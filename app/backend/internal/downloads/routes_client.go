@@ -1,4 +1,4 @@
-package api
+package downloads
 
 import (
 	"context"
@@ -11,7 +11,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 )
 
 // Everything in the client: the Downloads screen lists every torrent a
@@ -40,8 +39,8 @@ type ClientHealth struct {
 // clientRows returns the items of every client not already shown as
 // HolyArrs rows, and each client's health, from the background reader's
 // snapshots: no client call, no write.
-func (a *API) clientRows(ctx context.Context, names map[int64]domain.Downloader, shown map[clientKey]bool) ([]DownloadRow, []ClientHealth) {
-	if a.s.DLSync == nil {
+func (a *Web) clientRows(ctx context.Context, names map[int64]domain.Downloader, shown map[clientKey]bool) ([]DownloadRow, []ClientHealth) {
+	if a.DLSync == nil {
 		return nil, []ClientHealth{}
 	}
 	return a.storeRows(ctx, names, shown)
@@ -49,7 +48,7 @@ func (a *API) clientRows(ctx context.Context, names map[int64]domain.Downloader,
 
 // downloaderNames reads every Downloader (removed ones too: old downloads
 // still name them) by id, in one read.
-func (a *API) downloaderNames(ctx context.Context) map[int64]domain.Downloader {
+func (a *Web) downloaderNames(ctx context.Context) map[int64]domain.Downloader {
 	names := map[int64]domain.Downloader{}
 	if all, err := database.Select[domain.Downloader](ctx, a.read(), "downloaders", "1=1"); err == nil {
 		for _, d := range all {
@@ -60,7 +59,7 @@ func (a *API) downloaderNames(ctx context.Context) map[int64]domain.Downloader {
 }
 
 // clientRow is one client item in the Downloads screen's words.
-func clientRow(d domain.Downloader, j downloads.Job) DownloadRow {
+func clientRow(d domain.Downloader, j Job) DownloadRow {
 	ph, st, active := clientPhase(j)
 	if d.Protocol == "usenet" && st == "seeding" {
 		st = "done" // Usenet has no sharing after the bytes are in
@@ -68,10 +67,10 @@ func clientRow(d domain.Downloader, j downloads.Job) DownloadRow {
 	row := DownloadRow{
 		DownloadView: DownloadView{State: st, Label: PhaseLabels[ph], Progress: j.Progress, Speed: j.Speed, UpSpeed: j.UpSpeed, Seeds: j.Seeds, Peers: j.Peers, SeedsTotal: j.SeedsTotal, PeersTotal: j.PeersTotal, Active: active},
 		Phase:        ph, Name: j.Name, Downloader: d.Name, DownloaderKind: d.Adapter, Protocol: d.Protocol, Size: j.Size,
-		UpdatedAt: time.Now().UTC(), CanAct: !downloads.ReadOnlyFor(d), ClientLocked: downloads.ReadOnlyFor(d), ClientItem: true, Outside: true, DownloaderID: d.ID, Hash: j.ID,
+		UpdatedAt: time.Now().UTC(), CanAct: !ReadOnlyFor(d), ClientLocked: ReadOnlyFor(d), ClientItem: true, Outside: true, DownloaderID: d.ID, Hash: j.ID,
 		Category: j.Category, Ratio: &j.Ratio, Limits: j.Limits, ClientHint: clientHint(j.Detail),
 		QueuePos: j.QueuePos, Tracker: j.Tracker, TrackerProblem: j.TrackerProblem,
-		LimitDown: j.LimitDown, LimitUp: j.LimitUp, LiveKey: liveKey(d.ID, j.ID),
+		LimitDown: j.LimitDown, LimitUp: j.LimitUp, LiveKey: LiveKey(d.ID, j.ID),
 	}
 	row.Path = j.ContentPath
 	if row.Path == "" {
@@ -99,7 +98,7 @@ func clientRow(d domain.Downloader, j downloads.Job) DownloadRow {
 	if ph == "done" {
 		row.Label = "Done"
 	}
-	if j.State == downloads.StateFailed && j.Detail != "" && row.ClientHint == "" {
+	if j.State == StateFailed && j.Detail != "" && row.ClientHint == "" {
 		row.Text = j.Detail // the Downloader's own reason (SABnzbd's fail message)
 	}
 	return row
@@ -146,15 +145,15 @@ func clientHint(state string) string {
 
 // clientPhase maps a client item onto the Downloads screen's phase and
 // state: a finished torrent still shared is done and seeding.
-func clientPhase(j downloads.Job) (phase, state string, active bool) {
+func clientPhase(j Job) (phase, state string, active bool) {
 	switch j.State {
-	case downloads.StateQueued:
+	case StateQueued:
 		return "waiting", "queued", true
-	case downloads.StatePaused:
+	case StatePaused:
 		return "paused", "paused", true
-	case downloads.StateFailed:
+	case StateFailed:
 		return "failed", "failed", false
-	case downloads.StateFinished:
+	case StateFinished:
 		switch j.Detail {
 		case "pausedUP", "stoppedUP":
 			return "done", "paused", false
@@ -169,7 +168,7 @@ func clientPhase(j downloads.Job) (phase, state string, active bool) {
 
 // knownTitles names the client items HolyArrs already knows by hash (its
 // own downloads older than the list), and drops their outside mark.
-func (a *API) knownTitles(ctx context.Context, downloaderID int64, rows []DownloadRow) {
+func (a *Web) knownTitles(ctx context.Context, downloaderID int64, rows []DownloadRow) {
 	at := map[string]int{}
 	for i, r := range rows {
 		at[r.Hash] = i
@@ -229,9 +228,9 @@ func (a *API) knownTitles(ctx context.Context, downloaderID int64, rows []Downlo
 
 // Client item routes: the client controls, addressed by Downloader id and
 // the client's own item id (a torrent's info hash).
-func (a *API) clientItemRoutes(m *http.ServeMux) {
-	write := func(action, verb string, f func(ctx context.Context, e downloads.Engine, id string) error) http.HandlerFunc {
-		return a.itemAct(true, func(r *http.Request, e downloads.Engine, id string) error {
+func (a *Web) clientItemRoutes(m *http.ServeMux) {
+	write := func(action, verb string, f func(ctx context.Context, e Engine, id string) error) http.HandlerFunc {
+		return a.itemAct(true, func(r *http.Request, e Engine, id string) error {
 			err := f(r.Context(), e, id)
 			if err == nil {
 				a.itemChanged(r, id, action, verb)
@@ -239,21 +238,21 @@ func (a *API) clientItemRoutes(m *http.ServeMux) {
 			return err
 		})
 	}
-	m.HandleFunc("POST /api/v1/downloaders/{id}/items/{hash}/pause", write("pause", "paused", func(ctx context.Context, e downloads.Engine, id string) error {
-		return asController(e, func(c downloads.Controller) error { return c.PauseItem(ctx, id) })
+	m.HandleFunc("POST /api/v1/downloaders/{id}/items/{hash}/pause", write("pause", "paused", func(ctx context.Context, e Engine, id string) error {
+		return asController(e, func(c Controller) error { return c.PauseItem(ctx, id) })
 	}))
-	m.HandleFunc("POST /api/v1/downloaders/{id}/items/{hash}/resume", write("resume", "resumed", func(ctx context.Context, e downloads.Engine, id string) error {
-		return asController(e, func(c downloads.Controller) error { return c.ResumeItem(ctx, id) })
+	m.HandleFunc("POST /api/v1/downloaders/{id}/items/{hash}/resume", write("resume", "resumed", func(ctx context.Context, e Engine, id string) error {
+		return asController(e, func(c Controller) error { return c.ResumeItem(ctx, id) })
 	}))
-	m.HandleFunc("POST /api/v1/downloaders/{id}/items/{hash}/top", write("top", "moved to the top", func(ctx context.Context, e downloads.Engine, id string) error {
-		return asController(e, func(c downloads.Controller) error { return c.MoveTop(ctx, id) })
+	m.HandleFunc("POST /api/v1/downloaders/{id}/items/{hash}/top", write("top", "moved to the top", func(ctx context.Context, e Engine, id string) error {
+		return asController(e, func(c Controller) error { return c.MoveTop(ctx, id) })
 	}))
 	a.usenetQueueRoutes(m)
-	m.HandleFunc("POST /api/v1/downloaders/{id}/items/{hash}/recheck", write("recheck", "rechecked", func(ctx context.Context, e downloads.Engine, id string) error {
-		return asTorrent(e, func(t downloads.TorrentController) error { return t.Recheck(ctx, id) })
+	m.HandleFunc("POST /api/v1/downloaders/{id}/items/{hash}/recheck", write("recheck", "rechecked", func(ctx context.Context, e Engine, id string) error {
+		return asTorrent(e, func(t TorrentController) error { return t.Recheck(ctx, id) })
 	}))
-	m.HandleFunc("POST /api/v1/downloaders/{id}/items/{hash}/reannounce", write("reannounce", "reannounced", func(ctx context.Context, e downloads.Engine, id string) error {
-		return asTorrent(e, func(t downloads.TorrentController) error { return t.Reannounce(ctx, id) })
+	m.HandleFunc("POST /api/v1/downloaders/{id}/items/{hash}/reannounce", write("reannounce", "reannounced", func(ctx context.Context, e Engine, id string) error {
+		return asTorrent(e, func(t TorrentController) error { return t.Reannounce(ctx, id) })
 	}))
 	m.HandleFunc("POST /api/v1/downloaders/{id}/items/{hash}/remove", a.removeItem)
 	m.HandleFunc("GET /api/v1/downloaders/{id}/items/{hash}/detail", a.itemDetail)
@@ -263,9 +262,9 @@ func (a *API) clientItemRoutes(m *http.ServeMux) {
 }
 
 // itemAct runs a call on one client item and answers ok.
-func (a *API) itemAct(write bool, f func(r *http.Request, e downloads.Engine, id string) error) http.HandlerFunc {
+func (a *Web) itemAct(write bool, f func(r *http.Request, e Engine, id string) error) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if err := a.onItem(r, write, func(e downloads.Engine, id string) error { return f(r, e, id) }); err != nil {
+		if err := a.onItem(r, write, func(e Engine, id string) error { return f(r, e, id) }); err != nil {
 			itemError(w, err)
 			return
 		}
@@ -273,20 +272,20 @@ func (a *API) itemAct(write bool, f func(r *http.Request, e downloads.Engine, id
 	}
 }
 
-func (a *API) onItem(r *http.Request, write bool, call func(e downloads.Engine, id string) error) error {
+func (a *Web) onItem(r *http.Request, write bool, call func(e Engine, id string) error) error {
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
-		return downloads.ErrNoDownloader
+		return ErrNoDownloader
 	}
-	err = a.manager().ControlItem(r.Context(), id, r.PathValue("hash"), write, call)
+	err = a.Manager().ControlItem(r.Context(), id, r.PathValue("hash"), write, call)
 	if err == nil && write {
-		a.manager().Kick(id) // the reader shows the change at once
+		a.Manager().Kick(id) // the reader shows the change at once
 	}
 	return err
 }
 
 func itemError(w http.ResponseWriter, err error) {
-	if errors.Is(err, downloads.ErrNoDownloader) {
+	if errors.Is(err, ErrNoDownloader) {
 		webserver.Fail(w, http.StatusNotFound, err.Error())
 		return
 	}
@@ -294,11 +293,11 @@ func itemError(w http.ResponseWriter, err error) {
 }
 
 // removeItem takes one item out of the client, with or without its files.
-func (a *API) removeItem(w http.ResponseWriter, r *http.Request) {
+func (a *Web) removeItem(w http.ResponseWriter, r *http.Request) {
 	var in struct {
 		DeleteFiles bool `json:"delete_files"`
 	}
-	if r.ContentLength != 0 && !decode(w, r, &in, `body is {"delete_files": true or false}`) {
+	if r.ContentLength != 0 && !webserver.Decode(w, r, &in, `body is {"delete_files": true or false}`) {
 		return
 	}
 	// Removing a torrent HolyArrs did not send is a Downloader owner's call:
@@ -306,7 +305,7 @@ func (a *API) removeItem(w http.ResponseWriter, r *http.Request) {
 	if !a.itemChangeOK(w, r) {
 		return
 	}
-	a.itemAct(true, func(r *http.Request, e downloads.Engine, id string) error {
+	a.itemAct(true, func(r *http.Request, e Engine, id string) error {
 		err := e.Remove(r.Context(), id, in.DeleteFiles)
 		if err == nil {
 			if did, perr := strconv.ParseInt(r.PathValue("id"), 10, 64); perr == nil {
@@ -319,10 +318,10 @@ func (a *API) removeItem(w http.ResponseWriter, r *http.Request) {
 }
 
 // itemDetail is a client item's Info, read live; it has no HolyArrs log.
-func (a *API) itemDetail(w http.ResponseWriter, r *http.Request) {
+func (a *Web) itemDetail(w http.ResponseWriter, r *http.Request) {
 	out := DownloadDetailView{Log: []DownloadLogLine{}}
-	err := a.onItem(r, false, func(e downloads.Engine, id string) error {
-		return asInspector(e, func(t downloads.TorrentInspector) error {
+	err := a.onItem(r, false, func(e Engine, id string) error {
+		return asInspector(e, func(t TorrentInspector) error {
 			p, err := t.Properties(r.Context(), id)
 			if err == nil {
 				out.Torrent = &p
@@ -330,15 +329,15 @@ func (a *API) itemDetail(w http.ResponseWriter, r *http.Request) {
 			return err
 		})
 	})
-	if errors.Is(err, downloads.ErrNoDownloader) || errors.Is(err, downloads.ErrNotFound) {
+	if errors.Is(err, ErrNoDownloader) || errors.Is(err, ErrNotFound) {
 		itemError(w, err)
 		return
 	}
-	if err != nil && !errors.Is(err, downloads.ErrNotSupported) {
+	if err != nil && !errors.Is(err, ErrNotSupported) {
 		out.TorrentErr = err.Error()
 	}
 	if id, perr := strconv.ParseInt(r.PathValue("id"), 10, 64); perr == nil {
-		db := a.s.Store.Read()
+		db := a.Store.Read()
 		var adapter string
 		_ = db.QueryRowContext(r.Context(), "SELECT name, adapter FROM downloaders WHERE id = ?", id).Scan(&out.Downloader, &adapter)
 		if a.outsideHash(r.Context(), id, r.PathValue("hash")) {
@@ -351,19 +350,19 @@ func (a *API) itemDetail(w http.ResponseWriter, r *http.Request) {
 				out.RequestedBy = "Added in " + adapterWord(adapter)
 			}
 		}
-		out.Log = a.torrentTimeline(r.Context(), id, r.PathValue("hash"), out.Torrent, nil)
+		out.Log = a.TorrentTimeline(r.Context(), id, r.PathValue("hash"), out.Torrent, nil)
 	}
 	webserver.WriteJSON(w, http.StatusOK, out)
 }
 
 // titleOwner names the person who added a Library title, or "" when
 // HolyArrs added it on its own (an import or a match).
-func (a *API) titleOwner(ctx context.Context, titleID int64) string {
+func (a *Web) titleOwner(ctx context.Context, titleID int64) string {
 	if titleID == 0 {
 		return ""
 	}
 	var name string
-	_ = a.s.Store.Read().QueryRowContext(ctx, `SELECT u.name FROM titles t JOIN users u ON u.id = json_extract(t.created_by, '$.id')
+	_ = a.Store.Read().QueryRowContext(ctx, `SELECT u.name FROM titles t JOIN users u ON u.id = json_extract(t.created_by, '$.id')
 		WHERE t.id = ? AND json_extract(t.created_by, '$.kind') = 'user'`, titleID).Scan(&name)
 	return name
 }
@@ -371,7 +370,7 @@ func (a *API) titleOwner(ctx context.Context, titleID int64) string {
 // rowOwners fills each row's Requested by from its Library title, in one
 // read: the person who added the title, else "Added in <client>" for an
 // outside item (nobody asked HolyArrs for it).
-func (a *API) rowOwners(ctx context.Context, rows []DownloadRow) {
+func (a *Web) rowOwners(ctx context.Context, rows []DownloadRow) {
 	ids := []int64{}
 	for _, r := range rows {
 		if r.TitleID != 0 {
@@ -426,13 +425,13 @@ func adapterWord(adapter string) string {
 }
 
 // itemSwarm lists a client item's trackers and peers.
-func (a *API) itemSwarm(w http.ResponseWriter, r *http.Request) {
+func (a *Web) itemSwarm(w http.ResponseWriter, r *http.Request) {
 	out := struct {
-		Trackers []downloads.Tracker `json:"trackers"`
-		Peers    []downloads.Peer    `json:"peers"`
+		Trackers []Tracker `json:"trackers"`
+		Peers    []Peer    `json:"peers"`
 	}{}
-	err := a.onItem(r, false, func(e downloads.Engine, id string) error {
-		return asTorrent(e, func(t downloads.TorrentController) error {
+	err := a.onItem(r, false, func(e Engine, id string) error {
+		return asTorrent(e, func(t TorrentController) error {
 			var err error
 			if out.Trackers, err = t.Trackers(r.Context(), id); err != nil {
 				return err
@@ -452,10 +451,10 @@ func (a *API) itemSwarm(w http.ResponseWriter, r *http.Request) {
 }
 
 // itemFiles lists a client item's files with their priority.
-func (a *API) itemFiles(w http.ResponseWriter, r *http.Request) {
-	var files []downloads.TorrentFile
-	err := a.onItem(r, false, func(e downloads.Engine, id string) error {
-		return asInspector(e, func(t downloads.TorrentInspector) error {
+func (a *Web) itemFiles(w http.ResponseWriter, r *http.Request) {
+	var files []TorrentFile
+	err := a.onItem(r, false, func(e Engine, id string) error {
+		return asInspector(e, func(t TorrentInspector) error {
 			var err error
 			files, err = t.TorrentFiles(r.Context(), id)
 			return err
@@ -469,12 +468,12 @@ func (a *API) itemFiles(w http.ResponseWriter, r *http.Request) {
 }
 
 // setItemFiles sets which files of a client item to fetch and how soon.
-func (a *API) setItemFiles(w http.ResponseWriter, r *http.Request) {
+func (a *Web) setItemFiles(w http.ResponseWriter, r *http.Request) {
 	var in struct {
 		Indexes  []int `json:"indexes"`
 		Priority int   `json:"priority"`
 	}
-	if !decode(w, r, &in, `body is {"indexes": [file index...], "priority": 0 (skip), 1 (normal), 6 (high) or 7 (maximum)}`) {
+	if !webserver.Decode(w, r, &in, `body is {"indexes": [file index...], "priority": 0 (skip), 1 (normal), 6 (high) or 7 (maximum)}`) {
 		return
 	}
 	if len(in.Indexes) == 0 || len(in.Indexes) > 10000 {
@@ -484,14 +483,14 @@ func (a *API) setItemFiles(w http.ResponseWriter, r *http.Request) {
 	switch in.Priority {
 	case 0, 1, 6, 7:
 	default:
-		webserver.Fail(w, http.StatusBadRequest, downloads.ErrFilePriority.Error())
+		webserver.Fail(w, http.StatusBadRequest, ErrFilePriority.Error())
 		return
 	}
 	if !a.itemChangeOK(w, r) {
 		return
 	}
-	a.itemAct(true, func(r *http.Request, e downloads.Engine, id string) error {
-		return asInspector(e, func(t downloads.TorrentInspector) error {
+	a.itemAct(true, func(r *http.Request, e Engine, id string) error {
+		return asInspector(e, func(t TorrentInspector) error {
 			return t.SetFilePriority(r.Context(), id, in.Indexes, in.Priority)
 		})
 	})(w, r)

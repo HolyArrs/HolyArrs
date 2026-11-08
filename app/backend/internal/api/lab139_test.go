@@ -182,7 +182,7 @@ func TestLabAskLiveProgress(t *testing.T) {
 		Downloads json.RawMessage `json:"downloads"`
 		Ask       map[string]any  `json:"ask"`
 		search    []sources.SearchView
-		rows      []DownloadRow
+		rows      []downloads.DownloadRow
 	}
 	var snaps []snap
 	key := ""
@@ -195,7 +195,7 @@ func TestLabAskLiveProgress(t *testing.T) {
 		}
 		_ = json.Unmarshal(x.Searches, &sv)
 		var dv struct {
-			Downloads []DownloadRow `json:"downloads"`
+			Downloads []downloads.DownloadRow `json:"downloads"`
 		}
 		_ = json.Unmarshal(x.Downloads, &dv)
 		x.search, x.rows = sv.Running, dv.Downloads

@@ -4,11 +4,12 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
 	"testing"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
@@ -23,7 +24,7 @@ func TestTagsOnDownloadersSourcesAndTitles(t *testing.T) {
 	srv, s := dlServer(t)
 	key := "0123456789abcdef0123456789abcdef"
 	sab := fakeSAB(t, key)
-	var d DownloaderView
+	var d downloads.DownloaderView
 	raw, _ := json.Marshal(map[string]any{"name": "Kids SAB", "kind": "sabnzbd", "url": sab.URL, "secret": key, "category": "movies",
 		"allow_local_network": true, "tags": []string{" Kids ", "kids", "4K  Only"}})
 	_ = json.Unmarshal(do(t, "POST", srv.URL+"/api/v1/downloaders", string(raw), 201), &d)

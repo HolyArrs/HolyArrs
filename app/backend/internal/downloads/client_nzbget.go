@@ -10,13 +10,14 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"io"
 	"net/http"
 	"path"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 )
 
 const (

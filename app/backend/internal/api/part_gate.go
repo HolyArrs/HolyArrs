@@ -32,7 +32,7 @@ func (a *API) controlRoutes(m *http.ServeMux) {
 func (a *API) linkTest(kind string) (test http.HandlerFunc, unavailable string) {
 	switch kind {
 	case "downloader":
-		return a.testDownloader, ""
+		return a.dl.TestDownloader, ""
 	case "source":
 		return a.sourceHandlers().TestSource, ""
 	case "media_server":

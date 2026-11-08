@@ -4,8 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
-	setupmod "github.com/HolyArrs/holyarrs/app/backend/internal/setup"
 	"io"
 	"net/http"
 	"net/http/cookiejar"
@@ -18,6 +16,9 @@ import (
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
+	setupmod "github.com/HolyArrs/holyarrs/app/backend/internal/setup"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 

@@ -185,12 +185,10 @@ type API struct {
 	// sourceH serves the Source, search and bridge routes (modules.go).
 	sourceOnce sync.Once
 	sourceH    *sources.Handlers
-	// tlog is the torrent log's last seen state per torrent (torrentlog.go).
-	tlog torrentLog
+	// dl serves the Downloads routes (internal/downloads).
+	dl *downloads.Web
 	// interest limits each session's live interest calls (webserver.go).
 	interest interestState
-	// dlHealth is the health last pushed per client (downloads_live.go).
-	dlHealth dlHealthSent
 	// listSeen is each region's last world-list shelves signature
 	// (music_lists_v1), guarded by musicv2.cursorMu.
 	listSeen map[string]string
@@ -249,20 +247,6 @@ type API struct {
 	ctl      musicControl
 	// artistVideos keeps each artist's music videos (see music_video.go).
 	artistVideos artistVideoCache
-	// speeds is the rolling total-speed history (downloads/speed_history.go).
-	speeds downloads.SpeedHistory
-	// match links outside torrents to Library titles (client_match.go).
-	match clientMatch
-	// viewDB, when set, takes the Downloads view's reads (tests count them).
-	viewDB *sql.DB
-}
-
-// read is the read pool the Downloads view uses.
-func (a *API) read() *sql.DB {
-	if a.viewDB != nil {
-		return a.viewDB
-	}
-	return a.s.Store.Read()
 }
 
 // New makes the API.
@@ -322,6 +306,9 @@ func New(s Server) *API {
 	a.titles = a.newTitlePages()
 	a.trailers = a.newTrailers()
 	a.ai = &ai.Handlers{Store: s.Store, Version: s.Version, PartOn: a.partIsOn}
+	a.dl = &downloads.Web{Store: s.Store, DLSync: s.DLSync, Downloads: s.Downloads, Live: s.Live, Queue: s.Queue,
+		Secrets: s.Secrets, Auth: s.Auth, Library: s.Library, Metadata: s.Metadata, Search: s.Search,
+		ShowSource: a.showSource, AddMovieTitle: a.addMatchedMovie, AddShowTitle: a.addMatchedShow, LibraryError: libraryError}
 	return a
 }
 
@@ -409,7 +396,7 @@ func (a *API) Routes(rt *webserver.Router) {
 	m.HandleFunc("GET /api/v1/library/copies", a.listLibraryCopies)
 	m.HandleFunc("POST /api/v1/library/copies/search/preview", a.previewLibraryCopySearch)
 	m.HandleFunc("POST /api/v1/library/copies/search", a.searchLibraryCopies)
-	a.downloaderRoutes(m)
+	a.dl.Routes(m)
 	a.organiseRoutes(m)
 	a.manualImportRoutes(m)
 	a.holding().Routes(m)
@@ -478,7 +465,7 @@ func (a *API) Routes(rt *webserver.Router) {
 	}
 	a.askHandlers().Routes(m)
 	(&webserver.URLBaseHandlers{Store: a.s.Store, InUse: a.s.URLBase}).Routes(m)
-	a.alertRoutes(m)
+	(&alerts.Handlers{Store: a.s.Store, Secrets: a.s.Secrets, Sender: a.s.Alerts, Caller: a.callerID, OwnEmail: a.ownEmail}).Routes(m)
 	if startup.FeatureOn(features.PlexWatchlists) {
 		(&requests.WatchlistHandlers{Store: a.s.Store, Queue: a.s.Queue, Watchlists: func() *requests.Watchlists { return a.s.Watchlists }, Person: a.person}).Routes(m)
 	}
@@ -551,7 +538,7 @@ type SlotView struct {
 	File       *mediafiles.File `json:"file,omitempty"`
 	DownloadID *int64           `json:"active_download_id,omitempty"`
 	// Download is the active (or last) Download in plain words.
-	Download *DownloadView `json:"download,omitempty"`
+	Download *downloads.DownloadView `json:"download,omitempty"`
 }
 
 // TitleView is a Title with its Slots.
@@ -810,7 +797,7 @@ func (a *API) titleView(ctx context.Context, t mediafiles.Title) (TitleView, err
 				found = database.Get(ctx, db, "downloads", *s.ActiveDownloadID, &d) == nil
 			}
 			if found {
-				dv := downloadView(d)
+				dv := downloads.DownloadViewOf(d)
 				sv.Download = &dv
 			}
 		}
@@ -1323,6 +1310,6 @@ func (a *API) searchMetadata(w http.ResponseWriter, r *http.Request) {
 // StartSpeedHistory starts the total-speed readings (downloads.SpeedHistory).
 func (a *API) StartSpeedHistory(ctx context.Context) {
 	if a.s.Store != nil {
-		a.speeds.Start(ctx, a.s.Store.Read())
+		a.dl.Speeds.Start(ctx, a.s.Store.Read())
 	}
 }

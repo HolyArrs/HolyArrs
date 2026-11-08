@@ -316,7 +316,7 @@ func TestLabBrokenAlbumNextGrabbed(t *testing.T) {
 	nh := serveAlbum(t, "lab-small-hours-mp3", smallMP3, smallMP3Hash, next, true)
 	labRemove(t, x.m, labQbit(), bh, nh)
 	x.albumSearch(t)
-	var first DownloadRow
+	var first downloads.DownloadRow
 	x.until(t, "the FLAC copy to be sent", func() bool {
 		rows := labRows(t, x.srv.URL)
 		if len(rows) == 1 && rows[0].Name == smallFLAC && rows[0].Active {

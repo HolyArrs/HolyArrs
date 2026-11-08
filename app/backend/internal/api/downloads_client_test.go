@@ -10,6 +10,7 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
@@ -80,7 +81,7 @@ func (f *allClient) server(t *testing.T) *httptest.Server {
 }
 
 type viewRows struct {
-	Downloads []DownloadRow `json:"downloads"`
+	Downloads []downloads.DownloadRow `json:"downloads"`
 }
 
 func countDownloads(t *testing.T, s *database.Store) int {
@@ -108,7 +109,7 @@ func TestDownloadsViewListsEveryTorrent(t *testing.T) {
 	if len(out.Downloads) != 4 {
 		t.Fatalf("rows %d: %+v", len(out.Downloads), out.Downloads)
 	}
-	by := map[string]DownloadRow{}
+	by := map[string]downloads.DownloadRow{}
 	for _, r := range out.Downloads {
 		by[r.Hash] = r
 	}
@@ -202,7 +203,7 @@ func TestClientItemControls(t *testing.T) {
 	}
 	do(t, "POST", base+"/remove", `{"delete_files":true}`, 200)
 	do(t, "POST", base+"/remove", "", 200)
-	var d DownloadDetailView
+	var d downloads.DownloadDetailView
 	_ = json.Unmarshal(do(t, "GET", base+"/detail", "", 200), &d)
 	if d.Torrent == nil || d.Torrent.Downloaded != 2500 || d.Downloader != "Q" || len(d.Log) != 0 || d.RequestedBy != "Added in qBittorrent" {
 		t.Fatalf("detail %+v", d)

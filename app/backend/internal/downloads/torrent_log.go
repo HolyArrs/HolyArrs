@@ -1,4 +1,4 @@
-package api
+package downloads
 
 import (
 	"context"
@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 )
 
 // The torrent log: what happened to a torrent, for the panel's Log tab.
@@ -19,16 +18,13 @@ import (
 // message changes. Changes are compared in memory and written only when
 // something changed; nothing here asks the client anything extra.
 
-// torrentLogCap is how many recorded lines each torrent keeps.
-const torrentLogCap = 200
-
 // torrentSnap is what the last list refresh saw of one torrent.
 type torrentSnap struct {
 	detail, savePath, trackerProblem string
 	progress                         float64
 	ratio                            float64
 	seedingTime, lastActivity        int64
-	limits                           *downloads.ShareLimits
+	limits                           *ShareLimits
 }
 
 // torrentLog keeps the last seen tracker messages per torrent.
@@ -37,7 +33,7 @@ type torrentLog struct {
 	trackers map[clientKey]map[string]string
 }
 
-func snapOf(j downloads.Job) torrentSnap {
+func snapOf(j Job) torrentSnap {
 	return torrentSnap{detail: j.Detail, savePath: j.SavePath, trackerProblem: j.TrackerProblem, progress: j.Progress,
 		ratio: j.Ratio, seedingTime: j.SeedingTime, lastActivity: j.LastActivity, limits: j.Limits}
 }
@@ -113,15 +109,15 @@ func stateLines(prev, cur torrentSnap) []DownloadLogLine {
 // trackerLines are the lines for tracker messages that changed. The first
 // sighting of a tracker records nothing; an empty new message records
 // nothing either. Hosts only: addresses in messages are cut to their host.
-func trackerLines(prev map[string]string, cur []downloads.Tracker) ([]DownloadLogLine, map[string]string) {
+func trackerLines(prev map[string]string, cur []Tracker) ([]DownloadLogLine, map[string]string) {
 	next := map[string]string{}
 	var out []DownloadLogLine
 	for _, t := range cur {
 		if t.Fixed {
 			continue
 		}
-		host := downloads.HostOnly(t.URL)
-		msg := strings.TrimSpace(downloads.RedactURLs(t.Message))
+		host := HostOnly(t.URL)
+		msg := strings.TrimSpace(RedactURLs(t.Message))
 		if msg == "" {
 			msg = t.Status
 		}
@@ -138,7 +134,7 @@ func trackerLines(prev map[string]string, cur []downloads.Tracker) ([]DownloadLo
 // forgetChunk caps the hashes in one DELETE ... IN (...).
 const forgetChunk = 500
 
-func (a *API) forgetTorrents(ctx context.Context, downloaderID int64, hashes []string) {
+func (a *Web) forgetTorrents(ctx context.Context, downloaderID int64, hashes []string) {
 	all := len(hashes) == 0
 	gone := map[string]bool{}
 	for _, h := range hashes {
@@ -155,7 +151,7 @@ func (a *API) forgetTorrents(ctx context.Context, downloaderID int64, hashes []s
 	for h := range gone {
 		list = append(list, h)
 	}
-	_ = a.s.Store.Write(context.WithoutCancel(ctx), func(tx *sql.Tx) error {
+	_ = a.Store.Write(context.WithoutCancel(ctx), func(tx *sql.Tx) error {
 		for _, t := range []string{"torrent_log", "client_links", "torrent_seen"} {
 			if all {
 				if _, err := tx.Exec("DELETE FROM "+t+" WHERE downloader_id = ?", downloaderID); err != nil {
@@ -181,7 +177,7 @@ func (a *API) forgetTorrents(ctx context.Context, downloaderID int64, hashes []s
 }
 
 // noteTrackers records tracker message changes from a swarm read.
-func (a *API) noteTrackers(ctx context.Context, downloaderID int64, hash string, ts []downloads.Tracker) {
+func (a *Web) noteTrackers(ctx context.Context, downloaderID int64, hash string, ts []Tracker) {
 	hash = strings.ToLower(hash)
 	k := clientKey{downloaderID, hash}
 	a.tlog.mu.Lock()
@@ -197,16 +193,16 @@ func (a *API) noteTrackers(ctx context.Context, downloaderID int64, hash string,
 }
 
 // lastActivity is the last piece-moved time in the reader's snapshot.
-func (a *API) lastActivity(downloaderID int64, hash string) int64 {
-	if a.s.DLSync == nil {
+func (a *Web) lastActivity(downloaderID int64, hash string) int64 {
+	if a.DLSync == nil {
 		return 0
 	}
-	return a.s.DLSync.Store.Current(downloaderID).Items[strings.ToLower(hash)].LastActivity
+	return a.DLSync.Store.Current(downloaderID).Items[strings.ToLower(hash)].LastActivity
 }
 
 // writeTorrentLog stores lines and keeps the newest torrentLogCap.
-func (a *API) writeTorrentLog(ctx context.Context, downloaderID int64, hash string, at time.Time, lines []DownloadLogLine) {
-	_ = a.s.Store.Write(context.WithoutCancel(ctx), func(tx *sql.Tx) error {
+func (a *Web) writeTorrentLog(ctx context.Context, downloaderID int64, hash string, at time.Time, lines []DownloadLogLine) {
+	_ = a.Store.Write(context.WithoutCancel(ctx), func(tx *sql.Tx) error {
 		for _, l := range lines {
 			if _, err := tx.Exec("INSERT INTO torrent_log (downloader_id, hash, at, kind, summary) VALUES (?, ?, ?, ?, ?)",
 				downloaderID, hash, at.Format(database.TimeLayout), l.Kind, l.Summary); err != nil {
@@ -221,8 +217,8 @@ func (a *API) writeTorrentLog(ctx context.Context, downloaderID int64, hash stri
 }
 
 // recordedLines reads a torrent's recorded lines.
-func (a *API) recordedLines(ctx context.Context, downloaderID int64, hash string) []DownloadLogLine {
-	rows, err := a.s.Store.Read().QueryContext(ctx, "SELECT at, kind, summary FROM torrent_log WHERE downloader_id = ? AND hash = ? ORDER BY at DESC, id DESC LIMIT ?",
+func (a *Web) recordedLines(ctx context.Context, downloaderID int64, hash string) []DownloadLogLine {
+	rows, err := a.Store.Read().QueryContext(ctx, "SELECT at, kind, summary FROM torrent_log WHERE downloader_id = ? AND hash = ? ORDER BY at DESC, id DESC LIMIT ?",
 		downloaderID, strings.ToLower(hash), torrentLogCap)
 	if err != nil {
 		return nil
@@ -242,7 +238,7 @@ func (a *API) recordedLines(ctx context.Context, downloaderID int64, hash string
 
 // derivedLines are the lines worked out from the client's own timestamps;
 // only events with real values are shown.
-func derivedLines(t *downloads.TorrentDetail, lastActivity int64, now time.Time) []DownloadLogLine {
+func derivedLines(t *TorrentDetail, lastActivity int64, now time.Time) []DownloadLogLine {
 	if t == nil {
 		return nil
 	}
@@ -312,9 +308,9 @@ func plainBytes(n int64) string {
 	return fmt.Sprintf("%.1f TB", f)
 }
 
-// torrentTimeline merges a torrent's derived, recorded and HolyArrs lines,
+// TorrentTimeline merges a torrent's derived, recorded and HolyArrs lines,
 // newest first, and fills the detail's last activity from the list.
-func (a *API) torrentTimeline(ctx context.Context, downloaderID int64, hash string, t *downloads.TorrentDetail, own []DownloadLogLine) []DownloadLogLine {
+func (a *Web) TorrentTimeline(ctx context.Context, downloaderID int64, hash string, t *TorrentDetail, own []DownloadLogLine) []DownloadLogLine {
 	la := a.lastActivity(downloaderID, hash)
 	if t != nil && la > 0 {
 		at := time.Unix(la, 0).UTC()

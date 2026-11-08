@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
@@ -140,7 +141,7 @@ func exec41(t *testing.T, s *database.Store, q string, args ...any) {
 func TestDownloadsView(t *testing.T) {
 	x := seed41(t, mediafiles.SlotDownloading, "downloading")
 	var out struct {
-		Downloads []DownloadRow `json:"downloads"`
+		Downloads []downloads.DownloadRow `json:"downloads"`
 	}
 	_ = json.Unmarshal(do(t, "GET", x.srv.URL+"/api/v1/downloads/view", "", 200), &out)
 	if len(out.Downloads) != 1 {
@@ -154,8 +155,8 @@ func TestDownloadsView(t *testing.T) {
 	// Upload speed, seeds and peers come through, and the totals add up what is moving.
 	exec41(t, x.s, "UPDATE downloads SET up_speed = 512, seeds = 40, peers = 7")
 	var rates struct {
-		Downloads []DownloadRow  `json:"downloads"`
-		Totals    DownloadTotals `json:"totals"`
+		Downloads []downloads.DownloadRow  `json:"downloads"`
+		Totals    downloads.DownloadTotals `json:"totals"`
 	}
 	_ = json.Unmarshal(do(t, "GET", x.srv.URL+"/api/v1/downloads/view", "", 200), &rates)
 	if rr := rates.Downloads[0]; rr.UpSpeed != 512 || rr.Seeds != 40 || rr.Peers != 7 || rates.Totals.Speed != 2048 || rates.Totals.UpSpeed != 512 {
@@ -186,7 +187,7 @@ func TestRemoveDownloadRoute(t *testing.T) {
 	x := seed41(t, mediafiles.SlotDownloading, "downloading")
 	do(t, "POST", x.srv.URL+"/api/v1/downloads/"+itoa(x.dlID)+"/remove", `{"delete_files":"yes"}`, 400)
 	// Defaults: delete files, keep the Release, the movie goes back to wanted.
-	var v DownloadView
+	var v downloads.DownloadView
 	_ = json.Unmarshal(do(t, "POST", x.srv.URL+"/api/v1/downloads/"+itoa(x.dlID)+"/remove", "", 200), &v)
 	if v.State != "cleaned" || v.Label != "Removed" || v.Active || !strings.HasPrefix(v.Text, "Removed") {
 		t.Fatalf("removed %+v", v)
@@ -214,8 +215,8 @@ func TestRemoveDownloadRoute(t *testing.T) {
 func TestNeedsDecisionList(t *testing.T) {
 	x := seed41(t, mediafiles.SlotNeedsADecision, "failed")
 	var out struct {
-		Items []DecisionView `json:"items"`
-		Count int            `json:"count"`
+		Items []downloads.DecisionView `json:"items"`
+		Count int                      `json:"count"`
 	}
 	_ = json.Unmarshal(do(t, "GET", x.srv.URL+"/api/v1/needs-decision", "", 200), &out)
 	if out.Count != 1 || len(out.Items) != 1 {
@@ -274,8 +275,8 @@ func TestDecideRoute(t *testing.T) {
 func TestDecideStopRefusesSlotThatMovedOn(t *testing.T) {
 	x := seed41(t, mediafiles.SlotNeedsADecision, "failed")
 	exec41(t, x.s, "UPDATE versions SET keep_up_to_date = 1")
-	beforeDecide = func() { exec41(t, x.s, "UPDATE slots SET state = 'searching'") }
-	t.Cleanup(func() { beforeDecide = nil })
+	downloads.BeforeDecide = func() { exec41(t, x.s, "UPDATE slots SET state = 'searching'") }
+	t.Cleanup(func() { downloads.BeforeDecide = nil })
 	do(t, "POST", x.srv.URL+"/api/v1/needs-decision/"+itoa(x.slotID)+"/decide", `{"action":"stop"}`, 409)
 	var keep bool
 	_ = x.s.Read().QueryRow("SELECT keep_up_to_date FROM versions LIMIT 1").Scan(&keep)

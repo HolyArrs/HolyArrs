@@ -78,30 +78,6 @@ func TestBulkRoute(t *testing.T) {
 	do(t, "POST", base+"/bulk", `{"action":"start","hashes":[]}`, 400)
 }
 
-func TestSubfolderAndLinkGuards(t *testing.T) {
-	for _, bad := range []string{"/etc", "../up", "a/../../b", `C:\x`, `\host\share`, "c:x", "a\x00b", "..", "."} {
-		if _, err := subfolder(bad); err == nil {
-			t.Errorf("subfolder %q passed", bad)
-		}
-	}
-	if s, err := subfolder("tv/new//"); err != nil || s != "tv/new" {
-		t.Fatalf("good subfolder %q %v", s, err)
-	}
-	if joinFolder(`D:\dl`, "tv/new") != `D:\dl\tv\new` || joinFolder("/data/", "tv") != "/data/tv" {
-		t.Fatal("join")
-	}
-	for _, bad := range []string{"magnet:?xt=urn:btih:" + outHash + "\r\nx", "https://a.test/x\n", "ftp://a.test/x", "javascript:alert(1)", "https://user@1.1.1.1/x", "magnet:", "https://a.test/a b"} {
-		if err := checkLink(bad); err == nil {
-			t.Errorf("link %q passed", bad)
-		}
-	}
-	for _, ok := range []string{outHash, strings.Repeat("a", 64), "magnet:?xt=urn:btih:" + outHash, "https://1.1.1.1/x.torrent"} {
-		if err := checkLink(ok); err != nil {
-			t.Errorf("%q: %v", ok, err)
-		}
-	}
-}
-
 // Without the settings permission a folder is only a subfolder of the
 // category's folder and the category must exist in the client.
 func TestClientFolderWithoutSettings(t *testing.T) {
@@ -109,23 +85,23 @@ func TestClientFolderWithoutSettings(t *testing.T) {
 	var did int64
 	_ = x.s.Read().QueryRow("SELECT id FROM downloaders").Scan(&did)
 	ctx := webserver.ContextWith(context.Background(), webserver.Caller{UserID: 7, Via: "session", Perms: []webserver.Perm{webserver.PermManageLibrary}})
-	if _, _, err := x.api.clientFolder(ctx, did, "linux", "/etc", true); !errors.Is(err, errFolder) {
+	if _, _, err := x.api.dl.ClientFolder(ctx, did, "linux", "/etc", true); !errors.Is(err, downloads.ErrFolder) {
 		t.Fatalf("absolute: %v", err)
 	}
-	if _, _, err := x.api.clientFolder(ctx, did, "linux", "../../root", true); !errors.Is(err, errFolder) {
+	if _, _, err := x.api.dl.ClientFolder(ctx, did, "linux", "../../root", true); !errors.Is(err, downloads.ErrFolder) {
 		t.Fatalf("traversal: %v", err)
 	}
-	if _, _, err := x.api.clientFolder(ctx, did, "made-up", "", true); !errors.Is(err, errCategory) {
+	if _, _, err := x.api.dl.ClientFolder(ctx, did, "made-up", "", true); !errors.Is(err, downloads.ErrPickCategory) {
 		t.Fatalf("category: %v", err)
 	}
-	if c, f, err := x.api.clientFolder(ctx, did, "linux", "iso/new", true); err != nil || c != "linux" || f != "/data/linux/iso/new" {
+	if c, f, err := x.api.dl.ClientFolder(ctx, did, "linux", "iso/new", true); err != nil || c != "linux" || f != "/data/linux/iso/new" {
 		t.Fatalf("subfolder %q %q %v", c, f, err)
 	}
-	if _, f, err := x.api.clientFolder(ctx, did, "music", "x", true); err != nil || f != "/data/downloads/x" {
+	if _, f, err := x.api.dl.ClientFolder(ctx, did, "music", "x", true); err != nil || f != "/data/downloads/x" {
 		t.Fatalf("default root %q %v", f, err)
 	}
 	admin := webserver.ContextWith(context.Background(), webserver.Caller{UserID: 1, Via: "session", Perms: []webserver.Perm{webserver.PermManageLibrary, webserver.PermSettings}})
-	if _, f, err := x.api.clientFolder(admin, did, "anything", "/srv/media", true); err != nil || f != "/srv/media" {
+	if _, f, err := x.api.dl.ClientFolder(admin, did, "anything", "/srv/media", true); err != nil || f != "/srv/media" {
 		t.Fatalf("admin %q %v", f, err)
 	}
 }
@@ -188,7 +164,7 @@ func TestShareLimitsOutsideNeedSettings(t *testing.T) {
 		req := httptest.NewRequest("POST", "/x", strings.NewReader(body)).WithContext(webserver.ContextWith(context.Background(), who))
 		req.SetPathValue("id", itoa(did))
 		rec := httptest.NewRecorder()
-		x.api.shareLimits(rec, req)
+		x.api.dl.ShareLimits(rec, req)
 		return rec.Code
 	}
 	ratio := `{"hashes":["` + outHash + `"],"ratio":2,"seeding_minutes":-2,"inactive_minutes":-2}`
@@ -217,14 +193,6 @@ func TestShareLimitsOutsideNeedSettings(t *testing.T) {
 	}
 	if c := call(owner, ratio); c != 200 {
 		t.Fatalf("owner: %d", c)
-	}
-}
-
-func TestClientHints(t *testing.T) {
-	for in, want := range map[string]string{"checkingDL": "checking", "checkingUP": "checking", "checkingResumeData": "checking", "moving": "moving", "error": "errored", "missingFiles": "missing", "stalledUP": "idle_seed", "stalledDL": "", "uploading": ""} {
-		if got := clientHint(in); got != want {
-			t.Errorf("%s: %q", in, got)
-		}
 	}
 }
 
@@ -284,7 +252,7 @@ func TestLocationWithoutSettings(t *testing.T) {
 		req := httptest.NewRequest("POST", "/x", strings.NewReader(body)).WithContext(webserver.ContextWith(context.Background(), member))
 		req.SetPathValue("id", itoa(did))
 		rec := httptest.NewRecorder()
-		x.api.setLocation(rec, req)
+		x.api.dl.SetLocation(rec, req)
 		return rec.Code
 	}
 	// A torrent HolyArrs did not send needs the settings permission to move at all.

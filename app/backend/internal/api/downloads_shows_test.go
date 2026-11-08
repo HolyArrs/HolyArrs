@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
@@ -59,7 +60,7 @@ func seedPack(t *testing.T) (*dl41, []int64) {
 func TestDownloadsViewShowsEpisodes(t *testing.T) {
 	x, ids := seedPack(t)
 	var out struct {
-		Downloads []DownloadRow `json:"downloads"`
+		Downloads []downloads.DownloadRow `json:"downloads"`
 	}
 	_ = json.Unmarshal(do(t, "GET", x.srv.URL+"/api/v1/downloads/view", "", 200), &out)
 	if len(out.Downloads) != 1 {
@@ -91,7 +92,7 @@ func TestDownloadsViewShowsEpisodes(t *testing.T) {
 func TestNeedsDecisionEpisodesAndPacks(t *testing.T) {
 	x, ids := seedPack(t)
 	var out struct {
-		Items []DecisionView `json:"items"`
+		Items []downloads.DecisionView `json:"items"`
 	}
 	_ = json.Unmarshal(do(t, "GET", x.srv.URL+"/api/v1/needs-decision", "", 200), &out)
 	if len(out.Items) != 2 {

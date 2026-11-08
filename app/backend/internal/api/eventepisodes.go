@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 )
 
 // queryer is what the event page reads with (*sql.DB fits; tests count calls).
@@ -19,7 +20,7 @@ type queryer interface {
 type eventPage struct {
 	titles   map[int64]pageTitle
 	slots    map[int64]pageSlot
-	items    map[int64]EpisodeLine
+	items    map[int64]downloads.EpisodeLine
 	versions map[int64]pageVersion
 }
 
@@ -29,7 +30,7 @@ type pageTitle struct {
 }
 
 type pageSlot struct {
-	line    EpisodeLine
+	line    downloads.EpisodeLine
 	isTrack bool
 	label   string // the Slot's Version
 }
@@ -105,7 +106,7 @@ func eventItems(e domain.Event) []int64 {
 // loadEventPage reads, in a few queries, the titles, Slots, Items and
 // Versions a page of Events names.
 func loadEventPage(ctx context.Context, db queryer, es []domain.Event) (*eventPage, error) {
-	p := &eventPage{titles: map[int64]pageTitle{}, slots: map[int64]pageSlot{}, items: map[int64]EpisodeLine{}, versions: map[int64]pageVersion{}}
+	p := &eventPage{titles: map[int64]pageTitle{}, slots: map[int64]pageSlot{}, items: map[int64]downloads.EpisodeLine{}, versions: map[int64]pageVersion{}}
 	seen := map[string]map[int64]bool{"t": {}, "s": {}, "i": {}, "v": {}}
 	var titles, slots, items, versions []int64
 	add := func(kind string, list *[]int64, id int64) {
@@ -176,7 +177,7 @@ func loadEventPage(ctx context.Context, db queryer, es []domain.Event) (*eventPa
 		if err := r.Scan(&id, &se, &ep, &name); err != nil {
 			return err
 		}
-		p.items[id] = EpisodeLine{Season: int(se.Int64), Episode: int(ep.Int64), Label: fmt.Sprintf("S%02dE%02d", se.Int64, ep.Int64), Name: name.String}
+		p.items[id] = downloads.EpisodeLine{Season: int(se.Int64), Episode: int(ep.Int64), Label: fmt.Sprintf("S%02dE%02d", se.Int64, ep.Int64), Name: name.String}
 		return nil
 	})
 	if err != nil {
@@ -222,22 +223,22 @@ func (p *eventPage) episode(e domain.Event) string {
 		return ""
 	}
 	if ids := eventSlots(e); len(ids) > 0 {
-		eps := []EpisodeLine{}
+		eps := []downloads.EpisodeLine{}
 		for _, id := range ids {
 			if s, ok := p.slots[id]; ok {
 				eps = append(eps, s.line)
 			}
 		}
-		sortLines(eps)
-		return covers(eps)
+		downloads.SortLines(eps)
+		return downloads.Covers(eps)
 	}
-	var eps []EpisodeLine
+	var eps []downloads.EpisodeLine
 	for _, id := range eventItems(e) {
 		if l, ok := p.items[id]; ok {
 			eps = append(eps, l)
 		}
 	}
-	return covers(eps)
+	return downloads.Covers(eps)
 }
 
 // version names the Version an Event is about (its Slot's, the first of

@@ -112,15 +112,15 @@ func pointQB(t *testing.T, x *dl41, url string) {
 	exec41(t, x.s, "UPDATE downloaders SET url = ?", url)
 	var id int64
 	_ = x.s.Read().QueryRow("SELECT id FROM downloaders LIMIT 1").Scan(&id)
-	x.api.manager().Forget(id)
+	x.api.dl.Manager().Forget(id)
 }
 
 type viewAnswer struct {
-	Downloads    []DownloadRow  `json:"downloads"`
-	Totals       DownloadTotals `json:"totals"`
-	Clients      []ClientHealth `json:"clients"`
-	OutsideTotal int            `json:"outside_total"`
-	NextCursor   string         `json:"next_cursor"`
+	Downloads    []downloads.DownloadRow  `json:"downloads"`
+	Totals       downloads.DownloadTotals `json:"totals"`
+	Clients      []downloads.ClientHealth `json:"clients"`
+	OutsideTotal int                      `json:"outside_total"`
+	NextCursor   string                   `json:"next_cursor"`
 }
 
 func view(t *testing.T, url string) viewAnswer {
@@ -147,7 +147,7 @@ func TestDownloadsViewHungClient(t *testing.T) {
 	t.Cleanup(hang.Close)
 	t.Cleanup(func() { close(stop) })
 	pointQB(t, x, hang.URL)
-	x.api.s.DLSync = &downloads.Sync{Store: &downloads.Store{}, DB: x.s}
+	x.api.dl.DLSync = &downloads.Sync{Store: &downloads.Store{}, DB: x.s}
 	var worst time.Duration
 	var last viewAnswer
 	for range 20 {
@@ -206,7 +206,7 @@ func TestDownloadsViewQueryCount(t *testing.T) {
 	}
 	pointQB(t, x, qbList(t, `[]`).URL)
 	feedStore(t, x.api)
-	x.api.viewDB = countingPool(t, x.s)
+	x.api.dl.ViewDB = countingPool(t, x.s)
 	view(t, x.srv.URL+"/api/v1/downloads/view")
 	before := countReads.Load()
 	v := view(t, x.srv.URL+"/api/v1/downloads/view")
@@ -248,9 +248,6 @@ func TestDownloadsViewTotalsIncludeSeeding(t *testing.T) {
 	if v.Totals.UpSpeed != 100+250*10 || v.Totals.Speed != 0 {
 		t.Fatalf("totals %+v", v.Totals)
 	}
-	if got := viewTotals([]DownloadRow{{DownloadView: DownloadView{State: "downloading", Active: true, Speed: 5, UpSpeed: 1}}, {DownloadView: DownloadView{State: "seeding", UpSpeed: 7}}}); got.Speed != 5 || got.UpSpeed != 8 {
-		t.Fatalf("viewTotals %+v", got)
-	}
 }
 
 // Outside rows come 200 at a time with a cursor to the next page.
@@ -274,7 +271,7 @@ func TestDownloadsViewPagesOutsideRows(t *testing.T) {
 				own++
 			}
 		}
-		if own != 1 || out > outsideCap || v.OutsideTotal != 450 {
+		if own != 1 || out > downloads.OutsideCap || v.OutsideTotal != 450 {
 			t.Fatalf("page %d: own %d outside %d total %d", pages, own, out, v.OutsideTotal)
 		}
 		pages++
@@ -288,17 +285,6 @@ func TestDownloadsViewPagesOutsideRows(t *testing.T) {
 	}
 	if v := view(t, x.srv.URL+"/api/v1/downloads/view?outside_limit=1000"); v.NextCursor != "" || len(v.Downloads) != 451 {
 		t.Fatalf("one big page: %d rows next %q", len(v.Downloads), v.NextCursor)
-	}
-}
-
-// Show more past the most one answer carries stays at that most, never back
-// to the first page's size (2,000 torrents, then 2,200 asked: still 2,000).
-func TestOutsideLimitHoldsAtItsMost(t *testing.T) {
-	for q, want := range map[string]int{"": 200, "x": 200, "0": 200, "-5": 200, "400": 400, "2000": 2000, "2200": 2000, "99999": 2000} {
-		r := httptest.NewRequest(http.MethodGet, "/api/v1/downloads/view?outside_limit="+q, nil)
-		if got := outsideLimit(r); got != want {
-			t.Errorf("outside_limit=%q: %d, want %d", q, got, want)
-		}
 	}
 }
 

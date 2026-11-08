@@ -13,6 +13,8 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/alerts"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
@@ -385,7 +387,7 @@ func TestAlertsPerMomentOverHTTP(t *testing.T) {
 	if strings.Contains(string(b), "secret-token") {
 		t.Fatalf("the link leaked: %s", b)
 	}
-	var al AlertView
+	var al alerts.View
 	_ = json.Unmarshal(b, &al)
 	r.owner.call("POST", "/api/v1/alerts", `{"name":"family","kind":"discord","url":"https://discord.com/api/webhooks/1/x"}`, 409)
 	// Off discord.com, or on the local network, a link needs the choice.
@@ -457,7 +459,7 @@ func TestAlertsPerMomentOverHTTP(t *testing.T) {
 
 	// An email Alert with no address to test against says so.
 	b = r.owner.call("POST", "/api/v1/alerts", `{"name":"Mail","kind":"email","smtp_host":"127.0.0.1","smtp_port":1,"smtp_security":"none","smtp_from":"h@example.test"}`, 201)
-	var mail AlertView
+	var mail alerts.View
 	_ = json.Unmarshal(b, &mail)
 	r.owner.call("POST", "/api/v1/alerts/"+itoa(mail.ID)+"/test", "", 400)
 	r.owner.call("PUT", "/api/v1/alerts/"+itoa(mail.ID), `{"name":"Mail","smtp_host":"127.0.0.1","smtp_port":1,"smtp_security":"none","smtp_from":"h@example.test","staff_to":"luis@example.test"}`, 200)
@@ -507,7 +509,7 @@ func TestWebhookAlertOverHTTP(t *testing.T) {
 	if strings.Contains(string(b), "hk-5678") || strings.Contains(string(b), hook.URL) {
 		t.Fatalf("a secret leaked: %s", b)
 	}
-	var al AlertView
+	var al alerts.View
 	_ = json.Unmarshal(b, &al)
 	if al.Secret != secrets.Masked || al.URL != secrets.Masked || al.WebhookAuth != "sign" || len(al.Moments) != 3 {
 		t.Fatalf("view %+v", al)
@@ -543,7 +545,7 @@ func TestTelegramAlertOverHTTP(t *testing.T) {
 	body := func(m map[string]any) string { b, _ := json.Marshal(m); return string(b) }
 	r.owner.call("POST", "/api/v1/alerts", body(map[string]any{"name": "TG", "kind": "telegram", "bot_token": token, "chat_id": "not a chat"}), 400)
 	b := r.owner.call("POST", "/api/v1/alerts", body(map[string]any{"name": "TG", "kind": "telegram", "allow_local_network": true, "bot_token": token, "chat_id": "-1001234"}), 201)
-	var al AlertView
+	var al alerts.View
 	_ = json.Unmarshal(b, &al)
 	if al.BotToken != secrets.Masked || al.ChatID != "-1001234" || al.URL != "" {
 		t.Fatalf("view %+v", al)
@@ -595,7 +597,7 @@ func TestAppAlertsOverHTTP(t *testing.T) {
 	for _, in := range adds {
 		b := r.owner.call("POST", "/api/v1/alerts", body(in), 201)
 		answers += string(b)
-		var al AlertView
+		var al alerts.View
 		_ = json.Unmarshal(b, &al)
 		if al.AppToken != secrets.Masked || al.URL != "" || al.BotToken != "" {
 			t.Fatalf("view %+v", al)
@@ -634,7 +636,7 @@ func TestAppAlertsOverHTTP(t *testing.T) {
 	// The optional ntfy token can be dropped; the masked value sent with it
 	// does not keep it.
 	b := r.owner.call("PUT", "/api/v1/alerts/"+itoa(ntfyID), body(map[string]any{"name": "N", "allow_local_network": true, "server_url": app.URL, "topic": "holyarrs", "app_token": secrets.Masked, "clear_app_token": true}), 200)
-	var al AlertView
+	var al alerts.View
 	_ = json.Unmarshal(b, &al)
 	if al.AppToken != "" {
 		t.Fatalf("token kept after removal: %+v", al)

@@ -1,4 +1,4 @@
-package api
+package downloads
 
 import (
 	"bytes"
@@ -7,8 +7,6 @@ import (
 	"path/filepath"
 	"testing"
 	"time"
-
-	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 )
 
 // JSON goldens for the records the download routes return. Run with
@@ -48,7 +46,7 @@ func TestDlPinRecordGoldens(t *testing.T) {
 		DownloaderKind: "qbittorrent", Protocol: "torrent", Size: 1000, StartedAt: &at, FinishedAt: &at, UpdatedAt: at, SlotState: "downloading", CanAct: true,
 		ClientLocked: true, Replaced: true, Kind: "show", Episodes: []EpisodeLine{ep}, Covers: "S01E02", Album: "Alb", ClientItem: true, Outside: true, Linked: true,
 		DownloaderID: 2, Hash: "abcd", Category: "holyarrs", RequestedBy: "ana", SourceName: "Lab", SourceID: 4, PostedAt: &at, Ratio: &ratio,
-		Limits: &downloads.ShareLimits{}, ClientHint: "checking", QueuePos: 3, Tracker: "t.example", TrackerProblem: "error", Availability: &avail,
+		Limits: &ShareLimits{}, ClientHint: "checking", QueuePos: 3, Tracker: "t.example", TrackerProblem: "error", Availability: &avail,
 		LiveKey: "2:abcd", LimitDown: 10, LimitUp: 20}
 	dlApiGolden(t, "pin_download_row_full.golden.json", full)
 	// A bare row: every optional field empty (a NULL-partner row).

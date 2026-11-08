@@ -13,57 +13,9 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
-
-func TestGuessOf(t *testing.T) {
-	cases := []struct {
-		name, cat string
-		kind      string
-		title     string
-		year      int
-		covers    string
-	}{
-		{"Paper.Harbour.2023.1080p.WEB-DL.H264-GRP", "movies", "movie", "Paper Harbour", 2023, ""},
-		{"Some.Show.S01E02.720p.HDTV.x264-GRP", "tv_shows", "show", "Some Show", 0, "S01E02"},
-		{"Some.Show.S02.1080p.WEB-DL-GRP", "tv_shows", "show", "Some Show", 0, "Season 2"},
-		{"Some.Show.S01E02E03.1080p.WEB-GRP", "", "show", "Some Show", 0, "S01E02-E03"},
-		{"setup.exe", "", "", "", 0, ""},
-	}
-	for _, c := range cases {
-		g := guessOf(c.name, c.cat)
-		if g.kind != c.kind || (c.kind != "" && (!strings.EqualFold(g.title, c.title) || g.year != c.year)) {
-			t.Errorf("%s: %+v", c.name, g)
-		}
-		if c.kind == "show" && coversLine(g) != c.covers {
-			t.Errorf("%s covers %q", c.name, coversLine(g))
-		}
-	}
-	g := guessOf("Some.Show.S02.1080p.WEB-DL-GRP", "tv")
-	if !coversEpisode(g, 2, 5) || coversEpisode(g, 1, 5) {
-		t.Fatalf("season pack covers %+v", g)
-	}
-}
-
-func TestPickSure(t *testing.T) {
-	one := []Candidate{{ID: "tmdb:1", Name: "Paper Harbour", Year: 2023, Score: likeness("Paper Harbour", "Paper Harbour")}, {ID: "tmdb:2", Name: "Paper Moon", Year: 1973, Score: likeness("Paper Harbour", "Paper Moon")}}
-	if i := pickSure(one, 2023); i != 0 {
-		t.Fatalf("one exact: %d", i)
-	}
-	if i := pickSure(one, 1990); i != -1 {
-		t.Fatalf("wrong year must be unsure: %d", i)
-	}
-	twins := []Candidate{{ID: "tmdb:1", Name: "Quiet Orchard", Year: 2022, Score: 100}, {ID: "tmdb:9", Name: "Quiet Orchard", Year: 1999, Score: 100}}
-	if i := pickSure(twins, 0); i != -1 {
-		t.Fatalf("two alike without a year must be unsure: %d", i)
-	}
-	if i := pickSure(twins, 1999); i != 1 {
-		t.Fatalf("the year decides: %d", i)
-	}
-	if likeness("The Office", "Office") != 100 || likeness("Paper Harbour", "Lighthouse") > 50 {
-		t.Fatal("likeness")
-	}
-}
 
 const (
 	sureHash   = "aaaa000000000000000000000000000000000001"
@@ -130,7 +82,7 @@ func TestClientMatchLinksAndConfirms(t *testing.T) {
 	md := r.api.s.Metadata
 	var mu sync.Mutex
 	lookups := 0
-	r.api.match.searchMovies = func(ctx context.Context, name string, year int) ([]metadata.Movie, error) {
+	r.api.dl.Match.SearchMovies = func(ctx context.Context, name string, year int) ([]metadata.Movie, error) {
 		mu.Lock()
 		lookups++
 		mu.Unlock()
@@ -154,7 +106,7 @@ func TestClientMatchLinksAndConfirms(t *testing.T) {
 
 	var view viewRows
 	_ = json.Unmarshal(r.owner.call("GET", "/api/v1/downloads/view", "", 200), &view)
-	by := map[string]DownloadRow{}
+	by := map[string]downloads.DownloadRow{}
 	for _, x := range view.Downloads {
 		by[x.Hash] = x
 	}
@@ -166,11 +118,11 @@ func TestClientMatchLinksAndConfirms(t *testing.T) {
 	}
 
 	var list struct {
-		Matches []MatchView    `json:"matches"`
-		Counts  map[string]int `json:"counts"`
+		Matches []downloads.MatchView `json:"matches"`
+		Counts  map[string]int        `json:"counts"`
 	}
 	_ = json.Unmarshal(r.owner.call("GET", "/api/v1/downloads/matches", "", 200), &list)
-	if list.Counts[linkLinked] != 1 || list.Counts[linkUnsure] != 1 || list.Counts[linkNotMedia] != 1 || len(list.Matches) != 1 || len(list.Matches[0].Candidates) != 2 {
+	if list.Counts[downloads.LinkLinked] != 1 || list.Counts[downloads.LinkUnsure] != 1 || list.Counts[downloads.LinkNotMedia] != 1 || len(list.Matches) != 1 || len(list.Matches[0].Candidates) != 2 {
 		t.Fatalf("matches %+v", list)
 	}
 
@@ -192,9 +144,9 @@ func TestClientMatchLinksAndConfirms(t *testing.T) {
 	// Confirm: a choice not in the list is refused; one in it adds and links.
 	id := list.Matches[0].ID
 	r.owner.call("POST", fmt.Sprintf("/api/v1/downloads/matches/%d/pick", id), `{"candidate":"tmdb:1"}`, 400)
-	var picked MatchView
+	var picked downloads.MatchView
 	_ = json.Unmarshal(r.owner.call("POST", fmt.Sprintf("/api/v1/downloads/matches/%d/pick", id), `{"candidate":"tmdb:900003"}`, 200), &picked)
-	if picked.State != linkLinked || picked.TitleID == 0 {
+	if picked.State != downloads.LinkLinked || picked.TitleID == 0 {
 		t.Fatalf("picked %+v", picked)
 	}
 	// Picking again reuses the title: still one Quiet Orchard, one link row.
@@ -240,15 +192,4 @@ func TestOutsideChangesNeedSettings(t *testing.T) {
 	r.ana.call("POST", fmt.Sprintf("/api/v1/downloaders/%d/bulk", dl), `{"action":"pause","hashes":["`+isoHash+`"]}`, 200)
 	r.owner.call("POST", item+"/trackers", `{"urls":["https://t.example.org/announce"]}`, 200)
 	r.owner.call("POST", fmt.Sprintf("/api/v1/downloaders/%d/speed-limits", dl), `{"hashes":["`+isoHash+`"],"down":1,"up":1}`, 200)
-}
-
-// An indexer-manager category like "prowlarr" says nothing about the kind: a
-// name with a year and a resolution is still a movie; other names stay out.
-func TestGuessNeutralCategory(t *testing.T) {
-	if g := guessOf("Root_Cause_2019_Bluray-1080p", "prowlarr"); g.kind != "movie" {
-		t.Fatalf("prowlarr movie: %+v", g)
-	}
-	if g := guessOf("Some.Linux.Distro.x64", "linux"); g.kind != "" {
-		t.Fatalf("linux: %+v", g)
-	}
 }

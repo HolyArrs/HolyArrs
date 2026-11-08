@@ -2,12 +2,13 @@ package api
 
 import (
 	"errors"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"net/http"
 	"net/http/cookiejar"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
 // TestControlsNeedAPasswordSignIn: the local-network skip signs a person

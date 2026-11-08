@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"errors"
 	"io"
 	"net/http"
 	"net/http/cookiejar"
@@ -17,23 +16,12 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/backups"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
-
-func TestDownloaderAttemptErrorsArePublicSentinels(t *testing.T) {
-	for _, sentinel := range []error{downloads.ErrUncertain, downloads.ErrAttemptStopped, downloads.ErrPendingAttempt} {
-		w := httptest.NewRecorder()
-		downloaderError(w, errors.Join(sentinel, errors.New("private provider and database detail")))
-		if w.Code != http.StatusConflict || strings.Contains(w.Body.String(), "private provider") || !strings.Contains(w.Body.String(), sentinel.Error()) {
-			t.Fatal("attempt conflict leaked joined cause", w.Code)
-		}
-	}
-}
 
 func TestDownloaderAttemptRoutePolicy(t *testing.T) {
 	patterns := []string{

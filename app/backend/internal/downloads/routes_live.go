@@ -1,4 +1,4 @@
-package api
+package downloads
 
 import (
 	"context"
@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 )
 
 // Push updates for the Downloads page (setting downloads.sync = on): the
@@ -29,15 +28,15 @@ import (
 // client, empty when none of their rows moved, so their rev chain has no
 // holes; the browser drops nothing and reads its page again on any gap.
 
-// liveKey is a row's key in patches: "<downloader id>:<external id>".
-func liveKey(downloaderID int64, externalID string) string {
+// LiveKey is a row's key in patches: "<downloader id>:<external id>".
+func LiveKey(downloaderID int64, externalID string) string {
 	return strconv.FormatInt(downloaderID, 10) + ":" + strings.ToLower(externalID)
 }
 
 // ownNumbers are the fields of a HolyArrs row a patch may move: the client's
 // live numbers. State, phase and words come from the Manager's own writes,
 // which reach the page through the "download" event and a page read.
-func ownNumbers(j downloads.Job) map[string]any {
+func ownNumbers(j Job) map[string]any {
 	m := map[string]any{
 		"progress": j.Progress, "speed": j.Speed, "up_speed": j.UpSpeed, "seeds": j.Seeds, "peers": j.Peers,
 		"seeds_total": j.SeedsTotal, "peers_total": j.PeersTotal, "ratio": j.Ratio, "eta": nil, "availability": nil,
@@ -85,7 +84,7 @@ type dlOwn struct {
 
 // ownRows reads which keys of client id are HolyArrs' own rows on the page
 // and, when anyone but a manager watches, whose asks each serves.
-func (a *API) ownRows(ctx context.Context, id int64, keys []string, people bool) dlOwn {
+func (a *Web) ownRows(ctx context.Context, id int64, keys []string, people bool) dlOwn {
 	o := dlOwn{keys: map[string]bool{}, users: map[string]map[int64]bool{}}
 	db := a.read()
 	// The same list the view shows: the newest 100 downloads.
@@ -94,7 +93,7 @@ func (a *API) ownRows(ctx context.Context, id int64, keys []string, people bool)
 			var did int64
 			var ext string
 			if rs.Scan(&did, &ext) == nil && did == id && ext != "" {
-				o.keys[liveKey(did, ext)] = true
+				o.keys[LiveKey(did, ext)] = true
 			}
 		}
 		rs.Close()
@@ -121,7 +120,7 @@ func (a *API) ownRows(ctx context.Context, id int64, keys []string, people bool)
 		var ext string
 		var uid int64
 		if rs.Scan(&ext, &uid) == nil {
-			k := liveKey(id, ext)
+			k := LiveKey(id, ext)
 			if o.users[k] == nil {
 				o.users[k] = map[int64]bool{}
 			}
@@ -133,8 +132,8 @@ func (a *API) ownRows(ctx context.Context, id int64, keys []string, people bool)
 
 // PublishDL is the publisher's Build: one patch per audience for client id
 // going from prev (at fromRev) to cur (at toRev).
-func (a *API) PublishDL(ctx context.Context, id int64, fromRev, toRev uint64, prev, cur map[string]downloads.Job) {
-	if a.s.Live == nil || !a.syncOn() {
+func (a *Web) PublishDL(ctx context.Context, id int64, fromRev, toRev uint64, prev, cur map[string]Job) {
+	if a.Live == nil || !a.syncOn() {
 		return
 	}
 	var d domain.Downloader
@@ -143,9 +142,9 @@ func (a *API) PublishDL(ctx context.Context, id int64, fromRev, toRev uint64, pr
 	} else {
 		return
 	}
-	viewers := a.s.Live.Viewers()
-	ch := downloads.Diff(prev, cur)
-	keyOf := func(ext string) string { return liveKey(id, ext) }
+	viewers := a.Live.Viewers()
+	ch := Diff(prev, cur)
+	keyOf := func(ext string) string { return LiveKey(id, ext) }
 	var moved []string
 	for _, ext := range ch.Added {
 		moved = append(moved, keyOf(ext))
@@ -154,16 +153,16 @@ func (a *API) PublishDL(ctx context.Context, id int64, fromRev, toRev uint64, pr
 		moved = append(moved, keyOf(fc.ID))
 	}
 	own := a.ownRows(ctx, id, moved, len(viewers) > 0)
-	outsideShown := d.Protocol == "torrent" || d.Protocol == "usenet" && a.s.DLSync.SABOutside(ctx)
-	boot := a.s.Live.Boot()
+	outsideShown := d.Protocol == "torrent" || d.Protocol == "usenet" && a.DLSync.SABOutside(ctx)
+	boot := a.Live.Boot()
 
-	mgr := downloads.Patch{Kind: downloads.KindPatch, Boot: boot, Client: id, FromRev: fromRev, ToRev: toRev, Totals: a.dlTotals()}
-	per := map[int64]*downloads.Patch{}
+	mgr := Patch{Kind: KindPatch, Boot: boot, Client: id, FromRev: fromRev, ToRev: toRev, Totals: a.dlTotals()}
+	per := map[int64]*Patch{}
 	for _, uid := range viewers {
-		per[uid] = &downloads.Patch{Kind: downloads.KindPatch, Boot: boot, Client: id, FromRev: fromRev, ToRev: toRev}
+		per[uid] = &Patch{Kind: KindPatch, Boot: boot, Client: id, FromRev: fromRev, ToRev: toRev}
 	}
 	var added []DownloadRow
-	upsertOwn := func(k string, p, c downloads.Job, isNew bool) {
+	upsertOwn := func(k string, p, c Job, isNew bool) {
 		f := ownNumbers(c)
 		if !isNew {
 			f = changed(ownNumbers(p), f)
@@ -183,7 +182,7 @@ func (a *API) PublishDL(ctx context.Context, id int64, fromRev, toRev uint64, pr
 		k, c := keyOf(ext), cur[ext]
 		switch {
 		case own.keys[k]:
-			upsertOwn(k, downloads.Job{}, c, true)
+			upsertOwn(k, Job{}, c, true)
 		case outsideShown:
 			row := clientRow(d, c)
 			row.LiveKey = k
@@ -220,23 +219,23 @@ func (a *API) PublishDL(ctx context.Context, id int64, fromRev, toRev uint64, pr
 		}
 	}
 	key := strconv.FormatInt(id, 10)
-	a.s.Live.PublishDL(key, mgr, nil)
+	a.Live.PublishDL(key, mgr, nil)
 	uids := make([]int64, 0, len(per))
 	for uid := range per {
 		uids = append(uids, uid)
 	}
 	sort.Slice(uids, func(i, j int) bool { return uids[i] < uids[j] })
 	for _, uid := range uids {
-		a.s.Live.PublishDLUser(key, per[uid], uid)
+		a.Live.PublishDLUser(key, per[uid], uid)
 	}
 }
 
 // dlTotals adds up every client's speeds in the reader's snapshots.
-func (a *API) dlTotals() *downloads.PatchTotals {
-	t := &downloads.PatchTotals{}
-	for id := range a.s.DLSync.Store.Revs() {
-		for _, j := range a.s.DLSync.Store.Current(id).Items {
-			if j.State == downloads.StateDownloading {
+func (a *Web) dlTotals() *PatchTotals {
+	t := &PatchTotals{}
+	for id := range a.DLSync.Store.Revs() {
+		for _, j := range a.DLSync.Store.Current(id).Items {
+			if j.State == StateDownloading {
 				t.Speed += j.Speed
 			}
 			t.UpSpeed += j.UpSpeed
@@ -253,12 +252,12 @@ type dlHealthSent struct {
 
 // PublishDLHealth is the publisher's Health: a health event (managers only)
 // for each client whose health word or staleness changed.
-func (a *API) PublishDLHealth(ctx context.Context) {
-	if a.s.Live == nil || !a.syncOn() {
+func (a *Web) PublishDLHealth(ctx context.Context) {
+	if a.Live == nil || !a.syncOn() {
 		return
 	}
-	boot := a.s.Live.Boot()
-	sab := a.s.DLSync.SABOutside(ctx)
+	boot := a.Live.Boot()
+	sab := a.DLSync.SABOutside(ctx)
 	a.dlHealth.mu.Lock()
 	defer a.dlHealth.mu.Unlock()
 	if a.dlHealth.last == nil {
@@ -268,17 +267,17 @@ func (a *API) PublishDLHealth(ctx context.Context) {
 		if d.Removed || !(d.Protocol == "torrent" || sab && d.Protocol == "usenet") {
 			continue
 		}
-		h := syncHealth(d, a.s.DLSync.Store.Current(d.ID))
+		h := syncHealth(d, a.DLSync.Store.Current(d.ID))
 		sig := h.Health + "/" + strconv.FormatBool(h.Stale)
 		if a.dlHealth.last[d.ID] == sig {
 			continue
 		}
 		a.dlHealth.last[d.ID] = sig
-		p := downloads.Patch{Kind: downloads.KindHealth, Boot: boot, Client: d.ID, Health: h.Health, Name: h.Name, Stale: h.Stale}
+		p := Patch{Kind: KindHealth, Boot: boot, Client: d.ID, Health: h.Health, Name: h.Name, Stale: h.Stale}
 		if !h.SeenAt.IsZero() {
 			t := h.SeenAt.UTC().Truncate(time.Second)
 			p.SeenAt = &t
 		}
-		a.s.Live.PublishDL("h"+strconv.FormatInt(d.ID, 10), p, nil)
+		a.Live.PublishDL("h"+strconv.FormatInt(d.ID, 10), p, nil)
 	}
 }

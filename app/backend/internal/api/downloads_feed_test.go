@@ -16,11 +16,11 @@ import (
 // the way the reader's pollers fill it. The Downloads view reads only it.
 func feedStore(t *testing.T, a *API) *downloads.Sync {
 	t.Helper()
-	if a.s.DLSync == nil {
-		a.s.DLSync = &downloads.Sync{Store: &downloads.Store{}, DB: a.s.Store}
+	if a.dl.DLSync == nil {
+		a.dl.DLSync = &downloads.Sync{Store: &downloads.Store{}, DB: a.s.Store}
 	}
 	ctx := context.Background()
-	ds, err := database.Select[domain.Downloader](ctx, a.read(), "downloaders", "1=1")
+	ds, err := database.Select[domain.Downloader](ctx, a.s.Store.Read(), "downloaders", "1=1")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -29,7 +29,7 @@ func feedStore(t *testing.T, a *API) *downloads.Sync {
 			continue
 		}
 		var jobs []downloads.Job
-		err := a.manager().ControlEngine(ctx, d, func(e downloads.Engine) error {
+		err := a.dl.Manager().ControlEngine(ctx, d, func(e downloads.Engine) error {
 			al, ok := e.(downloads.AllLister)
 			if !ok {
 				return downloads.ErrNotSupported
@@ -42,12 +42,12 @@ func feedStore(t *testing.T, a *API) *downloads.Sync {
 			err = nil
 		}
 		if err != nil {
-			a.s.DLSync.Store.Fail(d.ID, 0)
+			a.dl.DLSync.Store.Fail(d.ID, 0)
 			continue
 		}
-		a.s.DLSync.Store.Update(d.ID, 0, jobs, time.Now())
+		a.dl.DLSync.Store.Update(d.ID, 0, jobs, time.Now())
 	}
-	return a.s.DLSync
+	return a.dl.DLSync
 }
 
 // matchStored runs the reader's match lookup (MatchLinkOnly) once for every
@@ -55,13 +55,13 @@ func feedStore(t *testing.T, a *API) *downloads.Sync {
 func matchStored(t *testing.T, a *API) {
 	t.Helper()
 	ctx := context.Background()
-	ds, err := database.Select[domain.Downloader](ctx, a.read(), "downloaders", "1=1")
+	ds, err := database.Select[domain.Downloader](ctx, a.s.Store.Read(), "downloaders", "1=1")
 	if err != nil {
 		t.Fatal(err)
 	}
 	for _, d := range ds {
-		for _, j := range a.s.DLSync.Store.Current(d.ID).Items {
-			if _, _, err := a.MatchLinkOnly(ctx, d.ID, j.ID, j.Name, j.Category); err != nil {
+		for _, j := range a.dl.DLSync.Store.Current(d.ID).Items {
+			if _, _, err := a.dl.MatchLinkOnly(ctx, d.ID, j.ID, j.Name, j.Category); err != nil {
 				t.Fatalf("match %q: %v", j.Name, err)
 			}
 		}

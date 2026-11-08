@@ -3,10 +3,11 @@ package downloads
 import (
 	"context"
 	"errors"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"io"
 	"net/http"
 	"net/url"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 )
 
 // fetchRelease downloads a Release file for a client that cannot reach the Source. It takes web addresses only, with no sign-in part, and fetches through Client so the address rules apply to every redirect and connection. Error text is fixed so it never echoes the address, which may hold a key.

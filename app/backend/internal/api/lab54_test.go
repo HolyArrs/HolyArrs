@@ -103,9 +103,9 @@ func TestLabRarMovieZeroToDone(t *testing.T) {
 	m := &downloads.Manager{Store: s, SavePath: "/data/downloads/incomplete/" + cat}
 	srv := httptest.NewServer(New(Server{Store: s, Metadata: metadata.Lab(), Version: "lab", Downloads: m}).Handler())
 	t.Cleanup(srv.Close)
-	view := func() DownloadRow {
+	view := func() downloads.DownloadRow {
 		var out struct {
-			Downloads []DownloadRow `json:"downloads"`
+			Downloads []downloads.DownloadRow `json:"downloads"`
 		}
 		_ = json.Unmarshal(do(t, "GET", srv.URL+"/api/v1/downloads/view", "", 200), &out)
 		if len(out.Downloads) != 1 {

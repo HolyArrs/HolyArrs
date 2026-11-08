@@ -14,6 +14,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
@@ -260,11 +261,11 @@ func (w *dlPinWorld) seed(t *testing.T) {
 }
 
 type dlPinView struct {
-	Downloads []DownloadRow  `json:"downloads"`
-	Totals    DownloadTotals `json:"totals"`
+	Downloads []downloads.DownloadRow  `json:"downloads"`
+	Totals    downloads.DownloadTotals `json:"totals"`
 }
 
-func dlPinCheckRow(t *testing.T, r DownloadRow, w *dlPinWant, manager bool) {
+func dlPinCheckRow(t *testing.T, r downloads.DownloadRow, w *dlPinWant, manager bool) {
 	t.Helper()
 	if r.TitleID != w.titleID || r.Title != w.title || r.Version != w.version || r.Kind != w.kind {
 		t.Errorf("download %d: title %d %q %q %q, want %d %q %q %q", r.ID, r.TitleID, r.Title, r.Version, r.Kind, w.titleID, w.title, w.version, w.kind)
@@ -403,8 +404,8 @@ func TestDlPinNeedsDecisionLargeLibrary(t *testing.T) {
 		t.Fatalf("%d %s", st, b)
 	}
 	var out struct {
-		Items []DecisionView `json:"items"`
-		Count int            `json:"count"`
+		Items []downloads.DecisionView `json:"items"`
+		Count int                      `json:"count"`
 	}
 	if err := json.Unmarshal(b, &out); err != nil {
 		t.Fatal(err)

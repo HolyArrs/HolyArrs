@@ -17,7 +17,7 @@ var oversized = map[string]bool{
 	"app/backend/internal/api/explore_new.go":                true,
 	"app/frontend/src/lib/types.ts":                          true,
 	"app/backend/internal/importer/shows.go":                 true,
-	"app/backend/internal/api/downloads.go":                  true,
+	"app/backend/internal/downloads/routes_downloads.go":     true,
 	"app/backend/tools/demo/showcase.go":                     true,
 	"app/backend/internal/api/trailer.go":                    true,
 	"app/backend/internal/api/explore.go":                    true,

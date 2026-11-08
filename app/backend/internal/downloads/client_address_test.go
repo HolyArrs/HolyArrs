@@ -2,8 +2,9 @@ package downloads
 
 import (
 	"errors"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"testing"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 )
 
 func TestClientRefusesMetadataAddresses(t *testing.T) {

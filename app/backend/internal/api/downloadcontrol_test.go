@@ -8,6 +8,7 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 )
 
@@ -94,7 +95,7 @@ func TestDownloadSwarm(t *testing.T) {
 func TestDownloadClientsAndAll(t *testing.T) {
 	x, f := controlSeed(t)
 	var out struct {
-		Clients []ClientView `json:"clients"`
+		Clients []downloads.ClientView `json:"clients"`
 	}
 	_ = json.Unmarshal(do(t, "GET", x.srv.URL+"/api/v1/downloads/clients", "", 200), &out)
 	if len(out.Clients) != 1 || !out.Clients[0].Controls || !out.Clients[0].Torrent || out.Clients[0].Status == nil ||
@@ -121,7 +122,7 @@ func TestDownloadClientsAndAll(t *testing.T) {
 func TestDownloadDetailAndFiles(t *testing.T) {
 	x, f := controlSeed(t)
 	base := x.srv.URL + "/api/v1/downloads/" + itoa(x.dlID)
-	var d DownloadDetailView
+	var d downloads.DownloadDetailView
 	_ = json.Unmarshal(do(t, "GET", base+"/detail", "", 200), &d)
 	if d.Torrent == nil || d.Torrent.Downloaded != 500 || d.Torrent.SeedsTotal != 5 || d.Torrent.SavePath != "/downloads" || d.Downloader == "" || d.Log == nil {
 		t.Fatalf("detail %+v", d)
@@ -141,7 +142,7 @@ func TestDownloadDetailAndFiles(t *testing.T) {
 	}
 	do(t, "GET", x.srv.URL+"/api/v1/downloads/999/detail", "", 404)
 	exec41(t, x.s, "UPDATE downloads SET state = 'cleaned'")
-	d = DownloadDetailView{}
+	d = downloads.DownloadDetailView{}
 	_ = json.Unmarshal(do(t, "GET", base+"/detail", "", 200), &d)
 	if d.Torrent != nil {
 		t.Fatalf("a finished download asks the client: %+v", d)

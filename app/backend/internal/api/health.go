@@ -22,7 +22,7 @@ func notOwner(r *http.Request) bool { return health.NotOwner(r) }
 // the update check reach it as funcs.
 func (a *API) healthRoutes(m *http.ServeMux) {
 	h := &health.Handlers{Store: a.s.Store, Engine: a.s.Health, States: a.s.States, SafeMode: a.s.SafeMode,
-		SyncTrouble: func(ctx context.Context) any { return a.syncTrouble(ctx) },
+		SyncTrouble: func(ctx context.Context) any { return a.dl.SyncTrouble(ctx) },
 		DefaultFeed: updates.DefaultReleaseFeed, ResetUpdate: a.s.Updates.ResetUpdate}
 	if a.s.Parts != nil {
 		h.PartStatuses = func() []jobs.Status { return a.s.Parts.Statuses() }

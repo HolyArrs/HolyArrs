@@ -1,10 +1,9 @@
-package api
+package downloads
 
 import (
 	"testing"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 )
 
 // A downloading torrent carries the swarm's full copies; a finished one or
@@ -12,13 +11,13 @@ import (
 func TestClientRowAvailability(t *testing.T) {
 	q := domain.Downloader{ID: 1, Name: "Q", Adapter: "qbittorrent", Protocol: "torrent"}
 	a := 0.4
-	if r := clientRow(q, downloads.Job{ID: outHash, Progress: 0.5, Availability: &a}); r.Availability == nil || *r.Availability != 0.4 {
+	if r := clientRow(q, Job{ID: outHash, Progress: 0.5, Availability: &a}); r.Availability == nil || *r.Availability != 0.4 {
 		t.Fatalf("downloading row %+v", r.Availability)
 	}
-	if r := clientRow(q, downloads.Job{ID: outHash, Progress: 1, Availability: &a}); r.Availability != nil {
+	if r := clientRow(q, Job{ID: outHash, Progress: 1, Availability: &a}); r.Availability != nil {
 		t.Fatalf("finished row %+v", r.Availability)
 	}
-	if r := clientRow(q, downloads.Job{ID: outHash, Progress: 0.5}); r.Availability != nil {
+	if r := clientRow(q, Job{ID: outHash, Progress: 0.5}); r.Availability != nil {
 		t.Fatalf("unknown row %+v", r.Availability)
 	}
 }
