@@ -8,7 +8,6 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	engine "github.com/HolyArrs/holyarrs/app/backend/internal/discover/rows"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
 // exploreGenreRow answers GET /api/v1/explore/genre-row?type=all|movies|shows:
@@ -41,29 +40,9 @@ func (a *API) exploreGenreRow(w http.ResponseWriter, r *http.Request) {
 	webserver.WriteJSON(w, http.StatusOK, map[string]any{"type": sw, "genres": cards})
 }
 
-// genreRowPage drops the titles a row would not show this person: above a
-// Kid's rating limit, or marked never-add.
+// genreRowPage drops the titles a row would not show this person.
 func (a *API) genreRowPage(ctx context.Context, r *http.Request, pg engine.Page) (engine.Page, error) {
-	var all []metadata.DiscoverItem
-	for _, rows := range [][]engine.Row{pg.Head, pg.Tail} {
-		for _, row := range rows {
-			for _, it := range row.Items {
-				all = append(all, metadata.DiscoverItem{TMDBID: it.TMDBID, Kind: it.Kind})
-			}
-		}
-	}
-	if max := a.kidMax(r); max != "" {
-		all = a.kidItems(ctx, max, all, 0)
-	}
-	all, err := a.dropNeverAdd(ctx, all)
-	if err != nil {
-		return pg, err
-	}
-	ok := make(map[string]bool, len(all))
-	for _, it := range all {
-		ok[it.Kind+":"+it.TMDBID] = true
-	}
-	return pg.Filter(func(it engine.Item) bool { return ok[it.Key()] }), nil
+	return discover.GenreRowPage(ctx, pg, a.kidMax(r), a.kidItems, a.dropNeverAdd)
 }
 
 // searchBrowse answers GET /api/v1/explore/browse?type=all|movies|shows:
