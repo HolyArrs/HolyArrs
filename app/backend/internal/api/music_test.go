@@ -11,6 +11,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
@@ -229,7 +230,7 @@ func TestMusicAPI(t *testing.T) {
 	do(t, "GET", u+"/albums/999", "", 404)
 
 	var trs struct {
-		Tracks []TrackView `json:"tracks"`
+		Tracks []music.TrackView[EpisodeSlot] `json:"tracks"`
 	}
 	_ = json.Unmarshal(do(t, "GET", fmt.Sprintf("%s/albums/%d/tracks", u, first.ID), "", 200), &trs)
 	if len(trs.Tracks) != 2 || trs.Tracks[0].Name != "Song 1" || trs.Tracks[1].Number != 2 || len(trs.Tracks[0].Slots) != 1 ||

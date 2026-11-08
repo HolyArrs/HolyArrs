@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"log"
 	"net/http"
@@ -25,7 +26,7 @@ func (a *API) musicRoutes(m *http.ServeMux) {
 	m.HandleFunc("GET /api/v1/artists/lookup", a.lookupArtists)
 	m.HandleFunc("POST /api/v1/artists", a.addArtist)
 	m.HandleFunc("PUT /api/v1/titles/{id}/artist", a.setArtist)
-	m.HandleFunc("GET /api/v1/albums/{id}/tracks", a.listTracks)
+	music.TrackHandlers[EpisodeSlot]{Store: a.s.Store, Slots: trackSlots}.Routes(m)
 	m.HandleFunc("GET /api/v1/albums/{id}/cover", a.albumCoverArt)
 }
 
@@ -339,48 +340,19 @@ func (a *API) albumID(w http.ResponseWriter, r *http.Request) (mediafiles.Part, 
 	return music.AlbumID(w, r, a.s.Store.Read())
 }
 
-// TrackView is one track with its Slots.
-type TrackView struct {
-	ID           int64             `json:"id"`
-	Disc         int               `json:"disc"`
-	Number       int               `json:"number"`
-	Name         string            `json:"name,omitempty"`
-	LengthMS     *int              `json:"length_ms,omitempty"`
-	RecordingID  string            `json:"recording_id,omitempty"`
-	ReleaseDate  *time.Time        `json:"release_date,omitempty"`
-	KeepUpToDate bool              `json:"keep_up_to_date"`
-	Dropped      bool              `json:"dropped,omitempty"`
-	IDs          map[string]string `json:"ids"`
-	Slots        []EpisodeSlot     `json:"slots"`
-}
-
-// listTracks lists an album's tracks in disc and track order, each with its
-// Slot per Version.
-func (a *API) listTracks(w http.ResponseWriter, r *http.Request) {
-	p, ok := a.albumID(w, r)
-	if !ok {
-		return
-	}
-	db := a.s.Store.Read()
-	its, err := database.Select[mediafiles.Item](r.Context(), db, "items", `part_id = ? AND kind = 'track'
-		ORDER BY json_extract(numbers, '$.disc'), json_extract(numbers, '$.track'), id`, p.ID)
+// trackSlots builds the Slot views for an album's tracks, keyed by item id.
+func trackSlots(ctx context.Context, db *sql.DB, p mediafiles.Part) (map[int64][]EpisodeSlot, error) {
+	vs, err := database.Select[mediafiles.Version](ctx, db, "versions", "title_id = ? ORDER BY is_main DESC, id", p.TitleID)
 	if err != nil {
-		webserver.Internal(w, "api", err)
-		return
-	}
-	vs, err := database.Select[mediafiles.Version](r.Context(), db, "versions", "title_id = ? ORDER BY is_main DESC, id", p.TitleID)
-	if err != nil {
-		webserver.Internal(w, "api", err)
-		return
+		return nil, err
 	}
 	label := map[int64]string{}
 	for _, v := range vs {
 		label[v.ID] = v.Label
 	}
-	slots, err := database.Select[mediafiles.Slot](r.Context(), db, "slots", "item_id IN (SELECT id FROM items WHERE part_id = ? AND kind = 'track') ORDER BY id", p.ID)
+	slots, err := database.Select[mediafiles.Slot](ctx, db, "slots", "item_id IN (SELECT id FROM items WHERE part_id = ? AND kind = 'track') ORDER BY id", p.ID)
 	if err != nil {
-		webserver.Internal(w, "api", err)
-		return
+		return nil, err
 	}
 	byItem := map[int64][]EpisodeSlot{}
 	for _, s := range slots {
@@ -390,24 +362,6 @@ func (a *API) listTracks(w http.ResponseWriter, r *http.Request) {
 		}
 		byItem[s.ItemID] = append(byItem[s.ItemID], es)
 	}
-	trimEpisodeSlots(r.Context(), byItem)
-	out := make([]TrackView, 0, len(its))
-	for _, it := range its {
-		v := TrackView{ID: it.ID, Name: strOr(it.Name), LengthMS: it.LengthMS, RecordingID: strOr(it.RecordingID), ReleaseDate: it.AirDate,
-			KeepUpToDate: it.KeepUpToDate, Dropped: it.DroppedAt != nil, IDs: it.SourceIDs, Slots: []EpisodeSlot{}}
-		if it.Numbers.Disc != nil {
-			v.Disc = *it.Numbers.Disc
-		}
-		if it.Numbers.Track != nil {
-			v.Number = *it.Numbers.Track
-		}
-		if v.IDs == nil {
-			v.IDs = map[string]string{}
-		}
-		if sl := byItem[it.ID]; sl != nil {
-			v.Slots = sl
-		}
-		out = append(out, v)
-	}
-	webserver.WriteJSON(w, http.StatusOK, map[string]any{"tracks": out, "album_id": p.ID})
+	trimEpisodeSlots(ctx, byItem)
+	return byItem, nil
 }
