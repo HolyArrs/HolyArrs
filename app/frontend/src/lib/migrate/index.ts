@@ -34,3 +34,6 @@ export type { SheetRow } from './ItemsSheet.svelte';
 export type { ShowList } from './ItemsSheet.svelte';
 export type { Snapshot } from './move.ts';
 export type { Step } from './move.ts';
+export { createMoveRun } from './move-run.svelte.ts';
+export { createMovePlan } from './move-plan.svelte.ts';
+export { createMovePassword } from './move-password.svelte.ts';

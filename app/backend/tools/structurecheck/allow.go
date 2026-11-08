@@ -52,7 +52,6 @@ var oversized = map[string]bool{
 	"app/backend/internal/parts/table.go":                    true,
 	"app/frontend/src/routes/+page.svelte":                   true,
 	"app/frontend/src/routes/library/[id]/+page.svelte":      true,
-	"app/frontend/src/routes/settings/move/+page.svelte":     true,
 	"app/frontend/src/routes/people/[id]/+page.svelte":       true,
 }
 

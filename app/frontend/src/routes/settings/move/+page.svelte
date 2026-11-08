@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { createMovePassword } from '#lib/migrate/index.ts';
+	import { createMovePlan } from '#lib/migrate/index.ts';
+	import { createMoveRun } from '#lib/migrate/index.ts';
 	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
@@ -6,7 +9,7 @@
 	import Button from '#lib/ui/Button.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import AdminLinkButton from '#lib/ui/AdminLinkButton.svelte';
-	import { MoveSteps, StepFoot, ReadSheet, type ReadAnswer, type SavedKey, ItemsSheet, type SheetRow, type ShowList, ReadStep, ChooseStep, BeforeSheet, MoveStep, DoneStep, createFollower, appName, asStep, buckets, countWords, extraProblems, folderProblem, moveTotal, OTHER, plural, rulesFrom, running, setChoice, stepGate, type AppKind, type Line, type Move, type PathRule, type PersonChoice, type Plan, type Report, type Snapshot, type Step } from '#lib/migrate/index.ts';
+	import { MoveSteps, StepFoot, ReadSheet, type ReadAnswer, type SavedKey, ItemsSheet, type SheetRow, type ShowList, ReadStep, ChooseStep, BeforeSheet, MoveStep, DoneStep, createFollower, appName, asStep, buckets, countWords, extraProblems, folderProblem, moveTotal, plural, rulesFrom, running, stepGate, type AppKind, type Line, type Move, type PathRule, type PersonChoice, type Plan, type Report, type Snapshot, type Step } from '#lib/migrate/index.ts';
 	import { onDestroy, onMount, tick, untrack } from 'svelte';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
@@ -29,57 +32,21 @@
 	const stepKey = embedded ? 'mstep' : 'step';
 
 	// What the page knows. An owner who signs in another way has no password to confirm: moving asks for one, so the step shows how to set it (Settings and the wizard).
-	let mustSetPw = $state(false);
-	// Set it right here: the first password, then a fresh check with it, so Move works without leaving.
-	let pwA = $state('');
-	let pwB = $state('');
-	let pwErr = $state('');
-	let pwBusy = $state(false);
-	async function setFirstPw(e: SubmitEvent) {
-		e.preventDefault();
-		pwErr = '';
-		const min = session.s.minPassword;
-		if (pwA.length < min) return void (pwErr = `Use at least ${min} characters.`);
-		if (pwA !== pwB) return void (pwErr = "Passwords don't match.");
-		pwBusy = true;
-		try {
-			await api.post('/auth/password', { new: pwA });
-			session.s.hasPassword = true;
-			await session.reauth(pwA);
-			pwA = pwB = '';
-			mustSetPw = false;
-			pwSheet = false;
-			if (resumeMove) {
-				resumeMove = false;
-				await start();
-			} else toasts.push('Password set', 'ok');
-		} catch (err) {
-			// A first password needs a fresh sign-in with the media server (the server's rule).
-			if (err instanceof ApiError && err.body?.code === 'reauth') pwStale = true;
-			else pwErr = message(err);
-		} finally {
-			pwBusy = false;
-		}
-	}
-	let pwStale = $state(false);
-	let pwSheet = $state(false);
-	let resumeMove = $state(false);
-	async function signInAgain() {
-		const back = location.pathname + location.search;
-		await session.logout();
-		await goto(to(`/login?next=${encodeURIComponent(back)}`));
-	}
+	const passwordFlowCtx = {
+		get runFlow() { return runFlow; },
+	};
+	const passwordFlow = createMovePassword(passwordFlowCtx);
 	onMount(() => {
 		const onReauth = (e: Event) => {
 			const path = (e as CustomEvent<{ path?: string }>).detail?.path ?? '';
 			if (!session.s.hasPassword && path.startsWith('/migrate')) {
-				mustSetPw = true;
+				passwordFlow.mustSetPw = true;
 				// Pressed Move (in Before you move or the confirm): ask right there, then carry on.
 				if (beforeOpen || confirmMove || path === '/migrate/moves') {
 					beforeOpen = false;
 					confirmMove = false;
-					resumeMove = true;
-					pwSheet = true;
+					passwordFlow.resumeMove = true;
+					passwordFlow.pwSheet = true;
 				}
 			}
 		};
@@ -87,7 +54,7 @@
 		return () => window.removeEventListener('holyarrs:reauth', onReauth);
 	});
 	$effect(() => {
-		if (mustSetPw && session.s.hasPassword) mustSetPw = false;
+		if (passwordFlow.mustSetPw && session.s.hasPassword) passwordFlow.mustSetPw = false;
 	});
 	let loaded = $state(false);
 	let loadError = $state('');
@@ -175,7 +142,7 @@
 				progressNote = a.progress_note;
 			}
 		},
-		onEnd: (a) => finished(a.move),
+		onEnd: (a) => runFlow.finished(a.move),
 		onLost: () => (lost = true),
 		onBack: () => (lost = false)
 	});
@@ -365,7 +332,7 @@
 			planCtrl?.abort();
 			planning = false;
 		}
-		if (s === 'choose') void makePlan();
+		if (s === 'choose') void planFlow.makePlan();
 		// A step that fell back puts its own name in the address, so Back stays one step.
 		if (push) setUrl(s);
 		else if (s !== want) setUrl(s, undefined, true);
@@ -435,235 +402,119 @@
 	}
 
 	// Step 2: every change plans again; switches wait 400ms, typed paths wait for blur or Enter. Older answers are dropped.
-	function replan(wait: boolean) {
-		clearTimeout(planTimer);
-		if (wait) planTimer = setTimeout(() => void makePlan(), 400);
-		else void makePlan();
-	}
-	async function makePlan() {
-		clearTimeout(planTimer);
-		if (picked.length === 0 || ruleErrors > 0) return;
-		const seq = ++planSeq;
-		planCtrl?.abort();
-		planCtrl = new AbortController();
-		planning = true;
-		planError = '';
-		try {
-			const r = await api.request<{ plan: Plan; suggested_path_rules?: PathRule[] }>('/migrate/plan', { method: 'POST', body: choices(), signal: planCtrl.signal });
-			if (seq !== planSeq || destroyed) return;
-			plan = r.plan;
-			const sug: Record<string, string> = {};
-			for (const s of r.suggested_path_rules ?? []) sug[s.from] = s.to;
-			suggested = sug;
-			// A suggestion fills a folder nobody set yet; the plan then runs with it.
-			const next = { ...picks };
-			let added = false;
-			for (const [from, dest] of Object.entries(sug)) {
-				if (!(from in next) && !extra.some((r) => r.from.trim() === from)) {
-					next[from] = dest;
-					added = true;
-				}
-			}
-			if (added) {
-				picks = next;
-				changed();
-				void makePlan();
-			}
-		} catch (err) {
-			if (seq !== planSeq || quiet(err)) return;
-			if (err instanceof ApiError && err.status === 404) gone = true;
-			else planError = message(err);
-		} finally {
-			if (seq === planSeq) planning = false;
-		}
-	}
-	function onfolder(from: string, value: string) {
-		picks = { ...picks, [from]: value };
-		changed();
-		if (value !== OTHER) replan(true);
-	}
-	function onother(from: string, value: string) {
-		others = { ...others, [from]: value };
-		changed();
-	}
-	function onextra(rules: PathRule[]) {
-		extra = rules;
-		changed();
-	}
-	function ongroup(name: string, on: boolean) {
-		skip = on ? skip.filter((x) => x !== name) : [...skip, name];
-		changed();
-		replan(true);
-	}
-	function onperson(key: string, c: PersonChoice | null) {
-		people = setChoice(people, key, c);
-		changed();
-		replan(true);
-	}
-
-	// The test run. A choice runs it again in place.
-	async function runTry() {
-		if (picked.length === 0 || ruleErrors > 0) return;
-		// No plan yet (a reload, a link): plan first, so the suggested folder matches are filled in before the test runs.
-		if (!plan) {
-			await makePlan();
-			if (destroyed) return;
-		}
-		const seq = ++trySeq;
-		tryCtrl?.abort();
-		tryCtrl = new AbortController();
-		const at = changes;
-		trying = true;
-		tryFailed = false;
-		actionError = '';
-		try {
-			const r = await api.request<{ report: Report; plan_hash: string }>('/migrate/dry-run', { method: 'POST', body: choices(), signal: tryCtrl.signal });
-			if (seq !== trySeq || destroyed) return;
-			dry = r.report;
-			planHash = r.plan_hash;
-			dryAt = at;
-			const m = new Map(seen);
-			for (const l of r.report.lines) if (l.choose) m.set(l.key, l);
-			seen = m;
-		} catch (err) {
-			if (seq !== trySeq || quiet(err)) return;
-			if (err instanceof ApiError && err.status === 404) gone = true;
-			else {
-				tryFailed = true;
-				actionError = message(err);
-			}
-		} finally {
-			if (seq === trySeq) trying = false;
-		}
-	}
-	function onchoose(key: string, c: PersonChoice) {
-		people = setChoice(people, key, c);
-		changed();
-		void runTry();
-	}
-
-	/** Choose's Move: a quiet test run, then the move (after a confirm), or "Before you move" when the test found problems. */
-	async function moveNow() {
-		if (checking || starting) return;
-		checking = true;
-		actionError = '';
-		try {
-			// A change while it runs makes it old: run again (a few times at most).
-			for (let i = 0; i < 3 && (!dry || stale || trying); i++) {
-				await runTry();
-				if (destroyed || tryFailed || gone) return;
-			}
-			if (!dry || stale || step !== 'choose') return;
-			if (problems > 0) beforeOpen = true;
-			else confirmMove = true;
-		} finally {
-			checking = false;
-		}
-	}
-	function moveAnyway() {
-		beforeOpen = false;
-		void start();
-	}
-	async function startMove(e: SubmitEvent) {
-		e.preventDefault();
-		confirmMove = false;
-		await start();
-	}
-
-	// Step 3: the move.
-	async function start() {
-		if (!dry || stale) return;
-		let recheck = false;
-		starting = true;
-		actionError = '';
-		try {
-			const r = await api.post<{ move: Move }>('/migrate/moves', { ...choices(), plan_hash: planHash });
-			current = r.move;
-			progress = 0;
-			progressNote = '';
-			lost = false;
-			moves = [r.move, ...moves.filter((m) => m.id !== r.move.id)];
-			// Choose starts the move now (there is no Move step before it): show the Move step before following, so finished() lands on Done.
-			step = 'move';
-			beforeOpen = false;
-			follower.follow(r.move.id);
-			setUrl('move', r.move.id, false);
-			// The Move button is gone now: keep focus on the step.
-			focusStep();
-		} catch (err) {
-			if (quiet(err)) return;
-			const text = message(err);
-			if (err instanceof ApiError && err.status === 409 && /safe mode/i.test(text)) safeMode = true;
-			else if (err instanceof ApiError && err.status === 409 && /changed/i.test(text)) {
-				// The plan moved on since the test: check again and ask again.
-				dryAt = -1;
-				tryNotice = 'Something changed, so HolyArrs checked again.';
-				// After finally: moveNow skips while starting is still true.
-				recheck = true;
-			} else if (err instanceof ApiError && err.status === 404) gone = true;
-			else actionError = text;
-		} finally {
-			starting = false;
-		}
-		if (recheck) void moveNow();
-	}
-
-	/** Hears a move or an undo end. */
-	function finished(m: Move) {
-		moves = [m, ...moves.filter((x) => x.id !== m.id)];
-		if (m.state === 'undone') toasts.push(`Move ${m.id} undone`, 'ok');
-		else if (m.undo_state === 'failed') toasts.push("Couldn't undo move", 'fail', { body: 'Try again' });
-		else if (m.state === 'done') toasts.push(`Move ${m.id} finished`, 'ok');
-		else toasts.push(`Move ${m.id} failed`, 'fail', { body: 'See the report' });
-		// A finished move forgets the kept keys.
-		if (m.state === 'done') void loadSaved();
-		if (m.state !== 'undone' && !m.undo_state) {
-			// A finished move needs a new test before another one: the reads it used are switched off.
-			dry = null;
-			dryAt = -1;
-			planHash = '';
-			suggested = {};
-			picked = picked.filter((id) => !m.snapshots.includes(id));
-			changed();
-			// Still on Choose for another round: it plans again with the reads left (or falls back to step 1).
-			if (step === 'choose' || (step === 'move' && current?.id !== m.id)) enter('choose', false);
-		}
-		if (current?.id === m.id) {
-			current = m;
-			progress = 1;
-			if (step === 'move' || step === 'done') {
-				step = 'done';
-				setUrl('done', m.id, true);
-				focusStep();
-			}
-		}
-	}
-
-	// Step 4.
-	async function undo(e: SubmitEvent) {
-		e.preventDefault();
-		confirmUndo = false;
-		const m = current;
-		if (!m || undoing) return;
-		undoing = true;
-		actionError = '';
-		try {
-			const r = await api.post<{ move: Move }>(`/migrate/moves/${m.id}/undo`);
-			current = r.move;
-			progress = 0;
-			progressNote = '';
-			lost = false;
-			follower.follow(m.id);
-			// The Undo button is gone now: keep focus on the step.
-			focusStep();
-		} catch (err) {
-			if (quiet(err)) return;
-			if (err instanceof ApiError && err.status === 409 && /safe mode/i.test(message(err))) safeMode = true;
-			actionError = message(err);
-		} finally {
-			undoing = false;
-		}
-	}
+	const planFlowCtx = {
+		get planTimer() { return planTimer; },
+		set planTimer(v) { planTimer = v; },
+		get picked() { return picked; },
+		get ruleErrors() { return ruleErrors; },
+		get planSeq() { return planSeq; },
+		set planSeq(v) { planSeq = v; },
+		get planCtrl() { return planCtrl; },
+		set planCtrl(v) { planCtrl = v; },
+		get planning() { return planning; },
+		set planning(v) { planning = v; },
+		get planError() { return planError; },
+		set planError(v) { planError = v; },
+		choices,
+		get destroyed() { return destroyed; },
+		get plan() { return plan; },
+		set plan(v) { plan = v; },
+		get suggested() { return suggested; },
+		set suggested(v) { suggested = v; },
+		get picks() { return picks; },
+		set picks(v) { picks = v; },
+		get extra() { return extra; },
+		set extra(v) { extra = v; },
+		changed,
+		quiet,
+		get gone() { return gone; },
+		set gone(v) { gone = v; },
+		get others() { return others; },
+		set others(v) { others = v; },
+		get skip() { return skip; },
+		set skip(v) { skip = v; },
+		get people() { return people; },
+		set people(v) { people = v; },
+		get trySeq() { return trySeq; },
+		set trySeq(v) { trySeq = v; },
+		get tryCtrl() { return tryCtrl; },
+		set tryCtrl(v) { tryCtrl = v; },
+		get changes() { return changes; },
+		get trying() { return trying; },
+		set trying(v) { trying = v; },
+		get tryFailed() { return tryFailed; },
+		set tryFailed(v) { tryFailed = v; },
+		get actionError() { return actionError; },
+		set actionError(v) { actionError = v; },
+		get dry() { return dry; },
+		set dry(v) { dry = v; },
+		get planHash() { return planHash; },
+		set planHash(v) { planHash = v; },
+		get dryAt() { return dryAt; },
+		set dryAt(v) { dryAt = v; },
+		get seen() { return seen; },
+		set seen(v) { seen = v; },
+	};
+	const planFlow = createMovePlan(planFlowCtx);
+	const runFlowCtx = {
+		get checking() { return checking; },
+		set checking(v) { checking = v; },
+		get starting() { return starting; },
+		set starting(v) { starting = v; },
+		get actionError() { return actionError; },
+		set actionError(v) { actionError = v; },
+		get dry() { return dry; },
+		set dry(v) { dry = v; },
+		get stale() { return stale; },
+		get trying() { return trying; },
+		runTry: planFlow.runTry,
+		get destroyed() { return destroyed; },
+		get tryFailed() { return tryFailed; },
+		get gone() { return gone; },
+		set gone(v) { gone = v; },
+		get step() { return step; },
+		set step(v) { step = v; },
+		get problems() { return problems; },
+		get beforeOpen() { return beforeOpen; },
+		set beforeOpen(v) { beforeOpen = v; },
+		get confirmMove() { return confirmMove; },
+		set confirmMove(v) { confirmMove = v; },
+		choices,
+		get planHash() { return planHash; },
+		set planHash(v) { planHash = v; },
+		get current() { return current; },
+		set current(v) { current = v; },
+		get progress() { return progress; },
+		set progress(v) { progress = v; },
+		get progressNote() { return progressNote; },
+		set progressNote(v) { progressNote = v; },
+		get lost() { return lost; },
+		set lost(v) { lost = v; },
+		get moves() { return moves; },
+		set moves(v) { moves = v; },
+		get follower() { return follower; },
+		setUrl,
+		focusStep,
+		quiet,
+		get safeMode() { return safeMode; },
+		set safeMode(v) { safeMode = v; },
+		get dryAt() { return dryAt; },
+		set dryAt(v) { dryAt = v; },
+		get tryNotice() { return tryNotice; },
+		set tryNotice(v) { tryNotice = v; },
+		loadSaved,
+		get suggested() { return suggested; },
+		set suggested(v) { suggested = v; },
+		get picked() { return picked; },
+		set picked(v) { picked = v; },
+		changed,
+		enter,
+		get confirmUndo() { return confirmUndo; },
+		set confirmUndo(v) { confirmUndo = v; },
+		get undoing() { return undoing; },
+		set undoing(v) { undoing = v; },
+	};
+	const runFlow = createMoveRun(runFlowCtx);
 	async function openMove(id: number, push = true) {
 		actionError = '';
 		try {
@@ -755,17 +606,17 @@
 	<LoadError hasData={false} message={loadError} onretry={load} />
 {:else}
 	{#if !embedded}<MoveSteps {step} busy={railBusy} fill={railFill} locked={moveRunning && step === 'move'} onpick={back} />{/if}
-	{#if mustSetPw && !pwSheet}
+	{#if passwordFlow.mustSetPw && !passwordFlow.pwSheet}
 		<SettingsCard id="move-password" title="Set a password first" icon="shield">
-			<form class="setpw" onsubmit={setFirstPw}>
-				<input class="input" type="password" bind:value={pwA} placeholder="Password" aria-label="Password" autocomplete="new-password" />
-				<input class="input" type="password" bind:value={pwB} placeholder="Confirm password" aria-label="Confirm password" autocomplete="new-password" />
-				<Button variant="primary" type="submit" busy={pwBusy} disabled={pwBusy}>Set password</Button>
+			<form class="setpw" onsubmit={passwordFlow.setFirstPw}>
+				<input class="input" type="password" bind:value={passwordFlow.pwA} placeholder="Password" aria-label="Password" autocomplete="new-password" />
+				<input class="input" type="password" bind:value={passwordFlow.pwB} placeholder="Confirm password" aria-label="Confirm password" autocomplete="new-password" />
+				<Button variant="primary" type="submit" busy={passwordFlow.pwBusy} disabled={passwordFlow.pwBusy}>Set password</Button>
 			</form>
-			{#if pwStale}
+			{#if passwordFlow.pwStale}
 				<p class="form-error" role="alert">Sign in again to continue. You'll return here.</p>
-				<div><Button onclick={signInAgain}>Sign in again</Button></div>
-			{:else if pwErr}<p class="form-error" role="alert">{pwErr}</p>{/if}
+				<div><Button onclick={passwordFlow.signInAgain}>Sign in again</Button></div>
+			{:else if passwordFlow.pwErr}<p class="form-error" role="alert">{passwordFlow.pwErr}</p>{/if}
 		</SettingsCard>
 	{/if}
 
@@ -796,12 +647,12 @@
 			{suggested}
 			{skip}
 			{people}
-			{onfolder}
-			{onother}
-			{onextra}
-			{ongroup}
-			{onperson}
-			oncommit={() => replan(false)}
+			onfolder={planFlow.onfolder}
+			onother={planFlow.onother}
+			onextra={planFlow.onextra}
+			ongroup={planFlow.ongroup}
+			onperson={planFlow.onperson}
+			oncommit={() => planFlow.replan(false)}
 			onshow={show}
 		/>
 		{#if planError}<p class="form-error" role="alert">{planError}</p>{/if}
@@ -827,7 +678,7 @@
 		<StepFoot
 			back={() => back('read')}
 			label="Move"
-			onclick={() => void moveNow()}
+			onclick={() => void runFlow.moveNow()}
 			disabled={!gate.ok || safeMode || moveRunning}
 			busy={checking || starting}
 			reason={safeMode ? 'HolyArrs started in safe mode.' : checking ? 'Checking…' : gate.reason}
@@ -870,15 +721,15 @@
 	{/snippet}
 </Sheet>
 
-<Sheet bind:open={pwSheet} title="Set a password first" size="sm">
-	<form class="setpw one-col" onsubmit={setFirstPw}>
-		<input class="input" type="password" bind:value={pwA} placeholder="Password" aria-label="Password" autocomplete="new-password" />
-		<input class="input" type="password" bind:value={pwB} placeholder="Confirm password" aria-label="Confirm password" autocomplete="new-password" />
-		{#if pwStale}
+<Sheet bind:open={passwordFlow.pwSheet} title="Set a password first" size="sm">
+	<form class="setpw one-col" onsubmit={passwordFlow.setFirstPw}>
+		<input class="input" type="password" bind:value={passwordFlow.pwA} placeholder="Password" aria-label="Password" autocomplete="new-password" />
+		<input class="input" type="password" bind:value={passwordFlow.pwB} placeholder="Confirm password" aria-label="Confirm password" autocomplete="new-password" />
+		{#if passwordFlow.pwStale}
 			<p class="form-error" role="alert">Sign in again to continue. You'll return here.</p>
-			<Button onclick={signInAgain}>Sign in again</Button>
-		{:else if pwErr}<p class="form-error" role="alert">{pwErr}</p>{/if}
-		<Button variant="primary" type="submit" busy={pwBusy} disabled={pwBusy}>Set password and move</Button>
+			<Button onclick={passwordFlow.signInAgain}>Sign in again</Button>
+		{:else if passwordFlow.pwErr}<p class="form-error" role="alert">{passwordFlow.pwErr}</p>{/if}
+		<Button variant="primary" type="submit" busy={passwordFlow.pwBusy} disabled={passwordFlow.pwBusy}>Set password and move</Button>
 	</form>
 </Sheet>
 
@@ -891,13 +742,13 @@
 	{trying}
 	ready={!!dry && !stale && !tryFailed}
 	notice={tryNotice}
-	{onchoose}
-	onmove={moveAnyway}
+	onchoose={planFlow.onchoose}
+	onmove={runFlow.moveAnyway}
 	onshow={show}
 />
 
 <Sheet bind:open={confirmMove} title="Move {plural(total, 'item')}?" size="sm">
-	<form id="move-confirm-form" onsubmit={startMove}>
+	<form id="move-confirm-form" onsubmit={runFlow.startMove}>
 		{#if tryNotice}<p class="notice warn" role="status">{tryNotice}</p>{/if}
 		<p class="small muted">{fromApps ? `From ${fromApps}. ` : ''}Paused items stay paused. You can undo this later from Earlier moves {embedded ? 'on the next screen, or after setup in Settings › Move from other apps' : 'on this page'}.</p>
 	</form>
@@ -908,7 +759,7 @@
 </Sheet>
 
 <Sheet bind:open={confirmUndo} title={current ? `Undo move ${current.id}?` : 'Undo this move?'} size="sm">
-	<form id="move-undo-form" onsubmit={undo}>
+	<form id="move-undo-form" onsubmit={runFlow.undo}>
 		<p class="small muted">Removes what this move added; your later changes stay. Download the report first if you want it.</p>
 	</form>
 	{#snippet footer()}
