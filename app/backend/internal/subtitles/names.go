@@ -1,6 +1,12 @@
 package subtitles
 
-import "github.com/HolyArrs/holyarrs/app/backend/internal/subtitles/subtext"
+import (
+	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles/subtext"
+)
+
+// The library knows subtitle files by these rules wherever subtitles is linked in.
+func init() { library.UseSubtitleNames(Names{}) }
 
 // Names answers which files beside a video are its subtitles.
 type Names struct{}
