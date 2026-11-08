@@ -9,7 +9,7 @@
 
 	// An AI app (Claude Code, Cursor, ChatGPT…) sent the person here to sign
 	// in: say what is asking and what it can do, then allow or cancel.
-	type Info = { client_name: string; returns_to: string; local: boolean; enabled: boolean; deny_url: string };
+	type Info = { client_name: string; returns_to: string; local: boolean; name_verified?: boolean; enabled: boolean; deny_url: string };
 
 	let info = $state<Info | null>(null);
 	let error = $state('');
@@ -69,13 +69,15 @@
 		<h2>Not connected</h2>
 		<p class="muted">{info.client_name} did not get access. You can close this tab.</p>
 	{:else}
-		<h2><b>{info.client_name}</b> wants to use HolyArrs as {session.s.name}</h2>
+		<!-- Any app can send any name, so the return address leads; the name is marked unless it comes back to this computer. -->
+		<h2 data-testid="ai-connect-host">An app at <b>{info.returns_to}</b> wants to use HolyArrs as {session.s.name}</h2>
+		<p class="small muted" data-testid="ai-connect-name">Calls itself {info.client_name}{#if !info.name_verified} (unverified){/if}</p>
 		<ul class="can small">
 			<li>Look up your Library, calendar, downloads and your own requests.</li>
 			<li>Find titles, and ask for one after checking with you first.</li>
 			<li>It cannot approve requests, change settings or see other people's requests.</li>
 		</ul>
-		<p class="small muted">Afterwards you go back to {info.returns_to}. Every request it makes shows in History.</p>
+		<p class="small muted">Every request it makes shows in History.</p>
 		{#if info.local}<p class="small muted">Allow only if you just started this from an AI app on your own device.</p>{/if}
 		{#if !canAllow}
 			<p class="notice warn">Only people who can change settings can connect AI apps. Ask the owner.</p>

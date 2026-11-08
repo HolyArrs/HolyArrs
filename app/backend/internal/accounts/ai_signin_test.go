@@ -3,6 +3,7 @@ package accounts
 import (
 	"context"
 	"crypto/sha256"
+	"database/sql"
 	"encoding/base64"
 	"encoding/json"
 	"io"
@@ -13,13 +14,83 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
+
+// turnAIOn flips the AI apps switch the ai package owns.
+func turnAIOn(t *testing.T, f *fixture) {
+	t.Helper()
+	if err := f.s.Write(context.Background(), func(tx *sql.Tx) error {
+		return database.PutSetting(tx, "this_app", "mcp_enabled", "on", domain.System, time.Now())
+	}); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestAIAllowRefusedWhenOff(t *testing.T) {
+	f := setup(t, Options{})
+	m := http.NewServeMux()
+	f.a.Routes(m)
+	f.srv.Config.Handler = f.a.Middleware(m)
+	c := client(t)
+	csrf := setupOwner(t, f, c)
+	bare := &http.Client{}
+	_, body := call(t, bare, "POST", f.srv.URL+"/oauth/register", `{"client_name":"x","redirect_uris":["http://localhost:4567/callback"]}`, nil)
+	var reg struct {
+		ClientID string `json:"client_id"`
+	}
+	_ = json.Unmarshal([]byte(body), &reg)
+	h := sha256.Sum256([]byte("a-verifier-that-is-long-enough-for-pkce-0123456789"))
+	q := url.Values{"response_type": {"code"}, "client_id": {reg.ClientID}, "redirect_uri": {"http://localhost:4567/callback"},
+		"code_challenge": {base64.RawURLEncoding.EncodeToString(h[:])}, "code_challenge_method": {"S256"}, "state": {"s"}}
+	allowBody, _ := json.Marshal(map[string]string{"query": q.Encode()})
+	if resp, body := call(t, c, "POST", f.srv.URL+"/api/v1/auth/ai-connect", string(allowBody), map[string]string{CSRFHeader: csrf}); resp.StatusCode != 403 {
+		t.Fatalf("allow while off: %d %s", resp.StatusCode, body)
+	}
+	req, _ := http.NewRequest("POST", f.srv.URL+"/oauth/token", strings.NewReader("grant_type=authorization_code&code=x"))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	if resp, err := bare.Do(req); err != nil || resp.StatusCode != 403 {
+		t.Fatalf("token while off: %v %v", resp, err)
+	} else {
+		resp.Body.Close()
+	}
+	var n int
+	if err := f.s.Read().QueryRow("SELECT count(*) FROM api_keys").Scan(&n); err != nil || n != 0 {
+		t.Fatalf("keys: %d %v", n, err)
+	}
+}
+
+func TestAIClientNameStripsBidi(t *testing.T) {
+	if got := aiClientName("Good‮evil"); strings.ContainsAny(got, "‮") || got != "Good evil" {
+		t.Fatalf("got %q", got)
+	}
+}
+
+func TestAIRegisterLimited(t *testing.T) {
+	f := setup(t, Options{})
+	m := http.NewServeMux()
+	f.a.Routes(m)
+	f.srv.Config.Handler = f.a.Middleware(m)
+	bare := &http.Client{}
+	for i := 0; i < 30; i++ {
+		resp, _ := call(t, bare, "POST", f.srv.URL+"/oauth/register", `{"client_name":"x","redirect_uris":["http://localhost:4567/callback"]}`, nil)
+		if resp.StatusCode == 429 {
+			if i < freeTries {
+				t.Fatalf("limited after %d", i)
+			}
+			return
+		}
+	}
+	t.Fatal("never limited")
+}
 
 // signInAIApp runs the sign-in an AI app does (MCP authorization): learn
 // where to sign in, register, open the browser, allow, swap the code.
 func TestAIAppSignsInWithoutAPastedKey(t *testing.T) {
 	f := setup(t, Options{})
+	turnAIOn(t, f)
 	m := http.NewServeMux()
 	m.HandleFunc("GET /api/v1/titles", okHandler)
 	f.a.Routes(m)
@@ -278,6 +349,7 @@ func mcpEcho(next http.Handler) http.Handler {
 // document), as the Claude app does by default: no registration needed.
 func TestAIAppSignsInWithAMetadataDocument(t *testing.T) {
 	f := setup(t, Options{})
+	turnAIOn(t, f)
 	m := http.NewServeMux()
 	f.a.Routes(m)
 	f.srv.Config.Handler = f.a.Middleware(mcpEcho(webserver.RecordRouteHits(m)))
