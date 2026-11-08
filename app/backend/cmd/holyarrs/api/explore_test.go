@@ -111,8 +111,8 @@ func TestExplorePoolInvalidation(t *testing.T) {
 			}
 		}
 	}
-	if a.discoverCache().HitCount() != 0 {
-		t.Fatalf("a pool build used the per-person limit: %v", a.discoverCache().HitCount())
+	if a.discover.HitCount() != 0 {
+		t.Fatalf("a pool build used the per-person limit: %v", a.discover.HitCount())
 	}
 	if ok, stale := poolState(t, s, 1, "all"); !ok || stale {
 		t.Fatal("pool not stored fresh")

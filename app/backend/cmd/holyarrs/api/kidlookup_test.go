@@ -90,7 +90,7 @@ func TestKidRatingLookupBudgetPerPerson(t *testing.T) {
 // not Details, and are kept apart from the Explore cache.
 func TestKidRatingLightLookupsOwnCache(t *testing.T) {
 	a, l := newRatingAPI(t)
-	a.discover.Put("details|movie|1", discoverEntry{At: time.Now(), Details: &metadata.Details{}})
+	a.discover.Put("details|movie|1", discover.Entry{At: time.Now(), Details: &metadata.Details{}})
 	a.kidAllowed(kidCtx(5), "PG", unknownRefs(7000, 10), 0)
 	a.kidAllowed(kidCtx(5), "PG", unknownRefs(7000, 10), 0)
 	if c := l.calls.Load(); c != 0 {
@@ -99,8 +99,8 @@ func TestKidRatingLightLookupsOwnCache(t *testing.T) {
 	if c := rateCalls.Load(); c != 10 {
 		t.Fatalf("%d rating lookups for 10 titles asked twice", c)
 	}
-	if a.discoverCache().Len() != 1 {
-		t.Fatalf("Explore cache has %d entries, want the 1 it had", a.discoverCache().Len())
+	if a.discover.Len() != 1 {
+		t.Fatalf("Explore cache has %d entries, want the 1 it had", a.discover.Len())
 	}
 }
 

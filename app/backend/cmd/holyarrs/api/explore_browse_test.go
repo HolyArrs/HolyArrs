@@ -68,7 +68,7 @@ func TestSearchBrowseSectionBuilding(t *testing.T) {
 	old := discover.BrowseWait
 	discover.BrowseWait = 20 * time.Millisecond
 	defer func() { discover.BrowseWait = old }()
-	sh := a.browseShare("shows", false, "")
+	sh := a.disc.BrowseShare("shows", false, "")
 	hold := make(chan struct{})
 	sh.SetBusy("genres", hold)
 	start := time.Now()

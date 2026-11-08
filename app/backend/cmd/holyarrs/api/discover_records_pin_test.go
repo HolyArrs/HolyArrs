@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/discover"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -87,7 +88,7 @@ func rdpGolden[T any](t *testing.T, name string) {
 
 // The records the requests and discover routes return keep their JSON names (R4).
 func TestRDPRecordJSON(t *testing.T) {
-	t.Run("discover_item_view", func(t *testing.T) { rdpGolden[discoverItemView](t, "rdp_discover_item_view") })
+	t.Run("discover_item_view", func(t *testing.T) { rdpGolden[discover.ItemView](t, "rdp_discover_item_view") })
 	t.Run("ask_brief", func(t *testing.T) { rdpGolden[askBrief](t, "rdp_ask_brief") })
 	t.Run("asked_by_entry", func(t *testing.T) { rdpGolden[requests.AskedByEntry](t, "rdp_asked_by_entry") })
 	t.Run("ask_limit_view", func(t *testing.T) { rdpGolden[requests.AskLimitView](t, "rdp_ask_limit_view") })

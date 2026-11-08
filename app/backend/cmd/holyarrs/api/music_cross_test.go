@@ -27,7 +27,7 @@ func TestDiscoverFailBusy(t *testing.T) {
 			t.Fatalf("%v: %d %q", err, w.Code, w.Header().Get("Retry-After"))
 		}
 		w = httptest.NewRecorder()
-		peopleError(w, err)
+		discover.PeopleError(w, err)
 		if w.Code != http.StatusServiceUnavailable || w.Header().Get("Retry-After") == "" {
 			t.Fatalf("people %v: %d", err, w.Code)
 		}

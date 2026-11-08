@@ -753,7 +753,7 @@ func TestKidCannotReachBlockedTitleAnywhere(t *testing.T) {
 		for _, u := range urls {
 			// The walk covers every route, more lookups than the Kid's minute
 			// limit allows (kidlookup_test checks that limit); start each fresh.
-			k.api.discoverCache().ResetHits()
+			k.api.discover.ResetHits()
 			code, body := k.kai.get(u)
 			if code < 200 || code > 299 {
 				continue

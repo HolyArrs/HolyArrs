@@ -80,5 +80,5 @@ func (a *API) titleHandlers() *discover.TitleHandlers {
 	return &discover.TitleHandlers{Store: a.s.Store, Library: a.s.Library, Metadata: a.s.Metadata, Queue: a.s.Queue, Asks: a.s.Asks,
 		Live: a.s.Live != nil, Actor: actor, Person: a.person, Fail: libraryError, ShowError: showError,
 		KindDefaultsFor: a.kindDefaultsFor, TitleID: a.titleID, TitleView: a.titleView, PublishTitleView: a.publishTitleView,
-		KidMax: a.kidMax, KidLimited: a.kidLimited, KidMovies: a.kidMovies, OpenAsk: a.openAsk, OpenMovieAsk: a.openMovieAsk}
+		KidMax: a.kidMax, KidLimited: a.disc.KidLimited, KidMovies: a.kidMovies, OpenAsk: a.openAsk, OpenMovieAsk: a.openMovieAsk}
 }

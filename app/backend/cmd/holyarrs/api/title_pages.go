@@ -36,7 +36,7 @@ type titleAges struct{ a *API }
 func (t titleAges) Max(r *http.Request) string { return t.a.kidMax(r) }
 
 func (t titleAges) Limited(w http.ResponseWriter, r *http.Request) bool {
-	return t.a.kidLimited(w, r)
+	return t.a.disc.KidLimited(w, r)
 }
 
 func (t titleAges) LibraryRating(ctx context.Context, kind, tmdbID string) (string, bool) {
@@ -53,7 +53,7 @@ func (t titleExplore) Details(ctx context.Context, kind, id string) (metadata.De
 }
 
 func (t titleExplore) Caching(w http.ResponseWriter, r *http.Request, cache string) {
-	t.a.exploreCaching(w, r, cache)
+	t.a.disc.Caching(w, r, cache)
 }
 
 // titleMusic gives the title pages the music answers and artist pictures.

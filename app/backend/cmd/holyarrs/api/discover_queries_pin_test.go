@@ -186,32 +186,32 @@ func TestRDPLibraryJoinAndNeverAdd(t *testing.T) {
 	never("movie", `{}`) // no TMDB id: never matches anything
 	never("artist", `{"tmdb":"128"}`)
 
-	v, hidden, err := r.api.libraryJoin(ctx, metadata.DiscoverItem{Kind: "movie", TMDBID: "123"}, r.ana.id)
+	v, hidden, err := r.api.disc.LibraryJoin(ctx, metadata.DiscoverItem{Kind: "movie", TMDBID: "123"}, r.ana.id)
 	if err != nil || hidden || !v.InLibrary || v.TitleID != movie || v.Ask != nil || v.Genres == nil {
 		t.Fatalf("in library: %+v hidden=%v %v", v, hidden, err)
 	}
 	// Right number, wrong kind: not in the Library.
-	if v, _, _ := r.api.libraryJoin(ctx, metadata.DiscoverItem{Kind: "movie", TMDBID: "124"}, r.ana.id); v.InLibrary || v.TitleID != 0 {
+	if v, _, _ := r.api.disc.LibraryJoin(ctx, metadata.DiscoverItem{Kind: "movie", TMDBID: "124"}, r.ana.id); v.InLibrary || v.TitleID != 0 {
 		t.Fatalf("movie 124 found a show: %+v", v)
 	}
-	if v, _, _ := r.api.libraryJoin(ctx, metadata.DiscoverItem{Kind: "show", TMDBID: "124"}, r.ana.id); !v.InLibrary {
+	if v, _, _ := r.api.disc.LibraryJoin(ctx, metadata.DiscoverItem{Kind: "show", TMDBID: "124"}, r.ana.id); !v.InLibrary {
 		t.Fatalf("show 124 not found: %+v", v)
 	}
 	// Removed: not in the Library.
-	if v, _, _ := r.api.libraryJoin(ctx, metadata.DiscoverItem{Kind: "movie", TMDBID: "125"}, r.ana.id); v.InLibrary {
+	if v, _, _ := r.api.disc.LibraryJoin(ctx, metadata.DiscoverItem{Kind: "movie", TMDBID: "125"}, r.ana.id); v.InLibrary {
 		t.Fatalf("removed title found: %+v", v)
 	}
 	for _, c := range []struct {
 		kind, id string
 		hide     bool
 	}{{"movie", "126", true}, {"show", "126", false}, {"show", "127", true}, {"movie", "128", false}, {"movie", "", false}} {
-		if _, h, err := r.api.libraryJoin(ctx, metadata.DiscoverItem{Kind: c.kind, TMDBID: c.id}, r.ana.id); err != nil || h != c.hide {
+		if _, h, err := r.api.disc.LibraryJoin(ctx, metadata.DiscoverItem{Kind: c.kind, TMDBID: c.id}, r.ana.id); err != nil || h != c.hide {
 			t.Fatalf("never-add %s %s: hidden %v want %v (%v)", c.kind, c.id, h, c.hide, err)
 		}
 	}
 	// dropNeverAdd keeps the order and leaves out movie 126 and show 127 only.
 	items := []metadata.DiscoverItem{{Kind: "movie", TMDBID: "126"}, {Kind: "movie", TMDBID: "1"}, {Kind: "show", TMDBID: "127"}, {Kind: "show", TMDBID: "126"}, {Kind: "movie", TMDBID: "128"}}
-	kept, err := r.api.dropNeverAdd(ctx, items)
+	kept, err := r.api.disc.DropNeverAdd(ctx, items)
 	if err != nil || len(kept) != 3 || kept[0].TMDBID != "1" || kept[1].TMDBID != "126" || kept[2].TMDBID != "128" {
 		t.Fatalf("dropNeverAdd %+v %v", kept, err)
 	}
@@ -220,7 +220,7 @@ func TestRDPLibraryJoinAndNeverAdd(t *testing.T) {
 		t.Fatal(err)
 	}
 	for who, want := range map[int64]bool{r.ana.id: true, r.bo.id: false} {
-		v, _, err := r.api.libraryJoin(ctx, metadata.DiscoverItem{Kind: "movie", TMDBID: "693134"}, who)
+		v, _, err := r.api.disc.LibraryJoin(ctx, metadata.DiscoverItem{Kind: "movie", TMDBID: "693134"}, who)
 		if err != nil || v.Ask == nil || v.Ask.State != "asked" || v.Ask.Mine != want || v.Ask.People != 1 {
 			t.Fatalf("open ask for %d: %+v %v", who, v.Ask, err)
 		}
