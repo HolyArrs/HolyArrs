@@ -33,8 +33,8 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/api"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/asks"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/backups"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/requests"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
@@ -42,7 +42,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/lists"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediaservers"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
@@ -600,7 +599,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	q.Handle(downloads.KindGrab, dm.HandleGrab)
 	// An ask turns Ready right after its import, not on the next 30 s ready
 	// check: the Requests card would drop from Importing back to Processing.
-	var readyCheck atomic.Pointer[asks.Service]
+	var readyCheck atomic.Pointer[requests.Service]
 	q.Handle(importer.KindImport, func(ctx context.Context, r *jobs.Run) error {
 		err := im.HandleJob(ctx, r)
 		if w := readyCheck.Load(); err == nil && w != nil {
@@ -694,11 +693,11 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	} else if n, err := lib.RecoverRenames(ctx, domain.System); err != nil || n > 0 {
 		log.Printf("renames cut off by a stop: %d finished, error %v", n, err)
 	}
-	ol := &lists.Service{Store: s, Queue: q, Library: lib, Metadata: md, TMDBBase: hosted.TMDBBase,
+	ol := &requests.OutsideLists{Store: s, Queue: q, Library: lib, Metadata: md, TMDBBase: hosted.TMDBBase,
 		TraktBase: os.Getenv("HOLYARRS_TRAKT_URL"), TMDBToken: hosted.TMDBAccess,
 		TraktClient: func(ctx context.Context) (string, error) { return vault.Setting(ctx, "links", "trakt_client_id") }}
 	ol.Register(q)
-	q.ProbeSchedule(lists.KindSync, ol.ProbeSync)
+	q.ProbeSchedule(requests.OutsideListSync, ol.ProbeSync)
 	he := &health.Engine{Store: s, Version: version, ConfigUnmapped: unmapped, ConfigDir: c.ConfigDir, Publish: func(topic string, data any) { hub.Publish(topic, data) },
 		Backups: func(ctx context.Context) (health.Backups, error) {
 			newest, every, lastErr, err := bm.State(ctx)
@@ -737,8 +736,8 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	// Plex watchlists (Requests): registered here with the other kinds; the
 	// reader is set once Requests and sign-in are up, and a pass before
 	// that finds nothing to do.
-	var watchlists atomic.Pointer[asks.Watchlists]
-	q.Handle(asks.KindPlexWatchlists, func(ctx context.Context, r *jobs.Run) error {
+	var watchlists atomic.Pointer[requests.Watchlists]
+	q.Handle(requests.KindPlexWatchlists, func(ctx context.Context, r *jobs.Run) error {
 		if !startup.FeatureOn(features.PlexWatchlists) {
 			r.SetResult(map[string]any{"skipped": "held back"})
 			return nil
@@ -749,7 +748,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		r.SetResult(map[string]any{"skipped": "still starting"})
 		return nil
 	})
-	q.ProbeSchedule(asks.KindPlexWatchlists, func(ctx context.Context, now time.Time) (bool, any, error) {
+	q.ProbeSchedule(requests.KindPlexWatchlists, func(ctx context.Context, now time.Time) (bool, any, error) {
 		if !startup.FeatureOn(features.PlexWatchlists) {
 			return false, nil, nil
 		}
@@ -856,26 +855,26 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		media.Watch(ctx)
 	}
 	defer sender.Wait()
-	wish := &asks.Service{Store: s, Library: lib, Metadata: md, Alerts: sender, Live: hub}
-	readyCheck.Store(wish)
+	requestsSvc := &requests.Service{Store: s, Library: lib, Metadata: md, Alerts: sender, Live: hub}
+	readyCheck.Store(requestsSvc)
 	optional(jobs.Loop{Name: "wishlist", Label: "Requests ready check", Every: 30 * time.Second, Run: func(ctx context.Context) error {
-		if _, err := wish.CheckReady(ctx); err != nil {
+		if _, err := requestsSvc.CheckReady(ctx); err != nil {
 			return err
 		}
-		if _, err := wish.SendEpisodeNotices(ctx); err != nil {
+		if _, err := requestsSvc.SendEpisodeNotices(ctx); err != nil {
 			return err
 		}
-		_, err := wish.SendAlbumNotices(ctx)
+		_, err := requestsSvc.SendAlbumNotices(ctx)
 		return err
 	}})
-	wish.PrefetchParts = true
+	requestsSvc.PrefetchParts = true
 	// Plex watchlists are read with each person's own kept Plex sign-in.
-	plexWatch := &asks.Watchlists{Asks: wish, Base: env("HOLYARRS_PLEX_DISCOVER_URL", asks.DefaultPlexDiscover),
+	plexWatch := &requests.Watchlists{Asks: requestsSvc, Base: env("HOLYARRS_PLEX_DISCOVER_URL", requests.DefaultPlexDiscover),
 		Token: au.PlexToken, ClientID: au.PlexClientID}
 	watchlists.Store(plexWatch)
-	go wish.BackfillParts(context.Background())
-	wish.WatchEpisodes()
-	wish.WatchTMDBFollows()
+	go requestsSvc.BackfillParts(context.Background())
+	requestsSvc.WatchEpisodes()
+	requestsSvc.WatchTMDBFollows()
 	reg.Set(jobs.StageKey("alerts"), "stage", "Alerts", jobs.Running, "")
 	if c.SafeMode {
 		reg.Set(jobs.StageKey("media_servers"), "stage", "Media-server refresh", jobs.Off, notStarted)
@@ -883,7 +882,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		reg.Set(jobs.StageKey("media_servers"), "stage", "Media-server refresh", jobs.Running, "")
 	}
 	reg.Set(jobs.StageKey("events"), "stage", "Event hooks", jobs.Running, "")
-	defer wish.Wait()
+	defer requestsSvc.Wait()
 	// Deezer marks and artist bios come from the metadata server; only the
 	// direct stand-in (a Deezer stand-in in tests, or
 	// HOLYARRS_DIRECT_SOURCES=1) is asked directly.
@@ -899,7 +898,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		Secrets: vault, TraktBase: os.Getenv("HOLYARRS_TRAKT_URL"), MetadataUp: hosted.Health.Up, ServiceTop: hosted.Service.ServiceTop, TrailerPick: func(ctx context.Context, kind, id, lang string) (string, error) {
 			t, err := hosted.Service.TrailerPick(ctx, kind, id, lang)
 			return t.Key, err
-		}, AnimeMap: hosted.Service.AnimeMap, LiveSearch: flagOn("live_search"), ExtraArt: hosted.Service.Art, ImageBase: hosted.Service.Base() + "/v1/img", MusicControl: hosted.Service.Control, ArtistVideos: hosted.Service.ArtistVideos, ExtraRatings: hosted.Service.Ratings, CountryCount: hosted.Gate.SetCountryCount, WikiTitle: hosted.Service.WikiTitle, WikiPerson: hosted.Service.WikiPerson, AwardWinners: hosted.Service.AwardWinners, Alerts: sender, Asks: wish, Watchlists: plexWatch, Search: sr, Downloads: dm, DLSync: dls, Health: he, Updates: uc, Media: media, Subtitles: subs, States: reg, SafeMode: c.SafeMode, Parts: pc, ExitApp: exitApp, Mover: mover,
+		}, AnimeMap: hosted.Service.AnimeMap, LiveSearch: flagOn("live_search"), ExtraArt: hosted.Service.Art, ImageBase: hosted.Service.Base() + "/v1/img", MusicControl: hosted.Service.Control, ArtistVideos: hosted.Service.ArtistVideos, ExtraRatings: hosted.Service.Ratings, CountryCount: hosted.Gate.SetCountryCount, WikiTitle: hosted.Service.WikiTitle, WikiPerson: hosted.Service.WikiPerson, AwardWinners: hosted.Service.AwardWinners, Alerts: sender, Asks: requestsSvc, Watchlists: plexWatch, Search: sr, Downloads: dm, DLSync: dls, Health: he, Updates: uc, Media: media, Subtitles: subs, States: reg, SafeMode: c.SafeMode, Parts: pc, ExitApp: exitApp, Mover: mover,
 		Log: applogs, ConfigDir: c.ConfigDir, SavePath: c.SavePath, URLBase: c.URLBase, Deps: music.Deps{MusicTrending: hosted.Service.MusicTrending, MusicPictures: hosted.Service.MusicPictures, MusicNew: hosted.Service.MusicNewWindow, MusicSimilar: hosted.Service.MusicSimilar, MusicCharts: hosted.Service.MusicCharts, MusicGenres: hosted.Service.MusicGenreList, MusicGenreTile: hosted.Service.MusicGenreTile, MusicRowsV2: flagOn("music_rows_v2"), MusicRowsV3: flagOn("music_rows_v3"), MusicRowsV6: flagOn("music_rows_v6"), MusicRowsV7: flagOn("music_rows_v7"), MusicListsV1: flagOn("music_lists_v1"), MusicShelves: hosted.Service.MusicShelves, MusicPools: hosted.Service.MusicPools, MusicRowsTplOff: flagOn("music_rows_tpl_off"), MusicListeners: hosted.Service.MusicListeners, MusicSimilarSet: hosted.Service.MusicSimilarSet, MusicArtistData: hosted.Service.MusicArtistData, MusicSuggest: hosted.Service.MusicSuggest, MusicTopSongs: hosted.Service.MusicTopSongs, MusicRising: hosted.Service.MusicRisingToday, MusicDiscography: hosted.Service.MusicDiscography,
 			MusicDeezer: serverDeezer, MusicDeezerAlbum: serverDeezerAlbum, MusicArtistBio: serverBio}})
 	// "Count this install" rides on every request to the metadata server.

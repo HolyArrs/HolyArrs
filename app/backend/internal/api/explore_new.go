@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/explore"
+	engine "github.com/HolyArrs/holyarrs/app/backend/internal/discover/rows"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
@@ -40,9 +40,9 @@ const newPerService = 20
 // newPage is one member's built page: the rows, the This week rail, why each
 // title is new, its score and the service each services-row title is on.
 type newPage struct {
-	rows   []explore.Row
+	rows   []engine.Row
 	rail   []newRailDay
-	facts  map[string]explore.NewFact
+	facts  map[string]engine.NewFact
 	scores map[string]float64
 	marks  map[string]streamingMark
 	// picked says the member chose their services.
@@ -52,7 +52,7 @@ type newPage struct {
 	// perService is each chip row's own list per service id (row type ->
 	// service -> titles), so a chip shows that service's titles, not a
 	// filter of the shared row.
-	perService map[string]map[int][]explore.Item
+	perService map[string]map[int][]engine.Item
 	// svcNames names each service id on the page.
 	svcNames map[int]string
 }
@@ -66,7 +66,7 @@ type newRailDay struct {
 // newRailItem is one title on a day: what happens (added, out, episode),
 // on which service, and whether the member follows it.
 type newRailItem struct {
-	explore.Item
+	engine.Item
 	What      string
 	Service   *streamingMark
 	Following bool
@@ -86,7 +86,7 @@ type newPageCache struct {
 
 var newPages newPageCache
 
-// heroShown is each member's latest Explore hero (member id -> []explore.Item),
+// heroShown is each member's latest Explore hero (member id -> []engine.Item),
 // so New & Popular's hero shows other titles. Entries expire after a day.
 var heroShown = newTTLMap(24*time.Hour, 10000)
 
@@ -104,13 +104,13 @@ var newHeroKeys = newTTLMap(explorePageTTL, 2000)
 func (a *API) newHero(r *http.Request, pg newPage, me int64) ([]discoverItemView, error) {
 	skip := map[string]bool{}
 	if v, ok := heroShown.Load(me); ok {
-		for _, it := range v.([]explore.Item) {
+		for _, it := range v.([]engine.Item) {
 			skip[it.Key()] = true
 		}
 	}
-	var cands []explore.Item
+	var cands []engine.Item
 	seen := map[string]bool{}
-	take := func(it explore.Item) {
+	take := func(it engine.Item) {
 		if !seen[it.Key()] && !skip[it.Key()] && pg.scores[it.Key()] > 0 {
 			seen[it.Key()] = true
 			cands = append(cands, it)
@@ -122,15 +122,15 @@ func (a *API) newHero(r *http.Request, pg newPage, me int64) ([]discoverItemView
 		}
 	}
 	for _, row := range pg.rows {
-		if row.Type == explore.TypeNPServices || row.Type == explore.TypeNPTopShows || row.Type == explore.TypeNPTopFilms {
+		if row.Type == engine.TypeNPServices || row.Type == engine.TypeNPTopShows || row.Type == engine.TypeNPTopFilms {
 			for _, it := range row.Items {
 				take(it)
 			}
 		}
 	}
-	explore.SortByScore(cands, func(it explore.Item) float64 { return pg.scores[it.Key()] })
+	engine.SortByScore(cands, func(it engine.Item) float64 { return pg.scores[it.Key()] })
 	cands = cands[:min(len(cands), 24)]
-	views, err := a.exploreViews(r.Context(), r, []explore.Row{{Items: cands}})
+	views, err := a.exploreViews(r.Context(), r, []engine.Row{{Items: cands}})
 	if err != nil || len(views) != 1 {
 		return []discoverItemView{}, err
 	}
@@ -168,13 +168,13 @@ func (a *API) newHero(r *http.Request, pg newPage, me int64) ([]discoverItemView
 }
 
 // withoutHero drops the hero's titles from rows.
-func withoutHero(rows []explore.Row, hero map[string]bool) []explore.Row {
+func withoutHero(rows []engine.Row, hero map[string]bool) []engine.Row {
 	if len(hero) == 0 {
 		return rows
 	}
-	out := make([]explore.Row, 0, len(rows))
+	out := make([]engine.Row, 0, len(rows))
 	for _, r := range rows {
-		items := make([]explore.Item, 0, len(r.Items))
+		items := make([]engine.Item, 0, len(r.Items))
 		for _, it := range r.Items {
 			if !hero[it.Key()] {
 				items = append(items, it)
@@ -219,7 +219,7 @@ func (c *newPageCache) put(key string, p newPage) {
 // newEpisode is a Library show's episode near now (aired in the last 14
 // days or airing in the next 7).
 type newEpisode struct {
-	show            explore.Item
+	show            engine.Item
 	at              time.Time
 	season, episode int
 }
@@ -303,7 +303,7 @@ func (a *API) newHousehold(ctx context.Context, me int64, now time.Time) newHous
 				e.show.Poster = links[0]
 			}
 			e.show.Kind, e.show.Owned = "show", true
-			if e.at = explore.ParseDay(at); !e.at.IsZero() {
+			if e.at = engine.ParseDay(at); !e.at.IsZero() {
 				h.episodes = append(h.episodes, e)
 			}
 		}
@@ -314,7 +314,7 @@ func (a *API) newHousehold(ctx context.Context, me int64, now time.Time) newHous
 
 // suit is how much a title suits the household: its genres' share of the
 // Library, plus a lot for a Library title or one the member follows.
-func (h newHousehold) suit(it explore.Item) float64 {
+func (h newHousehold) suit(it engine.Item) float64 {
 	total := 0
 	for _, n := range h.genres {
 		total += n
@@ -335,9 +335,9 @@ func (h newHousehold) suit(it explore.Item) float64 {
 // services (every Streaming Availability service when none is picked),
 // newest first, each with when it was added; from the kept lists (never
 // fetched here beyond the 12-hour service-top read).
-func (a *API) newServiceLists(ctx context.Context, h newHousehold, kinds map[string]bool) ([]streamingMark, map[int][]explore.Item, map[string]time.Time, metadata.ServiceTop) {
+func (a *API) newServiceLists(ctx context.Context, h newHousehold, kinds map[string]bool) ([]streamingMark, map[int][]engine.Item, map[string]time.Time, metadata.ServiceTop) {
 	added := map[string]time.Time{}
-	by := map[int][]explore.Item{}
+	by := map[int][]engine.Item{}
 	var order []streamingMark
 	if a.s.ServiceTop == nil || h.region == "" {
 		return nil, by, added, metadata.ServiceTop{}
@@ -361,11 +361,11 @@ func (a *API) newServiceLists(ctx context.Context, h newHousehold, kinds map[str
 			if it.TMDBID <= 0 || !kinds[kind] {
 				continue
 			}
-			e := explore.Item{TMDBID: strconv.FormatInt(it.TMDBID, 10), Kind: kind, Name: it.Title, Genres: []string{}}
+			e := engine.Item{TMDBID: strconv.FormatInt(it.TMDBID, 10), Kind: kind, Name: it.Title, Genres: []string{}}
 			if it.PosterPath != "" {
 				e.Poster = metadata.ImageBase + "/w342" + it.PosterPath
 			}
-			if at := explore.ParseDay(it.AddedAt); !at.IsZero() && at.After(added[e.Key()]) {
+			if at := engine.ParseDay(it.AddedAt); !at.IsZero() && at.After(added[e.Key()]) {
 				added[e.Key()] = at
 			}
 			by[id] = append(by[id], e)
@@ -376,24 +376,24 @@ func (a *API) newServiceLists(ctx context.Context, h newHousehold, kinds map[str
 
 // newCharts are today's top titles of kind on each of the member's services
 // (Streaming Availability's own charts), in rank order.
-func newCharts(list metadata.ServiceTop, h newHousehold, kind string) ([]streamingMark, [][]explore.Item) {
+func newCharts(list metadata.ServiceTop, h newHousehold, kind string) ([]streamingMark, [][]engine.Item) {
 	picked := map[int]bool{}
 	for _, s := range h.services {
 		picked[s] = true
 	}
 	var marks []streamingMark
-	var lists [][]explore.Item
+	var lists [][]engine.Item
 	for _, sv := range list.Services {
 		id := serviceTopProviders[sv.Service]
 		if id == 0 || sv.Source != "streaming-availability" || (len(picked) > 0 && !picked[id]) {
 			continue
 		}
-		var l []explore.Item
+		var l []engine.Item
 		for _, it := range sv.Items {
 			if it.TMDBID <= 0 || serviceKind(it.Kind) != kind {
 				continue
 			}
-			e := explore.Item{TMDBID: strconv.FormatInt(it.TMDBID, 10), Kind: kind, Name: it.Title, Genres: []string{}}
+			e := engine.Item{TMDBID: strconv.FormatInt(it.TMDBID, 10), Kind: kind, Name: it.Title, Genres: []string{}}
 			if it.PosterPath != "" {
 				e.Poster = metadata.ImageBase + "/w342" + it.PosterPath
 			}
@@ -407,63 +407,63 @@ func newCharts(list metadata.ServiceTop, h newHousehold, kind string) ([]streami
 
 // newLists names one kind's shared lists (see newRequests).
 type newLists struct {
-	trending, upcoming, cinema, released, episodes, series, critics, genre []explore.Item
-	world                                                                  [][]explore.Item
+	trending, upcoming, cinema, released, episodes, series, critics, genre []engine.Item
+	world                                                                  [][]engine.Item
 	// onService are the TMDB top-ups per service id (watch providers,
 	// newest out first).
-	onService map[int][]explore.Item
+	onService map[int][]engine.Item
 }
 
 // newRequests are one kind's shared lists: TMDB only, each kept by the list
 // cache (warmed like Browse; a cold build waits newWait and says building).
-func newRequests(kind, genre, region string, services []streamingMark, now time.Time) ([]explore.Request, func([][]explore.Item) newLists) {
+func newRequests(kind, genre, region string, services []streamingMark, now time.Time) ([]engine.Request, func([][]engine.Item) newLists) {
 	day := func(d int) string { return now.AddDate(0, 0, d).Format("2006-01-02") }
 	back := -45 // a movie release window
 	if kind == "show" {
 		back = -60 // a brand-new series window
 	}
-	var reqs []explore.Request
+	var reqs []engine.Request
 	at := map[string]int{}
-	add := func(name string, q explore.Request) {
+	add := func(name string, q engine.Request) {
 		at[name] = len(reqs)
 		reqs = append(reqs, q)
 	}
-	add("trending", explore.Request{List: "trending"})
-	add("upcoming", explore.Request{List: "upcoming"}) // shows: on the air now
-	add("cinema", explore.Request{List: "now_playing", Region: region})
+	add("trending", engine.Request{List: "trending"})
+	add("upcoming", engine.Request{List: "upcoming"}) // shows: on the air now
+	add("cinema", engine.Request{List: "now_playing", Region: region})
 	if kind == "movie" {
-		add("released", explore.Request{List: "discover", From: day(back), To: day(0), Types: "4|3", Region: region, MinVotes: 10})
+		add("released", engine.Request{List: "discover", From: day(back), To: day(0), Types: "4|3", Region: region, MinVotes: 10})
 	} else {
 		// Shows with an episode out this week (a new episode or season).
-		add("episodes", explore.Request{List: "discover", AirFrom: day(-6), AirTo: day(0), MinVotes: 20})
-		add("series", explore.Request{List: "discover", From: day(back), To: day(0), MinVotes: 5})
+		add("episodes", engine.Request{List: "discover", AirFrom: day(-6), AirTo: day(0), MinVotes: 20})
+		add("series", engine.Request{List: "discover", From: day(back), To: day(0), MinVotes: 5})
 	}
-	add("critics", explore.Request{List: "discover", From: day(-60), To: day(0), MinVote: 7.2, MinVotes: 50, Sort: "rating"})
+	add("critics", engine.Request{List: "discover", From: day(-60), To: day(0), MinVote: 7.2, MinVotes: 50, Sort: "rating"})
 	for _, l := range newWorld {
-		add("world:"+l, explore.Request{List: "discover", Lang: l, From: day(back), To: day(0), MinVotes: 10})
+		add("world:"+l, engine.Request{List: "discover", Lang: l, From: day(back), To: day(0), MinVotes: 10})
 	}
 	if genre != "" {
-		add("genre", explore.Request{List: "discover", Genre: genre, From: day(back), To: day(0), MinVotes: 10})
+		add("genre", engine.Request{List: "discover", Genre: genre, From: day(back), To: day(0), MinVotes: 10})
 	}
 	for _, s := range services {
-		q := explore.Request{List: "discover", Services: strconv.Itoa(s.Service), Region: region, From: day(back), To: day(0), Sort: "recent", MinVotes: 5}
+		q := engine.Request{List: "discover", Services: strconv.Itoa(s.Service), Region: region, From: day(back), To: day(0), Sort: "recent", MinVotes: 5}
 		if kind == "show" {
-			q = explore.Request{List: "discover", Services: strconv.Itoa(s.Service), Region: region, AirFrom: day(-6), AirTo: day(0), MinVotes: 5}
+			q = engine.Request{List: "discover", Services: strconv.Itoa(s.Service), Region: region, AirFrom: day(-6), AirTo: day(0), MinVotes: 5}
 		}
 		add("service:"+strconv.Itoa(s.Service), q)
 	}
 	for i := range reqs {
-		reqs[i].Kind, reqs[i].Scope = kind, explore.ScopeShared
+		reqs[i].Kind, reqs[i].Scope = kind, engine.ScopeShared
 	}
-	return reqs, func(got [][]explore.Item) newLists {
-		get := func(name string) []explore.Item {
+	return reqs, func(got [][]engine.Item) newLists {
+		get := func(name string) []engine.Item {
 			if i, ok := at[name]; ok && i < len(got) {
 				return got[i]
 			}
 			return nil
 		}
 		l := newLists{trending: get("trending"), upcoming: get("upcoming"), cinema: get("cinema"), released: get("released"), episodes: get("episodes"),
-			series: get("series"), critics: get("critics"), genre: get("genre"), onService: map[int][]explore.Item{}}
+			series: get("series"), critics: get("critics"), genre: get("genre"), onService: map[int][]engine.Item{}}
 		for _, w := range newWorld {
 			l.world = append(l.world, get("world:"+w))
 		}
@@ -477,11 +477,11 @@ func newRequests(kind, genre, region string, services []streamingMark, now time.
 // newFacts keeps the freshest fact of each title.
 type newFacts struct {
 	now time.Time
-	m   map[string]explore.NewFact
+	m   map[string]engine.NewFact
 }
 
-func (f newFacts) put(key string, n explore.NewFact) {
-	if old, ok := f.m[key]; ok && explore.Freshness(old, f.now) >= explore.Freshness(n, f.now) {
+func (f newFacts) put(key string, n engine.NewFact) {
+	if old, ok := f.m[key]; ok && engine.Freshness(old, f.now) >= engine.Freshness(n, f.now) {
 		return
 	}
 	f.m[key] = n
@@ -489,18 +489,18 @@ func (f newFacts) put(key string, n explore.NewFact) {
 
 // dated is the fact a title's own date gives: a movie's release (upcoming
 // when ahead), a show's first air date (a brand-new series).
-func (f newFacts) dated(it explore.Item) {
-	d := explore.ParseDay(it.Released)
+func (f newFacts) dated(it engine.Item) {
+	d := engine.ParseDay(it.Released)
 	if d.IsZero() {
 		return
 	}
 	switch {
 	case d.After(f.now):
-		f.put(it.Key(), explore.NewFact{Kind: explore.NewUpcoming, At: d})
+		f.put(it.Key(), engine.NewFact{Kind: engine.NewUpcoming, At: d})
 	case it.Kind == "movie":
-		f.put(it.Key(), explore.NewFact{Kind: explore.NewRelease, At: d})
+		f.put(it.Key(), engine.NewFact{Kind: engine.NewRelease, At: d})
 	case it.Kind == "show":
-		f.put(it.Key(), explore.NewFact{Kind: explore.NewSeries, At: d})
+		f.put(it.Key(), engine.NewFact{Kind: engine.NewSeries, At: d})
 	}
 }
 
@@ -510,7 +510,7 @@ func (a *API) newRows(ctx context.Context, r *http.Request, me int64, sw string)
 	now := a.exploreNow().UTC()
 	h := a.newHousehold(ctx, me, now)
 	kinds := map[string]bool{}
-	for _, k := range explore.Kinds(sw) {
+	for _, k := range engine.Kinds(sw) {
 		if len(a.kindsOn(k)) > 0 {
 			kinds[k] = true
 		}
@@ -520,14 +520,14 @@ func (a *API) newRows(ctx context.Context, r *http.Request, me int64, sw string)
 		return p, false
 	}
 	order, svcNew, added, top := a.newServiceLists(ctx, h, kinds)
-	pg := newPage{facts: map[string]explore.NewFact{}, scores: map[string]float64{}, marks: map[string]streamingMark{}, picked: len(h.services) > 0, key: key,
-		perService: map[string]map[int][]explore.Item{explore.TypeNPServices: {}, explore.TypeNPTopShows: {}, explore.TypeNPTopFilms: {}}, svcNames: map[int]string{}}
+	pg := newPage{facts: map[string]engine.NewFact{}, scores: map[string]float64{}, marks: map[string]streamingMark{}, picked: len(h.services) > 0, key: key,
+		perService: map[string]map[int][]engine.Item{engine.TypeNPServices: {}, engine.TypeNPTopShows: {}, engine.TypeNPTopFilms: {}}, svcNames: map[int]string{}}
 	for _, s := range order {
 		pg.svcNames[s.Service] = s.Name
 	}
 	facts := newFacts{now: now, m: pg.facts}
 	for k, at := range added {
-		facts.put(k, explore.NewFact{Kind: explore.NewService, At: at})
+		facts.put(k, engine.NewFact{Kind: engine.NewService, At: at})
 	}
 	ready := true
 	lists := map[string]newLists{}
@@ -540,9 +540,9 @@ func (a *API) newRows(ctx context.Context, r *http.Request, me int64, sw string)
 		lists[k], ready = name(g), ready && ok
 	}
 	// Every TMDB title's own date, then the stronger facts on top.
-	var pool []explore.Item
+	var pool []engine.Item
 	for _, l := range lists {
-		all := [][]explore.Item{l.trending, l.upcoming, l.cinema, l.released, l.episodes, l.series, l.critics, l.genre}
+		all := [][]engine.Item{l.trending, l.upcoming, l.cinema, l.released, l.episodes, l.series, l.critics, l.genre}
 		all = append(all, l.world...)
 		for _, s := range l.onService {
 			all = append(all, s)
@@ -556,28 +556,28 @@ func (a *API) newRows(ctx context.Context, r *http.Request, me int64, sw string)
 		for _, it := range l.episodes {
 			// The air-date list says an episode came out this week; three
 			// days is the middle of that week.
-			facts.put(it.Key(), explore.NewFact{Kind: explore.NewEpisode, At: now.AddDate(0, 0, -3)})
+			facts.put(it.Key(), engine.NewFact{Kind: engine.NewEpisode, At: now.AddDate(0, 0, -3)})
 		}
 	}
 	for _, e := range h.episodes {
 		if e.at.After(now) {
 			continue
 		}
-		f := explore.NewFact{Kind: explore.NewEpisode, At: e.at}
+		f := engine.NewFact{Kind: engine.NewEpisode, At: e.at}
 		if e.episode == 1 && e.season > 1 {
-			f = explore.NewFact{Kind: explore.NewSeason, At: e.at, Season: e.season}
+			f = engine.NewFact{Kind: engine.NewSeason, At: e.at, Season: e.season}
 		} else if e.episode == 1 && e.season == 1 {
-			f = explore.NewFact{Kind: explore.NewSeries, At: e.at}
+			f = engine.NewFact{Kind: engine.NewSeries, At: e.at}
 		}
 		facts.put(e.show.Key(), f)
 		pool = append(pool, e.show)
 	}
-	pop := explore.PopPercentile(pool)
+	pop := engine.PopPercentile(pool)
 	maxSuit := 0.0
 	for _, it := range pool {
 		maxSuit = max(maxSuit, h.suit(it))
 	}
-	score := func(it explore.Item) float64 {
+	score := func(it engine.Item) float64 {
 		if s, ok := pg.scores[it.Key()]; ok {
 			return s
 		}
@@ -589,26 +589,26 @@ func (a *API) newRows(ctx context.Context, r *http.Request, me int64, sw string)
 		if maxSuit > 0 {
 			t = h.suit(it) / maxSuit
 		}
-		s := explore.NewScore(explore.Freshness(pg.facts[it.Key()], now), p, t)
+		s := engine.NewScore(engine.Freshness(pg.facts[it.Key()], now), p, t)
 		pg.scores[it.Key()] = s
 		return s
 	}
-	fresh := func(items []explore.Item) []explore.Item {
-		out := []explore.Item{}
+	fresh := func(items []engine.Item) []engine.Item {
+		out := []engine.Item{}
 		for _, it := range items {
-			if kinds[it.Kind] && score(it) > 0 && pg.facts[it.Key()].Kind != explore.NewUpcoming {
+			if kinds[it.Kind] && score(it) > 0 && pg.facts[it.Key()].Kind != engine.NewUpcoming {
 				out = append(out, it)
 			}
 		}
 		return out
 	}
-	ranked := func(items []explore.Item) []explore.Item {
+	ranked := func(items []engine.Item) []engine.Item {
 		out := fresh(items)
-		explore.SortByScore(out, score)
+		engine.SortByScore(out, score)
 		return out
 	}
-	both := func(get func(newLists) []explore.Item) []explore.Item {
-		var all []explore.Item
+	both := func(get func(newLists) []engine.Item) []engine.Item {
+		var all []engine.Item
 		for _, k := range []string{"show", "movie"} {
 			if l, ok := lists[k]; ok {
 				all = append(all, get(l)...)
@@ -617,15 +617,15 @@ func (a *API) newRows(ctx context.Context, r *http.Request, me int64, sw string)
 		return ranked(all)
 	}
 
-	var rows []explore.Row
-	addRow := func(id, typ, title string, items []explore.Item) {
-		rows = append(rows, explore.Row{ID: id, Type: typ, Title: title, Items: items})
+	var rows []engine.Row
+	addRow := func(id, typ, title string, items []engine.Item) {
+		rows = append(rows, engine.Row{ID: id, Type: typ, Title: title, Items: items})
 	}
 	// Fresh on your services: each service's adds, topped up to about 20 from
 	// TMDB's newest on it; Library titles after the rest.
-	var perService [][]explore.Item
+	var perService [][]engine.Item
 	for _, s := range order {
-		var items []explore.Item
+		var items []engine.Item
 		items = append(items, svcNew[s.Service]...)
 		for _, k := range []string{"show", "movie"} {
 			items = append(items, lists[k].onService[s.Service]...)
@@ -633,7 +633,7 @@ func (a *API) newRows(ctx context.Context, r *http.Request, me int64, sw string)
 		items = ranked(items)
 		sort.SliceStable(items, func(i, j int) bool { return !h.owned[items[i].Key()] && h.owned[items[j].Key()] })
 		seen := map[string]bool{}
-		var l []explore.Item
+		var l []engine.Item
 		for _, it := range items {
 			if seen[it.Key()] || len(l) >= newPerService {
 				continue
@@ -645,25 +645,25 @@ func (a *API) newRows(ctx context.Context, r *http.Request, me int64, sw string)
 			}
 		}
 		perService = append(perService, l)
-		pg.perService[explore.TypeNPServices][s.Service] = l
+		pg.perService[engine.TypeNPServices][s.Service] = l
 	}
-	services := explore.RankMerge(perService, explore.NewRowCap[explore.TypeNPServices])
+	services := engine.RankMerge(perService, engine.NewRowCap[engine.TypeNPServices])
 	// The top of the page, in this order: the Top 10 new shows and movies
 	// (each service's real chart, new titles only, topped up from the scored
 	// pool), what everyone is watching (the same charts past their top 10,
 	// shows and movies together), then the critics' best new releases. A
 	// title shows once: the first row it is in keeps it.
-	var watching [][]explore.Item
+	var watching [][]engine.Item
 	for _, k := range []string{"show", "movie"} {
 		if !kinds[k] {
 			continue
 		}
 		marks, charts := newCharts(top, h, k)
-		typ := explore.TypeNPTopFilms
+		typ := engine.TypeNPTopFilms
 		if k == "show" {
-			typ = explore.TypeNPTopShows
+			typ = engine.TypeNPTopShows
 		}
-		var lists2 [][]explore.Item
+		var lists2 [][]engine.Item
 		for i, c := range charts {
 			l := fresh(c)
 			for j := range l {
@@ -677,12 +677,12 @@ func (a *API) newRows(ctx context.Context, r *http.Request, me int64, sw string)
 			watching = append(watching, l)
 			pg.perService[typ][marks[i].Service] = l
 		}
-		hot := explore.RankMerge(lists2, 10)
+		hot := engine.RankMerge(lists2, 10)
 		have := map[string]bool{}
 		for _, it := range hot {
 			have[it.Key()] = true
 		}
-		var rest []explore.Item
+		var rest []engine.Item
 		for _, it := range pool {
 			if it.Kind == k && !have[it.Key()] {
 				have[it.Key()] = true
@@ -691,16 +691,16 @@ func (a *API) newRows(ctx context.Context, r *http.Request, me int64, sw string)
 		}
 		hot = append(hot, ranked(rest)...)
 		if k == "show" {
-			addRow("np_top_shows", explore.TypeNPTopShows, "Top 10 new shows", hot)
+			addRow("np_top_shows", engine.TypeNPTopShows, "Top 10 new shows", hot)
 		} else {
-			addRow("np_top_movies", explore.TypeNPTopFilms, "Top 10 new movies", hot)
+			addRow("np_top_movies", engine.TypeNPTopFilms, "Top 10 new movies", hot)
 		}
 	}
-	addRow("np_watching", explore.TypeNPWatching, "Everyone's watching", explore.RankMerge(watching, 3*explore.RowMax))
-	addRow("np_acclaimed", explore.TypeNPAcclaim, "Critically acclaimed new releases", both(func(l newLists) []explore.Item { return l.critics }))
-	addRow("np_services", explore.TypeNPServices, "Fresh on your services", services)
+	addRow("np_watching", engine.TypeNPWatching, "Everyone's watching", engine.RankMerge(watching, 3*engine.RowMax))
+	addRow("np_acclaimed", engine.TypeNPAcclaim, "Critically acclaimed new releases", both(func(l newLists) []engine.Item { return l.critics }))
+	addRow("np_services", engine.TypeNPServices, "Fresh on your services", services)
 	if kinds["show"] {
-		var mine []explore.Item
+		var mine []engine.Item
 		for _, e := range h.episodes {
 			if !e.at.After(now) {
 				mine = append(mine, e.show)
@@ -711,43 +711,43 @@ func (a *API) newRows(ctx context.Context, r *http.Request, me int64, sw string)
 				mine = append(mine, it)
 			}
 		}
-		addRow("np_episodes", explore.TypeNPEpisodes, "Your shows, new episodes", ranked(mine))
+		addRow("np_episodes", engine.TypeNPEpisodes, "Your shows, new episodes", ranked(mine))
 	}
-	var picks []explore.Item
+	var picks []engine.Item
 	for _, it := range ranked(pool) {
 		if h.suit(it) > 0 && !h.owned[it.Key()] {
 			picks = append(picks, it)
 		}
 	}
-	addRow("np_picks", explore.TypeNPPicks, "Made for you, just out", picks)
+	addRow("np_picks", engine.TypeNPPicks, "Made for you, just out", picks)
 	if kinds["show"] {
-		var first []explore.Item
+		var first []engine.Item
 		for _, it := range ranked(pool) {
-			if it.Kind == "show" && pg.facts[it.Key()].Kind == explore.NewSeries {
+			if it.Kind == "show" && pg.facts[it.Key()].Kind == engine.NewSeries {
 				first = append(first, it)
 			}
 		}
-		addRow("np_series", explore.TypeNPSeries, "First seasons", first)
+		addRow("np_series", engine.TypeNPSeries, "First seasons", first)
 	}
 	if kinds["movie"] {
-		addRow("np_cinema", explore.TypeNPCinema, "In cinemas now", ranked(lists["movie"].cinema))
+		addRow("np_cinema", engine.TypeNPCinema, "In cinemas now", ranked(lists["movie"].cinema))
 	}
 	if g := h.topGenre["show"]; g != "" || h.topGenre["movie"] != "" {
 		if g == "" || (kinds["movie"] && !kinds["show"]) {
 			g = h.topGenre["movie"]
 		}
-		addRow("np_genre", explore.TypeNPGenre, "Just out in "+strings.ToLower(g), both(func(l newLists) []explore.Item { return l.genre }))
+		addRow("np_genre", engine.TypeNPGenre, "Just out in "+strings.ToLower(g), both(func(l newLists) []engine.Item { return l.genre }))
 	}
-	addRow("np_world", explore.TypeNPWorld, "New from abroad", both(func(l newLists) []explore.Item {
-		var all []explore.Item
+	addRow("np_world", engine.TypeNPWorld, "New from abroad", both(func(l newLists) []engine.Item {
+		var all []engine.Item
 		for _, w := range l.world {
 			all = append(all, w...)
 		}
 		return all
 	}))
-	weight := map[string]float64{explore.TypeNPEpisodes: 1.3, explore.TypeNPPicks: 1.2, explore.TypeNPSeries: 1, explore.TypeNPGenre: 1,
-		explore.TypeNPCinema: 0.9, explore.TypeNPAcclaim: 0.8, explore.TypeNPWorld: 0.6}
-	pg.rows = explore.OrderNewRows(explore.DedupeRows(rows, explore.NewRowMin), score, weight)
+	weight := map[string]float64{engine.TypeNPEpisodes: 1.3, engine.TypeNPPicks: 1.2, engine.TypeNPSeries: 1, engine.TypeNPGenre: 1,
+		engine.TypeNPCinema: 0.9, engine.TypeNPAcclaim: 0.8, engine.TypeNPWorld: 0.6}
+	pg.rows = engine.OrderNewRows(engine.DedupeRows(rows, engine.NewRowMin), score, weight)
 	pg.rail = newRail(h, lists, svcNew, order, pg, kinds, score, now)
 	if ready {
 		newPages.put(key, pg)
@@ -761,7 +761,7 @@ const newRailMax = 12
 // newRail is the This week rail: three days back to seven ahead. Past days
 // carry service adds, releases and Library episodes; days ahead carry TMDB's
 // upcoming movies and the Library's next episodes.
-func newRail(h newHousehold, lists map[string]newLists, svcNew map[int][]explore.Item, order []streamingMark, pg newPage, kinds map[string]bool, score func(explore.Item) float64, now time.Time) []newRailDay {
+func newRail(h newHousehold, lists map[string]newLists, svcNew map[int][]engine.Item, order []streamingMark, pg newPage, kinds map[string]bool, score func(engine.Item) float64, now time.Time) []newRailDay {
 	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
 	byDay := map[string][]newRailItem{}
 	seen := map[string]bool{}
@@ -792,16 +792,16 @@ func newRail(h newHousehold, lists map[string]newLists, svcNew map[int][]explore
 		id := s.Service
 		for _, it := range svcNew[id] {
 			f := pg.facts[it.Key()]
-			if f.Kind == explore.NewService {
+			if f.Kind == engine.NewService {
 				m := names[id]
 				put(f.At, newRailItem{Item: it, What: "On " + m.Name, Service: &m})
 			}
 		}
 	}
 	if l, ok := lists["movie"]; ok {
-		for _, items := range [][]explore.Item{l.released, l.cinema, l.trending, l.upcoming} {
+		for _, items := range [][]engine.Item{l.released, l.cinema, l.trending, l.upcoming} {
 			for _, it := range items {
-				d := explore.ParseDay(it.Released)
+				d := engine.ParseDay(it.Released)
 				if d.IsZero() {
 					continue
 				}
@@ -842,40 +842,40 @@ func newRail(h newHousehold, lists map[string]newLists, svcNew map[int][]explore
 
 // newFresh is the card strip a title's newness gives (Phase C): Added 2d
 // ago, Out Nov 4, Season 3, New episode Fri, New series.
-func newFresh(f explore.NewFact, now time.Time) *explore.Fresh {
+func newFresh(f engine.NewFact, now time.Time) *engine.Fresh {
 	if f.At.IsZero() {
 		return nil
 	}
 	days := int(now.Sub(f.At).Hours() / 24)
 	switch f.Kind {
-	case explore.NewService:
+	case engine.NewService:
 		t := "Added today"
 		if days == 1 {
 			t = "Added yesterday"
 		} else if days > 1 {
 			t = "Added " + strconv.Itoa(days) + "d ago"
 		}
-		return &explore.Fresh{Kind: explore.FreshRecentlyAdded, Text: t}
-	case explore.NewRelease:
-		return &explore.Fresh{Kind: explore.FreshNewRelease, Text: "Out " + f.At.Format("Jan 2")}
-	case explore.NewUpcoming:
-		return &explore.Fresh{Kind: explore.FreshComing, Text: "Out " + f.At.Format("Jan 2")}
-	case explore.NewSeason:
-		return &explore.Fresh{Kind: explore.FreshNewSeason, Text: "Season " + strconv.Itoa(f.Season)}
-	case explore.NewEpisode:
+		return &engine.Fresh{Kind: engine.FreshRecentlyAdded, Text: t}
+	case engine.NewRelease:
+		return &engine.Fresh{Kind: engine.FreshNewRelease, Text: "Out " + f.At.Format("Jan 2")}
+	case engine.NewUpcoming:
+		return &engine.Fresh{Kind: engine.FreshComing, Text: "Out " + f.At.Format("Jan 2")}
+	case engine.NewSeason:
+		return &engine.Fresh{Kind: engine.FreshNewSeason, Text: "Season " + strconv.Itoa(f.Season)}
+	case engine.NewEpisode:
 		if days <= 6 {
-			return &explore.Fresh{Kind: explore.FreshNewEpisode, Text: "New episode " + f.At.Format("Mon")}
+			return &engine.Fresh{Kind: engine.FreshNewEpisode, Text: "New episode " + f.At.Format("Mon")}
 		}
-		return &explore.Fresh{Kind: explore.FreshNewEpisode, Text: "New episodes"}
-	case explore.NewSeries:
-		return &explore.Fresh{Kind: explore.FreshNewRelease, Text: "New series"}
+		return &engine.Fresh{Kind: engine.FreshNewEpisode, Text: "New episodes"}
+	case engine.NewSeries:
+		return &engine.Fresh{Kind: engine.FreshNewRelease, Text: "New series"}
 	}
 	return nil
 }
 
 // newViews joins rows (Kid limit, never-add, Library), drops rows left
 // under least and puts each card's newness strip and service on it.
-func (a *API) newViews(r *http.Request, rows []explore.Row, pg newPage, least int) ([]exploreRowView, error) {
+func (a *API) newViews(r *http.Request, rows []engine.Row, pg newPage, least int) ([]exploreRowView, error) {
 	views, err := a.exploreViews(r.Context(), r, rows)
 	if err != nil {
 		return nil, err
@@ -898,7 +898,7 @@ func (a *API) newViews(r *http.Request, rows []explore.Row, pg newPage, least in
 			if f := newFresh(pg.facts[k], now); f != nil {
 				it.Fresh = f
 			}
-			if m, ok := pg.marks[k]; ok && (out[i].Type == explore.TypeNPServices || out[i].Type == explore.TypeNPTopShows || out[i].Type == explore.TypeNPTopFilms) {
+			if m, ok := pg.marks[k]; ok && (out[i].Type == engine.TypeNPServices || out[i].Type == engine.TypeNPTopShows || out[i].Type == engine.TypeNPTopFilms) {
 				it.Streaming = &m
 			}
 		}
@@ -923,7 +923,7 @@ type newRailDayView struct {
 func (a *API) newRailViews(r *http.Request, rail []newRailDay) ([]newRailDayView, error) {
 	out := []newRailDayView{}
 	for _, d := range rail {
-		row := explore.Row{ID: "np_rail_" + d.Day, Type: "np_rail", Items: make([]explore.Item, 0, len(d.Items))}
+		row := engine.Row{ID: "np_rail_" + d.Day, Type: "np_rail", Items: make([]engine.Item, 0, len(d.Items))}
 		extra := map[string]newRailItem{}
 		for _, it := range d.Items {
 			row.Items = append(row.Items, it.Item)
@@ -931,7 +931,7 @@ func (a *API) newRailViews(r *http.Request, rail []newRailDay) ([]newRailDayView
 				extra[it.Key()] = it
 			}
 		}
-		views, err := a.exploreViews(r.Context(), r, []explore.Row{row})
+		views, err := a.exploreViews(r.Context(), r, []engine.Row{row})
 		if err != nil {
 			return nil, err
 		}
@@ -1014,7 +1014,7 @@ func (a *API) exploreNew(w http.ResponseWriter, r *http.Request) {
 		to = from + newPageRows
 	}
 	from, to = min(from, len(rows)), min(to, len(rows))
-	views, err := a.newViews(r, rows[from:to], pg, explore.NewRowMin)
+	views, err := a.newViews(r, rows[from:to], pg, engine.NewRowMin)
 	if err != nil {
 		internal(w, err)
 		return
@@ -1050,16 +1050,16 @@ func (a *API) exploreNewServices(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	pg, _ := a.newRows(r.Context(), r, a.person(r).UserID, sw)
-	var items []explore.Item
+	var items []engine.Item
 	for _, row := range pg.rows {
-		if row.Type == explore.TypeNPServices {
+		if row.Type == engine.TypeNPServices {
 			items = append(items, row.Items...)
 		}
 	}
-	explore.SortByScore(items, func(it explore.Item) float64 { return pg.scores[it.Key()] })
-	items = explore.CapPer(items, func(it explore.Item) string { return strconv.Itoa(pg.marks[it.Key()].Service) }, newPreviewPer, newPreviewMax*2)
-	row := exploreRowView{ID: "np_services", Type: explore.TypeNPServices, Title: "New on your services", Items: []discoverItemView{}}
-	views, err := a.newViews(r, []explore.Row{{ID: "np_services", Type: explore.TypeNPServices, Title: "New on your services", Items: items}}, pg, 1)
+	engine.SortByScore(items, func(it engine.Item) float64 { return pg.scores[it.Key()] })
+	items = engine.CapPer(items, func(it engine.Item) string { return strconv.Itoa(pg.marks[it.Key()].Service) }, newPreviewPer, newPreviewMax*2)
+	row := exploreRowView{ID: "np_services", Type: engine.TypeNPServices, Title: "New on your services", Items: []discoverItemView{}}
+	views, err := a.newViews(r, []engine.Row{{ID: "np_services", Type: engine.TypeNPServices, Title: "New on your services", Items: items}}, pg, 1)
 	if err != nil {
 		internal(w, err)
 		return
@@ -1073,7 +1073,7 @@ func (a *API) exploreNewServices(w http.ResponseWriter, r *http.Request) {
 }
 
 // newServiceRows names the chip rows exploreNewService answers for.
-var newServiceRows = map[string]string{"services": explore.TypeNPServices, "hot_shows": explore.TypeNPTopShows, "hot_movies": explore.TypeNPTopFilms}
+var newServiceRows = map[string]string{"services": engine.TypeNPServices, "hot_shows": engine.TypeNPTopShows, "hot_movies": engine.TypeNPTopFilms}
 
 // exploreNewService answers GET /api/v1/explore/new/service?id=&type=&row=:
 // one service's own list for a chip row (row services, the default: up to
@@ -1102,7 +1102,7 @@ func (a *API) exploreNewService(w http.ResponseWriter, r *http.Request) {
 	pg, building := a.newRows(r.Context(), r, a.person(r).UserID, sw)
 	items := pg.perService[typ][id]
 	row := exploreRowView{ID: typ + "_" + strconv.Itoa(id), Type: typ, Items: []discoverItemView{}}
-	views, err := a.newViews(r, []explore.Row{{ID: row.ID, Type: typ, Items: items}}, pg, 1)
+	views, err := a.newViews(r, []engine.Row{{ID: row.ID, Type: typ, Items: items}}, pg, 1)
 	if err != nil {
 		internal(w, err)
 		return
@@ -1118,7 +1118,7 @@ func (a *API) exploreNewService(w http.ResponseWriter, r *http.Request) {
 	sort.SliceStable(row.Items, func(i, j int) bool { return !row.Items[i].InLibrary && row.Items[j].InLibrary })
 	for i := range row.Items {
 		m := mark
-		if typ != explore.TypeNPServices {
+		if typ != engine.TypeNPServices {
 			m.Rank = i + 1
 		}
 		if m.Service != 0 {

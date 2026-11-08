@@ -17,8 +17,8 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/lists"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/requests"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles"
 )
 
@@ -572,7 +572,7 @@ func TestMoveOutsideLists(t *testing.T) {
 		t.Fatal(err)
 	}
 	for i, name := range []string{"Top films", "Top films (radarr)"} {
-		if _, err := lists.Add(ctx, l.st, lists.Input{Name: name, Kind: lists.KindTMDB, Ref: strconv.Itoa(i + 1)}, by); err != nil {
+		if _, err := requests.AddOutsideList(ctx, l.st, requests.OutsideListInput{Name: name, Kind: requests.ListTMDB, Ref: strconv.Itoa(i + 1)}, by); err != nil {
 			t.Fatal(err)
 		}
 	}

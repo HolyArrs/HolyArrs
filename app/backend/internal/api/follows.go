@@ -4,7 +4,7 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/asks"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/requests"
 )
 
 func (a *API) followRoutes(m *http.ServeMux) {
@@ -26,7 +26,7 @@ func (a *API) followRoutes(m *http.ServeMux) {
 
 func (a *API) movieFollowState(w http.ResponseWriter, r *http.Request, tmdbID string) {
 	on, err := a.s.Asks.IsFollowingMovieTMDB(r.Context(), a.person(r).UserID, tmdbID)
-	if errors.Is(err, asks.ErrBadTMDBID) {
+	if errors.Is(err, requests.ErrBadTMDBID) {
 		fail(w, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -44,11 +44,11 @@ func (a *API) getMovieFollow(w http.ResponseWriter, r *http.Request) {
 func (a *API) putMovieFollow(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("tmdb_id")
 	switch err := a.s.Asks.FollowMovieTMDB(r.Context(), a.person(r), id); {
-	case errors.Is(err, asks.ErrBadTMDBID):
+	case errors.Is(err, requests.ErrBadTMDBID):
 		fail(w, http.StatusBadRequest, err.Error())
-	case errors.Is(err, asks.ErrNotFollowable):
+	case errors.Is(err, requests.ErrNotFollowable):
 		fail(w, http.StatusBadRequest, err.Error())
-	case errors.Is(err, asks.ErrAboveLimit):
+	case errors.Is(err, requests.ErrAboveLimit):
 		fail(w, http.StatusForbidden, err.Error())
 	case err != nil:
 		internal(w, err)
@@ -60,7 +60,7 @@ func (a *API) putMovieFollow(w http.ResponseWriter, r *http.Request) {
 func (a *API) deleteMovieFollow(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("tmdb_id")
 	switch err := a.s.Asks.UnfollowMovieTMDB(r.Context(), a.person(r).UserID, id); {
-	case errors.Is(err, asks.ErrBadTMDBID):
+	case errors.Is(err, requests.ErrBadTMDBID):
 		fail(w, http.StatusBadRequest, err.Error())
 	case err != nil:
 		internal(w, err)
@@ -74,7 +74,7 @@ func (a *API) deleteMovieFollow(w http.ResponseWriter, r *http.Request) {
 
 func (a *API) showFollowState(w http.ResponseWriter, r *http.Request, tmdbID string, titleID int64) {
 	on, err := a.s.Asks.IsFollowingShowTMDB(r.Context(), a.person(r).UserID, tmdbID)
-	if errors.Is(err, asks.ErrBadTMDBID) {
+	if errors.Is(err, requests.ErrBadTMDBID) {
 		fail(w, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -97,9 +97,9 @@ func (a *API) putShowFollow(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("tmdb_id")
 	tid, err := a.s.Asks.FollowShowTMDB(r.Context(), a.person(r), id)
 	switch {
-	case errors.Is(err, asks.ErrBadTMDBID), errors.Is(err, asks.ErrNotFollowable):
+	case errors.Is(err, requests.ErrBadTMDBID), errors.Is(err, requests.ErrNotFollowable):
 		fail(w, http.StatusBadRequest, err.Error())
-	case errors.Is(err, asks.ErrAboveLimit):
+	case errors.Is(err, requests.ErrAboveLimit):
 		fail(w, http.StatusForbidden, err.Error())
 	case err != nil:
 		internal(w, err)
@@ -112,7 +112,7 @@ func (a *API) deleteShowFollow(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("tmdb_id")
 	err := a.s.Asks.UnfollowShowTMDB(r.Context(), a.person(r).UserID, id)
 	switch {
-	case errors.Is(err, asks.ErrBadTMDBID):
+	case errors.Is(err, requests.ErrBadTMDBID):
 		fail(w, http.StatusBadRequest, err.Error())
 	case err != nil:
 		internal(w, err)
@@ -151,9 +151,9 @@ func (a *API) putFollow(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	switch err := a.s.Asks.FollowTitle(r.Context(), a.person(r), t.ID); {
-	case errors.Is(err, asks.ErrNotFollowable):
+	case errors.Is(err, requests.ErrNotFollowable):
 		fail(w, http.StatusBadRequest, err.Error())
-	case errors.Is(err, asks.ErrAboveLimit):
+	case errors.Is(err, requests.ErrAboveLimit):
 		fail(w, http.StatusForbidden, err.Error())
 	case err != nil:
 		internal(w, err)

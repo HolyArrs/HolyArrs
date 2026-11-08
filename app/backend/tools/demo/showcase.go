@@ -22,12 +22,12 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/asks"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/requests"
 )
 
 // The showcase seeder fills the redesign preview (the showcase backend on
@@ -240,7 +240,7 @@ func (w *world) showcaseWipe(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	svc := &asks.Service{Store: w.s, Library: w.lib}
+	svc := &requests.Service{Store: w.s, Library: w.lib}
 	for _, a := range as {
 		if a.State == domain.AskAsked || a.State == domain.AskApproved {
 			if err := svc.Withdraw(ctx, a.ID, owner, true); err != nil {
@@ -369,8 +369,8 @@ const (
 	standInSource     = "Showcase stand-in indexer (disabled)"
 )
 
-func ownerPerson(ctx context.Context, db database.Querier) (asks.Person, error) {
-	var p asks.Person
+func ownerPerson(ctx context.Context, db database.Querier) (requests.Person, error) {
+	var p requests.Person
 	err := db.QueryRowContext(ctx, "SELECT id, name FROM users WHERE role = 'owner' ORDER BY id LIMIT 1").Scan(&p.UserID, &p.Name)
 	if err != nil {
 		return p, fmt.Errorf("the showcase has no owner: %w", err)
@@ -531,8 +531,8 @@ func (w *world) showcaseAgent(ctx context.Context, in io.Reader) error {
 	return err
 }
 
-func (w *world) member(ctx context.Context, name string) (asks.Person, error) {
-	var p asks.Person
+func (w *world) member(ctx context.Context, name string) (requests.Person, error) {
+	var p requests.Person
 	err := w.s.Read().QueryRowContext(ctx, "SELECT id, name, max_rating FROM users WHERE name = ?", name).Scan(&p.UserID, &p.Name, &p.MaxRating)
 	return p, err
 }
@@ -895,7 +895,7 @@ func (w *world) showcaseAsks(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	svc := &asks.Service{Store: w.s, Library: w.lib, Metadata: w.lib.Metadata}
+	svc := &requests.Service{Store: w.s, Library: w.lib, Metadata: w.lib.Metadata}
 	defer svc.Wait()
 	for _, e := range showcaseMovieList {
 		key := "ask movie " + e.TMDB
@@ -920,7 +920,7 @@ func (w *world) showcaseAsks(ctx context.Context) error {
 		switch e.Ask {
 		case "approved":
 			lf, _ := w.folderOf(ctx, "movie")
-			a, err := svc.Approve(ctx, res.Ask.ID, owner, asks.ApproveOptions{LibraryFolderID: lf.ID})
+			a, err := svc.Approve(ctx, res.Ask.ID, owner, requests.ApproveOptions{LibraryFolderID: lf.ID})
 			if err != nil {
 				w.skip("approve %s: %v", e.Name, err)
 			} else if a.TitleID != nil {

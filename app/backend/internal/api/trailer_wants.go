@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/explore"
+	engine "github.com/HolyArrs/holyarrs/app/backend/internal/discover/rows"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 )
@@ -121,9 +121,9 @@ func (a *API) trailerPassTitles(ctx context.Context) [][2]string {
 	}
 	rows.Close()
 	now := a.exploreNow()
-	day := explore.Day(now)
+	day := engine.Day(now)
 	var heroes [][2]string
-	var cards []explore.Item
+	var cards []engine.Item
 	for _, k := range keys {
 		m, err := a.loadMember(ctx, k.member)
 		if err != nil || m.kid {
@@ -137,10 +137,10 @@ func (a *API) trailerPassTitles(ctx context.Context) [][2]string {
 		if err != nil || pool == nil || pool.Kid {
 			continue
 		}
-		pg := a.poolPage(*pool, k.member, k.sw, m.region, explore.Moment{Local: now.Local()})
+		pg := a.poolPage(*pool, k.member, k.sw, m.region, engine.Moment{Local: now.Local()})
 		heroes = append(heroes, exploreTrailerTitles(heroCandidates(pg, k.sw == "all"), nil)...)
-		for _, row := range append(append([]explore.Row{}, pg.Head...), pg.Tail...) {
-			if row.Type == explore.TypeTopServices {
+		for _, row := range append(append([]engine.Row{}, pg.Head...), pg.Tail...) {
+			if row.Type == engine.TypeTopServices {
 				// The page fills this row itself, from the kept lists.
 				cards = append(cards, a.keptServiceTop(strings.ToUpper(m.region), k.sw)...)
 				continue

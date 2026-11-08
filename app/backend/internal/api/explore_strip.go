@@ -18,12 +18,12 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/explore"
+	engine "github.com/HolyArrs/holyarrs/app/backend/internal/discover/rows"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
 // The Explore category strip, picked on the server for each member from the
-// Browse sections already built (explore.PickStrip). It never waits for a
+// Browse sections already built (engine.PickStrip). It never waits for a
 // section: one not built yet starts building in the background and the
 // answer says partial. Answers are cached per member, tab, limit, day and
 // the rows below for stripTTL.
@@ -51,12 +51,12 @@ const (
 type stripEntry struct {
 	at    time.Time
 	sig   string
-	tiles []explore.CategoryTile
+	tiles []engine.CategoryTile
 }
 
 type stripTasteEntry struct {
 	at    time.Time
-	taste explore.StripTaste
+	taste engine.StripTaste
 }
 
 var (
@@ -154,17 +154,17 @@ func (a *API) exploreStrip(w http.ResponseWriter, r *http.Request) {
 		internal(w, err)
 		return
 	}
-	cands := make([]explore.StripCand, 0, 128)
+	cands := make([]engine.StripCand, 0, 128)
 	for _, t := range page {
-		cands = append(cands, explore.NewStripCand(explore.CategoryTile{BrowseTile: t, Section: "genres"}, pageGenreItems(pg, t.GenreName), now))
+		cands = append(cands, engine.NewStripCand(engine.CategoryTile{BrowseTile: t, Section: "genres"}, pageGenreItems(pg, t.GenreName), now))
 	}
 	share := a.browseShare(sw, kid, max)
 	complete := true
-	for i, s := range explore.BrowseSections {
+	for i, s := range engine.BrowseSections {
 		res, built, _ := share.get(s.ID)
 		if !built {
 			complete = false
-			missing := explore.BrowseSections[i:]
+			missing := engine.BrowseSections[i:]
 			bg, cancel := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Minute)
 			go jobs.Guard("explore-strip-build", func() {
 				defer cancel()
@@ -185,12 +185,12 @@ func (a *API) exploreStrip(w http.ResponseWriter, r *http.Request) {
 			internal(w, err)
 			return
 		}
-		items := map[string][]explore.Item{}
+		items := map[string][]engine.Item{}
 		for _, c := range res {
 			items[c.Cat.ID] = c.Items
 		}
 		for _, t := range tiles {
-			cands = append(cands, explore.NewStripCand(t, items[t.Category], now))
+			cands = append(cands, engine.NewStripCand(t, items[t.Category], now))
 		}
 	}
 	stats, recent, err := a.stripStats(ctx, member, now)
@@ -198,8 +198,8 @@ func (a *API) exploreStrip(w http.ResponseWriter, r *http.Request) {
 		internal(w, err)
 		return
 	}
-	tiles := explore.PickStrip(explore.StripIn{Cands: cands, Taste: a.stripTaste(ctx, member, kid, now), Stats: stats, Recent: recent,
-		Rows: rows, Local: moment.Local, Seed: fmt.Sprintf("%d|%s", member, moment.Local.Format("2006-01-02")), Kid: kid, Max: explore.StripMax})
+	tiles := engine.PickStrip(engine.StripIn{Cands: cands, Taste: a.stripTaste(ctx, member, kid, now), Stats: stats, Recent: recent,
+		Rows: rows, Local: moment.Local, Seed: fmt.Sprintf("%d|%s", member, moment.Local.Format("2006-01-02")), Kid: kid, Max: engine.StripMax})
 	if complete {
 		keepStrip(key, stripEntry{at: time.Now(), sig: sig, tiles: tiles})
 	}
@@ -208,10 +208,10 @@ func (a *API) exploreStrip(w http.ResponseWriter, r *http.Request) {
 }
 
 // pageGenreItems are the member's page titles of a genre.
-func pageGenreItems(pg explore.Page, genre string) []explore.Item {
-	var out []explore.Item
+func pageGenreItems(pg engine.Page, genre string) []engine.Item {
+	var out []engine.Item
 	seen := map[string]bool{}
-	for _, row := range append(append([]explore.Row{}, pg.Head...), pg.Tail...) {
+	for _, row := range append(append([]engine.Row{}, pg.Head...), pg.Tail...) {
 		for _, it := range row.Items {
 			if seen[it.Key()] {
 				continue
@@ -229,19 +229,19 @@ func pageGenreItems(pg explore.Page, genre string) []explore.Item {
 }
 
 // stripStats reads the member's strip counts of the last StripCountDays.
-func (a *API) stripStats(ctx context.Context, member int64, now time.Time) (map[string]explore.StripStats, map[string]bool, error) {
-	got, err := accounts.CategoryCountsSince(ctx, a.s.Store.Read(), member, explore.Day(now.AddDate(0, 0, -explore.StripCountDays)))
+func (a *API) stripStats(ctx context.Context, member int64, now time.Time) (map[string]engine.StripStats, map[string]bool, error) {
+	got, err := accounts.CategoryCountsSince(ctx, a.s.Store.Read(), member, engine.Day(now.AddDate(0, 0, -engine.StripCountDays)))
 	if err != nil {
 		return nil, nil, err
 	}
-	var days []explore.CategoryDay
+	var days []engine.CategoryDay
 	for _, c := range got {
-		d := explore.CategoryDay{Category: c.Key, Shown: c.Shown, Opened: c.Opened}
+		d := engine.CategoryDay{Category: c.Key, Shown: c.Shown, Opened: c.Opened}
 		if d.Day, err = time.Parse("2006-01-02", c.Day); err == nil {
 			days = append(days, d)
 		}
 	}
-	stats, recent := explore.StripStatsFrom(days, now)
+	stats, recent := engine.StripStatsFrom(days, now)
 	return stats, recent, nil
 }
 
@@ -328,20 +328,20 @@ func stripKeywordKey(kind, id string) string { return "strip-kw|" + kind + "|" +
 // stripTaste is the member's taste for the strip, from what is cached. The
 // titles whose keywords are not cached yet are looked up in the
 // background (never during the request), and the taste is rebuilt after.
-func (a *API) stripTaste(ctx context.Context, member int64, kid bool, now time.Time) explore.StripTaste {
+func (a *API) stripTaste(ctx context.Context, member int64, kid bool, now time.Time) engine.StripTaste {
 	key := a.stripMemberKey(member) + fmt.Sprint(kid)
 	if v, ok := stripTastes.Load(key); ok && time.Since(v.(stripTasteEntry).at) < stripTasteTTL {
 		return v.(stripTasteEntry).taste
 	}
 	refs, err := a.stripTasteRefs(ctx, member, kid, now)
 	if err != nil {
-		return explore.StripTaste{}
+		return engine.StripTaste{}
 	}
 	cache := metadata.LookupCache{Store: a.s.Store}
-	titles := make([]explore.TasteTitle, 0, len(refs))
+	titles := make([]engine.TasteTitle, 0, len(refs))
 	var missing []tasteRef
 	for _, ref := range refs {
-		t := explore.TasteTitle{Genres: ref.genres, Weight: ref.weight}
+		t := engine.TasteTitle{Genres: ref.genres, Weight: ref.weight}
 		if b, ok, _ := cache.Get(ctx, stripKeywordKey(ref.kind, ref.tmdbID), now); ok {
 			var kw stripKeywords
 			if json.Unmarshal(b, &kw) == nil {
@@ -355,7 +355,7 @@ func (a *API) stripTaste(ctx context.Context, member int64, kid bool, now time.T
 		}
 		titles = append(titles, t)
 	}
-	taste := explore.NewStripTaste(titles)
+	taste := engine.NewStripTaste(titles)
 	stripTastes.Store(key, stripTasteEntry{at: time.Now(), taste: taste})
 	if len(missing) > 0 {
 		a.fetchStripKeywords(member, missing)
@@ -413,7 +413,7 @@ func (a *API) fetchStripKeywords(member int64, refs []tasteRef) {
 // stripCategoryOK says id names a strip category: a Browse category or a
 // genre tile's lower-case name.
 func stripCategoryOK(id string) bool {
-	if _, ok := explore.CategoryByID(id); ok {
+	if _, ok := engine.CategoryByID(id); ok {
 		return true
 	}
 	if id == "" || len(id) > 32 {
@@ -456,7 +456,7 @@ func (a *API) exploreStripCounts(w http.ResponseWriter, r *http.Request) {
 		}
 		seen[c] = true
 	}
-	member, day := a.person(r).UserID, explore.Day(a.exploreNow())
+	member, day := a.person(r).UserID, engine.Day(a.exploreNow())
 	err := a.s.Store.Write(r.Context(), func(tx *sql.Tx) error {
 		// A member's day holds at most stripDayCategoriesMax categories, so
 		// made-up names cannot grow the database without end; past it only

@@ -14,7 +14,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/explore"
+	engine "github.com/HolyArrs/holyarrs/app/backend/internal/discover/rows"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 )
@@ -63,7 +63,7 @@ type MusicCard struct {
 	// Note is the card's own reason line, when the row gives one.
 	Note string `json:"note,omitempty"`
 	// Fresh is the card's freshness strip (Recently Added, New Release).
-	Fresh *explore.Fresh `json:"fresh,omitempty"`
+	Fresh *engine.Fresh `json:"fresh,omitempty"`
 	// Badge names a new release (New album, New EP, Album coming).
 	Badge string `json:"badge,omitempty"`
 	// Kicker is a Spotlight card's label above its title (New album, Climbing).
@@ -710,7 +710,7 @@ func (a *API) exploreMusic(w http.ResponseWriter, r *http.Request) {
 		row.Items = uniqCards(row.Items)
 		// A title once in the first rows (hero included), unless that leaves
 		// the row under its minimum.
-		if len(final) < explore.HeadDedupe {
+		if len(final) < engine.HeadDedupe {
 			fresh := []MusicCard{}
 			for _, c := range row.Items {
 				if !pageSeen[c.Key] {

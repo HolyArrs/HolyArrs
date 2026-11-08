@@ -9,18 +9,18 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/explore"
+	engine "github.com/HolyArrs/holyarrs/app/backend/internal/discover/rows"
 )
 
 // downSource fails while down is set, and always for Ref "gone" (a
 // removed title).
 type downSource struct{ down atomic.Bool }
 
-func (d *downSource) List(_ context.Context, q explore.Request) ([]explore.Item, error) {
+func (d *downSource) List(_ context.Context, q engine.Request) ([]engine.Item, error) {
 	if d.down.Load() || q.Ref == "gone" {
 		return nil, errors.New("metadata server unreachable")
 	}
-	return []explore.Item{{TMDBID: "1", Kind: q.Kind, Name: "One"}}, nil
+	return []engine.Item{{TMDBID: "1", Kind: q.Kind, Name: "One"}}, nil
 }
 
 func (s *syncBuf) lines(part string) int {
@@ -35,10 +35,10 @@ func TestExploreListFailureLoggedOncePerOutage(t *testing.T) {
 	a, _, f := exploreRig(t)
 	src := &downSource{}
 	src.down.Store(true)
-	a.explore.paced = &explore.Paced{Source: src, Gap: time.Millisecond, Burst: 100}
+	a.explore.paced = &engine.Paced{Source: src, Gap: time.Millisecond, Burst: 100}
 	b := catchLog(t)
 	ask := func(ctx context.Context, list, ref string) error {
-		q := explore.Request{List: list, Kind: "movie", Ref: ref, Scope: explore.ScopeShared}
+		q := engine.Request{List: list, Kind: "movie", Ref: ref, Scope: engine.ScopeShared}
 		_, err := exploreSource{a: a, lister: f.provider()}.List(ctx, q)
 		return err
 	}

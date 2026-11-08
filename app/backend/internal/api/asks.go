@@ -12,13 +12,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/asks"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/requests"
 )
 
 func (a *API) askRoutes(m *http.ServeMux) {
@@ -44,14 +44,14 @@ func (a *API) askRoutes(m *http.ServeMux) {
 
 // person is the signed-in person as Requests sees them. Without
 // sign-in (tests) it is user 1 with every right.
-func (a *API) person(r *http.Request) asks.Person {
+func (a *API) person(r *http.Request) requests.Person {
 	who, ok := webserver.From(r.Context())
 	if !ok {
 		var name string
 		_ = a.s.Store.Read().QueryRowContext(r.Context(), "SELECT name FROM users WHERE id = 1").Scan(&name)
-		return asks.Person{UserID: 1, Name: name, AutoApprove: true, NoLimit: true}
+		return requests.Person{UserID: 1, Name: name, AutoApprove: true, NoLimit: true}
 	}
-	return asks.Person{UserID: who.UserID, Name: who.Name, AutoApprove: who.Has(webserver.PermAutoApprove), NoLimit: who.Has(webserver.PermApprove),
+	return requests.Person{UserID: who.UserID, Name: who.Name, AutoApprove: who.Has(webserver.PermAutoApprove), NoLimit: who.Has(webserver.PermApprove),
 		MaxRating: a.kidMax(r)}
 }
 
@@ -62,8 +62,8 @@ func mayApprove(r *http.Request) bool {
 }
 
 func askError(w http.ResponseWriter, err error) {
-	var in *asks.InLibraryError
-	var le *asks.LimitError
+	var in *requests.InLibraryError
+	var le *requests.LimitError
 	switch {
 	case errors.As(err, &in):
 		writeJSON(w, http.StatusConflict, map[string]any{"error": err.Error(), "title_id": in.TitleID, "ready": in.Ready})
@@ -71,16 +71,16 @@ func askError(w http.ResponseWriter, err error) {
 		secs := int(time.Until(le.RetryAt).Seconds()) + 1
 		w.Header().Set("Retry-After", strconv.Itoa(max(secs, 1)))
 		writeJSON(w, http.StatusTooManyRequests, map[string]any{"error": err.Error(), "retry_at": le.RetryAt, "per_week": le.PerWeek, "kind": le.Kind})
-	case errors.Is(err, asks.ErrNotOpen), errors.Is(err, asks.ErrAskedAgain):
+	case errors.Is(err, requests.ErrNotOpen), errors.Is(err, requests.ErrAskedAgain):
 		fail(w, http.StatusConflict, err.Error())
-	case errors.Is(err, asks.ErrNotYours), errors.Is(err, asks.ErrAboveLimit):
+	case errors.Is(err, requests.ErrNotYours), errors.Is(err, requests.ErrAboveLimit):
 		fail(w, http.StatusForbidden, err.Error())
-	case errors.Is(err, asks.ErrNoteLength), errors.Is(err, asks.ErrPerWeek), errors.Is(err, asks.ErrEmail), errors.Is(err, asks.ErrDiscordID),
-		errors.Is(err, asks.ErrNoSuchSeason), errors.Is(err, asks.ErrBadEpisode), errors.Is(err, asks.ErrNotAlbumTrack), errors.Is(err, asks.ErrNotAskedPart), errors.Is(err, asks.ErrNoFourKRules):
+	case errors.Is(err, requests.ErrNoteLength), errors.Is(err, requests.ErrPerWeek), errors.Is(err, requests.ErrEmail), errors.Is(err, requests.ErrDiscordID),
+		errors.Is(err, requests.ErrNoSuchSeason), errors.Is(err, requests.ErrBadEpisode), errors.Is(err, requests.ErrNotAlbumTrack), errors.Is(err, requests.ErrNotAskedPart), errors.Is(err, requests.ErrNoFourKRules):
 		fail(w, http.StatusBadRequest, err.Error())
-	case errors.Is(err, asks.ErrNoSuchAlbum), errors.Is(err, library.ErrCopyChoice):
+	case errors.Is(err, requests.ErrNoSuchAlbum), errors.Is(err, library.ErrCopyChoice):
 		fail(w, http.StatusBadRequest, err.Error())
-	case errors.Is(err, asks.ErrAlbumNotIncluded), errors.Is(err, asks.ErrAlbumNotListedYet):
+	case errors.Is(err, requests.ErrAlbumNotIncluded), errors.Is(err, requests.ErrAlbumNotListedYet):
 		fail(w, http.StatusConflict, err.Error())
 	case errors.Is(err, database.ErrNotFound):
 		fail(w, http.StatusNotFound, "no such ask")
@@ -93,7 +93,7 @@ func askError(w http.ResponseWriter, err error) {
 	}
 }
 
-func (a *API) askViews(r *http.Request, where string, args ...any) ([]asks.View, error) {
+func (a *API) askViews(r *http.Request, where string, args ...any) ([]requests.View, error) {
 	vs, err := a.s.Asks.Views(r.Context(), where, args...)
 	if err != nil {
 		return nil, err
@@ -143,7 +143,7 @@ func (a *API) listAsks(w http.ResponseWriter, r *http.Request) {
 		args = append(args, k)
 	}
 	if st := r.URL.Query().Get("state"); st != "" {
-		if asks.StateLabels[st] == "" {
+		if requests.StateLabels[st] == "" {
 			fail(w, http.StatusBadRequest, "state must be asked, approved, turned_down or available")
 			return
 		}
@@ -159,21 +159,21 @@ func (a *API) listAsks(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{"asks": vs})
 }
 
-func (a *API) askByID(w http.ResponseWriter, r *http.Request) (asks.View, bool) {
+func (a *API) askByID(w http.ResponseWriter, r *http.Request) (requests.View, bool) {
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
 		fail(w, http.StatusNotFound, "no such ask")
-		return asks.View{}, false
+		return requests.View{}, false
 	}
 	vs, err := a.askViews(r, "a.id = ?", id)
 	if err != nil {
 		internal(w, err)
-		return asks.View{}, false
+		return requests.View{}, false
 	}
 	// Someone else's ask is not shown to people who do not approve.
 	if len(vs) == 0 || (!vs[0].Mine && !mayApprove(r)) {
 		fail(w, http.StatusNotFound, "no such ask")
-		return asks.View{}, false
+		return requests.View{}, false
 	}
 	return vs[0], true
 }
@@ -231,7 +231,7 @@ func (a *API) makeAsk(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	src, num, ok := strings.Cut(strings.TrimSpace(body.ID), ":")
-	var res asks.Result
+	var res requests.Result
 	var err error
 	switch body.Kind {
 	case "", "movie":
@@ -287,7 +287,7 @@ func (a *API) makeAsk(w http.ResponseWriter, r *http.Request) {
 	follow := body.Follow == nil || *body.Follow
 	if err != nil {
 		// Asking for a title already in the Library still follows it.
-		var in *asks.InLibraryError
+		var in *requests.InLibraryError
 		if follow && errors.As(err, &in) && in.TitleID != 0 {
 			if ferr := a.s.Asks.FollowAdded(r.Context(), a.person(r), in.TitleID); ferr != nil {
 				log.Printf("api: follow on ask: %v", ferr)
@@ -355,7 +355,7 @@ func (a *API) approveAsk(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusConflict, partOffBody(parts.Of(p)))
 		return
 	}
-	var opt asks.ApproveOptions
+	var opt requests.ApproveOptions
 	if r.ContentLength != 0 && !decode(w, r, &opt, `send {} or any of library_folder_id, pick_rules_id, audio_languages, seasons, episodes, albums, note`) {
 		return
 	}
@@ -385,7 +385,7 @@ func (a *API) turnDownAsk(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *API) getAskSettings(w http.ResponseWriter, r *http.Request) {
-	s, err := asks.ReadSettings(r.Context(), a.s.Store.Read())
+	s, err := requests.ReadSettings(r.Context(), a.s.Store.Read())
 	if err != nil {
 		internal(w, err)
 		return
@@ -395,7 +395,7 @@ func (a *API) getAskSettings(w http.ResponseWriter, r *http.Request) {
 
 func (a *API) putAskSettings(w http.ResponseWriter, r *http.Request) {
 	// Fields left out keep their saved values.
-	s, err := asks.ReadSettings(r.Context(), a.s.Store.Read())
+	s, err := requests.ReadSettings(r.Context(), a.s.Store.Read())
 	if err != nil {
 		internal(w, err)
 		return
@@ -403,7 +403,7 @@ func (a *API) putAskSettings(w http.ResponseWriter, r *http.Request) {
 	if !decode(w, r, &s, "send any of movies_per_week, shows_per_week, music_per_week, library_folder_id, pick_rules_id, search_on_approve, show_library_folder_id, show_pick_rules_id, music_library_folder_id, music_pick_rules_id") {
 		return
 	}
-	if err := asks.SaveSettings(r.Context(), a.s.Store, s, actor(r)); err != nil {
+	if err := requests.SaveSettings(r.Context(), a.s.Store, s, actor(r)); err != nil {
 		askError(w, err)
 		return
 	}
@@ -415,7 +415,7 @@ type askLimitView struct {
 	UserID int64  `json:"user_id"`
 	Name   string `json:"name"`
 	Role   string `json:"role"`
-	asks.PersonLimit
+	requests.PersonLimit
 	// Used is how many of their own asks of each kind count this week.
 	Used    map[string]int `json:"used"`
 	NoLimit bool           `json:"no_limit"` // they may approve, so no limit applies
@@ -445,17 +445,17 @@ func (a *API) listAskLimits(w http.ResponseWriter, r *http.Request) {
 	rows.Close()
 	out := []askLimitView{}
 	for _, x := range list {
-		p := asks.Person{UserID: x.v.UserID, NoLimit: x.v.Role == webserver.RoleOwner || strings.Contains(x.perms, `"`+string(webserver.PermApprove)+`"`)}
+		p := requests.Person{UserID: x.v.UserID, NoLimit: x.v.Role == webserver.RoleOwner || strings.Contains(x.perms, `"`+string(webserver.PermApprove)+`"`)}
 		l, err := a.s.Asks.LimitOf(ctx, p)
 		if err != nil {
 			internal(w, err)
 			return
 		}
-		if x.v.Movies, x.v.Shows, x.v.Music, err = asks.PersonLimits(ctx, a.s.Store.Read(), x.v.UserID); err != nil {
+		if x.v.Movies, x.v.Shows, x.v.Music, err = requests.PersonLimits(ctx, a.s.Store.Read(), x.v.UserID); err != nil {
 			internal(w, err)
 			return
 		}
-		x.v.Used = map[string]int{asks.KindMovies: l.Movies.Used, asks.KindShows: l.Shows.Used, asks.KindMusic: l.Music.Used}
+		x.v.Used = map[string]int{requests.KindMovies: l.Movies.Used, requests.KindShows: l.Shows.Used, requests.KindMusic: l.Music.Used}
 		x.v.NoLimit = p.NoLimit
 		out = append(out, x.v)
 	}
@@ -469,7 +469,7 @@ func (a *API) putAskLimit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var body struct {
-		asks.PersonLimit
+		requests.PersonLimit
 		PerWeek *int `json:"per_week"` // older form: the same limit for every kind
 	}
 	if !decode(w, r, &body, `send {"movies_per_week": <0 to 1000, 0 is no limit, null for the default>, "shows_per_week": ..., "music_per_week": ...}`) {
@@ -477,9 +477,9 @@ func (a *API) putAskLimit(w http.ResponseWriter, r *http.Request) {
 	}
 	l := body.PersonLimit
 	if body.PerWeek != nil && l.Movies == nil && l.Shows == nil && l.Music == nil {
-		l = asks.PersonLimit{Movies: body.PerWeek, Shows: body.PerWeek, Music: body.PerWeek}
+		l = requests.PersonLimit{Movies: body.PerWeek, Shows: body.PerWeek, Music: body.PerWeek}
 	}
-	if err := asks.SetPersonLimit(r.Context(), a.s.Store, id, l); errors.Is(err, database.ErrNotFound) {
+	if err := requests.SetPersonLimit(r.Context(), a.s.Store, id, l); errors.Is(err, database.ErrNotFound) {
 		fail(w, http.StatusNotFound, "no such user")
 		return
 	} else if err != nil {
@@ -490,7 +490,7 @@ func (a *API) putAskLimit(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *API) listMessages(w http.ResponseWriter, r *http.Request) {
-	ms, unread, err := asks.Messages(r.Context(), a.s.Store.Read(), a.person(r).UserID, limit(r, 30))
+	ms, unread, err := requests.Messages(r.Context(), a.s.Store.Read(), a.person(r).UserID, limit(r, 30))
 	if err != nil {
 		internal(w, err)
 		return
@@ -502,13 +502,13 @@ func (a *API) listMessages(w http.ResponseWriter, r *http.Request) {
 		out["waiting"] = n
 	}
 	if mayManageReports(r) {
-		out["reports_open"], _ = asks.OpenReports(r.Context(), a.s.Store.Read())
+		out["reports_open"], _ = requests.OpenReports(r.Context(), a.s.Store.Read())
 	}
 	writeJSON(w, http.StatusOK, out)
 }
 
 func (a *API) readMessages(w http.ResponseWriter, r *http.Request) {
-	if err := asks.MarkRead(r.Context(), a.s.Store, a.person(r).UserID); err != nil {
+	if err := requests.MarkRead(r.Context(), a.s.Store, a.person(r).UserID); err != nil {
 		internal(w, err)
 		return
 	}
@@ -516,7 +516,7 @@ func (a *API) readMessages(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *API) getMyAlerts(w http.ResponseWriter, r *http.Request) {
-	t, err := asks.ReadTargets(r.Context(), a.s.Store.Read(), a.person(r).UserID)
+	t, err := requests.ReadTargets(r.Context(), a.s.Store.Read(), a.person(r).UserID)
 	if err != nil {
 		internal(w, err)
 		return
@@ -525,16 +525,16 @@ func (a *API) getMyAlerts(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *API) putMyAlerts(w http.ResponseWriter, r *http.Request) {
-	var t asks.Targets
+	var t requests.Targets
 	if !decode(w, r, &t, `send {"email": "...", "discord_id": "...", "new_episodes": true}`) {
 		return
 	}
 	t.Email, t.DiscordID = strings.TrimSpace(t.Email), strings.TrimSpace(t.DiscordID)
-	if err := asks.SaveTargets(r.Context(), a.s.Store, a.person(r).UserID, t); err != nil {
+	if err := requests.SaveTargets(r.Context(), a.s.Store, a.person(r).UserID, t); err != nil {
 		askError(w, err)
 		return
 	}
-	t, err := asks.ReadTargets(r.Context(), a.s.Store.Read(), a.person(r).UserID)
+	t, err := requests.ReadTargets(r.Context(), a.s.Store.Read(), a.person(r).UserID)
 	if err != nil {
 		internal(w, err)
 		return
@@ -571,7 +571,7 @@ func (a *API) openMovieAsk(ctx context.Context, tmdbID string, me int64, fourK b
 		}
 		return nil, err
 	}
-	b.StateLabel = asks.StateLabels[b.State]
+	b.StateLabel = requests.StateLabels[b.State]
 	return &b, nil
 }
 
@@ -600,7 +600,7 @@ func (a *API) openShowAsk(ctx context.Context, ids map[string]string, me int64) 
 		}
 		return nil, err
 	}
-	b.StateLabel = asks.StateLabels[b.State]
+	b.StateLabel = requests.StateLabels[b.State]
 	b.Seasons = []int{}
 	_ = json.Unmarshal([]byte(seasons), &b.Seasons)
 	return &b, nil
@@ -608,7 +608,7 @@ func (a *API) openShowAsk(ctx context.Context, ids map[string]string, me int64) 
 
 // hideDeciderNames drops the decider's sign-in name from asks shown to
 // people who do not approve; the display name stays (#136).
-func hideDeciderNames(vs []asks.View) {
+func hideDeciderNames(vs []requests.View) {
 	for i := range vs {
 		if vs[i].DecidedBy != nil {
 			vs[i].DecidedBy.Name = ""
@@ -618,7 +618,7 @@ func hideDeciderNames(vs []asks.View) {
 
 // titleAsks are the asks that led to a Title: who asked and who decided.
 // People who do not approve see only the asks they are part of.
-func (a *API) titleAsks(ctx context.Context, titleID int64) ([]asks.View, error) {
+func (a *API) titleAsks(ctx context.Context, titleID int64) ([]requests.View, error) {
 	who, ok := webserver.From(ctx)
 	if !ok || who.Has(webserver.PermApprove) {
 		return a.s.Asks.Views(ctx, "a.title_id = ?", titleID)
@@ -648,7 +648,7 @@ func (a *API) openArtistAsks(ctx context.Context, mbid string, me int64) ([]askB
 		if err := rows.Scan(&b.ID, &b.State, &albums, &b.Mine, &b.People); err != nil {
 			return nil, err
 		}
-		b.StateLabel = asks.StateLabels[b.State]
+		b.StateLabel = requests.StateLabels[b.State]
 		b.Albums = []domain.AskAlbum{}
 		_ = json.Unmarshal([]byte(albums), &b.Albums)
 		out = append(out, b)

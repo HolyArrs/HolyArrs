@@ -13,12 +13,12 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/asks"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/requests"
 )
 
 // writeTaggedJSON writes v with an ETag (a hash of the body) and, unless
@@ -174,7 +174,7 @@ type titleBatch struct {
 	downloads map[int64]domain.Download
 	files     map[int64]mediafiles.File
 	labels    map[int64]mediafiles.Version
-	asks      map[int64][]asks.View
+	asks      map[int64][]requests.View
 }
 
 type titleBatchKey struct{}
@@ -188,7 +188,7 @@ func batchOf(ctx context.Context) *titleBatch {
 func (a *API) withTitleBatch(ctx context.Context) (context.Context, error) {
 	db := a.s.Store.Read()
 	b := &titleBatch{slots: map[int64][]mediafiles.Slot{}, downloads: map[int64]domain.Download{}, files: map[int64]mediafiles.File{},
-		labels: map[int64]mediafiles.Version{}, asks: map[int64][]asks.View{}}
+		labels: map[int64]mediafiles.Version{}, asks: map[int64][]requests.View{}}
 	itemTitle := map[int64]int64{}
 	rows, err := db.QueryContext(ctx, `SELECT i.id, i.title_id FROM items i JOIN titles t ON t.id = i.title_id WHERE t.kind = 'movie'`)
 	if err != nil {
@@ -237,7 +237,7 @@ func (a *API) withTitleBatch(ctx context.Context) (context.Context, error) {
 	}
 	// Asks: the same rules as titleAsks, in one read.
 	who, ok := webserver.From(ctx)
-	var views []asks.View
+	var views []requests.View
 	if !ok || who.Has(webserver.PermApprove) {
 		views, err = a.s.Asks.Views(ctx, "a.title_id IS NOT NULL")
 	} else {
@@ -259,9 +259,9 @@ func (a *API) withTitleBatch(ctx context.Context) (context.Context, error) {
 }
 
 // asksFor answers a Title's asks from the batch (never nil, as Views).
-func (b *titleBatch) asksFor(id int64) []asks.View {
+func (b *titleBatch) asksFor(id int64) []requests.View {
 	if v := b.asks[id]; v != nil {
 		return v
 	}
-	return []asks.View{}
+	return []requests.View{}
 }

@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/alerts"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/asks"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/requests"
 )
 
 // AlertView is an Alert as the API shows it.
@@ -20,7 +20,7 @@ func (a *API) alertRoutes(m *http.ServeMux) {
 			return p.UserID, p.Name
 		},
 		OwnEmail: func(ctx context.Context, userID int64) (string, error) {
-			t, err := asks.ReadTargets(ctx, a.s.Store.Read(), userID)
+			t, err := requests.ReadTargets(ctx, a.s.Store.Read(), userID)
 			return t.Email, err
 		}}
 	h.Routes(m)

@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	engine "github.com/HolyArrs/holyarrs/app/backend/internal/discover/rows"
 	"log"
 	"net/url"
 	"strconv"
@@ -14,7 +15,6 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/explore"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
@@ -63,13 +63,13 @@ type poolKey struct {
 
 type exploreList struct {
 	at    time.Time
-	items []explore.Item
+	items []engine.Item
 }
 
 type explorePage struct {
 	at    time.Time
 	built time.Time
-	page  explore.Page
+	page  engine.Page
 }
 
 // exploreState is the pool job and its caches.
@@ -79,7 +79,7 @@ type exploreState struct {
 	wake    chan struct{}
 	started bool
 	day     string
-	paced   *explore.Paced
+	paced   *engine.Paced
 	lists   map[string]exploreList
 	flight  map[string]*listFlight
 	// failing are the list keys whose last outside ask failed, so a failing
@@ -95,7 +95,7 @@ type exploreState struct {
 	building map[poolKey]bool
 	slots    chan struct{}
 	// calls are the outside calls of each pool's last build.
-	calls map[poolKey]*explore.Calls
+	calls map[poolKey]*engine.Calls
 	// cards is the wide card art filler (cardart.go).
 	cards cardArtState
 }
@@ -314,7 +314,7 @@ func (a *API) nextDue() (poolKey, bool) {
 // two days for the new day, and prunes old pools and counts.
 func (a *API) exploreDaily(ctx context.Context) {
 	now := a.exploreNow()
-	day := explore.Day(now)
+	day := engine.Day(now)
 	e := &a.explore
 	e.mu.Lock()
 	same := e.day == day
@@ -323,15 +323,15 @@ func (a *API) exploreDaily(ctx context.Context) {
 	if same {
 		return
 	}
-	cut := explore.Day(now.AddDate(0, 0, -2))
+	cut := engine.Day(now.AddDate(0, 0, -2))
 	_ = a.s.Store.Write(ctx, func(tx *sql.Tx) error {
 		if _, err := tx.Exec("DELETE FROM explore_pool WHERE day < ?", cut); err != nil {
 			return err
 		}
-		if _, err := tx.Exec("DELETE FROM explore_titles WHERE day < ?", explore.Day(now.AddDate(0, 0, -30))); err != nil {
+		if _, err := tx.Exec("DELETE FROM explore_titles WHERE day < ?", engine.Day(now.AddDate(0, 0, -30))); err != nil {
 			return err
 		}
-		return accounts.PruneViewCounts(ctx, tx, explore.Day(now.AddDate(0, 0, -90)))
+		return accounts.PruneViewCounts(ctx, tx, engine.Day(now.AddDate(0, 0, -90)))
 	})
 	rows, err := a.s.Store.Read().QueryContext(ctx, "SELECT DISTINCT member_id, type_switch FROM explore_pool WHERE day < ?", day)
 	if err != nil {
@@ -360,19 +360,19 @@ type exploreSource struct {
 	// cacheOnly answers from the cache and never goes out (cold pages).
 	cacheOnly bool
 	// calls counts this build's outside calls (nil: not counted).
-	calls *explore.Calls
+	calls *engine.Calls
 }
 
 // listFlight is one outside list being fetched; others wait on done.
 type listFlight struct {
 	done  chan struct{}
-	items []explore.Item
+	items []engine.Item
 	err   error
 }
 
 type storedList struct {
-	At    time.Time      `json:"at"`
-	Items []explore.Item `json:"items"`
+	At    time.Time     `json:"at"`
+	Items []engine.Item `json:"items"`
 }
 
 // cachedList finds a list in memory, then in SQLite.
@@ -417,12 +417,12 @@ func (s exploreSource) keepList(key string, l exploreList) {
 }
 
 // Cached says q is answered from a fresh cached list (no outside call).
-func (s exploreSource) Cached(ctx context.Context, q explore.Request) bool {
+func (s exploreSource) Cached(ctx context.Context, q engine.Request) bool {
 	got, ok := s.cachedList(ctx, q.String())
 	return ok && time.Since(got.at) < exploreListTTL[q.List]
 }
 
-func (s exploreSource) List(ctx context.Context, q explore.Request) ([]explore.Item, error) {
+func (s exploreSource) List(ctx context.Context, q engine.Request) ([]engine.Item, error) {
 	e := &s.a.explore
 	key := q.String()
 	ttl := exploreListTTL[q.List]
@@ -434,7 +434,7 @@ func (s exploreSource) List(ctx context.Context, q explore.Request) ([]explore.I
 		if ok {
 			return got.items, nil
 		}
-		return []explore.Item{}, nil
+		return []engine.Item{}, nil
 	}
 	e.mu.Lock()
 	if f, busy := e.flight[key]; busy {
@@ -460,7 +460,7 @@ func (s exploreSource) List(ctx context.Context, q explore.Request) ([]explore.I
 	if e.paced == nil {
 		// A cold genre page asks up to 9 lists at once; a burst lets them
 		// run side by side instead of 2 s apart (about 6 s cold before).
-		e.paced = &explore.Paced{Source: listerSource{s.lister}, Burst: exploreListBurst}
+		e.paced = &engine.Paced{Source: listerSource{s.lister}, Burst: exploreListBurst}
 	}
 	p := e.paced
 	e.mu.Unlock()
@@ -532,7 +532,7 @@ func keywordID(ctx context.Context, kf metadata.KeywordFinder, name string) (int
 // listerSource maps a Request to TMDB lists.
 type listerSource struct{ l metadata.ExploreLister }
 
-func (s listerSource) List(ctx context.Context, q explore.Request) ([]explore.Item, error) {
+func (s listerSource) List(ctx context.Context, q engine.Request) ([]engine.Item, error) {
 	p := "movie"
 	if q.Kind == "show" {
 		p = "tv"
@@ -551,7 +551,7 @@ func (s listerSource) List(ctx context.Context, q explore.Request) ([]explore.It
 	case "now_playing":
 		// Movies in cinemas now (New & Popular); shows have no such list.
 		if q.Kind != "movie" {
-			return []explore.Item{}, nil
+			return []engine.Item{}, nil
 		}
 		var v url.Values
 		if q.Region != "" {
@@ -569,7 +569,7 @@ func (s listerSource) List(ctx context.Context, q explore.Request) ([]explore.It
 	case "collection":
 		cl, ok := s.l.(metadata.CollectionLister)
 		if !ok {
-			return []explore.Item{}, nil
+			return []engine.Item{}, nil
 		}
 		out, err = cl.CollectionParts(ctx, q.Ref)
 	case "person":
@@ -585,7 +585,7 @@ func (s listerSource) List(ctx context.Context, q explore.Request) ([]explore.It
 		if q.Keywords != "" {
 			kf, ok := s.l.(metadata.KeywordFinder)
 			if !ok {
-				return []explore.Item{}, nil
+				return []engine.Item{}, nil
 			}
 			var ids []string
 			for _, name := range strings.Split(q.Keywords, "|") {
@@ -598,7 +598,7 @@ func (s listerSource) List(ctx context.Context, q explore.Request) ([]explore.It
 				}
 			}
 			if len(ids) == 0 {
-				return []explore.Item{}, nil
+				return []engine.Item{}, nil
 			}
 			v.Set("with_keywords", strings.Join(ids, "|"))
 		}
@@ -636,7 +636,7 @@ func (s listerSource) List(ctx context.Context, q explore.Request) ([]explore.It
 				return nil, gerr
 			}
 			if id == 0 {
-				return []explore.Item{}, nil
+				return []engine.Item{}, nil
 			}
 			v.Set("with_genres", strconv.FormatInt(id, 10))
 		}
@@ -675,12 +675,12 @@ func (s listerSource) List(ctx context.Context, q explore.Request) ([]explore.It
 	if err != nil {
 		return nil, err
 	}
-	items := make([]explore.Item, 0, len(out))
+	items := make([]engine.Item, 0, len(out))
 	for _, d := range out {
 		if q.MaxVotes > 0 && d.VoteCount > q.MaxVotes {
 			continue
 		}
-		items = append(items, explore.Item{TMDBID: d.TMDBID, Kind: d.Kind, Name: d.Name, Year: d.Year, Poster: d.Poster, Backdrop: d.Backdrop,
+		items = append(items, engine.Item{TMDBID: d.TMDBID, Kind: d.Kind, Name: d.Name, Year: d.Year, Poster: d.Poster, Backdrop: d.Backdrop,
 			Overview: d.Overview, Genres: d.Genres, Pop: d.Popularity, Vote: d.VoteAverage, Votes: d.VoteCount, Released: d.Released})
 	}
 	return items, nil
@@ -707,8 +707,8 @@ func (a *API) loadMember(ctx context.Context, id int64) (exploreMember, error) {
 }
 
 // exploreInput reads the member's signals from the Library and the asks.
-func (a *API) exploreInput(ctx context.Context, m exploreMember, sw string, now time.Time) (explore.Input, error) {
-	in := explore.Input{Member: m.id, Kid: m.kid, Switch: sw, Now: now, Owned: map[string]bool{},
+func (a *API) exploreInput(ctx context.Context, m exploreMember, sw string, now time.Time) (engine.Input, error) {
+	in := engine.Input{Member: m.id, Kid: m.kid, Switch: sw, Now: now, Owned: map[string]bool{},
 		OwnedPeople: map[string]int{}, OwnedDecadeGenre: map[string]int{}, Services: m.services, Region: m.region}
 	db := a.s.Store.Read()
 	rows, err := db.QueryContext(ctx, `SELECT kind, json_extract(source_ids, '$.tmdb'), name, COALESCE(year, 0), genres, people, rating, created_at
@@ -717,9 +717,9 @@ func (a *API) exploreInput(ctx context.Context, m exploreMember, sw string, now 
 	if err != nil {
 		return in, err
 	}
-	var lib []explore.LibTitle
+	var lib []engine.LibTitle
 	for rows.Next() {
-		var t explore.LibTitle
+		var t engine.LibTitle
 		var genres, people, added string
 		if err := rows.Scan(&t.Kind, &t.TMDBID, &t.Name, &t.Year, &genres, &people, &t.Rating, &added); err != nil {
 			rows.Close()
@@ -754,9 +754,9 @@ func (a *API) exploreInput(ctx context.Context, m exploreMember, sw string, now 
 	if err != nil {
 		return in, err
 	}
-	var asks []explore.AskSeed
+	var asks []engine.AskSeed
 	type hh struct {
-		item    explore.Item
+		item    engine.Item
 		asks    int
 		members map[int64]bool
 	}
@@ -764,7 +764,7 @@ func (a *API) exploreInput(ctx context.Context, m exploreMember, sw string, now 
 	var order []string
 	month := now.AddDate(0, 0, -30)
 	for rows.Next() {
-		var s explore.AskSeed
+		var s engine.AskSeed
 		var poster, at string
 		var open bool
 		if err := rows.Scan(&s.Kind, &s.TMDBID, &s.Name, &s.Year, &poster, &s.Member, &at, &s.Kid, &open); err != nil {
@@ -774,13 +774,13 @@ func (a *API) exploreInput(ctx context.Context, m exploreMember, sw string, now 
 		s.At, _ = time.Parse(database.TimeLayout, at)
 		asks = append(asks, s)
 		if s.Member == m.id && open {
-			in.MyAsks = append([]explore.Item{{TMDBID: s.TMDBID, Kind: s.Kind, Name: s.Name, Year: s.Year, Poster: poster, Genres: []string{}}}, in.MyAsks...)
+			in.MyAsks = append([]engine.Item{{TMDBID: s.TMDBID, Kind: s.Kind, Name: s.Name, Year: s.Year, Poster: poster, Genres: []string{}}}, in.MyAsks...)
 		}
 		if s.At.After(month) {
 			key := s.Kind + ":" + s.TMDBID
 			h, ok := house[key]
 			if !ok {
-				h = &hh{item: explore.Item{TMDBID: s.TMDBID, Kind: s.Kind, Name: s.Name, Year: s.Year, Poster: poster, Genres: []string{}}, members: map[int64]bool{}}
+				h = &hh{item: engine.Item{TMDBID: s.TMDBID, Kind: s.Kind, Name: s.Name, Year: s.Year, Poster: poster, Genres: []string{}}, members: map[int64]bool{}}
 				house[key] = h
 				order = append(order, key)
 			}
@@ -794,7 +794,7 @@ func (a *API) exploreInput(ctx context.Context, m exploreMember, sw string, now 
 	}
 	for _, k := range order {
 		h := house[k]
-		in.Household = append(in.Household, explore.HouseholdTitle{Item: h.item, Asks: h.asks, Members: len(h.members)})
+		in.Household = append(in.Household, engine.HouseholdTitle{Item: h.item, Asks: h.asks, Members: len(h.members)})
 	}
 	_ = db.QueryRowContext(ctx, "SELECT count(*) FROM users WHERE state = 'active'").Scan(&in.Members)
 	if sw == "shows" {
@@ -809,13 +809,13 @@ func (a *API) exploreInput(ctx context.Context, m exploreMember, sw string, now 
 			return in, err
 		}
 	}
-	in.Seeds = explore.Seeds(m.id, m.kid, lib, asks, now)
+	in.Seeds = engine.Seeds(m.id, m.kid, lib, asks, now)
 	return in, nil
 }
 
 // exploreReturning are the Library shows whose next episode airs in 7 to
 // 60 days, soonest first (local data only).
-func exploreReturning(ctx context.Context, db *sql.DB, now time.Time) ([]explore.Item, error) {
+func exploreReturning(ctx context.Context, db *sql.DB, now time.Time) ([]engine.Item, error) {
 	rows, err := db.QueryContext(ctx, `SELECT json_extract(t.source_ids, '$.tmdb'), t.name, COALESCE(t.year, 0), t.genres, t.artwork, t.backdrop, MIN(i.air_date) AS next
 		FROM titles t JOIN items i ON i.title_id = t.id AND i.kind = 'episode' AND i.dropped_at IS NULL AND i.air_date > ?
 		WHERE t.kind = 'show' AND t.state != 'removed' AND json_extract(t.source_ids, '$.tmdb') IS NOT NULL
@@ -825,9 +825,9 @@ func exploreReturning(ctx context.Context, db *sql.DB, now time.Time) ([]explore
 		return nil, err
 	}
 	defer rows.Close()
-	var out []explore.Item
+	var out []engine.Item
 	for rows.Next() {
-		var it explore.Item
+		var it engine.Item
 		var genres, artwork, next string
 		if err := rows.Scan(&it.TMDBID, &it.Name, &it.Year, &genres, &artwork, &it.Backdrop, &next); err != nil {
 			return nil, err
@@ -849,7 +849,7 @@ func exploreReturning(ctx context.Context, db *sql.DB, now time.Time) ([]explore
 
 // exploreCollections are the TMDB collections with an owned movie, most
 // owned first (local data only; the parts are looked up by collection id).
-func exploreCollections(ctx context.Context, db *sql.DB) ([]explore.LibCollection, error) {
+func exploreCollections(ctx context.Context, db *sql.DB) ([]engine.LibCollection, error) {
 	rows, err := db.QueryContext(ctx, `SELECT substr(c.source_id, 6), c.name, count(t.id) AS n
 		FROM movie_collections c
 		JOIN movie_collection_titles ct ON ct.collection_id = c.id
@@ -860,9 +860,9 @@ func exploreCollections(ctx context.Context, db *sql.DB) ([]explore.LibCollectio
 		return nil, err
 	}
 	defer rows.Close()
-	var out []explore.LibCollection
+	var out []engine.LibCollection
 	for rows.Next() {
-		var c explore.LibCollection
+		var c engine.LibCollection
 		if err := rows.Scan(&c.TMDBID, &c.Name, &c.Owned); err != nil {
 			return nil, err
 		}
@@ -873,9 +873,9 @@ func exploreCollections(ctx context.Context, db *sql.DB) ([]explore.LibCollectio
 
 // kidAllow is the Kid limit at candidate time: known ratings first, then a
 // few lookups; an unknown rating hides the title.
-func (a *API) kidAllow(ctx context.Context, max string) func(explore.Item) bool {
+func (a *API) kidAllow(ctx context.Context, max string) func(engine.Item) bool {
 	left := exploreKidLookups
-	return func(it explore.Item) bool {
+	return func(it engine.Item) bool {
 		ref := ratingRef{kind: it.Kind, tmdbID: it.TMDBID}
 		r, ok := a.knownRating(ctx, ref)
 		if !ok && left > 0 {
@@ -887,7 +887,7 @@ func (a *API) kidAllow(ctx context.Context, max string) func(explore.Item) bool 
 }
 
 // readPool reads the member's pool for a day ("" takes the newest).
-func (a *API) readPool(ctx context.Context, member int64, sw, day string, before bool) (*explore.Pool, bool, error) {
+func (a *API) readPool(ctx context.Context, member int64, sw, day string, before bool) (*engine.Pool, bool, error) {
 	q := "SELECT pool, stale FROM explore_pool WHERE member_id = ? AND type_switch = ? AND day = ?"
 	if before {
 		q = "SELECT pool, stale FROM explore_pool WHERE member_id = ? AND type_switch = ? AND day < ? ORDER BY day DESC LIMIT 1"
@@ -901,7 +901,7 @@ func (a *API) readPool(ctx context.Context, member int64, sw, day string, before
 	if err != nil {
 		return nil, false, err
 	}
-	var p explore.Pool
+	var p engine.Pool
 	if err := json.Unmarshal([]byte(raw), &p); err != nil {
 		return nil, false, err
 	}
@@ -923,7 +923,7 @@ func (a *API) buildPool(ctx context.Context, member int64, sw string) error {
 	if err != nil {
 		return err
 	}
-	day := explore.Day(now)
+	day := engine.Day(now)
 	if in.Today, _, err = a.readPool(ctx, member, sw, day, false); err != nil {
 		return err
 	}
@@ -937,9 +937,9 @@ func (a *API) buildPool(ctx context.Context, member int64, sw string) error {
 	if l, ok := metadata.ExploreListerFor(ctx, a.s.Metadata); ok {
 		lister = l
 	}
-	calls := &explore.Calls{}
+	calls := &engine.Calls{}
 	start := time.Now()
-	pool, err := explore.Build(ctx, exploreSource{a: a, lister: lister, calls: calls}, in)
+	pool, err := engine.Build(ctx, exploreSource{a: a, lister: lister, calls: calls}, in)
 	if err != nil {
 		return err
 	}
@@ -960,7 +960,7 @@ func (a *API) buildPool(ctx context.Context, member int64, sw string) error {
 	a.explore.mu.Lock()
 	a.explore.builds++
 	if a.explore.calls == nil {
-		a.explore.calls = map[poolKey]*explore.Calls{}
+		a.explore.calls = map[poolKey]*engine.Calls{}
 	}
 	a.explore.calls[poolKey{member, sw}] = calls
 	for k := range a.explore.pages {

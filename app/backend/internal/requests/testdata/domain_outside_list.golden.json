@@ -1,0 +1,29 @@
+{
+  "ID": 7,
+  "CreatedAt": "2026-10-13T12:00:00Z",
+  "CreatedBy": {
+    "kind": "s",
+    "id": 7
+  },
+  "UpdatedAt": "2026-10-13T12:00:00Z",
+  "UpdatedBy": {
+    "kind": "s",
+    "id": 7
+  },
+  "Name": "s",
+  "Kind": "s",
+  "TitleKind": "s",
+  "Ref": "s",
+  "LibraryFolderID": 7,
+  "PickRulesID": 7,
+  "KeepUpToDate": true,
+  "SearchOnAdd": true,
+  "ReleaseGate": "s",
+  "Seasons": "s",
+  "NewSeasons": "s",
+  "Enabled": true,
+  "SyncEveryHours": 7,
+  "LastSyncedAt": "2026-10-13T12:00:00Z",
+  "LastResult": "s",
+  "LastError": "s"
+}

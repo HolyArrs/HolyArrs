@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/explore"
+	engine "github.com/HolyArrs/holyarrs/app/backend/internal/discover/rows"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
@@ -69,13 +69,13 @@ func TestAwardWinnersCollection(t *testing.T) {
 		}
 		return out, nil
 	}
-	c, ok := explore.CategoryByID("awards")
+	c, ok := engine.CategoryByID("awards")
 	if !ok {
 		t.Fatal("no awards category")
 	}
 	src := exploreSource{a: a, lister: f.provider()}
 	items, err := a.browseItems(context.Background(), src, c, "all", false, "")
-	if err != nil || len(items) < explore.BrowseMin {
+	if err != nil || len(items) < engine.BrowseMin {
 		t.Fatalf("%d items, %v", len(items), err)
 	}
 	kinds := map[string]bool{}

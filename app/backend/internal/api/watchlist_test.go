@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/asks"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/requests"
 )
 
 // route: GET /api/v1/my/plex-watchlist
@@ -26,7 +26,7 @@ func TestPlexWatchlistOverHTTP(t *testing.T) {
 		_, _ = w.Write([]byte(`{"MediaContainer":{"size":1,"Metadata":[{"ratingKey":"k1","type":"movie","title":"Quiet Orchard","year":2022,"Guid":[{"id":"tmdb://900003"}]}]}}`))
 	}))
 	defer plex.Close()
-	wl := &asks.Watchlists{Asks: r.asks, Base: plex.URL, Token: func(_ context.Context, id int64) (string, error) {
+	wl := &requests.Watchlists{Asks: r.asks, Base: plex.URL, Token: func(_ context.Context, id int64) (string, error) {
 		if id == r.ana.id {
 			return "tok-ana", nil
 		}
@@ -38,7 +38,7 @@ func TestPlexWatchlistOverHTTP(t *testing.T) {
 		Movies, Shows bool
 		MayAsk        bool `json:"may_ask"`
 		CanReadJSON   bool `json:"can_read"`
-		Items         []asks.WatchlistItem
+		Items         []requests.WatchlistItem
 	}
 	get := func() view {
 		var v view
@@ -76,7 +76,7 @@ func TestPlexWatchlistOverHTTP(t *testing.T) {
 		t.Fatal(err)
 	}
 	v := get()
-	if len(v.Items) != 1 || v.Items[0].State != asks.WatchAsked || v.Items[0].AskID == nil {
+	if len(v.Items) != 1 || v.Items[0].State != requests.WatchAsked || v.Items[0].AskID == nil {
 		t.Fatalf("items %+v", v.Items)
 	}
 	a := askOf(t, []byte(`{"ask":`+string(r.ana.call("GET", "/api/v1/asks/"+itoa(*v.Items[0].AskID), "", 200))+`}`))

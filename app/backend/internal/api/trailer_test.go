@@ -16,7 +16,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/explore"
+	engine "github.com/HolyArrs/holyarrs/app/backend/internal/discover/rows"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata/youtube"
 )
@@ -417,10 +417,10 @@ func TestTrailerSharedLookupAndFailures(t *testing.T) {
 }
 
 func TestExploreTrailerTitles(t *testing.T) {
-	it := func(kind, id string) explore.Item { return explore.Item{Kind: kind, TMDBID: id} }
-	row := func(items ...explore.Item) explore.Row { return explore.Row{Items: items} }
-	hero := []explore.Item{it("movie", "1"), it("show", "2")}
-	head := []explore.Row{row(), row(it("movie", "1"), it("movie", "3"), it("movie", "4"), it("movie", "5"), it("movie", "6")), row(it("artist", "x"), it("show", "7")), row(it("movie", "8")), row(it("movie", "9"))}
+	it := func(kind, id string) engine.Item { return engine.Item{Kind: kind, TMDBID: id} }
+	row := func(items ...engine.Item) engine.Row { return engine.Row{Items: items} }
+	hero := []engine.Item{it("movie", "1"), it("show", "2")}
+	head := []engine.Row{row(), row(it("movie", "1"), it("movie", "3"), it("movie", "4"), it("movie", "5"), it("movie", "6")), row(it("artist", "x"), it("show", "7")), row(it("movie", "8")), row(it("movie", "9"))}
 	got := fmt.Sprint(exploreTrailerTitles(hero, head))
 	if got != "[[movie 1] [show 2] [movie 3] [movie 4] [movie 5] [show 7] [movie 8]]" {
 		t.Fatal(got)

@@ -19,11 +19,11 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/asks"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/requests"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
@@ -121,7 +121,7 @@ func TestLabAskLiveProgress(t *testing.T) {
 	sr.Register(q)
 	lib.Register(q)
 	q.Handle(downloads.KindGrab, m.HandleGrab)
-	svc := &asks.Service{Store: s, Library: lib, Metadata: md}
+	svc := &requests.Service{Store: s, Library: lib, Metadata: md}
 	// As cmd/holyarrs: the ready check runs right after each import.
 	q.Handle(importer.KindImport, func(ctx context.Context, r *jobs.Run) error {
 		err := im.HandleJob(ctx, r)
@@ -170,7 +170,7 @@ func TestLabAskLiveProgress(t *testing.T) {
 	srv := httptest.NewServer(New(Server{Store: s, Metadata: md, Version: "lab", Downloads: m, Queue: q, Library: lib, Asks: svc}).Handler())
 	t.Cleanup(srv.Close)
 
-	res, err := svc.Ask(ctx, asks.Person{UserID: ana, Name: "ana"}, "693134")
+	res, err := svc.Ask(ctx, requests.Person{UserID: ana, Name: "ana"}, "693134")
 	if err != nil || res.Ask.State != domain.AskAsked {
 		t.Fatalf("ask %+v %v", res.Ask, err)
 	}

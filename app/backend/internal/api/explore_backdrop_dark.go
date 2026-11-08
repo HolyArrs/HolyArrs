@@ -12,7 +12,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/explore"
+	engine "github.com/HolyArrs/holyarrs/app/backend/internal/discover/rows"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
@@ -129,7 +129,7 @@ func startBackdropDark(ctx context.Context) {
 				}
 			}
 		}()
-		explore.DarkBackdrop = func(b string) bool {
+		engine.DarkBackdrop = func(b string) bool {
 			v, ok := backdropLuma.Load(b)
 			if !ok {
 				queueBackdrop(b)
@@ -153,7 +153,7 @@ func queueBackdrop(b string) {
 
 // sampleBackdrops samples the backdrops not yet known, waiting for each
 // (the warm-up uses it so built sections pick with brightness known).
-func sampleBackdrops(ctx context.Context, items []explore.Item, n int) {
+func sampleBackdrops(ctx context.Context, items []engine.Item, n int) {
 	cl := library.ArtworkClient()
 	for _, it := range items {
 		if n == 0 || ctx.Err() != nil {

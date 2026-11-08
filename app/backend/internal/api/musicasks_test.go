@@ -7,7 +7,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/asks"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/requests"
 )
 
 // newMusicAskRig is the ask rig with a music Library folder and the fake
@@ -52,8 +52,8 @@ func TestMusicAskOverHTTP(t *testing.T) {
 		t.Fatalf("ask %+v", a)
 	}
 	var joined struct {
-		Ask    asks.View `json:"ask"`
-		Joined bool      `json:"joined"`
+		Ask    requests.View `json:"ask"`
+		Joined bool          `json:"joined"`
 	}
 	_ = json.Unmarshal(r.bo.call("POST", "/api/v1/asks", `{"kind":"artist","id":"mbid:`+apiArtist+`","albums":["`+apiLive+`"]}`, 200), &joined)
 	// A member sees everyone who asked.
@@ -66,15 +66,15 @@ func TestMusicAskOverHTTP(t *testing.T) {
 		t.Fatalf("lookup with ask %+v", look)
 	}
 	var list struct {
-		Asks []asks.View `json:"asks"`
+		Asks []requests.View `json:"asks"`
 	}
 	_ = json.Unmarshal(r.owner.call("GET", "/api/v1/asks?kind=artist", "", 200), &list)
 	if len(list.Asks) != 1 {
 		t.Fatalf("artist asks %+v", list)
 	}
-	var lim asks.Limit
+	var lim requests.Limit
 	_ = json.Unmarshal(r.ana.call("GET", "/api/v1/asks/limit", "", 200), &lim)
-	if lim.Music.Used != 1 || lim.Movies.Used != 0 || lim.Music.Left != asks.DefaultPerWeek-1 {
+	if lim.Music.Used != 1 || lim.Movies.Used != 0 || lim.Music.Left != requests.DefaultPerWeek-1 {
 		t.Fatalf("limit %+v", lim)
 	}
 
@@ -100,8 +100,8 @@ func TestMusicAskOverHTTP(t *testing.T) {
 		t.Fatalf("keeps %v", keeps)
 	}
 	var title struct {
-		Kind string      `json:"kind"`
-		Asks []asks.View `json:"asks"`
+		Kind string          `json:"kind"`
+		Asks []requests.View `json:"asks"`
 	}
 	_ = json.Unmarshal(r.owner.call("GET", fmt.Sprintf("/api/v1/titles/%d", *got.TitleID), "", 200), &title)
 	if title.Kind != "artist" || len(title.Asks) != 1 || len(title.Asks[0].People) != 2 {
@@ -133,9 +133,9 @@ func TestMusicAskOverHTTP(t *testing.T) {
 	}
 
 	// Settings: the music fields save; a non-music folder is refused.
-	var set asks.Settings
+	var set requests.Settings
 	_ = json.Unmarshal(r.owner.call("PUT", "/api/v1/settings/asks", `{"music_per_week":0}`, 200), &set)
-	if set.MusicPerWeek != 0 || set.ShowsPerWeek != asks.DefaultPerWeek {
+	if set.MusicPerWeek != 0 || set.ShowsPerWeek != requests.DefaultPerWeek {
 		t.Fatalf("settings %+v", set)
 	}
 	r.owner.call("PUT", "/api/v1/settings/asks", `{"music_library_folder_id":1}`, 400)
@@ -204,7 +204,7 @@ func TestArtistAskListHasPicture(t *testing.T) {
 	r := newMusicAskRig(t)
 	r.ana.call("POST", "/api/v1/asks", `{"kind":"artist","id":"mbid:`+apiArtist+`"}`, 201)
 	var out struct {
-		Asks []asks.View `json:"asks"`
+		Asks []requests.View `json:"asks"`
 	}
 	if err := json.Unmarshal(r.owner.call("GET", "/api/v1/asks?kind=artist", "", 200), &out); err != nil || len(out.Asks) != 1 {
 		t.Fatalf("asks %+v %v", out, err)

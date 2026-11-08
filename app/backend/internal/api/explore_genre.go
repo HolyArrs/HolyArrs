@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/explore"
+	engine "github.com/HolyArrs/holyarrs/app/backend/internal/discover/rows"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
@@ -29,7 +29,7 @@ func (a *API) liveSource(ctx context.Context) exploreSource {
 	if l, ok := metadata.ExploreListerFor(ctx, a.s.Metadata); ok {
 		lister = l
 	}
-	return exploreSource{a: a, lister: lister, calls: &explore.Calls{}}
+	return exploreSource{a: a, lister: lister, calls: &engine.Calls{}}
 }
 
 // exploreGenreParam reads ?genre= for kind: the TMDB genre id and name.
@@ -38,10 +38,10 @@ func exploreGenreParam(v, kind string) (int, string, bool) {
 		return 0, "", true
 	}
 	id, err := strconv.Atoi(v)
-	if err != nil || explore.GenreName(kind, id) == "" {
+	if err != nil || engine.GenreName(kind, id) == "" {
 		return 0, "", false
 	}
-	return id, explore.GenreName(kind, id), true
+	return id, engine.GenreName(kind, id), true
 }
 
 // exploreTop answers GET /api/v1/explore/top?type=&chip=all|<service id>
@@ -65,7 +65,7 @@ func (a *API) exploreTop(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var kinds []string
-	for _, k := range explore.Kinds(sw) {
+	for _, k := range engine.Kinds(sw) {
 		if len(a.kindsOn(k)) > 0 {
 			kinds = append(kinds, k)
 		}
@@ -98,17 +98,17 @@ func (a *API) exploreTop(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	src := a.liveSource(r.Context())
-	var lists [][]explore.Item
+	var lists [][]engine.Item
 	for _, k := range kinds {
-		items, err := src.List(r.Context(), explore.Request{List: "weekly", Kind: k, Services: providers, Region: region, Genre: genre, Scope: explore.ScopeShared})
+		items, err := src.List(r.Context(), engine.Request{List: "weekly", Kind: k, Services: providers, Region: region, Genre: genre, Scope: engine.ScopeShared})
 		if err != nil {
 			continue
 		}
 		lists = append(lists, items)
 	}
 	// A few spare titles cover ones the Kid limit or never-add drops.
-	merged := explore.MergeTop(lists, topServicesMax*2)
-	views, err := a.exploreViews(r.Context(), r, []explore.Row{{ID: explore.TypeTopServices, Type: explore.TypeTopServices, Items: merged}})
+	merged := engine.MergeTop(lists, topServicesMax*2)
+	views, err := a.exploreViews(r.Context(), r, []engine.Row{{ID: engine.TypeTopServices, Type: engine.TypeTopServices, Items: merged}})
 	if err != nil {
 		internal(w, err)
 		return
@@ -132,7 +132,7 @@ func kinds0(kinds []string, sw string) string {
 	if len(kinds) > 0 {
 		return kinds[0]
 	}
-	return explore.Kinds(sw)[0]
+	return engine.Kinds(sw)[0]
 }
 
 // fillTopArt adds trailer keys and card art to ranked items.
@@ -163,16 +163,16 @@ func (a *API) exploreGenre(w http.ResponseWriter, r *http.Request) {
 	}
 	// Under All a genre is a movie genre id that TV has a combined genre
 	// for; the page merges the movie page and the show page.
-	kind := explore.Kinds(sw)[0]
+	kind := engine.Kinds(sw)[0]
 	if sw == "all" {
 		kind = "movie"
 	}
 	id, genre, ok := exploreGenreParam(q.Get("genre"), kind)
-	if !ok || genre == "" || (sw == "all" && explore.ShowGenreFor(genre) == "") {
+	if !ok || genre == "" || (sw == "all" && engine.ShowGenreFor(genre) == "") {
 		fail(w, http.StatusBadRequest, "genre must be a TMDB genre id of that type")
 		return
 	}
-	for _, k := range explore.Kinds(sw) {
+	for _, k := range engine.Kinds(sw) {
 		if len(a.kindsOn(k)) == 0 {
 			fail(w, http.StatusNotFound, "that part is off")
 			return
@@ -187,16 +187,16 @@ func (a *API) exploreGenre(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	rows, partial := a.genreBuild(ctx, r, kind, genre)
 	if sw == "all" {
-		more, p2 := a.genreBuild(ctx, r, "show", explore.ShowGenreFor(genre))
+		more, p2 := a.genreBuild(ctx, r, "show", engine.ShowGenreFor(genre))
 		rows, partial = mergeGenreRows(rows, more), partial || p2
 	}
 	st.mark("lists")
 	// A title once per page, first row wins.
 	seen := map[string]bool{}
 	for i := range rows {
-		var keep []explore.Item
+		var keep []engine.Item
 		for _, it := range rows[i].Items {
-			if !seen[it.Key()] && len(keep) < explore.RowMax {
+			if !seen[it.Key()] && len(keep) < engine.RowMax {
 				keep = append(keep, it)
 			}
 		}
@@ -235,11 +235,11 @@ func (a *API) exploreGenre(w http.ResponseWriter, r *http.Request) {
 // genreBuild is one kind's genre page rows (before per-person views): from
 // the memory cache, else built from the genre's lists. partial says some
 // lists were still out.
-func (a *API) genreBuild(ctx context.Context, r *http.Request, kind, genre string) ([]explore.Row, bool) {
-	inGenre := func(items []explore.Item) []explore.Item {
-		var out []explore.Item
+func (a *API) genreBuild(ctx context.Context, r *http.Request, kind, genre string) ([]engine.Row, bool) {
+	inGenre := func(items []engine.Item) []engine.Item {
+		var out []engine.Item
 		for _, it := range items {
-			if explore.HasGenre(it, genre) {
+			if engine.HasGenre(it, genre) {
 				out = append(out, it)
 			}
 		}
@@ -252,23 +252,23 @@ func (a *API) genreBuild(ctx context.Context, r *http.Request, kind, genre strin
 	if rows, cached := a.genreRows.get(cacheKey); cached {
 		return rows, false
 	}
-	var rows []explore.Row
+	var rows []engine.Row
 	reqs := genreRequests(kind, genre, now)
 	moods := metadata.SubMoods(genre)
 	if hasSeed {
-		reqs = append(reqs, explore.Request{List: "similar", Ref: seed.TMDBID})
+		reqs = append(reqs, engine.Request{List: "similar", Ref: seed.TMDBID})
 	}
 	got, ready := a.genreLists(ctx, kind, reqs, genreWait)
-	trending := explore.Interleave([][]explore.Item{inGenre(got[0]), got[1]}, explore.RowMax)
-	rows = append(rows, explore.Row{ID: "genre_trending", Type: explore.TypeTrending, Title: "Trending " + lower, Items: trending})
-	rows = append(rows, explore.Row{ID: "genre_best", Type: explore.TypeBest, Title: "Best new " + lower, Items: got[2]})
+	trending := engine.Interleave([][]engine.Item{inGenre(got[0]), got[1]}, engine.RowMax)
+	rows = append(rows, engine.Row{ID: "genre_trending", Type: engine.TypeTrending, Title: "Trending " + lower, Items: trending})
+	rows = append(rows, engine.Row{ID: "genre_best", Type: engine.TypeBest, Title: "Best new " + lower, Items: got[2]})
 	if hasSeed {
-		rows = append(rows, explore.Row{ID: "genre_because", Type: explore.TypeBecauseHave, Title: "Because you have " + seed.Name,
+		rows = append(rows, engine.Row{ID: "genre_because", Type: engine.TypeBecauseHave, Title: "Because you have " + seed.Name,
 			Items: inGenre(got[len(got)-1])})
 	}
-	rows = append(rows, explore.Row{ID: "genre_classics", Type: explore.TypeClassics, Title: "Top-rated " + lower + " classics", Items: got[3]})
+	rows = append(rows, engine.Row{ID: "genre_classics", Type: engine.TypeClassics, Title: "Top-rated " + lower + " classics", Items: got[3]})
 	for i, m := range moods {
-		rows = append(rows, explore.Row{ID: "genre_mood_" + strings.ReplaceAll(strings.ToLower(m.Label), " ", "_"), Type: explore.TypeMood, Title: m.Label,
+		rows = append(rows, engine.Row{ID: "genre_mood_" + strings.ReplaceAll(strings.ToLower(m.Label), " ", "_"), Type: engine.TypeMood, Title: m.Label,
 			Items: got[4+i]})
 	}
 	if ready {
@@ -280,8 +280,8 @@ func (a *API) genreBuild(ctx context.Context, r *http.Request, kind, genre strin
 // mergeGenreRows folds the show page's rows into the movie page's: a row
 // both have takes turns between the two kinds; the rest follow. The
 // "Because you have" row keeps the first seed's.
-func mergeGenreRows(movie, show []explore.Row) []explore.Row {
-	out := append([]explore.Row{}, movie...)
+func mergeGenreRows(movie, show []engine.Row) []engine.Row {
+	out := append([]engine.Row{}, movie...)
 	at := map[string]int{}
 	for i, r := range out {
 		at[r.ID] = i
@@ -293,7 +293,7 @@ func mergeGenreRows(movie, show []explore.Row) []explore.Row {
 			at[r.ID] = len(out)
 			out = append(out, r)
 		case r.ID != "genre_because":
-			out[i].Items = explore.Interleave([][]explore.Item{out[i].Items, r.Items}, explore.RowMax)
+			out[i].Items = engine.Interleave([][]engine.Item{out[i].Items, r.Items}, engine.RowMax)
 		}
 	}
 	return out
@@ -301,17 +301,17 @@ func mergeGenreRows(movie, show []explore.Row) []explore.Row {
 
 // genreSeed is the newest Library title of kind in the genre (a Kid's
 // limit applies).
-func (a *API) genreSeed(ctx context.Context, r *http.Request, kind, genre string) (explore.Item, bool) {
+func (a *API) genreSeed(ctx context.Context, r *http.Request, kind, genre string) (engine.Item, bool) {
 	rows, err := a.s.Store.Read().QueryContext(ctx, `SELECT json_extract(source_ids, '$.tmdb'), name, rating FROM titles
 		WHERE kind = ? AND state != 'removed' AND json_extract(source_ids, '$.tmdb') IS NOT NULL
 		AND EXISTS (SELECT 1 FROM json_each(titles.genres) WHERE value = ?) ORDER BY created_at DESC, id DESC LIMIT 20`, kind, genre)
 	if err != nil {
-		return explore.Item{}, false
+		return engine.Item{}, false
 	}
 	defer rows.Close()
 	max := a.kidMax(r)
 	for rows.Next() {
-		var it explore.Item
+		var it engine.Item
 		var rating string
 		if rows.Scan(&it.TMDBID, &it.Name, &rating) != nil {
 			continue
@@ -322,7 +322,7 @@ func (a *API) genreSeed(ctx context.Context, r *http.Request, kind, genre string
 		it.Kind = kind
 		return it, true
 	}
-	return explore.Item{}, false
+	return engine.Item{}, false
 }
 
 // genreRowsTTL is how long a genre page's rows are kept in memory.
@@ -337,28 +337,28 @@ type genreRowCache struct {
 
 type genreRowsEntry struct {
 	at   time.Time
-	rows []explore.Row
+	rows []engine.Row
 }
 
-func (c *genreRowCache) get(key string) ([]explore.Row, bool) {
+func (c *genreRowCache) get(key string) ([]engine.Row, bool) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	e, ok := c.rows[key]
 	if !ok || time.Since(e.at) > genreRowsTTL {
 		return nil, false
 	}
-	out := make([]explore.Row, len(e.rows))
+	out := make([]engine.Row, len(e.rows))
 	copy(out, e.rows)
 	return out, true
 }
 
-func (c *genreRowCache) put(key string, rows []explore.Row) {
+func (c *genreRowCache) put(key string, rows []engine.Row) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	if c.rows == nil || len(c.rows) > 200 {
 		c.rows = map[string]genreRowsEntry{}
 	}
-	keep := make([]explore.Row, len(rows))
+	keep := make([]engine.Row, len(rows))
 	copy(keep, rows)
 	c.rows[key] = genreRowsEntry{at: time.Now(), rows: keep}
 }
@@ -375,18 +375,18 @@ const (
 // genreRequests are a genre page's shared lists, in row order: trending,
 // the genre's popular titles, best new, classics, then one per mood (the
 // "similar" list for the seed comes last when there is one).
-func genreRequests(kind, genre string, now time.Time) []explore.Request {
-	reqs := []explore.Request{
+func genreRequests(kind, genre string, now time.Time) []engine.Request {
+	reqs := []engine.Request{
 		{List: "trending"},
 		{List: "discover", Genre: genre, MinVotes: 50},
 		{List: "discover", Genre: genre, From: now.AddDate(-1, 0, 0).Format("2006-01-02"), To: now.Format("2006-01-02"), MinVote: 6.5, MinVotes: 50},
 		{List: "discover", Genre: genre, To: now.AddDate(-20, 0, 0).Format("2006-01-02"), MinVotes: 1000, Sort: "rating"},
 	}
 	for _, m := range metadata.SubMoods(genre) {
-		reqs = append(reqs, explore.Request{List: "discover", Genre: genre, Keywords: strings.Join(m.Keywords, "|"), MinVotes: 20})
+		reqs = append(reqs, engine.Request{List: "discover", Genre: genre, Keywords: strings.Join(m.Keywords, "|"), MinVotes: 20})
 	}
 	for i := range reqs {
-		reqs[i].Kind, reqs[i].Scope = kind, explore.ScopeShared
+		reqs[i].Kind, reqs[i].Scope = kind, engine.ScopeShared
 	}
 	return reqs
 }
@@ -394,17 +394,17 @@ func genreRequests(kind, genre string, now time.Time) []explore.Request {
 // genreLists fetches reqs side by side and waits up to wait (0: until all
 // are back). Lists still out at the deadline are nil and ready is false;
 // they finish in the background and land in the list cache.
-func (a *API) genreLists(ctx context.Context, kind string, reqs []explore.Request, wait time.Duration) ([][]explore.Item, bool) {
+func (a *API) genreLists(ctx context.Context, kind string, reqs []engine.Request, wait time.Duration) ([][]engine.Item, bool) {
 	bg := context.WithoutCancel(ctx)
 	src := a.liveSource(bg)
 	var mu sync.Mutex
-	got := make([][]explore.Item, len(reqs))
+	got := make([][]engine.Item, len(reqs))
 	back := make([]bool, len(reqs))
 	var wg sync.WaitGroup
 	for i, q := range reqs {
-		q.Kind, q.Scope = kind, explore.ScopeShared
+		q.Kind, q.Scope = kind, engine.ScopeShared
 		wg.Add(1)
-		go func(i int, q explore.Request) {
+		go func(i int, q engine.Request) {
 			defer wg.Done()
 			items, err := src.List(bg, q)
 			if err != nil {
@@ -447,7 +447,7 @@ wait:
 	}
 	mu.Lock()
 	defer mu.Unlock()
-	out := make([][]explore.Item, len(got))
+	out := make([][]engine.Item, len(got))
 	copy(out, got)
 	ready := true
 	for _, b := range back {
@@ -469,7 +469,7 @@ func (a *API) warmGenres(ctx context.Context) {
 			if len(a.kindsOn(kind)) == 0 {
 				continue
 			}
-			for _, genre := range explore.Genres[kind] {
+			for _, genre := range engine.Genres[kind] {
 				for _, q := range genreRequests(kind, genre, a.exploreNow().UTC()) {
 					if ctx.Err() != nil {
 						return

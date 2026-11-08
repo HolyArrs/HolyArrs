@@ -8,15 +8,15 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/asks"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/requests"
 )
 
-func reportOf(t *testing.T, b []byte) asks.ReportView {
+func reportOf(t *testing.T, b []byte) requests.ReportView {
 	t.Helper()
 	var x struct {
-		Report asks.ReportView `json:"report"`
+		Report requests.ReportView `json:"report"`
 	}
 	if err := json.Unmarshal(b, &x); err != nil {
 		t.Fatal(err)
@@ -25,8 +25,8 @@ func reportOf(t *testing.T, b []byte) asks.ReportView {
 }
 
 type reportList struct {
-	Reports []asks.ReportView `json:"reports"`
-	Open    *int              `json:"open"`
+	Reports []requests.ReportView `json:"reports"`
+	Open    *int                  `json:"open"`
 }
 
 func TestReportsOverHTTP(t *testing.T) {
@@ -76,8 +76,8 @@ func TestReportsOverHTTP(t *testing.T) {
 	}
 	r.owner.call("POST", "/api/v1/reports/"+itoa(mine.ID)+"/fix", ``, 409)
 	var inbox struct {
-		Messages []asks.Message `json:"messages"`
-		Unread   int            `json:"unread"`
+		Messages []requests.Message `json:"messages"`
+		Unread   int                `json:"unread"`
 	}
 	_ = json.Unmarshal(r.ana.call("GET", "/api/v1/messages", "", 200), &inbox)
 	if inbox.Unread != 1 || inbox.Messages[0].Kind != "fixed" || inbox.Messages[0].ReportID == nil || *inbox.Messages[0].ReportID != mine.ID {

@@ -8,12 +8,12 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/asks"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/requests"
 )
 
 // Reports (#95): anyone signed in reports a problem with a title in the
@@ -35,13 +35,13 @@ func mayManageReports(r *http.Request) bool {
 
 func reportError(w http.ResponseWriter, err error) {
 	switch {
-	case errors.Is(err, asks.ErrReportKind), errors.Is(err, asks.ErrReportPart), errors.Is(err, asks.ErrNoteLength):
+	case errors.Is(err, requests.ErrReportKind), errors.Is(err, requests.ErrReportPart), errors.Is(err, requests.ErrNoteLength):
 		fail(w, http.StatusBadRequest, err.Error())
-	case errors.Is(err, asks.ErrNotInLibrary):
+	case errors.Is(err, requests.ErrNotInLibrary):
 		fail(w, http.StatusUnprocessableEntity, err.Error())
-	case errors.Is(err, asks.ErrReportedAlready), errors.Is(err, asks.ErrReportFixed), errors.Is(err, asks.ErrReportOpen):
+	case errors.Is(err, requests.ErrReportedAlready), errors.Is(err, requests.ErrReportFixed), errors.Is(err, requests.ErrReportOpen):
 		fail(w, http.StatusConflict, err.Error())
-	case errors.Is(err, asks.ErrTooManyReports):
+	case errors.Is(err, requests.ErrTooManyReports):
 		fail(w, http.StatusTooManyRequests, err.Error())
 	case errors.Is(err, database.ErrNotFound):
 		fail(w, http.StatusNotFound, "no such report")
@@ -51,7 +51,7 @@ func reportError(w http.ResponseWriter, err error) {
 }
 
 // reportLinks turns the stored poster into a link and marks the reader's own.
-func (a *API) reportLinks(r *http.Request, vs []asks.ReportView) []asks.ReportView {
+func (a *API) reportLinks(r *http.Request, vs []requests.ReportView) []requests.ReportView {
 	me := a.person(r).UserID
 	for i := range vs {
 		if vs[i].Poster != "" {
@@ -88,10 +88,10 @@ func (a *API) listReports(w http.ResponseWriter, r *http.Request) {
 	}
 	// A title above the reader's Kid limit stays hidden, even their own
 	// report of it after the limit was lowered.
-	vs = slices.DeleteFunc(vs, func(v asks.ReportView) bool { return !metadata.RatingAllows(a.kidMax(r), v.TitleKind, v.Rating) })
+	vs = slices.DeleteFunc(vs, func(v requests.ReportView) bool { return !metadata.RatingAllows(a.kidMax(r), v.TitleKind, v.Rating) })
 	out := map[string]any{"reports": a.reportLinks(r, vs)}
 	if mayManageReports(r) {
-		n, _ := asks.OpenReports(r.Context(), a.s.Store.Read())
+		n, _ := requests.OpenReports(r.Context(), a.s.Store.Read())
 		out["open"] = n
 	}
 	writeJSON(w, http.StatusOK, out)
@@ -100,7 +100,7 @@ func (a *API) listReports(w http.ResponseWriter, r *http.Request) {
 const reportHelp = `send {"title_id": <Library title id>, "kind": "picture|sound|subtitles|wont_play|other", "note": "..."}; "season", "item_id" (an episode or track), "album_id" and "version_id" narrow it`
 
 func (a *API) makeReport(w http.ResponseWriter, r *http.Request) {
-	var in asks.ReportInput
+	var in requests.ReportInput
 	if !decode(w, r, &in, reportHelp) {
 		return
 	}
@@ -124,7 +124,7 @@ func (a *API) makeReport(w http.ResponseWriter, r *http.Request) {
 		reportError(w, err)
 		return
 	}
-	writeJSON(w, http.StatusCreated, map[string]any{"report": a.reportLinks(r, []asks.ReportView{v})[0]})
+	writeJSON(w, http.StatusCreated, map[string]any{"report": a.reportLinks(r, []requests.ReportView{v})[0]})
 }
 
 func reportID(w http.ResponseWriter, r *http.Request) (int64, bool) {
@@ -152,7 +152,7 @@ func (a *API) fixReport(w http.ResponseWriter, r *http.Request) {
 		reportError(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"report": a.reportLinks(r, []asks.ReportView{v})[0]})
+	writeJSON(w, http.StatusOK, map[string]any{"report": a.reportLinks(r, []requests.ReportView{v})[0]})
 }
 
 func (a *API) reopenReport(w http.ResponseWriter, r *http.Request) {
@@ -165,5 +165,5 @@ func (a *API) reopenReport(w http.ResponseWriter, r *http.Request) {
 		reportError(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"report": a.reportLinks(r, []asks.ReportView{v})[0]})
+	writeJSON(w, http.StatusOK, map[string]any{"report": a.reportLinks(r, []requests.ReportView{v})[0]})
 }

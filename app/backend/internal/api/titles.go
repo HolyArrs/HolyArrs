@@ -15,12 +15,12 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/asks"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/requests"
 )
 
 // decode reads a JSON body into v; false means an answer was already sent.
@@ -278,7 +278,7 @@ func (a *API) lookupTitles(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			if v.TitleID != 0 {
-				if v.Has4K, err = asks.HasFourK(r.Context(), db, v.TitleID); err != nil {
+				if v.Has4K, err = requests.HasFourK(r.Context(), db, v.TitleID); err != nil {
 					internal(w, err)
 					return
 				}

@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/explore"
+	engine "github.com/HolyArrs/holyarrs/app/backend/internal/discover/rows"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
@@ -16,7 +16,7 @@ func TestCardArtCached(t *testing.T) {
 	a, _, f := exploreRig(t)
 	a.explore.cards.gap = time.Millisecond
 	ctx := context.Background()
-	pool := &explore.Pool{Rows: []explore.Row{{Items: []explore.Item{{Kind: "movie", TMDBID: "7", Backdrop: "b.jpg"}, {Kind: "artist", TMDBID: "9"}}}}}
+	pool := &engine.Pool{Rows: []engine.Row{{Items: []engine.Item{{Kind: "movie", TMDBID: "7", Backdrop: "b.jpg"}, {Kind: "artist", TMDBID: "9"}}}}}
 	wait := func() {
 		for i := 0; i < 500; i++ {
 			a.explore.cards.mu.Lock()

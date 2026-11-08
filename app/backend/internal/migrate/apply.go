@@ -16,13 +16,12 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/alerts"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/asks"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/lists"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/requests"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles"
 )
@@ -371,7 +370,7 @@ func next(rep *Report) []string {
 		switch {
 		case l.Group == GroupLists && made:
 			outside = true
-			trakt = trakt || strings.HasPrefix(l.Key, "outside_list:"+lists.KindTrakt+":")
+			trakt = trakt || strings.HasPrefix(l.Key, "outside_list:"+requests.ListTrakt+":")
 		case (l.Group == GroupSources || l.Group == GroupDownloaders) && made:
 			links = true
 		case l.Group == GroupPeople && made:
@@ -731,7 +730,7 @@ func readSettingValue(ctx context.Context, q rowQuerier, key string) (settingVal
 }
 
 func (r *run) askSettings(it Item) (string, string) {
-	cur, err := asks.ReadSettings(r.ctx, r.m.Store.Read())
+	cur, err := requests.ReadSettings(r.ctx, r.m.Store.Read())
 	if err != nil {
 		return ResFailed, err.Error()
 	}
@@ -898,7 +897,7 @@ func (r *run) outsideList(it Item) (string, string) {
 		return ResAlready, "an Outside list for this list is here"
 	}
 	lib := filepath.Clean(filepath.FromSlash(o.Library))
-	what := map[string]string{lists.KindTMDB: "TMDB list ", lists.KindTrakt: "Trakt list "}[o.Kind] + o.Ref + " into " + o.Library + ", paused until you check it and turn it on"
+	what := map[string]string{requests.ListTMDB: "TMDB list ", requests.ListTrakt: "Trakt list "}[o.Kind] + o.Ref + " into " + o.Library + ", paused until you check it and turn it on"
 	if r.dry {
 		if r.id("SELECT id FROM library_folders WHERE path = ?", lib) == 0 && !isDir(lib) {
 			return ResNotFound, "no folder at " + o.Library + " on this server; add a path rule"
@@ -913,9 +912,9 @@ func (r *run) outsideList(it Item) (string, string) {
 		return r.id("SELECT id FROM outside_lists WHERE name = ? COLLATE NOCASE", n) != 0
 	})
 	off, keep := false, o.KeepUpToDate
-	in := lists.Input{Name: name, Kind: o.Kind, Ref: o.Ref, LibraryFolderID: lfID, PickRulesID: r.presetID(o.Preset, "movie"), KeepUpToDate: &keep,
+	in := requests.OutsideListInput{Name: name, Kind: o.Kind, Ref: o.Ref, LibraryFolderID: lfID, PickRulesID: r.presetID(o.Preset, "movie"), KeepUpToDate: &keep,
 		SearchOnAdd: o.SearchOnAdd, ReleaseGate: o.ReleaseGate, Enabled: &off, SyncEveryHours: o.SyncEveryHours}
-	_, err := lists.Add(r.ctx, r.m.Store, in, r.by, r.markWith(it.Key, "outside_list"))
+	_, err := requests.AddOutsideList(r.ctx, r.m.Store, in, r.by, r.markWith(it.Key, "outside_list"))
 	return result(err, ResCreated, what)
 }
 
