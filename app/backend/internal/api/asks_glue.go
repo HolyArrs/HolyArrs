@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"strings"
 
@@ -69,4 +70,17 @@ func (a *API) openShowAsk(ctx context.Context, ids map[string]string, me int64) 
 
 func (a *API) openArtistAsks(ctx context.Context, mbid string, me int64) ([]askBrief, error) {
 	return requests.OpenArtistAsks(ctx, a.s.Store.Read(), mbid, me)
+}
+
+// decodeKeys is decode that also answers which top-level keys the body
+// holds, so a left-out field can take a saved default.
+func decodeKeys(w http.ResponseWriter, r *http.Request, v any, help string) (map[string]json.RawMessage, bool) {
+	return webserver.DecodeKeys(w, r, v, help)
+}
+
+// kindDefaultsFor fills an add's left-out fields from the saved defaults
+// (requests.KindDefaultsFor).
+func (a *API) kindDefaultsFor(ctx context.Context, kind string, sent map[string]json.RawMessage,
+	folder, rules *int64, keep **bool, search *bool) error {
+	return requests.KindDefaultsFor(ctx, a.s.Store.Read(), kind, sent, folder, rules, keep, search)
 }
