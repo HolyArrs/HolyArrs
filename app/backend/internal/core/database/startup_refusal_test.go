@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/files"
 )
 
 func shareAs(kind string) func(string) (bool, string, error) {
@@ -37,7 +39,7 @@ func TestOpenRefusesWithATypedShareError(t *testing.T) {
 	if !strings.Contains(msg, dir) {
 		t.Errorf("the log line keeps the path: %q", msg)
 	}
-	if !strings.Contains(msg, ShareFix("9p")) {
+	if !strings.Contains(msg, files.ShareFix("9p")) {
 		t.Errorf("the message carries the fix for 9p: %q", msg)
 	}
 	if strings.Contains(msg, "move the config folder to local storage") {
@@ -45,37 +47,6 @@ func TestOpenRefusesWithATypedShareError(t *testing.T) {
 	}
 	if _, statErr := os.Stat(filepath.Join(dir, MainFile)); statErr == nil {
 		t.Fatal("database file created on a shared folder")
-	}
-}
-
-func TestShareFixPerKind(t *testing.T) {
-	cases := []struct {
-		kind   string
-		has    []string
-		hasNot []string
-	}{
-		{"9p", []string{"Docker Desktop", "named volume", "holyarrs-config:/config", "Media folders can stay"}, []string{"local storage", "cache"}},
-		{"fakeowner", []string{"Docker Desktop", "named volume", "holyarrs-config:/config"}, []string{"cache"}},
-		{"fuse", []string{"/mnt/<pool>/appdata", "named volume"}, []string{"cache"}},
-		{"nfs", []string{"local disk"}, nil},
-		{"smb", []string{"local disk"}, nil},
-		{"cifs", []string{"local disk"}, nil},
-		{"some-new-kind", []string{"local disk"}, nil},
-	}
-	for _, c := range cases {
-		t.Run(c.kind, func(t *testing.T) {
-			fix := ShareFix(c.kind)
-			for _, w := range c.has {
-				if !strings.Contains(fix, w) {
-					t.Errorf("ShareFix(%q) = %q, lacks %q", c.kind, fix, w)
-				}
-			}
-			for _, w := range c.hasNot {
-				if strings.Contains(strings.ToLower(fix), strings.ToLower(w)) {
-					t.Errorf("ShareFix(%q) = %q, should not say %q", c.kind, fix, w)
-				}
-			}
-		})
 	}
 }
 

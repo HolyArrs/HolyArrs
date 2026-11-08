@@ -19,6 +19,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/backup"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/files"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/doctor"
@@ -79,9 +80,9 @@ func publicReason(err error) string {
 	case errors.As(err, &nd):
 		return "this data is from a newer HolyArrs. Run that version again, or restore a backup." + goBack
 	case errors.As(err, &ns):
-		return "the config folder is on a shared or network folder (" + ns.Kind + "). " + database.ShareFix(ns.Kind)
+		return "the config folder is on a shared or network folder (" + ns.Kind + "). " + files.ShareFix(ns.Kind)
 	case errors.Is(err, database.ErrInMemory):
-		return "the config folder is in memory (tmpfs or ramfs), so everything in it would be lost at the next restart. Put /config on a disk (on Unraid: /mnt/<pool>/appdata/holyarrs, and check that the pool exists), or set " + database.EnvConfigInMemory + "=yes to keep it in memory anyway, then restart."
+		return "the config folder is in memory (tmpfs or ramfs), so everything in it would be lost at the next restart. Put /config on a disk (on Unraid: /mnt/<pool>/appdata/holyarrs, and check that the pool exists), or set " + files.EnvConfigInMemory + "=yes to keep it in memory anyway, then restart."
 	case errors.Is(err, database.ErrNotWritable) && (errors.Is(err, syscall.ENOSPC) || errors.Is(err, syscall.EDQUOT)):
 		return "the disk that holds the config folder is full or over its quota. Free some space and restart. Nothing was changed."
 	case errors.Is(err, database.ErrNotWritable):

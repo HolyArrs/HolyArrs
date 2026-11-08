@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/files"
 )
 
 func shareKind(kind string) func(string) (bool, string, error) {
@@ -50,8 +51,8 @@ func TestConfigShareFixFollowsTheKind(t *testing.T) {
 				t.Fatalf("not a FAIL:\n%s", r.Text())
 			}
 			fix := r.Checks[len(r.Checks)-1].Fix
-			if fix != database.ShareFix(c.kind) {
-				t.Errorf("fix %q, want database.ShareFix(%q) = %q", fix, c.kind, database.ShareFix(c.kind))
+			if fix != files.ShareFix(c.kind) {
+				t.Errorf("fix %q, want files.ShareFix(%q) = %q", fix, c.kind, files.ShareFix(c.kind))
 			}
 			for _, w := range c.has {
 				if !strings.Contains(fix, w) {

@@ -11,12 +11,13 @@ import (
 	"testing"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/files"
 )
 
 const secretDir = "/srv/private-config-dir"
 
 func shareErr(kind string) error {
-	return fmt.Errorf("%w: %s; %s", &database.NetShareError{Kind: kind}, secretDir, database.ShareFix(kind))
+	return fmt.Errorf("%w: %s; %s", &database.NetShareError{Kind: kind}, secretDir, files.ShareFix(kind))
 }
 
 // Refusals a person has to fix keep the page up instead of exiting into a

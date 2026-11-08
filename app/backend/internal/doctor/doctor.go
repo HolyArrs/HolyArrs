@@ -136,7 +136,7 @@ func Run(ctx context.Context, o Options) Report {
 	var r Report
 	uid, gid := os.Geteuid(), os.Getegid()
 	appChecks(&r, o.Version, uid, gid)
-	configChecks(&r, o.ConfigDir, uid, gid, database.NetworkShare)
+	configChecks(&r, o.ConfigDir, uid, gid, files.IsNetworkShare)
 	if o.ConfigDir != "" {
 		if lockProbe != nil {
 			lockChecks(&r, o.ConfigDir, lockProbe)
@@ -401,27 +401,27 @@ func configChecks(r *Report, dir string, uid, gid int, share func(string) (bool,
 		r.add(s, Warn, "could not tell whether it is a local disk: "+err.Error(), "")
 	case !on:
 		text := "on a local disk (the database must be local)"
-		if fs := database.MountType(dir); fs != "" {
+		if fs := files.MountType(dir); fs != "" {
 			text += ", mount type " + fs // for support: names the filesystem
 		}
 		r.add(s, OK, text, "")
-	case database.InMemory(kind):
-		if database.ConfigInMemoryAllowed() {
-			r.add(s, Warn, "in memory ("+kind+"), kept there because "+database.EnvConfigInMemory+" is set; everything in it is lost at the next restart", "put /config on a disk and remove "+database.EnvConfigInMemory)
+	case files.InMemory(kind):
+		if files.ConfigInMemoryAllowed() {
+			r.add(s, Warn, "in memory ("+kind+"), kept there because "+files.EnvConfigInMemory+" is set; everything in it is lost at the next restart", "put /config on a disk and remove "+files.EnvConfigInMemory)
 		} else {
 			r.add(s, Fail, "in memory ("+kind+"); everything in it is lost at the next restart, so HolyArrs will not start",
 				"put /config on a disk (on Unraid: /mnt/<pool>/appdata/holyarrs, and check that the pool exists)")
 		}
-	case kind == "fakeowner" && database.DesktopFolderAllowed():
-		r.add(s, Warn, "a Docker Desktop folder share, used because "+database.EnvAllowDesktopFolder+" is set; file locks there may not work", database.ShareFix(kind))
+	case kind == "fakeowner" && files.DesktopFolderAllowed():
+		r.add(s, Warn, "a Docker Desktop folder share, used because "+files.EnvAllowDesktopFolder+" is set; file locks there may not work", files.ShareFix(kind))
 	default:
 		text := "on a shared or network folder (" + kind + "); the database must be on a local disk"
-		if fs := database.MountType(dir); fs != "" {
+		if fs := files.MountType(dir); fs != "" {
 			if label, _ := files.Family(fs); label != "" {
 				text = "on " + label + " (" + fs + "); the database must be on a local disk"
 			}
 		}
-		r.add(s, Fail, text, database.ShareFix(kind))
+		r.add(s, Fail, text, files.ShareFix(kind))
 	}
 }
 
