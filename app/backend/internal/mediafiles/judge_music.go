@@ -144,7 +144,7 @@ func matchArtist(p releasename.Result, lib []TitleRef) Match {
 		}
 	}
 	if m.Various {
-		return Match{Conf: releasename.Unknown, Detail: "a various artists ReleaseFacts; it names no single artist"}
+		return Match{Conf: releasename.Unknown, Detail: "a various artists Release; it names no single artist"}
 	}
 	return Match{Conf: releasename.Unknown, Detail: fmt.Sprintf("no artist in the library is called %q", m.Artist)}
 }
