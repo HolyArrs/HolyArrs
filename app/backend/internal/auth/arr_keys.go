@@ -3,14 +3,10 @@ package auth
 import (
 	"context"
 	"crypto/rand"
-	"database/sql"
 	"encoding/hex"
-	"encoding/json"
 	"errors"
 	"net/http"
 	"strings"
-
-	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 )
 
 // The old-app API (decision 0008): /sonarr/ and /radarr/ answer apps such
@@ -81,11 +77,7 @@ func (a *Auth) checkArrKey(ctx context.Context, side, k string) (Who, bool) {
 	if len(k) != 32 {
 		return Who{}, false
 	}
-	var who Who
-	var used sql.NullString
-	var perms string
-	err := a.s.Read().QueryRowContext(ctx, `SELECT k.last_used_at, `+userCols+` FROM compat_keys k JOIN users u ON u.id = k.owner_user_id
-		WHERE k.side = ? AND k.hash = ? AND u.state = 'active'`, side, sum(k)).Scan(&used, &who.UserID, &who.Name, &who.Role, &perms, &who.TwoFactor, &who.MaxRating, &who.RatingCountry)
+	who, used, perms, err := a.arrKeyOwner(ctx, side, sum(k))
 	if err != nil {
 		return Who{}, false
 	}
@@ -94,10 +86,7 @@ func (a *Auth) checkArrKey(ctx context.Context, side, k string) (Who, bool) {
 	// an hour, like API keys.
 	now := a.now()
 	if !used.Valid || now.Sub(parseTime(used.String)) > touchEvery {
-		_ = a.s.WriteCore(ctx, func(tx *sql.Tx) error {
-			_, err := tx.Exec("UPDATE compat_keys SET last_used_at = ? WHERE side = ?", database.FormatTime(now), side)
-			return err
-		})
+		_ = a.touchArrKey(ctx, side, now)
 	}
 	who.Via = "api_key"
 	who.Scopes = []string{ScopeCompat}
@@ -117,26 +106,7 @@ type ArrKeyView struct {
 
 // ArrKeys lists the sides that have a key.
 func (a *Auth) ArrKeys(ctx context.Context) ([]ArrKeyView, error) {
-	rows, err := a.s.Read().QueryContext(ctx, `SELECT k.side, k.hint, COALESCE(u.name, ''), COALESCE(u.state = 'active', 0), k.created_at, k.last_used_at
-		FROM compat_keys k LEFT JOIN users u ON u.id = k.owner_user_id ORDER BY k.side DESC`)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	out := []ArrKeyView{}
-	for rows.Next() {
-		var v ArrKeyView
-		var used sql.NullString
-		if err := rows.Scan(&v.Side, &v.Hint, &v.Owner, &v.OwnerOK, &v.CreatedAt, &used); err != nil {
-			return nil, err
-		}
-		v.Hint = "…" + v.Hint
-		if used.Valid {
-			v.LastUsedAt = &used.String
-		}
-		out = append(out, v)
-	}
-	return out, rows.Err()
+	return a.listArrKeys(ctx)
 }
 
 // MakeArrKey makes a new key for side, owned by the person asking, and
@@ -153,15 +123,7 @@ func (a *Auth) MakeArrKey(r *http.Request, side string) (string, error) {
 	}
 	k := hex.EncodeToString(b)
 	who, _ := From(r.Context())
-	by, _ := json.Marshal(Actor(r.Context()))
-	now := database.FormatTime(a.now())
-	err := a.s.WriteCore(r.Context(), func(tx *sql.Tx) error {
-		_, err := tx.Exec(`INSERT INTO compat_keys(side, created_at, created_by, owner_user_id, hash, hint) VALUES (?, ?, ?, ?, ?, ?)
-			ON CONFLICT (side) DO UPDATE SET created_at = excluded.created_at, created_by = excluded.created_by, owner_user_id = excluded.owner_user_id,
-			last_used_at = NULL, hash = excluded.hash, hint = excluded.hint`, side, now, string(by), who.UserID, sum(k), k[len(k)-4:])
-		return err
-	})
-	if err != nil {
+	if err := a.putArrKey(r.Context(), side, who.UserID, k); err != nil {
 		return "", err
 	}
 	a.event(r, Actor(r.Context()), "api_key_created", "Old-app API key ("+side+") made", map[string]any{"old_app_side": side})
@@ -170,14 +132,7 @@ func (a *Auth) MakeArrKey(r *http.Request, side string) (string, error) {
 
 // DeleteArrKey removes side's key; false when it had none.
 func (a *Auth) DeleteArrKey(r *http.Request, side string) (bool, error) {
-	var n int64
-	err := a.s.WriteCore(r.Context(), func(tx *sql.Tx) error {
-		res, err := tx.Exec("DELETE FROM compat_keys WHERE side = ?", side)
-		if err == nil {
-			n, err = res.RowsAffected()
-		}
-		return err
-	})
+	n, err := a.removeArrKey(r.Context(), side)
 	if err != nil || n == 0 {
 		return false, err
 	}
