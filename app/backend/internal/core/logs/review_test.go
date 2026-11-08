@@ -160,10 +160,4 @@ func TestStdoutMasked(t *testing.T) {
 	if strings.Contains(out.String(), "stdout-secret-1") || strings.Contains(out.String(), "\x1b") || !strings.HasSuffix(out.String(), "\n") {
 		t.Fatalf("stdout: %q", out.String())
 	}
-	// The first-run setup code stays readable in docker logs.
-	out.Reset()
-	lg.Printf("auth: first run: setup code GD6ZYjW-5HCby_lyDC2L (also in x)")
-	if !strings.Contains(out.String(), "GD6ZYjW-5HCby_lyDC2L") {
-		t.Fatalf("setup code hidden on stdout: %q", out.String())
-	}
 }

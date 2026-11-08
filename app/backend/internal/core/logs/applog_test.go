@@ -12,18 +12,17 @@ import (
 
 func TestRedactPatterns(t *testing.T) {
 	for in, want := range map[string]string{
-		"GET http://user:XXXX@host:8080/api":                        "GET http://<H>@host:8080/api",
-		"feed https://tracker.example/rss?passkey=XXXX_PASS&x=1":    "feed https://tracker.example/rss?passkey=<H>&x=1",
-		"sources: X-Api-Key: XXXX_KEY sent":                         "sources: X-Api-Key: <H> sent",
-		`{"password":"XXXX_PW"}`:                                    `{"password":"<H>"}`,
-		"Authorization: Bearer abcdefghijklmnop":                    "Authorization: <H> <H>",
-		"key hak_abcDEF123_xyz made":                                "key hak_<H> made",
-		"auth: first run: setup code GD6ZYjW-5HCby_lyDC2L (also in": "auth: first run: setup code <H> (also in",
-		"token=XXXX_TOKEN next":                                     "token=<H> next",
-		"cookie: XXXX_COOKIE":                                       "cookie: <H>",
-		"blob 9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822c":     "blob <H>",
-		"Movie.Name.2026.1080p.WEB-DL.x264-GROUP imported":          "Movie.Name.2026.1080p.WEB-DL.x264-GROUP imported",
-		"auth: user 1 changed their password":                       "auth: user 1 changed their password",
+		"GET http://user:XXXX@host:8080/api":                     "GET http://<H>@host:8080/api",
+		"feed https://tracker.example/rss?passkey=XXXX_PASS&x=1": "feed https://tracker.example/rss?passkey=<H>&x=1",
+		"sources: X-Api-Key: XXXX_KEY sent":                      "sources: X-Api-Key: <H> sent",
+		`{"password":"XXXX_PW"}`:                                 `{"password":"<H>"}`,
+		"Authorization: Bearer abcdefghijklmnop":                 "Authorization: <H> <H>",
+		"key hak_abcDEF123_xyz made":                             "key hak_<H> made",
+		"token=XXXX_TOKEN next":                                  "token=<H> next",
+		"cookie: XXXX_COOKIE":                                    "cookie: <H>",
+		"blob 9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822c":  "blob <H>",
+		"Movie.Name.2026.1080p.WEB-DL.x264-GROUP imported":       "Movie.Name.2026.1080p.WEB-DL.x264-GROUP imported",
+		"auth: user 1 changed their password":                    "auth: user 1 changed their password",
 	} {
 		if want = strings.ReplaceAll(want, "<H>", Hidden); RedactPatterns(in) != want {
 			got := RedactPatterns(in)

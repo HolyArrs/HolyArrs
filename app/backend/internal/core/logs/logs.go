@@ -80,8 +80,6 @@ var (
 	bearer = regexp.MustCompile(`(?i)\b(bearer|basic)\s+[A-Za-z0-9._~+/=-]{8,}`)
 	// HolyArrs API keys
 	hak = regexp.MustCompile(`\bhak_[A-Za-z0-9_-]+`)
-	// "setup code ABC" in the first-run line
-	setupCode = regexp.MustCompile(`(?i)(setup code )\S+`)
 	// long token-like runs: 32+ letters, digits, - or _ holding both letters and digits
 	longTok = regexp.MustCompile(`\b[A-Za-z0-9_-]{32,}\b`)
 )
@@ -319,13 +317,12 @@ func Clean(s string) string {
 }
 
 // Mask wraps the program's own output (docker logs) so it gets the same
-// masking and escaping as the file, except the first-run setup code: the
-// owner reads it there to make the first account.
+// masking and escaping as the file.
 func (l *Log) Mask(w io.Writer) io.Writer { return maskWriter{l, w} }
 
 func (m maskWriter) Write(p []byte) (int, error) {
 	s, nl := strings.CutSuffix(string(p), "\n")
-	out := m.l.redact(Clean(s), true)
+	out := m.l.redact(Clean(s))
 	if nl {
 		out += "\n"
 	}
@@ -338,12 +335,12 @@ func (m maskWriter) Write(p []byte) (int, error) {
 // Redact masks secrets in one line: the known vault values (and their
 // encoded forms), credentials in links, secret query parameters, key=value
 // and key: value pairs with a secret name, bearer tokens, HolyArrs API keys,
-// the first-run setup code and long token-like runs.
-func (l *Log) Redact(s string) string { return l.redact(s, false) }
+// and long token-like runs.
+func (l *Log) Redact(s string) string { return l.redact(s) }
 
 // RedactPatterns masks what the patterns of Redact catch, without the
 // vault values.
-func RedactPatterns(s string) string { return redactPatterns(s, false) }
+func RedactPatterns(s string) string { return redactPatterns(s) }
 
 // LevelOf guesses a line's level from its words.
 func LevelOf(text string) string {
@@ -569,7 +566,7 @@ func (l *Log) writeLine(s string) {
 	l.size += int64(n)
 }
 
-func (l *Log) redact(s string, keepSetup bool) string {
+func (l *Log) redact(s string) string {
 	if p := l.known.Load(); p != nil {
 		for _, v := range p.long {
 			if strings.Contains(s, v) {
@@ -580,7 +577,7 @@ func (l *Log) redact(s string, keepSetup bool) string {
 			s = replaceToken(s, v)
 		}
 	}
-	return redactPatterns(s, keepSetup)
+	return redactPatterns(s)
 }
 
 // replaceToken masks v where it stands alone: not next to a letter, digit,
@@ -619,7 +616,7 @@ func isWord(c byte) bool {
 	return c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0' && c <= '9' || c == '_' || c >= 0x80
 }
 
-func redactPatterns(s string, keepSetup bool) string {
+func redactPatterns(s string) string {
 	s = urlCreds.ReplaceAllString(s, "${1}"+Hidden+"@")
 	s = queryKey.ReplaceAllString(s, "${1}"+Hidden)
 	s = bearer.ReplaceAllString(s, "${1} "+Hidden)
@@ -636,9 +633,6 @@ func redactPatterns(s string, keepSetup bool) string {
 		return sm[1] + sm[2] + Hidden
 	})
 	s = hak.ReplaceAllString(s, "hak_"+Hidden)
-	if !keepSetup {
-		s = setupCode.ReplaceAllString(s, "${1}"+Hidden)
-	}
 	s = longTok.ReplaceAllStringFunc(s, func(m string) string {
 		if strings.ContainsAny(m, "0123456789") && strings.ContainsFunc(m, func(r rune) bool { return r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z' }) {
 			return Hidden
