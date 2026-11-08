@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 )
 
 // rdpRoutes is what each route of requests, discover, migrate, the old-app
@@ -134,15 +134,15 @@ var rdpRoutes = map[string][2]string{
 
 func TestRDPRoutePermsAndScopes(t *testing.T) {
 	for p, want := range rdpRoutes {
-		need, ok := auth.RoutePerms[p]
+		need, ok := accounts.RoutePerms[p]
 		if !ok {
-			t.Errorf("%s: no entry in auth.RoutePerms", p)
+			t.Errorf("%s: no entry in accounts.RoutePerms", p)
 			continue
 		}
 		if string(need) != want[0] {
 			t.Errorf("%s: needs %q, pinned %q", p, need, want[0])
 		}
-		if got := auth.RouteScope(p); got != want[1] {
+		if got := accounts.RouteScope(p); got != want[1] {
 			t.Errorf("%s: scope %q, pinned %q", p, got, want[1])
 		}
 	}
@@ -252,7 +252,7 @@ func (r *askRig) rdpSend(t *testing.T, who *signedIn, req string) (int, string) 
 	path, body, _ := strings.Cut(rest, " ")
 	hr, _ := http.NewRequest(m, r.srv.URL+path, strings.NewReader(body))
 	hr.Header.Set("Content-Type", "application/json")
-	hr.Header.Set(auth.CSRFHeader, who.csrf)
+	hr.Header.Set(accounts.CSRFHeader, who.csrf)
 	resp, err := who.c.Do(hr)
 	if err != nil {
 		t.Fatal(err)
