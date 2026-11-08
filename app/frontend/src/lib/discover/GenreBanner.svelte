@@ -1,13 +1,10 @@
 <script lang="ts">
-	import { proxied } from '../core/tmdb-image.ts';
-	import type { Snippet } from 'svelte';
 	import ArtPill from '#lib/ui/ArtPill.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
+	import type { Snippet } from 'svelte';
+	import { proxied } from '../core/tmdb-image.ts';
 
-	// Explore's editorial banner for the household's favourite genre: big slow art,
-	// the genre in large type, a short line, and a row of picks not in the Library yet.
-	// One click on the card opens the genre page. `layout` 1 lays the picks over the
-	// art; 2 sets the words and art beside a column of picks below.
+	// Explore's banner for the household's favourite genre: slow art, the genre in large type, a short line and a row of picks not in the Library yet. One click opens the genre page. `layout` 1 lays the picks along the bottom, 2 puts them in a panel on the right.
 	let {
 		name,
 		line,
@@ -29,7 +26,7 @@
 		count?: number;
 		/** Square picks (music covers) instead of posters. */
 		square?: boolean;
-		/** The posters, rendered by the page so they match every other row. */
+		/** Posters rendered by the page so they match every other row. */
 		picks: Snippet;
 	} = $props();
 	const bg = $derived(proxied(art[0]));
@@ -67,17 +64,14 @@
 	.picks { position: relative; z-index: 2; display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; min-width: 0; --pick: 168px; }
 	.picks::-webkit-scrollbar { display: none; }
 	.picks > :global(*) { flex: none; width: var(--pick); }
-	/* Layout 1: words top-left, the picks run along the bottom over the art. */
 	.l1 { min-height: 520px; grid-template-rows: 1fr auto; padding: 40px 36px 28px; gap: 28px; }
-	/* Layout 2: words left, the picks in a glass panel on the right, two rows. */
-	/* Layout 2: words centred on the left, one row of four picks on the right, no gaps. */
 	.l2 { min-height: 0; grid-template-columns: minmax(0, 4fr) minmax(0, 7fr); align-items: center; padding: 32px 36px; gap: 32px; }
 	.l2 .veil { background: linear-gradient(90deg, rgb(0 0 0 / .86), rgb(0 0 0 / .6) 45%, rgb(0 0 0 / .3)); }
 	.l2 .picks { flex-wrap: nowrap; overflow: visible; --pick: calc((100% - 24px) / 4); }
 	.l2 .picks > :global(*:nth-child(n + 5)) { display: none; }
-	/* The pictures carry the names; the captions under them sat on busy art and could not be read. */
+	/* The pictures carry the names; captions under them sat on busy art and could not be read. */
 	.l2 .picks :global(.t), .l2 .picks :global(.s), .l2 .picks :global(.sk-line) { display: none; }
-	/* (and so the placeholders: a pick's height never changes when the covers arrive) */
+	/* Placeholders follow, so a pick's height never changes when covers arrive. */
 	@container (max-width: 900px) { .l2 { grid-template-columns: 1fr; } .l2 .picks { overflow-x: auto; --pick: 140px; } .l2 .picks > :global(*:nth-child(n + 5)) { display: block; } }
 	@media (max-width: 767px) {
 		.l1 { min-height: 0; padding: 26px 16px 18px; gap: 20px; }

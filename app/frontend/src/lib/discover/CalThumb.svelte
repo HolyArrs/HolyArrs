@@ -1,11 +1,11 @@
 <script lang="ts">
-	import type { CalendarEntry } from '#lib/core/types.ts';
+	import ArtPlaceholder from '#lib/ui/ArtPlaceholder.svelte';
 	import { entryArt } from './calendar.ts';
 	import { entryTitle } from './calendar-groups.ts';
+	import type { CalendarEntry } from '#lib/core/types.ts';
 	import { sized } from '#lib/core/tmdb-image.ts';
-	import ArtPlaceholder from '#lib/ui/ArtPlaceholder.svelte';
 
-	// The small 16:9 picture on a List row (an album's cover fills it, cropped).
+	// Small 16:9 picture on a List row; an album cover fills it, cropped.
 	let { e, w = 160 }: { e: CalendarEntry; w?: number } = $props();
 	const src = $derived(e.kind === 'album' ? (e.poster ?? null) : entryArt(e));
 	let failed = $state(false);

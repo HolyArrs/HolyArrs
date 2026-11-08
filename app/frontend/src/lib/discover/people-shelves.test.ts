@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { byDept, chipDept, visibleChips, type ShelfMeta } from './people-shelves.ts';
+import { describe, expect, it } from 'vitest';
 
 const shelf = (departments: Record<string, number>): ShelfMeta => ({ id: 'library', title: 'From your Library', count: 20, departments });
 

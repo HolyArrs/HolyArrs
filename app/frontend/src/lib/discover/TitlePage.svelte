@@ -1,20 +1,6 @@
 <script lang="ts">
+	import '#lib/ui/title-page.css';
 	import PageLoader from '#lib/ui/PageLoader.svelte';
-	import { goto, replaceState, snapshot } from '$app/navigation';
-	import { page } from '$app/state';
-	import { to } from '#lib/core/paths.ts';
-	import { api, message, ApiError } from '#lib/core/api.ts';
-	import { session } from '#lib/core/session.svelte.ts';
-	import { toasts } from '#lib/core/toasts.svelte.ts';
-	import { SearchOutcomeLine, QuickAsk, AddMovieDialog, AddShowDialog, AskShowDialog, AskMovieDialog } from '#lib/requests/index.ts';
-	import { refreshInbox } from '#lib/core/inbox.svelte.ts';
-	import { seasonWords, SeasonFolds } from '#lib/shows/index.ts';
-	import { detailPath, fourKOffer, isDetailKind, loadDetails, remembered, type TitleDetails } from '#lib/metadata/index.ts';
-	import { preloadHero } from '#lib/core/tmdb-image.ts';
-	import type { Ask, LibraryFolder, LookupMovie, PickRulesView, TitleView } from '#lib/core/types.ts';
-	import type { GateDefaults } from '#lib/mediafiles/index.ts';
-	import type { ShowSettings } from '#lib/shows/index.ts';
-	import type { LookupShow } from '#lib/core/types.ts';
 	import TitleHero, { richMetadata, runtimeWords, type RichMeta } from '#lib/ui/TitleHero.svelte';
 	import ActionButton from '#lib/ui/ActionButton.svelte';
 	import Shelf from '#lib/ui/Shelf.svelte';
@@ -22,38 +8,47 @@
 	import FollowButton from '#lib/ui/FollowButton.svelte';
 	import type { InfoDetails } from '#lib/ui/title-info.ts';
 	import { tmdbArtName } from '#lib/ui/title-cards.ts';
-	import TitleScores from './TitleScores.svelte';
-	import TitleTrailers from './TitleTrailers.svelte';
 	import { loadExtras, scoreName, type OutsideScore } from '#lib/ui/outside-ratings.ts';
 	import { ratingPicks, shownRatings } from '#lib/ui/rating-picks.svelte.ts';
 	import { loadWikiFacts, type WikiAward } from '#lib/ui/wiki-facts.ts';
 	import ActionMenu from '#lib/ui/ActionMenu.svelte';
-	import { savedDefaults } from '#lib/mediafiles/index.ts';
-	import { bytes, ago } from '#lib/core/format.ts';
 	import PersonCircle from '#lib/ui/PersonCircle.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
-	import { untrack } from 'svelte';
-	import { live } from '#lib/core/live.svelte.ts';
-	import { date } from '#lib/core/format.ts';
 	import { loadAskedBy, type AskedByAnswer } from '#lib/ui/asked-by.ts';
 	import AskedByLine from '#lib/ui/AskedByLine.svelte';
-	import '#lib/ui/title-page.css';
 	import { audienceOf, titleStatus } from '#lib/ui/title-status.ts';
+	import TitleScores from './TitleScores.svelte';
+	import TitleTrailers from './TitleTrailers.svelte';
 	import { createOwnedTitle } from './title-owned.svelte.ts';
 	import TitleLibrary from './TitleLibrary.svelte';
 	import TitleOwnedSheets from './TitleOwnedSheets.svelte';
+	import { SearchOutcomeLine, QuickAsk, AddMovieDialog, AddShowDialog, AskShowDialog, AskMovieDialog } from '#lib/requests/index.ts';
+	import { seasonWords, SeasonFolds } from '#lib/shows/index.ts';
+	import { detailPath, fourKOffer, isDetailKind, loadDetails, remembered, type TitleDetails } from '#lib/metadata/index.ts';
+	import type { GateDefaults } from '#lib/mediafiles/index.ts';
+	import type { ShowSettings } from '#lib/shows/index.ts';
+	import { savedDefaults } from '#lib/mediafiles/index.ts';
+	import { goto, replaceState, snapshot } from '$app/navigation';
+	import { page } from '$app/state';
+	import { untrack } from 'svelte';
+	import { to } from '#lib/core/paths.ts';
+	import { api, message, ApiError } from '#lib/core/api.ts';
+	import { session } from '#lib/core/session.svelte.ts';
+	import { toasts } from '#lib/core/toasts.svelte.ts';
+	import { refreshInbox } from '#lib/core/inbox.svelte.ts';
+	import { preloadHero } from '#lib/core/tmdb-image.ts';
+	import type { Ask, LibraryFolder, LookupMovie, PickRulesView, TitleView } from '#lib/core/types.ts';
+	import type { LookupShow } from '#lib/core/types.ts';
+	import { bytes, ago } from '#lib/core/format.ts';
+	import { live } from '#lib/core/live.svelte.ts';
+	import { date } from '#lib/core/format.ts';
 
-	// The one title page for a movie or show, wherever it is opened from
-	// (/title/<kind>/<tmdb> and /library/<id> both render it). Not in the
-	// Library: Add (people who manage the Library) or Ask (members). In the
-	// Library: the same page, with a Library tab and the More menu for the
-	// manager tools (files, Versions, copies, subtitles, releases, delete).
+	// The one title page for a movie or show, wherever it is opened from (/title/<kind>/<tmdb> and /library/<id> both render it). Not in the Library: Add (people who manage it) or Ask (members). In the Library: the same page with its Library tab.
 	let { kind, tmdb, libraryId, backHref }: { kind: string; tmdb: string; libraryId?: number; backHref?: string } = $props();
 	let details = $state<TitleDetails | null>(null);
-	// Back from a person (or any page opened here) lands where the page was:
-	// rows below the hero load late, so the scroll is put back as they arrive.
+	// Back from a person (or any page opened here) lands where the page was. Rows below the hero load late, so the scroll is restored as they arrive.
 	snapshot<number>({
 		capture: () => Math.round(scrollY),
 		restore: (y) => {
@@ -87,7 +82,7 @@
 	// The short facts about the copy you have: quality, size, kept up to date.
 	let rules = $state<PickRulesView[]>([]);
 	let folders = $state<LibraryFolder[]>([]);
-	// Who asked (the hero's byline).
+	// Who asked, for the hero byline.
 	let askedBy = $state<AskedByAnswer>({ titles: {} });
 	$effect(() => {
 		const id = owned?.id;
@@ -122,7 +117,7 @@
 		// Opened from the Library: its record loads beside the details, not after them.
 		if (libraryId && own.ownedFor !== libraryId) void own.loadOwned(libraryId);
 		try {
-			// The metadata answer draws the hero at once; the lookup's Library and ask facts follow.
+			// The metadata answer draws the hero at once; the Library and ask facts follow.
 			const d = await loadDetails(api.get, k, id, undefined, (m) => {
 				if (k !== kind || id !== tmdb) return;
 				preloadHero(m.backdrop);
@@ -152,8 +147,7 @@
 			loading = false;
 		}
 	}
-	// Load only when the title itself changes: a live update hands the same kind
-	// and TMDB id again, and reloading then would drop open sheets and scroll.
+	// Load only when the title itself changes. A live update hands over the same kind and TMDB id, and reloading then would drop open sheets and scroll.
 	let loadedKey = '';
 	$effect(() => {
 		const k = kind, id = tmdb;
@@ -171,7 +165,7 @@
 		api.get<{ pick_rules: PickRulesView[] }>('/pick-rules').then((r) => (rules = r.pick_rules)).catch(() => {});
 		api.get<GateDefaults>('/settings/release-gate').then((r) => (gateDefault = r.release_gate)).catch(() => {});
 		api.get<ShowSettings>('/settings/shows').then((r) => (showDefaults = r)).catch(() => {});
-		// The add dialogs wait for the saved defaults; fetched once for this visit.
+		// The add dialogs wait for the saved defaults, fetched once per visit.
 		savedDefaults.forget();
 		void savedDefaults.load();
 	});
@@ -197,13 +191,13 @@
 		void refreshInbox();
 	}
 	const kindWord = $derived(kind === 'show' ? 'TV shows' : kind === 'movie' ? 'Movies' : 'Not found');
-	// Other apps and old links say "tv" or "series" for a show and "film" for a movie: go to the one address this page uses.
+	// Other apps and old links say "tv" or "series" for a show and "film" for a movie; go to the one address this page uses.
 	const KIND_ALIASES: Record<string, string> = { tv: 'show', series: 'show', shows: 'show', film: 'movie', movies: 'movie' };
 	$effect(() => {
 		const alias = KIND_ALIASES[kind.toLowerCase()];
 		if (alias && typeof location !== 'undefined') void goto(location.pathname.replace(`/title/${kind}/`, `/title/${alias}/`) + location.search, { replaceState: true });
 	});
-	// The logo and age rating, when the metadata endpoint has them (cached, shared with loadDetails' answer).
+	// The logo and age rating, when the metadata endpoint has them (cached, shared with loadDetails).
 	let rich = $state<RichMeta | null>(null);
 	$effect(() => {
 		const k = kind, id = tmdb;
@@ -222,8 +216,7 @@
 	const seasons = $derived(info?.seasons ?? []);
 	const regular = $derived(seasons.filter((s) => s.number > 0).length);
 	const networkOf = (d: TitleDetails) => d.network ?? d.show?.network ?? '';
-	// The hero says what it is (year, length or seasons, genres, age rating,
-	// scores); the details under the story say only what the hero does not.
+	// The hero says what it is (year, length or seasons, genres, age rating, scores); the details under the story say only what the hero does not.
 	const personHref = (id?: string) => (id ? to(`/people/${id.replace(/^tmdb:/, '')}`) : undefined);
 	/** The director (movies) or creators (shows). */
 	const makers = $derived((info?.crew ?? []).filter((p) => p.role === (kind === 'show' ? 'creator' : 'director')));
@@ -259,14 +252,14 @@
 		void loadExtras(api.get, k, id).then((x) => live && (outside = x.scores));
 		return () => (live = false);
 	});
-	// Only the ratings this browser picked (Settings › Appearance).
+	// Only the ratings this browser picked (Settings > Appearance).
 	const picked = $derived(shownRatings(outside, rich?.score ?? scoreOf(details?.rating), ratingPicks.list, !ratingPicks.custom));
 	const hasScores = $derived(picked.scores.length > 0 || !!picked.tmdb);
 	// The second row of facts: dates, where the title stands, studio, money, awards, original title.
 	const fmtDay = (d?: string) => (d ? new Date(`${d}T00:00:00Z`).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' }) : '');
 	const money = (n?: number) => (n ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', notation: 'compact', maximumFractionDigits: 1 }).format(n) : '');
 	const statusWord = (s?: string) => (!s || s === 'Released' ? '' : s.charAt(0) + s.slice(1).toLowerCase());
-	// Award badges ("3 Oscars"): in the hero, or under it with the facts line (H2).
+	// Award badges ("3 Oscars"), in the hero or under it with the facts line.
 	let awards = $state<WikiAward[]>([]);
 	let awardBadges = $state<string[]>([]);
 	$effect(() => {
@@ -285,7 +278,7 @@
 	// About band: every score this title has (first is the big one), the award count, and three fact columns.
 	const allScores = $derived.by(() => {
 		const out: { name: string; value: string; votes: string }[] = [];
-		// Every score on one scale (out of 10, one decimal) so the rows line up and compare at a glance.
+		// Every score on one scale (out of 10, one decimal) so rows line up and compare at a glance.
 		const ten = (v: number, max: number) => ((Math.round((v / max) * 100) / 10).toFixed(1));
 		for (const o of outside) out.push({ name: scoreName(o.source), value: ten(o.value, o.max), votes: o.votes ? o.votes.toLocaleString() : '' });
 		const t = rich?.score ?? scoreOf(details?.rating);
@@ -338,11 +331,9 @@
 		].filter((x): x is { name: string; href: string } => !!x);
 	});
 	const crumbs = $derived(details ? [{ href: to('/explore'), label: 'Explore' }, { href: to(detailPath(details.kind, details.tmdb)), label: details.year ? `${details.name} (${details.year})` : details.name }] : []);
-	// The breadcrumb's parent for a page opened fresh: the title's section (Movies or TV shows).
-	// From the Library grid: back to it with its filters (backHref); otherwise the kind's own list.
+	// The breadcrumb's parent for a page opened fresh is the title's section (Movies or TV shows). From the Library grid it goes back to the grid with its filters (backHref).
 	const sectionCrumb = $derived(details?.kind === 'show' ? { label: 'TV shows', href: backHref ?? to('/library?kind=show') } : { label: 'Movies', href: backHref ?? to('/library?kind=movie') });
 </script>
-
 
 <svelte:head><title>{details?.name ? `${details.name} · HolyArrs` : `${kindWord} · HolyArrs`}</title></svelte:head>
 
@@ -428,7 +419,6 @@
 
 		{#snippet factsLine()}
 			{@const parts = heroFacts(d).slice(0, heroFacts(d).length - d.genres.slice(0, d.kind === 'show' ? 2 : 3).length)}
-			<!-- One even row: every item, the age rating and each score apart by the same · and space. -->
 			<div class="calm-meta">
 				{#each parts as f, i (i)}{#if i}<span class="sep" aria-hidden="true">·</span>{/if}<span>{f}</span>{/each}
 				{#if cert}<span class="sep" aria-hidden="true">·</span><span class="fb cert">{cert}</span>{/if}
@@ -451,7 +441,6 @@
 			<LoadError hasData={false} message="Could not load this title's Library details." onretry={() => libraryId && void own.loadOwned(libraryId)} />
 		{/if}
 		{#if owned}
-			<!-- Underline tabs under the hero: Overview and Library. -->
 			{@render ownTabBar()}
 			<TitleLibrary {own} {folders} {rules} />
 			<TitleOwnedSheets {own} />
@@ -471,8 +460,7 @@
 		{#if d.kind === 'show'}<SeasonFolds tmdb={d.tmdb} {seasons} fallback={d.backdrop} />{/if}
 		{@render castRow()}
 		<TitleRows kind={d.kind} tmdb={d.tmdb} bind:info band={false} quickAsk={QuickAsk} />
-			<!-- Apple TV-like About band: a lighter strip to the page edges; a row of cards (the title, every score,
-			     awards), then three columns of plain label/value facts, then links out. -->
+			<!-- About band: a lighter strip to the page edges, a row of cards (the title, every score, awards), three columns of label and value facts, then links out. -->
 			<section class="atv" data-testid="title-ledger">
 				<h2 class="atv-h">About</h2>
 				<div class="atv-cards">
@@ -494,7 +482,6 @@
 					</article>
 					{/if}
 					{#if allScores.length}
-						<!-- Every score as one row: colored mark and name left, the score out of 10 right. -->
 						<article class="atv-card">
 							<h3 id="ratings">Ratings</h3>
 							<div class="atv-scores" ><TitleScores scores={outside} tmdb={rich?.score ?? scoreOf(d.rating)} variant="list" outOf10 /></div>
@@ -515,7 +502,6 @@
 				<p class="atv-links">{#each outLinks as l, i (l.name)}{#if i}<span class="sep" aria-hidden="true">·</span>{/if}<a href={l.href} target="_blank" rel="noopener noreferrer">{l.name} ↗</a>{/each}</p>
 			</section>
 
-
 		{/if}
 		<Sheet bind:open={allCast} title="Cast and crew" size="lg">
 			<ul class="all-grid people">
@@ -530,7 +516,6 @@
 </PageLoader>
 {/if}
 
-
 {#if manage}
 	<AddMovieDialog bind:this={addMovie} {folders} {rules} {gateDefault} onadded={(_m, t) => added(t)} />
 	<AddShowDialog bind:this={addShow} {folders} {rules} defaults={showDefaults} onadded={(_s, t) => added(t)} />
@@ -541,40 +526,23 @@
 {/if}
 
 <style>
-
 	.all-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 18px 14px; margin: 0; padding: 0; list-style: none; }
 	.all-grid.people { grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); }
-	/* Linked names read as text until hovered. */
 	.lead { max-width: 72ch; margin: 0; font: 400 16px/1.55 var(--font-ui); color: var(--text); }
-	/* The ratings on their own row, then the details in one even grid: columns line up at every width. */
 	.d-left { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
 	.top-scores { display: contents; color: inherit; text-decoration: none; }
 	#ratings { scroll-margin-top: 90px; }
-	/* Owned title (A–E): status chips, band, tabs, inline panel, tools. */
 	.own-tabs { display: flex; gap: 6px; }
 	.own-tabs button { position: relative; display: inline-flex; align-items: center; gap: 6px; height: 40px; padding: 0 14px; border: 0; background: none; color: var(--text-muted); font: 600 14px/1 var(--font-ui); cursor: pointer; }
 	.own-tabs button.on { color: var(--text); }
 	.own-count { color: var(--text-muted); font: 600 12px/1 var(--font-ui); font-variant-numeric: tabular-nums; }
-	/* T1: underline tabs, left. */
 	.own-tabs { border-bottom: 1px solid var(--line); }
 	.own-tabs button { border-bottom: 2px solid transparent; transition: color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out); }
 	.own-tabs button:hover { color: var(--text); }
 	.own-tabs button.on { border-bottom-color: var(--text); }
-	/* T2: centered segmented pills. */
-	/* T3: glass pills sitting on the bottom edge of the art. */
-	/* T4: a full-width bar that sticks under the top bar while scrolling. */
-	/* T5: a vertical list beside the content. */
 	@keyframes own-pulse { 50% { opacity: .35; } }
 	
 	.own-badge { margin-left: 6px; display: inline-grid; place-items: center; width: 16px; height: 16px; border-radius: 50%; background: var(--fail); color: #fff; font-size: 11px; }
-	/* Library tab */
-	/* Wide screens: status, seasons and files on the left; activity and settings beside them, so less scrolling. */
-	/* Seasons as a list, closed until opened (like the classic season rows, without the clutter). */
-	/* The title button covers the whole row; the row's own buttons sit above it. */
-	/* A row's value that opens a short menu or a small panel. */
-	/* Quality: a segmented control under its label; the last slot opens the other sets. */
-	/* The shared menu button has a taller minimum; match the other segments so Custom sits on the same line. */
-	/* The tools under the tabs speak the Settings group's language: same heading size, same surfaces. */
 	.calm-meta .sep { margin: 0 8px; color: var(--text-faint); }
 	.side-credits dt { color: var(--text-muted); font-weight: 500; }
 	.side-credits a { color: inherit; }
@@ -585,9 +553,6 @@
 	@media (max-width: 899px) { .side { grid-template-columns: minmax(0, 1fr); } }
 	.calm-meta { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 0; color: var(--text-muted); font: 500 15.5px/1.4 var(--font-ui); }
 	.d-left .tagchips.quiet { margin-top: -6px; }
-	/* About band, Apple TV-like: lighter strip edge to edge, cards, then label/value columns. */
-	/* About band, measured on tv.apple.com (1440-1650 px desktop): band one step lighter than the page (#2b2b2b on #1f1f1f),
-	   cards white 10% with 12 px corners and 14/16/16 padding, 20 px gaps; 17 px bold titles, 11 px caps, 15/20 text, 12 px facts. */
 	.atv { position: relative; margin-top: 32px; padding: 32px 0 40px; background: var(--atv-band); box-shadow: 0 0 0 100vmax var(--atv-band); clip-path: inset(0 -100vmax -100vmax -100vmax); --atv-band: color-mix(in srgb, var(--text) 7%, var(--bg)); --atv-card: rgb(255 255 255 / 10%); }
 	:global([data-theme='light']) .atv { --atv-band: color-mix(in srgb, var(--text) 5%, var(--bg)); --atv-card: var(--bg); }
 	.atv-scores :global(.list li) { padding: 0; border-top: 0; font-size: 15px; line-height: 20px; }
@@ -596,7 +561,6 @@
 	.atv-h { margin: 0 0 13px; color: var(--text); font: 700 17px/21px var(--font-ui); }
 	.atv-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
 	.atv-card { min-width: 0; padding: 14px 16px 16px; border-radius: 12px; background: var(--atv-card); }
-	/* Cards keep a third of the width each, however many there are (never one stretched card). */
 	.atv-card h3 { margin: 0; padding-bottom: 8px; color: var(--text); font: 700 17px/21px var(--font-ui); }
 	.atv-cap { margin: 0; padding-bottom: 5px; color: var(--text-muted); font: 400 11px/14px var(--font-ui); text-transform: uppercase; }
 	.atv-text { margin: 0; color: var(--text-muted); font: 400 15px/20px var(--font-ui); }
@@ -611,7 +575,7 @@
 	.atv-links { display: flex; flex-wrap: wrap; align-items: center; margin: 20px 0 0; color: var(--text-muted); font: 400 12px/16px var(--font-ui); }
 	.atv-links .sep { margin: 0 8px; color: var(--text-faint); }
 	.atv-links a { color: var(--text-muted); text-decoration: none; }
-	/* Touch phones: a 44px-tall hit area over the 16px link line. */
+	/* A 44px-tall hit area over the 16px link line on touch phones. */
 	@media (max-width: 767px) and (pointer: coarse) { .atv-links a { position: relative; } .atv-links a::after { content: ''; position: absolute; inset: -14px 0; } }
 	.atv-links a:hover { color: var(--text); }
 	@media (max-width: 899px) { .atv-cards { grid-template-columns: minmax(0, 1fr); } .atv-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 16px; } }

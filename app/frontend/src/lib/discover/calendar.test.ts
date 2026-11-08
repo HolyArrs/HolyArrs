@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { addDays, rangeChunks, titlesFromAddress, itemDot, oneMovieDate, movieFacts, followsOk, followerNames, withFollow, startFollows, readFollows, saveFollows, type MovieFacts, byDay, monthGrid, monthRange, shiftMonth, ymd, weekStart, shiftWeek, readView, saveView, startView, viewFromAddress, entryArt, entryIcon, bannerArt, type BannerEntry } from './calendar.ts';
+import { describe, expect, it } from 'vitest';
 import type { CalendarEntry } from '../core/types.ts';
 
 const e = (title_id: number, kind: CalendarEntry['kind'], date: string): CalendarEntry => ({ title_id, name: `Movie ${title_id}`, kind, date });
@@ -39,7 +39,7 @@ describe('calendar', () => {
 
 describe('calendar week', () => {
 	it('starts weeks on Monday', () => {
-		const s = weekStart(new Date(2026, 9, 18)); // a Sunday
+		const s = weekStart(new Date(2026, 9, 18)); // A Sunday.
 		expect(ymd(s)).toBe('2026-10-12');
 		expect(ymd(shiftWeek(s, -1))).toBe('2026-10-05');
 	});
@@ -97,13 +97,11 @@ describe('one date per movie', () => {
 			[1, 'digital'],
 			[2, 'cinema']
 		]);
-		// Digital and disc on one day: one date.
 		expect(oneMovieDate([mv(3, 'digital', '2026-12-01'), mv(3, 'physical', '2026-12-01')])).toHaveLength(1);
 	});
 	it('lets the title decide when its home date is outside the days loaded, and marks a movie in the Library', () => {
 		const facts = new Map<number, MovieFacts>([[1, { cinema: '2026-11-01', digital: '2027-01-10', have: false }], [2, { cinema: '2026-11-05', have: true }]]);
 		const out = oneMovieDate([mv(1, 'cinema', '2026-11-01'), mv(2, 'cinema', '2026-11-05'), { title_id: 9, name: 'Show', kind: 'episode', date: '2026-11-02', air_day: '2026-11-02' }], facts);
-		// Movie 1 is out at home in January: its cinema date in view is dropped.
 		expect(out.map((x) => x.title_id)).toEqual([2, 9]);
 		expect(out[0].state).toBe('in_library');
 		expect(itemDot(out[0], '2026-11-10')).toBe('have');

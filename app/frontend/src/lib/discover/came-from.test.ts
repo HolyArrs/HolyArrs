@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { fromIcon, pageLabel } from './came-from.svelte.ts';
+import { describe, expect, it } from 'vitest';
 
 describe('came-from', () => {
 	it('names a page from its title', () => expect(pageLabel('Search · HolyArrs')).toBe('Search'));

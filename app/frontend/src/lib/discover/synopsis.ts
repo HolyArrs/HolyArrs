@@ -1,6 +1,4 @@
-// A short, Netflix-length synopsis: whole sentences up to about `max`
-// characters; a first sentence that is already too long is cut at a word
-// and ends in an ellipsis. No "Show more" is ever needed.
+// A short synopsis of whole sentences up to about `max` characters. A first sentence that is already too long is cut at a word and ends in an ellipsis, so no "Show more" is needed.
 export function shortSynopsis(text: string | null | undefined, max = 160): string {
 	const t = (text ?? '').replace(/\s+/g, ' ').trim();
 	if (t.length <= max) return t;

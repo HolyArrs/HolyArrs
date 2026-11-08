@@ -7,10 +7,7 @@
 	import { missReason, trailerSources, videoReason, type TrailerSource } from '../core/trailer/autoplay.svelte.ts';
 	import { openTheater } from '../core/trailer/theater.svelte.ts';
 
-	// A title's trailers and teasers (YouTube, as TMDB lists them) as one row
-	// of small cards, the main trailer first. Each card shows the video's own
-	// cover; when that cannot load, one of the title's backdrops. Playing one
-	// opens the big player.
+	// A title's trailers and teasers (YouTube, as TMDB lists them) as one row of small cards, main trailer first. Each card shows the video's own cover, or one of the title's backdrops when that cannot load.
 	let {
 		kind,
 		tmdb,
@@ -24,7 +21,7 @@
 		title: string;
 		videos?: Video[];
 		art?: (string | null | undefined)[];
-		/** About how wide a card is; the row fits whole cards (the episode cards' size). */
+		/** About how wide a card is; the row fits whole cards. */
 		item?: string;
 	} = $props();
 
@@ -57,8 +54,7 @@
 			let list: TrailerSource[] = [];
 			const isMain = !!main && v.key === main.key;
 			if (isMain) list = await trailerSources(kind, tmdb, videos);
-			// The main trailer with no stream left plays in the YouTube player,
-			// with the server's reason for the line shown if that refuses it too.
+			// A main trailer with no stream left plays in the YouTube player, with the server's reason shown if that refuses it too.
 			const why = isMain ? missReason(kind, tmdb) : '';
 			// When the server said none of the trailers plays here, the player says why at once.
 			const [source, ...fallbacks]: TrailerSource[] = list.length ? list : [why ? { kind: 'embed', key: v.key, why, told: videoReason(why) || undefined } : { kind: 'embed', key: v.key }];

@@ -34,7 +34,7 @@ export interface NewServicesAnswer {
 	row: ServerRow;
 }
 
-/** parseNewType reads ?type= (anything else is All). */
+/** Reads ?type=; anything else is All. */
 export function parseNewType(v: string | null): NewType {
 	return v === 'movies' || v === 'shows' || v === 'music' ? v : 'all';
 }
@@ -59,12 +59,12 @@ export function serviceRowName(rowType: string): string {
 	return rowType === 'np_top_shows' ? 'hot_shows' : rowType === 'np_top_movies' ? 'hot_movies' : 'services';
 }
 
-/** newServicePath asks for one service's own list on a chip row. */
+/** Asks for one service's own list on a chip row. */
 export function newServicePath(t: NewType, service: number, rowType: string): string {
 	return `/explore/new/service?id=${service}&type=${t}&row=${serviceRowName(rowType)}`;
 }
 
-/** The New & Popular link for an Explore tab (music has none: All). */
+/** The New & Popular link for an Explore tab (music has none, so All). */
 export function newHref(t: string): string {
 	return t === 'movies' || t === 'shows' ? `/popular?type=${t}` : '/popular';
 }
@@ -79,10 +79,7 @@ function plainKey(c: Pick<ExploreCard, 'kind' | 'ref'>): string {
 	return c.ref?.startsWith('tmdb:') ? `${c.kind}:${c.ref.slice(5)}` : '';
 }
 
-/**
- * leaveOut drops cards already shown elsewhere on the page (by cardIdentity
- * or by a "kind:tmdb" key) and returns [] when fewer than min remain.
- */
+/** Drops cards already shown elsewhere on the page (by cardIdentity or by a "kind:tmdb" key) and returns [] when fewer than `min` remain. */
 export function leaveOut<C extends Pick<ExploreCard, 'key' | 'kind' | 'ref' | 'titleId'>>(cards: readonly C[], taken: Iterable<string>, min = NEW_ROW_MIN): C[] {
 	const seen = new Set(taken);
 	const out: C[] = [];
@@ -96,7 +93,7 @@ export function leaveOut<C extends Pick<ExploreCard, 'key' | 'kind' | 'ref' | 't
 	return out.length >= min ? out : [];
 }
 
-/** serviceChips lists the services a row's cards are on, in first-seen order. */
+/** The services a row's cards are on, in first-seen order. */
 export function cardServices(cards: readonly Pick<ExploreCard, 'streaming'>[]): { service: number; name: string }[] {
 	const out: { service: number; name: string }[] = [];
 	for (const c of cards) {
@@ -106,19 +103,19 @@ export function cardServices(cards: readonly Pick<ExploreCard, 'streaming'>[]): 
 	return out;
 }
 
-/** chipRows are the rows that draw a chip per service (each service's own list). */
+/** The rows that draw a chip per service (each service's own list). */
 export function hasServiceChips(rowType: string): boolean {
 	return rowType === 'np_services' || isRanked(rowType);
 }
 
-/** pickService keeps one service's cards (null: all); a ranked row keeps its order. */
+/** Keeps one service's cards (null means all); a ranked row keeps its order. */
 export function pickService<C extends Pick<ExploreCard, 'streaming'>>(cards: readonly C[], service: number | null): C[] {
 	return service === null ? [...cards] : cards.filter((c) => c.streaming?.service === service);
 }
 
 const DAY_MS = 86_400_000;
 
-/** dayOffset is how many days `day` (YYYY-MM-DD) is from `today` (a local date). */
+/** How many days `day` (YYYY-MM-DD) is from `today` (a local date). */
 export function dayOffset(day: string, today: Date): number {
 	const [y, m, d] = day.split('-').map(Number);
 	const a = Date.UTC(y, m - 1, d);
@@ -126,7 +123,7 @@ export function dayOffset(day: string, today: Date): number {
 	return Math.round((a - b) / DAY_MS);
 }
 
-/** railLabel is the rail's big day word and its small date: Today, Yesterday, Tomorrow, else the weekday. */
+/** The rail's big day word and small date: Today, Yesterday, Tomorrow, else the weekday. */
 export function railLabel(day: string, today: Date): { big: string; small: string } {
 	const [y, m, d] = day.split('-').map(Number);
 	const date = new Date(Date.UTC(y, m - 1, d));
@@ -137,7 +134,7 @@ export function railLabel(day: string, today: Date): { big: string; small: strin
 	return { big, small: off === 0 || off === -1 || off === 1 ? `${weekday} ${small}` : small };
 }
 
-/** railBell says what a rail title shows on the right: the Follow bell, "Coming" (in the Library already), or nothing. */
+/** What a rail title shows on the right: the Follow bell, "Coming" (in the Library already), or nothing. */
 export function railBell(it: Pick<RailItem, 'upcoming' | 'in_library' | 'kind'>): 'bell' | 'coming' | null {
 	if (!it.upcoming) return null;
 	if (it.in_library) return 'coming';

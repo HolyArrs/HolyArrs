@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { tasteMatch, whyShown } from './why-shown.ts';
+import { describe, expect, it } from 'vitest';
 
 describe('whyShown', () => {
 	it('puts New season first, then Picked for you, at most two', () => {

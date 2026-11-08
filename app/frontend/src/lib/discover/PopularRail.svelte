@@ -1,12 +1,9 @@
 <script lang="ts">
 	import { dragScroll } from '#lib/ui/drag-scroll.ts';
-	// This week: a date rail on New & Popular. Days 3 back to 7 ahead, each
-	// with a big day word and its titles beside it. The cards are the page's
-	// own (the same card and hover preview as every row, passed in as `card`);
-	// under each sits what happens that day. Scrolls sideways; swipes on phones.
 	import type { Snippet } from 'svelte';
 	import { dayOffset, railLabel, type RailDay, type RailItem } from './popular.ts';
 
+	// This week: a date rail on New & Popular, from 3 days back to 7 ahead, each with a day word and its titles beside it. The cards are the page's own, passed in as `card`.
 	let { days, card }: { days: RailDay[]; card: Snippet<[RailItem]> } = $props();
 
 	const today = new Date();
@@ -61,7 +58,7 @@
 	.past .big { color: color-mix(in srgb, var(--text, #fff) 62%, transparent); }
 	.small { font: 600 11px/1.2 var(--font-ui); color: var(--text-muted); letter-spacing: .02em; }
 	.titles { list-style: none; margin: 0; padding: 0; display: flex; gap: var(--shelf-gap, 12px); }
-	/* The same width as a Top 10 card. */
+	/* Same width as a Top 10 card. */
 	.t { width: var(--rail-item, 240px); flex: none; display: flex; flex-direction: column; gap: 6px; }
 	.what { font: 500 12px/1.25 var(--font-ui); color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 	@media (max-width: 767px) {

@@ -1,6 +1,6 @@
 export type SearchKind = 'movie' | 'show' | 'music';
 
-/** searchAddress writes the controls' current values, even while page state is catching up. */
+/** Writes the controls' current values, even while page state is catching up. */
 export function searchAddress(current: Pick<URL, 'href'>, kind: SearchKind, term: string): URL {
 	const url = new URL(current.href);
 	const query = term.trim();
@@ -13,7 +13,7 @@ export function searchAddress(current: Pick<URL, 'href'>, kind: SearchKind, term
 
 export type KindPart = 'movies' | 'shows' | 'music';
 
-/** kindOptions are the search filter's choices, leaving out kinds whose part is off. */
+/** The search filter's choices, leaving out kinds whose part is off. */
 export function kindOptions(on: (part: KindPart) => boolean): { value: SearchKind; label: string; part: KindPart }[] {
 	const all: { value: SearchKind; label: string; part: KindPart }[] = [
 		{ value: 'movie', label: 'Movies', part: 'movies' },
@@ -23,16 +23,15 @@ export function kindOptions(on: (part: KindPart) => boolean): { value: SearchKin
 	return all.filter((o) => on(o.part));
 }
 
-// ── The Search page (Explore card system) ────────────────────────────────
 export type SearchScope = 'all' | 'show' | 'movie' | 'music' | 'people';
 const scopes: SearchScope[] = ['all', 'people', 'movie', 'show', 'music'];
 
-/** readScope reads ?kind=; anything unknown is All. */
+/** Reads ?kind=; anything unknown is All. */
 export function readScope(v: string | null): SearchScope {
 	return scopes.includes(v as SearchScope) ? (v as SearchScope) : 'all';
 }
 
-/** scopeAddress writes ?q= and ?kind= (left out for All). */
+/** Writes ?q= and ?kind= (left out for All). */
 export function scopeAddress(current: Pick<URL, 'href'>, scope: SearchScope, term: string): URL {
 	const url = new URL(current.href);
 	const q = term.trim();
@@ -46,14 +45,14 @@ export function scopeAddress(current: Pick<URL, 'href'>, scope: SearchScope, ter
 export const RECENT_MAX = 8;
 export const recentKey = (user: string | number | undefined) => `holyarrs.search.recent.${user ?? 'anon'}`;
 
-/** addRecent puts q first, drops a same-words duplicate and keeps RECENT_MAX. */
+/** Puts q first, drops a same-words duplicate and keeps RECENT_MAX. */
 export function addRecent(list: string[], q: string): string[] {
 	const t = q.trim();
 	if (!t) return list;
 	return [t, ...list.filter((x) => x.toLowerCase() !== t.toLowerCase())].slice(0, RECENT_MAX);
 }
 
-/** readRecent parses a stored list, tolerating anything broken. */
+/** Parses a stored list, tolerating anything broken. */
 export function readRecent(raw: string | null): string[] {
 	try {
 		const v = JSON.parse(raw ?? '[]');
@@ -63,7 +62,7 @@ export function readRecent(raw: string | null): string[] {
 	}
 }
 
-/** topMatches takes the first hits of each group in turn (the lookups answer best first). */
+/** Takes the first hits of each group in turn (the lookups answer best first). */
 export function topMatches<T>(groups: T[][], max = 6): T[] {
 	const out: T[] = [];
 	for (let i = 0; out.length < max && groups.some((g) => i < g.length); i++) {
@@ -72,20 +71,17 @@ export function topMatches<T>(groups: T[][], max = 6): T[] {
 	return out;
 }
 
-/**
- * rankTop puts hits whose name is exactly the typed words first ("drake" → Drake before
- * Vera Drake), keeping the interleaved order otherwise. Exact hits deeper in a group are pulled up, one per group.
- */
+/** Puts hits whose name is exactly the typed words first ("drake" gives Drake before Vera Drake), keeping the interleaved order otherwise. Exact hits deeper in a group are pulled up, one per group. */
 export function rankTop<T extends { name: string }>(groups: T[][], term: string, max = 6): T[] {
 	const want = term.trim().toLocaleLowerCase();
 	const exact = (c: T) => !!want && c.name.trim().toLocaleLowerCase() === want;
-	// One exact hit per group: a dozen same-named bands must not crowd out the rest.
+	// One exact hit per group, so a dozen same-named bands cannot crowd out the rest.
 	const first = groups.map((g) => g.find(exact)).filter((c): c is T => !!c);
 	const rest = topMatches(groups.map((g) => g.filter((c) => !first.includes(c))), max);
 	return [...first, ...rest].slice(0, max);
 }
 
-/** LibraryHit is the slice of a Library title the "In your Library" row reads. */
+/** The slice of a Library title the "In your Library" row reads. */
 export type LibraryHit = {
 	kind: string;
 	slots?: { state: string; download?: { active?: boolean } | null }[] | null;
@@ -95,10 +91,7 @@ export type LibraryHit = {
 
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
 
-/**
- * libraryNote is a Library card's state line in Search: "Downloading",
- * "Missing 2 episodes", or what is kept ("4 seasons · up to date").
- */
+/** A Library card's state line in Search: "Downloading", "Missing 2 episodes", or what is kept ("4 seasons · up to date"). */
 export function libraryNote(t: LibraryHit, fallback = ''): string {
 	if ((t.slots ?? []).some((s) => s.download?.active || s.state === 'downloading' || s.state === 'importing')) return 'Downloading';
 	if (t.kind === 'show' && t.show) {

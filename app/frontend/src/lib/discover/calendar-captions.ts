@@ -1,15 +1,14 @@
-// The two caption lines under every calendar card and list row, and the
-// choices for them (?movie=1-6, ?music=1-5, ?channels=all|known).
-import type { CalendarEntry } from '../core/types.ts';
+// The two caption lines under every calendar card and list row, and the choices for them (?movie=1-6, ?music=1-5, ?channels=all|known).
 import type { CalGroup } from './calendar-groups.ts';
+import type { CalendarEntry } from '../core/types.ts';
 
 export type Channels = 'all' | 'known';
-/** Which caption each kind shows: movie 1-6, music 1-5, and which TV channels are named. */
+/** Which caption each kind shows, and which TV channels are named. */
 export interface CaptionLook {
 	movie: number;
 	music: number;
 	channels: Channels;
-	/** The viewer's country (US, GB…), or 'global' when the browser does not say. */
+	/** The viewer's country (US, GB), or 'global' when the browser does not say. */
 	region: string;
 }
 
@@ -30,7 +29,7 @@ export const MUSIC_LOOKS = [
 ];
 export const DEFAULT_LOOK: Omit<CaptionLook, 'region'> = { movie: 1, music: 5, channels: 'known' };
 
-/** lookFrom reads the choices from the address, then from what was kept, else the defaults. */
+/** Reads the choices from the address, then from what was kept, else the defaults. */
 export function lookFrom(q: Pick<URLSearchParams, 'get'>, kept: Partial<CaptionLook> | null, region: string): CaptionLook {
 	const num = (v: string | null, max: number) => {
 		const n = Number(v);
@@ -45,12 +44,7 @@ export function lookFrom(q: Pick<URLSearchParams, 'get'>, kept: Partial<CaptionL
 	};
 }
 
-// ---- Episodes ----
-
-/**
- * fakeEpisodeName: names that only repeat the number or the day ("Episode 8827", "Episode 170 / 8805",
- * "19/10/2026", "2026-10-19", "October 19, 2026", "TBA") say nothing.
- */
+/** Names that only repeat the number or the day ("Episode 8827", "19/10/2026", "TBA") say nothing. */
 export function fakeEpisodeName(name?: string): boolean {
 	const n = (name ?? '').trim();
 	if (!n) return true;
@@ -61,7 +55,7 @@ export function fakeEpisodeName(name?: string): boolean {
 	return new RegExp(`^(${day})?(\\d{1,2}(st|nd|rd|th)?\\s+(${months})\\.?,?(\\s+\\d{4})?|(${months})\\.?\\s+\\d{1,2}(st|nd|rd|th)?,?(\\s+\\d{4})?)$`, 'i').test(n);
 }
 
-/** clockTime is an episode's air time in the viewer's own format: "7 PM", "7:30 PM", "19:00". */
+/** An episode's air time in the viewer's own format: "7 PM", "7:30 PM", "19:00". */
 export function clockTime(e: Pick<CalendarEntry, 'kind' | 'date' | 'timed'>, locale?: string): string {
 	if (e.kind !== 'episode' || !e.timed) return '';
 	const d = new Date(e.date);
@@ -72,7 +66,7 @@ export function clockTime(e: Pick<CalendarEntry, 'kind' | 'date' | 'timed'>, loc
 	return f.format(d);
 }
 
-/** episodeWords: "Season 22, Episode 111"; several: "Season 39, Episodes 194–196". */
+/** "Season 22, Episode 111"; several: "Season 39, Episodes 194–196". */
 export function episodeWords(eps: Pick<CalendarEntry, 'season' | 'episode'>[]): string {
 	const s = [...eps].sort((a, b) => (a.season ?? 0) - (b.season ?? 0) || (a.episode ?? 0) - (b.episode ?? 0));
 	const first = s[0];
@@ -111,12 +105,7 @@ const CHANNELS: Record<string, string[]> = {
 };
 const norm = (s: string) => s.trim().toLowerCase();
 
-/**
- * channelShown: Every channel shows as today with 'all'. With 'known', only the
- * well-known streaming services and the channels of the viewer's own country
- * (read from the browser's language, en-US → US) are named; a viewer whose
- * browser names no country sees the streaming services only.
- */
+/** With 'all' every channel shows. With 'known' only well-known streaming services and the channels of the viewer's own country (read from the browser's language, en-US to US) are named. */
 export function channelShown(network: string | undefined, look: Pick<CaptionLook, 'channels' | 'region'>): boolean {
 	if (!network) return false;
 	if (look.channels === 'all') return true;
@@ -125,9 +114,7 @@ export function channelShown(network: string | undefined, look: Pick<CaptionLook
 	return (CHANNELS[look.region] ?? []).includes(n);
 }
 
-// ---- Movies ----
-
-/** runLength: "2h 50m", "2h", "50m". */
+/** "2h 50m", "2h", "50m". */
 export function runLength(min?: number): string {
 	if (!min || min <= 0) return '';
 	const h = Math.floor(min / 60);
@@ -138,7 +125,7 @@ export function runLength(min?: number): string {
 const shortDay = (iso?: string) => (iso ? new Date(iso.slice(0, 10) + 'T00:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '');
 const day = (iso?: string) => (iso ? iso.slice(0, 10) : '');
 
-/** whereOut: "In cinemas", "In cinemas · At home from Mar 3", "At home", "At home · In cinemas Jul 17". */
+/** "In cinemas", "In cinemas · At home from Mar 3", "At home", "At home · In cinemas Jul 17". */
 export function whereOut(e: CalendarEntry): string {
 	if (e.kind === 'cinema') return day(e.home_date) > day(e.date) ? `In cinemas · At home from ${shortDay(e.home_date)}` : 'In cinemas';
 	return e.cinema_date && day(e.cinema_date) < day(e.date) ? `At home · In cinemas ${shortDay(e.cinema_date)}` : 'At home';
@@ -147,17 +134,14 @@ export function whereOut(e: CalendarEntry): string {
 const NUMBERS: Record<string, number> = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10, i: 1, ii: 2, iii: 3, iv: 4, v: 5, vi: 6, vii: 7, viii: 8, ix: 9, x: 10 };
 const asNumber = (w: string) => (/^\d+$/.test(w) ? Number(w) : (NUMBERS[w.toLowerCase()] ?? 0));
 
-/** ordinal: 1st, 2nd, 3rd, 4th, 11th… */
+/** 1st, 2nd, 3rd, 4th, 11th. */
 export function ordinal(n: number): string {
 	const t = n % 100;
 	if (t >= 11 && t <= 13) return `${n}th`;
 	return `${n}${{ 1: 'st', 2: 'nd', 3: 'rd' }[n % 10] ?? 'th'}`;
 }
 
-/**
- * seriesLine: the series a movie belongs to, and its place when the name says it:
- * "Dune · Part 3", "Toy Story · 4th film"; else "Avengers series"; '' outside a series.
- */
+/** The series a movie belongs to, with its place when the name says it: "Dune · Part 3", "Toy Story · 4th film"; else "Avengers series"; '' outside a series. */
 export function seriesLine(e: Pick<CalendarEntry, 'name' | 'collection'>): string {
 	if (!e.collection) return '';
 	const series = e.collection.replace(/\s+(collection|series|saga|trilogy)$/i, '').trim();
@@ -170,7 +154,7 @@ export function seriesLine(e: Pick<CalendarEntry, 'name' | 'collection'>): strin
 
 const people = (xs?: string[]) => (xs ?? []).slice(0, 2).join(' & ');
 
-/** movieCaption is a movie's caption line for the choice picked (1-6); another known fact stands in for a blank one, never the year. */
+/** A movie's caption line for the choice picked (1-6). Another known fact stands in for a blank one, never the year. */
 export function movieCaption(e: CalendarEntry, look: number): string {
 	const genre = e.genres?.[0] ?? '';
 	const len = runLength(e.runtime);
@@ -187,21 +171,19 @@ export function movieCaption(e: CalendarEntry, look: number): string {
 	return pick[look] || genreLen || director;
 }
 
-// ---- Music ----
-
 const kindOf = (t?: string) => {
 	const k = (t ?? '').toLowerCase();
 	return k === 'single' ? 'single' : k === 'ep' ? 'EP' : 'album';
 };
 const cap = (s: string) => (s === 'EP' ? s : s.charAt(0).toUpperCase() + s.slice(1));
 const songs = (n?: number) => (n ? `${n} ${n === 1 ? 'song' : 'songs'}` : '');
-/** albumLength: "44 min", "1 hr 12 min". */
+/** "44 min", "1 hr 12 min". */
 export function albumLength(min?: number): string {
 	if (!min || min <= 0) return '';
 	return min < 60 ? `${min} min` : `${Math.floor(min / 60)} hr${min % 60 ? ` ${min % 60} min` : ''}`;
 }
 
-/** musicCaption is an album's caption line for the choice picked (1-5). The label is not known yet: 3 shows the songs. */
+/** An album's caption line for the choice picked (1-5). The label is not known yet, so 3 shows the songs. */
 export function musicCaption(e: CalendarEntry, look: number): string {
 	const kind = kindOf(e.album_type);
 	const Kind = cap(kind);
@@ -224,13 +206,7 @@ export function musicCaption(e: CalendarEntry, look: number): string {
 	}
 }
 
-/**
- * A row's words, in the set order. `title` is line 1 (the show, the movie, the
- * artist); `lines` are the lines under it, each only when it has real data;
- * `when` is the time column: an air time ("8 PM"), "All day" when an episode
- * has no time (`quiet`), or for movies and albums Cinema, At home or Out now
- * (an album still to come says its kind: Album, EP, Single).
- */
+/** A row's words in the set order. `title` is line 1 (show, movie or artist); `lines` sit under it, each only when it has real data; `when` is the time column: an air time ("8 PM"), or "All day". */
 export interface RowWords {
 	title: string;
 	lines: string[];
@@ -238,7 +214,7 @@ export interface RowWords {
 	quiet: boolean;
 }
 
-/** rowWords builds a List row (or a Cards caption, see cardLines) for a card's worth of dates. */
+/** Builds a List row, or a Cards caption (see cardLines), for one card's dates. */
 export function rowWords(g: CalGroup, look: CaptionLook, today: string): RowWords {
 	const e = g.lead;
 	if (e.kind === 'episode') {
@@ -257,11 +233,7 @@ export function rowWords(g: CalGroup, look: CaptionLook, today: string): RowWord
 	return { title: e.name, lines, when: e.kind === 'cinema' ? 'In theaters' : 'Streaming', quiet: false };
 }
 
-/**
- * cardLines are the captions under a card, in the same order: the time or the
- * short word first, then the lines. The art carries the show's, movie's or
- * album's name, so an album's card names the artist in place of its own name.
- */
+/** The captions under a card in the same order: the time or short word first, then the lines. The art carries the name, so an album's card names the artist in place of its own name. */
 export function cardLines(g: CalGroup, look: CaptionLook, today: string): string[] {
 	const w = rowWords(g, look, today);
 	// An episode card: the time, then one line "Season 4, Episode 3 · Its name" (two lines on every card, all alike).

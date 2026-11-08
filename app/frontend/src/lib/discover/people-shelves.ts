@@ -1,6 +1,4 @@
-// Search's People sections: From your Library and In what's hot right now
-// (from /people/shelves), then the popular list. A section shows only with
-// at least SHELF_MIN people; a chip shows only when it would show that many.
+// Search's People sections: From your Library and In what's hot right now (from /people/shelves), then the popular list. A section shows only with at least SHELF_MIN people; a chip shows only when it would show that many.
 export const SHELF_MIN = 8;
 // Rows a section shows at first, and adds each time its end nears.
 export const PEOPLE_ROWS = 2;

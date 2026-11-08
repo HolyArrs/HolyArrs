@@ -1,10 +1,8 @@
 <script lang="ts">
-	import { to } from '../core/paths.ts';
 	import { MusicTileGrid } from '../music/index.ts';
+	import { to } from '../core/paths.ts';
 
-	// Search > Music Browse (music_lists_v1 row templates): titled sections of the
-	// shared Music tile, every tile of the section shown. A tile with no album
-	// cover is left out, and one whose covers fail to load drops out of its grid.
+	// Search > Music Browse: titled sections of the shared Music tile. A tile with no album cover is left out, and one whose covers fail to load drops out of its grid.
 	type Tile = { key: string; name: string; href: string; hue?: number; covers: string[] };
 	type Section = { id: string; title: string; tiles: Tile[] };
 	let { sections }: { sections: Section[] } = $props();

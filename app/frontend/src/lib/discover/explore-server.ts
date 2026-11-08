@@ -47,7 +47,7 @@ function headParams(q: HeadQuery): URLSearchParams {
 	return p;
 }
 
-/** headPath: services are sent so the server builds On your services for them (empty = none picked). */
+/** Services are sent so the server builds On your services for them; empty means none picked. */
 export function headPath(q: HeadQuery): string {
 	const p = headParams(q);
 	if (q.services && q.region) {
@@ -63,14 +63,14 @@ export function tailPath(q: HeadQuery, page: number): string {
 	return `/explore/tail?${p.toString()}`;
 }
 
-/** Badges state facts only (revision 4): no countdowns, no "leaving soon". */
+/** Badges state facts only: no countdowns, no "leaving soon". */
 export const FACTUAL_BADGES = /^(New season|New episodes|Coming .+|In library|Asked|Today|Tomorrow|Premiere|New|4K|1080p|720p|\d+p)$/;
 
 export function factualBadges(badges: string[]): string[] {
 	return badges.filter((b) => FACTUAL_BADGES.test(b));
 }
 
-/** serverRow turns a server row into an Explore row; Coming soon keeps its wide pictures. */
+/** Turns a server row into an Explore row; Coming soon keeps its wide pictures. */
 export function serverRow(r: ServerRow): ExploreRow & { wide: boolean; type: string } {
 	return {
 		id: r.id,
@@ -80,7 +80,7 @@ export function serverRow(r: ServerRow): ExploreRow & { wide: boolean; type: str
 		...(r.title_layer ? { titleLayer: r.title_layer } : {}),
 		wide: !!r.wide,
 		cards: r.items.map((d) => {
-			// Every movie and show row draws wide title cards now: keep the backdrop on each card.
+			// Every movie and show row draws wide title cards, so keep the backdrop on each card.
 			const c = { ...discoverCard(d, r.id), wide: d.backdrop ?? null };
 			return { ...c, badges: factualBadges(c.badges) };
 		}),

@@ -1,14 +1,13 @@
 <script lang="ts">
-	import type { Snippet } from 'svelte';
-	import { api } from '../core/api.ts';
 	import { richMetadata, type RichMeta } from '#lib/ui/TitleHero.svelte';
 	import Billboard from '#lib/ui/Billboard.svelte';
+	import { shortSynopsis } from './synopsis.ts';
+	import type { Snippet } from 'svelte';
+	import { api } from '../core/api.ts';
 	import { heroPictures } from '../core/trailer/trailer.ts';
 	import { proxied, sized } from '../core/tmdb-image.ts';
-	import { shortSynopsis } from './synopsis.ts';
 
-	// The Explore hero: one featured title in the shared billboard
-	// (Billboard.svelte). More info opens the title's page.
+	// The Explore hero: one featured title in the shared billboard. More info opens the title's page.
 	let {
 		kind,
 		tmdb,
@@ -25,7 +24,7 @@
 		tmdb: string;
 		title: string;
 		href?: string;
-		/** A backdrop known already (shown at once). */
+		/** A backdrop known already, shown at once. */
 		backdrop?: string | null;
 		subtitle?: string;
 		/** The page has finished its first load. */
@@ -63,7 +62,7 @@
 		{#if badge}{@render badge()}{/if}
 	{/snippet}
 	{#snippet fold()}
-		<!-- The title box and the overview keep their space while the details load. -->
+		<!-- The title box and overview keep their space while the details load. -->
 		<div class="about">
 			{#if rich?.overview}<p class="bb-desc" title={rich.overview}>{shortSynopsis(rich.overview, 220)}</p>{/if}
 		</div>

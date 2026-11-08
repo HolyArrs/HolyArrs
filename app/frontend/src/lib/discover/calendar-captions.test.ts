@@ -1,7 +1,7 @@
-import { describe, expect, it } from 'vitest';
-import type { CalendarEntry } from '../core/types.ts';
 import { groupDates } from './calendar-groups.ts';
 import { cardLines, rowWords, channelShown, clockTime, episodeWords, fakeEpisodeName, lookFrom, movieCaption, musicCaption, ordinal, runLength, seriesLine, whereOut, type CaptionLook } from './calendar-captions.ts';
+import { describe, expect, it } from 'vitest';
+import type { CalendarEntry } from '../core/types.ts';
 
 const look = (o: Partial<CaptionLook> = {}): CaptionLook => ({ movie: 6, music: 5, channels: 'all', region: 'US', ...o });
 const ep = (o: Partial<CalendarEntry> = {}): CalendarEntry => ({
@@ -56,7 +56,6 @@ describe('movie captions', () => {
 		expect(movieCaption(odyssey, 3)).toMatch(/^In cinemas · At home from /);
 		expect(movieCaption(odyssey, 4)).toBe('Matt Damon · Adventure');
 		expect(movieCaption(odyssey, 6)).toBe('Christopher Nolan · 2h 50m');
-		// Not in a series: genre and length rather than a blank.
 		expect(movieCaption(odyssey, 5)).toBe('Adventure · 2h 50m');
 	});
 	it('names the series and the place the name gives', () => {

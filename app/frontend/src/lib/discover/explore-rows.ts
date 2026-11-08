@@ -1,23 +1,21 @@
-// Explore rows built from data HolyArrs already has (the Library, the calendar and
-// Requests). Everything that decides what shows, and in which order, is a pure
-// function so it can be tested and explained.
+// Explore rows built from data HolyArrs already has (the Library, the calendar and Requests). Everything that decides what shows, and in which order, is a pure function so it can be tested.
 
 import { titleStatus } from '#lib/ui/title-status.ts';
-import type { Ask, CalendarEntry, TitleView } from '../core/types.ts';
 import { type CardKind, type ExploreCard, type ExploreRow, ROW_MAX, kindOf, titleCard, tmdbArtName, cardTmdb } from '#lib/ui/title-cards.ts';
+import type { Ask, CalendarEntry, TitleView } from '../core/types.ts';
 
-/** Facets are what two titles can share: genres and people. */
+/** What two titles can share: genres and people. */
 export interface Facets {
 	genres: string[];
 	people: string[];
 }
 
-/** recentlyAdded: newest first. Title ids only grow, so the highest id is the latest added. */
+/** Newest first. Title ids only grow, so the highest id is the latest added. */
 export function recentlyAdded(titles: TitleView[], n = ROW_MAX): TitleView[] {
 	return [...titles].sort((a, b) => b.id - a.id).slice(0, n);
 }
 
-/** orderRecent puts cards with artwork first, and within each group takes turns between kinds (order kept per kind). */
+/** Puts cards with artwork first and, within each group, takes turns between kinds (order kept per kind). */
 export function orderRecent<T extends { kind: CardKind; image?: string | null }>(items: T[]): T[] {
 	const turns = (list: T[]): T[] => {
 		const byKind = new Map<CardKind, T[]>();
@@ -42,21 +40,21 @@ function shortDay(iso: string, now: Date): string {
 
 const releaseWord: Record<CalendarEntry['kind'], string> = { cinema: 'In cinemas', digital: 'On digital', physical: 'On disc', episode: '', album: 'New album' };
 
-/** releaseLine is a wide card's second line: S1 · E3 · Name, On digital, or the album. */
+/** A wide card's second line: S1 · E3 · Name, On digital, or the album. */
 export function releaseLine(e: CalendarEntry): string {
 	if (e.kind === 'episode') return [`S${e.season ?? 0}`, `E${e.episode ?? 0}`, e.episode_name].filter(Boolean).join(' · ');
 	if (e.kind === 'album') return e.album ?? releaseWord.album;
 	return releaseWord[e.kind];
 }
 
-/** releaseBadges: the day, plus Premiere for S1E1 and New for any other episode 1. */
+/** The day, plus Premiere for S1E1 and New for any other episode 1. */
 export function releaseBadges(e: CalendarEntry, now: Date): string[] {
 	const when = shortDay(e.kind === 'episode' && !e.timed && e.air_day ? e.air_day : e.date, now);
 	const extra = e.kind === 'episode' && e.episode === 1 ? (e.season === 1 ? 'Premiere' : 'New') : '';
 	return [when, extra].filter(Boolean);
 }
 
-/** comingSoon keeps each title's next date, soonest first, skipping what already passed. */
+/** Keeps each title's next date, soonest first, skipping what already passed. */
 export function comingSoon(entries: CalendarEntry[], titles: TitleView[], now = new Date(), n = ROW_MAX): ExploreCard[] {
 	const byId = new Map(titles.map((t) => [t.id, t]));
 	const start = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
@@ -83,7 +81,7 @@ export function comingSoon(entries: CalendarEntry[], titles: TitleView[], now = 
 	return out;
 }
 
-/** missingEpisodes lists shows with aired episodes that have no file, most missing first. */
+/** Shows with aired episodes that have no file, most missing first. */
 export function missingEpisodes(titles: TitleView[], n = ROW_MAX): ExploreCard[] {
 	return titles
 		.filter((t) => (t.show?.missing ?? 0) > 0)
@@ -97,14 +95,14 @@ export function missingEpisodes(titles: TitleView[], n = ROW_MAX): ExploreCard[]
 		});
 }
 
-/** kindShelf: the newest titles of one kind, for the Movies, TV shows and Music rows. */
+/** The newest titles of one kind, for the Movies, TV shows and Music rows. */
 export function kindShelf(titles: TitleView[], kind: CardKind, n = ROW_MAX): ExploreCard[] {
 	return recentlyAdded(titles.filter((t) => kindOf(t.kind) === kind), n).map((t) => titleCard(t, undefined, `${kind[0]}${t.id}`));
 }
 
 export const have = (state: string) => state === 'in_library' || state === 'better_wanted';
 
-/** readyToWatch: movies and shows with every copy in the Library and no episode missing. */
+/** Movies and shows with every copy in the Library and no episode missing. */
 export function readyToWatch(titles: TitleView[], n = ROW_MAX): ExploreCard[] {
 	return recentlyAdded(
 		titles.filter((t) => kindOf(t.kind) !== 'artist' && (t.slots ?? []).length > 0 && t.slots.every((s) => have(s.state)) && !(t.show?.missing ?? 0)),
@@ -112,7 +110,7 @@ export function readyToWatch(titles: TitleView[], n = ROW_MAX): ExploreCard[] {
 	).map((t) => titleCard(t, undefined, `r${t.id}`));
 }
 
-/** stillLooking: movies and artists still looking for a copy (shows have Missing episodes). */
+/** Movies and artists still looking for a copy (shows have Missing episodes). */
 export function stillLooking(titles: TitleView[], n = ROW_MAX): ExploreCard[] {
 	return recentlyAdded(titles.filter((t) => kindOf(t.kind) !== 'show' && (t.slots ?? []).some((s) => s.state === 'wanted')), n).map((t) => {
 		const c = titleCard(t, undefined, `w${t.id}`);
@@ -121,7 +119,7 @@ export function stillLooking(titles: TitleView[], n = ROW_MAX): ExploreCard[] {
 	});
 }
 
-/** askKey groups asks for the same thing (the same title, or the same add id). */
+/** Groups asks for the same thing (the same title, or the same add id). */
 function askKey(a: Pick<Ask, 'title_id' | 'ref' | 'kind' | 'tmdb_id' | 'name'>): string {
 	if (a.title_id) return `t${a.title_id}`;
 	if (a.ref) return a.ref;
@@ -129,10 +127,7 @@ function askKey(a: Pick<Ask, 'title_id' | 'ref' | 'kind' | 'tmdb_id' | 'name'>):
 	return `${a.kind}:${a.name}`;
 }
 
-/**
- * popularInHousehold: what the most people asked for. Score is the number of
- * people on the ask; ties go to the latest ask. Turned-down asks do not count.
- */
+/** What the most people asked for. Score is the number of people on the ask; ties go to the latest ask. Turned-down asks do not count. */
 export function popularInHousehold(asks: Ask[], titles: TitleView[], n = ROW_MAX): ExploreCard[] {
 	const byId = new Map(titles.map((t) => [t.id, t]));
 	const groups = new Map<string, { ask: Ask; people: Set<number>; last: string; mine: boolean }>();
@@ -170,7 +165,7 @@ export function popularInHousehold(asks: Ask[], titles: TitleView[], n = ROW_MAX
 		});
 }
 
-/** overlap counts what two titles share; a shared person counts double a shared genre. */
+/** Counts what two titles share; a shared person counts double a shared genre. */
 export function overlap(a: Facets | undefined, b: Facets | undefined): number {
 	if (!a || !b) return 0;
 	const g = a.genres.filter((x) => b.genres.includes(x)).length;
@@ -178,11 +173,7 @@ export function overlap(a: Facets | undefined, b: Facets | undefined): number {
 	return g + 2 * p;
 }
 
-/**
- * score ranks a candidate: overlap × recency × household asks. recency is
- * 1 for the newest title and falls towards 0.5 for the oldest; every person
- * who asked adds 25%. Zero overlap scores zero, so it never shows.
- */
+/** Ranks a candidate as overlap × recency × household asks. Recency is 1 for the newest title and falls toward 0.5 for the oldest; every person who asked adds 25%. Zero overlap scores zero, so it never shows. */
 export function score(o: { overlap: number; ageRank: number; total: number; asks: number }): number {
 	const recency = o.total > 1 ? 1 - (0.5 * o.ageRank) / (o.total - 1) : 1;
 	return o.overlap * recency * (1 + 0.25 * o.asks);
@@ -192,10 +183,7 @@ function asksOf(t: Pick<TitleView, 'asks'>): number {
 	return (t.asks ?? []).reduce((n, a) => n + Math.max(1, a.people?.length ?? 0), 0);
 }
 
-/**
- * becauseYouHave picks the newest title that has at least `min` related
- * titles and returns it with those titles, best first.
- */
+/** Picks the newest title that has at least `min` related titles and returns it with those titles, best first. */
 export function becauseYouHave(titles: TitleView[], facets: Map<number, Facets>, min = 3, n = ROW_MAX): { seed: TitleView; cards: ExploreCard[] } | null {
 	const recent = recentlyAdded(titles, titles.length);
 	const rank = new Map(recent.map((t, i) => [t.id, i]));
@@ -212,7 +200,7 @@ export function becauseYouHave(titles: TitleView[], facets: Map<number, Facets>,
 	return null;
 }
 
-/** genreRows: the biggest genres in the Library, each with at least `min` titles. */
+/** The biggest genres in the Library, each with at least `min` titles. */
 export function genreRows(titles: TitleView[], facets: Map<number, Facets>, maxRows = 3, min = 4, n = ROW_MAX): ExploreRow[] {
 	const by = new Map<string, TitleView[]>();
 	for (const t of recentlyAdded(titles, titles.length)) for (const g of facets.get(t.id)?.genres ?? []) by.set(g, [...(by.get(g) ?? []), t]);
@@ -223,7 +211,7 @@ export function genreRows(titles: TitleView[], facets: Map<number, Facets>, maxR
 		.map(([g, ts]) => ({ id: `genre-${g.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`, title: `${g} in your library`, cards: ts.slice(0, n).map((t) => titleCard(t, undefined, `g${t.id}`)) }));
 }
 
-/** fromPerson: the person in the most Library titles (at least `min`), with those titles. */
+/** The person in the most Library titles (at least `min`), with those titles. */
 export function fromPerson(titles: TitleView[], facets: Map<number, Facets>, min = 2, n = ROW_MAX): { person: string; cards: ExploreCard[] } | null {
 	const count = new Map<string, TitleView[]>();
 	for (const t of recentlyAdded(titles, titles.length)) for (const p of new Set(facets.get(t.id)?.people ?? [])) count.set(p, [...(count.get(p) ?? []), t]);
@@ -231,17 +219,13 @@ export function fromPerson(titles: TitleView[], facets: Map<number, Facets>, min
 	return best ? { person: best[0], cards: best[1].slice(0, n).map((t) => titleCard(t, undefined, `f${t.id}`)) } : null;
 }
 
-/** genresOf reads genres when the API sends them (it does not yet; see backend-needs.md). */
+/** Reads genres when the API sends them (it does not yet). */
 export function genresOf(t: TitleView): string[] {
 	const g = (t as TitleView & { genres?: unknown }).genres;
 	return Array.isArray(g) ? g.filter((x): x is string => typeof x === 'string') : [];
 }
 
-/**
- * markTransitions gives each title's first card on the page a view-transition
- * name, so its art grows into the title page's hero: title-art-<id> for a
- * Library title, tmdb-art-<kind>-<tmdb> for a movie or show not added yet.
- */
+/** Gives each title's first card on the page a view-transition name so its art grows into the title page's hero: title-art-<id> for a Library title, tmdb-art-<kind>-<tmdb> for a movie or show not added yet. */
 export function markTransitions(rows: ExploreRow[]): ExploreRow[] {
 	const used = new Set<string>();
 	return rows.map((r) => ({
@@ -256,7 +240,7 @@ export function markTransitions(rows: ExploreRow[]): ExploreRow[] {
 	}));
 }
 
-/** keepFull drops empty rows. */
+/** Drops empty rows. */
 export function keepFull(rows: (ExploreRow | null | undefined)[]): ExploreRow[] {
 	return rows.filter((r): r is ExploreRow => !!r && (r.cards.length > 0 || !!r.keep));
 }

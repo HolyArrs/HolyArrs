@@ -1,18 +1,15 @@
 <script lang="ts">
+	import Icon from '#lib/ui/Icon.svelte';
+	import { createSuggest, live, step, suggestHref, SUGGEST_MIN, type SuggestAnswer } from './live-search.ts';
+	import GlassDropdown from './GlassDropdown.svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
-	import Icon from '#lib/ui/Icon.svelte';
 	import { appPath, to } from '../core/paths.ts';
 	import { dlScope, registerField, rememberReturn, searchField, searchHooks } from '../core/search-field.svelte.ts';
 	import { api } from '../core/api.ts';
-	import { createSuggest, live, step, suggestHref, SUGGEST_MIN, type SuggestAnswer } from './live-search.ts';
-	import GlassDropdown from './GlassDropdown.svelte';
 	import { inSettings, settingsFind } from '../core/settings-find.svelte.ts';
 
-	// The one search field (spec: top bar, centre). Typing or Enter anywhere
-	// opens the Search page with the words; a focus or click on an empty field
-	// opens it on Browse. Escape clears the words; a second Escape closes Search
-	// (back to the page you came from), elsewhere it leaves the field.
+	// The one search field in the top bar. Typing or Enter opens the Search page with the words; focusing or clicking an empty field opens it on Browse. Escape clears the words; a second Escape closes Search.
 	let { searchKey, testid = 'search-box', id = 'q', closable = true }: { searchKey: string; testid?: string; id?: string; closable?: boolean } = $props();
 
 	let el = $state<HTMLInputElement>();
@@ -20,7 +17,7 @@
 	const onSearch = () => appPath(page.url.pathname).startsWith('/search');
 	// On Downloads the field searches that list (a chip says so); removing the chip searches all of HolyArrs again.
 	const scoped = $derived(dlScope.on && !dlScope.off && appPath(page.url.pathname).startsWith('/downloads'));
-	// In Settings the field searches settings instead (results on the Settings home).
+	// In Settings the field searches settings instead, with results on the Settings home.
 	const settings = $derived(inSettings(appPath(page.url.pathname)));
 	const shown = $derived(settings ? settingsFind.term : scoped ? dlScope.term : searchField.term);
 	function settingsTyped(v: string) {
@@ -56,10 +53,10 @@
 		rememberReturn();
 		void goto(to(t ? `/search?q=${encodeURIComponent(t)}` : '/search'), { reset: false }).then(() => scrollTo(0, 0));
 	}
-	// Live search: the glass dropdown under the field (shared by every page).
+	// The live dropdown under the field, shared by every page.
 	let answer = $state<SuggestAnswer | null>(null);
 	let active = $state(-1);
-	// Words typed and their suggestions on the way: the panel is already open with loading rows.
+	// Words typed and suggestions on the way: the panel is already open with loading rows.
 	let waiting = $state(false);
 	const listId = $derived(`${id}-suggest`);
 	const suggest = createSuggest(
@@ -143,7 +140,7 @@
 		return answer ? suggestHref(answer.items[j]) : '';
 	}
 	const here = $derived(appPath(page.url.pathname).startsWith('/search'));
-	// On Search one round × does both jobs, as Escape does: it clears the words, then (empty) closes Search.
+	// On Search one × does both jobs, as Escape does: it clears the words, then closes Search.
 	const one = $derived(here && closable);
 	function clearOrClose() {
 		close();

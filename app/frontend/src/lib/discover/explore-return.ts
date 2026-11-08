@@ -1,25 +1,23 @@
-// Back from a title page lands on Explore where it was: the page's scroll
-// and each row's sideways offset are kept in the history entry (SvelteKit
-// snapshots) and put back once the rows have loaded far enough.
+// Back from a title page lands on Explore where it was. The page's scroll and each row's sideways offset are kept in the history entry (SvelteKit snapshots) and put back once the rows have loaded far enough.
 
 export interface ExploreReturn {
 	/** The page's vertical scroll. */
 	y: number;
 	/** Each scrolled row's sideways offset, by row id. */
 	rows: Record<string, number>;
-	/** The first row on screen and how far from the top it sat: rows above may load at other heights, so this, not y, is the spot. */
+	/** The first row on screen and how far from the top it sat. Rows above may load at other heights, so this, not y, is the spot. */
 	anchor?: { id: string; top: number };
 }
 
 type Box = { top: number; bottom: number };
 type RowEl = { dataset: { rowId?: string }; getBoundingClientRect(): Box; firstElementChild?: { getBoundingClientRect(): Box } | null };
-/** A row wrapper may be display: contents (no box of its own): its first child stands in. */
+/** A row wrapper may be display: contents (no box of its own); its first child stands in. */
 function box(el: RowEl): Box {
 	const r = el.getBoundingClientRect();
 	return r.bottom - r.top > 0 || !el.firstElementChild ? r : el.firstElementChild.getBoundingClientRect();
 }
 
-/** readAnchor finds the first row whose bottom is on screen (below the top bar) and its top. */
+/** Finds the first row whose bottom is on screen (below the top bar) and its top. */
 export function readAnchor(root: ParentNode, below = 0): { id: string; top: number } | undefined {
 	for (const el of root.querySelectorAll('[data-row-id]') as unknown as Iterable<RowEl>) {
 		const r = box(el);
@@ -29,7 +27,7 @@ export function readAnchor(root: ParentNode, below = 0): { id: string; top: numb
 	return undefined;
 }
 
-/** anchorDelta is how far to scroll so the anchor row sits where it was (null: that row is not on the page). */
+/** How far to scroll so the anchor row sits where it was; null when that row is not on the page. */
 export function anchorDelta(root: ParentNode, anchor: { id: string; top: number } | undefined): number | null {
 	if (!anchor) return null;
 	for (const el of root.querySelectorAll('[data-row-id]') as unknown as Iterable<RowEl>) {
@@ -38,7 +36,7 @@ export function anchorDelta(root: ParentNode, anchor: { id: string; top: number 
 	return null;
 }
 
-/** readOffsets reads the sideways offset of every scrolled row under root. */
+/** Reads the sideways offset of every scrolled row under root. */
 export function readOffsets(root: ParentNode): Record<string, number> {
 	const out: Record<string, number> = {};
 	for (const el of root.querySelectorAll<HTMLElement>('[data-row-id]')) {
@@ -49,7 +47,7 @@ export function readOffsets(root: ParentNode): Record<string, number> {
 	return out;
 }
 
-/** putOffsets puts the rows back; rows not on the page (yet) are skipped. */
+/** Puts the rows back; rows not on the page (yet) are skipped. */
 export function putOffsets(root: ParentNode, rows: Record<string, number>): void {
 	for (const el of root.querySelectorAll<HTMLElement>('[data-row-id]')) {
 		const left = rows[el.dataset.rowId ?? ''];
@@ -58,7 +56,7 @@ export function putOffsets(root: ParentNode, rows: Record<string, number>): void
 	}
 }
 
-/** canReturn: the page is tall enough to scroll back to y (or nothing more will load). */
+/** The page is tall enough to scroll back to y, or nothing more will load. */
 export function canReturn(pageHeight: number, y: number, viewport: number, more: boolean): boolean {
 	return pageHeight >= y + viewport || !more;
 }

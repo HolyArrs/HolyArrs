@@ -1,20 +1,14 @@
-// Heroes the user is about to open get their big pictures fetched ahead
-// so the page's hero draws at once: a mouse resting on
-// a card (80 ms) or keyboard focus on one preloads its hero, and focus also
-// preloads the next card's in the same row (arrowing along a row). Only
-// pictures whose record says they are stored are asked, at the exact
-// address the page will ask, so nothing is fetched twice.
+// Heroes the user is about to open get their big pictures fetched ahead so the page's hero draws at once. A mouse resting on a card (80 ms) or keyboard focus on one preloads its hero; focus also preloads the next card's.
 import { appPicture, coverFor } from '../music/index.ts';
-import { pictureFor } from '../core/pictures.ts';
 import { remembered, type DetailKind } from '../metadata/index.ts';
+import { pictureFor } from '../core/pictures.ts';
 import { proxied } from '../core/tmdb-image.ts';
 
 const album = /\/music\/album\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})(?:[?#]|$)/;
 const artist = /\/music\/artist\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})(?:[?#]|$)/;
 const title = /\/title\/(movie|show)\/(\d+)(?:[?#/]|$)/;
 
-/** heroPictures are the big pictures a music page shows first: an album's
- * hero cover, an artist's wide background and logo (stored ones only). */
+/** The big pictures a music page shows first: an album's hero cover, an artist's wide background and logo (stored ones only). */
 export function heroPictures(href: string, ratio = globalThis.devicePixelRatio || 1): string[] {
 	let m = album.exec(href);
 	if (m) return pictureFor('album', m[1]) ? [coverFor(appPicture(`/api/v1/music-trending/art/album/${m[1]}`), 260, ratio, true).src].filter((u): u is string => !!u) : [];
@@ -33,8 +27,7 @@ function warm(url: string): void {
 	im.src = proxied(url);
 }
 
-/** heroAhead preloads the hero behind a link: music pictures here, a
- * title's backdrop through preload (the title page's own preloadHero). */
+/** Preloads the hero behind a link: music pictures here, a title's backdrop through `preload` (the title page's own preloadHero). */
 export function heroAhead(href: string | null | undefined, preload: (backdrop: string | null | undefined) => void): void {
 	if (!href) return;
 	for (const u of heroPictures(href)) warm(u);
@@ -42,7 +35,7 @@ export function heroAhead(href: string | null | undefined, preload: (backdrop: s
 	if (t) preload(remembered(t[1] as DetailKind, t[2])?.backdrop);
 }
 
-/** installHeroAhead watches hovers and focus for the whole app; it answers its own removal. */
+/** Watches hovers and focus for the whole app; returns its own removal. */
 export function installHeroAhead(preload: (backdrop: string | null | undefined) => void): () => void {
 	let timer: ReturnType<typeof setTimeout> | undefined;
 	const link = (e: Event) => (e.target as Element | null)?.closest?.('a[href]') as HTMLAnchorElement | null;

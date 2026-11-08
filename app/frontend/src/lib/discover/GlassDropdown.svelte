@@ -1,19 +1,13 @@
 <script lang="ts">
+	import ArtPlaceholder from '#lib/ui/ArtPlaceholder.svelte';
+	import { SkTrackRow } from '#lib/ui/sk/index.ts';
 	import { roundArt, stateWord, subline, suggestHref, type SuggestAnswer } from './live-search.ts';
 	import { appPicture, coverFor } from '../music/index.ts';
 	import { pictureOf } from '../core/pictures.ts';
-	import ArtPlaceholder from '#lib/ui/ArtPlaceholder.svelte';
-	import { SkTrackRow } from '#lib/ui/sk/index.ts';
-	// No art yet, or it failed: the row shows the one placeholder every
-	// picture uses (initials, on the picture's own colour when known).
+	// No art yet, or it failed: the row shows the one placeholder every picture uses.
 	let failed = $state<string[]>([]);
 
-	// The live search dropdown (music plan Phase 4): a glass panel under the
-	// field. Word completions first, then rich rows with 44 px art (round for
-	// artists and people), a "Type · detail" subline and the state chip.
-	// `active` indexes completions then rows; the field owns the keys.
-	// `answer` null means the words are being looked up: the panel opens at once with loading
-	// rows (the album track list's), and the suggestions fill in place when they come.
+	// The live search dropdown: a panel under the field. Word completions first, then rich rows with 44px art (round for artists and people), a "Type · detail" subline and the state chip.
 	let { answer, active, id, onpick, onword }: { answer: SuggestAnswer | null; active: number; id: string; onpick: (href: string) => void; onword: (w: string) => void } = $props();
 	const words = $derived(answer?.completions ?? []);
 	const items = $derived(answer?.items ?? []);
@@ -40,8 +34,7 @@
 
 <style>
 	.glass { position: absolute; z-index: 40; top: calc(100% + 8px); left: 0; right: 0; max-height: min(70vh, 640px); overflow-y: auto; padding: 6px; border-radius: 12px; background: color-mix(in srgb, var(--surface-2) 94%, transparent); -webkit-backdrop-filter: blur(60px) saturate(2.2); backdrop-filter: blur(60px) saturate(2.2); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.12), 0 8px 40px rgb(0 0 0 / 0.45); text-align: left; }
-	/* On a phone the field sits in a sticky strip where the blur does not
-	   reach the page, so the results below showed through; use the solid fill. */
+	/* On a phone the field sits in a sticky strip where the blur does not reach the page, so results showed through; use the solid fill. */
 	@media (max-width: 767px) { .glass { background: var(--surface-2); } }
 	.word { display: flex; align-items: center; min-height: 32px; padding: 0 8px; border-radius: 6px; font: 600 14px/1.2 var(--font-ui); color: var(--text); cursor: pointer; }
 	.rule { height: 1px; margin: 6px 8px; background: color-mix(in srgb, var(--text) 12%, transparent); }

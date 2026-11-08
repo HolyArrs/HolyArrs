@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { browseCategoryPath, browseCols, browseHref, browsePath, browseSectionPath, browseType, BROWSE_ROWS, musicTiles, readCategory, readMood, shownCount, strictTiles, tileHue, TILE_HUES } from './search-browse.ts';
+import { describe, expect, it } from 'vitest';
 
 describe('search browse', () => {
 	it('asks per tab, Movies and Shows only', () => {
@@ -59,7 +59,6 @@ describe('strict Browse per type', () => {
 		const card = (key: string, kind: 'album' | 'artist', image: string, genres: string[]) => ({ key, kind, mbid: key, name: key, image, genres });
 		const items = [card('p', 'artist', '/photo.jpg', ['rock']), card('a', 'album', '/a.jpg', ['rock']), card('b', 'album', '/b.jpg', ['rock', 'jazz']), card('c', 'artist', '/c.jpg', ['folk'])];
 		const out = musicTiles({ genres: ['rock', 'jazz', 'folk'], hero: null, rows: [{ id: 'r', type: 'x', title: 'x', reason: '', shape: 'square', items }] }, (g) => `/m/${g}`, (c) => c.image ?? null);
-		// Folk has only an artist picture, so it gets no tile.
 		expect(out.map((x) => [x.name, x.image, x.href])).toEqual([['Rock', '/a.jpg', '/m/rock'], ['Jazz', '/b.jpg', '/m/jazz']]);
 	});
 });

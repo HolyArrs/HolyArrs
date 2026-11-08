@@ -1,16 +1,15 @@
 <script lang="ts">
-	import type { CalendarEntry } from '#lib/core/types.ts';
-	import { to } from '#lib/core/paths.ts';
+	import Sheet from '#lib/ui/Sheet.svelte';
+	import Button from '#lib/ui/Button.svelte';
 	import { entryArt, entryHref, itemDot } from './calendar.ts';
 	import { entryTitle, groupTag, type CalGroup } from './calendar-groups.ts';
 	import { cardLines, rowWords, type CaptionLook } from './calendar-captions.ts';
-	import { sized } from '#lib/core/tmdb-image.ts';
-	import Sheet from '#lib/ui/Sheet.svelte';
-	import Button from '#lib/ui/Button.svelte';
 	import { epText, movieText } from './episode-text.svelte.ts';
+	import type { CalendarEntry } from '#lib/core/types.ts';
+	import { to } from '#lib/core/paths.ts';
+	import { sized } from '#lib/core/tmdb-image.ts';
 
-	// The details window of a calendar card or row (an episode's description, a movie's or
-	// album's facts, a way to the page). Shared by Cards and List.
+	// Details window of a calendar card or row (an episode's description, a movie's or album's facts, a way to the page). Shared by Cards and List.
 	let { g, today, look, open = $bindable(false) }: { g: CalGroup; today: string; look: CaptionLook; open: boolean } = $props();
 
 	const e = $derived<CalendarEntry>(g.lead);
@@ -58,11 +57,10 @@
 </Sheet>
 
 <style>
-	/* Layout 1: the description in a soft shaded box, always two lines tall so every card in a row lines up. */
+	/* The description box is always two lines tall so every card in a row lines up. */
 	.ep-win { display: flex; flex-direction: column; gap: 12px; }
 	.ep-art { position: relative; border-radius: 10px; overflow: hidden; }
 	.ep-still { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; }
-	/* An album shows its cover sharp and filling the frame, the same as its card. */
 	.ep-art.album .ep-still { object-position: center 30%; }
 	.ep-art.album { aspect-ratio: 16 / 9; box-shadow: 0 20px 50px rgb(0 0 0 / .35); }
 	.ep-when.tag { align-self: flex-start; padding: 5px 10px; border-radius: 999px; background: var(--surface-2); font: 700 12px/1 var(--font-ui); text-transform: uppercase; letter-spacing: .06em; }

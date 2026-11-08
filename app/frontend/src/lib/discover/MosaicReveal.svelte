@@ -1,31 +1,25 @@
 <script lang="ts" module>
-	// The Search layer's sweep. A canvas cover of page-coloured squares over the
-	// content, from the top bar's lower edge to the bottom of the viewport. A
-	// soft band (FEATHER px tall) moves through it; squares inside the band fade
-	// and shrink (1 → 0.92) with a small seeded delay each, so the edge
-	// shimmers rather than wipes.
-	// Enter: 120 ms hold, then the band runs down over 1600 ms on a gentle ease-in-out curve. Exit: the band runs back up over
-	// EXIT_MS on an ease-in curve (it accelerates away), building the cover.
+	// The Search layer's sweep: a canvas of page-coloured squares over the content, from the top bar's lower edge to the bottom of the viewport. A soft band (FEATHER px tall) moves through it and squares inside the band fade out or in.
 	export const ENTER_DELAY = 120;
 	export const ENTER_SWEEP = 1600;
 	export const EXIT_MS = 900;
 	export const FEATHER = 280;
-	// A gentle ease-in-out (cubic): the band travels down at a visible, even pace (expo-out was over in the first quarter).
+	// A gentle cubic ease-in-out so the band travels at a visible, even pace.
 	const sweepEase = (x: number) => (x >= 1 ? 1 : x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
 	const easeIn = (x: number) => x * x * x;
 
-	/** frontAt is the band's leading edge (0 top, 1 bottom of the cover) at ms after the entry starts. */
+	/** The band's leading edge (0 top, 1 bottom of the cover) `ms` after the entry starts. */
 	export function frontAt(ms: number): number {
 		return sweepEase(Math.min(1, Math.max(0, ms - ENTER_DELAY) / ENTER_SWEEP));
 	}
-	/** passAt is when (ms after the entry starts) the band's edge reaches a height fraction f. */
+	/** When, in ms after the entry starts, the band's edge reaches height fraction `f`. */
 	export function passAt(f: number): number {
 		const e = Math.min(0.999, Math.max(0, f));
 		// Inverse of sweepEase.
 		const x = e < 0.5 ? Math.cbrt(e / 4) : 1 - Math.cbrt(2 * (1 - e)) / 2;
 		return ENTER_DELAY + x * ENTER_SWEEP;
 	}
-	// A small seeded generator, so the shimmer is the same every time.
+	// Seeded, so the shimmer is the same every time.
 	function seeded(seed: number) {
 		return () => {
 			seed = (seed + 0x6d2b79f5) | 0;
@@ -50,7 +44,7 @@
 	}
 	const box = measure();
 	const bg = typeof document === 'undefined' ? '' : getComputedStyle(document.documentElement).getPropertyValue('--bg').trim() || getComputedStyle(document.body).backgroundColor || '#000';
-	// The breaking squares are drawn a touch lighter than the page, so the pixels read as pixels.
+	// Breaking squares are drawn slightly lighter than the page so the pixels read as pixels.
 	const px = typeof document === 'undefined' ? '' : getComputedStyle(document.documentElement).getPropertyValue('--surface-2').trim() || bg;
 
 	onMount(() => {
@@ -64,21 +58,21 @@
 		c.width = Math.ceil(box.width * dpr);
 		c.height = Math.ceil(box.height * dpr);
 		ctx.scale(dpr, dpr);
-		// The grid, once: each square's seeded delay as a share of the band.
+		// Each square's seeded delay as a share of the band, computed once.
 		const cols = Math.ceil(box.width / cell);
 		const rows = Math.ceil(box.height / cell);
 		const rnd = seeded(20261020);
 		const jitter = new Float32Array(cols * rows);
 		for (let i = 0; i < jitter.length; i++) jitter[i] = rnd() * 0.9;
 		const H = box.height;
-		// Far enough that the last row's slowest squares have fully settled before the canvas goes (no pop at the end).
+		// Far enough that the last row's slowest squares settle before the canvas goes.
 		const travel = H + FEATHER * 1.6;
 		let raf = 0;
 		const t0 = performance.now();
 		const total = exit ? EXIT_MS : ENTER_DELAY + ENTER_SWEEP;
 		const frame = (now: number) => {
 			const ms = now - t0;
-			// The band's leading edge in px; squares above (enter) are clear, below are covered.
+			// The band's leading edge in px; squares above it (entering) are clear, below are covered.
 			const edge = exit ? (1 - easeIn(Math.min(1, ms / EXIT_MS))) * travel - FEATHER : frontAt(ms) * travel - FEATHER;
 			ctx.clearRect(0, 0, box.width, H);
 			ctx.fillStyle = bg;
@@ -90,10 +84,10 @@
 			for (let y = r0; y < r1; y++) {
 				if (y * cell >= solid) break;
 				for (let x = 0; x < cols; x++) {
-					// 0 at the band's top (clear), 1 at its bottom (covered); minus the seeded delay.
+					// 0 at the band's top (clear), 1 at its bottom (covered), minus the seeded delay.
 					const k = Math.min(1, Math.max(0, ((y + 0.5) * cell - edge) / FEATHER * 1.4 + jitter[y * cols + x] - 0.45));
 					if (k <= 0.02) continue;
-					// Each square breaks on its own beat: it shrinks to nothing (pixels), lighter while it goes.
+					// Each square shrinks to nothing, lighter while it goes.
 					ctx.globalAlpha = Math.min(1, 0.35 + k);
 					ctx.fillStyle = k > 0.96 ? bg : px;
 					const s = Math.max(2, cell * k - (k < 0.96 ? 2 : 0));

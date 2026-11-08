@@ -1,25 +1,20 @@
 import { searchField } from '../core/search-field.svelte.ts';
 
-// The top bar hides while you scroll down and comes back when you scroll up.
-// One listener for the whole app (installed by the root layout); pages only
-// mark their scope pills with data-pin-pills so they pin in the freed space.
-// The change is one class on <html>; the bar and pills glide on the
-// compositor (transform only, CSS transitions), so a mouse wheel's 100 px
-// steps can't make it jump and no style is recomputed per frame.
+// The top bar hides while you scroll down and comes back when you scroll up. One listener for the whole app (installed by the root layout); pages only mark their scope pills with data-pin-pills so they pin in the freed space.
 
-export const HIDE_AFTER = 80; // px of downward scroll before the bar leaves
-export const SHOW_AFTER = 24; // px of upward scroll before it comes back
+export const HIDE_AFTER = 80; // Px of downward scroll before the bar leaves.
+export const SHOW_AFTER = 24; // Px of upward scroll before it comes back.
 
 export type BarState = { hidden: boolean; anchor: number };
 
-/** nextBar is the pure direction logic: anchor is where the current run of scroll began. */
+/** The pure direction logic; `anchor` is where the current run of scroll began. */
 export function nextBar(s: BarState, y: number): BarState {
 	if (y <= 0) return { hidden: false, anchor: 0 };
 	if (s.hidden) {
-		if (y > s.anchor) return { hidden: true, anchor: y }; // still going down: follow
+		if (y > s.anchor) return { hidden: true, anchor: y }; // Still going down: follow.
 		return s.anchor - y >= SHOW_AFTER ? { hidden: false, anchor: y } : s;
 	}
-	if (y < s.anchor) return { hidden: false, anchor: y }; // going up: follow
+	if (y < s.anchor) return { hidden: false, anchor: y }; // Going up: follow.
 	return y - s.anchor >= HIDE_AFTER ? { hidden: true, anchor: y } : s;
 }
 
@@ -30,7 +25,7 @@ let st: BarState = { hidden: false, anchor: 0 };
 function blocked(): boolean {
 	const a = document.activeElement;
 	if (a instanceof HTMLElement && a.closest('.ui-topbar')) return true;
-	if (location.pathname.includes('/search') && searchField.term.trim()) return true; // typed words: results stay with the field
+	if (location.pathname.includes('/search') && searchField.term.trim()) return true; // Typed words: results stay with the field.
 	return !!document.querySelector('dialog[open], [aria-modal="true"], .fullscreen, [data-fullscreen]') || !!document.fullscreenElement;
 }
 
@@ -40,12 +35,12 @@ function apply(hidden: boolean) {
 	document.documentElement.classList.toggle('bar-hidden', hidden);
 }
 
-/** overHero is whether a page hero ([data-hero]) still shows under the bar: then the bar drops its glass and line. */
+/** Whether a page hero ([data-hero]) still shows under the bar; then the bar drops its glass and line. */
 export function overHero(heroBottom: number | null, barBottom: number): boolean {
 	return heroBottom !== null && heroBottom > barBottom + 24;
 }
 
-/** checkHero sets html.over-hero from the page's hero; the layout calls it after each navigation too. */
+/** Sets html.over-hero from the page's hero; the layout calls it after each navigation too. */
 export function checkHero() {
 	if (typeof document === 'undefined') return;
 	const h = document.querySelector('[data-hero]');
@@ -54,25 +49,23 @@ export function checkHero() {
 	document.documentElement.classList.toggle('over-hero', over);
 }
 
-/** rebaseBar keeps the bar as it is and counts from the current place, after the page itself moved (content added above). */
+/** Keeps the bar as it is and counts from the current place after the page itself moved (content added above). */
 export function rebaseBar() {
 	if (typeof window === 'undefined') return;
 	st = { hidden: topBar.hidden, anchor: window.scrollY };
 }
 
-/** showBar brings the bar back at once (Ctrl K, focus) and restarts the run from here. */
+/** Brings the bar back at once (Ctrl K, focus) and restarts the run from here. */
 export function showBar() {
 	if (typeof window === 'undefined') return;
 	st = { hidden: false, anchor: window.scrollY };
 	apply(false);
 }
 
-/** installScrollBar starts the one passive listener; the returned function stops it. */
+/** Starts the one passive listener; the returned function stops it. */
 export function installScrollBar(): () => void {
 	let queued = false;
-	// Which way the person last asked to go (wheel, swipe, keys). While it is up, the page moving
-	// down by itself (days added above, pictures loading) never hides the bar.
-	// The wish counts for a short while only, so a scrollbar drag or a link later is read plainly.
+	// Which way the person last asked to go (wheel, swipe, keys). While it is up, the page moving down by itself (days added above, pictures loading) never hides the bar. The wish counts for a short while only.
 	let goingUp = false;
 	let wishAt = 0;
 	const wish = (up: boolean) => ((goingUp = up), (wishAt = performance.now()));

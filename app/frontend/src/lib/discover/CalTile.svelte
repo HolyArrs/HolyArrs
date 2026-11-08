@@ -1,20 +1,18 @@
 <script lang="ts">
-	import type { CalendarEntry } from '#lib/core/types.ts';
-	import { to } from '#lib/core/paths.ts';
-	import { entryArt, entryHref, itemDot, type Follows } from './calendar.ts';
-	import { dayChip, entryTitle, groupTag, type CalGroup } from './calendar-groups.ts';
-	import { cardLines, rowWords, DEFAULT_LOOK, type CaptionLook } from './calendar-captions.ts';
-	import { sized } from '#lib/core/tmdb-image.ts';
 	import Badge from '#lib/ui/Badge.svelte';
 	import ArtPlaceholder from '#lib/ui/ArtPlaceholder.svelte';
 	import IconButton from '#lib/ui/IconButton.svelte';
+	import { entryArt, entryHref, itemDot, type Follows } from './calendar.ts';
+	import { dayChip, entryTitle, groupTag, type CalGroup } from './calendar-groups.ts';
+	import { cardLines, rowWords, DEFAULT_LOOK, type CaptionLook } from './calendar-captions.ts';
 	import FollowWho from './FollowWho.svelte';
 	import CalWindow from './CalWindow.svelte';
 	import { epCode } from './episode-text.svelte.ts';
+	import type { CalendarEntry } from '#lib/core/types.ts';
+	import { to } from '#lib/core/paths.ts';
+	import { sized } from '#lib/core/tmdb-image.ts';
 
-	// Coming Soon's card for rows: the Day view's big backdrop card made row
-	// size, with the name on the art and its badges. Several episodes of one
-	// show on one day are one card, drawn as a small stack ("3 episodes").
+	// Coming Soon's card for rows: the Day view's backdrop card at row size, with the name on the art and its badges. Several episodes of one show on one day are one card, drawn as a small stack ("3 episodes").
 	let {
 		g,
 		today,
@@ -35,12 +33,11 @@
 	const n = $derived(g.entries.length);
 	const src = $derived(e.kind === 'album' ? (e.poster ?? null) : entryArt(e));
 	const badges = $derived([chip ? dayChip(g.day, today) : '', groupTag(g)].filter(Boolean));
-	// The time (or Cinema, At home, Out now) first, then each line that has real data; the day is beside the card.
+	// The time (or Cinema, At home, Out now) first, then each line that has real data.
 	const lines = $derived(cardLines(g, look, today).slice(0, 2));
 	const have = $derived(g.entries.every((x) => itemDot(x, today) === 'have'));
 	let failed = $state(false);
-	// A click anywhere on the card opens a window with the details (an
-	// episode's description, a movie's or album's facts) and a way to the page.
+	// A click anywhere on the card opens a window with the details and a way to the page.
 	const isEp = $derived(e.kind === 'episode');
 	const code = $derived(isEp ? epCode(g.entries) : '');
 	const epLines = $derived(isEp ? [[lines[0], code].filter(Boolean).join(' · '), n > 1 ? `${n} episodes` : e.episode_name || lines[1] || ''] : lines);
@@ -87,9 +84,9 @@
 
 <style>
 	.ct { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
-	/* A past day fades its picture only; its words keep full contrast. */
+	/* A past day fades its picture only; the words keep full contrast. */
 	.ct.past .pile { opacity: 0.75; }
-	/* Every card keeps 8px under its art; a stack's layers peek out there, so all tops line up. */
+	/* Every card keeps 8px under its art so a stack's layers peek out there and all tops line up. */
 	.pile { position: relative; display: flex; flex-direction: column; padding-bottom: 8px; }
 	.layer { position: absolute; border-radius: var(--r-card); background: var(--surface-3); box-shadow: var(--shadow-card); }
 	.l1 { bottom: 4px; left: 4%; right: 4%; height: 40px; opacity: 0.9; }
@@ -98,13 +95,11 @@
 	.art:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.art > :global(.ui-art-ph) { position: absolute; inset: 0; }
 	.bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-	/* An album: its cover fills the card (a centred crop), no blur, the name on the fade like every card. */
 	.album .bg { object-position: center 30%; }
 	.scrim { position: absolute; inset: 0; background: linear-gradient(to top, rgb(0 0 0 / 0.75), rgb(0 0 0 / 0.08) 60%, transparent); pointer-events: none; }
 	.on-art { position: absolute; left: 6%; right: 6%; bottom: 8%; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
 	.tags { display: flex; flex-wrap: wrap; gap: 4px; }
 	.name { color: #fff; font: 700 clamp(17px, 1.6vw, 22px)/1.08 var(--font-display); letter-spacing: -0.02em; text-shadow: 0 2px 12px rgb(0 0 0 / 0.5); display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
-	/* Caption lines, one line each. */
 	.caps { display: flex; flex-direction: column; gap: 2px; min-width: 0; height: 38px; overflow: hidden; }
 	.cap { color: var(--text-muted); font: var(--t-footnote); line-height: 18px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 	.cap.when { color: var(--text); font-weight: 700; font-variant-numeric: tabular-nums; }
@@ -118,6 +113,6 @@
 	@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
 		.art:hover { transform: translateY(var(--lift)); box-shadow: var(--shadow-lift); }
 	}
-	/* Phones: the caption button's tap area grows to 44px; padding and margin cancel, so the card keeps its size. */
+	/* Phones: the caption button's tap area grows to 44px, with padding and margin cancelling so the card keeps its size. */
 	@media (max-width: 767px) and (pointer: coarse) { .tap { position: relative; padding-block: 3px; margin-block: -3px; } }
 </style>

@@ -1,20 +1,15 @@
 <script lang="ts">
-	import type { CalendarEntry } from '#lib/core/types.ts';
+	import Badge from '#lib/ui/Badge.svelte';
 	import type { Follows } from './calendar.ts';
 	import { groupDates, monthGroups, thingCount } from './calendar-groups.ts';
 	import { DEFAULT_LOOK, type CaptionLook } from './calendar-captions.ts';
 	import CalTile from './CalTile.svelte';
-	import Badge from '#lib/ui/Badge.svelte';
 	import CalEmpty from './CalEmpty.svelte';
 	import { SvelteSet } from 'svelte/reactivity';
 	import { onDestroy } from 'svelte';
+	import type { CalendarEntry } from '#lib/core/types.ts';
 
-	// Cards: one day per row. A big date stamp on the left (the
-	// day name over a large number, once per day) and a large backdrop card
-	// beside it with the name on the art, a short line and an Open button.
-	// Month names divide the list.
-	// mode says which follows are shown: Everyone's follows names who follows each title;
-	// onfollow follows or stops following a title from its card; look picks the caption lines.
+	// Cards view: one day per row. A date stamp on the left (day name over a large number, once per day) and backdrop cards beside it with the name on the art, a short line and an Open button. Month names divide the list.
 	let {
 		entries,
 		today,
@@ -27,10 +22,7 @@
 	const months = $derived(monthGroups(entries));
 	const at = (day: string) => new Date(day + 'T00:00:00');
 
-	// Only the days near the screen get their real cards; the rest hold plain boxes of exactly the
-	// same size (same grid, picture ratio and caption height), so the page is just as tall and
-	// scrolling never jumps, but a year of days costs a few dozen cards instead of hundreds.
-	// A day keeps its cards once drawn.
+	// Only days near the screen get real cards; the rest hold plain boxes of exactly the same size, so the page keeps its height and scrolling never jumps while a year of days stays cheap.
 	const drawn = new SvelteSet<string>();
 	const io = typeof IntersectionObserver === 'undefined' ? null : new IntersectionObserver(
 		(es) => {
@@ -50,7 +42,6 @@
 	onDestroy(() => io?.disconnect());
 </script>
 
-
 {#if !months.length}
 	<CalEmpty {onlater} />
 {:else}
@@ -68,7 +59,6 @@
 								<span class="mon">{at(d.day).toLocaleDateString(undefined, { month: 'short' })}</span>
 								{#if d.day === today}<span class="today-tag"><Badge label="Today" /></span>{/if}
 							</div>
-							<!-- Every card of the day, all one size, wrapping onto more rows when a row is full. -->
 							<div class="day">
 								<h4 class="count">{thingCount(d.items.length)}</h4>
 								<div class="grid" data-testid="cal-day-grid">
@@ -92,13 +82,12 @@
 	.divider { display: flex; align-items: center; gap: 14px; margin: 0 0 16px; font: var(--t-title2); letter-spacing: var(--t-title2-track); }
 	.divider::after { content: ''; flex: 1; height: 1px; background: var(--line); }
 	.rows { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 28px; }
-	/* Each day after the first starts on a hairline across the full width. */
 	.row { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 20px; align-items: start; scroll-margin-top: 8px; }
 	.row + .row { padding-top: 28px; border-top: 1px solid var(--line); }
 	.day { min-width: 0; display: flex; flex-direction: column; gap: 16px; }
 	.count { font: var(--t-title3); letter-spacing: var(--t-title3-track); color: var(--text-muted); line-height: 24px; }
 	.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr)); gap: 20px; }
-	/* The stand-in for a card not drawn yet: CalTile's exact box (picture, its 8px foot, the 6px gap, two caption lines). */
+	/* The stand-in for an undrawn card has CalTile's exact box (picture, 8px foot, 6px gap, two caption lines). */
 	.ph { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
 	.pa { display: block; aspect-ratio: 16 / 9; margin-bottom: 8px; border-radius: var(--r-card); background: var(--surface-1); }
 	.pc { display: block; height: 38px; }

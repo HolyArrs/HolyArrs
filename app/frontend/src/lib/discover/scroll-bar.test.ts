@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { nextBar, overHero, type BarState } from './scroll-bar.svelte.ts';
+import { describe, expect, it } from 'vitest';
 
 const walk = (ys: number[], s: BarState = { hidden: false, anchor: 0 }) => ys.reduce(nextBar, s);
 

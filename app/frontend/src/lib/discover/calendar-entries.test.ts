@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { albumHave, byDay, entryDay, entryHref, entryKey, entryName, entryTime, shows } from './calendar.ts';
+import { describe, expect, it } from 'vitest';
 import type { CalendarEntry } from '../core/types.ts';
 
 describe('episodes on the calendar', () => {

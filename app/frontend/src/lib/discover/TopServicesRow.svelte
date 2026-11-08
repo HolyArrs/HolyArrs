@@ -1,21 +1,18 @@
 <script lang="ts">
-	import { untrack, type Snippet } from 'svelte';
-	import { to } from '../core/paths.ts';
-	import { api } from '../core/api.ts';
-	import { detailPath, remember } from '../metadata/index.ts';
 	import Shelf from '#lib/ui/Shelf.svelte';
 	import PosterCard from '#lib/ui/PosterCard.svelte';
 	import Chip from '#lib/ui/Chip.svelte';
 	import { discoverCard, matchOwned, ownedMark, followsByTmdb, ownedTitle, type ExploreCard, type OwnedIndex, cardIdentity } from '#lib/ui/title-cards.ts';
+	import type { Audience } from '#lib/ui/title-status.ts';
 	import { serviceChips, serviceLabel, serviceTopPath, topPath, type ServiceTopAnswer, type ServiceTopRow, type TopAnswer } from './explore-services.ts';
 	import { type ExploreType } from './explore-type.ts';
 	import { type Genre } from './genres.ts';
-	import type { Audience } from '#lib/ui/title-status.ts';
+	import { detailPath, remember } from '../metadata/index.ts';
+	import { untrack, type Snippet } from 'svelte';
+	import { to } from '../core/paths.ts';
+	import { api } from '../core/api.ts';
 
-	// "Top on your services": one row, one chip per streaming service (one
-	// picked at a time). Every service's list comes in one answer, so a chip
-	// switch never waits on the network. Inside a genre a service's chip is
-	// TMDB's most popular in that genre on it.
+	// "Top on your services": one row with one chip per streaming service, one picked at a time. Every service's list comes in one answer, so switching chips never waits on the network.
 	let {
 		type,
 		used,
@@ -28,17 +25,17 @@
 		ask
 	}: {
 		type: ExploreType;
-		/** The person's services, first in the chips. */
+		/** The person's services, first among the chips. */
 		used: number[];
 		region: string;
 		genre?: Genre | null;
 		owned?: OwnedIndex;
 		who?: Audience;
-		/** The first chip's titles (cardIdentity), so the rows below can skip them; a chip switch never moves them. */
+		/** The first chip's titles, so the rows below can skip them; switching chips never moves them. */
 		shown?: string[];
 		/** Where the row's See all goes (New & Popular). */
 		seeAll?: string;
-		/** The page's Ask / Add button for a card, the same one its other rows use (on hover and in the hover card). */
+		/** The page's Ask or Add button for a card, the same one its other rows use. */
 		ask?: Snippet<[ExploreCard]>;
 	} = $props();
 
@@ -126,12 +123,12 @@
 	</div>
 {/snippet}
 
-<!-- No list at all (a cold metadata server): the row is left out, never shown empty. -->
+<!-- With no list at all (a cold metadata server) the row is left out, never shown empty. -->
 {#if loading || chips.length > 0}
 	<section class="top" data-testid="top-services-row" data-row="top_services">
 		<!-- A new list starts at rank 1, not where the last one was scrolled to. -->
 		{#key `${row?.service ?? ''}|${type}|${genre?.id ?? ''}`}
-			<!-- While loading, the source line and the chips keep their space so nothing below moves when they arrive. -->
+			<!-- While loading, the source line and chips keep their space so nothing below moves. -->
 			<Shelf {title} subtitle={source || (loading ? ' ' : undefined)} {tools} href={seeAll} item={ranked ? 'calc(var(--explore-item, 180px) / 0.68)' : 'var(--explore-item, 180px)'} items={cards} key={(c) => c.key} placeholder="poster">
 				{#snippet card(raw: Ranked)}
 					{@const c = owned ? { ...matchOwned(raw, owned), rank: raw.rank } : raw}
@@ -157,12 +154,11 @@
 	.top { position: relative; }
 	.top-tools { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
 	.chips { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; margin-inline: calc(var(--gutter) * -1); padding: 2px var(--gutter); }
-	/* One chip tall even before the services arrive. */
 	.chips { min-height: 36px; }
 	@media (pointer: coarse) { .chips { min-height: 48px; } }
 	.chips::-webkit-scrollbar { display: none; }
 	.chips :global(.ui-chip) { flex: none; }
-	/* The column is the poster (68%, the same width as the other rows' posters) plus the number (32%); the poster overlaps the number's right edge a little. */
+	/* The column is the poster (68%, as wide as other rows' posters) plus the number (32%); the poster overlaps the number's right edge a little. */
 	.ranked { position: relative; container-type: inline-size; }
 	.rank { position: absolute; left: 0; top: 0; width: 37%; height: 102cqw; display: flex; align-items: flex-end; justify-content: flex-end; font-size: 50cqw; font-weight: 800; line-height: 0.76; letter-spacing: -0.06em; color: var(--bg, #000); -webkit-text-stroke: 3px var(--text-muted); paint-order: stroke; user-select: none; z-index: 0; }
 	.rank.two { font-size: 36cqw; letter-spacing: -0.12em; }

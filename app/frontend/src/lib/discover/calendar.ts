@@ -11,7 +11,7 @@ export const kindWord: Record<CalendarEntry['kind'], string> = {
 /** Which titles the calendar shows. */
 export type TitlesShown = 'all' | 'movies' | 'shows' | 'music';
 
-/** shows says whether an entry is shown for the movies/shows/music choice. */
+/** Whether an entry shows for the movies, shows or music choice. */
 export function shows(e: Pick<CalendarEntry, 'kind'>, which: TitlesShown): boolean {
 	switch (which) {
 		case 'all':
@@ -24,12 +24,12 @@ export function shows(e: Pick<CalendarEntry, 'kind'>, which: TitlesShown): boole
 	return e.kind !== 'episode' && e.kind !== 'album';
 }
 
-/** entryHref is where an entry leads: an album's own page, else the title. */
+/** Where an entry leads: an album's own page, else the title. */
 export function entryHref(e: Pick<CalendarEntry, 'kind' | 'title_id' | 'part_id'>): string {
 	return e.kind === 'album' && e.part_id ? `/library/${e.title_id}/albums/${e.part_id}` : `/library/${e.title_id}`;
 }
 
-/** albumHave says how much of an album entry is in the Library. */
+/** How much of an album entry is in the Library. */
 export function albumHave(e: Pick<CalendarEntry, 'tracks' | 'have'>): string {
 	const n = e.tracks ?? 0;
 	const h = e.have ?? 0;
@@ -38,9 +38,7 @@ export function albumHave(e: Pick<CalendarEntry, 'tracks' | 'have'>): string {
 	return h >= n ? 'In your Library' : `${h} of ${n} songs in your Library`;
 }
 
-/** entryDay is the local day an entry falls on: an episode with an air time
- *  on the reader's own day (time zone aware), else its air day; a movie
- *  date on its date. */
+/** The local day an entry falls on: an episode with an air time on the reader's own day (time zone aware), else its air day; a movie on its date. */
 export function entryDay(e: Pick<CalendarEntry, 'kind' | 'date' | 'timed' | 'air_day'>): string {
 	if (e.kind === 'episode') {
 		if (e.timed) return ymd(new Date(e.date));
@@ -49,56 +47,55 @@ export function entryDay(e: Pick<CalendarEntry, 'kind' | 'date' | 'timed' | 'air
 	return dayOf(e.date);
 }
 
-/** entryTime is an episode's local air time (21:00), or '' when unknown. */
+/** An episode's local air time (21:00), or '' when unknown. */
 export function entryTime(e: Pick<CalendarEntry, 'kind' | 'date' | 'timed'>): string {
 	if (e.kind !== 'episode' || !e.timed) return '';
 	const d = new Date(e.date);
 	return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 }
 
-/** episodeCode is S01E02 for an episode entry. */
+/** S01E02 for an episode entry. */
 export function episodeCode(e: Pick<CalendarEntry, 'season' | 'episode'>): string {
 	const p = (n = 0) => String(n).padStart(2, '0');
 	return `S${p(e.season)}E${p(e.episode)}`;
 }
 
-/** entryName is the line an entry shows: the movie, the show and episode,
- *  or the artist and album. */
+/** The line an entry shows: the movie, the show and episode, or the artist and album. */
 export function entryName(e: CalendarEntry): string {
 	if (e.kind === 'album') return `${e.name} – ${e.album ?? 'Album'}`;
 	if (e.kind !== 'episode') return `${e.name}${e.year ? ` (${e.year})` : ''}`;
 	return `${e.name} ${episodeCode(e)}${e.episode_name ? ` ${e.episode_name}` : ''}`;
 }
 
-/** entryKey tells entries apart in a list. */
+/** Tells entries apart in a list. */
 export function entryKey(e: CalendarEntry): string {
 	if (e.kind === 'album') return `a${e.part_id}`;
 	return e.kind === 'episode' ? `e${e.item_id}` : `${e.title_id}${e.kind}`;
 }
 
-/** ymd is a calendar day as 2026-10-13, read in local time. */
+/** A calendar day as 2026-10-13, read in local time. */
 export function ymd(d: Date): string {
 	const p = (n: number) => String(n).padStart(2, '0');
 	return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
 }
 
-/** dayOf is the calendar day of an API date (its date part, not shifted by time zone). */
+/** The calendar day of an API date: its date part, not shifted by time zone. */
 export function dayOf(iso: string): string {
 	return iso.slice(0, 10);
 }
 
 export interface GridDay {
-	day: string; // 2026-10-13
-	date: number; // 13
+	day: string;
+	date: number;
 	inMonth: boolean;
 	today: boolean;
 	items: CalendarEntry[];
 }
 
-/** monthRange is the first day shown and the day after the last for a month grid (whole weeks, Monday first). */
+/** The first day shown and the day after the last for a month grid (whole weeks, Monday first). */
 export function monthRange(year: number, month: number): { from: string; to: string; start: Date; weeks: number } {
 	const first = new Date(year, month, 1);
-	const lead = (first.getDay() + 6) % 7; // days before it in its week (Monday first)
+	const lead = (first.getDay() + 6) % 7; // Days before it in its week (Monday first).
 	const start = new Date(year, month, 1 - lead);
 	const days = new Date(year, month + 1, 0).getDate();
 	const weeks = Math.ceil((lead + days) / 7);
@@ -106,7 +103,7 @@ export function monthRange(year: number, month: number): { from: string; to: str
 	return { from: ymd(start), to: ymd(end), start, weeks };
 }
 
-/** monthGrid lays a month out in weeks of seven days, Monday first, with each day's dates. */
+/** Lays a month out in weeks of seven days, Monday first, with each day's dates. */
 export function monthGrid(year: number, month: number, entries: CalendarEntry[], today = ymd(new Date())): GridDay[][] {
 	const { start, weeks } = monthRange(year, month);
 	const byDay = new Map<string, CalendarEntry[]>();
@@ -127,9 +124,8 @@ export function monthGrid(year: number, month: number, entries: CalendarEntry[],
 	return out;
 }
 
-/** byDay groups dates by calendar day for the list, in day order. */
-// One order inside every day: movies (In theaters, then Streaming), then TV (All day,
-// then by air time), then music; the name breaks ties.
+/** Groups dates by calendar day for the list, in day order. */
+// One order inside every day: movies (In theaters, then Streaming), then TV (All day, then by air time), then music; the name breaks ties.
 const kindRank: Record<string, number> = { cinema: 0, digital: 1, physical: 1, episode: 2, album: 3 };
 function dayOrder(a: CalendarEntry, b: CalendarEntry): number {
 	const k = (kindRank[a.kind] ?? 9) - (kindRank[b.kind] ?? 9);
@@ -153,31 +149,28 @@ export function byDay(entries: CalendarEntry[]): { day: string; items: CalendarE
 	return out;
 }
 
-/** shiftMonth moves a month by n (n may be negative). */
+/** Moves a month by n (n may be negative). */
 export function shiftMonth(year: number, month: number, n: number): { year: number; month: number } {
 	const d = new Date(year, month + n, 1);
 	return { year: d.getFullYear(), month: d.getMonth() };
 }
 
-/** The calendar's two views: big picture cards day by day, or a compact list. */
+/** Big picture cards day by day, or a compact list. */
 export type CalendarView = 'cards' | 'list';
 
-/** weekStart is the Monday of the week a day falls in (local time). */
+/** The Monday of the week a day falls in (local time). */
 export function weekStart(d: Date): Date {
 	return new Date(d.getFullYear(), d.getMonth(), d.getDate() - ((d.getDay() + 6) % 7));
 }
 
-/** shiftWeek moves a week start by n weeks. */
+/** Moves a week start by n weeks. */
 export function shiftWeek(start: Date, n: number): Date {
 	return new Date(start.getFullYear(), start.getMonth(), start.getDate() + n * 7);
 }
 
 const viewKey = 'holyarrs.calendar-view';
 
-/**
- * viewFromAddress reads ?view=: cards or list; the old layout links still
- * land somewhere sensible (now or 0, the old page, opens List; 1 to 5 open Cards).
- */
+/** Reads ?view=: cards or list. Old layout links still land somewhere sensible (now or 0, the old page, opens List; 1 to 5 open Cards). */
 export function viewFromAddress(v: string | null | undefined): CalendarView | null {
 	if (v === 'cards' || v === 'list') return v;
 	if (v === 'now' || v === '0') return 'list';
@@ -185,7 +178,7 @@ export function viewFromAddress(v: string | null | undefined): CalendarView | nu
 	return null;
 }
 
-/** readView is the view picked earlier in this session, if any. */
+/** The view picked earlier in this session, if any. */
 export function readView(store: Pick<Storage, 'getItem'> | undefined = globalThis.sessionStorage): CalendarView | null {
 	try {
 		const v = store?.getItem(viewKey);
@@ -195,7 +188,7 @@ export function readView(store: Pick<Storage, 'getItem'> | undefined = globalThi
 	}
 }
 
-/** saveView keeps the view picked for the session; a private window may refuse and that is fine. */
+/** Keeps the view for the session; a private window may refuse and that is fine. */
 export function saveView(v: CalendarView, store: Pick<Storage, 'setItem'> | undefined = globalThis.sessionStorage) {
 	try {
 		store?.setItem(viewKey, v);
@@ -204,17 +197,17 @@ export function saveView(v: CalendarView, store: Pick<Storage, 'setItem'> | unde
 	}
 }
 
-/** startView is the view the calendar opens on: the address, else the session's pick, else Cards. */
+/** The view the calendar opens on: the address, else the session's pick, else Cards. */
 export function startView(address: string | null | undefined, remembered: CalendarView | null): CalendarView {
 	return viewFromAddress(address) ?? remembered ?? 'cards';
 }
 
-/** entryArt is the picture for a calendar entry: the episode still, then the backdrop, then the poster. */
+/** The picture for a calendar entry: the episode still, then the backdrop, then the poster. */
 export function entryArt(e: Pick<CalendarEntry, 'still' | 'backdrop' | 'poster'>): string | null {
 	return e.still || e.backdrop || e.poster || null;
 }
 
-/** entryIcon is the kind icon an entry shows when it has no picture. */
+/** The kind icon an entry shows when it has no picture. */
 export function entryIcon(kind: CalendarEntry['kind']): 'tv' | 'music' | 'film' {
 	return kind === 'episode' ? 'tv' : kind === 'album' ? 'music' : 'film';
 }
@@ -222,7 +215,7 @@ export function entryIcon(kind: CalendarEntry['kind']): 'tv' | 'music' | 'film' 
 /** The status dot on a calendar item: in the Library, missing (its day has passed), or still to come. */
 export type ItemDot = 'have' | 'missing' | 'upcoming';
 
-/** itemDot says which dot a calendar item shows on a given day. */
+/** Which dot a calendar item shows on a given day. */
 export function itemDot(e: CalendarEntry, today = ymd(new Date())): ItemDot {
 	const have = e.kind === 'album' ? !!e.tracks && (e.have ?? 0) >= e.tracks : e.state === 'in_library' || !!e.versions?.some((v) => v.state === 'in_library');
 	if (have) return 'have';
@@ -237,7 +230,7 @@ export interface MovieFacts {
 	have: boolean;
 }
 
-/** movieFacts reads a movie title's dates and whether any of its copies is in the Library. */
+/** Reads a movie title's dates and whether any of its copies is in the Library. */
 export function movieFacts(t: Pick<TitleView, 'cinema_date' | 'digital_date' | 'physical_date' | 'slots'>): MovieFacts {
 	return {
 		cinema: t.cinema_date ? dayOf(t.cinema_date) : undefined,
@@ -250,13 +243,7 @@ export function movieFacts(t: Pick<TitleView, 'cinema_date' | 'digital_date' | '
 const homeKinds = new Set<CalendarEntry['kind']>(['digital', 'physical']);
 const isMovie = (e: Pick<CalendarEntry, 'kind'>) => e.kind === 'cinema' || homeKinds.has(e.kind);
 
-/**
- * oneMovieDate keeps one date per movie: the day it can be watched at home
- * (the earlier of its digital and disc dates), else its cinema date. The
- * title's own dates decide when known, so a cinema date in view is dropped
- * when the home date is later; without them the loaded dates decide. A movie
- * with a copy in the Library is marked so (the server sends no state for movies).
- */
+/** Keeps one date per movie: the day it can be watched at home (the earlier of its digital and disc dates), else its cinema date. The title's own dates decide when known, so a cinema date in view is dropped when the title says it is already out. */
 export function oneMovieDate(entries: CalendarEntry[], movies: Map<number, MovieFacts> = new Map()): CalendarEntry[] {
 	const home = new Map<number, string>();
 	for (const e of entries) {
@@ -284,28 +271,22 @@ export function oneMovieDate(entries: CalendarEntry[], movies: Map<number, Movie
 	return out;
 }
 
-/**
- * Which dates the calendar shows. Following a title puts its dates on your
- * calendar (asking for a title follows it too):
- * - mine: what you follow (the default),
- * - everyone: what anyone on this server follows, each row saying who,
- * - library: every date in the Library, followed or not.
- */
+/** Which dates the calendar shows. Following a title puts its dates on your calendar (asking for a title follows it too). mine: what you follow (the default). everyone: what anyone on this server follows, each row saying who. all: the whole Library. */
 export type Follows = 'mine' | 'everyone' | 'library';
 
-/** followedByAnyone says whether anyone (the reader included) follows an entry's title. */
+/** Whether anyone, the reader included, follows an entry's title. */
 export function followedByAnyone(e: Pick<CalendarEntry, 'following' | 'followers' | 'followers_hidden'>): boolean {
 	return !!e.following || (e.followers?.length ?? 0) > 0 || (e.followers_hidden ?? 0) > 0;
 }
 
-/** followsOk says whether an entry shows for the Follows choice. */
+/** Whether an entry shows for the Follows choice. */
 export function followsOk(e: Pick<CalendarEntry, 'following' | 'followers' | 'followers_hidden'>, f: Follows): boolean {
 	if (f === 'library') return true;
 	if (f === 'mine') return !!e.following;
 	return followedByAnyone(e);
 }
 
-/** followerNames says who follows an entry's title: "You, Ana and 2 others". */
+/** Who follows an entry's title: "You, Ana and 2 others". */
 export function followerNames(e: Pick<CalendarEntry, 'followers' | 'followers_hidden'>): string {
 	const names = (e.followers ?? []).map((p) => (p.me ? 'You' : p.name));
 	const hidden = e.followers_hidden ?? 0;
@@ -314,7 +295,7 @@ export function followerNames(e: Pick<CalendarEntry, 'followers' | 'followers_hi
 	return `${names.slice(0, -1).join(', ')} and ${names.at(-1)}`;
 }
 
-/** withFollow is an entry after the reader follows (on) or stops following its title. */
+/** An entry after the reader follows (on) or stops following its title. */
 export function withFollow<T extends CalendarEntry>(e: T, on: boolean, me: { name: string; avatar?: string | null }): T {
 	const mine = e.followers?.find((p) => p.me);
 	const others = (e.followers ?? []).filter((p) => !p.me);
@@ -324,7 +305,7 @@ export function withFollow<T extends CalendarEntry>(e: T, on: boolean, me: { nam
 
 const followsKey = 'holyarrs.calendar-follows';
 
-/** readFollows is the Follows choice picked earlier in this session, if any. */
+/** The Follows choice picked earlier in this session, if any. */
 export function readFollows(store: Pick<Storage, 'getItem'> | undefined = globalThis.sessionStorage): Follows | null {
 	try {
 		const v = store?.getItem(followsKey);
@@ -334,7 +315,7 @@ export function readFollows(store: Pick<Storage, 'getItem'> | undefined = global
 	}
 }
 
-/** saveFollows keeps the Follows choice for the session; a private window may refuse and that is fine. */
+/** Keeps the Follows choice for the session; a private window may refuse and that is fine. */
 export function saveFollows(v: Follows, store: Pick<Storage, 'setItem'> | undefined = globalThis.sessionStorage) {
 	try {
 		store?.setItem(followsKey, v);
@@ -343,23 +324,19 @@ export function saveFollows(v: Follows, store: Pick<Storage, 'setItem'> | undefi
 	}
 }
 
-/**
- * startFollows is the choice the calendar opens on: the session's pick, else
- * My follows; someone who follows nothing opens on the Whole Library, and
- * Everyone's follows needs more than one person on the server.
- */
+/** The choice the calendar opens on: the session's pick, else My follows. Someone who follows nothing opens on the Whole Library, and Everyone's follows needs more than one person on the server. */
 export function startFollows(remembered: Follows | null, myFollows: number, people: number): Follows {
 	let f: Follows = remembered ?? (myFollows > 0 ? 'mine' : 'library');
 	if (f === 'everyone' && people < 2) f = myFollows > 0 ? 'mine' : 'library';
 	return f;
 }
 
-/** addDays moves a day by n days (local time, midnight). */
+/** Moves a day by n days (local time, midnight). */
 export function addDays(d: Date, n: number): Date {
 	return new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
 }
 
-/** rangeChunks splits a calendar query into pieces the server takes (at most `max` days each). */
+/** Splits a calendar query into pieces the server takes (at most `max` days each). */
 export function rangeChunks(from: string, to: string, max = 360): { from: string; to: string }[] {
 	const out: { from: string; to: string }[] = [];
 	let a = new Date(from + 'T00:00:00');
@@ -372,7 +349,7 @@ export function rangeChunks(from: string, to: string, max = 360): { from: string
 	return out;
 }
 
-/** titlesFromAddress reads ?titles=: all (once called everything), movies, shows or music. */
+/** Reads ?titles=: all (once called everything), movies, shows or music. */
 export function titlesFromAddress(v: string | null | undefined): TitlesShown {
 	return v === 'movies' || v === 'shows' || v === 'music' ? v : 'all';
 }
@@ -380,19 +357,14 @@ export function titlesFromAddress(v: string | null | undefined): TitlesShown {
 /** The List view's banner: the server's banner and logo (stored picks only), when sent. */
 export type BannerEntry = CalendarEntry & { banner?: string; logo?: string };
 
-/**
- * bannerArt is a List row's wide picture, best first (the row moves to the
- * next when one fails to load), and the logo set over it. Movies and shows
- * use the textless banner under the logo, else the title backdrop, else an
- * episode's still; music uses the artist's wide picture, else the cover.
- */
+/** A List row's wide picture, best first (the row moves to the next when one fails to load), and the logo over it. Movies and shows use the textless banner under the logo, else the title backdrop, else an episode still. */
 export function bannerArt(e: BannerEntry): { images: string[]; logo: string | null } {
 	const list = e.kind === 'album' ? [e.banner, e.backdrop, e.poster] : [e.banner, e.backdrop, e.still, e.poster];
 	return { images: [...new Set(list.filter((x): x is string => !!x))], logo: e.logo || null };
 }
 
 const MONTH_KEY = 'holyarrs.calendar.month-hidden';
-/** readMonthHidden says whether the small month was hidden last time (false when storage is unavailable). */
+/** Whether the small month was hidden last time (false when storage is unavailable). */
 export function readMonthHidden(): boolean {
 	try {
 		return globalThis.localStorage?.getItem(MONTH_KEY) === '1';
@@ -400,11 +372,11 @@ export function readMonthHidden(): boolean {
 		return false;
 	}
 }
-/** saveMonthHidden remembers the small month's choice; storage errors are ignored. */
+/** Remembers the small month's choice; storage errors are ignored. */
 export function saveMonthHidden(hidden: boolean): void {
 	try {
 		globalThis.localStorage?.setItem(MONTH_KEY, hidden ? '1' : '0');
 	} catch {
-		/* private window or blocked storage: the choice lasts for this page only */
+		/* Private window or blocked storage: the choice lasts for this page only. */
 	}
 }

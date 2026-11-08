@@ -1,7 +1,7 @@
 // Explore rows from the discover endpoint: trending, best, upcoming, similar, genre.
 
-import { api, ApiError, type Client } from '../core/api.ts';
 import { type ProviderItem } from '#lib/ui/title-cards.ts';
+import { api, ApiError, type Client } from '../core/api.ts';
 
 export type ProviderRowName = 'trending' | 'best' | 'upcoming' | 'similar' | 'genre' | 'services';
 
@@ -34,7 +34,7 @@ export function discoverPath(q: ProviderRowQuery): string {
 	return `/discover?${p.toString()}`;
 }
 
-/** fetchProviderRow asks the server for a discover row; null when the server has none yet (404/501). */
+/** Asks the server for a discover row; null when the server has none yet (404 or 501). */
 export async function fetchProviderRow(q: ProviderRowQuery, client: Pick<Client, 'get'> = api, signal?: AbortSignal): Promise<ProviderRowAnswer | null> {
 	try {
 		return await client.get<ProviderRowAnswer>(discoverPath(q), signal);

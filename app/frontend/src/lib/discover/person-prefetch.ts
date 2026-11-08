@@ -1,8 +1,7 @@
-import { api } from '../core/api.ts';
 import type { FilmographyPage, FilmSort } from '#lib/ui/people.ts';
+import { api } from '../core/api.ts';
 
-// A person page opens filled in when the pointer has rested on that person's face:
-// the first page of their filmography is fetched on hover and handed to the page.
+// A person page opens filled in when the pointer has rested on that person's face: the first page of their filmography is fetched on hover and handed to the page.
 const TTL = 60_000;
 const DWELL = 120;
 const SORT_KEY = 'holyarrs.people.sort';
@@ -24,7 +23,7 @@ export function firstPageURL(id: string, sort: FilmSort): string {
 	return `/people/${encodeURIComponent(id)}?role=all&sort=${sort}&page_size=100&page=1`;
 }
 
-/** Fetch a person's first page once, unless a fresh copy is already on its way. */
+/** Fetches a person's first page once, unless a fresh copy is already on its way. */
 export function prefetchPerson(id: string, sort: FilmSort = peopleSort(), now = Date.now()) {
 	const url = firstPageURL(id, sort);
 	const hit = cache.get(url);
@@ -34,7 +33,7 @@ export function prefetchPerson(id: string, sort: FilmSort = peopleSort(), now = 
 	cache.set(url, { at: now, answer });
 }
 
-/** The prefetched answer for url, used once; null when there is none or it went stale. */
+/** The prefetched answer for `url`, used once; null when there is none or it went stale. */
 export function takePrefetched(url: string, now = Date.now()): Promise<FilmographyPage> | null {
 	const hit = cache.get(url);
 	if (!hit) return null;
@@ -42,7 +41,7 @@ export function takePrefetched(url: string, now = Date.now()): Promise<Filmograp
 	return now - hit.at < TTL ? hit.answer : null;
 }
 
-/** Prefetch while a mouse pointer rests on any link to a person page. Returns the cleanup. */
+/** Prefetches while a mouse pointer rests on any link to a person page. Returns the cleanup. */
 export function installPersonPrefetch(): () => void {
 	let timer: ReturnType<typeof setTimeout> | undefined;
 	const over = (e: PointerEvent) => {

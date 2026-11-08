@@ -1,14 +1,12 @@
 import { api } from '#lib/core/api.ts';
 
-// Episode descriptions for calendar cards, read from the metadata server one
-// season at a time (the same answer the title page's season list uses) and
-// kept for the visit, so each show's season is asked once.
+// Episode descriptions for calendar cards, read from the metadata server one season at a time (the same answer the title page's season list uses) and kept for the visit, so each show's season is asked once.
 type Ep = { number: number; name?: string; overview?: string; still?: string };
 
 const seasons = $state<Record<string, Record<number, Ep>>>({});
 const asked = new Set<string>();
 
-/** epText is an episode's description, once its season has been read ('' until then or when there is none). */
+/** An episode's description once its season has been read; '' until then or when there is none. */
 export function epText(tmdb: string | undefined, season: number | undefined, episode: number | undefined): string {
 	if (!tmdb || season == null || episode == null) return '';
 	const key = `${tmdb}:${season}`;
@@ -21,7 +19,7 @@ export function epText(tmdb: string | undefined, season: number | undefined, epi
 	return seasons[key]?.[episode]?.overview?.trim() ?? '';
 }
 
-/** epCode is "S2 E5" (or "S2 E5–7" for several of one season). */
+/** "S2 E5", or "S2 E5–7" for several of one season. */
 export function epCode(eps: { season?: number; episode?: number }[]): string {
 	const e = eps.filter((x) => x.season != null && x.episode != null);
 	if (!e.length) return '';
@@ -32,7 +30,7 @@ export function epCode(eps: { season?: number; episode?: number }[]): string {
 const movies = $state<Record<string, string>>({});
 const askedMovies = new Set<string>();
 
-/** movieText is a movie's description, read once from the metadata server ('' until then or when there is none). */
+/** A movie's description, read once from the metadata server; '' until then or when there is none. */
 export function movieText(tmdb: string | undefined): string {
 	if (!tmdb) return '';
 	if (!askedMovies.has(tmdb)) {

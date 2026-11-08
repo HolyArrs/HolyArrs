@@ -1,19 +1,17 @@
 <script lang="ts">
-	import type { CalendarEntry } from '#lib/core/types.ts';
-	import { to } from '#lib/core/paths.ts';
-	import { date } from '#lib/core/format.ts';
+	import Badge from '#lib/ui/Badge.svelte';
+	import IconButton from '#lib/ui/IconButton.svelte';
 	import { entryHref, itemDot, type Follows } from './calendar.ts';
 	import { groupDates, type CalGroup } from './calendar-groups.ts';
 	import { rowWords, channelShown, type CaptionLook } from './calendar-captions.ts';
-	import Badge from '#lib/ui/Badge.svelte';
-	import IconButton from '#lib/ui/IconButton.svelte';
 	import FollowWho from './FollowWho.svelte';
 	import CalThumb from './CalThumb.svelte';
 	import CalWindow from './CalWindow.svelte';
+	import type { CalendarEntry } from '#lib/core/types.ts';
+	import { to } from '#lib/core/paths.ts';
+	import { date } from '#lib/core/format.ts';
 
-	// The List view in three compact layouts (1 Agenda, 2 Two columns, 3 Table). Every row is
-	// one height; several dates of one show on a day are one row ("Episodes 194-196"). A click
-	// on a row opens the same details window the Cards use.
+	// The List view in three compact layouts (1 Agenda, 2 Two columns, 3 Table). Every row has one height; several dates of one show on a day are one row ("Episodes 194-196"). A click opens the same details window the Cards view uses.
 	let {
 		days,
 		layout,
@@ -96,8 +94,7 @@
 <style>
 	.lr { --rh: 56px; --stick: var(--topbar); container-type: inline-size; display: flex; flex-direction: column; gap: 14px; }
 	:global(.cal-body.barred) .lr { --stick: calc(var(--topbar) + 56px); }
-	/* When the top bar slides away the slim bar goes up with it, so the day headers follow
-	   (else rows show through the gap above them). Phones keep their bars put. */
+	/* When the top bar slides away the slim bar goes with it, so day headers follow to avoid rows showing through the gap. Phones keep their bars. */
 	@media (min-width: 641px) {
 		:global(html.bar-hidden) .lr { --stick: 0px; }
 		:global(html.bar-hidden .cal-body.barred) .lr { --stick: 53px; }
@@ -105,7 +102,7 @@
 	}
 	.day { min-width: 0; }
 	.rws { list-style: none; margin: 0; padding: 0; }
-	/* Day header: sticky and slim, shared by all three. */
+	/* Day header, shared by all three layouts. */
 	.dh { position: sticky; top: var(--stick); z-index: 5; display: flex; align-items: center; gap: 8px; height: 32px; padding: 0 14px; background: var(--bg); color: var(--text-muted); font: var(--t-footnote); }
 	.dh .dow { color: var(--accent-text); font-weight: 600; min-width: 3ch; }
 	.dh b { color: var(--text); font: var(--t-headline); font-variant-numeric: tabular-nums; }
@@ -134,7 +131,6 @@
 	.pic { display: block; overflow: hidden; }
 	.rw:hover .ttl { text-decoration: underline; text-underline-offset: 3px; }
 
-	/* 1 Agenda: one panel per day, hairlines, a 16:9 thumbnail after the time. */
 	.lay1 { max-width: 800px; }
 	.lay1 .day { border-radius: var(--r-panel); background: var(--surface-1); outline: 1px solid var(--line); box-shadow: var(--shadow-card); }
 	.lay1 .dh { background: var(--surface-1); border-radius: var(--r-panel) var(--r-panel) 0 0; border-bottom: 1px solid var(--line); }
@@ -144,7 +140,6 @@
 	.lay1 .rw:last-child { border-radius: 0 0 var(--r-panel) var(--r-panel); }
 	.lay1 .rw:hover { background: var(--surface-2); }
 
-	/* 2 Two columns: a date rail, rows as small cards, two to a line when wide. */
 	.lr.lay2 { --rh: 64px; gap: 18px; }
 	.lay2 .day { display: grid; grid-template-columns: 64px minmax(0, 1fr); column-gap: 14px; align-items: start; }
 	.lay2 .dh { grid-column: 1; flex-direction: column; justify-content: flex-start; gap: 0; height: auto; padding: 8px 0; align-self: start; background: transparent; }
@@ -163,7 +158,6 @@
 	.lay2 .bell { grid-column: 4; grid-row: 1; }
 	@container (min-width: 900px) { .lay2 .rws { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 
-	/* 3 Table: a quiet ledger, columns under one another, a tiny picture. */
 	.lr.lay3 { --rh: 46px; gap: 6px; }
 	.lay3 .dh { border-bottom: 1px solid var(--line); padding: 0 8px; }
 	.lay3 .dh .dow { color: var(--text-muted); }
@@ -182,7 +176,6 @@
 	.lay3 .s2 { grid-column: 5; }
 	.lay3 .sep { display: none; }
 
-	/* Phones: no chips; time and picture shrink; same row height all down. */
 	@container (max-width: 640px) {
 		.lay1 .rw { grid-template-columns: 56px 64px minmax(0, 1fr) 36px; gap: 10px; padding: 0 2px 0 10px; }
 		.lay1 .net, .lay3 .net { display: none; }

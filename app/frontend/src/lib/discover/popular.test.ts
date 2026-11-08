@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { cardServices, dayOffset, hasServiceChips, isRanked, leaveOut, newHref, newPath, newServicePath, newServicesPath, parseNewType, pickService, railBell, railLabel } from './popular.ts';
+import { describe, expect, it } from 'vitest';
 
 describe('newServicePath', () => {
 	it('names the chip row for the server', () => {
@@ -60,7 +60,7 @@ describe('service chips', () => {
 });
 
 describe('This week rail', () => {
-	const today = new Date(2026, 9, 21); // Wed Oct 21 (local)
+	const today = new Date(2026, 9, 21); // Wed Oct 21 (local).
 	it('counts days from today', () => {
 		expect(dayOffset('2026-10-21', today)).toBe(0);
 		expect(dayOffset('2026-10-18', today)).toBe(-3);

@@ -1,6 +1,6 @@
+import MusicBrowseSections from './MusicBrowseSections.svelte';
 import { describe, expect, it } from 'vitest';
 import { render } from 'svelte/server';
-import MusicBrowseSections from './MusicBrowseSections.svelte';
 
 const sections = [
 	{ id: 'genres', title: 'Genres', tiles: [{ key: 'genre:pop', name: 'Pop', href: '/music/genre/pop', hue: 3, covers: ['/api/v1/music-trending/art/album/a', '/api/v1/music-trending/art/album/b'] }] },

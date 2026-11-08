@@ -39,10 +39,10 @@ export interface BrowseSectionAnswer {
 	building?: boolean;
 }
 
-/** BROWSE_ROWS: a section first shows this many rows, then this many more each time its end nears the viewport. */
+/** A section first shows this many rows, then this many more each time its end nears the viewport. */
 export const BROWSE_ROWS = 2;
 
-/** shownCount is how many of a section's n tiles show with rows rows of cols (never fewer than one row's worth). */
+/** How many of a section's n tiles show with `rows` rows of `cols` (never fewer than one row's worth). */
 export function shownCount(n: number, cols: number, rows: number): number {
 	return Math.min(n, Math.max(1, cols) * Math.max(1, rows));
 }
@@ -60,7 +60,7 @@ export interface CategoryView {
 	type: 'all' | 'movies' | 'shows';
 }
 
-/** readCategory reads Search's category view from the address (?cat=&type=); null when it is not one. */
+/** Reads Search's category view from the address (?cat=&type=); null when it is not one. */
 export function readCategory(p: Pick<URLSearchParams, 'get'>): CategoryView | null {
 	const id = p.get('cat')?.trim();
 	const type = p.get('type');
@@ -77,7 +77,7 @@ export function browseType(scope: string): ExploreType {
 	return scope === 'movie' ? 'movies' : scope === 'show' ? 'shows' : 'all';
 }
 
-/** strictTiles: under Movies only movie tiles, under TV shows only TV ones; All keeps every (merged) tile. */
+/** Under Movies only movie tiles, under TV shows only TV ones; All keeps every (merged) tile. */
 export function strictTiles(tiles: BrowseTile[], tab: ExploreType): BrowseTile[] {
 	if (tab === 'movies') return tiles.filter((t) => t.kind === 'movie');
 	if (tab === 'shows') return tiles.filter((t) => t.kind === 'show');
@@ -92,7 +92,7 @@ export interface PlainTile {
 	image: string;
 }
 
-/** musicTiles: one tile per music genre the Explore Music answer names, its picture an album cover of that genre (each cover once). Artist pictures never stand in for a cover. */
+/** One tile per music genre the Explore Music answer names, its picture an album cover of that genre (each cover once). Artist pictures never stand in for a cover. */
 export function musicTiles(a: Pick<MusicExploreAnswer, 'genres' | 'rows' | 'hero'>, open: (genre: string) => string, pic: (c: MusicCardData) => string | null): PlainTile[] {
 	const cards = [...(a.hero ? [a.hero] : []), ...a.rows.flatMap((r) => r.items)];
 	const used = new Set<string>();
@@ -112,7 +112,7 @@ export function musicTiles(a: Pick<MusicExploreAnswer, 'genres' | 'rows' | 'hero
 
 const tabOf = (t: Pick<BrowseTile, 'kind' | 'both'>): 'all' | 'movies' | 'shows' => (t.both ? 'all' : t.kind === 'show' ? 'shows' : 'movies');
 
-/** browseHref: a genre tile opens the Explore genre page, a mood tile Search's mood view. */
+/** A genre tile opens the Explore genre page, a mood tile Search's mood view. */
 export function browseHref(t: Pick<BrowseTile, 'kind' | 'genre' | 'mood' | 'both' | 'category'>, tab?: ExploreType): string {
 	if (t.category) return `/search?${new URLSearchParams({ cat: t.category, type: tab === 'movies' || tab === 'shows' || tab === 'all' ? tab : t.kind === 'show' ? 'shows' : 'movies' }).toString()}`;
 	const type = tab === 'movies' || tab === 'shows' ? tab : tabOf(t);
@@ -126,7 +126,7 @@ export interface MoodView {
 	type: 'all' | 'movies' | 'shows';
 }
 
-/** readMood reads Search's mood view from the address; null when it is not one. */
+/** Reads Search's mood view from the address; null when it is not one. */
 export function readMood(p: Pick<URLSearchParams, 'get'>): MoodView | null {
 	const mood = p.get('mood')?.trim();
 	const genre = Number(p.get('genre'));
@@ -135,18 +135,17 @@ export function readMood(p: Pick<URLSearchParams, 'get'>): MoodView | null {
 	return { mood, genre, type };
 }
 
-/** The tile hues: strong, distinct, readable under white type. */
-// HolyArrs cinematic duotone: rich brand reds, with a few plum, rust and steel tones so neighbours differ.
+/** Tile hues: strong, distinct, readable under white type. */
 export const TILE_HUES = ['#d0202a', '#b3123e', '#8e1f4f', '#6d2a8a', '#c2410c', '#9f1d35', '#3f6a8a', '#b91c1c', '#7a1d6b', '#2c7a7b', '#c0263f', '#a3402b'];
 
-/** tileHue gives a category its own colour, the same on every visit (by its name). */
+/** Gives a category its own colour, the same on every visit (by its name). */
 export function tileHue(name: string): string {
 	let h = 2166136261;
 	for (const ch of name.toLowerCase()) h = Math.imul(h ^ ch.charCodeAt(0), 16777619);
 	return TILE_HUES[(h >>> 0) % TILE_HUES.length];
 }
 
-/** browseCols is the grid's column count at a viewport width (matches the CSS). */
+/** The grid's column count at a viewport width (matches the CSS). */
 export function browseCols(width: number): number {
 	return width >= 1440 ? 6 : width >= 1280 ? 5 : width >= 900 ? 4 : width >= 600 ? 3 : 2;
 }

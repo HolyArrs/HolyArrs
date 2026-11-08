@@ -1,7 +1,7 @@
 <script lang="ts">
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 
-	// What a variant shows when the shown weeks hold nothing: say so, and offer the next weeks.
+	// Shown when the visible weeks hold nothing; offers the next weeks.
 	let { onlater, text = 'Nothing in these weeks with these filters.', label = 'Show the weeks after' }: { onlater: () => void; text?: string; label?: string } = $props();
 </script>
 

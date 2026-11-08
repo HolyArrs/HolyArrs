@@ -2,10 +2,7 @@
 	import { bannerArt, type BannerEntry } from './calendar.ts';
 	import { sized } from '#lib/core/tmdb-image.ts';
 
-	// A List row's wide banner (TV-banner style): the title's textless art
-	// with its logo over it, filling the row's right side and fading into
-	// the row on its left. A picture that fails moves on to the next one;
-	// with none left (or no logo) the banner keeps what still loads.
+	// A List row's wide banner: the title's textless art with its logo over it, filling the right side and fading into the row. A picture that fails moves on to the next one.
 	let { e }: { e: BannerEntry } = $props();
 
 	const art = $derived(bannerArt(e));
@@ -19,8 +16,7 @@
 <span class="cal-banner" class:album={e.kind === 'album'} aria-hidden="true" data-testid="cal-banner">
 	{#if src}
 		{#key src}
-			<!-- The picture keeps its own shape (16:9) at the row's height on the right; a blurred, dimmed
-			     copy of it fills the rest of the row, so nothing is stretched or cropped to a sliver. -->
+			<!-- The picture keeps its 16:9 shape; a blurred, dimmed copy fills the rest of the row so nothing is stretched or cropped to a sliver. -->
 			<img class="fill" class:in={shown} {src} alt="" loading="lazy" decoding="async" />
 			<img class="bg" class:in={shown} {src} alt="" loading="lazy" decoding="async" onload={() => (shown = true)} onerror={() => ((shown = false), at++)} />
 		{/key}
@@ -38,7 +34,7 @@
 		transition: opacity var(--dur-slow) var(--ease-out), transform var(--dur-slow) var(--ease-out); }
 	.album .bg { object-position: center 25%; }
 	.bg.in { opacity: 1; transform: none; }
-	/* The logo sits right of centre so the left fade never eats it; a soft shadow keeps it clear on bright art. */
+	/* The logo sits right of centre so the left fade never covers it. */
 	.logo { position: absolute; right: 6%; top: 50%; max-width: 30%; max-height: 62%; object-fit: contain; transform: translateY(-50%);
 		filter: drop-shadow(0 1px 6px rgb(0 0 0 / 0.55)); opacity: 0; transition: opacity var(--dur-slow) var(--ease-out); }
 	.logo.in { opacity: 1; }

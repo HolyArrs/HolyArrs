@@ -1,20 +1,14 @@
 <script lang="ts">
+	import '@fontsource/anton/latin-400.css';
 	import Shelf from '#lib/ui/Shelf.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
-	import { to } from '../core/paths.ts';
-	import { sized } from '../core/tmdb-image.ts';
 	import { browseHref, type BrowseTile } from './search-browse.ts';
 	import { SECTION_LABEL } from './category-strip.ts';
 	import type { ExploreType } from './explore-type.ts';
-	import '@fontsource/anton/latin-400.css';
+	import { to } from '../core/paths.ts';
+	import { sized } from '../core/tmdb-image.ts';
 
-	// The category strip under the Explore hero: heavy condensed wordmarks over
-	// a dark, grey still of the category's art; on hover or focus the still
-	// comes up in its own colour and the word breathes open. A small crimson
-	// section label sits over the name; then All categories (Search Browse).
-	// onopen hears which tile was opened (the strip learns from it); the look is unchanged.
-	// Music passes genres instead of tiles: the same tile, its grey art (or a
-	// gradient in the genre's hue when there is none or it fails to load).
+	// The category strip under the Explore hero: condensed wordmarks over a dark grey still of the category's art. On hover or focus the still comes up in its own colour.
 	type Genre = { key: string; name: string; href: string; art: string; hue: number };
 	let { tiles = [], genres, type, onopen }: { tiles?: (BrowseTile & { section: string })[]; genres?: Genre[]; type: ExploreType; onopen?: (t: BrowseTile & { section: string }) => void } = $props();
 	/** n items picked evenly across the list. */
@@ -31,12 +25,11 @@
 			name: t.name,
 			label: SECTION_LABEL[t.section] ?? '',
 			href: to(browseHref(t, type)),
-			// A 142–236 px grey still: w780 through HolyArrs' artwork cache, never TMDB's original.
+			// A 142 to 236 px grey still: w780 through HolyArrs' artwork cache, never TMDB's original.
 			art: t.backdrop ? sized(t.backdrop, 'backdrop', 240) : '',
 			tile: t
 		})),
-		// All categories: a strip of four stills from tiles spread across the row
-		// (never the tile right beside it), so it reads as every category at once.
+		// All categories: four stills from tiles spread across the row (never the tile right beside it), so it reads as every category at once.
 		{ key: 'all', name: 'All categories', label: 'Browse', href: to(type === 'movies' ? '/search?kind=movie' : type === 'shows' ? '/search?kind=show' : '/search'), art: '', arts: spread(tiles.slice(0, -1).filter((t) => t.backdrop).map((t) => sized(t.backdrop!, 'backdrop', 240)), 4), all: true }
 	]);
 </script>
@@ -57,20 +50,19 @@
 </div>
 
 <style>
-	/* The heading stays for screen readers only; the strip reads as part of the hero. */
+	/* The heading stays for screen readers only. */
 	.cat-strip :global(.ui-shelf > header) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; margin: 0; }
 	.cat-strip { margin-top: -12px; --ease-tile: var(--ease-out); }
 	.cat-strip :global(.ui-shelf .row) { padding-block: 4px 8px; }
 	.cat-strip :global(.ui-shelf .arrow) { top: calc(50% - 22px); }
-	/* Tiles stay dark in both modes: their own near-black glass, white type. */
+	/* Tiles stay dark in both themes. */
 	.cat {
 		position: relative; isolation: isolate; container-type: inline-size; display: block; height: 84px; overflow: hidden;
 		border-radius: 14px; color: #fff; background: #120a0b; border: 1px solid rgba(255, 255, 255, .07);
 		transition: transform var(--dur-slow) var(--ease-tile), box-shadow var(--dur-slow) var(--ease-tile), border-color var(--dur-slow) var(--ease-tile);
 	}
-	/* At rest a grey, dim still; on hover it comes up in its own colour. */
 	.art { position: absolute; inset: 0; z-index: -3; width: 100%; height: 100%; object-fit: cover; filter: grayscale(1) contrast(1.2); opacity: .3; transition: opacity var(--dur-slow) var(--ease-tile), filter var(--dur-slow) var(--ease-tile), transform var(--dur-slow) var(--ease-tile); }
-	/* The dark glass from the left keeps the wordmark legible. */
+	/* Dark glass from the left keeps the wordmark legible. */
 	.cat::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(90deg, #0b0708 22%, rgba(11, 7, 8, .35) 70%, transparent); transition: opacity var(--dur-slow) var(--ease-tile); }
 	.txt { position: absolute; left: 14px; right: 12px; bottom: 10px; display: flex; flex-direction: column; gap: 4px; }
 	small { font: 600 10px/1 var(--font-ui); letter-spacing: .14em; text-transform: uppercase; color: #ff4a52; }
@@ -90,9 +82,8 @@
 	.mosaic img { flex: 1 1 0; min-width: 0; height: 100%; object-fit: cover; }
 	.cat.all { background: linear-gradient(120deg, #3a0609, #120a0b 70%); }
 	.cat.all small { color: #ffc9cb; }
-	/* A music genre with no picture: its hue as a dark gradient, never a broken image. */
+	/* A music genre with no picture shows its hue as a gradient, never a broken image. */
 	.cat.tinted { background: linear-gradient(120deg, color-mix(in srgb, var(--tint) 70%, #120a0b), #120a0b 75%); }
-	/* Light mode: the tile keeps its dark glass; a soft lift seats it on the light page. */
 	:global(:root[data-theme='light']) .cat { box-shadow: 0 6px 18px -10px rgba(20, 8, 9, .45); border-color: rgba(0, 0, 0, .12); }
 	@media (prefers-color-scheme: light) { :global(:root:not([data-theme='dark'])) .cat { box-shadow: 0 6px 18px -10px rgba(20, 8, 9, .45); border-color: rgba(0, 0, 0, .12); } }
 	@media (prefers-reduced-motion: reduce) {

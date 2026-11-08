@@ -1,6 +1,6 @@
-import { describe, expect, it } from 'vitest';
 import { cardIdentity, type ExploreCard, type ExploreRow } from '#lib/ui/title-cards.ts';
 import { dedupeTop } from './genres.ts';
+import { describe, expect, it } from 'vitest';
 
 const card = (row: string, id: number): ExploreCard => ({ key: `${row}-movie-${id}`, kind: 'movie', name: `T${id}`, ref: `tmdb:${id}`, badges: [] });
 const row = (id: string, ids: number[]): ExploreRow => ({ id, title: id, cards: ids.map((n) => card(id, n)) });

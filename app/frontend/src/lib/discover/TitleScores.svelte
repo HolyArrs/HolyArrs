@@ -1,12 +1,10 @@
 <script lang="ts">
 	import { scoreName, scoreText, type OutsideScore } from '#lib/ui/outside-ratings.ts';
-	// One icon file each: the package's index holds every brand (12.9 MB in dev).
+	// One icon file each: the package index holds every brand (12.9 MB in dev).
 	import rottentomatoes from 'simple-icons/icons/rottentomatoes.svg?raw';
 	import metacritic from 'simple-icons/icons/metacritic.svg?raw';
 	import trakt from 'simple-icons/icons/trakt.svg?raw';
-	// Real brand logos (Simple Icons, one path each), the same everywhere a score shows; RT audience keeps the
-	// popcorn bucket (Simple Icons has no audience mark); dark brand colours fall back to the text colour.
-	// The colours are Simple Icons' own (its data file), which the icon files do not carry.
+	// Real brand logos (Simple Icons, one path each), the same wherever a score shows. RT audience keeps the popcorn bucket because Simple Icons has no audience mark; dark brand colours fall back to the text colour.
 	const path = (svg: string) => / d="([^"]+)"/.exec(svg)?.[1] ?? '';
 	const LOGOS: Record<string, { path: string; color: string }> = {
 		rt_critics: { path: path(rottentomatoes), color: '#FA320A' },
@@ -14,10 +12,7 @@
 		trakt: { path: path(trakt), color: '#9F42C6' }
 	};
 
-	// A title's scores on the page (not over art): TMDB's star score first,
-	// then the outside ratings. chips: one line of marks and numbers; tiles:
-	// big numbers with a short name under each; list: name left, score right;
-	// mono: the chips line in one quiet color, for a facts row.
+	// A title's scores on the page, not over art: TMDB's star score first, then the outside ratings. Variants: chips (one line of marks and numbers), tiles (big numbers with a short name), list (name left, score right), mono (chips without brand colours, joining the facts row).
 	let { scores = [], tmdb, variant = 'chips', outOf10 = false, showMissing = false }: { scores?: OutsideScore[]; tmdb?: number | null; variant?: 'chips' | 'tiles' | 'list' | 'mono'; outOf10?: boolean; showMissing?: boolean } = $props();
 	const marks: Record<string, string> = { imdb: 'IMDb', metacritic: 'MC', letterboxd: 'LB', trakt: 'Trakt' };
 	const short: Record<string, string> = { imdb: 'IMDb', rt_critics: 'Critics', rt_audience: 'Audience', metacritic: 'Metacritic', letterboxd: 'Letterboxd', trakt: 'Trakt' };
@@ -71,13 +66,10 @@
 	.v { font: 700 15px/1 var(--font-ui); }
 	.n { color: var(--text-muted); font: 500 12px/1.2 var(--font-ui); }
 
-	/* chips: one line, Overseerr-like. */
 	.chips { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
 	.chips li { display: inline-flex; align-items: center; gap: 6px; }
 	.chips .n { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 
-	/* mono: the chips without brand colors, joining the facts row around them
-	   (each score is an item of that row, with the same · and spacing). */
 	.mono { display: contents; }
 	.mono li { display: inline-flex; align-items: center; gap: 5px; color: var(--text-muted); }
 	.mono li + li { margin-left: 8px; }
@@ -86,13 +78,11 @@
 	.mono .n { order: 3; color: var(--text-muted); font: 500 13.5px/1 var(--font-ui); }
 	.mono li:has(.mark.imdb) .n, .mono li:has(.mark.tmdb) .n { display: none; }
 
-	/* tiles: big numbers with the name under them. */
 	.tiles { display: flex; flex-wrap: wrap; gap: 14px 28px; }
 	.tiles li { display: grid; grid-template-columns: auto auto; grid-template-rows: auto auto; align-items: center; gap: 4px 7px; }
 	.tiles .v { font-size: 22px; letter-spacing: -0.01em; }
 	.tiles .n { grid-column: 1 / -1; text-transform: uppercase; letter-spacing: .06em; font-size: 11px; font-weight: 600; }
 
-	/* list: name left, score right. */
 	.list { display: flex; flex-direction: column; }
 	.list .mark { width: 40px; justify-content: flex-start; }
 	.list .mark svg { flex: none; }

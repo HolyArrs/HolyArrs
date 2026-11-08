@@ -1,12 +1,11 @@
-import { describe, expect, it } from 'vitest';
 import { genrePath, genresFor, parseGenre } from './genres.ts';
 import { serviceChips, serviceLabel, serviceTopPath, topChips, topPath, topSource, type ServiceTopRow } from './explore-services.ts';
+import { describe, expect, it } from 'vitest';
 
 describe('Trending on streaming', () => {
 	it('asks for one chip, with the services, region and genre', () => {
 		expect(topPath({ type: 'movies', chip: 'all', services: [8, 337], region: 'US' })).toBe('/explore/top?type=movies&chip=all&region=US&services=8%7C337');
 		expect(topPath({ type: 'shows', chip: 8, services: [8], region: 'GB', genre: 18 })).toBe('/explore/top?type=shows&chip=8&region=GB&services=8&genre=18');
-		// Under All a genre is never sent.
 		expect(topPath({ type: 'all', chip: 8, services: [], region: 'US', genre: 27 })).toBe('/explore/top?type=all&chip=8&region=US');
 	});
 	it('offers All my services, then each picked service', () => {

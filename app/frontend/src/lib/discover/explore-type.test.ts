@@ -1,6 +1,6 @@
-import { describe, expect, it } from 'vitest';
-import { filterRows, parseType, typeHref, typeKindOf } from './explore-type.ts';
 import { type ExploreCard, type ExploreRow } from '#lib/ui/title-cards.ts';
+import { filterRows, parseType, typeHref, typeKindOf } from './explore-type.ts';
+import { describe, expect, it } from 'vitest';
 
 const card = (key: string, kind: ExploreCard['kind']): ExploreCard => ({ key, kind, name: key, badges: [] });
 const rows: ExploreRow[] = [

@@ -1,10 +1,9 @@
 <script lang="ts">
-	import type { CalendarEntry } from '#lib/core/types.ts';
-	import { followerNames } from './calendar.ts';
 	import Avatar from '#lib/ui/Avatar.svelte';
+	import { followerNames } from './calendar.ts';
+	import type { CalendarEntry } from '#lib/core/types.ts';
 
-	// Who follows a calendar title: up to three small faces and the names
-	// ("You, Ana and 1 other"). People the reader may not see are counted only.
+	// Who follows a calendar title: up to three small faces and the names ("You, Ana and 1 other"). People the reader may not see are only counted.
 	let { e, size = 18 }: { e: Pick<CalendarEntry, 'followers' | 'followers_hidden'>; size?: number } = $props();
 	const faces = $derived((e.followers ?? []).slice(0, 3));
 	const words = $derived(followerNames(e));

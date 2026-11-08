@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { describes, found, plainPath, understood, type PlainQuery } from './search-plain.ts';
+import { describe, expect, it } from 'vitest';
 
 const q = (x: Partial<PlainQuery>): PlainQuery => ({ text: '', plain: false, name: '', genres: [], people: [], words: [], ...x });
 

@@ -1,12 +1,10 @@
 <script lang="ts">
-	import type { CalendarEntry } from '#lib/core/types.ts';
+	import IconButton from '#lib/ui/IconButton.svelte';
 	import { monthGrid } from './calendar.ts';
 	import { dayName, thingCount } from './calendar-groups.ts';
-	import IconButton from '#lib/ui/IconButton.svelte';
+	import type { CalendarEntry } from '#lib/core/types.ts';
 
-	// The small month beside the calendar (a sheet on phones). Only days that
-	// have something are buttons, each marked with a dot; empty days are dimmed
-	// and skipped by the keyboard. Today is ringed; the day in view is filled.
+	// The small month beside the calendar (a sheet on phones). Only days with something are buttons, marked with a dot; empty days are dimmed and skipped by the keyboard. Today is ringed and the day in view is filled.
 	let {
 		year,
 		month,

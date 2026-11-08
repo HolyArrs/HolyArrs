@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { shortSynopsis } from './synopsis.ts';
+import { describe, expect, it } from 'vitest';
 
 describe('shortSynopsis', () => {
 	it('keeps short text as is', () => {

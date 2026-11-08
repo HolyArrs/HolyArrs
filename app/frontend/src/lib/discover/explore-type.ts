@@ -10,36 +10,33 @@ const typeKind: Record<Exclude<ExploreType, 'all'>, CardKind> = { movies: 'movie
 /** The shelves that hold one kind only, and the type they belong to. */
 const kindRows: Record<string, Exclude<ExploreType, 'all'>> = { movies: 'movies', shows: 'shows', music: 'music' };
 
-/** parseType reads ?type=; anything unknown (or music while it is off) is All. */
+/** Reads ?type=; anything unknown (or music while it is off) is All. */
 export function parseType(v: string | null | undefined, musicOn = true): ExploreType {
 	if (v === 'movies' || v === 'shows' || (v === 'music' && musicOn)) return v;
 	return 'all';
 }
 
-/** typeKindOf is the card kind a type keeps, or null for All. */
+/** The card kind a type keeps, or null for All. */
 export function typeKindOf(t: ExploreType): CardKind | null {
 	return t === 'all' ? null : typeKind[t];
 }
 
-/**
- * filterRows keeps the cards of one type in every row, drops the kind shelves
- * of other types, and hides rows left empty. All keeps everything.
- */
+/** Keeps the cards of one type in every row, drops the kind shelves of other types and hides rows left empty. All keeps everything. */
 export function filterRows(rows: ExploreRow[], t: ExploreType): ExploreRow[] {
 	const kind = typeKindOf(t);
 	if (!kind) return rows;
 	return keepFull(rows.filter((r) => !kindRows[r.id] || kindRows[r.id] === t).map((r) => ({ ...r, cards: r.cards.filter((c) => c.kind === kind) })));
 }
 
-/** A row with fewer cards than this is left out (rows kept on purpose, like Trending on streaming, stay). */
+/** A row with fewer cards than this is left out; rows kept on purpose, like Trending on streaming, stay. */
 export const ROW_MIN = 8;
 
-/** enoughCards drops rows under min cards, keeping rows marked keep. */
+/** Drops rows under `min` cards, keeping rows marked keep. */
 export function enoughCards<T extends { cards: readonly unknown[]; keep?: boolean }>(rows: T[], min = ROW_MIN): T[] {
 	return rows.filter((r) => r.keep || r.cards.length >= min);
 }
 
-/** GenreRowCard is one card of Browse by genre (GET /explore/genre-row). */
+/** One card of Browse by genre (GET /explore/genre-row). */
 export interface GenreRowCard {
 	kind: 'movie' | 'show';
 	id: number;
@@ -52,27 +49,24 @@ export interface GenreRowCard {
 
 export const GENRE_ROW_MAX = 16;
 
-/** genreRowPath is GET /explore/genre-row for a tab. */
+/** GET /explore/genre-row for a tab. */
 export function genreRowPath(t: ExploreType): string {
 	return `/explore/genre-row?${new URLSearchParams({ type: t === 'music' ? 'all' : t }).toString()}`;
 }
 
-/** genreCardHref opens the same genre page as the Genres picker. */
+/** Opens the same genre page as the Genres picker. */
 export function genreCardHref(g: Pick<GenreRowCard, 'kind' | 'id' | 'both'>): string {
 	return g.both ? `/explore?genre=${g.id}` : `/explore?type=${g.kind === 'show' ? 'shows' : 'movies'}&genre=${g.id}`;
 }
 
-/**
- * genreRowAfter is the row index Browse by genre follows: row 6 (index 5)
- * or the first later spot not next to a genre row; -1 with under 6 rows.
- */
+/** The row index Browse by genre follows: row 6 (index 5) or the first later spot not next to a genre row; -1 with fewer than 6 rows. */
 export function genreRowAfter(rows: readonly { type?: string }[]): number {
 	const genreish = (r?: { type?: string }) => !!r?.type && r.type.includes('genre');
 	for (let i = 5; i < rows.length; i++) if (!genreish(rows[i]) && !genreish(rows[i + 1])) return i;
 	return -1;
 }
 
-/** typeHref carries the type to a "See all" target: kind= for the Library, type= elsewhere. */
+/** Carries the type to a "See all" target: kind= for the Library, type= elsewhere. */
 export function typeHref(href: string | undefined, t: ExploreType): string | undefined {
 	const kind = typeKindOf(t);
 	if (!href || !kind) return href;

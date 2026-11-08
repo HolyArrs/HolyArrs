@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { headPath, serverRow, tailPath } from './explore-server.ts';
+import { describe, expect, it } from 'vitest';
 
 describe('server-built Explore', () => {
 	it('builds the head and tail paths', () => {

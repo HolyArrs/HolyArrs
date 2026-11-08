@@ -1,6 +1,6 @@
-import { describe, expect, it, vi } from 'vitest';
 import { fromStrip, kin, ranked, seeded, shownBatcher, stripKey, stripPath, stripRowNames, stripTiles } from './category-strip.ts';
 import type { BrowseTile } from './search-browse.ts';
+import { describe, expect, it, vi } from 'vitest';
 
 const tile = (name: string, kind: 'movie' | 'show' = 'movie', count = 20): BrowseTile => ({ kind, genre: 1, genre_name: name, name, backdrop: `/${name}.jpg`, from: '', category: name.toLowerCase(), count });
 const many = (prefix: string, n: number) => Array.from({ length: n }, (_, i) => tile(`${prefix}${i}`));

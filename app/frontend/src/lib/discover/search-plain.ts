@@ -1,6 +1,4 @@
-// Search in plain words ("that space movie with the robot from 2014"):
-// the server reads the words; this file decides when to ask it and says
-// back what it understood.
+// Search in plain words ("that space movie with the robot from 2014"). The server reads the words; this file decides when to ask it and says back what it understood.
 import type { ProviderItem } from '#lib/ui/title-cards.ts';
 import type { TitleView } from '../core/types.ts';
 
@@ -28,18 +26,14 @@ const KIND = /\b(movies?|films?|shows?|series|tv|sitcom)\b/i;
 const YEARS = /\b(from|in|after|before|since|around)\s+(18[7-9]\d|19\d\d|20\d\d)\b|\b'?\d0'?s\b|\b(18|19|20)\d0s\b|\b(twenties|thirties|forties|fifties|sixties|seventies|eighties|nineties)\b/i;
 const ABOUT = /\b(starring|featuring|about|with)\b/i;
 
-/**
- * describes says the text is worth a plain-words search: at least two
- * words and a kind, a year phrase, a decade, or "with"/"about". A plain
- * name ("2012", "Se7en", "Dune 2021") is left to the normal search.
- */
+/** Whether the text is worth a plain-words search: at least two words and a kind, a year phrase, a decade, or "with" or "about". A plain name ("2012", "Se7en", "Dune 2021") is left to the normal search. */
 export function describes(text: string): boolean {
 	const t = text.trim();
 	if (t.length > 300 || t.split(/\s+/).length < 2 || /^[a-z]+:\S+$/i.test(t)) return false;
 	return KIND.test(t.replace(/\bshow me\b/i, '')) || YEARS.test(t) || (ABOUT.test(t) && t.split(/\s+/).length >= 3);
 }
 
-/** plainPath is the server address for a plain-words search. */
+/** The server address for a plain-words search. */
 export function plainPath(text: string): string {
 	return `/search?q=${encodeURIComponent(text.trim())}`;
 }
@@ -55,10 +49,7 @@ function years(q: PlainQuery): string {
 	return '';
 }
 
-/**
- * understood is the short "Understood as" line, such as
- * "Science Fiction movies · 2014 · about robot". "" when nothing was read.
- */
+/** The short "Understood as" line, such as "Science Fiction movies · 2014 · about robot"; "" when nothing was read. */
 export function understood(q: PlainQuery | null | undefined): string {
 	if (!q || q.plain) return '';
 	const kind = q.kind === 'movie' ? 'movies' : q.kind === 'show' ? 'shows' : q.kind === 'music' ? 'music' : 'titles';
@@ -67,7 +58,7 @@ export function understood(q: PlainQuery | null | undefined): string {
 	return parts.filter(Boolean).join(' · ');
 }
 
-/** found says the answer has something to show. */
+/** Whether the answer has something to show. */
 export function found(a: PlainAnswer | null | undefined): boolean {
 	return !!a && !a.query.plain && (a.titles.length > 0 || a.more.length > 0);
 }

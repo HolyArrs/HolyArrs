@@ -1,28 +1,28 @@
+import { type MenuItem } from '#lib/ui/Menu.svelte';
+import { ShowVersions } from '#lib/shows/index.ts';
+import { qualityBadges } from '#lib/mediafiles/index.ts';
+import { MovieVersions } from '#lib/movies/index.ts';
 import { replaceState } from '$app/navigation';
 import { page } from '$app/state';
+import { tick } from 'svelte';
 import { to } from '#lib/core/paths.ts';
 import { api, message } from '#lib/core/api.ts';
 import { session } from '#lib/core/session.svelte.ts';
 import { toasts } from '#lib/core/toasts.svelte.ts';
-import { ShowVersions } from '#lib/shows/index.ts';
 import type { EventRecord, TitleView } from '#lib/core/types.ts';
-import { type MenuItem } from '#lib/ui/Menu.svelte';
-import { qualityBadges } from '#lib/mediafiles/index.ts';
-import { tick } from 'svelte';
 import { live } from '#lib/core/live.svelte.ts';
 import { date } from '#lib/core/format.ts';
-import { MovieVersions } from '#lib/movies/index.ts';
 
 export function createOwnedTitle() {
 		const manage = $derived(session.can('manage_library'));
-		// An owned title: its library record (files, versions, status), shown on this same page.
+		// An owned title's library record (files, versions, status), shown on this same page.
 		let owned = $state<TitleView | null>(null);
 		let ownedEvents = $state<EventRecord[]>([]);
 		let ownedFor = 0;
 		async function loadOwned(id: number) {
 			ownedFor = id;
 			try {
-				// Both asks go out together (one round trip, not two in a row).
+				// Both asks go out together, in one round trip.
 				const events = api.get<{ events?: typeof ownedEvents }>(`/events?title=${id}&limit=30`).catch(() => ({ events: [] }));
 				owned = await api.get<TitleView>(`/titles/${id}`);
 				ownedEvents = (await events).events ?? [];
@@ -37,7 +37,7 @@ export function createOwnedTitle() {
 		}
 		let ownedFailed = $state(false);
 		let ownTab = $state<'overview' | 'library'>(typeof location !== 'undefined' && ['episodes', 'library'].includes(new URLSearchParams(location.search).get('tab') ?? '') ? 'library' : 'overview');
-		// Keep the open tab in the address, so reload and Back land on the same tab.
+		// Keeps the open tab in the address, so reload and Back land on the same tab.
 		function setTab(v: typeof ownTab) {
 			ownTab = v;
 			const url = new URL(location.href);
@@ -132,7 +132,7 @@ export function createOwnedTitle() {
 			await tick();
 			await (owned?.kind === 'show' ? showVersions : movieVersions)?.openAdd();
 		}
-		// Keep the Library record current while the page is open (downloads, imports, renames).
+		// Keeps the Library record current while the page is open (downloads, imports, renames).
 		const ownedId = $derived(owned?.id ?? 0);
 		let liveTimer: ReturnType<typeof setTimeout> | undefined;
 		function reloadOwned() {

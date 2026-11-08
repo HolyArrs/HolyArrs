@@ -1,5 +1,5 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createSuggest, live, step, subline, suggestHref, SUGGEST_WAIT, type SuggestAnswer } from './live-search.ts';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const ans = (q: string): SuggestAnswer => ({ q, completions: [q], items: [] });
 

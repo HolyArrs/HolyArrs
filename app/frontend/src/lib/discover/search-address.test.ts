@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { kindOptions, searchAddress } from './search-address.ts';
+import { describe, expect, it } from 'vitest';
 
 describe('search address', () => {
 	it('writes both the selected kind and trimmed query from current controls', () => {

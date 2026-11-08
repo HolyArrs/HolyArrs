@@ -1,25 +1,25 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
-	import { page } from '$app/state';
-	import { to } from '#lib/core/paths.ts';
-	import { api, message } from '#lib/core/api.ts';
-	import { toasts } from '#lib/core/toasts.svelte.ts';
-	import { ShowVersions, SeasonToolsSheet, EpisodeSheet, type SheetEpisode } from '#lib/shows/index.ts';
-	import type { LibraryFolder, PickRulesView, TitleView } from '#lib/core/types.ts';
 	import TitleSection from '#lib/ui/TitleSection.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
-	import { HistoryLine as CompactRow, isRoutine, groupDownloads, downloadTone } from '#lib/downloads/index.ts';
 	import Menu, { type MenuItem } from '#lib/ui/Menu.svelte';
-	import { qualityBadges, ShowDeleteDialog, splitSteps, type RenameStep } from '#lib/mediafiles/index.ts';
-	import { bytes, ago } from '#lib/core/format.ts';
 	import Sheet from '#lib/ui/Sheet.svelte';
-	import { SvelteSet } from 'svelte/reactivity';
-	import { date } from '#lib/core/format.ts';
+	import type { OwnedTitle } from './title-owned.svelte.ts';
+	import { dayWords, epFile, epQuality, epTone } from './title-library-words.ts';
+	import { ShowVersions, SeasonToolsSheet, EpisodeSheet, type SheetEpisode } from '#lib/shows/index.ts';
+	import { HistoryLine as CompactRow, isRoutine, groupDownloads, downloadTone } from '#lib/downloads/index.ts';
+	import { qualityBadges, ShowDeleteDialog, splitSteps, type RenameStep } from '#lib/mediafiles/index.ts';
 	import { MovieVersions } from '#lib/movies/index.ts';
 	import { SubtitlePanel } from '#lib/subtitles/index.ts';
 	import type { TitleSubtitles } from '#lib/subtitles/index.ts';
-	import type { OwnedTitle } from './title-owned.svelte.ts';
-	import { dayWords, epFile, epQuality, epTone } from './title-library-words.ts';
+	import { goto } from '$app/navigation';
+	import { page } from '$app/state';
+	import { SvelteSet } from 'svelte/reactivity';
+	import { to } from '#lib/core/paths.ts';
+	import { api, message } from '#lib/core/api.ts';
+	import { toasts } from '#lib/core/toasts.svelte.ts';
+	import type { LibraryFolder, PickRulesView, TitleView } from '#lib/core/types.ts';
+	import { bytes, ago } from '#lib/core/format.ts';
+	import { date } from '#lib/core/format.ts';
 
 	let { own, folders, rules }: { own: OwnedTitle; folders: LibraryFolder[]; rules: PickRulesView[] } = $props();
 	const manage = $derived(own.manage);
@@ -41,7 +41,7 @@
 
 	let epPicked = $state<SheetEpisode | null>(null);
 
-	// Seasons start closed; each one you open loads its episodes (with files) once.
+	// Seasons start closed; each one opened loads its episodes (with files) once.
 	const openSeasons = new SvelteSet<number>();
 
 	const seasonFailed = new SvelteSet<number>();
@@ -93,7 +93,7 @@
 		}
 	}
 
-	// One season's files, rename and history; and the title's Edit panel.
+	// One season's files, rename and history, and the title's Edit panel.
 	let toolsOpen = $state(false);
 
 	let toolsSeason = $state(0);
@@ -109,7 +109,7 @@
 		if (!seasonEps[n]) void loadSeason(id, n);
 	}
 
-	// Library tab (shows): look for one episode or a whole season's missing ones.
+	// Look for one episode, or a whole season's missing ones.
 	async function epSearch(body: Record<string, unknown>, key: string, done: string) {
 		const o = owned;
 		if (!o) return;
@@ -124,7 +124,7 @@
 		}
 	}
 
-	// Quality: ready-made sets in the control (4K stays for second versions), every other set in the Custom menu.
+	// Ready-made quality sets sit in the control (4K stays for second versions); every other set is in the Custom menu.
 	const qOrder = ['Lite', 'Standard', 'Best'];
 
 	const qHints: Record<string, string> = { 'Lite': '720p to 1080p, small files', 'Standard': 'Up to 1080p, best value', Best: '4K and HDR when out', '4K': '4K first' };
@@ -160,8 +160,7 @@
 		}
 	}
 
-	// Settings rows that save on the spot: folder (after a short check, files move), and for shows
-	// which seasons to keep, new seasons and episode order.
+	// Settings rows that save on the spot: folder (after a short check, files move), and for shows which seasons to keep, new seasons and episode order.
 	async function putTitle(body: Record<string, unknown>, busy: string, done?: string) {
 		const o = owned;
 		if (!o) return;
@@ -205,8 +204,7 @@
 
 	const folderMenu = $derived<MenuItem[]>(kindFolders.map((f) => ({ label: folderName(f), checked: f.id === owned?.library_folder_id, onselect: () => { if (f.id !== owned?.library_folder_id) moveTo = f; } })));
 
-	// Seasons: one choice sets every season and new seasons together.
-	// A mix made season by season in the list reads Custom.
+	// One choice sets every season and new seasons together; a mix made season by season reads Custom.
 	type SeasonPick = 'all' | 'latest' | 'none';
 
 	const realSeasons = $derived((owned?.show?.seasons ?? []).filter((x) => x.number > 0));
@@ -270,7 +268,7 @@
 
 	const activeDownloads = $derived((owned?.slots ?? []).filter((x) => x.download?.active));
 
-	// Library tab: one status card, the files as cards, recent activity, then settings with delete last.
+	// One status card, the files as cards, recent activity, then settings with delete last.
 	const libHead = $derived.by(() => {
 		const o = owned;
 		if (!o) return null;
@@ -287,7 +285,7 @@
 		return { kind: k, title: k === 'have' ? (o.show ? ownState.label : 'In your library') : ownState.label, sub, pct, action };
 	});
 
-	// The facts row under the status: folder, size, quality, keep, status, network, language.
+	// Folder, size, quality, keep, status, network and language.
 	const libFacts = $derived.by(() => {
 		const o = owned;
 		if (!o) return [];
@@ -317,8 +315,7 @@
 
 	let subsOpen = $state(false);
 
-	// Subtitles as a choice like Quality: Default (the default languages), Off, or the title's own
-	// languages under Custom, whose menu also opens the full window and starts a search.
+	// Subtitles work like Quality: Default (the default languages), Off, or the title's own languages under Custom, whose menu also opens the full window and starts a search.
 	let subsData = $state<TitleSubtitles | null>(null);
 
 	async function loadSubs(id: number) {
@@ -378,7 +375,7 @@
 		...(owned?.kind !== 'show' ? [{ label: 'Subtitle files…', icon: 'copy' as const, onselect: () => (subsOpen = true) }] : [])
 	]);
 
-	// The Rename row says up front how many files would get a new name (the same read the preview uses).
+	// The Rename row says up front how many files would get a new name, from the same read the preview uses.
 	let renameCount = $state<number | null>(null);
 
 	$effect(() => {
@@ -444,7 +441,7 @@
 										{@const st = e.slots[0]}
 										{@const tone = epTone(st?.state ?? '')}
 										{@const aired = !e.air_date || Date.parse(e.air_date) <= Date.now()}
-										<!-- The row is not a button itself (it holds buttons): the title button opens the episode and stretches over the row. -->
+										<!-- The row is not a button itself, since it holds buttons: the title button opens the episode and stretches over the row. -->
 										<div class="lib-ep {tone}" class:future={!aired}>
 											{#if manage}<button type="button" class="lib-keep sm" class:on={e.keep_up_to_date !== false} aria-pressed={e.keep_up_to_date !== false} title={e.keep_up_to_date !== false ? 'Kept up to date' : 'Not kept up to date'} aria-label="Keep episode {e.episode} up to date" onclick={(ev) => { ev.stopPropagation(); void keepEpisode(e, se.number); }}><Icon name="check" size={11} /></button>{/if}
 											<span class="lib-ep-still">{#if e.still}<img src={e.still.replace('/w780/', '/w300/')} alt="" loading="lazy" decoding="async" />{/if}<span class="lib-ep-n">{e.episode}</span></span>
@@ -537,7 +534,7 @@
 							<div class="lib-pick"><Menu label="Episode order" variant="button" items={orderMenu} width={200}>{#snippet trigger()}<span>{orders.find(([v]) => v === o.show?.episode_order)?.[1] ?? 'As aired'}</span><Icon name="chevronDown" size={14} />{/snippet}</Menu></div>
 						</div>
 					{/if}
-					<!-- Folder: only when there is another folder of this kind to move to. -->
+					<!-- Only when there is another folder of this kind to move to. -->
 					{#if kindFolders.length > 1}
 						<div class="lib-row static" data-testid="folder-row" title={o.folder_path ?? ''}>
 							<span><b>Folder</b></span>
@@ -565,7 +562,7 @@
 			</aside>
 		</div>
 		{#if manage}
-			<!-- The rest of the Library tools: active downloads and Versions (subtitles open from Settings). -->
+			<!-- Active downloads and Versions (subtitles open from Settings). -->
 			<div class="lib-more" data-testid="lib-tools">
 				{#if activeDownloads.length}
 					<TitleSection id="h-downloads" title="Downloading">
@@ -609,22 +606,12 @@
 <style>
 	.own-pane { display: grid; gap: 16px; padding-top: 4px; }
 	.lib-more { display: flex; flex-direction: column; gap: clamp(28px, 4vw, 44px); margin-top: clamp(28px, 4vw, 44px); min-width: 0; }
-	/* Linked names read as text until hovered. */
-	/* The ratings on their own row, then the details in one even grid: columns line up at every width. */
-	/* Owned title (A–E): status chips, band, tabs, inline panel, tools. */
-	/* T1: underline tabs, left. */
-	/* T2: centered segmented pills. */
-	/* T3: glass pills sitting on the bottom edge of the art. */
-	/* T4: a full-width bar that sticks under the top bar while scrolling. */
-	/* T5: a vertical list beside the content. */
 	.own-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--text-faint); }
 	.own-dot.have { background: var(--ok); }
 	.own-dot.downloading { background: var(--info); animation: own-pulse 1.4s ease-in-out infinite; }
 	.own-dot.failed { background: var(--fail); }
 	@keyframes own-pulse { 50% { opacity: .35; } }
 	@media (prefers-reduced-motion: reduce) { .own-dot.downloading { animation: none; } }
-	/* Library tab */
-	/* Wide screens: status, seasons and files on the left; activity and settings beside them, so less scrolling. */
 	.lib { display: grid; gap: 0 40px; grid-template-columns: minmax(0, 1fr); }
 	.lib-main, .lib-side { display: grid; align-content: start; min-width: 0; }
 	@media (min-width: 1100px) {
@@ -645,7 +632,6 @@
 	.lib-btn { display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 18px; border: 0; border-radius: 999px; background: color-mix(in srgb, var(--text) 8%, transparent); color: var(--text); font: 600 14px/1 var(--font-ui); white-space: nowrap; text-decoration: none; cursor: pointer; }
 	.lib-btn.primary { background: var(--text); color: var(--bg); }
 	.lib-btn:hover { filter: brightness(1.08); }
-	/* Seasons as a list, closed until opened (like the classic season rows, without the clutter). */
 	.lib-head-acts { display: flex; gap: 8px; }
 	.lib-sl { display: grid; gap: 8px; }
 	.lib-sr { border-radius: 14px; background: var(--surface-2); overflow: hidden; }
@@ -744,7 +730,6 @@
 	.lib-row.static { cursor: default; }
 	.lib-row.static:hover { background: none; }
 	.lib-row small.wrap { white-space: normal; }
-	/* A row's value that opens a short menu or a small panel. */
 	.lib-pick { flex: none; max-width: 55%; min-width: 0; }
 	.lib-pick :global(.ui-pop) { display: flex; max-width: 100%; }
 	.lib-pick :global(.trigger) { max-width: 100%; min-width: 0; overflow: hidden; height: 34px; padding: 0 10px; border-radius: 9px; color: var(--text-muted); font: 500 14px/1 var(--font-ui); }
@@ -753,7 +738,6 @@
 	.lib-pick :global(.trigger:hover), .lib-pick :global(.trigger[aria-expanded='true']) { background: color-mix(in srgb, var(--text) 7%, transparent); color: var(--text); }
 	.lib-move-path { margin: 0 0 16px; color: var(--text-muted); font: 500 13px/1.4 var(--font-mono, ui-monospace, monospace); overflow-wrap: anywhere; }
 	.lib-move-actions { display: flex; justify-content: flex-end; gap: 8px; }
-	/* Quality: a segmented control under its label; the last slot opens the other sets. */
 	.q-row { display: grid; gap: 10px; }
 	.q-seg { display: flex; gap: 2px; padding: 3px; border-radius: 10px; background: color-mix(in srgb, var(--text) 7%, transparent); min-width: 0; }
 	.q-seg > button, .q-more :global(.trigger) { flex: 1 1 auto; min-width: 0; display: inline-flex; align-items: center; justify-content: center; gap: 3px; height: 32px; padding: 0 8px; border: 0; border-radius: 8px; background: none; color: color-mix(in srgb, var(--text) 82%, transparent); font: 600 13px/1 var(--font-ui); white-space: nowrap; cursor: pointer; }
@@ -771,7 +755,6 @@
 	@media (pointer: coarse) { .q-seg > button, .q-more :global(.trigger) { height: 40px; } .lib-ico { width: 40px; height: 40px; } .lib-keep { position: relative; } .lib-keep::after { content: ''; position: absolute; inset: -10px; } }
 	@media (max-width: 420px) { .q-seg > button, .q-more :global(.trigger) { padding: 0 6px; font-size: 12.5px; } }
 	.lib-val { flex: none; color: var(--text-muted); font: 500 14px/1.3 var(--font-ui); text-align: right; font-variant-numeric: tabular-nums; }
-	/* The tools under the tabs speak the Settings group's language: same heading size, same surfaces. */
 	.lib-more :global(.tp-h2) { font: 700 20px/1.2 var(--font-ui); letter-spacing: -.01em; margin-bottom: 12px; }
 	.lib-more :global(.tp-vrow) { grid-template-columns: minmax(0, 1fr); gap: 8px; }
 	.lib-more :global(.tp-vrow > li) { flex-direction: row; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 14px 20px; border-radius: 16px; }
@@ -784,9 +767,5 @@
 	.lib-switch.on::after { transform: translateX(18px); }
 	@media (max-width: 600px) { .lib-status { padding: 18px; } .lib-btn { flex: 1; justify-content: center; } .lib-files { grid-template-columns: 1fr; } }
 	.lib-hist { display: grid; gap: 2px; margin: 0 -12px; }
-	/* About band, Apple TV-like: lighter strip edge to edge, cards, then label/value columns. */
-	/* About band, measured on tv.apple.com (1440-1650 px desktop): band one step lighter than the page (#2b2b2b on #1f1f1f),
-	   cards white 10% with 12 px corners and 14/16/16 padding, 20 px gaps; 17 px bold titles, 11 px caps, 15/20 text, 12 px facts. */
-	/* Cards keep a third of the width each, however many there are (never one stretched card). */
-	/* Touch phones: a 44px-tall hit area over the 16px link line. */
+	/* A 44px-tall hit area over the 16px link line on touch phones. */
 </style>
