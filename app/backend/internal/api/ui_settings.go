@@ -11,6 +11,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/health"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 )
 
@@ -20,9 +21,8 @@ import (
 
 const (
 	settingAutoplay = "autoplay_trailers"
-	// settingCountryCount is "Count this install" (the metadata server's
-	// per-country install total).
-	settingCountryCount = "install_country_count"
+	// settingCountryCount is "Count this install" (health owns it).
+	settingCountryCount = health.SettingCountryCount
 )
 
 // UISettings is the answer of GET /settings/ui.
@@ -70,16 +70,7 @@ func (a *API) uiSettings(ctx context.Context) UISettings {
 	}
 	k := database.ReadHistoryKeep(ctx, a.s.Store.Read())
 	return UISettings{AutoplayTrailers: v != "off", SigninLibraryArt: l == "on", ArtworkCacheGB: gb,
-		HistoryRoutineDays: k.RoutineDays, HistoryOtherDays: k.OtherDays, CountInstall: CountInstall(ctx, a.s.Store.Read())}
-}
-
-// CountInstall reads the stored "Count this install" (on unless switched
-// off). The app sets it on the metadata server's requests before any Job
-// runs, so no request goes out counted after the owner switched it off.
-func CountInstall(ctx context.Context, db *sql.DB) bool {
-	var c string
-	_ = db.QueryRowContext(ctx, "SELECT value FROM settings WHERE grp = 'this_app' AND key = ?", settingCountryCount).Scan(&c)
-	return c != "off"
+		HistoryRoutineDays: k.RoutineDays, HistoryOtherDays: k.OtherDays, CountInstall: health.CountInstall(ctx, a.s.Store.Read())}
 }
 
 // ApplyCountryCount passes the stored "Count this install" on to the

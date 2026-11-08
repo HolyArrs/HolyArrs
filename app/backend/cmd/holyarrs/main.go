@@ -421,7 +421,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	hosted.Disk = metadata.LookupCache{Store: s}
 	// "Count this install" is set before the Job queue starts: a Job's
 	// request must not go out counted after the owner switched it off.
-	hosted.Gate.SetCountryCount(api.CountInstall(ctx, s.Read()))
+	hosted.Gate.SetCountryCount(health.CountInstall(ctx, s.Read()))
 	var md metadata.Provider = hosted.TMDB()
 	showMD := showSources(vault, hosted)
 	var artistMD metadata.ArtistProvider = musicSource(s, version)
