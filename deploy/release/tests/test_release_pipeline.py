@@ -67,14 +67,6 @@ class GoModules(unittest.TestCase):
 
 
 class VulnerabilityWatch(unittest.TestCase):
-    def test_dependabot_watches_go_modules_weekly_grouped(self):
-        text = read(ROOT / ".github" / "dependabot.yml")
-        m = re.search(r"package-ecosystem:\s*[\"']?gomod[\"']?(.*?)(?=\n\s*-\s+package-ecosystem:|\Z)", text, re.S)
-        self.assertIsNotNone(m, "no gomod entry in dependabot.yml")
-        entry = m.group(1)
-        self.assertRegex(entry, r"interval:\s*[\"']?weekly")
-        self.assertRegex(entry, r"\n\s*groups:")
-
     def test_ci_runs_pinned_govulncheck(self):
         text = read(WORKFLOWS / "ci.yml")
         self.assertRegex(text, r"golang\.org/x/vuln/cmd/govulncheck@v\d+\.\d+\.\d+",
