@@ -174,3 +174,5 @@ export { createExploreServices } from './explore-services.svelte.ts';
 export { createExploreBanner } from './explore-banner.svelte.ts';
 export { createExploreStrip } from './explore-strip.svelte.ts';
 export { createExploreGenre } from './explore-genre.svelte.ts';
+export { createCalendarScroll } from './calendar-scroll.svelte.ts';
+export type { CalendarAnswer } from './calendar-scroll.svelte.ts';
