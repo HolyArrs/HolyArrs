@@ -73,13 +73,13 @@ func TestSupportDocNamesSleepingDisks(t *testing.T) {
 	}
 }
 
-// docs/user/platforms/nas.md has a "Disks that sleep" section with the advice people on a
+// docs/run/platforms.md has a "Disks that sleep" section with the advice people on a
 // NAS need.
 func TestNASDocHasDisksThatSleep(t *testing.T) {
-	doc := readDoc(t, filepath.Join("user", "platforms", "nas.md"))
-	i := strings.Index(doc, "## Let your disks sleep")
+	doc := readDoc(t, filepath.Join("run", "platforms.md"))
+	i := strings.Index(doc, "### Let your disks sleep")
 	if i < 0 {
-		t.Fatal(`docs/user/platforms/nas.md has no "## Let your disks sleep" section`)
+		t.Fatal(`docs/run/platforms.md has no "### Let your disks sleep" section`)
 	}
 	sec := doc[i+3:]
 	if j := strings.Index(sec, "\n## "); j >= 0 {
