@@ -1,4 +1,4 @@
-package asks
+package requests
 
 import (
 	"bufio"

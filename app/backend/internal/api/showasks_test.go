@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/asks"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/requests"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
@@ -40,7 +40,7 @@ func TestShowAskOverHTTP(t *testing.T) {
 	}
 	// bo asks by the TVDB id: he joins.
 	var joined struct {
-		Ask    asks.View `json:"ask"`
+		Ask    requests.View `json:"ask"`
 		Joined bool      `json:"joined"`
 	}
 	_ = json.Unmarshal(r.bo.call("POST", "/api/v1/asks", `{"kind":"show","id":"tvdb:200","seasons":[1]}`, 200), &joined)
@@ -58,7 +58,7 @@ func TestShowAskOverHTTP(t *testing.T) {
 	}
 	// Staff see it under kind=show; movies only lists none.
 	var list struct {
-		Asks []asks.View `json:"asks"`
+		Asks []requests.View `json:"asks"`
 	}
 	_ = json.Unmarshal(r.owner.call("GET", "/api/v1/asks?kind=show", "", 200), &list)
 	if len(list.Asks) != 1 {
@@ -78,7 +78,7 @@ func TestShowAskOverHTTP(t *testing.T) {
 	}
 	var title struct {
 		Kind string      `json:"kind"`
-		Asks []asks.View `json:"asks"`
+		Asks []requests.View `json:"asks"`
 	}
 	_ = json.Unmarshal(r.owner.call("GET", fmt.Sprintf("/api/v1/titles/%d", *got.TitleID), "", 200), &title)
 	if title.Kind != "show" || len(title.Asks) != 1 || len(title.Asks[0].People) != 2 {
@@ -98,9 +98,9 @@ func TestShowAskOverHTTP(t *testing.T) {
 
 	// Settings: a partial change keeps the rest.
 	r.owner.call("PUT", "/api/v1/settings/asks", `{"movies_per_week":3}`, 200)
-	var set asks.Settings
+	var set requests.Settings
 	_ = json.Unmarshal(r.owner.call("PUT", "/api/v1/settings/asks", `{"shows_per_week":2}`, 200), &set)
-	if set.MoviesPerWeek != 3 || set.ShowsPerWeek != 2 || set.MusicPerWeek != asks.DefaultPerWeek || !set.SearchOnApprove {
+	if set.MoviesPerWeek != 3 || set.ShowsPerWeek != 2 || set.MusicPerWeek != requests.DefaultPerWeek || !set.SearchOnApprove {
 		t.Fatalf("settings %+v", set)
 	}
 	r.owner.call("PUT", "/api/v1/settings/asks", `{"show_library_folder_id":1}`, 400)

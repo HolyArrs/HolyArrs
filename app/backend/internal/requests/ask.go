@@ -3,7 +3,7 @@
 // down (or auto-approve does), approving adds the Title and starts the
 // search, and the people who asked are told when it is approved, turned
 // down and ready. Each person may ask for a number of movies per week.
-package asks
+package requests
 
 import (
 	"context"

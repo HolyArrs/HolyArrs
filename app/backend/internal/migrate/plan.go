@@ -16,7 +16,7 @@ import (
 	"unicode"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/lists"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/requests"
 )
 
 // A Plan says what a move would bring over from one or more Snapshots:
@@ -2289,7 +2289,7 @@ func syncHours(v any) int {
 }
 
 // outsideList plans one Radarr list as a paused Outside list: a TMDB list,
-// a Trakt list or a Trakt watchlist (lists.NormalRef checks its reference).
+// a Trakt list or a Trakt watchlist (requests.NormalListRef checks its reference).
 // It says false for every other kind, which leftBehind lists.
 func (b *builder) outsideList(i int, l Provider) bool {
 	from := b.from("import_lists", i)
@@ -2298,13 +2298,13 @@ func (b *builder) outsideList(i int, l Provider) bool {
 	var kind, ref string
 	switch strings.ToLower(l.Kind) {
 	case "tmdblistimport":
-		kind, ref = lists.KindTMDB, str(anyKey(set, "listId"))
+		kind, ref = requests.ListTMDB, str(anyKey(set, "listId"))
 	case "traktlistimport":
-		kind, ref = lists.KindTrakt, setStr(set, "username", "authUser")+"/"+listSlug(str(anyKey(set, "listname")))
+		kind, ref = requests.ListTrakt, setStr(set, "username", "authUser")+"/"+listSlug(str(anyKey(set, "listname")))
 	case "traktuserimport":
 		switch str(anyKey(set, "traktListType")) {
 		case "0", "userWatchList", "":
-			kind, ref = lists.KindTrakt, setStr(set, "username", "authUser")+"/watchlist"
+			kind, ref = requests.ListTrakt, setStr(set, "username", "authUser")+"/watchlist"
 		default:
 			b.not(GroupLists, from, l.Name, "HolyArrs reads Trakt lists and watchlists; a watched or collection list stays in Radarr")
 			return true
@@ -2312,10 +2312,10 @@ func (b *builder) outsideList(i int, l Provider) bool {
 	default:
 		return false
 	}
-	norm, err := lists.NormalRef(kind, ref)
+	norm, err := requests.NormalListRef(kind, ref)
 	if err != nil {
 		why := "its TMDB list number did not come over; add it again under Settings > Outside lists"
-		if kind == lists.KindTrakt {
+		if kind == requests.ListTrakt {
 			why = "its Trakt user or list name did not come over; add it again under Settings > Outside lists"
 		}
 		b.not(GroupLists, from, l.Name, why)
@@ -2361,14 +2361,14 @@ func (b *builder) outsideList(i int, l Provider) bool {
 	case on:
 		was = "was on there"
 	}
-	detail := fmt.Sprintf("%s %s into %s; added paused (%s), every %d hours", map[string]string{lists.KindTMDB: "TMDB list", lists.KindTrakt: "Trakt list"}[kind], norm, lib, was, op.SyncEveryHours)
+	detail := fmt.Sprintf("%s %s into %s; added paused (%s), every %d hours", map[string]string{requests.ListTMDB: "TMDB list", requests.ListTrakt: "Trakt list"}[kind], norm, lib, was, op.SyncEveryHours)
 	if op.ReleaseGate != "" {
 		detail += "; release gate: " + gateWords[op.ReleaseGate]
 	}
 	if !op.KeepUpToDate {
 		detail += "; Keep up to date off"
 	}
-	if kind == lists.KindTrakt {
+	if kind == requests.ListTrakt {
 		detail += "; needs your Trakt key, and the list must be public"
 	}
 	b.add(GroupLists, Item{Key: "outside_list:" + kind + ":" + strings.ToLower(norm), Name: name, From: from, Detail: detail,

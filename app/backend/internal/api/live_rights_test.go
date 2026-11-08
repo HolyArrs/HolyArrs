@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/asks"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/requests"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
@@ -167,7 +167,7 @@ func TestLiveTitleUpdateLeavesAsksOut(t *testing.T) {
 	ch := x.streamURL(t, ctx, srv.URL)
 	x.waitClients(t, 1)
 	a := &API{s: Server{Live: hub}}
-	a.publishTitleView(TitleView{Asks: []asks.View{{ID: 7, Note: "not this one"}}})
+	a.publishTitleView(TitleView{Asks: []requests.View{{ID: 7, Note: "not this one"}}})
 	got := frames(ch, 300*time.Millisecond)
 	if len(got) != 1 || got[0].topic != "title" || strings.Contains(got[0].data, "not this one") || strings.Contains(got[0].data, `"id":7`) {
 		t.Fatalf("title update %+v", got)

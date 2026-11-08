@@ -23,15 +23,14 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/alerts"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/asks"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/backup"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/bridge"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/health"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/requests"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/lists"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/logs"
@@ -125,13 +124,13 @@ type Server struct {
 	// Library runs adding, editing and refreshing; New makes one when nil.
 	Library *library.Service
 	// Lists reads Outside lists; New makes one without keys when nil.
-	Lists *lists.Service
+	Lists *requests.OutsideLists
 	// Alerts sends Discord and email Alerts; New makes one when Secrets is set.
 	Alerts *alerts.Sender
 	// Asks runs Requests; New makes one when nil.
-	Asks *asks.Service
+	Asks *requests.Service
 	// Watchlists reads Plex watchlists (nil: no person can be read).
-	Watchlists *asks.Watchlists
+	Watchlists *requests.Watchlists
 	// Downloads follows Downloaders and Downloads; made on first use when nil.
 	Downloads *downloader.Manager
 	// Search runs searches, hand choices and the Held and Turned down
@@ -269,13 +268,13 @@ func New(s Server) *API {
 		s.Library = &library.Service{Store: s.Store, Queue: s.Queue, Metadata: s.Metadata, Live: s.Live}
 	}
 	if s.Lists == nil {
-		s.Lists = &lists.Service{Store: s.Store, Queue: s.Queue, Library: s.Library, Metadata: s.Metadata}
+		s.Lists = &requests.OutsideLists{Store: s.Store, Queue: s.Queue, Library: s.Library, Metadata: s.Metadata}
 	}
 	if s.Alerts == nil && s.Secrets != nil {
 		s.Alerts = &alerts.Sender{Store: s.Store, Vault: s.Secrets}
 	}
 	if s.Asks == nil {
-		s.Asks = &asks.Service{Store: s.Store, Library: s.Library, Metadata: s.Metadata, Live: s.Live}
+		s.Asks = &requests.Service{Store: s.Store, Library: s.Library, Metadata: s.Metadata, Live: s.Live}
 		if s.Alerts != nil {
 			s.Asks.Alerts = s.Alerts
 		}
@@ -617,7 +616,7 @@ type TitleView struct {
 	Versions []VersionView `json:"versions"`
 	Slots    []SlotView    `json:"slots"`
 	// Asks are the Requests that led to it: who asked and who decided.
-	Asks []asks.View `json:"asks"`
+	Asks []requests.View `json:"asks"`
 	// Show holds a show's choices and season summaries (shows only; their
 	// episodes and Slots come from /titles/{id}/episodes, so Slots is empty).
 	Show *ShowInfo `json:"show,omitempty"`
@@ -774,7 +773,7 @@ func (a *API) titleView(ctx context.Context, t domain.Title) (TitleView, error) 
 		v.LibraryFolderID, v.PickRulesID, v.FolderPath, v.PickRulesName = m.LibraryFolderID, m.PickRulesID, m.FolderPath, m.PickRulesName
 	}
 	batch := batchOf(ctx)
-	titleAsks := func() ([]asks.View, error) {
+	titleAsks := func() ([]requests.View, error) {
 		if batch != nil {
 			return batch.asksFor(t.ID), nil
 		}

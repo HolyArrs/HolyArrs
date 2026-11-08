@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/asks"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/requests"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
@@ -215,7 +215,7 @@ func TestRDPLibraryJoinAndNeverAdd(t *testing.T) {
 		t.Fatalf("dropNeverAdd %+v %v", kept, err)
 	}
 	// An open ask: ana asked, so Mine for ana and not for bo.
-	if _, err := r.asks.Ask(ctx, asks.Person{UserID: r.ana.id, Name: "ana"}, "693134"); err != nil {
+	if _, err := r.asks.Ask(ctx, requests.Person{UserID: r.ana.id, Name: "ana"}, "693134"); err != nil {
 		t.Fatal(err)
 	}
 	for who, want := range map[int64]bool{r.ana.id: true, r.bo.id: false} {
@@ -236,10 +236,10 @@ func TestRDPExploreInputReadsLibraryAndAsks(t *testing.T) {
 	}
 	rdpTitle(t, r.st, "show", "No Id", "", "active", rdpStamp)
 	rdpTitle(t, r.st, "show", "Gone", "7777", "removed", rdpStamp)
-	if _, err := r.asks.Ask(ctx, asks.Person{UserID: r.ana.id, Name: "ana"}, "693134"); err != nil {
+	if _, err := r.asks.Ask(ctx, requests.Person{UserID: r.ana.id, Name: "ana"}, "693134"); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := r.asks.Ask(ctx, asks.Person{UserID: r.bo.id, Name: "bo"}, "900002"); err != nil {
+	if _, err := r.asks.Ask(ctx, requests.Person{UserID: r.bo.id, Name: "bo"}, "900002"); err != nil {
 		t.Fatal(err)
 	}
 	m, err := r.api.loadMember(ctx, r.ana.id)
@@ -281,7 +281,7 @@ func TestRDPStripTasteRefsWeights(t *testing.T) {
 	rdpExec(t, r.st, "INSERT INTO follows (user_id, title_id, created_at) VALUES (?, ?, ?), (?, ?, ?)", r.ana.id, f1, rdpStamp, r.ana.id, noID, rdpStamp)
 	rdpExec(t, r.st, "INSERT INTO tmdb_follows (user_id, kind, tmdb_id, created_at) VALUES (?, 'show', '5151', ?)", r.ana.id, rdpStamp)
 	rdpExec(t, r.st, "INSERT INTO tmdb_movie_follows (user_id, tmdb_id, created_at) VALUES (?, '5252', ?)", r.ana.id, rdpStamp)
-	if _, err := r.asks.Ask(ctx, asks.Person{UserID: r.ana.id, Name: "ana"}, "693134"); err != nil {
+	if _, err := r.asks.Ask(ctx, requests.Person{UserID: r.ana.id, Name: "ana"}, "693134"); err != nil {
 		t.Fatal(err)
 	}
 	count := func(kid bool) (ask, follow, lib int) {

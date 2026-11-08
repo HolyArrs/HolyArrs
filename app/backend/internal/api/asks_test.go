@@ -14,7 +14,7 @@ import (
 	"testing"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/asks"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/requests"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
@@ -55,7 +55,7 @@ func (s *signedIn) call(method, path, body string, want int) []byte {
 type askRig struct {
 	srv   *httptest.Server
 	st    *database.Store
-	asks  *asks.Service
+	asks  *requests.Service
 	owner *signedIn
 	ana   *signedIn
 	bo    *signedIn
@@ -127,10 +127,10 @@ func insertFolder(t *testing.T) func(tx *sql.Tx) error {
 	}
 }
 
-func askOf(t *testing.T, b []byte) asks.View {
+func askOf(t *testing.T, b []byte) requests.View {
 	t.Helper()
 	var x struct {
-		Ask asks.View `json:"ask"`
+		Ask requests.View `json:"ask"`
 	}
 	if err := json.Unmarshal(b, &x); err != nil {
 		t.Fatal(err)
@@ -170,7 +170,7 @@ func TestAskJoinApproveOverHTTP(t *testing.T) {
 	// Members see only their own asks, and may not decide.
 	r.bo.call("POST", "/api/v1/asks", `{"id":"tmdb:900003"}`, 201)
 	var list struct {
-		Asks []asks.View `json:"asks"`
+		Asks []requests.View `json:"asks"`
 	}
 	_ = json.Unmarshal(r.ana.call("GET", "/api/v1/asks", "", 200), &list)
 	if len(list.Asks) != 1 {
@@ -263,9 +263,9 @@ func TestAskJoinApproveOverHTTP(t *testing.T) {
 // route: PUT /api/v1/ask-limits/{id}
 func TestLimitTurnDownAndTakeBackOverHTTP(t *testing.T) {
 	r := newAskRig(t)
-	var set asks.Settings
+	var set requests.Settings
 	_ = json.Unmarshal(r.owner.call("GET", "/api/v1/settings/asks", "", 200), &set)
-	if set.MoviesPerWeek != asks.DefaultPerWeek || set.ShowsPerWeek != asks.DefaultPerWeek || set.MusicPerWeek != asks.DefaultPerWeek || !set.SearchOnApprove {
+	if set.MoviesPerWeek != requests.DefaultPerWeek || set.ShowsPerWeek != requests.DefaultPerWeek || set.MusicPerWeek != requests.DefaultPerWeek || !set.SearchOnApprove {
 		t.Fatalf("defaults %+v", set)
 	}
 	r.owner.call("PUT", "/api/v1/settings/asks", `{"movies_per_week":1,"search_on_approve":false}`, 200)
@@ -287,9 +287,9 @@ func TestLimitTurnDownAndTakeBackOverHTTP(t *testing.T) {
 		!strings.Contains(string(b), `"kind":"movies"`) {
 		t.Fatalf("over the limit: %d %s %s", resp.StatusCode, resp.Header.Get("Retry-After"), b)
 	}
-	var lim asks.Limit
+	var lim requests.Limit
 	_ = json.Unmarshal(r.ana.call("GET", "/api/v1/asks/limit", "", 200), &lim)
-	if m := lim.Movies; m.PerWeek != 1 || m.Left != 0 || m.RetryAt == nil || lim.Shows.Left != asks.DefaultPerWeek || lim.Music.Left != asks.DefaultPerWeek {
+	if m := lim.Movies; m.PerWeek != 1 || m.Left != 0 || m.RetryAt == nil || lim.Shows.Left != requests.DefaultPerWeek || lim.Music.Left != requests.DefaultPerWeek {
 		t.Fatalf("limit %+v", lim)
 	}
 
@@ -305,7 +305,7 @@ func TestLimitTurnDownAndTakeBackOverHTTP(t *testing.T) {
 	r.owner.call("PUT", "/api/v1/ask-limits/"+itoa(r.ana.id), `{"shows_per_week":5000}`, 400)
 	r.ana.call("PUT", "/api/v1/ask-limits/"+itoa(r.ana.id), `{"movies_per_week":0}`, 403)
 	_ = json.Unmarshal(r.ana.call("GET", "/api/v1/asks/limit", "", 200), &lim)
-	if lim.Movies.PerWeek != 3 || lim.Movies.Left != 2 || lim.Shows.PerWeek != asks.DefaultPerWeek || lim.Music.PerWeek != asks.DefaultPerWeek {
+	if lim.Movies.PerWeek != 3 || lim.Movies.Left != 2 || lim.Shows.PerWeek != requests.DefaultPerWeek || lim.Music.PerWeek != requests.DefaultPerWeek {
 		t.Fatalf("own movie limit %+v", lim)
 	}
 	var limits struct {
@@ -411,7 +411,7 @@ func TestAlertsPerMomentOverHTTP(t *testing.T) {
 	r.asks.Wait()
 	r.owner.call("POST", "/api/v1/asks/"+itoa(c.ID)+"/turn-down", `{"note":"no"}`, 200)
 	r.asks.Wait()
-	var cur asks.View
+	var cur requests.View
 	_ = json.Unmarshal(r.ana.call("GET", "/api/v1/asks/"+itoa(a.ID), "", 200), &cur)
 	tid := *cur.TitleID
 	err := r.st.Write(context.Background(), func(tx *sql.Tx) error {
@@ -446,7 +446,7 @@ func TestAlertsPerMomentOverHTTP(t *testing.T) {
 		}
 	}
 	var ms struct {
-		Messages []asks.Message `json:"messages"`
+		Messages []requests.Message `json:"messages"`
 	}
 	_ = json.Unmarshal(r.ana.call("GET", "/api/v1/messages", "", 200), &ms)
 	if len(ms.Messages) != 3 || ms.Messages[0].Kind != "ready" || ms.Messages[1].Kind != "turned_down" || ms.Messages[2].Kind != "approved" {

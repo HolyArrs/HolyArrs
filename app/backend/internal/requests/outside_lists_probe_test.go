@@ -1,4 +1,4 @@
-package lists
+package requests
 
 import (
 	"context"
@@ -13,7 +13,7 @@ import (
 func TestProbeSync_DueListNeedsRunAndWritesNothing(t *testing.T) {
 	e := setup(t)
 	ctx := context.Background()
-	l, err := Add(ctx, e.s, Input{Name: "Lab list", Kind: KindTMDB, Ref: "42", LibraryFolderID: e.lf.ID}, domain.System)
+	l, err := AddOutsideList(ctx, e.s, OutsideListInput{Name: "Lab list", Kind: ListTMDB, Ref: "42", LibraryFolderID: e.lf.ID}, domain.System)
 	if err != nil {
 		t.Fatal(err)
 	}

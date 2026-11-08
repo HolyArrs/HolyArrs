@@ -1,4 +1,4 @@
-package lists
+package requests
 
 import (
 	"context"
@@ -165,26 +165,26 @@ func keptSeasons(t *testing.T, s *database.Store, titleID int64) map[int]bool {
 func TestAdd_ShowInputChecks(t *testing.T) {
 	e, lf := showEnv(t)
 	ctx := context.Background()
-	bad := []Input{
-		{Name: "x", Kind: KindTMDB, Ref: "61", TitleKind: "artist"},
-		{Name: "x", Kind: KindTMDB, Ref: "61", TitleKind: "show", Seasons: "pilot"},
-		{Name: "x", Kind: KindTMDB, Ref: "61", TitleKind: "show", NewSeasons: "some"},
-		{Name: "x", Kind: KindTMDB, Ref: "61", TitleKind: "show", LibraryFolderID: e.lf.ID}, // a movie folder
-		{Name: "x", Kind: KindTMDB, Ref: "61", LibraryFolderID: lf.ID},                      // a show folder for movies
+	bad := []OutsideListInput{
+		{Name: "x", Kind: ListTMDB, Ref: "61", TitleKind: "artist"},
+		{Name: "x", Kind: ListTMDB, Ref: "61", TitleKind: "show", Seasons: "pilot"},
+		{Name: "x", Kind: ListTMDB, Ref: "61", TitleKind: "show", NewSeasons: "some"},
+		{Name: "x", Kind: ListTMDB, Ref: "61", TitleKind: "show", LibraryFolderID: e.lf.ID}, // a movie folder
+		{Name: "x", Kind: ListTMDB, Ref: "61", LibraryFolderID: lf.ID},                      // a show folder for movies
 	}
 	for _, in := range bad {
-		if _, err := Add(ctx, e.s, in, domain.System); err == nil {
+		if _, err := AddOutsideList(ctx, e.s, in, domain.System); err == nil {
 			t.Errorf("accepted %+v", in)
 		}
 	}
-	l, err := Add(ctx, e.s, Input{Name: "Shows", Kind: KindTMDB, Ref: "61", TitleKind: "show", ReleaseGate: library.GateReleased}, domain.System)
+	l, err := AddOutsideList(ctx, e.s, OutsideListInput{Name: "Shows", Kind: ListTMDB, Ref: "61", TitleKind: "show", ReleaseGate: library.GateReleased}, domain.System)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if l.TitleKind != "show" || l.LibraryFolderID != lf.ID || l.Seasons != library.SeasonsAll || l.NewSeasons != "all" || l.ReleaseGate != "" {
 		t.Fatalf("show defaults %+v", l)
 	}
-	m, err := Add(ctx, e.s, Input{Name: "Movies", Kind: KindTMDB, Ref: "61", Seasons: "first"}, domain.System)
+	m, err := AddOutsideList(ctx, e.s, OutsideListInput{Name: "Movies", Kind: ListTMDB, Ref: "61", Seasons: "first"}, domain.System)
 	if err != nil || m.TitleKind != "movie" || m.Seasons != "" || m.LibraryFolderID != e.lf.ID {
 		t.Fatalf("movie list %+v %v", m, err)
 	}
@@ -192,12 +192,12 @@ func TestAdd_ShowInputChecks(t *testing.T) {
 	if _, err := e.svc.Sync(ctx, m.ID, domain.System); err != nil {
 		t.Fatal(err)
 	}
-	m, err = Edit(ctx, e.s, m.ID, Input{Name: "Movies", Kind: KindTMDB, Ref: "61", TitleKind: "show", Seasons: "latest"}, domain.System)
+	m, err = EditOutsideList(ctx, e.s, m.ID, OutsideListInput{Name: "Movies", Kind: ListTMDB, Ref: "61", TitleKind: "show", Seasons: "latest"}, domain.System)
 	if err != nil || m.LastSyncedAt != nil || m.Seasons != library.SeasonsLatest || m.LibraryFolderID != lf.ID {
 		t.Fatalf("edit to shows %+v %v", m, err)
 	}
 	// An edit without title_kind keeps a show list a show list.
-	m, err = Edit(ctx, e.s, m.ID, Input{Name: "Movies", Kind: KindTMDB, Ref: "61", Seasons: library.SeasonsFuture, NewSeasons: "none"}, domain.System)
+	m, err = EditOutsideList(ctx, e.s, m.ID, OutsideListInput{Name: "Movies", Kind: ListTMDB, Ref: "61", Seasons: library.SeasonsFuture, NewSeasons: "none"}, domain.System)
 	if err != nil || m.TitleKind != "show" || m.Seasons != library.SeasonsFuture || m.NewSeasons != "all" {
 		t.Fatalf("edit without title_kind %+v %v", m, err)
 	}
@@ -207,18 +207,18 @@ func TestAdd_ShowInputChecks(t *testing.T) {
 		t.Fatal(err)
 	}
 	showOnly, _ := library.CreatePickRules(ctx, e.s, library.PickRulesInput{Name: "Shows only", Kinds: []string{"show"}, Body: domain.GoodEveryday()}, domain.System)
-	if _, err := Add(ctx, e.s, Input{Name: "Wrong rules", Kind: KindTMDB, Ref: "61", TitleKind: "show", PickRulesID: movieOnly.ID}, domain.System); !errors.Is(err, ErrRulesKind) {
+	if _, err := AddOutsideList(ctx, e.s, OutsideListInput{Name: "Wrong rules", Kind: ListTMDB, Ref: "61", TitleKind: "show", PickRulesID: movieOnly.ID}, domain.System); !errors.Is(err, ErrRulesKind) {
 		t.Fatalf("movie rules on a show list: %v", err)
 	}
-	if _, err := Add(ctx, e.s, Input{Name: "Wrong rules", Kind: KindTMDB, Ref: "61", PickRulesID: showOnly.ID}, domain.System); !errors.Is(err, ErrRulesKind) {
+	if _, err := AddOutsideList(ctx, e.s, OutsideListInput{Name: "Wrong rules", Kind: ListTMDB, Ref: "61", PickRulesID: showOnly.ID}, domain.System); !errors.Is(err, ErrRulesKind) {
 		t.Fatalf("show rules on a movie list: %v", err)
 	}
-	if _, err := Add(ctx, e.s, Input{Name: "Right rules", Kind: KindTMDB, Ref: "61", TitleKind: "show", PickRulesID: showOnly.ID}, domain.System); err != nil {
+	if _, err := AddOutsideList(ctx, e.s, OutsideListInput{Name: "Right rules", Kind: ListTMDB, Ref: "61", TitleKind: "show", PickRulesID: showOnly.ID}, domain.System); err != nil {
 		t.Fatalf("show rules on a show list: %v", err)
 	}
 	// No show folder yet: a show list cannot be saved.
 	e2 := setup(t)
-	if _, err := Add(ctx, e2.s, Input{Name: "Shows", Kind: KindTMDB, Ref: "61", TitleKind: "show"}, domain.System); !errors.Is(err, library.ErrNoShowFolder) {
+	if _, err := AddOutsideList(ctx, e2.s, OutsideListInput{Name: "Shows", Kind: ListTMDB, Ref: "61", TitleKind: "show"}, domain.System); !errors.Is(err, library.ErrNoShowFolder) {
 		t.Fatalf("no show folder: %v", err)
 	}
 }
@@ -233,7 +233,7 @@ func TestSync_TMDBShowListUsesItsSeasonChoice(t *testing.T) {
 	if _, _, err := e.svc.Library.AddShow(ctx, "tmdb:700002", library.ShowAddOptions{LibraryFolderID: lf.ID}, domain.System); err != nil {
 		t.Fatal(err)
 	}
-	l, err := Add(ctx, e.s, Input{Name: "Shows", Kind: KindTMDB, Ref: "61", TitleKind: "show", Seasons: SeasonsFirst, NewSeasons: "none", SearchOnAdd: true}, domain.System)
+	l, err := AddOutsideList(ctx, e.s, OutsideListInput{Name: "Shows", Kind: ListTMDB, Ref: "61", TitleKind: "show", Seasons: SeasonsFirst, NewSeasons: "none", SearchOnAdd: true}, domain.System)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -270,7 +270,7 @@ func TestSync_TMDBShowListUsesItsSeasonChoice(t *testing.T) {
 func TestSync_TraktShowListAndWatchlist(t *testing.T) {
 	e, _ := showEnv(t)
 	ctx := context.Background()
-	l, err := Add(ctx, e.s, Input{Name: "Trakt shows", Kind: KindTrakt, Ref: "luis/shows", TitleKind: "show", Seasons: library.SeasonsLatest}, domain.System)
+	l, err := AddOutsideList(ctx, e.s, OutsideListInput{Name: "Trakt shows", Kind: ListTrakt, Ref: "luis/shows", TitleKind: "show", Seasons: library.SeasonsLatest}, domain.System)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -291,7 +291,7 @@ func TestSync_TraktShowListAndWatchlist(t *testing.T) {
 	if jobs != 0 {
 		t.Fatalf("searched without search on add: %d", jobs)
 	}
-	w, err := Add(ctx, e.s, Input{Name: "Show watchlist", Kind: KindTrakt, Ref: "luis/watchlist", TitleKind: "show"}, domain.System)
+	w, err := AddOutsideList(ctx, e.s, OutsideListInput{Name: "Show watchlist", Kind: ListTrakt, Ref: "luis/watchlist", TitleKind: "show"}, domain.System)
 	if err != nil {
 		t.Fatal(err)
 	}

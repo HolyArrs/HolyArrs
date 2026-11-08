@@ -31,9 +31,9 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/api"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/asks"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/backup"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/bridge"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/requests"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/dlsync"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/doctor"
@@ -43,7 +43,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/lists"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediaserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
@@ -602,7 +601,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	q.Handle(downloader.KindGrab, dm.HandleGrab)
 	// An ask turns Ready right after its import, not on the next 30 s ready
 	// check: the Requests card would drop from Importing back to Processing.
-	var readyCheck atomic.Pointer[asks.Service]
+	var readyCheck atomic.Pointer[requests.Service]
 	q.Handle(importer.KindImport, func(ctx context.Context, r *jobs.Run) error {
 		err := im.HandleJob(ctx, r)
 		if w := readyCheck.Load(); err == nil && w != nil {
@@ -696,11 +695,11 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	} else if n, err := lib.RecoverRenames(ctx, domain.System); err != nil || n > 0 {
 		log.Printf("renames cut off by a stop: %d finished, error %v", n, err)
 	}
-	ol := &lists.Service{Store: s, Queue: q, Library: lib, Metadata: md, TMDBBase: hosted.TMDBBase,
+	ol := &requests.OutsideLists{Store: s, Queue: q, Library: lib, Metadata: md, TMDBBase: hosted.TMDBBase,
 		TraktBase: os.Getenv("HOLYARRS_TRAKT_URL"), TMDBToken: hosted.TMDBAccess,
 		TraktClient: func(ctx context.Context) (string, error) { return vault.Setting(ctx, "links", "trakt_client_id") }}
 	ol.Register(q)
-	q.ProbeSchedule(lists.KindSync, ol.ProbeSync)
+	q.ProbeSchedule(requests.OutsideListSync, ol.ProbeSync)
 	he := &health.Engine{Store: s, Version: version, ConfigUnmapped: unmapped, ConfigDir: c.ConfigDir, Publish: func(topic string, data any) { hub.Publish(topic, data) },
 		Backups: func(ctx context.Context) (health.Backups, error) {
 			newest, every, lastErr, err := bm.State(ctx)
@@ -737,8 +736,8 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	// Plex watchlists (Requests): registered here with the other kinds; the
 	// reader is set once Requests and sign-in are up, and a pass before
 	// that finds nothing to do.
-	var watchlists atomic.Pointer[asks.Watchlists]
-	q.Handle(asks.KindPlexWatchlists, func(ctx context.Context, r *jobs.Run) error {
+	var watchlists atomic.Pointer[requests.Watchlists]
+	q.Handle(requests.KindPlexWatchlists, func(ctx context.Context, r *jobs.Run) error {
 		if !startup.FeatureOn(features.PlexWatchlists) {
 			r.SetResult(map[string]any{"skipped": "held back"})
 			return nil
@@ -749,7 +748,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		r.SetResult(map[string]any{"skipped": "still starting"})
 		return nil
 	})
-	q.ProbeSchedule(asks.KindPlexWatchlists, func(ctx context.Context, now time.Time) (bool, any, error) {
+	q.ProbeSchedule(requests.KindPlexWatchlists, func(ctx context.Context, now time.Time) (bool, any, error) {
 		if !startup.FeatureOn(features.PlexWatchlists) {
 			return false, nil, nil
 		}
@@ -856,7 +855,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		media.Watch(ctx)
 	}
 	defer sender.Wait()
-	wish := &asks.Service{Store: s, Library: lib, Metadata: md, Alerts: sender, Live: hub}
+	wish := &requests.Service{Store: s, Library: lib, Metadata: md, Alerts: sender, Live: hub}
 	readyCheck.Store(wish)
 	optional(jobs.Loop{Name: "wishlist", Label: "Requests ready check", Every: 30 * time.Second, Run: func(ctx context.Context) error {
 		if _, err := wish.CheckReady(ctx); err != nil {
@@ -870,7 +869,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	}})
 	wish.PrefetchParts = true
 	// Plex watchlists are read with each person's own kept Plex sign-in.
-	plexWatch := &asks.Watchlists{Asks: wish, Base: env("HOLYARRS_PLEX_DISCOVER_URL", asks.DefaultPlexDiscover),
+	plexWatch := &requests.Watchlists{Asks: wish, Base: env("HOLYARRS_PLEX_DISCOVER_URL", requests.DefaultPlexDiscover),
 		Token: au.PlexToken, ClientID: au.PlexClientID}
 	watchlists.Store(plexWatch)
 	go wish.BackfillParts(context.Background())

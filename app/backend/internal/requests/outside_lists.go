@@ -1,7 +1,7 @@
 // Package lists keeps Outside lists: TMDB and Trakt lists whose movies or
 // shows are added to the Library on a schedule. Titles on the Never-add list
 // are skipped, and every added title is marked as added by a list.
-package lists
+package requests
 
 import (
 	"context"
@@ -22,9 +22,9 @@ import (
 
 // Kinds of Outside list, and the Job kind that reads them.
 const (
-	KindTMDB  = "tmdb_list"
-	KindTrakt = "trakt_list"
-	KindSync  = "sync_outside_lists"
+	ListTMDB  = "tmdb_list"
+	ListTrakt = "trakt_list"
+	OutsideListSync  = "sync_outside_lists"
 )
 
 // SeasonsFirst is the seasons choice that keeps only season one of a show.
@@ -51,11 +51,11 @@ var (
 	traktPair = regexp.MustCompile(`^([A-Za-z0-9._-]+)/([A-Za-z0-9._-]+)$`)
 )
 
-// Input is what a person sets on a list. Zero values take defaults: a movie
+// OutsideListInput is what a person sets on a list. Zero values take defaults: a movie
 // list, the first Library folder of its kind, no Pick rules, kept up to date,
 // no search on add, enabled, synced every 12 hours. A show list takes all
 // seasons and all new seasons. The Release gate applies to movies only.
-type Input struct {
+type OutsideListInput struct {
 	Name            string `json:"name"`
 	Kind            string `json:"kind"`
 	TitleKind       string `json:"title_kind"`
@@ -71,16 +71,16 @@ type Input struct {
 	SyncEveryHours  int    `json:"sync_every_hours"`
 }
 
-// NormalRef turns what a person pasted into the stored list reference. Trakt
+// NormalListRef turns what a person pasted into the stored list reference. Trakt
 // lists are refused while the Trakt lists feature is off.
-func NormalRef(kind, ref string) (string, error) {
+func NormalListRef(kind, ref string) (string, error) {
 	ref = strings.TrimSpace(ref)
 	switch kind {
-	case KindTMDB:
+	case ListTMDB:
 		if m := tmdbRef.FindStringSubmatch(ref); m != nil {
 			return m[1], nil
 		}
-	case KindTrakt:
+	case ListTrakt:
 		if !startup.FeatureOn(features.TraktLists) {
 			return "", ErrKind
 		}
@@ -96,9 +96,9 @@ func NormalRef(kind, ref string) (string, error) {
 	return "", ErrRef
 }
 
-// Add saves a new Outside list. Each then function runs in the same
+// AddOutsideList saves a new Outside list. Each then function runs in the same
 // transaction with the new id, so callers can save related rows atomically.
-func Add(ctx context.Context, s *database.Store, in Input, by domain.Actor, then ...func(tx *sql.Tx, id int64) error) (domain.OutsideList, error) {
+func AddOutsideList(ctx context.Context, s *database.Store, in OutsideListInput, by domain.Actor, then ...func(tx *sql.Tx, id int64) error) (domain.OutsideList, error) {
 	var l domain.OutsideList
 	err := s.Write(ctx, func(tx *sql.Tx) error {
 		if err := fill(ctx, tx, in, &l); err != nil {
@@ -118,9 +118,9 @@ func Add(ctx context.Context, s *database.Store, in Input, by domain.Actor, then
 	return l, err
 }
 
-// Edit changes a list. A new reference or kind clears the last sync, since
+// EditOutsideList changes a list. A new reference or kind clears the last sync, since
 // the old result no longer describes what the list reads.
-func Edit(ctx context.Context, s *database.Store, id int64, in Input, by domain.Actor) (domain.OutsideList, error) {
+func EditOutsideList(ctx context.Context, s *database.Store, id int64, in OutsideListInput, by domain.Actor) (domain.OutsideList, error) {
 	var l domain.OutsideList
 	err := s.Write(ctx, func(tx *sql.Tx) error {
 		if err := database.Get(ctx, tx, "outside_lists", id, &l); err != nil {
@@ -138,8 +138,8 @@ func Edit(ctx context.Context, s *database.Store, id int64, in Input, by domain.
 	return l, err
 }
 
-// Remove deletes a list. Titles it added stay in the Library.
-func Remove(ctx context.Context, s *database.Store, id int64) error {
+// RemoveOutsideList deletes a list. Titles it added stay in the Library.
+func RemoveOutsideList(ctx context.Context, s *database.Store, id int64) error {
 	return s.Write(ctx, func(tx *sql.Tx) error {
 		res, err := tx.Exec("DELETE FROM outside_lists WHERE id = ?", id)
 		if err != nil {
@@ -152,15 +152,15 @@ func Remove(ctx context.Context, s *database.Store, id int64) error {
 	})
 }
 
-// Get returns one list by id.
-func Get(ctx context.Context, db database.Querier, id int64) (domain.OutsideList, error) {
+// GetOutsideList returns one list by id.
+func GetOutsideList(ctx context.Context, db database.Querier, id int64) (domain.OutsideList, error) {
 	var l domain.OutsideList
 	err := database.Get(ctx, db, "outside_lists", id, &l)
 	return l, err
 }
 
-// All returns every Outside list ordered by name, never nil.
-func All(ctx context.Context, db database.Lister) ([]domain.OutsideList, error) {
+// AllOutsideLists returns every Outside list ordered by name, never nil.
+func AllOutsideLists(ctx context.Context, db database.Lister) ([]domain.OutsideList, error) {
 	out, err := database.Select[domain.OutsideList](ctx, db, "outside_lists", "1=1 ORDER BY name COLLATE NOCASE")
 	if out == nil {
 		out = []domain.OutsideList{}
@@ -168,14 +168,14 @@ func All(ctx context.Context, db database.Lister) ([]domain.OutsideList, error) 
 	return out, err
 }
 
-// fill checks an Input and writes the result into l. It runs inside the
+// fill checks an OutsideListInput and writes the result into l. It runs inside the
 // caller's transaction so folder and name checks match what gets saved.
-func fill(ctx context.Context, tx *sql.Tx, in Input, l *domain.OutsideList) error {
+func fill(ctx context.Context, tx *sql.Tx, in OutsideListInput, l *domain.OutsideList) error {
 	name := strings.TrimSpace(in.Name)
 	if name == "" || len(name) > 80 {
 		return ErrName
 	}
-	ref, err := NormalRef(in.Kind, in.Ref)
+	ref, err := NormalListRef(in.Kind, in.Ref)
 	if err != nil {
 		return err
 	}
@@ -270,7 +270,7 @@ func due(l domain.OutsideList, now time.Time) bool {
 }
 
 // describe words a sync result for the list's last_result field.
-func describe(r Result) string {
+func describe(r OutsideListResult) string {
 	s := fmt.Sprintf("%d on the list, %d added, %d already in the Library, %d on the Never-add list", r.Found, r.Added, r.Already, r.NeverAdd)
 	if r.Failed > 0 {
 		s += fmt.Sprintf(", %d could not be added", r.Failed)

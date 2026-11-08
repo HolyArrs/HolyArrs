@@ -1,4 +1,4 @@
-package lists
+package requests
 
 import (
 	"context"
@@ -16,7 +16,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 )
 
-// Add reads library_folders and pick_rules (other modules' tables) while it
+// AddOutsideList reads library_folders and pick_rules (other modules' tables) while it
 // saves: with no folder given it takes the lowest id of the list's kind, and
 // a missing partner row (no Pick rules chosen) is stored as NULL.
 func TestPinAddReadsFoldersAndPickRules(t *testing.T) {
@@ -32,7 +32,7 @@ func TestPinAddReadsFoldersAndPickRules(t *testing.T) {
 			t.Fatalf("folder %d: %v", i, err)
 		}
 	}
-	l, err := Add(ctx, e.s, Input{Name: "A", Kind: KindTMDB, Ref: "42"}, domain.System)
+	l, err := AddOutsideList(ctx, e.s, OutsideListInput{Name: "A", Kind: ListTMDB, Ref: "42"}, domain.System)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -40,7 +40,7 @@ func TestPinAddReadsFoldersAndPickRules(t *testing.T) {
 		t.Fatalf("defaults %+v", l)
 	}
 	// A show list takes the first show folder, not the movie one.
-	s, err := Add(ctx, e.s, Input{Name: "B", Kind: KindTMDB, Ref: "43", TitleKind: "show"}, domain.System)
+	s, err := AddOutsideList(ctx, e.s, OutsideListInput{Name: "B", Kind: ListTMDB, Ref: "43", TitleKind: "show"}, domain.System)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -62,29 +62,29 @@ func TestPinAddReadsFoldersAndPickRules(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := Add(ctx, e.s, Input{Name: "C", Kind: KindTMDB, Ref: "44", PickRulesID: showOnly}, domain.System); !errors.Is(err, ErrRulesKind) {
+	if _, err := AddOutsideList(ctx, e.s, OutsideListInput{Name: "C", Kind: ListTMDB, Ref: "44", PickRulesID: showOnly}, domain.System); !errors.Is(err, ErrRulesKind) {
 		t.Fatalf("movie list on show rules: %v", err)
 	}
-	ok, err := Add(ctx, e.s, Input{Name: "D", Kind: KindTMDB, Ref: "45", TitleKind: "show", PickRulesID: showOnly}, domain.System)
+	ok, err := AddOutsideList(ctx, e.s, OutsideListInput{Name: "D", Kind: ListTMDB, Ref: "45", TitleKind: "show", PickRulesID: showOnly}, domain.System)
 	if err != nil || ok.PickRulesID == nil || *ok.PickRulesID != showOnly {
 		t.Fatalf("show list on show rules: %+v %v", ok, err)
 	}
 	// A show folder given for a movie list is refused.
-	if _, err := Add(ctx, e.s, Input{Name: "E", Kind: KindTMDB, Ref: "46", LibraryFolderID: first}, domain.System); !errors.Is(err, library.ErrNotMovieFolder) {
+	if _, err := AddOutsideList(ctx, e.s, OutsideListInput{Name: "E", Kind: ListTMDB, Ref: "46", LibraryFolderID: first}, domain.System); !errors.Is(err, library.ErrNotMovieFolder) {
 		t.Fatalf("wrong folder kind: %v", err)
 	}
 }
 
-// All lists by name ignoring case; Get and Remove report a missing id the same way.
+// AllOutsideLists lists by name ignoring case; GetOutsideList and RemoveOutsideList report a missing id the same way.
 func TestPinListOrderAndMissing(t *testing.T) {
 	e := setup(t)
 	ctx := context.Background()
 	for i, n := range []string{"bravo", "Alpha", "charlie", "ALPHA2", "delta"} {
-		if _, err := Add(ctx, e.s, Input{Name: n, Kind: KindTMDB, Ref: fmt.Sprint(100 + i)}, domain.System); err != nil {
+		if _, err := AddOutsideList(ctx, e.s, OutsideListInput{Name: n, Kind: ListTMDB, Ref: fmt.Sprint(100 + i)}, domain.System); err != nil {
 			t.Fatal(err)
 		}
 	}
-	all, err := All(ctx, e.s.Read())
+	all, err := AllOutsideLists(ctx, e.s.Read())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -95,24 +95,24 @@ func TestPinListOrderAndMissing(t *testing.T) {
 	if fmt.Sprint(names) != "[Alpha ALPHA2 bravo charlie delta]" {
 		t.Fatalf("order %v", names)
 	}
-	if err := Remove(ctx, e.s, 9999); !errors.Is(err, database.ErrNotFound) {
+	if err := RemoveOutsideList(ctx, e.s, 9999); !errors.Is(err, database.ErrNotFound) {
 		t.Fatalf("remove missing: %v", err)
 	}
-	if _, err := Get(ctx, e.s.Read(), 9999); !errors.Is(err, database.ErrNotFound) {
+	if _, err := GetOutsideList(ctx, e.s.Read(), 9999); !errors.Is(err, database.ErrNotFound) {
 		t.Fatalf("get missing: %v", err)
 	}
 	empty := setup(t)
-	if err := Remove(ctx, empty.s, 1); err == nil {
+	if err := RemoveOutsideList(ctx, empty.s, 1); err == nil {
 		t.Fatal("remove from empty")
 	}
-	if got, _ := All(ctx, empty.s.Read()); got == nil || len(got) != 0 {
+	if got, _ := AllOutsideLists(ctx, empty.s.Read()); got == nil || len(got) != 0 {
 		t.Fatalf("empty list must be [] not nil: %#v", got)
 	}
 }
 
 // Record JSON names are frozen (R4).
 func TestPinListRecordJSON(t *testing.T) {
-	for name, v := range map[string]any{"input": &Input{}, "result": &Result{}} {
+	for name, v := range map[string]any{"outside_lists_input": &OutsideListInput{}, "outside_lists_result": &OutsideListResult{}} {
 		pinFillList(reflect.ValueOf(v).Elem())
 		got, err := json.MarshalIndent(v, "", "  ")
 		if err != nil {

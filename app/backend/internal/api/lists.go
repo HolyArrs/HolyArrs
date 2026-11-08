@@ -10,7 +10,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/lists"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/requests"
 )
 
 // ListView is an Outside list as the API shows it.
@@ -44,10 +44,10 @@ func listView(l domain.OutsideList) ListView {
 // listError answers list refusals; the rest go to libraryError.
 func listError(w http.ResponseWriter, err error) {
 	switch {
-	case errors.Is(err, lists.ErrNameTaken), errors.Is(err, library.ErrNoShowFolder):
+	case errors.Is(err, requests.ErrNameTaken), errors.Is(err, library.ErrNoShowFolder):
 		fail(w, http.StatusConflict, err.Error())
-	case errors.Is(err, lists.ErrName), errors.Is(err, lists.ErrKind), errors.Is(err, lists.ErrRef), errors.Is(err, lists.ErrEvery),
-		errors.Is(err, lists.ErrTitleKind), errors.Is(err, lists.ErrSeasons), errors.Is(err, lists.ErrRulesKind):
+	case errors.Is(err, requests.ErrName), errors.Is(err, requests.ErrKind), errors.Is(err, requests.ErrRef), errors.Is(err, requests.ErrEvery),
+		errors.Is(err, requests.ErrTitleKind), errors.Is(err, requests.ErrSeasons), errors.Is(err, requests.ErrRulesKind):
 		fail(w, http.StatusBadRequest, err.Error())
 	default:
 		libraryError(w, err)
@@ -56,12 +56,12 @@ func listError(w http.ResponseWriter, err error) {
 
 // syncList queues a read of one list now (Radarr reads a list when it is saved).
 func (a *API) syncList(r *http.Request, id int64) (int64, error) {
-	jid, _, err := a.s.Queue.Enqueue(r.Context(), lists.KindSync, nil, map[string]any{"list_id": id}, "sync_outside_list:"+itoa(id), actor(r))
+	jid, _, err := a.s.Queue.Enqueue(r.Context(), requests.OutsideListSync, nil, map[string]any{"list_id": id}, "sync_outside_list:"+itoa(id), actor(r))
 	return jid, err
 }
 
 func (a *API) listOutsideLists(w http.ResponseWriter, r *http.Request) {
-	ls, err := lists.All(r.Context(), a.s.Store.Read())
+	ls, err := requests.AllOutsideLists(r.Context(), a.s.Store.Read())
 	if err != nil {
 		internal(w, err)
 		return
@@ -76,11 +76,11 @@ func (a *API) listOutsideLists(w http.ResponseWriter, r *http.Request) {
 const listHelp = `send {"name": "...", "kind": "tmdb_list" or "trakt_list", "ref": "<TMDB list number, Trakt user/list or a link>"} with optional title_kind ("movie" or "show"), library_folder_id, pick_rules_id, keep_up_to_date, search_on_add, release_gate (movies), seasons and new_seasons (shows), enabled, sync_every_hours`
 
 func (a *API) addOutsideList(w http.ResponseWriter, r *http.Request) {
-	var in lists.Input
+	var in requests.OutsideListInput
 	if !decode(w, r, &in, listHelp) {
 		return
 	}
-	l, err := lists.Add(r.Context(), a.s.Store, in, actor(r))
+	l, err := requests.AddOutsideList(r.Context(), a.s.Store, in, actor(r))
 	if err != nil {
 		listError(w, err)
 		return
@@ -100,11 +100,11 @@ func (a *API) editOutsideList(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	var in lists.Input
+	var in requests.OutsideListInput
 	if !decode(w, r, &in, listHelp) {
 		return
 	}
-	l, err := lists.Edit(r.Context(), a.s.Store, id, in, actor(r))
+	l, err := requests.EditOutsideList(r.Context(), a.s.Store, id, in, actor(r))
 	if err != nil {
 		listError(w, err)
 		return
@@ -124,7 +124,7 @@ func (a *API) deleteOutsideList(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	if err := lists.Remove(r.Context(), a.s.Store, id); err != nil {
+	if err := requests.RemoveOutsideList(r.Context(), a.s.Store, id); err != nil {
 		listError(w, err)
 		return
 	}
@@ -136,7 +136,7 @@ func (a *API) syncOutsideList(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	if _, err := lists.Get(r.Context(), a.s.Store.Read(), id); err != nil {
+	if _, err := requests.GetOutsideList(r.Context(), a.s.Store.Read(), id); err != nil {
 		listError(w, err)
 		return
 	}

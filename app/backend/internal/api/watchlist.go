@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/asks"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/requests"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
@@ -24,7 +24,7 @@ func (a *API) watchlistRoutes(m *http.ServeMux) {
 
 // watchlistView is My account's Plex watchlist card.
 type watchlistView struct {
-	asks.WatchlistState
+	requests.WatchlistState
 	// On: the owner allows watchlists (Request rules).
 	On bool `json:"on"`
 	// Linked: a Plex account is linked to this person; PlexName is its name.
@@ -45,11 +45,11 @@ func (a *API) watchlistView(r *http.Request) (watchlistView, error) {
 	ctx := r.Context()
 	uid := a.person(r).UserID
 	db := a.s.Store.Read()
-	st, err := asks.ReadWatchlist(ctx, db, uid)
+	st, err := requests.ReadWatchlist(ctx, db, uid)
 	if err != nil {
 		return watchlistView{}, err
 	}
-	set, err := asks.ReadSettings(ctx, db)
+	set, err := requests.ReadSettings(ctx, db)
 	if err != nil {
 		return watchlistView{}, err
 	}
@@ -73,7 +73,7 @@ func (a *API) getMyWatchlist(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *API) putMyWatchlist(w http.ResponseWriter, r *http.Request) {
-	var body asks.WatchlistSwitches
+	var body requests.WatchlistSwitches
 	if !decode(w, r, &body, `send {"movies": true, "shows": false}`) {
 		return
 	}
@@ -97,7 +97,7 @@ func (a *API) putMyWatchlist(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	uid := a.person(r).UserID
-	if err := asks.SaveWatchlistSwitches(r.Context(), a.s.Store, uid, body); err != nil {
+	if err := requests.SaveWatchlistSwitches(r.Context(), a.s.Store, uid, body); err != nil {
 		internal(w, err)
 		return
 	}
@@ -131,7 +131,7 @@ func (a *API) queueWatchlist(r *http.Request, uid int64) (int64, bool) {
 	if a.s.Queue == nil {
 		return 0, false
 	}
-	id, _, err := a.s.Queue.EnqueueAt(r.Context(), asks.KindPlexWatchlists, nil, map[string]any{"user_id": uid},
+	id, _, err := a.s.Queue.EnqueueAt(r.Context(), requests.KindPlexWatchlists, nil, map[string]any{"user_id": uid},
 		"plex_watchlist:"+strconv.FormatInt(uid, 10), domain.Actor{Kind: "user", ID: uid}, time.Time{})
 	return id, err == nil
 }

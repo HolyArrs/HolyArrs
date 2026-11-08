@@ -1,4 +1,4 @@
-package lists
+package requests
 
 import (
 	"os"

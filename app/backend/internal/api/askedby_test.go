@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/asks"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/requests"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
@@ -114,7 +114,7 @@ func TestAskedByEveryoneSees(t *testing.T) {
 
 	// The Requests list names every asker too, for a member and a Kid.
 	var list struct {
-		Asks []asks.View `json:"asks"`
+		Asks []requests.View `json:"asks"`
 	}
 	for _, s := range []*signedIn{r.bo, kai} {
 		_ = json.Unmarshal(s.call("GET", "/api/v1/asks", "", 200), &list)

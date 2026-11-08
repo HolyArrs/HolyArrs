@@ -13,7 +13,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/asks"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/requests"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
@@ -276,7 +276,7 @@ func (a *API) lookupTitles(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			if v.TitleID != 0 {
-				if v.Has4K, err = asks.HasFourK(r.Context(), db, v.TitleID); err != nil {
+				if v.Has4K, err = requests.HasFourK(r.Context(), db, v.TitleID); err != nil {
 					internal(w, err)
 					return
 				}

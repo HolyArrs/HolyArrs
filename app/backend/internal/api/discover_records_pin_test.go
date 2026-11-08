@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/asks"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/requests"
 )
 
 // rdpFill sets every exported field to a fixed non-zero value, so a
@@ -91,5 +91,5 @@ func TestRDPRecordJSON(t *testing.T) {
 	t.Run("ask_brief", func(t *testing.T) { rdpGolden[askBrief](t, "rdp_ask_brief") })
 	t.Run("asked_by_entry", func(t *testing.T) { rdpGolden[askedByEntry](t, "rdp_asked_by_entry") })
 	t.Run("ask_limit_view", func(t *testing.T) { rdpGolden[askLimitView](t, "rdp_ask_limit_view") })
-	t.Run("ask_view", func(t *testing.T) { rdpGolden[asks.View](t, "rdp_ask_view") })
+	t.Run("ask_view", func(t *testing.T) { rdpGolden[requests.View](t, "rdp_ask_view") })
 }

@@ -18,7 +18,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/lists"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/requests"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
@@ -53,7 +53,7 @@ func listSetup(t *testing.T) (*httptest.Server, *database.Store) {
 	lib := &library.Service{Store: s, Queue: q, Metadata: md}
 	lib.Register(q)
 	q.Handle(library.KindSearchSlot, func(context.Context, *jobs.Run) error { return nil })
-	ls := &lists.Service{Store: s, Queue: q, Library: lib, Metadata: md, TMDBBase: fake.URL,
+	ls := &requests.OutsideLists{Store: s, Queue: q, Library: lib, Metadata: md, TMDBBase: fake.URL,
 		TMDBToken:   func(context.Context) (string, error) { return "TOKEN_FOR_TEST_ONLY", nil },
 		TraktClient: func(ctx context.Context) (string, error) { return v.Setting(ctx, "links", "trakt_client_id") }}
 	ls.Register(q)

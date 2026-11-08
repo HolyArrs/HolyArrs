@@ -1,4 +1,4 @@
-package lists
+package requests
 
 import (
 	"bytes"
@@ -27,8 +27,8 @@ import (
 // cannot run forever.
 const maxPages = 20
 
-// Service reads Outside lists and adds their movies or shows to the Library.
-type Service struct {
+// OutsideLists reads Outside lists and adds their movies or shows to the Library.
+type OutsideLists struct {
 	Store    *database.Store
 	Queue    *jobs.Queue
 	Library  *library.Service
@@ -45,8 +45,8 @@ type Service struct {
 	Now         func() time.Time
 }
 
-// Result counts what one sync of one list did.
-type Result struct {
+// OutsideListResult counts what one sync of one list did.
+type OutsideListResult struct {
 	Found    int      `json:"found"`
 	Added    int      `json:"added"`
 	Already  int      `json:"already"`
@@ -60,12 +60,12 @@ type Result struct {
 type entry struct{ tmdb, imdb, tvdb, name string }
 
 // Register adds the list Job handler to the queue.
-func (s *Service) Register(q *jobs.Queue) { q.Handle(KindSync, s.handle) }
+func (s *OutsideLists) Register(q *jobs.Queue) { q.Handle(OutsideListSync, s.handle) }
 
 // ProbeSync reports whether any enabled list is due. It uses the same test
 // as the Job handler and writes nothing.
-func (s *Service) ProbeSync(ctx context.Context, now time.Time) (bool, any, error) {
-	ls, err := All(ctx, s.Store.Read())
+func (s *OutsideLists) ProbeSync(ctx context.Context, now time.Time) (bool, any, error) {
+	ls, err := AllOutsideLists(ctx, s.Store.Read())
 	if err != nil {
 		return true, nil, err
 	}
@@ -80,17 +80,17 @@ func (s *Service) ProbeSync(ctx context.Context, now time.Time) (bool, any, erro
 // Sync reads one list now and adds its new movies or shows. A failed read is
 // returned and saved on the list; a title that fails to add only counts in
 // the result.
-func (s *Service) Sync(ctx context.Context, id int64, by domain.Actor) (Result, error) {
-	res := Result{Names: []string{}}
-	l, err := Get(ctx, s.Store.Read(), id)
+func (s *OutsideLists) Sync(ctx context.Context, id int64, by domain.Actor) (OutsideListResult, error) {
+	res := OutsideListResult{Names: []string{}}
+	l, err := GetOutsideList(ctx, s.Store.Read(), id)
 	if err != nil {
 		return res, err
 	}
 	var es []entry
 	switch l.Kind {
-	case KindTMDB:
+	case ListTMDB:
 		es, err = s.fetchTMDB(ctx, l.Ref, l.TitleKind)
-	case KindTrakt:
+	case ListTrakt:
 		es, err = s.fetchTrakt(ctx, l.Ref, l.TitleKind)
 	default:
 		err = ErrKind
@@ -128,7 +128,7 @@ func (s *Service) Sync(ctx context.Context, id int64, by domain.Actor) (Result, 
 }
 
 // now returns the current time in UTC, from the test clock when one is set.
-func (s *Service) now() time.Time {
+func (s *OutsideLists) now() time.Time {
 	if s.Now != nil {
 		return s.Now().UTC()
 	}
@@ -136,7 +136,7 @@ func (s *Service) now() time.Time {
 }
 
 // client returns the configured HTTP client, or one with a 15 second timeout.
-func (s *Service) client() *http.Client {
+func (s *OutsideLists) client() *http.Client {
 	if s.HTTP != nil {
 		return s.HTTP
 	}
@@ -145,7 +145,7 @@ func (s *Service) client() *http.Client {
 
 // handle reads one list when the Job has a list_id, or every due list on the
 // schedule. One failing list does not stop the others.
-func (s *Service) handle(ctx context.Context, r *jobs.Run) error {
+func (s *OutsideLists) handle(ctx context.Context, r *jobs.Run) error {
 	by := domain.Actor{Kind: "job", ID: r.Job.ID}
 	if v, ok := r.Job.Params["list_id"].(float64); ok && v > 0 {
 		res, err := s.Sync(ctx, int64(v), by)
@@ -158,7 +158,7 @@ func (s *Service) handle(ctx context.Context, r *jobs.Run) error {
 		r.SetResult(out)
 		return nil
 	}
-	ls, err := All(ctx, s.Store.Read())
+	ls, err := AllOutsideLists(ctx, s.Store.Read())
 	if err != nil {
 		return err
 	}
@@ -180,7 +180,7 @@ func (s *Service) handle(ctx context.Context, r *jobs.Run) error {
 
 // addOne adds one list movie unless it is already in the Library or on the
 // Never-add list. It returns the outcome word, the title name and any error.
-func (s *Service) addOne(ctx context.Context, l domain.OutsideList, e entry, by domain.Actor) (string, string, error) {
+func (s *OutsideLists) addOne(ctx context.Context, l domain.OutsideList, e entry, by domain.Actor) (string, string, error) {
 	db := s.Store.Read()
 	lookup := ""
 	switch {
@@ -226,7 +226,7 @@ func (s *Service) addOne(ctx context.Context, l domain.OutsideList, e entry, by 
 // addShow adds one list show unless it is already in the Library or on the
 // Never-add list, using the list's folder, rules, seasons and search choice.
 // It returns the outcome word, the title name and any error.
-func (s *Service) addShow(ctx context.Context, l domain.OutsideList, e entry, by domain.Actor) (string, string, error) {
+func (s *OutsideLists) addShow(ctx context.Context, l domain.OutsideList, e entry, by domain.Actor) (string, string, error) {
 	ids := map[string]string{}
 	for k, v := range map[string]string{"tmdb": e.tmdb, "tvdb": e.tvdb, "imdb": e.imdb} {
 		if v != "" {
@@ -278,7 +278,7 @@ func (s *Service) addShow(ctx context.Context, l domain.OutsideList, e entry, by
 }
 
 // record saves the outcome on the list and in History, then tells open pages.
-func (s *Service) record(ctx context.Context, l domain.OutsideList, res Result, problem string, by domain.Actor) {
+func (s *OutsideLists) record(ctx context.Context, l domain.OutsideList, res OutsideListResult, problem string, by domain.Actor) {
 	now := s.now()
 	text := describe(res)
 	err := s.Store.Write(ctx, func(tx *sql.Tx) error {
@@ -305,7 +305,7 @@ func (s *Service) record(ctx context.Context, l domain.OutsideList, res Result, 
 
 // get fetches one page and decodes it into into. The identity keeps retry
 // state per service and key. The body is capped at 4 MiB.
-func (s *Service) get(ctx context.Context, what, endpoint, u string, head map[string]string, into any) (http.Header, error) {
+func (s *OutsideLists) get(ctx context.Context, what, endpoint, u string, head map[string]string, into any) (http.Header, error) {
 	identity := []string{what, endpoint}
 	for _, k := range []string{"Authorization", "trakt-api-key", "X-Trakt-Client-Id"} {
 		identity = append(identity, head[k])
@@ -363,7 +363,7 @@ func (s *Service) get(ctx context.Context, what, endpoint, u string, head map[st
 
 // fetchTMDB reads a TMDB list. A list can mix movies and shows, so only the
 // ones of the list's kind are kept.
-func (s *Service) fetchTMDB(ctx context.Context, ref, titleKind string) ([]entry, error) {
+func (s *OutsideLists) fetchTMDB(ctx context.Context, ref, titleKind string) ([]entry, error) {
 	if s.TMDBToken == nil {
 		return nil, metadata.ErrNoAccess
 	}
@@ -407,7 +407,7 @@ func (s *Service) fetchTMDB(ctx context.Context, ref, titleKind string) ([]entry
 
 // fetchTrakt reads a Trakt list or watchlist: its movies, or its shows for a
 // show list. Trakt gives the page count in a response header.
-func (s *Service) fetchTrakt(ctx context.Context, ref, titleKind string) ([]entry, error) {
+func (s *OutsideLists) fetchTrakt(ctx context.Context, ref, titleKind string) ([]entry, error) {
 	if s.TraktClient == nil {
 		return nil, ErrNoTraktKey
 	}

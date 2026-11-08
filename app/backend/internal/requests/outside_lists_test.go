@@ -1,4 +1,4 @@
-package lists
+package requests
 
 import (
 	"context"
@@ -99,13 +99,13 @@ func fakeTrakt(t *testing.T) *httptest.Server {
 type env struct {
 	s     *database.Store
 	q     *jobs.Queue
-	svc   *Service
+	svc   *OutsideLists
 	lf    domain.LibraryFolder
 	hits  *atomic.Int32
 	clock *time.Time
 }
 
-// setup opens a store and builds a Service wired to the fake servers.
+// setup opens a store and builds a OutsideLists wired to the fake servers.
 func setup(t *testing.T) *env {
 	t.Helper()
 	s, err := database.Open(t.TempDir(), database.Options{})
@@ -120,7 +120,7 @@ func setup(t *testing.T) *env {
 	lib.Register(q)
 	q.Handle(library.KindSearchSlot, func(context.Context, *jobs.Run) error { return nil })
 	hits := &atomic.Int32{}
-	svc := &Service{Store: s, Queue: q, Library: lib, Metadata: md,
+	svc := &OutsideLists{Store: s, Queue: q, Library: lib, Metadata: md,
 		TMDBBase: fakeTMDB(t, hits).URL, TraktBase: fakeTrakt(t).URL,
 		TMDBToken:   func(context.Context) (string, error) { return fakeTMDBToken, nil },
 		TraktClient: func(context.Context) (string, error) { return fakeTraktClient, nil },
@@ -150,45 +150,45 @@ func titles(t *testing.T, s *database.Store) map[string]domain.Title {
 func TestAdd_InputChecks(t *testing.T) {
 	e := setup(t)
 	ctx := context.Background()
-	bad := []Input{
-		{Name: "", Kind: KindTMDB, Ref: "42"},
+	bad := []OutsideListInput{
+		{Name: "", Kind: ListTMDB, Ref: "42"},
 		{Name: "x", Kind: "imdb", Ref: "42"},
-		{Name: "x", Kind: KindTMDB, Ref: "forty-two"},
-		{Name: "x", Kind: KindTrakt, Ref: "no-slash"},
-		{Name: "x", Kind: KindTMDB, Ref: "42", SyncEveryHours: 1},
-		{Name: "x", Kind: KindTMDB, Ref: "42", LibraryFolderID: 999},
-		{Name: "x", Kind: KindTMDB, Ref: "42", PickRulesID: 999},
+		{Name: "x", Kind: ListTMDB, Ref: "forty-two"},
+		{Name: "x", Kind: ListTrakt, Ref: "no-slash"},
+		{Name: "x", Kind: ListTMDB, Ref: "42", SyncEveryHours: 1},
+		{Name: "x", Kind: ListTMDB, Ref: "42", LibraryFolderID: 999},
+		{Name: "x", Kind: ListTMDB, Ref: "42", PickRulesID: 999},
 	}
 	for _, in := range bad {
-		if _, err := Add(ctx, e.s, in, domain.System); err == nil {
+		if _, err := AddOutsideList(ctx, e.s, in, domain.System); err == nil {
 			t.Errorf("accepted %+v", in)
 		}
 	}
-	l, err := Add(ctx, e.s, Input{Name: "Lab list", Kind: KindTMDB, Ref: "https://www.themoviedb.org/list/42-lab-list"}, domain.System)
+	l, err := AddOutsideList(ctx, e.s, OutsideListInput{Name: "Lab list", Kind: ListTMDB, Ref: "https://www.themoviedb.org/list/42-lab-list"}, domain.System)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if l.Ref != "42" || l.SyncEveryHours != 12 || !l.Enabled || l.LibraryFolderID != e.lf.ID {
 		t.Fatalf("defaults %+v", l)
 	}
-	if _, err := Add(ctx, e.s, Input{Name: "lab list", Kind: KindTMDB, Ref: "43"}, domain.System); !errors.Is(err, ErrNameTaken) {
+	if _, err := AddOutsideList(ctx, e.s, OutsideListInput{Name: "lab list", Kind: ListTMDB, Ref: "43"}, domain.System); !errors.Is(err, ErrNameTaken) {
 		t.Fatalf("same name: %v", err)
 	}
 	off := false
-	l, err = Edit(ctx, e.s, l.ID, Input{Name: "Lab list", Kind: KindTMDB, Ref: "42", Enabled: &off, SyncEveryHours: 24}, domain.System)
+	l, err = EditOutsideList(ctx, e.s, l.ID, OutsideListInput{Name: "Lab list", Kind: ListTMDB, Ref: "42", Enabled: &off, SyncEveryHours: 24}, domain.System)
 	if err != nil || l.Enabled || l.SyncEveryHours != 24 {
 		t.Fatalf("edit %+v %v", l, err)
 	}
-	if err := Remove(ctx, e.s, l.ID); err != nil {
+	if err := RemoveOutsideList(ctx, e.s, l.ID); err != nil {
 		t.Fatal(err)
 	}
-	if err := Remove(ctx, e.s, l.ID); !errors.Is(err, database.ErrNotFound) {
+	if err := RemoveOutsideList(ctx, e.s, l.ID); !errors.Is(err, database.ErrNotFound) {
 		t.Fatalf("remove twice: %v", err)
 	}
-	// A step given to Add runs in the same write, so when it fails no list
+	// A step given to AddOutsideList runs in the same write, so when it fails no list
 	// is kept.
 	var got int64
-	l, err = Add(ctx, e.s, Input{Name: "Hooked", Kind: KindTMDB, Ref: "44"}, domain.System, func(tx *sql.Tx, id int64) error {
+	l, err = AddOutsideList(ctx, e.s, OutsideListInput{Name: "Hooked", Kind: ListTMDB, Ref: "44"}, domain.System, func(tx *sql.Tx, id int64) error {
 		got = id
 		return nil
 	})
@@ -196,10 +196,10 @@ func TestAdd_InputChecks(t *testing.T) {
 		t.Fatalf("then step: id %d, %v", got, err)
 	}
 	failed := errors.New("mark failed")
-	if _, err := Add(ctx, e.s, Input{Name: "Dropped", Kind: KindTMDB, Ref: "45"}, domain.System, func(*sql.Tx, int64) error { return failed }); !errors.Is(err, failed) {
+	if _, err := AddOutsideList(ctx, e.s, OutsideListInput{Name: "Dropped", Kind: ListTMDB, Ref: "45"}, domain.System, func(*sql.Tx, int64) error { return failed }); !errors.Is(err, failed) {
 		t.Fatalf("failing step: %v", err)
 	}
-	if all, _ := All(ctx, e.s.Read()); len(all) != 1 || all[0].Name != "Hooked" {
+	if all, _ := AllOutsideLists(ctx, e.s.Read()); len(all) != 1 || all[0].Name != "Hooked" {
 		t.Fatalf("lists %+v", all)
 	}
 }
@@ -210,7 +210,7 @@ func TestSync_TMDBListAddsMoviesAndSkipsNeverAdd(t *testing.T) {
 	if _, err := library.AddNeverAdd(ctx, e.s, domain.NeverAdd{SourceIDs: map[string]string{"tmdb": "900003"}, Name: "Quiet Orchard"}, domain.System); err != nil {
 		t.Fatal(err)
 	}
-	l, err := Add(ctx, e.s, Input{Name: "Lab list", Kind: KindTMDB, Ref: "42"}, domain.System)
+	l, err := AddOutsideList(ctx, e.s, OutsideListInput{Name: "Lab list", Kind: ListTMDB, Ref: "42"}, domain.System)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -225,7 +225,7 @@ func TestSync_TMDBListAddsMoviesAndSkipsNeverAdd(t *testing.T) {
 	if ts["Paper Harbour"].WhyAdded != "list" || len(ts) != 1 {
 		t.Fatalf("titles %+v", ts)
 	}
-	got, _ := Get(ctx, e.s.Read(), l.ID)
+	got, _ := GetOutsideList(ctx, e.s.Read(), l.ID)
 	if got.LastSyncedAt == nil || got.LastError != "" || !strings.Contains(got.LastResult, "1 added") {
 		t.Fatalf("list after sync %+v", got)
 	}
@@ -243,7 +243,7 @@ func TestSync_TMDBListAddsMoviesAndSkipsNeverAdd(t *testing.T) {
 func TestSync_TraktListAndWatchlist(t *testing.T) {
 	e := setup(t)
 	ctx := context.Background()
-	l, err := Add(ctx, e.s, Input{Name: "Favourites", Kind: KindTrakt, Ref: "luis/favourites", SearchOnAdd: true}, domain.System)
+	l, err := AddOutsideList(ctx, e.s, OutsideListInput{Name: "Favourites", Kind: ListTrakt, Ref: "luis/favourites", SearchOnAdd: true}, domain.System)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -251,7 +251,7 @@ func TestSync_TraktListAndWatchlist(t *testing.T) {
 	if err != nil || res.Added != 2 {
 		t.Fatalf("result %+v %v", res, err) // Salt Choir has only an IMDb id
 	}
-	w, _ := Add(ctx, e.s, Input{Name: "Watchlist", Kind: KindTrakt, Ref: "https://trakt.tv/users/luis/watchlist"}, domain.System)
+	w, _ := AddOutsideList(ctx, e.s, OutsideListInput{Name: "Watchlist", Kind: ListTrakt, Ref: "https://trakt.tv/users/luis/watchlist"}, domain.System)
 	if w.Ref != "luis/watchlist" {
 		t.Fatalf("ref %q", w.Ref)
 	}
@@ -267,16 +267,16 @@ func TestSync_FailedFetchIsRecorded(t *testing.T) {
 	e := setup(t)
 	ctx := context.Background()
 	e.svc.TMDBToken = func(context.Context) (string, error) { return "wrong", nil }
-	l, _ := Add(ctx, e.s, Input{Name: "Lab list", Kind: KindTMDB, Ref: "42"}, domain.System)
+	l, _ := AddOutsideList(ctx, e.s, OutsideListInput{Name: "Lab list", Kind: ListTMDB, Ref: "42"}, domain.System)
 	if _, err := e.svc.Sync(ctx, l.ID, domain.System); err == nil {
 		t.Fatal("no error from a refused token")
 	}
-	got, _ := Get(ctx, e.s.Read(), l.ID)
+	got, _ := GetOutsideList(ctx, e.s.Read(), l.ID)
 	if got.LastError == "" || strings.Contains(got.LastError, fakeTMDBToken) {
 		t.Fatalf("error %q", got.LastError)
 	}
 	e.svc.TraktClient = func(context.Context) (string, error) { return "", nil }
-	tl, _ := Add(ctx, e.s, Input{Name: "Trakt", Kind: KindTrakt, Ref: "luis/favourites"}, domain.System)
+	tl, _ := AddOutsideList(ctx, e.s, OutsideListInput{Name: "Trakt", Kind: ListTrakt, Ref: "luis/favourites"}, domain.System)
 	if _, err := e.svc.Sync(ctx, tl.ID, domain.System); !errors.Is(err, ErrNoTraktKey) {
 		t.Fatalf("no key: %v", err)
 	}
@@ -290,17 +290,17 @@ func TestHandle_ScheduleReadsOnlyDueEnabledLists(t *testing.T) {
 	}
 	t.Cleanup(e.q.Stop)
 	off := false
-	_, _ = Add(ctx, e.s, Input{Name: "Lab list", Kind: KindTMDB, Ref: "42"}, domain.System)
-	_, _ = Add(ctx, e.s, Input{Name: "Off", Kind: KindTMDB, Ref: "42", Enabled: &off}, domain.System)
+	_, _ = AddOutsideList(ctx, e.s, OutsideListInput{Name: "Lab list", Kind: ListTMDB, Ref: "42"}, domain.System)
+	_, _ = AddOutsideList(ctx, e.s, OutsideListInput{Name: "Off", Kind: ListTMDB, Ref: "42", Enabled: &off}, domain.System)
 	var sched int
-	_ = e.s.Read().QueryRow("SELECT count(*) FROM schedules WHERE kind = ? AND enabled = 1", KindSync).Scan(&sched)
+	_ = e.s.Read().QueryRow("SELECT count(*) FROM schedules WHERE kind = ? AND enabled = 1", OutsideListSync).Scan(&sched)
 	if sched != 1 {
 		t.Fatal("no schedule row for list syncs")
 	}
 	run := func() {
 		t.Helper()
 		before := e.hits.Load()
-		id, _, err := e.q.Enqueue(ctx, KindSync, nil, map[string]any{"scheduled": true}, "", domain.System)
+		id, _, err := e.q.Enqueue(ctx, OutsideListSync, nil, map[string]any{"scheduled": true}, "", domain.System)
 		if err != nil {
 			t.Fatal(err)
 		}

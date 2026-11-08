@@ -6,15 +6,15 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/asks"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/requests"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
-func reportOf(t *testing.T, b []byte) asks.ReportView {
+func reportOf(t *testing.T, b []byte) requests.ReportView {
 	t.Helper()
 	var x struct {
-		Report asks.ReportView `json:"report"`
+		Report requests.ReportView `json:"report"`
 	}
 	if err := json.Unmarshal(b, &x); err != nil {
 		t.Fatal(err)
@@ -23,7 +23,7 @@ func reportOf(t *testing.T, b []byte) asks.ReportView {
 }
 
 type reportList struct {
-	Reports []asks.ReportView `json:"reports"`
+	Reports []requests.ReportView `json:"reports"`
 	Open    *int              `json:"open"`
 }
 
@@ -74,7 +74,7 @@ func TestReportsOverHTTP(t *testing.T) {
 	}
 	r.owner.call("POST", "/api/v1/reports/"+itoa(mine.ID)+"/fix", ``, 409)
 	var inbox struct {
-		Messages []asks.Message `json:"messages"`
+		Messages []requests.Message `json:"messages"`
 		Unread   int            `json:"unread"`
 	}
 	_ = json.Unmarshal(r.ana.call("GET", "/api/v1/messages", "", 200), &inbox)
