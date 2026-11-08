@@ -286,7 +286,7 @@ func New(s Server) *API {
 		s.Media = &mediaserver.Linker{Store: s.Store, Vault: s.Secrets}
 	}
 	if s.Subtitles == nil {
-		s.Subtitles = newSubtitles(s)
+		s.Subtitles = subtitles.NewService(s.Store, s.Secrets, s.Live, s.Queue)
 	}
 	if s.Search == nil {
 		q := s.Queue
@@ -414,7 +414,7 @@ func (a *API) Routes(rt *webserver.Router) {
 	a.showRoutes(m)
 	a.musicRoutes(m)
 	a.musicPageRoutes(m)
-	a.subtitleRoutes(m)
+	subtitles.NewHandlers(a.s.Store, a.s.Secrets, a.s.Subtitles).Routes(m)
 	a.importSecretsRoutes(m)
 	a.thisAppRoutes(m)
 	a.dataPackRoutes(m)
@@ -541,6 +541,9 @@ func (a *API) healthz(w http.ResponseWriter, _ *http.Request) {
 	}
 	_, _ = w.Write([]byte("ok\n"))
 }
+
+// SubtitleFileView is one main File with its subtitles.
+type SubtitleFileView = subtitles.FileView
 
 func writeJSON(w http.ResponseWriter, code int, v any) { webserver.WriteJSON(w, code, v) }
 
