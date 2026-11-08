@@ -32,7 +32,6 @@ var oversized = map[string]bool{
 	"app/backend/internal/metadata/discover.go":              true,
 	"app/backend/internal/library/rename.go":                 true,
 	"app/backend/internal/auth/perms.go":                     true,
-	"app/backend/internal/sources/client.go":                 true,
 	"app/frontend/src/lib/SigninBackdrop.svelte":             true,
 	"app/backend/internal/music/rowtpl/page.go":              true,
 	"app/frontend/src/lib/Account.svelte":                    true,
