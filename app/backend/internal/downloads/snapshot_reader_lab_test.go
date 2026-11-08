@@ -1,6 +1,6 @@
 //go:build lab
 
-package dlsync
+package downloads
 
 import (
 	"context"
@@ -18,7 +18,6 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
 )
 
 // TestLabReaderGrabToFinished runs the reader and the Manager together against the lab qBittorrent only, never a real client, behind a counting proxy:
@@ -46,7 +45,7 @@ func TestLabReaderGrabToFinished(t *testing.T) {
 		proxy.ServeHTTP(w, r)
 	}))
 	defer front.Close()
-	q := downloader.NewQbittorrentKey(front.URL, key, nil)
+	q := NewQbittorrentKey(front.URL, key, nil)
 	const testHash = "29be7bfa8759643f2d5dac9f94d516c3378696ed"
 	fastTimers(t)
 
@@ -75,7 +74,7 @@ func TestLabReaderGrabToFinished(t *testing.T) {
 			t.Fatal(err)
 		}
 		r := &rig{db: db}
-		r.m = &downloader.Manager{Store: db, HealthEvery: time.Hour, Engine: func(domain.Downloader) (downloader.Engine, error) { return q, nil }}
+		r.m = &Manager{Store: db, HealthEvery: time.Hour, Engine: func(domain.Downloader) (Engine, error) { return q, nil }}
 		r.s = &Sync{Store: &Store{}, DB: db, Manager: r.m, Lines: testLines}
 		ctx, cancel := context.WithCancel(context.Background())
 		done := make(chan struct{})
@@ -92,7 +91,7 @@ func TestLabReaderGrabToFinished(t *testing.T) {
 		}
 		mu.Unlock()
 		start := time.Now()
-		if _, err := q.Add(context.Background(), downloader.AddRequest{URL: "http://fake-indexer/dune-part-two.torrent", Category: "holyarrs-labtest",
+		if _, err := q.Add(context.Background(), AddRequest{URL: "http://fake-indexer/dune-part-two.torrent", Category: "holyarrs-labtest",
 			SavePath: "/data/downloads/incomplete/holyarrs-labtest", InfoHash: testHash}); err != nil {
 			t.Fatal(err)
 		}

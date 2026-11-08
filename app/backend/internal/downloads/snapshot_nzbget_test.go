@@ -1,4 +1,4 @@
-package dlsync
+package downloads
 
 import (
 	"context"
@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
 )
 
 // nzbRPC answers listgroups, history and status like NZBGet and counts the calls.
@@ -58,7 +57,7 @@ func TestSync_NzbgetListsEveryJob(t *testing.T) {
 		setting string
 		want    int
 	}{{"", 4}, {"false", 2}} {
-		e := downloader.NewNZBGet(srv.URL, "u", "p", nil)
+		e := NewNZBGet(srv.URL, "u", "p", nil)
 		s, d := nzbRig(t, e, c.setting)
 		if err := s.read(context.Background(), d); err != nil {
 			t.Fatal(err)
@@ -67,7 +66,7 @@ func TestSync_NzbgetListsEveryJob(t *testing.T) {
 		if len(items) != c.want {
 			t.Fatalf("setting %q: %d items, want %d", c.setting, len(items), c.want)
 		}
-		if c.setting == "" && (items["nzbid-3"].State != downloader.StateFailed || items["nzbid-2"].State != downloader.StatePaused || items["nzbid-1"].Speed != 1024) {
+		if c.setting == "" && (items["nzbid-3"].State != StateFailed || items["nzbid-2"].State != StatePaused || items["nzbid-1"].Speed != 1024) {
 			t.Fatalf("items %+v", items)
 		}
 	}
@@ -85,12 +84,12 @@ func TestSync_NzbgetListsEveryJob(t *testing.T) {
 }
 
 // nzbRig builds a reader over a fake NZBGet.
-func nzbRig(t *testing.T, e downloader.Engine, outside string) (*Sync, domain.Downloader) {
+func nzbRig(t *testing.T, e Engine, outside string) (*Sync, domain.Downloader) {
 	t.Helper()
 	s, d := sabRig(t, nil, outside)
 	d.Adapter = "nzbget"
 	d.Category = "movies"
-	s.Manager = &downloader.Manager{Store: s.DB, Active: time.Second, Idle: time.Second, HealthEvery: time.Hour,
-		Engine: func(domain.Downloader) (downloader.Engine, error) { return e, nil }}
+	s.Manager = &Manager{Store: s.DB, Active: time.Second, Idle: time.Second, HealthEvery: time.Hour,
+		Engine: func(domain.Downloader) (Engine, error) { return e, nil }}
 	return s, d
 }

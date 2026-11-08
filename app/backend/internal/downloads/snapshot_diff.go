@@ -1,16 +1,14 @@
-package dlsync
+package downloads
 
 import (
 	"reflect"
 	"sort"
-
-	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
 )
 
 // jobFields lists the Job fields compared by Diff, found once by reflection
 // so a new Job field is compared without touching this file.
 var jobFields = func() []reflect.StructField {
-	t := reflect.TypeFor[downloader.Job]()
+	t := reflect.TypeFor[Job]()
 	out := make([]reflect.StructField, 0, t.NumField())
 	for i := range t.NumField() {
 		f := t.Field(i)
@@ -47,7 +45,7 @@ func (c Changes) Empty() bool {
 
 // Diff compares two reads item by item and field by field. The result is
 // sorted by id, so the same input always gives the same output.
-func Diff(prev, cur map[string]downloader.Job) Changes {
+func Diff(prev, cur map[string]Job) Changes {
 	var c Changes
 	for id, j := range cur {
 		p, ok := prev[id]
@@ -76,7 +74,7 @@ func Diff(prev, cur map[string]downloader.Job) Changes {
 
 // changedFields returns the names of the fields that differ between two
 // versions of one job. Pointers, slices and maps need a deep compare.
-func changedFields(a, b downloader.Job) []string {
+func changedFields(a, b Job) []string {
 	va, vb := reflect.ValueOf(a), reflect.ValueOf(b)
 	var out []string
 	for _, f := range jobFields {

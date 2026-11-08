@@ -7,18 +7,17 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/dlsync"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 )
 
 // feedStore does one background read by hand: every torrent Downloader's
 // whole list goes into the reader's Store (made when the API has none),
 // the way the reader's pollers fill it. The Downloads view reads only it.
-func feedStore(t *testing.T, a *API) *dlsync.Sync {
+func feedStore(t *testing.T, a *API) *downloads.Sync {
 	t.Helper()
 	if a.s.DLSync == nil {
-		a.s.DLSync = &dlsync.Sync{Store: &dlsync.Store{}, DB: a.s.Store}
+		a.s.DLSync = &downloads.Sync{Store: &downloads.Store{}, DB: a.s.Store}
 	}
 	ctx := context.Background()
 	ds, err := database.Select[domain.Downloader](ctx, a.read(), "downloaders", "1=1")
@@ -29,17 +28,17 @@ func feedStore(t *testing.T, a *API) *dlsync.Sync {
 		if d.Removed || d.Protocol != "torrent" {
 			continue
 		}
-		var jobs []downloader.Job
-		err := a.manager().ControlEngine(ctx, d, func(e downloader.Engine) error {
-			al, ok := e.(downloader.AllLister)
+		var jobs []downloads.Job
+		err := a.manager().ControlEngine(ctx, d, func(e downloads.Engine) error {
+			al, ok := e.(downloads.AllLister)
 			if !ok {
-				return downloader.ErrNotSupported
+				return downloads.ErrNotSupported
 			}
 			var err error
 			jobs, err = al.ListAll(ctx)
 			return err
 		})
-		if errors.Is(err, downloader.ErrNotSupported) {
+		if errors.Is(err, downloads.ErrNotSupported) {
 			err = nil
 		}
 		if err != nil {

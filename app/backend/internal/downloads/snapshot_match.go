@@ -1,4 +1,4 @@
-package dlsync
+package downloads
 
 import (
 	"context"
@@ -76,7 +76,7 @@ func (s *Sync) matchStep(ctx context.Context) int {
 					out = "nomatch"
 				}
 				_, e := tx.Exec("UPDATE dl_match_queue SET attempts = ?, next_try_at = ?, last_error = ?, outcome = ? WHERE downloader_id = ? AND key = ?",
-					tries, at.Add(matchBackoff(tries)).UTC().Format(database.TimeLayout), firstLine(err.Error()), out, r.id, r.key)
+					tries, at.Add(matchBackoff(tries)).UTC().Format(database.TimeLayout), snapshotFirstLine(err.Error()), out, r.id, r.key)
 				return e
 			}
 			var tid any
@@ -120,9 +120,9 @@ func matchBackoff(failures int) time.Duration {
 	return 7 * 24 * time.Hour
 }
 
-// firstLine keeps an error short enough to store: its first line, or its
+// snapshotFirstLine keeps an error short enough to store: its first line, or its
 // first 300 bytes when it has no line break.
-func firstLine(s string) string {
+func snapshotFirstLine(s string) string {
 	for i, c := range s {
 		if c == '\n' {
 			return s[:i]

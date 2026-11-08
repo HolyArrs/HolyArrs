@@ -11,7 +11,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/health"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
@@ -351,7 +351,7 @@ func (a *API) statusInput(ctx context.Context, now time.Time) (statusInput, erro
 	}
 	in.Downloaders = []namedState{}
 	for _, d := range dls {
-		in.Downloaders = append(in.Downloaders, namedState{d.Name, downloader.HealthOf(d, now).State})
+		in.Downloaders = append(in.Downloaders, namedState{d.Name, downloads.HealthOf(d, now).State})
 	}
 	if a.s.Backups != nil {
 		if bs, err := a.s.Backups.List(); err == nil {

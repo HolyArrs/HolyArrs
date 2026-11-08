@@ -13,7 +13,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 )
 
 func manageBase(t *testing.T) (x *dl41, f *allClient, base string) {
@@ -233,7 +233,7 @@ func TestClientHints(t *testing.T) {
 func TestTrackerRoutes(t *testing.T) {
 	x, f, base := manageBase(t)
 	item := base + "/items/" + outHash + "/trackers"
-	var sw struct{ Trackers []downloader.Tracker }
+	var sw struct{ Trackers []downloads.Tracker }
 	_ = json.Unmarshal(do(t, "GET", base+"/items/"+outHash+"/swarm", "", 200), &sw)
 	if len(sw.Trackers) != 1 || strings.Contains(sw.Trackers[0].URL, "passkey") || sw.Trackers[0].Ref == "" {
 		t.Fatalf("swarm %+v", sw)

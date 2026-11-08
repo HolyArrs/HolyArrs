@@ -12,7 +12,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 )
 
 // Guards for the hand steering routes: what a person may name as a folder
@@ -77,13 +77,13 @@ func (a *API) clientFolder(ctx context.Context, downloaderID int64, category, fo
 	}
 	var dr domain.Downloader
 	if err := database.Get(ctx, a.s.Store.Read(), "downloaders", downloaderID, &dr); err != nil || dr.Removed {
-		return "", "", downloader.ErrNoDownloader
+		return "", "", downloads.ErrNoDownloader
 	}
-	var base downloader.SaveBase
-	err := a.manager().ControlTorrentClient(ctx, downloaderID, false, func(e downloader.Engine) error {
-		t, ok := e.(downloader.TorrentFolders)
+	var base downloads.SaveBase
+	err := a.manager().ControlTorrentClient(ctx, downloaderID, false, func(e downloads.Engine) error {
+		t, ok := e.(downloads.TorrentFolders)
 		if !ok {
-			return downloader.ErrNotSupported
+			return downloads.ErrNotSupported
 		}
 		var err error
 		base, err = t.SaveBase(ctx)

@@ -13,7 +13,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/alerts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediaserver"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
@@ -517,11 +517,11 @@ func (r *run) downloaderItem(item, adapter, name, addr, user, secret string, loc
 			r.done(item, "paused until you check and resume it")
 			return
 		}
-		in := downloader.Input{Name: name, Adapter: adapter, URL: addr, Secret: secret, AllowLocal: &local}
+		in := downloads.Input{Name: name, Adapter: adapter, URL: addr, Secret: secret, AllowLocal: &local}
 		if hasUser {
 			in.Username = &user
 		}
-		if _, err := downloader.Add(r.ctx, r.d.Store, r.d.Vault, in, r.d.By, createdPaused("downloaders")); err != nil {
+		if _, err := downloads.Add(r.ctx, r.d.Store, r.d.Vault, in, r.d.By, createdPaused("downloaders")); err != nil {
 			r.fail(item, err)
 			return
 		}
@@ -542,7 +542,7 @@ func (r *run) downloaderItem(item, adapter, name, addr, user, secret string, loc
 			return
 		}
 		if !r.dry {
-			if _, err := downloader.SetPaused(r.ctx, r.d.Store, d.ID, true, r.d.By); err != nil {
+			if _, err := downloads.SetPaused(r.ctx, r.d.Store, d.ID, true, r.d.By); err != nil {
 				r.fail(item, err)
 				return
 			}
@@ -556,17 +556,17 @@ func (r *run) downloaderItem(item, adapter, name, addr, user, secret string, loc
 	}
 	note := ""
 	if cleanURL(d.URL) != addr || !r.secretIs(d.SecretRef, secret) {
-		if _, err := downloader.SetPaused(r.ctx, r.d.Store, d.ID, true, r.d.By); err != nil {
+		if _, err := downloads.SetPaused(r.ctx, r.d.Store, d.ID, true, r.d.By); err != nil {
 			r.fail(item, err)
 			return
 		}
 		note = changedNote
 	}
-	in := downloader.Input{Name: d.Name, URL: addr, Secret: secret, AllowLocal: &local}
+	in := downloads.Input{Name: d.Name, URL: addr, Secret: secret, AllowLocal: &local}
 	if hasUser {
 		in.Username = &user
 	}
-	if _, err := downloader.Change(r.ctx, r.d.Store, r.d.Vault, d.ID, in, r.d.By); err != nil {
+	if _, err := downloads.Change(r.ctx, r.d.Store, r.d.Vault, d.ID, in, r.d.By); err != nil {
 		r.fail(item, err)
 		return
 	}

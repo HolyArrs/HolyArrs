@@ -8,9 +8,8 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/dlsync"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 )
 
@@ -60,7 +59,7 @@ func (a *API) storeRows(ctx context.Context, names map[int64]domain.Downloader, 
 }
 
 // syncHealth is one client's state as the background reader sees it.
-func syncHealth(d domain.Downloader, snap dlsync.Snapshot) ClientHealth {
+func syncHealth(d domain.Downloader, snap downloads.Snapshot) ClientHealth {
 	h := ClientHealth{ID: d.ID, Name: d.Name, Health: "ok", SeenAt: snap.ReadAt}
 	switch {
 	case snap.Fallback:
@@ -145,11 +144,11 @@ func sortClientRows(out []DownloadRow) {
 
 // TorrentLines is the torrent log's line format for one item going from
 // prev to cur, for the reader's persister.
-func TorrentLines(prev, cur downloader.Job) []dlsync.LogLine {
+func TorrentLines(prev, cur downloads.Job) []downloads.LogLine {
 	ls := stateLines(snapOf(prev), snapOf(cur))
-	out := make([]dlsync.LogLine, len(ls))
+	out := make([]downloads.LogLine, len(ls))
 	for i, l := range ls {
-		out[i] = dlsync.LogLine{Kind: l.Kind, Summary: l.Summary}
+		out[i] = downloads.LogLine{Kind: l.Kind, Summary: l.Summary}
 	}
 	return out
 }

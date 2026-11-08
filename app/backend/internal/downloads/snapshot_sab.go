@@ -1,17 +1,15 @@
-package dlsync
+package downloads
 
 import (
 	"context"
 	"sync"
-
-	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
 )
 
 // SabSource is what a SABnzbd poll needs: the guarded engine's queue and
 // finished-list reads.
 type SabSource interface {
-	downloader.QueueReader
-	downloader.HistoryReader
+	QueueReader
+	HistoryReader
 }
 
 // SabCursors keeps the finished list and its change counter per Downloader
@@ -25,8 +23,8 @@ type SabCursors struct {
 
 // SabPoll is one read of a SABnzbd: queue and finished list, merged.
 type SabPoll struct {
-	Jobs        []downloader.Job
-	Head        downloader.QueueHead
+	Jobs        []Job
+	Head        QueueHead
 	HistoryRead bool // the finished list was read because it had changed
 	Reset       bool // the counter went down, so SABnzbd restarted
 }
@@ -34,7 +32,7 @@ type SabPoll struct {
 // sabCursor is the last finished list and counter of one SABnzbd.
 type sabCursor struct {
 	last int64
-	hist []downloader.Job
+	hist []Job
 }
 
 // Poll reads the queue and, when it changed, the finished list. Any error
@@ -69,7 +67,7 @@ func (c *SabCursors) Poll(ctx context.Context, id int64, gen uint64, s SabSource
 		cur.hist, cur.last, p.HistoryRead = h.Jobs, h.Last, true
 	}
 	seen := make(map[string]bool, len(q.Jobs))
-	p.Jobs = make([]downloader.Job, 0, len(q.Jobs)+len(cur.hist))
+	p.Jobs = make([]Job, 0, len(q.Jobs)+len(cur.hist))
 	for _, j := range q.Jobs {
 		seen[j.ID] = true
 		p.Jobs = append(p.Jobs, j)

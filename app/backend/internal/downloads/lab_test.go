@@ -1,6 +1,6 @@
 //go:build lab
 
-package downloader
+package downloads
 
 import (
 	"context"

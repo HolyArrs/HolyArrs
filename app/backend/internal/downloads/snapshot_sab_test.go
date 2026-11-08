@@ -1,4 +1,4 @@
-package dlsync
+package downloads
 
 import (
 	"context"
@@ -10,68 +10,67 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
 )
 
-// fakeSab is a SABnzbd as the reader sees it: a queue, a finished list and its change counter.
-type fakeSab struct {
+// fakeSnapshotSab is a SABnzbd as the reader sees it: a queue, a finished list and its change counter.
+type fakeSnapshotSab struct {
 	mu      sync.Mutex
-	queue   []downloader.Job
-	hist    []downloader.Job
+	queue   []Job
+	hist    []Job
 	counter int64
 	sent    []int64 // counters History was called with
 	histErr error
 }
 
-func (f *fakeSab) Health(context.Context) (downloader.Health, error) { return downloader.Health{}, nil }
-func (f *fakeSab) Add(context.Context, downloader.AddRequest) (string, error) {
+func (f *fakeSnapshotSab) Health(context.Context) (Health, error) { return Health{}, nil }
+func (f *fakeSnapshotSab) Add(context.Context, AddRequest) (string, error) {
 	return "", errors.New("no")
 }
-func (f *fakeSab) List(context.Context, string) ([]downloader.Job, error) {
+func (f *fakeSnapshotSab) List(context.Context, string) ([]Job, error) {
 	return nil, errors.New("the reader must not use List for SABnzbd")
 }
-func (f *fakeSab) Get(context.Context, string) (downloader.Job, error) {
-	return downloader.Job{}, downloader.ErrNotFound
+func (f *fakeSnapshotSab) Get(context.Context, string) (Job, error) {
+	return Job{}, ErrNotFound
 }
-func (f *fakeSab) Remove(context.Context, string, bool) error { return nil }
-func (f *fakeSab) Queue(context.Context) (downloader.QueuePage, error) {
+func (f *fakeSnapshotSab) Remove(context.Context, string, bool) error { return nil }
+func (f *fakeSnapshotSab) Queue(context.Context) (QueuePage, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	return downloader.QueuePage{Head: downloader.QueueHead{Speed: 1}, Jobs: append([]downloader.Job(nil), f.queue...)}, nil
+	return QueuePage{Head: QueueHead{Speed: 1}, Jobs: append([]Job(nil), f.queue...)}, nil
 }
-func (f *fakeSab) History(_ context.Context, since int64) (downloader.HistoryPage, error) {
+func (f *fakeSnapshotSab) History(_ context.Context, since int64) (HistoryPage, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.sent = append(f.sent, since)
 	if f.histErr != nil {
-		return downloader.HistoryPage{}, f.histErr
+		return HistoryPage{}, f.histErr
 	}
 	if since > 0 && since == f.counter {
-		return downloader.HistoryPage{Last: since}, nil
+		return HistoryPage{Last: since}, nil
 	}
-	return downloader.HistoryPage{Last: f.counter, Changed: true, Jobs: append([]downloader.Job(nil), f.hist...)}, nil
+	return HistoryPage{Last: f.counter, Changed: true, Jobs: append([]Job(nil), f.hist...)}, nil
 }
 
 // sabJob makes a job with the given id, category and state.
-func sabJob(id, cat, state string) downloader.Job {
+func sabJob(id, cat, state string) Job {
 	p := 0.5
-	if state == downloader.StateFinished || state == downloader.StateFailed {
+	if state == StateFinished || state == StateFailed {
 		p = 1
 	}
-	return downloader.Job{ID: id, Name: "Show.S01E01." + id, Category: cat, State: state, Progress: p}
+	return Job{ID: id, Name: "Show.S01E01." + id, Category: cat, State: state, Progress: p}
 }
 
 // The finished list must be read only when its counter moves, a lower counter means a restart, and an error must drop the counter.
 func TestSabCursors_FastPathResetAndErrors(t *testing.T) {
-	f := &fakeSab{queue: []downloader.Job{sabJob("q1", "tv", downloader.StateDownloading)},
-		hist: []downloader.Job{sabJob("h1", "tv", downloader.StateFinished), sabJob("q1", "tv", downloader.StateFinished)}, counter: 5}
+	f := &fakeSnapshotSab{queue: []Job{sabJob("q1", "tv", StateDownloading)},
+		hist: []Job{sabJob("h1", "tv", StateFinished), sabJob("q1", "tv", StateFinished)}, counter: 5}
 	var c SabCursors
 	ctx := context.Background()
 	p, err := c.Poll(ctx, 1, 0, f)
 	if err != nil || !p.HistoryRead || len(p.Jobs) != 2 {
 		t.Fatalf("first: %v %+v", err, p)
 	}
-	if p.Jobs[0].State != downloader.StateDownloading {
+	if p.Jobs[0].State != StateDownloading {
 		t.Fatal("the queue row must win over the finished row with the same id")
 	}
 	// Unchanged counter: the finished list is kept, not read.
@@ -80,7 +79,7 @@ func TestSabCursors_FastPathResetAndErrors(t *testing.T) {
 		t.Fatalf("unchanged: %v %+v sent %v", err, p, f.sent)
 	}
 	// Lower counter: SABnzbd restarted, so a full read from 0 follows.
-	f.counter, f.hist = 2, []downloader.Job{sabJob("h2", "tv", downloader.StateFailed)}
+	f.counter, f.hist = 2, []Job{sabJob("h2", "tv", StateFailed)}
 	p, err = c.Poll(ctx, 1, 0, f)
 	if err != nil || !p.Reset || !p.HistoryRead || len(p.Jobs) != 2 {
 		t.Fatalf("reset: %v %+v", err, p)
@@ -104,7 +103,7 @@ func TestSabCursors_FastPathResetAndErrors(t *testing.T) {
 }
 
 // sabRig builds a reader over a fake SABnzbd.
-func sabRig(t *testing.T, f *fakeSab, outside string) (*Sync, domain.Downloader) {
+func sabRig(t *testing.T, f *fakeSnapshotSab, outside string) (*Sync, domain.Downloader) {
 	t.Helper()
 	db, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
@@ -126,8 +125,8 @@ func sabRig(t *testing.T, f *fakeSab, outside string) (*Sync, domain.Downloader)
 	if err != nil {
 		t.Fatal(err)
 	}
-	m := &downloader.Manager{Store: db, Active: time.Second, Idle: time.Second, HealthEvery: time.Hour,
-		Engine: func(domain.Downloader) (downloader.Engine, error) { return f, nil }}
+	m := &Manager{Store: db, Active: time.Second, Idle: time.Second, HealthEvery: time.Hour,
+		Engine: func(domain.Downloader) (Engine, error) { return f, nil }}
 	s := &Sync{Store: &Store{}, DB: db, Manager: m, Lines: testLines}
 	s.init()
 	return s, *d
@@ -135,9 +134,9 @@ func sabRig(t *testing.T, f *fakeSab, outside string) (*Sync, domain.Downloader)
 
 // Every SABnzbd job must show by default, queue and finished list in any category. With the setting off only the Downloader's category does.
 func TestSync_SabnzbdListsEveryJob(t *testing.T) {
-	f := &fakeSab{counter: 3,
-		queue: []downloader.Job{sabJob("q1", "holyarrs", downloader.StateDownloading), sabJob("q2", "tv", downloader.StatePaused)},
-		hist:  []downloader.Job{sabJob("h1", "movies", downloader.StateFinished), sabJob("h2", "holyarrs", downloader.StateFailed)}}
+	f := &fakeSnapshotSab{counter: 3,
+		queue: []Job{sabJob("q1", "holyarrs", StateDownloading), sabJob("q2", "tv", StatePaused)},
+		hist:  []Job{sabJob("h1", "movies", StateFinished), sabJob("h2", "holyarrs", StateFailed)}}
 	for _, c := range []struct {
 		setting string
 		want    int
@@ -164,7 +163,7 @@ func TestSync_SabnzbdListsEveryJob(t *testing.T) {
 
 // The first poll must get the long budget until a full finished list was read, then the short one.
 func TestSabCursors_NeedsFull(t *testing.T) {
-	f := &fakeSab{hist: []downloader.Job{sabJob("h1", "tv", downloader.StateFinished)}, counter: 5}
+	f := &fakeSnapshotSab{hist: []Job{sabJob("h1", "tv", StateFinished)}, counter: 5}
 	var c SabCursors
 	if !c.NeedsFull(1) {
 		t.Fatal("new downloader should need a full read")

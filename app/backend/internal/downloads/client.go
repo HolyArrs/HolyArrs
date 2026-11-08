@@ -1,6 +1,6 @@
 // Package downloader sends Releases to download engines (torrent and Usenet clients) and reads back their progress.
 // Each client sits behind the Engine interface, so the rest of HolyArrs does not care which one runs a Download.
-package downloader
+package downloads
 
 import (
 	"context"

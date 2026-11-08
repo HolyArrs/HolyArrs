@@ -1,12 +1,10 @@
-package dlsync
+package downloads
 
 import (
 	"context"
 	"encoding/json"
 	"sync"
 	"time"
-
-	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
 )
 
 // Patch kinds.
@@ -47,13 +45,13 @@ type PatchTotals struct {
 	UpSpeed int64 `json:"up_speed"`
 }
 
-// Publisher batches store changes per client into patches. Build makes and
+// SnapshotPublisher batches store changes per client into patches. Build makes and
 // sends the patch for one client from its state at fromRev to its state at
 // toRev; Health checks every client's health. Both run on the publisher's
 // goroutine only.
-type Publisher struct {
+type SnapshotPublisher struct {
 	Store  *Store
-	Build  func(ctx context.Context, client int64, fromRev, toRev uint64, prev, cur map[string]downloader.Job)
+	Build  func(ctx context.Context, client int64, fromRev, toRev uint64, prev, cur map[string]Job)
 	Health func(ctx context.Context)
 	Now    func() time.Time
 
@@ -67,7 +65,7 @@ type Publisher struct {
 // pubBase is a client's state at the last patch.
 type pubBase struct {
 	rev   uint64
-	items map[string]downloader.Job
+	items map[string]Job
 }
 
 // MergePatch folds a newer dl message into an older one still waiting for a
@@ -147,7 +145,7 @@ func MergePatch(old, cur json.RawMessage) json.RawMessage {
 
 // Note records that client id changed from prev, which was at prevRev. The
 // first note of a client sets its base, and the patch is due one window later.
-func (p *Publisher) Note(id int64, prevRev uint64, prev map[string]downloader.Job) {
+func (p *SnapshotPublisher) Note(id int64, prevRev uint64, prev map[string]Job) {
 	if p == nil {
 		return
 	}
@@ -167,7 +165,7 @@ func (p *Publisher) Note(id int64, prevRev uint64, prev map[string]downloader.Jo
 }
 
 // Flush builds the patches that are due, or all of them when force is set.
-func (p *Publisher) Flush(ctx context.Context, force bool) {
+func (p *SnapshotPublisher) Flush(ctx context.Context, force bool) {
 	p.mu.Lock()
 	p.init()
 	now := p.now()
@@ -195,7 +193,7 @@ func (p *Publisher) Flush(ctx context.Context, force bool) {
 }
 
 // Run sends patches and health events until ctx ends.
-func (p *Publisher) Run(ctx context.Context) {
+func (p *SnapshotPublisher) Run(ctx context.Context) {
 	p.mu.Lock()
 	p.init()
 	wake := p.wake
@@ -229,7 +227,7 @@ func (p *Publisher) Run(ctx context.Context) {
 }
 
 // now returns the clock, which tests can replace.
-func (p *Publisher) now() time.Time {
+func (p *SnapshotPublisher) now() time.Time {
 	if p.Now != nil {
 		return p.Now()
 	}
@@ -237,14 +235,14 @@ func (p *Publisher) now() time.Time {
 }
 
 // init makes the maps on first use, so the zero value works.
-func (p *Publisher) init() {
+func (p *SnapshotPublisher) init() {
 	if !p.ready {
 		p.base, p.due, p.wake, p.ready = map[int64]pubBase{}, map[int64]time.Time{}, make(chan struct{}, 1), true
 	}
 }
 
 // next returns when the earliest patch is due, or zero when none is.
-func (p *Publisher) next() time.Time {
+func (p *SnapshotPublisher) next() time.Time {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	var t time.Time

@@ -16,8 +16,8 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/dlsync"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 )
 
 // countDriver wraps the SQLite driver and counts every query it runs.
@@ -145,7 +145,7 @@ func TestDownloadsViewHungClient(t *testing.T) {
 	t.Cleanup(hang.Close)
 	t.Cleanup(func() { close(stop) })
 	pointQB(t, x, hang.URL)
-	x.api.s.DLSync = &dlsync.Sync{Store: &dlsync.Store{}, DB: x.s}
+	x.api.s.DLSync = &downloads.Sync{Store: &downloads.Store{}, DB: x.s}
 	var worst time.Duration
 	var last viewAnswer
 	for range 20 {

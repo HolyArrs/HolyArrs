@@ -1,4 +1,4 @@
-package dlsync
+package downloads
 
 import (
 	"context"
@@ -12,7 +12,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
 )
 
 // Reader timings.
@@ -43,11 +42,11 @@ var restartBackoff = []time.Duration{2 * time.Second, 5 * time.Second, 15 * time
 type Sync struct {
 	Store   *Store
 	DB      *database.Store
-	Manager Manager
+	Manager SnapshotManager
 	Lines   LinesFunc
 	Match   MatchFunc
 	// Pub publishes patches to the live stream; nil turns that off.
-	Pub *Publisher
+	Pub *SnapshotPublisher
 	Now func() time.Time
 	// Sleep replaces the real wait in tests; nil waits for real.
 	Sleep func(ctx context.Context, d time.Duration) error
@@ -65,38 +64,38 @@ type Sync struct {
 	onNow   bool
 }
 
-// Manager is what the reader needs from downloader.Manager.
-type Manager interface {
-	Reader(ctx context.Context, d domain.Downloader) (downloader.Engine, uint64, error)
+// SnapshotManager is what the reader needs from Manager.
+type SnapshotManager interface {
+	Reader(ctx context.Context, d domain.Downloader) (Engine, uint64, error)
 	ReportRead(ctx context.Context, d domain.Downloader, err error)
 	Generation(id int64) uint64
 	Interval(active int) time.Duration
 }
 
-// On reports whether the reader runs. It implements downloader.SyncSource.
+// On reports whether the reader runs. It implements SyncSource.
 func (s *Sync) On() bool {
 	return s != nil && s.started.Load()
 }
 
 // ClientStatus returns a qBittorrent's state from the reader's last read,
 // when the reader is on and has one.
-func (s *Sync) ClientStatus(id int64) (downloader.ClientStatus, bool) {
+func (s *Sync) ClientStatus(id int64) (ClientStatus, bool) {
 	if !s.On() {
-		return downloader.ClientStatus{}, false
+		return ClientStatus{}, false
 	}
 	return s.cursors.Status(id)
 }
 
 // View returns one client's snapshot for the Manager. It implements
-// downloader.SyncSource.
-func (s *Sync) View(id int64) downloader.SyncView { return s.Store.View(id) }
+// SyncSource.
+func (s *Sync) View(id int64) SyncView { return s.Store.View(id) }
 
 // Fallback marks whether the Manager reads a client itself. It implements
-// downloader.SyncSource.
+// SyncSource.
 func (s *Sync) Fallback(id int64, on bool) { s.Store.SetFallback(id, on) }
 
 // Changed returns a channel that gets a signal after a read changed
-// something. It implements downloader.SyncSource.
+// something. It implements SyncSource.
 func (s *Sync) Changed() <-chan struct{} {
 	s.init()
 	return s.changed
@@ -450,7 +449,7 @@ func (s *Sync) poll(ctx context.Context, id int64, kick chan struct{}) {
 				every = s.cadence(d, n)
 				s.Store.SetFloor(id, every)
 			}
-		case errors.Is(err, downloader.ErrAuth):
+		case errors.Is(err, ErrAuth):
 			// Stop until the settings change (a new engine generation).
 			// Retrying a refused sign-in could get HolyArrs banned.
 			gen := s.Manager.Generation(id)
@@ -499,7 +498,7 @@ func (s *Sync) cadence(d domain.Downloader, n int) time.Duration {
 	snap := s.Store.Current(d.ID)
 	outside := false
 	for _, j := range snap.Items {
-		if j.State == downloader.StateDownloading {
+		if j.State == StateDownloading {
 			outside = true
 			break
 		}
@@ -525,10 +524,10 @@ func (s *Sync) read(ctx context.Context, d domain.Downloader) error {
 		s.Store.Fail(d.ID, gen)
 		return err
 	}
-	var jobs []downloader.Job
+	var jobs []Job
 	scope := d.Category
 	shared := false
-	ms, isMain := e.(downloader.MainSyncer)
+	ms, isMain := e.(MainSyncer)
 	switch {
 	case d.Adapter == "qbittorrent" && isMain:
 		var p MainPoll
@@ -580,13 +579,13 @@ func (s *Sync) read(ctx context.Context, d domain.Downloader) error {
 }
 
 // isSab reports whether the engine has the paged SABnzbd reads.
-func isSab(e downloader.Engine) bool {
+func isSab(e Engine) bool {
 	_, ok := e.(SabSource)
 	return ok
 }
 
 // inCategory keeps the jobs of one category. "" or "*" keeps all.
-func inCategory(jobs []downloader.Job, cat string) []downloader.Job {
+func inCategory(jobs []Job, cat string) []Job {
 	if cat == "" || cat == "*" {
 		return jobs
 	}

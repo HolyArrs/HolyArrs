@@ -3,31 +3,31 @@ package api
 import (
 	"net/http"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 )
 
 // Usenet queue order and priority for one client item. Top stays on the
 // shared Controller route.
 func (a *API) usenetQueueRoutes(m *http.ServeMux) {
 	move := func(where string) http.HandlerFunc {
-		return a.itemAct(true, func(r *http.Request, e downloader.Engine, id string) error {
-			err := asUsenetQueue(e, func(q downloader.UsenetQueue) error { return q.MoveItem(r.Context(), id, where) })
+		return a.itemAct(true, func(r *http.Request, e downloads.Engine, id string) error {
+			err := asUsenetQueue(e, func(q downloads.UsenetQueue) error { return q.MoveItem(r.Context(), id, where) })
 			if err == nil {
 				a.itemChanged(r, id, "move_"+where, "moved "+where)
 			}
 			return err
 		})
 	}
-	m.HandleFunc("POST /api/v1/downloaders/{id}/items/{hash}/up", move(downloader.MoveUp))
-	m.HandleFunc("POST /api/v1/downloaders/{id}/items/{hash}/down", move(downloader.MoveDown))
-	m.HandleFunc("POST /api/v1/downloaders/{id}/items/{hash}/bottom", move(downloader.MoveBottom))
+	m.HandleFunc("POST /api/v1/downloaders/{id}/items/{hash}/up", move(downloads.MoveUp))
+	m.HandleFunc("POST /api/v1/downloaders/{id}/items/{hash}/down", move(downloads.MoveDown))
+	m.HandleFunc("POST /api/v1/downloaders/{id}/items/{hash}/bottom", move(downloads.MoveBottom))
 	m.HandleFunc("POST /api/v1/downloaders/{id}/items/{hash}/priority", a.itemPriority)
 }
 
-func asUsenetQueue(e downloader.Engine, f func(downloader.UsenetQueue) error) error {
-	q, ok := e.(downloader.UsenetQueue)
+func asUsenetQueue(e downloads.Engine, f func(downloads.UsenetQueue) error) error {
+	q, ok := e.(downloads.UsenetQueue)
 	if !ok {
-		return downloader.ErrNotSupported
+		return downloads.ErrNotSupported
 	}
 	return f(q)
 }
@@ -43,13 +43,13 @@ func (a *API) itemPriority(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	switch in.Priority {
-	case downloader.PriorityLow, downloader.PriorityNormal, downloader.PriorityHigh, downloader.PriorityForce:
+	case downloads.PriorityLow, downloads.PriorityNormal, downloads.PriorityHigh, downloads.PriorityForce:
 	default:
 		fail(w, http.StatusBadRequest, priorityHelp)
 		return
 	}
-	a.itemAct(true, func(r *http.Request, e downloader.Engine, id string) error {
-		err := asUsenetQueue(e, func(q downloader.UsenetQueue) error { return q.SetPriority(r.Context(), id, in.Priority) })
+	a.itemAct(true, func(r *http.Request, e downloads.Engine, id string) error {
+		err := asUsenetQueue(e, func(q downloads.UsenetQueue) error { return q.SetPriority(r.Context(), id, in.Priority) })
 		if err == nil {
 			a.itemChanged(r, id, "priority", "set the priority to "+in.Priority+" for")
 		}

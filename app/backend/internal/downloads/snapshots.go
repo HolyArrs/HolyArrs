@@ -1,10 +1,8 @@
-package dlsync
+package downloads
 
 import (
 	"sync"
 	"time"
-
-	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
 )
 
 // FreshCeiling is the longest a read counts as fresh, whatever the cadence.
@@ -24,7 +22,7 @@ const viewerTTL = 60 * time.Second
 type Snapshot struct {
 	Gen      uint64
 	Rev      uint64
-	Items    map[string]downloader.Job
+	Items    map[string]Job
 	Complete bool
 	ReadAt   time.Time
 	Fresh    bool
@@ -53,7 +51,7 @@ type Store struct {
 type client struct {
 	gen      uint64
 	rev      uint64
-	items    map[string]downloader.Job
+	items    map[string]Job
 	complete bool
 	readAt   time.Time
 	scope    string
@@ -78,7 +76,7 @@ func (s *Store) Current(id int64) Snapshot {
 		return Snapshot{}
 	}
 	fresh := s.fresh(c, s.now())
-	items := make(map[string]downloader.Job, len(c.items))
+	items := make(map[string]Job, len(c.items))
 	for k, v := range c.items {
 		if !fresh {
 			// These are last-known rows, so their speeds would be wrong.
@@ -90,24 +88,24 @@ func (s *Store) Current(id int64) Snapshot {
 		Stale: c.stale, Running: c.running, Fallback: c.fallback, Failed: c.failed, Shared: c.shared}
 }
 
-// View returns one client as downloader.Manager reads it. It is degraded
+// View returns one client as Manager reads it. It is degraded
 // when no reader runs or the last good read is older than the bound.
-func (s *Store) View(id int64) downloader.SyncView {
+func (s *Store) View(id int64) SyncView {
 	if s == nil {
-		return downloader.SyncView{Degraded: true}
+		return SyncView{Degraded: true}
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	c := s.clients[id]
 	if c == nil {
-		return downloader.SyncView{Degraded: true}
+		return SyncView{Degraded: true}
 	}
 	now := s.now()
 	fresh := s.fresh(c, now)
-	v := downloader.SyncView{Scope: c.scope, Complete: c.complete, Fresh: fresh, ReadAt: c.readAt,
+	v := SyncView{Scope: c.scope, Complete: c.complete, Fresh: fresh, ReadAt: c.readAt,
 		Degraded: !c.running || !fresh && (c.since.IsZero() || now.Sub(c.since) >= s.boundOf(c))}
 	if fresh {
-		v.Items = make(map[string]downloader.Job, len(c.items))
+		v.Items = make(map[string]Job, len(c.items))
 		for k, j := range c.items {
 			v.Items[k] = j
 		}
@@ -145,7 +143,7 @@ func (s *Store) Revs() map[int64]uint64 {
 // Update records a whole read of a client at engine generation gen and
 // returns what changed against the previous read. It diffs across a
 // generation change too, so removals during the gap are still seen.
-func (s *Store) Update(id int64, gen uint64, jobs []downloader.Job, at time.Time) Changes {
+func (s *Store) Update(id int64, gen uint64, jobs []Job, at time.Time) Changes {
 	ch, _, _ := s.Apply(id, gen, "", jobs, at)
 	return ch
 }
@@ -153,8 +151,8 @@ func (s *Store) Update(id int64, gen uint64, jobs []downloader.Job, at time.Time
 // Apply is Update for a read that covered scope ("" is everything). It also
 // returns the items before the read and whether they were stale rows loaded
 // from dl_items.
-func (s *Store) Apply(id int64, gen uint64, scope string, jobs []downloader.Job, at time.Time) (Changes, map[string]downloader.Job, bool) {
-	cur := make(map[string]downloader.Job, len(jobs))
+func (s *Store) Apply(id int64, gen uint64, scope string, jobs []Job, at time.Time) (Changes, map[string]Job, bool) {
+	cur := make(map[string]Job, len(jobs))
 	for _, j := range jobs {
 		cur[j.ID] = j
 	}
@@ -192,11 +190,11 @@ func (s *Store) Reset(id int64, gen uint64) {
 
 // Load puts last-known rows from dl_items in place as stale. They are shown
 // but not Complete until the first good read replaces them.
-func (s *Store) Load(id int64, jobs []downloader.Job) {
+func (s *Store) Load(id int64, jobs []Job) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	c := s.get(id)
-	c.items = make(map[string]downloader.Job, len(jobs))
+	c.items = make(map[string]Job, len(jobs))
 	for _, j := range jobs {
 		c.items[j.ID] = j
 	}

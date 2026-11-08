@@ -14,7 +14,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
@@ -60,7 +60,7 @@ func albumFiles(seed byte, ext string) []labFile {
 type labAlbum struct {
 	s      *database.Store
 	srv    *httptest.Server
-	m      *downloader.Manager
+	m      *downloads.Manager
 	music  string
 	slots  []int64
 	title  int64
@@ -141,10 +141,10 @@ func newLabAlbum(t *testing.T) labAlbum {
 	ctx, cancel := context.WithCancel(context.Background())
 	x.cancel = cancel
 	q := jobs.New(s, jobs.Options{Workers: 2, BaseBackoff: time.Hour, PollInterval: 50 * time.Millisecond})
-	x.m = &downloader.Manager{Store: s, SavePath: filepath.Join("/data/downloads/incomplete", lab414Cat)}
+	x.m = &downloads.Manager{Store: s, SavePath: filepath.Join("/data/downloads/incomplete", lab414Cat)}
 	im := &importer.Importer{Store: s}
 	sr := &source.Searcher{Store: s, Queue: q, OnChosen: func(ctx context.Context, slotID, releaseID int64) {
-		_, _, _ = q.Enqueue(ctx, downloader.KindGrab, &domain.Subject{Type: "slot", ID: slotID}, map[string]any{"release_id": releaseID}, fmt.Sprintf("grab:%d", slotID), domain.System)
+		_, _, _ = q.Enqueue(ctx, downloads.KindGrab, &domain.Subject{Type: "slot", ID: slotID}, map[string]any{"release_id": releaseID}, fmt.Sprintf("grab:%d", slotID), domain.System)
 	}}
 	x.m.OnFailed = func(ctx context.Context, slotID int64) {
 		if err := sr.QueueAfterFailure(ctx, slotID, domain.System); err != nil {
@@ -158,7 +158,7 @@ func newLabAlbum(t *testing.T) labAlbum {
 		_, _, _ = q.Enqueue(ctx, source.KindSearchSlot, &domain.Subject{Type: "slot", ID: slotID}, nil, fmt.Sprintf("search_slot:%d", slotID), domain.System)
 	}
 	sr.Register(q)
-	q.Handle(downloader.KindGrab, x.m.HandleGrab)
+	q.Handle(downloads.KindGrab, x.m.HandleGrab)
 	q.Handle(importer.KindImport, im.HandleJob)
 	if err := q.Start(ctx); err != nil {
 		t.Fatal(err)

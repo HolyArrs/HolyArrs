@@ -23,7 +23,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/asks"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/naming"
@@ -228,7 +228,7 @@ func (w *world) showcaseWipe(ctx context.Context) error {
 		return err
 	}
 	for _, d := range dls {
-		if err := w.dm.Remove(ctx, d.ID, downloader.RemoveChoice{}, w.by, "showcase seed"); err != nil {
+		if err := w.dm.Remove(ctx, d.ID, downloads.RemoveChoice{}, w.by, "showcase seed"); err != nil {
 			w.say("   download %d: %v", d.ID, err)
 		}
 	}
@@ -271,7 +271,7 @@ func (w *world) showcaseWipe(ctx context.Context) error {
 	})
 	ds, _ := database.Select[domain.Downloader](ctx, db, "downloaders", "name = ? AND removed = 0", standInDownloader)
 	for _, d := range ds {
-		if err := downloader.Remove(ctx, w.s, d.ID, w.by); err != nil {
+		if err := downloads.Remove(ctx, w.s, d.ID, w.by); err != nil {
 			w.say("   Downloader %d: %v", d.ID, err)
 		}
 	}
@@ -303,7 +303,7 @@ func (w *world) showcaseClearDownloads(ctx context.Context) error {
 		return err
 	}
 	for _, d := range active {
-		if err := w.dm.Remove(ctx, d.ID, downloader.RemoveChoice{}, w.by, "showcase: no stand-in downloads"); err != nil {
+		if err := w.dm.Remove(ctx, d.ID, downloads.RemoveChoice{}, w.by, "showcase: no stand-in downloads"); err != nil {
 			w.say("   download %d: %v", d.ID, err)
 		}
 	}
@@ -319,7 +319,7 @@ func (w *world) showcaseClearDownloads(ctx context.Context) error {
 	}
 	ds, _ := database.Select[domain.Downloader](ctx, db, "downloaders", "name = ? AND removed = 0", standInDownloader)
 	for _, d := range ds {
-		if err := downloader.Remove(ctx, w.s, d.ID, w.by); err != nil {
+		if err := downloads.Remove(ctx, w.s, d.ID, w.by); err != nil {
 			w.say("   Downloader %d: %v", d.ID, err)
 		}
 	}

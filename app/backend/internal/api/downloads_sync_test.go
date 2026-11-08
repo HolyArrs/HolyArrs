@@ -12,17 +12,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/dlsync"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
 // noClient is a reader Manager that never reaches a client: the store only
 // holds what the test loads.
-type noClient struct{ m *downloader.Manager }
+type noClient struct{ m *downloads.Manager }
 
-func (noClient) Reader(context.Context, domain.Downloader) (downloader.Engine, uint64, error) {
+func (noClient) Reader(context.Context, domain.Downloader) (downloads.Engine, uint64, error) {
 	return nil, 0, errors.New("no client in this test")
 }
 func (noClient) ReportRead(context.Context, domain.Downloader, error) {}
@@ -42,12 +41,12 @@ func TestDownloadsViewFromStore(t *testing.T) {
 	_ = x.s.Read().QueryRow("SELECT id FROM downloaders LIMIT 1").Scan(&dlr)
 	exec41(t, x.s, `INSERT INTO settings (grp, key, value, created_at, created_by, updated_at, updated_by) VALUES ('links', 'downloads_sync', 'on', '', '{}', '', '{}')`)
 
-	sy := &dlsync.Sync{Store: &dlsync.Store{}, DB: x.s, Manager: noClient{x.api.manager()}}
+	sy := &downloads.Sync{Store: &downloads.Store{}, DB: x.s, Manager: noClient{x.api.manager()}}
 	x.api.s.DLSync = sy
-	var jobs []downloader.Job
+	var jobs []downloads.Job
 	for i := range 250 {
-		jobs = append(jobs, downloader.Job{ID: fmt.Sprintf("%040x", i+1), Name: fmt.Sprintf("Outside.%d", i), Category: "linux", Size: 100, Progress: 1,
-			UpSpeed: 10, State: downloader.StateFinished, Detail: "uploading", AddedAt: int64(1700000000 + i), Ratio: 1.5, LastActivity: int64(1700100000 + i)})
+		jobs = append(jobs, downloads.Job{ID: fmt.Sprintf("%040x", i+1), Name: fmt.Sprintf("Outside.%d", i), Category: "linux", Size: 100, Progress: 1,
+			UpSpeed: 10, State: downloads.StateFinished, Detail: "uploading", AddedAt: int64(1700000000 + i), Ratio: 1.5, LastActivity: int64(1700100000 + i)})
 	}
 	sy.Store.Load(dlr, jobs)
 	ctx, cancel := context.WithCancel(context.Background())
@@ -134,7 +133,7 @@ func TestDownloadsViewFromStore(t *testing.T) {
 	}
 	// The torrent detail's last activity comes from the reader's snapshot,
 	// not the empty list cache.
-	var td downloader.TorrentDetail
+	var td downloads.TorrentDetail
 	x.api.torrentTimeline(context.Background(), dlr, fmt.Sprintf("%040X", 3), &td, nil)
 	if td.LastActivity == nil || td.LastActivity.Unix() != 1700100002 {
 		t.Fatalf("last activity %v, want from the reader", td.LastActivity)

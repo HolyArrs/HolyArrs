@@ -1,4 +1,4 @@
-package dlsync
+package downloads
 
 import (
 	"context"
@@ -7,17 +7,16 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
 )
 
 // Last-known rows, loaded or kept after a failed read, must carry no speeds or ETA.
 func TestStore_StaleSnapshotHasNoSpeeds(t *testing.T) {
 	s := &Store{}
-	s.Load(1, []downloader.Job{{ID: "a", Speed: 100, UpSpeed: 50, ETA: 9}})
+	s.Load(1, []Job{{ID: "a", Speed: 100, UpSpeed: 50, ETA: 9}})
 	if j := s.Current(1).Items["a"]; j.Speed != 0 || j.UpSpeed != 0 || j.ETA != 0 {
 		t.Fatalf("loaded row keeps speeds: %+v", j)
 	}
-	s.Update(1, 0, []downloader.Job{{ID: "a", Speed: 100, UpSpeed: 50, ETA: 9}}, time.Now())
+	s.Update(1, 0, []Job{{ID: "a", Speed: 100, UpSpeed: 50, ETA: 9}}, time.Now())
 	if j := s.Current(1).Items["a"]; j.Speed != 100 || j.UpSpeed != 50 || j.ETA != 9 {
 		t.Fatalf("fresh row lost speeds: %+v", j)
 	}

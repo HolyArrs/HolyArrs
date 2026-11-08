@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/dlsync"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
@@ -30,7 +30,7 @@ type liveUser struct {
 type liveSetup struct {
 	srv  *httptest.Server
 	hub  *webserver.LiveHub
-	sy   *dlsync.Sync
+	sy   *downloads.Sync
 	own  liveUser
 	mem  liveUser
 	mem2 liveUser
@@ -71,7 +71,7 @@ func setupLive(t *testing.T) liveSetup {
 		t.Fatal(err)
 	}
 	hub := webserver.NewLiveHub(webserver.LiveOptions{})
-	sy := &dlsync.Sync{Store: &dlsync.Store{}, DB: s}
+	sy := &downloads.Sync{Store: &downloads.Store{}, DB: s}
 	x := liveSetup{hub: hub, sy: sy, st: s}
 	x.srv = httptest.NewServer(New(Server{Store: s, Metadata: metadata.Lab(), Version: "test", Auth: accounts.New(s, accounts.Options{Vault: v}), Secrets: v,
 		Live: hub, DLSync: sy}).Handler())

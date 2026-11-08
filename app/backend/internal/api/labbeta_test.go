@@ -20,7 +20,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
@@ -190,7 +190,7 @@ type labMovie struct {
 	s      *database.Store
 	srv    *httptest.Server
 	q      *jobs.Queue
-	m      *downloader.Manager
+	m      *downloads.Manager
 	lib    *library.Service
 	vault  *secrets.Vault
 	cat    string
@@ -297,21 +297,21 @@ func newLabMovie(t *testing.T, o labMovieOpts) *labMovie {
 	x.q = jobs.New(s, jobs.Options{Workers: 2, BaseBackoff: time.Hour, PollInterval: 50 * time.Millisecond})
 	md := metadata.Lab()
 	x.lib = &library.Service{Store: s, Queue: x.q, Metadata: md}
-	x.m = &downloader.Manager{Store: s, SavePath: filepath.Join("/data/downloads/incomplete", o.cat)}
+	x.m = &downloads.Manager{Store: s, SavePath: filepath.Join("/data/downloads/incomplete", o.cat)}
 	x.m.Link = func(ctx context.Context, rel domain.Release) (string, error) {
 		return source.GrabLink(ctx, s, vault, rel)
 	}
 	im := &importer.Importer{Store: s}
 	q := x.q
 	sr := &source.Searcher{Store: s, Queue: q, Secrets: vault, OnChosen: func(ctx context.Context, slotID, releaseID int64) {
-		_, _, _ = q.Enqueue(ctx, downloader.KindGrab, &domain.Subject{Type: "slot", ID: slotID}, map[string]any{"release_id": releaseID}, fmt.Sprintf("grab:%d", slotID), domain.System)
+		_, _, _ = q.Enqueue(ctx, downloads.KindGrab, &domain.Subject{Type: "slot", ID: slotID}, map[string]any{"release_id": releaseID}, fmt.Sprintf("grab:%d", slotID), domain.System)
 	}}
 	x.m.OnFailed = func(ctx context.Context, slotID int64) { _ = sr.QueueAfterFailure(ctx, slotID, domain.System) }
 	x.m.OnFinished = func(ctx context.Context, id int64) {
 		_, _, _ = q.Enqueue(ctx, importer.KindImport, &domain.Subject{Type: "download", ID: id}, nil, fmt.Sprintf("import:%d", id), domain.System)
 	}
 	sr.Register(q)
-	q.Handle(downloader.KindGrab, x.m.HandleGrab)
+	q.Handle(downloads.KindGrab, x.m.HandleGrab)
 	q.Handle(importer.KindImport, im.HandleJob)
 	if err := q.Start(qctx); err != nil {
 		t.Fatal(err)

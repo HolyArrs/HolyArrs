@@ -1,4 +1,4 @@
-package dlsync
+package downloads
 
 import (
 	"context"
@@ -10,12 +10,11 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
 )
 
 // jobSnapshot indexes jobs by id, the shape Diff takes.
-func jobSnapshot(js ...downloader.Job) map[string]downloader.Job {
-	m := map[string]downloader.Job{}
+func jobSnapshot(js ...Job) map[string]Job {
+	m := map[string]Job{}
 	for _, j := range js {
 		m[j.ID] = j
 	}
@@ -25,23 +24,23 @@ func jobSnapshot(js ...downloader.Job) map[string]downloader.Job {
 // Diff must report added, removed and changed items, and a state change as a transition.
 func TestDiff_AddChangeRemoveTransition(t *testing.T) {
 	prev := jobSnapshot(
-		downloader.Job{ID: "a", State: downloader.StateDownloading, Progress: 0.2, Speed: 100},
-		downloader.Job{ID: "b", State: downloader.StateDownloading, Progress: 0.5},
-		downloader.Job{ID: "c", State: downloader.StatePaused},
-		downloader.Job{ID: "f", Files: []downloader.File{{Name: "x"}}},
+		Job{ID: "a", State: StateDownloading, Progress: 0.2, Speed: 100},
+		Job{ID: "b", State: StateDownloading, Progress: 0.5},
+		Job{ID: "c", State: StatePaused},
+		Job{ID: "f", Files: []File{{Name: "x"}}},
 	)
 	cur := jobSnapshot(
-		downloader.Job{ID: "a", State: downloader.StateDownloading, Progress: 0.3, Speed: 100},
-		downloader.Job{ID: "b", State: downloader.StateFinished, Progress: 1},
-		downloader.Job{ID: "d", State: downloader.StateQueued},
-		downloader.Job{ID: "f", Files: []downloader.File{{Name: "y"}}},
+		Job{ID: "a", State: StateDownloading, Progress: 0.3, Speed: 100},
+		Job{ID: "b", State: StateFinished, Progress: 1},
+		Job{ID: "d", State: StateQueued},
+		Job{ID: "f", Files: []File{{Name: "y"}}},
 	)
 	c := Diff(prev, cur)
 	want := Changes{
 		Added:       []string{"d"},
 		Removed:     []string{"c"},
 		Changed:     []FieldChange{{ID: "a", Fields: []string{"Progress"}}, {ID: "b", Fields: []string{"Progress", "State"}}, {ID: "f", Fields: []string{"Files"}}},
-		Transitions: []Transition{{ID: "b", From: downloader.StateDownloading, To: downloader.StateFinished}},
+		Transitions: []Transition{{ID: "b", From: StateDownloading, To: StateFinished}},
 	}
 	if !reflect.DeepEqual(c, want) {
 		t.Fatalf("got %+v\nwant %+v", c, want)
@@ -56,12 +55,12 @@ func TestDiff_AddChangeRemoveTransition(t *testing.T) {
 
 // Diff must compare pointer fields by value, so equal limits behind two pointers are no change.
 func TestDiff_PointerFieldsCompareByValue(t *testing.T) {
-	a := downloader.Job{ID: "a", Limits: &downloader.ShareLimits{Ratio: 1}}
-	b := downloader.Job{ID: "a", Limits: &downloader.ShareLimits{Ratio: 1}}
+	a := Job{ID: "a", Limits: &ShareLimits{Ratio: 1}}
+	b := Job{ID: "a", Limits: &ShareLimits{Ratio: 1}}
 	if !Diff(jobSnapshot(a), jobSnapshot(b)).Empty() {
 		t.Fatal("equal limits behind different pointers counted as a change")
 	}
-	b.Limits = &downloader.ShareLimits{Ratio: 2}
+	b.Limits = &ShareLimits{Ratio: 2}
 	if c := Diff(jobSnapshot(a), jobSnapshot(b)); len(c.Changed) != 1 || c.Changed[0].Fields[0] != "Limits" {
 		t.Fatalf("%+v", c)
 	}
@@ -78,7 +77,7 @@ func TestStore_NilSafeAndFreshness(t *testing.T) {
 	if c := s.Current(1); c.Complete || c.Fresh {
 		t.Fatal("unknown client is complete")
 	}
-	s.Update(1, 0, []downloader.Job{{ID: "a"}}, now)
+	s.Update(1, 0, []Job{{ID: "a"}}, now)
 	if c := s.Current(1); !c.Complete || !c.Fresh || c.Rev != 1 || len(c.Items) != 1 {
 		t.Fatalf("%+v", c)
 	}
@@ -108,16 +107,16 @@ func TestStore_NilSafeAndFreshness(t *testing.T) {
 func TestStore_RevMovesOnlyOnChangeAndFailKeepsItems(t *testing.T) {
 	at := time.Now()
 	s := &Store{}
-	s.Update(1, 0, []downloader.Job{{ID: "a", Progress: 0.1}}, at)
-	s.Update(1, 0, []downloader.Job{{ID: "a", Progress: 0.1}}, at)
+	s.Update(1, 0, []Job{{ID: "a", Progress: 0.1}}, at)
+	s.Update(1, 0, []Job{{ID: "a", Progress: 0.1}}, at)
 	if s.Rev(1) != 1 {
 		t.Fatalf("rev %d after an unchanged read", s.Rev(1))
 	}
-	ch := s.Update(1, 0, []downloader.Job{{ID: "a", Progress: 0.2}}, at)
+	ch := s.Update(1, 0, []Job{{ID: "a", Progress: 0.2}}, at)
 	if s.Rev(1) != 2 || len(ch.Changed) != 1 {
 		t.Fatalf("rev %d %+v", s.Rev(1), ch)
 	}
-	s.Update(2, 0, []downloader.Job{{ID: "z"}}, at)
+	s.Update(2, 0, []Job{{ID: "z"}}, at)
 	if s.Rev(1) != 2 || s.Rev(2) != 1 {
 		t.Fatal("revs are not per client")
 	}
@@ -141,10 +140,10 @@ type fakeMain struct {
 	err     error
 }
 
-func (f *fakeMain) SyncMain(_ context.Context, rid int64) (downloader.MainData, error) {
+func (f *fakeMain) SyncMain(_ context.Context, rid int64) (MainData, error) {
 	f.rids = append(f.rids, rid)
 	if f.err != nil {
-		return downloader.MainData{}, f.err
+		return MainData{}, f.err
 	}
 	a := f.answers[0]
 	if len(f.answers) > 1 {
@@ -157,9 +156,9 @@ func (f *fakeMain) SyncMain(_ context.Context, rid int64) (downloader.MainData, 
 		Removed  []string                              `json:"torrents_removed"`
 	}
 	if err := json.Unmarshal([]byte(a), &raw); err != nil {
-		return downloader.MainData{}, err
+		return MainData{}, err
 	}
-	return downloader.MainData{Rid: raw.Rid, FullUpdate: raw.Full, Torrents: raw.Torrents, Removed: raw.Removed, Bytes: len(a)}, nil
+	return MainData{Rid: raw.Rid, FullUpdate: raw.Full, Torrents: raw.Torrents, Removed: raw.Removed, Bytes: len(a)}, nil
 }
 
 const (
@@ -168,7 +167,7 @@ const (
 )
 
 // ids returns the ids of jobs in order.
-func ids(js []downloader.Job) []string {
+func ids(js []Job) []string {
 	var out []string
 	for _, j := range js {
 		out = append(out, j.ID)
@@ -219,8 +218,8 @@ func TestCursors_SharedSessionAndParseErrorDropsCursor(t *testing.T) {
 	if !p.SharedSession {
 		t.Fatal("4 full answers to a valid rid did not flag a shared session")
 	}
-	f.err = downloader.ErrSyncParse
-	if _, err := c.Poll(ctx, 1, 0, f); !errors.Is(err, downloader.ErrSyncParse) {
+	f.err = ErrSyncParse
+	if _, err := c.Poll(ctx, 1, 0, f); !errors.Is(err, ErrSyncParse) {
 		t.Fatal(err)
 	}
 	if c.Rid(1, 0) != 0 {

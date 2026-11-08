@@ -1,6 +1,6 @@
 //go:build lab
 
-package dlsync
+package downloads
 
 import (
 	"context"
@@ -14,8 +14,6 @@ import (
 	"sync"
 	"testing"
 	"time"
-
-	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
 )
 
 // TestLabMaindata runs the change feed against the lab qBittorrent only, never a real client, behind a counting proxy. The key comes from labctl, which never prints it:
@@ -43,10 +41,10 @@ func TestLabMaindata(t *testing.T) {
 		proxy.ServeHTTP(w, r)
 	}))
 	defer front.Close()
-	q := downloader.NewQbittorrentKey(front.URL, key, nil)
+	q := NewQbittorrentKey(front.URL, key, nil)
 	ctx := context.Background()
 	const testHash = "29be7bfa8759643f2d5dac9f94d516c3378696ed"
-	if _, err := q.Add(ctx, downloader.AddRequest{URL: "http://fake-indexer/dune-part-two.torrent", Category: "holyarrs-labtest",
+	if _, err := q.Add(ctx, AddRequest{URL: "http://fake-indexer/dune-part-two.torrent", Category: "holyarrs-labtest",
 		SavePath: "/data/downloads/incomplete/holyarrs-labtest", InfoHash: testHash}); err != nil {
 		t.Fatal(err)
 	}
@@ -92,9 +90,9 @@ func TestLabMaindata(t *testing.T) {
 }
 
 // parityDiff compares the change-feed rows with torrents/info, ignoring live counters that move between the two reads.
-func parityDiff(feed, listed []downloader.Job) string {
-	norm := func(js []downloader.Job) map[string]downloader.Job {
-		m := map[string]downloader.Job{}
+func parityDiff(feed, listed []Job) string {
+	norm := func(js []Job) map[string]Job {
+		m := map[string]Job{}
 		for _, j := range js {
 			j.Progress, j.Speed, j.UpSpeed, j.ETA, j.Seeds, j.Peers, j.SeedsTotal, j.PeersTotal = 0, 0, 0, 0, 0, 0, 0, 0
 			j.LastActivity, j.TimeActive, j.SeedingTime, j.Uploaded, j.Ratio, j.SeenComplete = 0, 0, 0, 0, 0, 0

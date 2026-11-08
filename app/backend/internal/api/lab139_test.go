@@ -20,7 +20,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/asks"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
@@ -108,17 +108,17 @@ func TestLabAskLiveProgress(t *testing.T) {
 	q := jobs.New(s, jobs.Options{Workers: 2, BaseBackoff: time.Hour, PollInterval: 50 * time.Millisecond})
 	md := metadata.Lab()
 	lib := &library.Service{Store: s, Queue: q, Metadata: md}
-	m := &downloader.Manager{Store: s, SavePath: filepath.Join("/data/downloads/incomplete", cat)}
+	m := &downloads.Manager{Store: s, SavePath: filepath.Join("/data/downloads/incomplete", cat)}
 	im := &importer.Importer{Store: s}
 	sr := &source.Searcher{Store: s, Queue: q, OnChosen: func(ctx context.Context, slotID, releaseID int64) {
-		_, _, _ = q.Enqueue(ctx, downloader.KindGrab, &domain.Subject{Type: "slot", ID: slotID}, map[string]any{"release_id": releaseID}, fmt.Sprintf("grab:%d", slotID), domain.System)
+		_, _, _ = q.Enqueue(ctx, downloads.KindGrab, &domain.Subject{Type: "slot", ID: slotID}, map[string]any{"release_id": releaseID}, fmt.Sprintf("grab:%d", slotID), domain.System)
 	}}
 	m.OnFinished = func(ctx context.Context, id int64) {
 		_, _, _ = q.Enqueue(ctx, importer.KindImport, &domain.Subject{Type: "download", ID: id}, nil, fmt.Sprintf("import:%d", id), domain.System)
 	}
 	sr.Register(q)
 	lib.Register(q)
-	q.Handle(downloader.KindGrab, m.HandleGrab)
+	q.Handle(downloads.KindGrab, m.HandleGrab)
 	svc := &asks.Service{Store: s, Library: lib, Metadata: md}
 	// As cmd/holyarrs: the ready check runs right after each import.
 	q.Handle(importer.KindImport, func(ctx context.Context, r *jobs.Run) error {
@@ -270,7 +270,7 @@ func TestLabAskLiveProgress(t *testing.T) {
 }
 
 // labRemoveCat removes the lab torrents and the category folder afterwards.
-func labRemoveCat(t *testing.T, m *downloader.Manager, cat string, hashes ...string) {
+func labRemoveCat(t *testing.T, m *downloads.Manager, cat string, hashes ...string) {
 	t.Cleanup(func() {
 		if e, err := m.EngineFor(context.Background(), domain.Downloader{Adapter: "qbittorrent", URL: labQbit(), AllowLocal: true}); err == nil {
 			for _, h := range hashes {

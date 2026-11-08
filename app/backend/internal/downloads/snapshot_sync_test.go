@@ -1,4 +1,4 @@
-package dlsync
+package downloads
 
 import (
 	"context"
@@ -16,34 +16,33 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
 )
 
 // fakeClient is an in-memory Downloader engine that counts every call.
 type fakeClient struct {
 	mu      sync.Mutex
-	jobs    map[string]downloader.Job
+	jobs    map[string]Job
 	lists   int
 	gets    int
 	panicN  int // how many of the next List calls panic
 	listErr error
 }
 
-func newFakeClient(js ...downloader.Job) *fakeClient {
-	f := &fakeClient{jobs: map[string]downloader.Job{}}
+func newFakeClient(js ...Job) *fakeClient {
+	f := &fakeClient{jobs: map[string]Job{}}
 	for _, j := range js {
 		f.jobs[j.ID] = j
 	}
 	return f
 }
 
-func (f *fakeClient) Health(context.Context) (downloader.Health, error) {
-	return downloader.Health{Version: "1"}, nil
+func (f *fakeClient) Health(context.Context) (Health, error) {
+	return Health{Version: "1"}, nil
 }
-func (f *fakeClient) Add(context.Context, downloader.AddRequest) (string, error) {
+func (f *fakeClient) Add(context.Context, AddRequest) (string, error) {
 	return "", errors.New("no adds in this test")
 }
-func (f *fakeClient) List(_ context.Context, category string) ([]downloader.Job, error) {
+func (f *fakeClient) List(_ context.Context, category string) ([]Job, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.lists++
@@ -54,7 +53,7 @@ func (f *fakeClient) List(_ context.Context, category string) ([]downloader.Job,
 	if f.listErr != nil {
 		return nil, f.listErr
 	}
-	var out []downloader.Job
+	var out []Job
 	for _, j := range f.jobs {
 		if category == "" || j.Category == category {
 			out = append(out, j)
@@ -62,18 +61,18 @@ func (f *fakeClient) List(_ context.Context, category string) ([]downloader.Job,
 	}
 	return out, nil
 }
-func (f *fakeClient) Get(_ context.Context, id string) (downloader.Job, error) {
+func (f *fakeClient) Get(_ context.Context, id string) (Job, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.gets++
 	if j, ok := f.jobs[id]; ok {
 		return j, nil
 	}
-	return downloader.Job{}, downloader.ErrNotFound
+	return Job{}, ErrNotFound
 }
 func (f *fakeClient) Remove(context.Context, string, bool) error { return nil }
 
-func (f *fakeClient) set(j downloader.Job) { f.mu.Lock(); f.jobs[j.ID] = j; f.mu.Unlock() }
+func (f *fakeClient) set(j Job) { f.mu.Lock(); f.jobs[j.ID] = j; f.mu.Unlock() }
 func (f *fakeClient) drop(id string)       { f.mu.Lock(); delete(f.jobs, id); f.mu.Unlock() }
 func (f *fakeClient) listCount() int       { f.mu.Lock(); defer f.mu.Unlock(); return f.lists }
 
@@ -81,7 +80,7 @@ func (f *fakeClient) listCount() int       { f.mu.Lock(); defer f.mu.Unlock(); r
 type rig struct {
 	db     *database.Store
 	client *fakeClient
-	m      *downloader.Manager
+	m      *Manager
 	s      *Sync
 	dlID   int64
 }
@@ -90,7 +89,7 @@ type rig struct {
 const ownHash = "1111111111111111111111111111111111111111"
 
 // newRig makes a store with one Downloader of a list-only adapter, one active HolyArrs Download on it, a Manager reading a fake client, and a reader.
-func newRig(t *testing.T, js ...downloader.Job) *rig {
+func newRig(t *testing.T, js ...Job) *rig {
 	t.Helper()
 	db, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
@@ -112,15 +111,15 @@ func newRig(t *testing.T, js ...downloader.Job) *rig {
 	if err != nil {
 		t.Fatal(err)
 	}
-	r.m = &downloader.Manager{Store: db, Active: 50 * time.Millisecond, Idle: 100 * time.Millisecond, HealthEvery: time.Hour,
-		Engine: func(domain.Downloader) (downloader.Engine, error) { return r.client, nil }}
+	r.m = &Manager{Store: db, Active: 50 * time.Millisecond, Idle: 100 * time.Millisecond, HealthEvery: time.Hour,
+		Engine: func(domain.Downloader) (Engine, error) { return r.client, nil }}
 	r.s = &Sync{Store: &Store{}, DB: db, Manager: r.m, Lines: testLines}
 	r.m.Sync = r.s
 	return r
 }
 
 // testLines is a LinesFunc that logs state changes.
-func testLines(prev, cur downloader.Job) []LogLine {
+func testLines(prev, cur Job) []LogLine {
 	if prev.Progress < 1 && cur.Progress >= 1 {
 		return []LogLine{{Kind: "completed", Summary: "Completed"}}
 	}
@@ -158,13 +157,13 @@ func (r *rig) state(t *testing.T) (string, float64) {
 }
 
 // own returns the HolyArrs Download at the given progress.
-func own(progress float64) downloader.Job {
-	return downloader.Job{ID: ownHash, Name: "Own", Category: "holyarrs", Progress: progress, State: downloader.StateDownloading}
+func own(progress float64) Job {
+	return Job{ID: ownHash, Name: "Own", Category: "holyarrs", Progress: progress, State: StateDownloading}
 }
 
 // outsider returns a job HolyArrs did not send.
-func outsider(id string, progress float64) downloader.Job {
-	return downloader.Job{ID: id, Name: "Outside " + id, Category: "holyarrs", Progress: progress, State: downloader.StateDownloading}
+func outsider(id string, progress float64) Job {
+	return Job{ID: id, Name: "Outside " + id, Category: "holyarrs", Progress: progress, State: StateDownloading}
 }
 
 // With the reader on, it must make every list read, one per cadence tick, and the Manager none, while the Manager still applies the client's changes.
@@ -518,7 +517,7 @@ func TestSync_FinishLatencyVsManagerReads(t *testing.T) {
 			}
 			waitUntil(t, "downloading", func() bool { st, _ := r.state(t); return st == "downloading" })
 			j := own(1)
-			j.State = downloader.StateFinished
+			j.State = StateFinished
 			start := time.Now()
 			r.client.set(j)
 			waitUntil(t, "finished", func() bool { st, _ := r.state(t); return st == "finished" })

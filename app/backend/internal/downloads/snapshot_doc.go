@@ -3,4 +3,4 @@
 // works out what changed between reads, saves items and torrent log lines to
 // the database, queues new items for title matching, and publishes patches
 // to the live stream.
-package dlsync
+package downloads

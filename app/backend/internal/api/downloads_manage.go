@@ -11,7 +11,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 )
 
 // Hand steering of a torrent Downloader from the Downloads screen, the way
@@ -39,10 +39,10 @@ const addTorrentsMax = 64 << 20
 func (a *API) addTorrents(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
-		fail(w, http.StatusNotFound, downloader.ErrNoDownloader.Error())
+		fail(w, http.StatusNotFound, downloads.ErrNoDownloader.Error())
 		return
 	}
-	var b downloader.AddBatch
+	var b downloads.AddBatch
 	if strings.HasPrefix(r.Header.Get("Content-Type"), "multipart/") {
 		r.Body = http.MaxBytesReader(w, r.Body, addTorrentsMax)
 		if err := r.ParseMultipartForm(16 << 20); err != nil {
@@ -69,7 +69,7 @@ func (a *API) addTorrents(w http.ResponseWriter, r *http.Request) {
 				fail(w, http.StatusBadRequest, "could not read "+fh.Filename)
 				return
 			}
-			b.Files = append(b.Files, downloader.TorrentUpload{Name: fh.Filename, Data: data})
+			b.Files = append(b.Files, downloads.TorrentUpload{Name: fh.Filename, Data: data})
 		}
 	} else {
 		var in struct {
@@ -81,7 +81,7 @@ func (a *API) addTorrents(w http.ResponseWriter, r *http.Request) {
 		if !decode(w, r, &in, `body is {"links": [magnet or http link...], "category": "", "save_path": "", "paused": false}, or a multipart upload with torrents files`) {
 			return
 		}
-		b = downloader.AddBatch{Links: in.Links, Category: in.Category, SavePath: in.SavePath, Paused: in.Paused}
+		b = downloads.AddBatch{Links: in.Links, Category: in.Category, SavePath: in.SavePath, Paused: in.Paused}
 	}
 	if len(b.Links)+len(b.Files) > 500 {
 		fail(w, http.StatusBadRequest, "add 500 torrents at most at once")
@@ -89,7 +89,7 @@ func (a *API) addTorrents(w http.ResponseWriter, r *http.Request) {
 	}
 	var dr domain.Downloader
 	if err := database.Get(r.Context(), a.s.Store.Read(), "downloaders", id, &dr); err != nil || dr.Removed {
-		fail(w, http.StatusNotFound, downloader.ErrNoDownloader.Error())
+		fail(w, http.StatusNotFound, downloads.ErrNoDownloader.Error())
 		return
 	}
 	// Lines split on LF only; a CR or any other control character left in a
@@ -116,17 +116,17 @@ func (a *API) addTorrents(w http.ResponseWriter, r *http.Request) {
 		itemError(w, err)
 		return
 	}
-	var out downloader.AddOutcome
-	err = a.manager().ControlTorrentClient(r.Context(), id, true, func(e downloader.Engine) error {
-		t, ok := e.(downloader.TorrentAdder)
+	var out downloads.AddOutcome
+	err = a.manager().ControlTorrentClient(r.Context(), id, true, func(e downloads.Engine) error {
+		t, ok := e.(downloads.TorrentAdder)
 		if !ok {
-			return downloader.ErrNotSupported
+			return downloads.ErrNotSupported
 		}
 		var err error
 		out, err = t.AddTorrents(r.Context(), b)
 		return err
 	})
-	if errors.Is(err, downloader.ErrNothingToAdd) {
+	if errors.Is(err, downloads.ErrNothingToAdd) {
 		fail(w, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -165,7 +165,7 @@ const bulkHelp = `body is {"action": "start", "pause", "recheck", "reannounce", 
 func (a *API) bulkItems(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
-		fail(w, http.StatusNotFound, downloader.ErrNoDownloader.Error())
+		fail(w, http.StatusNotFound, downloads.ErrNoDownloader.Error())
 		return
 	}
 	var in bulkIn
@@ -176,7 +176,7 @@ func (a *API) bulkItems(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	known := in.Action == "remove"
-	for _, k := range downloader.BulkActions {
+	for _, k := range downloads.BulkActions {
 		known = known || k == in.Action
 	}
 	if !known {
@@ -186,7 +186,7 @@ func (a *API) bulkItems(w http.ResponseWriter, r *http.Request) {
 	if in.Action == "remove" && !a.changeOutsideOK(w, r, id, in.Hashes) {
 		return
 	}
-	err = a.onBulk(r, id, func(t downloader.TorrentBulk) error {
+	err = a.onBulk(r, id, func(t downloads.TorrentBulk) error {
 		if in.Action == "remove" {
 			err := t.RemoveMany(r.Context(), in.Hashes, in.DeleteFiles)
 			if err == nil {
@@ -209,7 +209,7 @@ func (a *API) bulkItems(w http.ResponseWriter, r *http.Request) {
 		}
 		return err
 	})
-	if errors.Is(err, downloader.ErrQueueOff) {
+	if errors.Is(err, downloads.ErrQueueOff) {
 		fail(w, http.StatusConflict, err.Error())
 		return
 	}
@@ -222,9 +222,9 @@ func (a *API) bulkItems(w http.ResponseWriter, r *http.Request) {
 
 // bulkVerbs say a bulk action in History's words.
 var bulkVerbs = map[string]string{
-	downloader.BulkStart: "resumed", downloader.BulkPause: "paused", downloader.BulkRecheck: "rechecked", downloader.BulkReannounce: "reannounced",
-	downloader.BulkTop: "moved to the top", downloader.BulkBottom: "moved to the bottom", downloader.BulkUp: "moved up", downloader.BulkDown: "moved down",
-	downloader.BulkForce: "force-started", downloader.BulkUnforce: "stopped force-starting",
+	downloads.BulkStart: "resumed", downloads.BulkPause: "paused", downloads.BulkRecheck: "rechecked", downloads.BulkReannounce: "reannounced",
+	downloads.BulkTop: "moved to the top", downloads.BulkBottom: "moved to the bottom", downloads.BulkUp: "moved up", downloads.BulkDown: "moved down",
+	downloads.BulkForce: "force-started", downloads.BulkUnforce: "stopped force-starting",
 }
 
 // bulkHashesOK checks a selection: 1 to 1000 info hashes.
@@ -284,11 +284,11 @@ func (a *API) itemChangeOK(w http.ResponseWriter, r *http.Request) bool {
 }
 
 // onBulk runs a call on a torrent Downloader that acts on many torrents.
-func (a *API) onBulk(r *http.Request, id int64, call func(t downloader.TorrentBulk) error) error {
-	return a.manager().ControlTorrentClient(r.Context(), id, true, func(e downloader.Engine) error {
-		t, ok := e.(downloader.TorrentBulk)
+func (a *API) onBulk(r *http.Request, id int64, call func(t downloads.TorrentBulk) error) error {
+	return a.manager().ControlTorrentClient(r.Context(), id, true, func(e downloads.Engine) error {
+		t, ok := e.(downloads.TorrentBulk)
 		if !ok {
-			return downloader.ErrNotSupported
+			return downloads.ErrNotSupported
 		}
 		return call(t)
 	})
@@ -302,12 +302,12 @@ const shareHelp = `body is {"hashes": [info hash...], "ratio": -2 (Downloader's 
 func (a *API) shareLimits(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
-		fail(w, http.StatusNotFound, downloader.ErrNoDownloader.Error())
+		fail(w, http.StatusNotFound, downloads.ErrNoDownloader.Error())
 		return
 	}
 	var in struct {
 		Hashes []string `json:"hashes"`
-		downloader.ShareLimits
+		downloads.ShareLimits
 	}
 	if !decode(w, r, &in, shareHelp) || !a.bulkHashesOK(w, in.Hashes) {
 		return
@@ -333,14 +333,14 @@ func (a *API) shareLimits(w http.ResponseWriter, r *http.Request) {
 	if !safe && !a.changeOutsideOK(w, r, id, in.Hashes) {
 		return
 	}
-	err = a.manager().ControlTorrentClient(r.Context(), id, true, func(e downloader.Engine) error {
-		t, ok := e.(downloader.ShareLimiter)
+	err = a.manager().ControlTorrentClient(r.Context(), id, true, func(e downloads.Engine) error {
+		t, ok := e.(downloads.ShareLimiter)
 		if !ok {
-			return downloader.ErrNotSupported
+			return downloads.ErrNotSupported
 		}
 		return t.SetShareLimits(r.Context(), in.Hashes, l)
 	})
-	if errors.Is(err, downloader.ErrShareAction) {
+	if errors.Is(err, downloads.ErrShareAction) {
 		fail(w, http.StatusConflict, err.Error())
 		return
 	}
@@ -356,7 +356,7 @@ func (a *API) shareLimits(w http.ResponseWriter, r *http.Request) {
 func (a *API) slowMode(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
-		fail(w, http.StatusNotFound, downloader.ErrNoDownloader.Error())
+		fail(w, http.StatusNotFound, downloads.ErrNoDownloader.Error())
 		return
 	}
 	var in struct {
@@ -369,10 +369,10 @@ func (a *API) slowMode(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusBadRequest, `body is {"on": true or false}`)
 		return
 	}
-	err = a.manager().ControlTorrentClient(r.Context(), id, true, func(e downloader.Engine) error {
-		t, ok := e.(downloader.SlowModer)
+	err = a.manager().ControlTorrentClient(r.Context(), id, true, func(e downloads.Engine) error {
+		t, ok := e.(downloads.SlowModer)
 		if !ok {
-			return downloader.ErrNotSupported
+			return downloads.ErrNotSupported
 		}
 		return t.SetSlowMode(r.Context(), *in.On)
 	})
@@ -384,15 +384,15 @@ func (a *API) slowMode(w http.ResponseWriter, r *http.Request) {
 }
 
 // onTrackers runs a tracker change on one torrent of a torrent Downloader.
-func (a *API) onTrackers(w http.ResponseWriter, r *http.Request, call func(t downloader.TrackerEditor, id string) error) {
-	err := a.onItem(r, true, func(e downloader.Engine, id string) error {
-		t, ok := e.(downloader.TrackerEditor)
+func (a *API) onTrackers(w http.ResponseWriter, r *http.Request, call func(t downloads.TrackerEditor, id string) error) {
+	err := a.onItem(r, true, func(e downloads.Engine, id string) error {
+		t, ok := e.(downloads.TrackerEditor)
 		if !ok {
-			return downloader.ErrNotSupported
+			return downloads.ErrNotSupported
 		}
 		return call(t, id)
 	})
-	if errors.Is(err, downloader.ErrTrackerTier) {
+	if errors.Is(err, downloads.ErrTrackerTier) {
 		fail(w, http.StatusConflict, err.Error())
 		return
 	}
@@ -409,11 +409,11 @@ func (a *API) trackerURLsOK(w http.ResponseWriter, r *http.Request, urls []strin
 	id, _ := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	var dr domain.Downloader
 	if err := database.Get(r.Context(), a.s.Store.Read(), "downloaders", id, &dr); err != nil || dr.Removed {
-		fail(w, http.StatusNotFound, downloader.ErrNoDownloader.Error())
+		fail(w, http.StatusNotFound, downloads.ErrNoDownloader.Error())
 		return false
 	}
 	for _, u := range urls {
-		if !downloader.TrackerAllowed(u, dr.AllowLocal) {
+		if !downloads.TrackerAllowed(u, dr.AllowLocal) {
 			fail(w, http.StatusBadRequest, "a tracker is an http, https or udp address on the internet (local ones need the Downloader's local network access): "+trackerShown(u))
 			return false
 		}
@@ -453,7 +453,7 @@ func (a *API) addTrackers(w http.ResponseWriter, r *http.Request) {
 	if !a.trackerURLsOK(w, r, urls) {
 		return
 	}
-	a.onTrackers(w, r, func(t downloader.TrackerEditor, id string) error { return t.AddTrackers(r.Context(), id, urls) })
+	a.onTrackers(w, r, func(t downloads.TrackerEditor, id string) error { return t.AddTrackers(r.Context(), id, urls) })
 }
 
 // editTracker changes one tracker's address or tier, naming it by ref.
@@ -478,7 +478,7 @@ func (a *API) editTracker(w http.ResponseWriter, r *http.Request) {
 	if in.URL != "" && !a.trackerURLsOK(w, r, []string{in.URL}) {
 		return
 	}
-	a.onTrackers(w, r, func(t downloader.TrackerEditor, id string) error {
+	a.onTrackers(w, r, func(t downloads.TrackerEditor, id string) error {
 		return t.EditTracker(r.Context(), id, in.Ref, in.URL, in.Tier)
 	})
 }
@@ -498,15 +498,15 @@ func (a *API) removeTrackers(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusBadRequest, "refs needs 1 to 100 tracker refs")
 		return
 	}
-	a.onTrackers(w, r, func(t downloader.TrackerEditor, id string) error { return t.RemoveTrackers(r.Context(), id, in.Refs) })
+	a.onTrackers(w, r, func(t downloads.TrackerEditor, id string) error { return t.RemoveTrackers(r.Context(), id, in.Refs) })
 }
 
 // onMover runs a call on a torrent Downloader that moves or caps torrents.
-func (a *API) onMover(r *http.Request, id int64, call func(t downloader.Mover) error) error {
-	return a.manager().ControlTorrentClient(r.Context(), id, true, func(e downloader.Engine) error {
-		t, ok := e.(downloader.Mover)
+func (a *API) onMover(r *http.Request, id int64, call func(t downloads.Mover) error) error {
+	return a.manager().ControlTorrentClient(r.Context(), id, true, func(e downloads.Engine) error {
+		t, ok := e.(downloads.Mover)
 		if !ok {
-			return downloader.ErrNotSupported
+			return downloads.ErrNotSupported
 		}
 		return call(t)
 	})
@@ -518,7 +518,7 @@ func (a *API) onMover(r *http.Request, id int64, call func(t downloader.Mover) e
 func (a *API) setLocation(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
-		fail(w, http.StatusNotFound, downloader.ErrNoDownloader.Error())
+		fail(w, http.StatusNotFound, downloads.ErrNoDownloader.Error())
 		return
 	}
 	var in struct {
@@ -545,7 +545,7 @@ func (a *API) setLocation(w http.ResponseWriter, r *http.Request) {
 		itemError(w, err)
 		return
 	}
-	if err := a.onMover(r, id, func(t downloader.Mover) error { return t.SetLocation(r.Context(), in.Hashes, folder) }); err != nil {
+	if err := a.onMover(r, id, func(t downloads.Mover) error { return t.SetLocation(r.Context(), in.Hashes, folder) }); err != nil {
 		itemError(w, err)
 		return
 	}
@@ -557,7 +557,7 @@ func (a *API) setLocation(w http.ResponseWriter, r *http.Request) {
 func (a *API) torrentLimits(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
-		fail(w, http.StatusNotFound, downloader.ErrNoDownloader.Error())
+		fail(w, http.StatusNotFound, downloads.ErrNoDownloader.Error())
 		return
 	}
 	var in struct {
@@ -576,7 +576,7 @@ func (a *API) torrentLimits(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusBadRequest, help)
 		return
 	}
-	if err := a.onMover(r, id, func(t downloader.Mover) error { return t.SetTorrentLimits(r.Context(), in.Hashes, in.Down, in.Up) }); err != nil {
+	if err := a.onMover(r, id, func(t downloads.Mover) error { return t.SetTorrentLimits(r.Context(), in.Hashes, in.Down, in.Up) }); err != nil {
 		itemError(w, err)
 		return
 	}

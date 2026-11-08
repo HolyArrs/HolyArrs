@@ -15,7 +15,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/backup"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
@@ -24,7 +24,7 @@ import (
 )
 
 func TestDownloaderAttemptErrorsArePublicSentinels(t *testing.T) {
-	for _, sentinel := range []error{downloader.ErrUncertain, downloader.ErrAttemptStopped, downloader.ErrPendingAttempt} {
+	for _, sentinel := range []error{downloads.ErrUncertain, downloads.ErrAttemptStopped, downloads.ErrPendingAttempt} {
 		w := httptest.NewRecorder()
 		downloaderError(w, errors.Join(sentinel, errors.New("private provider and database detail")))
 		if w.Code != http.StatusConflict || strings.Contains(w.Body.String(), "private provider") || !strings.Contains(w.Body.String(), sentinel.Error()) {

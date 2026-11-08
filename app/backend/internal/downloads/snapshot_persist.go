@@ -1,4 +1,4 @@
-package dlsync
+package downloads
 
 import (
 	"context"
@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
 )
 
 // Persist timings.
@@ -27,7 +26,7 @@ type LogLine struct {
 
 // LinesFunc returns the torrent log lines for one item going from prev to
 // cur. The API supplies it so both sides share one line format.
-type LinesFunc func(prev, cur downloader.Job) []LogLine
+type LinesFunc func(prev, cur Job) []LogLine
 
 // itemKey identifies one item of one client.
 type itemKey struct {
@@ -37,7 +36,7 @@ type itemKey struct {
 
 // itemWrite is a pending dl_items write; gone marks a removal.
 type itemWrite struct {
-	job  downloader.Job
+	job  Job
 	gone bool
 }
 
@@ -78,7 +77,7 @@ type persister struct {
 // note queues the writes for one read's changes. why is set when prev was
 // loaded stale after a start, and is added to the log lines so they say the
 // change was not seen live.
-func (p *persister) note(id int64, ch Changes, prev, cur map[string]downloader.Job, why string) {
+func (p *persister) note(id int64, ch Changes, prev, cur map[string]Job, why string) {
 	if p == nil || ch.Empty() {
 		return
 	}
@@ -245,8 +244,8 @@ func (p *persister) flush(ctx context.Context) error {
 }
 
 // load reads the last known items of every client, leaving out removed ones.
-func (p *persister) load(ctx context.Context) (map[int64][]downloader.Job, error) {
-	out := map[int64][]downloader.Job{}
+func (p *persister) load(ctx context.Context) (map[int64][]Job, error) {
+	out := map[int64][]Job{}
 	if p == nil || p.db == nil {
 		return out, nil
 	}
@@ -261,7 +260,7 @@ func (p *persister) load(ctx context.Context) (map[int64][]downloader.Job, error
 		if err := rows.Scan(&id, &key, &data); err != nil {
 			return out, err
 		}
-		var j downloader.Job
+		var j Job
 		if json.Unmarshal([]byte(data), &j) != nil {
 			continue
 		}
@@ -280,9 +279,9 @@ func (p *persister) init() {
 
 // matchPriority orders lookups: active items first, then seeding ones, then
 // the rest of the archive.
-func matchPriority(j downloader.Job) int {
+func matchPriority(j Job) int {
 	switch j.State {
-	case downloader.StateDownloading, downloader.StateQueued, downloader.StatePaused:
+	case StateDownloading, StateQueued, StatePaused:
 		return 1
 	}
 	if j.UpSpeed > 0 {

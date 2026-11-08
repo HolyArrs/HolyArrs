@@ -1,6 +1,6 @@
 //go:build measure
 
-package downloader
+package downloads
 
 import (
 	"context"

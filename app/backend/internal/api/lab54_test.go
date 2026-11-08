@@ -14,7 +14,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
@@ -98,7 +98,7 @@ func TestLabRarMovieZeroToDone(t *testing.T) {
 	// A 29 MB "2160p" lab video would trip the size floors meant for real ones.
 	labNoSizeFloors(t, s)
 	im := &importer.Importer{Store: s}
-	m := &downloader.Manager{Store: s, SavePath: "/data/downloads/incomplete/" + cat}
+	m := &downloads.Manager{Store: s, SavePath: "/data/downloads/incomplete/" + cat}
 	srv := httptest.NewServer(New(Server{Store: s, Metadata: metadata.Lab(), Version: "lab", Downloads: m}).Handler())
 	t.Cleanup(srv.Close)
 	view := func() DownloadRow {

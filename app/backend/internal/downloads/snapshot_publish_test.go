@@ -1,12 +1,10 @@
-package dlsync
+package downloads
 
 import (
 	"context"
 	"encoding/json"
 	"testing"
 	"time"
-
-	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
 )
 
 // raw encodes a patch as a live message.
@@ -62,20 +60,20 @@ func TestPublisher_BatchesChangesInOneWindow(t *testing.T) {
 	st := &Store{Now: func() time.Time { return now }}
 	type built struct {
 		from, to  uint64
-		prev, cur map[string]downloader.Job
+		prev, cur map[string]Job
 	}
 	var got []built
-	p := &Publisher{Store: st, Now: func() time.Time { return now },
-		Build: func(_ context.Context, _ int64, from, to uint64, prev, cur map[string]downloader.Job) {
+	p := &SnapshotPublisher{Store: st, Now: func() time.Time { return now },
+		Build: func(_ context.Context, _ int64, from, to uint64, prev, cur map[string]Job) {
 			got = append(got, built{from, to, prev, cur})
 		}}
-	read := func(jobs ...downloader.Job) {
+	read := func(jobs ...Job) {
 		_, prev, _ := st.Apply(1, 1, "", jobs, now)
 		p.Note(1, st.Rev(1)-1, prev)
 	}
-	read(downloader.Job{ID: "a", Progress: 0.1})
-	read(downloader.Job{ID: "a", Progress: 0.2})
-	read(downloader.Job{ID: "a", Progress: 0.3}, downloader.Job{ID: "b"})
+	read(Job{ID: "a", Progress: 0.1})
+	read(Job{ID: "a", Progress: 0.2})
+	read(Job{ID: "a", Progress: 0.3}, Job{ID: "b"})
 	p.Flush(context.Background(), false)
 	if len(got) != 0 {
 		t.Fatalf("flushed before the window: %+v", got)
@@ -85,7 +83,7 @@ func TestPublisher_BatchesChangesInOneWindow(t *testing.T) {
 	if len(got) != 1 || got[0].from != 0 || got[0].to != 3 || len(got[0].cur) != 2 || got[0].prev != nil {
 		t.Fatalf("batch %+v", got)
 	}
-	read(downloader.Job{ID: "a", Progress: 0.4})
+	read(Job{ID: "a", Progress: 0.4})
 	now = now.Add(PublishWindow)
 	p.Flush(context.Background(), false)
 	if len(got) != 2 || got[1].from != 3 || got[1].to != 4 || got[1].prev["a"].Progress != 0.3 {

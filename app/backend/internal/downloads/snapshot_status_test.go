@@ -1,4 +1,4 @@
-package dlsync
+package downloads
 
 import (
 	"context"

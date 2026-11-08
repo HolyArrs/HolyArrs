@@ -7,7 +7,7 @@ import (
 	"database/sql"
 	"errors"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/dlsync"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 
 	"log"
 	"net/http"
@@ -27,7 +27,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/backup"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/bridge"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/health"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
@@ -57,7 +56,7 @@ type Server struct {
 	Store *database.Store
 	// DLSync is the background download reader (downloads.sync = on); nil
 	// keeps the Downloads view's own client reads.
-	DLSync   *dlsync.Sync
+	DLSync   *downloads.Sync
 	Queue    *jobs.Queue
 	Live     *webserver.LiveHub
 	Metadata metadata.Provider
@@ -133,7 +132,7 @@ type Server struct {
 	// Watchlists reads Plex watchlists (nil: no person can be read).
 	Watchlists *asks.Watchlists
 	// Downloads follows Downloaders and Downloads; made on first use when nil.
-	Downloads *downloader.Manager
+	Downloads *downloads.Manager
 	// Search runs searches, hand choices and the Held and Turned down
 	// lists; New makes one (choices queue a grab Job) when nil.
 	Search *source.Searcher
@@ -300,7 +299,7 @@ func New(s Server) *API {
 				if q == nil {
 					return
 				}
-				if _, _, err := q.Enqueue(ctx, downloader.KindGrab, &domain.Subject{Type: "slot", ID: slotID}, map[string]any{"release_id": releaseID},
+				if _, _, err := q.Enqueue(ctx, downloads.KindGrab, &domain.Subject{Type: "slot", ID: slotID}, map[string]any{"release_id": releaseID},
 					"grab:"+itoa(slotID), domain.System); err != nil {
 					log.Printf("queue grab: %v", err)
 				}
