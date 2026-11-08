@@ -1,5 +1,5 @@
 name: release
-# Release publishing is withheld until Luis separately authorizes a release.
+# Release publishing is withheld until the maintainer separately authorizes a release.
 # This manual workflow remains inert: its only job is permanently skipped and
 # receives no package-write or OIDC permission.
 #
@@ -24,7 +24,7 @@ jobs:
   image:
     if: ${{ false }}
     runs-on: [self-hosted, Linux, X64, holyarrs-continuation]
-    # Luis approves each run in the release environment.
+    # The maintainer approves each run in the release environment.
     environment: release
     permissions:
       contents: read
