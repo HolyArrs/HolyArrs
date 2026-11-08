@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { IMAGE, PROJECT_REPO, goBackBackup, imageTag, plainVersion, releaseLink, updatePrivacy, updateWords } from './update-notice.ts';
+import { IMAGE, PROJECT_REPO, goBackBackup, imageTag, plainVersion, releaseLink, whatsNew, updatePrivacy, updateWords } from './update-notice.ts';
 
 const base = { on: true, feed: 'f', newer: false, version: 'v1.0.0' };
 
@@ -56,5 +56,19 @@ describe('goBackBackup', () => {
 		expect(imageTag('1.1.0')).toBe('1.1.0');
 		expect(plainVersion(' V2.0.0-rc.1')).toBe('2.0.0-rc.1');
 		expect(`${IMAGE}:${imageTag('v1.1.0')}`).toBe('ghcr.io/coderluii/holyarrs:1.1.0');
+	});
+});
+
+describe('whatsNew', () => {
+	const u = { version: 'v1.0.0', newer: false, notes: 'Faster Explore.\n\n Fixed search. ', link: 'L' };
+	it('lists this release with its note lines when it is the newest', () => {
+		expect(whatsNew(null)).toEqual([]);
+		expect(whatsNew(u)).toEqual([{ version: '1.0.0', lines: ['Faster Explore.', 'Fixed search.'], link: 'L' }]);
+	});
+	it('puts the newer release first and gives it the notes', () => {
+		const got = whatsNew({ ...u, newer: true, latest: 'v1.1.0' });
+		expect(got.map((r) => r.version)).toEqual(['1.1.0', '1.0.0']);
+		expect(got[0].lines).toEqual(['Faster Explore.', 'Fixed search.']);
+		expect(got[1]).toEqual({ version: '1.0.0', lines: [], link: undefined });
 	});
 });

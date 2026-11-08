@@ -54,3 +54,20 @@ export function plainVersion(version: string): string {
 function bare(v: string): string {
 	return v.trim().replace(/^v/i, '');
 }
+
+export type ReleaseNote = { version: string; date?: string; lines: string[]; link?: string };
+type NotesInfo = { version: string; latest?: string; newer: boolean; link?: string; notes?: string };
+
+/** What's New: releases newest first, each with its note lines, from the update info already loaded. */
+export function whatsNew(u: NotesInfo | null): ReleaseNote[] {
+	if (!u) return [];
+	const out: ReleaseNote[] = [];
+	// The update info has no publish date, so the newer release gets none.
+	if (u.newer && u.latest) out.push({ version: plainVersion(u.latest), lines: noteLines(u.notes), link: u.link });
+	out.push({ version: plainVersion(u.version), lines: u.newer ? [] : noteLines(u.notes), link: u.newer ? undefined : u.link });
+	return out;
+}
+
+export function noteLines(notes: string | undefined): string[] {
+	return (notes ?? '').split('\n').map((l) => l.trim()).filter(Boolean);
+}
