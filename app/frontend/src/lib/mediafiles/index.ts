@@ -192,3 +192,8 @@ export type { SavedFilter } from './table.ts';
 export type { ShelfKind } from './last-kind.ts';
 export type { SortDir } from './table.ts';
 export type { SortKey } from './table.ts';
+export { createTitleSearch } from './title-search.svelte.ts';
+export { createTitleRemove } from './title-remove.svelte.ts';
+export { createTitleChoose } from './title-choose.svelte.ts';
+export { createTitleVersions } from './title-versions.svelte.ts';
+export { createTitleEdit } from './title-edit.svelte.ts';
