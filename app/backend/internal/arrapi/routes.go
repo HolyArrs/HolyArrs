@@ -1,15 +1,12 @@
-// Package compat answers apps such as Seerr, Overseerr, Bazarr, Unpackerr
-// and Homepage the way Sonarr (under /sonarr/) and Radarr (under /radarr/)
-// would, so they can add shows and movies and see them become available.
-// Prowlarr writes its indexers in as Sources (indexers.go).
+// Package arrapi answers Seerr, Overseerr, Bazarr, Unpackerr and Homepage the
+// way Sonarr (under /sonarr/) and Radarr (under /radarr/) would, so they can
+// add shows and movies and see them become available. Prowlarr writes its
+// indexers in as Sources.
 //
-// The package keeps no data of its own beyond a small tag table. Every
-// answer is read from the Library, and every change goes through the same
-// library, search and Job code the app uses. The field names those apps
-// expect stay inside this package.
-//
-// Sign-in, the key, permissions and parts are checked before a request
-// gets here.
+// The package keeps only a tag table. Every answer is read from the Library
+// and every change goes through the same services the app uses. Sign-in, key,
+// permission and part checks run before a request gets here. The field names
+// those apps expect stay inside this package.
 package arrapi
 
 import (
