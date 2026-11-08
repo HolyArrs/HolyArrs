@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/shows"
 )
 
 // titleSize sums the size of every file kept for a title, across all its
@@ -54,30 +55,7 @@ func titleSize(ctx context.Context, db database.Lister, titleID int64) (int64, e
 	return n, rows.Err()
 }
 
-// lastAired is the newest air date of a show's episodes on or before now;
-// nil when nothing has aired yet.
+// lastAired is the newest air date of a show's episodes on or before now.
 func lastAired(ctx context.Context, db database.Lister, titleID int64, now time.Time) (*time.Time, error) {
-	// Stored times share one fixed-width UTC layout, so SQLite can pick the
-	// newest aired one instead of the server parsing every episode.
-	rows, err := db.QueryContext(ctx, `SELECT max(air_date) FROM items WHERE title_id = ? AND kind = 'episode' AND air_date IS NOT NULL AND air_date <= ?`, titleID, database.FormatTime(now))
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var last *time.Time
-	for rows.Next() {
-		var air sql.NullString
-		if err := rows.Scan(&air); err != nil {
-			return nil, err
-		}
-		at, err := time.Parse(database.TimeLayout, air.String)
-		if err != nil || at.After(now) {
-			continue
-		}
-		if last == nil || at.After(*last) {
-			a := at
-			last = &a
-		}
-	}
-	return last, rows.Err()
+	return shows.LastAired(ctx, db, titleID, now)
 }

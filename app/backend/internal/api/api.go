@@ -599,29 +599,7 @@ type TitleView struct {
 }
 
 // ShowInfo is what a show's page needs besides the shared Title fields.
-type ShowInfo struct {
-	DetailsSource string                `json:"details_source"`
-	EpisodeOrder  string                `json:"episode_order"`
-	SeasonChoice  string                `json:"season_choice,omitempty"`
-	NewSeasons    string                `json:"new_seasons"`
-	Status        string                `json:"status"`
-	Network       string                `json:"network,omitempty"`
-	AirTime       string                `json:"air_time,omitempty"`
-	TimeZone      string                `json:"time_zone,omitempty"`
-	Seasons       []shows.SeasonSummary `json:"seasons"`
-	Episodes      int                   `json:"episodes"`
-	Missing       int                   `json:"missing"`
-	NotOutYet     int                   `json:"not_out_yet"`
-	InLibrary     int                   `json:"in_library"`
-	BetterWanted  int                   `json:"better_wanted"`
-	Downloading   int                   `json:"downloading"`
-	Failed        int                   `json:"failed"`
-	NextAirDate   *time.Time            `json:"next_air_date,omitempty"`
-	// SeasonCount counts numbered seasons (specials left out); LastAirDate
-	// is the most recent episode that has aired.
-	SeasonCount int        `json:"season_count"`
-	LastAirDate *time.Time `json:"last_air_date,omitempty"`
-}
+type ShowInfo = shows.Info
 
 func strOr(p *string) string {
 	if p == nil {
@@ -631,31 +609,7 @@ func strOr(p *string) string {
 }
 
 func (a *API) showInfo(ctx context.Context, t mediafiles.Title) (*ShowInfo, error) {
-	ss, err := shows.Seasons(ctx, a.s.Store.Read(), t.ID, time.Now())
-	if err != nil {
-		return nil, err
-	}
-	si := &ShowInfo{DetailsSource: t.MetadataSource, EpisodeOrder: strOr(t.EpisodeOrder), SeasonChoice: strOr(t.SeasonChoice), NewSeasons: t.NewPartsPolicy,
-		Status: t.Status, Network: strOr(t.Network), AirTime: strOr(t.AirTime), TimeZone: strOr(t.TimeZone), Seasons: ss}
-	for _, s := range ss {
-		if s.Number > 0 {
-			si.SeasonCount++
-		}
-		si.Episodes += s.Episodes
-		si.Missing += s.Missing
-		si.NotOutYet += s.NotOutYet
-		si.InLibrary += s.InLibrary
-		si.BetterWanted += s.BetterWanted
-		si.Downloading += s.Downloading
-		si.Failed += s.Failed
-		if s.NextAirDate != nil && (si.NextAirDate == nil || s.NextAirDate.Before(*si.NextAirDate)) {
-			si.NextAirDate = s.NextAirDate
-		}
-	}
-	if si.LastAirDate, err = lastAired(ctx, a.s.Store.Read(), t.ID, time.Now()); err != nil {
-		return nil, err
-	}
-	return si, nil
+	return shows.InfoOf(ctx, a.s.Store.Read(), t)
 }
 
 // StateLabels are the words people see for Slot states.
