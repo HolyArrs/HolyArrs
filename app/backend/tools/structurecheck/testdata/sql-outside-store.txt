@@ -48,7 +48,6 @@ app/backend/internal/api/settings_status.go
 app/backend/internal/api/showroutes.go
 app/backend/internal/api/showsearch.go
 app/backend/internal/api/signinart.go
-app/backend/internal/api/speedhistory.go
 app/backend/internal/api/titlefacts.go
 app/backend/internal/api/titles.go
 app/backend/internal/api/titles_brief.go

@@ -248,8 +248,8 @@ type API struct {
 	ctl      musicControl
 	// artistVideos keeps each artist's music videos (see music_video.go).
 	artistVideos artistVideoCache
-	// speeds is the rolling total-speed history (speedhistory.go).
-	speeds speedHistory
+	// speeds is the rolling total-speed history (downloads/speed_history.go).
+	speeds downloads.SpeedHistory
 	// match links outside torrents to Library titles (client_match.go).
 	match clientMatch
 	// viewDB, when set, takes the Downloads view's reads (tests count them).
@@ -1318,4 +1318,11 @@ func (a *API) searchMetadata(w http.ResponseWriter, r *http.Request) {
 	}
 	ms = a.kidMovies(r.Context(), a.kidMax(r), ms)
 	webserver.WriteJSON(w, http.StatusOK, map[string]any{"movies": ms, "attribution": metadata.Attribution})
+}
+
+// StartSpeedHistory starts the total-speed readings (downloads.SpeedHistory).
+func (a *API) StartSpeedHistory(ctx context.Context) {
+	if a.s.Store != nil {
+		a.speeds.Start(ctx, a.s.Store.Read())
+	}
 }

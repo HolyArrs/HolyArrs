@@ -1,9 +1,9 @@
-package api
+package downloads
 
 import "testing"
 
 func TestSpeedHistoryKeepsNewest(t *testing.T) {
-	var h speedHistory
+	var h SpeedHistory
 	for i := 0; i < speedKeep+30; i++ {
 		h.add(SpeedSample{Down: int64(i)})
 	}
