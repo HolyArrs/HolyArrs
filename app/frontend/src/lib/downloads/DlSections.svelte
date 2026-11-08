@@ -10,6 +10,7 @@
 	import DlMorePop from './DlMorePop.svelte';
 	import { createColumns } from './columns-grid.svelte.ts';
 	import DlColumnPicker from './DlColumnPicker.svelte';
+	import DlSelBars from './DlSelBars.svelte';
 	import DlRow from './DlRow.svelte';
 	import DlPane from './DlPane.svelte';
 	import { Downloaders } from './clients.svelte.ts';
@@ -24,7 +25,7 @@
 	import { kindOf, rowName } from './downloaders.ts';
 	import type { ImportRecord } from './types.ts';
 	import { ALL, counts, emptyOf, pick, showOf, statusWord, subCounts, tabsFor } from './status-tabs.ts';
-	import { controllable, pausable, retryable } from './usenet.ts';
+	import { controllable, pausable } from './usenet.ts';
 	import { poster, who } from './row-art.ts';
 	import { byTracker, countLabel, pickRange, problemWords, toolbarTargets, trackerOptions, type BulkAction, type SteerMode } from './manage.ts';
 	import { problem } from './problem.ts';
@@ -315,12 +316,7 @@
 		{ mode: 'speed', label: 'Speed limits…', short: 'Speed limits' },
 		{ mode: 'seed', label: 'Seeding rules…', short: 'Seeding rules' }
 	];
-	const PHONE_BULK: { action: BulkAction; label: string; icon: 'play' | 'pause' | 'refresh' }[] = [{ action: 'start', label: 'Start', icon: 'play' }, { action: 'pause', label: 'Pause', icon: 'pause' }, { action: 'recheck', label: 'Check again', icon: 'refresh' }];
 	const allItems = $derived(watch ? [] : [{ label: 'Select', onselect: () => (selecting = true) }, { label: 'Start all', onselect: () => onall?.(false) }, { label: 'Pause all', onselect: () => onall?.(true) }, { label: 'Speed limit…', onselect: () => onlimit?.() }, { label: 'Held files', onselect: () => void goto(to('/library/held')) }]);
-	const BULK: { action: BulkAction; label: string }[] = [
-		{ action: 'recheck', label: 'Check again' }, { action: 'reannounce', label: 'Ask trackers again' }, { action: 'top', label: 'Move to top' },
-		{ action: 'up', label: 'Move up' }, { action: 'down', label: 'Move down' }, { action: 'bottom', label: 'Move to bottom' }, { action: 'force', label: 'Force start' }
-	];
 	let paneOpen = $state(true);
 	const openTab = $derived(openRow ? tabNow(openRow) : '');
 	const pane = new PaneDetail({ openId: () => openId, openTab: () => openTab, paneOpen: () => paneOpen, rows: () => everyRow, watch: () => watch });
@@ -575,21 +571,7 @@
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 <div class="listbox" bind:this={cols.listEl} data-testid="dl-listbox" use:overlayScroll={{ header: ".chead" }}>
 {#if (pickedRows.length || selecting) && !watch}
-	<div class="selbar" role="toolbar" aria-label="Selected downloads" data-testid="dl-selbar">
-		<span class="sn" aria-live="polite"><b>{pickedRows.length}</b> selected</span>
-		{#if bulkRows.length}{#each BULK as b (b.action)}<button type="button" class="xbn" disabled={batchBusy} onclick={() => onbulk?.(bulkRows, b.action)} data-testid="dl-bulk-{b.action}">{b.label}</button>{/each}{/if}
-		{#if pickedRows.some(steerable)}{#each STEER as m (m.mode)}<button type="button" class="xbn" onclick={() => onsteer?.(pickedRows.filter(steerable), m.mode)} data-testid="dl-bulk-steer-{m.mode}">{m.short}</button>{/each}{/if}
-		{#if pickedRows.some((r) => retryable(r) && mayEdit(r))}<button type="button" class="xbn" disabled={batchBusy} onclick={() => onretry?.(pickedRows.filter((r) => retryable(r) && mayEdit(r)))} data-testid="dl-bulk-retry">Download again</button>{/if}
-		<button type="button" class="xbn" onclick={() => (picked = new Set(list.map((r) => r.id)))} data-testid="dl-bulk-all">Select all</button>
-		<button type="button" class="xbn" onclick={clearPicked} data-testid="dl-bulk-clear">Clear</button>
-	</div>
-		<div class="psel" role="toolbar" aria-label="Selected downloads" data-testid="dl-psel">
-			<div class="pst"><span class="sn" aria-live="polite"><b>{pickedRows.length}</b> selected</span><button type="button" class="plk" onclick={() => (picked = new Set(list.map((r) => r.id)))} data-testid="dl-psel-all">Select all</button><button type="button" class="plk" onclick={clearPicked} data-testid="dl-psel-cancel">Cancel</button></div>
-			<div class="psa">
-				{#each PHONE_BULK.filter((b) => b.action !== 'recheck' || bulkRows.length) as b (b.action)}<button type="button" class="pa" disabled={batchBusy || (b.action === 'start' ? !startT.rows.length : b.action === 'pause' ? !pauseT.rows.length : false)} onclick={() => (b.action === 'start' ? runOn(startT, 'resume', 'start') : b.action === 'pause' ? runOn(pauseT, 'pause', 'pause') : onbulk?.(bulkRows, b.action))} data-testid="dl-psel-{b.action}"><Icon name={b.icon} size={20} /><span>{b.label}</span></button>{/each}
-				<button type="button" class="pa bad" onclick={() => onremovemany?.(pickedRows)} data-testid="dl-psel-remove"><Icon name="trash" size={20} /><span>Remove</span></button>
-			</div>
-		</div>
+	<DlSelBars {pickedRows} {bulkRows} steer={STEER} {startT} {pauseT} {batchBusy} {steerable} {mayEdit} {runOn} {onbulk} {onsteer} {onretry} {onremovemany} onall={() => (picked = new Set(list.map((r) => r.id)))} onclear={clearPicked} />
 {/if}
 {#if list.length}
 	<div class="tw" onscroll={cols.sync} data-testid="dl-tablebox"><div class="tin">
@@ -645,14 +627,7 @@
 	.hk::after { content: ''; position: absolute; top: 0; bottom: 0; right: calc(3px - var(--gap)); width: 1px; background: var(--line-strong); pointer-events: none; }
 	.hpk { width: 16px; height: 16px; margin: 0 0 0 4px; accent-color: var(--accent); cursor: pointer; }
 	.hpk:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.selbar { position: sticky; top: 0; left: 0; z-index: 3; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 8px var(--gutter, 12px); background: var(--surface-1); border-bottom: 1px solid var(--line); }
-	.selbar .sn { font: var(--t-footnote); color: var(--text-muted); margin-right: 4px; }
-	.selbar .sn b { color: var(--text); }
-	.psel, .qline { display: none; }
-	@keyframes pselIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
-	@media (prefers-reduced-motion: reduce) {
-		.psel { animation: none; }
-	}
+	.qline { display: none; }
 	.dline { display: grid; grid-template-columns: var(--tpl); align-items: center; column-gap: var(--gap); height: max(44px, calc(var(--pi, 26px) * 1.5 + 6px)); }
 	@media (min-width: 641px) {
 		.dline:not(.chead) > [data-col] { min-width: 0; overflow: hidden; }
@@ -678,7 +653,6 @@
 	.ch.fixed::after { content: ''; position: absolute; top: 0; bottom: 0; right: calc(3px - var(--gap)); width: 1px; background: var(--line-strong); pointer-events: none; }
 	.grip:focus-visible { outline: none; }
 	.cm { display: flex; justify-content: flex-end; }
-	.xbn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.app { display: flex; flex-direction: column; height: var(--app-h, auto); min-height: 420px; min-width: 0; overflow: clip; }
 	.body { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); flex: 1 1 auto; min-height: 0; }
 	.listbox { min-width: 0; min-height: 0; overflow: auto; overscroll-behavior: contain; }
@@ -729,9 +703,6 @@
 	@media (prefers-reduced-motion: reduce) {
 		.pw, .tab, .stab, .subwrap { transition: none; }
 	}
-	.xbn { min-height: 32px; padding: 0 14px; border: 1px solid var(--surface-3); border-radius: var(--r-btn); background: var(--surface-2); color: var(--text); font: var(--t-footnote); font-weight: 500; cursor: pointer; }
-	.xbn:hover:not(:disabled) { background: var(--surface-3); }
-	.xbn:disabled { opacity: 0.5; cursor: not-allowed; }
 	.app { --r-poster: 4px; }
 	@keyframes rowin { from { opacity: 0; transform: translateY(-4px); } }
 	@keyframes tabin { from { opacity: 0; transform: translateY(4px); } }
@@ -765,20 +736,8 @@
 		.qbtn:focus-visible { outline: none; border-radius: 6px; box-shadow: var(--focus-ring); }
 		.qcap { display: inline-flex; align-items: center; gap: 3px; color: var(--text-muted); font-weight: 400; }
 		.qrv { margin-left: auto; min-height: 24px; padding: 0 10px; border: 0; border-radius: 999px; background: color-mix(in srgb, var(--fail) 14%, transparent); color: var(--fail-text); font: 600 12px/1 var(--font-ui); }
-	.selbar { display: none; }
-		.psel { position: fixed; left: 8px; right: 8px; bottom: calc(var(--tabbar, 56px) + env(safe-area-inset-bottom) + 8px); z-index: 45; display: grid; gap: 4px; padding: 6px 8px 8px; border: 1px solid var(--line-strong); border-radius: 18px; background: color-mix(in srgb, var(--surface-1) 97%, transparent); backdrop-filter: blur(20px) saturate(1.4); -webkit-backdrop-filter: blur(20px) saturate(1.4); box-shadow: var(--shadow-modal); animation: pselIn 220ms var(--ease-out); }
-		.pst { display: flex; align-items: center; gap: 4px; }
-		.pst .sn { flex: 1; padding-left: 8px; color: var(--text-muted); font: 400 13px/1 var(--font-ui); }
-		.pst .sn b { color: var(--text); font-weight: 600; }
-		.plk { min-height: 44px; padding: 0 12px; border: 0; border-radius: 10px; background: none; color: var(--accent-text, var(--text)); font: 600 14px/1 var(--font-ui); cursor: pointer; }
-		.psa { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; }
-		.pa { display: grid; justify-items: center; align-content: center; gap: 4px; min-height: 52px; padding: 4px 2px; border: 0; border-radius: 12px; background: var(--surface-2); color: var(--text); font: 500 11px/1.1 var(--font-ui); cursor: pointer; -webkit-tap-highlight-color: transparent; }
-		.pa span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-		.pa:active, .plk:active { transform: scale(0.97); }
-		.pa.bad { color: var(--fail-text); }
-		.pa:disabled { opacity: 0.45; }
-		.pa:focus-visible, .plk:focus-visible, .qrv:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-		.listbox:has(.psel) .dlrows { padding-bottom: 140px; }
+		.qrv:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+		.listbox:has(:global(.psel)) .dlrows { padding-bottom: 140px; }
 		.dline > [data-col='progress'] { height: 4px; align-self: center; }
 	.strip { gap: 4px 14px; }
 	}
@@ -819,7 +778,7 @@
 	.tw::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--text) 40%, transparent) padding-box; }
 	@media (max-width: 640px) {
 		.tab, .stab { height: 32px; }
-		.trchip, .qrv, .xbn { min-height: 32px; }
+		.trchip, .qrv { min-height: 32px; }
 	}
 	/* Touch phones get 44px targets; the hit area grows with an invisible ::after so nothing moves. */
 	@media (max-width: 767px) and (pointer: coarse) {

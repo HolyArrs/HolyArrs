@@ -3,7 +3,6 @@ package structurecheck
 // oversized lists files over the 800-line cap that a later task splits.
 // Remove an entry when its file is split.
 var oversized = map[string]bool{
-	"app/frontend/src/lib/downloads/DlSections.svelte":       true,
 	"app/backend/internal/migrate/apply.go":                  true,
 	"app/backend/internal/migrate/plan.go":                   true,
 	"app/frontend/src/lib/TitlePage.svelte":                  true,
