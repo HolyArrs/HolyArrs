@@ -1,4 +1,4 @@
-package api
+package health
 
 import (
 	"archive/zip"
@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/logs"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/health"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
 // Extra masks for the support bundle, on top of the log's own masking:
@@ -21,9 +21,9 @@ var (
 	bundlePair   = regexp.MustCompile(`(?i)\b(api[-_ ]?key|apikey|token|access[-_ ]?token|refresh[-_ ]?token|password|passwd|passkey|secret)("?\s*[:=]\s*)("[^"]*"|'[^']*'|[^\s"',;&]+)`)
 )
 
-// redactBundle masks secrets in text once more, line by line, before it
+// RedactBundle masks secrets in text once more, line by line, before it
 // goes into the support bundle.
-func redactBundle(s string) string {
+func RedactBundle(s string) string {
 	lines := strings.Split(s, "\n")
 	for i, l := range lines {
 		l = logs.RedactPatterns(l)
@@ -43,23 +43,23 @@ func redactBundle(s string) string {
 // supportBundle is a zip to attach to a bug report: the newest log (masked,
 // then masked again), the About view, the doctor report and the health data.
 // Owner and admins only, like the log download.
-func (a *API) supportBundle(w http.ResponseWriter, r *http.Request) {
+func (h *AppHandlers) supportBundle(w http.ResponseWriter, r *http.Request) {
 	logText := "this HolyArrs keeps no log file; read the program's output (docker logs)\n"
-	if a.s.Log != nil {
-		if a.s.Secrets != nil {
-			if err := a.s.Log.Sync(r.Context(), a.s.Secrets); err != nil {
-				internal(w, err)
+	if h.Log != nil {
+		if h.Secrets != nil {
+			if err := h.Log.Sync(r.Context(), h.Secrets); err != nil {
+				webserver.Internal(w, "api", err)
 				return
 			}
 		}
-		logText = string(a.s.Log.Tail(maxLogDownload))
+		logText = string(h.Log.Tail(maxLogDownload))
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
 	defer cancel()
-	rep := health.RunDoctor(ctx, health.DoctorOptions{Version: a.s.Version, ConfigDir: a.configDir(), DB: a.s.Store.Read(), SavePath: a.s.SavePath,
+	rep := RunDoctor(ctx, DoctorOptions{Version: h.Version, ConfigDir: h.configDir(), DB: h.Store.Read(), SavePath: h.SavePath,
 		FolderBudget: 10 * time.Second, NetTimeout: 5 * time.Second})
-	about, _ := json.MarshalIndent(a.aboutView(r.Context()), "", "  ")
-	health, _ := json.MarshalIndent(a.healthView(r.Context()), "", "  ")
+	about, _ := json.MarshalIndent(h.aboutView(r.Context()), "", "  ")
+	healthJSON, _ := json.MarshalIndent(h.HealthView(r.Context()), "", "  ")
 	var buf bytes.Buffer
 	zw := zip.NewWriter(&buf)
 	now := time.Now().UTC()
@@ -67,20 +67,20 @@ func (a *API) supportBundle(w http.ResponseWriter, r *http.Request) {
 		{"log.txt", logText},
 		{"about.json", string(about) + "\n"},
 		{"doctor.txt", rep.Text()},
-		{"health.json", string(health) + "\n"},
+		{"health.json", string(healthJSON) + "\n"},
 	} {
 		fw, err := zw.CreateHeader(&zip.FileHeader{Name: f.name, Method: zip.Deflate, Modified: now})
 		if err != nil {
-			internal(w, err)
+			webserver.Internal(w, "api", err)
 			return
 		}
-		if _, err := fw.Write([]byte(redactBundle(f.body))); err != nil {
-			internal(w, err)
+		if _, err := fw.Write([]byte(RedactBundle(f.body))); err != nil {
+			webserver.Internal(w, "api", err)
 			return
 		}
 	}
 	if err := zw.Close(); err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	w.Header().Set("Content-Type", "application/zip")

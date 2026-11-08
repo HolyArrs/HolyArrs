@@ -25,3 +25,10 @@ func libraryFolders(ctx context.Context, q database.Lister) ([]DiskView, error) 
 	}
 	return out, rows.Err()
 }
+
+// sqliteVersion is the SQLite library's version; "" when it cannot be read.
+func sqliteVersion(ctx context.Context, q database.Querier) string {
+	var v string
+	_ = q.QueryRowContext(ctx, "SELECT sqlite_version()").Scan(&v)
+	return v
+}
