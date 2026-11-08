@@ -15,7 +15,7 @@
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import PageLoader from '#lib/ui/PageLoader.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
-	import { artGone, lightOnDark } from '#lib/art-check.ts';
+	import { artGone, lightOnDark } from './art-check.ts';
 	import { arrivedHead, attention, downloadMoved, downloadingNow, fallbackRows, homeStrip, n, type HomeAnswer, type HomeCard, type HomeRow } from './home.ts';
 	import { MetadataNotice } from '#lib/metadata/index.ts';
 	import { homeFacts, homeGreeting, homeNews } from './home-line.ts';

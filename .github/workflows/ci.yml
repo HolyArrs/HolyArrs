@@ -31,6 +31,7 @@ jobs:
           node-version: "24"
       - run: npm ci
       - run: npm run check
+      - run: npm run lint
       - run: npm test
       # The build must succeed. Its output is not compared with the committed
       # app/frontend/dist: images build their own pages (Dockerfile web stage), and a

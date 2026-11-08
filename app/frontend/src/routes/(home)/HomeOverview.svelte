@@ -8,7 +8,7 @@
 	import { metadataOutage } from '#lib/metadata/index.ts';
 	import SettingsTile from '#lib/ui/SettingsTile.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
-	import { artGone } from '#lib/art-check.ts';
+	import { artGone } from './art-check.ts';
 	import Button from '#lib/ui/Button.svelte';
 	import type { IconName } from '#lib/ui/Icon.svelte';
 	import type { Tint } from '#lib/core/settings.ts';

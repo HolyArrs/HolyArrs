@@ -1,15 +1,9 @@
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { LAYER, SRC, buildGraph, isCode, isTest, listFiles, zoneOf } from '../../structure-graph.ts';
+import { LAYER, buildGraph, isCode, isTest, listFiles, zoneOf } from '../../structure-graph.ts';
 
 const MAX_CORE_FILES = 40;
 const ROUTE_TEST_FOLDERS = ['routes/(home)/', 'routes/(frame)/', 'routes/settings/(home)/'];
 
-const PENDING_FILE = join(SRC, 'lib/core/structure-pending.json');
-const pending: Record<'names' | 'flat' | 'routeTests' | 'edges' | 'pageEdges' | 'noIndex', string[]> = existsSync(PENDING_FILE)
-	? JSON.parse(readFileSync(PENDING_FILE, 'utf8'))
-	: { names: [], flat: [], routeTests: [], edges: [], pageEdges: [], noIndex: [] };
 
 const graph = buildGraph();
 const all = listFiles();
@@ -17,7 +11,7 @@ const lib = graph.files.filter((f) => f.startsWith('lib/'));
 
 const names = all.filter((f) => {
 	const name = f.split('/').pop()!;
-	if (name.startsWith('+') || f.startsWith('static/')) return false;
+	if (name.startsWith('+') || /^hooks\.(client|server)\.ts$/.test(name) || f.startsWith('static/')) return false;
 	if (name.endsWith('.svelte')) return !/^[A-Z][A-Za-z0-9]*\.svelte$/.test(name);
 	if (name.endsWith('.ts')) return !/^[a-z0-9]+(-[a-z0-9]+)*(\.svelte|\.test|\.lab\.test|\.d)?\.ts$/.test(name);
 	return false;
@@ -55,17 +49,8 @@ const noIndex = Object.keys(LAYER).filter((m) => lib.some((f) => f.startsWith('l
 
 const found = { names, flat, routeTests, edges, pageEdges, noIndex };
 
-if (process.env.UPDATE_PENDING) {
-	writeFileSync(PENDING_FILE, JSON.stringify(Object.fromEntries(Object.entries(found).map(([k, v]) => [k, [...v].sort()])), null, '\t') + '\n');
-}
-
 function same(kind: keyof typeof found) {
-	const allowed = new Set(pending[kind]);
-	const now = new Set(found[kind]);
-	return {
-		newBreaks: [...now].filter((x) => !allowed.has(x)),
-		stale: [...allowed].filter((x) => !now.has(x))
-	};
+	return { newBreaks: found[kind], stale: [] as string[] };
 }
 
 describe('file names', () => {

@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
-const src = readFileSync(new URL('./+page.svelte', import.meta.url), 'utf8');
+const src = readFileSync(new URL('../../routes/settings/alerts/+page.svelte', import.meta.url), 'utf8');
 
 describe('alerts hints', () => {
 	it('says what the local-network box turns on', () => {
