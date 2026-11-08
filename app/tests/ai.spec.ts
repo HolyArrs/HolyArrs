@@ -237,7 +237,7 @@ test('an AI app signs in through the browser and gets its own key', async () => 
 	});
 	const q = new URLSearchParams({ response_type: 'code', client_id: reg.client_id, redirect_uri: 'http://localhost:45999/callback', code_challenge: challenge, code_challenge_method: 'S256', state: 's1', resource: origin + '/api/v1/mcp' });
 	await page.goto('/oauth/authorize?' + q);
-	await expect(page).toHaveURL(/\/ai-connect\?/);
+	await expect(page).toHaveURL(/\/ai\?/);
 	const card = page.getByTestId('ai-connect');
 	await expect(card).toContainText('Test Agent wants to use HolyArrs');
 	await card.getByRole('button', { name: 'Allow' }).click();
