@@ -31,6 +31,7 @@ jobs:
       # Switching the job on also grants, here and only here:
       #   packages: write  (push to GHCR)
       #   id-token: write  (keyless cosign signing)
+      #   contents: write  (create the GitHub release)
     env:
       IMAGE: ghcr.io/coderluii/holyarrs
       HUB_IMAGE: docker.io/coderluii/holyarrs
@@ -199,6 +200,33 @@ jobs:
         with:
           name: sbom
           path: sbom.spdx.json
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "24"
+      - name: Package the release files
+        env:
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          npm ci --prefix app/frontend
+          go mod download
+          python3 deploy/release/package.py --ref "$GITHUB_SHA" --version "${REF_NAME#v}" \
+            --output "$RUNNER_TEMP/assets" --web-node-modules app/frontend/node_modules \
+            --module-cache "$(go env GOMODCACHE)"
+
+      # The notes are this version's CHANGELOG.md section.
+      - name: Create the GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          python3 deploy/release/changelog_notes.py "$REF_NAME" > "$RUNNER_TEMP/notes.md"
+          pre=""
+          case "$REF_NAME" in *-*) pre="--prerelease" ;; esac
+          gh release create "$REF_NAME" --verify-tag $pre --title "${REF_NAME#v}" \
+            --notes-file "$RUNNER_TEMP/notes.md" "$RUNNER_TEMP"/assets/*
 
       # promote.yml takes this digest to move the stable tags.
       - name: Digest in the run summary

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { IMAGE, goBackBackup, imageTag, releaseLink, updatePrivacy, updateWords } from './update-notice.ts';
+import { IMAGE, PROJECT_REPO, goBackBackup, imageTag, plainVersion, releaseLink, whatsNew, updatePrivacy, updateWords } from './update-notice.ts';
 
 const base = { on: true, feed: 'f', newer: false, version: 'v1.0.0' };
 
@@ -7,7 +7,7 @@ describe('updateWords', () => {
 	it('shows a plain sentence for each update state', () => {
 		expect(updateWords({ ...base, on: false })).toContain('off');
 		expect(updateWords(base)).toContain('Not checked yet');
-		expect(updateWords({ ...base, checked_at: 'x', newer: true, latest: 'v2.0.0' })).toBe('HolyArrs v2.0.0 is out, newer than this one.');
+		expect(updateWords({ ...base, checked_at: 'x', newer: true, latest: 'v2.0.0' })).toBe('HolyArrs 2.0.0 is out, newer than this one.');
 		expect(updateWords({ ...base, checked_at: 'x', problem: 'the release feed did not answer' })).toContain('did not work');
 		expect(updateWords({ ...base, checked_at: 'x', no_release: true })).toBe('No HolyArrs release is published yet.');
 		expect(updateWords({ ...base, checked_at: 'x' })).toBe('This is the newest version.');
@@ -16,6 +16,9 @@ describe('updateWords', () => {
 
 describe('releaseLink', () => {
 	it('opens a release link only when it is a project release page', () => {
+		expect(PROJECT_REPO).toBe('HolyArrs/holyarrs');
+		expect(releaseLink('https://github.com/HolyArrs/holyarrs/releases/tag/v1.2.0')).toBe('https://github.com/HolyArrs/holyarrs/releases/tag/v1.2.0');
+		// Until the backend check moves to the new repo.
 		expect(releaseLink('https://github.com/CoderLuii/holyarrs/releases/tag/v1.2.0')).toBe('https://github.com/CoderLuii/holyarrs/releases/tag/v1.2.0');
 		for (const bad of [
 			undefined,
@@ -24,6 +27,8 @@ describe('releaseLink', () => {
 			'http://github.com/CoderLuii/holyarrs/releases/tag/v1',
 			'https://github.com.evil.example/CoderLuii/holyarrs/releases/x',
 			'https://github.com/CoderLuii/holyarrs/releasesX/tag/v1',
+			'https://github.com/HolyArrs/holyarrs-evil/releases/tag/v1',
+			'https://github.com/HolyArrs/holyarrs/releases/../../x',
 			'https://github.com/CoderLuii/holyarrs/releases/../../x',
 			'https://github.com/CoderLuii/holyarrs/releases/tag/v1?x=1',
 			'javascript:alert(1)'
@@ -49,6 +54,21 @@ describe('goBackBackup', () => {
 	it('shows the image tag without a leading v', () => {
 		expect(imageTag('v1.1.0')).toBe('1.1.0');
 		expect(imageTag('1.1.0')).toBe('1.1.0');
+		expect(plainVersion(' V2.0.0-rc.1')).toBe('2.0.0-rc.1');
 		expect(`${IMAGE}:${imageTag('v1.1.0')}`).toBe('ghcr.io/coderluii/holyarrs:1.1.0');
+	});
+});
+
+describe('whatsNew', () => {
+	const u = { version: 'v1.0.0', newer: false, notes: 'Faster Explore.\n\n Fixed search. ', link: 'L' };
+	it('lists this release with its note lines when it is the newest', () => {
+		expect(whatsNew(null)).toEqual([]);
+		expect(whatsNew(u)).toEqual([{ version: '1.0.0', lines: ['Faster Explore.', 'Fixed search.'], link: 'L' }]);
+	});
+	it('puts the newer release first and gives it the notes', () => {
+		const got = whatsNew({ ...u, newer: true, latest: 'v1.1.0' });
+		expect(got.map((r) => r.version)).toEqual(['1.1.0', '1.0.0']);
+		expect(got[0].lines).toEqual(['Faster Explore.', 'Fixed search.']);
+		expect(got[1]).toEqual({ version: '1.0.0', lines: [], link: undefined });
 	});
 });

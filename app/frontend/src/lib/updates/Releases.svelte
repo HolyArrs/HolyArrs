@@ -3,6 +3,7 @@
 	import Button from '#lib/ui/Button.svelte';
 	import { page } from '$app/state';
 	import { ago } from '../core/format.ts';
+	import { noteLines, plainVersion, whatsNew, type ReleaseNote } from './update-notice.ts';
 
 	type Update = { on: boolean; version: string; latest?: string; newer: boolean; link?: string; notes?: string; checked_at?: string; problem?: string; no_release?: boolean };
 	type Rel = { version: string; date?: string; notes?: string; link?: string };
@@ -26,45 +27,37 @@
 	];
 	const isDemo = $derived(import.meta.env.DEV && page.url.searchParams.get('releases') === 'demo');
 
-	const list = $derived.by((): Rel[] => {
-		if (isDemo) return demo;
-		if (!upd) return [];
-		const out: Rel[] = [];
-		// The update info has no publish date, so the newer release gets none.
-		if (upd.newer && upd.latest) out.push({ version: upd.latest, notes: upd.notes, link: upd.link });
-		out.push({ version: upd.version, notes: upd.newer ? undefined : upd.notes, link: upd.newer ? undefined : upd.link });
-		return out;
-	});
+	const list = $derived<ReleaseNote[]>(isDemo ? demo.map((r) => ({ ...r, lines: noteLines(r.notes) })) : whatsNew(upd));
 	const current = $derived(isDemo ? '1.3.2' : upd?.version);
 	// Call the first row newest only when a check ran and worked.
 	const known = $derived(isDemo || !!(upd && upd.on && !upd.problem && !upd.no_release && upd.checked_at));
-	const isOpen = (r: Rel, i: number) => open[r.version] ?? i === 0;
+	const isOpen = (r: ReleaseNote, i: number) => open[r.version] ?? i === 0;
 </script>
 
-{#snippet head(r: Rel, i: number, notes: boolean)}
+{#snippet head(r: ReleaseNote, i: number, notes: boolean)}
 	<span class="chev" aria-hidden="true">{#if notes}<svg viewBox="0 0 20 20"><path d="M7 5l5 5-5 5" /></svg>{/if}</span>
-	<span class="rv">v{r.version}</span>
+	<span class="rv">{plainVersion(r.version)}</span>
 	{#if i === 0 && known}<span class="chip ok">Newest</span>{/if}
 	{#if r.version === current}<span class="chip red">Yours</span>{/if}
 	{#if r.date}<span class="rd">{ago(r.date)}</span>{/if}
 {/snippet}
 
-<section class="st-plate" aria-labelledby="s-rel">
-	<h2 id="s-rel">All releases{#if list.length > 1}<span class="cnt">{list.length}</span>{/if}</h2>
+<section class="st-plate" aria-labelledby="s-rel" data-testid="whats-new">
+	<h2 id="s-rel">What's new{#if list.length > 1}<span class="cnt">{list.length}</span>{/if}</h2>
 
 	{#if !list.length}<p class="none">Loading releases…</p>{/if}
 	<ol class="rels">
 		{#each list.slice(0, shown) as r, i (r.version)}
-			{@const o = !!r.notes && isOpen(r, i)}
+			{@const o = r.lines.length > 0 && isOpen(r, i)}
 			<li class="rel" class:open={o}>
-				{#if r.notes}
+				{#if r.lines.length}
 					<button type="button" class="rh" aria-expanded={o} onclick={() => (open[r.version] = !o)}>{@render head(r, i, true)}</button>
 				{:else}
 					<div class="rh">{@render head(r, i, false)}</div>
 				{/if}
-				{#if o && r.notes}
+				{#if o}
 					<div class="body">
-						<ul class="notes">{#each r.notes.split('\n').filter(Boolean) as line}<li>{line}</li>{/each}</ul>
+						<ul class="notes">{#each r.lines as line}<li>{line}</li>{/each}</ul>
 						{#if r.link}<a class="xbtn" href={r.link} target="_blank" rel="noopener noreferrer">Release page</a>{/if}
 					</div>
 				{/if}

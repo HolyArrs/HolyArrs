@@ -2,7 +2,7 @@
 	import Button from '#lib/ui/Button.svelte';
 	import Releases from './Releases.svelte';
 	import GoBack from './GoBack.svelte';
-	import { RELEASE_PAGES, releaseLink } from './update-notice.ts';
+	import { RELEASE_PAGES, plainVersion, releaseLink } from './update-notice.ts';
 	import { session } from '#lib/core/session.svelte.ts';
 	import { page } from '$app/state';
 	import { api, message } from '../core/api.ts';
@@ -75,10 +75,10 @@
 
 <section class="st-plate band" data-standing={standing} aria-label="Your version" data-testid="status-updates">
 	<div class="vers">
-		<span class="v"><small>This HolyArrs</small><b>v{upd?.version ?? '…'}</b></span>
+		<span class="v"><small>This HolyArrs</small><b>{upd?.version ? plainVersion(upd.version) : '…'}</b></span>
 		{#if standing === 'behind' && upd?.latest}
 			<span class="arrow" aria-hidden="true"><svg viewBox="0 0 20 20"><path d="M4 10h12m-5-5 5 5-5 5" /></svg></span>
-			<span class="v new"><small>Newest</small><b>v{upd.latest}</b></span>
+			<span class="v new"><small>Newest</small><b>{plainVersion(upd.latest)}</b></span>
 		{:else if standing === 'current'}
 			<span class="chip ok">Up to date</span>
 		{/if}
