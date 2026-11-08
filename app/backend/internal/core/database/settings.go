@@ -36,6 +36,24 @@ func SettingOr(ctx context.Context, q Querier, grp, key, def string) string {
 	return v
 }
 
+// EachSetting calls fn for every row of one settings group, in table order.
+// Rows read before an error have already been passed to fn.
+func EachSetting(ctx context.Context, q Lister, grp string, fn func(key, value string)) error {
+	rows, err := q.QueryContext(ctx, "SELECT key, value FROM settings WHERE grp = ?", grp)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var k, v string
+		if err := rows.Scan(&k, &v); err != nil {
+			return err
+		}
+		fn(k, v)
+	}
+	return rows.Err()
+}
+
 // PutSetting writes one value, replacing a value already there.
 func PutSetting(tx *sql.Tx, grp, key, value string, by Actor, now time.Time) error {
 	who, _ := json.Marshal(by)

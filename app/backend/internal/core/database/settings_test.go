@@ -50,3 +50,31 @@ func TestSettingHelpers(t *testing.T) {
 		t.Fatalf("created_by %s", by)
 	}
 }
+
+func TestEachSettingReadsOneGroup(t *testing.T) {
+	s, err := Open(t.TempDir(), Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer s.Close()
+	ctx := context.Background()
+	now := time.Now()
+	if err := s.Write(ctx, func(tx *sql.Tx) error {
+		if err := PutSetting(tx, "links", "pin_a", "1", System, now); err != nil {
+			return err
+		}
+		if err := PutSetting(tx, "links", "pin_b", "2", System, now); err != nil {
+			return err
+		}
+		return PutSetting(tx, "alerts", "pin_a", "9", System, now)
+	}); err != nil {
+		t.Fatal(err)
+	}
+	got := map[string]string{}
+	if err := EachSetting(ctx, s.Read(), "links", func(k, v string) { got[k] = v }); err != nil {
+		t.Fatal(err)
+	}
+	if got["pin_a"] != "1" || got["pin_b"] != "2" {
+		t.Fatalf("got %v", got)
+	}
+}

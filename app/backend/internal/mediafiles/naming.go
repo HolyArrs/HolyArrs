@@ -9,7 +9,6 @@ package mediafiles
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"strconv"
@@ -486,16 +485,7 @@ const group = "where_files_go"
 // ReadNaming reads the naming settings; unset or broken ones keep their default.
 func ReadNaming(ctx context.Context, db database.Lister) (NamingSettings, error) {
 	s := NamingDefaults()
-	rows, err := db.QueryContext(ctx, "SELECT key, value FROM settings WHERE grp = ?", group)
-	if err != nil {
-		return s, err
-	}
-	defer rows.Close()
-	for rows.Next() {
-		var k, v string
-		if err := rows.Scan(&k, &v); err != nil {
-			return s, err
-		}
+	err := database.EachSetting(ctx, db, group, func(k, v string) {
 		switch k {
 		case "file_pattern":
 			s.FilePattern = v
@@ -552,8 +542,8 @@ func ReadNaming(ctx context.Context, db database.Lister) (NamingSettings, error)
 		case "music_read_tags":
 			s.MusicReadTags = v != "false"
 		}
-	}
-	if err := rows.Err(); err != nil {
+	})
+	if err != nil {
 		return s, err
 	}
 	s.fillShows()
@@ -587,9 +577,8 @@ func PutNamingSettings(ctx context.Context, st *database.Store, s NamingSettings
 	if s.MusicAdoptScanLimit == 0 {
 		s.MusicAdoptScanLimit = DefaultMusicAdoptScanLimit
 	}
-	actor, _ := json.Marshal(by)
 	return st.Write(ctx, func(tx *sql.Tx) error {
-		now := database.FormatTime(time.Now())
+		now := time.Now()
 		for k, v := range map[string]string{"file_pattern": s.FilePattern, "folder_pattern": s.FolderPattern, "colon": s.Colon,
 			"illegal": s.Illegal, "rename_on_import": fmt.Sprint(s.RenameOnImport),
 			"adopt_scan_limit": strconv.Itoa(s.AdoptScanLimit), "music_adopt_scan_limit": strconv.Itoa(s.MusicAdoptScanLimit), "show_folder_pattern": s.ShowFolderPattern, "season_folders": fmt.Sprint(s.SeasonFolders),
@@ -599,9 +588,7 @@ func PutNamingSettings(ctx context.Context, st *database.Store, s NamingSettings
 			"artist_folder_pattern": s.ArtistFolderPattern, "album_folder_pattern": s.AlbumFolderPattern, "track_pattern": s.TrackPattern,
 			"multi_disc_track_pattern": s.MultiDiscTrackPattern, "disc_folders": fmt.Sprint(s.DiscFolders), "disc_folder_pattern": s.DiscFolderPattern,
 			"music_read_tags": fmt.Sprint(s.MusicReadTags)} {
-			if _, err := tx.Exec(`INSERT INTO settings (grp, key, value, created_at, created_by, updated_at, updated_by) VALUES (?, ?, ?, ?, ?, ?, ?)
-				ON CONFLICT (grp, key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at, updated_by = excluded.updated_by`,
-				group, k, v, now, string(actor), now, string(actor)); err != nil {
+			if err := database.PutSetting(tx, group, k, v, by, now); err != nil {
 				return err
 			}
 		}
