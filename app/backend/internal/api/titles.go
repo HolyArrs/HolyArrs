@@ -298,179 +298,6 @@ func pathID(w http.ResponseWriter, r *http.Request) (int64, bool) {
 	return id, true
 }
 
-// FolderView is a Library folder as the API shows it.
-type FolderView struct {
-	ID               int64      `json:"id"`
-	Path             string     `json:"path"`
-	Kind             string     `json:"kind"`
-	Label            string     `json:"label"`
-	DefaultPickRules *int64     `json:"default_pick_rules_id"`
-	FreeSpace        int64      `json:"free_space"`
-	Health           string     `json:"health"`
-	HealthReason     string     `json:"health_reason"`
-	HealthCheckedAt  *time.Time `json:"health_checked_at,omitempty"`
-}
-
-func folderView(f mediafiles.LibraryFolder) FolderView {
-	return FolderView{ID: f.ID, Path: f.Path, Kind: f.Kind, Label: f.Label, DefaultPickRules: f.DefaultPickRules, FreeSpace: f.FreeSpace,
-		Health: f.Health, HealthReason: f.HealthReason, HealthCheckedAt: f.HealthCheckedAt}
-}
-
-// NeverAddView is a Never-add entry as the API shows it.
-type NeverAddView struct {
-	ID        int64             `json:"id"`
-	Kind      string            `json:"kind"`
-	SourceIDs map[string]string `json:"ids"`
-	Name      string            `json:"name"`
-	Reason    string            `json:"reason"`
-	CreatedAt time.Time         `json:"created_at"`
-}
-
-func neverAddView(n mediafiles.NeverAdd) NeverAddView {
-	return NeverAddView{ID: n.ID, Kind: n.Kind, SourceIDs: n.SourceIDs, Name: n.Name, Reason: n.Reason, CreatedAt: n.CreatedAt}
-}
-
-func (a *API) listFolders(w http.ResponseWriter, r *http.Request) {
-	fs, err := database.Select[mediafiles.LibraryFolder](r.Context(), a.s.Store.Read(), "library_folders", "1=1 ORDER BY id")
-	if err != nil {
-		webserver.Internal(w, "api", err)
-		return
-	}
-	out := []FolderView{}
-	for _, f := range fs {
-		out = append(out, folderView(f))
-	}
-	webserver.WriteJSON(w, http.StatusOK, map[string]any{"library_folders": out})
-}
-
-func (a *API) downloadPaths(r *http.Request) []string {
-	ps, _ := library.DownloadPaths(r.Context(), a.s.Store.Read(), a.s.Library.SavePath)
-	return ps
-}
-
-func (a *API) addFolder(w http.ResponseWriter, r *http.Request) {
-	var in library.FolderInput
-	if !decode(w, r, &in, `send {"path": "/movies", "kind": "movie", "label": "Movies"}`) {
-		return
-	}
-	lf, err := library.AddFolder(r.Context(), a.s.Store, in, a.downloadPaths(r), actor(r))
-	if err != nil {
-		libraryError(w, err)
-		return
-	}
-	webserver.WriteJSON(w, http.StatusCreated, folderView(lf))
-}
-
-func (a *API) editFolder(w http.ResponseWriter, r *http.Request) {
-	id, ok := pathID(w, r)
-	if !ok {
-		return
-	}
-	var c library.FolderChange
-	if !decode(w, r, &c, `send {"label": "...", "default_pick_rules_id": <id>}`) {
-		return
-	}
-	lf, err := library.UpdateFolder(r.Context(), a.s.Store, id, c, actor(r))
-	if err != nil {
-		libraryError(w, err)
-		return
-	}
-	webserver.WriteJSON(w, http.StatusOK, folderView(lf))
-}
-
-func (a *API) deleteFolder(w http.ResponseWriter, r *http.Request) {
-	id, ok := pathID(w, r)
-	if !ok {
-		return
-	}
-	if err := library.DeleteFolder(r.Context(), a.s.Store, id); err != nil {
-		libraryError(w, err)
-		return
-	}
-	w.WriteHeader(http.StatusNoContent)
-}
-
-func (a *API) checkFolder(w http.ResponseWriter, r *http.Request) {
-	id, ok := pathID(w, r)
-	if !ok {
-		return
-	}
-	lf, _, err := library.RecheckFolder(r.Context(), a.s.Store, id, a.downloadPaths(r), actor(r), false)
-	if err != nil {
-		libraryError(w, err)
-		return
-	}
-	webserver.WriteJSON(w, http.StatusOK, folderView(lf))
-}
-
-func (a *API) listNeverAdd(w http.ResponseWriter, r *http.Request) {
-	ns, err := library.NeverAddList(r.Context(), a.s.Store.Read())
-	if err != nil {
-		webserver.Internal(w, "api", err)
-		return
-	}
-	out := []NeverAddView{}
-	for _, n := range ns {
-		out = append(out, neverAddView(n))
-	}
-	webserver.WriteJSON(w, http.StatusOK, map[string]any{"never_add": out})
-}
-
-func (a *API) addNeverAdd(w http.ResponseWriter, r *http.Request) {
-	var body struct {
-		Kind   string `json:"kind"`
-		TMDB   string `json:"tmdb_id"`
-		Name   string `json:"name"`
-		Reason string `json:"reason"`
-	}
-	if !decode(w, r, &body, `send {"tmdb_id": "<number>", "name": "...", "reason": "...", "kind": "movie" or "show"}`) {
-		return
-	}
-	if body.TMDB == "" || body.Name == "" || (body.Kind != "" && body.Kind != "movie" && body.Kind != "show") {
-		webserver.Fail(w, http.StatusBadRequest, "tmdb_id and name are needed; kind is movie (the default) or show")
-		return
-	}
-	n, err := library.AddNeverAdd(r.Context(), a.s.Store, mediafiles.NeverAdd{Kind: body.Kind, SourceIDs: map[string]string{"tmdb": body.TMDB}, Name: body.Name, Reason: body.Reason}, actor(r))
-	if err != nil {
-		libraryError(w, err)
-		return
-	}
-	webserver.WriteJSON(w, http.StatusCreated, neverAddView(n))
-}
-
-func (a *API) deleteNeverAdd(w http.ResponseWriter, r *http.Request) {
-	id, ok := pathID(w, r)
-	if !ok {
-		return
-	}
-	if err := library.RemoveNeverAdd(r.Context(), a.s.Store, id); err != nil {
-		libraryError(w, err)
-		return
-	}
-	w.WriteHeader(http.StatusNoContent)
-}
-
-func (a *API) getGateDefaults(w http.ResponseWriter, r *http.Request) {
-	g, err := library.ReadGateDefaults(r.Context(), a.s.Store.Read())
-	if err != nil {
-		webserver.Internal(w, "api", err)
-		return
-	}
-	webserver.WriteJSON(w, http.StatusOK, g)
-}
-
-func (a *API) putGateDefaults(w http.ResponseWriter, r *http.Request) {
-	var g library.GateDefaults
-	if !decode(w, r, &g, `send {"release_gate": "released", "gate_delay_days": 0, "bulk_search_respects_gate": true}`) {
-		return
-	}
-	if err := library.SetGateDefaults(r.Context(), a.s.Store, g, actor(r)); err != nil {
-		libraryError(w, err)
-		return
-	}
-	webserver.WriteJSON(w, http.StatusOK, g)
-}
-
 func (a *API) refreshTitle(w http.ResponseWriter, r *http.Request) {
 	t, ok := a.titleID(w, r)
 	if !ok {
@@ -843,3 +670,14 @@ func serveArtwork(w http.ResponseWriter, r *http.Request, name, p string) {
 func serveArtworkCached(w http.ResponseWriter, r *http.Request, name, p, cacheControl string) {
 	library.ServeArtworkCached(w, r, name, p, cacheControl)
 }
+
+func (a *API) downloadPaths(r *http.Request) []string {
+	ps, _ := library.DownloadPaths(r.Context(), a.s.Store.Read(), a.s.Library.SavePath)
+	return ps
+}
+
+// FolderView and NeverAddView are the library module's views.
+type (
+	FolderView   = library.FolderView
+	NeverAddView = library.NeverAddView
+)
