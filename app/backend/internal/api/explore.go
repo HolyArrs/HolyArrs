@@ -12,6 +12,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/explore"
 
@@ -332,14 +333,7 @@ func (a *API) exploreDaily(ctx context.Context) {
 		if _, err := tx.Exec("DELETE FROM explore_titles WHERE day < ?", explore.Day(now.AddDate(0, 0, -30))); err != nil {
 			return err
 		}
-		if _, err := tx.Exec("DELETE FROM explore_title_counts WHERE day < ?", explore.Day(now.AddDate(0, 0, -90))); err != nil {
-			return err
-		}
-		if _, err := tx.Exec("DELETE FROM explore_category_counts WHERE day < ?", explore.Day(now.AddDate(0, 0, -90))); err != nil {
-			return err
-		}
-		_, err := tx.Exec("DELETE FROM explore_counts WHERE day < ?", explore.Day(now.AddDate(0, 0, -90)))
-		return err
+		return accounts.PruneViewCounts(ctx, tx, explore.Day(now.AddDate(0, 0, -90)))
 	})
 	rows, err := a.s.Store.Read().QueryContext(ctx, "SELECT DISTINCT member_id, type_switch FROM explore_pool WHERE day < ?", day)
 	if err != nil {

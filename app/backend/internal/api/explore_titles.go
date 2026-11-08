@@ -8,6 +8,7 @@ import (
 	"time"
 	_ "time/tzdata" // viewers' time zones, on hosts without a zone database
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/explore"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/features"
@@ -92,13 +93,7 @@ func (a *API) exploreTitleCount(ctx context.Context, member int64, field string,
 	}
 	day := explore.Day(a.exploreNow())
 	_ = a.s.Store.Write(ctx, func(tx *sql.Tx) error {
-		for _, l := range keep {
-			if _, err := tx.Exec(`INSERT INTO explore_title_counts (member_id, layer, day, `+field+`) VALUES (?, ?, ?, 1)
-				ON CONFLICT (member_id, layer, day) DO UPDATE SET `+field+` = `+field+` + 1`, member, l, day); err != nil {
-				return err
-			}
-		}
-		return nil
+		return accounts.AddLayerCounts(ctx, tx, member, day, field, keep)
 	})
 }
 
@@ -120,13 +115,11 @@ func rowLayers(rows []exploreRowView) []string {
 // stay on this server and never change what Explore shows.
 func (a *API) exploreTitleStats(w http.ResponseWriter, r *http.Request) {
 	from := explore.Day(a.exploreNow().AddDate(0, 0, -30))
-	rows, err := a.s.Store.Read().QueryContext(r.Context(), `SELECT layer, SUM(shown), SUM(opens), SUM(asks) FROM explore_title_counts
-		WHERE day >= ? GROUP BY layer ORDER BY layer`, from)
+	got, err := accounts.LayerTotals(r.Context(), a.s.Store.Read(), from)
 	if err != nil {
 		internal(w, err)
 		return
 	}
-	defer rows.Close()
 	type stat struct {
 		Layer string `json:"layer"`
 		Shown int    `json:"shown"`
@@ -134,17 +127,8 @@ func (a *API) exploreTitleStats(w http.ResponseWriter, r *http.Request) {
 		Asks  int    `json:"asks"`
 	}
 	out := []stat{}
-	for rows.Next() {
-		var s stat
-		if err := rows.Scan(&s.Layer, &s.Shown, &s.Opens, &s.Asks); err != nil {
-			internal(w, err)
-			return
-		}
-		out = append(out, s)
-	}
-	if err := rows.Err(); err != nil {
-		internal(w, err)
-		return
+	for _, t := range got {
+		out = append(out, stat{Layer: t.Layer, Shown: t.Shown, Opens: t.Opens, Asks: t.Asks})
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"days": 30, "templates": len(explore.Templates), "layers": out})
 }

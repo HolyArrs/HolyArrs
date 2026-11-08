@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/explore"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
@@ -168,13 +169,7 @@ func (a *API) exploreCount(ctx context.Context, member int64, field string, type
 	}
 	day := explore.Day(a.exploreNow())
 	_ = a.s.Store.Write(ctx, func(tx *sql.Tx) error {
-		for _, t := range types {
-			if _, err := tx.Exec(`INSERT INTO explore_counts (member_id, row_type, day, `+field+`) VALUES (?, ?, ?, 1)
-				ON CONFLICT (member_id, row_type, day) DO UPDATE SET `+field+` = `+field+` + 1`, member, t, day); err != nil {
-				return err
-			}
-		}
-		return nil
+		return accounts.AddRowCounts(ctx, tx, member, day, field, types)
 	})
 }
 
@@ -315,6 +310,20 @@ func (a *API) exploreTail(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{"type": sw, "page": n, "more": more, "rows": rows})
 }
 
+// exploreViewKeyOK is the check accounts calls before it counts a view:
+// the row types, title layers and strip categories Explore knows.
+func exploreViewKeyOK(kind, key string) bool {
+	switch kind {
+	case accounts.ViewRow:
+		return explore.MinItems(key) != 0 || key == "hero"
+	case accounts.ViewLayer:
+		return validTitleLayer(key) || key == explore.LayerFixed
+	case accounts.ViewCategory:
+		return stripCategoryOK(key)
+	}
+	return false
+}
+
 // exploreCounts answers POST /api/v1/explore/counts {row_type, event}:
 // a card opened or an ask started from a row. Counts only measure; they
 // never change what Explore shows.
@@ -330,11 +339,11 @@ func (a *API) exploreCounts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	field := map[string]string{"open": "opens", "ask": "asks"}[body.Event]
-	if field == "" || (explore.MinItems(body.RowType) == 0 && body.RowType != "hero") {
+	if field == "" || !accounts.ViewKeyOK(accounts.ViewRow, body.RowType) {
 		fail(w, http.StatusBadRequest, "event must be open or ask, row_type an Explore row type")
 		return
 	}
-	if body.TitleLayer != "" && !validTitleLayer(body.TitleLayer) && body.TitleLayer != explore.LayerFixed {
+	if body.TitleLayer != "" && !accounts.ViewKeyOK(accounts.ViewLayer, body.TitleLayer) {
 		fail(w, http.StatusBadRequest, "title_layer must be an Explore title layer")
 		return
 	}

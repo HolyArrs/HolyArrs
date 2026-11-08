@@ -15,6 +15,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/explore"
@@ -230,25 +231,16 @@ func pageGenreItems(pg explore.Page, genre string) []explore.Item {
 
 // stripStats reads the member's strip counts of the last StripCountDays.
 func (a *API) stripStats(ctx context.Context, member int64, now time.Time) (map[string]explore.StripStats, map[string]bool, error) {
-	rows, err := a.s.Store.Read().QueryContext(ctx, `SELECT category_id, day, shown, opened FROM explore_category_counts
-		WHERE member_id = ? AND day >= ?`, member, explore.Day(now.AddDate(0, 0, -explore.StripCountDays)))
+	got, err := accounts.CategoryCountsSince(ctx, a.s.Store.Read(), member, explore.Day(now.AddDate(0, 0, -explore.StripCountDays)))
 	if err != nil {
 		return nil, nil, err
 	}
-	defer rows.Close()
 	var days []explore.CategoryDay
-	for rows.Next() {
-		var d explore.CategoryDay
-		var day string
-		if err := rows.Scan(&d.Category, &day, &d.Shown, &d.Opened); err != nil {
-			return nil, nil, err
-		}
-		if d.Day, err = time.Parse("2006-01-02", day); err == nil {
+	for _, c := range got {
+		d := explore.CategoryDay{Category: c.Key, Shown: c.Shown, Opened: c.Opened}
+		if d.Day, err = time.Parse("2006-01-02", c.Day); err == nil {
 			days = append(days, d)
 		}
-	}
-	if err := rows.Err(); err != nil {
-		return nil, nil, err
 	}
 	stats, recent := explore.StripStatsFrom(days, now)
 	return stats, recent, nil
@@ -459,7 +451,7 @@ func (a *API) exploreStripCounts(w http.ResponseWriter, r *http.Request) {
 	}
 	seen := map[string]bool{}
 	for _, c := range body.Categories {
-		if !stripCategoryOK(c) {
+		if !accounts.ViewKeyOK(accounts.ViewCategory, c) {
 			fail(w, http.StatusBadRequest, "categories must be Explore strip categories")
 			return
 		}
@@ -470,20 +462,19 @@ func (a *API) exploreStripCounts(w http.ResponseWriter, r *http.Request) {
 		// A member's day holds at most stripDayCategoriesMax categories, so
 		// made-up names cannot grow the database without end; past it only
 		// categories already counted that day move.
-		var have int
-		if err := tx.QueryRow(`SELECT COUNT(*) FROM explore_category_counts WHERE member_id = ? AND day = ?`, member, day).Scan(&have); err != nil {
+		have, err := accounts.CategoryKeysOn(r.Context(), tx, member, day)
+		if err != nil {
 			return err
 		}
 		for c := range seen {
 			if have >= stripDayCategoriesMax {
-				if _, err := tx.Exec(`UPDATE explore_category_counts SET `+field+` = `+field+` + 1 WHERE member_id = ? AND category_id = ? AND day = ?`, member, c, day); err != nil {
+				if err := accounts.BumpCategoryCount(r.Context(), tx, member, c, day, field); err != nil {
 					return err
 				}
 				continue
 			}
 			have++
-			if _, err := tx.Exec(`INSERT INTO explore_category_counts (member_id, category_id, day, `+field+`) VALUES (?, ?, ?, 1)
-				ON CONFLICT (member_id, category_id, day) DO UPDATE SET `+field+` = `+field+` + 1`, member, c, day); err != nil {
+			if err := accounts.AddCategoryCount(r.Context(), tx, member, c, day, field); err != nil {
 				return err
 			}
 		}
@@ -501,8 +492,7 @@ func (a *API) exploreStripCounts(w http.ResponseWriter, r *http.Request) {
 func (a *API) exploreStripReset(w http.ResponseWriter, r *http.Request) {
 	member := a.person(r).UserID
 	err := a.s.Store.Write(r.Context(), func(tx *sql.Tx) error {
-		_, err := tx.Exec("DELETE FROM explore_category_counts WHERE member_id = ?", member)
-		return err
+		return accounts.ResetCategoryCounts(r.Context(), tx, member)
 	})
 	if err != nil {
 		internal(w, err)

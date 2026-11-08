@@ -262,6 +262,7 @@ func (a *API) read() *sql.DB {
 
 // New makes the API.
 func New(s Server) *API {
+	accounts.SetViewKeyCheck(exploreViewKeyOK)
 	if s.Started.IsZero() {
 		s.Started = time.Now()
 	}
