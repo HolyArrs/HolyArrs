@@ -10,6 +10,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/shows"
 )
 
 func animeTMDB(t *testing.T) metadata.Provider {
@@ -52,8 +53,8 @@ func TestMetadataAnime(t *testing.T) {
 			Titles: []metadata.AnimeTitle{{AniList: 11, Romaji: "Gousei Shou", English: "Synthetic Show", Native: "合成ショー"}}}, nil
 	}}).Handler())
 	t.Cleanup(srv.Close)
-	get := func(path string) animeView {
-		var v animeView
+	get := func(path string) shows.AnimeView {
+		var v shows.AnimeView
 		if err := json.Unmarshal(do(t, "GET", srv.URL+path, "", 200), &v); err != nil {
 			t.Fatal(err)
 		}

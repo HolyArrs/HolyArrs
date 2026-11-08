@@ -10,7 +10,6 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 )
 
 // VersionView is one wanted copy of a title as the API shows it.
@@ -103,15 +102,6 @@ func (m *lookupMemo) rules(ctx context.Context, db database.Querier, id int64) (
 	})
 }
 
-func versionID(w http.ResponseWriter, r *http.Request) (int64, bool) {
-	id, err := strconv.ParseInt(r.PathValue("vid"), 10, 64)
-	if err != nil || id <= 0 {
-		webserver.Fail(w, http.StatusNotFound, "not found")
-		return 0, false
-	}
-	return id, true
-}
-
 // publishTitle sends the changed title to live pages.
 func (a *API) publishTitle(r *http.Request, id int64) {
 	if a.s.Live == nil {
@@ -126,64 +116,12 @@ func (a *API) publishTitle(r *http.Request, id int64) {
 	}
 }
 
-func (a *API) addVersion(w http.ResponseWriter, r *http.Request) {
-	t, ok := a.titleID(w, r)
-	if !ok {
-		return
+// versionID reads the {vid} Version id, answering 404 itself.
+func versionID(w http.ResponseWriter, r *http.Request) (int64, bool) {
+	id, err := strconv.ParseInt(r.PathValue("vid"), 10, 64)
+	if err != nil || id <= 0 {
+		webserver.Fail(w, http.StatusNotFound, "not found")
+		return 0, false
 	}
-	var in library.VersionInput
-	if !decode(w, r, &in, `send {"label": "4K"} with optional pick_rules_id, library_folder_id, keep_up_to_date`) {
-		return
-	}
-	v, err := library.AddVersion(r.Context(), a.s.Store, t.ID, in, a.downloadPaths(r), a.s.Library.Clock(), actor(r))
-	if err != nil {
-		libraryError(w, err)
-		return
-	}
-	a.s.Library.VersionEvent(r.Context(), t, "Added the "+v.Label+" Version", v, actor(r))
-	a.publishTitle(r, t.ID)
-	webserver.WriteJSON(w, http.StatusCreated, versionView(r.Context(), a.s.Store.Read(), v))
-}
-
-func (a *API) editVersion(w http.ResponseWriter, r *http.Request) {
-	t, ok := a.titleID(w, r)
-	if !ok {
-		return
-	}
-	vid, ok := versionID(w, r)
-	if !ok {
-		return
-	}
-	var c library.VersionChange
-	if !decode(w, r, &c, `send any of label, pick_rules_id, keep_up_to_date`) {
-		return
-	}
-	v, err := library.EditVersion(r.Context(), a.s.Store, t.ID, vid, c, actor(r))
-	if err != nil {
-		libraryError(w, err)
-		return
-	}
-	a.s.Library.VersionEvent(r.Context(), t, "Changed the "+v.Label+" Version", v, actor(r))
-	a.publishTitle(r, t.ID)
-	webserver.WriteJSON(w, http.StatusOK, versionView(r.Context(), a.s.Store.Read(), v))
-}
-
-func (a *API) deleteVersion(w http.ResponseWriter, r *http.Request) {
-	t, ok := a.titleID(w, r)
-	if !ok {
-		return
-	}
-	vid, ok := versionID(w, r)
-	if !ok {
-		return
-	}
-	var v mediafiles.Version
-	_ = database.Get(r.Context(), a.s.Store.Read(), "versions", vid, &v)
-	if err := library.RemoveVersion(r.Context(), a.s.Store, t.ID, vid, actor(r)); err != nil {
-		libraryError(w, err)
-		return
-	}
-	a.s.Library.VersionEvent(r.Context(), t, "Removed the "+v.Label+" Version", v, actor(r))
-	a.publishTitle(r, t.ID)
-	w.WriteHeader(http.StatusNoContent)
+	return id, true
 }
