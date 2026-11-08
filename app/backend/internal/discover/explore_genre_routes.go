@@ -1,4 +1,4 @@
-package api
+package discover
 
 import (
 	"context"
@@ -9,7 +9,6 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/discover"
 	engine "github.com/HolyArrs/holyarrs/app/backend/internal/discover/rows"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
@@ -18,19 +17,17 @@ import (
 // Netflix's own weekly Top 10 instead of TMDB popularity.
 const netflixService = "8"
 
-const topServicesMax = discover.TopServicesMax
-
 // genreMoodMin is the fewest titles a genre page's mood row needs.
 const genreMoodMin = 8
 
 // liveSource is the Explore list source with outside calls allowed (lists
 // are cached by their own TTL).
-func (a *API) liveSource(ctx context.Context) discover.ExploreSource {
+func (h *Handlers) LiveExplore(ctx context.Context) ExploreSource {
 	var lister metadata.ExploreLister
-	if l, ok := metadata.ExploreListerFor(ctx, a.s.Metadata); ok {
+	if l, ok := metadata.ExploreListerFor(ctx, h.Metadata); ok {
 		lister = l
 	}
-	return discover.ExploreSource{E: &a.explore, Lister: lister, Calls: &engine.Calls{}}
+	return ExploreSource{E: h.Explore, Lister: lister, Calls: &engine.Calls{}}
 }
 
 // exploreTop answers GET /api/v1/explore/top?type=&chip=all|<service id>
@@ -38,9 +35,9 @@ func (a *API) liveSource(ctx context.Context) discover.ExploreSource {
 // chip. Netflix (no genre) is Netflix's weekly Top 10; any other service,
 // and All my services, is TMDB's most popular on it in the region, kept a
 // week, merged by popularity with each title once.
-func (a *API) exploreTop(w http.ResponseWriter, r *http.Request) {
+func (h *Handlers) exploreTop(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
-	sw, ok := discover.ExploreSwitch(q.Get("type"))
+	sw, ok := ExploreSwitch(q.Get("type"))
 	if !ok {
 		webserver.Fail(w, http.StatusBadRequest, "type must be all, movies or shows")
 		return
@@ -49,13 +46,13 @@ func (a *API) exploreTop(w http.ResponseWriter, r *http.Request) {
 	if chip == "" {
 		chip = "all"
 	}
-	if (chip != "all" && !metadata.ServiceIDs(chip)) || strings.Contains(chip, "|") || (services != "" && !metadata.ServiceIDs(services)) || !isCountry(region) {
+	if (chip != "all" && !metadata.ServiceIDs(chip)) || strings.Contains(chip, "|") || (services != "" && !metadata.ServiceIDs(services)) || !IsCountry(region) {
 		webserver.Fail(w, http.StatusBadRequest, "chip must be all or one service id, services ids joined by |, region a country code")
 		return
 	}
 	var kinds []string
 	for _, k := range engine.Kinds(sw) {
-		if len(a.kindsOn(k)) > 0 {
+		if len(h.KindsOn(k)) > 0 {
 			kinds = append(kinds, k)
 		}
 	}
@@ -66,12 +63,12 @@ func (a *API) exploreTop(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		var gok bool
-		if _, genre, gok = discover.ExploreGenreParam(g, discover.Kinds0(kinds, sw)); !gok {
+		if _, genre, gok = ExploreGenreParam(g, Kinds0(kinds, sw)); !gok {
 			webserver.Fail(w, http.StatusBadRequest, "genre must be a TMDB genre id of that type")
 			return
 		}
 	}
-	if !a.discover.Allow(a.person(r).UserID, time.Now()) {
+	if !h.Cache.Allow(h.UserID(r), time.Now()) {
 		w.Header().Set("Retry-After", "60")
 		webserver.Fail(w, http.StatusTooManyRequests, "too many Explore requests; try again in a minute")
 		return
@@ -80,13 +77,13 @@ func (a *API) exploreTop(w http.ResponseWriter, r *http.Request) {
 	if chip == "all" {
 		providers = services
 	}
-	out := map[string]any{"chip": chip, "region": region, "source": "popular", "items": []rankedView{}}
+	out := map[string]any{"chip": chip, "region": region, "source": "popular", "items": []RankedView{}}
 	if providers == "" || len(kinds) == 0 {
-		a.exploreCaching(w, r, "private, max-age=300")
+		h.Caching(w, r, "private, max-age=300")
 		webserver.WriteJSON(w, http.StatusOK, out)
 		return
 	}
-	src := a.liveSource(r.Context())
+	src := h.LiveExplore(r.Context())
 	var lists [][]engine.Item
 	for _, k := range kinds {
 		items, err := src.List(r.Context(), engine.Request{List: "weekly", Kind: k, Services: providers, Region: region, Genre: genre, Scope: engine.ScopeShared})
@@ -96,35 +93,35 @@ func (a *API) exploreTop(w http.ResponseWriter, r *http.Request) {
 		lists = append(lists, items)
 	}
 	// A few spare titles cover ones the Kid limit or never-add drops.
-	merged := engine.MergeTop(lists, topServicesMax*2)
-	views, err := a.exploreViews(r.Context(), r, []engine.Row{{ID: engine.TypeTopServices, Type: engine.TypeTopServices, Items: merged}})
+	merged := engine.MergeTop(lists, TopServicesMax*2)
+	views, err := h.ExploreViews(r.Context(), r, []engine.Row{{ID: engine.TypeTopServices, Type: engine.TypeTopServices, Items: merged}})
 	if err != nil {
 		webserver.Internal(w, "api", err)
 		return
 	}
-	items := []rankedView{}
+	items := []RankedView{}
 	if len(views) == 1 {
 		for i, v := range views[0].Items {
-			if i == topServicesMax {
+			if i == TopServicesMax {
 				break
 			}
-			items = append(items, rankedView{ItemView: v, Rank: i + 1})
+			items = append(items, RankedView{ItemView: v, Rank: i + 1})
 		}
 	}
-	a.fillTopArt(r, items)
+	h.fillTopArt(r, items)
 	out["items"] = items
-	a.exploreCaching(w, r, "private, max-age=300")
+	h.Caching(w, r, "private, max-age=300")
 	webserver.WriteJSON(w, http.StatusOK, out)
 }
 
 // fillTopArt adds trailer keys and card art to ranked items.
-func (a *API) fillTopArt(r *http.Request, items []rankedView) {
-	views := make([]discoverItemView, len(items))
+func (h *Handlers) fillTopArt(r *http.Request, items []RankedView) {
+	views := make([]ItemView, len(items))
 	for i := range items {
 		views[i] = items[i].ItemView
 	}
-	a.fillTrailerKeys(r, views)
-	a.fillCardArt(r, views)
+	h.FillTrailerKeys(r, views)
+	h.FillCardArt(r, views)
 	for i := range items {
 		items[i].ItemView = views[i]
 	}
@@ -136,9 +133,9 @@ func (a *API) fillTopArt(r *http.Request, items []rankedView) {
 // the genre>, Top-rated <genre> classics and the genre's mood rows (each
 // only with 8 or more titles). The page puts Top on your services, in the
 // genre, second.
-func (a *API) exploreGenre(w http.ResponseWriter, r *http.Request) {
+func (h *Handlers) exploreGenre(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
-	sw, ok := discover.ExploreSwitch(q.Get("type"))
+	sw, ok := ExploreSwitch(q.Get("type"))
 	if !ok {
 		webserver.Fail(w, http.StatusBadRequest, "type must be all, movies or shows")
 		return
@@ -149,28 +146,28 @@ func (a *API) exploreGenre(w http.ResponseWriter, r *http.Request) {
 	if sw == "all" {
 		kind = "movie"
 	}
-	id, genre, ok := discover.ExploreGenreParam(q.Get("genre"), kind)
+	id, genre, ok := ExploreGenreParam(q.Get("genre"), kind)
 	if !ok || genre == "" || (sw == "all" && engine.ShowGenreFor(genre) == "") {
 		webserver.Fail(w, http.StatusBadRequest, "genre must be a TMDB genre id of that type")
 		return
 	}
 	for _, k := range engine.Kinds(sw) {
-		if len(a.kindsOn(k)) == 0 {
+		if len(h.KindsOn(k)) == 0 {
 			webserver.Fail(w, http.StatusNotFound, "that part is off")
 			return
 		}
 	}
-	if !a.discover.Allow(a.person(r).UserID, time.Now()) {
+	if !h.Cache.Allow(h.UserID(r), time.Now()) {
 		w.Header().Set("Retry-After", "60")
 		webserver.Fail(w, http.StatusTooManyRequests, "too many Explore requests; try again in a minute")
 		return
 	}
 	st := webserver.NewServerTiming()
 	ctx := r.Context()
-	rows, partial := a.genreBuild(ctx, r, kind, genre)
+	rows, partial := h.genreBuild(ctx, r, kind, genre)
 	if sw == "all" {
-		more, p2 := a.genreBuild(ctx, r, "show", engine.ShowGenreFor(genre))
-		rows, partial = discover.MergeGenreRows(rows, more), partial || p2
+		more, p2 := h.genreBuild(ctx, r, "show", engine.ShowGenreFor(genre))
+		rows, partial = MergeGenreRows(rows, more), partial || p2
 	}
 	st.Mark("lists")
 	// A title once per page, first row wins.
@@ -187,13 +184,13 @@ func (a *API) exploreGenre(w http.ResponseWriter, r *http.Request) {
 		}
 		rows[i].Items = keep
 	}
-	views, err := a.exploreViews(ctx, r, rows)
+	views, err := h.ExploreViews(ctx, r, rows)
 	if err != nil {
 		webserver.Internal(w, "api", err)
 		return
 	}
 	st.Mark("views")
-	hero := []discoverItemView{}
+	hero := []ItemView{}
 	if len(views) > 0 && views[0].ID == "genre_trending" {
 		for _, v := range views[0].Items {
 			if !v.InLibrary && len(hero) < 6 {
@@ -201,23 +198,23 @@ func (a *API) exploreGenre(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
-	a.fillTrailerKeys(r, hero)
-	a.fillCardArt(r, hero)
+	h.FillTrailerKeys(r, hero)
+	h.FillCardArt(r, hero)
 	for i := range views {
-		a.fillTrailerKeys(r, views[i].Items)
+		h.FillTrailerKeys(r, views[i].Items)
 	}
 	st.Mark("trailers")
-	a.fillRowsCardArt(r, views)
+	h.FillRowsCardArt(r, views)
 	st.Mark("cardart")
 	st.Write(w)
-	a.exploreCaching(w, r, "private, no-cache")
+	h.Caching(w, r, "private, no-cache")
 	webserver.WriteJSON(w, http.StatusOK, map[string]any{"type": sw, "genre": map[string]any{"id": id, "name": genre, "kind": kind}, "hero": hero, "rows": views, "partial": partial})
 }
 
 // genreBuild is one kind's genre page rows (before per-person views): from
 // the memory cache, else built from the genre's lists. partial says some
 // lists were still out.
-func (a *API) genreBuild(ctx context.Context, r *http.Request, kind, genre string) ([]engine.Row, bool) {
+func (h *Handlers) genreBuild(ctx context.Context, r *http.Request, kind, genre string) ([]engine.Row, bool) {
 	inGenre := func(items []engine.Item) []engine.Item {
 		var out []engine.Item
 		for _, it := range items {
@@ -227,20 +224,20 @@ func (a *API) genreBuild(ctx context.Context, r *http.Request, kind, genre strin
 		}
 		return out
 	}
-	now := a.explore.Now().UTC()
+	now := h.Explore.Now().UTC()
 	lower := strings.ToLower(genre)
-	seed, hasSeed := a.genreSeed(ctx, r, kind, genre)
-	cacheKey := kind + "|" + genre + "|" + a.kidMax(r) + "|" + seed.TMDBID + "|" + now.Format("2006-01-02")
-	if rows, cached := a.genreRows.Get(cacheKey); cached {
+	seed, hasSeed := h.genreSeed(ctx, r, kind, genre)
+	cacheKey := kind + "|" + genre + "|" + h.KidMax(r) + "|" + seed.TMDBID + "|" + now.Format("2006-01-02")
+	if rows, cached := h.genreRows.Get(cacheKey); cached {
 		return rows, false
 	}
 	var rows []engine.Row
-	reqs := discover.GenreRequests(kind, genre, now)
+	reqs := GenreRequests(kind, genre, now)
 	moods := metadata.SubMoods(genre)
 	if hasSeed {
 		reqs = append(reqs, engine.Request{List: "similar", Ref: seed.TMDBID})
 	}
-	got, ready := a.genreLists(ctx, kind, reqs, genreWait)
+	got, ready := h.GenreLists(ctx, kind, reqs, genreWait)
 	trending := engine.Interleave([][]engine.Item{inGenre(got[0]), got[1]}, engine.RowMax)
 	rows = append(rows, engine.Row{ID: "genre_trending", Type: engine.TypeTrending, Title: "Trending " + lower, Items: trending})
 	rows = append(rows, engine.Row{ID: "genre_best", Type: engine.TypeBest, Title: "Best new " + lower, Items: got[2]})
@@ -254,22 +251,22 @@ func (a *API) genreBuild(ctx context.Context, r *http.Request, kind, genre strin
 			Items: got[4+i]})
 	}
 	if ready {
-		a.genreRows.Put(cacheKey, rows)
+		h.genreRows.Put(cacheKey, rows)
 	}
 	return rows, !ready
 }
 
 // genreSeed is the newest Library title of kind in the genre (a Kid's
 // limit applies).
-func (a *API) genreSeed(ctx context.Context, r *http.Request, kind, genre string) (engine.Item, bool) {
-	rows, err := a.s.Store.Read().QueryContext(ctx, `SELECT json_extract(source_ids, '$.tmdb'), name, rating FROM titles
+func (h *Handlers) genreSeed(ctx context.Context, r *http.Request, kind, genre string) (engine.Item, bool) {
+	rows, err := h.Store.Read().QueryContext(ctx, `SELECT json_extract(source_ids, '$.tmdb'), name, rating FROM titles
 		WHERE kind = ? AND state != 'removed' AND json_extract(source_ids, '$.tmdb') IS NOT NULL
 		AND EXISTS (SELECT 1 FROM json_each(titles.genres) WHERE value = ?) ORDER BY created_at DESC, id DESC LIMIT 20`, kind, genre)
 	if err != nil {
 		return engine.Item{}, false
 	}
 	defer rows.Close()
-	max := a.kidMax(r)
+	max := h.KidMax(r)
 	for rows.Next() {
 		var it engine.Item
 		var rating string
@@ -297,9 +294,9 @@ const (
 // genreLists fetches reqs side by side and waits up to wait (0: until all
 // are back). Lists still out at the deadline are nil and ready is false;
 // they finish in the background and land in the list cache.
-func (a *API) genreLists(ctx context.Context, kind string, reqs []engine.Request, wait time.Duration) ([][]engine.Item, bool) {
+func (h *Handlers) GenreLists(ctx context.Context, kind string, reqs []engine.Request, wait time.Duration) ([][]engine.Item, bool) {
 	bg := context.WithoutCancel(ctx)
-	src := a.liveSource(bg)
+	src := h.LiveExplore(bg)
 	var mu sync.Mutex
 	got := make([][]engine.Item, len(reqs))
 	back := make([]bool, len(reqs))
@@ -366,18 +363,18 @@ const genreWarmGap = 3 * time.Second
 // warmGenres fetches every genre page's shared lists for the parts that
 // are on, so a genre page after a restart reads kept lists. It runs at
 // start and again as the lists expire; kept lists cost no outside call.
-func (a *API) warmGenres(ctx context.Context) {
+func (h *Handlers) WarmGenres(ctx context.Context) {
 	for {
 		for _, kind := range []string{"movie", "show"} {
-			if len(a.kindsOn(kind)) == 0 {
+			if len(h.KindsOn(kind)) == 0 {
 				continue
 			}
 			for _, genre := range engine.Genres[kind] {
-				for _, q := range discover.GenreRequests(kind, genre, a.explore.Now().UTC()) {
+				for _, q := range GenreRequests(kind, genre, h.Explore.Now().UTC()) {
 					if ctx.Err() != nil {
 						return
 					}
-					src := a.liveSource(ctx)
+					src := h.LiveExplore(ctx)
 					if src.Cached(ctx, q) {
 						continue
 					}
@@ -397,6 +394,3 @@ func (a *API) warmGenres(ctx context.Context) {
 		}
 	}
 }
-
-// genreRowCache keeps built genre-page rows (internal/discover).
-type genreRowCache = discover.GenreRowCache

@@ -43,7 +43,6 @@ func TestExploreStripRoute(t *testing.T) {
 	}
 	// The built sections: every category with enough titles that have art.
 	share := a.browseShare("shows", false, "")
-	share.mu.Lock()
 	n := 0
 	for _, s := range engine.BrowseSections {
 		var res []engine.CategoryResult
@@ -55,9 +54,8 @@ func TestExploreStripRoute(t *testing.T) {
 			}
 			res = append(res, engine.CategoryResult{Cat: c, Items: items})
 		}
-		share.res[s.ID], share.at[s.ID] = res, time.Now()
+		share.Put(s.ID, res)
 	}
-	share.mu.Unlock()
 	got := get("/api/v1/explore/strip?type=shows", 200)
 	if got["partial"] != false {
 		t.Fatalf("partial after build: %v", got["partial"])

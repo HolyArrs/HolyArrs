@@ -14,7 +14,7 @@ func (a *API) stripBrowse() discover.StripBrowse {
 	return discover.StripBrowse{
 		Page: a.browsePage,
 		Section: func(sw string, kid bool, max, id string) ([]engine.CategoryResult, bool) {
-			res, built, _ := a.browseShare(sw, kid, max).get(id)
+			res, built, _ := a.browseShare(sw, kid, max).Get(id)
 			return res, built
 		},
 		Build: func(ctx context.Context, sw string, kid bool, max, id string) {

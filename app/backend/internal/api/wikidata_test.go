@@ -77,7 +77,7 @@ func TestAwardWinnersCollection(t *testing.T) {
 		t.Fatal("no awards category")
 	}
 	src := discover.ExploreSource{E: &a.explore, Lister: f.provider()}
-	items, err := a.browseItems(context.Background(), src, c, "all", false, "")
+	items, err := a.disc.BrowseItems(context.Background(), src, c, "all", false, "")
 	if err != nil || len(items) < engine.BrowseMin {
 		t.Fatalf("%d items, %v", len(items), err)
 	}

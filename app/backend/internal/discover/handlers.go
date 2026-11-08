@@ -74,6 +74,8 @@ type Deps struct {
 	WarmMusicNew func()
 	// Strip is the Browse glue for the Explore strip.
 	Strip StripBrowse
+	// AwardWinners are the titles of kind that won a major award.
+	AwardWinners func(ctx context.Context, kind string) (map[string]bool, bool)
 }
 
 // ServiceTopFetch reads one region's per-service top lists.
@@ -88,6 +90,7 @@ type Lister interface {
 // zero-value ready, so &Handlers{Deps: d} works.
 type Handlers struct {
 	Deps
+	genreRows GenreRowCache
 }
 
 // ItemView is one discover item with what the Library knows of it.
@@ -127,6 +130,12 @@ func (h *Handlers) Routes(m *http.ServeMux) {
 	m.HandleFunc("GET /api/v1/explore/new", h.exploreNew)
 	m.HandleFunc("GET /api/v1/explore/new/services", h.exploreNewServices)
 	m.HandleFunc("GET /api/v1/explore/new/service", h.exploreNewService)
+	m.HandleFunc("GET /api/v1/explore/top", h.exploreTop)
+	m.HandleFunc("GET /api/v1/explore/genre", h.exploreGenre)
+	m.HandleFunc("GET /api/v1/explore/genre-row", h.exploreGenreRow)
+	m.HandleFunc("GET /api/v1/explore/browse", h.searchBrowse)
+	m.HandleFunc("GET /api/v1/explore/browse/section", h.searchBrowseSection)
+	m.HandleFunc("GET /api/v1/explore/browse/category", h.searchBrowseCategory)
 }
 
 // TokenRoutes registers the Trakt VIP token setting (api registers it only

@@ -222,8 +222,7 @@ type API struct {
 	// artMisses is each person's budget of artwork cache misses.
 	artMisses discover.ArtworkBudget
 	// explore runs the Explore pool job and keeps its lists and pages.
-	explore   discover.Explore
-	genreRows genreRowCache
+	explore discover.Explore
 	// trailers keeps resolved trailer addresses, serves the trailer routes
 	// and runs the trailer pass (metadata).
 	trailers *metadata.Trailers
@@ -457,12 +456,6 @@ func (a *API) Routes(rt *webserver.Router) {
 	a.trailers.Routes(m)
 	a.uiHandlers().Routes(m)
 	a.signin.Routes(m)
-	m.HandleFunc("GET /api/v1/explore/top", a.exploreTop)
-	m.HandleFunc("GET /api/v1/explore/genre", a.exploreGenre)
-	m.HandleFunc("GET /api/v1/explore/genre-row", a.exploreGenreRow)
-	m.HandleFunc("GET /api/v1/explore/browse", a.searchBrowse)
-	m.HandleFunc("GET /api/v1/explore/browse/section", a.searchBrowseSection)
-	m.HandleFunc("GET /api/v1/explore/browse/category", a.searchBrowseCategory)
 	a.disc.StripRoutes(m)
 	if startup.FeatureOn(features.RowTitleStats) {
 		m.HandleFunc("GET /api/v1/explore/title-stats", a.exploreTitleStats)

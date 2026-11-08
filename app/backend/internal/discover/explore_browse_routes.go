@@ -1,4 +1,4 @@
-package api
+package discover
 
 import (
 	"context"
@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/discover"
 	engine "github.com/HolyArrs/holyarrs/app/backend/internal/discover/rows"
 )
 
@@ -32,9 +31,9 @@ const browseFetchers = 3
 // priority: a member's build takes the free fetchers between them).
 const browseWarmGap = 150 * time.Millisecond
 
-// browseWait is how long a section request waits for a build before it
+// BrowseWait is how long a section request waits for a build before it
 // answers "building".
-var browseWait = 1500 * time.Millisecond
+var BrowseWait = 1500 * time.Millisecond
 
 // browseCategoryMax is how many titles a category view shows.
 const browseCategoryMax = 40
@@ -55,12 +54,12 @@ type browseShared struct {
 var browseShares sync.Map
 
 // browseShareKey: the shared cache is per tab, Kid flag and maximum rating.
-func (a *API) browseShareKey(sw string, kid bool, max string) string {
-	return fmt.Sprintf("%p|%s|%t|%s", a, sw, kid, max)
+func (h *Handlers) browseShareKey(sw string, kid bool, max string) string {
+	return fmt.Sprintf("%p|%s|%t|%s", h.Explore, sw, kid, max)
 }
 
-func (a *API) browseShare(sw string, kid bool, max string) *browseShared {
-	v, _ := browseShares.LoadOrStore(a.browseShareKey(sw, kid, max), &browseShared{at: map[string]time.Time{}, res: map[string][]engine.CategoryResult{}, busy: map[string]chan struct{}{}})
+func (h *Handlers) browseShare(sw string, kid bool, max string) *browseShared {
+	v, _ := browseShares.LoadOrStore(h.browseShareKey(sw, kid, max), &browseShared{at: map[string]time.Time{}, res: map[string][]engine.CategoryResult{}, busy: map[string]chan struct{}{}})
 	return v.(*browseShared)
 }
 
@@ -76,7 +75,7 @@ func (s *browseShared) get(id string) ([]engine.CategoryResult, bool, bool) {
 // buildShared builds section id of the share (or waits for the build
 // already running) and returns when it is done. A failed build keeps the
 // section's earlier results.
-func (a *API) buildShared(ctx context.Context, s *browseShared, sw string, kid bool, max, id string, warm bool) {
+func (h *Handlers) buildShared(ctx context.Context, s *browseShared, sw string, kid bool, max, id string, warm bool) {
 	s.mu.Lock()
 	if ch, busy := s.busy[id]; busy {
 		s.mu.Unlock()
@@ -95,7 +94,7 @@ func (a *API) buildShared(ctx context.Context, s *browseShared, sw string, kid b
 		s.mu.Unlock()
 		close(ch)
 	}()
-	src := a.liveSource(ctx)
+	src := h.LiveExplore(ctx)
 	cats := engine.SectionCategories(id, sw, kid, time.Now())
 	res := make([]engine.CategoryResult, len(cats))
 	var failed atomic.Bool
@@ -111,14 +110,14 @@ func (a *API) buildShared(ctx context.Context, s *browseShared, sw string, kid b
 		go func(i int, c engine.Category) {
 			defer wg.Done()
 			defer func() { <-browseFetch }()
-			items, err := a.browseItems(ctx, src, c, sw, kid, max)
+			items, err := h.browseItems(ctx, src, c, sw, kid, max)
 			if err != nil {
 				failed.Store(true)
 			}
 			if warm {
 				// The warm-up learns the top backdrops' brightness first, so
 				// the pickers skip too-dark art.
-				discover.SampleBackdrops(ctx, items, 4)
+				SampleBackdrops(ctx, items, 4)
 			}
 			res[i] = engine.CategoryResult{Cat: c, Items: items}
 		}(i, c)
@@ -154,11 +153,11 @@ func browseWarmOrder(sws []string) []browseJob {
 }
 
 // browseTabsOn are the tabs with a kind that is on.
-func (a *API) browseTabsOn() []string {
+func (h *Handlers) browseTabsOn() []string {
 	var out []string
 	for _, sw := range []string{"all", "movies", "shows"} {
 		for _, k := range engine.Kinds(sw) {
-			if len(a.kindsOn(k)) > 0 {
+			if len(h.KindsOn(k)) > 0 {
 				out = append(out, sw)
 				break
 			}
@@ -175,9 +174,9 @@ type browseLimit struct {
 
 // browseLimits are the open limit (always first) and every rating-limited
 // share a member has opened.
-func (a *API) browseLimits() []browseLimit {
+func (h *Handlers) browseLimits() []browseLimit {
 	out := []browseLimit{{false, ""}}
-	prefix := fmt.Sprintf("%p|", a)
+	prefix := fmt.Sprintf("%p|", h.Explore)
 	browseShares.Range(func(k, _ any) bool {
 		key := k.(string)
 		if !strings.HasPrefix(key, prefix) {
@@ -200,15 +199,15 @@ func (a *API) browseLimits() []browseLimit {
 }
 
 // warmBrowseOnce builds every due section, in warm-up order.
-func (a *API) warmBrowseOnce(ctx context.Context) {
-	for _, l := range a.browseLimits() {
-		for _, j := range browseWarmOrder(a.browseTabsOn()) {
+func (h *Handlers) warmBrowseOnce(ctx context.Context) {
+	for _, l := range h.browseLimits() {
+		for _, j := range browseWarmOrder(h.browseTabsOn()) {
 			if ctx.Err() != nil {
 				return
 			}
-			s := a.browseShare(j.sw, l.kid, l.max)
+			s := h.browseShare(j.sw, l.kid, l.max)
 			if _, _, due := s.get(j.section); due {
-				a.buildShared(ctx, s, j.sw, l.kid, l.max, j.section, true)
+				h.buildShared(ctx, s, j.sw, l.kid, l.max, j.section, true)
 			}
 		}
 	}
@@ -216,9 +215,9 @@ func (a *API) warmBrowseOnce(ctx context.Context) {
 
 // warmBrowse builds every Browse section for every tab at start, then
 // checks every 10 minutes and rebuilds those near expiry.
-func (a *API) warmBrowse(ctx context.Context) {
+func (h *Handlers) warmBrowse(ctx context.Context) {
 	for {
-		a.warmBrowseOnce(ctx)
+		h.warmBrowseOnce(ctx)
 		select {
 		case <-ctx.Done():
 			return
@@ -270,28 +269,28 @@ func (b *browseBuild) start(page []engine.BrowseTile) {
 }
 
 // browsePage is the member's filtered page and its fast genre tiles.
-func (a *API) browsePage(ctx context.Context, r *http.Request, sw string) (engine.Page, []engine.BrowseTile, bool, error) {
-	pg, _, err := a.explorePageFor(ctx, r, a.person(r).UserID, sw)
+func (h *Handlers) browsePage(ctx context.Context, r *http.Request, sw string) (engine.Page, []engine.BrowseTile, bool, error) {
+	pg, _, err := h.ExplorePageFor(ctx, r, h.UserID(r), sw)
 	if err != nil {
 		return pg, nil, false, err
 	}
-	if pg, err = a.genreRowPage(ctx, r, pg); err != nil {
+	if pg, err = h.genreRowPage(ctx, r, pg); err != nil {
 		return pg, nil, false, err
 	}
-	kid := pg.Kid || a.kidMax(r) != ""
+	kid := pg.Kid || h.KidMax(r) != ""
 	return pg, engine.PageGenreTiles(pg, sw, kid, map[string]bool{}), kid, nil
 }
 
 // browseItems fetches category c for the tab (both kinds merged by
 // popularity), without titles above the rating limit max. Never-add
 // titles are left to browseDropNever.
-func (a *API) browseItems(ctx context.Context, src discover.ExploreSource, c engine.Category, sw string, kid bool, max string) ([]engine.Item, error) {
+func (h *Handlers) browseItems(ctx context.Context, src ExploreSource, c engine.Category, sw string, kid bool, max string) ([]engine.Item, error) {
 	if c.ID == "awards" {
-		if merged, ok, err := a.awardItems(ctx, src, c, sw, kid); ok {
+		if merged, ok, err := h.awardItems(ctx, src, c, sw, kid); ok {
 			if err != nil || max == "" {
 				return merged, err
 			}
-			return discover.KeepItems(merged, a.kidItems(ctx, max, discover.ItemRefs(merged), 0)), nil
+			return KeepItems(merged, h.KidItems(ctx, max, ItemRefs(merged), 0)), nil
 		}
 	}
 	var lists [][]engine.Item
@@ -306,16 +305,16 @@ func (a *API) browseItems(ctx context.Context, src discover.ExploreSource, c eng
 	if max == "" {
 		return merged, nil
 	}
-	return discover.KeepItems(merged, a.kidItems(ctx, max, discover.ItemRefs(merged), 0)), nil
+	return KeepItems(merged, h.KidItems(ctx, max, ItemRefs(merged), 0)), nil
 }
 
 // browseDropNever leaves Never-add titles out of items.
-func (a *API) browseDropNever(ctx context.Context, items []engine.Item) ([]engine.Item, error) {
-	refs, err := a.dropNeverAdd(ctx, discover.ItemRefs(items))
+func (h *Handlers) browseDropNever(ctx context.Context, items []engine.Item) ([]engine.Item, error) {
+	refs, err := h.DropNeverAdd(ctx, ItemRefs(items))
 	if err != nil {
 		return nil, err
 	}
-	return discover.KeepItems(items, refs), nil
+	return KeepItems(items, refs), nil
 }
 
 // errBrowseBuilding: a section the member needs is still being built.
@@ -323,11 +322,11 @@ var errBrowseBuilding = errors.New("browse section building")
 
 // browseSectionTiles picks the member's sections up to id (in order) from
 // the shared ones and returns id's tiles. Shared sections not built yet
-// build in the background; after browseWait the answer is
+// build in the background; after BrowseWait the answer is
 // errBrowseBuilding.
-func (a *API) browseSectionTiles(ctx context.Context, r *http.Request, sw string, kid bool, pg engine.Page, page []engine.BrowseTile, id string) ([]engine.CategoryTile, error) {
-	max := a.kidMax(r)
-	key := fmt.Sprintf("%p|%d|%s|%t|%s", a, a.person(r).UserID, sw, kid, max)
+func (h *Handlers) browseSectionTiles(ctx context.Context, r *http.Request, sw string, kid bool, pg engine.Page, page []engine.BrowseTile, id string) ([]engine.CategoryTile, error) {
+	max := h.KidMax(r)
+	key := fmt.Sprintf("%p|%d|%s|%t|%s", h.Explore, h.UserID(r), sw, kid, max)
 	v, loaded := browseBuilds.LoadOrStore(key, &browseBuild{})
 	if !loaded {
 		sweepBrowseBuilds(key)
@@ -341,7 +340,7 @@ func (a *API) browseSectionTiles(ctx context.Context, r *http.Request, sw string
 	if got, ok := b.sections[id]; ok {
 		return got, nil
 	}
-	share := a.browseShare(sw, kid, max)
+	share := h.browseShare(sw, kid, max)
 	for b.next < len(engine.BrowseSections) {
 		s := engine.BrowseSections[b.next]
 		res, ok, _ := share.get(s.ID)
@@ -353,7 +352,7 @@ func (a *API) browseSectionTiles(ctx context.Context, r *http.Request, sw string
 				defer close(done)
 				for _, x := range missing {
 					if _, have, _ := share.get(x.ID); !have {
-						a.buildShared(bg, share, sw, kid, max, x.ID, false)
+						h.buildShared(bg, share, sw, kid, max, x.ID, false)
 					}
 					if x.ID == id {
 						return
@@ -362,7 +361,7 @@ func (a *API) browseSectionTiles(ctx context.Context, r *http.Request, sw string
 			}()
 			select {
 			case <-done:
-			case <-time.After(browseWait):
+			case <-time.After(BrowseWait):
 			case <-ctx.Done():
 				return nil, ctx.Err()
 			}
@@ -372,7 +371,7 @@ func (a *API) browseSectionTiles(ctx context.Context, r *http.Request, sw string
 		}
 		picked := make([]engine.CategoryResult, 0, len(res))
 		for _, c := range res {
-			items, err := a.browseDropNever(ctx, c.Items)
+			items, err := h.browseDropNever(ctx, c.Items)
 			if err != nil {
 				return nil, err
 			}
@@ -396,8 +395,8 @@ func (a *API) browseSectionTiles(ctx context.Context, r *http.Request, sw string
 // genre tiles don't already cover). Each needs BrowseMin titles with a
 // backdrop; no backdrop repeats across the tab's sections; a Kid gets
 // kid-safe categories only.
-func (a *API) searchBrowseSection(w http.ResponseWriter, r *http.Request) {
-	sw, ok := discover.ExploreParams(w, r)
+func (h *Handlers) searchBrowseSection(w http.ResponseWriter, r *http.Request) {
+	sw, ok := ExploreParams(w, r)
 	if !ok {
 		return
 	}
@@ -410,15 +409,15 @@ func (a *API) searchBrowseSection(w http.ResponseWriter, r *http.Request) {
 		webserver.Fail(w, http.StatusBadRequest, "section is not a Browse section")
 		return
 	}
-	if a.kidLimited(w, r) {
+	if h.KidLimited(w, r) {
 		return
 	}
-	pg, page, kid, err := a.browsePage(r.Context(), r, sw)
+	pg, page, kid, err := h.browsePage(r.Context(), r, sw)
 	if err != nil {
 		webserver.Internal(w, "api", err)
 		return
 	}
-	tiles, err := a.browseSectionTiles(r.Context(), r, sw, kid, pg, page, id)
+	tiles, err := h.browseSectionTiles(r.Context(), r, sw, kid, pg, page, id)
 	if errors.Is(err, errBrowseBuilding) {
 		// Still building: the page shows ghost tiles and asks again.
 		w.Header().Set("Cache-Control", "no-store")
@@ -429,31 +428,31 @@ func (a *API) searchBrowseSection(w http.ResponseWriter, r *http.Request) {
 		webserver.Internal(w, "api", err)
 		return
 	}
-	a.exploreCaching(w, r, "private, no-cache")
+	h.Caching(w, r, "private, no-cache")
 	webserver.WriteJSON(w, http.StatusOK, map[string]any{"type": sw, "section": id, "tiles": tiles})
 }
 
 // searchBrowseCategory answers GET /api/v1/explore/browse/category?type=&id=:
 // a Browse category's titles for the tab, most popular first.
-func (a *API) searchBrowseCategory(w http.ResponseWriter, r *http.Request) {
+func (h *Handlers) searchBrowseCategory(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
-	sw, ok := discover.ExploreSwitch(q.Get("type"))
+	sw, ok := ExploreSwitch(q.Get("type"))
 	if !ok {
 		webserver.Fail(w, http.StatusBadRequest, "type must be all, movies or shows")
 		return
 	}
-	kid := a.kidMax(r) != ""
+	kid := h.KidMax(r) != ""
 	c, found := engine.CategoryByID(q.Get("id"))
 	if !found || (kid && !c.Kid) || len(c.Requests(sw, kid)) == 0 {
 		webserver.Fail(w, http.StatusNotFound, "no such Browse category")
 		return
 	}
-	if a.kidLimited(w, r) {
+	if h.KidLimited(w, r) {
 		return
 	}
-	items, err := a.browseItems(r.Context(), a.liveSource(r.Context()), c, sw, kid, a.kidMax(r))
+	items, err := h.browseItems(r.Context(), h.LiveExplore(r.Context()), c, sw, kid, h.KidMax(r))
 	if err == nil {
-		items, err = a.browseDropNever(r.Context(), items)
+		items, err = h.browseDropNever(r.Context(), items)
 	}
 	if err != nil {
 		webserver.Internal(w, "api", err)
@@ -462,15 +461,15 @@ func (a *API) searchBrowseCategory(w http.ResponseWriter, r *http.Request) {
 	if len(items) > browseCategoryMax {
 		items = items[:browseCategoryMax]
 	}
-	views, err := a.exploreViews(r.Context(), r, []engine.Row{{ID: "browse-" + c.ID, Type: "browse", Title: c.Name, Items: items}})
+	views, err := h.ExploreViews(r.Context(), r, []engine.Row{{ID: "browse-" + c.ID, Type: "browse", Title: c.Name, Items: items}})
 	if err != nil {
 		webserver.Internal(w, "api", err)
 		return
 	}
-	out := []discoverItemView{}
+	out := []ItemView{}
 	if len(views) > 0 && views[0].Items != nil {
 		out = views[0].Items
 	}
-	a.exploreCaching(w, r, "private, no-cache")
+	h.Caching(w, r, "private, no-cache")
 	webserver.WriteJSON(w, http.StatusOK, map[string]any{"type": sw, "id": c.ID, "name": c.Name, "section": c.Section, "items": out})
 }

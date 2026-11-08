@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"net/http"
+	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/discover"
 	engine "github.com/HolyArrs/holyarrs/app/backend/internal/discover/rows"
@@ -64,7 +65,10 @@ func (a *API) newDiscover() *discover.Handlers {
 		AllowedTitleIDs: a.allowedTitleIDs, KnownGenres: func(mbid string) []string { return a.mh().KnownGenres(mbid) }, ReadCardArt: a.readCardArt,
 		GenreLists: a.genreLists, NoteTrailers: func(lang string, titles [][2]string) { a.trailers.Note(lang, titles) },
 		WarmMusicNew: func() { a.musicProvider().WarmNew() },
-		Strip:        a.stripBrowse()}}
+		Strip:        a.stripBrowse(),
+		AwardWinners: func(ctx context.Context, kind string) (map[string]bool, bool) {
+			return a.titles.AwardWinners(ctx, kind)
+		}}}
 }
 
 func peopleError(w http.ResponseWriter, err error) { discover.PeopleError(w, err) }
@@ -87,3 +91,33 @@ func (a *API) poolPage(p engine.Pool, member int64, sw, region string, m engine.
 func (a *API) exploreViews(ctx context.Context, r *http.Request, rows []engine.Row) ([]exploreRowView, error) {
 	return a.disc.ExploreViews(ctx, r, rows)
 }
+
+// Thin wrappers for the api files that still call the moved Explore
+// genre and Browse code (internal/discover).
+
+func (a *API) liveSource(ctx context.Context) discover.ExploreSource { return a.disc.LiveExplore(ctx) }
+
+func (a *API) genreLists(ctx context.Context, kind string, reqs []engine.Request, wait time.Duration) ([][]engine.Item, bool) {
+	return a.disc.GenreLists(ctx, kind, reqs, wait)
+}
+
+func (a *API) browsePage(ctx context.Context, r *http.Request, sw string) (engine.Page, []engine.BrowseTile, bool, error) {
+	return a.disc.BrowsePage(ctx, r, sw)
+}
+
+func (a *API) browseShare(sw string, kid bool, max string) *discover.BrowseShared {
+	return a.disc.BrowseShare(sw, kid, max)
+}
+
+func (a *API) buildShared(ctx context.Context, s *discover.BrowseShared, sw string, kid bool, max, id string, warm bool) {
+	a.disc.BuildShared(ctx, s, sw, kid, max, id, warm)
+}
+
+func (a *API) browseSectionTiles(ctx context.Context, r *http.Request, sw string, kid bool, pg engine.Page, page []engine.BrowseTile, id string) ([]engine.CategoryTile, error) {
+	return a.disc.BrowseSectionTiles(ctx, r, sw, kid, pg, page, id)
+}
+
+var (
+	errBrowseBuilding = discover.ErrBrowseBuilding
+	browseFetch       = discover.BrowseFetch
+)
