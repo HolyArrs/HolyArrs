@@ -19,7 +19,7 @@ func TestFullPathKnowsContainerPathsAndGitBashMangling(t *testing.T) {
 		}
 	}
 	// A Windows folder is a full path on Windows only.
-	if got := FullPath(`C:\Users\me\media\movies`); got != (runtime.GOOS == "windows") {
+	if got := FullPath(`D:\media\movies`); got != (runtime.GOOS == "windows") {
 		t.Errorf("windows folder: %v", got)
 	}
 }

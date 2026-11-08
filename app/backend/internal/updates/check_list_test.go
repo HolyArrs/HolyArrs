@@ -49,7 +49,7 @@ func (l *listServer) set(k signtest.Key, serial int, version, extra string) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	l.data = []byte(`{"schema":1,"serial":` + strconv.Itoa(serial) + `,"generated_at":"2026-10-13T11:00:00Z","channels":{"stable":{"version":"` + version +
-		`","changelog_url":"https://github.com/CoderLuii/holyarrs/releases/tag/` + version + `","notes_short":"<i>Fixes</i>"` + extra + `}},"revoked":[]}`)
+		`","changelog_url":"https://github.com/HolyArrs/holyarrs/releases/tag/` + version + `","notes_short":"<i>Fixes</i>"` + extra + `}},"revoked":[]}`)
 	l.sig = k.Sign(l.data, "serial "+strconv.Itoa(serial))
 }
 
@@ -66,7 +66,7 @@ func TestUpdateListGood(t *testing.T) {
 	w, k, srv, _ := listWorld(t)
 	srv.set(k, 3, "v1.2.0", "")
 	i := w.e.CheckUpdate(context.Background())
-	if !i.Newer || i.Latest != "v1.2.0" || i.Notes != "Fixes" || i.Link != "https://github.com/CoderLuii/holyarrs/releases/tag/v1.2.0" {
+	if !i.Newer || i.Latest != "v1.2.0" || i.Notes != "Fixes" || i.Link != "https://github.com/HolyArrs/holyarrs/releases/tag/v1.2.0" {
 		t.Fatalf("info %+v", i)
 	}
 	if w.e.Setting(context.Background(), updates.SettingListSerial) != "3" {

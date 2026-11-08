@@ -18,5 +18,4 @@ bin/
 /app/tests/.tmp/
 /app/tests/.tmp-*/
 /app/tests/whole-app/live-push.spec.ts-snapshots/
-deploy/metadata/live/egress.env
 releases/out/

@@ -49,7 +49,7 @@ func newShow(name, tmdb, tvdb, imdb string) metadata.Show {
 }
 
 // fakeShowLists serves TMDB list 61 (two shows, one movie, one show on the
-// Never-add list) and the Trakt list luis/shows and luis's show watchlist.
+// Never-add list) and the Trakt list kim/shows and kim's show watchlist.
 func fakeShowLists(t *testing.T) *httptest.Server {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
@@ -64,7 +64,7 @@ func fakeShowLists(t *testing.T) *httptest.Server {
 				{"id": 900002, "media_type": "movie", "title": "Paper Harbour"},
 				{"id": 700003, "media_type": "tv", "name": "Not Here"},
 			}})
-		case "/users/luis/lists/shows/items/show", "/users/luis/watchlist/shows":
+		case "/users/kim/lists/shows/items/show", "/users/kim/watchlist/shows":
 			if r.Header.Get("trakt-api-key") != fakeTraktClient {
 				w.WriteHeader(403)
 				return
@@ -273,7 +273,7 @@ func TestSync_TMDBShowListUsesItsSeasonChoice(t *testing.T) {
 func TestSync_TraktShowListAndWatchlist(t *testing.T) {
 	e, _ := showEnv(t)
 	ctx := context.Background()
-	l, err := AddOutsideList(ctx, e.s, OutsideListInput{Name: "Trakt shows", Kind: ListTrakt, Ref: "luis/shows", TitleKind: "show", Seasons: library.SeasonsLatest}, domain.System)
+	l, err := AddOutsideList(ctx, e.s, OutsideListInput{Name: "Trakt shows", Kind: ListTrakt, Ref: "kim/shows", TitleKind: "show", Seasons: library.SeasonsLatest}, domain.System)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -294,7 +294,7 @@ func TestSync_TraktShowListAndWatchlist(t *testing.T) {
 	if jobs != 0 {
 		t.Fatalf("searched without search on add: %d", jobs)
 	}
-	w, err := AddOutsideList(ctx, e.s, OutsideListInput{Name: "Show watchlist", Kind: ListTrakt, Ref: "luis/watchlist", TitleKind: "show"}, domain.System)
+	w, err := AddOutsideList(ctx, e.s, OutsideListInput{Name: "Show watchlist", Kind: ListTrakt, Ref: "kim/watchlist", TitleKind: "show"}, domain.System)
 	if err != nil {
 		t.Fatal(err)
 	}

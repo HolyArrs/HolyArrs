@@ -6,7 +6,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        dir: [".", "services/metadata"]
+        dir: ["."]
     steps:
       - uses: actions/checkout@v7.0.1
       - uses: actions/setup-go@v7.0.0
@@ -19,7 +19,6 @@ jobs:
           go-licenses check ./...
           --allowed_licenses=MIT,BSD-2-Clause,BSD-3-Clause,Apache-2.0,ISC,MPL-2.0,CC0-1.0,Zlib
           --ignore github.com/HolyArrs/holyarrs
-          --ignore github.com/CoderLuii/holyarrs-metadata
       - name: save licence texts for the notices file
         if: matrix.dir == '.'
         run: go-licenses save ./... --save_path=third_party_licences --ignore github.com/HolyArrs/holyarrs

@@ -193,7 +193,7 @@ func TestMusicBrainzSearchByName(t *testing.T) {
 		t.Fatalf("search %+v", got)
 	}
 	// The search words are escaped for the search syntax, and HolyArrs names itself.
-	if !strings.Contains(fake.hits[0], `query=Lab%5C%3A+Band`) || fake.ua[0] != "HolyArrs/1.2.3 ( https://github.com/CoderLuii/holyarrs )" {
+	if !strings.Contains(fake.hits[0], `query=Lab%5C%3A+Band`) || fake.ua[0] != "HolyArrs/1.2.3 ( https://github.com/HolyArrs/holyarrs )" {
 		t.Fatalf("request %q ua %q", fake.hits[0], fake.ua[0])
 	}
 	if got, err := mb.SearchArtists(context.Background(), "nobody"); err != nil || len(got) != 0 {

@@ -71,7 +71,7 @@ func fakeTMDB(t *testing.T, hits *atomic.Int32) *httptest.Server {
 	return srv
 }
 
-// fakeTrakt serves the list luis/favourites and the watchlist of luis.
+// fakeTrakt serves the list kim/favourites and the watchlist of kim.
 func fakeTrakt(t *testing.T) *httptest.Server {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("trakt-api-key") != fakeTraktClient || r.Header.Get("trakt-api-version") != "2" {
@@ -80,12 +80,12 @@ func fakeTrakt(t *testing.T) *httptest.Server {
 		}
 		var out []map[string]any
 		switch r.URL.Path {
-		case "/users/luis/lists/favourites/items/movie":
+		case "/users/kim/lists/favourites/items/movie":
 			out = []map[string]any{
 				{"type": "movie", "movie": map[string]any{"title": "Glass Meridian", "year": 2021, "ids": map[string]any{"tmdb": 900004, "imdb": "tt9000040"}}},
 				{"type": "movie", "movie": map[string]any{"title": "Salt Choir", "year": 2020, "ids": map[string]any{"imdb": "tt9000050"}}},
 			}
-		case "/users/luis/watchlist/movies":
+		case "/users/kim/watchlist/movies":
 			out = []map[string]any{{"type": "movie", "movie": map[string]any{"title": "Quiet Orchard", "ids": map[string]any{"tmdb": 900003}}}}
 		default:
 			w.WriteHeader(404)
@@ -245,7 +245,7 @@ func TestSync_TMDBListAddsMoviesAndSkipsNeverAdd(t *testing.T) {
 func TestSync_TraktListAndWatchlist(t *testing.T) {
 	e := setup(t)
 	ctx := context.Background()
-	l, err := AddOutsideList(ctx, e.s, OutsideListInput{Name: "Favourites", Kind: ListTrakt, Ref: "luis/favourites", SearchOnAdd: true}, domain.System)
+	l, err := AddOutsideList(ctx, e.s, OutsideListInput{Name: "Favourites", Kind: ListTrakt, Ref: "kim/favourites", SearchOnAdd: true}, domain.System)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -253,8 +253,8 @@ func TestSync_TraktListAndWatchlist(t *testing.T) {
 	if err != nil || res.Added != 2 {
 		t.Fatalf("result %+v %v", res, err) // Salt Choir has only an IMDb id
 	}
-	w, _ := AddOutsideList(ctx, e.s, OutsideListInput{Name: "Watchlist", Kind: ListTrakt, Ref: "https://trakt.tv/users/luis/watchlist"}, domain.System)
-	if w.Ref != "luis/watchlist" {
+	w, _ := AddOutsideList(ctx, e.s, OutsideListInput{Name: "Watchlist", Kind: ListTrakt, Ref: "https://trakt.tv/users/kim/watchlist"}, domain.System)
+	if w.Ref != "kim/watchlist" {
 		t.Fatalf("ref %q", w.Ref)
 	}
 	if res, err := e.svc.Sync(ctx, w.ID, domain.System); err != nil || res.Added != 1 {
@@ -278,7 +278,7 @@ func TestSync_FailedFetchIsRecorded(t *testing.T) {
 		t.Fatalf("error %q", got.LastError)
 	}
 	e.svc.TraktClient = func(context.Context) (string, error) { return "", nil }
-	tl, _ := AddOutsideList(ctx, e.s, OutsideListInput{Name: "Trakt", Kind: ListTrakt, Ref: "luis/favourites"}, domain.System)
+	tl, _ := AddOutsideList(ctx, e.s, OutsideListInput{Name: "Trakt", Kind: ListTrakt, Ref: "kim/favourites"}, domain.System)
 	if _, err := e.svc.Sync(ctx, tl.ID, domain.System); !errors.Is(err, ErrNoTraktKey) {
 		t.Fatalf("no key: %v", err)
 	}
