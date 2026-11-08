@@ -26,7 +26,7 @@
 	import { to } from '#lib/core/paths.ts';
 	import { api, message } from '#lib/core/api.ts';
 	import { tone } from '#lib/core/format.ts';
-	import { reducedMotion } from '#lib/core/motion.ts';
+	import { scrollToStart } from '#lib/core/motion.ts';
 	import { session } from '#lib/core/session.svelte.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import type { AlbumSummary, EventPage, EventRecord, TitleView } from '#lib/core/types.ts';
@@ -175,7 +175,7 @@
 	const mayReport = $derived(!!artist && (tracks ?? []).some(hasFile));
 	const moreItems = $derived<MenuItem[]>([...(staff ? heroItems : []), ...(mayReport ? [...(staff ? [{ kind: 'separator' as const }] : []), { label: 'Report a problem', icon: 'alert' as const, onselect: () => (reportOpen = true) }] : [])]);
 	function toLibrary() {
-		document.getElementById('album-library')?.scrollIntoView({ behavior: reducedMotion() ? 'auto' : 'smooth', block: 'start' });
+		scrollToStart(document.getElementById('album-library'));
 	}
 
 	// Search now lets HolyArrs pick; Choose a release lists every Release.

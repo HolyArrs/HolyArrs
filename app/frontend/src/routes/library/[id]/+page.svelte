@@ -44,7 +44,7 @@
 	import { session } from '#lib/core/session.svelte.ts';
 	import { decided } from '#lib/core/plain.ts';
 	import { plainReason } from '#lib/core/plain.ts';
-	import { reducedMotion } from '#lib/core/motion.ts';
+	import { scrollToStart } from '#lib/core/motion.ts';
 	import type { EventPage, EventRecord, ReleasePage, ReleaseView, TitleView, VersionView } from '#lib/core/types.ts';
 
 	const id = $derived(Number(page.params.id));
@@ -252,7 +252,7 @@
 	const moreItems = $derived<MenuItem[]>([...(manage ? heroItems : []), ...(mayReport ? [...(manage ? [{ kind: 'separator' as const }] : []), { label: 'Report a problem', icon: 'alert' as const, onselect: () => (reportOpen = true) }] : [])]);
 	function toLibrary() {
 		const h = document.getElementById('h-library');
-		h?.closest('section')?.scrollIntoView({ behavior: reducedMotion() ? 'auto' : 'smooth', block: 'start' });
+		scrollToStart(h?.closest('section'));
 	}
 
 	async function setKeep(v: boolean) {

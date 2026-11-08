@@ -52,6 +52,11 @@ export function reducedMotion(win: MediaWindow | undefined = typeof window === '
 	}
 }
 
+// Scrolls an element to the top of the view, jumping instead of gliding when motion is reduced.
+export function scrollToStart(el: Element | null | undefined): void {
+	el?.scrollIntoView({ behavior: reducedMotion() ? 'auto' : 'smooth', block: 'start' });
+}
+
 // Caps the stagger so long lists do not trail for seconds.
 export function staggerDelay(index: number, step = 30, max = 8, reduce = false): number {
 	if (reduce || !Number.isFinite(index) || index <= 0) return 0;

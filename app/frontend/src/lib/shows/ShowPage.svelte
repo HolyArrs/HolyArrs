@@ -48,7 +48,7 @@
 	import { page } from '$app/state';
 	import { peopleNames, decided } from '../core/plain.ts';
 	import { to } from '../core/paths.ts';
-	import { reducedMotion } from '../core/motion.ts';
+	import { scrollToStart } from '../core/motion.ts';
 	import { api, message } from '../core/api.ts';
 	import { live } from '../core/live.svelte.ts';
 	import { ago, date, dateTime, tone } from '../core/format.ts';
@@ -236,7 +236,7 @@
 				scopeJobs = r.job_ids;
 				// The release list sits in the Library section, so scroll to it.
 				await tick();
-				document.querySelector('[data-testid="show-releases"]')?.scrollIntoView({ behavior: reducedMotion() ? 'auto' : 'smooth', block: 'start' });
+				scrollToStart(document.querySelector('[data-testid="show-releases"]'));
 			}
 			toasts.push(r.job_ids.length ? done : 'Nothing to search for', r.job_ids.length ? 'info' : 'ok');
 		} catch (e) {
@@ -324,7 +324,7 @@
 
 	function toLibrary() {
 		const h = document.getElementById('h-library');
-		h?.closest('section')?.scrollIntoView({ behavior: reducedMotion() ? 'auto' : 'smooth', block: 'start' });
+		scrollToStart(h?.closest('section'));
 	}
 
 	async function setSeason(n: number, keep: boolean) {

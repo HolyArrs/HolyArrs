@@ -2,7 +2,7 @@
 import type { TitleView } from '#lib/core/types.ts';
 import { api, message } from '#lib/core/api.ts';
 import { toasts } from '#lib/core/toasts.svelte.ts';
-import { reducedMotion } from '#lib/core/motion.ts';
+import { scrollToStart } from '#lib/core/motion.ts';
 
 export function createTitleSearch(ctx: { id: number; title: TitleView | null; slotPick: number; searching: boolean; running: number[]; relOffset: number; refreshing: boolean; load: (which?: 'all' | 'title' | 'releases') => Promise<void> }) {
 	let failing = $state(0);
@@ -40,7 +40,7 @@ export function createTitleSearch(ctx: { id: number; title: TitleView | null; sl
 	// More > Choose a release: bring the Releases section into view and start the same pick-it-yourself search as its own button.
 	function chooseRelease() {
 		const h = document.getElementById('h-rel');
-		h?.closest('section')?.scrollIntoView({ behavior: reducedMotion() ? 'auto' : 'smooth', block: 'start' });
+		scrollToStart(h?.closest('section'));
 		h?.focus({ preventScroll: true });
 		void searchNow(false);
 	}
