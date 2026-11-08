@@ -1,21 +1,14 @@
-package api
+package mediafiles
 
 import (
-	"context"
 	"database/sql"
 	"encoding/json"
 	"math"
 	"net/http"
 	"strings"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
-
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/requests"
 )
 
 // OwnedItem is one entry of GET /api/v1/titles/owned: a Library title (or
@@ -52,22 +45,38 @@ SELECT 'album', '', COALESCE(json_extract(p.source_ids, '$.musicbrainz'), ''), t
 FROM parts p JOIN titles t ON t.id = p.title_id AND t.kind = 'artist' AND t.state != 'removed'
 LEFT JOIN agg g ON g.part_id = p.id WHERE p.kind = 'album' AND p.included = 1`
 
+// OwnedHandlers serve GET /api/v1/titles/owned. The part switch, the Kid
+// limit and the age rating check come from the caller.
+type OwnedHandlers struct {
+	Store *database.Store
+	// KindOn says whether a title kind's part is on (an album is an artist).
+	KindOn func(kind string) bool
+	// KidMax is the caller's age limit ("" none).
+	KidMax func(*http.Request) string
+	// RatingAllows says whether a rating fits under max for a kind.
+	RatingAllows func(max, kind, rating string) bool
+}
+
+// Routes mounts GET /api/v1/titles/owned.
+func (a *OwnedHandlers) Routes(m *http.ServeMux) {
+	m.HandleFunc("GET /api/v1/titles/owned", a.titlesOwned)
+}
+
 // titlesOwned answers GET /api/v1/titles/owned in one query, with the same
 // part and Kid filters as /titles, an ETag and 304.
-func (a *API) titlesOwned(w http.ResponseWriter, r *http.Request) {
+func (a *OwnedHandlers) titlesOwned(w http.ResponseWriter, r *http.Request) {
 	on := func(kind string) bool {
 		if kind == "album" {
 			kind = "artist"
 		}
-		p, ok := parts.ForTitleKind(kind)
-		return !ok || a.partIsOn(p) || a.s.Parts.SafeMode
+		return a.KindOn(kind)
 	}
-	max := a.kidMax(r)
+	max := a.KidMax(r)
 	// As titleAsks: without the right to approve, only the caller's own
 	// asks mark a title requested (the body, so the ETag, is per person).
 	who, signed := webserver.From(r.Context())
 	all := !signed || who.Has(webserver.PermApprove)
-	rows, err := a.s.Store.Read().QueryContext(r.Context(), ownedSQL, all, who.UserID)
+	rows, err := a.Store.Read().QueryContext(r.Context(), ownedSQL, all, who.UserID)
 	if err != nil {
 		webserver.Internal(w, "api", err)
 		return
@@ -85,7 +94,7 @@ func (a *API) titlesOwned(w http.ResponseWriter, r *http.Request) {
 			webserver.Internal(w, "api", err)
 			return
 		}
-		if !on(it.Kind) || !metadata.RatingAllows(max, strings.Replace(it.Kind, "album", "artist", 1), rating) {
+		if !on(it.Kind) || !a.RatingAllows(max, strings.Replace(it.Kind, "album", "artist", 1), rating) {
 			continue
 		}
 		if it.Kind == "artist" || it.Kind == "album" {
@@ -132,104 +141,4 @@ func max64(a, b float64) float64 {
 		return a
 	}
 	return b
-}
-
-// titleBatch holds the movie Slots (with their Downloads and Files) and the
-// asks of every Title, read in a few queries, so listing all Titles does
-// not query them once per Title.
-type titleBatch struct {
-	slots     map[int64][]mediafiles.Slot // by title id (movies only)
-	downloads map[int64]domain.Download
-	files     map[int64]mediafiles.File
-	labels    map[int64]mediafiles.Version
-	asks      map[int64][]requests.View
-}
-
-type titleBatchKey struct{}
-
-func batchOf(ctx context.Context) *titleBatch {
-	b, _ := ctx.Value(titleBatchKey{}).(*titleBatch)
-	return b
-}
-
-// withTitleBatch reads the batch for all Titles and keeps it on ctx for titleView.
-func (a *API) withTitleBatch(ctx context.Context) (context.Context, error) {
-	db := a.s.Store.Read()
-	b := &titleBatch{slots: map[int64][]mediafiles.Slot{}, downloads: map[int64]domain.Download{}, files: map[int64]mediafiles.File{},
-		labels: map[int64]mediafiles.Version{}, asks: map[int64][]requests.View{}}
-	itemTitle := map[int64]int64{}
-	rows, err := db.QueryContext(ctx, `SELECT i.id, i.title_id FROM items i JOIN titles t ON t.id = i.title_id WHERE t.kind = 'movie'`)
-	if err != nil {
-		return ctx, err
-	}
-	for rows.Next() {
-		var item, title int64
-		if err := rows.Scan(&item, &title); err != nil {
-			rows.Close()
-			return ctx, err
-		}
-		itemTitle[item] = title
-	}
-	rows.Close()
-	if err := rows.Err(); err != nil {
-		return ctx, err
-	}
-	movieSlots := "item_id IN (SELECT i.id FROM items i JOIN titles t ON t.id = i.title_id WHERE t.kind = 'movie')"
-	ss, err := database.Select[mediafiles.Slot](ctx, db, "slots", movieSlots+" ORDER BY id")
-	if err != nil {
-		return ctx, err
-	}
-	for _, s := range ss {
-		b.slots[itemTitle[s.ItemID]] = append(b.slots[itemTitle[s.ItemID]], s)
-	}
-	ds, err := database.Select[domain.Download](ctx, db, "downloads", "id IN (SELECT active_download_id FROM slots WHERE "+movieSlots+")")
-	if err != nil {
-		return ctx, err
-	}
-	for _, d := range ds {
-		b.downloads[d.ID] = d
-	}
-	fs, err := database.Select[mediafiles.File](ctx, db, "files", "id IN (SELECT file_id FROM slots WHERE "+movieSlots+")")
-	if err != nil {
-		return ctx, err
-	}
-	for _, f := range fs {
-		b.files[f.ID] = f
-	}
-	vs, err := database.Select[mediafiles.Version](ctx, db, "versions", "title_id IN (SELECT id FROM titles WHERE kind = 'movie')")
-	if err != nil {
-		return ctx, err
-	}
-	for _, v := range vs {
-		b.labels[v.ID] = v
-	}
-	// Asks: the same rules as titleAsks, in one read.
-	who, ok := webserver.From(ctx)
-	var views []requests.View
-	if !ok || who.Has(webserver.PermApprove) {
-		views, err = a.s.Asks.Views(ctx, "a.title_id IS NOT NULL")
-	} else {
-		views, err = a.s.Asks.Views(ctx, "a.title_id IS NOT NULL AND EXISTS (SELECT 1 FROM ask_people p WHERE p.ask_id = a.id AND p.user_id = ?)", who.UserID)
-		for i := range views {
-			views[i].Mine = true
-		}
-		requests.HideDeciderNames(views)
-	}
-	if err != nil {
-		return ctx, err
-	}
-	for _, v := range views {
-		if v.TitleID != nil {
-			b.asks[*v.TitleID] = append(b.asks[*v.TitleID], v)
-		}
-	}
-	return context.WithValue(ctx, titleBatchKey{}, b), nil
-}
-
-// asksFor answers a Title's asks from the batch (never nil, as Views).
-func (b *titleBatch) asksFor(id int64) []requests.View {
-	if v := b.asks[id]; v != nil {
-		return v
-	}
-	return []requests.View{}
 }

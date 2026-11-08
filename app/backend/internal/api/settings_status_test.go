@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/health"
 	"slices"
 	"strings"
 	"testing"
@@ -27,7 +28,7 @@ func intp(n int) *int        { return &n }
 func boolp(b bool) *bool     { return &b }
 func timep(s string) *string { return &s }
 
-func pages(a statusAnswer) []string {
+func pages(a health.StatusAnswer) []string {
 	var out []string
 	for _, i := range a.Items {
 		out = append(out, i.Page)
@@ -36,7 +37,7 @@ func pages(a statusAnswer) []string {
 	return out
 }
 
-func inGroup(a statusAnswer, g string) int {
+func inGroup(a health.StatusAnswer, g string) int {
 	n := 0
 	for _, i := range a.Items {
 		if i.Group == g {
@@ -50,15 +51,15 @@ func inGroup(a statusAnswer, g string) int {
 // settings-status rules (settings-status.test.ts) over unchanged in meaning.
 func TestSettingsStatusRules(t *testing.T) {
 	t.Run("all set when every known check is fine", func(t *testing.T) {
-		a := settingsStatus(statusInput{Checks: []domain.HealthCheck{check("downloader", "qBit", "ok", "")},
-			Sources: []namedState{{"A", "working"}}, Downloaders: []namedState{{"Q", "working"}}, Now: statusNow})
+		a := health.SettingsStatus(health.StatusInput{Checks: []domain.HealthCheck{check("downloader", "qBit", "ok", "")},
+			Sources: []health.NamedState{{Name: "A", State: "working"}}, Downloaders: []health.NamedState{{Name: "Q", State: "working"}}, Now: statusNow})
 		if len(a.Items) != 0 || !slices.Contains(a.Known, "/settings/sources") || !slices.Contains(a.Known, "/settings/downloaders") || len(a.Unset) != 0 {
 			t.Fatalf("%+v", a)
 		}
 	})
 	t.Run("a failing downloader counts once, from the check and the list", func(t *testing.T) {
-		a := settingsStatus(statusInput{Checks: []domain.HealthCheck{check("downloader", "qBit", "error", "not answering")},
-			Downloaders: []namedState{{"qBit", "not_answering"}}, Sources: []namedState{{"A", "working"}}, Now: statusNow})
+		a := health.SettingsStatus(health.StatusInput{Checks: []domain.HealthCheck{check("downloader", "qBit", "error", "not answering")},
+			Downloaders: []health.NamedState{{Name: "qBit", State: "not_answering"}}, Sources: []health.NamedState{{Name: "A", State: "working"}}, Now: statusNow})
 		if len(a.Items) != 1 || a.Items[0].Page != "/settings/downloaders" || a.Items[0].Group != "copies" ||
 			a.Items[0].Text != "qBit: not answering" || a.Items[0].Severity != "error" {
 			t.Fatalf("%+v", a.Items)
@@ -68,7 +69,7 @@ func TestSettingsStatusRules(t *testing.T) {
 		}
 	})
 	t.Run("the metadata server down, an old backup and a failed media server", func(t *testing.T) {
-		a := settingsStatus(statusInput{MetadataUp: boolp(false), NewestBackup: timep("2026-10-01T00:00:00Z"),
+		a := health.SettingsStatus(health.StatusInput{MetadataUp: boolp(false), NewestBackup: timep("2026-10-01T00:00:00Z"),
 			States: []jobs.Status{{Key: "media_server:1", Kind: "media_server", Name: "Jelly", State: jobs.Failed}}, Now: statusNow})
 		if got := pages(a); !slices.Equal(got, []string{"/settings/backups", "/settings/media-servers", "/settings/tmdb"}) {
 			t.Fatalf("pages %v", got)
@@ -76,7 +77,7 @@ func TestSettingsStatusRules(t *testing.T) {
 		if inGroup(a, "maintenance") != 1 {
 			t.Fatalf("%+v", a.Items)
 		}
-		want := map[string]statusItem{
+		want := map[string]health.StatusItem{
 			"/settings/tmdb":          {Group: "library", Page: "/settings/tmdb", Text: metadata.Down, Severity: "warning"},
 			"/settings/backups":       {Group: "maintenance", Page: "/settings/backups", Text: "No backup in the last 7 days", Severity: "warning"},
 			"/settings/media-servers": {Group: "linked", Page: "/settings/media-servers", Text: "The media server Jelly failed", Severity: "error"},
@@ -88,35 +89,35 @@ func TestSettingsStatusRules(t *testing.T) {
 		}
 	})
 	t.Run("a recent backup is fine and no backup at all is flagged", func(t *testing.T) {
-		if a := settingsStatus(statusInput{NewestBackup: timep("2026-10-17T00:00:00Z"), Now: statusNow}); len(a.Items) != 0 {
+		if a := health.SettingsStatus(health.StatusInput{NewestBackup: timep("2026-10-17T00:00:00Z"), Now: statusNow}); len(a.Items) != 0 {
 			t.Fatalf("%+v", a.Items)
 		}
-		a := settingsStatus(statusInput{NewestBackup: timep(""), Now: statusNow})
+		a := health.SettingsStatus(health.StatusInput{NewestBackup: timep(""), Now: statusNow})
 		if len(a.Items) != 1 || a.Items[0].Text != "No backup yet" || a.Items[0].Severity != "warning" {
 			t.Fatalf("%+v", a.Items)
 		}
 	})
 	t.Run("not set up without folders, Sources or Downloaders", func(t *testing.T) {
-		a := settingsStatus(statusInput{Folders: intp(0), Sources: []namedState{}, Downloaders: []namedState{}, Now: statusNow})
+		a := health.SettingsStatus(health.StatusInput{Folders: intp(0), Sources: []health.NamedState{}, Downloaders: []health.NamedState{}, Now: statusNow})
 		if !slices.Equal(a.Unset["library"], []string{"/settings/library-folders"}) ||
 			!slices.Equal(a.Unset["copies"], []string{"/settings/sources", "/settings/downloaders"}) {
 			t.Fatalf("unset %+v", a.Unset)
 		}
 	})
 	t.Run("nothing about pages it knows nothing of", func(t *testing.T) {
-		a := settingsStatus(statusInput{Now: statusNow})
+		a := health.SettingsStatus(health.StatusInput{Now: statusNow})
 		if len(a.Items) != 0 || len(a.Known) != 0 || len(a.Unset) != 0 {
 			t.Fatalf("%+v", a)
 		}
 	})
 	t.Run("severities", func(t *testing.T) {
-		a := settingsStatus(statusInput{
+		a := health.SettingsStatus(health.StatusInput{
 			Checks: []domain.HealthCheck{check("disk_space", "Movies", "warning", "low on space"), check("backups", "", "error", "")},
 			States: []jobs.Status{{Key: "stage:search", Kind: "stage", Name: "search", State: jobs.Running, Stuck: true},
 				{Key: "subtitle_site:2", Kind: "subtitle_site", Name: "Subs", State: jobs.Failed}},
-			Sources:     []namedState{{"Ind", "auth_failed"}},
+			Sources:     []health.NamedState{{Name: "Ind", State: "auth_failed"}},
 			UpdateNewer: boolp(true), Now: statusNow})
-		want := []statusItem{
+		want := []health.StatusItem{
 			{Group: "library", Page: "/settings/library-folders", Text: "Movies: low on space", Severity: "warning"},
 			{Group: "maintenance", Page: "/settings/backups", Text: "needs a look", Severity: "error"},
 			{Group: "general", Page: "/settings/parts", Text: "The stage search is stuck", Severity: "warning"},
@@ -135,7 +136,7 @@ func TestSettingsStatusRoute(t *testing.T) {
 	r := newAskRig(t)
 	b := string(r.owner.call("GET", "/api/v1/settings/status", "", 200))
 	var a struct {
-		Items      []statusItem        `json:"items"`
+		Items      []health.StatusItem `json:"items"`
 		Unset      map[string][]string `json:"unset"`
 		Known      []string            `json:"known"`
 		MetadataUp bool                `json:"metadata_up"`
@@ -149,7 +150,7 @@ func TestSettingsStatusRoute(t *testing.T) {
 	}
 	r.ana.call("GET", "/api/v1/settings/status", "", 403)
 	r.api.s.MetadataUp = func(context.Context) bool { return false }
-	r.api.status.forget()
+	r.api.status.Forget()
 	b = string(r.owner.call("GET", "/api/v1/settings/status", "", 200))
 	if !strings.Contains(b, "Metadata server is down") || !strings.Contains(b, `"metadata_up":false`) {
 		t.Fatalf("server down: %s", b)
@@ -168,7 +169,7 @@ func TestMetadataHealthRoute(t *testing.T) {
 	}
 }
 
-func pagesOf(items []statusItem) []string {
+func pagesOf(items []health.StatusItem) []string {
 	var out []string
 	for _, i := range items {
 		out = append(out, i.Page)
@@ -191,19 +192,19 @@ func TestStatusFlagsGoneDefaults(t *testing.T) {
 	putSettingRow(t, r.st, "what_to_pick", "movie_pick_rules_id", "0")
 	putSettingRow(t, r.st, "what_to_pick", "movie_library_folder_id", "9999")
 	putSettingRow(t, r.st, "what_to_pick", "show_pick_rules_id", "8888")
-	r.api.status.forget()
+	r.api.status.Forget()
 	var a struct {
-		Items []statusItem `json:"items"`
-		Known []string     `json:"known"`
+		Items []health.StatusItem `json:"items"`
+		Known []string            `json:"known"`
 	}
 	_ = json.Unmarshal(r.owner.call("GET", "/api/v1/settings/status", "", 200), &a)
-	var got []statusItem
+	var got []health.StatusItem
 	for _, i := range a.Items {
 		if i.Page == "/settings/title-defaults" {
 			got = append(got, i)
 		}
 	}
-	want := []statusItem{
+	want := []health.StatusItem{
 		{Group: "library", Page: "/settings/title-defaults", Text: "The Library folder saved for new movies is gone, so new movies go to the first movie folder", Severity: "warning"},
 		{Group: "library", Page: "/settings/title-defaults", Text: "The Pick rules saved for new shows are gone, so new shows use their folder's own Pick rules", Severity: "warning"},
 	}
@@ -215,7 +216,7 @@ func TestStatusFlagsGoneDefaults(t *testing.T) {
 func TestSettingsStatusCached(t *testing.T) {
 	r := newAskRig(t)
 	at := statusNow
-	r.api.status.now = func() time.Time { return at }
+	r.api.status.Now = func() time.Time { return at }
 	first := string(r.owner.call("GET", "/api/v1/settings/status", "", 200))
 	if !strings.Contains(first, `"/settings/sources"`) {
 		t.Fatalf("first %s", first)
@@ -242,7 +243,7 @@ func TestSettingsStatusForgetsAfterWrites(t *testing.T) {
 		t.Fatal(err)
 	}
 	unsetFolders := func() bool {
-		var a statusAnswer
+		var a health.StatusAnswer
 		if err := json.Unmarshal(r.owner.call("GET", "/api/v1/settings/status", "", 200), &a); err != nil {
 			t.Fatal(err)
 		}
@@ -268,7 +269,7 @@ func TestStatusFlagsKidWithLocalSkip(t *testing.T) {
 		want bool
 	}{{&on, &one, true}, {&off, &one, false}, {&on, &none, false}, {nil, &one, false}} {
 		got := false
-		for _, i := range settingsStatus(statusInput{SkipLocal: c.skip, Kids: c.kids}).Items {
+		for _, i := range health.SettingsStatus(health.StatusInput{SkipLocal: c.skip, Kids: c.kids}).Items {
 			if i.Page == page && i.Group == "security" && i.Severity == "error" {
 				got = true
 			}
@@ -283,14 +284,14 @@ func TestStatusFlagsKidWithLocalSkip(t *testing.T) {
 // to new people, the Users page warns that newcomers get no limit.
 func TestStatusWarnsKidWithOutsideJoin(t *testing.T) {
 	on, off, one, none := true, false, 1, 0
-	want := statusItem{Group: "people", Page: "/settings/users", Severity: "warning",
+	want := health.StatusItem{Group: "people", Page: "/settings/users", Severity: "warning",
 		Text: "New people who sign in with Plex, Jellyfin, Emby or single sign-on get no age limit; link a Kid's outside accounts to their Kid account."}
 	for _, c := range []struct {
 		join *bool
 		kids *int
 		want bool
 	}{{&on, &one, true}, {&off, &one, false}, {&on, &none, false}} {
-		got := slices.Contains(settingsStatus(statusInput{OutsideJoin: c.join, Kids: c.kids}).Items, want)
+		got := slices.Contains(health.SettingsStatus(health.StatusInput{OutsideJoin: c.join, Kids: c.kids}).Items, want)
 		if got != c.want {
 			t.Fatalf("join %v kids %v: warned %t", *c.join, *c.kids, got)
 		}
