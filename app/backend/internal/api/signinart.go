@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/health"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
@@ -53,7 +54,7 @@ const (
 	// draws the picture on a canvas).
 	signinPicPath = "/api/v1/public/signin-pic/t/p/"
 	// settingSigninLibraryArt is the this_app setting key.
-	settingSigninLibraryArt = "signin_library_art"
+	settingSigninLibraryArt = health.SettingSigninLibraryArt
 )
 
 // signinImage is one picture at its original size.

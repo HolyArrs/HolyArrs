@@ -6,6 +6,8 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/health"
 )
 
 // "Count this install" is on by default, round-trips through
@@ -29,13 +31,13 @@ func TestCountInstallSetting(t *testing.T) {
 		}
 		return s
 	}
-	if !CountInstall(ctx, a.s.Store.Read()) {
+	if !health.CountInstall(ctx, a.s.Store.Read()) {
 		t.Fatal("stored count_install is off by default (read before the Job queue starts)")
 	}
 	if s := put(`{"count_install": false}`); s.CountInstall || a.uiSettings(ctx).CountInstall {
 		t.Fatal("count_install off not kept")
 	}
-	if CountInstall(ctx, a.s.Store.Read()) {
+	if health.CountInstall(ctx, a.s.Store.Read()) {
 		t.Fatal("stored count_install off not read before the Job queue starts")
 	}
 	put(`{"autoplay_trailers": true}`)

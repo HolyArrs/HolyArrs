@@ -51,14 +51,14 @@ func inGroup(a statusAnswer, g string) int {
 func TestSettingsStatusRules(t *testing.T) {
 	t.Run("all set when every known check is fine", func(t *testing.T) {
 		a := settingsStatus(statusInput{Checks: []domain.HealthCheck{check("downloader", "qBit", "ok", "")},
-			Sources: []namedState{{"A", "working"}}, Downloaders: []namedState{{"Q", "working"}}, Now: statusNow})
+			Sources: []namedState{{Name: "A", State: "working"}}, Downloaders: []namedState{{Name: "Q", State: "working"}}, Now: statusNow})
 		if len(a.Items) != 0 || !slices.Contains(a.Known, "/settings/sources") || !slices.Contains(a.Known, "/settings/downloaders") || len(a.Unset) != 0 {
 			t.Fatalf("%+v", a)
 		}
 	})
 	t.Run("a failing downloader counts once, from the check and the list", func(t *testing.T) {
 		a := settingsStatus(statusInput{Checks: []domain.HealthCheck{check("downloader", "qBit", "error", "not answering")},
-			Downloaders: []namedState{{"qBit", "not_answering"}}, Sources: []namedState{{"A", "working"}}, Now: statusNow})
+			Downloaders: []namedState{{Name: "qBit", State: "not_answering"}}, Sources: []namedState{{Name: "A", State: "working"}}, Now: statusNow})
 		if len(a.Items) != 1 || a.Items[0].Page != "/settings/downloaders" || a.Items[0].Group != "copies" ||
 			a.Items[0].Text != "qBit: not answering" || a.Items[0].Severity != "error" {
 			t.Fatalf("%+v", a.Items)
@@ -114,7 +114,7 @@ func TestSettingsStatusRules(t *testing.T) {
 			Checks: []domain.HealthCheck{check("disk_space", "Movies", "warning", "low on space"), check("backups", "", "error", "")},
 			States: []jobs.Status{{Key: "stage:search", Kind: "stage", Name: "search", State: jobs.Running, Stuck: true},
 				{Key: "subtitle_site:2", Kind: "subtitle_site", Name: "Subs", State: jobs.Failed}},
-			Sources:     []namedState{{"Ind", "auth_failed"}},
+			Sources:     []namedState{{Name: "Ind", State: "auth_failed"}},
 			UpdateNewer: boolp(true), Now: statusNow})
 		want := []statusItem{
 			{Group: "library", Page: "/settings/library-folders", Text: "Movies: low on space", Severity: "warning"},
@@ -149,7 +149,7 @@ func TestSettingsStatusRoute(t *testing.T) {
 	}
 	r.ana.call("GET", "/api/v1/settings/status", "", 403)
 	r.api.s.MetadataUp = func(context.Context) bool { return false }
-	r.api.status.forget()
+	r.api.status.Forget()
 	b = string(r.owner.call("GET", "/api/v1/settings/status", "", 200))
 	if !strings.Contains(b, "Metadata server is down") || !strings.Contains(b, `"metadata_up":false`) {
 		t.Fatalf("server down: %s", b)
@@ -191,7 +191,7 @@ func TestStatusFlagsGoneDefaults(t *testing.T) {
 	putSettingRow(t, r.st, "what_to_pick", "movie_pick_rules_id", "0")
 	putSettingRow(t, r.st, "what_to_pick", "movie_library_folder_id", "9999")
 	putSettingRow(t, r.st, "what_to_pick", "show_pick_rules_id", "8888")
-	r.api.status.forget()
+	r.api.status.Forget()
 	var a struct {
 		Items []statusItem `json:"items"`
 		Known []string     `json:"known"`
@@ -215,7 +215,7 @@ func TestStatusFlagsGoneDefaults(t *testing.T) {
 func TestSettingsStatusCached(t *testing.T) {
 	r := newAskRig(t)
 	at := statusNow
-	r.api.status.now = func() time.Time { return at }
+	r.api.status.SetClock(func() time.Time { return at })
 	first := string(r.owner.call("GET", "/api/v1/settings/status", "", 200))
 	if !strings.Contains(first, `"/settings/sources"`) {
 		t.Fatalf("first %s", first)

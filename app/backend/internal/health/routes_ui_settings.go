@@ -1,9 +1,8 @@
-package api
+package health
 
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"errors"
 	"net/http"
 	"strconv"
@@ -11,6 +10,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 )
 
@@ -23,7 +23,25 @@ const (
 	// settingCountryCount is "Count this install" (the metadata server's
 	// per-country install total).
 	settingCountryCount = "install_country_count"
+	// SettingSigninLibraryArt is "Show Library art on the sign-in page".
+	SettingSigninLibraryArt = "signin_library_art"
 )
+
+// UIHandlers serves GET and PUT /settings/ui. SetArtworkCap (may be nil)
+// sets the picture cache's cap in bytes; CountryCount (may be nil) passes
+// "Count this install" on to the metadata server's requests.
+type UIHandlers struct {
+	Store         *database.Store
+	Actor         func(*http.Request) domain.Actor
+	SetArtworkCap func(int64)
+	CountryCount  func(bool)
+}
+
+// Routes mounts the UI settings routes.
+func (h *UIHandlers) Routes(m *http.ServeMux) {
+	m.HandleFunc("GET /api/v1/settings/ui", h.get)
+	m.HandleFunc("PUT /api/v1/settings/ui", h.put)
+}
 
 // UISettings is the answer of GET /settings/ui.
 type UISettings struct {
@@ -50,51 +68,48 @@ const settingArtworkCache = "artwork_cache_gb"
 
 var artworkCacheSizes = map[int]bool{1: true, 2: true, 5: true, 10: true, 20: true}
 
-// applyArtworkCap sets the picture cache's cap from Settings.
-func (a *API) applyArtworkCap(ctx context.Context) {
-	if a.s.Library != nil && a.s.Library.Artwork != nil {
-		a.s.Library.Artwork.SetCap(int64(a.uiSettings(ctx).ArtworkCacheGB) << 30)
+// ApplyArtworkCap sets the picture cache's cap from Settings.
+func (h *UIHandlers) ApplyArtworkCap(ctx context.Context) {
+	if h.SetArtworkCap != nil {
+		h.SetArtworkCap(int64(UISettingsOf(ctx, h.Store).ArtworkCacheGB) << 30)
 	}
 }
 
-func (a *API) uiSettings(ctx context.Context) UISettings {
-	var v string
-	_ = a.s.Store.Read().QueryRowContext(ctx, "SELECT value FROM settings WHERE grp = 'this_app' AND key = ?", settingAutoplay).Scan(&v)
-	var l string
-	_ = a.s.Store.Read().QueryRowContext(ctx, "SELECT value FROM settings WHERE grp = 'this_app' AND key = ?", settingSigninLibraryArt).Scan(&l)
-	var g string
-	_ = a.s.Store.Read().QueryRowContext(ctx, "SELECT value FROM settings WHERE grp = 'this_app' AND key = ?", settingArtworkCache).Scan(&g)
+// UISettingsOf reads the UI settings.
+func UISettingsOf(ctx context.Context, st *database.Store) UISettings {
+	v, _ := database.Setting(ctx, st.Read(), "this_app", settingAutoplay)
+	l, _ := database.Setting(ctx, st.Read(), "this_app", SettingSigninLibraryArt)
+	g, _ := database.Setting(ctx, st.Read(), "this_app", settingArtworkCache)
 	gb, err := strconv.Atoi(g)
 	if err != nil || !artworkCacheSizes[gb] {
 		gb = int(library.DefaultArtworkCap >> 30)
 	}
-	k := database.ReadHistoryKeep(ctx, a.s.Store.Read())
+	k := database.ReadHistoryKeep(ctx, st.Read())
 	return UISettings{AutoplayTrailers: v != "off", SigninLibraryArt: l == "on", ArtworkCacheGB: gb,
-		HistoryRoutineDays: k.RoutineDays, HistoryOtherDays: k.OtherDays, CountInstall: CountInstall(ctx, a.s.Store.Read())}
+		HistoryRoutineDays: k.RoutineDays, HistoryOtherDays: k.OtherDays, CountInstall: CountInstall(ctx, st.Read())}
 }
 
 // CountInstall reads the stored "Count this install" (on unless switched
 // off). The app sets it on the metadata server's requests before any Job
 // runs, so no request goes out counted after the owner switched it off.
 func CountInstall(ctx context.Context, db *sql.DB) bool {
-	var c string
-	_ = db.QueryRowContext(ctx, "SELECT value FROM settings WHERE grp = 'this_app' AND key = ?", settingCountryCount).Scan(&c)
+	c, _ := database.Setting(ctx, db, "this_app", settingCountryCount)
 	return c != "off"
 }
 
 // ApplyCountryCount passes the stored "Count this install" on to the
 // requests to the metadata server (at start and after each change).
-func (a *API) ApplyCountryCount(ctx context.Context) {
-	if a.s.CountryCount != nil {
-		a.s.CountryCount(a.uiSettings(ctx).CountInstall)
+func (h *UIHandlers) ApplyCountryCount(ctx context.Context) {
+	if h.CountryCount != nil {
+		h.CountryCount(UISettingsOf(ctx, h.Store).CountInstall)
 	}
 }
 
-func (a *API) getUISettings(w http.ResponseWriter, r *http.Request) {
-	webserver.WriteJSON(w, http.StatusOK, a.uiSettings(r.Context()))
+func (h *UIHandlers) get(w http.ResponseWriter, r *http.Request) {
+	webserver.WriteJSON(w, http.StatusOK, UISettingsOf(r.Context(), h.Store))
 }
 
-func (a *API) putUISettings(w http.ResponseWriter, r *http.Request) {
+func (h *UIHandlers) put(w http.ResponseWriter, r *http.Request) {
 	// keep_ytdlp_updated, the old trailer tool's update switch, is not read:
 	// older pages may still send it, and like any field not listed here it
 	// is ignored.
@@ -106,7 +121,7 @@ func (a *API) putUISettings(w http.ResponseWriter, r *http.Request) {
 		OtherDays        *int  `json:"history_other_days"`
 		CountInstall     *bool `json:"count_install"`
 	}
-	if !decode(w, r, &in, `send {"autoplay_trailers": true, "signin_library_art": true, "artwork_cache_gb": 5, "count_install": true}`) {
+	if !webserver.Decode(w, r, &in, `send {"autoplay_trailers": true, "signin_library_art": true, "artwork_cache_gb": 5, "count_install": true}`) {
 		return
 	}
 	if in.RoutineDays != nil || in.OtherDays != nil {
@@ -115,14 +130,14 @@ func (a *API) putUISettings(w http.ResponseWriter, r *http.Request) {
 			webserver.Fail(w, http.StatusForbidden, "only the owner may change how long History is kept")
 			return
 		}
-		k := database.ReadHistoryKeep(r.Context(), a.s.Store.Read())
+		k := database.ReadHistoryKeep(r.Context(), h.Store.Read())
 		if in.RoutineDays != nil {
 			k.RoutineDays = *in.RoutineDays
 		}
 		if in.OtherDays != nil {
 			k.OtherDays = *in.OtherDays
 		}
-		if err := a.s.Store.SaveHistoryKeep(r.Context(), k, actor(r)); err != nil {
+		if err := h.Store.SaveHistoryKeep(r.Context(), k, h.Actor(r)); err != nil {
 			if errors.Is(err, database.ErrHistoryKeep) {
 				webserver.Fail(w, http.StatusBadRequest, err.Error())
 				return
@@ -136,31 +151,21 @@ func (a *API) putUISettings(w http.ResponseWriter, r *http.Request) {
 			webserver.Fail(w, http.StatusBadRequest, "artwork_cache_gb is 1, 2, 5, 10 or 20")
 			return
 		}
-		now := database.FormatTime(time.Now())
-		by, _ := json.Marshal(actor(r))
-		if err := a.s.Store.Write(r.Context(), func(tx *sql.Tx) error {
-			_, err := tx.Exec(`INSERT INTO settings (grp, key, value, created_at, created_by, updated_at, updated_by) VALUES ('this_app', ?, ?, ?, ?, ?, ?)
-			ON CONFLICT (grp, key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at, updated_by = excluded.updated_by`,
-				settingArtworkCache, strconv.Itoa(*in.ArtworkCacheGB), now, string(by), now, string(by))
-			return err
+		if err := h.Store.Write(r.Context(), func(tx *sql.Tx) error {
+			return database.PutSetting(tx, "this_app", settingArtworkCache, strconv.Itoa(*in.ArtworkCacheGB), h.Actor(r), time.Now())
 		}); err != nil {
 			webserver.Internal(w, "api", err)
 			return
 		}
-		a.applyArtworkCap(r.Context())
+		h.ApplyArtworkCap(r.Context())
 	}
-	for key, on := range map[string]*bool{settingAutoplay: in.AutoplayTrailers, settingSigninLibraryArt: in.SigninLibraryArt, settingCountryCount: in.CountInstall} {
+	for key, on := range map[string]*bool{settingAutoplay: in.AutoplayTrailers, SettingSigninLibraryArt: in.SigninLibraryArt, settingCountryCount: in.CountInstall} {
 		if on == nil {
 			continue
 		}
 		v := map[bool]string{true: "on", false: "off"}[*on]
-		now := database.FormatTime(time.Now())
-		by, _ := json.Marshal(actor(r))
-		err := a.s.Store.Write(r.Context(), func(tx *sql.Tx) error {
-			_, err := tx.Exec(`INSERT INTO settings (grp, key, value, created_at, created_by, updated_at, updated_by) VALUES ('this_app', ?, ?, ?, ?, ?, ?)
-			ON CONFLICT (grp, key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at, updated_by = excluded.updated_by`,
-				key, v, now, string(by), now, string(by))
-			return err
+		err := h.Store.Write(r.Context(), func(tx *sql.Tx) error {
+			return database.PutSetting(tx, "this_app", key, v, h.Actor(r), time.Now())
 		})
 		if err != nil {
 			webserver.Internal(w, "api", err)
@@ -168,7 +173,7 @@ func (a *API) putUISettings(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if in.CountInstall != nil {
-		a.ApplyCountryCount(r.Context())
+		h.ApplyCountryCount(r.Context())
 	}
-	webserver.WriteJSON(w, http.StatusOK, a.uiSettings(r.Context()))
+	webserver.WriteJSON(w, http.StatusOK, UISettingsOf(r.Context(), h.Store))
 }

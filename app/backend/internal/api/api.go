@@ -204,7 +204,7 @@ type API struct {
 	// rated keeps TMDB ratings looked up for Kid limits.
 	rated ratingState
 	// status keeps the Settings status answer for 30 seconds.
-	status statusCache
+	status health.StatusHandlers
 	// serviceTop keeps the per-service top lists for 12 hours.
 	serviceTop serviceTopCache
 	// watchOn keeps each title's TMDB watch providers per region a day.
@@ -373,7 +373,7 @@ func (a *API) Routes(rt *webserver.Router) {
 	m.HandleFunc("GET /api/v1/artwork/{name}", a.artwork)
 	m.HandleFunc("GET /api/v1/artwork/tmdb/{size}/{file}", a.tmdbArtwork)
 	m.HandleFunc("GET /api/v1/artwork/img/{kind}/{id}/{file}", a.serverArtwork)
-	m.HandleFunc("GET /api/v1/settings/status", a.settingsStatusRoute)
+	a.settingsStatusRoutes(m)
 	m.HandleFunc("GET /api/v1/settings/title-defaults", a.getTitleDefaults)
 	m.HandleFunc("PUT /api/v1/settings/title-defaults", a.putTitleDefaults)
 	m.HandleFunc("GET /api/v1/pick-rules", a.listPickRules)
@@ -433,9 +433,8 @@ func (a *API) Routes(rt *webserver.Router) {
 	reviews.Routes(m)
 	m.HandleFunc("GET /api/v1/metadata/{kind}/{tmdb_id}/anime", a.metadataAnime)
 	a.trailers.Routes(m)
-	m.HandleFunc("GET /api/v1/settings/ui", a.getUISettings)
+	a.uiSettingsRoutes(m)
 	a.signinArtRoutes(m)
-	m.HandleFunc("PUT /api/v1/settings/ui", a.putUISettings)
 	m.HandleFunc("GET /api/v1/discover", a.discoverRow)
 	m.HandleFunc("GET /api/v1/watch-services", a.watchServices)
 	m.HandleFunc("GET /api/v1/explore/head", a.exploreHead)
@@ -518,10 +517,10 @@ func (a *API) Chain(rt *webserver.Router) http.Handler {
 	m := rt.Mux()
 	if a.s.Auth != nil {
 		a.ai.Inner = a.kidGate(m, a.partGate(m, accounts.Gate(m)))
-		return webserver.SecureHeaders(a.arr().Gate(a.s.Auth.Middleware(wrapMux(a.liveRecheck(a.logSettingsChanges(a.forgetStatusOnWrite(a.kidGate(m, a.partGate(m, accounts.Gate(m))))))))))
+		return webserver.SecureHeaders(a.arr().Gate(a.s.Auth.Middleware(wrapMux(a.liveRecheck(a.logSettingsChanges(a.status.ForgetOnWrite(a.kidGate(m, a.partGate(m, accounts.Gate(m))))))))))
 	}
 	a.ai.Inner = a.partGate(m, m)
-	return webserver.SecureHeaders(a.arr().Gate(wrapMux(a.logSettingsChanges(a.forgetStatusOnWrite(a.partGate(m, m))))))
+	return webserver.SecureHeaders(a.arr().Gate(wrapMux(a.logSettingsChanges(a.status.ForgetOnWrite(a.partGate(m, m))))))
 }
 
 // wrapMux lets tests record which routes the mux served.

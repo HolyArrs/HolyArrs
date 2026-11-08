@@ -1,14 +1,15 @@
-package api
+package health
 
 import (
 	"slices"
 	"testing"
+	"time"
 )
 
 func TestSettingsStatusSourceWarnings(t *testing.T) {
-	a := settingsStatus(statusInput{Sources: []namedState{{"Down", "unreachable"}, {"Slow", "rate_limited"}, {"Lan", "blocked"}, {"Guarded", "bot_check"}, {"Banned", "site_ban"}, {"Off", "disabled"}, {"Ok", "working"}},
-		SourcesNear: []string{"The Source Ok is close to its search limit (8 of 10)"}, Now: statusNow})
-	want := []statusItem{
+	a := SettingsStatus(StatusInput{Sources: []NamedState{{Name: "Down", State: "unreachable"}, {Name: "Slow", State: "rate_limited"}, {Name: "Lan", State: "blocked"}, {Name: "Guarded", State: "bot_check"}, {Name: "Banned", State: "site_ban"}, {Name: "Off", State: "disabled"}, {Name: "Ok", State: "working"}},
+		SourcesNear: []string{"The Source Ok is close to its search limit (8 of 10)"}, Now: time.Date(2026, 10, 18, 12, 0, 0, 0, time.UTC)})
+	want := []StatusItem{
 		{"copies", "/settings/sources", "The Source Down is not answering", "error"},
 		{"copies", "/settings/sources", "The Source Slow asked HolyArrs to slow down, so it waits a while", "warning"},
 		{"copies", "/settings/sources", "The Source Lan is blocked from the local network", "warning"},
