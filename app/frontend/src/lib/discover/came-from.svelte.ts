@@ -5,14 +5,6 @@ export type CameFrom = { path: string; label: string; y?: number };
 const KEY = 'holyarrs:came-from';
 let before: CameFrom | null = null;
 
-function read(): Record<string, CameFrom> {
-	try {
-		return JSON.parse(sessionStorage.getItem(KEY) ?? '{}');
-	} catch {
-		return {};
-	}
-}
-
 /** SvelteKit's index for the current history entry, or null. */
 export function historyIndex(): string | null {
 	const s = history.state as Record<string, unknown> | null;
@@ -72,4 +64,12 @@ export function fromIcon(path: string): 'search' | 'compass' | 'people' | 'home'
 	const bare = path.split('?')[0];
 	if (bare === '/' || bare.endsWith('/home')) return 'home';
 	return null;
+}
+
+function read(): Record<string, CameFrom> {
+	try {
+		return JSON.parse(sessionStorage.getItem(KEY) ?? '{}');
+	} catch {
+		return {};
+	}
 }

@@ -3,10 +3,8 @@ import { detailPath } from '../metadata/index.ts';
 import { albumHref, artistHref } from '../music/index.ts';
 import { to } from '../core/paths.ts';
 
-export const SUGGEST_MIN = 2;
-export const SUGGEST_WAIT = 150;
-
 export type SuggestKind = 'movie' | 'show' | 'person' | 'artist' | 'album' | 'song';
+
 export type SuggestRow = {
 	kind: SuggestKind;
 	name: string;
@@ -19,7 +17,13 @@ export type SuggestRow = {
 	mbid?: string;
 	artist_mbid?: string;
 };
+
 export type SuggestAnswer = { q: string; completions: string[]; items: SuggestRow[] };
+
+type Fetcher = (q: string, signal: AbortSignal) => Promise<SuggestAnswer>;
+
+export const SUGGEST_MIN = 2;
+export const SUGGEST_WAIT = 150;
 
 /** null until the first answer; false when the server has live search off (404). */
 export const live: { on: boolean | null } = { on: null };
@@ -69,8 +73,6 @@ export function step(i: number, n: number, dir: 1 | -1): number {
 	if (dir === 1) return i >= n - 1 ? 0 : i + 1;
 	return i <= 0 ? -1 : i - 1;
 }
-
-type Fetcher = (q: string, signal: AbortSignal) => Promise<SuggestAnswer>;
 
 /** Runs the dropdown's requests. type(q) waits SUGGEST_WAIT, then asks; a newer type() aborts the older request and only the newest answer reaches onAnswer. clear() drops everything. */
 export function createSuggest(fetch: Fetcher, onAnswer: (a: SuggestAnswer | null) => void, wait = SUGGEST_WAIT) {

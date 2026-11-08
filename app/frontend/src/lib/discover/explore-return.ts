@@ -11,11 +11,6 @@ export interface ExploreReturn {
 
 type Box = { top: number; bottom: number };
 type RowEl = { dataset: { rowId?: string }; getBoundingClientRect(): Box; firstElementChild?: { getBoundingClientRect(): Box } | null };
-/** A row wrapper may be display: contents (no box of its own); its first child stands in. */
-function box(el: RowEl): Box {
-	const r = el.getBoundingClientRect();
-	return r.bottom - r.top > 0 || !el.firstElementChild ? r : el.firstElementChild.getBoundingClientRect();
-}
 
 /** Finds the first row whose bottom is on screen (below the top bar) and its top. */
 export function readAnchor(root: ParentNode, below = 0): { id: string; top: number } | undefined {
@@ -59,4 +54,10 @@ export function putOffsets(root: ParentNode, rows: Record<string, number>): void
 /** The page is tall enough to scroll back to y, or nothing more will load. */
 export function canReturn(pageHeight: number, y: number, viewport: number, more: boolean): boolean {
 	return pageHeight >= y + viewport || !more;
+}
+
+/** A row wrapper may be display: contents (no box of its own); its first child stands in. */
+function box(el: RowEl): Box {
+	const r = el.getBoundingClientRect();
+	return r.bottom - r.top > 0 || !el.firstElementChild ? r : el.firstElementChild.getBoundingClientRect();
 }

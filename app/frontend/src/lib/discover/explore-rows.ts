@@ -28,16 +28,6 @@ export function orderRecent<T extends { kind: CardKind; image?: string | null }>
 	return [...turns(items.filter((x) => !!x.image)), ...turns(items.filter((x) => !x.image))];
 }
 
-function shortDay(iso: string, now: Date): string {
-	const d = new Date(iso);
-	if (Number.isNaN(d.getTime())) return '';
-	const day = (x: Date) => Math.floor(Date.UTC(x.getFullYear(), x.getMonth(), x.getDate()) / 86400000);
-	const diff = day(d) - day(now);
-	if (diff === 0) return 'Today';
-	if (diff === 1) return 'Tomorrow';
-	return d.toLocaleDateString(undefined, diff < 7 && diff > 0 ? { weekday: 'long' } : { day: 'numeric', month: 'short' });
-}
-
 const releaseWord: Record<CalendarEntry['kind'], string> = { cinema: 'In cinemas', digital: 'On digital', physical: 'On disc', episode: '', album: 'New album' };
 
 /** A wide card's second line: S1 · E3 · Name, On digital, or the album. */
@@ -119,14 +109,6 @@ export function stillLooking(titles: TitleView[], n = ROW_MAX): ExploreCard[] {
 	});
 }
 
-/** Groups asks for the same thing (the same title, or the same add id). */
-function askKey(a: Pick<Ask, 'title_id' | 'ref' | 'kind' | 'tmdb_id' | 'name'>): string {
-	if (a.title_id) return `t${a.title_id}`;
-	if (a.ref) return a.ref;
-	if (a.tmdb_id) return `tmdb:${a.tmdb_id}`;
-	return `${a.kind}:${a.name}`;
-}
-
 /** What the most people asked for. Score is the number of people on the ask; ties go to the latest ask. Turned-down asks do not count. */
 export function popularInHousehold(asks: Ask[], titles: TitleView[], n = ROW_MAX): ExploreCard[] {
 	const byId = new Map(titles.map((t) => [t.id, t]));
@@ -177,10 +159,6 @@ export function overlap(a: Facets | undefined, b: Facets | undefined): number {
 export function score(o: { overlap: number; ageRank: number; total: number; asks: number }): number {
 	const recency = o.total > 1 ? 1 - (0.5 * o.ageRank) / (o.total - 1) : 1;
 	return o.overlap * recency * (1 + 0.25 * o.asks);
-}
-
-function asksOf(t: Pick<TitleView, 'asks'>): number {
-	return (t.asks ?? []).reduce((n, a) => n + Math.max(1, a.people?.length ?? 0), 0);
 }
 
 /** Picks the newest title that has at least `min` related titles and returns it with those titles, best first. */
@@ -243,4 +221,26 @@ export function markTransitions(rows: ExploreRow[]): ExploreRow[] {
 /** Drops empty rows. */
 export function keepFull(rows: (ExploreRow | null | undefined)[]): ExploreRow[] {
 	return rows.filter((r): r is ExploreRow => !!r && (r.cards.length > 0 || !!r.keep));
+}
+
+function shortDay(iso: string, now: Date): string {
+	const d = new Date(iso);
+	if (Number.isNaN(d.getTime())) return '';
+	const day = (x: Date) => Math.floor(Date.UTC(x.getFullYear(), x.getMonth(), x.getDate()) / 86400000);
+	const diff = day(d) - day(now);
+	if (diff === 0) return 'Today';
+	if (diff === 1) return 'Tomorrow';
+	return d.toLocaleDateString(undefined, diff < 7 && diff > 0 ? { weekday: 'long' } : { day: 'numeric', month: 'short' });
+}
+
+/** Groups asks for the same thing (the same title, or the same add id). */
+function askKey(a: Pick<Ask, 'title_id' | 'ref' | 'kind' | 'tmdb_id' | 'name'>): string {
+	if (a.title_id) return `t${a.title_id}`;
+	if (a.ref) return a.ref;
+	if (a.tmdb_id) return `tmdb:${a.tmdb_id}`;
+	return `${a.kind}:${a.name}`;
+}
+
+function asksOf(t: Pick<TitleView, 'asks'>): number {
+	return (t.asks ?? []).reduce((n, a) => n + Math.max(1, a.people?.length ?? 0), 0);
 }

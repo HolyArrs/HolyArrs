@@ -9,6 +9,15 @@ export interface Genre {
 	name: string;
 }
 
+export interface GenreAnswer {
+	type: ExploreType;
+	genre: { id: number; name: string; kind: 'movie' | 'show' };
+	hero: ProviderItem[];
+	rows: ServerRow[];
+	/** Some lists were still out; the rest come on a later ask. */
+	partial?: boolean;
+}
+
 /** TMDB's genre lists per kind, with its own fixed ids. */
 export const GENRES: Record<'movie' | 'show', Genre[]> = {
 	movie: [
@@ -35,15 +44,6 @@ export function parseGenre(v: string | null | undefined, t: ExploreType): Genre 
 	const id = Number(v);
 	if (t === 'all') return MERGED_GENRES.has(id) ? (GENRES.movie.find((g) => g.id === id) ?? null) : null;
 	return genresFor(t).find((g) => g.id === id) ?? null;
-}
-
-export interface GenreAnswer {
-	type: ExploreType;
-	genre: { id: number; name: string; kind: 'movie' | 'show' };
-	hero: ProviderItem[];
-	rows: ServerRow[];
-	/** Some lists were still out; the rest come on a later ask. */
-	partial?: boolean;
 }
 
 export function genrePath(t: ExploreType, genre: number): string {

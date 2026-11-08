@@ -13,6 +13,8 @@ import type { EventRecord, TitleView } from '#lib/core/types.ts';
 import { live } from '#lib/core/live.svelte.ts';
 import { date } from '#lib/core/format.ts';
 
+export type OwnedTitle = ReturnType<typeof createOwnedTitle>;
+
 export function createOwnedTitle() {
 		const manage = $derived(session.can('manage_library'));
 		// An owned title's library record (files, versions, status), shown on this same page.
@@ -273,5 +275,3 @@ export function createOwnedTitle() {
 		addVersion
 	};
 }
-
-export type OwnedTitle = ReturnType<typeof createOwnedTitle>;

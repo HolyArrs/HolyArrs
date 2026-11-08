@@ -41,12 +41,6 @@ export interface HeadQuery {
 	tz?: string;
 }
 
-function headParams(q: HeadQuery): URLSearchParams {
-	const p = new URLSearchParams({ type: q.type === 'music' ? 'all' : q.type });
-	if (q.tz) p.set('tz', q.tz);
-	return p;
-}
-
 /** Services are sent so the server builds On your services for them; empty means none picked. */
 export function headPath(q: HeadQuery): string {
 	const p = headParams(q);
@@ -86,4 +80,10 @@ export function serverRow(r: ServerRow): ExploreRow & { wide: boolean; type: str
 		}),
 		keep: r.type === 'top_services'
 	};
+}
+
+function headParams(q: HeadQuery): URLSearchParams {
+	const p = new URLSearchParams({ type: q.type === 'music' ? 'all' : q.type });
+	if (q.tz) p.set('tz', q.tz);
+	return p;
 }

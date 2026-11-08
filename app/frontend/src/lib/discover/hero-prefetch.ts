@@ -19,13 +19,6 @@ export function heroPictures(href: string, ratio = globalThis.devicePixelRatio |
 }
 
 const asked = new Set<string>();
-function warm(url: string): void {
-	if (asked.has(url)) return;
-	asked.add(url);
-	const im = new Image();
-	im.decoding = 'async';
-	im.src = proxied(url);
-}
 
 /** Preloads the hero behind a link: music pictures here, a title's backdrop through `preload` (the title page's own preloadHero). */
 export function heroAhead(href: string | null | undefined, preload: (backdrop: string | null | undefined) => void): void {
@@ -63,4 +56,12 @@ export function installHeroAhead(preload: (backdrop: string | null | undefined) 
 		window.removeEventListener('pointerover', over, { capture: true });
 		window.removeEventListener('focusin', focus, { capture: true });
 	};
+}
+
+function warm(url: string): void {
+	if (asked.has(url)) return;
+	asked.add(url);
+	const im = new Image();
+	im.decoding = 'async';
+	im.src = proxied(url);
 }

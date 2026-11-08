@@ -2,6 +2,14 @@
 import type { ExploreType } from './explore-type.ts';
 import { strictTiles, type BrowseTile } from './search-browse.ts';
 
+/** GET /explore/strip: the member's strip, picked and ordered on the server. */
+export interface StripAnswer {
+	type: ExploreType;
+	tiles: BrowseTile[];
+	/** Some Browse sections were still building. */
+	partial?: boolean;
+}
+
 /** How many categories the strip shows before All categories. */
 export const STRIP_MAX = 18;
 
@@ -89,14 +97,6 @@ export function stripTiles(sections: Readonly<Record<string, readonly BrowseTile
 		}
 	}
 	return out;
-}
-
-/** GET /explore/strip: the member's strip, picked and ordered on the server. */
-export interface StripAnswer {
-	type: ExploreType;
-	tiles: BrowseTile[];
-	/** Some Browse sections were still building. */
-	partial?: boolean;
 }
 
 /** The titles of the rows below, trimmed, once each, at most 40 of up to 80 characters. */

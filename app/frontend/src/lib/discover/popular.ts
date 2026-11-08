@@ -4,9 +4,6 @@ import { type ServerRow } from './explore-server.ts';
 
 export type NewType = 'all' | 'movies' | 'shows' | 'music';
 
-/** A row needs this many cards to show. */
-export const NEW_ROW_MIN = 6;
-
 export interface NewAnswer {
 	type: string;
 	page: number;
@@ -34,6 +31,16 @@ export interface NewServicesAnswer {
 	row: ServerRow;
 }
 
+export interface NewServiceAnswer {
+	type: string;
+	service: number;
+	building: boolean;
+	row: ServerRow;
+}
+
+/** A row needs this many cards to show. */
+export const NEW_ROW_MIN = 6;
+
 /** Reads ?type=; anything else is All. */
 export function parseNewType(v: string | null): NewType {
 	return v === 'movies' || v === 'shows' || v === 'music' ? v : 'all';
@@ -45,13 +52,6 @@ export function newPath(t: NewType, page: number): string {
 
 export function newServicesPath(t: string): string {
 	return `/explore/new/services?type=${t === 'movies' || t === 'shows' ? t : 'all'}`;
-}
-
-export interface NewServiceAnswer {
-	type: string;
-	service: number;
-	building: boolean;
-	row: ServerRow;
 }
 
 /** The server's name for a chip row (services, hot_shows, hot_movies). */
@@ -72,11 +72,6 @@ export function newHref(t: string): string {
 /** Ranked rows draw their place number. */
 export function isRanked(rowType: string): boolean {
 	return rowType === 'np_top_shows' || rowType === 'np_top_movies';
-}
-
-/** A card's "kind:tmdb" key ("movie:123"). */
-function plainKey(c: Pick<ExploreCard, 'kind' | 'ref'>): string {
-	return c.ref?.startsWith('tmdb:') ? `${c.kind}:${c.ref.slice(5)}` : '';
 }
 
 /** Drops cards already shown elsewhere on the page (by cardIdentity or by a "kind:tmdb" key) and returns [] when fewer than `min` remain. */
@@ -139,4 +134,9 @@ export function railBell(it: Pick<RailItem, 'upcoming' | 'in_library' | 'kind'>)
 	if (!it.upcoming) return null;
 	if (it.in_library) return 'coming';
 	return it.kind === 'movie' || it.kind === 'show' ? 'bell' : null;
+}
+
+/** A card's "kind:tmdb" key ("movie:123"). */
+function plainKey(c: Pick<ExploreCard, 'kind' | 'ref'>): string {
+	return c.ref?.startsWith('tmdb:') ? `${c.kind}:${c.ref.slice(5)}` : '';
 }

@@ -38,17 +38,6 @@ export function plainPath(text: string): string {
 	return `/search?q=${encodeURIComponent(text.trim())}`;
 }
 
-function years(q: PlainQuery): string {
-	const from = q.year_from ?? 0;
-	const to = q.year_to ?? 0;
-	if (from && to && from === to) return String(from);
-	if (from && to && to - from === 9 && from % 10 === 0) return `the ${from}s`;
-	if (from && to) return `${from} to ${to}`;
-	if (from) return `${from} or later`;
-	if (to) return `${to} or earlier`;
-	return '';
-}
-
 /** The short "Understood as" line, such as "Science Fiction movies · 2014 · about robot"; "" when nothing was read. */
 export function understood(q: PlainQuery | null | undefined): string {
 	if (!q || q.plain) return '';
@@ -61,4 +50,15 @@ export function understood(q: PlainQuery | null | undefined): string {
 /** Whether the answer has something to show. */
 export function found(a: PlainAnswer | null | undefined): boolean {
 	return !!a && !a.query.plain && (a.titles.length > 0 || a.more.length > 0);
+}
+
+function years(q: PlainQuery): string {
+	const from = q.year_from ?? 0;
+	const to = q.year_to ?? 0;
+	if (from && to && from === to) return String(from);
+	if (from && to && to - from === 9 && from % 10 === 0) return `the ${from}s`;
+	if (from && to) return `${from} to ${to}`;
+	if (from) return `${from} or later`;
+	if (to) return `${to} or earlier`;
+	return '';
 }

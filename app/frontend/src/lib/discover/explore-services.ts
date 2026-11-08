@@ -2,8 +2,6 @@
 
 import { serviceRegion } from '#lib/ui/region.ts';
 import { have } from './explore-rows.ts';
-
-export { serviceRegion };
 import { type ProviderItem } from '#lib/ui/title-cards.ts';
 import { type ExploreType } from './explore-type.ts';
 
@@ -14,6 +12,50 @@ export interface WatchService {
 	logo?: string;
 	priority: number;
 }
+
+/** A chip of the Top on your services row: all, or one service id. */
+export type TopChip = 'all' | number;
+
+export interface TopQuery {
+	type: ExploreType;
+	chip: TopChip;
+	services: number[];
+	region: string;
+	genre?: number;
+}
+
+export interface TopAnswer {
+	chip: string;
+	region: string;
+	/** TMDB's most popular this week on the service. */
+	source: 'popular';
+	items: (ProviderItem & { rank: number })[];
+}
+
+/** One streaming service's list from GET /explore/service-top. */
+export interface ServiceTopRow {
+	/** The TMDB watch provider id (the picker's ids). */
+	service: number;
+	key: string;
+	name: string;
+	/** streaming-availability: the service's own top today. tmdb-popular: TMDB's most popular on it. */
+	source: 'streaming-availability' | 'tmdb-popular';
+	fetched_at: string;
+	age_seconds: number;
+	stale: boolean;
+	/** Only the service's own top list is a ranking. */
+	ranked: boolean;
+	items: (ProviderItem & { rank: number })[];
+}
+
+export interface ServiceTopAnswer {
+	region: string;
+	/** Must be shown with the lists. */
+	attribution: string;
+	services: ServiceTopRow[];
+}
+
+export { serviceRegion };
 
 /** How many services the picker offers, the region's best known first. */
 export const SERVICES_SHOWN = 6;
@@ -53,25 +95,6 @@ export function writeServices(region: string, ids: number[], raw: string | null)
 	return JSON.stringify({ ...all, [region]: ids });
 }
 
-/** A chip of the Top on your services row: all, or one service id. */
-export type TopChip = 'all' | number;
-
-export interface TopQuery {
-	type: ExploreType;
-	chip: TopChip;
-	services: number[];
-	region: string;
-	genre?: number;
-}
-
-export interface TopAnswer {
-	chip: string;
-	region: string;
-	/** TMDB's most popular this week on the service. */
-	source: 'popular';
-	items: (ProviderItem & { rank: number })[];
-}
-
 /** GET /explore/top for one chip. */
 export function topPath(q: TopQuery): string {
 	const p = new URLSearchParams({ type: q.type === 'music' ? 'all' : q.type, chip: String(q.chip), region: q.region });
@@ -90,29 +113,6 @@ export function topChips(picked: number[], shown: WatchService[]): { id: TopChip
 export function topSource(a: Pick<TopAnswer, 'source' | 'region'>, serviceName: string): string {
 	const where = a.region === 'global' ? 'worldwide' : a.region;
 	return `Popular on ${serviceName} · ${where}`;
-}
-
-/** One streaming service's list from GET /explore/service-top. */
-export interface ServiceTopRow {
-	/** The TMDB watch provider id (the picker's ids). */
-	service: number;
-	key: string;
-	name: string;
-	/** streaming-availability: the service's own top today. tmdb-popular: TMDB's most popular on it. */
-	source: 'streaming-availability' | 'tmdb-popular';
-	fetched_at: string;
-	age_seconds: number;
-	stale: boolean;
-	/** Only the service's own top list is a ranking. */
-	ranked: boolean;
-	items: (ProviderItem & { rank: number })[];
-}
-
-export interface ServiceTopAnswer {
-	region: string;
-	/** Must be shown with the lists. */
-	attribution: string;
-	services: ServiceTopRow[];
 }
 
 /** GET /explore/service-top: every service at once. */

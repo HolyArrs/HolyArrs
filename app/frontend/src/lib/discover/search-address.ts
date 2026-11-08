@@ -1,5 +1,17 @@
 export type SearchKind = 'movie' | 'show' | 'music';
 
+export type KindPart = 'movies' | 'shows' | 'music';
+
+export type SearchScope = 'all' | 'show' | 'movie' | 'music' | 'people';
+
+/** The slice of a Library title the "In your Library" row reads. */
+export type LibraryHit = {
+	kind: string;
+	slots?: { state: string; download?: { active?: boolean } | null }[] | null;
+	show?: { seasons: { number: number }[]; missing: number } | null;
+	artist?: { albums: number; missing: number } | null;
+};
+
 /** Writes the controls' current values, even while page state is catching up. */
 export function searchAddress(current: Pick<URL, 'href'>, kind: SearchKind, term: string): URL {
 	const url = new URL(current.href);
@@ -11,8 +23,6 @@ export function searchAddress(current: Pick<URL, 'href'>, kind: SearchKind, term
 	return url;
 }
 
-export type KindPart = 'movies' | 'shows' | 'music';
-
 /** The search filter's choices, leaving out kinds whose part is off. */
 export function kindOptions(on: (part: KindPart) => boolean): { value: SearchKind; label: string; part: KindPart }[] {
 	const all: { value: SearchKind; label: string; part: KindPart }[] = [
@@ -23,7 +33,6 @@ export function kindOptions(on: (part: KindPart) => boolean): { value: SearchKin
 	return all.filter((o) => on(o.part));
 }
 
-export type SearchScope = 'all' | 'show' | 'movie' | 'music' | 'people';
 const scopes: SearchScope[] = ['all', 'people', 'movie', 'show', 'music'];
 
 /** Reads ?kind=; anything unknown is All. */
@@ -80,14 +89,6 @@ export function rankTop<T extends { name: string }>(groups: T[][], term: string,
 	const rest = topMatches(groups.map((g) => g.filter((c) => !first.includes(c))), max);
 	return [...first, ...rest].slice(0, max);
 }
-
-/** The slice of a Library title the "In your Library" row reads. */
-export type LibraryHit = {
-	kind: string;
-	slots?: { state: string; download?: { active?: boolean } | null }[] | null;
-	show?: { seasons: { number: number }[]; missing: number } | null;
-	artist?: { albums: number; missing: number } | null;
-};
 
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
 

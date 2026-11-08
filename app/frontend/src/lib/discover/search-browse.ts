@@ -39,6 +39,25 @@ export interface BrowseSectionAnswer {
 	building?: boolean;
 }
 
+export interface CategoryView {
+	id: string;
+	type: 'all' | 'movies' | 'shows';
+}
+
+/** A plain Browse tile (People, Music): a picture, a name and where it opens. */
+export interface PlainTile {
+	key: string;
+	name: string;
+	href: string;
+	image: string;
+}
+
+export interface MoodView {
+	mood: string;
+	genre: number;
+	type: 'all' | 'movies' | 'shows';
+}
+
 /** A section first shows this many rows, then this many more each time its end nears the viewport. */
 export const BROWSE_ROWS = 2;
 
@@ -53,11 +72,6 @@ export function browseSectionPath(t: ExploreType, section: string): string {
 
 export function browseCategoryPath(t: ExploreType, id: string): string {
 	return `/explore/browse/category?${new URLSearchParams({ type: t, id }).toString()}`;
-}
-
-export interface CategoryView {
-	id: string;
-	type: 'all' | 'movies' | 'shows';
 }
 
 /** Reads Search's category view from the address (?cat=&type=); null when it is not one. */
@@ -82,14 +96,6 @@ export function strictTiles(tiles: BrowseTile[], tab: ExploreType): BrowseTile[]
 	if (tab === 'movies') return tiles.filter((t) => t.kind === 'movie');
 	if (tab === 'shows') return tiles.filter((t) => t.kind === 'show');
 	return tiles;
-}
-
-/** A plain Browse tile (People, Music): a picture, a name and where it opens. */
-export interface PlainTile {
-	key: string;
-	name: string;
-	href: string;
-	image: string;
 }
 
 /** One tile per music genre the Explore Music answer names, its picture an album cover of that genre (each cover once). Artist pictures never stand in for a cover. */
@@ -118,12 +124,6 @@ export function browseHref(t: Pick<BrowseTile, 'kind' | 'genre' | 'mood' | 'both
 	const type = tab === 'movies' || tab === 'shows' ? tab : tabOf(t);
 	if (t.mood) return `/search?${new URLSearchParams({ mood: t.mood, genre: String(t.genre), type }).toString()}`;
 	return `/explore?${new URLSearchParams(type === 'all' ? { genre: String(t.genre) } : { type, genre: String(t.genre) }).toString()}`;
-}
-
-export interface MoodView {
-	mood: string;
-	genre: number;
-	type: 'all' | 'movies' | 'shows';
 }
 
 /** Reads Search's mood view from the address; null when it is not one. */

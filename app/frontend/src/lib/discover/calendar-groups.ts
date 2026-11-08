@@ -2,6 +2,14 @@
 import { byDay, entryDay, entryTime, episodeCode, kindWord } from './calendar.ts';
 import type { CalendarEntry } from '../core/types.ts';
 
+/** One card's dates: one, or several of one show (or one movie) on the same day. */
+export interface CalGroup {
+	key: string;
+	day: string;
+	lead: CalendarEntry;
+	entries: CalendarEntry[];
+}
+
 const at = (day: string) => new Date(day + 'T00:00:00');
 const daysBetween = (a: string, b: string) => Math.round((at(b).getTime() - at(a).getTime()) / 86400000);
 
@@ -91,14 +99,6 @@ export function monthGroups(entries: CalendarEntry[]): { month: string; name: st
 /** A day's count: "1 coming out", "10 coming out". */
 export function thingCount(n: number): string {
 	return `${n} coming out`;
-}
-
-/** One card's dates: one, or several of one show (or one movie) on the same day. */
-export interface CalGroup {
-	key: string;
-	day: string;
-	lead: CalendarEntry;
-	entries: CalendarEntry[];
 }
 
 /** Folds dates into cards. A show's episodes on one day become one card ("3 episodes"), as do one movie's dates on one day (digital and disc); albums stay one card each. Order follows each card's first date. */

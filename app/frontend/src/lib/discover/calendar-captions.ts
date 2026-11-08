@@ -3,6 +3,7 @@ import type { CalGroup } from './calendar-groups.ts';
 import type { CalendarEntry } from '../core/types.ts';
 
 export type Channels = 'all' | 'known';
+
 /** Which caption each kind shows, and which TV channels are named. */
 export interface CaptionLook {
 	movie: number;
@@ -10,6 +11,14 @@ export interface CaptionLook {
 	channels: Channels;
 	/** The viewer's country (US, GB), or 'global' when the browser does not say. */
 	region: string;
+}
+
+/** A row's words in the set order. `title` is line 1 (show, movie or artist); `lines` sit under it, each only when it has real data; `when` is the time column: an air time ("8 PM"), or "All day". */
+export interface RowWords {
+	title: string;
+	lines: string[];
+	when: string;
+	quiet: boolean;
 }
 
 export const MOVIE_LOOKS = [
@@ -20,6 +29,7 @@ export const MOVIE_LOOKS = [
 	{ value: 5, label: 'Part of a set' },
 	{ value: 6, label: 'Director · length' }
 ];
+
 export const MUSIC_LOOKS = [
 	{ value: 1, label: 'Kind · songs' },
 	{ value: 2, label: 'Kind · length' },
@@ -27,6 +37,7 @@ export const MUSIC_LOOKS = [
 	{ value: 4, label: 'Genre · songs' },
 	{ value: 5, label: 'Which release' }
 ];
+
 export const DEFAULT_LOOK: Omit<CaptionLook, 'region'> = { movie: 1, music: 5, channels: 'known' };
 
 /** Reads the choices from the address, then from what was kept, else the defaults. */
@@ -80,6 +91,7 @@ const STREAMING = [
 	'netflix', 'disney+', 'apple tv+', 'apple tv', 'prime video', 'amazon', 'amazon prime video', 'max', 'hbo max', 'hulu', 'paramount+',
 	'paramount+ with showtime', 'peacock', 'youtube', 'youtube premium', 'crunchyroll', 'starz', 'mgm+', 'amc+', 'bet+', 'britbox', 'shudder', 'tubi', 'roku channel', 'the roku channel'
 ];
+
 /** The best-known channels of a country; a viewer's own country's channels are named. */
 const CHANNELS: Record<string, string[]> = {
 	US: ['abc', 'cbs', 'nbc', 'fox', 'the cw', 'pbs', 'hbo', 'amc', 'fx', 'fxx', 'showtime', 'usa network', 'tnt', 'tbs', 'comedy central', 'adult swim', 'cartoon network', 'nickelodeon', 'disney channel', 'bravo', 'syfy', 'a&e', 'history', 'discovery', 'national geographic', 'mtv', 'freeform', 'hallmark channel', 'lifetime', 'bet', 'e!', 'espn', 'cnn', 'food network', 'hgtv', 'tlc', 'cinemax', 'epix', 'ifc', 'sundancetv', 'bbc america'],
@@ -103,6 +115,7 @@ const CHANNELS: Record<string, string[]> = {
 	KR: ['kbs2', 'mbc', 'sbs', 'tvn', 'jtbc', 'ena'],
 	IN: ['sony liv', 'zee5', 'jiocinema', 'star plus', 'colors tv']
 };
+
 const norm = (s: string) => s.trim().toLowerCase();
 
 /** With 'all' every channel shows. With 'known' only well-known streaming services and the channels of the viewer's own country (read from the browser's language, en-US to US) are named. */
@@ -175,8 +188,10 @@ const kindOf = (t?: string) => {
 	const k = (t ?? '').toLowerCase();
 	return k === 'single' ? 'single' : k === 'ep' ? 'EP' : 'album';
 };
+
 const cap = (s: string) => (s === 'EP' ? s : s.charAt(0).toUpperCase() + s.slice(1));
 const songs = (n?: number) => (n ? `${n} ${n === 1 ? 'song' : 'songs'}` : '');
+
 /** "44 min", "1 hr 12 min". */
 export function albumLength(min?: number): string {
 	if (!min || min <= 0) return '';
@@ -204,14 +219,6 @@ export function musicCaption(e: CalendarEntry, look: number): string {
 		default:
 			return kindSongs;
 	}
-}
-
-/** A row's words in the set order. `title` is line 1 (show, movie or artist); `lines` sit under it, each only when it has real data; `when` is the time column: an air time ("8 PM"), or "All day". */
-export interface RowWords {
-	title: string;
-	lines: string[];
-	when: string;
-	quiet: boolean;
 }
 
 /** Builds a List row, or a Cards caption (see cardLines), for one card's dates. */

@@ -1,6 +1,37 @@
 // Calendar: the month grid and list for movie dates and episodes.
 import type { CalendarEntry, TitleView } from '../core/types.ts';
 
+/** Which titles the calendar shows. */
+export type TitlesShown = 'all' | 'movies' | 'shows' | 'music';
+
+export interface GridDay {
+	day: string;
+	date: number;
+	inMonth: boolean;
+	today: boolean;
+	items: CalendarEntry[];
+}
+
+/** Big picture cards day by day, or a compact list. */
+export type CalendarView = 'cards' | 'list';
+
+/** The status dot on a calendar item: in the Library, missing (its day has passed), or still to come. */
+export type ItemDot = 'have' | 'missing' | 'upcoming';
+
+/** A movie's dates and whether a copy is in the Library, read from its title. */
+export interface MovieFacts {
+	cinema?: string;
+	digital?: string;
+	physical?: string;
+	have: boolean;
+}
+
+/** Which dates the calendar shows. Following a title puts its dates on your calendar (asking for a title follows it too). mine: what you follow (the default). everyone: what anyone on this server follows, each row saying who. all: the whole Library. */
+export type Follows = 'mine' | 'everyone' | 'library';
+
+/** The List view's banner: the server's banner and logo (stored picks only), when sent. */
+export type BannerEntry = CalendarEntry & { banner?: string; logo?: string };
+
 export const kindWord: Record<CalendarEntry['kind'], string> = {
 	cinema: 'In cinemas',
 	digital: 'Movie release',
@@ -8,8 +39,6 @@ export const kindWord: Record<CalendarEntry['kind'], string> = {
 	episode: 'Episode',
 	album: 'Album release'
 };
-/** Which titles the calendar shows. */
-export type TitlesShown = 'all' | 'movies' | 'shows' | 'music';
 
 /** Whether an entry shows for the movies, shows or music choice. */
 export function shows(e: Pick<CalendarEntry, 'kind'>, which: TitlesShown): boolean {
@@ -84,14 +113,6 @@ export function dayOf(iso: string): string {
 	return iso.slice(0, 10);
 }
 
-export interface GridDay {
-	day: string;
-	date: number;
-	inMonth: boolean;
-	today: boolean;
-	items: CalendarEntry[];
-}
-
 /** The first day shown and the day after the last for a month grid (whole weeks, Monday first). */
 export function monthRange(year: number, month: number): { from: string; to: string; start: Date; weeks: number } {
 	const first = new Date(year, month, 1);
@@ -127,16 +148,6 @@ export function monthGrid(year: number, month: number, entries: CalendarEntry[],
 /** Groups dates by calendar day for the list, in day order. */
 // One order inside every day: movies (In theaters, then Streaming), then TV (All day, then by air time), then music; the name breaks ties.
 const kindRank: Record<string, number> = { cinema: 0, digital: 1, physical: 1, episode: 2, album: 3 };
-function dayOrder(a: CalendarEntry, b: CalendarEntry): number {
-	const k = (kindRank[a.kind] ?? 9) - (kindRank[b.kind] ?? 9);
-	if (k) return k;
-	if (a.kind === 'episode') {
-		const at = a.timed ? Date.parse(a.date) : -Infinity;
-		const bt = b.timed ? Date.parse(b.date) : -Infinity;
-		if (at !== bt) return at < bt ? -1 : 1;
-	}
-	return (a.name ?? '').localeCompare(b.name ?? '') || (a.season ?? 0) - (b.season ?? 0) || (a.episode ?? 0) - (b.episode ?? 0);
-}
 
 export function byDay(entries: CalendarEntry[]): { day: string; items: CalendarEntry[] }[] {
 	const out: { day: string; items: CalendarEntry[] }[] = [];
@@ -154,9 +165,6 @@ export function shiftMonth(year: number, month: number, n: number): { year: numb
 	const d = new Date(year, month + n, 1);
 	return { year: d.getFullYear(), month: d.getMonth() };
 }
-
-/** Big picture cards day by day, or a compact list. */
-export type CalendarView = 'cards' | 'list';
 
 /** The Monday of the week a day falls in (local time). */
 export function weekStart(d: Date): Date {
@@ -212,22 +220,11 @@ export function entryIcon(kind: CalendarEntry['kind']): 'tv' | 'music' | 'film' 
 	return kind === 'episode' ? 'tv' : kind === 'album' ? 'music' : 'film';
 }
 
-/** The status dot on a calendar item: in the Library, missing (its day has passed), or still to come. */
-export type ItemDot = 'have' | 'missing' | 'upcoming';
-
 /** Which dot a calendar item shows on a given day. */
 export function itemDot(e: CalendarEntry, today = ymd(new Date())): ItemDot {
 	const have = e.kind === 'album' ? !!e.tracks && (e.have ?? 0) >= e.tracks : e.state === 'in_library' || !!e.versions?.some((v) => v.state === 'in_library');
 	if (have) return 'have';
 	return entryDay(e) < today ? 'missing' : 'upcoming';
-}
-
-/** A movie's dates and whether a copy is in the Library, read from its title. */
-export interface MovieFacts {
-	cinema?: string;
-	digital?: string;
-	physical?: string;
-	have: boolean;
 }
 
 /** Reads a movie title's dates and whether any of its copies is in the Library. */
@@ -270,9 +267,6 @@ export function oneMovieDate(entries: CalendarEntry[], movies: Map<number, Movie
 	}
 	return out;
 }
-
-/** Which dates the calendar shows. Following a title puts its dates on your calendar (asking for a title follows it too). mine: what you follow (the default). everyone: what anyone on this server follows, each row saying who. all: the whole Library. */
-export type Follows = 'mine' | 'everyone' | 'library';
 
 /** Whether anyone, the reader included, follows an entry's title. */
 export function followedByAnyone(e: Pick<CalendarEntry, 'following' | 'followers' | 'followers_hidden'>): boolean {
@@ -354,9 +348,6 @@ export function titlesFromAddress(v: string | null | undefined): TitlesShown {
 	return v === 'movies' || v === 'shows' || v === 'music' ? v : 'all';
 }
 
-/** The List view's banner: the server's banner and logo (stored picks only), when sent. */
-export type BannerEntry = CalendarEntry & { banner?: string; logo?: string };
-
 /** A List row's wide picture, best first (the row moves to the next when one fails to load), and the logo over it. Movies and shows use the textless banner under the logo, else the title backdrop, else an episode still. */
 export function bannerArt(e: BannerEntry): { images: string[]; logo: string | null } {
 	const list = e.kind === 'album' ? [e.banner, e.backdrop, e.poster] : [e.banner, e.backdrop, e.still, e.poster];
@@ -364,6 +355,7 @@ export function bannerArt(e: BannerEntry): { images: string[]; logo: string | nu
 }
 
 const MONTH_KEY = 'holyarrs.calendar.month-hidden';
+
 /** Whether the small month was hidden last time (false when storage is unavailable). */
 export function readMonthHidden(): boolean {
 	try {
@@ -372,6 +364,7 @@ export function readMonthHidden(): boolean {
 		return false;
 	}
 }
+
 /** Remembers the small month's choice; storage errors are ignored. */
 export function saveMonthHidden(hidden: boolean): void {
 	try {
@@ -379,4 +372,15 @@ export function saveMonthHidden(hidden: boolean): void {
 	} catch {
 		/* Private window or blocked storage: the choice lasts for this page only. */
 	}
+}
+
+function dayOrder(a: CalendarEntry, b: CalendarEntry): number {
+	const k = (kindRank[a.kind] ?? 9) - (kindRank[b.kind] ?? 9);
+	if (k) return k;
+	if (a.kind === 'episode') {
+		const at = a.timed ? Date.parse(a.date) : -Infinity;
+		const bt = b.timed ? Date.parse(b.date) : -Infinity;
+		if (at !== bt) return at < bt ? -1 : 1;
+	}
+	return (a.name ?? '').localeCompare(b.name ?? '') || (a.season ?? 0) - (b.season ?? 0) || (a.episode ?? 0) - (b.episode ?? 0);
 }

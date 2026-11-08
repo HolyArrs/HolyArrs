@@ -5,6 +5,17 @@ import { keepFull } from './explore-rows.ts';
 
 export type ExploreType = 'all' | 'movies' | 'shows' | 'music';
 
+/** One card of Browse by genre (GET /explore/genre-row). */
+export interface GenreRowCard {
+	kind: 'movie' | 'show';
+	id: number;
+	name: string;
+	backdrop: string;
+	from: string;
+	/** The genre page holds movies and shows (opened under All). */
+	both?: boolean;
+}
+
 const typeKind: Record<Exclude<ExploreType, 'all'>, CardKind> = { movies: 'movie', shows: 'show', music: 'artist' };
 
 /** The shelves that hold one kind only, and the type they belong to. */
@@ -34,17 +45,6 @@ export const ROW_MIN = 8;
 /** Drops rows under `min` cards, keeping rows marked keep. */
 export function enoughCards<T extends { cards: readonly unknown[]; keep?: boolean }>(rows: T[], min = ROW_MIN): T[] {
 	return rows.filter((r) => r.keep || r.cards.length >= min);
-}
-
-/** One card of Browse by genre (GET /explore/genre-row). */
-export interface GenreRowCard {
-	kind: 'movie' | 'show';
-	id: number;
-	name: string;
-	backdrop: string;
-	from: string;
-	/** The genre page holds movies and shows (opened under All). */
-	both?: boolean;
 }
 
 export const GENRE_ROW_MAX = 16;
