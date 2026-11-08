@@ -137,3 +137,11 @@ func (a *API) followsChanged(userID int64) {
 	a.musicv2.days.Invalidate(userID)
 	a.forgetMusicV7Snaps(userID)
 }
+
+// viewer is the signed-in person's id (1, the owner, without sign-in).
+func viewer(ctx context.Context) int64 {
+	if who, ok := webserver.From(ctx); ok {
+		return who.UserID
+	}
+	return 1
+}

@@ -5,7 +5,6 @@ app/backend/internal/alerts/music.go
 app/backend/internal/alerts/service.go
 app/backend/internal/alerts/shows.go
 app/backend/internal/api/api.go
-app/backend/internal/api/askedby.go
 app/backend/internal/api/asks.go
 app/backend/internal/api/cardart.go
 app/backend/internal/api/client_match.go

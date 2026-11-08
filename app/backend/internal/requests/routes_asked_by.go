@@ -1,4 +1,4 @@
-package api
+package requests
 
 import (
 	"context"
@@ -11,20 +11,30 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
-func (a *API) askedByRoutes(m *http.ServeMux) {
-	m.HandleFunc("GET /api/v1/asked-by", a.getAskedBy)
+// AskedByHandlers answer who asked for which titles.
+type AskedByHandlers struct {
+	Store *database.Store
+	// KidMax is the age limit of the signed-in Kid, or "" for everyone else.
+	KidMax func(r *http.Request) string
+	// AllowedTitleIDs keeps the ids within a Kid's age limit.
+	AllowedTitleIDs func(ctx context.Context, max string, ids []int64) (map[int64]bool, error)
 }
 
-// viewer is the signed-in person's id (1, the owner, without sign-in).
-func viewer(ctx context.Context) int64 {
+// Routes registers the asked-by route.
+func (h *AskedByHandlers) Routes(m *http.ServeMux) {
+	m.HandleFunc("GET /api/v1/asked-by", h.getAskedBy)
+}
+
+// viewerID is the signed-in person's id (1, the owner, without sign-in).
+func viewerID(ctx context.Context) int64 {
 	if who, ok := webserver.From(ctx); ok {
 		return who.UserID
 	}
 	return 1
 }
 
-// askedByEntry is one title's askers.
-type askedByEntry struct {
+// AskedByEntry is one title's askers.
+type AskedByEntry struct {
 	Askers []askedByPerson `json:"askers"`
 }
 
@@ -38,7 +48,7 @@ type askedByPerson struct {
 // getAskedBy answers ?title_id=1&title_id=2 (or title_ids=1,2) with each
 // title's askers, earliest first. Everyone in the household sees every
 // asker; a Kid only gets titles within their age limit.
-func (a *API) getAskedBy(w http.ResponseWriter, r *http.Request) {
+func (h *AskedByHandlers) getAskedBy(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	var ids []int64
 	raw := r.URL.Query()["title_id"]
@@ -57,12 +67,12 @@ func (a *API) getAskedBy(w http.ResponseWriter, r *http.Request) {
 		webserver.Fail(w, http.StatusBadRequest, "at most 200 title ids")
 		return
 	}
-	me := viewer(ctx)
-	out := map[string]askedByEntry{}
-	if max := a.kidMax(r); max != "" && len(ids) > 0 {
-		ok, err := a.allowedTitleIDs(ctx, max, ids)
+	me := viewerID(ctx)
+	out := map[string]AskedByEntry{}
+	if max := h.KidMax(r); max != "" && len(ids) > 0 {
+		ok, err := h.AllowedTitleIDs(ctx, max, ids)
 		if err != nil {
-			webserver.Internal(w, "api", err)
+			webserver.Internal(w, "requests", err)
 			return
 		}
 		kept := ids[:0]
@@ -74,38 +84,16 @@ func (a *API) getAskedBy(w http.ResponseWriter, r *http.Request) {
 		ids = kept
 	}
 	if len(ids) > 0 {
-		args := make([]any, len(ids))
-		for i, id := range ids {
-			args[i] = id
-		}
-		rows, err := a.s.Store.Read().QueryContext(ctx, `SELECT a.title_id, p.user_id, u.name, min(p.asked_at) FROM asks a
-			JOIN ask_people p ON p.ask_id = a.id JOIN users u ON u.id = p.user_id
-			WHERE a.title_id IN (?`+strings.Repeat(", ?", len(ids)-1)+`) GROUP BY a.title_id, p.user_id ORDER BY min(p.asked_at), p.user_id`, args...)
+		rows, err := askedByRows(ctx, h.Store, ids)
 		if err != nil {
-			webserver.Internal(w, "api", err)
+			webserver.Internal(w, "requests", err)
 			return
 		}
-		defer rows.Close()
-		for rows.Next() {
-			var tid, uid int64
-			var name, at string
-			if err := rows.Scan(&tid, &uid, &name, &at); err != nil {
-				webserver.Internal(w, "api", err)
-				return
-			}
-			// Older rows were written in RFC 3339 rather than the store's layout.
-			t, err := time.Parse(database.TimeLayout, at)
-			if err != nil {
-				t, _ = time.Parse(time.RFC3339Nano, at)
-			}
-			k := strconv.FormatInt(tid, 10)
+		for _, x := range rows {
+			k := strconv.FormatInt(x.titleID, 10)
 			e := out[k]
-			e.Askers = append(e.Askers, askedByPerson{ID: uid, Name: name, AskedAt: t, Me: uid == me})
+			e.Askers = append(e.Askers, askedByPerson{ID: x.userID, Name: x.name, AskedAt: x.at, Me: x.userID == me})
 			out[k] = e
-		}
-		if err := rows.Err(); err != nil {
-			webserver.Internal(w, "api", err)
-			return
 		}
 	}
 	webserver.WriteJSON(w, http.StatusOK, map[string]any{"titles": out})

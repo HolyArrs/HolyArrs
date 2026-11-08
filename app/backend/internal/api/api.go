@@ -484,7 +484,7 @@ func (a *API) Routes(rt *webserver.Router) {
 		a.watchlistRoutes(m)
 	}
 	(&requests.ReportHandlers{Svc: a.s.Asks, Store: a.s.Store, Person: a.person, KidMax: a.kidMax, TitleGate: a.reportTitleGate}).Routes(m)
-	a.askedByRoutes(m)
+	(&requests.AskedByHandlers{Store: a.s.Store, KidMax: a.kidMax, AllowedTitleIDs: a.allowedTitleIDs}).Routes(m)
 	(&requests.FollowHandlers{Svc: a.s.Asks, Person: a.person, Title: a.titleID, Changed: a.followsChanged}).Routes(m)
 	a.controlRoutes(m)
 	m.HandleFunc("GET /api/v1/openapi.json", a.openapi)
