@@ -2,14 +2,11 @@
 package main
 
 import (
-	"bufio"
 	"context"
 	"database/sql"
 	"errors"
-	"flag"
 	"fmt"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/updates"
@@ -22,7 +19,6 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
-	"strings"
 	"sync/atomic"
 	"syscall"
 	"time"
@@ -61,201 +57,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/features"
 )
-
-var version = "0.0.0-skeleton"
-
-type config struct {
-	ConfigDir string
-	Addr      string
-	// Skeleton setup: one Source, one Downloader, one movie Library folder.
-	SourceURL string
-	QbitURL   string
-	Movies    string
-	SavePath  string
-	// SafeMode starts only the core (sign-in, the Library, settings,
-	// backups, health): no schedules, searches, downloads or imports.
-	SafeMode bool
-	// URLBase runs the app under a path such as /holyarrs (reverse proxy).
-	URLBase string
-	// urlBaseFlag is true when -url-base was given on the command line.
-	urlBaseFlag bool
-}
-
-func env(key, def string) string {
-	if v := os.Getenv(key); v != "" {
-		return v
-	}
-	return def
-}
-
-// EnvSafeMode set to 1 (or true) starts HolyArrs in safe mode.
-const EnvSafeMode = "HOLYARRS_SAFE_MODE"
-
-func envOn(key string) bool {
-	switch strings.ToLower(strings.TrimSpace(os.Getenv(key))) {
-	case "1", "true", "yes", "on":
-		return true
-	}
-	return false
-}
-
-// defaultPort is the web port HolyArrs listens on unless -addr says otherwise
-// (6262, Psalm 62). The health check uses the same port.
-const defaultPort = "6262"
-
-func parseFlags(args []string, errOut io.Writer) (config, error) {
-	fs := flag.NewFlagSet("holyarrs", flag.ContinueOnError)
-	fs.SetOutput(errOut)
-	var c config
-	fs.StringVar(&c.ConfigDir, "config", "/config", "folder for the database and settings (must be on local disk)")
-	fs.StringVar(&c.Addr, "addr", ":"+defaultPort, "address to listen on")
-	fs.StringVar(&c.SourceURL, "source-url", env("HOLYARRS_SOURCE_URL", ""), "Torznab Source to add on start (no key)")
-	fs.StringVar(&c.QbitURL, "qbittorrent-url", env("HOLYARRS_QBITTORRENT_URL", ""), "qBittorrent Web UI to add on start")
-	fs.StringVar(&c.Movies, "movies", env("HOLYARRS_MOVIES", ""), "movie Library folder to add on start")
-	fs.StringVar(&c.SavePath, "save-path", env("HOLYARRS_SAVE_PATH", ""), "where the Downloader saves (same path in both containers)")
-	fs.BoolVar(&c.SafeMode, "safe-mode", envOn(EnvSafeMode), "start only the core: sign-in, the Library, settings, backups and health ("+EnvSafeMode+"=1)")
-	fs.StringVar(&c.URLBase, "url-base", env(webserver.URLBaseEnv, ""), "serve under this path behind a reverse proxy, such as /holyarrs ("+webserver.URLBaseEnv+")")
-	if err := fs.Parse(args); err != nil {
-		return c, err
-	}
-	fs.Visit(func(f *flag.Flag) { c.urlBaseFlag = c.urlBaseFlag || f.Name == "url-base" })
-	base, err := webserver.CleanURLBase(c.URLBase)
-	if err != nil {
-		fmt.Fprintln(errOut, "-url-base:", err)
-		return c, err
-	}
-	c.URLBase = base
-	if fs.NArg() > 0 {
-		return c, fmt.Errorf("unexpected arguments: %v", fs.Args())
-	}
-	return c, nil
-}
-
-// ensure adds the configured Source, Downloader and Library folder once.
-func ensure(ctx context.Context, s *database.Store, c config) error {
-	return s.Write(ctx, func(tx *sql.Tx) error {
-		exists := func(q string, arg any) (bool, error) {
-			var n int
-			err := tx.QueryRow(q, arg).Scan(&n)
-			return n > 0, err
-		}
-		if c.Movies != "" && !library.FullPath(c.Movies) {
-			// Git Bash turns /data/media/movies into "C:/Program Files/Git/data/media/movies"
-			// when a container is made without MSYS_NO_PATHCONV=1: a folder that can never be reached.
-			log.Printf("setup: movie Library folder %q is not a full path here; not added", c.Movies)
-		} else if c.Movies != "" {
-			ok, err := exists("SELECT count(*) FROM library_folders WHERE path = ?", c.Movies)
-			if err != nil {
-				return err
-			}
-			if !ok {
-				if _, err := database.Insert(tx, "library_folders", &mediafiles.LibraryFolder{Path: c.Movies, Kind: "movie", Label: "Movies",
-					Health: "unknown", SameDiskAs: []int64{}}, domain.System); err != nil {
-					return err
-				}
-			}
-		}
-		if c.SourceURL != "" {
-			ok, err := exists("SELECT count(*) FROM sources WHERE url = ?", c.SourceURL)
-			if err != nil {
-				return err
-			}
-			if !ok {
-				if _, err := database.Insert(tx, "sources", &domain.Source{Name: "Lab fake indexer", Protocol: "torrent", Format: "torznab",
-					URL: c.SourceURL, UseFor: domain.SourceUse{Feed: false, AutoSearch: true, HandSearch: true}, Kinds: []string{"movie"},
-					Categories: map[string][]int{"movie": {2000}}, Limits: domain.SourceLimits{GapMS: 2000, SearchesPerWindow: 100, WindowSeconds: 3600},
-					Priority: 25, State: "enabled", Extra: map[string]string{}, AllowLocal: true}, domain.System); err != nil {
-					return err
-				}
-			}
-			// The Source named on the command line is the person's own (the lab's
-			// fake indexer on a private network), so it may reach the local network.
-			if _, err := tx.Exec("UPDATE sources SET allow_local_network = 1 WHERE url = ?", c.SourceURL); err != nil {
-				return err
-			}
-		}
-		if c.QbitURL != "" {
-			ok, err := exists("SELECT count(*) FROM downloaders WHERE url = ?", c.QbitURL)
-			if err != nil {
-				return err
-			}
-			if !ok {
-				if _, err := database.Insert(tx, "downloaders", &domain.Downloader{Name: "Lab qBittorrent", Adapter: "qbittorrent", Protocol: "torrent",
-					URL: c.QbitURL, Category: "holyarrs", Priority: 1, PathMap: []domain.PathMap{}, AfterImport: "leave", State: "ok", AllowLocal: true}, domain.System); err != nil {
-					return err
-				}
-			}
-		}
-		return nil
-	})
-}
-
-// maxBody is the largest API request body accepted.
-const maxBody = 1 << 20
-
-// limitBodies refuses API request bodies over maxBody with 413.
-func limitBodies(h http.Handler) http.Handler {
-	restoreZip := func(path string) bool { return path == backups.RestorePath } // has its own, larger limit
-	return webserver.LimitBodies(maxBody, restoreZip, h)
-}
-
-// newServer has no WriteTimeout: the live stream stays open. Instead each
-// write gets its own deadline (stallGuard), so a client that stops reading
-// frees its handler instead of holding it forever.
-func newServer(addr string, h http.Handler) *http.Server {
-	return &http.Server{Addr: addr, Handler: stallGuard(h), ReadHeaderTimeout: 10 * time.Second, ReadTimeout: 30 * time.Second, IdleTimeout: 120 * time.Second}
-}
-
-// writeStall is how long one write may wait on a client that does not read.
-var writeStall = 60 * time.Second
-
-// stallGuard moves the connection's write deadline forward before every
-// write, so long streams that keep writing stay open while a stalled one
-// fails after writeStall.
-func stallGuard(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		g := &stallWriter{ResponseWriter: w, rc: http.NewResponseController(w)}
-		h.ServeHTTP(g, r)
-		if g.wrote && !g.hijacked {
-			g.extend() // the final flush after the handler returns
-		}
-	})
-}
-
-type stallWriter struct {
-	http.ResponseWriter
-	rc       *http.ResponseController
-	wrote    bool
-	hijacked bool
-}
-
-func (w *stallWriter) extend() {
-	w.wrote = true
-	_ = w.rc.SetWriteDeadline(time.Now().Add(writeStall))
-}
-
-func (w *stallWriter) Write(b []byte) (int, error) {
-	w.extend()
-	return w.ResponseWriter.Write(b)
-}
-
-func (w *stallWriter) Flush() {
-	w.extend()
-	_ = w.rc.Flush()
-}
-
-// Hijack hands over the connection with no deadline left on it.
-func (w *stallWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
-	c, rw, err := w.rc.Hijack()
-	if err == nil {
-		w.hijacked = true
-		_ = c.SetDeadline(time.Time{})
-	}
-	return c, rw, err
-}
-
-// Unwrap gives http.ResponseController the underlying writer.
-func (w *stallWriter) Unwrap() http.ResponseWriter { return w.ResponseWriter }
 
 // errRestart asks main to exit so the container starts HolyArrs again,
 // which puts a staged restore in place.
@@ -546,7 +347,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 			log.Printf("queue %s: %v", kind, err)
 		}
 	}
-	// Your own traits (#97) go to the judge before anything is judged.
+	// Your own traits go to the judge before anything is judged.
 	if err := library.LoadOwnTraits(ctx, s); err != nil {
 		return fmt.Errorf("own traits: %w", err)
 	}
@@ -898,8 +699,8 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		Secrets: vault, TraktBase: os.Getenv("HOLYARRS_TRAKT_URL"), MetadataUp: hosted.Health.Up, ServiceTop: hosted.Service.ServiceTop, TrailerPick: func(ctx context.Context, kind, id, lang string) (string, error) {
 			t, err := hosted.Service.TrailerPick(ctx, kind, id, lang)
 			return t.Key, err
-		}, AnimeMap: hosted.Service.AnimeMap, LiveSearch: flagOn("live_search"), ExtraArt: hosted.Service.Art, ImageBase: hosted.Service.Base() + "/v1/img", MusicControl: hosted.Service.Control, ArtistVideos: hosted.Service.ArtistVideos, ExtraRatings: hosted.Service.Ratings, CountryCount: hosted.Gate.SetCountryCount, WikiTitle: hosted.Service.WikiTitle, WikiPerson: hosted.Service.WikiPerson, AwardWinners: hosted.Service.AwardWinners, Alerts: sender, Asks: requestsSvc, Watchlists: plexWatch, Search: sr, Downloads: dm, DLSync: dls, Health: he, Updates: uc, Media: media, Subtitles: subs, States: reg, SafeMode: c.SafeMode, Parts: pc, ExitApp: exitApp, Mover: mover,
-		Log: applogs, ConfigDir: c.ConfigDir, SavePath: c.SavePath, URLBase: c.URLBase, Deps: music.Deps{MusicTrending: hosted.Service.MusicTrending, MusicPictures: hosted.Service.MusicPictures, MusicNew: hosted.Service.MusicNewWindow, MusicSimilar: hosted.Service.MusicSimilar, MusicCharts: hosted.Service.MusicCharts, MusicGenres: hosted.Service.MusicGenreList, MusicGenreTile: hosted.Service.MusicGenreTile, MusicRowsV2: flagOn("music_rows_v2"), MusicRowsV3: flagOn("music_rows_v3"), MusicRowsV6: flagOn("music_rows_v6"), MusicRowsV7: flagOn("music_rows_v7"), MusicListsV1: flagOn("music_lists_v1"), MusicShelves: hosted.Service.MusicShelves, MusicPools: hosted.Service.MusicPools, MusicRowsTplOff: flagOn("music_rows_tpl_off"), MusicListeners: hosted.Service.MusicListeners, MusicSimilarSet: hosted.Service.MusicSimilarSet, MusicArtistData: hosted.Service.MusicArtistData, MusicSuggest: hosted.Service.MusicSuggest, MusicTopSongs: hosted.Service.MusicTopSongs, MusicRising: hosted.Service.MusicRisingToday, MusicDiscography: hosted.Service.MusicDiscography,
+		}, AnimeMap: hosted.Service.AnimeMap, LiveSearch: startup.FeatureOn("live_search"), ExtraArt: hosted.Service.Art, ImageBase: hosted.Service.Base() + "/v1/img", MusicControl: hosted.Service.Control, ArtistVideos: hosted.Service.ArtistVideos, ExtraRatings: hosted.Service.Ratings, CountryCount: hosted.Gate.SetCountryCount, WikiTitle: hosted.Service.WikiTitle, WikiPerson: hosted.Service.WikiPerson, AwardWinners: hosted.Service.AwardWinners, Alerts: sender, Asks: requestsSvc, Watchlists: plexWatch, Search: sr, Downloads: dm, DLSync: dls, Health: he, Updates: uc, Media: media, Subtitles: subs, States: reg, SafeMode: c.SafeMode, Parts: pc, ExitApp: exitApp, Mover: mover,
+		Log: applogs, ConfigDir: c.ConfigDir, SavePath: c.SavePath, URLBase: c.URLBase, Deps: music.Deps{MusicTrending: hosted.Service.MusicTrending, MusicPictures: hosted.Service.MusicPictures, MusicNew: hosted.Service.MusicNewWindow, MusicSimilar: hosted.Service.MusicSimilar, MusicCharts: hosted.Service.MusicCharts, MusicGenres: hosted.Service.MusicGenreList, MusicGenreTile: hosted.Service.MusicGenreTile, MusicRowsV2: startup.FeatureOn("music_rows_v2"), MusicRowsV3: startup.FeatureOn("music_rows_v3"), MusicRowsV6: startup.FeatureOn("music_rows_v6"), MusicRowsV7: startup.FeatureOn("music_rows_v7"), MusicListsV1: startup.FeatureOn("music_lists_v1"), MusicShelves: hosted.Service.MusicShelves, MusicPools: hosted.Service.MusicPools, MusicRowsTplOff: startup.FeatureOn("music_rows_tpl_off"), MusicListeners: hosted.Service.MusicListeners, MusicSimilarSet: hosted.Service.MusicSimilarSet, MusicArtistData: hosted.Service.MusicArtistData, MusicSuggest: hosted.Service.MusicSuggest, MusicTopSongs: hosted.Service.MusicTopSongs, MusicRising: hosted.Service.MusicRisingToday, MusicDiscography: hosted.Service.MusicDiscography,
 			MusicDeezer: serverDeezer, MusicDeezerAlbum: serverDeezerAlbum, MusicArtistBio: serverBio}})
 	// "Count this install" rides on every request to the metadata server.
 	a.ApplyCountryCount(ctx)
@@ -944,131 +745,6 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	return nil
 }
 
-// showSources are the show details sources: TMDB and TVmaze through the
-// metadata server, and TVDB with the person's own key only.
-// HOLYARRS_TVMAZE_URL and HOLYARRS_TVDB_URL point at stand-ins (tests); a
-// TVmaze stand-in is asked directly, and HOLYARRS_DIRECT_SOURCES=1
-// (developers only) keeps the real TVmaze behind the server for TVDB and
-// IMDb ids.
-func showSources(v *secrets.Vault, hosted *metadata.Hosted) metadata.ShowSources {
-	var maze metadata.ShowProvider = &metadata.TVMaze{BaseURL: os.Getenv("HOLYARRS_TVMAZE_URL")}
-	if !standIn("HOLYARRS_TVMAZE_URL") {
-		var direct metadata.ShowProvider
-		if directSources() {
-			direct = maze
-		}
-		maze = hosted.Service.Shows("tvmaze", direct)
-	}
-	return metadata.ShowSources{
-		"tmdb":   hosted.TMDB(),
-		"tvmaze": maze,
-		"tvdb": &metadata.TVDB{BaseURL: os.Getenv("HOLYARRS_TVDB_URL"),
-			Key: func(ctx context.Context) (string, error) { return v.Setting(ctx, api.TVDBKeyGroup, api.TVDBKeyName) }},
-	}
-}
-
-// directSources reports HOLYARRS_DIRECT_SOURCES=1: a developer stand-in
-// that lets this install ask Deezer, Wikipedia, MusicBrainz and TVmaze
-// itself. Off by default and never for installs: they ask the metadata
-// server only.
-func directSources() bool { return os.Getenv("HOLYARRS_DIRECT_SOURCES") == "1" }
-
-// standIn reports a stand-in address (tests) named by the variable.
-func standIn(name string) bool {
-	v := strings.TrimSpace(os.Getenv(name))
-	return v != "" && v != "off"
-}
-
-// artistImages is the direct Deezer and Wikipedia client, a stand-in
-// only: HOLYARRS_DEEZER_URL names a stand-in (tests), and
-// HOLYARRS_DIRECT_SOURCES=1 (developers) reaches the real Deezer over
-// public addresses. Off otherwise ("off", or nothing named): the metadata
-// server answers instead.
-func artistImages() *metadata.ArtistImages {
-	env := strings.TrimRight(os.Getenv("HOLYARRS_DEEZER_URL"), "/")
-	switch {
-	case env == "off", env == "" && (os.Getenv("HOLYARRS_MUSICBRAINZ_URL") != "" || !directSources()):
-		return nil
-	case env != "":
-		return &metadata.ArtistImages{BaseURL: env}
-	}
-	t := http.DefaultTransport.(*http.Transport).Clone()
-	t.Proxy = nil // the policy must see the real address
-	t.DialContext = outbound.PolicyDialer(outbound.PublicOnly).DialContext
-	return &metadata.ArtistImages{BaseURL: metadata.DeezerBase, HTTP: &http.Client{Transport: t}}
-}
-
-// musicSource is MusicBrainz at no more than one request a second (one
-// shared limiter), with answers kept in the lookup_cache table. The base
-// URL and cache hours are settings (Settings > Music), read on each
-// request; HOLYARRS_MUSICBRAINZ_URL points at a stand-in (tests) and wins.
-// Its own clients reach public addresses only, or the local network too
-// (never cloud metadata addresses) when the music settings allow it or
-// the stand-in is used.
-func musicSource(s *database.Store, version string) *metadata.MusicBrainz {
-	env := os.Getenv("HOLYARRS_MUSICBRAINZ_URL")
-	client := func(allow func(net.IP) bool) *http.Client {
-		t := http.DefaultTransport.(*http.Transport).Clone()
-		t.Proxy = nil // the policy must see the real address
-		t.DialContext = outbound.PolicyDialer(allow).DialContext
-		return &http.Client{Transport: t}
-	}
-	public, local := client(outbound.PublicOnly), client(outbound.NotMetadata)
-	return &metadata.MusicBrainz{
-		Client: func(ctx context.Context) *http.Client {
-			if env != "" {
-				return local
-			}
-			if d, _ := library.ReadMusicDefaults(ctx, s.Read()); d.AllowLocal {
-				return local
-			}
-			return public
-		},
-		BaseURL: func(ctx context.Context) string {
-			if env != "" {
-				return env
-			}
-			d, _ := library.ReadMusicDefaults(ctx, s.Read())
-			return d.MusicBrainzURL
-		},
-		TTL: func(ctx context.Context) time.Duration {
-			d, _ := library.ReadMusicDefaults(ctx, s.Read())
-			return time.Duration(d.CacheHours) * time.Hour
-		},
-		UserAgent: metadata.UserAgentFor(version),
-		Cache:     metadata.LookupCache{Store: s},
-	}
-}
-
-// healthcheck asks a running server for its health: 0 when it answers 200, 1
-// otherwise. The image has no shell or curl, so its HEALTHCHECK uses this.
-func healthcheck(base string) int {
-	cl := &http.Client{Timeout: 5 * time.Second}
-	resp, err := cl.Get(strings.TrimRight(base, "/") + "/healthz")
-	if err != nil {
-		return 1
-	}
-	defer resp.Body.Close()
-	_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, 1<<16))
-	if resp.StatusCode != http.StatusOK {
-		return 1
-	}
-	return 0
-}
-
-// healthcheckCmd runs -healthcheck. It applies FILE__ only, so
-// FILE__HOLYARRS_URL_BASE and FILE__HOLYARRS_HEALTH_URL work; it never
-// switches user or sets UMASK.
-func healthcheckCmd() int {
-	if err := startup.LoadFileEnv(os.Environ(), os.ReadFile, os.Setenv); err != nil {
-		log.Printf("holyarrs: %v", err)
-		return 1
-	}
-	// The root /healthz answers under any URL base, also one set by flag or
-	// in Settings, which the probe cannot see.
-	return healthcheck(env("HOLYARRS_HEALTH_URL", "http://127.0.0.1:"+defaultPort))
-}
-
 func main() {
 	if len(os.Args) > 1 && os.Args[1] == "-healthcheck" {
 		os.Exit(healthcheckCmd())
@@ -1106,78 +782,4 @@ func main() {
 	} else if err != nil {
 		log.Fatalf("holyarrs: %v", err)
 	}
-}
-
-// logFolderCheck logs one line on the Library and download folders, and a
-// WARN line with the fix for each problem folder. It takes a few seconds at
-// most: a folder that is slower (a hung network share) is skipped with a note.
-func logFolderCheck(ctx context.Context, db database.Lister, savePath string) {
-	sum, warns := health.DoctorStartup(ctx, db, savePath, 3*time.Second)
-	log.Printf("holyarrs: %s", sum)
-	for _, w := range warns {
-		log.Printf("holyarrs: %s", w)
-	}
-	if w := health.ProxyWarning(os.Getenv); w != "" {
-		log.Printf("holyarrs: warning: %s (%s)", w, "proxies for indexers can be set on each Source")
-	}
-}
-
-// configDirArg finds -config in the arguments of the server or a command,
-// before the flags are parsed, so start-up knows which folder to give to
-// PUID:PGID.
-func configDirArg(args []string) string {
-	dir := "/config"
-	for i := 0; i < len(args); i++ {
-		a := args[i]
-		if a == "--" {
-			break
-		}
-		if v, ok := strings.CutPrefix(a, "-config="); ok {
-			dir = v
-		} else if v, ok := strings.CutPrefix(a, "--config="); ok {
-			dir = v
-		} else if (a == "-config" || a == "--config") && i+1 < len(args) {
-			dir = args[i+1]
-			i++
-		}
-	}
-	return dir
-}
-
-// resetOwner sets the owner's name and password from stdin ("name: ..." and
-// "password: ..." lines), for when the password is lost. Every session and API
-// key ends. It works while the server runs.
-func resetOwner(args []string) int {
-	c, err := parseFlags(args, os.Stderr)
-	if err != nil {
-		return 2
-	}
-	name, pw, err := accounts.ReadNewOwner(os.Stdin)
-	if err != nil {
-		log.Printf("reset-owner: %v", err)
-		return 1
-	}
-	s, err := database.Open(c.ConfigDir, database.Options{})
-	if err != nil {
-		log.Printf("reset-owner: %v", err)
-		return 1
-	}
-	defer s.Close()
-	if err := accounts.ResetOwner(context.Background(), s, name, pw); err != nil {
-		log.Printf("reset-owner: %v", err)
-		return 1
-	}
-	log.Printf("reset-owner: the owner is now %q; sign in again everywhere", name)
-	return 0
-}
-
-// flagOn reports whether a feature flag is listed in HOLYARRS_FLAGS
-// (comma separated, e.g. "music_rows_v2").
-func flagOn(name string) bool {
-	for _, f := range strings.Split(os.Getenv("HOLYARRS_FLAGS"), ",") {
-		if strings.TrimSpace(f) == name {
-			return true
-		}
-	}
-	return false
 }
