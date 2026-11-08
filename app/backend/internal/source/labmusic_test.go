@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
@@ -64,7 +65,7 @@ func TestLab_AlbumSearch(t *testing.T) {
 	}
 	var picks int
 	sr := &Searcher{Store: f.s, OnChosen: func(context.Context, int64, int64) { picks++ }}
-	j := runKind(t, f, sr, KindSearchAlbum, &domain.Subject{Type: "part", ID: partID}, map[string]any{"version_id": verID})
+	j := runKind(t, f, sr, jobs.KindSearchAlbum, &domain.Subject{Type: "part", ID: partID}, map[string]any{"version_id": verID})
 	if j.State != "done" {
 		t.Fatalf("job %s %+v", j.State, j.Error)
 	}

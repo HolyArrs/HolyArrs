@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
 )
@@ -77,7 +78,7 @@ func (a *API) searchTitle(w http.ResponseWriter, r *http.Request) {
 		if params["choose"] == false {
 			key = "show_slot:" + itoa(s.ID)
 		}
-		id, _, err := a.s.Queue.Enqueue(r.Context(), source.KindSearchSlot, &domain.Subject{Type: "slot", ID: s.ID}, params, key, actor(r))
+		id, _, err := a.s.Queue.Enqueue(r.Context(), jobs.KindSearchSlot, &domain.Subject{Type: "slot", ID: s.ID}, params, key, actor(r))
 		if err != nil {
 			internal(w, err)
 			return
@@ -239,8 +240,8 @@ func (a *API) titleReleases(w http.ResponseWriter, r *http.Request) {
 		slotFilter += f.cond
 		slotArg = append(slotArg, id)
 	}
-	args := append(append([]any{t.ID}, slotArg...), append([]any{source.KindSearchSlot, t.ID}, slotArg...)...)
-	args = append(args, append([]any{source.KindSearchSeason, source.KindSearchAlbum, t.ID}, slotArg...)...)
+	args := append(append([]any{t.ID}, slotArg...), append([]any{jobs.KindSearchSlot, t.ID}, slotArg...)...)
+	args = append(args, append([]any{jobs.KindSearchSeason, jobs.KindSearchAlbum, t.ID}, slotArg...)...)
 	// The newest search Job per Slot of this Title: one whose Releases
 	// matched the Slot, or a search of the Slot itself, so Releases that
 	// matched no Title are listed too.
@@ -299,7 +300,7 @@ func (a *API) titleReleases(w http.ResponseWriter, r *http.Request) {
 		kind = ? AND json_extract(subject, '$.type') = 'slot'
 			AND json_extract(subject, '$.id') IN (SELECT s.id FROM slots s JOIN items i ON i.id = s.item_id WHERE i.title_id = ?)
 		OR kind IN (?, ?) AND json_extract(subject, '$.type') = 'part' AND json_extract(subject, '$.id') IN (SELECT id FROM parts WHERE title_id = ?)) ORDER BY id`,
-		source.KindSearchSlot, t.ID, source.KindSearchSeason, source.KindSearchAlbum, t.ID)
+		jobs.KindSearchSlot, t.ID, jobs.KindSearchSeason, jobs.KindSearchAlbum, t.ID)
 	if err == nil {
 		for _, j := range js {
 			running = append(running, j.ID)
@@ -446,7 +447,7 @@ func (a *API) bulkSearch(which string) http.HandlerFunc {
 			fail(w, http.StatusBadRequest, `kind must be "movie", "show" or "artist"`)
 			return
 		}
-		id, _, err := a.s.Queue.Enqueue(r.Context(), source.KindSearchMissing, nil, params, key, actor(r))
+		id, _, err := a.s.Queue.Enqueue(r.Context(), jobs.KindSearchMissing, nil, params, key, actor(r))
 		if err != nil {
 			internal(w, err)
 			return
@@ -456,7 +457,7 @@ func (a *API) bulkSearch(which string) http.HandlerFunc {
 }
 
 func (a *API) feedCheckNow(w http.ResponseWriter, r *http.Request) {
-	id, _, err := a.s.Queue.Enqueue(r.Context(), source.KindFeedCheck, nil, map[string]any{}, "schedule:"+source.KindFeedCheck, actor(r))
+	id, _, err := a.s.Queue.Enqueue(r.Context(), jobs.KindFeedCheck, nil, map[string]any{}, "schedule:"+jobs.KindFeedCheck, actor(r))
 	if err != nil {
 		internal(w, err)
 		return
@@ -497,7 +498,7 @@ func (a *API) readSearchSettings(ctx context.Context) (SearchSettings, error) {
 	var st SearchSettings
 	var every int
 	var enabled bool
-	err := db.QueryRowContext(ctx, "SELECT every_seconds, enabled FROM schedules WHERE kind = ?", source.KindFeedCheck).Scan(&every, &enabled)
+	err := db.QueryRowContext(ctx, "SELECT every_seconds, enabled FROM schedules WHERE kind = ?", jobs.KindFeedCheck).Scan(&every, &enabled)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return st, err
 	}
@@ -505,7 +506,7 @@ func (a *API) readSearchSettings(ctx context.Context) (SearchSettings, error) {
 		st.FeedCheckMinutes = every / 60
 	}
 	var missingOn bool
-	_ = db.QueryRowContext(ctx, "SELECT enabled FROM schedules WHERE kind = ?", source.KindSearchMissing).Scan(&missingOn)
+	_ = db.QueryRowContext(ctx, "SELECT enabled FROM schedules WHERE kind = ?", jobs.KindSearchMissing).Scan(&missingOn)
 	st.MissingSearchCount, _ = strconv.Atoi(source.Setting(ctx, db, source.SettingMissingCount))
 	if !missingOn {
 		st.MissingSearchCount = 0
@@ -606,11 +607,11 @@ func (a *API) putSearchSettings(w http.ResponseWriter, r *http.Request) {
 			feedEvery = 15 * 60 // off keeps the default interval for when it is turned on again
 		}
 		if _, err := tx.Exec("UPDATE schedules SET every_seconds = ?, enabled = ?, updated_at = ?, updated_by = ? WHERE kind = ?",
-			feedEvery, feedOn, now, byText, source.KindFeedCheck); err != nil {
+			feedEvery, feedOn, now, byText, jobs.KindFeedCheck); err != nil {
 			return err
 		}
 		if _, err := tx.Exec("UPDATE schedules SET enabled = ?, updated_at = ?, updated_by = ? WHERE kind = ?",
-			in.MissingSearchCount > 0, now, byText, source.KindSearchMissing); err != nil {
+			in.MissingSearchCount > 0, now, byText, jobs.KindSearchMissing); err != nil {
 			return err
 		}
 		for k, v := range map[string]string{source.SettingMissingCount: strconv.Itoa(max(in.MissingSearchCount, 0)),
@@ -673,7 +674,7 @@ type SearchView struct {
 	Error     string     `json:"error,omitempty"`
 }
 
-var searchKinds = []any{source.KindSearchSlot, source.KindSearchMissing, source.KindFeedCheck, source.KindSearchSeason, source.KindSearchAlbum}
+var searchKinds = []any{jobs.KindSearchSlot, jobs.KindSearchMissing, jobs.KindFeedCheck, jobs.KindSearchSeason, jobs.KindSearchAlbum}
 
 // searches lists the search Jobs queued or running, oldest first, and the
 // newest finished ones (limit, default 10) with what each found.
@@ -743,7 +744,7 @@ func (a *API) searches(w http.ResponseWriter, r *http.Request) {
 				v.Outcome = "episodes"
 			case j.Result["album_search_job_id"] != nil:
 				v.Outcome = "album"
-			case j.State == "done" && (j.Kind == source.KindSearchSlot || j.Kind == source.KindSearchSeason || j.Kind == source.KindSearchAlbum):
+			case j.State == "done" && (j.Kind == jobs.KindSearchSlot || j.Kind == jobs.KindSearchSeason || j.Kind == jobs.KindSearchAlbum):
 				v.Outcome = "none"
 			}
 			for _, k := range []string{"chosen_release_id", "held_release_id"} {

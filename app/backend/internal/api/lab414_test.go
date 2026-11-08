@@ -155,7 +155,7 @@ func newLabAlbum(t *testing.T) labAlbum {
 		_, _, _ = q.Enqueue(ctx, importer.KindImport, &domain.Subject{Type: "download", ID: id}, nil, fmt.Sprintf("import:%d", id), domain.System)
 	}
 	im.OnRejected = func(ctx context.Context, slotID int64) {
-		_, _, _ = q.Enqueue(ctx, source.KindSearchSlot, &domain.Subject{Type: "slot", ID: slotID}, nil, fmt.Sprintf("search_slot:%d", slotID), domain.System)
+		_, _, _ = q.Enqueue(ctx, jobs.KindSearchSlot, &domain.Subject{Type: "slot", ID: slotID}, nil, fmt.Sprintf("search_slot:%d", slotID), domain.System)
 	}
 	sr.Register(q)
 	q.Handle(downloader.KindGrab, x.m.HandleGrab)
@@ -338,7 +338,7 @@ func TestLabBrokenAlbumNextGrabbed(t *testing.T) {
 	}
 	x.until(t, "the MP3 copy to be placed", func() bool { return x.placed(t, "mp3", next) })
 	var albums int
-	_ = x.s.Read().QueryRow("SELECT count(*) FROM jobs WHERE kind = ?", source.KindSearchAlbum).Scan(&albums)
+	_ = x.s.Read().QueryRow("SELECT count(*) FROM jobs WHERE kind = ?", jobs.KindSearchAlbum).Scan(&albums)
 	if albums != 2 {
 		t.Fatalf("%d album searches, want the first and one after the failure", albums)
 	}

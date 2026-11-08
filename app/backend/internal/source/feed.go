@@ -21,13 +21,6 @@ import (
 )
 
 const (
-	// Job kinds for the scheduled search work. Each also has a schedules row of the same name.
-	KindFeedCheck     = "feed_check"
-	KindGrabHeld      = "grab_held"
-	KindSearchMissing = "search_missing"
-)
-
-const (
 	// Settings in the what_to_pick group that steer the searches.
 	SettingMissingCount = "missing_search_count"
 	// SettingMissingBetter makes the scheduled search look for better copies too.
@@ -79,12 +72,12 @@ var askCatchUpPerRun = 3
 
 // Register adds the search Job handlers to a queue.
 func (s *Searcher) Register(q *jobs.Queue) {
-	q.Handle(KindSearchSlot, s.Handle)
-	q.Handle(KindFeedCheck, s.HandleFeed)
-	q.Handle(KindGrabHeld, s.HandleGrabHeld)
-	q.Handle(KindSearchMissing, s.HandleSearchMissing)
-	q.Handle(KindSearchSeason, s.HandleSeason)
-	q.Handle(KindSearchAlbum, s.HandleAlbum)
+	q.Handle(jobs.KindSearchSlot, s.Handle)
+	q.Handle(jobs.KindFeedCheck, s.HandleFeed)
+	q.Handle(jobs.KindGrabHeld, s.HandleGrabHeld)
+	q.Handle(jobs.KindSearchMissing, s.HandleSearchMissing)
+	q.Handle(jobs.KindSearchSeason, s.HandleSeason)
+	q.Handle(jobs.KindSearchAlbum, s.HandleAlbum)
 }
 
 // HandleFeed reads the newest Releases of every feed Source, matches them to Titles whose Slots want one, judges them per Slot, and chooses or holds the best.
@@ -471,7 +464,7 @@ func (s *Searcher) HandleSearchMissing(ctx context.Context, r *jobs.Run) error {
 		// Each Title's searches are spread bulkStagger apart from when its Job starts. The next Title starts after the last of them (its Slots are the most it can queue), so Titles do not ask the Sources together. The per-run cap keeps this wait short.
 		at := time.Now().UTC()
 		for _, a := range tids {
-			if _, _, err := s.Queue.EnqueueAt(ctx, KindSearchMissing, &domain.Subject{Type: "title", ID: a.id},
+			if _, _, err := s.Queue.EnqueueAt(ctx, jobs.KindSearchMissing, &domain.Subject{Type: "title", ID: a.id},
 				map[string]any{"title_id": a.id}, "search_wanted:"+strconv.FormatInt(a.id, 10), jobActor(r), at); err != nil {
 				return err
 			}
@@ -534,14 +527,14 @@ func (s *Searcher) HandleSearchMissing(ctx context.Context, r *jobs.Run) error {
 		if skipGate {
 			params["skip_gate"] = true
 		}
-		kind, subject, key := KindSearchSlot, &domain.Subject{Type: "slot", ID: f.id}, "search_slot:"+strconv.FormatInt(f.id, 10)
+		kind, subject, key := jobs.KindSearchSlot, &domain.Subject{Type: "slot", ID: f.id}, "search_slot:"+strconv.FormatInt(f.id, 10)
 		if k := (seasonKey{f.part, f.ver}); f.kind == "show" && perSeason[k] > 1 {
 			if seen[k] {
 				continue
 			}
 			seen[k] = true
 			params["version_id"] = f.ver
-			kind, subject = KindSearchSeason, &domain.Subject{Type: "part", ID: f.part}
+			kind, subject = jobs.KindSearchSeason, &domain.Subject{Type: "part", ID: f.part}
 			key = fmt.Sprintf("search_season:%d:%d", f.part, f.ver)
 		}
 		// Tracks are always searched as their album.
@@ -552,7 +545,7 @@ func (s *Searcher) HandleSearchMissing(ctx context.Context, r *jobs.Run) error {
 			}
 			seen[k] = true
 			params["version_id"] = f.ver
-			kind, subject = KindSearchAlbum, &domain.Subject{Type: "part", ID: f.part}
+			kind, subject = jobs.KindSearchAlbum, &domain.Subject{Type: "part", ID: f.part}
 			key = fmt.Sprintf("search_album:%d:%d", f.part, f.ver)
 		}
 
@@ -561,10 +554,10 @@ func (s *Searcher) HandleSearchMissing(ctx context.Context, r *jobs.Run) error {
 			return err
 		} else if created {
 			queued++
-			if kind == KindSearchSeason {
+			if kind == jobs.KindSearchSeason {
 				seasons++
 			}
-			if kind == KindSearchAlbum {
+			if kind == jobs.KindSearchAlbum {
 				albums++
 			}
 		}

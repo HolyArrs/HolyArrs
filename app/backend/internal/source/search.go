@@ -20,9 +20,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
-// KindSearchSlot is the job kind that searches every enabled Source for one Slot.
-const KindSearchSlot = "search_slot"
-
 // Publisher sends live events.
 type Publisher interface {
 	Publish(topic string, data any) uint64

@@ -134,7 +134,7 @@ func TestFeed_HitChooses(t *testing.T) {
 	feedOn(t, f)
 	var chosen []int64
 	sr := &Searcher{Store: f.s, OnChosen: func(_ context.Context, _, rel int64) { chosen = append(chosen, rel) }}
-	j := runKind(t, f, sr, KindFeedCheck, nil, nil)
+	j := runKind(t, f, sr, jobs.KindFeedCheck, nil, nil)
 	if j.State != "done" {
 		t.Fatalf("feed job %s %v", j.State, j.Error)
 	}
@@ -151,7 +151,7 @@ func TestFeed_HitChooses(t *testing.T) {
 		t.Fatal("stored a Release that matches nothing")
 	}
 	exec(t, f, "UPDATE slots SET state = 'wanted'")
-	runKind(t, f, sr, KindFeedCheck, nil, nil)
+	runKind(t, f, sr, jobs.KindFeedCheck, nil, nil)
 	if len(chosen) != 1 {
 		t.Fatalf("the same feed Release was picked twice: %v", chosen)
 	}
@@ -161,7 +161,7 @@ func TestFeed_SkipsSourcesNotUsedForFeeds(t *testing.T) {
 	lf := &liveFeed{}
 	lf.set(feedOf(item(web1080, time.Now().Add(-2*time.Hour), 50, "")))
 	f := seed(t, lf.url(t))
-	runKind(t, f, &Searcher{Store: f.s}, KindFeedCheck, nil, nil)
+	runKind(t, f, &Searcher{Store: f.s}, jobs.KindFeedCheck, nil, nil)
 	if lf.hits != 0 || slotState(t, f).State != domain.SlotWanted {
 		t.Fatalf("hits %d", lf.hits)
 	}
@@ -177,14 +177,14 @@ func TestFeed_HeldThenBetterThenWaitOver(t *testing.T) {
 	waitMinutes(t, f, 60)
 	var chosen []int64
 	sr := &Searcher{Store: f.s, OnChosen: func(_ context.Context, _, rel int64) { chosen = append(chosen, rel) }}
-	runKind(t, f, sr, KindFeedCheck, nil, nil)
+	runKind(t, f, sr, jobs.KindFeedCheck, nil, nil)
 	sl := slotState(t, f)
 	first := relByName(t, f, tv720)
 	if sl.State != domain.SlotHeld || sl.HeldReleaseID == nil || *sl.HeldReleaseID != first.ID || first.State != "held" || first.HoldUntil == nil {
 		t.Fatalf("slot %s, release %s", sl.State, first.State)
 	}
 	lf.set(feedOf(item(tv720, time.Now(), 50, ""), item(web1080, time.Now(), 50, "")))
-	runKind(t, f, sr, KindFeedCheck, nil, nil)
+	runKind(t, f, sr, jobs.KindFeedCheck, nil, nil)
 	sl = slotState(t, f)
 	second := relByName(t, f, web1080)
 	if sl.State != domain.SlotHeld || *sl.HeldReleaseID != second.ID {
@@ -193,12 +193,12 @@ func TestFeed_HeldThenBetterThenWaitOver(t *testing.T) {
 	if got := relByName(t, f, tv720); got.State != "passed_over" {
 		t.Fatalf("first Held release is %s", got.State)
 	}
-	runKind(t, f, sr, KindGrabHeld, nil, nil)
+	runKind(t, f, sr, jobs.KindGrabHeld, nil, nil)
 	if len(chosen) != 0 {
 		t.Fatal("grabbed during the wait")
 	}
 	exec(t, f, "UPDATE slots SET next_try_at = ?", database.FormatTime(time.Now().Add(-time.Minute)))
-	j := runKind(t, f, sr, KindGrabHeld, nil, nil)
+	j := runKind(t, f, sr, jobs.KindGrabHeld, nil, nil)
 	if j.State != "done" || slotState(t, f).State != domain.SlotChosen || len(chosen) != 1 || chosen[0] != second.ID {
 		t.Fatalf("after the wait: job %s slot %s chosen %v", j.State, slotState(t, f).State, chosen)
 	}
@@ -238,7 +238,7 @@ func TestMissingSearch_SkipsNotOutYetAndBusy(t *testing.T) {
 	}
 	exec(t, f, "UPDATE settings SET value = '1' WHERE grp = 'what_to_pick' AND key = 'missing_search_count'")
 	sr := &Searcher{Store: f.s}
-	j := runKind(t, f, sr, KindSearchMissing, nil, map[string]any{"scheduled": true})
+	j := runKind(t, f, sr, jobs.KindSearchMissing, nil, map[string]any{"scheduled": true})
 	if j.State != "done" {
 		t.Fatalf("job %s %v", j.State, j.Error)
 	}
@@ -246,9 +246,9 @@ func TestMissingSearch_SkipsNotOutYetAndBusy(t *testing.T) {
 	if len(got) != 1 || got[0] != extra[2] {
 		t.Fatalf("queued %v, want only the never-searched wanted Slot %d", got, extra[2])
 	}
-	exec(t, f, "DELETE FROM jobs WHERE kind = ?", KindSearchSlot)
+	exec(t, f, "DELETE FROM jobs WHERE kind = ?", jobs.KindSearchSlot)
 	exec(t, f, "UPDATE slots SET state = 'wanted' WHERE id IN (?, ?)", f.slotID, extra[2])
-	runKind(t, f, sr, KindSearchMissing, nil, map[string]any{"which": "missing"})
+	runKind(t, f, sr, jobs.KindSearchMissing, nil, map[string]any{"which": "missing"})
 	got = queuedSearches(t, f)
 	if len(got) != 2 || got[0] != extra[2] || got[1] != f.slotID {
 		t.Fatalf("queued %v", got)
@@ -257,7 +257,7 @@ func TestMissingSearch_SkipsNotOutYetAndBusy(t *testing.T) {
 
 func queuedSearches(t *testing.T, f fixture) []int64 {
 	t.Helper()
-	js, err := database.Select[domain.Job](context.Background(), f.s.Read(), "jobs", "kind = ? ORDER BY id", KindSearchSlot)
+	js, err := database.Select[domain.Job](context.Background(), f.s.Read(), "jobs", "kind = ? ORDER BY id", jobs.KindSearchSlot)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -285,7 +285,7 @@ func TestHandle_MergesSourcesAndDedupes(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	j := runKind(t, f, &Searcher{Store: f.s}, KindSearchSlot, &domain.Subject{Type: "slot", ID: f.slotID}, map[string]any{"choose": false})
+	j := runKind(t, f, &Searcher{Store: f.s}, jobs.KindSearchSlot, &domain.Subject{Type: "slot", ID: f.slotID}, map[string]any{"choose": false})
 	if j.State != "done" {
 		t.Fatalf("job %s", j.State)
 	}
@@ -324,7 +324,7 @@ func TestHandle_PicksLimitPerSource(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	runKind(t, f, &Searcher{Store: f.s}, KindSearchSlot, &domain.Subject{Type: "slot", ID: f.slotID}, nil)
+	runKind(t, f, &Searcher{Store: f.s}, jobs.KindSearchSlot, &domain.Subject{Type: "slot", ID: f.slotID}, nil)
 	got := relByName(t, f, web1080)
 	if got.State != "passed_over" || !strings.Contains(fmt.Sprint(got.Verdict["reasons"]), "source_limit") || slotState(t, f).State != domain.SlotWanted {
 		t.Fatalf("release %s slot %s", got.State, slotState(t, f).State)

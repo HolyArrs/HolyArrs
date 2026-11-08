@@ -73,13 +73,13 @@ func runScheduledFeed(t *testing.T, f fixture, sr *Searcher, beforeStart func())
 	ctx := context.Background()
 	now := time.Now().UTC()
 	exec(t, f, "UPDATE schedules SET enabled = 0")
-	exec(t, f, "UPDATE schedules SET enabled = 1, next_run = ? WHERE kind = ?", database.FormatTime(now.Add(-time.Minute)), KindFeedCheck)
+	exec(t, f, "UPDATE schedules SET enabled = 1, next_run = ? WHERE kind = ?", database.FormatTime(now.Add(-time.Minute)), jobs.KindFeedCheck)
 	q := jobs.New(f.s, jobs.Options{Workers: 1, BaseBackoff: time.Hour, PollInterval: 5 * time.Millisecond})
 	sr.Queue = q
 	sr.Register(q)
-	q.ProbeSchedule(KindFeedCheck, sr.ProbeFeed)
+	q.ProbeSchedule(jobs.KindFeedCheck, sr.ProbeFeed)
 	queued, err := q.RunSchedules(ctx, now)
-	if err != nil || len(queued) != 1 || queued[0] != KindFeedCheck {
+	if err != nil || len(queued) != 1 || queued[0] != jobs.KindFeedCheck {
 		t.Fatalf("schedule: queued %v, error %v", queued, err)
 	}
 	if beforeStart != nil {
@@ -91,7 +91,7 @@ func runScheduledFeed(t *testing.T, f fixture, sr *Searcher, beforeStart func())
 	defer q.Stop()
 	deadline := time.Now().Add(5 * time.Second)
 	for time.Now().Before(deadline) {
-		js, err := database.Select[domain.Job](ctx, f.s.Read(), "jobs", "kind = ? ORDER BY id DESC LIMIT 1", KindFeedCheck)
+		js, err := database.Select[domain.Job](ctx, f.s.Read(), "jobs", "kind = ? ORDER BY id DESC LIMIT 1", jobs.KindFeedCheck)
 		if err != nil {
 			t.Fatal(err)
 		}

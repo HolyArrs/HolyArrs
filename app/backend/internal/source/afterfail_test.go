@@ -68,7 +68,7 @@ func TestQueueAfterFailure_PackSearchesSeasonAgain(t *testing.T) {
 		kinds[k]++
 	}
 	rows.Close()
-	if kinds[KindSearchSeason] != 1 || kinds[KindSearchSlot] != 1 {
+	if kinds[jobs.KindSearchSeason] != 1 || kinds[jobs.KindSearchSlot] != 1 {
 		t.Fatalf("queued %v", kinds)
 	}
 	if err := f.s.Write(ctx, func(tx *sql.Tx) error { _, err := tx.Exec("DELETE FROM jobs"); return err }); err != nil {
@@ -76,7 +76,7 @@ func TestQueueAfterFailure_PackSearchesSeasonAgain(t *testing.T) {
 	}
 	var grabs [][2]int64
 	sr = &Searcher{Store: f.s, OnChosen: func(_ context.Context, slotID, releaseID int64) { grabs = append(grabs, [2]int64{slotID, releaseID}) }}
-	j := runKind(t, f.fixture, sr, KindSearchSeason, &domain.Subject{Type: "part", ID: f.parts[1]}, map[string]any{"version_id": f.verID})
+	j := runKind(t, f.fixture, sr, jobs.KindSearchSeason, &domain.Subject{Type: "part", ID: f.parts[1]}, map[string]any{"version_id": f.verID})
 	if j.State != "done" {
 		t.Fatalf("job %s %+v", j.State, j.Error)
 	}

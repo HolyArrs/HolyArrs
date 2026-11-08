@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
@@ -26,7 +27,7 @@ func TestFeedCheck_RacingHandChoice(t *testing.T) {
 		}
 	}
 	t.Cleanup(func() { beforeSettle = nil })
-	j := runKind(t, f, sr, KindFeedCheck, nil, nil)
+	j := runKind(t, f, sr, jobs.KindFeedCheck, nil, nil)
 	if j.State != "done" {
 		t.Fatalf("feed job %s %v", j.State, j.Error)
 	}
@@ -48,7 +49,7 @@ func TestFeedCheck_SlotAlreadyDownloading(t *testing.T) {
 	sr := &Searcher{Store: f.s, OnChosen: func(context.Context, int64, int64) { called++ }}
 	beforeSettle = func(int64) { exec(t, f, "UPDATE slots SET state = 'downloading'") }
 	t.Cleanup(func() { beforeSettle = nil })
-	j := runKind(t, f, sr, KindFeedCheck, nil, nil)
+	j := runKind(t, f, sr, jobs.KindFeedCheck, nil, nil)
 	if j.State != "done" || called != 0 || slotState(t, f).State != domain.SlotDownloading {
 		t.Fatalf("job %s chosen %d slot %s", j.State, called, slotState(t, f).State)
 	}

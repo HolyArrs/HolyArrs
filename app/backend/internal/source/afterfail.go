@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
@@ -28,7 +29,7 @@ func (s *Searcher) QueueAfterFailure(ctx context.Context, slotID int64, by domai
 		return err
 	}
 	if kind == "artist" && partID.Valid {
-		_, _, err := s.Queue.Enqueue(ctx, KindSearchAlbum, &domain.Subject{Type: "part", ID: partID.Int64},
+		_, _, err := s.Queue.Enqueue(ctx, jobs.KindSearchAlbum, &domain.Subject{Type: "part", ID: partID.Int64},
 			map[string]any{"version_id": versionID}, fmt.Sprintf("search_album:%d:%d", partID.Int64, versionID), by)
 		return err
 	}
@@ -39,11 +40,11 @@ func (s *Searcher) QueueAfterFailure(ctx context.Context, slotID int64, by domai
 			return err
 		}
 		if same > 1 {
-			_, _, err := s.Queue.Enqueue(ctx, KindSearchSeason, &domain.Subject{Type: "part", ID: partID.Int64},
+			_, _, err := s.Queue.Enqueue(ctx, jobs.KindSearchSeason, &domain.Subject{Type: "part", ID: partID.Int64},
 				map[string]any{"version_id": versionID}, fmt.Sprintf("search_season:%d:%d", partID.Int64, versionID), by)
 			return err
 		}
 	}
-	_, _, err = s.Queue.Enqueue(ctx, KindSearchSlot, &domain.Subject{Type: "slot", ID: slotID}, nil, "search_slot:"+strconv.FormatInt(slotID, 10), by)
+	_, _, err = s.Queue.Enqueue(ctx, jobs.KindSearchSlot, &domain.Subject{Type: "slot", ID: slotID}, nil, "search_slot:"+strconv.FormatInt(slotID, 10), by)
 	return err
 }

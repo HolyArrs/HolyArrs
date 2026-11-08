@@ -12,9 +12,9 @@ import (
 	"unicode"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
 )
 
 // doneID is the command id of a command that had nothing to queue, above
@@ -111,7 +111,7 @@ func (h *handler) runCommand(ctx context.Context, name string, in commandIn, by 
 			return err
 		}
 		for _, s := range slots {
-			if err := enqueue(source.KindSearchSlot, &domain.Subject{Type: "slot", ID: s.ID}, map[string]any{"by_hand": true}, "hand_search_slot:"+itoa(s.ID)); err != nil {
+			if err := enqueue(jobs.KindSearchSlot, &domain.Subject{Type: "slot", ID: s.ID}, map[string]any{"by_hand": true}, "hand_search_slot:"+itoa(s.ID)); err != nil {
 				return err
 			}
 		}
@@ -122,7 +122,7 @@ func (h *handler) runCommand(ctx context.Context, name string, in commandIn, by 
 		if keptOnly {
 			params["kept_only"] = true
 		}
-		return enqueue(source.KindSearchSeason, &domain.Subject{Type: "part", ID: partID}, params, fmt.Sprintf("hand_search_season:%d:%d", partID, versionID))
+		return enqueue(jobs.KindSearchSeason, &domain.Subject{Type: "part", ID: partID}, params, fmt.Sprintf("hand_search_season:%d:%d", partID, versionID))
 	}
 	switch name {
 	case "RefreshMonitoredDownloads":
@@ -130,7 +130,7 @@ func (h *handler) runCommand(ctx context.Context, name string, in commandIn, by 
 	case "SeriesSearch", "MissingEpisodeSearch":
 		if in.SeriesID == 0 && name == "MissingEpisodeSearch" {
 			// The whole missing list, as the daily missing search runs it.
-			return ids, enqueue(source.KindSearchMissing, nil, map[string]any{"which": "missing"}, "search_missing:missing")
+			return ids, enqueue(jobs.KindSearchMissing, nil, map[string]any{"which": "missing"}, "search_missing:missing")
 		}
 		if _, err := h.title(ctx, in.SeriesID, "show"); err != nil {
 			return nil, err
@@ -324,12 +324,12 @@ func (h *handler) getCommand(w http.ResponseWriter, r *http.Request) {
 // "" for a kind no command queues.
 func jobCommandName(kind, side string) string {
 	switch kind {
-	case source.KindSearchSlot, source.KindSearchSeason:
+	case jobs.KindSearchSlot, jobs.KindSearchSeason:
 		if side == "radarr" {
 			return "MoviesSearch"
 		}
 		return "SeriesSearch"
-	case source.KindSearchMissing:
+	case jobs.KindSearchMissing:
 		return "MissingEpisodeSearch"
 	case library.KindRefreshTitle:
 		if side == "radarr" {

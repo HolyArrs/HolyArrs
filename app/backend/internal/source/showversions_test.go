@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
@@ -71,7 +72,7 @@ func TestHandleSeason_PerVersion(t *testing.T) {
 	var grabs [][2]int64
 	sr := &Searcher{Store: f.s, OnChosen: func(_ context.Context, slotID, releaseID int64) { grabs = append(grabs, [2]int64{slotID, releaseID}) }}
 
-	j := runKind(t, f.fixture, sr, KindSearchSeason, &domain.Subject{Type: "part", ID: f.parts[1]}, map[string]any{"version_id": f.verID})
+	j := runKind(t, f.fixture, sr, jobs.KindSearchSeason, &domain.Subject{Type: "part", ID: f.parts[1]}, map[string]any{"version_id": f.verID})
 	if j.State != "done" {
 		t.Fatalf("HD job %s %+v", j.State, j.Error)
 	}
@@ -88,7 +89,7 @@ func TestHandleSeason_PerVersion(t *testing.T) {
 		}
 	}
 
-	j = runKind(t, f.fixture, sr, KindSearchSeason, &domain.Subject{Type: "part", ID: f.parts[1]}, map[string]any{"version_id": uhd})
+	j = runKind(t, f.fixture, sr, jobs.KindSearchSeason, &domain.Subject{Type: "part", ID: f.parts[1]}, map[string]any{"version_id": uhd})
 	if j.State != "done" {
 		t.Fatalf("4K job %s %+v", j.State, j.Error)
 	}
@@ -117,12 +118,12 @@ func TestMissingSearch_PerVersion(t *testing.T) {
 	f := seedShow(t, ts.start(t), nil)
 	uhd, _ := addUHD(t, f)
 	sr := &Searcher{Store: f.s}
-	if j := runKind(t, f.fixture, sr, KindSearchMissing, nil, nil); j.State != "done" {
+	if j := runKind(t, f.fixture, sr, jobs.KindSearchMissing, nil, nil); j.State != "done" {
 		t.Fatalf("%s %+v", j.State, j.Error)
 	}
 	for _, v := range []int64{f.verID, uhd} {
 		var n int
-		_ = f.s.Read().QueryRow("SELECT count(*) FROM jobs WHERE kind = ? AND json_extract(params, '$.version_id') = ?", KindSearchSeason, v).Scan(&n)
+		_ = f.s.Read().QueryRow("SELECT count(*) FROM jobs WHERE kind = ? AND json_extract(params, '$.version_id') = ?", jobs.KindSearchSeason, v).Scan(&n)
 		if n != 1 {
 			t.Fatalf("Version %d: %d season searches", v, n)
 		}

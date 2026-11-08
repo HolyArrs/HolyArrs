@@ -28,7 +28,7 @@ func TestGrabHeld_SlotMissingFromPickList(t *testing.T) {
 	exec(t, f, "UPDATE releases SET verdict = json_set(COALESCE(verdict, '{}'), '$.pick_slot_ids', json('[90001, 90002]')) WHERE id = ?", rel.ID)
 	var chosen []int64
 	sr := &Searcher{Store: f.s, OnChosen: func(_ context.Context, slotID, _ int64) { chosen = append(chosen, slotID) }}
-	runKind(t, f, sr, KindGrabHeld, nil, nil)
+	runKind(t, f, sr, jobs.KindGrabHeld, nil, nil)
 	if sl := slotState(t, f); sl.State != domain.SlotChosen || len(chosen) != 1 || chosen[0] != f.slotID {
 		t.Fatalf("slot %s, chosen %v", sl.State, chosen)
 	}
@@ -47,7 +47,7 @@ func TestSettleChosenMany_RefusesEmpty(t *testing.T) {
 func TestSettleChosen_RecordsRelease(t *testing.T) {
 	f, rel := holdForFeed(t)
 	sr := &Searcher{Store: f.s}
-	runKind(t, f, sr, KindGrabHeld, nil, nil)
+	runKind(t, f, sr, jobs.KindGrabHeld, nil, nil)
 	var chosenFor sql.NullInt64
 	_ = f.s.Read().QueryRow("SELECT chosen_release_id FROM slots WHERE id = ?", f.slotID).Scan(&chosenFor)
 	if chosenFor.Int64 != rel.ID {
@@ -160,8 +160,8 @@ func TestStoppedSearches_LeaveNoSlotSearching(t *testing.T) {
 		kind   string
 		labels []string
 	}{
-		{"season", KindSearchSeason, []string{"S01E01", "S01E02", "S01E03"}},
-		{"episode", KindSearchSlot, []string{"S02E01"}},
+		{"season", jobs.KindSearchSeason, []string{"S01E01", "S01E02", "S01E03"}},
+		{"episode", jobs.KindSearchSlot, []string{"S02E01"}},
 	} {
 		t.Run(c.name, func(t *testing.T) {
 			block := make(chan struct{})
@@ -183,7 +183,7 @@ func TestStoppedSearches_LeaveNoSlotSearching(t *testing.T) {
 			}
 			subj := &domain.Subject{Type: "part", ID: f.parts[1]}
 			params := map[string]any{"version_id": f.verID}
-			if c.kind == KindSearchSlot {
+			if c.kind == jobs.KindSearchSlot {
 				subj, params = &domain.Subject{Type: "slot", ID: f.slots["S02E01"]}, nil
 			}
 			if _, _, err := q.Enqueue(ctx, c.kind, subj, params, "", domain.System); err != nil {
@@ -242,7 +242,7 @@ func holdForFeed(t *testing.T) (fixture, domain.Release) {
 	f := seed(t, lf.url(t))
 	feedOn(t, f)
 	waitMinutes(t, f, 60)
-	runKind(t, f, &Searcher{Store: f.s}, KindFeedCheck, nil, nil)
+	runKind(t, f, &Searcher{Store: f.s}, jobs.KindFeedCheck, nil, nil)
 	if sl := slotState(t, f); sl.State != domain.SlotHeld {
 		t.Fatalf("slot %s", sl.State)
 	}

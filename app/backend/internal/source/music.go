@@ -20,9 +20,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
-// KindSearchAlbum is the Job kind that searches Sources for one album.
-const KindSearchAlbum = "search_album"
-
 const (
 	// SettingMissingMusic lets the nightly and bulk searches cover albums.
 	SettingMissingMusic = "missing_search_music"
@@ -566,7 +563,7 @@ func (s *Searcher) queueAlbumFor(ctx context.Context, r *jobs.Run, c slotCtx) er
 		params["choose"] = false
 		key = fmt.Sprintf("show_album:%d:%d", *c.it.PartID, c.ver.ID)
 	}
-	id, _, err := s.Queue.Enqueue(ctx, KindSearchAlbum, &domain.Subject{Type: "part", ID: *c.it.PartID}, params, key, jobActor(r))
+	id, _, err := s.Queue.Enqueue(ctx, jobs.KindSearchAlbum, &domain.Subject{Type: "part", ID: *c.it.PartID}, params, key, jobActor(r))
 	if err != nil {
 		return err
 	}

@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
@@ -22,7 +23,7 @@ func wantedJobs(t *testing.T, f fixture, titleID int64) int {
 	t.Helper()
 	var n int
 	_ = f.s.Read().QueryRow("SELECT count(*) FROM jobs WHERE kind = ? AND dedupe_key = ? AND json_extract(params, '$.title_id') = ?",
-		KindSearchMissing, "search_wanted:"+strconv.FormatInt(titleID, 10), titleID).Scan(&n)
+		jobs.KindSearchMissing, "search_wanted:"+strconv.FormatInt(titleID, 10), titleID).Scan(&n)
 	return n
 }
 
@@ -31,7 +32,7 @@ func episodeSearches(t *testing.T, f showFix) int {
 	t.Helper()
 	var n int
 	_ = f.s.Read().QueryRow("SELECT count(*) FROM jobs WHERE kind IN (?, ?) AND (json_extract(params, '$.version_id') = ? OR json_extract(subject, '$.id') = ?)",
-		KindSearchSeason, KindSearchSlot, f.verID, f.slots["S02E01"]).Scan(&n)
+		jobs.KindSearchSeason, jobs.KindSearchSlot, f.verID, f.slots["S02E01"]).Scan(&n)
 	return n
 }
 
@@ -43,7 +44,7 @@ func TestHandleSearchMissing_ApprovedAskFirst(t *testing.T) {
 
 	exec(t, f.fixture, "UPDATE items SET last_searched_at = '2020-01-01T00:00:00Z' WHERE id = (SELECT item_id FROM slots WHERE id = ?)", f.slotID)
 	sr := &Searcher{Store: f.s}
-	j := runKind(t, f.fixture, sr, KindSearchMissing, nil, nil)
+	j := runKind(t, f.fixture, sr, jobs.KindSearchMissing, nil, nil)
 	if j.State != "done" {
 		t.Fatalf("%s %+v", j.State, j.Error)
 	}
@@ -55,7 +56,7 @@ func TestHandleSearchMissing_ApprovedAskFirst(t *testing.T) {
 	}
 
 	var movie int
-	_ = f.s.Read().QueryRow("SELECT count(*) FROM jobs WHERE kind = ? AND json_extract(subject, '$.id') = ?", KindSearchSlot, f.slotID).Scan(&movie)
+	_ = f.s.Read().QueryRow("SELECT count(*) FROM jobs WHERE kind = ? AND json_extract(subject, '$.id') = ?", jobs.KindSearchSlot, f.slotID).Scan(&movie)
 
 	n, _ := j.Result["slots"].(float64)
 	queued, _ := j.Result["queued"].(float64)
@@ -76,8 +77,8 @@ func TestHandleSearchMissing_ApprovedAskNotRepeated(t *testing.T) {
 	}
 	exec(t, f.fixture, `INSERT INTO jobs (created_at, created_by, updated_at, updated_by, kind, subject, params, priority, state, attempt, max_attempts, run_after, asked_by, dedupe_key)
 		VALUES ('2026-11-01T04:00:00Z', '{}', 't', '{}', ?, '{"type":"title","id":1}', '{}', 'normal', 'done', 1, 5, 't', '{}', ?)`,
-		KindSearchMissing, "search_wanted:"+strconv.FormatInt(f.titleID, 10))
-	j := runKind(t, f.fixture, sr, KindSearchMissing, nil, nil)
+		jobs.KindSearchMissing, "search_wanted:"+strconv.FormatInt(f.titleID, 10))
+	j := runKind(t, f.fixture, sr, jobs.KindSearchMissing, nil, nil)
 	if j.State != "done" {
 		t.Fatalf("%s %+v", j.State, j.Error)
 	}
@@ -88,8 +89,8 @@ func TestHandleSearchMissing_ApprovedAskNotRepeated(t *testing.T) {
 	fresh()
 	exec(t, f.fixture, `INSERT INTO jobs (created_at, created_by, updated_at, updated_by, kind, subject, params, priority, state, attempt, max_attempts, run_after, asked_by, dedupe_key)
 		VALUES ('2026-10-01T04:00:00Z', '{}', 't', '{}', ?, '{"type":"title","id":1}', '{}', 'normal', 'done', 1, 5, 't', '{}', ?)`,
-		KindSearchMissing, "search_wanted:"+strconv.FormatInt(f.titleID, 10))
-	j = runKind(t, f.fixture, sr, KindSearchMissing, nil, nil)
+		jobs.KindSearchMissing, "search_wanted:"+strconv.FormatInt(f.titleID, 10))
+	j = runKind(t, f.fixture, sr, jobs.KindSearchMissing, nil, nil)
 	if n, _ := j.Result["asks"].(float64); n != 1 {
 		t.Fatalf("a search from before the approval blocked the catch-up: %+v", j.Result)
 	}
@@ -97,8 +98,8 @@ func TestHandleSearchMissing_ApprovedAskNotRepeated(t *testing.T) {
 	fresh()
 	exec(t, f.fixture, `INSERT INTO jobs (created_at, created_by, updated_at, updated_by, kind, subject, params, priority, state, attempt, max_attempts, run_after, asked_by, dedupe_key)
 		VALUES ('2026-10-01T04:00:00Z', '{}', 't', '{}', ?, '{"type":"title","id":1}', '{}', 'normal', 'queued', 0, 5, '2099-01-01T00:00:00Z', '{}', ?)`,
-		KindSearchMissing, "search_wanted:"+strconv.FormatInt(f.titleID, 10))
-	j = runKind(t, f.fixture, sr, KindSearchMissing, nil, nil)
+		jobs.KindSearchMissing, "search_wanted:"+strconv.FormatInt(f.titleID, 10))
+	j = runKind(t, f.fixture, sr, jobs.KindSearchMissing, nil, nil)
 	if n, _ := j.Result["asks"].(float64); n != 0 {
 		t.Fatalf("caught up while its one-title search was queued: %+v", j.Result)
 	}
@@ -107,7 +108,7 @@ func TestHandleSearchMissing_ApprovedAskNotRepeated(t *testing.T) {
 	exec(t, f.fixture, `INSERT INTO jobs (created_at, created_by, updated_at, updated_by, kind, subject, params, priority, state, attempt, max_attempts, run_after, asked_by, dedupe_key)
 		VALUES ('2026-11-04T04:00:00Z', '{}', 't', '{}', 'scan_title', ?, '{"then":["search_wanted"]}', 'normal', 'queued', 0, 5, '2099-01-01T00:00:00Z', '{}', ?)`,
 		`{"type":"title","id":`+strconv.FormatInt(f.titleID, 10)+`}`, "scan_then_search:"+strconv.FormatInt(f.titleID, 10))
-	j = runKind(t, f.fixture, sr, KindSearchMissing, nil, nil)
+	j = runKind(t, f.fixture, sr, jobs.KindSearchMissing, nil, nil)
 	if n, _ := j.Result["asks"].(float64); n != 0 || wantedJobs(t, f.fixture, f.titleID) != 0 {
 		t.Fatalf("caught up while approval's scan was queued: %+v", j.Result)
 	}
@@ -116,7 +117,7 @@ func TestHandleSearchMissing_ApprovedAskNotRepeated(t *testing.T) {
 	exec(t, f.fixture, `INSERT INTO jobs (created_at, created_by, updated_at, updated_by, kind, subject, params, priority, state, attempt, max_attempts, run_after, asked_by)
 		VALUES ('2026-11-04T04:00:00Z', '{}', 't', '{}', 'refresh_title', ?, '{"then":["scan_title","search_wanted"]}', 'normal', 'queued', 0, 5, '2099-01-01T00:00:00Z', '{}')`,
 		`{"type":"title","id":`+strconv.FormatInt(f.titleID, 10)+`}`)
-	j = runKind(t, f.fixture, sr, KindSearchMissing, nil, nil)
+	j = runKind(t, f.fixture, sr, jobs.KindSearchMissing, nil, nil)
 	if n, _ := j.Result["asks"].(float64); n != 0 || wantedJobs(t, f.fixture, f.titleID) != 0 {
 		t.Fatalf("caught up while approval's refresh was queued: %+v", j.Result)
 	}
@@ -125,7 +126,7 @@ func TestHandleSearchMissing_ApprovedAskNotRepeated(t *testing.T) {
 	exec(t, f.fixture, `INSERT INTO jobs (created_at, created_by, updated_at, updated_by, kind, subject, params, priority, state, attempt, max_attempts, run_after, asked_by, dedupe_key)
 		VALUES ('2026-10-01T04:00:00Z', '{}', 't', '{}', 'scan_title', ?, '{"then":["search_wanted"]}', 'normal', 'queued', 0, 5, '2099-01-01T00:00:00Z', '{}', ?)`,
 		`{"type":"title","id":`+strconv.FormatInt(f.titleID, 10)+`}`, "scan_title:"+strconv.FormatInt(f.titleID, 10))
-	j = runKind(t, f.fixture, sr, KindSearchMissing, nil, nil)
+	j = runKind(t, f.fixture, sr, jobs.KindSearchMissing, nil, nil)
 	if n, _ := j.Result["asks"].(float64); n != 0 || wantedJobs(t, f.fixture, f.titleID) != 0 {
 		t.Fatalf("caught up while the chain's scan was queued: %+v", j.Result)
 	}
@@ -134,7 +135,7 @@ func TestHandleSearchMissing_ApprovedAskNotRepeated(t *testing.T) {
 	exec(t, f.fixture, `INSERT INTO jobs (created_at, created_by, updated_at, updated_by, kind, subject, params, priority, state, attempt, max_attempts, run_after, asked_by, dedupe_key)
 		VALUES ('2026-11-04T04:00:00Z', '{}', 't', '{}', 'refresh_title', ?, '{}', 'normal', 'queued', 0, 5, '2099-01-01T00:00:00Z', '{}', ?)`,
 		`{"type":"title","id":`+strconv.FormatInt(f.titleID, 10)+`}`, "refresh_title:"+strconv.FormatInt(f.titleID, 10))
-	j = runKind(t, f.fixture, sr, KindSearchMissing, nil, nil)
+	j = runKind(t, f.fixture, sr, jobs.KindSearchMissing, nil, nil)
 	if n, _ := j.Result["asks"].(float64); n != 1 {
 		t.Fatalf("a plain refresh held the catch-up back: %+v", j.Result)
 	}
@@ -143,7 +144,7 @@ func TestHandleSearchMissing_ApprovedAskNotRepeated(t *testing.T) {
 	exec(t, f.fixture, `INSERT INTO jobs (created_at, created_by, updated_at, updated_by, kind, subject, params, priority, state, attempt, max_attempts, run_after, asked_by, dedupe_key)
 		VALUES ('2026-11-04T04:00:00Z', '{}', 't', '{}', 'scan_title', ?, '{"then":["search_wanted"]}', 'normal', 'failed', 5, 5, 't', '{}', ?)`,
 		`{"type":"title","id":`+strconv.FormatInt(f.titleID, 10)+`}`, "scan_then_search:"+strconv.FormatInt(f.titleID, 10))
-	j = runKind(t, f.fixture, sr, KindSearchMissing, nil, nil)
+	j = runKind(t, f.fixture, sr, jobs.KindSearchMissing, nil, nil)
 	if n, _ := j.Result["asks"].(float64); n != 1 || wantedJobs(t, f.fixture, f.titleID) != 1 {
 		t.Fatalf("a failed approval scan blocked the catch-up: %+v", j.Result)
 	}
@@ -157,7 +158,7 @@ func TestHandleSearchMissing_ApprovedAsksOldestFirstAndCapped(t *testing.T) {
 	askFor(t, f.fixture, f.titleID, "approved", "2026-10-31T17:07:51Z")
 	askFor(t, f.fixture, movieTitle, "approved", "2026-10-30T22:21:16Z")
 	setSetting(t, f.fixture, SettingMissingCount, "1")
-	j := runKind(t, f.fixture, &Searcher{Store: f.s}, KindSearchMissing, nil, nil)
+	j := runKind(t, f.fixture, &Searcher{Store: f.s}, jobs.KindSearchMissing, nil, nil)
 	if n, _ := j.Result["asks"].(float64); n != 1 || wantedJobs(t, f.fixture, movieTitle) != 1 || wantedJobs(t, f.fixture, f.titleID) != 0 {
 		t.Fatalf("older approval first, one title: %+v movie %d show %d", j.Result, wantedJobs(t, f.fixture, movieTitle), wantedJobs(t, f.fixture, f.titleID))
 	}
@@ -169,14 +170,14 @@ func TestHandleSearchMissing_ApprovedArtistMusicSwitch(t *testing.T) {
 	exec(t, f.fixture, `INSERT INTO settings (grp, key, value, created_at, created_by, updated_at, updated_by)
 		VALUES ('what_to_pick', ?, 'false', '2026-01-01', '{}', '2026-01-01', '{}')`, SettingMissingMusic)
 	askFor(t, f.fixture, f.titleID, "approved", "2026-10-31T01:33:30Z")
-	j := runKind(t, f.fixture, &Searcher{Store: f.s}, KindSearchMissing, nil, nil)
+	j := runKind(t, f.fixture, &Searcher{Store: f.s}, jobs.KindSearchMissing, nil, nil)
 	if n, _ := j.Result["asks"].(float64); n != 1 || wantedJobs(t, f.fixture, f.titleID) != 1 {
 		t.Fatalf("approved artist with music off: %+v", j.Result)
 	}
 	exec(t, f.fixture, "DELETE FROM jobs")
 	exec(t, f.fixture, "UPDATE items SET last_searched_at = NULL")
 	exec(t, f.fixture, `INSERT INTO settings (created_at, created_by, updated_at, updated_by, grp, key, value) VALUES ('t', '{}', 't', '{}', 'this_app', 'ask_search_on_approve', 'false')`)
-	j = runKind(t, f.fixture, &Searcher{Store: f.s}, KindSearchMissing, nil, nil)
+	j = runKind(t, f.fixture, &Searcher{Store: f.s}, jobs.KindSearchMissing, nil, nil)
 	if n, _ := j.Result["asks"].(float64); n != 0 || wantedJobs(t, f.fixture, f.titleID) != 0 {
 		t.Fatalf("approved artist with music and search on approve off: %+v", j.Result)
 	}
@@ -188,7 +189,7 @@ func TestHandleSearchMissing_ApprovedAskSearchOnApproveOff(t *testing.T) {
 	setSetting(t, f.fixture, SettingMissingShows, "false")
 	exec(t, f.fixture, `INSERT INTO settings (created_at, created_by, updated_at, updated_by, grp, key, value) VALUES ('t', '{}', 't', '{}', 'this_app', 'ask_search_on_approve', 'false')`)
 	askFor(t, f.fixture, f.titleID, "approved", "2026-10-31T17:07:51Z")
-	j := runKind(t, f.fixture, &Searcher{Store: f.s}, KindSearchMissing, nil, nil)
+	j := runKind(t, f.fixture, &Searcher{Store: f.s}, jobs.KindSearchMissing, nil, nil)
 	if j.State != "done" {
 		t.Fatalf("%s %+v", j.State, j.Error)
 	}
@@ -203,15 +204,15 @@ func TestHandleSearchMissing_ApprovedAskCaughtUpOnce(t *testing.T) {
 	askFor(t, f.fixture, f.titleID, "approved", "2026-10-31T17:07:51Z")
 	sr := &Searcher{Store: f.s}
 
-	runKind(t, f.fixture, sr, KindSearchSeason, &domain.Subject{Type: "part", ID: f.parts[1]}, map[string]any{"version_id": f.verID})
-	runKind(t, f.fixture, sr, KindSearchSlot, &domain.Subject{Type: "slot", ID: f.slots["S02E01"]}, nil)
+	runKind(t, f.fixture, sr, jobs.KindSearchSeason, &domain.Subject{Type: "part", ID: f.parts[1]}, map[string]any{"version_id": f.verID})
+	runKind(t, f.fixture, sr, jobs.KindSearchSlot, &domain.Subject{Type: "slot", ID: f.slots["S02E01"]}, nil)
 	var never int
 	_ = f.s.Read().QueryRow("SELECT count(*) FROM items WHERE title_id = ? AND last_searched_at IS NULL AND (air_date IS NULL OR air_date < ?)", f.titleID, time.Now().UTC().Format(time.RFC3339)).Scan(&never)
 	if never != 0 {
 		t.Fatalf("%d aired episodes still never searched", never)
 	}
 	exec(t, f.fixture, "DELETE FROM jobs")
-	j := runKind(t, f.fixture, sr, KindSearchMissing, nil, nil)
+	j := runKind(t, f.fixture, sr, jobs.KindSearchMissing, nil, nil)
 	if n, _ := j.Result["asks"].(float64); n != 0 || wantedJobs(t, f.fixture, f.titleID) != 0 {
 		t.Fatalf("searched ask caught up again: %+v", j.Result)
 	}
@@ -226,7 +227,7 @@ func TestHandleSearchMissing_OnlyApprovedAsksCaughtUp(t *testing.T) {
 		ts := &tvServer{answer: func(url.Values) []string { return nil }}
 		f := seedShow(t, ts.start(t), nil)
 		askFor(t, f.fixture, f.titleID, state, "2026-10-31T17:07:51Z")
-		j := runKind(t, f.fixture, &Searcher{Store: f.s}, KindSearchMissing, nil, nil)
+		j := runKind(t, f.fixture, &Searcher{Store: f.s}, jobs.KindSearchMissing, nil, nil)
 		if n, _ := j.Result["asks"].(float64); j.State != "done" || n != 0 || wantedJobs(t, f.fixture, f.titleID) != 0 {
 			t.Fatalf("%s ask caught up: %s %+v", state, j.State, j.Result)
 		}
@@ -237,14 +238,14 @@ func TestHandleSearchMissing_OnlyApprovedAsksCaughtUp(t *testing.T) {
 
 	exec(t, f.fixture, "UPDATE slots SET state = 'better_wanted' WHERE id = ?", f.slots["S02E01"])
 	for _, p := range []map[string]any{{"which": "better"}, {"which": "missing", "kind": "movie"}} {
-		j := runKind(t, f.fixture, &Searcher{Store: f.s}, KindSearchMissing, nil, p)
+		j := runKind(t, f.fixture, &Searcher{Store: f.s}, jobs.KindSearchMissing, nil, p)
 		if n, _ := j.Result["asks"].(float64); j.State != "done" || n != 0 || wantedJobs(t, f.fixture, f.titleID) != 0 {
 			t.Fatalf("%v caught the show up: %+v", p, j.Result)
 		}
 	}
 
 	setSetting(t, f.fixture, SettingMissingCount, "0")
-	j := runKind(t, f.fixture, &Searcher{Store: f.s}, KindSearchMissing, nil, nil)
+	j := runKind(t, f.fixture, &Searcher{Store: f.s}, jobs.KindSearchMissing, nil, nil)
 	if n, _ := j.Result["asks"].(float64); n != 0 || wantedJobs(t, f.fixture, f.titleID) != 0 {
 		t.Fatalf("count 0 caught up: %+v", j.Result)
 	}
@@ -255,7 +256,7 @@ func TestHandleSearchMissing_ApprovedAskIgnoresNightlyShowSwitch(t *testing.T) {
 	f := seedShow(t, ts.start(t), nil)
 	setSetting(t, f.fixture, SettingMissingShows, "false")
 	askFor(t, f.fixture, f.titleID, "approved", "2026-10-31T17:07:51Z")
-	j := runKind(t, f.fixture, &Searcher{Store: f.s}, KindSearchMissing, nil, nil)
+	j := runKind(t, f.fixture, &Searcher{Store: f.s}, jobs.KindSearchMissing, nil, nil)
 	if n, _ := j.Result["asks"].(float64); n != 1 || wantedJobs(t, f.fixture, f.titleID) != 1 {
 		t.Fatalf("approved show with the nightly switch off: %+v", j.Result)
 	}
@@ -307,7 +308,7 @@ func TestHandleSearchMissing_ApprovedAsksSpreadOut(t *testing.T) {
 	var otherSlot int64
 	_ = f.s.Read().QueryRow("SELECT max(id) FROM slots").Scan(&otherSlot)
 	before := time.Now().UTC()
-	j := runKind(t, f.fixture, &Searcher{Store: f.s}, KindSearchMissing, nil, nil)
+	j := runKind(t, f.fixture, &Searcher{Store: f.s}, jobs.KindSearchMissing, nil, nil)
 	if n, _ := j.Result["asks"].(float64); n != 2 {
 		t.Fatalf("asks %+v", j.Result)
 	}
@@ -326,8 +327,8 @@ func TestHandleSearchMissing_ApprovedAsksSpreadOut(t *testing.T) {
 func TestHandleSearchMissing_SeasonFallbackEpisodesSpreadOut(t *testing.T) {
 	ts := &tvServer{answer: func(url.Values) []string { return nil }}
 	f := seedShow(t, ts.start(t), nil)
-	runKind(t, f.fixture, &Searcher{Store: f.s}, KindSearchSeason, &domain.Subject{Type: "part", ID: f.parts[1]}, map[string]any{"version_id": f.verID})
-	at := runAfters(t, f.fixture, "kind = ? AND json_extract(subject, '$.id') IN (?, ?, ?)", KindSearchSlot, f.slots["S01E01"], f.slots["S01E02"], f.slots["S01E03"])
+	runKind(t, f.fixture, &Searcher{Store: f.s}, jobs.KindSearchSeason, &domain.Subject{Type: "part", ID: f.parts[1]}, map[string]any{"version_id": f.verID})
+	at := runAfters(t, f.fixture, "kind = ? AND json_extract(subject, '$.id') IN (?, ?, ?)", jobs.KindSearchSlot, f.slots["S01E01"], f.slots["S01E02"], f.slots["S01E03"])
 	if len(at) != 3 {
 		t.Fatalf("episode searches %v", at)
 	}
@@ -348,12 +349,12 @@ func TestHandleSearchMissing_ApprovedAsksFewPerRun(t *testing.T) {
 	old := askCatchUpPerRun
 	askCatchUpPerRun = 1
 	defer func() { askCatchUpPerRun = old }()
-	j := runKind(t, f.fixture, &Searcher{Store: f.s}, KindSearchMissing, nil, nil)
+	j := runKind(t, f.fixture, &Searcher{Store: f.s}, jobs.KindSearchMissing, nil, nil)
 	if n, _ := j.Result["asks"].(float64); n != 1 || wantedJobs(t, f.fixture, movieTitle) != 1 || wantedJobs(t, f.fixture, f.titleID) != 0 {
 		t.Fatalf("one title a run: %+v", j.Result)
 	}
 
-	j = runKind(t, f.fixture, &Searcher{Store: f.s}, KindSearchMissing, nil, nil)
+	j = runKind(t, f.fixture, &Searcher{Store: f.s}, jobs.KindSearchMissing, nil, nil)
 	if n, _ := j.Result["asks"].(float64); n != 1 || wantedJobs(t, f.fixture, f.titleID) != 1 {
 		t.Fatalf("second run: %+v", j.Result)
 	}

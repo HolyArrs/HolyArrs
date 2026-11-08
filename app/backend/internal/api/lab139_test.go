@@ -236,7 +236,7 @@ func TestLabAskLiveProgress(t *testing.T) {
 			}
 		}
 		for _, r := range x.search {
-			if r.Kind != source.KindFeedCheck && r.TitleID != nil {
+			if r.Kind != jobs.KindFeedCheck && r.TitleID != nil {
 				sawSearch = true
 			}
 		}

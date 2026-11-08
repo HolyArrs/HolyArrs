@@ -52,8 +52,8 @@ func TestQueueAfterFailure_AlbumSearchesAlbumAgain(t *testing.T) {
 		}
 	}
 	var albums, others int
-	_ = f.s.Read().QueryRow("SELECT count(*) FROM jobs WHERE kind = ?", KindSearchAlbum).Scan(&albums)
-	_ = f.s.Read().QueryRow("SELECT count(*) FROM jobs WHERE kind != ?", KindSearchAlbum).Scan(&others)
+	_ = f.s.Read().QueryRow("SELECT count(*) FROM jobs WHERE kind = ?", jobs.KindSearchAlbum).Scan(&albums)
+	_ = f.s.Read().QueryRow("SELECT count(*) FROM jobs WHERE kind != ?", jobs.KindSearchAlbum).Scan(&others)
 	if albums != 1 || others != 0 {
 		t.Fatalf("queued %d album searches and %d other jobs", albums, others)
 	}

@@ -15,7 +15,6 @@ import (
 	"net"
 	"net/http"
 	"net/url"
-	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -23,6 +22,7 @@ import (
 	"unicode"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 )
 
 // maxRetryAfter caps a Source's Retry-After, in seconds (one day).
@@ -780,12 +780,6 @@ func (c *Client) Test(ctx context.Context) (int, error) {
 	return 0, err
 }
 
-var infoHashRe = regexp.MustCompile(`^([0-9a-f]{40}|[0-9a-f]{64})$`)
-
-// ValidInfoHash says whether s is a lower-case v1 (40 hex) or v2 (64 hex)
-// torrent info hash.
-func ValidInfoHash(s string) bool { return infoHashRe.MatchString(s) }
-
 func parseItems(body []byte, protocol string) ([]Item, error) {
 	var x rssXML
 	if err := xml.Unmarshal(body, &x); err != nil {
@@ -823,7 +817,7 @@ func parseItems(body []byte, protocol string) ([]Item, error) {
 					i.Peers = &n
 				}
 			case "infohash":
-				if h := strings.ToLower(strings.TrimSpace(a.Value)); ValidInfoHash(h) {
+				if h := strings.ToLower(strings.TrimSpace(a.Value)); releasename.ValidInfoHash(h) {
 					i.InfoHash = h
 				}
 			case "files":

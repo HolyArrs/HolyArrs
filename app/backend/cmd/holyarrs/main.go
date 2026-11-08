@@ -8,10 +8,9 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/musicsync"
 	"io"
 	"log"
 	"net"
@@ -24,6 +23,9 @@ import (
 	"sync/atomic"
 	"syscall"
 	"time"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/musicsync"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/alerts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/api"
@@ -580,7 +582,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 				log.Printf("remove rejected download %d: %v", dlID.Int64, err)
 			}
 		}
-		enqueue(ctx, source.KindSearchSlot, domain.Subject{Type: "slot", ID: slotID}, nil, fmt.Sprintf("search_slot:%d", slotID))
+		enqueue(ctx, jobs.KindSearchSlot, domain.Subject{Type: "slot", ID: slotID}, nil, fmt.Sprintf("search_slot:%d", slotID))
 	}
 	// A finished Import: clear a Usenet download out of its Downloader.
 	im.OnImported = dm.ClearFinished
@@ -595,8 +597,8 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		enqueue(ctx, importer.KindImport, domain.Subject{Type: "download", ID: downloadID}, nil, fmt.Sprintf("import:%d", downloadID))
 	}
 	sr.Register(q)
-	q.ProbeSchedule(source.KindFeedCheck, sr.ProbeFeed)
-	q.ProbeSchedule(source.KindGrabHeld, sr.ProbeGrabHeld)
+	q.ProbeSchedule(jobs.KindFeedCheck, sr.ProbeFeed)
+	q.ProbeSchedule(jobs.KindGrabHeld, sr.ProbeGrabHeld)
 	q.Handle(downloader.KindGrab, dm.HandleGrab)
 	// An ask turns Ready right after its import, not on the next 30 s ready
 	// check: the Requests card would drop from Importing back to Processing.

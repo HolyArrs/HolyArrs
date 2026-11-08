@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
@@ -75,7 +76,7 @@ func TestAlbumSearchOverHTTP(t *testing.T) {
 	}
 	// The whole artist: First Light only (the one kept up to date).
 	js := jobOf(do(t, "POST", tu+"/search", "", 202))
-	if len(js) != 1 || js[0].Kind != source.KindSearchAlbum || js[0].Subject.ID != first || js[0].Params["kept_only"] != true {
+	if len(js) != 1 || js[0].Kind != jobs.KindSearchAlbum || js[0].Subject.ID != first || js[0].Params["kept_only"] != true {
 		t.Fatalf("whole artist %+v", js)
 	}
 	albumJob := js[0]
@@ -138,7 +139,7 @@ func TestAlbumSearchOverHTTP(t *testing.T) {
 	var trackID, slotID int64
 	_ = s.Read().QueryRow("SELECT i.id, s.id FROM items i JOIN slots s ON s.item_id = i.id WHERE i.part_id = ? ORDER BY i.id LIMIT 1", first).Scan(&trackID, &slotID)
 	js = jobOf(do(t, "POST", tu+"/search", fmt.Sprintf(`{"item_id":%d}`, trackID), 202))
-	if len(js) != 1 || js[0].Kind != source.KindSearchAlbum || js[0].Subject.ID != first {
+	if len(js) != 1 || js[0].Kind != jobs.KindSearchAlbum || js[0].Subject.ID != first {
 		t.Fatalf("track %+v", js)
 	}
 	do(t, "POST", tu+"/search", `{"choose":false}`, 400)

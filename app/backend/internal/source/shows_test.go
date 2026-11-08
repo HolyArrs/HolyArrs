@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
@@ -191,7 +192,7 @@ func TestSearch_Episode(t *testing.T) {
 	f := seedShow(t, ts.start(t), nil)
 	var chosen []int64
 	sr := &Searcher{Store: f.s, OnChosen: func(_ context.Context, slotID, releaseID int64) { chosen = append(chosen, slotID) }}
-	j := runKind(t, f.fixture, sr, KindSearchSlot, &domain.Subject{Type: "slot", ID: f.slots["S01E02"]}, nil)
+	j := runKind(t, f.fixture, sr, jobs.KindSearchSlot, &domain.Subject{Type: "slot", ID: f.slots["S01E02"]}, nil)
 	if j.State != "done" {
 		t.Fatalf("job %s %+v", j.State, j.Error)
 	}
@@ -226,11 +227,11 @@ func TestHandleSeason_EpisodeNotAiredSearchedOnlyByHand(t *testing.T) {
 	ts := &tvServer{answer: func(url.Values) []string { return []string{"Copper.Valley.S02E02.1080p.WEB-DL.H.264-QUILL"} }}
 	f := seedShow(t, ts.start(t), nil)
 	sr := &Searcher{Store: f.s}
-	j := runKind(t, f.fixture, sr, KindSearchSlot, &domain.Subject{Type: "slot", ID: f.slots["S02E02"]}, nil)
+	j := runKind(t, f.fixture, sr, jobs.KindSearchSlot, &domain.Subject{Type: "slot", ID: f.slots["S02E02"]}, nil)
 	if j.Result["skipped"] == nil || len(ts.queries) != 0 {
 		t.Fatalf("an episode not aired yet was searched: %+v", j.Result)
 	}
-	j = runKind(t, f.fixture, sr, KindSearchSlot, &domain.Subject{Type: "slot", ID: f.slots["S02E02"]}, map[string]any{"by_hand": true})
+	j = runKind(t, f.fixture, sr, jobs.KindSearchSlot, &domain.Subject{Type: "slot", ID: f.slots["S02E02"]}, map[string]any{"by_hand": true})
 	if j.State != "done" || f.state(t, "S02E02") != domain.SlotChosen {
 		t.Fatalf("hand search %s %+v, slot %s", j.State, j.Result, f.state(t, "S02E02"))
 	}
@@ -252,7 +253,7 @@ func TestHandleSeason_TakesPack(t *testing.T) {
 	f := seedShow(t, ts.start(t), nil)
 	var grabs [][2]int64
 	sr := &Searcher{Store: f.s, OnChosen: func(_ context.Context, slotID, releaseID int64) { grabs = append(grabs, [2]int64{slotID, releaseID}) }}
-	j := runKind(t, f.fixture, sr, KindSearchSeason, &domain.Subject{Type: "part", ID: f.parts[1]}, map[string]any{"version_id": f.verID})
+	j := runKind(t, f.fixture, sr, jobs.KindSearchSeason, &domain.Subject{Type: "part", ID: f.parts[1]}, map[string]any{"version_id": f.verID})
 	if j.State != "done" {
 		t.Fatalf("job %s %+v", j.State, j.Error)
 	}
@@ -290,12 +291,12 @@ func TestHandleSeason_FallsBackToEpisodes(t *testing.T) {
 		}
 	})
 	sr := &Searcher{Store: f.s}
-	j := runKind(t, f.fixture, sr, KindSearchSeason, &domain.Subject{Type: "part", ID: f.parts[1]}, map[string]any{"version_id": f.verID})
+	j := runKind(t, f.fixture, sr, jobs.KindSearchSeason, &domain.Subject{Type: "part", ID: f.parts[1]}, map[string]any{"version_id": f.verID})
 	if n, _ := j.Result["episodes_queued"].(float64); n != 2 {
 		t.Fatalf("result %+v", j.Result)
 	}
 	var queued int
-	_ = f.s.Read().QueryRow("SELECT count(*) FROM jobs WHERE kind = ? AND json_extract(subject, '$.id') IN (?, ?)", KindSearchSlot,
+	_ = f.s.Read().QueryRow("SELECT count(*) FROM jobs WHERE kind = ? AND json_extract(subject, '$.id') IN (?, ?)", jobs.KindSearchSlot,
 		f.slots["S01E02"], f.slots["S01E03"]).Scan(&queued)
 	if queued != 2 {
 		t.Fatalf("queued %d episode searches", queued)
@@ -311,7 +312,7 @@ func TestHandleSeason_LeftoversSearchedAlone(t *testing.T) {
 	}}
 	f := seedShow(t, ts.start(t), nil)
 	sr := &Searcher{Store: f.s}
-	j := runKind(t, f.fixture, sr, KindSearchSeason, &domain.Subject{Type: "part", ID: f.parts[1]}, map[string]any{"version_id": f.verID})
+	j := runKind(t, f.fixture, sr, jobs.KindSearchSeason, &domain.Subject{Type: "part", ID: f.parts[1]}, map[string]any{"version_id": f.verID})
 	if f.state(t, "S01E01") != domain.SlotChosen {
 		t.Fatalf("S01E01 %s %+v", f.state(t, "S01E01"), j.Result)
 	}
@@ -336,7 +337,7 @@ func TestFeedShow_PackRules(t *testing.T) {
 	fileSlot = f.slots["S01E01"]
 	addFile(t, f, fileSlot, "Copper.Valley.S01E01.1080p.WEB-DL.H.264-OTHER")
 	sr := &Searcher{Store: f.s}
-	j := runKind(t, f.fixture, sr, KindFeedCheck, nil, nil)
+	j := runKind(t, f.fixture, sr, jobs.KindFeedCheck, nil, nil)
 	if j.State != "done" {
 		t.Fatalf("feed %s %+v", j.State, j.Error)
 	}
@@ -356,7 +357,7 @@ func TestFeedShow_PackRules(t *testing.T) {
 
 	setSetting(t, f.fixture, SettingPackUpgrade, "any")
 	feed = []string{"Copper.Valley.S01.1080p.WEB-DL.H.265-LARKSPUR"}
-	j = runKind(t, f.fixture, sr, KindFeedCheck, nil, nil)
+	j = runKind(t, f.fixture, sr, jobs.KindFeedCheck, nil, nil)
 	pack = relByName(t, f.fixture, "Copper.Valley.S01.1080p.WEB-DL.H.265-LARKSPUR")
 	if pack.State != "chosen" || f.state(t, "S01E02") != domain.SlotChosen || f.state(t, "S01E03") != domain.SlotChosen {
 		t.Fatalf("partial pack: %s %v, %s %s", pack.State, reasonCodes(pack), f.state(t, "S01E02"), f.state(t, "S01E03"))
@@ -399,7 +400,7 @@ func TestHandleSeason_TurnedDownForOneEpisode(t *testing.T) {
 	ts := &tvServer{answer: func(url.Values) []string { return []string{"Copper.Valley.S01.1080p.WEB-DL.H.264-QUILL"} }}
 	f := seedShow(t, ts.start(t), nil)
 	sr := &Searcher{Store: f.s}
-	j := runKind(t, f.fixture, sr, KindSearchSeason, &domain.Subject{Type: "part", ID: f.parts[1]}, map[string]any{"version_id": f.verID, "choose": false})
+	j := runKind(t, f.fixture, sr, jobs.KindSearchSeason, &domain.Subject{Type: "part", ID: f.parts[1]}, map[string]any{"version_id": f.verID, "choose": false})
 	if j.Result["shown"] != true {
 		t.Fatalf("show only: %+v", j.Result)
 	}
@@ -464,7 +465,7 @@ func TestChoose_PackByHandFillsSeason(t *testing.T) {
 	f := seedShow(t, ts.start(t), nil)
 	var grabs []int64
 	sr := &Searcher{Store: f.s, OnChosen: func(_ context.Context, slotID, _ int64) { grabs = append(grabs, slotID) }}
-	runKind(t, f.fixture, sr, KindSearchSeason, &domain.Subject{Type: "part", ID: f.parts[1]}, map[string]any{"version_id": f.verID, "choose": false, "by_hand": true})
+	runKind(t, f.fixture, sr, jobs.KindSearchSeason, &domain.Subject{Type: "part", ID: f.parts[1]}, map[string]any{"version_id": f.verID, "choose": false, "by_hand": true})
 	pack := relByName(t, f.fixture, "Copper.Valley.S01.720p.HDTV.x264-OXBOW")
 	ch, err := sr.Choose(context.Background(), pack.ID, 0, false, domain.System)
 	if err != nil || len(ch.SlotIDs) != 3 || len(grabs) != 1 {
@@ -481,7 +482,7 @@ func TestMissingSearch_GroupsSeasons(t *testing.T) {
 	ts := &tvServer{answer: func(url.Values) []string { return nil }}
 	f := seedShow(t, ts.start(t), nil)
 	sr := &Searcher{Store: f.s}
-	j := runKind(t, f.fixture, sr, KindSearchMissing, nil, nil)
+	j := runKind(t, f.fixture, sr, jobs.KindSearchMissing, nil, nil)
 	if j.State != "done" {
 		t.Fatalf("%s %+v", j.State, j.Error)
 	}
@@ -489,10 +490,10 @@ func TestMissingSearch_GroupsSeasons(t *testing.T) {
 		t.Fatalf("result %+v", j.Result)
 	}
 	var seasons, eps int
-	_ = f.s.Read().QueryRow("SELECT count(*) FROM jobs WHERE kind = ? AND json_extract(params, '$.version_id') = ?", KindSearchSeason, f.verID).Scan(&seasons)
-	_ = f.s.Read().QueryRow("SELECT count(*) FROM jobs WHERE kind = ? AND json_extract(subject, '$.id') IN (?, ?)", KindSearchSlot, f.slots["S02E01"], f.slotID).Scan(&eps)
+	_ = f.s.Read().QueryRow("SELECT count(*) FROM jobs WHERE kind = ? AND json_extract(params, '$.version_id') = ?", jobs.KindSearchSeason, f.verID).Scan(&seasons)
+	_ = f.s.Read().QueryRow("SELECT count(*) FROM jobs WHERE kind = ? AND json_extract(subject, '$.id') IN (?, ?)", jobs.KindSearchSlot, f.slots["S02E01"], f.slotID).Scan(&eps)
 	var unaired int
-	_ = f.s.Read().QueryRow("SELECT count(*) FROM jobs WHERE json_extract(subject, '$.id') = ? AND kind = ?", f.slots["S02E02"], KindSearchSlot).Scan(&unaired)
+	_ = f.s.Read().QueryRow("SELECT count(*) FROM jobs WHERE json_extract(subject, '$.id') = ? AND kind = ?", f.slots["S02E02"], jobs.KindSearchSlot).Scan(&unaired)
 	if seasons != 1 || eps != 2 || unaired != 0 {
 		t.Fatalf("seasons %d, episode and movie searches %d, unaired %d", seasons, eps, unaired)
 	}
@@ -502,10 +503,10 @@ func TestMissingSearch_GroupsSeasons(t *testing.T) {
 		t.Fatal(err)
 	}
 	_ = f.s.Write(context.Background(), func(tx *sql.Tx) error {
-		_, err := tx.Exec("DELETE FROM jobs WHERE kind != ?", KindSearchMissing)
+		_, err := tx.Exec("DELETE FROM jobs WHERE kind != ?", jobs.KindSearchMissing)
 		return err
 	})
-	j = runKind(t, f.fixture, sr, KindSearchMissing, nil, nil)
+	j = runKind(t, f.fixture, sr, jobs.KindSearchMissing, nil, nil)
 	if n, _ := j.Result["slots"].(float64); n != 1 {
 		t.Fatalf("with shows off: %+v", j.Result)
 	}
@@ -515,17 +516,17 @@ func TestMissingSearch_OneKind(t *testing.T) {
 	ts := &tvServer{answer: func(url.Values) []string { return nil }}
 	f := seedShow(t, ts.start(t), nil)
 	sr := &Searcher{Store: f.s}
-	j := runKind(t, f.fixture, sr, KindSearchMissing, nil, map[string]any{"which": "missing", "kind": "movie"})
+	j := runKind(t, f.fixture, sr, jobs.KindSearchMissing, nil, map[string]any{"which": "missing", "kind": "movie"})
 	if n, _ := j.Result["slots"].(float64); j.State != "done" || n != 1 {
 		t.Fatalf("movies: %s %+v", j.State, j.Result)
 	}
 	var movie, show int
-	_ = f.s.Read().QueryRow("SELECT count(*) FROM jobs WHERE kind = ? AND json_extract(subject, '$.id') = ?", KindSearchSlot, f.slotID).Scan(&movie)
-	_ = f.s.Read().QueryRow("SELECT count(*) FROM jobs WHERE kind IN (?, ?)", KindSearchSeason, KindSearchSlot).Scan(&show)
+	_ = f.s.Read().QueryRow("SELECT count(*) FROM jobs WHERE kind = ? AND json_extract(subject, '$.id') = ?", jobs.KindSearchSlot, f.slotID).Scan(&movie)
+	_ = f.s.Read().QueryRow("SELECT count(*) FROM jobs WHERE kind IN (?, ?)", jobs.KindSearchSeason, jobs.KindSearchSlot).Scan(&show)
 	if movie != 1 || show != 1 {
 		t.Fatalf("movie searches %d, all searches %d", movie, show)
 	}
-	j = runKind(t, f.fixture, sr, KindSearchMissing, nil, map[string]any{"which": "missing", "kind": "show"})
+	j = runKind(t, f.fixture, sr, jobs.KindSearchMissing, nil, map[string]any{"which": "missing", "kind": "show"})
 	if n, _ := j.Result["slots"].(float64); n != 4 {
 		t.Fatalf("shows: %+v", j.Result)
 	}
@@ -548,7 +549,7 @@ func TestShowQuery_DailyEpisode(t *testing.T) {
 		return err
 	})
 	sr := &Searcher{Store: f.s}
-	runKind(t, f.fixture, sr, KindSearchSlot, &domain.Subject{Type: "slot", ID: f.slots["S02E01"]}, nil)
+	runKind(t, f.fixture, sr, jobs.KindSearchSlot, &domain.Subject{Type: "slot", ID: f.slots["S02E01"]}, nil)
 	q := ts.queries[0]
 	if q.Get("season") != day.Format("2006") || q.Get("ep") != day.Format("01/02") {
 		t.Fatalf("daily query %v", q)
@@ -564,12 +565,12 @@ func TestMissingSearch_OneTitle(t *testing.T) {
 	ts := &tvServer{answer: func(url.Values) []string { return nil }}
 	f := seedShow(t, ts.start(t), nil)
 	sr := &Searcher{Store: f.s}
-	j := runKind(t, f.fixture, sr, KindSearchMissing, nil, map[string]any{"title_id": float64(f.titleID)})
+	j := runKind(t, f.fixture, sr, jobs.KindSearchMissing, nil, map[string]any{"title_id": float64(f.titleID)})
 	if n, _ := j.Result["slots"].(float64); j.State != "done" || n != 4 {
 		t.Fatalf("one title: %s %+v", j.State, j.Result)
 	}
 	var movie int
-	_ = f.s.Read().QueryRow("SELECT count(*) FROM jobs WHERE kind = ? AND json_extract(subject, '$.id') = ?", KindSearchSlot, f.slotID).Scan(&movie)
+	_ = f.s.Read().QueryRow("SELECT count(*) FROM jobs WHERE kind = ? AND json_extract(subject, '$.id') = ?", jobs.KindSearchSlot, f.slotID).Scan(&movie)
 	if movie != 0 {
 		t.Fatalf("the movie was searched too (%d)", movie)
 	}
@@ -582,11 +583,11 @@ func TestMissingSearch_OneTitleIgnoresNightlyShowSwitch(t *testing.T) {
 	f := seedShow(t, ts.start(t), nil)
 	setSetting(t, f.fixture, SettingMissingShows, "false")
 	sr := &Searcher{Store: f.s}
-	j := runKind(t, f.fixture, sr, KindSearchMissing, nil, map[string]any{"title_id": float64(f.titleID)})
+	j := runKind(t, f.fixture, sr, jobs.KindSearchMissing, nil, map[string]any{"title_id": float64(f.titleID)})
 	if n, _ := j.Result["slots"].(float64); n != 4 {
 		t.Fatalf("one title with the nightly show switch off: %+v", j.Result)
 	}
-	j = runKind(t, f.fixture, sr, KindSearchMissing, nil, nil)
+	j = runKind(t, f.fixture, sr, jobs.KindSearchMissing, nil, nil)
 	if n, _ := j.Result["slots"].(float64); n != 1 {
 		t.Fatalf("nightly with shows off searches the movie only: %+v", j.Result)
 	}

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
@@ -46,13 +47,13 @@ func TestFeed_TaggedReleasesMatchOnlyTitlesSharingTag(t *testing.T) {
 	f := seed(t, lf.url(t))
 	feedOn(t, f)
 	exec(t, f, `UPDATE sources SET tags = '["kids"]'`)
-	runKind(t, f, &Searcher{Store: f.s}, KindFeedCheck, nil, nil)
+	runKind(t, f, &Searcher{Store: f.s}, jobs.KindFeedCheck, nil, nil)
 	if rs, _ := database.Select[domain.Release](context.Background(), f.s.Read(), "releases", "name = ?", web1080); len(rs) != 0 {
 		t.Fatalf("a tagged Source's release was matched to an untagged title: %+v", rs)
 	}
 	exec(t, f, `UPDATE titles SET tags = '["kids"]'`)
 	lf.set(feedOf(item(web1080, time.Now().Add(-time.Hour), 50, "")))
-	runKind(t, f, &Searcher{Store: f.s}, KindFeedCheck, nil, nil)
+	runKind(t, f, &Searcher{Store: f.s}, jobs.KindFeedCheck, nil, nil)
 	if rs, _ := database.Select[domain.Release](context.Background(), f.s.Read(), "releases", "name = ?", web1080); len(rs) != 1 {
 		t.Fatalf("with the tag on the title: %d releases", len(rs))
 	}
@@ -77,7 +78,7 @@ func TestFeed_TaggedReleaseNeverLandsOnLookAlike(t *testing.T) {
 		SELECT created_at, created_by, updated_at, updated_by, (SELECT max(id) FROM titles), 'HD', pick_rules_id, library_folder_id, 'Dune (2021)', 1, 1 FROM versions LIMIT 1`)
 	exec(t, f, `INSERT INTO slots (created_at, created_by, updated_at, updated_by, item_id, version_id, state)
 		SELECT created_at, created_by, updated_at, updated_by, (SELECT max(id) FROM items), (SELECT max(id) FROM versions), 'wanted' FROM slots LIMIT 1`)
-	runKind(t, f, &Searcher{Store: f.s}, KindFeedCheck, nil, nil)
+	runKind(t, f, &Searcher{Store: f.s}, jobs.KindFeedCheck, nil, nil)
 	if rs, _ := database.Select[domain.Release](context.Background(), f.s.Read(), "releases", "name = ?", web1080); len(rs) != 0 {
 		t.Fatalf("the release landed on a title: %+v", rs[0].MatchedSlotIDs)
 	}

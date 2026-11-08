@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
@@ -32,7 +33,7 @@ func TestReleaseSafety_MovieEarlyAndTinyRefused(t *testing.T) {
 		t.Fatal(err)
 	}
 	sr := &Searcher{Store: f.s}
-	if j := runKind(t, f, sr, KindSearchSlot, &domain.Subject{Type: "slot", ID: f.slotID}, nil); j.State != "done" {
+	if j := runKind(t, f, sr, jobs.KindSearchSlot, &domain.Subject{Type: "slot", ID: f.slotID}, nil); j.State != "done" {
 		t.Fatalf("job %s %+v", j.State, j.Error)
 	}
 	wantRefused(t, f, early, "posted_early")
@@ -49,7 +50,7 @@ func TestReleaseSafety_EpisodeEarlyAndTinyRefused(t *testing.T) {
 	url := safeServer(t, []safeItem{{early, 1200 << 20, aired.AddDate(0, 0, -3)}, {tiny, 2 << 20, aired.AddDate(0, 0, 1)}, {real, 1200 << 20, aired.AddDate(0, 0, 1)}})
 	f := seedShow(t, url, nil)
 	sr := &Searcher{Store: f.s}
-	if j := runKind(t, f.fixture, sr, KindSearchSlot, &domain.Subject{Type: "slot", ID: f.slots["S02E01"]}, nil); j.State != "done" {
+	if j := runKind(t, f.fixture, sr, jobs.KindSearchSlot, &domain.Subject{Type: "slot", ID: f.slots["S02E01"]}, nil); j.State != "done" {
 		t.Fatalf("job %s %+v", j.State, j.Error)
 	}
 	wantRefused(t, f.fixture, early, "posted_early")
@@ -84,7 +85,7 @@ func TestReleaseSafety_EarlyCheckOff(t *testing.T) {
 	f := seedShow(t, safeServer(t, []safeItem{{early, 1200 << 20, aired.AddDate(0, 0, -3)}}), nil)
 	setSetting(t, f.fixture, SettingRefuseEarly, "false")
 	sr := &Searcher{Store: f.s}
-	runKind(t, f.fixture, sr, KindSearchSlot, &domain.Subject{Type: "slot", ID: f.slots["S02E01"]}, nil)
+	runKind(t, f.fixture, sr, jobs.KindSearchSlot, &domain.Subject{Type: "slot", ID: f.slots["S02E01"]}, nil)
 	if r := relByName(t, f.fixture, early); r.State != "chosen" {
 		t.Fatalf("with the check off: %s %v", r.State, reasonCodes(r))
 	}

@@ -82,7 +82,7 @@ func TestPinMissingSearchLargeLibrary(t *testing.T) {
 	exec(t, f, "UPDATE items SET keep_up_to_date = 0 WHERE id = (SELECT item_id FROM slots WHERE id = ?)", ids[700])
 	exec(t, f, "UPDATE titles SET state = 'removed' WHERE id = (SELECT i.title_id FROM slots s JOIN items i ON i.id = s.item_id WHERE s.id = ?)", ids[701])
 	setSetting(t, f, SettingMissingCount, "300")
-	j := runKind(t, f, &Searcher{Store: f.s}, KindSearchMissing, nil, nil)
+	j := runKind(t, f, &Searcher{Store: f.s}, jobs.KindSearchMissing, nil, nil)
 	if j.State != "done" {
 		t.Fatalf("%s %+v", j.State, j.Error)
 	}
@@ -99,7 +99,7 @@ func TestPinMissingSearchLargeLibrary(t *testing.T) {
 			want = append(want, id)
 		}
 	}
-	rows, err := f.s.Read().Query(`SELECT json_extract(subject, '$.id') FROM jobs WHERE kind = ?`, KindSearchSlot)
+	rows, err := f.s.Read().Query(`SELECT json_extract(subject, '$.id') FROM jobs WHERE kind = ?`, jobs.KindSearchSlot)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -124,23 +124,23 @@ func TestPinMissingSearchLargeLibrary(t *testing.T) {
 // episodes are left out.
 func TestPinMissingSearchGroupsSeasons(t *testing.T) {
 	f := seedShow(t, "http://127.0.0.1:1/api", nil)
-	j := runKind(t, f.fixture, &Searcher{Store: f.s}, KindSearchMissing, nil, nil)
+	j := runKind(t, f.fixture, &Searcher{Store: f.s}, jobs.KindSearchMissing, nil, nil)
 	if j.State != "done" {
 		t.Fatalf("%s %+v", j.State, j.Error)
 	}
 	if s, _ := j.Result["seasons"].(float64); s != 1 {
 		t.Fatalf("seasons %+v", j.Result)
 	}
-	if n := jobCount(t, f.fixture, KindSearchSeason, f.parts[1]); n != 1 {
+	if n := jobCount(t, f.fixture, jobs.KindSearchSeason, f.parts[1]); n != 1 {
 		t.Fatalf("season 1 jobs %d", n)
 	}
-	if n := jobCount(t, f.fixture, KindSearchSlot, f.slots["S02E01"]); n != 1 {
+	if n := jobCount(t, f.fixture, jobs.KindSearchSlot, f.slots["S02E01"]); n != 1 {
 		t.Fatalf("S02E01 jobs %d", n)
 	}
-	if n := jobCount(t, f.fixture, KindSearchSlot, f.slots["S02E02"]); n != 0 {
+	if n := jobCount(t, f.fixture, jobs.KindSearchSlot, f.slots["S02E02"]); n != 0 {
 		t.Fatalf("future episode searched %d", n)
 	}
-	if n := jobCount(t, f.fixture, KindSearchSlot, f.slotID); n != 1 {
+	if n := jobCount(t, f.fixture, jobs.KindSearchSlot, f.slotID); n != 1 {
 		t.Fatalf("movie jobs %d", n)
 	}
 }
@@ -256,7 +256,7 @@ func TestPinQueueAfterFailureByKind(t *testing.T) {
 		if err := sr.QueueAfterFailure(ctx, id, domain.System); err != nil {
 			t.Fatal(err)
 		}
-		if n := jobCount(t, f.fixture, KindSearchSlot, id); n != 1 {
+		if n := jobCount(t, f.fixture, jobs.KindSearchSlot, id); n != 1 {
 			t.Fatalf("slot %d jobs %d", id, n)
 		}
 	}

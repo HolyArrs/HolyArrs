@@ -23,9 +23,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/tagset"
 )
 
-// KindSearchSeason is the job kind that searches one season of a show for one Version.
-const KindSearchSeason = "search_season"
-
 const (
 	// Show search settings.
 	SettingMissingShows = "missing_search_shows"
@@ -889,7 +886,7 @@ func (s *Searcher) queueEpisodes(ctx context.Context, eps []*epSlot, hand, skipG
 		if skipGate {
 			params["skip_gate"] = true
 		}
-		_, created, err := s.Queue.EnqueueAt(ctx, KindSearchSlot, &domain.Subject{Type: "slot", ID: e.sl.ID}, params, key, by, start.Add(time.Duration(n)*bulkStagger))
+		_, created, err := s.Queue.EnqueueAt(ctx, jobs.KindSearchSlot, &domain.Subject{Type: "slot", ID: e.sl.ID}, params, key, by, start.Add(time.Duration(n)*bulkStagger))
 		if err != nil {
 			return n, err
 		}

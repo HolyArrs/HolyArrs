@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
@@ -59,7 +60,7 @@ func (a *API) searchShow(w http.ResponseWriter, r *http.Request, t domain.Title,
 			params["choose"] = false
 			key = "show_slot:" + itoa(slotID)
 		}
-		id, _, err := a.s.Queue.Enqueue(ctx, source.KindSearchSlot, &domain.Subject{Type: "slot", ID: slotID}, params, key, by)
+		id, _, err := a.s.Queue.Enqueue(ctx, jobs.KindSearchSlot, &domain.Subject{Type: "slot", ID: slotID}, params, key, by)
 		if err == nil {
 			ids = append(ids, id)
 		}
@@ -75,7 +76,7 @@ func (a *API) searchShow(w http.ResponseWriter, r *http.Request, t domain.Title,
 			params["choose"] = false
 			key = fmt.Sprintf("show_season:%d:%d", partID, versionID)
 		}
-		id, _, err := a.s.Queue.Enqueue(ctx, source.KindSearchSeason, &domain.Subject{Type: "part", ID: partID}, params, key, by)
+		id, _, err := a.s.Queue.Enqueue(ctx, jobs.KindSearchSeason, &domain.Subject{Type: "part", ID: partID}, params, key, by)
 		if err == nil {
 			ids = append(ids, id)
 		}

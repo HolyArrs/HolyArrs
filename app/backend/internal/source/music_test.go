@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
@@ -175,7 +176,7 @@ func (f artistFix) albumJob(t *testing.T, sr *Searcher, album string, params map
 	for k, v := range params {
 		p[k] = v
 	}
-	return runKind(t, f.fixture, sr, KindSearchAlbum, &domain.Subject{Type: "part", ID: f.albums[album]}, p)
+	return runKind(t, f.fixture, sr, jobs.KindSearchAlbum, &domain.Subject{Type: "part", ID: f.albums[album]}, p)
 }
 
 func TestAlbumSearch_OneReleaseForEveryTrack(t *testing.T) {
@@ -231,13 +232,13 @@ func TestTrackSearch_SearchesItsAlbum(t *testing.T) {
 	ms := &musicServer{answer: func(url.Values) []string { return []string{flac} }}
 	f := seedArtist(t, ms.start(t))
 	sr := &Searcher{Store: f.s}
-	j := runKind(t, f.fixture, sr, KindSearchSlot, &domain.Subject{Type: "slot", ID: f.slots["Low Tide Atlas 1-2"]}, map[string]any{"by_hand": true})
+	j := runKind(t, f.fixture, sr, jobs.KindSearchSlot, &domain.Subject{Type: "slot", ID: f.slots["Low Tide Atlas 1-2"]}, map[string]any{"by_hand": true})
 	if j.Result["album_search_job_id"] == nil {
 		t.Fatalf("track search did not queue its album: %+v", j.Result)
 	}
 	var kind, params string
 	_ = f.s.Read().QueryRow("SELECT kind, params FROM jobs WHERE id = ?", int64(j.Result["album_search_job_id"].(float64))).Scan(&kind, &params)
-	if kind != KindSearchAlbum || !strings.Contains(params, `"by_hand":true`) {
+	if kind != jobs.KindSearchAlbum || !strings.Contains(params, `"by_hand":true`) {
 		t.Fatalf("queued %s %s", kind, params)
 	}
 }
@@ -347,7 +348,7 @@ func TestHandleFeed_PicksAlbum(t *testing.T) {
 	ms := &musicServer{answer: func(url.Values) []string { return []string{flac, "Dune.Part.Two.2024.1080p.WEB.H264-OTHER"} }}
 	f := seedArtist(t, ms.start(t))
 	sr := &Searcher{Store: f.s}
-	j := runKind(t, f.fixture, sr, KindFeedCheck, nil, nil)
+	j := runKind(t, f.fixture, sr, jobs.KindFeedCheck, nil, nil)
 	if j.State != "done" {
 		t.Fatalf("feed %s %+v", j.State, j.Error)
 	}
@@ -366,14 +367,14 @@ func TestHandleSearchMissing_QueuesAlbums(t *testing.T) {
 	f := seedArtist(t, ms.start(t))
 	exec(t, f.fixture, "UPDATE slots SET state = 'in_library' WHERE id = ?", f.slotID)
 	sr := &Searcher{Store: f.s}
-	j := runKind(t, f.fixture, sr, KindSearchMissing, nil, map[string]any{"which": "missing"})
+	j := runKind(t, f.fixture, sr, jobs.KindSearchMissing, nil, map[string]any{"which": "missing"})
 	if j.State != "done" || j.Result["albums"] != float64(1) || j.Result["queued"] != float64(1) {
 		t.Fatalf("missing %s %+v", j.State, j.Result)
 	}
-	exec(t, f.fixture, "DELETE FROM jobs WHERE kind = ?", KindSearchAlbum)
+	exec(t, f.fixture, "DELETE FROM jobs WHERE kind = ?", jobs.KindSearchAlbum)
 	exec(t, f.fixture, `INSERT INTO settings (grp, key, value, created_at, created_by, updated_at, updated_by)
 		VALUES ('what_to_pick', ?, 'false', '2026-01-01', '{}', '2026-01-01', '{}')`, SettingMissingMusic)
-	j = runKind(t, f.fixture, sr, KindSearchMissing, nil, map[string]any{"which": "missing"})
+	j = runKind(t, f.fixture, sr, jobs.KindSearchMissing, nil, map[string]any{"which": "missing"})
 	if j.Result["albums"] != float64(0) {
 		t.Fatalf("albums searched with the setting off: %+v", j.Result)
 	}

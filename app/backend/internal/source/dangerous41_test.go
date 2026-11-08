@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
@@ -56,7 +57,7 @@ func TestDangerousFiles_StayRefused(t *testing.T) {
 		t.Fatalf("picked without force: %v", err)
 	}
 	lf.set(feedOf(item(br1080, time.Now(), 50, h)))
-	runKind(t, f, sr, KindSearchSlot, &domain.Subject{Type: "slot", ID: f.slotID}, nil)
+	runKind(t, f, sr, jobs.KindSearchSlot, &domain.Subject{Type: "slot", ID: f.slotID}, nil)
 	if r := relByName(t, f, br1080); r.State == "chosen" || !hasCode(r, "hard.safety:dangerous_files") {
 		t.Fatalf("same torrent under another name: %s %v", r.State, reasonCodes(r))
 	}
@@ -89,7 +90,7 @@ func TestDangerousName_OtherHashStaysFree(t *testing.T) {
 	if got := listingHash("", "magnet:?xt=urn:btih:"+strings.ToUpper(bad)+"&dn=x"); got != bad {
 		t.Fatalf("magnet hash %q", got)
 	}
-	runKind(t, f, sr, KindSearchSlot, &domain.Subject{Type: "slot", ID: f.slotID}, nil)
+	runKind(t, f, sr, jobs.KindSearchSlot, &domain.Subject{Type: "slot", ID: f.slotID}, nil)
 	var st, ver string
 	if err := f.s.Read().QueryRow("SELECT state, COALESCE(verdict, '') FROM releases WHERE info_hash = ?", good).Scan(&st, &ver); err != nil {
 		t.Fatalf("the real torrent was not stored: %v", err)
@@ -110,7 +111,7 @@ func TestHeldDangerous_NotSentAfterTheWait(t *testing.T) {
 	failedDownload(t, f, other, h, "dangerous files: Dune.mkv.exe")
 	var chosen []int64
 	sr := &Searcher{Store: f.s, OnChosen: func(_ context.Context, _, rel int64) { chosen = append(chosen, rel) }}
-	runKind(t, f, sr, KindGrabHeld, nil, nil)
+	runKind(t, f, sr, jobs.KindGrabHeld, nil, nil)
 	if len(chosen) != 0 {
 		t.Fatalf("sent after the wait: %v", chosen)
 	}

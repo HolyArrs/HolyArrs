@@ -19,7 +19,7 @@ func TestBulkSearch_SkipGatePicks(t *testing.T) {
 	lf.set(feedOf(item(web1080, time.Now().Add(-time.Hour), 10, "")))
 	f := seed(t, lf.url(t))
 	exec(t, f, "UPDATE slots SET state = 'not_out_yet'")
-	runKind(t, f, &Searcher{Store: f.s}, KindSearchSlot, &domain.Subject{Type: "slot", ID: f.slotID}, map[string]any{"bulk": true, "skip_gate": true})
+	runKind(t, f, &Searcher{Store: f.s}, jobs.KindSearchSlot, &domain.Subject{Type: "slot", ID: f.slotID}, map[string]any{"bulk": true, "skip_gate": true})
 	if st := slotState(t, f).State; st != domain.SlotChosen {
 		t.Fatalf("slot %s", st)
 	}
@@ -52,11 +52,11 @@ func TestHandSearch_FromNeedsADecision(t *testing.T) {
 	lf.set(feedOf(item(web1080, time.Now().Add(-time.Hour), 10, "")))
 	f := seed(t, lf.url(t))
 	exec(t, f, "UPDATE slots SET state = 'needs_a_decision'")
-	runKind(t, f, &Searcher{Store: f.s}, KindSearchSlot, &domain.Subject{Type: "slot", ID: f.slotID}, map[string]any{"bulk": true})
+	runKind(t, f, &Searcher{Store: f.s}, jobs.KindSearchSlot, &domain.Subject{Type: "slot", ID: f.slotID}, map[string]any{"bulk": true})
 	if st := slotState(t, f).State; st != domain.SlotNeedsADecision {
 		t.Fatalf("a bulk search moved it: %s", st)
 	}
-	runKind(t, f, &Searcher{Store: f.s}, KindSearchSlot, &domain.Subject{Type: "slot", ID: f.slotID}, map[string]any{"by_hand": true})
+	runKind(t, f, &Searcher{Store: f.s}, jobs.KindSearchSlot, &domain.Subject{Type: "slot", ID: f.slotID}, map[string]any{"by_hand": true})
 	if st := slotState(t, f).State; st != domain.SlotChosen {
 		t.Fatalf("slot %s", st)
 	}
@@ -68,7 +68,7 @@ func TestHandSearch_FromNeedsADecisionFindsNothing(t *testing.T) {
 	lf.set(feedOf())
 	f := seed(t, lf.url(t))
 	exec(t, f, "UPDATE slots SET state = 'needs_a_decision'")
-	runKind(t, f, &Searcher{Store: f.s}, KindSearchSlot, &domain.Subject{Type: "slot", ID: f.slotID}, map[string]any{"by_hand": true})
+	runKind(t, f, &Searcher{Store: f.s}, jobs.KindSearchSlot, &domain.Subject{Type: "slot", ID: f.slotID}, map[string]any{"by_hand": true})
 	if sl := slotState(t, f); sl.State != domain.SlotNeedsADecision || sl.LastReason == nil || !strings.HasPrefix(*sl.LastReason, "searched again") {
 		t.Fatalf("slot %s %v", sl.State, sl.LastReason)
 	}
@@ -83,7 +83,7 @@ func TestFeed_LooksAgainAtNamesOthersStored(t *testing.T) {
 	addRelease(t, f, web1080, "passed_over")
 	var chosen []int64
 	sr := &Searcher{Store: f.s, OnChosen: func(_ context.Context, _, rel int64) { chosen = append(chosen, rel) }}
-	runKind(t, f, sr, KindFeedCheck, nil, nil)
+	runKind(t, f, sr, jobs.KindFeedCheck, nil, nil)
 	if len(chosen) != 1 {
 		t.Fatalf("feed did not look again: %v", chosen)
 	}
@@ -98,7 +98,7 @@ func TestBulkSearch_CappedAndStaggered(t *testing.T) {
 		SELECT created_at, created_by, updated_at, updated_by, item_id, (SELECT max(id) FROM versions), 'wanted' FROM slots LIMIT 1`)
 	exec(t, f, `INSERT INTO settings (grp, key, value, created_at, created_by, updated_at, updated_by)
 		VALUES ('what_to_pick', 'bulk_search_cap', '1', '2026-01-01T00:00:00Z', '{}', '2026-01-01T00:00:00Z', '{}')`)
-	j := runKind(t, f, &Searcher{Store: f.s}, KindSearchMissing, nil, map[string]any{"which": "missing"})
+	j := runKind(t, f, &Searcher{Store: f.s}, jobs.KindSearchMissing, nil, map[string]any{"which": "missing"})
 	if j.Result["queued"] != float64(1) {
 		t.Fatalf("result %v", j.Result)
 	}
@@ -106,8 +106,8 @@ func TestBulkSearch_CappedAndStaggered(t *testing.T) {
 	exec(t, f, "DELETE FROM jobs WHERE kind = 'search_slot'")
 	// The queued searches do nothing here, so a worker that runs one never moves the run times the handler set.
 	before := time.Now().UTC().Add(-time.Second)
-	runKind(t, f, &Searcher{Store: f.s}, KindSearchMissing, nil, map[string]any{"which": "missing"}, func(q *jobs.Queue) {
-		q.Handle(KindSearchSlot, func(context.Context, *jobs.Run) error { return nil })
+	runKind(t, f, &Searcher{Store: f.s}, jobs.KindSearchMissing, nil, map[string]any{"which": "missing"}, func(q *jobs.Queue) {
+		q.Handle(jobs.KindSearchSlot, func(context.Context, *jobs.Run) error { return nil })
 	})
 	js, _ := database.Select[domain.Job](context.Background(), f.s.Read(), "jobs", "kind = 'search_slot' ORDER BY id")
 	if len(js) != 2 {

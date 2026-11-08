@@ -13,7 +13,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 )
 
 // ErrNothingToAdd means the batch had no links and no files.
@@ -222,7 +222,7 @@ func (q *Qbittorrent) SaveBase(ctx context.Context) (SaveBase, error) {
 // linkHash returns the lowercase hex info hash of a bare hash or magnet link, or empty. Base32 hashes are converted since some magnets use them.
 func linkHash(link string) string {
 	l := strings.TrimSpace(link)
-	if source.ValidInfoHash(strings.ToLower(l)) {
+	if releasename.ValidInfoHash(strings.ToLower(l)) {
 		return strings.ToLower(l)
 	}
 	if !strings.HasPrefix(strings.ToLower(l), "magnet:") {
@@ -237,7 +237,7 @@ func linkHash(link string) string {
 		if !ok {
 			continue
 		}
-		if source.ValidInfoHash(v) {
+		if releasename.ValidInfoHash(v) {
 			return v
 		}
 		if len(v) == 32 {

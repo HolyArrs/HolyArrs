@@ -573,7 +573,7 @@ func (s *Searcher) dangerousSeen(ctx context.Context) dangerousRels {
 	for rows.Next() {
 		var h, n string
 		if rows.Scan(&h, &n) == nil {
-			if ValidInfoHash(h) {
+			if releasename.ValidInfoHash(h) {
 				d.hashes[h] = true
 			}
 			if n != "" {

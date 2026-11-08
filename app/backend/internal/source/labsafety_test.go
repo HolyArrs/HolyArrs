@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
@@ -55,7 +56,7 @@ func day(s string) string {
 func TestLabFeed_MovieEarlyAndFake(t *testing.T) {
 	f := seed(t, labFeed(t))
 	labExec(t, f.s, "UPDATE titles SET cinema_date = ?", day("2024-03-01"))
-	if j := runKind(t, f, &Searcher{Store: f.s}, KindSearchSlot, &domain.Subject{Type: "slot", ID: f.slotID}, nil); j.State != "done" {
+	if j := runKind(t, f, &Searcher{Store: f.s}, jobs.KindSearchSlot, &domain.Subject{Type: "slot", ID: f.slotID}, nil); j.State != "done" {
 		t.Fatalf("job %s %+v", j.State, j.Error)
 	}
 	wantRefused(t, f, "Dune.Part.Two.2024.2160p.WEB-DL.DV.H265-EARLY", "posted_early")
@@ -69,7 +70,7 @@ func TestLabFeed_EpisodeEarlyAndFake(t *testing.T) {
 	f := seedShow(t, labFeed(t), nil)
 	labExec(t, f.s, "UPDATE titles SET name = 'Arcane', sort_name = 'arcane', year = 2021, source_ids = '{\"tvdb\":\"371028\",\"imdb\":\"tt11126994\"}' WHERE id = ?", f.titleID)
 	labExec(t, f.s, "UPDATE items SET air_date = ?, air_day = '2021-11-06', runtime = 20 WHERE id = ?", database.FormatTime(time.Date(2021, 11, 6, 19, 0, 0, 0, time.UTC)), f.items["S01E01"])
-	if j := runKind(t, f.fixture, &Searcher{Store: f.s}, KindSearchSlot, &domain.Subject{Type: "slot", ID: f.slots["S01E01"]}, nil); j.State != "done" {
+	if j := runKind(t, f.fixture, &Searcher{Store: f.s}, jobs.KindSearchSlot, &domain.Subject{Type: "slot", ID: f.slots["S01E01"]}, nil); j.State != "done" {
 		t.Fatalf("job %s %+v", j.State, j.Error)
 	}
 	wantRefused(t, f.fixture, "Arcane.S01E01.1080p.WEB.H264-EARLY", "posted_early")

@@ -18,7 +18,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
 )
 
 func setup(t *testing.T) (*httptest.Server, *database.Store, *jobs.Queue) {
@@ -91,7 +90,7 @@ func TestAddListSearch(t *testing.T) {
 	}
 
 	ran := make(chan int64, 1)
-	q.Handle(source.KindSearchSlot, func(ctx context.Context, r *jobs.Run) error { ran <- r.Job.Subject.ID; return nil })
+	q.Handle(jobs.KindSearchSlot, func(ctx context.Context, r *jobs.Run) error { ran <- r.Job.Subject.ID; return nil })
 	if err := q.Start(context.Background()); err != nil {
 		t.Fatal(err)
 	}

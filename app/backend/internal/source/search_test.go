@@ -106,13 +106,13 @@ func (p *pubs) Publish(topic string, _ any) uint64 {
 func runSearch(t *testing.T, f fixture, sr *Searcher) domain.Job {
 	t.Helper()
 	q := jobs.New(f.s, jobs.Options{Workers: 1, BaseBackoff: time.Hour, PollInterval: 5 * time.Millisecond})
-	q.Handle(KindSearchSlot, sr.Handle)
+	q.Handle(jobs.KindSearchSlot, sr.Handle)
 	ctx := context.Background()
 	if err := q.Start(ctx); err != nil {
 		t.Fatal(err)
 	}
 	defer q.Stop()
-	id, _, err := q.Enqueue(ctx, KindSearchSlot, &domain.Subject{Type: "slot", ID: f.slotID}, nil, "", domain.System)
+	id, _, err := q.Enqueue(ctx, jobs.KindSearchSlot, &domain.Subject{Type: "slot", ID: f.slotID}, nil, "", domain.System)
 	if err != nil {
 		t.Fatal(err)
 	}

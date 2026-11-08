@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
@@ -21,14 +22,14 @@ func TestHandle_TurnedDownNeverPickedAndForceNeeded(t *testing.T) {
 	f := seed(t, lf.url(t))
 	ctx := context.Background()
 	sr := &Searcher{Store: f.s}
-	runKind(t, f, sr, KindSearchSlot, &domain.Subject{Type: "slot", ID: f.slotID}, map[string]any{"choose": false})
+	runKind(t, f, sr, jobs.KindSearchSlot, &domain.Subject{Type: "slot", ID: f.slotID}, map[string]any{"choose": false})
 	best := relByName(t, f, br1080)
 	if err := sr.TurnDown(ctx, best.ID, "bad audio", domain.System); err != nil {
 		t.Fatal(err)
 	}
 	var picked []int64
 	sr.OnChosen = func(_ context.Context, _, rel int64) { picked = append(picked, rel) }
-	runKind(t, f, sr, KindSearchSlot, &domain.Subject{Type: "slot", ID: f.slotID}, nil)
+	runKind(t, f, sr, jobs.KindSearchSlot, &domain.Subject{Type: "slot", ID: f.slotID}, nil)
 	again := relByName(t, f, br1080)
 	if again.ID == best.ID || again.State != "refused" || len(picked) != 1 || picked[0] == again.ID {
 		t.Fatalf("turned down Release picked again: state %s picked %v", again.State, picked)
@@ -63,11 +64,11 @@ func TestHandle_GateSkippedOnlyByHand(t *testing.T) {
 	f := seed(t, lf.url(t))
 	exec(t, f, "UPDATE slots SET state = 'not_out_yet'")
 	sr := &Searcher{Store: f.s}
-	runKind(t, f, sr, KindSearchSlot, &domain.Subject{Type: "slot", ID: f.slotID}, nil)
+	runKind(t, f, sr, jobs.KindSearchSlot, &domain.Subject{Type: "slot", ID: f.slotID}, nil)
 	if slotState(t, f).State != domain.SlotNotOutYet || lf.hits != 0 {
 		t.Fatal("an automatic search ran on a Slot not out yet")
 	}
-	runKind(t, f, sr, KindSearchSlot, &domain.Subject{Type: "slot", ID: f.slotID}, map[string]any{"by_hand": true})
+	runKind(t, f, sr, jobs.KindSearchSlot, &domain.Subject{Type: "slot", ID: f.slotID}, map[string]any{"by_hand": true})
 	if slotState(t, f).State != domain.SlotChosen {
 		t.Fatalf("hand search: %s", slotState(t, f).State)
 	}
@@ -107,14 +108,14 @@ func TestHandle_BetterCopySearch(t *testing.T) {
 		}
 	}
 	addFile("Dune.Part.Two.2024.720p.WEB-DL.x264-OLD")
-	runKind(t, f, &Searcher{Store: f.s}, KindSearchSlot, &domain.Subject{Type: "slot", ID: f.slotID}, nil)
+	runKind(t, f, &Searcher{Store: f.s}, jobs.KindSearchSlot, &domain.Subject{Type: "slot", ID: f.slotID}, nil)
 	if relByName(t, f, tv720).State != "refused" || relByName(t, f, web1080).State != "chosen" {
 		t.Fatalf("720p tv %s, 1080p web %s", relByName(t, f, tv720).State, relByName(t, f, web1080).State)
 	}
 	addFile("Dune.Part.Two.2024.1080p.WEB-DL.x264-OLD")
 	exec(t, f, "UPDATE slots SET state = 'better_wanted'")
 	exec(t, f, "DELETE FROM releases")
-	runKind(t, f, &Searcher{Store: f.s}, KindSearchSlot, &domain.Subject{Type: "slot", ID: f.slotID}, nil)
+	runKind(t, f, &Searcher{Store: f.s}, jobs.KindSearchSlot, &domain.Subject{Type: "slot", ID: f.slotID}, nil)
 	if got := relByName(t, f, web1080); got.State != "refused" || !strings.Contains(fmt.Sprint(got.Verdict["reasons"]), "good_enough_already") {
 		t.Fatalf("good enough copy still replaced: %s", got.State)
 	}

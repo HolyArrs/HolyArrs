@@ -33,7 +33,7 @@ func searchWorld(t *testing.T) (srvURL string, s *database.Store, q *jobs.Queue,
 		if _, err := database.Insert(tx, "sources", src, domain.System); err != nil {
 			return err
 		}
-		job := &domain.Job{Kind: source.KindSearchSlot, Params: map[string]any{}, Priority: "normal", State: "done", RunAfter: time.Now(), AskedBy: domain.System, MaxAttempts: 1}
+		job := &domain.Job{Kind: jobs.KindSearchSlot, Params: map[string]any{}, Priority: "normal", State: "done", RunAfter: time.Now(), AskedBy: domain.System, MaxAttempts: 1}
 		if _, err := database.Insert(tx, "jobs", job, domain.System); err != nil {
 			return err
 		}
@@ -219,7 +219,7 @@ func TestBulkSearchesQueueJobs(t *testing.T) {
 		t.Fatalf("show search %+v %v", shown, sj.Params)
 	}
 	do(t, "POST", u+"/api/v1/titles/"+itoa(titleID)+"/search", `{"slot_id":999}`, 404)
-	for path, kind := range map[string]string{"missing": source.KindSearchMissing, "better": source.KindSearchMissing, "feed-check": source.KindFeedCheck} {
+	for path, kind := range map[string]string{"missing": jobs.KindSearchMissing, "better": jobs.KindSearchMissing, "feed-check": jobs.KindFeedCheck} {
 		var out struct {
 			JobIDs []int64 `json:"job_ids"`
 		}
@@ -301,19 +301,19 @@ func TestSearchesRunningAndFound(t *testing.T) {
 	u, s, _, titleID, slotID, rels := searchWorld(t)
 	note := "searching Lab"
 	if err := s.Write(context.Background(), func(tx *sql.Tx) error {
-		run := &domain.Job{Kind: source.KindSearchSlot, Subject: &domain.Subject{Type: "slot", ID: slotID}, Params: map[string]any{"by_hand": true},
+		run := &domain.Job{Kind: jobs.KindSearchSlot, Subject: &domain.Subject{Type: "slot", ID: slotID}, Params: map[string]any{"by_hand": true},
 			Priority: "normal", State: "running", Progress: 0.5, ProgressNote: &note, RunAfter: time.Now(), AskedBy: domain.System, MaxAttempts: 1}
 		if _, err := database.Insert(tx, "jobs", run, domain.System); err != nil {
 			return err
 		}
 		ended := time.Now()
-		done := &domain.Job{Kind: source.KindSearchSlot, Subject: &domain.Subject{Type: "slot", ID: slotID}, Params: map[string]any{}, Priority: "normal",
+		done := &domain.Job{Kind: jobs.KindSearchSlot, Subject: &domain.Subject{Type: "slot", ID: slotID}, Params: map[string]any{}, Priority: "normal",
 			State: "done", RunAfter: time.Now(), EndedAt: &ended, AskedBy: domain.System, MaxAttempts: 1,
 			Result: map[string]any{"releases": 3, "refused": 1, "chosen_release_id": rels["judged"]}}
 		if _, err := database.Insert(tx, "jobs", done, domain.System); err != nil {
 			return err
 		}
-		feed := &domain.Job{Kind: source.KindFeedCheck, Params: map[string]any{}, Priority: "normal", State: "queued", RunAfter: time.Now(), AskedBy: domain.System, MaxAttempts: 1}
+		feed := &domain.Job{Kind: jobs.KindFeedCheck, Params: map[string]any{}, Priority: "normal", State: "queued", RunAfter: time.Now(), AskedBy: domain.System, MaxAttempts: 1}
 		_, err := database.Insert(tx, "jobs", feed, domain.System)
 		return err
 	}); err != nil {
@@ -328,10 +328,10 @@ func TestSearchesRunningAndFound(t *testing.T) {
 		t.Fatalf("running %+v", out.Running)
 	}
 	r := out.Running[0]
-	if r.Kind != source.KindSearchSlot || r.TitleID == nil || *r.TitleID != titleID || r.TitleName == "" || r.Note != note || !r.ByHand || r.Progress != 0.5 {
+	if r.Kind != jobs.KindSearchSlot || r.TitleID == nil || *r.TitleID != titleID || r.TitleName == "" || r.Note != note || !r.ByHand || r.Progress != 0.5 {
 		t.Fatalf("running search %+v", r)
 	}
-	if out.Running[1].Kind != source.KindFeedCheck || out.Running[1].TitleID != nil {
+	if out.Running[1].Kind != jobs.KindFeedCheck || out.Running[1].TitleID != nil {
 		t.Fatalf("feed check %+v", out.Running[1])
 	}
 	if len(out.Recent) != 1 || out.Recent[0].Found != 3 || out.Recent[0].Refused != 1 || out.Recent[0].TitleName == "" || out.Recent[0].EndedAt == nil ||
@@ -347,7 +347,7 @@ func TestTitleReleasesListsUnmatched(t *testing.T) {
 	u, s, _, titleID, slotID, _ := searchWorld(t)
 	var unmatched int64
 	if err := s.Write(context.Background(), func(tx *sql.Tx) error {
-		job := &domain.Job{Kind: source.KindSearchSlot, Subject: &domain.Subject{Type: "slot", ID: slotID}, Params: map[string]any{}, Priority: "normal",
+		job := &domain.Job{Kind: jobs.KindSearchSlot, Subject: &domain.Subject{Type: "slot", ID: slotID}, Params: map[string]any{}, Priority: "normal",
 			State: "done", RunAfter: time.Now(), AskedBy: domain.System, MaxAttempts: 1}
 		if _, err := database.Insert(tx, "jobs", job, domain.System); err != nil {
 			return err
@@ -382,7 +382,7 @@ func TestHandSearchNotDedupedByBulk(t *testing.T) {
 	var bulkID int64
 	if err := s.Write(context.Background(), func(tx *sql.Tx) error {
 		key := "search_slot:" + itoa(slotID)
-		j := &domain.Job{Kind: source.KindSearchSlot, Subject: &domain.Subject{Type: "slot", ID: slotID}, Params: map[string]any{"bulk": true},
+		j := &domain.Job{Kind: jobs.KindSearchSlot, Subject: &domain.Subject{Type: "slot", ID: slotID}, Params: map[string]any{"bulk": true},
 			Priority: "normal", State: "queued", RunAfter: time.Now().Add(time.Hour), AskedBy: domain.System, MaxAttempts: 1, DedupeKey: &key}
 		id, err := database.Insert(tx, "jobs", j, domain.System)
 		bulkID = id

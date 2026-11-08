@@ -20,6 +20,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/tagset"
@@ -300,7 +301,7 @@ func (m *Manager) Grab(ctx context.Context, slotID, releaseID int64, by domain.A
 	}
 
 	hash := ""
-	if rel.InfoHash != nil && source.ValidInfoHash(strings.ToLower(*rel.InfoHash)) {
+	if rel.InfoHash != nil && releasename.ValidInfoHash(strings.ToLower(*rel.InfoHash)) {
 		hash = strings.ToLower(*rel.InfoHash)
 	}
 	now := m.now()

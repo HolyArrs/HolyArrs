@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
 )
@@ -86,7 +87,7 @@ func (a *API) searchArtist(w http.ResponseWriter, r *http.Request, t domain.Titl
 			params["choose"] = false
 			key = fmt.Sprintf("show_album:%d:%d", partID, versionID)
 		}
-		id, created, err := a.s.Queue.EnqueueAt(ctx, source.KindSearchAlbum, &domain.Subject{Type: "part", ID: partID}, params, key, by, runAfter)
+		id, created, err := a.s.Queue.EnqueueAt(ctx, jobs.KindSearchAlbum, &domain.Subject{Type: "part", ID: partID}, params, key, by, runAfter)
 		if err == nil {
 			ids = append(ids, id)
 			if created && !runAfter.IsZero() {

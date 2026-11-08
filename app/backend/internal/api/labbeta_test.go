@@ -354,7 +354,7 @@ func (x *labMovie) waitJob(t *testing.T, id int64) (string, string) {
 // autoSearch runs the search the app runs by itself (not by hand).
 func (x *labMovie) autoSearch(t *testing.T) string {
 	t.Helper()
-	id, _, err := x.q.Enqueue(context.Background(), source.KindSearchSlot, &domain.Subject{Type: "slot", ID: x.slot}, nil, fmt.Sprintf("search_slot:%d:%d", x.slot, time.Now().UnixNano()), domain.System)
+	id, _, err := x.q.Enqueue(context.Background(), jobs.KindSearchSlot, &domain.Subject{Type: "slot", ID: x.slot}, nil, fmt.Sprintf("search_slot:%d:%d", x.slot, time.Now().UnixNano()), domain.System)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -704,7 +704,7 @@ func TestLabBeta48WaitForBetter(t *testing.T) {
 	// A better copy shows up in the Source's feed during the wait (the app's
 	// feed check, as the old apps' RSS sync, is what sees it).
 	feed.set([]string{labDune1080}, own)
-	fc, _, err := x.q.Enqueue(context.Background(), source.KindFeedCheck, nil, nil, "schedule:feed_check", domain.System)
+	fc, _, err := x.q.Enqueue(context.Background(), jobs.KindFeedCheck, nil, nil, "schedule:feed_check", domain.System)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -727,7 +727,7 @@ func TestLabBeta48WaitForBetter(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	id, _, err := x.q.Enqueue(context.Background(), source.KindGrabHeld, nil, nil, "schedule:grab_held:after", domain.System)
+	id, _, err := x.q.Enqueue(context.Background(), jobs.KindGrabHeld, nil, nil, "schedule:grab_held:after", domain.System)
 	if err != nil {
 		t.Fatal(err)
 	}

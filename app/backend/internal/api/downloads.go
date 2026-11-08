@@ -15,9 +15,9 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
@@ -925,17 +925,17 @@ func (a *API) decide(w http.ResponseWriter, r *http.Request) {
 			fail(w, http.StatusServiceUnavailable, "searches are not running")
 			return
 		}
-		var jobs []int64
+		var queued []int64
 		for _, t := range targets {
-			jid, _, err := a.s.Queue.Enqueue(r.Context(), source.KindSearchSlot, &domain.Subject{Type: "slot", ID: t.SlotID}, map[string]any{"by_hand": true},
+			jid, _, err := a.s.Queue.Enqueue(r.Context(), jobs.KindSearchSlot, &domain.Subject{Type: "slot", ID: t.SlotID}, map[string]any{"by_hand": true},
 				"hand_search_slot:"+itoa(t.SlotID), by)
 			if err != nil {
 				internal(w, err)
 				return
 			}
-			jobs = append(jobs, jid)
+			queued = append(queued, jid)
 		}
-		writeJSON(w, http.StatusAccepted, map[string]any{"job_id": jobs[0], "job_ids": jobs, "action": in.Action})
+		writeJSON(w, http.StatusAccepted, map[string]any{"job_id": queued[0], "job_ids": queued, "action": in.Action})
 	case "stop":
 		to := domain.SlotWanted
 		if dv.HasCopy {

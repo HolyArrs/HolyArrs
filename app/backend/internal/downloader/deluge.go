@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"io"
 	"net/http"
 	"net/http/cookiejar"
@@ -18,7 +17,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 )
 
 var (
@@ -117,7 +117,7 @@ func (d *Deluge) Add(ctx context.Context, r AddRequest) (string, error) {
 		return "", ErrCategory
 	}
 	expected := strings.ToLower(r.InfoHash)
-	if expected != "" && !source.ValidInfoHash(expected) {
+	if expected != "" && !releasename.ValidInfoHash(expected) {
 		return "", errDelugeBadHash
 	}
 	if r.ReconcileOnly {
@@ -201,7 +201,7 @@ func (d *Deluge) Add(ctx context.Context, r AddRequest) (string, error) {
 	}
 
 	id = strings.ToLower(id)
-	if !source.ValidInfoHash(id) {
+	if !releasename.ValidInfoHash(id) {
 		existing, getErr := d.Get(ctx, expected)
 		if getErr == nil && existing.Category == r.Category && !r.Skip[existing.ID] {
 			return existing.ID, nil
@@ -241,7 +241,7 @@ func (d *Deluge) List(ctx context.Context, category string) ([]Job, error) {
 // Get returns the torrent with the given id.
 func (d *Deluge) Get(ctx context.Context, id string) (Job, error) {
 	id = strings.ToLower(id)
-	if !source.ValidInfoHash(id) {
+	if !releasename.ValidInfoHash(id) {
 		return Job{}, errDelugeBadHash
 	}
 	if _, err := d.ready(ctx); err != nil {
@@ -262,7 +262,7 @@ func (d *Deluge) Get(ctx context.Context, id string) (Job, error) {
 // Remove deletes the torrent, and its data when deleteFiles is set.
 func (d *Deluge) Remove(ctx context.Context, id string, deleteFiles bool) error {
 	id = strings.ToLower(id)
-	if !source.ValidInfoHash(id) {
+	if !releasename.ValidInfoHash(id) {
 		return errDelugeBadHash
 	}
 	if _, err := d.ready(ctx); err != nil {
@@ -501,7 +501,7 @@ func delugeMagnetHash(raw string) (string, bool) {
 		const prefix = "urn:btih:"
 		if len(xt) > len(prefix) && strings.EqualFold(xt[:len(prefix)], prefix) {
 			hash := strings.ToLower(xt[len(prefix):])
-			if source.ValidInfoHash(hash) {
+			if releasename.ValidInfoHash(hash) {
 				return hash, true
 			}
 		}

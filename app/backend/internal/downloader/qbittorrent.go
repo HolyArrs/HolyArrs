@@ -16,7 +16,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 )
 
 // qbitSignInPause is how long a refused sign-in is remembered. Retrying sooner only adds failed attempts, and qBittorrent bans an address after a few.
@@ -173,7 +173,7 @@ func (q *Qbittorrent) Add(ctx context.Context, r AddRequest) (string, error) {
 	if strings.TrimSpace(string(b)) == "Fails." {
 		return "", errors.New("qbittorrent refused the torrent")
 	}
-	if h := strings.ToLower(r.InfoHash); source.ValidInfoHash(h) {
+	if h := strings.ToLower(r.InfoHash); releasename.ValidInfoHash(h) {
 		return h, nil
 	}
 	return "", nil
@@ -205,7 +205,7 @@ func (q *Qbittorrent) ListAll(ctx context.Context) ([]Job, error) {
 // Get returns one torrent with its files. A client that has no file list for it still returns the job.
 func (q *Qbittorrent) Get(ctx context.Context, id string) (Job, error) {
 	id = strings.ToLower(id)
-	if !source.ValidInfoHash(id) {
+	if !releasename.ValidInfoHash(id) {
 		return Job{}, errBadHash
 	}
 	js, err := q.info(ctx, url.Values{"hashes": {id}})
@@ -232,7 +232,7 @@ func (q *Qbittorrent) Get(ctx context.Context, id string) (Job, error) {
 // Remove deletes a torrent, and its data when deleteFiles is set.
 func (q *Qbittorrent) Remove(ctx context.Context, id string, deleteFiles bool) error {
 	id = strings.ToLower(id)
-	if !source.ValidInfoHash(id) {
+	if !releasename.ValidInfoHash(id) {
 		return errBadHash
 	}
 	_, err := q.call(ctx, http.MethodPost, "torrents/delete", url.Values{"hashes": {id}, "deleteFiles": {fmt.Sprint(deleteFiles)}})

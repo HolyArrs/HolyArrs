@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/judge"
 )
@@ -138,7 +139,7 @@ func TestChoose_ShowPackLeavesProtectedEpisode(t *testing.T) {
 	exec(t, f.fixture, `UPDATE files SET protected = 1 WHERE id = (SELECT file_id FROM slots WHERE id = ?)`, f.slots["S01E02"])
 	exec(t, f.fixture, `UPDATE slots SET state = ? WHERE id = ?`, domain.SlotInLibrary, f.slots["S01E02"])
 	sr := &Searcher{Store: f.s}
-	runKind(t, f.fixture, sr, KindSearchSeason, &domain.Subject{Type: "part", ID: f.parts[1]}, map[string]any{"version_id": f.verID, "choose": false, "by_hand": true})
+	runKind(t, f.fixture, sr, jobs.KindSearchSeason, &domain.Subject{Type: "part", ID: f.parts[1]}, map[string]any{"version_id": f.verID, "choose": false, "by_hand": true})
 	pack := relByName(t, f.fixture, "Copper.Valley.S01.720p.HDTV.x264-OXBOW")
 
 	choice, err := sr.Choose(context.Background(), pack.ID, 0, false, domain.System)

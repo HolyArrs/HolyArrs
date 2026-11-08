@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
@@ -19,7 +20,7 @@ func TestPicksLimit_CountsChosenNotYetSent(t *testing.T) {
 	f := seed(t, lf.url(t))
 	exec(t, f, `UPDATE sources SET limits = '{"grabs_per_window":1,"window_seconds":3600}'`)
 	addRelease(t, f, "Other.Movie.2024.1080p.WEB-DL-X", "chosen")
-	runKind(t, f, &Searcher{Store: f.s}, KindSearchSlot, &domain.Subject{Type: "slot", ID: f.slotID}, nil)
+	runKind(t, f, &Searcher{Store: f.s}, jobs.KindSearchSlot, &domain.Subject{Type: "slot", ID: f.slotID}, nil)
 	if got := relByName(t, f, web1080); got.State != "passed_over" {
 		t.Fatalf("release %s: the chosen one was not counted", got.State)
 	}
@@ -70,7 +71,7 @@ func TestFeed_StoresReleaseOncePerRun(t *testing.T) {
 		SELECT created_at, created_by, updated_at, updated_by, title_id, '4K', pick_rules_id, library_folder_id, 'Dune 4K', 1, 0 FROM versions LIMIT 1`)
 	exec(t, f, `INSERT INTO slots (created_at, created_by, updated_at, updated_by, item_id, version_id, state)
 		SELECT created_at, created_by, updated_at, updated_by, item_id, (SELECT max(id) FROM versions), 'wanted' FROM slots LIMIT 1`)
-	runKind(t, f, &Searcher{Store: f.s}, KindFeedCheck, nil, nil)
+	runKind(t, f, &Searcher{Store: f.s}, jobs.KindFeedCheck, nil, nil)
 	rs, err := database.Select[domain.Release](context.Background(), f.s.Read(), "releases", "name = ?", web1080)
 	if err != nil || len(rs) != 1 {
 		t.Fatalf("stored %d times: %v", len(rs), err)
