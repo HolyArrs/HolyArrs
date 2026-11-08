@@ -2,8 +2,7 @@
 	import Icon, { type IconName } from '#lib/ui/Icon.svelte';
 	import { press } from '#lib/core/motion.ts';
 
-	// One sidebar row. Collapsed, the label fades out but stays the accessible
-	// name, and a tooltip shows it on hover or focus.
+	// One sidebar row. Collapsed, the label fades out but stays the accessible name, and a tooltip shows it on hover or focus.
 	let {
 		href,
 		label,
@@ -26,7 +25,7 @@
 		collapsed?: boolean;
 		badge?: number;
 		badgeLabel?: string;
-		/** Overall progress 0-100: a ring around the icon. Decorative; the name carries the words. */
+		/** Overall progress 0 to 100: a ring around the icon. Decorative; the name carries the words. */
 		ring?: number;
 		/** A small flag that something here needs attention. */
 		dot?: boolean;

@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { to } from '#lib/core/paths.ts';
-	import { RenamePreview, LibraryToolPage } from '#lib/mediafiles/index.ts';
 	import Button from '#lib/ui/Button.svelte';
+	import { RenamePreview, LibraryToolPage } from '#lib/mediafiles/index.ts';
+	import { to } from '#lib/core/paths.ts';
 	import { session } from '#lib/core/session.svelte.ts';
 
 	let changeCount = $state(0);

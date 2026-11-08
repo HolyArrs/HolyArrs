@@ -1,20 +1,18 @@
 <script lang="ts">
+	import { decisionPins, feedPins, forgetFeeds } from './bell-feeds.svelte.ts';
+	import Toast from './Toast.svelte';
+	import { AlertsPanel } from '#lib/alerts/index.ts';
+	import { METADATA_BACK, METADATA_DOWN_TITLE, clearMetadataBack, dismissMetadataDown, metadataDownShown, metadataOutage, watchMetadata } from '#lib/metadata/index.ts';
 	import { onMount, untrack } from 'svelte';
 	import { notifyIn, notifyOut } from '#lib/core/transitions.ts';
 	import { alertsPanel, toasts } from '#lib/core/toasts.svelte.ts';
-	import { AlertsPanel } from '#lib/alerts/index.ts';
-	import { decisionPins, feedPins, forgetFeeds } from './bell-feeds.svelte.ts';
-	import Toast from './Toast.svelte';
-	import { METADATA_BACK, METADATA_DOWN_TITLE, clearMetadataBack, dismissMetadataDown, metadataDownShown, metadataOutage, watchMetadata } from '#lib/metadata/index.ts';
 	import { session } from '#lib/core/session.svelte.ts';
 
-	// Notifications drop in at the top right under the top bar (top, full width on
-	// phones) with a soft spring and leave upwards, quicker; reduced motion fades only.
+	// Notifications drop in at the top right under the top bar (top, full width on phones) with a soft spring and leave upwards, quicker; reduced motion fades only.
 	const toastIn = notifyIn;
 	const toastOut = notifyOut;
 
-	// Screen readers: the stack itself is a polite live region, so each alert is read as it
-	// drops in, with no hidden second copy of its text.
+	// Screen readers: the stack itself is a polite live region, so each alert is read as it drops in, with no hidden second copy of its text.
 
 	// Metadata outage: full card, shrinks to a pill after 6 s, tap to open again.
 	const downShown = $derived(metadataDownShown());
@@ -45,9 +43,7 @@
 		return () => clearTimeout(t);
 	});
 
-	// Health checks need a signed-in session (the endpoint answers 401
-	// before sign-in, which would read as an outage). Sign-in itself never
-	// needs metadata, so nothing is checked or shown until signed in.
+	// Health checks need a signed-in session (the endpoint answers 401 before sign-in, which would read as an outage). Sign-in itself never needs metadata, so nothing is checked or shown until signed in.
 	const signedIn = $derived(session.s.state === 'signed_in');
 	// Recent alerts belong to this sign-in: signing out clears them.
 	$effect(() => {
@@ -63,9 +59,7 @@
 	});
 	onMount(() => () => clearTimeout(shrinkTimer));
 
-	// Toasts live in the top layer (a manual popover), so they stay above an open
-	// <dialog> such as the Requests window and Undo can still be clicked. Shown again
-	// on every new toast, so they land above whatever dialog opened since.
+	// Toasts live in the top layer (a manual popover), so they stay above an open <dialog> such as the Requests window and Undo can still be clicked. Shown again on every new toast, so they land above whatever dialog opened since.
 	let host = $state<HTMLElement>();
 	let home = $state<HTMLElement>();
 	let inWin = $state(false);
@@ -76,12 +70,10 @@
 			if (el.matches(':popover-open')) el.hidePopover();
 			el.showPopover();
 		} catch {
-			// popover unsupported: the fixed layer still shows outside dialogs
+			// Popover unsupported: the fixed layer still shows outside dialogs.
 		}
 	}
-	// A modal <dialog> makes everything outside it inert, a top-layer popover included, so
-	// while one is open the toasts move inside it (Undo stays clickable, and a click on a
-	// toast never reads as a click on the dialog's backdrop). They move back when it closes.
+	// A modal <dialog> makes everything outside it inert, a top-layer popover included, so while one is open the toasts move inside it (Undo stays clickable, and a click on a toast never reads as a click on the dialog's backdrop). They move back when it closes.
 	function place() {
 		const el = host;
 		if (!el || !home) return;
@@ -101,8 +93,7 @@
 	}
 	onMount(() => {
 		place();
-		// A dialog removed while still open (a page left mid close animation) takes the toasts
-		// with it and fires no 'open' change, so a detached host is brought home as well.
+		// A dialog removed while still open (a page left mid close animation) takes the toasts with it and fires no 'open' change, so a detached host is brought home as well.
 		const mo = new MutationObserver((recs) => {
 			if ((host && !host.isConnected) || recs.some((r) => r.type === 'attributes')) place();
 		});
@@ -113,8 +104,7 @@
 			if (host && home && host.parentNode !== home.parentNode) home.after(host);
 		};
 	});
-	// Preview builds only (VITE_ALERTS_DEMO): a button that plays sample alerts, for
-	// checking the look on real pages. Normal builds drop this code.
+	// Preview builds only (VITE_ALERTS_DEMO): a button that plays sample alerts, for checking the look on real pages. Normal builds drop this code.
 	const demo = !!import.meta.env.VITE_ALERTS_DEMO;
 	let step = 0;
 	// Built only into the preview: normal builds see `false ? [...] : []` and drop the samples.
@@ -185,7 +175,7 @@
 	.alerts-demo { position: fixed; z-index: 89; right: 20px; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); padding: 8px 14px; border-radius: 999px; font: var(--t-subhead); font-weight: 600; color: #f5f5f7; background: rgb(30 30 34 / 80%); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); box-shadow: 0 6px 20px rgb(0 0 0 / 35%), inset 0 0 0 0.5px rgb(255 255 255 / 12%); }
 	@media (max-width: 767px) { .alerts-demo { bottom: calc(var(--tabbar, 60px) + 12px + env(safe-area-inset-bottom, 0px)); } }
 	.toasts {
-		/* Undo the popover defaults. Top right, just under the top bar, like Apple TV. */
+		/* Undo the popover defaults: top right, just under the top bar. */
 		inset: auto;
 		margin: 0;
 		padding: 0;
@@ -203,13 +193,11 @@
 		width: min(380px, calc(100vw - 32px));
 		pointer-events: none;
 	}
-	/* Inside an open window the top right holds its close button, so the toasts sit at
-	   the bottom centre of the screen instead. */
+	/* Inside an open window the top right holds its close button, so the toasts sit at the bottom centre of the screen instead. */
 	.toasts.in-win { top: auto; right: auto; left: 50%; transform: translateX(-50%); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); }
 	@media (max-width: 767px) {
 		.toasts { left: 12px; right: 12px; width: auto; top: calc(var(--topbar, 56px) + 8px + env(safe-area-inset-top, 0px)); }
-		/* A full-screen window on a phone keeps its answer buttons at the bottom; drop in
-		   under its top controls. */
+		/* A full-screen window on a phone keeps its answer buttons at the bottom; drop in under its top controls. */
 		.toasts.in-win { left: 12px; right: 12px; transform: none; bottom: auto; top: calc(72px + env(safe-area-inset-top, 0px)); }
 	}
 	.slot { display: flex; flex-direction: column; }

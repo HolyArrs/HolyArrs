@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { onDestroy } from 'svelte';
 	import IconButton from '#lib/ui/IconButton.svelte';
+	import { onDestroy } from 'svelte';
 	import { closeTheater, holdScroll, runExit, theater, waitForResume } from '#lib/core/trailer/theater.svelte.ts';
 	import { embedUrl, playingWord, setSoundOn } from '#lib/core/trailer/trailer.ts';
 	import { flipFrames, reducedMotion, THEATER_CHROME_MS, THEATER_EASE, THEATER_FADE_MS, THEATER_GROW_MS, THEATER_SHRINK_MS, type Box } from '#lib/core/motion.ts';
@@ -8,16 +8,7 @@
 	import { missLine } from '#lib/core/trailer/trailer-miss.ts';
 	import { attachHLS, screenTarget } from '#lib/core/trailer/hls-player.ts';
 
-	// The full-screen trailer, one shared element from the card to full screen
-	// and back (Netflix): the picture grows out of the small player's rect
-	// (the frame scales, the picture inside is counter-scaled to one uniform
-	// scale so it never stretches; transforms only, so the compositor runs it),
-	// carries on from the same second with the same sound, and shows the small
-	// player's last frame until its own first frame is ready. The scrim and
-	// controls fade in after the grow and out before the shrink. Esc or Close
-	// shrink it back where it came from (a hero carries on playing there);
-	// the end of the trailer opens the title page under it first and shrinks
-	// into that page's hero. Reduced motion: a plain crossfade.
+	// The full-screen trailer, one shared element from the card to full screen and back. The picture grows out of the small player's rect (the frame scales, the picture inside is counter-scaled to one uniform scale so it never stretches; transforms only, so the compositor runs it), carries on from the same second with the same sound, and shows the small player's last frame until its own first frame is ready. The scrim and controls fade in after the grow and out before the shrink. Esc or Close shrink it back where it came from (a hero carries on playing there); the end of the trailer opens the title page under it first and shrinks into that page's hero. Reduced motion: a plain crossfade.
 	let dialog = $state<HTMLDialogElement>();
 	let stage = $state<HTMLElement>();
 	let pic = $state<HTMLElement>();
@@ -47,7 +38,7 @@
 	// The source, then its fallbacks one by one while they fail; "can't play here" only after the last.
 	let tried = $state(0);
 	const list = $derived(now ? [now.source, ...(now.fallbacks ?? [])] : []);
-	// Why it will not play, when the server said (the reason rides on the embed): the line says so in plain words.
+	// Why it will not play, when the server said (the reason rides on the embed); the line says so in plain words.
 	const why = $derived.by(() => {
 		for (const s of list) if (s.kind === 'embed' && s.why) return s.why;
 		return undefined;
@@ -95,7 +86,7 @@
 		anims = [];
 	}
 	const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
-	/** keepStill puts the small player's last frame in the picture until this one plays. */
+	/** Puts the small player's last frame in the picture until this one plays. */
 	function keepStill(node: HTMLElement) {
 		const c = now?.still;
 		if (c) node.replaceChildren(c);
@@ -142,7 +133,7 @@
 			mediaOn = true;
 			chrome = true;
 			wake();
-			// Real full screen where the browser allows it (after the grow, so it never jumps mid-move).
+			// Real full screen where the browser allows it, after the grow so it never jumps mid-move.
 			d.requestFullscreen?.().catch(() => {});
 		});
 	});
@@ -235,7 +226,7 @@
 		if (now.time > 0.5 && now.time < (video.duration || Infinity)) video.currentTime = now.time;
 		video.muted = muted;
 		void video.play().catch(() => {
-			// Sound refused without a fresh click: play muted, the sound button turns it on.
+			// Sound refused without a fresh click: play muted; the sound button turns it on.
 			if (!video) return;
 			video.muted = muted = true;
 			void video.play().catch(() => {});
@@ -379,7 +370,7 @@
 	:global(html.scroll-held) { overflow: hidden; padding-right: var(--held-scrollbar, 0px); }
 	.ui-theater { position: fixed; inset: 0; width: auto; height: auto; max-width: none; max-height: none; margin: 0; padding: 0; border: 0; background: transparent; color: var(--on-art); overflow: hidden; }
 	.ui-theater::backdrop { background: var(--on-art-scrim); }
-	/* Its own grow and fades replace the app's dialog entrance (that faded the whole player in). */
+	/* Its own grow and fades replace the app's dialog entrance, which faded the whole player in. */
 	.ui-theater[open], .ui-theater[open]::backdrop { animation: none; }
 	.ui-theater:fullscreen { width: 100%; height: 100%; }
 	.stage { position: absolute; inset: 0; background: #000; overflow: hidden; container-type: size; transform-origin: 0 0; }

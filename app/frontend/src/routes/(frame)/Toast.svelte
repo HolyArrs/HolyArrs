@@ -3,9 +3,7 @@
 	import type { IconName } from '#lib/ui/Icon.svelte';
 	import { AlertSymbol } from '#lib/alerts/index.ts';
 
-	// One notification, Apple TV style: a dark glass pill with a filled symbol whose
-	// shape and colour carry the tone, a short title and an optional second line.
-	// `compact` shrinks it to a small pill (tap to open again). × or a swipe up closes it.
+	// One notification: a dark glass pill with a filled symbol whose shape and colour carry the tone, a short title and an optional second line. `compact` shrinks it to a small pill (tap to open again). × or a swipe up closes it.
 	type Tone = 'ok' | 'fail' | 'info' | 'warn';
 	let {
 		text,
@@ -111,7 +109,7 @@
 {/if}
 
 <style>
-	/* Always dark glass, as on Apple TV, so it reads the same over any page or artwork. */
+	/* Always dark glass so it reads the same over any page or artwork. */
 	.ui-toast {
 		position: relative;
 		pointer-events: auto;

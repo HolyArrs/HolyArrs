@@ -1,9 +1,7 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 
-	// Page frame: sidebar (tablet/desktop), sticky top bar, content, and the
-	// phone tab bar. The content margin follows the sidebar width; on tablets
-	// an expanded sidebar floats over the content with a scrim.
+	// Page frame: sidebar (tablet and desktop), sticky top bar, content, and the phone tab bar. The content margin follows the sidebar width; on tablets an expanded sidebar floats over the content with a scrim.
 	let {
 		collapsed,
 		overlay = false,
@@ -13,9 +11,9 @@
 		tabbar,
 		children
 	}: {
-		/** Desktop sidebar is icons-only. */
+		/** The desktop sidebar shows icons only. */
 		collapsed: boolean;
-		/** Tablet sidebar is open over the content. */
+		/** The tablet sidebar is open over the content. */
 		overlay?: boolean;
 		onscrim?: () => void;
 		sidebar: Snippet;
@@ -40,9 +38,7 @@
 	.ui-shell { --space: var(--sidebar-expanded); min-height: 100dvh; }
 	.ui-shell.collapsed { --space: var(--sidebar-collapsed); }
 	.content { min-width: 0; min-height: 100dvh; margin-left: var(--space); }
-	/* The margin eases only when the sidebar is folded or opened; dropping to
-	   phone width (no sidebar) takes the margin away at once, so the page is
-	   never wider than the screen while it settles. */
+	/* The margin eases only when the sidebar is folded or opened. Dropping to phone width (no sidebar) removes the margin at once, so the page is never wider than the screen while it settles. */
 	@media (min-width: 768px) {
 		.content { transition: margin-left var(--dur) var(--ease-out); }
 		.collapsed .content { transition-delay: var(--dur-fast); }

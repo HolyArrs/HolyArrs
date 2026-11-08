@@ -1,22 +1,23 @@
 <script lang="ts">
 	import PageLoader from '#lib/ui/PageLoader.svelte';
-	import { to } from '#lib/core/paths.ts';
-	// Missing subtitles: every movie and episode missing a wished subtitle.
-	import { onMount } from 'svelte';
 	import Poster from '#lib/ui/Poster.svelte';
-	import { titleArt, pager, LibraryToolPage } from '#lib/mediafiles/index.ts';
-	import { page } from '$app/state';
-	import { goto } from '$app/navigation';
-	import { api, message } from '#lib/core/api.ts';
-	import { dateTime } from '#lib/core/format.ts';
-	import { live } from '#lib/core/live.svelte.ts';
-	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import Button from '#lib/ui/Button.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import ProgressBar from '#lib/ui/ProgressBar.svelte';
-	import { plainReason } from '#lib/core/plain.ts';
+	import { titleArt, pager, LibraryToolPage } from '#lib/mediafiles/index.ts';
 	import { jobsDone, langName, missingName, missingQuery, missingWords, wantLabel, type Language, type MissingRow, type MissingTitle } from '#lib/subtitles/index.ts';
+	import { onMount } from 'svelte';
+	import { page } from '$app/state';
+	import { goto } from '$app/navigation';
+	import { to } from '#lib/core/paths.ts';
+	import { api, message } from '#lib/core/api.ts';
+	import { dateTime } from '#lib/core/format.ts';
+	import { live } from '#lib/core/live.svelte.ts';
+	import { toasts } from '#lib/core/toasts.svelte.ts';
+	import { plainReason } from '#lib/core/plain.ts';
+
+	// Missing subtitles: every movie and episode missing a wished subtitle.
 
 	const limit = 100;
 	let rows = $state<MissingRow[]>([]);
@@ -74,7 +75,7 @@
 			const r = await api.get<{ jobs: { ID: number; State: string }[] }>('/jobs?limit=200');
 			for (const j of r.jobs) if (jobIds.includes(j.ID)) jobStates[j.ID] = j.State;
 		} catch {
-			// the next tick tries again
+			// The next tick tries again.
 		}
 	}
 

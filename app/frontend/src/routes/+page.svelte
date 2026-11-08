@@ -1,40 +1,39 @@
 <script lang="ts">
-	import { to } from '#lib/core/paths.ts';
-	import { onMount } from 'svelte';
-	import { api } from '#lib/core/api.ts';
-	import { afterHandoff } from '#lib/core/loader.ts';
-	import { live } from '#lib/core/live.svelte.ts';
-	import { session } from '#lib/core/session.svelte.ts';
-	import { stageOf, decisions } from '#lib/downloads/index.ts';
-	import { SvelteSet } from 'svelte/reactivity';
-	import { artGone, lightOnDark } from '#lib/art-check.ts';
-	import { proxied, sized } from '#lib/core/tmdb-image.ts';
-	import { askArtist, askDetails, wantDetails } from '#lib/requests/index.ts';
-	import { inbox } from '#lib/core/inbox.svelte.ts';
 	import type { IconName } from '#lib/ui/Icon.svelte';
-	import { arrivedHead, attention, downloadMoved, downloadingNow, fallbackRows, freeSpace, arrivedTitle, groupAttention, homeFailures, homeStrip, libraryCards, moreLink, n, partCount, shownState, uncheckedLine, type Attention, type AttentionGroup, type HomeAnswer, type HomeCard, type HomeRow } from '#lib/home.ts';
-	import { METADATA_DOWN, metadataOutage, MetadataNotice } from '#lib/metadata/index.ts';
-	import { agoLong, bytes, duration, percent } from '#lib/core/format.ts';
-	import { homeFacts, homeGreeting, homeNews, localDay } from '#lib/home-line.ts';
 	import type { Fresh } from '#lib/ui/fresh.ts';
-	import type { DownloadRow } from '#lib/core/types.ts';
-	import type { Ask, LibraryFolder } from '#lib/core/types.ts';
-	import type { Health, HealthChecks } from '#lib/health/index.ts';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
 	import IconButton from '#lib/ui/IconButton.svelte';
 	import SettingsTile from '#lib/ui/SettingsTile.svelte';
 	import ArtPill from '#lib/ui/ArtPill.svelte';
-	import type { Tint } from '#lib/core/settings.ts';
 	import Shelf from '#lib/ui/Shelf.svelte';
 	import WideCard from '#lib/ui/WideCard.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import PageLoader from '#lib/ui/PageLoader.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
+	import { stageOf, decisions } from '#lib/downloads/index.ts';
+	import { artGone, lightOnDark } from '#lib/art-check.ts';
+	import { askArtist, askDetails, wantDetails } from '#lib/requests/index.ts';
+	import { arrivedHead, attention, downloadMoved, downloadingNow, fallbackRows, freeSpace, arrivedTitle, groupAttention, homeFailures, homeStrip, libraryCards, moreLink, n, partCount, shownState, uncheckedLine, type Attention, type AttentionGroup, type HomeAnswer, type HomeCard, type HomeRow } from '#lib/home.ts';
+	import { METADATA_DOWN, metadataOutage, MetadataNotice } from '#lib/metadata/index.ts';
+	import { homeFacts, homeGreeting, homeNews, localDay } from '#lib/home-line.ts';
+	import type { Health, HealthChecks } from '#lib/health/index.ts';
+	import { onMount } from 'svelte';
+	import { SvelteSet } from 'svelte/reactivity';
+	import { to } from '#lib/core/paths.ts';
+	import { api } from '#lib/core/api.ts';
+	import { afterHandoff } from '#lib/core/loader.ts';
+	import { live } from '#lib/core/live.svelte.ts';
+	import { session } from '#lib/core/session.svelte.ts';
+	import { proxied, sized } from '#lib/core/tmdb-image.ts';
+	import { inbox } from '#lib/core/inbox.svelte.ts';
+	import { agoLong, bytes, duration, percent } from '#lib/core/format.ts';
+	import type { DownloadRow } from '#lib/core/types.ts';
+	import type { Ask, LibraryFolder } from '#lib/core/types.ts';
+	import type { Tint } from '#lib/core/settings.ts';
 
-	// Home is "my stuff": the server sends the row order per person (GET /home);
-	// every row hides when it has nothing.
+	// Home is "my stuff": the server sends the row order per person (GET /home); every row hides when it has nothing.
 	let loaded = $state(false);
 	// The bigger asks (asks, downloads) have answered: the greeting waits for them so it does not change under your eyes.
 	let settled = $state(false);
@@ -63,8 +62,7 @@
 	const owner = $derived(home ? home.owner : manager);
 
 	const rows = $derived<HomeRow[]>(home?.rows ?? (loaded ? fallbackRows(owner) : []));
-	// Sources and Downloaders, from GET /health and the health checks. A failing Source is paused by the server and its
-	// check warns; a Downloader carries its own state. Only "disabled" is turned off.
+	// Sources and Downloaders, from GET /health and the health checks. A failing Source is paused by the server and its check warns; a Downloader carries its own state. Only "disabled" is turned off.
 	const failingChecks = (kind: string) => (checks?.checks ?? []).filter((c) => c.kind === kind && shownState(c) !== 'ok');
 	const srcs = $derived(partCount(health?.sources, failingChecks('source').map((c) => c.subject)));
 	const dls = $derived(partCount(health?.downloaders, failingChecks('downloader').map((c) => c.subject)));
@@ -88,8 +86,7 @@
 		return list.length === 1 ? `${list[0]} has a problem` : `${n(list.length)} have a problem`;
 	}
 	const partLine = (p: { total: number; off: number }, trouble: string) => trouble || (p.off ? `${n(p.off)} turned off` : 'All working');
-	// Nothing can be found or fetched without a Source and a Downloader that are on. The health checks only cover the
-	// ones that exist, so Home adds these itself once setup is over (the Welcome card covers it before that).
+	// Nothing can be found or fetched without a Source and a Downloader that are on. The health checks only cover the ones that exist, so Home adds these itself once setup is over (the Welcome card covers it before that).
 	const setupGaps = $derived.by((): Attention[] => {
 		if (!owner || !partsRead || rows.includes('welcome')) return [];
 		const gap = (key: string, title: string, reason: string, path: string, action: string): Attention => ({ key, tone: 'wait', word: 'Warning', text: `${title}: ${reason}.`, title, reason, cause: `setup:${key}`, href: admin ? path : '/status', action: admin ? action : 'Look' });
@@ -103,8 +100,7 @@
 		if (dls.failing && !failingChecks('downloader').length) out.push(gap('downloaders-trouble', dls.failing === 1 ? 'Downloader' : `${n(dls.failing)} Downloaders`, dls.failing === 1 ? 'has a problem' : 'have a problem', '/settings/downloaders', 'Fix'));
 		return out;
 	});
-	// Needs attention is what needs you: failed downloads or imports (the same rule as Downloads), decisions,
-	// health problems and a metadata outage while it lasts. Decisions come from the list the layout keeps fresh.
+	// Needs attention is what needs you: failed downloads or imports (the same rule as Downloads), decisions, health problems and a metadata outage while it lasts. Decisions come from the list the layout keeps fresh.
 	const fixes = $derived(
 		owner
 			? [
@@ -178,8 +174,7 @@
 	let board = $state<'home' | 'system'>('home');
 	const showSystem = $derived(manager && !kid);
 	const shown = $derived(showSystem ? board : 'home');
-	// Pictures for the big, tall and wide tiles: new seasons, arrivals, coming soon and follows, taken in turn, each title once.
-	// A picture that cannot load drops out, and the next one (or a count tile) takes its place.
+	// Pictures for the big, tall and wide tiles: new seasons, arrivals, coming soon and follows, taken in turn, each title once. A picture that cannot load drops out, and the next one (or a count tile) takes its place.
 	const badPic = new SvelteSet<number>();
 	const badLogo = new SvelteSet<number>();
 	const pics = $derived.by(() => {
@@ -204,9 +199,7 @@
 		return out;
 	});
 	const showOverview = $derived(!rows.includes('welcome'));
-	// The count tiles, in order. The first four are always there for the person they are for (Needs attention, asks,
-	// Library, disk), so they never change places while the page loads; the rest fill the picture places that have
-	// no picture. Explore, New & Popular and Search always can, so the grid never has a hole.
+	// The count tiles, in order. The first four are always there for the person they are for (Needs attention, asks, Library, disk), so they never change places while the page loads; the rest fill the picture places that have no picture. Explore, New & Popular and Search always can, so the grid never has a hole.
 	const recentArrived = $derived((home?.arrived ?? []).filter((c) => c.at && now.getTime() - Date.parse(c.at) < 14 * 86400000));
 	const recentNew = $derived(recentArrived.length + (home?.new_seasons?.length ?? 0));
 	const statPool = $derived(
@@ -254,11 +247,7 @@
 		return out;
 	});
 	const libTotal = $derived(libCards.reduce((t, c) => t + c.big, 0));
-	// Under the tiles Home has one picture row (Recently added) and one list, Coming up. The other rows went: New season,
-	// Coming soon and Waiting for approval repeated a tile above; Your asks is the asks tile and the Requests page; what
-	// you follow shows up in the row and the list when something new happens. What airs next, one line each with its date; a new season that is already out leads, two at most.
-	// Nothing under the tiles repeats a tile: a title a picture tile already shows is left out of the row and the list
-	// below. When a tile shows something else (or there are no tiles), nothing is skipped.
+	// Under the tiles Home has one picture row (Recently added) and one list, Coming up. The other rows went: New season, Coming soon and Waiting for approval repeated a tile above; Your asks is the asks tile and the Requests page; what you follow shows up in the row and the list when something new happens. Coming up shows what airs next, one line each with its date; a new season that is already out leads, two at most.
 	const onTiles = $derived(new Set(showOverview ? places.flatMap((pl) => (pl.pic ? [pl.pic.c.title_id] : [])) : []));
 	const below = (cards: HomeCard[] | undefined) => (cards ?? []).filter((c) => !onTiles.has(c.title_id));
 	type UpLine = { key: string; c: HomeCard; sub: string; when: string; now: boolean };
@@ -283,12 +272,10 @@
 	const upAt = $derived(rows.find((r) => r === 'new_season' || r === 'soon'));
 	const badThumb = new SvelteSet<string>();
 	const kindIcon = (k: string): IconName => (k === 'movie' ? 'film' : k === 'artist' ? 'music' : 'tv');
-	// The Library is never a mixed list: every link goes to one kind. A card's own kind when the link is about a card;
-	// for the Library total, the biggest part of it.
+	// The Library is never a mixed list: every link goes to one kind. A card's own kind when the link is about a card; for the Library total, the biggest part of it.
 	const libHref = $derived([...libCards].sort((x, y) => y.big - x.big)[0]?.href ?? '/library?kind=movie');
 	const kindHref = (c?: HomeCard) => (c ? `/library?kind=${c.kind}` : libHref);
-	// An ask's picture. Its own poster first; when the ask was saved without one, or it cannot be shown, the picture
-	// the Requests page uses: the title's poster from this install's own details, or the artist's wide photo.
+	// An ask's picture. Its own poster first; when the ask was saved without one, or it cannot be shown, the picture the Requests page uses: the title's poster from this install's own details, or the artist's wide photo.
 	const badArt = new SvelteSet<number>();
 	const noArt = new SvelteSet<number>();
 	function askPic(a: Ask): string | undefined {
@@ -320,9 +307,7 @@
 			.filter((x): x is { a: Ask; pic: string } => !!x.pic)
 			.slice(0, 3)
 	);
-	// Downloads, counted once and used everywhere: waiting (queued), downloading (bytes coming in, stalled and checking
-	// included), importing, and paused apart (a paused download is not in the list or the row). The tile, the note
-	// beside the switch and the row all read these.
+	// Downloads, counted once and used everywhere: waiting (queued), downloading (bytes coming in, stalled and checking included), importing, and paused apart (a paused download is not in the list or the row). The tile, the note beside the switch and the row all read these.
 	const speed = $derived(fetchingAll.reduce((t, d) => t + (d.speed || 0), 0));
 	const pausedCount = $derived(manager ? downloads.filter((d) => !d.client_item && stageOf(d) === 'paused').length : 0);
 	function countStages(rows: DownloadRow[], paused = 0) {
@@ -406,8 +391,7 @@
 	}
 
 	async function loadAll() {
-		// The first screen (the Home answer) loads now; the bigger asks wait until
-		// the sign-in hand-off has left, so its frames stay smooth.
+		// The first screen (the Home answer) loads now; the bigger asks wait until the sign-in hand-off has left, so its frames stay smooth.
 		const first = loadHome().then(() => {
 			if (home) loaded = true;
 		});
@@ -415,7 +399,7 @@
 		const [, fo, dl, he, ch, as] = await Promise.allSettled([
 			first,
 			manager ? api.get<{ library_folders: LibraryFolder[] }>('/library-folders') : Promise.resolve(null),
-			// Members may only read the Library and their own asks (perms.go); the rest needs manage_library.
+			// Members may only read the Library and their own asks; the rest needs manage_library.
 			manager ? api.get<{ downloads: DownloadRow[] }>('/downloads/view?limit=100') : Promise.resolve(null),
 			manager ? api.get<Health>('/health') : Promise.resolve(null),
 			// The checks need manage_library only; people without Settings get Status links instead of Fix.
@@ -455,16 +439,14 @@
 		return () => clearInterval(t);
 	});
 
-	// Members get no live title or import news. When their download ends, Home reads everything once;
-	// while an ask of theirs is approved and waiting for a copy, it reads again once a minute (in view only).
+	// Members get no live title or import news. When their download ends, Home reads everything once; while an ask of theirs is approved and waiting for a copy, it reads again once a minute (in view only).
 	let wasBusy = false;
 	$effect(() => {
 		const b = busy;
 		if (wasBusy && !b && !manager) void loadAll();
 		wasBusy = b;
 	});
-	// Members get no live stream: when the bell's minute check brings a new message
-	// (approved, declined, ready), Home reads again.
+	// Members get no live stream: when the bell's minute check brings a new message (approved, declined, ready), Home reads again.
 	let lastMsg: number | undefined;
 	$effect(() => {
 		const top = inbox.messages.length ? Math.max(...inbox.messages.map((m) => m.id)) : undefined;
@@ -564,7 +546,7 @@
 		<PageLoader loading={!loaded} label="Loading Home" onretry={retry}>
 		{#if showOverview}
 			<div class="boards" data-testid="home-overview">
-				<!-- A tile's head: the same glossy icon square as the Settings pages, its name, and an arrow when it opens a page. -->
+				<!-- A tile's head: the same icon square as the Settings pages, its name, and an arrow when it opens a page. -->
 				{#snippet head(icon: IconName, tint: Tint, label: string, go = true)}
 					<span class="head"><SettingsTile {icon} {tint} /><span class="lab">{label}</span>{#if go}<span class="go" aria-hidden="true"><Icon name="chevronRight" size={16} /></span>{/if}</span>
 				{/snippet}
@@ -892,8 +874,7 @@
 </div>
 
 <style>
-	/* The same sizes as Explore: 279px wide cards at a 1536px window (Netflix), 5px gaps on wide rows, one 32px rhythm between blocks.
-	   The sheet colours live here so the tiles and the Welcome card share them. */
+	/* The same sizes as Explore: 279px wide cards at a 1536px window, 5px gaps on wide rows, one 32px rhythm between blocks. The sheet colours live here so the tiles and the Welcome card share them. */
 	.home {
 		container: home / inline-size; --title-item: max(200px, calc((100vw - 96px) / 5.16)); --poster-item: 168px; --home-gap: 32px; display: flex; flex-direction: column; gap: var(--home-gap); padding-bottom: 48px;
 		--sheet-a: light-dark(#ffffff, #212126); --sheet-b: light-dark(#f4f5f8, #151518);
@@ -906,7 +887,6 @@
 	.wide-row { display: contents; }
 	@media (min-width: 768px) { .wide-row { --shelf-gap: 5px; } }
 
-	/* The top: the greeting, then one line with the Home | System switch, the note beside it, and Search and Explore. */
 	.top { display: flex; flex-direction: column; gap: 14px; margin-bottom: -8px; }
 	.top :global(.ui-head) { position: absolute; width: 1px; height: 1px; margin: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 	.greet { font: var(--t-large-title); letter-spacing: var(--t-large-title-track); text-wrap: balance; overflow-wrap: anywhere; }
@@ -921,16 +901,13 @@
 	.wide-only { display: flex; gap: 8px; }
 	.phone-only { display: none; gap: 8px; }
 
-	/* Bento: one grid of tiles. Home: pictures in the roomy places, counts in the small ones; the shape follows how many
-	   tiles there are, and every shape fills whole rows. System: the same frame filled with how HolyArrs is running.
-	   The hidden grid is lifted out of the flow. */
+	/* Bento: one grid of tiles. Home has pictures in the roomy places and counts in the small ones; the shape follows how many tiles there are, and every shape fills whole rows. System is the same frame filled with how HolyArrs is running. */
 	.boards { position: relative; }
 	.boards > .bento { transition: opacity var(--dur) var(--ease-out), translate var(--dur) var(--ease-out); }
 	.bento.gone { position: absolute; inset: 0 0 auto; opacity: 0; translate: 0 6px; visibility: hidden; pointer-events: none; transition: opacity var(--dur) var(--ease-out), translate var(--dur) var(--ease-out), visibility 0s linear var(--dur); }
 	.bento { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-auto-rows: 150px; grid-auto-flow: row dense; gap: 16px; }
 
-	/* The tile is the Requests card's sheet, on its own: lit from above (a paler top, a bright top edge), a hairline,
-	   and one long soft shadow that sits it on the page. A whisper of grain keeps the flat colour from looking printed. */
+	/* The tile is the Requests card's sheet on its own: lit from above, a hairline, and one long soft shadow. A whisper of grain keeps the flat colour from looking printed. */
 	.tile {
 		position: relative; isolation: isolate; min-width: 0; min-height: 0; display: flex; flex-direction: column; padding: 16px 18px; border: 0; border-radius: 20px; overflow: hidden;
 		color: var(--text); text-align: left; font: inherit; background: linear-gradient(180deg, var(--sheet-a), var(--sheet-b)); box-shadow: var(--edge), var(--drop);
@@ -946,7 +923,6 @@
 	.tile.tall { grid-row: span 2; }
 	.tile.banner { grid-column: 1 / -1; }
 
-	/* A count tile: the icon square and name on top, the number low on the left, one quiet line under it. */
 	.head { display: flex; align-items: center; gap: 10px; min-width: 0; }
 	.lab { flex: 1; min-width: 0; margin: 0; font: 600 14px / 1.3 var(--font-ui); letter-spacing: -0.005em; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.go { flex: none; display: inline-grid; color: var(--text-faint); transition: transform var(--dur) var(--ease-out), color var(--dur-fast) var(--ease-out); }
@@ -967,7 +943,6 @@
 	.sk i + i { width: 60%; }
 	.sk i + i + i { width: 40%; }
 
-	/* The thin line along a tile's foot, the same as the life line on a Requests card: how full the disk is, or one pip per part. */
 	.life { position: absolute; left: 18px; right: 18px; bottom: 6px; display: flex; gap: 2px; height: 4px; border-radius: 4px; overflow: hidden; background: var(--track); }
 	.life i { display: block; min-width: 2px; flex-basis: 0; }
 	.life .used { flex: none; border-radius: inherit; background: #1ea9be; }
@@ -978,7 +953,7 @@
 	.life.pips i.bad { background: var(--wait); }
 	.life.pips i.off { background: var(--track); }
 
-	/* Picture tiles: the picture fills the tile; a glass pill says what it is, the title sits on a dark fade at the foot (white in both themes). */
+	/* Picture tiles: the picture fills the tile; a glass pill says what it is and the title sits on a dark fade at the foot (white in both themes). */
 	.pic { justify-content: flex-end; color: #fff; background: #17181d; box-shadow: var(--drop); }
 	.pic > img:first-child { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; object-position: center 28%; transition: transform var(--dur-slow) var(--ease-out); }
 	a.pic:hover > img:first-child { transform: scale(1.03); }
@@ -994,13 +969,11 @@
 	.pic .logo:global(.dark) { filter: brightness(0) invert(1) drop-shadow(0 2px 10px rgb(0 0 0 / 50%)); }
 	.pic .sm { color: rgb(255 255 255 / 86%); font: 600 12px / 1.3 var(--font-ui); -webkit-line-clamp: 1; line-clamp: 1; }
 
-	/* Waiting asks: up to three posters overlapping left to right, each ringed in the sheet's own colour, then a round +N. */
 	.ask-stack { margin-top: auto; display: flex; align-items: center; }
 	.ask-stack img { width: 38px; height: auto; aspect-ratio: 2 / 3; object-fit: cover; border-radius: 7px; margin-left: -12px; background: var(--surface-3); box-shadow: 0 0 0 2.5px var(--sheet-b), 0 6px 14px -4px rgb(0 0 0 / 35%); }
 	.ask-stack img:first-child { margin-left: 0; }
 	.ask-stack b { min-width: 30px; height: 30px; margin-left: 10px; padding: 0 8px; display: grid; place-items: center; border-radius: 999px; background: var(--well); box-shadow: inset 0 0 0 1px var(--line); color: var(--text); font: var(--t-footnote); font-weight: 700; font-variant-numeric: tabular-nums; }
 
-	/* System: downloads. The number, the three steps a download goes through, then what is running (or what finished last). */
 	.dl .num, .dl > .word { margin-top: 14px; }
 	.flow { list-style: none; margin: 14px 0 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-radius: 12px; background: var(--well); box-shadow: inset 0 0 0 1px var(--line); }
 	.flow li { position: relative; min-width: 0; padding: 9px 12px; display: flex; flex-direction: column; gap: 2px; }
@@ -1015,8 +988,7 @@
 	.pb i { display: block; height: 100%; border-radius: inherit; background: var(--info); }
 	.quiet { margin-top: auto; font: var(--t-callout); color: var(--text-muted); }
 
-	/* System: Needs attention. Each cause is one row that opens where it can be fixed; when all is well, what was checked. */
-	/* Dark theme's red and amber are light colours: the digits go dark there, so they can be read. */
+	/* Dark theme's red and amber are light colours, so the digits go dark there to stay readable. */
 	.count { flex: none; min-width: 24px; height: 24px; padding: 0 7px; display: grid; place-items: center; border-radius: 999px; background: var(--fail); color: light-dark(#fff, #17171b); font: 700 12px / 1 var(--font-ui); font-variant-numeric: tabular-nums; }
 	.count.wait { background: var(--wait); }
 	.fixes { list-style: none; margin: 10px -8px 0; padding: 0; display: flex; flex-direction: column; min-height: 0; }
@@ -1041,8 +1013,7 @@
 	.again { margin-top: 12px; }
 	.meta { display: flex; align-items: center; gap: 6px; margin-top: 0; }
 
-	/* Two columns (a narrow window, a tablet, a phone): the big tiles keep their two-by-two, the tall one becomes one row,
-	   an odd last tile spans the row, and everything inside a tile takes its compact size (the rows are 132px here). */
+	/* Two columns (a narrow window, a tablet, a phone): the big tiles keep their two-by-two, the tall one becomes one row, an odd last tile spans the row, and everything inside a tile takes its compact size (the rows are 132px here). */
 	@container home (max-width: 900px) {
 		.bento { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: 132px; gap: 10px; }
 		.tile.tall { grid-row: span 1; }
@@ -1073,7 +1044,7 @@
 		.dl-list li:nth-child(n + 3) { display: none; }
 		.act { display: none; }
 	}
-	/* Two columns on a wide screen (a tablet, a narrow desktop window): a little taller, so pictures are not thin strips. */
+	/* Two columns on a wide screen: a little taller, so pictures are not thin strips. */
 	@container home (min-width: 560px) and (max-width: 900px) {
 		.bento { grid-auto-rows: 150px; }
 	}
@@ -1084,8 +1055,7 @@
 		.head { gap: 7px; }
 		.lab { font-size: 12.5px; letter-spacing: -0.012em; }
 	}
-	/* Phones: Search and Explore become two round buttons beside the switch; the note goes under them and keeps its
-	   line when there is a switch, so Home and System start at the same height. */
+	/* Phones: Search and Explore become two round buttons beside the switch; the note goes under them and keeps its line when there is a switch, so Home and System start at the same height. */
 	@media (max-width: 767px) {
 		.home { --home-gap: 26px; --poster-item: 54vw; --title-item: calc((100cqi - var(--shelf-gap)) / 1.6 / .78); }
 		.greet { font-size: 28px; }
@@ -1098,7 +1068,6 @@
 		.go { display: none; }
 	}
 
-	/* Coming up: a heading like the rows', then one sheet with a line per title: a small picture, the name over its episode, the date at the right. */
 	.up { display: flex; flex-direction: column; gap: 12px; }
 	.up-head { display: flex; align-items: baseline; gap: 12px; }
 	.up-head h2 { font: var(--t-title2); letter-spacing: var(--t-title2-track); }
@@ -1120,7 +1089,6 @@
 	.up-t span { font: var(--t-footnote); color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.up-when { flex: none; font: 600 12px / 1.2 var(--font-ui); color: var(--text-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
 	.up-when.now { color: var(--accent-text); }
-	/* A narrow window or a phone: one column, four lines. */
 	@container home (max-width: 700px) {
 		.up-list { grid-template-columns: minmax(0, 1fr); border-radius: 18px; }
 		.up-list li:nth-child(n + 2) { box-shadow: inset 0 1px 0 var(--line); }
@@ -1158,8 +1126,7 @@
 
 	@media (max-width: 900px) { .setup { grid-template-columns: 1fr; } .steps { box-shadow: inset 0 1px 0 var(--line); } }
 
-	/* High Contrast (forced colors) drops shadows and fills: tiles, the steps box and the ticks get a system border,
-	   focus gets a system outline, and the small coloured marks (dots, pips, the foot line, the count) keep their colours. */
+	/* High Contrast (forced colors) drops shadows and fills: tiles, the steps box and the ticks get a system border, focus gets a system outline, and the small coloured marks (dots, pips, the foot line, the count) keep their colours. */
 	@media (forced-colors: active) {
 		.home :global(:focus-visible) { outline: 2px solid Highlight !important; outline-offset: 2px; }
 		.tile, .setup, .prompt, .flow, .passed li, .up-list { border: 1px solid CanvasText; }

@@ -1,1 +1,1 @@
-<!-- /account opens Settings › My account (see +page.ts). -->
+<!-- /account opens Settings > My account (see +page.ts). -->

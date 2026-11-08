@@ -1,12 +1,10 @@
 <script lang="ts">
 	import IconButton from '#lib/ui/IconButton.svelte';
 	import { SearchField, topBar, cameFrom, pageLabel, type CameFrom } from '#lib/discover/index.ts';
-	import { topCrumbs } from '#lib/core/top-crumbs.svelte.ts';
 	import { afterNavigate } from '$app/navigation';
+	import { topCrumbs } from '#lib/core/top-crumbs.svelte.ts';
 
-	// The 56px translucent bar above the content (tablet and desktop):
-	// sidebar toggle when collapsed, back/forward on detail pages, the one
-	// search field in the centre.
+	// The 56px translucent bar above the content (tablet and desktop): sidebar toggle when collapsed, back and forward on detail pages, and the one search field in the centre.
 	let {
 		showToggle,
 		controls,
@@ -26,8 +24,7 @@
 	// Where you came from (read after each move, once the layout has noted it) and this page's name.
 	let from = $state<CameFrom | null>(null);
 	let titleName = $state('');
-	// After stepping back: the scroll to return to, kept until the page has grown tall enough
-	// (rows that load late would otherwise leave you higher up than where you were).
+	// After stepping back: the scroll to return to, kept until the page has grown tall enough (rows that load late would otherwise leave you higher up than where you were).
 	let pendingY: number | null = null;
 	afterNavigate(() => {
 		from = cameFrom();
@@ -89,10 +86,7 @@
 		position: sticky; top: 0; z-index: 30; height: var(--topbar); display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px;
 		padding: 0 var(--gutter); background: color-mix(in srgb, var(--bg) 82%, transparent); border-bottom: 1px solid var(--line);
 	}
-	/* The blur sits on a layer behind the bar, not on the bar itself: a
-	   backdrop-filter on the bar would make it a backdrop root, so the search
-	   dropdown's own glass could not see the page below and the page showed
-	   through it. */
+	/* The blur sits on a layer behind the bar, not on the bar itself: a backdrop-filter on the bar would make it a backdrop root, so the search dropdown's own glass could not see the page below and the page showed through it. */
 	.ui-topbar::before { content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none; backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px); }
 	:global(html.over-hero) .ui-topbar::before { -webkit-backdrop-filter: none; backdrop-filter: none; }
 	/* Glides with the pills (--bar-glide, app.css): transform only, no fade. */

@@ -1,7 +1,5 @@
 <script lang="ts">
-	// The component catalog (spec §5): every lib/ui part in each state, light
-	// and dark side by side. Signed-in only (the layout handles that); not in
-	// the navigation.
+	// The component catalog: every lib/ui part in each state, light and dark side by side. Signed-in only (the layout handles that); not in the navigation.
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import IconButton from '#lib/ui/IconButton.svelte';
@@ -17,12 +15,12 @@
 	import PosterCard from '#lib/ui/PosterCard.svelte';
 	import WideCard from '#lib/ui/WideCard.svelte';
 	import PersonCircle from '#lib/ui/PersonCircle.svelte';
-	import { Table } from '#lib/accounts/index.ts';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import Skeleton from '#lib/ui/Skeleton.svelte';
 	import ProgressBar from '#lib/ui/ProgressBar.svelte';
+	import { Table } from '#lib/accounts/index.ts';
 	import Toast from '../../(frame)/Toast.svelte';
 	import SidebarItem from '../../(frame)/SidebarItem.svelte';
 	import TabBar from '../../(frame)/TabBar.svelte';

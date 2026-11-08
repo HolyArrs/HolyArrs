@@ -1,14 +1,13 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import { page } from '$app/state';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import Confirm from '#lib/ui/Confirm.svelte';
+	import { onMount } from 'svelte';
+	import { page } from '$app/state';
 	import { api, message } from '#lib/core/api.ts';
 	import { session } from '#lib/core/session.svelte.ts';
 
-	// An AI app (Claude Code, Cursor, ChatGPT…) sent the person here to sign
-	// in: say what is asking and what it can do, then allow or cancel.
+	// An AI app (Claude Code, Cursor, ChatGPT) sent the person here to sign in: say what is asking and what it can do, then allow or cancel.
 	type Info = { client_name: string; returns_to: string; local: boolean; enabled: boolean; deny_url: string };
 
 	let info = $state<Info | null>(null);

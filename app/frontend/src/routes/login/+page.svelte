@@ -1,30 +1,27 @@
 <script lang="ts">
 	import Button from '#lib/ui/Button.svelte';
 	import IconButton from '#lib/ui/IconButton.svelte';
-	import { to } from '#lib/core/paths.ts';
+	import { safeNext, SigninBackdrop, SigninPortals, SIGNIN_GL_EVENT, providerTiles, type Way, forgetPerson, keepPersonPic, recentPeople, rememberPerson, type RecentPerson, type RecentWay, pixelTrail, pixelIn, blockDissolve, siteCell, setTheme, theme } from '#lib/accounts/index.ts';
 	import { onMount, tick, untrack } from 'svelte';
 	import { goto } from '$app/navigation';
-	import { loaderReady, playHandoff, playSignIn, SIGNIN_HOLD_MS, VEIL_MS } from '#lib/core/loader.ts';
 	import { page } from '$app/state';
+	import { to } from '#lib/core/paths.ts';
+	import { loaderReady, playHandoff, playSignIn, SIGNIN_HOLD_MS, VEIL_MS } from '#lib/core/loader.ts';
 	import { ApiError, message } from '#lib/core/api.ts';
 	import { session, type FoundServer, type SignInResult } from '#lib/core/session.svelte.ts';
-	import { safeNext, SigninBackdrop, SigninPortals, SIGNIN_GL_EVENT, providerTiles, type Way, forgetPerson, keepPersonPic, recentPeople, rememberPerson, type RecentPerson, type RecentWay, pixelTrail, pixelIn, blockDissolve, siteCell, setTheme, theme } from '#lib/accounts/index.ts';
 
 	const MIN_LENGTH = $derived(session.s.minPassword);
 
 	let name = $state('');
 	// People who signed in on this device, with the way each one used.
 	let recent = $state<RecentPerson[]>([]);
-	// Which account view: 'auto' (one person: their step; more: the list),
-	// the list, another account (the usual form), or one person by index.
+	// Which account view: 'auto' (one person: their step; more: the list), the list, another account (the usual form), or one person by index.
 	let acct = $state<'auto' | 'list' | 'new' | number>('auto');
 	let editing = $state(false);
 	// The way's name for people: Password, Plex, Jellyfin, Emby, Single sign-on.
 	const wayName = (w: RecentWay) => (w === 'oidc' ? 'Single sign-on' : w.slice(0, 1).toUpperCase() + w.slice(1));
 	const hue = (n: string) => [...n].reduce((a, c) => (a * 31 + c.charCodeAt(0)) % 360, 7);
-	// After a view change the pressed button is gone, so focus would drop to the
-	// page: move it to the new step's first control. Touch screens are left alone
-	// (focusing a field there pops the keyboard).
+	// After a view change the pressed button is gone, so focus would drop to the page: move it to the new step's first control. Touch screens are left alone (focusing a field there pops the keyboard).
 	function focusStep() {
 		if (!matchMedia('(pointer: fine)').matches && document.documentElement.dataset.input !== 'keyboard') return;
 		void tick().then(() => {
@@ -91,8 +88,7 @@
 	let waitUntil = $state(0);
 	let now = $state(Date.now());
 
-	// Which way: the list of buttons, the HolyArrs password, or a Jellyfin
-	// or Emby account. With only the password on, the form shows at once.
+	// Which way: the list of buttons, the HolyArrs password, or a Jellyfin or Emby account. With only the password on, the form shows at once.
 	let chosen = $state<'choose' | 'password' | 'jellyfin' | 'emby'>('choose');
 	// Set once the first step passed and a two-factor code is needed.
 	let ticket = $state('');
@@ -102,8 +98,7 @@
 	let plexTimer: ReturnType<typeof setInterval> | undefined;
 
 	const mode = $derived(session.s.state === 'needs_setup' ? 'setup' : ticket ? 'code' : 'login');
-	// First run: which way makes the owner. 'choose' shows them all; Plex
-	// signs in from its tile, the others open their form.
+	// First run: which way makes the owner. 'choose' shows them all; Plex signs in from its tile, the others open their form.
 	type SetupWay = 'password' | 'plex' | 'jellyfin' | 'emby';
 	let setupWay = $state<'choose' | 'password' | 'jellyfin' | 'emby'>('choose');
 	const setupName = (w: SetupWay) => w.charAt(0).toUpperCase() + w.slice(1);
@@ -171,14 +166,9 @@
 		return safeNext(n);
 	}
 
-	// The card is there on the first frame; its contents come in as a soft
-	// stagger (logo, tiles, "or", fields, button: 70 ms apart, done in about
-	// 1 s). Focus goes to the name field at once, so typing never waits.
+	// The card is there on the first frame; its contents come in as a soft stagger (logo, tiles, "or", fields, button: 70 ms apart, done in about 1 s). Focus goes to the name field at once, so typing never waits.
 	let intro = $state(true);
-	// The stagger waits (paused, at its first frame) while the wallpaper's
-	// wave shader compiles: on a first visit the GPU is busy with it for about
-	// 100 ms, and a fade caught in that would hitch. SigninBackdrop signals
-	// when it is done; repeat visits (shader cached) wait two frames at most.
+	// The stagger waits (paused, at its first frame) while the wallpaper's wave shader compiles: on a first visit the GPU is busy with it for about 100 ms, and a fade caught in that would hitch. SigninBackdrop signals when it is ready.
 	let glWait = $state(true);
 	const GL_WAIT_CAP_MS = 450;
 	let staggered = false;
@@ -211,7 +201,7 @@
 				ticket = t;
 			}
 		} catch {
-			// no storage: they sign in again
+			// No storage: they sign in again.
 		}
 		calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 		recent = recentPeople();
@@ -279,13 +269,10 @@
 			rememberPerson(session.s.name, way, way === 'jellyfin' || way === 'emby' ? name.trim() : undefined);
 			void keepPersonPic(session.s.name, session.s.avatar);
 		}
-		// Success, one continuous move: the Orbit grows out of the Sign in
-		// button and glides to the centre while the panel and the art dissolve
-		// under a veil in the app colour; the app opens under the same Orbit,
-		// which then leaves as the first page rises (lib/loader.ts).
+		// Success, one continuous move: the Orbit grows out of the Sign in button and glides to the centre while the panel and the art dissolve under a veil in the app colour; the app opens under the same Orbit, which then leaves as the page appears.
 		const target = to(firstRun ? '/welcome?first=1' : next());
 		if (calm) {
-			playSignIn(session.s.name, SIGNIN_HOLD_MS); // reduced motion: a plain crossfade, no long hold
+			playSignIn(session.s.name, SIGNIN_HOLD_MS); // Reduced motion: a plain crossfade, no long hold.
 			void goto(target, { replace: true }).finally(loaderReady);
 			return;
 		}
@@ -308,8 +295,7 @@
 		}
 	}
 
-	// Two-factor: six digit boxes (typing moves on, a pasted or autofilled code
-	// fills them all and sends), or one box for a backup code.
+	// Two-factor: six digit boxes (typing moves on, a pasted or autofilled code fills them all and sends), or one box for a backup code.
 	let useBackup = $state(false);
 	let digits = $state(['', '', '', '', '', '']);
 	let digitsEl = $state<HTMLDivElement>();
@@ -544,7 +530,7 @@
 		try {
 			const p = await (setup ? session.setupPlexStart() : session.plexStart());
 			if (win) {
-				win.opener = null; // the Plex page cannot reach back into HolyArrs
+				win.opener = null; // The Plex page cannot reach back into HolyArrs.
 				win.location.href = p.auth_url;
 			}
 			else window.open(p.auth_url, '_blank', 'noopener');
@@ -942,28 +928,23 @@
 </main>
 
 <style>
-	/* Direction B2: one cinematic backdrop, the panel always centred on dark
-	   hairline glass. The page stays dark in light mode too. */
+	/* One backdrop, the panel always centred on dark hairline glass. The page stays dark in light mode too. */
 	.wrap {
 		position: relative;
 		min-height: 100dvh;
 		display: grid;
-		/* The card's top stays put: a step change, an error note or the open help
-		   grows it downward (and the page scrolls) instead of re-centring it. The
-		   top offset centres a usual-height card. */
+		/* The card's top stays put: a step change, an error note or the open help grows it downward (and the page scrolls) instead of re-centring it. The top offset centres a usual-height card. */
 		justify-items: center;
 		align-items: start;
 		/* --fr mirrors the edge frame's thickness (SigninPortals), so the panel clears it. */
 		--fr: 14px;
-		/* Centres a usual (~560 px) card, but never so low that the tallest (~640 px) would not fit. */
+		/* Centres a usual (about 560 px) card, but never so low that the tallest (about 640 px) would not fit. */
 		padding: calc(var(--fr) + max(clamp(16px, 5vh, 48px), (100dvh - 640px) / 2, min((100dvh - 560px) / 2, 100dvh - 640px - 2 * var(--fr) - clamp(16px, 5vh, 48px)))) calc(clamp(16px, 5vw, 96px) + var(--fr)) calc(clamp(16px, 5vh, 48px) + var(--fr));
 		background: #050507;
 		color: var(--text);
 		isolation: isolate;
 	}
-	/* The entrance: each part fades and lifts 6 px, 70 ms after the one
-	   before; the logo settles from a hair smaller instead. Opacity and
-	   transform only, so it stays on the compositor. */
+	/* The entrance: each part fades and lifts 6 px, 70 ms after the one before; the logo settles from a hair smaller instead. Opacity and transform only, so it stays on the compositor. */
 	@media (prefers-reduced-motion: no-preference) {
 		.intro .brand { animation: brand-in var(--dur-slow) var(--ease-out) 60ms both; }
 		.intro :is(.title, .lead, .provs, .or, .field, .submit, .step .link, .help) {
@@ -979,15 +960,13 @@
 	.panel {
 		position: relative;
 		z-index: 1;
-		/* Visual width clamp(360px, 24vw, 440px); type and inputs scale with
-		   --z on big screens (zoom multiplies the width, so divide it out). */
+		/* Visual width clamp(360px, 24vw, 440px); type and inputs scale with --z on big screens (zoom multiplies the width, so divide it out). */
 		--z: 1;
 		zoom: var(--z);
 		width: min(calc(clamp(360px, 24vw, 440px) / var(--z)), calc(100% / var(--z)));
 		padding: 34px 34px 32px;
 		border-radius: 28px;
-		/* Glass: a light tint over a deep blur, so the wallpaper's colour comes
-		   through; the darkening brightness() keeps white text above AA on bright art. */
+		/* Glass: a light tint over a deep blur, so the wallpaper's colour comes through; the darkening brightness() keeps white text above AA on bright art. */
 		background: rgb(14 14 18 / 0.46);
 		-webkit-backdrop-filter: blur(40px) saturate(1.7) brightness(0.72);
 		backdrop-filter: blur(40px) saturate(1.7) brightness(0.72);
@@ -1000,8 +979,7 @@
 		-webkit-backdrop-filter: blur(80px) saturate(1.3) brightness(0.62);
 		backdrop-filter: blur(80px) saturate(1.3) brightness(0.62);
 	}
-	/* Success: the panel breaks into blocks, then the dark closes over the
-	   art in the site's hero cells (blockDissolve masks both). */
+	/* Success: the panel breaks into blocks, then the dark closes over the art in the site's hero cells (blockDissolve masks both). */
 	.cover {
 		position: fixed;
 		inset: 0;
@@ -1012,17 +990,14 @@
 	}
 	.wrap.leaving .cover { display: block; }
 	:global(html[data-theme='light']) .cover { background: #f5f5f7; }
-	/* A 44 px blur re-rendered under a changing mask costs ~30 ms a frame; the
-	   panel is breaking up anyway, so it leaves on its solid fallback colour. */
+	/* A 44 px blur re-rendered under a changing mask costs about 30 ms a frame; the panel is breaking up anyway, so it leaves on its solid fallback colour. */
 	.wrap.leaving .panel { -webkit-backdrop-filter: none; backdrop-filter: none; background: rgb(18 18 22 / 0.92); }
 	@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
 		.panel { background: rgb(18 18 22 / 0.92); }
 		.panel.light { background: rgb(248 246 242 / 0.94); }
 	}
 
-	/* Light mode: tinted glass. The blur lifts the poster under the panel and
-	   keeps its colour; text is dark ink, links are dark and underlined (red on
-	   tinted glass reads poorly), and red stays on the main button. */
+	/* Light mode: tinted glass. The blur lifts the poster under the panel and keeps its colour; text is dark ink, links are dark and underlined (red on tinted glass reads poorly), and red stays on the main button. */
 	.panel.light {
 		/* Thick enough that the poster's dark patches read as tint, never as smudges behind the text. */
 		background: rgb(255 253 250 / 0.66);
@@ -1043,7 +1018,7 @@
 	.light .or { color: rgb(0 0 0 / 0.62); }
 	.light .or::before, .light .or::after { background: rgb(0 0 0 / 0.14); }
 	.light :global(.input) { background: rgb(255 255 255 / 0.6); border-color: rgb(255 255 255 / 0.75); color: #111; }
-	/* The resting light field above outranks app.css's hover, focus and error borders: give them back. */
+	/* The resting light field above outranks app.css's hover, focus and error borders, so give them back. */
 	.light :global(.input:hover) { border-color: rgb(0 0 0 / 0.16); }
 	.light :global(.input:focus-visible) { border-color: var(--accent); box-shadow: 0 0 0 3px rgb(229 53 43 / 0.22); }
 	.light :global(.input[aria-invalid='true']) { border-color: var(--fail); }
@@ -1191,8 +1166,7 @@
 
 	/* Provider tiles: one row, mark over name; a lone tile is a wide button. */
 	.provs { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); }
-	/* Marks sit on one line across the row: a two-line label ("Single sign-on")
-	   grows downward instead of pushing its mark up. */
+	/* Marks sit on one line across the row: a two-line label ("Single sign-on") grows downward instead of pushing its mark up. */
 	.prov {
 		position: relative;
 		overflow: hidden;
@@ -1241,7 +1215,7 @@
 	.acct-pick:focus-visible { outline: 2px solid var(--accent-text); outline-offset: -2px; box-shadow: none; }
 	@media (hover: hover) {
 		.acct-pick:hover { background: rgb(255 255 255 / 0.12); }
-		/* The arrow of the row under the pointer steps forward and darkens/brightens. */
+		/* The arrow of the row under the pointer steps forward and darkens or brightens. */
 		.acct-pick:hover .acct-end { color: currentColor; transform: translateX(2px); }
 	}
 	.acct-pick:active { background: rgb(255 255 255 / 0.16); }
@@ -1289,9 +1263,7 @@
 	.or { display: flex; align-items: center; gap: 10px; margin: 18px 0; color: rgb(255 255 255 / 0.45); font: var(--t-footnote); }
 	.or::before, .or::after { content: ''; flex: 1; height: 1px; background: rgb(255 255 255 / 0.12); }
 
-	/* Hover lives on the buttons only: a 1 px lift, a soft glow and the
-	   site's pixel trail inside the button (pixelTrail.ts paints a canvas
-	   clipped to the button's radius). Focus rings come from :focus-visible. */
+	/* Hover lives on the buttons only: a 1 px lift, a soft glow and the site's pixel trail inside the button (pixel-trail.ts paints a canvas clipped to the button's radius). Focus rings come from :focus-visible. */
 	.submit :global(.ui-btn) { position: relative; overflow: hidden; isolation: isolate; transition: transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out), background-color var(--dur-fast) var(--ease-out); }
 	.prov { isolation: isolate; }
 	.prov > :global(:not(canvas)),
@@ -1376,8 +1348,7 @@
 	@media (min-width: 1600px) and (min-height: 760px) { .panel { --z: 1.08; } }
 	@media (min-width: 2200px) and (min-height: 1000px) { .panel { --z: 1.2; } }
 	@media (min-width: 3000px) and (min-height: 1300px) { .panel { --z: 1.32; } }
-	/* Phones: the desktop card, floating low over full-bleed art with 24 px of
-	   art on every side; it rides above the keyboard (--kb) with a smooth lift. */
+	/* Phones: the desktop card, floating low over full-bleed art with 24 px of art on every side; it rides above the keyboard (--kb) with a smooth lift. */
 	@media (max-width: 600px) {
 		.wrap {
 			--fr: 0px;

@@ -1,6 +1,5 @@
 <script lang="ts">
-	// Needs a decision now lives on the Downloads rows (Problems › Needs a
-	// decision; a row's sheet holds the choices). Old links land there.
+	// Needs a decision now lives on the Downloads rows (Problems > Needs a decision; a row's sheet holds the choices). Old links land there.
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { to } from '#lib/core/paths.ts';

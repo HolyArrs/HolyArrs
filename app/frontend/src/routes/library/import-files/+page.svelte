@@ -1,14 +1,14 @@
 <script lang="ts">
+	import Icon from '#lib/ui/Icon.svelte';
+	import Button from '#lib/ui/Button.svelte';
+	import EmptyState from '#lib/ui/EmptyState.svelte';
+	import Badge from '#lib/ui/Badge.svelte';
+	import { LibraryToolPage, blocker, episodeCode, itemsFor, pickLine, resultLine, startPick, startTicked, type ByHandFile, type ByHandResult, type ByHandScan, type Mode, type Pick } from '#lib/mediafiles/index.ts';
 	import { to } from '#lib/core/paths.ts';
 	import { api, message } from '#lib/core/api.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { bytes } from '#lib/core/format.ts';
-	import Icon from '#lib/ui/Icon.svelte';
-	import { LibraryToolPage, blocker, episodeCode, itemsFor, pickLine, resultLine, startPick, startTicked, type ByHandFile, type ByHandResult, type ByHandScan, type Mode, type Pick } from '#lib/mediafiles/index.ts';
 	import { session } from '#lib/core/session.svelte.ts';
-	import Button from '#lib/ui/Button.svelte';
-	import EmptyState from '#lib/ui/EmptyState.svelte';
-	import Badge from '#lib/ui/Badge.svelte';
 	import type { EpisodeView, TitleView } from '#lib/core/types.ts';
 
 	let path = $state('');

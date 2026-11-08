@@ -1,32 +1,13 @@
 <script lang="ts">
-	import { artistSheets, askShowSheet, quickAskSheet } from '../../request-sheets.ts';
+	import '#lib/ui/title-page.css';
 	import PageLoader from '#lib/ui/PageLoader.svelte';
-	import { peopleNames } from '#lib/core/plain.ts';
-	import { to } from '#lib/core/paths.ts';
-	import { page } from '$app/state';
-	import { api, message, ApiError } from '#lib/core/api.ts';
-	import { live } from '#lib/core/live.svelte.ts';
-	import { toasts } from '#lib/core/toasts.svelte.ts';
-	import { ago, bytes, date, dateTime, tone, words } from '#lib/core/format.ts';
 	import Icon from '#lib/ui/Icon.svelte';
-	import { session } from '#lib/core/session.svelte.ts';
 	import EmptyState from '#lib/ui/TitleEmpty.svelte';
-	import { secondVersion, slotNotes, chooseWarnings, facts, keyReasons, pager, verdict, verdictTone, RenamePreview, CopyControls, deleteSummary, type RemovePlan, artName, crumbFor, qualityBadges } from '#lib/mediafiles/index.ts';
-	import { ReportSheet } from '#lib/requests/index.ts';
-	import { decided } from '#lib/core/plain.ts';
-	import { downloadTone, percent, timeLeft, groupLabel, kindTone } from '#lib/downloads/index.ts';
-	import { SubtitlePanel } from '#lib/subtitles/index.ts';
-	import { ShowPage } from '#lib/shows/index.ts';
-	import { ArtistPage } from '#lib/music/index.ts';
-	import { TitlePage } from '#lib/discover/index.ts';
-	import { goto } from '$app/navigation';
 	import TitleHero, { richMetadata, runtimeWords, shortFolder, type RichMeta } from '#lib/ui/TitleHero.svelte';
-	import { plainReason } from '#lib/core/plain.ts';
 	import ActionButton from '#lib/ui/ActionButton.svelte';
 	import FollowButton from '#lib/ui/FollowButton.svelte';
 	import AskedByLine from '#lib/ui/AskedByLine.svelte';
 	import { loadAskedBy, type AskedByAnswer } from '#lib/ui/asked-by.ts';
-	import { reducedMotion } from '#lib/core/motion.ts';
 	import ActionMenu from '#lib/ui/ActionMenu.svelte';
 	import Menu from '#lib/ui/Menu.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
@@ -39,7 +20,26 @@
 	import { audienceOf, factsOf, titleStatus } from '#lib/ui/title-status.ts';
 	import TitleSection from '#lib/ui/TitleSection.svelte';
 	import type { MenuItem } from '#lib/ui/Menu.svelte';
-	import '#lib/ui/title-page.css';
+	import { artistSheets, askShowSheet, quickAskSheet } from '../../request-sheets.ts';
+	import { secondVersion, slotNotes, chooseWarnings, facts, keyReasons, pager, verdict, verdictTone, RenamePreview, CopyControls, deleteSummary, type RemovePlan, artName, crumbFor, qualityBadges } from '#lib/mediafiles/index.ts';
+	import { ReportSheet } from '#lib/requests/index.ts';
+	import { downloadTone, percent, timeLeft, groupLabel, kindTone } from '#lib/downloads/index.ts';
+	import { SubtitlePanel } from '#lib/subtitles/index.ts';
+	import { ShowPage } from '#lib/shows/index.ts';
+	import { ArtistPage } from '#lib/music/index.ts';
+	import { TitlePage } from '#lib/discover/index.ts';
+	import { page } from '$app/state';
+	import { goto } from '$app/navigation';
+	import { peopleNames } from '#lib/core/plain.ts';
+	import { to } from '#lib/core/paths.ts';
+	import { api, message, ApiError } from '#lib/core/api.ts';
+	import { live } from '#lib/core/live.svelte.ts';
+	import { toasts } from '#lib/core/toasts.svelte.ts';
+	import { ago, bytes, date, dateTime, tone, words } from '#lib/core/format.ts';
+	import { session } from '#lib/core/session.svelte.ts';
+	import { decided } from '#lib/core/plain.ts';
+	import { plainReason } from '#lib/core/plain.ts';
+	import { reducedMotion } from '#lib/core/motion.ts';
 	import type { Choice, EventPage, EventRecord, LibraryFolder, PickRulesView, ReleasePage, ReleaseView, TitleView, VersionView } from '#lib/core/types.ts';
 
 	const id = $derived(Number(page.params.id));
@@ -51,9 +51,7 @@
 		return target && (target === library || target.startsWith(`${library}?`)) ? target : own;
 	});
 	let title = $state<TitleView | null>(null);
-	// A movie or show with a TMDB id opens the one title page (lib/discover/TitlePage.svelte), the same page
-	// New & Popular, Explore and search open; its Library tab and More menu hold the manager tools.
-	// The page below stays only for titles without a TMDB id.
+	// A movie or show with a TMDB id opens the one title page (lib/discover TitlePage), the same page New & Popular, Explore and search open; its Library tab and More menu hold the manager tools. The page below stays only for the cases that page does not cover.
 	const shared = (t: TitleView | null): t is TitleView & { ids: { tmdb: string } } => !!t && (t.kind === 'movie' || t.kind === 'show') && !!t.ids?.tmdb;
 
 	// Who asked.
@@ -81,7 +79,6 @@
 	let saving = $state(false);
 	let refreshing = $state(false);
 
-	// The edit dialog
 	let editDialog: HTMLDialogElement | undefined = $state();
 	let rules = $state<PickRulesView[]>([]);
 	let eRules = $state(0);
@@ -101,7 +98,6 @@
 	const stageWord: Record<string, string> = { announced: 'Announced', in_cinemas: 'In cinemas', released: 'Out on digital or disc' };
 	const files = $derived(title ? title.slots.filter((s) => s.file) : []);
 
-	// The add-a-Version dialog
 	let versionDialog: HTMLDialogElement | undefined = $state();
 	let folders = $state<LibraryFolder[]>([]);
 	let vLabel = $state('4K');
@@ -174,8 +170,7 @@
 	let chooseError = $state('');
 	let choosing = $state(false);
 	let turnReason = $state('');
-	// The Slot a choice goes to: the picked Version, the one the Release
-	// matched, or the only one the movie has.
+	// The Slot a choice goes to: the picked Version, the one the Release matched, or the only one the movie has.
 	const targetSlotId = $derived(slotPick || target?.slot_id || (title?.slots.length === 1 ? title.slots[0].id : 0));
 	const targetSlot = $derived(title?.slots.find((s) => s.id === targetSlotId));
 	const warnings = $derived(target ? chooseWarnings(target, targetSlot?.state) : []);
@@ -300,7 +295,7 @@
 		return () => offs.forEach((off) => off());
 	});
 
-	// Rename and delete (5.1.4, 5.1.6).
+	// Rename and delete.
 	let renameDialog: HTMLDialogElement | undefined = $state();
 	let renameOpen = $state(false);
 	let deleteDialog: HTMLDialogElement | undefined = $state();
@@ -383,8 +378,7 @@
 		}
 	}
 
-	// More › Choose a release: bring the Releases section into view and start
-	// the same pick-it-yourself search as its own button.
+	// More > Choose a release: bring the Releases section into view and start the same pick-it-yourself search as its own button.
 	function chooseRelease() {
 		const h = document.getElementById('h-rel');
 		h?.closest('section')?.scrollIntoView({ behavior: reducedMotion() ? 'auto' : 'smooth', block: 'start' });
@@ -392,7 +386,7 @@
 		void searchNow(false);
 	}
 
-	/** dlKind maps a download state to the pill that says it. */
+	/** Maps a download state to the pill that says it. */
 	function dlKind(state: string, active: boolean): StatusKind {
 		if (active) return 'downloading';
 		const t = downloadTone(state);
@@ -481,7 +475,7 @@
 		{ kind: 'separator' },
 		{ label: 'Delete movie', icon: 'trash', destructive: true, onselect: openDelete }
 	]);
-	// Report a problem (#95): anyone, once the movie has a file; members get it as their only More item.
+	// Report a problem: anyone, once the movie has a file; members get it as their only More item.
 	let reportOpen = $state(false);
 	const mayReport = $derived(!!title && files.length > 0);
 	const moreItems = $derived<MenuItem[]>([...(manage ? heroItems : []), ...(mayReport ? [...(manage ? [{ kind: 'separator' as const }] : []), { label: 'Report a problem', icon: 'alert' as const, onselect: () => (reportOpen = true) }] : [])]);

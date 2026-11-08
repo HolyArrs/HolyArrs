@@ -1,10 +1,4 @@
-/*
- * The one settings content style (Grid): every
- * settings page lays its SettingsCards (.ui-settings) out as a dense
- * two-column grid of small cards; one column on narrow panes.
- * Text is calm: one quiet label style (small, muted), one value style
- * (normal weight), one card title size.
- */
+/* Settings content style: every settings page lays its SettingsCards (.ui-settings) out as a dense two-column grid of small cards, one column on narrow panes. Text is calm: one quiet label style (small, muted), one value style (normal weight), one card title size. */
 
 .settings-content {
 	display: grid;
@@ -18,7 +12,6 @@
 .settings-content .acct > :not(.ui-settings) { grid-column: 1 / -1; }
 .settings-content > .ui-settings + .ui-settings { margin-top: 0 !important; }
 
-/* Cards */
 .settings-content .ui-settings {
 	border-radius: 12px;
 	transition: box-shadow var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
@@ -40,7 +33,6 @@
 .settings-content .ui-settings .adv-body { padding: 0 14px 12px; }
 .settings-content .ui-settings footer { padding: 8px 14px; }
 
-/* Calm text: labels quiet and small, values plain. */
 .settings-content .ui-settings .field > :is(label:first-child, .label, legend) {
 	font: var(--t-footnote);
 	font-weight: 500;
@@ -62,8 +54,7 @@
 .settings-content .ui-settings ul > li > label.switch > span:not(.sw) { min-width: 0; }
 .settings-content .ui-settings ul > li > label.switch br { display: none; }
 
-/* The one settings row: label and a one-line hint on the left, the control
-   on the right (same column in every card), thin divider between rows. */
+/* The one settings row: label and a one-line hint on the left, the control on the right (same column in every card), thin divider between rows. */
 .settings-content .srow {
 	display: grid;
 	grid-template-columns: minmax(0, 1fr) auto;
@@ -96,9 +87,7 @@
 	.settings-content .ui-ibtn.ui-ibtn.md { width: 40px; height: 40px; }
 	.settings-content .srow > .ctl .ui-btn { min-height: 40px; }
 }
-/* Touch screens: 44px targets, as everywhere else in the app. */
-/* Touch phones (and small tablets up to 767px): every control is a 44px
-   target. Fine pointers and wider screens keep the compact sizes. */
+/* Touch phones (and small tablets up to 767px): every control is a 44px target. Fine pointers and wider screens keep the compact sizes. */
 @media (max-width: 767px) and (pointer: coarse) {
 	.settings-content .ui-btn.md,
 	.settings-content .srow > .ctl .ui-btn { min-height: 44px; }
@@ -115,15 +104,11 @@
 	.settings-content .ui-settings { transition: none; }
 }
 
-/* One plain list per page: cards stack in
-   one column; every field puts its label on the left and its control (hint
-   and error under it) on the right. Hand-built .card blocks follow the same
-   rows as SettingsCards. */
+/* One plain list per page: cards stack in one column; every field puts its label on the left and its control (hint and error under it) on the right. Hand-built .card blocks follow the same rows as SettingsCards. */
 .settings-content,
 .settings-content .sc-form { grid-template-columns: minmax(0, 1fr) !important; }
 .settings-content > section.ui-settings:last-of-type:nth-of-type(odd) { grid-column: auto; }
-/* Fields a page set side by side stack instead: a label-left row in a half
-   or third of a card squeezes both halves. */
+/* Fields a page sets side by side stack instead: a label-left row in a half or third of a card squeezes both halves. */
 .settings-content :is(.ui-settings, .card) :is(.two, .three, .pair, .kind-row, .row):has(> .field) {
 	display: grid;
 	grid-template-columns: minmax(0, 1fr);
@@ -144,10 +129,7 @@
 	.settings-content :is(.ui-settings, .card) .field > :not(:first-child) { grid-column: 2; min-width: 0; }
 }
 
-/* On/off rows: every checkbox line reads like a switch row, text on the
-   left and the switch on the right, so a card never mixes ticks and
-   switches. The real checkbox is drawn as the switch. A row of choices
-   (.box, such as Movies / TV shows / Music) keeps its ticks. */
+/* On/off rows: every checkbox line reads like a switch row, text on the left and the switch on the right, so a card never mixes ticks and switches. The real checkbox is drawn as the switch. A row of choices (.box, such as Movies / TV shows / Music) keeps its ticks. */
 .settings-content .checkline:not(.box) {
 	justify-content: space-between;
 	flex-direction: row-reverse;

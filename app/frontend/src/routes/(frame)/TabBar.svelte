@@ -7,8 +7,7 @@
 	import Icon from '#lib/ui/Icon.svelte';
 	import { press } from '#lib/core/motion.ts';
 
-	// Phone bottom tab bar: translucent, safe-area aware. Items are links, or
-	// buttons (with onclick) that open a sheet such as More.
+	// Phone bottom tab bar: translucent and safe-area aware. Items are links, or buttons (with onclick) that open a sheet such as More.
 	let { items, label = 'Main' }: { items: Tab[]; label?: string } = $props();
 </script>
 
@@ -35,8 +34,7 @@
 	@media (max-width: 767px) { .ui-tabbar { display: flex; } }
 	.tab { flex: 1; min-width: 0; min-height: var(--tabbar, 56px); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; border-radius: 10px; color: var(--text); font: 500 11px/1.1 var(--font-ui); }
 	.tab span:last-child { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	/* The bar is see-through, so the page behind can darken it: the active label keeps the text
-	   colour (4.5:1 on any page) and only its icon is red (3:1 is enough for an icon). */
+	/* The bar is see-through, so the page behind can darken it: the active label keeps the text colour (4.5:1 on any page) and only its icon is red (3:1 is enough for an icon). */
 	.tab.active { color: var(--text); font-weight: 600; }
 	.tab.active :global(.icon) { color: var(--accent-text); }
 	.tab:not(.active) :global(.icon) { color: var(--text-muted); }

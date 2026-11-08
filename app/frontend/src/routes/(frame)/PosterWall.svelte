@@ -1,9 +1,8 @@
 <script lang="ts">
-	// The Settings background, shared: this Library's posters, blurred,
-	// dimmed and still, behind a page. Nothing shows until posters are known.
-	import { onMount } from 'svelte';
+	// The Settings background, shared: this Library's posters, blurred, dimmed and still, behind a page. Nothing shows until posters are known.
 	import { homeArt, startArt } from '../settings/(home)/art.svelte.ts';
 	import { wall } from '../settings/(home)/pick.ts';
+	import { onMount } from 'svelte';
 	import { session } from '#lib/core/session.svelte.ts';
 
 	const tiles = $derived(wall(homeArt.posters));

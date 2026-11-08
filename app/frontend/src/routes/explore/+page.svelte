@@ -4,34 +4,14 @@
 </script>
 
 <script lang="ts">
-	import { artistSheets } from '../request-sheets.ts';
-	import { libraryTitles, ownedLibrary, partOff, partOn } from '#lib/mediafiles/index.ts';
-	import { onMount, tick, untrack } from 'svelte';
-	import { anchorDelta, canReturn, putOffsets, readAnchor, readOffsets, type ExploreReturn, headPath, serverRow, tailPath, type HeadAnswer, type TailAnswer, markTransitions, dedupeTop, genrePath, genresFor, parseGenre, type GenreAnswer, filterRows, parseType, typeHref, enoughCards, genreRowPath, genreCardHref, genreRowAfter, GENRE_ROW_MAX, ROW_MIN, type GenreRowCard, type ExploreType, pickerServices, readServices, serviceRegion, SERVICES_KEY, SERVICES_SHOWN, type WatchService, TopServicesRow, ExploreHero, CategoryStrip, GenreBanner, GENRES, leaveOut, newHref, newServicesPath, type NewServicesAnswer, browsePath, browseSectionPath, tileHue, type BrowseAnswer, type BrowseSectionAnswer, type BrowseTileData as BrowseTile, fromStrip, shownBatcher, stripKey, stripPath, stripRowNames, type StripAnswer, whyShown } from '#lib/discover/index.ts';
-	import { page } from '$app/state';
-	import { goto, snapshot } from '$app/navigation';
-	import { to } from '#lib/core/paths.ts';
-	import { detailPath, loadDetails, remember, MetadataNotice } from '#lib/metadata/index.ts';
-	import { api, message } from '#lib/core/api.ts';
-	import { session } from '#lib/core/session.svelte.ts';
-	import { toasts } from '#lib/core/toasts.svelte.ts';
-	import { QuickAsk } from '#lib/requests/index.ts';
-	import { refreshInbox } from '#lib/core/inbox.svelte.ts';
 	import { cardAction, followsByTmdb, cardTmdb, discoverCard, liveCard, matchOwned, ownedIndex, ownedMark, ownedTitle, cardIdentity, type ExploreCard, type ExploreRow } from '#lib/ui/title-cards.ts';
 	import { contextLine } from '#lib/ui/grow-lines.ts';
 	import { defaultRegion } from '#lib/ui/region.ts';
-	import type { Ask, AskState, LibraryFolder, PickRulesView, TitleView } from '#lib/core/types.ts';
-	import type { GateDefaults } from '#lib/mediafiles/index.ts';
-	import type { ShowSettings } from '#lib/shows/index.ts';
-	import type { LookupShow } from '#lib/core/types.ts';
-	import { seasonWords } from '#lib/shows/index.ts';
 	import { audienceOf } from '#lib/ui/title-status.ts';
 	import Popover from '#lib/ui/Popover.svelte';
-	import { MusicTrendingRows, fetchMusicGenre, musicCardHref, musicImage, type MusicCardData, coverFor, MusicGenreTiles } from '#lib/music/index.ts';
 	import Shelf from '#lib/ui/Shelf.svelte';
 	import PosterCard from '#lib/ui/PosterCard.svelte';
 	import WideCard from '#lib/ui/WideCard.svelte';
-	import { fitTile } from '#lib/core/tmdb-image.ts';
 	import IconButton from '#lib/ui/IconButton.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import { SkCard, SkRail } from '#lib/ui/sk/index.ts';
@@ -41,8 +21,28 @@
 	import type { IconName } from '#lib/ui/Icon.svelte';
 	import { EAGER_ROWS, stableRows } from '#lib/ui/row-window.ts';
 	import Icon from '#lib/ui/Icon.svelte';
-	import { onTheaterExit } from '#lib/core/trailer/theater.svelte.ts';
 	import { whenIdle } from '#lib/ui/lazy-art.ts';
+	import { artistSheets } from '../request-sheets.ts';
+	import { libraryTitles, ownedLibrary, partOff, partOn } from '#lib/mediafiles/index.ts';
+	import { anchorDelta, canReturn, putOffsets, readAnchor, readOffsets, type ExploreReturn, headPath, serverRow, tailPath, type HeadAnswer, type TailAnswer, markTransitions, dedupeTop, genrePath, genresFor, parseGenre, type GenreAnswer, filterRows, parseType, typeHref, enoughCards, genreRowPath, genreCardHref, genreRowAfter, GENRE_ROW_MAX, ROW_MIN, type GenreRowCard, type ExploreType, pickerServices, readServices, serviceRegion, SERVICES_KEY, SERVICES_SHOWN, type WatchService, TopServicesRow, ExploreHero, CategoryStrip, GenreBanner, GENRES, leaveOut, newHref, newServicesPath, type NewServicesAnswer, browsePath, browseSectionPath, tileHue, type BrowseAnswer, type BrowseSectionAnswer, type BrowseTileData as BrowseTile, fromStrip, shownBatcher, stripKey, stripPath, stripRowNames, type StripAnswer, whyShown } from '#lib/discover/index.ts';
+	import { detailPath, loadDetails, remember, MetadataNotice } from '#lib/metadata/index.ts';
+	import { QuickAsk } from '#lib/requests/index.ts';
+	import type { GateDefaults } from '#lib/mediafiles/index.ts';
+	import type { ShowSettings } from '#lib/shows/index.ts';
+	import { seasonWords } from '#lib/shows/index.ts';
+	import { MusicTrendingRows, fetchMusicGenre, musicCardHref, musicImage, type MusicCardData, coverFor, MusicGenreTiles } from '#lib/music/index.ts';
+	import { onMount, tick, untrack } from 'svelte';
+	import { page } from '$app/state';
+	import { goto, snapshot } from '$app/navigation';
+	import { to } from '#lib/core/paths.ts';
+	import { api, message } from '#lib/core/api.ts';
+	import { session } from '#lib/core/session.svelte.ts';
+	import { toasts } from '#lib/core/toasts.svelte.ts';
+	import { refreshInbox } from '#lib/core/inbox.svelte.ts';
+	import type { Ask, AskState, LibraryFolder, PickRulesView, TitleView } from '#lib/core/types.ts';
+	import type { LookupShow } from '#lib/core/types.ts';
+	import { fitTile } from '#lib/core/tmdb-image.ts';
+	import { onTheaterExit } from '#lib/core/trailer/theater.svelte.ts';
 
 	let loaded = $state(false);
 	let failed = $state(false);
@@ -99,7 +99,7 @@
 		try {
 			localStorage.setItem(TYPE_KEY, t);
 		} catch {
-			/* the choice is a convenience */
+			/* The choice is a convenience. */
 		}
 		const url = new URL((page.shallow?.url ?? page.url).href);
 		if (t === 'all') url.searchParams.delete('type');
@@ -113,9 +113,7 @@
 		void loadHead();
 	}
 
-	// Back from a title page: the page's scroll and each row's sideways offset
-	// come back once the rows have loaded far enough (more tail pages load
-	// first when the spot was further down).
+	// Back from a title page: the page's scroll and each row's sideways offset come back once the rows have loaded far enough (more tail pages load first when the spot was further down).
 	let back = $state<ExploreReturn | null>(null);
 	snapshot<ExploreReturn>({
 		id: 'explore',
@@ -125,8 +123,7 @@
 		}
 	});
 	let backTries = 0;
-	// Rows above the spot may still be settling to their real heights: keep the
-	// row that was first on screen where it was for a moment, until the person scrolls.
+	// Rows above the spot may still be settling to their real heights: keep the row that was first on screen where it was for a moment, until the person scrolls.
 	function settleOn(v: ExploreReturn) {
 		let moved = false;
 		const stop = () => (moved = true);
@@ -175,8 +172,7 @@
 	// A full-screen trailer (hero or hover card) that plays to its end lands on the title's page; Esc only closes it.
 	$effect(() => onTheaterExit((o) => (o.kind === 'artist' ? undefined : goto(to(detailPath(o.kind, o.tmdb))))));
 
-	// Music shows only music rows: the movie and show rows (services, Best new releases) never appear there.
-	// A genre page (Movies or Shows, ?genre=<TMDB id>) swaps the head and tail for its own rows.
+	// Music shows only music rows: the movie and show rows (services, Best new releases) never appear there. A genre page (Movies or Shows, ?genre=<TMDB id>) swaps the head and tail for its own rows.
 	const genre = $derived(parseGenre((page.shallow?.url ?? page.url).searchParams.get('genre'), type));
 	const genres = $derived(genresFor(type));
 	let musicGenres = $state<{ key: string; name: string; href: string; art: string; images?: string[]; hue: number }[]>([]);
@@ -208,8 +204,7 @@
 		const g = genre;
 		if (g && genreLoaded !== g.id) void loadGenre(g.id);
 	});
-	// Back from a genre page lands on the tab and the spot it was opened from: the address
-	// (tab included) maps to where the page stood when a genre was opened from it.
+	// Back from a genre page lands on the tab and the spot it was opened from: the address (tab included) maps to where the page stood when a genre was opened from it.
 	const spots = new Map<string, ExploreReturn>();
 	function rememberSpot() {
 		spots.set(new URL((page.shallow?.url ?? page.url).href).href, {
@@ -227,7 +222,7 @@
 				try {
 					localStorage.setItem(TYPE_KEY, t);
 				} catch {
-					/* the choice is a convenience */
+					/* The choice is a convenience. */
 				}
 				void loadHead();
 			}
@@ -238,7 +233,7 @@
 			}
 		});
 	});
-	/** pickGenre opens a genre page (a new history entry, so Back returns); null clears it. */
+	/** Opens a genre page (a new history entry, so Back returns); null clears it. */
 	function pickGenre(id: number | null, close?: () => void) {
 		close?.();
 		const url = new URL((page.shallow?.url ?? page.url).href);
@@ -251,16 +246,14 @@
 	}
 	const genreOn = $derived(!!genre && type !== 'music');
 
-	// The Genres picker for Movies and TV: the Music tile look, each genre over the
-	// backdrop Search's Browse grid uses for it (read when the picker first opens).
+	// The Genres picker for Movies and TV: the Music tile look, each genre over the backdrop Search's Browse grid uses for it (read when the picker first opens).
 	let browseArt = $state<Record<string, Record<string, string>>>({});
 	async function loadBrowseArt(t: typeof type) {
 		if (t !== 'movies' && t !== 'shows') return;
 		if (browseArt[t]) return;
 		browseArt = { ...browseArt, [t]: {} };
 		try {
-			// The same tiles Search's Browse grid shows: its first answer, then its Genres section.
-			// Worlds is read too: it holds the pictures the combined TV genres fall back on.
+			// The same tiles Search's Browse grid shows: its first answer, then its Genres section. Worlds is read too: it holds the pictures the combined TV genres fall back on.
 			const [a, more, worlds] = await Promise.all([api.get<BrowseAnswer>(browsePath(t)), api.get<BrowseSectionAnswer>(browseSectionPath(t, 'genres')).catch(() => null), api.get<BrowseSectionAnswer>(browseSectionPath(t, 'worlds')).catch(() => null)]);
 			const art: Record<string, string> = {};
 			for (const x of [...(a.tiles ?? []), ...(more?.tiles ?? []), ...(worlds?.tiles ?? [])]) {
@@ -283,8 +276,7 @@
 		if (!headLoaded || (t !== 'movies' && t !== 'shows')) return;
 		return whenIdle(() => void loadBrowseArt(t), 300);
 	});
-	// Genres Browse has no tile of their own (TMDB's combined TV genres) borrow a
-	// picture from the closest Browse tiles, tried in order.
+	// Genres Browse has no tile of their own (TMDB's combined TV genres) borrow a picture from the closest Browse tiles, tried in order.
 	const genreArtAlias: Record<string, string[]> = {
 		'action & adventure': ['action', 'adventure', 'treasure hunts'],
 		'sci-fi & fantasy': ['sci-fi', 'science fiction', 'fantasy', 'space', 'fantasy worlds', 'parallel worlds'],
@@ -324,8 +316,7 @@
 		return () => { ro.disconnect(); removeEventListener('resize', measurePick); };
 	});
 
-	// The category strip under the hero: the household's top Browse categories, from the
-	// Browse answers the server keeps warm. Hidden until they are ready (no ghosts).
+	// The category strip under the hero: the household's top Browse categories, from the Browse answers the server keeps warm. Hidden until they are ready (no ghosts).
 	let strip = $state<(BrowseTile & { section: string })[]>([]);
 	let stripFor = '';
 	async function loadStrip(t: ExploreType) {
@@ -407,9 +398,7 @@
 		);
 	});
 	const bannerPicks = $derived(bannerCards.map(live).filter((c) => (c.kind === 'movie' || c.kind === 'show') && c.image && !ownedMark(c, ownedTitle(c, owned), who) && c.titleId === undefined).slice(0, 7));
-	// Music: the household's top music genre (first of the genre tiles the
-	// music rows answer, built from the Library's artists) and its albums and
-	// artists not in the Library yet, from the app's own genre page answer.
+	// Music: the household's top music genre (first of the genre tiles the music rows answer, built from the Library's artists) and its albums and artists not in the Library yet, from the app's own genre page answer.
 	let musicPicks = $state<MusicCardData[]>([]);
 	/** The picks are on their way: the banner keeps its place (placeholders) so the rows below never jump. */
 	let musicPicksPending = $state(false);
@@ -417,11 +406,7 @@
 	const musicFav = $derived(type === 'music' ? (musicGenres[0] ?? null) : null);
 	/** The music rows' first answer is in (musicGenres says all it will). */
 	let musicReady = $state(false);
-	/**
-	 * Until the music rows answer, the "Your genre" banner's place is held (the same banner
-	 * with placeholders, so the exact height) when the last visit showed it, so the rows
-	 * never jump down when it arrives. Remembered per browser; first visit holds it.
-	 */
+	/** Until the music rows answer, the "Your genre" banner's place is held (the same banner with placeholders, so the exact height) when the last visit showed it, so the rows never jump down when it arrives. Remembered per browser. */
 	let musicBannerHint = $state(true);
 	/** The last banner's genre name: the held banner's name wraps the same, so the same height. */
 	let musicBannerName = $state('');
@@ -430,7 +415,7 @@
 		musicBannerHint = kept !== '0';
 		musicBannerName = kept && kept !== '0' && kept !== '1' ? kept : '';
 	} catch {
-		/* storage off: hold the place */
+		/* Storage off: hold the place. */
 	}
 	$effect(() => {
 		if (type !== 'music') musicReady = false;
@@ -442,7 +427,7 @@
 		try {
 			localStorage.setItem('holyarrs-music-banner', musicBannerShown && musicFav ? musicFav.name : '0');
 		} catch {
-			/* storage off */
+			/* Storage off. */
 		}
 	});
 	$effect(() => {
@@ -476,8 +461,7 @@
 	let servicesShown = $state<string[]>([]);
 	// A title shows once in the first 8 rows, counting the hero and the services row.
 	const taken = $derived([...heroCards.map(cardIdentity), ...servicesShown]);
-	// New on your services: one row from New & Popular's kept lists, right after Trending on
-	// streaming, leaving out what the hero and that row show (hidden under 6).
+	// New on your services: one row from New & Popular's kept lists, right after Trending on streaming, leaving out what the hero and that row show (hidden under 6).
 	let newServices = $state<(ExploreRow & { wide: boolean; type: string }) | null>(null);
 	let newFor = '';
 	$effect(() => {
@@ -525,7 +509,7 @@
 	/** The head rows' order as first shown for this query; a rebuilt pool never moves them. */
 	let headOrder: string[] = [];
 	let poll: ReturnType<typeof setTimeout> | undefined;
-	/** loadHead reads the head; while the server builds the pool it asks again every 5 s (at most 2 minutes). */
+	/** Reads the head; while the server builds the pool it asks again every 5 s (at most 2 minutes). */
 	async function loadHead(tries = 0) {
 		if (type === 'music') return;
 		const n = ++headAsk;
@@ -554,7 +538,7 @@
 		}
 	}
 
-	/** reuseKept puts back the rows from the last visit (same query, under 10 minutes old). */
+	/** Puts back the rows from the last visit (same query, under 10 minutes old). */
 	function reuseKept() {
 		const k = kept;
 		kept = null;
@@ -605,7 +589,7 @@
 		if (row && el?.closest('a')) count(row, 'open', wrap?.getAttribute('data-title-layer') ?? undefined);
 	}
 
-	/** count: a card opened or an ask started from a row, kept only to measure Explore. */
+	/** A card opened or an ask started from a row, kept only to measure Explore. */
 	function count(rowType: string, event: 'open' | 'ask', titleLayer?: string) {
 		void api.post('/explore/counts', { row_type: rowType, event, ...(titleLayer ? { title_layer: titleLayer } : {}) }).catch(() => {});
 	}
@@ -649,14 +633,13 @@
 			// The genre banner reads Library genres; an answer without them borrows the full list.
 			if (o.light && type !== 'music' && !o.titles.some((t) => t.genres?.length)) titles = await libraryTitles();
 		} catch {
-			/* owned marks wait for the Library */
+			/* Owned marks wait for the Library. */
 		}
 		loaded = true;
 		busy = false;
 	}
 
-	// "On your services": the streaming services this person has, picked
-	// from the region's best known ones; remembered on this device.
+	// "On your services": the streaming services this person has, picked from the region's best known ones; remembered on this device.
 	const region = serviceRegion(defaultRegion());
 	let services = $state<WatchService[]>([]);
 	/** null until the person picks once (the row then asks them to). */
@@ -669,7 +652,7 @@
 		try {
 			picked = readServices(region, localStorage.getItem(SERVICES_KEY));
 		} catch {
-			/* nothing saved */
+			/* Nothing saved. */
 		}
 	}
 
@@ -689,7 +672,7 @@
 				const saved = parseType(localStorage.getItem(TYPE_KEY), musicKept);
 				if (saved !== 'all') setType(saved);
 			} catch {
-				/* nothing saved */
+				/* Nothing saved. */
 			}
 		}
 		void load();
@@ -707,7 +690,6 @@
 </script>
 
 <svelte:head><title>Explore · HolyArrs</title></svelte:head>
-
 
 {#snippet newServicesRow(row: ExploreRow & { type: string }, cards: ExploreCard[])}
 	<div class="row-wrap wide-row" data-row={row.type} data-row-id={row.id}>
@@ -740,7 +722,6 @@
 		<IconButton icon="plus" label={act === 'add' ? `Add ${c.name}` : `Ask for ${c.name}`} variant="glass" size="lg" aria-haspopup="dialog" aria-busy={flow?.busy(c) || undefined} onclick={() => void quick(c, act)} />
 	{/if}
 {/snippet}
-
 
 <!-- A card opened from a row is counted (to measure only). -->
 <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
@@ -924,17 +905,17 @@
 <QuickAsk bind:this={flow} onadded={() => void load()} />
 
 <style>
-	.explore { container: explore / inline-size; /* One size for every title row, measured on Netflix (2026-10-20): 279px cards at a 1536px window, sized from the window like Netflix (whose page has no sidebar), so cards match it; never under 200px. */
+	.explore { container: explore / inline-size; /* One size for every title row: 279px cards at a 1536px window, sized from the window (the page has no sidebar), never under 200px. */
 		--title-item: max(200px, calc((100vw - 96px) / 5.16)); --explore-item: 168px; display: flex; flex-direction: column; gap: 32px; padding-bottom: 48px; }
 	.explore > :global(.ui-head) { margin-bottom: -8px; }
 	/* The held banner keeps the real one's words for its height, unseen until the real one comes. */
 	.music-banner.hold :global(.name) { visibility: hidden; }
-	/* The type switch: in the page under the title; once scrolled past it floats as a glass pill under the top bar. */
+	/* The type switch sits in the page under the title; once scrolled past it floats as a glass pill under the top bar. */
 	.types-mark { height: 0; margin-top: -32px; }
 	.types { position: sticky; top: calc(var(--topbar) + 10px); z-index: 20; display: flex; justify-content: center; margin-top: -12px; pointer-events: none; }
 	.types :global(.ui-seg) { pointer-events: auto; transition: transform var(--bar-glide), box-shadow var(--bar-glide), background-color var(--bar-glide); transform-origin: top center; }
 	.types.stuck :global(.ui-seg) { transform: scale(0.9); background: color-mix(in srgb, var(--surface-2) 70%, transparent); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); box-shadow: 0 10px 30px rgb(0 0 0 / 0.28), 0 0 0 0.5px color-mix(in srgb, var(--text) 14%, transparent); }
-	/* Scaled to 0.9 while stuck: the segments' hit area grows to stay 44px on touch phones (#79). */
+	/* Scaled to 0.9 while stuck: the segments' hit area grows to stay 44px on touch phones. */
 	.types.stuck { --seg-hit: 49px; }
 	.types :global(.ui-seg) { border-radius: 999px; padding: 3px; }
 	.types :global(.ui-seg .thumb) { top: 3px; bottom: 3px; left: 3px; width: calc((100% - 6px) / var(--n)); border-radius: 999px; }
@@ -968,7 +949,7 @@
 	.why { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 0; padding: 0; list-style: none; }
 	.why li { font: 600 12px/1 var(--font-ui); letter-spacing: .02em; padding: 6px 10px; border-radius: 999px; color: #fff; background: rgb(255 255 255 / 14%); border: 1px solid rgb(255 255 255 / 22%); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
 	.row-wrap { display: contents; }
-	/* Wide title rows sit almost edge to edge, as on Netflix: about 279px cards at a 1536px window with a 5px gap. */
+	/* Wide title rows sit almost edge to edge: about 279px cards at a 1536px window with a 5px gap. */
 	@media (min-width: 768px) { .row-wrap.wide-row { --shelf-gap: 5px; } }
 	.loading { display: flex; flex-direction: column; gap: 32px; min-width: 0; }
 	@media (min-width: 768px) { .loading { --shelf-gap: 5px; } }

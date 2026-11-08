@@ -1,5 +1,4 @@
-// The app's places, grouped the way the sidebar shows them.
-// Pure, so the permission rules are testable without a browser.
+// The app's places, grouped the way the sidebar shows them. Pure, so the permission rules are testable without a browser.
 
 import type { IconName } from '#lib/ui/Icon.svelte';
 
@@ -14,7 +13,7 @@ export interface NavItem {
 	also?: string[];
 	badge?: number;
 	badgeLabel?: string;
-	/** Overall progress, 0-100, drawn as a ring around the icon. */
+	/** Overall progress, 0 to 100, drawn as a ring around the icon. */
 	ring?: number;
 	/** A small "needs attention" flag (Settings, for people who change settings). */
 	dot?: boolean;
@@ -55,7 +54,7 @@ function downloadsBadge(input: NavInput): Pick<NavItem, 'badge' | 'badgeLabel' |
 	return { badge: input.decisions, badgeLabel: `${input.decisions} need a decision` };
 }
 
-/** buildNav returns the sections this person may see, empty ones left out. */
+/** The sections this person may see, empty ones left out. */
 export function buildNav(input: NavInput): NavSection[] {
 	const ok = (i: NavItem) => (i.need === null || input.allowed(i.need)) && !input.off(i.href.split('?')[0]);
 	const approver = input.allowed('approve');
@@ -104,7 +103,7 @@ export function buildNav(input: NavInput): NavSection[] {
 	return sections.map((s) => ({ ...s, items: s.items.filter(ok) })).filter((s) => s.items.length > 0);
 }
 
-/** isCurrent says whether a nav item is the page at path (with its query). */
+/** Whether a nav item is the page at path (with its query). */
 export function isCurrent(item: Pick<NavItem, 'href' | 'also'>, path: string, search: Pick<URLSearchParams, 'get'>): boolean {
 	const [base, query] = item.href.split('?');
 	if (query) {
@@ -118,7 +117,7 @@ export function isCurrent(item: Pick<NavItem, 'href' | 'also'>, path: string, se
 	return path === base || path.startsWith(base + '/');
 }
 
-/** currentHref picks the single most specific item that matches, so only one row is selected. */
+/** Picks the single most specific item that matches, so only one row is selected. */
 export function currentHref(items: Pick<NavItem, 'href' | 'also'>[], path: string, search: Pick<URLSearchParams, 'get'>): string | null {
 	const hits = items.filter((i) => isCurrent(i, path, search));
 	// Exact query matches beat plain prefixes; longer paths beat shorter ones.
@@ -133,7 +132,7 @@ export interface Destination {
 	section: string;
 }
 
-/** destinations flattens the sections for the command palette, one per href+label. */
+/** Flattens the sections for the command palette, one per href and label. */
 export function destinations(sections: NavSection[], extra: Destination[] = []): Destination[] {
 	const out: Destination[] = [];
 	const seen = new Set<string>();
@@ -148,7 +147,7 @@ export function destinations(sections: NavSection[], extra: Destination[] = []):
 	return out;
 }
 
-/** filterDestinations ranks places for a typed query: starts-with first, then contains. */
+/** Ranks places for a typed query: starts-with first, then contains. */
 export function filterDestinations(list: Destination[], query: string): Destination[] {
 	const q = query.trim().toLowerCase();
 	if (!q) return list;
@@ -167,7 +166,7 @@ export function filterDestinations(list: Destination[], query: string): Destinat
 export type SidebarPref = 'expanded' | 'collapsed';
 export const SIDEBAR_KEY = 'holyarrs.sidebar';
 
-/** readSidebarPref reads the saved choice; storage may be missing or refuse. */
+/** Reads the saved choice; storage may be missing or refuse. */
 export function readSidebarPref(storage: Pick<Storage, 'getItem'> | undefined): SidebarPref {
 	try {
 		return storage?.getItem(SIDEBAR_KEY) === 'collapsed' ? 'collapsed' : 'expanded';
@@ -176,22 +175,22 @@ export function readSidebarPref(storage: Pick<Storage, 'getItem'> | undefined): 
 	}
 }
 
-/** writeSidebarPref saves the choice; a refusal only means it lasts this visit. */
+/** Saves the choice; a refusal only means it lasts this visit. */
 export function writeSidebarPref(storage: Pick<Storage, 'setItem'> | undefined, pref: SidebarPref): void {
 	try {
 		storage?.setItem(SIDEBAR_KEY, pref);
 	} catch {
-		// private windows may refuse storage
+		// Private windows may refuse storage.
 	}
 }
 
 export type ShellMode = 'phone' | 'tablet' | 'desktop';
-/** shellMode maps a viewport width onto the three shell layouts. */
+/** Maps a viewport width onto the three shell layouts. */
 export function shellMode(width: number): ShellMode {
 	return width < 768 ? 'phone' : width < 1024 ? 'tablet' : 'desktop';
 }
 
-/** homeHref is where the logo goes: Home, which every signed-in person may use (members see their own shelves). */
+/** Where the logo goes: Home, which every signed-in person may use (members see their own shelves). */
 export function homeHref(): string {
 	return '/';
 }

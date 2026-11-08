@@ -1,11 +1,10 @@
 <script lang="ts">
-	import type { Snippet } from 'svelte';
 	import IconButton from '#lib/ui/IconButton.svelte';
 	import SidebarItem from './SidebarItem.svelte';
 	import type { NavItem, NavSection } from './nav.ts';
+	import type { Snippet } from 'svelte';
 
-	// The sidebar: brand, sections, account
-	// footer. One selected fill slides between rows.
+	// The sidebar: brand, sections and account footer. One selected fill slides between rows.
 	let {
 		id = 'sidebar',
 		sections,

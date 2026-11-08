@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { isNavigationKey } from './focus.ts';
+import { describe, expect, it } from 'vitest';
 
 const k = (key: string, mods: Partial<{ metaKey: boolean; ctrlKey: boolean; altKey: boolean }> = {}) => ({ key, metaKey: false, ctrlKey: false, altKey: false, ...mods });
 

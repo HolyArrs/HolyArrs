@@ -1,22 +1,7 @@
 <script lang="ts">
-	import { libraryTitles, ownedLibrary, exceptionChip, filters, posterStatus, firstOfLetter, kinds, letterOf, letters, matchesTitleQuery, missingEpisodes, ofKind, titleQuery, type Filter, type Kind, activeCount, columnSort, sortName, filterCounts, loadColumns, loadSaved, noFilter, passes, progressOf, releaseDate, saveColumns, saveSaved, sortLabel, sortTitles, sortsFor, startDir, columnsFor, defaultSort, type Column, type FilterContext, type FilterState, type Kept, type LibKind, type SavedFilter, type SortDir, type SortKey, tableMinWidth, LibraryPoster, barOf, detailLabels, flipFrom, loadPosterDetail, needsAttention, savePosterDetail, type PosterDetail, BannerArt, ColumnChooser, LibraryViewSwitch, rememberLibraryKind, artName, slotKind, partsNow, libraryState, codecLabel, copyCodecs, languageName, type CopySearchPreview, type CopySearchResult, deleteBody } from '#lib/mediafiles/index.ts';
 	import PageLoader from '#lib/ui/PageLoader.svelte';
-	import { to } from '#lib/core/paths.ts';
-	import { onMount, tick, untrack } from 'svelte';
-	import { SvelteMap } from 'svelte/reactivity';
-	import { api, message } from '#lib/core/api.ts';
-	import { live } from '#lib/core/live.svelte.ts';
-	import { page } from '$app/state';
-	import { beforeNavigate, goto } from '$app/navigation';
-	import { ago, bytes, date } from '#lib/core/format.ts';
-	import { reducedMotion } from '#lib/core/motion.ts';
-	import { DUR, EASE, dropIn, dropOut, easeOut, moveMs } from '#lib/core/transitions.ts';
-	import { fade, slide } from 'svelte/transition';
-	import { episodeLabel, showProgress } from '#lib/shows/index.ts';
-	import { artistProgress, artistHref } from '#lib/music/index.ts';
 	import Poster from '#lib/ui/Poster.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
-	import { flip } from 'svelte/animate';
 	import Chip from '#lib/ui/Chip.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import IconButton from '#lib/ui/IconButton.svelte';
@@ -24,20 +9,35 @@
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
 	import Popover from '#lib/ui/Popover.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
-	import { DlFind, searchShortcut, dlTop } from '#lib/downloads/index.ts';
 	import StatusPill from '#lib/ui/StatusPill.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import Skeleton from '#lib/ui/Skeleton.svelte';
-	import { peopleNames, plainReason } from '#lib/core/plain.ts';
-	import { session } from '#lib/core/session.svelte.ts';
 	import { audienceOf, audienceStatus } from '#lib/ui/title-status.ts';
 	import { quality } from '#lib/ui/title-cards.ts';
-	import type { EpisodeView, TitleView } from '#lib/core/types.ts';
-	import type { MovieCollection, CollectionDetail } from '#lib/mediafiles/index.ts';
 	import { ownedMark, type ExploreCard } from '#lib/ui/title-cards.ts';
-	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { bannerHeight, bannerRatio, bannerWidth, densityLabels, loadDensity, loadPosterSize, posterLabels, posterMinFor, posterRatio, posterSrc, saveDensity, savePosterSize, squarePhoneMin, type Density, type PosterSize } from '#lib/ui/library-art.ts';
+	import { libraryTitles, ownedLibrary, exceptionChip, filters, posterStatus, firstOfLetter, kinds, letterOf, letters, matchesTitleQuery, missingEpisodes, ofKind, titleQuery, type Filter, type Kind, activeCount, columnSort, sortName, filterCounts, loadColumns, loadSaved, noFilter, passes, progressOf, releaseDate, saveColumns, saveSaved, sortLabel, sortTitles, sortsFor, startDir, columnsFor, defaultSort, type Column, type FilterContext, type FilterState, type Kept, type LibKind, type SavedFilter, type SortDir, type SortKey, tableMinWidth, LibraryPoster, barOf, detailLabels, flipFrom, loadPosterDetail, needsAttention, savePosterDetail, type PosterDetail, BannerArt, ColumnChooser, LibraryViewSwitch, rememberLibraryKind, artName, slotKind, partsNow, libraryState, codecLabel, copyCodecs, languageName, type CopySearchPreview, type CopySearchResult, deleteBody } from '#lib/mediafiles/index.ts';
+	import { episodeLabel, showProgress } from '#lib/shows/index.ts';
+	import { artistProgress, artistHref } from '#lib/music/index.ts';
+	import { DlFind, searchShortcut, dlTop } from '#lib/downloads/index.ts';
+	import type { MovieCollection, CollectionDetail } from '#lib/mediafiles/index.ts';
+	import { onMount, tick, untrack } from 'svelte';
+	import { SvelteMap } from 'svelte/reactivity';
+	import { page } from '$app/state';
+	import { beforeNavigate, goto } from '$app/navigation';
+	import { fade, slide } from 'svelte/transition';
+	import { flip } from 'svelte/animate';
+	import { to } from '#lib/core/paths.ts';
+	import { api, message } from '#lib/core/api.ts';
+	import { live } from '#lib/core/live.svelte.ts';
+	import { ago, bytes, date } from '#lib/core/format.ts';
+	import { reducedMotion } from '#lib/core/motion.ts';
+	import { DUR, EASE, dropIn, dropOut, easeOut, moveMs } from '#lib/core/transitions.ts';
+	import { peopleNames, plainReason } from '#lib/core/plain.ts';
+	import { session } from '#lib/core/session.svelte.ts';
+	import type { EpisodeView, TitleView } from '#lib/core/types.ts';
+	import { toasts } from '#lib/core/toasts.svelte.ts';
 
 	type View = 'rows' | 'table' | 'posters' | 'overview';
 
@@ -54,7 +54,6 @@
 	let lastOpenedId = $state<number | null>(null);
 	let myId = $state<number | undefined>();
 
-	// ── URL state: kind (from the sidebar), filters, sort, search, grouping ──
 	function params() {
 		return (page.shallow?.url ?? page.url).searchParams;
 	}
@@ -124,14 +123,13 @@
 	const kindLabel: Record<string, string> = { movie: 'Movie', show: 'Show', artist: 'Artist' };
 	const kindTitle = $derived(kind === 'movie' ? 'Movies' : kind === 'show' ? 'TV shows' : kind === 'artist' ? 'Music' : 'Library');
 
-	// ── View: remembered per library; ?layout= from older links still works ──
 	function readView(k: Kind, fromUrl = false): View {
 		const asked = fromUrl ? page.url.searchParams.get('layout') : null;
 		if (asked === 'rows') return 'rows';
 		if (asked === 'list' || asked === 'table' || asked === 'banners') return 'table';
 		if (asked === 'grid' || asked === 'posters') return 'posters';
 		if (asked === 'overview') return 'overview';
-		// Rows is the view everyone starts on (Luis's pick, 2026-11-05); a view picked before that day is not carried over.
+		// Rows is the view everyone starts on; a view picked before that default was set is not carried over.
 		try {
 			const v = localStorage.getItem(`holyarrs.library-view.${k}`);
 			return v === 'posters' || v === 'overview' || v === 'table' ? v : 'rows';
@@ -160,7 +158,6 @@
 		} catch { /* Not remembered in a private window. */ }
 	}
 
-	// ── Columns: per member and library ──
 	let listWidth = $state(1000);
 	let columns = $state<Column[]>(columnsFor('movie'));
 	$effect(() => {
@@ -169,12 +166,7 @@
 		columns = loadColumns(me, k);
 	});
 	const chosenCols = $derived(columns.filter((c) => c.on));
-	// Columns that do not fit the width wait until the window is wider (the
-	// banner and the title always stay); the header says how many wait.
-	// The art is the hero of each row: the banner column takes its share of
-	// the width (by density) and its shape sets the row height: 1000x185 for
-	// movies and shows, 1000x400 for Music (square artist photos need height).
-	// Columns that do not fit scroll sideways rather than squeeze the art.
+	// Columns that do not fit the width wait until the window is wider (the banner and the title always stay); the header says how many wait. The art is the hero of each row, so the banner column takes its share of the width.
 	let density = $state<Density>('large');
 	let posterSize = $state<PosterSize>('m');
 	let posterDetail = $state<PosterDetail>('status');
@@ -220,8 +212,7 @@
 		touchActs = canManage && typeof matchMedia === 'function' && matchMedia('(hover: none)').matches ? 132 : 0;
 	});
 	const colsNeed = (cols: Column[]) => tableMinWidth(['0px', '28px', '180px', ...cols.map((c) => c.width)], 16, 20 + touchActs) + ART_INSET;
-	// The table never needs a sideways scroll: the banner gives way first (down to its floor),
-	// then the last columns step out until the rest fits.
+	// The table never needs a sideways scroll: the banner gives way first (down to its floor), then the last columns step out until the rest fits.
 	const shownCols = $derived.by(() => {
 		if (phone || kind === 'all') return chosenCols;
 		let out = chosenCols;
@@ -229,11 +220,10 @@
 		return out;
 	});
 	const hiddenCols = $derived(chosenCols.length - shownCols.length);
-	// As many facts as the list is wide enough for: three on a wide screen, down to one.
-	// The Rows grid: poster 52, title >= 120, status 168, each fact 150, actions (wider on touch screens), 12 px gaps.
+	// As many facts as the list is wide enough for: three on a wide screen, down to one. The Rows grid: poster 52, title >= 120, status 168, each fact 150, actions (wider on touch screens), 12 px gaps.
 	const actsW = $derived(96 + (touchActs ? 48 : 0));
 	const factCols = $derived(chosenCols.filter((c) => c.id !== 'status' && c.id !== 'kept'));
-	/** colPx is a column's width for the Rows grid (a stretching column takes its floor). */
+	/** A column's width for the Rows grid (a stretching column takes its floor). */
 	const colPx = (c: Column) => Math.max(84, parseInt(c.width.replace(/^minmax\((\d+)px.*$/, '$1'), 10) || 150);
 	const rowCols = $derived.by(() => {
 		if (kind === 'all') return [];
@@ -247,7 +237,7 @@
 		return out;
 	});
 	const factsTpl = $derived(rowCols.map((c) => `${colPx(c)}px`).join(' ') || '0px');
-	/** rowCell is a fact for the Rows view: counts for progress columns, "14 d ago" for dates that are recent by nature. */
+	/** A fact for the Rows view: counts for progress columns, "14 d ago" for dates that are recent by nature. */
 	function rowCell(t: TitleView, c: Column, p: { have: number; total: number }): string {
 		if (isProgressCol(c)) return p.total ? `${p.have}/${p.total}` : '';
 		if (c.id === 'release' && t.kind === 'movie' && t.digital_date && Date.parse(t.digital_date) <= Date.now()) return date(t.digital_date);
@@ -277,7 +267,6 @@
 		saveColumns(myId, libKind, c);
 	}
 
-	// ── Movie series: which titles belong to which series ──
 	let series = $state<MovieCollection[]>([]);
 	let seriesOfTitle = $state<Map<number, number>>(new Map());
 	let seriesLoaded = false;
@@ -302,7 +291,6 @@
 	});
 	const seriesName = (id: number) => series.find((s) => s.id === id)?.name ?? 'Collection';
 
-	// ── Filtering and sorting ──
 	function linkedPeople(t: TitleView) {
 		const people = new Map<number, { id: number; name: string }>();
 		for (const ask of t.asks ?? []) {
@@ -320,7 +308,6 @@
 	const askers = $derived([...new Map(ofThisKind.flatMap((t) => linkedPeople(t)).map((p) => [p.id, p])).values()].sort((a, b) => a.name.localeCompare(b.name)));
 	const filtersOn = $derived(activeCount(filter));
 
-	// ── Toolbar: the count where the title was, the top search field, the pinned bar ──
 	const nouns: Record<string, [string, string]> = { movie: ['movie', 'movies'], show: ['TV show', 'TV shows'], artist: ['artist', 'artists'], all: ['title', 'titles'] };
 	const kindTotal = $derived(titles.filter((t) => ofKind(t, kind)).length);
 	const countText = $derived.by(() => {
@@ -423,8 +410,7 @@
 
 	// Counts stay blank until the Library has loaded, so a 0 only ever means 0.
 	const countHint = (n: number) => (loaded ? String(n) : undefined);
-	// Add only adds. Everything that looks after the Library is in Tools (people are found by the search,
-	// movie series by Group by series, and held files are on Downloads).
+	// Add only adds. Everything that looks after the Library is in Tools (people are found by the search, movie series by Group by series, and held files are on Downloads).
 	const addItems = $derived<MenuItem[]>([
 		...(partOn('movies') ? ([{ label: 'Movie', icon: 'film', href: to('/search') }] as MenuItem[]) : []),
 		...(partOn('shows') ? ([{ label: 'TV show', icon: 'tv', href: to('/search?kind=show') }] as MenuItem[]) : []),
@@ -442,7 +428,6 @@
 		return partsNow.answer?.parts.find((part) => part.part === name)?.on !== false;
 	}
 
-	// ── Entries: rows, with series headers when grouped ──
 	type Entry = { type: 'head'; key: string; id: number; name: string; count: number } | { type: 'row'; key: string; t: TitleView };
 	const grouped = $derived(groupSets && kind === 'movie');
 	const entries = $derived.by<Entry[]>(() => {
@@ -467,7 +452,6 @@
 	});
 	const rowEntries = $derived(entries.filter((e): e is Extract<Entry, { type: 'row' }> => e.type === 'row'));
 
-	// ── Virtual list: only rows near the screen are drawn ──
 	let listEl = $state<HTMLElement | null>(null);
 	let scrollY = $state(0);
 	let viewH = $state(900);
@@ -532,7 +516,6 @@
 		void tick().then(readTop);
 	});
 
-	// ── Keyboard: arrows move, Space selects, Enter opens ──
 	let active = $state(0);
 	async function focusRow(i: number) {
 		const n = rowEntries.length;
@@ -576,7 +559,6 @@
 		void goto(openLink(t));
 	}
 
-	// ── Selecting and the bulk bar ──
 	let selecting = $state(false);
 	let picked = $state<Set<number>>(new Set());
 	let busy = $state(false);
@@ -641,8 +623,7 @@
 		busy = false;
 		report('being searched for', failed, ids.length);
 	}
-	// Find another copy (movies): the selected movies' main files, searched again at their Quality
-	// after a review. Protected files are left out.
+	// Find another copy (movies): the selected movies' main files, searched again at their Quality after a review. Protected files are left out.
 	const copyPicks = $derived(pickedShown.flatMap((t) => (t.copy && !t.copy.protected ? [{ file_id: t.copy.file_id, version_id: t.copy.version_id }] : [])));
 	let copyDialog = $state<HTMLDialogElement | null>(null);
 	let copyPreview = $state<CopySearchPreview | null>(null);
@@ -767,8 +748,7 @@
 		if (selecting && e.key === 'Escape' && !deleteDialog?.open) stopSelecting();
 	}
 
-	// ── A to Z: only while sorted by name ──
-	// Letters follow the sort, which skips a leading The, A or An.
+	// A to Z, only while sorted by name. Letters follow the sort, which skips a leading The, A or An.
 	const jumps = $derived(firstOfLetter(shown.map((t) => ({ id: t.id, name: sortName(t.name) }))));
 	const railOn = $derived(sort.key === 'name' && !grouped && shown.length > 12);
 	let railFocus = $state('A');
@@ -805,7 +785,6 @@
 		if (!jumps.has(railFocus)) railFocus = letters.find((l) => jumps.has(l)) ?? 'A';
 	});
 
-	// ── Cells ──
 	function titleLink(id: number): string {
 		const url = page.shallow?.url ?? page.url;
 		return to(`/library/${id}?returnTo=${encodeURIComponent(url.pathname + url.search)}`);
@@ -910,7 +889,6 @@
 		}
 	}
 
-	// ── Loading, search and scroll memory ──
 	$effect(() => {
 		loadRevision;
 		if (!mounted) return;
@@ -1467,8 +1445,7 @@
 		--drop: 0 1px 2px light-dark(rgb(20 24 40 / 5%), rgb(0 0 0 / 40%)), 0 18px 32px -20px light-dark(rgb(20 24 40 / 30%), rgb(0 0 0 / 85%)); }
 	.library.selecting { padding-bottom: 112px; }
 
-	/* One row, and the page has no top bar above it (as on Downloads): search, view and size, sort and filter,
-	   columns, select, add. Each group sits in the same glass capsule the Downloads row uses. Pinned, it is one solid band. */
+	/* One row, and the page has no top bar above it (as on Downloads): search, view and size, sort and filter, columns, select, add. Each group sits in the same glass capsule the Downloads row uses. Pinned, it is one solid band. */
 	.toolbar { position: sticky; top: 0; z-index: 6; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: calc(-1 * var(--s-6, 24px)) calc(-1 * var(--gutter, 0px)) 0; padding: 10px var(--gutter, 0px); background: var(--bg); border-bottom: 1px solid transparent; transition: border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out); }
 	.toolbar.stuck { border-bottom-color: var(--line); box-shadow: 0 10px 24px rgb(0 0 0 / .08); }
 	.toolbar.topbar .cap { display: flex; flex: none; align-items: center; gap: 2px; height: 52px; box-sizing: border-box; padding: 3px; border: 1px solid var(--line); border-radius: 14px; background: color-mix(in srgb, var(--surface-1) 72%, transparent); -webkit-backdrop-filter: blur(18px) saturate(1.4); backdrop-filter: blur(18px) saturate(1.4); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 6px 20px -10px rgb(0 0 0 / 0.35); }
@@ -1489,8 +1466,7 @@
 	.t-tools, .t-sel, .t-add, .t-cols { display: contents; }
 	.chips .t-miss { display: inline-flex; margin-left: auto; }
 	.toolbar.topbar .t-tools { display: flex; margin-left: auto; }
-	/* A narrower page keeps the one row: first Columns and Select fold to their icons, then Tools and Add too.
-	   A folded name is only hidden from the eye, so the button keeps its name for screen readers. */
+	/* A narrower page keeps the one row: first Columns and Select fold to their icons, then Tools and Add too. A folded name is only hidden from the eye, so the button keeps its name for screen readers. */
 	.toolbar.topbar { container-type: inline-size; }
 	.toolbar.topbar :global(.dlfind) { flex-basis: 200px; min-width: 180px; }
 	@container (max-width: 1000px) {
@@ -1511,8 +1487,7 @@
 	.toolbar .count.shelf { display: inline-flex; min-width: 0; }
 	.count.shelf :global(button[aria-haspopup]) { min-width: 0; max-width: 100%; padding-inline: 0 8px; background: none; box-shadow: none; font: var(--t-headline); font-weight: 650; color: var(--text); }
 	.count.shelf :global(button[aria-haspopup] span) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	/* Sort and filter: one panel in the app's own material. Sort is a ticked list (as in every menu),
-	   filters are the same chips the page shows once they are on. */
+	/* Sort and filter: one panel in the app's own material. Sort is a ticked list (as in every menu); filters are the same chips the page shows once they are on. */
 	.sf { display: grid; grid-template-columns: 212px minmax(0, 1fr); padding: 6px; }
 	.sf-col { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
 	.sf-sort { padding-right: 12px; }
@@ -1542,7 +1517,7 @@
 	.sf-chip.t-not_out_yet { --dot: var(--text-muted); }
 	.sf-chip.t-better { --dot: var(--info, #409cff); }
 	.sf-chip.t-have { --dot: var(--ok, #2fa36b); }
-	/* The series list is long: it scrolls inside its own well, and takes the height the Sort column leaves. */
+	/* The series list is long: it scrolls inside its own well and takes the height the Sort column leaves. */
 	.sf-well { flex: 1 1 0; min-height: 104px; overflow-y: auto; overscroll-behavior: contain; padding: 4px; border-radius: 10px; background: color-mix(in srgb, var(--text) 4%, transparent); box-shadow: inset 0 0 0 1px var(--line); scrollbar-width: thin; scrollbar-color: var(--line-strong, var(--text-faint)) transparent; }
 	/* Tools: tiles with the Settings pages' glossy icons, two across (one on phones). */
 	/* A count sits on the icon's corner, so every tile keeps the same shape: red when it calls for action, grey when it only tells. */
@@ -1606,14 +1581,11 @@
 	.lsub { color: var(--text-muted); font: var(--t-footnote); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
 	.lyr { color: var(--text-muted); font: 500 12px/1 var(--font-ui); }
 
-
-	/* Banner table */
 	.rows { position: relative; isolation: isolate; min-width: 0; border-radius: 20px; background: linear-gradient(180deg, var(--sheet-a), var(--sheet-b) 420px); box-shadow: var(--edge), var(--drop); overflow: clip; }
 	/* A whisper of grain keeps the flat colour from looking printed (as on Home's tiles). */
 	.rows::before { content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none; opacity: .05; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .5 0 0 0 0 .5 0 0 0 0 .5 0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
 	.row { display: grid; grid-template-columns: var(--cols); align-items: center; gap: 0 16px; min-height: var(--row-h, 100px); padding: 0 var(--row-pad, 20px) 0 8px; width: 100%; box-sizing: border-box; }
-	/* The virtual list moves its own rows (a top spacer); the browser's scroll
-	   anchoring must not also correct for them, or the two chase each other. */
+	/* The virtual list moves its own rows (a top spacer); the browser's scroll anchoring must not also correct for them, or the two chase each other. */
 	.body { overflow-anchor: none; }
 	.row.head { position: relative; min-height: 40px; background: color-mix(in srgb, var(--text) 3%, transparent); border-bottom: 1px solid var(--line); }
 	/* Sentence case, like Downloads' column headings: one voice on the page. */
@@ -1628,8 +1600,7 @@
 	.dir { color: var(--accent); }
 	.entry { position: relative; outline: none; cursor: pointer; scroll-margin-top: 84px; transition: background var(--dur-fast) var(--ease-out); }
 	.library.selecting .entry, .library.selecting .grid > li { scroll-margin-bottom: 120px; }
-	/* Every row carries its top line, so a row's height never changes when the
-	   virtual window drops the row above it (that would nudge the list 1px). */
+	/* Every row carries its top line, so a row's height never changes when the virtual window drops the row above it (that would nudge the list 1px). */
 	/* The line between rows is drawn, not a border, and starts after the picture. */
 	.entry::before { content: ''; position: absolute; top: 0; left: 20px; right: 20px; height: 1px; background: var(--line); pointer-events: none; }
 	.rows.table .entry::before { left: calc(var(--banner-w, 0px) + 24px); }
@@ -1684,7 +1655,6 @@
 	.entry:hover .acts, .entry:focus-within .acts { opacity: 1; }
 	@media (hover: none) { .acts { opacity: 1; } }
 
-	/* Progress meter, coloured by state */
 	.meter { position: relative; display: block; height: 5px; border-radius: 99px; background: var(--surface-3); overflow: hidden; }
 	.meter i { position: absolute; inset: 0 auto 0 0; border-radius: inherit; background: var(--text-muted); transition: width var(--dur-slow) var(--ease-out); }
 	.meter.full i { background: var(--ok, #2fa36b); }
@@ -1698,7 +1668,6 @@
 	.series-head span { color: var(--text-muted); font: var(--t-footnote); }
 	.series-head a { margin-left: auto; color: var(--accent-text); font: var(--t-footnote); font-weight: 600; }
 
-	/* Overview list */
 	.ov { display: grid; grid-template-columns: 92px minmax(0, 1fr) minmax(200px, 264px); gap: 18px 24px; padding: 14px 20px 14px 16px; }
 	.ov-poster { display: block; border-radius: 8px; overflow: hidden; }
 	.ov-main { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
@@ -1720,9 +1689,6 @@
 	/* Music: a square photo that keeps its shape, and two or three lines of bio. */
 	.ov.music .ov-poster { align-self: start; }
 
-	/* Loading rows match the banner shape */
-
-	/* Posters */
 	.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--poster-min, 172px), 1fr)); gap: 26px 18px; margin: 0; padding: 0; list-style: none; }
 	/* Posters: no paint containment here, so the lift, tilt and shadow are never clipped. */
 	.grid > li { position: relative; min-width: 0; display: flex; flex-direction: column; gap: 4px; scroll-margin-top: 120px; }
@@ -1743,7 +1709,6 @@
 	.row-notes { display: flex; flex-wrap: wrap; gap: 4px 12px; margin: -6px 0 0; padding: 0 12px 10px 54px; }
 	.rows.table .row-notes, .rows.table .fold { padding-left: calc(var(--banner-w, 0px) + 68px); }
 
-	/* Bulk bar */
 	.select-bar { position: sticky; bottom: 16px; z-index: 20; container-type: inline-size; display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 6px; margin-top: 8px; padding: 10px 12px; border-radius: var(--r-panel); background: color-mix(in srgb, var(--sheet-a) 90%, transparent); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); box-shadow: var(--shadow-card), inset 0 1px 0 rgb(255 255 255 / 6%), 0 8px 28px rgb(0 0 0 / 25%); }
 	/* Narrow: the bar's buttons fold to their icons (Remove keeps its word), the toolbar's own trick. */
 	@container (max-width: 1000px) {
@@ -1764,14 +1729,12 @@
 	.modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: var(--s-6); }
 	.modal .input { width: 100%; margin-top: 6px; }
 
-	/* A to Z */
 	.rail { position: sticky; top: 84px; display: flex; flex-direction: column; align-items: stretch; padding: 4px 0; border-radius: 999px; background: var(--surface-1); box-shadow: var(--shadow-card); }
 	.rail-l { display: grid; place-items: center; min-height: 24px; /* WCAG 2.5.8: each letter is at least a 24px target. */ padding: 0; border: 0; border-radius: 6px; background: none; color: var(--text); font: 600 11px/1 var(--font-ui); cursor: pointer; }
 	.rail-l:hover:not(:disabled) { background: var(--surface-2); color: var(--accent); }
 	.rail-l:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.rail-l:disabled { color: var(--text-muted); opacity: .45; cursor: default; }
 
-	/* Missing fold */
 	.fold { padding: 0 12px 10px 54px; }
 	.fold-body { margin-top: 6px; padding: 8px 12px; border-radius: var(--r-btn); background: var(--surface-2); }
 	:global(.fold-btn svg:first-child) { transition: rotate var(--dur-fast) var(--ease-out); }
@@ -1784,7 +1747,6 @@
 	.fold-note { margin: 0; color: var(--text-muted); font: var(--t-callout); }
 	.empty-more { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
 
-	
 	/* Phones: each row becomes a banner card; posters stay a grid. */
 	@media (max-width: 639px) {
 		.toolbar { position: static; margin: 0; padding: 8px 0; }

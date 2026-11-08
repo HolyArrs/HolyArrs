@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { cut, messageWords } from './bell-words.ts';
+import { describe, expect, it } from 'vitest';
 
 describe('bell words', () => {
 	it('names the kind of request message and keeps its first sentence', () => {
