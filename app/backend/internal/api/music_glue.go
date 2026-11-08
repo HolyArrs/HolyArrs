@@ -20,7 +20,9 @@ type (
 // mh is the Music handlers over this API's services, built once.
 func (a *API) mh() *music.Handlers {
 	a.musOnce.Do(func() {
-		a.mus = &music.Handlers{Deps: &a.s.Deps, Services: music.Services{Store: a.s.Store, Packages: a.s.Packages}}
+		a.mus = &music.Handlers{Deps: &a.s.Deps, Services: music.Services{
+			Store: a.s.Store, Packages: a.s.Packages, Queue: a.s.Queue,
+			SlotOfTitle: a.slotOfTitle, SeasonLabel: a.seasonLabel}}
 	})
 	return a.mus
 }
@@ -63,4 +65,12 @@ func waitFlight[T any](ctx context.Context, fl *sideFlight, by time.Time) (v T, 
 
 func sideGet[T any](a *API, ctx context.Context, kind, key string, fresh time.Duration, fetch func(context.Context) (T, bool, error)) (T, bool) {
 	return music.SideGet(a.mh(), ctx, kind, key, fresh, fetch)
+}
+
+func (a *API) albumLabels(ctx context.Context, slotIDs []int64) string {
+	return a.mh().AlbumLabels(ctx, slotIDs)
+}
+
+func (a *API) partLabel(ctx context.Context, partID int64) (titleID int64, title, season, album string) {
+	return a.mh().PartLabel(ctx, partID)
 }

@@ -372,7 +372,7 @@ func (h *Handlers) WithPictures(ctx context.Context, b []byte, extra ...string) 
 func (h *Handlers) WriteMusicJSON(w http.ResponseWriter, r *http.Request, v any, extra ...string) {
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(v); err != nil {
-		webserver.Internal(w, "api", err)
+		webserver.Internal(w, "music", err)
 		return
 	}
 	b := h.WithPictures(r.Context(), buf.Bytes(), extra...)

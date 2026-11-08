@@ -1,9 +1,11 @@
 package music
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 )
 
 // Services are the program services the Music routes use, named as the
@@ -12,6 +14,14 @@ type Services struct {
 	Store *database.Store
 	// Packages are the kept artist packages; nil: none.
 	Packages *PackageSync
+	Queue    *jobs.Queue
+
+	// Funcs owned by other modules (shows), filled by the caller.
+
+	// SlotOfTitle says a track item belongs to the title.
+	SlotOfTitle func(ctx context.Context, itemID, titleID int64) bool
+	// SeasonLabel names a part's title and season ("S01").
+	SeasonLabel func(ctx context.Context, partID int64) (int64, string, string)
 }
 
 // Handlers serves the Music routes. Deps points at the caller's flags and
