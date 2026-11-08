@@ -274,7 +274,7 @@ func TestDLUserOnly(t *testing.T) {
 	}
 }
 
-// Ask events follow the asks routes (#139): the full one goes to people
+// Ask events follow the asks routes: the full one goes to people
 // who approve, each asker who does not approve gets their own copy, and
 // someone who only runs the Library (or another member) gets neither.
 func TestAskEventsFollowApprove(t *testing.T) {
