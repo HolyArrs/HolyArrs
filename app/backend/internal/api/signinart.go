@@ -101,7 +101,7 @@ type signinArtCached struct {
 
 // signinLibraryArt reads "Show Library art on the sign-in page" (default off).
 func (a *API) signinLibraryArt(ctx context.Context) bool {
-	return a.uiSettings(ctx).SigninLibraryArt
+	return a.signinLibraryArtOn(ctx)
 }
 
 func (st *signinArtState) clock() time.Time {

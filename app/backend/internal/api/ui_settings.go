@@ -20,6 +20,12 @@ func (a *API) uiHandlers() *health.UIHandlers {
 
 func (a *API) uiSettings(ctx context.Context) UISettings { return health.UISettingsOf(ctx, a.s.Store) }
 
+// autoplayOn and signinLibraryArtOn read one UI setting each.
+func (a *API) autoplayOn(ctx context.Context) bool { return health.AutoplayOn(ctx, a.s.Store) }
+func (a *API) signinLibraryArtOn(ctx context.Context) bool {
+	return health.SigninLibraryArtOn(ctx, a.s.Store)
+}
+
 // applyArtworkCap sets the picture cache's cap from Settings.
 func (a *API) applyArtworkCap(ctx context.Context) { a.uiHandlers().ApplyArtworkCap(ctx) }
 

@@ -265,7 +265,7 @@ func (a *API) artistVideo(w http.ResponseWriter, r *http.Request) {
 		a.pickedVideo(w, r, mbid, id, r.URL.Query().Get("play") == "1")
 		return
 	}
-	if !a.uiSettings(r.Context()).AutoplayTrailers {
+	if !a.autoplayOn(r.Context()) {
 		webserver.Fail(w, http.StatusNotFound, "trailers are turned off")
 		return
 	}

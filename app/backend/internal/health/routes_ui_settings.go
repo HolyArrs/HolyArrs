@@ -169,3 +169,18 @@ func (h *UIHandlers) put(w http.ResponseWriter, r *http.Request) {
 	}
 	webserver.WriteJSON(w, http.StatusOK, UISettingsOf(r.Context(), h.Store))
 }
+
+// AutoplayOn reads "Autoplay trailers" from Settings.
+func AutoplayOn(ctx context.Context, st *database.Store) bool {
+	return UISettingsOf(ctx, st).AutoplayTrailers
+}
+
+// SigninLibraryArtOn reads "Show Library art on the sign-in page".
+func SigninLibraryArtOn(ctx context.Context, st *database.Store) bool {
+	return UISettingsOf(ctx, st).SigninLibraryArt
+}
+
+// ArtworkCacheGBOf reads the picture cache size in GB.
+func ArtworkCacheGBOf(ctx context.Context, st *database.Store) int {
+	return UISettingsOf(ctx, st).ArtworkCacheGB
+}

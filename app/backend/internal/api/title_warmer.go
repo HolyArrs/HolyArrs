@@ -149,7 +149,7 @@ func (a *API) warmOne(ctx context.Context, j warmJob) {
 		}
 	}
 	a.titles.WarmExtras(ctx, j.kind, j.id)
-	if !a.uiSettings(ctx).AutoplayTrailers {
+	if !a.autoplayOn(ctx) {
 		return
 	}
 	// The key only (the metadata server's pick, else TMDB's videos; no
