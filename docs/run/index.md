@@ -5,7 +5,7 @@ level: Setup
 sidebar: { order: 0 }
 ---
 
-Everything for keeping a running HolyArrs in good shape.
+Keep a running HolyArrs updated, backed up and healthy.
 
 ## Keep it healthy
 

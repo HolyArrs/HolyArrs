@@ -1,11 +1,11 @@
 ---
 title: Metadata server
-description: Notes on the standalone HolyArrs metadata service: its client contract, recovery and private validation.
+description: How clients call the standalone HolyArrs metadata server, and how it is recovered and checked.
 level: Expert
 sidebar: { order: 0 }
 ---
 
-The metadata server answers lookups for names, pictures and charts. These pages describe the standalone service, for people who run or test it.
+The metadata server answers lookups for titles, pictures, ratings and charts. These pages are for people who run or test it.
 
 - [Client contract](client-contract.md): routes, credentials and limits a client must follow.
 - [Private recovery](private-recovery.md): create and verify an encrypted recovery package.

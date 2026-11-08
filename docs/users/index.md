@@ -5,7 +5,7 @@ level: Setup
 sidebar: { order: 0 }
 ---
 
-Everything about who can use your server and what it tells them.
+Who can use your server, and what it tells them.
 
 - [Users and roles](roles.md): invite people, set permissions, turn on two-factor sign-in.
 - [Sign-in and passwords](sign-in.md): set the shortest password, skip sign-in at home, add single sign-on.
