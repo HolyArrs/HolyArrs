@@ -39,7 +39,7 @@ const (
 )
 
 // aiConnectPage is the web page where a person allows an AI app.
-const aiConnectPage = "/ai-connect"
+const aiConnectPage = "/ai"
 
 // aiClient is a registered AI app. Registration is open to anyone, so the
 // client id simply carries the registration (name and return addresses):

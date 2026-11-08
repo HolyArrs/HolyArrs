@@ -87,7 +87,7 @@ export function healthFix(kind: HealthCheck['kind']): string {
 			return '/downloads?show=waiting.paused';
 		case 'config_folder':
 			// No setting fixes it: Status shows the steps.
-			return '/status';
+			return '/health';
 		default:
 			// Updates, trailers and anything new live on This app.
 			return '/settings/this-app';
@@ -129,7 +129,7 @@ function healthItem(c: HealthCheck, tone: 'fail' | 'wait', word: string, action:
 	const kind = c.key === 'backups:key' ? 'key_kit' : c.kind;
 	const w = healthWords[kind];
 	const level = tone === 'fail' ? 'error' : 'warning';
-	const href = admin ? healthFix(c.kind) : '/status';
+	const href = admin ? healthFix(c.kind) : '/health';
 	return {
 		key: `h${c.key}`,
 		tone,
@@ -144,7 +144,7 @@ function healthItem(c: HealthCheck, tone: 'fail' | 'wait', word: string, action:
 		subject: NAMED.has(c.kind) ? c.subject || undefined : undefined,
 		// Settings is only for people who may change it; everyone else sees the check on Status.
 		href,
-		action: href === '/status' ? 'Look' : href.startsWith('/downloads') ? 'Downloads' : action
+		action: href === '/health' ? 'Look' : href.startsWith('/downloads') ? 'Downloads' : action
 	};
 }
 
@@ -173,7 +173,7 @@ export function attention(input: {
 		out.push({ key: own ? `f${d.id}` : `fc${d.downloader_id ?? 0}:${d.hash || d.name || out.length}`, tone: 'fail', word: 'Failed', text: `${d.title}: ${r.text}`, title: d.title, reason: refused ? 'import refused' : 'download failed', cause: 'download_failed', note: d.text ? r.text : undefined, detail: r.detail, href: own ? `/downloads?show=problems.failed&open=${d.id}` : '/downloads?show=problems.failed', action: 'Downloads' });
 	}
 	// The metadata outage stays while it lasts and goes away on the next check that passes.
-	if (input.metadata) out.push({ key: 'metadata', tone: 'wait', word: 'Warning', text: `HolyArrs metadata can't be reached. ${input.metadata}`, title: 'HolyArrs metadata', reason: "can't be reached", cause: 'metadata', note: input.metadata, href: admin ? '/settings/tmdb' : '/status', action: 'Look' });
+	if (input.metadata) out.push({ key: 'metadata', tone: 'wait', word: 'Warning', text: `HolyArrs metadata can't be reached. ${input.metadata}`, title: 'HolyArrs metadata', reason: "can't be reached", cause: 'metadata', note: input.metadata, href: admin ? '/settings/tmdb' : '/health', action: 'Look' });
 	for (const d of input.decisions) {
 		const r = plainReason(d.reason || 'HolyArrs needs you to choose.');
 		const title = `${d.title}${d.episode ? ` ${d.episode.label}` : ''}`;
@@ -240,7 +240,7 @@ export function groupAttention(items: Attention[]): AttentionGroup[] {
 export function moreLink(hidden: Pick<AttentionGroup, 'items'>[], admin = true): { href: string; text: string } | null {
 	if (!hidden.length) return null;
 	const health = hidden.filter((g) => /^(health:|setup:|metadata$)/.test(g.items[0]?.cause ?? '')).length;
-	if (health * 2 > hidden.length) return admin ? { href: '/settings/health', text: `${hidden.length} more on Health` } : { href: '/status', text: `${hidden.length} more on Status` };
+	if (health * 2 > hidden.length) return admin ? { href: '/settings/health', text: `${hidden.length} more on Health` } : { href: '/health', text: `${hidden.length} more on Status` };
 	return { href: '/downloads', text: `${hidden.length} more in Downloads` };
 }
 

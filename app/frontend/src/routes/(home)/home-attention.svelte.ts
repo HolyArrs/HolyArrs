@@ -33,7 +33,7 @@ export function createHomeAttention(ctx: Pick<HomeContext, 'checks' | 'health' |
 	// Nothing can be found or fetched without a Source and a Downloader that are on. The health checks only cover the ones that exist, so Home adds these itself once setup is over (the Welcome card covers it before that).
 	const setupGaps = $derived.by((): Attention[] => {
 		if (!ctx.owner || !partsRead || ctx.rows.includes('welcome')) return [];
-		const gap = (key: string, title: string, reason: string, path: string, action: string): Attention => ({ key, tone: 'wait', word: 'Warning', text: `${title}: ${reason}.`, title, reason, cause: `setup:${key}`, href: ctx.admin ? path : '/status', action: ctx.admin ? action : 'Look' });
+		const gap = (key: string, title: string, reason: string, path: string, action: string): Attention => ({ key, tone: 'wait', word: 'Warning', text: `${title}: ${reason}.`, title, reason, cause: `setup:${key}`, href: ctx.admin ? path : '/health', action: ctx.admin ? action : 'Look' });
 		const out: Attention[] = [];
 		if (!srcs.total) out.push(gap('no-sources', 'Sources', 'none added yet', '/settings/sources', 'Add'));
 		else if (!srcs.on) out.push(gap('sources-off', 'Sources', 'all turned off', '/settings/sources', 'Fix'));
@@ -81,7 +81,7 @@ export function createHomeAttention(ctx: Pick<HomeContext, 'checks' | 'health' |
 	const fixLine = $derived(fixRows.length ? rowLine(fixRows[0]) : '');
 	const fixMore = $derived(fixRows.length ? fixes.length - fixRows[0].items.length : 0);
 	// The Needs attention tile opens the page of the row it names (the worst one).
-	const fixHref = $derived(fixRows[0]?.href ?? (ctx.admin ? '/settings/health' : '/status'));
+	const fixHref = $derived(fixRows[0]?.href ?? (ctx.admin ? '/settings/health' : '/health'));
 	// System lists each cause as a row; four fit, the rest link to the page that holds most of them.
 	const fixShown = $derived(fixRows.slice(0, 4));
 	const fixHidden = $derived(moreLink(fixRows.slice(4), ctx.admin));

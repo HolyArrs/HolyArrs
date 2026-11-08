@@ -80,11 +80,11 @@ func TestAIAppSignsInWithoutAPastedKey(t *testing.T) {
 		"code_challenge": {base64.RawURLEncoding.EncodeToString(h[:])}, "code_challenge_method": {"S256"}, "state": {"st8"},
 		"resource": {f.srv.URL + "/api/v1/mcp"}, "scope": {"mcp"}}
 	resp, _ = call(t, bare, "GET", f.srv.URL+"/oauth/authorize?"+q.Encode(), "", nil)
-	if loc := resp.Header.Get("Location"); resp.StatusCode != 302 || !strings.HasPrefix(loc, "/login?next=%2Fai-connect%3F") {
+	if loc := resp.Header.Get("Location"); resp.StatusCode != 302 || !strings.HasPrefix(loc, "/login?next=%2Fai%3F") {
 		t.Fatalf("signed out: %d %q", resp.StatusCode, loc)
 	}
 	resp, _ = call(t, c, "GET", f.srv.URL+"/oauth/authorize?"+q.Encode(), "", nil)
-	if loc := resp.Header.Get("Location"); resp.StatusCode != 302 || loc != "/ai-connect?"+q.Encode() {
+	if loc := resp.Header.Get("Location"); resp.StatusCode != 302 || loc != "/ai?"+q.Encode() {
 		t.Fatalf("signed in: %d %q", resp.StatusCode, loc)
 	}
 	// A return address it never registered is shown, not followed.

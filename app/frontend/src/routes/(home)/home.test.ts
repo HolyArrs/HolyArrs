@@ -71,7 +71,7 @@ describe('home', () => {
 	it('keeps the metadata outage while it lasts, and sends people without Settings to Status', () => {
 		const items = attention({ failed: [], decisions: [], health: [check('e', 'error', 'downloader'), check('w', 'warning', 'trailers' as HealthCheck['kind'])], metadata: 'Search pauses.', admin: false });
 		expect(items.map((i) => `${i.title} · ${i.reason}`)).toEqual(['Downloader · S not answering', "HolyArrs metadata · can't be reached", 'Trailers · lookups failing']);
-		expect(items.map((i) => [i.href, i.action])).toEqual([['/status', 'Look'], ['/status', 'Look'], ['/status', 'Look']]);
+		expect(items.map((i) => [i.href, i.action])).toEqual([['/health', 'Look'], ['/health', 'Look'], ['/health', 'Look']]);
 		expect(items[1].note).toBe('Search pauses.');
 		const own = attention({ failed: [], decisions: [], health: [check('e', 'error', 'downloader')], metadata: 'x' });
 		expect(own.map((i) => i.href)).toEqual(['/settings/downloaders', '/settings/tmdb']);
@@ -102,10 +102,10 @@ describe('home', () => {
 	it('names the /config error and waiting downloads, linked to where they are fixed', () => {
 		const items = attention({ failed: [], decisions: [], health: [check('config_folder', 'error', 'config_folder'), check('waiting_downloads', 'warning', 'waiting_downloads')] });
 		expect(items.map((i) => `${i.title} · ${i.reason}`)).toEqual(['Config folder · lost if the container is recreated', 'Downloads · waiting for their files']);
-		expect(items.map((i) => [i.href, i.action])).toEqual([['/status', 'Look'], ['/downloads?show=waiting.paused', 'Downloads']]);
+		expect(items.map((i) => [i.href, i.action])).toEqual([['/health', 'Look'], ['/downloads?show=waiting.paused', 'Downloads']]);
 		expect(items[0].text).toBe('/config is not mapped to a folder, so HolyArrs data is lost when the container is recreated.');
 		const member = attention({ failed: [], decisions: [], health: [check('config_folder', 'error', 'config_folder'), check('waiting_downloads', 'error', 'waiting_downloads')], admin: false });
-		expect(member.map((i) => i.href)).toEqual(['/status', '/status']);
+		expect(member.map((i) => i.href)).toEqual(['/health', '/health']);
 	});
 
 	it('follows the flap guard when the server sends the confirmed state', () => {
@@ -123,7 +123,7 @@ describe('home', () => {
 		const g = (cause: string, n = 1) => ({ items: Array.from({ length: n }, () => ({ cause }) as never) });
 		expect(moreLink([])).toBeNull();
 		expect(moreLink([g('health:source:warning', 2), g('health:backups:warning')])).toEqual({ href: '/settings/health', text: '2 more on Health' });
-		expect(moreLink([g('health:source:warning'), g('metadata')], false)).toEqual({ href: '/status', text: '2 more on Status' });
+		expect(moreLink([g('health:source:warning'), g('metadata')], false)).toEqual({ href: '/health', text: '2 more on Status' });
 		expect(moreLink([g('download_failed', 3), g('decision')])).toEqual({ href: '/downloads', text: '2 more in Downloads' });
 		expect(moreLink([g('decision'), g('health:update:warning')])).toEqual({ href: '/downloads', text: '2 more in Downloads' });
 	});

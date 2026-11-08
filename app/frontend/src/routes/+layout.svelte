@@ -331,7 +331,7 @@
 		if (p === '/library/held' || p === '/library/turned-down' || p === '/library/rename' || p === '/library/import' || p === '/library/import-files' || p === '/library/missing-subtitles' || p === '/library/copies') return allowed('manage_library');
 		if (p.startsWith('/requests')) return allowed('wishlist');
 		// Status sits under Manage, as in the side menu.
-		if (p.startsWith('/status')) return allowed('manage_library');
+		if (p.startsWith('/health')) return allowed('manage_library');
 		// A Settings page the person may not open shows a short note there instead of a bounce.
 		if (p === '/settings') return staff;
 		return true;

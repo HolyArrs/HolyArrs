@@ -57,7 +57,7 @@
 		{/snippet}
 		<!-- Disk: what the Library takes, how much room is left, and one thin line along the foot for how full it is (only when the free room is known). -->
 		{#snippet diskTile(cls: string)}
-			<a class="tile stat {cls}" class:lined={!!disk.free} href={to(admin ? '/settings/library-folders' : '/status')}>
+			<a class="tile stat {cls}" class:lined={!!disk.free} href={to(admin ? '/settings/library-folders' : '/health')}>
 				{@render head('archive', disk.diskTint, 'On disk')}
 				{#if !settled}
 					{@render wait()}
@@ -74,7 +74,7 @@
 		{/snippet}
 		<!-- Sources or Downloaders: how many work, which have a problem, and one pip each along the foot. -->
 		{#snippet partTile(label: string, icon: IconName, tint: Tint, p: { total: number; on: number; working: number; off: number; failing: number }, trouble: string, path: string, empty: string)}
-			<a class="tile stat" class:lined={settled && !uncheckedParts && p.total > 0} href={to(admin ? path : '/status')}>
+			<a class="tile stat" class:lined={settled && !uncheckedParts && p.total > 0} href={to(admin ? path : '/health')}>
 				{@render head(icon, tint, label)}
 				{#if !settled}
 					{@render wait()}
@@ -290,7 +290,7 @@
 				{@render diskTile('')}
 				{@render partTile('Sources', 'source', 'purple', attentionView.srcs, attentionView.troubled('source', health?.sources), '/settings/sources', 'Add a Source to find releases')}
 				{@render partTile('Downloaders', 'downloader', 'indigo', attentionView.dls, attentionView.troubled('downloader', health?.downloaders), '/settings/downloaders', 'Add a Downloader to fetch them')}
-				<a class="tile stat" href={to('/status')}>
+				<a class="tile stat" href={to('/health')}>
 					{@render head('clock', 'graphite', 'Running for')}
 					{#if !settled}
 						{@render wait()}

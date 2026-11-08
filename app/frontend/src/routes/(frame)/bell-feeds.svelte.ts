@@ -73,7 +73,7 @@ export function startBellFeeds(canManage: boolean): () => void {
 			api
 				.get<UpdateInfo>('/app/update')
 				.then((u) => {
-					feedPins.update = u.on && u.newer && u.latest ? { key: 'update', title: 'Update available', body: `Version ${u.latest} is ready`, tone: 'info', href: '/status?tab=updates', label: 'Update' } : null;
+					feedPins.update = u.on && u.newer && u.latest ? { key: 'update', title: 'Update available', body: `Version ${u.latest} is ready`, tone: 'info', href: '/health?tab=updates', label: 'Update' } : null;
 				})
 				.catch(() => {});
 		void check();
