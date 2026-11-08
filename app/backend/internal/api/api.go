@@ -186,7 +186,8 @@ type API struct {
 	sourceOnce sync.Once
 	sourceH    *sources.Handlers
 	// dl serves the Downloads routes (internal/downloads).
-	dl *downloads.Web
+	dl  *downloads.Web
+	dlh *downloads.Handlers
 	// interest limits each session's live interest calls (webserver.go).
 	interest interestState
 	// listSeen is each region's last world-list shelves signature
@@ -309,6 +310,9 @@ func New(s Server) *API {
 	a.dl = &downloads.Web{Store: s.Store, DLSync: s.DLSync, Downloads: s.Downloads, Live: s.Live, Queue: s.Queue,
 		Secrets: s.Secrets, Auth: s.Auth, Library: s.Library, Metadata: s.Metadata, Search: s.Search,
 		ShowSource: a.showSource, AddMovieTitle: a.addMatchedMovie, AddShowTitle: a.addMatchedShow, LibraryError: libraryError}
+	a.dlh = &downloads.Handlers{Deps: downloads.Deps{Store: s.Store, Library: s.Library, Queue: s.Queue,
+		TitleID: a.titleID, PublishTitle: a.publishTitle, LibraryError: libraryError,
+		VersionJSON: func(ctx context.Context, v mediafiles.Version) any { return versionView(ctx, s.Store.Read(), v) }}}
 	return a
 }
 
@@ -361,7 +365,7 @@ func (a *API) Routes(rt *webserver.Router) {
 	a.statusHandlers().Routes(m)
 	m.HandleFunc("GET /api/v1/settings/title-defaults", a.getTitleDefaults)
 	m.HandleFunc("PUT /api/v1/settings/title-defaults", a.putTitleDefaults)
-	(&downloads.Handlers{Deps: downloads.Deps{Store: a.s.Store}}).Routes(m)
+	a.dlh.Routes(m)
 	m.HandleFunc("GET /api/v1/library-folders", a.listFolders)
 	m.HandleFunc("POST /api/v1/library-folders", a.addFolder)
 	m.HandleFunc("PUT /api/v1/library-folders/{id}", a.editFolder)
@@ -380,7 +384,7 @@ func (a *API) Routes(rt *webserver.Router) {
 	m.HandleFunc("GET /api/v1/events", a.listEvents)
 	m.HandleFunc("GET /api/v1/jobs", a.listJobs)
 	a.peopleRoutes(m)
-	a.copyRoutes(m)
+	a.dlh.CopyRoutes(m)
 	(&movies.Handlers{Lib: a.s.Library, KidMax: a.kidMax, AllowedTitleIDs: a.allowedTitleIDs}).Routes(m)
 	m.HandleFunc("GET /api/v1/library/copies", a.listLibraryCopies)
 	m.HandleFunc("POST /api/v1/library/copies/search/preview", a.previewLibraryCopySearch)

@@ -7,7 +7,7 @@ app/backend/internal/alerts/shows.go
 app/backend/internal/api/api.go
 app/backend/internal/api/asks.go
 app/backend/internal/api/cardart.go
-app/backend/internal/api/copy_choices.go
+app/backend/internal/downloads/routes_copies.go
 app/backend/internal/api/discover.go
 app/backend/internal/api/episode_labels.go
 app/backend/internal/api/eventepisodes.go
