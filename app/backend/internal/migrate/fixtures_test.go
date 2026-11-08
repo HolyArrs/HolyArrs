@@ -13,7 +13,7 @@ import (
 	"testing"
 )
 
-// Fixtures are written from the manuals only (research/upstream/<app>/manual):
+// Fixtures are written from the public API docs only:
 // the API paths and fields, and the backup files, tables and columns they
 // describe. Every secret in them starts with "S3CR3T" so one search proves
 // none reaches a Snapshot.

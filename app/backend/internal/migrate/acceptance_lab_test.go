@@ -30,7 +30,7 @@ func TestAcceptanceLabQBittorrentReadOnly(t *testing.T) {
 	if s.Kind != QBittorrent || s.Via != ViaAPI || s.Version != "v5.2.4" {
 		t.Fatalf("unexpected reader identity: kind=%q via=%q version=%q", s.Kind, s.Via, s.Version)
 	}
-	if s.Downloader == nil || s.Downloader.Host != "10.10.25.25" || s.Downloader.Port != 18708 {
+	if s.Downloader == nil || (os.Getenv("HOLYARRS_ACCEPTANCE_QBIT_HOST") != "" && s.Downloader.Host != os.Getenv("HOLYARRS_ACCEPTANCE_QBIT_HOST")) || s.Downloader.Port != 18708 {
 		t.Fatalf("unexpected downloader endpoint: %#v", s.Downloader)
 	}
 	if !s.Downloader.NeedsPassword || !slices.Contains(s.NeedsReentry, "downloader: needs your password or key") {
