@@ -10,14 +10,14 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 )
 
-// queryer is what the event page reads with (*sql.DB fits; tests count calls).
-type queryer interface {
+// Queryer is what the event page reads with (*sql.DB fits; tests count calls).
+type Queryer interface {
 	QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error)
 }
 
-// eventPage holds what a page of Events names, read with one query per
+// EventPage holds what a page of Events names, read with one query per
 // kind of row (titles, Slots, Items, Versions) instead of one per Event.
-type eventPage struct {
+type EventPage struct {
 	titles   map[int64]pageTitle
 	slots    map[int64]pageSlot
 	items    map[int64]downloads.EpisodeLine
@@ -44,7 +44,7 @@ type pageVersion struct {
 const idChunk = 500
 
 // eachIn runs query (with one "%s" for the IN list) over ids in chunks.
-func eachIn(ctx context.Context, db queryer, query string, ids []int64, scan func(*sql.Rows) error) error {
+func eachIn(ctx context.Context, db Queryer, query string, ids []int64, scan func(*sql.Rows) error) error {
 	for start := 0; start < len(ids); start += idChunk {
 		part := ids[start:min(start+idChunk, len(ids))]
 		args := make([]any, len(part))
@@ -103,10 +103,10 @@ func eventItems(e domain.Event) []int64 {
 	return items
 }
 
-// loadEventPage reads, in a few queries, the titles, Slots, Items and
+// LoadEventPage reads, in a few queries, the titles, Slots, Items and
 // Versions a page of Events names.
-func loadEventPage(ctx context.Context, db queryer, es []domain.Event) (*eventPage, error) {
-	p := &eventPage{titles: map[int64]pageTitle{}, slots: map[int64]pageSlot{}, items: map[int64]downloads.EpisodeLine{}, versions: map[int64]pageVersion{}}
+func LoadEventPage(ctx context.Context, db Queryer, es []domain.Event) (*EventPage, error) {
+	p := &EventPage{titles: map[int64]pageTitle{}, slots: map[int64]pageSlot{}, items: map[int64]downloads.EpisodeLine{}, versions: map[int64]pageVersion{}}
 	seen := map[string]map[int64]bool{"t": {}, "s": {}, "i": {}, "v": {}}
 	var titles, slots, items, versions []int64
 	add := func(kind string, list *[]int64, id int64) {
@@ -198,27 +198,27 @@ func loadEventPage(ctx context.Context, db queryer, es []domain.Event) (*eventPa
 	return p, nil
 }
 
-// appendEvent is es with e added when it is not nil (a copy; es stays).
-func appendEvent(es []domain.Event, e *domain.Event) []domain.Event {
+// AppendEvent is es with e added when it is not nil (a copy; es stays).
+func AppendEvent(es []domain.Event, e *domain.Event) []domain.Event {
 	if e == nil {
 		return es
 	}
 	return append(append(make([]domain.Event, 0, len(es)+1), es...), *e)
 }
 
-// titleName is the name of an Event's title ("" when gone).
-func (p *eventPage) titleName(e domain.Event) string {
+// TitleName is the name of an Event's title ("" when gone).
+func (p *EventPage) TitleName(e domain.Event) string {
 	if e.TitleID == nil {
 		return ""
 	}
 	return p.titles[*e.TitleID].name
 }
 
-// episode names the episodes a show Event is about, as the Downloads
+// Episode names the episodes a show Event is about, as the Downloads
 // screen does ("S01E02 The Mill", "S01E01-E03, 3 episodes"): the Slots an
 // import placed, a pack's Slots, the Event's own Slot, or the episodes a
 // delete names. A movie Event names none.
-func (p *eventPage) episode(e domain.Event) string {
+func (p *EventPage) Episode(e domain.Event) string {
 	if e.TitleID == nil || p.titles[*e.TitleID].kind != "show" {
 		return ""
 	}
@@ -241,10 +241,10 @@ func (p *eventPage) episode(e domain.Event) string {
 	return downloads.Covers(eps)
 }
 
-// version names the Version an Event is about (its Slot's, the first of
+// Version names the Version an Event is about (its Slot's, the first of
 // the Slots it names, or its version_id), only when the title has more
 // than one Version.
-func (p *eventPage) version(e domain.Event) string {
+func (p *EventPage) Version(e domain.Event) string {
 	if e.TitleID == nil || p.titles[*e.TitleID].versions < 2 {
 		return ""
 	}

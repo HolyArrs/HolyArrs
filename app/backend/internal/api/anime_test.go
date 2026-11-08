@@ -101,7 +101,7 @@ func TestMetadataAnimeKidGate(t *testing.T) {
 		r.SetPathValue("tmdb_id", id)
 		r = r.WithContext(webserver.ContextWith(r.Context(), kid))
 		w := httptest.NewRecorder()
-		a.metadataAnime(w, r)
+		a.shows.Anime(w, r)
 		return w.Code
 	}
 	if c := call("9300"); c != 200 {

@@ -9,8 +9,6 @@ app/backend/internal/api/asks.go
 app/backend/internal/api/cardart.go
 app/backend/internal/api/copy_choices.go
 app/backend/internal/api/discover.go
-app/backend/internal/api/episode_labels.go
-app/backend/internal/api/eventepisodes.go
 app/backend/internal/api/explore.go
 app/backend/internal/api/explore_genre.go
 app/backend/internal/api/explore_new.go
@@ -36,7 +34,6 @@ app/backend/internal/api/people.go
 app/backend/internal/api/people_shelves.go
 app/backend/internal/api/servicetop.go
 app/backend/internal/api/settings_status.go
-app/backend/internal/api/showroutes.go
 app/backend/internal/api/signinart.go
 app/backend/internal/api/titlefacts.go
 app/backend/internal/api/titles.go
@@ -135,6 +132,8 @@ app/backend/internal/requests/store_steps.go
 app/backend/internal/requests/store_views.go
 app/backend/internal/shows/add.go
 app/backend/internal/shows/adopt.go
+app/backend/internal/shows/episode_labels.go
+app/backend/internal/shows/event_page.go
 app/backend/internal/shows/refresh.go
 app/backend/internal/shows/schedule.go
 app/backend/internal/shows/service.go

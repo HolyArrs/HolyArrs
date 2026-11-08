@@ -97,6 +97,14 @@ func (d *discoverState) put(key string, e discoverEntry) {
 	d.cache[key] = e
 }
 
+// loadedDetails is the details page already loaded for kind/id, nil if none.
+func (a *API) loadedDetails(kind, id string) *metadata.Details {
+	if e, ok := a.discover.get("details|" + kind + "|" + id); ok {
+		return e.details
+	}
+	return nil
+}
+
 // kidLimited counts one TMDB search, lookup or details page of a Kid
 // against the Explore minute limit; true when it answered 429.
 func (a *API) kidLimited(w http.ResponseWriter, r *http.Request) bool {

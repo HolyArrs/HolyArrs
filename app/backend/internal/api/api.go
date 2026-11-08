@@ -6,6 +6,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/discover"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
@@ -187,6 +188,8 @@ type API struct {
 	sourceH    *sources.Handlers
 	// dl serves the Downloads routes (internal/downloads).
 	dl *downloads.Web
+	// shows serves the show add, episode, season and anime routes (internal/shows).
+	shows *shows.Handlers
 	// interest limits each session's live interest calls (webserver.go).
 	interest interestState
 	// listSeen is each region's last world-list shelves signature
@@ -306,9 +309,36 @@ func New(s Server) *API {
 	a.titles = a.newTitlePages()
 	a.trailers = a.newTrailers()
 	a.ai = &ai.Handlers{Store: s.Store, Version: s.Version, PartOn: a.partIsOn}
+	a.shows = shows.NewHandlers(shows.Deps{Store: s.Store, Library: s.Library, Metadata: s.Metadata, AnimeMap: s.AnimeMap,
+		KidMax: a.kidMax, KidLimited: a.kidLimited, KidShows: a.kidShows, KindsOn: a.kindsOn, LibraryRating: a.libraryRating,
+		Caching: a.exploreCaching, CachedDetails: a.loadedDetails, Details: a.cachedDetails,
+		OpenAsk: func(r *http.Request, ids map[string]string) (any, error) {
+			b, err := a.openShowAsk(r.Context(), ids, a.person(r).UserID)
+			if b == nil || err != nil {
+				return nil, err
+			}
+			return b, nil
+		},
+		Follow: func(r *http.Request, titleID int64) error {
+			if a.s.Asks == nil {
+				return nil
+			}
+			return a.s.Asks.FollowAdded(r.Context(), a.person(r), titleID)
+		},
+		Added: func(ctx context.Context, t mediafiles.Title) (any, error) {
+			v, err := a.titleView(ctx, t)
+			if err != nil {
+				return nil, err
+			}
+			if a.s.Live != nil {
+				a.publishTitleView(v)
+			}
+			return v, nil
+		},
+		KindDefaultsFor: a.kindDefaultsFor, TitleID: a.titleID, StateLabels: StateLabels, Trim: trimEpisodeSlots, LibraryError: libraryError})
 	a.dl = &downloads.Web{Store: s.Store, DLSync: s.DLSync, Downloads: s.Downloads, Live: s.Live, Queue: s.Queue,
 		Secrets: s.Secrets, Auth: s.Auth, Library: s.Library, Metadata: s.Metadata, Search: s.Search,
-		ShowSource: a.showSource, AddMovieTitle: a.addMatchedMovie, AddShowTitle: a.addMatchedShow, LibraryError: libraryError}
+		ShowSource: a.shows.ShowSource, AddMovieTitle: a.addMatchedMovie, AddShowTitle: a.addMatchedShow, LibraryError: libraryError}
 	return a
 }
 
@@ -399,7 +429,7 @@ func (a *API) Routes(rt *webserver.Router) {
 	a.holding().Routes(m)
 	a.healthRoutes(m)
 	a.media.Routes(m)
-	a.showRoutes(m)
+	a.shows.Routes(m)
 	a.musicRoutes(m)
 	a.libraryHandlers().Routes(m)
 	a.musicPageRoutes(m)
@@ -414,7 +444,7 @@ func (a *API) Routes(rt *webserver.Router) {
 	m.HandleFunc("GET /api/v1/metadata/{kind}/{tmdb_id}/more-from", a.metadataMoreFrom)
 	reviews := a.reviewHandlers()
 	reviews.Routes(m)
-	a.animeHandlers().Routes(m)
+	a.shows.AnimeRoutes(m)
 	a.trailers.Routes(m)
 	a.uiSettingsRoutes(m)
 	a.signinArtRoutes(m)
@@ -597,6 +627,15 @@ type TitleView struct {
 	// Pressings and tracks come from /titles/{id}/albums and /albums/{id}).
 	Artist *ArtistInfo `json:"artist,omitempty"`
 }
+
+// showError answers show refusals; anything else goes to libraryError.
+func showError(w http.ResponseWriter, err error) { shows.ShowError(w, err, libraryError) }
+
+// EpisodeSlot and EpisodeView are the shows module's episode views.
+type (
+	EpisodeSlot = shows.EpisodeSlot
+	EpisodeView = shows.EpisodeView
+)
 
 // ShowInfo is what a show's page needs besides the shared Title fields.
 type ShowInfo = shows.Info
@@ -1128,7 +1167,7 @@ func (a *API) listEvents(w http.ResponseWriter, r *http.Request) {
 	if len(f.ItemIDs) == 1 {
 		filtered = &domain.Event{TitleID: &f.TitleID, Data: map[string]any{"item_id": float64(f.ItemIDs[0])}}
 	}
-	page, err := loadEventPage(r.Context(), a.s.Store.Read(), appendEvent(es, filtered))
+	page, err := shows.LoadEventPage(r.Context(), a.s.Store.Read(), shows.AppendEvent(es, filtered))
 	if err != nil {
 		webserver.Internal(w, "api", err)
 		return
@@ -1158,15 +1197,15 @@ func (a *API) listEvents(w http.ResponseWriter, r *http.Request) {
 			v.ActorName = names[e.Actor.ID]
 		}
 		if e.TitleID != nil {
-			v.TitleName = page.titleName(e)
-			v.Episode = page.episode(e)
-			v.Version = page.version(e)
+			v.TitleName = page.TitleName(e)
+			v.Episode = page.Episode(e)
+			v.Version = page.Version(e)
 		}
 		out = append(out, v)
 	}
 	resp := map[string]any{"events": out, "total": total, "limit": f.Limit, "offset": f.Offset}
 	if filtered != nil {
-		resp["episode"] = page.episode(*filtered)
+		resp["episode"] = page.Episode(*filtered)
 	}
 	webserver.WriteJSON(w, http.StatusOK, resp)
 }
@@ -1262,4 +1301,32 @@ func (a *API) StartSpeedHistory(ctx context.Context) {
 	if a.s.Store != nil {
 		a.dl.Speeds.Start(ctx, a.s.Store.Read())
 	}
+}
+
+// idChunk keeps an IN list under SQLite's variable limit.
+const idChunk = 500
+
+// eachIn runs query (with one "%s" for the IN list) over ids in chunks.
+func eachIn(ctx context.Context, db *sql.DB, query string, ids []int64, scan func(*sql.Rows) error) error {
+	for start := 0; start < len(ids); start += idChunk {
+		part := ids[start:min(start+idChunk, len(ids))]
+		args := make([]any, len(part))
+		for i, id := range part {
+			args[i] = id
+		}
+		rows, err := db.QueryContext(ctx, fmt.Sprintf(query, strings.TrimSuffix(strings.Repeat("?,", len(part)), ",")), args...)
+		if err != nil {
+			return err
+		}
+		for rows.Next() {
+			if err := scan(rows); err != nil {
+				_ = rows.Close()
+				return err
+			}
+		}
+		if err := rows.Close(); err != nil {
+			return err
+		}
+	}
+	return nil
 }
