@@ -2,9 +2,9 @@ package music
 
 import (
 	"context"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"net/http"
 	"regexp"
-	"slices"
 	"strconv"
 	"sync"
 	"time"
@@ -83,7 +83,7 @@ func (h GenreArtHandlers) Art(w http.ResponseWriter, r *http.Request) {
 		if c.pics == nil {
 			c.pics = map[string]genrePic{}
 		}
-		keepUnder(c.pics, GenreArtMax, func(p genrePic) time.Time { return p.at })
+		webserver.KeepUnder(c.pics, GenreArtMax, func(p genrePic) time.Time { return p.at })
 		c.pics[key] = genrePic{b: pic, at: time.Now()}
 		c.mu.Unlock()
 	}
@@ -95,25 +95,4 @@ func (h GenreArtHandlers) Art(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Cache-Control", "private, max-age=3600")
 	}
 	_, _ = w.Write(pic)
-}
-
-// keepUnder makes room for one more entry in m under limit by dropping the
-// oldest tenth (by at), so hitting a cap never empties a cache at once.
-func keepUnder[K comparable, V any](m map[K]V, limit int, at func(V) time.Time) {
-	if len(m) < limit {
-		return
-	}
-	times := make([]time.Time, 0, len(m))
-	for _, v := range m {
-		times = append(times, at(v))
-	}
-	slices.SortFunc(times, func(a, b time.Time) int { return a.Compare(b) })
-	drop := max(len(m)-limit+1, limit/10)
-	cut := times[min(drop, len(times))-1]
-	for k, v := range m {
-		if !at(v).After(cut) && drop > 0 {
-			delete(m, k)
-			drop--
-		}
-	}
 }

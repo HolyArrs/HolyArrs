@@ -231,7 +231,7 @@ func (c *extrasCache) keep(key string, e extrasEntry) {
 	if c.seen == nil {
 		c.seen = map[string]extrasEntry{}
 	}
-	keepUnder(c.seen, 5000, func(e extrasEntry) time.Time { return e.at })
+	webserver.KeepUnder(c.seen, 5000, func(e extrasEntry) time.Time { return e.at })
 	c.seen[key] = e
 	c.mu.Unlock()
 }

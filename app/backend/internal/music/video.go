@@ -102,7 +102,7 @@ func (c *artistVideoCache) putLocked(k string, e artistVideoList) {
 		c.m = map[string]artistVideoList{}
 	}
 	if _, has := c.m[k]; !has {
-		keepUnder(c.m, artistVideosMax, func(v artistVideoList) time.Time { return v.at })
+		webserver.KeepUnder(c.m, artistVideosMax, func(v artistVideoList) time.Time { return v.at })
 	}
 	c.m[k] = e
 }
