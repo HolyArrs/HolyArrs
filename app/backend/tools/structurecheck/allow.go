@@ -1,30 +1,7 @@
 package structurecheck
 
-// oversized lists files over the 800-line cap that a later task splits.
-// Remove an entry when its file is split.
-var oversized = map[string]bool{
-	"app/backend/internal/migrate/apply.go":                  true,
-	"app/backend/internal/migrate/plan.go":                   true,
-	"app/frontend/src/lib/TitlePage.svelte":                  true,
-	"app/frontend/src/lib/ai-apps.ts":                        true,
-	"app/backend/internal/importer/importer.go":              true,
-	"app/frontend/src/lib/music/MusicArtistPage.svelte":      true,
-	"app/backend/cmd/holyarrs/main.go":                       true,
-	"app/frontend/src/lib/types.ts":                          true,
-	"app/backend/internal/importer/shows.go":                 true,
-	"app/backend/internal/downloads/routes_downloads.go":     true,
-	"app/backend/tools/demo/showcase.go":                     true,
-	"app/frontend/src/lib/explore.ts":                        true,
-	"app/backend/internal/library/rename.go":                 true,
-	"app/frontend/src/lib/SigninBackdrop.svelte":             true,
-	"app/frontend/src/lib/Account.svelte":                    true,
-	"app/backend/internal/compat/shows.go":                   true,
-	"app/backend/internal/library/adopt.go":                  true,
-	"app/backend/internal/library/artist.go":                 true,
-	"app/backend/internal/migrate/arr.go":                    true,
-	"app/frontend/src/lib/approvals/ApprovalsDesktop.svelte": true,
-	"app/backend/internal/parts/table.go":                    true, // split into the modules by t13
-}
+// oversized lists files allowed over the 800-line cap. It stays empty.
+var oversized = map[string]bool{}
 
 // bannedNameAllowed lists folders that keep a banned name until their
 // task moves them.
