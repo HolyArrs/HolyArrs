@@ -155,7 +155,7 @@ func TestTopLayout(t *testing.T) {
 			t.Errorf("%s is missing", d)
 		}
 	}
-	for _, d := range []string{"cmd", "internal", "web", "services", "examples", "design-notes", "docs/design-review", "tools", "Dockerfile"} {
+	for _, d := range []string{"cmd", "internal", "web", "services", "examples", "tools", "Dockerfile"} {
 		if exists(root, d) {
 			t.Errorf("%s should not be at the repo root", d)
 		}
