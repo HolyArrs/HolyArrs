@@ -6,7 +6,7 @@ level: Start
 
 HolyArrs searches your Sources for each episode you want, sends the best release to a Downloader and files the result in your Library.
 
-You add a show once. After that every aired episode is searched until it has a copy that is good enough. A new episode is picked up when it airs.
+You add a show once. Every aired episode is then searched until its copy is good enough, and each new episode when it airs.
 
 ## Pages
 
@@ -14,4 +14,4 @@ You add a show once. After that every aired episode is searched until it has a c
 - [Show downloads](downloads.md): follow the queue, fix stuck downloads and settle episodes in Review.
 - [Organise shows](organise.md): adopt shows you already have, rename files and delete safely.
 
-If this is your first title, start with [First title](../start/first-title.md). Movies work the same way, see [Movies](../movies/index.md).
+If this is your first title, start with [First title](../start/first-title.md). Movies work the same way: see [Movies](../movies/index.md).
