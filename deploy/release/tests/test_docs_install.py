@@ -71,12 +71,17 @@ class InstallGuides(unittest.TestCase):
                          ":/config", "6262:6262", "unless-stopped"):
                 with self.subTest(want=want):
                     self.assertIn(want, block)
-        # One shared media mount keeps hardlinks working; it is optional.
-        self.assertRegex(compose, r":/data *#optional")
-        self.assertIn(":/data", cli)
+            for folder in ("/movies", "/tv", "/music", "/downloads"):
+                with self.subTest(folder=folder):
+                    self.assertRegex(block, re.escape(":" + folder) + r"`? *`?#optional")
+            self.assertNotIn(":/data", block)
         # Every port, folder and variable in the examples is explained.
         self.assertLess(text.index("## Steps"), text.index("## Settings explained"))
-        for row in ("-p 6262:6262", "-v /config", "-v /data", "PUID", "PGID", "TZ", "UMASK"):
+        headings = re.findall(r"^#+ (.+)$", text, re.M)
+        order = ["Steps", "Ports and folders", "Environment variables", "User and group", "Media folders",
+                 "Read-only root filesystem", "Start as a fixed user"]
+        self.assertEqual([h for h in headings if h in order], order)
+        for row in ("-p 6262:6262", "-v /config", "-v /movies", "-v /tv", "-v /music", "-v /downloads", "PUID", "PGID", "TZ", "UMASK"):
             with self.subTest(row=row):
                 self.assertRegex(text, r"\n\| [^|\n]*`" + re.escape(row) + "`")
         for heading in ("Media folders", "Read-only root filesystem", "Start as a fixed user", "User and group"):

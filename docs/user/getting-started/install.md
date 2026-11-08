@@ -34,7 +34,10 @@ Without Docker, see [Portable archives](../platforms/portable.md).
          - TZ=Etc/UTC
        volumes:
          - /srv/holyarrs/config:/config
-         - /srv/media:/data #optional
+         - /path/to/movies:/movies #optional
+         - /path/to/tv:/tv #optional
+         - /path/to/music:/music #optional
+         - /path/to/downloads:/downloads #optional
        ports:
          - 6262:6262
        restart: unless-stopped
@@ -63,7 +66,7 @@ docker run -d \
   -e TZ=Etc/UTC \
   -p 6262:6262 \
   -v /srv/holyarrs/config:/config \
-  -v /srv/media:/data \
+  -v /path/to/movies:/movies `#optional`   -v /path/to/tv:/tv `#optional`   -v /path/to/music:/music `#optional`   -v /path/to/downloads:/downloads `#optional` \
   --restart unless-stopped \
   ghcr.io/coderluii/holyarrs:beta
 ```
@@ -79,7 +82,10 @@ version has been out for a while.
 | --- | --- |
 | `-p 6262:6262` | The web app. |
 | `-v /config` | Databases, settings, the master key, backups and logs. Local disk only. |
-| `-v /data` | Optional. One shared folder with your downloads and Library folders inside. See [Media folders](#media-folders). |
+| `-v /movies` | Optional. A movie Library folder. |
+| `-v /tv` | Optional. A shows Library folder. |
+| `-v /music` | Optional. A music Library folder. |
+| `-v /downloads` | Optional. The Downloader's download folder. See [Media folders](#media-folders). |
 | `--read-only=true` | Optional. See [Read-only root filesystem](#read-only-root-filesystem). |
 | `--user=1000:1000` | Optional. See [Start as a fixed user](#start-as-a-fixed-user). |
 
@@ -153,21 +159,15 @@ others read. Use `002` when a group must write too.
 
 ### Media folders
 
-Each folder you mount on its own is a separate mount inside the container.
-A file cannot be hardlinked across mounts, so every import becomes a full copy
-and a seeding torrent uses its space twice.
+Mount only the folders you use: `/movies`, `/tv` and `/music` as Library
+folders and `/downloads` as the download folder.
 
-For hardlinks, mount one parent folder with everything inside it:
-
-```yaml
-volumes:
-  - /srv/holyarrs/config:/config
-  - /srv/media:/data
-```
-
-Then use `/data/movies`, `/data/tv` and `/data/music` as Library folders and
-`/data/downloads` as the download folder. Give the Downloader the same mount at
-the same path. The parent folder must also be one filesystem. Separate NAS
+Tip for hardlinks: each folder you mount on its own is a separate mount inside
+the container, and a file cannot be hardlinked across mounts, so imports become
+full copies. If you want hardlinks, you can instead mount one shared parent
+folder (with downloads and Library folders inside it) in place of the four
+optional mounts, and give the Downloader the same mount at the same path. The
+parent folder must also be one filesystem. Separate NAS
 shares or datasets under it still copy. Settings > Library folders warns you
 when HolyArrs has to copy.
 
@@ -267,7 +267,7 @@ services:
       - TZ=Etc/UTC
     volumes:
       - holyarrs-config:/config
-      - C:/Media:/data
+      - C:/Media/movies:/movies
     ports:
       - 6262:6262
     restart: unless-stopped
