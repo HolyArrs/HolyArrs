@@ -119,6 +119,9 @@ type Auth struct {
 	realNamesAt     time.Time
 	satLogged       time.Time
 	proxyWarned     atomic.Int64                    // unix nanoseconds of the last untrusted-proxy warning (localnet.go)
+	proxyMu         sync.Mutex                      // guards proxyPeer and proxyPeerAt
+	proxyPeer       string                          // the untrusted proxy the warning saw (noteProxyPeer)
+	proxyPeerAt     time.Time                       // when proxyPeer last sent forwarding headers
 	known           map[string]map[string]time.Time // name -> address -> last full sign-in (signInWait)
 	ownerSetupFails map[string]*failure             // failed first-run owner attempts (hosts.go)
 	refusedHosts    map[string]bool                 // refused names already logged (hosts.go)

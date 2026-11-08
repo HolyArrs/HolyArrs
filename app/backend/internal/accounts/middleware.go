@@ -165,7 +165,13 @@ func (a *Auth) localPeer(r *http.Request) bool {
 // strictLocal says whether the request may skip sign-in on the local
 // network: the skip is on, the Host is an IP address or a home-only name,
 // and the caller is on a listed local network. Forwarding headers count only
-// from a trusted proxy; from any other peer they end the skip.
+// from a trusted proxy; from any other peer they end the skip. A proxy's own
+// address never skips: a proxy that drops the headers and sets Host to the
+// upstream IP (nginx's default) would otherwise pass every internet visitor
+// off as a home one. That covers trusted proxies and the untrusted one the
+// proxy warning saw; a proxy that never sends any forwarding header and is
+// not listed cannot be told apart from a home device, which is why the
+// Settings card asks the owner to list it.
 func (a *Auth) strictLocal(r *http.Request) bool {
 	if !a.skipLocal.Load() || !a.hostAllowed(r) {
 		return false
@@ -173,14 +179,14 @@ func (a *Auth) strictLocal(r *http.Request) bool {
 	if h := normHost(r.Host); net.ParseIP(h) == nil && !homeName(h) {
 		return false
 	}
+	ip := parseHostIP(r.RemoteAddr)
 	if anyForwardHeader(r) {
-		host, _, err := net.SplitHostPort(r.RemoteAddr)
-		if err != nil {
-			host = r.RemoteAddr
-		}
-		if ip := net.ParseIP(strings.Trim(host, "[]")); ip == nil || !a.trustedProxy(ip) {
+		if ip == nil || !a.trustedProxy(ip) {
+			a.warnUntrustedProxy(ip)
 			return false
 		}
+	} else if ip == nil || a.trustedProxy(ip) || a.seenProxy(ip) {
+		return false
 	}
 	return a.localPeer(r)
 }

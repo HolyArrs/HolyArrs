@@ -162,3 +162,41 @@ func TestSkipLocalStrict(t *testing.T) {
 		t.Error("listed proxy with an outside client skipped sign-in")
 	}
 }
+
+// A reverse proxy that drops its forwarding headers and sets Host to the
+// upstream IP (nginx's default) must not pass internet visitors off as home
+// ones: its own address never earns the skip, whether it is listed as a
+// trusted proxy or was seen forwarding before. Plain home visits still skip.
+func TestSkipLocalRefusesProxyPeer(t *testing.T) {
+	nets, err := parseLocalNets([]string{"192.168.1.0/24", "172.16.0.0/12"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	try := func(a *Auth, peer, xff string) bool {
+		r := httptest.NewRequest("GET", "/api/v1/titles", nil)
+		r.RemoteAddr, r.Host = peer+":5000", "192.168.1.9:6262"
+		if xff != "" {
+			r.Header.Set("X-Forwarded-For", xff)
+		}
+		return a.strictLocal(r)
+	}
+	seen := setup(t, Options{}).a
+	seen.localNets.Store(nets)
+	seen.skipLocal.Store(true)
+	try(seen, "172.17.0.1", "8.8.8.8") // the proxy forwards once
+	if try(seen, "172.17.0.1", "") {
+		t.Error("the proxy seen forwarding skipped sign-in without headers")
+	}
+	if !try(seen, "192.168.1.20", "") {
+		t.Error("a plain home visit no longer skips")
+	}
+	listed := setup(t, Options{TrustedProxies: []string{"172.17.0.1"}}).a
+	listed.localNets.Store(nets)
+	listed.skipLocal.Store(true)
+	if try(listed, "172.17.0.1", "") {
+		t.Error("a trusted proxy with no forwarding headers skipped sign-in")
+	}
+	if !try(listed, "192.168.1.20", "") {
+		t.Error("a plain home visit no longer skips behind a listed proxy")
+	}
+}
