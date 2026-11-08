@@ -465,7 +465,7 @@ func (h *handler) lookupSeries(w http.ResponseWriter, r *http.Request) {
 		}
 		sh, err := h.Library.LookupShow(ctx, kind+":"+v, defs.Source)
 		if err != nil && !errors.Is(err, metadata.ErrShowNotFound) && !errors.Is(err, metadata.ErrNoTVDBKey) && !errors.Is(err, library.ErrNoShowSources) {
-			message(w, http.StatusInternalServerError, err.Error())
+			internalError(w, err)
 			return
 		}
 		if err == nil {
@@ -477,7 +477,7 @@ func (h *handler) lookupSeries(w http.ResponseWriter, r *http.Request) {
 			shows, err = p.SearchShows(ctx, term)
 		}
 		if err != nil {
-			message(w, http.StatusInternalServerError, err.Error())
+			internalError(w, err)
 			return
 		}
 	}

@@ -2,6 +2,7 @@ package arrapi
 
 import (
 	"errors"
+	"log"
 	"net/http"
 	"strings"
 
@@ -90,7 +91,7 @@ func (h *handler) addSeries(w http.ResponseWriter, r *http.Request) {
 			refuse(w, f)
 			return
 		}
-		message(w, http.StatusInternalServerError, err.Error())
+		internalError(w, err)
 		return
 	}
 	s, _, err := h.oneSeries(ctx, id)
@@ -211,7 +212,8 @@ func (h *handler) deleteTitle(w http.ResponseWriter, r *http.Request) {
 	case errors.Is(err, library.ErrAlreadyRemoved):
 		notFound(w)
 	case err != nil:
-		message(w, http.StatusConflict, err.Error())
+		log.Printf("arrapi: remove title %d: %v", id, err)
+		message(w, http.StatusConflict, "this title could not be removed")
 	default:
 		writeJSON(w, http.StatusOK, map[string]any{})
 	}

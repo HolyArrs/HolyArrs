@@ -326,7 +326,7 @@ func (h *handler) lookupMovies(w http.ResponseWriter, r *http.Request) {
 		}
 		m, err := h.Metadata.Movie(ctx, low[:5]+v)
 		if err != nil && !errors.Is(err, metadata.ErrNotFound) {
-			message(w, http.StatusInternalServerError, err.Error())
+			internalError(w, err)
 			return
 		}
 		if err == nil {
@@ -335,7 +335,7 @@ func (h *handler) lookupMovies(w http.ResponseWriter, r *http.Request) {
 	default:
 		var err error
 		if ms, err = h.Metadata.Search(ctx, term, 0); err != nil {
-			message(w, http.StatusInternalServerError, err.Error())
+			internalError(w, err)
 			return
 		}
 	}
@@ -407,7 +407,7 @@ func (h *handler) addMovie(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err != nil {
-		message(w, http.StatusInternalServerError, err.Error())
+		internalError(w, err)
 		return
 	}
 	// Left out, monitored counts as true, as in Radarr.
@@ -433,7 +433,7 @@ func (h *handler) addMovie(w http.ResponseWriter, r *http.Request) {
 			refuse(w, f)
 			return
 		}
-		message(w, http.StatusInternalServerError, err.Error())
+		internalError(w, err)
 		return
 	}
 	out, _, err := h.oneMovie(ctx, id, false)
