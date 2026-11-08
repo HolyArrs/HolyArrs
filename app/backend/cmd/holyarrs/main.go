@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 
-
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/updates"
 
