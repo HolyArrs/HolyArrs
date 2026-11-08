@@ -1,29 +1,57 @@
-# Running under a path (URL base) behind a reverse proxy
+# Run HolyArrs under a path
 
-HolyArrs can live at a path such as `http://home.example/holyarrs` instead of its own host or port.
+You want HolyArrs at an address like `https://home.example/holyarrs` behind a
+reverse proxy, instead of on its own port or host name.
 
-## Turn it on
+## Steps
 
-Set the base when HolyArrs starts, either way:
+1. Set the path when HolyArrs starts:
 
-- environment: `HOLYARRS_URL_BASE=/holyarrs`
-- flag: `-url-base /holyarrs`
+   ```yaml
+   services:
+     holyarrs:
+       environment:
+         - HOLYARRS_URL_BASE=/holyarrs
+   ```
 
-The base is a plain path (letters, digits, `-`, `_`, `.` and `/`; no `..` or `//`). `holyarrs`, `/holyarrs` and `/holyarrs/` all mean `/holyarrs`. Settings > This app shows the base in use.
+   Or start it with `-url-base /holyarrs`.
+2. Point your proxy at HolyArrs. Use one of the examples below.
+3. Open `https://home.example/holyarrs/`. Settings > This app shows the path
+   in use.
 
-You can also save the base from the app (`PUT /api/v1/settings/url-base` with `{"url_base": "/holyarrs"}`; the Settings field uses it). A saved base takes effect on the next start, and only when the environment and the flag are not set. To ignore a saved base, start with `HOLYARRS_URL_BASE=/`. A saved base that is not a plain path is ignored, so a bad save never locks you out.
+You can also save the path in Settings > This app. A saved path takes effect
+on the next start, and only when the environment variable and the flag are
+not set.
 
-With a base set, everything is under it: the pages, scripts and styles, the API (`/holyarrs/api/v1/...`), the live stream (`/holyarrs/live`), the health check (`/holyarrs/healthz`; the root `/healthz` and `/readyz` also answer, and the image's own health check calls the root), downloads, the sign-in cookie (its path is the base) and sign-in redirects. `/holyarrs` alone goes to `/holyarrs/`. Any other address outside the base answers 404. Redirects only ever point inside the app, never to another site. The OpenAPI file names the base as its server, and links the app builds (invite links, the calendar feed, the API page's base address) carry it.
+## Settings explained
 
-The proxy must pass the path on unchanged (do not strip `/holyarrs`), keep the `Host` header, and not buffer the live stream. If the proxy adds `X-Forwarded-For`, add its address to `HOLYARRS_TRUSTED_PROXIES`; if people reach HolyArrs by a host name, add it to `HOLYARRS_ALLOWED_HOSTS`.
+- The path may use letters, digits, `-`, `_`, `.` and `/`. No `..` or `//`.
+- `holyarrs`, `/holyarrs` and `/holyarrs/` all mean `/holyarrs`.
+- Everything moves under the path: pages, the API, the live updates, sign-in
+  and links HolyArrs builds, such as invite links and the calendar feed.
+- `/healthz` and `/readyz` also still answer at the root, so the image's own
+  health check keeps working.
+- Any other address outside the path answers "not found".
 
-## nginx-proxy-manager
+Your proxy must:
 
-Proxy host for your domain, then Custom locations > Add location:
+- pass the path on unchanged (do not strip `/holyarrs`),
+- keep the `Host` header,
+- not buffer responses, so live updates arrive.
+
+If the proxy adds `X-Forwarded-For`, add its address to
+`HOLYARRS_TRUSTED_PROXIES`. If people use a host name, add it to
+`HOLYARRS_ALLOWED_HOSTS`. See [Install](install.md#host-names-and-reverse-proxies).
+
+## Proxy examples
+
+### nginx-proxy-manager
+
+Make a proxy host for your domain, then add a custom location:
 
 - Location: `/holyarrs`
-- Forward hostname / IP: `holyarrs` (the container), port `6262`
-- In the gear (advanced) box of that location:
+- Forward hostname: `holyarrs`, port `6262`
+- In the gear box of that location:
 
 ```
 proxy_set_header Host $host;
@@ -33,11 +61,9 @@ proxy_buffering off;
 proxy_read_timeout 1h;
 ```
 
-Do not add a trailing slash to the forward address (that would strip the path).
+Do not add a slash at the end of the forward address. That strips the path.
 
-Keep both address lines. With only `X-Real-IP`, nginx passes on whatever `X-Forwarded-For` the visitor sent; HolyArrs then sees two different addresses, cannot tell which one is real, and treats the visitor as outside your network.
-
-## Traefik (Docker labels)
+### Traefik
 
 ```
 labels:
@@ -46,9 +72,9 @@ labels:
   - traefik.http.services.holyarrs.loadbalancer.server.port=6262
 ```
 
-No StripPrefix middleware: HolyArrs expects the base in the path. Traefik streams by default.
+Do not add a StripPrefix middleware.
 
-## Caddy
+### Caddy
 
 ```
 home.example {
@@ -60,14 +86,13 @@ home.example {
 }
 ```
 
-Use `handle`, not `handle_path` (which strips the path).
+Use `handle`. `handle_path` strips the path.
 
-## Docker compose
+## Troubleshooting
 
-```
-services:
-  holyarrs:
-    image: holyarrs
-    environment:
-      - HOLYARRS_URL_BASE=/holyarrs
-```
+| Problem | Do this |
+| --- | --- |
+| Every page says not found | The proxy strips the path. Remove the strip setting or trailing slash. |
+| Live updates do not arrive | Turn off buffering in the proxy. |
+| A saved path locked you out | Start with `HOLYARRS_URL_BASE=/` to ignore it. A saved path that is not valid is ignored anyway. |
+| Sign-in treats you as outside your network | Send both `X-Real-IP` and `X-Forwarded-For`, and trust the proxy. |

@@ -1,11 +1,24 @@
-# Movie collections
+# Movie series
 
-HolyArrs can store an exact collection identity from a movie details source and connect that collection to movies already in the Library. It does not infer collection membership from names, folders or release labels.
+You want to see a movie series together, or remove a whole series in one go. HolyArrs groups movies by the series their movie details list. It does not guess from names or folders.
 
-The collection screen is a reviewed shortcut over the normal safe movie removal. A preview lists the selected movie, Version and File IDs. It also includes a review token made from the complete current collection membership, File ownership and protection state, the selected movies and every removal choice. Confirmation is refused when any of that changes, so the person must review the current state again.
+## See a series
 
-Keeping files is the default. When managed files are removed, the existing title removal path moves imported and adopted files to the holding folder. Files HolyArrs does not own remain untouched. The action never recursively deletes a collection folder. Removing a movie removes its Library entry even if the same movie belongs to another collection; the other collection and unrelated titles remain.
+Open the **Library**, pick **Movies**, and group by series.
 
-A movie with a protected present or missing copy is skipped as a whole while that copy would be retained. Its Library record and every other copy stay unchanged. Removing it requires both file removal and the separate protected-copy acknowledgment. Protection is checked again by the normal removal path under the same file-operation coordination used by imports.
+## Remove movies from a series
 
-Each selected movie reports `removed`, `skipped` or `failed`. A failure does not undo successful removals. Refresh the collection and preview only the remaining movies before retrying. Pending imports are coordinated by the normal title removal path. Unless Never-add is selected, an outside list may add a removed movie again later.
+1. Open the series.
+2. Pick the movies to remove and choose whether to delete their files.
+3. Press **Review removal**. The review lists every movie and file that will be touched.
+4. Press **Confirm this exact selection**.
+
+If anything changes after the review, such as a new file or a protected copy, HolyArrs refuses and asks you to review again.
+
+Files stay by default. If you delete files, the ones HolyArrs imported or adopted move to the holding folder, the same as [deleting one movie](organise-movies.md#delete-a-movie). Files HolyArrs does not own are never touched. The series folder itself is never deleted.
+
+A movie with a protected copy is skipped unless you also delete files and confirm the protected copy.
+
+## After the removal
+
+Each movie shows removed, skipped or failed. A failure does not undo the others. Press **Review remaining movies** to try the rest again. Unless you add a movie to the Never-add list, an outside list may add it again later.

@@ -1,22 +1,45 @@
-# Held back from the first release
+# Features held back in the first release
 
-These features are built but not yet proven end to end, so they are switched off in the first release (Luis, 2026-11-07). The code and any saved data stay; each comes back as its own roadmap item once it is fully tested.
+You read about a feature and can't find it in HolyArrs. It may be held back. These features are built, but they have not been tested end to end with real services yet. So they are off in the first release.
 
-A held-back feature is off unless its name is listed in `HOLYARRS_FLAGS` (comma separated). Off means its routes are not registered (the server answers not found), its jobs do not run, and the web app hides every place that shows it. The switches live in `internal/feature`; the web app gets the off list with `/auth/me` (`held`) and asks `session.held(name)`.
+While a feature is held back:
 
-| Switch | Feature | Hidden | What is missing before it comes back |
-|---|---|---|---|
-| `ai_apps` | AI apps: the AI connector (MCP), AI keys, AI sign-in for apps, AI app guides | Settings > AI apps, `/api/v1/mcp`, `/mcp`, `/api/v1/settings/ai`, the AI sign-in routes (`/.well-known/oauth-*`, `/oauth/*`, `/api/v1/auth/ai-connect`) | Tested with real AI apps (desktop and cloud), key handling reviewed, sign-in flow security review |
-| `plex_watchlists` | Plex watchlists become requests | Request rules > Plex watchlists, My account > Plex watchlist, `/api/v1/my/plex-watchlist*`, the watchlist job | Tested with real Plex accounts and watchlists over days; limits and duplicates checked |
-| `row_title_stats` | Explore row titles statistics (owner table) | Appearance > Explore row titles, `/api/v1/explore/title-stats`, the counting | Decide whether owners need it at all; it measures which row-title style gets opens and requests |
-| `trakt_lists` | Trakt: key, VIP token, Trakt lists, Trakt reviews | Outside lists > Trakt key and the Trakt list kind, `/api/v1/settings/trakt-*`, Trakt reviews on title pages | Tested with a real Trakt app and lists; TMDB lists stay on |
-| `alert_channels_more` | Alert channels not yet proven: Telegram, ntfy, Gotify, Pushover, webhook | Those kinds in Settings > Alerts; the server refuses to add them. Existing channels of those kinds are kept | Each channel sent and received end to end; Discord and email stay on |
-| `subtitle_sites` | Subtitle sites and subtitle searching | Subtitles > Subtitle sites, title-page Look for subtitles, Choose, Sync fix, Turn down, the subtitle search routes and the after-import search | A real site searched and a subtitle downloaded and placed; the language choice stays on |
-| `emby_signin` | Sign in with Emby | Sign-in > Emby, the Emby button on the sign-in page; Emby sign-in is refused | Tested with a real Emby server; Emby library refresh (media servers) is not affected |
-| `go_back` | Go back to the previous version | Status > Updates > Go back to | Proven after many real updates; the command-line restore stays for support |
+- its pages and menu items are hidden,
+- its API routes answer "not found",
+- its background jobs don't run,
+- any data you already saved for it stays in place.
 
-## How to work on one
+## Turn a held-back feature on
 
-1. Add its switch to `HOLYARRS_FLAGS` on the lab or preview server and restart.
-2. The end-to-end server (`web/app/e2e/server.mjs`) and the Go package tests switch all of them on, so their tests keep running.
-3. When it is proven, remove its switch checks and its row here, and close its roadmap item.
+You can turn one on yourself. You do this at your own risk.
+
+1. Add the switch name to the `HOLYARRS_FLAGS` environment variable. Separate several names with commas.
+2. Restart HolyArrs.
+
+In a Compose file:
+
+```yaml
+environment:
+  HOLYARRS_FLAGS: "subtitle_sites,alert_channels_more"
+```
+
+To turn it off again, remove the name and restart.
+
+## The switches
+
+| Switch | Feature | What stays hidden while it is off |
+|---|---|---|
+| `ai_apps` | Connect AI apps | Settings > AI apps, the `/ai` page and the AI connection routes. |
+| `plex_watchlists` | Plex watchlists turn into requests | The Plex watchlist settings in Request rules and My account, and the watchlist job. |
+| `row_title_stats` | Explore row title statistics | The row title statistics in Appearance. |
+| `trakt_lists` | Trakt key, Trakt lists and Trakt reviews | The Trakt key and the Trakt list kind in Outside lists, and Trakt reviews on title pages. TMDB lists stay on. |
+| `alert_channels_more` | Telegram, ntfy, Gotify, Pushover and webhook alerts | Those kinds in Settings > Alerts. Discord and email stay on. Channels you already made are kept. |
+| `subtitle_sites` | Subtitle sites and subtitle search | Subtitle sites and the subtitle search actions. Your subtitle language choice stays on. |
+| `emby_signin` | Sign in with Emby | The Emby sign-in button and its settings. Emby library refresh still works. |
+| `go_back` | Go back to the previous version | The "go back" steps on the `/status` page. |
+
+## Troubleshooting
+
+**I added the switch and nothing changed.** Check the spelling. Names are lowercase with underscores. Then make sure you restarted the container, not just reloaded the page.
+
+**I turned a feature off and my settings are gone.** They are not gone. They are only hidden. Turn the switch on again and they come back.

@@ -1,76 +1,60 @@
 # Library folders
 
-A Library folder is where HolyArrs keeps finished movies, shows or music. Open
-**Settings > Library folders** to add and check them. This screen requires the
-**Change settings** permission.
+You want HolyArrs to know where your finished movies, shows and music live. A Library folder is that place. You add and check them in **Settings > Library folders**. You need the **Change settings** permission to open this screen.
 
 ## Add a folder
 
-1. Select whether the folder holds **Movies**, **Shows** or **Music**. Each kind
-   uses its own folders.
-2. Enter the full path exactly as HolyArrs sees it. In Docker this is a
-   container path such as `/data/media/movies`, not the host path.
-3. Optionally enter a name. When it is empty, HolyArrs uses the last part of
-   the folder path.
-4. Select **Add and check**.
+1. Open **Settings > Library folders**.
+2. Pick what the folder holds: **Movies**, **Shows** or **Music**. Each kind uses its own folders.
+3. Enter the full path as HolyArrs sees it. In Docker, this is the path inside the container, such as `/data/media/movies`. The host path will not work.
+4. Enter a name if you want one. Leave it empty and HolyArrs uses the last part of the path.
+5. Select **Add and check**.
 
-The path must already exist, be a folder, be absolute, and not overlap another
-Library folder. The running HolyArrs user must be able to write there.
+The path must already exist, must be a folder, must be a full path, and must not sit inside or around another Library folder. HolyArrs must be able to write there.
 
-First-run setup adds one folder with the same rules. Add separate folders later
-for every enabled kind you use.
+First-run setup adds one folder with these same rules. Add a folder for each other kind you use later.
 
-## Health
+## What the check tells you
 
-Each row shows the folder kind, path, free space, health reason and last check.
-The check verifies:
+Each row shows the kind, the path, free space, health and when it was last checked. The check makes sure that:
 
-- the folder exists;
-- HolyArrs can create a temporary file there;
-- downloads can be hardlinked into it from each active Downloader folder; and
+- the folder exists,
+- HolyArrs can write a small test file there,
+- downloads can be hardlinked into it from each active Downloader folder,
 - at least 100 MB is free.
 
-Probe files are removed after the check. **Check again** repeats it.
+Test files are removed when the check ends. Select **Check again** to run it again.
 
-`Missing` and `Read only` prevent the folder from being used. `No hardlink` is
-a warning: imports still work by copying files, which uses more time and disk
-space. A low-space note may appear with an otherwise usable folder.
+- **Missing** or **Read only**: HolyArrs will not use the folder until you fix it.
+- **No hardlink**: a warning. Imports still work, but files are copied. That takes longer and uses more disk space.
+- A low space note can show on a folder that otherwise works.
 
-For Docker, put downloads and media below the same `/data` mount so both paths
-can share a filesystem. See [Install HolyArrs with Docker](install.md).
+In Docker, put downloads and media under the same `/data` mount so they share one filesystem and hardlinks work. See [Install HolyArrs with Docker](../getting-started/install.md).
 
-## Rename or remove
+## Rename or remove a folder
 
-**Rename** changes only the display name. It does not move the folder or its
-files.
+**Rename** changes only the name you see. Nothing moves on disk.
 
-**Remove** removes the folder from HolyArrs and leaves every file on disk.
-HolyArrs refuses to remove it while Titles still use it; move those Titles
-first.
+**Remove** takes the folder out of HolyArrs and leaves every file where it is. HolyArrs refuses while titles still use the folder. Move those titles first.
 
+## Extra import folders
 
-## Folders for Import files by hand
+**Library > Import files by hand** only reads, copies and moves files inside these places:
 
-**Library > Import files by hand** reads, copies and moves files only inside
-these places:
-
-- the Library folders;
-- the folders the Downloaders save into, as HolyArrs sees them: the save path
-  set at start (`HOLYARRS_SAVE_PATH`) and the HolyArrs side of every path map
-  of a Downloader that is still set up; and
+- your Library folders,
+- the folders your Downloaders save into, as HolyArrs sees them. That is the save path set at start (`HOLYARRS_SAVE_PATH`) and the HolyArrs side of each path map on a Downloader that is still set up,
 - the **Extra import folders** on this page.
 
-Any other path is refused, and the answer names the places above. A path with
-`..`, a network share path (`\\server\share`) and a link or Windows junction
-that leads out of a place are refused too.
+To add one, type one full path per line in **Extra import folders**, such as `/data/imports` or `D:\Imports`. You can list up to 32. A whole disk, such as `/` or `C:\`, is refused.
 
-When `HOLYARRS_SAVE_PATH` is not set and no Downloader has a path map, the
-download folder is not one of these places. Set `HOLYARRS_SAVE_PATH` (see
-[Install](install.md)) or add the download folder, such as `/downloads`, as an
-extra import folder.
+Only the owner or an admin signed in with a password can change this list. An API key also needs the admin scope. People with **Change settings** can see the list.
 
-Add an extra import folder for loose files that sit somewhere else, such as
-`/data/imports` or `D:\Imports`: one full path per line, up to 32. A whole
-disk (`/` or `C:\`) is refused. Only the owner or an admin, signed in with a
-password, can change them; an API key also needs the admin scope. People with
-the **Change settings** permission see the list.
+## Troubleshooting
+
+**Import says the path is not allowed.** The path is outside every place listed above. The message names the allowed places. Paths with `..`, network share paths such as `\\server\share`, and links or Windows junctions that lead outside are refused too.
+
+**Import cannot see the download folder.** If `HOLYARRS_SAVE_PATH` is not set and no Downloader has a path map, the download folder is not allowed. Set `HOLYARRS_SAVE_PATH` (see [Install](../getting-started/install.md)) or add the download folder, such as `/downloads`, as an extra import folder.
+
+**No hardlink on Docker.** Downloads and media are on different mounts. Put both under one `/data` mount.
+
+**Cannot remove a folder.** Titles still use it. Move them to another folder first.

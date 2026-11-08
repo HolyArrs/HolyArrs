@@ -1,95 +1,118 @@
-# Sources, and Jackett or Prowlarr as a bridge
+# Add Sources, and link Jackett or Prowlarr
 
-A **Source** is a place HolyArrs looks for Releases. HolyArrs reads three kinds of feed itself:
+You want HolyArrs to find Releases for your movies, shows and music. For that it needs Sources. A Source is a feed HolyArrs asks for Releases.
 
-- **Torznab** for torrents,
-- **Newznab** for Usenet,
-- a **plain rss feed**, which only gives its newest Releases and cannot be searched.
+HolyArrs reads three kinds of feed itself:
 
-Many torrent sites have no Torznab feed of their own. For those, run **Jackett** or **Prowlarr** next to HolyArrs. Both sign in to the sites for you and hand HolyArrs one Torznab feed per site. HolyArrs then treats each of those feeds as an ordinary Source. This page shows how.
+- **Torznab**, for torrents. Jackett and Prowlarr give you these.
+- **Newznab**, for Usenet.
+- **RSS**, which only gives the newest Releases. You can't search it.
 
-## Add a Source
+Many torrent sites have no feed of their own. For those, run Jackett or Prowlarr next to HolyArrs. They sign in to the sites for you and give HolyArrs one feed per site.
 
-1. Open **Settings**, then **Sources**, and press **Add a Source**.
-2. Give it a name and pick the kind of feed.
-3. Paste the address and, for Torznab and Newznab, the key.
-4. Press **Save Source**. HolyArrs tests the new Source straight away and says the result under it.
+## Add a Source by hand
 
-Keys, rss passkeys and proxy passwords are kept encrypted and are always shown masked. When you change a Source's address to another host, HolyArrs asks for the key again, so a key is never sent to a new host by itself. The same goes for a new proxy on a Source whose address starts with `http://` (the proxy could read the key), and for the proxy password when the proxy's host or name changes.
+1. Open **Settings**, then **Sources**.
+2. Press **Add a Source**.
+3. Give it a name and pick the **Kind of feed**.
+4. Paste the **Address**. For Torznab and Newznab, paste the **Key** too.
+5. Press **Save**. HolyArrs tests the Source right away and shows the result under it.
 
-### What each setting does
+You can press **Test** on any Source later to check it again.
+
+## Link Jackett or Prowlarr
+
+This brings in every site you set up in Jackett or Prowlarr in one go. On **Settings > Sources**, find the **Prowlarr or Jackett** card.
+
+1. Press **Link**.
+2. Pick **Jackett** or **Prowlarr**.
+3. Type the **Address**. For Jackett, include the base path if you use one. The usual ports are 9117 for Jackett and 9696 for Prowlarr.
+4. Paste the **API key**. Jackett shows it on its main page. Prowlarr has it under **Settings > General**.
+5. Press **Test** to see what HolyArrs finds, then press **Link**.
+
+### What happens with Jackett
+
+HolyArrs adds one Torznab Source per site in Jackett, with the categories that site offers. The card tells you how many it added.
+
+Every 6 hours, and when you press **Sync**, HolyArrs keeps the Sources in step with Jackett:
+
+- A new site in Jackett becomes a new Source.
+- A site you remove in Jackett loses its Source.
+- A changed address, key or category follows along.
+
+Everything else on a Source stays as you set it, such as its name, priority, use and limits. You can change how often the check runs in your schedule settings, from every hour to once a week.
+
+### What happens with Prowlarr
+
+You need a HolyArrs password before you can link Prowlarr. The card links you to your account page if you don't have one yet.
+
+HolyArrs adds itself to Prowlarr as an app. It does this once for TV shows and once for movies, only for the parts you have turned on. Prowlarr then sends its sites to HolyArrs and keeps them up to date. The Sources arrive within a minute.
+
+The card shows the address Prowlarr uses to reach HolyArrs, such as `http://your-server:6262`. Press **Change** if Prowlarr can't reach HolyArrs at that address, for example when they run on different machines.
+
+HolyArrs needs a key for each side, TV shows and movies. If a side already has a key, you get two choices:
+
+- Tick **Replace keys**. HolyArrs makes new keys. Any other app that used the old key, like Seerr, needs the new one.
+- Or type the key you already have.
+
+### Unlink
+
+Press **Unlink** on the card. You choose what happens to the Sources:
+
+- **Remove its Sources.** For Prowlarr, this also takes HolyArrs out of Prowlarr's app list.
+- **Unlink here only. Sources stay.** The Sources become ordinary Sources you manage yourself.
+
+## Settings for each Source
 
 | Setting | What it does |
 |---|---|
-| Use it for | **Newest list** reads the Source's newest Releases now and then. **Searches on its own** lets HolyArrs ask it when it looks for a title by itself. **Search by hand** lets you ask it from a title's page. An rss feed can only be used for the newest list. |
+| Use it for | **Newest list** reads the Source's newest Releases now and then. **Automatic searches** lets HolyArrs ask it when it looks for a title by itself. **Choose a release** lets you ask it from a title's page. An RSS feed can only be used for the newest list. |
 | Media | Which kinds of title this Source is asked about: movies, TV shows, music. |
-| Priority | 1 to 50. Sources are asked in this order, 1 first, and when two Releases are equal the one from the Source with the lower number wins. New Sources get 25. |
-| Fewest seeders | Torrents with fewer seeders are passed over. New torrent Sources get 1. |
-| Limits | Most searches in a window of hours, the least time between two calls, and how long to wait for an answer. 0 means no cap. |
-| Proxy | Sends every call to this Source through an HTTP or SOCKS5 proxy, for example `socks5://name@host:1080`. |
-| May reach the local network | Off by default. Sources may only reach addresses on the internet unless you tick it. Tick it for a bridge on this machine or your home network. |
-| The proxy may be on the local network | The same rule, for the proxy. Even with a proxy, HolyArrs still checks the Source's own address against the first rule: it looks the name up itself and hands the proxy only the checked address (an HTTP proxy gets a tunnel request, so it must allow CONNECT to the Source's port). A name only the proxy can look up is refused. Local-network permission never allows cloud metadata addresses. |
+| Priority | 1 to 50. Lower numbers are asked first. When two Releases are equally good, the one from the lower number wins. New Sources start at 25. |
+| Fewest seeders | Torrents with fewer seeders are skipped. New Sources start at 1. |
+| Tags | Only titles with a matching tag use this Source. Leave it empty to use it for all titles. |
+| Limits | **Most searches per window**, **Window (hours)**, **Least time between calls (ms)** and **Give up after (seconds)**. 0 means no limit. |
+| Proxy | Sends every call to this Source through an HTTP or SOCKS5 proxy, such as `socks5://name@host:1080` or `http://host:3128`. |
+| Reach the local network | Off by default. Turn it on when the Source runs on this machine or your home network, like Jackett or Prowlarr at home. |
+| Proxy may be on the local network | The same, for the proxy. |
 
-## How healthy is a Source
+Keys and proxy passwords are stored encrypted and always shown hidden. If you move a Source to a different host, HolyArrs asks you to type the key again. That way a key is never sent to a new host without you knowing.
 
-Each Source shows its state in plain words:
+Turning on the local network never lets a Source reach cloud metadata addresses.
+
+## Check a Source's health
+
+Each Source shows a short state:
 
 - **Working**: it answered last time.
-- **Unreachable**: it did not answer, answered with something HolyArrs could not read, or asked HolyArrs to slow down.
-- **Key turned down**: it refused the key. Check the key, then press **Test**.
+- **Unreachable**: it did not answer, or answered with something HolyArrs could not read.
+- **Key turned down** or **Key refused**: it did not accept the key.
+- **Slowed down**: it asked HolyArrs to wait.
+- **Blocked**: the site has a bot check, such as Cloudflare. HolyArrs can't read it directly. Use Jackett or Prowlarr for that site.
 - **Paused**: you paused it. HolyArrs does not use it until you press **Resume**.
 
-A Source that fails rests for a while and is tried again on its own: one minute, then twice as long each time, up to six hours. The Source shows when the next try is. **Try again now** ends the rest at once, and a working **Test** does too.
+When a Source fails, HolyArrs waits and tries again by itself. It waits one minute at first, then twice as long each time, up to six hours. The Source shows when the next try is. Press **Try now** to try at once.
 
-Press **Health** on a Source to see its state, its last answer, its average response time, and its calls, failures and picked Releases per day for up to 90 days, plus its last 20 calls. Calls that find work, fail or recover a Source are kept on disk for 90 days. Successful scheduled checks that find nothing new are kept in memory so an idle app does not write to disk. Those checks appear in Health while the app runs and are forgotten when it restarts. The daily totals cover up to 90 days; the rolling last-day count keeps up to 2,048 quiet checks per Source, enough for the fastest supported schedule.
+Press **Health** on a Source to see more:
 
-## Connect Jackett or Prowlarr in one step
+- its state and last answer,
+- its average response time,
+- calls, failures and picked Releases per day, for 7, 14, 30 or 90 days,
+- its recent calls.
 
-On **Settings > Sources**, the card **Connect Jackett or Prowlarr** brings every site you set up there in as Sources.
+HolyArrs keeps calls that found something, failed or recovered for 90 days. Quiet checks that found nothing new are kept only while HolyArrs runs, so an idle server doesn't write to disk all the time. They are gone after a restart.
 
-1. Press **Connect Jackett or Prowlarr**, then **Look for them**. HolyArrs looks on this machine, on the Docker host and at the usual Docker names (`jackett`, `prowlarr`) on ports 9117 and 9696. It looks nowhere else and never scans your network. Pick one it found, or type the address.
-2. Paste the key. Jackett shows its key at the top of its page; Prowlarr has it under **Settings > General**. The key is kept encrypted.
-3. Press **Test** to see what HolyArrs found, then **Connect**.
+## Troubleshooting
 
-**Jackett.** HolyArrs adds one Torznab Source per site you set up in Jackett, with the categories the site offers. Every 6 hours, and when you press **Check now**, it keeps them in step: a new site becomes a Source, a site you remove in Jackett takes its Source away, and an address or category change follows. A Source's own name, priority, use and limits are yours and stay as you set them. A Source you remove here stays away; connecting the same Jackett again brings every site back. When Jackett's address is on this machine or your home network, its Sources may reach your home network (Jackett serves their feeds from there), and the card says so; a Jackett on a public address gets ordinary Sources that never reach a local address. **Disconnect** asks whether to remove its Sources or keep them as ordinary ones.
-
-**Prowlarr.** HolyArrs adds itself to Prowlarr as an app, once for TV shows and once for movies (only for the parts you have on), and asks Prowlarr to send its sites. Prowlarr then keeps them up to date through the old-app API (`docs/old-app-api.md`). The setup turns the old-app API on if it is off and makes a key for each side that has none. If a side already has a key, it asks first, because a new key replaces the old one and an app using it (such as Seerr) must get the new one too; or type the key you have. Give the address Prowlarr reaches HolyArrs at, such as `http://192.168.1.10:6262`. The card starts with the address you opened HolyArrs at. A key the setup makes is shown once, right after connecting, so an app that used a replaced one can get it. **Disconnect** takes HolyArrs out of Prowlarr's apps and removes the Sources Prowlarr wrote (or only forgets the connection here, keeping both). Connecting the same Jackett or Prowlarr again takes its new key, and for Prowlarr the new address HolyArrs is reached at.
-
-A site behind a bot check (Cloudflare, DDoS-Guard) cannot be read by HolyArrs directly. Its Source says so and links to this card.
-
-You can still add a bridge site by hand, as below.
-
-## Use Jackett as a bridge
-
-1. Run Jackett next to HolyArrs and add the site in Jackett, signing in there with your own account on that site.
-2. In Jackett, press **Copy Torznab Feed** on the site's row. The address looks like `http://jackett-host:9117/api/v2.0/indexers/<site>/results/torznab/`.
-3. Copy the Jackett key from the top of the Jackett page.
-4. In HolyArrs, add a Source: kind **Torznab**, the copied address, the Jackett key.
-5. If Jackett runs on this machine or your home network, tick **May reach the local network**.
-6. Save. The test under the Source should say "The Source answered."
-
-Add one Source per site you want, each with its own priority.
-
-## Use Prowlarr as a bridge
-
-1. Run Prowlarr next to HolyArrs and add the site in Prowlarr.
-2. In Prowlarr, open the site and note its number. Its Torznab address is `http://prowlarr-host:9696/<number>/api` (a Usenet site uses the same address as a Newznab feed).
-3. Copy the Prowlarr key from Prowlarr's general settings.
-4. In HolyArrs, add a Source: kind **Torznab** (or **Newznab** for Usenet), that address, the Prowlarr key.
-5. Tick **May reach the local network** if Prowlarr runs at home, then save.
-
-Do not also connect Prowlarr to HolyArrs in Prowlarr's own app list: HolyArrs reads Prowlarr's feeds, Prowlarr does not manage HolyArrs.
-
-## When the test fails
-
-| What the test says | What to do |
+| What you see | What to do |
 |---|---|
-| The Source turned down the key | Copy the key again from Jackett or Prowlarr and save it. |
-| The address is on the local network | Tick **May reach the local network**, or the proxy box if it is the proxy. |
-| HolyArrs could not reach the Source | Check the bridge is running and the address and port are right. |
-| The Source answered, but not with a feed HolyArrs can read | The address is not a Torznab feed; copy it again from the bridge. |
-| The Source asked HolyArrs to slow down | Wait, or raise the least time between calls under **Limits**. |
+| The key was turned down | Copy the key again from Jackett, Prowlarr or the site, and save it. |
+| The address is on the local network | Turn on **Reach the local network**. If it's the proxy, turn on **Proxy may be on the local network**. |
+| HolyArrs could not reach the Source | Check that Jackett, Prowlarr or the site is running, and that the address and port are right. |
+| The answer is not a feed HolyArrs can read | The address is not a Torznab or Newznab feed. Copy it again. |
+| The Source asked HolyArrs to slow down | Wait, or raise **Least time between calls** under **Limits**. |
+| The site has a bot check | Add the site to Jackett or Prowlarr and link it. |
+| Prowlarr won't link | Set a HolyArrs password first. Check that Prowlarr can reach the HolyArrs address on the card. |
+| Another app stopped working after linking Prowlarr | You replaced a key. Give that app the new key. |
 
-## Why a bridge, and not site files inside HolyArrs
-
-For now HolyArrs reads only Torznab, Newznab and rss itself. Reading the community's per-site files directly was weighed and left for after version 1 (decision 0005), so the bridge is the way to reach sites without a feed.
+See also [Find a title in the Library](library-search.md).

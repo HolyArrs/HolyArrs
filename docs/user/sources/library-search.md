@@ -1,27 +1,37 @@
 # Find a title in the Library
 
-Open Library and type in **Find in the Library**. This searches the titles
-already added to HolyArrs. To find something to add, use the Search page.
+You want to find a movie, show or artist you already added. Use the search box on the Library page. To find something new to add, use the Search page.
 
-The name box finds movie, show and artist names, their other names from
-metadata, and years. Latin accents are optional: `amelie` finds `Amélie`.
-You can type the beginning of a word, and several words narrow the match.
-The existing name-substring matches also work. A short pause while typing
-lets HolyArrs finish the search.
+## Steps
 
-The kind and state buttons still apply. For example, choose Shows and
-Missing, then type part of a show's name. The button counts describe the
-Library before the name filter. Clear the name box to see that view again.
+1. Open **Library**.
+2. Type in the search box. It says **Search library**, or **Search movies**, **Search TV shows** or **Search music** if you picked a kind.
+3. Wait a moment. The list updates as you type.
+4. To see everything again, clear the box.
 
-Only enabled parts are shown, except in safe mode. Removed titles never
-appear in the results. Searching does not add a title, start a download or
-change a file.
+## How matching works
 
-The name box accepts at most 256 characters and 16 words. Search symbols
-such as `OR` and `*` do not act as commands. If a search fails, its message
-appears on the page; clear or change the name and try again.
+- It matches names, original names, other names from metadata, and years.
+- Accents are optional. `amelie` finds `Amélie`.
+- You can type the start of a word. `star` finds `Stargate`.
+- Each extra word narrows the results. Every word must match.
+- Symbols like `OR` and `*` are treated as plain text.
 
-For scripts, `GET /api/v1/titles?q=amelie` returns matching titles with their
-Versions and Slots. This API matches word prefixes in local names, aliases
-and years; every word must match. Empty input lists the visible Library.
-See [The API for other apps](api.md) for sign-in and keys.
+The kind and state buttons still apply. For example, pick Shows and Missing, then type part of a name.
+
+Searching never adds a title, starts a download or changes a file. Removed titles never show up.
+
+## Limits
+
+The box takes up to 256 characters and 16 words.
+
+## Troubleshooting
+
+- **Nothing shows up.** Check the kind and state buttons. They may hide the title. Try fewer words.
+- **An error shows on the page.** Shorten or change what you typed, then try again.
+
+## For scripts
+
+`GET /api/v1/titles?q=amelie` returns matching titles. It uses the same matching rules. An empty query lists the whole Library. See [The API](../../dev/api.md) for how to sign in and use keys.
+
+See also [Add Sources, and link Jackett or Prowlarr](sources-bridge.md).

@@ -1,64 +1,30 @@
-# Portable candidates
+# Run HolyArrs without Docker
 
-Portable archives are development candidates. They are not a signed release.
-The v1 public delivery plan remains Docker. NAS installation is still
-unverified; no NAS platform support is claimed.
+You want to run HolyArrs as a plain program, without Docker. Docker stays the main way to run it. Portable archives are not signed, and nobody publishes them for you yet. You build them yourself from the source.
 
-## Build a committed candidate
+## Steps
 
-The packaging command uses Python 3, Git, Docker and the pinned Go 1.27.2
-builder already used by the project. It never pulls an image or fetches a
-module. Supply a complete module cache path or Docker volume with
-`--module-cache`; it is mounted read-only. Populate it with the locked
-modules through the normal project build first. The installed frontend dependencies must
-match `web/app/package-lock.json`; they supply their license notices.
+### Build the archives
 
-From the checkout:
+You need Python 3, Git and Docker. The build runs in the project's pinned Go builder image with networking off, so it never downloads anything. Get these ready first:
+
+- A complete Go module cache, filled by a normal project build. It is mounted read-only.
+- The frontend dependencies installed from `app/frontend/package-lock.json`. They supply license notices.
+- The built web app, committed. The build uses committed source only, so uncommitted edits are left out.
+
+From the checkout, run:
 
 ```sh
-python scripts/package.py --ref HEAD --version 0.0.0-candidate.1 --output /srv/holyarrs-candidates/candidate-1 --web-node-modules web/app/node_modules --module-cache /home/you/go/pkg/mod
+python deploy/release/package.py --ref HEAD --version 1.0.0 --output /srv/holyarrs-archives/1.0.0 --web-node-modules app/frontend/node_modules --module-cache /home/you/go/pkg/mod
 ```
 
-Use a new output directory outside the checkout. An existing output is
-refused. The command exports the committed source, including `web/dist`,
-and builds there with networking disabled. Uncommitted edits and runtime
-state are excluded. Rebuild and commit the web app before packaging a UI
-change. Go modules are verified and vendored for an offline source rebuild.
+Use a new output folder outside the checkout. An existing folder is refused. If any target fails, no output folder is left behind.
 
-For a constrained machine, add `--low-resource`. Each builder container is
-limited to one CPU, 2 GiB memory with no additional swap, and 256 PIDs. Go uses
-`GOMAXPROCS=1`, `GOFLAGS=-p=1`, `GOMEMLIMIT=768MiB` and `GOGC=50`. The Go memory
-setting is a target within the container's hard limit. The option leaves normal
-build defaults unchanged. Python assembles the archives on the host, outside
-these container limits; apply host process limits separately when needed.
+### Run it
 
-The default matrix is Linux amd64, arm64, armv7 (`GOARM=7`) and Windows
-amd64. Every selected target must build or the command fails without
-publishing the output directory. To select a subset, pass `--targets` with
-comma-separated names. Linux amd64 uses `GOAMD64=v1`; arm64 uses `GOARM64=v8.0`.
-Compilation alone is not native platform acceptance.
-
-The resolved commit is appended to the supplied version as build metadata
-and embedded into the executable. The running app and its backups report
-that candidate identity. It does not create a release tag.
-
-Each archive includes the program, license, third-party notices, guides,
-source manifest and package identity. `SHA256SUMS` covers the archives.
-The source archive includes the project source and vendored Go dependencies.
-Frontend dependencies are identified by the lockfile, with notices for the
-bundled runtime and fonts; their complete source is not included. Keep the
-source archive beside its binaries. The manifest records the Git commit,
-tree and file hashes. `package.json` records the target, compiler, builder,
-source archive hash and executable hash. These checksums are not signatures.
-
-Archives use fixed ordering and normalized timestamps and ownership. Repeat
-the command with the same commit, version, locked inputs and toolchain to
-check reproducibility. A failed build leaves its requested output absent.
-
-## Run without installing a service
-
-Verify `SHA256SUMS`, then extract the archive into a new directory. Keep the
-program and config in separate directories. Choose explicit local paths:
+1. Check the archive against `SHA256SUMS`.
+2. Extract it into a new folder. Keep the program and the config in separate folders.
+3. Start it with your own config path:
 
 ```sh
 ./holyarrs -config /srv/holyarrs/config -addr :6262
@@ -70,61 +36,45 @@ On Windows PowerShell:
 .\holyarrs.exe -config 'C:\HolyArrs\config' -addr ':6262'
 ```
 
-The default config path is `/config`; always supply your own. Node is not
-needed at runtime. Linux needs readable system CA certificates for HTTPS;
-the static binary does not embed a CA trust store. Run under a dedicated
-account with write access only to config and the intended data tree. On
-Windows use an NTFS ACL restricted to that account; Unix file modes do not
-prove Windows ACL protection.
+4. Open http://your-server:6262 and create the owner account right away. See [First run](../setup/first-run.md) for the rest.
 
-Do not start the program as root. Outside a container, root without `PUID`
-and `PGID` stops with "started as root outside a container"; it does not
-change any owner or switch to the container default 1000:1000. Run it as its
-own service user, or set `PUID` and `PGID` to that user so HolyArrs gives it
-the config folder and switches to it.
+## Settings explained
 
-Without `GOMEMLIMIT` the program uses a 384 MiB memory target, the same
-as in the Docker image; set `GOMEMLIMIT` to change it (about 80 percent
-of the memory you give HolyArrs). This is a Go memory target, not a hard
-process limit. Use your service manager for resource
-limits and restart handling; packaging does not create a service.
+**Build options.**
 
-On a machine with about 2.5 GiB of memory or less, HolyArrs turns on its
-low-memory mode by itself (Linux). `HOLYARRS_LOW_MEMORY=1` or `=0` decides it
-yourself. See [Low-memory mode](parts-and-safe-mode.md#low-memory-mode).
+- `--targets` picks a subset, comma-separated. The defaults are `linux-amd64`, `linux-arm64`, `linux-armv7` and `windows-amd64`.
+- `--low-resource` is for a small build machine. Each builder container gets one CPU, 2 GiB of memory and 256 processes, and Go builds one package at a time. Python still packs the archives on the host, outside those limits.
+- The commit is added to your version number and built into the program. The app and its backups report it.
 
-Open port 6262 at your host's network address and create the owner account
-right away. See
-[Install](install.md#finish-the-first-run) for the remaining setup and data
-permissions. Config must stay on local disk. Keep downloads and Library
-folders in one filesystem when hardlinks matter.
+**What an archive holds.** The program, license, third-party notices, guides, a source manifest and the package identity. A separate source archive holds the project source and the Go dependencies. Keep it next to the binaries. The checksums prove the files match. They are not signatures. The same commit, version and inputs give the same archives, so you can rebuild to check.
 
-## Update and recover
+**Config path.** The default is `/config`. Always give your own with `-config`. Keep it on a local disk.
 
-1. Verify the new archive and its source identity before stopping the app.
-2. Stop it gracefully and take a protected copy of the complete config,
-   including the master key. Copy only while the app is stopped, or use a
-   checked in-app backup and keep its matching key separately.
-3. Extract the new program into a different directory. Keep the previous
-   program and its matching pre-update config. Start the new program against
-   the intended config and verify sign-in, health and saved settings.
-4. A restore through Settings > Backups stages the databases and exits 75.
-   Restart the program to apply it. A standalone process has no automatic
-   restart policy unless you set one in your service manager.
+**User.** Run HolyArrs under its own account with write access only to the config and your media. Do not start it as root. As root outside a container, without `PUID` and `PGID`, it stops with "started as root outside a container". With `PUID` and `PGID` set, it hands the config folder to that user and switches to it. On Windows, protect the config folder with an NTFS permission for that account.
 
-Rollback requires the old program **and its matching pre-update config**.
-Never point an older program at databases migrated by a newer one. Preserve
-the new config separately before rollback so later changes are not silently
-lost. Test recovery with a disposable config copy first. See [Backups](backups.md).
+**Memory.** Without `GOMEMLIMIT`, HolyArrs aims at 384 MiB, the same as in Docker. Set `GOMEMLIMIT` to about 80 percent of the memory you give it. This is a target, not a hard limit. Use your service manager for hard limits.
 
-## Evidence classes
+**Low-memory mode.** On Linux, a machine with about 2.5 GiB or less turns it on by itself. Then the target drops to a quarter of the machine's memory, between 192 and 384 MiB. Set `HOLYARRS_LOW_MEMORY=1` or `0` to decide yourself. See [Low-memory mode](../help/parts-and-safe-mode.md#low-memory-mode).
 
-| Platform | What packaging can establish | Remaining acceptance |
-| --- | --- | --- |
-| Windows amd64 | Native disposable first-run, restart and backup/recovery when a receipt records them | Service installation, ACL hardening and a separate user's experience |
-| Linux amd64 | Cross-build plus native Linux runtime only when a receipt records it | NAS OS and catalog installation |
-| Linux arm64 | Cross-build | Native ARM64 hardware and day-long resource gates |
-| Linux armv7 | Mandatory selected-target cross-build for these candidates | Native runtime and platform installation; historical support policy remains in decision 0002 |
-| Unraid, Synology, QNAP, TrueNAS | Unraid template preparation only | Every actual NAS installation check |
+**Other needs.** Node is not needed to run it. On Linux, HTTPS needs the system CA certificates. Keep downloads and Library folders on one filesystem if you want hardlinks.
 
-Exact tested versions and hashes belong in the candidate's acceptance receipt.
+**No service.** The archive does not install a service. Set up restarts and limits in your own service manager.
+
+## Update and roll back
+
+1. Check the new archive before you stop the app.
+2. Stop HolyArrs, then copy the whole config folder, master key included. Or use an in-app backup and keep its key separately.
+3. Extract the new program into a different folder. Keep the old program and the old config copy.
+4. Start the new program on your config. Check sign-in, health and your settings.
+
+To roll back, you need the old program and its matching config from before the update. Never point an older program at databases a newer one has changed. Save the newer config first so you lose nothing. See [Backups](../backups/backups.md).
+
+## Troubleshooting
+
+**"started as root outside a container".** Run it as its own user, or set `PUID` and `PGID`.
+
+**The app exits after a restore.** A restore from Settings > Backups stages the data and exits with code 75. Start it again to apply it. Set your service manager to restart it on its own.
+
+**HTTPS calls fail on Linux.** Install the system CA certificates.
+
+**The build says the output exists.** Pick a new output folder.

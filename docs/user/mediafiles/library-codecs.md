@@ -1,28 +1,46 @@
-# Library codec view
+# Video codecs
 
-The codec view lists present main movie files with the exact Version each file belongs to. Its codec filter reads only `media_info.video_codec` when `media_info.inspection_status` is `complete` or `partial`. Missing data, failed or unsupported inspections, and unrecognized codec values appear as **Unknown**. The parsed release-name value in `quality.codec` never counts as inspected media.
+You want to find movies in an old or large codec and look for better copies. The **Video codecs** page in the Library does this. You need permission to manage the Library.
 
-The list supports title prefix search, codec filtering, and title, codec, or recently-added sorting. Pages contain at most 100 rows and use title, Title ID, Version ID, and File ID as deterministic tie breakers. A selection contains both the File ID and Version ID, so it remains exact while a person moves between pages.
+## Find copies by codec
 
-## Reviewed searches
+1. Open the **Video codecs** page from the Library.
+2. Type in **Search movies** to match the start of a title.
+3. Pick a codec in **Codec**.
+4. Pick an order in **Sort**: title, codec or recently added.
 
-Searching is a two-step action:
+The list shows main movie files that are present, with the Version each one belongs to. Pages hold up to 100 rows. Your selection is kept while you move between pages.
 
-1. `POST /api/v1/library/copies/search/preview` re-reads every selected File and Version. It rejects a missing, moved, non-movie, non-main, non-present, mismatched, or protected copy and returns a review token.
-2. `POST /api/v1/library/copies/search` revalidates the same records and token, then queues the existing search for each exact movie Slot in the selected Versions. The queued search has `by_hand: true` and `choose: false`.
+The codec comes only from what HolyArrs read inside the file. A codec in the release name never counts. If the file was not read, could not be read, or has a codec HolyArrs does not know, it shows as **Unknown**. See [Media inspection](media-inspection.md).
 
-The search applies each Version's current Pick rules and stores candidates for a person to review. It does not choose, grab, replace, delete, or edit rules, and it does not guarantee that a replacement exists.
+## Search again for better copies
 
-All three routes require `manage_library`:
+1. Tick the copies you want.
+2. Select **Review**. HolyArrs checks each copy again and shows what it will search.
+3. Confirm the search.
+
+HolyArrs searches each chosen Version with its current Pick rules and saves the results for you to look at. It does not pick, grab, replace or delete anything, and it does not change your rules. A better release may not exist.
+
+## For scripts
+
+These routes need the manage Library permission:
 
 - `GET /api/v1/library/copies?q=&codec=&sort=&limit=&offset=`
 - `POST /api/v1/library/copies/search/preview`
 - `POST /api/v1/library/copies/search`
 
-The preview body is:
+Preview body:
 
 ```json
 {"selections":[{"file_id":12,"version_id":7}]}
 ```
 
-The final body includes the unchanged selections and the `review_token` returned by preview. A stale token returns `409 Conflict` and requires another review.
+Send the same selections and the `review_token` from preview to the search route.
+
+## Troubleshooting
+
+**A copy cannot be ticked.** It is protected. See [Protected copies](protected-copies.md).
+
+**Review refuses a copy.** The file was moved, is missing, is not a main movie file, no longer belongs to that Version, or is protected.
+
+**The search says it is out of date.** Something changed after you reviewed, and the answer is `409 Conflict`. Select **Review** again.

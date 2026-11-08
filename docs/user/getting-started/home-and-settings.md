@@ -1,123 +1,97 @@
-# Home and Settings
+# First setup, Home and Settings
 
-Home is the working summary of this HolyArrs. Settings is the map to every
-configuration screen the signed-in person may use.
+You just made the owner account and want HolyArrs ready to use. This page
+covers the setup steps, what Home shows you, and where to find each setting.
 
 ## First setup
 
-After the owner account is made, HolyArrs asks an owner or admin to:
+Right after you make the owner account, HolyArrs walks you through setup.
+Only the owner, or an admin who may change settings, can finish it.
 
-1. Turn Movies, Shows, Music and Subtitles on or off, and say whether family
-   or friends will use Requests.
-2. Add one Library folder for movies, shows or music.
+1. **Coming from other apps?** Pick **Bring my apps** to move over from
+   Sonarr, Radarr, Lidarr or Overseerr. Pick **Start fresh** to set things up
+   by hand. You also say whether family or friends will ask for titles. Yes
+   adds a Requests page.
+2. **Where's your media?** Turn on what you collect and add its folder. On
+   Docker, use the path inside the container, such as `/data/movies`.
+3. **Which app downloads?** Connect your Downloader.
+4. **Where should we search?** Link Prowlarr or Jackett, and your sites come
+   with it.
+5. **You're set.** Open Home, or invite family.
 
-Metadata needs no keys; see [Metadata](metadata-keys.md).
+You can skip any step and finish it later in Settings. If you picked
+**Bring my apps**, HolyArrs only reads your old apps. Nothing moves until you
+say so, and your old apps keep running. See [Migrate](../migrate/move-from-other-apps.md).
 
-The **Just movies** button turns on Movies and turns the other optional parts
-off. Parts may be changed later under **Settings > Parts and controls**.
-
-See [Install HolyArrs with Docker](install.md#finish-the-first-run),
-[Metadata](metadata-keys.md), and [Library folders](library-folders.md).
+Metadata needs no keys. See [Metadata](../metadata/metadata-service.md).
 
 ## Home
 
-Home changes as the Library and linked apps change. It shows:
+Home sums up what is happening. The switch at the top shows **Home** or
+**System**.
 
-- **Downloading now** for active, queued and stalled Downloads, with progress,
-  speed and an estimated finish time when those facts are available.
-- **Searches** for running and recent searches, with links to their details.
-- **Missing** for the first eight wanted or searching slots.
-- **Latest Events** for the latest twelve history Events.
-- **Health** for the first five current problems, or that all checks passed.
-- **This HolyArrs** with its version, uptime, Source count and Downloader count.
+While setup is not done, Home lists what is left:
 
-The page updates while downloads, searches, imports, health checks and other
-background work run. Use the linked screen when a card needs more detail.
+- Choose a Library folder
+- Add a Source
+- Add a Downloader
+- Add your first title
 
-### Getting started
+Each step links to the screen that does it. You can also choose
+**Import what you have** to add folders you already own.
 
-Until the basic setup is complete, Home lists the remaining steps. The current
-checklist covers a Library folder, a Source, a Downloader and a
-first movie. A music-only or shows-only setup can still use the relevant
-Settings screens even when that movie-oriented checklist remains visible.
+Once you are set up, Home shows:
+
+- **Needs attention** with problems to fix, or **All good**.
+- Downloads by step: waiting, downloading and importing.
+- Your Sources and Downloaders, and how many are working.
+- **Coming up** with air dates and releases. The owner gets a link to the
+  Calendar.
+- Shortcuts to Explore, what is trending, the Calendar and Search.
+- How long HolyArrs has been up.
+
+Home updates by itself while downloads, searches and checks run. If a card
+says **Could not read**, tap **Try again**.
 
 ## Settings
 
-The Settings landing page is a set of links. A link is shown only when its
-Part is on and the current person may open it:
+Open Settings from the menu. You only see the screens you may use, and only
+for parts you turned on.
 
-- The owner may open every settings screen.
-- An admin or member with **Change settings** may open the ordinary settings
-  screens.
-- The owner and admins may open **Move from other apps**, **Parts and
-  controls**, **Users**, and **Logs**.
-- Everyone may open **My account**.
+- The owner sees every screen.
+- An admin or member who may change settings sees the usual screens.
+- The owner and admins also see **Move from other apps**, **Parts**, **Users** and **Logs**.
+- Everyone sees **My account**.
 
-The complete screen-to-guide map is in the [documentation index](index.md).
+The Settings home also lists what needs your attention, such as a Source that
+does not answer or no recent backup. Each item links to the screen that fixes
+it.
 
-### What needs attention
+### Turn parts on or off
 
-`GET /api/v1/settings/status` (Change settings) gives the Settings home one
-answer: `{"items": [{"group", "page", "text", "severity"}], "unset": {"<group>":
-["<page>"]}, "known": ["<page>"], "metadata_up": bool}`. Groups are
-`general`, `library`, `copies`, `people`, `security`, `linked`, `maintenance`
-and `account`. Severity follows what was found:
-
-- a health check: its own state (`warning` or `error`);
-- a failed stage, media server or subtitle site: `error`; a stuck one: `warning`;
-- a Source or Downloader not answering: `error`;
-- the metadata server not answering, no backup, or no backup in the last 7
-  days: `warning`;
-- a newer HolyArrs: `info`;
-- a saved Movies and TV default whose Library folder or Pick rules are gone:
-  `warning`, on `/settings/title-defaults` in `library`.
-
-Pages with no Library folders, Sources or Downloaders are listed under
-`unset`. The answer is kept for 30 seconds for everyone. `metadata_up` says whether
-the metadata server answers (`GET /api/v1/metadata/health` gives the same,
-cached about a minute, to anyone signed in).
+**Settings > Parts** turns Movies, Shows, Music, Subtitles and
+Requests on or off. See [Parts and safe mode](../help/parts-and-safe-mode.md).
 
 ### Movies and TV defaults
 
-`GET /api/v1/settings/title-defaults` (Run the Library) and `PUT` (Change
-settings) hold what a new movie or show gets when an add leaves a field out:
-`{"movie": {"library_folder_id", "pick_rules_id", "keep_up_to_date",
-"search_on_add"}, "show": {...}}`. `0` means the first folder of that kind and
-the folder's own Pick rules. Built-in values are Keep up to date on for both,
-Search when added on for movies and off for shows.
+**Settings > Movies and TV defaults** sets what a new movie or show gets when
+you add it: its Library folder, its Pick rules, **Keep up to date**, and
+**Search when added**. Out of the box, Keep up to date is on for both, and
+Search when added is on for movies and off for shows. If a folder or Pick
+rules you saved here are removed later, HolyArrs uses the built-in choice and
+Settings flags it.
 
-`POST /titles` and `POST /shows` use a saved value only for a field the
-request leaves out, and only once that value has been saved; with nothing
-saved, adds behave as before. A saved folder or Pick rules that are removed
-later are skipped (the add uses the built-in choice) and Settings flags them.
-`POST /shows` also takes `search_on_add`: after the folder look, the whole
-show is searched the same way **Search** on a show does. Outside lists and
-approved asks keep their own settings.
+### Appearance
 
-### Pick rules editing
+**Settings > Appearance** has the theme (**Automatic**, **Dark** or
+**Light**), **Play trailers by themselves**, and **Show Library art on the
+sign-in page**. Motion follows your device's Reduce motion setting.
 
-`POST /api/v1/pick-rules`, `GET`/`PUT`/`DELETE /api/v1/pick-rules/{id}` make,
-read, change and remove Pick rules (reading needs Run the Library, the rest
-Change settings). A change bumps `revision`. Ready-made rules keep their name
-and kinds and cannot be removed; their rules may change. Rules in use (by a
-Version, a Library folder, an Outside list, a Request setting or a Movies and
-TV default; `in_use` counts each) cannot be removed, drop a kind in use, or
-switch between video and music: those answer 409 with `in_use`. A wrong field
-answers 400 `{"error", "field"}` where `field` is a dotted path such as
-`body.good_enough_at`.
+## Troubleshooting
 
-## Settings for Explore and trailers
-
-| Where | Setting | Default |
-| --- | --- | --- |
-| My account, Alerts for you | **New episodes of shows I asked for** | On |
-| Settings > This app | **Autoplay trailers** | On |
-
-See [Explore](explore.md#new-episode-notices) and [Trailers](trailers.md#settings).
-
-## Appearance
-
-The Settings landing page offers **Dark** and **Light**. The choice is kept in
-the current browser. Reduced motion follows the browser or operating-system
-preference.
-
+| Problem | Do this |
+| --- | --- |
+| Setup says only the owner or an admin can finish | Sign in as the owner, or ask them to give you settings access. |
+| A Settings screen is missing | Its part is off, or your account may not use it. Ask the owner. |
+| Home keeps showing setup steps | Each step must be done: a Library folder, a Source, a Downloader and a title. |
+| A folder is not found | Use the path inside the container, not the host path. See [Install](install.md#media-folders). |

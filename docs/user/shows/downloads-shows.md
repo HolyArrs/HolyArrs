@@ -1,21 +1,17 @@
 # Downloads for shows
 
-This page covers what happens after HolyArrs sends a Release for one or more episodes to your Downloader: how the files are put in the Library, what a season pack does, what happens when a download fails, and where to look when something gets stuck. Movies work the same way and are covered in [Downloads for movies](downloads-movies.md). Only the owner and admins (people who may manage the Library) see any of this.
+You want episodes to land in the right folder with the right name, and you want to know what to do when a download goes wrong. This page covers what happens after HolyArrs sends a Release to your Downloader. Movies work the same way, see [Downloads for movies](../movies/downloads-movies.md). Only the owner and admins see these screens.
 
-## One download, many episodes
+## What happens when a download finishes
 
-A Release can hold one episode, a file with several episodes, or a whole season (a season pack). HolyArrs sends it to your Downloader once, as one download for every episode it fills.
-
-When the Downloader is done, HolyArrs reads the name of each file in the download and works out which episode it is:
-
-- `Copper.Valley.S01E02.1080p.WEB.mkv` is season 1, episode 2;
-- `Copper.Valley.S01E02E03.1080p.WEB.mkv` holds episodes 2 and 3 in one file;
-- `The.Late.Lamp.Show.2026.03.14.mkv` is the episode that aired on that day (for shows ordered by air day);
-- `[Group] Starfall Kitchen - 112.mkv` is running number 112 (for shows ordered by running number).
-
-A file whose name has no show name, such as `S01E02.mkv`, takes the show from its folder or from the Release name. A file that names another show is refused.
-
-Each file then goes into the show's folder in the Library, in its season folder, under the name your settings give it:
+1. HolyArrs reads the name of each file and works out its episode:
+   - `Copper.Valley.S01E02.1080p.WEB.mkv` is season 1, episode 2.
+   - `Copper.Valley.S01E02E03.1080p.WEB.mkv` holds episodes 2 and 3.
+   - `The.Late.Lamp.Show.2025.03.14.mkv` is the episode that aired that day.
+   - `[Group] Starfall Kitchen - 112.mkv` is running number 112.
+2. A file with no show name, like `S01E02.mkv`, takes the show from its folder or the Release name. A file that names another show is refused.
+3. HolyArrs checks that the disk keeps the free space set in **Settings > Naming and files**. If it would not, nothing is placed and the episodes wait on **Needs a decision**.
+4. Each file goes into the show's season folder under the name your patterns give it.
 
 ```
 Copper Valley (2025)/Season 1/Copper Valley - S01E02 - The Mill 1080p WEB.mkv
@@ -23,64 +19,70 @@ Copper Valley (2025)/Season 1/Copper Valley - S01E02-E03 - The Mill + Flood 1080
 Copper Valley (2025)/Specials/Copper Valley - S00E01 - Behind the scenes 1080p WEB.mkv
 ```
 
-Files are hardlinked when the download and the Library are on the same disk, so they take no extra space and the Downloader can keep sharing them. On another disk they are copied. HolyArrs never moves or deletes the Downloader's files, and never writes over a file it did not put there.
+Files are hardlinked when the download and the Library are on the same disk, so they take no extra space and your Downloader can keep seeding. On another disk they are copied. HolyArrs never moves or deletes your Downloader's files, and never writes over a file it did not put there.
 
-A download always fills one Version. When a show is kept in HD and 4K, the HD pack and the 4K pack are two downloads, and each file goes to its own Version's folder (for example `Copper Valley (2025)` and `Copper Valley (2025) [4K]`), so neither copy replaces the other.
+A download always fills one Version. For a show kept in HD and 4K, each pack goes to its own Version's folder, for example `Copper Valley (2025)` and `Copper Valley (2025) [4K]`.
 
-## When a pack does not hold everything
+## When a season pack does not hold everything
 
-A season pack is not always what its name promises. HolyArrs settles each episode on its own:
+HolyArrs settles each episode on its own:
 
-- **Episodes it holds** go into the Library.
-- **Episodes it should have held but does not** look for another copy. The Release is added to Turned down for those episodes only, so it is never picked again for them; it still counts for the others.
-- **Files for episodes this download was not meant to fill** (you already have them, or they are not kept up to date) are left alone and listed in the import.
-- **Extra files** (samples, text files, files with no episode in the name) are left alone and listed in the import.
-- **A file that is worse than its Release name said**, or worse than the copy you already have, is refused for that episode; that episode keeps its copy (or looks again).
+- Episodes the pack holds go into the Library.
+- Episodes it should have held but does not go back to looking. The Release is turned down for those episodes only.
+- Files for episodes this download was not meant to fill are left alone and listed.
+- Extra files, like samples or text files, are left alone and listed.
+- A file worse than its Release name said, or worse than the copy you have, is refused for that episode.
 
-The row on the Downloads screen says where every episode ended up, for example "2 of 3 episodes in the library; S01E03 looks for another copy."
+The row on the Downloads screen sums it up, for example "2 of 3 episodes in the library; S01E03 looks for another copy."
 
 ## Better copies
 
-When a better copy of an episode arrives, it takes the old one's place. The old file goes to the holding folder in its Library folder (`.holyarrs-replaced`) and is removed after the number of days in **Settings > Naming and files**. If the new file cannot be placed, the old one comes back.
+When a better copy arrives, it takes the old one's place. The old file goes to the holding folder `.holyarrs-replaced` inside its Library folder. It is removed after the holding days set in **Settings > Naming and files**. If the new file cannot be placed, the old one comes back.
 
-A file that held two episodes, when only one of them gets a better copy, stays where it is for the other episode.
+A file that holds two episodes stays until both have a better copy.
 
-## When something stops halfway
+## Use the Downloads screen
 
-If HolyArrs stops in the middle of an import (a restart, a power cut), it finishes the import the next time it runs. Files already placed are recognised as its own and nothing is placed twice.
+Each row names the show and the episodes it covers, like "S01E02 The Mill" or "S01E01-E03, 3 episodes". Open **The episodes it covers** to see where each episode is: downloading, importing, in the Library, looking for another copy, or needing a decision.
 
-Before anything is placed, HolyArrs checks that the disk keeps the free space set in **Settings > Naming and files** (100 MB at least). If it would not, nothing is placed and the episodes wait on **Needs a decision**.
+**Mark failed** and **Remove** act on the whole download. For a pack, that is every episode in it.
 
-Downloads for shows that finished before this version of HolyArrs could place episodes are picked up at start and every 10 minutes.
+## Handle Needs a decision
 
-## Failed and stalled downloads
+An episode lands here when HolyArrs cannot finish on its own. It ran out of Releases, or a file it did not place is already where the episode should go.
 
-The same rules as for movies apply, for one episode or a whole pack:
+For one episode you can:
 
-- A download that makes no progress for the time in **Settings > Downloaders** is **Stalled**; after the second time it is acted on.
-- A download that fails, or that you **Mark failed**, has its Release added to Turned down for every episode it was filling, is removed from the Downloader (unless you turned that off), and every episode looks again.
-- After a failed season pack, HolyArrs searches the whole season again, so another pack can take its place. A failed single episode is searched on its own.
+- **Search again**
+- **Choose a release by hand** on the show page
+- **Add to Turned down**, for this episode only
+- **Stop looking**, which turns off Keep up to date for this episode only
 
-## The Downloads screen
+When several episodes of one pack are stuck, they share one card. **Search again for these episodes**, **Add the pack to Turned down** and **Stop looking for these episodes** settle them all at once. Each episode keeps its own buttons too.
 
-Each row names the movie or the show. For a show it also says which episodes the download covers: one episode by its name ("S01E02 The Mill"), a run of episodes in short ("S01E01-E03, 3 episodes"). Open **The episodes it covers** to see each episode and where it is: downloading, importing, in the Library, looking for another copy, or needing a decision.
-
-**Mark failed** and **Remove** work on the whole download: for a pack, on every episode it fills.
-
-## Needs a decision
-
-An episode lands here when HolyArrs cannot finish it on its own: it ran out of Releases, or an import hit a conflict (for example a file it did not place is already where the episode should go).
-
-- A single episode has the same choices as a movie: **Search again**, **Choose a release by hand** (on the show page), **Add to Turned down** (for this episode only) and **Stop looking**. Stop looking turns off Keep up to date for that episode only; the rest of the show goes on.
-- When several episodes of one season pack are stuck, they share one card. The card lists every episode of the pack and where each one is. **Search again for these episodes**, **Add the pack to Turned down** (for every episode it holds) and **Stop looking for these episodes** settle them all at once. Each episode also keeps its own buttons.
-
-## Naming
+## Settings
 
 **Settings > Naming and files** has a **Show names** card:
 
-- **Show folder pattern**: the folder of a show added from now on, `{title} ({year})` at first.
-- **A folder for each season**, with its pattern (`Season {season}`) and the folder for specials (`Specials`).
-- **Episode file name pattern**: `{title} - {episode} - {episode_title} {quality}` at first. `{episode}` gives `S01E02`, or `S01E02-E03` for a file with several episodes; `{episode_title}` joins several episode names with `+`.
-- One pattern each for shows ordered by air day (`{air_date}`) and by running number (`{absolute}`).
+| Setting | Default |
+| --- | --- |
+| Show folder pattern | `{title} ({year})` |
+| Season folder | `Season {season}` |
+| Specials folder | `Specials` |
+| Episode file name | `{title} - {episode} - {episode_title} {quality}` |
+| Shows ordered by air day | `{title} - {air_date} - {episode_title} {quality}` |
+| Shows ordered by running number | `{title} - {episode} - {absolute} - {episode_title} {quality}` |
 
-The examples under the patterns change as you type. **Rename files** uses the same patterns for episodes you already have, and its preview is exactly what it does.
+`{episode}` gives `S01E02`, or `S01E02-E03` for a file with several episodes. `{episode_title}` joins several names with `+`. The examples under each pattern change as you type. The show folder pattern applies to shows you add from now on.
+
+The same page sets the free space an import must leave (100 MB at least) and the holding days. Holding days set to 0 keep replaced files for good.
+
+## Troubleshooting
+
+**A download makes no progress.** After the time set in **Settings > Downloaders** it is marked **Stalled**. The second time, HolyArrs acts on it like a failed download.
+
+**A download failed.** The Release is turned down for every episode it was filling and removed from your Downloader, unless you turned that off. A failed season pack makes HolyArrs search the whole season again. A failed single episode is searched on its own.
+
+**HolyArrs stopped in the middle of an import.** After a restart or power cut, it finishes the import the next time it runs. Files already placed are recognised and nothing is placed twice.
+
+**Episodes wait on Needs a decision because of disk space.** Free some space on the Library disk, then press **Search again**.

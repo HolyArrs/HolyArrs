@@ -1,53 +1,45 @@
-# Optional metadata service
+# Metadata
 
-By default HolyArrs uses the HolyArrs metadata server at
-`https://holyarrs-api.coderluii.dev` and needs no keys (see
-[Metadata](metadata-keys.md); `HOLYARRS_METADATA_URL` points it at another
-server). This page covers a separate, optional standalone metadata service
-with its own API. Its address is not a MusicBrainz mirror
-address and must never be entered in `musicbrainz_url`.
+You want names, dates, posters and ids for your movies, shows and music. HolyArrs gets them for you from the HolyArrs metadata server. You need no keys, and a new install works without typing anything.
 
-After the application wiring is integrated, select the service at startup with
-`HOLYARRS_METADATA_SERVICE_URL` and mount a separate installation credential file
-at the path named by `HOLYARRS_METADATA_SERVICE_TOKEN_FILE`. The file takes
-precedence over the encrypted vault setting `links/metadata_service_installation_token`.
-The file is read again for each request, so rotation does not require a restart.
-This feature does not add a browser enrollment or credential-setting route.
-Keep the file private and outside exports, reports and source control.
+## Check that it works
 
-Use a plain HTTPS origin without a path, user information, query or fragment.
-Public destinations always require HTTPS. For an operator-controlled private
-service or temporary SSH forward, `HOLYARRS_METADATA_SERVICE_ALLOW_LOCAL=true`
-also allows local addresses. Plain HTTP is accepted only with that opt-in and a
-private or loopback literal IP address. Cloud metadata and link-local addresses
-remain blocked. Redirects and environment proxies are disabled.
+1. Open **Settings > Metadata**.
+2. Look at the **Metadata server** card. It says whether the server answers.
 
-The installation credential is sent only to the configured service. Direct
-provider keys stay with their existing providers. Service answers are checked
-for schema, source identity, size and freshness; HTML summaries are treated as
-plain text. The app does not cache authenticated service answers locally, so a
-revoked installation is checked again on the next lookup. An expired cached
-service answer is refused. A refresh requests fresh data but cannot force the
-service to refresh its upstream cache.
+That is all there is to set up. On its first lookup, your install registers with the server once and gets its own credential. HolyArrs keeps it encrypted and never shows it.
 
-Movie and show name search use the first provider page, as the current
-application interfaces do. Movie search with a year stays on the direct provider
-because the service API has no year filter. The adapter validates the service's pagination and never follows
-links from a reply. Show details must contain every advertised season and its
-episodes within the configured bounds. A missing or mismatched set does not
-replace a saved episode list.
+## Where each kind of data comes from
 
-An embedded artist album list is partial. An embedded album edition list returns
-the existing partial-list signal. When available, the direct MusicBrainz provider
-still supplies complete browse results. Missing albums or editions in a partial
-answer do not remove saved records. Recording detail is used only when a track
-needs a missing name or duration; the app has no separate recording lookup screen.
+- **Movies and shows.** Searches, details, seasons, Explore rows, people, age ratings and TMDB lists come from the metadata server. Show details can also come from TVMaze. Neither needs a key.
+- **Posters and backdrops.** These load from TMDB's picture host in TMDB's own sizes. HolyArrs falls back to the metadata server only when TMDB can't be reached.
+- **Music.** Details come from MusicBrainz. There is no key field. Its rate and contact settings are under **Settings > Music defaults**.
+- **Music pictures.** Album covers, artist photos, backgrounds and logos come from the metadata server, through your install's artwork cache. HolyArrs never asks a picture site itself.
+- **Artist top songs.** The top songs on an artist page, and their explicit marks, come from Deezer's public API. It needs no key.
 
-An unavailable service, a busy service, or an unsupported complete-catalog
-operation can use the existing direct provider within the same 18-second lookup
-budget. Revoked access, malformed data, identity mismatches and expired answers
-are reported. One retry for a 429 or 503 respects a bounded wait and the caller's
-deadline. Disabling the optional URL restores direct-provider selection.
+What the server learns about your install is on [Metadata privacy](metadata-privacy.md).
 
-Private synthetic integration checks do not establish public hosting eligibility,
-provider permission, live-provider completeness or installed-version support.
+## Settings
+
+| Setting | Where | What it does |
+| --- | --- | --- |
+| `HOLYARRS_METADATA_URL` | environment | Points HolyArrs at another metadata server. The default is `https://holyarrs-api.coderluii.dev`. |
+| `HOLYARRS_TMDB_KEY` | environment | Your own TMDB read token. Movie and show lookups then go to TMDB directly. |
+| `HOLYARRS_DEEZER_URL=off` | environment | Turns off artist top songs. |
+| **Trakt key** | **Settings > Outside lists** | Held back. See below. |
+
+### Trakt
+
+Trakt lists are held back in this release. They stay off until the `trakt_lists` switch is on, see [Held back](../help/held-back.md). With the switch on, open **Settings > Outside lists**, find **Trakt key**, and paste the Client ID of a Trakt app. After you save, you only see a masked value.
+
+### Keys from other apps
+
+[Import secrets](../getting-started/import-secrets.md) reads app keys from one local file. The preview masks the values, and the import stores them in the encrypted vault. Never put real keys in a tracked file.
+
+## Troubleshooting
+
+**Home, Search or Explore says the metadata server is down.** Searches and new artwork come back when the server answers again. HolyArrs checks at most once a minute. Your Library, downloads and everything already saved keep working meanwhile.
+
+**You set `HOLYARRS_METADATA_URL` and nothing loads.** Check the address from the HolyArrs machine, then restart HolyArrs so it reads the new value.
+
+**Artist pages show no top songs.** Check that `HOLYARRS_DEEZER_URL` is not set to `off`.

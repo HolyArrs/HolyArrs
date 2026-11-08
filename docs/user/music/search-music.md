@@ -1,66 +1,82 @@
-# Searching for music
+# Search for music
 
-This page covers how HolyArrs finds Releases for the albums of your artists: by itself, when you press a button, and when you choose a release yourself. Movies and shows work the same way and are covered in [Searching for movies](search-movies.md) and [Searching for shows](search-shows.md). Only the owner and admins (people who may manage the Library) see any of this; members never do.
+You want the albums of your artists found and downloaded. This page shows how HolyArrs searches for them, how to search by hand, and how to choose a Release yourself.
 
-## Albums and tracks
+Only the owner and admins see this. Members never do. Movies and shows work the same way, see [Search for movies](../movies/search-movies.md) and [Search for shows](../shows/search-shows.md).
 
-Each track of an album has its own place in each Version, but HolyArrs looks for music **one album at a time**: one Release is chosen for every track it holds and sent to your Downloader once, as one download.
+## How it works
 
-HolyArrs reads album names like these:
+HolyArrs looks for music one album at a time. It picks one Release for all the tracks it holds and sends it to your Downloader as one download.
+
+An album is only searched when the artist, the album, the track and the Version all have **Keep up to date** on. Albums that are not out yet are never searched by themselves.
+
+HolyArrs searches by itself in three ways:
+
+- **Feed checks.** While an album is missing a track, the feed check also reads the music categories of your Sources. A new Release that fits is judged, then chosen or held.
+- **The nightly search.** It covers albums too, one search per album.
+- **Better copies.** An album below **Good enough** keeps looking. A new Release replaces it only when it is better for every track that already has a copy. A better album never swaps some tracks for worse ones.
+
+## Search by hand
+
+1. Open the artist page.
+2. Press **Search now** to search every album with a missing track. Or press the search button on one album row.
+3. To choose for yourself, open the album page and press **Choose a release**.
+4. You see every Release found, with its verdict and the reasons in plain words.
+5. Choose one and it fills every track it holds. Turn one down and it is never picked again for this album.
+
+Home shows each search as "Artist – Album". The Held and Turned down lists use the same name.
+
+If you search an album that is not out yet, the search still runs. Every verdict then says the date check was skipped.
+
+## Album names HolyArrs reads
 
 - `Velvet Cartography - Low Tide Atlas (2019) [FLAC]`
 - `Velvet Cartography - Low Tide Atlas (2019) [MP3 320]`, `[MP3 V0]`, `[AAC 256]`, `[FLAC 24-96]`
-- `Velvet_Cartography-Low_Tide_Atlas-WEB-FLAC-2019-GROUP` (the scene style)
-- `Velvet Cartography - Harbour Songs (2021) CD2 [FLAC]` (one disc: it fills only that disc's tracks)
+- `Velvet_Cartography-Low_Tide_Atlas-WEB-FLAC-2019-GROUP`
+- `Velvet Cartography - Harbour Songs (2021) CD2 [FLAC]`. This fills only the tracks of disc 2.
 
-It matches the artist by name (or another name the artist is known by) and the album by its name among the artist's albums. When two albums share a name, the year tells them apart. A year that differs from the album's own (a remaster from a later year) is fine; the Release just says so.
+The artist is matched by name, or by another name the artist is known by. The album is matched by name among the artist's albums. When two albums share a name, the year tells them apart. A different year, such as a later remaster, is fine. The Release just says so.
 
 ## Music Pick rules
 
-Music has its own Pick rules, from worst to best:
+Music has its own Pick rules. The steps, from worst to best:
 
 | Step | What it means |
 |---|---|
 | Lossy, low | under 192 kbps |
-| Lossy, middle | 192 to 256 kbps, MP3 V1 or V2, or a lossy format with no bit rate given |
+| Lossy, middle | 192 to 256 kbps, MP3 V1 or V2, or a lossy file with no bit rate given |
 | Lossy, best | MP3 320 or V0, AAC 256 and up, Opus 160 and up |
 | Lossless | FLAC, ALAC, WAV, APE or WavPack at CD quality |
 | Lossless hi-res | 24-bit, or a sample rate above 48 kHz |
 
-Three sets come with HolyArrs:
+HolyArrs comes with three sets:
 
-- **Lossless first** (what new artists get): takes the best lossy copy until a lossless one turns up; good enough at lossless.
-- **Lossy 320 or V0**: small files; good enough at the best lossy step.
-- **Any music**: takes anything, best first.
+- **Lossless first.** New artists get this one. It takes the best lossy copy until a lossless one turns up. Good enough is lossless.
+- **Lossy 320 or V0.** Small files. It takes lossy middle and lossy best. Good enough is lossy best.
+- **Any music.** It takes anything, best first. Good enough is lossless.
 
-A CD rip, a web purchase and a rip log or cue sheet earn points; a vinyl rip loses some (it still passes). A whole album in one file with a cue sheet, a Release that says it is a transcode, samples, programs and password archives are always turned away. Movie Pick rules cannot judge music, so an artist always uses music Pick rules.
+A CD rip, a web purchase and a rip log or cue sheet earn points. A vinyl rip loses some points, but it still passes.
 
-## How HolyArrs looks by itself
+These are always turned away: a whole album in one file with a cue sheet, a Release that is a lossy transcode, samples, programs and password protected archives.
 
-- **Feed checks.** The same feed check that serves movies and shows also reads the music categories of your Sources while an album is missing a track. A new album Release that fits is judged and chosen or held.
-- **The nightly search** covers albums too (Settings > Search, **Search for missing albums too**), one search per album. Albums that are not out yet are never searched.
-- **Find a better copy.** An album below **Good enough** keeps looking. A new Release replaces it only when it is better for **every** track that already has a copy, so a better album never swaps some tracks for worse ones.
+Movie Pick rules cannot judge music, so an artist always uses music Pick rules.
 
-An album is only looked for when the artist, the album, the track and the Version all have **Keep up to date** on.
+## Settings
 
-## Searching by hand
+Open **Settings**, then **Search**, and find the music part.
 
-- On the **artist page**, **Search now** looks for every album with a missing track, and the search button on each album row looks for that album.
-- On the **album page**, **Search now** (or **Find a better copy**) lets HolyArrs pick, and **Choose a release** lists every Release found with its verdict and the reasons in plain words. Choose one and it fills every track it holds; Turn down one and it is never picked again for this album.
-- Home shows each search as "Artist – Album", and so do the Held and Turned down lists.
+- **Search for missing albums too.** On by default. The nightly search covers albums.
+- **Take whole discographies.** Off by default, so a Release with every album of an artist is turned away. Turn it on and such a Release may fill the album you searched for.
+- **Tracks an album Release may lack.** Some Sources say how many files a Release holds. A Release with fewer files than the album has tracks is turned away. 0, the default, allows none missing. -1 turns the check off.
 
-A search you start for an album that is not out yet still runs; every verdict then says the date check was skipped.
+## Troubleshooting
 
-## Early and fake Releases
+**An album is never searched.** Check that **Keep up to date** is on for the artist, the album, the track and the Version. Check that the album is already out.
 
-A Release posted before the album came out, or far too small for it, is turned away like for movies; see [Early and fake Releases](search-movies.md#early-and-fake-releases).
+**A Release is turned away and you do not know why.** Open the album, press **Choose a release** and read the reasons next to it.
 
-## Settings > Search, Music
+**A Release posted before the album came out is turned away.** That is on purpose. Early or far too small Releases are turned away like for movies, see [Early and fake Releases](../movies/search-movies.md#fake-and-early-releases).
 
-- **Search for missing albums too**: on by default.
-- **Take whole discographies**: off by default, so a Release holding every album of an artist is turned away; on, it may fill the album searched for.
-- **Tracks an album Release may lack**: when a Source says how many files a Release holds, a Release with fewer files than the album's tracks is turned away. 0 (the default) allows none missing; -1 never checks.
+**A discography Release is turned away.** Turn on **Take whole discographies**.
 
-## What happens after a choice
-
-The chosen Release goes to your Downloader as one download. Placing the finished files into your music folder comes in a later version: until then a finished album download stays in your Downloader and nothing is moved or lost.
+After a Release is chosen, see [Downloads for music](downloads-music.md) for what happens next.

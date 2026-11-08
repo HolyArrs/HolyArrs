@@ -1,26 +1,33 @@
-# Media header inspection
+# Media inspection
 
-HolyArrs reads a bounded set of Matroska, WebM, MP4 and QuickTime container headers to identify the video codec and audio track languages. It does not decode media samples, run another process, use the network or guess facts from a filename.
+You want to know which codec and audio languages a file really has. HolyArrs reads the part of the file that describes its tracks and records what it finds. It does this when it imports a movie or show, when it takes over a file already on disk, and on rescans.
 
-`internal/mediainfo.Inspect` accepts only a regular file. `InspectReaderAt` supports bounded synthetic fixtures and callers that already own a random-access reader. Both return:
+## What it reads
 
-- `Container`: `matroska`, `webm` or `mp4` when recognized.
-- `VideoCodec`: `h264`, `hevc`, `av1`, `vp9`, `mpeg2`, `xvid` or `vc1` when the inspected header identifies one unambiguous supported codec.
-- `AudioLanguages`: sorted, unique lowercase base language codes. Region and script variants reduce to the same matching code used by Version language requirements.
-- `AudioTracks`: the actual number of audio tracks found in the inspected headers.
-- `AudioUnknown`: true when at least one audio track has a missing, `und` or invalid language value.
-- `Status`: `complete`, `partial` or `unsupported`.
+It reads Matroska (`.mkv`), WebM and MP4 or QuickTime (`.mp4`, `.mov`) files. From them it records:
 
-An unsupported codec remains unknown. An unsupported container returns `unsupported`. Recognized malformed input returns an error. Unknown facts never fall back to release names or file names.
+- **Container**: Matroska, WebM or MP4.
+- **Video codec**: H.264, HEVC, AV1, VP9, MPEG-2, Xvid or VC-1, when the file names exactly one of these.
+- **Audio languages**: each language found, cut to its base code, so `en-US` counts as `en`.
+- **Audio tracks**: how many audio tracks the file has.
+- **Unknown audio**: set when a track has no language, has `und`, or has a bad value.
+- **Status**: complete, partial or unsupported.
 
-The reader caps element count, nesting depth, tracks and inspected string lengths. It validates every declared offset and length against the parent container and file size. Large media-data payloads are skipped by offset. It rejects truncated headers, integer overflow, malformed variable-length integers and non-regular filesystem inputs. This is metadata inspection, not a deep corruption scan.
+## What it does not do
 
-## Format references
+- It does not play or decode the file. It cannot tell you every frame works.
+- It does not guess from the file name or the release name. Anything it cannot read stays **Unknown**.
+- It does not use the network or run other programs.
 
-- Matroska container elements, track types, codec IDs and language precedence: <https://www.rfc-editor.org/rfc/rfc9559.html>
-- QuickTime/ISO media atom structure and sizes: <https://developer.apple.com/documentation/quicktime-file-format/atoms>
-- Track handler declaration: <https://developer.apple.com/documentation/quicktime-file-format/handler_reference_atom>
-- Media language field and packed language codes: <https://developer.apple.com/documentation/quicktime-file-format/media_header_atom/language> and <https://developer.apple.com/documentation/quicktime-file-format/language_code_values>
-- Extended language tags: <https://developer.apple.com/documentation/quicktime-file-format/extended_language_tag_atom/language_tag_string>
-- Sample-description layout: <https://developer.apple.com/documentation/quicktime-file-format/sample_description_atom>
-- Registered ISO media sample-entry codec codes: <https://mp4ra.org/registered-types/codecs>
+## Where you see it
+
+- Audio languages show in the title page's **Copies** section and decide whether a file meets a Version. See [Original and dubbed audio](audio-versions.md).
+- The codec drives the **Video codecs** page. See [Video codecs](library-codecs.md).
+
+## Troubleshooting
+
+**Codec shows Unknown.** The file uses another container, the codec is not in the list above, or the file could not be read.
+
+**A file is reported as damaged.** The track details in the file are cut short or do not add up. Get a fresh copy of the file.
+
+**Music has no inspection.** Music is handled the way it always was.

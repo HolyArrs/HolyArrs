@@ -1,15 +1,28 @@
 # Movie editions
 
-A movie keeps one Title identity. Each Version can choose an edition independently from its Pick rules: for example, Theatrical HD, Theatrical 4K and Director cut HD. An empty edition is unconstrained. Existing Versions and files are not relabelled theatrical when the database is upgraded.
+You want a certain cut of a movie, such as the Director's Cut, or you want more than one cut side by side. Each Version of a movie can ask for its own edition. For example, one movie can have a Theatrical HD Version, a Theatrical 4K Version and a Director's Cut HD Version.
 
-Add an edition on the movie's Version form. Searches use the selected edition; imports check it again before placement. An unknown, conflicting or ambiguous edition waits for a decision. On Needs a decision, a person with Library permission can confirm an edition they checked and retry the current finished movie download. This confirmation is recorded. It cannot bypass audio requirements, protection, ownership, path checks or a removed Title.
+## Ask for an edition
 
-Copy details distinguish Version requirements from the edition recorded for an actual file. A checked correction updates that file's recorded edition. It does not rename its current path. Rename still uses a reviewed plan and the ordinary collision guards.
+1. Open the movie.
+2. Add or edit a Version.
+3. Set its edition.
 
-To adopt another existing copy, add an empty Version. Choose its existing folder name if it differs from the generated folder, then use Adopt existing copy with a relative file path inside that Version's folder. The file is inspected and recorded in place; adoption does not move its bytes. A constrained edition needs a matching stated edition or an explicit checked confirmation. The selected Version must be empty and have no active download.
+Searches for that Version look for the edition you set. Imports check it again before the file is placed. A Version with no edition takes any cut.
 
-## Media-server naming
+When you upgrade HolyArrs, your existing Versions and files are not relabelled as theatrical.
 
-Newly placed or explicitly renamed movies with a known edition receive the Plex filename tag `{edition-Name}`. Existing filenames stay unchanged until a reviewed rename. This follows [Plex's edition naming](https://support.plex.tv/articles/multiple-editions/). Plex's edition support also depends on its account, agent and server requirements. Producing this filename is not proof that a particular server has scanned and recognized it.
+## When the edition is unclear
 
-[Jellyfin](https://jellyfin.org/docs/general/server/media/movies/) and [Emby](https://emby.media/support/articles/Movie-Naming.html) describe generic versions grouped by a shared folder and filename prefix. Those are different recognition contracts. This addition does not claim that the Plex edition tag creates a native edition identity on either server. Live recognition and any server-specific arrangement require separate fixture or lab evidence; no installed server or media folder was changed for this build.
+If a finished download has an unknown or conflicting edition, it waits for you on [Downloads](downloads-movies.md) under **Review**. Check the file yourself, then use **Set edition** and **Save and try again**. Your choice is recorded. It does not skip any other check.
+
+## Names for your media server
+
+New files with a known edition get the Plex edition tag in the name, for example `{edition-Director's Cut}`. Existing files keep their names until you rename them. See [Organise your movies](organise-movies.md#rename-files).
+
+Plex has its own rules for when it shows editions. Jellyfin and Emby group versions differently and may not show the tag as a separate edition.
+
+## Troubleshooting
+
+- **A download keeps stopping for an edition.** The release name does not say which cut it is. Set the edition yourself on the Review row.
+- **My media server shows one movie, not two cuts.** Check your media server's own edition support.

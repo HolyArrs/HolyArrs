@@ -1,182 +1,74 @@
 # Explore
 
-Explore is the page for finding something to ask for or add. It never plays
-anything: HolyArrs is where people ask for titles, so Explore reads only your
-Library, your asks and the charts from the
-[metadata server](metadata-keys.md). Nothing about what people watch is
-collected.
+Use Explore to find something to ask for or add. The page is built for you, from what is in your Library and what you asked for. Open it at `http://your-server:6262/explore`.
 
-## The type switch
+Explore never plays anything. It reads your Library, your asks and the charts from the [metadata server](../metadata/metadata-service.md). It does not track what anyone watches.
 
-A switch at the top picks **All**, **Movies**, **Shows** or **Music**. The pick
-is kept in the address (`?type=`) and remembered on this device. **Music**
-shows only when the Music part is on; if it is turned off while picked, the
-page falls back to All.
+## Find something to ask for
 
-## How the page is built
+1. Open **Explore** from the menu.
+2. Pick **All**, **Movies**, **Shows** or **Music** at the top.
+3. Scroll. More rows load as you go.
+4. Press a card to open the title. Press **Ask** or add it from there.
 
-The server builds each person's page, so two people see different rows in a
-different order.
+Your type pick is kept in the address (`?type=`) and remembered on this device. **Music** only shows when the Music part is on.
 
-- **Head.** The first rows come in one answer, from a stored pool, so the page
-  opens fast. Every title appears once in the head.
-- **Tail.** Below the head, generated rows load four at a time as the page
-  scrolls. How many there are grows with how much HolyArrs knows about the
-  person (their Library titles and asks, called seeds): fewer than 3 seeds
-  give at most 8 rows, 3 to 9 give at most 20, and 10 or more give at most 40.
-  A Kid account stops at 20.
-- **Order.** Tail rows are ordered by a score that is personal through those
-  seeds. A small daily shuffle (up to 5 percent) keeps the page the same all
-  day and different tomorrow. The same kind of row never appears twice in a
-  row while another kind is left.
-- **Cold start.** With an empty Library and no asks, the page still fills:
-  the head holds the charts, and the tail holds up to 8 "Popular" genre and
-  decade rows that name no person and no seed.
+## How your page is built
 
-Counts of rows shown, cards opened and asks started are kept on the server to
-measure only. They never change what Explore shows.
+Each person gets their own page. Two people in the same house see different rows in a different order.
 
-## Head rows
+- **The first rows** open fast and show each title once. These include the charts, **Top picks for you**, **Because you have** a title, **Best new releases**, **Because you asked for** a title and **Popular in your household**.
+- **More rows** load as you scroll. The more titles you have and ask for, the more rows you get: up to 8 with fewer than 3, up to 20 with 3 to 9, and up to 40 with 10 or more.
+- **The order** changes a little each day and stays the same all day.
+- **A new server** still gets a full page. With an empty Library and no asks, you see the charts and popular genre and decade rows.
 
-Each tab has its own head order. A slot without data is skipped, and the best
-tail rows fill the head up to 12 rows. Just arrived, your asks and Coming
-soon are Home rows, not Explore rows.
+Some rows need something before they show:
 
-| Tab | Head order |
-| --- | --- |
-| All | Trending on streaming, Top picks for you, Trending this week everywhere, Because you have X, Best new releases, Because you asked for X, Popular in your household |
-| Movies | Trending movies on streaming, Top picks for you, Finish the collection, Trending movies this week, Because you have X, Best new releases, Coming to cinemas and streaming, Popular in your household |
-| Shows | Trending shows on streaming, Top picks for you, New seasons and premieres, Trending shows this week, Because you have X, Returning soon, Popular in your household |
-| Under 3 seeds | Trending on streaming, Trending this week, Best new releases, the tab's own rows, Popular genre rows, Classics |
-
-- **Hero.** Up to 6 titles not in your Library yet, from Trending this week
-  and Trending on streaming, with **Ask** as the main button.
-- **Top picks for you** needs 3 seeds.
-- **Because you asked for X** needs an open ask of yours (your two newest).
-- **Popular in your household** needs at least 2 active members and asks from
-  the last 30 days. Without them these rows do not show.
-- A title shows once in the first 8 rows, counting the hero and Trending on
-  your services. A row keeps repeats rather than drop under its minimum.
-
-When a row cannot fill, the next candidate moves up.
-
-The ranked row keeps every rank. A title the metadata server cannot match to a card
-shows as a name tile, and both seasons of a show are listed.
+- **Top picks for you** needs at least 3 titles in your Library or asks.
+- **Because you asked for** needs an open ask of yours.
+- **Popular in your household** needs at least 2 people on the server who asked for things lately.
 
 ## Other rows
 
-- **On your services.** Titles on the streaming services you pick, with a
-  picker in the row's header. The pick is kept on this device.
-- **Best new releases.** Well-rated recent titles. It was measured against
-  Trending (movies 5 percent shared, shows 15 percent), so it stays as its own
-  row.
-- **Because you have X**, **More from a person**, **Genre picks for you**,
-  **New on your services**, **Popular in your household**, decade rows and
-  **Hidden gems** fill the tail.
-- **Browse by genre** (All, Movies and Shows; not Music). One row of wide genre
-  cards: each shows a backdrop from a popular title of that genre on your page,
-  with the genre name in the corner. The genres your household has and asks
-  for most come first, then the most popular ones, up to 16. No two cards share
-  a backdrop, and Kid accounts see only kid-safe genres. Under All a genre shows
-  once, as the kind with more of it. A card opens the same genre page as the
-  **Genres** picker. The row comes from the page Explore already built (no new
-  outside calls) and loads after the first rows, after row 6, never next to
-  another genre row. API: `GET /api/v1/explore/genre-row?type=`.
+- **On your services.** Titles on the streaming services you pick in the row's header. The pick is kept on this device.
+- **Finish the collection.** Movies missing from a collection you started.
+- **Returning soon.** Shows in your Library with a new episode coming in the next two months.
+- **Browse by genre.** Wide genre cards. The genres your house has and asks for most come first. A card opens that genre's page.
+- **Hidden gems**, decade rows, and rows about the people in your favourite titles fill the rest.
 
-## Smart row titles
+The **Music** type has its own rows, such as new albums from artists you have, trending artists and top albums. Albums are square and artists are round.
 
-Tail rows take their title from a library of 585 short titles, in five layers.
-The most specific layer that is true wins:
+## Row titles
 
-1. **Occasion.** Halloween, Valentine's, the holiday season, New Year, summer,
-   Friday night, the weekend, or a row's release day.
-2. **Time of day** in the person's time zone (early morning, morning,
-   afternoon, evening, late night).
-3. **Genre mix.**
-4. **Taste.**
-5. **Row reason**, the plain "why this row".
+Lower rows can get a short title that fits the moment, such as the time of day or a holiday. A row only gets a title that is true for it. A Kid account only gets titles made for kids. The first rows keep their plain titles.
 
-If none fits, the row keeps its plain title. Titles stay true to the row: a
-genre word needs that genre on at least half the items, and "new" needs at
-least half released in the last 90 days. A Kid account only gets titles flagged
-for Kids. A person does not see the same title again for 14 days, and a row
-keeps its title for the whole local day. The fixed head rows (the charts, Top
-picks, Best new releases, Because you have X and Because you asked for X, and
-the tab's own rows) keep their title and get a short factual subtitle instead.
+The table that shows the owner how these titles do is held back. It is off in this release.
 
-The occasion and time of day also nudge the order a little (a late-night
-thriller row moves up a place or two, never more, and never for Kid
-accounts). They never change which titles a row holds.
+## Cards
 
-The owner sees how often each layer was shown, opened and asked from under
-**Settings > This app** (`GET /api/v1/explore/title-stats`).
+- A strip on the card can say **New Episode**, **New Season**, **Recently Added**, **Trending**, **Coming** or **New Release**.
+- A round mark at the top right says if the title is in the Library, partly there, downloading, asked for or turned down.
+- Under **All**, a small label says Movie, Show or Music.
 
-## Music
+On a computer, rest the pointer on a card and it grows to show more and play the trailer. Keyboard focus does the same, and Esc closes it. On a phone, a tap opens the title page. With Reduce motion on, cards do not grow. See [Trailers](../metadata/trailers.md).
 
-The **Music** switch has its own rows: a new-album hero and genre chips, then
-Just arrived, New from artists you have (singles count too), Your asks, Trending
-artists, Top albums, New this week, Rising artists, Classic albums, Popular in
-your country, anniversaries, live albums and EPs, debuts, collaborators,
-decades, moods that follow the hour, soundtracks for the Library's movies and
-shows, Because you have an artist, Fans of an artist, and Missing albums.
-Albums are square and artists are round. Small Libraries get at least 4 rows,
-and a cold start keeps 10 or more.
+## Who asked
 
-## Cards and badges
-
-Each card carries at most two marks.
-
-- **Freshness strip.** One strip from the server, picked in this order: New
-  Episode (a Library show with an episode in the last 7 days), New Season
-  (started in the last 14 days), Recently Added (in the Library for under a
-  week), Trending, Coming (this week) or Premieres (a date), Season N coming, and
-  New Release (a movie or album out in the last 30 days). Music cards show
-  only Recently Added and New Release. The ranked row already shows its rank,
-  so it drops its own Trending strip.
-- **Library icon.** A solid round mark at the top right says whether the
-  title is in the Library, partly there, downloading (with a progress ring),
-  asked for or turned down. On narrow cards it is only the icon, with the full
-  sentence as its tooltip and accessible name.
-- Under **All**, a small pill at the top left says Movie, Show or Music.
-
-Movie and show rows on Explore and Home use wide 16:9 cards with the title's
-logo (or name) over the backdrop. The ranked row uses tall cards with the rank, and
-albums and artists keep their square and round shapes.
-
-### Hover and touch
-
-- On a wide card, resting the pointer for 0.4 seconds grows the card in place
-  (inward at the edge of a row), then shows an info panel and the trailer.
-  Every grown card has the same width (414 px), whatever row it is in.
-- Keyboard focus opens the card after the same delay, and Esc closes it.
-- On touch, a tap opens the title page. This follows Netflix on phones, where
-  a tap on a poster goes straight to the title's details; there is no hover
-  to grow a card from.
-- With Reduce motion on, cards do not grow. Nothing opens while a row is being
-  dragged.
-- Rows also scroll by dragging with the mouse, with a glide on release.
-- Trailers in these cards are covered in [Trailers](trailers.md).
-
-## New-episode notices
-
-People who asked for a show get one notice per show at most once an hour
-(for example "3 new episodes of ..."). It is on by default and is a person's
-own choice under **My account > Alerts for you > New episodes of shows I asked
-for**. It reaches them on their Wishlist, and by email or Discord when the
-owner has set those up; the owner can also route the `new_episodes` moment
-through [Alerts](alerts-and-health.md).
-
-## Asked by
-
-A title page can say who asked for the title: "You asked", "Asked by Ana",
-"Asked by Ana and Leo" or "Asked by Ana and 2 others". Press the line to see
-everyone who asked and when. Cards stay factual and show no names.
-
-Everyone in the household sees who asked, Kid accounts included. There is no
-setting for it. A Kid only gets the line on titles within their age limit.
+A title page can say who asked for it, like "You asked" or "Asked by Ana and 2 others". Press the line to see everyone and when. Cards never show names.
 
 ## Kid accounts
 
-Kid accounts get the same rows, filtered twice by their age limit: when the
-rows are built and again when the answer is sent. A title with no rating for
-the region is hidden. See [Kid accounts](kid-accounts.md).
+Kid accounts see fewer rows, and every row is checked against their age limit. A title with no rating for your region is hidden. See [Kid accounts](../accounts/kid-accounts.md).
+
+## New episodes
+
+If you asked for a show, you get a notice when new episodes arrive, at most once an hour per show. Turn it off under **My account**. The owner can also send it through [Alerts](../alerts/alerts.md).
+
+## Troubleshooting
+
+- **The page has few rows.** Add or ask for a few titles. Rows grow with what HolyArrs knows about you.
+- **A row I saw yesterday is gone.** Rows only show when they have enough titles. It comes back when it fills again.
+- **Music is missing.** Turn the Music part on in Settings.
+- **Cards show only names.** The metadata server could not match the title. It still counts in the row.
+
+For new releases and what is popular on streaming, see [New & Popular](popular.md). For dates, see [Calendar](calendar.md). For actors and directors, see [People](people.md).

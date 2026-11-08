@@ -1,36 +1,38 @@
 # Kid accounts
 
-A Kid account is a member with an age-rating limit. HolyArrs then shows that
-person only the movies and shows rated at or below the limit, and lets them ask
-only for those.
+You want a child to use HolyArrs and see only titles that fit their age. A Kid
+account is a member with an age-rating limit. HolyArrs shows that person only
+movies and shows rated at or below the limit, and lets them ask only for
+those.
 
-## Who may set a limit
+## Make a Kid account
 
-- The owner and admins set a limit when they make a member invite, or later
-  when they change a member on the Users screen.
-- Only members can have a limit. An owner or admin never has one. Making a
-  member an admin clears their limit, and making them a member again does not
-  bring the old limit back.
-- A changed limit holds from the person's next request. They do not need to
-  sign out, and their API keys follow the same limit.
+1. Turn off **Skip sign-in on the local network** first, under
+   **Settings > Sign-in and security**. A limit cannot be set while it is on. See
+   [Sign-in and passwords](sign-in.md).
+2. Open **Settings > Users and roles** and start an invite as a **Member**.
+3. Pick an age limit from either ladder below.
+4. Keep only the Ask permission, and Asks approved without waiting if you
+   want.
+5. Make the link and give it to the child. See
+   [Users, roles and two-factor sign-in](users-and-roles.md).
 
-In the API the limit is `max_rating` and the country is `rating_country`, on
-`POST /api/v1/users/invites`, `PUT /api/v1/users/{id}`, `GET /api/v1/users`,
-`GET /api/v1/users/invites`, `GET /api/v1/auth/invites/{token}` and
-`GET /api/v1/auth/me`. An empty `max_rating` means no limit. On a change, an
-empty `max_rating` clears the limit and leaving it out keeps it.
+To limit an existing member, change them on **Settings > Users and roles** and pick a
+limit. The new limit applies from their next click. They do not need to sign
+out, and their API keys follow it too.
 
-## The ladders
+## Settings explained
 
-The limit is one value from either ladder, lowest first:
+### The ladders
+
+Pick one value, lowest first:
 
 | Kind | Ladder |
 | --- | --- |
 | Movies | G, PG, PG-13, R, NC-17 |
 | Shows | TV-Y, TV-Y7, TV-G, TV-PG, TV-14, TV-MA |
 
-A limit picked from one ladder is matched onto the other one with this table,
-then each title is compared with the limit on its own ladder:
+A limit from one ladder is matched onto the other:
 
 | Movie limit | Shows up to | | Show limit | Movies up to |
 | --- | --- | --- | --- | --- |
@@ -41,85 +43,83 @@ then each title is compared with the limit on its own ladder:
 | NC-17 | TV-MA | | TV-14 | PG-13 |
 | | | | TV-MA | R |
 
-So a Kid with the limit PG sees movies rated G or PG and shows rated TV-Y,
-TV-Y7, TV-G or TV-PG.
+So a limit of PG shows movies rated G or PG, and shows rated TV-Y up to
+TV-PG.
 
-## Titles without a rating and music stay hidden
+Only US ratings are known for now.
 
-With a limit set, these are never shown and cannot be asked for:
+### What stays hidden
 
-- a movie or show with no rating, rated NR, or with a rating that is not on
-  the ladder for its kind;
-- every music artist, album and track, because music has no age ratings.
+With a limit set, these never show and cannot be asked for:
 
-## What a Kid sees
+- movies and shows with no rating, rated NR, or with a rating not on their
+  ladder,
+- all music, because music has no age ratings.
 
-The server does the hiding, so every screen and every API client gets the
-same answer:
+### Permissions
 
-- **Library, Home and search** list only the titles the limit allows, and
-  Home's counts count only those.
-- **A title page** for a Library title above the limit answers "not found",
-  exactly like a title that is not there, on every page of that title
-  (seasons, episodes, people and the rest).
-- **Explore rows, movie search and the add searches** show only allowed
-  movies and shows. A row item carries no rating, so HolyArrs takes it from
-  the Library, then from the ratings and details it keeps for 24 hours, then
-  from one small TMDB rating lookup (at most four at a time). One answer
-  makes at most 24 such lookups, and each Kid at most 120 a minute; an item
-  whose rating cannot be found stays hidden. A Kid's searches, add searches,
-  TMDB title pages and Explore rows together are limited to 30 a minute
-  (429 with Retry-After after that).
-- **Trailers** never autoplay for a Kid account (the server answers 403).
-  **Asked by** on a title page names everyone who asked, as for everyone
-  else; a Kid only sees it on titles within their age limit.
-- **A TMDB title page** above the limit answers "This title is rated above
-  what this account may see.", and its "more like this" list keeps only
-  allowed titles.
-- **People pages** list only the person's movies that are in the Library
-  and allowed. **Movie series** show only their allowed movies, and a series
-  with none is not shown.
-- **Calendar** (for a Kid who may run the Library) lists only allowed titles.
+A Kid account can hold only Ask and Asks approved without waiting. Other
+permissions open Library screens such as Downloads and History, which the
+limit does not cover. To give the person more, clear the limit in the same
+change.
+
+Only members can have a limit. Making a member an admin clears it, and making
+them a member again does not bring it back.
+
+## What the child sees
+
+HolyArrs hides titles on the server, so every screen and app gets the same
+answer.
+
+- **Library, Home and search** list only allowed titles. Home's counts count
+  only those.
+- **A Library title above the limit** looks like it does not exist.
+- **Explore and the add searches** show only allowed titles. A title whose
+  rating cannot be found stays hidden.
+- **A title page from TMDB** above the limit says "This title is rated above
+  what this account may see."
+- **People pages and movie series** show only allowed movies.
+- **Trailers** never play on their own.
 - **Asking** for a title above the limit is refused with "This account can
-  ask only for titles rated up to PG." (with the Kid's own limit). Asking for
-  music is refused with "This account cannot ask for music, because music
-  has no age ratings." A Kid also cannot join someone else's ask for a title
-  above the limit.
+  ask only for titles rated up to PG." (with their own limit). Music is
+  refused with "This account cannot ask for music, because music has no age
+  ratings."
 
-A Kid account may hold only the Ask permission and, if the owner wants, the
-permission to have asks approved without waiting (`ask` and `auto_approve`).
-Any other permission would open Library-work screens such as Downloads,
-History, jobs and the live updates, which the limit does not cover. So an
-invite or a change on `PUT /users/{id}` that combines a limit with any other
-permission answers 400 "A Kid account can only ask for titles." To give such
-a person more, clear the limit in the same change.
+A Kid account's searches and Explore loads are limited to 30 a minute.
 
-## Sign-in and Kid accounts
+## Troubleshooting
 
-- **Skipping sign-in on the local network** makes everyone at home the
-  owner, so a limit would mean nothing. While it is on, setting a limit
-  answers 400 "Turn off skipping sign-in on the local network first: with it
-  on, anyone at home signs in as the owner." While anyone has a limit,
-  turning it on answers 400 too. If both are on anyway (for example a Kid
-  joined from an older invite), Settings shows an error on the sign-in page.
-- **Plex, Jellyfin, Emby and single sign-on** can let new people join by
-  signing in there. Such a newcomer is an ordinary member with no age limit,
-  even when it is a child. While a Kid account exists and any of these lets
-  new people join, Settings shows a warning on the Users page. Link a Kid's
-  outside accounts to their Kid account, or let only listed names join, so
-  the child cannot come in through a second, unlimited account.
+**"Turn off skipping sign-in on the local network first."** With that shortcut
+on, everyone at home signs in as the owner, so a limit means nothing. Turn it
+off, then set the limit. While anyone has a limit, the shortcut cannot be
+turned on. If both end up on, Settings shows an error on the sign-in page.
 
-## Pictures
+**"A Kid account can only ask for titles."** You combined a limit with a
+permission other than Ask or Asks approved without waiting. Remove the extra
+permission, or clear the limit.
 
-Posters are kept in one picture cache shared by everyone, and a picture's
-cache name comes from its address. Someone who knows a title's poster
-address can therefore tell whether that poster is cached, which hints that
-someone in the house looked at the title. The picture itself shows no
-title or rating, and the Kid limit still hides the title everywhere else.
+**"Only members can have an age-rating limit."** You tried to limit an owner
+or admin. Make them a member first.
 
-## US ratings only for now
+**"Only US age ratings are known for now."** Only the US country works.
 
-HolyArrs keeps only the US rating of each title, so `rating_country` is `US`
-and any other country is refused with "Only US age ratings are known for now."
-Other errors are just as plain: an unknown rating lists the choices, and a
-limit on an admin answers "Only members can have an age-rating limit."
+**The child got in with a second account.** Plex, Jellyfin and single sign-on
+can let new people join by signing in there. A newcomer that way is an
+ordinary member with no limit. Settings warns on the Users page when a Kid
+account exists and joining is open. Link the child's outside accounts to
+their Kid account, or let only listed names join. Sign in with Emby is held
+back for now.
+
+**Someone could guess what a child looked at.** Posters sit in one shared
+cache named after their address. Someone who knows a poster's address can
+tell whether it is cached. The picture shows no title or rating, and the
+title stays hidden everywhere else.
+
+## For scripts
+
+The limit is `max_rating` and the country is `rating_country` (always `US`).
+They appear on `POST /api/v1/users/invites`, `PUT /api/v1/users/{id}`,
+`GET /api/v1/users`, `GET /api/v1/users/invites`,
+`GET /api/v1/auth/invites/{token}` and `GET /api/v1/auth/me`. An empty
+`max_rating` means no limit. On a change, empty clears the limit and leaving
+it out keeps it. Too many lookups answer 429 with Retry-After.
