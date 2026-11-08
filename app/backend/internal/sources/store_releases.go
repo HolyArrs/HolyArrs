@@ -12,14 +12,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/judge"
 )
 
-// slotRetryFacts reads what deciding the search after a failed Download
-// needs about a Slot: its Version, Part, active Download and Title kind.
-func slotRetryFacts(ctx context.Context, q database.Querier, slotID int64) (versionID int64, partID, dlID sql.NullInt64, kind string, err error) {
-	err = q.QueryRowContext(ctx, `SELECT s.version_id, i.part_id, s.active_download_id, t.kind FROM slots s JOIN items i ON i.id = s.item_id
-		JOIN titles t ON t.id = i.title_id WHERE s.id = ?`, slotID).Scan(&versionID, &partID, &dlID, &kind)
-	return
-}
-
 // slotsOfDownloadInSeason counts the Slots a Download filled in one Part
 // (season) for one Version.
 func slotsOfDownloadInSeason(ctx context.Context, q database.Querier, downloadID, partID, versionID int64) (int, error) {
@@ -27,23 +19,6 @@ func slotsOfDownloadInSeason(ctx context.Context, q database.Querier, downloadID
 	err := q.QueryRowContext(ctx, `SELECT count(*) FROM downloads d, json_each(d.slot_ids) j JOIN slots s ON s.id = j.value
 		JOIN items i ON i.id = s.item_id WHERE d.id = ? AND i.part_id = ? AND s.version_id = ?`, downloadID, partID, versionID).Scan(&n)
 	return n, err
-}
-
-// slotChoiceFacts reads a Slot's state, its Title's state and whether its
-// copy is protected, in the caller's transaction.
-func slotChoiceFacts(tx *sql.Tx, slotID int64) (slotState, titleState string, protected bool, err error) {
-	err = tx.QueryRow(`SELECT s.state, t.state, COALESCE(f.protected, 0)
-		FROM slots s JOIN items i ON i.id = s.item_id JOIN titles t ON t.id = i.title_id
-		LEFT JOIN files f ON f.id = s.file_id WHERE s.id = ?`, slotID).Scan(&slotState, &titleState, &protected)
-	return
-}
-
-// slotCopyProtected reports whether the Slot's current file is protected.
-func slotCopyProtected(ctx context.Context, q database.Querier, slotID int64) (bool, error) {
-	var protected bool
-	err := q.QueryRowContext(ctx, `SELECT COALESCE(f.protected, 0) FROM slots s
-		LEFT JOIN files f ON f.id = s.file_id WHERE s.id = ?`, slotID).Scan(&protected)
-	return protected, err
 }
 
 // collectLinksWith adds to links the id and link of each Release of the

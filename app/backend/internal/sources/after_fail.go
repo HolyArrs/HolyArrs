@@ -8,6 +8,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // QueueAfterFailure queues the search that follows a failed Download, for one of its Slots.
@@ -19,7 +20,7 @@ func (s *Searcher) QueueAfterFailure(ctx context.Context, slotID int64, by domai
 		return errors.New("searching again needs the job queue")
 	}
 	db := s.Store.Read()
-	versionID, partID, dlID, kind, err := slotRetryFacts(ctx, db, slotID)
+	versionID, partID, dlID, kind, err := store.SlotRetryFacts(ctx, db, slotID)
 	if err != nil {
 		return err
 	}

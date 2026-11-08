@@ -10,6 +10,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/judge"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // protectedChoiceErr is the error for choosing a Release into a Slot whose copy is protected. It wraps ErrBusy so callers treat it as a lost race.
@@ -19,7 +20,7 @@ func protectedChoiceErr() error {
 
 // choiceStateTx reads a Slot's state inside the write that chooses for it, and refuses when its Title is not active or its copy is protected. Checking in the same transaction keeps a protection set meanwhile from being overwritten.
 func choiceStateTx(tx *sql.Tx, slotID int64) (domain.SlotState, error) {
-	slotState, titleState, protected, err := slotChoiceFacts(tx, slotID)
+	slotState, titleState, protected, err := store.SlotChoiceFacts(tx, slotID)
 	if err != nil {
 		return "", err
 	}
@@ -36,7 +37,7 @@ func choiceStateTx(tx *sql.Tx, slotID int64) (domain.SlotState, error) {
 func slotHasProtectedCopy(ctx context.Context, db interface {
 	QueryRowContext(context.Context, string, ...any) *sql.Row
 }, slotID int64) bool {
-	protected, err := slotCopyProtected(ctx, db, slotID)
+	protected, err := store.SlotCopyProtected(ctx, db, slotID)
 	return err == nil && protected
 }
 
