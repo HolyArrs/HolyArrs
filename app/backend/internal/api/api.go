@@ -198,7 +198,7 @@ type API struct {
 	// shows serves the show add, episode, season and anime routes (internal/shows).
 	shows *shows.Handlers
 	// interest limits each session's live interest calls (webserver.go).
-	interest interestState
+	interest webserver.Interest
 	// controls serves the part switches, the controls and the part gate (internal/setup).
 	controls *setupmod.Handlers
 	// ai serves the AI connections (internal/ai).
