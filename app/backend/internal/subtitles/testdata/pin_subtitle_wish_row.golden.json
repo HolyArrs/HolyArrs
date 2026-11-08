@@ -1,0 +1,22 @@
+{
+  "ID": 5,
+  "CreatedAt": "2026-03-04T05:06:07Z",
+  "CreatedBy": {
+    "kind": "user",
+    "id": 2
+  },
+  "UpdatedAt": "2026-03-04T05:06:07Z",
+  "UpdatedBy": {
+    "kind": "system"
+  },
+  "file_id": 9,
+  "language": "fr",
+  "forced": false,
+  "hearing_impaired": false,
+  "place": "wish",
+  "score_parts": [],
+  "origin": "found",
+  "state": "wanted",
+  "tries": 0,
+  "sync": {}
+}

@@ -1,0 +1,44 @@
+{
+  "tmdb_id": "s",
+  "kind": "s",
+  "name": "s",
+  "year": 7,
+  "poster": "s",
+  "backdrop": "s",
+  "overview": "s",
+  "genres": [
+    "s"
+  ],
+  "in_library": true,
+  "title_id": 7,
+  "ask": {
+    "id": 7,
+    "state": "s",
+    "state_label": "s",
+    "mine": true,
+    "people": 7,
+    "seasons": [
+      7
+    ],
+    "albums": [
+      {
+        "mbid": "",
+        "name": ""
+      }
+    ]
+  },
+  "fresh": {
+    "kind": "s",
+    "text": "s",
+    "rank": 7
+  },
+  "trailer_key": "s",
+  "streaming": {
+    "service": 7,
+    "name": "s",
+    "rank": 7
+  },
+  "card_art": "s",
+  "card_logo": "s",
+  "art_has_title": true
+}

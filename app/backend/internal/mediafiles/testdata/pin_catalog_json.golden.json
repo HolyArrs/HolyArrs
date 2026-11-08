@@ -1,0 +1,225 @@
+{
+  "ID": 7,
+  "CreatedAt": "2026-01-02T03:04:05Z",
+  "CreatedBy": {
+    "kind": "system"
+  },
+  "UpdatedAt": "2026-01-02T03:04:05Z",
+  "UpdatedBy": {
+    "kind": "system"
+  },
+  "Kind": "movie",
+  "Name": "Pin",
+  "SortName": "",
+  "OriginalName": null,
+  "Year": 1999,
+  "Overview": null,
+  "OriginalLanguage": null,
+  "Aliases": null,
+  "SourceIDs": null,
+  "MetadataSource": "",
+  "EpisodeOrder": null,
+  "KeepUpToDate": false,
+  "NewPartsPolicy": "",
+  "ReleaseGate": "",
+  "GateDelayDays": 0,
+  "MusicTypes": null,
+  "WhyAdded": "",
+  "Artwork": null,
+  "RefreshedAt": null,
+  "Status": "",
+  "State": "",
+  "CinemaDate": null,
+  "DigitalDate": null,
+  "PhysicalDate": null,
+  "GateDriver": "",
+  "GateOpensAt": null,
+  "DroppedAt": null,
+  "SeasonChoice": null,
+  "FutureFrom": null,
+  "Network": null,
+  "AirTime": null,
+  "TimeZone": null,
+  "AlbumChoice": null,
+  "MusicSecondary": null,
+  "MusicStatuses": null,
+  "ArtistType": null,
+  "Disambiguation": null,
+  "Backdrop": "",
+  "Logo": "",
+  "Genres": null,
+  "RuntimeMinutes": 0,
+  "Rating": "",
+  "People": null,
+  "Directors": null,
+  "Studio": "",
+  "Tags": null
+}
+{
+  "ID": 3,
+  "CreatedAt": "2026-01-02T03:04:05Z",
+  "CreatedBy": {
+    "kind": ""
+  },
+  "UpdatedAt": "2026-01-02T03:04:05Z",
+  "UpdatedBy": {
+    "kind": ""
+  },
+  "ItemID": 0,
+  "VersionID": 0,
+  "State": "wanted",
+  "FileID": null,
+  "GoodEnough": false,
+  "HeldReleaseID": null,
+  "ChosenReleaseID": null,
+  "ActiveDownloadID": null,
+  "LastReason": null,
+  "NextTryAt": null
+}
+{
+  "ID": 4,
+  "CreatedAt": "2026-01-02T03:04:05Z",
+  "CreatedBy": {
+    "kind": ""
+  },
+  "UpdatedAt": "2026-01-02T03:04:05Z",
+  "UpdatedBy": {
+    "kind": ""
+  },
+  "Protected": false,
+  "SlotIDs": null,
+  "VersionID": 0,
+  "RelativePath": "pin.mkv",
+  "Size": 42,
+  "AddedAt": "0001-01-01T00:00:00Z",
+  "Quality": {},
+  "Languages": null,
+  "MediaInfo": null,
+  "ReleaseName": null,
+  "Group": null,
+  "Origin": "",
+  "PlacedBy": "",
+  "FellBack": false,
+  "Fingerprint": null,
+  "CheckedAt": null,
+  "Role": "",
+  "ParentFileID": null,
+  "State": ""
+}
+{
+  "steps": [
+    {
+      "quality": "cam",
+      "allowed": false
+    },
+    {
+      "quality": "telesync",
+      "allowed": false
+    },
+    {
+      "quality": "sd_tv",
+      "allowed": false
+    },
+    {
+      "quality": "sd_dvd",
+      "allowed": false
+    },
+    {
+      "quality": "720p_tv",
+      "allowed": true
+    },
+    {
+      "quality": "720p_web",
+      "allowed": true
+    },
+    {
+      "quality": "720p_bluray",
+      "allowed": true
+    },
+    {
+      "quality": "1080p_tv",
+      "allowed": true
+    },
+    {
+      "quality": "1080p_web",
+      "allowed": true
+    },
+    {
+      "quality": "1080p_bluray",
+      "allowed": true
+    },
+    {
+      "quality": "1080p_remux",
+      "allowed": false
+    },
+    {
+      "quality": "2160p_web",
+      "allowed": false
+    },
+    {
+      "quality": "2160p_bluray",
+      "allowed": false
+    },
+    {
+      "quality": "2160p_remux",
+      "allowed": false
+    }
+  ],
+  "good_enough_at": "1080p_web",
+  "traits": [
+    {
+      "trait": "hevc",
+      "points": 10
+    },
+    {
+      "trait": "ddp_audio",
+      "points": 5
+    },
+    {
+      "trait": "web_dl",
+      "points": 5
+    },
+    {
+      "trait": "upscaled",
+      "points": -50
+    },
+    {
+      "trait": "dubbed_only",
+      "points": -30
+    }
+  ],
+  "must_have": [],
+  "never": [
+    "sample",
+    "executable",
+    "password_protected",
+    "disc_image",
+    "hardcoded_subs",
+    "3d",
+    "cam",
+    "telesync"
+  ],
+  "min_points": 0,
+  "size_limits": {
+    "*": {
+      "min": 8947848,
+      "max": 107374182,
+      "per_minute": true
+    }
+  },
+  "protocol": {
+    "prefer": "either",
+    "wait_minutes_torrent": 0,
+    "wait_minutes_usenet": 0,
+    "skip_wait_at_good_enough": false
+  },
+  "language": {
+    "wanted": [],
+    "original_ok": true
+  },
+  "order": "quality_then_points",
+  "upgrade_min_points": 10,
+  "proper_policy": {
+    "mode": "take_any"
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "move": 7,
+  "dry": true,
+  "undo": true,
+  "apps": [
+    "s"
+  ],
+  "at": "2026-10-13T12:00:00Z",
+  "lines": [
+    {
+      "group": "s",
+      "key": "s",
+      "name": "s",
+      "result": "s",
+      "detail": "s",
+      "needs": "s",
+      "choose": "s"
+    }
+  ],
+  "counts": {
+    "s": 7
+  },
+  "not_moved": [
+    {
+      "group": "s",
+      "from": "s",
+      "what": "s",
+      "why": "s"
+    }
+  ],
+  "needs_input": [
+    "s"
+  ],
+  "notes": [
+    "s"
+  ],
+  "next": [
+    "s"
+  ]
+}

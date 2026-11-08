@@ -1,0 +1,17 @@
+{
+  "languages": [],
+  "pass_mark_movie": 70,
+  "pass_mark_episode": 90,
+  "use_built_in": true,
+  "ignore_picture_tracks": false,
+  "hi_suffix": "hi",
+  "search_hours": 6,
+  "better": true,
+  "better_hours": 12,
+  "better_days": 7,
+  "batch": 100,
+  "adaptive": true,
+  "sync_from_fps": 25,
+  "sync_to_fps": 23.976,
+  "sync_step_ms": 500
+}

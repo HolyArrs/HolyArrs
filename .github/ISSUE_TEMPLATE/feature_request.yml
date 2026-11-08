@@ -1,10 +1,10 @@
 name: Idea
 description: Something HolyArrs could do.
-labels: [idea]
+type: Idea
 body:
   - type: markdown
     attributes:
-      value: Check the roadmap issues first, your idea may already be planned.
+      value: Search the open issues first. Your idea may already be planned.
   - type: textarea
     id: idea
     attributes:
@@ -15,3 +15,10 @@ body:
     id: why
     attributes:
       label: Why it would help you
+    validations:
+      required: true
+  - type: textarea
+    id: today
+    attributes:
+      label: How you do it today
+      description: Another app, a script, or not at all.

@@ -1,0 +1,24 @@
+/* Overlay scrollbar for the list (see overlay-scroll.ts), drawn from the segment-pill material. It floats over the content and the lane shows only under the pointer. */
+.osb-on { scrollbar-width: none; }
+.osb-on::-webkit-scrollbar { display: none; }
+/* Only the thumb takes the pointer, so the lane never blocks the rows' buttons (the ⋯ menu sits at the right edge). */
+.osb-rail { position: absolute; z-index: 5; border-radius: var(--r-pill); opacity: .85; pointer-events: none;
+	transition: opacity var(--dur) var(--ease-out), background-color var(--dur-fast) var(--ease-out); }
+/* Bounded by the list box: --osb-top (toolbar rows and the header above it), --osb-bottom (the pane below it). */
+.osb-v { right: 2px; width: 14px; top: calc(var(--osb-top, 0px) + 6px); bottom: calc(var(--osb-bottom, 0px) + 6px); }
+.osb-h { bottom: calc(var(--osb-bottom, 0px) + 2px); height: 14px; left: 10px; right: 10px; }
+[data-osb-both] .osb-v { bottom: calc(var(--osb-bottom, 0px) + 20px); }
+[data-osb-both] .osb-h { right: 20px; }
+.osb-rail[hidden] { display: none; }
+.osb-thumb { position: absolute; border-radius: var(--r-pill); pointer-events: auto; cursor: default;
+	background: var(--seg-thumb, var(--surface-1));
+	box-shadow: 0 0 0 1px var(--line-strong), 0 1px 2px rgb(0 0 0 / 0.12);
+	transition: transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out); }
+.osb-v .osb-thumb { left: 3px; width: 8px; top: 0; height: var(--osb-len); transform: translateY(var(--osb-pos)); }
+.osb-h .osb-thumb { top: 3px; height: 8px; left: 0; width: var(--osb-len); transform: translateX(var(--osb-pos)); }
+[data-osb-active] .osb-rail, .osb-rail:has(.osb-thumb:hover), .osb-rail[data-drag] { opacity: 1; }
+.osb-rail:has(.osb-thumb:hover), .osb-rail[data-drag] { background: var(--surface-3); }
+.osb-rail[data-drag] .osb-thumb { box-shadow: 0 0 0 1px var(--text-muted), 0 1px 2px rgb(0 0 0 / 0.12); }
+[data-osb-drag] { user-select: none; }
+@media (prefers-reduced-motion: reduce) { .osb-rail, .osb-thumb { transition: none; } }
+@media (forced-colors: active) { .osb-on { scrollbar-width: auto; } .osb-on::-webkit-scrollbar { display: initial; } .osb-rail { display: none; } }

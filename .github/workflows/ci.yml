@@ -12,11 +12,11 @@ concurrency:
 
 jobs:
   web:
-    runs-on: [self-hosted, Linux, X64, holyarrs-continuation]
+    runs-on: ubuntu-latest
     timeout-minutes: 60
     defaults:
       run:
-        working-directory: web/app
+        working-directory: app/frontend
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
@@ -31,9 +31,10 @@ jobs:
           node-version: "24"
       - run: npm ci
       - run: npm run check
+      - run: npm run lint
       - run: npm test
       # The build must succeed. Its output is not compared with the committed
-      # web/dist: images build their own pages (Dockerfile web stage), and a
+      # app/frontend/dist: images build their own pages (Dockerfile web stage), and a
       # build on another system names its chunk files differently.
       - run: npm run build
       # The package list is source: a fresh build must write the same one
@@ -46,8 +47,8 @@ jobs:
       # holds is in the notices, each with its licence texts.
       - name: Third-party notices list every shipped part
         run: |
-          python3 ../../scripts/notices.py --check
-          python3 ../../scripts/notices.py
+          python3 ../../deploy/release/notices.py --check
+          python3 ../../deploy/release/notices.py
           git status --porcelain -- ../../THIRD_PARTY_NOTICES.md ../../docs/third-party-notices.md
           test -z "$(git status --porcelain -- ../../THIRD_PARTY_NOTICES.md ../../docs/third-party-notices.md)"
       # The reviewed runner image supplies Chromium's OS dependencies without job-time root access.
@@ -58,16 +59,13 @@ jobs:
           npm run e2e 2>&1 | sed -E 's/(auth: first run: setup code) [^ ]+/\1 [hidden]/g'
 
   build:
-    runs-on: [self-hosted, Linux, X64, holyarrs-continuation]
+    runs-on: ubuntu-latest
     timeout-minutes: 90
     strategy:
       fail-fast: false
       matrix:
         include:
           - goarch: amd64
-            goarm: ""
-            test_exec: ""
-          - goarch: "386"
             goarm: ""
             test_exec: ""
           - goarch: arm64
@@ -89,6 +87,14 @@ jobs:
         with:
           go-version: "1.27.3"
           cache: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "24"
+      # The Go tests serve the built pages, so they need them first.
+      - name: Build the web app
+        run: |
+          npm --prefix app/frontend ci --ignore-scripts --no-audit --no-fund
+          npm --prefix app/frontend run build
       - name: Build and vet ${{ matrix.goarch }}
         run: |
           set -o pipefail
@@ -112,7 +118,7 @@ jobs:
     # Known security holes in the Go modules and the Go version the program
     # uses. A pinned govulncheck, so a new release of the tool cannot change
     # the result on its own.
-    runs-on: [self-hosted, Linux, X64, holyarrs-continuation]
+    runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
       CGO_ENABLED: "0"
@@ -129,7 +135,7 @@ jobs:
           go run golang.org/x/vuln/cmd/govulncheck@v1.1.4 ./...
 
   image-version:
-    runs-on: [self-hosted, Linux, X64, holyarrs-continuation]
+    runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
       IMAGE: holyarrs-ci-version:${{ github.run_id }}-${{ github.run_attempt }}
@@ -141,7 +147,7 @@ jobs:
       - name: Set the development version for this source
         run: echo "CANDIDATE_VERSION=0.0.0-dev+g${GITHUB_SHA::12}" >> "$GITHUB_ENV"
       - name: Build the reviewed development image
-        run: docker build --build-arg VERSION="$CANDIDATE_VERSION" --build-arg GOMAXPROCS=1 --build-arg GOFLAGS=-p=1 --tag "$IMAGE" .
+        run: docker build --build-arg VERSION="$CANDIDATE_VERSION" --build-arg GOMAXPROCS=1 --build-arg GOFLAGS=-p=1 --file deploy/Dockerfile --tag "$IMAGE" .
       - name: Verify the image label and running binary version
         run: |
           set -o pipefail
@@ -184,7 +190,7 @@ jobs:
     # summary. Pass lines: the process's median crash-to-sign-in time
     # under 2 s, and each memory run under decision 0002's limits (250 MB
     # idle, 500 MB peak resident).
-    runs-on: [self-hosted, Linux, X64, holyarrs-continuation]
+    runs-on: ubuntu-latest
     timeout-minutes: 60
     env:
       CGO_ENABLED: "0"
@@ -196,24 +202,32 @@ jobs:
         with:
           go-version: "1.27.3"
           cache: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "24"
+      # The Go tests serve the built pages, so they need them first.
+      - name: Build the web app
+        run: |
+          npm --prefix app/frontend ci --ignore-scripts --no-audit --no-fund
+          npm --prefix app/frontend run build
       - name: API spec matches the code (contract)
         run: |
           set -o pipefail
-          go test -count=1 -run '^TestOpenAPIGenerated$' ./internal/api 2>&1 | sed -E 's/(auth: first run: setup code) [^ ]+/\1 [hidden]/g'
+          go test -count=1 -run '^TestOpenAPIGenerated$' ./app/backend/cmd/holyarrs 2>&1 | sed -E 's/(auth: first run: setup code) [^ ]+/\1 [hidden]/g'
       - name: Every route checks its API key scope
         run: |
           set -o pipefail
-          go test -count=1 -run 'Scope' ./internal/auth 2>&1 | sed -E 's/(auth: first run: setup code) [^ ]+/\1 [hidden]/g'
+          go test -count=1 -run 'Scope' ./app/backend/internal/auth 2>&1 | sed -E 's/(auth: first run: setup code) [^ ]+/\1 [hidden]/g'
       - name: Downloader suite (qBittorrent, SABnzbd, the made-up third engine)
         run: |
           set -o pipefail
-          go test -count=1 -run '^TestDownloaderConformance$' -v ./internal/downloader 2>&1 | sed -E 's/(auth: first run: setup code) [^ ]+/\1 [hidden]/g'
+          go test -count=1 -run '^TestDownloaderConformance$' -v ./app/backend/internal/downloads 2>&1 | sed -E 's/(auth: first run: setup code) [^ ]+/\1 [hidden]/g'
       - name: Fault runs (a crash in each loop, a slow write, bad outside services, a pass past its deadline)
         env:
           HOLYARRS_FAULT_OUT: ${{ runner.temp }}/faults.md
         run: |
           set -o pipefail
-          go test -count=1 -run '^TestFault|^TestCrashInEveryLoopIsContained$' -v ./cmd/holyarrs 2>&1 | sed -E 's/(auth: first run: setup code) [^ ]+/\1 [hidden]/g'
+          go test -count=1 -run '^TestFault|^TestCrashInEveryLoopIsContained$' -v ./app/backend/cmd/holyarrs 2>&1 | sed -E 's/(auth: first run: setup code) [^ ]+/\1 [hidden]/g'
           { echo "### Fault runs: sign-in, Library, backup"; echo "| run | sign-in | Library | backup |"; echo "|---|---|---|---|"; grep -v 'after hanging' "$HOLYARRS_FAULT_OUT"; echo; echo "| link | state | reason |"; echo "|---|---|---|"; grep 'after hanging' "$HOLYARRS_FAULT_OUT"; } >> "$GITHUB_STEP_SUMMARY"
       - name: Crash to sign-in page
         env:
@@ -221,7 +235,7 @@ jobs:
           HOLYARRS_RESTART_TIMING_OUT: ${{ runner.temp }}/restart.txt
         run: |
           set -o pipefail
-          go test -count=1 -run '^TestCrashRestartTime$' -v ./cmd/holyarrs 2>&1 | sed -E 's/(auth: first run: setup code) [^ ]+/\1 [hidden]/g'
+          go test -count=1 -run '^TestCrashRestartTime$' -v ./app/backend/cmd/holyarrs 2>&1 | sed -E 's/(auth: first run: setup code) [^ ]+/\1 [hidden]/g'
           { echo "### Crash to sign-in page"; cat "$HOLYARRS_RESTART_TIMING_OUT"; } >> "$GITHUB_STEP_SUMMARY"
       - name: Memory with all parts on and with Movies and Shows only
         env:
@@ -229,7 +243,7 @@ jobs:
           HOLYARRS_MEMORY_OUT: ${{ runner.temp }}/memory.md
         run: |
           set -o pipefail
-          go test -count=1 -run '^TestMemoryPartsRuns$' -v -timeout 30m ./cmd/holyarrs 2>&1 | sed -E 's/(auth: first run: setup code) [^ ]+/\1 [hidden]/g'
+          go test -count=1 -run '^TestMemoryPartsRuns$' -v -timeout 30m ./app/backend/cmd/holyarrs 2>&1 | sed -E 's/(auth: first run: setup code) [^ ]+/\1 [hidden]/g'
           { echo "### Memory"; cat "$HOLYARRS_MEMORY_OUT"; } >> "$GITHUB_STEP_SUMMARY"
       - name: Preserve bounded local fault and memory evidence
         if: always()
@@ -248,7 +262,7 @@ jobs:
     # media rescan and 10 live-stream clients. The harness measures fixture
     # construction separately, then requires 30 idle minutes under the
     # unchanged 250 MB idle / 500 MB peak and zero-write limits.
-    runs-on: [self-hosted, Linux, X64, holyarrs-continuation]
+    runs-on: ubuntu-latest
     # The test binary has a 75-minute deadline; this includes setup and
     # summary overhead outside that measured test process.
     timeout-minutes: 90
@@ -260,12 +274,14 @@ jobs:
         with:
           go-version: "1.27.3"
           cache: false
+      - name: Install the arm64 emulator
+        run: sudo apt-get update && sudo apt-get install -y qemu-user-static
       - name: Run the combined arm64 scale check
         id: scale
         continue-on-error: true
         env:
           QEMU_AARCH64_STATIC: /usr/bin/qemu-aarch64-static
-        run: bash scripts/scale-check.sh "$RUNNER_TEMP/scale-combined"
+        run: bash app/tests/setups/scale-check.sh "$RUNNER_TEMP/scale-combined"
       - name: Write combined scale evidence to the job summary
         if: always()
         run: |
@@ -273,7 +289,7 @@ jobs:
           {
             echo "### Combined arm64 scale check"
             echo
-            echo "- Compute: self-hosted Linux X64 runner"
+            echo "- Compute: GitHub-hosted Linux X64 runner"
             echo "- Workload: linux/arm64 under Docker QEMU"
             echo "- Local evidence: RUNNER_TEMP/scale-combined (not uploaded)"
             if [[ -s "$result_file" ]]; then
@@ -311,7 +327,7 @@ jobs:
           done
 
   race:
-    runs-on: [self-hosted, Linux, X64, holyarrs-continuation]
+    runs-on: ubuntu-latest
     timeout-minutes: 60
     env:
       CGO_ENABLED: "1"
@@ -323,6 +339,14 @@ jobs:
         with:
           go-version: "1.27.3"
           cache: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "24"
+      # The Go tests serve the built pages, so they need them first.
+      - name: Build the web app
+        run: |
+          npm --prefix app/frontend ci --ignore-scripts --no-audit --no-fund
+          npm --prefix app/frontend run build
       - name: Race detector
         run: |
           set -o pipefail

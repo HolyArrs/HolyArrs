@@ -1,4 +1,4 @@
-module github.com/CoderLuii/holyarrs
+module github.com/HolyArrs/holyarrs
 
 go 1.27.3
 

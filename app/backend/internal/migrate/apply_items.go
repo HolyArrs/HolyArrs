@@ -1,0 +1,501 @@
+package migrate
+
+import (
+	"database/sql"
+	"encoding/json"
+	"reflect"
+	"strings"
+	"time"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/alerts"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles"
+)
+
+func (r *run) neverAdd(it Item) (string, string) {
+	n := it.NeverAdd
+	db := r.m.Store.Read()
+	var on bool
+	switch n.Kind {
+	case "movie":
+		on, _ = library.OnNeverAdd(r.ctx, db, n.IDs["tmdb"])
+	case "show":
+		on, _ = library.ShowOnNeverAdd(r.ctx, db, n.IDs)
+	default:
+		on, _ = library.ArtistOnNeverAdd(r.ctx, db, n.IDs["musicbrainz"])
+	}
+	if on {
+		return ResAlready, "already on the Never-add list"
+	}
+	if r.dry {
+		return ResCreate, "added to the Never-add list"
+	}
+	row := mediafiles.NeverAdd{Kind: n.Kind, SourceIDs: n.IDs, Name: it.Name, Reason: "moved from the old app's exclusions"}
+	var id int64
+	err := r.m.Store.Write(r.ctx, func(tx *sql.Tx) error {
+		var err error
+		if id, err = database.Insert(tx, "never_add", &row, r.by); err != nil {
+			return err
+		}
+		return r.markTx(tx, it.Key, "never_add", id, "", "")
+	})
+	return result(err, ResCreated, "added to the Never-add list")
+}
+
+// A moved Source or Downloader is always created paused and without
+// local-network reach, whatever its keys: the owner checks each one, turns
+// on "reach the local network" where it belongs, and resumes it. The
+// link-local and metadata refusal of the dial policies stays either way.
+func (r *run) source(it Item) (string, string) {
+	s := it.Source
+	if r.id("SELECT id FROM sources WHERE name = ?", it.Name) != 0 {
+		return ResAlready, "a Source with this name is here"
+	}
+	what := s.Format + " at " + s.URL + ", paused until you check and resume it"
+	if r.dry {
+		return ResCreate, what
+	}
+	local := false
+	prio := s.Priority
+	in := sources.Input{Name: it.Name, Format: s.Format, Protocol: s.Protocol, URL: s.URL, Kinds: s.Kinds, Categories: s.Categories,
+		MinSeeders: s.MinSeeders, Priority: &prio, AllowLocal: &local}
+	_, err := sources.Add(r.ctx, r.m.Store, nil, in, r.by, func(tx *sql.Tx, id int64) error {
+		if _, err := tx.Exec("UPDATE sources SET state = 'disabled' WHERE id = ?", id); err != nil {
+			return err
+		}
+		return r.markTx(tx, it.Key, "source", id, "", "")
+	})
+	return result(err, ResCreated, what)
+}
+
+func (r *run) downloader(it Item) (string, string) {
+	d := it.Downloader
+	maps, dropped := safeMaps(d.PathMap, r.m.Store.Dir())
+	// Checked here, not in the plan, so the plan stays the same.
+	unseen := ""
+	if u := unseenMaps(maps); u != "" {
+		unseen = "; not visible here yet (check your mounts): " + u
+	}
+	if r.id("SELECT id FROM downloaders WHERE url = ? AND removed = 0", d.URL) != 0 {
+		if len(maps) > 0 {
+			// Nothing is changed on a Downloader that is already here.
+			return ResAlready, "a Downloader at this address is here; add these folder maps to it yourself if it needs them: " + mapList(maps) + unseen
+		}
+		return ResAlready, "a Downloader at this address is here"
+	}
+	name := it.Name
+	if r.id("SELECT id FROM downloaders WHERE name = ?", name) != 0 {
+		name = clip(name+" (moved)", 80)
+	}
+	what := d.Adapter + " at " + d.URL + ", paused until you check and resume it; it downloads into its own holyarrs category"
+	if len(maps) > 0 {
+		what += "; folder maps: " + mapList(maps)
+	}
+	if len(dropped) > 0 {
+		what += "; not moved (they lead into the HolyArrs config folder): " + clip(strings.Join(dropped, ", "), 500)
+	}
+	what += unseen
+	if r.dry {
+		return ResCreate, what
+	}
+	proto := "torrent"
+	if d.Adapter == "sabnzbd" || d.Adapter == "nzbget" {
+		proto = "usenet"
+	}
+	row := domain.Downloader{Name: name, Adapter: d.Adapter, Protocol: proto, URL: d.URL, Category: "holyarrs", Priority: d.Priority,
+		PathMap: maps, AfterImport: "leave", State: "disabled", Username: d.Username, AllowLocal: false, ClearFinished: true}
+	err := r.m.Store.Write(r.ctx, func(tx *sql.Tx) error {
+		id, err := database.Insert(tx, "downloaders", &row, r.by)
+		if err != nil {
+			return err
+		}
+		return r.markTx(tx, it.Key, "downloader", id, "", "")
+	})
+	return result(err, ResCreated, what)
+}
+
+// setNaming puts one moved naming value on s.
+func setNaming(s *mediafiles.NamingSettings, k, v string) {
+	switch k {
+	case "rename_on_import":
+		s.RenameOnImport = v == "true"
+	case "colon":
+		s.Colon = v
+	case "illegal":
+		s.Illegal = v
+	case "file_pattern":
+		s.FilePattern = v
+	case "folder_pattern":
+		s.FolderPattern = v
+	case "show_folder_pattern":
+		s.ShowFolderPattern = v
+	case "season_folder_pattern":
+		s.SeasonFolderPattern = v
+	case "episode_pattern":
+		s.EpisodePattern = v
+	case "daily_pattern":
+		s.DailyPattern = v
+	case "anime_pattern":
+		s.AnimePattern = v
+	case "multi_episode_style":
+		s.MultiEpisodeStyle = v
+	}
+}
+
+func (r *run) naming(it Item) (string, string) {
+	cur, err := mediafiles.ReadNaming(r.ctx, r.m.Store.Read())
+	if err != nil {
+		return ResFailed, err.Error()
+	}
+	next := cur
+	for k, v := range it.Naming {
+		setNaming(&next, k, v)
+	}
+	if reflect.DeepEqual(next, cur) {
+		return ResAlready, "naming is already set this way"
+	}
+	if err := next.Validate(); err != nil {
+		return ResFailed, "these naming settings do not fit together: " + err.Error()
+	}
+	if r.dry {
+		return ResChange, it.Detail + "; nothing on disk is renamed"
+	}
+	before, _ := json.Marshal(cur)
+	after, _ := json.Marshal(it.Naming)
+	err = mediafiles.PutNamingSettings(r.ctx, r.m.Store, next, r.by, func(tx *sql.Tx) error {
+		return r.markTx(tx, it.Key, "naming", 0, string(before), string(after))
+	})
+	return result(err, ResChanged, it.Detail+"; nothing on disk is renamed")
+}
+
+func (r *run) subtitles(it Item) (string, string) {
+	sp := it.Subtitles
+	if sp.SiteKind != "" {
+		if r.id("SELECT id FROM subtitle_sites WHERE kind = ?", sp.SiteKind) != 0 {
+			return ResAlready, "a subtitle site of this kind is here"
+		}
+		if r.dry {
+			return ResCreate, "subtitle site " + sp.SiteKind
+		}
+		name := it.Name
+		if r.id("SELECT id FROM subtitle_sites WHERE name = ?", name) != 0 {
+			name = clip(name+" (moved)", 100)
+		}
+		on := !sp.NeedsAccount
+		_, err := subtitles.AddSite(r.ctx, r.m.Store, nil, subtitles.SiteInput{Name: name, Kind: sp.SiteKind, Enabled: &on}, r.by, r.markWith(it.Key, "subtitle_site"))
+		return result(err, ResCreated, "subtitle site "+sp.SiteKind)
+	}
+	cur := subtitles.ReadSettings(r.ctx, r.m.Store.Read())
+	next := cur
+	next.Languages = nil
+	for _, w := range sp.Languages {
+		next.Languages = append(next.Languages, subtitles.Want{Language: w.Language, HearingImpaired: w.HearingImpaired, Forced: w.Forced})
+	}
+	if reflect.DeepEqual(next.Languages, cur.Languages) {
+		return ResAlready, "these are already the default languages"
+	}
+	if err := next.Validate(); err != nil {
+		return ResFailed, "the languages were not taken: " + err.Error()
+	}
+	if r.dry {
+		return ResChange, "default languages: " + it.Detail
+	}
+	before, _ := json.Marshal(cur.Languages)
+	after, _ := json.Marshal(next.Languages)
+	err := subtitles.SaveSettings(r.ctx, r.m.Store, next, r.by, func(tx *sql.Tx) error {
+		return r.markTx(tx, it.Key, "subtitle_languages", 0, string(before), string(after))
+	})
+	return result(err, ResChanged, "default languages: "+it.Detail)
+}
+
+func (r *run) person(it Item) (string, string) {
+	pp := it.Person
+	if pp.Role == "owner" {
+		if pp.Email != "" || pp.MoviesPerWeek != nil || pp.ShowsPerWeek != nil {
+			r.rep.NotMoved = append(r.rep.NotMoved, NotMoved{Group: GroupPeople, From: it.From, What: it.Name + ": contact and ask limits",
+				Why: "the person was matched to the existing HolyArrs owner, so the owner's current email and limits are kept"})
+		}
+		r.people[it.Key] = r.owner
+		return ResMatched, "is you, as you confirmed"
+	}
+	if pp.Choice == PersonSkip {
+		// Keep the choice row when someone here has the same name, so the
+		// owner can change it back.
+		if r.choose == "" && r.id("SELECT id FROM users WHERE name = ? COLLATE NOCASE", it.Name) != 0 {
+			r.choose = ChooseSameName
+		}
+		return ResSkipped, "you left them out; their asks come over as yours"
+	}
+	// A person here with the same name is never merged silently: the owner
+	// chooses merge or skip on the move screen.
+	if id := r.id("SELECT id FROM users WHERE name = ? COLLATE NOCASE", it.Name); id != 0 {
+		if r.choose == "" {
+			r.choose = ChooseSameName
+		}
+		if pp.Choice != PersonMerge {
+			return ResSkipped, "Someone here has the same name. Until you choose, they stay behind and their requests become yours."
+		}
+		if pp.Email != "" || pp.MoviesPerWeek != nil || pp.ShowsPerWeek != nil {
+			r.rep.NotMoved = append(r.rep.NotMoved, NotMoved{Group: GroupPeople, From: it.From, What: it.Name + ": contact and ask limits",
+				Why: "the person was merged with an existing HolyArrs account, so its current email and limits are kept"})
+		}
+		r.people[it.Key] = id
+		return ResMatched, "merged with the person of this name here, as you chose; their asks are theirs"
+	}
+	if pp.Choice == PersonMerge {
+		// Same person merges by name: a numeric-id person whose name nobody
+		// here has can only be left out.
+		if r.choose == ChooseNumericID {
+			return ResSkipped, "No one here has this name, so Same person can't be used. Choose Leave out."
+		}
+		r.choose = ChooseMergeGone
+		return ResSkipped, "The person you picked is no longer here. Choose again."
+	}
+	email := pp.Email
+	if email != "" && !alerts.CheckAddress(email) {
+		r.rep.NotMoved = append(r.rep.NotMoved, NotMoved{Group: GroupPeople, From: it.From, What: it.Name + ": email",
+			Why: "not one plain email address, so the email is not moved"})
+		email = ""
+	}
+	if r.dry {
+		r.people[it.Key] = -1
+		return ResCreate, "comes over turned off as a " + pp.Role + " until you invite them"
+	}
+	perms, _ := json.Marshal(pp.Perms)
+	u := domain.User{Name: it.Name, Role: pp.Role, PasswordHash: "", State: "disabled", Perms: string(perms)}
+	var id int64
+	err := r.m.Store.Write(r.ctx, func(tx *sql.Tx) error {
+		var err error
+		if id, err = database.Insert(tx, "users", &u, r.by); err != nil {
+			return err
+		}
+		if _, err = tx.Exec("INSERT INTO user_ask_settings (user_id, per_week, movies_per_week, shows_per_week, email) VALUES (?, NULL, ?, ?, ?)",
+			id, pp.MoviesPerWeek, pp.ShowsPerWeek, email); err != nil {
+			return err
+		}
+		return r.markTx(tx, it.Key, "user", id, "", "")
+	})
+	if err == nil {
+		r.people[it.Key] = id
+	}
+	return result(err, ResCreated, "came over turned off as a "+pp.Role+" until you invite them")
+}
+
+func (r *run) personID(key string) int64 {
+	if key == "" {
+		return 0
+	}
+	if id, ok := r.people[key]; ok {
+		return id
+	}
+	if allowed, planned := r.personMarked[key]; planned && !allowed {
+		return 0
+	}
+	if stable, planned := r.personStable[key]; planned && !stable {
+		if id, ok := r.madeThisMove(key); ok {
+			return id
+		}
+		return 0
+	}
+	if id, ok := r.made(key); ok {
+		return id
+	}
+	return 0
+}
+
+func (r *run) createAsk(it Item, row *domain.Ask, by int64, asked time.Time, expectedAskerFP string, decidedBy int64, expectedDeciderFP string) (int64, error) {
+	var id int64
+	err := r.m.Store.Write(r.ctx, func(tx *sql.Tx) error {
+		askerFP, err := userIdentity(r.ctx, tx, by)
+		if err != nil || askerFP != expectedAskerFP {
+			return errUndoReplaced
+		}
+		if decidedBy > 0 {
+			deciderFP, err := userIdentity(r.ctx, tx, decidedBy)
+			if err != nil || deciderFP != expectedDeciderFP {
+				return errUndoReplaced
+			}
+		}
+		if id, err = database.Insert(tx, "asks", row, r.by); err != nil {
+			return err
+		}
+		// A moved ask never counts against the person's weekly limit.
+		if _, err = tx.Exec("INSERT INTO ask_people (ask_id, user_id, asked_at, counted) VALUES (?, ?, ?, 0)", id, by, database.FormatTime(asked)); err != nil {
+			return err
+		}
+		baseline, _ := json.Marshal(askBaseline{UserID: by, AskedAt: database.FormatTime(asked), UserFingerprint: askerFP})
+		return r.markTx(tx, it.Key, "ask", id, "", string(baseline))
+	})
+	return id, err
+}
+
+func (r *run) ask(it Item) (string, string) {
+	a := it.Ask
+	if a.Kind == "show" && !r.m.partOn("shows") || a.Kind == "movie" && !r.m.partOn("movies") {
+		return ResSkipped, "its part is off"
+	}
+	tmdb := a.IDs["tmdb"]
+	existing := r.id(`SELECT id FROM asks WHERE kind = ? AND state IN ('asked', 'approved') AND (ref = ? OR (tmdb_id != '' AND tmdb_id = ?))`, a.Kind, a.Ref, tmdb)
+	var titleID int64
+	if a.Kind == "movie" {
+		titleID, _ = library.TitleByTMDB(r.ctx, r.m.Store.Read(), tmdb)
+	} else {
+		titleID, _ = library.ShowByIDs(r.ctx, r.m.Store.Read(), a.IDs)
+	}
+	by := r.personID(a.By)
+	if by == -2 {
+		return ResSkipped, "HolyArrs can't tell who asked for this. Choose Same person or Leave out for that person, then move again."
+	}
+	note := a.Note
+	if by == 0 {
+		by = r.owner
+		if a.ByName != "" {
+			note = strings.TrimSpace(note + "; asked by " + a.ByName + " in " + a.App)
+		}
+	}
+	if existing != 0 {
+		expectedAskFP, askIdentityErr := askIdentity(r.ctx, r.m.Store.Read(), existing)
+		expectedUserFP, userIdentityErr := r.expectedUserIdentity(a.By, by)
+		if askIdentityErr != nil || userIdentityErr != nil {
+			return ResFailed, "the existing request owner identity could not be verified"
+		}
+		if a.Approved || a.Decider != "" || a.DecidedAt != "" {
+			r.rep.NotMoved = append(r.rep.NotMoved, NotMoved{Group: GroupRequests, From: it.From, What: it.Name + ": old decision",
+				Why: "Requests entry already exists, so its current decision and decision time are kept"})
+		}
+		if by > 0 && r.id("SELECT ask_id FROM ask_people WHERE ask_id = ? AND user_id = ?", existing, by) != 0 {
+			if !r.dry {
+				err := r.m.Store.Write(r.ctx, func(tx *sql.Tx) error {
+					askFP, err := askIdentity(r.ctx, tx, existing)
+					if err != nil || askFP != expectedAskFP {
+						return errUndoReplaced
+					}
+					userFP, err := userIdentity(r.ctx, tx, by)
+					if err != nil || userFP != expectedUserFP {
+						return errUndoReplaced
+					}
+					var askedAt string
+					if err := tx.QueryRowContext(r.ctx, "SELECT asked_at FROM ask_people WHERE ask_id = ? AND user_id = ? AND counted=0", existing, by).Scan(&askedAt); err != nil {
+						return err
+					}
+					mark, _ := json.Marshal(askPersonMark{AskID: existing, UserID: by, AskedAt: askedAt, AskFingerprint: askFP, UserFingerprint: userFP})
+					return r.markTx(tx, it.Key, "ask_claim", existing, string(mark), "")
+				})
+				if err != nil {
+					return ResFailed, err.Error()
+				}
+			}
+			return ResAlready, "already on the Requests page for this person"
+		}
+		if r.dry {
+			return ResCreate, "adds this person's request to the existing request"
+		}
+		if by <= 0 {
+			return ResFailed, "its asker was not moved"
+		}
+		asked, timeErr := r.sourceOrMoveTime(a.AskedAt)
+		if timeErr != nil {
+			return ResFailed, "the move's stable request time was not found: " + timeErr.Error()
+		}
+		err := r.m.Store.Write(r.ctx, func(tx *sql.Tx) error {
+			askFP, err := askIdentity(r.ctx, tx, existing)
+			if err != nil || askFP != expectedAskFP {
+				return errUndoReplaced
+			}
+			userFP, err := userIdentity(r.ctx, tx, by)
+			if err != nil || userFP != expectedUserFP {
+				return errUndoReplaced
+			}
+			if _, err := tx.Exec("INSERT INTO ask_people (ask_id, user_id, asked_at, counted) VALUES (?, ?, ?, 0)", existing, by, database.FormatTime(asked)); err != nil {
+				return err
+			}
+			mark, _ := json.Marshal(askPersonMark{AskID: existing, UserID: by, AskedAt: database.FormatTime(asked), AskFingerprint: askFP, UserFingerprint: userFP})
+			return r.markTx(tx, it.Key, "ask_person", 0, string(mark), "")
+		})
+		return result(err, ResCreated, "added this person's request to the existing request")
+	}
+	state := "asked"
+	if a.Approved && titleID != 0 {
+		state = "approved"
+	} else if a.Approved {
+		note = strings.TrimSpace(note + "; approved in " + a.App + ": approve it again here to add it")
+	}
+	note = strings.Trim(note, "; ")
+	what := map[string]string{"asked": "waiting", "approved": "approved"}[state]
+	if r.dry {
+		if by < 0 {
+			return ResCreate, what + ", by the new person"
+		}
+		return ResCreate, what
+	}
+	if by <= 0 {
+		return ResFailed, "its asker was not moved"
+	}
+	expectedAskerFP, identityErr := r.expectedUserIdentity(a.By, by)
+	if identityErr != nil || expectedAskerFP == "" {
+		return ResFailed, "the request owner identity could not be verified"
+	}
+	asked, timeErr := r.sourceOrMoveTime(a.AskedAt)
+	if timeErr != nil {
+		return ResFailed, "the move's stable request time was not found: " + timeErr.Error()
+	}
+	row := domain.Ask{Kind: a.Kind, TMDBID: tmdb, Name: it.Name, State: state, AskedBy: by, AskedAt: asked, Note: clip(note, 300),
+		Ref: a.Ref, SourceIDs: a.IDs, Seasons: append([]int{}, a.Seasons...), Albums: []domain.AskAlbum{}}
+	if a.Kind == "movie" {
+		row.Seasons = []int{}
+	}
+	if titleID != 0 {
+		row.TitleID = &titleID
+	}
+	var decidedBy int64
+	var expectedDeciderFP string
+	if state == "approved" {
+		decidedBy = r.personID(a.Decider)
+		if decidedBy <= 0 {
+			r.rep.NotMoved = append(r.rep.NotMoved, NotMoved{Group: GroupRequests, From: it.From, What: it.Name + ": decision owner", Why: "the source approver could not be matched, so HolyArrs records the current owner as the approver"})
+			decidedBy = r.owner
+		}
+		expectedDeciderFP, identityErr = r.expectedUserIdentity(a.Decider, decidedBy)
+		if identityErr != nil || expectedDeciderFP == "" {
+			return ResFailed, "the request decision owner identity could not be verified"
+		}
+		decided, timeErr := r.sourceOrMoveTime(a.DecidedAt)
+		if timeErr != nil {
+			return ResFailed, "the move's stable decision time was not found: " + timeErr.Error()
+		}
+		row.DecidedBy, row.DecidedAt = &decidedBy, &decided
+	}
+	_, err := r.createAsk(it, &row, by, asked, expectedAskerFP, decidedBy, expectedDeciderFP)
+	return result(err, ResCreated, what)
+}
+
+func (r *run) alert(it Item) (string, string) {
+	a := it.Alert
+	if r.id("SELECT id FROM alerts WHERE name = ? COLLATE NOCASE", it.Name) != 0 {
+		return ResAlready, "an Alert with this name is here"
+	}
+	what := a.Kind + ", off until you type " + it.Needs
+	if r.dry {
+		return ResCreate, what
+	}
+	row := domain.Alert{Name: it.Name, Kind: a.Kind, Enabled: false, Moments: append([]string{}, alerts.Moments...), SMTPHost: a.SMTPHost,
+		SMTPPort: 587, SMTPSecurity: "starttls", SMTPFrom: a.SMTPFrom, SMTPUser: a.SMTPUser, StaffTo: a.StaffTo, WebhookAuth: "sign"}
+	if a.SMTPPort > 0 {
+		row.SMTPPort = a.SMTPPort
+	}
+	if a.SMTPSecurity != "" {
+		row.SMTPSecurity = a.SMTPSecurity
+	}
+	err := r.m.Store.Write(r.ctx, func(tx *sql.Tx) error {
+		id, err := database.Insert(tx, "alerts", &row, r.by)
+		if err != nil {
+			return err
+		}
+		return r.markTx(tx, it.Key, "alert", id, "", "")
+	})
+	return result(err, ResCreated, what)
+}

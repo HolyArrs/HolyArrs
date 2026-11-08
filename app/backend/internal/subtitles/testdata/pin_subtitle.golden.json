@@ -1,0 +1,41 @@
+{
+  "ID": 5,
+  "CreatedAt": "2026-03-04T05:06:07Z",
+  "CreatedBy": {
+    "kind": "user",
+    "id": 2
+  },
+  "UpdatedAt": "2026-03-04T05:06:07Z",
+  "UpdatedBy": {
+    "kind": "system"
+  },
+  "file_id": 9,
+  "language": "en",
+  "forced": true,
+  "hearing_impaired": true,
+  "place": "beside",
+  "track_index": 2,
+  "codec": "subrip",
+  "relative_path": "a.en.srt",
+  "site_id": 3,
+  "site": "Lab",
+  "site_key": "k1",
+  "score": 88,
+  "score_parts": [
+    {
+      "name": "title",
+      "points": 40,
+      "matched": true
+    }
+  ],
+  "origin": "fetched",
+  "state": "present",
+  "saved_at": "2026-03-04T05:06:07Z",
+  "tries": 2,
+  "first_tried_at": "2026-03-04T05:06:07Z",
+  "last_tried_at": "2026-03-04T05:06:07Z",
+  "next_try_at": "2026-03-04T05:06:07Z",
+  "sync": {
+    "offset_ms": 250
+  }
+}

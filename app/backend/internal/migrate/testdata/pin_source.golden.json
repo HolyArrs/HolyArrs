@@ -1,0 +1,18 @@
+{
+  "Kind": "s",
+  "URL": "s",
+  "Key": "s",
+  "Username": "s",
+  "Password": "s",
+  "Path": "s",
+  "AllowLocal": true,
+  "Limits": {
+    "MaxAnswer": 7,
+    "MaxDepth": 7,
+    "Timeout": 7,
+    "MaxFile": 7,
+    "MaxEntries": 7,
+    "MaxRatio": 7,
+    "MaxRows": 7
+  }
+}
