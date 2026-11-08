@@ -15,7 +15,7 @@ Only the owner and admins see this. Shows work much the same way, see [Downloads
 2. When it finishes, HolyArrs matches each audio file to a track of the album's chosen pressing.
 3. It checks that the whole album fits on the disk. If one track does not fit, none is placed.
 4. It places each track in the artist's folder, in a folder for the album.
-   You should see the album on the Downloads screen by artist, album and year, with its size, such as "12 tracks" or "2 discs, 20 tracks".
+   You should see the album on the Downloads screen by artist, album and year, with its track count, such as "12 tracks" or "2 discs, 20 tracks".
 
 ```
 Lab Band/First Light (2020)/01 - Dawn.flac
@@ -33,7 +33,7 @@ HolyArrs never moves or deletes the Downloader's files, and never writes over a 
 
 ## When an album misses tracks
 
-Each track is settled on its own:
+Each track is handled on its own:
 
 - Tracks the album holds go into the Library.
 - Tracks it should hold but does not are searched again. The Release is turned down for those tracks only.

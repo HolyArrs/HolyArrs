@@ -11,7 +11,7 @@ For setup, see [Subtitles](subtitles.md). Subtitle sites are held back in the fi
 
 ## The Pass mark
 
-Every subtitle a site offers gets a score from 0 to 100. A search saves one on its own only when it reaches the Pass mark. A hand choice may have any score.
+Each subtitle gets a score from 0 to 100. A search saves one by itself only at or above the Pass mark. A hand choice may have any score.
 
 | Setting | Default | Range |
 |---|---|---|
