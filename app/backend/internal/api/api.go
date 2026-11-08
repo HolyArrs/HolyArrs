@@ -205,6 +205,8 @@ type API struct {
 	ai *ai.Handlers
 	// discover caches Explore rows and details pages and limits each person.
 	discover discoverState
+	// disc serves the Explore rows, details and reviews routes (internal/discover).
+	disc *discover.Handlers
 	// status keeps the Settings status answer for 30 seconds.
 	status health.StatusCache
 	// serviceTop keeps the per-service top lists for 12 hours.
@@ -302,6 +304,7 @@ func New(s Server) *API {
 	if s.Auth != nil {
 		a.signin.ClientKey = s.Auth.ClientKey
 	}
+	a.disc = a.newDiscover()
 	a.titles = a.newTitlePages()
 	a.trailers = a.newTrailers()
 	a.ai = &ai.Handlers{Store: s.Store, Version: s.Version, PartOn: a.partIsOn}
@@ -462,17 +465,11 @@ func (a *API) Routes(rt *webserver.Router) {
 	a.scheduleHandlers().Routes(m)
 	m.HandleFunc("GET /api/v1/metadata/search", a.searchMetadata)
 	(&metadata.Handlers{Up: func(ctx context.Context) bool { return a.s.MetadataUp == nil || a.s.MetadataUp(ctx) }}).Routes(m)
-	m.HandleFunc("GET /api/v1/metadata/{kind}/{tmdb_id}", a.metadataDetails)
-	m.HandleFunc("GET /api/v1/metadata/show/{tmdb_id}/seasons/{number}", a.metadataSeason)
-	m.HandleFunc("GET /api/v1/metadata/{kind}/{tmdb_id}/more-from", a.metadataMoreFrom)
-	reviews := a.reviewHandlers()
-	reviews.Routes(m)
+	a.disc.Routes(m)
 	a.shows.AnimeRoutes(m)
 	a.trailers.Routes(m)
 	a.uiHandlers().Routes(m)
 	a.signin.Routes(m)
-	m.HandleFunc("GET /api/v1/discover", a.discoverRow)
-	m.HandleFunc("GET /api/v1/watch-services", a.watchServices)
 	m.HandleFunc("GET /api/v1/explore/head", a.exploreHead)
 	m.HandleFunc("GET /api/v1/explore/tail", a.exploreTail)
 	m.HandleFunc("GET /api/v1/explore/top", a.exploreTop)
@@ -496,7 +493,7 @@ func (a *API) Routes(rt *webserver.Router) {
 	if a.s.Secrets != nil {
 		if startup.FeatureOn(features.TraktLists) {
 			lists.TraktKeyRoutes(m)
-			reviews.TokenRoutes(m)
+			a.disc.TokenRoutes(m)
 		}
 		(&shows.TVDBKeyHandlers{Secrets: a.s.Secrets}).Routes(m)
 	}
