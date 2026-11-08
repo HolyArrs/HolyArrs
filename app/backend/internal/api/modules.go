@@ -182,3 +182,18 @@ func (a *API) mover() *migrate.Mover {
 }
 
 func (a *API) safeMode() bool { return a.s.SafeMode || (a.s.Parts != nil && a.s.Parts.SafeMode) }
+
+// holding is the holding-folder routes of mediafiles on the library service.
+func (a *API) holding() *mediafiles.HoldingHandlers {
+	return &mediafiles.HoldingHandlers{
+		HeldFiles: func(ctx context.Context) (any, error) { return a.s.Library.HeldFiles(ctx) },
+		RestoreHeld: func(ctx context.Context, ids []int64, by domain.Actor) (any, []int64, error) {
+			return a.s.Library.RestoreHeld(ctx, ids, by)
+		},
+		QueueRescan: func(ctx context.Context, by domain.Actor) (int64, error) {
+			id, _, err := a.s.Queue.Enqueue(ctx, library.KindRescan, nil, nil, library.KindRescan, by)
+			return id, err
+		},
+		Actor: actor,
+	}
+}

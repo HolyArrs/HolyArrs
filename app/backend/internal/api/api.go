@@ -412,7 +412,7 @@ func (a *API) Routes(rt *webserver.Router) {
 	a.downloaderRoutes(m)
 	a.organiseRoutes(m)
 	a.manualImportRoutes(m)
-	a.holdingRoutes(m)
+	a.holding().Routes(m)
 	a.healthRoutes(m)
 	a.media.Routes(m)
 	a.showRoutes(m)
