@@ -85,7 +85,7 @@ func (a *API) serverArtwork(w http.ResponseWriter, r *http.Request) {
 	if ok {
 		c.Recheck(src, serverPlaceholder)
 	} else {
-		if !a.artworkMissOK(w, r) {
+		if !a.artMisses.MissOK(w, r) {
 			return
 		}
 		if _, err := c.FetchStored(r.Context(), src, serverPlaceholder); err != nil {

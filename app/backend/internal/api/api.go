@@ -7,6 +7,7 @@ import (
 	"database/sql"
 	"errors"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/discover"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/movies"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/shows"
@@ -229,7 +230,7 @@ type API struct {
 	// signinSeed keeps the first sign-in slide's tiny thumbnails.
 	signinSeed signinSeedState
 	// artMisses is each person's budget of artwork cache misses.
-	artMisses artworkBudget
+	artMisses discover.ArtworkBudget
 	// explore runs the Explore pool job and keeps its lists and pages.
 	explore   exploreState
 	genreRows genreRowCache

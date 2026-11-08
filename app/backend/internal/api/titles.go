@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/discover"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/shows"
 
@@ -590,7 +591,7 @@ func (a *API) calendar(w http.ResponseWriter, r *http.Request) {
 		webserver.Fail(w, http.StatusBadRequest, "to must be after from, at most a year later")
 		return
 	}
-	titles, ok := calendarTitles(q.Get("titles"))
+	titles, ok := discover.CalendarTitles(q.Get("titles"))
 	if !ok {
 		webserver.Fail(w, http.StatusBadRequest, "titles must be all, movies, shows or music")
 		return
@@ -848,7 +849,7 @@ func (a *API) serveRemoteArtwork(w http.ResponseWriter, r *http.Request, src str
 	if ok {
 		c.Recheck(src, nil) // a copy past TMDB's six months is fetched again
 	} else {
-		if !a.artworkMissOK(w, r) {
+		if !a.artMisses.MissOK(w, r) {
 			return
 		}
 		if _, err := c.Fetch(r.Context(), src); err != nil {
