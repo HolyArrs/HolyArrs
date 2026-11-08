@@ -17,7 +17,7 @@ var (
 	routeHits   = map[string]bool{}
 )
 
-var routePattern = regexp.MustCompile(`HandleFunc\("([A-Z]+ /api/v1/[^"]*)"`)
+var routePattern = regexp.MustCompile(`Handle(?:Func)?\("([A-Z]+ /api/v1/[^"]*)"`)
 
 // RecordRouteHits notes the mux pattern of every request that h serves.
 // Put it right outside the mux: the mux writes the matched pattern into the

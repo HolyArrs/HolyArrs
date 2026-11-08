@@ -16,7 +16,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
 )
 
 // Pins of the routes owned by sources (incl. search, held, bridges),
@@ -193,7 +193,7 @@ func TestPinSourceAndMediaServerViewGolden(t *testing.T) {
 		Categories: map[string][]int{"movie": {2000}, "tv": {5000}}, MinSeeders: &seed, Priority: 10, State: "enabled",
 		SecretRef: &ref, AllowLocal: true, ProxyURL: "", Tags: nil}
 	src.ID = 3
-	pinSMGolden(t, "pin_source_view.golden.json", sourceView(src, source.Summary{}))
+	pinSMGolden(t, "pin_source_view.golden.json", sources.SourceViewOf(src, sources.Summary{}))
 	ms := domain.MediaServer{Name: "Jellyfin", Kind: "jellyfin", URL: "http://jf:8096", TokenSecretID: &ref, Enabled: true, OnImport: true,
 		OnRename: true, OnDelete: false, PathFrom: "/data", PathTo: "/media", AllowLocal: true, LastOKAt: &at, LastError: "slow"}
 	ms.ID = 2

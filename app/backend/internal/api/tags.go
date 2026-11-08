@@ -3,6 +3,8 @@ package api
 import (
 	"net/http"
 	"sort"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
 )
 
 // TagUse is one tag in use and how many titles, Downloaders and Sources have it.
@@ -23,7 +25,6 @@ func (a *API) listTags(w http.ResponseWriter, r *http.Request) {
 	}{
 		{"titles", func(u *TagUse) { u.Titles++ }},
 		{"downloaders", func(u *TagUse) { u.Downloaders++ }},
-		{"sources", func(u *TagUse) { u.Sources++ }},
 	} {
 		// A row saved without tags may hold JSON null rather than a list.
 		where := " WHERE json_type(x.tags) = 'array'"
@@ -56,6 +57,17 @@ func (a *API) listTags(w http.ResponseWriter, r *http.Request) {
 			internal(w, err)
 			return
 		}
+	}
+	onSources, err := sources.TagUses(r.Context(), a.s.Store.Read())
+	if err != nil {
+		internal(w, err)
+		return
+	}
+	for label, n := range onSources {
+		if uses[label] == nil {
+			uses[label] = &TagUse{Label: label}
+		}
+		uses[label].Sources += n
 	}
 	out := make([]TagUse, 0, len(uses))
 	for _, u := range uses {

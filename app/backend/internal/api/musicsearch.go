@@ -2,19 +2,18 @@ package api
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"net/http"
 	"slices"
-	"strconv"
 	"strings"
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
 )
 
 // Album search (stage 3.3): an album, a track's album or every album with a
@@ -88,11 +87,11 @@ func (a *API) searchArtist(w http.ResponseWriter, r *http.Request, t mediafiles.
 			params["choose"] = false
 			key = fmt.Sprintf("show_album:%d:%d", partID, versionID)
 		}
-		id, created, err := a.s.Queue.EnqueueAt(ctx, source.KindSearchAlbum, &domain.Subject{Type: "part", ID: partID}, params, key, by, runAfter)
+		id, created, err := a.s.Queue.EnqueueAt(ctx, jobs.KindSearchAlbum, &domain.Subject{Type: "part", ID: partID}, params, key, by, runAfter)
 		if err == nil {
 			ids = append(ids, id)
 			if created && !runAfter.IsZero() {
-				runAfter = runAfter.Add(source.BulkStagger)
+				runAfter = runAfter.Add(sources.BulkStagger)
 			}
 		}
 		return err
@@ -138,7 +137,7 @@ func (a *API) searchArtist(w http.ResponseWriter, r *http.Request, t mediafiles.
 	// Every album × Version at once would ask the Sources hundreds of times
 	// in a burst: the searches are spread out like a bulk search, and one
 	// click queues at most artist_search_cap of them.
-	limit := artistSearchCap(ctx, db)
+	limit := sources.ArtistSearchCap(ctx, db)
 	left := max(len(list)-limit, 0)
 	list = list[:len(list)-left]
 	runAfter = time.Now().UTC()
@@ -149,15 +148,6 @@ func (a *API) searchArtist(w http.ResponseWriter, r *http.Request, t mediafiles.
 		}
 	}
 	writeJSON(w, http.StatusAccepted, map[string]any{"job_ids": ids, "left_out": left})
-}
-
-// artistSearchCap is the most album searches one Search now on an artist
-// queues.
-func artistSearchCap(ctx context.Context, db *sql.DB) int {
-	if n, err := strconv.Atoi(source.Setting(ctx, db, source.SettingArtistSearchCap)); err == nil && n > 0 {
-		return n
-	}
-	return source.DefaultArtistSearchCap
 }
 
 // albumLabels names the albums of track Slots ("Low Tide Atlas"); "" when

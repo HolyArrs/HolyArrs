@@ -10,6 +10,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
@@ -115,8 +116,8 @@ func TestFailedCopyTurnedDownThenUndone(t *testing.T) {
 		t.Fatalf("slot %s", st)
 	}
 	var list struct {
-		Releases []ReleaseView `json:"releases"`
-		Total    int           `json:"total"`
+		Releases []sources.ReleaseView `json:"releases"`
+		Total    int                   `json:"total"`
 	}
 	_ = json.Unmarshal(do(t, "GET", x.srv.URL+"/api/v1/turned-down", "", 200), &list)
 	if list.Total != 1 || list.Releases[0].ID != x.relID || list.Releases[0].Name == "" {

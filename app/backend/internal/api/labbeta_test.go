@@ -30,7 +30,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
 )
 
 // The last beta lab checks (#41 #46 #47 #48 #49 #50 #52; #43 is in
@@ -301,11 +301,11 @@ func newLabMovie(t *testing.T, o labMovieOpts) *labMovie {
 	x.lib = &library.Service{Store: s, Queue: x.q, Metadata: md}
 	x.m = &downloader.Manager{Store: s, SavePath: filepath.Join("/data/downloads/incomplete", o.cat)}
 	x.m.Link = func(ctx context.Context, rel domain.Release) (string, error) {
-		return source.GrabLink(ctx, s, vault, rel)
+		return sources.GrabLink(ctx, s, vault, rel)
 	}
 	im := &importer.Importer{Store: s}
 	q := x.q
-	sr := &source.Searcher{Store: s, Queue: q, Secrets: vault, OnChosen: func(ctx context.Context, slotID, releaseID int64) {
+	sr := &sources.Searcher{Store: s, Queue: q, Secrets: vault, OnChosen: func(ctx context.Context, slotID, releaseID int64) {
 		_, _, _ = q.Enqueue(ctx, downloader.KindGrab, &domain.Subject{Type: "slot", ID: slotID}, map[string]any{"release_id": releaseID}, fmt.Sprintf("grab:%d", slotID), domain.System)
 	}}
 	x.m.OnFailed = func(ctx context.Context, slotID int64) { _ = sr.QueueAfterFailure(ctx, slotID, domain.System) }
@@ -356,7 +356,7 @@ func (x *labMovie) waitJob(t *testing.T, id int64) (string, string) {
 // autoSearch runs the search the app runs by itself (not by hand).
 func (x *labMovie) autoSearch(t *testing.T) string {
 	t.Helper()
-	id, _, err := x.q.Enqueue(context.Background(), source.KindSearchSlot, &domain.Subject{Type: "slot", ID: x.slot}, nil, fmt.Sprintf("search_slot:%d:%d", x.slot, time.Now().UnixNano()), domain.System)
+	id, _, err := x.q.Enqueue(context.Background(), jobs.KindSearchSlot, &domain.Subject{Type: "slot", ID: x.slot}, nil, fmt.Sprintf("search_slot:%d:%d", x.slot, time.Now().UnixNano()), domain.System)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -706,7 +706,7 @@ func TestLabBeta48WaitForBetter(t *testing.T) {
 	// A better copy shows up in the Source's feed during the wait (the app's
 	// feed check, as the old apps' RSS sync, is what sees it).
 	feed.set([]string{labDune1080}, own)
-	fc, _, err := x.q.Enqueue(context.Background(), source.KindFeedCheck, nil, nil, "schedule:feed_check", domain.System)
+	fc, _, err := x.q.Enqueue(context.Background(), jobs.KindFeedCheck, nil, nil, "schedule:feed_check", domain.System)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -729,7 +729,7 @@ func TestLabBeta48WaitForBetter(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	id, _, err := x.q.Enqueue(context.Background(), source.KindGrabHeld, nil, nil, "schedule:grab_held:after", domain.System)
+	id, _, err := x.q.Enqueue(context.Background(), jobs.KindGrabHeld, nil, nil, "schedule:grab_held:after", domain.System)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -873,7 +873,7 @@ func TestLabBeta47JackettGrab(t *testing.T) {
 	jackett := envOr("HOLYARRS_LAB_JACKETT_URL", "http://jackett:9117")
 	x := newLabMovie(t, labMovieOpts{cat: "holyarrs-lab-b47"})
 	x.remove(t, labDuneHash)
-	var v BridgeView
+	var v sources.BridgeView
 	_ = json.Unmarshal(do(t, "POST", x.srv.URL+"/api/v1/bridges", fmt.Sprintf(`{"kind":"jackett","url":%q,"key":%q}`, jackett, key), 201), &v)
 	if v.Sources < 1 {
 		t.Fatalf("bridge %+v", v)

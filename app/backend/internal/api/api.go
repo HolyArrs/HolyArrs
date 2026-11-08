@@ -28,7 +28,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/asks"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/backups"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/bridge"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/health"
@@ -46,7 +45,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/musicsync"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
@@ -74,8 +73,8 @@ type Server struct {
 	Restart func()
 	// Secrets stores the encrypted settings.
 	Secrets *secrets.Vault
-	// Bridges keeps the connected Jackett and Prowlarr (#96); nil makes one.
-	Bridges *bridge.Service
+	// Bridges keeps the connected Jackett and Prowlarr; nil makes one.
+	Bridges *sources.BridgeService
 	// TraktBase is the Trakt API address for reviews; empty is the real one.
 	TraktBase string
 	// MetadataUp reports whether the metadata server answers (cached
@@ -138,7 +137,7 @@ type Server struct {
 	Downloads *downloader.Manager
 	// Search runs searches, hand choices and the Held and Turned down
 	// lists; New makes one (choices queue a grab Job) when nil.
-	Search *source.Searcher
+	Search *sources.Searcher
 	// Health runs the health checks; New makes one when nil.
 	Health *health.Engine
 	// Updates is the update check; New makes one when nil and hands it to
@@ -181,9 +180,9 @@ type API struct {
 	media *mediaservers.Handlers
 	// titles serves the extras and wiki routes (metadata).
 	titles *metadata.TitlePages
-	// bridgeSvc keeps the connected Jackett and Prowlarr (bridges.go, #96).
-	bridgeOnce sync.Once
-	bridgeSvc  *bridge.Service
+	// sourceH serves the Source, search and bridge routes (modules.go).
+	sourceOnce sync.Once
+	sourceH    *sources.Handlers
 	// tlog is the torrent log's last seen state per torrent (torrentlog.go).
 	tlog torrentLog
 	// interest limits each session's live interest calls (webserver.go).
@@ -302,11 +301,11 @@ func New(s Server) *API {
 	}
 	if s.Search == nil {
 		q := s.Queue
-		var pub source.Publisher
+		var pub sources.Publisher
 		if s.Live != nil {
 			pub = s.Live // a nil hub must stay a nil Publisher
 		}
-		s.Search = &source.Searcher{Store: s.Store, Live: pub, Secrets: s.Secrets, Queue: q,
+		s.Search = &sources.Searcher{Store: s.Store, Live: pub, Secrets: s.Secrets, Queue: q,
 			OnChosen: func(ctx context.Context, slotID, releaseID int64) {
 				if q == nil {
 					return
@@ -398,27 +397,6 @@ func (a *API) Routes(rt *webserver.Router) {
 	m.HandleFunc("DELETE /api/v1/outside-lists/{id}", a.deleteOutsideList)
 	m.HandleFunc("POST /api/v1/outside-lists/{id}/sync", a.syncOutsideList)
 	m.HandleFunc("POST /api/v1/titles/{id}/search", a.searchTitle)
-	m.HandleFunc("GET /api/v1/titles/{id}/releases", a.titleReleases)
-	m.HandleFunc("POST /api/v1/releases/{id}/choose", a.chooseRelease)
-	m.HandleFunc("POST /api/v1/releases/{id}/turn-down", a.turnDownRelease)
-	m.HandleFunc("GET /api/v1/held", a.listState("held"))
-	m.HandleFunc("DELETE /api/v1/held", a.removeFrom("held", false))
-	m.HandleFunc("DELETE /api/v1/held/{id}", a.removeFrom("held", true))
-	m.HandleFunc("GET /api/v1/turned-down", a.listState("turned_down"))
-	m.HandleFunc("DELETE /api/v1/turned-down", a.removeFrom("turned_down", false))
-	m.HandleFunc("DELETE /api/v1/turned-down/{id}", a.removeFrom("turned_down", true))
-	m.HandleFunc("POST /api/v1/search/missing", a.bulkSearch("missing"))
-	m.HandleFunc("POST /api/v1/search/better", a.bulkSearch("better"))
-	m.HandleFunc("POST /api/v1/search/feed-check", a.feedCheckNow)
-	m.HandleFunc("GET /api/v1/searches", a.searches)
-	m.HandleFunc("GET /api/v1/settings/search", a.getSearchSettings)
-	m.HandleFunc("GET /api/v1/bridges", a.listBridges)
-	m.HandleFunc("POST /api/v1/bridges", a.addBridge)
-	m.HandleFunc("POST /api/v1/bridges/find", a.findBridges)
-	m.HandleFunc("POST /api/v1/bridges/test", a.testBridge)
-	m.HandleFunc("POST /api/v1/bridges/{id}/check", a.checkBridge)
-	m.HandleFunc("DELETE /api/v1/bridges/{id}", a.deleteBridge)
-	m.HandleFunc("PUT /api/v1/settings/search", a.putSearchSettings)
 	m.HandleFunc("GET /api/v1/downloads", a.listDownloads)
 	m.HandleFunc("GET /api/v1/imports", a.listImports)
 	m.HandleFunc("GET /api/v1/events", a.listEvents)
@@ -432,7 +410,6 @@ func (a *API) Routes(rt *webserver.Router) {
 	m.HandleFunc("GET /api/v1/library/copies", a.listLibraryCopies)
 	m.HandleFunc("POST /api/v1/library/copies/search/preview", a.previewLibraryCopySearch)
 	m.HandleFunc("POST /api/v1/library/copies/search", a.searchLibraryCopies)
-	a.sourceRoutes(m)
 	a.downloaderRoutes(m)
 	a.organiseRoutes(m)
 	a.manualImportRoutes(m)
@@ -537,6 +514,7 @@ func (a *API) Routes(rt *webserver.Router) {
 func (a *API) Handler() http.Handler {
 	rt := webserver.NewRouter()
 	a.Routes(rt)
+	a.ModuleRoutes(rt)
 	return a.Chain(rt)
 }
 
@@ -1209,7 +1187,7 @@ func (a *API) listEvents(w http.ResponseWriter, r *http.Request) {
 		f.HideKinds = append(slices.Clone(f.HideKinds), domain.AskEventKinds...)
 	}
 	if f.SourceID > 0 {
-		ids, err := source.ReleaseIDs(r.Context(), a.s.Store.Read(), f.SourceID)
+		ids, err := sources.ReleaseIDs(r.Context(), a.s.Store.Read(), f.SourceID)
 		if err != nil {
 			internal(w, err)
 			return

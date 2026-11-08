@@ -13,8 +13,8 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
 )
 
 type libraryCopySearchIn struct {
@@ -165,7 +165,7 @@ func (a *API) searchLibraryCopies(w http.ResponseWriter, r *http.Request) {
 		}
 		item := libraryCopySearchItem{FileID: copy.FileID, VersionID: copy.VersionID, SlotIDs: slots, JobIDs: []int64{}}
 		for _, slotID := range slots {
-			jobID, _, err := a.s.Queue.Enqueue(r.Context(), source.KindSearchSlot, &domain.Subject{Type: "slot", ID: slotID}, map[string]any{"by_hand": true, "choose": false}, "show_slot:"+itoa(slotID), actor(r))
+			jobID, _, err := a.s.Queue.Enqueue(r.Context(), jobs.KindSearchSlot, &domain.Subject{Type: "slot", ID: slotID}, map[string]any{"by_hand": true, "choose": false}, "show_slot:"+itoa(slotID), actor(r))
 			if err != nil {
 				internal(w, err)
 				return

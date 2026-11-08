@@ -13,7 +13,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
 )
 
 // searchWorld adds Dune with one wanted Slot, a Source and three Releases
@@ -33,7 +33,7 @@ func searchWorld(t *testing.T) (srvURL string, s *database.Store, q *jobs.Queue,
 		if _, err := database.Insert(tx, "sources", src, domain.System); err != nil {
 			return err
 		}
-		job := &domain.Job{Kind: source.KindSearchSlot, Params: map[string]any{}, Priority: "normal", State: "done", RunAfter: time.Now(), AskedBy: domain.System, MaxAttempts: 1}
+		job := &domain.Job{Kind: jobs.KindSearchSlot, Params: map[string]any{}, Priority: "normal", State: "done", RunAfter: time.Now(), AskedBy: domain.System, MaxAttempts: 1}
 		if _, err := database.Insert(tx, "jobs", job, domain.System); err != nil {
 			return err
 		}
@@ -78,9 +78,9 @@ func TestReleasesListChooseAndForce(t *testing.T) {
 	defer q.Stop()
 
 	var page struct {
-		Releases []ReleaseView `json:"releases"`
-		Total    int           `json:"total"`
-		Running  []int64       `json:"running_job_ids"`
+		Releases []sources.ReleaseView `json:"releases"`
+		Total    int                   `json:"total"`
+		Running  []int64               `json:"running_job_ids"`
 	}
 	_ = json.Unmarshal(do(t, "GET", u+"/api/v1/titles/"+itoa(titleID)+"/releases?limit=2", "", 200), &page)
 	if page.Total != 3 || len(page.Releases) != 2 || page.Releases[0].ID != rels["judged"] || page.Releases[1].ID != rels["passed_over"] {
@@ -111,7 +111,7 @@ func TestReleasesListChooseAndForce(t *testing.T) {
 	do(t, "POST", u+"/api/v1/releases/"+itoa(rels["refused"])+"/choose", "{bad", 400)
 
 	// The passed one goes straight through and a grab is queued.
-	var ch source.Choice
+	var ch sources.Choice
 	_ = json.Unmarshal(do(t, "POST", u+"/api/v1/releases/"+itoa(rels["judged"])+"/choose", "", 200), &ch)
 	if ch.SlotID != slotID || ch.Forced {
 		t.Fatalf("choice %+v", ch)
@@ -128,7 +128,7 @@ func TestReleasesListChooseAndForce(t *testing.T) {
 	do(t, "POST", u+"/api/v1/releases/"+itoa(rels["passed_over"])+"/choose", `{"force":true}`, 409)
 
 	// Turning one down puts it on the list with the reason.
-	var tv ReleaseView
+	var tv sources.ReleaseView
 	_ = json.Unmarshal(do(t, "POST", u+"/api/v1/releases/"+itoa(rels["passed_over"])+"/turn-down", `{"reason":"wrong language"}`, 200), &tv)
 	if tv.State != "turned_down" || !tv.NeedsForce || !strings.Contains(tv.Reasons[len(tv.Reasons)-1].Text, "wrong language") {
 		t.Fatalf("turned down %+v", tv)
@@ -164,10 +164,10 @@ func TestHeldAndTurnedDownLists(t *testing.T) {
 		t.Fatal(err)
 	}
 	var page struct {
-		Releases []ReleaseView `json:"releases"`
-		Total    int           `json:"total"`
-		Limit    int           `json:"limit"`
-		Offset   int           `json:"offset"`
+		Releases []sources.ReleaseView `json:"releases"`
+		Total    int                   `json:"total"`
+		Limit    int                   `json:"limit"`
+		Offset   int                   `json:"offset"`
 	}
 	_ = json.Unmarshal(do(t, "GET", u+"/api/v1/held?limit=1", "", 200), &page)
 	if page.Total != 2 || len(page.Releases) != 1 || page.Limit != 1 || page.Releases[0].HoldUntil == nil {
@@ -219,7 +219,7 @@ func TestBulkSearchesQueueJobs(t *testing.T) {
 		t.Fatalf("show search %+v %v", shown, sj.Params)
 	}
 	do(t, "POST", u+"/api/v1/titles/"+itoa(titleID)+"/search", `{"slot_id":999}`, 404)
-	for path, kind := range map[string]string{"missing": source.KindSearchMissing, "better": source.KindSearchMissing, "feed-check": source.KindFeedCheck} {
+	for path, kind := range map[string]string{"missing": jobs.KindSearchMissing, "better": jobs.KindSearchMissing, "feed-check": jobs.KindFeedCheck} {
 		var out struct {
 			JobIDs []int64 `json:"job_ids"`
 		}
@@ -248,9 +248,9 @@ func TestBulkSearchesQueueJobs(t *testing.T) {
 // route: PUT /api/v1/settings/search
 func TestSearchSettings(t *testing.T) {
 	srv, s, _ := setup(t)
-	var st SearchSettings
+	var st sources.SearchSettings
 	_ = json.Unmarshal(do(t, "GET", srv.URL+"/api/v1/settings/search", "", 200), &st)
-	if st != (SearchSettings{FeedCheckMinutes: 15, MissingSearchCount: 20, MissingSearchBetter: false, TryNextDownloader: true,
+	if st != (sources.SearchSettings{FeedCheckMinutes: 15, MissingSearchCount: 20, MissingSearchBetter: false, TryNextDownloader: true,
 		MissingSearchShows: true, SeasonPackUpgrade: "all", SeasonPackPrefer: "rank", MissingSearchMusic: true, ArtistSearchCap: 200,
 		RefuseEarlyReleases: true, EarlyReleaseGraceHours: 24, RefuseTinyReleases: true, ImportSizeFloors: true, EpisodeDefaultMinutes: 20}) {
 		t.Fatalf("defaults %+v", st)
@@ -259,7 +259,7 @@ func TestSearchSettings(t *testing.T) {
 	do(t, "PUT", srv.URL+"/api/v1/settings/search", `{"feed_check_minutes":30,"missing_search_count":501,"missing_search_better":false,"try_next_downloader":true}`, 400)
 	_ = json.Unmarshal(do(t, "PUT", srv.URL+"/api/v1/settings/search",
 		`{"feed_check_minutes":30,"missing_search_count":0,"missing_search_better":true,"try_next_downloader":false}`, 200), &st)
-	if st != (SearchSettings{FeedCheckMinutes: 30, MissingSearchCount: 0, MissingSearchBetter: true, TryNextDownloader: false,
+	if st != (sources.SearchSettings{FeedCheckMinutes: 30, MissingSearchCount: 0, MissingSearchBetter: true, TryNextDownloader: false,
 		MissingSearchShows: true, SeasonPackUpgrade: "all", SeasonPackPrefer: "rank", MissingSearchMusic: true, ArtistSearchCap: 200,
 		RefuseEarlyReleases: true, EarlyReleaseGraceHours: 24, RefuseTinyReleases: true, ImportSizeFloors: true, EpisodeDefaultMinutes: 20}) {
 		t.Fatalf("saved %+v", st)
@@ -301,37 +301,37 @@ func TestSearchesRunningAndFound(t *testing.T) {
 	u, s, _, titleID, slotID, rels := searchWorld(t)
 	note := "searching Lab"
 	if err := s.Write(context.Background(), func(tx *sql.Tx) error {
-		run := &domain.Job{Kind: source.KindSearchSlot, Subject: &domain.Subject{Type: "slot", ID: slotID}, Params: map[string]any{"by_hand": true},
+		run := &domain.Job{Kind: jobs.KindSearchSlot, Subject: &domain.Subject{Type: "slot", ID: slotID}, Params: map[string]any{"by_hand": true},
 			Priority: "normal", State: "running", Progress: 0.5, ProgressNote: &note, RunAfter: time.Now(), AskedBy: domain.System, MaxAttempts: 1}
 		if _, err := database.Insert(tx, "jobs", run, domain.System); err != nil {
 			return err
 		}
 		ended := time.Now()
-		done := &domain.Job{Kind: source.KindSearchSlot, Subject: &domain.Subject{Type: "slot", ID: slotID}, Params: map[string]any{}, Priority: "normal",
+		done := &domain.Job{Kind: jobs.KindSearchSlot, Subject: &domain.Subject{Type: "slot", ID: slotID}, Params: map[string]any{}, Priority: "normal",
 			State: "done", RunAfter: time.Now(), EndedAt: &ended, AskedBy: domain.System, MaxAttempts: 1,
 			Result: map[string]any{"releases": 3, "refused": 1, "chosen_release_id": rels["judged"]}}
 		if _, err := database.Insert(tx, "jobs", done, domain.System); err != nil {
 			return err
 		}
-		feed := &domain.Job{Kind: source.KindFeedCheck, Params: map[string]any{}, Priority: "normal", State: "queued", RunAfter: time.Now(), AskedBy: domain.System, MaxAttempts: 1}
+		feed := &domain.Job{Kind: jobs.KindFeedCheck, Params: map[string]any{}, Priority: "normal", State: "queued", RunAfter: time.Now(), AskedBy: domain.System, MaxAttempts: 1}
 		_, err := database.Insert(tx, "jobs", feed, domain.System)
 		return err
 	}); err != nil {
 		t.Fatal(err)
 	}
 	var out struct {
-		Running []SearchView `json:"running"`
-		Recent  []SearchView `json:"recent"`
+		Running []sources.SearchView `json:"running"`
+		Recent  []sources.SearchView `json:"recent"`
 	}
 	_ = json.Unmarshal(do(t, "GET", u+"/api/v1/searches", "", 200), &out)
 	if len(out.Running) != 2 {
 		t.Fatalf("running %+v", out.Running)
 	}
 	r := out.Running[0]
-	if r.Kind != source.KindSearchSlot || r.TitleID == nil || *r.TitleID != titleID || r.TitleName == "" || r.Note != note || !r.ByHand || r.Progress != 0.5 {
+	if r.Kind != jobs.KindSearchSlot || r.TitleID == nil || *r.TitleID != titleID || r.TitleName == "" || r.Note != note || !r.ByHand || r.Progress != 0.5 {
 		t.Fatalf("running search %+v", r)
 	}
-	if out.Running[1].Kind != source.KindFeedCheck || out.Running[1].TitleID != nil {
+	if out.Running[1].Kind != jobs.KindFeedCheck || out.Running[1].TitleID != nil {
 		t.Fatalf("feed check %+v", out.Running[1])
 	}
 	if len(out.Recent) != 1 || out.Recent[0].Found != 3 || out.Recent[0].Refused != 1 || out.Recent[0].TitleName == "" || out.Recent[0].EndedAt == nil ||
@@ -347,7 +347,7 @@ func TestTitleReleasesListsUnmatched(t *testing.T) {
 	u, s, _, titleID, slotID, _ := searchWorld(t)
 	var unmatched int64
 	if err := s.Write(context.Background(), func(tx *sql.Tx) error {
-		job := &domain.Job{Kind: source.KindSearchSlot, Subject: &domain.Subject{Type: "slot", ID: slotID}, Params: map[string]any{}, Priority: "normal",
+		job := &domain.Job{Kind: jobs.KindSearchSlot, Subject: &domain.Subject{Type: "slot", ID: slotID}, Params: map[string]any{}, Priority: "normal",
 			State: "done", RunAfter: time.Now(), AskedBy: domain.System, MaxAttempts: 1}
 		if _, err := database.Insert(tx, "jobs", job, domain.System); err != nil {
 			return err
@@ -362,8 +362,8 @@ func TestTitleReleasesListsUnmatched(t *testing.T) {
 		t.Fatal(err)
 	}
 	var page struct {
-		Releases []ReleaseView `json:"releases"`
-		Total    int           `json:"total"`
+		Releases []sources.ReleaseView `json:"releases"`
+		Total    int                   `json:"total"`
 	}
 	_ = json.Unmarshal(do(t, "GET", u+"/api/v1/titles/"+itoa(titleID)+"/releases", "", 200), &page)
 	if page.Total != 1 || len(page.Releases) != 1 || page.Releases[0].ID != unmatched || !page.Releases[0].NeedsForce {
@@ -382,7 +382,7 @@ func TestHandSearchNotDedupedByBulk(t *testing.T) {
 	var bulkID int64
 	if err := s.Write(context.Background(), func(tx *sql.Tx) error {
 		key := "search_slot:" + itoa(slotID)
-		j := &domain.Job{Kind: source.KindSearchSlot, Subject: &domain.Subject{Type: "slot", ID: slotID}, Params: map[string]any{"bulk": true},
+		j := &domain.Job{Kind: jobs.KindSearchSlot, Subject: &domain.Subject{Type: "slot", ID: slotID}, Params: map[string]any{"bulk": true},
 			Priority: "normal", State: "queued", RunAfter: time.Now().Add(time.Hour), AskedBy: domain.System, MaxAttempts: 1, DedupeKey: &key}
 		id, err := database.Insert(tx, "jobs", j, domain.System)
 		bulkID = id

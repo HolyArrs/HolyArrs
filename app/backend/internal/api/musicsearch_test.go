@@ -10,9 +10,10 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
 )
 
 // Album search over HTTP (stage 3.3): the search routes take an album, a
@@ -77,7 +78,7 @@ func TestAlbumSearchOverHTTP(t *testing.T) {
 	}
 	// The whole artist: First Light only (the one kept up to date).
 	js := jobOf(do(t, "POST", tu+"/search", "", 202))
-	if len(js) != 1 || js[0].Kind != source.KindSearchAlbum || js[0].Subject.ID != first || js[0].Params["kept_only"] != true {
+	if len(js) != 1 || js[0].Kind != jobs.KindSearchAlbum || js[0].Subject.ID != first || js[0].Params["kept_only"] != true {
 		t.Fatalf("whole artist %+v", js)
 	}
 	albumJob := js[0]
@@ -117,7 +118,7 @@ func TestAlbumSearchOverHTTP(t *testing.T) {
 	}
 	_ = json.Unmarshal(body, &capped)
 	js = jobOf(body)
-	if all < 3 || len(js) != 2 || capped.LeftOut != all-2 || !js[1].RunAfter.After(js[0].RunAfter.Add(source.BulkStagger/2)) {
+	if all < 3 || len(js) != 2 || capped.LeftOut != all-2 || !js[1].RunAfter.After(js[0].RunAfter.Add(sources.BulkStagger/2)) {
 		t.Fatalf("capped artist search: %d albums, %d jobs, left out %d", all, len(js), capped.LeftOut)
 	}
 	if err := s.Write(ctx, func(tx *sql.Tx) error {
@@ -140,7 +141,7 @@ func TestAlbumSearchOverHTTP(t *testing.T) {
 	var trackID, slotID int64
 	_ = s.Read().QueryRow("SELECT i.id, s.id FROM items i JOIN slots s ON s.item_id = i.id WHERE i.part_id = ? ORDER BY i.id LIMIT 1", first).Scan(&trackID, &slotID)
 	js = jobOf(do(t, "POST", tu+"/search", fmt.Sprintf(`{"item_id":%d}`, trackID), 202))
-	if len(js) != 1 || js[0].Kind != source.KindSearchAlbum || js[0].Subject.ID != first {
+	if len(js) != 1 || js[0].Kind != jobs.KindSearchAlbum || js[0].Subject.ID != first {
 		t.Fatalf("track %+v", js)
 	}
 	do(t, "POST", tu+"/search", `{"choose":false}`, 400)
@@ -180,8 +181,8 @@ func TestAlbumSearchOverHTTP(t *testing.T) {
 		t.Fatal(err)
 	}
 	var list struct {
-		Releases []ReleaseView `json:"releases"`
-		Total    int           `json:"total"`
+		Releases []sources.ReleaseView `json:"releases"`
+		Total    int                   `json:"total"`
 	}
 	_ = json.Unmarshal(do(t, "GET", fmt.Sprintf("%s/releases?album_id=%d", tu, first), "", 200), &list)
 	if list.Total != 1 || list.Releases[0].Album != "First Light" || list.Releases[0].TitleName != "Lab Band" || list.Releases[0].Episode != "" {
@@ -191,7 +192,7 @@ func TestAlbumSearchOverHTTP(t *testing.T) {
 	if list.Total != 0 {
 		t.Fatalf("other album %+v", list)
 	}
-	var v ReleaseView
+	var v sources.ReleaseView
 	_ = json.Unmarshal(do(t, "POST", fmt.Sprintf("%s/releases/%d/turn-down", u, relID), `{"reason":"bad rip"}`, 200), &v)
 	if v.State != "turned_down" || v.Album != "First Light" {
 		t.Fatalf("turned down %+v", v)
@@ -201,7 +202,7 @@ func TestAlbumSearchOverHTTP(t *testing.T) {
 		t.Fatalf("turned down list %+v", list)
 	}
 	var home struct {
-		Recent []SearchView `json:"recent"`
+		Recent []sources.SearchView `json:"recent"`
 	}
 	_ = json.Unmarshal(do(t, "GET", u+"/searches", "", 200), &home)
 	found := false
@@ -213,7 +214,7 @@ func TestAlbumSearchOverHTTP(t *testing.T) {
 	}
 
 	// Music search settings.
-	var st SearchSettings
+	var st sources.SearchSettings
 	_ = json.Unmarshal(do(t, "PUT", u+"/settings/search", `{"missing_search_music":false,"music_discography_packs":true,"album_track_tolerance":2}`, 200), &st)
 	if st.MissingSearchMusic || !st.MusicDiscographyPacks || st.AlbumTrackTolerance != 2 || st.FeedCheckMinutes != 15 {
 		t.Fatalf("music settings %+v", st)

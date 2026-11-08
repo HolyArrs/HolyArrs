@@ -26,7 +26,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
 )
 
 // manifestKey is the setting (group this_app) where seed records what it
@@ -98,7 +98,7 @@ type world struct {
 	s     *database.Store
 	vault *secrets.Vault
 	lib   *library.Service
-	sr    *source.Searcher
+	sr    *sources.Searcher
 	dm    *downloader.Manager
 	im    *importer.Importer
 	eng   *fakeEngine
@@ -162,7 +162,7 @@ func openWorld(ctx context.Context, o options, p providers, out io.Writer) (*wor
 	q := jobs.New(s, jobs.Options{}) // only queued into: the app runs these Jobs when it starts
 	w.lib = &library.Service{Store: s, Queue: q, Metadata: p.Movies, Shows: p.Shows, Artists: p.Artists, SavePath: w.Downloads,
 		Artwork: &library.ArtworkCache{Dir: filepath.Join(o.ConfigDir, "artwork"), Allowed: []string{metadata.ImageBase + "/"}}}
-	w.sr = &source.Searcher{Store: s, Secrets: vault, Queue: q}
+	w.sr = &sources.Searcher{Store: s, Secrets: vault, Queue: q}
 	w.eng = newFakeEngine(w.Downloads)
 	w.im = &importer.Importer{Store: s, NoSizeFloors: true} // placeholder files are a few KB
 	w.dm = &downloader.Manager{Store: s, SavePath: w.Downloads, VanishGrace: time.Hour,

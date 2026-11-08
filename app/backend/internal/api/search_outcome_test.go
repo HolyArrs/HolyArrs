@@ -11,7 +11,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
 )
 
 // route: GET /api/v1/titles/{id}/search-outcome
@@ -50,7 +50,7 @@ func TestSearchOutcomeOwnerSeesSourcesMemberDoesNot(t *testing.T) {
 		t.Fatal("no search yet must not read as empty")
 	}
 	tid := titleID
-	if err := r.st.AddEvent(ctx, &domain.Event{Actor: domain.System, Kind: source.EventSearchFailed, TitleID: &tid,
+	if err := r.st.AddEvent(ctx, &domain.Event{Actor: domain.System, Kind: sources.EventSearchFailed, TitleID: &tid,
 		Summary: "no Source answered: Alpha: paused (rate_limited)",
 		Data:    map[string]any{"sources": []map[string]any{{"id": 7, "name": "Alpha", "why": "rate_limited"}}}}); err != nil {
 		t.Fatal(err)

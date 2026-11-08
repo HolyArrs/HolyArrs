@@ -10,9 +10,10 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
 )
 
 // Show search (stage 3.2): an episode, a season or the whole show, by hand.
@@ -61,7 +62,7 @@ func (a *API) searchShow(w http.ResponseWriter, r *http.Request, t mediafiles.Ti
 			params["choose"] = false
 			key = "show_slot:" + itoa(slotID)
 		}
-		id, _, err := a.s.Queue.Enqueue(ctx, source.KindSearchSlot, &domain.Subject{Type: "slot", ID: slotID}, params, key, by)
+		id, _, err := a.s.Queue.Enqueue(ctx, jobs.KindSearchSlot, &domain.Subject{Type: "slot", ID: slotID}, params, key, by)
 		if err == nil {
 			ids = append(ids, id)
 		}
@@ -77,7 +78,7 @@ func (a *API) searchShow(w http.ResponseWriter, r *http.Request, t mediafiles.Ti
 			params["choose"] = false
 			key = fmt.Sprintf("show_season:%d:%d", partID, versionID)
 		}
-		id, _, err := a.s.Queue.Enqueue(ctx, source.KindSearchSeason, &domain.Subject{Type: "part", ID: partID}, params, key, by)
+		id, _, err := a.s.Queue.Enqueue(ctx, jobs.KindSearchSeason, &domain.Subject{Type: "part", ID: partID}, params, key, by)
 		if err == nil {
 			ids = append(ids, id)
 		}
@@ -173,7 +174,7 @@ func (a *API) episodeLabels(ctx context.Context, slotIDs []int64) string {
 		if database.Get(ctx, db, "items", itemID, &it) != nil || it.Kind != "episode" {
 			continue
 		}
-		l := source.EpisodeLabel(it)
+		l := sources.EpisodeLabel(it)
 		if !slices.Contains(labels, l) {
 			labels = append(labels, l)
 			if it.Numbers.Season != nil {

@@ -13,9 +13,9 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/health"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
 )
 
 // statusItem is one thing in Settings that needs attention. Group is one of
@@ -143,15 +143,15 @@ func settingsStatus(in statusInput) statusAnswer {
 		known("/settings/sources")
 		for _, s := range in.Sources {
 			switch s.State {
-			case source.StateUnreachable, source.StateAuthFailed:
+			case sources.StateUnreachable, sources.StateAuthFailed:
 				add(statusItem{"copies", "/settings/sources", "The Source " + s.Name + " is not answering", "error"}, "source:"+s.Name)
-			case source.KindRateLimited:
+			case sources.KindRateLimited:
 				add(statusItem{"copies", "/settings/sources", "The Source " + s.Name + " asked HolyArrs to slow down, so it waits a while", "warning"}, "source:"+s.Name)
-			case source.KindBlocked:
+			case sources.KindBlocked:
 				add(statusItem{"copies", "/settings/sources", "The Source " + s.Name + " is blocked from the local network", "warning"}, "source:"+s.Name)
-			case source.BlockBotCheck:
+			case sources.BlockBotCheck:
 				add(statusItem{"copies", "/settings/sources", "The Source " + s.Name + " is behind a bot check HolyArrs cannot pass", "warning"}, "source:"+s.Name)
-			case source.BlockSiteBan:
+			case sources.BlockSiteBan:
 				add(statusItem{"copies", "/settings/sources", "The site behind the Source " + s.Name + " refuses HolyArrs's address", "warning"}, "source:"+s.Name)
 			}
 		}
@@ -330,18 +330,18 @@ func (a *API) statusInput(ctx context.Context, now time.Time) (statusInput, erro
 	}
 	in.Sources = []namedState{}
 	for _, s := range srcs {
-		state := source.HealthOf(s).State
+		state := sources.HealthOf(s).State
 		// Its own backoff for slowing down or a blocked address is a warning,
 		// not a Source that stopped answering.
-		if s.State == "paused" && s.PauseReason != nil && (*s.PauseReason == source.KindRateLimited || *s.PauseReason == source.KindBlocked) {
+		if s.State == "paused" && s.PauseReason != nil && (*s.PauseReason == sources.KindRateLimited || *s.PauseReason == sources.KindBlocked) {
 			state = *s.PauseReason
 		}
-		if b := source.BlockOf(s); b != "" {
+		if b := sources.BlockOf(s); b != "" {
 			state = b // a site's bot check or ban (#106), not the local network
 		}
 		in.Sources = append(in.Sources, namedState{s.Name, state})
 		if s.State != "disabled" {
-			if near, text := source.NearCap(ctx, a.s.Store, s, now); near {
+			if near, text := sources.NearCap(ctx, a.s.Store, s, now); near {
 				in.SourcesNear = append(in.SourcesNear, text)
 			}
 		}

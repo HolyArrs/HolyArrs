@@ -36,7 +36,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/asks"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/backups"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/bridge"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/dlsync"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
@@ -54,7 +53,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/files"
@@ -505,7 +504,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		log.Printf("secrets: encrypted %d secrets that were stored in the clear", n)
 	}
 	// Not fatal: a Source left as it was still works.
-	if n, err := source.HidePathKeys(ctx, s, vault); err != nil {
+	if n, err := sources.HidePathKeys(ctx, s, vault); err != nil {
 		log.Printf("secrets: moving rss passkeys into the vault: %v", err)
 	} else if n > 0 {
 		log.Printf("secrets: moved the passkeys of %d rss Sources into the vault", n)
@@ -556,14 +555,14 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	}
 	dm := &downloader.Manager{Store: s, Live: hub, SavePath: c.SavePath,
 		Link: func(ctx context.Context, rel domain.Release) (string, error) {
-			return source.GrabLink(ctx, s, vault, rel)
+			return sources.GrabLink(ctx, s, vault, rel)
 		},
 		SourceTransport: func(ctx context.Context, src domain.Source) (http.RoundTripper, error) {
-			cfg, err := source.ConfigFor(ctx, src, vault)
+			cfg, err := sources.ConfigFor(ctx, src, vault)
 			if err != nil {
 				return nil, err
 			}
-			return source.Transport(cfg), nil
+			return sources.Transport(cfg), nil
 		},
 		FromVault: vault.Get}
 	// Background download reader: one reader per Downloader inside the
@@ -571,7 +570,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	dls := &dlsync.Sync{Store: &dlsync.Store{}, DB: s, Manager: dm, Lines: api.TorrentLines}
 	dm.Sync = dls
 	im := &importer.Importer{Store: s, Live: hub}
-	sr := &source.Searcher{Store: s, Live: hub, Secrets: vault, Queue: q, OnChosen: func(ctx context.Context, slotID, releaseID int64) {
+	sr := &sources.Searcher{Store: s, Live: hub, Secrets: vault, Queue: q, OnChosen: func(ctx context.Context, slotID, releaseID int64) {
 		enqueue(ctx, downloader.KindGrab, domain.Subject{Type: "slot", ID: slotID}, map[string]any{"release_id": releaseID}, fmt.Sprintf("grab:%d", slotID))
 	}}
 	// A rejected Import turned its Release down: remove the Download from
@@ -583,7 +582,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 				log.Printf("remove rejected download %d: %v", dlID.Int64, err)
 			}
 		}
-		enqueue(ctx, source.KindSearchSlot, domain.Subject{Type: "slot", ID: slotID}, nil, fmt.Sprintf("search_slot:%d", slotID))
+		enqueue(ctx, jobs.KindSearchSlot, domain.Subject{Type: "slot", ID: slotID}, nil, fmt.Sprintf("search_slot:%d", slotID))
 	}
 	// A finished Import: clear a Usenet download out of its Downloader.
 	im.OnImported = dm.ClearFinished
@@ -598,8 +597,8 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		enqueue(ctx, importer.KindImport, domain.Subject{Type: "download", ID: downloadID}, nil, fmt.Sprintf("import:%d", downloadID))
 	}
 	sr.Register(q)
-	q.ProbeSchedule(source.KindFeedCheck, sr.ProbeFeed)
-	q.ProbeSchedule(source.KindGrabHeld, sr.ProbeGrabHeld)
+	q.ProbeSchedule(jobs.KindFeedCheck, sr.ProbeFeed)
+	q.ProbeSchedule(jobs.KindGrabHeld, sr.ProbeGrabHeld)
 	q.Handle(downloader.KindGrab, dm.HandleGrab)
 	// An ask turns Ready right after its import, not on the next 30 s ready
 	// check: the Requests card would drop from Importing back to Processing.
@@ -734,9 +733,9 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	})
 	q.ProbeSchedule(health.KindCheck, he.Probe)
 	// Connected Jackett (#96): its Sources follow its sites; no bridge, no run.
-	bridges := &bridge.Service{Store: s, Vault: vault}
-	q.Handle(bridge.KindCheck, bridges.HandleCheck)
-	q.ProbeSchedule(bridge.KindCheck, bridges.Probe)
+	bridges := &sources.BridgeService{Store: s, Vault: vault}
+	q.Handle(sources.BridgeKindCheck, bridges.HandleCheck)
+	q.ProbeSchedule(sources.BridgeKindCheck, bridges.Probe)
 	// Plex watchlists (Requests): registered here with the other kinds; the
 	// reader is set once Requests and sign-in are up, and a pass before
 	// that finds nothing to do.

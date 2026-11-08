@@ -355,7 +355,7 @@ func (a *API) linkRestart(w http.ResponseWriter, r *http.Request) {
 	case "downloader":
 		test = a.testDownloader
 	case "source":
-		test = a.testSource
+		test = a.sourceHandlers().TestSource
 	case "media_server":
 		if a.s.Media == nil {
 			fail(w, http.StatusServiceUnavailable, "media servers are not available here")

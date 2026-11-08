@@ -12,6 +12,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
 )
 
 const sourceCaps = `<?xml version="1.0"?><caps><limits max="50"/><searching><search available="yes" supportedParams="q"/>
@@ -54,7 +55,7 @@ func TestSourcesAddTestPauseDelete(t *testing.T) {
 	}))
 	t.Cleanup(idx.Close)
 
-	var x SourceView
+	var x sources.SourceView
 	raw, _ := json.Marshal(map[string]any{"name": "Lab", "format": "torznab", "url": idx.URL + "/api", "api_key": key, "allow_local_network": true, "priority": 10})
 	body := string(raw)
 	_ = json.Unmarshal(do(t, "POST", srv.URL+"/api/v1/sources", body, 201), &x)
@@ -109,7 +110,7 @@ func TestSourcesAddTestPauseDelete(t *testing.T) {
 	}
 
 	var st struct {
-		Source SourceView `json:"source"`
+		Source sources.SourceView `json:"source"`
 		Days   []struct {
 			Calls, Failures int
 		} `json:"days"`

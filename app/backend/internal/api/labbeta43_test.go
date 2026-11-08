@@ -15,8 +15,8 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
 )
 
 // #43 Lossless protection on the lab (labclients.py run beta, as the 4.14
@@ -66,9 +66,9 @@ func (x labAlbum) albumDone(t *testing.T) {
 	deadline := time.Now().Add(2 * time.Minute)
 	for {
 		var open int
-		_ = x.s.Read().QueryRow("SELECT count(*) FROM jobs WHERE kind = ? AND state NOT IN ('done', 'failed', 'dead')", source.KindSearchAlbum).Scan(&open)
+		_ = x.s.Read().QueryRow("SELECT count(*) FROM jobs WHERE kind = ? AND state NOT IN ('done', 'failed', 'dead')", jobs.KindSearchAlbum).Scan(&open)
 		var all int
-		_ = x.s.Read().QueryRow("SELECT count(*) FROM jobs WHERE kind = ?", source.KindSearchAlbum).Scan(&all)
+		_ = x.s.Read().QueryRow("SELECT count(*) FROM jobs WHERE kind = ?", jobs.KindSearchAlbum).Scan(&all)
 		if all > 0 && open == 0 {
 			return
 		}

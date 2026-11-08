@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"io"
 	"net/http"
 	"net/url"
@@ -17,7 +16,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 )
 
 var errTransmissionForeign = errors.New("the torrent belongs to another category")
@@ -124,7 +124,7 @@ func (tr *Transmission) Add(ctx context.Context, r AddRequest) (string, error) {
 		return "", ErrCategory
 	}
 	id := strings.ToLower(r.InfoHash)
-	if id != "" && !source.ValidInfoHash(id) {
+	if id != "" && !releasename.ValidInfoHash(id) {
 		return "", errBadHash
 	}
 	if r.ReconcileOnly {
@@ -221,7 +221,7 @@ func (tr *Transmission) Add(ctx context.Context, r AddRequest) (string, error) {
 		got = out.Duplicate.Hash
 		duplicate = true
 	}
-	if !source.ValidInfoHash(got) {
+	if !releasename.ValidInfoHash(got) {
 		return "", errors.Join(ErrUncertain, errors.New("transmission returned an invalid torrent identity"))
 	}
 	if duplicate {
@@ -245,7 +245,7 @@ func (tr *Transmission) Add(ctx context.Context, r AddRequest) (string, error) {
 // Remove deletes the torrent, and its data when deleteFiles is set.
 func (tr *Transmission) Remove(ctx context.Context, id string, deleteFiles bool) error {
 	id = strings.ToLower(id)
-	if !source.ValidInfoHash(id) {
+	if !releasename.ValidInfoHash(id) {
 		return errBadHash
 	}
 	if tr.category != "" {
@@ -479,7 +479,7 @@ func (t transmissionTorrent) job(category string) Job {
 
 func (tr *Transmission) get(ctx context.Context, id, category string) (Job, error) {
 	id = strings.ToLower(id)
-	if !source.ValidInfoHash(id) {
+	if !releasename.ValidInfoHash(id) {
 		return Job{}, errBadHash
 	}
 	ts, err := tr.torrents(ctx, id, true)

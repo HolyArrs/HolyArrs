@@ -15,8 +15,8 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
 )
 
 // ErrFilePriority means a file priority is not 0, 1, 6 or 7.
@@ -707,7 +707,7 @@ func (q *Qbittorrent) qbitStartStop(ctx context.Context, hashes string, start bo
 
 func qbitHash(id string) (string, error) {
 	id = strings.ToLower(id)
-	if !source.ValidInfoHash(id) {
+	if !releasename.ValidInfoHash(id) {
 		return "", errBadHash
 	}
 	return id, nil

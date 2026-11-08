@@ -14,8 +14,9 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
 )
 
 var (
@@ -251,7 +252,7 @@ func (m *Manager) claimAttempt(ctx context.Context, d domain.Downloader, release
 			return err
 		}
 		covered := []int64{slotID}
-		if many := source.PickSlots(rel); slices.Contains(many, slotID) {
+		if many := sources.PickSlots(rel); slices.Contains(many, slotID) {
 			covered = many
 		}
 		type slotSnapshot struct {
@@ -273,7 +274,7 @@ func (m *Manager) claimAttempt(ctx context.Context, d domain.Downloader, release
 		}
 		expected := ""
 		if d.Protocol == "torrent" {
-			if source.ValidInfoHash(strings.ToLower(hash.String)) {
+			if releasename.ValidInfoHash(strings.ToLower(hash.String)) {
 				expected = strings.ToLower(hash.String)
 			} else if magnetHash, ok := delugeMagnetHash(link); ok {
 				expected = magnetHash

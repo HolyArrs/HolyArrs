@@ -12,9 +12,9 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
 )
 
 // ShowAddOptions are the choices made when adding a show. Empty values take
@@ -361,7 +361,7 @@ func (s *Service) ScanThenSearch(ctx context.Context, titleID int64, by domain.A
 
 // searchWanted queues the missing search for this one title.
 func (s *Service) searchWanted(ctx context.Context, titleID int64, by domain.Actor) error {
-	_, _, err := s.Queue.Enqueue(ctx, source.KindSearchMissing, &domain.Subject{Type: "title", ID: titleID},
+	_, _, err := s.Queue.Enqueue(ctx, jobs.KindSearchMissing, &domain.Subject{Type: "title", ID: titleID},
 		map[string]any{"title_id": titleID}, "search_wanted:"+strconv.FormatInt(titleID, 10), by)
 	return err
 }
@@ -401,7 +401,7 @@ func (s *Service) searchShow(ctx context.Context, titleID int64, by domain.Actor
 		return err
 	}
 	for _, x := range list {
-		if _, _, err := s.Queue.Enqueue(ctx, source.KindSearchSeason, &domain.Subject{Type: "part", ID: x.PartID},
+		if _, _, err := s.Queue.Enqueue(ctx, jobs.KindSearchSeason, &domain.Subject{Type: "part", ID: x.PartID},
 			map[string]any{"version_id": x.VersionID}, fmt.Sprintf("search_season:%d:%d", x.PartID, x.VersionID), by); err != nil {
 			return err
 		}

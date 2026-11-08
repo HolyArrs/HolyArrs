@@ -17,7 +17,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediaservers"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles"
 )
 
@@ -370,8 +370,8 @@ func (r *run) indexer(item, name, addr, key, format string, local, clearKey bool
 			r.done(item, "paused until you check and resume it")
 			return
 		}
-		in := source.Input{Name: name, Format: format, URL: addr, APIKey: key, AllowLocal: &local}
-		if _, err := source.Add(r.ctx, r.d.Store, r.d.Vault, in, r.d.By, createdPaused("sources")); err != nil {
+		in := sources.Input{Name: name, Format: format, URL: addr, APIKey: key, AllowLocal: &local}
+		if _, err := sources.Add(r.ctx, r.d.Store, r.d.Vault, in, r.d.By, createdPaused("sources")); err != nil {
 			r.fail(item, err)
 			return
 		}
@@ -394,7 +394,7 @@ func (r *run) indexer(item, name, addr, key, format string, local, clearKey bool
 			return
 		}
 		if !r.dry {
-			if _, err := source.SetPaused(r.ctx, r.d.Store, src.ID, true, r.d.By); err != nil {
+			if _, err := sources.SetPaused(r.ctx, r.d.Store, src.ID, true, r.d.By); err != nil {
 				r.fail(item, err)
 				return
 			}
@@ -410,14 +410,14 @@ func (r *run) indexer(item, name, addr, key, format string, local, clearKey bool
 	// paused, never live with half the change).
 	note := ""
 	if cleanURL(src.URL) != addr || !keySame {
-		if _, err := source.SetPaused(r.ctx, r.d.Store, src.ID, true, r.d.By); err != nil {
+		if _, err := sources.SetPaused(r.ctx, r.d.Store, src.ID, true, r.d.By); err != nil {
 			r.fail(item, err)
 			return
 		}
 		note = changedNote
 	}
-	in := source.Input{Name: src.Name, Format: format, URL: addr, APIKey: key, ClearKey: key == "" && clearKey, AllowLocal: &local}
-	if _, err := source.Change(r.ctx, r.d.Store, r.d.Vault, src.ID, in, r.d.By); err != nil {
+	in := sources.Input{Name: src.Name, Format: format, URL: addr, APIKey: key, ClearKey: key == "" && clearKey, AllowLocal: &local}
+	if _, err := sources.Change(r.ctx, r.d.Store, r.d.Vault, src.ID, in, r.d.By); err != nil {
 		r.fail(item, err)
 		return
 	}

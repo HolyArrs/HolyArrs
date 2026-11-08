@@ -28,7 +28,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
 )
 
 // Roadmap #139 on the lab, from a throwaway container in the lab network
@@ -112,7 +112,7 @@ func TestLabAskLiveProgress(t *testing.T) {
 	lib := &library.Service{Store: s, Queue: q, Metadata: md}
 	m := &downloader.Manager{Store: s, SavePath: filepath.Join("/data/downloads/incomplete", cat)}
 	im := &importer.Importer{Store: s}
-	sr := &source.Searcher{Store: s, Queue: q, OnChosen: func(ctx context.Context, slotID, releaseID int64) {
+	sr := &sources.Searcher{Store: s, Queue: q, OnChosen: func(ctx context.Context, slotID, releaseID int64) {
 		_, _, _ = q.Enqueue(ctx, downloader.KindGrab, &domain.Subject{Type: "slot", ID: slotID}, map[string]any{"release_id": releaseID}, fmt.Sprintf("grab:%d", slotID), domain.System)
 	}}
 	m.OnFinished = func(ctx context.Context, id int64) {
@@ -181,7 +181,7 @@ func TestLabAskLiveProgress(t *testing.T) {
 		Searches  json.RawMessage `json:"searches"`
 		Downloads json.RawMessage `json:"downloads"`
 		Ask       map[string]any  `json:"ask"`
-		search    []SearchView
+		search    []sources.SearchView
 		rows      []DownloadRow
 	}
 	var snaps []snap
@@ -191,7 +191,7 @@ func TestLabAskLiveProgress(t *testing.T) {
 		x.Searches = do(t, "GET", srv.URL+"/api/v1/searches", "", 200)
 		x.Downloads = do(t, "GET", srv.URL+"/api/v1/downloads/view", "", 200)
 		var sv struct {
-			Running []SearchView `json:"running"`
+			Running []sources.SearchView `json:"running"`
 		}
 		_ = json.Unmarshal(x.Searches, &sv)
 		var dv struct {
@@ -238,7 +238,7 @@ func TestLabAskLiveProgress(t *testing.T) {
 			}
 		}
 		for _, r := range x.search {
-			if r.Kind != source.KindFeedCheck && r.TitleID != nil {
+			if r.Kind != jobs.KindFeedCheck && r.TitleID != nil {
 				sawSearch = true
 			}
 		}

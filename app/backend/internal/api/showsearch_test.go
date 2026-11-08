@@ -9,8 +9,9 @@ import (
 	"testing"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
 )
 
 // Show search over HTTP (stage 3.2): the existing search routes take an
@@ -61,18 +62,18 @@ func TestShowSearchOverHTTP(t *testing.T) {
 	// The whole show: one season search for season 1 (season 2 has not
 	// aired, specials are not kept up to date).
 	js := jobOf(do(t, "POST", tu+"/search", "", 202))
-	if len(js) != 1 || js[0].Kind != source.KindSearchSeason || js[0].Params["kept_only"] != true || js[0].Params["by_hand"] != true {
+	if len(js) != 1 || js[0].Kind != jobs.KindSearchSeason || js[0].Params["kept_only"] != true || js[0].Params["by_hand"] != true {
 		t.Fatalf("whole show %+v", js)
 	}
 	seasonJob := js[0]
 	// A season to choose from.
 	js = jobOf(do(t, "POST", tu+"/search", `{"season":1,"choose":false}`, 202))
-	if len(js) != 1 || js[0].Kind != source.KindSearchSeason || js[0].Params["choose"] != false || js[0].ID == seasonJob.ID {
+	if len(js) != 1 || js[0].Kind != jobs.KindSearchSeason || js[0].Params["choose"] != false || js[0].ID == seasonJob.ID {
 		t.Fatalf("season list %+v", js)
 	}
 	// One episode, by its episode or its Slot.
 	js = jobOf(do(t, "POST", tu+"/search", fmt.Sprintf(`{"item_id":%d}`, e1.ID), 202))
-	if len(js) != 1 || js[0].Kind != source.KindSearchSlot || js[0].Subject.ID != s1 || js[0].Params["by_hand"] != true {
+	if len(js) != 1 || js[0].Kind != jobs.KindSearchSlot || js[0].Subject.ID != s1 || js[0].Params["by_hand"] != true {
 		t.Fatalf("episode %+v", js)
 	}
 	js = jobOf(do(t, "POST", tu+"/search", fmt.Sprintf(`{"slot_id":%d,"choose":false}`, s2), 202))
@@ -111,8 +112,8 @@ func TestShowSearchOverHTTP(t *testing.T) {
 	}
 	_ = srcID
 	var list struct {
-		Releases []ReleaseView `json:"releases"`
-		Total    int           `json:"total"`
+		Releases []sources.ReleaseView `json:"releases"`
+		Total    int                   `json:"total"`
 	}
 	_ = json.Unmarshal(do(t, "GET", tu+"/releases?season=1", "", 200), &list)
 	if list.Total != 1 || list.Releases[0].Episode != "S01E01, S01E02" || !slices.Equal(list.Releases[0].SlotIDs, []int64{s1, s2}) ||
@@ -130,15 +131,15 @@ func TestShowSearchOverHTTP(t *testing.T) {
 	do(t, "GET", tu+"/releases?season=x", "", 400)
 
 	// Turned down for S01E02 only.
-	var v ReleaseView
+	var v sources.ReleaseView
 	_ = json.Unmarshal(do(t, "POST", fmt.Sprintf("%s/releases/%d/turn-down", u, relID), fmt.Sprintf(`{"reason":"bad audio","slot_id":%d}`, s2), 200), &v)
 	if v.State != "turned_down" || v.TurnedDownFor != "S01E02" || v.SlotID == nil || *v.SlotID != s2 {
 		t.Fatalf("turned down %+v", v)
 	}
 	do(t, "POST", fmt.Sprintf("%s/releases/%d/turn-down", u, relID), `{"slot_id":99999}`, 400)
 	var td struct {
-		Releases []ReleaseView `json:"releases"`
-		Total    int           `json:"total"`
+		Releases []sources.ReleaseView `json:"releases"`
+		Total    int                   `json:"total"`
 	}
 	_ = json.Unmarshal(do(t, "GET", u+"/turned-down", "", 200), &td)
 	if td.Total != 1 || td.Releases[0].TurnedDownFor != "S01E02" || td.Releases[0].TitleName != "Lab Show" {
@@ -147,7 +148,7 @@ func TestShowSearchOverHTTP(t *testing.T) {
 
 	// Home names the season search.
 	var home struct {
-		Recent []SearchView `json:"recent"`
+		Recent []sources.SearchView `json:"recent"`
 	}
 	_ = json.Unmarshal(do(t, "GET", u+"/searches", "", 200), &home)
 	found := false

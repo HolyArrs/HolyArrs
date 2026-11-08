@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
 )
 
 // Connect Jackett or Prowlarr (#96), through the API, against fakes on this machine.
@@ -77,19 +78,19 @@ func TestBridgeJackettConnectCheckDisconnect(t *testing.T) {
 		}
 	}
 
-	var v BridgeView
+	var v sources.BridgeView
 	_ = json.Unmarshal(do(t, "POST", srv.URL+"/api/v1/bridges", `{"kind":"jackett","url":"`+j.URL+`","key":"`+bridgeJackettKey+`"}`, 201), &v)
 	if v.Kind != "jackett" || v.URL != j.URL || v.Sites != 2 || v.Sources != 2 || v.LastCheck == nil || v.LastError != "" {
 		t.Fatalf("connect %+v", v)
 	}
 	// Connecting the same Jackett again takes its key; it is still one connection.
-	var again BridgeView
+	var again sources.BridgeView
 	_ = json.Unmarshal(do(t, "POST", srv.URL+"/api/v1/bridges", `{"kind":"jackett","url":"`+j.URL+`/","key":"`+bridgeJackettKey+`"}`, 201), &again)
 	if again.ID != v.ID || again.Sources != 2 {
 		t.Fatalf("reconnect %+v", again)
 	}
 	var list struct {
-		Bridges []BridgeView `json:"bridges"`
+		Bridges []sources.BridgeView `json:"bridges"`
 	}
 	_ = json.Unmarshal(do(t, "GET", srv.URL+"/api/v1/bridges", "", 200), &list)
 	if len(list.Bridges) != 1 || list.Bridges[0].ID != v.ID {
@@ -321,7 +322,7 @@ func TestBridgeProwlarrConnectUsesTheOldAppSync(t *testing.T) {
 	if st != 201 {
 		t.Fatalf("connect %d %s", st, out)
 	}
-	var v BridgeView
+	var v sources.BridgeView
 	_ = json.Unmarshal([]byte(out), &v)
 	if v.Kind != "prowlarr" || v.Sources != 2 || v.CallbackURL != f.srv.URL || v.LastError != "" {
 		t.Fatalf("view %+v", v)

@@ -19,7 +19,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
@@ -544,9 +544,9 @@ func (e *Engine) sources(ctx context.Context) ([]Result, error) {
 	}
 	var out []Result
 	for _, s := range ss {
-		h := source.HealthOf(s)
+		h := sources.HealthOf(s)
 		r := Result{Key: "source:" + strconv.FormatInt(s.ID, 10), Kind: "source", Subject: s.Name, State: OK}
-		if h.State == source.StateUnreachable || h.State == source.StateAuthFailed {
+		if h.State == sources.StateUnreachable || h.State == sources.StateAuthFailed {
 			r.State, r.Message = Warning, "Source "+s.Name+": "+h.Text
 		}
 		out = append(out, r)
