@@ -237,3 +237,65 @@ func TestLocalArtist_EmptyPackageIsNoAnswerAndWanted(t *testing.T) {
 		t.Fatalf("wants %v", src.wants)
 	}
 }
+
+// cursorSource serves two packages a page and fails every request after
+// failAfter of them, so a copy stops half way.
+type cursorSource struct {
+	pkgs      []json.RawMessage
+	failAfter int
+	asked     []int64
+}
+
+func (f *cursorSource) MusicPackages(_ context.Context, since int64, limit int) (metadata.PackagePage, error) {
+	f.asked = append(f.asked, since)
+	if len(f.asked) > f.failAfter {
+		return metadata.PackagePage{}, fmt.Errorf("server went away")
+	}
+	var out []json.RawMessage
+	next := since
+	for v := since + 1; v <= int64(len(f.pkgs)) && len(out) < 2; v++ {
+		out = append(out, f.pkgs[v-1])
+		next = v
+	}
+	return metadata.PackagePage{SchemaVersion: 1, Since: since, Next: next, More: next < int64(len(f.pkgs)), Latest: int64(len(f.pkgs)), Packages: out}, nil
+}
+
+func (f *cursorSource) WantMusicPackage(context.Context, string) error { return nil }
+
+func savedCursor(t *testing.T, st *database.Store) int64 {
+	t.Helper()
+	var c int64
+	if err := st.Read().QueryRow("SELECT cursor FROM music_package_sync WHERE id = 1").Scan(&c); err != nil {
+		t.Fatal(err)
+	}
+	return c
+}
+
+func TestSyncOnce_ResumesFromSavedCursor(t *testing.T) {
+	picGap = 0
+	st := openStore(t)
+	src := &cursorSource{failAfter: 1}
+	for i := 1; i <= 5; i++ {
+		src.pkgs = append(src.pkgs, pkgJSON(i, int64(i), i))
+	}
+	ctx := context.Background()
+	first := &PackageSync{Store: st, Source: src}
+	if n, err := first.SyncOnce(ctx); err == nil || n != 2 {
+		t.Fatalf("first run changed %d err %v", n, err)
+	}
+	if c := savedCursor(t, st); c != 2 {
+		t.Fatalf("saved cursor %d, want 2", c)
+	}
+	// A new copier on the same store carries on from the saved cursor.
+	src.asked, src.failAfter = nil, 99
+	second := &PackageSync{Store: st, Source: src}
+	if n, err := second.SyncOnce(ctx); err != nil || n != 3 {
+		t.Fatalf("second run changed %d err %v", n, err)
+	}
+	if len(src.asked) == 0 || src.asked[0] != 2 {
+		t.Fatalf("second run asked %v, want to start at 2", src.asked)
+	}
+	if c := savedCursor(t, st); c != 5 {
+		t.Fatalf("saved cursor %d, want 5", c)
+	}
+}
