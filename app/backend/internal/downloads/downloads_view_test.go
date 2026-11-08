@@ -1,4 +1,4 @@
-package api
+package downloads
 
 import (
 	"context"
@@ -19,7 +19,6 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 )
 
 // countDriver wraps the SQLite driver and counts every query it runs.
@@ -112,15 +111,15 @@ func pointQB(t *testing.T, x *dl41, url string) {
 	exec41(t, x.s, "UPDATE downloaders SET url = ?", url)
 	var id int64
 	_ = x.s.Read().QueryRow("SELECT id FROM downloaders LIMIT 1").Scan(&id)
-	x.api.dl.Manager().Forget(id)
+	x.dl.Manager().Forget(id)
 }
 
 type viewAnswer struct {
-	Downloads    []downloads.DownloadRow  `json:"downloads"`
-	Totals       downloads.DownloadTotals `json:"totals"`
-	Clients      []downloads.ClientHealth `json:"clients"`
-	OutsideTotal int                      `json:"outside_total"`
-	NextCursor   string                   `json:"next_cursor"`
+	Downloads    []DownloadRow  `json:"downloads"`
+	Totals       DownloadTotals `json:"totals"`
+	Clients      []ClientHealth `json:"clients"`
+	OutsideTotal int            `json:"outside_total"`
+	NextCursor   string         `json:"next_cursor"`
 }
 
 func view(t *testing.T, url string) viewAnswer {
@@ -148,7 +147,7 @@ func TestDownloadsViewHungClient(t *testing.T) {
 	t.Cleanup(hang.Close)
 	t.Cleanup(func() { close(stop) })
 	pointQB(t, x, hang.URL)
-	x.api.dl.DLSync = &downloads.Sync{Store: &downloads.Store{}, DB: x.s}
+	x.dl.DLSync = &Sync{Store: &Store{}, DB: x.s}
 	var worst time.Duration
 	var last viewAnswer
 	for range 20 {
@@ -174,12 +173,12 @@ func TestDownloadsViewStaleClient(t *testing.T) {
 	t.Parallel()
 	x := seed41(t, mediafiles.SlotDownloading, "downloading")
 	pointQB(t, x, qbList(t, outsideTorrents(3, 0)).URL)
-	feedStore(t, x.api)
+	feedStore(t, x.dl)
 	if v := view(t, x.srv.URL+"/api/v1/downloads/view"); v.OutsideTotal != 3 || v.Clients[0].Health != "ok" {
 		t.Fatalf("first %+v", v.Clients)
 	}
 	pointQB(t, x, "http://127.0.0.1:1")
-	feedStore(t, x.api) // the background read fails
+	feedStore(t, x.dl) // the background read fails
 	v := view(t, x.srv.URL+"/api/v1/downloads/view")
 	if v.Clients[0].Health != "offline" || !v.Clients[0].Stale || v.OutsideTotal != 3 {
 		t.Fatalf("after %+v outside %d", v.Clients, v.OutsideTotal)
@@ -208,8 +207,8 @@ func TestDownloadsViewQueryCount(t *testing.T) {
 		t.Fatal(err)
 	}
 	pointQB(t, x, qbList(t, `[]`).URL)
-	feedStore(t, x.api)
-	x.api.dl.ViewDB = countingPool(t, x.s)
+	feedStore(t, x.dl)
+	x.dl.ViewDB = countingPool(t, x.s)
 	view(t, x.srv.URL+"/api/v1/downloads/view")
 	before := countReads.Load()
 	v := view(t, x.srv.URL+"/api/v1/downloads/view")
@@ -225,7 +224,7 @@ func TestDownloadsViewQueryCount(t *testing.T) {
 	// With outside rows, the count does not grow with how many there are.
 	count := func(n int) int64 {
 		pointQB(t, x, qbList(t, outsideTorrents(n, 0)).URL)
-		feedStore(t, x.api)
+		feedStore(t, x.dl)
 		view(t, x.srv.URL+"/api/v1/downloads/view")
 		b := countReads.Load()
 		if got := view(t, x.srv.URL+"/api/v1/downloads/view"); got.OutsideTotal != n {
@@ -247,7 +246,7 @@ func TestDownloadsViewTotalsIncludeSeeding(t *testing.T) {
 	x := seed41(t, mediafiles.SlotInLibrary, "seeding")
 	exec41(t, x.s, "UPDATE downloads SET up_speed = 100, speed = 0")
 	pointQB(t, x, qbList(t, outsideTorrents(250, 10)).URL)
-	feedStore(t, x.api)
+	feedStore(t, x.dl)
 	v := view(t, x.srv.URL+"/api/v1/downloads/view")
 	if v.Totals.UpSpeed != 100+250*10 || v.Totals.Speed != 0 {
 		t.Fatalf("totals %+v", v.Totals)
@@ -259,7 +258,7 @@ func TestDownloadsViewPagesOutsideRows(t *testing.T) {
 	t.Parallel()
 	x := seed41(t, mediafiles.SlotDownloading, "downloading")
 	pointQB(t, x, qbList(t, outsideTorrents(450, 0)).URL)
-	feedStore(t, x.api)
+	feedStore(t, x.dl)
 	seen := map[string]bool{}
 	cursor, pages := "", 0
 	for {
@@ -276,7 +275,7 @@ func TestDownloadsViewPagesOutsideRows(t *testing.T) {
 				own++
 			}
 		}
-		if own != 1 || out > downloads.OutsideCap || v.OutsideTotal != 450 {
+		if own != 1 || out > OutsideCap || v.OutsideTotal != 450 {
 			t.Fatalf("page %d: own %d outside %d total %d", pages, own, out, v.OutsideTotal)
 		}
 		pages++

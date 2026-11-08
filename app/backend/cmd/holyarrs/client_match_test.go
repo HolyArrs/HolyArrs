@@ -1,4 +1,4 @@
-package api
+package main
 
 import (
 	"context"
@@ -64,15 +64,6 @@ func addQB(t *testing.T, st *database.Store, url string) int64 {
 	return id
 }
 
-func count(t *testing.T, st *database.Store, q string, args ...any) int {
-	t.Helper()
-	var n int
-	if err := st.Read().QueryRow(q, args...).Scan(&n); err != nil {
-		t.Fatal(err)
-	}
-	return n
-}
-
 // route: GET /api/v1/downloads/matches
 // route: POST /api/v1/downloads/matches/run
 // route: POST /api/v1/downloads/matches/{id}/pick
@@ -80,10 +71,10 @@ func TestClientMatchLinksAndConfirms(t *testing.T) {
 	t.Parallel()
 	r := newAskRig(t)
 	addQB(t, r.st, mediaClient(t).URL)
-	md := r.api.s.Metadata
+	md := r.md
 	var mu sync.Mutex
 	lookups := 0
-	r.api.dl.Match.SearchMovies = func(ctx context.Context, name string, year int) ([]metadata.Movie, error) {
+	r.api.DownloadsWeb().Match.SearchMovies = func(ctx context.Context, name string, year int) ([]metadata.Movie, error) {
 		mu.Lock()
 		lookups++
 		mu.Unlock()
