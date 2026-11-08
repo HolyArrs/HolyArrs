@@ -131,17 +131,8 @@ func (a *API) StartExplore(ctx context.Context) {
 	go jobs.Guard("explore-service-top-warm", func() { a.warmServiceTop(warm) })
 	go jobs.Guard("explore-genre-warm", func() { a.warmGenres(warm) })
 	startBackdropDark(ctx)
-	a.mh().StartSync(ctx)
+	a.mh().Start(ctx) // the music sync and catalog bundle warm
 	go jobs.Guard("explore-browse-warm", func() { a.warmBrowse(warm) })
-	if a.mh().TplOn() {
-		// The music catalog bundle is read once at start, so the first music
-		// page does not wait for its download.
-		go jobs.Guard("music-bundle-warm", func() {
-			// Then every engine page's covers are stored ahead (musicpreload.go):
-			// the household's own region joins when its pages are first asked.
-			a.mh().TplPreload(a.mh().Bundle(ctx, time.Now().UTC()), "us")
-		})
-	}
 }
 
 // exploreOnEvent marks pools stale: an ask (or joining one) marks the
