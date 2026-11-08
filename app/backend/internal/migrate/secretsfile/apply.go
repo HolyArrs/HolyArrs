@@ -364,7 +364,8 @@ func (r *run) indexers() {
 
 func (r *run) indexer(item, name, addr, key, format string, local, clearKey bool) {
 	var src domain.Source
-	err := r.d.Store.Read().QueryRowContext(r.ctx, "SELECT id FROM sources WHERE name = ? COLLATE NOCASE", name).Scan(&src.ID)
+	var err error
+	src.ID, err = sourceIDByName(r.ctx, r.d.Store.Read(), name)
 	if errors.Is(err, sql.ErrNoRows) {
 		if r.dry {
 			r.done(item, "paused until you check and resume it")
@@ -441,10 +442,7 @@ var testFailCreate func(table string) error
 // moment exists where it is active.
 func createdPaused(table string) func(tx *sql.Tx, id int64) error {
 	return func(tx *sql.Tx, id int64) error {
-		if _, err := tx.Exec("UPDATE "+table+" SET state = 'disabled' WHERE id = ?", id); err != nil {
-			return err
-		}
-		if _, err := tx.Exec("INSERT OR REPLACE INTO import_created (tbl, item_id, live) VALUES (?, ?, 1)", table, id); err != nil {
+		if err := markPaused(tx, table, id); err != nil {
 			return err
 		}
 		if testFailCreate != nil {
@@ -457,9 +455,7 @@ func createdPaused(table string) func(tx *sql.Tx, id int64) error {
 // importCreated says whether the import made this item and the owner has
 // not resumed it since.
 func (r *run) importCreated(table string, id int64) bool {
-	var n int
-	_ = r.d.Store.Read().QueryRowContext(r.ctx, "SELECT count(*) FROM import_created WHERE tbl = ? AND item_id = ? AND live = 1", table, id).Scan(&n)
-	return n > 0
+	return importMade(r.ctx, r.d.Store.Read(), table, id) > 0
 }
 
 // --- Downloaders --------------------------------------------------------
@@ -510,8 +506,8 @@ func (r *run) downloaderItem(item, adapter, name, addr, user, secret string, loc
 		return
 	}
 	var d domain.Downloader
-	err := r.d.Store.Read().QueryRowContext(r.ctx, `SELECT id FROM downloaders WHERE removed = 0 AND adapter = ? AND (url = ? OR name = ? COLLATE NOCASE)
-		ORDER BY url = ? DESC, id LIMIT 1`, adapter, addr, name, addr).Scan(&d.ID)
+	var err error
+	d.ID, err = downloaderID(r.ctx, r.d.Store.Read(), adapter, addr, name)
 	if errors.Is(err, sql.ErrNoRows) {
 		if r.dry {
 			r.done(item, "paused until you check and resume it")
@@ -592,8 +588,8 @@ func (r *run) mediaServer(item, kind, name, addr, tok string, local bool) {
 		return
 	}
 	var m domain.MediaServer
-	err := r.d.Store.Read().QueryRowContext(r.ctx, `SELECT id FROM media_servers WHERE kind = ? AND (url = ? OR name = ? COLLATE NOCASE)
-		ORDER BY url = ? DESC, id LIMIT 1`, kind, addr, name, addr).Scan(&m.ID)
+	var err error
+	m.ID, err = mediaServerID(r.ctx, r.d.Store.Read(), kind, addr, name)
 	if errors.Is(err, sql.ErrNoRows) {
 		if r.dry {
 			r.done(item, "off until you test it and turn it on")
@@ -743,7 +739,8 @@ func (r *run) smtp() {
 // changes the one of that name and kind.
 func (r *run) alert(item string, in alerts.Input, same func(domain.Alert) bool) {
 	var a domain.Alert
-	err := r.d.Store.Read().QueryRowContext(r.ctx, "SELECT id FROM alerts WHERE name = ? COLLATE NOCASE AND kind = ?", in.Name, in.Kind).Scan(&a.ID)
+	var err error
+	a.ID, err = alertID(r.ctx, r.d.Store.Read(), in.Name, in.Kind)
 	if errors.Is(err, sql.ErrNoRows) {
 		if r.dry {
 			r.done(item, "off until you test it and turn it on")

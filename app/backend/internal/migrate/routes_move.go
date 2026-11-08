@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
@@ -178,7 +179,7 @@ func (h *Handlers) getMove(w http.ResponseWriter, r *http.Request) {
 		job = mv.UndoJobID
 	}
 	if job != 0 {
-		_ = h.Store.Read().QueryRowContext(r.Context(), "SELECT progress, COALESCE(progress_note, '') FROM jobs WHERE id = ?", job).Scan(&progress, &note)
+		progress, note, _ = jobs.ProgressOf(r.Context(), h.Store.Read(), job)
 	}
 	if mv.State == "done" || mv.State == "undone" {
 		progress = 1

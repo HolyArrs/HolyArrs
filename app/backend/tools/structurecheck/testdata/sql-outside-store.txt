@@ -40,8 +40,6 @@ app/backend/internal/api/kid.go
 app/backend/internal/api/library_summary.go
 app/backend/internal/api/libraryfacts.go
 app/backend/internal/api/mcp.go
-app/backend/internal/api/migrate.go
-app/backend/internal/api/moves.go
 app/backend/internal/api/music.go
 app/backend/internal/api/musicpages.go
 app/backend/internal/api/musicsearch.go
@@ -134,8 +132,6 @@ app/backend/internal/importer/manual.go
 app/backend/internal/importer/rules.go
 app/backend/internal/importer/shows.go
 app/backend/internal/importer/upgrade.go
-app/backend/internal/importsecrets/apply.go
-app/backend/internal/importsecrets/movecreds.go
 app/backend/internal/library/addshow.go
 app/backend/internal/library/adopt.go
 app/backend/internal/library/adoptcopy.go
@@ -172,7 +168,7 @@ app/backend/internal/lists/lists.go
 app/backend/internal/lists/sync.go
 app/backend/internal/mediaserver/mediaserver.go
 app/backend/internal/migrate/apply.go
-app/backend/internal/migrate/files.go
+app/backend/internal/migrate/backup_files.go
 app/backend/internal/musicsync/musicsync.go
 app/backend/internal/naming/naming.go
 app/backend/internal/parts/control.go

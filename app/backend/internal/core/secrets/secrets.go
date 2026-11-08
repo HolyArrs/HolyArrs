@@ -364,6 +364,12 @@ func (v *Vault) Delete(ctx context.Context, id int64) error {
 // DeleteTx removes secrets inside the caller's transaction. Ids that do not
 // exist are skipped.
 func (v *Vault) DeleteTx(ctx context.Context, q database.Execer, ids ...int64) error {
+	return DeleteIDs(ctx, q, ids...)
+}
+
+// DeleteIDs removes secrets by id inside the caller's transaction, for code
+// that holds no Vault. Ids that do not exist are skipped.
+func DeleteIDs(ctx context.Context, q database.Execer, ids ...int64) error {
 	if len(ids) == 0 {
 		return nil
 	}

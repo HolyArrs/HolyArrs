@@ -83,9 +83,7 @@ func SaveMoveCredential(ctx context.Context, st *database.Store, v *secrets.Vaul
 			return err
 		}
 		ab, _ := json.Marshal(by)
-		_, err = tx.ExecContext(ctx, "INSERT INTO move_credentials (kind, secret_id, created_at, created_by) VALUES (?, ?, ?, ?)",
-			kind, id, database.FormatTime(time.Now()), string(ab))
-		return err
+		return insertMoveCredential(ctx, tx, kind, id, database.FormatTime(time.Now()), string(ab))
 	})
 }
 
@@ -108,8 +106,7 @@ func ReadMoveCredentialVersion(ctx context.Context, st *database.Store, v *secre
 	if v == nil || !validMoveKind(kind) {
 		return c, MoveCredentialVersion{}, false, nil
 	}
-	var id int64
-	err := st.Read().QueryRowContext(ctx, "SELECT secret_id FROM move_credentials WHERE kind = ?", kind).Scan(&id)
+	id, err := moveCredentialSecret(ctx, st.Read(), kind)
 	if errors.Is(err, sql.ErrNoRows) {
 		return c, MoveCredentialVersion{}, false, nil
 	}
@@ -148,19 +145,17 @@ func ListMoveCredentials(ctx context.Context, st *database.Store, v *secrets.Vau
 }
 
 func dropMove(ctx context.Context, tx *sql.Tx, kind string) error {
-	var id int64
-	err := tx.QueryRowContext(ctx, "SELECT secret_id FROM move_credentials WHERE kind = ?", kind).Scan(&id)
+	id, err := moveCredentialSecret(ctx, tx, kind)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil
 	}
 	if err != nil {
 		return err
 	}
-	if _, err := tx.ExecContext(ctx, "DELETE FROM secrets WHERE id = ?", id); err != nil {
+	if err := secrets.DeleteIDs(ctx, tx, id); err != nil {
 		return err
 	}
-	_, err = tx.ExecContext(ctx, "DELETE FROM move_credentials WHERE kind = ?", kind)
-	return err
+	return deleteMoveCredential(ctx, tx, kind)
 }
 
 // ForgetMoveCredential deletes one old app's credential (kind) or, with
@@ -172,8 +167,8 @@ func ForgetMoveCredential(ctx context.Context, st *database.Store, kind string) 
 			if kind != "" && k != kind {
 				continue
 			}
-			var has int
-			if err := tx.QueryRowContext(ctx, "SELECT count(*) FROM move_credentials WHERE kind = ?", k).Scan(&has); err != nil {
+			has, err := countMoveCredentials(ctx, tx, k)
+			if err != nil {
 				return err
 			}
 			if has == 0 {

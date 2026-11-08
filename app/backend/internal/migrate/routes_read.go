@@ -190,8 +190,8 @@ func (h *Handlers) keepMoveKey(r *http.Request, src Source, usedSaved secretsfil
 
 // movesDone counts the finished moves (-2 when it can't be read).
 func (h *Handlers) movesDone(ctx context.Context) int {
-	n := 0
-	if err := h.Store.Read().QueryRowContext(ctx, "SELECT count(*) FROM moves WHERE state = 'done'").Scan(&n); err != nil {
+	n, err := CountDoneMoves(ctx, h.Store.Read())
+	if err != nil {
 		return -2
 	}
 	return n
@@ -246,8 +246,7 @@ func (h *Handlers) deleteSnapshot(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	var kind string
-	_ = h.Store.Read().QueryRowContext(r.Context(), "SELECT app_kind FROM migrate_snapshots WHERE id = ?", id).Scan(&kind)
+	kind, _ := SnapshotKind(r.Context(), h.Store.Read(), id)
 	if err := Delete(r.Context(), h.Store, id); err != nil {
 		if errors.Is(err, ErrNoSnapshot) {
 			webserver.Fail(w, http.StatusNotFound, err.Error())
