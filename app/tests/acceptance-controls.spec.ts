@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { owner, signIn } from './helpers.ts';
 
-// The lab qBittorrent's address as the app sees it, e.g. http://192.0.2.10:18708.
+// The lab qBittorrent's address as the app sees it, e.g. http://192.168.1.10:18708.
 const LAB_QBIT = process.env.HOLYARRS_LAB_QBIT_URL ?? '';
 
 test('the Downloaders Test button reaches the preserved lab qBittorrent with its API key', async ({ page }) => {

@@ -14,7 +14,7 @@ describe('fastEnough', () => {
 });
 
 describe('ownAddress', () => {
-	const o = 'http://192.0.2.10:18729';
+	const o = 'http://192.168.1.10:18729';
 	it('keeps our own paths and same-origin addresses', () => {
 		expect(ownAddress('/api/v1/music/art/cover/x?size=500', o)).toBe(true);
 		expect(ownAddress(`${o}/api/v1/pictures/1`, o)).toBe(true);
