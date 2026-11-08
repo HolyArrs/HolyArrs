@@ -9,15 +9,15 @@ import (
 // AI limits per key: reads a minute, actions an hour, and how long a
 // confirm token lives.
 const (
-	ReadsPerMin    = 60
-	ActsPerHour    = 5
-	aiConfirmFor   = 5 * time.Minute
-	TextMax        = 300
-	aiListMax      = 25
-	aiBodyMax      = 64 << 10
-	aiClientsMax   = 1000
-	aiTokensMax    = 1000
-	aiArgsLogLimit = 500
+	ReadsPerMin  = 60
+	ActsPerHour  = 5
+	confirmFor   = 5 * time.Minute
+	TextMax      = 300
+	listMax      = 25
+	bodyMax      = 64 << 10
+	clientsMax   = 1000
+	tokensMax    = 1000
+	argsLogLimit = 500
 )
 
 // Limits is what AI connections keep in memory: use counts per key, the
@@ -26,13 +26,13 @@ type Limits struct {
 	mu      sync.Mutex
 	Reads   map[int64][]time.Time
 	Acts    map[int64][]time.Time
-	tokens  map[string]aiToken
+	tokens  map[string]token
 	clients map[int64]string
 	now     func() time.Time
 }
 
-// aiToken is one confirm step waiting for its second call.
-type aiToken struct {
+// token is one confirm step waiting for its second call.
+type token struct {
 	user, key int64
 	tool      string
 	args      string
@@ -46,7 +46,7 @@ func (s *Limits) clock() time.Time {
 	return time.Now()
 }
 
-// allow counts one use against the limit in the window, and when full
+// Allow counts one use against the limit in the window, and when full
 // says how long until the oldest use leaves it.
 func (s *Limits) Allow(m *map[int64][]time.Time, key int64, limit int, window time.Duration) (bool, time.Duration) {
 	s.mu.Lock()
@@ -71,13 +71,13 @@ func (s *Limits) Allow(m *map[int64][]time.Time, key int64, limit int, window ti
 
 // rememberClient keeps the client's name per key for History.
 func (h *Handlers) rememberClient(key int64, name string) {
-	name = aiClean(name, 60)
+	name = clean(name, 60)
 	if name == "" {
 		return
 	}
 	h.mu.Lock()
 	defer h.mu.Unlock()
-	if h.clients == nil || len(h.clients) > aiClientsMax {
+	if h.clients == nil || len(h.clients) > clientsMax {
 		h.clients = map[int64]string{}
 	}
 	if _, known := h.clients[key]; !known || !strings.Contains(name, "/") {

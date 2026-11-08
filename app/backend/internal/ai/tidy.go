@@ -7,9 +7,9 @@ import (
 	"unicode/utf8"
 )
 
-// aiDrop are answer fields an AI never needs: pictures, links, file paths
+// drop are answer fields an AI never needs: pictures, links, file paths
 // and other bulk.
-var aiDrop = []string{"poster", "backdrop", "artwork", "art", "logo", "still", "photo", "picture", "image", "thumb", "avatar",
+var drop = []string{"poster", "backdrop", "artwork", "art", "logo", "still", "photo", "picture", "image", "thumb", "avatar",
 	"url", "path", "hash", "cover", "trailer", "color", "colour", "client_item", "streaming", "fresh", "swarm", "files", "links", "blur"}
 
 // Tidy keeps an answer small and safe to hand an AI: no picture or link
@@ -23,18 +23,18 @@ func Tidy(v any, depth int) any {
 		out := map[string]any{}
 		for k, val := range x {
 			lk := strings.ToLower(k)
-			if slices.ContainsFunc(aiDrop, func(d string) bool { return strings.Contains(lk, d) }) {
+			if slices.ContainsFunc(drop, func(d string) bool { return strings.Contains(lk, d) }) {
 				continue
 			}
 			if t := Tidy(val, depth+1); t != nil {
-				out[aiClean(k, 64)] = t
+				out[clean(k, 64)] = t
 			}
 		}
 		return out
 	case []any:
 		out := []any{}
 		for _, val := range x {
-			if len(out) == aiListMax {
+			if len(out) == listMax {
 				break
 			}
 			if t := Tidy(val, depth+1); t != nil {
@@ -43,14 +43,14 @@ func Tidy(v any, depth int) any {
 		}
 		return out
 	case string:
-		return aiClean(x, TextMax)
+		return clean(x, TextMax)
 	}
 	return v
 }
 
-// aiClean drops control and invisible (zero-width, direction) characters
+// clean drops control and invisible (zero-width, direction) characters
 // and cuts s to max characters.
-func aiClean(s string, max int) string {
+func clean(s string, max int) string {
 	var b strings.Builder
 	n := 0
 	for _, c := range s {

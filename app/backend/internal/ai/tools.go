@@ -21,9 +21,9 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 )
 
-// aiTool is one tool: off says why it is hidden from this person ("" when
+// toolSpec is one tool: off says why it is hidden from this person ("" when
 // shown), run does the work.
-type aiTool struct {
+type toolSpec struct {
 	name, title, about string
 	action             bool
 	schema             map[string]any
@@ -31,12 +31,12 @@ type aiTool struct {
 	run                func(h *Handlers, r *http.Request, who auth.Who, args map[string]any) (any, error)
 }
 
-// aiFail is a tool error said to the AI in plain words.
-type aiFail struct{ msg string }
+// failure is a tool error said to the AI in plain words.
+type failure struct{ msg string }
 
-func (e aiFail) Error() string { return e.msg }
+func (e failure) Error() string { return e.msg }
 
-func aiObj(props map[string]any, required ...string) map[string]any {
+func object(props map[string]any, required ...string) map[string]any {
 	s := map[string]any{"type": "object", "properties": props, "additionalProperties": false}
 	if len(required) > 0 {
 		s["required"] = required
@@ -45,13 +45,13 @@ func aiObj(props map[string]any, required ...string) map[string]any {
 }
 
 var (
-	aiStrProp = func(about string) map[string]any { return map[string]any{"type": "string", "description": about} }
-	aiIntProp = func(about string) map[string]any { return map[string]any{"type": "integer", "description": about} }
-	aiTokProp = aiStrProp("Leave out on the first call. Send the confirm_token from the first answer after the person agreed.")
+	strProp = func(about string) map[string]any { return map[string]any{"type": "string", "description": about} }
+	intProp = func(about string) map[string]any { return map[string]any{"type": "integer", "description": about} }
+	tokProp = strProp("Leave out on the first call. Send the confirm_token from the first answer after the person agreed.")
 )
 
 // Who may see a tool.
-func aiMediaOff(h *Handlers, _ auth.Who) string {
+func mediaOff(h *Handlers, _ auth.Who) string {
 	for _, p := range []parts.Part{parts.Movies, parts.Shows, parts.Music} {
 		if h.partOn(p) {
 			return ""
@@ -60,14 +60,14 @@ func aiMediaOff(h *Handlers, _ auth.Who) string {
 	return "Movies, TV shows and Music are off"
 }
 
-func aiAsksOff(h *Handlers, who auth.Who) string {
+func asksOff(h *Handlers, who auth.Who) string {
 	if !h.partOn(parts.Wishlist) {
 		return "Requests is off"
 	}
 	return ""
 }
 
-func aiNeedPerm(p auth.Perm, base func(*Handlers, auth.Who) string) func(*Handlers, auth.Who) string {
+func needPerm(p auth.Perm, base func(*Handlers, auth.Who) string) func(*Handlers, auth.Who) string {
 	return func(h *Handlers, who auth.Who) string {
 		if why := base(h, who); why != "" {
 			return why
@@ -79,53 +79,53 @@ func aiNeedPerm(p auth.Perm, base func(*Handlers, auth.Who) string) func(*Handle
 	}
 }
 
-func aiAlways(*Handlers, auth.Who) string { return "" }
+func always(*Handlers, auth.Who) string { return "" }
 
-// aiTools lists the tools in a fixed order.
-func (h *Handlers) aiTools() []aiTool {
-	return []aiTool{
+// tools lists the tools in a fixed order.
+func (h *Handlers) tools() []toolSpec {
+	return []toolSpec{
 		{name: "search_titles", title: "Search titles", about: "Find movies and shows in plain words, like \"funny 90s movies\" or \"space movie from 2014\". Returns Library titles and titles that could be asked for.",
-			schema: aiObj(map[string]any{"query": aiStrProp("What to look for, in plain words.")}, "query"), off: aiMediaOff, run: toolSearch},
+			schema: object(map[string]any{"query": strProp("What to look for, in plain words.")}, "query"), off: mediaOff, run: toolSearch},
 		{name: "library_lookup", title: "Look in the Library", about: "Check whether a movie, show or artist is in the Library, by name.",
-			schema: aiObj(map[string]any{"name": aiStrProp("The name to look for."), "kind": map[string]any{"type": "string", "enum": []string{"all", "movie", "show", "music"}}}, "name"),
-			off:    aiMediaOff, run: toolLibrary},
+			schema: object(map[string]any{"name": strProp("The name to look for."), "kind": map[string]any{"type": "string", "enum": []string{"all", "movie", "show", "music"}}}, "name"),
+			off:    mediaOff, run: toolLibrary},
 		{name: "calendar", title: "Calendar", about: "What comes out in the next days: movies and episodes of shows in the Library.",
-			schema: aiObj(map[string]any{"days": aiIntProp("How many days ahead, 1 to 60 (default 14).")}), off: aiMediaOff, run: toolCalendar},
+			schema: object(map[string]any{"days": intProp("How many days ahead, 1 to 60 (default 14).")}), off: mediaOff, run: toolCalendar},
 		{name: "downloads", title: "Downloads", about: "What is downloading now and how far along it is. Read only.",
-			schema: aiObj(map[string]any{}), off: aiAlways, run: toolDownloads},
+			schema: object(map[string]any{}), off: always, run: toolDownloads},
 		{name: "my_asks", title: "My requests", about: "The person's own requests and their state, and how many more they may ask for.",
-			schema: aiObj(map[string]any{}), off: aiAsksOff, run: toolMyAsks},
+			schema: object(map[string]any{}), off: asksOff, run: toolMyAsks},
 		{name: "health", title: "Health", about: "Whether HolyArrs and the apps it uses are working.",
-			schema: aiObj(map[string]any{}), off: aiNeedPerm(auth.PermManageLibrary, aiAlways), run: toolHealth},
+			schema: object(map[string]any{}), off: needPerm(auth.PermManageLibrary, always), run: toolHealth},
 		{name: "ask_for_title", title: "Ask for a title", action: true,
 			about:  "Ask for a movie or show by its TMDB id. The first call returns a summary and a confirm_token; call again with the token after the person agrees.",
-			schema: aiObj(map[string]any{"tmdb_id": aiStrProp("The TMDB id, like 693134."), "kind": map[string]any{"type": "string", "enum": []string{"movie", "show"}}, "confirm_token": aiTokProp}, "tmdb_id"),
-			off:    aiNeedPerm(auth.PermAsk, aiAsksOff), run: toolAsk},
+			schema: object(map[string]any{"tmdb_id": strProp("The TMDB id, like 693134."), "kind": map[string]any{"type": "string", "enum": []string{"movie", "show"}}, "confirm_token": tokProp}, "tmdb_id"),
+			off:    needPerm(auth.PermAsk, asksOff), run: toolAsk},
 	}
 }
 
 // callTool runs one tool; wait is set when the key is over its action limit.
 func (h *Handlers) callTool(r *http.Request, who auth.Who, name string, args map[string]any) (map[string]any, time.Duration) {
-	i := slices.IndexFunc(h.aiTools(), func(t aiTool) bool { return t.name == name })
+	i := slices.IndexFunc(h.tools(), func(t toolSpec) bool { return t.name == name })
 	if i < 0 {
-		return aiToolError("there is no tool called " + aiClean(name, 60)), 0
+		return toolError("there is no tool called " + clean(name, 60)), 0
 	}
-	t := h.aiTools()[i]
+	t := h.tools()[i]
 	if why := t.off(h, who); why != "" {
-		return aiToolError("this tool is not available: " + why + "."), 0
+		return toolError("this tool is not available: " + why + "."), 0
 	}
-	if t.action && aiStr(args, "confirm_token") != "" {
+	if t.action && str(args, "confirm_token") != "" {
 		if ok, wait := h.Allow(&h.Acts, who.KeyID, ActsPerHour, time.Hour); !ok {
 			return nil, wait
 		}
 	}
 	out, err := t.run(h, r, who, args)
 	if err != nil {
-		var f aiFail
+		var f failure
 		if errors.As(err, &f) {
-			return aiToolError(f.msg), 0
+			return toolError(f.msg), 0
 		}
-		return aiToolError("something went wrong; see the HolyArrs log"), 0
+		return toolError("something went wrong; see the HolyArrs log"), 0
 	}
 	data := Tidy(out, 0)
 	m, ok := data.(map[string]any)
@@ -136,12 +136,12 @@ func (h *Handlers) callTool(r *http.Request, who auth.Who, name string, args map
 	return map[string]any{"content": []any{map[string]any{"type": "text", "text": string(text)}}, "structuredContent": m, "isError": false}, 0
 }
 
-func aiToolError(msg string) map[string]any {
+func toolError(msg string) map[string]any {
 	return map[string]any{"content": []any{map[string]any{"type": "text", "text": msg}}, "isError": true}
 }
 
-// aiCall runs one app route as who with only scope, the way the app would.
-func (h *Handlers) aiCall(r *http.Request, who auth.Who, scope, method, path string, body any) (int, any) {
+// call runs one app route as who with only scope, the way the app would.
+func (h *Handlers) call(r *http.Request, who auth.Who, scope, method, path string, body any) (int, any) {
 	var rd io.Reader
 	if body != nil {
 		b, _ := json.Marshal(body)
@@ -163,26 +163,26 @@ func (h *Handlers) aiCall(r *http.Request, who auth.Who, scope, method, path str
 	return rec.Code, v
 }
 
-// aiRead is aiCall for a GET that must answer 200.
-func (h *Handlers) aiRead(r *http.Request, who auth.Who, path string) (any, error) {
-	code, v := h.aiCall(r, who, auth.ScopeRead, http.MethodGet, path, nil)
+// read is call for a GET that must answer 200.
+func (h *Handlers) read(r *http.Request, who auth.Who, path string) (any, error) {
+	code, v := h.call(r, who, auth.ScopeRead, http.MethodGet, path, nil)
 	if code != http.StatusOK {
-		return nil, aiFail{aiRouteError(code, v)}
+		return nil, failure{routeError(code, v)}
 	}
 	return v, nil
 }
 
-// aiRouteError says why a route refused, in its own words when it gave any.
-func aiRouteError(code int, v any) string {
+// routeError says why a route refused, in its own words when it gave any.
+func routeError(code int, v any) string {
 	if m, ok := v.(map[string]any); ok {
 		if s, ok := m["error"].(string); ok && s != "" {
-			return aiClean(s, TextMax)
+			return clean(s, TextMax)
 		}
 	}
 	return fmt.Sprintf("HolyArrs answered %d", code)
 }
 
-func aiStr(args map[string]any, k string) string {
+func str(args map[string]any, k string) string {
 	switch v := args[k].(type) {
 	case string:
 		return strings.TrimSpace(v)
@@ -192,49 +192,49 @@ func aiStr(args map[string]any, k string) string {
 	return ""
 }
 
-func aiNum(args map[string]any, k string) int64 {
-	n, _ := strconv.ParseInt(aiStr(args, k), 10, 64)
+func num(args map[string]any, k string) int64 {
+	n, _ := strconv.ParseInt(str(args, k), 10, 64)
 	return n
 }
 
 func toolSearch(h *Handlers, r *http.Request, who auth.Who, args map[string]any) (any, error) {
-	q := aiStr(args, "query")
+	q := str(args, "query")
 	if q == "" {
-		return nil, aiFail{"send a query"}
+		return nil, failure{"send a query"}
 	}
-	return h.aiRead(r, who, "/api/v1/search?q="+url.QueryEscape(aiClean(q, 200)))
+	return h.read(r, who, "/api/v1/search?q="+url.QueryEscape(clean(q, 200)))
 }
 
 func toolLibrary(h *Handlers, r *http.Request, who auth.Who, args map[string]any) (any, error) {
-	n := aiStr(args, "name")
+	n := str(args, "name")
 	if n == "" {
-		return nil, aiFail{"send a name"}
+		return nil, failure{"send a name"}
 	}
-	kind := aiStr(args, "kind")
+	kind := str(args, "kind")
 	if kind == "" {
 		kind = "all"
 	}
-	return h.aiRead(r, who, "/api/v1/library/search?q="+url.QueryEscape(aiClean(n, 200))+"&kind="+url.QueryEscape(kind))
+	return h.read(r, who, "/api/v1/library/search?q="+url.QueryEscape(clean(n, 200))+"&kind="+url.QueryEscape(kind))
 }
 
 func toolCalendar(h *Handlers, r *http.Request, who auth.Who, args map[string]any) (any, error) {
-	days := aiNum(args, "days")
+	days := num(args, "days")
 	if days < 1 || days > 60 {
 		days = 14
 	}
 	from := h.clock().UTC()
 	to := from.AddDate(0, 0, int(days))
-	return h.aiRead(r, who, "/api/v1/calendar?from="+from.Format("2006-01-02")+"&to="+to.Format("2006-01-02"))
+	return h.read(r, who, "/api/v1/calendar?from="+from.Format("2006-01-02")+"&to="+to.Format("2006-01-02"))
 }
 
 func toolDownloads(h *Handlers, r *http.Request, who auth.Who, _ map[string]any) (any, error) {
-	return h.aiRead(r, who, "/api/v1/downloads/view")
+	return h.read(r, who, "/api/v1/downloads/view")
 }
 
 // toolMyAsks is the person's own requests only: other people's requests
 // stay off AI connections.
 func toolMyAsks(h *Handlers, r *http.Request, who auth.Who, _ map[string]any) (any, error) {
-	v, err := h.aiRead(r, who, "/api/v1/asks?mine=1")
+	v, err := h.read(r, who, "/api/v1/asks?mine=1")
 	if err != nil {
 		return nil, err
 	}
@@ -243,7 +243,7 @@ func toolMyAsks(h *Handlers, r *http.Request, who auth.Who, _ map[string]any) (a
 		out["asks"] = m["asks"]
 	}
 	if who.Has(auth.PermAsk) {
-		if l, err := h.aiRead(r, who, "/api/v1/asks/limit"); err == nil {
+		if l, err := h.read(r, who, "/api/v1/asks/limit"); err == nil {
 			out["limit"] = l
 		}
 	}
@@ -251,71 +251,71 @@ func toolMyAsks(h *Handlers, r *http.Request, who auth.Who, _ map[string]any) (a
 }
 
 func toolHealth(h *Handlers, r *http.Request, who auth.Who, _ map[string]any) (any, error) {
-	return h.aiRead(r, who, "/api/v1/health/states")
+	return h.read(r, who, "/api/v1/health/states")
 }
 
 // confirmStep is the first or second call of an action. On the first it
 // returns a token to hand back; on the second it checks the token and
 // says to go ahead.
 func (h *Handlers) confirmStep(who auth.Who, tool string, args map[string]any, summary map[string]any) (map[string]any, bool, error) {
-	key := tool + "|" + aiStr(args, "tmdb_id") + "|" + aiStr(args, "kind") + "|" + aiStr(args, "ask_id") + "|" + aiStr(args, "note")
+	key := tool + "|" + str(args, "tmdb_id") + "|" + str(args, "kind") + "|" + str(args, "ask_id") + "|" + str(args, "note")
 	now := h.clock()
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	if h.tokens == nil {
-		h.tokens = map[string]aiToken{}
+		h.tokens = map[string]token{}
 	}
 	for k, t := range h.tokens {
 		if now.After(t.until) {
 			delete(h.tokens, k)
 		}
 	}
-	tok := aiStr(args, "confirm_token")
+	tok := str(args, "confirm_token")
 	if tok == "" {
-		if len(h.tokens) >= aiTokensMax {
-			return nil, false, aiFail{"too many actions are waiting; try again in a few minutes"}
+		if len(h.tokens) >= tokensMax {
+			return nil, false, failure{"too many actions are waiting; try again in a few minutes"}
 		}
 		b := make([]byte, 16)
 		_, _ = rand.Read(b)
 		tok = hex.EncodeToString(b)
-		h.tokens[tok] = aiToken{user: who.UserID, key: who.KeyID, tool: tool, args: key, until: now.Add(aiConfirmFor)}
+		h.tokens[tok] = token{user: who.UserID, key: who.KeyID, tool: tool, args: key, until: now.Add(confirmFor)}
 		summary["confirm_token"] = tok
-		summary["expires_in_s"] = int(aiConfirmFor.Seconds())
+		summary["expires_in_s"] = int(confirmFor.Seconds())
 		summary["next"] = "Show this to the person. If they agree, call " + tool + " again with the same arguments and this confirm_token."
 		return summary, false, nil
 	}
 	t, ok := h.tokens[tok]
 	if !ok || t.user != who.UserID || t.key != who.KeyID {
-		return nil, false, aiFail{"that confirm_token is unknown, used or expired; call again without it to get a new one"}
+		return nil, false, failure{"that confirm_token is unknown, used or expired; call again without it to get a new one"}
 	}
 	if t.tool != tool || t.args != key {
-		return nil, false, aiFail{"that confirm_token was given for something else; call again without it"}
+		return nil, false, failure{"that confirm_token was given for something else; call again without it"}
 	}
 	delete(h.tokens, tok)
 	return nil, true, nil
 }
 
 func toolAsk(h *Handlers, r *http.Request, who auth.Who, args map[string]any) (any, error) {
-	id := aiStr(args, "tmdb_id")
+	id := str(args, "tmdb_id")
 	if id == "" || len(id) > 12 || strings.Trim(id, "0123456789") != "" {
-		return nil, aiFail{"send tmdb_id as digits, like 693134"}
+		return nil, failure{"send tmdb_id as digits, like 693134"}
 	}
-	kind := aiStr(args, "kind")
+	kind := str(args, "kind")
 	if kind == "" {
 		kind = "movie"
 	}
 	if kind != "movie" && kind != "show" {
-		return nil, aiFail{"kind is movie or show"}
+		return nil, failure{"kind is movie or show"}
 	}
 	if p, _ := parts.ForTitleKind(kind); !h.partOn(p) {
-		return nil, aiFail{p.Label() + " is off"}
+		return nil, failure{p.Label() + " is off"}
 	}
 	summary := map[string]any{"tmdb_id": id, "kind": kind}
-	if aiStr(args, "confirm_token") == "" {
+	if str(args, "confirm_token") == "" {
 		// The details page first, then the lookup the add screens use.
 		lookup := map[string]string{"movie": "/api/v1/titles/lookup?term=tmdb:", "show": "/api/v1/shows/lookup?term=tmdb:"}[kind]
 		for _, path := range []string{"/api/v1/metadata/" + kind + "/" + id, lookup + id} {
-			v, err := h.aiRead(r, who, path)
+			v, err := h.read(r, who, path)
 			if m, ok := v.(map[string]any); ok && m["name"] == nil {
 				for _, k := range []string{"movies", "shows", "results"} {
 					if l, ok := m[k].([]any); ok && len(l) > 0 {
@@ -341,12 +341,12 @@ func toolAsk(h *Handlers, r *http.Request, who auth.Who, args map[string]any) (a
 	if err != nil || !goAhead {
 		return out, err
 	}
-	code, v := h.aiCall(r, who, auth.ScopeWrite, http.MethodPost, "/api/v1/asks", map[string]any{"id": "tmdb:" + id, "kind": kind})
-	return h.aiActed(r, who, "ask_for_title", args, "ai_ask_made", "asked for", code, v)
+	code, v := h.call(r, who, auth.ScopeWrite, http.MethodPost, "/api/v1/asks", map[string]any{"id": "tmdb:" + id, "kind": kind})
+	return h.acted(r, who, "ask_for_title", args, "ai_ask_made", "asked for", code, v)
 }
 
-// aiActed writes the action to History and answers it.
-func (h *Handlers) aiActed(r *http.Request, who auth.Who, tool string, args map[string]any, kind, did string, code int, v any) (any, error) {
+// acted writes the action to History and answers it.
+func (h *Handlers) acted(r *http.Request, who auth.Who, tool string, args map[string]any, kind, did string, code int, v any) (any, error) {
 	ok := code >= 200 && code < 300
 	name := ""
 	var titleID *int64
@@ -372,23 +372,23 @@ func (h *Handlers) aiActed(r *http.Request, who auth.Who, tool string, args map[
 			logged[k] = Tidy(val, 4)
 		}
 	}
-	if b, _ := json.Marshal(logged); len(b) > aiArgsLogLimit {
+	if b, _ := json.Marshal(logged); len(b) > argsLogLimit {
 		logged = map[string]any{"cut": true}
 	}
 	client := h.clientOf(who.KeyID)
-	summary := fmt.Sprintf("AI (%s, key %s) %s %s for %s", client, aiClean(who.KeyLabel, 64), did, aiClean(name, 120), who.Name)
-	data := map[string]any{"key_id": who.KeyID, "key": aiClean(who.KeyLabel, 64), "client": client, "tool": tool, "args": logged, "ok": ok}
+	summary := fmt.Sprintf("AI (%s, key %s) %s %s for %s", client, clean(who.KeyLabel, 64), did, clean(name, 120), who.Name)
+	data := map[string]any{"key_id": who.KeyID, "key": clean(who.KeyLabel, 64), "client": client, "tool": tool, "args": logged, "ok": ok}
 	if askID > 0 {
 		data["ask_id"] = askID
 	}
 	if !ok {
 		kind = "ai_action_failed"
-		summary = fmt.Sprintf("AI (%s, key %s) could not use %s for %s", client, aiClean(who.KeyLabel, 64), tool, who.Name)
-		data["error"] = aiRouteError(code, v)
+		summary = fmt.Sprintf("AI (%s, key %s) could not use %s for %s", client, clean(who.KeyLabel, 64), tool, who.Name)
+		data["error"] = routeError(code, v)
 	}
 	_ = h.Store.AddEvent(r.Context(), &domain.Event{Actor: domain.Actor{Kind: "ai", ID: who.UserID}, Kind: kind, TitleID: titleID, Summary: summary, Data: data})
 	if !ok {
-		return nil, aiFail{aiRouteError(code, v)}
+		return nil, failure{routeError(code, v)}
 	}
 	return map[string]any{"done": true, "result": v}, nil
 }

@@ -1,3 +1,8 @@
+// Package ai lets AI apps such as Claude reach a few read and ask actions
+// over MCP (JSON-RPC on one POST route, no stream). The route is off until the
+// owner turns it on and only an AI key (scope mcp) reaches it. Tools act as
+// the key's person through the same routes the app uses, so permissions,
+// parts and kid limits hold, and every action is written to History.
 package ai
 
 import (
@@ -19,30 +24,24 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 )
 
-// AI connections (roadmap #89): AI assistants such as Claude reach a few
-// tools over MCP (JSON-RPC on one POST route, no stream). The route is off
-// until the owner turns it on, only an AI key (scope mcp) reaches it, the
-// tools act as the key's person through the same routes the app uses, and
-// every action is written to History.
-
-// settingMCP turns AI connections on (this_app group; missing means off).
+// settingMCP turns AI connections on (missing means off).
 const settingMCP = "mcp_enabled"
 
 // Versions are the MCP protocol versions answered, newest first. The
 // older two only differ in what this server never uses, so clients that
-// still send them keep working. 2026-07-28 is left out: it needs a
-// resultType on every answer, and clients refuse tool lists without it
-// (Claude Code, checked live 2026-11-03); they use 2025-11-25 instead.
+// still send them keep working. Protocol version 2026-07-28 is not offered: it
+// needs a resultType on every answer, and clients refuse tool lists without
+// it. Claude Code sends 2025-11-25 instead.
 var Versions = []string{"2025-11-25", "2025-06-18", "2025-03-26"}
 
 // Routes registers the AI connection routes and their on/off setting.
 func (h *Handlers) Routes(r *webserver.Router) {
-	r.Handle("POST /api/v1/mcp", webserver.NeedSignedIn, http.HandlerFunc(h.mcp))
-	r.Handle("GET /api/v1/mcp", webserver.NeedSignedIn, http.HandlerFunc(h.mcp))
-	r.Handle("POST /mcp", webserver.NeedSignedIn, http.HandlerFunc(h.mcp))
-	r.Handle("GET /mcp", webserver.NeedSignedIn, http.HandlerFunc(h.mcp))
-	r.Handle("GET /api/v1/settings/ai", webserver.NeedSignedIn, http.HandlerFunc(h.getAISettings))
-	r.Handle("PUT /api/v1/settings/ai", webserver.NeedOwner, http.HandlerFunc(h.putAISettings))
+	r.Handle("POST /api/v1/mcp", webserver.NeedSignedIn, http.HandlerFunc(h.serveRPC))
+	r.Handle("GET /api/v1/mcp", webserver.NeedSignedIn, http.HandlerFunc(h.serveRPC))
+	r.Handle("POST /mcp", webserver.NeedSignedIn, http.HandlerFunc(h.serveRPC))
+	r.Handle("GET /mcp", webserver.NeedSignedIn, http.HandlerFunc(h.serveRPC))
+	r.Handle("GET /api/v1/settings/ai", webserver.NeedSignedIn, http.HandlerFunc(h.getSettings))
+	r.Handle("PUT /api/v1/settings/ai", webserver.NeedOwner, http.HandlerFunc(h.putSettings))
 }
 
 // Handlers serves the AI connection routes. Tools call the rest of the app
@@ -72,13 +71,13 @@ func actor(r *http.Request) domain.Actor {
 	return domain.Actor{Kind: "user", ID: 1}
 }
 
-func (h *Handlers) mcpOn(ctx context.Context) bool { return mcpEnabled(ctx, h.Store) }
+func (h *Handlers) on(ctx context.Context) bool { return enabled(ctx, h.Store) }
 
-func (h *Handlers) getAISettings(w http.ResponseWriter, r *http.Request) {
-	webserver.WriteJSON(w, http.StatusOK, map[string]any{"enabled": h.mcpOn(r.Context()), "path": "/api/v1/mcp", "versions": Versions})
+func (h *Handlers) getSettings(w http.ResponseWriter, r *http.Request) {
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"enabled": h.on(r.Context()), "path": "/api/v1/mcp", "versions": Versions})
 }
 
-func (h *Handlers) putAISettings(w http.ResponseWriter, r *http.Request) {
+func (h *Handlers) putSettings(w http.ResponseWriter, r *http.Request) {
 	var in struct {
 		Enabled *bool `json:"enabled"`
 	}
@@ -86,12 +85,12 @@ func (h *Handlers) putAISettings(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if in.Enabled != nil {
-		if err := saveMCPEnabled(r.Context(), h.Store, actor(r), *in.Enabled); err != nil {
+		if err := saveEnabled(r.Context(), h.Store, actor(r), *in.Enabled); err != nil {
 			webserver.Internal(w, "ai", err)
 			return
 		}
 	}
-	h.getAISettings(w, r)
+	h.getSettings(w, r)
 }
 
 // rpcMsg is one JSON-RPC message.
@@ -120,9 +119,9 @@ func rpcReply(w http.ResponseWriter, code int, id json.RawMessage, result any, e
 	webserver.WriteJSON(w, code, out)
 }
 
-// mcp answers one MCP message.
-func (h *Handlers) mcp(w http.ResponseWriter, r *http.Request) {
-	if !h.mcpOn(r.Context()) {
+// serveRPC answers one MCP message.
+func (h *Handlers) serveRPC(w http.ResponseWriter, r *http.Request) {
+	if !h.on(r.Context()) {
 		http.NotFound(w, r)
 		return
 	}
@@ -147,7 +146,7 @@ func (h *Handlers) mcp(w http.ResponseWriter, r *http.Request) {
 		webserver.Fail(w, http.StatusBadRequest, "MCP protocol version "+v+" is not supported; use "+strings.Join(Versions, ", "))
 		return
 	}
-	body, err := io.ReadAll(http.MaxBytesReader(w, r.Body, aiBodyMax))
+	body, err := io.ReadAll(http.MaxBytesReader(w, r.Body, bodyMax))
 	if err != nil {
 		rpcReply(w, http.StatusRequestEntityTooLarge, nil, nil, &rpcErr{-32600, "message too large"})
 		return
@@ -176,18 +175,18 @@ func (h *Handlers) mcp(w http.ResponseWriter, r *http.Request) {
 		if slices.Contains(Versions, p.ProtocolVersion) {
 			v = p.ProtocolVersion
 		}
-		res := h.mcpServerInfo()
+		res := h.serverInfo()
 		res["protocolVersion"] = v
 		rpcReply(w, http.StatusOK, msg.ID, res, nil)
 	case "server/discover":
-		res := h.mcpServerInfo()
+		res := h.serverInfo()
 		res["supportedVersions"] = Versions
 		rpcReply(w, http.StatusOK, msg.ID, res, nil)
 	case "ping":
 		rpcReply(w, http.StatusOK, msg.ID, map[string]any{}, nil)
 	case "tools/list":
 		tools := []map[string]any{}
-		for _, t := range h.aiTools() {
+		for _, t := range h.tools() {
 			if why := t.off(h, who); why == "" {
 				tools = append(tools, map[string]any{"name": t.name, "title": t.title, "description": t.about, "inputSchema": t.schema,
 					"annotations": map[string]any{"readOnlyHint": !t.action}})
@@ -207,28 +206,28 @@ func (h *Handlers) mcp(w http.ResponseWriter, r *http.Request) {
 			p.Arguments = map[string]any{}
 		}
 		if ok, wait := h.Allow(&h.Reads, who.KeyID, ReadsPerMin, time.Minute); !ok {
-			aiTooMany(w, msg.ID, wait)
+			tooMany(w, msg.ID, wait)
 			return
 		}
 		h.rememberClient(who.KeyID, clientFromAgent(r.UserAgent()))
 		res, wait := h.callTool(r, who, p.Name, p.Arguments)
 		if wait > 0 {
-			aiTooMany(w, msg.ID, wait)
+			tooMany(w, msg.ID, wait)
 			return
 		}
 		rpcReply(w, http.StatusOK, msg.ID, res, nil)
 	default:
-		rpcReply(w, http.StatusOK, msg.ID, nil, &rpcErr{-32601, "unknown method " + aiClean(msg.Method, 60)})
+		rpcReply(w, http.StatusOK, msg.ID, nil, &rpcErr{-32601, "unknown method " + clean(msg.Method, 60)})
 	}
 }
 
-func aiTooMany(w http.ResponseWriter, id json.RawMessage, wait time.Duration) {
+func tooMany(w http.ResponseWriter, id json.RawMessage, wait time.Duration) {
 	s := int(wait.Seconds()) + 1
 	w.Header().Set("Retry-After", strconv.Itoa(s))
 	rpcReply(w, http.StatusTooManyRequests, id, nil, &rpcErr{-32000, fmt.Sprintf("too many calls from this key; try again in %d seconds", s)})
 }
 
-func (h *Handlers) mcpServerInfo() map[string]any {
+func (h *Handlers) serverInfo() map[string]any {
 	return map[string]any{
 		"capabilities": map[string]any{"tools": map[string]any{"listChanged": false}},
 		"serverInfo":   map[string]any{"name": "holyarrs", "title": "HolyArrs", "version": h.Version},

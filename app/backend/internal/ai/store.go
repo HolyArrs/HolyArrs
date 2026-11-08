@@ -11,12 +11,12 @@ import (
 // settingsGroup is the settings group the on/off switch lives in.
 const settingsGroup = "this_app"
 
-// mcpEnabled says whether AI connections are on; a missing row means off.
-func mcpEnabled(ctx context.Context, st *database.Store) bool {
+// enabled says whether AI connections are on; a missing row means off.
+func enabled(ctx context.Context, st *database.Store) bool {
 	return database.SettingOr(ctx, st.Read(), settingsGroup, settingMCP, "") == "on"
 }
 
-func saveMCPEnabled(ctx context.Context, st *database.Store, who database.Actor, on bool) error {
+func saveEnabled(ctx context.Context, st *database.Store, who database.Actor, on bool) error {
 	v := map[bool]string{true: "on", false: "off"}[on]
 	return st.Write(ctx, func(tx *sql.Tx) error {
 		return database.PutSetting(tx, settingsGroup, settingMCP, v, who, time.Now())
