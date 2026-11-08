@@ -89,6 +89,8 @@ type runOpts struct {
 	kinds func([]string)
 	// parts is told the parts Control once it is made.
 	parts func(*parts.Control)
+	// store is told the main store once it is open (tests emit Events).
+	store func(*database.Store)
 }
 
 func run(c config) error {
@@ -234,6 +236,9 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	}
 	if o.parts != nil {
 		o.parts(pc)
+	}
+	if o.store != nil {
+		o.store(s)
 	}
 	// The loops end before the store closes; one stuck in code that ignores
 	// its context is left behind after a while so the app still stops.
@@ -501,11 +506,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	ol.Register(q)
 	q.ProbeSchedule(requests.OutsideListSync, ol.ProbeSync)
 	he := &health.Engine{Store: s, Version: version, ConfigUnmapped: unmapped, ConfigDir: c.ConfigDir, Publish: func(topic string, data any) { hub.Publish(topic, data) },
-		Backups: func(ctx context.Context) (health.Backups, error) {
-			newest, every, lastErr, err := bm.State(ctx)
-			return health.Backups{Newest: newest, Every: every, LastErr: lastErr, Started: bm.Passed(),
-				KeyPrint: bm.KeyPrint(), KeyKitPrint: bm.KeyKitPrint(ctx)}, err
-		}}
+		Backups: backupsHealth(bm)}
 	// The update check: once a day from the release feed, through the
 	// network policy (public only unless the setting allows the local
 	// network; never cloud metadata addresses). HOLYARRS_RELEASE_FEED
@@ -701,8 +702,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 			t, err := hosted.Service.TrailerPick(ctx, kind, id, lang)
 			return t.Key, err
 		}, AnimeMap: hosted.Service.AnimeMap, LiveSearch: startup.FeatureOn("live_search"), ExtraArt: hosted.Service.Art, ImageBase: hosted.Service.Base() + "/v1/img", MusicControl: hosted.Service.Control, ArtistVideos: hosted.Service.ArtistVideos, ExtraRatings: hosted.Service.Ratings, CountryCount: hosted.Gate.SetCountryCount, WikiTitle: hosted.Service.WikiTitle, WikiPerson: hosted.Service.WikiPerson, AwardWinners: hosted.Service.AwardWinners, Alerts: sender, Asks: requestsSvc, Watchlists: plexWatch, Search: sr, Downloads: dm, DLSync: dls, Health: he, Updates: uc, Media: media, Subtitles: subs, States: reg, SafeMode: c.SafeMode, Parts: pc, ExitApp: exitApp, Mover: mover,
-		Log: applogs, ConfigDir: c.ConfigDir, SavePath: c.SavePath, URLBase: c.URLBase, Deps: music.Deps{MusicTrending: hosted.Service.MusicTrending, MusicPictures: hosted.Service.MusicPictures, MusicNew: hosted.Service.MusicNewWindow, MusicSimilar: hosted.Service.MusicSimilar, MusicCharts: hosted.Service.MusicCharts, MusicGenres: hosted.Service.MusicGenreList, MusicGenreTile: hosted.Service.MusicGenreTile, MusicRowsV2: startup.FeatureOn("music_rows_v2"), MusicRowsV3: startup.FeatureOn("music_rows_v3"), MusicRowsV6: startup.FeatureOn("music_rows_v6"), MusicRowsV7: startup.FeatureOn("music_rows_v7"), MusicListsV1: startup.FeatureOn("music_lists_v1"), MusicShelves: hosted.Service.MusicShelves, MusicPools: hosted.Service.MusicPools, MusicRowsTplOff: startup.FeatureOn("music_rows_tpl_off"), MusicListeners: hosted.Service.MusicListeners, MusicSimilarSet: hosted.Service.MusicSimilarSet, MusicArtistData: hosted.Service.MusicArtistData, MusicSuggest: hosted.Service.MusicSuggest, MusicTopSongs: hosted.Service.MusicTopSongs, MusicRising: hosted.Service.MusicRisingToday, MusicDiscography: hosted.Service.MusicDiscography,
-			MusicDeezer: serverDeezer, MusicDeezerAlbum: serverDeezerAlbum, MusicArtistBio: serverBio}})
+		Log: applogs, ConfigDir: c.ConfigDir, SavePath: c.SavePath, URLBase: c.URLBase, Deps: musicDeps(hosted.Service, serverDeezer, serverDeezerAlbum, serverBio)})
 	// "Count this install" rides on every request to the metadata server.
 	a.ApplyCountryCount(ctx)
 	// Matching in the reader's queue is link-only: it never adds a title.

@@ -1,12 +1,18 @@
 package main
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/api"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/backups"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/features"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/health"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
 )
@@ -27,4 +33,26 @@ func routes(a *api.API, c config) http.Handler {
 	a.Routes(rt)
 	a.ModuleRoutes(rt)
 	return webserver.UnderURLBase(c.URLBase, webserver.Compress(limitBodies(a.Chain(rt))))
+}
+
+// backupsHealth gives the health engine the state of backups.
+func backupsHealth(bm *backups.Manager) func(context.Context) (health.Backups, error) {
+	return func(ctx context.Context) (health.Backups, error) {
+		newest, every, lastErr, err := bm.State(ctx)
+		return health.Backups{Newest: newest, Every: every, LastErr: lastErr, Started: bm.Passed(),
+			KeyPrint: bm.KeyPrint(), KeyKitPrint: bm.KeyKitPrint(ctx)}, err
+	}
+}
+
+// musicDeps hands the music module its metadata calls and feature switches.
+// The Deezer and bio reads are the server's, or nil when a direct stand-in
+// answers instead.
+func musicDeps(svc *metadata.Service, deezer func(context.Context, string) (metadata.DeezerProfile, error),
+	deezerAlbum func(context.Context, int64) (metadata.DeezerAlbumInfo, error),
+	bio func(context.Context, string) (*metadata.WikiSummary, error)) music.Deps {
+	return music.Deps{MusicTrending: svc.MusicTrending, MusicPictures: svc.MusicPictures, MusicNew: svc.MusicNewWindow, MusicSimilar: svc.MusicSimilar, MusicCharts: svc.MusicCharts, MusicGenres: svc.MusicGenreList, MusicGenreTile: svc.MusicGenreTile,
+		MusicRowsV2: startup.FeatureOn("music_rows_v2"), MusicRowsV3: startup.FeatureOn("music_rows_v3"), MusicRowsV6: startup.FeatureOn("music_rows_v6"), MusicRowsV7: startup.FeatureOn("music_rows_v7"), MusicListsV1: startup.FeatureOn("music_lists_v1"),
+		MusicShelves: svc.MusicShelves, MusicPools: svc.MusicPools, MusicRowsTplOff: startup.FeatureOn("music_rows_tpl_off"), MusicListeners: svc.MusicListeners, MusicSimilarSet: svc.MusicSimilarSet, MusicArtistData: svc.MusicArtistData,
+		MusicSuggest: svc.MusicSuggest, MusicTopSongs: svc.MusicTopSongs, MusicRising: svc.MusicRisingToday, MusicDiscography: svc.MusicDiscography,
+		MusicDeezer: deezer, MusicDeezerAlbum: deezerAlbum, MusicArtistBio: bio}
 }

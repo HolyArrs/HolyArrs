@@ -64,3 +64,40 @@ func TestEventsBySourceAndHideFeed(t *testing.T) {
 		t.Errorf("all: %d", n)
 	}
 }
+
+func TestAddEventRunsHookThroughGuard(t *testing.T) {
+	ctx := context.Background()
+	t.Cleanup(func() { eventGuard.Store(nil) })
+
+	// With a guard set, every hook runs through it, and a crash inside the
+	// hook does not fail AddEvent.
+	var got []string
+	SetEventGuard(func(name string, f func()) {
+		got = append(got, name)
+		defer func() { _ = recover() }()
+		f()
+	})
+	s, _ := openTest(t, Options{})
+	s.OnEvent(func(Event) { panic("boom") })
+	e := &Event{Kind: "x", At: time.Now()}
+	if err := s.AddEvent(ctx, e); err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 1 || got[0] != "events" {
+		t.Fatalf("guard not used: %v", got)
+	}
+
+	// With no guard set, the built-in one catches the crash.
+	eventGuard.Store(nil)
+	e2 := &Event{Kind: "y", At: time.Now()}
+	if err := s.AddEvent(ctx, e2); err != nil {
+		t.Fatal(err)
+	}
+	es, _, err := s.Events(ctx, EventFilter{Kinds: []string{"y"}})
+	if err != nil || len(es) != 1 {
+		t.Fatalf("event row missing: %v %v", es, err)
+	}
+	if len(got) != 1 {
+		t.Fatalf("old guard called after reset: %v", got)
+	}
+}
