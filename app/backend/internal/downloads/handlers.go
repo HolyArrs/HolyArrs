@@ -24,8 +24,18 @@ type Handlers struct {
 	Deps
 }
 
-// Routes registers the Downloads routes; empty until they move here.
-func (h *Handlers) Routes(m *http.ServeMux) {}
+// Routes registers the Pick rules and own traits routes.
+func (h *Handlers) Routes(m *http.ServeMux) {
+	m.HandleFunc("GET /api/v1/pick-rules", h.listPickRules)
+	m.HandleFunc("POST /api/v1/pick-rules", h.addPickRules)
+	m.HandleFunc("GET /api/v1/pick-rules/{id}", h.getPickRules)
+	m.HandleFunc("PUT /api/v1/pick-rules/{id}", h.editPickRules)
+	m.HandleFunc("DELETE /api/v1/pick-rules/{id}", h.deletePickRules)
+	m.HandleFunc("GET /api/v1/own-traits", h.listOwnTraits)
+	m.HandleFunc("POST /api/v1/own-traits", h.addOwnTrait)
+	m.HandleFunc("PUT /api/v1/own-traits/{id}", h.editOwnTrait)
+	m.HandleFunc("DELETE /api/v1/own-traits/{id}", h.deleteOwnTrait)
+}
 
 // read is the database the routes read from.
 func (h *Handlers) read() *sql.DB {

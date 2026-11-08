@@ -1,4 +1,4 @@
-package api
+package downloads
 
 import (
 	"errors"
@@ -58,7 +58,7 @@ func useWords(u library.Use) string {
 	return strings.Join(parts[:len(parts)-1], ", ") + " and " + parts[len(parts)-1]
 }
 
-func (a *API) pickRulesID(w http.ResponseWriter, r *http.Request) (int64, bool) {
+func (h *Handlers) pickRulesID(w http.ResponseWriter, r *http.Request) (int64, bool) {
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil || id <= 0 {
 		webserver.Fail(w, http.StatusBadRequest, "the Pick rules id must be a number")
@@ -68,7 +68,7 @@ func (a *API) pickRulesID(w http.ResponseWriter, r *http.Request) (int64, bool) 
 }
 
 // pickRulesError answers a refusal from the Pick rules editing calls.
-func (a *API) pickRulesError(w http.ResponseWriter, r *http.Request, id int64, err error) {
+func (h *Handlers) pickRulesError(w http.ResponseWriter, r *http.Request, id int64, err error) {
 	var fe *mediafiles.FieldError
 	switch {
 	case errors.As(err, &fe):
@@ -80,32 +80,32 @@ func (a *API) pickRulesError(w http.ResponseWriter, r *http.Request, id int64, e
 	case errors.Is(err, library.ErrPresetLocked):
 		webserver.Fail(w, http.StatusConflict, "These are ready-made Pick rules: they keep their name and kinds and cannot be removed. Their rules may be changed, or make a copy.")
 	case errors.Is(err, library.ErrPickRulesInUse):
-		u, uerr := library.PickRulesUse(r.Context(), a.s.Store, id)
+		u, uerr := library.PickRulesUse(r.Context(), h.Store, id)
 		if uerr != nil {
-			webserver.Internal(w, "api", uerr)
+			webserver.Internal(w, "downloads", uerr)
 			return
 		}
 		webserver.WriteJSON(w, http.StatusConflict, map[string]any{
 			"error":  "These Pick rules are used by " + useWords(u) + ", so they cannot be removed, lose a kind in use, or switch between video and music.",
 			"in_use": u})
 	default:
-		webserver.Internal(w, "api", err)
+		webserver.Internal(w, "downloads", err)
 	}
 }
 
-func (a *API) getPickRules(w http.ResponseWriter, r *http.Request) {
-	id, ok := a.pickRulesID(w, r)
+func (h *Handlers) getPickRules(w http.ResponseWriter, r *http.Request) {
+	id, ok := h.pickRulesID(w, r)
 	if !ok {
 		return
 	}
 	var p mediafiles.PickRules
-	if err := database.Get(r.Context(), a.s.Store.Read(), "pick_rules", id, &p); err != nil {
-		a.pickRulesError(w, r, id, err)
+	if err := database.Get(r.Context(), h.Store.Read(), "pick_rules", id, &p); err != nil {
+		h.pickRulesError(w, r, id, err)
 		return
 	}
-	u, err := library.PickRulesUse(r.Context(), a.s.Store, id)
+	u, err := library.PickRulesUse(r.Context(), h.Store, id)
 	if err != nil {
-		webserver.Internal(w, "api", err)
+		webserver.Internal(w, "downloads", err)
 		return
 	}
 	webserver.WriteJSON(w, http.StatusOK, detailOfPickRules(p, u))
@@ -113,49 +113,82 @@ func (a *API) getPickRules(w http.ResponseWriter, r *http.Request) {
 
 const pickRulesHelp = `send {"name": "...", "kinds": ["movie"], "body": {...}}`
 
-func (a *API) addPickRules(w http.ResponseWriter, r *http.Request) {
+func (h *Handlers) addPickRules(w http.ResponseWriter, r *http.Request) {
 	var in library.PickRulesInput
-	if !decode(w, r, &in, pickRulesHelp) {
+	if !webserver.Decode(w, r, &in, pickRulesHelp) {
 		return
 	}
-	p, err := library.CreatePickRules(r.Context(), a.s.Store, in, actor(r))
+	p, err := library.CreatePickRules(r.Context(), h.Store, in, webserver.ActorOr(r, database.Actor{Kind: "user", ID: 1}))
 	if err != nil {
-		a.pickRulesError(w, r, 0, err)
+		h.pickRulesError(w, r, 0, err)
 		return
 	}
 	webserver.WriteJSON(w, http.StatusCreated, detailOfPickRules(p, library.Use{}))
 }
 
-func (a *API) editPickRules(w http.ResponseWriter, r *http.Request) {
-	id, ok := a.pickRulesID(w, r)
+func (h *Handlers) editPickRules(w http.ResponseWriter, r *http.Request) {
+	id, ok := h.pickRulesID(w, r)
 	if !ok {
 		return
 	}
 	var in library.PickRulesInput
-	if !decode(w, r, &in, pickRulesHelp) {
+	if !webserver.Decode(w, r, &in, pickRulesHelp) {
 		return
 	}
-	p, err := library.UpdatePickRules(r.Context(), a.s.Store, id, in, actor(r))
+	p, err := library.UpdatePickRules(r.Context(), h.Store, id, in, webserver.ActorOr(r, database.Actor{Kind: "user", ID: 1}))
 	if err != nil {
-		a.pickRulesError(w, r, id, err)
+		h.pickRulesError(w, r, id, err)
 		return
 	}
-	u, err := library.PickRulesUse(r.Context(), a.s.Store, id)
+	u, err := library.PickRulesUse(r.Context(), h.Store, id)
 	if err != nil {
-		webserver.Internal(w, "api", err)
+		webserver.Internal(w, "downloads", err)
 		return
 	}
 	webserver.WriteJSON(w, http.StatusOK, detailOfPickRules(p, u))
 }
 
-func (a *API) deletePickRules(w http.ResponseWriter, r *http.Request) {
-	id, ok := a.pickRulesID(w, r)
+func (h *Handlers) deletePickRules(w http.ResponseWriter, r *http.Request) {
+	id, ok := h.pickRulesID(w, r)
 	if !ok {
 		return
 	}
-	if err := library.DeletePickRules(r.Context(), a.s.Store, id, actor(r)); err != nil {
-		a.pickRulesError(w, r, id, err)
+	if err := library.DeletePickRules(r.Context(), h.Store, id, webserver.ActorOr(r, database.Actor{Kind: "user", ID: 1})); err != nil {
+		h.pickRulesError(w, r, id, err)
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
+}
+
+// PickRulesView is a Pick rules set as choosers show it.
+type PickRulesView struct {
+	ID     int64    `json:"id"`
+	Name   string   `json:"name"`
+	Kinds  []string `json:"kinds"`
+	Preset bool     `json:"preset"`
+	// InUse counts every use (Versions, Library folders, Outside lists, ask
+	// settings and Movies and TV defaults).
+	InUse int `json:"in_use"`
+}
+
+func (h *Handlers) listPickRules(w http.ResponseWriter, r *http.Request) {
+	ps, err := database.Select[mediafiles.PickRules](r.Context(), h.Store.Read(), "pick_rules", "1=1 ORDER BY id")
+	if err != nil {
+		webserver.Internal(w, "downloads", err)
+		return
+	}
+	uses, err := library.PickRulesUses(r.Context(), h.Store)
+	if err != nil {
+		webserver.Internal(w, "downloads", err)
+		return
+	}
+	out := []PickRulesView{}
+	for _, p := range ps {
+		k := p.Kinds
+		if k == nil {
+			k = []string{}
+		}
+		out = append(out, PickRulesView{ID: p.ID, Name: p.Name, Kinds: k, Preset: p.Preset, InUse: uses[p.ID].Total()})
+	}
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"pick_rules": out})
 }

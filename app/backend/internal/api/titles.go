@@ -332,39 +332,6 @@ func neverAddView(n mediafiles.NeverAdd) NeverAddView {
 	return NeverAddView{ID: n.ID, Kind: n.Kind, SourceIDs: n.SourceIDs, Name: n.Name, Reason: n.Reason, CreatedAt: n.CreatedAt}
 }
 
-// PickRulesView is a Pick rules set as choosers show it.
-type PickRulesView struct {
-	ID     int64    `json:"id"`
-	Name   string   `json:"name"`
-	Kinds  []string `json:"kinds"`
-	Preset bool     `json:"preset"`
-	// InUse counts every use (Versions, Library folders, Outside lists, ask
-	// settings and Movies and TV defaults).
-	InUse int `json:"in_use"`
-}
-
-func (a *API) listPickRules(w http.ResponseWriter, r *http.Request) {
-	ps, err := database.Select[mediafiles.PickRules](r.Context(), a.s.Store.Read(), "pick_rules", "1=1 ORDER BY id")
-	if err != nil {
-		webserver.Internal(w, "api", err)
-		return
-	}
-	uses, err := library.PickRulesUses(r.Context(), a.s.Store)
-	if err != nil {
-		webserver.Internal(w, "api", err)
-		return
-	}
-	out := []PickRulesView{}
-	for _, p := range ps {
-		k := p.Kinds
-		if k == nil {
-			k = []string{}
-		}
-		out = append(out, PickRulesView{ID: p.ID, Name: p.Name, Kinds: k, Preset: p.Preset, InUse: uses[p.ID].Total()})
-	}
-	webserver.WriteJSON(w, http.StatusOK, map[string]any{"pick_rules": out})
-}
-
 func (a *API) listFolders(w http.ResponseWriter, r *http.Request) {
 	fs, err := database.Select[mediafiles.LibraryFolder](r.Context(), a.s.Store.Read(), "library_folders", "1=1 ORDER BY id")
 	if err != nil {
