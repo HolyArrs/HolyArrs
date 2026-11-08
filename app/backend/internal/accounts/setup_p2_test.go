@@ -9,15 +9,15 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	setuppkg "github.com/HolyArrs/holyarrs/app/backend/internal/setup"
 )
 
-// setup.Service and accounts each know the first-run settings row; they must
-// agree on when the wizard is open.
+// setup.Service reads the first-run settings row (this_app/first_run_done) the
+// way wizardOpen does here; accounts must write it so they agree. setup imports
+// accounts, so the read is copied here instead of importing it.
 func TestSetupServiceAgreesWithAccounts(t *testing.T) {
 	f := gated(t, Options{})
 	ctx := context.Background()
-	s := setuppkg.New(f.s)
+	s := wizardRow{f.s}
 	if open, err := s.Open(ctx); err != nil || !open {
 		t.Fatalf("fresh install: open=%v err=%v", open, err)
 	}
@@ -108,4 +108,12 @@ func TestStateListsSetupWaysOnlyBeforeOwner(t *testing.T) {
 	if _, ok := state()["setup_ways"]; ok {
 		t.Fatal("setup_ways still listed after the owner exists")
 	}
+}
+
+// wizardRow mirrors setup.Service.Open.
+type wizardRow struct{ st *database.Store }
+
+func (w wizardRow) Open(ctx context.Context) (bool, error) {
+	v, err := database.Setting(ctx, w.st.Read(), "this_app", "first_run_done")
+	return v != "1", err
 }
