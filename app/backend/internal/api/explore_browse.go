@@ -13,7 +13,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/discover"
 	engine "github.com/HolyArrs/holyarrs/app/backend/internal/discover/rows"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
 // browseTTL is how long built Browse sections are kept (the lists under
@@ -292,7 +291,7 @@ func (a *API) browseItems(ctx context.Context, src exploreSource, c engine.Categ
 			if err != nil || max == "" {
 				return merged, err
 			}
-			return keepItems(merged, a.kidItems(ctx, max, itemRefs(merged), 0)), nil
+			return discover.KeepItems(merged, a.kidItems(ctx, max, discover.ItemRefs(merged), 0)), nil
 		}
 	}
 	var lists [][]engine.Item
@@ -307,39 +306,16 @@ func (a *API) browseItems(ctx context.Context, src exploreSource, c engine.Categ
 	if max == "" {
 		return merged, nil
 	}
-	return keepItems(merged, a.kidItems(ctx, max, itemRefs(merged), 0)), nil
-}
-
-func itemRefs(items []engine.Item) []metadata.DiscoverItem {
-	refs := make([]metadata.DiscoverItem, len(items))
-	for i, it := range items {
-		refs[i] = metadata.DiscoverItem{TMDBID: it.TMDBID, Kind: it.Kind}
-	}
-	return refs
-}
-
-// keepItems keeps the items named in refs, in items' order.
-func keepItems(items []engine.Item, refs []metadata.DiscoverItem) []engine.Item {
-	ok := map[string]bool{}
-	for _, it := range refs {
-		ok[it.Kind+":"+it.TMDBID] = true
-	}
-	out := []engine.Item{}
-	for _, it := range items {
-		if ok[it.Key()] {
-			out = append(out, it)
-		}
-	}
-	return out
+	return discover.KeepItems(merged, a.kidItems(ctx, max, discover.ItemRefs(merged), 0)), nil
 }
 
 // browseDropNever leaves Never-add titles out of items.
 func (a *API) browseDropNever(ctx context.Context, items []engine.Item) ([]engine.Item, error) {
-	refs, err := a.dropNeverAdd(ctx, itemRefs(items))
+	refs, err := a.dropNeverAdd(ctx, discover.ItemRefs(items))
 	if err != nil {
 		return nil, err
 	}
-	return keepItems(items, refs), nil
+	return discover.KeepItems(items, refs), nil
 }
 
 // errBrowseBuilding: a section the member needs is still being built.
@@ -421,7 +397,7 @@ func (a *API) browseSectionTiles(ctx context.Context, r *http.Request, sw string
 // backdrop; no backdrop repeats across the tab's sections; a Kid gets
 // kid-safe categories only.
 func (a *API) searchBrowseSection(w http.ResponseWriter, r *http.Request) {
-	sw, ok := exploreParams(w, r)
+	sw, ok := discover.ExploreParams(w, r)
 	if !ok {
 		return
 	}
@@ -461,7 +437,7 @@ func (a *API) searchBrowseSection(w http.ResponseWriter, r *http.Request) {
 // a Browse category's titles for the tab, most popular first.
 func (a *API) searchBrowseCategory(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
-	sw, ok := exploreSwitch(q.Get("type"))
+	sw, ok := discover.ExploreSwitch(q.Get("type"))
 	if !ok {
 		webserver.Fail(w, http.StatusBadRequest, "type must be all, movies or shows")
 		return

@@ -14,6 +14,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/discover"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
@@ -169,7 +171,7 @@ func TestTrailerPassCoversEveryCard(t *testing.T) {
 			want = append(want, k)
 		}
 	}
-	for _, it := range heroCandidates(pg, true) {
+	for _, it := range discover.HeroCandidates(pg, true) {
 		add(it.Kind, it.TMDBID)
 	}
 	if len(want) != 8 {

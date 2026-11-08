@@ -4,6 +4,8 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/discover"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	engine "github.com/HolyArrs/holyarrs/app/backend/internal/discover/rows"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
@@ -14,7 +16,7 @@ import (
 // (the same cached page the head and tail read, so no outside call). The
 // page asks for it after the head, so it never slows the first row.
 func (a *API) exploreGenreRow(w http.ResponseWriter, r *http.Request) {
-	sw, ok := exploreParams(w, r)
+	sw, ok := discover.ExploreParams(w, r)
 	if !ok {
 		return
 	}
@@ -70,7 +72,7 @@ func (a *API) genreRowPage(ctx context.Context, r *http.Request, pg engine.Page)
 // backdrop; TV's combined genres come split, as categories). The other
 // sections load from /explore/browse/section as the grid scrolls.
 func (a *API) searchBrowse(w http.ResponseWriter, r *http.Request) {
-	sw, ok := exploreParams(w, r)
+	sw, ok := discover.ExploreParams(w, r)
 	if !ok {
 		return
 	}

@@ -86,7 +86,7 @@ type serviceTopView struct {
 // Kid limits and never-add apply as on the other rows.
 func (a *API) exploreServiceTop(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
-	sw, ok := exploreSwitch(q.Get("type"))
+	sw, ok := discover.ExploreSwitch(q.Get("type"))
 	region := strings.ToUpper(q.Get("region"))
 	if !ok || !isCountry(region) {
 		webserver.Fail(w, http.StatusBadRequest, "type must be all, movies or shows and region a country code")

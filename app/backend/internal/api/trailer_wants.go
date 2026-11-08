@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/discover"
+
 	engine "github.com/HolyArrs/holyarrs/app/backend/internal/discover/rows"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/health"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
@@ -105,7 +107,7 @@ func (a *API) trailerPassTitles(ctx context.Context) [][2]string {
 			continue
 		}
 		pg := a.poolPage(*pool, k.member, k.sw, m.region, engine.Moment{Local: now.Local()})
-		heroes = append(heroes, exploreTrailerTitles(heroCandidates(pg, k.sw == "all"), nil)...)
+		heroes = append(heroes, discover.ExploreTrailerTitles(discover.HeroCandidates(pg, k.sw == "all"), nil)...)
 		for _, row := range append(append([]engine.Row{}, pg.Head...), pg.Tail...) {
 			if row.Type == engine.TypeTopServices {
 				// The page fills this row itself, from the kept lists.

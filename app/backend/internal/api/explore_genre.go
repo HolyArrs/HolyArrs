@@ -41,7 +41,7 @@ func (a *API) liveSource(ctx context.Context) exploreSource {
 // week, merged by popularity with each title once.
 func (a *API) exploreTop(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
-	sw, ok := exploreSwitch(q.Get("type"))
+	sw, ok := discover.ExploreSwitch(q.Get("type"))
 	if !ok {
 		webserver.Fail(w, http.StatusBadRequest, "type must be all, movies or shows")
 		return
@@ -139,7 +139,7 @@ func (a *API) fillTopArt(r *http.Request, items []rankedView) {
 // genre, second.
 func (a *API) exploreGenre(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
-	sw, ok := exploreSwitch(q.Get("type"))
+	sw, ok := discover.ExploreSwitch(q.Get("type"))
 	if !ok {
 		webserver.Fail(w, http.StatusBadRequest, "type must be all, movies or shows")
 		return

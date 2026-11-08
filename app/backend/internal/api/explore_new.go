@@ -158,7 +158,7 @@ func (a *API) newHero(r *http.Request, pg newPage, me int64) ([]discoverItemView
 			continue
 		}
 		k := v.Kind + ":" + v.TMDBID
-		if f := newFresh(pg.facts[k], now); f != nil {
+		if f := discover.NewFresh(pg.facts[k], now); f != nil {
 			v.Fresh = f
 		}
 		if m, ok := pg.marks[k]; ok {
@@ -167,25 +167,6 @@ func (a *API) newHero(r *http.Request, pg newPage, me int64) ([]discoverItemView
 		out = append(out, v)
 	}
 	return out, nil
-}
-
-// withoutHero drops the hero's titles from rows.
-func withoutHero(rows []engine.Row, hero map[string]bool) []engine.Row {
-	if len(hero) == 0 {
-		return rows
-	}
-	out := make([]engine.Row, 0, len(rows))
-	for _, r := range rows {
-		items := make([]engine.Item, 0, len(r.Items))
-		for _, it := range r.Items {
-			if !hero[it.Key()] {
-				items = append(items, it)
-			}
-		}
-		r.Items = items
-		out = append(out, r)
-	}
-	return out
 }
 
 func (c *newPageCache) get(key string) (newPage, bool) {
@@ -842,39 +823,6 @@ func newRail(h newHousehold, lists map[string]newLists, svcNew map[int][]engine.
 	return out
 }
 
-// newFresh is the card strip a title's newness gives (Phase C): Added 2d
-// ago, Out Nov 4, Season 3, New episode Fri, New series.
-func newFresh(f engine.NewFact, now time.Time) *engine.Fresh {
-	if f.At.IsZero() {
-		return nil
-	}
-	days := int(now.Sub(f.At).Hours() / 24)
-	switch f.Kind {
-	case engine.NewService:
-		t := "Added today"
-		if days == 1 {
-			t = "Added yesterday"
-		} else if days > 1 {
-			t = "Added " + strconv.Itoa(days) + "d ago"
-		}
-		return &engine.Fresh{Kind: engine.FreshRecentlyAdded, Text: t}
-	case engine.NewRelease:
-		return &engine.Fresh{Kind: engine.FreshNewRelease, Text: "Out " + f.At.Format("Jan 2")}
-	case engine.NewUpcoming:
-		return &engine.Fresh{Kind: engine.FreshComing, Text: "Out " + f.At.Format("Jan 2")}
-	case engine.NewSeason:
-		return &engine.Fresh{Kind: engine.FreshNewSeason, Text: "Season " + strconv.Itoa(f.Season)}
-	case engine.NewEpisode:
-		if days <= 6 {
-			return &engine.Fresh{Kind: engine.FreshNewEpisode, Text: "New episode " + f.At.Format("Mon")}
-		}
-		return &engine.Fresh{Kind: engine.FreshNewEpisode, Text: "New episodes"}
-	case engine.NewSeries:
-		return &engine.Fresh{Kind: engine.FreshNewRelease, Text: "New series"}
-	}
-	return nil
-}
-
 // newViews joins rows (Kid limit, never-add, Library), drops rows left
 // under least and puts each card's newness strip and service on it.
 func (a *API) newViews(r *http.Request, rows []engine.Row, pg newPage, least int) ([]exploreRowView, error) {
@@ -897,7 +845,7 @@ func (a *API) newViews(r *http.Request, rows []engine.Row, pg newPage, least int
 		for j := range out[i].Items {
 			it := &out[i].Items[j]
 			k := it.Kind + ":" + it.TMDBID
-			if f := newFresh(pg.facts[k], now); f != nil {
+			if f := discover.NewFresh(pg.facts[k], now); f != nil {
 				it.Fresh = f
 			}
 			if m, ok := pg.marks[k]; ok && (out[i].Type == engine.TypeNPServices || out[i].Type == engine.TypeNPTopShows || out[i].Type == engine.TypeNPTopFilms) {
@@ -956,7 +904,7 @@ func (a *API) newRailViews(r *http.Request, rail []newRailDay) ([]newRailDayView
 
 // newParams reads ?type= and checks the member may see the page.
 func (a *API) newParams(w http.ResponseWriter, r *http.Request) (string, bool) {
-	sw, ok := exploreSwitch(r.URL.Query().Get("type"))
+	sw, ok := discover.ExploreSwitch(r.URL.Query().Get("type"))
 	if !ok {
 		webserver.Fail(w, http.StatusBadRequest, "type must be all, movies or shows")
 		return "", false
@@ -1009,7 +957,7 @@ func (a *API) exploreNew(w http.ResponseWriter, r *http.Request) {
 	if v, ok := newHeroKeys.Load(pg.key); ok {
 		heroKeys = v.(map[string]bool)
 	}
-	rows := withoutHero(pg.rows, heroKeys)
+	rows := discover.WithoutHero(pg.rows, heroKeys)
 	from, to := 0, newFirstRows
 	if n > 0 {
 		from = newFirstRows + (n-1)*newPageRows

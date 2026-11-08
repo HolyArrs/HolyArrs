@@ -10,6 +10,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/discover"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	engine "github.com/HolyArrs/holyarrs/app/backend/internal/discover/rows"
@@ -274,11 +276,11 @@ func TestNewFreshText(t *testing.T) {
 		"Out Oct 14":      {Kind: engine.NewRelease, At: time.Date(2026, 10, 14, 0, 0, 0, 0, time.UTC)},
 	}
 	for want, f := range cases {
-		if got := newFresh(f, now); got == nil || got.Text != want {
+		if got := discover.NewFresh(f, now); got == nil || got.Text != want {
 			t.Fatalf("%+v: %v, want %s", f, got, want)
 		}
 	}
-	if newFresh(engine.NewFact{}, now) != nil {
+	if discover.NewFresh(engine.NewFact{}, now) != nil {
 		t.Fatal("no fact, no strip")
 	}
 }

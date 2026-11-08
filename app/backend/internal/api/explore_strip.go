@@ -94,7 +94,7 @@ func keepStrip(key string, e stripEntry) {
 // exploreStrip answers GET /api/v1/explore/strip?type=&row=: the member's
 // category strip, in order.
 func (a *API) exploreStrip(w http.ResponseWriter, r *http.Request) {
-	sw, ok := exploreParams(w, r)
+	sw, ok := discover.ExploreParams(w, r)
 	if !ok {
 		return
 	}

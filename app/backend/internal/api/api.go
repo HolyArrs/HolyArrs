@@ -233,7 +233,7 @@ type API struct {
 
 // New makes the API.
 func New(s Server) *API {
-	accounts.SetViewKeyCheck(exploreViewKeyOK)
+	accounts.SetViewKeyCheck(discover.ExploreViewKeyOK)
 	if s.Started.IsZero() {
 		s.Started = time.Now()
 	}

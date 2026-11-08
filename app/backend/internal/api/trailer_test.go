@@ -16,6 +16,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/discover"
+
 	engine "github.com/HolyArrs/holyarrs/app/backend/internal/discover/rows"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata/youtube"
@@ -421,7 +423,7 @@ func TestExploreTrailerTitles(t *testing.T) {
 	row := func(items ...engine.Item) engine.Row { return engine.Row{Items: items} }
 	hero := []engine.Item{it("movie", "1"), it("show", "2")}
 	head := []engine.Row{row(), row(it("movie", "1"), it("movie", "3"), it("movie", "4"), it("movie", "5"), it("movie", "6")), row(it("artist", "x"), it("show", "7")), row(it("movie", "8")), row(it("movie", "9"))}
-	got := fmt.Sprint(exploreTrailerTitles(hero, head))
+	got := fmt.Sprint(discover.ExploreTrailerTitles(hero, head))
 	if got != "[[movie 1] [show 2] [movie 3] [movie 4] [movie 5] [show 7] [movie 8]]" {
 		t.Fatal(got)
 	}

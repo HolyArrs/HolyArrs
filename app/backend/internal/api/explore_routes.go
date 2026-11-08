@@ -8,6 +8,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/discover"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
@@ -26,17 +28,6 @@ type exploreRowView struct {
 	TitleLayer string             `json:"title_layer,omitempty"`
 	Wide       bool               `json:"wide,omitempty"`
 	Items      []discoverItemView `json:"items"`
-}
-
-// exploreSwitch reads ?type=: all (default), movies or shows.
-func exploreSwitch(v string) (string, bool) {
-	switch v {
-	case "", "all":
-		return "all", true
-	case "movies", "shows":
-		return v, true
-	}
-	return "", false
 }
 
 // explorePageFor assembles the member's page: today's pool, else the
@@ -183,20 +174,11 @@ func rowTypes(rows []exploreRowView) []string {
 	return out
 }
 
-// exploreParams reads the type switch shared by the head and the tail.
-func exploreParams(w http.ResponseWriter, r *http.Request) (sw string, ok bool) {
-	sw, ok = exploreSwitch(r.URL.Query().Get("type"))
-	if !ok {
-		webserver.Fail(w, http.StatusBadRequest, "type must be all, movies or shows")
-	}
-	return sw, ok
-}
-
 // exploreHead answers GET /api/v1/explore/head: the head rows in one answer, from the stored pool. building says a pool is
 // on its way (the page may ask again shortly).
 func (a *API) exploreHead(w http.ResponseWriter, r *http.Request) {
 	st := webserver.NewServerTiming()
-	sw, ok := exploreParams(w, r)
+	sw, ok := discover.ExploreParams(w, r)
 	if !ok {
 		return
 	}
@@ -277,7 +259,7 @@ func (a *API) exploreHead(w http.ResponseWriter, r *http.Request) {
 // exploreTail answers GET /api/v1/explore/tail?page=n: the next 4 rows of
 // the generated tail; more says another page follows.
 func (a *API) exploreTail(w http.ResponseWriter, r *http.Request) {
-	sw, ok := exploreParams(w, r)
+	sw, ok := discover.ExploreParams(w, r)
 	if !ok {
 		return
 	}
@@ -312,20 +294,6 @@ func (a *API) exploreTail(w http.ResponseWriter, r *http.Request) {
 	webserver.WriteJSON(w, http.StatusOK, map[string]any{"type": sw, "page": n, "more": more, "rows": rows})
 }
 
-// exploreViewKeyOK is the check accounts calls before it counts a view:
-// the row types, title layers and strip categories Explore knows.
-func exploreViewKeyOK(kind, key string) bool {
-	switch kind {
-	case accounts.ViewRow:
-		return engine.MinItems(key) != 0 || key == "hero"
-	case accounts.ViewLayer:
-		return validTitleLayer(key) || key == engine.LayerFixed
-	case accounts.ViewCategory:
-		return stripCategoryOK(key)
-	}
-	return false
-}
-
 // exploreCounts answers POST /api/v1/explore/counts {row_type, event}:
 // a card opened or an ask started from a row. Counts only measure; they
 // never change what Explore shows.
@@ -354,52 +322,11 @@ func (a *API) exploreCounts(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// heroCandidates are the titles the hero picks from (before its quality
-// gate), best first; All takes 2 x HeroShuffleTop more (the tabs' share).
-func heroCandidates(pg engine.Page, all bool) []engine.Item {
-	n := engine.HeroPool
-	if all {
-		n += 2 * engine.HeroShuffleTop
-	}
-	return engine.HeroRank(engine.HeroCandidates(pg.Head, pg.Leans, n), pg.Taste)
-}
-
-// exploreTrailerTitles are the movies and shows a page shows first, each
-// once: the hero's candidates, then the first 4 cards of the first 3 rows
-// that have cards (the trailer pass hands it the hero's candidates only).
-func exploreTrailerTitles(hero []engine.Item, head []engine.Row) [][2]string {
-	var out [][2]string
-	seen := map[string]bool{}
-	add := func(v engine.Item) {
-		if (v.Kind == "movie" || v.Kind == "show") && v.TMDBID != "" && !seen[v.Kind+v.TMDBID] {
-			seen[v.Kind+v.TMDBID] = true
-			out = append(out, [2]string{v.Kind, v.TMDBID})
-		}
-	}
-	for _, v := range hero {
-		add(v)
-	}
-	rows := 0
-	for _, row := range head {
-		if len(row.Items) == 0 || rows == 3 {
-			continue
-		}
-		rows++
-		for i, v := range row.Items {
-			if i == 4 {
-				break
-			}
-			add(v)
-		}
-	}
-	return out
-}
-
 // exploreHero picks the hero (engine.PickHero) from a pool of candidates
 // that pass the quality gate: a known trailer, a logo and a backdrop. When
 // trailers are off or too few are known yet, art-only titles top it up.
 func (a *API) exploreHero(r *http.Request, pg engine.Page, all bool, me int64) ([]discoverItemView, error) {
-	cands := heroCandidates(pg, all)
+	cands := discover.HeroCandidates(pg, all)
 	views, err := a.exploreViews(r.Context(), r, []engine.Row{{Items: cands}})
 	if err != nil || len(views) != 1 {
 		return []discoverItemView{}, err
