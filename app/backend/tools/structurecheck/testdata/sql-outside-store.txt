@@ -7,7 +7,6 @@ app/backend/internal/alerts/shows.go
 app/backend/internal/api/api.go
 app/backend/internal/api/asks.go
 app/backend/internal/api/cardart.go
-app/backend/internal/downloads/routes_copies.go
 app/backend/internal/api/discover.go
 app/backend/internal/api/explore.go
 app/backend/internal/api/explore_genre.go
@@ -31,7 +30,6 @@ app/backend/internal/api/people_shelves.go
 app/backend/internal/api/servicetop.go
 app/backend/internal/api/settings_status.go
 app/backend/internal/api/signinart.go
-app/backend/internal/api/titlefacts.go
 app/backend/internal/api/titles.go
 app/backend/internal/api/titles_brief.go
 app/backend/internal/api/trailer_wants.go
@@ -50,6 +48,7 @@ app/backend/internal/downloads/grab.go
 app/backend/internal/downloads/poll.go
 app/backend/internal/downloads/routes_client.go
 app/backend/internal/downloads/routes_control.go
+app/backend/internal/downloads/routes_copies.go
 app/backend/internal/downloads/routes_downloaders.go
 app/backend/internal/downloads/routes_downloads.go
 app/backend/internal/downloads/routes_live.go
@@ -148,6 +147,7 @@ app/backend/internal/subtitles/settings.go
 app/backend/internal/subtitles/store_sites.go
 app/backend/internal/subtitles/video_facts.go
 app/backend/internal/subtitles/wish.go
+app/backend/internal/titleview/store_facts.go
 app/backend/tools/demo/doctor.go
 app/backend/tools/demo/history.go
 app/backend/tools/demo/inspect.go

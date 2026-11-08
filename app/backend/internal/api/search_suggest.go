@@ -12,6 +12,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/titleview"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
@@ -226,7 +227,7 @@ func mergeSuggest(rows []SuggestRow) []SuggestRow {
 // suggestLocal reads the Library: titles (Kid limits and parts apply),
 // album parts of Library artists, people credited in Library titles.
 func (a *API) suggestLocal(r *http.Request, q, kind string, music bool) []SuggestRow {
-	ctx := withLookupMemo(r.Context())
+	ctx := titleview.WithLookupMemo(r.Context())
 	out := []SuggestRow{}
 	visible := func(t mediafiles.Title) bool {
 		if p, ok := parts.ForTitleKind(t.Kind); ok && !a.partIsOn(p) && !a.s.Parts.SafeMode {

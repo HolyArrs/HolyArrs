@@ -1,4 +1,4 @@
-package api
+package titleview
 
 import (
 	"context"
@@ -7,8 +7,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/requests"
 )
 
@@ -30,9 +28,9 @@ func batchOf(ctx context.Context) *titleBatch {
 	return b
 }
 
-// withTitleBatch reads the batch for all Titles and keeps it on ctx for titleView.
-func (a *API) withTitleBatch(ctx context.Context) (context.Context, error) {
-	db := a.s.Store.Read()
+// WithTitleBatch reads the batch for all Titles and keeps it on ctx for View.
+func (h *Handlers) WithTitleBatch(ctx context.Context) (context.Context, error) {
+	db := h.Store.Read()
 	b := &titleBatch{slots: map[int64][]mediafiles.Slot{}, downloads: map[int64]domain.Download{}, files: map[int64]mediafiles.File{},
 		labels: map[int64]mediafiles.Version{}, asks: map[int64][]requests.View{}}
 	itemTitle := map[int64]int64{}
@@ -85,9 +83,9 @@ func (a *API) withTitleBatch(ctx context.Context) (context.Context, error) {
 	who, ok := webserver.From(ctx)
 	var views []requests.View
 	if !ok || who.Has(webserver.PermApprove) {
-		views, err = a.s.Asks.Views(ctx, "a.title_id IS NOT NULL")
+		views, err = h.Asks.Views(ctx, "a.title_id IS NOT NULL")
 	} else {
-		views, err = a.s.Asks.Views(ctx, "a.title_id IS NOT NULL AND EXISTS (SELECT 1 FROM ask_people p WHERE p.ask_id = a.id AND p.user_id = ?)", who.UserID)
+		views, err = h.Asks.Views(ctx, "a.title_id IS NOT NULL AND EXISTS (SELECT 1 FROM ask_people p WHERE p.ask_id = a.id AND p.user_id = ?)", who.UserID)
 		for i := range views {
 			views[i].Mine = true
 		}
@@ -110,14 +108,4 @@ func (b *titleBatch) asksFor(id int64) []requests.View {
 		return v
 	}
 	return []requests.View{}
-}
-
-// ownedHandlers serve the owned-title marks (mediafiles); the part switches,
-// the Kid limit and the age rating check come from here.
-func (a *API) ownedHandlers() *mediafiles.OwnedHandlers {
-	return &mediafiles.OwnedHandlers{Store: a.s.Store, KidMax: a.kidMax, RatingAllows: metadata.RatingAllows,
-		KindOn: func(kind string) bool {
-			p, ok := parts.ForTitleKind(kind)
-			return !ok || a.partIsOn(p) || a.s.Parts.SafeMode
-		}}
 }

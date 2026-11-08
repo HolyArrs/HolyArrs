@@ -10,6 +10,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/titleview"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/discover"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
@@ -37,7 +38,7 @@ func (a *API) plainSearch(w http.ResponseWriter, r *http.Request) {
 		webserver.WriteJSON(w, http.StatusOK, out)
 		return
 	}
-	ctx := withLookupMemo(r.Context())
+	ctx := titleview.WithLookupMemo(r.Context())
 	views, err := a.plainLibrary(ctx, r, q)
 	if err != nil {
 		webserver.Internal(w, "api", err)

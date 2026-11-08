@@ -79,6 +79,7 @@ var layers = map[string]int{
 	"health":       9,
 	"updates":      9,
 	"setup":        9,
+	"titleview":    9, // Title views above shows, music and requests; same-layer callers get injected funcs
 }
 
 // coreRows orders the core packages. A core package imports only core
