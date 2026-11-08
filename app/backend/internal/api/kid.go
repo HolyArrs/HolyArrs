@@ -31,13 +31,7 @@ const aboveLimit = metadata.AboveLimit
 
 // kidMax is the signed-in person's age-rating limit: "" for no limit, for
 // owners and admins, and without sign-in.
-func (a *API) kidMax(r *http.Request) string {
-	who, ok := webserver.From(r.Context())
-	if !ok || who.Role != webserver.RoleMember {
-		return ""
-	}
-	return who.MaxRating
-}
+func (a *API) kidMax(r *http.Request) string { return accounts.KidMax(r) }
 
 // titleAllowed says the signed-in person may see the Library title t.
 func (a *API) titleAllowed(r *http.Request, t mediafiles.Title) bool {
