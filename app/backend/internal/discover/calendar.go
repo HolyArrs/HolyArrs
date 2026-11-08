@@ -23,6 +23,8 @@ func viewer(ctx context.Context) int64 {
 	return 1
 }
 
+// calendar lists cinema, digital and physical dates of Library movies in
+// [from, to); dates are YYYY-MM-DD, default today to today + 30 days.
 func (h *Handlers) calendar(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 	from := time.Now().UTC().Truncate(24 * time.Hour)
