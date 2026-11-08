@@ -13,7 +13,7 @@ Only the owner, or an admin who may change settings, can finish it.
    by hand. You also say whether family or friends will ask for titles. Yes
    adds a Requests page.
 2. **Where's your media?** Turn on what you collect and add its folder. On
-   Docker, use the path inside the container, such as `/data/movies`.
+   Docker, use the path inside the container, such as `/movies`.
 3. **Which app downloads?** Connect your Downloader.
 4. **Where should we search?** Link Prowlarr or Jackett, and your sites come
    with it.

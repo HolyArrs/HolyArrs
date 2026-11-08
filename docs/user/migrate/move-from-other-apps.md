@@ -28,7 +28,7 @@ Old apps often run in other containers and see your folders under other names. I
 
 When an old folder is not on this server but a Library folder with the same last name is, HolyArrs fills it in and marks it **Suggested**.
 
-Under **Advanced** you can add your own path rules. Say Radarr kept movies in `/movies` and HolyArrs sees the same folder as `/data/movies`. Add the rule `/movies` to `/data/movies`. The longest matching rule wins.
+Under **Advanced** you can add your own path rules. Say Radarr kept movies in `/data/media/movies` and HolyArrs sees the same folder as `/movies`. Add the rule `/data/media/movies` to `/movies`. The longest matching rule wins.
 
 Titles whose folder is not found are listed with the reason. Fix the rule and move again. Nothing is added twice.
 
@@ -134,7 +134,7 @@ The body of plan, dry-run and moves looks like this, plus `"plan_hash"` for move
 ```json
 {
   "snapshots": [1, 2],
-  "path_rules": [{"from": "/movies", "to": "/data/movies"}],
+  "path_rules": [{"from": "/data/media/movies", "to": "/movies"}],
   "skip": ["alerts"],
   "people": {"person:seerr:1": "owner", "person:seerr:3": "admin", "person:seerr:2": "merge"}
 }

@@ -7,11 +7,11 @@ You want HolyArrs in Container Manager on your Synology. Read [Install HolyArrs 
 1. In File Station, make `docker/holyarrs/config`.
 2. Make one shared folder for media, for example `media`, with `downloads`, `movies`, `tv` and `music` inside.
 3. In Container Manager, open Project, then Create, and paste the Compose file from the Docker guide.
-4. Set the volumes to `/volume1/docker/holyarrs/config:/config` and `/volume1/media:/data`.
+4. Set the volumes to `/volume1/docker/holyarrs/config:/config`, then `/volume1/media/movies:/movies`, `/volume1/media/tv:/tv`, `/volume1/media/music:/music` and `/volume1/media/downloads:/downloads`.
 5. Set `PUID` and `PGID` to your user. On Synology this is often `1026` and `100`. Check with `id <user>` over SSH.
 6. Give that user read and write on the media folder: Control Panel, Shared Folder, Edit, Permissions.
 7. Tick Enable auto-restart.
-8. Open http://your-server:6262 and create the owner account. Add `/data/movies`, `/data/tv` and `/data/music` as Library folders.
+8. Open http://your-server:6262 and create the owner account. Add `/movies`, `/tv` and `/music` as Library folders.
 
 ## Troubleshooting
 

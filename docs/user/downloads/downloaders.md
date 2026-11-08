@@ -43,7 +43,7 @@ For qBittorrent these sit under **More options**.
   - NZBGet gets it as the download category.
 - **Priority**: 1 to 50. The lowest number is used first.
 - **Tags**: only titles with one of these tags use this Downloader.
-- **Downloader's path** and **HolyArrs' path**: fill these in only when the Downloader sees the download folder under a different name than HolyArrs does. This is common when they run in separate containers. For example, `/data/downloads` for the Downloader and `/downloads` for HolyArrs.
+- **Downloader's path** and **HolyArrs' path**: fill these in only when the Downloader sees the download folder under a different name than HolyArrs does. This is common when they run in separate containers. For example, `/data/torrents` for the Downloader and `/downloads` for HolyArrs.
 - **Reach the local network**: on for most setups, since Downloaders usually run at home. Turn it off for a Downloader on the internet.
 - **HolyArrs can change this Downloader**: when off, new downloads still go to it, but HolyArrs never pauses, changes or removes anything already in it. See [Keep a Downloader read only](#keep-a-downloader-read-only).
 

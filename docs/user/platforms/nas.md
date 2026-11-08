@@ -19,21 +19,21 @@ Pages for single boxes: [Unraid](unraid.md), [Synology](synology.md). QNAP and T
 
 1. Make `Container/holyarrs/config` and one `media` share.
 2. In Container Station, open Applications, then Create, and paste the Compose file.
-3. Use `/share/Container/holyarrs/config:/config` and `/share/media:/data`.
+3. Use `/share/Container/holyarrs/config:/config`, then `/share/media/movies:/movies`, `/share/media/tv:/tv`, `/share/media/music:/music` and `/share/media/downloads:/downloads`.
 4. Set `PUID` and `PGID` to the owner of the `media` share.
 
 ## TrueNAS SCALE (custom app)
 
 1. Make two datasets: `apps/holyarrs-config` and `media`. Put `downloads`, `movies`, `tv` and `music` inside `media`.
 2. In Apps, add a custom app from YAML with the Compose file.
-3. Use `/mnt/<pool>/apps/holyarrs-config:/config` and `/mnt/<pool>/media:/data`.
+3. Use `/mnt/<pool>/apps/holyarrs-config:/config`, then `/mnt/<pool>/media/movies:/movies`, `/mnt/<pool>/media/tv:/tv`, `/mnt/<pool>/media/music:/music` and `/mnt/<pool>/media/downloads:/downloads`.
 4. Set `PUID` and `PGID` to the dataset's owner. TrueNAS apps often use `568`. Give that user write access in the dataset ACL.
 
 ## Settings explained
 
 **Config on local disk.** HolyArrs keeps its databases in `/config`. A network share or a FUSE path can corrupt them, so HolyArrs refuses to start on one and tells you why.
 
-**One media mount for hardlinks.** When downloads and Library folders sit in one folder mounted once as `/data`, imports are hardlinks. They take no extra space and finish at once. Separate `/movies`, `/tv`, `/music` and `/downloads` mounts also work, but imports are then copies. See [Media folders](../getting-started/install.md#media-folders).
+**Hardlinks.** Separate `/movies`, `/tv`, `/music` and `/downloads` mounts work, but imports are copies. For hardlinks, which take no extra space and finish at once, mount the one media folder in place of the four, and give the Downloader the same mount at the same path. See [Media folders](../getting-started/install.md#media-folders).
 
 **Auto-restart.** Restart in the app, safe mode and a backup restore all stop HolyArrs and expect Docker to start it again. Without auto-restart it just stays stopped.
 

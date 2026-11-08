@@ -6,7 +6,7 @@ You want HolyArrs to know where your finished movies, shows and music live. A Li
 
 1. Open **Settings > Library folders**.
 2. Pick what the folder holds: **Movies**, **Shows** or **Music**. Each kind uses its own folders.
-3. Enter the full path as HolyArrs sees it. In Docker, this is the path inside the container, such as `/data/media/movies`. The host path will not work.
+3. Enter the full path as HolyArrs sees it. In Docker, this is the path inside the container, such as `/movies`. The host path will not work.
 4. Enter a name if you want one. Leave it empty and HolyArrs uses the last part of the path.
 5. Select **Add and check**.
 
@@ -29,7 +29,7 @@ Test files are removed when the check ends. Select **Check again** to run it aga
 - **No hardlink**: a warning. Imports still work, but files are copied. That takes longer and uses more disk space.
 - A low space note can show on a folder that otherwise works.
 
-In Docker, put downloads and media under the same `/data` mount so they share one filesystem and hardlinks work. See [Install HolyArrs with Docker](../getting-started/install.md).
+In Docker, separate `/movies`, `/tv`, `/music` and `/downloads` mounts mean imports are copies. For hardlinks, mount one shared parent folder holding downloads and media instead, on one filesystem. See [Install HolyArrs with Docker](../getting-started/install.md).
 
 ## Rename or remove a folder
 
@@ -45,7 +45,7 @@ In Docker, put downloads and media under the same `/data` mount so they share on
 - the folders your Downloaders save into, as HolyArrs sees them. That is the save path set at start (`HOLYARRS_SAVE_PATH`) and the HolyArrs side of each path map on a Downloader that is still set up,
 - the **Extra import folders** on this page.
 
-To add one, type one full path per line in **Extra import folders**, such as `/data/imports` or `D:\Imports`. You can list up to 32. A whole disk, such as `/` or `C:\`, is refused.
+To add one, type one full path per line in **Extra import folders**, such as `/imports` or `D:\Imports`. You can list up to 32. A whole disk, such as `/` or `C:\`, is refused.
 
 Only the owner or an admin signed in with a password can change this list. An API key also needs the admin scope. People with **Change settings** can see the list.
 
@@ -55,6 +55,6 @@ Only the owner or an admin signed in with a password can change this list. An AP
 
 **Import cannot see the download folder.** If `HOLYARRS_SAVE_PATH` is not set and no Downloader has a path map, the download folder is not allowed. Set `HOLYARRS_SAVE_PATH` (see [Install](../getting-started/install.md)) or add the download folder, such as `/downloads`, as an extra import folder.
 
-**No hardlink on Docker.** Downloads and media are on different mounts. Put both under one `/data` mount.
+**No hardlink on Docker.** Downloads and media are on different mounts. Mount one shared parent folder holding both instead.
 
 **Cannot remove a folder.** Titles still use it. Move them to another folder first.

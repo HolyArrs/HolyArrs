@@ -25,7 +25,7 @@ HolyArrs waits 10 seconds and gathers every changed folder before it sends anyth
 ## Settings
 
 - **Update it after**: pick which changes the server hears about. **An import**, **A rename** and **A delete**. A delete only counts when files were removed from disk. All three are on for a new server.
-- **HolyArrs path** and **Same folder on the server**: fill these only when the server sees your files under another path, for example when it runs in another container. If HolyArrs sees `/data/movies` and the server sees `/movies`, put `/data/movies` in the first box and `/movies` in the second. Fill both or neither.
+- **HolyArrs path** and **Same folder on the server**: fill these only when the server sees your files under another path, for example when it runs in another container. If HolyArrs sees `/movies` and the server sees `/media/movies`, put `/movies` in the first box and `/media/movies` in the second. Fill both or neither.
 - **Reach the local network**: on by default, since media servers are almost always at home. Turn it off for a server out on the internet. Even when it is on, HolyArrs never calls link-local or cloud metadata addresses.
 - **Send updates**: turn this off to pause a server without removing it. Its card then shows **Off**.
 

@@ -9,7 +9,7 @@ There is no HolyArrs template in Community Applications yet, so you add the cont
 1. In the Docker tab, add a container with the HolyArrs image.
 2. Map port `6262`.
 3. Map `/config` to a pool path, such as `/mnt/<pool>/appdata/holyarrs`. `<pool>` is your pool's name.
-4. Map one media share, holding downloads and all Library folders, to `/data`. Use a disk or pool path for it.
+4. Map your media folders to `/movies`, `/tv`, `/music` and `/downloads`. Use disk or pool paths for them.
 5. Set `PUID=99`, `PGID=100` (Unraid's `nobody:users`) and `UMASK=022`.
 6. Make sure the container restarts on its own.
 7. Open http://your-server:6262 and create the owner account.
