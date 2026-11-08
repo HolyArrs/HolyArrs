@@ -140,3 +140,17 @@ func Delete(ctx context.Context, st *database.Store, id int64) error {
 		return nil
 	})
 }
+
+// CountDoneMoves counts the finished moves.
+func CountDoneMoves(ctx context.Context, q database.Querier) (int, error) {
+	n := 0
+	err := q.QueryRowContext(ctx, "SELECT count(*) FROM moves WHERE state = 'done'").Scan(&n)
+	return n, err
+}
+
+// SnapshotKind names the old app a kept read came from.
+func SnapshotKind(ctx context.Context, q database.Querier, id int64) (string, error) {
+	var kind string
+	err := q.QueryRowContext(ctx, "SELECT app_kind FROM migrate_snapshots WHERE id = ?", id).Scan(&kind)
+	return kind, err
+}

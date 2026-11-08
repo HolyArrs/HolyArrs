@@ -1,11 +1,12 @@
 package migrate
 
 import (
-	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/features"
 	"os"
 	"strings"
 	"testing"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/features"
 )
 
 // TestMain runs this package with the held-back features switched on

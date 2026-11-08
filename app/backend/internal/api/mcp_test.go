@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/ai"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
@@ -198,7 +199,7 @@ func TestMCPHandshake(t *testing.T) {
 		t.Fatalf("initialize: %d %v", st, v)
 	}
 	_, v = f.rpc(f.ownKey, "initialize", `{"protocolVersion":"1999-01-01"}`)
-	if res, _ := v["result"].(map[string]any); res["protocolVersion"] != mcpVersions[0] {
+	if res, _ := v["result"].(map[string]any); res["protocolVersion"] != ai.Versions[0] {
 		t.Fatalf("unknown version: %v", v)
 	}
 	_, v = f.rpc(f.ownKey, "server/discover", "")
@@ -302,7 +303,7 @@ func TestMCPConfirmAndHistory(t *testing.T) {
 	// Expired after five minutes.
 	first, _ = f.tool(f.memKey, "ask_for_title", `{"tmdb_id":"693134","kind":"movie"}`)
 	tok, _ = first["confirm_token"].(string)
-	f.api.ai.now = func() time.Time { return time.Now().Add(6 * time.Minute) }
+	f.api.ai.SetClock(func() time.Time { return time.Now().Add(6 * time.Minute) })
 	if _, msg := f.tool(f.memKey, "ask_for_title", `{"tmdb_id":"693134","kind":"movie","confirm_token":"`+tok+`"}`); !strings.Contains(msg, "expired") {
 		t.Fatalf("expired: %q", msg)
 	}
@@ -321,14 +322,14 @@ func TestMCPRateLimit(t *testing.T) {
 	f := newAIFix(t)
 	f.turnOn(true)
 	got := 0
-	for i := 0; i < aiReadsPerMin+5; i++ {
+	for i := 0; i < ai.ReadsPerMin+5; i++ {
 		st, _ := f.rpc(f.ownKey, "tools/call", `{"name":"downloads","arguments":{}}`)
 		if st == 429 {
 			got = i
 			break
 		}
 	}
-	if got != aiReadsPerMin {
+	if got != ai.ReadsPerMin {
 		t.Fatalf("429 after %d reads", got)
 	}
 	// Another key has its own count.
@@ -336,21 +337,21 @@ func TestMCPRateLimit(t *testing.T) {
 		t.Fatalf("other key: %d", st)
 	}
 	// Actions: five an hour.
-	var s aiState
-	for i := 0; i < aiActsPerHour; i++ {
-		if ok, _ := s.allow(&s.acts, 1, aiActsPerHour, time.Hour); !ok {
+	var s ai.Limits
+	for i := 0; i < ai.ActsPerHour; i++ {
+		if ok, _ := s.Allow(&s.Acts, 1, ai.ActsPerHour, time.Hour); !ok {
 			t.Fatalf("action %d refused", i)
 		}
 	}
-	if ok, wait := s.allow(&s.acts, 1, aiActsPerHour, time.Hour); ok || wait <= 0 {
+	if ok, wait := s.Allow(&s.Acts, 1, ai.ActsPerHour, time.Hour); ok || wait <= 0 {
 		t.Fatal("sixth action allowed")
 	}
 }
 
 func TestMCPTidy(t *testing.T) {
 	long := strings.Repeat("a", 400)
-	got := aiTidy(map[string]any{"name": "Du​ne\x07", "overview": long, "poster": "x.jpg", "items": make([]any, 40)}, 0).(map[string]any)
-	if got["name"] != "Dune" || got["poster"] != nil || len([]rune(got["overview"].(string))) != aiTextMax+1 {
+	got := ai.Tidy(map[string]any{"name": "Du​ne\x07", "overview": long, "poster": "x.jpg", "items": make([]any, 40)}, 0).(map[string]any)
+	if got["name"] != "Dune" || got["poster"] != nil || len([]rune(got["overview"].(string))) != ai.TextMax+1 {
 		t.Fatalf("tidy: %v", got)
 	}
 	if n := len(got["items"].([]any)); n != 0 {

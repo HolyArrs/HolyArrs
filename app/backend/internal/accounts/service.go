@@ -122,9 +122,9 @@ type Auth struct {
 	known           map[string]map[string]time.Time // name -> address -> last full sign-in (signInWait)
 	ownerSetupFails map[string]*failure             // failed first-run owner attempts (hosts.go)
 	refusedHosts    map[string]bool                 // refused names already logged (hosts.go)
-	// codes are AI app sign-ins waiting for their key (aioauth.go).
+	// codes are AI app sign-ins waiting for their key (ai_signin.go).
 	codes aiCodes
-	// cimd reads AI apps' client ID metadata documents (aicimd.go).
+	// cimd reads AI apps' client ID metadata documents (ai_client_docs.go).
 	cimd aiCIMD
 	// The first-run search for Jellyfin and Emby (setup_outside.go): where
 	// it is sent and how long it waits (defaults when empty), one at a time.

@@ -255,6 +255,15 @@ func (r *Run) Progress(ctx context.Context, p float64, note string) error {
 	return err
 }
 
+// ProgressOf reads how far a Job is and its note. It is zero and empty for a
+// Job that does not exist.
+func ProgressOf(ctx context.Context, q database.Querier, id int64) (float64, string, error) {
+	var progress float64
+	var note string
+	err := q.QueryRowContext(ctx, "SELECT progress, COALESCE(progress_note, '') FROM jobs WHERE id = ?", id).Scan(&progress, &note)
+	return progress, note, err
+}
+
 // SetResult stores a result to save when the Job is done.
 func (r *Run) SetResult(v map[string]any) { r.result = v }
 

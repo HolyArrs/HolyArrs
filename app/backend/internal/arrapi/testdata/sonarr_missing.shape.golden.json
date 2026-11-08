@@ -1,0 +1,80 @@
+{
+  "page": "number",
+  "pageSize": "number",
+  "records": [
+    {
+      "airDate": "string",
+      "airDateUtc": "string",
+      "episodeFileId": "number",
+      "episodeNumber": "number",
+      "hasFile": "bool",
+      "id": "number",
+      "monitored": "bool",
+      "runtime": "number",
+      "seasonNumber": "number",
+      "series": {
+        "added": "string",
+        "alternateTitles": [],
+        "ended": "bool",
+        "genres": [],
+        "id": "number",
+        "images": [],
+        "languageProfileId": "number",
+        "lastAired": "string",
+        "monitorNewItems": "string",
+        "monitored": "bool",
+        "originalLanguage": {
+          "id": "number",
+          "name": "string"
+        },
+        "path": "string",
+        "previousAiring": "string",
+        "qualityProfileId": "number",
+        "rootFolderPath": "string",
+        "runtime": "number",
+        "seasonFolder": "bool",
+        "seasons": [
+          {
+            "monitored": "bool",
+            "seasonNumber": "number",
+            "statistics": {
+              "episodeCount": "number",
+              "episodeFileCount": "number",
+              "percentOfEpisodes": "number",
+              "previousAiring": "string",
+              "releaseGroups": [],
+              "sizeOnDisk": "number",
+              "totalEpisodeCount": "number"
+            }
+          }
+        ],
+        "seriesType": "string",
+        "sortTitle": "string",
+        "statistics": {
+          "episodeCount": "number",
+          "episodeFileCount": "number",
+          "percentOfEpisodes": "number",
+          "releaseGroups": [],
+          "seasonCount": "number",
+          "sizeOnDisk": "number",
+          "totalEpisodeCount": "number"
+        },
+        "status": "string",
+        "tags": [],
+        "title": "string",
+        "titleSlug": "string",
+        "tmdbId": "number",
+        "tvMazeId": "number",
+        "tvdbId": "number",
+        "useSceneNumbering": "bool",
+        "year": "number"
+      },
+      "seriesId": "number",
+      "tvdbId": "number",
+      "unverifiedSceneNumbering": "bool"
+    }
+  ],
+  "sortDirection": "string",
+  "sortKey": "string",
+  "totalRecords": "number"
+}

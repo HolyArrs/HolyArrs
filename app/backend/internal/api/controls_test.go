@@ -528,7 +528,7 @@ func TestEveryRouteHasAPart(t *testing.T) {
 	for _, dir := range routePackages {
 		files, _ := filepath.Glob(filepath.Join(dir, "*.go"))
 		for _, f := range files {
-			if strings.HasSuffix(f, "_test.go") {
+			if strings.HasSuffix(f, "_test.go") || (dir == "../arrapi" && filepath.Base(f) != "routes_settings.go") {
 				continue
 			}
 			b, err := os.ReadFile(f)

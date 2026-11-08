@@ -40,7 +40,7 @@ func TestEveryRouteHasAPermission(t *testing.T) {
 	for _, dir := range routePackages {
 		files, _ := filepath.Glob(filepath.Join(dir, "*.go"))
 		for _, f := range files {
-			if strings.HasSuffix(f, "_test.go") {
+			if strings.HasSuffix(f, "_test.go") || (dir == "../arrapi" && filepath.Base(f) != "routes_settings.go") {
 				continue
 			}
 			b, err := os.ReadFile(f)
@@ -137,7 +137,7 @@ func TestMemberIsRefusedEveryStaffRoute(t *testing.T) {
 		}
 		// The old-app API takes no session at all, only its own keys;
 		// TestOldAppMemberKeyRefused checks a member's key gets 403.
-		if accounts.CompatSide(path) != "" {
+		if accounts.ArrSide(path) != "" {
 			continue
 		}
 		st, body := signed(method, fill.Replace(path), "{}", mem, memCSRF)

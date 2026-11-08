@@ -12,6 +12,8 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/updates"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/ai"
+
 	"log"
 	"net/http"
 	"net/url"
@@ -193,8 +195,8 @@ type API struct {
 	lookups inFlight
 	// confirm holds the two-step controls' confirmation ids.
 	confirm confirms
-	// ai holds the AI connections' limits and confirm tokens (mcp.go).
-	ai aiState
+	// ai serves the AI connections (internal/ai).
+	ai *ai.Handlers
 	// discover caches Explore rows and details pages and limits each person.
 	discover discoverState
 	// rated keeps TMDB ratings looked up for Kid limits.
@@ -316,6 +318,7 @@ func New(s Server) *API {
 	a := &API{s: s, media: &mediaservers.Handlers{Store: s.Store, Vault: s.Secrets, Linker: s.Media}}
 	a.titles = a.newTitlePages()
 	a.trailers = a.newTrailers()
+	a.ai = &ai.Handlers{Store: s.Store, Version: s.Version, PartOn: a.partIsOn}
 	return a
 }
 
@@ -417,7 +420,6 @@ func (a *API) Routes(rt *webserver.Router) {
 	a.musicRoutes(m)
 	a.musicPageRoutes(m)
 	subtitles.NewHandlers(a.s.Store, a.s.Secrets, a.s.Subtitles).Routes(m)
-	a.importSecretsRoutes(m)
 	a.thisAppRoutes(m)
 	a.dataPackRoutes(m)
 	a.scheduleRoutes(m)
@@ -485,8 +487,6 @@ func (a *API) Routes(rt *webserver.Router) {
 	a.askedByRoutes(m)
 	a.followRoutes(m)
 	a.controlRoutes(m)
-	a.migrateRoutes(m)
-	a.moveRoutes(m)
 	m.HandleFunc("GET /api/v1/openapi.json", a.openapi)
 	m.HandleFunc("GET /api/v1/health", a.health)
 	m.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write([]byte("ok\n")) })
@@ -494,10 +494,6 @@ func (a *API) Routes(rt *webserver.Router) {
 	// start page answers it with 503).
 	m.HandleFunc("GET /readyz", func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write([]byte("ready\n")) })
 	a.liveRoutes(m)
-	if startup.FeatureOn(features.AIApps) {
-		a.mcpRoutes(m)
-	}
-	a.oldAppRoutes(m)
 	m.Handle("GET /", webserver.Handler())
 	if a.s.Backups != nil {
 		a.s.Backups.Routes(m, a.s.Restart)
@@ -521,11 +517,11 @@ func (a *API) Handler() http.Handler {
 func (a *API) Chain(rt *webserver.Router) http.Handler {
 	m := rt.Mux()
 	if a.s.Auth != nil {
-		a.ai.inner = a.kidGate(m, a.partGate(m, accounts.Gate(m)))
-		return secure(a.oldAppGate(a.s.Auth.Middleware(wrapMux(a.liveRecheck(a.logSettingsChanges(a.forgetStatusOnWrite(a.kidGate(m, a.partGate(m, accounts.Gate(m))))))))))
+		a.ai.Inner = a.kidGate(m, a.partGate(m, accounts.Gate(m)))
+		return secure(a.arr().Gate(a.s.Auth.Middleware(wrapMux(a.liveRecheck(a.logSettingsChanges(a.forgetStatusOnWrite(a.kidGate(m, a.partGate(m, accounts.Gate(m))))))))))
 	}
-	a.ai.inner = a.partGate(m, m)
-	return secure(a.oldAppGate(wrapMux(a.logSettingsChanges(a.forgetStatusOnWrite(a.partGate(m, m))))))
+	a.ai.Inner = a.partGate(m, m)
+	return secure(a.arr().Gate(wrapMux(a.logSettingsChanges(a.forgetStatusOnWrite(a.partGate(m, m))))))
 }
 
 // wrapMux lets tests record which routes the mux served.

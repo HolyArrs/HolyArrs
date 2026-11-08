@@ -91,7 +91,7 @@ func TestSeerrDefaultQuotaPresenceSurvivesReaderAndPlan(t *testing.T) {
 	}
 	zero := seerrDefaults(map[string]any{"defaultQuotas": map[string]any{"movie": map[string]any{"quotaLimit": 0, "quotaDays": 7}}})
 	p := BuildPlan([]Input{{ID: 1, Snap: &Snapshot{Kind: Seerr, Settings: zero}}}, Choices{})
-	it := item(t, p, GroupWishlist, "wishlist_defaults")
+	it := item(t, p, GroupRequests, "wishlist_defaults")
 	if it.AskSettings == nil || it.AskSettings.MoviesPerWeek == nil || *it.AskSettings.MoviesPerWeek != 0 || it.AskSettings.ShowsPerWeek != nil {
 		t.Fatalf("explicit unlimited/default presence lost: %+v", it.AskSettings)
 	}

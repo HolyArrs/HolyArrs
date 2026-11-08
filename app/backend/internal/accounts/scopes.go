@@ -163,7 +163,7 @@ var RoutePerms = map[string]webserver.Perm{
 	"GET /mcp":                webserver.NeedSignedIn,
 	"GET /api/v1/settings/ai": webserver.NeedSignedIn,
 	"PUT /api/v1/settings/ai": webserver.NeedOwner,
-	// AI app sign-in (aioauth.go): the app's own calls are public; allowing it
+	// AI app sign-in (ai_signin.go): the app's own calls are public; allowing it
 	// needs the person's browser session.
 	"GET /.well-known/oauth-protected-resource":           webserver.NeedPublic,
 	"GET /.well-known/oauth-protected-resource/{path...}": webserver.NeedPublic,
@@ -588,7 +588,7 @@ func Gate(m *http.ServeMux) http.Handler {
 			return
 		}
 		if !who.Has(need) {
-			if r.Method == http.MethodGet && !strings.HasPrefix(r.URL.Path, "/api/") && r.URL.Path != "/live" && CompatSide(r.URL.Path) == "" {
+			if r.Method == http.MethodGet && !strings.HasPrefix(r.URL.Path, "/api/") && r.URL.Path != "/live" && ArrSide(r.URL.Path) == "" {
 				http.Redirect(w, r, "/", http.StatusSeeOther)
 				return
 			}

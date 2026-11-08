@@ -16,13 +16,13 @@ func (a *Auth) Middleware(next http.Handler) http.Handler {
 		// key is no browser credential, so the host and origin checks do
 		// not apply (Seerr calls from a Docker neighbour by name). A
 		// missing or wrong key gets a bare 401, as the old apps answer.
-		if to, ok := compatLink(r); ok {
+		if to, ok := arrLink(r); ok {
 			http.Redirect(w, r, to, http.StatusFound)
 			return
 		}
-		if side := CompatSide(r.URL.Path); side != "" {
-			k, _ := compatKey(r)
-			who, ok := a.checkCompatKey(r.Context(), side, k)
+		if side := ArrSide(r.URL.Path); side != "" {
+			k, _ := arrKey(r)
+			who, ok := a.checkArrKey(r.Context(), side, k)
 			if !ok {
 				w.WriteHeader(http.StatusUnauthorized)
 				return
