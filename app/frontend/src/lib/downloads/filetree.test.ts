@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { fileTree } from './filetree.ts';
+import { describe, expect, it } from 'vitest';
 
 describe('fileTree', () => {
 	const files = [

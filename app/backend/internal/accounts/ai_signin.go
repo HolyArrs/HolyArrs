@@ -39,7 +39,7 @@ const (
 )
 
 // aiConnectPage is the web page where a person allows an AI app.
-const aiConnectPage = "/ai-connect"
+const aiConnectPage = "/ai"
 
 const aiClientPrefix = "hai_"
 

@@ -1,5 +1,5 @@
-import { describe, expect, it, vi } from 'vitest';
 import { GAP_REASK_MS, gapWaits, keepShown, reaskWhileIncomplete, REASK_MS, sleep } from './reask.ts';
+import { describe, expect, it, vi } from 'vitest';
 
 type A = { tracks: number[]; incomplete?: boolean };
 const now = () => Promise.resolve();

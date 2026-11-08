@@ -1,7 +1,6 @@
 <script module lang="ts">
-	// Back to Search reuses what was on screen: the answers kept when Search was
-	// left, for that history entry and address only (a fresh visit loads anew).
-	import { historyIndex } from '#lib/came-from.svelte.ts';
+	// Back to Search reuses what was on screen: the answers kept when Search was left, for that history entry and address only (a fresh visit loads anew).
+	import { historyIndex, SearchField, BrowseTile, MusicBrowseSections, MosaicReveal, browseCols, browseHref, BROWSE_ROWS, readCategory, readMood, shownCount, tileHue, SHELF_MIN, live, libraryNote, rankTop, readScope, scopeAddress, type SearchScope, describes, found, plainPath, understood, type PlainAnswer } from '#lib/discover/index.ts';
 	let kept: { key: string; data: unknown } | null = null;
 	function entryKey(): string {
 		if (typeof history === 'undefined') return '';
@@ -11,60 +10,42 @@
 </script>
 
 <script lang="ts">
-	import { to } from '#lib/paths.ts';
-	import { onMount, tick, untrack } from 'svelte';
-	import { focusField, forgetReturn, playFieldEntry, restoreReturn, searchField, searchHooks } from '#lib/search-field.svelte.ts';
-	import SearchField from '#lib/ui/SearchField.svelte';
-	import { afterNavigate, beforeNavigate, goto, snapshot } from '$app/navigation';
-	import { page } from '$app/state';
-	import { api, message, ApiError } from '#lib/api.ts';
-	import { toasts } from '#lib/toasts.svelte.ts';
-	import Icon, { type IconName } from '#lib/Icon.svelte';
-	import { session } from '#lib/session.svelte.ts';
-	import BrowseTile from '#lib/ui/BrowseTile.svelte';
-	import MusicTileGrid from '#lib/ui/MusicTileGrid.svelte';
-	import MusicBrowseSections from '#lib/ui/MusicBrowseSections.svelte';
-	import MosaicReveal, { ENTER_DELAY, ENTER_SWEEP, passAt } from '#lib/ui/MosaicReveal.svelte';
-	import { browseCategoryPath, browseCols, browseHref, browsePath, browseSectionPath, browseType, BROWSE_ROWS, musicTiles, readCategory, readMood, shownCount, strictTiles, tileHue, type PlainTile, type BrowseAnswer, type BrowseSection, type BrowseSectionAnswer, type BrowseTile as Tile, type CategoryView, type MoodView } from '#lib/search-browse.ts';
-	import { reducedMotion } from '#lib/motion.ts';
-	import MetadataNotice from '#lib/MetadataNotice.svelte';
+	import { createSearchEntry } from '#lib/discover/index.ts';
+	import { artistCard, inLibrary, movieCard, personCard, showCard, type Card, type LibraryAnswer } from '#lib/discover/index.ts';
+	import { createSearchArtists } from '#lib/discover/index.ts';
+	import { createSearchRecent } from '#lib/discover/index.ts';
+	import { createSearchBrowse } from '#lib/discover/index.ts';
+	import { type IconName } from '#lib/ui/Icon.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
 	import Shelf from '#lib/ui/Shelf.svelte';
 	import WideCard from '#lib/ui/WideCard.svelte';
-	import type { CardOwned } from '#lib/ui/CardBadges.svelte';
 	import Chip from '#lib/ui/Chip.svelte';
 	import { Orbit, SkRail, SkGrid } from '#lib/ui/sk/index.ts';
-	import { plainReason } from '#lib/plain.ts';
-	import type { Ask, LibraryFolder, LookupArtist, LookupMovie, LookupShow, MusicSettings, PickRulesView, TitleView } from '#lib/types.ts';
-	import type { PersonSummary } from '#lib/people.ts';
-	import { byDept, chipDept, PEOPLE_ROWS, SHELF_MIN, visibleChips, type PeopleFilter, type ShelfMeta, type ShelfPerson } from '#lib/people-shelves.ts';
-	import { appPicture, artistHref } from '#lib/music/music-pages.ts';
-	import { fetchMusicExplore, genreHref, musicCardHref, musicCardNote, musicImage, type MusicCardData } from '#lib/music/music-trending.ts';
-	import { refreshInbox } from '#lib/requests.svelte.ts';
-	import AddArtistDialog from '#lib/AddArtistDialog.svelte';
-	import AskArtistDialog from '#lib/AskArtistDialog.svelte';
-	import QuickAsk from '#lib/QuickAsk.svelte';
+	import type { PersonSummary } from '#lib/ui/people.ts';
 	import IconButton from '#lib/ui/IconButton.svelte';
-	import { albumWords } from '#lib/music/music.ts';
-	import { createLatestOnly } from '#lib/history.ts';
-	import { live } from '#lib/live-search.ts';
-	import { addRecent, libraryNote, readRecent, rankTop, readScope, recentKey, scopeAddress, type SearchScope } from '#lib/search.ts';
-	import { partOn, partsNow, refreshParts } from '#lib/parts.svelte.ts';
-	import { detailPath } from '#lib/title-details.ts';
-	import { discoverCard, followsByTmdb, genrePath, ownedMark, type ExploreCard, type GenreAnswer, type ProviderItem } from '#lib/explore.ts';
-	import { audienceOf } from '#lib/title-status.ts';
-	import { posterStatus } from '#lib/library.ts';
-	import { describes, found, plainPath, understood, type PlainAnswer } from '#lib/plain-search.ts';
+	import { discoverCard, followsByTmdb, ownedMark, type ExploreCard, type ProviderItem } from '#lib/ui/title-cards.ts';
+	import { audienceOf } from '#lib/ui/title-status.ts';
+	import { MusicTileGrid, musicCardHref, musicImage } from '#lib/music/index.ts';
+	import { MetadataNotice, detailPath } from '#lib/metadata/index.ts';
+	import type { LookupArtist, MusicSettings } from '#lib/music/index.ts';
+	import { AddArtistDialog, AskArtistDialog, QuickAsk } from '#lib/requests/index.ts';
+	import { createLatestOnly } from '#lib/downloads/index.ts';
+	import { partOn, partsNow, refreshParts, posterStatus } from '#lib/mediafiles/index.ts';
+	import { onMount, tick, untrack } from 'svelte';
+	import { afterNavigate, beforeNavigate, goto, snapshot } from '$app/navigation';
+	import { page } from '$app/state';
+	import { to } from '#lib/core/paths.ts';
+	import { focusField, forgetReturn, playFieldEntry, searchField, searchHooks } from '#lib/core/search-field.svelte.ts';
+	import { api, message, ApiError } from '#lib/core/api.ts';
+	import { session } from '#lib/core/session.svelte.ts';
+	import { reducedMotion } from '#lib/core/motion.ts';
+	import { plainReason } from '#lib/core/plain.ts';
+	import type { Ask, LibraryFolder, LookupMovie, PickRulesView, TitleView } from '#lib/core/types.ts';
+	import type { LookupShow } from '#lib/core/types.ts';
 
-	// Search is a page; its one field is the top bar's (lib/search-field.svelte.ts;
-	// on phones, where the top bar is hidden, a copy sits at the page top). The words and the scope
-	// live in the address (?q=, ?kind=). Before typing it shows recent searches
-	// (this device, per user) and the Browse grid (genres and their moods, per
-	// tab); a mood tile opens a mood view here (?mood=&genre=&type=). Results
-	// come in as you type. Kid limits are applied by the server on every lookup.
+	// Search is a page; its one field is the top bar's (on phones, where the top bar is hidden, a copy sits at the page top). The words and the scope live in the address (?q=, ?kind=). Before typing it shows recent searches (this device, per user) and the Browse grid (genres and their moods, per tab); a mood tile opens a mood view here (?mood=&genre=&type=). Results come in as you type. Kid limits are applied by the server on every lookup.
 
-	type Card = { key: string; type: Exclude<SearchScope, 'all'>; titleId?: number; name: string; year?: number; image?: string | null; href: string; owned: CardOwned | null; preview?: { kind: 'movie' | 'show'; tmdb: string; year?: number; titleId?: number }; artist?: LookupArtist; subtitle?: string; /** A movie or show as an Explore card, for its Add or Ask. */ ec?: ExploreCard };
 
 	// The words live in the shared field (top bar); a direct link fills it from ?q=.
 	if (!searchField.term.trim()) searchField.term = page.url.searchParams.get('q') ?? '';
@@ -76,79 +57,38 @@
 	let groups = $state<Record<Card['type'], Card[] | null>>({ show: null, movie: null, music: null, people: null });
 	/** What was on screen when the current search started: kept up until the new answers arrive. */
 	let stale = $state.raw<{ groups: Record<Card['type'], Card[] | null>; lib: LibraryAnswer | null } | null>(null);
-	let plainTiles = $state<PlainTile[] | null>(null);
-	/** Music scope with the v2 rows: the genre tiles (hue and grey art), each opening its Music genre page. */
-	let musicGenres = $state<MusicCardData[]>([]);
-	/** The same genres as the shared Music tile: an album cover each, and none without one. */
-	const musicGenreTiles = $derived(musicGenres.filter((c) => c.cover).map((c) => ({ key: c.key, name: c.name, href: genreHref(c), covers: [c.cover as string] })));
-	// music_lists_v1 row templates: the Browse sections (genres, moods, seasons, decades, activities).
-	let musicSections = $state<{ id: string; title: string; tiles: { key: string; name: string; href: string; hue: number; covers: string[] }[] }[]>([]);
-	let plainFor = '';
-	let mgenre = $state<string | null>(page.url.searchParams.get('mgenre')?.trim() || null);
-	let mgenreCards = $state<(MusicCardData & { note?: string })[] | null>(null);
-	let tiles = $state<Tile[] | null>(null);
-	let tilesFor = '';
-	let mood = $state<MoodView | null>(readMood(page.url.searchParams));
-	let moodItems = $state<ProviderItem[] | null>(null);
-	let moodGenre = $state('');
-	// Browse sections after the page's genre tiles (Moods, Stories…), each loaded as the grid nears it;
-	// a category tile opens a category view here (?cat=&type=).
-	let sections = $state<BrowseSection[]>([]);
-	let sectionTiles = $state<Record<string, Tile[] | null>>({});
-	let cat = $state<CategoryView | null>(readCategory(page.url.searchParams));
-	let catItems = $state<ProviderItem[] | null>(null);
-	let catName = $state('');
-	// The entry: a mosaic dissolve down the whole visible page, the tiles rising
-	// row by row behind it; under reduced motion the band alone. Timing: a
-	// 120 ms hold, the band builds to ~900 ms, the last visible row lands by
-	// ~1.1 s, the field's glow settles by ~1.4 s. Only transform and opacity move.
+	const browseCtx = {
+		get scope() {
+			return scope;
+		},
+		get cols() {
+			return cols;
+		},
+	};
+	const browse = createSearchBrowse(browseCtx);
+	// The entry: a mosaic dissolve down the whole visible page, the tiles rising row by row behind it; under reduced motion the band alone. Timing: a 120 ms hold, the band builds to about 900 ms, the last visible row lands by about 1.1 s, the field's glow settles by about 1.4 s. Only transform and opacity move.
 	const calm = reducedMotion();
 	let revealing = $state(true);
-	// Search is a layer: Close, Escape on an empty field or Back returns to the
-	// page you came from, at its scroll. Typing replaces the address, so only
-	// links inside Search add history entries (counted in depth).
-	let cameFrom = '';
-	let depth = 0;
-	let leaving = $state(false);
-	let covering = $state(false);
-	const LAND_MS = 700;
-	function exit() {
-		if (leaving) return;
-		revealing = false;
-		leaving = true;
-		// The tiles drop out quickly, last visible row first; the band then sweeps back up (ease-in).
-		// The page stays put and the pixels cover it, bottom up.
-		covering = true;
-	}
-	function left() {
-		if (cameFrom) {
-			restoreReturn(location.pathname);
-			history.go(-(depth + 1));
-		} else void goto(to('/'));
-	}
-	const t0 = typeof performance === 'undefined' ? 0 : performance.now();
-	// Each tile enters behind the band: rows ~70 ms apart, ~25 ms left to right
-	// within a row, starting as the band passes it, bounded so the last lands by ~1.1 s.
-	function landing(node: HTMLElement, at: { row: number; col: number }) {
-		if (calm || restored) return;
-		const elapsed = performance.now() - t0;
-		// The first screen only: tiles that arrive after the entry just appear.
-		if (elapsed > ENTER_DELAY + ENTER_SWEEP) return;
-		const top = document.querySelector('.ui-topbar')?.getBoundingClientRect().bottom ?? 0;
-		const r = node.getBoundingClientRect();
-		if (r.top > innerHeight) return;
-		const f = (r.top - top) / Math.max(1, innerHeight - top);
-		// The pixels themselves reveal the tile (it is already there under the
-		// mosaic); as the band passes its row the tile only settles a hair, so the
-		// page comes through the pixelation instead of after it.
-		const start = Math.min(ENTER_DELAY + ENTER_SWEEP - LAND_MS, passAt(Math.max(0, f)) + at.col * 18);
-		const delay = Math.max(0, start - elapsed);
-		node.style.willChange = 'transform';
-		const a = node.animate([{ transform: 'scale(1.025)' }, { transform: 'none' }], { duration: LAND_MS, delay, easing: 'cubic-bezier(.22,1,.36,1)', fill: 'backwards' });
-		a.onfinish = a.oncancel = () => (node.style.willChange = '');
-	}
+	const entryCtx = {
+		get revealing() {
+			return revealing;
+		},
+		set revealing(v) {
+			revealing = v;
+		},
+		get calm() {
+			return calm;
+		},
+		get restored() {
+			return restored;
+		},
+	};
+	const entry = createSearchEntry(entryCtx);
 	let cols = $state(6);
-	let recent = $state<string[]>([]);
+	const recentsCtx = {
+		run,
+	};
+	const recents = createSearchRecent(recentsCtx);
 	const beginSearch = createLatestOnly();
 	const who = $derived(audienceOf(session.can));
 	const manage = $derived(session.can('manage_library'));
@@ -165,28 +105,7 @@
 	const labels: Record<Card['type'], string> = { show: 'TV shows', movie: 'Movies', music: 'Music', people: 'People' };
 	const order = $derived(scopeOptions.map((o) => o.value).filter((v): v is Card['type'] => v !== 'all'));
 
-	// ── Library marking: one mark for every card, as on Explore ────────────
-	const inLibrary: CardOwned = { state: 'available', label: 'In your Library' };
-	function askMark(ask: { state: string; mine: boolean } | undefined | null): CardOwned | null {
-		if (!ask || ask.state === 'turned_down') return null;
-		return { state: 'requested', label: ask.state === 'approved' ? 'Approved, waiting for a copy' : 'Requested' };
-	}
-	/** asCard: a search result as an Explore card, so its + adds or asks the same way. */
-	const asCard = (key: string, kind: 'movie' | 'show', name: string, year: number | undefined, tmdb: string, titleId: number | undefined, ask: LookupMovie['ask']): ExploreCard =>
-		({ key, kind, name, year, titleId, ref: `tmdb:${tmdb}`, status: titleId ? 'in_library' : undefined, badges: [], mine: !!ask?.mine, ask: ask && ask.state !== 'turned_down' ? ask : undefined });
-	const movieCard = (m: LookupMovie): Card | null =>
-		m.ids.tmdb
-			? { key: `m${m.ids.tmdb}`, type: 'movie', titleId: m.title_id || undefined, name: m.name, year: m.year || undefined, subtitle: m.year ? String(m.year) : undefined, image: m.poster, href: to(m.title_id ? `/library/${m.title_id}` : detailPath('movie', m.ids.tmdb)), owned: m.title_id ? inLibrary : askMark(m.ask), preview: { kind: 'movie', tmdb: m.ids.tmdb, year: m.year || undefined, titleId: m.title_id || undefined }, ec: asCard(`m${m.ids.tmdb}`, 'movie', m.name, m.year || undefined, m.ids.tmdb, m.title_id || undefined, m.ask) }
-			: null;
-	const showCard = (s: LookupShow, i: number): Card => {
-		const tmdb = s.ids.tmdb;
-		return { key: `s${s.source}${s.ids[s.source] ?? s.name}${i}`, type: 'show', titleId: s.title_id || undefined, name: s.name, year: s.year, subtitle: s.year ? String(s.year) : undefined, image: s.poster, href: to(s.title_id ? `/library/${s.title_id}` : tmdb ? detailPath('show', tmdb) : `/search?q=${encodeURIComponent(s.name)}&kind=show`), owned: s.title_id ? inLibrary : askMark(s.ask), preview: tmdb ? { kind: 'show', tmdb, year: s.year, titleId: s.title_id || undefined } : undefined, ec: tmdb ? asCard(`s${s.source}${s.ids[s.source] ?? s.name}${i}`, 'show', s.name, s.year, tmdb, s.title_id || undefined, s.ask) : undefined };
-	};
-	const artistCard = (a: LookupArtist): Card => ({ key: `a${a.mbid}`, type: 'music', titleId: a.title_id || undefined, name: a.name, subtitle: a.disambiguation || [a.type, a.country].filter(Boolean).join(' · ') || undefined, image: appPicture(a.image), href: artistHref(a.mbid), owned: a.title_id ? inLibrary : askMark(a.ask), artist: a });
-	const personCard = (p: PersonSummary): Card => ({ key: `p${p.id}`, type: 'people', name: p.name, subtitle: p.department, image: p.profile, href: to(`/people/${encodeURIComponent(p.id)}`), owned: null });
 
-	// ── In your Library: local matches first, left out of the wider results ──
-	type LibraryAnswer = { titles: TitleView[]; albums: { id: number; title_id: number; name: string; artist: string; year?: number; image?: string }[]; people: { name: string; titles: { id: number; name: string; kind: string }[] }[] };
 	let lib = $state<LibraryAnswer | null>(null);
 	// Search in plain words: asked only when the words describe a title.
 	let plainAns = $state<PlainAnswer | null>(null);
@@ -199,15 +118,14 @@
 		try {
 			localStorage.setItem(ONLY_KEY, v ? '1' : '0');
 		} catch {
-			/* a private window: the choice just is not remembered */
+			/* A private window: the choice just is not remembered. */
 		}
 	}
 	const whereOptions: { value: 'everywhere' | 'library'; label: string }[] = [{ value: 'everywhere', label: 'Everywhere' }, { value: 'library', label: 'In your Library' }];
 	const markOf = (t: TitleView) => ownedMark({ key: String(t.id), kind: t.kind === 'show' ? 'show' : t.kind === 'artist' ? 'artist' : 'movie', name: t.name, titleId: t.id } as ExploreCard, t, who);
 	// While a search runs and nothing has come back yet, the page keeps what it showed before.
 	const freshTotal = $derived(order.reduce((n, t) => n + (groups[t]?.length ?? 0), 0) + (lib ? lib.titles.length + lib.albums.length + lib.people.length : 0));
-	// Results land together: the skeleton stays until every group answered, so rows never push
-	// each other down (loading audit #1). A slow group stops holding the rest after 2.5 s.
+	// Results land together: the skeleton stays until every group answered, so rows never push each other down. A slow group stops holding the rest after 2.5 s.
 	let settleCap = $state(false);
 	$effect(() => {
 		void searchField.term;
@@ -217,8 +135,7 @@
 	});
 	const waiting = $derived(!!searchField.term.trim() && (order.some((t) => groups[t] === null) || busy || lib === null) && (freshTotal === 0 || !settleCap));
 	const holding = $derived(waiting && !!stale);
-	// A fresh search keeps the page you were on until its answer is slow: the skeleton shows once the
-	// request has been out 200 ms (the 250 ms typing pause doesn't count), so a quick answer swaps straight in.
+	// A fresh search keeps the page you were on until its answer is slow: the skeleton shows once the request has been out 200 ms (the 250 ms typing pause does not count), so a quick answer swaps straight in.
 	let slow = $state(false);
 	$effect(() => {
 		if (!(waiting && !stale && busy)) return void (slow = false);
@@ -239,11 +156,10 @@
 	const total = $derived(lists.reduce((n, g) => n + g.length, 0) + libCards.length);
 	const pending = $derived(order.some((t) => groups[t] === null));
 
-	// ── Searching ──────────────────────────────────────────────────────────
 	const ownAddresses = new Set<string>();
 	function writeAddress() {
 		const url = scopeAddress(page.url, scope, searchField.term);
-		if (searchField.term.trim() || !(mood || mgenre || cat)) for (const k of ['mood', 'genre', 'type', 'mgenre', 'cat']) url.searchParams.delete(k);
+		if (searchField.term.trim() || !(browse.mood || browse.mgenre || browse.cat)) for (const k of ['mood', 'genre', 'type', 'mgenre', 'cat']) url.searchParams.delete(k);
 		if (url.href === page.url.href) return;
 		ownAddresses.add(url.href);
 		void goto(url, { replace: true, shallow: true });
@@ -264,10 +180,7 @@
 		timer = setTimeout(() => void run(undefined, false), 250);
 	}
 
-	// Typing never asks MusicBrainz while live search is on (or not known
-	// yet): the Music group waits for Enter (or a page opened with the
-	// words) and the dropdown shows the music matches meanwhile. Movies,
-	// shows and people follow typing as before.
+	// Typing never asks MusicBrainz while live search is on (or not known yet): the Music group waits for Enter (or a page opened with the words) and the dropdown shows the music matches meanwhile. Movies, shows and people follow typing as before.
 	async function run(e?: SubmitEvent, full = true) {
 		e?.preventDefault();
 		clearTimeout(timer);
@@ -281,7 +194,7 @@
 		}
 		error = '';
 		noTMDB = false;
-		if (q) mood = mgenre = cat = null;
+		if (q) browse.mood = browse.mgenre = browse.cat = null;
 		if (!q) {
 			lib = null;
 			stale = null;
@@ -289,7 +202,7 @@
 			busy = false;
 			return;
 		}
-		if (e) remember(q);
+		if (e) recents.remember(q);
 		stale = total > 0 ? { groups: shownGroups, lib: shownLib } : null;
 		busy = true;
 		const holdMusic = !full && live.on !== false;
@@ -347,345 +260,43 @@
 		void run();
 	}
 
-	// ── Recent searches (this device, per user) ────────────────────────────
-	const key = () => recentKey(session.s.name);
-	function loadRecent() {
-		try {
-			recent = readRecent(localStorage.getItem(key()));
-		} catch {
-			recent = [];
-		}
-	}
-	function saveRecent() {
-		try {
-			localStorage.setItem(key(), JSON.stringify(recent));
-		} catch {
-			/* A private window: recents just are not kept. */
-		}
-	}
-	function remember(q: string) {
-		recent = addRecent(recent, q);
-		saveRecent();
-	}
-	function clearRecent() {
-		recent = [];
-		saveRecent();
-		focusField();
-	}
-	function pickRecent(q: string) {
-		searchField.term = q;
-		void run();
-	}
 
-	// ── Browse: the grid before typing, per tab (Movies and Shows only) ─────
-	const browseFor = $derived(browseType(scope));
-	async function loadTiles(t: ReturnType<typeof browseType>) {
-		if (tilesFor === t) return;
-		tilesFor = t;
-		tiles = null;
-		sections = [];
-		sectionTiles = {};
-		sectionRows = {};
-		try {
-			const a = await api.get<BrowseAnswer>(browsePath(t));
-			if (tilesFor !== t) return;
-			tiles = strictTiles(a.tiles ?? [], t).filter((x) => (x.kind === 'show' ? partOn('shows') : partOn('movies')));
-			sections = a.sections ?? [];
-		} catch {
-			if (tilesFor === t) {
-				tiles = [];
-				tilesFor = '';
-			}
-		}
-	}
-	// A section loads once, in order (the server keeps backdrops unique across them).
-	// While the server is still building it, ghost tiles show and the page asks again.
-	const sectionBusy = new Set<string>();
-	// Rows shown per section: BROWSE_ROWS first, more as its end nears the viewport.
-	let sectionRows = $state<Record<string, number>>({});
-	const rowsOf = (id: string) => sectionRows[id] ?? BROWSE_ROWS;
-	function moreRows(node: HTMLElement, id: string) {
-		if (typeof IntersectionObserver === 'undefined') {
-			sectionRows = { ...sectionRows, [id]: 1000 };
-			return;
-		}
-		const io = new IntersectionObserver((e) => { if (e.some((x) => x.isIntersecting)) sectionRows = { ...sectionRows, [id]: rowsOf(id) + BROWSE_ROWS }; }, { rootMargin: '0px 0px 600px 0px' });
-		io.observe(node);
-		return { destroy: () => io.disconnect() };
-	}
-	async function loadSection(id: string) {
-		const t = tilesFor as ReturnType<typeof browseType> | '';
-		if (!t || sectionTiles[id] !== undefined || sectionBusy.has(`${t}|${id}`)) return;
-		sectionBusy.add(`${t}|${id}`);
-		try {
-			const a = await api.get<BrowseSectionAnswer>(browseSectionPath(t, id));
-			if (a.building) {
-				setTimeout(() => { if (tilesFor === t) void loadSection(id); }, 2500);
-				return;
-			}
-			if (tilesFor === t) sectionTiles = { ...sectionTiles, [id]: a.tiles ?? [] };
-		} catch {
-			if (tilesFor === t) sectionTiles = { ...sectionTiles, [id]: [] };
-		} finally {
-			sectionBusy.delete(`${t}|${id}`);
-		}
-	}
-	// The sections shown: every loaded one, then the next to load (its sentinel)
-	// once the one before shows all its rows.
-	const shownSections = $derived.by(() => {
-		const out: { s: BrowseSection; tiles: Tile[] | null }[] = [];
-		for (const s of sections) {
-			const got = sectionTiles[s.id];
-			out.push({ s, tiles: got ?? null });
-			if (got === undefined) break;
-			const n = s.id === 'genres' ? (tiles?.length ?? 0) + (got ?? []).length : (got ?? []).length;
-			if (shownCount(n, cols, rowsOf(s.id)) < n) break;
-		}
-		return out;
-	});
-	const genreTiles = $derived([...(tiles ?? []), ...(sectionTiles.genres ?? [])]);
-	function near(node: HTMLElement, id: string) {
-		if (typeof IntersectionObserver === 'undefined') {
-			void loadSection(id);
-			return;
-		}
-		const io = new IntersectionObserver((e) => { if (e.some((x) => x.isIntersecting)) void loadSection(id); }, { rootMargin: '0px 0px 900px 0px' });
-		io.observe(node);
-		return { destroy: () => io.disconnect() };
-	}
-	// People: TMDB's popular people, 20 a page, up to 150, loaded as the grid nears the bottom.
-	// The Actors and Directors chips filter what is loaded, and keep loading until each has ~30.
-	const PEOPLE_MAX = 150;
-	const PEOPLE_PAGES = 8;
-	const PEOPLE_WANT = 30;
-	// Ahead of the popular list: From your Library and In what's hot right now, each loaded as it nears
-	// and shown a few rows at a time; a section or chip with fewer than eight people stays hidden.
-	let shelves = $state<ShelfMeta[] | null>(null);
-	let shelfPeople = $state<Record<string, ShelfPerson[]>>({});
-	let shelfRows = $state<Record<string, number>>({});
-	const shelfBusy = new Set<string>();
-	async function loadShelves() {
-		try {
-			shelves = (await api.get<{ shelves: ShelfMeta[] }>('/people/shelves')).shelves ?? [];
-		} catch {
-			shelves = [];
-		}
-	}
-	async function loadShelf(id: string) {
-		if (shelfBusy.has(id) || shelfPeople[id]) return;
-		shelfBusy.add(id);
-		try {
-			const r = await api.get<{ people: ShelfPerson[] }>(`/people/shelves/${encodeURIComponent(id)}`);
-			shelfPeople = { ...shelfPeople, [id]: (r.people ?? []).filter((p) => p.profile) };
-		} catch {
-			shelfPeople = { ...shelfPeople, [id]: [] };
-		} finally {
-			shelfBusy.delete(id);
-		}
-	}
-	// The sections shown: every loaded one, then the next to load (its sentinel); the popular list follows once all are in.
-	const shownShelves = $derived.by(() => {
-		const out: { s: ShelfMeta; people: ShelfPerson[] | null }[] = [];
-		for (const s of shelves ?? []) {
-			const got = shelfPeople[s.id];
-			out.push({ s, people: got ? byDept(got, chipDept(peopleFilter)) : null });
-			if (!got) break;
-		}
-		return out;
-	});
-	const shelvesDone = $derived(shelves !== null && (shelves ?? []).every((s) => shelfPeople[s.id]));
-	const shelfTiles = (people: ShelfPerson[], id: string) => people.slice(0, (shelfRows[id] ?? PEOPLE_ROWS) * cols).map((p) => ({ key: `p${p.id}`, name: p.name, note: p.note, href: to(`/people/${encodeURIComponent(p.id)}`), image: p.profile }));
-	function nearShelf(node: HTMLElement, id: string) {
-		const go = () => (shelfPeople[id] ? (shelfRows = { ...shelfRows, [id]: (shelfRows[id] ?? PEOPLE_ROWS) + PEOPLE_ROWS }) : void loadShelf(id));
-		if (typeof IntersectionObserver === 'undefined') {
-			go();
-			return;
-		}
-		const io = new IntersectionObserver((e) => { if (e.some((x) => x.isIntersecting)) go(); }, { rootMargin: '0px 0px 600px 0px' });
-		io.observe(node);
-		return { destroy: () => io.disconnect() };
-	}
-	let peopleAll = $state<PersonSummary[] | null>(null);
-	let peoplePage = 0;
-	let peopleBusy = $state(false);
-	let peopleEnd = $state(false);
-	let peopleFilter = $state<PeopleFilter>('popular');
-	let peopleSentinel = $state<HTMLElement>();
-	const peopleChips = $derived(visibleChips(shelves ?? [], peopleAll ?? []));
-	const peopleShown = $derived.by(() => {
-		return byDept(peopleAll ?? [], chipDept(peopleFilter));
-	});
-	const peopleTiles = $derived<PlainTile[] | null>(peopleAll === null ? null : peopleShown.map((p) => ({ key: `p${p.id}`, name: p.name, href: to(`/people/${encodeURIComponent(p.id)}`), image: p.profile as string })));
-	const peopleWantsMore = () => !peopleEnd && (peopleAll?.length ?? 0) < PEOPLE_MAX && peopleShown.length < (peopleFilter === 'popular' ? PEOPLE_MAX : PEOPLE_WANT);
-	async function morePeople() {
-		if (peopleBusy || peopleEnd) return;
-		peopleBusy = true;
-		try {
-			while (peopleWantsMore() || peopleAll === null) {
-				const r = await api.get<{ people: PersonSummary[]; page: number; total_pages: number }>(`/people/popular?page=${peoplePage + 1}`);
-				peoplePage = r.page || peoplePage + 1;
-				const have = new Set((peopleAll ?? []).map((p) => p.id));
-				const fresh = r.people.filter((p) => p.profile && !have.has(p.id) && have.add(p.id));
-				peopleAll = [...(peopleAll ?? []), ...fresh].slice(0, PEOPLE_MAX);
-				if (peoplePage >= PEOPLE_PAGES || peoplePage >= (r.total_pages || PEOPLE_PAGES) || r.people.length === 0 || peopleAll.length >= PEOPLE_MAX) peopleEnd = true;
-				if (peopleFilter === 'popular') break;
-			}
-		} catch {
-			peopleEnd = true;
-			peopleAll ??= [];
-		} finally {
-			peopleBusy = false;
-		}
-	}
-	// The next page loads when the grid's end comes within a screen; a fresh observer after each load re-checks a short grid.
-	$effect(() => {
-		void peopleAll?.length;
-		void peopleFilter;
-		if (scope !== 'people' || !peopleSentinel || peopleEnd || typeof IntersectionObserver === 'undefined') return;
-		const io = new IntersectionObserver((e) => { if (e.some((x) => x.isIntersecting)) void morePeople(); }, { rootMargin: '0px 0px 800px 0px' });
-		io.observe(peopleSentinel);
-		return () => io.disconnect();
-	});
-	// People and Music have their own tiles: popular people, and the music genres Explore Music names.
-	async function loadPlain(s: 'people' | 'music') {
-		if (plainFor === s) return;
-		plainFor = s;
-		plainTiles = null;
-		try {
-			if (s === 'people') {
-				await loadShelves();
-			} else {
-				const b = await api.get<{ sections: typeof musicSections }>(`/music/browse-tiles?${new URLSearchParams({ region: 'global' })}`).catch(() => null);
-				if (plainFor === s && b?.sections?.length) {
-					musicSections = b.sections;
-					plainTiles = [];
-					return;
-				}
-				const r = await fetchMusicExplore('', 'global');
-				if (plainFor === s && r.v2) musicGenres = (r.rows.find((row) => row.shape === 'tile' || row.shape === 'grid')?.items ?? []).map((c) => (c.image || !c.cover ? c : { ...c, image: c.cover }));
-				if (plainFor === s) plainTiles = musicGenres.some((c) => c.cover) ? [] : musicTiles(r, (g) => to(`/search?kind=music&mgenre=${encodeURIComponent(g)}`), musicImage);
-			}
-		} catch {
-			if (plainFor === s) {
-				plainTiles = [];
-				plainFor = '';
-			}
-		}
-	}
-	$effect(() => {
-		if (searchField.term.trim() || mood || mgenre || cat) return;
-		if (scope === 'people' || scope === 'music') void loadPlain(scope);
-		else void loadTiles(browseFor);
-	});
-
-	// A music genre view: that genre's Explore Music cards, as a grid.
-	let mgenreFor = '';
-	async function loadMgenre(g: string) {
-		if (mgenreFor === g) return;
-		mgenreFor = g;
-		mgenreCards = null;
-		try {
-			const r = await fetchMusicExplore(g, 'global');
-			if (mgenreFor !== g) return;
-			const seen = new Set<string>();
-			mgenreCards = r.rows.flatMap((row) => row.items.map((c) => ({ ...c, note: musicCardNote(row, c) }))).filter((c) => !seen.has(c.key) && !!seen.add(c.key));
-		} catch {
-			if (mgenreFor === g) {
-				mgenreCards = [];
-				mgenreFor = '';
-			}
-		}
-	}
-	$effect(() => {
-		if (mgenre && !searchField.term.trim()) void loadMgenre(mgenre);
-	});
-
-	// ── A mood view: that mood row of the genre page, as a grid ─────────────
-	let moodFor = '';
-	async function loadMood(m: MoodView) {
-		const k = `${m.type}|${m.genre}|${m.mood}`;
-		if (moodFor === k) return;
-		moodFor = k;
-		moodItems = null;
-		try {
-			const a = await api.get<GenreAnswer>(genrePath(m.type, m.genre));
-			if (moodFor !== k) return;
-			moodGenre = a.genre?.name ?? '';
-			moodItems = a.rows.find((r) => r.type === 'mood' && r.title.toLowerCase() === m.mood.toLowerCase())?.items ?? [];
-		} catch {
-			if (moodFor === k) {
-				moodItems = [];
-				moodFor = '';
-			}
-		}
-	}
-	$effect(() => {
-		if (mood) void loadMood(mood);
-	});
-	// ── A category view: that Browse category's titles, as a grid ──────────
-	let catFor = '';
-	async function loadCat(c: CategoryView) {
-		const k = `${c.type}|${c.id}`;
-		if (catFor === k) return;
-		catFor = k;
-		catItems = null;
-		try {
-			const a = await api.get<{ name: string; items: ProviderItem[] }>(browseCategoryPath(c.type, c.id));
-			if (catFor !== k) return;
-			catName = a.name;
-			catItems = a.items ?? [];
-		} catch {
-			if (catFor === k) {
-				catItems = [];
-				catFor = '';
-			}
-		}
-	}
-	$effect(() => {
-		if (cat && !searchField.term.trim()) void loadCat(cat);
-	});
-	const catCards = $derived((catItems ?? []).map((item) => ({ item, c: discoverCard(item, 'search-category') })));
-	const moodCards = $derived((moodItems ?? []).map((item) => ({ item, c: discoverCard(item, 'search-mood') })));
-
-	// ── Back restores Search exactly ───────────────────────────────────────
-	// The answers come from `kept` (no refetch, no entry animation); the
-	// snapshot holds the spot: scroll, loaded Browse sections and rows, people
-	// pages and the chip. The scroll comes back once the page is tall enough.
+	// Back restores Search exactly. The answers come from `kept` (no refetch, no entry animation); the snapshot holds the spot: scroll, loaded Browse sections and rows, people pages and the chip. The scroll comes back once the page is tall enough.
 	const kept0 = kept && kept.key === entryKey() ? (kept.data as ReturnType<typeof keep>) : null;
 	kept = null;
 	let restored = !!kept0;
 	function keep() {
-		return $state.snapshot({ groups, lib, searched, tiles, tilesFor, sections, sectionTiles, sectionRows, plainTiles, plainFor, musicGenres, musicSections, shelves, shelfPeople, shelfRows, peopleAll, peoplePage, peopleEnd, peopleFilter, catItems, catFor, catName, moodItems, moodFor, moodGenre, mgenreCards, mgenreFor });
+		return $state.snapshot({ groups, lib, searched, tiles: browse.tiles, tilesFor: browse.tilesFor, sections: browse.sections, sectionTiles: browse.sectionTiles, sectionRows: browse.sectionRows, plainTiles: browse.plainTiles, plainFor: browse.plainFor, musicGenres: browse.musicGenres, musicSections: browse.musicSections, shelves: browse.shelves, shelfPeople: browse.shelfPeople, shelfRows: browse.shelfRows, peopleAll: browse.peopleAll, peoplePage: browse.peoplePage, peopleEnd: browse.peopleEnd, peopleFilter: browse.peopleFilter, catItems: browse.catItems, catFor: browse.catFor, catName: browse.catName, moodItems: browse.moodItems, moodFor: browse.moodFor, moodGenre: browse.moodGenre, mgenreCards: browse.mgenreCards, mgenreFor: browse.mgenreFor });
 	}
 	if (kept0) {
 		const k = kept0;
 		groups = k.groups;
 		lib = k.lib;
 		searched = k.searched;
-		tiles = k.tiles;
-		tilesFor = k.tilesFor;
-		sections = k.sections;
-		sectionTiles = k.sectionTiles;
-		sectionRows = k.sectionRows;
-		plainTiles = k.plainTiles;
-		musicGenres = k.musicGenres ?? [];
-		musicSections = k.musicSections ?? [];
-		plainFor = k.plainFor;
-		shelves = k.shelves;
-		shelfPeople = k.shelfPeople;
-		shelfRows = k.shelfRows;
-		peopleAll = k.peopleAll;
-		peoplePage = k.peoplePage;
-		peopleEnd = k.peopleEnd;
-		peopleFilter = k.peopleFilter;
-		catItems = k.catItems;
-		catFor = k.catFor;
-		catName = k.catName;
-		moodItems = k.moodItems;
-		moodFor = k.moodFor;
-		moodGenre = k.moodGenre;
-		mgenreCards = k.mgenreCards;
-		mgenreFor = k.mgenreFor;
+		browse.tiles = k.tiles;
+		browse.tilesFor = k.tilesFor;
+		browse.sections = k.sections;
+		browse.sectionTiles = k.sectionTiles;
+		browse.sectionRows = k.sectionRows;
+		browse.plainTiles = k.plainTiles;
+		browse.musicGenres = k.musicGenres ?? [];
+		browse.musicSections = k.musicSections ?? [];
+		browse.plainFor = k.plainFor;
+		browse.shelves = k.shelves;
+		browse.shelfPeople = k.shelfPeople;
+		browse.shelfRows = k.shelfRows;
+		browse.peopleAll = k.peopleAll;
+		browse.peoplePage = k.peoplePage;
+		browse.peopleEnd = k.peopleEnd;
+		browse.peopleFilter = k.peopleFilter;
+		browse.catItems = k.catItems;
+		browse.catFor = k.catFor;
+		browse.catName = k.catName;
+		browse.moodItems = k.moodItems;
+		browse.moodFor = k.moodFor;
+		browse.moodGenre = k.moodGenre;
+		browse.mgenreCards = k.mgenreCards;
+		browse.mgenreFor = k.mgenreFor;
 		revealing = false;
 	}
 	beforeNavigate(({ to: dest }) => {
@@ -698,28 +309,28 @@
 	let backTries = 0;
 	snapshot<SearchReturn>({
 		id: 'search',
-		capture: () => ({ y: Math.round(scrollY), sections: Object.keys(sectionTiles), rows: { ...sectionRows }, peoplePages: peoplePage, only: onlyLib }),
+		capture: () => ({ y: Math.round(scrollY), sections: Object.keys(browse.sectionTiles), rows: { ...browse.sectionRows }, peoplePages: browse.peoplePage, only: onlyLib }),
 		restore: (v) => {
 			if (!v) return;
 			restored = true;
 			revealing = false;
 			onlyLib = v.only;
-			sectionRows = { ...v.rows, ...sectionRows };
+			browse.sectionRows = { ...v.rows, ...browse.sectionRows };
 			if (v.y > 0) backTo = v;
 		}
 	});
 	$effect(() => {
 		const v = backTo;
 		if (!v) return;
-		void [lib, groups, tiles, sections, sectionTiles, sectionRows, plainTiles, shelves, shelfPeople, peopleAll, catItems, moodItems, mgenreCards];
+		void [lib, groups, browse.tiles, browse.sections, browse.sectionTiles, browse.sectionRows, browse.plainTiles, browse.shelves, browse.shelfPeople, browse.peopleAll, browse.catItems, browse.moodItems, browse.mgenreCards];
 		void tick().then(() => {
 			if (backTo !== v) return;
 			const short = document.documentElement.scrollHeight < v.y + innerHeight - 1;
 			if (short && backTries++ < 20) {
 				// Load what was loaded before: the next Browse section, or the next page of people.
-				const next = v.sections.find((id) => sectionTiles[id] === undefined);
-				if (next) void loadSection(next);
-				else if (scope === 'people' && peoplePage < v.peoplePages) void morePeople();
+				const next = v.sections.find((id) => browse.sectionTiles[id] === undefined);
+				if (next) void browse.loadSection(next);
+				else if (scope === 'people' && browse.peoplePage < v.peoplePages) void browse.morePeople();
 				else setTimeout(() => backTo === v && (backTo = { ...v }), 150);
 				return;
 			}
@@ -733,21 +344,21 @@
 		try {
 			onlyLib = localStorage.getItem(ONLY_KEY) === '1';
 		} catch {
-			/* a private window: the chip starts off */
+			/* A private window: the chip starts off. */
 		}
-		loadRecent();
+		recents.loadRecent();
 		const sync = () => (cols = browseCols(innerWidth));
 		sync();
 		addEventListener('resize', sync);
 		if (manage) {
-			api.get<{ library_folders: LibraryFolder[] }>('/library-folders').then((r) => (folders = r.library_folders)).catch(() => {});
-			api.get<{ pick_rules: PickRulesView[] }>('/pick-rules').then((r) => (rules = r.pick_rules)).catch(() => {});
-			api.get<MusicSettings>('/settings/music').then((r) => (musicDefaults = r)).catch(() => {});
+			api.get<{ library_folders: LibraryFolder[] }>('/library-folders').then((r) => (artists.folders = r.library_folders)).catch(() => {});
+			api.get<{ pick_rules: PickRulesView[] }>('/pick-rules').then((r) => (artists.rules = r.pick_rules)).catch(() => {});
+			api.get<MusicSettings>('/settings/music').then((r) => (artists.musicDefaults = r)).catch(() => {});
 		}
 		if (searchField.term.trim() && !kept0) void run();
 		searchHooks.submit = () => void run(new SubmitEvent('submit'));
 		searchHooks.blur = blurred;
-		searchHooks.exit = exit;
+		searchHooks.exit = entry.exit;
 		if (!(document.activeElement instanceof HTMLInputElement)) focusField();
 		playFieldEntry(calm || restored);
 		return () => {
@@ -763,18 +374,18 @@
 	afterNavigate(({ from, to: dest, type }) => {
 		if (!from || !dest) return;
 		if (!from.url.pathname.endsWith('/search')) {
-			cameFrom = from.url.pathname;
-			depth = 0;
+			entry.cameFrom = from.url.pathname;
+			entry.depth = 0;
 			return;
 		}
-		if (type === 'popstate') depth = Math.max(0, depth - 1);
-		else if (type === 'link') depth++;
+		if (type === 'popstate') entry.depth = Math.max(0, entry.depth - 1);
+		else if (type === 'link') entry.depth++;
 		if (ownAddresses.delete(dest.url.href)) return;
 		const q = dest.url.searchParams.get('q') ?? '';
 		const s = readScope(dest.url.searchParams.get('kind'));
-		mood = readMood(dest.url.searchParams);
-		cat = readCategory(dest.url.searchParams);
-		mgenre = dest.url.searchParams.get('mgenre')?.trim() || null;
+		browse.mood = readMood(dest.url.searchParams);
+		browse.cat = readCategory(dest.url.searchParams);
+		browse.mgenre = dest.url.searchParams.get('mgenre')?.trim() || null;
 		void tick().then(() => focusField());
 		if (q === searchField.term && s === scope) return;
 		searchField.term = lastTerm = q;
@@ -784,38 +395,20 @@
 
 	// Leaving the box after a search counts it as a recent one.
 	function blurred() {
-		if (searched && searched === searchField.term.trim()) remember(searched);
+		if (searched && searched === searchField.term.trim()) recents.remember(searched);
 	}
 
-	// ── Music: artists are added or asked for here ─────────────────────────
-	let folders = $state<LibraryFolder[]>([]);
-	let rules = $state<PickRulesView[]>([]);
-	let musicDefaults = $state<MusicSettings | null>(null);
+	const artistsCtx = {
+		get groups() {
+			return groups;
+		},
+		artistCard: artistCard,
+	};
+	const artists = createSearchArtists(artistsCtx);
 	let addArtist: ReturnType<typeof AddArtistDialog> | undefined = $state();
 	let askArtist: ReturnType<typeof AskArtistDialog> | undefined = $state();
 	/** The + on a movie or show card asks or adds as on Explore. */
 	let flow: ReturnType<typeof QuickAsk> | undefined = $state();
-	function patchArtist(a: LookupArtist, change: Partial<LookupArtist>) {
-		const list = groups.music;
-		if (!list) return;
-		const i = list.findIndex((c) => c.artist?.mbid === a.mbid);
-		if (i >= 0) list[i] = artistCard({ ...a, ...change });
-	}
-	function artistAdded(a: LookupArtist, t: TitleView) {
-		patchArtist(a, { title_id: t.id });
-		toasts.push(`${t.name} added`, 'ok', { body: 'Filling in albums and tracks' });
-	}
-	function artistAsked(a: LookupArtist, r: { ask: Ask; joined: boolean; already: boolean }) {
-		patchArtist(a, { ask: { id: r.ask.id, state: r.ask.state, state_label: r.ask.state_label, mine: true, people: r.ask.people.length, albums: r.ask.albums } });
-		const what = `${r.ask.name} (${albumWords(r.ask.albums)})`;
-		if (r.ask.state === 'approved') toasts.push(`${what} approved`, 'ok', { body: 'Kept up to date' });
-		else if (r.joined) toasts.push(`${what} already requested`, 'ok', { body: "You're on the request too" });
-		else toasts.push(`${what} requested`, 'ok', { body: 'Waiting for approval' });
-		void refreshInbox();
-	}
-	function artistRefused(a: LookupArtist, body: Record<string, unknown>) {
-		if (typeof body.title_id === 'number') patchArtist(a, { title_id: body.title_id });
-	}
 
 </script>
 
@@ -876,7 +469,7 @@
 
 <section class="search" class:calm data-testid="search-page">
 	<h1 class="sr-only">Search</h1>
-	<div class="close-row"><Button variant="plain" icon="x" onclick={exit} data-testid="search-page-close">Close</Button></div>
+	<div class="close-row"><Button variant="plain" icon="x" onclick={entry.exit} data-testid="search-page-close">Close</Button></div>
 	<div class="phone-field"><SearchField searchKey="" testid="search-box-phone" id="q-phone" closable={false} /></div>
 	<MetadataNotice />
 
@@ -913,58 +506,58 @@
 				{/if}
 			</section>
 		{/if}
-		{#if !searchField.term.trim() && mgenre}
+		{#if !searchField.term.trim() && browse.mgenre}
 			<section class="mood" aria-labelledby="mgenre-h" data-testid="search-music-genre">
 				<div class="mood-head">
 					<Button variant="plain" icon="chevronLeft" href={to('/search?kind=music')}>Browse</Button>
-					<h2 id="mgenre-h" class="h1">{mgenre.replace(/\b\w/g, (m) => m.toUpperCase())}</h2>
+					<h2 id="mgenre-h" class="h1">{browse.mgenre.replace(/\b\w/g, (m) => m.toUpperCase())}</h2>
 					<p class="muted">Music</p>
 				</div>
-				{#if mgenreCards === null}
+				{#if browse.mgenreCards === null}
 					<div class="grid-sk" aria-busy="true" aria-label="Loading titles"><SkGrid kind="wide" min="var(--title-item)" count={12} /></div>
-				{:else if mgenreCards.length === 0}
-					<div class="empty"><h2 class="h2">Nothing here yet</h2><p class="muted">No {mgenre} music to show right now.</p></div>
+				{:else if browse.mgenreCards.length === 0}
+					<div class="empty"><h2 class="h2">Nothing here yet</h2><p class="muted">No {browse.mgenre} music to show right now.</p></div>
 				{:else}
 					<ul class="grid">
-						{#each mgenreCards as c (c.key)}
+						{#each browse.mgenreCards as c (c.key)}
 							<li><WideCard cover title={c.name} href={musicCardHref(c)} image={musicImage(c)} kind="artist" subtitle={c.note || c.artist} owned={c.title_id ? inLibrary : null} /></li>
 						{/each}
 					</ul>
 				{/if}
 			</section>
-		{:else if !searchField.term.trim() && cat}
+		{:else if !searchField.term.trim() && browse.cat}
 			<section class="mood" aria-labelledby="cat-h" data-testid="search-category">
 				<div class="mood-head">
-					<Button variant="plain" icon="chevronLeft" href={to(`/search${cat.type === 'movies' ? '?kind=movie' : cat.type === 'shows' ? '?kind=show' : ''}`)}>Browse</Button>
-					<h2 id="cat-h" class="h1">{catName || 'Browse'}</h2>
-					<p class="muted">{cat.type === 'shows' ? 'TV shows' : cat.type === 'all' ? 'Movies and TV shows' : 'Movies'}</p>
+					<Button variant="plain" icon="chevronLeft" href={to(`/search${browse.cat.type === 'movies' ? '?kind=movie' : browse.cat.type === 'shows' ? '?kind=show' : ''}`)}>Browse</Button>
+					<h2 id="cat-h" class="h1">{browse.catName || 'Browse'}</h2>
+					<p class="muted">{browse.cat.type === 'shows' ? 'TV shows' : browse.cat.type === 'all' ? 'Movies and TV shows' : 'Movies'}</p>
 				</div>
-				{#if catItems === null}
+				{#if browse.catItems === null}
 					<div class="grid-sk" aria-busy="true" aria-label="Loading titles"><SkGrid kind="wide" min="var(--title-item)" count={12} /></div>
-				{:else if catCards.length === 0}
+				{:else if browse.catCards.length === 0}
 					<div class="empty"><h2 class="h2">Nothing here yet</h2><p class="muted">No titles fit this right now.</p></div>
 				{:else}
 					<ul class="grid">
-						{#each catCards as { item, c } (c.key)}
+						{#each browse.catCards as { item, c } (c.key)}
 							<li>{@render discover(item, c)}</li>
 						{/each}
 					</ul>
 				{/if}
 			</section>
-		{:else if !searchField.term.trim() && mood}
+		{:else if !searchField.term.trim() && browse.mood}
 			<section class="mood" aria-labelledby="mood-h" data-testid="search-mood">
 				<div class="mood-head">
 					<Button variant="plain" icon="chevronLeft" href={to(`/search${scope === 'all' ? '' : `?kind=${scope}`}`)}>Browse</Button>
-					<h2 id="mood-h" class="h1">{mood.mood}</h2>
-					<p class="muted">{moodGenre ? `${moodGenre} · ` : ''}{mood.type === 'shows' ? 'TV shows' : mood.type === 'all' ? 'Movies and TV shows' : 'Movies'}</p>
+					<h2 id="mood-h" class="h1">{browse.mood.mood}</h2>
+					<p class="muted">{browse.moodGenre ? `${browse.moodGenre} · ` : ''}{browse.mood.type === 'shows' ? 'TV shows' : browse.mood.type === 'all' ? 'Movies and TV shows' : 'Movies'}</p>
 				</div>
-				{#if moodItems === null}
+				{#if browse.moodItems === null}
 					<div class="grid-sk" aria-busy="true" aria-label="Loading titles"><SkGrid kind="wide" min="var(--title-item)" count={12} /></div>
-				{:else if moodCards.length === 0}
-					<div class="empty"><h2 class="h2">Nothing here yet</h2><p class="muted">No {mood.type === 'shows' ? 'shows' : mood.type === 'all' ? 'titles' : 'movies'} fit this mood right now. Try the genre page instead.</p><Button variant="secondary" href={to(mood.type === 'all' ? `/explore?genre=${mood.genre}` : `/explore?type=${mood.type}&genre=${mood.genre}`)}>Open {moodGenre || 'the genre'}</Button></div>
+				{:else if browse.moodCards.length === 0}
+					<div class="empty"><h2 class="h2">Nothing here yet</h2><p class="muted">No {browse.mood.type === 'shows' ? 'shows' : browse.mood.type === 'all' ? 'titles' : 'movies'} fit this mood right now. Try the genre page instead.</p><Button variant="secondary" href={to(browse.mood.type === 'all' ? `/explore?genre=${browse.mood.genre}` : `/explore?type=${browse.mood.type}&genre=${browse.mood.genre}`)}>Open {browse.moodGenre || 'the genre'}</Button></div>
 				{:else}
 					<ul class="grid">
-						{#each moodCards as { item, c } (c.key)}
+						{#each browse.moodCards as { item, c } (c.key)}
 							<li>{@render discover(item, c)}</li>
 						{/each}
 					</ul>
@@ -973,14 +566,14 @@
 		{:else if waiting && !stale && slow}
 			{@render resultsSkeleton()}
 		{:else if !searchField.term.trim() || (waiting && !stale)}
-			{#if recent.length}
+			{#if recents.recent.length}
 				<section class="recent" aria-labelledby="recent-h">
 					<div class="recent-head">
 						<h2 id="recent-h" class="sec">Recent searches</h2>
-						<button type="button" class="clear-all" onclick={clearRecent}>Clear<span class="sr-only"> recent searches</span></button>
+						<button type="button" class="clear-all" onclick={recents.clearRecent}>Clear<span class="sr-only"> recent searches</span></button>
 					</div>
 					<div class="chips">
-						{#each recent as q (q)}<Chip label={q} icon="clock" onclick={() => pickRecent(q)} />{/each}
+						{#each recents.recent as q (q)}<Chip label={q} icon="clock" onclick={() => recents.pickRecent(q)} />{/each}
 					</div>
 				</section>
 			{/if}
@@ -989,83 +582,83 @@
 				<h2 id="browse-h" class={scope === 'music' ? 'h1' : 'sr-only'}>{scope === 'people' ? 'People' : 'Browse'}</h2>
 				{#if scope === 'people'}
 					<div class="chips people-chips" role="group" aria-label="Filter people">
-						{#each peopleChips as c (c.value)}<Chip label={c.label} selected={peopleFilter === c.value} onclick={() => { peopleFilter = c.value; void morePeople(); }} />{/each}
+						{#each browse.peopleChips as c (c.value)}<Chip label={c.label} selected={browse.peopleFilter === c.value} onclick={() => { browse.peopleFilter = c.value; void browse.morePeople(); }} />{/each}
 					</div>
 				{/if}
 				{#if scope === 'people'}
-					{#if shelves === null}
+					{#if browse.shelves === null}
 						<ul class="tiles" aria-hidden="true">
-							{#each Array(cols * 2) as _, i (i)}<li class="ghost sk" use:landing={{ row: Math.floor(i / cols), col: i % cols }}></li>{/each}
+							{#each Array(cols * 2) as _, i (i)}<li class="ghost sk" use:entry.landing={{ row: Math.floor(i / cols), col: i % cols }}></li>{/each}
 						</ul>
 					{:else}
-						{#each shownShelves as { s, people } (s.id)}
+						{#each browse.shownShelves as { s, people } (s.id)}
 							{#if people && people.length >= SHELF_MIN}
-								{@const shown = shelfTiles(people, s.id)}
+								{@const shown = browse.shelfTiles(people, s.id)}
 								<section class="browse-section" aria-labelledby={`people-${s.id}-h`} data-testid={`search-people-${s.id}`}>
 									<h3 id={`people-${s.id}-h`} class="h1">{s.title}</h3>
 									<ul class="tiles">
 										{#each shown as t, i (t.key)}
-											<li use:landing={{ row: Math.floor(i / cols), col: i % cols }}><BrowseTile name={t.name} note={t.note} href={t.href} image={t.image} hue="#555b66" plain row={Math.min(6, Math.floor(i / cols))} /></li>
+											<li use:entry.landing={{ row: Math.floor(i / cols), col: i % cols }}><BrowseTile name={t.name} note={t.note} href={t.href} image={t.image} hue="#555b66" plain row={Math.min(6, Math.floor(i / cols))} /></li>
 										{/each}
 									</ul>
 									{#if shown.length < people.length}
-										{#key shelfRows[s.id]}<div class="more" use:nearShelf={s.id}></div>{/key}
+										{#key browse.shelfRows[s.id]}<div class="more" use:browse.nearShelf={s.id}></div>{/key}
 									{/if}
 								</section>
 							{/if}
 							{#if people === null}
-								<div class="more" use:nearShelf={s.id} aria-hidden="true"><ul class="tiles">{#each Array(cols) as _, i (i)}<li class="ghost sk"></li>{/each}</ul></div>
+								<div class="more" use:browse.nearShelf={s.id} aria-hidden="true"><ul class="tiles">{#each Array(cols) as _, i (i)}<li class="ghost sk"></li>{/each}</ul></div>
 							{/if}
 						{/each}
-						{#if shelvesDone && (!peopleEnd || peopleShown.length >= SHELF_MIN)}
+						{#if browse.shelvesDone && (!browse.peopleEnd || browse.peopleShown.length >= SHELF_MIN)}
 							<section class="browse-section" aria-labelledby="people-popular-h" data-testid="search-people-popular">
 								<h3 id="people-popular-h" class="h1">Popular</h3>
-								{#if peopleTiles && peopleTiles.length >= SHELF_MIN}
+								{#if browse.peopleTiles && browse.peopleTiles.length >= SHELF_MIN}
 									<ul class="tiles">
-										{#each peopleTiles as t, i (t.key)}
-											<li use:landing={{ row: Math.floor(i / cols), col: i % cols }}><BrowseTile name={t.name} href={t.href} image={t.image} hue="#555b66" plain row={Math.min(6, Math.floor(i / cols))} /></li>
+										{#each browse.peopleTiles as t, i (t.key)}
+											<li use:entry.landing={{ row: Math.floor(i / cols), col: i % cols }}><BrowseTile name={t.name} href={t.href} image={t.image} hue="#555b66" plain row={Math.min(6, Math.floor(i / cols))} /></li>
 										{/each}
 									</ul>
 								{/if}
-								<div bind:this={peopleSentinel} class="more" aria-busy={peopleBusy}>{#if peopleBusy}<Orbit />{/if}</div>
+								<div bind:this={browse.peopleSentinel} class="more" aria-busy={browse.peopleBusy}>{#if browse.peopleBusy}<Orbit />{/if}</div>
 							</section>
-						{:else if shelvesDone && !shownShelves.some((x) => (x.people?.length ?? 0) >= SHELF_MIN)}
+						{:else if browse.shelvesDone && !browse.shownShelves.some((x) => (x.people?.length ?? 0) >= SHELF_MIN)}
 							<p class="muted">Search for an actor, director or artist</p>
 						{/if}
 					{/if}
 				{:else if scope === 'music'}
-					{#if musicSections.length}
-						<MusicBrowseSections sections={musicSections} />
-					{:else if musicGenreTiles.length}
-						<MusicTileGrid tiles={musicGenreTiles} />
-					{:else if plainTiles === null}
+					{#if browse.musicSections.length}
+						<MusicBrowseSections sections={browse.musicSections} />
+					{:else if browse.musicGenreTiles.length}
+						<MusicTileGrid tiles={browse.musicGenreTiles} />
+					{:else if browse.plainTiles === null}
 						<MusicTileGrid tiles={[]} ghosts={12} />
-					{:else if plainTiles.length}
-						<MusicTileGrid tiles={plainTiles.map((t) => ({ key: t.key, name: t.name, href: t.href, covers: [t.image] }))} />
+					{:else if browse.plainTiles.length}
+						<MusicTileGrid tiles={browse.plainTiles.map((t) => ({ key: t.key, name: t.name, href: t.href, covers: [t.image] }))} />
 					{:else}
 						<p class="muted">Music genres show up here once Explore has something to show.</p>
 					{/if}
-				{:else if tiles === null}
+				{:else if browse.tiles === null}
 					<ul class="tiles" aria-hidden="true">
-						{#each Array(cols * 2) as _, i (i)}<li class="ghost sk" use:landing={{ row: Math.floor(i / cols), col: i % cols }}></li>{/each}
+						{#each Array(cols * 2) as _, i (i)}<li class="ghost sk" use:entry.landing={{ row: Math.floor(i / cols), col: i % cols }}></li>{/each}
 					</ul>
-				{:else if genreTiles.length || sections.length}
-					{#each shownSections as { s, tiles: st } (s.id)}
-						{@const all = s.id === 'genres' ? genreTiles : (st ?? [])}
-						{@const list = all.slice(0, shownCount(all.length, cols, rowsOf(s.id)))}
+				{:else if browse.genreTiles.length || browse.sections.length}
+					{#each browse.shownSections as { s, tiles: st } (s.id)}
+						{@const all = s.id === 'genres' ? browse.genreTiles : (st ?? [])}
+						{@const list = all.slice(0, shownCount(all.length, cols, browse.rowsOf(s.id)))}
 						{#if list.length}
 							<section class="browse-section" aria-labelledby={`browse-${s.id}-h`} data-testid={`search-browse-${s.id}`}>
 								<h3 id={`browse-${s.id}-h`} class="h1">{s.title}</h3>
 								<ul class="tiles">
 									{#each list as t, i (`${t.category ?? ''}:${t.kind}:${t.genre}:${t.mood ?? ''}`)}
-										<li use:landing={{ row: Math.floor(i / cols), col: i % cols }}><BrowseTile name={t.name} href={to(browseHref(t, browseFor))} image={t.backdrop} hue={tileHue(t.name)} row={Math.min(6, Math.floor(i / cols))} /></li>
+										<li use:entry.landing={{ row: Math.floor(i / cols), col: i % cols }}><BrowseTile name={t.name} href={to(browseHref(t, browse.browseFor))} image={t.backdrop} hue={tileHue(t.name)} row={Math.min(6, Math.floor(i / cols))} /></li>
 									{/each}
 								</ul>
-								{#if list.length < all.length}<div class="more" use:moreRows={s.id}></div>{/if}
+								{#if list.length < all.length}<div class="more" use:browse.moreRows={s.id}></div>{/if}
 							</section>
 						{/if}
 						{#if st === null}
-							<div class="more" use:near={s.id} aria-live="polite">
+							<div class="more" use:browse.near={s.id} aria-live="polite">
 								{#if s.id !== 'genres'}
 									<section class="browse-section" aria-label={`Loading ${s.title.toLowerCase()}`}>
 										<h3 class="h1">{s.title}</h3>
@@ -1075,10 +668,10 @@
 							</div>
 						{/if}
 					{/each}
-					{#if !sections.length}
+					{#if !browse.sections.length}
 						<ul class="tiles">
-							{#each genreTiles as t, i (`${t.kind}:${t.genre}:${t.mood ?? ''}`)}
-								<li use:landing={{ row: Math.floor(i / cols), col: i % cols }}><BrowseTile name={t.name} href={to(browseHref(t, browseFor))} image={t.backdrop} hue={tileHue(t.name)} row={Math.min(6, Math.floor(i / cols))} /></li>
+							{#each browse.genreTiles as t, i (`${t.kind}:${t.genre}:${t.mood ?? ''}`)}
+								<li use:entry.landing={{ row: Math.floor(i / cols), col: i % cols }}><BrowseTile name={t.name} href={to(browseHref(t, browse.browseFor))} image={t.backdrop} hue={tileHue(t.name)} row={Math.min(6, Math.floor(i / cols))} /></li>
 							{/each}
 						</ul>
 					{/if}
@@ -1133,10 +726,10 @@
 </section>
 
 {#if revealing}<MosaicReveal ondone={() => (revealing = false)} />{/if}
-{#if covering}<MosaicReveal exit ondone={left} />{/if}
+{#if entry.covering}<MosaicReveal exit ondone={entry.left} />{/if}
 
-<AddArtistDialog bind:this={addArtist} {folders} {rules} defaults={musicDefaults} onadded={artistAdded} />
-<AskArtistDialog bind:this={askArtist} onasked={artistAsked} onrefused={artistRefused} />
+<AddArtistDialog bind:this={addArtist} folders={artists.folders} rules={artists.rules} defaults={artists.musicDefaults} onadded={artists.artistAdded} />
+<AskArtistDialog bind:this={askArtist} onasked={artists.artistAsked} onrefused={artists.artistRefused} />
 <QuickAsk bind:this={flow} />
 
 <style>
@@ -1174,7 +767,7 @@
 	.browse-section { display: flex; flex-direction: column; gap: 16px; margin-top: 16px; }
 	.browse-section:first-of-type { margin-top: 0; }
 	.browse-section h3 { margin: 0; }
-	/* Ghost tiles use the shared Silhouette shimmer (tokens.css .sk), sized like BrowseTile. */
+	/* Ghost tiles use the shared skeleton shimmer (tokens.css .sk), sized like BrowseTile. */
 	.ghost { aspect-ratio: 3 / 4; border-radius: 16px; }
 	.more .tiles { width: 100%; }
 	.grid-sk { min-width: 0; }

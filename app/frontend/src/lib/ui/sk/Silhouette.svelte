@@ -1,12 +1,9 @@
 <script lang="ts">
+	// Shows a skeleton while loading, then fades the content in once timing rules allow.
 	import type { Snippet } from 'svelte';
-	import { holdFor, loadStage, stageTimers, FADE_MS, type LoadStage } from '../../silhouette.ts';
 	import Orbit from './Orbit.svelte';
+	import { holdFor, loadStage, stageTimers, FADE_MS, type LoadStage } from '../../core/silhouette.ts';
 
-	// A region that loads. While `loading`, it shows `skeleton` (in the layout from the first
-	// frame, visible at 150 ms). After 500 ms an Orbit with `status` sits over it; after 10 s a
-	// reassurance line and a retry. Content swaps in once the skeleton has shown for 100 ms (at once when `cached`),
-	// cross-fading over 200 ms. Timing rules: lib/silhouette.ts.
 	let {
 		loading,
 		skeleton,
@@ -17,13 +14,13 @@
 		onretry
 	}: { loading: boolean; skeleton: Snippet; children?: Snippet; status?: string; label?: string; cached?: boolean; onretry?: () => void } = $props();
 
-	const now = () => (typeof performance === 'undefined' ? Date.now() : performance.now());
 	let showSkeleton = $state(true);
 	let stage = $state<LoadStage>('quiet');
 	let fade = false;
 	let start = now();
 	let content = $state<HTMLElement>();
 
+	// Restarts the stage timers on each load; on finish, holds the skeleton briefly so it never flashes.
 	$effect(() => {
 		if (loading) {
 			start = now();
@@ -43,12 +40,18 @@
 		return () => clearTimeout(t);
 	});
 
+	// Fade only if the skeleton was visible, and never under reduced motion.
 	$effect(() => {
 		if (showSkeleton || !content || !fade) return;
 		if (matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
 		for (const el of Array.from(content.children)) el.animate?.([{ opacity: 0 }, { opacity: 1 }], { duration: FADE_MS, easing: 'ease-out' });
 		fade = false;
 	});
+
+	// performance.now is steadier than Date.now, with a fallback for non-browser runs.
+	function now() {
+		return typeof performance === 'undefined' ? Date.now() : performance.now();
+	}
 </script>
 
 {#if showSkeleton}

@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { heroArtists, heroLine } from './page-hero.ts';
+import { describe, expect, it } from 'vitest';
 
 describe('Browse page hero words', () => {
 	it('says what the page sounds like, then its leading artists', () => {

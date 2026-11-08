@@ -1,20 +1,18 @@
 <script lang="ts" module>
-	import type { OwnState } from '../fresh.ts';
+	import type { OwnState } from './fresh.ts';
 	export type CardOwned = { state: OwnState; label: string };
 </script>
 
 <script lang="ts">
-	import Icon from '../Icon.svelte';
-	import { freshLabel, type Fresh } from '../fresh.ts';
+	// Corner marks for a card: ownership state and a freshness tag.
+	import Icon from './Icon.svelte';
+	import { freshLabel, type Fresh } from './fresh.ts';
 
-	// The badges over a card's artwork, laid on the art box (it must be
-	// position: relative). Top-right: a solid round library status. The one
-	// freshness badge is a thin accent strip flush with the bottom edge.
-	// Same on posters, wide cards, hover cards and music.
 	let { fresh = null, owned = null, size = 'md' }: { fresh?: Fresh | null; owned?: CardOwned | null; size?: 'sm' | 'md' } = $props();
 
-	/** Percent from a "Downloading 42%" label, for the ring. */
+	// Download percent parsed from the label; NaN means unknown.
 	const pct = $derived(owned?.state === 'downloading' ? Number(/(\d+)%/.exec(owned.label)?.[1] ?? NaN) : NaN);
+	// Ring radius and length in the 24px viewbox, for the progress arc.
 	const R = 9;
 	const C = 2 * Math.PI * R;
 </script>
@@ -46,8 +44,8 @@
 {/if}
 
 <style>
+	/* Marks are drawn over the card art and must not catch clicks. */
 	.mark, .fresh { position: absolute; z-index: 2; pointer-events: none; }
-	/* Status circle: solid fill, white glyph (amber carries dark ink). */
 	.mark {
 		right: 8px; top: 8px;
 		width: 28px; height: 28px;
@@ -62,8 +60,6 @@
 	.downloading { background: var(--mark-dl); }
 	.requested { background: var(--mark-ask); color: var(--mark-ask-ink); }
 	.declined { background: var(--mark-no); }
-	/* Freshness strip: a thin flat bar flush with the art's bottom edge,
-	   centred, solid accent, square-ish top corners. No glass, no shadow. */
 	.fresh {
 		left: 50%; bottom: 0; transform: translateX(-50%);
 		max-width: calc(100% - 12px);
@@ -80,6 +76,7 @@
 	.sm.mark :global(svg) { width: 12px; height: 12px; }
 	.sm.mark.downloading :global(svg) { width: 17px; height: 17px; }
 	.sm.fresh { height: 16px; font-size: 10px; padding: 0 5px; }
+	/* Colors are dropped in forced colors, so add an outline. */
 	@media (forced-colors: active) {
 		.mark, .fresh { border: 1px solid CanvasText; }
 	}

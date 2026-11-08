@@ -1,15 +1,13 @@
 <script lang="ts">
-	import Icon, { type IconName } from '../Icon.svelte';
+	import Icon, { type IconName } from '#lib/ui/Icon.svelte';
+	import Sheet from '#lib/ui/Sheet.svelte';
 	import TopMenu from './TopMenu.svelte';
 	import DlFind from './DlFind.svelte';
 	import { tip } from './tip.ts';
+	import { actionName } from './action-name.ts';
 	import { KIND_TABS } from './size.ts';
-	import Sheet from '../ui/Sheet.svelte';
 
-	// The Downloads toolbar: three glass capsules. Actions on the left; Library and Sources
-	// on the right. Every button is the same width (icon over label) so highlights sit centred.
-	// The page has no top bar: the sidebar button (when the sidebar is folded) joins the actions
-	// capsule behind a hairline, and the plain Downloads search fills the gap before the filters.
+	// Download toolbar: actions on the left, Library and Sources filters on the right. On phones one compact bar replaces it.
 	type Act = { key: string; icon: IconName; label: string; hint: string; disabled: boolean; run?: () => void; href?: string; more?: { label: string; onselect: () => void }[] };
 	let {
 		kindOn = $bindable(''),
@@ -48,7 +46,7 @@
 		sideControls?: string;
 		onside?: () => void;
 		searchKey?: string;
-		/** The phone bar's "All downloads" menu (Start all, Pause all, Speed limit). */
+		/** Phone menu for the bulk actions. */
 		allItems?: { label: string; onselect: () => void }[];
 	} = $props();
 	let allMenu = $state<TopMenu>();
@@ -61,14 +59,10 @@
 		{ key: 'torrent', label: 'Torrent', icon: 'torrent' }
 	];
 	type F = { key: string; label: string; icon: IconName };
-	// The accessible name starts with the visible label (WCAG 2.5.3); a longer hint follows it.
-	// A hint that already holds the label ("Start (select a download)", "Speed limit: 42 MB/s") is the whole name.
-	const nameOf = (a: Act) => (!a.hint || a.hint === a.label ? a.label : a.hint.includes(a.label) ? a.hint : `${a.label} — ${a.hint}`);
 
 	const pickKind = (k: string) => (kindOn = kindOn === k ? '' : k);
 	const pickSrc = (k: string) => (srcOn = srcOn === k ? '' : k);
 	const showSide = $derived(side && !!onside);
-	// The tracker menu on the Torrent button: all trackers, one host, or trackers with problems.
 	let trkBtn = $state<HTMLButtonElement>();
 	let trkMenu = $state<TopMenu>();
 	const trkItems = $derived([
@@ -77,10 +71,9 @@
 		...(trackProblems ? [{ label: 'Trackers with problems', hint: String(trackProblems), checked: trackOn === 'p:any', bad: true, tid: 'dl-tracker-opt', key: 'p:any', onselect: () => (trackOn = 'p:any') }] : [])
 	]);
 
-	// Phones: one compact bar. Filters opens a bottom sheet with Library, Source and trackers;
-	// Start, Pause and Remove act on a picked row, so they live in its details and the selection bar.
+	// Phones use one compact bar. Start, Pause and Remove act on a picked row, so they live in its details.
 	let fOpen = $state(false);
-	// The Filters sheet belongs to the phone bar: it closes when the screen grows past 640px.
+	// The Filters sheet closes once the screen grows past 640px.
 	$effect(() => {
 		const mq = matchMedia('(max-width: 640px)');
 		const off = () => {
@@ -97,7 +90,7 @@
 		trackOn = '';
 	};
 
-	// The sliding highlight: each segment measures its picked item and moves one shared plate to it.
+	// Moves one shared plate to the picked segment.
 	function slider(node: HTMLElement, _dep: string) {
 		const place = () => {
 			const on = node.querySelector<HTMLElement>('[aria-pressed="true"]');
@@ -132,9 +125,9 @@
 	<span class="aw" data-testid="tb-{a.key}">
 		<span class="tw2" use:tip={a.hint !== a.label ? a.hint : ''}>
 			{#if a.href}
-				<a class="it act stk" href={a.href} aria-label={nameOf(a)}><span class="ic"><Icon name={a.icon} size={20} /></span><span class="lb">{a.label}</span></a>
+				<a class="it act stk" href={a.href} aria-label={actionName(a)}><span class="ic"><Icon name={a.icon} size={20} /></span><span class="lb">{a.label}</span></a>
 			{:else}
-				<button type="button" class="it act stk" disabled={a.disabled} aria-label={nameOf(a)} onclick={() => a.run?.()} data-testid="tb-{a.key}-btn"><span class="ic"><Icon name={a.icon} size={20} /></span><span class="lb">{a.label}</span></button>
+				<button type="button" class="it act stk" disabled={a.disabled} aria-label={actionName(a)} onclick={() => a.run?.()} data-testid="tb-{a.key}-btn"><span class="ic"><Icon name={a.icon} size={20} /></span><span class="lb">{a.label}</span></button>
 			{/if}
 		</span>
 		{#if a.more}<TopMenu label="More {a.key} actions" items={a.more} />{/if}
@@ -180,7 +173,7 @@
 			<Icon name="sliders" size={18} stroke={2} />
 			<span>Filters</span>{#if fCount}<b class="fc" data-testid="dl-filters-count">{fCount}</b>{/if}
 		</button>
-		{#if addAct && !watch}<button type="button" class="pbn add" onclick={() => addAct.run?.()} aria-label={nameOf(addAct)} data-testid="dl-phone-add"><Icon name="plus" size={18} /><span>Add</span></button>{/if}
+		{#if addAct && !watch}<button type="button" class="pbn add" onclick={() => addAct.run?.()} aria-label={actionName(addAct)} data-testid="dl-phone-add"><Icon name="plus" size={18} /><span>Add</span></button>{/if}
 		{#if allItems.length}<button type="button" class="pbn ico" bind:this={allBtn} aria-haspopup="menu" aria-label="All downloads" onclick={() => allBtn && allMenu?.show(allBtn)} data-testid="dl-all-btn"><Icon name="more" size={18} /></button><TopMenu bare bind:this={allMenu} label="All downloads" items={allItems} />{/if}
 	</div>
 </div>
@@ -213,7 +206,6 @@
 	{/snippet}
 </Sheet>
 
-
 <style>
 	.trw { position: relative; display: flex; align-items: stretch; }
 	.trk { display: grid; place-items: center; width: 32px; min-height: 32px; padding: 0; border: 0; border-radius: 6px; background: none; color: var(--text-muted); font-size: 11px; cursor: pointer; }
@@ -225,7 +217,6 @@
 	.grp, .seg { display: flex; flex: none; align-items: center; gap: 2px; padding: 0; margin: 0; border: 0; background: none; }
 	.aw, .tw2 { display: inline-flex; align-items: center; flex: none; }
 
-	/* The glass capsule: 52px tall, 3px inset, so every 44px button sits centred. */
 	.cap { display: flex; flex: none; align-items: center; height: 52px; box-sizing: border-box; padding: 3px; border: 1px solid var(--line); border-radius: 14px; background: color-mix(in srgb, var(--surface-1) 72%, transparent); backdrop-filter: blur(18px) saturate(1.4); -webkit-backdrop-filter: blur(18px) saturate(1.4); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 6px 20px -10px rgb(0 0 0 / 0.35); }
 	.cap > .grp, .cap > .seg { height: 44px; min-height: 0; align-items: stretch; }
 	.dlbar .seg > .it, .dlbar .grp > .aw { margin: 0; }
@@ -240,15 +231,12 @@
 	.dlbar .it:hover:not(:disabled) { background: color-mix(in srgb, var(--text) 7%, transparent); }
 	.dlbar .it:active:not(:disabled) { transform: scale(0.97); }
 	.it:disabled { cursor: not-allowed; }
-	/* Not usable until a download is picked: keep the shape crisp, dim only the ink. */
 	.dlbar .it:disabled .ic, .dlbar .it:disabled .lb { color: color-mix(in srgb, var(--text) 38%, transparent); }
 	.it:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	/* Nothing in it: the icon dims, the label stays readable (contrast). */
 	.it.zero:not(.on) .ic { opacity: 0.55; }
 	.dlbar .it.on, .dlbar .it.on .lb { color: var(--text); font-weight: 500; }
 	.dlbar .it.on .ic { color: var(--text); }
 
-	/* The picked filter gets the status tabs' raised plate, which slides between items. */
 	.seg { position: relative; }
 	.plate { position: absolute; z-index: 0; left: 0; top: 0; width: var(--iw, 0); height: var(--ih, 0); border-radius: 10px; background: var(--seg-thumb); box-shadow: 0 0 0 1px var(--line-strong), 0 1px 2px rgb(0 0 0 / 0.12), 0 2px 8px rgb(0 0 0 / 0.08); opacity: var(--io, 0); transform: translate(var(--ix, 0), var(--iy, 0)); transition: transform 320ms var(--ez), width 320ms var(--ez), opacity 160ms var(--ease-out); pointer-events: none; }
 	.dlbar .seg .it.on:hover { background: none; }
@@ -257,25 +245,21 @@
 	.dlbar .aw :global(.caret:hover) { opacity: 1; background: color-mix(in srgb, var(--text) 10%, transparent); }
 	.dlbar .aw :global(.caret svg) { width: 11px; height: 11px; }
 
-	/* The sidebar button, folded into the actions capsule behind a hairline. */
 	.dlbar .it.side { justify-content: center; width: 44px; height: 44px; padding: 0; border-radius: 10px; }
 	.vr { flex: none; align-self: center; width: 1px; height: 26px; margin: 0 4px; background: var(--line); }
 
-	/* Wide screens: nothing needs to scroll. */
 	@media (min-width: 1100px) {
 		.row { overflow: visible; }
 	}
-	/* Tablets and phones: the row scrolls inside itself (no page scroll); its edge fades to show there is more. */
+	/* Tablets and phones scroll the row sideways, with faded edges. */
 	@media (max-width: 1099px) {
 		.row > :global(.dlfind) { min-width: 200px; }
 	}
-	/* Phones: no sidebar (the tab bar); the page's own magnifier opens the search. */
 	@media (max-width: 767px) {
 		.row { -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 20px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 20px), transparent); }
 		.dlbar .it.stk { width: 58px; }
 		.row > :global(.dlfind), .sidecap, .dlbar .it.side, .vr.ph { display: none; }
 	}
-	/* The phone bar (hidden until 640px and below). */
 	.pbar { display: none; }
 	.pbn { display: inline-flex; align-items: center; gap: 6px; height: 44px; padding: 0 14px; border: 1px solid var(--line); border-radius: 999px; background: color-mix(in srgb, var(--surface-1) 72%, transparent); color: var(--text); font: 500 15px/1 var(--font-ui); cursor: pointer; -webkit-tap-highlight-color: transparent; transition: background 160ms var(--ease-out), transform 160ms var(--ez); }
 	.pbn:active { transform: scale(0.97); }
@@ -299,7 +283,6 @@
 	.fbtn:disabled { opacity: 0.45; cursor: default; }
 	.fbtn.pri { flex: 1; border-color: transparent; background: var(--text); color: var(--bg); }
 	.fbtn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	/* Tablets: slimmer buttons so the three capsules share one row. */
 	@media (min-width: 641px) and (max-width: 1099px) {
 		.dlbar .it.stk { width: 56px; }
 		.row > :global(.dlfind) { min-width: 160px; }

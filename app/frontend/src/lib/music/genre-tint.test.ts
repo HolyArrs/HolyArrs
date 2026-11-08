@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { genreTintToken } from './genre-tint.ts';
+import { describe, expect, it } from 'vitest';
 
 describe('genreTintToken', () => {
 	it('gives a listed genre the same token whatever its hue', () => {

@@ -1,19 +1,17 @@
 <script lang="ts">
 	import PageLoader from '#lib/ui/PageLoader.svelte';
-	import { onMount } from 'svelte';
-	import { api, message } from '#lib/api.ts';
-	import { session } from '#lib/session.svelte.ts';
-	import { to } from '#lib/paths.ts';
-	import LibraryToolPage from '#lib/LibraryToolPage.svelte';
-	import DlFind from '#lib/downloads/DlFind.svelte';
-	import Poster from '#lib/Poster.svelte';
-	import { titleArt } from '#lib/title-art.ts';
+	import Poster from '#lib/ui/Poster.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import Badge from '#lib/ui/Badge.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
-	import Icon from '#lib/Icon.svelte';
-	import { plainReason } from '#lib/plain.ts';
-	import { codecLabel, copiesQuery, copyCodecs, copyKey, copySorts, toggleCopy, type CopyCodec, type LibraryCopy, type CopySearchPreview, type CopySearchResult, type CopySelection, type CopySort, type LibraryCopyPage } from '#lib/library-copies.ts';
+	import Icon from '#lib/ui/Icon.svelte';
+	import { LibraryToolPage, titleArt, codecLabel, copiesQuery, copyCodecs, copyKey, copySorts, toggleCopy, type CopyCodec, type LibraryCopy, type CopySearchPreview, type CopySearchResult, type CopySelection, type CopySort, type LibraryCopyPage } from '#lib/mediafiles/index.ts';
+	import { DlFind } from '#lib/downloads/index.ts';
+	import { onMount } from 'svelte';
+	import { api, message } from '#lib/core/api.ts';
+	import { session } from '#lib/core/session.svelte.ts';
+	import { to } from '#lib/core/paths.ts';
+	import { plainReason } from '#lib/core/plain.ts';
 
 	const pageSize = 50;
 	let page = $state<LibraryCopyPage>({ copies: [], total: 0, limit: pageSize, offset: 0, codecs: {} });
@@ -48,7 +46,7 @@
 		offset = 0;
 		void load();
 	}
-	// The search field filters as you type (a short pause, so each letter is not its own request).
+	// The search field filters as you type, after a short pause so each letter is not its own request.
 	let typing: ReturnType<typeof setTimeout> | undefined;
 	function setQ(v: string) {
 		q = v.slice(0, 256);

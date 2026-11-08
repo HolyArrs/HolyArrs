@@ -1,10 +1,8 @@
 <script lang="ts">
-	// The quiet empty state used across Downloads: three faint ghost rows in
-	// one soft container, then a muted title and one lighter line. Neutral
-	// tokens only; an optional quiet text link (Clear search, Show all).
+	// Empty state used across Downloads: faint ghost rows in one container, a muted title and one line.
 	import type { Snippet } from 'svelte';
 	import { fade } from 'svelte/transition';
-	import { reducedMotion } from '../motion.ts';
+	import { reducedMotion } from '../core/motion.ts';
 
 	let { title, text = '', compact = false, testid = 'dl-empty', action }: { title: string; text?: string; compact?: boolean; testid?: string; action?: Snippet } = $props();
 	const dur = reducedMotion() ? 0 : 180;

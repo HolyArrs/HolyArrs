@@ -1,41 +1,32 @@
 <script lang="ts">
-	import { proxied } from '#lib/tmdb-image.ts';
-	import SearchOutcomeLine from '#lib/ui/SearchOutcomeLine.svelte';
+	import { createAskChoices } from '#lib/requests/index.ts';
+	import { createDeclineDialog } from '#lib/requests/index.ts';
+	import { createAskLive } from '#lib/requests/index.ts';
+	import { createTakeBack } from '#lib/requests/index.ts';
+	import { createAskCards } from '#lib/requests/index.ts';
 	import PageLoader from '#lib/ui/PageLoader.svelte';
-	import { glide } from '#lib/ui/transitions.ts';
 	import Button from '#lib/ui/Button.svelte';
-	import { to } from '#lib/paths.ts';
-	import { goto } from '$app/navigation';
-	import { onDestroy, onMount, tick, untrack } from 'svelte';
-	import IconButton from '#lib/ui/IconButton.svelte';
-	import { api, ApiError, message } from '#lib/api.ts';
-	import Icon, { type IconName } from '#lib/Icon.svelte';
+	import Icon from '#lib/ui/Icon.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import Menu from '#lib/ui/Menu.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
-	import { ago, dateTime } from '#lib/format.ts';
-	import { live } from '#lib/live.svelte.ts';
-	import { session } from '#lib/session.svelte.ts';
-	import { loadProfile, profile } from '#lib/account/profile.svelte.ts';
-	import { toasts } from '#lib/toasts.svelte.ts';
-	import { looksLikeId } from '#lib/plain.ts';
-	import { approverCounts as approverCountsOf, approverSort, approverTab as approverTabOf, askedBy as askedByRaw, askTab, askTabs, alsoDeclined as alsoDeclinedRaw, decided as decidedRaw, firstTab, limitLines, limitKinds, tabCounts, type ApproverTab, type AskTab } from '#lib/requests.ts';
-	import { partsNow } from '#lib/parts.svelte.ts';
-	import { inbox, markRead, refreshInbox } from '#lib/requests.svelte.ts';
-	import { listReports } from '#lib/reports.ts';
-	import type { Ask, AskLimit, LibraryFolder, PickRulesView, SearchView } from '#lib/types.ts';
-	import type { DownloadRow } from '#lib/downloaders.ts';
-	import { liveByTitle, liveFacts, stepFacts, type TitleLive } from '#lib/approvals/live.ts';
-	import { seasonWords } from '#lib/shows.ts';
-	import { albumWords } from '#lib/music/music.ts';
-	import { titleStatus } from '#lib/title-status.ts';
-	import { askHref, type ApprovalsCtx, type DecideOptions, type Member } from '#lib/approvals/approvals.ts';
-	import { artistPhoto, askArtist, askDetails, askInfo, seasonEpisodes, wantDetails } from '#lib/approvals/details.svelte.ts';
-	import { askedByOne, askers } from '#lib/approvals/inbox.ts';
-	import { kidLabel } from '#lib/kid.ts';
-	import { watchlistLine } from '#lib/account/watchlist.ts';
-	import ApprovalsDesktop from '#lib/approvals/ApprovalsDesktop.svelte';
+	import { SearchOutcomeLine, approverCounts as approverCountsOf, approverSort, approverTab as approverTabOf, askTab, askTabs, firstTab, limitLines, limitKinds, tabCounts, type ApproverTab, type AskTab, markRead, listReports, liveFacts, stepFacts, askHref, type BoardCtx, type DecideOptions, type Member, artistPhoto, askDetails, askInfo, seasonEpisodes, wantDetails, askedByOne, askers, RequestsBoard } from '#lib/requests/index.ts';
+	import { loadProfile, kidLabel, watchlistLine } from '#lib/accounts/index.ts';
+	import { partsNow } from '#lib/mediafiles/index.ts';
+	import type { AskLimit } from '#lib/requests/index.ts';
+	import { goto } from '$app/navigation';
+	import { onDestroy, onMount, tick, untrack } from 'svelte';
+	import { proxied } from '#lib/core/tmdb-image.ts';
+	import { inbox, refreshInbox } from '#lib/core/inbox.svelte.ts';
+	import { glide } from '#lib/core/transitions.ts';
+	import { to } from '#lib/core/paths.ts';
+	import { api, ApiError, message } from '#lib/core/api.ts';
+	import { ago, dateTime } from '#lib/core/format.ts';
+	import { live } from '#lib/core/live.svelte.ts';
+	import { session } from '#lib/core/session.svelte.ts';
+	import { toasts } from '#lib/core/toasts.svelte.ts';
+	import type { Ask, LibraryFolder, PickRulesView } from '#lib/core/types.ts';
 
 	const approver = $derived(session.can('approve'));
 	let asks = $state<Ask[]>([]);
@@ -49,7 +40,7 @@
 	// One line per kind whose part is on.
 	const onKinds = $derived(limitKinds.filter((k) => partsNow.answer?.parts.find((p) => p.part === k)?.on !== false));
 
-	// Asked by: one person's asks (0 is everyone's), for the Inbox looks' filter.
+	// Asked by: one person's asks (0 is everyone's), for the Inbox filter.
 	let person = $state(0);
 	const ofKind = $derived((kind === 'all' ? asks : asks.filter((a) => a.kind === kind)).filter((a) => !person || askedByOne(a, person)));
 	// A decision waiting out its Undo time already shows in its new tab.
@@ -99,14 +90,13 @@
 			const a = asks.find((x) => x.id === id);
 			const name = a?.name ?? 'the request';
 			if (err instanceof ApiError && err.status === 409 && /already decided/.test(err.message)) {
-				// Someone else answered it first (two approvers at once): show their answer, not "Try again".
-				// The one ask is read on its own, so a list load started meanwhile can't drop it.
+				// Someone else answered it first (two approvers at once): show their answer, not "Try again". The one ask is read on its own, so a list load started meanwhile cannot drop it.
 				const now = await api.get<Ask>(`/asks/${id}`).catch(() => undefined);
 				if (now) {
 					const i = asks.findIndex((x) => x.id === id);
 					if (i >= 0) asks[i] = now;
 				}
-				const m = /^(Declined|Approved) by (.+)$/.exec(now ? decided(now) : '');
+				const m = /^(Declined|Approved) by (.+)$/.exec(now ? askCards.decided(now) : '');
 				toasts.push(m ? `${name} already ${m[1].toLowerCase()}` : `${name} already answered`, 'info', m ? { body: `By ${m[2]}` } : {});
 				return;
 			}
@@ -116,7 +106,7 @@
 		}
 	}
 
-	/** act decides a set of asks after an Undo window; the toast's Undo cancels them all. */
+	/** Decides a set of asks after an Undo window; the toast's Undo cancels them all. */
 	function act(list: Ask[], mode: 'approve' | 'turn_down', why = '', opt?: DecideOptions) {
 		// Waiting asks, and (to decline only) approved ones whose title never got added (Failed).
 		const open = (a: Ask) => a.state === 'asked' || (mode === 'turn_down' && a.state === 'approved' && !a.title_id);
@@ -148,8 +138,7 @@
 	}
 	// Each waiting decision's Undo toast, so leaving the page can take the Undo away.
 	const undoToast = new Map<number, number>();
-	// Leaving the page sends what is still waiting out its Undo time.
-	// Its Undo can't work after that, so the toast goes too.
+	// Leaving the page sends what is still waiting out its Undo time. Its Undo cannot work after that, so the toast goes too.
 	onDestroy(() =>
 		Object.keys(pending).forEach((id) => {
 			const t = undoToast.get(Number(id));
@@ -159,49 +148,10 @@
 	);
 
 	// Decline asks for an optional reason the asker sees.
-	let declineOpen = $state(false);
-	let declineList = $state<Ask[]>([]);
-	let declineWhy = $state('');
-	let whyBox = $state<HTMLTextAreaElement>();
-	// One-tap reasons for the people who asked; the box stays free to type.
-	const reasons = ['Already have it', 'Not for kids', 'Asked before', 'Not enough space right now'];
-	function askDecline(list: Ask[]) {
-		declineList = list;
-		declineWhy = '';
-		declineOpen = true;
-		// The reason box takes focus, so the sheet opens ready to type (no ring on its close button).
-		void tick().then(() => setTimeout(() => whyBox?.focus({ preventScroll: true }), 60));
-	}
-	// A reason chip adds its words to what is typed; tapping it again takes them out.
-	const hasWhy = (why: string) => declineWhy.includes(why);
-	function tapWhy(why: string) {
-		const text = declineWhy.trim();
-		if (hasWhy(why)) {
-			declineWhy = text
-				.split(/\.\s*/)
-				.map((s) => s.trim())
-				.filter((s) => s && s !== why)
-				.join('. ');
-			if (declineWhy === text) declineWhy = text.replace(why, '').replace(/\s{2,}/g, ' ').trim();
-		} else declineWhy = text ? `${text.replace(/\.$/, '')}. ${why}` : why;
-		whyBox?.focus({ preventScroll: true });
-	}
-	function confirmDecline(e: SubmitEvent) {
-		e.preventDefault();
-		// The button that opened the sheet leaves with the ask: focus goes to the window, or the next card.
-		const ids = new Set(declineList.map((a) => a.id));
-		const cards = [...document.querySelectorAll<HTMLElement>('.bc[data-ask]')];
-		const at = cards.findIndex((c) => ids.has(Number(c.dataset.ask)));
-		const nextCard = cards.slice(at + 1).find((c) => !ids.has(Number(c.dataset.ask))) ?? cards.slice(0, Math.max(at, 0)).find((c) => !ids.has(Number(c.dataset.ask)));
-		act(declineList, 'turn_down', declineWhy.trim());
-		declineOpen = false;
-		setTimeout(() => {
-			const a = document.activeElement;
-			if (a && a !== document.body && a.isConnected && !a.closest('[inert]')) return;
-			const win = document.querySelector<HTMLElement>('dialog.win[open]');
-			(win ?? nextCard?.querySelector<HTMLElement>('.open') ?? null)?.focus({ preventScroll: true });
-		}, 80);
-	}
+	const declineFlowCtx = {
+		act,
+	};
+	const declineFlow = createDeclineDialog(declineFlowCtx);
 	let selectedId = $state(0);
 	let takingBack = $state<Set<number>>(new Set());
 	let myReports = $state(0);
@@ -223,7 +173,7 @@
 	const kindRules = $derived(rules.filter((r) => !r.kinds.length || r.kinds.includes(pickKind)));
 
 	let loadGen = 0;
-	/** load reads the list; quiet (a poll) keeps a failed read to itself. */
+	/** Reads the list; quiet (a poll) keeps a failed read to itself. */
 	async function load(quiet = false) {
 		const gen = ++loadGen;
 		try {
@@ -232,8 +182,7 @@
 			asks = r.asks;
 			error = '';
 		} catch (e) {
-			// A background refresh that fails keeps the list on screen and says so once;
-			// a poll says nothing and tries again on its next turn.
+			// A background refresh that fails keeps the list on screen and says so once; a poll says nothing and tries again on its next turn.
 			if (quiet && asks.length) return;
 			if (asks.length) toasts.push("Couldn't refresh requests", 'fail', { body: message(e) });
 			error = message(e);
@@ -253,8 +202,7 @@
 		void load().then(() => {
 			// The layouts open on Waiting for approvers, so an empty queue shows its calm state.
 			tab = approver ? 'waiting' : firstTab(asks);
-			// ?ask=<id> (History's "Go to Requests"): a member's cards open on that ask, ringed and scrolled to.
-			// Approvers get its window from the Cards (lib/approvals/ApprovalsDesktop.svelte).
+			// ?ask=<id> (History's "Go to Requests"): a member's cards open on that ask, ringed and scrolled to. Approvers get its window from the Cards (lib/requests/RequestsBoard.svelte).
 			const want = Number(new URLSearchParams(location.search).get('ask')) || 0;
 			const a = !approver && want ? asks.find((x) => x.id === want) : undefined;
 			if (!a) return;
@@ -280,75 +228,34 @@
 		if (session.can('settings')) {
 			api
 				.get<Record<string, unknown>>('/settings/asks')
-				.then((r) => (askSettings = r))
+				.then((r) => (askChoices.askSettings = r))
 				.catch(() => {});
 		}
-		void loadLive();
+		void askLive.loadLive();
 		const offs = [
 			live.on('ask', () => void load()),
 			// A slot moving (a search found nothing, an import waits on a person) changes an ask's step.
 			live.on('slot', () => {
-				if (slotSoon) return;
-				slotSoon = setTimeout(() => {
-					slotSoon = undefined;
+				if (askLive.slotSoon) return;
+				askLive.slotSoon = setTimeout(() => {
+					askLive.slotSoon = undefined;
 					void load();
 				}, 2000);
 			}),
 			live.on('ask_removed', () => void load()),
-			...['download', 'slot', 'import', 'resync'].map((t) => live.on(t, () => void loadLive())),
-			// Members get their own downloads as dl patches (#139): read again when one changes.
-			live.on('dl', onDlPatch)
+			...['download', 'slot', 'import', 'resync'].map((t) => live.on(t, () => void askLive.loadLive())),
+			// Members get their own downloads as dl patches: read again when one changes.
+			live.on('dl', askLive.onDlPatch)
 		];
 		return () => offs.forEach((off) => off());
 	});
 
 	// A dl patch with rows in it means a download moved; one read for a burst of them.
-	let dlSoon: ReturnType<typeof setTimeout> | undefined;
-	let slotSoon: ReturnType<typeof setTimeout> | undefined;
-	let stepReadAt = 0;
-	function onDlPatch(data: unknown) {
-		const p = data as { upsert?: unknown[]; remove?: unknown[] } | null;
-		if (!p || (!p.upsert?.length && !p.remove?.length) || dlSoon) return;
-		dlSoon = setTimeout(() => {
-			dlSoon = undefined;
-			void loadLive();
-			// The person's own ask steps move with their downloads (one read in 10 s at most).
-			if (!approver && Date.now() - stepReadAt > 10_000) {
-				stepReadAt = Date.now();
-				void load(true);
-			}
-		}, 1500);
-	}
-	onDestroy(() => (clearTimeout(dlSoon), clearTimeout(slotSoon)));
-
-	// Where approved asks are in the pipeline (local lists, refreshed on the same live events as the sidebar).
-	let titleLive = $state(new Map<number, TitleLive>());
-	let liveBusy = false;
-	let liveAgain = false;
-	async function loadLive() {
-		// Members read only the downloads of their own asks (the server keeps it to those), so they
-		// see why one failed; the searches list is for people who manage the Library.
-		const staff = session.can('manage_library');
-		// A live event during a read asks for one more read once it ends, so the last change is never lost.
-		if (liveBusy) return void (liveAgain = true);
-		liveBusy = true;
-		try {
-			const [d, s] = await Promise.all([
-				// Every download still in play for an approved ask (no row cap), so the failed count is exact.
-				api.get<{ downloads: DownloadRow[] }>('/downloads/view?asked=1'),
-				staff ? api.get<{ running: SearchView[] }>('/searches') : Promise.resolve({ running: [] as SearchView[] })
-			]);
-			titleLive = liveByTitle(d.downloads, s.running ?? []);
-		} catch {
-			// keep the last answer
-		} finally {
-			liveBusy = false;
-			if (liveAgain) {
-				liveAgain = false;
-				void loadLive();
-			}
-		}
-	}
+	const askLiveCtx = {
+		get approver() { return approver; },
+		load,
+	};
+	const askLive = createAskLive(askLiveCtx);
 
 	function open(a: Ask, m: 'approve' | 'turn_down') {
 		picked = a;
@@ -369,7 +276,7 @@
 		busy = false;
 	}
 
-	/** decideNow approves (with a Library folder and Pick rules) or turns down one ask straight away; '' when done, else the error. */
+	/** Approves (with a Library folder and Pick rules) or turns down one ask straight away; '' when done, else the error. */
 	async function decideNow(a: Ask, mode: 'approve' | 'turn_down', note: string, folderId: number, rulesId: number): Promise<string> {
 		try {
 			const path = `/asks/${a.id}/${mode === 'approve' ? 'approve' : 'turn-down'}`;
@@ -389,52 +296,13 @@
 	}
 
 	// Take back asks first in a confirm sheet.
-	let takeBackOpen = $state(false);
-	let takeBackAsk = $state<Ask | null>(null);
-	let takeBackError = $state('');
-	// Where focus goes once the sheet has closed after a Take back.
-	let focusAfterTakeBack: (() => void) | null = null;
-	function askTakeBack(a: Ask) {
-		takeBackAsk = a;
-		takeBackError = '';
-		takeBackOpen = true;
-	}
-
-	// The sheet stays open, busy, while the ask is taken back; a failure shows in it.
-	async function takeBack(a: Ask) {
-		if (takingBack.has(a.id)) return;
-		takeBackError = '';
-		const at = shown.findIndex((x) => x.id === a.id);
-		takingBack = new Set([...takingBack, a.id]);
-		try {
-			await api.del(`/asks/${a.id}`);
-			await load();
-			focusAfterTakeBack = () => {
-				const rows = document.querySelectorAll<HTMLElement>('[data-testid="ask"]');
-				const row = rows.length ? rows[Math.min(Math.max(at, 0), rows.length - 1)] : undefined;
-				const heading = document.querySelector<HTMLElement>('main h1');
-				const target = row?.querySelector<HTMLElement>('button, a') ?? heading;
-				if (target === heading) heading?.setAttribute('tabindex', '-1');
-				target?.focus();
-			};
-			takeBackOpen = false;
-		} catch (err) {
-			takeBackError = message(err);
-		} finally {
-			takingBack = new Set([...takingBack].filter((id) => id !== a.id));
-		}
-	}
-
-	function takeBackClosed() {
-		const f = focusAfterTakeBack;
-		focusAfterTakeBack = null;
-		// After the browser has put focus back on the (now gone) opener.
-		if (f) setTimeout(f, 0);
-	}
-
-	// Requests news (#92): no inbox card. Unread news about an ask marks its card New
-	// for this visit; other news (a fixed report, new albums, a followed title ready)
-	// shows once as a toast. Opening the page reads it all, so the badge clears.
+	const takeBackFlowCtx = {
+		get takingBack() { return takingBack; },
+		set takingBack(v) { takingBack = v; },
+		get shown() { return shown; },
+		load,
+	};
+	const takeBackFlow = createTakeBack(takeBackFlowCtx);
 	let fresh = $state(new Set<number>());
 	let reading = false;
 	$effect(() => {
@@ -449,133 +317,41 @@
 			.finally(() => (reading = false));
 	});
 
-	// The member cards (people who cannot approve) speak the approvers' card language: the title's wide art
-	// (its backdrop, an artist's photo, else the poster blurred), then a glass panel with the status and its lines.
+	// The member cards (people who cannot approve) speak the approvers' card language: the title's wide art (its backdrop, an artist's photo, else the poster blurred), then a glass panel with the status and its lines.
 	$effect(() => {
 		if (!approver) for (const a of shown.slice(0, 16)) wantDetails(a);
 	});
-	const wideOf = (a: Ask): string => {
-		if (a.kind === 'artist') return askArtist(a)?.backgrounds[0] ?? '';
-		const d = askDetails(a);
-		return d?.backdrop ? to(d.backdrop) : '';
+	const askCardsCtx = {
+		get approver() { return approver; },
+		get titleLive() { return askLive.titleLive; },
+		get asks() { return asks; },
+		load,
+		loadLive: askLive.loadLive,
 	};
-	const cardTone = (a: Ask) => (whyFailed(a) ? 'bad' : a.state === 'asked' ? 'wait' : a.state === 'approved' ? 'go' : a.state === 'turned_down' ? 'soft' : 'ok');
-	const cardIcon = (a: Ask): IconName => (whyFailed(a) ? 'alert' : a.state === 'asked' ? 'clock' : a.state === 'turned_down' ? 'x' : a.state === 'available' ? 'library' : 'check');
-	const kinds = [
-		{ k: 'all', label: 'Everything' },
-		{ k: 'movie', label: 'Movies' },
-		{ k: 'show', label: 'TV shows' },
-		{ k: 'artist', label: 'Music' }
-	] as const;
-
-	// One status vocabulary (title-status.ts): approvers get the staff words.
-	const askPill = (a: Ask) => titleStatus({ ask: a.state, titleKind: a.kind === 'artist' ? 'artist' : a.kind === 'show' ? 'show' : 'movie' }, approver ? 'staff' : 'member');
-
-	// Id-like account names read as a person, never a raw id.
-	const plain = (t: string) => t.replace(/[\w.-]+/g, (w) => (/\d/.test(w) && /\p{L}/u.test(w) && looksLikeId(w) ? 'someone in your household' : w));
-	const askedBy = (a: Ask) => plain(askedByRaw(a));
-	const decided = (a: Ask) => plain(decidedRaw(a, session.s.id != null ? { id: session.s.id, displayName: profile.displayName } : undefined) ?? '');
-	const alsoDeclined = (a: Ask) => plain(alsoDeclinedRaw(a, session.s.id != null ? { id: session.s.id, displayName: profile.displayName } : undefined));
-
-	function year(a: Ask) {
-		return a.year ? ` (${a.year})` : '';
-	}
-
-	/** what says what a show or artist ask is for; '' for movies. */
-	function what(a: Ask) {
-		if (a.kind === 'artist') return a.album_words ?? albumWords(a.albums);
-		return a.kind === 'show' ? (a.season_words ?? seasonWords(a.seasons)) : '';
-	}
-
-	/** whyFailed says why an approved ask is stuck (the server's reason when it has one); '' when nothing failed. */
-	function whyFailed(a: Ask): string {
-		if (a.state !== 'approved') return '';
-		if (a.problem) return a.problem;
-		if (!a.title_id) return 'HolyArrs couldn’t add it to the Library.';
-		const f = liveFacts(titleLive.get(a.title_id));
-		return f.phase === 'failed' ? `The download failed.${f.reason ? ` ${f.reason}` : ''}` : '';
-	}
-
-	/** stepLine says, in plain words, where the person's own approved ask is now (#139): no percent, no download names. */
-	function stepLine(a: Ask): string {
-		if (a.state !== 'approved' || !a.step) return '';
-		switch (a.step.kind) {
-			case 'searching':
-				return 'Searching for it now';
-			case 'downloading':
-				return 'Downloading now';
-			case 'importing':
-				return 'Adding it to the Library';
-			case 'waiting_on_admin':
-				return 'Waiting on an admin';
-			case 'not_out':
-				return 'Not out yet';
-			case 'waiting':
-				return a.step.searched_at ? `Nothing found yet · last looked ${ago(a.step.searched_at)}` : 'Not looked for yet';
-		}
-		return '';
-	}
-	// While one of the person's own asks is on its way, read the list again now and then:
-	// a search starting or an import finishing reaches them only this way.
-	// Without "Run the Library" there are no download events: the downloads read here
-	// would freeze, so the poll reads them again too while any are on screen.
-	const noDlEvents = $derived(!session.can('manage_library'));
-	const inFlight = $derived(
-		asks.some((a) => a.state === 'approved' && ['searching', 'downloading', 'importing', 'waiting_on_admin'].includes(a.step?.kind ?? '')) || (noDlEvents && [...titleLive.values()].some((t) => t.download && t.download.phase !== 'failed'))
-	);
+	const askCards = createAskCards(askCardsCtx);
+	const askChoicesCtx = {
+		get rules() { return rules; },
+		get folders() { return folders; },
+	};
+	const askChoices = createAskChoices(askChoicesCtx);
 	$effect(() => {
-		if (!inFlight) return;
-		const t = setInterval(() => {
-			if (document.visibilityState !== 'visible') return;
-			void load(true);
-			if (noDlEvents) void loadLive();
-		}, 15_000);
-		return () => clearInterval(t);
-	});
-
-	/** approvedLine says what happens after approval. */
-	function approvedLine(a: Ask) {
-		if (a.kind === 'show') return `HolyArrs keeps ${what(a)} up to date and looks for the episodes.`;
-		if (a.kind === 'artist') return `HolyArrs keeps ${what(a)} up to date and looks for the albums.`;
-		return 'HolyArrs is looking for it.';
-	}
-
-	// Who asked: picture and age limit, for the Inbox looks.
-	let members = $state<Record<number, Member>>({});
-	let membersAsked = false;
-	$effect(() => {
-		// The people list is an admin route: when it is refused, the rows show
-		// initials and no age-limit mark.
-		if (!approver || membersAsked) return;
-		membersAsked = true;
+		// The people list is an admin route: when it is refused, the rows show initials and no age-limit mark.
+		if (!approver || askChoices.membersAsked) return;
+		askChoices.membersAsked = true;
 		api
 			.get<{ users: Member[] }>('/users')
-			.then((r) => (members = Object.fromEntries(r.users.map((u) => [u.id, u]))))
+			.then((r) => (askChoices.members = Object.fromEntries(r.users.map((u) => [u.id, u]))))
 			.catch(() => {});
 	});
-	let askSettings = $state<Record<string, unknown>>({});
 	// The member the poster size and the panel are remembered for.
 	let myId = $state<number | undefined>();
-	const defaultRuleOf = (a: Ask) => {
-		const k = a.kind === 'show' ? 'show_pick_rules_id' : a.kind === 'artist' ? 'music_pick_rules_id' : 'pick_rules_id';
-		const id = Number(askSettings[k] ?? 0);
-		return id ? (rules.find((r) => r.id === id)?.name ?? '') : '';
-	};
-	const foldersOf = (a: Ask) => {
-		const k = a.kind === 'show' ? 'show' : a.kind === 'artist' ? 'music' : 'movie';
-		return folders.filter((f) => f.kind === k);
-	};
-	const rulesOf = (a: Ask) => {
-		const k = a.kind === 'show' ? 'show' : a.kind === 'artist' ? 'music' : 'movie';
-		return rules.filter((r) => !r.kinds.length || r.kinds.includes(k));
-	};
 	const people = $derived(askers(asks));
-	const ctx: ApprovalsCtx = {
+	const ctx: BoardCtx = {
 		get shown() { return shown; },
 		live: (a) => {
 			if (a.problem) return { phase: 'failed', reason: a.problem };
-			// The page's own live search or download first, else the server's step (#139).
-			const f = liveFacts(a.title_id ? titleLive.get(a.title_id) : undefined);
+			// The page's own live search or download first, else the server's step.
+			const f = liveFacts(a.title_id ? askLive.titleLive.get(a.title_id) : undefined);
 			return f.phase ? f : { ...f, ...stepFacts(a.step) };
 		},
 		get viewed() { return viewed; },
@@ -601,35 +377,35 @@
 		isPending: (id) => !!pending[id],
 		approve: (list) => act(list, 'approve'),
 		approveWith: (a, opt) => act([a], 'approve', opt.note ?? '', opt),
-		turnDown: (list) => askDecline(list),
+		turnDown: (list) => declineFlow.askDecline(list),
 		turnDownWith: (a, note) => act([a], 'turn_down', note),
 		withOptions: (a) => open(a, 'approve'),
 		review: () => {},
-		takeBack: (a) => askTakeBack(a),
+		takeBack: (a) => takeBackFlow.askTakeBack(a),
 		decideNow,
-		foldersFor: foldersOf,
-		rulesFor: rulesOf,
+		foldersFor: askChoices.foldersOf,
+		rulesFor: askChoices.rulesOf,
 		who: (a) => {
 			const p = a.people[0] ?? a.asked_by;
-			const m = members[p.id];
+			const m = askChoices.members[p.id];
 			const kid = kidLabel(m?.max_rating);
 			// The Kid badge says it already: no "(Kid)" in the name beside it.
-			const name = plain(p.name);
+			const name = askCards.plain(p.name);
 			return { id: p.id, name: kid ? name.replace(/\s*\(kid\)\s*$/i, '') || name : name, avatar: m?.avatar ?? null, kid };
 		},
-		what,
-		year,
-		askedBy,
-		decided,
-		alsoDeclined,
-		pill: askPill,
-		approvedLine,
+		what: askCards.what,
+		year: askCards.year,
+		askedBy: askCards.askedBy,
+		decided: askCards.decided,
+		alsoDeclined: askCards.alsoDeclined,
+		pill: askCards.askPill,
+		approvedLine: askCards.approvedLine,
 		href: askHref,
 		details: askDetails,
 		want: wantDetails,
 		info: askInfo,
 		episodes: seasonEpisodes,
-		defaultRule: defaultRuleOf,
+		defaultRule: askChoices.defaultRuleOf,
 		get kind() { return kind; },
 		setKind: (k) => ((kind = k), (chosen = new Set())),
 		get person() { return person; },
@@ -645,8 +421,8 @@
 
 <div class="ap-top" class:mem={!approver}>
 <h1 class="sr-only">Requests</h1>
-<!-- Reports (#36): approvers get it in the cards' toolbar; this link covers no toolbar (no asks yet, or no approving). -->
-{#if session.can('manage_library') && (!approver || (loaded && asks.length === 0))}<a class="rp-link" href={to('/reports')} data-testid="reports-link">Reports{#if inbox.reports}{' '}({inbox.reports}){/if}<span class="sr-only"> of problems with titles</span></a>{/if}
+<!-- Reports: approvers get it in the cards' toolbar; this link covers no toolbar (no asks yet, or no approving). -->
+{#if session.can('manage_library') && (!approver || (loaded && asks.length === 0))}<a class="rp-link" href={to('/requests/reports')} data-testid="reports-link">Reports{#if inbox.reports}{' '}({inbox.reports}){/if}<span class="sr-only"> of problems with titles</span></a>{/if}
 {#if (session.can('ask') && !approver) || myReports > 0}
 	<div class="ask-actions">
 		{#if session.can('ask') && !approver}
@@ -656,7 +432,7 @@
 			<a class="tb ask-k" href={to(`/search?kind=music`)}><Icon name="music" size={16} />Ask for music</a>
 			<a class="tb ink ask-one" href={to(`/search`)}><Icon name="plus" size={16} />Ask for something</a>
 		{/if}
-		{#if myReports > 0}<a class="tb ask-rp" href={to('/reports')} data-testid="my-reports-link"><Icon name="alert" size={16} />Your reports</a>{/if}
+		{#if myReports > 0}<a class="tb ask-rp" href={to('/requests/reports')} data-testid="my-reports-link"><Icon name="alert" size={16} />Your reports</a>{/if}
 		</div>
 {/if}
 
@@ -680,7 +456,7 @@
 		{/if}
 		{#if bothKinds}
 			<div class="tabs kinds" role="group" aria-label="Kind">
-				{#each kinds as k (k.k)}
+				{#each askCards.kinds as k (k.k)}
 					<div class="pw" class:on={kind === k.k} role="presentation"><button type="button" class="tab" aria-pressed={kind === k.k} onclick={() => (kind = k.k)}>{k.label}</button></div>
 				{/each}
 			</div>
@@ -703,7 +479,7 @@
 					</label>
 					{#if chosenAsks.length}
 						<Button size="sm" variant="primary" icon="check" type="button" onclick={() => act(chosenAsks, 'approve')}>Approve {chosenAsks.length}</Button>
-						<Button size="sm" icon="x" type="button" onclick={() => askDecline(chosenAsks)}>Decline {chosenAsks.length}</Button>
+						<Button size="sm" icon="x" type="button" onclick={() => declineFlow.askDecline(chosenAsks)}>Decline {chosenAsks.length}</Button>
 					{/if}
 				</div>
 			{/if}
@@ -734,7 +510,7 @@
 		{@render bulkBar()}
 		<ul class="cards" aria-label="Requests">
 			{#each shown as a, i (a.id)}
-				{@const wide = proxied(wideOf(a)) || null}
+				{@const wide = proxied(askCards.wideOf(a)) || null}
 				{@const photo = a.kind === 'artist' ? proxied(artistPhoto(a)) || null : null}
 				<li class="mc rise" animate:glide class:hl={selectedId === a.id} class:waiting={!!pending[a.id]} class:answered={a.state === 'turned_down'} style="--i: {i}" data-testid="ask" data-ask-id={a.id}>
 					<div class="ban" class:noart={!wide && !photo && !a.poster}>
@@ -749,35 +525,35 @@
 					</div>
 					<div class="sheet-b">
 						<div class="st-row">
-							<span class="st-chip st-{cardTone(a)}"><span class="st-sq"><Icon name={cardIcon(a)} size={15} /></span><b data-testid="ask-state">{askPill(a).label}</b></span>
+							<span class="st-chip st-{askCards.cardTone(a)}"><span class="st-sq"><Icon name={askCards.cardIcon(a)} size={15} /></span><b data-testid="ask-state">{askCards.askPill(a).label}</b></span>
 							{#if pending[a.id]}<span class="muted pending">Sending…</span>{/if}
 							{#if a.mine && a.state === 'asked'}
 								<span class="row-menu" data-testid="ask-menu">
 									<Menu
 										label="More for {a.name}"
 										width={220}
-										items={[{ label: 'Take back', icon: 'trash', destructive: true, disabled: takingBack.has(a.id), onselect: () => askTakeBack(a) }]}
+										items={[{ label: 'Take back', icon: 'trash', destructive: true, disabled: takingBack.has(a.id), onselect: () => takeBackFlow.askTakeBack(a) }]}
 									/>
 								</span>
 							{/if}
 						</div>
 						<div class="lines">
-							{#if what(a)}<p class="line what" data-testid={a.kind === 'artist' ? 'ask-albums' : 'ask-seasons'}>Asked for {what(a)}</p>{/if}
+							{#if askCards.what(a)}<p class="line what" data-testid={a.kind === 'artist' ? 'ask-albums' : 'ask-seasons'}>Asked for {askCards.what(a)}</p>{/if}
 							<p class="line muted" data-testid="asked-by">
-								{askedBy(a)} · <time datetime={a.asked_at} title={dateTime(a.asked_at)}>{ago(a.asked_at)}</time>
+								{askCards.askedBy(a)} · <time datetime={a.asked_at} title={dateTime(a.asked_at)}>{ago(a.asked_at)}</time>
 							</p>
 							{#if watchlistLine(a.people, session.s.id)}<p class="line muted" data-testid="ask-from-watchlist">{watchlistLine(a.people, session.s.id)}</p>{/if}
-							{#if decided(a)}
+							{#if askCards.decided(a)}
 								<p class="line muted" data-testid="decided-by">
-									{decided(a)}{#if a.decided_at}{' '}· <time datetime={a.decided_at} title={dateTime(a.decided_at)}>{ago(a.decided_at)}</time>{/if}
+									{askCards.decided(a)}{#if a.decided_at}{' '}· <time datetime={a.decided_at} title={dateTime(a.decided_at)}>{ago(a.decided_at)}</time>{/if}
 								</p>
 							{/if}
 							{#if a.note}<p class="line note">“{a.note}”</p>{/if}
 							{#if a.state === 'approved'}
-								{@const why = whyFailed(a)}
+								{@const why = askCards.whyFailed(a)}
 								{#if why}<p class="line rq-fail" data-testid="ask-failed">{why}</p>
-								{:else}<p class="line muted">{approvedLine(a)}</p>
-									{#if stepLine(a)}<p class="line rq-step" data-testid="ask-step">{stepLine(a)}</p>{/if}
+								{:else}<p class="line muted">{askCards.approvedLine(a)}</p>
+									{#if askCards.stepLine(a)}<p class="line rq-step" data-testid="ask-step">{askCards.stepLine(a)}</p>{/if}
 									{#if a.title_id && a.title_id > 0 && !a.step}<SearchOutcomeLine titleId={a.title_id} />{/if}{/if}
 							{/if}
 						</div>
@@ -805,20 +581,18 @@
 						action={{ label: 'Search', href: to('/search') }}
 					/>
 				{:else}
-					<!-- Approvers: Cards (every width) or the Stage (wide screens); design-notes/approvals-stage.md. -->
-					<ApprovalsDesktop {ctx} />
+					<!-- Approvers: Cards (every width). -->
+					<RequestsBoard {ctx} />
 				{/if}
 			</PageLoader>
 		{/if}
 			</div>
 {/if}
 
-
-
 <Sheet
 	bind:open={decideOpen}
-	title={picked ? `${mode === 'approve' ? 'Approve' : 'Decline'} ${picked.name}${year(picked)}` : 'Approve or decline'}
-	description={picked ? `${askedBy(picked)}${what(picked) ? `, for ${what(picked)}` : ''}.` : undefined}
+	title={picked ? `${mode === 'approve' ? 'Approve' : 'Decline'} ${picked.name}${askCards.year(picked)}` : 'Approve or decline'}
+	description={picked ? `${askCards.askedBy(picked)}${askCards.what(picked) ? `, for ${askCards.what(picked)}` : ''}.` : undefined}
 >
 	{#if picked}
 		<form class="decide" onsubmit={decide}>
@@ -849,9 +623,9 @@
 			{#if mode === 'approve'}
 				<p class="hint">
 					{picked.kind === 'show'
-						? `Approving adds the show to the Library, keeps ${what(picked)} up to date and starts looking for the episodes.`
+						? `Approving adds the show to the Library, keeps ${askCards.what(picked)} up to date and starts looking for the episodes.`
 						: picked.kind === 'artist'
-							? `Approving adds the artist to the Library, keeps ${what(picked)} up to date and starts looking for the albums.`
+							? `Approving adds the artist to the Library, keeps ${askCards.what(picked)} up to date and starts looking for the albums.`
 							: 'Approving adds the movie to the Library and starts looking for it.'}
 				</p>
 			{/if}
@@ -867,34 +641,34 @@
 </Sheet>
 
 <Sheet
-	bind:open={declineOpen}
+	bind:open={declineFlow.declineOpen}
 	size="sm"
-	title={declineList.length === 1 ? `Decline ${declineList[0].name}${year(declineList[0])}?` : `Decline ${declineList.length} asks?`}
+	title={declineFlow.declineList.length === 1 ? `Decline ${declineFlow.declineList[0].name}${askCards.year(declineFlow.declineList[0])}?` : `Decline ${declineFlow.declineList.length} asks?`}
 	description="You can undo this for a few seconds."
 >
-	<form class="decide" onsubmit={confirmDecline}>
+	<form class="decide" onsubmit={declineFlow.confirmDecline}>
 		<div class="field">
-			<label for="dc-why">Reason (optional, shown to {declineList.length === 1 ? ctx.who(declineList[0]).name : 'the people who asked'})</label>
-			<textarea id="dc-why" class="input" rows="3" maxlength="500" placeholder="For example: we already have it" bind:this={whyBox} bind:value={declineWhy} data-testid="decline-why"></textarea>
+			<label for="dc-why">Reason (optional, shown to {declineFlow.declineList.length === 1 ? ctx.who(declineFlow.declineList[0]).name : 'the people who asked'})</label>
+			<textarea id="dc-why" class="input" rows="3" maxlength="500" placeholder="For example: we already have it" bind:this={declineFlow.whyBox} bind:value={declineFlow.declineWhy} data-testid="decline-why"></textarea>
 			<div class="why-chips" role="group" aria-label="Quick reasons">
-				{#each reasons as why (why)}
-					<button type="button" class="why-chip" aria-pressed={hasWhy(why)} onclick={() => tapWhy(why)}>{why}</button>
+				{#each declineFlow.reasons as why (why)}
+					<button type="button" class="why-chip" aria-pressed={declineFlow.hasWhy(why)} onclick={() => declineFlow.tapWhy(why)}>{why}</button>
 				{/each}
 			</div>
 		</div>
 		<div class="decide-actions">
-			<Button variant="plain" type="button" onclick={() => (declineOpen = false)}>Cancel</Button>
+			<Button variant="plain" type="button" onclick={() => (declineFlow.declineOpen = false)}>Cancel</Button>
 			<Button variant="destructive" type="submit">Decline</Button>
 		</div>
 	</form>
 </Sheet>
 
-<Sheet bind:open={takeBackOpen} onclose={takeBackClosed} size="sm" title={takeBackAsk ? `Take back ${takeBackAsk.name}${year(takeBackAsk)}?` : 'Take back'} description="It leaves Requests. You can ask again later.">
-	{#if takeBackAsk}
-		{#if takeBackError}<p class="form-error" role="alert" data-testid="take-back-error">{takeBackError}</p>{/if}
+<Sheet bind:open={takeBackFlow.takeBackOpen} onclose={takeBackFlow.takeBackClosed} size="sm" title={takeBackFlow.takeBackAsk ? `Take back ${takeBackFlow.takeBackAsk.name}${askCards.year(takeBackFlow.takeBackAsk)}?` : 'Take back'} description="It leaves Requests. You can ask again later.">
+	{#if takeBackFlow.takeBackAsk}
+		{#if takeBackFlow.takeBackError}<p class="form-error" role="alert" data-testid="take-back-error">{takeBackFlow.takeBackError}</p>{/if}
 		<div class="decide-actions">
-			<Button variant="plain" type="button" onclick={() => (takeBackOpen = false)}>Keep it</Button>
-			<Button variant="destructive" type="button" busy={takingBack.has(takeBackAsk.id)} onclick={() => takeBackAsk && void takeBack(takeBackAsk)}>Take back</Button>
+			<Button variant="plain" type="button" onclick={() => (takeBackFlow.takeBackOpen = false)}>Keep it</Button>
+			<Button variant="destructive" type="button" busy={takingBack.has(takeBackFlow.takeBackAsk.id)} onclick={() => takeBackFlow.takeBackAsk && void takeBackFlow.takeBack(takeBackFlow.takeBackAsk)}>Take back</Button>
 		</div>
 	{/if}
 </Sheet>
@@ -917,12 +691,12 @@
 	.why-chip:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.decide-actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
 	.variant { min-width: 0; }
-	/* Reported problems (#95): a small link for the owner and admins. */
+	/* Reported problems: a small link for the owner and admins. */
 	.rp-link { display: inline-flex; margin-bottom: 10px; align-items: center; min-height: 32px; padding: 0 12px; border-radius: 999px; background: var(--surface-2); color: var(--text); font: 600 13px/1 var(--font-ui); font-variant-numeric: tabular-nums; }
 	.rp-link:hover { background: color-mix(in srgb, var(--text) 10%, var(--surface-2)); }
 	.rp-link:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	@media (max-width: 767px) and (pointer: coarse) { .rp-link { min-height: 44px; } }
-	/* People who cannot approve: the approvers' card language (lib/approvals/ApprovalsDesktop.svelte) around their own lines. */
+	/* People who cannot approve: the approvers' card language (lib/requests/RequestsBoard.svelte) around their own lines. */
 	.ap-top.mem { display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px; }
 	.ask-actions { display: flex; flex-wrap: wrap; gap: 10px; }
 	.tb { display: inline-flex; align-items: center; justify-content: center; gap: 7px; height: 40px; padding: 0 14px; border: 1px solid var(--line); border-radius: 12px; background: color-mix(in srgb, var(--surface-1) 72%, transparent); color: var(--text); font: 600 13px/1 var(--font-ui); white-space: nowrap; text-decoration: none; -webkit-backdrop-filter: blur(18px) saturate(1.4); backdrop-filter: blur(18px) saturate(1.4); transition: transform 160ms var(--ease-out), background 200ms var(--ease-out); }
@@ -975,7 +749,7 @@
 	.ban-t a:focus-visible { outline: none; }
 	.mc:has(.ban-t a:focus-visible) { box-shadow: 0 0 0 2px var(--text), 0 24px 48px -24px rgb(0 0 0 / 0.6); }
 	.ban-f { font: 600 12px/1.3 var(--font-ui); color: rgb(255 255 255 / 0.85); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-	/* The glass panel: smoked glass, the art blurred through it; --text, --text-muted and --bg are redefined on it so the ink reads. */
+	/* The glass panel redefines --text, --text-muted and --bg so the ink reads on the blurred art. */
 	.sheet-b { --blur: blur(22px) saturate(1.3); --text: light-dark(#14161c, #f5f5f7); --text-muted: light-dark(#1c2029, rgb(235 235 245 / 0.8)); --bg: light-dark(#eef0f5, #17171b); --gl-fail: light-dark(#86160b, #ff8f8a); --g1: light-dark(rgb(255 255 255 / 0.72), rgb(34 34 40 / 0.7)); --g2: light-dark(rgb(246 248 252 / 0.7), rgb(10 10 13 / 0.8)); --g3: light-dark(rgb(255 255 255 / 0.06), transparent); --edge: inset 0 1px 0 light-dark(rgb(255 255 255 / 0.75), rgb(255 255 255 / 0.16)), inset 0 0 0 1px light-dark(rgb(30 36 58 / 0.07), rgb(255 255 255 / 0.05)); --st-wait: light-dark(#8a5a00, #ffb340); --st-wait-ink: light-dark(#5c3b00, #ffd699); --st-ok: light-dark(#18843f, #34c26a); --st-ok-ink: light-dark(#073d1b, #a6efc0); --st-go: light-dark(#1d5fd6, #4b8dff); --st-go-ink: light-dark(#072a6b, #b5d1ff); --st-bad: light-dark(#a3170c, #ff6b63); --st-bad-ink: light-dark(#5e0e06, #ffb3ae); --st-soft: light-dark(#5a6070, #9aa0ad); --st-soft-ink: var(--text); position: relative; z-index: 1; display: flex; flex-direction: column; gap: 10px; flex: 1; margin: 0 var(--gap) var(--gap); padding: 12px; border-radius: calc(20px - var(--gap)); background: linear-gradient(180deg, var(--g1), var(--g2)), linear-gradient(var(--g3), var(--g3)); color: var(--text); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); box-shadow: var(--edge); }
 	:global(:root[data-theme='light']) .sheet-b { --blur: blur(30px) saturate(1.3) brightness(1.14); }
 	@media (prefers-color-scheme: light) { :global(:root:not([data-theme])) .sheet-b { --blur: blur(30px) saturate(1.3) brightness(1.14); } }

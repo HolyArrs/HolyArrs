@@ -1,40 +1,5 @@
 <script lang="ts">
 	import PageLoader from '#lib/ui/PageLoader.svelte';
-	// One set of Pick rules: name and kinds, quality steps and Good enough,
-	// traits and points, Must have and Never, size, waiting and language.
-	// "new" starts a set; ?from=<id> starts it as a copy of another.
-	import { tick, untrack } from 'svelte';
-	import { page } from '$app/state';
-	import { goto } from '$app/navigation';
-	import { api, ApiError } from '#lib/api.ts';
-	import { plainMessage as message } from '#lib/settings.ts';
-	import { to } from '#lib/paths.ts';
-	import { toasts } from '#lib/toasts.svelte.ts';
-	import { session } from '#lib/session.svelte.ts';
-	import {
-		applySize,
-		blankBody,
-		checkBody,
-		copyName,
-		fieldKey,
-		isMusic,
-		isOwnTrait,
-		kindChoices,
-		languages,
-		neverChoices,
-		orderChoices,
-		preferChoices,
-		properChoices,
-		sizeFields,
-		stepLabel,
-		tidyBody,
-		toggleKind,
-		traitLabel,
-		traitsFor,
-		usedWords,
-		type RulesKind,
-		type SizeFields
-	} from '#lib/pick-rules.ts';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import SaveBar from '#lib/ui/SaveBar.svelte';
@@ -45,7 +10,18 @@
 	import Chip from '#lib/ui/Chip.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
-	import type { OwnTrait, PickRulesBody, PickRulesDetail, PickRulesUse } from '#lib/types.ts';
+	import { applySize, blankBody, checkBody, copyName, fieldKey, isMusic, isOwnTrait, kindChoices, languages, neverChoices, orderChoices, preferChoices, properChoices, sizeFields, stepLabel, tidyBody, toggleKind, traitLabel, traitsFor, usedWords, type RulesKind, type SizeFields } from '#lib/downloads/index.ts';
+	import type { OwnTrait, PickRulesBody, PickRulesDetail, PickRulesUse } from '#lib/downloads/index.ts';
+	import { tick, untrack } from 'svelte';
+	import { page } from '$app/state';
+	import { goto } from '$app/navigation';
+	import { api, ApiError } from '#lib/core/api.ts';
+	import { plainMessage as message } from '#lib/core/settings.ts';
+	import { to } from '#lib/core/paths.ts';
+	import { toasts } from '#lib/core/toasts.svelte.ts';
+	import { session } from '#lib/core/session.svelte.ts';
+
+	// One set of Pick rules: name and kinds, quality steps and Good enough, traits and points, Must have and Never, size, waiting and language. "new" starts a set; ?from=<id> starts it as a copy of another.
 
 	interface Form {
 		name: string;
@@ -61,7 +37,7 @@
 	let preset = $state(false);
 	let savedName = $state('');
 	let inUse = $state<PickRulesUse | null>(null);
-	// Your own traits (#97), offered after the built-in ones.
+	// Your own traits, offered after the built-in ones.
 	let mine = $state<OwnTrait[]>([]);
 	let sizeStart = $state<SizeFields>({ min: '', max: '' });
 	let saved = $state('');
@@ -158,14 +134,14 @@
 		if (free) form.body.traits = [...form.body.traits, { trait: free, points: 0 }];
 	}
 
-	/** removeTrait drops one trait and moves focus to the next row's trait, else to Add a trait. */
+	/** Drops one trait and moves focus to the next row's trait, else to Add a trait. */
 	async function removeTrait(i: number) {
 		form.body.traits = form.body.traits.filter((_, j) => j !== i);
 		await tick();
 		(document.getElementById(`trait-${i}`) ?? document.getElementById('pr-add-trait'))?.focus();
 	}
 
-	/** traitChanged keeps focus on a row's trait after its key changes and the row is drawn again. */
+	/** Keeps focus on a row's trait after its key changes and the row is drawn again. */
 	async function traitChanged(i: number) {
 		await tick();
 		document.getElementById(`trait-${i}`)?.focus();
@@ -184,8 +160,7 @@
 		form.size[which] = v.trim() === '' ? '' : Number(v);
 	}
 
-	// Each field that shows its own error line, and the element to focus for it.
-	// Any other server error shows under the form.
+	// Each field that shows its own error line, and the element to focus for it. Any other server error shows under the form.
 	const fieldIds: Record<string, string> = {
 		name: 'pr-name',
 		kinds: 'pr-kinds',
@@ -205,7 +180,7 @@
 		proper_policy: 'pr-proper',
 		max_age_days: 'pr-proper-age'
 	};
-	/** bad marks a control invalid and points it at its error line (the Field's own "<id>-error"). */
+	/** Marks a control invalid and points it at its error line (the Field's own "<id>-error"). */
 	const bad = (k: string) => (errors[k] ? { 'aria-invalid': true, 'aria-describedby': `${fieldIds[k]}-error` } : {});
 
 	function focusFirst(keys: string[]) {

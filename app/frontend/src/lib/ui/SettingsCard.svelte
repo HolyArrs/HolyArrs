@@ -1,9 +1,11 @@
+<!-- Titled settings panel with optional collapsible Advanced section. -->
 <script lang="ts" module>
-	// Which Advanced disclosures a person left open, per person and per card, in this browser.
+	// Storage key prefix for the open state of each Advanced section.
 	const PREFIX = 'holyarrs.settings.advanced.';
 	export function advancedKey(person: string, card: string): string {
 		return `${PREFIX}${person || 'someone'}.${card}`;
 	}
+	// Storage can be blocked, so fail to closed.
 	function readOpen(key: string): boolean {
 		try {
 			return localStorage.getItem(key) === '1';
@@ -16,19 +18,16 @@
 			if (open) localStorage.setItem(key, '1');
 			else localStorage.removeItem(key);
 		} catch {
-			// Storage can be blocked; the disclosure still works for this visit.
+			// Remembering the state is optional.
 		}
 	}
 </script>
 
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import Icon, { type IconName } from '../Icon.svelte';
-	import { session } from '../session.svelte.ts';
+	import Icon, { type IconName } from './Icon.svelte';
+	import { session } from '../core/session.svelte.ts';
 
-	// A grouped settings block: title, one-line description, content, an
-	// optional Advanced disclosure (closed until the person opens it, then
-	// remembered) and an optional footer. tone="danger" outlines it in red.
 	let {
 		title,
 		description,
@@ -47,13 +46,16 @@
 		tone?: 'danger';
 		children?: Snippet;
 		advanced?: Snippet;
-		/** A stable name for this card's Advanced disclosure; defaults to id or title. */
 		advancedId?: string;
 		footer?: Snippet;
 	} = $props();
 	const uid = $props.id();
-	const storeKey = $derived(advancedKey(session.s.name, advancedId ?? id ?? title));
+
 	let open = $state(false);
+
+	// Per person, so each user keeps their own choice.
+	const storeKey = $derived(advancedKey(session.s.name, advancedId ?? id ?? title));
+
 	$effect(() => {
 		open = readOpen(storeKey);
 	});
@@ -85,6 +87,7 @@
 	.ui-settings { border-radius: var(--r-panel); background: var(--surface-1); box-shadow: 0 0 0 1px var(--line); overflow: hidden; scroll-margin-top: calc(var(--topbar, 56px) + 16px); }
 	.ui-settings:focus { outline: none; }
 	.ui-settings:focus-visible { box-shadow: var(--focus-ring); }
+	/* Red ring marks destructive cards. */
 	.danger { box-shadow: 0 0 0 1.5px var(--fail); }
 	.danger h2 { color: var(--fail-text); }
 	.danger .ic { background: rgb(215 0 21 / 10%); color: var(--fail-text); }

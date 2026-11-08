@@ -1,7 +1,5 @@
 <script lang="ts">
-	// Placeholder while content loads. It uses the shared Silhouette shimmer (tokens.css .sk):
-	// brand-tinted, one sweep for every tile, in the layout from the first frame and visible
-	// at 150 ms. For page-shaped placeholders use lib/ui/sk.
+	// Placeholder shapes shown while content loads.
 	let {
 		shape = 'line',
 		width,
@@ -10,6 +8,7 @@
 	}: { shape?: 'line' | 'block' | 'poster' | 'wide' | 'circle'; width?: string; height?: string; lines?: number } = $props();
 </script>
 
+<!-- the last line of a stack is shorter so it reads like real text -->
 {#if shape === 'line' && lines > 1}
 	<span class="stack" aria-hidden="true">
 		{#each Array.from({ length: lines }, (_, i) => i) as i (i)}<span class="sk ui-sk line" style:width={i === lines - 1 ? '62%' : width}></span>{/each}
@@ -19,6 +18,7 @@
 {/if}
 
 <style>
+	/* fixed sizes keep the layout from jumping when real content lands */
 	.stack { display: flex; flex-direction: column; gap: 8px; }
 	.ui-sk { display: block; }
 	.line { height: 12px; width: 100%; border-radius: 6px; }

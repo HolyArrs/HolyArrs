@@ -1,32 +1,24 @@
 <script lang="ts">
-	import { libraryBrief } from '#lib/owned.ts';
 	import PageLoader from '#lib/ui/PageLoader.svelte';
-	import { to } from '#lib/paths.ts';
+	import { libraryBrief } from '#lib/mediafiles/index.ts';
+	import { decisionName, manyWords, removeBody, removeFilesWords, removeStart, rowName, rowPath, type DownloaderSettings, type DownloaderView, type RemoveChoice, applyPatch, fromAnswer, isDl, mergeClient, wentStale, type Sync, dlPush, decisions, refreshDecisions, DlSections, ConfirmMatch, byDownload, AddTorrents, SteerSheet, BULK_DONE, byClient, type BulkAction } from '#lib/downloads/index.ts';
 	import { onMount } from 'svelte';
-	import { dlScope } from '#lib/search-field.svelte.ts';
 	import { page } from '$app/state';
-	import { api, message } from '#lib/api.ts';
-	import { live } from '#lib/live.svelte.ts';
-	import { toasts } from '#lib/toasts.svelte.ts';
-	import { decisionName, manyWords, removeBody, removeFilesWords, removeStart, rowName, rowPath, type Decision, type DownloaderSettings, type DownloaderView, type DownloadRow, type RemoveChoice } from '#lib/downloaders.ts';
+	import { to } from '#lib/core/paths.ts';
+	import { dlScope } from '#lib/core/search-field.svelte.ts';
+	import { api, message } from '#lib/core/api.ts';
+	import { live } from '#lib/core/live.svelte.ts';
+	import { toasts } from '#lib/core/toasts.svelte.ts';
+	import { type Decision, type DownloadRow } from '#lib/core/types.ts';
 	type ClientHealth = { id: number; name: string; health: 'ok' | 'slow' | 'offline' | 'waiting' | 'checking' | 'degraded' | (string & {}); stale?: boolean; seen_at?: string };
 	type ViewAnswer = { downloads: DownloadRow[]; totals?: { speed: number; up_speed: number }; clients?: ClientHealth[]; outside_total?: number; next_cursor?: string; boot?: string; revs?: Record<string, number> };
-	import { applyPatch, fromAnswer, isDl, mergeClient, wentStale, type Sync } from '#lib/downloads/dlstore.ts';
-	import { dlPush } from '#lib/downloads/push.svelte.ts';
-	import { decisions, refreshDecisions } from '#lib/decisions.svelte.ts';
-	import { session } from '#lib/session.svelte.ts';
+	import { session } from '#lib/core/session.svelte.ts';
 	import Button from '#lib/ui/Button.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
-	import type { ImportRecord, TitleView } from '#lib/types.ts';
-	import DlSections from '#lib/downloads/DlSections.svelte';
-	import ConfirmMatch from '#lib/downloads/ConfirmMatch.svelte';
-	import { byDownload } from '#lib/downloads/imports.ts';
-	import AddTorrents from '#lib/downloads/AddTorrents.svelte';
-	import SteerSheet from '#lib/downloads/SteerSheet.svelte';
-	import type { SteerMode } from '#lib/downloads/manage.ts';
-	import { BULK_DONE, byClient, type BulkAction } from '#lib/downloads/manage.ts';
+	import type { TitleView } from '#lib/core/types.ts';
+	import type { ImportRecord, SteerMode } from '#lib/downloads/index.ts';
 	
 	// Someone who may not manage the Library only watches the downloads for what they asked for.
 	const watch = $derived(!session.can('manage_library'));
@@ -40,8 +32,7 @@
 	// The poster pictures come from the Library titles; until they arrive the rows show plain poster tiles (no initials).
 	let titlesReady = $state(false);
 	let error = $state('');
-	// Calm notes for side reads that failed (posters, remove defaults, the
-	// Downloader list) and for torrent clients that are slow or down.
+	// Calm notes for side reads that failed (posters, remove defaults, the Downloader list) and for torrent clients that are slow or down.
 	let sideNotes = $state<Record<string, string>>({});
 	let clientHealth = $state<ClientHealth[]>([]);
 	let upTotal = $state<number | undefined>(undefined);
@@ -49,7 +40,7 @@
 	let outsideLimit = $state(200);
 	let moreOutside = $state(false);
 	let outsideTotal = $state(0);
-	// The server sends at most this many torrents it did not add (downloads.go outsideMax).
+	// The most torrents the server sends that it did not add.
 	const outsideMax = 2000;
 	const clientNotes = $derived(
 		clientHealth
@@ -82,10 +73,7 @@
 	// Imports belong to their download's row.
 	const importOf = $derived(byDownload(imports));
 
-	// Needs a decision lives on the rows: a download whose Slots wait for a
-	// person sits in the Queue and its details hold the choices. A decision
-	// with no download in the list (HolyArrs ran out of Releases before any
-	// download, or the download is older than the list) gets a row of its own.
+	// Needs a decision lives on the rows: a download whose Slots wait for a person sits in the Queue and its details hold the choices. A decision with no download in the list (HolyArrs ran out of Releases before any download) gets a row of its own.
 	const rowIds = $derived(new Set(rows.map((r) => r.id)));
 	const decisionsByDownload = $derived.by(() => {
 		const m = new Map<number, Decision[]>();
@@ -145,15 +133,13 @@
 			return;
 		}
 		const d = slot ? decisions.items.find((x) => x.slot_id === slot) : undefined;
-		if (slot && !d && decisions.items.length === 0 && !watch) return; // the decisions are still loading
+		if (slot && !d && decisions.items.length === 0 && !watch) return; // The decisions are still loading.
 		opened = true;
 		const id = dl || (d?.download_id && rowIds.has(d.download_id) ? d.download_id : -slot);
 		if (allRows.some((r) => r.id === id)) openId = id;
 	});
 
-	// A client item (a torrent HolyArrs did not send, or one older than the
-	// list) has no download id: it gets a stable stand-in id for this visit,
-	// below every decision row's.
+	// A client item (a torrent HolyArrs did not send, or one older than the list) has no download id: it gets a stable stand-in id for this visit, below every decision row's.
 	const clientIds = new Map<string, number>();
 	let nextClientId = -1_000_000_000;
 	function withId(r: DownloadRow): DownloadRow {
@@ -164,9 +150,7 @@
 		return { ...r, id };
 	}
 
-	// Push updates: the view answer carries each client's rev, and patches on
-	// /live keep the rows current between reads. No revs means the background
-	// reader is not running (safe mode): the page reads every 10 s instead.
+	// Push updates: the view answer carries each client's rev, and patches on /live keep the rows current between reads. No revs means the background reader is not running (safe mode), so the page reads every 10 s instead.
 	let sync: Sync | null = null;
 	const pushHealthy = () => sync !== null && live.status.state === 'live';
 	function interest() {
@@ -193,8 +177,7 @@
 		}
 	}
 
-	// Reads can overlap (a timed read, then a Remove's own read): only the newest one is applied,
-	// so an older answer never brings a removed row back.
+	// Reads can overlap (a timed read, then a Remove's own read): only the newest one is applied, so an older answer never brings a removed row back.
 	let loadSeq = 0;
 	async function load() {
 		const seq = ++loadSeq;
@@ -223,8 +206,7 @@
 		}
 	}
 
-	// A gap on one client rereads that client's page only (its rows and rev);
-	// the other clients keep their rows and keep applying patches.
+	// A gap on one client rereads that client's page only (its rows and rev); the other clients keep their rows and keep applying patches.
 	const rereading = new Set<number>();
 	function rereadClient(id: number) {
 		if (rereading.has(id)) return;
@@ -244,8 +226,7 @@
 			.finally(() => rereading.delete(id));
 	}
 
-	// Live news comes often while something downloads: read again at most
-	// once every 400 ms.
+	// Live news comes often while something downloads: read again at most once every 400 ms.
 	let timer: ReturnType<typeof setTimeout> | undefined;
 	function soon() {
 		if (timer) return;
@@ -330,9 +311,7 @@
 		}
 	}
 
-	// The Remove dialog: one download, or a selection. Delete files is off
-	// unless asked for (Shift+Delete), except a HolyArrs download follows the
-	// remove defaults in Settings.
+	// The Remove dialog: one download, or a selection. Delete files is off unless asked for (Shift+Delete), except a HolyArrs download follows the remove defaults in Settings.
 	let removeOpen = $state(false);
 	let targets = $state<DownloadRow[]>([]);
 	const target = $derived(targets.length === 1 ? targets[0] : null);
@@ -423,9 +402,7 @@
 			busy = 0;
 		}
 	}
-	// Try again for many failed Usenet jobs: one call each.
-	// One batch at a time: a second click while a selection action, Download again or
-	// Pause all is still on its way is dropped, so nothing is sent twice.
+	// Try again for many failed Usenet jobs: one call each. One batch at a time: a second click while a selection action, Download again or Pause all is still on its way is dropped, so nothing is sent twice.
 	let batchBusy = $state(false);
 	async function batch(run: () => Promise<void>) {
 		if (batchBusy) return;
@@ -493,7 +470,7 @@
 		}
 	}
 
-	// The speed limit: one cap per Downloader, in MB/s (0 = none), read from the client.
+	// The speed limit: one cap per Downloader, in MB/s (0 is none), read from the client.
 	let limitOpen = $state(false);
 	let clients = $state<ClientView[]>([]);
 	let limits = $state<Record<number, { down: number; up: number }>>({});

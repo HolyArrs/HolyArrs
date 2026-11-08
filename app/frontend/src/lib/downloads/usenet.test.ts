@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { controllable, pausable, repairSteps, retryable, serverRows, type UsenetView } from './usenet.ts';
+import { describe, expect, it } from 'vitest';
 
 const view: UsenetView = {
 	stages: [
@@ -20,7 +20,7 @@ describe('retryable', () => {
 		expect(retryable({ ...base, protocol: 'torrent' })).toBe(false);
 		expect(retryable({ ...base, phase: 'downloading' })).toBe(false);
 		expect(retryable({ ...base, client_item: false })).toBe(false);
-		// A job HolyArrs sent was already searched again: the server refuses Try again on it.
+		// A job HolyArrs sent was already searched again, so the server refuses Try again on it.
 		expect(retryable({ ...base, outside: false })).toBe(false);
 	});
 });

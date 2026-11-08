@@ -1,57 +1,46 @@
 <script lang="ts">
-	import { personName } from '#lib/plain.ts';
 	import { resolve } from '$app/paths';
-	import { setBase } from '#lib/paths.ts';
-	setBase(resolve('/'));
-	import { to, appPath } from '#lib/paths.ts';
+	import { personName } from '#lib/core/plain.ts';
+	import { setBase } from '#lib/core/paths.ts';
+	setBase(resolve('/(home)'));
+	import { to, appPath } from '#lib/core/paths.ts';
 	import '../app.css';
 	import { onMount, tick, type Snippet } from 'svelte';
 	import { page } from '$app/state';
 	import { afterNavigate, beforeNavigate, goto, onNavigate, preloadCode } from '$app/navigation';
-	import { hideReconnecting, loaderReady, navEnded, navStarted, showReconnecting } from '#lib/loader.ts';
-	import Icon from '#lib/Icon.svelte';
-	import ToastList from '#lib/ToastList.svelte';
-	import Theater from '#lib/ui/Theater.svelte';
-	import { theater } from '#lib/theater.svelte.ts';
-	import { session } from '#lib/session.svelte.ts';
-	import { keepPersonPic } from '#lib/recentPeople.ts';
-	import { live } from '#lib/live.svelte.ts';
-	import { dlPush } from '#lib/downloads/push.svelte.ts';
-	import { theme, setTheme, type ThemeChoice } from '#lib/theme.svelte.ts';
-	import { alertsPanel, toasts } from '#lib/toasts.svelte.ts';
-	import { decisionPins, feedPins, startBellFeeds } from '#lib/bell-feeds.svelte.ts';
-	import { inbox, refreshInbox } from '#lib/requests.svelte.ts';
-	import { decisions, refreshDecisions } from '#lib/decisions.svelte.ts';
-	import { activeDownloads, refreshActiveDownloads, resetActiveDownloads } from '#lib/activeDownloads.svelte.ts';
-	import { partsNow, refreshParts } from '#lib/parts.svelte.ts';
-	import { settingsNow, refreshSettingsStatus } from '#lib/settings-status.svelte.ts';
-	import { needsAttention } from '#lib/settings-status.ts';
-	import { offPartName } from '#lib/parts.ts';
-	import { navigateWithTransition } from '#lib/motion.ts';
-	import { installPersonPrefetch } from '#lib/person-prefetch.ts';
-	import { forgetMusicPrefetch, installMusicPrefetch, prefetchMusicOnScreen } from '#lib/music-prefetch.ts';
-	import { installArtistVideoPrefetch } from '#lib/music/artist-video-prefetch.ts';
-	import { installHeroPrefetch } from '#lib/title-details.ts';
-	import { installHeroAhead } from '#lib/hero-prefetch.ts';
-	import { idlePages, installRowAhead } from '#lib/smart-preload.ts';
-	import { preloadHero } from '#lib/tmdb-image.ts';
-	import AppShell from '#lib/ui/AppShell.svelte';
-	import PosterWall from '#lib/ui/PosterWall.svelte';
-	import { backdrop } from '#lib/backdrop.svelte.ts';
-	import Sidebar from '#lib/ui/Sidebar.svelte';
+	import { hideReconnecting, loaderReady, navEnded, navStarted, showReconnecting } from '#lib/core/loader.ts';
+	import Icon from '#lib/ui/Icon.svelte';
+	import ToastList from './(frame)/ToastList.svelte';
+	import Theater from './(frame)/Theater.svelte';
+	import { theater } from '#lib/core/trailer/theater.svelte.ts';
+	import { session } from '#lib/core/session.svelte.ts';
+	import { keepPersonPic, theme, setTheme, type ThemeChoice, backdrop } from '#lib/accounts/index.ts';
+	import { live } from '#lib/core/live.svelte.ts';
+	import { dlPush, decisions, refreshDecisions, activeDownloads, refreshActiveDownloads, resetActiveDownloads, dlTop } from '#lib/downloads/index.ts';
+	import { alertsPanel, toasts } from '#lib/core/toasts.svelte.ts';
+	import { decisionPins, feedPins, startBellFeeds } from './(frame)/bell-feeds.svelte.ts';
+	import { inbox, refreshInbox } from '#lib/core/inbox.svelte.ts';
+	import { partsNow, refreshParts, offPartName } from '#lib/mediafiles/index.ts';
+	import { settingsNow, refreshSettingsStatus, needsAttention } from '#lib/alerts/index.ts';
+	import { navigateWithTransition } from '#lib/core/motion.ts';
+	import { installPersonPrefetch, installHeroAhead, checkHero, installScrollBar, showBar, arrived, leaving } from '#lib/discover/index.ts';
+	import { forgetMusicPrefetch, installMusicPrefetch, prefetchMusicOnScreen, installArtistVideoPrefetch } from '#lib/music/index.ts';
+	import { installHeroPrefetch } from '#lib/metadata/index.ts';
+	import { idlePages, installRowAhead } from '#lib/core/smart-preload.ts';
+	import { preloadHero } from '#lib/core/tmdb-image.ts';
+	import AppShell from './(frame)/AppShell.svelte';
+	import PosterWall from './(frame)/PosterWall.svelte';
+	import Sidebar from './(frame)/Sidebar.svelte';
 	import Avatar from '#lib/ui/Avatar.svelte';
-	import SidebarItem from '#lib/ui/SidebarItem.svelte';
-	import TopBar from '#lib/ui/TopBar.svelte';
-	import TabBar, { type Tab } from '#lib/ui/TabBar.svelte';
+	import SidebarItem from './(frame)/SidebarItem.svelte';
+	import TopBar from './(frame)/TopBar.svelte';
+	import TabBar, { type Tab } from './(frame)/TabBar.svelte';
 	import Menu, { type MenuItem } from '#lib/ui/Menu.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
 	import Button from '#lib/ui/Button.svelte';
-	import { trackInputModality } from '#lib/focus.ts';
-	import { focusField, rememberReturn, searchField } from '#lib/search-field.svelte.ts';
-	import { dlTop } from '#lib/dl-top.svelte.ts';
-	import { checkHero, installScrollBar, showBar } from '#lib/scroll-bar.svelte.ts';
-	import { arrived, leaving } from '#lib/came-from.svelte.ts';
+	import { trackInputModality } from './(frame)/focus.ts';
+	import { focusField, rememberReturn, searchField } from '#lib/core/search-field.svelte.ts';
 	import {
 		buildNav,
 		currentHref,
@@ -62,7 +51,7 @@
 		type Need,
 		type ShellMode,
 		type SidebarPref
-	} from '#lib/ui/nav.ts';
+	} from './(frame)/nav.ts';
 
 	let { children }: { children: Snippet } = $props();
 
@@ -89,7 +78,6 @@
 		};
 	});
 
-	// ── Places ────────────────────────────────────────────────────────────
 	const kinds = $derived(
 		(
 			[
@@ -106,7 +94,7 @@
 			allowed: (n) => allowed(n),
 			off: (href) => !!offPartName(partsNow.answer, href),
 			kinds,
-			approvals: inbox.waiting,
+			waitingAsks: inbox.waiting,
 			decisions: decisions.count,
 			active: activeDownloads,
 			unread: inbox.unread,
@@ -141,7 +129,6 @@
 		return (kind && libraryResumeLinks[kind]) || to(href);
 	}
 
-	// ── Sidebar state ─────────────────────────────────────────────────────
 	function storage(): Storage | undefined {
 		try {
 			return localStorage;
@@ -184,7 +171,7 @@
 	onMount(trackInputModality);
 	onMount(installScrollBar);
 	onMount(installPersonPrefetch);
-	// Artist and album data on hover, touch and the first cards on screen (lib/music-prefetch.ts).
+	// Artist and album data on hover, touch and the first cards on screen.
 	onMount(installMusicPrefetch);
 	$effect(() => {
 		if (session.s.state !== 'signed_in') forgetMusicPrefetch();
@@ -197,7 +184,7 @@
 	onMount(() => installHeroPrefetch(preloadHero));
 	// Music heroes on hover and focus, title heroes on focus, and the next card in a row.
 	onMount(() => installHeroAhead(preloadHero));
-	// The next row's pictures when a row comes into view (lib/smart-preload.ts).
+	// The next row's pictures when a row comes into view.
 	onMount(() => installRowAhead());
 	// Once a page settles: the code of the side menu's places, on idle (fast connections only).
 	let stopIdle: (() => void) | undefined;
@@ -214,7 +201,7 @@
 		return () => mq.forEach((m) => m.removeEventListener('change', sync));
 	});
 
-	// ⌘\ / Ctrl+\ toggles the sidebar; ⌘K / Ctrl+K and / open the Search page; Escape closes the overlay.
+	// ⌘\ or Ctrl+\ toggles the sidebar; ⌘K, Ctrl+K and / open the Search page; Escape closes the overlay.
 	const mac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
 	const searchKey = mac ? '⌘K' : 'Ctrl K';
 	// Downloads has no top bar: its own toolbar carries the sidebar button and a plain search.
@@ -244,15 +231,12 @@
 		}
 	}
 
-	// Page changes cross-fade and rise (View Transitions, where supported).
-	// The full-screen trailer covers its own hand-over to the title page (it shrinks into the hero).
-	// Entering Search plays its own reveal (a mosaic from the top bar down), so no cross-fade there.
+	// Page changes cross-fade and rise (View Transitions, where supported). The full-screen trailer covers its own hand-over to the title page (it shrinks into the hero). Entering Search plays its own reveal (a mosaic from the top bar down), so no cross-fade there.
 	const intoSearch = (n: { from: { url: URL } | null; to: { url: URL } | null }) => !!n.to && n.to.url.pathname.endsWith('/search') && !n.from?.url.pathname.endsWith('/search');
-	// Leaving the sign-in page is covered by the Orbit hand-off (lib/loader.ts), so no cross-fade under it.
+	// Leaving the sign-in page is covered by the Orbit hand-off, so no cross-fade under it.
 	const fromLogin = (n: { from: { url: URL } | null }) => !!n.from?.url.pathname.endsWith('/login');
 	onNavigate((navigation) => (theater.landing || intoSearch(navigation) || fromLogin(navigation) ? undefined : navigateWithTransition(navigation)));
-	// The loading screen from app.html leaves once the session is known;
-	// slow page changes get a small one (lib/loader.ts).
+	// The loading screen from app.html leaves once the session is known; slow page changes get a small one.
 	$effect(() => {
 		if (session.s.state !== 'unknown') void tick().then(loaderReady);
 	});
@@ -270,7 +254,7 @@
 		prefetchMusicOnScreen();
 		stopIdle?.();
 		stopIdle = idlePages(menuPaths(), (p) => preloadCode(p as Parameters<typeof preloadCode>[0]));
-		// The new page's hero (if any) decides the bar's glass; it may load in a moment after.
+		// The new page's hero (if any) decides the bar's glass; it may load a moment later.
 		for (const t of [0, 250, 800, 2000]) setTimeout(checkHero, t);
 
 		navEnded();
@@ -279,7 +263,6 @@
 		void closeOverlay(false);
 	});
 
-	// ── Phone ─────────────────────────────────────────────────────────────
 	let moreOpen = $state(false);
 	const manager = $derived(allowed('manage'));
 	const tabs = $derived.by<Tab[]>(() => {
@@ -298,9 +281,8 @@
 		return t;
 	});
 
-	// ── Account ───────────────────────────────────────────────────────────
 	const roleWord = $derived({ owner: 'Owner', admin: 'Admin', member: 'Member' }[session.s.role] ?? 'Member');
-	// An id-like account name (preview-…, e2e-…) reads as "You".
+	// An id-like account name (preview-..., e2e-...) reads as "You".
 	const shownName = $derived(personName(session.s.name, 'You'));
 	// The bell counts new alerts plus Settings warnings still open (those stay until fixed).
 	const openFixes = $derived((settingsAttention ? (settingsNow.answer?.items.length ?? 0) : 0) + (allowed('manage_library') ? decisionPins().length : 0) + (feedPins.update ? 1 : 0));
@@ -332,7 +314,6 @@
 		themeChoice = theme.choice;
 	});
 
-	// ── Session, permissions and live data (unchanged rules) ──────────────
 	const offHere = $derived(offPartName(partsNow.answer, path));
 	const staff = $derived(allowed('staff'));
 	const mark = $derived(theme.value === 'light' ? '/brand/mark-color.svg' : '/brand/mark-color-on-dark.svg');
@@ -350,14 +331,13 @@
 		if (p === '/library/held' || p === '/library/turned-down' || p === '/library/rename' || p === '/library/import' || p === '/library/import-files' || p === '/library/missing-subtitles' || p === '/library/copies') return allowed('manage_library');
 		if (p.startsWith('/requests')) return allowed('wishlist');
 		// Status sits under Manage, as in the side menu.
-		if (p.startsWith('/status')) return allowed('manage_library');
+		if (p.startsWith('/health')) return allowed('manage_library');
 		// A Settings page the person may not open shows a short note there instead of a bounce.
 		if (p === '/settings') return staff;
 		return true;
 	}
 
-	// Send anyone who is not signed in to the sign-in page, and start or stop
-	// the live stream with the session.
+	// Send anyone who is not signed in to the sign-in page, and start or stop the live stream with the session.
 	$effect(() => {
 		const st = session.s.state;
 		if ((st === 'signed_out' || st === 'needs_setup') && !bare) {
@@ -372,9 +352,7 @@
 		if (st === 'signed_in' && !bare && !pageAllowed(path)) {
 			void goto(to(session.s.mustTwoFactor ? '/account' : homeHref()), { replace: true });
 		}
-		// The live stream carries Library and download news for staff; on
-		// Downloads with push updates, everyone else gets their own rows' patches,
-		// and on Requests their own asks and downloads as they move (#139).
+		// The live stream carries Library and download news for staff. On Downloads with push updates, everyone else gets their own rows' patches, and on Requests their own asks and downloads as they move.
 		if (st === 'signed_in' && (allowed('manage_library') || (path === '/downloads' && dlPush.on) || path === '/requests')) live.start();
 		else live.stop();
 	});
@@ -388,8 +366,7 @@
 		return () => clearInterval(t);
 	});
 
-	// Requests counts: asks waiting for people who approve, else unread messages.
-	// A derived flag, so the Parts answer arriving does not ask a second time.
+	// Requests counts: asks waiting for people who approve, else unread messages. A derived flag, so the Parts answer arriving does not ask a second time.
 	const inboxOn = $derived(session.s.state === 'signed_in' && allowed('wishlist') && !offPartName(partsNow.answer, '/requests'));
 	$effect(() => {
 		void path;
@@ -413,15 +390,13 @@
 		};
 	});
 
-	// Active downloads for the Downloads row: the live stream says when
-	// something moved; a 15 s poll runs only while the tab is visible.
+	// Active downloads for the Downloads row: the live stream says when something moved; a 15 s poll runs only while the tab is visible.
 	$effect(() => {
 		if (!decisionsOn || offPartName(partsNow.answer, '/downloads')) {
 			resetActiveDownloads();
 			return;
 		}
-		// Reading the list can itself send "download" events, so live
-		// refreshes keep at least 10 s apart instead of looping.
+		// Reading the list can itself send "download" events, so live refreshes keep at least 10 s apart instead of looping.
 		let timer: ReturnType<typeof setTimeout> | undefined;
 		let last = 0;
 		const soon = () => {
@@ -449,8 +424,7 @@
 		};
 	});
 
-	// A shared screen: sign out and open sign-in, where people who signed in
-	// here before are one tap away. Each switch is a full sign-in.
+	// A shared screen: sign out and open sign-in, where people who signed in here before are one tap away. Each switch is a full sign-in.
 	async function switchAccount() {
 		try {
 			await session.logout();
@@ -543,7 +517,6 @@
 			{:else}{@render children()}{/if}
 		</main>
 	</AppShell>
-
 
 	<Sheet bind:open={moreOpen} title={manager ? 'Manage' : 'More'} size="sm">
 		<!-- Only while open, so a closed sheet adds no second copy of every place to the page. -->

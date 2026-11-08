@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { mergeDetail } from './detail-merge.ts';
+import { describe, expect, it } from 'vitest';
 
 type D = { id: number; detail?: { a: number }; files?: { n: string }[]; err?: string };
 

@@ -1,12 +1,16 @@
-// What an import did, folded into its download's row on the Downloads table
-// (there is no separate Imports list: the Importing chip is the place for
-// imports in progress, Done for placed ones, Problems for failed ones).
-// Imports with no download row in the list stay in History. Pure, so it can be tested.
-import type { DownloadRow } from '../downloaders.ts';
-import type { ImportRecord } from '../types.ts';
+// What an import did, folded into its download's row on the Downloads table. There is no separate Imports list: the Importing chip shows imports in progress, Done the placed ones, Problems the failed ones.
+import type { ImportRecord } from './types.ts';
 import { stageOf } from './status-tabs.ts';
+import type { DownloadRow } from '../core/types.ts';
 
-/** byDownload keeps the newest import of every download. */
+export interface ImportFacts {
+	/** "Placed by hardlink", "2 of 3 files placed by hardlink". */
+	how: string;
+	/** The Library folder it went to ("Se7en (1995)"), when known. */
+	where: string;
+}
+
+/** Keeps the newest import of every download. */
 export function byDownload(imports: ImportRecord[]): Map<number, ImportRecord> {
 	const out = new Map<number, ImportRecord>();
 	for (const im of imports) {
@@ -20,20 +24,13 @@ export function byDownload(imports: ImportRecord[]): Map<number, ImportRecord> {
 
 const methodWords: Record<string, string> = { hardlink: 'hardlink', move: 'moving', copy: 'copying', reflink: 'reflink', symlink: 'link' };
 
-/** folder is the last folder of a path, never the whole path. */
+/** The last folder of a path, never the whole path. */
 export function folder(path: string | undefined): string {
 	const parts = (path ?? '').split(/[\\/]+/).filter(Boolean);
 	return parts.length > 1 ? parts[parts.length - 2] : '';
 }
 
-export interface ImportFacts {
-	/** "Placed by hardlink", "2 of 3 files placed by hardlink". */
-	how: string;
-	/** The Library folder it went to ("Se7en (1995)"), when known. */
-	where: string;
-}
-
-/** placed says how and where an import put the files, or null when nothing was placed. */
+/** How and where an import put the files; null when nothing was placed. */
 export function placed(im: ImportRecord | undefined): ImportFacts | null {
 	const res = im?.Result ?? [];
 	const ok = res.filter((r) => r.outcome === 'placed');
@@ -46,7 +43,7 @@ export function placed(im: ImportRecord | undefined): ImportFacts | null {
 	return { how, where: folder(first?.target_path) };
 }
 
-/** failReason says in a few words why an import failed (null: it did not fail). */
+/** Why an import failed in a few words; null when it did not fail. */
 export function failReason(im: ImportRecord | undefined): string | null {
 	if (!im || im.State !== 'failed') return null;
 	const err = im.Result?.find((r) => r.error)?.error?.trim();
@@ -54,9 +51,7 @@ export function failReason(im: ImportRecord | undefined): string | null {
 	return 'no file could be placed';
 }
 
-/** statusDetail is the short line after a row's status word: what an import
- *  in progress is doing, why it failed, or a seeding torrent's ratio. Empty
- *  when the word says it all. */
+/** The short line after a row's status word: what an import in progress is doing, why it failed, or a seeding torrent's ratio. Empty when the word says it all. */
 export function statusDetail(r: Pick<DownloadRow, 'phase' | 'state' | 'progress' | 'ratio'>, im: ImportRecord | undefined): string {
 	const stage = stageOf(r);
 	if (stage === 'importing') {
@@ -68,7 +63,7 @@ export function statusDetail(r: Pick<DownloadRow, 'phase' | 'state' | 'progress'
 	if (stage === 'failed' || stage === 'decide') {
 		const why = failReason(im);
 		if (why) return `import failed: ${why}`;
-		// Failed also holds these two; the line says which.
+		// Failed also covers these two; the line says which.
 		if (r.phase === 'vanished') return 'removed outside HolyArrs';
 		if (r.phase === 'import_refused') return 'the files did not match';
 	}

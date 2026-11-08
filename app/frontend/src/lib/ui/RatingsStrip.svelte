@@ -1,9 +1,9 @@
+<!-- Row of outside rating scores, each with a short source mark. -->
 <script lang="ts">
-	import { scoreName, scoreText, type OutsideScore } from '../outside-ratings.ts';
+	import { scoreName, scoreText, type OutsideScore } from './outside-ratings.ts';
 
-	// A compact row of outside ratings on a title page: each source's mark
-	// with its score. Hidden when there are none.
 	let { scores = [] }: { scores?: OutsideScore[] } = $props();
+	// Text fallback for sources with no drawn logo.
 	const marks: Record<string, string> = { imdb: 'IMDb', rt_critics: 'RT', rt_audience: 'RT', metacritic: 'MC', letterboxd: 'LB', trakt: 'Trakt' };
 </script>
 
@@ -32,5 +32,6 @@
 	.mark.letterboxd { background: #14181c; color: #40bcf4; }
 	.mark.trakt { background: #ed1c24; color: #fff; }
 	.mark.rt_critics, .mark.rt_audience { padding: 0; }
+	/* Screen-reader name of the source, hidden from view. */
 	.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 </style>

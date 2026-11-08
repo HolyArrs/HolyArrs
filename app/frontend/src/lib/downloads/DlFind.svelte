@@ -1,10 +1,8 @@
 <script lang="ts">
-	import Icon from '../Icon.svelte';
+	import Icon from '#lib/ui/Icon.svelte';
 	import { escStep } from './keys.ts';
 
-	// The Downloads search: a plain field that filters the list as you type. × and Esc only
-	// clear the words; Ctrl K and "/" focus it (the page's key handler). Quiet glass at rest;
-	// on focus the whole frame settles a shade brighter with a soft neutral ring.
+	// Downloads search: filters the list as you type. × and Esc clear the words; Ctrl K and "/" focus it (handled by the page).
 	let {
 		term = $bindable(''),
 		shown,
@@ -54,7 +52,6 @@
 	.dlfind:focus-within .mag { color: var(--text); }
 	@keyframes pop { from { opacity: 0; transform: scale(0.8); } }
 
-	/* Focus: the whole frame settles, never a box inside the box, never the accent. */
 	.dlfind:hover { border-color: color-mix(in srgb, var(--line-strong) 60%, var(--line)); }
 	.dlfind:focus-within { border-color: var(--line-strong); background: color-mix(in srgb, var(--surface-1) 86%, transparent); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.08), 0 0 0 3px color-mix(in srgb, var(--text) 6%, transparent), 0 8px 24px -12px rgb(0 0 0 / 0.4); }
 	.dlfind:focus-within .kb { opacity: 0.5; }

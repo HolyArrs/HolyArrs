@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { contrast, deepen, dominant, FALLBACK, hexRgb, paintWindow, rgbHsl, tintOf, unpaintWindow } from './album-tint.ts';
+import { describe, expect, it } from 'vitest';
 
 const covers = ['#3fae2a', '#d62839', '#2a5fe0', '#111111', '#f5f5f5', '#ffd400', '#e0e0ff', '#8a2be2', '#00ffff', '#7a5c3a'];
 

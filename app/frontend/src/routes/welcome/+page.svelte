@@ -1,36 +1,32 @@
 <script lang="ts">
+	import { STEPS, type Step } from '#lib/setup/index.ts';
+	import { createWelcomeParts } from '#lib/setup/index.ts';
+	import { createWelcomeMedia } from '#lib/setup/index.ts';
+	import { createWelcomeDownloader } from '#lib/setup/index.ts';
+	import { createWelcomeSources } from '#lib/setup/index.ts';
 	import Button from '#lib/ui/Button.svelte';
 	import IconButton from '#lib/ui/IconButton.svelte';
-	import Icon, { type IconName } from '#lib/Icon.svelte';
+	import Icon from '#lib/ui/Icon.svelte';
 	import TestTag from '#lib/ui/TestTag.svelte';
-	import Confirm from '#lib/account/Confirm.svelte';
-	import ConnectBridge from '../settings/sources/ConnectBridge.svelte';
-	import MoveFlow from '../settings/move/+page.svelte';
-	import { page } from '$app/state';
-	import { goto } from '$app/navigation';
-	import { onMount, setContext, tick, untrack } from 'svelte';
-	import { loaderReady, playLoader, SETUP_HOLD_MS } from '#lib/loader.ts';
-	import { api, message, ApiError } from '#lib/api.ts';
+	import Confirm from '#lib/ui/Confirm.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import PageLoader from '#lib/ui/PageLoader.svelte';
-	import { to } from '#lib/paths.ts';
-	import { session } from '#lib/session.svelte.ts';
-	import { partsNow, refreshParts } from '#lib/parts.svelte.ts';
-	import { needsProblem, type PartName } from '#lib/parts.ts';
-	import { applyParts } from '#lib/controls.ts';
-	import { theme } from '#lib/theme.svelte.ts';
-	import SigninBackdrop from '#lib/SigninBackdrop.svelte';
-	import { emptyForm, formBody, formFrom, kindWords, reachWords, type DownloaderForm, type DownloaderView } from '#lib/downloaders.ts';
-	import type { LibraryFolder } from '#lib/types.ts';
+	import { ConnectBridge } from '#lib/sources/index.ts';
+	import MoveFlow from '../settings/move/+page.svelte';
+	import { refreshParts } from '#lib/mediafiles/index.ts';
+	import { applyParts } from '#lib/setup/index.ts';
+	import { theme, SigninBackdrop } from '#lib/accounts/index.ts';
+	import { emptyForm, kindWords } from '#lib/downloads/index.ts';
+	import { page } from '$app/state';
+	import { goto } from '$app/navigation';
+	import { onMount, tick, untrack } from 'svelte';
+	import { loaderReady, playLoader, SETUP_HOLD_MS } from '#lib/core/loader.ts';
+	import { api, message } from '#lib/core/api.ts';
+	import { to } from '#lib/core/paths.ts';
+	import { session } from '#lib/core/session.svelte.ts';
 	const mark = $derived(theme.value === 'light' ? '/brand/mark-color.svg' : '/brand/mark-color-on-dark.svg');
 
-	// First run, right after the owner is made, forks once: bring the old apps
-	// (Import, then a Downloader or Source only if Import brought none), or
-	// start fresh (media and folders, a Downloader, a Source). Both end on a
-	// short done screen. A later visit to /welcome (no first=1) changes only
-	// the parts and returns to Home.
-	type Step = 'start' | 'media' | 'downloader' | 'source' | 'import' | 'done';
-	const STEPS: Step[] = ['start', 'media', 'downloader', 'source', 'import', 'done'];
+	// First run, right after the owner is made, forks once: bring the old apps (Import, then a Downloader or Source only if Import brought none), or start fresh (media and folders, a Downloader, a Source). Both end on a short done screen. A later visit to /welcome (no first=1) changes only the parts and returns to Home.
 	const firstRun = $derived(page.url.searchParams.get('first') === '1');
 	function stepFromUrl(q = page.url.searchParams): Step {
 		const s = q.get('step');
@@ -51,7 +47,7 @@
 		// Done says what is left, so it waits for that list.
 		if (s === 'done' && step !== 'done') {
 			busy = true;
-			void loadTodo().finally(() => {
+			void sourcesStep.loadTodo().finally(() => {
 				busy = false;
 				show(s);
 			});
@@ -75,9 +71,7 @@
 		document.getElementById('welcome-title')?.focus();
 		announce = `Step ${stepNo} of ${order.length}: ${head.h}`;
 	}
-	// Back or Forward in the browser: show the step the address names.
-	// Set once the wizard is finished in this tab: a later Back, Forward or reload
-	// onto a step goes to Home instead (the step history may predate a reload).
+	// Back or Forward in the browser: show the step the address names. Set once the wizard is finished in this tab: a later Back, Forward or reload onto a step goes to Home instead (the step history may predate a reload).
 	const DONE_KEY = 'holyarrs.welcome.done';
 	function wizardDone(): boolean {
 		try {
@@ -129,15 +123,11 @@
 	const stepNo = $derived(order.indexOf(step) + 1);
 	const prev = $derived(step === 'done' ? undefined : order[order.indexOf(step) - 1]);
 
-	// Setup is done: a short Orbit while Home (or Users) opens.
-	// It also ends the setup sign-in's no-password-check window (server side).
-	// The step entries fold back into the first one, which Home then replaces,
-	// so the browser's Back after setup leaves the wizard.
+	// Setup is done: a short Orbit while Home (or Users) opens. It also ends the setup sign-in's no-password-check window (server side). The step entries fold back into the first one, which Home then replaces, so the browser's Back after setup leaves the wizard.
 	let leaving = false;
 	async function home(path = '/') {
 		playLoader('', SETUP_HOLD_MS);
-		// Finished: the rest of the app opens. A failed save keeps the owner on Done,
-		// before the step entries fold back.
+		// Finished: the rest of the app opens. A failed save keeps the owner on Done, before the step entries fold back.
 		error = '';
 		try {
 			await api.post('/auth/setup/done');
@@ -151,7 +141,7 @@
 		try {
 			sessionStorage.setItem(DONE_KEY, '1');
 		} catch {
-			// no storage: the depth fold below still covers this visit
+			// No storage: the depth fold below still covers this visit.
 		}
 		if (depth > 0) {
 			leaving = true;
@@ -165,7 +155,7 @@
 		await goto(to(path), { replace: true }).finally(loaderReady);
 	}
 
-	// ---- The fork ----
+	// The fork.
 	function pickPath(apps: boolean) {
 		fromApps = apps;
 		extra = [];
@@ -173,367 +163,49 @@
 	}
 
 	// The parts as the server has them now.
-	function partsOn(): Record<PartName, boolean> {
-		const on = (p: PartName) => partsNow.answer?.parts.find((x) => x.part === p)?.on === true;
-		return { movies: on('movies'), shows: on('shows'), music: on('music'), subtitles: on('subtitles'), wishlist: on('wishlist') };
-	}
-
-	// ---- Parts: a later visit to /welcome, outside first run ----
-	let want = $state<Record<'movies' | 'shows' | 'music' | 'subtitles', boolean>>({ movies: true, shows: true, music: false, subtitles: true });
-	let family = $state<'yes' | 'no'>('no');
-	const choices: { part: 'movies' | 'shows' | 'music' | 'subtitles'; label: string; icon: IconName }[] = [
-		{ part: 'movies', label: 'Movies', icon: 'film' },
-		{ part: 'shows', label: 'TV shows', icon: 'tv' },
-		{ part: 'music', label: 'Music', icon: 'music' },
-		{ part: 'subtitles', label: 'Subtitles', icon: 'subtitle' }
-	];
-	const full = $derived<Record<PartName, boolean>>({ ...want, wishlist: family === 'yes' });
-	const problem = $derived(needsProblem(full));
-	async function submitParts(e: SubmitEvent) {
-		e.preventDefault();
-		if (problem) return void (error = problem);
-		error = '';
-		busy = true;
-		try {
-			await applyParts(full);
-			await refreshParts();
-			await home();
-		} catch (err) {
-			error = message(err);
-		} finally {
-			busy = false;
-		}
-	}
-
-	// ---- Media: a switch and a Library folder per part, on one screen ----
-	type MediaPart = 'movies' | 'shows' | 'music';
-	type Kind = 'movie' | 'show' | 'music';
-	// saved/id: the folder already made; editing reopens it to type a new path.
-	type Row = { part: MediaPart; kind: Kind; label: string; icon: IconName; hint: string; path: string; saved: string; id: number | null; editing: boolean; error: string };
-	const kindRows: Pick<Row, 'part' | 'kind' | 'label' | 'icon' | 'hint'>[] = [
-		{ part: 'movies', kind: 'movie', label: 'Movies', icon: 'film', hint: '/movies' },
-		{ part: 'shows', kind: 'show', label: 'TV shows', icon: 'tv', hint: '/tv' },
-		{ part: 'music', kind: 'music', label: 'Music', icon: 'music', hint: '/music' }
-	];
-	let rows = $state<Row[]>([]);
-	let media = $state<Record<MediaPart, boolean>>({ movies: true, shows: true, music: false });
-	const mediaOff = $derived(!media.movies && !media.shows && !media.music);
-	async function loadMedia() {
-		let have: LibraryFolder[] = [];
-		try {
-			have = (await api.get<{ library_folders: LibraryFolder[] }>('/library-folders')).library_folders ?? [];
-		} catch {
-			// show empty rows
-		}
-		// Back or reload, once a folder is saved: show the parts as saved, so Continue
-		// doesn't switch one off. A fresh install keeps the defaults.
-		if (have.length) await refreshParts().catch(() => {});
-		const on = partsOn();
-		if (have.length && partsNow.answer && (on.movies || on.shows || on.music)) media = { movies: on.movies, shows: on.shows, music: on.music };
-		// Keep anything typed while the list was loading.
-		rows = kindRows.map((k) => {
-			const f = have.find((x) => x.kind === k.kind);
-			const cur = rows.find((r) => r.kind === k.kind);
-			return { ...k, path: cur?.path ?? '', saved: f?.path ?? '', id: f?.id ?? null, editing: cur?.editing ?? false, error: '' };
-		});
-	}
-	// The server's folder answers, in plain words.
-	function folderWords(text: string, kind: Kind = 'movie'): string {
-		if (/absolute/i.test(text)) return `Use the full folder path, like ${kind === 'show' ? '/data/tv' : kind === 'music' ? '/data/music' : '/data/movies'}.`;
-		if (/already a library folder/i.test(text)) return 'This folder is already used, or sits inside one that is.';
-		if (/does not exist|not a folder|no such file/i.test(text)) return "That folder doesn't exist. Check the path.";
-		return text ? text[0].toUpperCase() + text.slice(1) : text;
-	}
-	// skip: keep the parts, add no folders now (Settings has them later).
-	async function saveMedia(skip: boolean) {
-		if (mediaOff || busy) return;
-		error = '';
-		// Continue needs a folder for every part that is on (Skip for now adds none).
-		if (!skip) {
-			const empty = rows.filter((r) => media[r.part] && !(r.saved && !r.editing) && !r.path.trim());
-			for (const r of empty) r.error = 'Add a folder or turn this off.';
-			if (empty.length) return void tick().then(() => document.getElementById(`folder-${empty[0].kind}`)?.focus());
-		}
-		busy = true;
-		try {
-			await refreshParts();
-			// Subtitles come on with Movies or TV shows; Requests stays as it is.
-			await applyParts({ ...media, subtitles: media.movies || media.shows, wishlist: partsOn().wishlist });
-			await refreshParts();
-		} catch (err) {
-			busy = false;
-			return void (error = message(err));
-		}
-		let failed = false;
-		for (const r of rows) {
-			if (skip || !media[r.part]) continue;
-			if (r.editing && r.path.trim() === r.saved) r.editing = false;
-			if ((r.saved && !r.editing) || !r.path.trim()) continue;
-			r.error = '';
-			// A changed folder is replaced: on first run it holds nothing yet.
-			// If the new path is refused, the old one is put back.
-			const old = r.editing && r.id != null ? r.saved : '';
-			try {
-				if (old) {
-					await api.del(`/library-folders/${r.id}`);
-					r.saved = '';
-					r.id = null;
-				}
-				// Named after its part ("Movies"), not the last bit of the path.
-				const f = await api.post<LibraryFolder>('/library-folders', { path: r.path.trim(), kind: r.kind, label: r.label });
-				r.saved = f.path;
-				r.id = f.id;
-				r.editing = false;
-			} catch (err) {
-				// Saved meanwhile (another tab, same path): take that one and carry on.
-				if (err instanceof ApiError && err.status === 409) {
-					try {
-						const have = (await api.get<{ library_folders: LibraryFolder[] }>('/library-folders')).library_folders ?? [];
-						const norm = (s: string) => s.trim().replace(/\\/g, '/').replace(/\/+$/, '');
-						const same = have.find((x) => x.kind === r.kind && norm(x.path) === norm(r.path));
-						if (same) {
-							r.saved = same.path;
-							r.id = same.id;
-							r.editing = false;
-							continue;
-						}
-					} catch {
-						// fall through to the error
-					}
-				}
-				r.error = folderWords(message(err), r.kind);
-				failed = true;
-				if (old && r.id == null) {
-					try {
-						const back = await api.post<LibraryFolder>('/library-folders', { path: old, kind: r.kind, label: r.label });
-						r.saved = back.path;
-						r.id = back.id;
-					} catch {
-						// The old folder could not come back; the row stays empty to fill again.
-					}
-				}
-			}
-		}
-		busy = false;
-		if (!failed) go('downloader');
-		else {
-			await tick();
-			document.getElementById(`folder-${rows.find((r) => r.error)?.kind}`)?.focus();
-		}
-	}
-
-	// ---- Downloader ----
-	const dlKinds: DownloaderForm['kind'][] = ['qbittorrent', 'sabnzbd', 'transmission', 'nzbget', 'deluge'];
-	const dlPorts: Record<DownloaderForm['kind'], string> = { qbittorrent: '8080', sabnzbd: '8080', transmission: '9091', nzbget: '6789', deluge: '8112' };
-	let dl = $state<DownloaderForm>(emptyForm());
-	// Every connected downloader, each with its last test answer; the form shows
-	// when there is none yet or the owner adds another.
-	let dlList = $state<DownloaderView[]>([]);
-	let dlTests = $state<Record<number, { ok: boolean; text: string }>>({});
-	let dlAdding = $state(false);
-	// The downloader being edited (its form is open), or null when adding a new one.
-	let dlEditing = $state<number | null>(null);
-	// Connect's answer when the downloader didn't answer, shown under Address.
-	let dlError = $state('');
-	// Shown under User name when an app that signs in turned down a try without one.
-	let dlAuth = $state('');
-	const dlForm = $derived(dlList.length === 0 || dlAdding);
-	const dlUser = $derived(dl.kind === 'qbittorrent' || dl.kind === 'transmission' || dl.kind === 'nzbget');
-	function pickDl(k: DownloaderForm['kind']) {
-		error = '';
-		dlError = '';
-		dlAuth = '';
-		const url = dl.url;
-		dl = { ...emptyForm(k), url: url !== 'http://' ? url : 'http://' };
-	}
-	async function listDownloaders(): Promise<DownloaderView[]> {
-		try {
-			return (await api.get<{ downloaders: DownloaderView[] }>('/downloaders')).downloaders ?? [];
-		} catch {
-			return [];
-		}
-	}
-	// The list didn't load: shown like the Source step, with Try again.
-	let dlLoadError = $state('');
-	async function loadDownloader() {
-		try {
-			dlList = (await api.get<{ downloaders: DownloaderView[] }>('/downloaders')).downloaders ?? [];
-			dlLoadError = '';
-		} catch (err) {
-			dlLoadError = message(err);
-			return;
-		}
-		// Each one is tested again, so the row shows its version or that it is down.
-		await Promise.all(dlList.map((d) => testDl(d.id)));
-	}
-	async function testDl(id: number) {
-		try {
-			const t = await api.post<{ ok: boolean; text: string }>(`/downloaders/${id}/test`);
-			dlTests = { ...dlTests, [id]: { ok: t.ok, text: t.ok ? t.text : reachWords(t.text) } };
-		} catch (err) {
-			dlTests = { ...dlTests, [id]: { ok: false, text: reachWords(message(err)) } };
-		}
-	}
-	function editDl(d: DownloaderView) {
-		error = '';
-		dlError = '';
-		dl = formFrom(d);
-		dlEditing = d.id;
-		dlAdding = true;
-	}
-	async function removeDl(d: DownloaderView) {
-		error = '';
-		busy = true;
-		try {
-			await api.del(`/downloaders/${d.id}`);
-			dlList = dlList.filter((x) => x.id !== d.id);
-		} catch (err) {
-			error = message(err);
-		} finally {
-			busy = false;
-		}
-	}
-	async function saveDownloader(e: SubmitEvent) {
-		e.preventDefault();
-		if (busy) return;
-		if (!dlForm) return afterDownloader();
-		error = '';
-		busy = true;
-		dlError = '';
-		dlAuth = '';
-		// A bare host:port gets http:// in front.
-		const u = dl.url.trim();
-		if (u && !/^[a-z][a-z0-9+.-]*:\/\//i.test(u)) dl.url = `http://${u}`;
-		try {
-			const editing = dlEditing;
-			const v = editing != null ? await api.put<DownloaderView>(`/downloaders/${editing}`, formBody(dl)) : await api.post<DownloaderView>('/downloaders', formBody(dl));
-			if (editing != null) dlList = dlList.map((x) => (x.id === v.id ? v : x));
-			// Only a downloader that answers becomes a row; a new one that doesn't is taken back and the form stays.
-			const t = await api.post<{ ok: boolean; text: string }>(`/downloaders/${v.id}/test`).catch((err) => ({ ok: false, text: message(err) }));
-			if (!t.ok) {
-				if (editing == null) await api.del(`/downloaders/${v.id}`).catch(() => {});
-				else dlEditing = v.id;
-				const words = reachWords(t.text);
-				if (!askSignIn(words)) dlError = words;
-				return;
-			}
-			dlTests = { ...dlTests, [v.id]: { ok: t.ok, text: t.text } };
-			if (editing == null) dlList = [...dlList, v];
-			dlEditing = null;
-			dlAdding = false;
-			dl = emptyForm();
-		} catch (err) {
-			// HolyArrs itself didn't answer: the Source step's wording.
-			if (err instanceof ApiError && (err.status === 0 || err.status >= 500)) error = 'HolyArrs isn’t answering. Try again in a moment.';
-			else if (!askSignIn(reachWords(message(err)))) error = message(err);
-		} finally {
-			busy = false;
-			// A failed Connect: focus the field the answer is about (the key, or else the address).
-			if (dlError || (error && dlForm)) void tick().then(() => document.getElementById(!dlError && /key|password/i.test(error) ? 'dl-secret' : 'dl-url')?.focus());
-		}
-	}
-	// An app that signs in, turned down with no user name typed: ask for both,
-	// under User name (the server's answer names an API key field the wizard doesn't have).
-	function askSignIn(words: string): boolean {
-		if (!dlUser || dl.username.trim() || words.startsWith("Can't reach")) return false;
-		dlAuth = 'Add the user name and password.';
-		void tick().then(() => document.getElementById('dl-user')?.focus());
-		return true;
-	}
-	// Fresh setup always asks for a Source next; after an import only when none came over.
-	async function afterDownloader() {
-		if (busy) return;
-		busy = true;
-		try {
-			if (fromApps && (await sourceCount()) > 0) return go('done');
-			go('source');
-		} finally {
-			busy = false;
-		}
-	}
-
-	// ---- Source ----
-	let sources = $state(0);
-	// Sources plus linked Jackett/Prowlarr (a fresh link may not have synced its Sources yet).
-	async function sourceCount(): Promise<number> {
-		const n = async (path: string, key: string) => {
-			try {
-				return ((await api.get<Record<string, unknown[]>>(path))[key] ?? []).length;
-			} catch {
-				return 0;
-			}
-		};
-		const [s, b] = await Promise.all([n('/sources', 'sources'), n('/bridges', 'bridges')]);
-		return s + b;
-	}
-	async function loadSources() {
-		sources = await sourceCount();
-	}
-
-	// ---- Import: the Settings move flow, right here in the panel ----
-	const IMPORT_QUERY = 'first=1&step=import';
-	// Import offers every app, except a downloader or Prowlarr that is already
-	// connected here. The list is filled before the Read sheet first opens.
-	const hideApps: string[] = [];
-	setContext('move-hide-apps', hideApps);
-	setContext('move-hide-count', true);
-	let moveStep = $state('read');
-	// After the move: ask only for what Import didn't bring.
-	async function afterImport() {
-		busy = true;
-		const [dls, srcs] = await Promise.all([listDownloaders(), sourceCount()]);
-		busy = false;
-		extra = [...(dls.length ? [] : (['downloader'] as Step[])), ...(srcs ? [] : (['source'] as Step[]))];
-		go(extra[0] ?? 'done');
-	}
-	async function loadHidden() {
-		const [dls, bridges] = await Promise.all([
-			listDownloaders(),
-			api.get<{ bridges: { kind: string }[] }>('/bridges').then((r) => r.bridges ?? [], () => [])
-		]);
-		hideApps.length = 0;
-		for (const k of ['qbittorrent', 'sabnzbd'] as const) if (dls.some((d) => d.kind === k)) hideApps.push(k);
-		if (bridges.some((b) => b.kind === 'prowlarr')) hideApps.push('prowlarr');
-	}
-
-	// ---- Done ----
-	// What a skipped step left to do, each a Settings page.
-	type Todo = { label: string; path: string };
-	let todo = $state<Todo[]>([]);
-	// What is set: a short line each ("Movies · /data/movies", "qBittorrent", "Prowlarr").
-	let haveSet = $state<string[]>([]);
-	async function loadTodo() {
-		const list = <T,>(path: string, key: string) => api.get<Record<string, T[]>>(path).then((r) => r[key] ?? [], () => null);
-		const [fl, dl, br, srcs] = await Promise.all([
-			list<LibraryFolder>('/library-folders', 'library_folders'),
-			list<DownloaderView>('/downloaders', 'downloaders'),
-			list<{ kind: string }>('/bridges', 'bridges'),
-			sourceCount()
-		]);
-		const kindName: Record<string, string> = { movie: 'Movies', show: 'TV shows', music: 'Music' };
-		const bridgeName: Record<string, string> = { prowlarr: 'Prowlarr', jackett: 'Jackett' };
-		haveSet = [
-			...(fl ?? []).map((f) => `${kindName[f.kind] ?? f.label} · ${f.path}`),
-			...(dl ?? []).map((d) => kindWords[d.kind] ?? d.name),
-			...(br ?? []).map((b) => bridgeName[b.kind] ?? b.kind)
-		];
-		// Unknown (the list failed to load) counts as set, so nothing is asked twice.
-		const folders = fl ? fl.length : 1;
-		const dls = dl ? dl.length : 1;
-		todo = [
-			...(folders ? [] : [{ label: 'Folders', path: '/settings/library-folders' }]),
-			...(dls ? [] : [{ label: 'Downloader', path: '/settings/downloaders' }]),
-			...(srcs ? [] : [{ label: 'Source', path: '/settings/sources' }])
-		];
-	}
-	// Invite family: turns on Requests (what the old "family" question did), then opens Users.
+	const partsStepCtx = {
+		get error() { return error; },
+		set error(v) { error = v; },
+		get busy() { return busy; },
+		set busy(v) { busy = v; },
+		home,
+	};
+	const partsStep = createWelcomeParts(partsStepCtx);
+	const mediaStepCtx = {
+		partsOn: partsStep.partsOn,
+		get busy() { return busy; },
+		set busy(v) { busy = v; },
+		get error() { return error; },
+		set error(v) { error = v; },
+		go,
+	};
+	const mediaStep = createWelcomeMedia(mediaStepCtx);
+	const downloaderStepCtx = {
+		get error() { return error; },
+		set error(v) { error = v; },
+		get busy() { return busy; },
+		set busy(v) { busy = v; },
+		get fromApps() { return fromApps; },
+		get sourcesStep() { return sourcesStep; },
+		go,
+	};
+	const downloaderStep = createWelcomeDownloader(downloaderStepCtx);
+	const sourcesStepCtx = {
+		get busy() { return busy; },
+		set busy(v) { busy = v; },
+		listDownloaders: downloaderStep.listDownloaders,
+		get extra() { return extra; },
+		set extra(v) { extra = v; },
+		go,
+	};
+	const sourcesStep = createWelcomeSources(sourcesStepCtx);
 	async function invite() {
 		if (busy) return;
 		error = '';
 		busy = true;
 		try {
 			await refreshParts();
-			const now = partsOn();
+			const now = partsStep.partsOn();
 			if (!now.wishlist) await applyParts({ ...now, wishlist: true });
 			await home('/settings/users');
 		} catch (err) {
@@ -549,18 +221,16 @@
 		else go(prev);
 	}
 	async function enter(s: Step) {
-		if (s === 'media') await loadMedia();
-		if (s === 'downloader') await loadDownloader();
-		if (s === 'source') await loadSources();
-		if (s === 'import') await loadHidden();
-		if (s === 'done' && !todo.length) await loadTodo();
+		if (s === 'media') await mediaStep.loadMedia();
+		if (s === 'downloader') await downloaderStep.loadDownloader();
+		if (s === 'source') await sourcesStep.loadSources();
+		if (s === 'import') await sourcesStep.loadHidden();
+		if (s === 'done' && !sourcesStep.todo.length) await sourcesStep.loadTodo();
 	}
 	onMount(() => {
 		if (firstRun && !wizardDone()) void enter(step);
 	});
-	// Moving asks for a recent password check (past the setup window): the
-	// move flow only signals it, so the wizard shows the confirm box itself
-	// (an owner with no password gets the move flow's set-a-password card).
+	// Moving asks for a recent password check (past the setup window): the move flow only signals it, so the wizard shows the confirm box itself (an owner with no password gets the move flow's set-a-password card).
 	let importCheck = $state(false);
 	onMount(() => {
 		const onReauth = () => {
@@ -584,7 +254,7 @@
 	const head = $derived(
 		!firstRun
 			? { h: 'What do you use?', p: 'You can change this later.' }
-			: step === 'done' && todo.length
+			: step === 'done' && sourcesStep.todo.length
 				? { h: 'HolyArrs is ready', p: 'A few things are left. Finish them anytime in Settings.' }
 				: step === 'done' && fromApps
 					? { h: 'Welcome home', p: 'Your library is here. Your old apps keep running.' }
@@ -599,7 +269,7 @@
 	<!-- First run keeps the sign-in look: the same moving backdrop behind one glass panel. -->
 	<div class="sheet" class:glass={firstRun} class:light={theme.value === 'light'} data-signin-panel={firstRun ? '' : undefined}>
 	<div class="brand"><img src={to(mark)} alt={firstRun ? 'HolyArrs' : ''} width={firstRun ? 28 : 32} height={firstRun ? 28 : 32} />{#if !firstRun}<span>HolyArrs</span>{/if}</div>
-	{#if firstRun && prev && session.can('users') && (step !== 'import' || moveStep === 'read')}
+	{#if firstRun && prev && session.can('users') && (step !== 'import' || sourcesStep.moveStep === 'read')}
 		<span class="corner"><IconButton icon="chevronLeft" variant="tinted" label="Back" onclick={back} disabled={busy} /></span>
 	{/if}
 	{#if firstRun}
@@ -616,12 +286,12 @@
 	{#if !session.can('users') || (firstRun && step !== 'start' && !session.can('settings'))}
 		<p class="notice warn">Only the owner or an admin with Settings access can finish setup.</p>
 	{:else if !firstRun}
-		<form class="card" onsubmit={submitParts} data-testid="welcome">
+		<form class="card" onsubmit={partsStep.submitParts} data-testid="welcome">
 			<!-- Big tiles, each a real checkbox (it covers the tile, so a tap anywhere toggles it). -->
 			<div class="tiles" role="group" aria-label="Parts">
-				{#each choices as c (c.part)}
-					<label class="tile" class:on={want[c.part]}>
-						<input type="checkbox" bind:checked={want[c.part]} aria-label={c.label} />
+				{#each partsStep.choices as c (c.part)}
+					<label class="tile" class:on={partsStep.want[c.part]}>
+						<input type="checkbox" bind:checked={partsStep.want[c.part]} aria-label={c.label} />
 						<span class="tick" aria-hidden="true"><Icon name="check" size={14} stroke={2.5} /></span>
 						<Icon name={c.icon} size={28} />
 						<span class="tile-label">{c.label}</span>
@@ -632,14 +302,14 @@
 			<fieldset class="family">
 				<legend>Will family or friends ask for titles?</legend>
 				<div class="seg">
-					<label class:on={family === 'no'}><input type="radio" name="family" value="no" bind:group={family} />No, just me</label>
-					<label class:on={family === 'yes'}><input type="radio" name="family" value="yes" bind:group={family} />Yes</label>
+					<label class:on={partsStep.family === 'no'}><input type="radio" name="family" value="no" bind:group={partsStep.family} />No, just me</label>
+					<label class:on={partsStep.family === 'yes'}><input type="radio" name="family" value="yes" bind:group={partsStep.family} />Yes</label>
 				</div>
 				<p class="hint">Yes adds a Requests page.</p>
 			</fieldset>
 
-			{#if error || problem}<p class="form-error" role="alert">{error || problem}</p>{/if}
-			<Button variant="primary" size="lg" full type="submit" disabled={busy || !!problem} {busy}>Continue</Button>
+			{#if error || partsStep.problem}<p class="form-error" role="alert">{error || partsStep.problem}</p>{/if}
+			<Button variant="primary" size="lg" full type="submit" disabled={busy || !!partsStep.problem} {busy}>Continue</Button>
 		</form>
 	{:else if step === 'start'}
 		<div class="card" data-testid="welcome-start">
@@ -657,19 +327,19 @@
 			</div>
 		</div>
 	{:else if step === 'media'}
-		<form class="card" onsubmit={(e) => { e.preventDefault(); void saveMedia(false); }} data-testid="welcome-media">
-			<PageLoader loading={!rows.length} label="Loading folders">
+		<form class="card" onsubmit={(e) => { e.preventDefault(); void mediaStep.saveMedia(false); }} data-testid="welcome-media">
+			<PageLoader loading={!mediaStep.rows.length} label="Loading folders">
 			<ul class="rows media-list">
-				{#each rows as r (r.kind)}
-					<li class="frow" class:off={!media[r.part]}>
+				{#each mediaStep.rows as r (r.kind)}
+					<li class="frow" class:off={!mediaStep.media[r.part]}>
 						<span class="ficon" aria-hidden="true"><Icon name={r.icon} size={20} /></span>
 						<div class="fbody">
 							<!-- The whole top line labels the switch, so the tap target is the row. -->
 							<label class="ftop">
 								<span class="fname">{r.label}</span>
-								<span class="switch"><input type="checkbox" bind:checked={media[r.part]} onchange={() => (r.error = '')} disabled={busy} /><span class="sw" aria-hidden="true"></span></span>
+								<span class="switch"><input type="checkbox" bind:checked={mediaStep.media[r.part]} onchange={() => (r.error = '')} disabled={busy} /><span class="sw" aria-hidden="true"></span></span>
 							</label>
-							{#if media[r.part]}
+							{#if mediaStep.media[r.part]}
 								{#if r.saved && !r.editing}
 									<div class="fsaved"><span class="path">{r.saved}</span><button type="button" class="quiet" disabled={busy} onclick={async () => { r.path = r.saved; r.editing = true; await tick(); document.getElementById(`folder-${r.kind}`)?.focus(); }} aria-label="Change {r.label} folder">Change</button></div>
 								{:else}
@@ -684,78 +354,78 @@
 			</ul>
 			</PageLoader>
 			<p class="hint">On Docker, use the path inside the container.</p>
-			{#if error || mediaOff}<p class="form-error" role="alert">{error || 'Turn on at least one.'}</p>{/if}
-			<Button variant="primary" size="lg" full type="submit" disabled={busy || mediaOff} {busy}>Continue</Button>
-			<button class="alt" type="button" disabled={busy || mediaOff} onclick={() => saveMedia(true)}>Skip for now</button>
+			{#if error || mediaStep.mediaOff}<p class="form-error" role="alert">{error || 'Turn on at least one.'}</p>{/if}
+			<Button variant="primary" size="lg" full type="submit" disabled={busy || mediaStep.mediaOff} {busy}>Continue</Button>
+			<button class="alt" type="button" disabled={busy || mediaStep.mediaOff} onclick={() => mediaStep.saveMedia(true)}>Skip for now</button>
 		</form>
 	{:else if step === 'downloader'}
-		<form class="card" onsubmit={saveDownloader} data-testid="welcome-downloader">
-			{#if dlLoadError}
-				<LoadError hasData={false} message={dlLoadError} onretry={loadDownloader} />
-			{:else if dlList.length}
+		<form class="card" onsubmit={downloaderStep.saveDownloader} data-testid="welcome-downloader">
+			{#if downloaderStep.dlLoadError}
+				<LoadError hasData={false} message={downloaderStep.dlLoadError} onretry={downloaderStep.loadDownloader} />
+			{:else if downloaderStep.dlList.length}
 				<ul class="conn" aria-label="Connected downloaders">
-					{#each dlList as d (d.id)}
-						{@const test = dlTests[d.id]}
+					{#each downloaderStep.dlList as d (d.id)}
+						{@const test = downloaderStep.dlTests[d.id]}
 						<li>
 							<div class="conn-row">
 							<div class="conn-text"><b>{d.name}</b><span class="addr">{d.url.replace(/^https?:\/\//, '')}</span></div>
 							{#if test}<TestTag ok={test.ok} text={test.text} app={kindWords[d.kind]} />{/if}
 							</div>
 							{#if test && !test.ok}<p class="form-error" role="alert">{test.text}</p>{/if}
-							{#if !dlForm}
+							{#if !downloaderStep.dlForm}
 								<div class="row-acts">
-									<button type="button" class="quiet" disabled={busy} onclick={() => editDl(d)} aria-label="Edit {d.name}">Edit</button>
-									<button type="button" class="quiet danger" disabled={busy} onclick={() => removeDl(d)} aria-label="Remove {d.name}">Remove</button>
+									<button type="button" class="quiet" disabled={busy} onclick={() => downloaderStep.editDl(d)} aria-label="Edit {d.name}">Edit</button>
+									<button type="button" class="quiet danger" disabled={busy} onclick={() => downloaderStep.removeDl(d)} aria-label="Remove {d.name}">Remove</button>
 								</div>
 							{/if}
 						</li>
 					{/each}
 				</ul>
-				{#if !dlForm}
-					<button class="add-row" type="button" disabled={busy} onclick={() => { error = ''; dlAdding = true; }}><Icon name="plus" size={16} />Add another</button>
+				{#if !downloaderStep.dlForm}
+					<button class="add-row" type="button" disabled={busy} onclick={() => { error = ''; downloaderStep.dlAdding = true; }}><Icon name="plus" size={16} />Add another</button>
 				{/if}
 			{/if}
-			{#if dlForm}
+			{#if downloaderStep.dlForm}
 				<div class="tiles five" role="radiogroup" aria-label="Downloader app">
-					{#each dlKinds as k (k)}
-						<label class="tile small" class:on={dl.kind === k}>
-							<input type="radio" name="dlkind" value={k} checked={dl.kind === k} onchange={() => pickDl(k)} aria-label={kindWords[k]} />
+					{#each downloaderStep.dlKinds as k (k)}
+						<label class="tile small" class:on={downloaderStep.dl.kind === k}>
+							<input type="radio" name="dlkind" value={k} checked={downloaderStep.dl.kind === k} onchange={() => downloaderStep.pickDl(k)} aria-label={kindWords[k]} />
 							<span class="tile-label">{kindWords[k]}</span>
 						</label>
 					{/each}
 				</div>
 				<div class="field">
 					<label for="dl-url">Address</label>
-					<input id="dl-url" class="input" type="text" inputmode="url" bind:value={dl.url} oninput={() => (dlError = '')} placeholder="192.168.1.10:{dlPorts[dl.kind]}" autocomplete="off" spellcheck="false" aria-invalid={dlError ? 'true' : undefined} aria-describedby={dlError ? 'dl-url-error' : undefined} />
-					{#if dlError}<p class="form-error" id="dl-url-error" role="alert">{dlError}</p>{/if}
+					<input id="dl-url" class="input" type="text" inputmode="url" bind:value={downloaderStep.dl.url} oninput={() => (downloaderStep.dlError = '')} placeholder="192.168.1.10:{downloaderStep.dlPorts[downloaderStep.dl.kind]}" autocomplete="off" spellcheck="false" aria-invalid={downloaderStep.dlError ? 'true' : undefined} aria-describedby={downloaderStep.dlError ? 'dl-url-error' : undefined} />
+					{#if downloaderStep.dlError}<p class="form-error" id="dl-url-error" role="alert">{downloaderStep.dlError}</p>{/if}
 				</div>
 				<div class="two">
-					{#if dlUser}
+					{#if downloaderStep.dlUser}
 						<div class="field">
 							<label for="dl-user">User name</label>
-							<input id="dl-user" class="input" bind:value={dl.username} oninput={() => (dlAuth = '')} autocomplete="off" autocapitalize="none" spellcheck="false" aria-invalid={dlAuth ? 'true' : undefined} aria-describedby={dlAuth ? 'dl-user-error' : undefined} />
-								{#if dlAuth}<p class="form-error" id="dl-user-error" role="alert">{dlAuth}</p>{/if}
+							<input id="dl-user" class="input" bind:value={downloaderStep.dl.username} oninput={() => (downloaderStep.dlAuth = '')} autocomplete="off" autocapitalize="none" spellcheck="false" aria-invalid={downloaderStep.dlAuth ? 'true' : undefined} aria-describedby={downloaderStep.dlAuth ? 'dl-user-error' : undefined} />
+								{#if downloaderStep.dlAuth}<p class="form-error" id="dl-user-error" role="alert">{downloaderStep.dlAuth}</p>{/if}
 						</div>
 					{/if}
 					<div class="field">
-						<label for="dl-secret">{dl.kind === 'sabnzbd' ? 'API key' : 'Password'}</label>
-						<input id="dl-secret" class="input" type="password" bind:value={dl.secret} autocomplete="new-password" />
+						<label for="dl-secret">{downloaderStep.dl.kind === 'sabnzbd' ? 'API key' : 'Password'}</label>
+						<input id="dl-secret" class="input" type="password" bind:value={downloaderStep.dl.secret} autocomplete="new-password" />
 					</div>
 				</div>
 			{/if}
 			{#if error}<p class="form-error" role="alert">{error}</p>{/if}
-			<Button variant="primary" size="lg" full type="submit" disabled={busy} {busy}>{dlEditing != null ? 'Save' : dlForm ? `Connect ${kindWords[dl.kind]}` : 'Continue'}</Button>
-			{#if dlForm && dlList.length}
-				<button class="alt" type="button" disabled={busy} onclick={() => { error = ''; dlError = ''; dlAdding = false; dlEditing = null; dl = emptyForm(); }}>Cancel</button>
+			<Button variant="primary" size="lg" full type="submit" disabled={busy} {busy}>{downloaderStep.dlEditing != null ? 'Save' : downloaderStep.dlForm ? `Connect ${kindWords[downloaderStep.dl.kind]}` : 'Continue'}</Button>
+			{#if downloaderStep.dlForm && downloaderStep.dlList.length}
+				<button class="alt" type="button" disabled={busy} onclick={() => { error = ''; downloaderStep.dlError = ''; downloaderStep.dlAdding = false; downloaderStep.dlEditing = null; downloaderStep.dl = emptyForm(); }}>Cancel</button>
 			{:else}
-				<button class="alt" type="button" disabled={busy} onclick={afterDownloader}>Skip for now</button>
+				<button class="alt" type="button" disabled={busy} onclick={downloaderStep.afterDownloader}>Skip for now</button>
 			{/if}
 		</form>
 	{:else if step === 'source'}
 		<div class="card source" data-testid="welcome-source">
-			<ConnectBridge onchange={loadSources} compact />
+			<ConnectBridge onchange={sourcesStep.loadSources} compact />
 			<div class="foot">
-				{#if sources > 0}
+				{#if sourcesStep.sources > 0}
 					<Button variant="primary" size="lg" full type="button" disabled={busy} onclick={() => go('done')}>Continue</Button>
 				{:else}
 					<button class="alt" type="button" disabled={busy} onclick={() => go('done')}>Skip for now</button>
@@ -767,23 +437,23 @@
 			{#if importCheck && session.s.hasPassword}
 				<Confirm action="password">{#snippet children()}{/snippet}</Confirm>
 			{/if}
-			<MoveFlow embedded={{ query: IMPORT_QUERY, ondone: afterImport, onstep: (s) => (moveStep = s) }} />
-			{#if moveStep === 'read'}
+			<MoveFlow embedded={{ query: sourcesStep.IMPORT_QUERY, ondone: sourcesStep.afterImport, onstep: (s) => (sourcesStep.moveStep = s) }} />
+			{#if sourcesStep.moveStep === 'read'}
 				<button class="alt" type="button" disabled={busy} onclick={() => pickPath(false)}>Start fresh instead</button>
 			{/if}
 		</div>
 	{:else}
 		<div class="card" data-testid="welcome-done">
-			{#if haveSet.length}
+			{#if sourcesStep.haveSet.length}
 				<ul class="todo" aria-label="Set up">
-					{#each haveSet as h (h)}
+					{#each sourcesStep.haveSet as h (h)}
 						<li><span class="todo-row"><span class="set-name"><span class="set-tick" aria-hidden="true"><Icon name="check" size={14} stroke={2.5} /></span><span>{h}</span></span></span></li>
 					{/each}
 				</ul>
 			{/if}
-			{#if todo.length}
+			{#if sourcesStep.todo.length}
 				<ul class="todo" aria-label="Still to do">
-					{#each todo as t (t.label)}
+					{#each sourcesStep.todo as t (t.label)}
 						<li><a href={to(t.path)} onclick={(e) => { e.preventDefault(); void home(t.path); }}><span>{t.label}</span><span class="todo-end"><span class="todo-state">Not set</span><Icon name="chevronRight" size={16} /></span></a></li>
 					{/each}
 				</ul>
@@ -837,7 +507,7 @@
 	.glass .head { margin-bottom: 22px; }
 	/* Inside the glass the step's card is just its content. */
 	.sheet.glass > :global(.card) { background: transparent; box-shadow: none; padding: 0; border-radius: 0; }
-	/* The Jackett/Prowlarr card on the Source step joins the glass too: no second box, edges lined up. */
+	/* The Jackett or Prowlarr card on the Source step joins the glass too: no second box, edges lined up. */
 	.sheet.glass :global(.ui-settings) { background: transparent; box-shadow: none; border-radius: 0; overflow: visible; }
 	.sheet.glass :global(.ui-settings > header), .sheet.glass :global(.ui-settings > .body) { padding-left: 0; padding-right: 0; }
 	.sheet.glass :global(.ui-settings > header) { padding-top: 0; }
@@ -1032,8 +702,7 @@
 		.seg label { min-height: 44px; }
 	}
 
-	/* One layer inside the glass card: lists are flat rows split by hairlines,
-	   choices are outlined, and only text fields keep a filled box. */
+	/* One layer inside the glass card: lists are flat rows split by hairlines, choices are outlined, and only text fields keep a filled box. */
 	.tile { background: transparent; }
 	@media (hover: hover) { .tile:hover { background: color-mix(in srgb, var(--text) 4%, transparent); } }
 	.media-list { background: none; border: 0; border-radius: 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); overflow: visible; }

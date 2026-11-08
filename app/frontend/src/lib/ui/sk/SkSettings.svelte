@@ -1,5 +1,5 @@
 <script lang="ts">
-	// A Settings card placeholder: a heading line, then label and field rows (the SettingsCard size).
+	// Loading stand-in for settings cards: a heading, then label and field rows.
 	let { cards = 1, rows = 3 }: { cards?: number; rows?: number } = $props();
 </script>
 
@@ -17,5 +17,6 @@
 	.h { width: min(220px, 60%); height: 17px; }
 	.row { display: flex; flex-direction: column; gap: 8px; }
 	.l { width: min(160px, 45%); height: 11px; }
+	/* Field cap width matches the real inputs. */
 	.f { width: min(520px, 100%); height: 40px; border-radius: var(--r-btn); }
 </style>

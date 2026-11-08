@@ -1,7 +1,6 @@
 import type { MusicCardData, MusicRowData } from './music-trending.ts';
 
-// The Browse page hero's words (our own): what the genre, mood, season,
-// decade or activity sounds like, then the page's leading artists.
+// The Browse page hero's words: what the genre, mood, season, decade or activity sounds like, then the page's leading artists.
 const blurbs: Record<string, string> = {
 	'genre:pop': 'Big hooks and bright choruses',
 	'genre:hip-hop': 'Hard beats, sharp verses and the songs everyone quotes',
@@ -39,7 +38,7 @@ const blurbs: Record<string, string> = {
 	'mood:throwback': 'Long-loved songs from years ago'
 };
 
-/** heroArtists answers the page's leading artists, once each, in row order. */
+/** The page's leading artists, once each, in row order. */
 export function heroArtists(hero: MusicCardData[], rows: MusicRowData[], n = 3): string[] {
 	const out: string[] = [];
 	for (const c of [...hero, ...rows.flatMap((r) => r.items)]) {
@@ -50,7 +49,7 @@ export function heroArtists(hero: MusicCardData[], rows: MusicRowData[], n = 3):
 	return out;
 }
 
-/** heroLine is the one-line description: the key's words, then its artists. */
+/** The one-line description: the key's words, then its artists. */
 export function heroLine(key: string, name: string, artists: string[]): string {
 	const kind = key.split(':')[0];
 	const lead = blurbs[key] ?? (kind === 'decade' ? `The albums that defined the ${name}` : kind === 'season' ? `Music for ${name}` : kind === 'activity' ? `Music for ${name.toLowerCase()}` : `The best of ${name}`);

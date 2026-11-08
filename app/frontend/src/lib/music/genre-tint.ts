@@ -1,7 +1,4 @@
-// A music genre's fixed tile colour: a token name from MusicGenreTiles.svelte's
-// palette, deep hues around the HolyArrs red. The same genre always gets the same
-// token; a genre not listed takes one by its server hue index, so tiles never
-// go uncoloured.
+// A music genre's fixed tile colour: a token name from the MusicGenreTiles.svelte palette. The same genre always gets the same token; a genre not listed takes one by its server hue index.
 const FIXED: Record<string, string> = {
 	'hip-hop-rap': 'crimson',
 	country: 'amber',
@@ -19,7 +16,7 @@ const FIXED: Record<string, string> = {
 };
 const SPARE = ['rust', 'crimson', 'plum', 'teal', 'amber', 'midnight', 'wine'];
 
-/** genreTintToken answers the CSS custom property (--mg-*) for a genre slug. */
+/** The CSS custom property (--mg-*) for a genre slug. */
 export function genreTintToken(slug: string, hue = 0): string {
 	return `--mg-${FIXED[slug] ?? SPARE[((hue % SPARE.length) + SPARE.length) % SPARE.length]}`;
 }

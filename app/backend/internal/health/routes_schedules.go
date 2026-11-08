@@ -56,7 +56,7 @@ var ScheduleInfos = map[string]ScheduleInfo{
 	"check_library_folders": {"Check Library folders", "Checks that every Library folder is there and has free space. The write and hardlink test runs at start-up, on Run now and when folders change.", schHour, schDay, schHour, ""},
 	"sync_outside_lists":    {"Read Outside lists", "Adds what TMDB and Trakt lists hold now.", 15 * schMinute, schDay, 5 * schMinute, ""},
 	"check_bridges":         {"Check Jackett", "Keeps the Sources from a connected Jackett in step with its sites.", 6 * schHour, 7 * schDay, schHour, "/settings/sources"},
-	"sync_plex_watchlists":  {"Read Plex watchlists", "Asks for what is new on the Plex watchlists of people who turned it on.", 3 * schMinute, schHour, schMinute, "/settings/wishlist"},
+	"sync_plex_watchlists":  {"Read Plex watchlists", "Asks for what is new on the Plex watchlists of people who turned it on.", 3 * schMinute, schHour, schMinute, "/settings/requests"},
 	"feed_check":            {"Feed check", "Reads the newest Releases of every Source with a feed.", 10 * schMinute, 120 * schMinute, schMinute, "/settings/search"},
 	"grab_held":             {"Try Held releases again", "Sends Held releases whose wait is over.", schMinute, schHour, schMinute, ""},
 	"search_missing":        {"Search for missing", "Searches the Sources for missing titles, a few at a time.", 6 * schHour, 7 * schDay, schHour, "/settings/search"},

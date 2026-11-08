@@ -1,7 +1,7 @@
 /* HolyArrs app styles. Every value comes from tokens.css; this file holds
    layout and shared parts only. */
 @import '@fontsource-variable/geist/wght.css';
-@import './lib/tokens.css';
+@import './lib/core/tokens.css';
 
 :root {
 	--tabbar: 60px;
@@ -376,7 +376,7 @@ select.input {
 	color: var(--text);
 }
 
-/* Skeleton while loading: the Silhouette shimmer lives in lib/tokens.css (.sk). */
+/* Skeleton while loading: the Silhouette shimmer lives in lib/core/tokens.css (.sk). */
 .sk { position: relative; overflow: hidden; }
 
 @keyframes rise {

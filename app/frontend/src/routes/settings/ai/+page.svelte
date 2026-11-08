@@ -6,40 +6,17 @@
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import Chip from '#lib/ui/Chip.svelte';
+	import { AI_SCOPE, CHECK_QUESTION, DEEPLINK_LABEL, GROUPS, GUIDES_URL, ROWS, agentPrompt, aiURL, appsFor, canSignIn, codeParts, deeplinkHref, isAIKey, onlyLocal, pickFor, testedLine, whereText, type AIApp, type Ctx, type Part, type Picked, type Row } from '#lib/ai/index.ts';
 	import { onMount, tick } from 'svelte';
 	import { page } from '$app/state';
 	import { replaceState } from '$app/navigation';
-	import { api, ApiError } from '#lib/api.ts';
-	import { plainMessage as message } from '#lib/settings.ts';
-	import { toasts } from '#lib/toasts.svelte.ts';
-	import { ago, date } from '#lib/format.ts';
-	import { session } from '#lib/session.svelte.ts';
-	import { getBase } from '#lib/paths.ts';
-	import type { ApiKey } from '#lib/types.ts';
-	import {
-		AI_SCOPE,
-		CHECK_QUESTION,
-		DEEPLINK_LABEL,
-		GROUPS,
-		GUIDES_URL,
-		ROWS,
-		agentPrompt,
-		aiURL,
-		appsFor,
-		canSignIn,
-		codeParts,
-		deeplinkHref,
-		isAIKey,
-		onlyLocal,
-		pickFor,
-		testedLine,
-		whereText,
-		type AIApp,
-		type Ctx,
-		type Part,
-		type Picked,
-		type Row
-	} from '#lib/ai-connect.ts';
+	import { api, ApiError } from '#lib/core/api.ts';
+	import { plainMessage as message } from '#lib/core/settings.ts';
+	import { toasts } from '#lib/core/toasts.svelte.ts';
+	import { ago, date } from '#lib/core/format.ts';
+	import { session } from '#lib/core/session.svelte.ts';
+	import { getBase } from '#lib/core/paths.ts';
+	import type { ApiKey } from '#lib/core/types.ts';
 
 	let loaded = $state(false);
 	let error = $state('');
@@ -87,7 +64,7 @@
 		return () => mq.removeEventListener('change', on);
 	});
 
-	// A row whose guide covers several apps (Codex, local AI) switches between their steps.
+	// A row whose guide covers several apps (for example local AI) switches between their steps.
 	function pickApp(a: AIApp) {
 		if (!picked?.row || a.id === app?.id) return;
 		picked = { id: a.id, row: picked.row, app: a };
@@ -106,7 +83,7 @@
 		clientID = '';
 		clientError = '';
 		if (picked) {
-			// Focus follows the steps, so a keyboard needn't pass every later row.
+			// Focus follows the steps, so a keyboard does not need to pass every later row.
 			await tick();
 			panelHead?.focus({ preventScroll: true });
 			panelEl?.scrollIntoView({ block: 'nearest' });
@@ -211,8 +188,7 @@
 		}
 	}
 
-	// Apps that do not register themselves (Gemini) get a client ID made from
-	// the return address they show.
+	// Apps that do not register themselves (Gemini) get a client ID made from the return address they show.
 	let redirectURI = $state('');
 	let clientID = $state('');
 	let clientError = $state('');

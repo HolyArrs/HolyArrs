@@ -1,5 +1,5 @@
 <script lang="ts" module>
-	// How many PageLoaders on screen are busy; #main carries aria-busy while any is.
+	// Shared across loaders so aria-busy stays on while any one is busy.
 	let busyCount = 0;
 	function markBusy(on: boolean): void {
 		busyCount = Math.max(0, busyCount + (on ? 1 : -1));
@@ -11,15 +11,10 @@
 </script>
 
 <script lang="ts">
+	// Shows a calm loader after a short delay and fades the page in when data arrives.
 	import { untrack, type Snippet } from 'svelte';
-	import { pageHoldFor, pageLine, pageTimers, PAGE_FADE_MS, type PageStage } from '../pageload.ts';
+	import { pageHoldFor, pageLine, pageTimers, PAGE_FADE_MS, type PageStage } from '../core/pageload.ts';
 
-	// The page loading screen: the branded Orbit (the same ring as the boot screen in
-	// app.html) centred in the content area while a page's main data loads. It appears only
-	// after 300 ms, stays at least 100 ms once shown, adds a status line at 3 s and a retry
-	// at 10 s, then the content fades in over 200 ms. Rules: lib/pageload.ts.
-	// `cached`: the page's answer came from the app's kept answers, so it swaps in at once.
-	// Loading inside an open page (more rows, a tab, a section) keeps the quiet placeholders.
 	let {
 		loading,
 		children,
@@ -30,17 +25,16 @@
 		onretry
 	}: { loading: boolean; children?: Snippet; status?: string; label?: string; immediate?: boolean; cached?: boolean; onretry?: () => void } = $props();
 
-	const now = () => (typeof performance === 'undefined' ? Date.now() : performance.now());
-	// `held` keeps a shown Orbit up after the data arrived; `busy` follows `loading` in the same
-	// render, so the content never draws a frame without its data.
 	let held = $state(false);
 	let stage = $state<PageStage>(untrack(() => (loading ? 'hidden' : 'orbit')));
 	let start = now();
 	let fade = false;
 	let content = $state<HTMLElement>();
+
 	const busy = $derived(loading || held);
 	const line = $derived(pageLine(stage, status, immediate));
 
+	// Runs before paint so the loader never flashes the old content.
 	$effect.pre(() => {
 		if (loading) {
 			start = now();
@@ -69,6 +63,11 @@
 		if (matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
 		for (const el of Array.from(content.children)) el.animate?.([{ opacity: 0 }, { opacity: 1 }], { duration: PAGE_FADE_MS, easing: 'ease-out' });
 	});
+
+	// Falls back to Date when performance is missing.
+	function now() {
+		return typeof performance === 'undefined' ? Date.now() : performance.now();
+	}
 </script>
 
 {#if busy}
@@ -95,7 +94,6 @@
 {/if}
 
 <style>
-	/* Holds the content area from the first frame (no jump when the Orbit arrives), on the page background. */
 	.pl {
 		min-height: calc(100dvh - var(--topbar-h, 56px) - 96px);
 		display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
@@ -105,6 +103,7 @@
 	.pl-in { display: contents; }
 	.ow { position: relative; width: 64px; height: 64px; }
 	.ow svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+	/* Only this will-change is worth it: the ring spins forever. */
 	.rs { animation: pl-turn 1.17s linear infinite; will-change: transform; }
 	.ms { animation: pl-breathe 2.6s ease-in-out infinite; }
 	.line { margin: 0; min-height: 1.3em; max-width: min(360px, 80vw); font: var(--t-callout); color: var(--text-muted); }
@@ -117,6 +116,7 @@
 	@keyframes pl-pulse { 50% { opacity: .4; } }
 	@media (prefers-reduced-motion: reduce) {
 		.pl.on { animation: none; }
+		/* Pulse instead of spin; important beats the base rule. */
 		.rs { animation: pl-pulse 1.6s ease-in-out infinite !important; animation-duration: 1.6s !important; animation-iteration-count: infinite !important; }
 		.ms { animation: none !important; }
 	}

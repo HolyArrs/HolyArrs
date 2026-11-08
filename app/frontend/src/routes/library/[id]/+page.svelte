@@ -1,51 +1,51 @@
 <script lang="ts">
+	import type { StatusKind } from '#lib/ui/StatusPill.svelte';
+	import { downloadTone } from '#lib/downloads/index.ts';
+	import { createTitleEdit } from '#lib/mediafiles/index.ts';
+	import { createTitleVersions } from '#lib/mediafiles/index.ts';
+	import { createTitleChoose } from '#lib/mediafiles/index.ts';
+	import { createTitleRemove } from '#lib/mediafiles/index.ts';
+	import { createTitleSearch } from '#lib/mediafiles/index.ts';
+	import '#lib/ui/title-page.css';
 	import PageLoader from '#lib/ui/PageLoader.svelte';
-	import { peopleNames } from '#lib/plain.ts';
-	import { to } from '#lib/paths.ts';
-	import { page } from '$app/state';
-	import { api, message, ApiError } from '#lib/api.ts';
-	import { live } from '#lib/live.svelte.ts';
-	import { toasts } from '#lib/toasts.svelte.ts';
-	import { ago, bytes, date, dateTime, tone, words } from '#lib/format.ts';
-	import Icon from '#lib/Icon.svelte';
-	import { session } from '#lib/session.svelte.ts';
-	import EmptyState from '#lib/EmptyState.svelte';
-	import { secondVersion, slotNotes } from '#lib/library.ts';
-	import { chooseWarnings, facts, keyReasons, pager, verdict, verdictTone } from '#lib/releases.ts';
-	import { decided } from '#lib/requests.ts';
-	import { downloadTone, percent, timeLeft } from '#lib/downloaders.ts';
-	import RenamePreview from '#lib/RenamePreview.svelte';
-	import SubtitlePanel from '#lib/SubtitlePanel.svelte';
-	import ShowPage from '#lib/ShowPage.svelte';
-	import CopyControls from '#lib/CopyControls.svelte';
-	import ArtistPage from '#lib/ArtistPage.svelte';
-	import TitlePage from '#lib/TitlePage.svelte';
-	import { goto } from '$app/navigation';
-	import { deleteSummary, type RemovePlan } from '#lib/organise.ts';
-	import { groupLabel, kindTone } from '#lib/history.ts';
+	import EmptyState from '#lib/ui/TitleEmpty.svelte';
 	import TitleHero, { richMetadata, runtimeWords, shortFolder, type RichMeta } from '#lib/ui/TitleHero.svelte';
-	import { plainReason } from '#lib/plain.ts';
 	import ActionButton from '#lib/ui/ActionButton.svelte';
 	import FollowButton from '#lib/ui/FollowButton.svelte';
 	import AskedByLine from '#lib/ui/AskedByLine.svelte';
-	import { loadAskedBy, type AskedByAnswer } from '#lib/askedby.ts';
-	import { reducedMotion } from '#lib/motion.ts';
+	import { loadAskedBy, type AskedByAnswer } from '#lib/ui/asked-by.ts';
 	import ActionMenu from '#lib/ui/ActionMenu.svelte';
 	import Menu from '#lib/ui/Menu.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
-	import StatusPill, { type StatusKind } from '#lib/ui/StatusPill.svelte';
+	import StatusPill from '#lib/ui/StatusPill.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import ProgressBar from '#lib/ui/ProgressBar.svelte';
-	import TitleCast from '#lib/TitleCast.svelte';
-	import TitleRows from '#lib/TitleRows.svelte';
+	import TitleCast from '#lib/ui/TitleCast.svelte';
+	import TitleRows from '#lib/ui/TitleRows.svelte';
 	import LibrarySection from '#lib/ui/LibrarySection.svelte';
-	import { artName, crumbFor, qualityBadges } from '#lib/title-page.ts';
-	import { audienceOf, factsOf, titleStatus } from '#lib/title-status.ts';
+	import { audienceOf, factsOf, titleStatus } from '#lib/ui/title-status.ts';
 	import TitleSection from '#lib/ui/TitleSection.svelte';
 	import type { MenuItem } from '#lib/ui/Menu.svelte';
-	import ReportSheet from '#lib/reports/ReportSheet.svelte';
-	import '#lib/title-page.css';
-	import type { Choice, EventPage, EventRecord, LibraryFolder, PickRulesView, ReleasePage, ReleaseView, TitleView, VersionView } from '#lib/types.ts';
+	import { artistSheets, askShowSheet, quickAskSheet } from '../../request-sheets.ts';
+	import { slotNotes, facts, keyReasons, pager, verdict, verdictTone, RenamePreview, CopyControls, deleteSummary, artName, crumbFor, qualityBadges } from '#lib/mediafiles/index.ts';
+	import { ReportSheet } from '#lib/requests/index.ts';
+	import { percent, timeLeft, groupLabel, kindTone } from '#lib/downloads/index.ts';
+	import { SubtitlePanel } from '#lib/subtitles/index.ts';
+	import { ShowPage } from '#lib/shows/index.ts';
+	import { ArtistPage } from '#lib/music/index.ts';
+	import { TitlePage } from '#lib/discover/index.ts';
+	import { page } from '$app/state';
+	import { peopleNames } from '#lib/core/plain.ts';
+	import { to } from '#lib/core/paths.ts';
+	import { api, message, ApiError } from '#lib/core/api.ts';
+	import { live } from '#lib/core/live.svelte.ts';
+	import { toasts } from '#lib/core/toasts.svelte.ts';
+	import { ago, bytes, date, dateTime, tone, words } from '#lib/core/format.ts';
+	import { session } from '#lib/core/session.svelte.ts';
+	import { decided } from '#lib/core/plain.ts';
+	import { plainReason } from '#lib/core/plain.ts';
+	import { scrollToStart } from '#lib/core/motion.ts';
+	import type { EventPage, EventRecord, ReleasePage, ReleaseView, TitleView, VersionView } from '#lib/core/types.ts';
 
 	const id = $derived(Number(page.params.id));
 	const libraryBack = $derived.by(() => {
@@ -56,9 +56,7 @@
 		return target && (target === library || target.startsWith(`${library}?`)) ? target : own;
 	});
 	let title = $state<TitleView | null>(null);
-	// A movie or show with a TMDB id opens the one title page (lib/TitlePage.svelte), the same page
-	// New & Popular, Explore and search open; its Library tab and More menu hold the manager tools.
-	// The page below stays only for titles without a TMDB id.
+	// A movie or show with a TMDB id opens the one title page (lib/discover TitlePage), the same page New & Popular, Explore and search open; its Library tab and More menu hold the manager tools. The page below stays only for the cases that page does not cover.
 	const shared = (t: TitleView | null): t is TitleView & { ids: { tmdb: string } } => !!t && (t.kind === 'movie' || t.kind === 'show') && !!t.ids?.tmdb;
 
 	// Who asked.
@@ -86,15 +84,14 @@
 	let saving = $state(false);
 	let refreshing = $state(false);
 
-	// The edit dialog
-	let editDialog: HTMLDialogElement | undefined = $state();
-	let rules = $state<PickRulesView[]>([]);
-	let eRules = $state(0);
-	let eGate = $state('released');
-	let eDelay = $state(0);
-	let eKeep = $state(true);
-	let editError = $state('');
-	let editing = $state(false);
+	const editFlowCtx = {
+		get title() { return title; },
+		set title(v) { title = v; },
+		get saving() { return saving; },
+		set saving(v) { saving = v; },
+		get id() { return id; },
+	};
+	const editFlow = createTitleEdit(editFlowCtx);
 	// Versions are one row; See all lays every Version out.
 	let allVersions = $state(false);
 	const leadVersion = (vs: VersionView[]) => (vs.find((v) => v.main) ?? vs[0])?.id;
@@ -106,144 +103,25 @@
 	const stageWord: Record<string, string> = { announced: 'Announced', in_cinemas: 'In cinemas', released: 'Out on digital or disc' };
 	const files = $derived(title ? title.slots.filter((s) => s.file) : []);
 
-	// The add-a-Version dialog
-	let versionDialog: HTMLDialogElement | undefined = $state();
-	let folders = $state<LibraryFolder[]>([]);
-	let vLabel = $state('4K');
-	let vEdition = $state('');
-	let vAudio = $state('');
-	let vFolderName = $state('');
-	let vRules = $state(0);
-	let vFolder = $state(0);
-	let vError = $state('');
-	let vBusy = $state(false);
-	const movieFolders = $derived(folders.filter((f) => f.kind === 'movie'));
-	const slotOf = (v: VersionView) => title?.slots.find((s) => s.version_id === v.id);
-
-	async function movieRules() {
-		if (!rules.length) {
-			rules = (await api.get<{ pick_rules: PickRulesView[] }>('/pick-rules')).pick_rules.filter((r) => !r.kinds.length || r.kinds.includes('movie'));
-		}
-	}
-
-	async function openVersion() {
-		if (!title) return;
-		vError = '';
-		try {
-			await movieRules();
-			if (!folders.length) folders = (await api.get<{ library_folders: LibraryFolder[] }>('/library-folders')).library_folders;
-			const used = new Set(title.versions.map((v) => v.label.toLowerCase()));
-			const sv = secondVersion(rules, movieFolders, title.library_folder_id ?? 0);
-			vLabel = used.has(sv.label.toLowerCase()) ? '' : sv.label;
-			vRules = sv.pick_rules_id;
-			vEdition = ''; vAudio = ''; vFolderName = '';
-			vFolder = sv.library_folder_id || movieFolders[0]?.id || 0;
-		} catch (e) {
-			vError = message(e);
-		}
-		// Open once the choices are filled in, so typing is never overwritten.
-		versionDialog?.showModal();
-	}
-
-	async function addVersion(e: SubmitEvent) {
-		e.preventDefault();
-		vBusy = true;
-		vError = '';
-		try {
-			await api.post(`/titles/${id}/versions`, { label: vLabel.trim(), pick_rules_id: vRules, library_folder_id: vFolder, edition: vEdition.trim(), audio_languages: vAudio.split(/[,\s]+/).filter(Boolean), folder_name: vFolderName });
-			versionDialog?.close();
-			allVersions = true;
-			await load('title');
-		} catch (err) {
-			vError = message(err);
-		} finally {
-			vBusy = false;
-		}
-	}
-
-	async function removeVersion(v: VersionView) {
-		if (!confirm(`Stop keeping the ${v.label} Version of this movie? Files on disk are not touched.`)) return;
-		try {
-			await api.del(`/titles/${id}/versions/${v.id}`);
-			await load('title');
-		} catch (e) {
-			toasts.push(`Couldn't remove Version`, 'fail', { body: message(e) });
-		}
-	}
-
-	// Choose a release: the confirm dialog and the turn-down dialog.
-	let chooseDialog: HTMLDialogElement | undefined = $state();
-	let turnDialog: HTMLDialogElement | undefined = $state();
-	let target = $state<ReleaseView | null>(null);
-	let forceReasons = $state<string[]>([]);
-	let chooseError = $state('');
-	let choosing = $state(false);
-	let turnReason = $state('');
-	// The Slot a choice goes to: the picked Version, the one the Release
-	// matched, or the only one the movie has.
-	const targetSlotId = $derived(slotPick || target?.slot_id || (title?.slots.length === 1 ? title.slots[0].id : 0));
-	const targetSlot = $derived(title?.slots.find((s) => s.id === targetSlotId));
-	const warnings = $derived(target ? chooseWarnings(target, targetSlot?.state) : []);
-	const needsForce = $derived(!!target && (target.needs_force || forceReasons.length > 0));
-
-	function askChoose(r: ReleaseView) {
-		target = r;
-		forceReasons = [];
-		chooseError = '';
-		chooseDialog?.showModal();
-	}
-
-	async function choose() {
-		if (!target) return;
-		choosing = true;
-		chooseError = '';
-		try {
-			const body: Record<string, unknown> = { force: needsForce };
-			if (targetSlotId) body.slot_id = targetSlotId;
-			const ch = await api.post<Choice>(`/releases/${target.id}/choose`, body);
-			chooseDialog?.close();
-			toasts.push('Sent to Downloader', 'ok', ch.warnings.length ? { body: ch.warnings.length === 1 ? ch.warnings[0] : `${ch.warnings.length} warnings` } : undefined);
-			await load();
-		} catch (e) {
-			if (e instanceof ApiError && e.status === 409 && e.body.needs_force) {
-				forceReasons = (e.body.reasons as string[] | undefined) ?? ['it did not pass'];
-			} else {
-				chooseError = message(e);
-			}
-		} finally {
-			choosing = false;
-		}
-	}
-
-	function askTurnDown(r: ReleaseView) {
-		target = r;
-		turnReason = '';
-		chooseError = '';
-		turnDialog?.showModal();
-	}
-
-	async function turnDown(e: SubmitEvent) {
-		e.preventDefault();
-		if (!target) return;
-		choosing = true;
-		try {
-			await api.post(`/releases/${target.id}/turn-down`, turnReason.trim() ? { reason: turnReason.trim() } : undefined);
-			turnDialog?.close();
-			toasts.push('Release turned down', 'ok', { body: 'Never picked for this movie' });
-			await load('releases');
-		} catch (err) {
-			chooseError = message(err);
-		} finally {
-			choosing = false;
-		}
-	}
-
-	function pickSlot(v: number) {
-		slotPick = v;
-		relOffset = 0;
-		void load('releases');
-	}
-
+	const versionsFlowCtx = {
+		get title() { return title; },
+		get rules() { return editFlow.rules; },
+		set rules(v) { editFlow.rules = v; },
+		get id() { return id; },
+		get allVersions() { return allVersions; },
+		set allVersions(v) { allVersions = v; },
+		load,
+	};
+	const versionsFlow = createTitleVersions(versionsFlowCtx);
+	const chooseFlowCtx = {
+		get slotPick() { return slotPick; },
+		set slotPick(v) { slotPick = v; },
+		get title() { return title; },
+		load,
+		get relOffset() { return relOffset; },
+		set relOffset(v) { relOffset = v; },
+	};
+	const chooseFlow = createTitleChoose(chooseFlowCtx);
 	function goPage(off: number | null) {
 		if (off === null) return;
 		relOffset = off;
@@ -305,152 +183,34 @@
 		return () => offs.forEach((off) => off());
 	});
 
-	// Rename and delete (5.1.4, 5.1.6).
-	let renameDialog: HTMLDialogElement | undefined = $state();
-	let renameOpen = $state(false);
-	let deleteDialog: HTMLDialogElement | undefined = $state();
-	let delFiles = $state(false);
-	let delNever = $state(false);
-	let delPlan = $state<RemovePlan | null>(null);
-	let delError = $state('');
-	let delBusy = $state(false);
-	let delAsk = 0;
-
-	function openRename() {
-		renameOpen = true;
-		renameDialog?.showModal();
-	}
-
-	async function planDelete() {
-		const ask = ++delAsk;
-		delError = '';
-		try {
-			const p = await api.post<RemovePlan>(`/titles/${id}/delete`, { delete_files: delFiles, never_add: delNever, apply: false });
-			if (ask === delAsk) delPlan = p;
-		} catch (e) {
-			if (ask === delAsk) delError = message(e);
-		}
-	}
-
-	function openDelete() {
-		delFiles = false;
-		delNever = false;
-		delPlan = null;
-		deleteDialog?.showModal();
-		void planDelete();
-	}
-
-	async function doDelete() {
-		delBusy = true;
-		delError = '';
-		try {
-			const p = await api.post<RemovePlan>(`/titles/${id}/delete`, { delete_files: delFiles, never_add: delNever, apply: true });
-			deleteDialog?.close();
-			toasts.push(`${p.name} deleted`, 'ok', { body: p.held.length ? `Files kept${p.holding_days ? ` ${p.holding_days} days` : ' in the holding folder'}` : 'Files stay on disk' });
-			await goto(to(crumbFor(title?.kind ?? 'movie').path));
-		} catch (e) {
-			delError = message(e);
-			if (e instanceof ApiError && e.body.plan) delPlan = e.body.plan as RemovePlan;
-		} finally {
-			delBusy = false;
-		}
-	}
-
-	let failing = $state(0);
-	async function markFailed(downloadID: number) {
-		if (!confirm('Mark this download failed? Its Release is turned down, it is removed from the Downloader and HolyArrs looks for the next Release.')) return;
-		failing = downloadID;
-		try {
-			await api.post(`/downloads/${downloadID}/mark-failed`);
-			toasts.push('Marked failed', 'ok', { body: 'Searching for the next Release' });
-			await load('title');
-		} catch (e) {
-			toasts.push(`Couldn't mark failed`, 'fail', { body: message(e) });
-		} finally {
-			failing = 0;
-		}
-	}
-
-	async function searchNow(pick = true) {
-		searching = true;
-		try {
-			const body: Record<string, unknown> = {};
-			if (!pick) body.choose = false;
-			if (slotPick) body.slot_id = slotPick;
-			const r = await api.post<{ job_ids: number[] }>(`/titles/${id}/search`, body);
-			running = [...new Set([...running, ...r.job_ids])];
-			relOffset = 0;
-			toasts.push('Searching for a Release', 'info', pick ? undefined : { body: 'Pick one from the list' });
-		} catch (e) {
-			toasts.push(`Couldn't start search`, 'fail', { body: message(e) });
-		} finally {
-			setTimeout(() => (searching = false), 1500);
-		}
-	}
-
-	// More › Choose a release: bring the Releases section into view and start
-	// the same pick-it-yourself search as its own button.
-	function chooseRelease() {
-		const h = document.getElementById('h-rel');
-		h?.closest('section')?.scrollIntoView({ behavior: reducedMotion() ? 'auto' : 'smooth', block: 'start' });
-		h?.focus({ preventScroll: true });
-		void searchNow(false);
-	}
-
-	/** dlKind maps a download state to the pill that says it. */
+	// Rename and delete.
+	const removeFlowCtx = {
+		get id() { return id; },
+		get title() { return title; },
+	};
+	const removeFlow = createTitleRemove(removeFlowCtx);
+	/** Maps a download state to the pill that says it. */
 	function dlKind(state: string, active: boolean): StatusKind {
 		if (active) return 'downloading';
 		const t = downloadTone(state);
 		return t === 'ok' ? 'in_library' : t === 'fail' ? 'failed' : t === 'idle' ? 'requested' : 'missing';
 	}
+	const searchFlowCtx = {
+		load,
+		get searching() { return searching; },
+		set searching(v) { searching = v; },
+		get slotPick() { return slotPick; },
+		get id() { return id; },
+		get running() { return running; },
+		set running(v) { running = v; },
+		get relOffset() { return relOffset; },
+		set relOffset(v) { relOffset = v; },
+		get refreshing() { return refreshing; },
+		set refreshing(v) { refreshing = v; },
+		get title() { return title; },
+	};
+	const searchFlow = createTitleSearch(searchFlowCtx);
 
-	async function refresh() {
-		refreshing = true;
-		try {
-			await api.post(`/titles/${id}/refresh`);
-			toasts.push(`Refreshing ${title?.name ?? 'title'}`, 'info', { body: 'Names, dates and posters' });
-		} catch (e) {
-			toasts.push(`Couldn't refresh`, 'fail', { body: message(e) });
-		} finally {
-			setTimeout(() => (refreshing = false), 1500);
-		}
-	}
-
-	async function openEdit() {
-		if (!title) return;
-		editError = '';
-		eRules = title.pick_rules_id ?? 0;
-		eGate = title.release_gate;
-		eDelay = title.gate_delay_days;
-		eKeep = title.keep_up_to_date;
-		editing = true;
-		editDialog?.showModal();
-		if (!rules.length) {
-			try {
-				rules = (await api.get<{ pick_rules: PickRulesView[] }>('/pick-rules')).pick_rules.filter((r) => !r.kinds.length || r.kinds.includes('movie'));
-			} catch (e) {
-				editError = message(e);
-			}
-		}
-	}
-
-	async function saveEdit(e: SubmitEvent) {
-		e.preventDefault();
-		saving = true;
-		editError = '';
-		try {
-			const body: Record<string, unknown> = { release_gate: eGate, gate_delay_days: Number(eDelay) || 0, keep_up_to_date: eKeep };
-			if (eRules) body.pick_rules_id = eRules;
-			const r = await api.put<{ title: TitleView }>(`/titles/${id}`, body);
-			title = r.title;
-			editDialog?.close();
-			toasts.push(`${title?.name ?? 'Title'} saved`, 'ok');
-		} catch (err) {
-			editError = message(err);
-		} finally {
-			saving = false;
-		}
-	}
 
 	// The hero: breadcrumb, meta line, badges from the kept files, status and menus.
 	const crumbs = $derived(
@@ -474,25 +234,25 @@
 	const manage = $derived(session.can('manage_library'));
 	// Manager actions live in the hero's ⋯ menu; the Library section holds the rest.
 	const heroItems = $derived<MenuItem[]>([
-		{ label: 'Search now', icon: 'search', onselect: () => searchNow(), disabled: searching },
-		{ label: 'Choose a release', icon: 'grid', onselect: chooseRelease, disabled: searching },
+		{ label: 'Search now', icon: 'search', onselect: () => searchFlow.searchNow(), disabled: searching },
+		{ label: 'Choose a release', icon: 'grid', onselect: searchFlow.chooseRelease, disabled: searching },
 		{ label: 'Keep up to date', checked: !!title?.keep_up_to_date, disabled: saving, onselect: () => title && setKeep(!title.keep_up_to_date) },
 		{ kind: 'separator' },
-		{ label: 'Edit', icon: 'tools', onselect: openEdit },
-		{ label: 'Rename files', icon: 'copy', onselect: openRename },
-		{ label: 'Add a Version', icon: 'plus', onselect: openVersion },
-		{ label: 'Refresh details', icon: 'refresh', onselect: refresh, disabled: refreshing },
+		{ label: 'Edit', icon: 'tools', onselect: editFlow.openEdit },
+		{ label: 'Rename files', icon: 'copy', onselect: removeFlow.openRename },
+		{ label: 'Add a Version', icon: 'plus', onselect: versionsFlow.openVersion },
+		{ label: 'Refresh details', icon: 'refresh', onselect: searchFlow.refresh, disabled: refreshing },
 		{ label: 'All history', icon: 'clock', href: to(`/downloads/history?title=${id}`) },
 		{ kind: 'separator' },
-		{ label: 'Delete movie', icon: 'trash', destructive: true, onselect: openDelete }
+		{ label: 'Delete movie', icon: 'trash', destructive: true, onselect: removeFlow.openDelete }
 	]);
-	// Report a problem (#95): anyone, once the movie has a file; members get it as their only More item.
+	// Report a problem: anyone, once the movie has a file; members get it as their only More item.
 	let reportOpen = $state(false);
 	const mayReport = $derived(!!title && files.length > 0);
 	const moreItems = $derived<MenuItem[]>([...(manage ? heroItems : []), ...(mayReport ? [...(manage ? [{ kind: 'separator' as const }] : []), { label: 'Report a problem', icon: 'alert' as const, onselect: () => (reportOpen = true) }] : [])]);
 	function toLibrary() {
 		const h = document.getElementById('h-library');
-		h?.closest('section')?.scrollIntoView({ behavior: reducedMotion() ? 'auto' : 'smooth', block: 'start' });
+		scrollToStart(h?.closest('section'));
 	}
 
 	async function setKeep(v: boolean) {
@@ -529,9 +289,9 @@
 {#if shared(title)}
 	{#key title.id}<TitlePage kind={title.kind} tmdb={String(title.ids.tmdb)} libraryId={title.id} backHref={page.url.searchParams.has('returnTo') ? libraryBack : undefined} />{/key}
 {:else if title.kind === 'show'}
-	<ShowPage {title} onchange={(t) => (title = t)} {error} onretry={() => load('title')} />
+	<ShowPage askSheet={askShowSheet} quickAsk={quickAskSheet} {title} onchange={(t) => (title = t)} {error} onretry={() => load('title')} />
 {:else if title.kind === 'artist'}
-	<ArtistPage {title} onchange={(t) => (title = t)} {error} onretry={() => load('title')} />
+	<ArtistPage sheets={artistSheets} {title} onchange={(t) => (title = t)} {error} onretry={() => load('title')} />
 {:else}
 	<div class="tp">
 		<TitleHero
@@ -575,7 +335,7 @@
 							<span class="small muted">{percent(d.progress)}{#if d.speed > 0} · {bytes(d.speed)}/s{/if}{#if timeLeft(d.eta)} · {timeLeft(d.eta)}{/if}</span>{/if}
 						<p class="tp-dl-text" data-testid="download-text">{d.text}</p>
 						{#if d.active && manage}
-							<Button class="tp-btn" size="sm" variant="plain" onclick={() => markFailed(d.id)} busy={failing === d.id}>Mark failed</Button>
+							<Button class="tp-btn" size="sm" variant="plain" onclick={() => searchFlow.markFailed(d.id)} busy={searchFlow.failing === d.id}>Mark failed</Button>
 						{/if}
 					</div>
 				{/each}
@@ -584,7 +344,7 @@
 
 		{#if error}<LoadError hasData message={error} onretry={() => load()} />{/if}
 
-		<TitleRows kind="movie" tmdb={title.ids?.tmdb}>
+		<TitleRows kind="movie" tmdb={title.ids?.tmdb} quickAsk={quickAskSheet}>
 			{#snippet middle()}{#key title!.id}<TitleCast titleId={title!.id} />{/key}{/snippet}
 		</TitleRows>
 
@@ -629,13 +389,13 @@
 							{#if title!.versions.length > 1}
 								<Button variant="plain" aria-expanded={allVersions} aria-controls="movie-versions" onclick={() => (allVersions = !allVersions)}>{allVersions ? 'Show less' : `See all ${title!.versions.length}`}</Button>
 							{/if}
-							<Button icon="search" onclick={() => searchNow()} disabled={searching} busy={searching} data-testid="search-now">Search now</Button>
-							<Button icon="plus" onclick={openVersion}>Add a Version</Button>
+							<Button icon="search" onclick={() => searchFlow.searchNow()} disabled={searching} busy={searching} data-testid="search-now">Search now</Button>
+							<Button icon="plus" onclick={versionsFlow.openVersion}>Add a Version</Button>
 						</div>
 					{/snippet}
 					<ul class="tp-list tp-vrow" id="movie-versions" aria-label="Versions">
 						{#each title.versions as v (v.id)}
-							{@const s = slotOf(v)}
+							{@const s = versionsFlow.slotOf(v)}
 							{@const f = s?.file}
 							<li class="tp-row" data-testid="version" hidden={!allVersions && v.id !== leadVersion(title.versions)}>
 								<div class="tp-row-main">
@@ -661,7 +421,7 @@
 								<div class="tp-row-end">
 									{#if s}<span class="chip {tone(s.state)}">{s.state_label}</span>{/if}
 									{#if !v.main}
-										<Menu label="Version actions for {v.label}" items={[{ label: `Remove ${v.label}`, icon: 'trash', destructive: true, onselect: () => removeVersion(v) }]} width={220} />
+										<Menu label="Version actions for {v.label}" items={[{ label: `Remove ${v.label}`, icon: 'trash', destructive: true, onselect: () => versionsFlow.removeVersion(v) }]} width={220} />
 									{/if}
 								</div>
 							</li>
@@ -684,7 +444,7 @@
 					{#if title.slots.length > 1}
 						<div class="field slot-pick">
 							<label for="slot-pick">Version</label>
-							<select id="slot-pick" class="input" value={slotPick} onchange={(e) => pickSlot(Number(e.currentTarget.value))}>
+							<select id="slot-pick" class="input" value={slotPick} onchange={(e) => chooseFlow.pickSlot(Number(e.currentTarget.value))}>
 								<option value={0}>Every Version</option>
 								{#each title.slots as s (s.id)}<option value={s.id}>{s.version || 'Main'}</option>{/each}
 							</select>
@@ -697,7 +457,7 @@
 					{#if releases.length === 0}
 						{#if !running.length}
 							<p class="small muted">No search yet. Search to see every release and why it would be picked or not.</p>
-							<Button class="tp-start tp-btn" icon="grid" onclick={() => searchNow(false)} disabled={searching}>Choose a release</Button>
+							<Button class="tp-start tp-btn" icon="grid" onclick={() => searchFlow.searchNow(false)} disabled={searching}>Choose a release</Button>
 						{/if}
 					{:else}
 						<ul class="rels">
@@ -724,9 +484,9 @@
 									{/if}
 									{#if r.state !== 'chosen'}
 										<div class="row rel-actions">
-											<Button onclick={() => askChoose(r)} aria-label="Choose {r.name}">Choose</Button>
+											<Button onclick={() => chooseFlow.askChoose(r)} aria-label="Choose {r.name}">Choose</Button>
 											{#if r.state !== 'turned_down'}
-												<Button variant="plain" onclick={() => askTurnDown(r)} aria-label="Turn down {r.name}">Turn down</Button>
+												<Button variant="plain" onclick={() => chooseFlow.askTurnDown(r)} aria-label="Turn down {r.name}">Turn down</Button>
 											{/if}
 										</div>
 									{/if}
@@ -787,95 +547,95 @@
 </PageLoader>
 {/if}
 
-<dialog bind:this={chooseDialog} aria-labelledby="choose-title" class="modal">
-	{#if target}
-		<h2 id="choose-title" class="h2">{needsForce ? 'Choose it anyway?' : 'Choose this Release?'}</h2>
-		<p class="mono small path" style="margin-top: var(--s-3)">{target.name}</p>
-		<p class="small muted">{facts(target, bytes)}</p>
-		{#if warnings.length || forceReasons.length}
+<dialog bind:this={chooseFlow.chooseDialog} aria-labelledby="choose-title" class="modal">
+	{#if chooseFlow.target}
+		<h2 id="choose-title" class="h2">{chooseFlow.needsForce ? 'Choose it anyway?' : 'Choose this Release?'}</h2>
+		<p class="mono small path" style="margin-top: var(--s-3)">{chooseFlow.target.name}</p>
+		<p class="small muted">{facts(chooseFlow.target, bytes)}</p>
+		{#if chooseFlow.warnings.length || chooseFlow.forceReasons.length}
 			<ul class="warns" data-testid="choose-warnings">
-				{#each warnings as w (w)}<li>{w}</li>{/each}
-				{#each forceReasons as w (w)}<li>It did not pass: {w}.</li>{/each}
+				{#each chooseFlow.warnings as w (w)}<li>{w}</li>{/each}
+				{#each chooseFlow.forceReasons as w (w)}<li>It did not pass: {w}.</li>{/each}
 			</ul>
 		{/if}
-		{#if chooseError}<p class="form-error" role="alert">{chooseError}</p>{/if}
+		{#if chooseFlow.chooseError}<p class="form-error" role="alert">{chooseFlow.chooseError}</p>{/if}
 		<div class="row modal-actions">
-			<Button variant="plain" onclick={() => chooseDialog?.close()}>Cancel</Button>
-			<Button variant="primary" onclick={choose} disabled={choosing} busy={choosing}>{needsForce ? 'Choose anyway' : 'Choose'}</Button>
+			<Button variant="plain" onclick={() => chooseFlow.chooseDialog?.close()}>Cancel</Button>
+			<Button variant="primary" onclick={chooseFlow.choose} disabled={chooseFlow.choosing} busy={chooseFlow.choosing}>{chooseFlow.needsForce ? 'Choose anyway' : 'Choose'}</Button>
 		</div>
 	{/if}
 </dialog>
 
-<dialog bind:this={turnDialog} aria-labelledby="turn-title" class="modal">
-	{#if target}
-		<form onsubmit={turnDown}>
+<dialog bind:this={chooseFlow.turnDialog} aria-labelledby="turn-title" class="modal">
+	{#if chooseFlow.target}
+		<form onsubmit={chooseFlow.turnDown}>
 			<h2 id="turn-title" class="h2">Turn down this Release?</h2>
-			<p class="mono small path" style="margin-top: var(--s-3)">{target.name}</p>
+			<p class="mono small path" style="margin-top: var(--s-3)">{chooseFlow.target.name}</p>
 			<p class="small muted">It won’t be picked again for this movie. You can undo this later.</p>
 			<div class="field" style="margin-top: var(--s-4)">
 				<label for="turn-reason">Why (optional)</label>
-				<input id="turn-reason" class="input" bind:value={turnReason} maxlength="500" />
+				<input id="turn-reason" class="input" bind:value={chooseFlow.turnReason} maxlength="500" />
 			</div>
-			{#if chooseError}<p class="form-error" role="alert">{chooseError}</p>{/if}
+			{#if chooseFlow.chooseError}<p class="form-error" role="alert">{chooseFlow.chooseError}</p>{/if}
 			<div class="row modal-actions">
-				<Button variant="plain" onclick={() => turnDialog?.close()}>Cancel</Button>
-				<Button variant="primary" type="submit" disabled={choosing} busy={choosing}>Turn down</Button>
+				<Button variant="plain" onclick={() => chooseFlow.turnDialog?.close()}>Cancel</Button>
+				<Button variant="primary" type="submit" disabled={chooseFlow.choosing} busy={chooseFlow.choosing}>Turn down</Button>
 			</div>
 		</form>
 	{/if}
 </dialog>
 
-<dialog bind:this={editDialog} aria-labelledby="edit-title" class="modal" onclose={() => (editing = false)}>
-	{#if title && editing}
-		<form onsubmit={saveEdit}>
+<dialog bind:this={editFlow.editDialog} aria-labelledby="edit-title" class="modal" onclose={() => (editFlow.editing = false)}>
+	{#if title && editFlow.editing}
+		<form onsubmit={editFlow.saveEdit}>
 			<h2 id="edit-title" class="h2">Edit {title.name}</h2>
 			<div class="field" style="margin-top: var(--s-5)">
 				<label for="e-rules">Pick rules{title.versions.length > 1 ? ' (main Version)' : ''}</label>
-				<select id="e-rules" class="input" bind:value={eRules}>
-					{#each rules as r (r.id)}<option value={r.id}>{r.name}</option>{/each}
+				<select id="e-rules" class="input" bind:value={editFlow.eRules}>
+					{#each editFlow.rules as r (r.id)}<option value={r.id}>{r.name}</option>{/each}
 				</select>
 			</div>
 			<div class="field">
 				<label for="e-gate">Release gate</label>
-				<select id="e-gate" class="input" bind:value={eGate}>
+				<select id="e-gate" class="input" bind:value={editFlow.eGate}>
 					{#each gates as [g, label] (g)}<option value={g}>{label}</option>{/each}
 				</select>
 			</div>
 			<div class="field">
 				<label for="e-delay">Wait extra days</label>
-				<input id="e-delay" class="input" type="number" min="0" max="365" bind:value={eDelay} />
+				<input id="e-delay" class="input" type="number" min="0" max="365" bind:value={editFlow.eDelay} />
 				<span class="hint">Days to wait after the gate date before looking.</span>
 			</div>
 			<label class="checkline">
-				<input type="checkbox" bind:checked={eKeep} />
+				<input type="checkbox" bind:checked={editFlow.eKeep} />
 				<span><b>Keep up to date</b><br /><span class="hint">HolyArrs looks for it and for a better copy later.</span></span>
 			</label>
-			{#if editError}<p class="form-error" role="alert">{editError}</p>{/if}
+			{#if editFlow.editError}<p class="form-error" role="alert">{editFlow.editError}</p>{/if}
 			<div class="row modal-actions">
-				<Button variant="plain" onclick={() => editDialog?.close()}>Cancel</Button>
+				<Button variant="plain" onclick={() => editFlow.editDialog?.close()}>Cancel</Button>
 				<Button variant="primary" type="submit" disabled={saving} busy={saving}>Save</Button>
 			</div>
 		</form>
 	{/if}
 </dialog>
 
-<dialog bind:this={renameDialog} aria-labelledby="rename-title" class="modal wide" onclose={() => (renameOpen = false)}>
-	{#if title && renameOpen}
+<dialog bind:this={removeFlow.renameDialog} aria-labelledby="rename-title" class="modal wide" onclose={() => (removeFlow.renameOpen = false)}>
+	{#if title && removeFlow.renameOpen}
 		<h2 id="rename-title" class="h2">Rename the files of {title.name}</h2>
 		<p class="small muted">Nothing changes until you press Rename.</p>
 		<RenamePreview titleId={id} onDone={() => load('title')} />
 		<div class="row modal-actions">
-			<Button variant="plain" onclick={() => renameDialog?.close()}>Close</Button>
+			<Button variant="plain" onclick={() => removeFlow.renameDialog?.close()}>Close</Button>
 		</div>
 	{/if}
 </dialog>
 
-<dialog bind:this={deleteDialog} aria-labelledby="delete-title" class="modal wide">
+<dialog bind:this={removeFlow.deleteDialog} aria-labelledby="delete-title" class="modal wide">
 	{#if title}
 		<h2 id="delete-title" class="h2">Delete {title.name}?</h2>
 		<p class="small muted">Nothing has changed yet.</p>
 		<label class="checkline">
-			<input type="checkbox" bind:checked={delFiles} onchange={planDelete} />
+			<input type="checkbox" bind:checked={removeFlow.delFiles} onchange={removeFlow.planDelete} />
 			<span
 				><b>Also delete its files</b><br /><span class="hint"
 					>Files HolyArrs imported or adopted move to the holding folder in their Library folder, and are removed for good after the holding days (7 unless you
@@ -884,81 +644,81 @@
 			>
 		</label>
 		<label class="checkline">
-			<input type="checkbox" bind:checked={delNever} onchange={planDelete} />
+			<input type="checkbox" bind:checked={removeFlow.delNever} onchange={removeFlow.planDelete} />
 			<span
 				><b>Add it to the Never-add list</b><br /><span class="hint">Outside lists can then never add it again. You can still add it yourself.</span></span
 			>
 		</label>
 		<section class="plan" aria-labelledby="plan-title" aria-live="polite" data-testid="delete-plan">
 			<h3 id="plan-title" class="h3">What will happen</h3>
-			{#if !delPlan}
+			{#if !removeFlow.delPlan}
 				<div class="sk" style="height: 60px"></div>
 			{:else}
 				<ul class="warns">
-					{#each deleteSummary(delPlan) as line (line)}<li>{line}</li>{/each}
+					{#each deleteSummary(removeFlow.delPlan) as line (line)}<li>{line}</li>{/each}
 				</ul>
-				{#if delPlan.held.length}
+				{#if removeFlow.delPlan.held.length}
 					<p class="xs muted">To the holding folder:</p>
 					<ul class="files">
-						{#each delPlan.held as f (f.file_id)}<li class="mono xs path">{f.path}</li>{/each}
+						{#each removeFlow.delPlan.held as f (f.file_id)}<li class="mono xs path">{f.path}</li>{/each}
 					</ul>
 				{/if}
-				{#if delPlan.kept.length}
+				{#if removeFlow.delPlan.kept.length}
 					<p class="xs muted">Staying where they are:</p>
 					<ul class="files">
-						{#each delPlan.kept as f (f.file_id)}<li class="xs"><span class="mono path">{f.path}</span> <span class="muted">({f.why})</span></li>{/each}
+						{#each removeFlow.delPlan.kept as f (f.file_id)}<li class="xs"><span class="mono path">{f.path}</span> <span class="muted">({f.why})</span></li>{/each}
 					</ul>
 				{/if}
 			{/if}
 		</section>
-		{#if delError}<p class="form-error" role="alert">{delError}</p>{/if}
+		{#if removeFlow.delError}<p class="form-error" role="alert">{removeFlow.delError}</p>{/if}
 		<div class="row modal-actions">
-			<Button variant="plain" onclick={() => deleteDialog?.close()}>Cancel</Button>
-			<Button variant="destructive" onclick={doDelete} disabled={delBusy || !delPlan} busy={delBusy}>Delete movie</Button>
+			<Button variant="plain" onclick={() => removeFlow.deleteDialog?.close()}>Cancel</Button>
+			<Button variant="destructive" onclick={removeFlow.doDelete} disabled={removeFlow.delBusy || !removeFlow.delPlan} busy={removeFlow.delBusy}>Delete movie</Button>
 		</div>
 	{/if}
 </dialog>
 
-<dialog bind:this={versionDialog} aria-labelledby="version-title" class="modal">
+<dialog bind:this={versionsFlow.versionDialog} aria-labelledby="version-title" class="modal">
 	{#if title}
-		<form onsubmit={addVersion}>
+		<form onsubmit={versionsFlow.addVersion}>
 			<h2 id="version-title" class="h2">Add a Version of {title.name}</h2>
 			<p class="small muted">Another copy, like 4K, with its own Pick rules and folder.</p>
 			<div class="field" style="margin-top: var(--s-5)">
 				<label for="v-label">Version name</label>
-				<input id="v-label" class="input" bind:value={vLabel} maxlength="40" required />
+				<input id="v-label" class="input" bind:value={versionsFlow.vLabel} maxlength="40" required />
 			</div>
 			<div class="field">
                 <label for="v-edition">Movie edition</label>
-                <input id="v-edition" class="input" bind:value={vEdition} maxlength="40" placeholder="For example, Theatrical or Directors Cut" />
+                <input id="v-edition" class="input" bind:value={versionsFlow.vEdition} maxlength="40" placeholder="For example, Theatrical or Directors Cut" />
                 <span class="hint">Leave empty for the existing quality-only choice. An unknown edition needs review before it can fill an edition choice.</span>
             </div>
             <div class="field">
                 <label for="v-audio">Required audio languages</label>
-                <input id="v-audio" class="input" bind:value={vAudio} placeholder="For example, en, ja" />
+                <input id="v-audio" class="input" bind:value={versionsFlow.vAudio} placeholder="For example, en, ja" />
                 <span class="hint">Audio must have every language. Subtitles don’t count.</span>
             </div>
             <div class="field">
                 <label for="v-existing-folder">Existing movie folder (optional)</label>
-                <input id="v-existing-folder" class="input" bind:value={vFolderName} maxlength="200" />
+                <input id="v-existing-folder" class="input" bind:value={versionsFlow.vFolderName} maxlength="200" />
                 <span class="hint">To use a copy you have, name its folder. Leave empty for a new one.</span>
             </div>
             <div class="field">
                 <label for="v-rules">Pick rules for this Version</label>
-				<select id="v-rules" class="input" bind:value={vRules}>
-					{#each rules as r (r.id)}<option value={r.id}>{r.name}</option>{/each}
+				<select id="v-rules" class="input" bind:value={versionsFlow.vRules}>
+					{#each editFlow.rules as r (r.id)}<option value={r.id}>{r.name}</option>{/each}
 				</select>
 			</div>
 			<div class="field">
 				<label for="v-folder">Library folder for this Version</label>
-				<select id="v-folder" class="input" bind:value={vFolder}>
-					{#each movieFolders as f (f.id)}<option value={f.id}>{f.label || f.path} ({f.path})</option>{/each}
+				<select id="v-folder" class="input" bind:value={versionsFlow.vFolder}>
+					{#each versionsFlow.movieFolders as f (f.id)}<option value={f.id}>{f.label || f.path} ({f.path})</option>{/each}
 				</select>
 			</div>
-			{#if vError}<p class="form-error" role="alert">{vError}</p>{/if}
+			{#if versionsFlow.vError}<p class="form-error" role="alert">{versionsFlow.vError}</p>{/if}
 			<div class="row modal-actions">
-				<Button variant="plain" onclick={() => versionDialog?.close()}>Cancel</Button>
-				<Button variant="primary" type="submit" disabled={vBusy || !vLabel.trim()} busy={vBusy}>Add version</Button>
+				<Button variant="plain" onclick={() => versionsFlow.versionDialog?.close()}>Cancel</Button>
+				<Button variant="primary" type="submit" disabled={versionsFlow.vBusy || !versionsFlow.vLabel.trim()} busy={versionsFlow.vBusy}>Add version</Button>
 			</div>
 		</form>
 	{/if}

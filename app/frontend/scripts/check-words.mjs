@@ -1,5 +1,5 @@
 // Fails the build when the app's source or built files use an upstream
-// coined word that glossary.md tells us to avoid.
+// coined word on the banned list.
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, extname } from 'node:path';
 

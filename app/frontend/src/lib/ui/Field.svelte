@@ -1,10 +1,7 @@
 <script lang="ts">
+	// Label, input slot, hint and error text, linked by the input id.
 	import type { Snippet } from 'svelte';
 
-	// One form field: label, the control (input, select or textarea, passed as
-	// children with the same id), an optional hint and an error line. The
-	// control keeps its own name, id and validation; styles live in app.css
-	// (.field, .input, .hint) so every form looks the same.
 	let {
 		id,
 		label,
@@ -24,6 +21,7 @@
 </div>
 
 <style>
+	/* Required star and error text share the failure color. Other field styles are global. */
 	.req { color: var(--fail-text); }
 	.field-error { color: var(--fail-text); font: var(--t-footnote); }
 </style>

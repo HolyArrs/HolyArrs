@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { problem } from './problem.ts';
+import { describe, expect, it } from 'vitest';
 
 const row = (o: Record<string, unknown>) => ({ phase: 'downloading', state: 'downloading', progress: 0.4, text: '', ...o }) as Parameters<typeof problem>[0];
 

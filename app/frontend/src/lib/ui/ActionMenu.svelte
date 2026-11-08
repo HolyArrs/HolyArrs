@@ -1,9 +1,8 @@
 <script lang="ts">
-	import Icon, { type IconName } from '../Icon.svelte';
+	// A glass menu trigger, round or pill, that opens a Menu of items.
+	import Icon, { type IconName } from './Icon.svelte';
 	import Menu, { type MenuItem } from './Menu.svelte';
 
-	// A Menu whose trigger matches ActionButton: a glass pill with its word
-	// and a chevron (Library ▾), or with `round` a 44px glass circle (⋯).
 	let {
 		label,
 		caption,
@@ -14,6 +13,7 @@
 		align = 'start',
 		open = $bindable(false)
 	}: { label: string; caption?: string; icon?: IconName; round?: boolean; items: MenuItem[]; width?: number; align?: 'start' | 'end'; open?: boolean } = $props();
+	// Plain more-dots menus are round, labelled ones are pills.
 	const isRound = $derived(round ?? icon === 'more');
 </script>
 
@@ -34,6 +34,7 @@
 
 <style>
 	.ui-actmenu { display: inline-flex; }
+	/* Restyle the menu trigger to match ActionButton. */
 	.ui-actmenu :global(.ui-pop > .trigger) {
 		position: relative; width: auto; height: 44px; min-width: 44px; padding: 0 16px 0 16px; gap: 8px; justify-content: center;
 		border-radius: 999px; border: 1px solid rgb(255 255 255 / 22%); background: rgb(255 255 255 / 14%); color: #fff;
@@ -54,7 +55,9 @@
 		opacity: 0; transition: opacity var(--dur-fast) var(--ease-out), translate var(--dur-fast) var(--ease-out);
 	}
 	.ui-actmenu :global(.ui-pop > .trigger:hover:not([aria-expanded='true']) .tip) { opacity: 1; translate: -50% 0; transition-delay: 500ms; }
+	/* Touch has no hover, so the label would stick. */
 	@media (hover: none) { .tip { display: none; } }
+	/* Drop the caption on very narrow screens to keep the trigger small. */
 	@media (max-width: 359px) { .cap { display: none; } .ui-actmenu :global(.ui-pop > .trigger) { padding: 0 12px; } }
 	@media (prefers-reduced-motion: reduce) { .ui-actmenu :global(.ui-pop > .trigger:active) { scale: 1; } }
 </style>

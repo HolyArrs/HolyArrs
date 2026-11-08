@@ -7,19 +7,17 @@
 	import Field from '#lib/ui/Field.svelte';
 	import MoreOptions from '#lib/ui/MoreOptions.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
-	import { to } from '#lib/paths.ts';
+	import type { Health } from '#lib/health/index.ts';
 	import { onMount } from 'svelte';
-	import { api, ApiError } from '#lib/api.ts';
-	import { plainMessage as message } from '#lib/settings.ts';
-	import { live } from '#lib/live.svelte.ts';
-	import { ago, bytes, dateTime, duration, words } from '#lib/format.ts';
-	import { session } from '#lib/session.svelte.ts';
-	import { toasts } from '#lib/toasts.svelte.ts';
-	import type { Health } from '#lib/types.ts';
+	import { to } from '#lib/core/paths.ts';
+	import { api, ApiError } from '#lib/core/api.ts';
+	import { plainMessage as message } from '#lib/core/settings.ts';
+	import { live } from '#lib/core/live.svelte.ts';
+	import { ago, bytes, dateTime, duration, words } from '#lib/core/format.ts';
+	import { session } from '#lib/core/session.svelte.ts';
+	import { toasts } from '#lib/core/toasts.svelte.ts';
 
-	// App-wide settings kept here: picture storage, the install count and
-	// History keep times. Autoplay trailers and the sign-in art live on
-	// Appearance; the Trakt keys on Outside lists.
+	// App-wide settings kept here: picture storage, the install count and History keep times. Autoplay trailers and the sign-in art live on Appearance; the Trakt keys on Outside lists.
 	let uiBusy = $state(false);
 	let uiLoaded = $state(false);
 	// Count this install in the metadata server's per-country install total.
@@ -126,8 +124,7 @@
 		}
 	}
 
-	// URL base: the path HolyArrs lives under behind a reverse proxy. A saved
-	// base applies on the next start, unless HOLYARRS_URL_BASE or -url-base is set.
+	// URL base: the path HolyArrs lives under behind a reverse proxy. A saved base applies on the next start, unless HOLYARRS_URL_BASE or -url-base is set.
 	let urlBase = $state<{ saved: string; in_use: string; restart_needed: boolean } | null>(null);
 	let urlBaseTyped = $state('');
 	let urlBaseBusy = $state(false);
@@ -198,7 +195,6 @@
 			</label>
 		</section>
 	{/if}
-
 
 	{#if session.can('settings')}
 		<MoreOptions>
@@ -304,7 +300,7 @@
 	{/if}
 
 	<p class="xs muted" style="margin-top: var(--s-5)">
-		HolyArrs is free software under the GPL-3.0.
+		HolyArrs is free software under the AGPL-3.0.
 	</p>
 {/if}
 

@@ -1,9 +1,8 @@
 <script lang="ts">
-	import { to } from '#lib/paths.ts';
-	import RenamePreview from '#lib/RenamePreview.svelte';
-	import LibraryToolPage from '#lib/LibraryToolPage.svelte';
 	import Button from '#lib/ui/Button.svelte';
-	import { session } from '#lib/session.svelte.ts';
+	import { RenamePreview, LibraryToolPage } from '#lib/mediafiles/index.ts';
+	import { to } from '#lib/core/paths.ts';
+	import { session } from '#lib/core/session.svelte.ts';
 
 	let changeCount = $state(0);
 </script>

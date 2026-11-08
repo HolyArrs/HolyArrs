@@ -6,17 +6,18 @@
 	import Button from '#lib/ui/Button.svelte';
 	import SaveBar from '#lib/ui/SaveBar.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
+	import { checkName, stateWord } from '#lib/health/index.ts';
+	import { refreshSettingsStatus } from '#lib/alerts/index.ts';
+	import type { HealthChecks, HealthSettings } from '#lib/health/index.ts';
+	import { updatePrivacy } from '#lib/updates/index.ts';
 	import { onMount } from 'svelte';
-	import { api } from '#lib/api.ts';
-	import { plainMessage as message } from '#lib/settings.ts';
-	import { live } from '#lib/live.svelte.ts';
-	import { ago } from '#lib/format.ts';
-	import { session } from '#lib/session.svelte.ts';
-	import { toasts } from '#lib/toasts.svelte.ts';
-	import { checkName, stateWord } from '#lib/health.ts';
-	import { refreshSettingsStatus } from '#lib/settings-status.svelte.ts';
-	import type { HealthChecks, HealthSettings, UpdateInfo } from '#lib/types.ts';
-	import { updatePrivacy } from '#lib/update.ts';
+	import { api } from '#lib/core/api.ts';
+	import { plainMessage as message } from '#lib/core/settings.ts';
+	import { live } from '#lib/core/live.svelte.ts';
+	import { ago } from '#lib/core/format.ts';
+	import { session } from '#lib/core/session.svelte.ts';
+	import { toasts } from '#lib/core/toasts.svelte.ts';
+	import type { UpdateInfo } from '#lib/core/types.ts';
 
 	let checks = $state<HealthChecks | null>(null);
 	let settings = $state<HealthSettings | null>(null);
@@ -88,7 +89,7 @@
 			offs.forEach((off) => off());
 		};
 	});
-	/** shortPath keeps the last two parts of a folder path (the full path is in the tooltip); other words stay as they are. */
+	/** Keeps the last two parts of a folder path (the full path is in the tooltip); other words stay as they are. */
 	function shortPath(t: string): string {
 		if (!/[\\/]/.test(t)) return t;
 		const parts = t.split(/[\\/]/).filter(Boolean);

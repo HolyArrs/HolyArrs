@@ -1,27 +1,22 @@
 <script lang="ts">
-	// Settings home (Luis, 2026-11-06, design settings-views v4): five group
-	// cards in a Bento grid over the blurred wall of this Library's posters.
-	// Each card shows what lives inside it and opens on its first page (a zoom
-	// on wider screens, a push on phones). My account is in the account menu.
-	import { to } from '#lib/paths.ts';
-	import Icon from '#lib/Icon.svelte';
+	// Settings home: five group cards in a Bento grid over the blurred wall of this Library's posters. Each card shows what lives inside it and opens on its first page (a zoom on wider screens, a push on phones). My account is in the account menu.
+	import Icon from '#lib/ui/Icon.svelte';
+	import SettingsTile from '#lib/ui/SettingsTile.svelte';
+	import PageHeader from '#lib/ui/PageHeader.svelte';
+	import EmptyState from '#lib/ui/EmptyState.svelte';
+	import { searchSettings, settingIndex, type SettingEntry } from './(home)/settings-search.ts';
+	import GroupArt from './(home)/GroupArt.svelte';
+	import { homeArt } from './(home)/art.svelte.ts';
+	import { cancelOpen, push, settingsNav, zoomBack, zoomOpen, clearFlight } from './(home)/zoom.ts';
+	import { partsNow, offPartName } from '#lib/mediafiles/index.ts';
+	import { settingsNow, groupState, stateWords, type GroupState } from '#lib/alerts/index.ts';
 	import { page } from '$app/state';
 	import { goto, preloadData } from '$app/navigation';
 	import { onMount, tick } from 'svelte';
-	import SettingsTile from '#lib/ui/SettingsTile.svelte';
-	import { grouped, groups as allGroups, sections as all, visible } from '#lib/settings.ts';
-	import { searchSettings, settingIndex, type SettingEntry } from '#lib/settings-search.ts';
-	import { session } from '#lib/session.svelte.ts';
-	import { partsNow } from '#lib/parts.svelte.ts';
-	import { offPartName } from '#lib/parts.ts';
-	import { settingsNow } from '#lib/settings-status.svelte.ts';
-	import { groupState, stateWords, type GroupState } from '#lib/settings-status.ts';
-	import PageHeader from '#lib/ui/PageHeader.svelte';
-	import EmptyState from '#lib/ui/EmptyState.svelte';
-	import GroupArt from '#lib/settings-home/GroupArt.svelte';
-	import { homeArt } from '#lib/settings-home/art.svelte.ts';
-	import { settingsFind } from '#lib/settings-home/find.svelte.ts';
-	import { cancelOpen, push, settingsNav, zoomBack, zoomOpen, clearFlight } from '#lib/settings-home/zoom.ts';
+	import { to } from '#lib/core/paths.ts';
+	import { grouped, groups as allGroups, sections as all, visible } from '#lib/core/settings.ts';
+	import { session } from '#lib/core/session.svelte.ts';
+	import { settingsFind } from '#lib/core/settings-find.svelte.ts';
 
 	const sections = $derived(visible(all, session.can).filter((section) => !offPartName(partsNow.answer, section.href)));
 	const groups = $derived(grouped(sections).filter((g) => g.group.id !== 'account'));
@@ -48,8 +43,7 @@
 
 	let home = $state<HTMLElement>();
 
-	// The next page is fetched as soon as the pointer or focus reaches a card,
-	// so by the time the zoom lands it is ready to mount under the sheet.
+	// The next page is fetched as soon as the pointer or focus reaches a card, so by the time the zoom lands it is ready to mount under the sheet.
 	const loads = new Map<string, Promise<unknown>>();
 	function warm(href: string): Promise<unknown> {
 		let p = loads.get(href);
@@ -155,9 +149,7 @@
 </div>
 
 <style>
-	/* Desktop: a compact landing, at most 640px tall and 1180px wide, centred.
-	   On short windows it shrinks to fit (main's 24px top and 64px bottom
-	   padding taken out), so it never scrolls. */
+	/* Desktop: a compact landing, at most 640px tall and 1180px wide, centred. On short windows it shrinks to fit (main's 24px top and 64px bottom padding taken out), so it never scrolls. */
 	/* Desktop: the grid sits in the middle of the window, across and down, and grows with it (no scroll). */
 	.sx-home { display: flex; flex-direction: column; justify-content: center; width: 100%; max-width: min(1480px, calc((100dvh - var(--topbar) - 88px) * 1.9)); margin-inline: auto; margin-bottom: -40px; height: calc(100dvh - var(--topbar) - 48px); min-height: 420px; }
 	.lede { margin: -14px 0 22px; color: var(--text-muted); font: var(--t-body); }
@@ -169,14 +161,13 @@
 
 	.fix { display: inline-flex; align-items: center; gap: 2px; min-height: 44px; padding: 0 6px 0 12px; color: var(--accent-text); font: var(--t-callout); font-weight: 600; }
 
-	/* ---------- Bento: Library tall on the left, four around it ---------- */
+	/* Bento: Library tall on the left, four around it. */
 	.bento { flex: 0 1 auto; height: min(820px, 100%); display: grid; grid-template-columns: 1.35fr 1fr 1fr; grid-template-rows: minmax(150px, 1fr) minmax(150px, 1fr); gap: 14px; min-height: 0; }
 	.sx-card { position: relative; display: block; min-width: 0; border-radius: var(--r-panel); color: var(--text); text-decoration: none; -webkit-tap-highlight-color: transparent; }
 	.sx-card[data-group='library'] { grid-row: span 2; }
 	.sx-card:focus-visible { outline: none; }
 	.sx-card:focus-visible .sx-face { box-shadow: var(--focus-ring), 0 1px 2px rgb(0 0 0 / 0.12); }
-	/* The link box never moves (so the pointer never slips off its edge and
-	   the hover never flickers); the face inside it lifts. */
+	/* The link box never moves (so the pointer never slips off its edge and the hover never flickers); the face inside it lifts. */
 	.sx-face {
 		position: absolute; inset: 0; display: block; overflow: hidden; padding: 24px; border-radius: inherit;
 		/* Status-plate glass: see-through, frosted, with a lit top edge. */
@@ -228,7 +219,7 @@
 		.sx-card:hover .art-hold :global(.sx-art) { transform: none; }
 	}
 
-	/* Search results */
+	/* Search results. */
 	.results { margin: 0; border-radius: var(--r-panel); background: color-mix(in srgb, var(--surface-1) 90%, transparent); box-shadow: 0 0 0 1px var(--line); padding: 6px; }
 	.results li + li { border-top: 1px solid var(--line); }
 	.row-link { display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 8px 12px; border-radius: var(--r-btn); transition: background var(--dur-fast) var(--ease-out); }

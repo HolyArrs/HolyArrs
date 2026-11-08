@@ -1,6 +1,4 @@
-// The Downloads column system: which columns exist, their default order,
-// visibility and width, and how a person's own layout is kept in this browser
-// (versioned, so an older saved shape still loads). Pure, so it can be tested.
+// The Downloads column system: which columns exist, their default order, visibility and width, and how a person's layout is kept in this browser. Versioned so an older saved shape still loads. Pure, so it can be tested.
 
 export type ColId =
 	| 'poster'
@@ -24,64 +22,23 @@ export interface ColDef {
 	/** Shown on a first visit and after Reset. */
 	on: boolean;
 	width: number;
-	/** Right-aligned numbers. */
 	num?: boolean;
-	/** Torrent-only: Usenet rows show a dash. */
+	/** Torrent-only; Usenet rows show a dash. */
 	torrent?: boolean;
-	/** The Downloaders do not send this yet: listed in the picker, but cannot be shown. */
+	/** Not sent by the Downloaders yet: listed in the picker but cannot be shown. */
 	missing?: boolean;
-	/** One width, no resize grip: its cell is one compact line. */
+	/** One width, no resize grip. */
 	fixed?: boolean;
 }
 
-// Each default width is its widest usual content plus 14px of air, measured in the app's
-// font (12px cells, 11px second lines and headers), so a fresh table reads as auto-fitted:
-// no column wider than what it shows. Poster, Type and Downloader snap to their own sizes.
-export const COLUMNS: ColDef[] = [
-	// Seven on by default, each filled on nearly every row. Time left lives under the Progress bar;
-	// the finished date lives in the pane's Dates.
-	{ id: 'poster', label: 'Poster', on: true, width: 32 },
-	// Off by default: the poster and the title's second line already say movie, show or music.
-	{ id: 'kind', label: 'Type', on: false, width: 24 },
-	{ id: 'title', label: 'Title', on: true, width: 310 },
-	{ id: 'proto', label: 'Downloader', on: true, width: 24 },
-	// The bar, with "↓ 12.4 MB/s · 1 h 20 min left" under it.
-	{ id: 'progress', label: 'Progress', on: true, width: 130 },
-	// "Downloading" with "Files did not match" under it.
-	{ id: 'status', label: 'Status', on: true, width: 120 },
-	// "957 MB", "12.5 GB".
-	{ id: 'size', label: 'Size', on: true, width: 60, num: true },
-	// An initial and a two-word name.
-	{ id: 'requested', label: 'Requested by', on: true, width: 112 },
-	// "2160p HDR".
-	{ id: 'quality', label: 'Quality', on: false, width: 80 },
-	// "12 min ago".
-	{ id: 'added', label: 'Added', on: false, width: 76, num: true },
-	// The torrent column: seeds, peers and the ratio on one compact line; its header sorts by any of the three.
-	{ id: 'swarm', label: 'Swarm', on: false, width: 132, torrent: true, fixed: true },
-	// "tracker.torrentleech.org".
-	{ id: 'tracker', label: 'Tracker', on: false, width: 150, torrent: true },
-	// The Source (indexer) it was found on, the same word as Settings > Sources: "TorrentLeech".
-	{ id: 'source', label: 'Source', on: false, width: 96 },
-	// "movies-radarr".
-	{ id: 'category', label: 'Category', on: false, width: 96 }
-];
-
-export const COL: Record<ColId, ColDef> = Object.fromEntries(COLUMNS.map((c) => [c.id, c])) as Record<ColId, ColDef>;
-export const IDS: ColId[] = COLUMNS.map((c) => c.id);
-const isId = (v: unknown): v is ColId => typeof v === 'string' && v in COL;
-
-export const MAX_W = 3000;
-export const MIN_W = 40;
-
 export interface Layout {
-	/** Every column, in the person's order (hidden ones too). */
+	/** Every column in the person's order, hidden ones included. */
 	order: ColId[];
 	hidden: ColId[];
 	widths: Record<ColId, number>;
-	/** The person set the Title width; until then it gives way when room is short. */
+	/** Set once the person sizes the Title; until then it gives way when room is short. */
 	titleSet?: boolean;
-	/** The column the list is sorted by, and which way; none keeps the tab's own order. */
+	/** The sorted column and direction; none keeps the tab's own order. */
 	sort?: Sort;
 }
 
@@ -95,11 +52,43 @@ export interface Sort {
 	facet?: SwarmFacet;
 }
 
+// Each default width is the widest usual content plus 14px, measured in the app font (12px cells, 11px second lines and headers), so a fresh table reads as auto-fitted. Poster, Type and Downloader snap to their own sizes.
+export const COLUMNS: ColDef[] = [
+	// Seven columns are on by default, each filled on nearly every row. Time left sits under the Progress bar and the finished date lives in the pane's Dates.
+	{ id: 'poster', label: 'Poster', on: true, width: 32 },
+	// Off by default: the poster and the title's second line already say movie, show or music.
+	{ id: 'kind', label: 'Type', on: false, width: 24 },
+	{ id: 'title', label: 'Title', on: true, width: 310 },
+	{ id: 'proto', label: 'Downloader', on: true, width: 24 },
+	{ id: 'progress', label: 'Progress', on: true, width: 130 },
+	{ id: 'status', label: 'Status', on: true, width: 120 },
+	{ id: 'size', label: 'Size', on: true, width: 60, num: true },
+	{ id: 'requested', label: 'Requested by', on: true, width: 112 },
+	{ id: 'quality', label: 'Quality', on: false, width: 80 },
+	{ id: 'added', label: 'Added', on: false, width: 76, num: true },
+	// Seeds, peers and ratio on one line; the header sorts by any of the three.
+	{ id: 'swarm', label: 'Swarm', on: false, width: 132, torrent: true, fixed: true },
+	{ id: 'tracker', label: 'Tracker', on: false, width: 150, torrent: true },
+	// The indexer it was found on, the same word as Settings > Sources.
+	{ id: 'source', label: 'Source', on: false, width: 96 },
+	{ id: 'category', label: 'Category', on: false, width: 96 }
+];
+
+export const COL: Record<ColId, ColDef> = Object.fromEntries(COLUMNS.map((c) => [c.id, c])) as Record<ColId, ColDef>;
+export const IDS: ColId[] = COLUMNS.map((c) => c.id);
+const isId = (v: unknown): v is ColId => typeof v === 'string' && v in COL;
+
+export const MAX_W = 3000;
+export const MIN_W = 40;
+
 export const KEY = 'holyarrs.downloads.layout';
-/** The first shape: widths only, keyed title/bar/st/size/time. */
+
+/** The first saved shape: widths only. */
 export const OLD_KEY = 'holyarrs.downloads.columns';
+
 export const VERSION = 3;
-/** The widths version 2 gave by default: a saved width still at one of them takes the new default. */
+
+/** Widths version 2 gave by default; a saved width still at one of them takes the new default. */
 const V2_WIDTHS: Partial<Record<ColId, number>> = { poster: 52, kind: 84, proto: 60, progress: 120, status: 150, size: 100, requested: 130, quality: 90, added: 90, tracker: 140, source: 120, category: 100 };
 
 export function defaults(): Layout {
@@ -112,8 +101,7 @@ export function defaults(): Layout {
 
 const width = (v: unknown, d: number) => (typeof v === 'number' && Number.isFinite(v) ? Math.round(Math.max(MIN_W, Math.min(MAX_W, v))) : d);
 
-/** normalize keeps every known column once, drops unknown ones, and appends
- *  columns added since the layout was saved in their default spot. */
+/** Keeps every known column once, drops unknown ones, and adds columns introduced since the save in their default spot. */
 export function normalize(v: Partial<Layout> | null | undefined): Layout {
 	const d = defaults();
 	if (!v || typeof v !== 'object') return d;
@@ -125,7 +113,6 @@ export function normalize(v: Partial<Layout> | null | undefined): Layout {
 		const after = IDS.slice(0, at).reverse().find((p) => order.includes(p));
 		order.splice(after ? order.indexOf(after) + 1 : 0, 0, id);
 	}
-	// Columns added since the layout was saved start as their default says.
 	const saved = Array.isArray(v.order) ? (v.order as unknown[]) : [];
 	const hidden = Array.isArray(v.hidden) ? IDS.filter((id) => (v.hidden as unknown[]).includes(id) || (saved.length > 0 && !saved.includes(id) && !COL[id].on)) : d.hidden;
 	const w = (v.widths ?? {}) as Record<string, unknown>;
@@ -136,19 +123,19 @@ export function normalize(v: Partial<Layout> | null | undefined): Layout {
 	return { order, hidden, widths, titleSet: v.titleSet === true, sort };
 }
 
-/** load reads the saved layout; with none, it carries over the first shape's widths. */
+/** Reads the saved layout; with none, carries over the first shape's widths. */
 export function load(raw: string | null, oldRaw: string | null): Layout {
 	try {
 		const v = raw ? JSON.parse(raw) : null;
 		if (v && typeof v === 'object' && v.v === VERSION) return normalize(v);
-		// A version 2 layout keeps its order, visibility and sort; widths left at version 2's defaults take the tighter ones.
+		// A version 2 layout keeps its order, visibility and sort; widths left at version 2 defaults take the tighter ones.
 		if (v && typeof v === 'object' && v.v === 2) {
 			const w = { ...((v.widths ?? {}) as Record<string, unknown>) };
 			for (const [id, d] of Object.entries(V2_WIDTHS)) if (w[id] === d) delete w[id];
 			return normalize({ ...v, widths: w as Record<ColId, number> });
 		}
 	} catch {
-		/* unreadable: fall through */
+		/* Unreadable: fall through. */
 	}
 	const d = defaults();
 	try {
@@ -158,7 +145,7 @@ export function load(raw: string | null, oldRaw: string | null): Layout {
 			for (const [from, to] of map) d.widths[to] = width(o[from], d.widths[to]);
 		}
 	} catch {
-		/* nothing usable */
+		/* Nothing usable. */
 	}
 	return d;
 }
@@ -167,19 +154,19 @@ export function dump(l: Layout): string {
 	return JSON.stringify({ v: VERSION, order: l.order, hidden: l.hidden, widths: l.widths, titleSet: !!l.titleSet, sort: l.sort });
 }
 
-/** visible is the columns on screen, in order (never one the Downloaders do not send). */
+/** The columns on screen in order, never one the Downloaders do not send. */
 export function visible(l: Layout): ColId[] {
 	return l.order.filter((id) => !l.hidden.includes(id) && !COL[id].missing);
 }
 
-/** move puts column `id` at index `to` of the full order. */
+/** Puts column `id` at index `to` of the full order. */
 export function move(order: ColId[], id: ColId, to: number): ColId[] {
 	const rest = order.filter((x) => x !== id);
 	const at = Math.max(0, Math.min(rest.length, to));
 	return [...rest.slice(0, at), id, ...rest.slice(at)];
 }
 
-/** moveVisible drops `id` before visible column number `slot` (slot = count: at the end). */
+/** Drops `id` before visible column number `slot`; slot equal to the count means the end. */
 export function moveVisible(l: Layout, id: ColId, slot: number): ColId[] {
 	const vis = visible(l).filter((x) => x !== id);
 	if (slot >= vis.length) {
@@ -193,10 +180,9 @@ export function toggle(l: Layout, id: ColId): ColId[] {
 	return l.hidden.includes(id) ? l.hidden.filter((x) => x !== id) : [...l.hidden, id];
 }
 
-/** nextSort is a header click: a new column sorts up (numbers and dates
- *  start high), the same column flips, and a third click clears it. */
+/** A header click: a new column sorts up (numbers and dates start high), the same column flips, a third click clears. */
 export function nextSort(cur: Sort | undefined, id: ColId, facet?: SwarmFacet): Sort | undefined {
-	// Swarm sorts by one of its three facets; a new facet starts high first, the same facet flips, then clears.
+	// Swarm sorts by one of three facets; a new facet starts high, the same facet flips, then clears.
 	if (id === 'swarm') {
 		const f = facet ?? cur?.facet ?? 'seeds';
 		if (!cur || cur.id !== id || cur.facet !== f) return { id, desc: true, facet: f };
@@ -209,7 +195,7 @@ export function nextSort(cur: Sort | undefined, id: ColId, facet?: SwarmFacet): 
 	return undefined;
 }
 
-/** sortRows orders rows by one key; empty values (null, undefined, '') go last either way. */
+/** Orders rows by one key; empty values go last either way. */
 export function sortRows<T>(rows: T[], key: (r: T) => number | string | null | undefined, desc: boolean): T[] {
 	const empty = (v: unknown) => v == null || v === '' || (typeof v === 'number' && !Number.isFinite(v));
 	return rows
@@ -222,7 +208,7 @@ export function sortRows<T>(rows: T[], key: (r: T) => number | string | null | u
 		.map((x) => x.r);
 }
 
-/** quality reads a Release name: "2160p HDR", "1080p DV", "720p" ('' when it says nothing). */
+/** Reads a Release name: "2160p HDR", "1080p DV", "720p", or '' when it says nothing. */
 export function quality(name: string | undefined): string {
 	const n = (name ?? '').toLowerCase();
 	if (!n) return '';
@@ -233,18 +219,18 @@ export function quality(name: string | undefined): string {
 	return [res, tag].filter(Boolean).join(' ');
 }
 
-/** swarmNum keeps a seed or peer count to four characters: 9999, then "10k". */
+/** Keeps a seed or peer count to four characters: 9999, then "10k". */
 export function swarmNum(n: number | undefined | null): string {
 	const v = Math.max(0, n ?? 0);
 	return v >= 10000 ? `${Math.round(v / 1000)}k` : String(v);
 }
 
-/** ratioText keeps a ratio to four characters: 0.51, 12.3, 120. */
+/** Keeps a ratio to four characters: 0.51, 12.3, 120. */
 export function ratioText(r: number): string {
 	return r >= 100 ? r.toFixed(0) : r >= 10 ? r.toFixed(1) : r.toFixed(2);
 }
 
-/** shortAge says how old a post is: "5 h", "3 d", "2 y" ('' when unknown). */
+/** How old a post is: "5 h", "3 d", "2 y", or '' when unknown. */
 export function shortAge(iso: string | undefined, now = Date.now()): string {
 	const t = iso ? Date.parse(iso) : NaN;
 	if (!Number.isFinite(t)) return '';

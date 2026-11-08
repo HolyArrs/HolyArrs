@@ -2,7 +2,7 @@
 # Word check over plans\ and the screens (3.6.6), run beside the repo.
 # CI cannot see the plans folder (it is not in the repo), so this runs the
 # same check locally with the plans folder required: the web app source,
-# docs, README, openapi.json and ../plans must use no word glossary.md
+# docs, README, openapi.json and ../plans must use no banned word
 # lists under Avoid. Exit 0 clean, non-zero with file:line for each hit.
 set -e
 cd "$(dirname "$0")/../../.."

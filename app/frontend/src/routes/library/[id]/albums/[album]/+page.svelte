@@ -1,16 +1,9 @@
 <script lang="ts">
+	import '#lib/ui/title-page.css';
 	import PageLoader from '#lib/ui/PageLoader.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import IconButton from '#lib/ui/IconButton.svelte';
-	import { to } from '#lib/paths.ts';
-	// One album: its tracks with their state, every Pressing MusicBrainz
-	// lists, its History, and for the staff Keep up to date, which Pressing
-	// is used, Rename files for the album and Delete for the album or a track.
-	import { page } from '$app/state';
-	import { goto } from '$app/navigation';
-	import { api, message } from '#lib/api.ts';
-	import EmptyState from '#lib/EmptyState.svelte';
-	import { tone } from '#lib/format.ts';
+	import EmptyState from '#lib/ui/TitleEmpty.svelte';
 	import TitleHero from '#lib/ui/TitleHero.svelte';
 	import ActionButton from '#lib/ui/ActionButton.svelte';
 	import ActionMenu from '#lib/ui/ActionMenu.svelte';
@@ -18,27 +11,27 @@
 	import TitleSection from '#lib/ui/TitleSection.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import Menu from '#lib/ui/Menu.svelte';
-	import Icon from '#lib/Icon.svelte';
-	import CompactRow from '#lib/history-looks/CompactRow.svelte';
-	import { isRoutine } from '#lib/history-looks/dirs.ts';
+	import Icon from '#lib/ui/Icon.svelte';
 	import Shelf from '#lib/ui/Shelf.svelte';
 	import WideCard from '#lib/ui/WideCard.svelte';
-	import { crumbFor } from '#lib/title-page.ts';
-	import { audienceStatus } from '#lib/title-status.ts';
-	import { reducedMotion } from '#lib/motion.ts';
-	import '#lib/title-page.css';
-	import { groupDownloads } from '#lib/history.ts';
-	import RenamePreview from '#lib/RenamePreview.svelte';
-	import { session } from '#lib/session.svelte.ts';
-	import ShowDeleteDialog from '#lib/ShowDeleteDialog.svelte';
-	import ShowReleases from '#lib/ShowReleases.svelte';
-	import { toasts } from '#lib/toasts.svelte.ts';
-	import { albumCover, albumKind, albumStateOf, albumYear, pressingLabel, trackLength } from '#lib/music/music.ts';
-	import { NO_SONGS_LINE, TRACK_REASK_MS, sleep, trackListView } from '#lib/music/reask.ts';
+	import { audienceStatus } from '#lib/ui/title-status.ts';
 	import { SkTrackRow } from '#lib/ui/sk/index.ts';
-	import type { AlbumSummary, EventPage, EventRecord, PressingView, TitleView, TrackView } from '#lib/types.ts';
-	import ReportSheet from '#lib/reports/ReportSheet.svelte';
-	import { hasFile } from '#lib/reports.ts';
+	import { HistoryLine as CompactRow, isRoutine, groupDownloads } from '#lib/downloads/index.ts';
+	import { crumbFor, RenamePreview, ShowDeleteDialog, ShowReleases } from '#lib/mediafiles/index.ts';
+	import { albumCover, albumKind, albumStateOf, albumYear, pressingLabel, trackLength, NO_SONGS_LINE, TRACK_REASK_MS, sleep, trackListView } from '#lib/music/index.ts';
+	import type { PressingView, TrackView } from '#lib/music/index.ts';
+	import { ReportSheet, hasFile } from '#lib/requests/index.ts';
+	import { page } from '$app/state';
+	import { goto } from '$app/navigation';
+	import { to } from '#lib/core/paths.ts';
+	import { api, message } from '#lib/core/api.ts';
+	import { tone } from '#lib/core/format.ts';
+	import { scrollToStart } from '#lib/core/motion.ts';
+	import { session } from '#lib/core/session.svelte.ts';
+	import { toasts } from '#lib/core/toasts.svelte.ts';
+	import type { AlbumSummary, EventPage, EventRecord, TitleView } from '#lib/core/types.ts';
+
+	// One album: its tracks with their state, every Pressing MusicBrainz lists, its History, and for the staff Keep up to date, which Pressing is used, Rename files for the album and Delete for the album or a track.
 
 	const titleId = $derived(Number(page.params.id));
 	const albumId = $derived(Number(page.params.album));
@@ -102,7 +95,7 @@
 						return;
 					}
 				} catch {
-					/* keep what is shown and try again */
+					/* Keep what is shown and try again. */
 				}
 			}
 		} catch {
@@ -177,12 +170,12 @@
 		{ kind: 'separator' },
 		{ label: 'Delete album', icon: 'trash', destructive: true, onselect: () => deleter?.open({ albumId, label: album?.name ?? 'Album' }) }
 	]);
-	// Report a problem (#95): anyone, once a track of the album has a file; members get it as their only More item.
+	// Report a problem: anyone, once a track of the album has a file; members get it as their only More item.
 	let reportOpen = $state(false);
 	const mayReport = $derived(!!artist && (tracks ?? []).some(hasFile));
 	const moreItems = $derived<MenuItem[]>([...(staff ? heroItems : []), ...(mayReport ? [...(staff ? [{ kind: 'separator' as const }] : []), { label: 'Report a problem', icon: 'alert' as const, onselect: () => (reportOpen = true) }] : [])]);
 	function toLibrary() {
-		document.getElementById('album-library')?.scrollIntoView({ behavior: reducedMotion() ? 'auto' : 'smooth', block: 'start' });
+		scrollToStart(document.getElementById('album-library'));
 	}
 
 	// Search now lets HolyArrs pick; Choose a release lists every Release.
@@ -352,7 +345,6 @@
 				{/each}
 			</Shelf>
 		{/if}
-
 
 		{#if staff}
 			<Sheet bind:open={listing} title="Choose a release" description={scope.label} size="lg">

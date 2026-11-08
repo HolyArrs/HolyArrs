@@ -1,5 +1,5 @@
-import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { place } from './tip.ts';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
 
 const box = (left: number, top: number, width: number, height: number) => ({ left, top, width, height, right: left + width, bottom: top + height }) as DOMRect;
 

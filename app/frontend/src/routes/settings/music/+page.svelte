@@ -5,14 +5,14 @@
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import SaveBar from '#lib/ui/SaveBar.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
-	// Settings > Music: what a new artist gets by default, which Pressing is
-	// used for an album, and where MusicBrainz answers come from.
+	import { albumChoices, extraKinds, mainKinds, newAlbumChoices, pressingRules, pressingStatuses, toggle } from '#lib/music/index.ts';
+	import type { MusicSettings } from '#lib/music/index.ts';
 	import { onMount } from 'svelte';
-	import { api } from '#lib/api.ts';
-	import { plainMessage as message } from '#lib/settings.ts';
-	import { toasts } from '#lib/toasts.svelte.ts';
-	import { albumChoices, extraKinds, mainKinds, newAlbumChoices, pressingRules, pressingStatuses, toggle } from '#lib/music/music.ts';
-	import type { MusicSettings } from '#lib/types.ts';
+	import { api } from '#lib/core/api.ts';
+	import { plainMessage as message } from '#lib/core/settings.ts';
+	import { toasts } from '#lib/core/toasts.svelte.ts';
+
+	// Settings > Music: what a new artist gets by default, which Pressing is used for an album, and where MusicBrainz answers come from.
 
 	let settings = $state<MusicSettings>({
 		album_choice: 'all',

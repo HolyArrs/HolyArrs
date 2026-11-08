@@ -1,9 +1,9 @@
 <script lang="ts">
-	import { askedByDated, askedByTip, firstName, initial, shortDate, WORDS, type Asker } from '../askedby.ts';
+	// A short "asked by" line that opens a list of who asked and when.
+	import { askedByDated, askedByTip, firstName, initial, shortDate, WORDS, type Asker } from './asked-by.ts';
 
-	// Asked by on the title page: "Asked by Ana · 12 Oct" under the title.
-	// It opens to the full list when more than one person asked.
 	let { askers }: { askers: Asker[] } = $props();
+	// Escape closes the list before any outer dialog sees it.
 	let open = $state(false);
 	const id = $props.id();
 	const line = $derived(askedByDated(askers));
@@ -13,7 +13,6 @@
 {#if askers.length}
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div class="asked" data-testid="asked-by-line" onkeydown={(e) => e.key === 'Escape' && open && ((open = false), e.stopPropagation())}>
-		<!-- A popover button: the detail opens by click, tap or keyboard (no hover-only tooltip). -->
 		<button type="button" class="t" aria-expanded={open} aria-controls="{id}-pop" onclick={() => (open = !open)}>{line}</button>
 		{#if open}
 			<div class="pop" id="{id}-pop">
@@ -30,7 +29,7 @@
 
 <style>
 	.asked { display: flex; flex-direction: column; gap: 6px; }
-	/* It sits in the hero's status line, on the page background: page colours, not white on art. */
+	/* Reset the button so it reads as dotted text. */
 	.t { all: unset; font: 500 14px/1.35 var(--font-ui); color: var(--text-muted); }
 	.t { cursor: pointer; text-decoration: underline dotted currentColor; text-underline-offset: 3px; }
 	.t:focus-visible { box-shadow: var(--focus-ring); border-radius: 4px; }
@@ -38,6 +37,6 @@
 	.pop p { margin: 0; font: var(--t-caption); }
 	ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
 	li { display: flex; align-items: center; gap: 8px; font: var(--t-caption); }
-	.d { margin-left: auto; padding-left: 12px; opacity: 0.7; }
 	.face { width: 18px; height: 18px; display: grid; place-items: center; border-radius: 50%; font: 700 10px/1 var(--font-ui); background: var(--accent); color: var(--on-art); }
+	.d { margin-left: auto; padding-left: 12px; opacity: 0.7; }
 </style>

@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { albumHref, artistHref, artistKind, countryName, initialsOf, coverFor, haveLine, kindWord, length, owned, shelves, withCover, type PageAlbum } from './music-pages.ts';
+import { describe, expect, it } from 'vitest';
 
 const al = (over: Partial<PageAlbum>): PageAlbum => ({ mbid: 'm', name: 'N', type: 'album', secondary_types: [], shelf: 'albums', image: '', ...over });
 

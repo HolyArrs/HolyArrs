@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { assignTileColours, preferredColour, RECENT, TILE_FIXED, TILE_PALETTE, tileSlug } from './tile-palette.ts';
+import { describe, expect, it } from 'vitest';
 
 // WCAG relative luminance and contrast, for the white name on a tile.
 const lin = (c: number) => {
@@ -35,7 +35,7 @@ const distance = (a: string, b: string) => {
 const LIGHT_BG = '#ffffff';
 const DARK_BG = '#0b0b0c';
 
-// The keys the server sends (rowtpl.BrowseLayout), in its order.
+// The keys the server sends, in its order.
 const GENRES = ['pop', 'hip-hop', 'rock', 'latin', 'rnb', 'country', 'dance', 'indie', 'alternative', 'metal', 'kpop', 'afro', 'jazz', 'classical', 'soul-funk', 'folk', 'reggae', 'blues', 'punk', 'christian', 'soundtracks', 'kids'].map((k) => `genre:${k}`);
 const MOODS = ['chill', 'party', 'love', 'sad', 'happy', 'focus', 'workout', 'sleep', 'romance', 'energy', 'throwback', 'feel-good'].map((k) => `mood:${k}`);
 const SEASONS = ['halloween', 'christmas', 'new-year', 'valentines', 'summer', 'dia-de-muertos', 'lunar-new-year', 'pride', 'thanksgiving', 'back-to-school', 'fall', 'spring'].map((k) => `season:${k}`);

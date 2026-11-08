@@ -6,19 +6,18 @@
 	import AdminLinkButton from '#lib/ui/AdminLinkButton.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
-	import { to } from '#lib/paths.ts';
+	import { emptyFilter, levelTone, levelWord, logQuery, pageWords, type LogFilter, type LogPage } from '#lib/health/index.ts';
 	import { onMount } from 'svelte';
-	import { api } from '#lib/api.ts';
-	import { plainMessage as message } from '#lib/settings.ts';
-	import { dateTime } from '#lib/format.ts';
-	import { emptyFilter, levelTone, levelWord, logQuery, pageWords, type LogFilter, type LogPage } from '#lib/logs.ts';
+	import { to } from '#lib/core/paths.ts';
+	import { api } from '#lib/core/api.ts';
+	import { plainMessage as message } from '#lib/core/settings.ts';
+	import { dateTime } from '#lib/core/format.ts';
 
 	let filter = $state<LogFilter>(emptyFilter());
 	let result = $state<LogPage | null>(null);
 	let error = $state('');
 	let busy = $state(false);
-	// The filter the shown lines answer; a quick second change (Level right
-	// after Show) must not let an older answer land on top of a newer one.
+	// The filter the shown lines answer; a quick second change (Level right after Show) must not let an older answer land on top of a newer one.
 	let shown = $state('');
 	let seq = 0;
 

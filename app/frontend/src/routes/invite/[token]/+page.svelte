@@ -1,16 +1,13 @@
 <script lang="ts">
 	import Button from '#lib/ui/Button.svelte';
 	import IconButton from '#lib/ui/IconButton.svelte';
-	import { to } from '#lib/paths.ts';
+	import { theme, alreadyLinked, inviteTiles, type Way, SigninBackdrop, SigninPortals } from '#lib/accounts/index.ts';
 	import { onDestroy, onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
-	import { api, ApiError, message } from '#lib/api.ts';
-	import { session, type SignInResult } from '#lib/session.svelte.ts';
-	import { theme } from '#lib/theme.svelte.ts';
-	import { alreadyLinked, inviteTiles, type Way } from '#lib/signinArt.ts';
-	import SigninBackdrop from '#lib/SigninBackdrop.svelte';
-	import SigninPortals from '#lib/SigninPortals.svelte';
+	import { to } from '#lib/core/paths.ts';
+	import { api, ApiError, message } from '#lib/core/api.ts';
+	import { session, type SignInResult } from '#lib/core/session.svelte.ts';
 
 	const MIN_LENGTH = $derived(session.s.minPassword);
 	const linkPart = $derived(page.params.token ?? '');
@@ -50,7 +47,7 @@
 		try {
 			invite = await api.get<{ role: string; max_rating?: string }>(`/auth/invites/${encodeURIComponent(linkPart)}`);
 		} catch (e) {
-			// A gone link (404/410) asks for a new one; anything else is worth a retry.
+			// A gone link (404 or 410) asks for a new one; anything else is worth a retry.
 			gone = e instanceof ApiError && (e.status === 404 || e.status === 410) ? 'gone' : message(e) || "Couldn't open this invite. Try again.";
 		}
 	});
@@ -70,7 +67,7 @@
 		try {
 			sessionStorage.setItem('holyarrs-2fa-ticket', r.ticket);
 		} catch {
-			// no storage: the sign-in page asks for the name and password again
+			// No storage: the sign-in page asks for the name and password again.
 		}
 		await goto(to('/login'), { replace: true });
 	}
@@ -140,7 +137,7 @@
 		try {
 			const p = await session.invitePlexStart(linkPart);
 			if (win) {
-				win.opener = null; // the Plex page cannot reach back into HolyArrs
+				win.opener = null; // The Plex page cannot reach back into HolyArrs.
 				win.location.href = p.auth_url;
 			} else window.open(p.auth_url, '_blank', 'noopener');
 			plexWaiting = true;
@@ -278,8 +275,7 @@
 </main>
 
 <style>
-	/* The sign-in page's frame (routes/login): one full-bleed wallpaper, an inset edge frame, and the
-	   card on hairline glass. The page stays dark in light mode too; the card turns to light glass. */
+	/* The sign-in page's frame (routes/login): one full-bleed wallpaper, an inset edge frame, and the card on hairline glass. The page stays dark in light mode too; the card turns to light glass. */
 	.wrap {
 		position: relative;
 		min-height: 100dvh;
@@ -345,7 +341,7 @@
 	.form-error a { color: inherit; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
 	.back { margin: 16px 0 0; text-align: center; font: var(--t-subhead); }
 	.back a { color: rgb(255 255 255 / 0.78); text-decoration: underline; text-underline-offset: 3px; }
-	/* Provider tiles, "or", the text link and the Plex wait: the sign-in page's looks (routes/login). */
+	/* Provider tiles, "or", the text link and the Plex wait share the sign-in page's looks (routes/login). */
 	.provs { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); }
 	.prov {
 		display: flex;

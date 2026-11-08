@@ -6,16 +6,16 @@
 	import SettingsLinks from '#lib/ui/SettingsLinks.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Button from '#lib/ui/Button.svelte';
-	import { onMount } from 'svelte';
-	import { api, ApiError } from '#lib/api.ts';
-	import { plainMessage as message } from '#lib/settings.ts';
-	import { toasts } from '#lib/toasts.svelte.ts';
-	import Icon from '#lib/Icon.svelte';
+	import Icon from '#lib/ui/Icon.svelte';
 	import TestTag from '#lib/ui/TestTag.svelte';
-	import { session } from '#lib/session.svelte.ts';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
-	import SsoCard from '#lib/signin/SsoCard.svelte';
+	import { SsoCard } from '#lib/accounts/index.ts';
+	import { onMount } from 'svelte';
+	import { api, ApiError } from '#lib/core/api.ts';
+	import { plainMessage as message } from '#lib/core/settings.ts';
+	import { toasts } from '#lib/core/toasts.svelte.ts';
+	import { session } from '#lib/core/session.svelte.ts';
 
 	let skipLocal = $state(false);
 	let loaded = $state(false);
@@ -33,7 +33,6 @@
 	let savingHosts = $state(false);
 	const netList = () => nets.split(/[\s,]+/).filter(Boolean);
 	let savingRequire = $state(false);
-
 
 	function strongNote(e: unknown): string {
 		return e instanceof ApiError && e.status === 403 ? 'Sign in with your password to change this.' : message(e);
@@ -115,7 +114,7 @@
 			try {
 				win?.close();
 			} catch {
-				// the window may already be gone
+				// The window may already be gone.
 			}
 		}
 	}

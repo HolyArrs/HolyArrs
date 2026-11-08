@@ -2,11 +2,11 @@
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Button from '#lib/ui/Button.svelte';
-	import { api } from '#lib/api.ts';
-	import { plainMessage as message } from '#lib/settings.ts';
-	import { session } from '#lib/session.svelte.ts';
-	import { toasts } from '#lib/toasts.svelte.ts';
-	import { isConfirm, type Confirm } from '#lib/controls.ts';
+	import { isConfirm, type Confirm } from '#lib/setup/index.ts';
+	import { api } from '#lib/core/api.ts';
+	import { plainMessage as message } from '#lib/core/settings.ts';
+	import { session } from '#lib/core/session.svelte.ts';
+	import { toasts } from '#lib/core/toasts.svelte.ts';
 
 	const allowed = $derived(session.can('users'));
 	let busy = $state('');
@@ -17,7 +17,7 @@
 
 	const stopped = (r: unknown) => (gone = (r as { text?: string })?.text ?? 'HolyArrs is stopping.');
 
-	/** app sends a whole-app control; the server always asks first, and the second step waits on this page. */
+	/** Sends a whole-app control; the server always asks first, and the second step waits on this page. */
 	async function app(how: 'restart' | 'safe-mode' | 'shutdown', label: string) {
 		const key = `app-${how}`;
 		busy = key;

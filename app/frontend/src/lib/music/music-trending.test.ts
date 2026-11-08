@@ -1,8 +1,8 @@
-import { describe, expect, it } from 'vitest';
-import { ApiError } from '../api.ts';
-import { matchOwned, ownedIndex } from '../explore.ts';
+import { matchOwned, ownedIndex } from '#lib/ui/title-cards.ts';
 import { fetchMusicExplore, fetchMusicExploreMore, fetchMusicTrend, listeners, releaseWords, musicCardHref, musicCardNote, musicTrendCards, newFromYourArtists, type MusicTrendAnswer } from './music-trending.ts';
-import type { TitleView } from '../types.ts';
+import { describe, expect, it } from 'vitest';
+import { ApiError } from '../core/api.ts';
+import type { TitleView } from '../core/types.ts';
 
 const bts = '0d79fe8e-ba27-4859-bb8c-2f255f346853';
 const arirang = '21159e3f-172e-43f6-aa7d-8e06a81fea49';

@@ -1,7 +1,8 @@
-import { describe, expect, it } from 'vitest';
-import { kindOf, rowPath, type DownloadRow } from '../downloaders.ts';
+import { kindOf, rowPath } from './downloaders.ts';
 import { counts, stageOf, statusWord, TABS } from './status-tabs.ts';
 import { historyStatus } from './sections.ts';
+import { describe, expect, it } from 'vitest';
+import { type DownloadRow } from '../core/types.ts';
 
 const item = (over: Partial<DownloadRow>): DownloadRow => ({
 	id: -1_000_000_000, phase: 'done', state: 'seeding', label: 'Done', text: '', progress: 1, speed: 0, active: false, name: 'Linux.ISO', title: '',

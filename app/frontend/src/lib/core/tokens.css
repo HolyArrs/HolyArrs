@@ -1,0 +1,295 @@
+/* HolyArrs design tokens.
+   Light is the default; dark follows the system unless the person picks one.
+   Every older variable name stays as an alias so existing pages keep working. */
+
+/* Values that do not change between light and dark. */
+:root {
+  --font-display: 'Geist Variable', 'Geist', -apple-system, BlinkMacSystemFont, 'SF Pro Display', ui-sans-serif, system-ui, sans-serif;
+  --font-ui: 'Geist Variable', 'Geist', -apple-system, BlinkMacSystemFont, 'SF Pro Text', ui-sans-serif, system-ui, 'Segoe UI', sans-serif;
+  /* No monospace face anywhere; code, paths and log lines use the app font. */
+  --font-mono: 'Geist Variable', 'Geist', -apple-system, BlinkMacSystemFont, 'SF Pro Text', ui-sans-serif, system-ui, 'Segoe UI', sans-serif;
+  --font-features: 'ss01' 0, 'cv11' 0;
+  --tracking-body: -0.006em;
+
+  /* On artwork: controls and text over a poster or backdrop look the same in
+     light and dark, because the art under them is always darkened. */
+  --on-art: #fff;
+  --on-art-ink: #111;
+  --on-art-soft: rgb(255 255 255 / 90%);
+  --on-art-muted: rgb(255 255 255 / 84%);
+  --on-art-fill: rgb(255 255 255 / 16%);
+  --on-art-fill-hover: rgb(255 255 255 / 28%);
+  --on-art-fill-strong: rgb(255 255 255 / 86%);
+  --on-art-ring: rgb(255 255 255 / 22%);
+  --on-art-scrim: rgb(0 0 0 / 86%);
+  --on-art-scrim-mid: rgb(0 0 0 / 55%);
+  --on-art-scrim-none: rgb(0 0 0 / 0%);
+  /* Status glyphs on artwork: bright enough on dark glass in both themes. */
+  --ok-on-art: #30d158;
+  --info-on-art: #64b5ff;
+  --wait-on-art: #ffb340;
+  --fail-on-art: #ff6961;
+  /* Solid card badges over artwork (same in both themes: they sit on pictures).
+     Library status circles; each fill carries its own glyph colour. */
+  --mark-have: #1f9d48;
+  --mark-dl: #4f46e5;
+  --mark-ask: #f0a020;
+  --mark-ask-ink: #2a1a00;
+  --mark-no: #d92d20;
+  --mark-ink: #fff;
+  --mark-ring: rgb(0 0 0 / 22%);
+
+  /* Type scale (spec). Each is a font shorthand; pair with its tracking. */
+  --t-large-title: 700 34px / 1.12 var(--font-display);
+  --t-large-title-track: -0.022em;
+  --t-title1: 700 28px / 1.15 var(--font-display);
+  --t-title1-track: -0.02em;
+  --t-title2: 700 22px / 1.2 var(--font-display);
+  --t-title2-track: -0.018em;
+  --t-title3: 600 19px / 1.25 var(--font-display);
+  --t-title3-track: -0.014em;
+  --t-headline: 600 16px / 1.35 var(--font-ui);
+  --t-body: 400 15px / 1.5 var(--font-ui);
+  --t-callout: 400 14px / 1.4 var(--font-ui);
+  --t-subhead: 500 13px / 1.35 var(--font-ui);
+  --t-footnote: 500 12px / 1.3 var(--font-ui);
+  --t-caption: 600 11px / 1.25 var(--font-ui);
+
+  /* Older type names (aliases). */
+  --text-xs: 12px; --text-sm: 14px; --text-base: 15px; --text-md: 16px;
+  --text-xl: 22px; --text-2xl: 28px; --text-3xl: 34px;
+  --leading-tight: 1.2; --leading: 1.5;
+  --weight-regular: 400; --weight-medium: 500; --weight-semibold: 600; --weight-bold: 700;
+  --tracking-display: -0.02em;
+
+  /* Space: 4px grid. */
+  --s-1: 4px; --s-2: 8px; --s-3: 12px; --s-4: 16px; --s-5: 20px;
+  --s-6: 24px; --s-8: 32px; --s-10: 40px; --s-12: 48px; --s-16: 64px;
+  --gutter: clamp(16px, 3vw, 40px);
+  --shelf-gap: 16px;
+
+  /* Shape. */
+  --r-sm: 6px; --r-btn: 10px; --r-card: 12px; --r-panel: 16px; --r-modal: 20px; --r-pill: 999px;
+
+  /* Layout. */
+  --tap: 44px;
+  --sidebar-expanded: 260px;
+  --sidebar-collapsed: 72px;
+  --topbar: 56px;
+  --rail: var(--sidebar-collapsed);
+  --sidebar: var(--sidebar-expanded);
+  --poster-ratio: 2 / 3;
+  --wide-ratio: 16 / 9;
+
+  /* Motion. One set for the whole app; every transition and animation uses
+     these (lib/ui/transitions.ts mirrors them for Svelte transitions).
+       --dur-instant  press down
+       --dur-fast     hover and focus colour, tooltips, every exit
+       --dur          menus, popovers, sheets and toasts entering; switches, chevrons, tab pills, small folds
+       --dur-slow     content and pictures fading in, reveals, card lifts and hover zoom, larger folds
+       --dur-page     page to page
+       --dur-glide    bars that follow the scroll (top bar, pinned pills), with --ease-glide
+       --dur-hero     hero moments: photo to video, a hero folding away, art crossfades
+     Longer loops (Ken Burns, slow pans, loaders) are ambient and keep their own pace.
+     Ease: --ease-out for anything entering or changing state, --ease-in for
+     anything leaving (a move a tap started counts as entering: it starts
+     fast), --ease-in-out for crossfades of big art and moves nobody asked
+     for, --ease-spring for a press letting go and pop-ins.
+     Animate transform and opacity only; a fold that must change height uses
+     grid-template-rows on one element, never on many. Reduced motion turns
+     every duration to 1ms: things appear in place, nothing travels. */
+  --dur-instant: 90ms; --dur-fast: 150ms; --dur: 240ms; --dur-slow: 360ms; --dur-page: 300ms;
+  --dur-glide: 420ms; --dur-hero: 900ms;
+  --ease-out: cubic-bezier(.22, 1, .36, 1);
+  --ease-in-out: cubic-bezier(.65, 0, .35, 1);
+  --ease-in: cubic-bezier(.4, 0, 1, 1);
+  --ease-glide: cubic-bezier(.32, .72, 0, 1);
+  --ease-spring: var(--ease-out);
+  --stagger: 30ms;
+  --lift: -3px;
+  --press: .97;
+  --press-round: .92;
+  --press-card: .98;
+  --rise: 8px;
+}
+@supports (transition-timing-function: linear(0, 1)) {
+  :root {
+    --ease-spring: linear(0, 0.06 2%, 0.24 5%, 0.53 9.5%, 0.8 14%, 0.97 19%, 1.04 24%, 1.06 28%, 1.05 33%, 1.02 40%, 1 48%, 0.995 58%, 1);
+  }
+}
+
+/* Light (default). Also usable on any element with data-theme="light". */
+:root, [data-theme='light'] {
+  --bg: #ffffff;
+  --sidebar-bg: rgb(246 246 247 / 86%);
+  --sidebar-solid: #f6f6f7;
+  --surface-1: #ffffff;
+  --surface-2: #f2f2f4;
+  --surface-3: #e9e9ec;
+  --line: rgb(0 0 0 / 8%);
+  --line-strong: rgb(0 0 0 / 16%);
+  --text: #1d1d1f;
+  --text-muted: #6e6e73;
+  --text-faint: #8e8e93;
+  --accent: #e5352b;
+  --accent-soft: rgb(229 53 43 / 10%);
+  --accent-text: #cf2c23;
+  --accent-fill: #d42d24;
+  --accent-fill-hover: #c42a21;
+  --text-on-red: #ffffff;
+  /* A green button under white words (Approve): dark enough in both themes (5.4:1). */
+  --ok-fill: #1f7a35;
+  --ok-fill-hover: #1a6e2e;
+  --ok: #248a3d; --wait: #b25000; --fail: #d70015; --info: #0071e3;
+  --ok-text: #1a6e2e; --wait-text: #8f4000; --fail-text: #b3000f; --info-text: #0068d1;
+  --scrim: rgb(0 0 0 / 40%);
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 6%), 0 4px 12px rgb(0 0 0 / 6%);
+  --shadow-lift: 0 2px 4px rgb(0 0 0 / 8%), 0 12px 28px rgb(0 0 0 / 14%);
+  --shadow-modal: 0 24px 64px rgb(0 0 0 / 24%);
+  --ring-dark: 0 0 0 0 transparent;
+  --seg-thumb: #ffffff;
+  color-scheme: light;
+}
+
+/* Dark: the system choice when nothing is picked… */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --bg: #0b0b0c;
+    --sidebar-bg: rgb(22 22 24 / 86%);
+    --sidebar-solid: #161618;
+    --surface-1: #161618;
+    --surface-2: #1e1e21;
+    --surface-3: #2a2a2e;
+    --line: rgb(255 255 255 / 9%);
+    --line-strong: rgb(255 255 255 / 18%);
+    --text: #f5f5f7;
+    --text-muted: #a1a1a6;
+    --text-faint: #7c7c80;
+    --accent: #ff453a;
+    --accent-soft: rgb(255 69 58 / 16%);
+    --accent-text: #ff453a;
+    --accent-fill: #d42d24;
+    --accent-fill-hover: #c42a21;
+    --text-on-red: #ffffff;
+    /* A green button under white words (Approve): dark enough in both themes (5.4:1). */
+    --ok-fill: #1f7a35;
+    --ok-fill-hover: #1a6e2e;
+    --ok: #30d158; --wait: #ffb340; --fail: #ff6961; --info: #409cff;
+  --ok-text: #30d158; --wait-text: #ffb340; --fail-text: #ff6961; --info-text: #409cff;
+    --scrim: rgb(0 0 0 / 60%);
+    --ring-dark: 0 0 0 1px var(--line);
+  --seg-thumb: #5a5a5f;
+    --shadow-card: 0 1px 2px rgb(0 0 0 / 30%), 0 4px 12px rgb(0 0 0 / 28%), var(--ring-dark);
+    --shadow-lift: 0 2px 4px rgb(0 0 0 / 34%), 0 12px 28px rgb(0 0 0 / 44%), var(--ring-dark);
+    --shadow-modal: 0 24px 64px rgb(0 0 0 / 56%), var(--ring-dark);
+    color-scheme: dark;
+  }
+}
+/* …or picked by the person (theme.svelte.ts), or set on a wrapper (the /ui catalog). */
+:root[data-theme='dark'], [data-theme='dark'] {
+  --bg: #0b0b0c;
+  --sidebar-bg: rgb(22 22 24 / 86%);
+  --sidebar-solid: #161618;
+  --surface-1: #161618;
+  --surface-2: #1e1e21;
+  --surface-3: #2a2a2e;
+  --line: rgb(255 255 255 / 9%);
+  --line-strong: rgb(255 255 255 / 18%);
+  --text: #f5f5f7;
+  --text-muted: #a1a1a6;
+  --text-faint: #7c7c80;
+  --accent: #ff453a;
+  --accent-soft: rgb(255 69 58 / 16%);
+  --accent-text: #ff453a;
+  --accent-fill: #d42d24;
+  --accent-fill-hover: #c42a21;
+  --text-on-red: #ffffff;
+  /* A green button under white words (Approve): dark enough in both themes (5.4:1). */
+  --ok-fill: #1f7a35;
+  --ok-fill-hover: #1a6e2e;
+  --ok: #30d158; --wait: #ffb340; --fail: #ff6961; --info: #409cff;
+  --ok-text: #30d158; --wait-text: #ffb340; --fail-text: #ff6961; --info-text: #409cff;
+  --scrim: rgb(0 0 0 / 60%);
+  --ring-dark: 0 0 0 1px var(--line);
+  --seg-thumb: #5a5a5f;
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 30%), 0 4px 12px rgb(0 0 0 / 28%), var(--ring-dark);
+  --shadow-lift: 0 2px 4px rgb(0 0 0 / 34%), 0 12px 28px rgb(0 0 0 / 44%), var(--ring-dark);
+  --shadow-modal: 0 24px 64px rgb(0 0 0 / 56%), var(--ring-dark);
+  color-scheme: dark;
+}
+
+/* Aliases that point at themed values. Declared on every themed element so a
+   nested data-theme wrapper resolves them against its own colours. */
+:root, [data-theme] {
+  --ha-red: var(--accent);
+  --ha-red-hover: var(--accent-soft);
+  --ha-red-press: var(--accent-fill);
+  --ha-red-deep: var(--accent-fill-hover);
+  --ha-red-soft: var(--accent-soft);
+  --ha-steel: var(--text-faint);
+  --shadow-panel: var(--shadow-card);
+  --focus-ring: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent);
+  /* Silhouette shimmer: a brand-tinted base and one shared sweep. */
+  --sk-base: color-mix(in oklab, var(--surface-2), var(--accent) 3%);
+  --sk-hi: color-mix(in oklab, var(--surface-2), var(--accent) var(--sk-hi-mix, 10%));
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme='light']) { --sk-hi-mix: 8%; } }
+:root[data-theme='dark'], [data-theme='dark'] { --sk-hi-mix: 8%; }
+[data-theme='light'] { --sk-hi-mix: 10%; }
+
+/* Silhouette (lib/ui/sk): every placeholder shares one sweep. The gradient is
+   fixed to the viewport, so all tiles light up together as one band. It is in
+   the layout from the first frame (so nothing moves) and fades in at 150 ms. */
+.sk {
+  display: block; border-radius: var(--r-card);
+  background-color: var(--sk-base);
+  background-image: linear-gradient(100deg, transparent 30%, var(--sk-hi) 50%, transparent 70%);
+  background-size: 200vw 100%; background-repeat: no-repeat; background-attachment: fixed;
+  animation: sk-sweep 1.6s ease-in-out infinite, sk-in var(--dur-fast, 160ms) ease-out 150ms both;
+}
+.sk-line { height: 12px; border-radius: 6px; }
+@keyframes sk-sweep { from { background-position: -200vw 0; } to { background-position: 200vw 0; } }
+@keyframes sk-in { from { opacity: 0; } }
+
+@media (max-width: 767px) {
+  :root { --shelf-gap: 12px; }
+}
+
+/* Page changes (lib/motion.ts): the content cross-fades and rises; the shell stays put. */
+::view-transition-old(root), ::view-transition-new(root) { animation: none; }
+::view-transition-old(page) { animation: vt-out var(--dur-fast) var(--ease-in) both; }
+::view-transition-new(page) { animation: vt-in var(--dur-page) var(--ease-out) both; }
+::view-transition-group(*) { animation-duration: var(--dur-page); animation-timing-function: var(--ease-out); }
+@keyframes vt-out { to { opacity: 0; } }
+@keyframes vt-in { from { opacity: 0; transform: translateY(var(--rise)); } }
+
+/* Shared motion helpers used by lib/motion.ts actions. */
+[data-reveal='wait'] { opacity: 0; transform: translateY(var(--rise)); }
+[data-reveal='in'] {
+  opacity: 1; transform: none;
+  transition: opacity var(--dur-slow) var(--ease-out), transform var(--dur-slow) var(--ease-out);
+}
+[data-press] {
+  transition-property: transform, background-color, color, border-color, box-shadow, opacity;
+  transition-duration: var(--dur), var(--dur-fast), var(--dur-fast), var(--dur-fast), var(--dur-fast), var(--dur-fast);
+  transition-timing-function: var(--ease-spring), var(--ease-out), var(--ease-out), var(--ease-out), var(--ease-out), var(--ease-out);
+}
+[data-press][data-pressed] { transform: scale(var(--press-scale, var(--press))); transition-duration: var(--dur-instant), var(--dur-fast); transition-timing-function: var(--ease-out), var(--ease-out); }
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-instant: 1ms; --dur-fast: 1ms; --dur: 1ms; --dur-slow: 1ms; --dur-page: 1ms; --dur-glide: 1ms; --dur-hero: 1ms;
+    --stagger: 0ms; --lift: 0px; --press: 1; --press-round: 1; --press-card: 1; --rise: 0px;
+  }
+  [data-press][data-pressed] { transform: none; }
+  [data-reveal] { transform: none !important; }
+  /* Silhouette under reduced motion: no sweep, a still tinted tile. */
+  .sk { background-image: none !important; animation: none !important; }
+  ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
+  /* The loader (#hl) is exempt: its ring always spins. */
+  /* 0s, not 1ms: every element's transition-property defaults to all, so a
+     1ms duration would turn every layout change into a transition and paint
+     one stale frame first (the Library list flickered by a screen on scroll).
+     At 0s the end state lands in the same frame and end events still fire. */
+  :not(#hl, #hl *), :not(#hl, #hl *)::before, :not(#hl, #hl *)::after { animation-duration: 0s !important; animation-iteration-count: 1 !important; transition-duration: 0s !important; scroll-behavior: auto !important; }
+}

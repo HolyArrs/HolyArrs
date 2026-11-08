@@ -1,14 +1,10 @@
 <script lang="ts">
-	// Confirm match: torrents added outside HolyArrs that it could not match
-	// to one title for sure. A banner over the Downloads list counts them; the
-	// sheet shows each torrent's looked-up choices with posters. Picking one
-	// adds the title (when missing) and links the torrent, the same as a sure
-	// match. The list is read from HolyArrs only; no outside lookups here.
-	import { api, message } from '../api.ts';
-	import { toasts } from '../toasts.svelte.ts';
-	import Sheet from '../ui/Sheet.svelte';
-	import Button from '../ui/Button.svelte';
+	// Sheet for torrents added outside HolyArrs that could not be matched to one title for sure. Picking a choice adds the title if missing and links the torrent. Reads only from HolyArrs, no outside lookups.
+	import Sheet from '#lib/ui/Sheet.svelte';
+	import Button from '#lib/ui/Button.svelte';
 	import { bannerWords, candidateLine, type Match, type Matches } from './matches.ts';
+	import { api, message } from '../core/api.ts';
+	import { toasts } from '../core/toasts.svelte.ts';
 
 	let { refresh = 0, onchange }: { refresh?: number; onchange?: () => void } = $props();
 
@@ -28,7 +24,7 @@
 		try {
 			data = await api.get<Matches>('/downloads/matches');
 		} catch {
-			// The banner simply stays hidden.
+			// A failed read leaves the banner hidden.
 		}
 	}
 	$effect(() => {

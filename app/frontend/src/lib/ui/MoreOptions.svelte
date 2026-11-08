@@ -1,10 +1,8 @@
 <script lang="ts">
+	// Collapsible section that hides rarely used settings.
 	import type { Snippet } from 'svelte';
-	import Icon from '../Icon.svelte';
+	import Icon from './Icon.svelte';
 
-	// One page-level "More options" disclosure: the rare and technical
-	// settings of a settings page, closed until opened. A search hit inside
-	// opens it (the settings layout opens the nearest details).
 	let { children, label = 'More options', id }: { children: Snippet; label?: string; id?: string } = $props();
 </script>
 
@@ -27,6 +25,7 @@
 		font: var(--t-headline);
 		font-size: 15px;
 	}
+	/* Hides the default Safari arrow; the icon replaces it. */
 	summary::-webkit-details-marker { display: none; }
 	summary:hover { color: var(--text); }
 	summary :global(.icon) { transition: transform var(--dur-fast) var(--ease-out); }

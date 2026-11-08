@@ -1,87 +1,44 @@
 <script lang="ts">
-	import { rebaseBar } from '#lib/scroll-bar.svelte.ts';
-	import { libraryBrief } from '#lib/owned.ts';
-	import { to } from '#lib/paths.ts';
-	import { onMount, tick, untrack } from 'svelte';
-	import { page } from '$app/state';
-	import { afterNavigate, replaceState } from '$app/navigation';
-	import { api, message } from '#lib/api.ts';
-	import { live } from '#lib/live.svelte.ts';
-	import { session } from '#lib/session.svelte.ts';
-	import { partOff, partOn } from '#lib/parts.svelte.ts';
-	import { toasts } from '#lib/toasts.svelte.ts';
-	import { date } from '#lib/format.ts';
-	import { glideScroll, popIn, popOut } from '#lib/ui/transitions.ts';
+	import { createCalendarScroll, type CalendarAnswer } from '#lib/discover/index.ts';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import IconButton from '#lib/ui/IconButton.svelte';
-	import Icon from '#lib/Icon.svelte';
+	import Icon from '#lib/ui/Icon.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
-	import Badge from '#lib/ui/Badge.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import Popover from '#lib/ui/Popover.svelte';
-	import ComingSoon from '#lib/calendar/ComingSoon.svelte';
-	import MiniMonth from '#lib/calendar/MiniMonth.svelte';
-	import FollowWho from '#lib/calendar/FollowWho.svelte';
-	import CalBanner from '#lib/calendar/CalBanner.svelte';
-	import CalListRows from '#lib/calendar/CalListRows.svelte';
-	import { rowWords, DEFAULT_LOOK, type CaptionLook } from '#lib/calendar-captions.ts';
-	import { setFollow } from '#lib/follow.ts';
-	import {
-		byDay,
-		entryKey,
-		readMonthHidden,
-		saveMonthHidden,
-		shiftMonth,
-		shows,
-		entryHref,
-		weekStart,
-		addDays,
-		entryDay,
-		rangeChunks,
-		titlesFromAddress,
-		monthRange,
-		itemDot,
-		oneMovieDate,
-		movieFacts,
-		followsOk,
-		withFollow,
-		readFollows,
-		saveFollows,
-		startFollows,
-		type Follows,
-		type MovieFacts,
-		ymd,
-		readView,
-		saveView,
-		startView,
-		type CalendarView,
-		type TitlesShown
-	} from '#lib/calendar.ts';
-	import type { CalendarEntry, TitleView } from '#lib/types.ts';
+	import { setFollow } from '#lib/ui/follow.ts';
+	import { rebaseBar, ComingSoon, MiniMonth, FollowWho, CalBanner, CalListRows, rowWords, DEFAULT_LOOK, type CaptionLook, byDay, entryKey, readMonthHidden, saveMonthHidden, shows, entryHref, weekStart, addDays, entryDay, rangeChunks, titlesFromAddress, itemDot, oneMovieDate, movieFacts, followsOk, withFollow, readFollows, saveFollows, startFollows, type Follows, type MovieFacts, ymd, readView, saveView, startView, type CalendarView, type TitlesShown } from '#lib/discover/index.ts';
+	import { libraryBrief, partOff, partOn } from '#lib/mediafiles/index.ts';
+	import { onMount, tick } from 'svelte';
+	import { page } from '$app/state';
+	import { replaceState } from '$app/navigation';
+	import { to } from '#lib/core/paths.ts';
+	import { api, message } from '#lib/core/api.ts';
+	import { live } from '#lib/core/live.svelte.ts';
+	import { session } from '#lib/core/session.svelte.ts';
+	import { toasts } from '#lib/core/toasts.svelte.ts';
+	import { date } from '#lib/core/format.ts';
+	import { popIn, popOut } from '#lib/core/transitions.ts';
+	import type { CalendarEntry } from '#lib/core/types.ts';
 
 	const now = new Date();
-	// ?month=2026-10 opens on that month (a link to a month can be shared).
+	// ?month=2026-10 opens on that month, so a link to a month can be shared.
 	const asked = /^(\d{4})-(\d{2})$/.exec(page.url.searchParams.get('month') ?? '');
 	const askedMonth = asked && Number(asked[2]) >= 1 && Number(asked[2]) <= 12 ? new Date(Number(asked[1]), Number(asked[2]) - 1, 1) : null;
-	// Cards (big pictures, day by day) or List (compact rows): ?view=cards|list, kept for the
-	// session; the old layout links (?view=2&span=…) land on Cards.
+	// Cards (big pictures, day by day) or List (compact rows): ?view=cards|list, kept for the session. Old layout links (?view=2&span=...) land on Cards.
 	let view = $state<CalendarView>(startView(page.url.searchParams.get('view'), readView()));
-	// The days shown run from `start` (a year back, or the first of a linked month) to the day
-	// before `end`. Six more weeks load as the end comes near. Both stop a year from today.
+	// The days shown run from `start` (a year back, or the first of a linked month) to the day before `end`. Six more weeks load as the end comes near. Both stop a year from today.
 	const today0 = addDays(now, 0);
 	const REACH = 6;
 	const earliest = addDays(today0, -365);
 	const latest = addDays(today0, 366);
-	// The whole past year loads with the first answer (one quick ask), and the page opens at
-	// today with that year above it, so scrolling up glides like scrolling down: nothing is
-	// ever slipped in above the person. A linked month starts at that month instead.
+	// The whole past year loads with the first answer (one quick ask), and the page opens at today with that year above it, so scrolling up glides like scrolling down and nothing is ever slipped in above the person. A linked month starts at that month.
 	let start = $state(askedMonth ?? earliest);
 	let toTodayOnce = !askedMonth;
-	// False until the page has been put on today (or on the linked month). Until then nothing may
-	// read the scroll position as the day in view: the rows at the top are a year back.
+	// False until the page has been put on today (or on the linked month). Until then nothing may read the scroll position as the day in view: the rows at the top are a year back.
 	let placed = !!askedMonth;
 	let end = $state(addDays(askedMonth ?? today0, 7 * REACH));
 	let entries = $state<CalendarEntry[]>([]);
@@ -89,9 +46,7 @@
 	let loaded = $state(false);
 	let fetching = $state(false);
 	let error = $state('');
-	// One menu ties the calendar to Follow: what you follow (asking for a title follows it),
-	// what anyone on this server follows, or every date in the Library. Picked once the first
-	// dates say how many titles you follow and how many people use the server; kept for the session.
+	// One menu ties the calendar to Follow: what you follow (asking for a title follows it), what anyone on this server follows, or every date in the Library. Picked once the first dates say how many titles you follow and how many people use the server.
 	let follows = $state<Follows>(readFollows() ?? 'mine');
 	let followsSet = false;
 	let myFollows = $state(0);
@@ -111,9 +66,7 @@
 	});
 	const firstDay = $derived(ymd(start));
 	const lastDay = $derived(ymd(end));
-	// The query asks a day either side (an episode's local day can differ from the day it is
-	// stored under); those extra days never show as days of their own.
-	// A movie shows one date: the day it is out to watch, else its cinema date.
+	// The query asks a day either side (an episode's local day can differ from the day it is stored under); those extra days never show as days of their own. A movie shows one date: the day it is out to watch, else its cinema date.
 	const pool = $derived(oneMovieDate(entries, movies));
 	const todayKey = ymd(now);
 	const filterOk = (e: CalendarEntry) => followsOk(e, follows);
@@ -137,8 +90,7 @@
 		return { from: ymd(s), long: `${f(s, false)} – ${f(e, true)}`, short: `${f(s, false)} – ${f(e, false)}` };
 	});
 
-	// The small month: starts on the first week's month, pages on its own, and follows the day in view.
-	// Anchored to today (or the linked month), never to the year back where loading starts.
+	// The small month starts on the first week's month, pages on its own, and follows the day in view. It is anchored to today (or the linked month), never to the year back where loading starts.
 	let pickYear = $state((askedMonth ?? now).getFullYear());
 	let pickMonth = $state((askedMonth ?? now).getMonth());
 	let active = $state<string | null>(null);
@@ -164,26 +116,22 @@
 		saveFollows(f);
 	}
 	const clearFilters = () => pickFollows('library');
-	// A filter change keeps the date in view: the day at the top is noted, and after the list
-	// changes that day (or the next one with something on it, else the last before it) goes back
-	// under the bars. The page never jumps to today; the Today button is for that.
+	// A filter change keeps the date in view. The day at the top is noted, and after the list changes that day (or the next one with something on it, else the last before it) goes back under the bars. The page never jumps to today.
 	function keepDay() {
 		const line = narrow ? 112 : 136;
 		const rows = [...document.querySelectorAll<HTMLElement>('.cal-main [data-day]')];
-		// Near the top (a closed card may have left the page there) the day in view is the one
-		// the heading names, else today: never the first row loaded, which is a year back.
+		// Near the top (a closed card may have left the page there) the day in view is the one the heading names, else today; never the first row loaded, which is a year back.
 		let was = window.scrollY < 4 || !placed ? (active ?? todayKey) : rows.find((x) => x.getBoundingClientRect().bottom > line + 8)?.dataset.day;
 		if (!was) return;
 		// The row standing in for today (today has nothing on it) means today: the new list may have today.
-		if (was > todayKey && was === todayRow()?.dataset.day && firstDay <= todayKey) was = todayKey;
+		if (was > todayKey && was === scroller.todayRow()?.dataset.day && firstDay <= todayKey) was = todayKey;
 		const main = document.querySelector<HTMLElement>('.cal-main');
 		if (main) main.style.minHeight = `${main.offsetHeight}px`;
 		void tick().then(() => landOn(was, line, () => {
 			if (main) main.style.minHeight = '';
 		}));
 	}
-	// Puts the row for this full date (YYYY-MM-DD, or the next one after it) at `at` px from the
-	// top, and keeps putting it back for a few frames while the new rows settle and grow.
+	// Puts the row for this full date (YYYY-MM-DD, or the next one after it) at `at` px from the top, and keeps putting it back for a few frames while the new rows settle and grow.
 	function landOn(day: string, at: number, done?: () => void) {
 		let frames = 0;
 		let still = 0;
@@ -202,8 +150,8 @@
 			if ((views.length > 1 || still < 4) && frames++ < 60) return void requestAnimationFrame(step);
 			rebaseBar();
 			done?.();
-			follow();
-			checkToday();
+			scroller.follow();
+			scroller.checkToday();
 		};
 		step();
 	}
@@ -223,14 +171,13 @@
 	// Today's button only shows (in red) once today has left the screen.
 	let away = $state(false);
 
-	type CalendarAnswer = { dates: CalendarEntry[] | null; my_follows?: number; people?: number };
 	let asks = 0;
 	async function load() {
 		const n = ++asks;
 		fetching = true;
 		try {
 			const r = range;
-			// The server takes up to a year a query; a longer stretch is asked in pieces.
+			// The server takes up to a year per query; a longer stretch is asked in pieces.
 			const [parts, t] = await Promise.all([
 				Promise.all(rangeChunks(r.from, r.to).map((c) => api.get<CalendarAnswer>(`/calendar?from=${c.from}&to=${c.to}`))),
 				libraryBrief()
@@ -250,26 +197,26 @@
 			libraryEmpty = t.length === 0;
 			error = '';
 			await tick();
-			holdPlace();
-			if (goTo) {
-				const day = goTo;
-				goTo = null;
-				void pickDay(day);
+			scroller.holdPlace();
+			if (scroller.goTo) {
+				const day = scroller.goTo;
+				scroller.goTo = null;
+				void scroller.pickDay(day);
 			}
 		} catch (e) {
 			if (n !== asks) return;
 			error = message(e);
-			goTo = null;
-			stepAgain = null;
+			scroller.goTo = null;
+			scroller.stepAgain = null;
 		} finally {
 			loaded = true;
 			if (n === asks) {
 				fetching = false;
 				// A step that waited for this load runs once the rows are drawn.
-				if (stepAgain && !error) {
-					const s = stepAgain;
-					stepAgain = null;
-					void tick().then(() => go(s.n, s.from, s.far));
+				if (scroller.stepAgain && !error) {
+					const s = scroller.stepAgain;
+					scroller.stepAgain = null;
+					void tick().then(() => scroller.go(s.n, s.from, s.far));
 				}
 				// The rows draw once loaded is set; then the page goes to today, below the bars.
 				if (toTodayOnce && !error) {
@@ -279,10 +226,10 @@
 					let tries = 0;
 					const place = () => {
 						if (document.querySelectorAll('.cal-main .view-in').length > 1 && tries++ < 40) return void requestAnimationFrame(place);
-						atToday();
+						scroller.atToday();
 						placed = true;
-						follow();
-						checkToday();
+						scroller.follow();
+						scroller.checkToday();
 					};
 					void tick().then(place);
 				}
@@ -290,375 +237,54 @@
 		}
 	}
 
-	function jump(d: Date) {
-		stepAgain = null;
-		unhold();
-		start = addDays(d, 0);
-		end = addDays(start, 7 * REACH);
-		anchor = null;
-		pickYear = start.getFullYear();
-		pickMonth = start.getMonth();
-	}
-	// The arrows move a week from the week in view (the one the heading names). They land on the
-	// first row of the next week that has dates (back over empty weeks: the dates before them),
-	// load further when that week is not loaded yet, and only say so at the ends of the calendar.
-	let stepAgain: { n: number; from: string; far?: boolean } | null = null;
-	// The latest day before `day` that a Library movie shows on (one date per movie, as the cards).
-	function shownBefore(day: string): string {
-		if (which !== 'all' && which !== 'movies') return '';
-		let best = '';
-		for (const f of movies.values()) {
-			const d = [f.digital, f.physical].filter((x): x is string => !!x).sort()[0] ?? f.cinema;
-			if (d && d < day && d > best) best = d;
-		}
-		return best;
-	}
-	// While an arrow's scroll runs, follow() keeps the week the arrow picked (else the frames in
-	// between, or a page that can't scroll that far, would put the old week back).
-	let held: string | null = null;
-	let unhold = () => {};
-	const userInput = ['wheel', 'touchstart', 'pointerdown', 'keydown'] as const;
-	function hold(day: string) {
-		unhold();
-		held = day;
-		// An instant scroll ends in the same frame it starts: only a later scrollend frees the hold.
-		let armed = false;
-		requestAnimationFrame(() => requestAnimationFrame(() => (armed = true)));
-		// Released after this frame's callbacks, so a follow() queued by the last scroll frame still sees the hold.
-		const onEnd = () => armed && setTimeout(() => unhold(), 0);
-		const timer = setTimeout(() => unhold(), 1500);
-		unhold = () => {
-			held = null;
-			clearTimeout(timer);
-			removeEventListener('scrollend', onEnd);
-			for (const t of userInput) removeEventListener(t, unhold);
-			unhold = () => {};
-		};
-		addEventListener('scrollend', onEnd);
-		// The person scrolling or pressing anything takes over at once.
-		for (const t of userInput) addEventListener(t, unhold, { passive: true, once: true });
-	}
-	function land(day: string) {
-		active = day;
-		const d = new Date(day + 'T00:00:00');
-		pickYear = d.getFullYear();
-		pickMonth = d.getMonth();
-		hold(day);
-	}
-	function go(n: number, from0?: string, far = false) {
-		if (!placed) return;
-		// The latest press wins: a step or a small-month pick still waiting for a load is dropped
-		// (the step is set again below if this one waits too).
-		stepAgain = null;
-		goTo = null;
-		const from = from0 ?? active ?? ymd(weekStart(askedMonth ?? now));
-		const fromWeek = ymd(weekStart(new Date(from + 'T00:00:00')));
-		const target = addDays(new Date(fromWeek + 'T00:00:00'), 7 * n);
-		// How far back a step may load: a year from today, or for a linked month further back than that,
-		// down to the nearest earlier movie date in the Library (its day out to watch, else its cinema day).
-		let lo = start < earliest ? start : earliest;
-		// Only when the week asked for is before the days loaded: steps inside them never load.
-		if (n < 0 && start < earliest && !far && ymd(target) < firstDay) {
-			// Before what is loaded already, so a movie hidden by the filters does not stop the search.
-			const before = shownBefore(fromWeek < firstDay ? fromWeek : firstDay);
-			if (before) {
-				const w = weekStart(new Date(before + 'T00:00:00'));
-				if (w < lo) lo = w;
-			}
-		}
-		const edge = () => toasts.push(n > 0 ? 'No later dates' : 'No earlier dates', 'ok');
-		if (target >= latest || addDays(target, 7) <= lo) return edge();
-		const tw = ymd(target);
-		const rows = [...document.querySelectorAll<HTMLElement>('.cal-main [data-day]')];
-		const dayOfRow = (r: HTMLElement) => r.dataset.day ?? '';
-		let row = n > 0 ? rows.find((r) => dayOfRow(r) >= tw) : (rows.find((r) => dayOfRow(r) >= tw && dayOfRow(r) < fromWeek) ?? rows.filter((r) => dayOfRow(r) < fromWeek).at(-1));
-		if (!row) {
-			// Not loaded yet: load the rest of that side once (or wait for the load running), then step again.
-			if (fetching) return void (stepAgain = { n, from });
-			if (n > 0 && end < latest) {
-				stepAgain = { n, from };
-				end = latest;
-				return;
-			}
-			if (n < 0 && start > lo) {
-				// Once per press: a far-back search that still finds no row names the week or says so.
-				stepAgain = { n, from, far: start < earliest };
-				earlier(lo);
-				return;
-			}
-			// Nothing earlier, but the days loaded start before this week: name the week before at the top.
-			if (n < 0 && tw >= firstDay) {
-				land(tw);
-				window.scrollTo({ top: 0, behavior: 'instant' });
-				return;
-			}
-			return edge();
-		}
-		// The first row of that row's week, so the heading names it from its start.
-		const rowWeek = ymd(weekStart(new Date(dayOfRow(row) + 'T00:00:00')));
-		row = rows.find((r) => dayOfRow(r) >= rowWeek) ?? row;
-		land(dayOfRow(row));
-		goRow(row);
-	}
-	// Today's row just below the top bar and the date bar, at once.
-	function atToday(): boolean {
-		if (!todayRow()) return false;
-		landOn(todayKey, narrow ? 112 : 136);
-		return true;
-	}
-	// Calendar picked again (side menu) while it already shows: start over at today and the top.
-	afterNavigate((nav) => {
-		if (nav.type !== 'link' || nav.from?.route.id !== nav.to?.route.id) return;
-		stepAgain = null;
-		unhold();
-		const m = /^(\d{4})-(\d{2})$/.exec(nav.to?.url.searchParams.get('month') ?? '');
-		if (m && Number(m[2]) >= 1 && Number(m[2]) <= 12) {
-			toTodayOnce = false;
-			placed = true;
-			const at = new Date(Number(m[1]), Number(m[2]) - 1, 1);
-			jump(at < earliest ? earliest : at >= latest ? addDays(latest, -7 * REACH) : at);
-			window.scrollTo({ top: 0, behavior: 'instant' });
-			return;
-		}
-		if (start.getTime() === earliest.getTime() && end.getTime() === addDays(today0, 7 * REACH).getTime()) return void atToday();
-		start = earliest;
-		end = addDays(today0, 7 * REACH);
-		anchor = null;
-		toTodayOnce = true;
-		placed = false;
-	});
-	// Each new range (the arrows, Today, more weeks, the small month) is loaded once.
-	let started = $state(false);
-	$effect(() => {
-		void range.from;
-		void range.to;
-		if (started) untrack(() => void load());
-	});
-	// Today glides to today's row when it is loaded, else loads the usual stretch and opens there.
-	function toToday() {
-		stepAgain = null;
-		unhold();
-		const row = firstDay <= todayKey ? todayRow() : undefined;
-		if (row) goRow(row);
-		else {
-			// Today is not loaded (a linked month): load the past year to six weeks ahead, then go to today.
-			if (start.getTime() === earliest.getTime() && end.getTime() === addDays(today0, 7 * REACH).getTime()) return void atToday();
-			start = earliest;
-			end = addDays(today0, 7 * REACH);
-			anchor = null;
-			toTodayOnce = true;
-			placed = false;
-		}
-	}
-	const todayRow = () => [...document.querySelectorAll<HTMLElement>('.cal-main [data-day]')].find((r) => (r.dataset.day ?? '') >= todayKey);
+	const scrollerCtx = {
+		get start() { return start; },
+		set start(v) { start = v; },
+		get end() { return end; },
+		set end(v) { end = v; },
+		get REACH() { return REACH; },
+		get pickYear() { return pickYear; },
+		set pickYear(v) { pickYear = v; },
+		get pickMonth() { return pickMonth; },
+		set pickMonth(v) { pickMonth = v; },
+		get which() { return which; },
+		get movies() { return movies; },
+		get active() { return active; },
+		set active(v) { active = v; },
+		get placed() { return placed; },
+		set placed(v) { placed = v; },
+		get askedMonth() { return askedMonth; },
+		get now() { return now; },
+		get earliest() { return earliest; },
+		get firstDay() { return firstDay; },
+		get latest() { return latest; },
+		get fetching() { return fetching; },
+		landOn,
+		get todayKey() { return todayKey; },
+		get narrow() { return narrow; },
+		get toTodayOnce() { return toTodayOnce; },
+		set toTodayOnce(v) { toTodayOnce = v; },
+		get today0() { return today0; },
+		get range() { return range; },
+		load,
+		get lastDay() { return lastDay; },
+		get shown() { return shown; },
+		picked,
+		get sheetOpen() { return sheetOpen; },
+		set sheetOpen(v) { sheetOpen = v; },
+		get loaded() { return loaded; },
+		get away() { return away; },
+		set away(v) { away = v; },
+		get headEnd() { return headEnd; },
+		get pastHead() { return pastHead; },
+		set pastHead(v) { pastHead = v; },
+		get view() { return view; },
+		set view(v) { view = v; },
+		get filteredOut() { return filteredOut; },
+	};
+	const scroller = createCalendarScroll(scrollerCtx);
 
-	// The small month's arrows; a month outside what is loaded gets loaded (within a year).
-	function pickPage(n: number) {
-		({ year: pickYear, month: pickMonth } = shiftMonth(pickYear, pickMonth, n));
-	}
-	// The small month shows its whole month: dates outside the days loaded are asked for it alone.
-	let monthDates = $state<CalendarEntry[]>([]);
-	$effect(() => {
-		const r = monthRange(pickYear, pickMonth);
-		if (!started || (r.from >= firstDay && r.to <= lastDay)) {
-			monthDates = [];
-			return;
-		}
-		const key = `${r.from}:${r.to}`;
-		untrack(() => {
-			monthAsk = key;
-			api.get<CalendarAnswer>(`/calendar?from=${ymd(addDays(r.start, -1))}&to=${ymd(addDays(new Date(r.to + 'T00:00:00'), 1))}`)
-				.then((c) => {
-					if (monthAsk === key) monthDates = c.dates ?? [];
-				})
-				.catch(() => {});
-		});
-	});
-	let monthAsk = '';
-	const miniDates = $derived.by(() => {
-		const keys = new Set(shown.map(entryKey));
-		return [...shown, ...oneMovieDate(monthDates, movies).filter((e) => picked(e) && !keys.has(entryKey(e)))];
-	});
-	// A day not loaded yet (from the small month) loads first, then the page glides to it.
-	let goTo: string | null = null;
-
-	// When days go in above the ones on screen (a far day picked in the small month, a live
-	// update), the row at the top of the screen is noted before and put back where it was
-	// after (scrollTop moves by what was added), so nothing jumps.
-	let anchor: { day: string; top: number } | null = null;
-	function notePlace() {
-		// The first row that starts below the top bar and the date bar (rows differ in height
-		// between views, so a row half hidden under the bars is a poor mark); else the one under them.
-		const line = narrow ? 112 : 136;
-		const rows = [...document.querySelectorAll<HTMLElement>('.cal-main [data-day]')];
-		const r = rows.find((x) => x.getBoundingClientRect().top >= line - 8) ?? rows.find((x) => x.getBoundingClientRect().bottom > line);
-		anchor = r ? { day: r.dataset.day ?? '', top: r.getBoundingClientRect().top } : null;
-	}
-	function holdPlace() {
-		if (!anchor) return;
-		const a = anchor;
-		anchor = null;
-		const row = document.querySelector<HTMLElement>(`.cal-main [data-day="${a.day}"]`);
-		if (!row) return;
-		const moved = row.getBoundingClientRect().top - a.top;
-		if (Math.abs(moved) > 0.5) {
-			window.scrollBy({ top: moved, behavior: 'instant' });
-			// The page moved, not the person: the top bar starts counting again from here.
-			rebaseBar();
-		}
-	}
-	function earlier(to: Date) {
-		if (to >= start) return;
-		notePlace();
-		start = to;
-	}
-	// Glide to a row; a long way (more than two screens) goes at once, since a long glide stalls.
-	function goRow(row: HTMLElement) {
-		const far = Math.abs(row.getBoundingClientRect().top) > 2 * innerHeight;
-		row.scrollIntoView({ block: 'start', behavior: far ? 'instant' : glideScroll() });
-		if (far) rebaseBar();
-	}
-	// A day picked in the small month: glide to its row (instant under reduced motion).
-	async function pickDay(day: string) {
-		stepAgain = null;
-		const fromSheet = sheetOpen;
-		sheetOpen = false;
-		if (fromSheet) await tick();
-		const at = new Date(day + 'T00:00:00');
-		if (day < firstDay) {
-			const to = at < earliest ? earliest : at;
-			if (to >= start) return;
-			goTo = day;
-			earlier(to);
-			return;
-		}
-		if (day >= lastDay) {
-			const to = addDays(at, 7) > latest ? latest : addDays(at, 7);
-			if (to <= end) return;
-			goTo = day;
-			end = to;
-			return;
-		}
-		const row = document.querySelector<HTMLElement>(`.cal-main [data-day="${day}"]`);
-		if (!row) return;
-		active = day;
-		goRow(row);
-	}
-	// The day at the top of the page, for the small month (which pages along when the month changes).
-	function follow() {
-		// Not on today yet: the small month and the heading stay on today, never the first day loaded.
-		if (!placed || held) return;
-		const rows = document.querySelectorAll<HTMLElement>('.cal-main [data-day]');
-		const line = 140;
-		let top: string | null = null;
-		for (const r of rows) {
-			if (r.getBoundingClientRect().top <= line) top = r.dataset.day ?? null;
-			else break;
-		}
-		if (!top) return;
-		// Today has nothing on it: the first row after today stands for today's week, not its own.
-		if (top > todayKey && top === todayRow()?.dataset.day && firstDay <= todayKey) top = todayKey;
-		if (top === active) return;
-		active = top;
-		if (top) {
-			const d = new Date(top + 'T00:00:00');
-			pickYear = d.getFullYear();
-			pickMonth = d.getMonth();
-		}
-	}
-	// Today is on screen when its row (or, on a day with nothing, the next day's row) shows
-	// below the bars. Days loaded from after today, or none loaded yet, count as away.
-	function checkToday() {
-		if (!loaded || firstDay > todayKey) {
-			away = loaded;
-			return;
-		}
-		const row = todayRow();
-		if (!row) {
-			away = !!document.querySelector('.cal-main [data-day]');
-			return;
-		}
-		const b = row.getBoundingClientRect();
-		away = b.bottom < (narrow ? 96 : 120) || b.top > innerHeight;
-	}
-	let ticking = false;
-	function onScroll() {
-		if (headEnd) pastHead = headEnd.getBoundingClientRect().top < (narrow ? 44 : 56);
-		if (ticking) return;
-		ticking = true;
-		requestAnimationFrame(() => {
-			ticking = false;
-			follow();
-			checkToday();
-		});
-	}
-
-	// Cards or List: in the address and kept for the session.
-	// Cards or List keeps the same day under the bars: the height is held while the views swap
-	// (so the page cannot shrink and scroll up, which would bring the top bar back), then the
-	// day at the top is put back where it was.
-	function pickView(v: CalendarView) {
-		if (v === view) return;
-		// Not placed yet (the first load is still on its way): switch only; the load puts the new view on today.
-		if (!placed) {
-			view = v;
-			saveView(v);
-			const u0 = new URL(page.url.href);
-			u0.searchParams.set('view', v);
-			u0.searchParams.delete('span');
-			replaceState(u0, page.state);
-			return;
-		}
-		const main = document.querySelector<HTMLElement>('.cal-main');
-		if (main) main.style.minHeight = `${main.offsetHeight}px`;
-		notePlace();
-		const was = anchor;
-		anchor = null;
-		// The same full date goes back where it was in the new view; at the very top, the day in view.
-		const day = was && window.scrollY >= 4 ? was.day : (active ?? (askedMonth ? null : todayKey));
-		const at = was && window.scrollY >= 4 ? was.top : narrow ? 112 : 136;
-		void tick().then(() => {
-			if (!day) {
-				if (main) main.style.minHeight = '';
-				return;
-			}
-			landOn(day, at, () => {
-				if (main) main.style.minHeight = '';
-			});
-		});
-		view = v;
-		saveView(v);
-		const u = new URL(page.url.href);
-		u.searchParams.set('view', v);
-		u.searchParams.delete('span');
-		replaceState(u, page.state);
-	}
-
-	// Near the end, the next six weeks load.
-	function more() {
-		if (fetching || end >= latest) return;
-		// Nothing shows under the filters: the end stays in view, so six weeks at a time would load
-		// again and again (and the count under the empty page would keep changing). Ask once to the end.
-		if (filteredOut) return void (end = latest);
-		const to = addDays(end, 7 * REACH);
-		end = to > latest ? latest : to;
-	}
-	function endless(node: HTMLElement, busy: boolean) {
-		const near = () => node.getBoundingClientRect().top < innerHeight + 900;
-		const io = new IntersectionObserver((es) => es.some((e) => e.isIntersecting) && more(), { rootMargin: '0px 0px 900px 0px' });
-		io.observe(node);
-		return {
-			// When a load ends with the end still near, ask for the next weeks.
-			update(now: boolean) {
-				if (!now && busy && near()) void tick().then(more);
-				busy = now;
-			},
-			destroy: () => io.disconnect()
-		};
-	}
-
-	// Follow or stop following a title from its row. The dates stay loaded; only who follows
-	// changes, so the row updates in place (in My follows it leaves the list).
+	// Follow or stop following a title from its row. The dates stay loaded; only who follows changes, so the row updates in place (in My follows it leaves the list).
 	let flipping = $state<number | null>(null);
 	async function flipFollow(e: CalendarEntry, on: boolean) {
 		if (flipping !== null) return;
@@ -669,7 +295,7 @@
 			const upd = (x: CalendarEntry) => (x.title_id === e.title_id ? withFollow(x, now, me) : x);
 			const was = entries.some((x) => x.title_id === e.title_id && !!x.following);
 			entries = entries.map(upd);
-			monthDates = monthDates.map(upd);
+			scroller.monthDates = scroller.monthDates.map(upd);
 			if (now !== was) myFollows = Math.max(0, myFollows + (now ? 1 : -1));
 			toasts.push(now ? `${e.name} followed` : `${e.name} unfollowed`, 'ok', now ? { body: 'Dates added to your calendar' } : {});
 		} catch (err) {
@@ -686,7 +312,7 @@
 		const fit = () => (narrow = mq.matches);
 		fit();
 		mq.addEventListener('change', fit);
-		started = true;
+		scroller.started = true;
 		saveView(view);
 		// The address always names the view; old layout parameters go.
 		const u = new URL(page.url.href);
@@ -695,7 +321,7 @@
 			u.searchParams.delete('span');
 			replaceState(u, page.state);
 		}
-		const again = () => (notePlace(), void load());
+		const again = () => (scroller.notePlace(), void load());
 		const offs = [live.on('title', again), live.on('resync', again)];
 		return () => {
 			offs.forEach((off) => off());
@@ -706,19 +332,19 @@
 	$effect(() => {
 		void shown;
 		void view;
-		if (loaded) void tick().then(() => (follow(), checkToday()));
+		if (loaded) void tick().then(() => (scroller.follow(), scroller.checkToday()));
 	});
 </script>
 
-<svelte:window onscroll={onScroll} />
+<svelte:window onscroll={scroller.onScroll} />
 
 {#snippet item(e: CalendarEntry, prevWhen = '')}
 	{@const dot = itemDot(e, todayKey)}
 	{@const w = rowWords({ key: entryKey(e), day: entryDay(e), lead: e, entries: [e] }, look, todayKey)}
 	{@const lines = w.lines.length ? w.lines : ['']}
 	<li class="item k-{e.kind}" data-testid="cal-item">
-		<!-- The time column (TV-guide style): the air time, or Cinema, At home, Out now; a quiet All day without a time. -->
-		<!-- A time repeated from the row above is left blank, TV-guide style, so the eye sees when it changes. -->
+		<!-- The time column: the air time, or Cinema, At home, Out now; a quiet All day without a time. -->
+		<!-- A time repeated from the row above is left blank, so the eye sees when it changes. -->
 		<span class="tcol" class:quiet={w.quiet} class:same={w.when === prevWhen} data-testid="cal-when">{w.when}</span>
 		<div class="it">
 			<span class="when-phone" class:quiet={w.quiet} aria-hidden="true">{w.when}</span>
@@ -748,12 +374,12 @@
 {/snippet}
 
 {#snippet mini()}
-	<MiniMonth year={pickYear} month={pickMonth} entries={miniDates} today={todayKey} {active} onpick={pickDay} onpage={pickPage} />
+	<MiniMonth year={pickYear} month={pickMonth} entries={scroller.miniDates} today={todayKey} {active} onpick={scroller.pickDay} onpage={scroller.pickPage} />
 {/snippet}
 
 {#snippet rangeNav(primary: boolean, short: boolean)}
 	<div class="range-nav">
-		<IconButton icon="chevronLeft" label="Week before" variant="tinted" onclick={() => go(-1)} />
+		<IconButton icon="chevronLeft" label="Week before" variant="tinted" onclick={() => scroller.go(-1)} />
 		{#if primary}
 			<h2 class="range" aria-live="polite" data-testid="cal-month" data-week={viewWeek.from}>{viewWeek.long}</h2>
 		{:else if short && narrow}
@@ -762,7 +388,7 @@
 		{:else}
 			<span class="range">{short ? viewWeek.short : viewWeek.long}</span>
 		{/if}
-		<IconButton icon="chevronRight" label="Week after" variant="tinted" onclick={() => go(1)} />
+		<IconButton icon="chevronRight" label="Week after" variant="tinted" onclick={() => scroller.go(1)} />
 	</div>
 {/snippet}
 
@@ -770,7 +396,7 @@
 	<!-- Hidden while today is on screen; once it is not, it pops in red to bring you back. -->
 	{#if away}
 		<span class="today-btn" in:popIn out:popOut data-testid="cal-today">
-			<Button variant="primary" {size} icon="calendar" onclick={toToday} aria-label="Back to today">Today</Button>
+			<Button variant="primary" {size} icon="calendar" onclick={scroller.toToday} aria-label="Back to today">Today</Button>
 		</span>
 	{/if}
 {/snippet}
@@ -812,13 +438,12 @@
 	<Button variant="secondary" size="sm" icon={follows === 'library' ? 'bell' : 'bellOn'} iconAfter="chevronDown" aria-haspopup="dialog" aria-label="Which dates: {followsWords[follows].label}" onclick={() => (filtersOpen = true)} data-testid="cal-follows-phone">{followsWords[follows].label}</Button>
 {/snippet}
 
-
 {#snippet viewSeg(primary: boolean)}
 	<SegmentedControl
 		label="Cards or list"
 		testid={primary ? 'cal-view' : undefined}
 		value={view}
-		onchange={(v) => pickView(v as CalendarView)}
+		onchange={(v) => scroller.pickView(v as CalendarView)}
 		options={[
 			{ value: 'cards', label: 'Cards' },
 			{ value: 'list', label: 'List' }
@@ -827,7 +452,6 @@
 {/snippet}
 
 <svelte:head><title>Calendar · HolyArrs</title></svelte:head>
-
 
 <PageHeader title="Calendar">
 	{#snippet actions()}
@@ -846,14 +470,13 @@
 </section>
 <span class="head-end" bind:this={headEnd} aria-hidden="true"></span>
 
-<!-- The slim bar: under the app's top bar once the controls above have scrolled away
-	and stays there; Today shows in it only once today has left the screen. -->
+<!-- The slim bar sits under the app's top bar once the controls above have scrolled away and stays there; Today shows in it only once today has left the screen. -->
 <div class="slim-wrap" class:on={barOn} inert={!barOn} data-testid="cal-slim">
 	<div class="slim" role="toolbar" aria-label="Calendar controls">
 		{@render rangeNav(false, true)}
 		<!-- Cards or List stays at hand in the bar once the header has scrolled away. -->
 		<span class="wide-only slim-view">{@render viewSeg(false)}</span>
-		<span class="phone-only"><IconButton icon={view === 'cards' ? 'menu' : 'grid'} label={view === 'cards' ? 'Show as a list' : 'Show as cards'} variant="tinted" onclick={() => pickView(view === 'cards' ? 'list' : 'cards')} data-testid="cal-view-slim" /></span>
+		<span class="phone-only"><IconButton icon={view === 'cards' ? 'menu' : 'grid'} label={view === 'cards' ? 'Show as a list' : 'Show as cards'} variant="tinted" onclick={() => scroller.pickView(view === 'cards' ? 'list' : 'cards')} data-testid="cal-view-slim" /></span>
 		<span class="wide-only slim-seg">{@render typeSeg(false)}</span>
 		<span class="wide-only">{@render followsMenu()}</span>
 		<span class="wide-only">{@render monthBtn(false)}</span>
@@ -885,7 +508,7 @@
 							<EmptyState compact icon="calendar" title={follows === 'mine' ? 'Nothing you follow here' : 'Nothing anyone follows here'} text={end < latest || fetching ? 'Looking further ahead…' : `${soonCount === 1 ? 'One date' : `${soonCount || 'No'} dates`} in the Library ${soonCount === 1 ? 'is' : 'are'} coming up this year.`} action={{ label: 'Show the Whole Library', onclick: clearFilters }} />
 						</div>
 										{:else if view === 'cards'}
-						<ComingSoon entries={shown} today={todayKey} onlater={more} mode={follows} {look} onfollow={flipFollow} />
+						<ComingSoon entries={shown} today={todayKey} onlater={scroller.more} mode={follows} {look} onfollow={flipFollow} />
 					{:else if agenda.length === 0}
 						<EmptyState compact icon="calendar" title="No dates from {rangeName}" />
 					{:else}
@@ -894,19 +517,18 @@
 				</div>
 			{/key}
 			<!-- Reaching the end loads the next weeks, up to a year. -->
-			<div class="endless" use:endless={fetching} aria-hidden="true"></div>
+			<div class="endless" use:scroller.endless={fetching} aria-hidden="true"></div>
 			{#if fetching}<p class="more-note" role="status">Loading the next weeks…</p>{/if}
 		</div>
 		<aside class="side" aria-label="Pick a day" inert={monthHidden} aria-hidden={monthHidden}>{@render mini()}</aside>
 	</div>
 {/if}
 
-
 <Sheet bind:open={sheetOpen} title="Pick a day" placement="bottom">
 	<div class="sheet-mini">
 		{@render rangeNav(false, false)}
 		{@render mini()}
-		<Button variant="secondary" full icon="calendar" onclick={() => { sheetOpen = false; toToday(); }}>Today</Button>
+		<Button variant="secondary" full icon="calendar" onclick={() => { sheetOpen = false; scroller.toToday(); }}>Today</Button>
 	</div>
 </Sheet>
 
@@ -949,7 +571,6 @@
 	.sheet-mini .range { flex: 1; min-width: 0; font: var(--t-headline); }
 	.sheet-filters > :global(.ui-seg) { width: 100%; }
 
-	/* The slim bar under the app's top bar. */
 	/* The top bar and the date bar are one solid band, so nothing shows through either. */
 	:global(html:has(.slim-wrap.on) .ui-topbar) { background-color: var(--bg); border-bottom-color: transparent; -webkit-backdrop-filter: none; backdrop-filter: none; }
 	/* Over the poster wall it stays the app's light glass, like every other page. */
@@ -972,7 +593,6 @@
 	@media (max-width: 767px) and (pointer: coarse) { .range-btn { min-height: 44px; } }
 	.pop-chips { padding: 4px; }
 	.filtered-out { margin-bottom: 24px; }
-	/* The Showing menu: three rows, one picked. */
 	.showing { display: flex; flex-direction: column; gap: 2px; }
 	.showing button { display: flex; align-items: flex-start; gap: 10px; width: 100%; padding: 10px; border: 0; border-radius: var(--r-sm); background: none; color: var(--text); text-align: left; cursor: pointer; transition: background var(--dur-fast) var(--ease-out); }
 	.showing button:hover, .showing button.on { background: var(--surface-2); }
@@ -991,7 +611,6 @@
 	/* While the bar shows, the small month and picked days sit below it. */
 	.cal-body.barred .side { top: calc(var(--topbar) + 76px); }
 	:global(html:has(.slim-wrap.on)) { scroll-padding-top: calc(var(--topbar) + 68px); }
-	/* Cards and List fade in when switched. */
 	.view-in { animation: view-in var(--dur-slow) var(--ease-out) both; }
 	@keyframes view-in { from { opacity: 0; transform: translateY(8px); } }
 	.endless { height: 1px; }
@@ -1008,20 +627,17 @@
 	.item + .item { border-top: 1px solid var(--line); }
 	/* List rows: the banner fills the row's right side, out to the card's edge (the card's corners round it). */
 	.day { overflow: hidden; }
-	/* The picture fills the whole row (time, words and all); a dark wash from the left keeps the words readable.
-	   Each row has the picture's own wide shape, so every row is the same size; it grows a little on hover. */
+	/* The picture fills the whole row (time, words and all); a dark wash from the left keeps the words readable. Each row has the picture's own wide shape, so every row is the same size; it grows a little on hover. */
 	.item { position: relative; min-height: 84px; padding-right: 12px; transition: min-height var(--dur) var(--ease-out); }
 	@media (hover: hover) { .item:hover { min-height: 96px; } }
 	.bwrap { position: absolute; top: 0; bottom: 0; left: -12px; right: -12px; }
-	/* Each row is its own soft card: rounded picture, a small gap between rows (no fades into the page,
-	   which turned white in light mode). */
+	/* Each row is its own soft card: rounded picture, a small gap between rows (no fades into the page, which turned white in light mode). */
 	@media (min-width: 641px) {
 		.bwrap { border-radius: 12px; overflow: hidden; }
 		.item + .item { border-top: 0; margin-top: 6px; }
 	}
 	.bwrap :global(.cal-banner) { -webkit-mask-image: none; mask-image: none; }
-	/* Behind the words: a frosted, darkened patch (blur + dim + a little grain of colour) that feathers
-	   softly into the picture, plus a faint wash over the rest so the right side keeps its colour. */
+	/* Behind the words: a frosted, darkened patch (blur, dim and a little grain of colour) that feathers softly into the picture, plus a faint wash over the rest so the right side keeps its colour. */
 	.bwrap::before { content: ''; position: absolute; z-index: 1; top: 0; bottom: 0; left: 0; width: min(520px, 62%); pointer-events: none;
 		background: linear-gradient(90deg, rgb(10 10 12 / .72), rgb(10 10 12 / .55) 60%, rgb(10 10 12 / .35));
 		-webkit-backdrop-filter: blur(16px) saturate(1.25) brightness(.8); backdrop-filter: blur(16px) saturate(1.25) brightness(.8);
@@ -1035,7 +651,6 @@
 		.item .sub.first { color: #fff; }
 	}
 	.it, .tcol, .row-bell { position: relative; z-index: 2; }
-	/* The words take only their own width, so the bell sits right after them. */
 	/* The words have one fixed width, so the bell sits at the same spot on every row. */
 	.it { display: flex; flex-direction: column; min-width: 0; flex: 0 1 260px; }
 	.who { display: flex; min-width: 0; margin-top: 3px; }
@@ -1050,7 +665,6 @@
 	.it a:hover { text-decoration: underline; text-underline-offset: 3px; }
 	.sub { color: var(--text-muted); font: var(--t-subhead); font-weight: 400; min-height: 1lh; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 	.sub.first { color: var(--text); }
-	/* The time column: one width for every row, so times line up down the page. */
 	/* One size for times and words (8 PM, In theaters, Streaming, Album), wide enough for the longest. */
 	/* Set like the row's title (same face, weight and size) so it reads as part of the row. */
 	.tcol { flex: none; width: 92px; font: var(--t-headline); font-size: 15px; font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--text); align-self: center; text-align: center; }
@@ -1060,8 +674,7 @@
 	/* Phones: the time sits above the title as a small bold line instead of a column. */
 	@media (max-width: 640px) {
 		.tcol { display: none; }
-		/* A smaller picture leaves the words room on narrow phones. */
-		/* Phones: the banner becomes a slim strip across the top of the row, the words below it. */
+		/* Phones: the banner becomes a slim strip across the top of the row, the words below it; a smaller picture leaves the words room on narrow phones. */
 		.item { flex-wrap: wrap; padding-right: 0; min-height: 0; }
 		.bwrap, .item:first-child .bwrap, .item:last-child .bwrap { position: relative; inset: auto; order: -1; flex: 0 0 100%; width: 100%; height: 56px; border-radius: var(--r-sm); overflow: hidden; }
 		.bwrap :global(.cal-banner) { -webkit-mask-image: none; mask-image: none; }

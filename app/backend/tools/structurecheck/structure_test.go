@@ -383,7 +383,8 @@ func TestNoOldPageAddresses(t *testing.T) {
 		for i, line := range strings.Split(string(b), "\n") {
 			for _, loc := range reLiteral.FindAllStringIndex(line, -1) {
 				lit := line[loc[0]:loc[1]]
-				if ext != ".go" && reAPICall.MatchString(line[:loc[0]]) {
+				// A line marked "// API path" builds a server path, not a page link.
+				if ext != ".go" && (reAPICall.MatchString(line[:loc[0]]) || strings.Contains(line, "// API path")) {
 					continue
 				}
 				if isOldPage(lit[1 : len(lit)-1]) {

@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { bannerWords, candidateLine } from './matches.ts';
+import { describe, expect, it } from 'vitest';
 
 describe('Confirm match words', () => {
 	it('counts the torrents waiting', () => {

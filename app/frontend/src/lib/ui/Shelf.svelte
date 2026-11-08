@@ -1,15 +1,13 @@
+<!-- Titled horizontal row of cards with paging arrows and lazy mounting. -->
 <script lang="ts" generics="T = unknown">
 	import { untrack, type Snippet } from 'svelte';
-	import Icon from '../Icon.svelte';
-	import { dragScroll } from '../drag-scroll.ts';
+	import Icon from './Icon.svelte';
+	import { dragScroll } from './drag-scroll.ts';
 	import IconButton from './IconButton.svelte';
-	import { nearView, setShelfNear, whenIdle } from '../lazy-art.ts';
-	import { mountNow, nextLimit, ROW_FIRST } from '../row-window.ts';
-	import { rove } from '../rove.ts';
+	import { nearView, setShelfNear, whenIdle } from './lazy-art.ts';
+	import { mountNow, nextLimit, ROW_FIRST } from './row-window.ts';
+	import { rove } from './rove.ts';
 
-	// A titled horizontal row: native scroll with snap, arrow buttons on hover
-	// (desktop), one tab stop per row with arrow keys between cards (rove.ts),
-	// optional See all ›.
 	let {
 		title,
 		href,
@@ -33,53 +31,53 @@
 		href?: string;
 		seeAll?: string;
 		subtitle?: string;
-		/** Item width, e.g. 180px posters, 300px wide cards. */
 		item?: string;
-		/** An id for in-page anchors. */
 		anchor?: string;
-		/** See all opens something on this page (a sheet) instead of a link. */
 		onseeall?: () => void;
-		/** Controls under the title, inside the header (a picker that refills this row). */
 		tools?: Snippet;
-		/** Windowed rows: the cards' data, drawn by `card` a dozen at a time as the row scrolls. */
 		items?: readonly T[];
 		card?: Snippet<[T, number]>;
-		/** Each card's key in a windowed row. */
 		key?: (it: T, i: number) => string | number;
-		/** Wait as a placeholder of the same height until the row is within 1.5 screens. */
 		defer?: boolean;
-		/** The placeholder's card shape while deferred. */
 		placeholder?: 'poster' | 'square' | 'round' | 'wide';
-		/** Text lines under each placeholder card: title only (1), or title and a note (2). */
 		lines?: 1 | 2;
-		/** Whole cards only (title pages): as many cards as fit at about `item` wide, sized to fill the row exactly, so none shows cut at the edge; the arrows and swipes move a page. */
 		whole?: boolean;
-		/** With `whole`: a row shorter than one page sits in the middle. */
 		centerFew?: boolean;
 		children?: Snippet;
 	} = $props();
 
 	const id = $props.id();
-	// Cards put in their pictures once the row comes near the screen.
+
 	let near = $state(false);
-	setShelfNear(() => near);
 	let scroller = $state<HTMLElement>();
 	let atStart = $state(true);
 	let atEnd = $state(false);
-	// Windowing: a deferred row mounts near the screen; then a dozen cards, more as it scrolls.
-	let mounted = $state(untrack(() => !defer)); // once mounted a row stays
-	// A row that stops deferring (Back to a spot further down) mounts at once.
-	$effect(() => {
-		if (!defer) mounted = true;
-	});
+	// Deferred shelves start as a skeleton until near the viewport or idle.
+	let mounted = $state(untrack(() => !defer));
+	// Cards render in growing chunks to keep the first paint light.
 	let limit = $state(ROW_FIRST);
-	const shown = $derived(items ? (items.length > limit ? items.slice(0, limit) : items) : []);
-	const more = $derived(!!items && items.length > limit);
-
-	// Whole cards: how many fit at about `item` wide (the probe has that width).
 	let probe = $state<HTMLElement>();
 	let per = $state(0);
 	let few = $state(false);
+
+	setShelfNear(() => near);
+
+	const shown = $derived(items ? (items.length > limit ? items.slice(0, limit) : items) : []);
+	const more = $derived(!!items && items.length > limit);
+
+	$effect(() => {
+		if (!defer) mounted = true;
+	});
+	$effect(() => {
+		if (!scroller) return;
+		void shown.length;
+		measure();
+		const ro = new ResizeObserver(measure);
+		ro.observe(scroller);
+		return () => ro.disconnect();
+	});
+
+	// For whole-page shelves: count how many cards fit so pages align to card edges.
 	function fit() {
 		if (!whole || !scroller || !probe) return;
 		const gap = parseFloat(getComputedStyle(scroller).columnGap) || 0;
@@ -94,7 +92,7 @@
 		atEnd = !more && scroller.scrollLeft + scroller.clientWidth >= scroller.scrollWidth - 2;
 		if (items) limit = nextLimit(limit, items.length, scroller);
 	}
-	/** soon mounts a deferred row at once when it starts near the screen, else when it comes within 1.5 screens. */
+	// Mounts the row when it nears the screen, or when the browser is idle.
 	function soon(node: Element) {
 		if (mounted) return {};
 		if (typeof IntersectionObserver === 'undefined' || mountNow(node.getBoundingClientRect().top, innerHeight)) {
@@ -108,18 +106,10 @@
 		};
 		const io = new IntersectionObserver((es) => es.some((e) => e.isIntersecting) && go(), { rootMargin: '0px 0px 150% 0px' });
 		io.observe(node);
-		// An observer that never fires still mounts the row once the browser is idle.
 		const stop = whenIdle(go);
 		return { destroy: () => { io.disconnect(); stop(); } };
 	}
-	$effect(() => {
-		if (!scroller) return;
-		void shown.length;
-		measure();
-		const ro = new ResizeObserver(measure);
-		ro.observe(scroller);
-		return () => ro.disconnect();
-	});
+	// Whole shelves page by exact rows; others scroll a bit less than a screen.
 	function page(dir: 1 | -1) {
 		if (!scroller) return;
 		const step = whole ? scroller.clientWidth + (parseFloat(getComputedStyle(scroller).columnGap) || 0) : scroller.clientWidth * 0.9;
@@ -153,15 +143,13 @@
 
 <style>
 	.ui-shelf { min-width: 0; }
-	/* No cover, no card: a row whose every card was left out goes too (no title over nothing). */
+	/* Hide the shelf when every card has removed itself. */
 	.ui-shelf:has(.row > :global(.gone)):not(:has(.row > :global(:not(.gone)))) { display: none; }
 	header { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
-	/* A name with no line under it: See all sits level with the name. */
 	header.bare { align-items: center; }
 	.tools { flex: 1 0 100%; min-width: 0; }
 	h2 { font: var(--t-title2); letter-spacing: var(--t-title2-track); }
 	h2 a:hover { color: var(--accent-text); }
-	/* Phones: the shelf name is a 44px-tall target, like See all beside it. */
 	@media (max-width: 767px) and (pointer: coarse) {
 		h2 a { position: relative; }
 		h2 a::after { content: ''; position: absolute; inset-inline: 0; top: 50%; height: 44px; transform: translateY(-50%); }
@@ -176,7 +164,7 @@
 		margin-inline: calc(var(--gutter) * -1); padding: 6px var(--gutter) 14px; scrollbar-width: none; border-radius: var(--r-card);
 	}
 	.row::-webkit-scrollbar { display: none; }
-	/* The deferred row's stand-in, one element: the cards' own height (art, then two text lines), with tile shapes drawn by a gradient. */
+	/* Skeleton sized like real cards so the page does not jump. */
 	.sk { --w: var(--item); --art: calc(var(--w) * 1.5); --text-h: 52.5px; height: calc(var(--art) + var(--text-h)); margin: 6px 0 14px; overflow: hidden;
 		background: repeating-linear-gradient(90deg, var(--surface-2) 0 var(--w), transparent var(--w) calc(var(--w) + var(--shelf-gap))) 0 0 / 100% var(--art) no-repeat; }
 	.sk.one { --text-h: 35px; }
@@ -192,9 +180,7 @@
 	.hide { pointer-events: none; }
 	@media (hover: none) { .arrow { display: none; } }
 	@media (max-width: 767px) { .row { grid-auto-columns: calc(var(--item) * .78); } }
-	/* Mouse drag-to-scroll (drag-scroll.ts): a grab hand on rows that can scroll. */
 	.row:global(.dragging) { cursor: grabbing; user-select: none; }
-	/* Whole cards: the row keeps to the page edges and its cards share it exactly. */
 	.probe { position: absolute; visibility: hidden; height: 0; width: var(--item); pointer-events: none; }
 	@media (max-width: 767px) { .probe { width: calc(var(--item) * .78); } }
 	.whole .row { margin-inline: 0; padding-inline: 0; scroll-padding-inline: 0; grid-auto-columns: calc((100% - (var(--per, 1) - 1) * var(--shelf-gap)) / var(--per, 1)); }

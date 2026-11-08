@@ -4,16 +4,16 @@
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Button from '#lib/ui/Button.svelte';
-	import { onMount } from 'svelte';
-	import { api } from '#lib/api.ts';
-	import { plainMessage as message } from '#lib/settings.ts';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
-	import Icon from '#lib/Icon.svelte';
+	import Icon from '#lib/ui/Icon.svelte';
 	import TestTag from '#lib/ui/TestTag.svelte';
-	import { ago } from '#lib/format.ts';
-	import { toasts } from '#lib/toasts.svelte.ts';
-	import type { MediaServerView } from '#lib/types.ts';
+	import type { MediaServerView } from '#lib/mediaservers/index.ts';
+	import { onMount } from 'svelte';
+	import { api } from '#lib/core/api.ts';
+	import { plainMessage as message } from '#lib/core/settings.ts';
+	import { ago } from '#lib/core/format.ts';
+	import { toasts } from '#lib/core/toasts.svelte.ts';
 
 	type Kind = MediaServerView['kind'];
 	const kindWord: Record<Kind, string> = { plex: 'Plex', jellyfin: 'Jellyfin', emby: 'Emby' };
@@ -68,7 +68,7 @@
 	function startChange(m: MediaServerView) {
 		isNew = false;
 		editing = m;
-		form = { ...m, token: '' }; // empty keeps the stored token
+		form = { ...m, token: '' }; // Empty keeps the stored token.
 		formError = '';
 	}
 
@@ -99,7 +99,7 @@
 			const r = await api.post<{ found: string }>(`/media-servers/${m.id}/test`);
 			// Plex names its libraries instead of a version: the tag counts them.
 			const libs = /^Libraries:/i.test(r.found ?? '') ? r.found.slice(10).split(',').filter((x) => x.trim()).length : 0;
-			// Jellyfin/Emby answer "<server name> <version>": only the last word is read for the version (a name like "HTPC 2.0" is not).
+			// Jellyfin and Emby answer "<server name> <version>": only the last word is read for the version (a name like "HTPC 2.0" is not).
 			results = { ...results, [m.id]: { ok: true, text: libs ? '' : (r.found ?? '').trim().split(/\s+/).pop() ?? '', hover: r.found ?? '', extra: libs ? `${libs} ${libs === 1 ? 'library' : 'libraries'}` : '' } };
 		} catch (err) {
 			results = { ...results, [m.id]: { ok: false, text: message(err) } };

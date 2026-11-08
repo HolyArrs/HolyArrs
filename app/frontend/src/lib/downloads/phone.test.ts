@@ -1,5 +1,5 @@
-import { describe, expect, it, vi } from 'vitest';
 import { HOLD_MS, pressTimer, subLine } from './phone.ts';
+import { describe, expect, it, vi } from 'vitest';
 
 describe('subLine', () => {
 	it('names one episode by code and name', () => {

@@ -1,36 +1,29 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
-	// This lives on the artist page's dark panel in both themes, so status text uses the *-on-art colours.
-	import { SvelteSet } from 'svelte/reactivity';
-	import Icon from '#lib/Icon.svelte';
+	import Icon from '#lib/ui/Icon.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
-	import ReleaseSheet from '#lib/ReleaseSheet.svelte';
-	import DeleteSheet from '#lib/DeleteSheet.svelte';
 	import Menu, { type MenuItem } from '#lib/ui/Menu.svelte';
-	import CompactRow from '#lib/history-looks/CompactRow.svelte';
-	import { isRoutine } from '#lib/history-looks/dirs.ts';
-	import { groupDownloads } from '#lib/history.ts';
-	import { splitSteps, type RenameStep } from '#lib/organise.ts';
-	import RenamePreview from '#lib/RenamePreview.svelte';
-	import { api, message } from '#lib/api.ts';
-	import { toasts } from '#lib/toasts.svelte.ts';
-	import { ago, bytes } from '#lib/format.ts';
-	import type { AlbumSummary, EventRecord, LibraryFolder, PickRulesView, TitleView, TrackView } from '#lib/types.ts';
 	import Button from '#lib/ui/Button.svelte';
-	import { to } from '#lib/paths.ts';
-	import { albumCover, albumStateOf, extraKinds, mainKinds, newAlbumChoices, pressingStatuses, toggle as toggleKind } from '#lib/music/music.ts';
+	import type { TrackView } from './types.ts';
+	import { albumCover, albumStateOf, extraKinds, mainKinds, newAlbumChoices, pressingStatuses, toggle as toggleKind } from './labels.ts';
+	import { ReleaseSheet, DeleteSheet, splitSteps, type RenameStep, RenamePreview } from '#lib/mediafiles/index.ts';
+	import { HistoryLine as CompactRow, isRoutine, groupDownloads } from '#lib/downloads/index.ts';
+	import { goto } from '$app/navigation';
+	import { SvelteSet } from 'svelte/reactivity';
+	import { api, message } from '#lib/core/api.ts';
+	import { toasts } from '#lib/core/toasts.svelte.ts';
+	import { ago, bytes } from '#lib/core/format.ts';
+	import type { AlbumSummary, EventRecord, LibraryFolder, PickRulesView, TitleView } from '#lib/core/types.ts';
+	import { to } from '#lib/core/paths.ts';
 
-	// An artist's Library tab: what you have, the albums grouped by kind (closed
-	// until opened, with their tracks and a link to the album page), keep up to
-	// date, search and pick per album and track, activity, settings (album kinds
-	// too) and delete. Same pattern as a show's seasons. `stamp` changes when the
-	// page hears the artist changed, so the tab reads again.
+	// This sits on the artist page's dark panel in both themes, so status text uses the *-on-art colours.
+
+	// An artist's Library tab: what you have, the albums grouped by kind (closed until opened, with their tracks and a link to the album page), keep up to date, search and pick per album and track, activity, and settings (album kinds, quality, folder, delete).
 	let { titleId, manage = false, stamp = 0, ondeleted }: { titleId: number; manage?: boolean; stamp?: number; ondeleted?: () => void } = $props();
 
 	let title = $state<TitleView | null>(null);
 	let albums = $state<AlbumSummary[]>([]);
 	let events = $state<EventRecord[]>([]);
-	// History: the same compact rows as a movie's Library tab, routine work left out.
+	// The same compact rows as a movie's Library tab, with routine work left out.
 	const eventRows = $derived(groupDownloads(events.filter((e) => !isRoutine(e.Kind))));
 	const eventTitles = $derived(new Map(title ? [[title.id, title]] : []));
 	let busy = $state('');
@@ -73,7 +66,7 @@
 		if (!tracks[id]) void loadTracks(id);
 	}
 
-	// Lidarr-style groups, in this order; anything else falls under Other.
+	// Groups in this order; anything else falls under Other.
 	const KINDS: [string, string][] = [['album', 'Albums'], ['ep', 'EPs'], ['single', 'Singles'], ['live', 'Live'], ['compilation', 'Compilations'], ['other', 'Other']];
 	const kindOf = (a: AlbumSummary) => (a.secondary_types?.includes('live') ? 'live' : a.secondary_types?.includes('compilation') ? 'compilation' : ['album', 'ep', 'single'].includes(a.type) ? a.type : 'other');
 	const kept = $derived(albums.filter((a) => a.included));
@@ -141,8 +134,7 @@
 	const refresh = () => run('refresh', () => api.post(`/titles/${titleId}/refresh`), 'Refreshing artist');
 	const albumPage = (a: AlbumSummary) => to(`/library/${titleId}/albums/${a.id}`);
 
-	// Album kinds: what counts for this artist, and what happens to albums
-	// MusicBrainz lists later. Saving brings the newly included albums in.
+	// Album kinds: what counts for this artist, and what happens to albums MusicBrainz lists later. Saving brings the newly included albums in.
 	let kindsOpen = $state(false);
 	let eNew = $state('all');
 	let eTypes = $state<string[]>([]);
@@ -202,7 +194,7 @@
 	let deleteOpen = $state(false);
 	let renameOpen = $state(false);
 
-	// Settings the movie way (Luis 2026-11-05): choices on the row, a row only when it can do something.
+	// Settings like a movie's: choices on the row, a row only when it can do something.
 	let rules = $state<PickRulesView[]>([]);
 	let folders = $state<LibraryFolder[]>([]);
 	let renameCount = $state(0);
@@ -216,7 +208,7 @@
 		void title?.id;
 		void api.get<{ steps: RenameStep[] }>(`/titles/${titleId}/rename`).then((r) => (renameCount = splitSteps(r.steps).change.length), () => (renameCount = 0));
 	});
-	// Quality: the three ready-made music sets, low to high, with short names on the control.
+	// The three ready-made music sets, low to high, with short names on the control.
 	const qOrder = ['Any music', 'Lossy 320 or V0', 'Lossless first'];
 	const qShort: Record<string, string> = { 'Any music': 'Any', 'Lossy 320 or V0': 'Lossy', 'Lossless first': 'Lossless' };
 	const qHints: Record<string, string> = { 'Any music': 'Any quality, up to lossless', 'Lossy 320 or V0': 'MP3 320 or V0, small files', 'Lossless first': 'FLAC, MP3 320 until found' };
@@ -236,7 +228,7 @@
 		{ label: 'New set', icon: 'plus', href: to('/settings/pick-rules/new') },
 		{ label: 'Edit sets', icon: 'tools', href: to(qCustom && !qCustom.preset ? `/settings/pick-rules/${qCustom.id}` : '/settings/pick-rules') }
 	]);
-	// Folder: only with another music folder to move to; moving asks first.
+	// Only with another music folder to move to; moving asks first.
 	let moveTo = $state<LibraryFolder | null>(null);
 	const folderMenu = $derived<MenuItem[]>(folders.map((f) => ({ label: f.label, checked: f.id === title?.library_folder_id, onselect: () => { if (f.id !== title?.library_folder_id) moveTo = f; } })));
 	const curFolder = $derived(folders.find((f) => f.id === title?.library_folder_id));
@@ -498,7 +490,7 @@
 	.al-ico { display: grid; place-items: center; width: 32px; height: 32px; border: 0; border-radius: 99px; background: none; color: var(--text-muted); cursor: pointer; }
 	.al-ico:hover:not(:disabled) { background: color-mix(in srgb, var(--text) 9%, transparent); color: var(--text); }
 	.al-ico:disabled { opacity: .3; cursor: default; }
-	/* The box is small; its hit area reaches 44px (the tap size). */
+	/* The box is small; its hit area reaches 44px. */
 	.al-keep::after { content: ''; position: absolute; inset: -11px; }
 	.al-keep:disabled { opacity: .35; cursor: default; }
 	.al-keep { position: relative; flex: none; display: grid; place-items: center; width: 22px; height: 22px; padding: 0; border: 1.5px solid color-mix(in srgb, var(--text) 30%, transparent); border-radius: 6px; background: none; color: transparent; cursor: pointer; }
@@ -515,7 +507,6 @@
 	.al-tr-st.downloading { color: var(--info-on-art); background: color-mix(in srgb, var(--info) 12%, transparent); }
 	.al-tr-st.failed { color: var(--fail-on-art); background: color-mix(in srgb, var(--fail) 12%, transparent); }
 	.al-link { justify-self: start; margin-top: 8px; padding: 0; border: 0; background: none; color: inherit; font: 600 14px/1 var(--font-ui); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
-	/* Static rows (choices inside) and the Quality control, same as a movie's Settings. */
 	.al-rowbtn.static { cursor: default; }
 	.al-rowbtn.static:hover { background: none; }
 	.al-rowbtn.static + .al-rowbtn, .al-rowbtn + .al-rowbtn.static { box-shadow: inset 0 .5px 0 color-mix(in srgb, var(--text) 10%, transparent); }

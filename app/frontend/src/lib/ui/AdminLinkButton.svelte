@@ -1,12 +1,10 @@
 <script lang="ts">
+	// A link styled as a button, with variants and sizes.
 	import type { Snippet } from 'svelte';
 	import type { HTMLAnchorAttributes } from 'svelte/elements';
-	import Icon, { type IconName } from '../Icon.svelte';
-	import { press } from '../motion.ts';
+	import Icon, { type IconName } from './Icon.svelte';
+	import { press } from '../core/motion.ts';
 
-	// A link that looks like the kit Button and keeps every link attribute
-	// (download, target, rel, data-testid). Use Button for actions; this is for
-	// links that must stay links, such as a file download.
 	type Props = Omit<HTMLAnchorAttributes, 'children'> & {
 		href: string;
 		variant?: 'primary' | 'secondary' | 'plain' | 'destructive';
@@ -15,6 +13,7 @@
 		children: Snippet;
 	};
 	let { href, variant = 'secondary', size = 'md', icon, children, class: cls = '', ...rest }: Props = $props();
+	// Icon grows with the button size.
 	const iconSize = $derived(size === 'lg' ? 20 : size === 'sm' ? 16 : 18);
 </script>
 
@@ -42,6 +41,7 @@
 	.plain:hover { background: var(--accent-soft); }
 	.destructive { background: color-mix(in srgb, var(--fail) 12%, transparent); color: var(--fail-text); }
 	.ui-link-btn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	/* Touch targets stay at least 44px tall. */
 	@media (pointer: coarse) { .ui-link-btn { min-height: 44px; } }
 	@media (max-width: 767px) { .sm { min-height: 36px; padding: 0 14px; font-size: 14px; } }
 </style>

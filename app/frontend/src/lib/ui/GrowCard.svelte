@@ -1,26 +1,25 @@
 <script lang="ts">
-	import { onDestroy, onMount, type Snippet } from 'svelte';
-	import { api, message } from '../api.ts';
-	import { toasts } from '../toasts.svelte.ts';
-	import { richMetadata, type RichMeta } from './TitleHero.svelte';
-	import TrailerPlayer from './TrailerPlayer.svelte';
+	// Hover card that grows out of a poster or tile and plays a trailer after a pause.
 	import IconButton from './IconButton.svelte';
+	import Icon, { type IconName } from './Icon.svelte';
+	import TrailerPlayer from './TrailerPlayer.svelte';
+	import { richMetadata, type RichMeta } from './TitleHero.svelte';
 	import type { CardOwned } from './CardBadges.svelte';
-	import Icon, { type IconName } from '../Icon.svelte';
-	import { followHint, followLabel, followPath, movieFollowHint, setFollow, type FollowTarget } from '../follow.ts';
-	import { fitTags, growFacts } from '../grow-lines.ts';
-	import { proxied, sized } from '../tmdb-image.ts';
-	import { autoplayHere, loadUISettings, trailerSources, type TrailerSource } from '../autoplay.svelte.ts';
-	import { fromHandoff, openTheater } from '../theater.svelte.ts';
-	import { THEATER_GROW_MS } from '../motion.ts';
-	import { flipTransform, growPlacement, GROW_MS, GROW_SCALE, GROW_WIDTH, SHRINK_MS, TRAILER_AFTER, type Growth, type Rect } from '../grow.ts';
+	import { followHint, followLabel, followPath, movieFollowHint, setFollow, type FollowTarget } from './follow.ts';
+	import { fitTags, growFacts } from './grow-lines.ts';
+	import { flipTransform, growPlacement, GROW_MS, GROW_SCALE, GROW_WIDTH, SHRINK_MS, TRAILER_AFTER, type Growth, type Rect } from './grow.ts';
+	import { onDestroy, onMount, type Snippet } from 'svelte';
+	import { api, message } from '../core/api.ts';
+	import { toasts } from '../core/toasts.svelte.ts';
+	import { proxied, sized } from '../core/tmdb-image.ts';
+	import { autoplayHere, loadUISettings, trailerSources, type TrailerSource } from '../core/trailer/autoplay.svelte.ts';
+	import { fromHandoff, openTheater } from '../core/trailer/theater.svelte.ts';
+	import { THEATER_GROW_MS } from '../core/motion.ts';
 
-	// The wide card grown in place, Netflix style: the card itself (same
-	// picture, same logo, same badges) scales up about 1.5x over its
-	// neighbours, then an info panel shows under the picture and the
-	// trailer fades in inside it. A FLIP from the card's exact rect, in a
-	// portal at the end of <body> so rows never clip it; leaving shrinks it
-	// back onto the card before it goes.
+	// How long the trailer stays faded out so the card can settle first.
+	const HOLD_MS = 1200;
+	const STATE_ICON: Partial<Record<CardOwned['state'], IconName>> = { available: 'check', partial: 'dash', downloading: 'download', requested: 'clock' };
+
 	let {
 		anchor,
 		kind,
@@ -48,57 +47,101 @@
 		service = null,
 		owned = null
 	}: {
-		/** The card's picture box: the grown card starts exactly on it. */
 		anchor: HTMLElement;
 		kind: 'movie' | 'show';
 		tmdb: string;
 		title: string;
 		href?: string;
 		year?: number;
-		/** The card's own picture URL (already loaded), so the grown card shows the same image. */
 		image?: string | null;
 		logo?: string | null;
-		/** The card has a freshness strip: the name sits higher, as on the card. */
 		lifted?: boolean;
-		/** Set by the card when the pointer left: shrink back, then ongone. */
 		leaving?: boolean;
 		badge?: Snippet;
 		action?: Snippet;
 		onenter?: () => void;
 		onleave?: () => void;
-		/** Esc, scroll or resize: close now (back: focus was inside, return it to the card). */
 		onclose: (back?: boolean) => void;
-		/** Opened from the keyboard: focus moves to the first button. */
 		focusIn?: boolean;
-		/** Tab past the last button (or Shift+Tab before the first): back is true for Shift+Tab. */
 		ontab?: (back: boolean) => void;
-		/** Where focus goes when the full-screen trailer opened from here closes. */
 		returnTo?: HTMLElement;
-		/** The shrink finished; the card shows again. */
 		ongone: () => void;
-		/** The ⌄ opens the More info panel here (Explore) instead of following href. */
 		onmore?: (from: DOMRect) => void;
-		/** A show in the Library: the bell follows it. */
 		followId?: number;
-		/** A show, or a movie not out yet, not in the Library: the bell follows it by TMDB id. */
 		followTmdb?: boolean;
-		/** The one line under the facts: the household's status, else why the card is shown. */
 		context?: { text: string; kind: 'house' | 'why' } | null;
-		/** On one of the member's streaming services: its logo ends the facts line. */
 		service?: { name: string; logo?: string } | null;
-		/** The card's own library state: it fills the first button slot when the caller's action shows nothing. */
 		owned?: CardOwned | null;
 	} = $props();
 
 	let following = $state(false);
 	let followBusy = $state(false);
-	// The bell: a Library show by its id; a show or a movie not out yet by TMDB id (FollowShowTMDB, FollowMovieTMDB).
+	let card = $state<HTMLElement>();
+	let g = $state<Growth | null>(null);
+	let meta = $state<RichMeta | null>(null);
+	let sources = $state<TrailerSource[]>([]);
+	let trailerOk = $state(false);
+	let playing = $state(false);
+	let held = $state(true);
+	let shown = $state(false);
+	let logoFailed = $state(false);
+	let bigIn = $state(false);
+	let anim: Animation | null = null;
+	const ctl = new AbortController();
+
 	const followTarget = $derived<FollowTarget | null>(followId && kind === 'show' ? { titleId: followId } : followTmdb ? { tmdb, kind } : null);
+	const showing = $derived(playing && !held);
+	const pic = $derived(image ?? (meta?.backdrop ? sized(meta.backdrop, 'backdrop') || null : null));
+	// Only TMDB sizes have a bigger variant to swap in.
+	const big = $derived(pic && /\/artwork\/tmdb\/w(?:300|780)\//.test(pic) ? pic.replace(/\/w(?:300|780)\//, '/w1280/') : null);
+	const shownLogo = $derived(logoFailed ? null : logo ? logo : meta?.logo ? sized(meta.logo, 'poster') : null);
+	const facts = $derived(growFacts({ kind, year: meta?.year ?? year, seasons: meta?.seasons, runtime: meta?.runtime, certification: meta?.certification, score: meta?.score }));
+	const tags = $derived(fitTags(meta?.moods, meta?.genres));
+	const bellHint = $derived(kind === 'movie' ? movieFollowHint(title, following) : followHint('show', following));
+	const stateIcon = $derived(owned ? STATE_ICON[owned.state] : undefined);
+
 	$effect(() => {
 		const t = followTarget;
 		if (!t) return;
 		api.get<{ following: boolean }>(followPath(t)).then((r) => (following = r.following), () => {});
 	});
+	$effect(() => {
+		if (leaving) shrink();
+	});
+
+	onMount(() => {
+		const t = setTimeout(() => (held = false), HOLD_MS);
+		return () => clearTimeout(t);
+	});
+	onMount(() => {
+		grow();
+		if (focusIn) requestAnimationFrame(() => focusables()[0]?.focus({ preventScroll: true }));
+		const close = () => onclose();
+		// The card is fixed over the page, so any scroll or resize closes it.
+		window.addEventListener('scroll', close, { passive: true, capture: true });
+		window.addEventListener('resize', close);
+		const later = setTimeout(() => (trailerOk = true), TRAILER_AFTER);
+		const metaP = richMetadata(api.get, kind, tmdb).then((m) => (meta = m));
+		void (async () => {
+			await loadUISettings();
+			if (!autoplayHere() || ctl.signal.aborted) return;
+			const first = await trailerSources(kind, tmdb, undefined, ctl.signal);
+			if (ctl.signal.aborted) return;
+			if (first.some((x) => x.kind !== 'embed')) return void (sources = first);
+			const m = await metaP;
+			if (!ctl.signal.aborted) sources = await trailerSources(kind, tmdb, m?.videos, ctl.signal);
+		})();
+		return () => {
+			clearTimeout(later);
+			window.removeEventListener('scroll', close, { capture: true });
+			window.removeEventListener('resize', close);
+		};
+	});
+	onDestroy(() => {
+		ctl.abort();
+		anim?.cancel();
+	});
+
 	async function flipFollow() {
 		const t = followTarget;
 		if (!t) return;
@@ -112,66 +155,6 @@
 		}
 	}
 
-	let card = $state<HTMLElement>();
-	let g = $state<Growth | null>(null);
-	let meta = $state<RichMeta | null>(null);
-	let sources = $state<TrailerSource[]>([]);
-	let trailerOk = $state(false);
-	let playing = $state(false);
-	// Netflix holds the still art, badge and title for a beat after the card
-	// opens; the trailer (already playing underneath) fades in after that.
-	const HOLD_MS = 1200;
-	let held = $state(true);
-	onMount(() => {
-		const t = setTimeout(() => (held = false), HOLD_MS);
-		return () => clearTimeout(t);
-	});
-	const showing = $derived(playing && !held);
-	let shown = $state(false);
-	let logoFailed = $state(false);
-	let anim: Animation | null = null;
-	const ctl = new AbortController();
-	const reduce = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
-
-	/**
-	 * The rect the grow starts from: the card's own picture when it is 16:9;
-	 * a poster or square tile stands in for a 16:9 frame centred on it, as
-	 * tall as the tile, so every card opens the same wide preview (Netflix).
-	 */
-	function from(): Rect {
-		const a = anchor.getBoundingClientRect();
-		if (a.height <= 0 || Math.abs(a.width / a.height - 16 / 9) < 0.05) return a;
-		const width = (a.height * 16) / 9 / GROW_SCALE;
-		const height = (width * 9) / 16;
-		return { left: a.left + a.width / 2 - width / 2, top: a.top + a.height / 2 - height / 2, width, height };
-	}
-
-	function measure(): Growth | null {
-		if (!card) return null;
-		const a = from();
-		const panel = card.querySelector<HTMLElement>('.panel')?.offsetHeight ?? 0;
-		const row = (anchor.closest('.row') ?? anchor.closest('main'))?.getBoundingClientRect();
-		return growPlacement({ left: a.left, top: a.top, width: a.width, height: a.height }, panel, { width: document.documentElement.clientWidth, height: window.innerHeight }, row ? { left: row.left, right: row.right } : undefined, { min: GROW_WIDTH, max: GROW_WIDTH });
-	}
-
-	/** The clip that shows only the picture (the start and end of the grow). */
-	function clipTo(at: Growth) {
-		const panel = Math.max(0, (card?.offsetHeight ?? 0) - at.mediaHeight);
-		return `inset(0 0 ${panel}px 0 round var(--r-card))`;
-	}
-
-	/** will-change only while it moves, so the card at rest is drawn crisp at its real size. */
-	function settle(a: Animation, done?: () => void) {
-		a.onfinish = () => {
-			if (anim === a) {
-				a.cancel();
-				anim = null;
-				if (card) card.style.willChange = '';
-			}
-			done?.();
-		};
-	}
-
 	function grow() {
 		const next = measure();
 		if (!next || !card) return;
@@ -182,7 +165,6 @@
 		card.style.willChange = 'transform';
 		anim = card.animate(
 			[
-				// Only the picture at first: the panel below is clipped away, then opens as the card grows.
 				{ transform: flipTransform(next.from), clipPath: clipTo(next) },
 				{ transform: 'none', clipPath: 'inset(0 0 0 0 round var(--r-card))' }
 			],
@@ -191,18 +173,13 @@
 		settle(anim);
 	}
 
-	/** The full-screen player took over from this card's spot: the card hides at once, under it, and is taken down after the grow (its teardown never costs the grow frames). */
-	function hideNow() {
-		anim?.cancel();
-		anim = null;
-		if (card) card.style.visibility = 'hidden';
-	}
-
+	// Plays the grow in reverse onto the anchor, then tells the parent to drop the card.
 	function shrink() {
 		if (card?.style.visibility === 'hidden') return ongone();
 		if (!card || !g || reduce()) return ongone();
 		const a = from();
 		const back = { x: a.left - g.left, y: a.top - g.top, scale: a.width / g.width };
+		// Start from the live transform so a shrink mid-grow does not jump.
 		const now = anim && anim.playState === 'running' ? getComputedStyle(card).transform : 'none';
 		anim?.cancel();
 		card.style.willChange = 'transform';
@@ -210,20 +187,14 @@
 		anim.onfinish = () => ongone();
 	}
 
-	$effect(() => {
-		if (leaving) shrink();
-	});
-
-	// The portal: moved to <body> so overflow and transforms of rows do not clip it.
-	function portal(node: HTMLElement) {
-		document.body.appendChild(node);
-		return { destroy: () => node.remove() };
+	function hideNow() {
+		anim?.cancel();
+		anim = null;
+		if (card) card.style.visibility = 'hidden';
 	}
 
-	// Shown buttons only: the stand-in state button is in the DOM but hidden when the caller's action shows.
-	const focusables = () => (card ? [...card.querySelectorAll<HTMLElement>('a[href]:not([tabindex="-1"]), button:not([disabled])')].filter((e) => e.getClientRects().length > 0) : []);
+	// Arrows go to the anchor's row; Tab at either end leaves the card.
 	function keydown(e: KeyboardEvent) {
-		// The portal sits outside the row: hand the row's arrow keys back to it (rove.ts), from the card.
 		if (['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) {
 			e.preventDefault();
 			anchor.dispatchEvent(new KeyboardEvent('keydown', { key: e.key, bubbles: true, cancelable: true }));
@@ -243,54 +214,48 @@
 		onleave?.();
 	}
 
-	onMount(() => {
-		grow();
-		// The panel's buttons exist from the start (it is clipped, not absent): focus the first button (the trailer's, when it already plays).
-		if (focusIn) requestAnimationFrame(() => focusables()[0]?.focus({ preventScroll: true }));
-		const close = () => onclose();
-		window.addEventListener('scroll', close, { passive: true, capture: true });
-		window.addEventListener('resize', close);
-		// The player is put in at once, hidden until a picture plays (it fades
-		// in over the end of the grow); the address was prefetched in view or
-		// at hover start, so the trailer does not wait on the details.
-		const later = setTimeout(() => (trailerOk = true), TRAILER_AFTER);
-		const metaP = richMetadata(api.get, kind, tmdb).then((m) => (meta = m));
-		void (async () => {
-			await loadUISettings();
-			if (!autoplayHere() || ctl.signal.aborted) return;
-			const first = await trailerSources(kind, tmdb, undefined, ctl.signal);
-			if (ctl.signal.aborted) return;
-			if (first.some((x) => x.kind !== 'embed')) return void (sources = first);
-			// No direct stream: the embed needs the title's videos from the details.
-			const m = await metaP;
-			if (!ctl.signal.aborted) sources = await trailerSources(kind, tmdb, m?.videos, ctl.signal);
-		})();
-		return () => {
-			clearTimeout(later);
-			window.removeEventListener('scroll', close, { capture: true });
-			window.removeEventListener('resize', close);
-		};
-	});
-	onDestroy(() => {
-		ctl.abort();
-		anim?.cancel();
-	});
+	const reduce = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+	const focusables = () => (card ? [...card.querySelectorAll<HTMLElement>('a[href]:not([tabindex="-1"]), button:not([disabled])')].filter((e) => e.getClientRects().length > 0) : []);
 
-	// The sharp picture for the grown card's real size (w1280), over the card's own w300 or w780 until it loads.
-	let bigIn = $state(false);
-	// Poster cards pass no picture: the title's backdrop fills the 16:9 frame.
-	const pic = $derived(image ?? (meta?.backdrop ? sized(meta.backdrop, 'backdrop') || null : null));
-	const big = $derived(pic && /\/artwork\/tmdb\/w(?:300|780)\//.test(pic) ? pic.replace(/\/w(?:300|780)\//, '/w1280/') : null);
-	const shownLogo = $derived(logoFailed ? null : logo ? logo : meta?.logo ? sized(meta.logo, 'poster') : null);
-	// The facts: 2024 · 3 seasons · TV-PG · ★ 6.8 (shows), 2024 · 1h 46m · PG-13 · ★ 6.6 (movies); the star only with 25 votes (shownScore).
-	const facts = $derived(growFacts({ kind, year: meta?.year ?? year, seasons: meta?.seasons, runtime: meta?.runtime, certification: meta?.certification, score: meta?.score }));
-	// Mood words the genres support (server moods, checked again), else genres: shown when there is no context line.
-	const tags = $derived(fitTags(meta?.moods, meta?.genres));
-	const bellHint = $derived(kind === 'movie' ? movieFollowHint(title, following) : followHint('show', following));
-	// The first button is never missing (Netflix's first slot): Ask or Add when the caller has it, else the
-	// title's state in the same shape as the card's badge, else the bell, else a plain Open.
-	const STATE_ICON: Partial<Record<CardOwned['state'], IconName>> = { available: 'check', partial: 'dash', downloading: 'download', requested: 'clock' };
-	const stateIcon = $derived(owned ? STATE_ICON[owned.state] : undefined);
+	// Start box for the grow. A non 16:9 anchor gets a 16:9 box centred on it so the card lines up.
+	function from(): Rect {
+		const a = anchor.getBoundingClientRect();
+		if (a.height <= 0 || Math.abs(a.width / a.height - 16 / 9) < 0.05) return a;
+		const width = (a.height * 16) / 9 / GROW_SCALE;
+		const height = (width * 9) / 16;
+		return { left: a.left + a.width / 2 - width / 2, top: a.top + a.height / 2 - height / 2, width, height };
+	}
+
+	function measure(): Growth | null {
+		if (!card) return null;
+		const a = from();
+		const panel = card.querySelector<HTMLElement>('.panel')?.offsetHeight ?? 0;
+		const row = (anchor.closest('.row') ?? anchor.closest('main'))?.getBoundingClientRect();
+		return growPlacement({ left: a.left, top: a.top, width: a.width, height: a.height }, panel, { width: document.documentElement.clientWidth, height: window.innerHeight }, row ? { left: row.left, right: row.right } : undefined, { min: GROW_WIDTH, max: GROW_WIDTH });
+	}
+
+	// Cuts off the info panel so only the media shows while the card is small.
+	function clipTo(at: Growth) {
+		const panel = Math.max(0, (card?.offsetHeight ?? 0) - at.mediaHeight);
+		return `inset(0 0 ${panel}px 0 round var(--r-card))`;
+	}
+
+	function settle(a: Animation, done?: () => void) {
+		a.onfinish = () => {
+			if (anim === a) {
+				a.cancel();
+				anim = null;
+				if (card) card.style.willChange = '';
+			}
+			done?.();
+		};
+	}
+
+	// Moves the card to body so page transforms and overflow cannot clip it.
+	function portal(node: HTMLElement) {
+		document.body.appendChild(node);
+		return { destroy: () => node.remove() };
+	}
 </script>
 
 <svelte:window onkeydown={(e) => e.key === 'Escape' && onclose(!!card?.contains(document.activeElement))} />
@@ -320,7 +285,6 @@
 			<span class="tp" class:held={!showing}><TrailerPlayer {sources} {title} repeat corner onplaying={() => (playing = true)} onfail={() => (playing = false)} onended={() => (playing = false)} onexpand={(o) => { openTheater({ kind, tmdb, title, ...fromHandoff(o), from: 'hover', returnTo }); hideNow(); setTimeout(onclose, THEATER_GROW_MS + 50); }} /></span>
 		{/if}
 		<span class="scrim" class:playing={showing} aria-hidden="true"></span>
-		<!-- The logo, else the name, stays over the trailer (card template). -->
 		{#if shownLogo}<span class="name" class:lifted class:playing={showing} aria-hidden="true"><img class="logo" src={shownLogo} alt="" onerror={() => (logoFailed = true)} /></span>
 		{:else}<span class="name" class:lifted class:playing={showing} aria-hidden="true"><span class="word">{title}</span></span>{/if}
 		{#if badge && g}<span class="badge" class:playing={showing}>{@render badge()}</span>{/if}
@@ -328,7 +292,6 @@
 	<div class="panel">
 		<div class="buttons">
 			{#if action}{@render action()}{/if}
-			<!-- Stands in only while it is the row's first button (CSS), so an action that renders nothing never leaves a hole. -->
 			{#if href && stateIcon && owned}<IconButton class="state" icon={stateIcon} label={owned.label} variant="glass" size="lg" {href} />
 			{:else if href && !followTarget}<IconButton class="state" icon="arrow" label="Go to {title}" variant="glass" size="lg" {href} />{/if}
 			{#if followTarget}<button type="button" class="more bell" class:on={following} aria-pressed={following} aria-label="{followLabel(following)} {title}" title={bellHint} disabled={followBusy} onclick={flipFollow} data-testid="grow-follow"><Icon name={following ? 'bellOn' : 'bell'} size={18} /></button>{/if}
@@ -336,7 +299,6 @@
 			{:else if href}<a class="more info" {href} aria-label="More about {title}" title="More info"><Icon name="chevronDown" size={20} /></a>{/if}
 		</div>
 		<p class="title" title={title}>{title}</p>
-		<!-- At most two lines, always in this order and always taking their room: the facts (the service logo ends it), then one context line. -->
 		<p class="facts" data-testid="grow-facts">
 			{#each facts as f, i (f.part)}{#if i}<i aria-hidden="true">·</i>{/if}<span class:rating={f.part === 'rating'} class:stars={f.part === 'stars'}>{f.text}</span>{/each}
 			{#if service}<span class="svc" title="On {service.name}">{#if service.logo}<img src={proxied(service.logo)} alt="" />{/if}<span class={service.logo ? 'sr' : 'svc-word'}>On {service.name}</span></span>{/if}
@@ -347,6 +309,7 @@
 </div>
 
 <style>
+	/* Fixed and hidden until placed so it never flashes at the wrong spot. */
 	.ui-grow {
 		--grow-shadow: 0 18px 48px rgb(0 0 0 / 0.42), 0 4px 14px rgb(0 0 0 / 0.28);
 		position: fixed; z-index: 60;
@@ -362,22 +325,21 @@
 	.media > img.big { opacity: 0; transition: opacity var(--dur-fast) var(--ease-out); }
 	.media > img.big.in { opacity: 1; }
 	.scrim { position: absolute; inset: auto 0 0; height: 55%; background: linear-gradient(to top, rgb(0 0 0 / 0.62), transparent); pointer-events: none; transition: opacity var(--dur-slow) var(--ease-out); }
-	/* The same bottom-left box as the card (WideCard), so the title doesn't grow or move as the card opens; once the trailer plays it settles a little smaller (Netflix). */
+	/* Logo box height tracks card width through container units. */
 	.name { position: absolute; left: 6%; bottom: 9%; z-index: 2; width: 40%; height: 13cqw; display: flex; align-items: flex-end; justify-content: flex-start; pointer-events: none; transform-origin: left bottom; transition: opacity var(--dur) var(--ease-out), transform var(--dur-slow) var(--ease-out); }
 	.name.lifted { bottom: 9%; }
 	.name.playing { transform: scale(.8); }
 	.badge.playing { opacity: 0; }
 	.tp { position: absolute; inset: 0; transition: opacity var(--dur-slow) var(--ease-out); }
 	.tp.held { opacity: 0; }
-	/* The expand button shows while the card is hovered or focused. */
 	.ui-grow :global(.corner) { opacity: 0; transition: opacity var(--dur-fast) var(--ease-out); }
 	.ui-grow:hover :global(.corner), .ui-grow:focus-within :global(.corner) { opacity: 1; }
 	.word { font: 700 clamp(14px, 4.4cqw, 26px)/1.05 var(--font-display); letter-spacing: -0.02em; color: #fff; text-shadow: 0 2px 10px rgb(0 0 0 / 0.55); display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
 	.badge { transition: opacity var(--dur) var(--ease-out); }
 	.scrim.playing { opacity: 0.5; }
 	.logo { display: block; max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; object-position: left bottom; filter: drop-shadow(0 2px 8px rgb(0 0 0 / 0.5)); }
-	/* The badges at their native size on the grown picture (no scale). */
 	.badge { position: absolute; inset: 0; z-index: 3; container: art / inline-size; pointer-events: none; }
+	/* Info panel fades in after the card has grown. */
 	.panel { display: flex; flex-direction: column; gap: 8px; padding: 12px 14px 14px; opacity: 0; transform: translateY(-6px); }
 	.shown .panel { animation: panel-in var(--dur-fast) var(--ease-out) 120ms both; }
 	@keyframes panel-in { to { opacity: 1; transform: none; } }
@@ -389,8 +351,8 @@
 	.more:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.more.bell.on { background: var(--text); color: var(--bg); box-shadow: none; }
 	.more.info { margin-left: auto; }
+	/* Only one state button shows even if the action slot adds its own. */
 	.buttons :global(.state:not(:first-child)) { display: none; }
-	/* Every panel button is the same 40px round (the Ask/Add one included). */
 	.buttons :global(.ui-ibtn) { width: 40px; height: 40px; flex: none; }
 	.buttons :global(.ui-ibtn:focus-visible) { outline: none; box-shadow: var(--focus-ring); }
 	.title { margin: 2px 0 -4px; font: var(--t-headline); letter-spacing: -0.01em; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -400,6 +362,7 @@
 	.svc { display: inline-flex; align-items: center; margin-left: 4px; flex: none; }
 	.svc img { display: block; width: 18px; height: 18px; border-radius: 4px; object-fit: cover; box-shadow: 0 0 0 1px var(--line); }
 	.svc-word { color: var(--text); }
+	/* Visually hidden but still read by screen readers. */
 	.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 	.facts { display: flex; align-items: center; gap: 6px; margin: 0; white-space: nowrap; overflow: hidden; font: var(--t-footnote); color: var(--text-muted); font-variant-numeric: tabular-nums; }
 	.rating { padding: 0 5px; border: 1px solid color-mix(in srgb, var(--text) 45%, transparent); border-radius: 3px; color: var(--text); font-size: 11px; line-height: 16px; }

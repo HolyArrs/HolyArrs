@@ -1,11 +1,10 @@
 <script lang="ts">
+	// Button that opens a floating panel placed to stay inside the viewport.
 	import type { Snippet } from 'svelte';
-	import { popIn, popOut } from './transitions.ts';
-	import Icon, { type IconName } from '../Icon.svelte';
-	import { press } from '../motion.ts';
+	import Icon, { type IconName } from './Icon.svelte';
+	import { popIn, popOut } from '../core/transitions.ts';
+	import { press } from '../core/motion.ts';
 
-	// A trigger and a floating panel. Closes on Escape, an outside click, or
-	// when content calls close(); focus goes back to the trigger.
 	let {
 		label,
 		icon,
@@ -23,12 +22,9 @@
 		ontriggerkey,
 		tabindex
 	}: {
-		/** Accessible name of the trigger. */
 		label: string;
 		icon?: IconName;
-		/** Visible trigger text (button and row variants). */
 		text?: string;
-		/** Custom trigger content, replaces icon/text. */
 		trigger?: Snippet;
 		variant?: 'icon' | 'button' | 'row';
 		align?: 'start' | 'end';
@@ -39,30 +35,21 @@
 		width?: number;
 		children: Snippet<[() => void]>;
 		onopen?: (panel: HTMLElement) => void;
-		/** Keys pressed on the trigger (a Menu opens on the arrow keys). */
 		ontriggerkey?: (e: KeyboardEvent) => void;
-		/** Trigger tab stop, for rows that keep one roving stop. */
 		tabindex?: number;
 	} = $props();
 
 	const id = $props.id();
+
 	let root = $state<HTMLElement>();
 	let button = $state<HTMLButtonElement>();
 	let panel = $state<HTMLElement>();
+	let pos = $state('');
+	let flip = $state(false);
 
-	export function close(returnFocus = true) {
-		if (!open) return;
-		open = false;
-		if (returnFocus) button?.focus({ preventScroll: true });
-	}
-	function toggle() {
-		open = !open;
-	}
-	function leave(e: FocusEvent) {
-		const to = e.relatedTarget as Node | null;
-		if (to && root && !root.contains(to)) close(false);
-	}
+	const origin = $derived(`${(placement === 'below') !== flip ? 'top' : 'bottom'} ${align === 'start' ? 'left' : 'right'}`);
 
+	// Outside click and Escape close it; focus moves into the panel on the next tick.
 	$effect(() => {
 		if (!open) return;
 		const outside = (e: PointerEvent) => {
@@ -70,7 +57,6 @@
 		};
 		const esc = (e: KeyboardEvent) => {
 			if (e.key === 'Escape') {
-				// Caught first, so a Sheet behind the panel stays open.
 				e.preventDefault();
 				e.stopPropagation();
 				close();
@@ -89,31 +75,7 @@
 		};
 	});
 
-	// Keep the panel on screen: a menu near the right edge of a phone would
-	// otherwise reach past it and make the whole page scroll sideways.
-	// The panel floats above the page (fixed to the viewport), so a parent
-	// that clips its overflow (a hero card) never cuts it off or scrolls.
-	let pos = $state('');
-	let flip = $state(false);
-	function place() {
-		if (!button || !panel) return;
-		const b = button.getBoundingClientRect();
-		const vw = document.documentElement.clientWidth;
-		const vh = window.innerHeight;
-		const h = panel.offsetHeight;
-		const w = Math.min(width, vw - 24);
-		// Flip to the roomier side when the asked side has no space.
-		const up = placement === 'above' ? b.top - 6 >= h || b.top > vh - b.bottom : vh - b.bottom - 6 < h && b.top > vh - b.bottom;
-		flip = up !== (placement === 'above');
-		let left = align === 'start' ? b.left : b.right - w;
-		left = Math.max(8, Math.min(left, vw - 8 - w));
-		// A transformed ancestor (the pinned pills slide with the top bar) becomes the
-		// containing block of a fixed panel; measure from it so the panel still lands on the button.
-		const p = panel.offsetParent;
-		const o = p && p !== document.body && p !== document.documentElement ? p.getBoundingClientRect() : { left: 0, top: 0, bottom: vh };
-		left -= o.left;
-		pos = up ? `left: ${left}px; bottom: ${o.bottom - b.top + 6}px;` : `left: ${left}px; top: ${b.bottom - o.top + 6}px;`;
-	}
+	// Capture scroll so scrolling any parent keeps the panel next to its button.
 	$effect(() => {
 		if (!open || !panel) return;
 		place();
@@ -126,7 +88,36 @@
 		};
 	});
 
-	const origin = $derived(`${(placement === 'below') !== flip ? 'top' : 'bottom'} ${align === 'start' ? 'left' : 'right'}`);
+	export function close(returnFocus = true) {
+		if (!open) return;
+		open = false;
+		if (returnFocus) button?.focus({ preventScroll: true });
+	}
+	function toggle() {
+		open = !open;
+	}
+	function leave(e: FocusEvent) {
+		const to = e.relatedTarget as Node | null;
+		if (to && root && !root.contains(to)) close(false);
+	}
+
+	// Flips to the roomier side, keeps 8px from the edges, and offsets for a positioned parent.
+	function place() {
+		if (!button || !panel) return;
+		const b = button.getBoundingClientRect();
+		const vw = document.documentElement.clientWidth;
+		const vh = window.innerHeight;
+		const h = panel.offsetHeight;
+		const w = Math.min(width, vw - 24);
+		const up = placement === 'above' ? b.top - 6 >= h || b.top > vh - b.bottom : vh - b.bottom - 6 < h && b.top > vh - b.bottom;
+		flip = up !== (placement === 'above');
+		let left = align === 'start' ? b.left : b.right - w;
+		left = Math.max(8, Math.min(left, vw - 8 - w));
+		const p = panel.offsetParent;
+		const o = p && p !== document.body && p !== document.documentElement ? p.getBoundingClientRect() : { left: 0, top: 0, bottom: vh };
+		left -= o.left;
+		pos = up ? `left: ${left}px; bottom: ${o.bottom - b.top + 6}px;` : `left: ${left}px; top: ${b.bottom - o.top + 6}px;`;
+	}
 </script>
 
 <div class="ui-pop" bind:this={root} onfocusout={leave}>
@@ -175,12 +166,12 @@
 	.button:hover { background: var(--surface-3); }
 	.row { width: 100%; min-height: 44px; padding: 6px 8px; border-radius: var(--r-btn); text-align: left; }
 	.row:hover, .row[aria-expanded='true'] { background: var(--surface-3); }
+	/* Fixed so scroll containers cannot clip it. */
 	.panel {
 		position: fixed; z-index: 70; max-width: calc(100vw - 24px); max-height: min(70dvh, 480px); overflow: auto;
 		padding: 6px; border-radius: 14px; background: var(--surface-1); color: var(--text);
 		box-shadow: var(--shadow-lift), 0 0 0 1px light-dark(var(--line), transparent);
 	}
-	/* On an album or artist colour the surfaces are see-through tints: the panel gets a solid, slightly lifted shade of the colour. */
 	:global(html[data-tint]) .panel { background: color-mix(in srgb, var(--tint-bg, #1d1d22) 86%, #fff); color: #fff; }
 	@media (pointer: coarse) { .icon { width: 44px; height: 44px; } .button { min-height: 44px; } }
 </style>

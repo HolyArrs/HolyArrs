@@ -3,7 +3,6 @@ package structurecheck
 // oversized lists files over the 800-line cap that a later task splits.
 // Remove an entry when its file is split.
 var oversized = map[string]bool{
-	"app/frontend/src/lib/downloads/DlSections.svelte":       true,
 	"app/backend/internal/migrate/apply.go":                  true,
 	"app/backend/internal/migrate/plan.go":                   true,
 	"app/frontend/src/lib/TitlePage.svelte":                  true,
@@ -36,17 +35,6 @@ var oversized = map[string]bool{
 	"app/frontend/src/lib/approvals/ApprovalsDesktop.svelte": true,
 	"app/backend/internal/api/explore_new_music.go":          true,
 	"app/backend/internal/parts/table.go":                    true, // split into the modules by t13
-	"app/frontend/src/routes/library/+page.svelte":           true,
-	"app/frontend/src/routes/login/+page.svelte":             true,
-	"app/frontend/src/routes/search/+page.svelte":            true,
-	"app/frontend/src/routes/+page.svelte":                   true,
-	"app/frontend/src/routes/calendar/+page.svelte":          true,
-	"app/frontend/src/routes/welcome/+page.svelte":           true,
-	"app/frontend/src/routes/explore/+page.svelte":           true,
-	"app/frontend/src/routes/requests/+page.svelte":          true,
-	"app/frontend/src/routes/library/[id]/+page.svelte":      true,
-	"app/frontend/src/routes/settings/move/+page.svelte":     true,
-	"app/frontend/src/routes/people/[id]/+page.svelte":       true,
 }
 
 // bannedNameAllowed lists folders that keep a banned name until their

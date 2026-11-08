@@ -1,8 +1,9 @@
 <script lang="ts">
+	// Button or link with variants, sizes, icons and a busy spinner.
 	import type { Snippet } from 'svelte';
 	import type { HTMLButtonAttributes } from 'svelte/elements';
-	import Icon, { type IconName } from '../Icon.svelte';
-	import { press } from '../motion.ts';
+	import Icon, { type IconName } from './Icon.svelte';
+	import { press } from '../core/motion.ts';
 
 	type Props = Omit<HTMLButtonAttributes, 'children'> & {
 		variant?: 'primary' | 'secondary' | 'plain' | 'destructive';
@@ -16,7 +17,7 @@
 	};
 	let { variant = 'secondary', size = 'md', href, icon, iconAfter, busy = false, full = false, type = 'button', disabled, children, class: cls = '', ...rest }: Props = $props();
 	const iconSize = $derived(size === 'lg' ? 20 : size === 'sm' ? 16 : 18);
-	// Pages that pass aria-busy by hand get the same spinner and lock as busy.
+	// Busy can come from the prop or a passed aria-busy.
 	const working = $derived(busy || rest['aria-busy'] === true || rest['aria-busy'] === 'true');
 </script>
 
@@ -38,7 +39,7 @@
 		cursor: pointer; user-select: none; text-decoration: none;
 	}
 	.ui-btn > span { overflow: hidden; text-overflow: ellipsis; }
-	/* Phones: a long label wraps instead of pushing the page sideways. */
+	/* Long labels wrap on phones instead of overflowing. */
 	@media (max-width: 767px) { .ui-btn { max-width: 100%; white-space: normal; text-align: center; padding-block: 6px; } }
 	.lg { min-height: 44px; padding: 0 20px; font-size: 16px; }
 	.md { min-height: 36px; padding: 0 16px; }
@@ -57,6 +58,6 @@
 	.spin { width: 16px; height: 16px; border-radius: 50%; border: 2px solid currentColor; border-right-color: transparent; animation: spin .8s linear infinite; }
 	@keyframes spin { to { transform: rotate(1turn); } }
 	@media (max-width: 767px) { .sm { min-height: 36px; padding: 0 14px; font-size: 14px; } }
-	/* Last, so the phone size above cannot undo the touch size. */
+	/* 44px is the minimum comfortable touch target. */
 	@media (pointer: coarse) { .ui-btn { min-height: 44px; } }
 </style>

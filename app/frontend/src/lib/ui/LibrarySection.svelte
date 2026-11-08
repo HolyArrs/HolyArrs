@@ -1,11 +1,8 @@
 <script lang="ts">
+	// Collapsible Library section on a title page.
 	import type { Snippet } from 'svelte';
-	import Icon from '../Icon.svelte';
+	import Icon from './Icon.svelte';
 
-	// The manager-only Library section, always last on a title page: files,
-	// Versions, releases, subtitles, history and the search actions. Open by
-	// default; the caller shows it only with manage_library, so requesters
-	// never see paths or files.
 	let { note = 'Versions, files, releases, subtitles and history', children }: { note?: string; children: Snippet } = $props();
 	let open = $state(true);
 </script>
@@ -24,8 +21,10 @@
 </section>
 
 <style>
+	/* Offset keeps the heading clear of the sticky top bar when scrolled to. */
 	.tp-library { border-top: 1px solid var(--line); padding-top: 8px; scroll-margin-top: calc(var(--topbar, 56px) + 16px); }
 	summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 56px; cursor: pointer; list-style: none; border-radius: 8px; }
+	/* Hide the default marker; the chevron replaces it. */
 	summary::-webkit-details-marker { display: none; }
 	summary:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.t { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; min-width: 0; }

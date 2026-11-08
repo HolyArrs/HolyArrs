@@ -1,7 +1,7 @@
 <script lang="ts">
-	import Icon from '../Icon.svelte';
+	// Thin progress bar that turns into a check mark at 100.
+	import Icon from './Icon.svelte';
 
-	// The fill slides (transform, no layout); at 100 a green tick pulses once (spec §3).
 	let {
 		value,
 		label,
@@ -10,6 +10,7 @@
 		tone = 'accent',
 		on = 'surface'
 	}: { value: number; label: string; showValue?: boolean; size?: 'sm' | 'md'; tone?: 'accent' | 'info' | 'ok'; on?: 'surface' | 'art' } = $props();
+	// Bad input counts as 0 so the bar never breaks.
 	const pct = $derived(Math.max(0, Math.min(100, Number.isFinite(value) ? value : 0)));
 	const done = $derived(pct >= 100);
 </script>
@@ -30,6 +31,7 @@
 	.track { position: relative; flex: 1; height: 6px; border-radius: 3px; background: var(--surface-3); overflow: hidden; }
 	.sm .track { height: 4px; border-radius: 2px; }
 	.art .track { background: rgb(255 255 255 / 28%); }
+	/* The fill slides in from the left instead of resizing, which is cheaper to animate. */
 	i { position: absolute; inset: 0; border-radius: inherit; background: var(--accent); transition: transform var(--dur-slow) var(--ease-out), background var(--dur) var(--ease-out); }
 	i.info { background: var(--info); }
 	i.ok { background: var(--ok); }

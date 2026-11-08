@@ -1,12 +1,11 @@
-// The Files tab's tree: folder rows and file rows from a torrent's flat
-// file list (paths use forward slashes). Pure, so it can be tested.
+// Files tab tree: folder rows and file rows built from a torrent's flat file list (paths use forward slashes). Pure, so it can be tested.
 
-/** One file as the torrent client reports it; done is bytes finished. */
+/** A file as the torrent client reports it; done is bytes finished. */
 export interface FlatFile { name: string; size: number; done: number }
 
 export interface TreeRow { key: string; name: string; depth: number; dir: boolean; size: number; done: number; i: number }
 
-/** fileTree turns the flat file list into folder rows and file rows, hiding what sits inside a closed folder. */
+/** Builds the folder and file rows, hiding what sits inside a closed folder. */
 export function fileTree(files: FlatFile[], closed: (key: string) => boolean): TreeRow[] {
 	const dirs = new Map<string, { size: number; done: number; order: number }>();
 	files.forEach((f) => {

@@ -6,25 +6,11 @@
 	import Button from '#lib/ui/Button.svelte';
 	import SaveBar from '#lib/ui/SaveBar.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
+	import { airDateChoices, colonChoices, episodeExampleRows, multiEpisodeChoices, illegalChoices, musicExampleRows, musicWords, showWords, type EpisodeExamples, type FileRules, type MusicExamples, type NamingSettings, type NamingView } from '#lib/mediafiles/index.ts';
 	import { onMount } from 'svelte';
-	import { api } from '#lib/api.ts';
-	import { plainMessage as message } from '#lib/settings.ts';
-	import { toasts } from '#lib/toasts.svelte.ts';
-	import {
-		airDateChoices,
-		colonChoices,
-		episodeExampleRows,
-		multiEpisodeChoices,
-		illegalChoices,
-		musicExampleRows,
-		musicWords,
-		showWords,
-		type EpisodeExamples,
-		type FileRules,
-		type MusicExamples,
-		type NamingSettings,
-		type NamingView
-	} from '#lib/organise.ts';
+	import { api } from '#lib/core/api.ts';
+	import { plainMessage as message } from '#lib/core/settings.ts';
+	import { toasts } from '#lib/core/toasts.svelte.ts';
 
 	let ns = $state<NamingSettings>({ file_pattern: '', folder_pattern: '', colon: 'smart', illegal: 'replace', rename_on_import: true, adopt_scan_limit: 5000 });
 	let fr = $state<FileRules>({ holding_days: 7, min_free_mb: 100, skip_free_space_check: false });
@@ -71,8 +57,7 @@
 	}
 	onMount(load);
 
-	// The live example: what the patterns on screen would name a sample
-	// movie. Nothing is saved.
+	// The live example: what the patterns on screen would name a sample movie. Nothing is saved.
 	$effect(() => {
 		if (!loaded || loadError) return;
 		const body = {

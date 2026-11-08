@@ -1,12 +1,9 @@
+<!-- Sticky bar shown when a form has unsaved changes, with a guard before leaving. -->
 <script lang="ts">
 	import { beforeNavigate, goto } from '$app/navigation';
 	import Button from './Button.svelte';
 	import Sheet from './Sheet.svelte';
 
-	// The bar that appears at the bottom of a settings page once something
-	// changed: "Unsaved changes", Discard and Save. Save submits the page's own
-	// form (by id), so its validation and save order stay the form's. Leaving
-	// the page with changes asks first.
 	let {
 		dirty,
 		form,
@@ -18,13 +15,13 @@
 
 	let asking = $state(false);
 	let target = $state<URL | null>(null);
+	// Plain flag so our own goto is not blocked by the guard below.
 	let leaving = false;
 
 	beforeNavigate((nav) => {
-		// A save on its way counts as kept.
 		if (!dirty || leaving || saving) return;
+		// Closing the tab cannot be paused, so ask the browser to stop it.
 		if (nav.type === 'leave') {
-			// Closing or reloading the tab: the browser asks in its own words.
 			nav.cancel();
 			return;
 		}
@@ -86,6 +83,7 @@
 	i { width: 8px; height: 8px; border-radius: 50%; background: var(--wait); }
 	.acts { display: flex; gap: 8px; margin-left: auto; }
 	@keyframes rise { from { opacity: 0; transform: translateY(12px); } }
+	/* Sit above the mobile tab bar. */
 	@media (max-width: 767px) {
 		.savebar { bottom: calc(var(--tabbar, 60px) + env(safe-area-inset-bottom, 0px) + 8px); }
 		.acts :global(.ui-btn) { min-height: 44px; }

@@ -1,5 +1,5 @@
 <script lang="ts">
-	// A track or episode row placeholder: number, name and a short end column.
+	// Loading stand-in for a track or episode row.
 	let { height = 48 }: { height?: number } = $props();
 </script>
 
@@ -13,5 +13,6 @@
 	.sk-track { display: flex; align-items: center; gap: 14px; padding: 0 12px; border-bottom: 1px solid var(--line); }
 	.n { width: 18px; flex: none; }
 	.t { flex: 1; max-width: 360px; }
+	/* Pushed to the far end like the real duration column. */
 	.d { width: 40px; margin-left: auto; flex: none; }
 </style>

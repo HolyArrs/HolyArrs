@@ -1,0 +1,28 @@
+.st-plate {
+	position: relative; min-width: 0; padding: 18px 20px 20px; border-radius: 20px; box-sizing: border-box;
+	border: 1px solid color-mix(in srgb, var(--text) 12%, transparent);
+	background: color-mix(in srgb, var(--surface-1) 55%, transparent);
+	-webkit-backdrop-filter: blur(28px) saturate(1.6); backdrop-filter: blur(28px) saturate(1.6);
+	box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.18), 0 20px 50px -30px rgb(0 0 0 / 0.5);
+	overflow-x: clip; overflow-clip-margin: 6px;
+}
+.st-plate > h2 {
+	display: flex; align-items: center; gap: 10px; margin: 0 -20px 16px; padding: 0 20px 14px;
+	border-bottom: 1px solid var(--line); box-shadow: 0 1px 0 rgb(255 255 255 / 0.05);
+	font: 600 18px/1.2 var(--font-ui); color: var(--text);
+}
+.st-plate > h2::before {
+	content: ''; flex: none; width: 4px; height: 16px; border-radius: 2px;
+	background: linear-gradient(var(--accent, var(--text)), color-mix(in srgb, var(--accent, var(--text)) 30%, transparent));
+}
+.st-dot { display: inline-block; flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--info); }
+.st-dot.ok { background: var(--ok); }
+.st-dot.wait { background: var(--wait); }
+.st-dot.fail { background: var(--fail); box-shadow: 0 0 0 3px color-mix(in srgb, var(--fail) 22%, transparent); }
+.st-dot.idle { background: var(--text-faint); }
+.st-dot.none { background: none; box-shadow: inset 0 0 0 1.5px var(--text-faint); }
+.st-plate > h2 .cnt { margin-left: auto; padding: 2px 9px; border-radius: var(--r-pill); background: var(--surface-2, var(--surface-1)); font-size: 12px; font-weight: 600; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+@media (max-width: 767px) {
+	.st-plate { padding: 14px 14px 16px; border-radius: 16px; }
+	.st-plate > h2 { margin: 0 -14px 12px; padding: 0 14px 12px; }
+}

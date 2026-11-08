@@ -3,12 +3,9 @@
 </script>
 
 <script lang="ts">
-	import Icon, { type IconName } from '../Icon.svelte';
+	// A small frosted pill for text, an icon or a progress ring over artwork.
+	import Icon, { type IconName } from './Icon.svelte';
 
-	// The one badge over artwork: a small dark glass pill, hairline ring,
-	// sentence case. Colour lives only in the glyph; the word stays white.
-	// `compact` shows the glyph only (a round glass button); the word stays as
-	// the accessible label and tooltip, so every row reads the same.
 	let {
 		text,
 		icon,
@@ -21,15 +18,14 @@
 		text: string;
 		icon?: IconName;
 		tone?: ArtTone;
-		/** 0–100: draws a thin progress ring as the glyph. */
 		percent?: number;
-		/** Accessible name when it says more than the visible word. */
 		label?: string;
 		compact?: boolean;
 		testid?: string;
 	} = $props();
+	// Keep the ring inside 0 to 100.
 	const pct = $derived(percent === undefined ? undefined : Math.max(0, Math.min(100, percent)));
-	// Ring: r=7 on a 24 grid, so it sits on the same optical size as the icons.
+	// Ring length for radius 7, used to draw the filled arc.
 	const C = 2 * Math.PI * 7;
 </script>
 
@@ -46,6 +42,7 @@
 </span>
 
 <style>
+	/* Frosted so it stays readable over any artwork. */
 	.ui-art-pill {
 		--tint: var(--on-art);
 		display: inline-flex;
@@ -72,7 +69,7 @@
 	.info { --tint: var(--info-on-art); }
 	.wait { --tint: var(--wait-on-art); }
 	.fail { --tint: var(--fail-on-art); }
-	/* Status on posters is always the glyph in a 28px glass circle; the word stays as label and tooltip. */
+	/* Compact keeps only the glyph in a round chip. */
 	.compact.glyph { width: 28px; height: 28px; padding: 0; justify-content: center; }
 	.compact.glyph .w { display: none; }
 </style>

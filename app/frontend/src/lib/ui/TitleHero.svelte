@@ -1,7 +1,9 @@
 <script lang="ts" module>
-	// Shared helpers for title pages.
+	// Title page hero: shared metadata helpers and the banner with art, badges and trailer button.
+	import type { Video } from '../core/trailer/trailer.ts';
+	import { shownScore } from '../core/rating.ts';
 
-	/** "2 hr 36 min" from minutes. */
+	// Minutes as "1 hr 5 min"; empty when unknown.
 	export function runtimeWords(min?: number | null): string {
 		if (!min || min <= 0) return '';
 		const h = Math.floor(min / 60);
@@ -9,24 +11,21 @@
 		return [h ? `${h} hr` : '', m ? `${m} min` : ''].filter(Boolean).join(' ');
 	}
 
-	/** The last part of a path ("Dune (2021)" from C:\...\Movies\Dune (2021)), never the full path. */
+	// Last folder name only, for either slash style.
 	export function shortFolder(path?: string | null): string {
 		const parts = (path ?? '').split(/[\\/]+/).filter(Boolean);
 		return parts[parts.length - 1] ?? '';
 	}
 
 	export type RichMeta = { backdrop?: string; logo?: string; poster?: string; genres: string[]; runtime?: number; certification?: string; score?: number; overview?: string; year?: number; backdrops: string[]; videos: Video[]; moods?: string[]; quality?: string; seasons?: number };
-	import type { Video } from '../trailer.ts';
-	import { shownScore } from '../rating.ts';
 	type Raw = Record<string, unknown>;
+	// s and n pick a clean string or positive number from loose server data
 	const s = (v: unknown) => (typeof v === 'string' && v.trim() ? v.trim() : undefined);
 	const n = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) && v > 0 ? v : undefined);
+	// one request per title, shared by every caller
 	const metaCache = new Map<string, Promise<RichMeta | null>>();
 
-	/**
-	 * richMetadata asks GET /metadata/{kind}/{tmdb} for art and facts the
-	 * Library title lacks. A missing endpoint or title answers null.
-	 */
+	// Failed lookups are dropped from the cache so a later call can retry.
 	export function richMetadata(get: <T>(path: string) => Promise<T>, kind: 'movie' | 'show', tmdb: string | undefined | null): Promise<RichMeta | null> {
 		if (!tmdb) return Promise.resolve(null);
 		const key = `${kind}:${tmdb}`;
@@ -42,7 +41,6 @@
 					return { backdrop: s(raw.backdrop), logo: s(raw.logo), poster: s(raw.poster), genres, runtime: n(raw.runtime_minutes) ?? n(raw.runtime), certification: rating, score: shownScore(n(raw.vote_average) ?? n(raw.score), n(raw.vote_count) ?? n(raw.votes)), overview: s(raw.overview), year: n(raw.year), backdrops, videos, moods, quality: s(raw.quality), seasons: Array.isArray(raw.seasons) ? raw.seasons.filter((x) => n((x as Raw)?.number)).length || undefined : n(raw.number_of_seasons) };
 				})
 				.catch(() => {
-					// A failed read is not remembered: the next page visit asks again.
 					metaCache.delete(key);
 					return null;
 				});
@@ -50,36 +48,26 @@
 		}
 		return p;
 	}
-
 </script>
 
 <script lang="ts">
 	import { onMount, type Snippet } from 'svelte';
-	import { setTopCrumbs } from '../top-crumbs.svelte.ts';
-	import Icon, { type IconName } from '../Icon.svelte';
+	import Icon, { type IconName } from './Icon.svelte';
 	import StatusPill, { type StatusKind } from './StatusPill.svelte';
-	import { viewTransitionName } from '../motion.ts';
-	import { proxied, sized } from '../tmdb-image.ts';
-	import { awardsTip, loadWikiFacts, type WikiFacts } from '../wiki-facts.ts';
 	import Billboard from './Billboard.svelte';
 	import ActionButton from './ActionButton.svelte';
-	import { heroPictures } from '../trailer.ts';
-	import { autoplayHere, loadUISettings, trailerClickSources } from '../autoplay.svelte.ts';
-	import { openTheater } from '../theater.svelte.ts';
-	import { api } from '../api.ts';
-	import { loadExtras, type Extras } from '../outside-ratings.ts';
 	import RatingsStrip from './RatingsStrip.svelte';
-	import { ratingPicks, shownRatings } from '../rating-picks.svelte.ts';
+	import { awardsTip, loadWikiFacts, type WikiFacts } from './wiki-facts.ts';
+	import { loadExtras, type Extras } from './outside-ratings.ts';
+	import { ratingPicks, shownRatings } from './rating-picks.svelte.ts';
+	import { setTopCrumbs } from '../core/top-crumbs.svelte.ts';
+	import { viewTransitionName } from '../core/motion.ts';
+	import { proxied, sized } from '../core/tmdb-image.ts';
+	import { heroPictures } from '../core/trailer/trailer.ts';
+	import { autoplayHere, loadUISettings, trailerClickSources } from '../core/trailer/autoplay.svelte.ts';
+	import { openTheater } from '../core/trailer/theater.svelte.ts';
+	import { api } from '../core/api.ts';
 
-	// The title page hero (movie, show, artist, album, not-yet-added titles):
-	// the Explore billboard (Billboard.svelte), so moving from Explore to a
-	// title keeps one look. Breadcrumb pill top-left, logo or title in the
-	// left 40 %, one facts line with the status, a short synopsis with Show
-	// more, then the action row: the page's main button (Ask, Add or In
-	// Library), a Trailer button, and the page's ⋯ menu. Movies and shows
-	// play the muted trailer after the dwell (desktop); the Trailer button
-	// opens the theater everywhere. With no backdrop the poster fills the
-	// frame, darkened; an album shows its cover square over a blurred copy.
 	let {
 		title,
 		kind,
@@ -107,27 +95,19 @@
 		actions: actionRow,
 		ratings = true,
 		showFacts = true,
-		tagline,
-		heroStory,
-		heroCaps
+		tagline
 	}: {
 		title: string;
-		/** A movie or show: the muted trailer and the Trailer button. */
 		kind?: 'movie' | 'show';
 		tmdb?: string | null;
-		/** An artist's MusicBrainz id: fanart.tv pictures when the artist has none. */
 		mbid?: string | null;
 		backdrop?: string | null;
-		/** More backdrops for the slow crossfade (Layer 1). */
 		backdrops?: string[];
 		poster?: string | null;
 		logo?: string | null;
 		meta?: string[];
-		/** Age rating, shown in a bordered box (PG-13, TV-MA). */
 		certification?: string | null;
-		/** Score out of 10. */
 		score?: number | null;
-		/** Quality badges: 4K, Dolby Vision, Atmos, CC. */
 		badges?: string[];
 		status?: StatusKind;
 		percent?: number;
@@ -136,32 +116,102 @@
 		breadcrumb?: { href: string; label: string }[];
 		crumbIcon?: IconName;
 		vtName?: string;
-		/** Square art (music). */
 		square?: boolean;
-		/** An album cover, shown square bottom-left over its own blurred copy. */
 		cover?: string | null;
 		settled?: boolean;
-		/** The status line under the hero, such as who asked. */
 		byline?: Snippet;
 		actions?: Snippet;
-		/** The score badge and outside ratings in the facts line (off when the page shows them below). */
 		ratings?: boolean;
-		/** The facts line, age rating and award badges (off when the page shows them under the hero). */
 		showFacts?: boolean;
-		/** A tagline under the logo or title. */
 		tagline?: string | null;
-		/** The story inside the hero (three lines at most), when the page shows it there. */
-		heroStory?: string | null;
-		/** A small-caps line above the story in the hero (director · country · minutes). */
-		heroCaps?: string | null;
 	} = $props();
 
 	let backdropFailed = $state(false);
 	let logoFailed = $state(false);
-	// A dark wordmark (black letters made for light posters) vanishes on the
-	// dark picture: it is drawn white instead, its shape unchanged.
 	let darkLogo = $state(false);
-	// The shown logo may come from another site; a CORS copy is read for the check.
+	let wideLogo = $state(false);
+	let posterFailed = $state(false);
+	let wiki = $state<WikiFacts>({ badges: [], awards: [], bio: null });
+	let extras = $state<Extras>({ backgrounds: [], scores: [] });
+	let fanartLogoFailed = $state(false);
+	let videos = $state<Video[] | undefined>();
+	let opening = $state(false);
+	let still = $state(true);
+
+	// the title logo wins; fan art logo is the fallback when it fails to load
+	const shownLogo = $derived(logo && !logoFailed ? proxied(logo) : extras.logo && !fanartLogoFailed ? extras.logo : null);
+	const heroBackdrop = $derived(backdrop || (mbid ? extras.backgrounds[0] : null));
+	const heroPoster = $derived(poster || (mbid ? extras.thumb : null));
+
+	// a cover replaces the wide backdrop; a poster fills in only when no backdrop exists
+	const wide = $derived(heroBackdrop && !backdropFailed && !cover ? heroBackdrop : null);
+	const pictures = $derived(wide ? heroPictures(wide, backdrops).map((u) => sized(u, 'backdrop')) : []);
+	const stand = $derived(cover ?? (!wide && heroPoster && !posterFailed ? heroPoster : null));
+
+	const shown = $derived(shownRatings(extras.scores, score, ratingPicks.list, !ratingPicks.custom));
+	// one decimal, like 7.4
+	const scoreText = $derived(shown.tmdb ? (Math.round(shown.tmdb * 10) / 10).toFixed(1) : '');
+
+	// each effect below drops late answers once its inputs change
+	$effect(() => {
+		const k = kind;
+		const t = tmdb;
+		wiki = { badges: [], awards: [], bio: null };
+		if (!k || !t) return;
+		let live = true;
+		void loadWikiFacts(api.get, k, t).then((f) => live && (wiki = f));
+		return () => (live = false);
+	});
+	$effect(() => {
+		const k = kind ?? (mbid ? 'artist' : undefined);
+		const id = kind ? tmdb : mbid;
+		extras = { backgrounds: [], scores: [] };
+		fanartLogoFailed = false;
+		if (!k || !id) return;
+		let live = true;
+		void loadExtras(api.get, k, id).then((e) => live && (extras = e));
+		return () => (live = false);
+	});
+	// crumbs live in the top bar, so clear them when the hero leaves
+	$effect(() => {
+		setTopCrumbs(breadcrumb[0] ?? null, breadcrumb.length > 1 ? (breadcrumb.at(-1)?.label ?? title) : title);
+		return () => setTopCrumbs(null);
+	});
+	$effect(() => {
+		const k = kind;
+		const t = tmdb;
+		videos = undefined;
+		if (!k || !t) return;
+		let live = true;
+		void richMetadata(api.get, k, t).then((m) => live && (videos = m?.videos ?? []));
+		return () => (live = false);
+	});
+
+	// the still poster pill shows unless autoplay is already running here
+	onMount(() => void loadUISettings().then(() => (still = !autoplayHere())));
+
+	// A running hero trailer is expanded instead of opening a second player.
+	async function playTrailer(e: MouseEvent) {
+		if (!kind || !tmdb || opening) return;
+		const btn = e.currentTarget as HTMLElement;
+		const hero = btn.closest('section');
+		const playing = hero?.querySelector<HTMLButtonElement>('.art button.expand');
+		if (playing) {
+			playing.click();
+			return;
+		}
+		opening = true;
+		const r = hero?.getBoundingClientRect();
+		const still = heroStill(hero);
+		try {
+			const s = await trailerClickSources(kind, tmdb, videos);
+			if (s[0]) openTheater({ kind, tmdb, title, source: s[0], fallbacks: s.slice(1), time: 0, rect: r ? { left: r.left, top: r.top, width: r.width, height: r.height } : null, from: 'hero', still, returnTo: btn });
+		} finally {
+			opening = false;
+		}
+	}
+
+	// Dark logos vanish on the dark hero, so they get inverted to white.
 	function checkLogo(src: string) {
 		darkLogo = false;
 		const probe = new Image();
@@ -169,6 +219,7 @@
 		probe.onload = () => src === shownLogo && (darkLogo = logoIsDark(probe));
 		probe.src = src;
 	}
+	// Samples a tiny canvas; the size, alpha and brightness cutoffs just need to tell black from light.
 	function logoIsDark(img: HTMLImageElement): boolean {
 		try {
 			const c = document.createElement('canvas');
@@ -187,68 +238,7 @@
 			return false;
 		}
 	}
-	// A very wide wordmark (over 6:1) would come out a thin line in the logo box: it gets a floor height and more width.
-	let wideLogo = $state(false);
-	let posterFailed = $state(false);
-
-	// Awards from Wikidata (metadata server): a badge like "Oscar winner" or
-	// "3 Emmys", the awards listed on hover.
-	let wiki = $state<WikiFacts>({ badges: [], awards: [], bio: null });
-	$effect(() => {
-		const k = kind;
-		const t = tmdb;
-		wiki = { badges: [], awards: [], bio: null };
-		if (!k || !t) return;
-		let live = true;
-		void loadWikiFacts(api.get, k, t).then((f) => live && (wiki = f));
-		return () => (live = false);
-	});
-
-	// fanart.tv art and outside ratings (metadata server, when its keys are set):
-	// the fanart logo only when TMDB has none or its logo fails to load.
-	let extras = $state<Extras>({ backgrounds: [], scores: [] });
-	let fanartLogoFailed = $state(false);
-	$effect(() => {
-		const k = kind ?? (mbid ? 'artist' : undefined);
-		const id = kind ? tmdb : mbid;
-		extras = { backgrounds: [], scores: [] };
-		fanartLogoFailed = false;
-		if (!k || !id) return;
-		let live = true;
-		void loadExtras(api.get, k, id).then((e) => live && (extras = e));
-		return () => (live = false);
-	});
-	const shownLogo = $derived(logo && !logoFailed ? proxied(logo) : extras.logo && !fanartLogoFailed ? extras.logo : null);
-	const heroBackdrop = $derived(backdrop || (mbid ? extras.backgrounds[0] : null));
-	const heroPoster = $derived(poster || (mbid ? extras.thumb : null));
-
-	const wide = $derived(heroBackdrop && !backdropFailed && !cover ? heroBackdrop : null);
-	const pictures = $derived(wide ? heroPictures(wide, backdrops).map((u) => sized(u, 'backdrop')) : []);
-	// No backdrop: the poster (or the cover) itself, cropped and darkened.
-	const stand = $derived(cover ?? (!wide && heroPoster && !posterFailed ? heroPoster : null));
-
-	// Only the ratings this browser picked (Settings › Appearance).
-	const shown = $derived(shownRatings(extras.scores, score, ratingPicks.list, !ratingPicks.custom));
-	const scoreText = $derived(shown.tmdb ? (Math.round(shown.tmdb * 10) / 10).toFixed(1) : '');
-	// The breadcrumb lives in the top bar (one pattern on every page): the page's parent for a fresh visit, and its name.
-	$effect(() => {
-		setTopCrumbs(breadcrumb[0] ?? null, breadcrumb.length > 1 ? (breadcrumb.at(-1)?.label ?? title) : title);
-		return () => setTopCrumbs(null);
-	});
-
-	// The Trailer button shows once the title has a trailer; it opens the theater.
-	let videos = $state<Video[] | undefined>();
-	$effect(() => {
-		const k = kind;
-		const t = tmdb;
-		videos = undefined;
-		if (!k || !t) return;
-		let live = true;
-		void richMetadata(api.get, k, t).then((m) => live && (videos = m?.videos ?? []));
-		return () => (live = false);
-	});
-	let opening = $state(false);
-	/** heroStill draws the hero's picture as it shows (cover, the hero's shape). */
+	// Copies the visible hero image so the theater can grow from the same frame.
 	function heroStill(hero: HTMLElement | null | undefined): HTMLCanvasElement | null {
 		const img = hero?.querySelector<HTMLImageElement>('.art img');
 		const r = hero?.getBoundingClientRect();
@@ -266,33 +256,9 @@
 		}
 		return c;
 	}
-	async function playTrailer(e: MouseEvent) {
-		if (!kind || !tmdb || opening) return;
-		const btn = e.currentTarget as HTMLElement;
-		const hero = btn.closest('section');
-		// The hero's trailer is playing: hand off from it, as a click on the picture does (same second, sound, frame, rect).
-		const playing = hero?.querySelector<HTMLButtonElement>('.art button.expand');
-		if (playing) {
-			playing.click();
-			return;
-		}
-		opening = true;
-		const r = hero?.getBoundingClientRect();
-		// The hero's picture is held while the big player loads (no black frame).
-		const still = heroStill(hero);
-		try {
-			// Nothing plays here: the player still opens and says why.
-			const s = await trailerClickSources(kind, tmdb, videos);
-			if (s[0]) openTheater({ kind, tmdb, title, source: s[0], fallbacks: s.slice(1), time: 0, rect: r ? { left: r.left, top: r.top, width: r.width, height: r.height } : null, from: 'hero', still, returnTo: btn });
-		} finally {
-			opening = false;
-		}
-	}
-	// No autoplay on this device (phone, reduced motion, data saver, setting off): the Trailer button shows its word.
-	let still = $state(true);
-	onMount(() => void loadUISettings().then(() => (still = !autoplayHere())));
 </script>
 
+<!-- description and byline sit under the banner, outside the art -->
 <div class="ui-thero" class:square>
 	<Billboard label={title} testid="title-hero" {kind} {tmdb} {title} {videos} {pictures} {vtName} {settled} once position="70% 30%" onpictureerror={() => (backdropFailed = true)} art={stand ? standArt : undefined}>
 		{#snippet heading()}
@@ -305,8 +271,6 @@
 				<h1 class="bb-name" class:short={!!cover}>{title}</h1>
 			{/if}
 			{#if tagline}<p class="hero-tagline" data-testid="hero-tagline">{tagline}</p>{/if}
-			{#if heroCaps}<p class="hero-caps" data-testid="hero-caps">{heroCaps}</p>{/if}
-			{#if heroStory}<p class="hero-story" data-testid="hero-story">{heroStory}</p>{/if}
 		{/snippet}
 		{#snippet meta()}
 			{#if showFacts && facts.length}<p>{facts.join(' · ')}</p>{/if}
@@ -324,7 +288,6 @@
 			{/if}
 		{/snippet}
 	</Billboard>
-	<!-- A title page: the story sits under the hero, in full, and never pops over the art. -->
 	{#if description}<p class="story" data-testid="title-story">{description}</p>{/if}
 	{#if byline}<div class="status-line">{@render byline()}</div>{/if}
 </div>
@@ -334,25 +297,25 @@
 {/snippet}
 
 <style>
+	/* dark logos turn white, wide ones get a size floor so they stay legible */
 	.bb-logo.dark :global(img) { filter: brightness(0) invert(1) drop-shadow(0 2px 10px rgb(0 0 0 / .45)); }
 	.bb-logo.wide :global(img) { min-height: clamp(40px, 3.4vw, 64px); max-width: min(92vw, 760px) !important; }
+	/* backdrop is dimmed so the text on top stays readable */
 	.bd { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 20%; filter: saturate(1.1) brightness(.75); }
 	.bd.square { object-position: center 35%; }
 	.bd.blur { filter: blur(40px) saturate(1.3) brightness(.6); transform: scale(1.2); }
 	.cover { display: block; width: clamp(120px, 14vw, 220px); aspect-ratio: 1; object-fit: cover; border-radius: 12px; box-shadow: 0 12px 40px rgb(0 0 0 / 50%); margin-bottom: 12px; }
 	.ui-thero :global(.bb-name.short) { min-height: 0; }
-	/* The billboard isolates its layers, so an open menu's panel can't rise past the sections below (the About band
-	   covered its last items on phones): lift the whole hero while a panel is open, still under the top bar. */
+	/* lifts the hero above later sections while a popover is open */
 	.ui-thero:has(:global(.ui-pop > .panel)) { position: relative; z-index: 10; }
 	.b { display: inline-flex; align-items: center; gap: 4px; height: 22px; padding: 0 7px; border-radius: 5px; border: 1px solid rgb(255 255 255 / 55%); color: rgb(255 255 255 / 92%); font: 700 11.5px/1 var(--font-ui); letter-spacing: .03em; white-space: nowrap; font-variant-numeric: tabular-nums; }
 	.b.award { border-color: rgb(245 197 24 / 75%); color: #f5c518; }
 	.cert { border-width: 1.5px; border-color: rgb(255 255 255 / 80%); }
 	.score { border-radius: 999px; padding: 0 9px 0 7px; background: rgb(255 255 255 / 12%); border-color: rgb(255 255 255 / 30%); }
 	.score svg { color: #f5c518; }
-	.hero-caps { margin: 12px 0 0; color: rgb(255 255 255 / 92%); font: 600 13px/1.3 var(--font-ui); letter-spacing: .08em; text-transform: uppercase; text-shadow: 0 1px 3px rgb(0 0 0 / 55%); }
-	.hero-story { margin: 12px 0 0; max-width: 58ch; color: rgb(255 255 255 / 90%); font: 500 clamp(14px, 1.1vw, 16px)/1.5 var(--font-ui); text-shadow: 0 1px 3px rgb(0 0 0 / 55%); display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 	.hero-tagline { margin: 10px 0 0; max-width: 40ch; color: rgb(255 255 255 / 88%); font: italic 500 clamp(15px, 1.3vw, 18px)/1.35 var(--font-ui); text-shadow: 0 1px 3px rgb(0 0 0 / 55%), 0 0 18px rgb(0 0 0 / 45%); }
 	.story { max-width: 72ch; margin: var(--s-5) 0 0; font: 400 16px/1.55 var(--font-ui); color: var(--text); }
+	/* 44px keeps the member control a comfortable touch target */
 	.ui-thero :global(.tp-member) { min-height: 44px; display: flex; align-items: center; }
 	.status-line { margin-top: var(--s-4); display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; font: 500 15px/1.4 var(--font-ui); color: var(--text-muted); }
 </style>

@@ -1,36 +1,36 @@
 <script lang="ts">
+	import { createPersonArt } from '#lib/discover/index.ts';
 	import PageLoader from '#lib/ui/PageLoader.svelte';
-	import { onMount } from 'svelte';
-	import { page } from '$app/state';
-	import { api, message } from '#lib/api.ts';
-	import { session } from '#lib/session.svelte.ts';
-	import Poster from '#lib/Poster.svelte';
+	import Poster from '#lib/ui/Poster.svelte';
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import Shelf from '#lib/ui/Shelf.svelte';
 	import WideCard from '#lib/ui/WideCard.svelte';
-	import BrowseTile from '#lib/ui/BrowseTile.svelte';
 	import IconButton from '#lib/ui/IconButton.svelte';
 	import type { CardOwned } from '#lib/ui/CardBadges.svelte';
-	import Icon from '#lib/Icon.svelte';
-	import { to } from '#lib/paths.ts';
-	import { plainReason } from '#lib/plain.ts';
-	import { detailPath } from '#lib/title-details.ts';
-	import { followsByTmdb } from '#lib/explore.ts';
-	import { byDecade, personChips, runReviewed, type FilmSort, type FilmographyPage, type PersonMovie, type PersonRole } from '#lib/people.ts';
-	import type { AskLimit } from '#lib/types.ts';
-	import { loadWikiFacts, type WikiFacts } from '#lib/wiki-facts.ts';
-	import { setTopCrumbs } from '#lib/top-crumbs.svelte.ts';
-	import { peopleSort, takePrefetched } from '#lib/person-prefetch.ts';
+	import Icon from '#lib/ui/Icon.svelte';
+	import { followsByTmdb } from '#lib/ui/title-cards.ts';
+	import { byDecade, personChips, runReviewed, type FilmSort, type FilmographyPage, type PersonMovie, type PersonRole } from '#lib/ui/people.ts';
+	import { loadWikiFacts, type WikiFacts } from '#lib/ui/wiki-facts.ts';
 	import ActionButton from '#lib/ui/ActionButton.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import HeroMotion from '#lib/ui/HeroMotion.svelte';
 	import TrailerPlayer from '#lib/ui/TrailerPlayer.svelte';
-	import { paintWindow, sampleCover, tintOf, unpaintWindow } from '#lib/music/album-tint.ts';
-	import { autoplayHere, loadUISettings, trailerSources, type TrailerSource } from '#lib/autoplay.svelte.ts';
-	import { HERO_DELAY } from '#lib/trailer.ts';
-	import { fromHandoff, openTheater } from '#lib/theater.svelte.ts';
+	import { BrowseTile, peopleSort, takePrefetched } from '#lib/discover/index.ts';
+	import { detailPath } from '#lib/metadata/index.ts';
+	import type { AskLimit } from '#lib/requests/index.ts';
+	import { paintWindow, sampleCover, tintOf, unpaintWindow } from '#lib/music/index.ts';
+	import { onMount } from 'svelte';
+	import { page } from '$app/state';
+	import { api, message } from '#lib/core/api.ts';
+	import { session } from '#lib/core/session.svelte.ts';
+	import { to } from '#lib/core/paths.ts';
+	import { plainReason } from '#lib/core/plain.ts';
+	import { setTopCrumbs } from '#lib/core/top-crumbs.svelte.ts';
+	import { autoplayHere, loadUISettings, trailerSources, type TrailerSource } from '#lib/core/trailer/autoplay.svelte.ts';
+	import { HERO_DELAY } from '#lib/core/trailer/trailer.ts';
+	import { fromHandoff, openTheater } from '#lib/core/trailer/theater.svelte.ts';
 
 	const id = page.params.id ?? '';
 	const SORT_KEY = 'holyarrs.people.sort';
@@ -48,7 +48,7 @@
 	let bioOpen = $state(false);
 	// Awards, death date and the Wikipedia bio (Wikidata via the metadata server).
 	let wiki = $state<WikiFacts>({ badges: [], awards: [], bio: null });
-	// The hero waits for the wiki facts (awards, bio) a short moment, so its words do not move when they land.
+	// The hero waits a short moment for the wiki facts (awards, bio), so its words do not move when they land.
 	let wikiDone = $state(false);
 	let wikiWaited = $state(false);
 	const WIKI_WAIT_MS = 600;
@@ -90,7 +90,7 @@
 		try {
 			localStorage.setItem(SORT_KEY, next);
 		} catch {
-			/* private window: the choice lasts this visit */
+			/* Private window: the choice lasts this visit. */
 		}
 		void load();
 	}
@@ -116,39 +116,20 @@
 		const who = m.characters?.length ? m.characters.join(' / ') : m.roles?.includes('Director') ? 'Director' : '';
 		return [who, m.year ? String(m.year) : ''].filter(Boolean).join(' · ');
 	};
-
-
-	// A credit shows only with a real picture (poster or backdrop). Pictures that fail or hang are dropped too.
-	const ART_WAIT_MS = 8000;
-	let artState = $state<Record<string, 'ok' | 'bad'>>({});
-	const probing = new Set<string>();
-	const artOf = (m: PersonMovie) => m.backdrop || m.poster || '';
-	function probe(m: PersonMovie) {
-		const k = m.ids.tmdb, src = artOf(m);
-		if (!src || probing.has(k)) return;
-		probing.add(k);
-		const img = new Image();
-		let settled = false;
-		const end = (ok: boolean) => { if (settled) return; settled = true; clearTimeout(t); artState = { ...artState, [k]: ok ? 'ok' : 'bad' }; };
-		const t = setTimeout(() => end(false), ART_WAIT_MS);
-		img.onload = () => end(img.naturalWidth > 0);
-		img.onerror = () => end(false);
-		img.src = src;
-	}
-	const withArt = (list: PersonMovie[] | undefined) => (list ?? []).filter((m) => artOf(m) && artState[m.ids.tmdb] !== 'bad');
+	const personArt = createPersonArt();
 	$effect(() => {
-		for (const m of [...(data?.known_for ?? []), ...(data?.coming_soon ?? []), ...(data?.library ?? []), ...(data?.asked ?? []), ...movies]) probe(m);
+		for (const m of [...(data?.known_for ?? []), ...(data?.coming_soon ?? []), ...(data?.library ?? []), ...(data?.asked ?? []), ...movies]) personArt.probe(m);
 	});
-	const shownMovies = $derived(withArt(movies));
+	const shownMovies = $derived(personArt.withArt(movies));
 	const stats = $derived(data?.stats && role === 'all' && !busy ? { ...data.stats, films: shownMovies.length } : data?.stats);
 
-	const hero = $derived(withArt(data?.known_for).find((m) => m.backdrop)?.backdrop ?? null);
+	const hero = $derived(personArt.withArt(data?.known_for).find((m) => m.backdrop)?.backdrop ?? null);
 	let heroIn = $state(false);
 	$effect(() => {
 		void hero;
 		heroIn = false;
 	});
-	const chips = $derived(personChips(stats, withArt(data?.library).length, withArt(data?.asked).length));
+	const chips = $derived(personChips(stats, personArt.withArt(data?.library).length, personArt.withArt(data?.asked).length));
 	const facts = $derived.by(() => {
 		const p = data?.person;
 		if (!p) return [];
@@ -157,7 +138,7 @@
 		const died = wiki.died && wiki.died.length === 10 ? new Date(`${wiki.died}T00:00:00Z`).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' }) : wiki.died ?? '';
 		return [known ? `Known for ${known}` : p.department, born ? `Born ${born}` : '', p.birthplace ? `From ${p.birthplace}` : wiki.birth_place ? `From ${wiki.birth_place}` : '', died ? `Died ${died}` : ''].filter(Boolean) as string[];
 	});
-	// The About sheet: three layouts Luis is comparing (switch inside the sheet).
+	// The About sheet has three layouts (switch inside the sheet).
 	let aboutView = $state<string>('profile');
 	const longDate = (d?: string) => (d && d.length === 10 ? new Date(`${d}T00:00:00Z`).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' }) : d ?? '');
 	const about = $derived.by(() => {
@@ -212,11 +193,7 @@
 		return () => clearTimeout(waited);
 	});
 
-
-	// Three layouts Luis is comparing (?look=1|2|3, 0 = today's page). All three
-	// follow the music artist page (short banner fading into a tinted page,
-	// photo line, slim bar, figures, numbered list, About card), made for movies:
-	// 1 the Known-for still, 2 the Known-for trailers playing muted, 3 a slow reel of Known-for stills.
+	// Page layouts picked with ?look=1|2|3 (0 is the plain page). All three follow the music artist page (short banner fading into a tinted page, photo line, slim bar, figures, numbered list, About card), made for movies: 1 the Known-for still, 2 the Known-for trailers playing muted, 3 a slow reel of Known-for stills.
 	const VIEWS = [{ value: 0, label: 'Now' }, { value: 1, label: 'A1 · Still' }, { value: 2, label: 'A2 · Trailers' }, { value: 3, label: 'A3 · Reel' }];
 	const view: number = 2;
 	const photo = $derived(data?.person.profile || wiki.image || '');
@@ -225,7 +202,7 @@
 		return st?.first_year ? `${st.first_year}–${st.active ? 'now' : st.last_year}` : '';
 	});
 	const lead = $derived([data?.person.department, ...facts.filter((f) => !f.startsWith('Known for'))].filter(Boolean).join(' · '));
-	const top = $derived(withArt(data?.known_for).slice(0, 10));
+	const top = $derived(personArt.withArt(data?.known_for).slice(0, 10));
 	// Under the name: only what they do and since when; the rest lives in About.
 	const roleWords = $derived.by(() => {
 		const all = [...(data?.known_for ?? []), ...movies].flatMap((m) => m.roles ?? []);
@@ -236,10 +213,10 @@
 		return got.length ? got.join(' · ') : dept === 'Acting' ? 'Actor' : dept ?? '';
 	});
 	const quiet = $derived([roleWords, data?.stats?.first_year ? `Since ${data.stats.first_year}` : ''].filter(Boolean).join(' · '));
-	const reel = $derived(withArt(data?.known_for).map((m) => m.backdrop).filter((b): b is string => !!b).slice(0, 6));
+	const reel = $derived(personArt.withArt(data?.known_for).map((m) => m.backdrop).filter((b): b is string => !!b).slice(0, 6));
 	// About starts half way through the stills (more of them when there are), so it never shows the banner's picture.
 	const aboutStills = $derived.by(() => {
-		const all = withArt(data?.known_for).map((m) => m.backdrop).filter((b): b is string => !!b).slice(0, 12);
+		const all = personArt.withArt(data?.known_for).map((m) => m.backdrop).filter((b): b is string => !!b).slice(0, 12);
 		const rest = all.slice(reel.length);
 		if (rest.length) return rest;
 		const h = Math.ceil(reel.length / 2);
@@ -292,7 +269,7 @@
 		}
 	});
 
-	// A2: the Known-for trailers play muted in the banner, one after another, after the usual dwell.
+	// The Known-for trailers play muted in the banner, one after another, after the usual dwell.
 	let clip = $state(0);
 	let sources = $state<TrailerSource[]>([]);
 	let clipOn = $state(false);
@@ -314,8 +291,7 @@
 		}, HERO_DELAY);
 		return () => (clearTimeout(t), ctl.abort());
 	});
-	// A trailer that will not play moves to the next; once every one failed,
-	// the banner settles on the stills (it never goes round again).
+	// A trailer that will not play moves to the next; once every one failed, the banner settles on the stills (it never goes round again).
 	let clipsFailed = 0;
 	$effect(() => {
 		void top;
@@ -350,8 +326,8 @@
 {/snippet}
 
 {#snippet row(title: string, list: PersonMovie[] | undefined, anchor: string)}
-	{#if withArt(list).length}
-		<Shelf {title} {anchor} item="var(--title-item)" items={withArt(list)} key={(m) => m.ids.tmdb} placeholder="wide" lines={1}>
+	{#if personArt.withArt(list).length}
+		<Shelf {title} {anchor} item="var(--title-item)" items={personArt.withArt(list)} key={(m) => m.ids.tmdb} placeholder="wide" lines={1}>
 			{#snippet card(m: PersonMovie)}{@render filmCard(m)}{/snippet}
 		</Shelf>
 	{/if}
@@ -402,11 +378,9 @@
 		</div>
 	</div>
 
-
 	{#if limit && action === 'ask' && !limit.no_limit && !limit.movies.no_limit}
 		<p class="note">Movie asks this rolling week: {limit.movies.used} used, {limit.movies.left} left.</p>
 	{/if}
-
 
 	{#if top.length}
 		<section class="block kf kf-eps" data-testid="person-top">
@@ -592,7 +566,7 @@
 	/* The hero stays dark in both themes, like the title pages. */
 	.hero { position: relative; isolation: isolate; min-height: clamp(380px, 38vw, 560px); display: flex; align-items: flex-end; overflow: hidden; margin: calc(var(--s-6) * -1) calc(var(--gutter) * -1) 0; background: var(--on-art-ink); color: var(--on-art); }
 	.art { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; object-position: center 25%; }
-	/* The hero image fades in over 400 ms once loaded (Silhouette image rules). */
+	/* The hero image fades in over 400 ms once loaded. */
 	.art { opacity: 0; transition: opacity var(--dur-slow) var(--ease-out); }
 	.art.in { opacity: 1; }
 	.shade { position: absolute; inset: 0; z-index: -1; background: linear-gradient(to top, var(--on-art-scrim) 0%, var(--on-art-scrim-mid) 38%, var(--on-art-scrim-none) 72%), linear-gradient(to right, var(--on-art-scrim-mid) 0%, var(--on-art-scrim-none) 60%); }
@@ -618,7 +592,6 @@
 	.notice { display: flex; align-items: center; gap: 8px; margin: 0; padding: 10px 12px; border-radius: var(--r-btn); background: var(--surface-2); font: var(--t-callout); }
 	.notice.bad { color: var(--fail); }
 	.attribution { margin: 0; color: var(--text-muted); font: var(--t-footnote); }
-	/* A1–A3: the music artist page, made for movies. */
 	.ap { --gap: 40px; display: flex; flex-direction: column; gap: var(--gap); min-width: 0; }
 	.ap.tinted { --text: #fff; --bg: var(--ap-bg); --text-muted: var(--ap-soft); --surface-1: rgb(255 255 255 / 8%); --surface-2: rgb(255 255 255 / 12%); --border: rgb(255 255 255 / 14%); --line: rgb(255 255 255 / 14%); color: #fff; color-scheme: dark; }
 	.ap h1 { font-family: var(--font-display); font-weight: 800; line-height: 1; letter-spacing: -.03em; text-wrap: balance; overflow-wrap: anywhere; }
@@ -699,23 +672,20 @@
 	.mate-name { font: 600 14px/1.25 var(--font-ui); text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	@media (prefers-reduced-motion: reduce) { .mate:hover .mate-pic { transform: none; } }
 	@media (max-width: 1000px) { .songs { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; grid-auto-flow: row; } }
-	/* Known for, Apple TV style: wide stills with a numbered line, like an episode list. */
+	/* Known for: wide stills with a numbered line, like an episode list. */
 	.kf-list { margin: 0; padding: 0; list-style: none; }
 	.kf-item { position: relative; min-width: 0; animation: ab-in var(--dur-slow) var(--ease-out) both; animation-delay: calc(var(--i) * 35ms); }
 	.kf-pic { position: relative; display: block; min-width: 0; }
 	.kf-pic :global(.ui-wide) { width: 100%; }
-	/* Episodes */
 	.kf-eps .kf-item { display: grid; grid-template-columns: 36px minmax(0, 1fr); align-items: center; gap: 14px; padding: 10px; border-radius: 16px; transition: background var(--dur-fast) var(--ease-out); }
 	.kf-eps .kf-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 8px 16px; }
 	.kf-eps .kf-item:hover { background: var(--surface-1); }
 	.kf-eps .kf-n { grid-column: 1; grid-row: 1; color: var(--text-muted); font: 800 22px/1 var(--font-display); font-variant-numeric: tabular-nums; text-align: center; }
 	.kf-eps .kf-pic { grid-column: 2; grid-row: 1; }
-	/* Top 10 */
-	/* Stills */
 	
 	@media (prefers-reduced-motion: reduce) { .kf-item { animation: none; } }
 	.c-line { display: flex; flex-wrap: wrap; align-items: baseline; }
-	/* About sheet (Profile / Dossier / Career), an Apple TV-style dark window in the person's tint. */
+	/* The About sheet is a dark window in the person's tint. */
 	:global(.ui-sheet:has(.ab)) { --text: #fff; --text-muted: rgb(235 235 245 / .62); --surface-1: rgb(255 255 255 / 7%); --surface-2: rgb(255 255 255 / 12%); --line: rgb(255 255 255 / 10%); --border: rgb(255 255 255 / 10%); color-scheme: dark; color: #fff; background: radial-gradient(120% 70% at 50% 0%, color-mix(in srgb, var(--ap-bg, #2a2c33) 85%, #fff 6%), color-mix(in srgb, var(--ap-bg, #1b1c20) 55%, #050506) 70%); box-shadow: 0 0 0 1px rgb(255 255 255 / 8%), 0 40px 120px rgb(0 0 0 / .6); }
 	.ab { display: flex; flex-direction: column; gap: 28px; }
 	.ab-switch { display: flex; justify-content: center; }

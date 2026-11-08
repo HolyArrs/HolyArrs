@@ -3,17 +3,16 @@
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
-	import Icon from '#lib/Icon.svelte';
-	import { to } from '#lib/paths.ts';
+	import Icon from '#lib/ui/Icon.svelte';
+	import { runTone, runWord, busyNow, dot, every, groupSchedules, mayRun, stateWords, unit, until, type LoopRow, type ScheduleRow } from '#lib/health/index.ts';
 	import { onMount, tick } from 'svelte';
-	import { api } from '#lib/api.ts';
-	import { plainMessage as message } from '#lib/settings.ts';
-	import { live } from '#lib/live.svelte.ts';
-	import { session } from '#lib/session.svelte.ts';
-	import { toasts } from '#lib/toasts.svelte.ts';
-	import { ago, dateTime } from '#lib/format.ts';
-	import { runTone, runWord } from '#lib/health.ts';
-	import { busyNow, dot, every, groupSchedules, mayRun, stateWords, unit, until, type LoopRow, type ScheduleRow } from '#lib/schedules.ts';
+	import { to } from '#lib/core/paths.ts';
+	import { api } from '#lib/core/api.ts';
+	import { plainMessage as message } from '#lib/core/settings.ts';
+	import { live } from '#lib/core/live.svelte.ts';
+	import { session } from '#lib/core/session.svelte.ts';
+	import { toasts } from '#lib/core/toasts.svelte.ts';
+	import { ago, dateTime } from '#lib/core/format.ts';
 
 	let rows = $state<ScheduleRow[] | null>(null);
 	let loops = $state<LoopRow[]>([]);
@@ -281,8 +280,7 @@
 {/if}
 
 <style>
-	/* A grouped list, like a phone's Settings app: a small heading over each
-	   rounded card, compact rows with a status dot, and columns on wide screens. */
+	/* A grouped list, like a phone's Settings app: a small heading over each rounded card, compact rows with a status dot, and columns on wide screens. */
 	.groups { display: grid; gap: 22px; }
 	.sched-group + .sched-group, .groups + .sched-group { margin-top: 22px; }
 	.group-head { padding: 0 6px 6px; font: var(--t-footnote); font-weight: 600; letter-spacing: 0.01em; color: var(--text-muted); }
@@ -347,8 +345,7 @@
 	.ed-acts { display: flex; align-items: center; justify-content: flex-end; gap: 6px; flex-wrap: wrap; }
 	.its { display: inline-flex; align-items: center; gap: 2px; margin-right: auto; color: var(--accent-text); font: var(--t-callout); font-weight: 600; }
 
-	/* Narrow cards (phones, small windows): name and actions on top, the times
-	   on one line under them with their labels showing. */
+	/* Narrow cards (phones, small windows): name and actions on top, the times on one line under them with their labels showing. */
 	@container (max-width: 640px) {
 		.cols { display: none; }
 		.line { grid-template-columns: minmax(0, 1fr); grid-template-areas: 'name' 'meta' 'acts'; row-gap: 4px; padding: 10px 12px 10px 14px; }

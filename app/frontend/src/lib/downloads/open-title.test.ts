@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 
-const src = readFileSync(new URL('./DlSections.svelte', import.meta.url), 'utf8');
+const src = readFileSync(new URL('./DlPane.svelte', import.meta.url), 'utf8');
 
 describe('matched rows', () => {
 	it('link to the title in the Library, but not unmatched outside rows', () => {

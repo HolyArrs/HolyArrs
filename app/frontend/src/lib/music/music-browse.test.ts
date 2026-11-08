@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { fetchMusicPage } from './music-trending.ts';
+import { describe, expect, it } from 'vitest';
 
 describe('music browse pages', () => {
 	it('reads genre pages from the genre route and other kinds from the browse route', async () => {

@@ -1,18 +1,14 @@
 <script lang="ts">
-	import Icon from '../Icon.svelte';
+	import Icon from '#lib/ui/Icon.svelte';
 	import { tick } from 'svelte';
 
-	// A small menu opened by a caret. The panel lives in the browser's top layer (the
-	// Popover API), so no frame or side nav can cover it; it is placed from the caret and
-	// kept inside the screen (flipped above when there is no room below). Arrow keys,
-	// Home and End move; Escape and an outside click close it and give the focus back.
-	// checked makes the item a radio choice (menuitemradio); tid and key feed data-testid and data-key.
+	// Menu opened by a caret. The panel uses the browser's top layer (Popover API) so no frame or side nav covers it, is placed from the caret and flips above when there is no room below. Arrow keys, Home and End move; Escape and an outside click close it and return focus.
 	type Item = { label: string; hint?: string; disabled?: boolean; checked?: boolean; bad?: boolean; tid?: string; key?: string; onselect?: () => void };
 	let { label, items, tight = false, text = '', bare = false }: { label: string; items: Item[]; tight?: boolean; text?: string; bare?: boolean } = $props();
 
 	let btn = $state<HTMLButtonElement>();
 	let anchor = $state<HTMLElement>();
-	/** Opens the menu under any element (the picked pill, say). */
+	/** Opens the menu under any element. */
 	export function show(el: HTMLElement) {
 		anchor = el;
 		panel?.showPopover();
@@ -42,7 +38,7 @@
 	async function toggled(e: Event) {
 		open = (e as ToggleEvent).newState === 'open';
 		if (!open) {
-			// Give the focus back to what opened the menu when it was inside the menu.
+			// Return focus to the opener if it was inside the menu.
 			const a = document.activeElement;
 			if (!a || a === document.body || panel?.contains(a)) (anchor ?? btn)?.focus({ preventScroll: true });
 			return;

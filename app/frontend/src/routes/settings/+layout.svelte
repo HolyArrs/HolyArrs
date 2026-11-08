@@ -1,30 +1,25 @@
 <script lang="ts">
-	import { to, appPath } from '#lib/paths.ts';
+	import '../(frame)/settings-content.css';
+	import Icon from '#lib/ui/Icon.svelte';
+	import StatusPill from '#lib/ui/StatusPill.svelte';
+	import SettingsCard from '#lib/ui/SettingsCard.svelte';
+	import Confirm from '#lib/ui/Confirm.svelte';
+	import Button from '#lib/ui/Button.svelte';
+	import { homeArt, startArt } from './(home)/art.svelte.ts';
+	import { wall } from './(home)/pick.ts';
+	import { arrive, coverPage, push, settingsNav, swap } from './(home)/zoom.ts';
+	import { backdrop } from '#lib/accounts/index.ts';
+	import { partsNow, offPartName } from '#lib/mediafiles/index.ts';
+	import { settingsNow, refreshSettingsStatus, pageState, stateWords } from '#lib/alerts/index.ts';
 	import type { Snippet } from 'svelte';
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
 	import { afterNavigate, goto, onNavigate } from '$app/navigation';
-	import Icon from '#lib/Icon.svelte';
-	import StatusPill from '#lib/ui/StatusPill.svelte';
-	import SettingsCard from '#lib/ui/SettingsCard.svelte';
-	import Confirm from '#lib/account/Confirm.svelte';
-	import Button from '#lib/ui/Button.svelte';
-	import { grouped, mayOpen, sectionFor, sections as all, visible } from '#lib/settings.ts';
-	import { homeArt, startArt } from '#lib/settings-home/art.svelte.ts';
-	import { wall } from '#lib/settings-home/pick.ts';
-	import { backdrop } from '#lib/backdrop.svelte.ts';
-	import { arrive, coverPage, push, settingsNav, swap } from '#lib/settings-home/zoom.ts';
-	import { session } from '#lib/session.svelte.ts';
-	import { partsNow } from '#lib/parts.svelte.ts';
-	import { offPartName } from '#lib/parts.ts';
-	import { settingsNow, refreshSettingsStatus } from '#lib/settings-status.svelte.ts';
-	import { pageState, stateWords } from '#lib/settings-status.ts';
-	import '#lib/ui/settings-looks.css';
+	import { to, appPath } from '#lib/core/paths.ts';
+	import { grouped, mayOpen, sectionFor, sections as all, visible } from '#lib/core/settings.ts';
+	import { session } from '#lib/core/session.svelte.ts';
 
-	// Settings (Luis, 2026-11-06, design settings-views v4): the home is five
-	// group cards over a still, blurred wall of this Library's posters; a page
-	// shows its group's name and a row of capsules for the group's pages. The
-	// top bar's field searches settings while you are here.
+	// Settings: the home is five group cards over a still, blurred wall of this Library's posters; a page shows its group's name and a row of capsules for the group's pages. The top bar's field searches settings while you are here.
 
 	const sections = $derived(visible(all, session.can).filter((section) => !offPartName(partsNow.answer, section.href)));
 	const groups = $derived(grouped(sections));
@@ -48,8 +43,7 @@
 	let workspace = $state<HTMLElement>();
 	let capsRow = $state<HTMLElement>();
 	const status = $derived(settingsNow.answer && currentSection ? pageState(settingsNow.answer, currentSection.href) : null);
-	// Which way the next screen moves: into a group (zoom or push), back to
-	// the home (the home plays it), or along a group's capsules (a quiet fade).
+	// Which way the next screen moves: into a group (zoom or push), back to the home (the home plays it), or along a group's capsules (a quiet fade).
 	onNavigate(({ from, to: next }) => {
 		if (!from || !next) return;
 		const a = appPath(from.url.pathname);
@@ -92,10 +86,7 @@
 		void goto(to('/settings'));
 	}
 
-	// Risky actions (keys, passwords, roles, backups, single sign-on) want
-	// the password typed again. The server answers 403 "reauth"; instead of leaving that
-	// bare error on the page, ask here, then load the page again. A failed
-	// save keeps the page (and its edits) under the box.
+	// Risky actions (keys, passwords, roles, backups, single sign-on) want the password typed again. The server answers 403 "reauth"; instead of leaving that bare error on the page, ask here, then load the page again. A failed save keeps the page (and its edits) under the box.
 	let reauth = $state<'load' | 'save' | null>(null);
 	let pageKey = $state(0);
 	$effect(() => {
@@ -112,8 +103,7 @@
 			const detail = (e as CustomEvent<{ method?: string; path?: string }>).detail;
 			const method = detail?.method ?? 'GET';
 			session.s.localRecent = false;
-			// My account asks inline, next to the control that needs it, and so
-			// does Jackett or Prowlarr, above its Connect button.
+			// My account asks inline, next to the control that needs it, and so does Jackett or Prowlarr, above its Connect button.
 			if (currentSection?.group === 'account' || detail?.path === '/bridges') return;
 			// Move from other apps shows its own set-a-password card in the step.
 			if (!session.s.hasPassword && detail?.path?.startsWith('/migrate')) return;
@@ -123,9 +113,7 @@
 		return () => window.removeEventListener('holyarrs:reauth', onReauth);
 	});
 
-	// A search result links to page#field: scroll to that field, open its
-	// Advanced disclosure, focus it and flash it softly. Pages load their data
-	// after they appear, so look for the field for a few seconds.
+	// A search result links to page#field: scroll to that field, open its Advanced disclosure, focus it and flash it softly. Pages load their data after they appear, so look for the field for a few seconds.
 	let seek = 0;
 	function highlight(id: string) {
 		const mine = ++seek;
@@ -134,8 +122,7 @@
 		const look = () => {
 			if (mine !== seek) return;
 			const el = document.getElementById(id);
-			// Keep watching for a few seconds: a page that finishes loading
-			// can redraw the field (closed again, focus lost), so redo it.
+			// Keep watching for a few seconds: a page that finishes loading can redraw the field (closed again, focus lost), so redo it.
 			if (tries++ < 50) setTimeout(look, 100);
 			if (!el || el === done) return;
 			done = el;
@@ -151,8 +138,7 @@
 		};
 		look();
 	}
-	// A direct load or reload of page#field: this layout can mount after
-	// the first navigation has finished, so afterNavigate never sees it.
+	// A direct load or reload of page#field: this layout can mount after the first navigation has finished, so afterNavigate never sees it.
 	onMount(() => {
 		if (location.hash) highlight(decodeURIComponent(location.hash.slice(1)));
 	});
@@ -222,20 +208,17 @@
 	</div>
 </div>
 
-
 <style>
-	/* Settings reads in one font: paths, keys, addresses and field values use the app font
-	   with even-width digits (the log viewer keeps its fixed-width lines). */
+	/* Settings reads in one font: paths, keys, addresses and field values use the app font with even-width digits (the log viewer keeps its fixed-width lines). */
 	.settings-content :global(:is(.mono, input, textarea, select, dl.facts dd, code, kbd)),
 	.settings-content :global(:is([class*='path'], [class*='key'], [class*='url'], [class*='addr'], .hint)) { font-family: var(--font-ui) !important; font-variant-numeric: tabular-nums; letter-spacing: normal; }
-	/* ---------- the wall: this Library's posters, blurred, dimmed, still ---------- */
+	/* The wall: this Library's posters, blurred, dimmed, still. */
 	.sx-wall { position: fixed; inset: 0 0 0 var(--space, 0px); z-index: -1; overflow: hidden; pointer-events: none; transition: opacity 500ms var(--ease-out); }
 	.sx-wall .tiles { position: absolute; inset: -60px; display: grid; grid-template-columns: repeat(8, 1fr); gap: 14px; transform: rotate(-8deg) scale(1.15); filter: blur(22px) saturate(1.15); }
 	.sx-wall img { width: 100%; aspect-ratio: 2 / 3; object-fit: cover; border-radius: 10px; display: block; }
 	.sx-wall .veil { position: absolute; inset: 0; background: linear-gradient(180deg, color-mix(in srgb, var(--bg) 58%, transparent), color-mix(in srgb, var(--bg) 70%, transparent)), radial-gradient(130% 90% at 50% 10%, transparent, color-mix(in srgb, var(--bg) 70%, transparent)); }
 	@media (max-width: 767px) { .sx-wall { left: 0; } .sx-wall .tiles { grid-template-columns: repeat(4, 1fr); } }
 
-	/* ---------- frame ---------- */
 	.settings-shell { position: relative; isolation: isolate; }
 	.settings-workspace { min-width: 0; max-width: 980px; }
 	.settings-shell.home .settings-workspace { max-width: none; }
@@ -268,7 +251,7 @@
 		.back-home { margin-left: -10px; }
 	}
 
-	/* content: the card grid from settings-looks.css, plus the "flash" for search hits */
+	/* Content: the card grid from settings-content.css, plus the "flash" for search hits. */
 	/* Hand-built cards wear the same surface, corners and title as SettingsCards. */
 	.settings-content :global(.card) { border: 0; border-radius: var(--fin-r); background: var(--fin-card); box-shadow: var(--fin-shadow), 0 0 0 1px var(--fin-edge); padding: 12px 14px; }
 	.settings-content :global(:is(.card, .ui-settings) :is(h2, .h2)) { font: var(--t-headline); font-size: 15px; font-weight: 600; letter-spacing: normal; }
@@ -285,7 +268,7 @@
 		.sx-wall, .cap, .back-home { transition: none; }
 	}
 
-	/* Plain cards and buttons on the page (Luis, 2026-11-03). */
+	/* Plain cards and buttons on the page. */
 	.look-fold {
 		--fin-r: 12px; --fin-card: var(--surface-1); --fin-edge: var(--line);
 		--fin-shadow: 0 1px 2px rgb(0 0 0 / 12%), 0 8px 24px -14px rgb(0 0 0 / 35%); --fin-btn-r: var(--r-btn); }
@@ -296,7 +279,7 @@
 		.look-fold .settings-content :global(.ui-settings), .look-fold :global(.ui-btn) { transition: none; }
 		.look-fold :global(.ui-btn:active:not(:disabled)) { transform: none; }
 	}
-	/* ---------- Status look (Luis, 2026-11-06): the section pages match the Status page ---------- */
+	/* The section pages match the Status page. */
 	/* One centred column, as wide as Status reads well. */
 	.settings-shell:not(.home) { max-width: 1120px; margin-inline: auto; }
 	.settings-shell:not(.home) .settings-workspace { max-width: none; }
@@ -376,7 +359,7 @@
 	.settings-content :global(:is(.field, .srow):has(textarea) > :is(label, .txt)) { padding-top: 10px; }
 	/* Row words, the same sizes as the Library folders rows. */
 	.settings-content :global(section.ui-settings :is(.srow > .txt > .hint, .field > .hint, label.switch .hint, .checkline .hint)) { font: 400 13px/1.35 var(--font-ui) !important; color: var(--text-muted); }
-	/* Stage 1 (spec): a field row's label lines up with its box, not with box + hint. */
+	/* A field row's label lines up with its box, not with box and hint. */
 	.settings-content :global(section.ui-settings :is(.srow, .field):not(.ask > *, .row-fields > *):has(> .ctl :is(input, select), > :is(input, select), > .ctl > .input)) { align-items: start !important; }
 	.settings-content :global(section.ui-settings :is(.srow, .field):not(.ask > *, .row-fields > *):has(> .ctl :is(input, select), > :is(input, select), > .ctl > .input) > :is(.txt, label:first-child)) { padding-top: 10px; }
 	/* Long values (patterns, addresses, paths) get half the row so they are never cut off. */

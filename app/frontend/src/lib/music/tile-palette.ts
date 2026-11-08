@@ -1,14 +1,4 @@
-// The Music Browse tile palette: one colour per tile, the same on every page
-// that shows Browse tiles (Explore, New & Popular, Search). Sixteen colours of
-// our own, bright and saturated but dark enough for white text at AA (4.5:1 for
-// the name), so one set serves the light and the dark theme.
-//
-// A tile's colour comes from its key with the kind prefix taken off
-// (genre:hip-hop, mood:chill, season:halloween, decade:1990s, activity:driving):
-// a fixed map for the common keys, else a hash of the key. On any one grid no
-// two tiles share a colour: a tile whose colour is taken steps to the next
-// unused one. A grid longer than the palette starts a new round, but a colour
-// never comes back within RECENT tiles, so neighbours always differ.
+// The Music Browse tile palette: one colour per tile, the same on every page that shows Browse tiles (Explore, New & Popular, Search). Sixteen colours, bright and saturated but dark enough for white text at AA (4.5:1).
 
 export interface TileColour {
 	name: string;
@@ -34,10 +24,10 @@ export const TILE_PALETTE: readonly TileColour[] = [
 	{ name: 'slate', hex: '#4e6075' }
 ];
 
-/** RECENT: once the palette is used up, a colour waits this many tiles before it comes back. */
+/** Once the palette is used up, a colour waits this many tiles before it comes back. */
 export const RECENT = 10;
 
-/** FIXED: the colour of each common key (kind prefix off). Within a kind no two keys share one. */
+/** The colour of each common key (kind prefix off). Within a kind no two keys share one. */
 export const TILE_FIXED: Readonly<Record<string, string>> = {
 	// Genres (the first sixteen in the Browse layout all differ).
 	pop: 'pink', 'hip-hop': 'orange', rock: 'red', latin: 'mustard', rnb: 'violet', country: 'terracotta', dance: 'blue', indie: 'emerald',
@@ -64,7 +54,7 @@ const ALIAS: Readonly<Record<string, string>> = {
 	'high-energy': 'energy', romantic: 'romance', 'valentine-s': 'valentines', 'chill-at-home': 'home'
 };
 
-/** tileSlug is a key's slug: the kind prefix off, lower case, plain dashes, a decade as "1990s". */
+/** A key's slug: the kind prefix off, lower case, plain dashes, a decade as "1990s". */
 export function tileSlug(key: string): string {
 	const s = key
 		.trim()
@@ -78,15 +68,9 @@ export function tileSlug(key: string): string {
 	return ALIAS[s] ?? s;
 }
 
-function hash(s: string): number {
-	let h = 2166136261;
-	for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619);
-	return h >>> 0;
-}
-
 const INDEX = new Map(TILE_PALETTE.map((c, i) => [c.name, i]));
 
-/** preferredColour is the palette index a key asks for: its fixed colour, else a hash of its slug. */
+/** The palette index a key asks for: its fixed colour, else a hash of its slug. */
 export function preferredColour(key: string): number {
 	const slug = tileSlug(key);
 	const fixed = TILE_FIXED[slug];
@@ -94,12 +78,7 @@ export function preferredColour(key: string): number {
 	return at ?? hash(slug) % TILE_PALETTE.length;
 }
 
-/**
- * assignTileColours gives each key of one grid, in order, a colour: the one it
- * prefers, or the next unused one. A tile's colour depends only on the tiles
- * before it, so a grid that shows more tiles on a wider screen keeps the ones it
- * had. After sixteen tiles a new round starts; its colours skip the last RECENT.
- */
+/** Gives each key of one grid, in order, a colour: the one it prefers, or the next unused one. A tile's colour depends only on the tiles before it, so a grid that shows more tiles on a wider screen keeps the colours it had. */
 export function assignTileColours(keys: readonly string[]): TileColour[] {
 	const n = TILE_PALETTE.length;
 	const used = new Set<number>();
@@ -122,4 +101,10 @@ export function assignTileColours(keys: readonly string[]): TileColour[] {
 		out.push(TILE_PALETTE[pick]);
 	}
 	return out;
+}
+
+function hash(s: string): number {
+	let h = 2166136261;
+	for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619);
+	return h >>> 0;
 }

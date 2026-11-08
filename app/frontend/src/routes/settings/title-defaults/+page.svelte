@@ -1,23 +1,23 @@
 <script lang="ts">
 	import { SkSettings } from '#lib/ui/sk/index.ts';
-	// Settings > Movies and TV defaults: what a new movie or show gets (folder,
-	// Pick rules, Keep up to date, Search when added), with the Release gate
-	// and the show choices behind Advanced. Three server routes, one form.
-	import { onMount } from 'svelte';
-	import { api } from '#lib/api.ts';
-	import { plainMessage as message } from '#lib/settings.ts';
-	import { to } from '#lib/paths.ts';
-	import { toasts } from '#lib/toasts.svelte.ts';
-	import { session } from '#lib/session.svelte.ts';
-	import { savedDefaults } from '#lib/title-defaults.svelte.ts';
-	import { changedParts, foldersFor, gateChoices, rulesFor } from '#lib/title-defaults.ts';
-	import { detailsSources, episodeOrders, seasonChoices } from '#lib/shows.ts';
 	import Field from '#lib/ui/Field.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import SaveBar from '#lib/ui/SaveBar.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
-	import type { GateDefaults, LibraryFolder, PickRulesView, ShowSettings, TitleDefaults } from '#lib/types.ts';
+	import { savedDefaults, changedParts, foldersFor, gateChoices, rulesFor } from '#lib/mediafiles/index.ts';
+	import { detailsSources, episodeOrders, seasonChoices } from '#lib/shows/index.ts';
+	import type { GateDefaults, TitleDefaults } from '#lib/mediafiles/index.ts';
+	import type { ShowSettings } from '#lib/shows/index.ts';
+	import { onMount } from 'svelte';
+	import { api } from '#lib/core/api.ts';
+	import { plainMessage as message } from '#lib/core/settings.ts';
+	import { to } from '#lib/core/paths.ts';
+	import { toasts } from '#lib/core/toasts.svelte.ts';
+	import { session } from '#lib/core/session.svelte.ts';
+	import type { LibraryFolder, PickRulesView } from '#lib/core/types.ts';
+
+	// Settings > Movies and TV defaults: what a new movie or show gets (folder, Pick rules, Keep up to date, Search when added), with the Release gate and the show choices behind Advanced. Three server routes, one form.
 
 	interface Parts {
 		defaults: TitleDefaults;
@@ -67,8 +67,7 @@
 
 	onMount(load);
 
-	// Saves only the routes whose part changed, one after the other; a part
-	// that saved stays saved when a later one fails.
+	// Saves only the routes whose part changed, one after the other; a part that saved stays saved when a later one fails.
 	async function save(e: SubmitEvent) {
 		e.preventDefault();
 		if (!form) return;
@@ -186,7 +185,7 @@
 		</SettingsCard>
 
 		<p class="hint where">
-			Each <a href={to('/settings/library-folders')}>Library folder</a> has a quality set of its own. <a href={to('/settings/wishlist')}>Request rules</a> and
+			Each <a href={to('/settings/library-folders')}>Library folder</a> has a quality set of its own. <a href={to('/settings/requests')}>Request rules</a> and
 			<a href={to('/settings/outside-lists')}>Outside lists</a> keep their own choices.
 		</p>
 	</fieldset>

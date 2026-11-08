@@ -1,17 +1,17 @@
 <script lang="ts">
 	import PageLoader from '#lib/ui/PageLoader.svelte';
-	import { onMount } from 'svelte';
-	import { page } from '$app/state';
-	import { api, message } from '#lib/api.ts';
-	import { to } from '#lib/paths.ts';
-	import { session } from '#lib/session.svelte.ts';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import StatusPill from '#lib/ui/StatusPill.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
-	import Icon from '#lib/Icon.svelte';
-	import { plainReason } from '#lib/plain.ts';
-	import { collectionBody, collectionResultLine, collectionStart, type CollectionChoice, type CollectionDetail, type CollectionReview } from '#lib/collections.ts';
+	import Icon from '#lib/ui/Icon.svelte';
+	import { collectionBody, collectionResultLine, collectionStart, type CollectionChoice, type CollectionDetail, type CollectionReview } from '#lib/mediafiles/index.ts';
+	import { onMount } from 'svelte';
+	import { page } from '$app/state';
+	import { api, message } from '#lib/core/api.ts';
+	import { to } from '#lib/core/paths.ts';
+	import { session } from '#lib/core/session.svelte.ts';
+	import { plainReason } from '#lib/core/plain.ts';
 
 	const id = Number(page.params.id);
 	let detail = $state<CollectionDetail | null>(null);

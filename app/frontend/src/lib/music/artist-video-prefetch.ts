@@ -1,19 +1,15 @@
-// Every link to an artist page (rows, cards, similar artists, credits) gets
-// the trailers' two moments: on screen for a while, the artist is named in
-// the in-view batch; at hover start, its video is asked for. Both only note
-// the artist on the server, whose trailer pass makes one of its music
-// videos ready on its schedule; a page never starts a lookup.
-import { prefetchArtistVideo, watchArtistVideo } from '../autoplay.svelte.ts';
+// Every link to an artist page (rows, cards, similar artists, credits) gets the trailers' two moments: on screen for a while, the artist is named in the in-view batch; at hover start, its video is asked for.
+import { prefetchArtistVideo, watchArtistVideo } from '../core/trailer/autoplay.svelte.ts';
 
 const ARTIST = /\/music\/artist\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})(?:[/?#]|$)/i;
 
-/** artistOfHref is the MusicBrainz id an artist page link names (null: not one). */
+/** The MusicBrainz id an artist page link names; null when it is not one. */
 export function artistOfHref(href: string | null | undefined): string | null {
 	const m = href?.match(ARTIST);
 	return m ? m[1].toLowerCase() : null;
 }
 
-/** Watch artist links in view and on hover. Returns the cleanup. */
+/** Watches artist links in view and on hover. Returns the cleanup. */
 export function installArtistVideoPrefetch(): () => void {
 	if (typeof window === 'undefined' || typeof MutationObserver === 'undefined') return () => {};
 	const stops = new Map<Element, () => void>();

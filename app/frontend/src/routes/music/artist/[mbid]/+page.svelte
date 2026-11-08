@@ -1,6 +1,7 @@
 <script lang="ts">
+	import { artistSheets } from '../../../request-sheets.ts';
+	import { ArtistOverview as MusicArtistPage } from '#lib/music/index.ts';
 	import { page } from '$app/state';
-	import MusicArtistPage from '#lib/music/MusicArtistPage.svelte';
 </script>
 
-<MusicArtistPage mbid={page.params.mbid ?? ''} />
+<MusicArtistPage mbid={page.params.mbid ?? ''} sheets={artistSheets} />

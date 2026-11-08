@@ -5,17 +5,17 @@
 	import AdminLinkButton from '#lib/ui/AdminLinkButton.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import IconButton from '#lib/ui/IconButton.svelte';
-	import { to } from '#lib/paths.ts';
-	import { onMount } from 'svelte';
-	import { api, ApiError } from '#lib/api.ts';
-	import { plainMessage as message } from '#lib/settings.ts';
-	import { toasts } from '#lib/toasts.svelte.ts';
-	import { bytes, dateTime, words } from '#lib/format.ts';
-	import Icon from '#lib/Icon.svelte';
+	import Icon from '#lib/ui/Icon.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
-	import type { BackupInfo } from '#lib/types.ts';
-	import { session } from '#lib/session.svelte.ts';
+	import type { BackupInfo } from '#lib/backups/index.ts';
+	import { onMount } from 'svelte';
+	import { to } from '#lib/core/paths.ts';
+	import { api, ApiError } from '#lib/core/api.ts';
+	import { plainMessage as message } from '#lib/core/settings.ts';
+	import { toasts } from '#lib/core/toasts.svelte.ts';
+	import { bytes, dateTime, words } from '#lib/core/format.ts';
+	import { session } from '#lib/core/session.svelte.ts';
 
 	type Preset = 'balanced' | 'light' | 'careful';
 	const presets: { key: Preset; name: string; about: string }[] = [
@@ -58,17 +58,14 @@
 	}
 	onMount(load);
 
-	// A backup file is the whole database: downloading it is a risky action,
-	// so a sign-in older than 10 minutes is asked for the password first
-	// (the box above the page), then Download works.
+	// A backup file is the whole database: downloading it is a risky action, so a sign-in older than 10 minutes is asked for the password first (the box above the page), then Download works.
 	function download(e: MouseEvent) {
 		if (session.s.via !== 'session' || session.s.localRecent) return;
 		e.preventDefault();
 		window.dispatchEvent(new CustomEvent('holyarrs:reauth', { detail: { method: 'POST' } }));
 	}
 
-	// The key kit is the master key as a file (owner only, fresh password).
-	// It is a POST, so it is fetched and handed to the browser as a download.
+	// The key kit is the master key as a file (owner only, fresh password). It is a POST, so it is fetched and handed to the browser as a download.
 	async function downloadKeyKit() {
 		if (gettingKit) return;
 		if (session.s.via === 'session' && !session.s.localRecent) {
@@ -250,7 +247,7 @@
 {/if}
 
 <style>
-	/* A file picker label, shaped like the kit secondary Button. */
+	/* A file picker label, shaped like the secondary Button. */
 	.restore { display: inline-flex; align-items: center; gap: 8px; min-height: 36px; padding: 0 16px; border-radius: var(--r-btn); background: var(--surface-2); color: var(--text); font: var(--t-headline); font-size: 15px; cursor: pointer; transition: background var(--dur-fast) var(--ease-out); }
 	.restore:hover { background: var(--surface-3); }
 	.restore:has(input:focus-visible) { box-shadow: var(--focus-ring); }

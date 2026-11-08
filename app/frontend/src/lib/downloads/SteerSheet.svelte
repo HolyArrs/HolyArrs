@@ -1,18 +1,17 @@
 <script lang="ts">
-	// One sheet for steering torrents by hand: seeding rules, a new folder
-	// or speed caps, for one or many torrents. One call per Downloader.
-	import Sheet from '../ui/Sheet.svelte';
-	import Button from '../ui/Button.svelte';
-	import { api, message } from '../api.ts';
-	import { toasts } from '../toasts.svelte.ts';
-	import type { DownloadRow } from '../downloaders.ts';
+	// One sheet for steering one or many torrents by hand: seeding rules, a new folder or speed caps. One call per Downloader.
+	import Sheet from '#lib/ui/Sheet.svelte';
+	import Button from '#lib/ui/Button.svelte';
 	import { byClient, bytesOf, checkLimits, kbOf, modeOf, valueOf, type LimitMode, type ShareLimits, type SteerMode } from './manage.ts';
+	import { api, message } from '../core/api.ts';
+	import { toasts } from '../core/toasts.svelte.ts';
+	import type { DownloadRow } from '../core/types.ts';
 
 	let { open = $bindable(false), mode, rows, ondone }: { open?: boolean; mode: SteerMode; rows: DownloadRow[]; ondone?: () => void } = $props();
 
 	let busy = $state(false);
 	let error = $state('');
-	// Seeding rules: each limit is the Downloader's rule, none, or a value.
+	// Each limit is the Downloader's rule, none, or a value.
 	let ratioMode = $state<LimitMode>('global');
 	let ratio = $state(2);
 	let seedMode = $state<LimitMode>('global');
@@ -20,10 +19,10 @@
 	let idleMode = $state<LimitMode>('global');
 	let idleMin = $state(60);
 	let action = $state<ShareLimits['action']>('');
-	// A new folder: a subfolder (full paths need settings access), maybe under a category's folder.
+	// A subfolder (full paths need settings access), optionally under a category's folder.
 	let category = $state('');
 	let folder = $state('');
-	// Speed caps in KB/s; 0 is no cap.
+	// In KB/s; 0 is no cap.
 	let down = $state(0);
 	let up = $state(0);
 	const TITLE: Record<SteerMode, string> = { seed: 'Seeding rules', location: 'Set location', speed: 'Speed limits' };

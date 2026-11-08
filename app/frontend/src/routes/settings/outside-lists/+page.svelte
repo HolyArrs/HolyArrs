@@ -1,21 +1,22 @@
 <script lang="ts">
-	import { session } from '#lib/session.svelte.ts';
 	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import Field from '#lib/ui/Field.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Button from '#lib/ui/Button.svelte';
-	import { onMount } from 'svelte';
-	import { api, ApiError } from '#lib/api.ts';
-	import { plainMessage as message } from '#lib/settings.ts';
-	import { toasts } from '#lib/toasts.svelte.ts';
-	import { live } from '#lib/live.svelte.ts';
-	import { dateTime } from '#lib/format.ts';
-	import Icon from '#lib/Icon.svelte';
+	import Icon from '#lib/ui/Icon.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
-	import { every, listKinds, listLink, listSeasons, titleKinds } from '#lib/lists.ts';
-	import type { LibraryFolder, NeverAddEntry, OutsideList, PickRulesView } from '#lib/types.ts';
+	import { every, listKinds, listLink, listSeasons, titleKinds } from '#lib/requests/index.ts';
+	import type { NeverAddEntry, OutsideList } from '#lib/requests/index.ts';
+	import { onMount } from 'svelte';
+	import { session } from '#lib/core/session.svelte.ts';
+	import { api, ApiError } from '#lib/core/api.ts';
+	import { plainMessage as message } from '#lib/core/settings.ts';
+	import { toasts } from '#lib/core/toasts.svelte.ts';
+	import { live } from '#lib/core/live.svelte.ts';
+	import { dateTime } from '#lib/core/format.ts';
+	import type { LibraryFolder, PickRulesView } from '#lib/core/types.ts';
 
 	let lists = $state<OutsideList[]>([]);
 	let folders = $state<LibraryFolder[]>([]);
@@ -44,17 +45,14 @@
 	let formError = $state('');
 	let saving = $state(false);
 
-	// Trakt app key
 	let traktMasked = $state('');
 	let traktKey = $state('');
 	let traktError = $state('');
 	let traktSaving = $state(false);
-	// Owner only: a Trakt VIP access token adds the Trakt tab (score,
-	// watchers, comments) to title pages. Moved here from This app.
+	// Owner only: a Trakt VIP access token adds the Trakt tab (score, watchers, comments) to title pages.
 	let traktVipMasked = $state('');
 	let traktVip = $state('');
 
-	// Never-add list
 	let naKind = $state<'movie' | 'show'>('movie');
 	let naId = $state('');
 	let naName = $state('');
@@ -117,7 +115,7 @@
 		formOpen = true;
 	}
 
-	/** pickTitleKind switches between a movie and a show list; folder and Pick rules start over. */
+	/** Switches between a movie and a show list; folder and Pick rules start over. */
 	function pickTitleKind() {
 		folderId = folders.find((f) => f.kind === titleKind)?.id ?? 0;
 		rulesId = 0;

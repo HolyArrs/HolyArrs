@@ -1,42 +1,23 @@
 <script lang="ts">
 	import PageLoader from '#lib/ui/PageLoader.svelte';
-	import { reaskWhileFilling } from '#lib/music/reask.ts';
-	import { to } from '#lib/paths.ts';
-	import { onMount } from 'svelte';
-	import { api, message } from '#lib/api.ts';
-	import { live } from '#lib/live.svelte.ts';
-	import { toasts } from '#lib/toasts.svelte.ts';
-	import { bytes } from '#lib/format.ts';
-	import Icon from '#lib/Icon.svelte';
-	import LibraryToolPage from '#lib/LibraryToolPage.svelte';
+	import Icon from '#lib/ui/Icon.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import ProgressBar from '#lib/ui/ProgressBar.svelte';
 	import Badge from '#lib/ui/Badge.svelte';
-	import { session } from '#lib/session.svelte.ts';
-	import {
-		albumFolderLine,
-		cutFilesLine,
-		canAdopt,
-		choices,
-		episodeFileLine,
-		musicFolderLine,
-		trackFileLine,
-		fileName,
-		followJob,
-		groupPlan,
-		matchKey,
-		score,
-		showFolderLine,
-		showIdOf,
-		startPicks,
-		type AdoptCandidate,
-		type AdoptPlan,
-		type AdoptResult,
-		type JobView
-	} from '#lib/organise.ts';
 	import LoadError from '#lib/ui/LoadError.svelte';
-	import type { LibraryFolder, LookupArtist, LookupMovie, LookupShow } from '#lib/types.ts';
+	import { reaskWhileFilling } from '#lib/music/index.ts';
+	import { LibraryToolPage, albumFolderLine, cutFilesLine, canAdopt, choices, episodeFileLine, musicFolderLine, trackFileLine, fileName, followJob, groupPlan, matchKey, score, showFolderLine, showIdOf, startPicks, type AdoptCandidate, type AdoptPlan, type AdoptResult, type JobView } from '#lib/mediafiles/index.ts';
+	import type { LookupArtist } from '#lib/music/index.ts';
+	import { onMount } from 'svelte';
+	import { to } from '#lib/core/paths.ts';
+	import { api, message } from '#lib/core/api.ts';
+	import { live } from '#lib/core/live.svelte.ts';
+	import { toasts } from '#lib/core/toasts.svelte.ts';
+	import { bytes } from '#lib/core/format.ts';
+	import { session } from '#lib/core/session.svelte.ts';
+	import type { LibraryFolder, LookupMovie } from '#lib/core/types.ts';
+	import type { LookupShow } from '#lib/core/types.ts';
 
 	let folders = $state<LibraryFolder[]>([]);
 	let loaded = $state(false);

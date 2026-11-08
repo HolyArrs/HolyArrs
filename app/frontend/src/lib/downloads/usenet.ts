@@ -1,33 +1,28 @@
-// Usenet bits of the Downloads page: which rows can be retried, the words
-// for a job's steps after its bytes are in, and the Servers and Repair tabs.
-import type { DownloadRow } from '../downloaders.ts';
+// Usenet parts of the Downloads page: which rows can be retried, the words for a job's steps after its bytes are in, and the Servers and Repair tabs.
+import type { DownloadRow } from '../core/types.ts';
 
 /** One step of a finished job, as /usenet answers it. */
 export type JobStage = { stage: string; lines: string[] };
+
 /** One news server's counters. */
 export type ServerStat = { name: string; total: number; month: number; week: number; day: number; articles_tried: number; articles_found: number };
+
 /** The Servers and Repair tabs of one Usenet job. */
 export type UsenetView = { stages: JobStage[]; job_servers: { name: string; amount: string }[]; servers?: { total: number; month: number; week: number; day: number; servers: ServerStat[] } };
 
 type RetryBits = Pick<DownloadRow, 'phase' | 'protocol' | 'client_item' | 'hash' | 'downloader_id' | 'outside'>;
 
-/** retryable says a row is a failed Usenet job the Downloader still holds
- *  and HolyArrs did not send (its own failed downloads were searched again).
- *  NZBGet takes Try again too. */
+/** A failed Usenet job the Downloader still holds and HolyArrs did not send (its own failed downloads were searched again). NZBGet takes Try again too. */
 export function retryable(r: RetryBits & { downloader_kind?: string }): boolean {
 	return (controllable(r.downloader_kind) || r.downloader_kind === 'nzbget') && !!r.client_item && !!r.outside && !!r.hash && !!r.downloader_id && r.protocol === 'usenet' && r.phase === 'failed';
 }
 
-/** pausable says whether Pause/Resume means anything: a Usenet job in the
- *  finished list (done or failed) cannot be paused. NZBGet takes pause and
- *  resume though not the other row controls. */
+/** Whether Pause and Resume mean anything: a Usenet job in the finished list cannot be paused. NZBGet takes pause and resume but not the other row controls. */
 export function pausable(r: { protocol?: string; phase?: string; downloader_kind?: string }): boolean {
 	return (controllable(r.downloader_kind) || r.downloader_kind === 'nzbget') && !(r.protocol === 'usenet' && (r.phase === 'done' || r.phase === 'failed'));
 }
 
-/** controllable says the Downloader kind takes pause, resume, retry and the
- *  other row controls; Transmission, Deluge and NZBGet do not (yet). An
- *  unknown kind is allowed and the server answers. */
+/** Whether the Downloader kind takes pause, resume, retry and the other row controls; Transmission, Deluge and NZBGet do not yet. An unknown kind is allowed and the server answers. */
 export function controllable(kind?: string): boolean {
 	return !kind || kind === 'qbittorrent' || kind === 'sabnzbd';
 }
@@ -35,10 +30,10 @@ export function controllable(kind?: string): boolean {
 /** The words for a Usenet job's step after the download, from client_hint. */
 export const STEP_WORD: Record<string, string> = { verifying: 'Verifying', repairing: 'Repairing', unpacking: 'Unpacking', finishing: 'Moving files', script: 'Running script' };
 
-// The Repair tab's stages in their order, with our headings.
+// The Repair tab's stages in order, with our headings.
 const REPAIR: [string, string][] = [['download', 'Download'], ['repair', 'Verify and repair'], ['join', 'Join'], ['unpack', 'Unpack'], ['rename', 'Rename'], ['move', 'Move'], ['script', 'Script']];
 
-/** repairSteps is the Repair tab: the post-download stages that have lines. */
+/** The post-download stages that have lines. */
 export function repairSteps(v: UsenetView | undefined): { title: string; lines: string[] }[] {
 	if (!v) return [];
 	const out: { title: string; lines: string[] }[] = [];
@@ -49,7 +44,7 @@ export function repairSteps(v: UsenetView | undefined): { title: string; lines: 
 	return out;
 }
 
-/** serverRows joins this job's per-server amounts with each server's totals. */
+/** Joins this job's per-server amounts with each server's totals. */
 export function serverRows(v: UsenetView | undefined): { name: string; job: string; total: number; found: string }[] {
 	if (!v) return [];
 	const stats = new Map((v.servers?.servers ?? []).map((s) => [s.name, s]));
