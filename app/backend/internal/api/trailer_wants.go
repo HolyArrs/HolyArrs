@@ -3,9 +3,7 @@ package api
 import (
 	"context"
 	"net/http"
-	"slices"
 	"strings"
-	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/discover"
 
@@ -49,26 +47,10 @@ func (h trailerHost) PassLanguages(ctx context.Context) []string {
 
 func (h trailerHost) Warm(lang string, titles [][2]string) { h.a.warmTitles(lang, titles) }
 
-// fillTrailerKeys sets trailer_key on Explore cards whose key is kept.
+// fillTrailerKeys sets trailer_key on Explore cards whose key is kept
+// (discover.FillTrailerKeys).
 func (a *API) fillTrailerKeys(r *http.Request, items []discoverItemView) {
-	lang := metadata.TrailerLanguage(r)
-	// Every listed title is warmed ahead (details, extras, trailer key), so
-	// opening or hovering it never makes the first outside call.
-	warm := make([][2]string, 0, len(items))
-	for _, v := range items {
-		if v.Kind == "movie" || v.Kind == "show" {
-			warm = append(warm, [2]string{v.Kind, v.TMDBID})
-		}
-	}
-	a.warmTitles(lang, warm)
-	if a.kidMax(r) != "" {
-		return
-	}
-	for i := range items {
-		if v := &items[i]; (v.Kind == "movie" || v.Kind == "show") && v.TMDBID != "" {
-			v.TrailerKey = a.trailers.KnownKey(r.Context(), v.Kind, v.TMDBID, lang)
-		}
-	}
+	discover.FillTrailerKeys(r, items, a.kidMax(r) != "", a.warmTitles, a.trailers.KnownKey)
 }
 
 // trailerPassTitles are the movies and shows of every stored Explore pool
@@ -140,41 +122,10 @@ func (a *API) trailerPassTitles(ctx context.Context) [][2]string {
 	return out
 }
 
-// trailerPassLanguages are the languages pages asked for lately (most card
-// pictures kept first, then the latest asked), at most metadata.TrailerPassLangs.
-// Before any page asked (just after a start) the card pictures' languages
-// count instead; "en" when none.
+// trailerPassLanguages are the languages the trailer pass fills
+// (discover.TrailerPassLanguages).
 func (a *API) trailerPassLanguages(ctx context.Context) []string {
-	var asked []string
-	at := a.cardArt().LangsAsked()
-	for l := range at {
-		asked = append(asked, l)
-	}
-	slices.SortFunc(asked, func(x, y string) int { return at[y].Compare(at[x]) })
-	var out []string
-	add := func(l string) {
-		if len(out) < metadata.TrailerPassLangs && len(l) == 2 && metadata.ValidTrailerLanguage(l) && !slices.Contains(out, l) {
-			out = append(out, l)
-		}
-	}
-	if rows, err := a.s.Store.Read().QueryContext(ctx, "SELECT lang FROM card_art GROUP BY lang ORDER BY count(*) DESC, lang LIMIT 20"); err == nil {
-		for rows.Next() {
-			var l string
-			// The filler keeps English pictures for every title; they count
-			// only when a page asked for English.
-			if rows.Scan(&l) == nil && (len(asked) == 0 || at[l] != (time.Time{})) {
-				add(l)
-			}
-		}
-		rows.Close()
-	}
-	for _, l := range asked {
-		add(l)
-	}
-	if len(out) == 0 {
-		out = []string{"en"}
-	}
-	return out
+	return discover.TrailerPassLanguages(ctx, a.s.Store, a.cardArt().LangsAsked())
 }
 
 // artistVideosOn says whether artist music videos can play here: music on,
