@@ -50,7 +50,6 @@ var oversized = map[string]bool{
 	"app/backend/internal/metadata/musicbrainz.go":           true,
 	"app/backend/internal/api/explore_new_music.go":          true,
 	"app/backend/internal/parts/table.go":                    true,
-	"app/frontend/src/routes/search/+page.svelte":            true,
 	"app/frontend/src/routes/+page.svelte":                   true,
 	"app/frontend/src/routes/calendar/+page.svelte":          true,
 	"app/frontend/src/routes/welcome/+page.svelte":           true,
