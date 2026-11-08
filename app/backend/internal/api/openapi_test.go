@@ -18,7 +18,7 @@ import (
 // server's mux. Every such route must be in openapi.json; that each one is
 // served to at least one test request is checked by each package's
 // TestMain (internal/routehits), not by comments.
-var routePackages = []string{".", "../accounts", "../backups", "../alerts", "../health", "../updates", "../mediaservers", "../metadata", "../sources", "../subtitles", "../ai", "../arrapi", "../migrate", "../movies", "../core/webserver"}
+var routePackages = []string{".", "../accounts", "../backups", "../alerts", "../health", "../updates", "../mediaservers", "../metadata", "../sources", "../subtitles", "../ai", "../arrapi", "../migrate", "../movies", "../mediafiles", "../core/webserver"}
 
 type openapiOp struct {
 	Summary    string         `json:"summary"`
