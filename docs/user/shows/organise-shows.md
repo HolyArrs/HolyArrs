@@ -1,16 +1,26 @@
-# Organise your shows
+---
+title: Organise shows
+description: Adopt shows you already have, rename episode files, delete safely and follow an episode's history.
+level: Setup
+---
 
-You already have shows on disk, or you want to tidy names, delete what you no longer watch, or see what happened to an episode. This page covers all of that. Movies work much the same way, see [Organise movies](../movies/organise-movies.md). Only the owner and admins see these screens.
+Bring in shows already on disk, tidy names, delete what you no longer watch, and see what happened to an episode. Only the owner and admins see these screens. Movies work much the same way, see [Organise movies](../movies/organise-movies.md).
 
 ## Bring in shows you already have
 
-HolyArrs can take over a show folder as it is. Scanning only reads the folder, and adopting adds each show with its files where they are. Nothing is moved or renamed.
+HolyArrs takes over a show folder as it is. The scan only reads; adopting adds each show with its files where they are. Nothing is moved or renamed.
 
 1. Open **Library**, then **Import a library**, and pick a Library folder for shows. They are listed as "Shows: ...".
-2. **Scan.** HolyArrs reads the show name, and the year when there is one, from each folder name and looks it up at your show details source. A folder name with an id, like `Copper Valley (2025) {tvdb-81189}`, always matches that show. If one lookup fails, that folder shows as not matched with the reason, and the rest go on.
-3. **Check each show's files.** Open the line that sums them up, like "8 episodes in 7 files; 1 file with no episode, left alone". Each video is listed with the episodes its name gives. A file that names another show, a file with no episode in its name, and a smaller copy of an episode another file holds are **left alone**, with the reason. They are never touched.
-4. **Check the groups**: Matched, Unsure, Not matched, Already in the Library, On the Never-add list, No video file. Press **Look up** on an unsure or unmatched show to search by name or by an id like `tvdb:81189`.
-5. **Adopt.** Tick the shows you want and press **Adopt**. Every episode with a file is in the Library, or looks for a better copy when the file is below Good enough. The other episodes follow your show settings.
+2. Press **Scan**. HolyArrs reads the show name, and the year if there is one, from each folder name and looks it up at your show details source.
+3. Open each show's summary line, like "8 episodes in 7 files; 1 file with no episode, left alone". Each video is listed with the episodes its name gives.
+4. Check the groups: Matched, Unsure, Not matched, Already in the Library, On the Never-add list, No video file. Press **Look up** on an unsure or unmatched show to search by name or by an id like `tvdb:81189`.
+5. Tick the shows you want and press **Adopt**.
+
+You should see every episode with a file in the Library, or looking for a better copy when the file is below Good enough. The other episodes follow your show settings.
+
+A folder name with an id, like `Copper Valley (2025) {tvdb-81189}`, always matches that show. If one lookup fails, that folder shows as not matched with the reason and the rest go on.
+
+These files are **left alone**, with the reason, and never touched: a file that names another show, a file with no episode in its name, and a smaller copy of an episode another file holds.
 
 ## Rename episode files
 
@@ -25,54 +35,78 @@ Blade Song (2015)/Season 5/Blade Song - S05E12 - 112 - Rain 1080p WEB.mkv
 ```
 
 1. For one show, open it and press **Rename files**. For everything, open **Library** and press **Rename files**.
-2. Read the preview. It lists each file's name now, the name it gets, and why any file is skipped.
-3. Press **Rename**. It does exactly what the preview showed. If something changed in between, nothing is renamed and you see a fresh preview.
+2. Read the preview: each file's name now, the name it gets, and why any file is skipped.
+3. Press **Rename**.
 
-Only files HolyArrs imported or adopted are renamed. A file holding two episodes gets one name for both. A show kept in several Versions is renamed per Version, and each file stays in its own Version's folder.
+You should see the new names on the show page. Rename does exactly what the preview showed; if something changed in between, nothing is renamed and you get a fresh preview.
 
-The patterns and their defaults are listed in [Downloads for shows](downloads-shows.md#settings).
+Only files HolyArrs imported or adopted are renamed. A file holding two episodes gets one name for both. A show in several Versions is renamed per Version, and each file stays in its own Version's folder. Patterns and defaults are in [Show downloads](downloads-shows.md#settings).
 
 ## Delete a show, a season or an episode
 
+:::caution
+**Also delete the files** moves files to the holding folder, and they are removed for good after the holding days (7 by default).
+:::
+
 1. Open the show. Press **Delete** for the whole show, **Delete season** on a season, or **Delete** on an episode's line.
-2. Read the dialog. It shows what will happen before anything changes.
+2. Read **What will happen** in the dialog.
 3. Choose your options and confirm.
 
-What the options do:
+You should see a deleted show leave the Library. A deleted season or episode stays on the show page with **Keep up to date** off; turn it back on whenever you want it.
 
-- By default every file stays on disk. A deleted show leaves the Library. A deleted season or episode stays on the show page, but HolyArrs stops keeping it up to date. Turn Keep up to date back on whenever you want it.
-- **Also delete the files** moves the files HolyArrs imported or adopted into the holding folder inside their Library folder. They are removed after the holding days. Until then you can take them back from there. Files HolyArrs only found are never touched.
-- A file holding several episodes goes only when every episode in it is deleted. The dialog tells you when a file stays.
-- Every Version's copy goes. For a show kept in HD and 4K, both copies are deleted.
-- **Add it to the Never-add list** appears when you delete a whole show. Lists can then never add it again.
-- Empty season and show folders go with the files. A folder with anything else in it stays.
+| Option or case | What happens |
+| --- | --- |
+| Default | Every file stays on disk. |
+| Also delete the files | Files HolyArrs imported or adopted move to the holding folder inside their Library folder. Take them back from there before the holding days run out. Files HolyArrs only found are never touched. |
+| A file with several episodes | Goes only when every episode in it is deleted. The dialog says when a file stays. |
+| Several Versions | Every Version's copy goes. |
+| Add it to the Never-add list | Shown for a whole show. Lists can then never add it again. |
+| Empty folders | Empty season and show folders go with the files. A folder with anything else in it stays. |
 
-When files are deleted, your media servers are told to look at that show's folder again.
+When files are deleted, your media servers are told to rescan that show's folder.
 
-## See the history of a show or an episode
+## Choices
 
-The show page has a History card with the latest rows. **All rows** opens the full History for the show. Rows name their episodes, like "S01E02 The Mill" or "S01E01-E03, 3 episodes". When the show has more than one Version, each row names its Version too.
+### History
 
-Each episode has a **History** button for that episode alone: its searches, the Release sent, the import, renames, deletes and decisions.
+The show page has a **History** card with the latest rows; **All rows** opens the full History for the show. Rows name their episodes, like "S01E02 The Mill", and their Version when the show has more than one. Each episode has a **History** button with its searches, the release sent, the import, renames, deletes and decisions.
 
-## Calendar
+### Calendar
 
-The **Calendar** shows when your episodes air, next to movie dates. An episode with a known air time shows at that time in your own time zone, so a late evening episode abroad may land on the next day for you. Use **Everything**, **Movies** or **Shows** to filter. An episode with several Versions is listed once and says which Versions you have.
+**Calendar** shows air dates next to movie dates. An episode with a known air time shows at that time in your time zone, so a late evening episode abroad may land on the next day. Filter with **Everything**, **Movies** or **Shows**. An episode in several Versions is listed once and names the Versions you have. The calendar feed has episodes at their air time, or as all-day events when the time is unknown.
 
-The calendar feed for your phone has the episodes too, at their air time, or as all-day events when the time is not known.
+### Alerts
 
-## Alerts
+Show Alerts name the show and episodes, like "In the Library: Copper Valley S01E02". A season pack sends one Alert listing every episode. For one Alert per episode, change **Season packs** on **Settings > Alerts**.
 
-Alerts about shows name the show and episodes, like "In the Library: Copper Valley S01E02". A season pack sends one Alert listing every episode it brought.
+## If it does not work
 
-To get one Alert per episode instead, open **Settings > Alerts** and change **Season packs**. A big pack then sends at most 25 single Alerts and one more that lists the rest. You can change that number from 1 to 500 with the `each_limit` API setting.
+**The scan finds nothing in a folder that has shows.**
+Cause: a drive or share is not mounted. HolyArrs says so when it knows files in the folder but sees it empty.
+Fix: mount it and scan again.
 
-## Troubleshooting
+**An episode shows as missing.**
+Cause: the daily disk check found its file gone. History names it. If a whole Library folder is gone, HolyArrs warns you and marks nothing missing.
+Fix: put the file back. It is marked present again.
 
-**The scan finds nothing in a folder that has shows.** If HolyArrs knows files in that folder but sees it empty, it says a drive or network share may not be mounted. Mount it and scan again.
+**A new file in a show folder is not used.**
+Cause: a video HolyArrs finds on its own is recorded with its episodes but never fills an episode by itself, and is never renamed, moved or deleted.
+Fix: import the folder again to adopt it.
 
-**An episode shows as missing.** Once a day HolyArrs checks the Library on disk. A file that disappeared is marked missing, and History names it. When the file comes back, it is marked present again. If a whole Library folder is gone, HolyArrs warns you and marks nothing missing.
+**A file is skipped in the rename preview.**
+Cause: only imported or adopted files are renamed.
+Fix: read the reason on the preview, or adopt the file first.
 
-**A new file in a show folder is not used.** A video HolyArrs finds on its own is recorded with the episodes its name gives, but it never fills an episode by itself. HolyArrs never renames, moves or deletes it. Import the folder again to adopt it.
+## For experts
 
-**A file is skipped in the rename preview.** Only files HolyArrs imported or adopted are renamed. The preview gives the reason for each skipped file.
+<details class="ha-more"><summary>Per-episode Alerts limit</summary>
+
+With **Season packs** set to one Alert per episode, a big pack sends at most 25 single Alerts and one more listing the rest. Change the number, 1 to 500, with the `each_limit` API setting.
+
+</details>
+
+## Related
+
+- [Show downloads](downloads-shows.md)
+- [Search for shows](search-shows.md)
+- [Organise movies](../movies/organise-movies.md)
