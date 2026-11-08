@@ -92,7 +92,7 @@ func pathValue(pattern, path, name string) string {
 
 // partIsOn reports whether the part p is on (always, without a Control).
 // In safe mode the Library still lists every title (parts.SafeLibrary).
-func (a *API) partIsOn(p parts.Part) bool { return a.s.Parts == nil || a.s.Parts.On(p) }
+func (a *API) partIsOn(p parts.Part) bool { return parts.PartOn(a.s.Parts, p) }
 
 // whoName names the person for an Event summary.
 func whoName(r *http.Request) string {
