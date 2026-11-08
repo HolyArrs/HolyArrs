@@ -395,11 +395,8 @@ func (a *API) Routes(rt *webserver.Router) {
 	m.HandleFunc("DELETE /api/v1/never-add/{id}", a.deleteNeverAdd)
 	m.HandleFunc("GET /api/v1/settings/release-gate", a.getGateDefaults)
 	m.HandleFunc("PUT /api/v1/settings/release-gate", a.putGateDefaults)
-	m.HandleFunc("GET /api/v1/outside-lists", a.listOutsideLists)
-	m.HandleFunc("POST /api/v1/outside-lists", a.addOutsideList)
-	m.HandleFunc("PUT /api/v1/outside-lists/{id}", a.editOutsideList)
-	m.HandleFunc("DELETE /api/v1/outside-lists/{id}", a.deleteOutsideList)
-	m.HandleFunc("POST /api/v1/outside-lists/{id}/sync", a.syncOutsideList)
+	lists := &requests.OutsideListHandlers{Store: a.s.Store, Queue: a.s.Queue, Secrets: a.s.Secrets, Actor: actor, LibraryError: libraryError}
+	lists.Routes(m)
 	(&sources.TitleSearchHandlers{Store: a.s.Store, Queue: a.s.Queue, Show: (&shows.SearchHandlers{Store: a.s.Store, Queue: a.s.Queue}).Search, Artist: a.searchArtist}).Routes(m)
 	m.HandleFunc("GET /api/v1/downloads", a.listDownloads)
 	m.HandleFunc("GET /api/v1/imports", a.listImports)
@@ -472,20 +469,20 @@ func (a *API) Routes(rt *webserver.Router) {
 	a.titles.Routes(m)
 	if a.s.Secrets != nil {
 		if startup.FeatureOn(features.TraktLists) {
-			m.HandleFunc("GET /api/v1/settings/trakt-key", a.getTraktKey)
-			m.HandleFunc("PUT /api/v1/settings/trakt-key", a.putTraktKey)
+			lists.TraktKeyRoutes(m)
 			reviews.TokenRoutes(m)
 		}
 		(&shows.TVDBKeyHandlers{Secrets: a.s.Secrets}).Routes(m)
 	}
-	a.askRoutes(m)
+	a.askHandlers().Routes(m)
+	(&webserver.URLBaseHandlers{Store: a.s.Store, InUse: a.s.URLBase}).Routes(m)
 	a.alertRoutes(m)
 	if startup.FeatureOn(features.PlexWatchlists) {
-		a.watchlistRoutes(m)
+		(&requests.WatchlistHandlers{Store: a.s.Store, Queue: a.s.Queue, Watchlists: func() *requests.Watchlists { return a.s.Watchlists }, Person: a.person}).Routes(m)
 	}
 	(&requests.ReportHandlers{Svc: a.s.Asks, Store: a.s.Store, Person: a.person, KidMax: a.kidMax, TitleGate: a.reportTitleGate}).Routes(m)
-	a.askedByRoutes(m)
-	a.followRoutes(m)
+	(&requests.AskedByHandlers{Store: a.s.Store, KidMax: a.kidMax, AllowedTitleIDs: a.allowedTitleIDs}).Routes(m)
+	(&requests.FollowHandlers{Svc: a.s.Asks, Person: a.person, Title: a.titleID, Changed: a.followsChanged}).Routes(m)
 	a.controlRoutes(m)
 	m.HandleFunc("GET /api/v1/openapi.json", a.openapi)
 	m.HandleFunc("GET /api/v1/health", a.health)
@@ -768,7 +765,7 @@ func (a *API) titleView(ctx context.Context, t mediafiles.Title) (TitleView, err
 		if batch != nil {
 			return batch.asksFor(t.ID), nil
 		}
-		return a.titleAsks(ctx, t.ID)
+		return a.s.Asks.TitleAsks(ctx, t.ID)
 	}
 	if t.Kind == "show" {
 		if v.Show, err = a.showInfo(ctx, t); err != nil {

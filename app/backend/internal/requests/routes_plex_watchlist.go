@@ -1,4 +1,4 @@
-package api
+package requests
 
 import (
 	"database/sql"
@@ -7,24 +7,35 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/requests"
 )
 
 // Plex watchlist sync (roadmap #102): each person turns on having their
 // Plex watchlist asked for as them, once the owner allows it in Request
 // rules. These routes read nothing from Plex: the schedule does.
 
-func (a *API) watchlistRoutes(m *http.ServeMux) {
-	m.HandleFunc("GET /api/v1/my/plex-watchlist", a.getMyWatchlist)
-	m.HandleFunc("PUT /api/v1/my/plex-watchlist", a.putMyWatchlist)
-	m.HandleFunc("POST /api/v1/my/plex-watchlist/check", a.checkMyWatchlist)
+// WatchlistHandlers are the My account Plex watchlist routes.
+type WatchlistHandlers struct {
+	Store *database.Store
+	Queue *jobs.Queue
+	// Watchlists gives the Plex watchlist reader (read per call; nil: none).
+	Watchlists func() *Watchlists
+	Person     func(r *http.Request) Person
+}
+
+// Routes registers the Plex watchlist routes.
+func (h *WatchlistHandlers) Routes(m *http.ServeMux) {
+	m.HandleFunc("GET /api/v1/my/plex-watchlist", h.getMyWatchlist)
+	m.HandleFunc("PUT /api/v1/my/plex-watchlist", h.putMyWatchlist)
+	m.HandleFunc("POST /api/v1/my/plex-watchlist/check", h.checkMyWatchlist)
 }
 
 // watchlistView is My account's Plex watchlist card.
 type watchlistView struct {
-	requests.WatchlistState
+	WatchlistState
 	// On: the owner allows watchlists (Request rules).
 	On bool `json:"on"`
 	// Linked: a Plex account is linked to this person; PlexName is its name.
@@ -41,30 +52,30 @@ func mayAsk(r *http.Request) bool {
 	return !ok || who.Has(webserver.PermAsk)
 }
 
-func (a *API) watchlistView(r *http.Request) (watchlistView, error) {
+func (h *WatchlistHandlers) watchlistView(r *http.Request) (watchlistView, error) {
 	ctx := r.Context()
-	uid := a.person(r).UserID
-	db := a.s.Store.Read()
-	st, err := requests.ReadWatchlist(ctx, db, uid)
+	uid := h.Person(r).UserID
+	db := h.Store.Read()
+	st, err := ReadWatchlist(ctx, db, uid)
 	if err != nil {
 		return watchlistView{}, err
 	}
-	set, err := requests.ReadSettings(ctx, db)
+	set, err := ReadSettings(ctx, db)
 	if err != nil {
 		return watchlistView{}, err
 	}
 	v := watchlistView{WatchlistState: st, On: set.PlexWatchlists, MayAsk: mayAsk(r)}
-	err = db.QueryRowContext(ctx, "SELECT external_name FROM user_links WHERE provider = 'plex' AND user_id = ? LIMIT 1", uid).Scan(&v.PlexName)
+	err = db.QueryRowContext(ctx, plexLinkNameSQL, uid).Scan(&v.PlexName)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return v, err
 	}
 	v.Linked = err == nil
-	v.CanRead = v.Linked && a.s.Watchlists.HasToken(ctx, uid)
+	v.CanRead = v.Linked && h.Watchlists().HasToken(ctx, uid)
 	return v, nil
 }
 
-func (a *API) getMyWatchlist(w http.ResponseWriter, r *http.Request) {
-	v, err := a.watchlistView(r)
+func (h *WatchlistHandlers) getMyWatchlist(w http.ResponseWriter, r *http.Request) {
+	v, err := h.watchlistView(r)
 	if err != nil {
 		webserver.Internal(w, "api", err)
 		return
@@ -72,9 +83,9 @@ func (a *API) getMyWatchlist(w http.ResponseWriter, r *http.Request) {
 	webserver.WriteJSON(w, http.StatusOK, v)
 }
 
-func (a *API) putMyWatchlist(w http.ResponseWriter, r *http.Request) {
-	var body requests.WatchlistSwitches
-	if !decode(w, r, &body, `send {"movies": true, "shows": false}`) {
+func (h *WatchlistHandlers) putMyWatchlist(w http.ResponseWriter, r *http.Request) {
+	var body WatchlistSwitches
+	if !webserver.Decode(w, r, &body, `send {"movies": true, "shows": false}`) {
 		return
 	}
 	if !mayAsk(r) {
@@ -82,7 +93,7 @@ func (a *API) putMyWatchlist(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if body.Movies || body.Shows {
-		v, err := a.watchlistView(r)
+		v, err := h.watchlistView(r)
 		if err != nil {
 			webserver.Internal(w, "api", err)
 			return
@@ -96,21 +107,21 @@ func (a *API) putMyWatchlist(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	uid := a.person(r).UserID
-	if err := requests.SaveWatchlistSwitches(r.Context(), a.s.Store, uid, body); err != nil {
+	uid := h.Person(r).UserID
+	if err := SaveWatchlistSwitches(r.Context(), h.Store, uid, body); err != nil {
 		webserver.Internal(w, "api", err)
 		return
 	}
 	if body.Movies || body.Shows {
-		a.queueWatchlist(r, uid)
+		h.queueWatchlist(r, uid)
 	}
-	a.getMyWatchlist(w, r)
+	h.getMyWatchlist(w, r)
 }
 
 // checkMyWatchlist reads the person's watchlist now instead of at the
 // next scheduled pass.
-func (a *API) checkMyWatchlist(w http.ResponseWriter, r *http.Request) {
-	v, err := a.watchlistView(r)
+func (h *WatchlistHandlers) checkMyWatchlist(w http.ResponseWriter, r *http.Request) {
+	v, err := h.watchlistView(r)
 	if err != nil {
 		webserver.Internal(w, "api", err)
 		return
@@ -119,7 +130,7 @@ func (a *API) checkMyWatchlist(w http.ResponseWriter, r *http.Request) {
 		webserver.Fail(w, http.StatusConflict, "turn on your Plex watchlist first")
 		return
 	}
-	id, ok := a.queueWatchlist(r, a.person(r).UserID)
+	id, ok := h.queueWatchlist(r, h.Person(r).UserID)
 	if !ok {
 		webserver.Fail(w, http.StatusServiceUnavailable, "could not start the check; try again")
 		return
@@ -127,11 +138,11 @@ func (a *API) checkMyWatchlist(w http.ResponseWriter, r *http.Request) {
 	webserver.WriteJSON(w, http.StatusAccepted, map[string]any{"job_id": id})
 }
 
-func (a *API) queueWatchlist(r *http.Request, uid int64) (int64, bool) {
-	if a.s.Queue == nil {
+func (h *WatchlistHandlers) queueWatchlist(r *http.Request, uid int64) (int64, bool) {
+	if h.Queue == nil {
 		return 0, false
 	}
-	id, _, err := a.s.Queue.EnqueueAt(r.Context(), requests.KindPlexWatchlists, nil, map[string]any{"user_id": uid},
+	id, _, err := h.Queue.EnqueueAt(r.Context(), KindPlexWatchlists, nil, map[string]any{"user_id": uid},
 		"plex_watchlist:"+strconv.FormatInt(uid, 10), domain.Actor{Kind: "user", ID: uid}, time.Time{})
 	return id, err == nil
 }

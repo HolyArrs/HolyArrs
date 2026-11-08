@@ -93,7 +93,7 @@ func TestOutsideListsAPI(t *testing.T) {
 	do(t, "POST", srv.URL+"/api/v1/outside-lists", `{"name":"x","kind":"imdb","ref":"1"}`, 400)
 	do(t, "POST", srv.URL+"/api/v1/outside-lists", `{"name":"x","kind":"trakt_list","ref":"no slash"}`, 400)
 	// Saving a list reads it once straight away.
-	var l ListView
+	var l requests.ListView
 	_ = json.Unmarshal(do(t, "POST", srv.URL+"/api/v1/outside-lists", `{"name":"Lab list","kind":"tmdb_list","ref":"https://www.themoviedb.org/list/7-lab"}`, 201), &l)
 	if l.ID == 0 || l.Ref != "7" || l.SyncEveryHours != 12 || l.JobID == 0 {
 		t.Fatalf("list %+v", l)
@@ -114,7 +114,7 @@ func TestOutsideListsAPI(t *testing.T) {
 		time.Sleep(10 * time.Millisecond)
 	}
 	var all struct {
-		Lists []ListView `json:"outside_lists"`
+		Lists []requests.ListView `json:"outside_lists"`
 	}
 	for time.Now().Before(deadline) {
 		_ = json.Unmarshal(do(t, "GET", srv.URL+"/api/v1/outside-lists", "", 200), &all)
@@ -148,7 +148,7 @@ func TestOutsideListsAPI(t *testing.T) {
 	_ = os.MkdirAll(shows, 0o755)
 	do(t, "POST", srv.URL+"/api/v1/library-folders", fmt.Sprintf(`{"path":%q,"kind":"show"}`, shows), 201)
 	do(t, "POST", srv.URL+"/api/v1/outside-lists", `{"name":"Shows","kind":"tmdb_list","ref":"7","title_kind":"show","seasons":"pilot"`+off+`}`, 400)
-	var sl ListView
+	var sl requests.ListView
 	_ = json.Unmarshal(do(t, "POST", srv.URL+"/api/v1/outside-lists", `{"name":"Shows","kind":"tmdb_list","ref":"7","title_kind":"show","seasons":"first","new_seasons":"none"`+off+`}`, 201), &sl)
 	if sl.TitleKind != "show" || sl.Seasons != "first" || sl.NewSeasons != "none" {
 		t.Fatalf("show list %+v", sl)
