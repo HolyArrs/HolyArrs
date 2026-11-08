@@ -69,14 +69,14 @@ func TestLibraryCopiesListAndReviewedSearch(t *testing.T) {
 	}
 
 	body := `{"selections":[{"file_id":` + itoa(f.ID) + `,"version_id":` + itoa(v.ID) + `}]}`
-	var preview libraryCopySearchPreview
+	var preview mediafiles.LibraryCopySearchPreview
 	_ = json.Unmarshal(do(t, "POST", srv.URL+"/api/v1/library/copies/search/preview", body, 200), &preview)
 	if preview.ReviewToken == "" || preview.SlotCount != 1 || len(preview.Copies) != 1 {
 		t.Fatalf("preview %+v", preview)
 	}
 
 	searchBody := `{"selections":[{"file_id":` + itoa(f.ID) + `,"version_id":` + itoa(v.ID) + `}],"review_token":"` + preview.ReviewToken + `"}`
-	var searched libraryCopySearchResult
+	var searched mediafiles.LibraryCopySearchResult
 	_ = json.Unmarshal(do(t, "POST", srv.URL+"/api/v1/library/copies/search", searchBody, 202), &searched)
 	if len(searched.JobIDs) != 1 || len(searched.Items) != 1 || searched.Items[0].SlotIDs[0] != slot.ID {
 		t.Fatalf("search %+v", searched)
@@ -96,7 +96,7 @@ func TestLibraryCopySearchRevalidatesStaleAndProtected(t *testing.T) {
 	srv, s, _ := setup(t)
 	f, v, _ := apiMovieCopy(t, s, false)
 	body := `{"selections":[{"file_id":` + itoa(f.ID) + `,"version_id":` + itoa(v.ID) + `}]}`
-	var preview libraryCopySearchPreview
+	var preview mediafiles.LibraryCopySearchPreview
 	_ = json.Unmarshal(do(t, "POST", srv.URL+"/api/v1/library/copies/search/preview", body, 200), &preview)
 	if err := s.Write(context.Background(), func(tx *sql.Tx) error {
 		_, err := tx.Exec("UPDATE files SET protected=1 WHERE id=?", f.ID)

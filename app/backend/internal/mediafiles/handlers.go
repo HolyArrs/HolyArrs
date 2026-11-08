@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 )
 
 // Deps is what the Library files routes need: services and core types, and funcs
@@ -11,6 +12,7 @@ import (
 // as the routes move out of internal/api.
 type Deps struct {
 	Store *database.Store
+	Queue *jobs.Queue
 	// KidMax is the signed-in person's age-rating limit ("" for none).
 	KidMax func(*http.Request) string
 }
@@ -21,5 +23,9 @@ type Handlers struct {
 	Deps
 }
 
-// Routes registers the Library files routes; empty until they move here.
-func (h *Handlers) Routes(m *http.ServeMux) {}
+// Routes registers the Library files routes.
+func (h *Handlers) Routes(m *http.ServeMux) {
+	m.HandleFunc("GET /api/v1/library/copies", h.listLibraryCopies)
+	m.HandleFunc("POST /api/v1/library/copies/search/preview", h.previewLibraryCopySearch)
+	m.HandleFunc("POST /api/v1/library/copies/search", h.searchLibraryCopies)
+}

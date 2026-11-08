@@ -188,6 +188,8 @@ type API struct {
 	sourceH    *sources.Handlers
 	// dl serves the Downloads routes (internal/downloads).
 	dl *downloads.Web
+	// mf serves the Library files routes (internal/mediafiles).
+	mf *mediafiles.Handlers
 	// interest limits each session's live interest calls (webserver.go).
 	interest interestState
 	// listSeen is each region's last world-list shelves signature
@@ -304,6 +306,7 @@ func New(s Server) *API {
 			}}
 	}
 	a := &API{s: s, media: &mediaservers.Handlers{Store: s.Store, Vault: s.Secrets, Linker: s.Media}}
+	a.mf = &mediafiles.Handlers{Deps: mediafiles.Deps{Store: s.Store, Queue: s.Queue, KidMax: a.kidMax}}
 	a.titles = a.newTitlePages()
 	a.trailers = a.newTrailers()
 	a.ai = &ai.Handlers{Store: s.Store, Version: s.Version, PartOn: a.partIsOn}
@@ -391,9 +394,7 @@ func (a *API) Routes(rt *webserver.Router) {
 	a.peopleRoutes(m)
 	a.copyRoutes(m)
 	(&movies.Handlers{Lib: a.s.Library, KidMax: a.kidMax, AllowedTitleIDs: a.allowedTitleIDs}).Routes(m)
-	m.HandleFunc("GET /api/v1/library/copies", a.listLibraryCopies)
-	m.HandleFunc("POST /api/v1/library/copies/search/preview", a.previewLibraryCopySearch)
-	m.HandleFunc("POST /api/v1/library/copies/search", a.searchLibraryCopies)
+	a.mf.Routes(m)
 	a.dl.Routes(m)
 	a.organiseRoutes(m)
 	a.manualImportRoutes(m)
