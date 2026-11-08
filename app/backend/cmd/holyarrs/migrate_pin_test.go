@@ -1,4 +1,4 @@
-package api
+package main
 
 import (
 	"context"
@@ -13,7 +13,7 @@ import (
 // while it runs, the undo job while an undo runs (unless the move is done:
 // then 1), 1 once done or undone, and 0 with no note when there is no job.
 func TestRDPMoveProgressFromJobs(t *testing.T) {
-	srv, st, _, _ := moveSetup(t, false)
+	srv, st, _, _ := arrMoveSetup(t, false)
 	ctx := context.Background()
 	stamp := "2026-10-13T12:00:00Z"
 	job := func(progress float64, note any) int64 {
@@ -69,7 +69,7 @@ func TestRDPMoveProgressFromJobs(t *testing.T) {
 			Progress     float64 `json:"progress"`
 			ProgressNote string  `json:"progress_note"`
 		}
-		if err := json.Unmarshal(do(t, "GET", srv.URL+"/api/v1/migrate/moves/"+itoa(c.id), "", 200), &got); err != nil {
+		if err := json.Unmarshal(arrDo(t, "GET", srv.URL+"/api/v1/migrate/moves/"+arrItoa(c.id), "", 200), &got); err != nil {
 			t.Fatal(err)
 		}
 		if got.Progress != c.progress || got.ProgressNote != c.note {

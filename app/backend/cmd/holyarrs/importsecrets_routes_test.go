@@ -1,4 +1,4 @@
-package api
+package main
 
 import (
 	"encoding/json"
@@ -33,7 +33,7 @@ func keyCall(t *testing.T, base, key, method, path, body string) (int, string) {
 // route: DELETE /api/v1/migrate/saved-keys
 func TestImportSecretsRoutes(t *testing.T) {
 	t.Parallel()
-	r := newAskRig(t)
+	r := newArrAskRig(t)
 	radarrKey := "your-radarr-key-1"
 	u := fakeRadarr(t, radarrKey)
 	file := map[string]any{"version": 1,
@@ -94,7 +94,7 @@ func TestImportSecretsRoutes(t *testing.T) {
 	}
 	r.ana.call("POST", "/api/v1/migrate/read", `{"kind":"radarr","use_saved_key":true}`, 403)
 	// An admin is not the owner.
-	r.owner.call("PUT", "/api/v1/users/"+itoa(r.bo.id), `{"role":"admin"}`, 200)
+	r.owner.call("PUT", "/api/v1/users/"+arrItoa(r.bo.id), `{"role":"admin"}`, 200)
 	r.bo.call("POST", "/api/v1/migrate/probe", `{"kind":"radarr","use_saved_key":true}`, 403)
 	// The key only goes to its saved address, with only its saved leave.
 	b = r.owner.call("POST", "/api/v1/migrate/probe", `{"kind":"radarr","use_saved_key":true,"url":"http://127.0.0.1:1"}`, 400)
@@ -141,8 +141,8 @@ func TestImportSecretsRoutes(t *testing.T) {
 // never used.
 func TestSavedKeyNeedsSignedInOwner(t *testing.T) {
 	t.Parallel()
-	srv, _, _ := setup(t)
-	do(t, "POST", srv.URL+"/api/v1/migrate/probe", `{"kind":"radarr","use_saved_key":true}`, 403)
+	srv, _, _ := arrSetup(t)
+	arrDo(t, "POST", srv.URL+"/api/v1/migrate/probe", `{"kind":"radarr","use_saved_key":true}`, 403)
 }
 
 func TestImportSecretsSameKeys(t *testing.T) {
@@ -158,7 +158,7 @@ func TestImportSecretsSameKeys(t *testing.T) {
 
 func TestLocalSkipCannotReadSavedAddresses(t *testing.T) {
 	t.Parallel()
-	r := newAskRig(t)
+	r := newArrAskRig(t)
 	r.owner.call("PUT", "/api/v1/auth/settings", `{"skip_login_local_network":true,"local_networks":["127.0.0.0/8","10.0.0.0/8"]}`, 200)
 	for _, tc := range []struct{ method, path string }{
 		{"GET", "/api/v1/migrate/saved-keys"},

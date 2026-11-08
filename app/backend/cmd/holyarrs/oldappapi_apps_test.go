@@ -1,4 +1,4 @@
-package api
+package main
 
 import (
 	"bytes"
@@ -178,19 +178,19 @@ func TestOldAppBazarrSync(t *testing.T) {
 	}
 	poster := fields(t, "poster", ims[0], []string{"coverType", "url", "remoteUrl"})
 	wide := fields(t, "fanart", ims[1], []string{"coverType", "url", "remoteUrl"})
-	at := "/sonarr/MediaCover/" + itoa(showID) + "/"
+	at := "/sonarr/MediaCover/" + arrItoa(showID) + "/"
 	if poster["coverType"] != "poster" || poster["url"] != at+"poster.jpg" || poster["remoteUrl"] != "" || wide["coverType"] != "fanart" || wide["url"] != at+"fanart.jpg" ||
 		wide["remoteUrl"] != "https://image.tmdb.org/t/p/w1280/lab-show-wide.jpg" {
 		t.Errorf("images: %v %v", poster, wide)
 	}
-	one := fields(t, "one series", f.arrOK(son, "GET", s+"series/"+itoa(showID), "", 200), []string{"lastAired", "alternateTitles", "originalLanguage", "images"})
+	one := fields(t, "one series", f.arrOK(son, "GET", s+"series/"+arrItoa(showID), "", 200), []string{"lastAired", "alternateTitles", "originalLanguage", "images"})
 	if one["lastAired"] != sm["lastAired"] {
 		t.Errorf("one series: %v", one)
 	}
 
 	// Episodes with their files (the version is past the point where
 	// Bazarr reads them embedded).
-	eps := arrList(t, "episodes", f.arrOK(son, "GET", s+"episode?seriesId="+itoa(showID)+"&includeEpisodeFile=true", "", 200), 5)
+	eps := arrList(t, "episodes", f.arrOK(son, "GET", s+"episode?seriesId="+arrItoa(showID)+"&includeEpisodeFile=true", "", 200), 5)
 	withFile := 0
 	for _, x := range eps {
 		e := fields(t, "bazarr episode", x, []string{"id", "seriesId", "title", "seasonNumber", "episodeNumber", "monitored", "hasFile", "episodeFileId", "tvdbId"})
@@ -213,7 +213,7 @@ func TestOldAppBazarrSync(t *testing.T) {
 	if withFile != 1 {
 		t.Fatalf("episodes with a file: %d", withFile)
 	}
-	for _, x := range arrList(t, "episodes", f.arrOK(son, "GET", s+"episode?seriesId="+itoa(showID), "", 200), 5) {
+	for _, x := range arrList(t, "episodes", f.arrOK(son, "GET", s+"episode?seriesId="+arrItoa(showID), "", 200), 5) {
 		fields(t, "episode, no file asked", x, nil, "episodeFile", "series")
 	}
 	arrList(t, "tags", f.arrOK(son, "GET", s+"tag", "", 200), -1)
@@ -267,8 +267,8 @@ func TestOldAppBazarrSync(t *testing.T) {
 		{son, s + "history?eventType=1&episodeId=1"},
 		{rad, r + "history?eventType=1&movieIds=1"},
 		{son, s + "episode/1"},
-		{son, s + "episodefile?seriesId=" + itoa(showID)},
-		{rad, r + "moviefile?movieId=" + itoa(movieID)},
+		{son, s + "episodefile?seriesId=" + arrItoa(showID)},
+		{rad, r + "moviefile?movieId=" + arrItoa(movieID)},
 	} {
 		if st, _, b := f.arr(c.key, "GET", c.path, ""); st != 404 {
 			t.Errorf("%s: %d %s, want 404", c.path, st, b)
@@ -296,9 +296,9 @@ func TestOldAppMediaCover(t *testing.T) {
 		t.Helper()
 		return f.arr(key, "GET", path, "")
 	}
-	at := "/sonarr/MediaCover/" + itoa(showID) + "/"
-	for _, p := range []string{at + "poster.jpg", at + "poster.jpg?lastWrite=638000000", "/sonarr/mediacover/" + itoa(showID) + "/POSTER.jpg",
-		"/sonarr/api/v3/mediacover/" + itoa(showID) + "/poster.jpg"} {
+	at := "/sonarr/MediaCover/" + arrItoa(showID) + "/"
+	for _, p := range []string{at + "poster.jpg", at + "poster.jpg?lastWrite=638000000", "/sonarr/mediacover/" + arrItoa(showID) + "/POSTER.jpg",
+		"/sonarr/api/v3/mediacover/" + arrItoa(showID) + "/poster.jpg"} {
 		st, hd, b := get(son, p)
 		// The address stays the same when the poster changes: kept a day, not a year.
 		if st != 200 || b != string(stored) || hd.Get("Content-Type") != "image/png" || hd.Get("Cache-Control") != "private, max-age=86400" {
@@ -317,15 +317,15 @@ func TestOldAppMediaCover(t *testing.T) {
 	if st, hd, b := get(son, at+"fanart.jpg"); st != 200 || b != string(wide) || strings.Contains(hd.Get("Cache-Control"), "immutable") {
 		t.Errorf("fanart: %d %q %q", st, hd.Get("Cache-Control"), b)
 	}
-	if st, _, _ := get(rad, "/radarr/MediaCover/"+itoa(movieID)+"/poster.jpg"); st != 200 {
+	if st, _, _ := get(rad, "/radarr/MediaCover/"+arrItoa(movieID)+"/poster.jpg"); st != 200 {
 		t.Errorf("movie poster: %d", st)
 	}
 	for _, c := range []struct{ key, path string }{
 		{son, at + "banner.jpg"},
-		{son, "/radarr/MediaCover/" + itoa(movieID) + "/poster.jpg"}, // the other side's key
-		{rad, "/radarr/MediaCover/" + itoa(movieID) + "/fanart.jpg"}, // no wide picture
-		{son, "/sonarr/MediaCover/" + itoa(movieID) + "/poster.jpg"}, // a movie on the Sonarr side
-		{rad, "/radarr/MediaCover/" + itoa(showID) + "/poster.jpg"},  // a show on the Radarr side
+		{son, "/radarr/MediaCover/" + arrItoa(movieID) + "/poster.jpg"}, // the other side's key
+		{rad, "/radarr/MediaCover/" + arrItoa(movieID) + "/fanart.jpg"}, // no wide picture
+		{son, "/sonarr/MediaCover/" + arrItoa(movieID) + "/poster.jpg"}, // a movie on the Sonarr side
+		{rad, "/radarr/MediaCover/" + arrItoa(showID) + "/poster.jpg"},  // a show on the Radarr side
 		{son, "/sonarr/MediaCover/999999/poster.jpg"},
 		{son, "/sonarr/MediaCover/x/poster.jpg"},
 		{son, "/sonarr/MediaCoverProxy/x/poster.jpg"},
@@ -337,7 +337,7 @@ func TestOldAppMediaCover(t *testing.T) {
 	if st, _, b := f.call(http.DefaultClient, "", "GET", at+"poster.jpg", ""); st != 401 || b != "" {
 		t.Errorf("no key: %d %q", st, b)
 	}
-	f.arrOK(son, "DELETE", "/sonarr/api/v3/series/"+itoa(showID), "", 200)
+	f.arrOK(son, "DELETE", "/sonarr/api/v3/series/"+arrItoa(showID), "", 200)
 	if st, _, _ := get(son, at+"poster.jpg"); st != 404 {
 		t.Errorf("removed show: %d", st)
 	}
@@ -422,7 +422,7 @@ func TestOldAppUnpackerrQueue(t *testing.T) {
 func idSQL(ids []int64) string {
 	parts := make([]string, len(ids))
 	for i, id := range ids {
-		parts[i] = itoa(id)
+		parts[i] = arrItoa(id)
 	}
 	return "(" + strings.Join(parts, ",") + ")"
 }
@@ -535,8 +535,8 @@ func TestOldAppHomepageWidgets(t *testing.T) {
 		t.Errorf("details row: %v", row)
 	}
 	details("?seriesId=999", 0)
-	details("?episodeIds="+itoa(e101), 0)
-	row = fields(t, "details with show", details("?seriesId="+itoa(showID)+"&episodeIds="+itoa(e102)+"&includeSeries=true&includeEpisode=true", 1)[0], []string{"series", "episode"})
+	details("?episodeIds="+arrItoa(e101), 0)
+	row = fields(t, "details with show", details("?seriesId="+arrItoa(showID)+"&episodeIds="+arrItoa(e102)+"&includeSeries=true&includeEpisode=true", 1)[0], []string{"series", "episode"})
 	if row["series"].(map[string]any)["title"] != "Lab Show" {
 		t.Errorf("details with show: %v", row)
 	}

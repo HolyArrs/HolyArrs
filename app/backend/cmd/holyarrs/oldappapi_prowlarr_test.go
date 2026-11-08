@@ -1,4 +1,4 @@
-package api
+package main
 
 import (
 	"context"
@@ -44,7 +44,7 @@ func newProwlarrFeed(t *testing.T) *prowlarrFeed {
 		p.mu.Lock()
 		p.asked = append(p.asked, r.URL.Path)
 		p.mu.Unlock()
-		_, _ = w.Write([]byte(sourceCaps))
+		_, _ = w.Write([]byte(arrSourceCaps))
 	}))
 	t.Cleanup(p.Close)
 	return p
@@ -203,7 +203,7 @@ func TestOldAppProwlarrFlow(t *testing.T) {
 			}
 		}
 		list := arrList(t, "indexers", f.arrOK(side.key, "GET", p+"indexer", "", 200), 1)
-		one := f.arrOK(side.key, "GET", p+"indexer/"+itoa(id), "", 200)
+		one := f.arrOK(side.key, "GET", p+"indexer/"+arrItoa(id), "", 200)
 		for _, got := range []any{list[0], one, added} {
 			if g, w := prowlarrManaged(got.(map[string]any)), prowlarrManaged(want); g != w {
 				t.Fatalf("%s reads back differently:\n%s\nwant\n%s", side.name, g, w)
@@ -214,35 +214,35 @@ func TestOldAppProwlarrFlow(t *testing.T) {
 		// writes nothing.
 		before := f.mustSource(id)
 		sent["id"] = id
-		f.arrOK(side.key, "PUT", p+"indexer/"+itoa(id), jsonOf(sent), 202)
+		f.arrOK(side.key, "PUT", p+"indexer/"+arrItoa(id), jsonOf(sent), 202)
 		if after := f.mustSource(id); !after.UpdatedAt.Equal(before.UpdatedAt) {
 			t.Fatalf("%s: an unchanged update wrote the Source", side.name)
 		}
 		// Nor does one with the key masked, as read back.
-		f.arrOK(side.key, "PUT", p+"indexer/"+itoa(id), jsonOf(one), 202)
+		f.arrOK(side.key, "PUT", p+"indexer/"+arrItoa(id), jsonOf(one), 202)
 		if after := f.mustSource(id); !after.UpdatedAt.Equal(before.UpdatedAt) {
 			t.Fatalf("%s: a read-back update wrote the Source", side.name)
 		}
 		// A changed one is written; it stays paused, its key stays.
 		sent["priority"], sent["name"] = 10, "Lab Tracker 2 (Prowlarr)"
-		f.arrOK(side.key, "PUT", p+"indexer/"+itoa(id), jsonOf(sent), 202)
+		f.arrOK(side.key, "PUT", p+"indexer/"+arrItoa(id), jsonOf(sent), 202)
 		src = f.mustSource(id)
 		if src.Priority != 10 || src.Name != "Lab Tracker 2 (Prowlarr)" || src.State != "disabled" || src.SecretRef == nil {
 			t.Fatalf("%s: changed source %+v", side.name, src)
 		}
 		// Resumed by a person, it stays on through a change of priority,
 		// and is paused again when its address moves.
-		if st, b := f.session("POST", "/api/v1/sources/"+itoa(id)+"/resume", ""); st != 200 {
+		if st, b := f.session("POST", "/api/v1/sources/"+arrItoa(id)+"/resume", ""); st != 200 {
 			t.Fatalf("resume: %d %s", st, b)
 		}
 		sent["priority"] = 11
-		f.arrOK(side.key, "PUT", p+"indexer/"+itoa(id), jsonOf(sent), 202)
+		f.arrOK(side.key, "PUT", p+"indexer/"+arrItoa(id), jsonOf(sent), 202)
 		if src = f.mustSource(id); src.State != "enabled" {
 			t.Fatalf("%s: a priority change paused it: %s", side.name, src.State)
 		}
 		moved := fillIndexer(t, tmpl, "Lab Tracker 2 (Prowlarr)", feed.URL+"/2/", side.set)
 		moved["priority"] = 11
-		f.arrOK(side.key, "PUT", p+"indexer/"+itoa(id), jsonOf(moved), 202)
+		f.arrOK(side.key, "PUT", p+"indexer/"+arrItoa(id), jsonOf(moved), 202)
 		if src = f.mustSource(id); src.State != "disabled" || src.URL != feed.URL+"/2/api" {
 			t.Fatalf("%s: moved source %+v", side.name, src)
 		}
@@ -250,11 +250,11 @@ func TestOldAppProwlarrFlow(t *testing.T) {
 			t.Errorf("%s: the moved address was not tested: %v", side.name, c)
 		}
 		// Delete removes the Source.
-		f.arrOK(side.key, "DELETE", p+"indexer/"+itoa(id), "", 200)
+		f.arrOK(side.key, "DELETE", p+"indexer/"+arrItoa(id), "", 200)
 		if _, err := f.source(id); err == nil {
 			t.Fatalf("%s: the Source is still there", side.name)
 		}
-		if st, _, _ := f.arr(side.key, "GET", p+"indexer/"+itoa(id), ""); st != 404 {
+		if st, _, _ := f.arr(side.key, "GET", p+"indexer/"+arrItoa(id), ""); st != 404 {
 			t.Errorf("%s: deleted indexer: %d", side.name, st)
 		}
 		arrList(t, "indexers", f.arrOK(side.key, "GET", p+"indexer", "", 200), 0)
@@ -290,7 +290,7 @@ func TestOldAppProwlarrRules(t *testing.T) {
 		t.Errorf("second side: %v %q", got["name"], f.mustSource(rid).Name)
 	}
 	for _, c := range []struct{ method, path string }{{"GET", "indexer/"}, {"PUT", "indexer/"}, {"DELETE", "indexer/"}} {
-		if st, _, b := f.arr(f.radarrKey, c.method, "/radarr/api/v3/"+c.path+itoa(sid), jsonOf(rad)); st != 404 {
+		if st, _, b := f.arr(f.radarrKey, c.method, "/radarr/api/v3/"+c.path+arrItoa(sid), jsonOf(rad)); st != 404 {
 			t.Errorf("radarr %s of a sonarr Source: %d %s", c.method, st, b)
 		}
 	}
@@ -304,7 +304,7 @@ func TestOldAppProwlarrRules(t *testing.T) {
 	hid := num(func() any { var v map[string]any; _ = json.Unmarshal([]byte(body), &v); return v["id"] }())
 	arrList(t, "sonarr indexers", f.arrOK(f.sonarrKey, "GET", "/sonarr/api/v3/indexer", "", 200), 1)
 	for _, m := range []string{"GET", "PUT", "DELETE"} {
-		if st, _, _ := f.arr(f.sonarrKey, m, "/sonarr/api/v3/indexer/"+itoa(hid), jsonOf(son)); st != 404 {
+		if st, _, _ := f.arr(f.sonarrKey, m, "/sonarr/api/v3/indexer/"+arrItoa(hid), jsonOf(son)); st != 404 {
 			t.Errorf("%s of a hand Source: %d", m, st)
 		}
 	}
@@ -331,13 +331,13 @@ func TestOldAppProwlarrRules(t *testing.T) {
 	// A masked key sent with a new host is refused: the stored key never
 	// goes to a new host by itself, through the test or an update.
 	feed2 := newProwlarrFeed(t)
-	away := f.arrOK(f.sonarrKey, "GET", "/sonarr/api/v3/indexer/"+itoa(sid), "", 200).(map[string]any)
+	away := f.arrOK(f.sonarrKey, "GET", "/sonarr/api/v3/indexer/"+arrItoa(sid), "", 200).(map[string]any)
 	for _, x := range away["fields"].([]any) {
 		if x.(map[string]any)["name"] == "baseUrl" {
 			x.(map[string]any)["value"] = feed2.URL + "/5/"
 		}
 	}
-	for _, c := range []struct{ method, path string }{{"POST", "indexer/test"}, {"PUT", "indexer/" + itoa(sid)}} {
+	for _, c := range []struct{ method, path string }{{"POST", "indexer/test"}, {"PUT", "indexer/" + arrItoa(sid)}} {
 		if st, _, b := f.arr(f.sonarrKey, c.method, "/sonarr/api/v3/"+c.path, jsonOf(away)); st != 400 || !strings.Contains(b, "ApiKey") {
 			t.Errorf("masked key to a new host, %s %s: %d %s", c.method, c.path, st, b)
 		}
@@ -360,7 +360,7 @@ func TestOldAppProwlarrRules(t *testing.T) {
 		t.Fatal(err)
 	}
 	rad["priority"] = 30
-	f.arrOK(f.radarrKey, "PUT", "/radarr/api/v3/indexer/"+itoa(rid), jsonOf(rad), 202)
+	f.arrOK(f.radarrKey, "PUT", "/radarr/api/v3/indexer/"+arrItoa(rid), jsonOf(rad), 202)
 	if src := f.mustSource(rid); !src.AllowLocal || src.State != "disabled" {
 		t.Errorf("local network back on: %v %s", src.AllowLocal, src.State)
 	}
@@ -384,8 +384,8 @@ func TestOldAppProwlarrRules(t *testing.T) {
 		t.Fatal(err)
 	}
 	arrList(t, "member list", f.arrOK(f.sonarrKey, "GET", "/sonarr/api/v3/indexer", "", 200), 3)
-	for _, c := range []struct{ method, path string }{{"POST", "indexer?forceSave=true"}, {"POST", "indexer/test"}, {"PUT", "indexer/" + itoa(sid)},
-		{"DELETE", "indexer/" + itoa(sid)}} {
+	for _, c := range []struct{ method, path string }{{"POST", "indexer?forceSave=true"}, {"POST", "indexer/test"}, {"PUT", "indexer/" + arrItoa(sid)},
+		{"DELETE", "indexer/" + arrItoa(sid)}} {
 		if st, _, b := f.arr(f.sonarrKey, c.method, "/sonarr/api/v3/"+c.path, jsonOf(son)); st != 403 {
 			t.Errorf("member key %s %s: %d %s", c.method, c.path, st, b)
 		}

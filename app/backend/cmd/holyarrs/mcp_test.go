@@ -1,4 +1,4 @@
-package api
+package main
 
 import (
 	"context"
@@ -20,7 +20,7 @@ import (
 
 // aiFix is a signed-in app with an owner, a member and their keys.
 type aiFix struct {
-	*ctlFix
+	*arrCtlFix
 	t                      *testing.T
 	own, mem               *http.Client
 	csrf, memCSRF          string
@@ -58,7 +58,7 @@ func aiField(body, name string) string {
 
 func newAIFix(t *testing.T) *aiFix {
 	t.Helper()
-	f := &aiFix{ctlFix: newCtl(t, true), t: t}
+	f := &aiFix{arrCtlFix: newArrCtl(t, true), t: t}
 	client := func() *http.Client { jar, _ := cookiejar.New(nil); return &http.Client{Jar: jar} }
 	f.own, f.mem = client(), client()
 	st, body := f.call(f.own, "", "", "POST", "/api/v1/auth/setup", `{"name":"luis","password":"a long test passphrase"}`)
@@ -307,7 +307,7 @@ func TestMCPConfirmAndHistory(t *testing.T) {
 	// Expired after five minutes.
 	first, _ = f.tool(f.memKey, "ask_for_title", `{"tmdb_id":"693134","kind":"movie"}`)
 	tok, _ = first["confirm_token"].(string)
-	f.api.ai.SetClock(func() time.Time { return time.Now().Add(6 * time.Minute) })
+	f.api.AIHandlers().SetClock(func() time.Time { return time.Now().Add(6 * time.Minute) })
 	if _, msg := f.tool(f.memKey, "ask_for_title", `{"tmdb_id":"693134","kind":"movie","confirm_token":"`+tok+`"}`); !strings.Contains(msg, "expired") {
 		t.Fatalf("expired: %q", msg)
 	}
