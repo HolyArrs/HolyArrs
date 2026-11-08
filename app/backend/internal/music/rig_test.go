@@ -2,8 +2,12 @@ package music
 
 import (
 	"context"
+	"database/sql"
+	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
@@ -11,11 +15,13 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	engine "github.com/HolyArrs/holyarrs/app/backend/internal/discover/rows"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/requests"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
 )
 
 // Server is the test stand-in for the old api.Server: the services the
@@ -33,6 +39,7 @@ type Server struct {
 	MusicControl func(ctx context.Context) (metadata.Control, error)
 	ArtistVideos func(ctx context.Context, mbid string) ([]metadata.ArtistVideo, error)
 	Metadata     metadata.Provider
+	Auth         *accounts.Auth
 	Version      string
 }
 
@@ -50,13 +57,20 @@ func newTestAPI(s Server) *testAPI {
 	if sp.Library == nil {
 		sp.Library = &library.Service{Store: sp.Store, Queue: sp.Queue, Metadata: sp.Metadata, Live: sp.Live}
 	}
+	if sp.Asks == nil {
+		sp.Asks = &requests.Service{Store: sp.Store, Library: sp.Library, Metadata: sp.Metadata, Live: sp.Live}
+	}
 	t := &testAPI{s: sp}
 	h := &Handlers{Deps: &sp.Deps, Services: Services{
 		Store: sp.Store, Packages: sp.Packages, Queue: sp.Queue, Live: sp.Live, Parts: sp.Parts, Asks: sp.Asks,
 		Library:      func() *library.Service { return sp.Library },
 		ImageBase:    func() string { return sp.ImageBase },
 		MusicControl: sp.MusicControl, ArtistVideos: sp.ArtistVideos,
-		SlotOfTitle: func(context.Context, int64, int64) bool { return false },
+		SlotOfTitle: func(ctx context.Context, itemID, titleID int64) bool {
+			var n int
+			_ = sp.Store.Read().QueryRowContext(ctx, "SELECT count(*) FROM items WHERE id = ? AND title_id = ?", itemID, titleID).Scan(&n)
+			return n == 1
+		},
 		SeasonLabel: func(context.Context, int64) (int64, string, string) { return 0, "", "" },
 	}}
 	h.PartIsOn = func(p parts.Part) bool { return parts.PartOn(sp.Parts, p) }
@@ -87,17 +101,138 @@ func newTestAPI(s Server) *testAPI {
 		}
 		return t, true
 	}
-	h.TitleView = func(_ context.Context, t mediafiles.Title) (any, error) { return t, nil }
+	h.TitleView = func(ctx context.Context, t mediafiles.Title) (any, error) {
+		v := struct {
+			mediafiles.Title
+			Slots  []any           `json:"slots"`
+			Artist *ArtistInfo     `json:"artist,omitempty"`
+			Asks   []requests.View `json:"asks,omitempty"`
+		}{Title: t, Slots: []any{}}
+		var err error
+		if t.Kind == "artist" {
+			if v.Artist, err = h.artistInfo(ctx, t); err == nil {
+				v.Asks, err = sp.Asks.TitleAsks(ctx, t.ID)
+			}
+		}
+		return v, err
+	}
 	h.PublishTitleView = func(any) {}
-	h.LibraryError = func(w http.ResponseWriter, err error) { webserver.Fail(w, http.StatusConflict, err.Error()) }
+	h.LibraryError = rigLibraryError
 	h.Limit = func(int64, time.Time) bool { return true }
+	h.TrackRoutes = func(m *http.ServeMux) {
+		TrackHandlers[trackSlot]{Store: sp.Store, Slots: rigTrackSlots}.Routes(m)
+	}
 	t.Handlers = h
 	return t
 }
 
 // Handler serves the music routes alone (no sign-in layer).
 func (a *testAPI) Handler() http.Handler {
-	m := http.NewServeMux()
+	rt := webserver.NewRouter()
+	m := rt.Mux()
 	a.RouteMux(m)
-	return m
+	// The search and release routes, over a stand-in catalog.
+	search := &sources.Searcher{Store: a.s.Store, Queue: a.s.Queue}
+	(&sources.Handlers{Store: a.s.Store, Queue: a.s.Queue, Search: func() *sources.Searcher { return search },
+		Catalog: rigCatalog{a}, PartOn: a.PartIsOn}).Routes(rt)
+	// The title routes the music tests read through (api serves them in the app).
+	m.HandleFunc("GET /api/v1/titles/{id}", func(w http.ResponseWriter, r *http.Request) {
+		t, ok := a.TitleID(w, r)
+		if !ok {
+			return
+		}
+		v, err := a.TitleView(r.Context(), t)
+		if err != nil {
+			webserver.Internal(w, "music", err)
+			return
+		}
+		webserver.WriteJSON(w, http.StatusOK, v)
+	})
+	(&sources.TitleSearchHandlers{Store: a.s.Store, Queue: a.s.Queue, Artist: a.SearchArtist}).Routes(m)
+	(&requests.FollowHandlers{Svc: a.s.Asks, Person: a.Person, Title: a.TitleID, Changed: a.FollowsChanged}).Routes(m)
+	// The Library-folder route the tests add their music folder with.
+	m.HandleFunc("POST /api/v1/library-folders", func(w http.ResponseWriter, r *http.Request) {
+		var in library.FolderInput
+		if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
+			webserver.Fail(w, http.StatusBadRequest, err.Error())
+			return
+		}
+		lf, err := library.AddFolder(r.Context(), a.s.Store, in, nil, webserver.ActorOr(r, domain.Actor{Kind: "user", ID: 1}))
+		if err != nil {
+			webserver.Fail(w, http.StatusConflict, err.Error())
+			return
+		}
+		webserver.WriteJSON(w, http.StatusCreated, map[string]any{"id": lf.ID, "path": lf.Path, "kind": lf.Kind})
+	})
+	if a.s.Auth == nil {
+		return m
+	}
+	// With sign-in: the accounts and ask routes too, behind the sign-in layer.
+	a.s.Auth.Routes(m)
+	actor := func(r *http.Request) domain.Actor { return webserver.ActorOr(r, domain.Actor{Kind: "user", ID: 1}) }
+	(&requests.AskHandlers{Svc: a.s.Asks, Store: a.s.Store, Person: a.Person, Actor: actor,
+		PartOff: func(http.ResponseWriter, string) bool { return false },
+		SeenArtists: func(vs []requests.View) {
+			var names []NameKey
+			for _, v := range vs {
+				if v.Kind == "artist" && v.ArtistID != "" {
+					names = append(names, NewNameKey("artist", strings.ToLower(v.ArtistID), v.Name, ""))
+				}
+			}
+			a.RememberNames(names)
+		},
+		MusicError: a.musicError, ShowError: a.musicError}).Routes(m)
+	return a.s.Auth.Middleware(accounts.Gate(m))
+}
+
+// rigTrackSlots is the test stand-in for api's track Slot views: each
+// track's Slots with their state.
+func rigTrackSlots(ctx context.Context, db *sql.DB, p mediafiles.Part) (map[int64][]trackSlot, error) {
+	slots, err := database.Select[mediafiles.Slot](ctx, db, "slots", "item_id IN (SELECT id FROM items WHERE part_id = ? AND kind = 'track') ORDER BY id", p.ID)
+	if err != nil {
+		return nil, err
+	}
+	out := map[int64][]trackSlot{}
+	for _, s := range slots {
+		out[s.ItemID] = append(out[s.ItemID], trackSlot{State: string(s.State), StateLabel: mediafiles.StateLabels[s.State]})
+	}
+	return out, nil
+}
+
+// rigCatalog answers the sources routes' questions about Titles and Parts.
+type rigCatalog struct{ a *testAPI }
+
+func (c rigCatalog) TitleFromPath(w http.ResponseWriter, r *http.Request) (mediafiles.Title, bool) {
+	return c.a.TitleID(w, r)
+}
+
+func (c rigCatalog) EpisodeLabels(context.Context, []int64) string { return "" }
+
+func (c rigCatalog) AlbumLabels(ctx context.Context, slotIDs []int64) string {
+	return c.a.AlbumLabels(ctx, slotIDs)
+}
+
+func (c rigCatalog) PartLabel(ctx context.Context, partID int64) (int64, string, string, string) {
+	return c.a.PartLabel(ctx, partID)
+}
+
+// rigLibraryError answers Library refusals with the codes api gives them.
+func rigLibraryError(w http.ResponseWriter, err error) {
+	for _, bad := range []error{library.ErrBadGate, library.ErrBadDelay, library.ErrNotMovieFolder, library.ErrNotShowFolder, library.ErrNotMusicFolder,
+		library.ErrNoPickRules, library.ErrNotMusicRules, library.ErrNotVideoRules, library.ErrFolderPath, library.ErrFolderKind,
+		library.ErrFolderAbsent, library.ErrNoMetadataIDs, library.ErrVersionLabel, library.ErrTooManyVersions, library.ErrCopyChoice} {
+		if errors.Is(err, bad) {
+			webserver.Fail(w, http.StatusBadRequest, err.Error())
+			return
+		}
+	}
+	var dup *library.AlreadyAddedError
+	switch {
+	case errors.As(err, &dup):
+		webserver.WriteJSON(w, http.StatusConflict, map[string]any{"error": err.Error(), "title_id": dup.TitleID})
+	case errors.Is(err, database.ErrNotFound), errors.Is(err, metadata.ErrNotFound):
+		webserver.Fail(w, http.StatusNotFound, "not found")
+	default:
+		webserver.Fail(w, http.StatusConflict, err.Error())
+	}
 }
