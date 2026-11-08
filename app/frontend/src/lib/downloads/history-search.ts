@@ -70,7 +70,7 @@ export function partOf(row: HistoryRow): string {
 	return episodeBits(row.head.episode).join(' · ') || first(row, (d) => str(d.album)) || '';
 }
 
-/* The Search view (?look=pill|plain): a search bar, a Filter with steps, type, who and dates, and a chip per active filter. Routine work (searches, refreshes, scans) is left out. */
+/* The History search: a search bar, a Filter with steps, type, who and dates, and a chip per active filter. Routine work (searches, refreshes, scans) is left out. */
 
 /** A step of a download's life as the Filter offers it, with the Event kinds it covers. */
 /** Problems that wait on a person get their own step (Needs you), so Failed means what actually went wrong. */

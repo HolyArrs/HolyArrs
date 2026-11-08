@@ -13,7 +13,7 @@
 	import type { TitleView } from '#lib/core/types.ts';
 
 	// One History row in a sheet (bottom sheet on phones), with the same content and order as the details panel.
-	let { row = $bindable(null), titleById, people, me, actions }: { row: HistoryRow | null; titleById: Map<number, TitleView>; people?: Map<number, string>; me?: number; /** Extra buttons for the row (History preview looks). */ actions?: Snippet<[HistoryRow]> } = $props();
+	let { row = $bindable(null), titleById, people, me, actions }: { row: HistoryRow | null; titleById: Map<number, TitleView>; people?: Map<number, string>; me?: number; /** Extra buttons for the row. */ actions?: Snippet<[HistoryRow]> } = $props();
 	let open = $state(false);
 	$effect(() => {
 		open = !!row;
