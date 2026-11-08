@@ -8,6 +8,7 @@ import (
 	"time"
 
 	engine "github.com/HolyArrs/holyarrs/app/backend/internal/discover/rows"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/health"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 )
@@ -33,7 +34,7 @@ func (a *API) Trailers() *metadata.Trailers { return a.trailers }
 type trailerHost struct{ a *API }
 
 func (h trailerHost) AutoplayTrailers(ctx context.Context) bool {
-	return h.a.autoplayOn(ctx)
+	return health.AutoplayOn(ctx, h.a.s.Store)
 }
 
 func (h trailerHost) UserID(r *http.Request) int64 { return h.a.person(r).UserID }

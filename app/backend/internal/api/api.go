@@ -397,16 +397,17 @@ func (a *API) Routes(rt *webserver.Router) {
 	a.organiseRoutes(m)
 	a.manualImportRoutes(m)
 	a.holding().Routes(m)
-	a.healthRoutes(m)
+	a.healthHandlers().Routes(m)
 	a.media.Routes(m)
 	a.showRoutes(m)
 	a.musicRoutes(m)
 	a.libraryHandlers().Routes(m)
 	a.musicPageRoutes(m)
 	subtitles.NewHandlers(a.s.Store, a.s.Secrets, a.s.Subtitles).Routes(m)
-	a.thisAppRoutes(m)
+	a.appHandlers().Routes(m)
+	(&updates.Handlers{Checker: a.s.Updates}).Routes(m)
 	a.dataPackRoutes(m)
-	a.scheduleRoutes(m)
+	a.scheduleHandlers().Routes(m)
 	m.HandleFunc("GET /api/v1/metadata/search", a.searchMetadata)
 	(&metadata.Handlers{Up: func(ctx context.Context) bool { return a.s.MetadataUp == nil || a.s.MetadataUp(ctx) }}).Routes(m)
 	m.HandleFunc("GET /api/v1/metadata/{kind}/{tmdb_id}", a.metadataDetails)
@@ -416,7 +417,7 @@ func (a *API) Routes(rt *webserver.Router) {
 	reviews.Routes(m)
 	a.animeHandlers().Routes(m)
 	a.trailers.Routes(m)
-	a.uiSettingsRoutes(m)
+	a.uiHandlers().Routes(m)
 	a.signinArtRoutes(m)
 	m.HandleFunc("GET /api/v1/discover", a.discoverRow)
 	m.HandleFunc("GET /api/v1/watch-services", a.watchServices)
@@ -461,7 +462,11 @@ func (a *API) Routes(rt *webserver.Router) {
 	}
 	a.askHandlers().Routes(m)
 	(&webserver.URLBaseHandlers{Store: a.s.Store, InUse: a.s.URLBase}).Routes(m)
-	(&alerts.Handlers{Store: a.s.Store, Secrets: a.s.Secrets, Sender: a.s.Alerts, Caller: a.callerID, OwnEmail: a.ownEmail}).Routes(m)
+	(&alerts.Handlers{Store: a.s.Store, Secrets: a.s.Secrets, Sender: a.s.Alerts, Caller: func(r *http.Request) (int64, string) { p := a.person(r); return p.UserID, p.Name },
+		OwnEmail: func(ctx context.Context, userID int64) (string, error) {
+			t, err := requests.ReadTargets(ctx, a.s.Store.Read(), userID)
+			return t.Email, err
+		}}).Routes(m)
 	if startup.FeatureOn(features.PlexWatchlists) {
 		(&requests.WatchlistHandlers{Store: a.s.Store, Queue: a.s.Queue, Watchlists: func() *requests.Watchlists { return a.s.Watchlists }, Person: a.person}).Routes(m)
 	}
@@ -1263,3 +1268,81 @@ func (a *API) StartSpeedHistory(ctx context.Context) {
 		a.dl.Speeds.Start(ctx, a.s.Store.Read())
 	}
 }
+
+// healthHandlers build the health module's routes; downloads, the parts
+// and the update check reach it as funcs.
+func (a *API) healthHandlers() *health.Handlers {
+	h := &health.Handlers{Store: a.s.Store, Engine: a.s.Health, States: a.s.States, SafeMode: a.s.SafeMode,
+		SyncTrouble: func(ctx context.Context) any { return a.dl.SyncTrouble(ctx) },
+		DefaultFeed: updates.DefaultReleaseFeed, ResetUpdate: a.s.Updates.ResetUpdate}
+	if a.s.Parts != nil {
+		h.PartStatuses = func() []jobs.Status { return a.s.Parts.Statuses() }
+	}
+	return h
+}
+
+// statusHandlers serve the Settings status (health); backups, the update
+// check and sign-in reach it as funcs.
+func (a *API) statusHandlers() *health.StatusHandlers {
+	h := &health.StatusHandlers{Store: a.s.Store, Engine: a.s.Health, States: a.s.States,
+		MetadataUp: func(ctx context.Context) (bool, bool) {
+			if a.s.MetadataUp == nil {
+				return false, false
+			}
+			return a.s.MetadataUp(ctx), true
+		},
+		UpdateNewer: func(ctx context.Context) bool { return a.s.Updates.Update(ctx).Newer }, Cache: &a.status}
+	if a.s.Parts != nil {
+		h.PartStatuses = func() []jobs.Status { return a.s.Parts.Statuses() }
+	}
+	if a.s.Backups != nil {
+		h.NewestBackup = func() (string, bool) {
+			bs, err := a.s.Backups.List()
+			if err != nil {
+				return "", false
+			}
+			newest := ""
+			var at time.Time
+			for _, b := range bs {
+				if b.CreatedAt.After(at) {
+					at = b.CreatedAt
+					newest = b.CreatedAt.UTC().Format(time.RFC3339)
+				}
+			}
+			return newest, true
+		}
+	}
+	if a.s.Auth != nil {
+		h.SkipLocal, h.OutsideJoin = a.s.Auth.SkipLocal, a.s.Auth.OutsideJoinOpen
+	}
+	return h
+}
+
+// settingsLog writes the settings_changed Events (health).
+func (a *API) settingsLog() *health.SettingsLog {
+	return &health.SettingsLog{Store: a.s.Store, Who: whoName, Actor: actor}
+}
+
+// scheduleHandlers build the health module's Schedules routes.
+func (a *API) scheduleHandlers() *health.ScheduleHandlers {
+	return &health.ScheduleHandlers{Store: a.s.Store, Queue: a.s.Queue, States: a.s.States, Parts: a.s.Parts, SafeMode: a.s.SafeMode}
+}
+
+// appHandlers build the storage, About, log and support bundle routes (health).
+func (a *API) appHandlers() *health.AppHandlers {
+	return &health.AppHandlers{Store: a.s.Store, Version: a.s.Version, Started: a.s.Started, Log: a.s.Log, Secrets: a.s.Secrets,
+		ConfigDir: a.s.ConfigDir, SavePath: a.s.SavePath, HealthView: func(ctx context.Context) any { return a.healthView(ctx) }}
+}
+
+// uiHandlers build the UI settings routes (health).
+func (a *API) uiHandlers() *health.UIHandlers {
+	h := &health.UIHandlers{Store: a.s.Store, Actor: actor, CountryCount: a.s.CountryCount}
+	if a.s.Library != nil && a.s.Library.Artwork != nil {
+		h.SetArtworkCap = a.s.Library.Artwork.SetCap
+	}
+	return h
+}
+
+// ApplyCountryCount passes the stored "Count this install" on to the
+// requests to the metadata server (at start and after each change).
+func (a *API) ApplyCountryCount(ctx context.Context) { a.uiHandlers().ApplyCountryCount(ctx) }

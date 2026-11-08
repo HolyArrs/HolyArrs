@@ -28,7 +28,7 @@ func TestRunScheduleTurnedOff(t *testing.T) {
 	r.SetPathValue("kind", "feed_check")
 	r = r.WithContext(webserver.ContextWith(r.Context(), staff))
 	w := httptest.NewRecorder()
-	f.api.runSchedule(w, r)
+	f.api.scheduleHandlers().RunNow(w, r)
 	if w.Code != http.StatusAccepted {
 		t.Fatalf("staff: %d %s", w.Code, w.Body.String())
 	}

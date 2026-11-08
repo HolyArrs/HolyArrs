@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/health"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
@@ -126,7 +127,7 @@ func TestSigninArtLibraryOn(t *testing.T) {
 	put := httptest.NewRequest("PUT", "/api/v1/settings/ui", strings.NewReader(`{"signin_library_art": true}`))
 	pw := httptest.NewRecorder()
 	a.Handler().ServeHTTP(pw, put)
-	if pw.Code != 200 || !a.uiSettings(context.Background()).SigninLibraryArt {
+	if pw.Code != 200 || !health.UISettingsOf(context.Background(), a.s.Store).SigninLibraryArt {
 		t.Fatalf("turning Library art on: %d %s", pw.Code, pw.Body)
 	}
 	_, shots := getSigninArt(t, a, "10.0.0.3")
@@ -145,7 +146,7 @@ func TestSigninArtLibraryOn(t *testing.T) {
 func TestSigninArtDefaultOff(t *testing.T) {
 	t.Parallel()
 	a, _ := signinRig(t, nil)
-	if a.uiSettings(context.Background()).SigninLibraryArt {
+	if health.UISettingsOf(context.Background(), a.s.Store).SigninLibraryArt {
 		t.Fatal("Library art should default to off")
 	}
 }

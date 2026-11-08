@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/health"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
@@ -149,7 +150,7 @@ func (a *API) warmOne(ctx context.Context, j warmJob) {
 		}
 	}
 	a.titles.WarmExtras(ctx, j.kind, j.id)
-	if !a.autoplayOn(ctx) {
+	if !health.AutoplayOn(ctx, a.s.Store) {
 		return
 	}
 	// The key only (the metadata server's pick, else TMDB's videos; no

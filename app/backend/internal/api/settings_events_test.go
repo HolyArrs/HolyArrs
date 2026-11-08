@@ -3,13 +3,14 @@ package api
 import (
 	"context"
 	"encoding/json"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/health"
 	"io"
 	"net/http"
 	"net/http/cookiejar"
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/health"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
@@ -82,7 +83,7 @@ func TestSettingsChangedName(t *testing.T) {
 	for _, m := range []string{"PUT", "DELETE"} {
 		h.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(m, "/api/v1/downloaders/"+itoa(did), nil))
 	}
-	es, _, err := x.s.Events(context.Background(), database.EventFilter{Kinds: []string{EventSettingsChanged}})
+	es, _, err := x.s.Events(context.Background(), database.EventFilter{Kinds: []string{health.EventSettingsChanged}})
 	if err != nil || len(es) != 2 {
 		t.Fatalf("events %v %v", es, err)
 	}
@@ -114,7 +115,7 @@ func TestSettingsSaveLeavesOnlyTheAuditEvent(t *testing.T) {
 	if err != nil || len(old) != 0 {
 		t.Fatalf("setting_changed rows %v %v", old, err)
 	}
-	es, _, err := x.s.Events(context.Background(), database.EventFilter{Kinds: []string{EventSettingsChanged}})
+	es, _, err := x.s.Events(context.Background(), database.EventFilter{Kinds: []string{health.EventSettingsChanged}})
 	if err != nil || len(es) != 2 {
 		t.Fatalf("settings_changed rows %v %v", es, err)
 	}
@@ -184,7 +185,7 @@ func TestSignInSettingsAreAudited(t *testing.T) {
 	if st, b := call("PUT", "/api/v1/auth/settings", body); st >= 300 {
 		t.Fatalf("put %d %s", st, b)
 	}
-	es, _, err := f.s.Events(context.Background(), database.EventFilter{Kinds: []string{EventSettingsChanged}})
+	es, _, err := f.s.Events(context.Background(), database.EventFilter{Kinds: []string{health.EventSettingsChanged}})
 	if err != nil || len(es) != 1 || es[0].Data["area"] != "sign-in" {
 		t.Fatalf("events %+v %v", es, err)
 	}

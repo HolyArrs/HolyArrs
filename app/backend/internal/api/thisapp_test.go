@@ -15,6 +15,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/health"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/updates"
 )
@@ -49,9 +50,9 @@ func TestStoragePaths(t *testing.T) {
 	t.Parallel()
 	srv, _, _ := logServer(t)
 	var got struct {
-		App     []PathInfo `json:"app"`
-		Folders []PathInfo `json:"library_folders"`
-		Save    string     `json:"save_path"`
+		App     []health.PathInfo `json:"app"`
+		Folders []health.PathInfo `json:"library_folders"`
+		Save    string            `json:"save_path"`
 	}
 	if err := json.Unmarshal(do(t, "GET", srv.URL+"/api/v1/app/storage", "", 200), &got); err != nil {
 		t.Fatal(err)
@@ -162,14 +163,13 @@ func TestUpdateFeedHoldsNoSecret(t *testing.T) {
 	for _, bad := range []string{"https://x.example/feed?token=XXXX_T", "https://user:XXXX@x.example/feed", "https://x.example/feed#frag"} {
 		do(t, "PUT", srv.URL+"/api/v1/settings/health", `{"every_minutes":5,"flap_guard":2,"low_space_mb":1024,"update_check_url":"`+bad+`"}`, 400)
 	}
-	a := &API{}
 	r := httptest.NewRequest("GET", "/", nil)
 	in := updates.UpdateInfo{Feed: "https://user:XXXX@x.example/feed?" + "to" + "ken=XXXX_T#f"}
-	if got := a.updateView(r, in).Feed; got != "https://x.example/feed" {
+	if got := updates.ViewFor(r, in).Feed; got != "https://x.example/feed" {
 		t.Fatalf("owner sees %q", got)
 	}
 	mgr := r.WithContext(webserver.ContextWith(r.Context(), webserver.Caller{UserID: 2, Role: webserver.RoleMember, Perms: []webserver.Perm{webserver.PermManageLibrary}}))
-	if got := a.updateView(mgr, in).Feed; got != "" {
+	if got := updates.ViewFor(mgr, in).Feed; got != "" {
 		t.Fatalf("manager sees %q", got)
 	}
 }
