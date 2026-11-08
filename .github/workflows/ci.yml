@@ -12,7 +12,7 @@ concurrency:
 
 jobs:
   web:
-    runs-on: [self-hosted, Linux, X64, holyarrs-continuation]
+    runs-on: ubuntu-latest
     timeout-minutes: 60
     defaults:
       run:
@@ -58,7 +58,7 @@ jobs:
           npm run e2e 2>&1 | sed -E 's/(auth: first run: setup code) [^ ]+/\1 [hidden]/g'
 
   build:
-    runs-on: [self-hosted, Linux, X64, holyarrs-continuation]
+    runs-on: ubuntu-latest
     timeout-minutes: 90
     strategy:
       fail-fast: false
@@ -117,7 +117,7 @@ jobs:
     # Known security holes in the Go modules and the Go version the program
     # uses. A pinned govulncheck, so a new release of the tool cannot change
     # the result on its own.
-    runs-on: [self-hosted, Linux, X64, holyarrs-continuation]
+    runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
       CGO_ENABLED: "0"
@@ -134,7 +134,7 @@ jobs:
           go run golang.org/x/vuln/cmd/govulncheck@v1.1.4 ./...
 
   image-version:
-    runs-on: [self-hosted, Linux, X64, holyarrs-continuation]
+    runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
       IMAGE: holyarrs-ci-version:${{ github.run_id }}-${{ github.run_attempt }}
@@ -189,7 +189,7 @@ jobs:
     # summary. Pass lines: the process's median crash-to-sign-in time
     # under 2 s, and each memory run under decision 0002's limits (250 MB
     # idle, 500 MB peak resident).
-    runs-on: [self-hosted, Linux, X64, holyarrs-continuation]
+    runs-on: ubuntu-latest
     timeout-minutes: 60
     env:
       CGO_ENABLED: "0"
@@ -261,7 +261,7 @@ jobs:
     # media rescan and 10 live-stream clients. The harness measures fixture
     # construction separately, then requires 30 idle minutes under the
     # unchanged 250 MB idle / 500 MB peak and zero-write limits.
-    runs-on: [self-hosted, Linux, X64, holyarrs-continuation]
+    runs-on: ubuntu-latest
     # The test binary has a 75-minute deadline; this includes setup and
     # summary overhead outside that measured test process.
     timeout-minutes: 90
@@ -273,6 +273,8 @@ jobs:
         with:
           go-version: "1.27.3"
           cache: false
+      - name: Install the arm64 emulator
+        run: sudo apt-get update && sudo apt-get install -y qemu-user-static
       - name: Run the combined arm64 scale check
         id: scale
         continue-on-error: true
@@ -286,7 +288,7 @@ jobs:
           {
             echo "### Combined arm64 scale check"
             echo
-            echo "- Compute: self-hosted Linux X64 runner"
+            echo "- Compute: GitHub-hosted Linux X64 runner"
             echo "- Workload: linux/arm64 under Docker QEMU"
             echo "- Local evidence: RUNNER_TEMP/scale-combined (not uploaded)"
             if [[ -s "$result_file" ]]; then
@@ -324,7 +326,7 @@ jobs:
           done
 
   race:
-    runs-on: [self-hosted, Linux, X64, holyarrs-continuation]
+    runs-on: ubuntu-latest
     timeout-minutes: 60
     env:
       CGO_ENABLED: "1"
