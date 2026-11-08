@@ -346,7 +346,7 @@ func (a *API) downloadsView(w http.ResponseWriter, r *http.Request) {
 	}
 	ds, err := database.Select[domain.Download](r.Context(), a.read(), "downloads", where+" ORDER BY id DESC LIMIT ?", append(args, n)...)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	db := a.read()
@@ -487,7 +487,7 @@ func (a *API) downloadsView(w http.ResponseWriter, r *http.Request) {
 			out["boot"] = a.s.Live.Boot()
 		}
 	}
-	writeJSON(w, http.StatusOK, out)
+	webserver.WriteJSON(w, http.StatusOK, out)
 }
 
 // viewTotals adds up the speeds of HolyArrs' rows and every client row.
@@ -668,7 +668,7 @@ func (a *API) removeDownload(w http.ResponseWriter, r *http.Request) {
 	}
 	st, err := a.readDownloaderSettings(r.Context())
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	var in struct {
@@ -696,11 +696,11 @@ func (a *API) removeDownload(w http.ResponseWriter, r *http.Request) {
 	err = a.manager().Remove(r.Context(), id, c, actor(r), who)
 	switch {
 	case errors.Is(err, database.ErrNotFound), errors.Is(err, sql.ErrNoRows):
-		fail(w, http.StatusNotFound, "no such download")
+		webserver.Fail(w, http.StatusNotFound, "no such download")
 	case errors.Is(err, downloads.ErrNotActive):
-		fail(w, http.StatusConflict, err.Error())
+		webserver.Fail(w, http.StatusConflict, err.Error())
 	case err != nil:
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 	default:
 		var d domain.Download
 		_ = database.Get(r.Context(), a.s.Store.Read(), "downloads", id, &d)
@@ -712,7 +712,7 @@ func (a *API) removeDownload(w http.ResponseWriter, r *http.Request) {
 		if d.StateReason != nil {
 			v.Text = upperFirst(*d.StateReason) + "."
 		}
-		writeJSON(w, http.StatusOK, v)
+		webserver.WriteJSON(w, http.StatusOK, v)
 	}
 }
 
@@ -835,10 +835,10 @@ func (a *API) decisions(ctx context.Context, slotID int64) ([]DecisionView, erro
 func (a *API) needsDecision(w http.ResponseWriter, r *http.Request) {
 	list, err := a.decisions(r.Context(), 0)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"items": list, "count": len(list)})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"items": list, "count": len(list)})
 }
 
 // decide runs a person's choice for a Slot that needs a decision:
@@ -866,11 +866,11 @@ func (a *API) decide(w http.ResponseWriter, r *http.Request) {
 	}
 	list, err := a.decisions(r.Context(), id)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	if len(list) == 0 {
-		fail(w, http.StatusNotFound, "this movie or episode does not need a decision")
+		webserver.Fail(w, http.StatusNotFound, "this movie or episode does not need a decision")
 		return
 	}
 	dv := list[0]
@@ -885,7 +885,7 @@ func (a *API) decide(w http.ResponseWriter, r *http.Request) {
 	targets := []DecisionView{dv}
 	if in.Pack {
 		if !many || len(dv.PackSlotIDs) == 0 {
-			fail(w, http.StatusBadRequest, "this "+noun+" did not come in a pack")
+			webserver.Fail(w, http.StatusBadRequest, "this "+noun+" did not come in a pack")
 			return
 		}
 		targets = nil
@@ -906,7 +906,7 @@ func (a *API) decide(w http.ResponseWriter, r *http.Request) {
 	switch in.Action {
 	case "turn_down":
 		if dv.ReleaseID == nil {
-			fail(w, http.StatusConflict, "there is no Release to turn down for this "+noun)
+			webserver.Fail(w, http.StatusConflict, "there is no Release to turn down for this "+noun)
 			return
 		}
 		reason := "turned down by " + who + " on Needs a decision"
@@ -924,7 +924,7 @@ func (a *API) decide(w http.ResponseWriter, r *http.Request) {
 		fallthrough
 	case "search":
 		if a.s.Queue == nil {
-			fail(w, http.StatusServiceUnavailable, "searches are not running")
+			webserver.Fail(w, http.StatusServiceUnavailable, "searches are not running")
 			return
 		}
 		var queued []int64
@@ -932,12 +932,12 @@ func (a *API) decide(w http.ResponseWriter, r *http.Request) {
 			jid, _, err := a.s.Queue.Enqueue(r.Context(), jobs.KindSearchSlot, &domain.Subject{Type: "slot", ID: t.SlotID}, map[string]any{"by_hand": true},
 				"hand_search_slot:"+itoa(t.SlotID), by)
 			if err != nil {
-				internal(w, err)
+				webserver.Internal(w, "api", err)
 				return
 			}
 			queued = append(queued, jid)
 		}
-		writeJSON(w, http.StatusAccepted, map[string]any{"job_id": queued[0], "job_ids": queued, "action": in.Action})
+		webserver.WriteJSON(w, http.StatusAccepted, map[string]any{"job_id": queued[0], "job_ids": queued, "action": in.Action})
 	case "stop":
 		to := mediafiles.SlotWanted
 		if dv.HasCopy {
@@ -981,11 +981,11 @@ func (a *API) decide(w http.ResponseWriter, r *http.Request) {
 			return nil
 		})
 		if errors.Is(err, errMovedOn) {
-			fail(w, http.StatusConflict, "this "+noun+" no longer needs a decision")
+			webserver.Fail(w, http.StatusConflict, "this "+noun+" no longer needs a decision")
 			return
 		}
 		if err != nil {
-			internal(w, err)
+			webserver.Internal(w, "api", err)
 			return
 		}
 		for _, t := range stopped {
@@ -1006,8 +1006,8 @@ func (a *API) decide(w http.ResponseWriter, r *http.Request) {
 				a.s.Live.Publish("slot", map[string]any{"id": sid, "state": st, "reason": reason})
 			}
 		}
-		writeJSON(w, http.StatusOK, map[string]any{"action": "stop", "state": to, "stopped": len(stopped)})
+		webserver.WriteJSON(w, http.StatusOK, map[string]any{"action": "stop", "state": to, "stopped": len(stopped)})
 	default:
-		fail(w, http.StatusBadRequest, `action is "search", "turn_down" or "stop"`)
+		webserver.Fail(w, http.StatusBadRequest, `action is "search", "turn_down" or "stop"`)
 	}
 }

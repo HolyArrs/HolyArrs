@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	engine "github.com/HolyArrs/holyarrs/app/backend/internal/discover/rows"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
@@ -23,19 +24,19 @@ func (a *API) exploreGenreRow(w http.ResponseWriter, r *http.Request) {
 	me := a.person(r).UserID
 	pg, _, err := a.explorePageFor(r.Context(), r, me, sw)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	// The same response-stage filters as the rows (exploreViews): a Kid's
 	// rating limit and never-add titles, so no card shows a backdrop from a
 	// title the person couldn't see in a row.
 	if pg, err = a.genreRowPage(r.Context(), r, pg); err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	cards := engine.BrowseGenres(pg, sw, pg.Taste, pg.Kid || a.kidMax(r) != "")
 	a.exploreCaching(w, r, "private, no-cache")
-	writeJSON(w, http.StatusOK, map[string]any{"type": sw, "genres": cards})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"type": sw, "genres": cards})
 }
 
 // genreRowPage drops the titles a row would not show this person: above a
@@ -78,9 +79,9 @@ func (a *API) searchBrowse(w http.ResponseWriter, r *http.Request) {
 	}
 	_, tiles, _, err := a.browsePage(r.Context(), r, sw)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	a.exploreCaching(w, r, "private, no-cache")
-	writeJSON(w, http.StatusOK, map[string]any{"type": sw, "tiles": tiles, "sections": engine.BrowseSections})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"type": sw, "tiles": tiles, "sections": engine.BrowseSections})
 }

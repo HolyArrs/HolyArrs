@@ -12,6 +12,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
 )
@@ -28,19 +29,19 @@ func (a *API) searchArtist(w http.ResponseWriter, r *http.Request, t mediafiles.
 	ctx := r.Context()
 	db := a.s.Store.Read()
 	if in.Season != nil {
-		fail(w, http.StatusBadRequest, "season is for shows; say album_id for an artist")
+		webserver.Fail(w, http.StatusBadRequest, "season is for shows; say album_id for an artist")
 		return
 	}
 	listOnly := in.Choose != nil && !*in.Choose
 	vs, err := database.Select[mediafiles.Version](ctx, db, "versions", "title_id = ? ORDER BY is_main DESC, id", t.ID)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	if in.VersionID != nil {
 		vs = slices.DeleteFunc(vs, func(v mediafiles.Version) bool { return v.ID != *in.VersionID })
 		if len(vs) == 0 {
-			fail(w, http.StatusNotFound, "no such Version on this artist")
+			webserver.Fail(w, http.StatusNotFound, "no such Version on this artist")
 			return
 		}
 	}
@@ -51,14 +52,14 @@ func (a *API) searchArtist(w http.ResponseWriter, r *http.Request, t mediafiles.
 	case in.SlotID != nil:
 		var sl mediafiles.Slot
 		if err := database.Get(ctx, db, "slots", *in.SlotID, &sl); err != nil || !a.slotOfTitle(ctx, sl.ItemID, t.ID) {
-			fail(w, http.StatusNotFound, "no such Slot on this artist")
+			webserver.Fail(w, http.StatusNotFound, "no such Slot on this artist")
 			return
 		}
 		vs = slices.DeleteFunc(vs, func(v mediafiles.Version) bool { return v.ID != sl.VersionID })
 		_ = db.QueryRowContext(ctx, "SELECT COALESCE(part_id, 0) FROM items WHERE id = ?", sl.ItemID).Scan(&album)
 	case in.ItemID != nil:
 		if !a.slotOfTitle(ctx, *in.ItemID, t.ID) {
-			fail(w, http.StatusNotFound, "no such track on this artist")
+			webserver.Fail(w, http.StatusNotFound, "no such track on this artist")
 			return
 		}
 		_ = db.QueryRowContext(ctx, "SELECT COALESCE(part_id, 0) FROM items WHERE id = ?", *in.ItemID).Scan(&album)
@@ -67,11 +68,11 @@ func (a *API) searchArtist(w http.ResponseWriter, r *http.Request, t mediafiles.
 		var n int
 		_ = db.QueryRowContext(ctx, "SELECT count(*) FROM parts WHERE id = ? AND title_id = ? AND kind = 'album'", album, t.ID).Scan(&n)
 		if n == 0 {
-			fail(w, http.StatusNotFound, "no such album on this artist")
+			webserver.Fail(w, http.StatusNotFound, "no such album on this artist")
 			return
 		}
 	} else if listOnly {
-		fail(w, http.StatusBadRequest, "say which album (album_id) to list Releases for")
+		webserver.Fail(w, http.StatusBadRequest, "say which album (album_id) to list Releases for")
 		return
 	}
 	by := actor(r)
@@ -99,11 +100,11 @@ func (a *API) searchArtist(w http.ResponseWriter, r *http.Request, t mediafiles.
 	if album != 0 {
 		for _, v := range vs {
 			if err := queue(album, v.ID, false); err != nil {
-				internal(w, err)
+				webserver.Internal(w, "api", err)
 				return
 			}
 		}
-		writeJSON(w, http.StatusAccepted, map[string]any{"job_ids": ids})
+		webserver.WriteJSON(w, http.StatusAccepted, map[string]any{"job_ids": ids})
 		return
 	}
 	// The whole artist: every album with a track kept up to date that is
@@ -115,7 +116,7 @@ func (a *API) searchArtist(w http.ResponseWriter, r *http.Request, t mediafiles.
 		AND p.dropped_at IS NULL AND i.keep_up_to_date = 1 AND i.dropped_at IS NULL
 		AND s.state IN ('wanted', 'better_wanted', 'failed', 'rejected', 'stalled') ORDER BY p.release_date, p.id, s.version_id`, t.ID)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	type pv struct{ part, ver int64 }
@@ -125,7 +126,7 @@ func (a *API) searchArtist(w http.ResponseWriter, r *http.Request, t mediafiles.
 		var d any
 		if err := rows.Scan(&x.part, &x.ver, &d); err != nil {
 			rows.Close()
-			internal(w, err)
+			webserver.Internal(w, "api", err)
 			return
 		}
 		list = append(list, x)
@@ -143,11 +144,11 @@ func (a *API) searchArtist(w http.ResponseWriter, r *http.Request, t mediafiles.
 	runAfter = time.Now().UTC()
 	for _, x := range list {
 		if err := queue(x.part, x.ver, true); err != nil {
-			internal(w, err)
+			webserver.Internal(w, "api", err)
 			return
 		}
 	}
-	writeJSON(w, http.StatusAccepted, map[string]any{"job_ids": ids, "left_out": left})
+	webserver.WriteJSON(w, http.StatusAccepted, map[string]any{"job_ids": ids, "left_out": left})
 }
 
 // albumLabels names the albums of track Slots ("Low Tide Atlas"); "" when

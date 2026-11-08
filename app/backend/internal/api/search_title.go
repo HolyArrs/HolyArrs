@@ -5,6 +5,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 )
@@ -33,13 +34,13 @@ func (a *API) searchTitle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if in.ItemID != nil || in.Season != nil || in.VersionID != nil || in.AlbumID != nil {
-		fail(w, http.StatusBadRequest, "item_id, season, album_id and version_id are for shows and artists")
+		webserver.Fail(w, http.StatusBadRequest, "item_id, season, album_id and version_id are for shows and artists")
 		return
 	}
 	slots, err := database.Select[mediafiles.Slot](r.Context(), a.s.Store.Read(), "slots",
 		"item_id IN (SELECT id FROM items WHERE title_id = ?) ORDER BY id", t.ID)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	params := map[string]any{"by_hand": true}
@@ -59,14 +60,14 @@ func (a *API) searchTitle(w http.ResponseWriter, r *http.Request) {
 		}
 		id, _, err := a.s.Queue.Enqueue(r.Context(), jobs.KindSearchSlot, &domain.Subject{Type: "slot", ID: s.ID}, params, key, actor(r))
 		if err != nil {
-			internal(w, err)
+			webserver.Internal(w, "api", err)
 			return
 		}
 		ids = append(ids, id)
 	}
 	if in.SlotID != nil && len(ids) == 0 {
-		fail(w, http.StatusNotFound, "no such Slot on this Title")
+		webserver.Fail(w, http.StatusNotFound, "no such Slot on this Title")
 		return
 	}
-	writeJSON(w, http.StatusAccepted, map[string]any{"job_ids": ids})
+	webserver.WriteJSON(w, http.StatusAccepted, map[string]any{"job_ids": ids})
 }

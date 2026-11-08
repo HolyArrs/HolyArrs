@@ -49,17 +49,17 @@ func (a *API) kindDefaultsFor(ctx context.Context, kind string, sent map[string]
 func (a *API) getTitleDefaults(w http.ResponseWriter, r *http.Request) {
 	d, _, err := library.ReadTitleDefaults(r.Context(), a.s.Store.Read())
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
-	writeJSON(w, http.StatusOK, d)
+	webserver.WriteJSON(w, http.StatusOK, d)
 }
 
 func (a *API) putTitleDefaults(w http.ResponseWriter, r *http.Request) {
 	// Fields left out keep their value.
 	d, _, err := library.ReadTitleDefaults(r.Context(), a.s.Store.Read())
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	const help = `send {"movie": {...}, "show": {...}} with any of library_folder_id, pick_rules_id, keep_up_to_date, search_on_add`
@@ -77,7 +77,7 @@ func (a *API) putTitleDefaults(w http.ResponseWriter, r *http.Request) {
 		}
 		fields := map[string]json.RawMessage{}
 		if json.Unmarshal(raw, &fields) != nil {
-			fail(w, http.StatusBadRequest, help)
+			webserver.Fail(w, http.StatusBadRequest, help)
 			return
 		}
 		for f := range fields {
@@ -87,11 +87,11 @@ func (a *API) putTitleDefaults(w http.ResponseWriter, r *http.Request) {
 	if err := library.SetTitleDefaults(r.Context(), a.s.Store, d, keys, actor(r)); err != nil {
 		switch {
 		case errors.Is(err, library.ErrBadFolder), errors.Is(err, library.ErrNoPickRules), errors.Is(err, library.ErrNotVideoRules):
-			fail(w, http.StatusBadRequest, err.Error())
+			webserver.Fail(w, http.StatusBadRequest, err.Error())
 		default:
-			internal(w, err)
+			webserver.Internal(w, "api", err)
 		}
 		return
 	}
-	writeJSON(w, http.StatusOK, d)
+	webserver.WriteJSON(w, http.StatusOK, d)
 }

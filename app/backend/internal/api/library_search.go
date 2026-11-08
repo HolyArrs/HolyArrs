@@ -12,6 +12,7 @@ import (
 	"golang.org/x/text/unicode/norm"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 )
 
@@ -54,12 +55,12 @@ func (a *API) librarySearch(w http.ResponseWriter, r *http.Request) {
 		kind = "all"
 	}
 	if !slices.Contains([]string{"all", "movie", "show", "music", "people"}, kind) {
-		fail(w, http.StatusBadRequest, "kind is all, movie, show, music or people")
+		webserver.Fail(w, http.StatusBadRequest, "kind is all, movie, show, music or people")
 		return
 	}
 	out := map[string]any{"titles": []TitleView{}, "albums": []LibraryAlbum{}, "people": []LibraryPerson{}}
 	if term == "" {
-		writeJSON(w, http.StatusOK, out)
+		webserver.WriteJSON(w, http.StatusOK, out)
 		return
 	}
 	visible := func(t mediafiles.Title) bool {
@@ -72,11 +73,11 @@ func (a *API) librarySearch(w http.ResponseWriter, r *http.Request) {
 	if kind != "people" {
 		ts, err := mediafiles.SearchTitles(ctx, a.s.Store, term)
 		if errors.Is(err, mediafiles.ErrTitleSearchQuery) {
-			fail(w, http.StatusBadRequest, err.Error())
+			webserver.Fail(w, http.StatusBadRequest, err.Error())
 			return
 		}
 		if err != nil {
-			internal(w, err)
+			webserver.Internal(w, "api", err)
 			return
 		}
 		want := map[string]string{"movie": "movie", "show": "show", "music": "artist"}[kind]
@@ -90,7 +91,7 @@ func (a *API) librarySearch(w http.ResponseWriter, r *http.Request) {
 			}
 			v, err := a.titleView(ctx, t)
 			if err != nil {
-				internal(w, err)
+				webserver.Internal(w, "api", err)
 				return
 			}
 			views = append(views, v)
@@ -99,13 +100,13 @@ func (a *API) librarySearch(w http.ResponseWriter, r *http.Request) {
 	}
 	words := foldWords(term)
 	if len(words) == 0 {
-		writeJSON(w, http.StatusOK, out)
+		webserver.WriteJSON(w, http.StatusOK, out)
 		return
 	}
 	if kind == "all" || kind == "music" {
 		albums, err := a.libraryAlbums(r, words, visible)
 		if err != nil {
-			internal(w, err)
+			webserver.Internal(w, "api", err)
 			return
 		}
 		out["albums"] = albums
@@ -113,12 +114,12 @@ func (a *API) librarySearch(w http.ResponseWriter, r *http.Request) {
 	if kind == "all" || kind == "people" {
 		people, err := a.libraryPeople(r, words, visible)
 		if err != nil {
-			internal(w, err)
+			webserver.Internal(w, "api", err)
 			return
 		}
 		out["people"] = people
 	}
-	writeJSON(w, http.StatusOK, out)
+	webserver.WriteJSON(w, http.StatusOK, out)
 }
 
 func (a *API) libraryAlbums(r *http.Request, words []string, visible func(mediafiles.Title) bool) ([]LibraryAlbum, error) {

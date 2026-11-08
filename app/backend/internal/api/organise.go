@@ -7,6 +7,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
@@ -50,7 +51,7 @@ func (a *API) scanFolder(w http.ResponseWriter, r *http.Request) {
 		libraryError(w, err)
 		return
 	}
-	writeJSON(w, http.StatusAccepted, map[string]any{"job_id": jobID, "dry_run": true})
+	webserver.WriteJSON(w, http.StatusAccepted, map[string]any{"job_id": jobID, "dry_run": true})
 }
 
 func (a *API) adoptFolders(w http.ResponseWriter, r *http.Request) {
@@ -66,12 +67,12 @@ func (a *API) adoptFolders(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if len(body.Folders) == 0 || len(body.Folders) > 5000 {
-		fail(w, http.StatusBadRequest, "send 1 to 5000 folders to adopt")
+		webserver.Fail(w, http.StatusBadRequest, "send 1 to 5000 folders to adopt")
 		return
 	}
 	for _, c := range body.Folders {
 		if c.Folder == "" || (c.TMDB == "" && c.ID == "") {
-			fail(w, http.StatusBadRequest, "every folder needs its folder name and tmdb_id (a movie) or id (a show, such as tvdb:81189, or an artist, such as mbid:<id>)")
+			webserver.Fail(w, http.StatusBadRequest, "every folder needs its folder name and tmdb_id (a movie) or id (a show, such as tvdb:81189, or an artist, such as mbid:<id>)")
 			return
 		}
 	}
@@ -80,16 +81,16 @@ func (a *API) adoptFolders(w http.ResponseWriter, r *http.Request) {
 		libraryError(w, err)
 		return
 	}
-	writeJSON(w, http.StatusAccepted, map[string]any{"job_id": jobID})
+	webserver.WriteJSON(w, http.StatusAccepted, map[string]any{"job_id": jobID})
 }
 
 func (a *API) rescanLibrary(w http.ResponseWriter, r *http.Request) {
 	id, _, err := a.s.Queue.Enqueue(r.Context(), library.KindRescan, nil, nil, library.KindRescan, actor(r))
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
-	writeJSON(w, http.StatusAccepted, map[string]any{"job_id": id})
+	webserver.WriteJSON(w, http.StatusAccepted, map[string]any{"job_id": id})
 }
 
 // deleteTitle answers with the plan of a delete (apply false, the default)
@@ -108,11 +109,11 @@ func (a *API) deleteTitle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := body.RemoveScope.Check(); err != nil {
-		fail(w, http.StatusBadRequest, "send one of season, episode_ids, album_id or track_ids, not several")
+		webserver.Fail(w, http.StatusBadRequest, "send one of season, episode_ids, album_id or track_ids, not several")
 		return
 	}
 	if len(body.EpisodeIDs) > 5000 || len(body.TrackIDs) > 5000 {
-		fail(w, http.StatusBadRequest, "send at most 5000 episode_ids or track_ids")
+		webserver.Fail(w, http.StatusBadRequest, "send at most 5000 episode_ids or track_ids")
 		return
 	}
 	var p library.RemovePlan
@@ -126,25 +127,25 @@ func (a *API) deleteTitle(w http.ResponseWriter, r *http.Request) {
 	case errors.Is(err, library.ErrNotShow), errors.Is(err, library.ErrNeverAddWholeShow), errors.Is(err, library.ErrNoEpisodesChosen),
 		errors.Is(err, library.ErrNoSuchEpisode), errors.Is(err, library.ErrNoSuchSeason), errors.Is(err, library.ErrNotArtist),
 		errors.Is(err, library.ErrNeverAddWholeArt), errors.Is(err, library.ErrNoSuchAlbumHere), errors.Is(err, library.ErrNoSuchTrack):
-		fail(w, http.StatusBadRequest, err.Error())
+		webserver.Fail(w, http.StatusBadRequest, err.Error())
 	case errors.Is(err, library.ErrAlreadyRemoved):
-		fail(w, http.StatusConflict, err.Error())
+		webserver.Fail(w, http.StatusConflict, err.Error())
 	case err != nil && p.TitleID != 0:
-		writeJSON(w, http.StatusConflict, map[string]any{"error": err.Error(), "plan": p})
+		webserver.WriteJSON(w, http.StatusConflict, map[string]any{"error": err.Error(), "plan": p})
 	case err != nil:
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 	default:
-		writeJSON(w, http.StatusOK, p)
+		webserver.WriteJSON(w, http.StatusOK, p)
 	}
 }
 
 func (a *API) cleanHolding(w http.ResponseWriter, r *http.Request) {
 	id, _, err := a.s.Queue.Enqueue(r.Context(), library.KindCleanHolding, nil, nil, library.KindCleanHolding, actor(r))
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
-	writeJSON(w, http.StatusAccepted, map[string]any{"job_id": id})
+	webserver.WriteJSON(w, http.StatusAccepted, map[string]any{"job_id": id})
 }
 
 func (a *API) previewTitleRename(w http.ResponseWriter, r *http.Request) {
@@ -154,10 +155,10 @@ func (a *API) previewTitleRename(w http.ResponseWriter, r *http.Request) {
 	}
 	steps, hash, err := library.PlanRenameHashed(r.Context(), a.s.Store.Read(), []int64{t.ID})
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"steps": steps, "plan_hash": hash})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"steps": steps, "plan_hash": hash})
 }
 
 func (a *API) renameTitle(w http.ResponseWriter, r *http.Request) {
@@ -174,24 +175,24 @@ func (a *API) renameTitle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if body.PlanHash == "" {
-		fail(w, http.StatusBadRequest, want)
+		webserver.Fail(w, http.StatusBadRequest, want)
 		return
 	}
 	id, err := a.s.Library.Rename(r.Context(), []int64{t.ID}, body.FileIDs, body.PlanHash, actor(r))
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
-	writeJSON(w, http.StatusAccepted, map[string]any{"job_id": id})
+	webserver.WriteJSON(w, http.StatusAccepted, map[string]any{"job_id": id})
 }
 
 func (a *API) previewRename(w http.ResponseWriter, r *http.Request) {
 	steps, hash, err := library.PlanRenameHashed(r.Context(), a.s.Store.Read(), nil)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"steps": steps, "plan_hash": hash})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"steps": steps, "plan_hash": hash})
 }
 
 func (a *API) renameAll(w http.ResponseWriter, r *http.Request) {
@@ -204,15 +205,15 @@ func (a *API) renameAll(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if body.PlanHash == "" {
-		fail(w, http.StatusBadRequest, want)
+		webserver.Fail(w, http.StatusBadRequest, want)
 		return
 	}
 	id, err := a.s.Library.Rename(r.Context(), body.TitleIDs, nil, body.PlanHash, actor(r))
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
-	writeJSON(w, http.StatusAccepted, map[string]any{"job_id": id})
+	webserver.WriteJSON(w, http.StatusAccepted, map[string]any{"job_id": id})
 }
 
 func (a *API) getJob(w http.ResponseWriter, r *http.Request) {
@@ -222,23 +223,23 @@ func (a *API) getJob(w http.ResponseWriter, r *http.Request) {
 	}
 	var j domain.Job
 	if err := database.Get(r.Context(), a.s.Store.Read(), "jobs", id, &j); errors.Is(err, database.ErrNotFound) {
-		fail(w, http.StatusNotFound, "no such job")
+		webserver.Fail(w, http.StatusNotFound, "no such job")
 		return
 	} else if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
-	writeJSON(w, http.StatusOK, j)
+	webserver.WriteJSON(w, http.StatusOK, j)
 }
 
 func (a *API) getNaming(w http.ResponseWriter, r *http.Request) {
 	ns, err := mediafiles.ReadNaming(r.Context(), a.s.Store.Read())
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	file, folder := namingExamples(ns)
-	writeJSON(w, http.StatusOK, map[string]any{"naming": ns, "words": mediafiles.Words, "example": file, "example_folder": folder,
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"naming": ns, "words": mediafiles.Words, "example": file, "example_folder": folder,
 		"example_episodes": episodeExamples(ns), "example_music": musicExamples(ns)})
 }
 
@@ -293,32 +294,32 @@ func (a *API) namingExample(w http.ResponseWriter, r *http.Request) {
 	// Fields left out keep their saved value.
 	ns, err := mediafiles.ReadNaming(r.Context(), a.s.Store.Read())
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	if !decode(w, r, &ns, `send {"file_pattern","folder_pattern","colon","illegal"}`) {
 		return
 	}
 	if err := ns.Validate(); err != nil {
-		fail(w, http.StatusBadRequest, err.Error())
+		webserver.Fail(w, http.StatusBadRequest, err.Error())
 		return
 	}
 	file, folder := namingExamples(ns)
-	writeJSON(w, http.StatusOK, map[string]any{"example": file, "example_folder": folder, "example_episodes": episodeExamples(ns), "example_music": musicExamples(ns)})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"example": file, "example_folder": folder, "example_episodes": episodeExamples(ns), "example_music": musicExamples(ns)})
 }
 
 func (a *API) putNaming(w http.ResponseWriter, r *http.Request) {
 	// Fields left out keep their saved value.
 	ns, err := mediafiles.ReadNaming(r.Context(), a.s.Store.Read())
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	if !decode(w, r, &ns, `send {"file_pattern","folder_pattern","colon","illegal","rename_on_import"}`) {
 		return
 	}
 	if err := mediafiles.PutNamingSettings(r.Context(), a.s.Store, ns, actor(r)); err != nil {
-		fail(w, http.StatusBadRequest, err.Error())
+		webserver.Fail(w, http.StatusBadRequest, err.Error())
 		return
 	}
 	a.getNaming(w, r)
@@ -327,10 +328,10 @@ func (a *API) putNaming(w http.ResponseWriter, r *http.Request) {
 func (a *API) getFileRules(w http.ResponseWriter, r *http.Request) {
 	fr, err := importer.ReadFileRules(r.Context(), a.s.Store.Read())
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
-	writeJSON(w, http.StatusOK, fr)
+	webserver.WriteJSON(w, http.StatusOK, fr)
 }
 
 func (a *API) putFileRules(w http.ResponseWriter, r *http.Request) {
@@ -339,8 +340,8 @@ func (a *API) putFileRules(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := importer.SaveFileRules(r.Context(), a.s.Store, fr, actor(r)); err != nil {
-		fail(w, http.StatusBadRequest, err.Error())
+		webserver.Fail(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	writeJSON(w, http.StatusOK, fr)
+	webserver.WriteJSON(w, http.StatusOK, fr)
 }

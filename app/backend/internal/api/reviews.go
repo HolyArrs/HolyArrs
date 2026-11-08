@@ -73,11 +73,11 @@ type reviewSourceView struct {
 func (a *API) metadataReviews(w http.ResponseWriter, r *http.Request) {
 	kind, id := r.PathValue("kind"), r.PathValue("tmdb_id")
 	if kind != "movie" && kind != "show" {
-		fail(w, http.StatusBadRequest, "kind must be movie or show")
+		webserver.Fail(w, http.StatusBadRequest, "kind must be movie or show")
 		return
 	}
 	if n, err := strconv.ParseInt(id, 10, 64); err != nil || n <= 0 {
-		fail(w, http.StatusBadRequest, "tmdb_id must be a TMDB number")
+		webserver.Fail(w, http.StatusBadRequest, "tmdb_id must be a TMDB number")
 		return
 	}
 	q := r.URL.Query()
@@ -85,7 +85,7 @@ func (a *API) metadataReviews(w http.ResponseWriter, r *http.Request) {
 	if p := q.Get("page"); p != "" {
 		n, err := strconv.Atoi(p)
 		if err != nil || n < 1 || n > 500 {
-			fail(w, http.StatusBadRequest, "page must be 1 to 500")
+			webserver.Fail(w, http.StatusBadRequest, "page must be 1 to 500")
 			return
 		}
 		page = n
@@ -95,11 +95,11 @@ func (a *API) metadataReviews(w http.ResponseWriter, r *http.Request) {
 		order = metadata.ReviewsNewest
 	}
 	if order != metadata.ReviewsNewest && order != metadata.ReviewsHelpful {
-		fail(w, http.StatusBadRequest, "order must be newest or helpful")
+		webserver.Fail(w, http.StatusBadRequest, "order must be newest or helpful")
 		return
 	}
 	if len(a.kindsOn(kind)) == 0 {
-		fail(w, http.StatusConflict, "that part is off")
+		webserver.Fail(w, http.StatusConflict, "that part is off")
 		return
 	}
 	if a.kidLimited(w, r) {
@@ -127,11 +127,11 @@ func (a *API) metadataReviews(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if !known {
-		fail(w, http.StatusBadRequest, "unknown source")
+		webserver.Fail(w, http.StatusBadRequest, "unknown source")
 		return
 	}
 	if chosen == nil {
-		fail(w, http.StatusNotFound, "that source is not set up")
+		webserver.Fail(w, http.StatusNotFound, "that source is not set up")
 		return
 	}
 	if !contains(orders, order) {
@@ -139,7 +139,7 @@ func (a *API) metadataReviews(w http.ResponseWriter, r *http.Request) {
 	}
 	d, ok := metadata.DiscovererFor(r.Context(), a.s.Metadata)
 	if !ok {
-		fail(w, http.StatusNotImplemented, "Explore is not available here")
+		webserver.Fail(w, http.StatusNotImplemented, "Explore is not available here")
 		return
 	}
 	dkey := "details|" + kind + "|" + id
@@ -160,7 +160,7 @@ func (a *API) metadataReviews(w http.ResponseWriter, r *http.Request) {
 			rating = de.details.Rating
 		}
 		if !metadata.RatingAllows(max, kind, rating) {
-			fail(w, http.StatusForbidden, aboveLimit)
+			webserver.Fail(w, http.StatusForbidden, aboveLimit)
 			return
 		}
 	}
@@ -178,7 +178,7 @@ func (a *API) metadataReviews(w http.ResponseWriter, r *http.Request) {
 			a.discover.put(key, e)
 		case cached && errors.Is(err, metadata.ErrRateLimited):
 		case src == "trakt" && errors.Is(err, metadata.ErrTraktLocked):
-			fail(w, http.StatusBadGateway, "Trakt refused the key; check the client id and VIP token in Settings")
+			webserver.Fail(w, http.StatusBadGateway, "Trakt refused the key; check the client id and VIP token in Settings")
 			return
 		default:
 			discoverFail(w, err)
@@ -194,7 +194,7 @@ func (a *API) metadataReviews(w http.ResponseWriter, r *http.Request) {
 		out.Reviews, hidden = []metadata.Review{}, true
 	}
 	a.exploreCaching(w, r, "")
-	writeJSON(w, http.StatusOK, struct {
+	webserver.WriteJSON(w, http.StatusOK, struct {
 		Source  string             `json:"source"`
 		Sources []reviewSourceView `json:"sources"`
 		Order   string             `json:"order"`
@@ -216,10 +216,10 @@ func contains(list []string, s string) bool {
 func (a *API) getTraktToken(w http.ResponseWriter, r *http.Request) {
 	k, err := a.s.Secrets.Setting(r.Context(), traktKeyGroup, traktTokenName)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]string{"token": secrets.Mask(k)})
+	webserver.WriteJSON(w, http.StatusOK, map[string]string{"token": secrets.Mask(k)})
 }
 
 // putTraktToken saves the Trakt VIP access token encrypted; never logged.
@@ -231,12 +231,12 @@ func (a *API) putTraktToken(w http.ResponseWriter, r *http.Request) {
 		Token string `json:"token"`
 	}
 	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 8<<10)).Decode(&body); err != nil || body.Token == "" {
-		fail(w, http.StatusBadRequest, `send {"token": "<Trakt VIP access token>"}`)
+		webserver.Fail(w, http.StatusBadRequest, `send {"token": "<Trakt VIP access token>"}`)
 		return
 	}
 	if err := a.s.Secrets.SetSetting(r.Context(), traktKeyGroup, traktTokenName, body.Token, actor(r)); err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]string{"token": secrets.Masked})
+	webserver.WriteJSON(w, http.StatusOK, map[string]string{"token": secrets.Masked})
 }

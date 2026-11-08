@@ -38,26 +38,26 @@ func libraryError(w http.ResponseWriter, err error) {
 	var fe *library.FolderError
 	switch {
 	case errors.As(err, &dup):
-		writeJSON(w, http.StatusConflict, map[string]any{"error": err.Error(), "title_id": dup.TitleID})
+		webserver.WriteJSON(w, http.StatusConflict, map[string]any{"error": err.Error(), "title_id": dup.TitleID})
 	case errors.As(err, &fe):
-		writeJSON(w, http.StatusConflict, map[string]any{"error": err.Error(), "health": fe.Health.State, "reason": fe.Health.Reason})
+		webserver.WriteJSON(w, http.StatusConflict, map[string]any{"error": err.Error(), "health": fe.Health.State, "reason": fe.Health.Reason})
 	case errors.Is(err, library.ErrNeverAdd), errors.Is(err, library.ErrNoFolder), errors.Is(err, library.ErrFolderInUse),
 		errors.Is(err, library.ErrFolderTaken), errors.Is(err, library.ErrFolderName), errors.Is(err, library.ErrMainVersion), errors.Is(err, library.ErrVersionHasFiles), errors.Is(err, library.ErrVersionBusy),
 		errors.Is(err, library.ErrVersionFolder), errors.Is(err, library.ErrProtectedCopy):
-		fail(w, http.StatusConflict, err.Error())
+		webserver.Fail(w, http.StatusConflict, err.Error())
 	case errors.Is(err, library.ErrBadGate), errors.Is(err, library.ErrBadDelay), errors.Is(err, library.ErrNotMovieFolder), errors.Is(err, library.ErrNotShowFolder), errors.Is(err, library.ErrNotMusicFolder),
 		errors.Is(err, library.ErrNoPickRules), errors.Is(err, library.ErrNotMusicRules), errors.Is(err, library.ErrNotVideoRules), errors.Is(err, library.ErrFolderPath), errors.Is(err, library.ErrFolderKind),
 		errors.Is(err, library.ErrFolderAbsent), errors.Is(err, library.ErrNoMetadataIDs), errors.Is(err, library.ErrVersionLabel),
 		errors.Is(err, library.ErrTooManyVersions), errors.Is(err, library.ErrCopyChoice):
-		fail(w, http.StatusBadRequest, err.Error())
+		webserver.Fail(w, http.StatusBadRequest, err.Error())
 	case errors.Is(err, database.ErrNotFound):
-		fail(w, http.StatusNotFound, "not found")
+		webserver.Fail(w, http.StatusNotFound, "not found")
 	case errors.Is(err, metadata.ErrNotFound):
-		fail(w, http.StatusNotFound, "no movie with that id")
+		webserver.Fail(w, http.StatusNotFound, "no movie with that id")
 	case errors.Is(err, metadata.ErrNoAccess):
-		fail(w, http.StatusServiceUnavailable, err.Error())
+		webserver.Fail(w, http.StatusServiceUnavailable, err.Error())
 	default:
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 	}
 }
 
@@ -81,7 +81,7 @@ func metadataServiceError(w http.ResponseWriter, err error) bool {
 	default:
 		return false
 	}
-	fail(w, status, message)
+	webserver.Fail(w, status, message)
 	return true
 }
 
@@ -97,11 +97,11 @@ func (a *API) addTitle(w http.ResponseWriter, r *http.Request) {
 	}
 	o := &body.AddOptions
 	if err := a.kindDefaultsFor(r.Context(), "movie", sent, &o.LibraryFolderID, &o.PickRulesID, &o.KeepUpToDate, &o.SearchOnAdd); err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	if body.ID == "" {
-		fail(w, http.StatusBadRequest, `send {"id": "tmdb:<number>"}`)
+		webserver.Fail(w, http.StatusBadRequest, `send {"id": "tmdb:<number>"}`)
 		return
 	}
 	m, err := a.s.Metadata.Movie(r.Context(), body.ID)
@@ -121,18 +121,18 @@ func (a *API) addTitle(w http.ResponseWriter, r *http.Request) {
 	}
 	var t mediafiles.Title
 	if err := database.Get(r.Context(), a.s.Store.Read(), "titles", id, &t); err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	v, err := a.titleView(r.Context(), t)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	if a.s.Live != nil {
 		a.publishTitleView(v)
 	}
-	writeJSON(w, http.StatusCreated, map[string]any{"title": v, "job_id": jobID})
+	webserver.WriteJSON(w, http.StatusCreated, map[string]any{"title": v, "job_id": jobID})
 }
 
 func (a *API) getTitle(w http.ResponseWriter, r *http.Request) {
@@ -142,10 +142,10 @@ func (a *API) getTitle(w http.ResponseWriter, r *http.Request) {
 	}
 	v, err := a.titleView(r.Context(), t)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
-	writeJSON(w, http.StatusOK, v)
+	webserver.WriteJSON(w, http.StatusOK, v)
 }
 
 func (a *API) editTitle(w http.ResponseWriter, r *http.Request) {
@@ -185,13 +185,13 @@ func (a *API) editTitle(w http.ResponseWriter, r *http.Request) {
 	_ = database.Get(r.Context(), a.s.Store.Read(), "titles", t.ID, &t)
 	v, err := a.titleView(r.Context(), t)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	if !dry && a.s.Live != nil {
 		a.publishTitleView(v)
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"title": v, "changes": res})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"title": v, "changes": res})
 }
 
 func (a *API) moveTitle(w http.ResponseWriter, r *http.Request) {
@@ -211,7 +211,7 @@ func (a *API) moveTitle(w http.ResponseWriter, r *http.Request) {
 		libraryError(w, err)
 		return
 	}
-	writeJSON(w, http.StatusAccepted, map[string]any{"job_id": id, "dry_run": !body.Apply})
+	webserver.WriteJSON(w, http.StatusAccepted, map[string]any{"job_id": id, "dry_run": !body.Apply})
 }
 
 // LookupView is a looked-up movie with what the Library knows of it.
@@ -231,7 +231,7 @@ type LookupView struct {
 func (a *API) lookupTitles(w http.ResponseWriter, r *http.Request) {
 	term := strings.TrimSpace(r.URL.Query().Get("term"))
 	if term == "" || len(term) > 200 {
-		fail(w, http.StatusBadRequest, "send ?term=<name>, tmdb:<id> or imdb:<tt id>, and &year=<year> with a name if you know it")
+		webserver.Fail(w, http.StatusBadRequest, "send ?term=<name>, tmdb:<id> or imdb:<tt id>, and &year=<year> with a name if you know it")
 		return
 	}
 	if a.kidLimited(w, r) {
@@ -263,37 +263,37 @@ func (a *API) lookupTitles(w http.ResponseWriter, r *http.Request) {
 		if id := m.IDs["tmdb"]; id != "" {
 			var err error
 			if v.TitleID, err = library.TitleByTMDB(r.Context(), db, id); err != nil {
-				internal(w, err)
+				webserver.Internal(w, "api", err)
 				return
 			}
 			if v.NeverAdd, err = library.OnNeverAdd(r.Context(), db, id); err != nil {
-				internal(w, err)
+				webserver.Internal(w, "api", err)
 				return
 			}
 			if v.Ask, err = a.openAsk(r.Context(), id, a.person(r).UserID); err != nil {
-				internal(w, err)
+				webserver.Internal(w, "api", err)
 				return
 			}
 			if v.Ask4K, err = a.openMovieAsk(r.Context(), id, a.person(r).UserID, true); err != nil {
-				internal(w, err)
+				webserver.Internal(w, "api", err)
 				return
 			}
 			if v.TitleID != 0 {
 				if v.Has4K, err = requests.HasFourK(r.Context(), db, v.TitleID); err != nil {
-					internal(w, err)
+					webserver.Internal(w, "api", err)
 					return
 				}
 			}
 		}
 		out = append(out, v)
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"movies": out, "attribution": metadata.Attribution})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"movies": out, "attribution": metadata.Attribution})
 }
 
 func pathID(w http.ResponseWriter, r *http.Request) (int64, bool) {
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil || id <= 0 {
-		fail(w, http.StatusNotFound, "not found")
+		webserver.Fail(w, http.StatusNotFound, "not found")
 		return 0, false
 	}
 	return id, true
@@ -345,12 +345,12 @@ type PickRulesView struct {
 func (a *API) listPickRules(w http.ResponseWriter, r *http.Request) {
 	ps, err := database.Select[mediafiles.PickRules](r.Context(), a.s.Store.Read(), "pick_rules", "1=1 ORDER BY id")
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	uses, err := library.PickRulesUses(r.Context(), a.s.Store)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	out := []PickRulesView{}
@@ -361,20 +361,20 @@ func (a *API) listPickRules(w http.ResponseWriter, r *http.Request) {
 		}
 		out = append(out, PickRulesView{ID: p.ID, Name: p.Name, Kinds: k, Preset: p.Preset, InUse: uses[p.ID].Total()})
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"pick_rules": out})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"pick_rules": out})
 }
 
 func (a *API) listFolders(w http.ResponseWriter, r *http.Request) {
 	fs, err := database.Select[mediafiles.LibraryFolder](r.Context(), a.s.Store.Read(), "library_folders", "1=1 ORDER BY id")
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	out := []FolderView{}
 	for _, f := range fs {
 		out = append(out, folderView(f))
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"library_folders": out})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"library_folders": out})
 }
 
 func (a *API) downloadPaths(r *http.Request) []string {
@@ -392,7 +392,7 @@ func (a *API) addFolder(w http.ResponseWriter, r *http.Request) {
 		libraryError(w, err)
 		return
 	}
-	writeJSON(w, http.StatusCreated, folderView(lf))
+	webserver.WriteJSON(w, http.StatusCreated, folderView(lf))
 }
 
 func (a *API) editFolder(w http.ResponseWriter, r *http.Request) {
@@ -409,7 +409,7 @@ func (a *API) editFolder(w http.ResponseWriter, r *http.Request) {
 		libraryError(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, folderView(lf))
+	webserver.WriteJSON(w, http.StatusOK, folderView(lf))
 }
 
 func (a *API) deleteFolder(w http.ResponseWriter, r *http.Request) {
@@ -434,20 +434,20 @@ func (a *API) checkFolder(w http.ResponseWriter, r *http.Request) {
 		libraryError(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, folderView(lf))
+	webserver.WriteJSON(w, http.StatusOK, folderView(lf))
 }
 
 func (a *API) listNeverAdd(w http.ResponseWriter, r *http.Request) {
 	ns, err := library.NeverAddList(r.Context(), a.s.Store.Read())
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	out := []NeverAddView{}
 	for _, n := range ns {
 		out = append(out, neverAddView(n))
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"never_add": out})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"never_add": out})
 }
 
 func (a *API) addNeverAdd(w http.ResponseWriter, r *http.Request) {
@@ -461,7 +461,7 @@ func (a *API) addNeverAdd(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if body.TMDB == "" || body.Name == "" || (body.Kind != "" && body.Kind != "movie" && body.Kind != "show") {
-		fail(w, http.StatusBadRequest, "tmdb_id and name are needed; kind is movie (the default) or show")
+		webserver.Fail(w, http.StatusBadRequest, "tmdb_id and name are needed; kind is movie (the default) or show")
 		return
 	}
 	n, err := library.AddNeverAdd(r.Context(), a.s.Store, mediafiles.NeverAdd{Kind: body.Kind, SourceIDs: map[string]string{"tmdb": body.TMDB}, Name: body.Name, Reason: body.Reason}, actor(r))
@@ -469,7 +469,7 @@ func (a *API) addNeverAdd(w http.ResponseWriter, r *http.Request) {
 		libraryError(w, err)
 		return
 	}
-	writeJSON(w, http.StatusCreated, neverAddView(n))
+	webserver.WriteJSON(w, http.StatusCreated, neverAddView(n))
 }
 
 func (a *API) deleteNeverAdd(w http.ResponseWriter, r *http.Request) {
@@ -487,10 +487,10 @@ func (a *API) deleteNeverAdd(w http.ResponseWriter, r *http.Request) {
 func (a *API) getGateDefaults(w http.ResponseWriter, r *http.Request) {
 	g, err := library.ReadGateDefaults(r.Context(), a.s.Store.Read())
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
-	writeJSON(w, http.StatusOK, g)
+	webserver.WriteJSON(w, http.StatusOK, g)
 }
 
 func (a *API) putGateDefaults(w http.ResponseWriter, r *http.Request) {
@@ -502,7 +502,7 @@ func (a *API) putGateDefaults(w http.ResponseWriter, r *http.Request) {
 		libraryError(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, g)
+	webserver.WriteJSON(w, http.StatusOK, g)
 }
 
 func (a *API) refreshTitle(w http.ResponseWriter, r *http.Request) {
@@ -513,10 +513,10 @@ func (a *API) refreshTitle(w http.ResponseWriter, r *http.Request) {
 	id, _, err := a.s.Queue.Enqueue(r.Context(), library.KindRefreshTitle, &domain.Subject{Type: "title", ID: t.ID},
 		map[string]any{"by_hand": true}, "refresh_title:"+itoa(t.ID), actor(r))
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
-	writeJSON(w, http.StatusAccepted, map[string]any{"job_ids": []int64{id}})
+	webserver.WriteJSON(w, http.StatusAccepted, map[string]any{"job_ids": []int64{id}})
 }
 
 // refreshTitles refreshes every movie, show and artist, or only title_ids
@@ -533,22 +533,22 @@ func (a *API) refreshTitles(w http.ResponseWriter, r *http.Request) {
 		for _, kind := range []string{library.KindRefreshTitles, shows.KindRefreshShows, library.KindRefreshArtists} {
 			id, _, err := a.s.Queue.Enqueue(r.Context(), kind, nil, map[string]any{"by_hand": true}, kind+":by_hand", actor(r))
 			if err != nil {
-				internal(w, err)
+				webserver.Internal(w, "api", err)
 				return
 			}
 			ids = append(ids, id)
 		}
-		writeJSON(w, http.StatusAccepted, map[string]any{"job_ids": ids})
+		webserver.WriteJSON(w, http.StatusAccepted, map[string]any{"job_ids": ids})
 		return
 	}
 	if len(body.TitleIDs) > 500 {
-		fail(w, http.StatusBadRequest, "at most 500 title_ids at once")
+		webserver.Fail(w, http.StatusBadRequest, "at most 500 title_ids at once")
 		return
 	}
 	for _, tid := range body.TitleIDs {
 		var t mediafiles.Title
 		if err := database.Get(r.Context(), a.s.Store.Read(), "titles", tid, &t); err != nil {
-			fail(w, http.StatusNotFound, "no Title "+itoa(tid))
+			webserver.Fail(w, http.StatusNotFound, "no Title "+itoa(tid))
 			return
 		}
 	}
@@ -556,12 +556,12 @@ func (a *API) refreshTitles(w http.ResponseWriter, r *http.Request) {
 		id, _, err := a.s.Queue.Enqueue(r.Context(), library.KindRefreshTitle, &domain.Subject{Type: "title", ID: tid},
 			map[string]any{"by_hand": true}, "refresh_title:"+itoa(tid), actor(r))
 		if err != nil {
-			internal(w, err)
+			webserver.Internal(w, "api", err)
 			return
 		}
 		ids = append(ids, id)
 	}
-	writeJSON(w, http.StatusAccepted, map[string]any{"job_ids": ids})
+	webserver.WriteJSON(w, http.StatusAccepted, map[string]any{"job_ids": ids})
 }
 
 // calendar lists cinema, digital and physical dates of Library movies in
@@ -573,7 +573,7 @@ func (a *API) calendar(w http.ResponseWriter, r *http.Request) {
 	var err error
 	if v := q.Get("from"); v != "" {
 		if from, err = time.Parse("2006-01-02", v); err != nil {
-			fail(w, http.StatusBadRequest, "from must be YYYY-MM-DD")
+			webserver.Fail(w, http.StatusBadRequest, "from must be YYYY-MM-DD")
 			return
 		}
 		if q.Get("to") == "" {
@@ -582,22 +582,22 @@ func (a *API) calendar(w http.ResponseWriter, r *http.Request) {
 	}
 	if v := q.Get("to"); v != "" {
 		if to, err = time.Parse("2006-01-02", v); err != nil {
-			fail(w, http.StatusBadRequest, "to must be YYYY-MM-DD")
+			webserver.Fail(w, http.StatusBadRequest, "to must be YYYY-MM-DD")
 			return
 		}
 	}
 	if !to.After(from) || to.Sub(from) > 366*24*time.Hour {
-		fail(w, http.StatusBadRequest, "to must be after from, at most a year later")
+		webserver.Fail(w, http.StatusBadRequest, "to must be after from, at most a year later")
 		return
 	}
 	titles, ok := calendarTitles(q.Get("titles"))
 	if !ok {
-		fail(w, http.StatusBadRequest, "titles must be all, movies, shows or music")
+		webserver.Fail(w, http.StatusBadRequest, "titles must be all, movies, shows or music")
 		return
 	}
 	es, err := library.Calendar(r.Context(), a.s.Store.Read(), from, to, titles)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	if max := a.kidMax(r); max != "" {
@@ -607,7 +607,7 @@ func (a *API) calendar(w http.ResponseWriter, r *http.Request) {
 		}
 		ok, err := a.allowedTitleIDs(r.Context(), max, ids)
 		if err != nil {
-			internal(w, err)
+			webserver.Internal(w, "api", err)
 			return
 		}
 		kept := []library.CalendarEntry{}
@@ -630,11 +630,11 @@ func (a *API) calendar(w http.ResponseWriter, r *http.Request) {
 	}
 	out, mine, people, err := a.calendarFollows(r.Context(), es)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	a.calendarArt(r, out)
-	writeJSON(w, http.StatusOK, map[string]any{"from": from.Format("2006-01-02"), "to": to.Format("2006-01-02"), "titles": titles, "dates": out,
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"from": from.Format("2006-01-02"), "to": to.Format("2006-01-02"), "titles": titles, "dates": out,
 		"my_follows": mine, "people": people})
 }
 

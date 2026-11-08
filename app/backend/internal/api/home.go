@@ -179,7 +179,7 @@ func (a *API) home(w http.ResponseWriter, r *http.Request) {
 	run(func() (err error) { library, err = homeLibraryCounts(ctx, db, where, args, kinds); return })
 	wg.Wait()
 	if firstErr != nil {
-		internal(w, firstErr)
+		webserver.Internal(w, "api", firstErr)
 		return
 	}
 	failed += sick

@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/discover"
@@ -33,13 +34,13 @@ func (a *API) plainSearch(w http.ResponseWriter, r *http.Request) {
 	q := discover.ParsePlainWords(r.URL.Query().Get("q"))
 	out := map[string]any{"query": q, "titles": []TitleView{}, "more": []discoverItemView{}}
 	if q.Text == "" {
-		writeJSON(w, http.StatusOK, out)
+		webserver.WriteJSON(w, http.StatusOK, out)
 		return
 	}
 	ctx := withLookupMemo(r.Context())
 	views, err := a.plainLibrary(ctx, r, q)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	out["titles"] = views
@@ -52,7 +53,7 @@ func (a *API) plainSearch(w http.ResponseWriter, r *http.Request) {
 			out["note"] = note
 		}
 	}
-	writeJSON(w, http.StatusOK, out)
+	webserver.WriteJSON(w, http.StatusOK, out)
 }
 
 // plainLibrary are the Library titles that fit q, those about q.Words first.

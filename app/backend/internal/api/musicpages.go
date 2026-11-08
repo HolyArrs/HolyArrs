@@ -16,6 +16,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
@@ -291,11 +292,11 @@ func songArtID(artist, album, cover string) string {
 
 func (a *API) musicPageOpen(w http.ResponseWriter) bool {
 	if p, _ := parts.ForTitleKind("artist"); !a.partIsOn(p) {
-		fail(w, http.StatusNotFound, "music is turned off")
+		webserver.Fail(w, http.StatusNotFound, "music is turned off")
 		return false
 	}
 	if a.s.Library == nil || a.s.Library.Artists == nil {
-		fail(w, http.StatusServiceUnavailable, "no music source is set up")
+		webserver.Fail(w, http.StatusServiceUnavailable, "no music source is set up")
 		return false
 	}
 	return true
@@ -628,12 +629,12 @@ func (a *API) artistPage(w http.ResponseWriter, r *http.Request) {
 	}
 	// Kid members get no music pages, as with the other music routes (explicit marks are incomplete).
 	if a.kidMax(r) != "" {
-		fail(w, http.StatusForbidden, aboveLimit)
+		webserver.Fail(w, http.StatusForbidden, aboveLimit)
 		return
 	}
 	mbid := strings.ToLower(r.PathValue("mbid"))
 	if !metadata.ValidMBID(mbid) {
-		fail(w, http.StatusBadRequest, "mbid must be a MusicBrainz artist id")
+		webserver.Fail(w, http.StatusBadRequest, "mbid must be a MusicBrainz artist id")
 		return
 	}
 	if !a.musicPageOpen(w) {
@@ -668,7 +669,7 @@ func (a *API) artistPage(w http.ResponseWriter, r *http.Request) {
 	}), by)
 	if errors.Is(err, metadata.ErrArtistNotFound) {
 		wg.Wait()
-		fail(w, http.StatusNotFound, "no artist with that id")
+		webserver.Fail(w, http.StatusNotFound, "no artist with that id")
 		return
 	}
 	// A slow or failing source never fails the page: it answers with what
@@ -701,7 +702,7 @@ func (a *API) artistPage(w http.ResponseWriter, r *http.Request) {
 	wg.Wait()
 	albums, t, err := a.pageAlbums(ctx, r, art, dz)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	v := ArtistPageView{MBID: mbid, Name: art.Name, Type: art.Type, Country: art.Country, Disambiguation: art.Disambiguation, Status: art.Status,
@@ -985,7 +986,7 @@ func (a *API) albumPage(w http.ResponseWriter, r *http.Request) {
 	}
 	// Kid members get no music pages, as with the other music routes (explicit marks are incomplete).
 	if a.kidMax(r) != "" {
-		fail(w, http.StatusForbidden, aboveLimit)
+		webserver.Fail(w, http.StatusForbidden, aboveLimit)
 		return
 	}
 	mbid := strings.ToLower(r.PathValue("mbid"))
@@ -994,7 +995,7 @@ func (a *API) albumPage(w http.ResponseWriter, r *http.Request) {
 		artist = "" // a bad ?artist= never blocks the page: the album names its own artist
 	}
 	if !metadata.ValidMBID(mbid) {
-		fail(w, http.StatusBadRequest, "That album link is not valid.")
+		webserver.Fail(w, http.StatusBadRequest, "That album link is not valid.")
 		return
 	}
 	if !a.musicPageOpen(w) {
@@ -1011,7 +1012,7 @@ func (a *API) albumPage(w http.ResponseWriter, r *http.Request) {
 	if artist == "" {
 		// A bare album link: find the artist from the album itself.
 		if artist = a.albumArtistOf(ctx, mbid); artist == "" {
-			fail(w, http.StatusNotFound, "We could not find this album.")
+			webserver.Fail(w, http.StatusNotFound, "We could not find this album.")
 			return
 		}
 	}
@@ -1035,7 +1036,7 @@ func (a *API) albumPage(w http.ResponseWriter, r *http.Request) {
 		if a.albumWithRealArtist(ctx, w, r, mbid, artist) {
 			return
 		}
-		fail(w, http.StatusNotFound, "We could not find this album.")
+		webserver.Fail(w, http.StatusNotFound, "We could not find this album.")
 		return
 	}
 	// A slow or failing source never fails the page: the album is drawn
@@ -1049,7 +1050,7 @@ func (a *API) albumPage(w http.ResponseWriter, r *http.Request) {
 	dz := a.deezerProfile(side, artist, art)
 	albums, t, err := a.pageAlbums(ctx, r, art, dz)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	if incomplete && t != nil && art.Name == "" {
@@ -1069,11 +1070,11 @@ func (a *API) albumPage(w http.ResponseWriter, r *http.Request) {
 		if a.albumWithRealArtist(ctx, w, r, mbid, artist) {
 			return
 		}
-		fail(w, http.StatusNotFound, "We could not find this album.")
+		webserver.Fail(w, http.StatusNotFound, "We could not find this album.")
 		return
 	}
 	if kid && me.Explicit {
-		fail(w, http.StatusForbidden, aboveLimit)
+		webserver.Fail(w, http.StatusForbidden, aboveLimit)
 		return
 	}
 	v := AlbumPageView{PageAlbum: *me, Artist: PageArtist{MBID: artist, Name: art.Name, Image: artPath("artist", artist)}, Tracks: []PageTrack{},
@@ -1384,12 +1385,12 @@ func (a *API) albumWithRealArtist(ctx context.Context, w http.ResponseWriter, r 
 func (a *API) musicPageGate(w http.ResponseWriter, r *http.Request) (string, bool) {
 	// Kid members get no music pages, as with the other music routes (explicit marks are incomplete).
 	if a.kidMax(r) != "" {
-		fail(w, http.StatusForbidden, aboveLimit)
+		webserver.Fail(w, http.StatusForbidden, aboveLimit)
 		return "", false
 	}
 	mbid := strings.ToLower(r.PathValue("mbid"))
 	if !metadata.ValidMBID(mbid) {
-		fail(w, http.StatusBadRequest, "mbid must be a MusicBrainz id")
+		webserver.Fail(w, http.StatusBadRequest, "mbid must be a MusicBrainz id")
 		return "", false
 	}
 	return mbid, a.musicPageOpen(w)
@@ -1404,7 +1405,7 @@ func (a *API) artistCore(w http.ResponseWriter, r *http.Request) {
 	bioBy := time.After(coreBioWait)
 	t, err := a.libraryArtist(ctx, mbid)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	v := ArtistCoreView{MBID: mbid, Image: artPath("artist", mbid)}
@@ -1441,10 +1442,10 @@ func (a *API) artistCore(w http.ResponseWriter, r *http.Request) {
 	art, err := a.s.Library.Artists.Artist(quick, mbid)
 	switch {
 	case errors.Is(err, metadata.ErrArtistNotFound):
-		fail(w, http.StatusNotFound, "no artist with that id")
+		webserver.Fail(w, http.StatusNotFound, "no artist with that id")
 		return
 	case err != nil && v.Name == "":
-		fail(w, http.StatusBadGateway, "the music source did not answer; try again shortly")
+		webserver.Fail(w, http.StatusBadGateway, "the music source did not answer; try again shortly")
 		return
 	case err == nil:
 		if v.Name == "" {
@@ -1542,12 +1543,12 @@ func (a *API) albumCore(w http.ResponseWriter, r *http.Request) {
 	}
 	artist := strings.ToLower(r.URL.Query().Get("artist"))
 	if !metadata.ValidMBID(artist) {
-		fail(w, http.StatusBadRequest, "send the album's and its artist's MusicBrainz ids (?artist=)")
+		webserver.Fail(w, http.StatusBadRequest, "send the album's and its artist's MusicBrainz ids (?artist=)")
 		return
 	}
 	ctx := metadata.MemberLookup(r.Context())
 	if a.coreMissed(mbid, artist) {
-		fail(w, http.StatusNotFound, "this album is not kept yet; the full page answers")
+		webserver.Fail(w, http.StatusNotFound, "this album is not kept yet; the full page answers")
 		return
 	}
 	v := AlbumCoreView{MBID: mbid, Image: artPath("album", mbid), SecondaryTypes: []string{}, Artist: PageArtist{MBID: artist, Image: artPath("artist", artist)}}
@@ -1583,7 +1584,7 @@ func (a *API) albumCore(w http.ResponseWriter, r *http.Request) {
 		// Not in the kept list (a long discography): the full page answers.
 		// Remembered a minute, so a page listing it does not ask each load.
 		a.rememberCoreMiss(mbid, artist)
-		fail(w, http.StatusNotFound, "this album is not kept yet; the full page answers")
+		webserver.Fail(w, http.StatusNotFound, "this album is not kept yet; the full page answers")
 		return
 	}
 	w.Header().Set("Cache-Control", "private, max-age=60")
@@ -1756,7 +1757,7 @@ func (a *API) albumNear(w http.ResponseWriter, r *http.Request) {
 	}
 	artist := strings.ToLower(r.URL.Query().Get("artist"))
 	if !metadata.ValidMBID(artist) {
-		fail(w, http.StatusBadRequest, "send the album's and its artist's MusicBrainz ids (?artist=)")
+		webserver.Fail(w, http.StatusBadRequest, "send the album's and its artist's MusicBrainz ids (?artist=)")
 		return
 	}
 	ctx, cancel := context.WithTimeout(metadata.MemberLookup(r.Context()), 2*musicSideWait)

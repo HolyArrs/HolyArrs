@@ -91,7 +91,7 @@ func (a *API) ApplyCountryCount(ctx context.Context) {
 }
 
 func (a *API) getUISettings(w http.ResponseWriter, r *http.Request) {
-	writeJSON(w, http.StatusOK, a.uiSettings(r.Context()))
+	webserver.WriteJSON(w, http.StatusOK, a.uiSettings(r.Context()))
 }
 
 func (a *API) putUISettings(w http.ResponseWriter, r *http.Request) {
@@ -112,7 +112,7 @@ func (a *API) putUISettings(w http.ResponseWriter, r *http.Request) {
 	if in.RoutineDays != nil || in.OtherDays != nil {
 		// History is also the audit trail: only the owner sets how long it lasts.
 		if who, signed := webserver.From(r.Context()); !signed || who.Role != webserver.RoleOwner {
-			fail(w, http.StatusForbidden, "only the owner may change how long History is kept")
+			webserver.Fail(w, http.StatusForbidden, "only the owner may change how long History is kept")
 			return
 		}
 		k := database.ReadHistoryKeep(r.Context(), a.s.Store.Read())
@@ -124,16 +124,16 @@ func (a *API) putUISettings(w http.ResponseWriter, r *http.Request) {
 		}
 		if err := a.s.Store.SaveHistoryKeep(r.Context(), k, actor(r)); err != nil {
 			if errors.Is(err, database.ErrHistoryKeep) {
-				fail(w, http.StatusBadRequest, err.Error())
+				webserver.Fail(w, http.StatusBadRequest, err.Error())
 				return
 			}
-			internal(w, err)
+			webserver.Internal(w, "api", err)
 			return
 		}
 	}
 	if in.ArtworkCacheGB != nil {
 		if !artworkCacheSizes[*in.ArtworkCacheGB] {
-			fail(w, http.StatusBadRequest, "artwork_cache_gb is 1, 2, 5, 10 or 20")
+			webserver.Fail(w, http.StatusBadRequest, "artwork_cache_gb is 1, 2, 5, 10 or 20")
 			return
 		}
 		now := database.FormatTime(time.Now())
@@ -144,7 +144,7 @@ func (a *API) putUISettings(w http.ResponseWriter, r *http.Request) {
 				settingArtworkCache, strconv.Itoa(*in.ArtworkCacheGB), now, string(by), now, string(by))
 			return err
 		}); err != nil {
-			internal(w, err)
+			webserver.Internal(w, "api", err)
 			return
 		}
 		a.applyArtworkCap(r.Context())
@@ -163,12 +163,12 @@ func (a *API) putUISettings(w http.ResponseWriter, r *http.Request) {
 			return err
 		})
 		if err != nil {
-			internal(w, err)
+			webserver.Internal(w, "api", err)
 			return
 		}
 	}
 	if in.CountInstall != nil {
 		a.ApplyCountryCount(r.Context())
 	}
-	writeJSON(w, http.StatusOK, a.uiSettings(r.Context()))
+	webserver.WriteJSON(w, http.StatusOK, a.uiSettings(r.Context()))
 }

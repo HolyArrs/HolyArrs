@@ -95,7 +95,7 @@ func (a *API) liveInterest(w http.ResponseWriter, r *http.Request) {
 		View string `json:"view"`
 	}
 	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<10)).Decode(&in); err != nil || in.View != "downloads" {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": `view must be "downloads"`})
+		webserver.WriteJSON(w, http.StatusBadRequest, map[string]string{"error": `view must be "downloads"`})
 		return
 	}
 	key := "anon"
@@ -122,5 +122,5 @@ func (a *API) liveInterest(w http.ResponseWriter, r *http.Request) {
 	if a.s.DLSync != nil {
 		a.s.DLSync.Watched()
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"ttl_seconds": 60})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"ttl_seconds": 60})
 }

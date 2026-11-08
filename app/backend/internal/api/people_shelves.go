@@ -11,6 +11,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	engine "github.com/HolyArrs/holyarrs/app/backend/internal/discover/rows"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
@@ -284,7 +285,7 @@ func (a *API) peopleShelves(w http.ResponseWriter, r *http.Request) {
 	for _, id := range []string{"library", "hot"} {
 		s, err := a.peopleShelf(r.Context(), id, a.kidMax(r), p)
 		if err != nil {
-			internal(w, err)
+			webserver.Internal(w, "api", err)
 			return
 		}
 		if len(s.People) < peopleShelfMin {
@@ -296,7 +297,7 @@ func (a *API) peopleShelves(w http.ResponseWriter, r *http.Request) {
 		}
 		out = append(out, map[string]any{"id": s.ID, "title": s.Title, "count": len(s.People), "departments": depts})
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"shelves": out, "attribution": metadata.Attribution})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"shelves": out, "attribution": metadata.Attribution})
 }
 
 // peopleShelfOne answers GET /api/v1/people/shelves/{id}: one section's
@@ -304,7 +305,7 @@ func (a *API) peopleShelves(w http.ResponseWriter, r *http.Request) {
 func (a *API) peopleShelfOne(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	if peopleShelfTitles[id] == "" {
-		fail(w, http.StatusNotFound, "no such people section")
+		webserver.Fail(w, http.StatusNotFound, "no such people section")
 		return
 	}
 	p, ok := a.peopleProvider(r, w)
@@ -313,8 +314,8 @@ func (a *API) peopleShelfOne(w http.ResponseWriter, r *http.Request) {
 	}
 	s, err := a.peopleShelf(r.Context(), id, a.kidMax(r), p)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"id": s.ID, "title": s.Title, "people": s.People, "attribution": metadata.Attribution})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"id": s.ID, "title": s.Title, "people": s.People, "attribution": metadata.Attribution})
 }

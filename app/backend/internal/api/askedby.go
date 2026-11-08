@@ -48,13 +48,13 @@ func (a *API) getAskedBy(w http.ResponseWriter, r *http.Request) {
 	for _, s := range raw {
 		n, err := strconv.ParseInt(strings.TrimSpace(s), 10, 64)
 		if err != nil || n <= 0 {
-			fail(w, http.StatusBadRequest, "title_id must be a positive number")
+			webserver.Fail(w, http.StatusBadRequest, "title_id must be a positive number")
 			return
 		}
 		ids = append(ids, n)
 	}
 	if len(ids) > 200 {
-		fail(w, http.StatusBadRequest, "at most 200 title ids")
+		webserver.Fail(w, http.StatusBadRequest, "at most 200 title ids")
 		return
 	}
 	me := viewer(ctx)
@@ -62,7 +62,7 @@ func (a *API) getAskedBy(w http.ResponseWriter, r *http.Request) {
 	if max := a.kidMax(r); max != "" && len(ids) > 0 {
 		ok, err := a.allowedTitleIDs(ctx, max, ids)
 		if err != nil {
-			internal(w, err)
+			webserver.Internal(w, "api", err)
 			return
 		}
 		kept := ids[:0]
@@ -82,7 +82,7 @@ func (a *API) getAskedBy(w http.ResponseWriter, r *http.Request) {
 			JOIN ask_people p ON p.ask_id = a.id JOIN users u ON u.id = p.user_id
 			WHERE a.title_id IN (?`+strings.Repeat(", ?", len(ids)-1)+`) GROUP BY a.title_id, p.user_id ORDER BY min(p.asked_at), p.user_id`, args...)
 		if err != nil {
-			internal(w, err)
+			webserver.Internal(w, "api", err)
 			return
 		}
 		defer rows.Close()
@@ -90,7 +90,7 @@ func (a *API) getAskedBy(w http.ResponseWriter, r *http.Request) {
 			var tid, uid int64
 			var name, at string
 			if err := rows.Scan(&tid, &uid, &name, &at); err != nil {
-				internal(w, err)
+				webserver.Internal(w, "api", err)
 				return
 			}
 			// Older rows were written in RFC 3339 rather than the store's layout.
@@ -104,9 +104,9 @@ func (a *API) getAskedBy(w http.ResponseWriter, r *http.Request) {
 			out[k] = e
 		}
 		if err := rows.Err(); err != nil {
-			internal(w, err)
+			webserver.Internal(w, "api", err)
 			return
 		}
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"titles": out})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"titles": out})
 }

@@ -66,10 +66,10 @@ func (a *API) watchlistView(r *http.Request) (watchlistView, error) {
 func (a *API) getMyWatchlist(w http.ResponseWriter, r *http.Request) {
 	v, err := a.watchlistView(r)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
-	writeJSON(w, http.StatusOK, v)
+	webserver.WriteJSON(w, http.StatusOK, v)
 }
 
 func (a *API) putMyWatchlist(w http.ResponseWriter, r *http.Request) {
@@ -78,27 +78,27 @@ func (a *API) putMyWatchlist(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !mayAsk(r) {
-		fail(w, http.StatusForbidden, "your account may not ask for titles")
+		webserver.Fail(w, http.StatusForbidden, "your account may not ask for titles")
 		return
 	}
 	if body.Movies || body.Shows {
 		v, err := a.watchlistView(r)
 		if err != nil {
-			internal(w, err)
+			webserver.Internal(w, "api", err)
 			return
 		}
 		if !v.On {
-			fail(w, http.StatusConflict, "the owner has not turned on Plex watchlists in Request rules")
+			webserver.Fail(w, http.StatusConflict, "the owner has not turned on Plex watchlists in Request rules")
 			return
 		}
 		if !v.CanRead {
-			fail(w, http.StatusConflict, "link your Plex account first")
+			webserver.Fail(w, http.StatusConflict, "link your Plex account first")
 			return
 		}
 	}
 	uid := a.person(r).UserID
 	if err := requests.SaveWatchlistSwitches(r.Context(), a.s.Store, uid, body); err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	if body.Movies || body.Shows {
@@ -112,19 +112,19 @@ func (a *API) putMyWatchlist(w http.ResponseWriter, r *http.Request) {
 func (a *API) checkMyWatchlist(w http.ResponseWriter, r *http.Request) {
 	v, err := a.watchlistView(r)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	if !v.On || !v.CanRead || !v.MayAsk || !v.Movies && !v.Shows {
-		fail(w, http.StatusConflict, "turn on your Plex watchlist first")
+		webserver.Fail(w, http.StatusConflict, "turn on your Plex watchlist first")
 		return
 	}
 	id, ok := a.queueWatchlist(r, a.person(r).UserID)
 	if !ok {
-		fail(w, http.StatusServiceUnavailable, "could not start the check; try again")
+		webserver.Fail(w, http.StatusServiceUnavailable, "could not start the check; try again")
 		return
 	}
-	writeJSON(w, http.StatusAccepted, map[string]any{"job_id": id})
+	webserver.WriteJSON(w, http.StatusAccepted, map[string]any{"job_id": id})
 }
 
 func (a *API) queueWatchlist(r *http.Request, uid int64) (int64, bool) {

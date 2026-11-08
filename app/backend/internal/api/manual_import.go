@@ -39,14 +39,14 @@ func (a *API) scanByHand(w http.ResponseWriter, r *http.Request) {
 	out, err := a.byHandImporter().ScanByHand(r.Context(), body.Path)
 	var outside *importer.PlaceError
 	if errors.As(err, &outside) || errors.Is(err, importer.ErrByHandPath) {
-		fail(w, http.StatusBadRequest, err.Error())
+		webserver.Fail(w, http.StatusBadRequest, err.Error())
 		return
 	}
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
-	writeJSON(w, http.StatusOK, out)
+	webserver.WriteJSON(w, http.StatusOK, out)
 }
 
 func (a *API) importByHand(w http.ResponseWriter, r *http.Request) {
@@ -58,12 +58,12 @@ func (a *API) importByHand(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if len(body.Items) == 0 || len(body.Items) > 500 {
-		fail(w, http.StatusBadRequest, "send 1 to 500 files to import")
+		webserver.Fail(w, http.StatusBadRequest, "send 1 to 500 files to import")
 		return
 	}
 	res, err := a.byHandImporter().ImportByHand(r.Context(), body.Items, actor(r))
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	placed := 0
@@ -72,7 +72,7 @@ func (a *API) importByHand(w http.ResponseWriter, r *http.Request) {
 			placed++
 		}
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"results": res, "placed": placed})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"results": res, "placed": placed})
 }
 
 // getImportFolders answers the places files may be imported by hand from:
@@ -80,10 +80,10 @@ func (a *API) importByHand(w http.ResponseWriter, r *http.Request) {
 func (a *API) getImportFolders(w http.ResponseWriter, r *http.Request) {
 	ps, err := a.byHandImporter().ByHandPlaces(r.Context())
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
-	writeJSON(w, http.StatusOK, ps)
+	webserver.WriteJSON(w, http.StatusOK, ps)
 }
 
 // putImportFolders saves the extra import folders: the owner or an admin,
@@ -101,10 +101,10 @@ func (a *API) putImportFolders(w http.ResponseWriter, r *http.Request) {
 	}
 	if _, err := importer.SaveImportFolders(r.Context(), a.s.Store, body.Extra, actor(r)); err != nil {
 		if errors.Is(err, importer.ErrImportFolder) {
-			fail(w, http.StatusBadRequest, err.Error())
+			webserver.Fail(w, http.StatusBadRequest, err.Error())
 			return
 		}
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	a.getImportFolders(w, r)

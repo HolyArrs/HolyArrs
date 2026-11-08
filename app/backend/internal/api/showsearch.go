@@ -12,6 +12,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
 )
@@ -38,18 +39,18 @@ func (a *API) searchShow(w http.ResponseWriter, r *http.Request, t mediafiles.Ti
 	db := a.s.Store.Read()
 	listOnly := in.Choose != nil && !*in.Choose
 	if listOnly && in.SlotID == nil && in.ItemID == nil && in.Season == nil {
-		fail(w, http.StatusBadRequest, "say which episode (slot_id or item_id) or season to list Releases for")
+		webserver.Fail(w, http.StatusBadRequest, "say which episode (slot_id or item_id) or season to list Releases for")
 		return
 	}
 	vs, err := database.Select[mediafiles.Version](ctx, db, "versions", "title_id = ? ORDER BY is_main DESC, id", t.ID)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	if in.VersionID != nil {
 		vs = slices.DeleteFunc(vs, func(v mediafiles.Version) bool { return v.ID != *in.VersionID })
 		if len(vs) == 0 {
-			fail(w, http.StatusNotFound, "no such Version on this show")
+			webserver.Fail(w, http.StatusNotFound, "no such Version on this show")
 			return
 		}
 	}
@@ -91,21 +92,21 @@ func (a *API) searchShow(w http.ResponseWriter, r *http.Request, t mediafiles.Ti
 	case in.SlotID != nil:
 		var sl mediafiles.Slot
 		if err := database.Get(ctx, db, "slots", *in.SlotID, &sl); err != nil || !a.slotOfTitle(ctx, sl.ItemID, t.ID) || !verOK(sl.VersionID) {
-			fail(w, http.StatusNotFound, "no such Slot on this show")
+			webserver.Fail(w, http.StatusNotFound, "no such Slot on this show")
 			return
 		}
 		if err := episode(sl.ID); err != nil {
-			internal(w, err)
+			webserver.Internal(w, "api", err)
 			return
 		}
 	case in.ItemID != nil:
 		if !a.slotOfTitle(ctx, *in.ItemID, t.ID) {
-			fail(w, http.StatusNotFound, "no such episode on this show")
+			webserver.Fail(w, http.StatusNotFound, "no such episode on this show")
 			return
 		}
 		slots, err := database.Select[mediafiles.Slot](ctx, db, "slots", "item_id = ? ORDER BY id", *in.ItemID)
 		if err != nil {
-			internal(w, err)
+			webserver.Internal(w, "api", err)
 			return
 		}
 		for _, sl := range slots {
@@ -113,19 +114,19 @@ func (a *API) searchShow(w http.ResponseWriter, r *http.Request, t mediafiles.Ti
 				continue
 			}
 			if err := episode(sl.ID); err != nil {
-				internal(w, err)
+				webserver.Internal(w, "api", err)
 				return
 			}
 		}
 	case in.Season != nil:
 		var partID int64
 		if err := db.QueryRowContext(ctx, "SELECT id FROM parts WHERE title_id = ? AND kind = 'season' AND number = ?", t.ID, *in.Season).Scan(&partID); err != nil {
-			fail(w, http.StatusNotFound, "no such season")
+			webserver.Fail(w, http.StatusNotFound, "no such season")
 			return
 		}
 		for _, v := range vs {
 			if err := season(partID, v.ID, false); err != nil {
-				internal(w, err)
+				webserver.Internal(w, "api", err)
 				return
 			}
 		}
@@ -134,7 +135,7 @@ func (a *API) searchShow(w http.ResponseWriter, r *http.Request, t mediafiles.Ti
 		// that is looking for a copy, in a show and Version kept up to date.
 		list, err := shows.ShowSeasonsToSearch(ctx, db, t.ID)
 		if err != nil {
-			internal(w, err)
+			webserver.Internal(w, "api", err)
 			return
 		}
 		for _, x := range list {
@@ -142,12 +143,12 @@ func (a *API) searchShow(w http.ResponseWriter, r *http.Request, t mediafiles.Ti
 				continue
 			}
 			if err := season(x.PartID, x.VersionID, true); err != nil {
-				internal(w, err)
+				webserver.Internal(w, "api", err)
 				return
 			}
 		}
 	}
-	writeJSON(w, http.StatusAccepted, map[string]any{"job_ids": ids})
+	webserver.WriteJSON(w, http.StatusAccepted, map[string]any{"job_ids": ids})
 }
 
 func (a *API) slotOfTitle(ctx context.Context, itemID, titleID int64) bool {

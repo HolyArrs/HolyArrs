@@ -69,7 +69,7 @@ func (a *API) partGate(m *http.ServeMux, next http.Handler) http.Handler {
 			}
 		}
 		if !a.s.Parts.OwnerOn(o) {
-			writeJSON(w, http.StatusConflict, partOffBody(o))
+			webserver.WriteJSON(w, http.StatusConflict, partOffBody(o))
 			return
 		}
 		next.ServeHTTP(w, r)
@@ -121,7 +121,7 @@ func (a *API) listParts(w http.ResponseWriter, r *http.Request) {
 		}
 		stages = a.s.Parts.Stages()
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"parts": out, "screens": parts.Screens(), "safe_mode": a.s.SafeMode, "safe_screens": safeScreens, "stages": stages})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"parts": out, "screens": parts.Screens(), "safe_mode": a.s.SafeMode, "safe_screens": safeScreens, "stages": stages})
 }
 
 // confirms holds the confirmation ids of the two-step controls.
@@ -155,7 +155,7 @@ func (a *API) confirmed(w http.ResponseWriter, r *http.Request, what string) boo
 	}
 	raw, err := io.ReadAll(http.MaxBytesReader(w, r.Body, 4<<10))
 	if err != nil || (len(strings.TrimSpace(string(raw))) > 0 && json.Unmarshal(raw, &body) != nil) {
-		fail(w, http.StatusBadRequest, `send {} to ask, then {"confirm": "<id>"} within 60 seconds`)
+		webserver.Fail(w, http.StatusBadRequest, `send {} to ask, then {"confirm": "<id>"} within 60 seconds`)
 		return false
 	}
 	key := r.Method + " " + r.URL.Path
@@ -191,13 +191,13 @@ func (a *API) confirmed(w http.ResponseWriter, r *http.Request, what string) boo
 		_, _ = rand.Read(b)
 		id := hex.EncodeToString(b)
 		a.confirm.ids[id] = confirmFor{what: key, user: user, expires: now.Add(ConfirmFor)}
-		writeJSON(w, http.StatusAccepted, map[string]any{"confirm": id, "expires_in_s": int(ConfirmFor.Seconds()),
+		webserver.WriteJSON(w, http.StatusAccepted, map[string]any{"confirm": id, "expires_in_s": int(ConfirmFor.Seconds()),
 			"text": "To " + what + ", send the same request again within 60 seconds with {\"confirm\": \"" + id + "\"}."})
 		return false
 	}
 	c, ok := a.confirm.ids[body.Confirm]
 	if !ok || c.what != key || c.user != user {
-		fail(w, http.StatusConflict, "that confirmation id is unknown, used, expired or for another control; ask again")
+		webserver.Fail(w, http.StatusConflict, "that confirmation id is unknown, used, expired or for another control; ask again")
 		return false
 	}
 	delete(a.confirm.ids, body.Confirm)
@@ -224,12 +224,12 @@ func (a *API) controlEvent(r *http.Request, action, target, summary string) {
 
 func (a *API) partFrom(w http.ResponseWriter, r *http.Request) (parts.Part, bool) {
 	if a.s.Parts == nil {
-		fail(w, http.StatusServiceUnavailable, "part switches are not available here")
+		webserver.Fail(w, http.StatusServiceUnavailable, "part switches are not available here")
 		return "", false
 	}
 	p := parts.Part(r.PathValue("part"))
 	if !parts.Valid(p) {
-		fail(w, http.StatusNotFound, parts.ErrNoPart.Error())
+		webserver.Fail(w, http.StatusNotFound, parts.ErrNoPart.Error())
 		return "", false
 	}
 	return p, true
@@ -241,11 +241,11 @@ func controlError(w http.ResponseWriter, err error) {
 	var oe parts.OffError
 	switch {
 	case errors.As(err, &ne), errors.As(err, &oe), errors.Is(err, parts.ErrSafeMode), errors.Is(err, parts.ErrBusy):
-		fail(w, http.StatusConflict, err.Error())
+		webserver.Fail(w, http.StatusConflict, err.Error())
 	case errors.Is(err, parts.ErrNoStage), errors.Is(err, parts.ErrNoPart):
-		fail(w, http.StatusNotFound, err.Error())
+		webserver.Fail(w, http.StatusNotFound, err.Error())
 	default:
-		fail(w, http.StatusConflict, err.Error())
+		webserver.Fail(w, http.StatusConflict, err.Error())
 	}
 }
 
@@ -299,7 +299,7 @@ func (a *API) partRestart(w http.ResponseWriter, r *http.Request) {
 	if left > 0 {
 		text += " Some Jobs were still running after the wait; they carry on and finish, nothing was cut off."
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"text": text, "still_running": left})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"text": text, "still_running": left})
 }
 
 func (a *API) stageControl(action string) http.HandlerFunc {
@@ -308,7 +308,7 @@ func (a *API) stageControl(action string) http.HandlerFunc {
 			return
 		}
 		if a.s.Parts == nil {
-			fail(w, http.StatusServiceUnavailable, "stage controls are not available here")
+			webserver.Fail(w, http.StatusServiceUnavailable, "stage controls are not available here")
 			return
 		}
 		name := r.PathValue("name")
@@ -333,7 +333,7 @@ func (a *API) stageControl(action string) http.HandlerFunc {
 				out["state"] = st
 			}
 		}
-		writeJSON(w, http.StatusOK, out)
+		webserver.WriteJSON(w, http.StatusOK, out)
 	}
 }
 
@@ -347,7 +347,7 @@ func (a *API) linkRestart(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if who, ok := webserver.From(r.Context()); ok && !who.Has(webserver.PermSettings) {
-		fail(w, http.StatusForbidden, "your account may not do this; ask the owner")
+		webserver.Fail(w, http.StatusForbidden, "your account may not do this; ask the owner")
 		return
 	}
 	kind := r.PathValue("kind")
@@ -359,14 +359,14 @@ func (a *API) linkRestart(w http.ResponseWriter, r *http.Request) {
 		test = a.sourceHandlers().TestSource
 	case "media_server":
 		if a.s.Media == nil {
-			fail(w, http.StatusServiceUnavailable, "media servers are not available here")
+			webserver.Fail(w, http.StatusServiceUnavailable, "media servers are not available here")
 			return
 		}
 		test = a.media.Test
 	case "subtitle_site":
 		test = subtitles.NewHandlers(a.s.Store, a.s.Secrets, a.s.Subtitles).ServeSiteTest
 	default:
-		fail(w, http.StatusNotFound, "kind is downloader, source, media_server or subtitle_site")
+		webserver.Fail(w, http.StatusNotFound, "kind is downloader, source, media_server or subtitle_site")
 		return
 	}
 	sw := &statusWriter{ResponseWriter: w}
@@ -409,7 +409,7 @@ func (a *API) appExit(how string) http.HandlerFunc {
 			return
 		}
 		if a.s.ExitApp == nil {
-			fail(w, http.StatusServiceUnavailable, "this server cannot restart itself")
+			webserver.Fail(w, http.StatusServiceUnavailable, "this server cannot restart itself")
 			return
 		}
 		if !a.confirmed(w, r, what) {
@@ -423,11 +423,11 @@ func (a *API) appExit(how string) http.HandlerFunc {
 		// ExitApp arranges the exit (and the safe-mode mark) and stops
 		// the process shortly after, so the answer still reaches the page.
 		if err := a.s.ExitApp(how); err != nil {
-			fail(w, http.StatusInternalServerError, "could not arrange safe mode; nothing was restarted (the log says why)")
+			webserver.Fail(w, http.StatusInternalServerError, "could not arrange safe mode; nothing was restarted (the log says why)")
 			return
 		}
 		a.controlEvent(r, "app_"+how, "app", map[string]string{"restart": "restarted HolyArrs", "safe_mode": "restarted HolyArrs in safe mode", "shutdown": "shut HolyArrs down"}[how])
-		writeJSON(w, http.StatusAccepted, map[string]any{"text": text})
+		webserver.WriteJSON(w, http.StatusAccepted, map[string]any{"text": text})
 		if f, ok := w.(http.Flusher); ok {
 			f.Flush()
 		}

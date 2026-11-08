@@ -15,6 +15,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 )
@@ -595,19 +596,19 @@ func musicNewTopics(rows []MusicRow, hero []MusicCard) []string {
 // again shortly); kid is true for an account with an age limit.
 func (a *API) exploreNewMusic(w http.ResponseWriter, r *http.Request) {
 	if p, _ := parts.ForTitleKind("artist"); !a.partIsOn(p) {
-		fail(w, http.StatusNotFound, "music is turned off")
+		webserver.Fail(w, http.StatusNotFound, "music is turned off")
 		return
 	}
 	empty := map[string]any{"kid": false, "building": false, "hero": []MusicCard{}, "rows": []MusicRow{}, "genres": []string{}}
 	// Music has no ratings, so a Kid limit shows none of it (as on Explore → Music).
 	if a.kidMax(r) != "" {
 		empty["kid"] = true
-		writeJSON(w, http.StatusOK, empty)
+		webserver.WriteJSON(w, http.StatusOK, empty)
 		return
 	}
 	if !a.discover.allow(a.person(r).UserID, time.Now()) {
 		w.Header().Set("Retry-After", "60")
-		fail(w, http.StatusTooManyRequests, "too many Explore requests; try again in a minute")
+		webserver.Fail(w, http.StatusTooManyRequests, "too many Explore requests; try again in a minute")
 		return
 	}
 	ctx := r.Context()
@@ -626,14 +627,14 @@ func (a *API) exploreNewMusic(w http.ResponseWriter, r *http.Request) {
 	if d == nil {
 		empty["building"] = true
 		a.exploreCaching(w, r, "private, no-cache")
-		writeJSON(w, http.StatusOK, empty)
+		webserver.WriteJSON(w, http.StatusOK, empty)
 		return
 	}
 	db := a.s.Store.Read()
 	in := musicNewInput{data: d, owned: map[string]int64{}, images: map[string]string{}, follows: map[string]bool{}}
 	titles, err := database.Select[mediafiles.Title](ctx, db, "titles", "kind = 'artist' AND state != 'removed' ORDER BY id")
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	byTitle := map[int64]mediafiles.Title{}
@@ -649,7 +650,7 @@ func (a *API) exploreNewMusic(w http.ResponseWriter, r *http.Request) {
 		AND title_id IN (SELECT id FROM titles WHERE kind = 'artist' AND state != 'removed') ORDER BY release_date DESC, id`,
 		now.AddDate(0, 0, -musicNewLibrary).Format("2006-01-02"), now.AddDate(0, 0, musicNewAhead).Format("2006-01-02T15:04:05Z"))
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	for _, p := range ps {
@@ -741,16 +742,16 @@ func (a *API) landAlbumFollows(ctx context.Context, now time.Time) {
 func (a *API) albumFollowState(w http.ResponseWriter, r *http.Request, mbid string) {
 	var n int
 	if err := a.s.Store.Read().QueryRowContext(r.Context(), "SELECT count(*) FROM album_follows WHERE user_id = ? AND mbid = ?", a.person(r).UserID, mbid).Scan(&n); err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"mbid": mbid, "following": n > 0})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"mbid": mbid, "following": n > 0})
 }
 
 func albumMBID(w http.ResponseWriter, r *http.Request) (string, bool) {
 	id := strings.ToLower(r.PathValue("mbid"))
 	if !metadata.ValidMBID(id) {
-		fail(w, http.StatusBadRequest, "mbid must be a MusicBrainz release group id")
+		webserver.Fail(w, http.StatusBadRequest, "mbid must be a MusicBrainz release group id")
 		return "", false
 	}
 	return id, true
@@ -768,7 +769,7 @@ func (a *API) putAlbumFollow(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if a.kidMax(r) != "" {
-		fail(w, http.StatusForbidden, "music is not shown on this account")
+		webserver.Fail(w, http.StatusForbidden, "music is not shown on this account")
 		return
 	}
 	var body struct {
@@ -777,17 +778,17 @@ func (a *API) putAlbumFollow(w http.ResponseWriter, r *http.Request) {
 		ReleaseDate string `json:"release_date"`
 	}
 	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 4096)).Decode(&body); err != nil {
-		fail(w, http.StatusBadRequest, `send {"name": "...", "artist": "...", "release_date": "YYYY-MM-DD"}`)
+		webserver.Fail(w, http.StatusBadRequest, `send {"name": "...", "artist": "...", "release_date": "YYYY-MM-DD"}`)
 		return
 	}
 	body.Name, body.Artist = strings.TrimSpace(body.Name), strings.TrimSpace(body.Artist)
 	days, okDate := daysFrom(body.ReleaseDate, time.Now().UTC())
 	if body.Name == "" || body.Artist == "" || len(body.Name) > 300 || len(body.Artist) > 300 || !okDate {
-		fail(w, http.StatusBadRequest, "name, artist and release_date (YYYY-MM-DD) are needed")
+		webserver.Fail(w, http.StatusBadRequest, "name, artist and release_date (YYYY-MM-DD) are needed")
 		return
 	}
 	if days >= 0 {
-		fail(w, http.StatusConflict, "that album is out already")
+		webserver.Fail(w, http.StatusConflict, "that album is out already")
 		return
 	}
 	if err := a.s.Store.Write(r.Context(), func(tx *sql.Tx) error {
@@ -795,7 +796,7 @@ func (a *API) putAlbumFollow(w http.ResponseWriter, r *http.Request) {
 			ON CONFLICT DO NOTHING`, a.person(r).UserID, id, body.Name, body.Artist, body.ReleaseDate, database.FormatTime(time.Now()))
 		return err
 	}); err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	a.albumFollowState(w, r, id)
@@ -810,7 +811,7 @@ func (a *API) deleteAlbumFollow(w http.ResponseWriter, r *http.Request) {
 		_, err := tx.Exec("DELETE FROM album_follows WHERE user_id = ? AND mbid = ?", a.person(r).UserID, id)
 		return err
 	}); err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	a.albumFollowState(w, r, id)

@@ -12,6 +12,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/music/rowtpl"
 	musicscore "github.com/HolyArrs/holyarrs/app/backend/internal/music/score"
@@ -334,12 +335,12 @@ func (a *API) exploreMusicV2(w http.ResponseWriter, r *http.Request) {
 	}
 	lib, err := a.musicLibrary(ctx, now)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	acts, err := a.musicActsOf(ctx, member)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	key := musicscore.DayKey{Member: member, Date: musicscore.Day(now), View: region}
@@ -434,7 +435,7 @@ func (a *API) exploreMusicV2(w http.ResponseWriter, r *http.Request) {
 		a.rememberMusicCards(out, alts...)
 	}
 	a.exploreCaching(w, r, "private, no-cache")
-	writeJSON(w, http.StatusOK, map[string]any{"v2": true, "kid": false, "cold": ord.Cold, "genres": []string{}, "genre": "", "region": region, "regions": regions, "hero": hero, "hero_alts": alts, "rows": out})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"v2": true, "kid": false, "cold": ord.Cold, "genres": []string{}, "genre": "", "region": region, "regions": regions, "hero": hero, "hero_alts": alts, "rows": out})
 }
 
 func dayOfText(s string) string {

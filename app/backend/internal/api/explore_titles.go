@@ -10,6 +10,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	engine "github.com/HolyArrs/holyarrs/app/backend/internal/discover/rows"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/features"
 )
@@ -117,7 +118,7 @@ func (a *API) exploreTitleStats(w http.ResponseWriter, r *http.Request) {
 	from := engine.Day(a.exploreNow().AddDate(0, 0, -30))
 	got, err := accounts.LayerTotals(r.Context(), a.s.Store.Read(), from)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	type stat struct {
@@ -130,5 +131,5 @@ func (a *API) exploreTitleStats(w http.ResponseWriter, r *http.Request) {
 	for _, t := range got {
 		out = append(out, stat{Layer: t.Layer, Shown: t.Shown, Opens: t.Opens, Asks: t.Asks})
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"days": 30, "templates": len(engine.Templates), "layers": out})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"days": 30, "templates": len(engine.Templates), "layers": out})
 }

@@ -45,10 +45,10 @@ func listView(l domain.OutsideList) ListView {
 func listError(w http.ResponseWriter, err error) {
 	switch {
 	case errors.Is(err, requests.ErrNameTaken), errors.Is(err, library.ErrNoShowFolder):
-		fail(w, http.StatusConflict, err.Error())
+		webserver.Fail(w, http.StatusConflict, err.Error())
 	case errors.Is(err, requests.ErrName), errors.Is(err, requests.ErrKind), errors.Is(err, requests.ErrRef), errors.Is(err, requests.ErrEvery),
 		errors.Is(err, requests.ErrTitleKind), errors.Is(err, requests.ErrSeasons), errors.Is(err, requests.ErrRulesKind):
-		fail(w, http.StatusBadRequest, err.Error())
+		webserver.Fail(w, http.StatusBadRequest, err.Error())
 	default:
 		libraryError(w, err)
 	}
@@ -63,14 +63,14 @@ func (a *API) syncList(r *http.Request, id int64) (int64, error) {
 func (a *API) listOutsideLists(w http.ResponseWriter, r *http.Request) {
 	ls, err := requests.AllOutsideLists(r.Context(), a.s.Store.Read())
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	out := []ListView{}
 	for _, l := range ls {
 		out = append(out, listView(l))
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"outside_lists": out})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"outside_lists": out})
 }
 
 const listHelp = `send {"name": "...", "kind": "tmdb_list" or "trakt_list", "ref": "<TMDB list number, Trakt user/list or a link>"} with optional title_kind ("movie" or "show"), library_folder_id, pick_rules_id, keep_up_to_date, search_on_add, release_gate (movies), seasons and new_seasons (shows), enabled, sync_every_hours`
@@ -88,11 +88,11 @@ func (a *API) addOutsideList(w http.ResponseWriter, r *http.Request) {
 	v := listView(l)
 	if l.Enabled {
 		if v.JobID, err = a.syncList(r, l.ID); err != nil {
-			internal(w, err)
+			webserver.Internal(w, "api", err)
 			return
 		}
 	}
-	writeJSON(w, http.StatusCreated, v)
+	webserver.WriteJSON(w, http.StatusCreated, v)
 }
 
 func (a *API) editOutsideList(w http.ResponseWriter, r *http.Request) {
@@ -112,11 +112,11 @@ func (a *API) editOutsideList(w http.ResponseWriter, r *http.Request) {
 	v := listView(l)
 	if l.Enabled {
 		if v.JobID, err = a.syncList(r, l.ID); err != nil {
-			internal(w, err)
+			webserver.Internal(w, "api", err)
 			return
 		}
 	}
-	writeJSON(w, http.StatusOK, v)
+	webserver.WriteJSON(w, http.StatusOK, v)
 }
 
 func (a *API) deleteOutsideList(w http.ResponseWriter, r *http.Request) {
@@ -142,10 +142,10 @@ func (a *API) syncOutsideList(w http.ResponseWriter, r *http.Request) {
 	}
 	jid, err := a.syncList(r, id)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
-	writeJSON(w, http.StatusAccepted, map[string]any{"job_id": jid})
+	webserver.WriteJSON(w, http.StatusAccepted, map[string]any{"job_id": jid})
 }
 
 // The Trakt app key (client id) is kept encrypted like the TMDB token.
@@ -154,10 +154,10 @@ const traktKeyGroup, traktKeyName = "links", "trakt_client_id"
 func (a *API) getTraktKey(w http.ResponseWriter, r *http.Request) {
 	k, err := a.s.Secrets.Setting(r.Context(), traktKeyGroup, traktKeyName)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]string{"key": secrets.Mask(k)})
+	webserver.WriteJSON(w, http.StatusOK, map[string]string{"key": secrets.Mask(k)})
 }
 
 func (a *API) putTraktKey(w http.ResponseWriter, r *http.Request) {
@@ -168,12 +168,12 @@ func (a *API) putTraktKey(w http.ResponseWriter, r *http.Request) {
 		Key string `json:"key"`
 	}
 	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 8<<10)).Decode(&body); err != nil || body.Key == "" {
-		fail(w, http.StatusBadRequest, `send {"key": "<Trakt app client id>"}`)
+		webserver.Fail(w, http.StatusBadRequest, `send {"key": "<Trakt app client id>"}`)
 		return
 	}
 	if err := a.s.Secrets.SetSetting(r.Context(), traktKeyGroup, traktKeyName, body.Key, actor(r)); err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]string{"key": secrets.Masked})
+	webserver.WriteJSON(w, http.StatusOK, map[string]string{"key": secrets.Masked})
 }

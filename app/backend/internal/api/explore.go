@@ -5,13 +5,14 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
-	engine "github.com/HolyArrs/holyarrs/app/backend/internal/discover/rows"
 	"log"
 	"net/url"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
+
+	engine "github.com/HolyArrs/holyarrs/app/backend/internal/discover/rows"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"

@@ -67,7 +67,7 @@ func TestDownloadRowPathHiddenFromMember(t *testing.T) {
 // Every answer carries an opener policy, so a page an outside site opened
 // cannot be watched or redirected through window.opener handles.
 func TestSecureSetsOpenerPolicy(t *testing.T) {
-	h := secure(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {}))
+	h := webserver.SecureHeaders(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {}))
 	w := httptest.NewRecorder()
 	h.ServeHTTP(w, httptest.NewRequest("GET", "/library/1", nil))
 	if got := w.Header().Get("Cross-Origin-Opener-Policy"); got != "same-origin-allow-popups" {

@@ -11,6 +11,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/music/rowtpl"
 	musicscore "github.com/HolyArrs/holyarrs/app/backend/internal/music/score"
@@ -493,16 +494,16 @@ func countryName(code string) string {
 // answer.
 func (a *API) musicBrowseGate(w http.ResponseWriter, r *http.Request, empty map[string]any) bool {
 	if p, _ := parts.ForTitleKind("artist"); !a.partIsOn(p) {
-		fail(w, http.StatusNotFound, "music is turned off")
+		webserver.Fail(w, http.StatusNotFound, "music is turned off")
 		return false
 	}
 	if a.kidMax(r) != "" {
-		writeJSON(w, http.StatusOK, empty)
+		webserver.WriteJSON(w, http.StatusOK, empty)
 		return false
 	}
 	if !a.discover.allow(a.person(r).UserID, time.Now()) {
 		w.Header().Set("Retry-After", "60")
-		fail(w, http.StatusTooManyRequests, "too many Explore requests; try again in a minute")
+		webserver.Fail(w, http.StatusTooManyRequests, "too many Explore requests; try again in a minute")
 		return false
 	}
 	return true
@@ -513,14 +514,14 @@ func (a *API) musicBrowseGate(w http.ResponseWriter, r *http.Request, empty map[
 func (a *API) musicBrowsePage(w http.ResponseWriter, r *http.Request) {
 	kind, slug := r.PathValue("kind"), r.PathValue("slug")
 	if !tplKinds[kind] || !tplKeyRe.MatchString(slug) {
-		fail(w, http.StatusBadRequest, "unknown page")
+		webserver.Fail(w, http.StatusBadRequest, "unknown page")
 		return
 	}
 	if !a.musicBrowseGate(w, r, map[string]any{"kid": true, "v2": true, "genres": []string{}, "genre": slug, "hero": nil, "rows": []MusicRow{}}) {
 		return
 	}
 	if !a.musicTplOn() {
-		fail(w, http.StatusNotFound, "music pages are off")
+		webserver.Fail(w, http.StatusNotFound, "music pages are off")
 		return
 	}
 	a.serveTplPage(w, r, kind, slug)
@@ -529,7 +530,7 @@ func (a *API) musicBrowsePage(w http.ResponseWriter, r *http.Request) {
 // serveTplPage writes one engine page (shared with the genre route).
 func (a *API) serveTplPage(w http.ResponseWriter, r *http.Request, kind, slug string) bool {
 	if a.kidMax(r) != "" {
-		writeJSON(w, http.StatusOK, map[string]any{"kid": true, "v2": true, "genres": []string{}, "genre": slug, "hero": nil, "rows": []MusicRow{}})
+		webserver.WriteJSON(w, http.StatusOK, map[string]any{"kid": true, "v2": true, "genres": []string{}, "genre": slug, "hero": nil, "rows": []MusicRow{}})
 		return true
 	}
 	ctx := r.Context()
@@ -541,12 +542,12 @@ func (a *API) serveTplPage(w http.ResponseWriter, r *http.Request, kind, slug st
 	}
 	lib, err := a.musicLibrary(ctx, now)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return true
 	}
 	acts, err := a.musicActsOf(ctx, member)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return true
 	}
 	hero, alts, rows, tile, ok := a.buildTplPage(ctx, member, kind, slug, region, lib, acts, now)
@@ -554,7 +555,7 @@ func (a *API) serveTplPage(w http.ResponseWriter, r *http.Request, kind, slug st
 		if kind == "genre" {
 			return false
 		}
-		fail(w, http.StatusNotFound, "no such page")
+		webserver.Fail(w, http.StatusNotFound, "no such page")
 		return true
 	}
 	for i := range rows {
@@ -599,14 +600,14 @@ func (a *API) musicBrowseTiles(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !a.musicTplOn() {
-		fail(w, http.StatusNotFound, "music pages are off")
+		webserver.Fail(w, http.StatusNotFound, "music pages are off")
 		return
 	}
 	ctx := r.Context()
 	now := time.Now().UTC()
 	b := a.musicBundle(ctx, now)
 	if b == nil {
-		fail(w, http.StatusServiceUnavailable, "music catalog not ready")
+		webserver.Fail(w, http.StatusServiceUnavailable, "music catalog not ready")
 		return
 	}
 	region := strings.ToLower(r.URL.Query().Get("region"))

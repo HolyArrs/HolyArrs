@@ -36,17 +36,17 @@ func mayManageReports(r *http.Request) bool {
 func reportError(w http.ResponseWriter, err error) {
 	switch {
 	case errors.Is(err, requests.ErrReportKind), errors.Is(err, requests.ErrReportPart), errors.Is(err, requests.ErrNoteLength):
-		fail(w, http.StatusBadRequest, err.Error())
+		webserver.Fail(w, http.StatusBadRequest, err.Error())
 	case errors.Is(err, requests.ErrNotInLibrary):
-		fail(w, http.StatusUnprocessableEntity, err.Error())
+		webserver.Fail(w, http.StatusUnprocessableEntity, err.Error())
 	case errors.Is(err, requests.ErrReportedAlready), errors.Is(err, requests.ErrReportFixed), errors.Is(err, requests.ErrReportOpen):
-		fail(w, http.StatusConflict, err.Error())
+		webserver.Fail(w, http.StatusConflict, err.Error())
 	case errors.Is(err, requests.ErrTooManyReports):
-		fail(w, http.StatusTooManyRequests, err.Error())
+		webserver.Fail(w, http.StatusTooManyRequests, err.Error())
 	case errors.Is(err, database.ErrNotFound):
-		fail(w, http.StatusNotFound, "no such report")
+		webserver.Fail(w, http.StatusNotFound, "no such report")
 	default:
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 	}
 }
 
@@ -68,14 +68,14 @@ func (a *API) listReports(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 	state := q.Get("state")
 	if state != "" && state != domain.ReportOpen && state != domain.ReportFixed {
-		fail(w, http.StatusBadRequest, "state must be open or fixed")
+		webserver.Fail(w, http.StatusBadRequest, "state must be open or fixed")
 		return
 	}
 	var titleID int64
 	if s := q.Get("title_id"); s != "" {
 		id, err := strconv.ParseInt(s, 10, 64)
 		if err != nil {
-			fail(w, http.StatusBadRequest, "title_id must be a number")
+			webserver.Fail(w, http.StatusBadRequest, "title_id must be a number")
 			return
 		}
 		titleID = id
@@ -83,7 +83,7 @@ func (a *API) listReports(w http.ResponseWriter, r *http.Request) {
 	all := mayManageReports(r) && q.Get("mine") != "1"
 	vs, err := a.s.Asks.ListReports(r.Context(), a.person(r), all, state, titleID, limit(r, 200))
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	// A title above the reader's Kid limit stays hidden, even their own
@@ -94,7 +94,7 @@ func (a *API) listReports(w http.ResponseWriter, r *http.Request) {
 		n, _ := requests.OpenReports(r.Context(), a.s.Store.Read())
 		out["open"] = n
 	}
-	writeJSON(w, http.StatusOK, out)
+	webserver.WriteJSON(w, http.StatusOK, out)
 }
 
 const reportHelp = `send {"title_id": <Library title id>, "kind": "picture|sound|subtitles|wont_play|other", "note": "..."}; "season", "item_id" (an episode or track), "album_id" and "version_id" narrow it`
@@ -109,14 +109,14 @@ func (a *API) makeReport(w http.ResponseWriter, r *http.Request) {
 	var t mediafiles.Title
 	if err := database.Get(r.Context(), a.s.Store.Read(), "titles", in.TitleID, &t); err != nil || !a.titleAllowed(r, t) {
 		if err != nil && !errors.Is(err, database.ErrNotFound) {
-			internal(w, err)
+			webserver.Internal(w, "api", err)
 			return
 		}
-		fail(w, http.StatusNotFound, "no such Title")
+		webserver.Fail(w, http.StatusNotFound, "no such Title")
 		return
 	}
 	if p, known := parts.ForTitleKind(t.Kind); known && !a.partIsOn(p) {
-		writeJSON(w, http.StatusConflict, partOffBody(parts.Of(p)))
+		webserver.WriteJSON(w, http.StatusConflict, partOffBody(parts.Of(p)))
 		return
 	}
 	v, err := a.s.Asks.Report(r.Context(), a.person(r), in)
@@ -124,13 +124,13 @@ func (a *API) makeReport(w http.ResponseWriter, r *http.Request) {
 		reportError(w, err)
 		return
 	}
-	writeJSON(w, http.StatusCreated, map[string]any{"report": a.reportLinks(r, []requests.ReportView{v})[0]})
+	webserver.WriteJSON(w, http.StatusCreated, map[string]any{"report": a.reportLinks(r, []requests.ReportView{v})[0]})
 }
 
 func reportID(w http.ResponseWriter, r *http.Request) (int64, bool) {
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
-		fail(w, http.StatusNotFound, "no such report")
+		webserver.Fail(w, http.StatusNotFound, "no such report")
 		return 0, false
 	}
 	return id, true
@@ -152,7 +152,7 @@ func (a *API) fixReport(w http.ResponseWriter, r *http.Request) {
 		reportError(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"report": a.reportLinks(r, []requests.ReportView{v})[0]})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"report": a.reportLinks(r, []requests.ReportView{v})[0]})
 }
 
 func (a *API) reopenReport(w http.ResponseWriter, r *http.Request) {
@@ -165,5 +165,5 @@ func (a *API) reopenReport(w http.ResponseWriter, r *http.Request) {
 		reportError(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"report": a.reportLinks(r, []requests.ReportView{v})[0]})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"report": a.reportLinks(r, []requests.ReportView{v})[0]})
 }

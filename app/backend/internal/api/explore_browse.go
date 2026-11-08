@@ -10,6 +10,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	engine "github.com/HolyArrs/holyarrs/app/backend/internal/discover/rows"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
@@ -429,7 +430,7 @@ func (a *API) searchBrowseSection(w http.ResponseWriter, r *http.Request) {
 		known = known || s.ID == id
 	}
 	if !known {
-		fail(w, http.StatusBadRequest, "section is not a Browse section")
+		webserver.Fail(w, http.StatusBadRequest, "section is not a Browse section")
 		return
 	}
 	if a.kidLimited(w, r) {
@@ -437,22 +438,22 @@ func (a *API) searchBrowseSection(w http.ResponseWriter, r *http.Request) {
 	}
 	pg, page, kid, err := a.browsePage(r.Context(), r, sw)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	tiles, err := a.browseSectionTiles(r.Context(), r, sw, kid, pg, page, id)
 	if errors.Is(err, errBrowseBuilding) {
 		// Still building: the page shows ghost tiles and asks again.
 		w.Header().Set("Cache-Control", "no-store")
-		writeJSON(w, http.StatusOK, map[string]any{"type": sw, "section": id, "tiles": []engine.CategoryTile{}, "building": true})
+		webserver.WriteJSON(w, http.StatusOK, map[string]any{"type": sw, "section": id, "tiles": []engine.CategoryTile{}, "building": true})
 		return
 	}
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	a.exploreCaching(w, r, "private, no-cache")
-	writeJSON(w, http.StatusOK, map[string]any{"type": sw, "section": id, "tiles": tiles})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"type": sw, "section": id, "tiles": tiles})
 }
 
 // searchBrowseCategory answers GET /api/v1/explore/browse/category?type=&id=:
@@ -461,13 +462,13 @@ func (a *API) searchBrowseCategory(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 	sw, ok := exploreSwitch(q.Get("type"))
 	if !ok {
-		fail(w, http.StatusBadRequest, "type must be all, movies or shows")
+		webserver.Fail(w, http.StatusBadRequest, "type must be all, movies or shows")
 		return
 	}
 	kid := a.kidMax(r) != ""
 	c, found := engine.CategoryByID(q.Get("id"))
 	if !found || (kid && !c.Kid) || len(c.Requests(sw, kid)) == 0 {
-		fail(w, http.StatusNotFound, "no such Browse category")
+		webserver.Fail(w, http.StatusNotFound, "no such Browse category")
 		return
 	}
 	if a.kidLimited(w, r) {
@@ -478,7 +479,7 @@ func (a *API) searchBrowseCategory(w http.ResponseWriter, r *http.Request) {
 		items, err = a.browseDropNever(r.Context(), items)
 	}
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	if len(items) > browseCategoryMax {
@@ -486,7 +487,7 @@ func (a *API) searchBrowseCategory(w http.ResponseWriter, r *http.Request) {
 	}
 	views, err := a.exploreViews(r.Context(), r, []engine.Row{{ID: "browse-" + c.ID, Type: "browse", Title: c.Name, Items: items}})
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	out := []discoverItemView{}
@@ -494,5 +495,5 @@ func (a *API) searchBrowseCategory(w http.ResponseWriter, r *http.Request) {
 		out = views[0].Items
 	}
 	a.exploreCaching(w, r, "private, no-cache")
-	writeJSON(w, http.StatusOK, map[string]any{"type": sw, "id": c.ID, "name": c.Name, "section": c.Section, "items": out})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"type": sw, "id": c.ID, "name": c.Name, "section": c.Section, "items": out})
 }

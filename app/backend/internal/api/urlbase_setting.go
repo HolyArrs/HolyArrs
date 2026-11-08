@@ -45,7 +45,7 @@ func (a *API) urlBaseAnswer(ctx context.Context) urlBaseAnswer {
 }
 
 func (a *API) getURLBase(w http.ResponseWriter, r *http.Request) {
-	writeJSON(w, http.StatusOK, a.urlBaseAnswer(r.Context()))
+	webserver.WriteJSON(w, http.StatusOK, a.urlBaseAnswer(r.Context()))
 }
 
 func (a *API) putURLBase(w http.ResponseWriter, r *http.Request) {
@@ -57,7 +57,7 @@ func (a *API) putURLBase(w http.ResponseWriter, r *http.Request) {
 	}
 	b, err := webserver.CleanURLBase(body.URLBase)
 	if err != nil {
-		fail(w, http.StatusBadRequest, err.Error())
+		webserver.Fail(w, http.StatusBadRequest, err.Error())
 		return
 	}
 	raw, _ := json.Marshal(b)
@@ -70,8 +70,8 @@ func (a *API) putURLBase(w http.ResponseWriter, r *http.Request) {
 		return err
 	})
 	if err != nil {
-		fail(w, http.StatusInternalServerError, err.Error())
+		webserver.Fail(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	writeJSON(w, http.StatusOK, a.urlBaseAnswer(r.Context()))
+	webserver.WriteJSON(w, http.StatusOK, a.urlBaseAnswer(r.Context()))
 }

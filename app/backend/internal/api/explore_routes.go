@@ -4,10 +4,11 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"net/http"
 	"strconv"
 	"strings"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	engine "github.com/HolyArrs/holyarrs/app/backend/internal/discover/rows"
@@ -186,7 +187,7 @@ func rowTypes(rows []exploreRowView) []string {
 func exploreParams(w http.ResponseWriter, r *http.Request) (sw string, ok bool) {
 	sw, ok = exploreSwitch(r.URL.Query().Get("type"))
 	if !ok {
-		fail(w, http.StatusBadRequest, "type must be all, movies or shows")
+		webserver.Fail(w, http.StatusBadRequest, "type must be all, movies or shows")
 	}
 	return sw, ok
 }
@@ -202,11 +203,11 @@ func (a *API) exploreHead(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 	services, region := q.Get("services"), strings.ToUpper(q.Get("region"))
 	if services != "" && (!metadata.ServiceIDs(services) || !isCountry(region)) {
-		fail(w, http.StatusBadRequest, "services needs services=<ids joined by |> and region=<country code>")
+		webserver.Fail(w, http.StatusBadRequest, "services needs services=<ids joined by |> and region=<country code>")
 		return
 	}
 	if region != "" && !isCountry(region) {
-		fail(w, http.StatusBadRequest, "region must be a country code")
+		webserver.Fail(w, http.StatusBadRequest, "region must be a country code")
 		return
 	}
 	if a.kidLimited(w, r) {
@@ -223,7 +224,7 @@ func (a *API) exploreHead(w http.ResponseWriter, r *http.Request) {
 				return err
 			})
 			if err != nil {
-				internal(w, err)
+				webserver.Internal(w, "api", err)
 				return
 			}
 			a.markMemberStale(r.Context(), me, a.exploreNow())
@@ -231,7 +232,7 @@ func (a *API) exploreHead(w http.ResponseWriter, r *http.Request) {
 	}
 	pg, building, err := a.explorePageFor(r.Context(), r, me, sw)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	st.Mark("page")
@@ -246,14 +247,14 @@ func (a *API) exploreHead(w http.ResponseWriter, r *http.Request) {
 		}
 		views, err := a.exploreViews(r.Context(), r, []engine.Row{row})
 		if err != nil {
-			internal(w, err)
+			webserver.Internal(w, "api", err)
 			return
 		}
 		head = append(head, views...)
 	}
 	hero, err := a.exploreHero(r, pg, sw == "all", me)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	st.Mark("views")
@@ -269,7 +270,7 @@ func (a *API) exploreHead(w http.ResponseWriter, r *http.Request) {
 	st.Mark("cardart")
 	a.exploreCaching(w, r, "private, no-cache")
 	st.Write(w)
-	writeJSON(w, http.StatusOK, map[string]any{"type": sw, "building": building, "seeds": pg.Seeds, "tail_cap": pg.Cap,
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"type": sw, "building": building, "seeds": pg.Seeds, "tail_cap": pg.Cap,
 		"tail_rows": len(pg.Tail), "hero": hero, "head": head, "taste": pg.Taste})
 }
 
@@ -282,7 +283,7 @@ func (a *API) exploreTail(w http.ResponseWriter, r *http.Request) {
 	}
 	n, err := strconv.Atoi(r.URL.Query().Get("page"))
 	if err != nil || n < 0 || n > 100 {
-		fail(w, http.StatusBadRequest, "page must be a number from 0")
+		webserver.Fail(w, http.StatusBadRequest, "page must be a number from 0")
 		return
 	}
 	if a.kidLimited(w, r) {
@@ -291,13 +292,13 @@ func (a *API) exploreTail(w http.ResponseWriter, r *http.Request) {
 	me := a.person(r).UserID
 	pg, _, err := a.explorePageFor(r.Context(), r, me, sw)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	slice, more := pg.TailSlice(n)
 	rows, err := a.exploreViews(r.Context(), r, slice)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	a.exploreCount(r.Context(), me, "shown", rowTypes(rows))
@@ -308,7 +309,7 @@ func (a *API) exploreTail(w http.ResponseWriter, r *http.Request) {
 	a.fillRowsCardArt(r, rows)
 	a.fillStreaming(r, rows)
 	a.exploreCaching(w, r, "private, no-cache")
-	writeJSON(w, http.StatusOK, map[string]any{"type": sw, "page": n, "more": more, "rows": rows})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"type": sw, "page": n, "more": more, "rows": rows})
 }
 
 // exploreViewKeyOK is the check accounts calls before it counts a view:
@@ -336,16 +337,16 @@ func (a *API) exploreCounts(w http.ResponseWriter, r *http.Request) {
 		TitleLayer string `json:"title_layer"`
 	}
 	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1024)).Decode(&body); err != nil {
-		fail(w, http.StatusBadRequest, "body must be {row_type, event}")
+		webserver.Fail(w, http.StatusBadRequest, "body must be {row_type, event}")
 		return
 	}
 	field := map[string]string{"open": "opens", "ask": "asks"}[body.Event]
 	if field == "" || !accounts.ViewKeyOK(accounts.ViewRow, body.RowType) {
-		fail(w, http.StatusBadRequest, "event must be open or ask, row_type an Explore row type")
+		webserver.Fail(w, http.StatusBadRequest, "event must be open or ask, row_type an Explore row type")
 		return
 	}
 	if body.TitleLayer != "" && !accounts.ViewKeyOK(accounts.ViewLayer, body.TitleLayer) {
-		fail(w, http.StatusBadRequest, "title_layer must be an Explore title layer")
+		webserver.Fail(w, http.StatusBadRequest, "title_layer must be an Explore title layer")
 		return
 	}
 	a.exploreCount(r.Context(), a.person(r).UserID, field, []string{body.RowType})

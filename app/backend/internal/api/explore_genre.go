@@ -2,12 +2,13 @@ package api
 
 import (
 	"context"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"net/http"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 
 	engine "github.com/HolyArrs/holyarrs/app/backend/internal/discover/rows"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
@@ -54,7 +55,7 @@ func (a *API) exploreTop(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 	sw, ok := exploreSwitch(q.Get("type"))
 	if !ok {
-		fail(w, http.StatusBadRequest, "type must be all, movies or shows")
+		webserver.Fail(w, http.StatusBadRequest, "type must be all, movies or shows")
 		return
 	}
 	chip, services, region := q.Get("chip"), q.Get("services"), strings.ToUpper(q.Get("region"))
@@ -62,7 +63,7 @@ func (a *API) exploreTop(w http.ResponseWriter, r *http.Request) {
 		chip = "all"
 	}
 	if (chip != "all" && !metadata.ServiceIDs(chip)) || strings.Contains(chip, "|") || (services != "" && !metadata.ServiceIDs(services)) || !isCountry(region) {
-		fail(w, http.StatusBadRequest, "chip must be all or one service id, services ids joined by |, region a country code")
+		webserver.Fail(w, http.StatusBadRequest, "chip must be all or one service id, services ids joined by |, region a country code")
 		return
 	}
 	var kinds []string
@@ -74,18 +75,18 @@ func (a *API) exploreTop(w http.ResponseWriter, r *http.Request) {
 	genre := ""
 	if g := q.Get("genre"); g != "" {
 		if sw == "all" {
-			fail(w, http.StatusBadRequest, "genre needs type movies or shows")
+			webserver.Fail(w, http.StatusBadRequest, "genre needs type movies or shows")
 			return
 		}
 		var gok bool
 		if _, genre, gok = exploreGenreParam(g, kinds0(kinds, sw)); !gok {
-			fail(w, http.StatusBadRequest, "genre must be a TMDB genre id of that type")
+			webserver.Fail(w, http.StatusBadRequest, "genre must be a TMDB genre id of that type")
 			return
 		}
 	}
 	if !a.discover.allow(a.person(r).UserID, time.Now()) {
 		w.Header().Set("Retry-After", "60")
-		fail(w, http.StatusTooManyRequests, "too many Explore requests; try again in a minute")
+		webserver.Fail(w, http.StatusTooManyRequests, "too many Explore requests; try again in a minute")
 		return
 	}
 	providers := chip
@@ -95,7 +96,7 @@ func (a *API) exploreTop(w http.ResponseWriter, r *http.Request) {
 	out := map[string]any{"chip": chip, "region": region, "source": "popular", "items": []rankedView{}}
 	if providers == "" || len(kinds) == 0 {
 		a.exploreCaching(w, r, "private, max-age=300")
-		writeJSON(w, http.StatusOK, out)
+		webserver.WriteJSON(w, http.StatusOK, out)
 		return
 	}
 	src := a.liveSource(r.Context())
@@ -111,7 +112,7 @@ func (a *API) exploreTop(w http.ResponseWriter, r *http.Request) {
 	merged := engine.MergeTop(lists, topServicesMax*2)
 	views, err := a.exploreViews(r.Context(), r, []engine.Row{{ID: engine.TypeTopServices, Type: engine.TypeTopServices, Items: merged}})
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	items := []rankedView{}
@@ -126,7 +127,7 @@ func (a *API) exploreTop(w http.ResponseWriter, r *http.Request) {
 	a.fillTopArt(r, items)
 	out["items"] = items
 	a.exploreCaching(w, r, "private, max-age=300")
-	writeJSON(w, http.StatusOK, out)
+	webserver.WriteJSON(w, http.StatusOK, out)
 }
 
 func kinds0(kinds []string, sw string) string {
@@ -159,7 +160,7 @@ func (a *API) exploreGenre(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 	sw, ok := exploreSwitch(q.Get("type"))
 	if !ok {
-		fail(w, http.StatusBadRequest, "type must be all, movies or shows")
+		webserver.Fail(w, http.StatusBadRequest, "type must be all, movies or shows")
 		return
 	}
 	// Under All a genre is a movie genre id that TV has a combined genre
@@ -170,18 +171,18 @@ func (a *API) exploreGenre(w http.ResponseWriter, r *http.Request) {
 	}
 	id, genre, ok := exploreGenreParam(q.Get("genre"), kind)
 	if !ok || genre == "" || (sw == "all" && engine.ShowGenreFor(genre) == "") {
-		fail(w, http.StatusBadRequest, "genre must be a TMDB genre id of that type")
+		webserver.Fail(w, http.StatusBadRequest, "genre must be a TMDB genre id of that type")
 		return
 	}
 	for _, k := range engine.Kinds(sw) {
 		if len(a.kindsOn(k)) == 0 {
-			fail(w, http.StatusNotFound, "that part is off")
+			webserver.Fail(w, http.StatusNotFound, "that part is off")
 			return
 		}
 	}
 	if !a.discover.allow(a.person(r).UserID, time.Now()) {
 		w.Header().Set("Retry-After", "60")
-		fail(w, http.StatusTooManyRequests, "too many Explore requests; try again in a minute")
+		webserver.Fail(w, http.StatusTooManyRequests, "too many Explore requests; try again in a minute")
 		return
 	}
 	st := webserver.NewServerTiming()
@@ -208,7 +209,7 @@ func (a *API) exploreGenre(w http.ResponseWriter, r *http.Request) {
 	}
 	views, err := a.exploreViews(ctx, r, rows)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	st.Mark("views")
@@ -230,7 +231,7 @@ func (a *API) exploreGenre(w http.ResponseWriter, r *http.Request) {
 	st.Mark("cardart")
 	st.Write(w)
 	a.exploreCaching(w, r, "private, no-cache")
-	writeJSON(w, http.StatusOK, map[string]any{"type": sw, "genre": map[string]any{"id": id, "name": genre, "kind": kind}, "hero": hero, "rows": views, "partial": partial})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"type": sw, "genre": map[string]any{"id": id, "name": genre, "kind": kind}, "hero": hero, "rows": views, "partial": partial})
 }
 
 // genreBuild is one kind's genre page rows (before per-person views): from

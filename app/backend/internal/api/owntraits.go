@@ -8,6 +8,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 )
 
@@ -33,7 +34,7 @@ const ownTraitHelp = `send {"name": "...", "match": "name" or "group", "terms": 
 func (a *API) ownTraitID(w http.ResponseWriter, r *http.Request) (int64, bool) {
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil || id <= 0 {
-		fail(w, http.StatusBadRequest, "the trait id must be a number")
+		webserver.Fail(w, http.StatusBadRequest, "the trait id must be a number")
 		return 0, false
 	}
 	return id, true
@@ -43,27 +44,27 @@ func ownTraitError(w http.ResponseWriter, err error) {
 	var fe *mediafiles.FieldError
 	switch {
 	case errors.As(err, &fe):
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": fe.Text, "field": fe.Field})
+		webserver.WriteJSON(w, http.StatusBadRequest, map[string]string{"error": fe.Text, "field": fe.Field})
 	case errors.Is(err, database.ErrNotFound):
-		fail(w, http.StatusNotFound, "no such trait")
+		webserver.Fail(w, http.StatusNotFound, "no such trait")
 	case errors.Is(err, library.ErrOwnTraitName):
-		writeJSON(w, http.StatusConflict, map[string]string{"error": "Another of your traits already has this name.", "field": "name"})
+		webserver.WriteJSON(w, http.StatusConflict, map[string]string{"error": "Another of your traits already has this name.", "field": "name"})
 	default:
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 	}
 }
 
 func (a *API) listOwnTraits(w http.ResponseWriter, r *http.Request) {
 	ts, err := library.OwnTraits(r.Context(), a.s.Store)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	out := []OwnTraitView{}
 	for _, t := range ts {
 		out = append(out, viewOfOwnTrait(t))
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"own_traits": out})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"own_traits": out})
 }
 
 func (a *API) addOwnTrait(w http.ResponseWriter, r *http.Request) {
@@ -76,7 +77,7 @@ func (a *API) addOwnTrait(w http.ResponseWriter, r *http.Request) {
 		ownTraitError(w, err)
 		return
 	}
-	writeJSON(w, http.StatusCreated, viewOfOwnTrait(t))
+	webserver.WriteJSON(w, http.StatusCreated, viewOfOwnTrait(t))
 }
 
 func (a *API) editOwnTrait(w http.ResponseWriter, r *http.Request) {
@@ -93,7 +94,7 @@ func (a *API) editOwnTrait(w http.ResponseWriter, r *http.Request) {
 		ownTraitError(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, viewOfOwnTrait(t))
+	webserver.WriteJSON(w, http.StatusOK, viewOfOwnTrait(t))
 }
 
 // deleteOwnTrait answers how many Pick rules lost the trait.
@@ -107,5 +108,5 @@ func (a *API) deleteOwnTrait(w http.ResponseWriter, r *http.Request) {
 		ownTraitError(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]int{"pick_rules_changed": n})
+	webserver.WriteJSON(w, http.StatusOK, map[string]int{"pick_rules_changed": n})
 }

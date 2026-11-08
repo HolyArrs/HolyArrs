@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"sync"
 	"time"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
 // speedKeep is how many one-second readings of total speed are remembered: 15 minutes.
@@ -71,5 +73,5 @@ func (a *API) sampleSpeeds(ctx context.Context) {
 }
 
 func (a *API) speedHistory(w http.ResponseWriter, r *http.Request) {
-	writeJSON(w, http.StatusOK, map[string]any{"samples": a.speeds.last(0)})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"samples": a.speeds.last(0)})
 }

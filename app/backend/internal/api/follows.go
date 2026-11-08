@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/requests"
 )
 
@@ -27,14 +28,14 @@ func (a *API) followRoutes(m *http.ServeMux) {
 func (a *API) movieFollowState(w http.ResponseWriter, r *http.Request, tmdbID string) {
 	on, err := a.s.Asks.IsFollowingMovieTMDB(r.Context(), a.person(r).UserID, tmdbID)
 	if errors.Is(err, requests.ErrBadTMDBID) {
-		fail(w, http.StatusBadRequest, err.Error())
+		webserver.Fail(w, http.StatusBadRequest, err.Error())
 		return
 	}
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"tmdb_id": tmdbID, "following": on})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"tmdb_id": tmdbID, "following": on})
 }
 
 func (a *API) getMovieFollow(w http.ResponseWriter, r *http.Request) {
@@ -45,13 +46,13 @@ func (a *API) putMovieFollow(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("tmdb_id")
 	switch err := a.s.Asks.FollowMovieTMDB(r.Context(), a.person(r), id); {
 	case errors.Is(err, requests.ErrBadTMDBID):
-		fail(w, http.StatusBadRequest, err.Error())
+		webserver.Fail(w, http.StatusBadRequest, err.Error())
 	case errors.Is(err, requests.ErrNotFollowable):
-		fail(w, http.StatusBadRequest, err.Error())
+		webserver.Fail(w, http.StatusBadRequest, err.Error())
 	case errors.Is(err, requests.ErrAboveLimit):
-		fail(w, http.StatusForbidden, err.Error())
+		webserver.Fail(w, http.StatusForbidden, err.Error())
 	case err != nil:
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 	default:
 		a.movieFollowState(w, r, id)
 	}
@@ -61,9 +62,9 @@ func (a *API) deleteMovieFollow(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("tmdb_id")
 	switch err := a.s.Asks.UnfollowMovieTMDB(r.Context(), a.person(r).UserID, id); {
 	case errors.Is(err, requests.ErrBadTMDBID):
-		fail(w, http.StatusBadRequest, err.Error())
+		webserver.Fail(w, http.StatusBadRequest, err.Error())
 	case err != nil:
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 	default:
 		a.movieFollowState(w, r, id)
 	}
@@ -75,18 +76,18 @@ func (a *API) deleteMovieFollow(w http.ResponseWriter, r *http.Request) {
 func (a *API) showFollowState(w http.ResponseWriter, r *http.Request, tmdbID string, titleID int64) {
 	on, err := a.s.Asks.IsFollowingShowTMDB(r.Context(), a.person(r).UserID, tmdbID)
 	if errors.Is(err, requests.ErrBadTMDBID) {
-		fail(w, http.StatusBadRequest, err.Error())
+		webserver.Fail(w, http.StatusBadRequest, err.Error())
 		return
 	}
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	out := map[string]any{"tmdb_id": tmdbID, "following": on}
 	if titleID != 0 {
 		out["title_id"] = titleID
 	}
-	writeJSON(w, http.StatusOK, out)
+	webserver.WriteJSON(w, http.StatusOK, out)
 }
 
 func (a *API) getShowFollow(w http.ResponseWriter, r *http.Request) {
@@ -98,11 +99,11 @@ func (a *API) putShowFollow(w http.ResponseWriter, r *http.Request) {
 	tid, err := a.s.Asks.FollowShowTMDB(r.Context(), a.person(r), id)
 	switch {
 	case errors.Is(err, requests.ErrBadTMDBID), errors.Is(err, requests.ErrNotFollowable):
-		fail(w, http.StatusBadRequest, err.Error())
+		webserver.Fail(w, http.StatusBadRequest, err.Error())
 	case errors.Is(err, requests.ErrAboveLimit):
-		fail(w, http.StatusForbidden, err.Error())
+		webserver.Fail(w, http.StatusForbidden, err.Error())
 	case err != nil:
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 	default:
 		a.showFollowState(w, r, id, tid)
 	}
@@ -113,9 +114,9 @@ func (a *API) deleteShowFollow(w http.ResponseWriter, r *http.Request) {
 	err := a.s.Asks.UnfollowShowTMDB(r.Context(), a.person(r).UserID, id)
 	switch {
 	case errors.Is(err, requests.ErrBadTMDBID):
-		fail(w, http.StatusBadRequest, err.Error())
+		webserver.Fail(w, http.StatusBadRequest, err.Error())
 	case err != nil:
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 	default:
 		a.showFollowState(w, r, id, 0)
 	}
@@ -124,19 +125,19 @@ func (a *API) deleteShowFollow(w http.ResponseWriter, r *http.Request) {
 func (a *API) myFollows(w http.ResponseWriter, r *http.Request) {
 	fs, err := a.s.Asks.Following(r.Context(), a.person(r).UserID)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"follows": fs})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"follows": fs})
 }
 
 func (a *API) followState(w http.ResponseWriter, r *http.Request, titleID int64) {
 	on, err := a.s.Asks.IsFollowing(r.Context(), a.person(r).UserID, titleID)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"title_id": titleID, "following": on})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"title_id": titleID, "following": on})
 }
 
 func (a *API) getFollow(w http.ResponseWriter, r *http.Request) {
@@ -152,11 +153,11 @@ func (a *API) putFollow(w http.ResponseWriter, r *http.Request) {
 	}
 	switch err := a.s.Asks.FollowTitle(r.Context(), a.person(r), t.ID); {
 	case errors.Is(err, requests.ErrNotFollowable):
-		fail(w, http.StatusBadRequest, err.Error())
+		webserver.Fail(w, http.StatusBadRequest, err.Error())
 	case errors.Is(err, requests.ErrAboveLimit):
-		fail(w, http.StatusForbidden, err.Error())
+		webserver.Fail(w, http.StatusForbidden, err.Error())
 	case err != nil:
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 	default:
 		a.musicv2.days.Invalidate(a.person(r).UserID)
 		a.forgetMusicV7Snaps(a.person(r).UserID)
@@ -170,7 +171,7 @@ func (a *API) deleteFollow(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := a.s.Asks.Unfollow(r.Context(), a.person(r).UserID, t.ID); err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	a.musicv2.days.Invalidate(a.person(r).UserID)

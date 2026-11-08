@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
@@ -83,30 +84,30 @@ func (a *API) musicTrending(w http.ResponseWriter, r *http.Request) {
 		region = "global"
 	}
 	if (kind != "artist" && kind != "album") || (region != "global" && !isCountry(region)) {
-		fail(w, http.StatusBadRequest, "kind must be artist or album, region global or a country code")
+		webserver.Fail(w, http.StatusBadRequest, "kind must be artist or album, region global or a country code")
 		return
 	}
 	// A Kid gets no list: it can hold explicit releases (like /explore/music).
 	if a.kidMax(r) != "" {
-		writeJSON(w, http.StatusOK, map[string]any{"kind": kind, "items": []any{}})
+		webserver.WriteJSON(w, http.StatusOK, map[string]any{"kind": kind, "items": []any{}})
 		return
 	}
 	if p, _ := parts.ForTitleKind("artist"); a.s.MusicTrending == nil || !a.partIsOn(p) {
-		fail(w, http.StatusNotFound, "no music trending list here")
+		webserver.Fail(w, http.StatusNotFound, "no music trending list here")
 		return
 	}
 	if !a.discover.allow(a.person(r).UserID, time.Now()) {
 		w.Header().Set("Retry-After", "60")
-		fail(w, http.StatusTooManyRequests, "too many Explore requests; try again in a minute")
+		webserver.Fail(w, http.StatusTooManyRequests, "too many Explore requests; try again in a minute")
 		return
 	}
 	list, err := a.cachedMusicTrend(r.Context(), kind, region)
 	if errors.Is(err, metadata.ErrNotFound) {
-		fail(w, http.StatusNotFound, "no music trending list for that region")
+		webserver.Fail(w, http.StatusNotFound, "no music trending list for that region")
 		return
 	}
 	if err != nil {
-		fail(w, http.StatusBadGateway, "the metadata server did not answer; try again shortly")
+		webserver.Fail(w, http.StatusBadGateway, "the metadata server did not answer; try again shortly")
 		return
 	}
 	out := make([]musicTrendView, 0, len(list.Items))

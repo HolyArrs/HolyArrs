@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
@@ -26,7 +27,7 @@ func (a *API) copyRoutes(m *http.ServeMux) {
 func fileChoiceID(w http.ResponseWriter, r *http.Request) (int64, bool) {
 	id, err := strconv.ParseInt(r.PathValue("fid"), 10, 64)
 	if err != nil || id <= 0 {
-		fail(w, http.StatusBadRequest, "choose a file")
+		webserver.Fail(w, http.StatusBadRequest, "choose a file")
 		return 0, false
 	}
 	return id, true
@@ -51,7 +52,7 @@ func (a *API) setCopyChoice(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	a.publishTitle(r, t.ID)
-	writeJSON(w, http.StatusOK, f)
+	webserver.WriteJSON(w, http.StatusOK, f)
 }
 
 func (a *API) keepAndAddCopy(w http.ResponseWriter, r *http.Request) {
@@ -73,7 +74,7 @@ func (a *API) keepAndAddCopy(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	a.publishTitle(r, t.ID)
-	writeJSON(w, http.StatusCreated, versionView(r.Context(), a.s.Store.Read(), v))
+	webserver.WriteJSON(w, http.StatusCreated, versionView(r.Context(), a.s.Store.Read(), v))
 }
 
 func (a *API) confirmDownloadEdition(w http.ResponseWriter, r *http.Request) {
@@ -90,7 +91,7 @@ func (a *API) confirmDownloadEdition(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !in.Confirm {
-		fail(w, http.StatusBadRequest, "confirm the edition after checking the download")
+		webserver.Fail(w, http.StatusBadRequest, "confirm the edition after checking the download")
 		return
 	}
 	if err := a.s.Library.ConfirmDownloadEdition(r.Context(), id, in.Edition, actor(r)); err != nil {
@@ -106,7 +107,7 @@ func (a *API) confirmDownloadEdition(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"download_id": id, "edition": in.Edition, "confirmed": true, "job_id": jobID})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"download_id": id, "edition": in.Edition, "confirmed": true, "job_id": jobID})
 }
 
 func (a *API) titleCopies(w http.ResponseWriter, r *http.Request) {
@@ -116,7 +117,7 @@ func (a *API) titleCopies(w http.ResponseWriter, r *http.Request) {
 	}
 	files, err := database.Select[mediafiles.File](r.Context(), a.s.Store.Read(), "files", `version_id IN (SELECT id FROM versions WHERE title_id = ?) AND role = 'main' AND state IN ('present','missing') ORDER BY version_id,id`, t.ID)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	if files == nil {
@@ -124,10 +125,10 @@ func (a *API) titleCopies(w http.ResponseWriter, r *http.Request) {
 	}
 	versions, err := a.titleVersions(r.Context(), t.ID)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"files": files, "versions": versions})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"files": files, "versions": versions})
 }
 
 func (a *API) titleVersions(ctx context.Context, titleID int64) ([]VersionView, error) {
@@ -158,7 +159,7 @@ func (a *API) adoptMovieCopy(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	a.publishTitle(r, t.ID)
-	writeJSON(w, http.StatusCreated, f)
+	webserver.WriteJSON(w, http.StatusCreated, f)
 }
 
 // retryMovieImport changes only a still-waiting Slot of this finished download.

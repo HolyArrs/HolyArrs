@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 )
@@ -64,15 +65,15 @@ func asTorrent(e downloads.Engine, f func(downloads.TorrentController) error) er
 func clientControlError(w http.ResponseWriter, err error) {
 	switch {
 	case errors.Is(err, database.ErrNotFound), errors.Is(err, sql.ErrNoRows):
-		fail(w, http.StatusNotFound, "no such download")
+		webserver.Fail(w, http.StatusNotFound, "no such download")
 	case errors.Is(err, downloads.ErrNotActive), errors.Is(err, downloads.ErrNotSupported), errors.Is(err, downloads.ErrReadOnly):
-		fail(w, http.StatusConflict, err.Error())
+		webserver.Fail(w, http.StatusConflict, err.Error())
 	case errors.Is(err, downloads.ErrNotFound):
-		fail(w, http.StatusNotFound, err.Error())
+		webserver.Fail(w, http.StatusNotFound, err.Error())
 	default:
 		// The Downloader's own answer, in our words (adapters never put
 		// keys or addresses in errors).
-		fail(w, http.StatusBadGateway, err.Error())
+		webserver.Fail(w, http.StatusBadGateway, err.Error())
 	}
 }
 
@@ -87,7 +88,7 @@ func (a *API) downloadAct(f func(ctx context.Context, e downloads.Engine, id str
 			clientControlError(w, err)
 			return
 		}
-		writeJSON(w, http.StatusOK, map[string]any{"ok": true})
+		webserver.WriteJSON(w, http.StatusOK, map[string]any{"ok": true})
 	}
 }
 
@@ -121,7 +122,7 @@ func (a *API) downloadSwarm(w http.ResponseWriter, r *http.Request) {
 	if a.s.Store.Read().QueryRowContext(r.Context(), "SELECT downloader_id FROM downloads WHERE id = ?", id).Scan(&dlr) == nil && hash != "" {
 		a.noteTrackers(r.Context(), dlr, hash, out.Trackers)
 	}
-	writeJSON(w, http.StatusOK, out)
+	webserver.WriteJSON(w, http.StatusOK, out)
 }
 
 func asInspector(e downloads.Engine, f func(downloads.TorrentInspector) error) error {
@@ -183,7 +184,7 @@ func (a *API) downloadDetail(w http.ResponseWriter, r *http.Request) {
 	}
 	rows, err := a.s.Store.ReadEvents().QueryContext(ctx, "SELECT at, kind, summary FROM events WHERE download_id = ? ORDER BY at DESC, id DESC LIMIT 200", id)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	for rows.Next() {
@@ -214,7 +215,7 @@ func (a *API) downloadDetail(w http.ResponseWriter, r *http.Request) {
 	if dr.Protocol == "torrent" && d.ExternalID != "" {
 		out.Log = a.torrentTimeline(ctx, d.DownloaderID, d.ExternalID, out.Torrent, out.Log)
 	}
-	writeJSON(w, http.StatusOK, out)
+	webserver.WriteJSON(w, http.StatusOK, out)
 }
 
 func isActiveDownload(state string) bool {
@@ -243,7 +244,7 @@ func (a *API) downloadFiles(w http.ResponseWriter, r *http.Request) {
 		clientControlError(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"files": files})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"files": files})
 }
 
 // setDownloadFiles sets which files of a torrent to fetch and how soon.
@@ -260,13 +261,13 @@ func (a *API) setDownloadFiles(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if len(in.Indexes) == 0 || len(in.Indexes) > 10000 {
-		fail(w, http.StatusBadRequest, "indexes needs 1 to 10000 file indexes")
+		webserver.Fail(w, http.StatusBadRequest, "indexes needs 1 to 10000 file indexes")
 		return
 	}
 	switch in.Priority {
 	case 0, 1, 6, 7:
 	default:
-		fail(w, http.StatusBadRequest, downloads.ErrFilePriority.Error())
+		webserver.Fail(w, http.StatusBadRequest, downloads.ErrFilePriority.Error())
 		return
 	}
 	err := a.manager().Control(r.Context(), id, func(e downloads.Engine, ext string) error {
@@ -278,7 +279,7 @@ func (a *API) setDownloadFiles(w http.ResponseWriter, r *http.Request) {
 		clientControlError(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"ok": true})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"ok": true})
 }
 
 // ClientView is one Downloader with what it says about itself.
@@ -339,10 +340,10 @@ func (a *API) downloadClients(w http.ResponseWriter, r *http.Request) {
 		})
 	})
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"clients": out})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"clients": out})
 }
 
 // allAct pauses or resumes everything in every Downloader that can.
@@ -361,11 +362,11 @@ func (a *API) allAct(pause bool) http.HandlerFunc {
 			})
 		})
 		if err != nil {
-			internal(w, err)
+			webserver.Internal(w, "api", err)
 			return
 		}
 		a.manager().Poke()
-		writeJSON(w, http.StatusOK, map[string]any{"clients": out})
+		webserver.WriteJSON(w, http.StatusOK, map[string]any{"clients": out})
 	}
 }
 
@@ -384,12 +385,12 @@ func (a *API) speedLimit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if in.Down < 0 || in.Up < 0 {
-		fail(w, http.StatusBadRequest, "limits are 0 (none) or more")
+		webserver.Fail(w, http.StatusBadRequest, "limits are 0 (none) or more")
 		return
 	}
 	var d domain.Downloader
 	if err := database.Get(r.Context(), a.s.Store.Read(), "downloaders", id, &d); err != nil || d.Removed {
-		fail(w, http.StatusNotFound, "no such Downloader")
+		webserver.Fail(w, http.StatusNotFound, "no such Downloader")
 		return
 	}
 	err := a.manager().ControlEngine(r.Context(), d, func(e downloads.Engine) error {
@@ -399,5 +400,5 @@ func (a *API) speedLimit(w http.ResponseWriter, r *http.Request) {
 		clientControlError(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"ok": true})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"ok": true})
 }

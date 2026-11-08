@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
@@ -28,15 +29,15 @@ type animeView struct {
 func (a *API) metadataAnime(w http.ResponseWriter, r *http.Request) {
 	kind, id := r.PathValue("kind"), r.PathValue("tmdb_id")
 	if kind != "movie" && kind != "show" {
-		fail(w, http.StatusBadRequest, "kind must be movie or show")
+		webserver.Fail(w, http.StatusBadRequest, "kind must be movie or show")
 		return
 	}
 	if n, err := strconv.ParseInt(id, 10, 64); err != nil || n <= 0 || strconv.FormatInt(n, 10) != id {
-		fail(w, http.StatusBadRequest, "tmdb_id must be a TMDB number")
+		webserver.Fail(w, http.StatusBadRequest, "tmdb_id must be a TMDB number")
 		return
 	}
 	if len(a.kindsOn(kind)) == 0 {
-		fail(w, http.StatusConflict, "that part is off")
+		webserver.Fail(w, http.StatusConflict, "that part is off")
 		return
 	}
 	if a.kidLimited(w, r) {
@@ -49,7 +50,7 @@ func (a *API) metadataAnime(w http.ResponseWriter, r *http.Request) {
 		if !inLibrary {
 			d, ok := metadata.DiscovererFor(r.Context(), a.s.Metadata)
 			if !ok {
-				fail(w, http.StatusForbidden, aboveLimit)
+				webserver.Fail(w, http.StatusForbidden, aboveLimit)
 				return
 			}
 			key := "details|" + kind + "|" + id
@@ -57,7 +58,7 @@ func (a *API) metadataAnime(w http.ResponseWriter, r *http.Request) {
 			if !cached || time.Since(e.at) >= discoverTTL["details"] {
 				det, err := d.Details(r.Context(), kind, id)
 				if err != nil {
-					fail(w, http.StatusForbidden, aboveLimit)
+					webserver.Fail(w, http.StatusForbidden, aboveLimit)
 					return
 				}
 				e = discoverEntry{at: time.Now(), details: &det}
@@ -66,7 +67,7 @@ func (a *API) metadataAnime(w http.ResponseWriter, r *http.Request) {
 			rating = e.details.Rating
 		}
 		if rating == "" || !metadata.RatingAllows(max, kind, rating) {
-			fail(w, http.StatusForbidden, aboveLimit)
+			webserver.Fail(w, http.StatusForbidden, aboveLimit)
 			return
 		}
 	}
@@ -101,5 +102,5 @@ func (a *API) metadataAnime(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Cache-Control", "no-store")
 		}
 	}
-	writeJSON(w, http.StatusOK, out)
+	webserver.WriteJSON(w, http.StatusOK, out)
 }

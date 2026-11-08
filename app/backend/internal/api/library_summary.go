@@ -9,6 +9,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 )
 
@@ -47,7 +48,7 @@ func (a *API) librarySummary(w http.ResponseWriter, r *http.Request) {
 	ctx, db := r.Context(), a.s.Store.Read()
 	var total int
 	if err := db.QueryRowContext(ctx, "SELECT count(*) FROM titles t WHERE "+where, args...).Scan(&total); err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	rows, err := db.QueryContext(ctx, `SELECT t.id, t.name, t.year, t.artwork
@@ -55,7 +56,7 @@ func (a *API) librarySummary(w http.ResponseWriter, r *http.Request) {
 		(SELECT i.title_id FROM slots s JOIN items i ON i.id = s.item_id WHERE s.state IN ('wanted', 'searching'))
 		ORDER BY t.sort_name, t.id LIMIT 8`, args...)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	defer rows.Close()
@@ -64,7 +65,7 @@ func (a *API) librarySummary(w http.ResponseWriter, r *http.Request) {
 		var title libraryMissingView
 		var art sql.NullString
 		if err := rows.Scan(&title.ID, &title.Name, &title.Year, &art); err != nil {
-			internal(w, err)
+			webserver.Internal(w, "api", err)
 			return
 		}
 		var posters []string
@@ -76,18 +77,18 @@ func (a *API) librarySummary(w http.ResponseWriter, r *http.Request) {
 		missing = append(missing, title)
 	}
 	if err := rows.Err(); err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	if err := rows.Close(); err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	for i := range missing {
 		var state mediafiles.SlotState
 		if err := db.QueryRowContext(ctx, `SELECT s.state FROM slots s JOIN items i ON i.id = s.item_id
 			WHERE i.title_id = ? ORDER BY s.id LIMIT 1`, missing[i].ID).Scan(&state); err != nil {
-			internal(w, err)
+			webserver.Internal(w, "api", err)
 			return
 		}
 		missing[i].StateLabel = StateLabels[state]
@@ -96,17 +97,17 @@ func (a *API) librarySummary(w http.ResponseWriter, r *http.Request) {
 	recentWhere := strings.ReplaceAll(where, "t.", "") + " ORDER BY created_at DESC, id DESC LIMIT ?"
 	newest, err := database.Select[mediafiles.Title](ctx, db, "titles", recentWhere, append(args, recentMax)...)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	recent := []TitleView{}
 	for _, t := range newest {
 		v, err := a.titleView(ctx, t)
 		if err != nil {
-			internal(w, err)
+			webserver.Internal(w, "api", err)
 			return
 		}
 		recent = append(recent, v)
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"total": total, "missing": missing, "recent": recent, "card_art": a.libraryCardArt(r, newest)})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"total": total, "missing": missing, "recent": recent, "card_art": a.libraryCardArt(r, newest)})
 }

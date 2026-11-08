@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/datapack"
 )
 
@@ -24,13 +25,13 @@ func (a *API) dataPackRoutes(m *http.ServeMux) {
 func (a *API) listDataPacks(w http.ResponseWriter, r *http.Request) {
 	packs, err := datapack.List(r.Context(), a.s.Store)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	if packs == nil {
 		packs = []datapack.Summary{}
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"data_packs": packs})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"data_packs": packs})
 }
 
 func (a *API) validateDataPack(w http.ResponseWriter, r *http.Request) {
@@ -40,14 +41,14 @@ func (a *API) validateDataPack(w http.ResponseWriter, r *http.Request) {
 	}
 	p, err := datapack.Decode(raw)
 	if errors.Is(err, datapack.ErrTooLarge) {
-		fail(w, http.StatusRequestEntityTooLarge, err.Error())
+		webserver.Fail(w, http.StatusRequestEntityTooLarge, err.Error())
 		return
 	}
 	if err != nil {
-		fail(w, http.StatusBadRequest, err.Error())
+		webserver.Fail(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"valid": true, "pack": dataPackSummary(p)})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"valid": true, "pack": dataPackSummary(p)})
 }
 
 func (a *API) importDataPack(w http.ResponseWriter, r *http.Request) {
@@ -58,15 +59,15 @@ func (a *API) importDataPack(w http.ResponseWriter, r *http.Request) {
 	p, err := datapack.Import(r.Context(), a.s.Store, raw, actor(r))
 	switch {
 	case errors.Is(err, datapack.ErrConflict):
-		fail(w, http.StatusConflict, "a data pack with this id already exists")
+		webserver.Fail(w, http.StatusConflict, "a data pack with this id already exists")
 	case errors.Is(err, datapack.ErrTooLarge):
-		fail(w, http.StatusRequestEntityTooLarge, err.Error())
+		webserver.Fail(w, http.StatusRequestEntityTooLarge, err.Error())
 	case errors.Is(err, datapack.ErrInvalidInput):
-		fail(w, http.StatusBadRequest, err.Error())
+		webserver.Fail(w, http.StatusBadRequest, err.Error())
 	case err != nil:
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 	default:
-		writeJSON(w, http.StatusCreated, map[string]any{"pack": dataPackSummary(p)})
+		webserver.WriteJSON(w, http.StatusCreated, map[string]any{"pack": dataPackSummary(p)})
 	}
 }
 
@@ -74,13 +75,13 @@ func (a *API) exportDataPack(w http.ResponseWriter, r *http.Request) {
 	b, err := datapack.Export(r.Context(), a.s.Store, r.PathValue("id"))
 	switch {
 	case errors.Is(err, datapack.ErrNotFound):
-		fail(w, http.StatusNotFound, "data pack not found")
+		webserver.Fail(w, http.StatusNotFound, "data pack not found")
 		return
 	case errors.Is(err, datapack.ErrInvalidInput):
-		fail(w, http.StatusBadRequest, err.Error())
+		webserver.Fail(w, http.StatusBadRequest, err.Error())
 		return
 	case err != nil:
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
@@ -92,13 +93,13 @@ func (a *API) previewDataPack(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 	for key := range q {
 		if key != "pick_rule_id" && key != "naming_id" {
-			fail(w, http.StatusBadRequest, "preview accepts only pick_rule_id and naming_id")
+			webserver.Fail(w, http.StatusBadRequest, "preview accepts only pick_rule_id and naming_id")
 			return
 		}
 	}
 	namingIDs := q["naming_id"]
 	if len(namingIDs) > 1 {
-		fail(w, http.StatusBadRequest, "select at most one naming_id")
+		webserver.Fail(w, http.StatusBadRequest, "select at most one naming_id")
 		return
 	}
 	selection := datapack.Selection{PickRuleIDs: q["pick_rule_id"]}
@@ -108,13 +109,13 @@ func (a *API) previewDataPack(w http.ResponseWriter, r *http.Request) {
 	preview, err := datapack.Preview(r.Context(), a.s.Store, r.PathValue("id"), selection)
 	switch {
 	case errors.Is(err, datapack.ErrNotFound):
-		fail(w, http.StatusNotFound, "data pack not found")
+		webserver.Fail(w, http.StatusNotFound, "data pack not found")
 	case errors.Is(err, datapack.ErrInvalidInput):
-		fail(w, http.StatusBadRequest, err.Error())
+		webserver.Fail(w, http.StatusBadRequest, err.Error())
 	case err != nil:
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 	default:
-		writeJSON(w, http.StatusOK, preview)
+		webserver.WriteJSON(w, http.StatusOK, preview)
 	}
 }
 
@@ -131,29 +132,29 @@ func (a *API) applyDataPack(w http.ResponseWriter, r *http.Request) {
 	d := json.NewDecoder(bytes.NewReader(raw))
 	d.DisallowUnknownFields()
 	if err := d.Decode(&body); err != nil || strings.TrimSpace(body.ApprovalHash) == "" {
-		fail(w, http.StatusBadRequest, "send pick_rule_ids, optional naming_id and approval_hash")
+		webserver.Fail(w, http.StatusBadRequest, "send pick_rule_ids, optional naming_id and approval_hash")
 		return
 	}
 	var trailing any
 	if err := d.Decode(&trailing); !errors.Is(err, io.EOF) {
-		fail(w, http.StatusBadRequest, "send one JSON object")
+		webserver.Fail(w, http.StatusBadRequest, "send one JSON object")
 		return
 	}
 	result, err := datapack.Apply(r.Context(), a.s.Store, r.PathValue("id"),
 		datapack.Selection{PickRuleIDs: body.PickRuleIDs, NamingID: body.NamingID}, body.ApprovalHash, actor(r))
 	switch {
 	case errors.Is(err, datapack.ErrNotFound):
-		fail(w, http.StatusNotFound, "data pack not found")
+		webserver.Fail(w, http.StatusNotFound, "data pack not found")
 	case errors.Is(err, datapack.ErrConflict):
-		fail(w, http.StatusConflict, err.Error())
+		webserver.Fail(w, http.StatusConflict, err.Error())
 	case errors.Is(err, datapack.ErrStaleApproval):
-		fail(w, http.StatusConflict, "data pack preview is stale; preview the selection again")
+		webserver.Fail(w, http.StatusConflict, "data pack preview is stale; preview the selection again")
 	case errors.Is(err, datapack.ErrInvalidInput):
-		fail(w, http.StatusBadRequest, err.Error())
+		webserver.Fail(w, http.StatusBadRequest, err.Error())
 	case err != nil:
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 	default:
-		writeJSON(w, http.StatusOK, result)
+		webserver.WriteJSON(w, http.StatusOK, result)
 	}
 }
 
@@ -168,10 +169,10 @@ func readRequestBody(w http.ResponseWriter, r *http.Request, limit int64, tooLar
 	}
 	var maxBytes *http.MaxBytesError
 	if errors.As(err, &maxBytes) {
-		fail(w, http.StatusRequestEntityTooLarge, tooLarge)
+		webserver.Fail(w, http.StatusRequestEntityTooLarge, tooLarge)
 		return nil, false
 	}
-	internal(w, err)
+	webserver.Internal(w, "api", err)
 	return nil, false
 }
 

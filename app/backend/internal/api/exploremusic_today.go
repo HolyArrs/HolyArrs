@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 )
 
@@ -68,16 +69,16 @@ func (a *API) todayRow(ctx context.Context) *MusicRow {
 // when there is none today.
 func (a *API) risingToday(w http.ResponseWriter, r *http.Request) {
 	if p, _ := parts.ForTitleKind("artist"); !a.partIsOn(p) || a.kidMax(r) != "" {
-		fail(w, http.StatusNotFound, "no rising artists")
+		webserver.Fail(w, http.StatusNotFound, "no rising artists")
 		return
 	}
 	row := a.todayRow(context.WithoutCancel(r.Context()))
 	if row == nil {
-		fail(w, http.StatusNotFound, "no rising artists")
+		webserver.Fail(w, http.StatusNotFound, "no rising artists")
 		return
 	}
 	a.exploreCaching(w, r, "private, max-age=300")
-	writeJSON(w, http.StatusOK, row)
+	webserver.WriteJSON(w, http.StatusOK, row)
 }
 
 // shortCount writes 1234 as 1.2K and 2500000 as 2.5M.

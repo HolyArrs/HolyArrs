@@ -14,6 +14,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 )
@@ -135,7 +136,7 @@ func (a *API) clearMusicDaysSoon() {
 func (a *API) writeMusicAnswer(w http.ResponseWriter, key string, v any, complete bool, now time.Time) {
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(v); err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	// The answer carries its pictures' records (box, colour, version).

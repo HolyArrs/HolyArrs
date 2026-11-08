@@ -18,6 +18,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 )
 
@@ -101,7 +102,7 @@ func (a *API) kidLimited(w http.ResponseWriter, r *http.Request) bool {
 		return false
 	}
 	w.Header().Set("Retry-After", "60")
-	fail(w, http.StatusTooManyRequests, "too many lookups; try again in a minute")
+	webserver.Fail(w, http.StatusTooManyRequests, "too many lookups; try again in a minute")
 	return true
 }
 
@@ -155,19 +156,19 @@ func (a *API) kindsOn(kind string) []string {
 func discoverFail(w http.ResponseWriter, err error) {
 	switch {
 	case errors.Is(err, metadata.ErrNoAccess):
-		fail(w, http.StatusNotImplemented, "Explore is not available here")
+		webserver.Fail(w, http.StatusNotImplemented, "Explore is not available here")
 	case errors.Is(err, metadata.ErrRateLimited):
 		w.Header().Set("Retry-After", "60")
-		fail(w, http.StatusServiceUnavailable, "The movie and show details are busy; try again in a minute")
+		webserver.Fail(w, http.StatusServiceUnavailable, "The movie and show details are busy; try again in a minute")
 	case errors.Is(err, metadata.ErrNotFound):
-		fail(w, http.StatusNotFound, "That title could not be found")
+		webserver.Fail(w, http.StatusNotFound, "That title could not be found")
 	case detailsBusy(err):
 		// Held back, retrying or not answering for now: the page asks again
 		// on its own after Retry-After.
 		w.Header().Set("Retry-After", "5")
-		fail(w, http.StatusServiceUnavailable, "The movie and show details are busy; try again in a moment")
+		webserver.Fail(w, http.StatusServiceUnavailable, "The movie and show details are busy; try again in a moment")
 	default:
-		fail(w, http.StatusBadGateway, "The movie and show details did not answer; try again shortly")
+		webserver.Fail(w, http.StatusBadGateway, "The movie and show details did not answer; try again shortly")
 	}
 }
 
@@ -282,43 +283,43 @@ func (a *API) discoverRow(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 	row, kind, idText, genre := q.Get("row"), q.Get("kind"), q.Get("id"), q.Get("g")
 	if _, ok := discoverTitles[row]; !ok {
-		fail(w, http.StatusBadRequest, "row must be trending, popular, upcoming, similar, genre, services or best")
+		webserver.Fail(w, http.StatusBadRequest, "row must be trending, popular, upcoming, similar, genre, services or best")
 		return
 	}
 	if kind != "" && kind != "movie" && kind != "show" {
-		fail(w, http.StatusBadRequest, "kind must be movie or show")
+		webserver.Fail(w, http.StatusBadRequest, "kind must be movie or show")
 		return
 	}
 	var titleID int64
 	if row == "similar" {
 		n, err := strconv.ParseInt(idText, 10, 64)
 		if err != nil || n <= 0 {
-			fail(w, http.StatusBadRequest, "similar needs id=<Library title id>")
+			webserver.Fail(w, http.StatusBadRequest, "similar needs id=<Library title id>")
 			return
 		}
 		titleID = n
 	}
 	if row == "genre" && (genre == "" || len(genre) > 100) {
-		fail(w, http.StatusBadRequest, "genre needs g=<genre name>")
+		webserver.Fail(w, http.StatusBadRequest, "genre needs g=<genre name>")
 		return
 	}
 	services := ""
 	if row == "services" {
 		services, genre = q.Get("services"), strings.ToUpper(q.Get("region"))
 		if !metadata.ServiceIDs(services) || !isCountry(genre) {
-			fail(w, http.StatusBadRequest, "services needs services=<ids joined by |> and region=<country code>")
+			webserver.Fail(w, http.StatusBadRequest, "services needs services=<ids joined by |> and region=<country code>")
 			return
 		}
 	}
 	me := a.person(r).UserID
 	if !a.discover.allow(me, time.Now()) {
 		w.Header().Set("Retry-After", "60")
-		fail(w, http.StatusTooManyRequests, "too many Explore requests; try again in a minute")
+		webserver.Fail(w, http.StatusTooManyRequests, "too many Explore requests; try again in a minute")
 		return
 	}
 	d, ok := metadata.DiscovererFor(r.Context(), a.s.Metadata)
 	if !ok {
-		fail(w, http.StatusNotImplemented, "Explore is not available here")
+		webserver.Fail(w, http.StatusNotImplemented, "Explore is not available here")
 		return
 	}
 	kinds := a.kindsOn(kind)
@@ -326,7 +327,7 @@ func (a *API) discoverRow(w http.ResponseWriter, r *http.Request) {
 	if row == "similar" {
 		var t mediafiles.Title
 		if err := database.Get(r.Context(), a.s.Store.Read(), "titles", titleID, &t); err != nil || t.State == "removed" || !a.titleAllowed(r, t) {
-			fail(w, http.StatusNotFound, "no such Title")
+			webserver.Fail(w, http.StatusNotFound, "no such Title")
 			return
 		}
 		ref = t.SourceIDs["tmdb"]
@@ -363,17 +364,17 @@ func (a *API) discoverRow(w http.ResponseWriter, r *http.Request) {
 	// Library, the details cache or TMDB, and unknown ones stay hidden.
 	merged, err := a.dropNeverAdd(r.Context(), merged)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	merged = a.kidItems(r.Context(), a.kidMax(r), merged, discoverMax)
 	out, err := a.joinItems(withFreshRow(r.Context(), row), merged, me, discoverMax)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	a.exploreCaching(w, r, "private, max-age=300")
-	writeJSON(w, http.StatusOK, map[string]any{"row": row, "title": discoverTitles[row], "items": out})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"row": row, "title": discoverTitles[row], "items": out})
 }
 
 // metadataDetails answers a movie or show page from TMDB, in the Library
@@ -381,15 +382,15 @@ func (a *API) discoverRow(w http.ResponseWriter, r *http.Request) {
 func (a *API) metadataDetails(w http.ResponseWriter, r *http.Request) {
 	kind, id := r.PathValue("kind"), r.PathValue("tmdb_id")
 	if kind != "movie" && kind != "show" {
-		fail(w, http.StatusBadRequest, "kind must be movie or show")
+		webserver.Fail(w, http.StatusBadRequest, "kind must be movie or show")
 		return
 	}
 	if n, err := strconv.ParseInt(id, 10, 64); err != nil || n <= 0 {
-		fail(w, http.StatusBadRequest, "tmdb_id must be a TMDB number")
+		webserver.Fail(w, http.StatusBadRequest, "tmdb_id must be a TMDB number")
 		return
 	}
 	if len(a.kindsOn(kind)) == 0 {
-		fail(w, http.StatusConflict, "that part is off")
+		webserver.Fail(w, http.StatusConflict, "that part is off")
 		return
 	}
 	if a.kidLimited(w, r) {
@@ -397,7 +398,7 @@ func (a *API) metadataDetails(w http.ResponseWriter, r *http.Request) {
 	}
 	d, ok := metadata.DiscovererFor(r.Context(), a.s.Metadata)
 	if !ok {
-		fail(w, http.StatusNotImplemented, "Explore is not available here")
+		webserver.Fail(w, http.StatusNotImplemented, "Explore is not available here")
 		return
 	}
 	key := "details|" + kind + "|" + id
@@ -437,19 +438,19 @@ func (a *API) metadataDetails(w http.ResponseWriter, r *http.Request) {
 			rating = e.details.Rating
 		}
 		if !metadata.RatingAllows(max, kind, rating) {
-			fail(w, http.StatusForbidden, aboveLimit)
+			webserver.Fail(w, http.StatusForbidden, aboveLimit)
 			return
 		}
 	}
 	me := a.person(r).UserID
 	head, never, err := a.libraryJoin(r.Context(), e.details.DiscoverItem, me)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	similar, err := a.joinItems(r.Context(), a.kidItems(r.Context(), max, e.details.Similar, 0), me, len(e.details.Similar))
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	a.exploreCaching(w, r, "")
@@ -466,7 +467,7 @@ func (a *API) metadataDetails(w http.ResponseWriter, r *http.Request) {
 	if c := e.details.Collection; c != nil {
 		parts, err := a.joinItems(r.Context(), a.kidItems(r.Context(), max, c.Parts, 0), me, len(c.Parts))
 		if err != nil {
-			internal(w, err)
+			webserver.Internal(w, "api", err)
 			return
 		}
 		if len(parts) > 1 {
@@ -490,12 +491,12 @@ func (a *API) metadataDetails(w http.ResponseWriter, r *http.Request) {
 		var res sql.NullInt64
 		if err := a.s.Store.Read().QueryRowContext(r.Context(), `SELECT MAX(CAST(json_extract(f.quality, '$.resolution') AS INTEGER)) FROM files f
 			JOIN versions v ON v.id = f.version_id WHERE v.title_id = ? AND f.role = 'main' AND f.state = 'present'`, head.TitleID).Scan(&res); err != nil {
-			internal(w, err)
+			webserver.Internal(w, "api", err)
 			return
 		}
 		quality = qualityWord(res.Int64)
 	}
-	writeJSON(w, http.StatusOK, struct {
+	webserver.WriteJSON(w, http.StatusOK, struct {
 		metadata.Details
 		Quality    string                  `json:"quality,omitempty"`
 		Streaming  []metadata.WatchService `json:"streaming"`
@@ -576,15 +577,15 @@ const moreFromMin = 4
 func (a *API) metadataMoreFrom(w http.ResponseWriter, r *http.Request) {
 	kind, id := r.PathValue("kind"), r.PathValue("tmdb_id")
 	if kind != "movie" && kind != "show" {
-		fail(w, http.StatusBadRequest, "kind must be movie or show")
+		webserver.Fail(w, http.StatusBadRequest, "kind must be movie or show")
 		return
 	}
 	if n, err := strconv.ParseInt(id, 10, 64); err != nil || n <= 0 {
-		fail(w, http.StatusBadRequest, "tmdb_id must be a TMDB number")
+		webserver.Fail(w, http.StatusBadRequest, "tmdb_id must be a TMDB number")
 		return
 	}
 	if len(a.kindsOn(kind)) == 0 {
-		fail(w, http.StatusConflict, "that part is off")
+		webserver.Fail(w, http.StatusConflict, "that part is off")
 		return
 	}
 	if a.kidLimited(w, r) {
@@ -593,7 +594,7 @@ func (a *API) metadataMoreFrom(w http.ResponseWriter, r *http.Request) {
 	d, ok := metadata.DiscovererFor(r.Context(), a.s.Metadata)
 	l, ok2 := metadata.MadeByListerFor(r.Context(), a.s.Metadata)
 	if !ok || !ok2 {
-		fail(w, http.StatusNotImplemented, "Explore is not available here")
+		webserver.Fail(w, http.StatusNotImplemented, "Explore is not available here")
 		return
 	}
 	key := "morefrom|" + kind + "|" + id
@@ -648,7 +649,7 @@ func (a *API) metadataMoreFrom(w http.ResponseWriter, r *http.Request) {
 			rating = e.details.Rating
 		}
 		if !metadata.RatingAllows(max, kind, rating) {
-			fail(w, http.StatusForbidden, aboveLimit)
+			webserver.Fail(w, http.StatusForbidden, aboveLimit)
 			return
 		}
 	}
@@ -658,14 +659,14 @@ func (a *API) metadataMoreFrom(w http.ResponseWriter, r *http.Request) {
 		var err error
 		out, err = a.joinItems(r.Context(), items, a.person(r).UserID, len(items))
 		if err != nil {
-			internal(w, err)
+			webserver.Internal(w, "api", err)
 			return
 		}
 		a.rowCardArt(r, out)
 	}
 	who := e.details.People[0]
 	a.exploreCaching(w, r, "")
-	writeJSON(w, http.StatusOK, map[string]any{"person": who.Name, "role": who.Role, "items": out})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"person": who.Name, "role": who.Role, "items": out})
 }
 
 // metadataSeason answers GET /api/v1/metadata/show/{tmdb_id}/seasons/{number}:
@@ -675,16 +676,16 @@ func (a *API) metadataMoreFrom(w http.ResponseWriter, r *http.Request) {
 func (a *API) metadataSeason(w http.ResponseWriter, r *http.Request) {
 	id, num := r.PathValue("tmdb_id"), r.PathValue("number")
 	if n, err := strconv.ParseInt(id, 10, 64); err != nil || n <= 0 {
-		fail(w, http.StatusBadRequest, "tmdb_id must be a TMDB number")
+		webserver.Fail(w, http.StatusBadRequest, "tmdb_id must be a TMDB number")
 		return
 	}
 	season, err := strconv.Atoi(num)
 	if err != nil || season < 0 || season > 999 {
-		fail(w, http.StatusBadRequest, "number must be a season number")
+		webserver.Fail(w, http.StatusBadRequest, "number must be a season number")
 		return
 	}
 	if len(a.kindsOn("show")) == 0 {
-		fail(w, http.StatusConflict, "that part is off")
+		webserver.Fail(w, http.StatusConflict, "that part is off")
 		return
 	}
 	if a.kidLimited(w, r) {
@@ -692,7 +693,7 @@ func (a *API) metadataSeason(w http.ResponseWriter, r *http.Request) {
 	}
 	l, ok := metadata.SeasonListerFor(r.Context(), a.s.Metadata)
 	if !ok {
-		fail(w, http.StatusNotImplemented, "Explore is not available here")
+		webserver.Fail(w, http.StatusNotImplemented, "Explore is not available here")
 		return
 	}
 	if max := a.kidMax(r); max != "" {
@@ -700,7 +701,7 @@ func (a *API) metadataSeason(w http.ResponseWriter, r *http.Request) {
 		if !inLibrary {
 			d, ok := metadata.DiscovererFor(r.Context(), a.s.Metadata)
 			if !ok {
-				fail(w, http.StatusNotImplemented, "Explore is not available here")
+				webserver.Fail(w, http.StatusNotImplemented, "Explore is not available here")
 				return
 			}
 			key := "details|show|" + id
@@ -717,7 +718,7 @@ func (a *API) metadataSeason(w http.ResponseWriter, r *http.Request) {
 			rating = e.details.Rating
 		}
 		if !metadata.RatingAllows(max, "show", rating) {
-			fail(w, http.StatusForbidden, aboveLimit)
+			webserver.Fail(w, http.StatusForbidden, aboveLimit)
 			return
 		}
 	}
@@ -735,7 +736,7 @@ func (a *API) metadataSeason(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	a.exploreCaching(w, r, "")
-	writeJSON(w, http.StatusOK, map[string]any{"tmdb_id": id, "season": season, "episodes": e.episodes})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"tmdb_id": id, "season": season, "episodes": e.episodes})
 }
 
 // watchServices answers GET /api/v1/watch-services?region=<ISO>: the
@@ -743,23 +744,23 @@ func (a *API) metadataSeason(w http.ResponseWriter, r *http.Request) {
 func (a *API) watchServices(w http.ResponseWriter, r *http.Request) {
 	region := strings.ToUpper(r.URL.Query().Get("region"))
 	if !isCountry(region) {
-		fail(w, http.StatusBadRequest, "region must be a country code")
+		webserver.Fail(w, http.StatusBadRequest, "region must be a country code")
 		return
 	}
 	key := "services-list|" + region
 	if e, ok := a.discover.get(key); ok && time.Since(e.at) < 24*time.Hour {
 		a.exploreCaching(w, r, "private, max-age=3600")
-		writeJSON(w, http.StatusOK, map[string]any{"region": region, "services": e.services})
+		webserver.WriteJSON(w, http.StatusOK, map[string]any{"region": region, "services": e.services})
 		return
 	}
 	if !a.discover.allow(a.person(r).UserID, time.Now()) {
 		w.Header().Set("Retry-After", "60")
-		fail(w, http.StatusTooManyRequests, "too many Explore requests; try again in a minute")
+		webserver.Fail(w, http.StatusTooManyRequests, "too many Explore requests; try again in a minute")
 		return
 	}
 	l, ok := metadata.ServiceListerFor(r.Context(), a.s.Metadata)
 	if !ok {
-		fail(w, http.StatusNotImplemented, "Explore is not available here")
+		webserver.Fail(w, http.StatusNotImplemented, "Explore is not available here")
 		return
 	}
 	// One list for both kinds: a service keeps its best place in either.
@@ -785,5 +786,5 @@ func (a *API) watchServices(w http.ResponseWriter, r *http.Request) {
 	sort.SliceStable(out, func(i, j int) bool { return out[i].Priority < out[j].Priority })
 	a.discover.put(key, discoverEntry{at: time.Now(), services: out})
 	a.exploreCaching(w, r, "private, max-age=3600")
-	writeJSON(w, http.StatusOK, map[string]any{"region": region, "services": out})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"region": region, "services": out})
 }

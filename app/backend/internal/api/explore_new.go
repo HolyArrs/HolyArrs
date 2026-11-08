@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	engine "github.com/HolyArrs/holyarrs/app/backend/internal/discover/rows"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
@@ -956,7 +957,7 @@ func (a *API) newRailViews(r *http.Request, rail []newRailDay) ([]newRailDayView
 func (a *API) newParams(w http.ResponseWriter, r *http.Request) (string, bool) {
 	sw, ok := exploreSwitch(r.URL.Query().Get("type"))
 	if !ok {
-		fail(w, http.StatusBadRequest, "type must be all, movies or shows")
+		webserver.Fail(w, http.StatusBadRequest, "type must be all, movies or shows")
 		return "", false
 	}
 	if a.kidLimited(w, r) {
@@ -964,7 +965,7 @@ func (a *API) newParams(w http.ResponseWriter, r *http.Request) (string, bool) {
 	}
 	if !a.discover.allow(a.person(r).UserID, time.Now()) {
 		w.Header().Set("Retry-After", "60")
-		fail(w, http.StatusTooManyRequests, "too many Explore requests; try again in a minute")
+		webserver.Fail(w, http.StatusTooManyRequests, "too many Explore requests; try again in a minute")
 		return "", false
 	}
 	return sw, true
@@ -981,7 +982,7 @@ func (a *API) exploreNew(w http.ResponseWriter, r *http.Request) {
 		n, err = 0, nil
 	}
 	if err != nil || n < 0 || n > 20 {
-		fail(w, http.StatusBadRequest, "page must be a number from 0")
+		webserver.Fail(w, http.StatusBadRequest, "page must be a number from 0")
 		return
 	}
 	sw, ok := a.newParams(w, r)
@@ -994,7 +995,7 @@ func (a *API) exploreNew(w http.ResponseWriter, r *http.Request) {
 	var hero []discoverItemView
 	if n == 0 {
 		if hero, err = a.newHero(r, pg, me); err != nil {
-			internal(w, err)
+			webserver.Internal(w, "api", err)
 			return
 		}
 		keys := map[string]bool{}
@@ -1016,7 +1017,7 @@ func (a *API) exploreNew(w http.ResponseWriter, r *http.Request) {
 	from, to = min(from, len(rows)), min(to, len(rows))
 	views, err := a.newViews(r, rows[from:to], pg, engine.NewRowMin)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	body := map[string]any{"type": sw, "page": n, "more": to < len(rows), "building": building, "services_set": pg.picked, "rows": views}
@@ -1024,13 +1025,13 @@ func (a *API) exploreNew(w http.ResponseWriter, r *http.Request) {
 		body["hero"] = hero
 		rail, err := a.newRailViews(r, pg.rail)
 		if err != nil {
-			internal(w, err)
+			webserver.Internal(w, "api", err)
 			return
 		}
 		body["rail"] = rail
 	}
 	a.exploreCaching(w, r, "private, no-cache")
-	writeJSON(w, http.StatusOK, body)
+	webserver.WriteJSON(w, http.StatusOK, body)
 }
 
 // newPreviewMax and newPreviewPer shape Explore's New on your services
@@ -1061,7 +1062,7 @@ func (a *API) exploreNewServices(w http.ResponseWriter, r *http.Request) {
 	row := exploreRowView{ID: "np_services", Type: engine.TypeNPServices, Title: "New on your services", Items: []discoverItemView{}}
 	views, err := a.newViews(r, []engine.Row{{ID: "np_services", Type: engine.TypeNPServices, Title: "New on your services", Items: items}}, pg, 1)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	if len(views) == 1 {
@@ -1069,7 +1070,7 @@ func (a *API) exploreNewServices(w http.ResponseWriter, r *http.Request) {
 		row.Items = row.Items[:min(len(row.Items), newPreviewMax)]
 	}
 	a.exploreCaching(w, r, "private, max-age=300")
-	writeJSON(w, http.StatusOK, map[string]any{"type": sw, "row": row})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"type": sw, "row": row})
 }
 
 // newServiceRows names the chip rows exploreNewService answers for.
@@ -1083,7 +1084,7 @@ var newServiceRows = map[string]string{"services": engine.TypeNPServices, "hot_s
 func (a *API) exploreNewService(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(r.URL.Query().Get("id"))
 	if err != nil || id <= 0 {
-		fail(w, http.StatusBadRequest, "id must be a service id")
+		webserver.Fail(w, http.StatusBadRequest, "id must be a service id")
 		return
 	}
 	name := r.URL.Query().Get("row")
@@ -1092,7 +1093,7 @@ func (a *API) exploreNewService(w http.ResponseWriter, r *http.Request) {
 	}
 	typ, ok := newServiceRows[name]
 	if !ok {
-		fail(w, http.StatusBadRequest, "row must be services, hot_shows or hot_movies")
+		webserver.Fail(w, http.StatusBadRequest, "row must be services, hot_shows or hot_movies")
 		return
 	}
 	sw, ok := a.newParams(w, r)
@@ -1104,7 +1105,7 @@ func (a *API) exploreNewService(w http.ResponseWriter, r *http.Request) {
 	row := exploreRowView{ID: typ + "_" + strconv.Itoa(id), Type: typ, Items: []discoverItemView{}}
 	views, err := a.newViews(r, []engine.Row{{ID: row.ID, Type: typ, Items: items}}, pg, 1)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	if len(views) == 1 {
@@ -1130,5 +1131,5 @@ func (a *API) exploreNewService(w http.ResponseWriter, r *http.Request) {
 		cache = "private, no-cache"
 	}
 	a.exploreCaching(w, r, cache)
-	writeJSON(w, http.StatusOK, map[string]any{"type": sw, "service": id, "building": building, "row": row})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"type": sw, "service": id, "building": building, "row": row})
 }

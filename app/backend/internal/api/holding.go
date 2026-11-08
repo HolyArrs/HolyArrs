@@ -3,6 +3,7 @@ package api
 import (
 	"net/http"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 )
 
@@ -16,10 +17,10 @@ func (a *API) holdingRoutes(m *http.ServeMux) {
 func (a *API) listHolding(w http.ResponseWriter, r *http.Request) {
 	files, err := a.s.Library.HeldFiles(r.Context())
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"files": files})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"files": files})
 }
 
 // restoreHolding moves held files back; a deleted title comes back with
@@ -32,12 +33,12 @@ func (a *API) restoreHolding(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if len(body.IDs) == 0 || len(body.IDs) > 5000 {
-		fail(w, http.StatusBadRequest, "send 1 to 5000 ids")
+		webserver.Fail(w, http.StatusBadRequest, "send 1 to 5000 ids")
 		return
 	}
 	res, back, err := a.s.Library.RestoreHeld(r.Context(), body.IDs, actor(r))
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	out := map[string]any{"results": res, "titles_back": back}
@@ -46,5 +47,5 @@ func (a *API) restoreHolding(w http.ResponseWriter, r *http.Request) {
 			out["rescan_job_id"] = id
 		}
 	}
-	writeJSON(w, http.StatusOK, out)
+	webserver.WriteJSON(w, http.StatusOK, out)
 }

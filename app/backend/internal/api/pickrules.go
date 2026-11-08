@@ -10,6 +10,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 )
 
@@ -60,7 +61,7 @@ func useWords(u library.Use) string {
 func (a *API) pickRulesID(w http.ResponseWriter, r *http.Request) (int64, bool) {
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil || id <= 0 {
-		fail(w, http.StatusBadRequest, "the Pick rules id must be a number")
+		webserver.Fail(w, http.StatusBadRequest, "the Pick rules id must be a number")
 		return 0, false
 	}
 	return id, true
@@ -71,24 +72,24 @@ func (a *API) pickRulesError(w http.ResponseWriter, r *http.Request, id int64, e
 	var fe *mediafiles.FieldError
 	switch {
 	case errors.As(err, &fe):
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": fe.Text, "field": fe.Field})
+		webserver.WriteJSON(w, http.StatusBadRequest, map[string]string{"error": fe.Text, "field": fe.Field})
 	case errors.Is(err, database.ErrNotFound):
-		fail(w, http.StatusNotFound, "no such Pick rules")
+		webserver.Fail(w, http.StatusNotFound, "no such Pick rules")
 	case errors.Is(err, library.ErrPickRulesName):
-		writeJSON(w, http.StatusConflict, map[string]string{"error": "Other Pick rules already have this name.", "field": "name"})
+		webserver.WriteJSON(w, http.StatusConflict, map[string]string{"error": "Other Pick rules already have this name.", "field": "name"})
 	case errors.Is(err, library.ErrPresetLocked):
-		fail(w, http.StatusConflict, "These are ready-made Pick rules: they keep their name and kinds and cannot be removed. Their rules may be changed, or make a copy.")
+		webserver.Fail(w, http.StatusConflict, "These are ready-made Pick rules: they keep their name and kinds and cannot be removed. Their rules may be changed, or make a copy.")
 	case errors.Is(err, library.ErrPickRulesInUse):
 		u, uerr := library.PickRulesUse(r.Context(), a.s.Store, id)
 		if uerr != nil {
-			internal(w, uerr)
+			webserver.Internal(w, "api", uerr)
 			return
 		}
-		writeJSON(w, http.StatusConflict, map[string]any{
+		webserver.WriteJSON(w, http.StatusConflict, map[string]any{
 			"error":  "These Pick rules are used by " + useWords(u) + ", so they cannot be removed, lose a kind in use, or switch between video and music.",
 			"in_use": u})
 	default:
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 	}
 }
 
@@ -104,10 +105,10 @@ func (a *API) getPickRules(w http.ResponseWriter, r *http.Request) {
 	}
 	u, err := library.PickRulesUse(r.Context(), a.s.Store, id)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
-	writeJSON(w, http.StatusOK, detailOfPickRules(p, u))
+	webserver.WriteJSON(w, http.StatusOK, detailOfPickRules(p, u))
 }
 
 const pickRulesHelp = `send {"name": "...", "kinds": ["movie"], "body": {...}}`
@@ -122,7 +123,7 @@ func (a *API) addPickRules(w http.ResponseWriter, r *http.Request) {
 		a.pickRulesError(w, r, 0, err)
 		return
 	}
-	writeJSON(w, http.StatusCreated, detailOfPickRules(p, library.Use{}))
+	webserver.WriteJSON(w, http.StatusCreated, detailOfPickRules(p, library.Use{}))
 }
 
 func (a *API) editPickRules(w http.ResponseWriter, r *http.Request) {
@@ -141,10 +142,10 @@ func (a *API) editPickRules(w http.ResponseWriter, r *http.Request) {
 	}
 	u, err := library.PickRulesUse(r.Context(), a.s.Store, id)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
-	writeJSON(w, http.StatusOK, detailOfPickRules(p, u))
+	webserver.WriteJSON(w, http.StatusOK, detailOfPickRules(p, u))
 }
 
 func (a *API) deletePickRules(w http.ResponseWriter, r *http.Request) {

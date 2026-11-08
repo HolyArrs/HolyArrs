@@ -9,6 +9,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 )
 
@@ -105,7 +106,7 @@ func (m *lookupMemo) rules(ctx context.Context, db database.Querier, id int64) (
 func versionID(w http.ResponseWriter, r *http.Request) (int64, bool) {
 	id, err := strconv.ParseInt(r.PathValue("vid"), 10, 64)
 	if err != nil || id <= 0 {
-		fail(w, http.StatusNotFound, "not found")
+		webserver.Fail(w, http.StatusNotFound, "not found")
 		return 0, false
 	}
 	return id, true
@@ -141,7 +142,7 @@ func (a *API) addVersion(w http.ResponseWriter, r *http.Request) {
 	}
 	a.s.Library.VersionEvent(r.Context(), t, "Added the "+v.Label+" Version", v, actor(r))
 	a.publishTitle(r, t.ID)
-	writeJSON(w, http.StatusCreated, versionView(r.Context(), a.s.Store.Read(), v))
+	webserver.WriteJSON(w, http.StatusCreated, versionView(r.Context(), a.s.Store.Read(), v))
 }
 
 func (a *API) editVersion(w http.ResponseWriter, r *http.Request) {
@@ -164,7 +165,7 @@ func (a *API) editVersion(w http.ResponseWriter, r *http.Request) {
 	}
 	a.s.Library.VersionEvent(r.Context(), t, "Changed the "+v.Label+" Version", v, actor(r))
 	a.publishTitle(r, t.ID)
-	writeJSON(w, http.StatusOK, versionView(r.Context(), a.s.Store.Read(), v))
+	webserver.WriteJSON(w, http.StatusOK, versionView(r.Context(), a.s.Store.Read(), v))
 }
 
 func (a *API) deleteVersion(w http.ResponseWriter, r *http.Request) {

@@ -3,6 +3,7 @@ package api
 import (
 	"net/http"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 )
 
@@ -45,7 +46,7 @@ func (a *API) itemPriority(w http.ResponseWriter, r *http.Request) {
 	switch in.Priority {
 	case downloads.PriorityLow, downloads.PriorityNormal, downloads.PriorityHigh, downloads.PriorityForce:
 	default:
-		fail(w, http.StatusBadRequest, priorityHelp)
+		webserver.Fail(w, http.StatusBadRequest, priorityHelp)
 		return
 	}
 	a.itemAct(true, func(r *http.Request, e downloads.Engine, id string) error {

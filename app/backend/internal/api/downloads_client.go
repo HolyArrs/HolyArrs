@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 )
@@ -268,7 +269,7 @@ func (a *API) itemAct(write bool, f func(r *http.Request, e downloads.Engine, id
 			itemError(w, err)
 			return
 		}
-		writeJSON(w, http.StatusOK, map[string]any{"ok": true})
+		webserver.WriteJSON(w, http.StatusOK, map[string]any{"ok": true})
 	}
 }
 
@@ -286,7 +287,7 @@ func (a *API) onItem(r *http.Request, write bool, call func(e downloads.Engine, 
 
 func itemError(w http.ResponseWriter, err error) {
 	if errors.Is(err, downloads.ErrNoDownloader) {
-		fail(w, http.StatusNotFound, err.Error())
+		webserver.Fail(w, http.StatusNotFound, err.Error())
 		return
 	}
 	clientControlError(w, err)
@@ -352,7 +353,7 @@ func (a *API) itemDetail(w http.ResponseWriter, r *http.Request) {
 		}
 		out.Log = a.torrentTimeline(r.Context(), id, r.PathValue("hash"), out.Torrent, nil)
 	}
-	writeJSON(w, http.StatusOK, out)
+	webserver.WriteJSON(w, http.StatusOK, out)
 }
 
 // titleOwner names the person who added a Library title, or "" when
@@ -447,7 +448,7 @@ func (a *API) itemSwarm(w http.ResponseWriter, r *http.Request) {
 	if id, perr := strconv.ParseInt(r.PathValue("id"), 10, 64); perr == nil {
 		a.noteTrackers(r.Context(), id, r.PathValue("hash"), out.Trackers)
 	}
-	writeJSON(w, http.StatusOK, out)
+	webserver.WriteJSON(w, http.StatusOK, out)
 }
 
 // itemFiles lists a client item's files with their priority.
@@ -464,7 +465,7 @@ func (a *API) itemFiles(w http.ResponseWriter, r *http.Request) {
 		itemError(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"files": files})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"files": files})
 }
 
 // setItemFiles sets which files of a client item to fetch and how soon.
@@ -477,13 +478,13 @@ func (a *API) setItemFiles(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if len(in.Indexes) == 0 || len(in.Indexes) > 10000 {
-		fail(w, http.StatusBadRequest, "indexes needs 1 to 10000 file indexes")
+		webserver.Fail(w, http.StatusBadRequest, "indexes needs 1 to 10000 file indexes")
 		return
 	}
 	switch in.Priority {
 	case 0, 1, 6, 7:
 	default:
-		fail(w, http.StatusBadRequest, downloads.ErrFilePriority.Error())
+		webserver.Fail(w, http.StatusBadRequest, downloads.ErrFilePriority.Error())
 		return
 	}
 	if !a.itemChangeOK(w, r) {

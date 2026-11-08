@@ -14,6 +14,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
@@ -43,24 +44,24 @@ type libraryCopySearchResult struct {
 func (a *API) listLibraryCopies(w http.ResponseWriter, r *http.Request) {
 	limit, err := libraryCopyInt(r, "limit", 50)
 	if err != nil {
-		fail(w, http.StatusBadRequest, err.Error())
+		webserver.Fail(w, http.StatusBadRequest, err.Error())
 		return
 	}
 	offset, err := libraryCopyInt(r, "offset", 0)
 	if err != nil {
-		fail(w, http.StatusBadRequest, err.Error())
+		webserver.Fail(w, http.StatusBadRequest, err.Error())
 		return
 	}
 	page, err := mediafiles.LibraryCopies(r.Context(), a.s.Store, mediafiles.LibraryCopyFilter{Query: r.URL.Query().Get("q"), Codec: r.URL.Query().Get("codec"), Sort: r.URL.Query().Get("sort"), Limit: limit, Offset: offset})
 	if errors.Is(err, mediafiles.ErrLibraryCopyFilter) || errors.Is(err, mediafiles.ErrTitleSearchQuery) {
-		fail(w, http.StatusBadRequest, err.Error())
+		webserver.Fail(w, http.StatusBadRequest, err.Error())
 		return
 	}
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
-	writeJSON(w, http.StatusOK, page)
+	webserver.WriteJSON(w, http.StatusOK, page)
 }
 
 func libraryCopyInt(r *http.Request, name string, def int) (int, error) {
@@ -82,18 +83,18 @@ func (a *API) previewLibraryCopySearch(w http.ResponseWriter, r *http.Request) {
 	}
 	preview, err := a.libraryCopyPreview(r, in.Selections)
 	if errors.Is(err, mediafiles.ErrLibraryCopyFilter) {
-		fail(w, http.StatusBadRequest, err.Error())
+		webserver.Fail(w, http.StatusBadRequest, err.Error())
 		return
 	}
 	if errors.Is(err, mediafiles.ErrLibraryCopyStale) || errors.Is(err, errProtectedLibraryCopy) {
-		fail(w, http.StatusConflict, err.Error())
+		webserver.Fail(w, http.StatusConflict, err.Error())
 		return
 	}
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
-	writeJSON(w, http.StatusOK, preview)
+	webserver.WriteJSON(w, http.StatusOK, preview)
 }
 
 var errProtectedLibraryCopy = errors.New("a selected Library copy is protected")
@@ -131,28 +132,28 @@ func (a *API) searchLibraryCopies(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if len(in.ReviewToken) != sha256.Size*2 {
-		fail(w, http.StatusBadRequest, "review_token is required")
+		webserver.Fail(w, http.StatusBadRequest, "review_token is required")
 		return
 	}
 	preview, err := a.libraryCopyPreview(r, in.Selections)
 	if errors.Is(err, mediafiles.ErrLibraryCopyFilter) {
-		fail(w, http.StatusBadRequest, err.Error())
+		webserver.Fail(w, http.StatusBadRequest, err.Error())
 		return
 	}
 	if errors.Is(err, mediafiles.ErrLibraryCopyStale) || errors.Is(err, errProtectedLibraryCopy) {
-		fail(w, http.StatusConflict, err.Error())
+		webserver.Fail(w, http.StatusConflict, err.Error())
 		return
 	}
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	if subtle.ConstantTimeCompare([]byte(strings.ToLower(in.ReviewToken)), []byte(preview.ReviewToken)) != 1 {
-		fail(w, http.StatusConflict, "the reviewed Library copies changed; review them again")
+		webserver.Fail(w, http.StatusConflict, "the reviewed Library copies changed; review them again")
 		return
 	}
 	if a.s.Queue == nil {
-		internal(w, errors.New("Library copy search queue is unavailable"))
+		webserver.Internal(w, "api", errors.New("Library copy search queue is unavailable"))
 		return
 	}
 	result := libraryCopySearchResult{Items: make([]libraryCopySearchItem, 0, len(preview.Copies)), JobIDs: []int64{}}
@@ -160,14 +161,14 @@ func (a *API) searchLibraryCopies(w http.ResponseWriter, r *http.Request) {
 		sel := mediafiles.LibraryCopySelection{FileID: copy.FileID, VersionID: copy.VersionID}
 		slots, err := mediafiles.LibraryCopySlots(r.Context(), a.s.Store, sel)
 		if err != nil {
-			fail(w, http.StatusConflict, mediafiles.ErrLibraryCopyStale.Error())
+			webserver.Fail(w, http.StatusConflict, mediafiles.ErrLibraryCopyStale.Error())
 			return
 		}
 		item := libraryCopySearchItem{FileID: copy.FileID, VersionID: copy.VersionID, SlotIDs: slots, JobIDs: []int64{}}
 		for _, slotID := range slots {
 			jobID, _, err := a.s.Queue.Enqueue(r.Context(), jobs.KindSearchSlot, &domain.Subject{Type: "slot", ID: slotID}, map[string]any{"by_hand": true, "choose": false}, "show_slot:"+itoa(slotID), actor(r))
 			if err != nil {
-				internal(w, err)
+				webserver.Internal(w, "api", err)
 				return
 			}
 			item.JobIDs = append(item.JobIDs, jobID)
@@ -175,5 +176,5 @@ func (a *API) searchLibraryCopies(w http.ResponseWriter, r *http.Request) {
 		}
 		result.Items = append(result.Items, item)
 	}
-	writeJSON(w, http.StatusAccepted, result)
+	webserver.WriteJSON(w, http.StatusAccepted, result)
 }

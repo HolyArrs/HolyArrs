@@ -12,6 +12,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
@@ -370,7 +371,7 @@ func (a *API) withPictures(ctx context.Context, b []byte, extra ...string) []byt
 func (a *API) writeMusicJSON(w http.ResponseWriter, r *http.Request, v any, extra ...string) {
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(v); err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	b := a.withPictures(r.Context(), buf.Bytes(), extra...)

@@ -10,6 +10,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/health"
@@ -277,7 +278,7 @@ func (a *API) settingsStatusRoute(w http.ResponseWriter, r *http.Request) {
 	if c.answer == nil || now.Sub(c.at) >= statusFor {
 		in, err := a.statusInput(r.Context(), now)
 		if err != nil {
-			internal(w, err)
+			webserver.Internal(w, "api", err)
 			return
 		}
 		ans := settingsStatus(in)
@@ -294,7 +295,7 @@ func (a *API) settingsStatusRoute(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
-	writeJSON(w, http.StatusOK, out)
+	webserver.WriteJSON(w, http.StatusOK, out)
 }
 
 // statusInput gathers what the rules look at, including whether the

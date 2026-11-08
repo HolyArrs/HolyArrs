@@ -69,7 +69,7 @@ func (a *API) titlesOwned(w http.ResponseWriter, r *http.Request) {
 	all := !signed || who.Has(webserver.PermApprove)
 	rows, err := a.s.Store.Read().QueryContext(r.Context(), ownedSQL, all, who.UserID)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	defer rows.Close()
@@ -82,7 +82,7 @@ func (a *API) titlesOwned(w http.ResponseWriter, r *http.Request) {
 		var asked bool
 		var genres string
 		if err := rows.Scan(&it.Kind, &it.TMDB, &mbid, &it.ID, &rating, &have, &lack, &dl, &pct, &asked, &genres); err != nil {
-			internal(w, err)
+			webserver.Internal(w, "api", err)
 			return
 		}
 		if !on(it.Kind) || !metadata.RatingAllows(max, strings.Replace(it.Kind, "album", "artist", 1), rating) {
@@ -120,7 +120,7 @@ func (a *API) titlesOwned(w http.ResponseWriter, r *http.Request) {
 		out = append(out, it)
 	}
 	if err := rows.Err(); err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	w.Header().Set("Vary", "Cookie, Authorization")

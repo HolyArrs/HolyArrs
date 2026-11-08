@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	engine "github.com/HolyArrs/holyarrs/app/backend/internal/discover/rows"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
@@ -160,18 +161,18 @@ func (a *API) exploreServiceTop(w http.ResponseWriter, r *http.Request) {
 	sw, ok := exploreSwitch(q.Get("type"))
 	region := strings.ToUpper(q.Get("region"))
 	if !ok || !isCountry(region) {
-		fail(w, http.StatusBadRequest, "type must be all, movies or shows and region a country code")
+		webserver.Fail(w, http.StatusBadRequest, "type must be all, movies or shows and region a country code")
 		return
 	}
 	out := map[string]any{"region": region, "attribution": "", "services": []serviceTopView{}}
 	if a.s.ServiceTop == nil {
 		a.exploreCaching(w, r, "private, max-age=300")
-		writeJSON(w, http.StatusOK, out)
+		webserver.WriteJSON(w, http.StatusOK, out)
 		return
 	}
 	if !a.discover.allow(a.person(r).UserID, time.Now()) {
 		w.Header().Set("Retry-After", "60")
-		fail(w, http.StatusTooManyRequests, "too many Explore requests; try again in a minute")
+		webserver.Fail(w, http.StatusTooManyRequests, "too many Explore requests; try again in a minute")
 		return
 	}
 	kinds := map[string]bool{}
@@ -183,11 +184,11 @@ func (a *API) exploreServiceTop(w http.ResponseWriter, r *http.Request) {
 	list, err := a.cachedServiceTop(r.Context(), region)
 	if errors.Is(err, metadata.ErrNotFound) || (err == nil && len(kinds) == 0) {
 		a.exploreCaching(w, r, "private, max-age=300")
-		writeJSON(w, http.StatusOK, out)
+		webserver.WriteJSON(w, http.StatusOK, out)
 		return
 	}
 	if err != nil {
-		fail(w, http.StatusBadGateway, "the metadata server did not answer; try again shortly")
+		webserver.Fail(w, http.StatusBadGateway, "the metadata server did not answer; try again shortly")
 		return
 	}
 	// Every title once, joined in one pass, then handed back per service.
@@ -210,13 +211,13 @@ func (a *API) exploreServiceTop(w http.ResponseWriter, r *http.Request) {
 	}
 	all, err = a.dropNeverAdd(r.Context(), all)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	all = a.kidItems(r.Context(), a.kidMax(r), all, len(all))
 	joined, err := a.joinItems(r.Context(), all, a.person(r).UserID, len(all))
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	a.fillTrailerKeys(r, joined)
@@ -239,7 +240,7 @@ func (a *API) exploreServiceTop(w http.ResponseWriter, r *http.Request) {
 	}
 	out["attribution"], out["services"] = list.Attribution, views
 	a.exploreCaching(w, r, "private, max-age=300")
-	writeJSON(w, http.StatusOK, out)
+	webserver.WriteJSON(w, http.StatusOK, out)
 }
 
 // streamingMark says a card's title is on one of the member's streaming

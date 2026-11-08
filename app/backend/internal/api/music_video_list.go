@@ -3,6 +3,7 @@ package api
 import (
 	"net/http"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
@@ -32,5 +33,5 @@ func (a *API) artistVideoList(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	w.Header().Set("Cache-Control", "private, max-age=300")
-	writeJSON(w, http.StatusOK, map[string]any{"videos": out})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"videos": out})
 }

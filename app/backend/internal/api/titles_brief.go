@@ -36,7 +36,7 @@ func (a *API) listTitlesBrief(w http.ResponseWriter, r *http.Request, ts []media
 	rows, err := a.s.Store.Read().QueryContext(r.Context(), `SELECT i.title_id, s.state FROM slots s
 		JOIN items i ON i.id = s.item_id JOIN titles t ON t.id = i.title_id WHERE t.kind = 'movie' ORDER BY s.id`)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	defer rows.Close()
@@ -44,13 +44,13 @@ func (a *API) listTitlesBrief(w http.ResponseWriter, r *http.Request, ts []media
 		var id int64
 		var st string
 		if err := rows.Scan(&id, &st); err != nil {
-			internal(w, err)
+			webserver.Internal(w, "api", err)
 			return
 		}
 		slots[id] = append(slots[id], briefSlot{State: st})
 	}
 	if err := rows.Err(); err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	out := []titleBrief{}

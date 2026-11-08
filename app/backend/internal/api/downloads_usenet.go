@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 )
 
@@ -80,7 +81,7 @@ func (a *API) itemUsenet(w http.ResponseWriter, r *http.Request) {
 		itemError(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, out)
+	webserver.WriteJSON(w, http.StatusOK, out)
 }
 
 // downloadUsenet is the same for a download HolyArrs sent.
@@ -95,7 +96,7 @@ func (a *API) downloadUsenet(w http.ResponseWriter, r *http.Request) {
 		clientControlError(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, out)
+	webserver.WriteJSON(w, http.StatusOK, out)
 }
 
 const retryOwn = "HolyArrs already handled this failed download: it turned the copy down and searched again"
@@ -114,7 +115,7 @@ func (a *API) retryItem(w http.ResponseWriter, r *http.Request) {
 	}
 	old := r.PathValue("hash")
 	if !a.outsideHash(r.Context(), did, old) {
-		fail(w, http.StatusConflict, retryOwn)
+		webserver.Fail(w, http.StatusConflict, retryOwn)
 		return
 	}
 	if !a.itemChangeOK(w, r) {
@@ -139,10 +140,10 @@ func (a *API) retryItem(w http.ResponseWriter, r *http.Request) {
 	}
 	a.itemChangedEvent(r, did, newID, "retry", "sent back to try again")
 	if err := a.rekeyItem(r.Context(), did, old, newID); err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "id": newID})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"ok": true, "id": newID})
 }
 
 // rekeyItem moves what HolyArrs keeps about one client item to its new id

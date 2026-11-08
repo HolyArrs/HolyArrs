@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"sort"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
 )
 
@@ -36,14 +37,14 @@ func (a *API) listTags(w http.ResponseWriter, r *http.Request) {
 		}
 		rows, err := a.s.Store.Read().QueryContext(r.Context(), "SELECT j.value FROM "+q.table+" x, json_each(x.tags) j"+where)
 		if err != nil {
-			internal(w, err)
+			webserver.Internal(w, "api", err)
 			return
 		}
 		for rows.Next() {
 			var label string
 			if err := rows.Scan(&label); err != nil {
 				_ = rows.Close()
-				internal(w, err)
+				webserver.Internal(w, "api", err)
 				return
 			}
 			if uses[label] == nil {
@@ -54,13 +55,13 @@ func (a *API) listTags(w http.ResponseWriter, r *http.Request) {
 		err = rows.Err()
 		_ = rows.Close()
 		if err != nil {
-			internal(w, err)
+			webserver.Internal(w, "api", err)
 			return
 		}
 	}
 	onSources, err := sources.TagUses(r.Context(), a.s.Store.Read())
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	for label, n := range onSources {
@@ -74,5 +75,5 @@ func (a *API) listTags(w http.ResponseWriter, r *http.Request) {
 		out = append(out, *u)
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].Label < out[j].Label })
-	writeJSON(w, http.StatusOK, map[string]any{"tags": out})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"tags": out})
 }

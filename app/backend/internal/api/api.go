@@ -517,16 +517,14 @@ func (a *API) Chain(rt *webserver.Router) http.Handler {
 	m := rt.Mux()
 	if a.s.Auth != nil {
 		a.ai.Inner = a.kidGate(m, a.partGate(m, accounts.Gate(m)))
-		return secure(a.arr().Gate(a.s.Auth.Middleware(wrapMux(a.liveRecheck(a.logSettingsChanges(a.forgetStatusOnWrite(a.kidGate(m, a.partGate(m, accounts.Gate(m))))))))))
+		return webserver.SecureHeaders(a.arr().Gate(a.s.Auth.Middleware(wrapMux(a.liveRecheck(a.logSettingsChanges(a.forgetStatusOnWrite(a.kidGate(m, a.partGate(m, accounts.Gate(m))))))))))
 	}
 	a.ai.Inner = a.partGate(m, m)
-	return secure(a.arr().Gate(wrapMux(a.logSettingsChanges(a.forgetStatusOnWrite(a.partGate(m, m))))))
+	return webserver.SecureHeaders(a.arr().Gate(wrapMux(a.logSettingsChanges(a.forgetStatusOnWrite(a.partGate(m, m))))))
 }
 
 // wrapMux lets tests record which routes the mux served.
 var wrapMux = func(h http.Handler) http.Handler { return h }
-
-func secure(h http.Handler) http.Handler { return webserver.SecureHeaders(h) }
 
 // healthz is open to everyone: it says only whether the database answers.
 func (a *API) healthz(w http.ResponseWriter, _ *http.Request) {
@@ -539,12 +537,6 @@ func (a *API) healthz(w http.ResponseWriter, _ *http.Request) {
 
 // SubtitleFileView is one main File with its subtitles.
 type SubtitleFileView = subtitles.FileView
-
-func writeJSON(w http.ResponseWriter, code int, v any) { webserver.WriteJSON(w, code, v) }
-
-func fail(w http.ResponseWriter, code int, msg string) { webserver.Fail(w, code, msg) }
-
-func internal(w http.ResponseWriter, err error) { webserver.Internal(w, "api", err) }
 
 func itoa(n int64) string { return strconv.FormatInt(n, 10) }
 
@@ -881,11 +873,11 @@ func gateReason(t mediafiles.Title, open bool) string {
 func (a *API) listTitles(w http.ResponseWriter, r *http.Request) {
 	ts, err := mediafiles.SearchTitles(r.Context(), a.s.Store, r.URL.Query().Get("q"))
 	if errors.Is(err, mediafiles.ErrTitleSearchQuery) {
-		fail(w, http.StatusBadRequest, err.Error())
+		webserver.Fail(w, http.StatusBadRequest, err.Error())
 		return
 	}
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	if r.URL.Query().Has("brief") {
@@ -900,7 +892,7 @@ func (a *API) listTitles(w http.ResponseWriter, r *http.Request) {
 		ctx, err = a.withTitleBatch(ctx)
 	}
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	for _, t := range ts {
@@ -912,7 +904,7 @@ func (a *API) listTitles(w http.ResponseWriter, r *http.Request) {
 		}
 		v, err := a.titleView(ctx, t)
 		if err != nil {
-			internal(w, err)
+			webserver.Internal(w, "api", err)
 			return
 		}
 		if v.Artist != nil {
@@ -933,7 +925,7 @@ func (a *API) titleID(w http.ResponseWriter, r *http.Request) (mediafiles.Title,
 		err = database.Get(r.Context(), a.s.Store.Read(), "titles", id, &t)
 	}
 	if err != nil {
-		fail(w, http.StatusNotFound, "no such Title")
+		webserver.Fail(w, http.StatusNotFound, "no such Title")
 		return t, false
 	}
 	return t, true
@@ -950,25 +942,25 @@ func limit(r *http.Request, def int) int {
 func (a *API) listDownloads(w http.ResponseWriter, r *http.Request) {
 	ds, err := database.Select[domain.Download](r.Context(), a.s.Store.Read(), "downloads", "1=1 ORDER BY id DESC LIMIT ?", limit(r, 50))
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	if ds == nil {
 		ds = []domain.Download{}
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"downloads": ds})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"downloads": ds})
 }
 
 func (a *API) listImports(w http.ResponseWriter, r *http.Request) {
 	is, err := database.Select[mediafiles.Import](r.Context(), a.s.Store.Read(), "imports", "1=1 ORDER BY id DESC LIMIT ?", limit(r, 20))
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	if is == nil {
 		is = []mediafiles.Import{}
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"imports": is})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"imports": is})
 }
 
 // EventView is one History row: an Event with its movie's name.
@@ -1002,7 +994,7 @@ func (a *API) listEvents(w http.ResponseWriter, r *http.Request) {
 	if v := q.Get("title"); v != "" {
 		id, err := strconv.ParseInt(v, 10, 64)
 		if err != nil || id <= 0 {
-			fail(w, http.StatusBadRequest, "title must be a movie or show id")
+			webserver.Fail(w, http.StatusBadRequest, "title must be a movie or show id")
 			return
 		}
 		f.TitleID = id
@@ -1010,25 +1002,25 @@ func (a *API) listEvents(w http.ResponseWriter, r *http.Request) {
 	if v := q.Get("episode"); v != "" {
 		id, err := strconv.ParseInt(v, 10, 64)
 		if err != nil || id <= 0 {
-			fail(w, http.StatusBadRequest, "episode must be an episode id")
+			webserver.Fail(w, http.StatusBadRequest, "episode must be an episode id")
 			return
 		}
 		var titleID int64
 		if err := a.s.Store.Read().QueryRowContext(r.Context(), "SELECT title_id FROM items WHERE id = ? AND kind = 'episode'", id).Scan(&titleID); err != nil {
-			fail(w, http.StatusBadRequest, "no such episode")
+			webserver.Fail(w, http.StatusBadRequest, "no such episode")
 			return
 		}
 		f.TitleID, f.ItemIDs, f.SlotIDs = titleID, []int64{id}, []int64{}
 		rows, err := a.s.Store.Read().QueryContext(r.Context(), "SELECT id FROM slots WHERE item_id = ?", id)
 		if err != nil {
-			internal(w, err)
+			webserver.Internal(w, "api", err)
 			return
 		}
 		for rows.Next() {
 			var sid int64
 			if err := rows.Scan(&sid); err != nil {
 				rows.Close()
-				internal(w, err)
+				webserver.Internal(w, "api", err)
 				return
 			}
 			f.SlotIDs = append(f.SlotIDs, sid)
@@ -1036,7 +1028,7 @@ func (a *API) listEvents(w http.ResponseWriter, r *http.Request) {
 		err = rows.Err()
 		rows.Close()
 		if err != nil {
-			internal(w, err)
+			webserver.Internal(w, "api", err)
 			return
 		}
 	}
@@ -1044,12 +1036,12 @@ func (a *API) listEvents(w http.ResponseWriter, r *http.Request) {
 	if v := q.Get("season"); v != "" && f.TitleID > 0 {
 		n, err := strconv.Atoi(v)
 		if err != nil || n < 0 {
-			fail(w, http.StatusBadRequest, "season must be a number")
+			webserver.Fail(w, http.StatusBadRequest, "season must be a number")
 			return
 		}
 		rows, err := a.s.Store.Read().QueryContext(r.Context(), "SELECT i.id, s.id FROM items i LEFT JOIN slots s ON s.item_id = i.id WHERE i.title_id = ? AND i.kind = 'episode' AND json_extract(i.numbers, '$.season') = ?", f.TitleID, n)
 		if err != nil {
-			internal(w, err)
+			webserver.Internal(w, "api", err)
 			return
 		}
 		f.ItemIDs, f.SlotIDs = []int64{}, []int64{}
@@ -1059,7 +1051,7 @@ func (a *API) listEvents(w http.ResponseWriter, r *http.Request) {
 			var sid *int64
 			if err := rows.Scan(&iid, &sid); err != nil {
 				rows.Close()
-				internal(w, err)
+				webserver.Internal(w, "api", err)
 				return
 			}
 			if !seen[iid] {
@@ -1073,7 +1065,7 @@ func (a *API) listEvents(w http.ResponseWriter, r *http.Request) {
 		err = rows.Err()
 		rows.Close()
 		if err != nil {
-			internal(w, err)
+			webserver.Internal(w, "api", err)
 			return
 		}
 		if len(f.ItemIDs) == 0 {
@@ -1083,18 +1075,18 @@ func (a *API) listEvents(w http.ResponseWriter, r *http.Request) {
 	if v := q.Get("album"); v != "" {
 		id, err := strconv.ParseInt(v, 10, 64)
 		if err != nil || id <= 0 {
-			fail(w, http.StatusBadRequest, "album must be an album id")
+			webserver.Fail(w, http.StatusBadRequest, "album must be an album id")
 			return
 		}
 		var titleID int64
 		if err := a.s.Store.Read().QueryRowContext(r.Context(), "SELECT title_id FROM parts WHERE id = ? AND kind = 'album'", id).Scan(&titleID); err != nil {
-			fail(w, http.StatusBadRequest, "no such album")
+			webserver.Fail(w, http.StatusBadRequest, "no such album")
 			return
 		}
 		f.TitleID, f.PartID, f.ItemIDs, f.SlotIDs = titleID, id, []int64{}, []int64{}
 		rows, err := a.s.Store.Read().QueryContext(r.Context(), "SELECT i.id, s.id FROM items i LEFT JOIN slots s ON s.item_id = i.id WHERE i.part_id = ? AND i.kind = 'track'", id)
 		if err != nil {
-			internal(w, err)
+			webserver.Internal(w, "api", err)
 			return
 		}
 		for rows.Next() {
@@ -1102,7 +1094,7 @@ func (a *API) listEvents(w http.ResponseWriter, r *http.Request) {
 			var sid sql.NullInt64
 			if err := rows.Scan(&iid, &sid); err != nil {
 				rows.Close()
-				internal(w, err)
+				webserver.Internal(w, "api", err)
 				return
 			}
 			f.ItemIDs = append(f.ItemIDs, iid)
@@ -1113,7 +1105,7 @@ func (a *API) listEvents(w http.ResponseWriter, r *http.Request) {
 		err = rows.Err()
 		rows.Close()
 		if err != nil {
-			internal(w, err)
+			webserver.Internal(w, "api", err)
 			return
 		}
 	}
@@ -1121,7 +1113,7 @@ func (a *API) listEvents(w http.ResponseWriter, r *http.Request) {
 		if k = strings.TrimSpace(k); k != "" {
 			// History's default list (every kind but routine) is about 52 long.
 			if len(k) > 60 || len(f.Kinds) >= 64 {
-				fail(w, http.StatusBadRequest, "kind is a comma list of at most 64 Event kinds")
+				webserver.Fail(w, http.StatusBadRequest, "kind is a comma list of at most 64 Event kinds")
 				return
 			}
 			f.Kinds = append(f.Kinds, k)
@@ -1131,7 +1123,7 @@ func (a *API) listEvents(w http.ResponseWriter, r *http.Request) {
 	if v := q.Get("source"); v != "" {
 		id, err := strconv.ParseInt(v, 10, 64)
 		if err != nil || id <= 0 {
-			fail(w, http.StatusBadRequest, "source must be a Source id")
+			webserver.Fail(w, http.StatusBadRequest, "source must be a Source id")
 			return
 		}
 		f.SourceID = id
@@ -1147,7 +1139,7 @@ func (a *API) listEvents(w http.ResponseWriter, r *http.Request) {
 	if v := q.Get("from"); v != "" {
 		t, err := parseDay(v)
 		if err != nil {
-			fail(w, http.StatusBadRequest, "from must be a date like 2026-10-01")
+			webserver.Fail(w, http.StatusBadRequest, "from must be a date like 2026-10-01")
 			return
 		}
 		f.From = t
@@ -1155,7 +1147,7 @@ func (a *API) listEvents(w http.ResponseWriter, r *http.Request) {
 	if v := q.Get("to"); v != "" {
 		t, err := parseDay(v)
 		if err != nil {
-			fail(w, http.StatusBadRequest, "to must be a date like 2026-10-31")
+			webserver.Fail(w, http.StatusBadRequest, "to must be a date like 2026-10-31")
 			return
 		}
 		if len(v) == len("2006-01-02") {
@@ -1166,7 +1158,7 @@ func (a *API) listEvents(w http.ResponseWriter, r *http.Request) {
 	if v := q.Get("offset"); v != "" {
 		n, err := strconv.Atoi(v)
 		if err != nil || n < 0 {
-			fail(w, http.StatusBadRequest, "offset must be 0 or more")
+			webserver.Fail(w, http.StatusBadRequest, "offset must be 0 or more")
 			return
 		}
 		f.Offset = n
@@ -1184,14 +1176,14 @@ func (a *API) listEvents(w http.ResponseWriter, r *http.Request) {
 	if f.SourceID > 0 {
 		ids, err := sources.ReleaseIDs(r.Context(), a.s.Store.Read(), f.SourceID)
 		if err != nil {
-			internal(w, err)
+			webserver.Internal(w, "api", err)
 			return
 		}
 		f.SourceReleaseIDs = ids
 	}
 	es, total, err := a.s.Store.Events(r.Context(), f)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	// The filtered episode, named for the screen, is read with the page.
@@ -1201,7 +1193,7 @@ func (a *API) listEvents(w http.ResponseWriter, r *http.Request) {
 	}
 	page, err := loadEventPage(r.Context(), a.s.Store.Read(), appendEvent(es, filtered))
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	// Member names for the rows a person did (a missing name stays empty).
@@ -1239,23 +1231,23 @@ func (a *API) listEvents(w http.ResponseWriter, r *http.Request) {
 	if filtered != nil {
 		resp["episode"] = page.episode(*filtered)
 	}
-	writeJSON(w, http.StatusOK, resp)
+	webserver.WriteJSON(w, http.StatusOK, resp)
 }
 
 func (a *API) listJobs(w http.ResponseWriter, r *http.Request) {
 	js, err := database.Select[domain.Job](r.Context(), a.s.Store.Read(), "jobs", "1=1 ORDER BY id DESC LIMIT ?", limit(r, 50))
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	if js == nil {
 		js = []domain.Job{}
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"jobs": js})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"jobs": js})
 }
 
 func (a *API) health(w http.ResponseWriter, r *http.Request) {
-	writeJSON(w, http.StatusOK, a.healthView(r.Context()))
+	webserver.WriteJSON(w, http.StatusOK, a.healthView(r.Context()))
 }
 
 // healthView is what GET /api/v1/health answers.
@@ -1302,7 +1294,7 @@ func (a *API) healthView(ctx context.Context) map[string]any {
 func (a *API) searchMetadata(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query().Get("q")
 	if q == "" || len(q) > 200 {
-		fail(w, http.StatusBadRequest, "send ?q=<name>, and &year=<year> if you know it")
+		webserver.Fail(w, http.StatusBadRequest, "send ?q=<name>, and &year=<year> if you know it")
 		return
 	}
 	if a.kidLimited(w, r) {
@@ -1314,16 +1306,16 @@ func (a *API) searchMetadata(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if errors.Is(err, metadata.ErrNoAccess) {
-		fail(w, http.StatusServiceUnavailable, err.Error())
+		webserver.Fail(w, http.StatusServiceUnavailable, err.Error())
 		return
 	}
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	if ms == nil {
 		ms = []metadata.Movie{}
 	}
 	ms = a.kidMovies(r.Context(), a.kidMax(r), ms)
-	writeJSON(w, http.StatusOK, map[string]any{"movies": ms, "attribution": metadata.Attribution})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"movies": ms, "attribution": metadata.Attribution})
 }

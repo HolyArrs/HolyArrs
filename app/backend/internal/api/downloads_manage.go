@@ -39,7 +39,7 @@ const addTorrentsMax = 64 << 20
 func (a *API) addTorrents(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
-		fail(w, http.StatusNotFound, downloads.ErrNoDownloader.Error())
+		webserver.Fail(w, http.StatusNotFound, downloads.ErrNoDownloader.Error())
 		return
 	}
 	var b downloads.AddBatch
@@ -47,10 +47,10 @@ func (a *API) addTorrents(w http.ResponseWriter, r *http.Request) {
 		r.Body = http.MaxBytesReader(w, r.Body, addTorrentsMax)
 		if err := r.ParseMultipartForm(16 << 20); err != nil {
 			if mb := (*http.MaxBytesError)(nil); errors.As(err, &mb) {
-				fail(w, http.StatusRequestEntityTooLarge, "the files are too large together (64 MB at most)")
+				webserver.Fail(w, http.StatusRequestEntityTooLarge, "the files are too large together (64 MB at most)")
 				return
 			}
-			fail(w, http.StatusBadRequest, "could not read the upload")
+			webserver.Fail(w, http.StatusBadRequest, "could not read the upload")
 			return
 		}
 		b.Links = strings.Split(r.FormValue("links"), "\n")
@@ -60,13 +60,13 @@ func (a *API) addTorrents(w http.ResponseWriter, r *http.Request) {
 		for _, fh := range r.MultipartForm.File["torrents"] {
 			f, err := fh.Open()
 			if err != nil {
-				fail(w, http.StatusBadRequest, "could not read "+fh.Filename)
+				webserver.Fail(w, http.StatusBadRequest, "could not read "+fh.Filename)
 				return
 			}
 			data, err := io.ReadAll(io.LimitReader(f, addTorrentsMax))
 			f.Close()
 			if err != nil {
-				fail(w, http.StatusBadRequest, "could not read "+fh.Filename)
+				webserver.Fail(w, http.StatusBadRequest, "could not read "+fh.Filename)
 				return
 			}
 			b.Files = append(b.Files, downloads.TorrentUpload{Name: fh.Filename, Data: data})
@@ -84,12 +84,12 @@ func (a *API) addTorrents(w http.ResponseWriter, r *http.Request) {
 		b = downloads.AddBatch{Links: in.Links, Category: in.Category, SavePath: in.SavePath, Paused: in.Paused}
 	}
 	if len(b.Links)+len(b.Files) > 500 {
-		fail(w, http.StatusBadRequest, "add 500 torrents at most at once")
+		webserver.Fail(w, http.StatusBadRequest, "add 500 torrents at most at once")
 		return
 	}
 	var dr domain.Downloader
 	if err := database.Get(r.Context(), a.s.Store.Read(), "downloaders", id, &dr); err != nil || dr.Removed {
-		fail(w, http.StatusNotFound, downloads.ErrNoDownloader.Error())
+		webserver.Fail(w, http.StatusNotFound, downloads.ErrNoDownloader.Error())
 		return
 	}
 	// Lines split on LF only; a CR or any other control character left in a
@@ -101,7 +101,7 @@ func (a *API) addTorrents(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 		if err := checkLink(l); err != nil {
-			fail(w, http.StatusBadRequest, err.Error())
+			webserver.Fail(w, http.StatusBadRequest, err.Error())
 			return
 		}
 		links = append(links, l)
@@ -127,14 +127,14 @@ func (a *API) addTorrents(w http.ResponseWriter, r *http.Request) {
 		return err
 	})
 	if errors.Is(err, downloads.ErrNothingToAdd) {
-		fail(w, http.StatusBadRequest, err.Error())
+		webserver.Fail(w, http.StatusBadRequest, err.Error())
 		return
 	}
 	if err != nil {
 		itemError(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, out)
+	webserver.WriteJSON(w, http.StatusOK, out)
 }
 
 // validHash says s is a 40-character hex info hash.
@@ -165,7 +165,7 @@ const bulkHelp = `body is {"action": "start", "pause", "recheck", "reannounce", 
 func (a *API) bulkItems(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
-		fail(w, http.StatusNotFound, downloads.ErrNoDownloader.Error())
+		webserver.Fail(w, http.StatusNotFound, downloads.ErrNoDownloader.Error())
 		return
 	}
 	var in bulkIn
@@ -180,7 +180,7 @@ func (a *API) bulkItems(w http.ResponseWriter, r *http.Request) {
 		known = known || k == in.Action
 	}
 	if !known {
-		fail(w, http.StatusBadRequest, bulkHelp)
+		webserver.Fail(w, http.StatusBadRequest, bulkHelp)
 		return
 	}
 	if in.Action == "remove" && !a.changeOutsideOK(w, r, id, in.Hashes) {
@@ -210,14 +210,14 @@ func (a *API) bulkItems(w http.ResponseWriter, r *http.Request) {
 		return err
 	})
 	if errors.Is(err, downloads.ErrQueueOff) {
-		fail(w, http.StatusConflict, err.Error())
+		webserver.Fail(w, http.StatusConflict, err.Error())
 		return
 	}
 	if err != nil {
 		itemError(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "count": len(in.Hashes)})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"ok": true, "count": len(in.Hashes)})
 }
 
 // bulkVerbs say a bulk action in History's words.
@@ -230,12 +230,12 @@ var bulkVerbs = map[string]string{
 // bulkHashesOK checks a selection: 1 to 1000 info hashes.
 func (a *API) bulkHashesOK(w http.ResponseWriter, hashes []string) bool {
 	if len(hashes) == 0 || len(hashes) > 1000 {
-		fail(w, http.StatusBadRequest, "hashes needs 1 to 1000 info hashes")
+		webserver.Fail(w, http.StatusBadRequest, "hashes needs 1 to 1000 info hashes")
 		return false
 	}
 	for _, h := range hashes {
 		if !validHash(strings.ToLower(h)) {
-			fail(w, http.StatusBadRequest, "hashes are 40-character info hashes")
+			webserver.Fail(w, http.StatusBadRequest, "hashes are 40-character info hashes")
 			return false
 		}
 	}
@@ -270,7 +270,7 @@ func (a *API) changeOutsideOK(w http.ResponseWriter, r *http.Request, downloader
 	if a.mayChangeOutside(r.Context(), downloaderID, hashes) {
 		return true
 	}
-	fail(w, http.StatusForbidden, outsideRefused)
+	webserver.Fail(w, http.StatusForbidden, outsideRefused)
 	return false
 }
 
@@ -302,7 +302,7 @@ const shareHelp = `body is {"hashes": [info hash...], "ratio": -2 (Downloader's 
 func (a *API) shareLimits(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
-		fail(w, http.StatusNotFound, downloads.ErrNoDownloader.Error())
+		webserver.Fail(w, http.StatusNotFound, downloads.ErrNoDownloader.Error())
 		return
 	}
 	var in struct {
@@ -321,7 +321,7 @@ func (a *API) shareLimits(w http.ResponseWriter, r *http.Request) {
 		ratioOK = false
 	}
 	if !ratioOK || !minutesOK(l.SeedingMinutes) || !minutesOK(l.InactiveMinutes) {
-		fail(w, http.StatusBadRequest, shareHelp)
+		webserver.Fail(w, http.StatusBadRequest, shareHelp)
 		return
 	}
 	// Any limit could trigger a remove: the torrent's own action, or the
@@ -341,14 +341,14 @@ func (a *API) shareLimits(w http.ResponseWriter, r *http.Request) {
 		return t.SetShareLimits(r.Context(), in.Hashes, l)
 	})
 	if errors.Is(err, downloads.ErrShareAction) {
-		fail(w, http.StatusConflict, err.Error())
+		webserver.Fail(w, http.StatusConflict, err.Error())
 		return
 	}
 	if err != nil {
 		itemError(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "count": len(in.Hashes)})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"ok": true, "count": len(in.Hashes)})
 }
 
 // slowMode turns a torrent Downloader's slower second set of speed limits
@@ -356,7 +356,7 @@ func (a *API) shareLimits(w http.ResponseWriter, r *http.Request) {
 func (a *API) slowMode(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
-		fail(w, http.StatusNotFound, downloads.ErrNoDownloader.Error())
+		webserver.Fail(w, http.StatusNotFound, downloads.ErrNoDownloader.Error())
 		return
 	}
 	var in struct {
@@ -366,7 +366,7 @@ func (a *API) slowMode(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if in.On == nil {
-		fail(w, http.StatusBadRequest, `body is {"on": true or false}`)
+		webserver.Fail(w, http.StatusBadRequest, `body is {"on": true or false}`)
 		return
 	}
 	err = a.manager().ControlTorrentClient(r.Context(), id, true, func(e downloads.Engine) error {
@@ -380,7 +380,7 @@ func (a *API) slowMode(w http.ResponseWriter, r *http.Request) {
 		itemError(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "slow_mode": *in.On})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"ok": true, "slow_mode": *in.On})
 }
 
 // onTrackers runs a tracker change on one torrent of a torrent Downloader.
@@ -393,14 +393,14 @@ func (a *API) onTrackers(w http.ResponseWriter, r *http.Request, call func(t dow
 		return call(t, id)
 	})
 	if errors.Is(err, downloads.ErrTrackerTier) {
-		fail(w, http.StatusConflict, err.Error())
+		webserver.Fail(w, http.StatusConflict, err.Error())
 		return
 	}
 	if err != nil {
 		itemError(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"ok": true})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"ok": true})
 }
 
 // trackerURLsOK checks typed tracker addresses under the Downloader's
@@ -409,12 +409,12 @@ func (a *API) trackerURLsOK(w http.ResponseWriter, r *http.Request, urls []strin
 	id, _ := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	var dr domain.Downloader
 	if err := database.Get(r.Context(), a.s.Store.Read(), "downloaders", id, &dr); err != nil || dr.Removed {
-		fail(w, http.StatusNotFound, downloads.ErrNoDownloader.Error())
+		webserver.Fail(w, http.StatusNotFound, downloads.ErrNoDownloader.Error())
 		return false
 	}
 	for _, u := range urls {
 		if !downloads.TrackerAllowed(u, dr.AllowLocal) {
-			fail(w, http.StatusBadRequest, "a tracker is an http, https or udp address on the internet (local ones need the Downloader's local network access): "+trackerShown(u))
+			webserver.Fail(w, http.StatusBadRequest, "a tracker is an http, https or udp address on the internet (local ones need the Downloader's local network access): "+trackerShown(u))
 			return false
 		}
 	}
@@ -447,7 +447,7 @@ func (a *API) addTrackers(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if len(urls) == 0 || len(urls) > 50 {
-		fail(w, http.StatusBadRequest, "urls needs 1 to 50 tracker addresses")
+		webserver.Fail(w, http.StatusBadRequest, "urls needs 1 to 50 tracker addresses")
 		return
 	}
 	if !a.trackerURLsOK(w, r, urls) {
@@ -472,7 +472,7 @@ func (a *API) editTracker(w http.ResponseWriter, r *http.Request) {
 	}
 	in.URL = strings.TrimSpace(in.URL)
 	if in.Ref == "" || in.URL == "" && in.Tier == nil || in.Tier != nil && (*in.Tier < 0 || *in.Tier > 255) {
-		fail(w, http.StatusBadRequest, help)
+		webserver.Fail(w, http.StatusBadRequest, help)
 		return
 	}
 	if in.URL != "" && !a.trackerURLsOK(w, r, []string{in.URL}) {
@@ -495,7 +495,7 @@ func (a *API) removeTrackers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if len(in.Refs) == 0 || len(in.Refs) > 100 {
-		fail(w, http.StatusBadRequest, "refs needs 1 to 100 tracker refs")
+		webserver.Fail(w, http.StatusBadRequest, "refs needs 1 to 100 tracker refs")
 		return
 	}
 	a.onTrackers(w, r, func(t downloads.TrackerEditor, id string) error { return t.RemoveTrackers(r.Context(), id, in.Refs) })
@@ -518,7 +518,7 @@ func (a *API) onMover(r *http.Request, id int64, call func(t downloads.Mover) er
 func (a *API) setLocation(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
-		fail(w, http.StatusNotFound, downloads.ErrNoDownloader.Error())
+		webserver.Fail(w, http.StatusNotFound, downloads.ErrNoDownloader.Error())
 		return
 	}
 	var in struct {
@@ -534,7 +534,7 @@ func (a *API) setLocation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if strings.TrimSpace(in.Folder) == "" {
-		fail(w, http.StatusBadRequest, help)
+		webserver.Fail(w, http.StatusBadRequest, help)
 		return
 	}
 	_, folder, err := a.clientFolder(r.Context(), id, in.Category, in.Folder, true)
@@ -550,14 +550,14 @@ func (a *API) setLocation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	a.manyChangedEvent(r, id, in.Hashes, "move", "moved the files of", map[string]any{"folder": folder})
-	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "count": len(in.Hashes), "folder": folder})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"ok": true, "count": len(in.Hashes), "folder": folder})
 }
 
 // torrentLimits caps many torrents' download and upload speeds.
 func (a *API) torrentLimits(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
-		fail(w, http.StatusNotFound, downloads.ErrNoDownloader.Error())
+		webserver.Fail(w, http.StatusNotFound, downloads.ErrNoDownloader.Error())
 		return
 	}
 	var in struct {
@@ -573,12 +573,12 @@ func (a *API) torrentLimits(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if in.Down < 0 || in.Up < 0 || in.Down > 1<<40 || in.Up > 1<<40 {
-		fail(w, http.StatusBadRequest, help)
+		webserver.Fail(w, http.StatusBadRequest, help)
 		return
 	}
 	if err := a.onMover(r, id, func(t downloads.Mover) error { return t.SetTorrentLimits(r.Context(), in.Hashes, in.Down, in.Up) }); err != nil {
 		itemError(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "count": len(in.Hashes)})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"ok": true, "count": len(in.Hashes)})
 }

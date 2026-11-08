@@ -11,6 +11,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/music/rowtpl"
 	musicscore "github.com/HolyArrs/holyarrs/app/backend/internal/music/score"
@@ -149,12 +150,12 @@ func (a *API) musicGenreArt(w http.ResponseWriter, r *http.Request) {
 func (a *API) musicGenrePage(w http.ResponseWriter, r *http.Request) {
 	slug := r.PathValue("slug")
 	if !musicSlugRe.MatchString(slug) {
-		fail(w, http.StatusBadRequest, "unknown genre")
+		webserver.Fail(w, http.StatusBadRequest, "unknown genre")
 		return
 	}
 	// Music has no ratings, so a Kid limit shows none of it.
 	if a.kidMax(r) != "" {
-		writeJSON(w, http.StatusOK, map[string]any{"kid": true, "v2": true, "genres": []string{}, "genre": slug, "hero": nil, "rows": []MusicRow{}})
+		webserver.WriteJSON(w, http.StatusOK, map[string]any{"kid": true, "v2": true, "genres": []string{}, "genre": slug, "hero": nil, "rows": []MusicRow{}})
 		return
 	}
 	// The row template engine serves the genres it has a key for; others
@@ -183,17 +184,17 @@ func (a *API) musicGenrePage(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if tile == nil {
-		fail(w, http.StatusNotFound, "no such genre in this region's charts")
+		webserver.Fail(w, http.StatusNotFound, "no such genre in this region's charts")
 		return
 	}
 	lib, err := a.musicLibrary(ctx, now)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	acts, err := a.musicActsOf(ctx, member)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	hero, alts, rows := a.buildMusicGenre(ctx, member, region, *tile, lib, acts, now)

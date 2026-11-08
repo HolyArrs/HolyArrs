@@ -167,7 +167,7 @@ func isHex(s string, n int) bool {
 func folderError(w http.ResponseWriter, err error) bool {
 	switch {
 	case errors.Is(err, errFolder), errors.Is(err, errCategory), errors.Is(err, errLink):
-		fail(w, http.StatusBadRequest, err.Error())
+		webserver.Fail(w, http.StatusBadRequest, err.Error())
 		return true
 	}
 	return false

@@ -98,13 +98,13 @@ func (a *API) listDownloaders(w http.ResponseWriter, r *http.Request) {
 	db := a.s.Store.Read()
 	dls, err := database.Select[domain.Downloader](ctx, db, "downloaders", "removed = 0 ORDER BY priority, name")
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	counts := map[int64]int{}
 	rows, err := db.QueryContext(ctx, "SELECT downloader_id, count(*) FROM downloads WHERE state IN ('sent', 'queued', 'downloading', 'stalled', 'paused') GROUP BY downloader_id")
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	for rows.Next() {
@@ -119,7 +119,7 @@ func (a *API) listDownloaders(w http.ResponseWriter, r *http.Request) {
 	for _, d := range dls {
 		out = append(out, downloaderView(d, counts[d.ID]))
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"downloaders": out})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"downloaders": out})
 }
 
 const downloaderHelp = `send name, kind (qbittorrent, transmission, deluge, sabnzbd or nzbget), url, and if needed secret (an API key or password; qBittorrent takes its API key with no username, or a username and password), category, priority (1 to 50), path_map [{theirs, ours}], allow_local_network, writable, clear_finished`
@@ -127,23 +127,23 @@ const downloaderHelp = `send name, kind (qbittorrent, transmission, deluge, sabn
 func downloaderError(w http.ResponseWriter, err error) {
 	switch {
 	case errors.Is(err, downloads.ErrUncertain):
-		fail(w, http.StatusConflict, downloads.ErrUncertain.Error())
+		webserver.Fail(w, http.StatusConflict, downloads.ErrUncertain.Error())
 	case errors.Is(err, downloads.ErrAttemptStopped):
-		fail(w, http.StatusConflict, downloads.ErrAttemptStopped.Error())
+		webserver.Fail(w, http.StatusConflict, downloads.ErrAttemptStopped.Error())
 	case errors.Is(err, downloads.ErrPendingAttempt):
-		fail(w, http.StatusConflict, downloads.ErrPendingAttempt.Error())
+		webserver.Fail(w, http.StatusConflict, downloads.ErrPendingAttempt.Error())
 	case errors.Is(err, downloads.ErrNameUsed), errors.Is(err, downloads.ErrKeyAgain), errors.Is(err, downloads.ErrBusy):
-		fail(w, http.StatusConflict, err.Error())
+		webserver.Fail(w, http.StatusConflict, err.Error())
 	case errors.Is(err, downloads.ErrNoVault):
-		fail(w, http.StatusServiceUnavailable, err.Error())
+		webserver.Fail(w, http.StatusServiceUnavailable, err.Error())
 	case errors.Is(err, database.ErrNotFound), errors.Is(err, sql.ErrNoRows):
-		fail(w, http.StatusNotFound, "no such Downloader")
+		webserver.Fail(w, http.StatusNotFound, "no such Downloader")
 	case errors.Is(err, downloads.ErrName), errors.Is(err, downloads.ErrAdapter), errors.Is(err, downloads.ErrURL), errors.Is(err, downloads.ErrCategory), errors.Is(err, downloads.ErrDelugeLabel),
 		errors.Is(err, downloads.ErrPriority), errors.Is(err, downloads.ErrPathMap), errors.Is(err, downloads.ErrUsername), errors.Is(err, downloads.ErrKeyNeed),
 		errors.Is(err, downloads.ErrQbitKey):
-		fail(w, http.StatusBadRequest, err.Error())
+		webserver.Fail(w, http.StatusBadRequest, err.Error())
 	default:
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 	}
 }
 
@@ -161,7 +161,7 @@ func readDownloader(w http.ResponseWriter, r *http.Request) (downloads.Input, bo
 func idIn(w http.ResponseWriter, r *http.Request, what string) (int64, bool) {
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
-		fail(w, http.StatusNotFound, "no such "+what)
+		webserver.Fail(w, http.StatusNotFound, "no such "+what)
 		return 0, false
 	}
 	return id, true
@@ -187,7 +187,7 @@ func (a *API) addDownloader(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	a.publishDownloader(d)
-	writeJSON(w, http.StatusCreated, downloaderView(d, 0))
+	webserver.WriteJSON(w, http.StatusCreated, downloaderView(d, 0))
 }
 
 func (a *API) editDownloader(w http.ResponseWriter, r *http.Request) {
@@ -209,7 +209,7 @@ func (a *API) editDownloader(w http.ResponseWriter, r *http.Request) {
 	}
 	a.manager().Forget(id)
 	a.publishDownloader(d)
-	writeJSON(w, http.StatusOK, downloaderView(d, 0))
+	webserver.WriteJSON(w, http.StatusOK, downloaderView(d, 0))
 }
 
 func (a *API) deleteDownloader(w http.ResponseWriter, r *http.Request) {
@@ -240,7 +240,7 @@ func (a *API) setDownloaderPaused(w http.ResponseWriter, r *http.Request, paused
 		return
 	}
 	a.publishDownloader(d)
-	writeJSON(w, http.StatusOK, downloaderView(d, 0))
+	webserver.WriteJSON(w, http.StatusOK, downloaderView(d, 0))
 }
 
 func (a *API) pauseDownloader(w http.ResponseWriter, r *http.Request) {
@@ -285,7 +285,7 @@ func (a *API) listDownloaderAttempts(w http.ResponseWriter, r *http.Request) {
 	for _, attempt := range attempts {
 		out = append(out, downloaderAttemptView(attempt))
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"attempts": out})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"attempts": out})
 }
 
 // abandonDownloaderAttempt makes one uncertain send terminal. It never asks
@@ -297,12 +297,12 @@ func (a *API) abandonDownloaderAttempt(w http.ResponseWriter, r *http.Request) {
 	}
 	attemptID, err := strconv.ParseInt(r.PathValue("attemptID"), 10, 64)
 	if err != nil || attemptID < 1 {
-		fail(w, http.StatusNotFound, "no such send attempt")
+		webserver.Fail(w, http.StatusNotFound, "no such send attempt")
 		return
 	}
 	if err := a.manager().AbandonAttempt(r.Context(), downloaderID, attemptID, actor(r)); err != nil {
 		if errors.Is(err, database.ErrNotFound) || errors.Is(err, sql.ErrNoRows) {
-			fail(w, http.StatusNotFound, "no such send attempt")
+			webserver.Fail(w, http.StatusNotFound, "no such send attempt")
 			return
 		}
 		downloaderError(w, err)
@@ -375,7 +375,7 @@ func (a *API) testDownloader(w http.ResponseWriter, r *http.Request) {
 	_ = database.Get(r.Context(), a.s.Store.Read(), "downloaders", id, &d)
 	out["health"] = downloads.HealthOf(d, time.Now())
 	a.publishDownloader(d)
-	writeJSON(w, http.StatusOK, out)
+	webserver.WriteJSON(w, http.StatusOK, out)
 }
 
 // markFailed is "Mark failed" on an active Download.
@@ -391,15 +391,15 @@ func (a *API) markFailed(w http.ResponseWriter, r *http.Request) {
 	err := a.manager().MarkFailed(r.Context(), id, actor(r), who)
 	switch {
 	case errors.Is(err, database.ErrNotFound), errors.Is(err, sql.ErrNoRows):
-		fail(w, http.StatusNotFound, "no such download")
+		webserver.Fail(w, http.StatusNotFound, "no such download")
 	case errors.Is(err, downloads.ErrNotActive):
-		fail(w, http.StatusConflict, err.Error())
+		webserver.Fail(w, http.StatusConflict, err.Error())
 	case err != nil:
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 	default:
 		var d domain.Download
 		_ = database.Get(r.Context(), a.s.Store.Read(), "downloads", id, &d)
-		writeJSON(w, http.StatusOK, downloadView(d))
+		webserver.WriteJSON(w, http.StatusOK, downloadView(d))
 	}
 }
 
@@ -535,10 +535,10 @@ func (a *API) readDownloaderSettings(ctx context.Context) (DownloaderSettings, e
 func (a *API) getDownloaderSettings(w http.ResponseWriter, r *http.Request) {
 	st, err := a.readDownloaderSettings(r.Context())
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
-	writeJSON(w, http.StatusOK, st)
+	webserver.WriteJSON(w, http.StatusOK, st)
 }
 
 func (a *API) putDownloaderSettings(w http.ResponseWriter, r *http.Request) {
@@ -547,15 +547,15 @@ func (a *API) putDownloaderSettings(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if in.StalledAfterHours < 1 || in.StalledAfterHours > 168 {
-		fail(w, http.StatusBadRequest, "stalled_after_hours is 1 to 168")
+		webserver.Fail(w, http.StatusBadRequest, "stalled_after_hours is 1 to 168")
 		return
 	}
 	if in.StalledActHours < in.StalledAfterHours || in.StalledActHours > 720 {
-		fail(w, http.StatusBadRequest, "stalled_act_hours is at least stalled_after_hours and at most 720")
+		webserver.Fail(w, http.StatusBadRequest, "stalled_act_hours is at least stalled_after_hours and at most 720")
 		return
 	}
 	if in.GrabSpacingSeconds < 0 || in.GrabSpacingSeconds > 60 {
-		fail(w, http.StatusBadRequest, "grab_spacing_seconds is 0 to 60")
+		webserver.Fail(w, http.StatusBadRequest, "grab_spacing_seconds is 0 to 60")
 		return
 	}
 	by := actor(r)
@@ -590,7 +590,7 @@ func (a *API) putDownloaderSettings(w http.ResponseWriter, r *http.Request) {
 		return nil
 	})
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	// The change is logged once by logSettingsChanges as an audit Event (area

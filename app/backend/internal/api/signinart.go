@@ -183,12 +183,12 @@ func (a *API) signinArt(w http.ResponseWriter, r *http.Request) {
 	st := &a.signin
 	if !st.allow(a.signinClient(r)) {
 		w.Header().Set("Retry-After", "60")
-		writeJSON(w, http.StatusTooManyRequests, map[string]string{"error": "too many requests"})
+		webserver.WriteJSON(w, http.StatusTooManyRequests, map[string]string{"error": "too many requests"})
 		return
 	}
 	shots := a.signinShots(r.Context())
 	w.Header().Set("Cache-Control", "private, max-age=600")
-	writeJSON(w, http.StatusOK, map[string]any{"shots": publicShots(shots)})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"shots": publicShots(shots)})
 }
 
 // signinPicSizes are the TMDB sizes the sign-in pictures are served at:

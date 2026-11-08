@@ -382,18 +382,18 @@ func (a *API) kidGate(m *http.ServeMux, next http.Handler) http.Handler {
 		}
 		switch {
 		case strings.Contains(pattern, " /api/v1/albums/{id}"):
-			fail(w, http.StatusNotFound, "not found")
+			webserver.Fail(w, http.StatusNotFound, "not found")
 			return
 		case strings.Contains(pattern, " /api/v1/titles/{id}"):
 			var kind, rating string
 			err := a.s.Store.Read().QueryRowContext(r.Context(), "SELECT kind, rating FROM titles WHERE id = ?",
 				pathValue(pattern, r.URL.Path, "{id}")).Scan(&kind, &rating)
 			if errors.Is(err, sql.ErrNoRows) || (err == nil && !metadata.RatingAllows(max, kind, rating)) {
-				fail(w, http.StatusNotFound, "not found")
+				webserver.Fail(w, http.StatusNotFound, "not found")
 				return
 			}
 			if err != nil {
-				internal(w, err)
+				webserver.Internal(w, "api", err)
 				return
 			}
 		}

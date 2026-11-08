@@ -14,6 +14,7 @@ import (
 	"unicode"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
@@ -510,13 +511,13 @@ func (a *API) readMatches(ctx context.Context, where string, args ...any) ([]Mat
 func (a *API) listMatches(w http.ResponseWriter, r *http.Request) {
 	unsure, err := a.readMatches(r.Context(), "WHERE state = 'unsure' ORDER BY name")
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	counts := map[string]int{linkLinked: 0, linkUnsure: 0, linkNotMedia: 0, linkSkipped: 0}
 	rs, err := a.s.Store.Read().QueryContext(r.Context(), "SELECT state, COUNT(*) FROM client_links GROUP BY state")
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	defer rs.Close()
@@ -529,7 +530,7 @@ func (a *API) listMatches(w http.ResponseWriter, r *http.Request) {
 	}
 	var pending int
 	_ = a.read().QueryRowContext(r.Context(), "SELECT COUNT(*) FROM dl_match_queue WHERE outcome = ''").Scan(&pending)
-	writeJSON(w, http.StatusOK, map[string]any{"matches": unsure, "counts": counts, "pending": pending})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"matches": unsure, "counts": counts, "pending": pending})
 }
 
 // runMatches (Match now) makes every unmatched outside item due again in
@@ -537,7 +538,7 @@ func (a *API) listMatches(w http.ResponseWriter, r *http.Request) {
 func (a *API) runMatches(w http.ResponseWriter, r *http.Request) {
 	// The reader's queue matches: everything waiting or given up is due
 	// again.
-	writeJSON(w, http.StatusAccepted, map[string]any{"ok": true, "checked": a.rematch(r.Context())})
+	webserver.WriteJSON(w, http.StatusAccepted, map[string]any{"ok": true, "checked": a.rematch(r.Context())})
 }
 
 const pickHelp = `send {"candidate": "<id from the list>"}, {"not_media": true} or {"skip": true}`
@@ -559,11 +560,11 @@ func (a *API) pickMatch(w http.ResponseWriter, r *http.Request) {
 	}
 	vs, err := a.readMatches(r.Context(), "WHERE id = ?", id)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	if len(vs) == 0 {
-		fail(w, http.StatusNotFound, "no such match")
+		webserver.Fail(w, http.StatusNotFound, "no such match")
 		return
 	}
 	v := vs[0]
@@ -581,7 +582,7 @@ func (a *API) pickMatch(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		if c == nil {
-			fail(w, http.StatusBadRequest, "that candidate is not in this torrent's list")
+			webserver.Fail(w, http.StatusBadRequest, "that candidate is not in this torrent's list")
 			return
 		}
 		g := guessOf(v.Name, "")
@@ -590,11 +591,11 @@ func (a *API) pickMatch(w http.ResponseWriter, r *http.Request) {
 		}
 		err = a.addAndLink(r.Context(), want, g, *c, v.Candidates, "by hand")
 	default:
-		fail(w, http.StatusBadRequest, pickHelp)
+		webserver.Fail(w, http.StatusBadRequest, pickHelp)
 		return
 	}
 	if errors.Is(err, errHandNoFolder) {
-		fail(w, http.StatusConflict, err.Error())
+		webserver.Fail(w, http.StatusConflict, err.Error())
 		return
 	}
 	if err != nil {
@@ -603,10 +604,10 @@ func (a *API) pickMatch(w http.ResponseWriter, r *http.Request) {
 	}
 	vs, err = a.readMatches(r.Context(), "WHERE id = ?", id)
 	if err != nil || len(vs) == 0 {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
-	writeJSON(w, http.StatusOK, vs[0])
+	webserver.WriteJSON(w, http.StatusOK, vs[0])
 }
 
 // outsideHash says the hash is not tied to any HolyArrs download record in

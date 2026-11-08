@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	musicscore "github.com/HolyArrs/holyarrs/app/backend/internal/music/score"
@@ -632,12 +633,12 @@ func (a *API) exploreMusicV7(w http.ResponseWriter, r *http.Request) {
 	key := musicscore.PlanKey{Member: member, Date: musicscore.Day(now), View: region}
 	lib, err := a.musicLibrary(ctx, now)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	acts, err := a.musicActsOf(ctx, member)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	offset := 0
@@ -649,7 +650,7 @@ func (a *API) exploreMusicV7(w http.ResponseWriter, r *http.Request) {
 			p, ok = a.musicv2.plans.Get(musicscore.PlanKey{Member: member, Date: c.Date, View: region}, c.Version, now)
 		}
 		if !ok || p == nil {
-			fail(w, http.StatusBadRequest, "these rows expired; load Music again")
+			webserver.Fail(w, http.StatusBadRequest, "these rows expired; load Music again")
 			return
 		}
 		offset = c.Offset
@@ -721,7 +722,7 @@ func (a *API) exploreMusicV7(w http.ResponseWriter, r *http.Request) {
 	if more {
 		next, err = a.musicCursorSign(ctx, musicV7Cursor{Member: member, Date: p.Date, Region: region, Version: p.Version, Offset: offset + musicscore.PlanBatch})
 		if err != nil {
-			internal(w, err)
+			webserver.Internal(w, "api", err)
 			return
 		}
 	}
@@ -962,7 +963,7 @@ func (a *API) musicV7Asked(now time.Time) []musicV7AskKey {
 func writeJSONTagged(w http.ResponseWriter, r *http.Request, v any) {
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(v); err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	sum := sha256.Sum256(buf.Bytes())

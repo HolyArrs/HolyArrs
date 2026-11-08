@@ -10,6 +10,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
@@ -107,7 +108,7 @@ func pickSuggest(rows []SuggestRow, q string) ([]string, []SuggestRow) {
 // searchSuggest answers GET /api/v1/search/suggest?q=&kind=all|movie|show|music|people.
 func (a *API) searchSuggest(w http.ResponseWriter, r *http.Request) {
 	if !a.s.LiveSearch {
-		fail(w, http.StatusNotFound, "live search is off")
+		webserver.Fail(w, http.StatusNotFound, "live search is off")
 		return
 	}
 	q := strings.TrimSpace(r.URL.Query().Get("q"))
@@ -116,12 +117,12 @@ func (a *API) searchSuggest(w http.ResponseWriter, r *http.Request) {
 		kind = "all"
 	}
 	if !slices.Contains([]string{"all", "movie", "show", "music", "people"}, kind) || len(q) > 100 {
-		fail(w, http.StatusBadRequest, "send ?q=<2 to 100 characters>&kind=all, movie, show, music or people")
+		webserver.Fail(w, http.StatusBadRequest, "send ?q=<2 to 100 characters>&kind=all, movie, show, music or people")
 		return
 	}
 	w.Header().Set("Cache-Control", "no-store")
 	if utf8.RuneCountInString(q) < 2 {
-		writeJSON(w, http.StatusOK, map[string]any{"q": q, "completions": []string{}, "items": []SuggestRow{}})
+		webserver.WriteJSON(w, http.StatusOK, map[string]any{"q": q, "completions": []string{}, "items": []SuggestRow{}})
 		return
 	}
 	want := func(k string) bool { return kind == "all" || kind == k }
@@ -169,7 +170,7 @@ wait:
 	}
 	words, items := pickSuggest(mergeSuggest(rows), q)
 	a.coverSuggestAlbums(items)
-	writeJSON(w, http.StatusOK, map[string]any{"q": q, "completions": words, "items": items})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"q": q, "completions": words, "items": items})
 }
 
 // coverSuggestAlbums points every album row without art at the music

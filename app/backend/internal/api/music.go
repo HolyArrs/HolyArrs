@@ -13,6 +13,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
@@ -39,22 +40,22 @@ func musicError(w http.ResponseWriter, err error) {
 	var dup *library.ArtistAlreadyAddedError
 	switch {
 	case errors.As(err, &dup):
-		writeJSON(w, http.StatusConflict, map[string]any{"error": err.Error(), "title_id": dup.TitleID})
+		webserver.WriteJSON(w, http.StatusConflict, map[string]any{"error": err.Error(), "title_id": dup.TitleID})
 	case errors.Is(err, library.ErrNoMusicFolder), errors.Is(err, library.ErrArtistNeverAdd), errors.Is(err, library.ErrAlbumNotIncluded):
-		fail(w, http.StatusConflict, err.Error())
+		webserver.Fail(w, http.StatusConflict, err.Error())
 	case errors.Is(err, library.ErrBadAlbumChoice), errors.Is(err, library.ErrBadNewAlbums), errors.Is(err, library.ErrBadAlbumKinds),
 		errors.Is(err, library.ErrBadExtraKinds), errors.Is(err, library.ErrBadStatuses), errors.Is(err, library.ErrBadPressingRule),
 		errors.Is(err, library.ErrBadMusicURL), errors.Is(err, library.ErrBadCacheHours), errors.Is(err, library.ErrNotMusicFolder),
 		errors.Is(err, library.ErrBadArtistID):
-		fail(w, http.StatusBadRequest, err.Error())
+		webserver.Fail(w, http.StatusBadRequest, err.Error())
 	case errors.Is(err, library.ErrNotArtist), errors.Is(err, library.ErrNotAlbum), errors.Is(err, library.ErrNoSuchPressing),
 		errors.Is(err, metadata.ErrArtistNotFound):
-		fail(w, http.StatusNotFound, err.Error())
+		webserver.Fail(w, http.StatusNotFound, err.Error())
 	case errors.Is(err, library.ErrNoMusicSource), errors.Is(err, metadata.ErrMusicBusy):
-		fail(w, http.StatusServiceUnavailable, err.Error())
+		webserver.Fail(w, http.StatusServiceUnavailable, err.Error())
 	case errors.Is(err, metadata.ErrMusicUnavailable):
 		// Plain words only: no status code or connection detail.
-		fail(w, http.StatusBadGateway, metadata.ErrMusicUnavailable.Error())
+		webserver.Fail(w, http.StatusBadGateway, metadata.ErrMusicUnavailable.Error())
 	default:
 		libraryError(w, err)
 	}
@@ -160,18 +161,18 @@ func (f *inFlight) give(who int64) {
 func (a *API) lookupArtists(w http.ResponseWriter, r *http.Request) {
 	term := strings.TrimSpace(r.URL.Query().Get("term"))
 	if term == "" || len(term) > 200 {
-		fail(w, http.StatusBadRequest, "send ?term=<artist name> or an id such as mbid:5b11f4ce-a62d-471e-81fc-a69a8278c7da")
+		webserver.Fail(w, http.StatusBadRequest, "send ?term=<artist name> or an id such as mbid:5b11f4ce-a62d-471e-81fc-a69a8278c7da")
 		return
 	}
 	if a.kidMax(r) != "" {
 		// Music has no age ratings, so a Kid finds none.
-		writeJSON(w, http.StatusOK, map[string]any{"artists": []ArtistResult{}, "source": "musicbrainz"})
+		webserver.WriteJSON(w, http.StatusOK, map[string]any{"artists": []ArtistResult{}, "source": "musicbrainz"})
 		return
 	}
 	me := a.person(r).UserID
 	if !a.lookups.take(me, maxLookupsEach) {
 		w.Header().Set("Retry-After", "5")
-		fail(w, http.StatusTooManyRequests, "you already have two music lookups running; wait for them to finish and try again")
+		webserver.Fail(w, http.StatusTooManyRequests, "you already have two music lookups running; wait for them to finish and try again")
 		return
 	}
 	defer a.lookups.give(me)
@@ -185,7 +186,7 @@ func (a *API) lookupArtists(w http.ResponseWriter, r *http.Request) {
 		// An unseen name: the search keeps running behind and is kept, so
 		// the next ask is answered from the store.
 		w.Header().Set("Retry-After", "2")
-		writeJSON(w, http.StatusOK, map[string]any{"artists": []ArtistResult{}, "source": "musicbrainz", "pending": true})
+		webserver.WriteJSON(w, http.StatusOK, map[string]any{"artists": []ArtistResult{}, "source": "musicbrainz", "pending": true})
 		return
 	}
 	if err != nil {
@@ -206,11 +207,11 @@ func (a *API) lookupArtists(w http.ResponseWriter, r *http.Request) {
 			names = append(names, nameKey{kind: "artist", mbid: id, name: ar.Name})
 		}
 		if v.TitleID, err = library.ArtistByMBID(r.Context(), db, ar.MBID); err != nil {
-			internal(w, err)
+			webserver.Internal(w, "api", err)
 			return
 		}
 		if v.Asks, err = a.openArtistAsks(r.Context(), ar.MBID, me); err != nil {
-			internal(w, err)
+			webserver.Internal(w, "api", err)
 			return
 		}
 		for i := range v.Asks {
@@ -220,18 +221,18 @@ func (a *API) lookupArtists(w http.ResponseWriter, r *http.Request) {
 		}
 		if withAlbums && albums != nil {
 			if v.AskAlbums, err = a.askableAlbums(r.Context(), v.TitleID, albums); err != nil {
-				internal(w, err)
+				webserver.Internal(w, "api", err)
 				return
 			}
 		}
 		if v.NeverAdd, err = library.ArtistOnNeverAdd(r.Context(), db, ar.MBID); err != nil {
-			internal(w, err)
+			webserver.Internal(w, "api", err)
 			return
 		}
 		out = append(out, v)
 	}
 	a.rememberMusicNames(names)
-	writeJSON(w, http.StatusOK, map[string]any{"artists": out, "source": "musicbrainz"})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"artists": out, "source": "musicbrainz"})
 }
 
 const addArtistHelp = `send {"id": "mbid:<MusicBrainz artist id>"} with optional library_folder_id, pick_rules_id, keep_up_to_date, albums (all, future, missing, latest, first, none), new_albums (all, new, none), album_types (album, ep, single, broadcast, other), secondary_types (studio, live, compilation, ...), release_statuses (official, promotion, bootleg, pseudo-release), follow`
@@ -246,7 +247,7 @@ func (a *API) addArtist(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if strings.TrimSpace(body.ID) == "" {
-		fail(w, http.StatusBadRequest, addArtistHelp)
+		webserver.Fail(w, http.StatusBadRequest, addArtistHelp)
 		return
 	}
 	id, jobID, err := a.s.Library.AddArtist(r.Context(), body.ID, body.ArtistAddOptions, actor(r))
@@ -261,25 +262,25 @@ func (a *API) addArtist(w http.ResponseWriter, r *http.Request) {
 	}
 	var t mediafiles.Title
 	if err := database.Get(r.Context(), a.s.Store.Read(), "titles", id, &t); err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	v, err := a.titleView(r.Context(), t)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	if a.s.Live != nil {
 		a.publishTitleView(v)
 	}
-	writeJSON(w, http.StatusCreated, map[string]any{"title": v, "job_id": jobID})
+	webserver.WriteJSON(w, http.StatusCreated, map[string]any{"title": v, "job_id": jobID})
 }
 
 // artistID reads an artist Title from the path.
 func (a *API) artistID(w http.ResponseWriter, r *http.Request) (mediafiles.Title, bool) {
 	t, ok := a.titleID(w, r)
 	if ok && t.Kind != "artist" {
-		fail(w, http.StatusNotFound, "that Title is not an artist")
+		webserver.Fail(w, http.StatusNotFound, "that Title is not an artist")
 		return t, false
 	}
 	return t, ok
@@ -297,7 +298,7 @@ func (a *API) setArtist(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if body.NewAlbums == nil && body.AlbumTypes == nil && body.SecondaryTypes == nil && body.ReleaseStatuses == nil {
-		fail(w, http.StatusBadRequest, artistHelp)
+		webserver.Fail(w, http.StatusBadRequest, artistHelp)
 		return
 	}
 	t, jobID, err := a.s.Library.SetArtistChoices(r.Context(), t.ID, body, actor(r))
@@ -307,10 +308,10 @@ func (a *API) setArtist(w http.ResponseWriter, r *http.Request) {
 	}
 	v, err := a.titleView(r.Context(), t)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"title": v, "job_id": jobID})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"title": v, "job_id": jobID})
 }
 
 // ArtistInfo is what an artist's page needs besides the shared Title fields.
@@ -367,7 +368,7 @@ func (a *API) listAlbums(w http.ResponseWriter, r *http.Request) {
 	}
 	als, err := library.Albums(r.Context(), a.s.Store.Read(), t.ID)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	if r.URL.Query().Get("included") == "true" {
@@ -379,7 +380,7 @@ func (a *API) listAlbums(w http.ResponseWriter, r *http.Request) {
 		}
 		als = kept
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"albums": als})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"albums": als})
 }
 
 // albumID reads an album from the path.
@@ -390,7 +391,7 @@ func (a *API) albumID(w http.ResponseWriter, r *http.Request) (mediafiles.Part, 
 		return p, false
 	}
 	if err := database.Get(r.Context(), a.s.Store.Read(), "parts", id, &p); err != nil || p.Kind != "album" {
-		fail(w, http.StatusNotFound, "no such album")
+		webserver.Fail(w, http.StatusNotFound, "no such album")
 		return p, false
 	}
 	return p, true
@@ -419,12 +420,12 @@ func (a *API) getAlbum(w http.ResponseWriter, r *http.Request) {
 	}
 	sum, err := library.AlbumOf(r.Context(), a.s.Store.Read(), p)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	ps, err := database.Select[domain.AlbumPressing](r.Context(), a.s.Store.Read(), "pressings", "part_id = ? ORDER BY chosen DESC, date, id", p.ID)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	views := make([]PressingView, 0, len(ps))
@@ -439,7 +440,7 @@ func (a *API) getAlbum(w http.ResponseWriter, r *http.Request) {
 		}
 		views = append(views, v)
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"album": sum, "title_id": p.TitleID, "pressings": views})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"album": sum, "title_id": p.TitleID, "pressings": views})
 }
 
 const albumHelp = `send {"keep_up_to_date": true or false} and/or {"pressing_id": <id of one of the album's Pressings>}`
@@ -457,7 +458,7 @@ func (a *API) setAlbum(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if body.KeepUpToDate == nil && body.PressingID == 0 {
-		fail(w, http.StatusBadRequest, albumHelp)
+		webserver.Fail(w, http.StatusBadRequest, albumHelp)
 		return
 	}
 	p, err := a.s.Library.SetAlbum(r.Context(), p.ID, body.KeepUpToDate, body.PressingID, actor(r))
@@ -467,10 +468,10 @@ func (a *API) setAlbum(w http.ResponseWriter, r *http.Request) {
 	}
 	sum, err := library.AlbumOf(r.Context(), a.s.Store.Read(), p)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
-	writeJSON(w, http.StatusOK, sum)
+	webserver.WriteJSON(w, http.StatusOK, sum)
 }
 
 // TrackView is one track with its Slots.
@@ -499,12 +500,12 @@ func (a *API) listTracks(w http.ResponseWriter, r *http.Request) {
 	its, err := database.Select[mediafiles.Item](r.Context(), db, "items", `part_id = ? AND kind = 'track'
 		ORDER BY json_extract(numbers, '$.disc'), json_extract(numbers, '$.track'), id`, p.ID)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	vs, err := database.Select[mediafiles.Version](r.Context(), db, "versions", "title_id = ? ORDER BY is_main DESC, id", p.TitleID)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	label := map[int64]string{}
@@ -513,7 +514,7 @@ func (a *API) listTracks(w http.ResponseWriter, r *http.Request) {
 	}
 	slots, err := database.Select[mediafiles.Slot](r.Context(), db, "slots", "item_id IN (SELECT id FROM items WHERE part_id = ? AND kind = 'track') ORDER BY id", p.ID)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	byItem := map[int64][]EpisodeSlot{}
@@ -543,22 +544,22 @@ func (a *API) listTracks(w http.ResponseWriter, r *http.Request) {
 		}
 		out = append(out, v)
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"tracks": out, "album_id": p.ID})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"tracks": out, "album_id": p.ID})
 }
 
 func (a *API) getMusicSettings(w http.ResponseWriter, r *http.Request) {
 	d, err := library.ReadMusicDefaults(r.Context(), a.s.Store.Read())
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
-	writeJSON(w, http.StatusOK, d)
+	webserver.WriteJSON(w, http.StatusOK, d)
 }
 
 func (a *API) putMusicSettings(w http.ResponseWriter, r *http.Request) {
 	d, err := library.ReadMusicDefaults(r.Context(), a.s.Store.Read())
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	if !decode(w, r, &d, "send any of album_choice, new_albums, album_types, secondary_types, release_statuses, pressing_rule, musicbrainz_url, musicbrainz_allow_local_network, cache_hours") {
@@ -570,8 +571,8 @@ func (a *API) putMusicSettings(w http.ResponseWriter, r *http.Request) {
 	}
 	d, err = library.ReadMusicDefaults(r.Context(), a.s.Store.Read())
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
-	writeJSON(w, http.StatusOK, d)
+	webserver.WriteJSON(w, http.StatusOK, d)
 }

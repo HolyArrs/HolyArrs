@@ -266,16 +266,16 @@ func (a *API) artistVideo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !a.uiSettings(r.Context()).AutoplayTrailers {
-		fail(w, http.StatusNotFound, "trailers are turned off")
+		webserver.Fail(w, http.StatusNotFound, "trailers are turned off")
 		return
 	}
 	if a.s.ArtistVideos == nil {
-		fail(w, http.StatusNotFound, "no video")
+		webserver.Fail(w, http.StatusNotFound, "no video")
 		return
 	}
 	vids := a.videosOf(metadata.MemberLookup(r.Context()), mbid)
 	if len(vids) == 0 {
-		fail(w, http.StatusNotFound, "no video")
+		webserver.Fail(w, http.StatusNotFound, "no video")
 		return
 	}
 	// Noted on every view, so the pass keeps a video ready (and renewed).
@@ -285,7 +285,7 @@ func (a *API) artistVideo(w http.ResponseWriter, r *http.Request) {
 	if skip := r.URL.Query().Get("skip"); skip != "" {
 		vids = withoutVideos(vids, strings.Split(skip, ","))
 		if len(vids) == 0 {
-			fail(w, http.StatusNotFound, "no more videos")
+			webserver.Fail(w, http.StatusNotFound, "no more videos")
 			return
 		}
 	}
@@ -296,16 +296,16 @@ func (a *API) artistVideo(w http.ResponseWriter, r *http.Request) {
 	if !ready {
 		w.Header().Set("Cache-Control", "private, no-store")
 		w.Header().Set("Retry-After", "5")
-		fail(w, http.StatusNotFound, "no video ready yet")
+		webserver.Fail(w, http.StatusNotFound, "no video ready yet")
 		return
 	}
 	view, ok := a.videoView(r, v, s)
 	if !ok {
-		fail(w, http.StatusNotFound, "no direct stream")
+		webserver.Fail(w, http.StatusNotFound, "no direct stream")
 		return
 	}
 	w.Header().Set("Cache-Control", "private, no-store")
-	writeJSON(w, http.StatusOK, view)
+	webserver.WriteJSON(w, http.StatusOK, view)
 }
 
 // pickedVideo answers ?id=: that one of the artist's videos, relayed. Label
@@ -325,7 +325,7 @@ func (a *API) pickedVideo(w http.ResponseWriter, r *http.Request, mbid, id strin
 		}
 	}
 	if v.ID == "" {
-		fail(w, http.StatusNotFound, "no such video")
+		webserver.Fail(w, http.StatusNotFound, "no such video")
 		return
 	}
 	s, known := a.videoKnown(r.Context(), v.ID)
@@ -336,20 +336,20 @@ func (a *API) pickedVideo(w http.ResponseWriter, r *http.Request, mbid, id strin
 		}
 		w.Header().Set("Cache-Control", "private, no-store")
 		w.Header().Set("Retry-After", "5")
-		fail(w, http.StatusNotFound, "no video ready yet")
+		webserver.Fail(w, http.StatusNotFound, "no video ready yet")
 		return
 	}
 	if s.Type != "hls" {
-		fail(w, http.StatusNotFound, "no direct stream")
+		webserver.Fail(w, http.StatusNotFound, "no direct stream")
 		return
 	}
 	view, ok := a.videoView(r, v, s)
 	if !ok {
-		fail(w, http.StatusNotFound, "no direct stream")
+		webserver.Fail(w, http.StatusNotFound, "no direct stream")
 		return
 	}
 	w.Header().Set("Cache-Control", "private, no-store")
-	writeJSON(w, http.StatusOK, view)
+	webserver.WriteJSON(w, http.StatusOK, view)
 }
 
 // videoView relays the stream for this person and describes it.

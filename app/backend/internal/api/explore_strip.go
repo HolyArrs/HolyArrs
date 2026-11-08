@@ -18,6 +18,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	engine "github.com/HolyArrs/holyarrs/app/backend/internal/discover/rows"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
@@ -139,19 +140,19 @@ func (a *API) exploreStrip(w http.ResponseWriter, r *http.Request) {
 	max := a.kidMax(r)
 	rows, ok := stripRows(r)
 	if !ok {
-		fail(w, http.StatusBadRequest, "at most 40 row values of up to 80 characters")
+		webserver.Fail(w, http.StatusBadRequest, "at most 40 row values of up to 80 characters")
 		return
 	}
 	key := a.stripMemberKey(member) + sw + "|" + max
 	sig := moment.Local.Format("2006-01-02") + "|" + stripRowsHash(rows)
 	if v, ok := stripAnswers.Load(key); ok && v.(stripEntry).sig == sig && time.Since(v.(stripEntry).at) < stripTTL {
 		a.exploreCaching(w, r, "private, no-cache")
-		writeJSON(w, http.StatusOK, map[string]any{"type": sw, "tiles": v.(stripEntry).tiles, "partial": false})
+		webserver.WriteJSON(w, http.StatusOK, map[string]any{"type": sw, "tiles": v.(stripEntry).tiles, "partial": false})
 		return
 	}
 	pg, page, kid, err := a.browsePage(ctx, r, sw)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	cands := make([]engine.StripCand, 0, 128)
@@ -182,7 +183,7 @@ func (a *API) exploreStrip(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 		if err != nil {
-			internal(w, err)
+			webserver.Internal(w, "api", err)
 			return
 		}
 		items := map[string][]engine.Item{}
@@ -195,7 +196,7 @@ func (a *API) exploreStrip(w http.ResponseWriter, r *http.Request) {
 	}
 	stats, recent, err := a.stripStats(ctx, member, now)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	tiles := engine.PickStrip(engine.StripIn{Cands: cands, Taste: a.stripTaste(ctx, member, kid, now), Stats: stats, Recent: recent,
@@ -204,7 +205,7 @@ func (a *API) exploreStrip(w http.ResponseWriter, r *http.Request) {
 		keepStrip(key, stripEntry{at: time.Now(), sig: sig, tiles: tiles})
 	}
 	a.exploreCaching(w, r, "private, no-cache")
-	writeJSON(w, http.StatusOK, map[string]any{"type": sw, "tiles": tiles, "partial": !complete})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"type": sw, "tiles": tiles, "partial": !complete})
 }
 
 // pageGenreItems are the member's page titles of a genre.
@@ -440,18 +441,18 @@ func (a *API) exploreStripCounts(w http.ResponseWriter, r *http.Request) {
 		Categories []string `json:"categories"`
 	}
 	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 4096)).Decode(&body); err != nil {
-		fail(w, http.StatusBadRequest, "body must be {event, categories}")
+		webserver.Fail(w, http.StatusBadRequest, "body must be {event, categories}")
 		return
 	}
 	field := map[string]string{"shown": "shown", "open": "opened"}[body.Event]
 	if field == "" || len(body.Categories) == 0 || len(body.Categories) > stripRowsMax || (field == "opened" && len(body.Categories) != 1) {
-		fail(w, http.StatusBadRequest, "event must be shown (1 to 40 categories) or open (one category)")
+		webserver.Fail(w, http.StatusBadRequest, "event must be shown (1 to 40 categories) or open (one category)")
 		return
 	}
 	seen := map[string]bool{}
 	for _, c := range body.Categories {
 		if !accounts.ViewKeyOK(accounts.ViewCategory, c) {
-			fail(w, http.StatusBadRequest, "categories must be Explore strip categories")
+			webserver.Fail(w, http.StatusBadRequest, "categories must be Explore strip categories")
 			return
 		}
 		seen[c] = true
@@ -480,7 +481,7 @@ func (a *API) exploreStripCounts(w http.ResponseWriter, r *http.Request) {
 		return nil
 	})
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
@@ -494,7 +495,7 @@ func (a *API) exploreStripReset(w http.ResponseWriter, r *http.Request) {
 		return accounts.ResetCategoryCounts(r.Context(), tx, member)
 	})
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	a.forgetStrip(member)

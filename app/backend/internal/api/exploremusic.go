@@ -3,7 +3,6 @@ package api
 import (
 	"context"
 	"errors"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"net/http"
 	"net/url"
 	"sort"
@@ -11,6 +10,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
@@ -340,17 +341,17 @@ func dayOf(t *time.Time) string {
 // exploreMusic answers GET /api/v1/explore/music?genre=<tag>&region=<code>.
 func (a *API) exploreMusic(w http.ResponseWriter, r *http.Request) {
 	if p, _ := parts.ForTitleKind("artist"); !a.partIsOn(p) {
-		fail(w, http.StatusNotFound, "music is turned off")
+		webserver.Fail(w, http.StatusNotFound, "music is turned off")
 		return
 	}
 	// Music has no ratings, so a Kid limit shows none of it.
 	if a.kidMax(r) != "" {
-		writeJSON(w, http.StatusOK, map[string]any{"kid": true, "cold": false, "genres": []string{}, "genre": "", "hero": nil, "rows": []MusicRow{}})
+		webserver.WriteJSON(w, http.StatusOK, map[string]any{"kid": true, "cold": false, "genres": []string{}, "genre": "", "hero": nil, "rows": []MusicRow{}})
 		return
 	}
 	if !a.discover.allow(a.person(r).UserID, time.Now()) {
 		w.Header().Set("Retry-After", "60")
-		fail(w, http.StatusTooManyRequests, "too many Explore requests; try again in a minute")
+		webserver.Fail(w, http.StatusTooManyRequests, "too many Explore requests; try again in a minute")
 		return
 	}
 	if a.s.MusicRowsV2 && a.s.MusicRowsV3 && a.s.MusicRowsV7 {
@@ -381,14 +382,14 @@ func (a *API) exploreMusic(w http.ResponseWriter, r *http.Request) {
 
 	titles, err := database.Select[mediafiles.Title](ctx, db, "titles", "kind = 'artist' AND state != 'removed' ORDER BY id")
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	files := map[int64]int{}
 	rows, err := db.QueryContext(ctx, `SELECT i.title_id, COUNT(*) FROM items i JOIN slots s ON s.item_id = i.id
 		WHERE i.kind = 'track' AND s.file_id IS NOT NULL GROUP BY i.title_id`)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	for rows.Next() {
@@ -523,7 +524,7 @@ func (a *API) exploreMusic(w http.ResponseWriter, r *http.Request) {
 			AND title_id IN (SELECT id FROM titles WHERE kind = 'artist' AND state != 'removed') ORDER BY release_date DESC, id`,
 			now.AddDate(0, 0, -90).Format("2006-01-02"), now.AddDate(0, 0, 180).Format("2006-01-02"))
 		if err != nil {
-			internal(w, err)
+			webserver.Internal(w, "api", err)
 			return
 		}
 		var out, coming []MusicCard
@@ -611,7 +612,7 @@ func (a *API) exploreMusic(w http.ResponseWriter, r *http.Request) {
 			AND NOT EXISTS (SELECT 1 FROM items i JOIN slots s ON s.item_id = i.id WHERE i.part_id = parts.id AND s.file_id IS NOT NULL)
 			ORDER BY release_date DESC, id`, now.Format("2006-01-02T15:04:05Z"))
 		if err != nil {
-			internal(w, err)
+			webserver.Internal(w, "api", err)
 			return
 		}
 		by := map[int64][]mediafiles.Part{}

@@ -66,24 +66,24 @@ func askError(w http.ResponseWriter, err error) {
 	var le *requests.LimitError
 	switch {
 	case errors.As(err, &in):
-		writeJSON(w, http.StatusConflict, map[string]any{"error": err.Error(), "title_id": in.TitleID, "ready": in.Ready})
+		webserver.WriteJSON(w, http.StatusConflict, map[string]any{"error": err.Error(), "title_id": in.TitleID, "ready": in.Ready})
 	case errors.As(err, &le):
 		secs := int(time.Until(le.RetryAt).Seconds()) + 1
 		w.Header().Set("Retry-After", strconv.Itoa(max(secs, 1)))
-		writeJSON(w, http.StatusTooManyRequests, map[string]any{"error": err.Error(), "retry_at": le.RetryAt, "per_week": le.PerWeek, "kind": le.Kind})
+		webserver.WriteJSON(w, http.StatusTooManyRequests, map[string]any{"error": err.Error(), "retry_at": le.RetryAt, "per_week": le.PerWeek, "kind": le.Kind})
 	case errors.Is(err, requests.ErrNotOpen), errors.Is(err, requests.ErrAskedAgain):
-		fail(w, http.StatusConflict, err.Error())
+		webserver.Fail(w, http.StatusConflict, err.Error())
 	case errors.Is(err, requests.ErrNotYours), errors.Is(err, requests.ErrAboveLimit):
-		fail(w, http.StatusForbidden, err.Error())
+		webserver.Fail(w, http.StatusForbidden, err.Error())
 	case errors.Is(err, requests.ErrNoteLength), errors.Is(err, requests.ErrPerWeek), errors.Is(err, requests.ErrEmail), errors.Is(err, requests.ErrDiscordID),
 		errors.Is(err, requests.ErrNoSuchSeason), errors.Is(err, requests.ErrBadEpisode), errors.Is(err, requests.ErrNotAlbumTrack), errors.Is(err, requests.ErrNotAskedPart), errors.Is(err, requests.ErrNoFourKRules):
-		fail(w, http.StatusBadRequest, err.Error())
+		webserver.Fail(w, http.StatusBadRequest, err.Error())
 	case errors.Is(err, requests.ErrNoSuchAlbum), errors.Is(err, library.ErrCopyChoice):
-		fail(w, http.StatusBadRequest, err.Error())
+		webserver.Fail(w, http.StatusBadRequest, err.Error())
 	case errors.Is(err, requests.ErrAlbumNotIncluded), errors.Is(err, requests.ErrAlbumNotListedYet):
-		fail(w, http.StatusConflict, err.Error())
+		webserver.Fail(w, http.StatusConflict, err.Error())
 	case errors.Is(err, database.ErrNotFound):
-		fail(w, http.StatusNotFound, "no such ask")
+		webserver.Fail(w, http.StatusNotFound, "no such ask")
 	case errors.Is(err, library.ErrBadArtistID), errors.Is(err, library.ErrArtistNeverAdd), errors.Is(err, library.ErrNoMusicSource),
 		errors.Is(err, library.ErrNoMusicFolder), errors.Is(err, library.ErrNotMusicFolder), errors.Is(err, library.ErrAlbumNotIncluded),
 		errors.Is(err, metadata.ErrArtistNotFound), errors.Is(err, metadata.ErrMusicBusy), errors.Is(err, metadata.ErrMusicUnavailable):
@@ -136,7 +136,7 @@ func (a *API) listAsks(w http.ResponseWriter, r *http.Request) {
 	}
 	if k := r.URL.Query().Get("kind"); k != "" {
 		if k != "movie" && k != "show" && k != "artist" {
-			fail(w, http.StatusBadRequest, "kind must be movie, show or artist")
+			webserver.Fail(w, http.StatusBadRequest, "kind must be movie, show or artist")
 			return
 		}
 		where = append(where, "a.kind = ?")
@@ -144,7 +144,7 @@ func (a *API) listAsks(w http.ResponseWriter, r *http.Request) {
 	}
 	if st := r.URL.Query().Get("state"); st != "" {
 		if requests.StateLabels[st] == "" {
-			fail(w, http.StatusBadRequest, "state must be asked, approved, turned_down or available")
+			webserver.Fail(w, http.StatusBadRequest, "state must be asked, approved, turned_down or available")
 			return
 		}
 		where = append(where, "a.state = ?")
@@ -152,27 +152,27 @@ func (a *API) listAsks(w http.ResponseWriter, r *http.Request) {
 	}
 	vs, err := a.askViews(r, strings.Join(where, " AND "), args...)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	vs = vs[:min(len(vs), limit(r, 200))]
-	writeJSON(w, http.StatusOK, map[string]any{"asks": vs})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"asks": vs})
 }
 
 func (a *API) askByID(w http.ResponseWriter, r *http.Request) (requests.View, bool) {
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
-		fail(w, http.StatusNotFound, "no such ask")
+		webserver.Fail(w, http.StatusNotFound, "no such ask")
 		return requests.View{}, false
 	}
 	vs, err := a.askViews(r, "a.id = ?", id)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return requests.View{}, false
 	}
 	// Someone else's ask is not shown to people who do not approve.
 	if len(vs) == 0 || (!vs[0].Mine && !mayApprove(r)) {
-		fail(w, http.StatusNotFound, "no such ask")
+		webserver.Fail(w, http.StatusNotFound, "no such ask")
 		return requests.View{}, false
 	}
 	return vs[0], true
@@ -180,21 +180,21 @@ func (a *API) askByID(w http.ResponseWriter, r *http.Request) (requests.View, bo
 
 func (a *API) getAsk(w http.ResponseWriter, r *http.Request) {
 	if v, ok := a.askByID(w, r); ok {
-		writeJSON(w, http.StatusOK, v)
+		webserver.WriteJSON(w, http.StatusOK, v)
 	}
 }
 
 func (a *API) answerAsk(w http.ResponseWriter, r *http.Request, code int, id int64, extra map[string]any) {
 	vs, err := a.askViews(r, "a.id = ?", id)
 	if err != nil || len(vs) == 0 {
-		internal(w, errors.Join(err, errors.New("ask vanished")))
+		webserver.Internal(w, "api", errors.Join(err, errors.New("ask vanished")))
 		return
 	}
 	out := map[string]any{"ask": vs[0]}
 	for k, v := range extra {
 		out[k] = v
 	}
-	writeJSON(w, code, out)
+	webserver.WriteJSON(w, code, out)
 }
 
 func (a *API) makeAsk(w http.ResponseWriter, r *http.Request) {
@@ -218,7 +218,7 @@ func (a *API) makeAsk(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if (len(body.Editions) > 0 && body.Kind != "artist") || (body.FourK && body.Kind != "" && body.Kind != "movie") {
-		fail(w, http.StatusBadRequest, askHelp)
+		webserver.Fail(w, http.StatusBadRequest, askHelp)
 		return
 	}
 	// No one can ask for a title of a part that is off.
@@ -227,7 +227,7 @@ func (a *API) makeAsk(w http.ResponseWriter, r *http.Request) {
 		askKind = "movie"
 	}
 	if p, known := parts.ForTitleKind(askKind); known && !a.partIsOn(p) {
-		writeJSON(w, http.StatusConflict, partOffBody(parts.Of(p)))
+		webserver.WriteJSON(w, http.StatusConflict, partOffBody(parts.Of(p)))
 		return
 	}
 	src, num, ok := strings.Cut(strings.TrimSpace(body.ID), ":")
@@ -236,7 +236,7 @@ func (a *API) makeAsk(w http.ResponseWriter, r *http.Request) {
 	switch body.Kind {
 	case "", "movie":
 		if !ok || src != "tmdb" || num == "" || len(num) > 12 || strings.Trim(num, "0123456789") != "" || len(body.Seasons) > 0 || len(body.Episodes) > 0 || len(body.Albums) > 0 || body.FutureOnly {
-			fail(w, http.StatusBadRequest, askHelp)
+			webserver.Fail(w, http.StatusBadRequest, askHelp)
 			return
 		}
 		if body.FourK {
@@ -247,7 +247,7 @@ func (a *API) makeAsk(w http.ResponseWriter, r *http.Request) {
 	case "show":
 		if !ok || num == "" || len(num) > 20 || (src != "tmdb" && src != "tvdb" && src != "tvmaze" && src != "imdb") || len(body.Seasons) > 200 || len(body.Albums) > 0 ||
 			len(body.Episodes) > 200 || (body.FutureOnly && (len(body.Seasons) > 0 || len(body.Episodes) > 0)) || tooManyEpisodes(body.Episodes) {
-			fail(w, http.StatusBadRequest, askHelp)
+			webserver.Fail(w, http.StatusBadRequest, askHelp)
 			return
 		}
 		if body.FutureOnly {
@@ -257,12 +257,12 @@ func (a *API) makeAsk(w http.ResponseWriter, r *http.Request) {
 		}
 	case "artist":
 		if !ok || (src != "mbid" && src != "musicbrainz") || !metadata.ValidMBID(num) || len(body.Seasons) > 0 || len(body.Episodes) > 0 || len(body.Albums) > 500 || body.FutureOnly {
-			fail(w, http.StatusBadRequest, askHelp)
+			webserver.Fail(w, http.StatusBadRequest, askHelp)
 			return
 		}
 		for _, al := range body.Albums {
 			if !metadata.ValidMBID(strings.TrimSpace(al)) {
-				fail(w, http.StatusBadRequest, askHelp)
+				webserver.Fail(w, http.StatusBadRequest, askHelp)
 				return
 			}
 		}
@@ -274,14 +274,14 @@ func (a *API) makeAsk(w http.ResponseWriter, r *http.Request) {
 		for al, rel := range body.Editions {
 			al, rel = strings.ToLower(strings.TrimSpace(al)), strings.ToLower(strings.TrimSpace(rel))
 			if !metadata.ValidMBID(al) || !metadata.ValidMBID(rel) || !slices.ContainsFunc(body.Albums, func(x string) bool { return strings.EqualFold(strings.TrimSpace(x), al) }) {
-				fail(w, http.StatusBadRequest, askHelp)
+				webserver.Fail(w, http.StatusBadRequest, askHelp)
 				return
 			}
 			ed[al] = rel
 		}
 		res, err = a.s.Asks.AskArtistEditions(ctx, a.person(r), "mbid:"+num, body.Albums, ed)
 	default:
-		fail(w, http.StatusBadRequest, askHelp)
+		webserver.Fail(w, http.StatusBadRequest, askHelp)
 		return
 	}
 	follow := body.Follow == nil || *body.Follow
@@ -311,10 +311,10 @@ const askHelp = `send {"id": "tmdb:<number>"} for a movie, {"kind": "show", "id"
 func (a *API) askLimit(w http.ResponseWriter, r *http.Request) {
 	l, err := a.s.Asks.LimitOf(r.Context(), a.person(r))
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
-	writeJSON(w, http.StatusOK, l)
+	webserver.WriteJSON(w, http.StatusOK, l)
 }
 
 func (a *API) withdrawAsk(w http.ResponseWriter, r *http.Request) {
@@ -338,11 +338,11 @@ func (a *API) askParts(w http.ResponseWriter, r *http.Request) {
 	}
 	p, err := a.s.Asks.AskParts(r.Context(), v.ID)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	w.Header().Set("Cache-Control", "private, max-age=60")
-	writeJSON(w, http.StatusOK, p)
+	webserver.WriteJSON(w, http.StatusOK, p)
 }
 
 func (a *API) approveAsk(w http.ResponseWriter, r *http.Request) {
@@ -352,7 +352,7 @@ func (a *API) approveAsk(w http.ResponseWriter, r *http.Request) {
 	}
 	// An ask of a part that is off waits: approving it would add a title there.
 	if p, known := parts.ForTitleKind(v.Kind); known && !a.partIsOn(p) {
-		writeJSON(w, http.StatusConflict, partOffBody(parts.Of(p)))
+		webserver.WriteJSON(w, http.StatusConflict, partOffBody(parts.Of(p)))
 		return
 	}
 	var opt requests.ApproveOptions
@@ -387,17 +387,17 @@ func (a *API) turnDownAsk(w http.ResponseWriter, r *http.Request) {
 func (a *API) getAskSettings(w http.ResponseWriter, r *http.Request) {
 	s, err := requests.ReadSettings(r.Context(), a.s.Store.Read())
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
-	writeJSON(w, http.StatusOK, s)
+	webserver.WriteJSON(w, http.StatusOK, s)
 }
 
 func (a *API) putAskSettings(w http.ResponseWriter, r *http.Request) {
 	// Fields left out keep their saved values.
 	s, err := requests.ReadSettings(r.Context(), a.s.Store.Read())
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	if !decode(w, r, &s, "send any of movies_per_week, shows_per_week, music_per_week, library_folder_id, pick_rules_id, search_on_approve, show_library_folder_id, show_pick_rules_id, music_library_folder_id, music_pick_rules_id") {
@@ -425,7 +425,7 @@ func (a *API) listAskLimits(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	rows, err := a.s.Store.Read().QueryContext(ctx, `SELECT id, name, role, perms FROM users ORDER BY name`)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	type row struct {
@@ -437,7 +437,7 @@ func (a *API) listAskLimits(w http.ResponseWriter, r *http.Request) {
 		var x row
 		if err := rows.Scan(&x.v.UserID, &x.v.Name, &x.v.Role, &x.perms); err != nil {
 			rows.Close()
-			internal(w, err)
+			webserver.Internal(w, "api", err)
 			return
 		}
 		list = append(list, x)
@@ -448,24 +448,24 @@ func (a *API) listAskLimits(w http.ResponseWriter, r *http.Request) {
 		p := requests.Person{UserID: x.v.UserID, NoLimit: x.v.Role == webserver.RoleOwner || strings.Contains(x.perms, `"`+string(webserver.PermApprove)+`"`)}
 		l, err := a.s.Asks.LimitOf(ctx, p)
 		if err != nil {
-			internal(w, err)
+			webserver.Internal(w, "api", err)
 			return
 		}
 		if x.v.Movies, x.v.Shows, x.v.Music, err = requests.PersonLimits(ctx, a.s.Store.Read(), x.v.UserID); err != nil {
-			internal(w, err)
+			webserver.Internal(w, "api", err)
 			return
 		}
 		x.v.Used = map[string]int{requests.KindMovies: l.Movies.Used, requests.KindShows: l.Shows.Used, requests.KindMusic: l.Music.Used}
 		x.v.NoLimit = p.NoLimit
 		out = append(out, x.v)
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"limits": out})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"limits": out})
 }
 
 func (a *API) putAskLimit(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
-		fail(w, http.StatusNotFound, "no such user")
+		webserver.Fail(w, http.StatusNotFound, "no such user")
 		return
 	}
 	var body struct {
@@ -480,19 +480,19 @@ func (a *API) putAskLimit(w http.ResponseWriter, r *http.Request) {
 		l = requests.PersonLimit{Movies: body.PerWeek, Shows: body.PerWeek, Music: body.PerWeek}
 	}
 	if err := requests.SetPersonLimit(r.Context(), a.s.Store, id, l); errors.Is(err, database.ErrNotFound) {
-		fail(w, http.StatusNotFound, "no such user")
+		webserver.Fail(w, http.StatusNotFound, "no such user")
 		return
 	} else if err != nil {
 		askError(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"user_id": id, "movies_per_week": l.Movies, "shows_per_week": l.Shows, "music_per_week": l.Music})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"user_id": id, "movies_per_week": l.Movies, "shows_per_week": l.Shows, "music_per_week": l.Music})
 }
 
 func (a *API) listMessages(w http.ResponseWriter, r *http.Request) {
 	ms, unread, err := requests.Messages(r.Context(), a.s.Store.Read(), a.person(r).UserID, limit(r, 30))
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	out := map[string]any{"messages": ms, "unread": unread}
@@ -504,12 +504,12 @@ func (a *API) listMessages(w http.ResponseWriter, r *http.Request) {
 	if mayManageReports(r) {
 		out["reports_open"], _ = requests.OpenReports(r.Context(), a.s.Store.Read())
 	}
-	writeJSON(w, http.StatusOK, out)
+	webserver.WriteJSON(w, http.StatusOK, out)
 }
 
 func (a *API) readMessages(w http.ResponseWriter, r *http.Request) {
 	if err := requests.MarkRead(r.Context(), a.s.Store, a.person(r).UserID); err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
@@ -518,10 +518,10 @@ func (a *API) readMessages(w http.ResponseWriter, r *http.Request) {
 func (a *API) getMyAlerts(w http.ResponseWriter, r *http.Request) {
 	t, err := requests.ReadTargets(r.Context(), a.s.Store.Read(), a.person(r).UserID)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
-	writeJSON(w, http.StatusOK, t)
+	webserver.WriteJSON(w, http.StatusOK, t)
 }
 
 func (a *API) putMyAlerts(w http.ResponseWriter, r *http.Request) {
@@ -536,10 +536,10 @@ func (a *API) putMyAlerts(w http.ResponseWriter, r *http.Request) {
 	}
 	t, err := requests.ReadTargets(r.Context(), a.s.Store.Read(), a.person(r).UserID)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "api", err)
 		return
 	}
-	writeJSON(w, http.StatusOK, t)
+	webserver.WriteJSON(w, http.StatusOK, t)
 }
 
 // askBrief is an open ask shown next to a looked-up movie.
