@@ -120,31 +120,18 @@ type picJob struct{ kind, mbid, size, v string }
 func (s *PackageSync) Load(ctx context.Context) error {
 	arts := map[string]artistEntry{}
 	db := s.Store.Read()
-	rows, err := db.QueryContext(ctx, "SELECT mbid, rank, pictures FROM music_packages")
+	index, err := readPackageIndex(ctx, db)
 	if err != nil {
 		return err
 	}
-	for rows.Next() {
-		var id, pics string
-		var rank int
-		if err := rows.Scan(&id, &rank, &pics); err != nil {
-			rows.Close()
-			return err
-		}
-		e := artistEntry{rank: rank}
-		_ = json.Unmarshal([]byte(pics), &e.pics)
-		arts[id] = e
-	}
-	rows.Close()
-	if err := rows.Err(); err != nil {
-		return err
+	for _, r := range index {
+		e := artistEntry{rank: r.rank}
+		_ = json.Unmarshal([]byte(r.pictures), &e.pics)
+		arts[r.mbid] = e
 	}
 	albs := s.albumCount(ctx)
-	var cursor int64
-	var at string
-	_ = db.QueryRowContext(ctx, "SELECT cursor, synced_at FROM music_package_sync WHERE id = 1").Scan(&cursor, &at)
-	var size int64
-	_ = db.QueryRowContext(ctx, "SELECT coalesce(sum(length(body)), 0) FROM music_packages").Scan(&size)
+	cursor, at := readPackageSync(ctx, db)
+	size := readPackageBytes(ctx, db)
 	s.mu.Lock()
 	s.artists, s.albums, s.loaded = arts, albs, true
 	// An earlier copy (cursor past 0) answers coverage until this one ends.
@@ -195,8 +182,7 @@ func (s *PackageSync) SyncOnce(ctx context.Context) (int, error) {
 			return 0, err
 		}
 	}
-	var cursor int64
-	_ = s.Store.Read().QueryRowContext(ctx, "SELECT cursor FROM music_package_sync WHERE id = 1").Scan(&cursor)
+	cursor := readPackageCursor(ctx, s.Store.Read())
 	// Keep only the picture jobs until the copy ends, not the decoded packages:
 	// a first copy would otherwise hold every package at once.
 	var jobs []picJob
@@ -242,8 +228,8 @@ func (s *PackageSync) Package(ctx context.Context, mbid string) (*metadata.Music
 		return p, true
 	}
 	s.cacheMu.Unlock()
-	var body []byte
-	if s.Store.Read().QueryRowContext(ctx, "SELECT body FROM music_packages WHERE mbid = ?", mbid).Scan(&body) != nil {
+	body, err := readPackageBody(ctx, s.Store.Read(), mbid)
+	if err != nil {
 		return nil, false
 	}
 	raw, err := unpack(body)
@@ -365,8 +351,7 @@ func (s *PackageSync) schedule() time.Duration {
 
 // finish records the result of a copy run in the stats.
 func (s *PackageSync) finish(start time.Time, cursor int64, changed int, whole bool) {
-	var size int64
-	_ = s.Store.Read().QueryRow("SELECT coalesce(sum(length(body)), 0) FROM music_packages").Scan(&size)
+	size := readPackageBytes(context.Background(), s.Store.Read())
 	albs := s.albumCount(context.Background())
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -403,29 +388,21 @@ func (s *PackageSync) storePage(ctx context.Context, page metadata.PackagePage) 
 	now := database.FormatTime(time.Now())
 	err := s.Store.Write(ctx, func(tx *sql.Tx) error {
 		for _, r := range rows {
-			if _, err := tx.Exec(`INSERT INTO music_packages (mbid, version, hash, rank, complete, body, pictures, stored_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-				ON CONFLICT (mbid) DO UPDATE SET version = excluded.version, hash = excluded.hash, rank = excluded.rank, complete = excluded.complete,
-				body = excluded.body, pictures = excluded.pictures, stored_at = excluded.stored_at`,
-				r.p.MBID, r.p.Version, r.p.Hash, r.p.Rank, r.p.Complete, r.body, string(r.pics), now); err != nil {
-				return err
-			}
-			if _, err := tx.Exec("DELETE FROM music_package_albums WHERE artist = ?", r.p.MBID); err != nil {
-				return err
-			}
+			var albums []packageAlbum
 			for _, g := range r.p.ReleaseGroups {
 				cover := ""
 				if g.Cover != nil {
 					b, _ := json.Marshal(g.Cover)
 					cover = string(b)
 				}
-				if _, err := tx.Exec(`INSERT INTO music_package_albums (rg, artist, cover) VALUES (?, ?, ?)
-					ON CONFLICT (rg) DO UPDATE SET artist = excluded.artist, cover = excluded.cover`, strings.ToLower(g.ID), r.p.MBID, cover); err != nil {
-					return err
-				}
+				albums = append(albums, packageAlbum{rg: strings.ToLower(g.ID), cover: cover})
+			}
+			p := packageRow{mbid: r.p.MBID, version: r.p.Version, hash: r.p.Hash, rank: r.p.Rank, complete: r.p.Complete, body: r.body, pictures: string(r.pics)}
+			if err := putPackageTx(tx, p, albums, now); err != nil {
+				return err
 			}
 		}
-		_, err := tx.Exec(`INSERT INTO music_package_sync (id, cursor, synced_at) VALUES (1, ?, ?)
-			ON CONFLICT (id) DO UPDATE SET cursor = excluded.cursor, synced_at = excluded.synced_at`, page.Next, now)
+		err := putPackageCursorTx(tx, page.Next, now)
 		return err
 	})
 	if err != nil {
@@ -540,8 +517,8 @@ feed:
 // album reads one listed album by key. A read error counts as not listed, so
 // callers fall back to the live path.
 func (s *PackageSync) album(ctx context.Context, rg string) (artist string, cover *metadata.PictureRecord, ok bool) {
-	var raw string
-	if err := s.Store.Read().QueryRowContext(ctx, "SELECT artist, cover FROM music_package_albums WHERE rg = ?", strings.ToLower(rg)).Scan(&artist, &raw); err != nil {
+	artist, raw, err := readPackageAlbum(ctx, s.Store.Read(), strings.ToLower(rg))
+	if err != nil {
 		return "", nil, false
 	}
 	if raw != "" {
@@ -555,9 +532,7 @@ func (s *PackageSync) album(ctx context.Context, rg string) (artist string, cove
 
 // albumCount returns how many albums the packages list.
 func (s *PackageSync) albumCount(ctx context.Context) int {
-	var n int
-	_ = s.Store.Read().QueryRowContext(ctx, "SELECT count(*) FROM music_package_albums").Scan(&n)
-	return n
+	return countPackageAlbums(ctx, s.Store.Read())
 }
 
 // want asks the server to build or finish the artist's package. It does
