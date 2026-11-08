@@ -34,3 +34,21 @@ func TestProfileDisplayName(t *testing.T) {
 		t.Fatalf("cleared profile: %s", out)
 	}
 }
+
+// Each person edits only their own profile, and extra fields (role, name)
+// in the body change nothing.
+func TestProfileIsOwnOnly(t *testing.T) {
+	f := gated(t, Options{})
+	own := ownerOf(t, f)
+	ana := join(t, f, invite(t, f, own, `{}`), "ana")
+	if resp, out := ana.do(t, f, "PUT", "/api/v1/my/profile", `{"display_name":"Ana","role":"owner","name":"root"}`); resp.StatusCode != 200 {
+		t.Fatalf("put: %d %s", resp.StatusCode, out)
+	}
+	if _, out := own.do(t, f, "GET", "/api/v1/my/profile", ""); !strings.Contains(out, `"display_name":""`) {
+		t.Fatalf("owner's profile changed: %s", out)
+	}
+	_, out := ana.do(t, f, "GET", "/api/v1/auth/me", "")
+	if !strings.Contains(out, `"name":"ana"`) || strings.Contains(out, `"role":"owner"`) {
+		t.Fatalf("profile edit changed name or role: %s", out)
+	}
+}

@@ -3,9 +3,10 @@ package main
 import (
 	"strings"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
 	"os"
 	"testing"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
 )
 
 // TestMain keeps the update check off the real network: the release feed

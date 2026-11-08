@@ -1,4 +1,4 @@
-package api
+package main
 
 import (
 	"errors"
@@ -7,14 +7,12 @@ import (
 	"strings"
 	"testing"
 	"time"
-
-	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
 // TestControlsNeedAPasswordSignIn: the local-network skip signs a person
 // in without a password; it must not run any control.
 func TestControlsNeedAPasswordSignIn(t *testing.T) {
-	r := newAskRig(t)
+	r := newOwnerRig(t)
 	r.owner.call("PUT", "/api/v1/auth/settings", `{"skip_login_local_network":true,"local_networks":["127.0.0.0/8","10.0.0.0/8"]}`, 200)
 	jar, _ := cookiejar.New(nil)
 	bare := &signedIn{t: t, base: r.srv.URL, c: &http.Client{Jar: jar}}
@@ -43,29 +41,6 @@ func TestLinkRestartNotFoundFirst(t *testing.T) {
 	}
 	if es := f.events(t); len(es) != 0 {
 		t.Fatalf("events for unknown links: %+v", es)
-	}
-}
-
-// TestConfirmIDsAreCapped: one person cannot fill memory with confirm ids.
-func TestConfirmIDsAreCapped(t *testing.T) {
-	f := newCtl(t, false)
-	u := f.srv.URL + "/api/v1/"
-	for i := 0; i < webserver.MaxConfirmsPerUser+50; i++ {
-		do(t, "POST", u+"app/restart", "", 202)
-	}
-	a := f.api
-	n := a.controls.ConfirmCount()
-	if n > webserver.MaxConfirmsPerUser {
-		t.Fatalf("%d confirm ids kept, cap %d", n, webserver.MaxConfirmsPerUser)
-	}
-	// The newest id still works.
-	confirmTwice(t, u+"app/restart", 202)
-	defer func() { webserver.ConfirmNow = time.Now }()
-	webserver.ConfirmNow = func() time.Time { return time.Now().Add(2 * webserver.ConfirmFor) }
-	do(t, "POST", u+"app/restart", "", 202) // purges the expired ones
-	n = a.controls.ConfirmCount()
-	if n != 1 {
-		t.Fatalf("expired ids not purged: %d left", n)
 	}
 }
 

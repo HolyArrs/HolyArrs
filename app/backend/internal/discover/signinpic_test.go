@@ -81,12 +81,3 @@ func TestSigninPicServesOnlyItsOwnArt(t *testing.T) {
 		t.Fatal("a refused address reached the picture host")
 	}
 }
-
-// toServer sends every request to srv (the fake picture host).
-type toServer struct{ srv *url.URL }
-
-func (t toServer) RoundTrip(r *http.Request) (*http.Response, error) {
-	r = r.Clone(r.Context())
-	r.URL.Scheme, r.URL.Host = t.srv.Scheme, t.srv.Host
-	return http.DefaultTransport.RoundTrip(r)
-}

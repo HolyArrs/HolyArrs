@@ -2,9 +2,7 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
-	"io"
 	"net/http"
 	"net/http/cookiejar"
 	"net/http/httptest"
@@ -14,10 +12,8 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/alerts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/api"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/requests"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
@@ -26,32 +22,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
-
-// signedIn is one person's browser: cookies and the CSRF token.
-type signedIn struct {
-	t    *testing.T
-	base string
-	c    *http.Client
-	csrf string
-	id   int64
-}
-
-func (s *signedIn) call(method, path, body string, want int) []byte {
-	s.t.Helper()
-	req, _ := http.NewRequest(method, s.base+path, strings.NewReader(body))
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set(accounts.CSRFHeader, s.csrf)
-	resp, err := s.c.Do(req)
-	if err != nil {
-		s.t.Fatal(err)
-	}
-	defer resp.Body.Close()
-	b, _ := io.ReadAll(resp.Body)
-	if resp.StatusCode != want {
-		s.t.Fatalf("%s %s: %d, want %d: %s", method, path, resp.StatusCode, want, b)
-	}
-	return b
-}
 
 type askRig struct {
 	srv   *httptest.Server
@@ -63,6 +33,7 @@ type askRig struct {
 	api   *api.API
 	live  *webserver.LiveHub
 	wl    *requests.Watchlists
+	md    metadata.Provider
 }
 
 // newAskRig runs the real API with sign-in: the owner luis and the members
@@ -98,7 +69,7 @@ func newAskRig(t *testing.T) *askRig {
 		Library: lib, Alerts: al, Asks: asks, Watchlists: wl})
 	srv := httptest.NewServer(a.Handler())
 	t.Cleanup(srv.Close)
-	r := &askRig{srv: srv, st: st, asks: asks, api: a, live: live, wl: wl}
+	r := &askRig{srv: srv, st: st, asks: asks, api: a, live: live, wl: wl, md: md}
 
 	browser := func() *signedIn {
 		jar, _ := cookiejar.New(nil)
@@ -127,14 +98,6 @@ func newAskRig(t *testing.T) *askRig {
 	}
 	r.ana, r.bo = join("ana"), join("bo")
 	return r
-}
-
-func insertFolder(t *testing.T) func(tx *sql.Tx) error {
-	dir := t.TempDir()
-	return func(tx *sql.Tx) error {
-		_, err := database.Insert(tx, "library_folders", &mediafiles.LibraryFolder{Path: dir, Kind: "movie", Label: "Movies", Health: "ok", SameDiskAs: []int64{}}, domain.System)
-		return err
-	}
 }
 
 func askOf(t *testing.T, b []byte) requests.View {

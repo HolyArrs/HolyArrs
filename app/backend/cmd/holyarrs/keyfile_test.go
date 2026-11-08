@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 	"io"
 	"io/fs"
 	"net"
@@ -14,6 +13,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 )
 
 // The key messages point at the docs for moving to a new machine, and an

@@ -1,4 +1,4 @@
-package api
+package main
 
 import (
 	"context"
@@ -23,6 +23,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/api"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 
@@ -37,7 +38,7 @@ type ctlFix struct {
 	s       *database.Store
 	pc      *parts.Control
 	reg     *jobs.Registry
-	api     *API
+	api     *api.API
 	runs    atomic.Int64 // passes of the test loops
 	mu      sync.Mutex
 	exits   []string
@@ -82,7 +83,7 @@ func newCtlMode(t *testing.T, withAuth, safe bool) *ctlFix {
 	if err := q.Start(ctx); err != nil {
 		t.Fatal(err)
 	}
-	srvOpts := Server{Store: s, Queue: q, Metadata: metadata.Lab(), Version: "test", Parts: f.pc, States: f.reg, SafeMode: safe,
+	srvOpts := api.Server{Store: s, Queue: q, Metadata: metadata.Lab(), Version: "test", Parts: f.pc, States: f.reg, SafeMode: safe,
 		ExitApp: func(how string) error {
 			f.mu.Lock()
 			defer f.mu.Unlock()
@@ -95,7 +96,7 @@ func newCtlMode(t *testing.T, withAuth, safe bool) *ctlFix {
 	if withAuth {
 		srvOpts.Auth = accounts.New(s, accounts.Options{})
 	}
-	f.api = New(srvOpts)
+	f.api = api.New(srvOpts)
 	f.srv = httptest.NewServer(f.api.Handler())
 	t.Cleanup(f.srv.Close)
 	return f
@@ -334,7 +335,7 @@ func TestAppExitControls(t *testing.T) {
 		t.Fatalf("%d events", n)
 	}
 	// Without an exit hook the controls are refused.
-	s, _, _ := setup(t)
+	s := plainServer(t)
 	do(t, "POST", s.URL+"/api/v1/app/restart", "", 503)
 }
 
@@ -531,7 +532,7 @@ func TestEveryRouteHasAPart(t *testing.T) {
 	for _, dir := range routePackages {
 		files, _ := filepath.Glob(filepath.Join(dir, "*.go"))
 		for _, f := range files {
-			if strings.HasSuffix(f, "_test.go") || (dir == "../arrapi" && filepath.Base(f) != "routes_settings.go") {
+			if strings.HasSuffix(f, "_test.go") || (dir == "../../internal/arrapi" && filepath.Base(f) != "routes_settings.go") {
 				continue
 			}
 			b, err := os.ReadFile(f)
@@ -554,4 +555,17 @@ func TestEveryRouteHasAPart(t *testing.T) {
 			t.Errorf("internal/parts/table.go lists %q, but no such route is registered", r)
 		}
 	}
+}
+
+// plainServer serves the API with no exit hook and no sign-in.
+func plainServer(t *testing.T) *httptest.Server {
+	t.Helper()
+	s, err := database.Open(t.TempDir(), database.Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = s.Close() })
+	srv := httptest.NewServer(api.New(api.Server{Store: s, Metadata: metadata.Lab(), Version: "test"}).Handler())
+	t.Cleanup(srv.Close)
+	return srv
 }

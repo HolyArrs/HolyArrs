@@ -1,9 +1,15 @@
-package api
+package health
 
 import (
 	"encoding/json"
+	"io"
+	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
 // route: GET /api/v1/settings/ui
@@ -13,7 +19,30 @@ import (
 // nothing is stored for it and the other fields still save.
 func TestUISettingsOldUpdateSwitchIgnored(t *testing.T) {
 	t.Parallel()
-	srv, st := discoverRig(t, trailerTMDB(t))
+	st, err := database.Open(t.TempDir(), database.Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = st.Close() })
+	m := http.NewServeMux()
+	(&UIHandlers{Store: st, Actor: func(*http.Request) domain.Actor { return domain.System }}).Routes(m)
+	srv := httptest.NewServer(m)
+	t.Cleanup(srv.Close)
+	do := func(t *testing.T, method, url, body string, want int) []byte {
+		t.Helper()
+		req, _ := http.NewRequest(method, url, strings.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer resp.Body.Close()
+		b, _ := io.ReadAll(resp.Body)
+		if resp.StatusCode != want {
+			t.Fatalf("%s %s: %d, want %d: %s", method, url, resp.StatusCode, want, b)
+		}
+		return b
+	}
 	path := srv.URL + "/api/v1/settings/ui"
 	if b := string(do(t, "GET", path, "", 200)); strings.Contains(b, "keep_ytdlp_updated") {
 		t.Fatalf("old switch answered %s", b)
