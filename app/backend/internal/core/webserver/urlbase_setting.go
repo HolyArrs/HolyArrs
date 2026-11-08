@@ -8,29 +8,41 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
 // The URL base saved from Settings; HOLYARRS_URL_BASE or -url-base win
 // over it, and it takes effect on the next start.
-const urlBaseGroup, urlBaseKey = "this_app", "url_base"
+const urlBaseGroup, urlBaseSettingKey = "this_app", "url_base"
 
 // SavedURLBase reads the saved base for startup. A missing or bad value is
 // no base, so a wrong save never locks anyone out after a restart.
-func SavedURLBase(ctx context.Context, db *sql.DB) string {
-	var raw string
-	if err := db.QueryRowContext(ctx, "SELECT value FROM settings WHERE grp = ? AND key = ?", urlBaseGroup, urlBaseKey).Scan(&raw); err != nil {
+func SavedURLBase(ctx context.Context, db database.Querier) string {
+	raw, found, err := database.SettingFound(ctx, db, urlBaseGroup, urlBaseSettingKey)
+	if err != nil || !found {
 		return ""
 	}
 	var v string
 	if json.Unmarshal([]byte(raw), &v) != nil {
 		return ""
 	}
-	b, err := webserver.CleanURLBase(v)
+	b, err := CleanURLBase(v)
 	if err != nil {
 		return ""
 	}
 	return b
+}
+
+// URLBaseHandlers serve the URL base setting. InUse is the base this run
+// started with.
+type URLBaseHandlers struct {
+	Store *database.Store
+	InUse string
+}
+
+// Routes registers the URL base setting routes.
+func (h *URLBaseHandlers) Routes(m *http.ServeMux) {
+	m.HandleFunc("GET /api/v1/settings/url-base", h.get)
+	m.HandleFunc("PUT /api/v1/settings/url-base", h.put)
 }
 
 type urlBaseAnswer struct {
@@ -39,39 +51,38 @@ type urlBaseAnswer struct {
 	RestartNeeded bool   `json:"restart_needed"`
 }
 
-func (a *API) urlBaseAnswer(ctx context.Context) urlBaseAnswer {
-	saved := SavedURLBase(ctx, a.s.Store.Read())
-	return urlBaseAnswer{Saved: saved, InUse: a.s.URLBase, RestartNeeded: saved != a.s.URLBase}
+func (h *URLBaseHandlers) answer(ctx context.Context) urlBaseAnswer {
+	saved := SavedURLBase(ctx, h.Store.Read())
+	return urlBaseAnswer{Saved: saved, InUse: h.InUse, RestartNeeded: saved != h.InUse}
 }
 
-func (a *API) getURLBase(w http.ResponseWriter, r *http.Request) {
-	webserver.WriteJSON(w, http.StatusOK, a.urlBaseAnswer(r.Context()))
+func (h *URLBaseHandlers) get(w http.ResponseWriter, r *http.Request) {
+	WriteJSON(w, http.StatusOK, h.answer(r.Context()))
 }
 
-func (a *API) putURLBase(w http.ResponseWriter, r *http.Request) {
+func (h *URLBaseHandlers) put(w http.ResponseWriter, r *http.Request) {
 	var body struct {
 		URLBase string `json:"url_base"`
 	}
-	if !decode(w, r, &body, `send {"url_base": "/holyarrs"}, or "" for none`) {
+	if !Decode(w, r, &body, `send {"url_base": "/holyarrs"}, or "" for none`) {
 		return
 	}
-	b, err := webserver.CleanURLBase(body.URLBase)
+	b, err := CleanURLBase(body.URLBase)
 	if err != nil {
-		webserver.Fail(w, http.StatusBadRequest, err.Error())
+		Fail(w, http.StatusBadRequest, err.Error())
 		return
 	}
 	raw, _ := json.Marshal(b)
-	by, _ := json.Marshal(actor(r))
-	now := database.FormatTime(time.Now())
-	err = a.s.Store.Write(r.Context(), func(tx *sql.Tx) error {
-		_, err := tx.Exec(`INSERT INTO settings (grp, key, value, created_at, created_by, updated_at, updated_by) VALUES (?, ?, ?, ?, ?, ?, ?)
-			ON CONFLICT (grp, key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at, updated_by = excluded.updated_by`,
-			urlBaseGroup, urlBaseKey, string(raw), now, string(by), now, string(by))
-		return err
+	by := database.Actor{Kind: "user", ID: 1} // no caller only in tests
+	if _, ok := From(r.Context()); ok {
+		by = Actor(r.Context())
+	}
+	err = h.Store.Write(r.Context(), func(tx *sql.Tx) error {
+		return database.PutSetting(tx, urlBaseGroup, urlBaseSettingKey, string(raw), by, time.Now())
 	})
 	if err != nil {
-		webserver.Fail(w, http.StatusInternalServerError, err.Error())
+		Fail(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	webserver.WriteJSON(w, http.StatusOK, a.urlBaseAnswer(r.Context()))
+	WriteJSON(w, http.StatusOK, h.answer(r.Context()))
 }

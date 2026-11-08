@@ -38,8 +38,7 @@ func (a *API) askRoutes(m *http.ServeMux) {
 	m.HandleFunc("POST /api/v1/messages/read", a.readMessages)
 	m.HandleFunc("GET /api/v1/my/alerts", a.getMyAlerts)
 	m.HandleFunc("PUT /api/v1/my/alerts", a.putMyAlerts)
-	m.HandleFunc("GET /api/v1/settings/url-base", a.getURLBase)
-	m.HandleFunc("PUT /api/v1/settings/url-base", a.putURLBase)
+	(&webserver.URLBaseHandlers{Store: a.s.Store, InUse: a.s.URLBase}).Routes(m)
 }
 
 // person is the signed-in person as Requests sees them. Without

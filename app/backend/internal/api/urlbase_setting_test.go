@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"strings"
 	"testing"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
 // route: GET /api/v1/settings/url-base
@@ -21,11 +23,11 @@ func TestURLBaseSetting(t *testing.T) {
 	if b := string(do(t, "PUT", u, `{"url_base":"holyarrs/"}`, 200)); !strings.Contains(b, `"saved":"/holyarrs"`) || !strings.Contains(b, `"restart_needed":true`) {
 		t.Fatalf("put %s", b)
 	}
-	if got := SavedURLBase(context.Background(), s.Read()); got != "/holyarrs" {
+	if got := webserver.SavedURLBase(context.Background(), s.Read()); got != "/holyarrs" {
 		t.Fatalf("startup reads %q", got)
 	}
 	do(t, "PUT", u, `{"url_base":""}`, 200)
-	if got := SavedURLBase(context.Background(), s.Read()); got != "" {
+	if got := webserver.SavedURLBase(context.Background(), s.Read()); got != "" {
 		t.Fatalf("cleared reads %q", got)
 	}
 	if err := s.Write(context.Background(), func(tx *sql.Tx) error {
@@ -34,7 +36,7 @@ func TestURLBaseSetting(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	if got := SavedURLBase(context.Background(), s.Read()); got != "" {
+	if got := webserver.SavedURLBase(context.Background(), s.Read()); got != "" {
 		t.Fatalf("a bad saved base must be none, got %q", got)
 	}
 }

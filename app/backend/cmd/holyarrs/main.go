@@ -224,7 +224,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	// A base saved in Settings is used when the start setting is left
 	// unset; HOLYARRS_URL_BASE=/ forces none.
 	if _, set := os.LookupEnv(webserver.URLBaseEnv); !set && !c.urlBaseFlag && c.URLBase == "" {
-		if saved := api.SavedURLBase(ctx, s.Read()); saved != "" {
+		if saved := webserver.SavedURLBase(ctx, s.Read()); saved != "" {
 			c.URLBase = saved
 			log.Printf("holyarrs: URL base %s (saved in Settings)", saved)
 		}
