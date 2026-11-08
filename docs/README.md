@@ -24,7 +24,7 @@ Writing code for HolyArrs? Go to [For developers](#for-developers).
 | Sources | [Sources, Jackett and Prowlarr](user/sources/sources-bridge.md), [find titles in the Library](user/sources/library-search.md) |
 | Downloads | [Downloaders](user/downloads/downloaders.md), [history](user/downloads/history.md) |
 | Subtitles | [Subtitles](user/subtitles/subtitles.md) |
-| Files and folders | [Library folders](user/mediafiles/library-folders.md), [media details](user/mediafiles/media-inspection.md), [codecs](user/mediafiles/library-codecs.md), [audio versions](user/mediafiles/audio-versions.md), [protected copies](user/mediafiles/protected-copies.md) |
+| Files and folders | [Library folders](user/mediafiles/library-folders.md), [codecs and media inspection](user/library/codecs-inspection.md), [audio versions](user/library/audio-versions.md), [protected copies](user/library/protected-copies.md) |
 | Media servers | [Plex, Jellyfin and Emby](user/mediaservers/media-servers.md) |
 | Metadata | [Metadata](user/metadata/metadata-service.md), [privacy](user/metadata/metadata-privacy.md), [trailers](library/trailers.md), [data packs](user/metadata/data-packs.md) |
 | Accounts | [Sign-in and passwords](users/sign-in.md), [users and roles](users/roles.md), [kid accounts](users/kids.md), [signed-in devices](users/sessions.md) |

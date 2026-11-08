@@ -7,7 +7,6 @@ level: Start
 How HolyArrs stores and reads your media files.
 
 - [Library folders](library-folders.md)
-- [Media inspection](media-inspection.md)
-- [Video codecs](library-codecs.md)
-- [Original and dubbed audio](audio-versions.md)
-- [Protected copies](protected-copies.md)
+- [Codecs and media inspection](../library/codecs-inspection.md)
+- [Original and dubbed audio](../library/audio-versions.md)
+- [Protected copies](../library/protected-copies.md)
