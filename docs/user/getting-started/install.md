@@ -26,7 +26,7 @@ Without Docker, see [Portable archives](../platforms/portable.md).
    ```yaml
    services:
      holyarrs:
-       image: ghcr.io/coderluii/holyarrs:beta
+       image: holyarrs/holyarrs:beta
        container_name: holyarrs
        environment:
          - PUID=1000
@@ -68,7 +68,7 @@ docker run -d \
   -v /srv/holyarrs/config:/config \
   -v /path/to/movies:/movies `#optional`   -v /path/to/tv:/tv `#optional`   -v /path/to/music:/music `#optional`   -v /path/to/downloads:/downloads `#optional` \
   --restart unless-stopped \
-  ghcr.io/coderluii/holyarrs:beta
+  holyarrs/holyarrs:beta
 ```
 
 New versions land on `:beta` first. `:latest` and `:stable` move only after a
@@ -261,7 +261,7 @@ are not safe. HolyArrs refuses a `/config` there and shows the fix on port
 ```yaml
 services:
   holyarrs:
-    image: ghcr.io/coderluii/holyarrs:beta
+    image: holyarrs/holyarrs:beta
     container_name: holyarrs
     environment:
       - TZ=Etc/UTC
@@ -279,7 +279,7 @@ volumes:
 To move an old config folder into the volume, stop HolyArrs and run:
 
 ```sh
-docker create --name hx -v holyarrs-config:/config ghcr.io/coderluii/holyarrs:beta
+docker create --name hx -v holyarrs-config:/config holyarrs/holyarrs:beta
 docker cp C:\old\config\. hx:/config/
 docker rm hx
 ```
@@ -336,7 +336,7 @@ Never do it with normal Docker or on a NAS.
 
 ```ini
 [Container]
-Image=ghcr.io/coderluii/holyarrs:beta
+Image=holyarrs/holyarrs:beta
 UserNS=keep-id
 User=%U:%G
 Volume=%h/holyarrs/config:/config:Z
@@ -354,7 +354,7 @@ WantedBy=default.target
 Or as one command:
 
 ```sh
-podman run -d --name holyarrs --userns=keep-id --user "$(id -u):$(id -g)" -v ~/holyarrs/config:/config:Z -p 6262:6262 --health-cmd '["/holyarrs","-healthcheck"]' --health-interval 30s --restart always ghcr.io/coderluii/holyarrs:beta
+podman run -d --name holyarrs --userns=keep-id --user "$(id -u):$(id -g)" -v ~/holyarrs/config:/config:Z -p 6262:6262 --health-cmd '["/holyarrs","-healthcheck"]' --health-interval 30s --restart always holyarrs/holyarrs:beta
 ```
 
 - `:Z` is for SELinux systems. Use `:z` on folders the Downloader shares. Use

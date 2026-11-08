@@ -19,6 +19,6 @@ Only the latest release gets security fixes. Please update before you report.
 
 Release images are signed with cosign and come with a list of everything inside them (SBOM). To check one:
 
-    cosign verify ghcr.io/holyarrs/holyarrs:<tag> \
+    cosign verify holyarrs/holyarrs:<tag> \
       --certificate-identity-regexp 'https://github.com/HolyArrs/holyarrs/.github/workflows/release.yml@refs/tags/.*' \
       --certificate-oidc-issuer https://token.actions.githubusercontent.com

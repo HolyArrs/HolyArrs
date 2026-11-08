@@ -2,7 +2,10 @@
 # Data: gh issue list -R HolyArrs/holyarrs --milestone 1.0.0 (2026-11-08). 95 closed, 4 still Building (#100-#103).
 version = "1.0.0"
 theme = "One app for movies, shows and music, from asking to watching."
-image = "ghcr.io/holyarrs/holyarrs"
+images = [
+  {registry = "Docker Hub", name = "holyarrs/holyarrs"},
+]
+docs_url = ""   # set once the docs site is live; empty = no Docs link
 known_issues = []   # empty = section hidden everywhere; fill only with real ones
 security = [
   "Locked down by default, password guessing slowed down. (#85) (#86)",

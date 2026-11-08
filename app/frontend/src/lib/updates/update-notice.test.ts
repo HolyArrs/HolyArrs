@@ -55,7 +55,7 @@ describe('goBackBackup', () => {
 		expect(imageTag('v1.1.0')).toBe('1.1.0');
 		expect(imageTag('1.1.0')).toBe('1.1.0');
 		expect(plainVersion(' V2.0.0-rc.1')).toBe('2.0.0-rc.1');
-		expect(`${IMAGE}:${imageTag('v1.1.0')}`).toBe('ghcr.io/coderluii/holyarrs:1.1.0');
+		expect(`${IMAGE}:${imageTag('v1.1.0')}`).toBe('holyarrs/holyarrs:1.1.0');
 	});
 });
 

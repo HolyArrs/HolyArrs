@@ -33,7 +33,7 @@ docker exec holyarrs /holyarrs doctor
 When HolyArrs keeps stopping or restarting, `docker exec` won't work. Run the doctor in a new container from the same image, with the same folders and settings:
 
 ```sh
-docker run --rm --volumes-from holyarrs -e PUID=<puid> -e PGID=<pgid> -e TZ=<tz> ghcr.io/coderluii/holyarrs:<tag> doctor
+docker run --rm --volumes-from holyarrs -e PUID=<puid> -e PGID=<pgid> -e TZ=<tz> holyarrs/holyarrs:<tag> doctor
 ```
 
 With Compose, `docker compose run --rm holyarrs doctor` does the same.

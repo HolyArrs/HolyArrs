@@ -9,7 +9,7 @@ import unittest
 
 ROOT = pathlib.Path(__file__).resolve().parents[3]
 WORKFLOWS = ROOT / ".github" / "workflows"
-GHCR = "ghcr.io/coderluii/holyarrs"
+GHCR = "ghcr.io/holyarrs/holyarrs"
 
 
 def read(p: pathlib.Path) -> str:
@@ -21,8 +21,8 @@ def version(s: str) -> tuple:
 
 
 def docker_hub_named(text: str) -> bool:
-    """Docker Hub's coderluii/holyarrs, written with or without docker.io/."""
-    return re.search(r"(?<![\w./-])(docker\.io/)?coderluii/holyarrs\b", text.replace(GHCR, "")) is not None
+    """Docker Hub's holyarrs/holyarrs, written with or without docker.io/."""
+    return re.search(r"(?<![\w./-])(docker\.io/)?holyarrs/holyarrs\b", text.replace(GHCR, "")) is not None
 
 
 def triggers(text: str) -> list:
@@ -118,7 +118,7 @@ class ReleaseBuild(unittest.TestCase):
         self.assertIn("GITHUB_STEP_SUMMARY", scripts)
         self.assertRegex(scripts, r"(?i)digest")
 
-    def test_both_registries_ghcr_main(self):
+    def test_both_registries_docker_hub_shown(self):
         self.assertIn(GHCR, self.text)
         self.assertTrue(docker_hub_named(self.text), "release.yml does not push to Docker Hub")
         self.assertRegex(self.text, r"environment:\s*\n?\s*(name:\s*)?release\b")
@@ -174,8 +174,14 @@ class PromoteWorkflow(unittest.TestCase):
 class InstallDocsTag(unittest.TestCase):
     def test_docs_point_at_beta_until_first_stable(self):
         text = read(ROOT / "docs" / "user" / "getting-started" / "install.md")
-        self.assertIn("ghcr.io/coderluii/holyarrs:beta", text)
+        self.assertIn("holyarrs/holyarrs:beta", text)
         self.assertNotIn("holyarrs:latest", text)
+
+    def test_user_text_names_docker_hub_only(self):
+        pages = [*sorted((ROOT / "docs").rglob("*.md")), ROOT / "README.md", ROOT / "releases" / "notes-1.0.0.toml"]
+        for page in pages:
+            with self.subTest(page=page.name):
+                self.assertNotIn("ghcr", page.read_text(encoding="utf-8", errors="replace").lower())
 
 
 if __name__ == "__main__":

@@ -7,8 +7,8 @@ export const RELEASE_PAGES = `https://github.com/${PROJECT_REPO}/releases/`;
 // The backend update check still names the old repo until internal/updates and
 // internal/api move together (see plan/github/after-first-push.md); drop this then.
 const OLD_RELEASE_PAGES = 'https://github.com/CoderLuii/holyarrs/releases/';
-// release.yml still pushes this image name; it moves only if release.yml does.
-export const IMAGE = 'ghcr.io/coderluii/holyarrs';
+// The Docker Hub name users install from (release.yml pushes it).
+export const IMAGE = 'holyarrs/holyarrs';
 
 export function updateWords(u: UpdateInfo): string {
 	if (!u.on) return 'The update check is off: HolyArrs never asks for a newer version.';

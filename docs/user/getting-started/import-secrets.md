@@ -55,7 +55,7 @@ docker stop holyarrs
 docker run --rm -e PUID=1000 -e PGID=1000 \
   -v /srv/holyarrs/config:/config \
   -v /srv/holyarrs/holyarrs-secrets.yaml:/run/secrets/holyarrs.yaml:ro \
-  ghcr.io/coderluii/holyarrs:beta import-secrets -file /run/secrets/holyarrs.yaml
+  holyarrs/holyarrs:beta import-secrets -file /run/secrets/holyarrs.yaml
 docker start holyarrs
 ```
 

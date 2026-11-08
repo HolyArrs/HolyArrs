@@ -48,7 +48,7 @@ class Golden(unittest.TestCase):
     def test_section_order(self):
         self.assertEqual(headings(notes.render_github(load(), {})), [
             "Highlights", "Requests", "Library", "Downloads", "Indexers", "Accounts", "Health",
-            "Setup", "Install", "Also new", "Security", "Before you update", "Image", "Thanks"])
+            "Setup", "Install", "Also new", "Security", "Before you update", "Get the image", "Thanks"])
         gh = notes.render_github(load(), {})
         self.assertTrue(gh.rstrip().endswith("_95 issues done, 4 still building, 48 people credited._"))
         self.assertTrue(gh.startswith(load()["theme"]))
@@ -80,7 +80,15 @@ class Shape(unittest.TestCase):
         self.assertTrue(cl.split("### Added\n")[1].startswith("- Move over from your old apps"))
 
     def test_image_line(self):
-        self.assertIn("## Image\n`docker pull ghcr.io/holyarrs/holyarrs:1.0.0`", notes.render_github(load(), {}))
+        body = notes.render_github(load(), {})
+        self.assertIn("## Get the image\n- Docker Hub: `docker pull holyarrs/holyarrs:1.0.0` or `holyarrs/holyarrs:latest`", body)
+        self.assertNotIn("ghcr", body.lower())
+        self.assertNotIn("## Docs", body)
+
+    def test_docs_link_only_when_set(self):
+        n = load()
+        n["docs_url"] = "https://example.org/docs"
+        self.assertIn("## Docs\n[Read the docs](https://example.org/docs)", notes.render_github(n, {}))
 
     def test_old_map_format_and_docs_kind(self):
         n = load()
@@ -226,7 +234,8 @@ class Check(unittest.TestCase):
 
     def test_image_required(self):
         n = load()
-        del n["image"]
+        n.pop("image", None)
+        n.pop("images", None)
         self.assertTrue(any("image" in x for x in errors(n)))
 
 

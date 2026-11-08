@@ -105,7 +105,7 @@ your old backups, so the restore is refused. Put the old key in place first.
      Then run the restore once with the same image.
      With Compose: `docker compose run --rm holyarrs restore <zip name>`
      With the Docker CLI:
-     `docker run --rm --volumes-from holyarrs -e PUID=<puid> -e PGID=<pgid> ghcr.io/coderluii/holyarrs:<tag> restore <zip name>`
+     `docker run --rm --volumes-from holyarrs -e PUID=<puid> -e PGID=<pgid> holyarrs/holyarrs:<tag> restore <zip name>`
      If you use a key file path, add
      `-e HOLYARRS_MASTER_KEY_FILE=<its path>` so the restore checks against
      your key. `restore --list` shows the backup names it can see.

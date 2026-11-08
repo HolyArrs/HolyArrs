@@ -15,7 +15,7 @@ Add this to your Docker Compose file:
 ```yaml
 services:
   holyarrs:
-    image: ghcr.io/coderluii/holyarrs:beta
+    image: holyarrs/holyarrs:beta
     container_name: holyarrs
     environment:
       - PUID=1000

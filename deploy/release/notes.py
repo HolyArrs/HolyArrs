@@ -20,7 +20,7 @@ import tomllib
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 ISSUES = "https://github.com/HolyArrs/holyarrs/issues/"
 RELEASES = "https://github.com/HolyArrs/holyarrs/releases/tag/"
-KNOWN = {"version", "theme", "image", "highlights", "before_you_update", "groups",
+KNOWN = {"version", "theme", "image", "images", "docs_url", "highlights", "before_you_update", "groups",
          "security", "known_issues", "credits", "stats"}
 # Old map format kinds -> the prefix the list format uses ("" = new).
 KINDS = {"added": "", "fixed": "Fixed: ", "changed": "Changed: ", "docs": "Docs: "}
@@ -162,6 +162,17 @@ def render_changelog(n, today):
     return "\n".join(out) + "\n"
 
 
+def images(n):
+    """Registries to install from, main first; a lone old `image` still works."""
+    out = []
+    for i in n.get("images") or []:
+        if isinstance(i, dict) and not empty(i.get("name")):
+            out.append({"registry": i.get("registry") or i["name"].split("/")[0], "name": i["name"]})
+    if not out and not empty(n.get("image")):
+        out.append({"registry": "Docker Hub", "name": n["image"]})
+    return out
+
+
 def render_github(n, cmap):
     blocks = []
     if not empty(n.get("theme")):
@@ -190,8 +201,13 @@ def render_github(n, cmap):
         if not empty(b.get("rollback")):
             rows.append("- Rollback: " + b["rollback"])
         blocks.append("## Before you update\n" + "\n".join(rows))
-    if not empty(n.get("image")):
-        blocks.append("## Image\n`docker pull %s:%s`" % (n["image"], n["version"]))
+    imgs = images(n)
+    if imgs:
+        rows = ["- %s: `docker pull %s:%s` or `%s:latest`" % (i["registry"], i["name"], n["version"], i["name"])
+                for i in imgs]
+        blocks.append("## Get the image\n" + "\n".join(rows))
+    if not empty(n.get("docs_url")):
+        blocks.append("## Docs\n[Read the docs](%s)" % n["docs_url"])
     cs = sorted_credits(n)
     if cs:
         blocks.append("## Thanks\n" + ", ".join(credit_line(c, cmap) for c in cs))
@@ -283,8 +299,8 @@ def check(n, cmap):
         errors.append("version must be plain X.Y.Z (no v): %r" % n.get("version"))
     if empty(n.get("theme")):
         errors.append("theme is missing")
-    if empty(n.get("image")):
-        errors.append("image is missing")
+    if not images(n):
+        errors.append("images is missing (registry + name)")
     hl = items(n.get("highlights"))
     if len(hl) != 3:
         errors.append("need exactly 3 highlights, found %d" % len(hl))

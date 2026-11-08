@@ -8,7 +8,7 @@ Release tags are plain numbers: `1.0.0`, `1.1.0`, `1.1.1`. Every release is buil
 
 ## Image tags
 
-The release workflow builds one image for `linux/amd64`, `linux/arm64` and `linux/arm/v7` and pushes it to GHCR and Docker Hub.
+The release workflow builds one image for `linux/amd64`, `linux/arm64` and `linux/arm/v7` and pushes it to Docker Hub as `holyarrs/holyarrs`.
 
 - A new version lands on `:beta` and on its own version tag.
 - `:latest` and `:stable` move only after that version has run well for a while.
@@ -25,7 +25,7 @@ The release workflow builds one image for `linux/amd64`, `linux/arm64` and `linu
 
 Every release text is built from one file, `releases/notes-<version>.toml` (TOML, read with Python's built-in `tomllib`). Write only that file; never hand-edit what it builds.
 
-- `version` (plain `X.Y.Z`), `theme` (one line), `image` (`ghcr.io/holyarrs/holyarrs`) and exactly 3 `[[highlights]]`, each with `line`, `issues` (list of issue numbers) and `shot`. A highlight shows once, at the top; its issues appear in no group line.
+- `version` (plain `X.Y.Z`), `theme` (one line), `images` (a list of `{registry, name}`; Docker Hub `holyarrs/holyarrs` only), optional `docs_url` (empty = no Docs link) and exactly 3 `[[highlights]]`, each with `line`, `issues` (list of issue numbers) and `shot`. A highlight shows once, at the top; its issues appear in no group line.
 - `[groups]`: one list of lines per place (Requests, Library, Downloads...). Lines are new by default; only non-new lines start `Changed: `, `Fixed: ` or `Docs: `. Every line ends with its issue, for example `(#46)`. Places with fewer than 3 lines are shown together under Also new.
 - Optional: `[before_you_update]` (`breaking`, `manual_steps`, `backup`, `rollback`), `security`, `known_issues`, `credits` (`name`, `link`, `github`, `issues`) and `[stats]`. Leave anything empty that has nothing real in it; empty parts are hidden everywhere.
 - GitHub logins only when known, either in the notes file or in `releases/credits-map.json` (keyed by the bare or the `u/` name).
@@ -59,7 +59,7 @@ If a release is bad, move `:beta` back to the previous version and mark the bad 
 No NAS package is published yet. `deploy/release/nas-template.py` writes an Unraid user template for testing one exact image on your own box. It does not pull, install or publish anything.
 
 ```sh
-python deploy/release/nas-template.py --image 'ghcr.io/coderluii/holyarrs@sha256:<digest>' --config '/mnt/<pool>/appdata/holyarrs-test' --movies /mnt/user/holyarrs-test-data/movies --downloads /mnt/user/holyarrs-test-data/downloads --port 6262 --output holyarrs-test.xml
+python deploy/release/nas-template.py --image 'holyarrs/holyarrs@sha256:<digest>' --config '/mnt/<pool>/appdata/holyarrs-test' --movies /mnt/user/holyarrs-test-data/movies --downloads /mnt/user/holyarrs-test-data/downloads --port 6262 --output holyarrs-test.xml
 ```
 
 - Use the registry manifest digest of the image you checked, not a Docker image ID.

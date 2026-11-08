@@ -163,7 +163,7 @@ class PackagingTests(unittest.TestCase):
                     package.web_notices(root, modules)
 
     def test_nas_requires_immutable_image_local_config_and_separate_media(self):
-        image = "ghcr.io/coderluii/holyarrs@sha256:" + "a" * 64
+        image = "docker.io/holyarrs/holyarrs@sha256:" + "a" * 64
         config = "/mnt/cache/appdata/holyarrs"
         for bad in ("holyarrs:latest", "https://host/image", "owner:password@host/image"):
             with self.assertRaises(ValueError):
@@ -202,7 +202,7 @@ class PackagingTests(unittest.TestCase):
 
 
     def test_nas_offers_an_empty_allowed_host_names_field(self):
-        image = "ghcr.io/coderluii/holyarrs@sha256:" + "a" * 64
+        image = "docker.io/holyarrs/holyarrs@sha256:" + "a" * 64
         config = "/mnt/cache/appdata/holyarrs"
         doc = ET.fromstring(nas.render(image, config, 6262))
         configs = {c.attrib["Target"]: c for c in doc.findall("Config")}
@@ -217,7 +217,7 @@ class PackagingTests(unittest.TestCase):
         self.assertNotIn("HOLYARRS_TRUSTED_PROXIES", configs)
 
     def test_nas_allowed_host_names_are_checked(self):
-        image = "ghcr.io/coderluii/holyarrs@sha256:" + "a" * 64
+        image = "docker.io/holyarrs/holyarrs@sha256:" + "a" * 64
         config = "/mnt/cache/appdata/holyarrs"
         doc = ET.fromstring(nas.render(image, config, 6262, allowed_hosts="tower.local,nas"))
         configs = {c.attrib["Target"]: c for c in doc.findall("Config")}
