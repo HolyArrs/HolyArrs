@@ -17,7 +17,7 @@ import (
 	"testing/fstest"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/backup"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/backups"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 )
 
@@ -106,7 +106,7 @@ func TestCrashHelper(t *testing.T) {
 		}
 		_ = s.Close()
 	case "apply":
-		if _, err := backup.ApplyStaged(dir); err != nil {
+		if _, err := backups.ApplyStaged(dir); err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(3)
 		}
@@ -262,7 +262,7 @@ func goodStart(t *testing.T, dir string) {
 		t.Fatalf("restart after kill: %v", err)
 	}
 	defer s.Close()
-	bm := &backup.Manager{Store: s, Dir: dir, Version: "test"}
+	bm := &backups.Manager{Store: s, Dir: dir, Version: "test"}
 	if _, err := bm.AdoptMigrationCopies(); err != nil {
 		t.Fatal(err)
 	}
@@ -318,18 +318,18 @@ func TestCrashLoopDuringUpdate(t *testing.T) {
 		if parts, _ := filepath.Glob(filepath.Join(dir, "backups", "*.partial")); len(parts) > 0 {
 			t.Fatalf("run %d: stale %v after a good start", i, parts)
 		}
-		bm := &backup.Manager{Dir: dir, Version: "test"}
+		bm := &backups.Manager{Dir: dir, Version: "test"}
 		all, err := bm.List()
 		if err != nil {
 			t.Fatal(err)
 		}
 		pre := 0
 		for _, b := range all {
-			if b.Kind == backup.KindPreUpdate {
+			if b.Kind == backups.KindPreUpdate {
 				pre++
 			}
 		}
-		if pre < 1 || pre > backup.KeepPreUpdate {
+		if pre < 1 || pre > backups.KeepPreUpdate {
 			t.Fatalf("run %d: %d pre-update backups", i, pre)
 		}
 
@@ -343,7 +343,7 @@ func TestCrashLoopDuringUpdate(t *testing.T) {
 		if err := bm.StageNamed(context.Background(), newest.Name); err != nil {
 			t.Fatalf("run %d: staging %s: %v", i, newest.Name, err)
 		}
-		if _, err := backup.ApplyStaged(dir); err != nil {
+		if _, err := backups.ApplyStaged(dir); err != nil {
 			t.Fatal(err)
 		}
 		checkSound(t, main)
@@ -369,7 +369,7 @@ func TestCrashLoopDuringRestore(t *testing.T) {
 		dir := t.TempDir()
 		openBase(t, dir)
 		goodStart(t, dir)
-		bm := &backup.Manager{Dir: dir, Version: "test"}
+		bm := &backups.Manager{Dir: dir, Version: "test"}
 		b, err := bm.NewestPreUpdate()
 		if err != nil {
 			t.Fatal(err)
@@ -396,11 +396,11 @@ func TestCrashLoopDuringRestore(t *testing.T) {
 		time.Sleep(delay)
 		_ = cmd.Process.Kill()
 		_ = cmd.Wait()
-		if _, err := os.Stat(filepath.Join(dir, backup.JournalFile)); err == nil {
+		if _, err := os.Stat(filepath.Join(dir, backups.JournalFile)); err == nil {
 			got["journal-left"]++
 		}
 		// The next start finishes or undoes it before the store opens.
-		if _, err := backup.ApplyStaged(dir); err != nil {
+		if _, err := backups.ApplyStaged(dir); err != nil {
 			t.Fatalf("run %d: recovery: %v", i, err)
 		}
 		main := filepath.Join(dir, database.MainFile)
@@ -413,7 +413,7 @@ func TestCrashLoopDuringRestore(t *testing.T) {
 		default:
 			t.Fatalf("run %d (kill at %v): data is neither old nor new: %+v", i, delay, s)
 		}
-		if _, err := os.Stat(filepath.Join(dir, backup.JournalFile)); err == nil {
+		if _, err := os.Stat(filepath.Join(dir, backups.JournalFile)); err == nil {
 			t.Fatalf("run %d: journal still there after recovery", i)
 		}
 	}

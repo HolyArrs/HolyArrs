@@ -8,6 +8,7 @@ import (
 	"errors"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/dlsync"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/updates"
 
 	"log"
 	"net/http"
@@ -24,7 +25,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/asks"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/backup"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/backups"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/bridge"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
@@ -68,7 +69,7 @@ type Server struct {
 	Auth *accounts.Auth
 	// Backups serves the backup routes when set; Restart is called after a
 	// restore is staged.
-	Backups *backup.Manager
+	Backups *backups.Manager
 	Restart func()
 	// Secrets stores the encrypted settings.
 	Secrets *secrets.Vault
@@ -139,6 +140,9 @@ type Server struct {
 	Search *source.Searcher
 	// Health runs the health checks; New makes one when nil.
 	Health *health.Engine
+	// Updates is the update check; New makes one when nil and hands it to
+	// Health when Health has no update check yet.
+	Updates *updates.Checker
 	// Media tells media servers about changed folders; New makes one when
 	// Secrets is set.
 	Media *mediaserver.Linker
@@ -284,6 +288,12 @@ func New(s Server) *API {
 	if s.Health == nil {
 		s.Health = &health.Engine{Store: s.Store, Version: s.Version}
 	}
+	if s.Updates == nil {
+		s.Updates = &updates.Checker{Store: s.Store, Version: s.Version}
+	}
+	if s.Health.UpdateCheck == nil {
+		WireUpdateChecks(s.Health, s.Updates)
+	}
 	if s.Media == nil && s.Secrets != nil {
 		s.Media = &mediaserver.Linker{Store: s.Store, Vault: s.Secrets}
 	}
@@ -308,6 +318,19 @@ func New(s Server) *API {
 			}}
 	}
 	return &API{s: s}
+}
+
+// WireUpdateChecks hands the update check to the health checks: health
+// shows its row and its state, and never imports updates.
+func WireUpdateChecks(he *health.Engine, uc *updates.Checker) {
+	he.UpdateState = func(ctx context.Context) health.UpdateState {
+		i := uc.Update(ctx)
+		return health.UpdateState{On: i.On, Feed: i.Feed, CheckedAt: i.CheckedAt, Every: uc.Every(ctx), Latest: i.Latest, Newer: i.Newer}
+	}
+	he.UpdateCheck = func(ctx context.Context) (string, bool, bool) {
+		i, ran := uc.Scheduled(ctx)
+		return i.Latest, i.Newer, ran
+	}
 }
 
 // actor is the signed-in person; without sign-in (tests) it is the owner.
@@ -481,6 +504,7 @@ func (a *API) Routes(rt *webserver.Router) {
 		m.HandleFunc("PUT /api/v1/settings/tvdb-key", a.putTVDBKey)
 	}
 	a.askRoutes(m)
+	a.alertRoutes(m)
 	if startup.FeatureOn(features.PlexWatchlists) {
 		a.watchlistRoutes(m)
 	}

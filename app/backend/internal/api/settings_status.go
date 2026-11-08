@@ -370,7 +370,7 @@ func (a *API) statusInput(ctx context.Context, now time.Time) (statusInput, erro
 		up := a.s.MetadataUp(ctx)
 		in.MetadataUp = &up
 	}
-	newer := a.s.Health.Update(ctx).Newer
+	newer := a.s.Updates.Update(ctx).Newer
 	in.UpdateNewer = &newer
 	gone, err := goneDefaults(ctx, a.s.Store)
 	if err != nil {

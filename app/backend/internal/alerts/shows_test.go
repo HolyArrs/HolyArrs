@@ -60,7 +60,7 @@ func showWorld(t *testing.T, s *database.Store) (titleID int64, slots []int64) {
 	return titleID, slots
 }
 
-// 5.2.5: show moments name the show and its episodes; a pack import is one
+// Show moments name the show and its episodes; a pack import is one
 // Alert listing its episodes, or one per episode with pack_alerts each.
 func TestShowMomentsNameEpisodes(t *testing.T) {
 	s, v := open(t)
@@ -117,7 +117,7 @@ func TestShowMomentsNameEpisodes(t *testing.T) {
 	}
 }
 
-// 5.2 review: with pack_alerts each, a big pack sends at most each_limit
+// With pack_alerts each, a big pack sends at most each_limit
 // per-episode Alerts and one summary Alert for the rest.
 func TestPackEachIsCapped(t *testing.T) {
 	s, v := open(t)
@@ -144,7 +144,7 @@ func TestPackEachIsCapped(t *testing.T) {
 	}
 }
 
-// 5.2 review: pack_alerts lives in the alerts group; an old row in links is
+// pack_alerts lives in the alerts group; an old row in links is
 // still read until it is saved again.
 func TestAlertSettingsGroup(t *testing.T) {
 	s, _ := open(t)
@@ -177,7 +177,7 @@ func TestAlertSettingsGroup(t *testing.T) {
 	}
 }
 
-// 5.2 review: an episode Alert with a long pack of non-ASCII episode
+// An episode Alert with a long pack of non-ASCII episode
 // names stays within Discord's 2000 characters with whole letters, and an
 // episode name cannot add a mail header.
 func TestEpisodeAlertFormatting(t *testing.T) {

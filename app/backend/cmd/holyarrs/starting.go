@@ -17,12 +17,12 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/backup"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/backups"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/files"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/doctor"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/health"
 )
 
 // swapHandler lets the listener answer before the app is ready: a small
@@ -154,14 +154,14 @@ func needsPerson(err error) bool {
 }
 
 // unmappedConfigWarning is the boxed start-up warning when /config is not
-// mapped to the host (kind from doctor.UnmappedConfig), or "" when it is.
+// mapped to the host (kind from health.UnmappedConfig), or "" when it is.
 // Start-up never refuses for it.
 func unmappedConfigWarning(dir, kind string) string {
 	if kind == "" {
 		return ""
 	}
 	line := strings.Repeat("=", 72)
-	return line + "\nWARNING: " + doctor.UnmappedText(dir, kind) + ".\nFix: " + doctor.UnmappedFix(dir) + ".\n" + line
+	return line + "\nWARNING: " + health.UnmappedText(dir, kind) + ".\nFix: " + health.UnmappedFix(dir) + ".\n" + line
 }
 
 // maxCodeTries is how many wrong codes the go-back form takes before it
@@ -198,16 +198,16 @@ func normCode(s string) string {
 // goBackBackup finds the pre-update backup this build can put back, under
 // the config folder's lock (raw copies an update left are made into
 // backups first). ok is false when there is none, or the folder is busy.
-func goBackBackup(dir string) (backup.Info, bool) {
-	bm, unlock, err := openBackups(dir)
+func goBackBackup(dir string) (backups.Info, bool) {
+	bm, unlock, err := backups.OpenDir(dir, version)
 	if err != nil {
 		log.Printf("holyarrs: cannot look for a pre-update backup: %v", err)
-		return backup.Info{}, false
+		return backups.Info{}, false
 	}
 	defer unlock()
 	b, err := bm.NewestPreUpdate()
 	if err != nil {
-		return backup.Info{}, false
+		return backups.Info{}, false
 	}
 	return b, true
 }
@@ -294,13 +294,13 @@ func refusedHandler(dir string, err error, done chan<- struct{}) http.Handler {
 			form(w, http.StatusForbidden, "That code does not match the one in the log.")
 			return
 		}
-		bm, unlock, err := openBackups(dir)
+		bm, unlock, err := backups.OpenDir(dir, version)
 		if err != nil {
 			log.Printf("holyarrs: putting back the data from before the update: %v", err)
 			form(w, http.StatusConflict, "The data could not be put back; nothing was changed. See the log.")
 			return
 		}
-		name, kept, err := putBack(bm, b.Name)
+		name, kept, err := backups.PutBack(bm, b.Name)
 		unlock()
 		if err != nil {
 			log.Printf("holyarrs: putting back the data from before the update: %v", err)

@@ -10,6 +10,7 @@ import (
 	"fmt"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/updates"
 
 	"io"
 	"log"
@@ -32,11 +33,10 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/asks"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/backup"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/backups"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/bridge"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/dlsync"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/doctor"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/health"
@@ -198,7 +198,7 @@ const maxBody = 1 << 20
 
 // limitBodies refuses API request bodies over maxBody with 413.
 func limitBodies(h http.Handler) http.Handler {
-	restoreZip := func(path string) bool { return path == backup.RestorePath } // has its own, larger limit
+	restoreZip := func(path string) bool { return path == backups.RestorePath } // has its own, larger limit
 	return webserver.LimitBodies(maxBody, restoreZip, h)
 }
 
@@ -384,12 +384,12 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	}()
 	// A backup or restore upload cut off by a stop or kill left copies of
 	// the databases behind; none is valid after a restart.
-	if n, err := backup.CleanLeftovers(c.ConfigDir); err != nil {
+	if n, err := backups.CleanLeftovers(c.ConfigDir); err != nil {
 		log.Printf("backup: could not remove all of an unfinished backup: %v", err)
 	} else if n > 0 {
 		log.Printf("backup: removed what an unfinished backup or restore left behind, %d MB freed", (n+1<<20-1)>>20)
 	}
-	if _, err := backup.ApplyStaged(c.ConfigDir); err != nil {
+	if _, err := backups.ApplyStaged(c.ConfigDir); err != nil {
 		return fmt.Errorf("restore: %w", err)
 	}
 	s, err := database.Open(c.ConfigDir, database.Options{OnUpdating: func() { updating.Store(true) }, CacheKiB: startup.LowMemoryPick(0, 4000), ReaderCacheKiB: startup.LowMemoryPick(0, 2000)})
@@ -416,7 +416,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	}
 	defer s.Close()
 	pc.Store = s
-	unmapped := doctor.UnmappedConfig(c.ConfigDir)
+	unmapped := health.UnmappedConfig(c.ConfigDir)
 	if w := unmappedConfigWarning(c.ConfigDir, unmapped); w != "" {
 		log.Printf("holyarrs: %s", w)
 	}
@@ -518,7 +518,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		return fmt.Errorf("log masking: %w", err)
 	}
 	loop(jobs.Loop{Name: "log_secrets", Label: "Log masking", Every: time.Minute, Run: refreshLogSecrets})
-	bm := &backup.Manager{Store: s, Dir: c.ConfigDir, Version: version, CheckKey: func(p string) error { return secrets.CheckFile(p, key) },
+	bm := &backups.Manager{Store: s, Dir: c.ConfigDir, Version: version, CheckKey: func(p string) error { return secrets.CheckFile(p, key) },
 		Key: key, KeyFromEnv: os.Getenv(secrets.EnvKeyFile) != "", Stop: ctx}
 	if _, err := bm.AdoptMigrationCopies(); err != nil {
 		log.Printf("backup: %v", err)
@@ -711,8 +711,9 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	// network policy (public only unless the setting allows the local
 	// network; never cloud metadata addresses). HOLYARRS_RELEASE_FEED
 	// points it elsewhere (tests).
-	he.ReleaseFeed = env("HOLYARRS_RELEASE_FEED", health.DefaultReleaseFeed)
-	he.ClientFor = func(allowLocal bool) *http.Client {
+	uc := &updates.Checker{Store: s, Version: version}
+	uc.ReleaseFeed = env("HOLYARRS_RELEASE_FEED", updates.DefaultReleaseFeed)
+	uc.ClientFor = func(allowLocal bool) *http.Client {
 		allow := outbound.PublicOnly
 		if allowLocal {
 			allow = outbound.NotMetadata
@@ -722,6 +723,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		t.DialContext = outbound.PolicyDialer(allow).DialContext
 		return &http.Client{Transport: t, Timeout: 15 * time.Second}
 	}
+	api.WireUpdateChecks(he, uc)
 	he.Register(q)
 	// History clean-up: once a day, old Events past their keep time.
 	q.Handle(database.KindCleanHistory, func(ctx context.Context, r *jobs.Run) error {
@@ -899,7 +901,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		Secrets: vault, TraktBase: os.Getenv("HOLYARRS_TRAKT_URL"), MetadataUp: hosted.Health.Up, ServiceTop: hosted.Service.ServiceTop, TrailerPick: func(ctx context.Context, kind, id, lang string) (string, error) {
 			t, err := hosted.Service.TrailerPick(ctx, kind, id, lang)
 			return t.Key, err
-		}, AnimeMap: hosted.Service.AnimeMap, LiveSearch: flagOn("live_search"), ExtraArt: hosted.Service.Art, ImageBase: hosted.Service.Base() + "/v1/img", MusicControl: hosted.Service.Control, ArtistVideos: hosted.Service.ArtistVideos, ExtraRatings: hosted.Service.Ratings, CountryCount: hosted.Gate.SetCountryCount, WikiTitle: hosted.Service.WikiTitle, WikiPerson: hosted.Service.WikiPerson, AwardWinners: hosted.Service.AwardWinners, Alerts: sender, Asks: wish, Watchlists: plexWatch, Search: sr, Downloads: dm, DLSync: dls, Health: he, Media: media, Subtitles: subs, States: reg, SafeMode: c.SafeMode, Parts: pc, ExitApp: exitApp, Mover: mover,
+		}, AnimeMap: hosted.Service.AnimeMap, LiveSearch: flagOn("live_search"), ExtraArt: hosted.Service.Art, ImageBase: hosted.Service.Base() + "/v1/img", MusicControl: hosted.Service.Control, ArtistVideos: hosted.Service.ArtistVideos, ExtraRatings: hosted.Service.Ratings, CountryCount: hosted.Gate.SetCountryCount, WikiTitle: hosted.Service.WikiTitle, WikiPerson: hosted.Service.WikiPerson, AwardWinners: hosted.Service.AwardWinners, Alerts: sender, Asks: wish, Watchlists: plexWatch, Search: sr, Downloads: dm, DLSync: dls, Health: he, Updates: uc, Media: media, Subtitles: subs, States: reg, SafeMode: c.SafeMode, Parts: pc, ExitApp: exitApp, Mover: mover,
 		Log: applogs, ConfigDir: c.ConfigDir, SavePath: c.SavePath, URLBase: c.URLBase, Deps: music.Deps{MusicTrending: hosted.Service.MusicTrending, MusicPictures: hosted.Service.MusicPictures, MusicNew: hosted.Service.MusicNewWindow, MusicSimilar: hosted.Service.MusicSimilar, MusicCharts: hosted.Service.MusicCharts, MusicGenres: hosted.Service.MusicGenreList, MusicGenreTile: hosted.Service.MusicGenreTile, MusicRowsV2: flagOn("music_rows_v2"), MusicRowsV3: flagOn("music_rows_v3"), MusicRowsV6: flagOn("music_rows_v6"), MusicRowsV7: flagOn("music_rows_v7"), MusicListsV1: flagOn("music_lists_v1"), MusicShelves: hosted.Service.MusicShelves, MusicPools: hosted.Service.MusicPools, MusicRowsTplOff: flagOn("music_rows_tpl_off"), MusicListeners: hosted.Service.MusicListeners, MusicSimilarSet: hosted.Service.MusicSimilarSet, MusicArtistData: hosted.Service.MusicArtistData, MusicSuggest: hosted.Service.MusicSuggest, MusicTopSongs: hosted.Service.MusicTopSongs, MusicRising: hosted.Service.MusicRisingToday, MusicDiscography: hosted.Service.MusicDiscography,
 			MusicDeezer: serverDeezer, MusicDeezerAlbum: serverDeezerAlbum, MusicArtistBio: serverBio}})
 	// "Count this install" rides on every request to the metadata server.
@@ -1113,12 +1115,12 @@ func main() {
 // WARN line with the fix for each problem folder. It takes a few seconds at
 // most: a folder that is slower (a hung network share) is skipped with a note.
 func logFolderCheck(ctx context.Context, db database.Lister, savePath string) {
-	sum, warns := doctor.Startup(ctx, db, savePath, 3*time.Second)
+	sum, warns := health.DoctorStartup(ctx, db, savePath, 3*time.Second)
 	log.Printf("holyarrs: %s", sum)
 	for _, w := range warns {
 		log.Printf("holyarrs: %s", w)
 	}
-	if w := doctor.ProxyWarning(os.Getenv); w != "" {
+	if w := health.ProxyWarning(os.Getenv); w != "" {
 		log.Printf("holyarrs: warning: %s (%s)", w, "proxies for indexers can be set on each Source")
 	}
 }
