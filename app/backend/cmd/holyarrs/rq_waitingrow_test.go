@@ -1,4 +1,4 @@
-package api
+package main
 
 import (
 	"encoding/json"
@@ -25,12 +25,12 @@ func TestPausedRowShowsWaitingReason(t *testing.T) {
 		t.Fatalf("paused by a person: %q", v.Text)
 	}
 
-	x := seed41(t, mediafiles.SlotDownloading, "paused")
-	exec41(t, x.s, "UPDATE downloads SET state_reason = ?", reason)
+	srv, s := rqSeedDownload(t, mediafiles.SlotDownloading, "paused")
+	rqExec(t, s, "UPDATE downloads SET state_reason = ?", reason)
 	var out struct {
 		Downloads []downloads.DownloadRow `json:"downloads"`
 	}
-	_ = json.Unmarshal(do(t, "GET", x.srv.URL+"/api/v1/downloads/view", "", 200), &out)
+	_ = json.Unmarshal(rqDo(t, "GET", srv.URL+"/api/v1/downloads/view", "", 200), &out)
 	if len(out.Downloads) != 1 || !strings.HasPrefix(out.Downloads[0].Text, "The Downloader can't use the files") {
 		t.Fatalf("Downloads row %+v", out.Downloads)
 	}
