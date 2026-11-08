@@ -87,7 +87,7 @@ test("Movie editions: a Director's Cut checked on the Library tab renames the fi
 	expect(made.status(), await made.text()).toBe(201);
 	const serverId = ((await made.json()) as { id: number }).id;
 
-	// The copy's edition, checked by hand. Its box is not in the app (docs/audio-versions.md),
+	// The copy's edition, checked by hand. Its box is not in the app (docs/user/mediafiles/audio-versions.md),
 	// so the check goes through the API the box used.
 	const saved = await call('PUT', `/titles/${id}/files/${copies.files[0].ID}/choices`, { edition });
 	expect(saved.ok(), await saved.text()).toBe(true);

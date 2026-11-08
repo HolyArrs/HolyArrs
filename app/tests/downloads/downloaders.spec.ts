@@ -203,7 +203,7 @@ test('tags are set on a Downloader and on a title, and shown where they are kept
 
 		expect(ironPage).not.toBe('');
 		// A title's tags are set through the API: the title page's Tags row
-		// is not shown (docs/downloaders.md).
+		// is not shown (docs/user/downloads/downloaders.md).
 		const titleId = ironPage.match(/\/library\/(\d+)/)?.[1];
 		const tagged = await call('PUT', `/titles/${titleId}`, { tags: ['kids'] });
 		expect(tagged.ok(), await tagged.text()).toBe(true);
