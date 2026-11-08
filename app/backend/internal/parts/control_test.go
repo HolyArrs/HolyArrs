@@ -355,7 +355,7 @@ func TestSwitchesAreSaved(t *testing.T) {
 	if err := safe.Load(context.Background()); err != nil {
 		t.Fatal(err)
 	}
-	if len(safe.Off()) != len(All) {
+	if len(safe.Off()) != len(All()) {
 		t.Fatalf("safe mode: off %v", safe.Off())
 	}
 	for _, st := range safe.Statuses() {

@@ -300,6 +300,7 @@ func run(c config) error {
 
 // serve runs HolyArrs until ctx ends or a restart is asked for.
 func serve(ctx context.Context, c config, o runOpts) error {
+	registerHooks()
 	ctx, stop := context.WithCancel(ctx)
 	defer stop()
 	reg := o.reg
@@ -491,7 +492,6 @@ func serve(ctx context.Context, c config, o runOpts) error {
 			}
 		}
 	}
-	registerHooks()
 	vault, err := secrets.Open(ctx, s, key)
 	if err != nil {
 		return keyRefused(err)

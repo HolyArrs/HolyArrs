@@ -105,7 +105,7 @@ func (c *Control) Load(ctx context.Context) error {
 	defer c.mu.Unlock()
 	c.init()
 	if c.SafeMode {
-		for _, p := range All {
+		for _, p := range All() {
 			c.off[p] = "Safe mode: every part is off until the app starts again without safe mode."
 		}
 		c.flag()
@@ -276,7 +276,7 @@ func (c *Control) Off() []Part {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	var out []Part
-	for _, p := range All {
+	for _, p := range All() {
 		if !c.onLocked(p) {
 			out = append(out, p)
 		}
@@ -327,7 +327,7 @@ func (c *Control) Set(ctx context.Context, p Part, on bool, by domain.Actor) err
 	c.mu.Lock()
 	c.init()
 	state := map[Part]bool{}
-	for _, q := range All {
+	for _, q := range All() {
 		state[q] = c.onLocked(q)
 	}
 	if state[p] == on {
@@ -364,7 +364,7 @@ func (c *Control) Set(ctx context.Context, p Part, on bool, by domain.Actor) err
 // savedLocked is the list of parts turned off by a person, in order.
 func (c *Control) savedLocked() []Part {
 	var out []Part
-	for _, q := range All {
+	for _, q := range All() {
 		if _, off := c.off[q]; off {
 			out = append(out, q)
 		}
@@ -604,7 +604,7 @@ func (c *Control) Statuses() []jobs.Status {
 		stages []string
 	}
 	var rows []row
-	for _, p := range All {
+	for _, p := range All() {
 		r := row{p: p, off: c.off[p], hold: c.hold[p]}
 		for _, e := range c.loops {
 			if e.owner == Of(p) {

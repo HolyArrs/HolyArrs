@@ -85,7 +85,7 @@ func (a *API) scheduleRoutes(m *http.ServeMux) {
 
 // kindOn says whether a kind's part is on and, if not, the state to show.
 func (a *API) kindOn(kind string) (string, bool) {
-	o := parts.JobKinds[kind]
+	o := parts.JobOwner(kind)
 	if a.s.SafeMode && o != parts.Core {
 		return "safe_mode", false
 	}
@@ -101,7 +101,7 @@ func (a *API) scheduleView(ctx context.Context, db *sql.DB, sc domain.Schedule) 
 		info = scheduleInfo{Label: strings.ReplaceAll(sc.Kind, "_", " "), Min: schMinute, Max: 7 * schDay, Step: schMinute}
 	}
 	v := ScheduleView{Kind: sc.Kind, Label: info.Label, About: info.About, EverySeconds: sc.EverySeconds, MinSeconds: info.Min, MaxSeconds: info.Max,
-		StepSeconds: info.Step, Enabled: sc.Enabled, LastRun: sc.LastRun, NextRun: sc.NextRun, Part: string(parts.JobKinds[sc.Kind]), Settings: info.Settings, State: "waiting"}
+		StepSeconds: info.Step, Enabled: sc.Enabled, LastRun: sc.LastRun, NextRun: sc.NextRun, Part: string(parts.JobOwner(sc.Kind)), Settings: info.Settings, State: "waiting"}
 	if a.s.Queue != nil {
 		v.NextRun = a.s.Queue.EffectiveScheduleNext(sc)
 	}
@@ -167,7 +167,7 @@ func (a *API) listSchedules(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 			st.Reason = logs.RedactPatterns(st.Reason)
-			loops = append(loops, LoopView{Status: st, Part: string(parts.Loops[name])})
+			loops = append(loops, LoopView{Status: st, Part: string(parts.LoopOwner(name))})
 		}
 	}
 	sort.SliceStable(loops, func(i, j int) bool { return loops[i].Name < loops[j].Name })

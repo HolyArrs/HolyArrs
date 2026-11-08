@@ -560,7 +560,7 @@ func TestTrailerLoops(t *testing.T) {
 	if len(ls) != 1 || ls[0].Name != "trailer_pass" || ls[0].Run == nil || ls[0].Every != 0 {
 		t.Fatalf("%+v", ls)
 	}
-	if parts.Loops["trailer_pass"] != parts.Media {
+	if parts.Loops()["trailer_pass"] != parts.Media {
 		t.Fatal("trailer_pass has no part")
 	}
 }

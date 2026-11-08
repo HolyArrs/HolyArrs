@@ -54,7 +54,7 @@ func (a *API) partGate(m *http.ServeMux, next http.Handler) http.Handler {
 	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_, pattern := m.Handler(r)
-		o, ok := parts.Routes[pattern]
+		o, ok := parts.RouteOwner(pattern)
 		if !ok || o == parts.Core || (a.s.Parts.SafeMode && parts.SafeLibrary[pattern]) {
 			next.ServeHTTP(w, r)
 			return
@@ -103,12 +103,13 @@ type PartView struct {
 func (a *API) listParts(w http.ResponseWriter, r *http.Request) {
 	out := []PartView{}
 	if a.s.Parts == nil {
-		for _, p := range parts.All {
+		for _, p := range parts.All() {
 			out = append(out, PartView{Part: p, Name: p.Label(), On: true, State: "running"})
 		}
 	} else {
+		all := parts.All()
 		for i, st := range a.s.Parts.Statuses() {
-			p := parts.All[i]
+			p := all[i]
 			out = append(out, PartView{Part: p, Name: st.Name, On: a.s.Parts.On(p), State: string(st.State), Reason: st.Reason})
 		}
 	}
@@ -119,7 +120,7 @@ func (a *API) listParts(w http.ResponseWriter, r *http.Request) {
 		}
 		stages = a.s.Parts.Stages()
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"parts": out, "screens": parts.Screens, "safe_mode": a.s.SafeMode, "safe_screens": safeScreens, "stages": stages})
+	writeJSON(w, http.StatusOK, map[string]any{"parts": out, "screens": parts.Screens(), "safe_mode": a.s.SafeMode, "safe_screens": safeScreens, "stages": stages})
 }
 
 // confirms holds the confirmation ids of the two-step controls.

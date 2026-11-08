@@ -9,6 +9,7 @@ package parts
 
 import (
 	"strings"
+	"sync"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
 )
@@ -32,15 +33,24 @@ const (
 	ByTitle = startup.ByTitle
 )
 
-// All lists the parts in the order screens show them. Routes, Screens, Loops
-// and JobKinds are read from the registry when the package starts.
-var (
-	All      []Part
-	Routes   map[string]Owner
-	Screens  map[string]Owner
-	Loops    map[string]Owner
-	JobKinds map[string]Owner
-)
+// All lists the parts in the order screens show them.
+func All() []Part { return startup.Parts() }
+
+// Routes, Screens, Loops and JobKinds are copies of the registry's owners.
+func Routes() map[string]Owner   { return startup.OwnersOf(startup.RouteOwners) }
+func Screens() map[string]Owner  { return startup.OwnersOf(startup.ScreenOwners) }
+func Loops() map[string]Owner    { return startup.OwnersOf(startup.LoopOwners) }
+func JobKinds() map[string]Owner { return startup.OwnersOf(startup.JobOwners) }
+
+// RouteOwner is the owner of one route pattern; ok is false when no part
+// names it.
+func RouteOwner(pattern string) (Owner, bool) { return startup.OwnerOf(startup.RouteOwners, pattern) }
+
+// LoopOwner is the owner of one loop, "" when no part names it.
+func LoopOwner(name string) Owner { o, _ := startup.OwnerOf(startup.LoopOwners, name); return o }
+
+// JobOwner is the owner of one Job kind, "" when no part names it.
+func JobOwner(kind string) Owner { o, _ := startup.OwnerOf(startup.JobOwners, kind); return o }
 
 // Valid reports whether p is a registered part.
 func Valid(p Part) bool { return startup.PartKnown(p) }
@@ -792,20 +802,24 @@ var SafeLibrary = map[string]bool{
 // SafeScreens are the pages that show in safe mode for the same reason.
 var SafeScreens = []string{"/library", "/library/[id]", "/library/[id]/albums/[album]"}
 
-func init() {
+// Register adds the five parts and their route, screen, loop and Job kind
+// owners to the registry. The program wiring calls it once before anything
+// reads the registry; calling it again does nothing.
+func Register() {
+	registerOnce.Do(register)
+}
+
+var registerOnce sync.Once
+
+func register() {
 	for _, p := range []struct {
 		part  Part
 		label string
 	}{{Movies, "Movies"}, {Shows, "TV shows"}, {Music, "Music"}, {Subtitles, "Subtitles"}, {Wishlist, "Requests"}} {
 		startup.RegisterPart(p.part, p.label)
 	}
-	All = startup.Parts()
 	startup.RegisterOwners(startup.RouteOwners, routeOwners)
 	startup.RegisterOwners(startup.ScreenOwners, screenOwners)
 	startup.RegisterOwners(startup.LoopOwners, loopOwners)
 	startup.RegisterOwners(startup.JobOwners, jobOwners)
-	Routes = startup.OwnersOf(startup.RouteOwners)
-	Screens = startup.OwnersOf(startup.ScreenOwners)
-	Loops = startup.OwnersOf(startup.LoopOwners)
-	JobKinds = startup.OwnersOf(startup.JobOwners)
 }

@@ -67,6 +67,13 @@ func isStoreFile(rel string) bool {
 	return strings.HasPrefix(filepath.Base(rel), "store")
 }
 
+// sqlLeftover is true for the leftover packages that are judged by a core home
+// for imports but still hold other owners' tables: store (until t06b splits
+// it) and parts (until t13 splits it).
+func sqlLeftover(rel string) bool {
+	return strings.HasPrefix(rel, internalAt+"store/") || strings.HasPrefix(rel, internalAt+"parts/")
+}
+
 // sqlFile is what the scan finds in one Go file.
 type sqlFile struct {
 	hasSQL bool
@@ -149,7 +156,7 @@ func scanSQL(t *testing.T, root string) map[string]sqlFile {
 // own. Files outside internal/ and the migrate orchestrator are not judged.
 func foreignTables(rel string, f sqlFile) []string {
 	home := homeOf(rel)
-	if home == "" || home == "migrate" {
+	if home == "" || home == "migrate" || sqlLeftover(rel) {
 		return nil
 	}
 	var out []string
@@ -336,7 +343,7 @@ func coreName(mod, importPath string) string {
 func TestCoreNamesNoModuleTable(t *testing.T) {
 	root := repoRoot(t)
 	for rel, f := range scanSQL(t, root) {
-		if !isCoreHome(homeOf(rel)) {
+		if !isCoreHome(homeOf(rel)) || sqlLeftover(rel) {
 			continue
 		}
 		for _, tb := range f.tables {

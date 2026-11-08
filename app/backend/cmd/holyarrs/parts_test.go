@@ -72,12 +72,12 @@ func TestEveryLoopAndJobKindHasAPart(t *testing.T) {
 		t.Fatalf("only %d kinds and %d loops", len(kinds), len(loops))
 	}
 	for _, k := range kinds {
-		if _, ok := parts.JobKinds[k]; !ok {
+		if _, ok := parts.JobKinds()[k]; !ok {
 			t.Errorf("job kind %s belongs to no part in internal/parts/table.go", k)
 		}
 	}
 	for _, l := range loops {
-		if _, ok := parts.Loops[l]; !ok {
+		if _, ok := parts.Loops()[l]; !ok {
 			t.Errorf("loop %s belongs to no part in internal/parts/table.go", l)
 		}
 	}
@@ -86,7 +86,7 @@ func TestEveryLoopAndJobKindHasAPart(t *testing.T) {
 		if !isStage {
 			continue
 		}
-		if _, ok := parts.Loops[name]; !ok {
+		if _, ok := parts.Loops()[name]; !ok {
 			t.Errorf("stage %s belongs to no part in internal/parts/table.go", name)
 		}
 	}
@@ -119,7 +119,7 @@ func TestPartSwitchesSurviveARestart(t *testing.T) {
 		t.Fatal(err)
 	}
 	_, pc, _, _ = runApp(t, config{ConfigDir: dir, SafeMode: true})
-	if len(pc.Off()) != len(parts.All) {
+	if len(pc.Off()) != len(parts.All()) {
 		t.Fatalf("safe mode: off %v", pc.Off())
 	}
 }
@@ -192,7 +192,7 @@ func TestRestartInSafeModeFromTheControls(t *testing.T) {
 		t.Fatalf("serve returned %v, want exit %d", err, exitRestart)
 	}
 	_, pc, reg, stop := runApp(t, config{ConfigDir: dir})
-	if len(pc.Off()) != len(parts.All) {
+	if len(pc.Off()) != len(parts.All()) {
 		t.Fatalf("the start after was not in safe mode: off %v", pc.Off())
 	}
 	if st, _ := reg.Get(jobs.StageKey("schedules")); st.State != jobs.Off {

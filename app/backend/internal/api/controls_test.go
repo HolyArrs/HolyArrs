@@ -535,7 +535,7 @@ func TestEveryRouteHasAPart(t *testing.T) {
 			}
 			for _, m := range re.FindAllStringSubmatch(string(b), -1) {
 				seen[m[1]] = true
-				if _, ok := parts.Routes[m[1]]; !ok {
+				if _, ok := parts.Routes()[m[1]]; !ok {
 					t.Errorf("%s: route %q belongs to no part and is not marked core in internal/parts/table.go", f, m[1])
 				}
 			}
@@ -544,7 +544,7 @@ func TestEveryRouteHasAPart(t *testing.T) {
 	if len(seen) < 150 {
 		t.Fatalf("found only %d routes; the pattern no longer matches the code", len(seen))
 	}
-	for r := range parts.Routes {
+	for r := range parts.Routes() {
 		if !seen[r] {
 			t.Errorf("internal/parts/table.go lists %q, but no such route is registered", r)
 		}

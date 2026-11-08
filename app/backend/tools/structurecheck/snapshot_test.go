@@ -151,6 +151,7 @@ func registeredRoutes(t *testing.T, root string) []string {
 // TestRouteTableUnchanged: every route keeps its method, path, permission,
 // key scope, fresh-password rule and part.
 func TestRouteTableUnchanged(t *testing.T) {
+	parts.Register()
 	root := repoRoot(t)
 	seen := map[string]bool{}
 	for _, r := range registeredRoutes(t, root) {
@@ -159,7 +160,7 @@ func TestRouteTableUnchanged(t *testing.T) {
 	for r := range auth.RoutePerms {
 		seen[r] = true
 	}
-	for r := range parts.Routes {
+	for r := range parts.Routes() {
 		seen[r] = true
 	}
 	if len(seen) < 200 {
@@ -173,7 +174,7 @@ func TestRouteTableUnchanged(t *testing.T) {
 			perm = "unlisted"
 		}
 		part := "-"
-		if o, ok := parts.Routes[r]; ok {
+		if o, ok := parts.RouteOwner(r); ok {
 			part = string(o)
 		}
 		got = append(got, fmt.Sprintf("%s auth=%s scope=%s assurance=%t part=%s",

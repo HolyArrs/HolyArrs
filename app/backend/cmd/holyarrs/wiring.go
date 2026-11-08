@@ -6,12 +6,17 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/api"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/features"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
 )
 
-// registerHooks hands core the functions that modules own. Each module that
+// registerHooks hands core the functions, parts and feature names that
+// modules own. Each module that
 // leaves a leftover package adds its registrations here.
 func registerHooks() {
+	features.Register()
+	parts.Register()
 	secrets.RegisterRewriter("sources", source.EncryptPlainExtras)
 }
 

@@ -27,7 +27,7 @@ func TestEveryScreenHasAPart(t *testing.T) {
 			path = "/"
 		}
 		pages[path] = true
-		if _, ok := Screens[path]; !ok {
+		if _, ok := Screens()[path]; !ok {
 			t.Errorf("page %s belongs to no part and is not marked core in internal/parts/table.go", path)
 		}
 		return nil
@@ -38,7 +38,7 @@ func TestEveryScreenHasAPart(t *testing.T) {
 	if len(pages) < 30 {
 		t.Fatalf("found only %d pages", len(pages))
 	}
-	for s := range Screens {
+	for s := range Screens() {
 		if !pages[s] {
 			t.Errorf("Screens lists %s, but there is no such page", s)
 		}

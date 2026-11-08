@@ -51,7 +51,7 @@ func TestMusicWarmUpDoesNotRunWhenMusicIsOff(t *testing.T) {
 	})
 	pc := a.s.Parts
 	for _, l := range a.MusicLoops() {
-		if owner := parts.Loops[l.Name]; owner != parts.Of(parts.Music) {
+		if owner := parts.Loops()[l.Name]; owner != parts.Of(parts.Music) {
 			t.Fatalf("loop %s belongs to %q, not Music", l.Name, owner)
 		}
 		pc.Add(l, true)

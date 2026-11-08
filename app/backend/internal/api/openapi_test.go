@@ -77,7 +77,7 @@ func generateSpec(t *testing.T) []byte {
 		}
 		op["x-holyarrs-permission"] = perm
 		op["x-holyarrs-scope"] = auth.RouteScope(r)
-		op["x-holyarrs-part"] = string(parts.Routes[r])
+		op["x-holyarrs-part"] = string(parts.Routes()[r])
 		params, _ := op["parameters"].([]any)
 		for _, p := range param.FindAllStringSubmatch(path, -1) {
 			found := false

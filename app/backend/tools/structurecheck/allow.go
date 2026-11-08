@@ -49,7 +49,7 @@ var oversized = map[string]bool{
 	"app/frontend/src/lib/approvals/ApprovalsDesktop.svelte": true,
 	"app/backend/internal/metadata/musicbrainz.go":           true,
 	"app/backend/internal/api/explore_new_music.go":          true,
-	"app/backend/internal/parts/table.go":                    true,
+	"app/backend/internal/parts/table.go":                    true, // split into the modules by t13
 	"app/frontend/src/routes/library/+page.svelte":           true,
 	"app/frontend/src/routes/login/+page.svelte":             true,
 	"app/frontend/src/routes/search/+page.svelte":            true,
@@ -114,11 +114,11 @@ var coreRows = map[string]int{
 // so an import that breaks the layer order shows up before the move. A dash
 // means the package is split or dissolved and is not judged.
 var packageHome = map[string]string{
-	"store":         "-", // leftover until Task 6 dissolves it into mediafiles and the table owners
-	"features":      "-", // held-back feature names, until each module takes its own
-	"parts":         "-",
-	"domain":        "-",
-	"api":           "-",
+	"store":         "core/database", // leftover until t06b dissolves it into mediafiles and the table owners; judged by its strictest home
+	"features":      "-",             // held-back feature names; each module task moves its names, t13 deletes the package
+	"parts":         "core/startup",  // leftover until t13 splits table.go into the modules; judged by its strictest home
+	"domain":        "-",             // split per R4, deleted at the end of t06b
+	"api":           "-",             // dissolved into the owning modules by t13 and t14
 	"ratings":       "metadata",
 	"youtube":       "metadata",
 	"auth":          "accounts",

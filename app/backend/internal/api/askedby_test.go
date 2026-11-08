@@ -130,7 +130,7 @@ func TestAskedByEveryoneSees(t *testing.T) {
 		if _, ok := auth.RoutePerms[k]; ok {
 			t.Fatalf("%s is still in the route table", k)
 		}
-		if _, ok := parts.Routes[k]; ok {
+		if _, ok := parts.Routes()[k]; ok {
 			t.Fatalf("%s is still in the parts table", k)
 		}
 	}

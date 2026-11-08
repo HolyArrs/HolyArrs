@@ -3,7 +3,11 @@
 // feature when that module moves.
 package features
 
-import "github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
+import (
+	"sync"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
+)
 
 // The held-back features, by switch name.
 const (
@@ -21,8 +25,14 @@ const (
 // AlertChannelsMore is off.
 var ProvenAlertKinds = map[string]bool{"discord": true, "email": true}
 
-func init() {
-	for _, n := range []string{AIApps, PlexWatchlists, RowTitleStats, TraktLists, AlertChannelsMore, SubtitleSites, EmbySignIn, GoBack} {
-		startup.RegisterFeature(n)
-	}
+// Register adds the held-back feature names to the registry. The program
+// wiring calls it once; calling it again does nothing.
+func Register() {
+	registerOnce.Do(func() {
+		for _, n := range []string{AIApps, PlexWatchlists, RowTitleStats, TraktLists, AlertChannelsMore, SubtitleSites, EmbySignIn, GoBack} {
+			startup.RegisterFeature(n)
+		}
+	})
 }
+
+var registerOnce sync.Once
