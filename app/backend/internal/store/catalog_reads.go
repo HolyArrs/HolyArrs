@@ -177,3 +177,60 @@ func VersionSlotsOfTitle(ctx context.Context, q database.Lister, versionID, titl
 func VersionSlotsOfPart(ctx context.Context, q database.Lister, versionID, partID int64) ([]domain.Slot, error) {
 	return database.Select[domain.Slot](ctx, q, "slots", "version_id = ? AND item_id IN (SELECT id FROM items WHERE part_id = ?)", versionID, partID)
 }
+
+// LoadSlot reads one Slot by id into dest.
+func LoadSlot(ctx context.Context, q database.Querier, id int64, dest *domain.Slot) error {
+	return database.Get(ctx, q, "slots", id, dest)
+}
+
+// LoadVersion reads one Version by id into dest.
+func LoadVersion(ctx context.Context, q database.Querier, id int64, dest *domain.Version) error {
+	return database.Get(ctx, q, "versions", id, dest)
+}
+
+// LoadItem reads one Item by id into dest.
+func LoadItem(ctx context.Context, q database.Querier, id int64, dest *domain.Item) error {
+	return database.Get(ctx, q, "items", id, dest)
+}
+
+// LoadTitle reads one Title by id into dest.
+func LoadTitle(ctx context.Context, q database.Querier, id int64, dest *domain.Title) error {
+	return database.Get(ctx, q, "titles", id, dest)
+}
+
+// LoadPickRules reads one set of pick rules by id into dest.
+func LoadPickRules(ctx context.Context, q database.Querier, id int64, dest *domain.PickRules) error {
+	return database.Get(ctx, q, "pick_rules", id, dest)
+}
+
+// LoadPart reads one Part (a season or an album) by id into dest.
+func LoadPart(ctx context.Context, q database.Querier, id int64, dest *domain.Part) error {
+	return database.Get(ctx, q, "parts", id, dest)
+}
+
+// LoadFile reads one File by id into dest.
+func LoadFile(ctx context.Context, q database.Querier, id int64, dest *domain.File) error {
+	return database.Get(ctx, q, "files", id, dest)
+}
+
+// PartsOfTitle lists every Part of a Title.
+func PartsOfTitle(ctx context.Context, q database.Lister, titleID int64) ([]domain.Part, error) {
+	return database.Select[domain.Part](ctx, q, "parts", "title_id = ?", titleID)
+}
+
+// AlbumPartsOfTitle lists the albums of an artist that are not dropped.
+func AlbumPartsOfTitle(ctx context.Context, q database.Lister, titleID int64) ([]domain.Part, error) {
+	return database.Select[domain.Part](ctx, q, "parts", "title_id = ? AND kind = 'album' AND dropped_at IS NULL", titleID)
+}
+
+// EpisodesOfTitle lists the episodes of a show that are not dropped, by season and episode.
+func EpisodesOfTitle(ctx context.Context, q database.Lister, titleID int64) ([]domain.Item, error) {
+	return database.Select[domain.Item](ctx, q, "items", `title_id = ? AND kind = 'episode' AND dropped_at IS NULL
+		ORDER BY json_extract(numbers, '$.season'), json_extract(numbers, '$.episode')`, titleID)
+}
+
+// TracksOfPart lists the tracks of an album that are not dropped, by disc and track.
+func TracksOfPart(ctx context.Context, q database.Lister, partID int64) ([]domain.Item, error) {
+	return database.Select[domain.Item](ctx, q, "items", `part_id = ? AND kind = 'track' AND dropped_at IS NULL
+		ORDER BY json_extract(numbers, '$.disc'), json_extract(numbers, '$.track')`, partID)
+}

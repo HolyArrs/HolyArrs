@@ -9,7 +9,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
@@ -72,16 +71,16 @@ func (s *Searcher) HandleSeason(ctx context.Context, r *jobs.Run) error {
 	by := jobActor(r)
 	jobID := r.Job.ID
 	var part domain.Part
-	if err := database.Get(ctx, db, "parts", r.Job.Subject.ID, &part); err != nil {
+	if err := store.LoadPart(ctx, db, r.Job.Subject.ID, &part); err != nil {
 		return fmt.Errorf("season %d: %w", r.Job.Subject.ID, err)
 	}
 	var ti domain.Title
-	if err := database.Get(ctx, db, "titles", part.TitleID, &ti); err != nil {
+	if err := store.LoadTitle(ctx, db, part.TitleID, &ti); err != nil {
 		return err
 	}
 	vid, _ := r.Job.Params["version_id"].(float64)
 	var ver domain.Version
-	if err := database.Get(ctx, db, "versions", int64(vid), &ver); err != nil || ver.TitleID != ti.ID {
+	if err := store.LoadVersion(ctx, db, int64(vid), &ver); err != nil || ver.TitleID != ti.ID {
 		return fmt.Errorf("search_season needs a version_id of the show")
 	}
 	hand, _ := r.Job.Params["by_hand"].(bool)

@@ -11,7 +11,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/judge"
@@ -89,7 +88,7 @@ func currentOf(ctx context.Context, db *sql.DB, sl domain.Slot, pr domain.PickRu
 		return nil
 	}
 	var f domain.File
-	if err := database.Get(ctx, db, "files", *sl.FileID, &f); err != nil || f.State != "present" {
+	if err := store.LoadFile(ctx, db, *sl.FileID, &f); err != nil || f.State != "present" {
 		return nil
 	}
 	name := strings.TrimSuffix(path.Base(f.RelativePath), path.Ext(f.RelativePath))
@@ -140,10 +139,10 @@ func trackFormat(ctx context.Context, db *sql.DB, f domain.File) string {
 func (s *Searcher) loadShow(ctx context.Context, ti domain.Title, ver domain.Version) (showSet, error) {
 	db := s.Store.Read()
 	set := showSet{ti: ti, ver: ver, target: map[int64]bool{}, notOut: map[int64]bool{}}
-	if err := database.Get(ctx, db, "pick_rules", ver.PickRulesID, &set.pr); err != nil {
+	if err := store.LoadPickRules(ctx, db, ver.PickRulesID, &set.pr); err != nil {
 		return set, err
 	}
-	parts, err := database.Select[domain.Part](ctx, db, "parts", "title_id = ?", ti.ID)
+	parts, err := store.PartsOfTitle(ctx, db, ti.ID)
 	if err != nil {
 		return set, err
 	}
@@ -151,8 +150,7 @@ func (s *Searcher) loadShow(ctx context.Context, ti domain.Title, ver domain.Ver
 	for _, p := range parts {
 		partKept[p.ID] = p.KeepUpToDate && p.DroppedAt == nil
 	}
-	its, err := database.Select[domain.Item](ctx, db, "items", `title_id = ? AND kind = 'episode' AND dropped_at IS NULL
-		ORDER BY json_extract(numbers, '$.season'), json_extract(numbers, '$.episode')`, ti.ID)
+	its, err := store.EpisodesOfTitle(ctx, db, ti.ID)
 	if err != nil {
 		return set, err
 	}

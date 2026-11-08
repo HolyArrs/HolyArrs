@@ -14,7 +14,6 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/judge"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
@@ -75,16 +74,16 @@ func (s *Searcher) HandleAlbum(ctx context.Context, r *jobs.Run) error {
 	by := jobActor(r)
 	jobID := r.Job.ID
 	var part domain.Part
-	if err := database.Get(ctx, db, "parts", r.Job.Subject.ID, &part); err != nil || part.Kind != "album" {
+	if err := store.LoadPart(ctx, db, r.Job.Subject.ID, &part); err != nil || part.Kind != "album" {
 		return fmt.Errorf("album %d: not found", r.Job.Subject.ID)
 	}
 	var ti domain.Title
-	if err := database.Get(ctx, db, "titles", part.TitleID, &ti); err != nil {
+	if err := store.LoadTitle(ctx, db, part.TitleID, &ti); err != nil {
 		return err
 	}
 	vid, _ := r.Job.Params["version_id"].(float64)
 	var ver domain.Version
-	if err := database.Get(ctx, db, "versions", int64(vid), &ver); err != nil || ver.TitleID != ti.ID {
+	if err := store.LoadVersion(ctx, db, int64(vid), &ver); err != nil || ver.TitleID != ti.ID {
 		return fmt.Errorf("search_album needs a version_id of the artist")
 	}
 	hand, _ := r.Job.Params["by_hand"].(bool)
@@ -294,10 +293,10 @@ func (set albumSet) labels() map[int64]string {
 func (s *Searcher) loadAlbum(ctx context.Context, ti domain.Title, ver domain.Version, part domain.Part) (albumSet, error) {
 	db := s.Store.Read()
 	set := albumSet{ti: ti, ver: ver, part: part, target: map[int64]bool{}, notOut: map[int64]bool{}}
-	if err := database.Get(ctx, db, "pick_rules", ver.PickRulesID, &set.pr); err != nil {
+	if err := store.LoadPickRules(ctx, db, ver.PickRulesID, &set.pr); err != nil {
 		return set, err
 	}
-	parts, err := database.Select[domain.Part](ctx, db, "parts", "title_id = ? AND kind = 'album' AND dropped_at IS NULL", ti.ID)
+	parts, err := store.AlbumPartsOfTitle(ctx, db, ti.ID)
 	if err != nil {
 		return set, err
 	}
@@ -308,8 +307,7 @@ func (s *Searcher) loadAlbum(ctx context.Context, ti domain.Title, ver domain.Ve
 		}
 		set.albums = append(set.albums, a)
 	}
-	its, err := database.Select[domain.Item](ctx, db, "items", `part_id = ? AND kind = 'track' AND dropped_at IS NULL
-		ORDER BY json_extract(numbers, '$.disc'), json_extract(numbers, '$.track')`, part.ID)
+	its, err := store.TracksOfPart(ctx, db, part.ID)
 	if err != nil {
 		return set, err
 	}
@@ -589,7 +587,7 @@ func (s *Searcher) feedArtist(ctx context.Context, by domain.Actor, jobID *int64
 	for _, k := range order {
 		group := groups[k]
 		var part domain.Part
-		if err := database.Get(ctx, s.Store.Read(), "parts", k.part, &part); err != nil {
+		if err := store.LoadPart(ctx, s.Store.Read(), k.part, &part); err != nil {
 			continue
 		}
 		set, err := s.loadAlbum(ctx, group[0].ti, group[0].ver, part)

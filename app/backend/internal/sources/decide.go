@@ -52,19 +52,19 @@ type slotCtx struct {
 func (s *Searcher) loadSlot(ctx context.Context, slotID int64) (slotCtx, error) {
 	db := s.Store.Read()
 	var c slotCtx
-	if err := database.Get(ctx, db, "slots", slotID, &c.sl); err != nil {
+	if err := store.LoadSlot(ctx, db, slotID, &c.sl); err != nil {
 		return c, fmt.Errorf("slot %d: %w", slotID, err)
 	}
-	if err := database.Get(ctx, db, "versions", c.sl.VersionID, &c.ver); err != nil {
+	if err := store.LoadVersion(ctx, db, c.sl.VersionID, &c.ver); err != nil {
 		return c, err
 	}
-	if err := database.Get(ctx, db, "items", c.sl.ItemID, &c.it); err != nil {
+	if err := store.LoadItem(ctx, db, c.sl.ItemID, &c.it); err != nil {
 		return c, err
 	}
-	if err := database.Get(ctx, db, "titles", c.it.TitleID, &c.ti); err != nil {
+	if err := store.LoadTitle(ctx, db, c.it.TitleID, &c.ti); err != nil {
 		return c, err
 	}
-	if err := database.Get(ctx, db, "pick_rules", c.ver.PickRulesID, &c.pr); err != nil {
+	if err := store.LoadPickRules(ctx, db, c.ver.PickRulesID, &c.pr); err != nil {
 		return c, err
 	}
 
