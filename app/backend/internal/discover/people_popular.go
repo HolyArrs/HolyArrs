@@ -1,4 +1,4 @@
-package api
+package discover
 
 import (
 	"context"
@@ -80,10 +80,10 @@ func rankPopular(people []metadata.Person, boost map[string]bool) []metadata.Per
 
 // popularPool pulls TMDB's popular pages 1..popularPages, re-ranks the whole
 // pool and keeps it for a day.
-func (a *API) popularPool(ctx context.Context, p metadata.PeopleProvider, pop metadata.PopularPeopler) ([]metadata.Person, error) {
+func (h *Handlers) popularPool(ctx context.Context, p metadata.PeopleProvider, pop metadata.PopularPeopler) ([]metadata.Person, error) {
 	const key = "peoplepopular|v1"
 	now := time.Now()
-	c := metadata.LookupCache{Store: a.s.Store}
+	c := metadata.LookupCache{Store: h.Store}
 	if b, ok, _ := c.Get(ctx, key, now); ok {
 		var out []metadata.Person
 		if json.Unmarshal(b, &out) == nil {
@@ -110,7 +110,7 @@ func (a *API) popularPool(ctx context.Context, p metadata.PeopleProvider, pop me
 	}
 	boost := map[string]bool{}
 	for _, id := range []string{"library", "hot"} {
-		if s, err := a.peopleShelf(ctx, id, "", p); err == nil {
+		if s, err := h.peopleShelf(ctx, id, "", p); err == nil {
 			for _, sp := range s.People {
 				boost[sp.ID] = true
 			}

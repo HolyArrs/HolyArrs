@@ -1,4 +1,4 @@
-package api
+package discover
 
 import (
 	"context"
@@ -13,6 +13,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	engine "github.com/HolyArrs/holyarrs/app/backend/internal/discover/rows"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
@@ -70,10 +71,10 @@ func eachLimited(n int, f func(i int)) {
 	wg.Wait()
 }
 
-func (a *API) peopleShelf(ctx context.Context, id, max string, p metadata.PeopleProvider) (peopleShelf, error) {
+func (h *Handlers) peopleShelf(ctx context.Context, id, max string, p metadata.PeopleProvider) (peopleShelf, error) {
 	key := "peopleshelf|v2|" + id + "|" + max
 	now := time.Now()
-	c := metadata.LookupCache{Store: a.s.Store}
+	c := metadata.LookupCache{Store: h.Store}
 	if b, ok, _ := c.Get(ctx, key, now); ok {
 		var s peopleShelf
 		if json.Unmarshal(b, &s) == nil {
@@ -85,10 +86,10 @@ func (a *API) peopleShelf(ctx context.Context, id, max string, p metadata.People
 	// missed counts lookups that failed; such a shelf is tried again soon.
 	var missed atomic.Int32
 	if id == "library" {
-		s.People, err = a.libraryShelf(ctx, max, p, &missed)
+		s.People, err = h.libraryShelf(ctx, max, p, &missed)
 	} else if max == "" {
 		// A Kid gets no hot shelf: those titles are not held to their limit.
-		s.People = a.hotShelf(ctx, &missed)
+		s.People = h.hotShelf(ctx, &missed)
 	}
 	if err != nil {
 		return s, err
@@ -106,13 +107,13 @@ func (a *API) peopleShelf(ctx context.Context, id, max string, p metadata.People
 // libraryShelf counts the names stored with the Library titles this member
 // may see, looks the most frequent up, and adds the composers of the newest
 // titles from their credits.
-func (a *API) libraryShelf(ctx context.Context, limit string, p metadata.PeopleProvider, missed *atomic.Int32) ([]shelfPerson, error) {
+func (h *Handlers) libraryShelf(ctx context.Context, limit string, p metadata.PeopleProvider, missed *atomic.Int32) ([]shelfPerson, error) {
 	where := "t.kind IN ('movie', 'show')"
-	clause, args := kidSQL(limit)
+	clause, args := mediafiles.KidSQL(limit)
 	if clause != "" {
 		where += " AND " + clause
 	}
-	rows, err := a.s.Store.Read().QueryContext(ctx, `SELECT t.kind, COALESCE(json_extract(t.source_ids, '$.tmdb'), ''), t.people
+	rows, err := h.Store.Read().QueryContext(ctx, `SELECT t.kind, COALESCE(json_extract(t.source_ids, '$.tmdb'), ''), t.people
 		FROM titles t WHERE `+where+` ORDER BY t.created_at DESC`, args...)
 	if err != nil {
 		return nil, err
@@ -178,7 +179,7 @@ func (a *API) libraryShelf(ctx context.Context, limit string, p metadata.PeopleP
 	for _, sp := range found {
 		add(sp)
 	}
-	if cr, ok := metadata.TitleCrewerFor(ctx, a.s.Metadata); ok {
+	if cr, ok := metadata.TitleCrewerFor(ctx, h.Metadata); ok {
 		crews := make([]metadata.TitleCrew, len(recent))
 		eachLimited(len(recent), func(i int) {
 			var err error
@@ -213,10 +214,10 @@ func (a *API) libraryShelf(ctx context.Context, limit string, p metadata.PeopleP
 // hotShelf takes the leads of this week's trending titles and the Top 10
 // from the lists Explore already keeps: three billed actors, the director
 // and the composer of each.
-func (a *API) hotShelf(ctx context.Context, missed *atomic.Int32) []shelfPerson {
+func (h *Handlers) hotShelf(ctx context.Context, missed *atomic.Int32) []shelfPerson {
 	type hot struct{ kind, tmdb, name string }
 	var lists [][]hot
-	src := a.liveSource(context.WithoutCancel(ctx))
+	src := h.LiveSource(context.WithoutCancel(ctx))
 	for _, kind := range []string{"movie", "show"} {
 		var l []hot
 		if items, err := src.List(ctx, engine.Request{List: "trending", Kind: kind, Scope: engine.ScopeShared}); err == nil {
@@ -243,7 +244,7 @@ func (a *API) hotShelf(ctx context.Context, missed *atomic.Int32) []shelfPerson 
 			break
 		}
 	}
-	cr, ok := metadata.TitleCrewerFor(ctx, a.s.Metadata)
+	cr, ok := metadata.TitleCrewerFor(ctx, h.Metadata)
 	if !ok {
 		return []shelfPerson{}
 	}
@@ -276,16 +277,16 @@ func (a *API) hotShelf(ctx context.Context, missed *atomic.Int32) []shelfPerson 
 // peopleShelves answers GET /api/v1/people/shelves: the People sections
 // that have enough people to show, in order, with how many people each
 // holds per department so Search can hide a chip with too few.
-func (a *API) peopleShelves(w http.ResponseWriter, r *http.Request) {
-	p, ok := a.peopleProvider(r, w)
+func (h *Handlers) peopleShelves(w http.ResponseWriter, r *http.Request) {
+	p, ok := h.peopleProvider(r, w)
 	if !ok {
 		return
 	}
 	out := []map[string]any{}
 	for _, id := range []string{"library", "hot"} {
-		s, err := a.peopleShelf(r.Context(), id, a.kidMax(r), p)
+		s, err := h.peopleShelf(r.Context(), id, h.KidMax(r), p)
 		if err != nil {
-			webserver.Internal(w, "api", err)
+			webserver.Internal(w, "discover", err)
 			return
 		}
 		if len(s.People) < peopleShelfMin {
@@ -302,19 +303,19 @@ func (a *API) peopleShelves(w http.ResponseWriter, r *http.Request) {
 
 // peopleShelfOne answers GET /api/v1/people/shelves/{id}: one section's
 // people (library or hot), each with the line under their name.
-func (a *API) peopleShelfOne(w http.ResponseWriter, r *http.Request) {
+func (h *Handlers) peopleShelfOne(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	if peopleShelfTitles[id] == "" {
 		webserver.Fail(w, http.StatusNotFound, "no such people section")
 		return
 	}
-	p, ok := a.peopleProvider(r, w)
+	p, ok := h.peopleProvider(r, w)
 	if !ok {
 		return
 	}
-	s, err := a.peopleShelf(r.Context(), id, a.kidMax(r), p)
+	s, err := h.peopleShelf(r.Context(), id, h.KidMax(r), p)
 	if err != nil {
-		webserver.Internal(w, "api", err)
+		webserver.Internal(w, "discover", err)
 		return
 	}
 	webserver.WriteJSON(w, http.StatusOK, map[string]any{"id": s.ID, "title": s.Title, "people": s.People, "attribution": metadata.Attribution})

@@ -446,7 +446,7 @@ func (a *API) Routes(rt *webserver.Router) {
 	m.HandleFunc("GET /api/v1/imports", a.listImports)
 	m.HandleFunc("GET /api/v1/events", a.listEvents)
 	m.HandleFunc("GET /api/v1/jobs", a.listJobs)
-	a.peopleRoutes(m)
+	a.disc.PeopleRoutes(m)
 	a.dlh.CopyRoutes(m)
 	(&movies.Handlers{Lib: a.s.Library, KidMax: a.kidMax, AllowedTitleIDs: a.allowedTitleIDs}).Routes(m)
 	a.mf.Routes(m)

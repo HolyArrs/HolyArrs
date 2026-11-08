@@ -56,5 +56,9 @@ func (a *API) newDiscover() *discover.Handlers {
 		PartOn: a.partIsOn, TitleAllowed: a.titleAllowed, LibraryRating: a.libraryRating, KidItems: a.kidItems,
 		CardFresh: a.cardFresh, WithFreshRow: withFreshRow, OpenAsk: a.openAsk, OpenShowAsk: a.openShowAsk,
 		FillCardArt: a.fillCardArt, QueueCardItems: a.queueCardItems,
-		ServiceTop: func() discover.ServiceTopFetch { return a.s.ServiceTop }, ServiceTopCache: &a.serviceTop, WatchOn: &a.watchOn, FillTrailerKeys: a.fillTrailerKeys}}
+		ServiceTop: func() discover.ServiceTopFetch { return a.s.ServiceTop }, ServiceTopCache: &a.serviceTop, WatchOn: &a.watchOn, FillTrailerKeys: a.fillTrailerKeys,
+		KidKnownFor: a.kidKnownFor, LibraryMovieAllowed: a.libraryMovieAllowed,
+		LiveSource: func(ctx context.Context) discover.Lister { return a.liveSource(ctx) }}}
 }
+
+func peopleError(w http.ResponseWriter, err error) { discover.PeopleError(w, err) }

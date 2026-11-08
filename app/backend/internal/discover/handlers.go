@@ -44,10 +44,21 @@ type Deps struct {
 	ServiceTopCache *ServiceTopCache
 	WatchOn         *WatchOn
 	FillTrailerKeys func(r *http.Request, items []ItemView)
+	// KidKnownFor trims a person's known-for titles to a Kid's limit;
+	// LibraryMovieAllowed says whether a Library movie fits that limit.
+	KidKnownFor         func(ctx context.Context, max string, p *metadata.Person)
+	LibraryMovieAllowed func(ctx context.Context, max, tmdbID string) bool
+	// LiveSource lists Explore's live TMDB lists (the trending shelf).
+	LiveSource func(ctx context.Context) Lister
 }
 
 // ServiceTopFetch reads one region's per-service top lists.
 type ServiceTopFetch func(ctx context.Context, region string) (metadata.ServiceTop, error)
+
+// Lister answers one Explore list request.
+type Lister interface {
+	List(ctx context.Context, q engine.Request) ([]engine.Item, error)
+}
 
 // Handlers serves the Explore routes. Its state fields are private and
 // zero-value ready, so &Handlers{Deps: d} works.

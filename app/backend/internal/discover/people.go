@@ -1,4 +1,4 @@
-package api
+package discover
 
 import (
 	"encoding/json"
@@ -14,28 +14,29 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/discover"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/requests"
 )
 
-func (a *API) peopleRoutes(m *http.ServeMux) {
-	m.HandleFunc("GET /api/v1/people/search", a.searchPeople)
-	m.HandleFunc("GET /api/v1/people/popular", a.popularPeople)
-	m.HandleFunc("GET /api/v1/people/shelves", a.peopleShelves)
-	m.HandleFunc("GET /api/v1/people/shelves/{id}", a.peopleShelfOne)
-	m.HandleFunc("GET /api/v1/people/{id}", a.getPerson)
-	m.HandleFunc("POST /api/v1/people/{id}/movies/review", a.reviewPersonMovies)
-	m.HandleFunc("GET /api/v1/titles/{id}/people", a.titlePeople)
+func (h *Handlers) PeopleRoutes(m *http.ServeMux) {
+	m.HandleFunc("GET /api/v1/people/search", h.searchPeople)
+	m.HandleFunc("GET /api/v1/people/popular", h.popularPeople)
+	m.HandleFunc("GET /api/v1/people/shelves", h.peopleShelves)
+	m.HandleFunc("GET /api/v1/people/shelves/{id}", h.peopleShelfOne)
+	m.HandleFunc("GET /api/v1/people/{id}", h.getPerson)
+	m.HandleFunc("POST /api/v1/people/{id}/movies/review", h.reviewPersonMovies)
+	m.HandleFunc("GET /api/v1/titles/{id}/people", h.titlePeople)
 }
 
-func peopleError(w http.ResponseWriter, err error) {
+// PeopleError answers a people provider error without its details.
+func PeopleError(w http.ResponseWriter, err error) {
 	switch {
 	case errors.Is(err, metadata.ErrNotFound):
 		webserver.Fail(w, http.StatusNotFound, "no such person")
 	case errors.Is(err, metadata.ErrNoAccess):
 		webserver.Fail(w, http.StatusServiceUnavailable, "people results are unavailable; try again shortly")
-	case discover.DetailsBusy(err):
+	case DetailsBusy(err):
 		w.Header().Set("Retry-After", "5")
 		webserver.Fail(w, http.StatusServiceUnavailable, "people results are busy; try again in a moment")
 	default:
@@ -45,8 +46,8 @@ func peopleError(w http.ResponseWriter, err error) {
 	}
 }
 
-func (a *API) peopleProvider(r *http.Request, w http.ResponseWriter) (metadata.PeopleProvider, bool) {
-	if p, ok := metadata.PeopleProviderFor(r.Context(), a.s.Metadata); ok {
+func (h *Handlers) peopleProvider(r *http.Request, w http.ResponseWriter) (metadata.PeopleProvider, bool) {
+	if p, ok := metadata.PeopleProviderFor(r.Context(), h.Metadata); ok {
 		return p, true
 	}
 	webserver.Fail(w, http.StatusServiceUnavailable, "people results are unavailable for this movie metadata provider")
@@ -62,27 +63,27 @@ func intQuery(r *http.Request, name string, fallback, maximum int) (int, bool) {
 	return n, err == nil && n >= 1 && n <= maximum
 }
 
-func (a *API) searchPeople(w http.ResponseWriter, r *http.Request) {
+func (h *Handlers) searchPeople(w http.ResponseWriter, r *http.Request) {
 	q := strings.TrimSpace(r.URL.Query().Get("q"))
 	page, pageOK := intQuery(r, "page", 1, 500)
 	if q == "" || len(q) > 200 || !pageOK {
 		webserver.Fail(w, http.StatusBadRequest, "send ?q=<person name> and optional &page=1..500")
 		return
 	}
-	p, ok := a.peopleProvider(r, w)
+	p, ok := h.peopleProvider(r, w)
 	if !ok {
 		return
 	}
 	result, err := p.SearchPeople(r.Context(), q, page)
 	if err != nil {
-		peopleError(w, err)
+		PeopleError(w, err)
 		return
 	}
 	if result.People == nil {
 		result.People = []metadata.Person{}
 	}
 	for i := range result.People {
-		a.kidKnownFor(r.Context(), a.kidMax(r), &result.People[i])
+		h.KidKnownFor(r.Context(), h.KidMax(r), &result.People[i])
 	}
 	webserver.WriteJSON(w, http.StatusOK, map[string]any{"people": result.People, "page": result.Page, "total_pages": result.TotalPages,
 		"total_results": result.TotalResults, "attribution": metadata.Attribution})
@@ -92,13 +93,13 @@ func (a *API) searchPeople(w http.ResponseWriter, r *http.Request) {
 // tab popular list, re-ranked by fame from TMDB's first eight popular pages
 // (20 a page). Adult people and people without a picture or a well-known
 // title never appear; a Kid's known_for is cut like a search's.
-func (a *API) popularPeople(w http.ResponseWriter, r *http.Request) {
+func (h *Handlers) popularPeople(w http.ResponseWriter, r *http.Request) {
 	page, pageOK := intQuery(r, "page", 1, popularPages)
 	if !pageOK {
 		webserver.Fail(w, http.StatusBadRequest, "page must be 1..8")
 		return
 	}
-	p, ok := a.peopleProvider(r, w)
+	p, ok := h.peopleProvider(r, w)
 	if !ok {
 		return
 	}
@@ -107,9 +108,9 @@ func (a *API) popularPeople(w http.ResponseWriter, r *http.Request) {
 		webserver.Fail(w, http.StatusServiceUnavailable, "popular people are unavailable for this movie metadata provider")
 		return
 	}
-	pool, err := a.popularPool(r.Context(), p, pop)
+	pool, err := h.popularPool(r.Context(), p, pop)
 	if err != nil {
-		peopleError(w, err)
+		PeopleError(w, err)
 		return
 	}
 	people := []metadata.Person{}
@@ -117,7 +118,7 @@ func (a *API) popularPeople(w http.ResponseWriter, r *http.Request) {
 		people = append(people, pool[from:min(len(pool), from+popularPageSize)]...)
 	}
 	for i := range people {
-		a.kidKnownFor(r.Context(), a.kidMax(r), &people[i])
+		h.KidKnownFor(r.Context(), h.KidMax(r), &people[i])
 	}
 	total := (len(pool) + popularPageSize - 1) / popularPageSize
 	webserver.WriteJSON(w, http.StatusOK, map[string]any{"people": people, "page": page, "total_pages": total,
@@ -126,12 +127,12 @@ func (a *API) popularPeople(w http.ResponseWriter, r *http.Request) {
 
 type peopleMovieView struct {
 	metadata.Movie
-	Roles      []string  `json:"roles"`
-	Characters []string  `json:"characters"`
-	Popularity float64   `json:"popularity,omitempty"`
-	TitleID    int64     `json:"title_id,omitempty"`
-	NeverAdd   bool      `json:"never_add"`
-	Ask        *askBrief `json:"ask,omitempty"`
+	Roles      []string           `json:"roles"`
+	Characters []string           `json:"characters"`
+	Popularity float64            `json:"popularity,omitempty"`
+	TitleID    int64              `json:"title_id,omitempty"`
+	NeverAdd   bool               `json:"never_add"`
+	Ask        *requests.AskBrief `json:"ask,omitempty"`
 }
 
 func hasRole(roles []string, role string) bool {
@@ -143,10 +144,10 @@ func hasRole(roles []string, role string) bool {
 	return false
 }
 
-func (a *API) peopleMovieViews(r *http.Request, credits []metadata.PersonMovieCredit) ([]peopleMovieView, error) {
+func (h *Handlers) peopleMovieViews(r *http.Request, credits []metadata.PersonMovieCredit) ([]peopleMovieView, error) {
 	out := make([]peopleMovieView, 0, len(credits))
-	db := a.s.Store.Read()
-	me := a.person(r).UserID
+	db := h.Store.Read()
+	me := h.UserID(r)
 	for _, c := range credits {
 		tmdbID := c.Movie.IDs["tmdb"]
 		if tmdbID == "" {
@@ -160,7 +161,7 @@ func (a *API) peopleMovieViews(r *http.Request, credits []metadata.PersonMovieCr
 		if v.NeverAdd, err = library.OnNeverAdd(r.Context(), db, tmdbID); err != nil {
 			return nil, err
 		}
-		if v.Ask, err = a.openAsk(r.Context(), tmdbID, me); err != nil {
+		if v.Ask, err = h.OpenAsk(r.Context(), tmdbID, me); err != nil {
 			return nil, err
 		}
 		out = append(out, v)
@@ -180,9 +181,9 @@ func movieReleased(m metadata.Movie, now time.Time) (time.Time, bool) {
 	return time.Time{}, false
 }
 
-// personStats is the hero's strip: years active, film count and the
+// PersonStats is the hero's strip: years active, film count and the
 // average audience score of acting credits with at least 25 votes.
-type personStats struct {
+type PersonStats struct {
 	FirstYear int  `json:"first_year,omitempty"`
 	LastYear  int  `json:"last_year,omitempty"`
 	Active    bool `json:"active"`
@@ -194,8 +195,8 @@ type personStats struct {
 	Rated  int     `json:"rated,omitempty"`
 }
 
-func peopleStats(credits []metadata.PersonMovieCredit, now time.Time) personStats {
-	st := personStats{Films: len(credits)}
+func peopleStats(credits []metadata.PersonMovieCredit, now time.Time) PersonStats {
+	st := PersonStats{Films: len(credits)}
 	sum := 0.0
 	for _, c := range credits {
 		if c.Movie.Year > 0 {
@@ -221,7 +222,7 @@ func peopleStats(credits []metadata.PersonMovieCredit, now time.Time) personStat
 // the most frequent ones up, so the page can show who they often work
 // with. A title counts when its stored cast names the person or it is one
 // of their movie credits. Fewer than four found people show nothing.
-func (a *API) coStars(r *http.Request, p metadata.PeopleProvider, self string, titles []peopleMovieView) []metadata.Person {
+func (h *Handlers) coStars(r *http.Request, p metadata.PeopleProvider, self string, titles []peopleMovieView) []metadata.Person {
 	out := []metadata.Person{}
 	if p == nil {
 		return out
@@ -231,11 +232,11 @@ func (a *API) coStars(r *http.Request, p metadata.PeopleProvider, self string, t
 		ids[t.TitleID] = true
 	}
 	where := "t.kind IN ('movie', 'show') AND t.state != 'removed'"
-	clause, args := kidSQL(a.kidMax(r))
+	clause, args := mediafiles.KidSQL(h.KidMax(r))
 	if clause != "" {
 		where += " AND " + clause
 	}
-	rows, err := a.s.Store.Read().QueryContext(r.Context(), "SELECT t.id, t.people FROM titles t WHERE "+where+" ORDER BY t.id", args...)
+	rows, err := h.Store.Read().QueryContext(r.Context(), "SELECT t.id, t.people FROM titles t WHERE "+where+" ORDER BY t.id", args...)
 	if err != nil {
 		return out
 	}
@@ -330,20 +331,20 @@ func sortPeopleMovies(movies []metadata.PersonMovieCredit, order string, now tim
 	})
 }
 
-func (a *API) personCredits(r *http.Request, w http.ResponseWriter) (metadata.Person, metadata.PersonMoviePage, bool) {
-	p, ok := a.peopleProvider(r, w)
+func (h *Handlers) personCredits(r *http.Request, w http.ResponseWriter) (metadata.Person, metadata.PersonMoviePage, bool) {
+	p, ok := h.peopleProvider(r, w)
 	if !ok {
 		return metadata.Person{}, metadata.PersonMoviePage{}, false
 	}
 	id := "tmdb:" + r.PathValue("id")
 	person, err := p.Person(r.Context(), id)
 	if err != nil {
-		peopleError(w, err)
+		PeopleError(w, err)
 		return metadata.Person{}, metadata.PersonMoviePage{}, false
 	}
 	credits, err := p.PersonMovies(r.Context(), id)
 	if err != nil {
-		peopleError(w, err)
+		PeopleError(w, err)
 		return metadata.Person{}, metadata.PersonMoviePage{}, false
 	}
 	order := strings.ToLower(strings.TrimSpace(r.URL.Query().Get("sort")))
@@ -365,11 +366,11 @@ func (a *API) personCredits(r *http.Request, w http.ResponseWriter) (metadata.Pe
 	}
 	// A Kid sees only credits in the Library with a rating their limit
 	// allows; the rest of the filmography stays hidden.
-	max := a.kidMax(r)
-	a.kidKnownFor(r.Context(), max, &person)
+	max := h.KidMax(r)
+	h.KidKnownFor(r.Context(), max, &person)
 	filtered := credits.Movies[:0]
 	for _, c := range credits.Movies {
-		if (role == "all" || hasRole(c.Roles, role)) && (max == "" || a.libraryMovieAllowed(r.Context(), max, c.Movie.IDs["tmdb"])) {
+		if (role == "all" || hasRole(c.Roles, role)) && (max == "" || h.LibraryMovieAllowed(r.Context(), max, c.Movie.IDs["tmdb"])) {
 			filtered = append(filtered, c)
 		}
 	}
@@ -377,18 +378,18 @@ func (a *API) personCredits(r *http.Request, w http.ResponseWriter) (metadata.Pe
 	return person, credits, true
 }
 
-func (a *API) getPerson(w http.ResponseWriter, r *http.Request) {
+func (h *Handlers) getPerson(w http.ResponseWriter, r *http.Request) {
 	page, pageOK := intQuery(r, "page", 1, 500)
 	size, sizeOK := intQuery(r, "page_size", 24, 100)
 	if !pageOK || !sizeOK {
 		webserver.Fail(w, http.StatusBadRequest, "page must be 1..500 and page_size must be 1..100")
 		return
 	}
-	person, credits, ok := a.personCredits(r, w)
+	person, credits, ok := h.personCredits(r, w)
 	if !ok {
 		return
 	}
-	p, _ := a.peopleProvider(r, w)
+	p, _ := h.peopleProvider(r, w)
 	total := len(credits.Movies)
 	totalPages := 0
 	if total > 0 {
@@ -396,22 +397,22 @@ func (a *API) getPerson(w http.ResponseWriter, r *http.Request) {
 	}
 	start := min((page-1)*size, total)
 	end := min(start+size, total)
-	views, err := a.peopleMovieViews(r, credits.Movies[start:end])
+	views, err := h.peopleMovieViews(r, credits.Movies[start:end])
 	if err != nil {
-		webserver.Internal(w, "api", err)
+		webserver.Internal(w, "discover", err)
 		return
 	}
 	// The personal rows (In your Library, You asked for) and Known for come
 	// from every credit this member may see, so Kid limits hold here too.
-	all, err := a.peopleMovieViews(r, credits.Movies)
+	all, err := h.peopleMovieViews(r, credits.Movies)
 	if err != nil {
-		webserver.Internal(w, "api", err)
+		webserver.Internal(w, "discover", err)
 		return
 	}
 	now := time.Now().UTC()
 	stats := peopleStats(credits.Movies, now)
 	// TV credits only count for members without a Kid limit (a Kid sees Library movies only).
-	if c, ok := metadata.PersonShowCounterFor(r.Context(), a.s.Metadata); ok && a.kidMax(r) == "" {
+	if c, ok := metadata.PersonShowCounterFor(r.Context(), h.Metadata); ok && h.KidMax(r) == "" {
 		if n, err := c.PersonShowCount(r.Context(), "tmdb:"+r.PathValue("id")); err == nil && n > 0 {
 			stats.Shows, stats.Titles = n, stats.Films+n
 		}
@@ -441,21 +442,21 @@ func (a *API) getPerson(w http.ResponseWriter, r *http.Request) {
 	webserver.WriteJSON(w, http.StatusOK, map[string]any{"person": person, "movies": views, "page": page, "page_size": size,
 		"total_pages": totalPages, "total_results": total, "complete": credits.Complete, "provider_pages": credits.ProviderPages,
 		"library": library, "asked": asked, "known_for": known, "coming_soon": soon,
-		"stats": stats, "often_with": a.coStars(r, p, person.Name, library), "attribution": metadata.Attribution})
+		"stats": stats, "often_with": h.coStars(r, p, person.Name, library), "attribution": metadata.Attribution})
 }
 
-func (a *API) reviewPersonMovies(w http.ResponseWriter, r *http.Request) {
+func (h *Handlers) reviewPersonMovies(w http.ResponseWriter, r *http.Request) {
 	var body struct {
 		TMDBIDs []string `json:"tmdb_ids"`
 	}
-	if !decode(w, r, &body, `send {"tmdb_ids":["<number>"]}`) {
+	if !webserver.Decode(w, r, &body, `send {"tmdb_ids":["<number>"]}`) {
 		return
 	}
 	if len(body.TMDBIDs) == 0 || len(body.TMDBIDs) > 100 {
 		webserver.Fail(w, http.StatusBadRequest, "choose between 1 and 100 movies")
 		return
 	}
-	_, credits, ok := a.personCredits(r, w)
+	_, credits, ok := h.personCredits(r, w)
 	if !ok {
 		return
 	}
@@ -481,25 +482,25 @@ func (a *API) reviewPersonMovies(w http.ResponseWriter, r *http.Request) {
 			selectedCredits = append(selectedCredits, credit)
 		}
 	}
-	selected, err := a.peopleMovieViews(r, selectedCredits)
+	selected, err := h.peopleMovieViews(r, selectedCredits)
 	if err != nil {
-		webserver.Internal(w, "api", err)
+		webserver.Internal(w, "discover", err)
 		return
 	}
 	webserver.WriteJSON(w, http.StatusOK, map[string]any{"movies": selected, "automatic_future_credits": false})
 }
 
-func (a *API) titlePeople(w http.ResponseWriter, r *http.Request) {
+func (h *Handlers) titlePeople(w http.ResponseWriter, r *http.Request) {
 	id, ok := pathID(w, r)
 	if !ok {
 		return
 	}
 	var title mediafiles.Title
-	if err := database.Get(r.Context(), a.s.Store.Read(), "titles", id, &title); err != nil {
+	if err := database.Get(r.Context(), h.Store.Read(), "titles", id, &title); err != nil {
 		if errors.Is(err, database.ErrNotFound) {
 			webserver.Fail(w, http.StatusNotFound, "not found")
 		} else {
-			webserver.Internal(w, "api", err)
+			webserver.Internal(w, "discover", err)
 		}
 		return
 	}
@@ -510,25 +511,34 @@ func (a *API) titlePeople(w http.ResponseWriter, r *http.Request) {
 	var people []metadata.MoviePersonCredit
 	var err error
 	if title.Kind == "show" {
-		sp, ok := metadata.ShowPeoplerFor(r.Context(), a.s.Metadata)
+		sp, ok := metadata.ShowPeoplerFor(r.Context(), h.Metadata)
 		if !ok {
 			webserver.Fail(w, http.StatusServiceUnavailable, "people results are unavailable for this show metadata provider")
 			return
 		}
 		people, err = sp.ShowPeople(r.Context(), "tmdb:"+title.SourceIDs["tmdb"])
 	} else {
-		p, ok := a.peopleProvider(r, w)
+		p, ok := h.peopleProvider(r, w)
 		if !ok {
 			return
 		}
 		people, err = p.MoviePeople(r.Context(), "tmdb:"+title.SourceIDs["tmdb"])
 	}
 	if err != nil {
-		peopleError(w, err)
+		PeopleError(w, err)
 		return
 	}
 	if people == nil {
 		people = []metadata.MoviePersonCredit{}
 	}
 	webserver.WriteJSON(w, http.StatusOK, map[string]any{"people": people, "complete": false, "attribution": metadata.Attribution})
+}
+
+func pathID(w http.ResponseWriter, r *http.Request) (int64, bool) {
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil || id <= 0 {
+		webserver.Fail(w, http.StatusNotFound, "not found")
+		return 0, false
+	}
+	return id, true
 }
