@@ -32,7 +32,7 @@ var metadataAddrs = []net.IP{net.ParseIP("fd00:ec2::254"), net.ParseIP("100.100.
 // NotMetadata allows the local network but never link-local addresses
 // (169.254.0.0/16, where cloud metadata services answer, and fe80::/10) or
 // the other metadata addresses. It also refuses unspecified, multicast and
-// broadcast addresses, NAT64 ranges (which can carry a metadata address
+// broadcast addresses, NAT64 and 6to4 ranges (which can carry a metadata address
 // inside) and 192.0.0.0/24. It is the policy for anything that may reach
 // the local network.
 func NotMetadata(ip net.IP) bool {
@@ -56,7 +56,7 @@ func NotMetadata(ip net.IP) bool {
 // oddRanges are refused even where the local network is allowed.
 var oddRanges = func() []*net.IPNet {
 	var out []*net.IPNet
-	for _, c := range []string{"64:ff9b::/96", "64:ff9b:1::/48", "192.0.0.0/24"} {
+	for _, c := range []string{"64:ff9b::/96", "64:ff9b:1::/48", "2002::/16", "192.0.0.0/24"} {
 		_, n, _ := net.ParseCIDR(c)
 		out = append(out, n)
 	}

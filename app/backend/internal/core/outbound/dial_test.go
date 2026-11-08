@@ -23,7 +23,7 @@ func TestPublicOnly(t *testing.T) {
 func TestNotMetadataOddRanges(t *testing.T) {
 	for addr, want := range map[string]bool{
 		"0.0.0.0": false, "::": false, "224.0.0.1": false, "255.255.255.255": false,
-		"64:ff9b::a9fe:a9fe": false, "192.0.0.192": false,
+		"64:ff9b::a9fe:a9fe": false, "192.0.0.192": false, "2002:a9fe:a9fe::": false,
 		"192.168.1.2": true, "127.0.0.1": true, "10.0.0.5": true,
 	} {
 		if got := NotMetadata(net.ParseIP(addr)); got != want {
