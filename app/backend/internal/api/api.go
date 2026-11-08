@@ -480,6 +480,7 @@ func (a *API) Routes(rt *webserver.Router) {
 		m.HandleFunc("PUT /api/v1/settings/tvdb-key", a.putTVDBKey)
 	}
 	a.askRoutes(m)
+	a.alertRoutes(m)
 	if startup.FeatureOn(features.PlexWatchlists) {
 		a.watchlistRoutes(m)
 	}

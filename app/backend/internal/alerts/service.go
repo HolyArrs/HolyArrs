@@ -208,17 +208,6 @@ func fillApp(in Input, a *domain.Alert, isNew bool) error {
 	return nil
 }
 
-func nameUsed(tx *sql.Tx, name string, id int64) error {
-	var n int
-	if err := tx.QueryRow("SELECT count(*) FROM alerts WHERE name = ? COLLATE NOCASE AND id != ?", name, id).Scan(&n); err != nil {
-		return err
-	}
-	if n > 0 {
-		return ErrNameUsed
-	}
-	return nil
-}
-
 // Add stores a new Alert; its secrets go to the vault.
 func Add(ctx context.Context, s *database.Store, v *secrets.Vault, in Input, by domain.Actor) (domain.Alert, error) {
 	var a domain.Alert
@@ -346,14 +335,7 @@ func Remove(ctx context.Context, s *database.Store, id int64) error {
 				}
 			}
 		}
-		res, err := tx.Exec("DELETE FROM alerts WHERE id = ?", id)
-		if err != nil {
-			return err
-		}
-		if n, _ := res.RowsAffected(); n == 0 {
-			return database.ErrNotFound
-		}
-		return nil
+		return deleteRow(tx, id)
 	})
 }
 

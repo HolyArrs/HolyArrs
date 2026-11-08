@@ -227,7 +227,7 @@ func client(a domain.Alert) *http.Client {
 // failing does not stop the others; the errors are joined, recorded on the
 // Alert and written as an Event.
 func (s *Sender) Send(ctx context.Context, m Message) error {
-	as, err := database.Select[domain.Alert](ctx, s.Store.Read(), "alerts", "enabled = 1 ORDER BY id")
+	as, err := listEnabled(ctx, s.Store.Read())
 	if err != nil {
 		return err
 	}
@@ -355,11 +355,9 @@ func (s *Sender) record(ctx context.Context, a domain.Alert, m Message, sendErr 
 	}
 	err := s.Store.Write(context.WithoutCancel(ctx), func(tx *sql.Tx) error {
 		if sendErr != nil {
-			_, err := tx.Exec("UPDATE alerts SET last_error = ? WHERE id = ?", msg, a.ID)
-			return err
+			return markFailed(tx, a.ID, msg)
 		}
-		_, err := tx.Exec("UPDATE alerts SET last_sent_at = ?, last_error = '' WHERE id = ?", now, a.ID)
-		return err
+		return markSent(tx, a.ID, now)
 	})
 	if err != nil {
 		log.Printf("alerts: record %s: %v", a.Name, err)
@@ -374,8 +372,7 @@ func (s *Sender) record(ctx context.Context, a domain.Alert, m Message, sendErr 
 			Data: map[string]any{"alert_id": a.ID, "moment": m.Moment, "error": msg}, GroupKey: "alert:" + strconv.FormatInt(a.ID, 10)})
 	}
 	if s.OnResult != nil {
-		var fresh domain.Alert
-		if database.Get(ctx, s.Store.Read(), "alerts", a.ID, &fresh) == nil {
+		if fresh, err := get(ctx, s.Store.Read(), a.ID); err == nil {
 			s.OnResult(fresh)
 		}
 	}
