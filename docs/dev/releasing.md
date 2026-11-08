@@ -34,3 +34,17 @@ The update check in the app reads a signed update list. Each release adds its en
 ## Taking a release back
 
 If a release is bad, move `:beta` back to the previous version and mark the bad one in the update list, so installs don't offer it. Keep the tag.
+
+## Unraid test template
+
+No NAS package is published yet. `deploy/release/nas-template.py` writes an Unraid user template for testing one exact image on your own box. It does not pull, install or publish anything.
+
+```sh
+python deploy/release/nas-template.py --image 'ghcr.io/coderluii/holyarrs@sha256:<digest>' --config '/mnt/<pool>/appdata/holyarrs-test' --movies /mnt/user/holyarrs-test-data/movies --downloads /mnt/user/holyarrs-test-data/downloads --port 6262 --output holyarrs-test.xml
+```
+
+- Use the registry manifest digest of the image you checked, not a Docker image ID.
+- `--config` must be a pool path such as `/mnt/<pool>/appdata/holyarrs-test`. `/mnt/user` and `/mnt/user0` are FUSE paths, and the tool refuses them.
+- `--movies`, `--tv`, `--music` and `--downloads` are optional. Separate media paths are separate mounts, so imports between them are copied.
+- The template sets `PUID=99`, `PGID=100` and `UMASK=022`. Give that account write access to the test media.
+- Put the file in `/boot/config/plugins/dockerMan/templates-user/` and pick it under Docker > Add Container > Template.
