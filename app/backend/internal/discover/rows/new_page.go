@@ -70,9 +70,6 @@ type NewFact struct {
 	Season int
 }
 
-// NewWindow returns the window of a kind of newness, 0 for an unknown kind.
-func NewWindow(kind string) time.Duration { return newWindows[kind] }
-
 // Freshness returns exp(-age/tau) inside the kind's window and 0 outside it.
 // An upcoming title within its window counts as 1.
 func Freshness(f NewFact, now time.Time) float64 {
