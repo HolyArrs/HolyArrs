@@ -1,10 +1,13 @@
 <script lang="ts">
-	import type { IconName } from '#lib/ui/Icon.svelte';
+	import HomeOverview from './HomeOverview.svelte';
+	import { createHomeAttention } from './home-attention.svelte.ts';
+	import { createHomeOverview } from './home-overview.svelte.ts';
+	import { createHomeDownloads } from './home-downloads.svelte.ts';
+	import { createHomeDisk } from './home-disk.svelte.ts';
 	import type { Fresh } from '#lib/ui/fresh.ts';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
 	import IconButton from '#lib/ui/IconButton.svelte';
-	import SettingsTile from '#lib/ui/SettingsTile.svelte';
 	import ArtPill from '#lib/ui/ArtPill.svelte';
 	import Shelf from '#lib/ui/Shelf.svelte';
 	import WideCard from '#lib/ui/WideCard.svelte';
@@ -12,15 +15,12 @@
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import PageLoader from '#lib/ui/PageLoader.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
-	import { stageOf, decisions } from '#lib/downloads/index.ts';
 	import { artGone, lightOnDark } from '#lib/art-check.ts';
-	import { askArtist, askDetails, wantDetails } from '#lib/requests/index.ts';
-	import { arrivedHead, attention, downloadMoved, downloadingNow, fallbackRows, freeSpace, arrivedTitle, groupAttention, homeFailures, homeStrip, libraryCards, moreLink, n, partCount, shownState, uncheckedLine, type Attention, type AttentionGroup, type HomeAnswer, type HomeCard, type HomeRow } from './home.ts';
-	import { METADATA_DOWN, metadataOutage, MetadataNotice } from '#lib/metadata/index.ts';
-	import { homeFacts, homeGreeting, homeNews, localDay } from './home-line.ts';
+	import { arrivedHead, attention, downloadMoved, downloadingNow, fallbackRows, homeStrip, n, type HomeAnswer, type HomeCard, type HomeRow } from './home.ts';
+	import { MetadataNotice } from '#lib/metadata/index.ts';
+	import { homeFacts, homeGreeting, homeNews } from './home-line.ts';
 	import type { Health, HealthChecks } from '#lib/health/index.ts';
 	import { onMount } from 'svelte';
-	import { SvelteSet } from 'svelte/reactivity';
 	import { to } from '#lib/core/paths.ts';
 	import { api } from '#lib/core/api.ts';
 	import { afterHandoff } from '#lib/core/loader.ts';
@@ -28,10 +28,8 @@
 	import { session } from '#lib/core/session.svelte.ts';
 	import { proxied, sized } from '#lib/core/tmdb-image.ts';
 	import { inbox } from '#lib/core/inbox.svelte.ts';
-	import { agoLong, bytes, duration, percent } from '#lib/core/format.ts';
 	import type { DownloadRow } from '#lib/core/types.ts';
 	import type { Ask, LibraryFolder } from '#lib/core/types.ts';
-	import type { Tint } from '#lib/core/settings.ts';
 
 	// Home is "my stuff": the server sends the row order per person (GET /home); every row hides when it has nothing.
 	let loaded = $state(false);
@@ -63,106 +61,31 @@
 
 	const rows = $derived<HomeRow[]>(home?.rows ?? (loaded ? fallbackRows(owner) : []));
 	// Sources and Downloaders, from GET /health and the health checks. A failing Source is paused by the server and its check warns; a Downloader carries its own state. Only "disabled" is turned off.
-	const failingChecks = (kind: string) => (checks?.checks ?? []).filter((c) => c.kind === kind && shownState(c) !== 'ok');
-	const srcs = $derived(partCount(health?.sources, failingChecks('source').map((c) => c.subject)));
-	const dls = $derived(partCount(health?.downloaders, failingChecks('downloader').map((c) => c.subject)));
-	const partsRead = $derived(settled && !!health && !uncheckedParts);
-	const steps = $derived([
-		{ done: folders.length > 0, text: 'Choose a Library folder', detail: 'Tell HolyArrs where finished media should live.', href: '/settings/library-folders', cta: 'Choose a folder' },
-		{ done: srcs.total > 0, text: 'Add a Source', detail: 'Connect a place where HolyArrs can find Releases.', href: '/settings/sources', cta: 'Add a Source' },
-		{ done: dls.total > 0, text: 'Add a Downloader', detail: 'Connect the app that fetches chosen Releases.', href: '/settings/downloaders', cta: 'Add a Downloader' },
-		{ done: false, text: 'Add your first title', detail: 'Search for something new, or import folders you already have.', href: '/search', cta: 'Find a title' }
-	]);
-	const doneCount = $derived(steps.filter((s) => s.done).length);
-	const nextStep = $derived(steps.find((s) => !s.done) ?? steps[3]);
-
-	/** Which parts have a problem, in one short line: the name when it is one ("SABnzbd has a problem"), else how many. Needs attention names them all. */
-	function troubled(kind: 'source' | 'downloader', parts: { name: string; state: string }[] | null | undefined): string {
-		const names = new Set<string>();
-		for (const p of parts ?? []) if (!['ok', 'working', 'enabled', 'disabled'].includes(p.state) && !/ \(removed \d+\)$/.test(p.name)) names.add(p.name);
-		for (const c of failingChecks(kind)) if (c.subject) names.add(c.subject);
-		const list = [...names];
-		if (!list.length) return '';
-		return list.length === 1 ? `${list[0]} has a problem` : `${n(list.length)} have a problem`;
-	}
-	const partLine = (p: { total: number; off: number }, trouble: string) => trouble || (p.off ? `${n(p.off)} turned off` : 'All working');
-	// Nothing can be found or fetched without a Source and a Downloader that are on. The health checks only cover the ones that exist, so Home adds these itself once setup is over (the Welcome card covers it before that).
-	const setupGaps = $derived.by((): Attention[] => {
-		if (!owner || !partsRead || rows.includes('welcome')) return [];
-		const gap = (key: string, title: string, reason: string, path: string, action: string): Attention => ({ key, tone: 'wait', word: 'Warning', text: `${title}: ${reason}.`, title, reason, cause: `setup:${key}`, href: admin ? path : '/status', action: admin ? action : 'Look' });
-		const out: Attention[] = [];
-		if (!srcs.total) out.push(gap('no-sources', 'Sources', 'none added yet', '/settings/sources', 'Add'));
-		else if (!srcs.on) out.push(gap('sources-off', 'Sources', 'all turned off', '/settings/sources', 'Fix'));
-		if (!dls.total) out.push(gap('no-downloaders', 'Downloaders', 'none added yet', '/settings/downloaders', 'Add'));
-		else if (!dls.on) out.push(gap('downloaders-off', 'Downloaders', 'all turned off', '/settings/downloaders', 'Fix'));
-		// The health checks run every few minutes; /health is read now. A part it already reports as failing gets its row at once.
-		if (srcs.failing && !failingChecks('source').length) out.push(gap('sources-trouble', srcs.failing === 1 ? 'Source' : `${n(srcs.failing)} Sources`, srcs.failing === 1 ? 'has a problem' : 'have a problem', '/settings/sources', 'Fix'));
-		if (dls.failing && !failingChecks('downloader').length) out.push(gap('downloaders-trouble', dls.failing === 1 ? 'Downloader' : `${n(dls.failing)} Downloaders`, dls.failing === 1 ? 'has a problem' : 'have a problem', '/settings/downloaders', 'Fix'));
-		return out;
-	});
-	// Needs attention is what needs you: failed downloads or imports (the same rule as Downloads), decisions, health problems and a metadata outage while it lasts. Decisions come from the list the layout keeps fresh.
-	const fixes = $derived(
-		owner
-			? [
-					...attention({
-						failed: homeFailures(downloads),
-						decisions: manager ? decisions.items : [],
-						health: checks?.checks ?? [],
-						metadata: metadataOutage.s.down ? METADATA_DOWN : undefined,
-						admin
-					}),
-					...setupGaps
-				]
-			: []
-	);
-	const unchecked = $derived(owner && (uncheckedDl || uncheckedHealth || uncheckedParts));
-	// How bad it is, for the colour: a failure is red, a warning (an update, a low disk) is amber.
-	const worst = $derived(fixes.some((f) => f.tone === 'fail') ? 'fail' : fixes.length || unchecked ? 'wait' : 'ok');
-	const attTint = $derived<Tint>(!settled ? 'gray' : worst === 'fail' ? 'red' : worst === 'wait' ? 'amber' : 'green');
-	// Items that share a cause are one row ("2 downloads failed").
-	const fixRows = $derived(groupAttention(fixes));
-	/** One row in a few words: "6 downloads failed", "2 Sources have a problem", "Downloader: SABnzbd not answering". */
-	const rowLine = (g: AttentionGroup) => {
-		const cause = g.items[0].cause;
-		if (g.items.length > 1) {
-			if (!/^(health|setup):/.test(cause)) return g.title;
-			// The System row names the parts; the tile keeps "2 Sources have a problem".
-			const names = g.items.map((i) => i.subject).filter(Boolean).join(', ');
-			return `${g.title} ${names && g.reason.startsWith(`${names} `) ? g.reason.slice(names.length + 1) : g.reason}`;
-		}
-		// A folder's path is on the System row; the tile keeps the words.
-		return `${g.title}: ${/^health:(library_folder|disk_space):/.test(cause) ? g.reason.split(': ')[0] : g.reason}`;
+	const attentionCtx = {
+		get checks() { return checks; },
+		get health() { return health; },
+		get settled() { return settled; },
+		get uncheckedParts() { return uncheckedParts; },
+		get folders() { return folders; },
+		get owner() { return owner; },
+		get rows() { return rows; },
+		get admin() { return admin; },
+		get downloads() { return downloads; },
+		get manager() { return manager; },
+		get uncheckedDl() { return uncheckedDl; },
+		get uncheckedHealth() { return uncheckedHealth; },
+		get home() { return home; },
+		get asks() { return asks; },
 	};
-	// The Home tile names the worst row and says how many more things there are, so the number adds up.
-	const fixLine = $derived(fixRows.length ? rowLine(fixRows[0]) : '');
-	const fixMore = $derived(fixRows.length ? fixes.length - fixRows[0].items.length : 0);
-	// The Needs attention tile opens the page of the row it names (the worst one).
-	const fixHref = $derived(fixRows[0]?.href ?? (admin ? '/settings/health' : '/status'));
-	// System lists each cause as a row; four fit, the rest link to the page that holds most of them.
-	const fixShown = $derived(fixRows.slice(0, 4));
-	const fixHidden = $derived(moreLink(fixRows.slice(4), admin));
-	// What passed, for the all-good state: each kind of check that has no problem, once.
-	const CHECK_WORDS: Record<string, string> = { library_folder: 'Library folders', disk_space: 'Disk space', source: 'Sources', downloader: 'Downloaders', backups: 'Backups', update: 'Updates', config_disk: 'Config folder', config_folder: 'Config folder', waiting_downloads: 'Downloads', trailers: 'Trailers' };
-	const passedCount = $derived((checks?.checks ?? []).filter((c) => shownState(c) === 'ok').length);
-	const passed = $derived.by(() => {
-		const bad = new Set((checks?.checks ?? []).filter((c) => shownState(c) !== 'ok').map((c) => CHECK_WORDS[c.kind]));
-		return [...new Set((checks?.checks ?? []).map((c) => CHECK_WORDS[c.kind]).filter((w) => w && !bad.has(w)))];
-	});
-	// Your Library: one card per kind that is on, and for owners what it all takes on disk.
-	const libCards = $derived(libraryCards(home?.library, manager ? '/downloads' : undefined));
-	const diskTotal = $derived(libCards.reduce((t, c) => t + c.size, 0));
-	const showDisk = $derived(owner && libCards.length > 0);
-	const waiting = $derived(asks.filter((a) => a.state === 'asked'));
-	const mine = $derived(asks.filter((a) => a.mine && a.state !== 'available'));
-	const mineShown = $derived(mine.slice(0, 20));
+	const attentionView = createHomeAttention(attentionCtx);
 	// A turned-down ask is not open: it is counted apart.
-	const mineOpen = $derived(mine.filter((a) => a.state !== 'turned_down').length);
-	const mineDeclined = $derived(mine.length - mineOpen);
+	const mineOpen = $derived(attentionView.mine.filter((a) => a.state !== 'turned_down').length);
+	const mineDeclined = $derived(attentionView.mine.length - mineOpen);
 	const asksLine = $derived([mineOpen ? `${n(mineOpen)} still open` : '', mineDeclined ? `${n(mineDeclined)} turned down` : ''].filter(Boolean).join(' · '));
 	const canAsk = $derived(session.can('ask') || approver);
 	const progress = $derived(home?.ask_progress ?? {});
 	// While one of this person's own asks is downloading, Home re-reads, so it sees the title arrive.
-	const busy = $derived(mineShown.some((a) => !!a.title_id && !!progress[a.title_id]));
+	const busy = $derived(attentionView.mineShown.some((a) => !!a.title_id && !!progress[a.title_id]));
 	// Downloading (managers): what HolyArrs fetches now, from the downloads this page already read. It shows on the System side.
 	const fetchingAll = $derived(manager ? downloadingNow(downloads, Infinity) : []);
 	// The top of Home: a greeting that shows on the first frame, and a short note beside the switch once the data has answered.
@@ -171,210 +94,44 @@
 	const news = $derived(settled ? homeNews({ now, kid, facts: homeFacts({ home, asks, downloads, approver, manager, kid, now }) }) : '');
 
 	// Bento: the Home grid (pictures and counts) and, for people who manage the Library, a System grid of the same size.
-	let board = $state<'home' | 'system'>('home');
-	const showSystem = $derived(manager && !kid);
-	const shown = $derived(showSystem ? board : 'home');
-	// Pictures for the big, tall and wide tiles: new seasons, arrivals, coming soon and follows, taken in turn, each title once. A picture that cannot load drops out, and the next one (or a count tile) takes its place.
-	const badPic = new SvelteSet<number>();
-	const badLogo = new SvelteSet<number>();
-	const pics = $derived.by(() => {
-		const lists: [HomeCard[], (c: HomeCard) => string][] = [
-			[home?.new_seasons ?? [], () => 'New season'],
-			// "Just arrived" only while it is: an older arrival says how old it is.
-			[home?.arrived ?? [], (c) => arrivedTitle(c.at ? Date.parse(c.at) : undefined, now.getTime())],
-			[home?.soon ?? [], () => 'Coming soon'],
-			[home?.following ?? [], () => 'Following']
-		];
-		const seen = new Set<number>();
-		const out: { c: HomeCard; label: string }[] = [];
-		for (let i = 0; out.length < 3 && lists.some(([l]) => i < l.length); i++) {
-			for (const [l, label] of lists) {
-				const c = l[i];
-				if (c && (c.backdrop || c.poster) && !seen.has(c.title_id) && !badPic.has(c.title_id) && out.length < 3) {
-					seen.add(c.title_id);
-					out.push({ c, label: label(c) });
-				}
-			}
-		}
-		return out;
-	});
-	const showOverview = $derived(!rows.includes('welcome'));
-	// The count tiles, in order. The first four are always there for the person they are for (Needs attention, asks, Library, disk), so they never change places while the page loads; the rest fill the picture places that have no picture. Explore, New & Popular and Search always can, so the grid never has a hole.
-	const recentArrived = $derived((home?.arrived ?? []).filter((c) => c.at && now.getTime() - Date.parse(c.at) < 14 * 86400000));
-	const recentNew = $derived(recentArrived.length + (home?.new_seasons?.length ?? 0));
-	const statPool = $derived(
-		[
-			owner ? 'att' : '',
-			canAsk ? 'ask' : '',
-			libCards.length ? 'lib' : '',
-			showDisk ? 'disk' : '',
-			fetchingAll.length ? 'dl' : '',
-			owner && home?.soon?.length && !pics.some((p) => p.label === 'Coming soon') ? 'soon' : '',
-			recentNew ? 'new' : '',
-			'explore',
-			'popular',
-			manager ? 'calendar' : '',
-			'search'
-		].filter(Boolean)
-	);
-	// The grid's shape for how many tiles there are: every shape fills whole rows at four columns and at two.
-	const SHAPES: Record<number, string[]> = {
-		7: ['big', '', '', 'tall', '', 'wide', 'fill'],
-		6: ['big', '', '', 'wide', 'wide', 'wide'],
-		5: ['big', 'wide', 'wide', 'wide', 'wide'],
-		4: ['big', '', '', 'wide'],
-		3: ['big', 'wide', 'wide'],
-		2: ['big', 'big'],
-		1: ['banner']
+	const overviewCtx = {
+		get manager() { return manager; },
+		get kid() { return kid; },
+		get home() { return home; },
+		get now() { return now; },
+		get rows() { return rows; },
+		get owner() { return owner; },
+		get canAsk() { return canAsk; },
+		get libCards() { return attentionView.libCards; },
+		get showDisk() { return attentionView.showDisk; },
+		get fetchingAll() { return fetchingAll; },
+		get waiting() { return attentionView.waiting; },
 	};
-	type Place = { key: string; shape: string; pic?: { c: HomeCard; label: string }; stat?: string };
-	const places = $derived.by((): Place[] => {
-		const shapes = SHAPES[Math.min(7, pics.length + statPool.length)] ?? [];
-		const p = [...pics];
-		const st = [...statPool];
-		const out: Place[] = shapes.map((shape) => ({ key: '', shape }));
-		const roomy = (shape: string) => shape === 'big' || shape === 'tall' || shape === 'wide' || shape === 'banner';
-		// Pictures take the roomy places, the first count tiles take the small ones, and what is left fills the rest.
-		for (const pl of out) if (roomy(pl.shape) && p.length) pl.pic = p.shift();
-		for (const pl of out) if (!roomy(pl.shape) && st.length) pl.stat = st.shift();
-		for (const pl of out) {
-			if (!pl.pic && !pl.stat) {
-				if (st.length) pl.stat = st.shift();
-				else pl.pic = p.shift();
-			}
-			pl.key = pl.pic ? `p${pl.pic.c.title_id}` : `s${pl.stat}`;
-		}
-		return out;
-	});
-	const libTotal = $derived(libCards.reduce((t, c) => t + c.big, 0));
-	// Under the tiles Home has one picture row (Recently added) and one list, Coming up. The other rows went: New season, Coming soon and Waiting for approval repeated a tile above; Your asks is the asks tile and the Requests page; what you follow shows up in the row and the list when something new happens. Coming up shows what airs next, one line each with its date; a new season that is already out leads, two at most.
-	const onTiles = $derived(new Set(showOverview ? places.flatMap((pl) => (pl.pic ? [pl.pic.c.title_id] : [])) : []));
-	const below = (cards: HomeCard[] | undefined) => (cards ?? []).filter((c) => !onTiles.has(c.title_id));
-	type UpLine = { key: string; c: HomeCard; sub: string; when: string; now: boolean };
-	const comingUp = $derived.by((): UpLine[] => {
-		const today = localDay(now);
-		const seen = new Set<number>(onTiles);
-		const out: UpLine[] = [];
-		const add = (c: HomeCard, max: number) => {
-			if (seen.has(c.title_id) || out.length >= max) return;
-			seen.add(c.title_id);
-			const [sub, tail] = (c.line ?? '').split(' · ');
-			const outNow = /out now/i.test(tail ?? '');
-			const isToday = c.at?.slice(0, 10) === today;
-			out.push({ key: c.key, c, sub: sub ?? '', when: outNow ? 'Out now' : isToday ? 'Today' : (tail ?? ''), now: outNow || isToday });
-		};
-		for (const c of (home?.new_seasons ?? []).filter((x) => /out now/i.test(x.line ?? ''))) add(c, 2);
-		for (const c of home?.soon ?? []) add(c, 6);
-		for (const c of home?.new_seasons ?? []) add(c, 6);
-		return out;
-	});
-	// The list sits where the first of the two rows it replaces was.
-	const upAt = $derived(rows.find((r) => r === 'new_season' || r === 'soon'));
-	const badThumb = new SvelteSet<string>();
-	const kindIcon = (k: string): IconName => (k === 'movie' ? 'film' : k === 'artist' ? 'music' : 'tv');
-	// The Library is never a mixed list: every link goes to one kind. A card's own kind when the link is about a card; for the Library total, the biggest part of it.
-	const libHref = $derived([...libCards].sort((x, y) => y.big - x.big)[0]?.href ?? '/library?kind=movie');
-	const kindHref = (c?: HomeCard) => (c ? `/library?kind=${c.kind}` : libHref);
-	// An ask's picture. Its own poster first; when the ask was saved without one, or it cannot be shown, the picture the Requests page uses: the title's poster from this install's own details, or the artist's wide photo.
-	const badArt = new SvelteSet<number>();
-	const noArt = new SvelteSet<number>();
-	function askPic(a: Ask): string | undefined {
-		if (noArt.has(a.id)) return undefined;
-		if (a.poster && !badArt.has(a.id)) return a.poster;
-		if (a.kind === 'artist') return askArtist(a)?.backgrounds[0] || undefined;
-		wantDetails(a);
-		return askDetails(a)?.poster || undefined;
-	}
-	function artFailed(a: Ask, pic: string) {
-		if (pic === a.poster) badArt.add(a.id);
-		else noArt.add(a.id);
-	}
-	// An artist's own photo can be an empty file: it is tried once here, so the row can fall back before it shows a gap.
-	const tried = new Set<number>();
-	$effect(() => {
-		for (const a of waiting.slice(0, 20)) {
-			if (a.kind !== 'artist' || !a.poster || tried.has(a.id)) continue;
-			tried.add(a.id);
-			const probe = new Image();
-			probe.onerror = () => badArt.add(a.id);
-			probe.src = a.poster;
-		}
-	});
-	const waitingPics = $derived(
-		waiting
-			.slice(0, 20)
-			.map((a) => ({ a, pic: askPic(a) }))
-			.filter((x): x is { a: Ask; pic: string } => !!x.pic)
-			.slice(0, 3)
-	);
-	// Downloads, counted once and used everywhere: waiting (queued), downloading (bytes coming in, stalled and checking included), importing, and paused apart (a paused download is not in the list or the row). The tile, the note beside the switch and the row all read these.
-	const speed = $derived(fetchingAll.reduce((t, d) => t + (d.speed || 0), 0));
-	const pausedCount = $derived(manager ? downloads.filter((d) => !d.client_item && stageOf(d) === 'paused').length : 0);
-	function countStages(rows: DownloadRow[], paused = 0) {
-		const c = { waiting: 0, down: 0, imp: 0, paused };
-		for (const d of rows) {
-			const st = stageOf(d);
-			if (st === 'queued') c.waiting++;
-			else if (st === 'importing') c.imp++;
-			else c.down++;
-		}
-		return c;
-	}
-	const dlCount = $derived(countStages(fetchingAll, pausedCount));
-	const stageWords = (c: { waiting: number; down: number; imp: number; paused: number }) =>
-		[c.down ? `${n(c.down)} downloading` : '', c.imp ? `${n(c.imp)} importing` : '', c.waiting ? `${n(c.waiting)} waiting` : '', c.paused ? `${n(c.paused)} paused` : ''].filter(Boolean).join(' · ');
-	/** One running download in a few words: its percent and speed, or the step it is in. */
-	function dlState(d: DownloadRow): string {
-		const st = stageOf(d);
-		if (st === 'queued') return 'Waiting';
-		if (st === 'importing') return 'Importing';
-		if (st === 'checking') return 'Checking';
-		if (st === 'stalled') return `Stalled at ${Math.round(percent(d.progress))}%`;
-		return `${Math.round(percent(d.progress))}%${d.speed ? ` · ${bytes(d.speed)}/s` : ''}`;
-	}
-	// The tile lists what is moving first: downloading, then stalled, checking, importing, and waiting last.
-	const STEP_ORDER: Record<string, number> = { downloading: 0, stalled: 1, checking: 2, importing: 3, queued: 4 };
-	const dlList = $derived([...fetchingAll].sort((x, y) => (STEP_ORDER[stageOf(x)] ?? 9) - (STEP_ORDER[stageOf(y)] ?? 9)).slice(0, 3));
-	// When nothing runs, the tile shows what finished last.
-	const recentDone = $derived(
-		manager
-			? downloads
-					.filter((d) => !d.client_item && !!d.finished_at && d.phase === 'done')
-					.sort((x, y) => Date.parse(y.finished_at ?? '') - Date.parse(x.finished_at ?? ''))
-					.slice(0, 3)
-			: []
-	);
-	const pillIcon: Record<string, IconName> = { 'New season': 'sparkle', 'New today': 'sparkle', 'New this week': 'sparkle', 'Just arrived': 'check', 'Recently added': 'check', 'Coming soon': 'calendar', Following: 'bell' };
+	const overview = createHomeOverview(overviewCtx);
+	const downloadingCtx = {
+		get waiting() { return attentionView.waiting; },
+		askPic: overview.askPic,
+		get fetchingAll() { return fetchingAll; },
+		get manager() { return manager; },
+		get downloads() { return downloads; },
+	};
+	const downloading = createHomeDownloads(downloadingCtx);
 	// Disk: how much room is left, and whether the disk space check is failing (then a reading of 0 is a full disk).
-	const diskState = $derived.by(() => {
-		const st = (checks?.checks ?? []).filter((c) => c.kind === 'disk_space').map((c) => shownState(c));
-		return st.includes('error') ? 'error' : st.includes('warning') ? 'warning' : 'ok';
-	});
-	const free = $derived(freeSpace(folders, diskState !== 'ok'));
-	const diskLine = $derived(
-		!free
-			? uncheckedFolders
-				? 'Could not read the free room'
-				: diskState === 'ok'
-				? 'Across your Library folders'
-				: 'A disk is running out of room'
-			: free.free <= 0
-				? free.many
-					? 'A disk is full'
-					: 'The disk is full'
-				: `${diskState === 'ok' ? '' : 'Only '}${bytes(free.free)} free${free.many ? ' on the fullest disk' : ''}`
-	);
-	const diskTint = $derived<Tint>(diskState === 'error' ? 'red' : diskState === 'warning' ? 'amber' : 'teal');
-	const diskUsed = $derived(!free ? 0 : free.free <= 0 ? 100 : Math.min(100, Math.max(2, (diskTotal / Math.max(1, diskTotal + free.free)) * 100)));
-	const sysOk = $derived(settled && worst === 'ok');
-	const sysNote = $derived(
-		!settled
-			? ''
-			: (fixes.length ? `${n(fixes.length)} ${fixes.length === 1 ? 'thing needs' : 'things need'} a look` : unchecked ? 'Could not check everything' : 'All good') +
-					(uncheckedDl ? '' : dlCount.down ? ` · ${n(dlCount.down)} downloading${speed ? ` at ${bytes(speed)}/s` : ''}` : dlCount.imp || dlCount.waiting || dlCount.paused ? ` · ${stageWords(dlCount)}` : '')
-	);
-
-	/** A server-filled row's strip: what is new on the card, in the row's own kind. */
+	const diskCtx = {
+		get checks() { return checks; },
+		get folders() { return folders; },
+		get uncheckedFolders() { return uncheckedFolders; },
+		get diskTotal() { return attentionView.diskTotal; },
+		get settled() { return settled; },
+		get worst() { return attentionView.worst; },
+		get fixes() { return attentionView.fixes; },
+		get unchecked() { return attentionView.unchecked; },
+		get uncheckedDl() { return uncheckedDl; },
+		get dlCount() { return downloading.dlCount; },
+		get speed() { return downloading.speed; },
+		stageWords: downloading.stageWords,
+	};
+	const disk = createHomeDisk(diskCtx);
 	function strip(c: HomeCard, type: string): Fresh | null {
 		const own = homeStrip(c);
 		if (own || !c.line || type === 'home_arrived') return own;
@@ -453,7 +210,7 @@
 		if (!manager && lastMsg !== undefined && top !== undefined && top !== lastMsg) void loadAll();
 		lastMsg = top;
 	});
-	const waitingCopy = $derived(!manager && !busy && mine.some((a) => a.state === 'approved'));
+	const waitingCopy = $derived(!manager && !busy && attentionView.mine.some((a) => a.state === 'approved'));
 	$effect(() => {
 		if (!waitingCopy) return;
 		const t = setInterval(() => {
@@ -496,11 +253,11 @@
 		<!-- The page's own heading, for screen readers and for the small title bar phones show once the greeting has scrolled away. -->
 		<PageHeader title="Home" />
 		<div class="top-row">
-			{#if showSystem && showOverview && loaded && !(failed && !home)}
-				<SegmentedControl options={[{ value: 'home', label: 'Home', icon: 'home' }, { value: 'system', label: 'System', icon: 'gauge' }]} bind:value={board} label="Show on Home" testid="home-switch" announce={(l) => `Showing ${l}`} />
+			{#if overview.showSystem && overview.showOverview && loaded && !(failed && !home)}
+				<SegmentedControl options={[{ value: 'home', label: 'Home', icon: 'home' }, { value: 'system', label: 'System', icon: 'gauge' }]} bind:value={overview.board} label="Show on Home" testid="home-switch" announce={(l) => `Showing ${l}`} />
 			{/if}
-			<p class="note" class:pending={!settled} class:hold={showSystem && showOverview}>
-				{#if failed && !home}{:else if shown === 'system'}{#if sysNote}<span class="dot {worst}" aria-hidden="true"></span>{sysNote}{/if}{:else}{news}{/if}
+			<p class="note" class:pending={!settled} class:hold={overview.showSystem && overview.showOverview}>
+				{#if failed && !home}{:else if overview.shown === 'system'}{#if disk.sysNote}<span class="dot {attentionView.worst}" aria-hidden="true"></span>{disk.sysNote}{/if}{:else}{news}{/if}
 			</p>
 			<div class="acts">
 				<span class="wide-only"><Button variant="secondary" icon="search" href={to('/search')}>Search</Button><Button variant="secondary" icon="compass" href={to('/explore')}>Explore</Button></span>
@@ -532,10 +289,10 @@
 		{#snippet picTile(p: { c: HomeCard; label: string }, cls: string, tall: boolean)}
 			<a class="tile pic {cls}" href={to(p.c.href)}>
 				<!-- Through HolyArrs' own artwork cache, like every other card: the browser never calls the picture site itself. -->
-				<img src={tall ? sized(p.c.poster || p.c.backdrop, 'poster', 400) : sized(p.c.backdrop || p.c.poster, cls === 'big' ? 'large' : 'backdrop')} alt="" decoding="async" use:artGone={() => badPic.add(p.c.title_id)} />
-				<span class="pill"><ArtPill text={p.label} icon={pillIcon[p.label]} /></span>
-				{#if !tall && p.c.backdrop && p.c.logo && p.c.kind !== 'artist' && !badLogo.has(p.c.title_id)}
-					<img class="logo" src={proxied(p.c.logo)} alt={p.c.name} decoding="async" use:lightOnDark use:artGone={() => badLogo.add(p.c.title_id)} />
+				<img src={tall ? sized(p.c.poster || p.c.backdrop, 'poster', 400) : sized(p.c.backdrop || p.c.poster, cls === 'big' ? 'large' : 'backdrop')} alt="" decoding="async" use:artGone={() => overview.badPic.add(p.c.title_id)} />
+				<span class="pill"><ArtPill text={p.label} icon={downloading.pillIcon[p.label]} /></span>
+				{#if !tall && p.c.backdrop && p.c.logo && p.c.kind !== 'artist' && !overview.badLogo.has(p.c.title_id)}
+					<img class="logo" src={proxied(p.c.logo)} alt={p.c.name} decoding="async" use:lightOnDark use:artGone={() => overview.badLogo.add(p.c.title_id)} />
 				{:else}
 					<span class="nm" dir="auto">{p.c.name}</span>
 				{/if}
@@ -544,286 +301,28 @@
 		{/snippet}
 
 		<PageLoader loading={!loaded} label="Loading Home" onretry={retry}>
-		{#if showOverview}
-			<div class="boards" data-testid="home-overview">
-				<!-- A tile's head: the same icon square as the Settings pages, its name, and an arrow when it opens a page. -->
-				{#snippet head(icon: IconName, tint: Tint, label: string, go = true)}
-					<span class="head"><SettingsTile {icon} {tint} /><span class="lab">{label}</span>{#if go}<span class="go" aria-hidden="true"><Icon name="chevronRight" size={16} /></span>{/if}</span>
-				{/snippet}
-				<!-- A tile whose numbers have not arrived yet. -->
-				{#snippet wait(lines = 2)}
-					<span class="sk" aria-hidden="true">{#each Array(lines) as _, i (i)}<i></i>{/each}</span><span class="sr-only">Loading</span>
-				{/snippet}
-				<!-- Disk: what the Library takes, how much room is left, and one thin line along the foot for how full it is (only when the free room is known). -->
-				{#snippet diskTile(cls: string)}
-					<a class="tile stat {cls}" class:lined={!!free} href={to(admin ? '/settings/library-folders' : '/status')}>
-						{@render head('archive', diskTint, 'On disk')}
-						{#if !settled}
-							{@render wait()}
-						{:else}
-							<span class="num">{bytes(diskTotal).split(' ')[0]}<small>{bytes(diskTotal).split(' ')[1]}</small></span>
-							<span class="sm" class:fail={diskState === 'error'} class:warn={diskState === 'warning'}>{diskLine}</span>
-							{#if free}
-								<span class="life" role="img" aria-label="Your Library takes {bytes(diskTotal)}; {bytes(free.free)} free">
-									<i class="used {diskState}" style="width: {diskUsed}%"></i>
-								</span>
-							{/if}
-						{/if}
-					</a>
-				{/snippet}
-				<!-- Sources or Downloaders: how many work, which have a problem, and one pip each along the foot. -->
-				{#snippet partTile(label: string, icon: IconName, tint: Tint, p: { total: number; on: number; working: number; off: number; failing: number }, trouble: string, path: string, empty: string)}
-					<a class="tile stat" class:lined={settled && !uncheckedParts && p.total > 0} href={to(admin ? path : '/status')}>
-						{@render head(icon, tint, label)}
-						{#if !settled}
-							{@render wait()}
-						{:else if uncheckedParts}
-							<span class="word">Could not read</span>
-							<span class="sm">Home could not read this right now.</span>
-						{:else if !p.total}
-							<span class="word">None added</span>
-							<span class="sm">{empty}</span>
-						{:else}
-							<span class="num" class:warn={p.on > 0 && !p.working}>{n(p.working)}<small>of {n(p.total)} working</small></span>
-							<span class="sm" class:warn={!!trouble}>{partLine(p, trouble)}</span>
-							<span class="life pips" aria-hidden="true">
-								{#if p.total <= 12}
-									{#each Array(p.total) as _, i (i)}<i class:bad={i >= p.working && i < p.on} class:off={i >= p.on}></i>{/each}
-								{:else}
-									{#if p.working}<i style="flex-grow: {p.working}"></i>{/if}{#if p.failing}<i class="bad" style="flex-grow: {p.failing}"></i>{/if}{#if p.off}<i class="off" style="flex-grow: {p.off}"></i>{/if}
-								{/if}
-							</span>
-						{/if}
-					</a>
-				{/snippet}
-				<!-- One count tile. -->
-				{#snippet stat(key: string, cls: string)}
-					{#if key === 'att' && settled && unchecked && !fixes.length}
-						<button type="button" class="tile stat {cls}" class:busy={retrying} disabled={retrying} onclick={retry} aria-busy={retrying || undefined} data-testid="home-attention">
-							{@render head('refresh', 'amber', 'Needs attention', false)}
-							<span class="word">Could not check</span>
-							<span class="sm">Tap to try again</span>
-						</button>
-					{:else if key === 'att'}
-						<a class="tile stat {cls}" href={to(fixHref)} data-testid="home-attention">
-							{@render head(worst === 'ok' ? 'check' : 'alert', attTint, 'Needs attention')}
-							{#if !settled}
-								{@render wait()}
-							{:else if fixes.length}
-								<span class="num" class:fail={worst === 'fail'} class:warn={worst === 'wait'}>{n(fixes.length)}</span>
-								{#if fixMore}
-									<span class="sm two"><span>{fixLine}</span><span>and {n(fixMore)} more</span></span>
-								{:else}
-									<span class="sm">{fixLine}</span>
-								{/if}
-							{:else}
-								<span class="word">All good</span>
-								<span class="sm">Downloads, imports and checks</span>
-							{/if}
-						</a>
-					{:else if key === 'ask'}
-						{@const approving = approver && !kid && waiting.length > 0}
-						<a class="tile stat {cls}" href={to('/requests')}>
-							{@render head('requests', 'orange', approving ? 'To approve' : mine.length ? 'Your asks' : 'Requests')}
-							{#if !settled}
-								{@render wait()}
-							{:else if uncheckedAsks}
-								<span class="word">Could not read</span>
-								<span class="sm">Home could not read asks right now.</span>
-							{:else if approving && waitingPics.length}
-								<span class="ask-stack" aria-hidden="true">{#each waitingPics as w (w.a.id + w.pic)}<img src={sized(w.pic, 'poster', 80)} alt="" decoding="async" use:artGone={() => artFailed(w.a, w.pic)} />{/each}{#if waiting.length > waitingPics.length}<b>+{n(waiting.length - waitingPics.length)}</b>{/if}</span>
-								<span class="sm">{n(waiting.length)} {waiting.length === 1 ? 'ask' : 'asks'} to look at</span>
-							{:else if approving}
-								<span class="num">{n(waiting.length)}</span>
-								<span class="sm">{waiting.length === 1 ? 'ask' : 'asks'} to look at</span>
-							{:else if mineOpen}
-								<span class="num">{n(mineOpen)}</span>
-								<span class="sm">still open{mineDeclined ? ` · ${n(mineDeclined)} turned down` : ''}</span>
-							{:else if mineDeclined}
-								<span class="num">{n(mineDeclined)}</span>
-								<span class="sm">turned down</span>
-							{:else}
-								<span class="word">Nothing waiting</span>
-								<span class="sm">{approver && !kid ? 'No asks to approve' : 'Ask for something on Explore'}</span>
-							{/if}
-						</a>
-					{:else if key === 'lib'}
-						<a class="tile stat {cls}" href={to(libHref)} data-testid="home-library">
-							{@render head('library', 'indigo', 'Library')}
-							<span class="num">{n(libTotal)}</span>
-							<span class="sm">{libCards.length === 1 ? libCards[0].detail || `${libCards[0].unit} in your Library` : libCards.map((c) => `${n(c.big)}\u00a0${c.unit}`).join(' · ')}</span>
-						</a>
-					{:else if key === 'disk'}
-						{@render diskTile(cls)}
-					{:else if key === 'dl'}
-						<a class="tile stat {cls}" href={to('/downloads')}>
-							{@render head('download', 'blue', 'Downloads')}
-							<span class="num">{n(fetchingAll.length)}</span>
-							<span class="sm">{stageWords(countStages(fetchingAll))}</span>
-						</a>
-					{:else if key === 'soon'}
-						<a class="tile stat {cls}" href={to('/calendar')}>
-							{@render head('calendar', 'purple', 'Coming soon')}
-							<span class="num">{n(home?.soon?.length ?? 0)}{(home?.soon?.length ?? 0) >= 20 ? '+' : ''}</span>
-							<span class="sm">in the next 30 days</span>
-						</a>
-					{:else if key === 'new'}
-						<a class="tile stat {cls}" href={to(kindHref(recentArrived[0] ?? home?.new_seasons?.[0]))}>
-							{@render head('sparkle', 'pink', 'New for you')}
-							<span class="num">{n(recentNew)}</span>
-							<span class="sm">{recentArrived.length && home?.new_seasons?.length ? 'arrivals and new seasons' : recentArrived.length ? 'arrived in the last two weeks' : home?.new_seasons?.length === 1 ? 'new season of a show you have' : 'new seasons of shows you have'}</span>
-						</a>
-					{:else if key === 'explore'}
-						<a class="tile stat {cls}" href={to('/explore')}>
-							{@render head('compass', 'green', 'Explore')}
-							<span class="word">Find something new</span>
-							<span class="sm">Pick what to ask for next</span>
-						</a>
-					{:else if key === 'popular'}
-						<a class="tile stat {cls}" href={to('/popular')}>
-							{@render head('star', 'pink', 'New & Popular')}
-							<span class="word">What's trending</span>
-							<span class="sm">Top 10s and coming soon</span>
-						</a>
-					{:else if key === 'calendar'}
-						<a class="tile stat {cls}" href={to('/calendar')}>
-							{@render head('calendarDay', 'purple', 'Calendar')}
-							<span class="word">What's next</span>
-							<span class="sm">Air dates and releases</span>
-						</a>
-					{:else}
-						<a class="tile stat {cls}" href={to('/search')}>
-							{@render head('search', 'graphite', 'Search')}
-							<span class="word">Look anything up</span>
-							<span class="sm">By name</span>
-						</a>
-					{/if}
-				{/snippet}
-
-				<div class="bento" class:gone={shown !== 'home'} inert={shown !== 'home'} data-testid="home-board">
-					{#each places as pl (pl.key)}
-						{#if pl.pic}{@render picTile(pl.pic, pl.shape, pl.shape === 'tall')}{:else if pl.stat}{@render stat(pl.stat, pl.shape)}{/if}
-					{/each}
-				</div>
-				{#if showSystem}
-					<div class="bento" class:gone={shown !== 'system'} inert={shown !== 'system'} data-testid="home-system">
-						<a class="tile stat big dl" href={to('/downloads')}>
-							{@render head('download', 'blue', 'Downloading')}
-							{#if !settled}
-								{@render wait(3)}
-							{:else if uncheckedDl}
-								<span class="word">Could not read</span>
-								<span class="sm">Home could not read downloads right now.</span>
-							{:else}
-								{#if speed}
-									<span class="num">{bytes(speed).split(' ')[0]}<small>{bytes(speed).split(' ')[1]}/s</small></span>
-								{:else}
-									<span class="num">{n(dlCount.down)}<small>downloading</small></span>
-								{/if}
-								<!-- The three steps a download goes through, in order. -->
-								<ol class="flow" aria-label="Downloads by step">
-									<li><b>{n(dlCount.waiting)}</b><span>Waiting</span></li>
-									<li><b>{n(dlCount.down)}</b><span>Downloading</span></li>
-									<li><b>{n(dlCount.imp)}</b><span>Importing</span></li>
-								</ol>
-								{#if fetchingAll.length}
-									<ul class="dl-list">
-										{#each dlList as d (d.id)}
-											{@const moving = ['downloading', 'stalled'].includes(stageOf(d))}
-											<li><b dir="auto">{d.title || d.name}</b><span>{dlState(d)}</span>{#if moving}<i class="pb"><i style="width: {percent(d.progress)}%"></i></i>{/if}</li>
-										{/each}
-									</ul>
-								{:else if recentDone.length}
-									<ul class="dl-list done">
-										{#each recentDone as d (d.id)}
-											<li><b dir="auto">{d.title || d.name}</b><span>Finished {agoLong(d.finished_at, now.getTime())}</span></li>
-										{/each}
-									</ul>
-								{:else}
-									<span class="quiet">Nothing is downloading right now.{pausedCount ? ` ${n(pausedCount)} paused.` : ''}</span>
-								{/if}
-							{/if}
-						</a>
-						<section class="tile stat big att" aria-labelledby="h-fix" data-testid="home-problems">
-							<header class="head">
-								<SettingsTile icon={worst === 'ok' ? 'check' : 'alert'} tint={attTint} />
-								<h2 class="lab" id="h-fix">Needs attention</h2>
-								{#if fixes.length}<b class="count {worst}">{n(fixes.length)}</b>{/if}
-							</header>
-							{#if !settled}
-								{@render wait(3)}
-							{:else if fixes.length}
-								<ul class="fixes">
-									{#each fixShown as g (g.key)}
-										<li>
-											<a class="fix" href={to(g.href)}>
-												<i class="tone {g.tone}" aria-hidden="true"></i>
-												<span class="ft"><span class="sr-only">{g.word}: </span><b dir="auto">{g.title}</b><span dir="auto">{g.reason}</span></span>
-												<span class="fa"><span class="act">{g.action}</span><Icon name="chevronRight" size={14} /></span>
-											</a>
-										</li>
-									{/each}
-								</ul>
-								{#if fixHidden}
-									<a class="more" href={to(fixHidden.href)}>{fixHidden.text}<Icon name="chevronRight" size={13} /></a>
-								{:else if unchecked}
-									<span class="rest-ok">Some checks could not be read right now.</span>
-								{:else if fixShown.length <= 2 && passedCount}
-									<span class="rest-ok"><i class="tone ok" aria-hidden="true"></i>{n(passedCount)} other {passedCount === 1 ? 'check' : 'checks'} passed.</span>
-								{/if}
-							{:else if unchecked}
-								<span class="word">Could not check</span>
-								<span class="sm">{uncheckedLine(uncheckedDl, uncheckedHealth || uncheckedParts)}</span>
-								<span class="again"><Button size="sm" variant="secondary" busy={retrying} onclick={retry}>Try again</Button></span>
-							{:else}
-								<!-- All good: what was checked, each with its tick. -->
-								{#if passed.length}
-									<ul class="passed">
-										{#each passed.slice(0, 8) as w (w)}<li><Icon name="check" size={14} />{w}</li>{/each}
-									</ul>
-								{/if}
-								<span class="word">All good</span>
-								<span class="sm">Downloads, imports and checks are running fine.</span>
-							{/if}
-						</section>
-						{@render diskTile('')}
-						{@render partTile('Sources', 'source', 'purple', srcs, troubled('source', health?.sources), '/settings/sources', 'Add a Source to find releases')}
-						{@render partTile('Downloaders', 'downloader', 'indigo', dls, troubled('downloader', health?.downloaders), '/settings/downloaders', 'Add a Downloader to fetch them')}
-						<a class="tile stat" href={to('/status')}>
-							{@render head('clock', 'graphite', 'Running for')}
-							{#if !settled}
-								{@render wait()}
-							{:else}
-								{#if health && !uncheckedParts}<span class="num">{duration(health.uptime_s)}</span>{:else}<span class="word">Could not read</span>{/if}
-								{#if health && !uncheckedParts}<span class="sm">Version {health.version}</span>{/if}
-								<span class="sm meta"><i class="tone" class:ok={!metadataOutage.s.down} class:wait={metadataOutage.s.down} aria-hidden="true"></i>Metadata server {metadataOutage.s.down ? 'down' : 'online'}</span>
-							{/if}
-						</a>
-					</div>
-				{/if}
-			</div>
-		{/if}
+		<HomeOverview {overview} {disk} {admin} {settled} {attentionView} {uncheckedParts} {retrying} {retry} {approver} {kid} {uncheckedAsks} {downloading} {mineOpen} {mineDeclined} {fetchingAll} {home} {uncheckedDl} {now} {uncheckedHealth} {health} {picTile} />
 		{#each rows as row (row)}
 			{#if row === 'welcome'}
 				{#if owner}
 					<section class="setup" aria-labelledby="h-setup" data-testid="home-welcome">
 						<div class="setup-main">
-							<p class="kicker">{#if settled}{doneCount} of {steps.length} done{:else}&nbsp;{/if}</p>
+							<p class="kicker">{#if settled}{attentionView.doneCount} of {attentionView.steps.length} done{:else}&nbsp;{/if}</p>
 							<h2 id="h-setup">Welcome to HolyArrs</h2>
-							<div class="segs" aria-hidden="true">{#each steps as s, i (i)}<i class:on={settled && s.done}></i>{/each}</div>
+							<div class="segs" aria-hidden="true">{#each attentionView.steps as s, i (i)}<i class:on={settled && s.done}></i>{/each}</div>
 							{#if settled}
-								<h3>{nextStep.text}</h3>
-								<p>{nextStep.detail}</p>
+								<h3>{attentionView.nextStep.text}</h3>
+								<p>{attentionView.nextStep.detail}</p>
 							{:else}
 								<span class="sk setup-wait" aria-hidden="true"><i></i><i></i></span><span class="sr-only">Loading</span>
 							{/if}
 							<div class="welcome-acts" class:hide={!settled}>
-								<Button variant="primary" size="lg" href={to(nextStep.href)} iconAfter="chevronRight">{nextStep.cta}</Button>
+								<Button variant="primary" size="lg" href={to(attentionView.nextStep.href)} iconAfter="chevronRight">{attentionView.nextStep.cta}</Button>
 								<Button variant="secondary" size="lg" href={to('/library/import')}>Import what you have</Button>
 							</div>
 						</div>
 						<ol class="steps">
-							{#each steps as s, i (i)}
+							{#each attentionView.steps as s, i (i)}
 								<li class:done={settled && s.done}>
 									<a href={to(s.href)}>
 										<span class="dot">{#if settled && s.done}<Icon name="check" size={14} />{:else}{i + 1}{/if}</span>
@@ -845,20 +344,20 @@
 					</section>
 				{/if}
 			{:else if row === 'arrived'}
-				{@render wideRow(below(home?.arrived), 'home_arrived', { ...arrivedHead(home?.arrived ?? [], now.getTime()), href: to(kindHref(home?.arrived?.[0])) })}
-			{:else if row === upAt && comingUp.length}
+				{@render wideRow(overview.below(home?.arrived), 'home_arrived', { ...arrivedHead(home?.arrived ?? [], now.getTime()), href: to(overview.kindHref(home?.arrived?.[0])) })}
+			{:else if row === overview.upAt && overview.comingUp.length}
 				<section class="up" aria-labelledby="h-up" data-testid="home_coming_up">
 					<header class="up-head">
 						<h2 id="h-up">Coming up</h2>
 						{#if owner}<a class="up-more" href={to('/calendar')}>Calendar<Icon name="chevronRight" size={14} /></a>{/if}
 					</header>
 					<ul class="up-list">
-						{#each comingUp as u (u.key)}
+						{#each overview.comingUp as u (u.key)}
 							{@const art = u.c.backdrop || u.c.poster}
 							<li>
 								<a class="up-line" href={to(u.c.href)}>
 									<span class="up-th" aria-hidden="true">
-										{#if art && !badThumb.has(u.key)}<img src={sized(art, 'backdrop', 130)} alt="" loading="lazy" decoding="async" use:artGone={() => badThumb.add(u.key)} />{:else}<Icon name={kindIcon(u.c.kind)} size={16} />{/if}
+										{#if art && !overview.badThumb.has(u.key)}<img src={sized(art, 'backdrop', 130)} alt="" loading="lazy" decoding="async" use:artGone={() => overview.badThumb.add(u.key)} />{:else}<Icon name={overview.kindIcon(u.c.kind)} size={16} />{/if}
 									</span>
 									<span class="up-t"><b dir="auto">{u.c.name}</b><span>{u.sub}</span></span>
 									<span class="up-when" class:now={u.now}>{u.when}</span>
@@ -885,7 +384,8 @@
 	}
 	.banner { margin-bottom: -16px; }
 	.wide-row { display: contents; }
-	@media (min-width: 768px) { .wide-row { --shelf-gap: 5px; } }
+	@media (min-width: 768px) { .wide-row { --shelf-gap: 5px; }
+}
 
 	.top { display: flex; flex-direction: column; gap: 14px; margin-bottom: -8px; }
 	.top :global(.ui-head) { position: absolute; width: 1px; height: 1px; margin: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
@@ -901,57 +401,21 @@
 	.wide-only { display: flex; gap: 8px; }
 	.phone-only { display: none; gap: 8px; }
 
-	/* Bento: one grid of tiles. Home has pictures in the roomy places and counts in the small ones; the shape follows how many tiles there are, and every shape fills whole rows. System is the same frame filled with how HolyArrs is running. */
-	.boards { position: relative; }
-	.boards > .bento { transition: opacity var(--dur) var(--ease-out), translate var(--dur) var(--ease-out); }
-	.bento.gone { position: absolute; inset: 0 0 auto; opacity: 0; translate: 0 6px; visibility: hidden; pointer-events: none; transition: opacity var(--dur) var(--ease-out), translate var(--dur) var(--ease-out), visibility 0s linear var(--dur); }
-	.bento { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-auto-rows: 150px; grid-auto-flow: row dense; gap: 16px; }
-
 	/* The tile is the Requests card's sheet on its own: lit from above, a hairline, and one long soft shadow. A whisper of grain keeps the flat colour from looking printed. */
 	.tile {
 		position: relative; isolation: isolate; min-width: 0; min-height: 0; display: flex; flex-direction: column; padding: 16px 18px; border: 0; border-radius: 20px; overflow: hidden;
 		color: var(--text); text-align: left; font: inherit; background: linear-gradient(180deg, var(--sheet-a), var(--sheet-b)); box-shadow: var(--edge), var(--drop);
 		transition: transform var(--dur) var(--ease-out), box-shadow var(--dur) var(--ease-out), opacity var(--dur-fast) var(--ease-out);
 	}
-	.stat::before { content: ''; position: absolute; inset: 0; z-index: -1; border-radius: inherit; pointer-events: none; opacity: .05; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .5 0 0 0 0 .5 0 0 0 0 .5 0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
-	a.tile, button.tile { cursor: pointer; }
-	a.tile:hover, button.tile:hover { transform: translateY(var(--lift)); box-shadow: var(--edge), 0 2px 4px light-dark(rgb(20 24 40 / 6%), rgb(0 0 0 / 40%)), 0 26px 40px -22px light-dark(rgb(20 24 40 / 38%), rgb(0 0 0 / 90%)); }
-	a.tile:focus-visible, button.tile:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.tile.busy { opacity: .6; }
-	.tile.big { grid-column: span 2; grid-row: span 2; }
+	a.tile { cursor: pointer; }
 	.tile.wide { grid-column: span 2; }
 	.tile.tall { grid-row: span 2; }
 	.tile.banner { grid-column: 1 / -1; }
-
-	.head { display: flex; align-items: center; gap: 10px; min-width: 0; }
-	.lab { flex: 1; min-width: 0; margin: 0; font: 600 14px / 1.3 var(--font-ui); letter-spacing: -0.005em; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	.go { flex: none; display: inline-grid; color: var(--text-faint); transition: transform var(--dur) var(--ease-out), color var(--dur-fast) var(--ease-out); }
-	a.tile:hover .go { color: var(--text); transform: translateX(2px); }
-	.num, .word { margin-top: auto; }
-	.num { font: 800 40px / 1 var(--font-display); letter-spacing: -0.04em; font-variant-numeric: tabular-nums; white-space: nowrap; }
-	.num small { margin-left: 5px; font: 500 13px / 1 var(--font-ui); letter-spacing: 0; color: var(--text-muted); }
-	.word { font: 700 24px / 1.1 var(--font-display); letter-spacing: -0.025em; }
 	.sm { margin-top: 5px; font: var(--t-footnote); color: var(--text-muted); overflow: hidden; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; }
-	.stat > .num + .sm:not(:has(+ .sm)), .stat > .word + .sm:not(:has(+ .sm)) { min-height: 2.6em; }
-	/* Two lines that must both show: the row (cut with an ellipsis if long) and "and N more". */
-	.sm.two { display: block; }
 	.sm.two > span { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-	.fail, .sm.fail { color: var(--fail); }
-	.warn, .sm.warn { color: var(--wait); }
 	.sk { margin-top: auto; display: flex; flex-direction: column; gap: 8px; }
 	.sk i { display: block; height: 12px; border-radius: 6px; background: var(--sk-base); }
 	.sk i + i { width: 60%; }
-	.sk i + i + i { width: 40%; }
-
-	.life { position: absolute; left: 18px; right: 18px; bottom: 6px; display: flex; gap: 2px; height: 4px; border-radius: 4px; overflow: hidden; background: var(--track); }
-	.life i { display: block; min-width: 2px; flex-basis: 0; }
-	.life .used { flex: none; border-radius: inherit; background: #1ea9be; }
-	.life .used.warning { background: var(--wait); }
-	.life .used.error { background: var(--fail); }
-	.life.pips { gap: 3px; background: none; }
-	.life.pips i { flex: 1; border-radius: 4px; background: var(--ok); }
-	.life.pips i.bad { background: var(--wait); }
-	.life.pips i.off { background: var(--track); }
 
 	/* Picture tiles: the picture fills the tile; a glass pill says what it is and the title sits on a dark fade at the foot (white in both themes). */
 	.pic { justify-content: flex-end; color: #fff; background: #17181d; box-shadow: var(--drop); }
@@ -968,93 +432,31 @@
 	/* A dark wordmark (black letters made for light posters) is drawn white, its shape unchanged, like on the title page. */
 	.pic .logo:global(.dark) { filter: brightness(0) invert(1) drop-shadow(0 2px 10px rgb(0 0 0 / 50%)); }
 	.pic .sm { color: rgb(255 255 255 / 86%); font: 600 12px / 1.3 var(--font-ui); -webkit-line-clamp: 1; line-clamp: 1; }
-
-	.ask-stack { margin-top: auto; display: flex; align-items: center; }
 	.ask-stack img { width: 38px; height: auto; aspect-ratio: 2 / 3; object-fit: cover; border-radius: 7px; margin-left: -12px; background: var(--surface-3); box-shadow: 0 0 0 2.5px var(--sheet-b), 0 6px 14px -4px rgb(0 0 0 / 35%); }
 	.ask-stack img:first-child { margin-left: 0; }
-	.ask-stack b { min-width: 30px; height: 30px; margin-left: 10px; padding: 0 8px; display: grid; place-items: center; border-radius: 999px; background: var(--well); box-shadow: inset 0 0 0 1px var(--line); color: var(--text); font: var(--t-footnote); font-weight: 700; font-variant-numeric: tabular-nums; }
-
-	.dl .num, .dl > .word { margin-top: 14px; }
-	.flow { list-style: none; margin: 14px 0 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-radius: 12px; background: var(--well); box-shadow: inset 0 0 0 1px var(--line); }
-	.flow li { position: relative; min-width: 0; padding: 9px 12px; display: flex; flex-direction: column; gap: 2px; }
-	.flow li + li::before { content: ''; position: absolute; left: 0; top: 10px; bottom: 10px; width: 1px; background: var(--line); }
-	.flow b { font: 700 18px / 1.1 var(--font-display); letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
 	.flow span { font: var(--t-footnote); color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	.dl-list { list-style: none; margin: auto 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
-	.dl-list li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 3px 10px; font: var(--t-footnote); }
-	.dl-list b { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.dl-list span { color: var(--text-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
-	.pb { grid-column: 1 / -1; display: block; height: 4px; border-radius: 4px; background: var(--track); overflow: hidden; }
-	.pb i { display: block; height: 100%; border-radius: inherit; background: var(--info); }
-	.quiet { margin-top: auto; font: var(--t-callout); color: var(--text-muted); }
-
-	/* Dark theme's red and amber are light colours, so the digits go dark there to stay readable. */
-	.count { flex: none; min-width: 24px; height: 24px; padding: 0 7px; display: grid; place-items: center; border-radius: 999px; background: var(--fail); color: light-dark(#fff, #17171b); font: 700 12px / 1 var(--font-ui); font-variant-numeric: tabular-nums; }
-	.count.wait { background: var(--wait); }
-	.fixes { list-style: none; margin: 10px -8px 0; padding: 0; display: flex; flex-direction: column; min-height: 0; }
-	.fixes li + li { box-shadow: inset 0 1px 0 var(--line); }
-	.fix { display: flex; align-items: center; gap: 12px; min-height: 50px; padding: 0 8px; border-radius: 10px; color: inherit; transition: background var(--dur-fast) var(--ease-out); }
-	.fix:hover { background: var(--well); }
-	.fix:focus-visible, .more:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.tone { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--fail); }
-	.tone.wait { background: var(--wait); }
-	.tone.ok { background: var(--ok); }
-	.ft { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
-	.ft b { font: 600 14px / 1.3 var(--font-ui); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.ft > span:last-child { font: var(--t-footnote); color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	.fa { flex: none; display: inline-flex; align-items: center; gap: 2px; color: var(--accent-text); font: 600 13px / 1 var(--font-ui); white-space: nowrap; }
-	.more { position: relative; margin-top: auto; align-self: flex-start; display: inline-flex; align-items: center; gap: 2px; min-height: 28px; border-radius: 8px; color: var(--accent-text); font: 600 13px / 1 var(--font-ui); }
-	.more::after { content: ''; position: absolute; inset: -8px 0; }
-	.more:hover { text-decoration: underline; text-underline-offset: 3px; }
-	.rest-ok { margin-top: auto; display: flex; align-items: center; gap: 8px; font: var(--t-footnote); color: var(--text-muted); }
-	.passed { list-style: none; margin: 14px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; overflow: hidden; }
-	.passed li { display: inline-flex; align-items: center; gap: 5px; height: 28px; padding: 0 10px 0 8px; border-radius: 999px; background: var(--well); box-shadow: inset 0 0 0 1px var(--line); font: var(--t-footnote); color: var(--text-muted); white-space: nowrap; }
-	.passed li :global(.icon) { color: var(--ok); }
-	.again { margin-top: 12px; }
-	.meta { display: flex; align-items: center; gap: 6px; margin-top: 0; }
 
 	/* Two columns (a narrow window, a tablet, a phone): the big tiles keep their two-by-two, the tall one becomes one row, an odd last tile spans the row, and everything inside a tile takes its compact size (the rows are 132px here). */
 	@container home (max-width: 900px) {
-		.bento { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: 132px; gap: 10px; }
 		.tile.tall { grid-row: span 1; }
 		.tile.fill { grid-column: span 2; }
 		.tile { padding: 12px 14px; border-radius: 18px; }
-		.head { gap: 8px; }
-		.lab { font-size: 13px; }
-		.num { font-size: 30px; }
-		.num small { font-size: 12px; margin-left: 4px; }
-		.word { font-size: 19px; }
-		.life { left: 14px; right: 14px; bottom: 5px; height: 3px; }
 		.pill { top: 10px; left: 10px; }
 		.pic .nm { font-size: 18px; }
 		.pic.big .nm { font-size: 26px; }
 		.pic.big .logo { max-height: 72px; }
 		.sm { line-height: 1.3; }
 		.ask-stack img { width: 32px; margin-left: -10px; border-radius: 6px; }
-		.ask-stack b { min-width: 26px; height: 26px; margin-left: 8px; }
-		.dl .num, .dl > .word { margin-top: 10px; }
-		.flow { margin-top: 10px; }
-		.flow li { padding: 7px 10px; }
-		.fixes { margin-top: 6px; }
-		.fix { min-height: 44px; }
-		.passed { margin-top: 8px; max-height: 130px; }
-	}
+}
 	/* Phones: the big tiles have less room, so two downloads show and the problem rows keep only their arrow. */
 	@container home (max-width: 560px) {
-		.dl-list li:nth-child(n + 3) { display: none; }
-		.act { display: none; }
-	}
-	/* Two columns on a wide screen: a little taller, so pictures are not thin strips. */
-	@container home (min-width: 560px) and (max-width: 900px) {
-		.bento { grid-auto-rows: 150px; }
-	}
+}
 	/* A small phone (360): the tile names still fit. */
 	@container home (max-width: 340px) {
 		.tile { padding-inline: 12px; }
-		.life { left: 12px; right: 12px; }
-		.head { gap: 7px; }
-		.lab { font-size: 12.5px; letter-spacing: -0.012em; }
-	}
+}
 	/* Phones: Search and Explore become two round buttons beside the switch; the note goes under them and keeps its line when there is a switch, so Home and System start at the same height. */
 	@media (max-width: 767px) {
 		.home { --home-gap: 26px; --poster-item: 54vw; --title-item: calc((100cqi - var(--shelf-gap)) / 1.6 / .78); }
@@ -1065,8 +467,7 @@
 		.top-row :global(.ui-seg button) { min-height: 44px; }
 		.note { order: 3; flex-basis: 100%; font: var(--t-subhead); min-height: 1.35em; }
 		.note:empty:not(.pending):not(.hold) { display: none; }
-		.go { display: none; }
-	}
+}
 
 	.up { display: flex; flex-direction: column; gap: 12px; }
 	.up-head { display: flex; align-items: baseline; gap: 12px; }
@@ -1094,7 +495,7 @@
 		.up-list li:nth-child(n + 2) { box-shadow: inset 0 1px 0 var(--line); }
 		.up-list li:nth-child(n + 5) { display: none; }
 		.up-th { width: 60px; }
-	}
+}
 
 	/* The Welcome card and the first-ask prompt are the same sheet as the tiles. */
 	.setup { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(260px, 1fr); gap: 0; border-radius: 20px; background: linear-gradient(180deg, var(--sheet-a), var(--sheet-b)); box-shadow: var(--edge), var(--drop); overflow: hidden; }
@@ -1124,13 +525,13 @@
 	.welcome-acts { display: flex; flex-wrap: wrap; gap: 8px; }
 	.welcome-acts.hide { visibility: hidden; }
 
-	@media (max-width: 900px) { .setup { grid-template-columns: 1fr; } .steps { box-shadow: inset 0 1px 0 var(--line); } }
+	@media (max-width: 900px) { .setup { grid-template-columns: 1fr; } .steps { box-shadow: inset 0 1px 0 var(--line); }
+}
 
 	/* High Contrast (forced colors) drops shadows and fills: tiles, the steps box and the ticks get a system border, focus gets a system outline, and the small coloured marks (dots, pips, the foot line, the count) keep their colours. */
 	@media (forced-colors: active) {
 		.home :global(:focus-visible) { outline: 2px solid Highlight !important; outline-offset: 2px; }
-		.tile, .setup, .prompt, .flow, .passed li, .up-list { border: 1px solid CanvasText; }
-		.life, .pb, .tone, .note .dot, .count, .ask-stack b { forced-color-adjust: none; }
-		.life:not(.pips), .pb, .life.pips i.off { outline: 1px solid CanvasText; outline-offset: -1px; }
-	}
+		.tile, .setup, .prompt, .up-list { border: 1px solid CanvasText; }
+		.note .dot { forced-color-adjust: none; }
+}
 </style>

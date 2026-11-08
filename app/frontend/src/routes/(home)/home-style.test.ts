@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { compile } from 'svelte/compiler';
 
-// Home's phone and High Contrast rules, read from the compiled page styles.
-const css = compile(readFileSync(new URL('./+page.svelte', import.meta.url), 'utf8'), { filename: '+page.svelte', css: 'external' }).css?.code.replace(/:where\(\.svelte-[\w-]+\)|\.svelte-[\w-]+/g, '') ?? '';
+// Home's phone and High Contrast rules, read from the compiled styles of the page and its overview.
+const css = ['+page.svelte', 'HomeOverview.svelte']
+	.map((file) => compile(readFileSync(new URL(`./${file}`, import.meta.url), 'utf8'), { filename: file, css: 'external' }).css?.code.replace(/:where\(\.svelte-[\w-]+\)|\.svelte-[\w-]+/g, '') ?? '')
+	.join('\n');
 /** The rules inside one @media block (its braces matched). */
 function media(query: string): string {
 	const at = css.indexOf(`@media ${query}`);
