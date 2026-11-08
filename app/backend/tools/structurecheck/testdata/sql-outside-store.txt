@@ -1,5 +1,4 @@
 app/backend/cmd/holyarrs/main.go
-app/backend/internal/accounts/store_arr_keys.go
 app/backend/internal/alerts/events.go
 app/backend/internal/alerts/music.go
 app/backend/internal/alerts/service.go

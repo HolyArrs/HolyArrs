@@ -97,8 +97,7 @@ func ReadMoveCredential(ctx context.Context, st *database.Store, v *secrets.Vaul
 // MoveCredentialVersion pins the stored secret a credential was read from, so a
 // later write can tell whether it changed in between.
 type MoveCredentialVersion struct {
-	SecretID  int64
-	SealedSHA [32]byte
+	SecretID int64
 }
 
 // ReadMoveCredentialVersion also returns the immutable vault row identity
@@ -115,7 +114,7 @@ func ReadMoveCredentialVersion(ctx context.Context, st *database.Store, v *secre
 	if err != nil {
 		return c, MoveCredentialVersion{}, false, err
 	}
-	raw, revision, err := v.GetVersion(ctx, id)
+	raw, _, err := v.GetVersion(ctx, id)
 	if err != nil {
 		return c, MoveCredentialVersion{}, false, err
 	}
@@ -127,7 +126,7 @@ func ReadMoveCredentialVersion(ctx context.Context, st *database.Store, v *secre
 		return MoveCredential{}, MoveCredentialVersion{}, false, err
 	}
 	c.Address = address
-	return c, MoveCredentialVersion{SecretID: id, SealedSHA: revision}, true, nil
+	return c, MoveCredentialVersion{SecretID: id}, true, nil
 }
 
 // ListMoveCredentials says which old apps have a saved credential, with

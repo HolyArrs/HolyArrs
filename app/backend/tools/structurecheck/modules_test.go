@@ -186,7 +186,8 @@ func loadSQLAllowlist(t *testing.T) map[string]bool {
 	return out
 }
 
-// TestSeedSQLAllowlist writes the allowlist when run with -seed.
+// TestSeedSQLAllowlist writes the allowlist when run with -seed. This file has
+// the structure build tag, so run: go test -tags structure -run TestSeedSQLAllowlist ./tools/structurecheck/ -args -seed
 func TestSeedSQLAllowlist(t *testing.T) {
 	if !*seedSQL {
 		t.Skip("run with -seed to rewrite the allowlist")

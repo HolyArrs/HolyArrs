@@ -117,7 +117,6 @@ var packageHome = map[string]string{
 	"unrar":         "mediafiles",
 	"library":       "mediafiles",
 	"datapack":      "mediafiles",
-	"mediaserver":   "mediaservers",
 	"importsecrets": "migrate",
 	"compat":        "arrapi",
 	"doctor":        "health",
@@ -239,6 +238,6 @@ var tableOwner = map[string]string{
 	"import_created":    "migrate",
 
 	// arrapi
-	"compat_keys": "arrapi",
+	"compat_keys": "accounts", // key checks run in auth, below arrapi
 	"compat_tags": "arrapi",
 }
