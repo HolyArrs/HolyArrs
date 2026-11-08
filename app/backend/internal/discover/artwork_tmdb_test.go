@@ -1,4 +1,4 @@
-package api
+package discover
 
 import (
 	"io"
@@ -36,7 +36,10 @@ func TestTMDBArtworkFetchesOnceAndCaches(t *testing.T) {
 	defer pics.Close()
 	u, _ := url.Parse(pics.URL)
 	art := &library.ArtworkCache{Dir: filepath.Join(t.TempDir(), "art"), Allowed: []string{metadata.ImageBase + "/"}, HTTP: &http.Client{Transport: toServer{u}}}
-	srv := httptest.NewServer(New(Server{Version: "test", Library: &library.Service{Artwork: art}}).Handler())
+	var misses ArtworkBudget
+	m := http.NewServeMux()
+	m.HandleFunc("GET /api/v1/artwork/tmdb/{size}/{file}", func(w http.ResponseWriter, r *http.Request) { TMDBArtwork(w, r, art, &misses) })
+	srv := httptest.NewServer(m)
 	defer srv.Close()
 
 	var etag string

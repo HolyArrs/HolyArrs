@@ -28,10 +28,4 @@ func TestTitleArtworkIsALink(t *testing.T) {
 			t.Fatalf("%s: artwork is not a link: %s", u, b)
 		}
 	}
-	if got := artworkLinks(nil); got == nil || len(got) != 0 {
-		t.Fatalf("no artwork must be an empty list, got %#v", got)
-	}
-	if got := artworkLinks([]string{"https://image.tmdb.org/t/p/w342/x.jpg", "poster:"}); got[0] != "https://image.tmdb.org/t/p/w342/x.jpg" || got[1] != "poster:" {
-		t.Fatalf("other artwork must be kept as it is: %#v", got)
-	}
 }

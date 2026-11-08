@@ -1,4 +1,4 @@
-package api
+package discover
 
 import (
 	"io"
@@ -34,10 +34,11 @@ func TestServerArtworkThroughTheCache(t *testing.T) {
 		}
 	}))
 	defer pics.Close()
-	_, st := discoverRig(t, newDiscoverTMDB(t).provider())
 	art := &library.ArtworkCache{Dir: filepath.Join(t.TempDir(), "art"), Allowed: []string{pics.URL + "/v1/img/"}, HTTP: pics.Client()}
-	a := New(Server{Store: st, Version: "test", ImageBase: pics.URL + "/v1/img", Library: &library.Service{Store: st, Artwork: art}})
-	srv := httptest.NewServer(a.Handler())
+	var misses ArtworkBudget
+	m := http.NewServeMux()
+	m.HandleFunc("GET /api/v1/artwork/img/{kind}/{id}/{file}", func(w http.ResponseWriter, r *http.Request) { ServerArtwork(w, r, pics.URL+"/v1/img", art, &misses) })
+	srv := httptest.NewServer(m)
 	defer srv.Close()
 	get := func(p string) (int, string, string) {
 		res, err := http.Get(srv.URL + p)
