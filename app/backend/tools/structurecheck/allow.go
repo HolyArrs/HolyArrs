@@ -40,7 +40,6 @@ var oversized = map[string]bool{
 	"app/backend/internal/api/titles.go":                     true,
 	"app/backend/internal/library/adopt.go":                  true,
 	"app/backend/internal/api/asks.go":                       true,
-	"app/backend/internal/accounts/users.go":                 true,
 	"app/backend/internal/library/artist.go":                 true,
 	"app/backend/internal/migrate/arr.go":                    true,
 	"app/backend/internal/accounts/outside_signin.go":        true,
