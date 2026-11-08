@@ -9,6 +9,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 )
 
@@ -95,12 +96,12 @@ func (a *API) kindShown(kind string) bool {
 // albumNames hands the albums a Library search matched to the music
 // picture chain and prefetch, as Explore's rows do.
 func (a *API) albumNames(list []mediafiles.AlbumName) {
-	names := make([]nameKey, 0, len(list))
+	names := make([]music.NameKey, 0, len(list))
 	for _, n := range list {
-		names = append(names, nameKey{kind: "album", mbid: n.MBID, name: n.Name, artist: n.Artist})
+		names = append(names, music.NewNameKey("album", n.MBID, n.Name, n.Artist))
 	}
-	a.rememberMusicNames(names)
-	a.warmMusicNames(names)
+	a.mh().RememberNames(names)
+	a.mh().WarmNames(names)
 }
 
 func (a *API) libraryPeople(r *http.Request, words []string, visible func(mediafiles.Title) bool) ([]mediafiles.LibraryPerson, error) {

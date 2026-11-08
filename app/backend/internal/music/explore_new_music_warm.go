@@ -1,4 +1,4 @@
-package api
+package music
 
 import (
 	"context"
@@ -29,8 +29,8 @@ type musicNewDisk struct {
 }
 
 // loadMusicNew reads the last kept build once, when none is in memory.
-func (a *API) loadMusicNew() {
-	if a.s.Store == nil {
+func (h *Handlers) loadMusicNew() {
+	if h.Store == nil {
 		return
 	}
 	musicNew.mu.Lock()
@@ -38,7 +38,7 @@ func (a *API) loadMusicNew() {
 	if musicNew.data != nil {
 		return
 	}
-	b, ok, err := metadata.LookupCache{Store: a.s.Store}.Get(context.Background(), musicNewDiskKey, time.Now())
+	b, ok, err := metadata.LookupCache{Store: h.Store}.Get(context.Background(), musicNewDiskKey, time.Now())
 	if err != nil || !ok {
 		return
 	}
@@ -51,7 +51,7 @@ func (a *API) loadMusicNew() {
 
 // refreshMusicNew builds the lists now, swaps them in and keeps them.
 // It returns false when another build is already running.
-func (a *API) refreshMusicNew(ctx context.Context) bool {
+func (h *Handlers) refreshMusicNew(ctx context.Context) bool {
 	musicNew.mu.Lock()
 	if musicNew.building {
 		musicNew.mu.Unlock()
@@ -60,15 +60,15 @@ func (a *API) refreshMusicNew(ctx context.Context) bool {
 	musicNew.building = true
 	musicNew.mu.Unlock()
 	now := time.Now().UTC()
-	nd := a.buildMusicNew(ctx, now)
+	nd := h.buildMusicNew(ctx, now)
 	musicNew.mu.Lock()
 	musicNew.data, musicNew.building = nd, false
 	musicNew.mu.Unlock()
-	if a.s.Store != nil {
+	if h.Store != nil {
 		b, err := json.Marshal(musicNewDisk{At: nd.at, Releases: nd.releases, Fresh: nd.fresh, Albums: nd.albums, Artists: nd.artists, Server: nd.server})
 		if err == nil {
 			// Kept long past the TTL: a stale build still answers at once.
-			_ = metadata.LookupCache{Store: a.s.Store}.Put(context.WithoutCancel(ctx), musicNewDiskKey, b, now, now.Add(30*24*time.Hour))
+			_ = metadata.LookupCache{Store: h.Store}.Put(context.WithoutCancel(ctx), musicNewDiskKey, b, now, now.Add(30*24*time.Hour))
 		}
 	}
 	return true
@@ -77,9 +77,9 @@ func (a *API) refreshMusicNew(ctx context.Context) bool {
 // prebuildMusic builds New & Popular → Music, Explore Music's charts and
 // every genre page, then fetches ahead the details and covers of what they
 // show (music_ahead.go). One thing at a time, so upstream limits are kept.
-func (a *API) prebuildMusic(ctx context.Context) {
-	a.loadMusicNew()
-	a.refreshMusicNew(ctx)
+func (h *Handlers) prebuildMusic(ctx context.Context) {
+	h.loadMusicNew()
+	h.refreshMusicNew(ctx)
 	if ctx.Err() != nil {
 		return
 	}
@@ -92,18 +92,18 @@ func (a *API) prebuildMusic(ctx context.Context) {
 		}
 	}
 	for _, k := range []string{"albums", "songs"} {
-		for _, it := range a.musicChartOf(ctx, region, k, now) {
+		for _, it := range h.musicChartOf(ctx, region, k, now) {
 			add("album", it.MBID)
 			add("artist", it.ArtistMBID)
 		}
 	}
-	if lib, err := a.musicLibrary(ctx, now); err == nil {
-		if acts, err := a.musicActsOf(ctx, 0); err == nil {
-			for _, g := range a.musicGenreTiles(ctx, region, now) {
+	if lib, err := h.musicLibrary(ctx, now); err == nil {
+		if acts, err := h.musicActsOf(ctx, 0); err == nil {
+			for _, g := range h.musicGenreTiles(ctx, region, now) {
 				if ctx.Err() != nil {
 					return
 				}
-				_, _, rows := a.buildMusicGenre(ctx, 0, region, g, lib, acts, now)
+				_, _, rows := h.buildMusicGenre(ctx, 0, region, g, lib, acts, now)
 				for _, r := range rows {
 					for _, c := range r.Items {
 						if c.Kind == "album" {
@@ -136,5 +136,5 @@ func (a *API) prebuildMusic(ctx context.Context) {
 			}
 		}
 	}
-	a.fetchAhead(ctx, aheadOf(art))
+	h.fetchAhead(ctx, aheadOf(art))
 }

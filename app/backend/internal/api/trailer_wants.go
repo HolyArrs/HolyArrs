@@ -21,7 +21,7 @@ func (a *API) newTrailers() *metadata.Trailers {
 	t.Provider = func() metadata.Provider { return a.s.Metadata }
 	t.Pick = func() func(ctx context.Context, kind, id, lang string) (string, error) { return a.s.TrailerPick }
 	t.Explore, t.Ages, t.Settings, t.People = titleExplore{a}, titleAges{a}, trailerHost{a}, trailerHost{a}
-	t.KindsOn, t.Wants, t.Videos = a.kindsOn, trailerHost{a}, artistVideoHooks{a}
+	t.KindsOn, t.Wants, t.Videos = a.kindsOn, trailerHost{a}, a.mh().VideoHooks()
 	return t
 }
 
@@ -46,40 +46,6 @@ func (h trailerHost) PassLanguages(ctx context.Context) []string {
 }
 
 func (h trailerHost) Warm(lang string, titles [][2]string) { h.a.warmTitles(lang, titles) }
-
-// artistVideoHooks gives the trailers the artists' music videos.
-type artistVideoHooks struct{ a *API }
-
-func (v artistVideoHooks) On() bool { return v.a.artistVideosOn() }
-
-func (v artistVideoHooks) Asks(ctx context.Context, now time.Time) []string {
-	return v.a.artistAsks(ctx, now)
-}
-
-func (v artistVideoHooks) Due(ctx context.Context, mbid string, now time.Time) (bool, bool, bool) {
-	return v.a.artistVideoDue(ctx, mbid, now)
-}
-
-func (v artistVideoHooks) Pass(ctx context.Context, mbid string, renew bool) error {
-	return v.a.passArtistVideo(ctx, mbid, renew)
-}
-
-func (v artistVideoHooks) SaveAsks(ctx context.Context) { v.a.saveArtistAsks(ctx) }
-
-func (v artistVideoHooks) Ready(r *http.Request, mbid string) (any, bool) {
-	e, kept := v.a.keptVideos(r.Context(), mbid)
-	if !kept {
-		return nil, false
-	}
-	vid, s, ready := v.a.readyVideo(r.Context(), e.list)
-	if !ready {
-		return nil, false
-	}
-	view, ok := v.a.videoView(r, vid, s)
-	return view, ok
-}
-
-func (v artistVideoHooks) Note(ctx context.Context, mbids []string) { v.a.noteArtistVideos(ctx, mbids) }
 
 // fillTrailerKeys sets trailer_key on Explore cards whose key is kept.
 func (a *API) fillTrailerKeys(r *http.Request, items []discoverItemView) {

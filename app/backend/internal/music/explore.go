@@ -1,4 +1,4 @@
-package api
+package music
 
 import (
 	"context"
@@ -120,8 +120,8 @@ var similarPendingAgain = 5 * time.Second
 
 // similarPending reports a similar list the server is still getting (or
 // one being asked right now).
-func (a *API) similarPending(id string) bool {
-	c := &a.musicx
+func (h *Handlers) similarPending(id string) bool {
+	c := &h.musicx
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	e := c.similar[id]
@@ -145,10 +145,10 @@ type genreSource interface {
 
 // genresOf answers the known genres of each id and queues the rest for a
 // background MusicBrainz lookup.
-func (a *API) genresOf(ids []string) map[string][]string {
-	c := &a.musicx
+func (h *Handlers) genresOf(ids []string) map[string][]string {
+	c := &h.musicx
 	out := map[string][]string{}
-	src, _ := a.genreProvider()
+	src, _ := h.genreProvider()
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	if c.genres == nil {
@@ -169,23 +169,23 @@ func (a *API) genresOf(ids []string) map[string][]string {
 	}
 	if src != nil && len(c.queue) > 0 && !c.running {
 		c.running = true
-		go a.fillGenres(src)
+		go h.fillGenres(src)
 	}
 	return out
 }
 
-func (a *API) genreProvider() (genreSource, bool) {
-	if a.s.Library == nil || a.s.Library.Artists == nil {
+func (h *Handlers) genreProvider() (genreSource, bool) {
+	if h.Library == nil || h.Library.Artists == nil {
 		return nil, false
 	}
-	g, ok := a.s.Library.Artists.(genreSource)
+	g, ok := h.Library.Artists.(genreSource)
 	return g, ok
 }
 
 // fillGenres looks the queued artists up one at a time (MusicBrainz's own
 // limiter spaces them), at most musicGenreLookups an hour.
-func (a *API) fillGenres(src genreSource) {
-	c := &a.musicx
+func (h *Handlers) fillGenres(src genreSource) {
+	c := &h.musicx
 	for {
 		c.mu.Lock()
 		now := time.Now()
@@ -230,12 +230,12 @@ func (a *API) fillGenres(src genreSource) {
 
 // similarTo reads the similar artists of each seed, waiting at most wait
 // for answers not cached yet (they keep filling in the background).
-func (a *API) similarTo(seeds []string, wait time.Duration) map[string][]metadata.SimilarArtist {
+func (h *Handlers) similarTo(seeds []string, wait time.Duration) map[string][]metadata.SimilarArtist {
 	out := map[string][]metadata.SimilarArtist{}
-	if a.s.MusicSimilar == nil {
+	if h.MusicSimilar == nil {
 		return out
 	}
-	c := &a.musicx
+	c := &h.musicx
 	// pending holds the done channels, taken under the lock: fetchSimilar
 	// clears e.done under the lock, so reading it later would race.
 	var pending []chan struct{}
@@ -253,7 +253,7 @@ func (a *API) similarTo(seeds []string, wait time.Duration) map[string][]metadat
 			}
 			e = &musicSimilarEntry{done: make(chan struct{})}
 			c.similar[id] = e
-			go a.fetchSimilar(id, e)
+			go h.fetchSimilar(id, e)
 		}
 		if e.done != nil {
 			pending = append(pending, e.done)
@@ -283,11 +283,11 @@ wait:
 	return out
 }
 
-func (a *API) fetchSimilar(id string, e *musicSimilarEntry) {
+func (h *Handlers) fetchSimilar(id string, e *musicSimilarEntry) {
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
-	list, err := a.s.MusicSimilar(ctx, id)
-	c := &a.musicx
+	list, err := h.MusicSimilar(ctx, id)
+	c := &h.musicx
 	c.mu.Lock()
 	e.list, e.ok, e.at = list, err == nil, time.Now()
 	e.pending = errors.Is(err, metadata.ErrServicePending)
@@ -339,27 +339,27 @@ func dayOf(t *time.Time) string {
 }
 
 // exploreMusic answers GET /api/v1/explore/music?genre=<tag>&region=<code>.
-func (a *API) exploreMusic(w http.ResponseWriter, r *http.Request) {
-	if p, _ := parts.ForTitleKind("artist"); !a.partIsOn(p) {
+func (h *Handlers) exploreMusic(w http.ResponseWriter, r *http.Request) {
+	if p, _ := parts.ForTitleKind("artist"); !h.PartIsOn(p) {
 		webserver.Fail(w, http.StatusNotFound, "music is turned off")
 		return
 	}
 	// Music has no ratings, so a Kid limit shows none of it.
-	if a.kidMax(r) != "" {
+	if h.KidMax(r) != "" {
 		webserver.WriteJSON(w, http.StatusOK, map[string]any{"kid": true, "cold": false, "genres": []string{}, "genre": "", "hero": nil, "rows": []MusicRow{}})
 		return
 	}
-	if !a.discover.allow(a.person(r).UserID, time.Now()) {
+	if !h.Limit(h.Person(r).UserID, time.Now()) {
 		w.Header().Set("Retry-After", "60")
 		webserver.Fail(w, http.StatusTooManyRequests, "too many Explore requests; try again in a minute")
 		return
 	}
-	if a.s.MusicRowsV2 && a.s.MusicRowsV3 && a.s.MusicRowsV7 {
-		a.exploreMusicV7(w, r)
+	if h.MusicRowsV2 && h.MusicRowsV3 && h.MusicRowsV7 {
+		h.exploreMusicV7(w, r)
 		return
 	}
-	if a.s.MusicRowsV2 {
-		a.exploreMusicV2(w, r)
+	if h.MusicRowsV2 {
+		h.exploreMusicV2(w, r)
 		return
 	}
 	q := r.URL.Query()
@@ -369,11 +369,11 @@ func (a *API) exploreMusic(w http.ResponseWriter, r *http.Request) {
 		region = "global"
 	}
 	ctx := r.Context()
-	db := a.s.Store.Read()
+	db := h.Store.Read()
 	now := time.Now().UTC()
-	key := musicAnswerKey(a.person(r).UserID, genre, region, musicHour(q.Get("hour"), now))
-	if body, ok := a.cachedMusicAnswer(key, now); ok {
-		a.exploreCaching(w, r, "private, max-age=60")
+	key := musicAnswerKey(h.Person(r).UserID, genre, region, musicHour(q.Get("hour"), now))
+	if body, ok := h.cachedMusicAnswer(key, now); ok {
+		h.ExploreCaching(w, r, "private, max-age=60")
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write(body)
@@ -435,15 +435,15 @@ func (a *API) exploreMusic(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	st := webserver.NewServerTiming()
-	similar := a.similarTo(seedIDs, musicSimilarWait)
+	similar := h.similarTo(seedIDs, musicSimilarWait)
 	st.Mark("similar")
 
 	// Charts, from the cached trending lists.
 	var trendArtists, trendAlbums []MusicCard
 	regions := []string{}
-	if a.s.MusicTrending != nil {
+	if h.MusicTrending != nil {
 		for _, kind := range []string{"artist", "album"} {
-			l, err := a.cachedMusicTrend(ctx, kind, "global")
+			l, err := h.cachedMusicTrend(ctx, kind, "global")
 			if err != nil {
 				continue
 			}
@@ -476,7 +476,7 @@ func (a *API) exploreMusic(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	st.Mark("charts")
-	genres, genresDone := a.genresWaiting(ids, musicGenreWait)
+	genres, genresDone := h.genresWaiting(ids, musicGenreWait)
 	st.Mark("genres")
 	for _, m := range artists {
 		m.genres = genres[m.mbid]
@@ -540,13 +540,13 @@ func (a *API) exploreMusic(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 			out = append(out, c)
-			h := c
-			h.ArtistImage = m.image
+			hv := c
+			hv.ArtistImage = m.image
 			switch strings.ToLower(derefStr(p.ReleaseType)) {
 			case "album":
-				heroAlbums = append(heroAlbums, h)
+				heroAlbums = append(heroAlbums, hv)
 			case "ep":
-				heroEPs = append(heroEPs, h)
+				heroEPs = append(heroEPs, hv)
 			}
 		}
 		if all := append(heroAlbums, heroEPs...); len(all) > 0 {
@@ -677,7 +677,7 @@ func (a *API) exploreMusic(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	out = a.moreMusicRows(ctx, &musicCtx{now: now, hour: musicHour(q.Get("hour"), now), region: region, artists: artists, byTitle: byTitle, owned: owned,
+	out = h.moreMusicRows(ctx, &musicCtx{now: now, hour: musicHour(q.Get("hour"), now), region: region, artists: artists, byTitle: byTitle, owned: owned,
 		genres: genres, trendAlbums: trendAlbums, trendArtists: trendArtists, pool: pool, top: top, tag: tag, albumCard: albumCard, names: &names, cold: cold}, out)
 	st.Mark("more")
 
@@ -730,7 +730,7 @@ func (a *API) exploreMusic(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 		for i := range row.Items {
-			row.Items[i].Fresh = a.musicFresh(row.Type, row.Items[i])
+			row.Items[i].Fresh = h.MusicFresh(row.Type, row.Items[i])
 			pageSeen[row.Items[i].Key] = true
 		}
 		final = append(final, row)
@@ -756,11 +756,11 @@ func (a *API) exploreMusic(w http.ResponseWriter, r *http.Request) {
 	if heroAlts == nil {
 		heroAlts = []MusicCard{}
 	}
-	a.rememberMusicNames(names)
-	a.exploreCaching(w, r, "private, max-age=60")
+	h.rememberMusicNames(names)
+	h.ExploreCaching(w, r, "private, max-age=60")
 	complete := genresDone && len(similar) == len(seedIDs)
 	st.Write(w)
-	a.writeMusicAnswer(w, key, map[string]any{"kid": false, "cold": cold, "genres": top, "genre": genre, "region": region, "regions": regions, "hero": hero, "hero_alts": heroAlts, "rows": final}, complete, now)
+	h.writeMusicAnswer(w, key, map[string]any{"kid": false, "cold": cold, "genres": top, "genre": genre, "region": region, "regions": regions, "hero": hero, "hero_alts": heroAlts, "rows": final}, complete, now)
 }
 
 type nameKey struct{ kind, mbid, name, artist, cover string }
@@ -771,14 +771,14 @@ type nameKey struct{ kind, mbid, name, artist, cover string }
 const musicNamesMax = 60000
 
 // rememberMusicNames lets the picture route serve these albums and artists.
-func (a *API) rememberMusicNames(list []nameKey) {
-	a.rememberNames(list)
+func (h *Handlers) rememberMusicNames(list []nameKey) {
+	h.rememberNames(list)
 	// Every row and page that lists them also gets their pictures stored.
-	a.warmArtItems(list)
+	h.warmArtItems(list)
 }
 
-func (a *API) rememberNames(list []nameKey) {
-	c := &a.music
+func (h *Handlers) rememberNames(list []nameKey) {
+	c := &h.music
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	if c.names == nil {
@@ -818,7 +818,7 @@ const musicArtPrefix = "/api/v1/music-trending/art/"
 // rememberMusicCards lets the picture route serve every album and artist
 // these rows show, then fetches their pictures in the background, so the
 // cards and circles get art from the same cover chain as the charts.
-func (a *API) rememberMusicCards(rows []MusicRow, extra ...MusicCard) {
+func (h *Handlers) rememberMusicCards(rows []MusicRow, extra ...MusicCard) {
 	var names []nameKey
 	add := func(img, name, artist string) {
 		rest, ok := strings.CutPrefix(img, musicArtPrefix)
@@ -850,8 +850,8 @@ func (a *API) rememberMusicCards(rows []MusicRow, extra ...MusicCard) {
 	for _, c := range extra {
 		card(c)
 	}
-	a.rememberMusicNames(names)
-	a.warmMusicNames(names)
+	h.rememberMusicNames(names)
+	h.warmMusicNames(names)
 }
 
 // musicWarmTTL is how long a queued card picture is not queued again.
@@ -859,11 +859,11 @@ const musicWarmTTL = 10 * time.Minute
 
 // warmMusicNames fetches the pictures of these names into the artwork cache
 // in the background (albums at 250 and 500, artists at 250), two at a time.
-func (a *API) warmMusicNames(list []nameKey) {
-	if !a.partIsOn(parts.Music) || a.s.Library == nil || a.s.Library.Artwork == nil {
+func (h *Handlers) warmMusicNames(list []nameKey) {
+	if !h.PartIsOn(parts.Music) || h.Library == nil || h.Library.Artwork == nil {
 		return
 	}
-	c := &a.music
+	c := &h.music
 	now := time.Now()
 	var albums, artists []metadata.MusicTrendItem
 	c.mu.Lock()
@@ -890,8 +890,8 @@ func (a *API) warmMusicNames(list []nameKey) {
 	c.prefetching.Add(1)
 	go func() {
 		defer c.prefetching.Done()
-		a.prefetchMusicArt("album", albums)
-		a.prefetchMusicArt("artist", artists)
+		h.prefetchMusicArt("album", albums)
+		h.prefetchMusicArt("artist", artists)
 	}()
 }
 

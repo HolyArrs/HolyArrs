@@ -1,4 +1,4 @@
-package api
+package music
 
 import (
 	"context"
@@ -14,23 +14,23 @@ import (
 // pictures go to the local picture store through the picture route's own
 // fetch, and after each copy that changed packages the Explore music
 // pictures are warmed again.
-func (a *API) startMusicSync(ctx context.Context) {
-	p := a.s.Packages
-	if p == nil || !a.partIsOn(parts.Music) {
+func (h *Handlers) startMusicSync(ctx context.Context) {
+	p := h.Packages
+	if p == nil || !h.PartIsOn(parts.Music) {
 		return
 	}
 	if p.Pictures == nil {
 		p.Pictures = func(ctx context.Context, kind, mbid, size, v string) bool {
-			c, cancel := context.WithTimeout(metadata.Ahead(ctx), artWarmItem)
+			c, cancel := context.WithTimeout(metadata.Ahead(ctx), ArtWarmItem)
 			defer cancel()
 			metadata.WaitAhead(c)
-			return a.musicArt(c, kind, mbid, size, v).ok
+			return h.musicArt(c, kind, mbid, size, v).ok
 		}
 	}
 	if p.OnSynced == nil {
 		p.OnSynced = func(ctx context.Context) {
-			if a.musicTplOn() {
-				a.tplPreload(a.musicBundle(ctx, time.Now().UTC()), "us")
+			if h.musicTplOn() {
+				h.tplPreload(h.musicBundle(ctx, time.Now().UTC()), "us")
 			}
 		}
 	}
@@ -40,8 +40,8 @@ func (a *API) startMusicSync(ctx context.Context) {
 // wantPackages names to the server (package-want) the artists a music
 // answer lists that no kept package covers, so they get covered; an album
 // counts by its artist when Explore kept it.
-func (a *API) wantPackages(list []nameKey) {
-	p := a.s.Packages
+func (h *Handlers) wantPackages(list []nameKey) {
+	p := h.Packages
 	if p == nil {
 		return
 	}
@@ -53,7 +53,7 @@ func (a *API) wantPackages(list []nameKey) {
 			if p.HasAlbum(n.mbid) {
 				continue
 			}
-			c := &a.music
+			c := &h.music
 			c.mu.Lock()
 			id := strings.ToLower(c.names["album|"+strings.ToLower(n.mbid)].ArtistMBID)
 			c.mu.Unlock()

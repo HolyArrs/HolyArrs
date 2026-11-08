@@ -1,4 +1,4 @@
-package api
+package music
 
 import (
 	"context"
@@ -25,50 +25,50 @@ const musicShelvesTTL = 30 * time.Minute
 
 // musicShelvesOf reads a region's shelves (nil without the flag, the
 // server call, or an answer).
-func (a *API) musicShelvesOf(ctx context.Context, region string, now time.Time) *metadata.MusicShelves {
-	if !a.s.MusicListsV1 || a.s.MusicShelves == nil {
+func (h *Handlers) musicShelvesOf(ctx context.Context, region string, now time.Time) *metadata.MusicShelves {
+	if !h.MusicListsV1 || h.MusicShelves == nil {
 		return nil
 	}
 	key := "shelves:" + strings.ToLower(region)
-	if v, ok := a.musicv2.cand.Get(key, now); ok {
+	if v, ok := h.musicv2.cand.Get(key, now); ok {
 		return v.(*metadata.MusicShelves)
 	}
-	sh, err := a.s.MusicShelves(ctx, strings.ToLower(region))
+	sh, err := h.MusicShelves(ctx, strings.ToLower(region))
 	if err != nil {
 		markMusicMiss(ctx)
 		return nil
 	}
-	a.musicv2.cand.Put(key, &sh, musicShelvesTTL, now)
+	h.musicv2.cand.Put(key, &sh, musicShelvesTTL, now)
 	// New shelves (container start or a list refresh on the server): every
 	// album and artist they hold is fetched ahead, details and pictures, so
 	// rows show art at once.
 	sig := sh.AsOf + "|" + fmt.Sprint(listCount(&sh))
-	a.musicv2.cursorMu.Lock()
-	if a.listSeen == nil {
-		a.listSeen = map[string]string{}
+	h.musicv2.cursorMu.Lock()
+	if h.listSeen == nil {
+		h.listSeen = map[string]string{}
 	}
-	prev := a.listSeen[key]
-	a.listSeen[key] = sig
-	a.musicv2.cursorMu.Unlock()
+	prev := h.listSeen[key]
+	h.listSeen[key] = sig
+	h.musicv2.cursorMu.Unlock()
 	first := prev == ""
-	if first && a.s.Store != nil {
+	if first && h.Store != nil {
 		// After a restart: the shelves the kept plans were built from.
-		if b, ok, _ := (metadata.LookupCache{Store: a.s.Store}).Get(ctx, listSigPrefix+key, now); ok {
+		if b, ok, _ := (metadata.LookupCache{Store: h.Store}).Get(ctx, listSigPrefix+key, now); ok {
 			prev = string(b)
 		}
 	}
 	changed := prev != sig
 	if changed {
-		go a.queueAhead(listAhead(&sh))
-		go a.warmListVideos(&sh)
-		if a.s.Store != nil {
-			_ = metadata.LookupCache{Store: a.s.Store}.Put(context.WithoutCancel(ctx), listSigPrefix+key, []byte(sig), now, now.Add(30*24*time.Hour))
+		go h.queueAhead(listAhead(&sh))
+		go h.warmListVideos(&sh)
+		if h.Store != nil {
+			_ = metadata.LookupCache{Store: h.Store}.Put(context.WithoutCancel(ctx), listSigPrefix+key, []byte(sig), now, now.Add(30*24*time.Hour))
 		}
 	}
 	if changed && (prev != "" || first) {
 		// The server refreshed its lists (also while this install was
 		// down): today's plans rebuild on the next visit so the new rows show.
-		go a.forgetMusicV7Snaps(-1)
+		go h.forgetMusicV7Snaps(-1)
 	}
 	return &sh
 }
@@ -79,8 +79,8 @@ const listVideoWarm = 30
 
 // warmListVideos asks the video row's artists for their music videos
 // ahead, so the row shows once their videos are known.
-func (a *API) warmListVideos(sh *metadata.MusicShelves) {
-	if a.s.ArtistVideos == nil {
+func (h *Handlers) warmListVideos(sh *metadata.MusicShelves) {
+	if h.ArtistVideos == nil {
 		return
 	}
 	ctx := context.Background()
@@ -92,8 +92,8 @@ func (a *API) warmListVideos(sh *metadata.MusicShelves) {
 		if !metadata.ValidMBID(id) {
 			continue
 		}
-		if _, ok := a.keptVideos(ctx, id); !ok {
-			a.videosOf(ctx, id)
+		if _, ok := h.keptVideos(ctx, id); !ok {
+			h.videosOf(ctx, id)
 		}
 	}
 }
@@ -101,7 +101,7 @@ func (a *API) warmListVideos(sh *metadata.MusicShelves) {
 // listBlock is a row's shelf items; the video row keeps only artists
 // whose music videos are already known (the card shows its picture until
 // the stream is ready).
-func (a *API) listBlock(ctx context.Context, sh *metadata.MusicShelves, d listRowDef) []metadata.MusicShelfItem {
+func (h *Handlers) listBlock(ctx context.Context, sh *metadata.MusicShelves, d listRowDef) []metadata.MusicShelfItem {
 	items := sh.Blocks[d.Block]
 	if d.Block == "new_friday" || d.Block == "big_new_albums" {
 		// Rows meant to be new: releases of the last 90 days only.
@@ -118,7 +118,7 @@ func (a *API) listBlock(ctx context.Context, sh *metadata.MusicShelves, d listRo
 	}
 	var out []metadata.MusicShelfItem
 	for _, it := range items {
-		if e, ok := a.keptVideos(ctx, strings.ToLower(it.MBID)); ok && len(e.list) > 0 {
+		if e, ok := h.keptVideos(ctx, strings.ToLower(it.MBID)); ok && len(e.list) > 0 {
 			out = append(out, it)
 		}
 	}
@@ -469,11 +469,11 @@ func listNote(block string, it metadata.MusicShelfItem) string {
 // picture is stored or known to load is taken (the check is off until a
 // preload has stored a picture); a tile without one has no cover, and
 // coveredTiles leaves it out.
-func (a *API) browseCovers(ctx context.Context, region string, tiles []MusicCard, now time.Time) {
+func (h *Handlers) browseCovers(ctx context.Context, region string, tiles []MusicCard, now time.Time) {
 	used := map[string]bool{}
-	hasArt := a.albumHasArt()
+	hasArt := h.albumHasArt()
 	for i := range tiles {
-		for _, it := range a.musicGenreChartOf(ctx, region, tiles[i].MBID, now) {
+		for _, it := range h.musicGenreChartOf(ctx, region, tiles[i].MBID, now) {
 			id := strings.ToLower(it.MBID)
 			if metadata.ValidMBID(id) && !used[id] && (hasArt == nil || hasArt(id)) {
 				used[id] = true
@@ -631,12 +631,12 @@ func listNewOwnFirst(id string) bool {
 // first), then rows of recent releases, and only then the popularity rows
 // (charts, which hold older hits under labels that say so). One seen set
 // over the page, so no album shows twice.
-func (a *API) musicNewListRows(ctx context.Context, r *http.Request, in musicNewInput, hero []MusicCard, rows []MusicRow, now time.Time) ([]MusicCard, []MusicRow) {
+func (h *Handlers) musicNewListRows(ctx context.Context, r *http.Request, in musicNewInput, hero []MusicCard, rows []MusicRow, now time.Time) ([]MusicCard, []MusicRow) {
 	region := strings.ToUpper(r.URL.Query().Get("region"))
 	if region == "" || region == "GLOBAL" || !isCountry(region) {
 		region = "global"
 	}
-	sh := a.musicShelvesOf(ctx, region, now)
+	sh := h.musicShelvesOf(ctx, region, now)
 	if sh == nil {
 		honestLabels(hero, now)
 		return hero, rows
@@ -755,7 +755,7 @@ func (a *API) musicNewListRows(ctx context.Context, r *http.Request, in musicNew
 	// rows), Big this week in {genre}, the page's other rows, the videos.
 	for _, id := range listNewOrder {
 		if d, ok := defs[id]; ok && !recentRows[id] {
-			take(d, a.listBlock(ctx, sh, d))
+			take(d, h.listBlock(ctx, sh, d))
 		}
 	}
 	for _, d := range listTemplates {
@@ -769,18 +769,18 @@ func (a *API) musicNewListRows(ctx context.Context, r *http.Request, in musicNew
 	}
 	own(false)
 	if d, ok := defs["lists_videos"]; ok {
-		take(d, a.listBlock(ctx, sh, d))
+		take(d, h.listBlock(ctx, sh, d))
 	}
 	return hero, out
 }
 
 // musicV7HeadRows is the plan's fixed head: with music_lists_v1 the
 // region's top chart row follows New from your artists and Browse.
-func (a *API) musicV7HeadRows() []string {
-	if a.musicTplOn() {
+func (h *Handlers) musicV7HeadRows() []string {
+	if h.musicTplOn() {
 		return append(append([]string{}, musicV7Head...), "tpl:A01")
 	}
-	if a.s.MusicListsV1 && a.s.MusicShelves != nil {
+	if h.MusicListsV1 && h.MusicShelves != nil {
 		return append(append([]string{}, musicV7Head...), "lists_top_now")
 	}
 	return musicV7Head

@@ -1,4 +1,4 @@
-package api
+package music
 
 import (
 	"context"
@@ -23,8 +23,8 @@ import (
 // activities, filled from the server's catalog bundle.
 
 // musicTplOn reports whether the engine serves music pages.
-func (a *API) musicTplOn() bool {
-	return a.s.MusicListsV1 && !a.s.MusicRowsTplOff && a.s.MusicPools != nil
+func (h *Handlers) musicTplOn() bool {
+	return h.MusicListsV1 && !h.MusicRowsTplOff && h.MusicPools != nil
 }
 
 const (
@@ -47,20 +47,20 @@ type tplBundle struct {
 
 // musicBundle answers the catalog bundle: cached 6 hours, then re-read
 // with its ETag; a failed read keeps the last good copy for a week.
-func (a *API) musicBundle(ctx context.Context, now time.Time) *rowtpl.Bundle {
-	b := a.readMusicBundle(ctx, now)
+func (h *Handlers) musicBundle(ctx context.Context, now time.Time) *rowtpl.Bundle {
+	b := h.readMusicBundle(ctx, now)
 	if b != nil {
-		a.musicPre.catalog.Store(b)
-		a.tplPreload(b, "") // a new bundle's covers are stored again
+		h.musicPre.catalog.Store(b)
+		h.tplPreload(b, "") // a new bundle's covers are stored again
 	}
 	return b
 }
 
-func (a *API) readMusicBundle(ctx context.Context, now time.Time) *rowtpl.Bundle {
-	if v, ok := a.musicv2.cand.Get("tpl:bundle", now); ok {
+func (h *Handlers) readMusicBundle(ctx context.Context, now time.Time) *rowtpl.Bundle {
+	if v, ok := h.musicv2.cand.Get("tpl:bundle", now); ok {
 		return v.(*tplBundle).b
 	}
-	if _, failed := a.musicv2.cand.Get("tpl:fail", now); failed {
+	if _, failed := h.musicv2.cand.Get("tpl:fail", now); failed {
 		return nil
 	}
 	select {
@@ -70,14 +70,14 @@ func (a *API) readMusicBundle(ctx context.Context, now time.Time) *rowtpl.Bundle
 	}
 	defer func() { <-tplFetch }()
 	// Another request may have filled the cache while this one waited.
-	if v, ok := a.musicv2.cand.Get("tpl:bundle", now); ok {
+	if v, ok := h.musicv2.cand.Get("tpl:bundle", now); ok {
 		return v.(*tplBundle).b
 	}
-	if _, failed := a.musicv2.cand.Get("tpl:fail", now); failed {
+	if _, failed := h.musicv2.cand.Get("tpl:fail", now); failed {
 		return nil
 	}
 	var last *tplBundle
-	if v, ok := a.musicv2.cand.Get("tpl:last", now); ok {
+	if v, ok := h.musicv2.cand.Get("tpl:last", now); ok {
 		last = v.(*tplBundle)
 	}
 	etag := ""
@@ -88,33 +88,33 @@ func (a *API) readMusicBundle(ctx context.Context, now time.Time) *rowtpl.Bundle
 	// request, and has its own timeout.
 	dctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 30*time.Second)
 	defer cancel()
-	body, tag, err := a.s.MusicPools(dctx, etag)
+	body, tag, err := h.MusicPools(dctx, etag)
 	switch {
 	case errors.Is(err, metadata.ErrNotModified) && last != nil:
-		a.musicv2.cand.Put("tpl:bundle", last, tplBundleTTL, now)
+		h.musicv2.cand.Put("tpl:bundle", last, tplBundleTTL, now)
 		return last.b
 	case err != nil:
 		if last != nil {
-			a.musicv2.cand.Put("tpl:bundle", last, 10*time.Minute, now)
+			h.musicv2.cand.Put("tpl:bundle", last, 10*time.Minute, now)
 			return last.b
 		}
 		// The download's own result decides (the caller cannot cancel it):
 		// a failure, its own timeout included, is kept for minutes.
-		a.musicv2.cand.Put("tpl:fail", true, tplFailTTL, now)
+		h.musicv2.cand.Put("tpl:fail", true, tplFailTTL, now)
 		return nil
 	}
 	b, err := rowtpl.ParseBundle(body)
 	if err != nil {
 		if last != nil {
-			a.musicv2.cand.Put("tpl:bundle", last, 10*time.Minute, now)
+			h.musicv2.cand.Put("tpl:bundle", last, 10*time.Minute, now)
 			return last.b
 		}
-		a.musicv2.cand.Put("tpl:fail", true, tplFailTTL, now)
+		h.musicv2.cand.Put("tpl:fail", true, tplFailTTL, now)
 		return nil
 	}
 	x := &tplBundle{b: b, etag: tag}
-	a.musicv2.cand.Put("tpl:bundle", x, tplBundleTTL, now)
-	a.musicv2.cand.Put("tpl:last", x, tplKeepTTL, now)
+	h.musicv2.cand.Put("tpl:bundle", x, tplBundleTTL, now)
+	h.musicv2.cand.Put("tpl:last", x, tplKeepTTL, now)
 	return b
 }
 
@@ -124,35 +124,35 @@ var tplCountsMu sync.Mutex
 // tplCounts answers each Browse page's row count for a region, as a member
 // with an empty library sees it: cached per region and bundle version for
 // 6 hours, so tiles appear by themselves once their data grows.
-func (a *API) tplCounts(ctx context.Context, b *rowtpl.Bundle, region string, now time.Time) map[string]int {
+func (h *Handlers) tplCounts(ctx context.Context, b *rowtpl.Bundle, region string, now time.Time) map[string]int {
 	key := "tpl:counts:" + strings.ToLower(region) + ":" + b.Version
-	if v, ok := a.musicv2.cand.Get(key, now); ok {
+	if v, ok := h.musicv2.cand.Get(key, now); ok {
 		return v.(map[string]int)
 	}
 	tplCountsMu.Lock()
 	defer tplCountsMu.Unlock()
-	if v, ok := a.musicv2.cand.Get(key, now); ok {
+	if v, ok := h.musicv2.cand.Get(key, now); ok {
 		return v.(map[string]int)
 	}
-	counts := rowtpl.PageCounts(b, now, strings.ToLower(region), tplBlocks(a.musicShelvesOf(ctx, region, now)), rowtpl.BrowseKeys())
-	a.musicv2.cand.Put(key, counts, tplBundleTTL, now)
+	counts := rowtpl.PageCounts(b, now, strings.ToLower(region), tplBlocks(h.musicShelvesOf(ctx, region, now)), rowtpl.BrowseKeys())
+	h.musicv2.cand.Put(key, counts, tplBundleTTL, now)
 	return counts
 }
 
 // tplVisible answers the Browse sections a member sees: tiles whose page
 // has enough rows, seasons inside their window.
-func (a *API) tplVisible(ctx context.Context, b *rowtpl.Bundle, region string, lib *rowtpl.Lib, now time.Time) []rowtpl.BrowseSection {
+func (h *Handlers) tplVisible(ctx context.Context, b *rowtpl.Bundle, region string, lib *rowtpl.Lib, now time.Time) []rowtpl.BrowseSection {
 	r := strings.ToLower(region)
-	return rowtpl.VisibleSections(rowtpl.BrowseSections(b, now, r, lib), a.tplCounts(ctx, b, region, now), now, r)
+	return rowtpl.VisibleSections(rowtpl.BrowseSections(b, now, r, lib), h.tplCounts(ctx, b, region, now), now, r)
 }
 
 // tplVisibleArt is tplVisible with the cover rule: each tile's covers come
 // only from albums whose picture is stored or known to load, and a tile with
 // no such album is left out. The Browse tiles every page shows come from it;
 // tplVisible (every candidate cover) is for the preload, which stores them.
-func (a *API) tplVisibleArt(ctx context.Context, b *rowtpl.Bundle, region string, lib *rowtpl.Lib, now time.Time) []rowtpl.BrowseSection {
+func (h *Handlers) tplVisibleArt(ctx context.Context, b *rowtpl.Bundle, region string, lib *rowtpl.Lib, now time.Time) []rowtpl.BrowseSection {
 	r := strings.ToLower(region)
-	return rowtpl.VisibleSections(rowtpl.BrowseSectionsArt(b, now, r, lib, a.tplHasArt(b)), a.tplCounts(ctx, b, region, now), now, r)
+	return rowtpl.VisibleSections(rowtpl.BrowseSectionsArt(b, now, r, lib, h.tplHasArt(b)), h.tplCounts(ctx, b, region, now), now, r)
 }
 
 // tplKinds are the Browse page kinds the engine serves.
@@ -194,7 +194,7 @@ func tplKey(b *rowtpl.Bundle, kind, slug string) (string, bool) {
 // musicTplLib turns the member's library and acts into what the engine
 // reads: had and asked albums, artist affinity, similarity to the library,
 // library genres and decade, and up to 3 seeds.
-func (a *API) musicTplLib(ctx context.Context, member int64, lib *musicLib, acts *musicActs, b *rowtpl.Bundle, now time.Time) *rowtpl.Lib {
+func (h *Handlers) musicTplLib(ctx context.Context, member int64, lib *musicLib, acts *musicActs, b *rowtpl.Bundle, now time.Time) *rowtpl.Lib {
 	l := &rowtpl.Lib{Albums: map[string]bool{}, Asked: map[string]bool{}, Artists: map[string]float64{}, Sim: map[string]float64{}}
 	for _, ar := range lib.artists {
 		if ar.mbid == "" {
@@ -244,7 +244,7 @@ func (a *API) musicTplLib(ctx context.Context, member int64, lib *musicLib, acts
 	for _, x := range top[:min(12, len(top))] {
 		seedIDs = append(seedIDs, x.id)
 	}
-	sims := a.musicSimilarOf(ctx, seedIDs, now)
+	sims := h.musicSimilarOf(ctx, seedIDs, now)
 	for _, id := range seedIDs {
 		for _, s := range sims[id] {
 			if s.S > l.Sim[s.MBID] {
@@ -307,19 +307,19 @@ func tplBlocks(sh *metadata.MusicShelves) map[string][]string {
 
 // tplHue is a key's tile colour index (24 hues).
 func tplHue(key string) int {
-	h := fnv.New32a()
-	h.Write([]byte(key))
-	return int(h.Sum32() % 24)
+	hv := fnv.New32a()
+	hv.Write([]byte(key))
+	return int(hv.Sum32() % 24)
 }
 
 // buildTplPage fills one Browse page: the Spotlight (hero and two more)
 // and up to 30 rows. ok is false when the engine or the key is missing.
-func (a *API) buildTplPage(ctx context.Context, member int64, kind, slug, region string, lib *musicLib, acts *musicActs, now time.Time) (hero *MusicCard, alts []MusicCard, rows []MusicRow, tile MusicCard, ok bool) {
-	b := a.musicBundle(ctx, now)
+func (h *Handlers) buildTplPage(ctx context.Context, member int64, kind, slug, region string, lib *musicLib, acts *musicActs, now time.Time) (hero *MusicCard, alts []MusicCard, rows []MusicRow, tile MusicCard, ok bool) {
+	b := h.musicBundle(ctx, now)
 	if b == nil {
 		return nil, nil, nil, tile, false
 	}
-	a.tplPreload(b, region)
+	h.tplPreload(b, region)
 	key, found := tplKey(b, kind, slug)
 	if !found {
 		return nil, nil, nil, tile, false
@@ -327,12 +327,12 @@ func (a *API) buildTplPage(ctx context.Context, member int64, kind, slug, region
 	hue := tplHue(key)
 	tile = MusicCard{Key: key, Kind: "genre", MBID: slug, Name: b.Names[key].Name, Hue: &hue, Genres: []string{}}
 	// Not enough data: no near-empty page (the caller writes the note).
-	if a.tplCounts(ctx, b, region, now)[key] < rowtpl.MinPageRows {
+	if h.tplCounts(ctx, b, region, now)[key] < rowtpl.MinPageRows {
 		return nil, nil, nil, tile, true
 	}
-	sh := a.musicShelvesOf(ctx, region, now)
-	tl := a.musicTplLib(ctx, member, lib, acts, b, now)
-	hasArt := a.tplHasArt(b)
+	sh := h.musicShelvesOf(ctx, region, now)
+	tl := h.musicTplLib(ctx, member, lib, acts, b, now)
+	hasArt := h.tplHasArt(b)
 	build := func(m int64) ([]int, []rowtpl.Row) {
 		c := &rowtpl.Ctx{B: b, Kind: kindOfKey(key), Key: key, Region: strings.ToLower(region), Now: now, Member: m, Lib: tl, Blocks: tplBlocks(sh), CountryName: countryName, HasArt: hasArt}
 		if sh != nil {
@@ -372,12 +372,12 @@ func (a *API) buildTplPage(ctx context.Context, member int64, kind, slug, region
 
 // tplThin is the note for a page without enough data: links to up to 4
 // similar pages that are shown.
-func (a *API) tplThin(ctx context.Context, key, region string, now time.Time) []rowtpl.BrowseTile {
-	b := a.musicBundle(ctx, now)
+func (h *Handlers) tplThin(ctx context.Context, key, region string, now time.Time) []rowtpl.BrowseTile {
+	b := h.musicBundle(ctx, now)
 	if b == nil {
 		return []rowtpl.BrowseTile{}
 	}
-	out := rowtpl.Similar(b, key, a.tplVisible(ctx, b, region, nil, now), 4)
+	out := rowtpl.Similar(b, key, h.tplVisible(ctx, b, region, nil, now), 4)
 	if out == nil {
 		out = []rowtpl.BrowseTile{}
 	}
@@ -387,25 +387,25 @@ func (a *API) tplThin(ctx context.Context, key, region string, now time.Time) []
 // buildTplWorld fills New & Popular ("new") or the world part of Explore
 // ("explore") from the engine: the Spotlight and up to 30 rows. ok is
 // false when the bundle is missing.
-func (a *API) buildTplWorld(ctx context.Context, r *http.Request, kind string, now time.Time) (hero []MusicCard, rows []MusicRow, ok bool) {
-	b := a.musicBundle(ctx, now)
+func (h *Handlers) buildTplWorld(ctx context.Context, r *http.Request, kind string, now time.Time) (hero []MusicCard, rows []MusicRow, ok bool) {
+	b := h.musicBundle(ctx, now)
 	if b == nil {
 		return nil, nil, false
 	}
-	member := a.person(r).UserID
+	member := h.Person(r).UserID
 	region := strings.ToUpper(r.URL.Query().Get("region"))
 	if region == "" || region == "GLOBAL" || !isCountry(region) {
 		region = "global"
 	}
-	a.tplPreload(b, region)
+	h.tplPreload(b, region)
 	var lib *rowtpl.Lib
-	if ml, err := a.musicLibrary(ctx, now); err == nil {
-		if acts, err := a.musicActsOf(ctx, member); err == nil {
-			lib = a.musicTplLib(ctx, member, ml, acts, b, now)
+	if ml, err := h.musicLibrary(ctx, now); err == nil {
+		if acts, err := h.musicActsOf(ctx, member); err == nil {
+			lib = h.musicTplLib(ctx, member, ml, acts, b, now)
 		}
 	}
-	sh := a.musicShelvesOf(ctx, region, now)
-	c := &rowtpl.Ctx{B: b, Kind: kind, Region: strings.ToLower(region), Now: now, Member: member, Lib: lib, Blocks: tplBlocks(sh), CountryName: countryName, HasArt: a.tplHasArt(b)}
+	sh := h.musicShelvesOf(ctx, region, now)
+	c := &rowtpl.Ctx{B: b, Kind: kind, Region: strings.ToLower(region), Now: now, Member: member, Lib: lib, Blocks: tplBlocks(sh), CountryName: countryName, HasArt: h.tplHasArt(b)}
 	if sh != nil {
 		c.Neighbor = sh.Neighbor
 	}
@@ -419,13 +419,13 @@ func (a *API) buildTplWorld(ctx context.Context, r *http.Request, kind string, n
 		}
 		rows = append(rows, row)
 	}
-	a.rememberMusicCards(rows, hero...)
+	h.rememberMusicCards(rows, hero...)
 	return hero, rows, len(rows) > 0
 }
 
 // tplRememberCovers lists the albums behind Browse tile covers, so the
 // picture route serves them (and fetches them ahead).
-func (a *API) tplRememberCovers(b *rowtpl.Bundle, secs []rowtpl.BrowseSection) {
+func (h *Handlers) tplRememberCovers(b *rowtpl.Bundle, secs []rowtpl.BrowseSection) {
 	byID := map[string]rowtpl.Item{}
 	for _, it := range b.Items {
 		if it.Kind == "a" {
@@ -443,13 +443,13 @@ func (a *API) tplRememberCovers(b *rowtpl.Bundle, secs []rowtpl.BrowseSection) {
 			}
 		}
 	}
-	a.rememberMusicNames(names)
+	h.rememberMusicNames(names)
 }
 
 // tplExploreCands answers the engine's Explore candidates (world rows and
 // the personal rows it owns; the Explore builder keeps its own).
-func (a *API) tplExploreCands(ctx context.Context, member int64, region string, lib *musicLib, acts *musicActs, b *rowtpl.Bundle, sh *metadata.MusicShelves, now time.Time) []rowtpl.Cand {
-	c := &rowtpl.Ctx{B: b, Kind: "explore", Region: strings.ToLower(region), Now: now, Member: member, Lib: a.musicTplLib(ctx, member, lib, acts, b, now), Blocks: tplBlocks(sh), CountryName: countryName, HasArt: a.tplHasArt(b)}
+func (h *Handlers) tplExploreCands(ctx context.Context, member int64, region string, lib *musicLib, acts *musicActs, b *rowtpl.Bundle, sh *metadata.MusicShelves, now time.Time) []rowtpl.Cand {
+	c := &rowtpl.Ctx{B: b, Kind: "explore", Region: strings.ToLower(region), Now: now, Member: member, Lib: h.musicTplLib(ctx, member, lib, acts, b, now), Blocks: tplBlocks(sh), CountryName: countryName, HasArt: h.tplHasArt(b)}
 	if sh != nil {
 		c.Neighbor = sh.Neighbor
 	}
@@ -492,16 +492,16 @@ func countryName(code string) string {
 // on, no Kid limit (music has no ratings, so a Kid sees none of it; empty
 // is written), and the Explore pacing. It answers false when it wrote the
 // answer.
-func (a *API) musicBrowseGate(w http.ResponseWriter, r *http.Request, empty map[string]any) bool {
-	if p, _ := parts.ForTitleKind("artist"); !a.partIsOn(p) {
+func (h *Handlers) musicBrowseGate(w http.ResponseWriter, r *http.Request, empty map[string]any) bool {
+	if p, _ := parts.ForTitleKind("artist"); !h.PartIsOn(p) {
 		webserver.Fail(w, http.StatusNotFound, "music is turned off")
 		return false
 	}
-	if a.kidMax(r) != "" {
+	if h.KidMax(r) != "" {
 		webserver.WriteJSON(w, http.StatusOK, empty)
 		return false
 	}
-	if !a.discover.allow(a.person(r).UserID, time.Now()) {
+	if !h.Limit(h.Person(r).UserID, time.Now()) {
 		w.Header().Set("Retry-After", "60")
 		webserver.Fail(w, http.StatusTooManyRequests, "too many Explore requests; try again in a minute")
 		return false
@@ -511,46 +511,46 @@ func (a *API) musicBrowseGate(w http.ResponseWriter, r *http.Request, empty map[
 
 // musicBrowsePage answers GET /api/v1/music/browse/{kind}/{slug}: a mood,
 // season, decade, activity or genre page from the row template engine.
-func (a *API) musicBrowsePage(w http.ResponseWriter, r *http.Request) {
+func (h *Handlers) musicBrowsePage(w http.ResponseWriter, r *http.Request) {
 	kind, slug := r.PathValue("kind"), r.PathValue("slug")
 	if !tplKinds[kind] || !tplKeyRe.MatchString(slug) {
 		webserver.Fail(w, http.StatusBadRequest, "unknown page")
 		return
 	}
-	if !a.musicBrowseGate(w, r, map[string]any{"kid": true, "v2": true, "genres": []string{}, "genre": slug, "hero": nil, "rows": []MusicRow{}}) {
+	if !h.musicBrowseGate(w, r, map[string]any{"kid": true, "v2": true, "genres": []string{}, "genre": slug, "hero": nil, "rows": []MusicRow{}}) {
 		return
 	}
-	if !a.musicTplOn() {
+	if !h.musicTplOn() {
 		webserver.Fail(w, http.StatusNotFound, "music pages are off")
 		return
 	}
-	a.serveTplPage(w, r, kind, slug)
+	h.serveTplPage(w, r, kind, slug)
 }
 
 // serveTplPage writes one engine page (shared with the genre route).
-func (a *API) serveTplPage(w http.ResponseWriter, r *http.Request, kind, slug string) bool {
-	if a.kidMax(r) != "" {
+func (h *Handlers) serveTplPage(w http.ResponseWriter, r *http.Request, kind, slug string) bool {
+	if h.KidMax(r) != "" {
 		webserver.WriteJSON(w, http.StatusOK, map[string]any{"kid": true, "v2": true, "genres": []string{}, "genre": slug, "hero": nil, "rows": []MusicRow{}})
 		return true
 	}
 	ctx := r.Context()
 	now := time.Now().UTC()
-	member := a.person(r).UserID
+	member := h.Person(r).UserID
 	region := strings.ToUpper(r.URL.Query().Get("region"))
 	if region == "" || region == "GLOBAL" || !isCountry(region) {
 		region = "global"
 	}
-	lib, err := a.musicLibrary(ctx, now)
+	lib, err := h.musicLibrary(ctx, now)
 	if err != nil {
 		webserver.Internal(w, "api", err)
 		return true
 	}
-	acts, err := a.musicActsOf(ctx, member)
+	acts, err := h.musicActsOf(ctx, member)
 	if err != nil {
 		webserver.Internal(w, "api", err)
 		return true
 	}
-	hero, alts, rows, tile, ok := a.buildTplPage(ctx, member, kind, slug, region, lib, acts, now)
+	hero, alts, rows, tile, ok := h.buildTplPage(ctx, member, kind, slug, region, lib, acts, now)
 	if !ok {
 		if kind == "genre" {
 			return false
@@ -564,17 +564,17 @@ func (a *API) serveTplPage(w http.ResponseWriter, r *http.Request, kind, slug st
 		}
 	}
 	if hero != nil {
-		h := musicCardState(*hero, lib, acts)
-		hero = &h
+		hv := musicCardState(*hero, lib, acts)
+		hero = &hv
 	}
 	for i := range alts {
 		alts[i] = musicCardState(alts[i], lib, acts)
 	}
 	if rows == nil {
 		// Not enough music for this page yet: a short note and similar pages.
-		a.exploreCaching(w, r, "private, no-cache")
-		a.writeMusicJSON(w, r, map[string]any{"v2": true, "kid": false, "cold": false, "genres": []string{}, "genre": slug, "kind": kind, "region": region, "regions": []string{},
-			"tile": tile, "hero": nil, "rows": []MusicRow{}, "thin": true, "similar": a.tplThin(ctx, tile.Key, region, now)})
+		h.ExploreCaching(w, r, "private, no-cache")
+		h.WriteMusicJSON(w, r, map[string]any{"v2": true, "kid": false, "cold": false, "genres": []string{}, "genre": slug, "kind": kind, "region": region, "regions": []string{},
+			"tile": tile, "hero": nil, "rows": []MusicRow{}, "thin": true, "similar": h.tplThin(ctx, tile.Key, region, now)})
 		return true
 	}
 	// The picture route serves only listed albums and artists: list these
@@ -583,9 +583,9 @@ func (a *API) serveTplPage(w http.ResponseWriter, r *http.Request, kind, slug st
 	if hero != nil {
 		extra = append(extra, *hero)
 	}
-	a.rememberMusicCards(rows, extra...)
-	a.exploreCaching(w, r, "private, no-cache")
-	a.writeMusicJSON(w, r, map[string]any{"v2": true, "kid": false, "cold": false, "genres": []string{}, "genre": slug, "kind": kind, "region": region, "regions": []string{},
+	h.rememberMusicCards(rows, extra...)
+	h.ExploreCaching(w, r, "private, no-cache")
+	h.WriteMusicJSON(w, r, map[string]any{"v2": true, "kid": false, "cold": false, "genres": []string{}, "genre": slug, "kind": kind, "region": region, "regions": []string{},
 		"tile": tile, "hero": hero, "hero_alts": alts, "rows": rows})
 	return true
 }
@@ -595,17 +595,17 @@ func (a *API) serveTplPage(w http.ResponseWriter, r *http.Request, kind, slug st
 // activities) with their tiles' pages and covers, and "explore", the mix of
 // them Explore and New & Popular show. A tile has only covers of albums whose
 // picture is stored or known to load; a tile with none is left out.
-func (a *API) musicBrowseTiles(w http.ResponseWriter, r *http.Request) {
-	if !a.musicBrowseGate(w, r, map[string]any{"kid": true, "sections": []rowtpl.BrowseSection{}}) {
+func (h *Handlers) musicBrowseTiles(w http.ResponseWriter, r *http.Request) {
+	if !h.musicBrowseGate(w, r, map[string]any{"kid": true, "sections": []rowtpl.BrowseSection{}}) {
 		return
 	}
-	if !a.musicTplOn() {
+	if !h.musicTplOn() {
 		webserver.Fail(w, http.StatusNotFound, "music pages are off")
 		return
 	}
 	ctx := r.Context()
 	now := time.Now().UTC()
-	b := a.musicBundle(ctx, now)
+	b := h.musicBundle(ctx, now)
 	if b == nil {
 		webserver.Fail(w, http.StatusServiceUnavailable, "music catalog not ready")
 		return
@@ -614,23 +614,23 @@ func (a *API) musicBrowseTiles(w http.ResponseWriter, r *http.Request) {
 	if region == "" || !isCountry(strings.ToUpper(region)) {
 		region = "global"
 	}
-	a.tplPreload(b, region)
-	member := a.person(r).UserID
+	h.tplPreload(b, region)
+	member := h.Person(r).UserID
 	var lib *rowtpl.Lib
-	if ml, err := a.musicLibrary(ctx, now); err == nil {
-		if acts, err := a.musicActsOf(ctx, member); err == nil {
-			lib = a.musicTplLib(ctx, member, ml, acts, b, now)
+	if ml, err := h.musicLibrary(ctx, now); err == nil {
+		if acts, err := h.musicActsOf(ctx, member); err == nil {
+			lib = h.musicTplLib(ctx, member, ml, acts, b, now)
 		}
 	}
-	a.exploreCaching(w, r, "private, no-cache")
-	secs := a.tplVisibleArt(ctx, b, region, lib, now)
+	h.ExploreCaching(w, r, "private, no-cache")
+	secs := h.tplVisibleArt(ctx, b, region, lib, now)
 	if secs == nil {
 		secs = []rowtpl.BrowseSection{}
 	}
-	a.tplRememberCovers(b, secs)
+	h.tplRememberCovers(b, secs)
 	explore := rowtpl.ExploreTiles(secs)
 	if explore == nil {
 		explore = []rowtpl.BrowseTile{}
 	}
-	a.writeMusicJSON(w, r, map[string]any{"sections": secs, "explore": explore})
+	h.WriteMusicJSON(w, r, map[string]any{"sections": secs, "explore": explore})
 }

@@ -1,4 +1,4 @@
-package api
+package music
 
 import (
 	"context"
@@ -73,11 +73,11 @@ var aheadOn = metadata.Control{Prefetch: "on"}
 // musicSwitch answers the server's switch, read at most every 15 minutes.
 // An older server without one is on. A failed read keeps the last value;
 // after a day without a good read the install acts as slow.
-func (a *API) musicSwitch(ctx context.Context, now time.Time) metadata.Control {
-	if a.s.MusicControl == nil {
+func (h *Handlers) musicSwitch(ctx context.Context, now time.Time) metadata.Control {
+	if h.MusicControl == nil {
 		return aheadOn
 	}
-	c := &a.ctl
+	c := &h.ctl
 	c.mu.Lock()
 	if c.since.IsZero() {
 		c.since = now
@@ -88,7 +88,7 @@ func (a *API) musicSwitch(ctx context.Context, now time.Time) metadata.Control {
 	}
 	c.mu.Unlock()
 	if read {
-		v, err := a.s.MusicControl(ctx)
+		v, err := h.MusicControl(ctx)
 		c.mu.Lock()
 		switch {
 		case err == nil:
@@ -118,8 +118,8 @@ func (a *API) musicSwitch(ctx context.Context, now time.Time) metadata.Control {
 // random (±90 min on 3 h), so installs do not all ask at once.
 func musicPrebuildGap(c metadata.Control) time.Duration {
 	base := musicPrebuildEvery
-	if h := time.Duration(c.PrebuildMinHours * float64(time.Hour)); h > base {
-		base = h
+	if hv := time.Duration(c.PrebuildMinHours * float64(time.Hour)); hv > base {
+		base = hv
 	}
 	if c.Prefetch == "slow" {
 		base *= 2
@@ -149,98 +149,98 @@ func spreadAt(d time.Duration, at time.Time, frac float64) time.Duration {
 
 // beginAhead lets fetch-ahead run under the Music loop's ctx; endAhead
 // stops it when Music is turned off.
-func (a *API) beginAhead(ctx context.Context) {
-	a.ahead.mu.Lock()
-	a.ahead.ctx = ctx
-	a.ahead.mu.Unlock()
+func (h *Handlers) beginAhead(ctx context.Context) {
+	h.ahead.mu.Lock()
+	h.ahead.ctx = ctx
+	h.ahead.mu.Unlock()
 }
 
-func (a *API) endAhead() {
-	a.ahead.mu.Lock()
-	a.ahead.ctx, a.ahead.pending, a.ahead.queued = nil, nil, nil
-	a.ahead.mu.Unlock()
+func (h *Handlers) endAhead() {
+	h.ahead.mu.Lock()
+	h.ahead.ctx, h.ahead.pending, h.ahead.queued = nil, nil, nil
+	h.ahead.mu.Unlock()
 }
 
 // queueAhead adds items for the background pass (a page served with more
 // to come); nothing while Music's loop is not running.
-func (a *API) queueAhead(items []aheadItem) {
-	h := &a.ahead
-	h.mu.Lock()
-	defer h.mu.Unlock()
-	if h.ctx == nil || h.ctx.Err() != nil || len(items) == 0 {
+func (h *Handlers) queueAhead(items []aheadItem) {
+	hv := &h.ahead
+	hv.mu.Lock()
+	defer hv.mu.Unlock()
+	if hv.ctx == nil || hv.ctx.Err() != nil || len(items) == 0 {
 		return
 	}
-	if h.queued == nil {
-		h.queued = map[aheadItem]bool{}
+	if hv.queued == nil {
+		hv.queued = map[aheadItem]bool{}
 	}
 	for _, it := range items {
-		if !h.queued[it] {
-			h.queued[it] = true
-			h.pending = append(h.pending, it)
+		if !hv.queued[it] {
+			hv.queued[it] = true
+			hv.pending = append(hv.pending, it)
 		}
 	}
-	if h.running {
+	if hv.running {
 		return
 	}
-	h.running = true
-	ctx := h.ctx
+	hv.running = true
+	ctx := hv.ctx
 	go func() {
 		for {
-			h.mu.Lock()
-			l := h.pending
-			h.pending, h.queued = nil, nil
+			hv.mu.Lock()
+			l := hv.pending
+			hv.pending, hv.queued = nil, nil
 			if len(l) == 0 || ctx.Err() != nil {
-				h.running = false
-				h.mu.Unlock()
+				hv.running = false
+				hv.mu.Unlock()
 				return
 			}
-			h.mu.Unlock()
-			a.fetchAhead(ctx, l)
+			hv.mu.Unlock()
+			h.fetchAhead(ctx, l)
 		}
 	}()
 }
 
 // aheadKept says whether the item was fetched ahead lately.
-func (a *API) aheadKept(ctx context.Context, it aheadItem, now time.Time) bool {
-	h := &a.ahead
-	h.mu.Lock()
-	at, ok := h.kept[it]
-	h.mu.Unlock()
+func (h *Handlers) aheadKept(ctx context.Context, it aheadItem, now time.Time) bool {
+	hv := &h.ahead
+	hv.mu.Lock()
+	at, ok := hv.kept[it]
+	hv.mu.Unlock()
 	if ok && now.Sub(at) < aheadKeep {
 		return true
 	}
-	if a.s.Store == nil {
+	if h.Store == nil {
 		return false
 	}
-	if _, ok, err := (metadata.LookupCache{Store: a.s.Store}).Get(ctx, "musicahead|"+it.kind+"|"+it.mbid, now); err == nil && ok {
-		h.mu.Lock()
-		if h.kept == nil {
-			h.kept = map[aheadItem]time.Time{}
+	if _, ok, err := (metadata.LookupCache{Store: h.Store}).Get(ctx, "musicahead|"+it.kind+"|"+it.mbid, now); err == nil && ok {
+		hv.mu.Lock()
+		if hv.kept == nil {
+			hv.kept = map[aheadItem]time.Time{}
 		}
-		h.kept[it] = now
-		h.mu.Unlock()
+		hv.kept[it] = now
+		hv.mu.Unlock()
 		return true
 	}
 	return false
 }
 
-func (a *API) keepAhead(ctx context.Context, it aheadItem, now time.Time) {
-	h := &a.ahead
-	h.mu.Lock()
-	if h.kept == nil || len(h.kept) > 50000 {
-		h.kept = map[aheadItem]time.Time{}
+func (h *Handlers) keepAhead(ctx context.Context, it aheadItem, now time.Time) {
+	hv := &h.ahead
+	hv.mu.Lock()
+	if hv.kept == nil || len(hv.kept) > 50000 {
+		hv.kept = map[aheadItem]time.Time{}
 	}
-	h.kept[it] = now
-	h.mu.Unlock()
-	if a.s.Store != nil {
-		_ = metadata.LookupCache{Store: a.s.Store}.Put(context.WithoutCancel(ctx), "musicahead|"+it.kind+"|"+it.mbid, []byte("1"), now, now.Add(aheadKeep))
+	hv.kept[it] = now
+	hv.mu.Unlock()
+	if h.Store != nil {
+		_ = metadata.LookupCache{Store: h.Store}.Put(context.WithoutCancel(ctx), "musicahead|"+it.kind+"|"+it.mbid, []byte("1"), now, now.Add(aheadKeep))
 	}
 }
 
 // aheadDetails fetches what the item's page reads first: the artist (its
 // full album list lands in the lookup cache) or the album's pressings.
-func (a *API) aheadDetails(ctx context.Context, it aheadItem) error {
-	ar := a.s.Library.Artists
+func (h *Handlers) aheadDetails(ctx context.Context, it aheadItem) error {
+	ar := h.Library.Artists
 	switch it.kind {
 	case "artist":
 		_, err := ar.Artist(metadata.QuickArtist(ctx, aheadArtistWait), it.mbid)
@@ -283,22 +283,22 @@ func aheadSleep(ctx context.Context, d time.Duration) bool {
 // The server's switch is read as it goes: off stops, slow doubles the gaps
 // and halves the detail count. Busy answers back off (30 s, 1 min, 2 min,
 // with jitter) and the run stops after three in a row.
-func (a *API) fetchAhead(ctx context.Context, items []aheadItem) {
+func (h *Handlers) fetchAhead(ctx context.Context, items []aheadItem) {
 	if len(items) == 0 {
 		return
 	}
-	h := &a.ahead
-	h.run.Lock()
-	defer h.run.Unlock()
+	hv := &h.ahead
+	hv.run.Lock()
+	defer hv.run.Unlock()
 	ctx = metadata.Ahead(ctx)
 	details, fails := 0, 0
-	canDetail := a.s.Library != nil && a.s.Library.Artists != nil
+	canDetail := h.Library != nil && h.Library.Artists != nil
 	for _, it := range items {
 		if ctx.Err() != nil {
 			return
 		}
 		now := time.Now()
-		c := a.musicSwitch(ctx, now)
+		c := h.musicSwitch(ctx, now)
 		if c.Prefetch == "off" {
 			return
 		}
@@ -311,13 +311,13 @@ func (a *API) fetchAhead(ctx context.Context, items []aheadItem) {
 				gap = g
 			}
 		}
-		if canDetail && details < limit && !a.aheadKept(ctx, it, now) {
+		if canDetail && details < limit && !h.aheadKept(ctx, it, now) {
 			details++
-			err := a.aheadDetails(ctx, it)
+			err := h.aheadDetails(ctx, it)
 			switch {
 			case err == nil || aheadGone(err):
 				fails = 0
-				a.keepAhead(ctx, it, time.Now())
+				h.keepAhead(ctx, it, time.Now())
 			case aheadBusy(err):
 				fails++
 				if fails >= aheadFails {
@@ -331,7 +331,7 @@ func (a *API) fetchAhead(ctx context.Context, items []aheadItem) {
 				return
 			}
 		}
-		_, _, _ = a.musicTrendArtFile(ctx, it.kind, it.mbid, "500")
+		_, _, _ = h.musicTrendArtFile(ctx, it.kind, it.mbid, "500")
 		if !aheadSleep(ctx, artGap) {
 			return
 		}

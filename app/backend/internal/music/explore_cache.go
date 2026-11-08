@@ -1,4 +1,4 @@
-package api
+package music
 
 import (
 	"bytes"
@@ -56,8 +56,8 @@ func musicAnswerKey(user int64, genre, region string, hour int) string {
 }
 
 // cachedMusicAnswer answers a kept answer younger than musicAnswerTTL.
-func (a *API) cachedMusicAnswer(key string, now time.Time) ([]byte, bool) {
-	c := &a.musicAns
+func (h *Handlers) cachedMusicAnswer(key string, now time.Time) ([]byte, bool) {
+	c := &h.musicAns
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	e, ok := c.m[key]
@@ -68,8 +68,8 @@ func (a *API) cachedMusicAnswer(key string, now time.Time) ([]byte, bool) {
 }
 
 // staleMusicAnswer answers a kept answer younger than musicAnswerStale.
-func (a *API) staleMusicAnswer(key string, now time.Time) ([]byte, bool) {
-	c := &a.musicAns
+func (h *Handlers) staleMusicAnswer(key string, now time.Time) ([]byte, bool) {
+	c := &h.musicAns
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	e, ok := c.m[key]
@@ -79,8 +79,8 @@ func (a *API) staleMusicAnswer(key string, now time.Time) ([]byte, bool) {
 	return e.body, true
 }
 
-func (a *API) keepMusicAnswer(key string, body []byte, now time.Time) {
-	c := &a.musicAns
+func (h *Handlers) keepMusicAnswer(key string, body []byte, now time.Time) {
+	c := &h.musicAns
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	if c.m == nil || len(c.m) >= musicAnswerMax {
@@ -90,29 +90,29 @@ func (a *API) keepMusicAnswer(key string, body []byte, now time.Time) {
 }
 
 // forgetMusicAnswers drops every kept answer (an ask, or a title added).
-func (a *API) forgetMusicAnswers() {
-	c := &a.musicAns
+func (h *Handlers) forgetMusicAnswers() {
+	c := &h.musicAns
 	c.mu.Lock()
 	c.m = nil
 	c.mu.Unlock()
 }
 
 // musicOnEvent forgets the kept answers when an ask or a title changes what they show.
-func (a *API) musicOnEvent(ev domain.Event) {
-	if !a.partIsOn(parts.Music) {
+func (h *Handlers) musicOnEvent(ev domain.Event) {
+	if !h.PartIsOn(parts.Music) {
 		return
 	}
 	switch ev.Kind {
 	case domain.EventAskMade, domain.EventAskJoined, domain.EventTitleAdded:
-		a.forgetMusicAnswers()
+		h.forgetMusicAnswers()
 	}
 	if ev.Kind == domain.EventTitleAdded || ev.Kind == domain.EventTitleRemoved {
-		a.musicv2.cand.Forget("lib:")
+		h.musicv2.cand.Forget("lib:")
 		// A music title changes the household's rows: drop only the day
 		// orders (chart candidates stay), once per burst of adds, so the
 		// next visit rebuilds them instead of tomorrow.
 		if ev.Kind == domain.EventTitleRemoved || ev.Data["album_types"] != nil {
-			a.clearMusicDaysSoon()
+			h.clearMusicDaysSoon()
 		}
 	}
 }
@@ -121,29 +121,29 @@ func (a *API) musicOnEvent(ev domain.Event) {
 // clear of the day orders.
 var musicDayDebounce = 3 * time.Second
 
-func (a *API) clearMusicDaysSoon() {
-	if !a.musicv2.clearing.CompareAndSwap(false, true) {
+func (h *Handlers) clearMusicDaysSoon() {
+	if !h.musicv2.clearing.CompareAndSwap(false, true) {
 		return
 	}
 	time.AfterFunc(musicDayDebounce, func() {
-		a.musicv2.clearing.Store(false)
-		a.musicv2.days.Clear()
-		a.forgetMusicV7Snaps(-1)
+		h.musicv2.clearing.Store(false)
+		h.musicv2.days.Clear()
+		h.forgetMusicV7Snaps(-1)
 	})
 }
 
 // writeMusicAnswer writes the answer, and keeps it when it is complete.
-func (a *API) writeMusicAnswer(w http.ResponseWriter, key string, v any, complete bool, now time.Time) {
+func (h *Handlers) writeMusicAnswer(w http.ResponseWriter, key string, v any, complete bool, now time.Time) {
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(v); err != nil {
 		webserver.Internal(w, "api", err)
 		return
 	}
 	// The answer carries its pictures' records (box, colour, version).
-	b := a.withPictures(context.Background(), buf.Bytes())
+	b := h.WithPictures(context.Background(), buf.Bytes())
 	if complete {
-		a.keepMusicAnswer(key, b, now)
-	} else if old, ok := a.staleMusicAnswer(key, now); ok {
+		h.keepMusicAnswer(key, b, now)
+	} else if old, ok := h.staleMusicAnswer(key, now); ok {
 		// Still reading genres or similar lists: the last full answer stands in.
 		b = old
 	}
@@ -155,7 +155,7 @@ func (a *API) writeMusicAnswer(w http.ResponseWriter, key string, v any, complet
 // genresWaiting answers the known genres of ids, waiting up to wait for the
 // ones being read (the missing ones are queued); complete says every id
 // has its genres.
-func (a *API) genresWaiting(ids []string, wait time.Duration) (map[string][]string, bool) {
+func (h *Handlers) genresWaiting(ids []string, wait time.Duration) (map[string][]string, bool) {
 	want := 0
 	seen := map[string]bool{}
 	for _, id := range ids {
@@ -164,17 +164,17 @@ func (a *API) genresWaiting(ids []string, wait time.Duration) (map[string][]stri
 			want++
 		}
 	}
-	got := a.genresOf(ids)
+	got := h.genresOf(ids)
 	end := time.Now().Add(wait)
-	for len(got) < want && time.Now().Before(end) && a.genresFilling() {
+	for len(got) < want && time.Now().Before(end) && h.genresFilling() {
 		time.Sleep(25 * time.Millisecond)
-		got = a.genresOf(ids)
+		got = h.genresOf(ids)
 	}
 	return got, len(got) >= want
 }
 
-func (a *API) genresFilling() bool {
-	c := &a.musicx
+func (h *Handlers) genresFilling() bool {
+	c := &h.musicx
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	return c.running
@@ -182,7 +182,7 @@ func (a *API) genresFilling() bool {
 
 // MusicLoops are Music's background loops. Main adds them to the parts
 // Control, so they run only while Music is on and stop when it is turned off.
-func (a *API) MusicLoops() []jobs.Loop {
+func (h *Handlers) MusicLoops() []jobs.Loop {
 	return []jobs.Loop{{Name: "music_warm", Label: "Music read-ahead", Run: func(ctx context.Context) error {
 		// Explore → Music v7 first: its layer 1 is read back from disk (or
 		// fetched) within seconds of start, before the slower read-ahead.
@@ -191,17 +191,17 @@ func (a *API) MusicLoops() []jobs.Loop {
 			return nil
 		case <-time.After(musicV7WarmDelay):
 		}
-		a.beginAhead(ctx)
-		defer a.endAhead()
-		a.prewarmMusicV7(ctx)
-		a.warmMusic(ctx)
+		h.beginAhead(ctx)
+		defer h.endAhead()
+		h.prewarmMusicV7(ctx)
+		h.warmMusic(ctx)
 		for ctx.Err() == nil {
-			a.prebuildMusic(ctx)
-			a.prewarmMusicV7(ctx)
+			h.prebuildMusic(ctx)
+			h.prewarmMusicV7(ctx)
 			// Jittered (±90 min on 3 h) and stretched by the server's switch.
 			select {
 			case <-ctx.Done():
-			case <-time.After(musicPrebuildGap(a.musicSwitch(ctx, time.Now()))):
+			case <-time.After(musicPrebuildGap(h.musicSwitch(ctx, time.Now()))):
 			}
 		}
 		return nil
@@ -210,19 +210,19 @@ func (a *API) MusicLoops() []jobs.Loop {
 
 // warmMusic reads ahead the genres of the Library's artists and of the
 // charts, once, shortly after Music starts.
-func (a *API) warmMusic(ctx context.Context) {
+func (h *Handlers) warmMusic(ctx context.Context) {
 	select {
 	case <-ctx.Done():
 		return
 	case <-time.After(musicWarmDelay):
 	}
-	if a.s.Store == nil {
+	if h.Store == nil {
 		return
 	}
-	if _, ok := a.genreProvider(); !ok {
+	if _, ok := h.genreProvider(); !ok {
 		return
 	}
-	titles, err := database.Select[mediafiles.Title](ctx, a.s.Store.Read(), "titles", "kind = 'artist' AND state != 'removed' ORDER BY id")
+	titles, err := database.Select[mediafiles.Title](ctx, h.Store.Read(), "titles", "kind = 'artist' AND state != 'removed' ORDER BY id")
 	if err != nil {
 		return
 	}
@@ -233,9 +233,9 @@ func (a *API) warmMusic(ctx context.Context) {
 		}
 	}
 	var art [][2]string
-	if a.s.MusicTrending != nil {
+	if h.MusicTrending != nil {
 		for _, kind := range []string{"artist", "album"} {
-			l, err := a.cachedMusicTrend(ctx, kind, "global")
+			l, err := h.cachedMusicTrend(ctx, kind, "global")
 			if err != nil {
 				continue
 			}
@@ -251,14 +251,14 @@ func (a *API) warmMusic(ctx context.Context) {
 			}
 		}
 	}
-	a.genresOf(ids)
+	h.genresOf(ids)
 	// The charts' pictures are fetched ahead too, so the first Music visit
 	// reads kept files instead of a picture search per card.
 	for _, k := range art {
 		if ctx.Err() != nil {
 			return
 		}
-		_, _, _ = a.musicTrendArtFile(ctx, k[0], k[1], "500")
+		_, _, _ = h.musicTrendArtFile(ctx, k[0], k[1], "500")
 		select {
 		case <-ctx.Done():
 			return

@@ -1,4 +1,4 @@
-package api
+package music
 
 import (
 	"context"
@@ -86,11 +86,11 @@ type musicLibAlbum struct {
 	date            string
 }
 
-func (a *API) musicLibrary(ctx context.Context, now time.Time) (*musicLib, error) {
-	if v, ok := a.musicv2.cand.Get("lib:snapshot", now); ok {
+func (h *Handlers) musicLibrary(ctx context.Context, now time.Time) (*musicLib, error) {
+	if v, ok := h.musicv2.cand.Get("lib:snapshot", now); ok {
 		return v.(*musicLib), nil
 	}
-	db := a.s.Store.Read()
+	db := h.Store.Read()
 	lib := &musicLib{byMBID: map[string]int{}, hadParts: map[int64]bool{}}
 	rows, err := db.QueryContext(ctx, `SELECT DISTINCT i.part_id FROM items i JOIN slots s ON s.item_id = i.id
 		WHERE i.kind = 'track' AND s.file_id IS NOT NULL AND i.part_id IS NOT NULL`)
@@ -145,7 +145,7 @@ func (a *API) musicLibrary(ctx context.Context, now time.Time) (*musicLib, error
 		}
 	}
 	ts.Close()
-	a.musicv2.cand.Put("lib:snapshot", lib, musicLibraryTTL, now)
+	h.musicv2.cand.Put("lib:snapshot", lib, musicLibraryTTL, now)
 	return lib, nil
 }
 
@@ -168,8 +168,8 @@ type musicAsk struct {
 	state, at          string
 }
 
-func (a *API) musicActsOf(ctx context.Context, member int64) (*musicActs, error) {
-	db := a.s.Store.Read()
+func (h *Handlers) musicActsOf(ctx context.Context, member int64) (*musicActs, error) {
+	db := h.Store.Read()
 	x := &musicActs{follows: map[int64]map[int64]bool{}, asked: map[string]map[int64]bool{}, albumState: map[string]string{}, artistState: map[string]string{}}
 	rows, err := db.QueryContext(ctx, `SELECT user_id, title_id FROM follows`)
 	if err != nil {
@@ -265,38 +265,38 @@ func artworkLinksJSON(raw string) []string {
 	return out
 }
 
-func (a *API) musicChartOf(ctx context.Context, region, kind string, now time.Time) []metadata.MusicChartItem {
-	if a.s.MusicCharts == nil {
+func (h *Handlers) musicChartOf(ctx context.Context, region, kind string, now time.Time) []metadata.MusicChartItem {
+	if h.MusicCharts == nil {
 		return nil
 	}
 	key := "chart:" + region + ":" + kind
-	if v, ok := a.musicv2.cand.Get(key, now); ok {
+	if v, ok := h.musicv2.cand.Get(key, now); ok {
 		return v.([]metadata.MusicChartItem)
 	}
-	c, err := a.s.MusicCharts(ctx, region, kind, "")
+	c, err := h.MusicCharts(ctx, region, kind, "")
 	if err != nil {
 		markMusicMiss(ctx)
 		return nil
 	}
-	a.musicv2.cand.Put(key, c.Items, spread(musicChartTTL, 0.25), now)
+	h.musicv2.cand.Put(key, c.Items, spread(musicChartTTL, 0.25), now)
 	return c.Items
 }
 
-func (a *API) musicGenreTiles(ctx context.Context, region string, now time.Time) []metadata.MusicGenre {
-	if a.s.MusicGenres == nil {
+func (h *Handlers) musicGenreTiles(ctx context.Context, region string, now time.Time) []metadata.MusicGenre {
+	if h.MusicGenres == nil {
 		return nil
 	}
 	key := "genres:" + region
-	if v, ok := a.musicv2.cand.Get(key, now); ok {
+	if v, ok := h.musicv2.cand.Get(key, now); ok {
 		return v.([]metadata.MusicGenre)
 	}
-	g, err := a.s.MusicGenres(ctx, region)
+	g, err := h.MusicGenres(ctx, region)
 	if err != nil {
 		markMusicMiss(ctx)
 		return nil
 	}
 	// Short-lived, so new tile art from the metadata server shows soon.
-	a.musicv2.cand.Put(key, g.Genres, musicGenreListTTL, now)
+	h.musicv2.cand.Put(key, g.Genres, musicGenreListTTL, now)
 	return g.Genres
 }
 
@@ -322,43 +322,43 @@ func markMusicMiss(ctx context.Context) {
 func dayAt(now time.Time, d int) string { return now.UTC().AddDate(0, 0, d).Format("2006-01-02") }
 
 // exploreMusicV2 answers GET /api/v1/explore/music with flag music_rows_v2.
-func (a *API) exploreMusicV2(w http.ResponseWriter, r *http.Request) {
+func (h *Handlers) exploreMusicV2(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	now := time.Now().UTC()
-	if a.musicv2.now != nil {
-		now = a.musicv2.now().UTC()
+	if h.musicv2.now != nil {
+		now = h.musicv2.now().UTC()
 	}
-	member := a.person(r).UserID
+	member := h.Person(r).UserID
 	region := strings.ToUpper(r.URL.Query().Get("region"))
 	if region == "" || region == "GLOBAL" || !isCountry(region) {
 		region = "global"
 	}
-	lib, err := a.musicLibrary(ctx, now)
+	lib, err := h.musicLibrary(ctx, now)
 	if err != nil {
 		webserver.Internal(w, "api", err)
 		return
 	}
-	acts, err := a.musicActsOf(ctx, member)
+	acts, err := h.musicActsOf(ctx, member)
 	if err != nil {
 		webserver.Internal(w, "api", err)
 		return
 	}
 	key := musicscore.DayKey{Member: member, Date: musicscore.Day(now), View: region}
 	var ord *musicV2Order
-	if v, ok := a.musicv2.days.Get(key); ok {
+	if v, ok := h.musicv2.days.Get(key); ok {
 		ord = v.(*musicV2Order)
 	} else {
 		// A build that lost a source (a failed or cancelled fetch) is
 		// answered but not kept, so the next visit builds the full rows.
 		miss := &musicMiss{}
 		bctx := context.WithValue(ctx, musicMissKey{}, miss)
-		if a.s.MusicRowsV3 {
-			ord = a.buildMusicV3(bctx, member, region, lib, acts, now)
+		if h.MusicRowsV3 {
+			ord = h.buildMusicV3(bctx, member, region, lib, acts, now)
 		} else {
-			ord = a.buildMusicV2(bctx, member, region, lib, acts, now)
+			ord = h.buildMusicV2(bctx, member, region, lib, acts, now)
 		}
 		if ctx.Err() == nil && !miss.failed.Load() {
-			a.musicv2.days.Put(key, ord)
+			h.musicv2.days.Put(key, ord)
 		}
 	}
 	// Layer 3: state chips and the member's asks, read live.
@@ -413,13 +413,13 @@ func (a *API) exploreMusicV2(w http.ResponseWriter, r *http.Request) {
 	if anchors == 0 && len(asksRow.Items) > 0 {
 		out = append([]MusicRow{asksRow}, out...)
 	}
-	if a.s.MusicRowsV3 {
+	if h.MusicRowsV3 {
 		sinkAsked(out)
 	}
 	var hero *MusicCard
 	if ord.Hero != nil {
-		h := state(*ord.Hero)
-		hero = &h
+		hv := state(*ord.Hero)
+		hero = &hv
 	}
 	alts := make([]MusicCard, 0, len(ord.Alts))
 	for _, c := range ord.Alts {
@@ -430,11 +430,11 @@ func (a *API) exploreMusicV2(w http.ResponseWriter, r *http.Request) {
 		regions = []string{}
 	}
 	if hero != nil {
-		a.rememberMusicCards(out, append([]MusicCard{*hero}, alts...)...)
+		h.rememberMusicCards(out, append([]MusicCard{*hero}, alts...)...)
 	} else {
-		a.rememberMusicCards(out, alts...)
+		h.rememberMusicCards(out, alts...)
 	}
-	a.exploreCaching(w, r, "private, no-cache")
+	h.ExploreCaching(w, r, "private, no-cache")
 	webserver.WriteJSON(w, http.StatusOK, map[string]any{"v2": true, "kid": false, "cold": ord.Cold, "genres": []string{}, "genre": "", "region": region, "regions": regions, "hero": hero, "hero_alts": alts, "rows": out})
 }
 
@@ -446,7 +446,7 @@ func dayOfText(s string) string {
 }
 
 // buildMusicV2 builds layer 2: candidates, row order, then the shared fill.
-func (a *API) buildMusicV2(ctx context.Context, member int64, region string, lib *musicLib, acts *musicActs, now time.Time) *musicV2Order {
+func (h *Handlers) buildMusicV2(ctx context.Context, member int64, region string, lib *musicLib, acts *musicActs, now time.Time) *musicV2Order {
 	ord := &musicV2Order{}
 	// A per library artist.
 	aff := map[int64]float64{}
@@ -528,7 +528,7 @@ func (a *API) buildMusicV2(ctx context.Context, member int64, region string, lib
 		fresh[i].Upcoming = fresh[i].Date > dayAt(now, 0)
 	}
 	seen := map[string]bool{}
-	albums := a.musicChartOf(ctx, region, "albums", now)
+	albums := h.musicChartOf(ctx, region, "albums", now)
 	chartCard := func(it metadata.MusicChartItem) MusicCard {
 		c := MusicCard{Kind: "album", MBID: strings.ToLower(it.MBID), Name: it.Title, Artist: it.Artist, ArtistMBID: strings.ToLower(it.ArtistMBID), Date: it.Date, Rank: it.Rank, Explicit: it.Explicit, Genres: append([]string{}, it.Genres...)}
 		c.Key = "album:" + c.MBID
@@ -560,9 +560,9 @@ func (a *API) buildMusicV2(ctx context.Context, member int64, region string, lib
 	if !ord.Cold {
 		for _, c := range fresh {
 			if !c.Upcoming {
-				h := c
-				h.ArtistImage = artistOf[c.TitleID].image
-				addHero(h)
+				hv := c
+				hv.ArtistImage = artistOf[c.TitleID].image
+				addHero(hv)
 			}
 		}
 	}
@@ -596,7 +596,7 @@ func (a *API) buildMusicV2(ctx context.Context, member int64, region string, lib
 	{
 		var cards []MusicCard
 		var scores []float64
-		for _, g := range a.musicGenreTiles(ctx, region, now) {
+		for _, g := range h.musicGenreTiles(ctx, region, now) {
 			if len(cards) >= 12 {
 				break
 			}
@@ -613,7 +613,7 @@ func (a *API) buildMusicV2(ctx context.Context, member int64, region string, lib
 		var cards []MusicCard
 		var scores []float64
 		per := map[string]bool{}
-		for _, it := range a.musicChartOf(ctx, region, "songs", now) {
+		for _, it := range h.musicChartOf(ctx, region, "songs", now) {
 			if it.Date == "" || it.Date < dayAt(now, -14) || per[strings.ToLower(it.Artist)] {
 				continue
 			}
@@ -717,8 +717,8 @@ func (a *API) buildMusicV2(ctx context.Context, member int64, region string, lib
 	if ord.Rows == nil {
 		ord.Rows = []MusicRow{}
 	}
-	if a.s.MusicTrending != nil {
-		if l, err := a.cachedMusicTrend(ctx, "album", "global"); err == nil {
+	if h.MusicTrending != nil {
+		if l, err := h.cachedMusicTrend(ctx, "album", "global"); err == nil {
 			ord.Regions = l.Regions
 		}
 	}

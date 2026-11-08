@@ -1,4 +1,4 @@
-package api
+package music
 
 import (
 	"cmp"
@@ -55,8 +55,8 @@ type storedArtistAsk struct {
 
 // loadArtistAsks reads the kept list once, so a restart keeps the artists
 // ready (their streams are kept in SQLite too).
-func (a *API) loadArtistAsks(ctx context.Context) {
-	t := &a.artistAsked
+func (h *Handlers) loadArtistAsks(ctx context.Context) {
+	t := &h.artistAsked
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	if t.loaded {
@@ -66,10 +66,10 @@ func (a *API) loadArtistAsks(ctx context.Context) {
 	if t.m == nil {
 		t.m = map[string]artistAsk{}
 	}
-	if a.s.Store == nil {
+	if h.Store == nil {
 		return
 	}
-	b, found, _ := metadata.LookupCache{Store: a.s.Store}.Get(ctx, artistAskedDisk, time.Now())
+	b, found, _ := metadata.LookupCache{Store: h.Store}.Get(ctx, artistAskedDisk, time.Now())
 	var kept []storedArtistAsk
 	if !found || json.Unmarshal(b, &kept) != nil {
 		return
@@ -83,10 +83,10 @@ func (a *API) loadArtistAsks(ctx context.Context) {
 }
 
 // saveArtistAsks writes the list when it changed.
-func (a *API) saveArtistAsks(ctx context.Context) {
-	t := &a.artistAsked
+func (h *Handlers) saveArtistAsks(ctx context.Context) {
+	t := &h.artistAsked
 	t.mu.Lock()
-	if !t.dirty || a.s.Store == nil {
+	if !t.dirty || h.Store == nil {
 		t.mu.Unlock()
 		return
 	}
@@ -98,18 +98,18 @@ func (a *API) saveArtistAsks(ctx context.Context) {
 	t.mu.Unlock()
 	if b, err := json.Marshal(kept); err == nil {
 		now := time.Now()
-		_ = metadata.LookupCache{Store: a.s.Store}.Put(ctx, artistAskedDisk, b, now, now.Add(artistAskedKeep))
+		_ = metadata.LookupCache{Store: h.Store}.Put(ctx, artistAskedDisk, b, now, now.Add(artistAskedKeep))
 	}
 }
 
 // noteArtistVideos notes artists for the pass; no lookup here. One noted
 // again keeps its place; when full, the one asked for least lately goes.
-func (a *API) noteArtistVideos(ctx context.Context, mbids []string) {
-	if len(mbids) == 0 || !a.artistVideosOn() {
+func (h *Handlers) noteArtistVideos(ctx context.Context, mbids []string) {
+	if len(mbids) == 0 || !h.ArtistVideosOn() {
 		return
 	}
-	a.loadArtistAsks(ctx)
-	t := &a.artistAsked
+	h.loadArtistAsks(ctx)
+	t := &h.artistAsked
 	now := time.Now()
 	t.mu.Lock()
 	defer t.mu.Unlock()
@@ -145,9 +145,9 @@ func (a *API) noteArtistVideos(ctx context.Context, mbids []string) {
 
 // artistAsks are the noted artists, first asked first; ones nobody asked
 // for in artistAskedKeep are let go.
-func (a *API) artistAsks(ctx context.Context, now time.Time) []string {
-	a.loadArtistAsks(ctx)
-	t := &a.artistAsked
+func (h *Handlers) artistAsks(ctx context.Context, now time.Time) []string {
+	h.loadArtistAsks(ctx)
+	t := &h.artistAsked
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	var out []string
@@ -167,33 +167,33 @@ func (a *API) artistAsks(ctx context.Context, now time.Time) []string {
 // none ready yet (and one not tried), or the ready one's address expires
 // within trailerRenewAhead (a renewal; urgent when it would lapse before
 // the next pass).
-func (a *API) artistVideoDue(ctx context.Context, mbid string, now time.Time) (due, renew, urgent bool) {
+func (h *Handlers) artistVideoDue(ctx context.Context, mbid string, now time.Time) (due, renew, urgent bool) {
 	// No videos when last asked: not asked again before artistEmptyRecheck,
 	// so an install's noted artists cost the metadata server about one call
 	// a day each, not one every pass.
-	if e, kept := a.keptVideos(ctx, mbid); kept && len(e.list) == 0 && a.artistVideos.clock().Sub(e.at) < artistEmptyRecheck {
+	if e, kept := h.keptVideos(ctx, mbid); kept && len(e.list) == 0 && h.artistVideos.clock().Sub(e.at) < artistEmptyRecheck {
 		return false, false, false
 	}
-	c := &a.artistVideos
+	c := &h.artistVideos
 	c.mu.Lock()
 	failedAt, failed := c.failed[mbid]
 	c.mu.Unlock()
 	if failed && c.clock().Sub(failedAt) < artistFailWait {
 		return false, false, false
 	}
-	vids := a.videosOf(ctx, mbid)
+	vids := h.videosOf(ctx, mbid)
 	if len(vids) == 0 {
 		return false, false, false
 	}
-	if v, s, ok := a.readyVideo(ctx, vids); ok {
-		if a.trailers.InFlight("musicvideo|" + v.ID) {
+	if v, s, ok := h.readyVideo(ctx, vids); ok {
+		if h.Trailers.InFlight("musicvideo|" + v.ID) {
 			return false, false, false
 		}
 		left := s.ExpiresAt.Add(-metadata.TrailerEarly).Sub(now)
-		return left < a.trailers.RenewAhead(), true, left < a.trailers.RenewAhead()-metadata.TrailerPassEvery()
+		return left < h.Trailers.RenewAhead(), true, left < h.Trailers.RenewAhead()-metadata.TrailerPassEvery()
 	}
 	for _, v := range vids {
-		if _, known := a.videoKnown(ctx, v.ID); !known && !a.trailers.InFlight("musicvideo|"+v.ID) {
+		if _, known := h.videoKnown(ctx, v.ID); !known && !h.Trailers.InFlight("musicvideo|"+v.ID) {
 			return true, false, false
 		}
 	}
@@ -204,32 +204,32 @@ func (a *API) artistVideoDue(ctx context.Context, mbid string, now time.Time) (d
 // or renews the ready one. A video YouTube will not play here is dropped
 // from the artist's list; a renewal that fails keeps the address it has
 // until it expires.
-func (a *API) passArtistVideo(ctx context.Context, mbid string, renew bool) error {
-	vids := a.videosOf(ctx, mbid)
+func (h *Handlers) passArtistVideo(ctx context.Context, mbid string, renew bool) error {
+	vids := h.videosOf(ctx, mbid)
 	if renew {
-		v, _, ok := a.readyVideo(ctx, vids)
+		v, _, ok := h.readyVideo(ctx, vids)
 		if !ok {
 			return nil
 		}
 		ckey := "musicvideo|" + v.ID
 		now := time.Now()
-		s, err := a.trailers.Read(metadata.Renewing(ctx), v.ID, v.ID, now, true)
+		s, err := h.Trailers.Read(metadata.Renewing(ctx), v.ID, v.ID, now, true)
 		if err != nil {
 			if videoWontPlay(metadata.MissedFor(err)) {
-				a.dropVideo(ctx, mbid, v.ID)
+				h.dropVideo(ctx, mbid, v.ID)
 			}
 			return metadata.MissedFor(err)
 		}
-		a.trailers.KeepStream(ctx, ckey, s, now)
+		h.Trailers.KeepStream(ctx, ckey, s, now)
 		return nil
 	}
 	for _, v := range vids {
-		if _, known := a.videoKnown(ctx, v.ID); known {
+		if _, known := h.videoKnown(ctx, v.ID); known {
 			continue
 		}
-		_, err := a.resolveMusicVideo(ctx, v.ID)
+		_, err := h.resolveMusicVideo(ctx, v.ID)
 		if videoWontPlay(err) && ctx.Err() == nil {
-			a.dropVideo(ctx, mbid, v.ID)
+			h.dropVideo(ctx, mbid, v.ID)
 		}
 		return err
 	}

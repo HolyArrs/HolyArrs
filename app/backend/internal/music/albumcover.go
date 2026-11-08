@@ -1,4 +1,4 @@
-package api
+package music
 
 import (
 	"net/http"
@@ -17,45 +17,45 @@ import (
 // (kidGuard). An album with no cover stored (yet) answers 204, like the
 // other picture routes, so the page shows its placeholder without a failed
 // request in the console.
-func (a *API) albumCoverArt(w http.ResponseWriter, r *http.Request) {
-	p, ok := a.albumID(w, r)
+func (h *Handlers) albumCoverArt(w http.ResponseWriter, r *http.Request) {
+	p, ok := h.albumID(w, r)
 	if !ok {
 		return
 	}
-	lib := a.s.Library
+	lib := h.Library
 	mbid := strings.ToLower(p.SourceIDs["musicbrainz"])
 	if lib == nil || lib.Artwork == nil {
 		http.NotFound(w, r)
 		return
 	}
 	if mbid == "" {
-		noPicture(w)
+		NoPicture(w)
 		return
 	}
 	var t mediafiles.Title
-	if err := database.Get(r.Context(), a.s.Store.Read(), "titles", p.TitleID, &t); err != nil {
+	if err := database.Get(r.Context(), h.Store.Read(), "titles", p.TitleID, &t); err != nil {
 		http.NotFound(w, r)
 		return
 	}
 	// Only the metadata server's stored copy (Luis, 2026-10-24): an album it
 	// has not stored yet is 204 (the page shows its placeholder) until it has.
-	size := coverSize(r)
+	size := CoverSize(r)
 	want := size
 	if size == "250" {
 		want = "500" // 250 is made here from the 500
 	}
-	src := a.musicArtSrc("album", mbid, want, a.pictureVersion("album", mbid))
+	src := h.musicArtSrc("album", mbid, want, h.PictureVersion("album", mbid))
 	if src == "" {
-		noPicture(w)
+		NoPicture(w)
 		return
 	}
 	name := library.ArtworkName(src)
 	path, ok := lib.Artwork.Path(name)
 	if ok {
-		lib.Artwork.Recheck(src, serverStandIn)
+		lib.Artwork.Recheck(src, ServerStandIn)
 	} else {
-		if _, err := lib.Artwork.FetchStored(r.Context(), src, serverStandIn); err != nil {
-			noPicture(w)
+		if _, err := lib.Artwork.FetchStored(r.Context(), src, ServerStandIn); err != nil {
+			NoPicture(w)
 			return
 		}
 		if path, ok = lib.Artwork.Path(name); !ok {

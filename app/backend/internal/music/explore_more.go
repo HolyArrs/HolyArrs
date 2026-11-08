@@ -1,4 +1,4 @@
-package api
+package music
 
 import (
 	"context"
@@ -90,8 +90,8 @@ func musicSeedCount(artists int) int {
 
 // musicHour is the viewer's hour (0-23) when sent, else the server's.
 func musicHour(v string, now time.Time) int {
-	if h, err := strconv.Atoi(v); err == nil && h >= 0 && h < 24 {
-		return h
+	if hv, err := strconv.Atoi(v); err == nil && hv >= 0 && hv < 24 {
+		return hv
 	}
 	return time.Now().Hour()
 }
@@ -154,29 +154,29 @@ type soundtrackJob struct {
 	year int
 }
 
-var musicSoundtracks = map[*API]*soundtrackCache{}
+var musicSoundtracks = map[*Handlers]*soundtrackCache{}
 var musicSoundtracksMu sync.Mutex
 
-func (a *API) soundtracks() *soundtrackCache {
+func (h *Handlers) soundtracks() *soundtrackCache {
 	musicSoundtracksMu.Lock()
 	defer musicSoundtracksMu.Unlock()
-	c := musicSoundtracks[a]
+	c := musicSoundtracks[h]
 	if c == nil {
 		c = &soundtrackCache{found: map[int64]soundtrackEntry{}, queued: map[int64]bool{}}
-		musicSoundtracks[a] = c
+		musicSoundtracks[h] = c
 	}
 	return c
 }
 
 // soundtracksFor answers known soundtracks of each title and queues the
 // rest for a paced MusicBrainz search (100 an hour at most).
-func (a *API) soundtracksFor(jobs []soundtrackJob) map[int64][]metadata.Album {
+func (h *Handlers) soundtracksFor(jobs []soundtrackJob) map[int64][]metadata.Album {
 	out := map[int64][]metadata.Album{}
 	var src soundtrackSource
-	if a.s.Library != nil && a.s.Library.Artists != nil {
-		src, _ = a.s.Library.Artists.(soundtrackSource)
+	if h.Library != nil && h.Library.Artists != nil {
+		src, _ = h.Library.Artists.(soundtrackSource)
 	}
-	c := a.soundtracks()
+	c := h.soundtracks()
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	for _, j := range jobs {
@@ -227,8 +227,8 @@ func (a *API) soundtracksFor(jobs []soundtrackJob) map[int64][]metadata.Album {
 }
 
 // linksOf answers the known collaborators of each artist id.
-func (a *API) linksOf(ids []string) map[string][]metadata.ArtistLink {
-	c := &a.musicx
+func (h *Handlers) linksOf(ids []string) map[string][]metadata.ArtistLink {
+	c := &h.musicx
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	out := map[string][]metadata.ArtistLink{}
@@ -278,8 +278,8 @@ func (m *musicCtx) listCards(l metadata.MusicTrend, kind string) []MusicCard {
 	return out
 }
 
-func (a *API) moreMusicRows(ctx context.Context, m *musicCtx, out []MusicRow) []MusicRow {
-	db := a.s.Store.Read()
+func (h *Handlers) moreMusicRows(ctx context.Context, m *musicCtx, out []MusicRow) []MusicRow {
+	db := h.Store.Read()
 	add := func(r MusicRow) {
 		for i := range r.Items {
 			if r.Items[i].Key == "" {
@@ -289,10 +289,10 @@ func (a *API) moreMusicRows(ctx context.Context, m *musicCtx, out []MusicRow) []
 		out = append(out, r)
 	}
 	list := func(kind, region string) metadata.MusicTrend {
-		if a.s.MusicTrending == nil {
+		if h.MusicTrending == nil {
 			return metadata.MusicTrend{}
 		}
-		l, err := a.cachedMusicTrend(ctx, kind, region)
+		l, err := h.cachedMusicTrend(ctx, kind, region)
 		if err != nil {
 			return metadata.MusicTrend{}
 		}
@@ -434,7 +434,7 @@ func (a *API) moreMusicRows(ctx context.Context, m *musicCtx, out []MusicRow) []
 		for _, ar := range m.artists {
 			ids = append(ids, ar.mbid)
 		}
-		links := a.linksOf(ids)
+		links := h.linksOf(ids)
 		var items []MusicCard
 		seen := map[string]bool{}
 		for _, ar := range m.artists {
@@ -543,7 +543,7 @@ func (a *API) moreMusicRows(ctx context.Context, m *musicCtx, out []MusicRow) []
 			}
 			jobs = append(jobs, soundtrackJob{t.ID, t.Name, y})
 		}
-		found := a.soundtracksFor(jobs)
+		found := h.soundtracksFor(jobs)
 		var items []MusicCard
 		for _, t := range ts {
 			for _, al := range found[t.ID][:min(1, len(found[t.ID]))] {

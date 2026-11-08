@@ -1,4 +1,4 @@
-package api
+package music
 
 import (
 	"context"
@@ -27,11 +27,11 @@ const (
 
 // todayRow is the "Rising today" row (round artist cards, the day's gain
 // on each), or nil when the server has none or did not answer.
-func (a *API) todayRow(ctx context.Context) *MusicRow {
-	if a.s.MusicRising == nil {
+func (h *Handlers) todayRow(ctx context.Context) *MusicRow {
+	if h.MusicRising == nil {
 		return nil
 	}
-	c := &a.rising
+	c := &h.rising
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	now := time.Now()
@@ -42,7 +42,7 @@ func (a *API) todayRow(ctx context.Context) *MusicRow {
 	c.row = nil
 	ctx, cancel := context.WithTimeout(ctx, 8*time.Second)
 	defer cancel()
-	l, err := a.s.MusicRising(ctx)
+	l, err := h.MusicRising(ctx)
 	if err != nil || len(l.Items) == 0 {
 		return nil
 	}
@@ -60,24 +60,24 @@ func (a *API) todayRow(ctx context.Context) *MusicRow {
 		row.Items = append(row.Items, card)
 		names = append(names, nameKey{kind: "artist", mbid: it.MBID, name: it.Name})
 	}
-	a.rememberMusicNames(names)
+	h.rememberMusicNames(names)
 	c.row = &row
 	return c.row
 }
 
 // risingToday answers GET /api/v1/explore/music/rising: the row, or 404
 // when there is none today.
-func (a *API) risingToday(w http.ResponseWriter, r *http.Request) {
-	if p, _ := parts.ForTitleKind("artist"); !a.partIsOn(p) || a.kidMax(r) != "" {
+func (h *Handlers) risingToday(w http.ResponseWriter, r *http.Request) {
+	if p, _ := parts.ForTitleKind("artist"); !h.PartIsOn(p) || h.KidMax(r) != "" {
 		webserver.Fail(w, http.StatusNotFound, "no rising artists")
 		return
 	}
-	row := a.todayRow(context.WithoutCancel(r.Context()))
+	row := h.todayRow(context.WithoutCancel(r.Context()))
 	if row == nil {
 		webserver.Fail(w, http.StatusNotFound, "no rising artists")
 		return
 	}
-	a.exploreCaching(w, r, "private, max-age=300")
+	h.ExploreCaching(w, r, "private, max-age=300")
 	webserver.WriteJSON(w, http.StatusOK, row)
 }
 

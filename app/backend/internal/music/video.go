@@ -1,4 +1,4 @@
-package api
+package music
 
 import (
 	"context"
@@ -115,15 +115,15 @@ type storedVideos struct {
 func videoDiskKey(mbid string) string { return "artistvideos|" + mbid }
 
 // keepVideos stores a list in memory, and on disk when it is not empty.
-func (a *API) keepVideos(ctx context.Context, mbid string, e artistVideoList) {
-	c := &a.artistVideos
+func (h *Handlers) keepVideos(ctx context.Context, mbid string, e artistVideoList) {
+	c := &h.artistVideos
 	c.mu.Lock()
 	c.putLocked(mbid, e)
 	c.mu.Unlock()
-	if a.s.Store == nil {
+	if h.Store == nil {
 		return
 	}
-	lc := metadata.LookupCache{Store: a.s.Store}
+	lc := metadata.LookupCache{Store: h.Store}
 	if len(e.list) == 0 {
 		// Kept until the pass would ask again (a restart does not re-ask
 		// every artist with no videos at once).
@@ -139,13 +139,13 @@ func (a *API) keepVideos(ctx context.Context, mbid string, e artistVideoList) {
 
 // keptVideos reads the artist's videos from memory, then disk; ok is false
 // when neither has an answer.
-func (a *API) keptVideos(ctx context.Context, mbid string) (artistVideoList, bool) {
-	c := &a.artistVideos
+func (h *Handlers) keptVideos(ctx context.Context, mbid string) (artistVideoList, bool) {
+	c := &h.artistVideos
 	c.mu.Lock()
 	e, ok := c.m[mbid]
 	c.mu.Unlock()
-	if !ok && a.s.Store != nil {
-		if b, found, _ := (metadata.LookupCache{Store: a.s.Store}).Get(ctx, videoDiskKey(mbid), time.Now()); found {
+	if !ok && h.Store != nil {
+		if b, found, _ := (metadata.LookupCache{Store: h.Store}).Get(ctx, videoDiskKey(mbid), time.Now()); found {
 			var sv storedVideos
 			if json.Unmarshal(b, &sv) == nil && !sv.At.IsZero() {
 				e, ok = artistVideoList{at: sv.At, list: sv.Videos}, true
@@ -159,20 +159,20 @@ func (a *API) keptVideos(ctx context.Context, mbid string) (artistVideoList, boo
 }
 
 // videosOf reads the artist's videos: memory, then disk, then the server.
-func (a *API) videosOf(ctx context.Context, mbid string) []metadata.ArtistVideo {
-	c := &a.artistVideos
+func (h *Handlers) videosOf(ctx context.Context, mbid string) []metadata.ArtistVideo {
+	c := &h.artistVideos
 	now := c.clock()
-	e, ok := a.keptVideos(ctx, mbid)
+	e, ok := h.keptVideos(ctx, mbid)
 	switch {
 	case ok && len(e.list) > 0:
 		if now.Sub(e.at) >= artistVideosFresh {
-			a.recheckVideos(mbid)
+			h.recheckVideos(mbid)
 		}
 		return e.list
 	case ok && now.Sub(e.at) < artistVideosEmpty:
 		return nil
 	}
-	l, err := a.s.ArtistVideos(ctx, mbid)
+	l, err := h.ArtistVideos(ctx, mbid)
 	if err != nil {
 		// An artist the server does not know is kept as an empty list, so
 		// asking again within a few minutes costs no lookup. Any other
@@ -180,7 +180,7 @@ func (a *API) videosOf(ctx context.Context, mbid string) []metadata.ArtistVideo 
 		switch {
 		case errors.Is(err, metadata.ErrNotFound):
 			c.forgetFailed(mbid)
-			a.keepVideos(ctx, mbid, artistVideoList{at: now})
+			h.keepVideos(ctx, mbid, artistVideoList{at: now})
 		case ctx.Err() == nil:
 			// Not the caller giving up (its own cancel or deadline).
 			c.noteFailed(mbid, now)
@@ -188,14 +188,14 @@ func (a *API) videosOf(ctx context.Context, mbid string) []metadata.ArtistVideo 
 		return nil
 	}
 	c.forgetFailed(mbid)
-	a.keepVideos(ctx, mbid, artistVideoList{at: now, list: l})
+	h.keepVideos(ctx, mbid, artistVideoList{at: now, list: l})
 	return l
 }
 
 // recheckVideos asks the server again in the background; a failed or empty
 // answer keeps the list it has.
-func (a *API) recheckVideos(mbid string) {
-	c := &a.artistVideos
+func (h *Handlers) recheckVideos(mbid string) {
+	c := &h.artistVideos
 	c.mu.Lock()
 	if c.busy == nil {
 		c.busy = map[string]bool{}
@@ -214,16 +214,16 @@ func (a *API) recheckVideos(mbid string) {
 		}()
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
-		l, err := a.s.ArtistVideos(ctx, mbid)
+		l, err := h.ArtistVideos(ctx, mbid)
 		if err == nil && len(l) > 0 {
-			a.keepVideos(ctx, mbid, artistVideoList{at: c.clock(), list: l})
+			h.keepVideos(ctx, mbid, artistVideoList{at: c.clock(), list: l})
 		}
 	}()
 }
 
 // dropVideo removes a video that would not play from the kept list.
-func (a *API) dropVideo(ctx context.Context, mbid, id string) []metadata.ArtistVideo {
-	c := &a.artistVideos
+func (h *Handlers) dropVideo(ctx context.Context, mbid, id string) []metadata.ArtistVideo {
+	c := &h.artistVideos
 	c.mu.Lock()
 	e := c.m[mbid]
 	c.mu.Unlock()
@@ -233,7 +233,7 @@ func (a *API) dropVideo(ctx context.Context, mbid, id string) []metadata.ArtistV
 			kept = append(kept, v)
 		}
 	}
-	a.keepVideos(ctx, mbid, artistVideoList{at: e.at, list: kept})
+	h.keepVideos(ctx, mbid, artistVideoList{at: e.at, list: kept})
 	return kept
 }
 
@@ -255,32 +255,32 @@ func videoStart(v metadata.ArtistVideo, s metadata.TrailerStream) float64 {
 	return 0
 }
 
-func (a *API) artistVideo(w http.ResponseWriter, r *http.Request) {
-	mbid, ok := a.musicPageGate(w, r)
+func (h *Handlers) artistVideo(w http.ResponseWriter, r *http.Request) {
+	mbid, ok := h.musicPageGate(w, r)
 	if !ok {
 		return
 	}
 	// ?id= is a card in the Music videos row: pointing at it reads what is
 	// kept; a click (&play=1) may look that one video up.
 	if id := r.URL.Query().Get("id"); id != "" {
-		a.pickedVideo(w, r, mbid, id, r.URL.Query().Get("play") == "1")
+		h.pickedVideo(w, r, mbid, id, r.URL.Query().Get("play") == "1")
 		return
 	}
-	if !health.AutoplayOn(r.Context(), a.s.Store) {
+	if !health.AutoplayOn(r.Context(), h.Store) {
 		webserver.Fail(w, http.StatusNotFound, "trailers are turned off")
 		return
 	}
-	if a.s.ArtistVideos == nil {
+	if h.ArtistVideos == nil {
 		webserver.Fail(w, http.StatusNotFound, "no video")
 		return
 	}
-	vids := a.videosOf(metadata.MemberLookup(r.Context()), mbid)
+	vids := h.videosOf(metadata.MemberLookup(r.Context()), mbid)
 	if len(vids) == 0 {
 		webserver.Fail(w, http.StatusNotFound, "no video")
 		return
 	}
 	// Noted on every view, so the pass keeps a video ready (and renewed).
-	a.noteArtistVideos(r.Context(), []string{mbid})
+	h.noteArtistVideos(r.Context(), []string{mbid})
 	// ?skip=id,id names videos already played: the next one is another of the
 	// artist's videos, and none left answers 404 so the page repeats its last.
 	if skip := r.URL.Query().Get("skip"); skip != "" {
@@ -293,14 +293,14 @@ func (a *API) artistVideo(w http.ResponseWriter, r *http.Request) {
 	// Only a stream already looked up answers: the visitor never waits on a
 	// lookup, and none starts here. None ready yet answers 404 at once (the
 	// hero keeps its photo); the trailer pass makes one ready.
-	v, s, ready := a.readyVideo(r.Context(), vids)
+	v, s, ready := h.readyVideo(r.Context(), vids)
 	if !ready {
 		w.Header().Set("Cache-Control", "private, no-store")
 		w.Header().Set("Retry-After", "5")
 		webserver.Fail(w, http.StatusNotFound, "no video ready yet")
 		return
 	}
-	view, ok := a.videoView(r, v, s)
+	view, ok := h.videoView(r, v, s)
 	if !ok {
 		webserver.Fail(w, http.StatusNotFound, "no direct stream")
 		return
@@ -315,10 +315,10 @@ func (a *API) artistVideo(w http.ResponseWriter, r *http.Request) {
 // up, behind the answer: pointing at a card or focusing it reads what is
 // kept. One that will not play answers 404 and stays in the list (the
 // row's embed may still play it).
-func (a *API) pickedVideo(w http.ResponseWriter, r *http.Request, mbid, id string, play bool) {
+func (h *Handlers) pickedVideo(w http.ResponseWriter, r *http.Request, mbid, id string, play bool) {
 	var v metadata.ArtistVideo
-	if a.s.ArtistVideos != nil {
-		for _, k := range a.videosOf(metadata.MemberLookup(r.Context()), mbid) {
+	if h.ArtistVideos != nil {
+		for _, k := range h.videosOf(metadata.MemberLookup(r.Context()), mbid) {
 			if k.ID == id && metadata.ValidYouTubeID(k.ID) {
 				v = k
 				break
@@ -329,11 +329,11 @@ func (a *API) pickedVideo(w http.ResponseWriter, r *http.Request, mbid, id strin
 		webserver.Fail(w, http.StatusNotFound, "no such video")
 		return
 	}
-	s, known := a.videoKnown(r.Context(), v.ID)
+	s, known := h.videoKnown(r.Context(), v.ID)
 	if !known {
 		// A click: looked up behind the answer; the row's embed plays meanwhile.
 		if play {
-			a.resolveVideoBehind(r, mbid, nil, v.ID)
+			h.resolveVideoBehind(r, mbid, nil, v.ID)
 		}
 		w.Header().Set("Cache-Control", "private, no-store")
 		w.Header().Set("Retry-After", "5")
@@ -344,7 +344,7 @@ func (a *API) pickedVideo(w http.ResponseWriter, r *http.Request, mbid, id strin
 		webserver.Fail(w, http.StatusNotFound, "no direct stream")
 		return
 	}
-	view, ok := a.videoView(r, v, s)
+	view, ok := h.videoView(r, v, s)
 	if !ok {
 		webserver.Fail(w, http.StatusNotFound, "no direct stream")
 		return
@@ -354,8 +354,8 @@ func (a *API) pickedVideo(w http.ResponseWriter, r *http.Request, mbid, id strin
 }
 
 // videoView relays the stream for this person and describes it.
-func (a *API) videoView(r *http.Request, v metadata.ArtistVideo, s metadata.TrailerStream) (ArtistVideoView, bool) {
-	id := a.trailers.Relay(a.person(r).UserID, s.URL, s.ExpiresAt)
+func (h *Handlers) videoView(r *http.Request, v metadata.ArtistVideo, s metadata.TrailerStream) (ArtistVideoView, bool) {
+	id := h.Trailers.Relay(h.Person(r).UserID, s.URL, s.ExpiresAt)
 	if id == "" {
 		return ArtistVideoView{}, false
 	}
@@ -369,12 +369,12 @@ func (a *API) videoView(r *http.Request, v metadata.ArtistVideo, s metadata.Trai
 
 // videoKnown reads a video's stream from memory or SQLite only; known
 // with a zero stream means it has no direct stream (for now).
-func (a *API) videoKnown(ctx context.Context, id string) (metadata.TrailerStream, bool) {
+func (h *Handlers) videoKnown(ctx context.Context, id string) (metadata.TrailerStream, bool) {
 	ckey := "musicvideo|" + id
 	now := time.Now()
-	e, ok := a.trailers.Get(ckey, now)
-	if !ok && a.trailers.Stored(ctx, ckey, now) {
-		e, ok = a.trailers.Get(ckey, now)
+	e, ok := h.Trailers.Get(ckey, now)
+	if !ok && h.Trailers.Stored(ctx, ckey, now) {
+		e, ok = h.Trailers.Get(ckey, now)
 	}
 	if !ok || !e.Miss.IsZero() || e.Stream.Type != "hls" {
 		return metadata.TrailerStream{}, ok
@@ -383,9 +383,9 @@ func (a *API) videoKnown(ctx context.Context, id string) (metadata.TrailerStream
 }
 
 // readyVideo is the first of the videos whose stream is already known.
-func (a *API) readyVideo(ctx context.Context, vids []metadata.ArtistVideo) (metadata.ArtistVideo, metadata.TrailerStream, bool) {
+func (h *Handlers) readyVideo(ctx context.Context, vids []metadata.ArtistVideo) (metadata.ArtistVideo, metadata.TrailerStream, bool) {
 	for _, v := range vids {
-		if s, _ := a.videoKnown(ctx, v.ID); s.URL != "" {
+		if s, _ := h.videoKnown(ctx, v.ID); s.URL != "" {
 			return v, s, true
 		}
 	}
@@ -395,24 +395,24 @@ func (a *API) readyVideo(ctx context.Context, vids []metadata.ArtistVideo) (meta
 // resolveVideoBehind looks one video's stream up after the answer: id, else
 // the first of vids not known yet. It counts against the person's video
 // budget; one YouTube will not play here is dropped from the artist's list.
-func (a *API) resolveVideoBehind(r *http.Request, mbid string, vids []metadata.ArtistVideo, id string) {
+func (h *Handlers) resolveVideoBehind(r *http.Request, mbid string, vids []metadata.ArtistVideo, id string) {
 	ctx := metadata.MemberLookup(context.WithoutCancel(r.Context()))
 	if id == "" {
 		for _, v := range vids {
-			if _, known := a.videoKnown(ctx, v.ID); !known {
+			if _, known := h.videoKnown(ctx, v.ID); !known {
 				id = v.ID
 				break
 			}
 		}
 	}
-	if id == "" || a.trailers.InFlight("musicvideo|"+id) || !a.trailers.Allow(a.person(r).UserID, time.Now()) {
+	if id == "" || h.Trailers.InFlight("musicvideo|"+id) || !h.Trailers.Allow(h.Person(r).UserID, time.Now()) {
 		return
 	}
 	go func() {
 		lctx, cancel := context.WithTimeout(ctx, 40*time.Second)
 		defer cancel()
-		if _, err := a.resolveMusicVideo(lctx, id); videoWontPlay(err) && lctx.Err() == nil && vids != nil {
-			a.dropVideo(ctx, mbid, id)
+		if _, err := h.resolveMusicVideo(lctx, id); videoWontPlay(err) && lctx.Err() == nil && vids != nil {
+			h.dropVideo(ctx, mbid, id)
 		}
 	}()
 }
@@ -427,12 +427,12 @@ func videoWontPlay(err error) bool {
 
 // resolveMusicVideo resolves one YouTube video like a trailer: memory,
 // then SQLite, then one shared reader lookup in the trailer pool.
-func (a *API) resolveMusicVideo(ctx context.Context, key string) (metadata.TrailerStream, error) {
+func (h *Handlers) resolveMusicVideo(ctx context.Context, key string) (metadata.TrailerStream, error) {
 	ckey := "musicvideo|" + key
 	now := time.Now()
-	e, ok := a.trailers.Get(ckey, now)
-	if !ok && a.trailers.Stored(ctx, ckey, now) {
-		e, ok = a.trailers.Get(ckey, now)
+	e, ok := h.Trailers.Get(ckey, now)
+	if !ok && h.Trailers.Stored(ctx, ckey, now) {
+		e, ok = h.Trailers.Get(ckey, now)
 	}
 	if ok {
 		if !e.Miss.IsZero() {
@@ -440,8 +440,8 @@ func (a *API) resolveMusicVideo(ctx context.Context, key string) (metadata.Trail
 		}
 		return e.Stream, nil
 	}
-	f, err, done := a.trailers.Shared(ctx, ckey, func(lctx context.Context) (metadata.TrailerEntry, error) {
-		return a.lookupMusicVideo(lctx, key, ckey)
+	f, err, done := h.Trailers.Shared(ctx, ckey, func(lctx context.Context) (metadata.TrailerEntry, error) {
+		return h.lookupMusicVideo(lctx, key, ckey)
 	})
 	if !done {
 		return metadata.TrailerStream{}, ctx.Err()
@@ -455,18 +455,18 @@ func (a *API) resolveMusicVideo(ctx context.Context, key string) (metadata.Trail
 	return f.Stream, nil
 }
 
-func (a *API) lookupMusicVideo(ctx context.Context, key, ckey string) (metadata.TrailerEntry, error) {
+func (h *Handlers) lookupMusicVideo(ctx context.Context, key, ckey string) (metadata.TrailerEntry, error) {
 	now := time.Now()
-	s, err := a.trailers.Read(ctx, key, key, now, true)
+	s, err := h.Trailers.Read(ctx, key, key, now, true)
 	if err != nil {
 		if youtube.ReasonOf(err) == "" {
 			return metadata.TrailerEntry{}, err
 		}
 		e := metadata.TrailerEntry{Miss: now.Add(metadata.TrailerMiss), Reason: metadata.TrailerReasonOf(err)}
-		a.trailers.Put(ckey, e)
+		h.Trailers.Put(ckey, e)
 		return e, nil
 	}
-	return a.trailers.KeepStream(ctx, ckey, s, now), nil
+	return h.Trailers.KeepStream(ctx, ckey, s, now), nil
 }
 
 // withoutVideos drops the listed video ids (at most 50 are honoured).

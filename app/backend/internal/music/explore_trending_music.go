@@ -1,4 +1,4 @@
-package api
+package music
 
 import (
 	"context"
@@ -497,13 +497,13 @@ func composeMusicTrending(in musicTrendingInput, now time.Time) ([]MusicCard, []
 
 // musicTrendingRows reads the region charts and the listeners of this
 // week's release artists (layer 1 caches), then composes the rows.
-func (a *API) musicTrendingRows(ctx context.Context, r *http.Request, in musicNewInput, now time.Time) ([]MusicCard, []MusicRow) {
+func (h *Handlers) musicTrendingRows(ctx context.Context, r *http.Request, in musicNewInput, now time.Time) ([]MusicCard, []MusicRow) {
 	region := strings.ToUpper(r.URL.Query().Get("region"))
 	if region == "" || region == "GLOBAL" || !isCountry(region) {
 		region = "global"
 	}
 	t := musicTrendingInput{region: region, owned: in.owned, follows: in.follows, ownedImages: in.images,
-		albums: a.musicChartOf(ctx, region, "albums", now), songs: a.musicChartOf(ctx, region, "songs", now)}
+		albums: h.musicChartOf(ctx, region, "albums", now), songs: h.musicChartOf(ctx, region, "songs", now)}
 	t.library = in.library
 	if in.data != nil {
 		t.releases, t.server, t.fresh = in.data.releases, in.data.server, in.data.fresh.Items
@@ -514,14 +514,14 @@ func (a *API) musicTrendingRows(ctx context.Context, r *http.Request, in musicNe
 			ids = append(ids, strings.ToLower(rel.ArtistMBID))
 		}
 	}
-	for i, g := range a.musicGenreTiles(ctx, region, now) {
+	for i, g := range h.musicGenreTiles(ctx, region, now) {
 		if i >= 3 {
 			break
 		}
-		t.genreCharts = append(t.genreCharts, genreChart{g.Name, a.musicGenreChart(ctx, region, "albums", g.Slug, now)})
+		t.genreCharts = append(t.genreCharts, genreChart{g.Name, h.musicGenreChart(ctx, region, "albums", g.Slug, now)})
 	}
 	sort.Strings(ids)
-	t.listeners = a.musicListenersOf(ctx, ids, now)
+	t.listeners = h.musicListenersOf(ctx, ids, now)
 	return composeMusicTrending(t, now)
 }
 

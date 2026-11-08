@@ -122,7 +122,7 @@ func (a *API) StartExplore(ctx context.Context) {
 	e.mu.Unlock()
 	a.uiHandlers().ApplyArtworkCap(ctx) // the picture cache size from Settings
 	a.s.Store.OnEvent(a.exploreOnEvent)
-	a.s.Store.OnEvent(a.musicOnEvent)
+	a.s.Store.OnEvent(a.mh().OnEvent)
 	go jobs.Guard("explore", func() { a.exploreLoop(ctx) })
 	// The warmers fetch ahead of anyone: they carry X-Fetch: ahead, keep to
 	// the slower pace, wait out the server's hold and have their own
@@ -131,15 +131,15 @@ func (a *API) StartExplore(ctx context.Context) {
 	go jobs.Guard("explore-service-top-warm", func() { a.warmServiceTop(warm) })
 	go jobs.Guard("explore-genre-warm", func() { a.warmGenres(warm) })
 	startBackdropDark(ctx)
-	a.startMusicSync(ctx)
+	a.mh().StartSync(ctx)
 	go jobs.Guard("explore-browse-warm", func() { a.warmBrowse(warm) })
-	if a.musicTplOn() {
+	if a.mh().TplOn() {
 		// The music catalog bundle is read once at start, so the first music
 		// page does not wait for its download.
 		go jobs.Guard("music-bundle-warm", func() {
 			// Then every engine page's covers are stored ahead (musicpreload.go):
 			// the household's own region joins when its pages are first asked.
-			a.tplPreload(a.musicBundle(ctx, time.Now().UTC()), "us")
+			a.mh().TplPreload(a.mh().Bundle(ctx, time.Now().UTC()), "us")
 		})
 	}
 }

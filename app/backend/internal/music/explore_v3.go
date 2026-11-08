@@ -1,4 +1,4 @@
-package api
+package music
 
 import (
 	"context"
@@ -77,7 +77,7 @@ func dayBefore(date string) string {
 // week, ids the server left out an hour, errors not kept. Layer 1 is kept on
 // disk too (lookup_cache), so a restart reads it back instead of the
 // metadata server; the missing chunks are fetched a few at a time.
-func (a *API) musicBatch(ctx context.Context, prefix string, ids []string, chunk int, now time.Time, fetch func(context.Context, []string) (map[string]any, error)) map[string]any {
+func (h *Handlers) musicBatch(ctx context.Context, prefix string, ids []string, chunk int, now time.Time, fetch func(context.Context, []string) (map[string]any, error)) map[string]any {
 	out := map[string]any{}
 	var miss []string
 	seen := map[string]bool{}
@@ -86,7 +86,7 @@ func (a *API) musicBatch(ctx context.Context, prefix string, ids []string, chunk
 			continue
 		}
 		seen[id] = true
-		if v, ok := a.musicv2.cand.Get(prefix+id, now); ok {
+		if v, ok := h.musicv2.cand.Get(prefix+id, now); ok {
 			if v != nil {
 				out[id] = v
 			}
@@ -95,12 +95,12 @@ func (a *API) musicBatch(ctx context.Context, prefix string, ids []string, chunk
 		miss = append(miss, id)
 	}
 	if len(miss) > 0 {
-		disk := a.musicDiskRead(ctx, prefix, miss, now)
+		disk := h.musicDiskRead(ctx, prefix, miss, now)
 		rest := miss[:0:0]
 		for _, id := range miss {
 			if v, ok := disk[id]; ok {
 				out[id] = v
-				a.musicv2.cand.Put(prefix+id, v, musicArtistTTL, now)
+				h.musicv2.cand.Put(prefix+id, v, musicArtistTTL, now)
 				continue
 			}
 			rest = append(rest, id)
@@ -133,19 +133,19 @@ func (a *API) musicBatch(ctx context.Context, prefix string, ids []string, chunk
 				if v, ok := got[id]; ok && v != nil && musicEmpty(v) {
 					// Empty is not final: used now, asked again soon, never on disk.
 					out[id] = v
-					a.musicv2.cand.Put(prefix+id, v, musicEmptyTTL, now)
+					h.musicv2.cand.Put(prefix+id, v, musicEmptyTTL, now)
 				} else if ok && v != nil {
 					out[id] = v
 					fetched[id] = v
-					a.musicv2.cand.Put(prefix+id, v, musicArtistTTL, now)
+					h.musicv2.cand.Put(prefix+id, v, musicArtistTTL, now)
 				} else {
-					a.musicv2.cand.Put(prefix+id, nil, musicMissTTL, now)
+					h.musicv2.cand.Put(prefix+id, nil, musicMissTTL, now)
 				}
 			}
 		}(part)
 	}
 	wg.Wait()
-	a.musicDiskWrite(ctx, prefix, fetched, now)
+	h.musicDiskWrite(ctx, prefix, fetched, now)
 	return out
 }
 
@@ -162,13 +162,13 @@ func musicEmpty(v any) bool {
 	return false
 }
 
-func (a *API) musicListenersOf(ctx context.Context, ids []string, now time.Time) map[string]int64 {
+func (h *Handlers) musicListenersOf(ctx context.Context, ids []string, now time.Time) map[string]int64 {
 	out := map[string]int64{}
-	if a.s.MusicListeners == nil {
+	if h.MusicListeners == nil {
 		return out
 	}
-	for id, v := range a.musicBatch(ctx, "lb:l:", ids, 60, now, func(ctx context.Context, ids []string) (map[string]any, error) {
-		m, err := a.s.MusicListeners(ctx, ids)
+	for id, v := range h.musicBatch(ctx, "lb:l:", ids, 60, now, func(ctx context.Context, ids []string) (map[string]any, error) {
+		m, err := h.MusicListeners(ctx, ids)
 		r := map[string]any{}
 		for k, v := range m {
 			r[k] = v
@@ -180,13 +180,13 @@ func (a *API) musicListenersOf(ctx context.Context, ids []string, now time.Time)
 	return out
 }
 
-func (a *API) musicArtistDataOf(ctx context.Context, ids []string, now time.Time) map[string]*metadata.MusicArtistData {
+func (h *Handlers) musicArtistDataOf(ctx context.Context, ids []string, now time.Time) map[string]*metadata.MusicArtistData {
 	out := map[string]*metadata.MusicArtistData{}
-	if a.s.MusicArtistData == nil {
+	if h.MusicArtistData == nil {
 		return out
 	}
-	for id, v := range a.musicBatch(ctx, "lb:d:", ids, 30, now, func(ctx context.Context, ids []string) (map[string]any, error) {
-		l, err := a.s.MusicArtistData(ctx, ids)
+	for id, v := range h.musicBatch(ctx, "lb:d:", ids, 30, now, func(ctx context.Context, ids []string) (map[string]any, error) {
+		l, err := h.MusicArtistData(ctx, ids)
 		r := map[string]any{}
 		for i := range l {
 			r[strings.ToLower(l[i].MBID)] = &l[i]
@@ -198,13 +198,13 @@ func (a *API) musicArtistDataOf(ctx context.Context, ids []string, now time.Time
 	return out
 }
 
-func (a *API) musicSimilarOf(ctx context.Context, seeds []string, now time.Time) map[string][]metadata.MusicSimilarScore {
+func (h *Handlers) musicSimilarOf(ctx context.Context, seeds []string, now time.Time) map[string][]metadata.MusicSimilarScore {
 	out := map[string][]metadata.MusicSimilarScore{}
-	if a.s.MusicSimilarSet == nil {
+	if h.MusicSimilarSet == nil {
 		return out
 	}
-	for id, v := range a.musicBatch(ctx, "lb:s:", seeds, 12, now, func(ctx context.Context, ids []string) (map[string]any, error) {
-		m, err := a.s.MusicSimilarSet(ctx, ids)
+	for id, v := range h.musicBatch(ctx, "lb:s:", seeds, 12, now, func(ctx context.Context, ids []string) (map[string]any, error) {
+		m, err := h.MusicSimilarSet(ctx, ids)
 		r := map[string]any{}
 		for k, v := range m {
 			r[k] = v
@@ -216,20 +216,20 @@ func (a *API) musicSimilarOf(ctx context.Context, seeds []string, now time.Time)
 	return out
 }
 
-func (a *API) musicGenreChartOf(ctx context.Context, region, slug string, now time.Time) []metadata.MusicChartItem {
-	if a.s.MusicCharts == nil {
+func (h *Handlers) musicGenreChartOf(ctx context.Context, region, slug string, now time.Time) []metadata.MusicChartItem {
+	if h.MusicCharts == nil {
 		return nil
 	}
 	key := "chart:" + region + ":albums:" + slug
-	if v, ok := a.musicv2.cand.Get(key, now); ok {
+	if v, ok := h.musicv2.cand.Get(key, now); ok {
 		return v.([]metadata.MusicChartItem)
 	}
-	c, err := a.s.MusicCharts(ctx, region, "albums", slug)
+	c, err := h.MusicCharts(ctx, region, "albums", slug)
 	if err != nil {
 		markMusicMiss(ctx)
 		return nil
 	}
-	a.musicv2.cand.Put(key, c.Items, spread(musicChartTTL, 0.25), now)
+	h.musicv2.cand.Put(key, c.Items, spread(musicChartTTL, 0.25), now)
 	return c.Items
 }
 
@@ -250,7 +250,7 @@ func sinkAsked(rows []MusicRow) {
 }
 
 // buildMusicV3 builds layer 2 with the Phase 3 scores.
-func (a *API) buildMusicV3(ctx context.Context, member int64, region string, lib *musicLib, acts *musicActs, now time.Time) *musicV2Order {
+func (h *Handlers) buildMusicV3(ctx context.Context, member int64, region string, lib *musicLib, acts *musicActs, now time.Time) *musicV2Order {
 	ord := &musicV2Order{}
 	date := musicscore.Day(now)
 	today := dayAt(now, 0)
@@ -311,11 +311,11 @@ func (a *API) buildMusicV3(ctx context.Context, member int64, region string, lib
 	var albums, songs []metadata.MusicChartItem
 	var reads sync.WaitGroup
 	reads.Add(4)
-	go func() { defer reads.Done(); shelves = a.musicShelvesOf(ctx, region, now) }()
+	go func() { defer reads.Done(); shelves = h.musicShelvesOf(ctx, region, now) }()
 	// Server data (layer 1): genre votes and top albums of library artists.
-	go func() { defer reads.Done(); data = a.musicArtistDataOf(ctx, libIDs, now) }()
-	go func() { defer reads.Done(); albums = a.musicChartOf(ctx, region, "albums", now) }()
-	go func() { defer reads.Done(); songs = a.musicChartOf(ctx, region, "songs", now) }()
+	go func() { defer reads.Done(); data = h.musicArtistDataOf(ctx, libIDs, now) }()
+	go func() { defer reads.Done(); albums = h.musicChartOf(ctx, region, "albums", now) }()
+	go func() { defer reads.Done(); songs = h.musicChartOf(ctx, region, "songs", now) }()
 	reads.Wait()
 	shares := map[string]map[string]float64{}
 	primary := map[string]string{} // artist mbid → top-vote genre key
@@ -557,7 +557,7 @@ func (a *API) buildMusicV3(ctx context.Context, member int64, region string, lib
 	}
 
 	// Row 4: genre tiles, top 12 by G then region order.
-	tiles := a.musicGenreTiles(ctx, region, now)
+	tiles := h.musicGenreTiles(ctx, region, now)
 	{
 		type tg struct {
 			g metadata.MusicGenre
@@ -582,17 +582,17 @@ func (a *API) buildMusicV3(ctx context.Context, member int64, region string, lib
 		meta := MusicRow{ID: "genres", Type: "genres", Title: "Genres", Reason: "Your genres first, then the ones charting in your region", Shape: "tile"}
 		if shelves != nil {
 			meta.Title, meta.Shape = "Browse", "grid"
-			a.browseCovers(ctx, region, cards, now)
+			h.browseCovers(ctx, region, cards, now)
 			cards, sc = coveredTiles(cards, sc)
 		}
 		// Row templates: Explore's Browse row is the mix of the Browse page (genres,
 		// moods, the season, decades, activities), with covers of albums whose
 		// picture is stored; a tile with none is left out.
-		if a.musicTplOn() {
-			if b := a.musicBundle(ctx, now); b != nil {
+		if h.musicTplOn() {
+			if b := h.musicBundle(ctx, now); b != nil {
 				cards, sc = nil, nil
-				tiles := rowtpl.ExploreTiles(a.tplVisibleArt(ctx, b, region, nil, now))
-				a.tplRememberCovers(b, []rowtpl.BrowseSection{{Tiles: tiles}})
+				tiles := rowtpl.ExploreTiles(h.tplVisibleArt(ctx, b, region, nil, now))
+				h.tplRememberCovers(b, []rowtpl.BrowseSection{{Tiles: tiles}})
 				for _, t := range tiles {
 					hue := t.Hue
 					c := MusicCard{Key: t.Key, Kind: "genre", MBID: strings.TrimPrefix(t.Href, "/music/genre/"), Name: t.Name, Hue: &hue, Href: t.Href, Genres: []string{}}
@@ -711,7 +711,7 @@ func (a *API) buildMusicV3(ctx context.Context, member int64, region string, lib
 	}
 
 	if !ord.Cold {
-		a.personalMusicRows(ctx, member, region, date, lib, acts, now, personalIn{
+		h.personalMusicRows(ctx, member, region, date, lib, acts, now, personalIn{
 			aff: aff, affMBID: affMBID, artistOf: artistOf, hadMBID: hadMBID, hadAlbum: hadAlbum, G: G, shares: shares, primary: primary,
 			data: data, chartP: chartP, pcBest: pcBest, explicit: chartExplicit(albums), albumListeners: albumListeners, tiles: tiles, latest: latest, released: released,
 			albumCard: albumCard, chartCard: chartCard, scored: scored, sharesOf: sharesOf,
@@ -724,10 +724,10 @@ func (a *API) buildMusicV3(ctx context.Context, member int64, region string, lib
 	// The row template engine replaces the list rows when it has its
 	// catalog (kill switch music_rows_tpl_off keeps them).
 	tplDone := false
-	if a.musicTplOn() {
-		if b := a.musicBundle(ctx, now); b != nil {
-			a.tplPreload(b, region)
-			for _, cd := range a.tplExploreCands(ctx, member, region, lib, acts, b, shelves, now) {
+	if h.musicTplOn() {
+		if b := h.musicBundle(ctx, now); b != nil {
+			h.tplPreload(b, region)
+			for _, cd := range h.tplExploreCands(ctx, member, region, lib, acts, b, shelves, now) {
 				meta, row, cards, sc := tplV7Row(b, cd)
 				addRow(meta, row, cards, sc, false, false)
 			}
@@ -739,7 +739,7 @@ func (a *API) buildMusicV3(ctx context.Context, member int64, region string, lib
 			keep := func(c MusicCard) bool {
 				return d.Chart || c.Kind != "album" || !hadAlbum[c.MBID] && acts.albumState[c.MBID] == ""
 			}
-			cards, sc := listCandidates(d, a.listBlock(ctx, shelves, d), keep)
+			cards, sc := listCandidates(d, h.listBlock(ctx, shelves, d), keep)
 			if len(sc) < d.Min || distinctArtists(sc) < 4 {
 				continue
 			}
@@ -754,7 +754,7 @@ func (a *API) buildMusicV3(ctx context.Context, member int64, region string, lib
 		byID[b.meta.ID] = b
 		raw = append(raw, b.row)
 	}
-	if a.s.MusicRowsV7 {
+	if h.MusicRowsV7 {
 		// v7 keeps the raw rows: the day's plan orders and fills them.
 		c := &musicV7Cand{metas: map[string]MusicRow{}, cards: map[string]map[string]MusicCard{}, seen: seen}
 		for _, b := range rows {
@@ -765,8 +765,8 @@ func (a *API) buildMusicV3(ctx context.Context, member int64, region string, lib
 		}
 		ord.v7 = c
 		ord.Rows = []MusicRow{}
-		if a.s.MusicTrending != nil {
-			if l, err := a.cachedMusicTrend(ctx, "album", "global"); err == nil {
+		if h.MusicTrending != nil {
+			if l, err := h.cachedMusicTrend(ctx, "album", "global"); err == nil {
 				ord.Regions = l.Regions
 			}
 		}
@@ -783,8 +783,8 @@ func (a *API) buildMusicV3(ctx context.Context, member int64, region string, lib
 	if ord.Rows == nil {
 		ord.Rows = []MusicRow{}
 	}
-	if a.s.MusicTrending != nil {
-		if l, err := a.cachedMusicTrend(ctx, "album", "global"); err == nil {
+	if h.MusicTrending != nil {
+		if l, err := h.cachedMusicTrend(ctx, "album", "global"); err == nil {
 			ord.Regions = l.Regions
 		}
 	}
@@ -837,7 +837,7 @@ var collectiveName = regexp.MustCompile(`(?i)^(various artists|artists (stand up
 // musicGuestTypes are the release group kinds a guest spot can be.
 var musicGuestTypes = map[string]bool{"album": true, "ep": true, "single": true}
 
-func (a *API) personalMusicRows(ctx context.Context, member int64, region, date string, lib *musicLib, acts *musicActs, now time.Time, in personalIn) {
+func (h *Handlers) personalMusicRows(ctx context.Context, member int64, region, date string, lib *musicLib, acts *musicActs, now time.Time, in personalIn) {
 	today := dayAt(now, 0)
 	asked := func(mbid string) bool { return mbid != "" && acts.albumState[mbid] != "" }
 
@@ -863,7 +863,7 @@ func (a *API) personalMusicRows(ctx context.Context, member int64, region, date 
 	for _, s := range seeds {
 		seedIDs = append(seedIDs, s.ar.mbid)
 	}
-	sim := a.musicSimilarOf(ctx, seedIDs, now)
+	sim := h.musicSimilarOf(ctx, seedIDs, now)
 	// MusicBrainz relations (members, the artist's own groups, side
 	// projects, charity and collective credits) are not taste: they only
 	// rule artists out. S comes from ListenBrainz similarity alone, and
@@ -875,7 +875,7 @@ func (a *API) personalMusicRows(ctx context.Context, member int64, region, date 
 		}
 	}
 	related := map[string]bool{}
-	for _, l := range a.linksOf(libIDs) {
+	for _, l := range h.linksOf(libIDs) {
 		for _, x := range l {
 			related[strings.ToLower(x.MBID)] = true
 		}
@@ -908,10 +908,10 @@ func (a *API) personalMusicRows(ctx context.Context, member int64, region, date 
 		}
 	}
 	sort.Strings(pool)
-	listeners := a.musicListenersOf(ctx, pool, now)
+	listeners := h.musicListenersOf(ctx, pool, now)
 	// Artist data for the similar artists of the Since-you-have seeds only.
 	yesterday := map[string]bool{}
-	for _, id := range a.musicv2.seedLog.get(member, dayBefore(date)) {
+	for _, id := range h.musicv2.seedLog.get(member, dayBefore(date)) {
 		yesterday[id] = true
 	}
 	var since []seed
@@ -937,8 +937,8 @@ func (a *API) personalMusicRows(ctx context.Context, member int64, region, date 
 		})
 		want = append(want, ids[:min(15, len(ids))]...)
 	}
-	a.musicv2.seedLog.put(member, date, sinceIDs)
-	simData := a.musicArtistDataOf(ctx, want, now)
+	h.musicv2.seedLog.put(member, date, sinceIDs)
+	simData := h.musicArtistDataOf(ctx, want, now)
 	topAlbum := func(id string) *metadata.MusicTopAlbum {
 		d := simData[id]
 		if d == nil {
@@ -980,7 +980,7 @@ func (a *API) personalMusicRows(ctx context.Context, member int64, region, date 
 
 	// Row 9: Since you have {X}, 0.5·S + 0.3·P + 0.2·G_item (v7: the
 	// Because you have rows take its place).
-	if a.s.MusicRowsV7 {
+	if h.MusicRowsV7 {
 		since = nil
 	}
 	for _, s := range since {
@@ -1150,7 +1150,7 @@ func (a *API) personalMusicRows(ctx context.Context, member int64, region, date 
 			}
 			var list []pending
 			if slug != "" {
-				for _, it := range a.musicGenreChartOf(ctx, region, slug, now) {
+				for _, it := range h.musicGenreChartOf(ctx, region, slug, now) {
 					c := in.chartCard(it)
 					if in.hadAlbum[c.MBID] {
 						continue
@@ -1185,8 +1185,8 @@ func (a *API) personalMusicRows(ctx context.Context, member int64, region, date 
 	}
 
 	// Row 13 (Phase 6, flag music_rows_v6): Rising in your genres.
-	if a.s.MusicRowsV6 {
-		a.risingRow(ctx, region, now, in)
+	if h.MusicRowsV6 {
+		h.risingRow(ctx, region, now, in)
 	}
 
 	// Row 14: Guest spots, release groups crediting a Library artist who is
@@ -1237,7 +1237,7 @@ func (a *API) personalMusicRows(ctx context.Context, member int64, region, date 
 			musicscore.Row{Prior: musicscore.PriorPersonal}, cards, sc, true, true)
 	}
 
-	if a.s.MusicRowsV7 {
-		a.musicV7Rows(ctx, member, date, lib, acts, now, in, yesterday)
+	if h.MusicRowsV7 {
+		h.musicV7Rows(ctx, member, date, lib, acts, now, in, yesterday)
 	}
 }

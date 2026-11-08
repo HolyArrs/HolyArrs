@@ -1,8 +1,7 @@
-package api
+package music
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"log"
 	"net/http"
@@ -12,31 +11,33 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/requests"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
 )
 
 // musicRoutes serves adding artists, their albums, Pressings and tracks,
 // and the music settings (stage 2.3).
-func (a *API) musicRoutes(m *http.ServeMux) {
-	m.HandleFunc("GET /api/v1/artists/lookup", a.lookupArtists)
-	m.HandleFunc("POST /api/v1/artists", a.addArtist)
-	m.HandleFunc("PUT /api/v1/titles/{id}/artist", a.setArtist)
-	music.TrackHandlers[EpisodeSlot]{Store: a.s.Store, Slots: trackSlots}.Routes(m)
-	m.HandleFunc("GET /api/v1/albums/{id}/cover", a.albumCoverArt)
+func (h *Handlers) musicRoutes(m *http.ServeMux) {
+	m.HandleFunc("GET /api/v1/artists/lookup", h.lookupArtists)
+	m.HandleFunc("POST /api/v1/artists", h.addArtist)
+	m.HandleFunc("PUT /api/v1/titles/{id}/artist", h.setArtist)
+	if h.TrackRoutes != nil {
+		h.TrackRoutes(m)
+	}
+	m.HandleFunc("GET /api/v1/albums/{id}/cover", h.albumCoverArt)
 }
 
 // musicError answers music refusals with a status and a reason; anything
-// else goes to libraryError.
-func musicError(w http.ResponseWriter, err error) { music.Error(w, err, libraryError) }
+// else goes to LibraryError.
+func (h *Handlers) musicError(w http.ResponseWriter, err error) { Error(w, err, h.LibraryError) }
 
 // libraryHandlers serves albums and the music settings.
-func (a *API) libraryHandlers() music.LibraryHandlers {
-	return music.LibraryHandlers{Store: a.s.Store, Library: a.s.Library, ArtistID: a.artistID, Actor: actor, Fallback: libraryError}
+func (h *Handlers) libraryHandlers() LibraryHandlers {
+	return LibraryHandlers{Store: h.Store, Library: h.Library, ArtistID: h.artistID, Actor: actor, Fallback: h.LibraryError}
 }
 
 // ArtistResult is a looked-up artist (without its albums) with what the
@@ -49,8 +50,8 @@ type ArtistResult struct {
 	Image string `json:"image,omitempty"`
 	// Ask is the open ask for the artist the person is part of (the oldest),
 	// else the oldest open ask, if any; Asks lists every open ask for it.
-	Ask  *askBrief  `json:"ask,omitempty"`
-	Asks []askBrief `json:"asks,omitempty"`
+	Ask  *requests.AskBrief  `json:"ask,omitempty"`
+	Asks []requests.AskBrief `json:"asks,omitempty"`
 	// AskAlbums are the artist's albums to ask for (with ?albums=true and
 	// an mbid: term), oldest first.
 	AskAlbums []AskableAlbum `json:"ask_albums,omitempty"`
@@ -72,11 +73,11 @@ type AskableAlbum struct {
 
 // askableAlbums lists an artist's albums for asking, oldest first, with
 // what the Library keeps of them.
-func (a *API) askableAlbums(ctx context.Context, titleID int64, albums []metadata.Album) ([]AskableAlbum, error) {
+func (h *Handlers) askableAlbums(ctx context.Context, titleID int64, albums []metadata.Album) ([]AskableAlbum, error) {
 	byMBID := map[string]mediafiles.Part{}
 	artistKeep := false
 	if titleID != 0 {
-		db := a.s.Store.Read()
+		db := h.Store.Read()
 		if err := db.QueryRowContext(ctx, "SELECT keep_up_to_date FROM titles WHERE id = ?", titleID).Scan(&artistKeep); err != nil {
 			return nil, err
 		}
@@ -136,30 +137,30 @@ func (f *inFlight) give(who int64) {
 
 // lookupArtists finds artists to add by name, or one by "mbid:<id>";
 // ?albums=true with an id also lists its albums to ask for.
-func (a *API) lookupArtists(w http.ResponseWriter, r *http.Request) {
+func (h *Handlers) lookupArtists(w http.ResponseWriter, r *http.Request) {
 	term := strings.TrimSpace(r.URL.Query().Get("term"))
 	if term == "" || len(term) > 200 {
 		webserver.Fail(w, http.StatusBadRequest, "send ?term=<artist name> or an id such as mbid:5b11f4ce-a62d-471e-81fc-a69a8278c7da")
 		return
 	}
-	if a.kidMax(r) != "" {
+	if h.KidMax(r) != "" {
 		// Music has no age ratings, so a Kid finds none.
 		webserver.WriteJSON(w, http.StatusOK, map[string]any{"artists": []ArtistResult{}, "source": "musicbrainz"})
 		return
 	}
-	me := a.person(r).UserID
-	if !a.lookups.take(me, maxLookupsEach) {
+	me := h.Person(r).UserID
+	if !h.lookups.take(me, maxLookupsEach) {
 		w.Header().Set("Retry-After", "5")
 		webserver.Fail(w, http.StatusTooManyRequests, "you already have two music lookups running; wait for them to finish and try again")
 		return
 	}
-	defer a.lookups.give(me)
+	defer h.lookups.give(me)
 	ctx := r.Context()
 	if !mayApprove(r) {
 		// Members wait behind the scheduled refresh and staff at MusicBrainz.
 		ctx = metadata.MemberLookup(ctx)
 	}
-	found, err := a.s.Library.LookupArtists(ctx, term)
+	found, err := h.Library.LookupArtists(ctx, term)
 	if errors.Is(err, library.ErrSearchFilling) {
 		// An unseen name: the search keeps running behind and is kept, so
 		// the next ask is answered from the store.
@@ -168,11 +169,11 @@ func (a *API) lookupArtists(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err != nil {
-		musicError(w, err)
+		h.musicError(w, err)
 		return
 	}
 	out := []ArtistResult{}
-	db := a.s.Store.Read()
+	db := h.Store.Read()
 	var names []nameKey
 	withAlbums := r.URL.Query().Get("albums") == "true"
 	for _, ar := range found {
@@ -188,7 +189,7 @@ func (a *API) lookupArtists(w http.ResponseWriter, r *http.Request) {
 			webserver.Internal(w, "api", err)
 			return
 		}
-		if v.Asks, err = a.openArtistAsks(r.Context(), ar.MBID, me); err != nil {
+		if v.Asks, err = h.OpenArtistAsks(r.Context(), ar.MBID, me); err != nil {
 			webserver.Internal(w, "api", err)
 			return
 		}
@@ -198,7 +199,7 @@ func (a *API) lookupArtists(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		if withAlbums && albums != nil {
-			if v.AskAlbums, err = a.askableAlbums(r.Context(), v.TitleID, albums); err != nil {
+			if v.AskAlbums, err = h.askableAlbums(r.Context(), v.TitleID, albums); err != nil {
 				webserver.Internal(w, "api", err)
 				return
 			}
@@ -209,13 +210,13 @@ func (a *API) lookupArtists(w http.ResponseWriter, r *http.Request) {
 		}
 		out = append(out, v)
 	}
-	a.rememberMusicNames(names)
+	h.rememberMusicNames(names)
 	webserver.WriteJSON(w, http.StatusOK, map[string]any{"artists": out, "source": "musicbrainz"})
 }
 
 const addArtistHelp = `send {"id": "mbid:<MusicBrainz artist id>"} with optional library_folder_id, pick_rules_id, keep_up_to_date, albums (all, future, missing, latest, first, none), new_albums (all, new, none), album_types (album, ep, single, broadcast, other), secondary_types (studio, live, compilation, ...), release_statuses (official, promotion, bootleg, pseudo-release), follow`
 
-func (a *API) addArtist(w http.ResponseWriter, r *http.Request) {
+func (h *Handlers) addArtist(w http.ResponseWriter, r *http.Request) {
 	var body struct {
 		ID string `json:"id"`
 		library.ArtistAddOptions
@@ -228,35 +229,35 @@ func (a *API) addArtist(w http.ResponseWriter, r *http.Request) {
 		webserver.Fail(w, http.StatusBadRequest, addArtistHelp)
 		return
 	}
-	id, jobID, err := a.s.Library.AddArtist(r.Context(), body.ID, body.ArtistAddOptions, actor(r))
+	id, jobID, err := h.Library.AddArtist(r.Context(), body.ID, body.ArtistAddOptions, actor(r))
 	if err != nil {
-		musicError(w, err)
+		h.musicError(w, err)
 		return
 	}
-	if (body.Follow == nil || *body.Follow) && a.s.Asks != nil {
-		if err := a.s.Asks.FollowAdded(r.Context(), a.person(r), id); err != nil {
+	if (body.Follow == nil || *body.Follow) && h.Asks != nil {
+		if err := h.Asks.FollowAdded(r.Context(), h.Person(r), id); err != nil {
 			log.Printf("api: follow on add: %v", err)
 		}
 	}
 	var t mediafiles.Title
-	if err := database.Get(r.Context(), a.s.Store.Read(), "titles", id, &t); err != nil {
+	if err := database.Get(r.Context(), h.Store.Read(), "titles", id, &t); err != nil {
 		webserver.Internal(w, "api", err)
 		return
 	}
-	v, err := a.titleView(r.Context(), t)
+	v, err := h.TitleView(r.Context(), t)
 	if err != nil {
 		webserver.Internal(w, "api", err)
 		return
 	}
-	if a.s.Live != nil {
-		a.publishTitleView(v)
+	if h.Live != nil {
+		h.PublishTitleView(v)
 	}
 	webserver.WriteJSON(w, http.StatusCreated, map[string]any{"title": v, "job_id": jobID})
 }
 
 // artistID reads an artist Title from the path.
-func (a *API) artistID(w http.ResponseWriter, r *http.Request) (mediafiles.Title, bool) {
-	t, ok := a.titleID(w, r)
+func (h *Handlers) artistID(w http.ResponseWriter, r *http.Request) (mediafiles.Title, bool) {
+	t, ok := h.TitleID(w, r)
 	if ok && t.Kind != "artist" {
 		webserver.Fail(w, http.StatusNotFound, "that Title is not an artist")
 		return t, false
@@ -266,8 +267,8 @@ func (a *API) artistID(w http.ResponseWriter, r *http.Request) (mediafiles.Title
 
 const artistHelp = `send any of new_albums (all, new, none), album_types, secondary_types, release_statuses`
 
-func (a *API) setArtist(w http.ResponseWriter, r *http.Request) {
-	t, ok := a.artistID(w, r)
+func (h *Handlers) setArtist(w http.ResponseWriter, r *http.Request) {
+	t, ok := h.artistID(w, r)
 	if !ok {
 		return
 	}
@@ -279,12 +280,12 @@ func (a *API) setArtist(w http.ResponseWriter, r *http.Request) {
 		webserver.Fail(w, http.StatusBadRequest, artistHelp)
 		return
 	}
-	t, jobID, err := a.s.Library.SetArtistChoices(r.Context(), t.ID, body, actor(r))
+	t, jobID, err := h.Library.SetArtistChoices(r.Context(), t.ID, body, actor(r))
 	if err != nil {
-		musicError(w, err)
+		h.musicError(w, err)
 		return
 	}
-	v, err := a.titleView(r.Context(), t)
+	v, err := h.TitleView(r.Context(), t)
 	if err != nil {
 		webserver.Internal(w, "api", err)
 		return
@@ -318,13 +319,12 @@ type ArtistInfo struct {
 	Bio string `json:"bio,omitempty"`
 }
 
-var listOr = music.ListOr
+var listOr = ListOr
 
 // PressingView is one Pressing of an album with its tracks.
-type PressingView = music.PressingView
 
-func (a *API) artistInfo(ctx context.Context, t mediafiles.Title) (*ArtistInfo, error) {
-	n, err := library.Totals(ctx, a.s.Store.Read(), t.ID, time.Now())
+func (h *Handlers) artistInfo(ctx context.Context, t mediafiles.Title) (*ArtistInfo, error) {
+	n, err := library.Totals(ctx, h.Store.Read(), t.ID, time.Now())
 	if err != nil {
 		return nil, err
 	}
@@ -336,32 +336,6 @@ func (a *API) artistInfo(ctx context.Context, t mediafiles.Title) (*ArtistInfo, 
 }
 
 // albumID reads an album from the path.
-func (a *API) albumID(w http.ResponseWriter, r *http.Request) (mediafiles.Part, bool) {
-	return music.AlbumID(w, r, a.s.Store.Read())
-}
-
-// trackSlots builds the Slot views for an album's tracks, keyed by item id.
-func trackSlots(ctx context.Context, db *sql.DB, p mediafiles.Part) (map[int64][]EpisodeSlot, error) {
-	vs, err := database.Select[mediafiles.Version](ctx, db, "versions", "title_id = ? ORDER BY is_main DESC, id", p.TitleID)
-	if err != nil {
-		return nil, err
-	}
-	label := map[int64]string{}
-	for _, v := range vs {
-		label[v.ID] = v.Label
-	}
-	slots, err := database.Select[mediafiles.Slot](ctx, db, "slots", "item_id IN (SELECT id FROM items WHERE part_id = ? AND kind = 'track') ORDER BY id", p.ID)
-	if err != nil {
-		return nil, err
-	}
-	byItem := map[int64][]EpisodeSlot{}
-	for _, s := range slots {
-		es := EpisodeSlot{ID: s.ID, Version: label[s.VersionID], VersionID: s.VersionID, State: string(s.State), StateLabel: StateLabels[s.State], FileID: s.FileID}
-		if s.LastReason != nil {
-			es.Reason = *s.LastReason
-		}
-		byItem[s.ItemID] = append(byItem[s.ItemID], es)
-	}
-	trimEpisodeSlots(ctx, byItem)
-	return byItem, nil
+func (h *Handlers) albumID(w http.ResponseWriter, r *http.Request) (mediafiles.Part, bool) {
+	return AlbumID(w, r, h.Store.Read())
 }

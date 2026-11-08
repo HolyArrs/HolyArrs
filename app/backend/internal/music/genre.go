@@ -1,4 +1,4 @@
-package api
+package music
 
 import (
 	"context"
@@ -11,7 +11,6 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/music/rowtpl"
 	musicscore "github.com/HolyArrs/holyarrs/app/backend/internal/music/score"
 )
@@ -22,7 +21,7 @@ import (
 // and the genre's popular artists. Movies and Shows genre pages are the
 // old ones, untouched.
 
-var musicSlugRe = music.SlugRe
+var musicSlugRe = SlugRe
 
 // musicSlug is a genre name's URL name, the metadata server's rule.
 func musicSlug(name string) string {
@@ -85,50 +84,50 @@ func musicGenreArts(g metadata.MusicGenre) []string {
 
 // genreArtHandlers serves the genre tile pictures; the metadata call is
 // read per request so a later change to it is seen.
-func (a *API) genreArtHandlers() music.GenreArtHandlers {
-	return music.GenreArtHandlers{
+func (h *Handlers) genreArtHandlers() GenreArtHandlers {
+	return GenreArtHandlers{
 		Tile: func(ctx context.Context, slug, v string) ([]byte, error) {
-			if a.s.MusicGenreTile == nil {
+			if h.MusicGenreTile == nil {
 				return nil, metadata.ErrNotFound
 			}
-			return a.s.MusicGenreTile(ctx, slug, v)
+			return h.MusicGenreTile(ctx, slug, v)
 		},
-		KidMax: a.kidMax,
-		Cache:  &a.genreArt,
+		KidMax: h.KidMax,
+		Cache:  &h.genreArt,
 	}
 }
 
 // musicGenrePage answers GET /api/v1/music/genre/{slug}?region=.
-func (a *API) musicGenrePage(w http.ResponseWriter, r *http.Request) {
+func (h *Handlers) musicGenrePage(w http.ResponseWriter, r *http.Request) {
 	slug := r.PathValue("slug")
 	if !musicSlugRe.MatchString(slug) {
 		webserver.Fail(w, http.StatusBadRequest, "unknown genre")
 		return
 	}
 	// Music has no ratings, so a Kid limit shows none of it.
-	if a.kidMax(r) != "" {
+	if h.KidMax(r) != "" {
 		webserver.WriteJSON(w, http.StatusOK, map[string]any{"kid": true, "v2": true, "genres": []string{}, "genre": slug, "hero": nil, "rows": []MusicRow{}})
 		return
 	}
 	// The row template engine serves the genres it has a key for; others
 	// keep this page.
-	if a.musicTplOn() {
-		if !a.musicBrowseGate(w, r, map[string]any{"kid": true, "v2": true, "genres": []string{}, "genre": slug, "hero": nil, "rows": []MusicRow{}}) {
+	if h.musicTplOn() {
+		if !h.musicBrowseGate(w, r, map[string]any{"kid": true, "v2": true, "genres": []string{}, "genre": slug, "hero": nil, "rows": []MusicRow{}}) {
 			return
 		}
-		if a.serveTplPage(w, r, "genre", slug) {
+		if h.serveTplPage(w, r, "genre", slug) {
 			return
 		}
 	}
 	ctx := r.Context()
 	now := time.Now().UTC()
-	member := a.person(r).UserID
+	member := h.Person(r).UserID
 	region := strings.ToUpper(r.URL.Query().Get("region"))
 	if region == "" || region == "GLOBAL" || !isCountry(region) {
 		region = "global"
 	}
 	var tile *metadata.MusicGenre
-	for _, g := range a.musicGenreTiles(ctx, region, now) {
+	for _, g := range h.musicGenreTiles(ctx, region, now) {
 		if g.Slug == slug {
 			g := g
 			tile = &g
@@ -139,25 +138,25 @@ func (a *API) musicGenrePage(w http.ResponseWriter, r *http.Request) {
 		webserver.Fail(w, http.StatusNotFound, "no such genre in this region's charts")
 		return
 	}
-	lib, err := a.musicLibrary(ctx, now)
+	lib, err := h.musicLibrary(ctx, now)
 	if err != nil {
 		webserver.Internal(w, "api", err)
 		return
 	}
-	acts, err := a.musicActsOf(ctx, member)
+	acts, err := h.musicActsOf(ctx, member)
 	if err != nil {
 		webserver.Internal(w, "api", err)
 		return
 	}
-	hero, alts, rows := a.buildMusicGenre(ctx, member, region, *tile, lib, acts, now)
+	hero, alts, rows := h.buildMusicGenre(ctx, member, region, *tile, lib, acts, now)
 	for i := range rows {
 		for j := range rows[i].Items {
 			rows[i].Items[j] = musicCardState(rows[i].Items[j], lib, acts)
 		}
 	}
 	if hero != nil {
-		h := musicCardState(*hero, lib, acts)
-		hero = &h
+		hv := musicCardState(*hero, lib, acts)
+		hero = &hv
 	}
 	for i := range alts {
 		alts[i] = musicCardState(alts[i], lib, acts)
@@ -186,10 +185,10 @@ func (a *API) musicGenrePage(w http.ResponseWriter, r *http.Request) {
 			note(c)
 		}
 	}
-	a.rememberMusicNames(names)
+	h.rememberMusicNames(names)
 	hue := tile.Hue
-	a.exploreCaching(w, r, "private, no-cache")
-	a.writeMusicJSON(w, r, map[string]any{"v2": true, "kid": false, "cold": false, "genres": []string{}, "genre": slug, "region": region, "regions": []string{},
+	h.ExploreCaching(w, r, "private, no-cache")
+	h.WriteMusicJSON(w, r, map[string]any{"v2": true, "kid": false, "cold": false, "genres": []string{}, "genre": slug, "region": region, "regions": []string{},
 		"tile": MusicCard{Key: "genre:" + slug, Kind: "genre", MBID: slug, Name: tile.Name, Hue: &hue, Image: musicGenreArt(*tile), Images: musicGenreArts(*tile), Genres: []string{slug}},
 		"hero": hero, "hero_alts": alts, "rows": rows})
 }
@@ -210,25 +209,25 @@ func musicCardState(c MusicCard, lib *musicLib, acts *musicActs) MusicCard {
 }
 
 // musicGenreChart reads one genre's chart (layer 1, 6 hours).
-func (a *API) musicGenreChart(ctx context.Context, region, kind, slug string, now time.Time) []metadata.MusicChartItem {
-	if a.s.MusicCharts == nil {
+func (h *Handlers) musicGenreChart(ctx context.Context, region, kind, slug string, now time.Time) []metadata.MusicChartItem {
+	if h.MusicCharts == nil {
 		return nil
 	}
 	key := "chart:" + region + ":" + kind + ":" + slug
-	if v, ok := a.musicv2.cand.Get(key, now); ok {
+	if v, ok := h.musicv2.cand.Get(key, now); ok {
 		return v.([]metadata.MusicChartItem)
 	}
-	c, err := a.s.MusicCharts(ctx, region, kind, slug)
+	c, err := h.MusicCharts(ctx, region, kind, slug)
 	if err != nil {
 		return nil
 	}
-	a.musicv2.cand.Put(key, c.Items, spread(musicChartTTL, 0.25), now)
+	h.musicv2.cand.Put(key, c.Items, spread(musicChartTTL, 0.25), now)
 	return c.Items
 }
 
-func (a *API) buildMusicGenre(ctx context.Context, member int64, region string, g metadata.MusicGenre, lib *musicLib, acts *musicActs, now time.Time) (*MusicCard, []MusicCard, []MusicRow) {
-	albums := a.musicGenreChart(ctx, region, "albums", g.Slug, now)
-	songs := a.musicGenreChart(ctx, region, "songs", g.Slug, now)
+func (h *Handlers) buildMusicGenre(ctx context.Context, member int64, region string, g metadata.MusicGenre, lib *musicLib, acts *musicActs, now time.Time) (*MusicCard, []MusicCard, []MusicRow) {
+	albums := h.musicGenreChart(ctx, region, "albums", g.Slug, now)
+	songs := h.musicGenreChart(ctx, region, "songs", g.Slug, now)
 	artistOf := map[int64]musicLibArtist{}
 	for _, ar := range lib.artists {
 		artistOf[ar.id] = ar
@@ -290,7 +289,7 @@ func (a *API) buildMusicGenre(ctx context.Context, member int64, region string, 
 			ids = append(ids, ar.mbid)
 		}
 	}
-	known := a.genresOf(ids)
+	known := h.genresOf(ids)
 	for _, ar := range lib.artists {
 		for _, mg := range known[ar.mbid] {
 			if genreMatch(musicSlug(mg), g.Slug) {
@@ -400,7 +399,7 @@ func (a *API) buildMusicGenre(ctx context.Context, member int64, region string, 
 	}
 	// World-list rows (music_lists_v1): the tile's editorial lists, and the
 	// region's charts filtered to the genre by the artists' genres.
-	shelves := a.musicShelvesOf(ctx, region, now)
+	shelves := h.musicShelvesOf(ctx, region, now)
 	if shelves != nil {
 		lt, hasTile := listTileOf(g.Slug)
 		name := g.Name
@@ -427,7 +426,7 @@ func (a *API) buildMusicGenre(ctx context.Context, member int64, region string, 
 				ids = append(ids, strings.ToLower(it.ArtistMBID), strings.ToLower(it.MBID))
 			}
 		}
-		gs := a.genresOf(ids)
+		gs := h.genresOf(ids)
 		inG := func(it metadata.MusicShelfItem) bool {
 			id := strings.ToLower(it.ArtistMBID)
 			if it.Kind == "artist" {
@@ -542,7 +541,7 @@ func (a *API) buildMusicGenre(ctx context.Context, member int64, region string, 
 	// the artists behind the genre's top songs.
 	if region != "global" {
 		var cards []MusicCard
-		for _, it := range a.musicGenreChart(ctx, "global", "albums", g.Slug, now) {
+		for _, it := range h.musicGenreChart(ctx, "global", "albums", g.Slug, now) {
 			if it.MBID != "" {
 				cards = append(cards, chartCard(it))
 			}

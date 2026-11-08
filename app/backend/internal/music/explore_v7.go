@@ -1,4 +1,4 @@
-package api
+package music
 
 import (
 	"bytes"
@@ -74,7 +74,7 @@ func chartExplicit(l []metadata.MusicChartItem) map[string]bool {
 
 // musicV7Rows adds the v7 families to the build (personal households).
 // yesterday holds yesterday's seeds.
-func (a *API) musicV7Rows(ctx context.Context, member int64, date string, lib *musicLib, acts *musicActs, now time.Time, in personalIn, yesterday map[string]bool) {
+func (h *Handlers) musicV7Rows(ctx context.Context, member int64, date string, lib *musicLib, acts *musicActs, now time.Time, in personalIn, yesterday map[string]bool) {
 	today := dayAt(now, 0)
 	asked := func(mbid string) bool { return mbid != "" && acts.albumState[mbid] != "" }
 	nameOf := map[string]string{}
@@ -86,7 +86,7 @@ func (a *API) musicV7Rows(ctx context.Context, member int64, date string, lib *m
 		}
 	}
 	related := map[string]bool{}
-	links := a.linksOf(libIDs)
+	links := h.linksOf(libIDs)
 	for _, l := range links {
 		for _, x := range l {
 			related[strings.ToLower(x.MBID)] = true
@@ -149,7 +149,7 @@ func (a *API) musicV7Rows(ctx context.Context, member int64, date string, lib *m
 	for _, x := range set {
 		tIDs = append(tIDs, x.ID)
 	}
-	sim := a.musicSimilarOf(ctx, tIDs, now)
+	sim := h.musicSimilarOf(ctx, tIDs, now)
 	pair := map[[2]string]float64{}
 	for s, l := range sim {
 		for _, x := range l {
@@ -217,7 +217,7 @@ func (a *API) musicV7Rows(ctx context.Context, member int64, date string, lib *m
 			}
 		}
 		sort.Strings(want)
-		a.musicArtistDataOf(ctx, want, now)
+		h.musicArtistDataOf(ctx, want, now)
 	}
 
 	// Mixes (§2).
@@ -226,7 +226,7 @@ func (a *API) musicV7Rows(ctx context.Context, member int64, date string, lib *m
 		for _, sd := range seeds {
 			seedUsed[sd] = true
 		}
-		data := a.musicArtistDataOf(ctx, ids, now)
+		data := h.musicArtistDataOf(ctx, ids, now)
 		vals := make([]float64, len(ids))
 		for i, id := range ids {
 			vals[i] = sum[id]
@@ -297,7 +297,7 @@ func (a *API) musicV7Rows(ctx context.Context, member int64, date string, lib *m
 				seedUsed[ar.mbid] = true
 			}
 		}
-		a.musicv2.seedLog.put(member, date, seedIDs)
+		h.musicv2.seedLog.put(member, date, seedIDs)
 		bySim := sim
 		var want []string
 		near := map[string]map[string]float64{}
@@ -325,7 +325,7 @@ func (a *API) musicV7Rows(ctx context.Context, member int64, date string, lib *m
 			})
 			want = append(want, ids[:min(15, len(ids))]...)
 		}
-		data := a.musicArtistDataOf(ctx, want, now)
+		data := h.musicArtistDataOf(ctx, want, now)
 		for _, s := range seeds {
 			type cand struct {
 				id string
@@ -474,7 +474,7 @@ func (a *API) musicV7Rows(ctx context.Context, member int64, date string, lib *m
 				ids = append(ids, id)
 			}
 			sort.Strings(ids)
-			data := a.musicArtistDataOf(ctx, ids, now)
+			data := h.musicArtistDataOf(ctx, ids, now)
 			type cand struct {
 				id string
 				al metadata.MusicTopAlbum
@@ -537,15 +537,15 @@ type musicV7Cursor struct {
 
 // musicCursorSecret is the cursor signing key: 32 random bytes kept in the
 // settings table, made on first use.
-func (a *API) musicCursorSecret(ctx context.Context) ([]byte, error) {
-	a.musicv2.cursorMu.Lock()
-	defer a.musicv2.cursorMu.Unlock()
-	if a.musicv2.cursorKey != nil {
-		return a.musicv2.cursorKey, nil
+func (h *Handlers) musicCursorSecret(ctx context.Context) ([]byte, error) {
+	h.musicv2.cursorMu.Lock()
+	defer h.musicv2.cursorMu.Unlock()
+	if h.musicv2.cursorKey != nil {
+		return h.musicv2.cursorKey, nil
 	}
 	const key = "music_cursor_key"
 	var v string
-	err := a.s.Store.Read().QueryRowContext(ctx, "SELECT value FROM settings WHERE grp = 'this_app' AND key = ?", key).Scan(&v)
+	err := h.Store.Read().QueryRowContext(ctx, "SELECT value FROM settings WHERE grp = 'this_app' AND key = ?", key).Scan(&v)
 	if err == sql.ErrNoRows || err == nil && v == "" {
 		b := make([]byte, 32)
 		if _, err := rand.Read(b); err != nil {
@@ -554,12 +554,12 @@ func (a *API) musicCursorSecret(ctx context.Context) ([]byte, error) {
 		v = base64.RawURLEncoding.EncodeToString(b)
 		now := database.FormatTime(time.Now())
 		by, _ := json.Marshal(domain.System)
-		err = a.s.Store.Write(ctx, func(tx *sql.Tx) error {
+		err = h.Store.Write(ctx, func(tx *sql.Tx) error {
 			_, err := tx.Exec(`INSERT INTO settings (grp, key, value, created_at, created_by, updated_at, updated_by) VALUES ('this_app', ?, ?, ?, ?, ?, ?) ON CONFLICT (grp, key) DO NOTHING`, key, v, now, string(by), now, string(by))
 			return err
 		})
 		if err == nil {
-			err = a.s.Store.Read().QueryRowContext(ctx, "SELECT value FROM settings WHERE grp = 'this_app' AND key = ?", key).Scan(&v)
+			err = h.Store.Read().QueryRowContext(ctx, "SELECT value FROM settings WHERE grp = 'this_app' AND key = ?", key).Scan(&v)
 		}
 	}
 	if err != nil {
@@ -569,12 +569,12 @@ func (a *API) musicCursorSecret(ctx context.Context) ([]byte, error) {
 	if err != nil || len(b) < 32 {
 		return nil, fmt.Errorf("music cursor key unreadable")
 	}
-	a.musicv2.cursorKey = b
+	h.musicv2.cursorKey = b
 	return b, nil
 }
 
-func (a *API) musicCursorSign(ctx context.Context, c musicV7Cursor) (string, error) {
-	k, err := a.musicCursorSecret(ctx)
+func (h *Handlers) musicCursorSign(ctx context.Context, c musicV7Cursor) (string, error) {
+	k, err := h.musicCursorSecret(ctx)
 	if err != nil {
 		return "", err
 	}
@@ -584,9 +584,9 @@ func (a *API) musicCursorSign(ctx context.Context, c musicV7Cursor) (string, err
 	return base64.RawURLEncoding.EncodeToString([]byte(body)) + "." + base64.RawURLEncoding.EncodeToString(m.Sum(nil)), nil
 }
 
-func (a *API) musicCursorOpen(ctx context.Context, s string) (musicV7Cursor, bool) {
+func (h *Handlers) musicCursorOpen(ctx context.Context, s string) (musicV7Cursor, bool) {
 	var c musicV7Cursor
-	k, err := a.musicCursorSecret(ctx)
+	k, err := h.musicCursorSecret(ctx)
 	if err != nil {
 		return c, false
 	}
@@ -619,24 +619,24 @@ func (a *API) musicCursorOpen(ctx context.Context, s string) (musicV7Cursor, boo
 // exploreMusicV7 answers GET /api/v1/explore/music with flag music_rows_v7:
 // page 1 (rows 1–6, the Spotlight and the asks row) or, with ?cursor=, the
 // next 6 rows of the same pinned plan.
-func (a *API) exploreMusicV7(w http.ResponseWriter, r *http.Request) {
+func (h *Handlers) exploreMusicV7(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	now := time.Now().UTC()
-	if a.musicv2.now != nil {
-		now = a.musicv2.now().UTC()
+	if h.musicv2.now != nil {
+		now = h.musicv2.now().UTC()
 	}
-	member := a.person(r).UserID
+	member := h.Person(r).UserID
 	region := strings.ToUpper(r.URL.Query().Get("region"))
 	if region == "" || region == "GLOBAL" || !isCountry(region) {
 		region = "global"
 	}
 	key := musicscore.PlanKey{Member: member, Date: musicscore.Day(now), View: region}
-	lib, err := a.musicLibrary(ctx, now)
+	lib, err := h.musicLibrary(ctx, now)
 	if err != nil {
 		webserver.Internal(w, "api", err)
 		return
 	}
-	acts, err := a.musicActsOf(ctx, member)
+	acts, err := h.musicActsOf(ctx, member)
 	if err != nil {
 		webserver.Internal(w, "api", err)
 		return
@@ -644,10 +644,10 @@ func (a *API) exploreMusicV7(w http.ResponseWriter, r *http.Request) {
 	offset := 0
 	var p *musicscore.Plan
 	if cur := r.URL.Query().Get("cursor"); cur != "" {
-		c, ok := a.musicCursorOpen(ctx, cur)
+		c, ok := h.musicCursorOpen(ctx, cur)
 		if ok && c.Member == member && c.Region == region {
 			// The plan's own day: a last good plan of yesterday pages on.
-			p, ok = a.musicv2.plans.Get(musicscore.PlanKey{Member: member, Date: c.Date, View: region}, c.Version, now)
+			p, ok = h.musicv2.plans.Get(musicscore.PlanKey{Member: member, Date: c.Date, View: region}, c.Version, now)
 		}
 		if !ok || p == nil {
 			webserver.Fail(w, http.StatusBadRequest, "these rows expired; load Music again")
@@ -655,8 +655,8 @@ func (a *API) exploreMusicV7(w http.ResponseWriter, r *http.Request) {
 		}
 		offset = c.Offset
 	} else {
-		a.rememberMusicV7Ask(member, region, now)
-		p = a.musicV7PlanFor(ctx, member, region, key, lib, acts, now)
+		h.rememberMusicV7Ask(member, region, now)
+		p = h.musicV7PlanFor(ctx, member, region, key, lib, acts, now)
 	}
 	ord := p.Meta.(*musicV2Order)
 	var rows []musicscore.Row
@@ -720,28 +720,28 @@ func (a *API) exploreMusicV7(w http.ResponseWriter, r *http.Request) {
 	sinkAsked(out)
 	next := ""
 	if more {
-		next, err = a.musicCursorSign(ctx, musicV7Cursor{Member: member, Date: p.Date, Region: region, Version: p.Version, Offset: offset + musicscore.PlanBatch})
+		next, err = h.musicCursorSign(ctx, musicV7Cursor{Member: member, Date: p.Date, Region: region, Version: p.Version, Offset: offset + musicscore.PlanBatch})
 		if err != nil {
 			webserver.Internal(w, "api", err)
 			return
 		}
 	}
-	a.rememberMusicCards(out)
+	h.rememberMusicCards(out)
 	if more {
 		// The next page's albums and artists are fetched ahead while this
 		// one is read (nothing while Music's loop is off).
 		nextPage := offset/musicscore.PlanBatch + 1
-		go func() { a.queueAhead(musicV7PagesAhead(p, nextPage, 1)) }()
+		go func() { h.queueAhead(musicV7PagesAhead(p, nextPage, 1)) }()
 	}
-	a.exploreCaching(w, r, "private, no-cache")
+	h.ExploreCaching(w, r, "private, no-cache")
 	if offset > 0 {
-		a.writeMusicJSON(w, r, map[string]any{"v2": true, "v7": true, "rows": out, "next": next, "total": p.Total()})
+		h.WriteMusicJSON(w, r, map[string]any{"v2": true, "v7": true, "rows": out, "next": next, "total": p.Total()})
 		return
 	}
 	var hero *MusicCard
 	if ord.Hero != nil {
-		h := state(*ord.Hero)
-		hero = &h
+		hv := state(*ord.Hero)
+		hero = &hv
 	}
 	alts := make([]MusicCard, 0, len(ord.Alts))
 	for _, c := range ord.Alts {
@@ -752,9 +752,9 @@ func (a *API) exploreMusicV7(w http.ResponseWriter, r *http.Request) {
 		regions = []string{}
 	}
 	if hero != nil {
-		a.rememberMusicCards(nil, append([]MusicCard{*hero}, alts...)...)
+		h.rememberMusicCards(nil, append([]MusicCard{*hero}, alts...)...)
 	}
-	a.writeMusicJSON(w, r, map[string]any{"v2": true, "v7": true, "kid": false, "cold": ord.Cold, "partial": p.Partial, "genres": []string{}, "genre": "", "region": region, "regions": regions, "hero": hero, "hero_alts": alts, "rows": out, "next": next, "total": p.Total()})
+	h.WriteMusicJSON(w, r, map[string]any{"v2": true, "v7": true, "kid": false, "cold": ord.Cold, "partial": p.Partial, "genres": []string{}, "genre": "", "region": region, "regions": regions, "hero": hero, "hero_alts": alts, "rows": out, "next": next, "total": p.Total()})
 }
 
 // prewarmMusicV7 runs a second after Music starts and after each Music
@@ -762,32 +762,32 @@ func (a *API) exploreMusicV7(w http.ResponseWriter, r *http.Request) {
 // layer 1 (memory and disk) with the artist data, similarity and listeners
 // the v7 families read, so a member's first page of the day needs few or no
 // metadata requests. The household plan is kept like a visit's.
-func (a *API) prewarmMusicV7(ctx context.Context) {
-	if !a.s.MusicRowsV7 || !a.s.MusicRowsV3 || a.s.Store == nil {
+func (h *Handlers) prewarmMusicV7(ctx context.Context) {
+	if !h.MusicRowsV7 || !h.MusicRowsV3 || h.Store == nil {
 		return
 	}
 	now := time.Now().UTC()
-	lib, err := a.musicLibrary(ctx, now)
+	lib, err := h.musicLibrary(ctx, now)
 	if err != nil {
 		return
 	}
-	acts, err := a.musicActsOf(ctx, 0)
+	acts, err := h.musicActsOf(ctx, 0)
 	if err != nil {
 		return
 	}
 	key := musicscore.PlanKey{Member: 0, Date: musicscore.Day(now), View: "global"}
-	p := a.buildMusicV7Plan(ctx, 0, "global", key, lib, acts, now)
+	p := h.buildMusicV7Plan(ctx, 0, "global", key, lib, acts, now)
 	// The member and region pairs actually asked for lately are built ahead
 	// too, so their first visit of the day reads a ready plan.
-	defer a.prewarmMusicV7Asked(ctx, key.Date, lib, now)
+	defer h.prewarmMusicV7Asked(ctx, key.Date, lib, now)
 	if p != nil && p.Meta != nil {
 		// The first pages' albums and artists: details and pictures ahead.
 		pages := musicV7AheadPages
-		if a.s.MusicListsV1 {
+		if h.MusicListsV1 {
 			// Every row of the plan: list rows show art at once on any page.
 			pages = musicscore.PlanMax / musicscore.PlanBatch
 		}
-		a.queueAhead(musicV7PagesAhead(p, 0, pages))
+		h.queueAhead(musicV7PagesAhead(p, 0, pages))
 	}
 }
 
@@ -796,17 +796,17 @@ const musicV7AheadPages = 3
 
 // prewarmMusicV7Asked builds today's plan of each recently asked member and
 // region that has none yet.
-func (a *API) prewarmMusicV7Asked(ctx context.Context, date string, lib *musicLib, now time.Time) {
-	for _, k := range a.musicV7Asked(now) {
+func (h *Handlers) prewarmMusicV7Asked(ctx context.Context, date string, lib *musicLib, now time.Time) {
+	for _, k := range h.musicV7Asked(now) {
 		if ctx.Err() != nil {
 			return
 		}
 		pk := musicscore.PlanKey{Member: k.member, Date: date, View: k.region}
-		if _, ok := a.musicv2.plans.Current(pk, now); ok || (k.member == 0 && k.region == "global") {
+		if _, ok := h.musicv2.plans.Current(pk, now); ok || (k.member == 0 && k.region == "global") {
 			continue
 		}
-		if acts, err := a.musicActsOf(ctx, k.member); err == nil {
-			a.buildMusicV7Plan(ctx, k.member, k.region, pk, lib, acts, now)
+		if acts, err := h.musicActsOf(ctx, k.member); err == nil {
+			h.buildMusicV7Plan(ctx, k.member, k.region, pk, lib, acts, now)
 		}
 	}
 }
@@ -823,41 +823,41 @@ const musicV7PartialRetry = time.Minute
 // earlier plan exists: the current plan; else the last good plan (stale,
 // partial or yesterday's, in memory or on disk) with a rebuild behind;
 // else a build cut at musicV7Wait.
-func (a *API) musicV7PlanFor(ctx context.Context, member int64, region string, key musicscore.PlanKey, lib *musicLib, acts *musicActs, now time.Time) *musicscore.Plan {
-	if p, ok := a.musicv2.plans.Current(key, now); ok {
+func (h *Handlers) musicV7PlanFor(ctx context.Context, member int64, region string, key musicscore.PlanKey, lib *musicLib, acts *musicActs, now time.Time) *musicscore.Plan {
+	if p, ok := h.musicv2.plans.Current(key, now); ok {
 		if p.Partial && now.Sub(p.Built) >= musicV7PartialRetry {
-			a.refreshMusicV7(member, region, key, now)
+			h.refreshMusicV7(member, region, key, now)
 		}
 		return p
 	}
-	if old, ok := a.musicv2.plans.Newest(member, region, now); ok {
-		done := a.refreshMusicV7(member, region, key, now)
-		if p := a.waitMusicV7(done, key, now); p != nil {
+	if old, ok := h.musicv2.plans.Newest(member, region, now); ok {
+		done := h.refreshMusicV7(member, region, key, now)
+		if p := h.waitMusicV7(done, key, now); p != nil {
 			return p
 		}
 		return old
 	}
-	if snap, current, ok := a.loadMusicV7Snap(ctx, member, region, key.Date, lib, now); ok {
+	if snap, current, ok := h.loadMusicV7Snap(ctx, member, region, key.Date, lib, now); ok {
 		// Kept on disk (a restart): served at once, rebuilt behind when old
 		// (the rebuild is answered when it is done within the deadline).
 		if !current {
-			if p := a.waitMusicV7(a.refreshMusicV7(member, region, key, now), key, now); p != nil {
+			if p := h.waitMusicV7(h.refreshMusicV7(member, region, key, now), key, now); p != nil {
 				return p
 			}
 		}
 		ord := snap.order()
-		p := musicscore.NewPlan(ord.v7.rows, a.musicV7HeadRows(), musicV7Max, member, key.Date, ord.v7.seen)
+		p := musicscore.NewPlan(ord.v7.rows, h.musicV7HeadRows(), musicV7Max, member, key.Date, ord.v7.seen)
 		p.Meta = ord
-		a.musicv2.plans.Put(key, p, now)
+		h.musicv2.plans.Put(key, p, now)
 		if !current {
-			a.musicv2.plans.MarkStaleKey(key)
-			a.refreshMusicV7(member, region, key, now)
+			h.musicv2.plans.MarkStaleKey(key)
+			h.refreshMusicV7(member, region, key, now)
 		}
 		return p
 	}
 	// Nothing kept at all: the full build runs behind; the visitor gets it
 	// if it is done in time, else a build cut at the deadline.
-	done := a.refreshMusicV7(member, region, key, now)
+	done := h.refreshMusicV7(member, region, key, now)
 	dctx, cancel := context.WithTimeout(ctx, musicV7Wait)
 	defer cancel()
 	// Most builds read kept data and are done well within the deadline; only
@@ -866,18 +866,18 @@ func (a *API) musicV7PlanFor(ctx context.Context, member int64, region string, k
 	defer grace.Stop()
 	select {
 	case <-done:
-		if p, ok := a.musicv2.plans.Current(key, now); ok {
+		if p, ok := h.musicv2.plans.Current(key, now); ok {
 			return p
 		}
 	case <-grace.C:
 	}
 	cut := make(chan *musicscore.Plan, 1)
 	go func() {
-		ord := a.buildMusicV3(context.WithValue(dctx, musicMissKey{}, &musicMiss{}), member, region, lib, acts, now)
+		ord := h.buildMusicV3(context.WithValue(dctx, musicMissKey{}, &musicMiss{}), member, region, lib, acts, now)
 		if ord.v7 == nil {
 			ord.v7 = &musicV7Cand{metas: map[string]MusicRow{}, cards: map[string]map[string]MusicCard{}}
 		}
-		p := musicscore.NewPlan(ord.v7.rows, a.musicV7HeadRows(), musicV7Max, member, key.Date, ord.v7.seen)
+		p := musicscore.NewPlan(ord.v7.rows, h.musicV7HeadRows(), musicV7Max, member, key.Date, ord.v7.seen)
 		p.Meta = ord
 		p.Partial = true
 		cut <- p
@@ -885,7 +885,7 @@ func (a *API) musicV7PlanFor(ctx context.Context, member int64, region string, k
 	// The full build is preferred while the deadline lasts.
 	select {
 	case <-done:
-		if p, ok := a.musicv2.plans.Current(key, now); ok {
+		if p, ok := h.musicv2.plans.Current(key, now); ok {
 			return p
 		}
 	case <-dctx.Done():
@@ -904,12 +904,12 @@ func (a *API) musicV7PlanFor(ctx context.Context, member int64, region string, k
 }
 
 // waitMusicV7 waits up to musicV7Wait for a rebuild and answers its plan.
-func (a *API) waitMusicV7(done <-chan struct{}, key musicscore.PlanKey, now time.Time) *musicscore.Plan {
+func (h *Handlers) waitMusicV7(done <-chan struct{}, key musicscore.PlanKey, now time.Time) *musicscore.Plan {
 	t := time.NewTimer(musicV7Wait)
 	defer t.Stop()
 	select {
 	case <-done:
-		if p, ok := a.musicv2.plans.Current(key, now); ok {
+		if p, ok := h.musicv2.plans.Current(key, now); ok {
 			return p
 		}
 	case <-t.C:
@@ -930,23 +930,23 @@ type musicV7AskKey struct {
 
 // rememberMusicV7Ask notes that member asked for region's rows, so the
 // prewarm builds that plan ahead next time.
-func (a *API) rememberMusicV7Ask(member int64, region string, now time.Time) {
-	a.musicv2.asked.Store(musicV7AskKey{member, region}, now)
+func (h *Handlers) rememberMusicV7Ask(member int64, region string, now time.Time) {
+	h.musicv2.asked.Store(musicV7AskKey{member, region}, now)
 }
 
 // musicV7Asked answers the recently asked member and region pairs, newest
 // first, at most musicV7RecentMax.
-func (a *API) musicV7Asked(now time.Time) []musicV7AskKey {
+func (h *Handlers) musicV7Asked(now time.Time) []musicV7AskKey {
 	type at struct {
 		k musicV7AskKey
 		t time.Time
 	}
 	var l []at
-	a.musicv2.asked.Range(func(k, v any) bool {
+	h.musicv2.asked.Range(func(k, v any) bool {
 		if t := v.(time.Time); now.Sub(t) < musicV7Recent {
 			l = append(l, at{k.(musicV7AskKey), t})
 		} else {
-			a.musicv2.asked.Delete(k)
+			h.musicv2.asked.Delete(k)
 		}
 		return true
 	})

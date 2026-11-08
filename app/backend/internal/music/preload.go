@@ -1,4 +1,4 @@
-package api
+package music
 
 import (
 	"context"
@@ -108,14 +108,14 @@ type musicPreloadStatus struct {
 // tplPreload asks for the covers of a region's pages for bundle b ("" asks
 // for none, only the bundle check): a new bundle version preloads every
 // region asked so far again; a region already done for b is skipped.
-func (a *API) tplPreload(b *rowtpl.Bundle, region string) {
-	if b == nil || !musicPreloadOn || !a.musicTplOn() || !a.partIsOn(parts.Music) {
+func (h *Handlers) tplPreload(b *rowtpl.Bundle, region string) {
+	if b == nil || !musicPreloadOn || !h.musicTplOn() || !h.PartIsOn(parts.Music) {
 		return
 	}
-	if a.musicPre.warm == nil && (a.s.Library == nil || a.s.Library.Artwork == nil) {
+	if h.musicPre.warm == nil && (h.Library == nil || h.Library.Artwork == nil) {
 		return
 	}
-	p := &a.musicPre
+	p := &h.musicPre
 	r := strings.ToLower(region)
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -139,7 +139,7 @@ func (a *API) tplPreload(b *rowtpl.Bundle, region string) {
 	}
 	if len(p.queue) > 0 && !p.running {
 		p.running, p.st.Running = true, true
-		go jobs.Guard("music-cover-preload", a.runPreload)
+		go jobs.Guard("music-cover-preload", h.runPreload)
 	}
 }
 
@@ -151,11 +151,11 @@ func (p *musicPreload) markLocked(k preloadKey) {
 }
 
 // tplMarkArt records a stored picture (the picture route stored it).
-func (a *API) tplMarkArt(kind, mbid string) {
+func (h *Handlers) tplMarkArt(kind, mbid string) {
 	if kind != "album" && kind != "artist" {
 		return
 	}
-	p := &a.musicPre
+	p := &h.musicPre
 	p.mu.Lock()
 	p.markLocked(preloadKey{kind, mbid})
 	p.mu.Unlock()
@@ -163,12 +163,12 @@ func (a *API) tplMarkArt(kind, mbid string) {
 
 // artKnown reports a picture that is stored: the preload or the picture
 // route stored it, or its file is in the artwork store (then it is noted).
-func (a *API) artKnown(k preloadKey) bool {
-	p := &a.musicPre
+func (h *Handlers) artKnown(k preloadKey) bool {
+	p := &h.musicPre
 	p.mu.Lock()
 	v := p.have[k]
 	p.mu.Unlock()
-	if !v && a.localArt(k) {
+	if !v && h.localArt(k) {
 		v = true
 		p.mu.Lock()
 		p.markLocked(k)
@@ -179,8 +179,8 @@ func (a *API) artKnown(k preloadKey) bool {
 
 // artReady reports that a preload has stored a picture, so a missing one means
 // "not stored" and no longer "not looked at yet".
-func (a *API) artReady() bool {
-	p := &a.musicPre
+func (h *Handlers) artReady() bool {
+	p := &h.musicPre
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	return p.haveReady || len(p.have) > 0
@@ -190,8 +190,8 @@ func (a *API) artReady() bool {
 // picture is stored (the preload or the picture route stored it, or its
 // file is in the artwork store). nil (no check) until a preload has stored
 // any picture, so a page never empties before the first one runs.
-func (a *API) tplHasArt(b *rowtpl.Bundle) func(int) bool {
-	if !a.artReady() {
+func (h *Handlers) tplHasArt(b *rowtpl.Bundle) func(int) bool {
+	if !h.artReady() {
 		return nil
 	}
 	memo := map[int]bool{}
@@ -204,7 +204,7 @@ func (a *API) tplHasArt(b *rowtpl.Bundle) func(int) bool {
 		if it.Kind == "r" {
 			k.kind = "artist"
 		}
-		v := a.artKnown(k)
+		v := h.artKnown(k)
 		memo[i] = v
 		return v
 	}
@@ -212,17 +212,17 @@ func (a *API) tplHasArt(b *rowtpl.Bundle) func(int) bool {
 
 // albumHasArt answers the same check for an album id (a chart's, not in the
 // bundle); nil until a preload has stored any picture.
-func (a *API) albumHasArt() func(mbid string) bool {
-	if !a.artReady() {
+func (h *Handlers) albumHasArt() func(mbid string) bool {
+	if !h.artReady() {
 		return nil
 	}
-	return func(mbid string) bool { return a.artKnown(preloadKey{"album", strings.ToLower(mbid)}) }
+	return func(mbid string) bool { return h.artKnown(preloadKey{"album", strings.ToLower(mbid)}) }
 }
 
 // localArt reports a picture already in the artwork store (the server's
 // copy, at a card size).
-func (a *API) localArt(k preloadKey) bool {
-	lib := a.s.Library
+func (h *Handlers) localArt(k preloadKey) bool {
+	lib := h.Library
 	if lib == nil || lib.Artwork == nil {
 		return false
 	}
@@ -231,8 +231,8 @@ func (a *API) localArt(k preloadKey) bool {
 		kind = "artist"
 	}
 	// The card copy: at the known version, or the unversioned one.
-	for _, v := range []string{a.pictureVersion(kind, k.mbid), ""} {
-		if src := a.musicArtSrc(kind, k.mbid, "500", v); src != "" {
+	for _, v := range []string{h.PictureVersion(kind, k.mbid), ""} {
+		if src := h.musicArtSrc(kind, k.mbid, "500", v); src != "" {
 			if _, ok := lib.Artwork.Path(library.ArtworkName(src)); ok {
 				return true
 			}
@@ -242,8 +242,8 @@ func (a *API) localArt(k preloadKey) bool {
 }
 
 // tplPreloadStatus answers the preload's progress.
-func (a *API) tplPreloadStatus() musicPreloadStatus {
-	p := &a.musicPre
+func (h *Handlers) tplPreloadStatus() musicPreloadStatus {
+	p := &h.musicPre
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	st := p.st
@@ -252,8 +252,8 @@ func (a *API) tplPreloadStatus() musicPreloadStatus {
 }
 
 // runPreload works through the queued regions, newest bundle first.
-func (a *API) runPreload() {
-	p := &a.musicPre
+func (h *Handlers) runPreload() {
+	p := &h.musicPre
 	for {
 		p.mu.Lock()
 		if len(p.queue) == 0 {
@@ -262,7 +262,7 @@ func (a *API) runPreload() {
 			p.haveReady = true
 			if len(p.missed) > 0 {
 				ver := p.version
-				time.AfterFunc(musicPreloadRetry, func() { a.retryPreload(ver) })
+				time.AfterFunc(musicPreloadRetry, func() { h.retryPreload(ver) })
 			}
 			p.mu.Unlock()
 			return
@@ -273,7 +273,7 @@ func (a *API) runPreload() {
 			p.st.Started = time.Now().UTC()
 		}
 		p.mu.Unlock()
-		keys := a.preloadItems(b, region, time.Now().UTC())
+		keys := h.preloadItems(b, region, time.Now().UTC())
 		p.mu.Lock()
 		if p.version != ver {
 			p.mu.Unlock()
@@ -288,22 +288,22 @@ func (a *API) runPreload() {
 		}
 		p.st.Total += len(todo)
 		p.mu.Unlock()
-		a.preloadWarm(ver, todo)
+		h.preloadWarm(ver, todo)
 	}
 }
 
 // preloadItems answers the albums and artists of a region's engine pages:
 // the Browse tile covers and what each page shows now first, then every
 // item their rows can draw on.
-func (a *API) preloadItems(b *rowtpl.Bundle, region string, now time.Time) []preloadKey {
+func (h *Handlers) preloadItems(b *rowtpl.Bundle, region string, now time.Time) []preloadKey {
 	ctx := metadata.Ahead(context.Background())
 	r := strings.ToLower(region)
 	if r == "" {
 		r = "global"
 	}
-	sh := a.musicShelvesOf(ctx, strings.ToUpper(r), now)
+	sh := h.musicShelvesOf(ctx, strings.ToUpper(r), now)
 	blocks := tplBlocks(sh)
-	secs := a.tplVisible(ctx, b, r, nil, now)
+	secs := h.tplVisible(ctx, b, r, nil, now)
 	var out []preloadKey
 	addID := func(kind, id string) {
 		if id != "" {
@@ -360,11 +360,11 @@ func (a *API) preloadItems(b *rowtpl.Bundle, region string, now time.Time) []pre
 
 // preloadWarm stores the items' pictures with a few paced workers; a newer
 // bundle stops it.
-func (a *API) preloadWarm(ver string, todo []preloadKey) {
-	p := &a.musicPre
+func (h *Handlers) preloadWarm(ver string, todo []preloadKey) {
+	p := &h.musicPre
 	warm := p.warm
 	if warm == nil {
-		warm = a.preloadOne
+		warm = h.preloadOne
 	}
 	stale := func() bool {
 		p.mu.Lock()
@@ -379,7 +379,7 @@ func (a *API) preloadWarm(ver string, todo []preloadKey) {
 			defer wg.Done()
 			for k := range next {
 				p.waitPause()
-				ctx, cancel := context.WithTimeout(metadata.Ahead(context.Background()), artWarmItem)
+				ctx, cancel := context.WithTimeout(metadata.Ahead(context.Background()), ArtWarmItem)
 				ok := warm(ctx, k)
 				cancel()
 				p.mu.Lock()
@@ -415,8 +415,8 @@ var musicPreloadRetry = musicArtMissTTL + time.Minute
 
 // retryPreload asks again for the items the last pass missed, while the
 // bundle is the same; misses again are retried again later.
-func (a *API) retryPreload(ver string) {
-	p := &a.musicPre
+func (h *Handlers) retryPreload(ver string) {
+	p := &h.musicPre
 	p.mu.Lock()
 	if p.version != ver || p.running || len(p.missed) == 0 {
 		p.mu.Unlock()
@@ -428,19 +428,19 @@ func (a *API) retryPreload(ver string) {
 	p.running, p.st.Running = true, true
 	p.mu.Unlock()
 	go jobs.Guard("music-cover-preload-retry", func() {
-		a.preloadWarm(ver, todo)
-		a.runPreload() // closes the run (and schedules the next retry)
+		h.preloadWarm(ver, todo)
+		h.runPreload() // closes the run (and schedules the next retry)
 	})
 }
 
 // preloadOne stores an album's cover or an artist's photo at the card size
 // (500; a 250 thumbnail is made here from it), through the picture route's
 // own chain.
-func (a *API) preloadOne(ctx context.Context, k preloadKey) bool {
+func (h *Handlers) preloadOne(ctx context.Context, k preloadKey) bool {
 	kind := "album"
 	if k.kind != "album" {
 		kind = "artist"
 	}
-	_, _, ok := a.musicTrendArtFile(ctx, kind, k.mbid, "500")
+	_, _, ok := h.musicTrendArtFile(ctx, kind, k.mbid, "500")
 	return ok
 }

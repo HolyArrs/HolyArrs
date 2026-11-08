@@ -1,4 +1,4 @@
-package api
+package music
 
 import (
 	"context"
@@ -18,7 +18,7 @@ const risingGenres = 5
 // 0.2·F60. Hidden while any of those genre charts has fewer than 7 days
 // of kept ranks. Items with no rank gain, or an artist with no known
 // first release, are left out.
-func (a *API) risingRow(ctx context.Context, region string, now time.Time, in personalIn) {
+func (h *Handlers) risingRow(ctx context.Context, region string, now time.Time, in personalIn) {
 	type gv struct {
 		g string
 		v float64
@@ -57,7 +57,7 @@ func (a *API) risingRow(ctx context.Context, region string, now time.Time, in pe
 		if slug == "" {
 			continue
 		}
-		chart := a.musicGenreChartOf(ctx, region, slug, now)
+		chart := h.musicGenreChartOf(ctx, region, slug, now)
 		if !musicscore.RanksReady(albumRanks(chart)) {
 			return // ΔR undefined: the whole row stays hidden
 		}
@@ -78,7 +78,7 @@ func (a *API) risingRow(ctx context.Context, region string, now time.Time, in pe
 	if charts == 0 {
 		return
 	}
-	data := a.musicArtistDataOf(ctx, artists, now)
+	data := h.musicArtistDataOf(ctx, artists, now)
 	var cards []MusicCard
 	var sc []musicscore.Scored
 	for _, x := range list {

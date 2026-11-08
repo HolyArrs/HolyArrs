@@ -1,4 +1,4 @@
-package api
+package music
 
 import (
 	"net/http"
@@ -19,14 +19,14 @@ type ArtistVideoItem struct {
 // artist's music videos as the server keeps them, in the kept order. Nothing
 // is looked up on YouTube or relayed here; a video plays when it is opened.
 // No videos (or no video source) answers an empty list.
-func (a *API) artistVideoList(w http.ResponseWriter, r *http.Request) {
-	mbid, ok := a.musicPageGate(w, r)
+func (h *Handlers) artistVideoList(w http.ResponseWriter, r *http.Request) {
+	mbid, ok := h.musicPageGate(w, r)
 	if !ok {
 		return
 	}
 	out := []ArtistVideoItem{}
-	if a.s.ArtistVideos != nil {
-		for _, v := range a.videosOf(metadata.MemberLookup(r.Context()), mbid) {
+	if h.ArtistVideos != nil {
+		for _, v := range h.videosOf(metadata.MemberLookup(r.Context()), mbid) {
 			if metadata.ValidYouTubeID(v.ID) {
 				out = append(out, ArtistVideoItem{ID: v.ID, Title: v.Title, Duration: v.Duration})
 			}

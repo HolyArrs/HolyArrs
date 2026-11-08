@@ -1,4 +1,4 @@
-package api
+package music
 
 import (
 	"context"
@@ -68,43 +68,43 @@ type releaseSource interface {
 
 // warmMusicNew starts a build when there is none or it is older than the
 // TTL; it never waits.
-func (a *API) warmMusicNew() *musicNewData {
-	if p, _ := parts.ForTitleKind("artist"); !a.partIsOn(p) {
+func (h *Handlers) warmMusicNew() *musicNewData {
+	if p, _ := parts.ForTitleKind("artist"); !h.PartIsOn(p) {
 		return nil
 	}
-	a.loadMusicNew()
+	h.loadMusicNew()
 	musicNew.mu.Lock()
 	d := musicNew.data
 	stale := (d == nil || time.Since(d.at) > musicNewTTL) && !musicNew.building
 	musicNew.mu.Unlock()
 	if stale {
-		go a.refreshMusicNew(context.Background())
+		go h.refreshMusicNew(context.Background())
 	}
 	return d
 }
 
 // buildMusicNew reads the trending lists, then asks MusicBrainz (paced by
 // its shared limiter) for releases by notable artists in each window.
-func (a *API) buildMusicNew(ctx context.Context, now time.Time) *musicNewData {
+func (h *Handlers) buildMusicNew(ctx context.Context, now time.Time) *musicNewData {
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Minute)
 	defer cancel()
 	d := &musicNewData{at: now}
-	if a.s.MusicTrending != nil {
-		d.fresh, _ = a.cachedMusicTrend(ctx, "fresh", "global")
-		d.albums, _ = a.cachedMusicTrend(ctx, "album", "global")
-		d.artists, _ = a.cachedMusicTrend(ctx, "artist", "global")
+	if h.MusicTrending != nil {
+		d.fresh, _ = h.cachedMusicTrend(ctx, "fresh", "global")
+		d.albums, _ = h.cachedMusicTrend(ctx, "album", "global")
+		d.artists, _ = h.cachedMusicTrend(ctx, "artist", "global")
 	}
-	if a.s.MusicNew != nil {
+	if h.MusicNew != nil {
 		d.server = map[string][]metadata.MusicNewItem{}
 		for _, w := range []string{"tracks", "week", "recent", "upcoming"} {
-			if l, err := a.s.MusicNew(ctx, w); err == nil {
+			if l, err := h.MusicNew(ctx, w); err == nil {
 				d.server[w] = l.Items
 			}
 		}
 	}
 	var src releaseSource
-	if a.s.Library != nil && a.s.Library.Artists != nil {
-		src, _ = a.s.Library.Artists.(releaseSource)
+	if h.Library != nil && h.Library.Artists != nil {
+		src, _ = h.Library.Artists.(releaseSource)
 	}
 	if src == nil {
 		return d
@@ -594,43 +594,43 @@ func musicNewTopics(rows []MusicRow, hero []MusicCard) []string {
 // exploreNewMusic answers GET /api/v1/explore/new/music: New & Popular's
 // Music tab. building says the shared lists are still on their way (ask
 // again shortly); kid is true for an account with an age limit.
-func (a *API) exploreNewMusic(w http.ResponseWriter, r *http.Request) {
-	if p, _ := parts.ForTitleKind("artist"); !a.partIsOn(p) {
+func (h *Handlers) exploreNewMusic(w http.ResponseWriter, r *http.Request) {
+	if p, _ := parts.ForTitleKind("artist"); !h.PartIsOn(p) {
 		webserver.Fail(w, http.StatusNotFound, "music is turned off")
 		return
 	}
 	empty := map[string]any{"kid": false, "building": false, "hero": []MusicCard{}, "rows": []MusicRow{}, "genres": []string{}}
 	// Music has no ratings, so a Kid limit shows none of it (as on Explore → Music).
-	if a.kidMax(r) != "" {
+	if h.KidMax(r) != "" {
 		empty["kid"] = true
 		webserver.WriteJSON(w, http.StatusOK, empty)
 		return
 	}
-	if !a.discover.allow(a.person(r).UserID, time.Now()) {
+	if !h.Limit(h.Person(r).UserID, time.Now()) {
 		w.Header().Set("Retry-After", "60")
 		webserver.Fail(w, http.StatusTooManyRequests, "too many Explore requests; try again in a minute")
 		return
 	}
 	ctx := r.Context()
 	now := time.Now().UTC()
-	a.landAlbumFollows(ctx, now)
+	h.landAlbumFollows(ctx, now)
 	// The row template engine fills New & Popular → Music when it has its
 	// catalog (kill switch music_rows_tpl_off keeps the list rows).
-	if a.musicTplOn() {
-		if hero, rows, ok := a.buildTplWorld(ctx, r, "new", now); ok {
-			a.exploreCaching(w, r, "private, no-cache")
-			a.writeMusicJSON(w, r, map[string]any{"kid": false, "building": false, "hero": hero, "rows": rows, "genres": musicNewTopics(rows, hero)})
+	if h.musicTplOn() {
+		if hero, rows, ok := h.buildTplWorld(ctx, r, "new", now); ok {
+			h.ExploreCaching(w, r, "private, no-cache")
+			h.WriteMusicJSON(w, r, map[string]any{"kid": false, "building": false, "hero": hero, "rows": rows, "genres": musicNewTopics(rows, hero)})
 			return
 		}
 	}
-	d := a.warmMusicNew()
+	d := h.warmMusicNew()
 	if d == nil {
 		empty["building"] = true
-		a.exploreCaching(w, r, "private, no-cache")
+		h.ExploreCaching(w, r, "private, no-cache")
 		webserver.WriteJSON(w, http.StatusOK, empty)
 		return
 	}
-	db := a.s.Store.Read()
+	db := h.Store.Read()
 	in := musicNewInput{data: d, owned: map[string]int64{}, images: map[string]string{}, follows: map[string]bool{}}
 	titles, err := database.Select[mediafiles.Title](ctx, db, "titles", "kind = 'artist' AND state != 'removed' ORDER BY id")
 	if err != nil {
@@ -665,7 +665,7 @@ func (a *API) exploreNewMusic(w http.ResponseWriter, r *http.Request) {
 		}
 		in.library = append(in.library, c)
 	}
-	if rows, err := db.QueryContext(ctx, "SELECT mbid FROM album_follows WHERE user_id = ?", a.person(r).UserID); err == nil {
+	if rows, err := db.QueryContext(ctx, "SELECT mbid FROM album_follows WHERE user_id = ?", h.Person(r).UserID); err == nil {
 		for rows.Next() {
 			var id string
 			if rows.Scan(&id) == nil {
@@ -676,13 +676,13 @@ func (a *API) exploreNewMusic(w http.ResponseWriter, r *http.Request) {
 	}
 	var hero []MusicCard
 	var rows []MusicRow
-	if a.s.MusicRowsV6 {
-		hero, rows = a.musicTrendingRows(ctx, r, in, now)
+	if h.MusicRowsV6 {
+		hero, rows = h.musicTrendingRows(ctx, r, in, now)
 	} else {
 		hero, rows = composeMusicNew(in, now)
 	}
-	if a.s.MusicListsV1 {
-		hero, rows = a.musicNewListRows(ctx, r, in, hero, rows, now)
+	if h.MusicListsV1 {
+		hero, rows = h.musicNewListRows(ctx, r, in, hero, rows, now)
 	}
 	var names []nameKey
 	for _, c := range hero {
@@ -693,14 +693,14 @@ func (a *API) exploreNewMusic(w http.ResponseWriter, r *http.Request) {
 			names = append(names, nameKey{"album", c.MBID, c.Name, c.Artist, ""})
 		}
 	}
-	a.rememberMusicNames(names)
-	a.exploreCaching(w, r, "private, no-cache")
-	a.writeMusicJSON(w, r, map[string]any{"kid": false, "building": false, "hero": hero, "rows": rows, "genres": musicNewTopics(rows, hero)})
+	h.rememberMusicNames(names)
+	h.ExploreCaching(w, r, "private, no-cache")
+	h.WriteMusicJSON(w, r, map[string]any{"kid": false, "building": false, "hero": hero, "rows": rows, "genres": musicNewTopics(rows, hero)})
 }
 
 // landAlbumFollows tells people waiting for an album that it is out (an
 // in-app message), then ends those follows. At most every 10 minutes.
-func (a *API) landAlbumFollows(ctx context.Context, now time.Time) {
+func (h *Handlers) landAlbumFollows(ctx context.Context, now time.Time) {
 	musicNew.mu.Lock()
 	if now.Sub(musicNew.landed) < 10*time.Minute {
 		musicNew.mu.Unlock()
@@ -709,7 +709,7 @@ func (a *API) landAlbumFollows(ctx context.Context, now time.Time) {
 	musicNew.landed = now
 	musicNew.mu.Unlock()
 	today := now.Format("2006-01-02")
-	_ = a.s.Store.Write(ctx, func(tx *sql.Tx) error {
+	_ = h.Store.Write(ctx, func(tx *sql.Tx) error {
 		rows, err := tx.Query("SELECT user_id, mbid, name, artist FROM album_follows WHERE release_date <= ?", today)
 		if err != nil {
 			return err
@@ -739,9 +739,9 @@ func (a *API) landAlbumFollows(ctx context.Context, now time.Time) {
 
 // Album follows: an album not out yet, by MusicBrainz release group.
 
-func (a *API) albumFollowState(w http.ResponseWriter, r *http.Request, mbid string) {
+func (h *Handlers) albumFollowState(w http.ResponseWriter, r *http.Request, mbid string) {
 	var n int
-	if err := a.s.Store.Read().QueryRowContext(r.Context(), "SELECT count(*) FROM album_follows WHERE user_id = ? AND mbid = ?", a.person(r).UserID, mbid).Scan(&n); err != nil {
+	if err := h.Store.Read().QueryRowContext(r.Context(), "SELECT count(*) FROM album_follows WHERE user_id = ? AND mbid = ?", h.Person(r).UserID, mbid).Scan(&n); err != nil {
 		webserver.Internal(w, "api", err)
 		return
 	}
@@ -757,18 +757,18 @@ func albumMBID(w http.ResponseWriter, r *http.Request) (string, bool) {
 	return id, true
 }
 
-func (a *API) getAlbumFollow(w http.ResponseWriter, r *http.Request) {
+func (h *Handlers) getAlbumFollow(w http.ResponseWriter, r *http.Request) {
 	if id, ok := albumMBID(w, r); ok {
-		a.albumFollowState(w, r, id)
+		h.albumFollowState(w, r, id)
 	}
 }
 
-func (a *API) putAlbumFollow(w http.ResponseWriter, r *http.Request) {
+func (h *Handlers) putAlbumFollow(w http.ResponseWriter, r *http.Request) {
 	id, ok := albumMBID(w, r)
 	if !ok {
 		return
 	}
-	if a.kidMax(r) != "" {
+	if h.KidMax(r) != "" {
 		webserver.Fail(w, http.StatusForbidden, "music is not shown on this account")
 		return
 	}
@@ -791,28 +791,28 @@ func (a *API) putAlbumFollow(w http.ResponseWriter, r *http.Request) {
 		webserver.Fail(w, http.StatusConflict, "that album is out already")
 		return
 	}
-	if err := a.s.Store.Write(r.Context(), func(tx *sql.Tx) error {
+	if err := h.Store.Write(r.Context(), func(tx *sql.Tx) error {
 		_, err := tx.Exec(`INSERT INTO album_follows (user_id, mbid, name, artist, release_date, created_at) VALUES (?, ?, ?, ?, ?, ?)
-			ON CONFLICT DO NOTHING`, a.person(r).UserID, id, body.Name, body.Artist, body.ReleaseDate, database.FormatTime(time.Now()))
+			ON CONFLICT DO NOTHING`, h.Person(r).UserID, id, body.Name, body.Artist, body.ReleaseDate, database.FormatTime(time.Now()))
 		return err
 	}); err != nil {
 		webserver.Internal(w, "api", err)
 		return
 	}
-	a.albumFollowState(w, r, id)
+	h.albumFollowState(w, r, id)
 }
 
-func (a *API) deleteAlbumFollow(w http.ResponseWriter, r *http.Request) {
+func (h *Handlers) deleteAlbumFollow(w http.ResponseWriter, r *http.Request) {
 	id, ok := albumMBID(w, r)
 	if !ok {
 		return
 	}
-	if err := a.s.Store.Write(r.Context(), func(tx *sql.Tx) error {
-		_, err := tx.Exec("DELETE FROM album_follows WHERE user_id = ? AND mbid = ?", a.person(r).UserID, id)
+	if err := h.Store.Write(r.Context(), func(tx *sql.Tx) error {
+		_, err := tx.Exec("DELETE FROM album_follows WHERE user_id = ? AND mbid = ?", h.Person(r).UserID, id)
 		return err
 	}); err != nil {
 		webserver.Internal(w, "api", err)
 		return
 	}
-	a.albumFollowState(w, r, id)
+	h.albumFollowState(w, r, id)
 }

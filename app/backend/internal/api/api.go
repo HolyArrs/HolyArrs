@@ -6,10 +6,11 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/datapack"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
 	setupmod "github.com/HolyArrs/holyarrs/app/backend/internal/setup"
-	"fmt"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/discover"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
@@ -198,11 +199,6 @@ type API struct {
 	shows *shows.Handlers
 	// interest limits each session's live interest calls (webserver.go).
 	interest interestState
-	// listSeen is each region's last world-list shelves signature
-	// (music_lists_v1), guarded by musicv2.cursorMu.
-	listSeen map[string]string
-	// lookups counts each person's music lookups in flight.
-	lookups inFlight
 	// controls serves the part switches, the controls and the part gate (internal/setup).
 	controls *setupmod.Handlers
 	// ai serves the AI connections (internal/ai).
@@ -215,21 +211,10 @@ type API struct {
 	serviceTop serviceTopCache
 	// watchOn keeps each title's TMDB watch providers per region a day.
 	watchOn watchOnCache
-	// music keeps the music trending lists for an hour.
-	music  musicTrendCache
-	rising risingCache
 	// mus serves the moved Music code (internal/music); built on first use
 	// by mh() so a bare &API{} in tests works too.
 	mus     *music.Handlers
 	musOnce sync.Once
-	// musicx keeps artist genres and similar artists for Explore → Music.
-	musicx musicExplore
-	// musicAns keeps each member's Explore → Music answers a minute.
-	musicAns musicAnswers
-	// musicv2 holds the music_rows_v2 cache layers.
-	musicv2 musicV2State
-	// genreArt keeps genre tile pictures.
-	genreArt music.GenreArtCache
 	// signin keeps the sign-in page's art and its per-address budget.
 	signin signinArtState
 	// signinSeed keeps the first sign-in slide's tiny thumbnails.
@@ -242,17 +227,8 @@ type API struct {
 	// trailers keeps resolved trailer addresses, serves the trailer routes
 	// and runs the trailer pass (metadata).
 	trailers *metadata.Trailers
-	// artistAsked notes artists whose music videos the pass keeps ready.
-	artistAsked artistAsked
 	// warm fills listed titles' details, extras and trailers ahead.
 	warm titleWarmer
-	// ahead runs music fetch-ahead; ctl keeps the server's switch.
-	ahead musicAhead
-	// musicPre stores every engine page's covers ahead (musicpreload.go).
-	musicPre musicPreload
-	ctl      musicControl
-	// artistVideos keeps each artist's music videos (see music_video.go).
-	artistVideos artistVideoCache
 }
 
 // New makes the API.
@@ -463,9 +439,7 @@ func (a *API) Routes(rt *webserver.Router) {
 	a.healthHandlers().Routes(m)
 	a.media.Routes(m)
 	a.shows.Routes(m)
-	a.musicRoutes(m)
-	a.libraryHandlers().Routes(m)
-	a.musicPageRoutes(m)
+	a.mh().RouteMux(m)
 	subtitles.NewHandlers(a.s.Store, a.s.Secrets, a.s.Subtitles).Routes(m)
 	a.appHandlers().Routes(m)
 	(&updates.Handlers{Checker: a.s.Updates}).Routes(m)
@@ -493,10 +467,6 @@ func (a *API) Routes(rt *webserver.Router) {
 	m.HandleFunc("GET /api/v1/explore/new", a.exploreNew)
 	m.HandleFunc("GET /api/v1/explore/new/services", a.exploreNewServices)
 	m.HandleFunc("GET /api/v1/explore/new/service", a.exploreNewService)
-	m.HandleFunc("GET /api/v1/explore/new/music", a.exploreNewMusic)
-	m.HandleFunc("GET /api/v1/metadata/album/{mbid}/follow", a.getAlbumFollow)
-	m.HandleFunc("PUT /api/v1/metadata/album/{mbid}/follow", a.putAlbumFollow)
-	m.HandleFunc("DELETE /api/v1/metadata/album/{mbid}/follow", a.deleteAlbumFollow)
 	m.HandleFunc("GET /api/v1/explore/browse", a.searchBrowse)
 	m.HandleFunc("GET /api/v1/explore/browse/section", a.searchBrowseSection)
 	m.HandleFunc("GET /api/v1/explore/browse/category", a.searchBrowseCategory)
@@ -507,14 +477,6 @@ func (a *API) Routes(rt *webserver.Router) {
 	if startup.FeatureOn(features.RowTitleStats) {
 		m.HandleFunc("GET /api/v1/explore/title-stats", a.exploreTitleStats)
 	}
-	m.HandleFunc("GET /api/v1/music-trending", a.musicTrending)
-	m.HandleFunc("GET /api/v1/explore/music", a.exploreMusic)
-	m.HandleFunc("GET /api/v1/explore/music/rising", a.risingToday)
-	m.HandleFunc("GET /api/v1/music-trending/art/{kind}/{mbid}", a.musicTrendArt)
-	m.HandleFunc("GET /api/v1/music/genre/{slug}", a.musicGenrePage)
-	m.HandleFunc("GET /api/v1/music/browse/{kind}/{slug}", a.musicBrowsePage)
-	m.HandleFunc("GET /api/v1/music/browse-tiles", a.musicBrowseTiles)
-	a.genreArtHandlers().Routes(m)
 	a.titles.Routes(m)
 	if a.s.Secrets != nil {
 		if startup.FeatureOn(features.TraktLists) {
@@ -535,7 +497,7 @@ func (a *API) Routes(rt *webserver.Router) {
 	}
 	(&requests.ReportHandlers{Svc: a.s.Asks, Store: a.s.Store, Person: a.person, KidMax: a.kidMax, TitleGate: a.controls.ReportTitleGate}).Routes(m)
 	(&requests.AskedByHandlers{Store: a.s.Store, KidMax: a.kidMax, AllowedTitleIDs: a.allowedTitleIDs}).Routes(m)
-	(&requests.FollowHandlers{Svc: a.s.Asks, Person: a.person, Title: a.titleID, Changed: a.followsChanged}).Routes(m)
+	(&requests.FollowHandlers{Svc: a.s.Asks, Person: a.person, Title: a.titleID, Changed: a.mh().FollowsChanged}).Routes(m)
 	a.controls.Routes(m)
 	m.HandleFunc("GET /api/v1/openapi.json", a.openapi)
 	m.HandleFunc("GET /api/v1/health", a.health)
@@ -663,7 +625,7 @@ type TitleView struct {
 	Show *ShowInfo `json:"show,omitempty"`
 	// Artist holds an artist's choices and counts (artists only; albums,
 	// Pressings and tracks come from /titles/{id}/albums and /albums/{id}).
-	Artist *ArtistInfo `json:"artist,omitempty"`
+	Artist *music.ArtistInfo `json:"artist,omitempty"`
 }
 
 // showError answers show refusals; anything else goes to libraryError.
@@ -785,7 +747,7 @@ func (a *API) titleView(ctx context.Context, t mediafiles.Title) (TitleView, err
 		return trimForViewer(ctx, v), err
 	}
 	if t.Kind == "artist" {
-		if v.Artist, err = a.artistInfo(ctx, t); err != nil {
+		if v.Artist, err = a.mh().ArtistInfoOf(ctx, t); err != nil {
 			return v, err
 		}
 		v.Asks, err = titleAsks()
@@ -1295,7 +1257,7 @@ func (a *API) healthView(ctx context.Context) map[string]any {
 		"ok": ok, "version": a.s.Version, "schema": ver, "uptime_s": int(time.Since(a.s.Started).Seconds()),
 		"write_wait_p95_ms": float64(p95.Microseconds()) / 1000, "write_wait_samples": n, "writes": a.s.Store.WriteCount(),
 		"sources": srcs, "downloaders": dls, "live_clients": clients, "url_base": a.s.URLBase,
-		"music_covers": a.tplPreloadStatus(),
+		"music_covers": a.mh().PreloadStatus(),
 	}
 }
 
