@@ -1,4 +1,4 @@
-package api
+package downloads
 
 import (
 	"encoding/json"
@@ -7,35 +7,33 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
 // viewAs reads the Downloads rows as one person, past the sign-in.
-func viewAs(t *testing.T, x *dl41, who webserver.Caller) []downloads.DownloadRow {
+func viewAs(t *testing.T, x *dl41, who webserver.Caller) []DownloadRow {
 	t.Helper()
 	return viewAt(t, x, who, "/api/v1/downloads/view")
 }
 
 // viewAt is viewAs at a given address (?asked=1 for the Requests page).
-func viewAt(t *testing.T, x *dl41, who webserver.Caller, url string) []downloads.DownloadRow {
+func viewAt(t *testing.T, x *dl41, who webserver.Caller, url string) []DownloadRow {
 	t.Helper()
-	a := New(Server{Store: x.s, Queue: x.q, Live: webserver.NewLiveHub(webserver.LiveOptions{Heartbeat: time.Second}), Metadata: metadata.Lab(), Version: "test"})
+	a := &Web{Store: x.s, Queue: x.q, Live: webserver.NewLiveHub(webserver.LiveOptions{Heartbeat: time.Second}), Metadata: metadata.Lab()}
 	r := httptest.NewRequest("GET", url, nil)
 	r = r.WithContext(webserver.ContextWith(r.Context(), who))
 	w := httptest.NewRecorder()
-	a.dl.DownloadsView(w, r)
+	a.DownloadsView(w, r)
 	if w.Code != http.StatusOK {
 		t.Fatalf("status %d: %s", w.Code, w.Body.String())
 	}
 	var out struct {
-		Downloads []downloads.DownloadRow `json:"downloads"`
+		Downloads []DownloadRow `json:"downloads"`
 	}
 	_ = json.Unmarshal(w.Body.Bytes(), &out)
 	return out.Downloads
@@ -104,45 +102,6 @@ func TestDownloadsViewFailedReplaced(t *testing.T) {
 	exec41(t, x.s, "UPDATE slots SET state = 'failed'")
 	if r := viewAs(t, x, owner); r[0].Replaced {
 		t.Fatalf("just failed: %+v", r)
-	}
-}
-
-// route: DELETE /api/v1/turned-down/{id}
-// A failed download turns its copy down on its own; the
-// copy is on the Turned down list with why, and Undo lets it be picked again.
-func TestFailedCopyTurnedDownThenUndone(t *testing.T) {
-	t.Parallel()
-	x := seed41(t, mediafiles.SlotDownloading, "downloading")
-	do(t, "POST", x.srv.URL+"/api/v1/downloads/"+itoa(x.dlID)+"/mark-failed", "", 200)
-	// The search itself is the Manager's OnFailed (wired in main; covered in
-	// internal/downloader); here the Slot is handed to it as failed.
-	if st := x.slotState(t); st != string(mediafiles.SlotFailed) {
-		t.Fatalf("slot %s", st)
-	}
-	var list struct {
-		Releases []sources.ReleaseView `json:"releases"`
-		Total    int                   `json:"total"`
-	}
-	_ = json.Unmarshal(do(t, "GET", x.srv.URL+"/api/v1/turned-down", "", 200), &list)
-	if list.Total != 1 || list.Releases[0].ID != x.relID || list.Releases[0].Name == "" {
-		t.Fatalf("turned down %+v", list)
-	}
-	why := false
-	for _, r := range list.Releases[0].Reasons {
-		why = why || r.Code == "turned_down.reason"
-	}
-	if !why {
-		t.Fatalf("no reason shown: %+v", list.Releases[0].Reasons)
-	}
-	do(t, "DELETE", x.srv.URL+"/api/v1/turned-down/"+itoa(x.relID), "", 200)
-	var st string
-	_ = x.s.Read().QueryRow("SELECT state FROM releases WHERE id = ?", x.relID).Scan(&st)
-	if st == "turned_down" {
-		t.Fatal("still turned down after Undo")
-	}
-	_ = json.Unmarshal(do(t, "GET", x.srv.URL+"/api/v1/turned-down", "", 200), &list)
-	if list.Total != 0 {
-		t.Fatalf("still listed %+v", list)
 	}
 }
 

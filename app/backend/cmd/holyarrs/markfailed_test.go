@@ -40,7 +40,7 @@ func markServer(t *testing.T) (*httptest.Server, *database.Store) {
 	return srv, s
 }
 
-func doHTTP(t *testing.T, method, url, body string, want int) []byte {
+func do(t *testing.T, method, url, body string, want int) []byte {
 	t.Helper()
 	req, _ := http.NewRequest(method, url, strings.NewReader(body))
 	if body != "" {
@@ -139,12 +139,12 @@ func TestMarkFailedRoute(t *testing.T) {
 	}
 	// The movie page shows the Download in plain words.
 	var tv titleview.TitleView
-	_ = json.Unmarshal(doHTTP(t, "GET", srv.URL+"/api/v1/titles/1", "", 200), &tv)
+	_ = json.Unmarshal(do(t, "GET", srv.URL+"/api/v1/titles/1", "", 200), &tv)
 	if len(tv.Slots) != 1 || tv.Slots[0].Download == nil || tv.Slots[0].Download.Label != "Downloading" || !tv.Slots[0].Download.Active {
 		t.Fatalf("slot %+v", tv.Slots)
 	}
 	var dv downloads.DownloadView
-	_ = json.Unmarshal(doHTTP(t, "POST", srv.URL+"/api/v1/downloads/"+itoa(dlID)+"/mark-failed", "", 200), &dv)
+	_ = json.Unmarshal(do(t, "POST", srv.URL+"/api/v1/downloads/"+itoa(dlID)+"/mark-failed", "", 200), &dv)
 	if dv.State != "failed" || dv.Active || !strings.HasPrefix(dv.Text, "Marked failed") {
 		t.Fatalf("marked %+v", dv)
 	}
@@ -156,6 +156,6 @@ func TestMarkFailedRoute(t *testing.T) {
 	if st != string(mediafiles.SlotFailed) {
 		t.Fatalf("slot %s", st)
 	}
-	doHTTP(t, "POST", srv.URL+"/api/v1/downloads/"+itoa(dlID)+"/mark-failed", "", 409)
-	doHTTP(t, "POST", srv.URL+"/api/v1/downloads/999/mark-failed", "", 404)
+	do(t, "POST", srv.URL+"/api/v1/downloads/"+itoa(dlID)+"/mark-failed", "", 409)
+	do(t, "POST", srv.URL+"/api/v1/downloads/999/mark-failed", "", 404)
 }

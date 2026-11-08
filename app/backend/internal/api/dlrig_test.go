@@ -53,3 +53,12 @@ func fakeSAB(t *testing.T, key string) *httptest.Server {
 	t.Cleanup(srv.Close)
 	return srv
 }
+
+func count(t *testing.T, st *database.Store, q string, args ...any) int {
+	t.Helper()
+	var n int
+	if err := st.Read().QueryRow(q, args...).Scan(&n); err != nil {
+		t.Fatal(err)
+	}
+	return n
+}
