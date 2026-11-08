@@ -4,9 +4,7 @@ import (
 	"errors"
 	"log"
 	"net/http"
-	"strconv"
 	"strings"
-	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/shows"
@@ -22,8 +20,7 @@ import (
 func (a *API) showRoutes(m *http.ServeMux) {
 	m.HandleFunc("GET /api/v1/shows/lookup", a.lookupShows)
 	m.HandleFunc("POST /api/v1/shows", a.addShow)
-	m.HandleFunc("GET /api/v1/titles/{id}/episodes", a.listEpisodes)
-	m.HandleFunc("PUT /api/v1/episodes/{id}", a.setEpisode)
+	(&shows.EpisodeHandlers{Store: a.s.Store, Lib: a.s.Library, TitleID: a.titleID, Fail: showError, StateLabels: StateLabels, Trim: trimEpisodeSlots}).Routes(m)
 	(&shows.SeasonHandlers{Store: a.s.Store, Lib: a.s.Library, TitleID: a.titleID, Fail: showError}).Routes(m)
 }
 
@@ -186,159 +183,8 @@ func (a *API) addShow(w http.ResponseWriter, r *http.Request) {
 	webserver.WriteJSON(w, http.StatusCreated, map[string]any{"title": v, "job_id": jobID})
 }
 
-// showID reads a show Title from the path.
-func (a *API) showID(w http.ResponseWriter, r *http.Request) (mediafiles.Title, bool) {
-	return shows.ShowID(a.titleID, w, r)
-}
-
-// EpisodeSlot is one episode in one Version.
-type EpisodeSlot struct {
-	ID         int64  `json:"id"`
-	Version    string `json:"version"`
-	VersionID  int64  `json:"version_id"`
-	State      string `json:"state"`
-	StateLabel string `json:"state_label"`
-	Reason     string `json:"reason,omitempty"`
-	FileID     *int64 `json:"file_id,omitempty"`
-	// File is the episode's file (path, size, quality, media info), asked for with files=1.
-	File *mediafiles.File `json:"file,omitempty"`
-}
-
-// EpisodeView is one episode with its Slots.
-type EpisodeView struct {
-	ID       int64      `json:"id"`
-	Season   int        `json:"season"`
-	Episode  int        `json:"episode"`
-	Absolute *int       `json:"absolute,omitempty"`
-	Name     string     `json:"name,omitempty"`
-	AirDate  *time.Time `json:"air_date,omitempty"`
-	AirDay   string     `json:"air_day,omitempty"`
-	Runtime  *int       `json:"runtime,omitempty"`
-	// RuntimeMinutes repeats Runtime under the name title views use.
-	RuntimeMinutes *int              `json:"runtime_minutes,omitempty"`
-	Still          string            `json:"still,omitempty"` // still picture URL (w780)
-	KeepUpToDate   bool              `json:"keep_up_to_date"`
-	Dropped        bool              `json:"dropped,omitempty"`
-	IDs            map[string]string `json:"ids"`
-	Slots          []EpisodeSlot     `json:"slots"`
-}
-
-func episodeView(it mediafiles.Item) EpisodeView {
-	v := EpisodeView{ID: it.ID, Absolute: it.Numbers.Absolute, AirDate: it.AirDate, Runtime: it.Runtime, RuntimeMinutes: it.Runtime, Still: it.Still, KeepUpToDate: it.KeepUpToDate,
-		Dropped: it.DroppedAt != nil, IDs: it.SourceIDs, Slots: []EpisodeSlot{}}
-	if it.Numbers.Season != nil {
-		v.Season = *it.Numbers.Season
-	}
-	if it.Numbers.Episode != nil {
-		v.Episode = *it.Numbers.Episode
-	}
-	if it.Name != nil {
-		v.Name = *it.Name
-	}
-	if it.AirDay != nil {
-		v.AirDay = *it.AirDay
-	}
-	if v.IDs == nil {
-		v.IDs = map[string]string{}
-	}
-	return v
-}
-
-// listEpisodes lists a show's episodes in aired order, one season with
-// ?season=<number>.
-func (a *API) listEpisodes(w http.ResponseWriter, r *http.Request) {
-	t, ok := a.showID(w, r)
-	if !ok {
-		return
-	}
-	db := a.s.Store.Read()
-	where, args := "title_id = ? AND kind = 'episode'", []any{t.ID}
-	if sv := r.URL.Query().Get("season"); sv != "" {
-		n, err := strconv.Atoi(sv)
-		if err != nil || n < 0 {
-			webserver.Fail(w, http.StatusBadRequest, "season must be a number")
-			return
-		}
-		where += " AND json_extract(numbers, '$.season') = ?"
-		args = append(args, n)
-	}
-	its, err := database.Select[mediafiles.Item](r.Context(), db, "items", where+" ORDER BY json_extract(numbers, '$.season'), json_extract(numbers, '$.episode')", args...)
-	if err != nil {
-		webserver.Internal(w, "api", err)
-		return
-	}
-	vs, err := database.Select[mediafiles.Version](r.Context(), db, "versions", "title_id = ? ORDER BY is_main DESC, id", t.ID)
-	if err != nil {
-		webserver.Internal(w, "api", err)
-		return
-	}
-	label := map[int64]string{}
-	for _, v := range vs {
-		label[v.ID] = v.Label
-	}
-	slots, err := database.Select[mediafiles.Slot](r.Context(), db, "slots", "item_id IN (SELECT id FROM items WHERE title_id = ? AND kind = 'episode') ORDER BY id", t.ID)
-	if err != nil {
-		webserver.Internal(w, "api", err)
-		return
-	}
-	// files=1 adds each episode's file, for the episode details on the title page.
-	files := map[int64]*mediafiles.File{}
-	if r.URL.Query().Get("files") == "1" {
-		fs, err := database.Select[mediafiles.File](r.Context(), db, "files", `id IN (SELECT file_id FROM slots WHERE file_id IS NOT NULL AND item_id IN (SELECT id FROM items WHERE title_id = ? AND kind = 'episode'))`, t.ID)
-		if err != nil {
-			webserver.Internal(w, "api", err)
-			return
-		}
-		for i := range fs {
-			files[fs[i].ID] = &fs[i]
-		}
-	}
-	byItem := map[int64][]EpisodeSlot{}
-	for _, s := range slots {
-		es := EpisodeSlot{ID: s.ID, Version: label[s.VersionID], VersionID: s.VersionID, State: string(s.State), StateLabel: StateLabels[s.State], FileID: s.FileID}
-		if s.FileID != nil {
-			es.File = files[*s.FileID]
-		}
-		if s.LastReason != nil {
-			es.Reason = *s.LastReason
-		}
-		byItem[s.ItemID] = append(byItem[s.ItemID], es)
-	}
-	trimEpisodeSlots(r.Context(), byItem)
-	out := make([]EpisodeView, 0, len(its))
-	for _, it := range its {
-		v := episodeView(it)
-		if sl := byItem[it.ID]; sl != nil {
-			v.Slots = sl
-		}
-		out = append(out, v)
-	}
-	webserver.WriteJSON(w, http.StatusOK, map[string]any{"episodes": out, "episode_order": t.EpisodeOrder})
-}
-
-func (a *API) setEpisode(w http.ResponseWriter, r *http.Request) {
-	id, ok := pathID(w, r)
-	if !ok {
-		return
-	}
-	var body struct {
-		KeepUpToDate *bool `json:"keep_up_to_date"`
-	}
-	if !decode(w, r, &body, shows.KeepHelp) {
-		return
-	}
-	if body.KeepUpToDate == nil {
-		webserver.Fail(w, http.StatusBadRequest, shows.KeepHelp)
-		return
-	}
-	it, err := shows.New(a.s.Library).SetEpisode(r.Context(), id, *body.KeepUpToDate, actor(r))
-	if errors.Is(err, database.ErrNotFound) {
-		webserver.Fail(w, http.StatusNotFound, "no such episode")
-		return
-	}
-	if err != nil {
-		showError(w, err)
-		return
-	}
-	webserver.WriteJSON(w, http.StatusOK, episodeView(it))
-}
+// EpisodeSlot and EpisodeView are the shows module's episode views.
+type (
+	EpisodeSlot = shows.EpisodeSlot
+	EpisodeView = shows.EpisodeView
+)

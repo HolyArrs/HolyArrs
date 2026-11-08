@@ -287,3 +287,24 @@ func ItemOfTitle(ctx context.Context, q database.Querier, itemID, titleID int64)
 	_ = q.QueryRowContext(ctx, "SELECT count(*) FROM items WHERE id = ? AND title_id = ?", itemID, titleID).Scan(&n)
 	return n == 1
 }
+
+// ShowEpisodes lists every episode of a show (dropped ones too) by season
+// and episode; season limits it to one season when not nil.
+func ShowEpisodes(ctx context.Context, q database.Lister, titleID int64, season *int) ([]Item, error) {
+	where, args := "title_id = ? AND kind = 'episode'", []any{titleID}
+	if season != nil {
+		where += " AND json_extract(numbers, '$.season') = ?"
+		args = append(args, *season)
+	}
+	return database.Select[Item](ctx, q, "items", where+" ORDER BY json_extract(numbers, '$.season'), json_extract(numbers, '$.episode')", args...)
+}
+
+// EpisodeSlotsOfTitle lists the Slots of a show's episodes, oldest first.
+func EpisodeSlotsOfTitle(ctx context.Context, q database.Lister, titleID int64) ([]Slot, error) {
+	return database.Select[Slot](ctx, q, "slots", "item_id IN (SELECT id FROM items WHERE title_id = ? AND kind = 'episode') ORDER BY id", titleID)
+}
+
+// EpisodeFilesOfTitle lists the files held by a show's episode Slots.
+func EpisodeFilesOfTitle(ctx context.Context, q database.Lister, titleID int64) ([]File, error) {
+	return database.Select[File](ctx, q, "files", `id IN (SELECT file_id FROM slots WHERE file_id IS NOT NULL AND item_id IN (SELECT id FROM items WHERE title_id = ? AND kind = 'episode'))`, titleID)
+}
