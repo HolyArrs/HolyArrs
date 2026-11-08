@@ -34,7 +34,7 @@ type AppHandlers struct {
 	// falls back to the database folder.
 	ConfigDir string
 	SavePath  string
-	// HealthView is the app's own health answer, put in the support bundle.
+	// HealthView is the app's own health answer, put in the support bundle (may be nil).
 	HealthView func(ctx context.Context) any
 }
 
