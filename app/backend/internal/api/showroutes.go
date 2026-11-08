@@ -22,12 +22,9 @@ import (
 func (a *API) showRoutes(m *http.ServeMux) {
 	m.HandleFunc("GET /api/v1/shows/lookup", a.lookupShows)
 	m.HandleFunc("POST /api/v1/shows", a.addShow)
-	m.HandleFunc("GET /api/v1/titles/{id}/seasons", a.listSeasons)
-	m.HandleFunc("PUT /api/v1/titles/{id}/seasons/{number}", a.setSeason)
 	m.HandleFunc("GET /api/v1/titles/{id}/episodes", a.listEpisodes)
 	m.HandleFunc("PUT /api/v1/episodes/{id}", a.setEpisode)
-	m.HandleFunc("GET /api/v1/settings/shows", a.getShowSettings)
-	m.HandleFunc("PUT /api/v1/settings/shows", a.putShowSettings)
+	(&shows.SeasonHandlers{Store: a.s.Store, Lib: a.s.Library, TitleID: a.titleID, Fail: showError}).Routes(m)
 }
 
 // showError answers show refusals with a status and a reason; anything
@@ -191,65 +188,7 @@ func (a *API) addShow(w http.ResponseWriter, r *http.Request) {
 
 // showID reads a show Title from the path.
 func (a *API) showID(w http.ResponseWriter, r *http.Request) (mediafiles.Title, bool) {
-	t, ok := a.titleID(w, r)
-	if ok && t.Kind != "show" {
-		webserver.Fail(w, http.StatusNotFound, "that Title is not a show")
-		return t, false
-	}
-	return t, ok
-}
-
-func (a *API) listSeasons(w http.ResponseWriter, r *http.Request) {
-	t, ok := a.showID(w, r)
-	if !ok {
-		return
-	}
-	ss, err := shows.Seasons(r.Context(), a.s.Store.Read(), t.ID, time.Now())
-	if err != nil {
-		webserver.Internal(w, "api", err)
-		return
-	}
-	webserver.WriteJSON(w, http.StatusOK, map[string]any{"seasons": ss})
-}
-
-const keepHelp = `send {"keep_up_to_date": true or false}`
-
-func (a *API) setSeason(w http.ResponseWriter, r *http.Request) {
-	t, ok := a.showID(w, r)
-	if !ok {
-		return
-	}
-	n, err := strconv.Atoi(r.PathValue("number"))
-	if err != nil || n < 0 {
-		webserver.Fail(w, http.StatusNotFound, "no such season")
-		return
-	}
-	var body struct {
-		KeepUpToDate *bool `json:"keep_up_to_date"`
-	}
-	if !decode(w, r, &body, keepHelp) {
-		return
-	}
-	if body.KeepUpToDate == nil {
-		webserver.Fail(w, http.StatusBadRequest, keepHelp)
-		return
-	}
-	if err := shows.New(a.s.Library).SetSeason(r.Context(), t.ID, n, *body.KeepUpToDate, actor(r)); err != nil {
-		showError(w, err)
-		return
-	}
-	ss, err := shows.Seasons(r.Context(), a.s.Store.Read(), t.ID, time.Now())
-	if err != nil {
-		webserver.Internal(w, "api", err)
-		return
-	}
-	for _, s := range ss {
-		if s.Number == n {
-			webserver.WriteJSON(w, http.StatusOK, s)
-			return
-		}
-	}
-	webserver.Fail(w, http.StatusNotFound, "no such season")
+	return shows.ShowID(a.titleID, w, r)
 }
 
 // EpisodeSlot is one episode in one Version.
@@ -385,11 +324,11 @@ func (a *API) setEpisode(w http.ResponseWriter, r *http.Request) {
 	var body struct {
 		KeepUpToDate *bool `json:"keep_up_to_date"`
 	}
-	if !decode(w, r, &body, keepHelp) {
+	if !decode(w, r, &body, shows.KeepHelp) {
 		return
 	}
 	if body.KeepUpToDate == nil {
-		webserver.Fail(w, http.StatusBadRequest, keepHelp)
+		webserver.Fail(w, http.StatusBadRequest, shows.KeepHelp)
 		return
 	}
 	it, err := shows.New(a.s.Library).SetEpisode(r.Context(), id, *body.KeepUpToDate, actor(r))
@@ -402,29 +341,4 @@ func (a *API) setEpisode(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	webserver.WriteJSON(w, http.StatusOK, episodeView(it))
-}
-
-func (a *API) getShowSettings(w http.ResponseWriter, r *http.Request) {
-	d, err := library.ReadShowDefaults(r.Context(), a.s.Store.Read())
-	if err != nil {
-		webserver.Internal(w, "api", err)
-		return
-	}
-	webserver.WriteJSON(w, http.StatusOK, d)
-}
-
-func (a *API) putShowSettings(w http.ResponseWriter, r *http.Request) {
-	d, err := library.ReadShowDefaults(r.Context(), a.s.Store.Read())
-	if err != nil {
-		webserver.Internal(w, "api", err)
-		return
-	}
-	if !decode(w, r, &d, "send any of season_choice, new_seasons, episode_order, details_source, keep_specials, episode_wait_minutes") {
-		return
-	}
-	if err := shows.SetShowDefaults(r.Context(), a.s.Store, d, actor(r)); err != nil {
-		showError(w, err)
-		return
-	}
-	webserver.WriteJSON(w, http.StatusOK, d)
 }
