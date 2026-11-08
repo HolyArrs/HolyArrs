@@ -1,4 +1,4 @@
-package api
+package downloads
 
 import (
 	"context"
@@ -13,7 +13,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 )
 
 // Only people who may change settings flip "HolyArrs can change this
@@ -29,7 +28,7 @@ func TestWritableNeedsSettingsPermission(t *testing.T) {
 // The switch is saved, shown in the API, and read live: off refuses a
 // pause before the client, on lets it through; the environment list locks it.
 func TestWritableSwitchLive(t *testing.T) {
-	t.Setenv(downloads.ReadOnlyEnv, "")
+	t.Setenv(ReadOnlyEnv, "")
 	x := seed41(t, mediafiles.SlotDownloading, "downloading")
 	f := &allClient{}
 	exec41(t, x.s, "UPDATE downloaders SET url = ?, allow_local_network = 1", f.server(t).URL)
@@ -37,7 +36,7 @@ func TestWritableSwitchLive(t *testing.T) {
 	_ = x.s.Read().QueryRow("SELECT id FROM downloaders").Scan(&did)
 	pause := x.srv.URL + "/api/v1/downloaders/" + itoa(did) + "/items/" + outHash + "/pause"
 	exec41(t, x.s, "UPDATE downloaders SET writable = 0")
-	x.api.dl.Manager().Forget(did)
+	x.dl.Manager().Forget(did)
 	do(t, "POST", pause, "", http.StatusConflict)
 	// The Downloads screen learns the row's Downloader is locked, so it offers no client controls.
 	if body := string(do(t, "GET", x.srv.URL+"/api/v1/downloads/view?limit=100", "", http.StatusOK)); !strings.Contains(body, `"client_locked":true`) {
@@ -46,17 +45,17 @@ func TestWritableSwitchLive(t *testing.T) {
 	if strings.Contains(f.saw(), "torrents/stop") || strings.Contains(f.saw(), "torrents/pause") {
 		t.Fatalf("a read-only pause reached the client: %s", f.saw())
 	}
-	var v downloads.DownloaderView
+	var v DownloaderView
 	_ = json.Unmarshal(do(t, "PUT", x.srv.URL+"/api/v1/downloaders/"+itoa(did), `{"name":"Q","writable":true}`, http.StatusOK), &v)
 	if !v.Writable || v.WritableLocked {
 		t.Fatalf("view %+v", v)
 	}
 	do(t, "POST", pause, "", http.StatusOK)
-	t.Setenv(downloads.ReadOnlyEnv, itoa(did))
-	x.api.dl.Manager().Forget(did)
+	t.Setenv(ReadOnlyEnv, itoa(did))
+	x.dl.Manager().Forget(did)
 	do(t, "POST", pause, "", http.StatusConflict)
 	var list struct {
-		Downloaders []downloads.DownloaderView `json:"downloaders"`
+		Downloaders []DownloaderView `json:"downloaders"`
 	}
 	_ = json.Unmarshal(do(t, "GET", x.srv.URL+"/api/v1/downloaders", "", http.StatusOK), &list)
 	if len(list.Downloaders) != 1 || !list.Downloaders[0].Writable || !list.Downloaders[0].WritableLocked {
@@ -66,7 +65,7 @@ func TestWritableSwitchLive(t *testing.T) {
 
 // Every change sent straight to a client is in History: who and what.
 func TestClientItemChangeEvents(t *testing.T) {
-	t.Setenv(downloads.ReadOnlyEnv, "")
+	t.Setenv(ReadOnlyEnv, "")
 	x := seed41(t, mediafiles.SlotDownloading, "downloading")
 	f := &allClient{}
 	exec41(t, x.s, "UPDATE downloaders SET url = ?, allow_local_network = 1, writable = 1", f.server(t).URL)

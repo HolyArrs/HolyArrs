@@ -1,4 +1,4 @@
-package api
+package downloads
 
 import (
 	"context"
@@ -7,7 +7,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
@@ -61,7 +60,7 @@ func TestDownloadsViewShowsEpisodes(t *testing.T) {
 	t.Parallel()
 	x, ids := seedPack(t)
 	var out struct {
-		Downloads []downloads.DownloadRow `json:"downloads"`
+		Downloads []DownloadRow `json:"downloads"`
 	}
 	_ = json.Unmarshal(do(t, "GET", x.srv.URL+"/api/v1/downloads/view", "", 200), &out)
 	if len(out.Downloads) != 1 {
@@ -94,7 +93,7 @@ func TestNeedsDecisionEpisodesAndPacks(t *testing.T) {
 	t.Parallel()
 	x, ids := seedPack(t)
 	var out struct {
-		Items []downloads.DecisionView `json:"items"`
+		Items []DecisionView `json:"items"`
 	}
 	_ = json.Unmarshal(do(t, "GET", x.srv.URL+"/api/v1/needs-decision", "", 200), &out)
 	if len(out.Items) != 2 {

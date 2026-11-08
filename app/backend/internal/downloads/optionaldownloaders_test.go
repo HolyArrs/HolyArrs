@@ -1,11 +1,9 @@
-package api
+package downloads
 
 import (
 	"encoding/json"
 	"strings"
 	"testing"
-
-	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 )
 
 func TestOptionalDownloaderSecretsRoundTrip(t *testing.T) {
@@ -16,7 +14,7 @@ func TestOptionalDownloaderSecretsRoundTrip(t *testing.T) {
 			secret := "optional-downloader-test-password"
 			in := map[string]any{"name": kind, "kind": kind, "url": "http://downloader:9091", "username": "task-user", "secret": secret}
 			b := do(t, "POST", srv.URL+"/api/v1/downloaders", body(in), 201)
-			var d downloads.DownloaderView
+			var d DownloaderView
 			if err := json.Unmarshal(b, &d); err != nil {
 				t.Fatal(err)
 			}

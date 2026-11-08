@@ -1,4 +1,4 @@
-package api
+package downloads
 
 import (
 	"encoding/json"
@@ -8,26 +8,25 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 )
 
-// fakeClient is a qBittorrent that records every action it is sent.
-type fakeClient struct {
+// recordingQB is a qBittorrent that records every action it is sent.
+type recordingQB struct {
 	mu    sync.Mutex
 	calls []string
 }
 
-func (f *fakeClient) saw() string {
+func (f *recordingQB) saw() string {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	return strings.Join(f.calls, " ")
 }
 
-func controlSeed(t *testing.T) (*dl41, *fakeClient) {
+func controlSeed(t *testing.T) (*dl41, *recordingQB) {
 	t.Helper()
 	x := seed41(t, mediafiles.SlotDownloading, "downloading")
-	f := &fakeClient{}
+	f := &recordingQB{}
 	qb := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_ = r.ParseForm()
 		path := strings.TrimPrefix(r.URL.Path, "/api/v2/")
@@ -98,7 +97,7 @@ func TestDownloadClientsAndAll(t *testing.T) {
 	t.Parallel()
 	x, f := controlSeed(t)
 	var out struct {
-		Clients []downloads.ClientView `json:"clients"`
+		Clients []ClientView `json:"clients"`
 	}
 	_ = json.Unmarshal(do(t, "GET", x.srv.URL+"/api/v1/downloads/clients", "", 200), &out)
 	if len(out.Clients) != 1 || !out.Clients[0].Controls || !out.Clients[0].Torrent || out.Clients[0].Status == nil ||
@@ -126,7 +125,7 @@ func TestDownloadDetailAndFiles(t *testing.T) {
 	t.Parallel()
 	x, f := controlSeed(t)
 	base := x.srv.URL + "/api/v1/downloads/" + itoa(x.dlID)
-	var d downloads.DownloadDetailView
+	var d DownloadDetailView
 	_ = json.Unmarshal(do(t, "GET", base+"/detail", "", 200), &d)
 	if d.Torrent == nil || d.Torrent.Downloaded != 500 || d.Torrent.SeedsTotal != 5 || d.Torrent.SavePath != "/downloads" || d.Downloader == "" || d.Log == nil {
 		t.Fatalf("detail %+v", d)
@@ -146,7 +145,7 @@ func TestDownloadDetailAndFiles(t *testing.T) {
 	}
 	do(t, "GET", x.srv.URL+"/api/v1/downloads/999/detail", "", 404)
 	exec41(t, x.s, "UPDATE downloads SET state = 'cleaned'")
-	d = downloads.DownloadDetailView{}
+	d = DownloadDetailView{}
 	_ = json.Unmarshal(do(t, "GET", base+"/detail", "", 200), &d)
 	if d.Torrent != nil {
 		t.Fatalf("a finished download asks the client: %+v", d)
