@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
@@ -17,7 +18,7 @@ func TestTitlesOwned(t *testing.T) {
 	srv, _, _ := setup(t)
 	do(t, "POST", srv.URL+"/api/v1/titles", `{"id":"tmdb:693134"}`, 201)
 	var got struct {
-		Items []OwnedItem `json:"items"`
+		Items []mediafiles.OwnedItem `json:"items"`
 	}
 	if err := json.Unmarshal(do(t, "GET", srv.URL+"/api/v1/titles/owned", "", 200), &got); err != nil {
 		t.Fatal(err)
@@ -87,9 +88,11 @@ func TestTitlesOwnedAsksArePerPerson(t *testing.T) {
 		req := httptest.NewRequest("GET", "/api/v1/titles/owned", nil)
 		req = req.WithContext(webserver.ContextWith(req.Context(), who))
 		rec := httptest.NewRecorder()
-		r.api.titlesOwned(rec, req)
+		m := http.NewServeMux()
+		r.api.ownedHandlers().Routes(m)
+		m.ServeHTTP(rec, req)
 		var got struct {
-			Items []OwnedItem `json:"items"`
+			Items []mediafiles.OwnedItem `json:"items"`
 		}
 		_ = json.Unmarshal(rec.Body.Bytes(), &got)
 		for _, it := range got.Items {

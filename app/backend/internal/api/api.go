@@ -353,7 +353,7 @@ func (a *API) Routes(rt *webserver.Router) {
 	if a.s.Store != nil { // some tests build the API without a store
 		(&downloads.TagHandlers{DB: a.s.Store.Read()}).Routes(m)
 	}
-	m.HandleFunc("GET /api/v1/titles/owned", a.titlesOwned)
+	a.ownedHandlers().Routes(m)
 	m.HandleFunc("GET /api/v1/library/search", a.librarySearch)
 	m.HandleFunc("GET /api/v1/search/suggest", a.searchSuggest)
 	m.HandleFunc("GET /api/v1/search", a.plainSearch)
