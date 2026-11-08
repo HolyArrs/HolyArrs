@@ -17,7 +17,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/features"
@@ -91,41 +90,6 @@ func (a *API) kindsOn(kind string) []string {
 	return out
 }
 
-// discoverFail answers a provider error: 501 not set up, 503 rate limited,
-// 404 unknown, 502 anything else.
-func discoverFail(w http.ResponseWriter, err error) {
-	switch {
-	case errors.Is(err, metadata.ErrNoAccess):
-		webserver.Fail(w, http.StatusNotImplemented, "Explore is not available here")
-	case errors.Is(err, metadata.ErrRateLimited):
-		w.Header().Set("Retry-After", "60")
-		webserver.Fail(w, http.StatusServiceUnavailable, "The movie and show details are busy; try again in a minute")
-	case errors.Is(err, metadata.ErrNotFound):
-		webserver.Fail(w, http.StatusNotFound, "That title could not be found")
-	case detailsBusy(err):
-		// Held back, retrying or not answering for now: the page asks again
-		// on its own after Retry-After.
-		w.Header().Set("Retry-After", "5")
-		webserver.Fail(w, http.StatusServiceUnavailable, "The movie and show details are busy; try again in a moment")
-	default:
-		webserver.Fail(w, http.StatusBadGateway, "The movie and show details did not answer; try again shortly")
-	}
-}
-
-// detailsBusy is an error that passes on its own: the service is held,
-// its breaker is waiting, or it did not answer in time.
-func detailsBusy(err error) bool {
-	return errors.Is(err, outbound.ErrSuppressed) || errors.Is(err, metadata.ErrServiceUnavailable) ||
-		errors.Is(err, metadata.ErrServiceBusy) || errors.Is(err, metadata.ErrRateLimited) ||
-		errors.Is(err, context.DeadlineExceeded)
-}
-
-// staleOK says whether a kept copy may answer err: anything but a refusal
-// or an unknown title.
-func staleOK(err error) bool {
-	return !errors.Is(err, metadata.ErrNotFound) && !errors.Is(err, metadata.ErrNoAccess)
-}
-
 // cachedRow reads one row of one kind, from the cache while fresh. A
 // rate-limited TMDB is answered from a stale copy when there is one.
 func (a *API) cachedRow(ctx context.Context, d metadata.Discoverer, row, kind, ref, genre string) ([]metadata.DiscoverItem, error) {
@@ -136,7 +100,7 @@ func (a *API) cachedRow(ctx context.Context, d metadata.Discoverer, row, kind, r
 	}
 	items, err := d.Discover(ctx, row, kind, ref, genre)
 	if err != nil {
-		if ok && staleOK(err) {
+		if ok && discover.StaleOK(err) {
 			return e.Items, nil
 		}
 		return nil, err
@@ -280,7 +244,7 @@ func (a *API) discoverRow(w http.ResponseWriter, r *http.Request) {
 	for _, k := range kinds {
 		items, err := a.cachedRow(r.Context(), d, row, k, ref, genre)
 		if err != nil {
-			discoverFail(w, err)
+			discover.Fail(w, err)
 			return
 		}
 		lists = append(lists, items)
@@ -366,8 +330,8 @@ func (a *API) metadataDetails(w http.ResponseWriter, r *http.Request) {
 			e = discoverEntry{At: time.Now(), Details: &det}
 			a.discover.Put(key, e)
 			keepOnDisk(r.Context(), a, key, det)
-		case !(cached && staleOK(err)):
-			discoverFail(w, err)
+		case !(cached && discover.StaleOK(err)):
+			discover.Fail(w, err)
 			return
 		}
 	}
@@ -503,7 +467,7 @@ func (a *API) metadataMoreFrom(w http.ResponseWriter, r *http.Request) {
 		if !dcached || time.Since(de.At) >= discover.TTL["details"] {
 			det, err := d.Details(r.Context(), kind, id)
 			if err != nil {
-				discoverFail(w, err)
+				discover.Fail(w, err)
 				return
 			}
 			de = discoverEntry{At: time.Now(), Details: &det}
@@ -534,7 +498,7 @@ func (a *API) metadataMoreFrom(w http.ResponseWriter, r *http.Request) {
 			case cached && errors.Is(err, metadata.ErrRateLimited):
 				e, _ = a.discover.Get(key)
 			default:
-				discoverFail(w, err)
+				discover.Fail(w, err)
 				return
 			}
 		}
@@ -607,7 +571,7 @@ func (a *API) metadataSeason(w http.ResponseWriter, r *http.Request) {
 			if !cached || time.Since(e.At) >= discover.TTL["details"] {
 				det, err := d.Details(r.Context(), "show", id)
 				if err != nil {
-					discoverFail(w, err)
+					discover.Fail(w, err)
 					return
 				}
 				e = discoverEntry{At: time.Now(), Details: &det}
@@ -629,7 +593,7 @@ func (a *API) metadataSeason(w http.ResponseWriter, r *http.Request) {
 			e = discoverEntry{At: time.Now(), Episodes: eps}
 			a.discover.Put(key, e)
 		case !(cached && errors.Is(err, metadata.ErrRateLimited)):
-			discoverFail(w, err)
+			discover.Fail(w, err)
 			return
 		}
 	}
@@ -667,7 +631,7 @@ func (a *API) watchServices(w http.ResponseWriter, r *http.Request) {
 	for _, k := range []string{"movie", "show"} {
 		list, err := l.WatchServices(r.Context(), k, region)
 		if err != nil {
-			discoverFail(w, err)
+			discover.Fail(w, err)
 			return
 		}
 		for _, s := range list {
@@ -702,7 +666,7 @@ func (a *API) reviewHandlers() *metadata.ReviewHandlers {
 		Details:       a.cachedDetails,
 		Cache:         (*reviewCache)(a),
 		Caching:       func(w http.ResponseWriter, r *http.Request) { a.exploreCaching(w, r, "") },
-		Fail:          discoverFail,
+		Fail:          discover.Fail,
 		Actor:         actor,
 	}
 }

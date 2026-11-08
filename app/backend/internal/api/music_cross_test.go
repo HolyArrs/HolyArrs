@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/discover"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
@@ -21,7 +22,7 @@ const trendGroup = "21159e3f-172e-43f6-aa7d-8e06a81fea49"
 func TestDiscoverFailBusy(t *testing.T) {
 	for _, err := range []error{outbound.ErrSuppressed, metadata.ErrServiceUnavailable, metadata.ErrRateLimited, context.DeadlineExceeded} {
 		w := httptest.NewRecorder()
-		discoverFail(w, err)
+		discover.Fail(w, err)
 		if w.Code != http.StatusServiceUnavailable || w.Header().Get("Retry-After") == "" {
 			t.Fatalf("%v: %d %q", err, w.Code, w.Header().Get("Retry-After"))
 		}
@@ -31,7 +32,7 @@ func TestDiscoverFailBusy(t *testing.T) {
 			t.Fatalf("people %v: %d", err, w.Code)
 		}
 	}
-	if !staleOK(metadata.ErrServiceUnavailable) || staleOK(metadata.ErrNotFound) || staleOK(errors.Join(metadata.ErrNoAccess)) {
+	if !discover.StaleOK(metadata.ErrServiceUnavailable) || discover.StaleOK(metadata.ErrNotFound) || discover.StaleOK(errors.Join(metadata.ErrNoAccess)) {
 		t.Fatal("staleOK")
 	}
 }

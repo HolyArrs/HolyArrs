@@ -14,6 +14,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/discover"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
@@ -34,7 +35,7 @@ func peopleError(w http.ResponseWriter, err error) {
 		webserver.Fail(w, http.StatusNotFound, "no such person")
 	case errors.Is(err, metadata.ErrNoAccess):
 		webserver.Fail(w, http.StatusServiceUnavailable, "people results are unavailable; try again shortly")
-	case detailsBusy(err):
+	case discover.DetailsBusy(err):
 		w.Header().Set("Retry-After", "5")
 		webserver.Fail(w, http.StatusServiceUnavailable, "people results are busy; try again in a moment")
 	default:
