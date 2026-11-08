@@ -27,7 +27,7 @@ func (f *recordingTMDB) count(part string) int {
 func TestExploreSourceSharesAndStoresLists(t *testing.T) {
 	t.Parallel()
 	a, s, f := exploreRig(t)
-	a.explore.paced = &engine.Paced{Source: listerSource{f.provider()}, Gap: 30 * time.Millisecond}
+	a.explore.paced = &engine.Paced{Source: listerSource{L: f.provider()}, Gap: 30 * time.Millisecond}
 	q := engine.Request{List: "trending", Kind: "movie", Scope: engine.ScopeShared}
 	var wg sync.WaitGroup
 	calls := &engine.Calls{}
@@ -63,7 +63,7 @@ func TestExploreSourceSharesAndStoresLists(t *testing.T) {
 func TestExploreBuildsInParallel(t *testing.T) {
 	t.Parallel()
 	a, _, f := exploreRig(t)
-	a.explore.paced = &engine.Paced{Source: listerSource{f.provider()}, Gap: 5 * time.Millisecond}
+	a.explore.paced = &engine.Paced{Source: listerSource{L: f.provider()}, Gap: 5 * time.Millisecond}
 	now := time.Now()
 	for _, m := range []int64{1, 2, 3} {
 		a.queuePool(poolKey{m, "all"}, now, false)

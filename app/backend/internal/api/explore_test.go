@@ -71,7 +71,7 @@ func exploreRig(t *testing.T) (*API, *database.Store, *recordingTMDB) {
 	f := newRecordingTMDB(t)
 	_, s := discoverRig(t, f.provider())
 	a := New(Server{Store: s, Metadata: f.provider(), Version: "test"})
-	a.explore.paced = &engine.Paced{Source: listerSource{f.provider()}, Gap: time.Millisecond}
+	a.explore.paced = &engine.Paced{Source: listerSource{L: f.provider()}, Gap: time.Millisecond}
 	err := s.Write(context.Background(), func(tx *sql.Tx) error {
 		_, err := tx.Exec(`INSERT INTO users(id, created_at, created_by, updated_at, updated_by, name, role, password_hash, max_rating) VALUES
 			(2, 't', '{}', 't', '{}', 'zelda-member', 'member', 'x', ''), (3, 't', '{}', 't', '{}', 'kiddo', 'member', 'x', 'PG')`)
