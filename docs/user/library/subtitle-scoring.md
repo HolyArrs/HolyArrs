@@ -95,7 +95,7 @@ The account sites have only been tested against stand-in servers. Run **Test** b
 
 ## For scripts
 
-Every subtitle route is in `http://your-server:6262/api/v1/openapi.json`, under the Subtitles tag. Searches answer with the ids of their Jobs, so a script can follow them. See [API routes](../reference/api-routes.md).
+Every subtitle route is in `http://your-server:6262/api/v1/openapi.json`, under the Subtitles tag. Searches answer with the ids of their Jobs, so a script can follow them. See [API routes](../../reference/api-routes.md).
 
 ## Related
 

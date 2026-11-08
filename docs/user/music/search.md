@@ -7,11 +7,11 @@ sidebar: { order: 1 }
 
 HolyArrs finds each album of your artists as one Release and sends it to your Downloader as one download.
 
-Only the owner and admins see music search. Movies and shows work the same way, see [Search for movies](../movies/search.md) and [Search for shows](../shows/search.md).
+Only the owner and admins see music search. Movies and shows work the same way, see [Search for movies](../movies/search-movies.md) and [Search for shows](../shows/search-shows.md).
 
 ## Before you start
 
-- A Downloader and a Source are connected, see [Connect a downloader and a source](../start/connect.md).
+- A Downloader and a Source are connected, see [Connect a downloader and a source](../../start/connect.md).
 - The artist, album, track and Version all have **Keep up to date** on. An album with any of these off is never searched.
 
 ## Search an album by hand
@@ -67,7 +67,7 @@ Open **Settings > Search** and find the music part.
 **Fix:** open the album, press **Choose a release** and read the reasons beside it.
 
 **Symptom:** a Release posted before the album came out is turned away.
-**Cause:** early and far too small Releases are turned away on purpose, see [Early and fake Releases](../movies/search.md#fake-and-early-releases).
+**Cause:** early and far too small Releases are turned away on purpose, see [Early and fake Releases](../movies/search-movies.md#fake-and-early-releases).
 
 **Symptom:** a discography Release is turned away.
 **Fix:** turn on **Take whole discographies**.

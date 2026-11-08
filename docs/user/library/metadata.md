@@ -88,4 +88,4 @@ Keys from other apps can come in through [Import secrets](../getting-started/imp
 ## Related
 
 - [Data packs](data-packs.md)
-- [Trailers](../metadata/trailers.md)
+- [Trailers](../../library/trailers.md)

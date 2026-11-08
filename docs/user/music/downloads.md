@@ -7,7 +7,7 @@ sidebar: { order: 2 }
 
 A finished album download lands in your Library as named tracks, one folder per album.
 
-Only the owner and admins see this. Shows work much the same way, see [Downloads for shows](../shows/downloads.md).
+Only the owner and admins see this. Shows work much the same way, see [Downloads for shows](../shows/downloads-shows.md).
 
 ## How an album comes in
 
@@ -26,7 +26,7 @@ Lab Band/Second Tide (2023)/2-01 - Night Train.flac
 A multi-disc album keeps every track in one album folder, each name starting with its disc. To change names, see [Organise music](organise.md#change-how-tracks-are-named).
 
 :::tip
-Put downloads and the Library on the same disk. HolyArrs then hardlinks each file: no extra space, and your Downloader keeps sharing it. On another disk files are copied. See [Folders](../start/folders.md).
+Put downloads and the Library on the same disk. HolyArrs then hardlinks each file: no extra space, and your Downloader keeps sharing it. On another disk files are copied. See [Folders](../../start/folders.md).
 :::
 
 HolyArrs never moves or deletes the Downloader's files, and never writes over a file it did not put there.
@@ -75,7 +75,7 @@ Each track also has its own buttons. **Add to Turned down** on a track covers th
 
 **Symptom:** files were copied instead of hardlinked.
 **Cause:** downloads and the Library are on different disks.
-**Fix:** put them on the same disk, see [Folders](../start/folders.md).
+**Fix:** put them on the same disk, see [Folders](../../start/folders.md).
 
 ## For experts
 

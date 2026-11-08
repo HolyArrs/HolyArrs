@@ -45,7 +45,7 @@ Stays behind: other subtitle sites and their accounts. Add them under **Settings
 Stays behind: app links, sync profiles, indexer proxies and notification kinds HolyArrs does not have.
 
 :::tip
-To keep Prowlarr running and let it push Sources into HolyArrs instead, see [Old-app API](../reference/old-app-api.md).
+To keep Prowlarr running and let it push Sources into HolyArrs instead, see [Old-app API](../../reference/old-app-api.md).
 :::
 
 ## qBittorrent and SABnzbd

@@ -65,7 +65,7 @@ Then tell HolyArrs about it:
 - Add the new name to `HOLYARRS_ALLOWED_HOSTS`.
 - Add the proxy's address to `HOLYARRS_TRUSTED_PROXIES`, and make sure it sends `X-Forwarded-Proto: https`. Without this, HolyArrs hands out `http` sign-in addresses and apps refuse them.
 
-Cloud apps must reach HolyArrs with no login screen in front. A public address also puts your sign-in page on the internet, so use a strong password and [two-factor sign-in](../accounts/users-and-roles.md#set-up-two-factor-sign-in).
+Cloud apps must reach HolyArrs with no login screen in front. A public address also puts your sign-in page on the internet, so use a strong password and [two-factor sign-in](../../users/roles.md#set-up-two-factor-sign-in).
 
 ## Pick your app
 

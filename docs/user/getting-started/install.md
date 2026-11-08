@@ -190,7 +190,7 @@ volume there is no folder to open: copy it in with
 `docker cp holyarrs.key hx:/config/` as in
 [Docker Desktop](#docker-desktop-windows-and-mac). Moving to a new machine? Put
 the key back first, then restore the backup. See
-[Backups](../backups/backups.md).
+[Backups](../../run/backups.md).
 
 You can also keep the key in its own read-only file:
 
@@ -217,8 +217,8 @@ docker build --file deploy/Dockerfile --tag holyarrs:local .
 docker compose up -d --force-recreate
 ```
 
-Never remove `/config` during an update. See [Updates](../updates/updates.md)
-and [Backups](../backups/backups.md).
+Never remove `/config` during an update. See [Updates](../../run/updates.md)
+and [Backups](../../run/backups.md).
 
 ### Host names and reverse proxies
 

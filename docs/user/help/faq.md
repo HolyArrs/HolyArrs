@@ -26,7 +26,7 @@ In the `/config` folder. Keep it on a local disk. HolyArrs refuses to run its da
 
 ## I lost the master key. Can I get my passwords back?
 
-No. Passwords, keys and tokens are locked with that key, and backups don't hold it. Keep a copy of `holyarrs.key` somewhere safe. See [Backups](../backups/backups.md).
+No. Passwords, keys and tokens are locked with that key, and backups don't hold it. Keep a copy of `holyarrs.key` somewhere safe. See [Backups](../../run/backups.md).
 
 ## I forgot the owner password, or someone else made the owner account.
 

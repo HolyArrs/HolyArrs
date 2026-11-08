@@ -27,7 +27,7 @@ A movie page has a **Subtitles** card. A show page has one for the whole show, w
 - **Sync fix** works on subtitles HolyArrs saved. Shift every line earlier or later, by up to 10 minutes. Change the frame rate, for example from 25 to 23.976. Or do both. The old file goes to the holding folder. HolyArrs does not listen to the sound to line subtitles up.
 - **Turn down** works on subtitles HolyArrs saved. The file goes to the holding folder. HolyArrs never picks that subtitle again for this file, and looks for another.
 
-Everything that happens shows in the title's **History** under Subtitles. [Alerts](../alerts/alerts.md) can tell you about it too.
+Everything that happens shows in the title's **History** under Subtitles. [Alerts](../../users/alerts.md) can tell you about it too.
 
 ## The Missing subtitles list
 

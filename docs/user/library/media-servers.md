@@ -44,7 +44,7 @@ The token or key is stored encrypted and never shown. Leave the box empty to kee
 
 ## Check that it works
 
-The card shows the last check or last error. Every update also lands in [History](../downloads/history.md) as **Told the media server about it** or **Could not reach the media server** with the reason. The [Status](../health/health-checks.md) page lists each server: off, failed, not told yet, or working.
+The card shows the last check or last error. Every update also lands in [History](../downloads/history.md) as **Told the media server about it** or **Could not reach the media server** with the reason. The [Status](../../run/health.md) page lists each server: off, failed, not told yet, or working.
 
 ## If it does not work
 

@@ -67,7 +67,7 @@ On Windows PowerShell:
 3. Extract the new program into a different folder. Keep the old program and the old config copy.
 4. Start the new program on your config. Check sign-in, health and your settings.
 
-To roll back, you need the old program and its matching config from before the update. Never point an older program at databases a newer one has changed. Save the newer config first so you lose nothing. See [Backups](../backups/backups.md).
+To roll back, you need the old program and its matching config from before the update. Never point an older program at databases a newer one has changed. Save the newer config first so you lose nothing. See [Backups](../../run/backups.md).
 
 ## Troubleshooting
 

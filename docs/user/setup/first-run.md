@@ -36,7 +36,7 @@ If you brought your apps, HolyArrs only asks for a downloader or a source when t
 docker exec -i holyarrs /holyarrs reset-owner
 ```
 
-After that, everyone has to sign in again. See [Users and roles](../accounts/users-and-roles.md).
+After that, everyone has to sign in again. See [Users and roles](../../users/roles.md).
 
 **It says only the owner or an admin can finish setup.** You signed in as someone else. Sign in as the owner, or as an admin with Settings access.
 

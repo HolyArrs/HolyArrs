@@ -18,7 +18,7 @@ This follows the log live. Secrets are masked. Press Ctrl+C to stop following. T
 
 At start, HolyArrs checks its folders and writes one summary line, such as `folders: 4 ok, 1 not writable`. Then it writes one line per folder with a problem and a short fix. The check stops after 3 seconds so start-up never hangs. A folder that is too slow to answer is counted as not checked. This is often a disk waking from sleep or a slow network share. Run the doctor to check it without the time limit.
 
-See [Logs](../health/logs.md) for the log file and its settings.
+See [Logs](../../run/logs.md) for the log file and its settings.
 
 ## Run the doctor
 

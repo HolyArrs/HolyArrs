@@ -37,7 +37,7 @@ A movie page has a **Subtitles** card. A show page has one for the whole show. E
 | **Sync fix** | For subtitles HolyArrs saved. Shift every line by up to 10 minutes, change the frame rate (such as 25 to 23.976), or both. The old file goes to the holding folder. |
 | **Turn down** | For subtitles HolyArrs saved. The file goes to the holding folder, that subtitle is never picked again for this file, and HolyArrs looks for another. |
 
-Each subtitle you have shows its language, kind (normal, hearing-impaired or forced), where it came from (inside the video, beside it, a site, or chosen by hand), its score and its file name. Everything that happens shows in the title's **History** under Subtitles, and [Alerts](../users/alerts.md) can tell you too.
+Each subtitle you have shows its language, kind (normal, hearing-impaired or forced), where it came from (inside the video, beside it, a site, or chosen by hand), its score and its file name. Everything that happens shows in the title's **History** under Subtitles, and [Alerts](../../users/alerts.md) can tell you too.
 
 ## The Missing subtitles list
 

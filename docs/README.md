@@ -16,25 +16,25 @@ Writing code for HolyArrs? Go to [For developers](#for-developers).
 
 | Area | Guides |
 |---|---|
-| Requests | [Asking](user/requests/asking.md), [approving](user/requests/approving.md), [reports](user/requests/reports.md), [limits and Request rules](user/requests/settings.md) |
+| Requests | [Asking](requests/asking.md), [approving](requests/approving.md), [reports](requests/reports.md), [limits and Request rules](requests/settings.md) |
 | Movies | [Searching](user/movies/search-movies.md), [downloads](user/movies/downloads-movies.md), [organising](user/movies/organise-movies.md), [editions](user/movies/movie-editions.md), [movie sets](user/movies/collections.md) |
 | Shows | [Searching](user/shows/search-shows.md), [downloads](user/shows/downloads-shows.md), [organising](user/shows/organise-shows.md) |
 | Music | [Searching](user/music/search-music.md), [downloads](user/music/downloads-music.md), [organising](user/music/organise-music.md) |
-| Explore and the calendar | [Explore](user/discover/explore.md), [people](user/discover/people.md), [calendar](user/discover/calendar.md) |
+| Explore and the calendar | [Explore](discover/explore.md), [people](discover/popular-people.md), [calendar](discover/calendar.md) |
 | Sources | [Sources, Jackett and Prowlarr](user/sources/sources-bridge.md), [find titles in the Library](user/sources/library-search.md) |
 | Downloads | [Downloaders](user/downloads/downloaders.md), [history](user/downloads/history.md) |
 | Subtitles | [Subtitles](user/subtitles/subtitles.md) |
 | Files and folders | [Library folders](user/mediafiles/library-folders.md), [media details](user/mediafiles/media-inspection.md), [codecs](user/mediafiles/library-codecs.md), [audio versions](user/mediafiles/audio-versions.md), [protected copies](user/mediafiles/protected-copies.md) |
 | Media servers | [Plex, Jellyfin and Emby](user/mediaservers/media-servers.md) |
-| Metadata | [Metadata](user/metadata/metadata-service.md), [privacy](user/metadata/metadata-privacy.md), [trailers](user/metadata/trailers.md), [data packs](user/metadata/data-packs.md) |
-| Accounts | [Sign-in and passwords](user/accounts/sign-in.md), [users and roles](user/accounts/users-and-roles.md), [kid accounts](user/accounts/kid-accounts.md), [signed-in devices](user/accounts/sessions.md) |
-| Alerts | [Alerts](user/alerts/alerts.md) |
+| Metadata | [Metadata](user/metadata/metadata-service.md), [privacy](user/metadata/metadata-privacy.md), [trailers](library/trailers.md), [data packs](user/metadata/data-packs.md) |
+| Accounts | [Sign-in and passwords](users/sign-in.md), [users and roles](users/roles.md), [kid accounts](users/kids.md), [signed-in devices](users/sessions.md) |
+| Alerts | [Alerts](users/alerts.md) |
 | Moving from other apps | [Move from other apps](user/migrate/move-from-other-apps.md), [how HolyArrs reads them](user/migrate/move-reading.md) |
 | Older apps' API | [Connect Seerr, Overseerr, Bazarr and others](user/arrapi/README.md) |
 | AI apps (held back) | [Connect AI apps](user/ai/ai-connections.md) |
-| Backups | [Backups](user/backups/backups.md) |
-| Health | [Health checks](user/health/health-checks.md), [logs](user/health/logs.md), [schedules](user/health/schedules.md) |
-| Updates | [Updates](user/updates/updates.md) |
+| Backups | [Backups](run/backups.md) |
+| Health | [Health checks](run/health.md), [logs](run/logs.md), [schedules](run/schedules.md) |
+| Updates | [Updates](run/updates.md) |
 
 ## Platforms
 
@@ -58,18 +58,18 @@ A changing number or token is in square brackets.
 | Page | Address | Guide |
 |---|---|---|
 | Home | `/` | [Home and Settings](user/getting-started/home-and-settings.md) |
-| New & Popular | `/popular` | [New & Popular](user/discover/popular.md) |
-| Explore | `/explore` | [Explore](user/discover/explore.md) |
+| New & Popular | `/popular` | [New & Popular](discover/popular-people.md) |
+| Explore | `/explore` | [Explore](discover/explore.md) |
 | Search | `/search` | Searching for [movies](user/movies/search-movies.md), [shows](user/shows/search-shows.md), [music](user/music/search-music.md) |
-| People | `/people/[id]` | [People](user/discover/people.md) |
-| Calendar | `/calendar` | [Calendar](user/discover/calendar.md) |
-| Title page | `/title/...` | [Ask for a title](user/requests/asking.md) |
-| Requests | `/requests` | [Ask for a title](user/requests/asking.md), [approve or decline](user/requests/approving.md) |
-| Reports | `/requests/reports` | [Report a problem](user/requests/reports.md) |
-| Status | `/health` | [Health checks](user/health/health-checks.md), [updates](user/updates/updates.md) |
-| My account | `/account`, `/settings/account` | [Signed-in devices](user/accounts/sessions.md), [sign-in](user/accounts/sign-in.md) |
+| People | `/people/[id]` | [People](discover/popular-people.md) |
+| Calendar | `/calendar` | [Calendar](discover/calendar.md) |
+| Title page | `/title/...` | [Ask for a title](requests/asking.md) |
+| Requests | `/requests` | [Ask for a title](requests/asking.md), [approve or decline](requests/approving.md) |
+| Reports | `/requests/reports` | [Report a problem](requests/reports.md) |
+| Status | `/health` | [Health checks](run/health.md), [updates](run/updates.md) |
+| My account | `/account`, `/settings/account` | [Signed-in devices](users/sessions.md), [sign-in](users/sign-in.md) |
 | First run | `/login`, `/welcome` | [First run](user/setup/first-run.md) |
-| Join by invite | `/invite/[token]` | [Users and roles](user/accounts/users-and-roles.md) |
+| Join by invite | `/invite/[token]` | [Users and roles](users/roles.md) |
 | Downloads | `/downloads` | Downloads for [movies](user/movies/downloads-movies.md), [shows](user/shows/downloads-shows.md), [music](user/music/downloads-music.md) |
 | History | `/downloads/history` | [History](user/downloads/history.md) |
 | Needs a decision | `/downloads/decide` | Downloads for [movies](user/movies/downloads-movies.md), [shows](user/shows/downloads-shows.md), [music](user/music/downloads-music.md) |
@@ -80,25 +80,25 @@ A changing number or token is in square brackets.
 | Missing subtitles | `/library/missing-subtitles` | [Subtitles](user/subtitles/subtitles.md) |
 | Connect an AI app | `/ai` | [Connect AI apps](user/ai/ai-connections.md) (held back) |
 | Settings | `/settings` | [Home and Settings](user/getting-started/home-and-settings.md#settings) |
-| Request rules | `/settings/requests` | [Weekly limits and Request rules](user/requests/settings.md) |
+| Request rules | `/settings/requests` | [Weekly limits and Request rules](requests/settings.md) |
 | AI apps | `/settings/ai` | [Connect AI apps](user/ai/ai-connections.md) (held back) |
-| Alerts | `/settings/alerts` | [Alerts](user/alerts/alerts.md) |
-| Backups | `/settings/backups` | [Backups](user/backups/backups.md) |
+| Alerts | `/settings/alerts` | [Alerts](users/alerts.md) |
+| Backups | `/settings/backups` | [Backups](run/backups.md) |
 | Move from other apps | `/settings/move` | [Move from other apps](user/migrate/move-from-other-apps.md) |
 | Downloaders | `/settings/downloaders` | [Downloaders](user/downloads/downloaders.md) |
 | Library folders | `/settings/library-folders` | [Library folders](user/mediafiles/library-folders.md) |
 | Media servers | `/settings/media-servers` | [Media servers](user/mediaservers/media-servers.md) |
 | Parts | `/settings/parts` | [Parts and safe mode](user/help/parts-and-safe-mode.md) |
-| Sign-in and security | `/settings/sign-in` | [Sign-in and passwords](user/accounts/sign-in.md) |
+| Sign-in and security | `/settings/sign-in` | [Sign-in and passwords](users/sign-in.md) |
 | Sources | `/settings/sources` | [Sources](user/sources/sources-bridge.md) |
-| This app | `/settings/this-app` | [Logs](user/health/logs.md), [updates](user/updates/updates.md), [URL base](user/getting-started/url-base.md) |
-| Logs | `/settings/logs` | [Logs](user/health/logs.md) |
-| Schedules | `/settings/schedules` | [Schedules](user/health/schedules.md) |
+| This app | `/settings/this-app` | [Logs](run/logs.md), [updates](run/updates.md), [URL base](user/getting-started/url-base.md) |
+| Logs | `/settings/logs` | [Logs](run/logs.md) |
+| Schedules | `/settings/schedules` | [Schedules](run/schedules.md) |
 | API | `/settings/api` | [The HolyArrs API](dev/api.md) |
 | Metadata | `/settings/tmdb` | [Metadata](user/metadata/metadata-service.md) |
-| Users and roles | `/settings/users` | [Users and roles](user/accounts/users-and-roles.md), [kid accounts](user/accounts/kid-accounts.md) |
+| Users and roles | `/settings/users` | [Users and roles](users/roles.md), [kid accounts](users/kids.md) |
 | Naming and files | `/settings/naming` | Organising [movies](user/movies/organise-movies.md), [shows](user/shows/organise-shows.md), [music](user/music/organise-music.md) |
-| Outside lists | `/settings/outside-lists` | [Ask for a title](user/requests/asking.md) (no Outside lists guide yet) |
+| Outside lists | `/settings/outside-lists` | [Ask for a title](requests/asking.md) (no Outside lists guide yet) |
 | Search settings | `/settings/search` | Searching for [movies](user/movies/search-movies.md), [shows](user/shows/search-shows.md), [music](user/music/search-music.md) |
 | Music defaults | `/settings/music` | [Organising music](user/music/organise-music.md) |
 | Subtitles | `/settings/subtitles` | [Subtitles](user/subtitles/subtitles.md) |

@@ -40,7 +40,7 @@ Your token or key is kept encrypted and never shown again. Leave the box empty w
 
 The card shows when the server was last checked, or the last error.
 
-Every update also lands in History: **Told the media server about it**, or **Could not reach the media server** with the reason. The [Status](../health/health-checks.md) page lists each media server too: off, failed, not told about a change yet, or working.
+Every update also lands in History: **Told the media server about it**, or **Could not reach the media server** with the reason. The [Status](../../run/health.md) page lists each media server too: off, failed, not told about a change yet, or working.
 
 ## Troubleshooting
 
