@@ -92,7 +92,7 @@ Fix: remove it with **Add its Release to Turned down** on.
 | Fail downloads that hold programs or fakes | Fails a torrent as soon as its file list shows a program or a fake. | On | Rarely. |
 | Replace downloads removed outside HolyArrs | Off sends those movies to Review. | On | You remove downloads by hand on purpose. |
 | Try the next Downloader | When one Downloader fails, the next of the same kind takes the release. | On | You want one Downloader only. |
-| Seconds between sends to one Downloader | Spacing between sends. | 2 | A Downloader struggles with bursts. |
+| Seconds between sends to one Downloader | Spacing between sends, 0 to 60. | 2 | A Downloader struggles with bursts. |
 | When you remove a download | Where the Remove box starts: Delete its files, Turn down its Release, Search again. | On, Off, On | Your usual choice differs. |
 
 </details>

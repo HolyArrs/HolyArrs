@@ -4,7 +4,7 @@ description: How HolyArrs finds episodes and season packs, and how to search or 
 level: Setup
 ---
 
-Your shows' episodes arrive without you chasing them. Here you search on demand, pick a release by hand, and tune season packs. Only the owner and admins see these screens. Movies work the same way, see [Search for movies](../movies/search-movies.md).
+Episodes arrive by themselves. Here you search on demand, pick a release by hand, and tune season packs. Only the owner and admins see these screens. Movies work the same way, see [Search for movies](../movies/search-movies.md).
 
 Each episode has its own place in each Version, so one episode can be in the Library while the next is still missing.
 

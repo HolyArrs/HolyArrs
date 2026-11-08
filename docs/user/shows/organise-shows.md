@@ -8,7 +8,7 @@ Bring in shows already on disk, tidy names, delete what you no longer watch, and
 
 ## Bring in shows you already have
 
-HolyArrs takes over a show folder as it is. The scan only reads; adopting adds each show with its files where they are. Nothing is moved or renamed.
+HolyArrs takes over a show folder as it is. The scan only reads; nothing is moved or renamed.
 
 1. Open **Library**, then **Import a library**, and pick a Library folder for shows. They are listed as "Shows: ...".
 2. Press **Scan**. HolyArrs reads the show name, and the year if there is one, from each folder name and looks it up at your show details source.

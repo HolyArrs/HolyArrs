@@ -94,12 +94,10 @@ Fix: add it again. If you deleted its files, take them back from `.holyarrs-repl
 
 | Setting | What it does | Default | Change it when |
 | --- | --- | --- | --- |
-| Keep deleted files for (days) | How long deleted or replaced files stay in `.holyarrs-replaced`. 0 keeps them until you empty it. | 7 | You want a longer undo window or need the space. |
-| Folders read per library scan | Folders read in one scan. A bigger Library shows **Scan the rest**. | 5000 | Scans of a huge Library are slow. |
+| Keep deleted files for (days) | How long deleted or replaced files stay in `.holyarrs-replaced`. 0 never removes them. | 7 | You want a longer undo window or need the space. |
+| Folders read per library scan | 10 to 100000. A bigger Library shows **Scan the rest**. | 5000 | Scans of a huge Library are slow. |
 | Always leave this much free space (MB) | An import that would leave less is refused before anything is written. Minimum 100. | 100 | Your disk needs more headroom. |
 | Skip the free-space check | Turns the check off. | Off | Only for disks that misreport free space. |
-
-**Empty the holding folder now** clears old files at once instead of at the daily cleanup.
 
 **Movie names**
 

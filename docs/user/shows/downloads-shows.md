@@ -4,7 +4,7 @@ description: Where finished episodes go, how season packs are settled, and what 
 level: Setup
 ---
 
-Episodes land in the right folder under the right name. Here you see how, and what to do when a download goes wrong. Only the owner and admins see these screens. Movies work the same way, see [Movie downloads](../movies/downloads-movies.md).
+How finished episodes are placed, and what to do when a download goes wrong. Only the owner and admins see these screens. Movies work the same way, see [Movie downloads](../movies/downloads-movies.md).
 
 ## What happens when a download finishes
 
@@ -106,7 +106,7 @@ Fix: free space on the Library disk, then press **Search again**.
 
 `{episode}` gives `S01E02`, or `S01E02-E03` for a file with several episodes. `{episode_title}` joins several names with `+`. The examples under each pattern change as you type.
 
-The same page sets the free space an import must leave (100 MB minimum) and the holding days. 0 holding days keeps replaced files until you empty the folder.
+The same page sets the free space an import must leave (100 MB minimum) and the holding days. 0 holding days never removes replaced files.
 
 </details>
 

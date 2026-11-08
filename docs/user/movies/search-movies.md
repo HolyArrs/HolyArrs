@@ -4,7 +4,7 @@ description: How HolyArrs finds a release for a movie, and how to search or pick
 level: Setup
 ---
 
-HolyArrs finds a copy of each movie you want by itself. Here you search on demand, pick a release by hand, and read why one was chosen. Only the owner and admins see these screens.
+HolyArrs finds each movie you want by itself. Here you search on demand, pick a release by hand, and read why one won. Only the owner and admins see these screens.
 
 A **release** is one copy of a movie offered by a Source, such as `Heat.1995.1080p.BluRay`. Each movie's **Pick rules** decide which releases are good enough and which one wins.
 
@@ -106,9 +106,9 @@ The page also has **Check feeds now** and **Find a better copy for all**, which 
 
 | Setting | What it does | Default | Change it when |
 | --- | --- | --- | --- |
-| Titles to search each night | Missing titles searched each night, oldest searched first. 0 turns it off. | 20 | Your Sources limit searches, or you have a large backlog. |
+| Titles to search each night | Longest unsearched first, 0 to 500. 0 turns it off. | 20 | Your Sources limit searches, or you have a large backlog. |
 | Also find better copies each night | The nightly search also covers titles below Good enough. | Off | You want upgrades without waiting for feeds. |
-| Check Source feeds every (minutes) | 10 to 120. 0 turns feed checks off. | 15 | A Source limits requests. |
+| Check Source feeds every (minutes) | 10 to 120. 0 turns them off. | 15 | A Source limits requests. |
 | Turn down Releases posted before release | The early check. | On | Rarely. |
 | Hours a Release may be early | Grace for time zones, 0 to 720. | 24 | Good releases get turned away as early. |
 | Turn down fakes by size and file type | Size and file kind checks, and the empty file check at import. | On | Rarely. |
