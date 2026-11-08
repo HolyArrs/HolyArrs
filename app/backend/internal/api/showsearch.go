@@ -19,15 +19,8 @@ import (
 
 // Show search (stage 3.2): an episode, a season or the whole show, by hand.
 
-// showSearchIn is the body of POST /titles/{id}/search for a show.
-type showSearchIn struct {
-	Choose    *bool  `json:"choose"`
-	SlotID    *int64 `json:"slot_id"`
-	ItemID    *int64 `json:"item_id"`
-	Season    *int   `json:"season"`
-	VersionID *int64 `json:"version_id"`
-	AlbumID   *int64 `json:"album_id"` // artists: one album
-}
+// showSearchIn is the body of POST /titles/{id}/search (served by sources).
+type showSearchIn = sources.TitleSearchIn
 
 // searchShow queues the searches a person asked for on a show page: one
 // episode Slot (slot_id), an episode's Slots (item_id), a season

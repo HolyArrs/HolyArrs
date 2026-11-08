@@ -166,6 +166,11 @@ func VersionLabel(ctx context.Context, q database.Querier, versionID int64) stri
 	return label
 }
 
+// SlotsOfTitle lists every Slot of a Title, oldest first.
+func SlotsOfTitle(ctx context.Context, q database.Lister, titleID int64) ([]Slot, error) {
+	return database.Select[Slot](ctx, q, "slots", "item_id IN (SELECT id FROM items WHERE title_id = ?) ORDER BY id", titleID)
+}
+
 // VersionSlotsOfTitle lists the Slots of one Version that belong to a Title.
 func VersionSlotsOfTitle(ctx context.Context, q database.Lister, versionID, titleID int64) ([]Slot, error) {
 	return database.Select[Slot](ctx, q, "slots", "version_id = ? AND item_id IN (SELECT id FROM items WHERE title_id = ?)", versionID, titleID)
