@@ -8,6 +8,7 @@ import (
 	"errors"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/datapack"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
+	setupmod "github.com/HolyArrs/holyarrs/app/backend/internal/setup"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/discover"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
@@ -198,8 +199,8 @@ type API struct {
 	listSeen map[string]string
 	// lookups counts each person's music lookups in flight.
 	lookups inFlight
-	// confirm holds the two-step controls' confirmation ids.
-	confirm webserver.Confirms
+	// controls serves the part switches, the controls and the part gate (internal/setup).
+	controls *setupmod.Handlers
 	// ai serves the AI connections (internal/ai).
 	ai *ai.Handlers
 	// discover caches Explore rows and details pages and limits each person.
@@ -318,7 +319,28 @@ func New(s Server) *API {
 	a.dl = &downloads.Web{Store: s.Store, DLSync: s.DLSync, Downloads: s.Downloads, Live: s.Live, Queue: s.Queue,
 		Secrets: s.Secrets, Auth: s.Auth, Library: s.Library, Metadata: s.Metadata, Search: s.Search,
 		ShowSource: a.showSource, AddMovieTitle: a.addMatchedMovie, AddShowTitle: a.addMatchedShow, LibraryError: libraryError}
+	a.controls = &setupmod.Handlers{Deps: setupmod.Deps{Store: s.Store, Parts: s.Parts, SafeMode: s.SafeMode, States: s.States, ExitApp: s.ExitApp,
+		TitleAllowed: a.titleAllowed, TestDownloader: a.dl.TestDownloader,
+		TestSource: func(w http.ResponseWriter, r *http.Request) { a.sourceHandlers().TestSource(w, r) },
+		TestSubtitleSite: func(w http.ResponseWriter, r *http.Request) {
+			subtitles.NewHandlers(a.s.Store, a.s.Secrets, a.s.Subtitles).ServeSiteTest(w, r)
+		}}}
+	if s.Media != nil {
+		a.controls.TestMediaServer = a.media.Test
+	}
 	return a
+}
+
+// partIsOn reports whether the part p is on (always, without a Control).
+// In safe mode the Library still lists every title (parts.SafeLibrary).
+func (a *API) partIsOn(p parts.Part) bool { return parts.PartOn(a.s.Parts, p) }
+
+// viewer is the signed-in person's id (1, the owner, without sign-in).
+func viewer(ctx context.Context) int64 {
+	if who, ok := webserver.From(ctx); ok {
+		return who.UserID
+	}
+	return 1
 }
 
 // byHandRoutes registers the import-by-hand routes (internal/importer).
@@ -482,10 +504,10 @@ func (a *API) Routes(rt *webserver.Router) {
 	if startup.FeatureOn(features.PlexWatchlists) {
 		(&requests.WatchlistHandlers{Store: a.s.Store, Queue: a.s.Queue, Watchlists: func() *requests.Watchlists { return a.s.Watchlists }, Person: a.person}).Routes(m)
 	}
-	(&requests.ReportHandlers{Svc: a.s.Asks, Store: a.s.Store, Person: a.person, KidMax: a.kidMax, TitleGate: a.reportTitleGate}).Routes(m)
+	(&requests.ReportHandlers{Svc: a.s.Asks, Store: a.s.Store, Person: a.person, KidMax: a.kidMax, TitleGate: a.controls.ReportTitleGate}).Routes(m)
 	(&requests.AskedByHandlers{Store: a.s.Store, KidMax: a.kidMax, AllowedTitleIDs: a.allowedTitleIDs}).Routes(m)
 	(&requests.FollowHandlers{Svc: a.s.Asks, Person: a.person, Title: a.titleID, Changed: a.followsChanged}).Routes(m)
-	a.controlRoutes(m)
+	a.controls.Routes(m)
 	m.HandleFunc("GET /api/v1/openapi.json", a.openapi)
 	m.HandleFunc("GET /api/v1/health", a.health)
 	m.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write([]byte("ok\n")) })
@@ -516,11 +538,11 @@ func (a *API) Handler() http.Handler {
 func (a *API) Chain(rt *webserver.Router) http.Handler {
 	m := rt.Mux()
 	if a.s.Auth != nil {
-		a.ai.Inner = a.kidGate(m, a.partGate(m, accounts.Gate(m)))
-		return webserver.SecureHeaders(a.arr().Gate(a.s.Auth.Middleware(wrapMux(a.liveRecheck(a.settingsLog().Wrap(a.status.ForgetOnWrite(a.kidGate(m, a.partGate(m, accounts.Gate(m))))))))))
+		a.ai.Inner = a.kidGate(m, a.controls.PartGate(m, accounts.Gate(m)))
+		return webserver.SecureHeaders(a.arr().Gate(a.s.Auth.Middleware(wrapMux(a.liveRecheck(a.settingsLog().Wrap(a.status.ForgetOnWrite(a.kidGate(m, a.controls.PartGate(m, accounts.Gate(m))))))))))
 	}
-	a.ai.Inner = a.partGate(m, m)
-	return webserver.SecureHeaders(a.arr().Gate(wrapMux(a.settingsLog().Wrap(a.status.ForgetOnWrite(a.partGate(m, m))))))
+	a.ai.Inner = a.controls.PartGate(m, m)
+	return webserver.SecureHeaders(a.arr().Gate(wrapMux(a.settingsLog().Wrap(a.status.ForgetOnWrite(a.controls.PartGate(m, m))))))
 }
 
 // wrapMux lets tests record which routes the mux served.

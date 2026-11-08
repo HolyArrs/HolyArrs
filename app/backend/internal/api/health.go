@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"net/http"
 	"time"
 
@@ -75,3 +76,11 @@ func (a *API) settingsLog() *health.SettingsLog {
 
 // EventSettingsChanged is one change to settings (health).
 const EventSettingsChanged = health.EventSettingsChanged
+
+// whoName names the person for an Event summary.
+func whoName(r *http.Request) string {
+	if who, ok := webserver.From(r.Context()); ok && who.Name != "" {
+		return who.Name
+	}
+	return "The owner"
+}
