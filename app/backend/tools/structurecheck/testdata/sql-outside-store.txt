@@ -94,6 +94,7 @@ app/backend/internal/library/rename_apply.go
 app/backend/internal/library/service.go
 app/backend/internal/library/show_shared.go
 app/backend/internal/library/standin.go
+app/backend/internal/library/store_episode_lists.go
 app/backend/internal/library/title_defaults.go
 app/backend/internal/library/versions.go
 app/backend/internal/mediafiles/kid.go

@@ -21,7 +21,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/tags"
 )
 
 // Errors about adopting music.
@@ -250,7 +249,7 @@ func mapTrackFiles(lib string, files []AdoptVideo, tracks []importer.Track, ns m
 	}
 	at := importer.AlbumTarget{LibraryPath: lib, ArtistFolder: "a", Album: "a", Tracks: tracks, Naming: &ns}
 	if ns.MusicReadTags {
-		at.Tags = tags.ReadFile
+		at.Tags = importer.ReadFileTags
 	}
 	discs := 1
 	label := map[int64]string{}

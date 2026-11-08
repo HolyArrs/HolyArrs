@@ -17,7 +17,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/tags"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/importer/tags"
 )
 
 // Track is one audio file of an album with its tag facts.

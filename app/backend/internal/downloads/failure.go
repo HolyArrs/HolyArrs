@@ -13,7 +13,6 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/archive"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
@@ -274,7 +273,7 @@ func archiveSetSize(files []File) int64 {
 	for _, f := range files {
 		name := path.Base(strings.ReplaceAll(f.Name, `\`, "/"))
 		ext := strings.ToLower(path.Ext(strings.TrimRight(name, ". ")))
-		if k, _ := archive.Of(name); ext == ".rar" || isRarPart(ext) || k != "" {
+		if k, _ := importer.ArchiveKind(name); ext == ".rar" || isRarPart(ext) || k != "" {
 			n += f.Size
 		}
 	}

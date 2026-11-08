@@ -100,7 +100,7 @@ func TestEdgePasswordRARIsRefusedPlainly(t *testing.T) {
 func rar5Parts(t *testing.T) map[string][]byte {
 	files := map[string][]byte{}
 	for i := 1; i <= 4; i++ {
-		files[fmt.Sprintf("Rel/%s.part%02d.rar", relName, i)] = edgeFile(t, "..", "unrar", "testdata", "rar5-compressed", fmt.Sprintf("Dune.Part.Two.2024.1080p.WEB.H264-HOLYARRS.part%02d.rar", i))
+		files[fmt.Sprintf("Rel/%s.part%02d.rar", relName, i)] = edgeFile(t, "unrar", "testdata", "rar5-compressed", fmt.Sprintf("Dune.Part.Two.2024.1080p.WEB.H264-HOLYARRS.part%02d.rar", i))
 	}
 	return files
 }
@@ -166,7 +166,7 @@ func TestEdgeDamagedSevenZipSeasonPackIsRefusedPlainly(t *testing.T) {
 func TestSevenZipReleaseIsImportedWithoutATool(t *testing.T) {
 	files := map[string][]byte{}
 	for _, n := range []string{"parts.7z.001", "parts.7z.002"} {
-		files["Rel/"+relName+n[len("parts"):]] = edgeFile(t, "..", "archive", "testdata", n)
+		files["Rel/"+relName+n[len("parts"):]] = edgeFile(t, "archive", "testdata", n)
 	}
 	files["Rel/"+relName+".nfo"] = []byte("info")
 	fakeDisk(t, 10<<30)

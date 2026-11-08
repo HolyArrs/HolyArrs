@@ -181,7 +181,7 @@ func TestCompressedRAR5SceneSetIsImportedWithoutATool(t *testing.T) {
 		"Rel/Sample/" + strings.ToLower(relName) + "-sample.mkv": bytes.Repeat([]byte("s"), 200),
 	}
 	for i := 1; i <= 4; i++ {
-		b, err := os.ReadFile(filepath.Join("..", "unrar", "testdata", "rar5-compressed", fmt.Sprintf("Dune.Part.Two.2024.1080p.WEB.H264-HOLYARRS.part%02d.rar", i)))
+		b, err := os.ReadFile(filepath.Join("unrar", "testdata", "rar5-compressed", fmt.Sprintf("Dune.Part.Two.2024.1080p.WEB.H264-HOLYARRS.part%02d.rar", i)))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -267,7 +267,7 @@ func TestPackedNeedsFreeSpace(t *testing.T) {
 
 func TestCompressedRAR4IsUnpackedWithoutATool(t *testing.T) {
 	fakeDisk(t, 10<<30)
-	b, err := os.ReadFile(filepath.Join("..", "unrar", "testdata", "rarfile", "rar3-solid.rar"))
+	b, err := os.ReadFile(filepath.Join("unrar", "testdata", "rarfile", "rar3-solid.rar"))
 	if err != nil {
 		t.Fatal(err)
 	}

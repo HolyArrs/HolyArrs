@@ -14,7 +14,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/unrar"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/importer/unrar"
 )
 
 // testdata/*.7z: one 390,000-byte file (noise, then text), packed by

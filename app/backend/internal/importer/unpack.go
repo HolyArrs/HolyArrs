@@ -16,10 +16,10 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/archive"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/importer/archive"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/unrar"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/importer/unrar"
 )
 
 const (

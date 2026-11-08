@@ -6,7 +6,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/tags"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/importer/tags"
 )
 
 func TestPlanTracksTagsOnlyWhenNamesAreAmbiguous(t *testing.T) {

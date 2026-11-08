@@ -6,9 +6,9 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/archive"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/unrar"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/importer/archive"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/importer/unrar"
 )
 
 func importOnDisk(t *testing.T, free int64, files map[string][]byte) (*mediafiles.Import, world, map[string]string) {

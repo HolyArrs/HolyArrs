@@ -29,7 +29,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/unrar"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/importer/unrar"
 	"github.com/bodgit/sevenzip"
 	"github.com/therootcompany/xz"
 )

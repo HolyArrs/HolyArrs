@@ -16,24 +16,26 @@ var layers = map[string]int{
 	"metadata":     1,
 	"accounts":     2,
 	"mediafiles":   3,
-	"sources":      4,
-	"downloads":    5,
-	"subtitles":    6,
-	"mediaservers": 6,
-	"alerts":       6,
-	"movies":       7,
-	"shows":        7,
-	"music":        9,
-	"requests":     8,
-	"discover":     11,
-	"arrapi":       9,
-	"migrate":      9,
-	"ai":           9,
-	"backups":      9,
-	"health":       8,
-	"updates":      9,
-	"setup":        9,
-	"titleview":    10, // Title views sit above shows, music and requests; discover builds on them
+	"importer":     4, // file import: unpack, tags, matching; below library
+	"library":      5, // the Library: folders, adopt, rename
+	"sources":      6,
+	"downloads":    7,
+	"subtitles":    8,
+	"mediaservers": 8,
+	"alerts":       8,
+	"movies":       9,
+	"shows":        9,
+	"music":        11,
+	"requests":     10,
+	"discover":     13,
+	"arrapi":       11,
+	"migrate":      11,
+	"ai":           11,
+	"backups":      11,
+	"health":       10,
+	"updates":      11,
+	"setup":        11,
+	"titleview":    12, // Title views sit above shows, music and requests; discover builds on them
 }
 
 // coreRows orders the core packages. A core package imports only core
@@ -56,21 +58,15 @@ var coreRows = map[string]int{
 // so an import that breaks the layer order shows up before the move. A dash
 // means the package is split or dissolved and is not judged.
 var packageHome = map[string]string{
-	"store":         "core/database", // leftover until t06b dissolves it into mediafiles and the table owners; judged by its strictest home
-	"features":      "-",             // held-back feature names; each module task moves its names, t13 deletes the package
-	"parts":         "core/startup",  // leftover until t13 splits table.go into the modules; judged by its strictest home
-	"domain":        "-",             // split per R4, deleted at the end of t06b
+	"features":      "-",            // held-back feature names; each module task moves its names, t13 deletes the package
+	"parts":         "core/startup", // leftover until t13 splits table.go into the modules; judged by its strictest home
+	"domain":        "-",            // split per R4, deleted at the end of t06b
 	"ratings":       "metadata",
 	"youtube":       "metadata",
 	"judge":         "mediafiles",
 	"naming":        "mediafiles",
 	"mediainfo":     "mediafiles",
 	"tagset":        "mediafiles",
-	"tags":          "mediafiles",
-	"importer":      "mediafiles",
-	"archive":       "mediafiles",
-	"unrar":         "mediafiles",
-	"library":       "mediafiles",
 	"datapack":      "mediafiles",
 	"importsecrets": "migrate",
 	"compat":        "arrapi",
