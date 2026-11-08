@@ -25,7 +25,7 @@ const MaxImportFolders = 32
 const importFoldersGroup, importFoldersKey = "where_files_go", "import_folders"
 
 // ErrImportFolder is returned when an extra import folder is not a usable full path.
-var ErrImportFolder = fmt.Errorf("each extra import folder is a full path, such as /data/imports or D:\\Imports (not / or a whole drive), with no . or .. parts (%d at most)", MaxImportFolders)
+var ErrImportFolder = fmt.Errorf("each extra import folder is a full path, such as /data/imports or D:\\Imports (not / or a whole drive, and not inside or around the config folder), with no . or .. parts (%d at most)", MaxImportFolders)
 
 // CleanImportFolders validates and normalizes a list of extra import folders.
 func CleanImportFolders(in []string) ([]string, error) {
@@ -104,6 +104,11 @@ func SaveImportFolders(ctx context.Context, s *database.Store, in []string, by d
 	list, err := CleanImportFolders(in)
 	if err != nil {
 		return nil, err
+	}
+	for _, p := range list {
+		if filepath.IsAbs(p) && UnsafeFolder(p, s.Dir()) {
+			return nil, ErrImportFolder
+		}
 	}
 	raw, _ := json.Marshal(list)
 	err = s.Write(ctx, func(tx *sql.Tx) error {

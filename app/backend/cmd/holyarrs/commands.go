@@ -47,11 +47,14 @@ func healthcheckCmd() int {
 // logFolderCheck logs one line on the Library and download folders, and a
 // WARN line with the fix for each problem folder. It takes a few seconds at
 // most: a folder that is slower (a hung network share) is skipped with a note.
-func logFolderCheck(ctx context.Context, db database.Lister, savePath string) {
+func logFolderCheck(ctx context.Context, db database.Lister, savePath, configDir string) {
 	sum, warns := health.DoctorStartup(ctx, db, savePath, 3*time.Second)
 	log.Printf("holyarrs: %s", sum)
 	for _, w := range warns {
 		log.Printf("holyarrs: %s", w)
+	}
+	for _, w := range health.UnsafeFolderWarnings(ctx, db, configDir) {
+		log.Printf("holyarrs: WARN %s", w)
 	}
 	if w := health.ProxyWarning(os.Getenv); w != "" {
 		log.Printf("holyarrs: warning: %s (%s)", w, "proxies for indexers can be set on each Source")

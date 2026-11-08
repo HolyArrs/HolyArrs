@@ -250,3 +250,17 @@ func TestWholeDiskThroughALink(t *testing.T) {
 		t.Fatal("a plain folder is taken as the whole disk")
 	}
 }
+
+func TestSaveImportFoldersRefusesDataDir(t *testing.T) {
+	w := setup(t)
+	ctx := context.Background()
+	if _, err := SaveImportFolders(ctx, w.s, []string{filepath.Join(w.s.Dir(), "imports")}, domain.System); !errors.Is(err, ErrImportFolder) {
+		t.Fatalf("inside the data folder: %v", err)
+	}
+	if _, err := SaveImportFolders(ctx, w.s, []string{filepath.Dir(w.s.Dir())}, domain.System); !errors.Is(err, ErrImportFolder) {
+		t.Fatalf("around the data folder: %v", err)
+	}
+	if _, err := SaveImportFolders(ctx, w.s, []string{t.TempDir()}, domain.System); err != nil {
+		t.Fatalf("own folder: %v", err)
+	}
+}

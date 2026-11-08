@@ -113,7 +113,7 @@ func DownloadPaths(ctx context.Context, db database.Lister, extra ...string) ([]
 
 // Folder errors.
 var (
-	ErrFolderPath   = errors.New("the path must be an absolute folder path")
+	ErrFolderPath   = errors.New("the path must be an absolute folder path, not a whole drive and not inside or around the config folder")
 	ErrFolderKind   = errors.New("kind must be movie, show or music")
 	ErrFolderTaken  = errors.New("that folder, or one inside or around it, is already a Library folder")
 	ErrFolderInUse  = errors.New("titles still use this Library folder; move them first")
@@ -145,6 +145,11 @@ func FullPath(p string) bool {
 	return filepath.IsAbs(p)
 }
 
+// UnsafeFolder reports whether p, symlinks followed, is a filesystem or
+// drive root or overlaps the data folder dataDir. AddFolder refuses such a
+// path; the doctor warns about rows saved before this check.
+func UnsafeFolder(p, dataDir string) bool { return importer.UnsafeFolder(p, dataDir) }
+
 func overlaps(a, b string) bool {
 	a, b = filepath.Clean(a), filepath.Clean(b)
 	if a == b {
@@ -162,6 +167,9 @@ func AddFolder(ctx context.Context, s *database.Store, in FolderInput, downloadP
 		return lf, ErrFolderPath
 	}
 	in.Path = filepath.Clean(in.Path)
+	if UnsafeFolder(in.Path, s.Dir()) {
+		return lf, ErrFolderPath
+	}
 	if in.Kind != "movie" && in.Kind != "show" && in.Kind != "music" {
 		return lf, ErrFolderKind
 	}

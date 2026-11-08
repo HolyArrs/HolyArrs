@@ -171,6 +171,9 @@ func RunDoctor(ctx context.Context, o DoctorOptions) Report {
 			c := f.Check(uid, gid)
 			r.add("Library and download folders", c.Status, c.Text, c.Fix)
 		}
+		for _, w := range UnsafeFolderWarnings(ctx, db, o.ConfigDir) {
+			r.add("Library and download folders", StatusWarn, w, "")
+		}
 	}
 	raw := o.MetadataURL
 	if raw == "" {

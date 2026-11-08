@@ -330,7 +330,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	}
 	// After ensure, so folders added from the environment on a first start
 	// are checked too.
-	logFolderCheck(ctx, s.Read(), c.SavePath)
+	logFolderCheck(ctx, s.Read(), c.SavePath, c.ConfigDir)
 	hub := webserver.NewLiveHub(webserver.LiveOptions{Merge: downloads.MergePatch})
 	pools := jobs.DefaultPools
 	if c.SafeMode {

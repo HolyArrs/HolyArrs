@@ -195,3 +195,23 @@ func DoctorStartup(ctx context.Context, db database.Lister, savePath string, bud
 	}
 	return Summary(fs), warns
 }
+
+// UnsafeFolderWarnings returns one warning per saved Library folder that is
+// a filesystem or drive root or overlaps the config folder configDir. New
+// folders like these are refused; this catches rows saved before that.
+func UnsafeFolderWarnings(ctx context.Context, db database.Lister, configDir string) []string {
+	if db == nil {
+		return nil
+	}
+	libs, err := readFolders(ctx, db)
+	if err != nil {
+		return nil
+	}
+	var out []string
+	for _, l := range libs {
+		if library.UnsafeFolder(l[0], configDir) {
+			out = append(out, l[1]+" library "+l[0]+": is a whole drive or overlaps the config folder "+configDir+"; move the Library to its own folder")
+		}
+	}
+	return out
+}
