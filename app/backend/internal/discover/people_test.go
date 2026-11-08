@@ -1,10 +1,13 @@
-package api
+package discover
 
 import (
 	"context"
 	"database/sql"
 	"errors"
+	"io"
+	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -12,8 +15,11 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	engine "github.com/HolyArrs/holyarrs/app/backend/internal/discover/rows"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/requests"
 )
 
 type fakePeople struct {
@@ -89,6 +95,8 @@ func (f *fakePeople) PopularPeople(_ context.Context, page int) (metadata.Person
 	}, Page: page, TotalPages: 8, TotalResults: 160}, nil
 }
 
+// peopleRig serves the discover routes on a fresh database with the
+// given provider, wired the way api wires them for a signed-out owner.
 func peopleRig(t *testing.T, p metadata.Provider) (*httptest.Server, *database.Store) {
 	t.Helper()
 	s, err := database.Open(t.TempDir(), database.Options{})
@@ -96,11 +104,62 @@ func peopleRig(t *testing.T, p metadata.Provider) (*httptest.Server, *database.S
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = s.Close() })
-	a := New(Server{Store: s, Metadata: p, Version: "test"})
-	srv := httptest.NewServer(a.Handler())
+	m := http.NewServeMux()
+	testHandlers(s, p).PeopleRoutes(m)
+	srv := httptest.NewServer(m)
 	t.Cleanup(srv.Close)
 	return srv, s
 }
+
+// testHandlers are discover Handlers on s and p with api's wiring for a
+// signed-out owner (user 1, no age limit, every part on).
+func testHandlers(s *database.Store, p metadata.Provider) *Handlers {
+	mf := &mediafiles.Handlers{Deps: mediafiles.Deps{Store: s, Metadata: p, KidMax: func(*http.Request) string { return "" }}}
+	e := &Explore{}
+	e.Store = func() *database.Store { return s }
+	e.Metadata = func() metadata.Provider { return p }
+	e.KnownRating, e.LookupRating = mf.KnownRating, mf.LookupRating
+	h := &Handlers{Deps: Deps{Store: s, Metadata: p, Cache: &Cache{}, Explore: e,
+		KidMax: func(*http.Request) string { return "" }, UserID: func(*http.Request) int64 { return 1 },
+		Actor:  func(*http.Request) domain.Actor { return domain.System },
+		PartOn: func(pt parts.Part) bool { return parts.PartOn(nil, pt) }, TitleAllowed: mf.TitleAllowed,
+		LibraryRating: mf.LibraryRating, KidItems: mf.KidItems, KidKnownFor: mf.KidKnownFor, LibraryMovieAllowed: mf.LibraryMovieAllowed,
+		KidMovies: mf.KidMovies, AllowedTitleIDs: mf.AllowedTitleIDs,
+		OpenAsk: func(ctx context.Context, id string, me int64) (*requests.AskBrief, error) {
+			return requests.OpenMovieAsk(ctx, s.Read(), id, me, false)
+		},
+		OpenShowAsk: func(ctx context.Context, ids map[string]string, me int64) (*requests.AskBrief, error) {
+			return requests.OpenShowAsk(ctx, s.Read(), ids, me)
+		},
+		LiveSource: func(ctx context.Context) Lister {
+			var l metadata.ExploreLister
+			if x, ok := metadata.ExploreListerFor(ctx, p); ok {
+				l = x
+			}
+			return ExploreSource{E: e, Lister: l, Calls: &engine.Calls{}}
+		}}}
+	return h
+}
+
+func do(t *testing.T, method, url, body string, want int) []byte {
+	t.Helper()
+	req, _ := http.NewRequest(method, url, strings.NewReader(body))
+	if body != "" {
+		req.Header.Set("Content-Type", "application/json")
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	b, _ := io.ReadAll(resp.Body)
+	if resp.StatusCode != want {
+		t.Fatalf("%s %s: %d, want %d: %s", method, url, resp.StatusCode, want, b)
+	}
+	return b
+}
+
+func itoa(n int64) string { return strconv.FormatInt(n, 10) }
 
 func TestPeopleSearchDisambiguatesAndProviderFailure(t *testing.T) {
 	t.Parallel()

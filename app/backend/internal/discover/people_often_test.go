@@ -1,4 +1,4 @@
-package api
+package discover
 
 import (
 	"context"
@@ -9,7 +9,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/discover"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
@@ -41,8 +40,8 @@ func TestOftenWorksWithCountsLibraryShowsAndHidesUnderFour(t *testing.T) {
 		}
 	}
 	type page struct {
-		OftenWith []metadata.Person    `json:"often_with"`
-		Stats     discover.PersonStats `json:"stats"`
+		OftenWith []metadata.Person `json:"often_with"`
+		Stats     PersonStats       `json:"stats"`
 	}
 	get := func() page {
 		var x page
