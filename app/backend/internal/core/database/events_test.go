@@ -48,10 +48,10 @@ func TestEventsBySourceAndHideFeed(t *testing.T) {
 		}
 		return n, ks
 	}
-	if n, ks := count(EventFilter{SourceID: 1}); n != 2 || ks[0] != "source_paused" || ks[1] != "download_sent" {
+	if n, ks := count(EventFilter{SourceID: 1, SourceReleaseIDs: []int64{10}}); n != 2 || ks[0] != "source_paused" || ks[1] != "download_sent" {
 		t.Errorf("source 1: %d %v", n, ks)
 	}
-	if n, ks := count(EventFilter{SourceID: 2}); n != 1 || ks[0] != "release_chosen" {
+	if n, ks := count(EventFilter{SourceID: 2, SourceReleaseIDs: []int64{20}}); n != 1 || ks[0] != "release_chosen" {
 		t.Errorf("source 2: %d %v", n, ks)
 	}
 	if n, _ := count(EventFilter{SourceID: 3}); n != 0 {

@@ -158,6 +158,8 @@ var tableOwner = map[string]string{
 	"settings":        "core/database",
 	"events":          "core/database",
 	"schedules":       "core/jobs",
+	"jobs":            "core/jobs",
+	"secrets":         "core/secrets",
 	"secrets_retired": "core/secrets",
 
 	// accounts

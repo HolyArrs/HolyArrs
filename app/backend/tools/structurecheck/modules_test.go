@@ -329,3 +329,20 @@ func coreName(mod, importPath string) string {
 	name, _, _ := strings.Cut(rest, "/")
 	return name
 }
+
+// TestCoreNamesNoModuleTable: a core file never names a table a module owns,
+// and the allowlist cannot excuse it. Core reaches module data through hooks
+// that the module registers from wiring.go.
+func TestCoreNamesNoModuleTable(t *testing.T) {
+	root := repoRoot(t)
+	for rel, f := range scanSQL(t, root) {
+		if !isCoreHome(homeOf(rel)) {
+			continue
+		}
+		for _, tb := range f.tables {
+			if !isCoreHome(tableOwner[tb]) {
+				t.Errorf("%s: core names the module table %s (owner %s)", rel, tb, tableOwner[tb])
+			}
+		}
+	}
+}

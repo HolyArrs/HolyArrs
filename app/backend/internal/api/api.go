@@ -1183,6 +1183,14 @@ func (a *API) listEvents(w http.ResponseWriter, r *http.Request) {
 	if who, signed := auth.From(r.Context()); signed && !who.Has(auth.PermApprove) {
 		f.HideKinds = append(slices.Clone(f.HideKinds), domain.AskEventKinds...)
 	}
+	if f.SourceID > 0 {
+		ids, err := source.ReleaseIDs(r.Context(), a.s.Store.Read(), f.SourceID)
+		if err != nil {
+			internal(w, err)
+			return
+		}
+		f.SourceReleaseIDs = ids
+	}
 	es, total, err := a.s.Store.Events(r.Context(), f)
 	if err != nil {
 		internal(w, err)

@@ -491,6 +491,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 			}
 		}
 	}
+	registerHooks()
 	vault, err := secrets.Open(ctx, s, key)
 	if err != nil {
 		return keyRefused(err)

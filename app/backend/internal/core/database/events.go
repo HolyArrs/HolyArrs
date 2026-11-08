@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"log"
 	"strings"
 	"time"
@@ -37,8 +38,12 @@ type EventFilter struct {
 	// album_id).
 	PartID int64
 	// SourceID keeps the Events of one Source: grabs whose Release came
-	// from it (data.release_id) and those naming it (data.source_id).
-	SourceID int64
+	// from it (data.release_id, one of SourceReleaseIDs) and those naming it
+	// (data.source_id). The caller reads the Release ids from the Source's
+	// owner, because Releases live in the main database and Events in their
+	// own.
+	SourceID         int64
+	SourceReleaseIDs []int64
 	// HideFeed drops the routine feed checks.
 	HideFeed bool
 	// HideKinds drops Events of these exact kinds (from the list and the
@@ -148,14 +153,12 @@ func (s *Store) Events(ctx context.Context, f EventFilter) ([]Event, int, error)
 		args = append(args, f.PartID, f.PartID)
 	}
 	if f.SourceID > 0 {
-		// Releases live in the main database, Events in their own: read the
-		// Source's Release ids first and pass them as one JSON list.
-		ids := "[]"
-		if err := s.read.QueryRowContext(ctx, "SELECT coalesce(json_group_array(id), '[]') FROM releases WHERE source_id = ?", f.SourceID).Scan(&ids); err != nil {
+		ids, err := json.Marshal(append([]int64{}, f.SourceReleaseIDs...))
+		if err != nil {
 			return nil, 0, err
 		}
 		where = append(where, "(json_extract(data, '$.release_id') IN (SELECT value FROM json_each(?)) OR json_extract(data, '$.source_id') = ?)")
-		args = append(args, ids, f.SourceID)
+		args = append(args, string(ids), f.SourceID)
 	}
 	if len(f.HideKinds) > 0 {
 		where = append(where, "kind NOT IN ("+strings.TrimSuffix(strings.Repeat("?,", len(f.HideKinds)), ",")+")")

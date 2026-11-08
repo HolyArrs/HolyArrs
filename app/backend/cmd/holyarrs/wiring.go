@@ -4,8 +4,16 @@ import (
 	"net/http"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/api"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
 )
+
+// registerHooks hands core the functions that modules own. Each module that
+// leaves a leftover package adds its registrations here.
+func registerHooks() {
+	secrets.RegisterRewriter("sources", source.EncryptPlainExtras)
+}
 
 // routes returns the handler that serves every route of the app. Each module
 // that leaves the api package adds one registration line here.

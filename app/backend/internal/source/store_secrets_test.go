@@ -1,4 +1,4 @@
-package store
+package source
 
 import (
 	"context"
@@ -43,6 +43,7 @@ func TestMigratesPlaintext(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	secrets.RegisterRewriter("sources", EncryptPlainExtras)
 	n, err := v.MigratePlaintext(ctx)
 	if err != nil || n != 2 {
 		t.Fatalf("moved %d %v", n, err)

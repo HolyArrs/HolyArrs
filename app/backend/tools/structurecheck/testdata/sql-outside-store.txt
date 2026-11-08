@@ -110,7 +110,6 @@ app/backend/internal/compat/lists.go
 app/backend/internal/compat/movies.go
 app/backend/internal/compat/queue.go
 app/backend/internal/compat/shows.go
-app/backend/internal/core/database/events.go
 app/backend/internal/core/jobs/jobs.go
 app/backend/internal/core/jobs/schedule.go
 app/backend/internal/core/secrets/secrets.go

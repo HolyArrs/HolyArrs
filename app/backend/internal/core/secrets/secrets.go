@@ -19,6 +19,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
@@ -62,7 +63,6 @@ var (
 
 // Keys that hold secrets wherever an older setup may have kept them in the clear.
 var (
-	extraSecretKeys   = []string{"apikey", "api_key", "password", "token"}
 	settingSecretKeys = map[string]bool{"tmdb_token": true}
 )
 
@@ -75,10 +75,39 @@ type Vault struct {
 	OnPut func(plain string)
 }
 
-type plainSource struct {
-	id    int64
-	extra map[string]string
-	ref   sql.NullInt64
+// Rewriter moves the secrets one module stored in the clear into the vault,
+// inside the transaction it is given, and says how many it moved. The module
+// registers it from the program wiring, so core names no module table.
+type Rewriter func(tx *sql.Tx, v *Vault) (int, error)
+
+type namedRewriter struct {
+	name string
+	fn   Rewriter
+}
+
+var (
+	rewriterMu sync.Mutex
+	rewriters  []namedRewriter
+)
+
+// RegisterRewriter adds fn to what MigratePlaintext runs, in registration
+// order. Registering a name again replaces the earlier function.
+func RegisterRewriter(name string, fn Rewriter) {
+	rewriterMu.Lock()
+	defer rewriterMu.Unlock()
+	for i := range rewriters {
+		if rewriters[i].name == name {
+			rewriters[i].fn = fn
+			return
+		}
+	}
+	rewriters = append(rewriters, namedRewriter{name, fn})
+}
+
+func registeredRewriters() []namedRewriter {
+	rewriterMu.Lock()
+	defer rewriterMu.Unlock()
+	return append([]namedRewriter(nil), rewriters...)
 }
 
 type plainSetting struct{ grp, key, val string }
@@ -408,40 +437,18 @@ func (v *Vault) Setting(ctx context.Context, grp, key string) (string, error) {
 	return v.Get(ctx, id)
 }
 
-// MigratePlaintext moves secrets an older setup stored in the clear (Source
-// extras and secret settings) into the vault, and says how many it moved.
+// MigratePlaintext moves secrets an older setup stored in the clear (module values
+// and secret settings) into the vault, and says how many it moved.
 func (v *Vault) MigratePlaintext(ctx context.Context) (int, error) {
 	moved := 0
 	err := v.s.Write(ctx, func(tx *sql.Tx) error {
 		moved = 0
-		srcs, err := plainSources(tx)
-		if err != nil {
-			return err
-		}
-		for _, x := range srcs {
-			var plain string
-			for _, k := range extraSecretKeys {
-				if val, ok := x.extra[k]; ok {
-					if plain == "" {
-						plain = val
-					}
-					delete(x.extra, k)
-				}
-			}
-			if plain == "" {
-				continue
-			}
-			ref := x.ref.Int64
-			if !x.ref.Valid {
-				if ref, err = v.PutTx(tx, "source_api_key", plain, database.System); err != nil {
-					return err
-				}
-			}
-			b, _ := json.Marshal(x.extra)
-			if _, err := tx.Exec("UPDATE sources SET extra = ?, secret_ref = ?, updated_at = ? WHERE id = ?", string(b), ref, now(), x.id); err != nil {
+		for _, r := range registeredRewriters() {
+			n, err := r.fn(tx, v)
+			moved += n
+			if err != nil {
 				return err
 			}
-			moved++
 		}
 		sets, err := plainSettings(tx)
 		if err != nil {
@@ -574,25 +581,6 @@ func now() string { return database.FormatTime(time.Now()) }
 func actor(a database.Actor) string {
 	b, _ := json.Marshal(a)
 	return string(b)
-}
-
-func plainSources(tx *sql.Tx) ([]plainSource, error) {
-	rows, err := tx.Query("SELECT id, extra, secret_ref FROM sources")
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var out []plainSource
-	for rows.Next() {
-		var x plainSource
-		var raw string
-		if err := rows.Scan(&x.id, &raw, &x.ref); err != nil {
-			return nil, err
-		}
-		_ = json.Unmarshal([]byte(raw), &x.extra)
-		out = append(out, x)
-	}
-	return out, rows.Err()
 }
 
 func plainSettings(tx *sql.Tx) ([]plainSetting, error) {

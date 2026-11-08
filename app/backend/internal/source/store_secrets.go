@@ -1,6 +1,7 @@
 package source
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"time"
@@ -73,4 +74,15 @@ func plainSources(tx *sql.Tx) ([]plainSource, error) {
 		out = append(out, x)
 	}
 	return out, rows.Err()
+}
+
+// ReleaseIDs lists the ids of the Releases one Source found.
+func ReleaseIDs(ctx context.Context, q database.Querier, sourceID int64) ([]int64, error) {
+	var raw string
+	if err := q.QueryRowContext(ctx, "SELECT coalesce(json_group_array(id), '[]') FROM releases WHERE source_id = ?", sourceID).Scan(&raw); err != nil {
+		return nil, err
+	}
+	var ids []int64
+	err := json.Unmarshal([]byte(raw), &ids)
+	return ids, err
 }
