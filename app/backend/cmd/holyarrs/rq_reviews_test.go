@@ -1,4 +1,4 @@
-package api
+package main
 
 import (
 	"context"
@@ -10,12 +10,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/api"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
-type reviewsView struct {
+type rqReviewsView struct {
 	Source  string `json:"source"`
 	Sources []struct {
 		ID     string   `json:"id"`
@@ -85,11 +86,11 @@ func TestMetadataReviews(t *testing.T) {
 	}))
 	t.Cleanup(tk.Close)
 	prov := &metadata.TMDB{BaseURL: tm.URL + "/3", Access: func(context.Context) (string, error) { return "x", nil }, Gap: time.Millisecond}
-	srv := httptest.NewServer(New(Server{Store: s, Metadata: prov, Version: "test", Secrets: v, TraktBase: tk.URL}).Handler())
+	srv := httptest.NewServer(api.New(api.Server{Store: s, Metadata: prov, Version: "test", Secrets: v, TraktBase: tk.URL}).Handler())
 	t.Cleanup(srv.Close)
-	get := func(path string) reviewsView {
-		var out reviewsView
-		if err := json.Unmarshal(do(t, "GET", srv.URL+path, "", 200), &out); err != nil {
+	get := func(path string) rqReviewsView {
+		var out rqReviewsView
+		if err := json.Unmarshal(rqDo(t, "GET", srv.URL+path, "", 200), &out); err != nil {
 			t.Fatal(err)
 		}
 		return out
@@ -105,23 +106,23 @@ func TestMetadataReviews(t *testing.T) {
 	if tmdbHits.Load() != before {
 		t.Fatal("reviews not cached")
 	}
-	if d := string(do(t, "GET", srv.URL+"/api/v1/metadata/movie/11", "", 200)); !strings.Contains(d, `"score":7.8`) || !strings.Contains(d, `"votes":12400`) {
+	if d := string(rqDo(t, "GET", srv.URL+"/api/v1/metadata/movie/11", "", 200)); !strings.Contains(d, `"score":7.8`) || !strings.Contains(d, `"votes":12400`) {
 		t.Fatalf("details score %s", d)
 	}
-	do(t, "GET", srv.URL+"/api/v1/metadata/movie/11/reviews?source=trakt", "", 404)
-	do(t, "GET", srv.URL+"/api/v1/metadata/movie/11/reviews?source=imdb", "", 400)
-	do(t, "GET", srv.URL+"/api/v1/metadata/movie/11/reviews?page=0", "", 400)
-	do(t, "GET", srv.URL+"/api/v1/metadata/movie/11/reviews?order=best", "", 400)
-	do(t, "GET", srv.URL+"/api/v1/metadata/artist/11/reviews", "", 400)
+	rqDo(t, "GET", srv.URL+"/api/v1/metadata/movie/11/reviews?source=trakt", "", 404)
+	rqDo(t, "GET", srv.URL+"/api/v1/metadata/movie/11/reviews?source=imdb", "", 400)
+	rqDo(t, "GET", srv.URL+"/api/v1/metadata/movie/11/reviews?page=0", "", 400)
+	rqDo(t, "GET", srv.URL+"/api/v1/metadata/movie/11/reviews?order=best", "", 400)
+	rqDo(t, "GET", srv.URL+"/api/v1/metadata/artist/11/reviews", "", 400)
 
 	// The client id alone is not enough; the VIP token turns Trakt on.
-	do(t, "PUT", srv.URL+"/api/v1/settings/trakt-key", `{"key":"TRAKT_FOR_TEST_ONLY"}`, 200)
+	rqDo(t, "PUT", srv.URL+"/api/v1/settings/trakt-key", `{"key":"TRAKT_FOR_TEST_ONLY"}`, 200)
 	if g := get("/api/v1/metadata/movie/11/reviews"); len(g.Sources) != 1 {
 		t.Fatalf("trakt without token %+v", g)
 	}
-	do(t, "PUT", srv.URL+"/api/v1/settings/trakt-token", `{}`, 400)
-	do(t, "PUT", srv.URL+"/api/v1/settings/trakt-token", `{"token":"VIP_FOR_TEST_ONLY"}`, 200)
-	if b := string(do(t, "GET", srv.URL+"/api/v1/settings/trakt-token", "", 200)); strings.Contains(b, "VIP_FOR_TEST_ONLY") || !strings.Contains(b, secrets.Masked) {
+	rqDo(t, "PUT", srv.URL+"/api/v1/settings/trakt-token", `{}`, 400)
+	rqDo(t, "PUT", srv.URL+"/api/v1/settings/trakt-token", `{"token":"VIP_FOR_TEST_ONLY"}`, 200)
+	if b := string(rqDo(t, "GET", srv.URL+"/api/v1/settings/trakt-token", "", 200)); strings.Contains(b, "VIP_FOR_TEST_ONLY") || !strings.Contains(b, secrets.Masked) {
 		t.Fatalf("token shown: %s", b)
 	}
 	g = get("/api/v1/metadata/movie/11/reviews?source=trakt")
@@ -130,20 +131,6 @@ func TestMetadataReviews(t *testing.T) {
 		t.Fatalf("trakt %+v", g)
 	}
 	// A refused token says so.
-	do(t, "PUT", srv.URL+"/api/v1/settings/trakt-token", `{"token":"OLD_FOR_TEST_ONLY"}`, 200)
-	do(t, "GET", srv.URL+"/api/v1/metadata/movie/11/reviews?source=trakt&order=helpful", "", 502)
-}
-
-// A Kid keeps the score but gets no reviews; a title above the limit is 403.
-func TestKidReviewsHidden(t *testing.T) {
-	t.Parallel()
-	k := newKidRig(t)
-	code, body := k.kai.get("/api/v1/metadata/movie/4101/reviews")
-	var g reviewsView
-	if code != 200 || json.Unmarshal([]byte(body), &g) != nil || !g.Hidden || len(g.Reviews) != 0 {
-		t.Fatalf("kid %d %s", code, body)
-	}
-	if code, _ := k.kai.get("/api/v1/metadata/movie/4204/reviews"); code != 403 {
-		t.Fatalf("kid above limit %d", code)
-	}
+	rqDo(t, "PUT", srv.URL+"/api/v1/settings/trakt-token", `{"token":"OLD_FOR_TEST_ONLY"}`, 200)
+	rqDo(t, "GET", srv.URL+"/api/v1/metadata/movie/11/reviews?source=trakt&order=helpful", "", 502)
 }

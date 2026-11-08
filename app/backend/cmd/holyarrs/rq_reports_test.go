@@ -1,4 +1,4 @@
-package api
+package main
 
 import (
 	"context"
@@ -31,10 +31,10 @@ type reportList struct {
 
 func TestReportsOverHTTP(t *testing.T) {
 	t.Parallel()
-	r := newAskRig(t)
+	r := rqNewAskRig(t)
 	ctx := context.Background()
-	f, v, _ := apiMovieCopy(t, r.st, false)
-	title := itoa(v.TitleID)
+	f, v := rqMovieCopy(t, r.st)
+	title := rqItoa(v.TitleID)
 
 	// A member reports; the same open problem twice is refused.
 	mine := reportOf(t, r.ana.call("POST", "/api/v1/reports", `{"title_id":`+title+`,"kind":"sound","note":"hiss"}`, 201))
@@ -69,13 +69,13 @@ func TestReportsOverHTTP(t *testing.T) {
 	}
 
 	// Only managers fix and reopen; the reply reaches ana as a message.
-	r.ana.call("POST", "/api/v1/reports/"+itoa(mine.ID)+"/fix", `{}`, 403)
-	r.ana.call("POST", "/api/v1/reports/"+itoa(mine.ID)+"/reopen", ``, 403)
-	fixed := reportOf(t, r.owner.call("POST", "/api/v1/reports/"+itoa(mine.ID)+"/fix", `{"reply":"new copy is in"}`, 200))
+	r.ana.call("POST", "/api/v1/reports/"+rqItoa(mine.ID)+"/fix", `{}`, 403)
+	r.ana.call("POST", "/api/v1/reports/"+rqItoa(mine.ID)+"/reopen", ``, 403)
+	fixed := reportOf(t, r.owner.call("POST", "/api/v1/reports/"+rqItoa(mine.ID)+"/fix", `{"reply":"new copy is in"}`, 200))
 	if fixed.State != "fixed" || fixed.Reply != "new copy is in" || fixed.ClosedBy == nil || fixed.ClosedBy.Name != "luis" {
 		t.Fatalf("fixed %+v", fixed)
 	}
-	r.owner.call("POST", "/api/v1/reports/"+itoa(mine.ID)+"/fix", ``, 409)
+	r.owner.call("POST", "/api/v1/reports/"+rqItoa(mine.ID)+"/fix", ``, 409)
 	var inbox struct {
 		Messages []requests.Message `json:"messages"`
 		Unread   int                `json:"unread"`
@@ -84,10 +84,10 @@ func TestReportsOverHTTP(t *testing.T) {
 	if inbox.Unread != 1 || inbox.Messages[0].Kind != "fixed" || inbox.Messages[0].ReportID == nil || *inbox.Messages[0].ReportID != mine.ID {
 		t.Fatalf("ana's inbox %+v", inbox)
 	}
-	if again := reportOf(t, r.owner.call("POST", "/api/v1/reports/"+itoa(mine.ID)+"/reopen", ``, 200)); again.State != "open" {
+	if again := reportOf(t, r.owner.call("POST", "/api/v1/reports/"+rqItoa(mine.ID)+"/reopen", ``, 200)); again.State != "open" {
 		t.Fatalf("reopened %+v", again)
 	}
-	r.owner.call("POST", "/api/v1/reports/"+itoa(mine.ID)+"/reopen", ``, 409)
+	r.owner.call("POST", "/api/v1/reports/"+rqItoa(mine.ID)+"/reopen", ``, 409)
 	r.owner.call("POST", "/api/v1/reports/9999/fix", ``, 404)
 
 	// A title with nothing in the Library yet, and one that does not exist.
@@ -105,7 +105,7 @@ func TestReportsOverHTTP(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	r.ana.call("POST", "/api/v1/reports", `{"title_id":`+itoa(wanted)+`,"kind":"other"}`, 422)
+	r.ana.call("POST", "/api/v1/reports", `{"title_id":`+rqItoa(wanted)+`,"kind":"other"}`, 422)
 	r.ana.call("POST", "/api/v1/reports", `{"title_id":9999,"kind":"other"}`, 404)
 
 	// A Kid sees an unrated title as not there at all, as on GET /titles/{id}.
