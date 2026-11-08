@@ -19,6 +19,7 @@ app/backend/internal/api/downloads_live.go
 app/backend/internal/api/downloads_remove_event.go
 app/backend/internal/api/downloads_sync.go
 app/backend/internal/api/downloads_usenet.go
+app/backend/internal/api/episode_labels.go
 app/backend/internal/api/eventepisodes.go
 app/backend/internal/api/explore.go
 app/backend/internal/api/explore_genre.go
@@ -46,7 +47,6 @@ app/backend/internal/api/people_shelves.go
 app/backend/internal/api/servicetop.go
 app/backend/internal/api/settings_status.go
 app/backend/internal/api/showroutes.go
-app/backend/internal/api/showsearch.go
 app/backend/internal/api/signinart.go
 app/backend/internal/api/titlefacts.go
 app/backend/internal/api/titles.go

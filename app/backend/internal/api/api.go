@@ -400,7 +400,7 @@ func (a *API) Routes(rt *webserver.Router) {
 	m.HandleFunc("PUT /api/v1/outside-lists/{id}", a.editOutsideList)
 	m.HandleFunc("DELETE /api/v1/outside-lists/{id}", a.deleteOutsideList)
 	m.HandleFunc("POST /api/v1/outside-lists/{id}/sync", a.syncOutsideList)
-	(&sources.TitleSearchHandlers{Store: a.s.Store, Queue: a.s.Queue, Show: a.searchShow, Artist: a.searchArtist}).Routes(m)
+	(&sources.TitleSearchHandlers{Store: a.s.Store, Queue: a.s.Queue, Show: (&shows.SearchHandlers{Store: a.s.Store, Queue: a.s.Queue}).Search, Artist: a.searchArtist}).Routes(m)
 	m.HandleFunc("GET /api/v1/downloads", a.listDownloads)
 	m.HandleFunc("GET /api/v1/imports", a.listImports)
 	m.HandleFunc("GET /api/v1/events", a.listEvents)

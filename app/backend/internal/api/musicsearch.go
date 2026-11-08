@@ -25,7 +25,7 @@ import (
 // Slot (slot_id) or, with none of them, every album with a track kept up to
 // date and looking. version_id narrows to one Version. choose false only
 // lists the Releases, and needs an album.
-func (a *API) searchArtist(w http.ResponseWriter, r *http.Request, t mediafiles.Title, in showSearchIn) {
+func (a *API) searchArtist(w http.ResponseWriter, r *http.Request, t mediafiles.Title, in sources.TitleSearchIn) {
 	ctx := r.Context()
 	db := a.s.Store.Read()
 	if in.Season != nil {
