@@ -23,7 +23,7 @@ func TestWikiFactsBadgesBioAndFallback(t *testing.T) {
 				return metadata.WikiEntity{}, metadata.ErrNotFound
 			}
 			return metadata.WikiEntity{Tallies: []metadata.WikiTally{{Family: "golden_globe", Nominations: 2}, {Family: "oscar", Wins: 1}, {Family: "emmy", Wins: 3}},
-				Awards: []metadata.WikiAward{{Name: "Academy Award for Best Picture", Family: "oscar", Won: true, Year: 1995}},
+				Awards:  []metadata.WikiAward{{Name: "Academy Award for Best Picture", Family: "oscar", Won: true, Year: 1995}},
 				Summary: &metadata.WikiSummary{Extract: "x", URL: "https://en.wikipedia.org/wiki/X"}}, nil
 		},
 		WikiPerson: func(_ context.Context, id, _ string) (metadata.WikiEntity, error) {

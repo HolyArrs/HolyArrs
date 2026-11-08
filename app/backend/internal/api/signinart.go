@@ -12,9 +12,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
 // The sign-in page's art: one wide picture at a time behind the card. The
@@ -78,8 +78,8 @@ type signinArtState struct {
 	picks map[signinRef]signinPick // per-title picks
 	// failed marks a build that hit an error or timeout (not cached long).
 	failed bool
-	hits  map[string][]time.Time
-	pics  map[string][]time.Time // picture loads, by address
+	hits   map[string][]time.Time
+	pics   map[string][]time.Time // picture loads, by address
 
 	// Test hooks; nil uses the metadata provider.
 	images   func(ctx context.Context, kind, tmdbID string) (metadata.CardImages, error)

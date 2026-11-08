@@ -56,7 +56,7 @@ func musicNewFixture() musicNewInput {
 	add(30, "album", -2)  // this week
 	add(10, "ep", -15)    // recently out
 	add(8, "single", -4)  // fresh tracks
-	add(7, "album", 20) // coming
+	add(7, "album", 20)   // coming
 	add(3, "album", -400) // too old
 	live := rel(500, "album", nday(-1), 1)
 	live.SecondaryTypes = []string{"live"}

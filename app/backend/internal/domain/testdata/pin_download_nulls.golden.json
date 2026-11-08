@@ -1,0 +1,33 @@
+{
+  "ID": 5,
+  "CreatedAt": "2026-03-04T05:06:07Z",
+  "CreatedBy": {
+    "kind": "user",
+    "id": 2
+  },
+  "UpdatedAt": "2026-03-04T05:06:07Z",
+  "UpdatedBy": {
+    "kind": "system"
+  },
+  "DownloaderID": 0,
+  "ReleaseID": null,
+  "SlotIDs": [],
+  "ExternalID": "",
+  "Progress": 0,
+  "Speed": 0,
+  "UpSpeed": 0,
+  "Seeds": 0,
+  "Peers": 0,
+  "ETA": null,
+  "State": "",
+  "StateReason": null,
+  "FilesSeen": [],
+  "SavePath": "",
+  "StartedAt": null,
+  "FinishedAt": null,
+  "StartedBy": {
+    "kind": "system"
+  },
+  "ProgressAt": null,
+  "ConfirmedEdition": ""
+}

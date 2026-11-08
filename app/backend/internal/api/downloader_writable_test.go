@@ -13,7 +13,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 )
 
 // Only people who may change settings flip "HolyArrs can change this
@@ -29,7 +29,7 @@ func TestWritableNeedsSettingsPermission(t *testing.T) {
 // The switch is saved, shown in the API, and read live: off refuses a
 // pause before the client, on lets it through; the environment list locks it.
 func TestWritableSwitchLive(t *testing.T) {
-	t.Setenv(downloader.ReadOnlyEnv, "")
+	t.Setenv(downloads.ReadOnlyEnv, "")
 	x := seed41(t, mediafiles.SlotDownloading, "downloading")
 	f := &allClient{}
 	exec41(t, x.s, "UPDATE downloaders SET url = ?, allow_local_network = 1", f.server(t).URL)
@@ -52,7 +52,7 @@ func TestWritableSwitchLive(t *testing.T) {
 		t.Fatalf("view %+v", v)
 	}
 	do(t, "POST", pause, "", http.StatusOK)
-	t.Setenv(downloader.ReadOnlyEnv, itoa(did))
+	t.Setenv(downloads.ReadOnlyEnv, itoa(did))
 	x.api.manager().Forget(did)
 	do(t, "POST", pause, "", http.StatusConflict)
 	var list struct {
@@ -66,7 +66,7 @@ func TestWritableSwitchLive(t *testing.T) {
 
 // Every change sent straight to a client is in History: who and what.
 func TestClientItemChangeEvents(t *testing.T) {
-	t.Setenv(downloader.ReadOnlyEnv, "")
+	t.Setenv(downloads.ReadOnlyEnv, "")
 	x := seed41(t, mediafiles.SlotDownloading, "downloading")
 	f := &allClient{}
 	exec41(t, x.s, "UPDATE downloaders SET url = ?, allow_local_network = 1, writable = 1", f.server(t).URL)

@@ -3,14 +3,15 @@ package api
 import (
 	"context"
 	"encoding/json"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
-	"sync/atomic"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"

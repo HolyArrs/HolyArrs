@@ -139,7 +139,7 @@ type serviceTopView struct {
 	Stale      bool  `json:"stale"`
 	// Ranked is true for the service's own top list; TMDB popularity is
 	// not a ranking.
-	Ranked bool        `json:"ranked"`
+	Ranked bool         `json:"ranked"`
 	Items  []rankedView `json:"items"`
 }
 

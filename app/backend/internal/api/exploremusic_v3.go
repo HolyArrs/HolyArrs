@@ -29,8 +29,8 @@ const (
 	// musicEmptyTTL keeps an empty value (no similar artists, 0 listeners,
 	// no genres or albums) only minutes (cache audit 2026-10-23).
 	musicEmptyTTL = 10 * time.Minute
-	musicSeedsTop  = 10
-	musicSimilarS  = 0.3
+	musicSeedsTop = 10
+	musicSimilarS = 0.3
 )
 
 // musicSeedLog keeps which artists seeded Since you have rows per member

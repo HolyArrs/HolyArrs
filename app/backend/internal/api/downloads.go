@@ -19,7 +19,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
 )
 
@@ -94,7 +94,7 @@ type DownloadRow struct {
 	Ratio *float64 `json:"ratio,omitempty"`
 	// Limits are a client torrent's own seeding rules (-2 the client's
 	// global rule, -1 none), when the client reports them.
-	Limits *downloader.ShareLimits `json:"limits,omitempty"`
+	Limits *downloads.ShareLimits `json:"limits,omitempty"`
 	// ClientHint is a client torrent's finer state where the phase is too
 	// coarse: checking, moving, errored, missing (files gone) or idle_seed
 	// (finished, nobody asking for it now).
@@ -419,7 +419,7 @@ func (a *API) downloadsView(w http.ResponseWriter, r *http.Request) {
 		}
 		row.Label = PhaseLabels[row.Phase]
 		row.CanAct = row.Active && manage
-		row.ClientLocked = downloader.ReadOnlyFor(n)
+		row.ClientLocked = downloads.ReadOnlyFor(n)
 		if (d.State == "failed" || d.State == "vanished") && row.SlotState != "" && row.SlotState != string(mediafiles.SlotFailed) && row.SlotState != string(mediafiles.SlotNeedsADecision) {
 			row.Replaced = true
 		}
@@ -679,7 +679,7 @@ func (a *API) removeDownload(w http.ResponseWriter, r *http.Request) {
 	if r.ContentLength != 0 && !decode(w, r, &in, `body is {"delete_files": bool, "turn_down": bool, "search_again": bool}, each optional (defaults in Settings > Downloaders)`) {
 		return
 	}
-	c := downloader.RemoveChoice{DeleteFiles: st.RemoveDeleteFiles, TurnDown: st.RemoveTurnDown, SearchAgain: st.RemoveSearchAgain}
+	c := downloads.RemoveChoice{DeleteFiles: st.RemoveDeleteFiles, TurnDown: st.RemoveTurnDown, SearchAgain: st.RemoveSearchAgain}
 	if in.DeleteFiles != nil {
 		c.DeleteFiles = *in.DeleteFiles
 	}
@@ -697,7 +697,7 @@ func (a *API) removeDownload(w http.ResponseWriter, r *http.Request) {
 	switch {
 	case errors.Is(err, database.ErrNotFound), errors.Is(err, sql.ErrNoRows):
 		fail(w, http.StatusNotFound, "no such download")
-	case errors.Is(err, downloader.ErrNotActive):
+	case errors.Is(err, downloads.ErrNotActive):
 		fail(w, http.StatusConflict, err.Error())
 	case err != nil:
 		internal(w, err)

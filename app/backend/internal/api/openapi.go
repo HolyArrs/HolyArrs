@@ -3,8 +3,9 @@ package api
 import (
 	"bytes"
 	_ "embed"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"net/http"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
 // openapiJSON describes every /api/v1 route. It is generated from the code

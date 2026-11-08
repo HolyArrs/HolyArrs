@@ -9,7 +9,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/dlsync"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/updates"
 
 	"log"
@@ -29,7 +29,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/asks"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/backups"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/health"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
@@ -58,7 +57,7 @@ type Server struct {
 	Store *database.Store
 	// DLSync is the background download reader (downloads.sync = on); nil
 	// keeps the Downloads view's own client reads.
-	DLSync   *dlsync.Sync
+	DLSync   *downloads.Sync
 	Queue    *jobs.Queue
 	Live     *webserver.LiveHub
 	Metadata metadata.Provider
@@ -134,7 +133,7 @@ type Server struct {
 	// Watchlists reads Plex watchlists (nil: no person can be read).
 	Watchlists *asks.Watchlists
 	// Downloads follows Downloaders and Downloads; made on first use when nil.
-	Downloads *downloader.Manager
+	Downloads *downloads.Manager
 	// Search runs searches, hand choices and the Held and Turned down
 	// lists; New makes one (choices queue a grab Job) when nil.
 	Search *sources.Searcher
@@ -297,7 +296,7 @@ func New(s Server) *API {
 		s.Media = &mediaservers.Linker{Store: s.Store, Vault: s.Secrets}
 	}
 	if s.Subtitles == nil {
-		s.Subtitles = newSubtitles(s)
+		s.Subtitles = subtitles.NewService(s.Store, s.Secrets, s.Live, s.Queue)
 	}
 	if s.Search == nil {
 		q := s.Queue
@@ -310,7 +309,7 @@ func New(s Server) *API {
 				if q == nil {
 					return
 				}
-				if _, _, err := q.Enqueue(ctx, downloader.KindGrab, &domain.Subject{Type: "slot", ID: slotID}, map[string]any{"release_id": releaseID},
+				if _, _, err := q.Enqueue(ctx, downloads.KindGrab, &domain.Subject{Type: "slot", ID: slotID}, map[string]any{"release_id": releaseID},
 					"grab:"+itoa(slotID), domain.System); err != nil {
 					log.Printf("queue grab: %v", err)
 				}
@@ -419,7 +418,7 @@ func (a *API) Routes(rt *webserver.Router) {
 	a.showRoutes(m)
 	a.musicRoutes(m)
 	a.musicPageRoutes(m)
-	a.subtitleRoutes(m)
+	subtitles.NewHandlers(a.s.Store, a.s.Secrets, a.s.Subtitles).Routes(m)
 	a.importSecretsRoutes(m)
 	a.thisAppRoutes(m)
 	a.dataPackRoutes(m)
@@ -544,6 +543,9 @@ func (a *API) healthz(w http.ResponseWriter, _ *http.Request) {
 	}
 	_, _ = w.Write([]byte("ok\n"))
 }
+
+// SubtitleFileView is one main File with its subtitles.
+type SubtitleFileView = subtitles.FileView
 
 func writeJSON(w http.ResponseWriter, code int, v any) { webserver.WriteJSON(w, code, v) }
 

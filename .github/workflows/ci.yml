@@ -220,7 +220,7 @@ jobs:
       - name: Downloader suite (qBittorrent, SABnzbd, the made-up third engine)
         run: |
           set -o pipefail
-          go test -count=1 -run '^TestDownloaderConformance$' -v ./app/backend/internal/downloader 2>&1 | sed -E 's/(auth: first run: setup code) [^ ]+/\1 [hidden]/g'
+          go test -count=1 -run '^TestDownloaderConformance$' -v ./app/backend/internal/downloads 2>&1 | sed -E 's/(auth: first run: setup code) [^ ]+/\1 [hidden]/g'
       - name: Fault runs (a crash in each loop, a slow write, bad outside services, a pass past its deadline)
         env:
           HOLYARRS_FAULT_OUT: ${{ runner.temp }}/faults.md

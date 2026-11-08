@@ -13,7 +13,7 @@ import (
 	"strings"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 )
 
@@ -76,7 +76,7 @@ func (w *world) reset(ctx context.Context) error {
 		return nil
 	})
 	for _, id := range w.m.Downloaders {
-		if err := downloader.Remove(ctx, w.s, id, w.by); err != nil && !errors.Is(err, database.ErrNotFound) {
+		if err := downloads.Remove(ctx, w.s, id, w.by); err != nil && !errors.Is(err, database.ErrNotFound) {
 			w.say("   Downloader %d: %v", id, err)
 		}
 	}

@@ -13,8 +13,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/dlsync"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 )
 
 // dlStreams opens /live streams on the API's hub as a manager (uid 0) or
@@ -40,14 +39,14 @@ func dlStreams(t *testing.T, ctx context.Context, hub *webserver.LiveHub, uids .
 	return out, resume
 }
 
-func dlPatches(t *testing.T, fs []liveFrame) []dlsync.Patch {
+func dlPatches(t *testing.T, fs []liveFrame) []downloads.Patch {
 	t.Helper()
-	var out []dlsync.Patch
+	var out []downloads.Patch
 	for _, f := range fs {
 		if f.topic != webserver.LiveTopicDL {
 			continue
 		}
-		var p dlsync.Patch
+		var p downloads.Patch
 		if err := json.Unmarshal([]byte(f.data), &p); err != nil {
 			t.Fatal(err)
 		}
@@ -70,7 +69,7 @@ func TestPublishDLAudiences(t *testing.T) {
 	var dlr int64
 	_ = x.s.Read().QueryRow("SELECT id FROM downloaders LIMIT 1").Scan(&dlr)
 
-	sy := &dlsync.Sync{Store: &dlsync.Store{}, DB: x.s, Manager: noClient{x.api.manager()}}
+	sy := &downloads.Sync{Store: &downloads.Store{}, DB: x.s, Manager: noClient{x.api.manager()}}
 	x.api.s.DLSync = sy
 	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan struct{})
@@ -86,17 +85,17 @@ func TestPublishDLAudiences(t *testing.T) {
 
 	own := "abcdabcdabcdabcdabcdabcdabcdabcdabcdabcd"
 	out := strings.Repeat("e", 40)
-	prev := map[string]downloader.Job{
-		own: {ID: own, Name: "Salt", Progress: 0.3, Speed: 100, State: downloader.StateDownloading},
-		out: {ID: out, Name: "Secret.Outside", Progress: 0.1, State: downloader.StateDownloading},
+	prev := map[string]downloads.Job{
+		own: {ID: own, Name: "Salt", Progress: 0.3, Speed: 100, State: downloads.StateDownloading},
+		out: {ID: out, Name: "Secret.Outside", Progress: 0.1, State: downloads.StateDownloading},
 	}
-	cur := map[string]downloader.Job{
-		own:           {ID: own, Name: "Salt", Progress: 0.5, Speed: 200, State: downloader.StateDownloading},
-		out:           {ID: out, Name: "Secret.Outside", Progress: 0.2, State: downloader.StateDownloading},
-		"f" + out[1:]: {ID: "f" + out[1:], Name: "New.Outside", State: downloader.StateQueued},
+	cur := map[string]downloads.Job{
+		own:           {ID: own, Name: "Salt", Progress: 0.5, Speed: 200, State: downloads.StateDownloading},
+		out:           {ID: out, Name: "Secret.Outside", Progress: 0.2, State: downloads.StateDownloading},
+		"f" + out[1:]: {ID: "f" + out[1:], Name: "New.Outside", State: downloads.StateQueued},
 	}
 	x.api.PublishDL(ctx, dlr, 4, 5, prev, cur)
-	gone := map[string]downloader.Job{own: cur[own]}
+	gone := map[string]downloads.Job{own: cur[own]}
 	x.api.PublishDL(ctx, dlr, 5, 6, cur, gone)
 
 	k := func(ext string) string { return liveKey(dlr, ext) }
@@ -142,7 +141,7 @@ func TestPublishDLAudiences(t *testing.T) {
 	x.api.PublishDLHealth(ctx)
 	x.api.PublishDLHealth(ctx)
 	hs := dlPatches(t, frames(st[0], 200*time.Millisecond))
-	if len(hs) != 1 || hs[0].Kind != dlsync.KindHealth || hs[0].Client != dlr {
+	if len(hs) != 1 || hs[0].Kind != downloads.KindHealth || hs[0].Client != dlr {
 		t.Fatalf("manager health %+v", hs)
 	}
 	if m := dlPatches(t, frames(st[2], 100*time.Millisecond)); len(m) != 0 {

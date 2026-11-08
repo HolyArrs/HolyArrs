@@ -10,9 +10,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/dlsync"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 )
 
 // Push updates for the Downloads page (setting downloads.sync = on): the
@@ -38,7 +37,7 @@ func liveKey(downloaderID int64, externalID string) string {
 // ownNumbers are the fields of a HolyArrs row a patch may move: the client's
 // live numbers. State, phase and words come from the Manager's own writes,
 // which reach the page through the "download" event and a page read.
-func ownNumbers(j downloader.Job) map[string]any {
+func ownNumbers(j downloads.Job) map[string]any {
 	m := map[string]any{
 		"progress": j.Progress, "speed": j.Speed, "up_speed": j.UpSpeed, "seeds": j.Seeds, "peers": j.Peers,
 		"seeds_total": j.SeedsTotal, "peers_total": j.PeersTotal, "ratio": j.Ratio, "eta": nil, "availability": nil,
@@ -134,7 +133,7 @@ func (a *API) ownRows(ctx context.Context, id int64, keys []string, people bool)
 
 // PublishDL is the publisher's Build: one patch per audience for client id
 // going from prev (at fromRev) to cur (at toRev).
-func (a *API) PublishDL(ctx context.Context, id int64, fromRev, toRev uint64, prev, cur map[string]downloader.Job) {
+func (a *API) PublishDL(ctx context.Context, id int64, fromRev, toRev uint64, prev, cur map[string]downloads.Job) {
 	if a.s.Live == nil || !a.syncOn() {
 		return
 	}
@@ -145,7 +144,7 @@ func (a *API) PublishDL(ctx context.Context, id int64, fromRev, toRev uint64, pr
 		return
 	}
 	viewers := a.s.Live.Viewers()
-	ch := dlsync.Diff(prev, cur)
+	ch := downloads.Diff(prev, cur)
 	keyOf := func(ext string) string { return liveKey(id, ext) }
 	var moved []string
 	for _, ext := range ch.Added {
@@ -158,13 +157,13 @@ func (a *API) PublishDL(ctx context.Context, id int64, fromRev, toRev uint64, pr
 	outsideShown := d.Protocol == "torrent" || d.Protocol == "usenet" && a.s.DLSync.SABOutside(ctx)
 	boot := a.s.Live.Boot()
 
-	mgr := dlsync.Patch{Kind: dlsync.KindPatch, Boot: boot, Client: id, FromRev: fromRev, ToRev: toRev, Totals: a.dlTotals()}
-	per := map[int64]*dlsync.Patch{}
+	mgr := downloads.Patch{Kind: downloads.KindPatch, Boot: boot, Client: id, FromRev: fromRev, ToRev: toRev, Totals: a.dlTotals()}
+	per := map[int64]*downloads.Patch{}
 	for _, uid := range viewers {
-		per[uid] = &dlsync.Patch{Kind: dlsync.KindPatch, Boot: boot, Client: id, FromRev: fromRev, ToRev: toRev}
+		per[uid] = &downloads.Patch{Kind: downloads.KindPatch, Boot: boot, Client: id, FromRev: fromRev, ToRev: toRev}
 	}
 	var added []DownloadRow
-	upsertOwn := func(k string, p, c downloader.Job, isNew bool) {
+	upsertOwn := func(k string, p, c downloads.Job, isNew bool) {
 		f := ownNumbers(c)
 		if !isNew {
 			f = changed(ownNumbers(p), f)
@@ -184,7 +183,7 @@ func (a *API) PublishDL(ctx context.Context, id int64, fromRev, toRev uint64, pr
 		k, c := keyOf(ext), cur[ext]
 		switch {
 		case own.keys[k]:
-			upsertOwn(k, downloader.Job{}, c, true)
+			upsertOwn(k, downloads.Job{}, c, true)
 		case outsideShown:
 			row := clientRow(d, c)
 			row.LiveKey = k
@@ -233,11 +232,11 @@ func (a *API) PublishDL(ctx context.Context, id int64, fromRev, toRev uint64, pr
 }
 
 // dlTotals adds up every client's speeds in the reader's snapshots.
-func (a *API) dlTotals() *dlsync.PatchTotals {
-	t := &dlsync.PatchTotals{}
+func (a *API) dlTotals() *downloads.PatchTotals {
+	t := &downloads.PatchTotals{}
 	for id := range a.s.DLSync.Store.Revs() {
 		for _, j := range a.s.DLSync.Store.Current(id).Items {
-			if j.State == downloader.StateDownloading {
+			if j.State == downloads.StateDownloading {
 				t.Speed += j.Speed
 			}
 			t.UpSpeed += j.UpSpeed
@@ -275,7 +274,7 @@ func (a *API) PublishDLHealth(ctx context.Context) {
 			continue
 		}
 		a.dlHealth.last[d.ID] = sig
-		p := dlsync.Patch{Kind: dlsync.KindHealth, Boot: boot, Client: d.ID, Health: h.Health, Name: h.Name, Stale: h.Stale}
+		p := downloads.Patch{Kind: downloads.KindHealth, Boot: boot, Client: d.ID, Health: h.Health, Name: h.Name, Stale: h.Stale}
 		if !h.SeenAt.IsZero() {
 			t := h.SeenAt.UTC().Truncate(time.Second)
 			p.SeenAt = &t

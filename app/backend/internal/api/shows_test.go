@@ -1,9 +1,10 @@
 package api
 
 import (
-	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 	"strings"
 	"testing"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 )
 
 // route: GET /api/v1/settings/tvdb-key

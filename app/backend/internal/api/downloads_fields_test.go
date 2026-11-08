@@ -8,7 +8,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 )
 
 // HolyArrs' own row names the Source it came from and who added its
@@ -68,11 +68,11 @@ func TestDownloadRowOutsideRequested(t *testing.T) {
 // A Usenet client's post time reaches the row; torrents never carry one.
 func TestClientRowPostedAt(t *testing.T) {
 	u := domain.Downloader{ID: 2, Name: "S", Adapter: "sabnzbd", Protocol: "usenet"}
-	if r := clientRow(u, downloader.Job{ID: "SABnzbd_nzo_1", PostedAt: 1700000000}); r.PostedAt == nil || r.PostedAt.Unix() != 1700000000 {
+	if r := clientRow(u, downloads.Job{ID: "SABnzbd_nzo_1", PostedAt: 1700000000}); r.PostedAt == nil || r.PostedAt.Unix() != 1700000000 {
 		t.Fatalf("usenet row %+v", r.PostedAt)
 	}
 	q := domain.Downloader{ID: 1, Name: "Q", Adapter: "qbittorrent", Protocol: "torrent"}
-	if r := clientRow(q, downloader.Job{ID: outHash, PostedAt: 1700000000}); r.PostedAt != nil {
+	if r := clientRow(q, downloads.Job{ID: outHash, PostedAt: 1700000000}); r.PostedAt != nil {
 		t.Fatalf("torrent row %+v", r.PostedAt)
 	}
 }

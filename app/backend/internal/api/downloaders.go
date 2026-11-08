@@ -13,11 +13,10 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/dlsync"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 )
@@ -57,17 +56,17 @@ type DownloaderView struct {
 	Writable       bool `json:"writable"`
 	WritableLocked bool `json:"writable_locked"`
 	// ClearFinished: a Usenet job and its files leave the client once imported.
-	ClearFinished bool                  `json:"clear_finished"`
-	Tags          []string              `json:"tags"`
-	Health        downloader.HealthView `json:"health"`
-	CheckedAt     *time.Time            `json:"checked_at,omitempty"`
-	Active        int                   `json:"active_downloads"`
+	ClearFinished bool                 `json:"clear_finished"`
+	Tags          []string             `json:"tags"`
+	Health        downloads.HealthView `json:"health"`
+	CheckedAt     *time.Time           `json:"checked_at,omitempty"`
+	Active        int                  `json:"active_downloads"`
 }
 
 func downloaderView(d domain.Downloader, active int) DownloaderView {
 	v := DownloaderView{ID: d.ID, Name: d.Name, Kind: d.Adapter, Protocol: d.Protocol, URL: d.URL, Username: d.Username, Category: d.Category,
-		Priority: d.Priority, PathMap: d.PathMap, AllowLocal: d.AllowLocal, Health: downloader.HealthOf(d, time.Now()), CheckedAt: d.CheckedAt, Active: active,
-		Writable: d.Writable, WritableLocked: downloader.ReadOnlyByEnv(d), ClearFinished: d.ClearFinished, Tags: d.Tags}
+		Priority: d.Priority, PathMap: d.PathMap, AllowLocal: d.AllowLocal, Health: downloads.HealthOf(d, time.Now()), CheckedAt: d.CheckedAt, Active: active,
+		Writable: d.Writable, WritableLocked: downloads.ReadOnlyByEnv(d), ClearFinished: d.ClearFinished, Tags: d.Tags}
 	if v.Tags == nil {
 		v.Tags = []string{}
 	}
@@ -80,9 +79,9 @@ func downloaderView(d domain.Downloader, active int) DownloaderView {
 	return v
 }
 
-func (a *API) manager() *downloader.Manager {
+func (a *API) manager() *downloads.Manager {
 	if a.s.Downloads == nil {
-		m := &downloader.Manager{Store: a.s.Store}
+		m := &downloads.Manager{Store: a.s.Store}
 		if a.s.Live != nil {
 			m.Live = a.s.Live
 		}
@@ -127,29 +126,29 @@ const downloaderHelp = `send name, kind (qbittorrent, transmission, deluge, sabn
 
 func downloaderError(w http.ResponseWriter, err error) {
 	switch {
-	case errors.Is(err, downloader.ErrUncertain):
-		fail(w, http.StatusConflict, downloader.ErrUncertain.Error())
-	case errors.Is(err, downloader.ErrAttemptStopped):
-		fail(w, http.StatusConflict, downloader.ErrAttemptStopped.Error())
-	case errors.Is(err, downloader.ErrPendingAttempt):
-		fail(w, http.StatusConflict, downloader.ErrPendingAttempt.Error())
-	case errors.Is(err, downloader.ErrNameUsed), errors.Is(err, downloader.ErrKeyAgain), errors.Is(err, downloader.ErrBusy):
+	case errors.Is(err, downloads.ErrUncertain):
+		fail(w, http.StatusConflict, downloads.ErrUncertain.Error())
+	case errors.Is(err, downloads.ErrAttemptStopped):
+		fail(w, http.StatusConflict, downloads.ErrAttemptStopped.Error())
+	case errors.Is(err, downloads.ErrPendingAttempt):
+		fail(w, http.StatusConflict, downloads.ErrPendingAttempt.Error())
+	case errors.Is(err, downloads.ErrNameUsed), errors.Is(err, downloads.ErrKeyAgain), errors.Is(err, downloads.ErrBusy):
 		fail(w, http.StatusConflict, err.Error())
-	case errors.Is(err, downloader.ErrNoVault):
+	case errors.Is(err, downloads.ErrNoVault):
 		fail(w, http.StatusServiceUnavailable, err.Error())
 	case errors.Is(err, database.ErrNotFound), errors.Is(err, sql.ErrNoRows):
 		fail(w, http.StatusNotFound, "no such Downloader")
-	case errors.Is(err, downloader.ErrName), errors.Is(err, downloader.ErrAdapter), errors.Is(err, downloader.ErrURL), errors.Is(err, downloader.ErrCategory), errors.Is(err, downloader.ErrDelugeLabel),
-		errors.Is(err, downloader.ErrPriority), errors.Is(err, downloader.ErrPathMap), errors.Is(err, downloader.ErrUsername), errors.Is(err, downloader.ErrKeyNeed),
-		errors.Is(err, downloader.ErrQbitKey):
+	case errors.Is(err, downloads.ErrName), errors.Is(err, downloads.ErrAdapter), errors.Is(err, downloads.ErrURL), errors.Is(err, downloads.ErrCategory), errors.Is(err, downloads.ErrDelugeLabel),
+		errors.Is(err, downloads.ErrPriority), errors.Is(err, downloads.ErrPathMap), errors.Is(err, downloads.ErrUsername), errors.Is(err, downloads.ErrKeyNeed),
+		errors.Is(err, downloads.ErrQbitKey):
 		fail(w, http.StatusBadRequest, err.Error())
 	default:
 		internal(w, err)
 	}
 }
 
-func readDownloader(w http.ResponseWriter, r *http.Request) (downloader.Input, bool) {
-	var in downloader.Input
+func readDownloader(w http.ResponseWriter, r *http.Request) (downloads.Input, bool) {
+	var in downloads.Input
 	if !decode(w, r, &in, downloaderHelp) {
 		return in, false
 	}
@@ -170,7 +169,7 @@ func idIn(w http.ResponseWriter, r *http.Request, what string) (int64, bool) {
 
 func (a *API) publishDownloader(d domain.Downloader) {
 	if a.s.Live != nil {
-		a.s.Live.Publish("downloader", map[string]any{"id": d.ID, "health": downloader.HealthOf(d, time.Now())})
+		a.s.Live.Publish("downloader", map[string]any{"id": d.ID, "health": downloads.HealthOf(d, time.Now())})
 	}
 }
 
@@ -182,7 +181,7 @@ func (a *API) addDownloader(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	d, err := downloader.Add(r.Context(), a.s.Store, a.s.Secrets, in, actor(r))
+	d, err := downloads.Add(r.Context(), a.s.Store, a.s.Secrets, in, actor(r))
 	if err != nil {
 		downloaderError(w, err)
 		return
@@ -203,7 +202,7 @@ func (a *API) editDownloader(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	d, err := downloader.Change(r.Context(), a.s.Store, a.s.Secrets, id, in, actor(r))
+	d, err := downloads.Change(r.Context(), a.s.Store, a.s.Secrets, id, in, actor(r))
 	if err != nil {
 		downloaderError(w, err)
 		return
@@ -221,7 +220,7 @@ func (a *API) deleteDownloader(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	if err := downloader.Remove(r.Context(), a.s.Store, id, actor(r)); err != nil {
+	if err := downloads.Remove(r.Context(), a.s.Store, id, actor(r)); err != nil {
 		downloaderError(w, err)
 		return
 	}
@@ -235,7 +234,7 @@ func (a *API) setDownloaderPaused(w http.ResponseWriter, r *http.Request, paused
 	if !ok {
 		return
 	}
-	d, err := downloader.SetPaused(r.Context(), a.s.Store, id, paused, actor(r))
+	d, err := downloads.SetPaused(r.Context(), a.s.Store, id, paused, actor(r))
 	if err != nil {
 		downloaderError(w, err)
 		return
@@ -263,7 +262,7 @@ type DownloaderAttemptView struct {
 	UpdatedAt    string `json:"updated_at"`
 }
 
-func downloaderAttemptView(attempt downloader.Attempt) DownloaderAttemptView {
+func downloaderAttemptView(attempt downloads.Attempt) DownloaderAttemptView {
 	return DownloaderAttemptView{
 		ID: attempt.ID, DownloaderID: attempt.DownloaderID, ReleaseID: attempt.ReleaseID, SlotID: attempt.SlotID,
 		State: string(attempt.State), CreatedAt: attempt.CreatedAt, UpdatedAt: attempt.UpdatedAt,
@@ -325,13 +324,13 @@ func firstLine(s string) string {
 // holds a key: adapters strip addresses from network errors.
 func explainDownloader(err error) string {
 	switch {
-	case errors.Is(err, downloader.ErrQbitBanned):
+	case errors.Is(err, downloads.ErrQbitBanned):
 		return "qBittorrent has banned this address after too many wrong passwords. Wait for the ban to end (an hour by default), check the password, then test again."
-	case errors.Is(err, downloader.ErrQbitKeyRefused):
+	case errors.Is(err, downloads.ErrQbitKeyRefused):
 		return "qBittorrent turned down the API key. Check the key; the API key needs qBittorrent 5.2 or newer, so on an older qBittorrent sign in with user name and password instead."
-	case errors.Is(err, downloader.ErrAuth):
+	case errors.Is(err, downloads.ErrAuth):
 		return "It turned down the key or sign-in. Check them and test again."
-	case errors.Is(err, downloader.ErrNoCategory):
+	case errors.Is(err, downloads.ErrNoCategory):
 		return "It answered, but " + err.Error() + "."
 	case errors.Is(err, outbound.ErrAddressRefused):
 		return "The address is on this machine or the local network. Turn on May reach the local network if that is where it runs."
@@ -374,7 +373,7 @@ func (a *API) testDownloader(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	_ = database.Get(r.Context(), a.s.Store.Read(), "downloaders", id, &d)
-	out["health"] = downloader.HealthOf(d, time.Now())
+	out["health"] = downloads.HealthOf(d, time.Now())
 	a.publishDownloader(d)
 	writeJSON(w, http.StatusOK, out)
 }
@@ -393,7 +392,7 @@ func (a *API) markFailed(w http.ResponseWriter, r *http.Request) {
 	switch {
 	case errors.Is(err, database.ErrNotFound), errors.Is(err, sql.ErrNoRows):
 		fail(w, http.StatusNotFound, "no such download")
-	case errors.Is(err, downloader.ErrNotActive):
+	case errors.Is(err, downloads.ErrNotActive):
 		fail(w, http.StatusConflict, err.Error())
 	case err != nil:
 		internal(w, err)
@@ -443,7 +442,7 @@ func downloadView(d domain.Download) DownloadView {
 		v.Text = "Done; HolyArrs puts it in the library."
 	}
 	if d.StateReason != nil && *d.StateReason != "" && (d.State == "stalled" || d.State == "failed" || d.State == "vanished" ||
-		d.State == "paused" && strings.HasPrefix(*d.StateReason, downloader.WaitingReason)) {
+		d.State == "paused" && strings.HasPrefix(*d.StateReason, downloads.WaitingReason)) {
 		r, n := utf8.DecodeRuneInString(*d.StateReason)
 		v.Text = string(unicode.ToUpper(r)) + (*d.StateReason)[n:] + "."
 	}
@@ -492,17 +491,17 @@ func (a *API) readDownloaderSettings(ctx context.Context) (DownloaderSettings, e
 		}
 		n, _ := strconv.ParseFloat(v, 64)
 		switch g + "/" + k {
-		case "links/" + downloader.SettingStallAfter:
+		case "links/" + downloads.SettingStallAfter:
 			st.StalledAfterHours = n
-		case "links/" + downloader.SettingActAfter:
+		case "links/" + downloads.SettingActAfter:
 			st.StalledActHours = n
-		case "links/" + downloader.SettingSpacing:
+		case "links/" + downloads.SettingSpacing:
 			st.GrabSpacingSeconds = n
-		case "links/" + downloader.SettingRemoveFailed:
+		case "links/" + downloads.SettingRemoveFailed:
 			st.RemoveFailed = v != "false"
-		case "links/" + downloader.SettingFailDangerous:
+		case "links/" + downloads.SettingFailDangerous:
 			st.FailDangerous = v != "false"
-		case "links/" + downloader.SettingReplaceVanished:
+		case "links/" + downloads.SettingReplaceVanished:
 			st.ReplaceVanished = v != "false"
 		case "links/remove_delete_files":
 			st.RemoveDeleteFiles = v != "false"
@@ -512,7 +511,7 @@ func (a *API) readDownloaderSettings(ctx context.Context) (DownloaderSettings, e
 			st.RemoveSearchAgain = v != "false"
 		case "what_to_pick/try_next_downloader":
 			st.TryNextDownloader = v != "false"
-		case "links/" + dlsync.SettingSABOutside:
+		case "links/" + downloads.SettingSABOutside:
 			on := v != "false"
 			st.SABOutside = &on
 		case "links/" + settingAutoAdd:
@@ -520,7 +519,7 @@ func (a *API) readDownloaderSettings(ctx context.Context) (DownloaderSettings, e
 			st.AutoAdd = &on
 		}
 	}
-	mode := dlsync.ModeOn // any stored value reads as on
+	mode := downloads.ModeOn // any stored value reads as on
 	st.Sync = &mode
 	if st.AutoAdd == nil {
 		off := false
@@ -563,19 +562,19 @@ func (a *API) putDownloaderSettings(w http.ResponseWriter, r *http.Request) {
 	now := database.FormatTime(time.Now())
 	byText := actorJSONText(by)
 	vals := []struct{ grp, key, value string }{
-		{"links", downloader.SettingStallAfter, strconv.FormatFloat(in.StalledAfterHours, 'f', -1, 64)},
-		{"links", downloader.SettingActAfter, strconv.FormatFloat(in.StalledActHours, 'f', -1, 64)},
-		{"links", downloader.SettingSpacing, strconv.FormatFloat(in.GrabSpacingSeconds, 'f', -1, 64)},
-		{"links", downloader.SettingRemoveFailed, strconv.FormatBool(in.RemoveFailed)},
-		{"links", downloader.SettingFailDangerous, strconv.FormatBool(in.FailDangerous)},
-		{"links", downloader.SettingReplaceVanished, strconv.FormatBool(in.ReplaceVanished)},
+		{"links", downloads.SettingStallAfter, strconv.FormatFloat(in.StalledAfterHours, 'f', -1, 64)},
+		{"links", downloads.SettingActAfter, strconv.FormatFloat(in.StalledActHours, 'f', -1, 64)},
+		{"links", downloads.SettingSpacing, strconv.FormatFloat(in.GrabSpacingSeconds, 'f', -1, 64)},
+		{"links", downloads.SettingRemoveFailed, strconv.FormatBool(in.RemoveFailed)},
+		{"links", downloads.SettingFailDangerous, strconv.FormatBool(in.FailDangerous)},
+		{"links", downloads.SettingReplaceVanished, strconv.FormatBool(in.ReplaceVanished)},
 		{"what_to_pick", "try_next_downloader", strconv.FormatBool(in.TryNextDownloader)},
 		{"links", "remove_delete_files", strconv.FormatBool(in.RemoveDeleteFiles)},
 		{"links", "remove_turn_down", strconv.FormatBool(in.RemoveTurnDown)},
 		{"links", "remove_search_again", strconv.FormatBool(in.RemoveSearchAgain)},
 	}
 	if in.SABOutside != nil {
-		vals = append(vals, struct{ grp, key, value string }{"links", dlsync.SettingSABOutside, strconv.FormatBool(*in.SABOutside)})
+		vals = append(vals, struct{ grp, key, value string }{"links", downloads.SettingSABOutside, strconv.FormatBool(*in.SABOutside)})
 	}
 	if in.AutoAdd != nil {
 		vals = append(vals, struct{ grp, key, value string }{"links", settingAutoAdd, strconv.FormatBool(*in.AutoAdd)})

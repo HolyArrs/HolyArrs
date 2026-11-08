@@ -37,9 +37,8 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/asks"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/backups"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/dlsync"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/health"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
 
@@ -533,7 +532,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	// After ensure, so folders added from the environment on a first start
 	// are checked too.
 	logFolderCheck(ctx, s.Read(), c.SavePath)
-	hub := webserver.NewLiveHub(webserver.LiveOptions{Merge: dlsync.MergePatch})
+	hub := webserver.NewLiveHub(webserver.LiveOptions{Merge: downloads.MergePatch})
 	pools := jobs.DefaultPools
 	if c.SafeMode {
 		pools = map[jobs.Pool]int{jobs.PoolCore: jobs.DefaultPools[jobs.PoolCore]}
@@ -553,7 +552,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	if err := library.LoadOwnTraits(ctx, s); err != nil {
 		return fmt.Errorf("own traits: %w", err)
 	}
-	dm := &downloader.Manager{Store: s, Live: hub, SavePath: c.SavePath,
+	dm := &downloads.Manager{Store: s, Live: hub, SavePath: c.SavePath,
 		Link: func(ctx context.Context, rel domain.Release) (string, error) {
 			return sources.GrabLink(ctx, s, vault, rel)
 		},
@@ -567,11 +566,11 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		FromVault: vault.Get}
 	// Background download reader: one reader per Downloader inside the
 	// "downloads" loop; the Manager and the Downloads view read its snapshots.
-	dls := &dlsync.Sync{Store: &dlsync.Store{}, DB: s, Manager: dm, Lines: api.TorrentLines}
+	dls := &downloads.Sync{Store: &downloads.Store{}, DB: s, Manager: dm, Lines: api.TorrentLines}
 	dm.Sync = dls
 	im := &importer.Importer{Store: s, Live: hub}
 	sr := &sources.Searcher{Store: s, Live: hub, Secrets: vault, Queue: q, OnChosen: func(ctx context.Context, slotID, releaseID int64) {
-		enqueue(ctx, downloader.KindGrab, domain.Subject{Type: "slot", ID: slotID}, map[string]any{"release_id": releaseID}, fmt.Sprintf("grab:%d", slotID))
+		enqueue(ctx, downloads.KindGrab, domain.Subject{Type: "slot", ID: slotID}, map[string]any{"release_id": releaseID}, fmt.Sprintf("grab:%d", slotID))
 	}}
 	// A rejected Import turned its Release down: remove the Download from
 	// its Downloader and search that Slot again.
@@ -599,7 +598,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	sr.Register(q)
 	q.ProbeSchedule(jobs.KindFeedCheck, sr.ProbeFeed)
 	q.ProbeSchedule(jobs.KindGrabHeld, sr.ProbeGrabHeld)
-	q.Handle(downloader.KindGrab, dm.HandleGrab)
+	q.Handle(downloads.KindGrab, dm.HandleGrab)
 	// An ask turns Ready right after its import, not on the next 30 s ready
 	// check: the Requests card would drop from Importing back to Processing.
 	var readyCheck atomic.Pointer[asks.Service]
@@ -909,7 +908,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	// Matching in the reader's queue is link-only: it never adds a title.
 	dls.Match = a.MatchLinkOnly
 	// Push updates of the snapshots to the Downloads page (only while on).
-	dls.Pub = &dlsync.Publisher{Store: dls.Store, Build: a.PublishDL, Health: a.PublishDLHealth}
+	dls.Pub = &downloads.SnapshotPublisher{Store: dls.Store, Build: a.PublishDL, Health: a.PublishDLHealth}
 	a.StartSpeedHistory(ctx)
 	if !c.SafeMode {
 		a.StartExplore(ctx)

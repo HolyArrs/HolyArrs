@@ -60,7 +60,7 @@ func TestSigninSeedInlinesFirstSlideThumbnails(t *testing.T) {
 		t.Fatal("thumbnails never ready")
 	}
 	var body struct {
-		Shots []signinShot                `json:"shots"`
+		Shots []signinShot                 `json:"shots"`
 		Seed  map[string]map[string]string `json:"seed"`
 	}
 	if err := json.Unmarshal(got, &body); err != nil {

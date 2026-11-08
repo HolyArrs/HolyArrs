@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 )
 
 // Limits bound one read.
@@ -89,7 +89,7 @@ func newAPIClient(src Source, header func(*http.Request)) (*apiClient, error) {
 		return nil, errors.New("the address must be http:// or https:// with a host, and no user or query")
 	}
 	lim := src.Limits.orDefault()
-	h := downloader.Client(u.String(), src.AllowLocal)
+	h := downloads.Client(u.String(), src.AllowLocal)
 	h.Timeout = lim.Timeout
 	return &apiClient{base: u, h: h, lim: lim, header: header}, nil
 }

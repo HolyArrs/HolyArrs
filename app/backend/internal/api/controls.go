@@ -15,6 +15,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles"
 )
 
 // controlRoutes are the part switches and the owner and admin controls
@@ -363,7 +364,7 @@ func (a *API) linkRestart(w http.ResponseWriter, r *http.Request) {
 		}
 		test = a.media.Test
 	case "subtitle_site":
-		test = a.testSubtitleSite
+		test = subtitles.NewHandlers(a.s.Store, a.s.Secrets, a.s.Subtitles).ServeSiteTest
 	default:
 		fail(w, http.StatusNotFound, "kind is downloader, source, media_server or subtitle_site")
 		return

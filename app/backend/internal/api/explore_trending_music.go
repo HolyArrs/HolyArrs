@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	musicscore "github.com/HolyArrs/holyarrs/app/backend/internal/music/score"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
+	musicscore "github.com/HolyArrs/holyarrs/app/backend/internal/music/score"
 )
 
 // Fresh & Trending → Music, flag music_rows_v6 (plan 2026-10-22 §2.7,

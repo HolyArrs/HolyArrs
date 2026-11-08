@@ -26,7 +26,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/alerts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
@@ -271,7 +271,7 @@ func labQbit() string {
 	return "http://qbittorrent:8090"
 }
 
-func labRemove(t *testing.T, m *downloader.Manager, qb string, hashes ...string) {
+func labRemove(t *testing.T, m *downloads.Manager, qb string, hashes ...string) {
 	t.Cleanup(func() {
 		if e, err := m.EngineFor(context.Background(), domain.Downloader{Adapter: "qbittorrent", URL: qb, AllowLocal: true}); err == nil {
 			for _, h := range hashes {
@@ -314,7 +314,7 @@ func TestLabSeasonPackImports(t *testing.T) {
 		}
 	}
 	relID := x.release(t, pack, base+"/pack.torrent", hash, 900<<10, x.slots)
-	m := &downloader.Manager{Store: x.s, SavePath: save}
+	m := &downloads.Manager{Store: x.s, SavePath: save}
 	labRemove(t, m, qb, hash)
 	im := &importer.Importer{Store: x.s}
 	srv := httptest.NewServer(New(Server{Store: x.s, Metadata: metadata.Lab(), Version: "lab", Downloads: m}).Handler())
@@ -444,7 +444,7 @@ func TestLabBrokenEpisodeNextGrabbed(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	m := &downloader.Manager{Store: x.s, SavePath: save}
+	m := &downloads.Manager{Store: x.s, SavePath: save}
 	labRemove(t, m, qb, bh, nh)
 	var nextDL int64
 	m.OnFailed = func(ctx context.Context, slotID int64) {

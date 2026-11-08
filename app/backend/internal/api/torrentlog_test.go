@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 )
 
 func TestTorrentLogStateLines(t *testing.T) {
@@ -26,7 +26,7 @@ func TestTorrentLogStateLines(t *testing.T) {
 		{torrentSnap{detail: "uploading"}, torrentSnap{detail: "missingFiles"}, "Missing files"},
 		{torrentSnap{detail: "uploading", savePath: "/a"}, torrentSnap{detail: "uploading", savePath: "/b"}, "Moved to /b"},
 		{torrentSnap{detail: "downloading", progress: .9}, torrentSnap{detail: "uploading", progress: 1}, "Completed"},
-		{torrentSnap{detail: "uploading", progress: 1}, torrentSnap{detail: "stoppedUP", progress: 1, ratio: 2, limits: &downloader.ShareLimits{Ratio: 1, SeedingMinutes: -1}}, "Seeding rule reached"},
+		{torrentSnap{detail: "uploading", progress: 1}, torrentSnap{detail: "stoppedUP", progress: 1, ratio: 2, limits: &downloads.ShareLimits{Ratio: 1, SeedingMinutes: -1}}, "Seeding rule reached"},
 		{torrentSnap{detail: "uploading"}, torrentSnap{detail: "uploading", trackerProblem: "error"}, "Tracker error"},
 	}
 	for _, c := range cases {
@@ -45,12 +45,12 @@ func TestTorrentLogStateLines(t *testing.T) {
 }
 
 func TestTorrentLogTrackerLinesNeverKeepPasskey(t *testing.T) {
-	first := []downloader.Tracker{{URL: "https://t.example:443", Status: "working", Message: ""}}
+	first := []downloads.Tracker{{URL: "https://t.example:443", Status: "working", Message: ""}}
 	ls, seen := trackerLines(nil, first)
 	if len(ls) != 0 {
 		t.Fatalf("first sighting recorded %v", ls)
 	}
-	next := []downloader.Tracker{{URL: "https://t.example:443", Status: "not_working", Message: "down: http://t.example/announce?passkey=SECRET123"},
+	next := []downloads.Tracker{{URL: "https://t.example:443", Status: "not_working", Message: "down: http://t.example/announce?passkey=SECRET123"},
 		{URL: "DHT", Fixed: true, Message: "x"}}
 	ls, _ = trackerLines(seen, next)
 	if len(ls) != 1 || !strings.HasPrefix(ls[0].Summary, "t.example: ") || strings.Contains(ls[0].Summary, "SECRET123") || strings.Contains(ls[0].Summary, "passkey") {
@@ -61,7 +61,7 @@ func TestTorrentLogTrackerLinesNeverKeepPasskey(t *testing.T) {
 func TestTorrentLogDerivedLines(t *testing.T) {
 	now := time.Date(2026, 10, 30, 12, 0, 0, 0, time.UTC)
 	added, done := now.Add(-15*24*time.Hour), now.Add(-15*24*time.Hour+42*time.Minute)
-	d := &downloader.TorrentDetail{AddedAt: &added, DoneAt: &done, SeedingTime: int64(14 * 24 * 3600), Uploaded: 1 << 30, Ratio: .09}
+	d := &downloads.TorrentDetail{AddedAt: &added, DoneAt: &done, SeedingTime: int64(14 * 24 * 3600), Uploaded: 1 << 30, Ratio: .09}
 	ls := derivedLines(d, now.Add(-3*24*time.Hour).Unix(), now)
 	var got []string
 	for _, l := range ls {
@@ -76,7 +76,7 @@ func TestTorrentLogDerivedLines(t *testing.T) {
 	if strings.Contains(j, "Last seen") {
 		t.Errorf("shown without a value: %v", got)
 	}
-	if len(derivedLines(&downloader.TorrentDetail{}, 0, now)) != 0 || derivedLines(nil, 0, now) != nil {
+	if len(derivedLines(&downloads.TorrentDetail{}, 0, now)) != 0 || derivedLines(nil, 0, now) != nil {
 		t.Fatal("empty detail made lines")
 	}
 	m := mergeLog(ls)
@@ -97,7 +97,7 @@ func TestTorrentLogRecordsAndPrunes(t *testing.T) {
 	t.Cleanup(func() { _ = s.Close() })
 	a := &API{s: Server{Store: s}}
 	ctx := context.Background()
-	prev := downloader.Job{ID: outHash, Detail: "downloading", Progress: .5}
+	prev := downloads.Job{ID: outHash, Detail: "downloading", Progress: .5}
 	cur := prev
 	cur.Detail = "stoppedDL"
 	if l := TorrentLines(prev, cur); len(l) != 1 || l[0].Summary != "Paused" {
@@ -114,8 +114,8 @@ func TestTorrentLogRecordsAndPrunes(t *testing.T) {
 	if n != torrentLogCap {
 		t.Fatalf("kept %d", n)
 	}
-	a.noteTrackers(ctx, 7, seedHash, []downloader.Tracker{{URL: "https://t.example", Message: "ok"}})
-	a.noteTrackers(ctx, 7, seedHash, []downloader.Tracker{{URL: "https://t.example", Message: "unregistered torrent passkey=abc http://t.example/a/abc"}})
+	a.noteTrackers(ctx, 7, seedHash, []downloads.Tracker{{URL: "https://t.example", Message: "ok"}})
+	a.noteTrackers(ctx, 7, seedHash, []downloads.Tracker{{URL: "https://t.example", Message: "unregistered torrent passkey=abc http://t.example/a/abc"}})
 	var sum string
 	_ = s.Read().QueryRow("SELECT summary FROM torrent_log WHERE kind = 'tracker'").Scan(&sum)
 	if !strings.HasPrefix(sum, "t.example: ") || strings.Contains(sum, "/a/abc") {
@@ -133,7 +133,7 @@ func TestTorrentLogForgetsGoneTorrents(t *testing.T) {
 	t.Cleanup(func() { _ = s.Close() })
 	a := &API{s: Server{Store: s}}
 	ctx := context.Background()
-	a.noteTrackers(ctx, 7, strings.ToUpper(ownHash), []downloader.Tracker{{URL: "https://t.example", Message: "ok"}})
+	a.noteTrackers(ctx, 7, strings.ToUpper(ownHash), []downloads.Tracker{{URL: "https://t.example", Message: "ok"}})
 	a.forgetTorrents(ctx, 7, []string{ownHash})
 	if _, ok := a.tlog.trackers[clientKey{7, ownHash}]; ok {
 		t.Fatal("removed torrent's trackers kept in memory")

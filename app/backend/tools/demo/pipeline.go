@@ -19,7 +19,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
@@ -48,19 +48,19 @@ type fakeEngine struct {
 	save string
 	mu   sync.Mutex
 	plan map[string]payload
-	jobs map[string]downloader.Job
+	jobs map[string]downloads.Job
 	made []string
 }
 
 func newFakeEngine(save string) *fakeEngine {
-	return &fakeEngine{save: save, plan: map[string]payload{}, jobs: map[string]downloader.Job{}}
+	return &fakeEngine{save: save, plan: map[string]payload{}, jobs: map[string]downloads.Job{}}
 }
 
-func (f *fakeEngine) Health(context.Context) (downloader.Health, error) {
-	return downloader.Health{Version: "demo", At: time.Now()}, nil
+func (f *fakeEngine) Health(context.Context) (downloads.Health, error) {
+	return downloads.Health{Version: "demo", At: time.Now()}, nil
 }
 
-func (f *fakeEngine) Add(_ context.Context, r downloader.AddRequest) (string, error) {
+func (f *fakeEngine) Add(_ context.Context, r downloads.AddRequest) (string, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	id := r.InfoHash
@@ -72,9 +72,9 @@ func (f *fakeEngine) Add(_ context.Context, r downloader.AddRequest) (string, er
 		p = payload{Files: []string{r.Name + ".mkv"}}
 	}
 	root := filepath.Join(f.save, r.Name)
-	j := downloader.Job{ID: id, Name: r.Name, Category: r.Category, SavePath: f.save, ContentPath: filepath.ToSlash(root), Progress: 1, State: downloader.StateFinished}
+	j := downloads.Job{ID: id, Name: r.Name, Category: r.Category, SavePath: f.save, ContentPath: filepath.ToSlash(root), Progress: 1, State: downloads.StateFinished}
 	if p.Fail {
-		j.State, j.Progress, j.Detail = downloader.StateFailed, 0.37, "error"
+		j.State, j.Progress, j.Detail = downloads.StateFailed, 0.37, "error"
 	}
 	if p.State != "" {
 		// Believable numbers: each release moves at its own pace, near the
@@ -84,7 +84,7 @@ func (f *fakeEngine) Add(_ context.Context, r downloader.AddRequest) (string, er
 			p.Speed = p.Speed * int64(70+n%70) / 100
 			j.UpSpeed = p.Speed * int64(4+n%9) / 100
 			j.Seeds, j.Peers = 6+n%90, 2+n%24
-		} else if p.State == downloader.StateDownloading {
+		} else if p.State == downloads.StateDownloading {
 			j.Peers = n % 2 // stalled: almost nobody to talk to
 		}
 		j.State, j.Progress, j.Speed, j.Size = p.State, p.Progress, p.Speed, int64(2+n%14)<<30
@@ -109,7 +109,7 @@ func (f *fakeEngine) Add(_ context.Context, r downloader.AddRequest) (string, er
 				return "", err
 			}
 			f.made = append(f.made, full)
-			j.Files = append(j.Files, downloader.File{Name: filepath.ToSlash(filepath.Join(r.Name, name)), Size: int64(size), Progress: 1})
+			j.Files = append(j.Files, downloads.File{Name: filepath.ToSlash(filepath.Join(r.Name, name)), Size: int64(size), Progress: 1})
 			j.Size += int64(size)
 		}
 	}
@@ -117,30 +117,30 @@ func (f *fakeEngine) Add(_ context.Context, r downloader.AddRequest) (string, er
 	return id, nil
 }
 
-func (f *fakeEngine) List(context.Context, string) ([]downloader.Job, error) {
+func (f *fakeEngine) List(context.Context, string) ([]downloads.Job, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	out := make([]downloader.Job, 0, len(f.jobs))
+	out := make([]downloads.Job, 0, len(f.jobs))
 	for _, j := range f.jobs {
 		out = append(out, wobble(j))
 	}
 	return out, nil
 }
 
-func (f *fakeEngine) Get(_ context.Context, id string) (downloader.Job, error) {
+func (f *fakeEngine) Get(_ context.Context, id string) (downloads.Job, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	j, ok := f.jobs[id]
 	if !ok {
-		return j, downloader.ErrNotFound
+		return j, downloads.ErrNotFound
 	}
 	return wobble(j), nil
 }
 
 // wobble moves a downloading job's speeds a little with the clock, so a
 // graph drawn from repeated reads is not a flat line.
-func wobble(j downloader.Job) downloader.Job {
-	if j.State != downloader.StateDownloading || j.Speed == 0 {
+func wobble(j downloads.Job) downloads.Job {
+	if j.State != downloads.StateDownloading || j.Speed == 0 {
 		return j
 	}
 	t := float64(time.Now().UnixMilli())/1000 + float64(j.ID[2])

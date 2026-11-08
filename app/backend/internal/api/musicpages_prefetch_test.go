@@ -31,7 +31,9 @@ func (f *tracklistArtists) Pressings(ctx context.Context, mbid string) ([]metada
 func TestArtistPagePrefetchesFirstTracklists(t *testing.T) {
 	f := &tracklistArtists{}
 	a := New(Server{Version: "test", Library: &library.Service{Artists: f}})
-	id := func(i int) string { return "10000000-0000-0000-0000-0000000000" + string(rune('a'+i/16)) + string("0123456789abcdef"[i%16]) }
+	id := func(i int) string {
+		return "10000000-0000-0000-0000-0000000000" + string(rune('a'+i/16)) + string("0123456789abcdef"[i%16])
+	}
 	v := ArtistPageView{Latest: &PageAlbum{MBID: id(0)}}
 	for i := 0; i < 10; i++ {
 		v.Albums = append(v.Albums, PageAlbum{MBID: id(i), Shelf: "albums"})

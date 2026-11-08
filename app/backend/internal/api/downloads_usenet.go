@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 )
 
 // Usenet extras on the Downloads page: Retry for a failed job, and the
@@ -31,13 +31,13 @@ type JobServer struct {
 
 // UsenetView is the Servers and Repair tabs of one Usenet job.
 type UsenetView struct {
-	Stages     []downloader.JobStage   `json:"stages"`
-	JobServers []JobServer             `json:"job_servers"`
-	Servers    *downloader.ServerStats `json:"servers,omitempty"`
+	Stages     []downloads.JobStage   `json:"stages"`
+	JobServers []JobServer            `json:"job_servers"`
+	Servers    *downloads.ServerStats `json:"servers,omitempty"`
 }
 
 // jobServers reads the servers stage: one "name=amount" line per server.
-func jobServers(stages []downloader.JobStage) []JobServer {
+func jobServers(stages []downloads.JobStage) []JobServer {
 	out := []JobServer{}
 	for _, s := range stages {
 		if s.Stage != "servers" {
@@ -56,10 +56,10 @@ func jobServers(stages []downloader.JobStage) []JobServer {
 
 // usenetRead fills a UsenetView from the engine; the server counters are
 // extra (a failure there leaves them out).
-func usenetRead(ctx context.Context, e downloader.Engine, id string, out *UsenetView) error {
-	ui, ok := e.(downloader.UsenetInspector)
+func usenetRead(ctx context.Context, e downloads.Engine, id string, out *UsenetView) error {
+	ui, ok := e.(downloads.UsenetInspector)
 	if !ok {
-		return downloader.ErrNotSupported
+		return downloads.ErrNotSupported
 	}
 	st, err := ui.JobStages(ctx, id)
 	if err != nil {
@@ -74,8 +74,8 @@ func usenetRead(ctx context.Context, e downloader.Engine, id string, out *Usenet
 
 // itemUsenet is a client job's Servers and Repair tabs, read live.
 func (a *API) itemUsenet(w http.ResponseWriter, r *http.Request) {
-	out := UsenetView{Stages: []downloader.JobStage{}, JobServers: []JobServer{}}
-	err := a.onItem(r, false, func(e downloader.Engine, id string) error { return usenetRead(r.Context(), e, id, &out) })
+	out := UsenetView{Stages: []downloads.JobStage{}, JobServers: []JobServer{}}
+	err := a.onItem(r, false, func(e downloads.Engine, id string) error { return usenetRead(r.Context(), e, id, &out) })
 	if err != nil {
 		itemError(w, err)
 		return
@@ -89,8 +89,8 @@ func (a *API) downloadUsenet(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	out := UsenetView{Stages: []downloader.JobStage{}, JobServers: []JobServer{}}
-	err := a.manager().Inspect(r.Context(), id, func(e downloader.Engine, ext string) error { return usenetRead(r.Context(), e, ext, &out) })
+	out := UsenetView{Stages: []downloads.JobStage{}, JobServers: []JobServer{}}
+	err := a.manager().Inspect(r.Context(), id, func(e downloads.Engine, ext string) error { return usenetRead(r.Context(), e, ext, &out) })
 	if err != nil {
 		clientControlError(w, err)
 		return
@@ -109,7 +109,7 @@ const retryOwn = "HolyArrs already handled this failed download: it turned the c
 func (a *API) retryItem(w http.ResponseWriter, r *http.Request) {
 	did, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
-		itemError(w, downloader.ErrNoDownloader)
+		itemError(w, downloads.ErrNoDownloader)
 		return
 	}
 	old := r.PathValue("hash")
@@ -121,10 +121,10 @@ func (a *API) retryItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var newID string
-	err = a.onItem(r, true, func(e downloader.Engine, id string) error {
-		rt, ok := e.(downloader.Retrier)
+	err = a.onItem(r, true, func(e downloads.Engine, id string) error {
+		rt, ok := e.(downloads.Retrier)
 		if !ok {
-			return downloader.ErrNotSupported
+			return downloads.ErrNotSupported
 		}
 		var err error
 		newID, err = rt.Retry(r.Context(), id)

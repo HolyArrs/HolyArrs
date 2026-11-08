@@ -10,7 +10,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
@@ -71,7 +71,7 @@ func searchWorld(t *testing.T) (srvURL string, s *database.Store, q *jobs.Queue,
 func TestReleasesListChooseAndForce(t *testing.T) {
 	u, s, q, titleID, slotID, rels := searchWorld(t)
 	grabs := make(chan int64, 4)
-	q.Handle(downloader.KindGrab, func(_ context.Context, r *jobs.Run) error { grabs <- r.Job.Subject.ID; return nil })
+	q.Handle(downloads.KindGrab, func(_ context.Context, r *jobs.Run) error { grabs <- r.Job.Subject.ID; return nil })
 	if err := q.Start(context.Background()); err != nil {
 		t.Fatal(err)
 	}

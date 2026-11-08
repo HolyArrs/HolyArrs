@@ -18,7 +18,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
@@ -99,7 +99,7 @@ type world struct {
 	vault *secrets.Vault
 	lib   *library.Service
 	sr    *sources.Searcher
-	dm    *downloader.Manager
+	dm    *downloads.Manager
 	im    *importer.Importer
 	eng   *fakeEngine
 	m     *manifest
@@ -165,8 +165,8 @@ func openWorld(ctx context.Context, o options, p providers, out io.Writer) (*wor
 	w.sr = &sources.Searcher{Store: s, Secrets: vault, Queue: q}
 	w.eng = newFakeEngine(w.Downloads)
 	w.im = &importer.Importer{Store: s, NoSizeFloors: true} // placeholder files are a few KB
-	w.dm = &downloader.Manager{Store: s, SavePath: w.Downloads, VanishGrace: time.Hour,
-		Engine: func(domain.Downloader) (downloader.Engine, error) { return w.eng, nil },
+	w.dm = &downloads.Manager{Store: s, SavePath: w.Downloads, VanishGrace: time.Hour,
+		Engine: func(domain.Downloader) (downloads.Engine, error) { return w.eng, nil },
 		Link:   func(_ context.Context, rel domain.Release) (string, error) { return rel.LinkRef, nil },
 		OnFinished: func(_ context.Context, id int64) {
 			w.finished = append(w.finished, id)
@@ -416,7 +416,7 @@ func (w *world) downloaders(ctx context.Context) error {
 	cat := "holyarrs"
 	allow := true
 	prio := 1
-	d, err := downloader.Add(ctx, w.s, w.vault, downloader.Input{Name: "Lab SABnzbd", Adapter: "sabnzbd", URL: sabURL(), Secret: key,
+	d, err := downloads.Add(ctx, w.s, w.vault, downloads.Input{Name: "Lab SABnzbd", Adapter: "sabnzbd", URL: sabURL(), Secret: key,
 		Category: &cat, Priority: &prio, AllowLocal: &allow}, w.by)
 	if err != nil {
 		return err
