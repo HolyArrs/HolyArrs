@@ -9,7 +9,6 @@ var oversized = map[string]bool{
 	"app/frontend/src/lib/TitlePage.svelte":                  true,
 	"app/backend/internal/api/musicpages.go":                 true,
 	"app/frontend/src/lib/ai-apps.ts":                        true,
-	"app/backend/internal/accounts/service.go":               true,
 	"app/backend/internal/downloader/manager.go":             true,
 	"app/backend/internal/importer/importer.go":              true,
 	"app/backend/internal/api/api.go":                        true,
