@@ -4,7 +4,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { noSidewaysScroll, signIn, finishFirstRun } from './helpers.ts';
 
-// Status (#71, #78): every tab at desktop width and at
+// Status: every tab at desktop width and at
 // 390, the tabs work from the keyboard, and the Jobs table keeps its labels
 // on a phone. About hands an admin the support bundle; a member never gets it. Own fresh app: npx playwright test -c e2e/status.config.ts
 test.describe.configure({ mode: 'serial' });

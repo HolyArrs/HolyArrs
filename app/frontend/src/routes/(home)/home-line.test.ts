@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { capitalise, greetingName, hash, homeFacts, homeGreeting, homeLine, homeNews, homeLineTemplates, localDay, nearlyDone, noFacts, timeBucket, type HomeFacts } from './home-line.ts';
 
-// 2026-10-27 is a Tuesday: no day-of-week lines, only the time of day.
+// The fixed test day is a Tuesday: no day-of-week lines, only the time of day.
 const at = (month: number, day: number, hour = 10, minute = 0) => new Date(2026, month - 1, day, hour, minute);
 const TUE = (hour = 10, minute = 0) => at(10, 27, hour, minute);
 const facts = (f: Partial<HomeFacts>): HomeFacts => ({ ...noFacts, ...f });

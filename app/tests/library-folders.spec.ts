@@ -6,7 +6,7 @@ import { openLibraryTab, owner, signIn } from './helpers.ts';
 
 const tmp = join(dirname(fileURLToPath(import.meta.url)), '.tmp');
 
-// #28 Library folders: a show and an artist move to a second Library folder
+// Library folders: a show and an artist move to a second Library folder
 // of their kind later on, from Edit on their Library page, files and all
 // (movies already move; library-tools.spec.ts). Each test sets up its own
 // folders under .tmp and adopts a fake title that only these tests use.

@@ -92,7 +92,7 @@ export interface Catalog {
 	singles: number;
 	/** First release year, e.g. "2005". */
 	since: string;
-	/** "2005–2026", or one year when all came out the same year. */
+	/** First and last year joined by an en dash, or one year when all came out the same year. */
 	span: string;
 }
 

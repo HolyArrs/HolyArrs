@@ -19,7 +19,7 @@ export function epText(tmdb: string | undefined, season: number | undefined, epi
 	return seasons[key]?.[episode]?.overview?.trim() ?? '';
 }
 
-/** "S2 E5", or "S2 E5–7" for several of one season. */
+/** "S2 E5", or a span joined by an en dash for several of one season. */
 export function epCode(eps: { season?: number; episode?: number }[]): string {
 	const e = eps.filter((x) => x.season != null && x.episode != null);
 	if (!e.length) return '';

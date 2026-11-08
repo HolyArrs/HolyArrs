@@ -193,7 +193,7 @@ test('the owner approves from a phone: the movie is added and kim is told', asyn
 	expect(events.filter((e) => /took back the ask for Copper Lighthouse/.test(e))).toHaveLength(1);
 	expect(events.filter((e) => /Copper Lighthouse.*: approved by luis/.test(e))).toHaveLength(1);
 
-	// No inbox card (#92): the news marks kim's card New for this visit, and opening Requests reads it.
+	// No inbox card: the news marks kim's card New for this visit, and opening Requests reads it.
 	expect(((await (await kim.request.get('/api/v1/messages')).json()) as { messages: { text: string }[] }).messages.map((m) => m.text)).toContainEqual(expect.stringContaining('Copper Lighthouse (2017) was approved by an admin'));
 	await kim.goto('/requests');
 	const copper = kim.getByTestId('ask').filter({ hasText: 'Copper Lighthouse' });
@@ -252,8 +252,8 @@ test('turned down with a note; over the weekly limit kim is told when to try aga
 	await noSidewaysScroll(kim);
 });
 
-// The roadmap items below (#56 seasons, joining and albums, #59 4K, #134 why
-// an ask failed, #58 the owner's own messages, #19 Follow). Each test makes
+// The parts below (seasons, joining and albums, 4K, why
+// an ask failed, the owner's own messages, Follow). Each test makes
 // its own members, so none leans on kim's weekly limit or on another test.
 // They sit after the tests above, which count the waiting asks.
 
@@ -734,7 +734,7 @@ test('Approve on a card still lands when the approver leaves the page at once', 
 });
 
 
-// #136: three admins (made here, in this throwaway HolyArrs only) decline
+// three admins (made here, in this throwaway HolyArrs only) decline
 // the same movie in turn. Two of them answer one request at the same moment:
 // one decision wins and the other is told who answered first. The newest
 // request's window then names the others who declined it before, on a phone
@@ -868,7 +868,7 @@ test('#136 several admins decline the same movie: the window names who else decl
 	expect(halSees).not.toContain('also_declined');
 });
 
-// #139: a member's open Requests page follows their own request live: the
+// a member's open Requests page follows their own request live: the
 // approver's answer moves it without a reload, and who decided reads as a
 // display name or "an admin", never the sign-in name.
 test('a member sees the answer to their request live, without a reload', async ({ browser }) => {
@@ -895,7 +895,7 @@ test('a member sees the answer to their request live, without a reload', async (
 	await expect(card).not.toContainText('luis');
 });
 
-// #139: the person who asked sees their approved request's steps live
+// the person who asked sees their approved request's steps live
 // (searching, then nothing found yet) with no percent and no download
 // details; the approver's window says what it waits for, not a bare
 // "Processing".
@@ -929,7 +929,7 @@ test('a member follows their approved request step by step', async ({ browser })
 	await expect(said).not.toContainText('Processing');
 });
 
-// #139: the member's own card follows the download through to the Library:
+// the member's own card follows the download through to the Library:
 // "Downloading now", then "Adding it to the Library" (or straight to Ready
 // when the import is quicker than the page's next read), never a percent.
 test('a member sees their request downloading, then added to the Library', async ({ browser }) => {

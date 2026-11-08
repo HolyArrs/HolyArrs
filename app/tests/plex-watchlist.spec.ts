@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { plexPort } from './fakes.mjs';
 import { noSidewaysScroll, owner, signIn } from './helpers.ts';
 
-// Plex watchlist sync (#102), with the fake Plex only (fakes.mjs): the
+// Plex watchlist sync, with the fake Plex only (fakes.mjs): the
 // owner links their Plex account, allows watchlists in Request rules and
 // turns on Movies and Shows in My account. The fake watchlist holds a
 // movie, a show, a movie already in the Library and a song: the movie and

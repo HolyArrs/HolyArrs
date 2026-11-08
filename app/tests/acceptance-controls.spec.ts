@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import { owner, signIn } from './helpers.ts';
 
 test('the Downloaders Test button reaches the preserved lab qBittorrent with its API key', async ({ page }) => {
-	// The lab's own qBittorrent (research\lab); without it the test is skipped with the reason.
+	// The lab's own qBittorrent; without it the test is skipped with the reason.
 	const up = await fetch('http://10.10.25.25:18708/api/v2/app/version', { signal: AbortSignal.timeout(3000) }).then(() => true, () => false);
 	test.skip(!up, 'needs the lab qBittorrent on 18708: python research\lab\labctl.py up qbittorrent (stop it after)');
 	// A qBittorrent is saved with an API key or a sign-in, never neither (a3301b5d).

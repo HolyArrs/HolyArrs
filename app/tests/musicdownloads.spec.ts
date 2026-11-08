@@ -7,7 +7,7 @@ import { noSidewaysScroll, owner, signIn } from './helpers.ts';
 import { qbitPort } from './fakes.mjs';
 
 // Album downloads on the Downloads screen and Needs a decision (4.14.2).
-// Runs after musicsearch.spec.ts: the FLAC copy of Tin Lanterns – Harbour
+// Runs after musicsearch.spec.ts: the FLAC copy of Tin Lanterns, Harbour
 // Songs (four tracks, Song 1.1 to Song 1.4) is downloading in the fake
 // qBittorrent with one download.
 test.describe.configure({ mode: 'serial' });

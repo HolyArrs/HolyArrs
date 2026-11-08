@@ -4,7 +4,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { addFromSearch, noSidewaysScroll, owner, signIn } from './helpers.ts';
 
-// Reported problems (#95): a member reports a problem with a movie from a
+// Reported problems: a member reports a problem with a movie from a
 // phone (the sheet is a bottom sheet there), the owner finds it from
 // Requests on Reports and marks it fixed with a reply, and the
 // member sees it fixed, with the reply and a Fixed message. The spec makes

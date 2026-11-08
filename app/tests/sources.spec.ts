@@ -75,7 +75,7 @@ test('the health page shows state, last answer and calls over time', async () =>
 	await expect(page.getByTestId('source').filter({ hasText: 'Lab feed' })).toHaveCount(0);
 });
 
-// Connect Jackett (#96): the guided setup tests the address and key, brings
+// Connect Jackett: the guided setup tests the address and key, brings
 // the site in as a Source, checks it again, and disconnects (asked first);
 // a Source behind a bot check points to it. Only the fake Jackett and the
 // fake indexer on this machine answer.

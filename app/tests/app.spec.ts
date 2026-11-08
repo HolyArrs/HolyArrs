@@ -32,7 +32,7 @@ test('first run makes the owner, adds the key and folder, then returns Home', as
 	await expect(page).toHaveURL(/\/login/);
 	await expect(page.getByRole('heading', { name: 'Set up HolyArrs' })).toBeVisible();
 
-	// No setup code (decisions/0009): whoever opens a fresh HolyArrs first makes the owner.
+	// No setup code: whoever opens a fresh HolyArrs first makes the owner.
 	const o = newOwner();
 	await expect(page.getByLabel('Setup code')).toHaveCount(0);
 	await page.getByTestId('setup-ways').getByRole('button', { name: 'Password' }).click();
@@ -160,7 +160,7 @@ test('settings pages render their forms', async () => {
 	await expect(page.getByText('Answering', { exact: true })).toBeVisible();
 	await expect(page.locator('input[type=password]')).toHaveCount(0);
 	await expect(page.getByText(/read access token|TMDB key/i)).toHaveCount(0);
-	// No credit lines in the app (Luis): they live on GitHub.
+	// No credit lines in the app: they live on GitHub.
 	await page.goto('/settings/backups');
 	for (const p of ['Balanced', 'Light', 'Careful']) await expect(page.getByText(p, { exact: true })).toBeVisible();
 	await page.goto('/settings/sign-in');

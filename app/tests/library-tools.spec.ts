@@ -118,7 +118,7 @@ async function deleteWithFiles(page: Page, name: string) {
 	await expect(sheet).toBeHidden();
 }
 
-// #33 Import files by hand.
+// Import files by hand.
 test('Import files by hand: the scan guesses the movie, Copy imports it and its Library tab shows the file', async ({ page }) => {
 	await signIn(page, owner());
 	const call = await api(page);
@@ -157,7 +157,7 @@ test('Import files by hand: the scan guesses the movie, Copy imports it and its 
 	await expect(pane).toContainText(basename(target));
 });
 
-// #23 Recently deleted.
+// Recently deleted.
 test('Recently deleted: a movie deleted with its files is listed with days left, and Restore brings both back', async ({ page }) => {
 	await signIn(page, owner());
 	const call = await api(page);
@@ -188,7 +188,7 @@ test('Recently deleted: a movie deleted with its files is listed with days left,
 	await expect(page.getByRole('main').getByRole('link', { name: /Velvet Tide/ }).first()).toBeVisible();
 });
 
-// #23 Undo in the delete message.
+// Undo in the delete message.
 test('Undo in the delete message puts the movie and its file back', async ({ page }) => {
 	await signIn(page, owner());
 	const call = await api(page);
@@ -207,7 +207,7 @@ test('Undo in the delete message puts the movie and its file back', async ({ pag
 	expect(titles.filter((t) => t.kind === 'movie' && t.name === 'Ember Road')).toHaveLength(1);
 });
 
-// #35 Move ticked titles to another folder.
+// Move ticked titles to another folder.
 test('Move: two ticked movies go to a second movie folder together', async ({ page }) => {
 	await signIn(page, owner());
 	const call = await api(page);
@@ -245,7 +245,7 @@ test('Move: two ticked movies go to a second movie folder together', async ({ pa
 	for (const t of targets) expect(existsSync(t)).toBe(false);
 });
 
-// #34 Remove a movie series: the fake TMDB's one series, The Brumwick Films.
+// Remove a movie series: the fake TMDB's one series, The Brumwick Films.
 test('Remove a movie series: grouped by series, Open series, review both movies, remove them and hold the file', async ({ page }) => {
 	await signIn(page, owner());
 	const call = await api(page);

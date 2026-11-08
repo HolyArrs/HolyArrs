@@ -3,7 +3,7 @@ import { devices, expect, test, type Page } from '@playwright/test';
 import { noSidewaysScroll, owner, signIn } from './helpers.ts';
 import { qbitPort } from './fakes.mjs';
 
-// The Downloads screen and Needs a decision (stage 4.1). Runs after
+// The Downloads screen and Needs a decision. Runs after
 // downloaders.spec.ts: Iron Lullaby's 720p copy is downloading at 40% in
 // the fake qBittorrent and its 1080p copy is already turned down.
 test.describe.configure({ mode: 'serial' });

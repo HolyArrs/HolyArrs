@@ -53,7 +53,7 @@ export default defineConfig({
 		// Search: Choose a release, Held and Turned down, Home, Settings > Search.
 		{ name: 'search', testMatch: 'search.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['movies', 'sources'] },
 		{ name: 'ai', testMatch: 'ai.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['setup'] },
-		// Reported problems (#95): a member reports a problem from a phone, the owner marks it fixed with a reply, the member sees it fixed.
+		// Reported problems: a member reports a problem from a phone, the owner marks it fixed with a reply, the member sees it fixed.
 		{ name: 'reports', testMatch: 'reports.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['setup'] },
 		// Downloaders: SABnzbd and qBittorrent fakes, the settings, Mark failed on a movie, phone width and accessibility.
 		{ name: 'downloaders', testMatch: 'downloaders.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['sources'] },
@@ -73,9 +73,9 @@ export default defineConfig({
 		{ name: 'showorganise', testMatch: 'showorganise.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['showdownloads'] },
 		// Music: a music folder, Settings > Music, add an artist from Search, its albums, kinds and Pressings, artists in the Library, a member asks for one single from a phone and the owner approves from a phone.
 		{ name: 'music', testMatch: 'music.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['setup'] },
-		// Music search: Choose a release on the album page (verdicts, one turned down, FLAC chosen for every track), Home and the Turned down list name Artist – Album, Search now on the artist page, the music settings, a phone.
+		// Music search: Choose a release on the album page (verdicts, one turned down, FLAC chosen for every track), Home and the Turned down list name the artist and album, Search now on the artist page, the music settings, a phone.
 		{ name: 'musicsearch', testMatch: 'musicsearch.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['music', 'downloaders'] },
-		// Music downloads: the Downloads screen names Artist – Album and its tracks, an album is placed track by track, a stuck track waits on Needs a decision, a phone.
+		// Music downloads: the Downloads screen names the artist and album and its tracks, an album is placed track by track, a stuck track waits on Needs a decision, a phone.
 		{ name: 'musicdownloads', testMatch: 'musicdownloads.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['musicsearch', 'search'] },
 		// Organise for music: music naming with a live example, rename an album's tracks from its page, import an artist folder (nothing moves, a single left out), delete a track to the holding folder, an album's History, album days on the Calendar, a phone, delete an artist with Never-add.
 		{ name: 'musicorganise', testMatch: 'musicorganise.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['musicdownloads'] },

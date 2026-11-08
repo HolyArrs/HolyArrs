@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { addFromSearch, noSidewaysScroll, owner, signIn } from './helpers.ts';
 
-// AI apps (#89) and search in plain words (#90): turn AI apps
+// AI apps and search in plain words: turn AI apps
 // on, make an AI key, use it over MCP, and find a title by describing it.
 test.describe.configure({ mode: 'serial' });
 

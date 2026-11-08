@@ -59,7 +59,7 @@ export const noFacts: HomeFacts = { askedArrived: [], waiting: 0, newToday: { co
 
 const DAY = 86400000;
 
-/** localDay is the calendar day on the person's own clock, as 2026-10-27. */
+/** localDay is the calendar day on the person's own clock, as YYYY-MM-DD. */
 export function localDay(d: Date): string {
 	return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
@@ -110,7 +110,7 @@ export function homeFacts(i: {
 }
 
 // ---- The lines ----
-// {,name} becomes ", Luis" or nothing. {n} is a number, {title} a title.
+// {,name} becomes ", Maya" or nothing. {n} is a number, {title} a title.
 
 const TIME: Record<TimeBucket, string[]> = {
 	early: ["Good morning{,name}. You're up early.", "Early start{,name}. Here's what's new."],
@@ -211,7 +211,7 @@ export function homeLine(i: HomeLineInput): string {
 
 /**
  * homeGreeting is the big line at the top of Home: the time of day and your
- * name ("Good morning, Luis"). It never waits for data, so it shows on the first frame.
+ * name ("Good morning, Maya"). It never waits for data, so it shows on the first frame.
  */
 export function homeGreeting(i: { name?: string | null; displayName?: string | null; now: Date }): string {
 	const name = greetingName(i.displayName, i.name);

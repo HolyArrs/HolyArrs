@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { makeOldLibrary } from './fakes.mjs';
 import { noSidewaysScroll, owner, signIn, titleAction, libraryTool, openAdvanced } from './helpers.ts';
 
-// Organise (stage 5.1): import an existing library from the screen, rename
+// Organise: import an existing library from the screen, rename
 // files after seeing the preview, delete a movie after seeing the plan, and
 // Settings > Naming and files. Runs last.
 test.describe.configure({ mode: 'serial' });
@@ -257,7 +257,7 @@ test('members see none of it', async ({ browser }) => {
 	await expect(sam.getByRole('heading', { level: 1 })).toContainText('Cinder Waltz');
 	await expect(sam.getByRole('button', { name: 'Delete' })).toHaveCount(0);
 	await expect(sam.getByRole('button', { name: 'Rename files' })).toHaveCount(0);
-	// Members get More with only Report a problem (#95): none of the Library tools.
+	// Members get More with only Report a problem: none of the Library tools.
 	await sam.getByRole('button', { name: 'More actions', exact: true }).click();
 	await expect(sam.getByRole('menuitem')).toHaveText(['Report a problem']);
 	await sam.keyboard.press('Escape');

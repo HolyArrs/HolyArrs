@@ -1,7 +1,7 @@
 import { type SheetEpisode } from '#lib/shows/index.ts';
 import { bytes } from '#lib/core/format.ts';
 
-// "Yesterday", "Tomorrow", "Sat, Oct 31" this year, else "Oct 31, 2024".
+// "Yesterday", "Tomorrow", "Sat, Oct 31" this year, else the date with its year.
 export function dayWords(iso: string): string {
 	const d = new Date(iso);
 	const day = (x: Date) => Date.UTC(x.getUTCFullYear(), x.getUTCMonth(), x.getUTCDate());

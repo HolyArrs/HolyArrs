@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 
 // Push updates (setting downloads.sync = on) against a fake qBittorrent:
 // the Downloads page reads its snapshot once, then follows the client
-// through /live patches with no 2 s view reads; a stored legacy value
+// through /live patches with no 2 s view reads; a stored polling value
 // reads as on. Runs with live-push.config.ts only.
 test.describe.configure({ mode: 'serial' });
 
@@ -67,7 +67,7 @@ test('push: progress reaches the page in under 2.5 s with no view reads in betwe
 });
 
 test('legacy: a stored legacy value reads as on: the page follows by push with no 2 s view reads', async () => {
-	// The legacy reading path is gone (588da539): the setting still takes the old value, and it reads as on.
+	// There is no polling path: the setting still takes the old value, and it reads as on.
 	await setSync('legacy');
 	await page.waitForTimeout(6000); // the setting is read again within 5 s
 	await page.goto('/downloads');
@@ -81,8 +81,8 @@ test('legacy: a stored legacy value reads as on: the page follows by push with n
 	expect(views.length - v0, 'view reads while push is healthy').toBe(0);
 });
 
-// AC9: the Downloads list looks the same on push as on legacy. The baseline
-// is taken in legacy in this run (fixed clock, live numbers masked) and the
+// The Downloads list looks the same on push as on polling. The baseline
+// is taken in polling mode in this run (fixed clock, live numbers masked) and the
 // push page is compared with toHaveScreenshot.
 const masks = (p: Page) => ['progress', 'speed', 'eta', 'up', 'seeds', 'peers', 'ratio', 'completed', 'added', 'size'].map((c) => p.locator(`[data-testid="dl-listbox"] [data-col="${c}"]`));
 const sizes = [

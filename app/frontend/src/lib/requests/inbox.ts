@@ -76,7 +76,7 @@ export function nextWhen(iso: string, now = new Date()): string {
 	return t.toLocaleDateString('en-US', opts);
 }
 
-/** "Mar 3", or "Mar 3, 2027" outside this year. */
+/** "Mar 3", or with the year added outside this year. */
 export function shortDate(iso: string, now = new Date()): string {
 	const [y, m, d] = day(iso).split('-').map(Number);
 	if (!y || !m || !d) return '';

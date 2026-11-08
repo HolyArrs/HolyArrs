@@ -126,7 +126,7 @@ test('a new set starts for movies and TV shows; ticking Music switches to the mu
 	await expect(page).toHaveURL(/\/settings\/pick-rules$/);
 });
 
-// Your own traits (#97): made on the list page (mistakes named first), used
+// Your own traits: made on the list page (mistakes named first), used
 // in a copy's Never, and taken out of it again when removed. Whatever the
 // test made is removed at the end, pass or fail.
 test('your own trait is made, used in Never and taken out of the rules when removed', async () => {

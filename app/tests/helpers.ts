@@ -125,7 +125,7 @@ export async function openLibraryTab(page: Page): Promise<Locator> {
 
 /**
  * libraryTool opens a Library tool. Recently deleted opens from the Library's Sort & filter panel;
- * the others are off the Library for now (plans/active/2026-11-05-library-tools-deferred.md), so they open by address.
+ * the others are not on the Library page, so they open by address.
  */
 export async function libraryTool(page: Page, name: string) {
 	if (name === 'Recently deleted') {

@@ -6,7 +6,7 @@ import { episodeState, libraryTool, owner, signIn } from './helpers.ts';
 
 const tmp = join(dirname(fileURLToPath(import.meta.url)), '.tmp');
 
-// #33 Import files by hand: the parts a person does in the page itself.
+// Import files by hand: the parts a person does in the page itself.
 // Picking another Library title than the scan's guess, and bringing in
 // loose episodes of a show, with the season and episode picked where the
 // name does not say.

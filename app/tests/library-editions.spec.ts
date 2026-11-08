@@ -13,7 +13,7 @@ const plex = `http://127.0.0.1:${plexPort}`;
 const edition = "Director's Cut";
 const tag = `{edition-${edition}}`;
 
-// #31 Movie editions: an edition checked on a movie's copy names the file
+// Movie editions: an edition checked on a movie's copy names the file
 // with Plex's edition tag, and Plex is asked to scan that movie's folder.
 
 type Call = (method: 'GET' | 'POST' | 'PUT' | 'DELETE', path: string, data?: unknown) => Promise<APIResponse>;
@@ -88,7 +88,7 @@ test("Movie editions: a Director's Cut checked on the Library tab renames the fi
 	expect(made.status(), await made.text()).toBe(201);
 	const serverId = ((await made.json()) as { id: number }).id;
 
-	// The copy's edition, checked by hand. Its box is out of the app for now (docs/audio-versions.md),
+	// The copy's edition, checked by hand. Its box is not in the app (docs/audio-versions.md),
 	// so the check goes through the API the box used.
 	const saved = await call('PUT', `/titles/${id}/files/${copies.files[0].ID}/choices`, { edition });
 	expect(saved.ok(), await saved.text()).toBe(true);

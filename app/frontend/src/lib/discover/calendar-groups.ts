@@ -127,7 +127,7 @@ export function groupTag(g: CalGroup): string {
 	return words.length > 1 ? `${words.slice(0, -1).join(', ')} and ${words.at(-1)}` : words[0];
 }
 
-/** A card's facts line; several episodes show their span: "S39E194–E196 · 19:00 · Seven". */
+/** A card's facts line; several episodes show their span joined by an en dash, then time and network. */
 export function groupFacts(g: CalGroup): string {
 	if (g.entries.length === 1 || g.lead.kind !== 'episode') return entryFacts(g.lead);
 	const eps = [...g.entries].sort((a, b) => (a.season ?? 0) - (b.season ?? 0) || (a.episode ?? 0) - (b.episode ?? 0));

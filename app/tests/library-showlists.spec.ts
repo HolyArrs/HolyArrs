@@ -10,7 +10,7 @@ test.describe.configure({ timeout: 90_000 });
 
 const tmp = join(dirname(fileURLToPath(import.meta.url)), '.tmp');
 
-// #104 Auto-add shows from lists: an Outside list that adds shows, against
+// Auto-add shows from lists: an Outside list that adds shows, against
 // the fake TMDB list 104 and the fake Trakt list lab/tv-picks in fakes.mjs.
 // Each list keeps its own season choice; Never-add shows are skipped; a list
 // with Search when added looks for the new show's episodes. The lists use

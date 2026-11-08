@@ -180,7 +180,7 @@ test('the Downloaders page and the Downloads screen pass the accessibility scan 
 	await phone.close();
 });
 
-// Tags (#108): a Downloader and a title get tags from their forms; the
+// Tags: a Downloader and a title get tags from their forms; the
 // Downloader row says them, the title keeps them. Both are cleared at the
 // end, pass or fail, so the next projects route as before.
 test('tags are set on a Downloader and on a title, and shown where they are kept', async () => {
@@ -202,8 +202,8 @@ test('tags are set on a Downloader and on a title, and shown where they are kept
 		await expect(sab.getByTestId('downloader-tags')).toHaveText('tags 4k-only, kids');
 
 		expect(ironPage).not.toBe('');
-		// A title's tags are set through the API for now: the title page's Tags row
-		// is left out until it comes back in a later release (docs/downloaders.md).
+		// A title's tags are set through the API: the title page's Tags row
+		// is not shown (docs/downloaders.md).
 		const titleId = ironPage.match(/\/library\/(\d+)/)?.[1];
 		const tagged = await call('PUT', `/titles/${titleId}`, { tags: ['kids'] });
 		expect(tagged.ok(), await tagged.text()).toBe(true);

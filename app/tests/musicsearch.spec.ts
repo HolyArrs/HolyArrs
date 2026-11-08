@@ -7,7 +7,7 @@ import { noSidewaysScroll, owner, signIn, openAdvanced, openInLibrary } from './
 // a 128 kbps copy. Choose a release on the album page lists all three with
 // their verdicts; the 128 kbps copy is turned down; the FLAC copy is chosen
 // for every track with one download; Home and the Turned down list name
-// "Artist – Album"; the artist's Library tab has Get all missing; Settings > Search has
+// artist and album joined by an en dash; the artist's Library tab has Get all missing; Settings > Search has
 // the music choices; a phone.
 test.describe.configure({ mode: 'serial' });
 

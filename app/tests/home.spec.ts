@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { noSidewaysScroll, owner, signIn } from './helpers.ts';
 
-// Home (roadmap #3): the owner's overview, and the setup bar while setup is open, on a desktop and a phone.
+// Home: the owner's overview, and the setup bar while setup is open, on a desktop and a phone.
 for (const width of [1280, 390]) {
 	test(`home at ${width}px: Library and Needs attention, setup steps fill the bar`, async ({ browser }) => {
 		const ctx = await browser.newContext({ viewport: { width, height: 900 } });
@@ -25,7 +25,7 @@ for (const width of [1280, 390]) {
 	});
 }
 
-// Roadmap #79: on a touch phone every Home control is a tap of 44px or more.
+// On a touch phone every Home control is a tap of 44px or more.
 test('home on a touch phone: every control is a 44px tap', async ({ browser }) => {
 	const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
 	const page = await ctx.newPage();

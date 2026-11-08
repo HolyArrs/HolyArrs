@@ -6,7 +6,7 @@ import { libraryStatus, owner, signIn } from './helpers.ts';
 
 const tmp = join(dirname(fileURLToPath(import.meta.url)), '.tmp');
 
-// #27 Missing list: Search all missing (top of the Library's Missing list,
+// Missing list: Search all missing (top of the Library's Missing list,
 // after a confirm) searches every missing title of the kind shown at once:
 // first movies only, then everything. The fake Source answers
 // the searches; the titles here use the 4K Pick rules, so every Release it

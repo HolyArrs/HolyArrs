@@ -47,7 +47,7 @@ test("a title's Library tab lists its Versions on the File cards, with no Copies
 	const href = await paperHarbour(page);
 	await page.goto(`${href!}?tab=library`);
 	await expect(page.getByTestId('lib-pane')).toBeVisible();
-	// Protect a copy, keep a copy and add a Version, and the Versions list are out of the title page for now
+	// Protect a copy, keep a copy and add a Version, and the Versions list are out of the title page
 	// (docs/audio-versions.md); every Version shows as a File card, a Version without a file says so.
 	await expect(page.getByTestId('version-card').first()).toBeVisible();
 	await expect(page.getByTestId('copy-controls')).toHaveCount(0);

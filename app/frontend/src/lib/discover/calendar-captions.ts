@@ -77,7 +77,7 @@ export function clockTime(e: Pick<CalendarEntry, 'kind' | 'date' | 'timed'>, loc
 	return f.format(d);
 }
 
-/** "Season 22, Episode 111"; several: "Season 39, Episodes 194–196". */
+/** "Season 22, Episode 111"; several: the episode numbers joined by an en dash. */
 export function episodeWords(eps: Pick<CalendarEntry, 'season' | 'episode'>[]): string {
 	const s = [...eps].sort((a, b) => (a.season ?? 0) - (b.season ?? 0) || (a.episode ?? 0) - (b.episode ?? 0));
 	const first = s[0];

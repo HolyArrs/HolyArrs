@@ -2,7 +2,7 @@ import { defineConfig, devices } from '@playwright/test';
 
 const port = process.env.HOLYARRS_E2E_PORT ?? '18797';
 
-// Status (#71, #78): a fresh app of its own (the phone audit's server), so it
+// Status: a fresh app of its own (the phone audit's server), so it
 // runs without the main suite; every tab at 1280 and 390.
 export default defineConfig({
 	testDir: '.',

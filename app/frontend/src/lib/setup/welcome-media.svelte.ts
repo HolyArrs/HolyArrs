@@ -54,7 +54,7 @@ export function createWelcomeMedia(ctx: any) {
 	async function saveMedia(skip: boolean) {
 		if (mediaOff || ctx.busy) return;
 		ctx.error = '';
-		// Continue needs a folder for every part that is on (Skip for now adds none).
+		// Continue needs a folder for every part that is on (Skip adds none).
 		if (!skip) {
 			const empty = rows.filter((r) => media[r.part] && !(r.saved && !r.editing) && !r.path.trim());
 			for (const r of empty) r.error = 'Add a folder or turn this off.';

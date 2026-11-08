@@ -82,7 +82,7 @@ test('the owner adds Moss Parade with every season kept', async () => {
 	await openShow(page, 'Moss Parade');
 	const s1 = await openSeason(page, 'Season 1');
 	await expect(states(s1)).toHaveText(['Missing', 'Missing']);
-	// Both can be looked for now.
+	// Both can be looked for.
 	await expect(s1.getByRole('button', { name: 'Look for episode 1' })).toBeEnabled();
 	await expect(s1.getByRole('button', { name: 'Look for episode 2' })).toBeEnabled();
 });

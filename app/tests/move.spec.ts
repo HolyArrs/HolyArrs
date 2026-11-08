@@ -381,7 +381,7 @@ test("variants: qBittorrent sign-in, backup file, Stop reading and Forget", asyn
 // 3.5.13: `holyarrs import-secrets` while HolyArrs runs goes through its
 // API with an owner key; the old Radarr's key is saved for the Move tool,
 // offered without being shown, and kept for Read again until a move
-// finishes (Luis 2026-11-05: "Keep key until moved").
+// finishes (the key is kept until the move is done).
 test("import a made-up secrets file, then read Radarr with the saved key", async () => {
   const tmp = join(dirname(fileURLToPath(import.meta.url)), ".tmp");
   const me = (await (await page.request.get("/api/v1/auth/me")).json()) as {

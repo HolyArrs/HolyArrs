@@ -102,7 +102,7 @@ export function entryKey(e: CalendarEntry): string {
 	return e.kind === 'episode' ? `e${e.item_id}` : `${e.title_id}${e.kind}`;
 }
 
-/** A calendar day as 2026-10-13, read in local time. */
+/** A calendar day as YYYY-MM-DD, read in local time. */
 export function ymd(d: Date): string {
 	const p = (n: number) => String(n).padStart(2, '0');
 	return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;

@@ -231,7 +231,7 @@ export function episodeStateWords(state: string): { text: string; tone: Tone } {
 }
 
 /** rowName names a Downloads row: the movie with its year, the show, or
- *  Artist – Album (Year). */
+ *  artist and album joined by an en dash, then the year in brackets. */
 export function rowName(r: Pick<DownloadRow, 'title' | 'year' | 'name' | 'kind' | 'album'>): string {
 	if (!r.title) return r.name;
 	if (r.kind === 'show') return r.title;
