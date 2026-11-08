@@ -30,11 +30,10 @@ func repoRoot(t *testing.T) string {
 	return filepath.Dir(strings.TrimSpace(string(out)))
 }
 
-// skipDir names folders no snapshot or guard looks inside. services holds
-// the metadata server, a separate Go module with its own routes.
+// skipDir names folders no snapshot or guard looks inside.
 func skipDir(name string) bool {
 	switch name {
-	case ".git", "node_modules", ".svelte-kit", "dist", "testdata", "services":
+	case ".git", "node_modules", ".svelte-kit", "dist", "testdata":
 		return true
 	}
 	return false

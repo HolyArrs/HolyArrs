@@ -1,5 +1,3 @@
-//go:build structure
-
 package structurecheck
 
 import (
