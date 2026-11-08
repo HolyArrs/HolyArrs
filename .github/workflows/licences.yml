@@ -1,0 +1,51 @@
+# .github/workflows/licences.yml
+name: licences
+on: [pull_request, push]
+jobs:
+  go:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        dir: [".", "services/metadata"]
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-go@v7.0.0
+        with: { go-version-file: "${{ matrix.dir }}/go.mod" }
+      - run: go install github.com/google/go-licenses/v2@v2.0.1
+      - name: check
+        working-directory: ${{ matrix.dir }}
+        env: { GOOS: linux }
+        run: >
+          go-licenses check ./...
+          --allowed_licenses=MIT,BSD-2-Clause,BSD-3-Clause,Apache-2.0,ISC,MPL-2.0,CC0-1.0,Zlib
+          --ignore github.com/HolyArrs/holyarrs
+          --ignore github.com/CoderLuii/holyarrs-metadata
+      - name: save licence texts for the notices file
+        if: matrix.dir == '.'
+        run: go-licenses save ./... --save_path=third_party_licences --ignore github.com/HolyArrs/holyarrs
+      - uses: actions/upload-artifact@v7.0.2
+        if: matrix.dir == '.'
+        with: { name: go-licences, path: third_party_licences }
+
+
+  web:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: app/frontend } }
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7.1.0
+        with: { node-version: 24 }
+      - run: npm ci
+      - run: >
+          npx --yes license-checker-rseidelsohn@5.0.1
+          --excludePrivatePackages
+          --onlyAllow "MIT;ISC;BSD-2-Clause;BSD-3-Clause;Apache-2.0;0BSD;CC0-1.0;OFL-1.1;MPL-2.0;BlueOak-1.0.0;Python-2.0;CC-BY-4.0"
+          --summary
+
+
+      - run: npm run build
+      - name: shipped packages must be permissive or OFL/CC0
+        run: >
+          npx --yes license-checker-rseidelsohn@5.0.1
+          --includePackages "svelte;@sveltejs/kit;devalue;esm-env;clsx;hls.js;simple-icons;@fontsource/anton;@fontsource-variable/geist;@fontsource-variable/geist-mono;@fontsource/silkscreen"
+          --onlyAllow "MIT;ISC;BSD-2-Clause;BSD-3-Clause;Apache-2.0;CC0-1.0;OFL-1.1"
