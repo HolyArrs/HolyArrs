@@ -5,7 +5,7 @@ level: Start
 sidebar: { order: 8 }
 ---
 
-Run HolyArrs on your NAS with the right folders, owner and restart setting. Read [Install](../start/install/) first; this page covers only what changes on a NAS.
+Run HolyArrs on your NAS with the right folders, owner and restart setting. Read [Install](../start/install/) first.
 
 ## Before you start
 
@@ -72,7 +72,7 @@ These jobs wake the media disks. Change how often they run on the **Schedules** 
 | **Look for missing subtitles**, **Look for better subtitles** | The folder next to each video. |
 
 - Put `/config` and the download folder on an SSD or cache pool.
-- If `/config` shares a disk with downloads, keep 1 GB free. Below that you get a health warning.
+- Keep 1 GB free on the disk that holds `/config`. Below that you get a health warning.
 - On Unraid, the Cache Directories plugin keeps folder listings in memory, so scans skip the disk.
 - Set the rescan to every 7 days or off. Files you add by hand are then found only when you press **Run now** on **Rescan the Library**.
 - A seeding torrent reads its file. If it is hardlinked into your Library, that disk stays awake until seeding stops.
