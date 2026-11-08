@@ -1,0 +1,13 @@
+what's in 1.0.0
+
+one app for movies, shows and music, from asking to watching.
+
+- move over from your old apps without starting over
+- browse and request like a streaming app
+- every download on one page, stuck ones swapped for you
+
+heads up: default port is 6262. map your old port if you want to keep it.
+
+thanks to the 49 of you who asked for stuff, you're all named in the notes
+
+https://github.com/HolyArrs/holyarrs/releases/tag/1.0.0

@@ -1,0 +1,120 @@
+﻿# Single source for one release. Every place (GitHub, What's New, Reddit, Discord, roadmap) renders from this file.
+# Data: gh issue list -R HolyArrs/holyarrs --milestone 1.0.0 (2026-11-08). 95 closed, 4 still Building (#100-#103).
+version: 1.0.0
+theme: One app for movies, shows and music, from asking to watching.
+highlights:
+  - line: Move over from your old apps without starting over.
+    issue: 78
+    shot: Import step of the first-run wizard (GIF, apps found to Added)
+  - line: Browse and request like a streaming app.
+    issue: 6
+    shot: Explore home, rows scrolling (GIF)
+  - line: Every download on one page, stuck ones swapped for you.
+    issue: 46
+    shot: Downloads table with a swapped item
+groups:
+  Setup:
+    added:
+      - First run walks you through folders, downloader and sources. (#75)
+      - Turn off the parts you don't use. (#76)
+      - Search every setting from one box. (#54)
+    changed:
+      - Settings trimmed down to what people really change. (#95)
+      - Idles under 250 MB and runs on 1 GB machines. (#83) (#4)
+      - Pages open in under a second. (#82)
+  Install:
+    added:
+      - Step-by-step install guide. (#73)
+      - Runs under /holyarrs behind your proxy. (#74)
+    changed:
+      - Smaller download to install. (#84)
+  Migration:
+    added:
+      - Bring your library, sources and settings from your old apps. (#78)
+      - Your other apps keep working through the arr API. (#79)
+  Library:
+    added:
+      - Movies, shows and music in one library. (#59)
+      - HD and 4K copies side by side. (#62)
+      - Rename with a preview first. (#67)
+      - Undo a delete. (#70)
+      - Every file move shows its reason. (#71)
+      - Hardlinks save space when your folders allow it. (#49)
+      - Your media server refreshes after each import. (#56)
+      - Calendar shows what's coming. (#28)
+  Shows:
+    added:
+      - Anime matched to the right episodes. (#63)
+      - Pick only the seasons you want. (#61)
+  Movies:
+    added:
+      - Lists that fill your library. (#66)
+      - Search starts when a movie is out. (#41)
+  Music:
+    added:
+      - Music gets its own pages. (#25)
+      - Lossless stays lossless. (#43)
+  Downloads:
+    added:
+      - Every download on one page. (#46)
+      - Stuck downloads get swapped for another copy. (#47)
+      - Unpacks archives itself. (#48)
+      - Keep your torrent or Usenet downloader. (#45)
+      - Map Docker paths in one place. (#50)
+  Indexers:
+    added:
+      - One source list for everything. (#37)
+      - Bring your Jackett or Prowlarr. (#38)
+      - Set your own quality rules. (#39)
+      - See why each release won. (#44)
+      - Fakes and malware blocked before download. (#42)
+  Requests:
+    added:
+      - Browse like a streaming app. (#6)
+      - Find anything as you type, or describe it. (#21) (#22)
+      - Watch your request move, hear when it's ready. (#34) (#35)
+      - Approve exactly what you want, with weekly limits. (#33) (#32)
+      - Ask for music too. (#29)
+      - Trailers start fast with our trailer reader. (#8)
+  Accounts:
+    added:
+      - Invite the whole family, with age limits per kid. (#18) (#19)
+      - Two-factor and single sign-on. (#16) (#15)
+      - Plex or Jellyfin sign-in. (#14)
+  Alerts:
+    added:
+      - Alerts go where you already look. (#55)
+  Health:
+    added:
+      - Health at a glance. (#52)
+      - Logs safe to share. (#53)
+      - See what leaves your server. (#11)
+  Updates:
+    added:
+      - Updates you can undo. (#57)
+before_you_update:
+  breaking:
+    - Default port is 6262. Map your old port if you want to keep it.
+  manual_steps:
+    - Point HolyArrs at your old apps once in the Import step.
+  backup: Back up your old apps' config folders before the move.
+  rollback: Settings > Updates > go back to the last version.
+known_issues: []   # empty = section hidden everywhere; fill only with real ones
+security:
+  - Locked down by default, password guessing slowed down. (#85) (#86)
+  - Tracker passkeys and server details stay out of logs and pages. (#89) (#88)
+credits:   # from "Asked for by" lines in issue bodies. github: login only when known (issue author/commenter on HolyArrs/holyarrs, or credits-map.json). Checked 2026-11-08: no requester has a known login yet, so none shown.
+# render: [u/name](link) (@github) when github is set, else [u/name](link)
+  - {name: u/clayuk62, link: "https://www.reddit.com/r/HolyArrs/comments/1xcnv6u/comment/19rvebi6rzqm8/", issues: [91,75,62,57,55,53,52,49,46,45,39,37,35,34]}
+  - {name: u/ImportantCustomer503, link: "https://www.reddit.com/r/HolyArrs/comments/1xcnpvo/comment/19rjob0vhtou8/", issues: [78,56,42,34]}
+  - {name: u/The_Mdk, link: "https://www.reddit.com/r/SideProject/comments/1xjjuwp/comment/19rwcbh51glqb/", issues: [79,78,38]}
+  - {name: u/Artistic-Sea-7040, link: "https://www.reddit.com/r/HolyArrs/comments/1xcnv6u/comment/19rqqhfoxm8ao/", issues: [78,45,39]}
+  - {name: u/allexiel, link: "https://www.reddit.com/r/HolyArrs/comments/1xcnv6u/comment/19rlfiu3dklts/", issues: [78,63,44]}
+  - {name: u/roychassi, link: "https://www.reddit.com/r/HolyArrs/comments/1xcnv6u/comment/19rmhwkx3yxdw/", issues: [77,39,35]}
+  - {name: u/MrMe_w00t, link: "https://www.reddit.com/r/HolyArrs/comments/1xcnpvo/comment/19rhsj5rvlvyc/", issues: [78,33]}
+  - {name: u/Alan_More, link: "https://www.reddit.com/r/HolyArrs/comments/1xcnv6u/comment/19ri5rxj3in45/", issues: [75,28,27]}
+  # ...full list: every "Asked for by" name across the 95 issues (49 people); link = first comment link given
+stats:
+  issues_done: 95
+  still_building: 4
+  people_credited: 49

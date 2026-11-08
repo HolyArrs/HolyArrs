@@ -21,6 +21,24 @@ The release workflow builds one image for `linux/amd64`, `linux/arm64` and `linu
 4. `THIRD_PARTY_NOTICES.md` is current. Check it with `python3 deploy/release/notices.py --check`.
 5. The image builds with `docker build --file deploy/Dockerfile .` and starts on a fresh config folder.
 
+## Release notes
+
+Every release text is built from one file, `releases/notes-<version>.yml`. Write only that file; never hand-edit what it builds.
+
+- `version` (plain `X.Y.Z`), `theme` (one line), and exactly 3 `highlights`, each with `line`, `issue` and `shot`.
+- `groups`: one entry per place (Setup, Library, Downloads...), each with `added`, `fixed` and `changed` lists. Every line ends with its issue, for example `(#46)`.
+- Optional: `before_you_update` (`breaking`, `manual_steps`, `backup`, `rollback`), `security`, `known_issues`, `credits` (`name`, `link`, `github`, `issues`) and `stats`. Leave anything empty that has nothing real in it; empty parts are hidden everywhere.
+- GitHub logins only when known, either in the yml or in `releases/credits-map.json`.
+
+Check it, then build:
+
+```
+python deploy/release/notes.py 1.0.0 --check
+python deploy/release/notes.py 1.0.0
+```
+
+The second command writes `changelog.md`, `github.md`, `update-notes.json`, `reddit.txt`, `discord-dm.txt`, `discord-announce.md` and `roadmap-card.json` to `releases/out/1.0.0/`. `--check` exits 1 on any error and prints warnings for long lines and banned words.
+
 ## Update list
 
 The update check in the app reads a signed update list. Each release adds its entry and signs the list. The signing key never goes in the repo. HolyArrs refuses a list it can't verify.
