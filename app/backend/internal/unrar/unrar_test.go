@@ -322,3 +322,22 @@ func TestNextVolume_Names(t *testing.T) {
 		t.Error("volume detection")
 	}
 }
+
+// TestStoredEntryStaysInDest refuses to follow a folder link out of dest.
+func TestStoredEntryStaysInDest(t *testing.T) {
+	for name, vol := range formats() {
+		t.Run(name, func(t *testing.T) {
+			dir, dest, outside := t.TempDir(), t.TempDir(), t.TempDir()
+			if err := os.Symlink(outside, filepath.Join(dest, "sub")); err != nil {
+				t.Skipf("no symlinks here: %v", err)
+			}
+			first := put(t, dir, "rel.rar", vol(false, spec{name: "sub/a.mkv", data: movie}))
+			if _, err := Extract(first, dest); err == nil {
+				t.Fatal("want an error")
+			}
+			if left, _ := os.ReadDir(outside); len(left) != 0 {
+				t.Fatalf("wrote outside: %v", left)
+			}
+		})
+	}
+}
