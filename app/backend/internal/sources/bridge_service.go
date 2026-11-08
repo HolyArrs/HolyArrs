@@ -18,7 +18,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
-// KindCheck is the job kind that keeps every Jackett bridge's Sources in
+// BridgeKindCheck is the job kind that keeps every Jackett bridge's Sources in
 // step with its sites.
 const BridgeKindCheck = "check_bridges"
 
@@ -36,7 +36,7 @@ const (
 	extraLocal = "local"
 )
 
-// ErrTaken says that this Jackett or Prowlarr is already connected.
+// ErrBridgeTaken says that this Jackett or Prowlarr is already connected.
 var ErrBridgeTaken = errors.New("already connected")
 
 // Bridge is one connected Jackett or Prowlarr.
@@ -52,7 +52,7 @@ type Bridge struct {
 	Extra       map[string]string `db:"extra,json"`
 }
 
-// Result is what one check of a Jackett did.
+// BridgeResult is what one check of a Jackett did.
 type BridgeResult struct {
 	Sites   int `json:"sites"`
 	Added   int `json:"added"`
@@ -61,7 +61,7 @@ type BridgeResult struct {
 	Skipped int `json:"skipped"` // sites whose Source the person removed
 }
 
-// Service keeps bridges and their Sources.
+// BridgeService keeps bridges and their Sources.
 type BridgeService struct {
 	Store *database.Store
 	Vault *secrets.Vault
@@ -170,8 +170,8 @@ func (s *BridgeService) Update(ctx context.Context, b Bridge, key, callback stri
 }
 
 // Remove takes a bridge away and returns how many Sources it had brought in.
-// With keepSources they stay as ordinary Sources that are no longer kept in
-// step; otherwise they are removed too.
+// With keepSources they stay as ordinary Sources that are not kept in step;
+// otherwise they are removed too.
 func (s *BridgeService) Remove(ctx context.Context, b Bridge, keepSources bool) (int, error) {
 	s.work.Lock()
 	defer s.work.Unlock()

@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-// Prowlarr is a client for a Prowlarr the person runs. HolyArrs adds itself
+// BridgeProwlarr is a client for a Prowlarr the person runs. HolyArrs adds itself
 // there as an app for each side that is on (the Sonarr kind for TV, the
 // Radarr kind for movies), then asks it to sync. Prowlarr then writes its
 // sites into HolyArrs through the old-app API.
@@ -20,7 +20,7 @@ type BridgeProwlarr struct {
 	http *http.Client
 }
 
-// Side is one HolyArrs side that Prowlarr connects to.
+// BridgeSide is one HolyArrs side that Prowlarr connects to.
 type BridgeSide struct {
 	Kind string // Sonarr or Radarr, the app type name in Prowlarr
 	Name string // the entry's name in Prowlarr
@@ -32,7 +32,7 @@ type BridgeSide struct {
 // not know are sent back unchanged.
 type app map[string]any
 
-// NewProwlarr returns a client for one Prowlarr.
+// NewBridgeProwlarr returns a client for one Prowlarr.
 func NewBridgeProwlarr(url, key string) *BridgeProwlarr {
 	return &BridgeProwlarr{URL: strings.TrimRight(url, "/"), Key: key, http: client(30 * time.Second)}
 }

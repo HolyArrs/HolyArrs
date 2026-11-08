@@ -10,10 +10,10 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 )
 
-// IsLocal is the check Sources use for a local address; tests replace it.
+// BridgeIsLocal is the check Sources use for a local address; tests replace it.
 var BridgeIsLocal = BridgeLocalAddress
 
-// LocalAddress says whether an address is on this machine or a local
+// BridgeLocalAddress says whether an address is on this machine or a local
 // network (loopback, private and the other ranges Sources refuse). Only a
 // Jackett there serves its sites' feeds from there too, so only then do its
 // Sources get the local-network allowance. A name counts as local only when

@@ -17,9 +17,9 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
-// Search routes (stage 3.1): searching a Title, the releases a search found
-// with their verdicts, choosing one by hand, turning one down, the Held and
-// Turned down lists, bulk searches and the search settings.
+// Search routes: the Releases a search found with their verdicts, choosing
+// one by hand, turning one down, the Held and Turned down lists, bulk
+// searches and the search settings.
 
 // Reason is one line of a verdict in plain words.
 type Reason struct {
@@ -349,18 +349,18 @@ type SearchSettings struct {
 	MissingSearchCount  int  `json:"missing_search_count"`  // per daily run; 0 is off, at most 500
 	MissingSearchBetter bool `json:"missing_search_better"` // the daily run also looks for better copies
 	TryNextDownloader   bool `json:"try_next_downloader"`
-	// Shows (stage 3.2).
+	// Shows.
 	MissingSearchShows bool   `json:"missing_search_shows"` // the daily and bulk searches cover episodes
 	SeasonPackUpgrade  string `json:"season_pack_upgrade"`  // all: every episode a pack holds must gain; any: one is enough
 	SeasonPackPrefer   string `json:"season_pack_prefer"`   // rank: a pack wins ties; always: a passing pack wins
 	MultiSeasonPacks   bool   `json:"multi_season_packs"`   // Releases with several seasons may be taken
-	// Music (stage 3.3).
+	// Music.
 	MissingSearchMusic    bool `json:"missing_search_music"`    // the daily and bulk searches cover albums
 	MusicDiscographyPacks bool `json:"music_discography_packs"` // a whole-discography Release may fill an album
 	AlbumTrackTolerance   int  `json:"album_track_tolerance"`   // files a Release may lack against the album's tracks; -1 off
 	AlbumExtraFiles       int  `json:"album_extra_files"`       // files a bare file count is taken to hold besides tracks; 0 to 20
 	ArtistSearchCap       int  `json:"artist_search_cap"`       // most album searches one Search now on an artist queues; 1 to 2000
-	// Early and fake Releases (4.3.5).
+	// Early and fake Releases.
 	RefuseEarlyReleases    bool `json:"refuse_early_releases"`     // a Release posted before its movie, episode or album came out is refused
 	EarlyReleaseGraceHours int  `json:"early_release_grace_hours"` // 0 to 720
 	RefuseTinyReleases     bool `json:"refuse_tiny_releases"`      // far too small for what it holds, or an empty or old-container file at import

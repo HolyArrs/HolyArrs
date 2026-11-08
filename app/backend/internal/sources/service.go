@@ -1,3 +1,8 @@
+// Package sources talks to the Sources a person connects, the Torznab, Newznab
+// and rss feeds that list releases. It reads their caps, searches them, turns
+// their XML into plain items, runs the search jobs that judge and pick what
+// they return, keeps each Source's health, and connects the Jackett or
+// Prowlarr bridges that bring Sources in.
 package sources
 
 import (

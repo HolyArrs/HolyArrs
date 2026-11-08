@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-// Jackett is a client for a Jackett the person runs. Its key alone lists
+// BridgeJackett is a client for a Jackett the person runs. Its key alone lists
 // the configured sites and their categories.
 type BridgeJackett struct {
 	URL  string // as the person typed it, any base path included
@@ -18,7 +18,7 @@ type BridgeJackett struct {
 	http *http.Client
 }
 
-// Site is one site set up in Jackett.
+// BridgeSite is one site set up in Jackett.
 type BridgeSite struct {
 	ID         string
 	Title      string
@@ -48,7 +48,7 @@ type jackettList struct {
 	} `xml:"indexer"`
 }
 
-// NewJackett returns a client for one Jackett.
+// NewBridgeJackett returns a client for one Jackett.
 func NewBridgeJackett(base, key string) *BridgeJackett {
 	return &BridgeJackett{URL: strings.TrimRight(base, "/"), Key: key, http: client(30 * time.Second)}
 }

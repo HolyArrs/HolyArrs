@@ -21,7 +21,7 @@ const (
 	BridgeKindProwlarr = "prowlarr"
 )
 
-// Error is a failed call to a bridge, worded for the person. It never holds
+// BridgeError is a failed call to a bridge, worded for the person. It never holds
 // the key.
 type BridgeError struct {
 	Words string
@@ -30,7 +30,7 @@ type BridgeError struct {
 // Error returns the plain words of the failure.
 func (e *BridgeError) Error() string { return e.Words }
 
-// Words returns what went wrong, worded for the person.
+// BridgeWords returns what went wrong, worded for the person.
 func BridgeWords(err error) string {
 	var be *BridgeError
 	if errors.As(err, &be) {
@@ -42,7 +42,7 @@ func BridgeWords(err error) string {
 	return "Something went wrong talking to it."
 }
 
-// CleanURL checks a bridge address and drops its trailing slash. It must be
+// BridgeCleanURL checks a bridge address and drops its trailing slash. It must be
 // http or https with a host, and carry no user, password, query or fragment.
 func BridgeCleanURL(raw string) (string, error) {
 	raw = strings.TrimRight(strings.TrimSpace(raw), "/")

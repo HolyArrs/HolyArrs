@@ -1,6 +1,3 @@
-// Package source talks to Sources, the Torznab, Newznab and rss feeds that
-// list releases. It reads their caps, searches them, turns their XML into plain
-// items and runs the search jobs that judge and pick what they return.
 package sources
 
 import (

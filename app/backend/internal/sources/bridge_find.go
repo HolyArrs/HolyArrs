@@ -21,13 +21,13 @@ var findPorts = map[string]string{BridgeKindJackett: "9117", BridgeKindProwlarr:
 // BridgeFindHosts returns the hosts to try; tests replace it to point at fakes.
 var BridgeFindHosts = func() []string { return findHosts }
 
-// Found is a Jackett or Prowlarr that answered at an address.
+// BridgeFound is a Jackett or Prowlarr that answered at an address.
 type BridgeFound struct {
 	Kind string `json:"kind"`
 	URL  string `json:"url"`
 }
 
-// Find tries the usual addresses at once with a short wait and returns the
+// FindBridges tries the usual addresses at once with a short wait and returns the
 // ones where a bridge answered, Jackett first. It only fetches one public
 // page per address and sends no key.
 func FindBridges(ctx context.Context) []BridgeFound {
@@ -84,7 +84,7 @@ func FindBridges(ctx context.Context) []BridgeFound {
 	return uniq
 }
 
-// Looks says whether the address answers like that kind, without a key.
+// BridgeLooks says whether the address answers like that kind, without a key.
 // Prowlarr answers its ping with an OK status. Jackett answers a call
 // without a key with its own invalid-key error (code 100, status 200),
 // while its sign-in page only redirects. A wrong guess costs nothing since

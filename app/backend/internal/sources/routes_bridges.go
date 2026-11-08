@@ -14,7 +14,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 )
 
-// Connect Jackett or Prowlarr (#96): a guided setup in Settings > Sources
+// Connect Jackett or Prowlarr: a guided setup in Settings > Sources
 // that turns the sites set up there into Sources in one step.
 
 // BridgeView is one connected Jackett or Prowlarr.
@@ -31,8 +31,8 @@ type BridgeView struct {
 	Local bool `json:"local,omitempty"`
 }
 
-// BridgeInput is a Jackett or Prowlarr to test or connect.
-type BridgeInput struct {
+// bridgeBody is a Jackett or Prowlarr to test or connect.
+type bridgeBody struct {
 	Kind        string `json:"kind"`
 	URL         string `json:"url"`
 	Key         string `json:"key"`
@@ -72,7 +72,7 @@ func bridgeFail(w http.ResponseWriter, status int, err error, field string) {
 }
 
 // cleanBridge checks the kind and the addresses of an input.
-func cleanBridge(w http.ResponseWriter, in *BridgeInput) bool {
+func cleanBridge(w http.ResponseWriter, in *bridgeBody) bool {
 	if in.Kind != BridgeKindJackett && in.Kind != BridgeKindProwlarr {
 		webserver.WriteJSON(w, http.StatusBadRequest, map[string]string{"error": "Pick Jackett or Prowlarr.", "field": "kind"})
 		return false
@@ -111,12 +111,12 @@ func (h *Handlers) listBridges(w http.ResponseWriter, r *http.Request) {
 	// home_ip: this machine's home-network address, for the page to offer as
 	// HolyArrs's address for Prowlarr when the browser came in over Tailscale
 	// or localhost (Prowlarr usually can't reach those).
-	webserver.WriteJSON(w, http.StatusOK, map[string]any{"bridges": out, "home_ip": homeIP()})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"bridges": out, "home_ip": localAddress()})
 }
 
-// homeIP is the first 10.x or 192.168.x address of this machine, or "".
+// localAddress is the first 10.x or 192.168.x address of this machine, or "".
 // 172.16/12 is skipped: inside Docker it is the container's own network.
-func homeIP() string {
+func localAddress() string {
 	addrs, err := net.InterfaceAddrs()
 	if err != nil {
 		return ""
@@ -169,7 +169,7 @@ func sideOf(kind string) string {
 
 // testBridge checks an address and key without saving anything.
 func (h *Handlers) testBridge(w http.ResponseWriter, r *http.Request) {
-	var in BridgeInput
+	var in bridgeBody
 	if !webserver.Decode(w, r, &in, bridgeHelp) || !cleanBridge(w, &in) {
 		return
 	}
@@ -185,7 +185,7 @@ func (h *Handlers) testBridge(w http.ResponseWriter, r *http.Request) {
 		for _, s := range sites {
 			titles = append(titles, s.Title)
 		}
-		webserver.WriteJSON(w, http.StatusOK, map[string]any{"ok": true, "text": "Jackett answered with " + sitesWords(len(sites)) + ".", "sites": titles})
+		webserver.WriteJSON(w, http.StatusOK, map[string]any{"ok": true, "text": "Jackett answered with " + siteCountText(len(sites)) + ".", "sites": titles})
 		return
 	}
 	version, err := NewBridgeProwlarr(in.URL, in.Key).Status(ctx)
@@ -205,7 +205,7 @@ func (h *Handlers) testBridge(w http.ResponseWriter, r *http.Request) {
 	webserver.WriteJSON(w, http.StatusOK, map[string]any{"ok": true, "text": "Prowlarr " + version + " answered.", "keys": need})
 }
 
-func sitesWords(n int) string {
+func siteCountText(n int) string {
 	if n == 1 {
 		return "1 site"
 	}
@@ -221,7 +221,7 @@ func (h *Handlers) compatSides(ctx context.Context) (map[string]bool, error) {
 // already connected at that address takes the new key (and, for Prowlarr,
 // the new address HolyArrs is reached at) instead.
 func (h *Handlers) addBridge(w http.ResponseWriter, r *http.Request) {
-	var in BridgeInput
+	var in bridgeBody
 	if !webserver.Decode(w, r, &in, bridgeHelp) || !cleanBridge(w, &in) {
 		return
 	}
