@@ -304,6 +304,7 @@ func New(s Server) *API {
 	if s.Auth != nil {
 		a.signin.ClientKey = s.Auth.ClientKey
 	}
+	a.wireCardArt()
 	a.disc = a.newDiscover()
 	a.titles = a.newTitlePages()
 	a.trailers = a.newTrailers()

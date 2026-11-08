@@ -15,15 +15,12 @@ import (
 func TestCardArtCached(t *testing.T) {
 	t.Parallel()
 	a, _, f := exploreRig(t)
-	a.explore.cards.gap = time.Millisecond
+	a.cardArt().Gap = time.Millisecond
 	ctx := context.Background()
 	pool := &engine.Pool{Rows: []engine.Row{{Items: []engine.Item{{Kind: "movie", TMDBID: "7", Backdrop: "b.jpg"}, {Kind: "artist", TMDBID: "9"}}}}}
 	wait := func() {
 		for i := 0; i < 500; i++ {
-			a.explore.cards.mu.Lock()
-			done := !a.explore.cards.running
-			a.explore.cards.mu.Unlock()
-			if done {
+			if !a.cardArt().Running() {
 				return
 			}
 			time.Sleep(5 * time.Millisecond)
@@ -32,13 +29,13 @@ func TestCardArtCached(t *testing.T) {
 	}
 	a.queueCardArt(ctx, pool)
 	wait()
-	if a.explore.cards.fetched != 1 {
-		t.Fatalf("one image list call expected, got %d", a.explore.cards.fetched)
+	if a.cardArt().Fetched() != 1 {
+		t.Fatalf("one image list call expected, got %d", a.cardArt().Fetched())
 	}
 	a.queueCardArt(ctx, pool)
 	wait()
-	if a.explore.cards.fetched != 1 {
-		t.Fatalf("a fresh pick was fetched again: %d calls", a.explore.cards.fetched)
+	if a.cardArt().Fetched() != 1 {
+		t.Fatalf("a fresh pick was fetched again: %d calls", a.cardArt().Fetched())
 	}
 	before := len(f.urls)
 	items := []discoverItemView{{DiscoverItem: metadata.DiscoverItem{Kind: "movie", TMDBID: "7"}}}

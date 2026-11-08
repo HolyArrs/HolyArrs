@@ -98,7 +98,7 @@ type exploreState struct {
 	// calls are the outside calls of each pool's last build.
 	calls map[poolKey]*engine.Calls
 	// cards is the wide card art filler (cardart.go).
-	cards cardArtState
+	cards discover.CardArt
 }
 
 func (a *API) exploreNow() time.Time {

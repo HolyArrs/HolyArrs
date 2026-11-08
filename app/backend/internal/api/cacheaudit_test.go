@@ -35,8 +35,8 @@ func TestServeArtworkStableRevalidates(t *testing.T) {
 // Findings 12 and 14: card art 7 days; person and collection lists a day.
 func TestShorterListAndCardKeeps(t *testing.T) {
 	t.Parallel()
-	if cardArtTTL != 7*24*time.Hour {
-		t.Fatalf("card art %v", cardArtTTL)
+	if discover.CardArtTTL != 7*24*time.Hour {
+		t.Fatalf("card art %v", discover.CardArtTTL)
 	}
 	if exploreListTTL["person"] != 24*time.Hour || exploreListTTL["collection"] != 24*time.Hour {
 		t.Fatalf("lists %v", exploreListTTL)

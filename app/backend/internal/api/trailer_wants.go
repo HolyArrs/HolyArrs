@@ -146,16 +146,10 @@ func (a *API) trailerPassTitles(ctx context.Context) [][2]string {
 // count instead; "en" when none.
 func (a *API) trailerPassLanguages(ctx context.Context) []string {
 	var asked []string
-	at := map[string]time.Time{}
-	c := &a.explore.cards
-	c.mu.Lock()
-	for l, t := range c.langs {
-		if time.Since(t) < cardArtLangTTL {
-			asked = append(asked, l)
-			at[l] = t
-		}
+	at := a.cardArt().LangsAsked()
+	for l := range at {
+		asked = append(asked, l)
 	}
-	c.mu.Unlock()
 	slices.SortFunc(asked, func(x, y string) int { return at[y].Compare(at[x]) })
 	var out []string
 	add := func(l string) {
