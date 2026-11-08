@@ -294,6 +294,7 @@ func New(s Server) *API {
 	a.mf.CardArt = a.libraryCardArt
 	a.titles = a.newTitlePages()
 	a.trailers = a.newTrailers()
+	a.mh().Trailers = a.trailers // newTrailers built the music handlers before the trailers existed
 	a.ai = &ai.Handlers{Store: s.Store, Version: s.Version, PartOn: a.partIsOn}
 	a.shows = shows.NewHandlers(shows.Deps{Store: s.Store, Library: s.Library, Metadata: s.Metadata, AnimeMap: s.AnimeMap,
 		KidMax: a.kidMax, KidLimited: a.kidLimited, KidShows: a.kidShows, KindsOn: a.kindsOn, LibraryRating: a.libraryRating,

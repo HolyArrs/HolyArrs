@@ -164,9 +164,7 @@ func TestTitleExtrasArtistFromServerOnly(t *testing.T) {
 		t.Fatalf("not stored yet: %+v %q", v, res.Header.Get("Cache-Control"))
 	}
 	stored.Store(true)
-	a.music.mu.Lock()
-	a.music.artMiss = nil // the miss time has passed
-	a.music.mu.Unlock()
+	a.mh().TestHooks().ForgetArtMisses() // the miss time has passed
 	v = metadata.TitleExtras{}
 	_ = json.Unmarshal(do(t, "GET", srv.URL+p, "", 200), &v)
 	if v.Logo != music.ArtPrefix+"logo/"+id || len(v.Backgrounds) != 1 || v.Backgrounds[0] != music.ArtPrefix+"wide/"+id {

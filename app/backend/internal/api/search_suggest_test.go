@@ -191,11 +191,9 @@ func TestSuggestMissingAlbumGetsCoverRoute(t *testing.T) {
 	if items[1].Art != "https://x/y.jpg" || items[2].Art != "" || items[3].Art != "" {
 		t.Fatalf("other rows changed: %+v", items[1:])
 	}
-	r.api.music.mu.Lock()
-	n := r.api.music.names["album|abc"]
-	r.api.music.mu.Unlock()
+	n := r.api.mh().TestHooks().Name("album|abc")
 	if n.Title != "Radial" || n.Artist != "Lab Band" {
 		t.Fatalf("route names %+v", n)
 	}
-	r.api.music.prefetching.Wait()
+	r.api.mh().TestHooks().WaitPrefetch()
 }

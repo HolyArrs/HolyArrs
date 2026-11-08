@@ -16,6 +16,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	engine "github.com/HolyArrs/holyarrs/app/backend/internal/discover/rows"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/health"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
@@ -48,6 +49,8 @@ type Server struct {
 type testAPI struct {
 	*Handlers
 	s *Server
+	// extra mounts more routes a test needs (other modules' routes).
+	extra func(m *http.ServeMux)
 }
 
 // newTestAPI builds the music Handlers the way api.New wires them, with the
@@ -119,6 +122,10 @@ func newTestAPI(s Server) *testAPI {
 	h.PublishTitleView = func(any) {}
 	h.LibraryError = rigLibraryError
 	h.Limit = func(int64, time.Time) bool { return true }
+	h.Trailers = &metadata.Trailers{Store: sp.Store, Version: sp.Version, Provider: func() metadata.Provider { return sp.Metadata },
+		Pick:    func() func(ctx context.Context, kind, id, lang string) (string, error) { return nil },
+		Explore: rigTrailerHost{t}, Settings: rigTrailerHost{t}, Ages: rigTrailerHost{t}, People: rigTrailerHost{t}, Wants: rigTrailerHost{t},
+		KindsOn: func(kind string) []string { return []string{kind} }, Videos: h.VideoHooks()}
 	h.TrackRoutes = func(m *http.ServeMux) {
 		TrackHandlers[trackSlot]{Store: sp.Store, Slots: rigTrackSlots}.Routes(m)
 	}
@@ -135,6 +142,10 @@ func (a *testAPI) Handler() http.Handler {
 	search := &sources.Searcher{Store: a.s.Store, Queue: a.s.Queue}
 	(&sources.Handlers{Store: a.s.Store, Queue: a.s.Queue, Search: func() *sources.Searcher { return search },
 		Catalog: rigCatalog{a}, PartOn: a.PartIsOn}).Routes(rt)
+	// The trailer routes (music videos play through their relay) and the
+	// look settings.
+	a.Trailers.Routes(m)
+	(&health.UIHandlers{Store: a.s.Store, Actor: func(r *http.Request) domain.Actor { return webserver.ActorOr(r, domain.Actor{Kind: "user", ID: 1}) }}).Routes(m)
 	// The title routes the music tests read through (api serves them in the app).
 	m.HandleFunc("GET /api/v1/titles/{id}", func(w http.ResponseWriter, r *http.Request) {
 		t, ok := a.TitleID(w, r)
@@ -164,6 +175,9 @@ func (a *testAPI) Handler() http.Handler {
 		}
 		webserver.WriteJSON(w, http.StatusCreated, map[string]any{"id": lf.ID, "path": lf.Path, "kind": lf.Kind})
 	})
+	if a.extra != nil {
+		a.extra(m)
+	}
 	if a.s.Auth == nil {
 		return m
 	}
@@ -236,3 +250,29 @@ func rigLibraryError(w http.ResponseWriter, err error) {
 		webserver.Fail(w, http.StatusConflict, err.Error())
 	}
 }
+
+// rigTrailerHost answers the trailers' questions about the household:
+// no movie or show titles, no age limit beyond the Kid's, the look
+// settings from the store.
+type rigTrailerHost struct{ a *testAPI }
+
+func (h rigTrailerHost) Details(context.Context, string, string) (metadata.Details, error) {
+	return metadata.Details{}, metadata.ErrNotFound
+}
+
+func (h rigTrailerHost) Caching(w http.ResponseWriter, r *http.Request, cache string) {
+	webserver.CacheHeaders(w, cache, accounts.KidMax(r) != "")
+}
+
+func (h rigTrailerHost) AutoplayTrailers(ctx context.Context) bool {
+	return health.AutoplayOn(ctx, h.a.s.Store)
+}
+func (h rigTrailerHost) Max(r *http.Request) string                      { return accounts.KidMax(r) }
+func (h rigTrailerHost) Limited(http.ResponseWriter, *http.Request) bool { return false }
+func (h rigTrailerHost) LibraryRating(context.Context, string, string) (string, bool) {
+	return "", false
+}
+func (h rigTrailerHost) UserID(r *http.Request) int64           { return h.a.Person(r).UserID }
+func (h rigTrailerHost) PassTitles(context.Context) [][2]string { return nil }
+func (h rigTrailerHost) PassLanguages(context.Context) []string { return []string{"en"} }
+func (h rigTrailerHost) Warm(string, [][2]string)               {}

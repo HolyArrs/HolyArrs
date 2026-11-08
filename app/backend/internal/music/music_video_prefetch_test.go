@@ -1,4 +1,4 @@
-package api
+package music
 
 import (
 	"context"
@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
 )
 
 // route: GET /api/v1/trailer/batch
@@ -46,7 +45,7 @@ func TestArtistVideoPrefetch(t *testing.T) {
 		t.Fatalf("batch %+v", b)
 	}
 	before := yt.runs.Load()
-	var got music.ArtistVideoView
+	var got ArtistVideoView
 	_ = json.Unmarshal(do(t, "GET", u, "", 200), &got)
 	if got.Key != "dQw4w9WgXcQ" || got.ProxyURL == "" || yt.runs.Load() != before {
 		t.Fatalf("page video %+v, lookups %d -> %d", got, before, yt.runs.Load())
@@ -59,7 +58,7 @@ func TestArtistVideoPrefetch(t *testing.T) {
 	a := apiOf(t, u)
 	now := time.Now()
 	soon := now.Add(metadata.TrailerEarly + time.Minute)
-	a.trailers.KeepStream(context.Background(), "musicvideo|dQw4w9WgXcQ", metadata.TrailerStream{Type: "hls", URL: "https://manifest.googlevideo.com/api/manifest/hls_playlist/id/x", ExpiresAt: soon, Key: "dQw4w9WgXcQ"}, now)
+	a.Trailers.KeepStream(context.Background(), "musicvideo|dQw4w9WgXcQ", metadata.TrailerStream{Type: "hls", URL: "https://manifest.googlevideo.com/api/manifest/hls_playlist/id/x", ExpiresAt: soon, Key: "dQw4w9WgXcQ"}, now)
 	yt.set("dQw4w9WgXcQ", "bot")
 	if n := videoPass(t, u); n != 1 {
 		t.Fatalf("renewal pass %d", n)
@@ -68,7 +67,7 @@ func TestArtistVideoPrefetch(t *testing.T) {
 		t.Fatal("a refused renewal dropped the address")
 	}
 	yt.set("dQw4w9WgXcQ", "heat")
-	a.trailers.ResetDoor()
+	a.Trailers.ResetDoor()
 	if n := videoPass(t, u); n != 1 {
 		t.Fatalf("second renewal pass %d", n)
 	}
