@@ -1,4 +1,4 @@
-package api
+package discover
 
 import (
 	"net/http"
@@ -8,6 +8,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
 )
 
 // The pictures the metadata server stores for movies, shows and people
@@ -38,11 +39,11 @@ func serverArtURL(base, kind, id, file, v string) (string, bool) {
 	return u, true
 }
 
-// serverArtLink turns a server picture address into the artwork cache's
-// link ("" when it is not one).
-func (a *API) serverArtLink(u string) string {
-	rest, ok := strings.CutPrefix(u, strings.TrimRight(a.s.ImageBase, "/")+"/")
-	if !ok || a.s.ImageBase == "" {
+// ServerArtLink turns a server picture address (under imageBase) into the
+// artwork cache's link ("" when it is not one).
+func ServerArtLink(imageBase, u string) string {
+	rest, ok := strings.CutPrefix(u, strings.TrimRight(imageBase, "/")+"/")
+	if !ok || imageBase == "" {
 		return ""
 	}
 	path, query, _ := strings.Cut(rest, "?")
@@ -55,7 +56,7 @@ func (a *API) serverArtLink(u string) string {
 		return ""
 	}
 	v := q.Get("v")
-	if _, ok := serverArtURL(a.s.ImageBase, parts[0], parts[1], parts[2], v); !ok {
+	if _, ok := serverArtURL(imageBase, parts[0], parts[1], parts[2], v); !ok {
 		return ""
 	}
 	link := serverArtPrefix + path
@@ -65,30 +66,30 @@ func (a *API) serverArtLink(u string) string {
 	return link
 }
 
-// serverArtwork answers GET /api/v1/artwork/img/{kind}/{id}/{file}: the
+// ServerArtwork answers GET /api/v1/artwork/img/{kind}/{id}/{file}: the
 // server's stored picture, fetched once into the artwork cache. A picture
 // the server does not have (404) or only stands in for is 404 here too; the
 // page then shows its placeholder.
-func (a *API) serverArtwork(w http.ResponseWriter, r *http.Request) {
-	if a.s.Library == nil || a.s.Library.Artwork == nil {
+// c is the artwork cache (nil: 404) and misses each person's miss budget.
+func ServerArtwork(w http.ResponseWriter, r *http.Request, imageBase string, c *library.ArtworkCache, misses *ArtworkBudget) {
+	if c == nil {
 		http.NotFound(w, r)
 		return
 	}
-	src, ok := serverArtURL(a.s.ImageBase, r.PathValue("kind"), r.PathValue("id"), r.PathValue("file"), r.URL.Query().Get("v"))
+	src, ok := serverArtURL(imageBase, r.PathValue("kind"), r.PathValue("id"), r.PathValue("file"), r.URL.Query().Get("v"))
 	if !ok {
 		http.NotFound(w, r)
 		return
 	}
-	c := a.s.Library.Artwork
 	name := library.ArtworkName(src)
 	p, ok := c.Path(name)
 	if ok {
-		c.Recheck(src, serverPlaceholder)
+		c.Recheck(src, music.ServerPlaceholder)
 	} else {
-		if !a.artMisses.MissOK(w, r) {
+		if !misses.MissOK(w, r) {
 			return
 		}
-		if _, err := c.FetchStored(r.Context(), src, serverPlaceholder); err != nil {
+		if _, err := c.FetchStored(r.Context(), src, music.ServerPlaceholder); err != nil {
 			http.Error(w, "picture unavailable", http.StatusNotFound)
 			return
 		}
@@ -97,5 +98,5 @@ func (a *API) serverArtwork(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	serveArtwork(w, r, name, p)
+	library.ServeArtwork(w, r, name, p)
 }
