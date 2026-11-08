@@ -1,5 +1,5 @@
 <script lang="ts">
-	import '../(frame)/settings-looks.css';
+	import '../(frame)/settings-content.css';
 	import Icon from '#lib/ui/Icon.svelte';
 	import StatusPill from '#lib/ui/StatusPill.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
@@ -251,7 +251,7 @@
 		.back-home { margin-left: -10px; }
 	}
 
-	/* Content: the card grid from settings-looks.css, plus the "flash" for search hits. */
+	/* Content: the card grid from settings-content.css, plus the "flash" for search hits. */
 	/* Hand-built cards wear the same surface, corners and title as SettingsCards. */
 	.settings-content :global(.card) { border: 0; border-radius: var(--fin-r); background: var(--fin-card); box-shadow: var(--fin-shadow), 0 0 0 1px var(--fin-edge); padding: 12px 14px; }
 	.settings-content :global(:is(.card, .ui-settings) :is(h2, .h2)) { font: var(--t-headline); font-size: 15px; font-weight: 600; letter-spacing: normal; }
