@@ -1,4 +1,4 @@
-package api
+package main
 
 import (
 	"context"
@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/api"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata/youtube"
 )
@@ -47,8 +48,8 @@ func TestTrailerManyListedStopsAtFive(t *testing.T) {
 	yt := fakeReader(t, "age", keys[:5]...)
 	yt.set(keys[5], "ok")
 	yt.set(keys[6], "ok")
-	_, st := discoverRig(t, p)
-	a := New(Server{Store: st, Metadata: p, Version: "test"})
+	_, st := trDiscoverRig(t, p)
+	a := api.New(api.Server{Store: st, Metadata: p, Version: "test"})
 	srv := httptest.NewServer(a.Handler())
 	t.Cleanup(srv.Close)
 
@@ -67,7 +68,7 @@ func TestTrailerManyListedStopsAtFive(t *testing.T) {
 		}
 	}
 	var b struct{ Error, Reason, Key string }
-	_ = json.Unmarshal(do(t, "GET", srv.URL+"/api/v1/trailer/movie/77", "", 404), &b)
+	_ = json.Unmarshal(trDo(t, "GET", srv.URL+"/api/v1/trailer/movie/77", "", 404), &b)
 	if b.Error != "no direct stream" || b.Reason != string(youtube.AgeRestricted) || b.Key != keys[5] {
 		t.Fatalf("answer %+v", b)
 	}
@@ -80,34 +81,34 @@ func TestTrailerManyListedStopsAtFive(t *testing.T) {
 func TestTrailerUpkeepCountsATitleOnce(t *testing.T) {
 	keys, p := manyListed(t)
 	yt := fakeReader(t, "premiere", keys...)
-	_, st := discoverRig(t, p)
-	a := New(Server{Store: st, Metadata: p, Version: "test"})
+	_, st := trDiscoverRig(t, p)
+	a := api.New(api.Server{Store: st, Metadata: p, Version: "test"})
 	// A first lookup of a title that will not play says nothing about the
 	// reader (after a restart, known misses are looked up again).
 	recentGood(a, time.Hour)
 	_ = lookUp(t, a, "movie", "77")
-	if s := a.trailers.ReaderState(); s.Videos != 0 {
+	if s := a.Trailers().ReaderState(); s.Videos != 0 {
 		t.Fatalf("first lookup counted: %+v", s)
 	}
 	yt.runs.Store(0)
 	// The same title failing on its renewals (it played here before) counts,
 	// once.
 	for i := 1; i <= 3; i++ {
-		a.trailers.Forget()
-		if _, err := a.trailers.ResolveTitle(metadata.Renewing(context.Background()), "movie", "77", "en"); err == nil {
+		a.Trailers().Forget()
+		if _, err := a.Trailers().ResolveTitle(metadata.Renewing(context.Background()), "movie", "77", "en"); err == nil {
 			t.Fatal("played")
 		}
 		if n := yt.runs.Load(); n != int32(5*i) {
 			t.Fatalf("lookup %d: %d videos tried, want %d", i, n, 5*i)
 		}
-		if s := a.trailers.ReaderState(); s.Videos != 1 || s.LastReason != youtube.Unplayable {
+		if s := a.Trailers().ReaderState(); s.Videos != 1 || s.LastReason != youtube.Unplayable {
 			t.Fatalf("lookup %d: %+v", i, s)
 		}
 	}
 	// The same title in another language is still one title.
-	a.trailers.Forget()
-	_, _ = a.trailers.ResolveTitle(metadata.Renewing(context.Background()), "movie", "77", "de")
-	if s := a.trailers.ReaderState(); s.Videos != 1 {
+	a.Trailers().Forget()
+	_, _ = a.Trailers().ResolveTitle(metadata.Renewing(context.Background()), "movie", "77", "de")
+	if s := a.Trailers().ReaderState(); s.Videos != 1 {
 		t.Fatalf("another language counted again: %+v", s)
 	}
 }

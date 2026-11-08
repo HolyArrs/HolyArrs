@@ -1,4 +1,4 @@
-package api
+package main
 
 import (
 	"bytes"
@@ -14,6 +14,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/api"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/discover"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
@@ -108,13 +109,13 @@ func catchLog(t *testing.T) *syncBuf {
 // passRig is an API whose trailer key is the metadata server's pick, which
 // notes each title asked for (once per first lookup); "107" has none. The
 // gap between lookups is 0.
-func passRig(t *testing.T, st *database.Store, pc *parts.Control) (*API, func() []string) {
+func passRig(t *testing.T, st *database.Store, pc *parts.Control) (*api.API, func() []string) {
 	t.Helper()
 	gap := metadata.SetTrailerPassGap(0)
 	t.Cleanup(func() { metadata.SetTrailerPassGap(gap) })
 	var mu sync.Mutex
 	var asked []string
-	a := New(Server{Store: st, Metadata: trailerTMDB(t), Version: "test", Parts: pc, TrailerPick: func(ctx context.Context, kind, id, lang string) (string, error) {
+	a := api.New(api.Server{Store: st, Metadata: trailerTMDB(t), Version: "test", Parts: pc, TrailerPick: func(ctx context.Context, kind, id, lang string) (string, error) {
 		if !metadata.IsAhead(ctx) {
 			t.Errorf("%s:%s asked without the fetch-ahead mark", kind, id)
 		}
@@ -141,7 +142,7 @@ func passRig(t *testing.T, st *database.Store, pc *parts.Control) (*API, func() 
 // again. The route then reads what it kept.
 func TestTrailerPassCoversEveryCard(t *testing.T) {
 	yt := fakeReader(t, "ok")
-	_, st := discoverRig(t, trailerTMDB(t))
+	_, st := trDiscoverRig(t, trailerTMDB(t))
 	a, asked := passRig(t, st, nil)
 	logs := catchLog(t)
 	pool := widePool(1)
@@ -155,11 +156,11 @@ func TestTrailerPassCoversEveryCard(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	a.serviceTop.Put("US", metadata.ServiceTop{Region: "US", Services: []metadata.ServiceTopList{
+	a.TrailerTest().PutServiceTop("US", metadata.ServiceTop{Region: "US", Services: []metadata.ServiceTopList{
 		{Service: "netflix", Items: []metadata.ServiceTopItem{{TMDBID: 9001, Kind: "movie"}, {TMDBID: 100, Kind: "movie"}, {TMDBID: 9002, Kind: "tv"}}}}})
 
 	// What the page shows, in its order.
-	pg := a.poolPage(pool, 1, "all", "US", engine.Moment{Local: a.explore.Now().Local()})
+	pg := a.TrailerTest().PoolPage(pool, 1, "all", "US", engine.Moment{Local: a.TrailerTest().Explore().Now().Local()})
 	if len(pg.Tail) == 0 || pg.Head[0].Type != engine.TypeTopServices {
 		t.Fatalf("pool lays out %d head, %d tail rows", len(pg.Head), len(pg.Tail))
 	}
@@ -191,19 +192,19 @@ func TestTrailerPassCoversEveryCard(t *testing.T) {
 	}
 
 	ctx := metadata.Ahead(context.Background())
-	if n := a.trailers.Pass(ctx, 20); n != 20 || strings.Join(asked(), " ") != strings.Join(want[:20], " ") {
+	if n := a.Trailers().Pass(ctx, 20); n != 20 || strings.Join(asked(), " ") != strings.Join(want[:20], " ") {
 		t.Fatalf("first pass %d lookups: %v", n, asked())
 	}
 	if got := strings.Join(logs.passLines(), "|"); got != "trailers: read-ahead 121 due, 20 looked up, 101 left for the next pass" {
 		t.Fatalf("log %q", got)
 	}
-	if n := a.trailers.Pass(ctx, 20); n != 20 || strings.Join(asked()[20:], " ") != strings.Join(want[20:40], " ") {
+	if n := a.Trailers().Pass(ctx, 20); n != 20 || strings.Join(asked()[20:], " ") != strings.Join(want[20:40], " ") {
 		t.Fatalf("second pass %d lookups: %v", n, asked()[20:])
 	}
 	if got := strings.Join(logs.passLines(), "|"); got != "trailers: read-ahead 101 due, 20 looked up, 81 left for the next pass" {
 		t.Fatalf("log %q", got)
 	}
-	if n := a.trailers.Pass(ctx, 1000); n != 81 || strings.Join(asked(), " ") != strings.Join(want, " ") {
+	if n := a.Trailers().Pass(ctx, 1000); n != 81 || strings.Join(asked(), " ") != strings.Join(want, " ") {
 		t.Fatalf("last pass %d lookups", n)
 	}
 	for _, tr := range pg.Tail {
@@ -215,7 +216,7 @@ func TestTrailerPassCoversEveryCard(t *testing.T) {
 	}
 	logs.passLines()
 	runs := yt.runs.Load()
-	if n := a.trailers.Pass(ctx, 1000); n != 0 || yt.runs.Load() != runs {
+	if n := a.Trailers().Pass(ctx, 1000); n != 0 || yt.runs.Load() != runs {
 		t.Fatalf("looked up again: %d", n)
 	}
 	if got := logs.passLines(); len(got) != 0 {
@@ -224,11 +225,11 @@ func TestTrailerPassCoversEveryCard(t *testing.T) {
 	srv := httptest.NewServer(a.Handler())
 	t.Cleanup(srv.Close)
 	last := pg.Tail[len(pg.Tail)-1].Items
-	do(t, "GET", srv.URL+"/api/v1/trailer/movie/100", "", 200)
-	do(t, "GET", srv.URL+"/api/v1/trailer/movie/"+last[len(last)-1].TMDBID, "", 200)
-	do(t, "GET", srv.URL+"/api/v1/trailer/show/9002", "", 200)
-	do(t, "GET", srv.URL+"/api/v1/trailer/movie/205", "", 404) // on the Never-add list
-	if b := string(do(t, "GET", srv.URL+"/api/v1/trailer/movie/107", "", 404)); !strings.Contains(b, `"no trailer"`) {
+	trDo(t, "GET", srv.URL+"/api/v1/trailer/movie/100", "", 200)
+	trDo(t, "GET", srv.URL+"/api/v1/trailer/movie/"+last[len(last)-1].TMDBID, "", 200)
+	trDo(t, "GET", srv.URL+"/api/v1/trailer/show/9002", "", 200)
+	trDo(t, "GET", srv.URL+"/api/v1/trailer/movie/205", "", 404) // on the Never-add list
+	if b := string(trDo(t, "GET", srv.URL+"/api/v1/trailer/movie/107", "", 404)); !strings.Contains(b, `"no trailer"`) {
 		t.Fatal(b)
 	}
 	if yt.runs.Load() != runs {
@@ -240,14 +241,14 @@ func TestTrailerPassCoversEveryCard(t *testing.T) {
 // waiting in a gap stops when its context ends.
 func TestTrailerPassSpacing(t *testing.T) {
 	fakeReader(t, "ok")
-	_, st := discoverRig(t, trailerTMDB(t))
+	_, st := trDiscoverRig(t, trailerTMDB(t))
 	a, asked := passRig(t, st, nil)
 	storePool(t, st, passPool(1, "all", false))
 	ctx := metadata.Ahead(context.Background())
 	gap := metadata.SetTrailerPassGap(150 * time.Millisecond)
 	t.Cleanup(func() { metadata.SetTrailerPassGap(gap) })
 	start := time.Now()
-	if n := a.trailers.Pass(ctx, 3); n != 3 {
+	if n := a.Trailers().Pass(ctx, 3); n != 3 {
 		t.Fatalf("%d lookups", n)
 	}
 	if d := time.Since(start); d < 300*time.Millisecond {
@@ -257,7 +258,7 @@ func TestTrailerPassSpacing(t *testing.T) {
 	cctx, cancel := context.WithTimeout(ctx, 200*time.Millisecond)
 	defer cancel()
 	start = time.Now()
-	if n := a.trailers.Pass(cctx, 3); n != 1 || len(asked()) != 4 {
+	if n := a.Trailers().Pass(cctx, 3); n != 1 || len(asked()) != 4 {
 		t.Fatalf("%d lookups, asked %v", n, asked())
 	}
 	if d := time.Since(start); d > 10*time.Second {
@@ -269,23 +270,23 @@ func TestTrailerPassSpacing(t *testing.T) {
 // and the log says how many.
 func TestTrailerPassCap(t *testing.T) {
 	fakeReader(t, "ok")
-	_, st := discoverRig(t, trailerTMDB(t))
+	_, st := trDiscoverRig(t, trailerTMDB(t))
 	a, asked := passRig(t, st, nil)
 	logs := catchLog(t)
 	old := metadata.SetTrailerPassMax(5)
 	t.Cleanup(func() { metadata.SetTrailerPassMax(old) })
 	storePool(t, st, passPool(1, "all", false))
-	a.trailers.Note("en", [][2]string{{"movie", "555"}})
+	a.Trailers().Note("en", [][2]string{{"movie", "555"}})
 	ctx := metadata.Ahead(context.Background())
 	// The noted title goes first and is never cut; the cap counts pool
 	// titles only.
-	if n := a.trailers.Pass(ctx, 30); n != 6 || strings.Join(asked(), " ") != "movie:555 movie:100 movie:101 movie:102 movie:103 movie:104" {
+	if n := a.Trailers().Pass(ctx, 30); n != 6 || strings.Join(asked(), " ") != "movie:555 movie:100 movie:101 movie:102 movie:103 movie:104" {
 		t.Fatalf("%d lookups: %v", n, asked())
 	}
 	if got := strings.Join(logs.passLines(), "|"); got != "trailers: read-ahead 6 due, 6 looked up, 0 left for the next pass, 19 past the cap" {
 		t.Fatalf("log %q", got)
 	}
-	if got := a.trailers.Asks(time.Now()); len(got) != 0 {
+	if got := a.Trailers().Asks(time.Now()); len(got) != 0 {
 		t.Fatalf("noted %v", got)
 	}
 }
@@ -296,22 +297,22 @@ func TestTrailerPassCap(t *testing.T) {
 // pass that stops at YouTube's door keeps it noted.
 func TestTrailerPassCoversAskedTitles(t *testing.T) {
 	yt := fakeReader(t, "fail")
-	_, st := discoverRig(t, trailerTMDB(t))
+	_, st := trDiscoverRig(t, trailerTMDB(t))
 	a, _ := passRig(t, st, nil)
 	logs := catchLog(t)
 	srv := httptest.NewServer(a.Handler())
 	t.Cleanup(srv.Close)
-	if b := string(do(t, "GET", srv.URL+"/api/v1/trailer/movie/555?language=de", "", 404)); !strings.Contains(b, `"key"`) || strings.Contains(b, `"reason"`) {
+	if b := string(trDo(t, "GET", srv.URL+"/api/v1/trailer/movie/555?language=de", "", 404)); !strings.Contains(b, `"key"`) || strings.Contains(b, `"reason"`) {
 		t.Fatal(b)
 	}
 	if yt.runs.Load() != 0 {
 		t.Fatal("the route looked up")
 	}
-	if got := a.trailers.Asks(time.Now()); len(got) != 1 || got[0] != [3]string{"movie", "555", "de"} {
+	if got := a.Trailers().Asks(time.Now()); len(got) != 1 || got[0] != [3]string{"movie", "555", "de"} {
 		t.Fatalf("noted %v", got)
 	}
 	for i := 0; ; i++ {
-		if b := string(do(t, "GET", srv.URL+"/api/v1/trailer/movie/555?language=de", "", 404)); strings.Contains(b, `"key":"trailerKey1"`) {
+		if b := string(trDo(t, "GET", srv.URL+"/api/v1/trailer/movie/555?language=de", "", 404)); strings.Contains(b, `"key":"trailerKey1"`) {
 			break
 		} else if i == 100 {
 			t.Fatalf("key not learned: %s", b)
@@ -319,24 +320,24 @@ func TestTrailerPassCoversAskedTitles(t *testing.T) {
 		time.Sleep(20 * time.Millisecond)
 	}
 	ctx := metadata.Ahead(context.Background())
-	if n := a.trailers.Pass(ctx, 30); n != 1 || len(a.trailers.Asks(time.Now())) != 1 {
-		t.Fatalf("door failed: %d lookups, noted %v", n, a.trailers.Asks(time.Now()))
+	if n := a.Trailers().Pass(ctx, 30); n != 1 || len(a.Trailers().Asks(time.Now())) != 1 {
+		t.Fatalf("door failed: %d lookups, noted %v", n, a.Trailers().Asks(time.Now()))
 	}
 	if got := strings.Join(logs.passLines(), "|"); got != "trailers: read-ahead 1 due, 1 looked up, 0 left for the next pass" {
 		t.Fatalf("log %q", got)
 	}
 	// Its short miss kept: still noted. Once it ends, the next pass asks.
-	a.trailers.ResetDoor()
-	if n := a.trailers.Pass(ctx, 30); n != 0 || len(a.trailers.Asks(time.Now())) != 1 {
-		t.Fatalf("short miss: %d lookups, noted %v", n, a.trailers.Asks(time.Now()))
+	a.Trailers().ResetDoor()
+	if n := a.Trailers().Pass(ctx, 30); n != 0 || len(a.Trailers().Asks(time.Now())) != 1 {
+		t.Fatalf("short miss: %d lookups, noted %v", n, a.Trailers().Asks(time.Now()))
 	}
-	a.trailers.Drop("movie|555|de")
+	a.Trailers().Drop("movie|555|de")
 	yt = fakeReader(t, "ok")
-	if n := a.trailers.Pass(ctx, 30); n != 1 || yt.runs.Load() != 1 || len(a.trailers.Asks(time.Now())) != 0 {
-		t.Fatalf("pass %d lookups, %d calls, noted %v", n, yt.runs.Load(), a.trailers.Asks(time.Now()))
+	if n := a.Trailers().Pass(ctx, 30); n != 1 || yt.runs.Load() != 1 || len(a.Trailers().Asks(time.Now())) != 0 {
+		t.Fatalf("pass %d lookups, %d calls, noted %v", n, yt.runs.Load(), a.Trailers().Asks(time.Now()))
 	}
-	do(t, "GET", srv.URL+"/api/v1/trailer/movie/555?language=de", "", 200)
-	if n := a.trailers.Pass(ctx, 30); n != 0 || yt.runs.Load() != 1 {
+	trDo(t, "GET", srv.URL+"/api/v1/trailer/movie/555?language=de", "", 200)
+	if n := a.Trailers().Pass(ctx, 30); n != 0 || yt.runs.Load() != 1 {
 		t.Fatalf("looked up again: %d", n)
 	}
 }
@@ -344,20 +345,20 @@ func TestTrailerPassCoversAskedTitles(t *testing.T) {
 // Noted titles are bounded: the oldest goes when full, and one no pass
 // reached in a week is dropped.
 func TestTrailerAskedBounded(t *testing.T) {
-	a := New(Server{Version: "test"})
-	a.trailers.Note("en", [][2]string{{"movie", "1"}, {"music", "2"}, {"show", "x"}})
-	a.trailers.Note("english", [][2]string{{"movie", "3"}})
-	if got := a.trailers.Asks(time.Now()); len(got) != 1 || got[0] != [3]string{"movie", "1", "en"} {
+	a := api.New(api.Server{Version: "test"})
+	a.Trailers().Note("en", [][2]string{{"movie", "1"}, {"music", "2"}, {"show", "x"}})
+	a.Trailers().Note("english", [][2]string{{"movie", "3"}})
+	if got := a.Trailers().Asks(time.Now()); len(got) != 1 || got[0] != [3]string{"movie", "1", "en"} {
 		t.Fatalf("%v", got)
 	}
 	for i := 2; i <= notedMax+1; i++ {
-		a.trailers.Note("en", [][2]string{{"show", strconv.Itoa(i)}})
+		a.Trailers().Note("en", [][2]string{{"show", strconv.Itoa(i)}})
 	}
-	got := a.trailers.Asks(time.Now())
+	got := a.Trailers().Asks(time.Now())
 	if len(got) != notedMax || got[0][1] == "1" || got[len(got)-1][1] != strconv.Itoa(notedMax+1) {
 		t.Fatalf("%d noted, first %v last %v", len(got), got[0], got[len(got)-1])
 	}
-	if got := a.trailers.Asks(time.Now().Add(7*24*time.Hour + time.Minute)); len(got) != 0 || a.trailers.NotedTitles() != 0 {
+	if got := a.Trailers().Asks(time.Now().Add(7*24*time.Hour + time.Minute)); len(got) != 0 || a.Trailers().NotedTitles() != 0 {
 		t.Fatalf("old ones kept: %v", got)
 	}
 }
@@ -365,25 +366,25 @@ func TestTrailerAskedBounded(t *testing.T) {
 // At the cap, the title asked for least lately goes: one that has waited
 // longest but was asked for again just now stays, and keeps its place.
 func TestTrailerAskedEvictsLeastLately(t *testing.T) {
-	a := New(Server{Version: "test"})
+	a := api.New(api.Server{Version: "test"})
 	var full [][2]string
 	for i := 1; i <= notedMax; i++ {
 		full = append(full, [2]string{"movie", strconv.Itoa(i)})
 	}
-	a.trailers.Note("en", full)
+	a.Trailers().Note("en", full)
 	time.Sleep(2 * time.Millisecond)
-	a.trailers.Note("en", [][2]string{{"movie", "1"}})
+	a.Trailers().Note("en", [][2]string{{"movie", "1"}})
 	time.Sleep(2 * time.Millisecond)
-	a.trailers.Note("en", [][2]string{{"movie", "9999"}})
-	got := a.trailers.Asks(time.Now())
+	a.Trailers().Note("en", [][2]string{{"movie", "9999"}})
+	got := a.Trailers().Asks(time.Now())
 	if len(got) != notedMax || got[0][1] != "1" || got[1][1] != "3" || got[len(got)-1][1] != "9999" {
 		t.Fatalf("%d noted, first %v %v, last %v", len(got), got[0], got[1], got[len(got)-1])
 	}
 	// A new title before an old one in the same call: the old one is asked
 	// for again, so it is not the one that makes room, and keeps its place.
 	time.Sleep(2 * time.Millisecond)
-	a.trailers.Note("en", [][2]string{{"movie", "8888"}, {"movie", "3"}})
-	got = a.trailers.Asks(time.Now())
+	a.Trailers().Note("en", [][2]string{{"movie", "8888"}, {"movie", "3"}})
+	got = a.Trailers().Asks(time.Now())
 	if len(got) != notedMax || got[1][1] != "3" || got[2][1] == "4" || got[len(got)-1][1] != "8888" {
 		t.Fatalf("same call: %d noted, %v %v %v, last %v", len(got), got[0], got[1], got[2], got[len(got)-1])
 	}
@@ -393,7 +394,7 @@ func TestTrailerAskedEvictsLeastLately(t *testing.T) {
 // nothing is asked for.
 func TestTrailerPassSkips(t *testing.T) {
 	yt := fakeReader(t, "ok")
-	_, st := discoverRig(t, trailerTMDB(t))
+	_, st := trDiscoverRig(t, trailerTMDB(t))
 	a, asked := passRig(t, st, nil)
 	if err := st.Write(context.Background(), func(tx *sql.Tx) error {
 		_, err := tx.Exec(`INSERT INTO users(id, created_at, created_by, updated_at, updated_by, name, role, password_hash, max_rating) VALUES (3, 't', '{}', 't', '{}', 'kiddo', 'member', 'x', 'PG')`)
@@ -403,18 +404,18 @@ func TestTrailerPassSkips(t *testing.T) {
 	}
 	storePool(t, st, passPool(3, "all", true))
 	ctx := metadata.Ahead(context.Background())
-	if n := a.trailers.Pass(ctx, 30); n != 0 || len(asked()) != 0 || yt.runs.Load() != 0 {
+	if n := a.Trailers().Pass(ctx, 30); n != 0 || len(asked()) != 0 || yt.runs.Load() != 0 {
 		t.Fatalf("kid pool: %d %v %d", n, asked(), yt.runs.Load())
 	}
 
 	storePool(t, st, passPool(1, "all", false))
 	srv := httptest.NewServer(a.Handler())
 	t.Cleanup(srv.Close)
-	do(t, "PUT", srv.URL+"/api/v1/settings/ui", `{"autoplay_trailers":false}`, 200)
-	if n := a.trailers.Pass(ctx, 30); n != 0 || len(asked()) != 0 || yt.runs.Load() != 0 {
+	trDo(t, "PUT", srv.URL+"/api/v1/settings/ui", `{"autoplay_trailers":false}`, 200)
+	if n := a.Trailers().Pass(ctx, 30); n != 0 || len(asked()) != 0 || yt.runs.Load() != 0 {
 		t.Fatalf("autoplay off: %d %v %d", n, asked(), yt.runs.Load())
 	}
-	do(t, "PUT", srv.URL+"/api/v1/settings/ui", `{"autoplay_trailers":true}`, 200)
+	trDo(t, "PUT", srv.URL+"/api/v1/settings/ui", `{"autoplay_trailers":true}`, 200)
 
 	pc := &parts.Control{Store: st, Reg: jobs.NewRegistry(), Drain: time.Second, Logf: func(string, ...any) {}}
 	if err := pc.Load(context.Background()); err != nil {
@@ -424,7 +425,7 @@ func TestTrailerPassSkips(t *testing.T) {
 		t.Fatal(err)
 	}
 	off, offAsked := passRig(t, st, pc)
-	if n := off.trailers.Pass(ctx, 30); n != 0 || len(offAsked()) != 0 || yt.runs.Load() != 0 {
+	if n := off.Trailers().Pass(ctx, 30); n != 0 || len(offAsked()) != 0 || yt.runs.Load() != 0 {
 		t.Fatalf("movies off: %d %v %d", n, offAsked(), yt.runs.Load())
 	}
 }
@@ -435,7 +436,7 @@ func TestTrailerPassSkips(t *testing.T) {
 // old address and the pass stops there, the rest left for the next pass.
 func TestTrailerPassRenewsNearlyExpired(t *testing.T) {
 	yt := fakeReader(t, "fail")
-	_, st := discoverRig(t, trailerTMDB(t))
+	_, st := trDiscoverRig(t, trailerTMDB(t))
 	a, _ := passRig(t, st, nil)
 	logs := catchLog(t)
 	storePool(t, st, passPool(1, "all", false))
@@ -452,39 +453,39 @@ func TestTrailerPassRenewsNearlyExpired(t *testing.T) {
 	keep("100", soon)
 	keep("101", now.Add(5*time.Hour))
 	keep("103", now.Add(metadata.TrailerEarly+metadata.TrailerRenewAhead()+2*time.Minute))
-	if due, renew := a.trailers.PassDue(ctx, "movie|100|en", now); !due || !renew {
+	if due, renew := a.Trailers().PassDue(ctx, "movie|100|en", now); !due || !renew {
 		t.Fatal("nearly expired not due")
 	}
-	if due, _ := a.trailers.PassDue(ctx, "movie|101|en", now); due {
+	if due, _ := a.Trailers().PassDue(ctx, "movie|101|en", now); due {
 		t.Fatal("fresh address due")
 	}
-	if due, _ := a.trailers.PassDue(ctx, "movie|103|en", now); due {
+	if due, _ := a.Trailers().PassDue(ctx, "movie|103|en", now); due {
 		t.Fatal("an address lasting past the renewal window due")
 	}
 	if metadata.TrailerRenewAhead() < 2*metadata.TrailerPassEvery()+time.Duration(metadata.TrailerPassBudget)*40*time.Second {
 		t.Fatalf("renewal window %v is shorter than two passes and a full one", metadata.TrailerRenewAhead())
 	}
 	// YouTube refuses: the old address stays, and nothing more is asked.
-	if n := a.trailers.Pass(ctx, 30); n != 1 || yt.runs.Load() != 1 {
+	if n := a.Trailers().Pass(ctx, 30); n != 1 || yt.runs.Load() != 1 {
 		t.Fatalf("failed renewal: %d lookups, %d calls", n, yt.runs.Load())
 	}
 	if got := strings.Join(logs.passLines(), "|"); got != "trailers: read-ahead 22 due, 1 looked up, 21 left for the next pass" {
 		t.Fatalf("log %q", got)
 	}
-	if e, ok := a.trailers.Kept(ctx, "movie|100|en", time.Now()); !ok || !e.Miss.IsZero() || !e.Stream.ExpiresAt.Equal(soon) {
+	if e, ok := a.Trailers().Kept(ctx, "movie|100|en", time.Now()); !ok || !e.Miss.IsZero() || !e.Stream.ExpiresAt.Equal(soon) {
 		t.Fatalf("old address lost: %+v %v", e, ok)
 	}
 	yt = fakeReader(t, "ok")
-	if n := a.trailers.Pass(ctx, 2); n != 2 || yt.count("trailerKey1") != 2 {
+	if n := a.Trailers().Pass(ctx, 2); n != 2 || yt.count("trailerKey1") != 2 {
 		t.Fatalf("pass %d lookups, %d calls", n, yt.count("trailerKey1"))
 	}
-	if e, ok := a.trailers.Kept(ctx, "movie|100|en", time.Now()); !ok || e.Stream.Type != "hls" || time.Until(e.Stream.ExpiresAt) < 5*time.Hour {
+	if e, ok := a.Trailers().Kept(ctx, "movie|100|en", time.Now()); !ok || e.Stream.Type != "hls" || time.Until(e.Stream.ExpiresAt) < 5*time.Hour {
 		t.Fatalf("not renewed: %+v", e)
 	}
-	if e, _ := a.trailers.Kept(ctx, "movie|101|en", time.Now()); e.Stream.Type != "mp4" {
+	if e, _ := a.Trailers().Kept(ctx, "movie|101|en", time.Now()); e.Stream.Type != "mp4" {
 		t.Fatalf("a fresh address was looked up again: %+v", e)
 	}
-	if _, ok := a.trailers.Kept(ctx, "movie|102|en", time.Now()); !ok {
+	if _, ok := a.Trailers().Kept(ctx, "movie|102|en", time.Now()); !ok {
 		t.Fatal("the next title was not looked up")
 	}
 }
@@ -494,7 +495,7 @@ func TestTrailerPassRenewsNearlyExpired(t *testing.T) {
 // kept addresses further down first, in page order.
 func TestTrailerPassRenewsFirst(t *testing.T) {
 	yt := fakeReader(t, "ok")
-	_, st := discoverRig(t, trailerTMDB(t))
+	_, st := trDiscoverRig(t, trailerTMDB(t))
 	a, asked := passRig(t, st, nil)
 	storePool(t, st, passPool(1, "all", false))
 	ctx := metadata.Ahead(context.Background())
@@ -507,15 +508,15 @@ func TestTrailerPassRenewsFirst(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	if n := a.trailers.Pass(ctx, 3); n != 3 || yt.runs.Load() != 3 {
+	if n := a.Trailers().Pass(ctx, 3); n != 3 || yt.runs.Load() != 3 {
 		t.Fatalf("%d lookups, %d calls", n, yt.runs.Load())
 	}
 	for _, id := range []string{"203", "305"} {
-		if e, ok := a.trailers.Kept(ctx, "movie|"+id+"|en", time.Now()); !ok || e.Stream.Type != "hls" {
+		if e, ok := a.Trailers().Kept(ctx, "movie|"+id+"|en", time.Now()); !ok || e.Stream.Type != "hls" {
 			t.Fatalf("%s not renewed first: %+v", id, e)
 		}
 	}
-	if _, ok := a.trailers.Kept(ctx, "movie|101|en", time.Now()); ok {
+	if _, ok := a.Trailers().Kept(ctx, "movie|101|en", time.Now()); ok {
 		t.Fatal("a first lookup went before a renewal")
 	}
 	if got := asked(); len(got) != 3 || got[2] != "movie:100" || !slices.Contains(got[:2], "movie:203") || !slices.Contains(got[:2], "movie:305") {
@@ -525,10 +526,10 @@ func TestTrailerPassRenewsFirst(t *testing.T) {
 
 // The pass covers the languages already noted, most used first, at most 3.
 func TestTrailerPassLanguages(t *testing.T) {
-	_, st := discoverRig(t, trailerTMDB(t))
-	a := New(Server{Store: st, Version: "test"})
+	_, st := trDiscoverRig(t, trailerTMDB(t))
+	a := api.New(api.Server{Store: st, Version: "test"})
 	ctx := context.Background()
-	if got := strings.Join(a.trailerPassLanguages(ctx), " "); got != "en" {
+	if got := strings.Join(a.TrailerTest().PassLanguages(ctx), " "); got != "en" {
 		t.Fatalf("none noted: %s", got)
 	}
 	err := st.Write(ctx, func(tx *sql.Tx) error {
@@ -542,21 +543,21 @@ func TestTrailerPassLanguages(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := strings.Join(a.trailerPassLanguages(ctx), " "); got != "de fr en" {
+	if got := strings.Join(a.TrailerTest().PassLanguages(ctx), " "); got != "de fr en" {
 		t.Fatalf("noted: %s", got)
 	}
 	// Once pages asked for languages, only those count: English pictures
 	// filled on their own do not take a slot.
-	a.noteCardLang("es")
-	a.noteCardLang("de")
-	if got := strings.Join(a.trailerPassLanguages(ctx), " "); got != "de es" {
+	a.TrailerTest().NoteCardLang("es")
+	a.TrailerTest().NoteCardLang("de")
+	if got := strings.Join(a.TrailerTest().PassLanguages(ctx), " "); got != "de es" {
 		t.Fatalf("asked: %s", got)
 	}
 }
 
 // The loop is a long one with its own schedule, owned by a part.
 func TestTrailerLoops(t *testing.T) {
-	ls := New(Server{Version: "test"}).Trailers().Loops()
+	ls := api.New(api.Server{Version: "test"}).Trailers().Loops()
 	if len(ls) != 1 || ls[0].Name != "trailer_pass" || ls[0].Run == nil || ls[0].Every != 0 {
 		t.Fatalf("%+v", ls)
 	}
@@ -571,7 +572,7 @@ func TestTrailerLoops(t *testing.T) {
 // its place in the queue.
 func TestTrailerPassOrder(t *testing.T) {
 	fakeReader(t, "ok")
-	_, st := discoverRig(t, trailerTMDB(t))
+	_, st := trDiscoverRig(t, trailerTMDB(t))
 	a, asked := passRig(t, st, nil)
 	storePool(t, st, passPool(1, "all", false))
 	ctx := metadata.Ahead(context.Background())
@@ -584,12 +585,12 @@ func TestTrailerPassOrder(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	a.trailers.Note("en", [][2]string{{"movie", "555"}, {"movie", "556"}})
-	a.trailers.Note("en", [][2]string{{"movie", "555"}})
-	if got := a.trailers.Asks(time.Now()); len(got) != 2 || got[0][1] != "555" || got[1][1] != "556" {
+	a.Trailers().Note("en", [][2]string{{"movie", "555"}, {"movie", "556"}})
+	a.Trailers().Note("en", [][2]string{{"movie", "555"}})
+	if got := a.Trailers().Asks(time.Now()); len(got) != 2 || got[0][1] != "555" || got[1][1] != "556" {
 		t.Fatalf("noted again moved it: %v", got)
 	}
-	if n := a.trailers.Pass(ctx, 4); n != 4 {
+	if n := a.Trailers().Pass(ctx, 4); n != 4 {
 		t.Fatalf("%d lookups", n)
 	}
 	if got := strings.Join(asked(), " "); got != "movie:305 movie:555 movie:556 movie:203" {
@@ -601,7 +602,7 @@ func TestTrailerPassOrder(t *testing.T) {
 // toward the health check (it played here before): the pass marks it.
 func TestTrailerPassRenewalFailureCounts(t *testing.T) {
 	fakeReader(t, "unavailable")
-	_, st := discoverRig(t, trailerTMDB(t))
+	_, st := trDiscoverRig(t, trailerTMDB(t))
 	a, _ := passRig(t, st, nil)
 	recentGood(a, time.Hour)
 	storePool(t, st, passPool(1, "all", false))
@@ -613,10 +614,10 @@ func TestTrailerPassRenewalFailureCounts(t *testing.T) {
 	if err := (metadata.LookupCache{Store: st}).Put(ctx, "trailer|movie|305|en", b, now, exp.Add(-metadata.TrailerEarly)); err != nil {
 		t.Fatal(err)
 	}
-	if n := a.trailers.Pass(ctx, 1); n != 1 {
+	if n := a.Trailers().Pass(ctx, 1); n != 1 {
 		t.Fatalf("%d lookups", n)
 	}
-	if r := a.trailers.ReaderState(); r.Videos != 1 {
+	if r := a.Trailers().ReaderState(); r.Videos != 1 {
 		t.Fatalf("renewal failure not counted: %+v", r)
 	}
 	// That first lookups do not count is TestTrailerUpkeepIgnoresFirstLookupMisses

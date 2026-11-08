@@ -1,4 +1,4 @@
-package api
+package main
 
 import (
 	"context"
@@ -16,6 +16,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/api"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/discover"
 
 	engine "github.com/HolyArrs/holyarrs/app/backend/internal/discover/rows"
@@ -203,10 +204,10 @@ func trailerTMDB(t *testing.T) metadata.Provider {
 }
 
 // trailerRig is an API on the discover rig's database, with its server.
-func trailerRig(t *testing.T) (*httptest.Server, *API) {
+func trailerRig(t *testing.T) (*httptest.Server, *api.API) {
 	t.Helper()
-	_, st := discoverRig(t, trailerTMDB(t))
-	a := New(Server{Store: st, Metadata: trailerTMDB(t), Version: "test"})
+	_, st := trDiscoverRig(t, trailerTMDB(t))
+	a := api.New(api.Server{Store: st, Metadata: trailerTMDB(t), Version: "test"})
 	srv := httptest.NewServer(a.Handler())
 	t.Cleanup(srv.Close)
 	return srv, a
@@ -214,9 +215,9 @@ func trailerRig(t *testing.T) (*httptest.Server, *API) {
 
 // lookUp looks a title up as the trailer pass does; the routes then read
 // what it kept.
-func lookUp(t *testing.T, a *API, kind, id string) error {
+func lookUp(t *testing.T, a *api.API, kind, id string) error {
 	t.Helper()
-	_, err := a.trailers.ResolveTitle(context.Background(), kind, id, "en")
+	_, err := a.Trailers().ResolveTitle(context.Background(), kind, id, "en")
 	return err
 }
 
@@ -226,7 +227,7 @@ func TestTrailerStream(t *testing.T) {
 	srv, a := trailerRig(t)
 	// Not looked up yet: "no direct stream" at once, without a lookup.
 	var cold struct{ Error, Reason, Key string }
-	_ = json.Unmarshal(do(t, "GET", srv.URL+"/api/v1/trailer/movie/11", "", 404), &cold)
+	_ = json.Unmarshal(trDo(t, "GET", srv.URL+"/api/v1/trailer/movie/11", "", 404), &cold)
 	if cold.Error != "no direct stream" || cold.Reason != "" || yt.runs.Load() != 0 {
 		t.Fatalf("cold %+v, lookups %d", cold, yt.runs.Load())
 	}
@@ -234,7 +235,7 @@ func TestTrailerStream(t *testing.T) {
 		t.Fatal(err)
 	}
 	var s metadata.TrailerStream
-	if err := json.Unmarshal(do(t, "GET", srv.URL+"/api/v1/trailer/movie/11", "", 200), &s); err != nil {
+	if err := json.Unmarshal(trDo(t, "GET", srv.URL+"/api/v1/trailer/movie/11", "", 200), &s); err != nil {
 		t.Fatal(err)
 	}
 	if s.Type != "hls" || !strings.HasPrefix(s.URL, "https://manifest.googlevideo.com/api/manifest/hls_variant/") || !strings.Contains(s.MP4URL, "itag=136") || s.MP4Audio || s.Key != "trailerKey1" || s.Height != 720 || !s.Audio ||
@@ -243,27 +244,27 @@ func TestTrailerStream(t *testing.T) {
 	}
 	// The address is kept: a second ask does not look it up again.
 	before := yt.runs.Load()
-	do(t, "GET", srv.URL+"/api/v1/trailer/movie/11", "", 200)
+	trDo(t, "GET", srv.URL+"/api/v1/trailer/movie/11", "", 200)
 	if yt.runs.Load() != before {
 		t.Fatalf("looked up again (%d -> %d)", before, yt.runs.Load())
 	}
 	// Another language was not looked up.
-	do(t, "GET", srv.URL+"/api/v1/trailer/movie/11?language=de", "", 404)
+	trDo(t, "GET", srv.URL+"/api/v1/trailer/movie/11?language=de", "", 404)
 	if err := lookUp(t, a, "movie", "12"); err != metadata.ErrNoTrailer {
 		t.Fatalf("no trailer: %v", err)
 	}
-	if b := string(do(t, "GET", srv.URL+"/api/v1/trailer/movie/12", "", 404)); !strings.Contains(b, `"no trailer"`) {
+	if b := string(trDo(t, "GET", srv.URL+"/api/v1/trailer/movie/12", "", 404)); !strings.Contains(b, `"no trailer"`) {
 		t.Fatal(b)
 	}
 	if yt.runs.Load() != before {
 		t.Fatalf("a route looked up (%d -> %d)", before, yt.runs.Load())
 	}
-	do(t, "GET", srv.URL+"/api/v1/trailer/artist/1", "", 400)
-	do(t, "GET", srv.URL+"/api/v1/trailer/movie/x", "", 400)
+	trDo(t, "GET", srv.URL+"/api/v1/trailer/artist/1", "", 400)
+	trDo(t, "GET", srv.URL+"/api/v1/trailer/movie/x", "", 400)
 
 	// Off for everyone: no trailer at all.
-	do(t, "PUT", srv.URL+"/api/v1/settings/ui", `{"autoplay_trailers":false}`, 200)
-	do(t, "GET", srv.URL+"/api/v1/trailer/movie/11", "", 404)
+	trDo(t, "PUT", srv.URL+"/api/v1/settings/ui", `{"autoplay_trailers":false}`, 200)
+	trDo(t, "GET", srv.URL+"/api/v1/trailer/movie/11", "", 404)
 }
 
 // A lookup that finds no stream answers 404 with the reader's reason. At
@@ -275,7 +276,7 @@ func TestTrailerStreamRefusals(t *testing.T) {
 		srv, a := trailerRig(t)
 		_ = lookUp(t, a, "movie", "11")
 		var b struct{ Error, Reason, Key string }
-		_ = json.Unmarshal(do(t, "GET", srv.URL+"/api/v1/trailer/movie/11", "", 404), &b)
+		_ = json.Unmarshal(trDo(t, "GET", srv.URL+"/api/v1/trailer/movie/11", "", 404), &b)
 		if b.Error != "no direct stream" || b.Reason != string(reason) || b.Key != "trailerKey1" {
 			t.Fatalf("%s: %+v", mode, b)
 		}
@@ -301,19 +302,19 @@ func TestTrailerStreamTimeout(t *testing.T) {
 // route: GET /api/v1/settings/ui
 // route: PUT /api/v1/settings/ui
 func TestUISettings(t *testing.T) {
-	srv, _ := discoverRig(t, trailerTMDB(t))
+	srv, _ := trDiscoverRig(t, trailerTMDB(t))
 	path := srv.URL + "/api/v1/settings/ui"
-	if b := string(do(t, "GET", path, "", 200)); !strings.Contains(b, `"autoplay_trailers":true`) {
+	if b := string(trDo(t, "GET", path, "", 200)); !strings.Contains(b, `"autoplay_trailers":true`) {
 		t.Fatalf("default %s", b)
 	}
-	if b := string(do(t, "PUT", path, `{"autoplay_trailers":false}`, 200)); !strings.Contains(b, `"autoplay_trailers":false`) {
+	if b := string(trDo(t, "PUT", path, `{"autoplay_trailers":false}`, 200)); !strings.Contains(b, `"autoplay_trailers":false`) {
 		t.Fatalf("off %s", b)
 	}
-	if b := string(do(t, "PUT", path, `{}`, 200)); !strings.Contains(b, `"autoplay_trailers":false`) {
+	if b := string(trDo(t, "PUT", path, `{}`, 200)); !strings.Contains(b, `"autoplay_trailers":false`) {
 		t.Fatalf("left out keeps %s", b)
 	}
-	do(t, "PUT", path, `{"autoplay_trailers":"yes"}`, 400)
-	if b := string(do(t, "PUT", path, `{"autoplay_trailers":true}`, 200)); !strings.Contains(b, `"autoplay_trailers":true`) {
+	trDo(t, "PUT", path, `{"autoplay_trailers":"yes"}`, 400)
+	if b := string(trDo(t, "PUT", path, `{"autoplay_trailers":true}`, 200)); !strings.Contains(b, `"autoplay_trailers":true`) {
 		t.Fatalf("on %s", b)
 	}
 }
@@ -323,20 +324,20 @@ func TestUISettings(t *testing.T) {
 func TestTrailerStreamKeptAcrossRestartAndMP4(t *testing.T) {
 	yt := fakeReader(t, "mp4")
 	srv, a := trailerRig(t)
-	st := a.s.Store
+	st := a.Trailers().Store
 	if err := lookUp(t, a, "movie", "11"); err != nil {
 		t.Fatal(err)
 	}
 	var s metadata.TrailerStream
-	_ = json.Unmarshal(do(t, "GET", srv.URL+"/api/v1/trailer/movie/11", "", 200), &s)
+	_ = json.Unmarshal(trDo(t, "GET", srv.URL+"/api/v1/trailer/movie/11", "", 200), &s)
 	if s.Type != "mp4" || !strings.Contains(s.URL, "itag=136") || s.MP4URL != "" || s.Audio {
 		t.Fatalf("mp4 %+v", s)
 	}
-	srv2 := httptest.NewServer(New(Server{Store: st, Metadata: trailerTMDB(t), Version: "test"}).Handler())
+	srv2 := httptest.NewServer(api.New(api.Server{Store: st, Metadata: trailerTMDB(t), Version: "test"}).Handler())
 	t.Cleanup(srv2.Close)
 	n := yt.runs.Load()
 	var again metadata.TrailerStream
-	_ = json.Unmarshal(do(t, "GET", srv2.URL+"/api/v1/trailer/movie/11", "", 200), &again)
+	_ = json.Unmarshal(trDo(t, "GET", srv2.URL+"/api/v1/trailer/movie/11", "", 200), &again)
 	if again.URL != s.URL || yt.runs.Load() != n {
 		t.Fatalf("not kept: %+v runs %d->%d", again, n, yt.runs.Load())
 	}
@@ -350,7 +351,7 @@ func TestTrailerStreamPrefersMuxed(t *testing.T) {
 		t.Fatal(err)
 	}
 	var s metadata.TrailerStream
-	_ = json.Unmarshal(do(t, "GET", srv.URL+"/api/v1/trailer/movie/11", "", 200), &s)
+	_ = json.Unmarshal(trDo(t, "GET", srv.URL+"/api/v1/trailer/movie/11", "", 200), &s)
 	if s.Type != "mp4" || !strings.Contains(s.URL, "itag=18") || !s.Audio {
 		t.Fatalf("%+v", s)
 	}
@@ -360,8 +361,8 @@ func TestTrailerStreamPrefersMuxed(t *testing.T) {
 // is final.
 func TestTrailerUsesServerPick(t *testing.T) {
 	fakeReader(t, "ok", "serverPick1")
-	_, st := discoverRig(t, trailerTMDB(t))
-	a := New(Server{Store: st, Metadata: trailerTMDB(t), Version: "test", TrailerPick: func(_ context.Context, kind, id, lang string) (string, error) {
+	_, st := trDiscoverRig(t, trailerTMDB(t))
+	a := api.New(api.Server{Store: st, Metadata: trailerTMDB(t), Version: "test", TrailerPick: func(_ context.Context, kind, id, lang string) (string, error) {
 		if id == "12" {
 			return "", metadata.ErrNotFound
 		}
@@ -376,35 +377,35 @@ func TestTrailerUsesServerPick(t *testing.T) {
 		t.Fatal(err)
 	}
 	var s metadata.TrailerStream
-	_ = json.Unmarshal(do(t, "GET", srv.URL+"/api/v1/trailer/movie/11", "", 200), &s)
+	_ = json.Unmarshal(trDo(t, "GET", srv.URL+"/api/v1/trailer/movie/11", "", 200), &s)
 	if s.Key != "serverPick1" {
 		t.Fatalf("%+v", s)
 	}
-	do(t, "GET", srv.URL+"/api/v1/trailer/movie/12", "", 404)
+	trDo(t, "GET", srv.URL+"/api/v1/trailer/movie/12", "", 404)
 }
 
 // Many asks for one title share one lookup; failures in a row are counted
 // for the health check and a success resets them.
 func TestTrailerSharedLookupAndFailures(t *testing.T) {
 	fakeReader(t, "fail")
-	_, st := discoverRig(t, trailerTMDB(t))
-	a := New(Server{Store: st, Metadata: trailerTMDB(t), Version: "test"})
+	_, st := trDiscoverRig(t, trailerTMDB(t))
+	a := api.New(api.Server{Store: st, Metadata: trailerTMDB(t), Version: "test"})
 	ctx := context.Background()
 	for range 3 {
-		_, _ = a.trailers.ResolveTitle(ctx, "movie", "11", "en")
-		a.trailers.Forget() // forget the miss, as after metadata.TrailerMiss
+		_, _ = a.Trailers().ResolveTitle(ctx, "movie", "11", "en")
+		a.Trailers().Forget() // forget the miss, as after metadata.TrailerMiss
 	}
-	if st := a.trailers.ReaderState(); st.Failed != 3 || st.LastReason != youtube.Refused || !st.LastGood.IsZero() {
+	if st := a.Trailers().ReaderState(); st.Failed != 3 || st.LastReason != youtube.Refused || !st.LastGood.IsZero() {
 		t.Fatalf("failures %+v", st)
 	}
 	yt := fakeReader(t, "ok")
-	a.trailers.Forget()
+	a.Trailers().Forget()
 	var wg sync.WaitGroup
 	for range 5 {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			if s, err := a.trailers.ResolveTitle(ctx, "movie", "11", "en"); err != nil || s.Type != "hls" {
+			if s, err := a.Trailers().ResolveTitle(ctx, "movie", "11", "en"); err != nil || s.Type != "hls" {
 				t.Errorf("%+v %v", s, err)
 			}
 		}()
@@ -413,7 +414,7 @@ func TestTrailerSharedLookupAndFailures(t *testing.T) {
 	if yt.runs.Load() != 1 {
 		t.Fatalf("lookups %d", yt.runs.Load())
 	}
-	if st := a.trailers.ReaderState(); st.Failed != 0 || time.Since(st.LastGood) > time.Minute {
+	if st := a.Trailers().ReaderState(); st.Failed != 0 || time.Since(st.LastGood) > time.Minute {
 		t.Fatalf("not reset %+v", st)
 	}
 }
@@ -447,8 +448,8 @@ func TestTrailerLanguageChecked(t *testing.T) {
 
 // A kept address is checked again when read back from SQLite.
 func TestTrailerStoredRechecked(t *testing.T) {
-	_, st := discoverRig(t, trailerTMDB(t))
-	a := New(Server{Store: st, Metadata: trailerTMDB(t), Version: "test"})
+	_, st := trDiscoverRig(t, trailerTMDB(t))
+	a := api.New(api.Server{Store: st, Metadata: trailerTMDB(t), Version: "test"})
 	ctx, now := context.Background(), time.Now()
 	later := now.Add(time.Hour)
 	put := func(k string, s metadata.TrailerStream) {
@@ -463,7 +464,7 @@ func TestTrailerStoredRechecked(t *testing.T) {
 	put("movie|3|en", metadata.TrailerStream{Type: "hls", URL: good, MP4URL: "http://rr1.googlevideo.com/v", ExpiresAt: later})
 	put("movie|4|en", metadata.TrailerStream{Type: "mp4", URL: "https://rr1.googlevideo.com/videoplayback?expire=" + strconv.FormatInt(now.Add(-time.Minute).Unix(), 10), ExpiresAt: later})
 	for k, want := range map[string]bool{"movie|1|en": true, "movie|2|en": false, "movie|3|en": false, "movie|4|en": false} {
-		if got := a.trailers.Stored(ctx, k, now); got != want {
+		if got := a.Trailers().Stored(ctx, k, now); got != want {
 			t.Fatalf("%s: %v", k, got)
 		}
 	}
@@ -476,33 +477,32 @@ func TestTrailerStoredRechecked(t *testing.T) {
 func TestTrailerPageOpensNeverLookUp(t *testing.T) {
 	yt := fakeReader(t, "ok")
 	srv, a := trailerRig(t)
-	a.trailers.KeepKey(context.Background(), "movie", "11", "en", "trailerKey1")
+	a.Trailers().KeepKey(context.Background(), "movie", "11", "en", "trailerKey1")
 	var b struct{ Error, Reason, Key string }
-	_ = json.Unmarshal(do(t, "GET", srv.URL+"/api/v1/trailer/movie/11", "", 404), &b)
+	_ = json.Unmarshal(trDo(t, "GET", srv.URL+"/api/v1/trailer/movie/11", "", 404), &b)
 	if b.Error != "no direct stream" || b.Reason != "" || b.Key != "trailerKey1" {
 		t.Fatalf("cold %+v", b)
 	}
 	var batch trailerBatchView
-	if err := json.Unmarshal(do(t, "GET", srv.URL+"/api/v1/trailer/batch?ids=movie:11,show:22", "", 200), &batch); err != nil {
+	if err := json.Unmarshal(trDo(t, "GET", srv.URL+"/api/v1/trailer/batch?ids=movie:11,show:22", "", 200), &batch); err != nil {
 		t.Fatal(err)
 	}
 	if len(batch.Streams) != 0 || len(batch.Pending) != 0 {
 		t.Fatalf("batch %+v", batch)
 	}
 
-	ea, _, _ := exploreRig(t)
-	ea.s.TrailerPick = func(context.Context, string, string, string) (string, error) { return "trailerKey1", nil }
+	ea, _, _ := trExploreRig(t, func(context.Context, string, string, string) (string, error) { return "trailerKey1", nil })
 	ctx := context.Background()
 	for _, sw := range discover.ExploreSwitches {
-		if err := ea.explore.BuildPool(ctx, 1, sw); err != nil {
+		if err := ea.TrailerTest().Explore().BuildPool(ctx, 1, sw); err != nil {
 			t.Fatal(err)
 		}
 	}
 	esrv := httptest.NewServer(ea.Handler())
 	t.Cleanup(esrv.Close)
-	head := getJSON(t, esrv.URL+"/api/v1/explore/head?type=all", 200)
-	getJSON(t, esrv.URL+"/api/v1/explore/tail?type=all&page=0", 200)
-	getJSON(t, esrv.URL+"/api/v1/explore/new?type=all", 200)
+	head := trGetJSON(t, esrv.URL+"/api/v1/explore/head?type=all", 200)
+	trGetJSON(t, esrv.URL+"/api/v1/explore/tail?type=all&page=0", 200)
+	trGetJSON(t, esrv.URL+"/api/v1/explore/new?type=all", 200)
 	// The warmer runs beside the page: once it learned a listed title's key
 	// (its last step), nothing it does looks the trailer up.
 	var first [2]string
@@ -514,10 +514,10 @@ func TestTrailerPageOpensNeverLookUp(t *testing.T) {
 		}
 	}
 	deadline := time.Now().Add(10 * time.Second)
-	for first[0] != "" && ea.trailers.KnownKey(ctx, first[0], first[1], "en") == "" && time.Now().Before(deadline) {
+	for first[0] != "" && ea.Trailers().KnownKey(ctx, first[0], first[1], "en") == "" && time.Now().Before(deadline) {
 		time.Sleep(20 * time.Millisecond)
 	}
-	if first[0] == "" || ea.trailers.KnownKey(ctx, first[0], first[1], "en") != "trailerKey1" {
+	if first[0] == "" || ea.Trailers().KnownKey(ctx, first[0], first[1], "en") != "trailerKey1" {
 		t.Fatalf("the warmer did not learn %v's key", first)
 	}
 	time.Sleep(200 * time.Millisecond)
