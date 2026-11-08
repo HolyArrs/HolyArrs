@@ -20,11 +20,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
-// Publisher sends live events.
-type Publisher interface {
-	Publish(topic string, data any) uint64
-}
-
 // Searcher runs the search jobs.
 type Searcher struct {
 	Store *database.Store
@@ -47,11 +42,6 @@ func (s *Searcher) publish(topic string, data any) {
 	if s.Live != nil {
 		s.Live.Publish(topic, data)
 	}
-}
-
-// SecretReader opens stored secrets.
-type SecretReader interface {
-	Get(ctx context.Context, id int64) (string, error)
 }
 
 // client keeps one Client per Source so its limits hold across jobs. A Source
