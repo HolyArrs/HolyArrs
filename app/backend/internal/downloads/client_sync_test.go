@@ -129,7 +129,7 @@ func TestRegistryListsEveryExportedInterface(t *testing.T) {
 	}
 	fset := token.NewFileSet()
 	for _, f := range files {
-		if strings.HasSuffix(f, "_test.go") {
+		if strings.HasSuffix(f, "_test.go") || strings.HasPrefix(f, "snapshot") { // the reader's files are not engine adapters
 			continue
 		}
 		src, err := os.ReadFile(f)

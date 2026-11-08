@@ -484,7 +484,7 @@ func TestCadence_Table(t *testing.T) {
 // The reader must never write the downloads table, so the Manager stays its only writer.
 func TestSync_NeverWritesDownloads(t *testing.T) {
 	write := regexp.MustCompile(`(?i)(UPDATE\s+downloads\b|INSERT\s+INTO\s+downloads\b|DELETE\s+FROM\s+downloads\b|store\.(Update|Insert|UpdateWhere)\([^)]*"downloads")`)
-	files, _ := filepath.Glob("*.go")
+	files, _ := filepath.Glob("snapshot*.go") // the reader's files since the fold
 	files = append(files, filepath.Join("..", "api", "downloads_sync.go"))
 	for _, f := range files {
 		if strings.HasSuffix(f, "_test.go") {
