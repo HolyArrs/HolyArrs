@@ -22,7 +22,7 @@ HolyArrs takes over a folder of movies as it is. It moves and renames nothing.
    | Not matched | Press **Look up** and find the movie. |
 
    Movies already in the Library, on the Never-add list or without a video file are listed with the reason they are left out.
-5. Tick the movies you want and press **Adopt**.
+5. Tick the movies you want and press **Adopt**. The button shows the count, such as **Adopt 3 movies**.
 
 You should see the movies in **Library** with their files present.
 
