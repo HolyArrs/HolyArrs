@@ -5,9 +5,9 @@ import (
 	"database/sql"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // titleFacts holds every Title's size, last activity and Versions, read in
@@ -15,15 +15,15 @@ import (
 type titleFacts struct {
 	sizes    map[int64]int64
 	activity map[int64]time.Time
-	versions map[int64][]domain.Version
-	copies   map[int64]store.TitleCopy
+	versions map[int64][]mediafiles.Version
+	copies   map[int64]mediafiles.TitleCopy
 }
 
 type titleFactsKey struct{}
 
 // withTitleFacts reads the facts for all Titles and keeps them on ctx for titleView.
 func withTitleFacts(ctx context.Context, db database.Lister) (context.Context, error) {
-	f := &titleFacts{sizes: map[int64]int64{}, activity: map[int64]time.Time{}, versions: map[int64][]domain.Version{}}
+	f := &titleFacts{sizes: map[int64]int64{}, activity: map[int64]time.Time{}, versions: map[int64][]mediafiles.Version{}}
 	rows, err := db.QueryContext(ctx, `SELECT v.title_id, COALESCE(SUM(f.size), 0) FROM files f JOIN versions v ON v.id = f.version_id GROUP BY v.title_id`)
 	if err != nil {
 		return ctx, err
@@ -64,14 +64,14 @@ func withTitleFacts(ctx context.Context, db database.Lister) (context.Context, e
 	if err := rows.Err(); err != nil {
 		return ctx, err
 	}
-	vs, err := database.Select[domain.Version](ctx, db, "versions", "1 = 1 ORDER BY title_id, is_main DESC, id")
+	vs, err := database.Select[mediafiles.Version](ctx, db, "versions", "1 = 1 ORDER BY title_id, is_main DESC, id")
 	if err != nil {
 		return ctx, err
 	}
 	for _, v := range vs {
 		f.versions[v.TitleID] = append(f.versions[v.TitleID], v)
 	}
-	if f.copies, err = store.TitleCopies(ctx, db); err != nil {
+	if f.copies, err = mediafiles.TitleCopies(ctx, db); err != nil {
 		return ctx, err
 	}
 	return context.WithValue(ctx, titleFactsKey{}, f), nil

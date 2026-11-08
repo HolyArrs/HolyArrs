@@ -17,6 +17,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/alerts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
@@ -455,7 +457,7 @@ func (s *Service) Ask4K(ctx context.Context, p Person, tmdbID string) (Result, e
 func fourKVersion(ctx context.Context, db database.Querier, titleID int64) (int64, error) {
 	var id int64
 	err := db.QueryRowContext(ctx, `SELECT v.id FROM versions v LEFT JOIN pick_rules p ON p.id = v.pick_rules_id
-		WHERE v.title_id = ? AND (v.label = ? COLLATE NOCASE OR p.name = ?) ORDER BY v.id LIMIT 1`, titleID, domain.FourKName, domain.FourKName).Scan(&id)
+		WHERE v.title_id = ? AND (v.label = ? COLLATE NOCASE OR p.name = ?) ORDER BY v.id LIMIT 1`, titleID, mediafiles.FourKName, mediafiles.FourKName).Scan(&id)
 	if errors.Is(err, sql.ErrNoRows) {
 		return 0, nil
 	}
@@ -471,7 +473,7 @@ func HasFourK(ctx context.Context, db database.Querier, titleID int64) (bool, er
 // fourKRules is the 4K Pick rules preset's id (0 when it was removed).
 func fourKRules(ctx context.Context, db database.Querier) (int64, error) {
 	var id int64
-	err := db.QueryRowContext(ctx, "SELECT id FROM pick_rules WHERE name = ? ORDER BY id LIMIT 1", domain.FourKName).Scan(&id)
+	err := db.QueryRowContext(ctx, "SELECT id FROM pick_rules WHERE name = ? ORDER BY id LIMIT 1", mediafiles.FourKName).Scan(&id)
 	if errors.Is(err, sql.ErrNoRows) {
 		return 0, nil
 	}
@@ -852,11 +854,11 @@ func (s *Service) addForAsk(ctx context.Context, a domain.Ask, set Settings, opt
 			if vid, err := fourKVersion(ctx, db, tid); err != nil || vid != 0 {
 				return tid, err
 			}
-			v, err := library.AddVersion(ctx, s.Store, tid, library.VersionInput{Label: domain.FourKName, PickRulesID: rules}, nil, s.Library.Clock(), by.actor())
+			v, err := library.AddVersion(ctx, s.Store, tid, library.VersionInput{Label: mediafiles.FourKName, PickRulesID: rules}, nil, s.Library.Clock(), by.actor())
 			if err != nil {
 				return 0, err
 			}
-			var t domain.Title
+			var t mediafiles.Title
 			if database.Get(ctx, db, "titles", tid, &t) == nil {
 				s.Library.VersionEvent(ctx, t, "Added the "+v.Label+" Version", v, by.actor())
 			}

@@ -8,6 +8,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
@@ -85,8 +87,8 @@ func TestShowVersionRulesLabelsAndFolders(t *testing.T) {
 	srv, s, _, _ := showSetup(t)
 	u := srv.URL + "/api/v1"
 	var music, movie int64
-	_ = s.Read().QueryRow("SELECT id FROM pick_rules WHERE name = ?", domain.LosslessFirstName).Scan(&music)
-	_ = s.Read().QueryRow("SELECT id FROM pick_rules WHERE name = ?", domain.GoodEverydayName).Scan(&movie)
+	_ = s.Read().QueryRow("SELECT id FROM pick_rules WHERE name = ?", mediafiles.LosslessFirstName).Scan(&music)
+	_ = s.Read().QueryRow("SELECT id FROM pick_rules WHERE name = ?", mediafiles.GoodEverydayName).Scan(&movie)
 	if music == 0 || movie == 0 {
 		t.Fatal("no presets")
 	}
@@ -116,13 +118,13 @@ func TestShowVersionRulesLabelsAndFolders(t *testing.T) {
 	var folder string
 	_ = s.Read().QueryRow("SELECT library_folder_id, folder_name FROM versions WHERE id = ?", add.Title.Versions[0].ID).Scan(&lf, &folder)
 	if err := s.Write(context.Background(), func(tx *sql.Tx) error {
-		ti := &domain.Title{Kind: "show", GateDriver: "none", Name: "Other", SortName: "other", Aliases: []string{},
+		ti := &mediafiles.Title{Kind: "show", GateDriver: "none", Name: "Other", SortName: "other", Aliases: []string{},
 			SourceIDs: map[string]string{}, MetadataSource: "local", NewPartsPolicy: "all", ReleaseGate: "released",
 			MusicTypes: []string{}, WhyAdded: "by_hand", Artwork: []string{}, Status: "running", State: "active"}
 		if _, err := database.Insert(tx, "titles", ti, domain.System); err != nil {
 			return err
 		}
-		ov := &domain.Version{TitleID: ti.ID, Label: "HD", IsMain: true, PickRulesID: movie, LibraryFolderID: lf, FolderName: folder + " [Remux]"}
+		ov := &mediafiles.Version{TitleID: ti.ID, Label: "HD", IsMain: true, PickRulesID: movie, LibraryFolderID: lf, FolderName: folder + " [Remux]"}
 		_, err := database.Insert(tx, "versions", ov, domain.System)
 		return err
 	}); err != nil {

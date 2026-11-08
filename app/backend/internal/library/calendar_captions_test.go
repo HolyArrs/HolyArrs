@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
@@ -36,12 +38,12 @@ func TestCalendarMovieDetails(t *testing.T) {
 // a full cast of ten.
 func TestCreditsOfOlderTitles(t *testing.T) {
 	people := []string{"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "Dir One", "Dir Two"}
-	dirs, cast := creditsOf(domain.Title{People: people})
+	dirs, cast := creditsOf(mediafiles.Title{People: people})
 	if !slices.Equal(dirs, []string{"Dir One", "Dir Two"}) || !slices.Equal(cast, []string{"a", "b", "c"}) {
 		t.Fatalf("%v %v", dirs, cast)
 	}
 	// A short list cannot be told apart: no directors.
-	if dirs, cast := creditsOf(domain.Title{People: []string{"a", "b"}}); len(dirs) != 0 || !slices.Equal(cast, []string{"a", "b"}) {
+	if dirs, cast := creditsOf(mediafiles.Title{People: []string{"a", "b"}}); len(dirs) != 0 || !slices.Equal(cast, []string{"a", "b"}) {
 		t.Fatalf("%v %v", dirs, cast)
 	}
 }

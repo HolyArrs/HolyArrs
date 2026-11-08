@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
@@ -15,7 +17,7 @@ import (
 // S01E01 to S01E03: E02 is in the library, E01 and E03 need a decision.
 func seedPack(t *testing.T) (*dl41, []int64) {
 	t.Helper()
-	x := seed41(t, domain.SlotNeedsADecision, "finished")
+	x := seed41(t, mediafiles.SlotNeedsADecision, "finished")
 	ids := []int64{x.slotID}
 	err := x.s.Write(context.Background(), func(tx *sql.Tx) error {
 		var titleID, verID, itemID int64
@@ -30,14 +32,14 @@ func seedPack(t *testing.T) (*dl41, []int64) {
 		}
 		// In episode order: ids[1] is episode 2 and ids[2] episode 3.
 		for _, n := range []int{2, 3} {
-			st := map[int]domain.SlotState{2: domain.SlotInLibrary, 3: domain.SlotNeedsADecision}[n]
+			st := map[int]mediafiles.SlotState{2: mediafiles.SlotInLibrary, 3: mediafiles.SlotNeedsADecision}[n]
 			season, ep, name := 1, n, map[int]string{2: "Flood", 3: "Ash"}[n]
-			it := &domain.Item{TitleID: titleID, Kind: "episode", Numbers: domain.Numbers{Season: &season, Episode: &ep}, Name: &name, KeepUpToDate: true, SourceIDs: map[string]string{}}
+			it := &mediafiles.Item{TitleID: titleID, Kind: "episode", Numbers: mediafiles.Numbers{Season: &season, Episode: &ep}, Name: &name, KeepUpToDate: true, SourceIDs: map[string]string{}}
 			if _, err := database.Insert(tx, "items", it, domain.System); err != nil {
 				return err
 			}
 			reason := "the file could not be placed: a file HolyArrs did not place is already at the target"
-			sl := &domain.Slot{ItemID: it.ID, VersionID: verID, State: st, LastReason: &reason}
+			sl := &mediafiles.Slot{ItemID: it.ID, VersionID: verID, State: st, LastReason: &reason}
 			if _, err := database.Insert(tx, "slots", sl, domain.System); err != nil {
 				return err
 			}
@@ -111,7 +113,7 @@ func TestNeedsDecisionEpisodesAndPacks(t *testing.T) {
 		t.Fatalf("verdict %s", verdict)
 	}
 	// A movie is not a pack.
-	y := seed41(t, domain.SlotNeedsADecision, "failed")
+	y := seed41(t, mediafiles.SlotNeedsADecision, "failed")
 	do(t, "POST", y.srv.URL+"/api/v1/needs-decision/"+itoa(y.slotID)+"/decide", `{"action":"stop","pack":true}`, 400)
 	// Stop looking for the pack: every stuck episode stops, the show goes on.
 	exec41(t, x.s, "UPDATE slots SET state = 'needs_a_decision' WHERE id = ?", ids[0])

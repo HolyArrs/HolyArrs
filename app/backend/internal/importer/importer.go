@@ -20,15 +20,13 @@ import (
 	"time"
 	"unicode"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/judge"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/naming"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // KindImport is the job kind of an import.
@@ -50,24 +48,24 @@ type Target struct {
 	SlotIDs     []int64
 	Edition     string
 	IDs         map[string]string
-	Naming      *naming.Settings
+	Naming      *mediafiles.NamingSettings
 }
 
 func (t Target) fileName(p releasename.Result, source string) string {
-	ns := naming.Defaults()
+	ns := mediafiles.NamingDefaults()
 	if t.Naming != nil {
 		ns = *t.Naming
 	}
 	ext := filepath.Ext(source)
 	release := strings.TrimSuffix(filepath.Base(source), ext)
 	if !ns.RenameOnImport {
-		return EditionFileName(naming.CleanWith(ns, release)+strings.ToLower(ext), t.Edition)
+		return EditionFileName(mediafiles.CleanWith(ns, release)+strings.ToLower(ext), t.Edition)
 	}
-	facts := naming.FactsFrom(t.TitleName, t.Year, t.IDs, p, release, ext)
+	facts := mediafiles.FactsFrom(t.TitleName, t.Year, t.IDs, p, release, ext)
 	if t.Edition != "" {
 		facts.Edition = t.Edition
 	}
-	name := naming.File(ns, facts)
+	name := mediafiles.FileName(ns, facts)
 	return EditionFileName(name, t.Edition)
 }
 
@@ -89,16 +87,16 @@ var programExt = map[string]bool{".exe": true, ".scr": true, ".bat": true, ".cmd
 	".js": true, ".vbs": true, ".ps1": true, ".com": true, ".sh": true,
 	".dll": true, ".jar": true, ".apk": true}
 
-func safeName(s string) string { return naming.Clean(s) }
+func safeName(s string) string { return mediafiles.CleanName(s) }
 
 // FolderName builds the library folder name for a title and year.
 func FolderName(title string, year int) string {
-	return naming.Folder(naming.Defaults(), naming.Facts{Title: title, Year: year})
+	return mediafiles.Folder(mediafiles.NamingDefaults(), mediafiles.NameFacts{Title: title, Year: year})
 }
 
 // FileName builds the library file name for a title, year, step and extension.
 func FileName(title string, year int, step, ext string) string {
-	return naming.File(naming.Defaults(), naming.Facts{Title: title, Year: year, Step: step, Ext: ext})
+	return mediafiles.FileName(mediafiles.NamingDefaults(), mediafiles.NameFacts{Title: title, Year: year, Step: step, Ext: ext})
 }
 
 // Scan lists the media files under root.
@@ -185,13 +183,13 @@ func confidence(c releasename.Conf) float64 {
 const MinConfidence = 0.7
 
 // Plan turns candidate files into copy steps for a movie.
-func Plan(cands []Candidate, t Target) []domain.PlanStep {
-	ref := judge.TitleRef{ID: t.TitleID, Name: t.TitleName, Year: t.Year}
-	var steps []domain.PlanStep
+func Plan(cands []Candidate, t Target) []mediafiles.PlanStep {
+	ref := mediafiles.TitleRef{ID: t.TitleID, Name: t.TitleName, Year: t.Year}
+	var steps []mediafiles.PlanStep
 	var mains []int
 	for _, c := range cands {
 		ext := strings.ToLower(filepath.Ext(c.Path))
-		s := domain.PlanStep{SourceFile: c.Path, TargetSlotIDs: []int64{}, Why: []string{}}
+		s := mediafiles.PlanStep{SourceFile: c.Path, TargetSlotIDs: []int64{}, Why: []string{}}
 		p := releasename.Parse(filepath.Base(c.Path), releasename.Hints{Size: c.Size})
 		if p.Title.Value == "" {
 			p = releasename.Parse(filepath.Base(filepath.Dir(c.Path)), releasename.Hints{Size: c.Size})
@@ -204,10 +202,10 @@ func Plan(cands []Candidate, t Target) []domain.PlanStep {
 		case isSample(c.Path, p):
 			s.Method, s.Why = "refuse", []string{"a sample, not the full video"}
 		default:
-			m := judge.MatchTitle(p, []judge.TitleRef{ref})
+			m := mediafiles.MatchTitle(p, []mediafiles.TitleRef{ref})
 			if m.Title == nil && p.Year.Value == 0 {
 				if fp := releasename.Parse(filepath.Base(filepath.Dir(c.Path)), releasename.Hints{Size: c.Size}); fp.Title.Value != "" {
-					if fm := judge.MatchTitle(fp, []judge.TitleRef{ref}); fm.Title != nil {
+					if fm := mediafiles.MatchTitle(fp, []mediafiles.TitleRef{ref}); fm.Title != nil {
 						m = fm
 					}
 				}
@@ -414,18 +412,20 @@ func sameContent(a, b string, size int64) bool {
 }
 
 // Execute runs the steps with ops and returns one result per step.
-func Execute(steps []domain.PlanStep, ops Ops) []domain.PlaceResult { return execute(steps, ops, nil) }
+func Execute(steps []mediafiles.PlanStep, ops Ops) []mediafiles.PlaceResult {
+	return execute(steps, ops, nil)
+}
 
-func execute(steps []domain.PlanStep, ops Ops, resumable map[string]time.Time) []domain.PlaceResult {
+func execute(steps []mediafiles.PlanStep, ops Ops, resumable map[string]time.Time) []mediafiles.PlaceResult {
 	if ops.Link == nil {
 		ops.Link = os.Link
 	}
 	if ops.Copy == nil {
 		ops.Copy = copyFile
 	}
-	out := make([]domain.PlaceResult, 0, len(steps))
+	out := make([]mediafiles.PlaceResult, 0, len(steps))
 	for _, s := range steps {
-		r := domain.PlaceResult{SourceFile: s.SourceFile, PlacedBy: "none"}
+		r := mediafiles.PlaceResult{SourceFile: s.SourceFile, PlacedBy: "none"}
 		switch s.Method {
 		case "skip":
 			r.Outcome = "skipped"
@@ -440,8 +440,8 @@ func execute(steps []domain.PlanStep, ops Ops, resumable map[string]time.Time) [
 	return out
 }
 
-func place(s domain.PlanStep, ops Ops, resumeFrom time.Time) domain.PlaceResult {
-	r := domain.PlaceResult{SourceFile: s.SourceFile, PlacedBy: "none"}
+func place(s mediafiles.PlanStep, ops Ops, resumeFrom time.Time) mediafiles.PlaceResult {
+	r := mediafiles.PlaceResult{SourceFile: s.SourceFile, PlacedBy: "none"}
 	sfi, err := os.Lstat(s.SourceFile)
 	if err != nil {
 		r.Outcome, r.Error = "failed", err.Error()
@@ -511,9 +511,9 @@ func insideReal(root, p string) bool {
 	}
 }
 
-func candidates(root string, files []domain.SeenFile) ([]Candidate, []domain.PlanStep) {
+func candidates(root string, files []domain.SeenFile) ([]Candidate, []mediafiles.PlanStep) {
 	var cands []Candidate
-	var bad []domain.PlanStep
+	var bad []mediafiles.PlanStep
 	realRoot, rootErr := filepath.EvalSymlinks(root)
 	for _, f := range files {
 		name := strings.ReplaceAll(f.Name, `\`, "/")
@@ -533,7 +533,7 @@ func candidates(root string, files []domain.SeenFile) ([]Candidate, []domain.Pla
 			}
 		}
 		if !ok {
-			bad = append(bad, domain.PlanStep{SourceFile: f.Name, TargetSlotIDs: []int64{}, Method: "refuse",
+			bad = append(bad, mediafiles.PlanStep{SourceFile: f.Name, TargetSlotIDs: []int64{}, Method: "refuse",
 				Why: []string{"the Downloader reported a file outside the download folder"}})
 			continue
 		}
@@ -663,7 +663,7 @@ func mapPath(p string, maps []domain.PathMap) string {
 }
 
 // Import places one download into the library, or only plans it when dryRun is set.
-func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, by domain.Actor) (*domain.Import, error) {
+func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, by domain.Actor) (*mediafiles.Import, error) {
 	unlock := im.Store.LockFiles()
 	defer unlock()
 	db := im.Store.Read()
@@ -681,11 +681,11 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 	if err := database.Get(ctx, db, "downloaders", d.DownloaderID, &dr); err != nil {
 		return nil, err
 	}
-	var sl domain.Slot
-	var ver domain.Version
-	var lf domain.LibraryFolder
-	var it domain.Item
-	var ti domain.Title
+	var sl mediafiles.Slot
+	var ver mediafiles.Version
+	var lf mediafiles.LibraryFolder
+	var it mediafiles.Item
+	var ti mediafiles.Title
 	if err := database.Get(ctx, db, "slots", d.SlotIDs[0], &sl); err != nil {
 		return nil, err
 	}
@@ -693,7 +693,7 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 	if err := db.QueryRowContext(ctx, "SELECT t.kind, t.state FROM items i JOIN titles t ON t.id = i.title_id WHERE i.id = ?", sl.ItemID).Scan(&kind, &titleState); err != nil {
 		return nil, err
 	}
-	if titleState == "removed" || sl.State == domain.SlotRemoved {
+	if titleState == "removed" || sl.State == mediafiles.SlotRemoved {
 		return nil, errors.New("the title or item was removed; import stopped")
 	}
 	if kind == "artist" {
@@ -708,7 +708,7 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 		}
 		return im.importShow(ctx, d, dr, dryRun, by)
 	}
-	if !dryRun && sl.State != domain.SlotDownloading && sl.State != domain.SlotImporting {
+	if !dryRun && sl.State != mediafiles.SlotDownloading && sl.State != mediafiles.SlotImporting {
 		return nil, fmt.Errorf("slot %d is %s; nothing to import", sl.ID, sl.State)
 	}
 	for _, g := range []struct {
@@ -733,13 +733,13 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 	root, rootOK := domain.MapPath(d.SavePath, dr.PathMap)
 	cands, bad := candidates(root, d.FilesSeen)
 	if !rootOK {
-		cands, bad = nil, []domain.PlanStep{unpackStep(d.SavePath, "the Downloader reported a folder with \"..\" in it")}
+		cands, bad = nil, []mediafiles.PlanStep{unpackStep(d.SavePath, "the Downloader reported a folder with \"..\" in it")}
 	}
 	folder := safeName(ver.FolderName)
 	if folder == "" || folder == "." || folder == ".." {
 		folder = FolderName(ti.Name, year)
 	}
-	ns, err := naming.Read(ctx, db)
+	ns, err := mediafiles.ReadNaming(ctx, db)
 	if err != nil {
 		return nil, err
 	}
@@ -765,7 +765,7 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 	if err != nil {
 		return nil, err
 	}
-	imp := &domain.Import{DownloadID: &d.ID, FromPath: root, Kind: "movie", Plan: plan, Result: []domain.PlaceResult{}, Mode: "dry_run", State: "planned"}
+	imp := &mediafiles.Import{DownloadID: &d.ID, FromPath: root, Kind: "movie", Plan: plan, Result: []mediafiles.PlaceResult{}, Mode: "dry_run", State: "planned"}
 	if dryRun {
 		return imp, nil
 	}
@@ -791,7 +791,7 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 		}
 		return imp, nil
 	}
-	prior, err := database.Select[domain.Import](ctx, db, "imports", "download_id = ? AND state = 'placing' ORDER BY id DESC LIMIT 1", d.ID)
+	prior, err := database.Select[mediafiles.Import](ctx, db, "imports", "download_id = ? AND state = 'placing' ORDER BY id DESC LIMIT 1", d.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -809,7 +809,7 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 		}
 	}
 	for _, st := range plan {
-		r := domain.PlaceResult{SourceFile: st.SourceFile, Outcome: "pending", PlacedBy: "none"}
+		r := mediafiles.PlaceResult{SourceFile: st.SourceFile, Outcome: "pending", PlacedBy: "none"}
 		if st.Method == "hardlink" {
 			r.Outcome = "placing"
 		}
@@ -818,8 +818,8 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 	imp.State = "placing"
 	moved := false
 	if err := im.Store.Write(ctx, func(tx *sql.Tx) error {
-		if sl.State == domain.SlotDownloading {
-			if err := store.MoveSlotTx(tx, sl.ID, domain.SlotImporting, "importing", by); err != nil {
+		if sl.State == mediafiles.SlotDownloading {
+			if err := mediafiles.MoveSlotTx(tx, sl.ID, mediafiles.SlotImporting, "importing", by); err != nil {
 				return err
 			}
 			moved = true
@@ -833,7 +833,7 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 		return nil, err
 	}
 	if moved {
-		im.publish("slot", map[string]any{"id": sl.ID, "state": domain.SlotImporting})
+		im.publish("slot", map[string]any{"id": sl.ID, "state": mediafiles.SlotImporting})
 	}
 
 	swept := map[string]bool{}
@@ -954,7 +954,7 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 			}
 		}
 	}
-	slotTo, reason := domain.SlotNeedsADecision, "nothing could be placed; look at the import plan"
+	slotTo, reason := mediafiles.SlotNeedsADecision, "nothing could be placed; look at the import plan"
 	if unpackWhy != "" {
 		reason = unpackWhy
 	}
@@ -1004,9 +1004,9 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 			size := sizes[i]
 			name := strings.TrimSuffix(filepath.Base(step.SourceFile), filepath.Ext(step.SourceFile))
 			newName = name
-			f := &domain.File{SlotIDs: step.TargetSlotIDs, VersionID: ver.ID, RelativePath: filepath.ToSlash(rel), Size: size, AddedAt: now,
-				Quality:   domain.Quality{Resolution: p.Resolution.Value, Source: p.Source.Value, Codec: p.Codec.Value, HDR: p.HDR.Value},
-				Languages: InspectedLanguages(up.facts[step.SourceFile]), MediaInfo: map[string]any{"step": judge.StepFor(p)}, ReleaseName: &name, Origin: "imported", PlacedBy: r.PlacedBy,
+			f := &mediafiles.File{SlotIDs: step.TargetSlotIDs, VersionID: ver.ID, RelativePath: filepath.ToSlash(rel), Size: size, AddedAt: now,
+				Quality:   mediafiles.Quality{Resolution: p.Resolution.Value, Source: p.Source.Value, Codec: p.Codec.Value, HDR: p.HDR.Value},
+				Languages: InspectedLanguages(up.facts[step.SourceFile]), MediaInfo: map[string]any{"step": mediafiles.StepFor(p)}, ReleaseName: &name, Origin: "imported", PlacedBy: r.PlacedBy,
 				FellBack: r.FellBack, Role: "main", State: "present"}
 			if f.Languages == nil {
 				f.Languages = []string{}
@@ -1036,21 +1036,21 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 		}
 		ge := false
 		if fileID > 0 {
-			ge = judge.ReachesGoodEnough(newName, up.rules)
+			ge = mediafiles.ReachesGoodEnough(newName, up.rules)
 			if _, err := tx.Exec("UPDATE slots SET file_id = ?, active_download_id = NULL, good_enough = ? WHERE id = ?", fileID, ge, sl.ID); err != nil {
 				return err
 			}
-			slotTo, reason = domain.SlotInLibrary, "placed by "+how
+			slotTo, reason = mediafiles.SlotInLibrary, "placed by "+how
 			if up.old != nil {
 				reason += "; replaced " + up.oldName
 			}
 		}
-		if err := store.MoveSlotTx(tx, sl.ID, slotTo, reason, by); err != nil {
+		if err := mediafiles.MoveSlotTx(tx, sl.ID, slotTo, reason, by); err != nil {
 			return err
 		}
-		if slotTo == domain.SlotInLibrary && !ge && ver.KeepUpToDate && it.KeepUpToDate {
-			slotTo = domain.SlotBetterWanted
-			return store.MoveSlotTx(tx, sl.ID, slotTo, reason+"; below good enough, so a better copy is sought", by)
+		if slotTo == mediafiles.SlotInLibrary && !ge && ver.KeepUpToDate && it.KeepUpToDate {
+			slotTo = mediafiles.SlotBetterWanted
+			return mediafiles.MoveSlotTx(tx, sl.ID, slotTo, reason+"; below good enough, so a better copy is sought", by)
 		}
 		return nil
 	})
@@ -1087,12 +1087,12 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 	return imp, nil
 }
 
-func guardPlan(plan []domain.PlanStep, lib string, cands []Candidate, rules FileRules) *SpaceError {
+func guardPlan(plan []mediafiles.PlanStep, lib string, cands []Candidate, rules FileRules) *SpaceError {
 	low, _ := guardPlanWith(plan, lib, cands, rules, nil)
 	return low
 }
 
-func guardPlanWith(plan []domain.PlanStep, lib string, cands []Candidate, rules FileRules, base map[string]int64) (*SpaceError, map[string]int64) {
+func guardPlanWith(plan []mediafiles.PlanStep, lib string, cands []Candidate, rules FileRules, base map[string]int64) (*SpaceError, map[string]int64) {
 	var lowSpace *SpaceError
 	reserved := map[string]int64{}
 	mine := map[string]int64{}
@@ -1132,7 +1132,7 @@ func guardPlanWith(plan []domain.PlanStep, lib string, cands []Candidate, rules 
 	return lowSpace, mine
 }
 
-func (im *Importer) guard(plan []domain.PlanStep, lib string, cands []Candidate, rules FileRules) (*SpaceError, func()) {
+func (im *Importer) guard(plan []mediafiles.PlanStep, lib string, cands []Candidate, rules FileRules) (*SpaceError, func()) {
 	im.spaceMu.Lock()
 	defer im.spaceMu.Unlock()
 	if im.booked == nil {
@@ -1176,7 +1176,7 @@ func PathTooLong(p string) string {
 	return ""
 }
 
-func planPaths(plan []domain.PlanStep) []map[string]string {
+func planPaths(plan []mediafiles.PlanStep) []map[string]string {
 	out := []map[string]string{}
 	for _, st := range plan {
 		out = append(out, map[string]string{"from": st.SourceFile, "to": st.TargetPath, "method": st.Method})
@@ -1184,7 +1184,7 @@ func planPaths(plan []domain.PlanStep) []map[string]string {
 	return out
 }
 
-func placedSome(rs []domain.PlaceResult) bool {
+func placedSome(rs []mediafiles.PlaceResult) bool {
 	for _, r := range rs {
 		if r.Outcome == "placed" {
 			return true
@@ -1193,7 +1193,7 @@ func placedSome(rs []domain.PlaceResult) bool {
 	return false
 }
 
-func hasMain(plan []domain.PlanStep) bool {
+func hasMain(plan []mediafiles.PlanStep) bool {
 	for _, st := range plan {
 		if st.Method == "hardlink" {
 			return true

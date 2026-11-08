@@ -10,6 +10,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
@@ -82,7 +84,7 @@ func fakeShowLists(t *testing.T) *httptest.Server {
 
 // showEnv is setup plus show details, a show Library folder and the show
 // list stand-ins.
-func showEnv(t *testing.T) (*env, domain.LibraryFolder) {
+func showEnv(t *testing.T) (*env, mediafiles.LibraryFolder) {
 	t.Helper()
 	e := setup(t)
 	src := labShows{}
@@ -202,11 +204,11 @@ func TestAdd_ShowInputChecks(t *testing.T) {
 		t.Fatalf("edit without title_kind %+v %v", m, err)
 	}
 	// Pick rules must be made for what the list adds.
-	movieOnly, err := library.CreatePickRules(ctx, e.s, library.PickRulesInput{Name: "Movies only", Kinds: []string{"movie"}, Body: domain.GoodEveryday()}, domain.System)
+	movieOnly, err := library.CreatePickRules(ctx, e.s, library.PickRulesInput{Name: "Movies only", Kinds: []string{"movie"}, Body: mediafiles.GoodEveryday()}, domain.System)
 	if err != nil {
 		t.Fatal(err)
 	}
-	showOnly, _ := library.CreatePickRules(ctx, e.s, library.PickRulesInput{Name: "Shows only", Kinds: []string{"show"}, Body: domain.GoodEveryday()}, domain.System)
+	showOnly, _ := library.CreatePickRules(ctx, e.s, library.PickRulesInput{Name: "Shows only", Kinds: []string{"show"}, Body: mediafiles.GoodEveryday()}, domain.System)
 	if _, err := Add(ctx, e.s, Input{Name: "Wrong rules", Kind: KindTMDB, Ref: "61", TitleKind: "show", PickRulesID: movieOnly.ID}, domain.System); !errors.Is(err, ErrRulesKind) {
 		t.Fatalf("movie rules on a show list: %v", err)
 	}
@@ -226,7 +228,7 @@ func TestAdd_ShowInputChecks(t *testing.T) {
 func TestSync_TMDBShowListUsesItsSeasonChoice(t *testing.T) {
 	e, lf := showEnv(t)
 	ctx := context.Background()
-	if _, err := library.AddNeverAdd(ctx, e.s, domain.NeverAdd{Kind: "show", SourceIDs: map[string]string{"tmdb": "700003"}, Name: "Not Here"}, domain.System); err != nil {
+	if _, err := library.AddNeverAdd(ctx, e.s, mediafiles.NeverAdd{Kind: "show", SourceIDs: map[string]string{"tmdb": "700003"}, Name: "Not Here"}, domain.System); err != nil {
 		t.Fatal(err)
 	}
 	// Gull Watch is in the Library already, added by hand.

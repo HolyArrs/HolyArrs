@@ -10,21 +10,23 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
 )
 
-func deleteWorld(t *testing.T) (*Service, *database.Store, domain.LibraryFolder, int64, [3]domain.File) {
+func deleteWorld(t *testing.T) (*Service, *database.Store, mediafiles.LibraryFolder, int64, [3]mediafiles.File) {
 	t.Helper()
 	svc, s, lf, id := renameWorld(t)
 	imp := putFile(t, s, lf, id, "Dune - Part Two (2024)/Dune - Part Two (2024) 1080p BluRay.mkv", "Dune.Part.Two.2024.1080p.BluRay-HOLYARRS", "imported")
 	ado := putFile(t, s, lf, id, "Dune - Part Two (2024)/old copy.mkv", "Dune.Part.Two.2024.720p.WEB-DL-X", "adopted")
 	fnd := putFile(t, s, lf, id, "Dune - Part Two (2024)/someone else.mkv", "x", "found")
-	return svc, s, lf, id, [3]domain.File{imp, ado, fnd}
+	return svc, s, lf, id, [3]mediafiles.File{imp, ado, fnd}
 }
 
-func onDisk(lf domain.LibraryFolder, rel string) bool {
+func onDisk(lf mediafiles.LibraryFolder, rel string) bool {
 	_, err := os.Stat(filepath.Join(lf.Path, filepath.FromSlash(rel)))
 	return err == nil
 }
@@ -45,13 +47,13 @@ func TestDeleteKeepsFilesByDefault(t *testing.T) {
 			t.Fatalf("%s left the disk", f.RelativePath)
 		}
 	}
-	var ti domain.Title
+	var ti mediafiles.Title
 	_ = database.Get(ctx, s.Read(), "titles", id, &ti)
 	if ti.State != "removed" || ti.KeepUpToDate {
 		t.Fatalf("title %s keep %v", ti.State, ti.KeepUpToDate)
 	}
 	for _, sl := range slotsOf(t, s, id) {
-		if sl.State != domain.SlotRemoved {
+		if sl.State != mediafiles.SlotRemoved {
 			t.Fatalf("slot %s", sl.State)
 		}
 	}

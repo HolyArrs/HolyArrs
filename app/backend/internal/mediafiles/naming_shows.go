@@ -1,4 +1,4 @@
-package naming
+package mediafiles
 
 import (
 	"fmt"
@@ -17,7 +17,7 @@ const (
 // facts plus the episodes one file holds (one, or several in a
 // multi-episode file, all of one season).
 type EpisodeFacts struct {
-	Facts
+	NameFacts
 	Order    string // aired, daily or absolute
 	Season   int
 	Episodes []int
@@ -106,7 +106,7 @@ func episodeTitles(ts []string) string {
 
 // EpisodeFile renders an episode file name (with its extension) from the
 // pattern of the show's episode order, at most MaxComponent bytes.
-func EpisodeFile(s Settings, f EpisodeFacts) string {
+func EpisodeFile(s NamingSettings, f EpisodeFacts) string {
 	s.fillShows()
 	pat := s.EpisodePattern
 	switch {
@@ -115,7 +115,7 @@ func EpisodeFile(s Settings, f EpisodeFacts) string {
 	case f.Order == OrderAbsolute && absoluteCode(f.Absolute, s.AbsoluteDigits) != "":
 		pat = s.AnimePattern
 	}
-	vals := values(f.Facts)
+	vals := values(f.NameFacts)
 	vals["season"] = fmt.Sprint(f.Season)
 	vals["season_padded"] = fmt.Sprintf("%02d", f.Season)
 	vals["episode"] = episodeCode(f.Season, f.Episodes, s.MultiEpisodeStyle)
@@ -132,7 +132,7 @@ func EpisodeFile(s Settings, f EpisodeFacts) string {
 
 // SeasonFolder names the folder of one season ("" when season folders are
 // off); season 0 goes to the specials folder.
-func SeasonFolder(s Settings, season int) string {
+func SeasonFolder(s NamingSettings, season int) string {
 	s.fillShows()
 	if !s.SeasonFolders {
 		return ""
@@ -144,7 +144,7 @@ func SeasonFolder(s Settings, season int) string {
 }
 
 // ShowFolder renders a show folder name from the show folder pattern.
-func ShowFolder(s Settings, f Facts) string {
+func ShowFolder(s NamingSettings, f NameFacts) string {
 	s.fillShows()
 	name := capName(render(s, s.ShowFolderPattern, f), MaxComponent)
 	if name == "" {
@@ -156,6 +156,6 @@ func ShowFolder(s Settings, f Facts) string {
 // EpisodePath is where an episode file goes inside the Library folder,
 // with forward slashes: the show folder, the season folder, the file. An
 // import and a rename both use it, so a rename preview is what a rename does.
-func EpisodePath(s Settings, showFolder string, f EpisodeFacts) string {
+func EpisodePath(s NamingSettings, showFolder string, f EpisodeFacts) string {
 	return path.Join(showFolder, SeasonFolder(s, f.Season), EpisodeFile(s, f))
 }

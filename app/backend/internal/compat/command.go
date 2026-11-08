@@ -11,6 +11,8 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
@@ -106,7 +108,7 @@ func (h *handler) runCommand(ctx context.Context, name string, in commandIn, by 
 	}
 	// searchSlots hand-searches each Slot of the items; one Job per Slot.
 	searchSlots := func(where string, args ...any) error {
-		slots, err := database.Select[domain.Slot](ctx, h.Store.Read(), "slots", where+" ORDER BY id", args...)
+		slots, err := database.Select[mediafiles.Slot](ctx, h.Store.Read(), "slots", where+" ORDER BY id", args...)
 		if err != nil {
 			return err
 		}
@@ -157,7 +159,7 @@ func (h *handler) runCommand(ctx context.Context, name string, in commandIn, by 
 		if err := h.Store.Read().QueryRowContext(ctx, "SELECT id FROM parts WHERE title_id = ? AND kind = 'season' AND number = ?", in.SeriesID, *in.SeasonNumber).Scan(&partID); err != nil {
 			return nil, database.ErrNotFound
 		}
-		vs, err := database.Select[domain.Version](ctx, h.Store.Read(), "versions", "title_id = ? ORDER BY is_main DESC, id", in.SeriesID)
+		vs, err := database.Select[mediafiles.Version](ctx, h.Store.Read(), "versions", "title_id = ? ORDER BY is_main DESC, id", in.SeriesID)
 		if err != nil {
 			return nil, err
 		}

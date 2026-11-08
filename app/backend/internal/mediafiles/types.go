@@ -1,10 +1,14 @@
-package domain
+package mediafiles
 
-import "time"
+import (
+	"time"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+)
 
 // LibraryFolder is a folder on disk where finished files of one kind are kept.
 type LibraryFolder struct {
-	Meta
+	database.Meta
 	Path             string     `db:"path"`
 	Kind             string     `db:"kind"` // movie, show, music
 	Label            string     `db:"label"`
@@ -18,7 +22,7 @@ type LibraryFolder struct {
 
 // Title is one movie, show or artist in the Library.
 type Title struct {
-	Meta
+	database.Meta
 	Kind             string            `db:"kind"` // movie, show, artist
 	Name             string            `db:"name"`
 	SortName         string            `db:"sort_name"`
@@ -80,13 +84,13 @@ type Title struct {
 	Directors []string `db:"directors,json"`
 	// Studio is a movie's first production company.
 	Studio string `db:"studio"`
-	// Tags route this title's grabs and searches (tagset.Allows).
+	// Tags route this title's grabs and searches (Allows).
 	Tags []string `db:"tags,json"`
 }
 
 // NeverAdd is one entry of the Never-add list.
 type NeverAdd struct {
-	Meta
+	database.Meta
 	Kind      string            `db:"kind"` // movie, show, artist
 	SourceIDs map[string]string `db:"source_ids,json"`
 	Name      string            `db:"name"`
@@ -95,7 +99,7 @@ type NeverAdd struct {
 
 // Part is a season of a show or an album of an artist.
 type Part struct {
-	Meta
+	database.Meta
 	TitleID     int64      `db:"title_id"`
 	Kind        string     `db:"kind"` // season, album
 	Number      *int       `db:"number"`
@@ -128,7 +132,7 @@ type Numbers struct {
 
 // Item is the smallest wanted unit. A movie is its own single Item.
 type Item struct {
-	Meta
+	database.Meta
 	TitleID        int64      `db:"title_id"`
 	PartID         *int64     `db:"part_id"`
 	Kind           string     `db:"kind"` // movie, episode, track
@@ -156,7 +160,7 @@ type Item struct {
 
 // Version is one wanted copy of a Title, such as "HD" or "4K".
 type Version struct {
-	Meta
+	database.Meta
 	TitleID         int64    `db:"title_id"`
 	Label           string   `db:"label"`
 	PickRulesID     int64    `db:"pick_rules_id"`
@@ -170,7 +174,7 @@ type Version struct {
 
 // Slot is one Item in one Version; the core loop state lives here.
 type Slot struct {
-	Meta
+	database.Meta
 	ItemID           int64      `db:"item_id"`
 	VersionID        int64      `db:"version_id"`
 	State            SlotState  `db:"state"`
@@ -185,7 +189,7 @@ type Slot struct {
 
 // PickRules is one named rule set. The rule body is a JSON column.
 type PickRules struct {
-	Meta
+	database.Meta
 	Name     string        `db:"name"`
 	Kinds    []string      `db:"kinds,json"`
 	Revision int           `db:"revision"`
@@ -219,15 +223,15 @@ type PlaceResult struct {
 
 // Import is one attempt to place files into the library.
 type Import struct {
-	Meta
-	DownloadID *int64        `db:"download_id"`
-	FromPath   string        `db:"from_path"`
-	Kind       string        `db:"kind"`
-	Plan       []PlanStep    `db:"plan,json"`
-	Mode       string        `db:"mode"` // auto, dry_run, by_hand
-	Result     []PlaceResult `db:"result,json"`
-	DecidedBy  *Actor        `db:"decided_by,json"`
-	State      string        `db:"state"`
+	database.Meta
+	DownloadID *int64          `db:"download_id"`
+	FromPath   string          `db:"from_path"`
+	Kind       string          `db:"kind"`
+	Plan       []PlanStep      `db:"plan,json"`
+	Mode       string          `db:"mode"` // auto, dry_run, by_hand
+	Result     []PlaceResult   `db:"result,json"`
+	DecidedBy  *database.Actor `db:"decided_by,json"`
+	State      string          `db:"state"`
 }
 
 // Quality is our parsed form of a file's quality.
@@ -241,7 +245,7 @@ type Quality struct {
 
 // File is a file on disk that HolyArrs knows about.
 type File struct {
-	Meta
+	database.Meta
 	Protected    bool           `db:"protected"`
 	SlotIDs      []int64        `db:"slot_ids,json"`
 	VersionID    int64          `db:"version_id"`
@@ -261,4 +265,14 @@ type File struct {
 	Role         string         `db:"role"` // main, subtitle, artwork, info, lyrics
 	ParentFileID *int64         `db:"parent_file_id"`
 	State        string         `db:"state"` // present, missing, gone, replaced
+}
+
+// Pressing is one specific release of an album.
+type Pressing struct {
+	Name       string `json:"name"`
+	TrackCount int    `json:"track_count"`
+	Format     string `json:"format"`
+	Country    string `json:"country"`
+	SourceID   string `json:"source_id"`
+	Preferred  bool   `json:"preferred"`
 }

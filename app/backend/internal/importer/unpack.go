@@ -14,8 +14,9 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/archive"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/unrar"
@@ -227,8 +228,8 @@ func checkTree(root string) error {
 	})
 }
 
-func unpackStep(root, why string) domain.PlanStep {
-	return domain.PlanStep{SourceFile: root, TargetSlotIDs: []int64{}, Method: "refuse", Why: []string{why}}
+func unpackStep(root, why string) mediafiles.PlanStep {
+	return mediafiles.PlanStep{SourceFile: root, TargetSlotIDs: []int64{}, Method: "refuse", Why: []string{why}}
 }
 
 func unpackOthers(ctx context.Context, downloadID int64, root string, firsts []string, rules FileRules) ([]Candidate, func(), string) {

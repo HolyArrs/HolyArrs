@@ -7,6 +7,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
@@ -33,9 +35,9 @@ func TestLab_FakeIndexer(t *testing.T) {
 	if j.State != "done" {
 		t.Fatalf("job %s %+v", j.State, j.Error)
 	}
-	var sl domain.Slot
+	var sl mediafiles.Slot
 	_ = database.Get(context.Background(), f.s.Read(), "slots", f.slotID, &sl)
-	if sl.State != domain.SlotChosen {
+	if sl.State != mediafiles.SlotChosen {
 		t.Fatalf("slot %s %v", sl.State, sl.LastReason)
 	}
 	rels, _ := database.Select[domain.Release](context.Background(), f.s.Read(), "releases", "state = 'chosen'")

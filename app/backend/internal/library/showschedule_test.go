@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 
@@ -37,7 +39,7 @@ func TestShouldRefreshShow(t *testing.T) {
 		{"ended without dates", ago(2 * day), "ended", ShowFacts{}, false, "ended"},
 	}
 	for _, c := range cases {
-		yes, why := ShouldRefreshShow(domain.Title{RefreshedAt: c.fetched, Status: c.status}, c.facts, now)
+		yes, why := ShouldRefreshShow(mediafiles.Title{RefreshedAt: c.fetched, Status: c.status}, c.facts, now)
 		if yes != c.want || why != c.why {
 			t.Errorf("%s: %v %q, want %v %q", c.name, yes, why, c.want, c.why)
 		}
@@ -91,7 +93,7 @@ func TestEpisodeBecomesWantedOnTime(t *testing.T) {
 			t.Fatalf("wait %d: on time: opened %d %v", wait, n, err)
 		}
 		eps := episodes(t, s, id)
-		if eps["S02E02"].State != domain.SlotWanted || eps["S02E03"].State != domain.SlotNotOutYet || !strings.HasPrefix(eps["S02E02"].Reason, "aired 2026-10-19 02:00") {
+		if eps["S02E02"].State != mediafiles.SlotWanted || eps["S02E03"].State != mediafiles.SlotNotOutYet || !strings.HasPrefix(eps["S02E02"].Reason, "aired 2026-10-19 02:00") {
 			t.Fatalf("wait %d: after the air time %+v", wait, eps)
 		}
 		es, _, _ := s.Events(ctx, database.EventFilter{TitleID: id, Kinds: []string{domain.EventGateOpened}})
@@ -127,11 +129,11 @@ func TestNewEpisodeFromRefreshBecomesWanted(t *testing.T) {
 	if err != nil || out.EpisodesAdded != 1 {
 		t.Fatalf("refresh %+v %v", out, err)
 	}
-	if e := episodes(t, s, id)["S02E04"]; e.State != domain.SlotNotOutYet || !e.Keep {
+	if e := episodes(t, s, id)["S02E04"]; e.State != mediafiles.SlotNotOutYet || !e.Keep {
 		t.Fatalf("new episode %+v", e)
 	}
 	c.set("2026-10-13T13:00:00Z")
-	if n, _ := svc.OpenEpisodeGates(ctx); n != 1 || episodes(t, s, id)["S02E04"].State != domain.SlotWanted {
+	if n, _ := svc.OpenEpisodeGates(ctx); n != 1 || episodes(t, s, id)["S02E04"].State != mediafiles.SlotWanted {
 		t.Fatalf("not wanted on time: %d", n)
 	}
 	// A removed show's episodes stay as they are.
@@ -217,7 +219,7 @@ func TestShowRefreshScheduleJob(t *testing.T) {
 	if job.State != "done" || job.Result["refreshed"] != float64(2) || job.Result["dropped"] != float64(1) {
 		t.Fatalf("job %+v", job)
 	}
-	var g domain.Title
+	var g mediafiles.Title
 	_ = database.Get(ctx, s.Read(), "titles", gone, &g)
 	if g.DroppedAt == nil {
 		t.Fatal("the show the source forgot is not flagged")

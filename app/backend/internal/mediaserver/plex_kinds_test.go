@@ -13,6 +13,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
@@ -54,17 +56,17 @@ func addTitle(t *testing.T, w *world, base, libName, kind, name, folder, rel str
 		if kind == "artist" {
 			lfKind = "music"
 		}
-		lf := &domain.LibraryFolder{Path: filepath.Join(base, libName), Kind: lfKind, Label: libName, Health: "ok", SameDiskAs: []int64{}}
+		lf := &mediafiles.LibraryFolder{Path: filepath.Join(base, libName), Kind: lfKind, Label: libName, Health: "ok", SameDiskAs: []int64{}}
 		if _, err := database.Insert(tx, "library_folders", lf, domain.System); err != nil {
 			return err
 		}
-		ti := &domain.Title{Kind: kind, GateDriver: "none", Name: name, SortName: strings.ToLower(name), MetadataSource: "local", NewPartsPolicy: "all",
+		ti := &mediafiles.Title{Kind: kind, GateDriver: "none", Name: name, SortName: strings.ToLower(name), MetadataSource: "local", NewPartsPolicy: "all",
 			ReleaseGate: "released", WhyAdded: "by_hand", Status: "running", State: "active", SourceIDs: map[string]string{}, Aliases: []string{}, MusicTypes: []string{}, Artwork: []string{}}
 		if _, err := database.Insert(tx, "titles", ti, domain.System); err != nil {
 			return err
 		}
 		titleID = ti.ID
-		v := &domain.Version{TitleID: ti.ID, Label: "Main", PickRulesID: pr, LibraryFolderID: lf.ID, FolderName: folder, IsMain: true}
+		v := &mediafiles.Version{TitleID: ti.ID, Label: "Main", PickRulesID: pr, LibraryFolderID: lf.ID, FolderName: folder, IsMain: true}
 		if _, err := database.Insert(tx, "versions", v, domain.System); err != nil {
 			return err
 		}
@@ -73,16 +75,16 @@ func addTitle(t *testing.T, w *world, base, libName, kind, name, folder, rel str
 		if kind == "artist" {
 			itemKind = "track"
 		}
-		it := &domain.Item{TitleID: ti.ID, Kind: itemKind, Numbers: domain.Numbers{Track: &one}, SourceIDs: map[string]string{}}
+		it := &mediafiles.Item{TitleID: ti.ID, Kind: itemKind, Numbers: mediafiles.Numbers{Track: &one}, SourceIDs: map[string]string{}}
 		if _, err := database.Insert(tx, "items", it, domain.System); err != nil {
 			return err
 		}
-		sl := &domain.Slot{ItemID: it.ID, VersionID: v.ID, State: domain.SlotInLibrary}
+		sl := &mediafiles.Slot{ItemID: it.ID, VersionID: v.ID, State: mediafiles.SlotInLibrary}
 		if _, err := database.Insert(tx, "slots", sl, domain.System); err != nil {
 			return err
 		}
 		slotID = sl.ID
-		f := &domain.File{SlotIDs: []int64{sl.ID}, VersionID: v.ID, RelativePath: rel, Languages: []string{}, MediaInfo: map[string]any{}, Origin: "imported",
+		f := &mediafiles.File{SlotIDs: []int64{sl.ID}, VersionID: v.ID, RelativePath: rel, Languages: []string{}, MediaInfo: map[string]any{}, Origin: "imported",
 			PlacedBy: "hardlink", Role: "main", State: "present"}
 		if _, err := database.Insert(tx, "files", f, domain.System); err != nil {
 			return err

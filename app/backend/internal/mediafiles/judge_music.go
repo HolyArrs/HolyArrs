@@ -1,16 +1,15 @@
-package judge
+package mediafiles
 
 import (
 	"fmt"
 	"strings"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
 // hintsFor reads stored names as music when the Pick rules judge music.
-func hintsFor(rules domain.PickRulesBody) releasename.Hints {
-	return releasename.Hints{Music: domain.IsMusicRules(rules)}
+func hintsFor(rules PickRulesBody) releasename.Hints {
+	return releasename.Hints{Music: IsMusicRules(rules)}
 }
 
 // musicStep maps what a music name says to a music ladder step
@@ -145,7 +144,7 @@ func matchArtist(p releasename.Result, lib []TitleRef) Match {
 		}
 	}
 	if m.Various {
-		return Match{Conf: releasename.Unknown, Detail: "a various artists Release; it names no single artist"}
+		return Match{Conf: releasename.Unknown, Detail: "a various artists ReleaseFacts; it names no single artist"}
 	}
 	return Match{Conf: releasename.Unknown, Detail: fmt.Sprintf("no artist in the library is called %q", m.Artist)}
 }

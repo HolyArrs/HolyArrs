@@ -1,4 +1,4 @@
-package judge
+package mediafiles
 
 import (
 	"fmt"
@@ -9,11 +9,10 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
-// Release is what the judge needs to know about one search result.
-type Release struct {
+// ReleaseFacts is what the judge needs to know about one search result.
+type ReleaseFacts struct {
 	Name           string
 	Parse          releasename.Result
 	Size           int64
@@ -62,7 +61,7 @@ type SlotSet struct {
 	Match          Match
 	SlotIDs        []int64
 	RuntimeMinutes int
-	Out            bool // the Release gate is open (movies) or the air date passed
+	Out            bool // the ReleaseFacts gate is open (movies) or the air date passed
 	MinSeeders     *int
 	TurnedDown     []string // names or info hashes turned down for these Slots
 	Current        *Current
@@ -89,9 +88,9 @@ type SlotSet struct {
 // Checks turn on the early and fake-size checks (settings
 // refuse_early_releases, early_release_grace_hours, refuse_tiny_releases).
 type Checks struct {
-	Early bool          // a Release posted before OutSince (less Grace) is refused
+	Early bool          // a ReleaseFacts posted before OutSince (less Grace) is refused
 	Grace time.Duration // time zones and early air times
-	Tiny  bool          // a Release far too small for what it says it holds is refused
+	Tiny  bool          // a ReleaseFacts far too small for what it says it holds is refused
 	// HoldUnknown holds a Release whose size or dates are not known for a
 	// person's choice in automatic searches; off, it only warns.
 	HoldUnknown bool
@@ -202,7 +201,7 @@ var safetyTraits = map[string]bool{"sample": true, "executable": true, "password
 // traitMatches says whether a named Trait matches. Points Traits need a sure
 // field (a "likely" web_dl from a bare "WEB" earns nothing).
 func traitMatches(trait string, p releasename.Result) (bool, string) {
-	if id, ok := domain.OwnTraitID(trait); ok {
+	if id, ok := OwnTraitID(trait); ok {
 		return ownMatches(id, p)
 	}
 	if p.Music != nil {
@@ -282,7 +281,7 @@ func StepFor(p releasename.Result) string {
 	return ""
 }
 
-func stepIndex(rules domain.PickRulesBody, name string) int {
+func stepIndex(rules PickRulesBody, name string) int {
 	for i, s := range rules.Steps {
 		if s.Quality == name {
 			return i
@@ -291,7 +290,7 @@ func stepIndex(rules domain.PickRulesBody, name string) int {
 	return -1
 }
 
-func sizeLimit(rules domain.PickRulesBody, step string) (domain.SizeLimit, bool) {
+func sizeLimit(rules PickRulesBody, step string) (SizeLimit, bool) {
 	if l, ok := rules.SizeLimits[step]; ok {
 		return l, true
 	}
@@ -316,7 +315,7 @@ func saturatingPositiveMul(n int64, factor int) int64 {
 	return n * f
 }
 
-func scaledSizeLimit(l domain.SizeLimit, runtime int) (int64, int64) {
+func scaledSizeLimit(l SizeLimit, runtime int) (int64, int64) {
 	lo, hi := l.Min, l.Max
 	if !l.PerMinute {
 		return lo, hi
@@ -332,7 +331,7 @@ func sizeMidpoint(lo, hi int64) int64 { return lo + (hi-lo)/2 }
 
 // Judge runs the pipeline of pick-rules.md section 3.1 for one Release.
 // Hard steps all run so every refusal is reported at once.
-func Judge(rel Release, set SlotSet, rules domain.PickRulesBody) Verdict {
+func Judge(rel ReleaseFacts, set SlotSet, rules PickRulesBody) Verdict {
 	p := rel.Parse
 	v := Verdict{SlotIDs: set.SlotIDs}
 
@@ -406,14 +405,14 @@ func Judge(rel Release, set SlotSet, rules domain.PickRulesBody) Verdict {
 		v.add("hard", "gate", "fail", set.GateDetail, 0)
 	case set.HandSearch:
 		// A single-Item search by a person may skip the gate, and it says so.
-		v.add("hard", "gate_skipped", "warn", "the Title is not out yet; the Release gate is skipped because a person searched for it", 0)
+		v.add("hard", "gate_skipped", "warn", "the Title is not out yet; the ReleaseFacts gate is skipped because a person searched for it", 0)
 	case set.SkipGate:
-		v.add("hard", "gate_skipped", "warn", "the Title is not out yet; the Release gate is skipped because bulk searches are set to skip it", 0)
+		v.add("hard", "gate_skipped", "warn", "the Title is not out yet; the ReleaseFacts gate is skipped because bulk searches are set to skip it", 0)
 	default:
 		v.add("hard", "gate", "fail", "the Title is not out yet", 0)
 	}
 	if slices.Contains(set.TurnedDown, rel.Name) || (rel.InfoHash != "" && slices.Contains(set.TurnedDown, rel.InfoHash)) {
-		v.add("hard", "turned_down", "fail", "this Release was turned down for this Slot before", 0)
+		v.add("hard", "turned_down", "fail", "this ReleaseFacts was turned down for this Slot before", 0)
 	} else {
 		v.add("hard", "turned_down", "pass", "not turned down before", 0)
 	}
@@ -512,7 +511,7 @@ func hasFail(v Verdict, step, prefix string) bool {
 	return false
 }
 
-func sumPoints(p releasename.Result, rules domain.PickRulesBody) int {
+func sumPoints(p releasename.Result, rules PickRulesBody) int {
 	n := 0
 	for _, tp := range rules.Traits {
 		if ok, _ := traitMatches(tp.Trait, p); ok {
@@ -522,7 +521,7 @@ func sumPoints(p releasename.Result, rules domain.PickRulesBody) int {
 	return n
 }
 
-func (v *Verdict) safety(rel Release, rules domain.PickRulesBody, step string, set SlotSet) {
+func (v *Verdict) safety(rel ReleaseFacts, rules PickRulesBody, step string, set SlotSet) {
 	p := rel.Parse
 	runtime := set.RuntimeMinutes
 	start := len(v.Reasons)
@@ -572,7 +571,7 @@ func (v *Verdict) safety(rel Release, rules domain.PickRulesBody, step string, s
 	}
 }
 
-func (v *Verdict) size(rel Release, rules domain.PickRulesBody, step string, runtime int) {
+func (v *Verdict) size(rel ReleaseFacts, rules PickRulesBody, step string, runtime int) {
 	l, ok := sizeLimit(rules, step)
 	if !ok {
 		v.add("hard", "size", "pass", "no size limits", 0)
@@ -613,7 +612,7 @@ func (v *Verdict) size(rel Release, rules domain.PickRulesBody, step string, run
 var langNames = map[string]string{"en": "English", "fr": "French", "de": "German", "it": "Italian",
 	"es": "Spanish", "ru": "Russian", "ja": "Japanese", "ko": "Korean"}
 
-func (v *Verdict) language(p releasename.Result, rules domain.PickRulesBody, t *TitleRef) {
+func (v *Verdict) language(p releasename.Result, rules PickRulesBody, t *TitleRef) {
 	langs := p.Languages
 	if len(langs) == 0 {
 		v.add("hard", "language", "warn", "no language in the name; assumed the original language", 0)
@@ -647,7 +646,7 @@ func langName(code string) string {
 // better applies pick-rules.md section 4. A fix of the same step counts
 // first under take_any (decision of 2026-10-12, mirroring the common
 // default), so a proper replaces a copy that is already good enough.
-func (v *Verdict) better(rel Release, rules domain.PickRulesBody, cur *Current, idx, points int) {
+func (v *Verdict) better(rel ReleaseFacts, rules PickRulesBody, cur *Current, idx, points int) {
 	curIdx := stepIndex(rules, cur.Step)
 	p := rel.Parse
 	pol := rules.ProperPolicy
@@ -705,15 +704,15 @@ func seederBand(s *int) int {
 // Rank orders the passed Verdicts (section 3.2). The first becomes chosen
 // (unless it is held) and each loser gets a reason naming the key it lost on.
 // rels and vs are parallel.
-func Rank(rels []Release, vs []Verdict, rules domain.PickRulesBody) { rank(rels, vs, rules, false) }
+func Rank(rels []ReleaseFacts, vs []Verdict, rules PickRulesBody) { rank(rels, vs, rules, false) }
 
 // RankPacksFirst ranks like Rank, but a passing season pack comes before
 // any Release that is not one (setting season_pack_prefer = always).
-func RankPacksFirst(rels []Release, vs []Verdict, rules domain.PickRulesBody) {
+func RankPacksFirst(rels []ReleaseFacts, vs []Verdict, rules PickRulesBody) {
 	rank(rels, vs, rules, true)
 }
 
-func rank(rels []Release, vs []Verdict, rules domain.PickRulesBody, packsFirst bool) {
+func rank(rels []ReleaseFacts, vs []Verdict, rules PickRulesBody, packsFirst bool) {
 	var idx []int
 	for i := range vs {
 		if vs[i].Passed {
@@ -818,7 +817,7 @@ func rank(rels []Release, vs []Verdict, rules domain.PickRulesBody, packsFirst b
 // ReachesGoodEnough reports whether a file with this release name meets the
 // rules' Good enough step (and points, when set). It is used when the Pick
 // rules of a Version change.
-func ReachesGoodEnough(releaseName string, rules domain.PickRulesBody) bool {
+func ReachesGoodEnough(releaseName string, rules PickRulesBody) bool {
 	p := releasename.Parse(releaseName, hintsFor(rules))
 	idx := stepIndex(rules, StepFor(p))
 	if idx < 0 || idx < stepIndex(rules, rules.GoodEnoughAt) {
@@ -829,14 +828,14 @@ func ReachesGoodEnough(releaseName string, rules domain.PickRulesBody) bool {
 
 // CurrentOf describes a File already in the Library from its release name,
 // for the "better than what we have" step (pick-rules.md section 4).
-func CurrentOf(releaseName string, importedAt time.Time, rules domain.PickRulesBody) Current {
+func CurrentOf(releaseName string, importedAt time.Time, rules PickRulesBody) Current {
 	p := releasename.Parse(releaseName, hintsFor(rules))
 	return Current{Step: StepFor(p), Points: sumPoints(p, rules), Group: p.Group.Value, Fix: p.Fix, ImportedAt: importedAt}
 }
 
 // StepOf is the ladder step a name parses to and its place in the rules'
 // ladder (-1 when the step is unknown or not on the ladder).
-func StepOf(name string, rules domain.PickRulesBody) (string, int) {
+func StepOf(name string, rules PickRulesBody) (string, int) {
 	step := StepFor(releasename.Parse(name, hintsFor(rules)))
 	if step == "" {
 		return "", -1

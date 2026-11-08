@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
@@ -24,17 +26,17 @@ func presetID(t *testing.T, s *database.Store, name string) int64 {
 func TestPickRulesCreateUpdateDelete(t *testing.T) {
 	s := open(t)
 	ctx := context.Background()
-	in := PickRulesInput{Name: "Small files", Kinds: []string{"movie"}, Body: domain.GoodEveryday()}
+	in := PickRulesInput{Name: "Small files", Kinds: []string{"movie"}, Body: mediafiles.GoodEveryday()}
 	p, err := CreatePickRules(ctx, s, in, domain.System)
 	if err != nil || p.ID == 0 || p.Revision != 1 || p.Preset {
 		t.Fatalf("create: %+v %v", p, err)
 	}
-	if _, err := CreatePickRules(ctx, s, PickRulesInput{Name: "small FILES", Kinds: []string{"movie"}, Body: domain.GoodEveryday()}, domain.System); !errors.Is(err, ErrPickRulesName) {
+	if _, err := CreatePickRules(ctx, s, PickRulesInput{Name: "small FILES", Kinds: []string{"movie"}, Body: mediafiles.GoodEveryday()}, domain.System); !errors.Is(err, ErrPickRulesName) {
 		t.Fatalf("taken name: %v", err)
 	}
 	bad := in
 	bad.Body.Order = "random"
-	var fe *domain.FieldError
+	var fe *mediafiles.FieldError
 	if _, err := CreatePickRules(ctx, s, bad, domain.System); !errors.As(err, &fe) || fe.Field != "body.order" {
 		t.Fatalf("bad body: %v", err)
 	}
@@ -58,16 +60,16 @@ func TestPickRulesCreateUpdateDelete(t *testing.T) {
 func TestPickRulesPresetLock(t *testing.T) {
 	s := open(t)
 	ctx := context.Background()
-	id := presetID(t, s, domain.GoodEverydayName)
-	body := domain.GoodEveryday()
+	id := presetID(t, s, mediafiles.GoodEverydayName)
+	body := mediafiles.GoodEveryday()
 	body.MinPoints = 7
 	if _, err := UpdatePickRules(ctx, s, id, PickRulesInput{Name: "Renamed", Kinds: []string{"movie", "show"}, Body: body}, domain.System); !errors.Is(err, ErrPresetLocked) {
 		t.Fatalf("rename preset: %v", err)
 	}
-	if _, err := UpdatePickRules(ctx, s, id, PickRulesInput{Name: domain.GoodEverydayName, Kinds: []string{"movie"}, Body: body}, domain.System); !errors.Is(err, ErrPresetLocked) {
+	if _, err := UpdatePickRules(ctx, s, id, PickRulesInput{Name: mediafiles.GoodEverydayName, Kinds: []string{"movie"}, Body: body}, domain.System); !errors.Is(err, ErrPresetLocked) {
 		t.Fatalf("narrow preset kinds: %v", err)
 	}
-	var p domain.PickRules
+	var p mediafiles.PickRules
 	_ = database.Get(ctx, s.Read(), "pick_rules", id, &p)
 	p2, err := UpdatePickRules(ctx, s, id, PickRulesInput{Name: p.Name, Kinds: p.Kinds, Body: body}, domain.System)
 	if err != nil || p2.Body.MinPoints != 7 || !p2.Preset {
@@ -81,7 +83,7 @@ func TestPickRulesPresetLock(t *testing.T) {
 func TestPickRulesUseCountsEveryReference(t *testing.T) {
 	s := open(t)
 	ctx := context.Background()
-	p, err := CreatePickRules(ctx, s, PickRulesInput{Name: "Mine", Kinds: []string{"movie", "show"}, Body: domain.GoodEveryday()}, domain.System)
+	p, err := CreatePickRules(ctx, s, PickRulesInput{Name: "Mine", Kinds: []string{"movie", "show"}, Body: mediafiles.GoodEveryday()}, domain.System)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -123,11 +125,11 @@ func TestPickRulesUseCountsEveryReference(t *testing.T) {
 		t.Fatalf("delete in use: %v", err)
 	}
 	// Dropping show, which the show ask setting and show default use, is refused.
-	if _, err := UpdatePickRules(ctx, s, p.ID, PickRulesInput{Name: "Mine", Kinds: []string{"movie"}, Body: domain.GoodEveryday()}, domain.System); !errors.Is(err, ErrPickRulesInUse) {
+	if _, err := UpdatePickRules(ctx, s, p.ID, PickRulesInput{Name: "Mine", Kinds: []string{"movie"}, Body: mediafiles.GoodEveryday()}, domain.System); !errors.Is(err, ErrPickRulesInUse) {
 		t.Fatalf("drop used kind: %v", err)
 	}
 	// Switching to the music ladder is refused.
-	if _, err := UpdatePickRules(ctx, s, p.ID, PickRulesInput{Name: "Mine", Kinds: []string{"music"}, Body: domain.LosslessFirst()}, domain.System); !errors.Is(err, ErrPickRulesInUse) {
+	if _, err := UpdatePickRules(ctx, s, p.ID, PickRulesInput{Name: "Mine", Kinds: []string{"music"}, Body: mediafiles.LosslessFirst()}, domain.System); !errors.Is(err, ErrPickRulesInUse) {
 		t.Fatalf("switch ladder: %v", err)
 	}
 }
@@ -135,12 +137,12 @@ func TestPickRulesUseCountsEveryReference(t *testing.T) {
 func TestPickRulesUnusedKindMayBeDropped(t *testing.T) {
 	s := open(t)
 	ctx := context.Background()
-	p, _ := CreatePickRules(ctx, s, PickRulesInput{Name: "Mine", Kinds: []string{"movie", "show"}, Body: domain.GoodEveryday()}, domain.System)
+	p, _ := CreatePickRules(ctx, s, PickRulesInput{Name: "Mine", Kinds: []string{"movie", "show"}, Body: mediafiles.GoodEveryday()}, domain.System)
 	addFolder(t, s)
 	if _, err := AddMovie(ctx, s, dune, AddOptions{PickRulesID: p.ID}, nil, now, domain.System); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := UpdatePickRules(ctx, s, p.ID, PickRulesInput{Name: "Mine", Kinds: []string{"movie"}, Body: domain.GoodEveryday()}, domain.System); err != nil {
+	if _, err := UpdatePickRules(ctx, s, p.ID, PickRulesInput{Name: "Mine", Kinds: []string{"movie"}, Body: mediafiles.GoodEveryday()}, domain.System); err != nil {
 		t.Fatalf("drop unused show: %v", err)
 	}
 }
@@ -151,7 +153,7 @@ func TestPickRulesUsesMatchesOneByOne(t *testing.T) {
 	s := open(t)
 	ctx := context.Background()
 	mk := func(name string) int64 {
-		p, err := CreatePickRules(ctx, s, PickRulesInput{Name: name, Kinds: []string{"movie", "show"}, Body: domain.GoodEveryday()}, domain.System)
+		p, err := CreatePickRules(ctx, s, PickRulesInput{Name: name, Kinds: []string{"movie", "show"}, Body: mediafiles.GoodEveryday()}, domain.System)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -191,7 +193,7 @@ func TestPickRulesUsesMatchesOneByOne(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	ps, err := database.Select[domain.PickRules](ctx, s.Read(), "pick_rules", "1=1 ORDER BY id")
+	ps, err := database.Select[mediafiles.PickRules](ctx, s.Read(), "pick_rules", "1=1 ORDER BY id")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -220,8 +222,8 @@ func TestPickRulesUsedByShowList(t *testing.T) {
 	s := open(t)
 	ctx := context.Background()
 	lf := addShowFolder(t, s)
-	showOnly, _ := CreatePickRules(ctx, s, PickRulesInput{Name: "Shows only", Kinds: []string{"show"}, Body: domain.GoodEveryday()}, domain.System)
-	both, _ := CreatePickRules(ctx, s, PickRulesInput{Name: "Both", Kinds: []string{"movie", "show"}, Body: domain.GoodEveryday()}, domain.System)
+	showOnly, _ := CreatePickRules(ctx, s, PickRulesInput{Name: "Shows only", Kinds: []string{"show"}, Body: mediafiles.GoodEveryday()}, domain.System)
+	both, _ := CreatePickRules(ctx, s, PickRulesInput{Name: "Both", Kinds: []string{"movie", "show"}, Body: mediafiles.GoodEveryday()}, domain.System)
 	err := s.Write(ctx, func(tx *sql.Tx) error {
 		_, err := tx.Exec(fmt.Sprintf(`INSERT INTO outside_lists(created_at, created_by, updated_at, updated_by, name, kind, title_kind, ref, library_folder_id, pick_rules_id)
 			VALUES ('x', '{}', 'x', '{}', 'S1', 'tmdb_list', 'show', '1', %d, %d), ('x', '{}', 'x', '{}', 'S2', 'tmdb_list', 'show', '2', %d, %d)`, lf.ID, showOnly.ID, lf.ID, both.ID))
@@ -233,13 +235,13 @@ func TestPickRulesUsedByShowList(t *testing.T) {
 	if u, err := PickRulesUse(ctx, s, showOnly.ID); err != nil || u.OutsideLists != 1 {
 		t.Fatalf("use %+v %v", u, err)
 	}
-	if _, err := UpdatePickRules(ctx, s, showOnly.ID, PickRulesInput{Name: "Shows only, renamed", Kinds: []string{"show"}, Body: domain.GoodEveryday()}, domain.System); err != nil {
+	if _, err := UpdatePickRules(ctx, s, showOnly.ID, PickRulesInput{Name: "Shows only, renamed", Kinds: []string{"show"}, Body: mediafiles.GoodEveryday()}, domain.System); err != nil {
 		t.Fatalf("edit show-only rules used by a show list: %v", err)
 	}
-	if _, err := UpdatePickRules(ctx, s, both.ID, PickRulesInput{Name: "Both", Kinds: []string{"movie"}, Body: domain.GoodEveryday()}, domain.System); !errors.Is(err, ErrPickRulesInUse) {
+	if _, err := UpdatePickRules(ctx, s, both.ID, PickRulesInput{Name: "Both", Kinds: []string{"movie"}, Body: mediafiles.GoodEveryday()}, domain.System); !errors.Is(err, ErrPickRulesInUse) {
 		t.Fatalf("dropped show while a show list uses it: %v", err)
 	}
-	if _, err := UpdatePickRules(ctx, s, both.ID, PickRulesInput{Name: "Both", Kinds: []string{"show"}, Body: domain.GoodEveryday()}, domain.System); err != nil {
+	if _, err := UpdatePickRules(ctx, s, both.ID, PickRulesInput{Name: "Both", Kinds: []string{"show"}, Body: mediafiles.GoodEveryday()}, domain.System); err != nil {
 		t.Fatalf("drop unused movie: %v", err)
 	}
 }

@@ -9,6 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
@@ -39,7 +41,7 @@ func TestProtectedMovieRemovalNeedsExplicitDeleteAcknowledgement(t *testing.T) {
 	if _, err := svc.Remove(ctx, titleID, RemoveChoice{DeleteFiles: true}, true, domain.System); !errors.Is(err, ErrProtectedCopy) {
 		t.Fatalf("remove error %v", err)
 	}
-	var title domain.Title
+	var title mediafiles.Title
 	if err := database.Get(ctx, s.Read(), "titles", titleID, &title); err != nil {
 		t.Fatal(err)
 	}
@@ -136,7 +138,7 @@ func TestKeepAndAddVersionRequiresExplicitChoicesAndIsAtomic(t *testing.T) {
 	if !fileRow(t, s, f.ID).Protected || version.FolderName != "Dune Part Two 4K" || version.PickRulesID != fourKRules(t, s) || version.LibraryFolderID != other.ID || version.Edition != "Director's Cut" || len(version.AudioLanguages) != 2 {
 		t.Fatalf("file=%+v version=%+v", fileRow(t, s, f.ID), version)
 	}
-	if slots := slotsOf(t, s, titleID); len(slots) != 2 || slots[1].VersionID != version.ID || slots[1].State != domain.SlotWanted {
+	if slots := slotsOf(t, s, titleID); len(slots) != 2 || slots[1].VersionID != version.ID || slots[1].State != mediafiles.SlotWanted {
 		t.Fatalf("slots %+v", slots)
 	}
 }

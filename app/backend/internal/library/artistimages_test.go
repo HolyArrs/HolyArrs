@@ -10,6 +10,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 
@@ -62,7 +64,7 @@ func withPictures(t *testing.T, svc *Service, srv *httptest.Server) {
 
 func artworkOf(t *testing.T, s *database.Store, id int64) []string {
 	t.Helper()
-	var ti domain.Title
+	var ti mediafiles.Title
 	if err := database.Get(context.Background(), s.Read(), "titles", id, &ti); err != nil {
 		t.Fatal(err)
 	}

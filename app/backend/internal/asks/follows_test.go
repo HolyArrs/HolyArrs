@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/alerts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
@@ -112,11 +114,11 @@ func TestFollowArtistGetsNewAlbumNotices(t *testing.T) {
 			return err
 		}
 		one := 1
-		it := &domain.Item{TitleID: tid, PartID: &partID, Kind: "track", Numbers: domain.Numbers{Track: &one}, SourceIDs: map[string]string{}}
+		it := &mediafiles.Item{TitleID: tid, PartID: &partID, Kind: "track", Numbers: mediafiles.Numbers{Track: &one}, SourceIDs: map[string]string{}}
 		if _, err := database.Insert(tx, "items", it, domain.System); err != nil {
 			return err
 		}
-		id, err := database.Insert(tx, "slots", &domain.Slot{ItemID: it.ID, VersionID: versionID, State: domain.SlotWanted}, domain.System)
+		id, err := database.Insert(tx, "slots", &mediafiles.Slot{ItemID: it.ID, VersionID: versionID, State: mediafiles.SlotWanted}, domain.System)
 		slots = append(slots, id)
 		return err
 	})

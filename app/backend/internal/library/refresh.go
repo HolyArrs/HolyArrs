@@ -10,16 +10,17 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // lookupID is the id the metadata provider is asked for.
-func lookupID(t domain.Title) string {
+func lookupID(t mediafiles.Title) string {
 	if id := t.SourceIDs["tmdb"]; id != "" {
 		return "tmdb:" + id
 	}
@@ -43,7 +44,7 @@ type RefreshOutcome struct {
 // metadata source no longer knows is flagged (dropped_at), never deleted.
 func (s *Service) RefreshTitle(ctx context.Context, titleID int64, by domain.Actor, jobID *int64) (RefreshOutcome, error) {
 	var out RefreshOutcome
-	var t domain.Title
+	var t mediafiles.Title
 	if err := database.Get(ctx, s.Store.Read(), "titles", titleID, &t); err != nil {
 		return out, err
 	}
@@ -130,8 +131,8 @@ func groupKey(titleID int64) string { return "title:" + strconv.FormatInt(titleI
 
 // applyGateTx moves the Title's Slots across its gate: not_out_yet to wanted
 // once open, and wanted back to not_out_yet when the gate moved later.
-func applyGateTx(ctx context.Context, tx *sql.Tx, t domain.Title, now time.Time, by domain.Actor) (opened, closed []int64, err error) {
-	slots, err := database.Select[domain.Slot](ctx, tx, "slots",
+func applyGateTx(ctx context.Context, tx *sql.Tx, t mediafiles.Title, now time.Time, by domain.Actor) (opened, closed []int64, err error) {
+	slots, err := database.Select[mediafiles.Slot](ctx, tx, "slots",
 		"item_id IN (SELECT id FROM items WHERE title_id = ?) AND state IN ('not_out_yet', 'wanted')", t.ID)
 	if err != nil {
 		return nil, nil, err
@@ -140,13 +141,13 @@ func applyGateTx(ctx context.Context, tx *sql.Tx, t domain.Title, now time.Time,
 	reason := gateReason(t.GateDriver, t.GateOpensAt)
 	for _, sl := range slots {
 		switch {
-		case open && sl.State == domain.SlotNotOutYet:
-			if err := store.MoveSlotTx(tx, sl.ID, domain.SlotWanted, reason, by); err != nil {
+		case open && sl.State == mediafiles.SlotNotOutYet:
+			if err := mediafiles.MoveSlotTx(tx, sl.ID, mediafiles.SlotWanted, reason, by); err != nil {
 				return nil, nil, err
 			}
 			opened = append(opened, sl.ID)
-		case !open && sl.State == domain.SlotWanted:
-			if err := store.MoveSlotTx(tx, sl.ID, domain.SlotNotOutYet, reason, by); err != nil {
+		case !open && sl.State == mediafiles.SlotWanted:
+			if err := mediafiles.MoveSlotTx(tx, sl.ID, mediafiles.SlotNotOutYet, reason, by); err != nil {
 				return nil, nil, err
 			}
 			closed = append(closed, sl.ID)
@@ -159,20 +160,20 @@ func applyGateTx(ctx context.Context, tx *sql.Tx, t domain.Title, now time.Time,
 	return opened, closed, nil
 }
 
-func (s *Service) gateEvents(ctx context.Context, t domain.Title, opened, closed []int64, by domain.Actor, jobID *int64) {
+func (s *Service) gateEvents(ctx context.Context, t mediafiles.Title, opened, closed []int64, by domain.Actor, jobID *int64) {
 	for _, id := range opened {
 		slot := id
 		s.event(ctx, &domain.Event{Actor: by, Kind: domain.EventGateOpened, TitleID: &t.ID, SlotID: &slot, JobID: jobID,
 			Summary: t.Name + " is out: searching may start", Data: map[string]any{"gate_driver": t.GateDriver, "gate_opens_at": t.GateOpensAt},
 			GroupKey: groupKey(t.ID)})
-		s.publish("slot", map[string]any{"id": slot, "state": domain.SlotWanted})
+		s.publish("slot", map[string]any{"id": slot, "state": mediafiles.SlotWanted})
 	}
 	for _, id := range closed {
 		slot := id
 		s.event(ctx, &domain.Event{Actor: by, Kind: domain.EventGateClosed, TitleID: &t.ID, SlotID: &slot, JobID: jobID,
 			Summary: t.Name + " is not out yet: " + gateReason(t.GateDriver, t.GateOpensAt),
 			Data:    map[string]any{"gate_driver": t.GateDriver, "gate_opens_at": t.GateOpensAt}, GroupKey: groupKey(t.ID)})
-		s.publish("slot", map[string]any{"id": slot, "state": domain.SlotNotOutYet})
+		s.publish("slot", map[string]any{"id": slot, "state": mediafiles.SlotNotOutYet})
 	}
 }
 

@@ -6,8 +6,9 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 )
 
@@ -83,7 +84,7 @@ func (a *API) librarySummary(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	for i := range missing {
-		var state domain.SlotState
+		var state mediafiles.SlotState
 		if err := db.QueryRowContext(ctx, `SELECT s.state FROM slots s JOIN items i ON i.id = s.item_id
 			WHERE i.title_id = ? ORDER BY s.id LIMIT 1`, missing[i].ID).Scan(&state); err != nil {
 			internal(w, err)
@@ -93,7 +94,7 @@ func (a *API) librarySummary(w http.ResponseWriter, r *http.Request) {
 	}
 	// Recent: the newest titles by date added, for Home's Recently added.
 	recentWhere := strings.ReplaceAll(where, "t.", "") + " ORDER BY created_at DESC, id DESC LIMIT ?"
-	newest, err := database.Select[domain.Title](ctx, db, "titles", recentWhere, append(args, recentMax)...)
+	newest, err := database.Select[mediafiles.Title](ctx, db, "titles", recentWhere, append(args, recentMax)...)
 	if err != nil {
 		internal(w, err)
 		return

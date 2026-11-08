@@ -14,6 +14,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/files"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
@@ -69,11 +71,11 @@ func testWorld(t *testing.T) (options, string) {
 		t.Fatal(err)
 	}
 	err = s.Write(context.Background(), func(tx *sql.Tx) error {
-		if _, err := database.Insert(tx, "library_folders", &domain.LibraryFolder{Path: filepath.Join(o.MediaRoot, "movies"), Kind: "movie", Label: "Movies",
+		if _, err := database.Insert(tx, "library_folders", &mediafiles.LibraryFolder{Path: filepath.Join(o.MediaRoot, "movies"), Kind: "movie", Label: "Movies",
 			Health: "ok", SameDiskAs: []int64{}}, domain.System); err != nil {
 			return err
 		}
-		if _, err := database.Insert(tx, "library_folders", &domain.LibraryFolder{Path: "C:/Program Files/Git/data/media/movies", Kind: "movie", Label: "Movies",
+		if _, err := database.Insert(tx, "library_folders", &mediafiles.LibraryFolder{Path: "C:/Program Files/Git/data/media/movies", Kind: "movie", Label: "Movies",
 			Health: "missing", SameDiskAs: []int64{}}, domain.System); err != nil {
 			return err
 		}

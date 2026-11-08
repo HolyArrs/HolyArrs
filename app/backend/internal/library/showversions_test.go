@@ -9,6 +9,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
@@ -23,7 +25,7 @@ func TestShowVersions(t *testing.T) {
 	ctx := context.Background()
 	lf := addShowFolder(t, s)
 	var fourK int64
-	if err := s.Read().QueryRow("SELECT id FROM pick_rules WHERE name = ?", domain.FourKName).Scan(&fourK); err != nil {
+	if err := s.Read().QueryRow("SELECT id FROM pick_rules WHERE name = ?", mediafiles.FourKName).Scan(&fourK); err != nil {
 		t.Fatal(err)
 	}
 	id, _, err := svc.AddShow(ctx, "tmdb:100", ShowAddOptions{Seasons: SeasonsAll,
@@ -31,14 +33,14 @@ func TestShowVersions(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	vs, _ := database.Select[domain.Version](ctx, s.Read(), "versions", "title_id = ? ORDER BY is_main DESC, id", id)
+	vs, _ := database.Select[mediafiles.Version](ctx, s.Read(), "versions", "title_id = ? ORDER BY is_main DESC, id", id)
 	if len(vs) != 2 || !vs[0].IsMain || vs[1].Label != "4K" || vs[1].PickRulesID != fourK || vs[1].LibraryFolderID != lf.ID ||
 		vs[1].FolderName != vs[0].FolderName+" [4K]" {
 		t.Fatalf("versions %+v", vs)
 	}
-	its, _ := database.Select[domain.Item](ctx, s.Read(), "items", "title_id = ? AND kind = 'episode'", id)
+	its, _ := database.Select[mediafiles.Item](ctx, s.Read(), "items", "title_id = ? AND kind = 'episode'", id)
 	for _, it := range its {
-		sl, _ := database.Select[domain.Slot](ctx, s.Read(), "slots", "item_id = ? ORDER BY version_id", it.ID)
+		sl, _ := database.Select[mediafiles.Slot](ctx, s.Read(), "slots", "item_id = ? ORDER BY version_id", it.ID)
 		if len(sl) != 2 || sl[0].VersionID != vs[0].ID || sl[1].VersionID != vs[1].ID || sl[0].State != sl[1].State {
 			t.Fatalf("episode %d slots %+v", it.ID, sl)
 		}
@@ -105,7 +107,7 @@ func TestShowVersions(t *testing.T) {
 		t.Fatalf("finished download waiting on import: %v", err)
 	}
 	if err := s.Write(ctx, func(tx *sql.Tx) error {
-		_, err := database.Insert(tx, "imports", &domain.Import{DownloadID: &dlID, FromPath: "/x", Kind: "episodes", Plan: []domain.PlanStep{}, Result: []domain.PlaceResult{}, Mode: "auto", State: "done"}, domain.System)
+		_, err := database.Insert(tx, "imports", &mediafiles.Import{DownloadID: &dlID, FromPath: "/x", Kind: "episodes", Plan: []mediafiles.PlanStep{}, Result: []mediafiles.PlaceResult{}, Mode: "auto", State: "done"}, domain.System)
 		return err
 	}); err != nil {
 		t.Fatal(err)
@@ -113,7 +115,7 @@ func TestShowVersions(t *testing.T) {
 	if err := exec("UPDATE slots SET state = 'in_library' WHERE id = ?", slotID); err != nil {
 		t.Fatal(err)
 	}
-	f := &domain.File{SlotIDs: []int64{slotID}, VersionID: vs[1].ID, RelativePath: "Season 01/a.mkv", Size: 1, AddedAt: now, State: "present", Role: "main", Origin: "imported", PlacedBy: "move"}
+	f := &mediafiles.File{SlotIDs: []int64{slotID}, VersionID: vs[1].ID, RelativePath: "Season 01/a.mkv", Size: 1, AddedAt: now, State: "present", Role: "main", Origin: "imported", PlacedBy: "move"}
 	if err := s.Write(ctx, func(tx *sql.Tx) error { _, err := database.Insert(tx, "files", f, domain.System); return err }); err != nil {
 		t.Fatal(err)
 	}
@@ -152,8 +154,8 @@ func TestShowVersionsRename(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	vs, _ := database.Select[domain.Version](ctx, s.Read(), "versions", "title_id = ? ORDER BY is_main DESC, id", id)
-	var put []domain.File
+	vs, _ := database.Select[mediafiles.Version](ctx, s.Read(), "versions", "title_id = ? ORDER BY is_main DESC, id", id)
+	var put []mediafiles.File
 	for i, v := range vs {
 		var slotID int64
 		if err := s.Read().QueryRow(`SELECT s.id FROM slots s JOIN items i ON i.id = s.item_id WHERE s.version_id = ?
@@ -166,7 +168,7 @@ func TestShowVersionsRename(t *testing.T) {
 		}
 		writeFile(t, filepath.Join(lf.Path, filepath.FromSlash(rel)), "video:"+rel)
 		release := strings.TrimSuffix(filepath.Base(rel), ".mkv")
-		f := domain.File{SlotIDs: []int64{slotID}, VersionID: v.ID, RelativePath: rel, Size: 10, AddedAt: now, Languages: []string{},
+		f := mediafiles.File{SlotIDs: []int64{slotID}, VersionID: v.ID, RelativePath: rel, Size: 10, AddedAt: now, Languages: []string{},
 			MediaInfo: map[string]any{"step": step}, ReleaseName: &release, Origin: "imported", PlacedBy: "hardlink", Role: "main", State: "present"}
 		if err := s.Write(ctx, func(tx *sql.Tx) error { _, err := database.Insert(tx, "files", &f, domain.System); return err }); err != nil {
 			t.Fatal(err)

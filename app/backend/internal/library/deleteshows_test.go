@@ -9,6 +9,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
@@ -17,7 +19,7 @@ import (
 // showDeleteWorld adopts the lab show tree (three adopted files: S01E01,
 // S01E02 and the multi-episode S02E01E02) and records the files left alone
 // as found by a rescan.
-func showDeleteWorld(t *testing.T) (*Service, *database.Store, domain.LibraryFolder, int64) {
+func showDeleteWorld(t *testing.T) (*Service, *database.Store, mediafiles.LibraryFolder, int64) {
 	t.Helper()
 	svc, s, _, _ := addShowService(t)
 	ctx := context.Background()
@@ -49,7 +51,7 @@ func TestDeleteShowKeepsFilesAndNeverAdd(t *testing.T) {
 		t.Fatal("a file moved")
 	}
 	for _, sl := range slotsOf(t, s, id) {
-		if sl.State != domain.SlotRemoved || sl.LastReason == nil || *sl.LastReason != "the show was deleted" {
+		if sl.State != mediafiles.SlotRemoved || sl.LastReason == nil || *sl.LastReason != "the show was deleted" {
 			t.Fatalf("slot %+v", sl)
 		}
 	}
@@ -120,11 +122,11 @@ func TestDeleteSeason(t *testing.T) {
 	}
 	eps := episodes(t, s, id)
 	for _, k := range []string{"S02E01", "S02E02"} {
-		if e := eps[k]; e.Keep || e.State != domain.SlotWanted || e.Reason != "its file was deleted" {
+		if e := eps[k]; e.Keep || e.State != mediafiles.SlotWanted || e.Reason != "its file was deleted" {
 			t.Errorf("%s %+v", k, e)
 		}
 	}
-	if e := eps["S01E01"]; !e.Keep || e.State == domain.SlotWanted {
+	if e := eps["S01E01"]; !e.Keep || e.State == mediafiles.SlotWanted {
 		t.Errorf("season 1 changed: %+v", e)
 	}
 	ss, _ := Seasons(ctx, s.Read(), id, now)
@@ -133,7 +135,7 @@ func TestDeleteSeason(t *testing.T) {
 			t.Error("season 2 still kept up to date")
 		}
 	}
-	var ti domain.Title
+	var ti mediafiles.Title
 	_ = database.Get(ctx, s.Read(), "titles", id, &ti)
 	if ti.State == "removed" {
 		t.Error("the show was deleted")

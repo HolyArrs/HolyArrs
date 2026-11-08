@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
@@ -57,9 +59,9 @@ func runFolderCheck(t *testing.T, s *database.Store, q *jobs.Queue, params map[s
 	t.Fatal("folder check never ended")
 }
 
-func storedFolder(t *testing.T, s *database.Store, id int64) domain.LibraryFolder {
+func storedFolder(t *testing.T, s *database.Store, id int64) mediafiles.LibraryFolder {
 	t.Helper()
-	var lf domain.LibraryFolder
+	var lf mediafiles.LibraryFolder
 	if err := database.Get(context.Background(), s.Read(), "library_folders", id, &lf); err != nil {
 		t.Fatal(err)
 	}

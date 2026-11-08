@@ -8,12 +8,14 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
 // adoptedLabBand adopts the lab music folder and adds a found file and an
 // imported file, returning the artist.
-func adoptedLabBand(t *testing.T) (*Service, domain.LibraryFolder, int64) {
+func adoptedLabBand(t *testing.T) (*Service, mediafiles.LibraryFolder, int64) {
 	t.Helper()
 	svc, _, _, lf := musicService(t)
 	labMusicFolder(t, lf.Path)

@@ -5,6 +5,8 @@ import (
 	"encoding/binary"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
@@ -15,7 +17,7 @@ func asLink(v []byte) []byte {
 	return v
 }
 
-func importPacked(t *testing.T, files map[string][]byte) (*domain.Import, world) {
+func importPacked(t *testing.T, files map[string][]byte) (*mediafiles.Import, world) {
 	t.Helper()
 	w := packedWorld(t, files)
 	imp, err := (&Importer{Store: w.s}).Import(context.Background(), w.dlID, false, domain.System)

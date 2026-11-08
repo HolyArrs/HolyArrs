@@ -5,8 +5,9 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 )
 
@@ -19,12 +20,12 @@ type OwnTraitView struct {
 	Terms []string `json:"terms"`
 }
 
-func viewOfOwnTrait(t domain.OwnTrait) OwnTraitView {
+func viewOfOwnTrait(t mediafiles.OwnTrait) OwnTraitView {
 	terms := t.Terms
 	if terms == nil {
 		terms = []string{}
 	}
-	return OwnTraitView{ID: t.ID, Key: domain.OwnTraitKey(t.ID), Name: t.Name, Match: t.Match, Terms: terms}
+	return OwnTraitView{ID: t.ID, Key: mediafiles.OwnTraitKey(t.ID), Name: t.Name, Match: t.Match, Terms: terms}
 }
 
 const ownTraitHelp = `send {"name": "...", "match": "name" or "group", "terms": ["word", "/pattern/"]}`
@@ -39,7 +40,7 @@ func (a *API) ownTraitID(w http.ResponseWriter, r *http.Request) (int64, bool) {
 }
 
 func ownTraitError(w http.ResponseWriter, err error) {
-	var fe *domain.FieldError
+	var fe *mediafiles.FieldError
 	switch {
 	case errors.As(err, &fe):
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": fe.Text, "field": fe.Field})

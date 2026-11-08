@@ -8,6 +8,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
@@ -25,9 +27,9 @@ var (
 
 // PickRulesInput is a new or changed Pick rule.
 type PickRulesInput struct {
-	Name  string               `json:"name"`
-	Kinds []string             `json:"kinds"`
-	Body  domain.PickRulesBody `json:"body"`
+	Name  string                   `json:"name"`
+	Kinds []string                 `json:"kinds"`
+	Body  mediafiles.PickRulesBody `json:"body"`
 }
 
 // Use counts what uses one Pick rule. Requests counts the ask settings and
@@ -150,10 +152,10 @@ func nameTaken(tx *sql.Tx, name string, not int64) error {
 }
 
 // CreatePickRules checks and stores new Pick rules.
-func CreatePickRules(ctx context.Context, st *database.Store, in PickRulesInput, by domain.Actor) (domain.PickRules, error) {
+func CreatePickRules(ctx context.Context, st *database.Store, in PickRulesInput, by domain.Actor) (mediafiles.PickRules, error) {
 	in.Name = strings.TrimSpace(in.Name)
-	p := domain.PickRules{Name: in.Name, Kinds: in.Kinds, Revision: 1, Body: in.Body}
-	if err := domain.CheckPickRules(in.Name, in.Kinds, in.Body); err != nil {
+	p := mediafiles.PickRules{Name: in.Name, Kinds: in.Kinds, Revision: 1, Body: in.Body}
+	if err := mediafiles.CheckPickRules(in.Name, in.Kinds, in.Body); err != nil {
 		return p, err
 	}
 	err := st.Write(ctx, func(tx *sql.Tx) error {
@@ -173,10 +175,10 @@ func CreatePickRules(ctx context.Context, st *database.Store, in PickRulesInput,
 // rule keeps its name and kinds; a rule in use keeps every kind something
 // uses and its ladder. then, when given, runs in the same transaction after
 // the change.
-func UpdatePickRules(ctx context.Context, st *database.Store, id int64, in PickRulesInput, by domain.Actor, then ...func(tx *sql.Tx) error) (domain.PickRules, error) {
+func UpdatePickRules(ctx context.Context, st *database.Store, id int64, in PickRulesInput, by domain.Actor, then ...func(tx *sql.Tx) error) (mediafiles.PickRules, error) {
 	in.Name = strings.TrimSpace(in.Name)
-	var p domain.PickRules
-	if err := domain.CheckPickRules(in.Name, in.Kinds, in.Body); err != nil {
+	var p mediafiles.PickRules
+	if err := mediafiles.CheckPickRules(in.Name, in.Kinds, in.Body); err != nil {
 		return p, err
 	}
 	err := st.Write(ctx, func(tx *sql.Tx) error {
@@ -197,7 +199,7 @@ func UpdatePickRules(ctx context.Context, st *database.Store, id int64, in PickR
 			return err
 		}
 		if u.Total() > 0 {
-			if domain.IsMusicRules(p.Body) != domain.IsMusicRules(in.Body) {
+			if mediafiles.IsMusicRules(p.Body) != mediafiles.IsMusicRules(in.Body) {
 				return ErrPickRulesInUse
 			}
 			for k := range used {
@@ -231,7 +233,7 @@ func sameKinds(a, b []string) bool {
 // DeletePickRules removes Pick rules nothing uses. Ready-made rules stay.
 func DeletePickRules(ctx context.Context, st *database.Store, id int64, by domain.Actor) error {
 	return st.Write(ctx, func(tx *sql.Tx) error {
-		var p domain.PickRules
+		var p mediafiles.PickRules
 		if err := database.Get(ctx, tx, "pick_rules", id, &p); err != nil {
 			return err
 		}

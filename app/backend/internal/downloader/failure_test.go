@@ -10,6 +10,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
@@ -92,7 +94,7 @@ func TestMarkFailedWhileStalled(t *testing.T) {
 	id := grabbed(t, w, m)
 	w.clock = w.clock.Add(11 * time.Minute)
 	_, _ = m.SyncOnce(context.Background())
-	if w.slot(t).State != domain.SlotStalled {
+	if w.slot(t).State != mediafiles.SlotStalled {
 		t.Fatalf("slot %s", w.slot(t).State)
 	}
 	if err := m.MarkFailed(context.Background(), id, domain.System, ""); err != nil {
@@ -209,7 +211,7 @@ func TestVanishedIsReplaced(t *testing.T) {
 	if d.State != "vanished" || !strings.Contains(*d.StateReason, "removed outside HolyArrs") {
 		t.Fatalf("download %s %v", d.State, d.StateReason)
 	}
-	if w.release(t).State != "turned_down" || w.slot(t).State != domain.SlotFailed || len(w.failedSlots) != 1 || len(w.fake.deleted) != 0 {
+	if w.release(t).State != "turned_down" || w.slot(t).State != mediafiles.SlotFailed || len(w.failedSlots) != 1 || len(w.fake.deleted) != 0 {
 		t.Fatalf("release %s slot %s searched %v deleted %v", w.release(t).State, w.slot(t).State, w.failedSlots, w.fake.deleted)
 	}
 }
@@ -226,7 +228,7 @@ func TestVanishedNeedsADecisionWhenSettingOff(t *testing.T) {
 	if d := w.download(t, id); d.State != "vanished" {
 		t.Fatalf("download %s", d.State)
 	}
-	if w.release(t).State == "turned_down" || w.slot(t).State != domain.SlotNeedsADecision || len(w.failedSlots) != 0 {
+	if w.release(t).State == "turned_down" || w.slot(t).State != mediafiles.SlotNeedsADecision || len(w.failedSlots) != 0 {
 		t.Fatalf("release %s slot %s searched %v", w.release(t).State, w.slot(t).State, w.failedSlots)
 	}
 }
@@ -312,7 +314,7 @@ func wantFailedPath(t *testing.T, w *world, id int64, reason string, removed boo
 	if r := w.release(t); r.State != "turned_down" || !strings.Contains(r.Verdict["turned_down_reason"].(string), reason) {
 		t.Fatalf("release %s %v", r.State, r.Verdict)
 	}
-	if sl := w.slot(t); sl.State != domain.SlotFailed {
+	if sl := w.slot(t); sl.State != mediafiles.SlotFailed {
 		t.Fatalf("slot %s", sl.State)
 	}
 	if len(w.failedSlots) != 1 || w.failedSlots[0] != w.slotID {

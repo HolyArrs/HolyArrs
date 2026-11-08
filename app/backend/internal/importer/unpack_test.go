@@ -12,6 +12,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
@@ -112,7 +114,7 @@ func noLeftovers(t *testing.T, root string) {
 	}
 }
 
-func lastWhy(imp *domain.Import) string {
+func lastWhy(imp *mediafiles.Import) string {
 	return strings.Join(imp.Plan[len(imp.Plan)-1].Why, " ")
 }
 
@@ -223,7 +225,7 @@ func TestCompressedPackNobodyCanReadGivesPlainReason(t *testing.T) {
 		t.Fatalf("state %s, plan %+v", imp.State, imp.Plan)
 	}
 	var state string
-	if err := w.s.Read().QueryRow(`SELECT state FROM slots WHERE id = ?`, w.slotID).Scan(&state); err != nil || state != string(domain.SlotNeedsADecision) {
+	if err := w.s.Read().QueryRow(`SELECT state FROM slots WHERE id = ?`, w.slotID).Scan(&state); err != nil || state != string(mediafiles.SlotNeedsADecision) {
 		t.Fatalf("slot %q %v", state, err)
 	}
 	if after := snapshot(w.dl); len(after) != len(before) {

@@ -5,7 +5,7 @@
 // one of its tags; when none does, to the Downloaders with no tags at all.
 // A Source with tags serves only the titles that share one of them; a
 // Source with no tags serves every title.
-package tagset
+package mediafiles
 
 import (
 	"slices"
@@ -19,10 +19,10 @@ const (
 	MaxTags = 20
 )
 
-// Clean trims, lowercases and joins inner spaces with "-", drops empty and
+// CleanTags trims, lowercases and joins inner spaces with "-", drops empty and
 // repeated labels, cuts each to MaxLen and the list to MaxTags, and sorts.
 // It never returns nil, so JSON columns always hold a list.
-func Clean(in []string) []string {
+func CleanTags(in []string) []string {
 	out := []string{}
 	for _, t := range in {
 		t = strings.ToLower(strings.Join(strings.FieldsFunc(t, unicode.IsSpace), "-"))

@@ -9,6 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 
@@ -143,7 +145,7 @@ func labMusic() *fakeMusic {
 	}
 }
 
-func musicService(t *testing.T) (*Service, *database.Store, *fakeMusic, domain.LibraryFolder) {
+func musicService(t *testing.T) (*Service, *database.Store, *fakeMusic, mediafiles.LibraryFolder) {
 	t.Helper()
 	s := open(t)
 	fm := labMusic()
@@ -165,7 +167,7 @@ type albumRow struct {
 
 func albumsOf(t *testing.T, s *database.Store, titleID int64) map[string]albumRow {
 	t.Helper()
-	ps, err := database.Select[domain.Part](context.Background(), s.Read(), "parts", "title_id = ? AND kind = 'album'", titleID)
+	ps, err := database.Select[mediafiles.Part](context.Background(), s.Read(), "parts", "title_id = ? AND kind = 'album'", titleID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -183,7 +185,7 @@ type trackRow struct {
 	Disc    int
 	Number  int
 	SlotID  int64
-	State   domain.SlotState
+	State   mediafiles.SlotState
 	Reason  string
 	Keep    bool
 	Dropped bool
@@ -243,7 +245,7 @@ func TestAddArtistAlbumChoices(t *testing.T) {
 			if err != nil || jobID == 0 {
 				t.Fatalf("add: %v (job %d)", err, jobID)
 			}
-			var ti domain.Title
+			var ti mediafiles.Title
 			if err := database.Get(context.Background(), s.Read(), "titles", id, &ti); err != nil {
 				t.Fatal(err)
 			}
@@ -269,8 +271,8 @@ func TestAddArtistAlbumChoices(t *testing.T) {
 					t.Errorf("%s kept %v, want %v", a.Name, a.Keep, want)
 				}
 			}
-			var vs []domain.Version
-			if vs, err = database.Select[domain.Version](context.Background(), s.Read(), "versions", "title_id = ?", id); err != nil || len(vs) != 1 || vs[0].FolderName != "Lab Band" {
+			var vs []mediafiles.Version
+			if vs, err = database.Select[mediafiles.Version](context.Background(), s.Read(), "versions", "title_id = ?", id); err != nil || len(vs) != 1 || vs[0].FolderName != "Lab Band" {
 				t.Fatalf("version %+v %v", vs, err)
 			}
 			var n int
@@ -312,7 +314,7 @@ func TestAddArtistRefusals(t *testing.T) {
 	other := "a0000000-0000-0000-0000-000000000002"
 	fm.artists[other] = metadata.Artist{MBID: other, Name: "Kept Out", Status: "running"}
 	_ = s.Write(ctx, func(tx *sql.Tx) error {
-		_, err := database.Insert(tx, "never_add", &domain.NeverAdd{Kind: "artist", SourceIDs: map[string]string{"musicbrainz": other}, Name: "Kept Out"}, domain.System)
+		_, err := database.Insert(tx, "never_add", &mediafiles.NeverAdd{Kind: "artist", SourceIDs: map[string]string{"musicbrainz": other}, Name: "Kept Out"}, domain.System)
 		return err
 	})
 	if _, _, err := svc.AddArtist(ctx, other, ArtistAddOptions{}, domain.System); !errors.Is(err, ErrArtistNeverAdd) {
@@ -362,7 +364,7 @@ func TestRefreshArtistMakesTracks(t *testing.T) {
 		t.Fatalf("Old Days pressings %d", n)
 	}
 	tr := tracksOf(t, s, al[rgOld].ID)
-	if len(tr) != 3 || tr[0].Name != "Song 1" || tr[2].Rec != "rec-3" || tr[0].State != domain.SlotWanted || tr[0].Reason != "out since 2010-05-01" || !tr[0].Keep {
+	if len(tr) != 3 || tr[0].Name != "Song 1" || tr[2].Rec != "rec-3" || tr[0].State != mediafiles.SlotWanted || tr[0].Reason != "out since 2010-05-01" || !tr[0].Keep {
 		t.Fatalf("Old Days tracks %+v", tr)
 	}
 	if b := al[rgBoot]; b.Included || b.Keep {
@@ -374,7 +376,7 @@ func TestRefreshArtistMakesTracks(t *testing.T) {
 	if tr := tracksOf(t, s, al[rgNext].ID); len(tr) != 0 || !al[rgNext].Included {
 		t.Fatalf("Next Record has no Pressings yet: %+v", tr)
 	}
-	var ti domain.Title
+	var ti mediafiles.Title
 	_ = database.Get(context.Background(), s.Read(), "titles", id, &ti)
 	if ti.RefreshedAt == nil || !ti.RefreshedAt.Equal(now) {
 		t.Fatalf("refreshed_at %v", ti.RefreshedAt)
@@ -452,7 +454,7 @@ func TestRefreshArtistKeepsRowsSlotsAndFiles(t *testing.T) {
 		if err := tx.QueryRow("SELECT id FROM versions WHERE title_id = ?", id).Scan(&vid); err != nil {
 			return err
 		}
-		f := domain.File{SlotIDs: []int64{before[0].SlotID}, VersionID: vid, RelativePath: "Lab Band/Old Days/01 Song 1.flac", Languages: []string{},
+		f := mediafiles.File{SlotIDs: []int64{before[0].SlotID}, VersionID: vid, RelativePath: "Lab Band/Old Days/01 Song 1.flac", Languages: []string{},
 			Origin: "imported", PlacedBy: "hardlink", Role: "main", State: "present"}
 		if _, err := database.Insert(tx, "files", &f, domain.System); err != nil {
 			return err
@@ -495,7 +497,7 @@ func TestRefreshArtistKeepsRowsSlotsAndFiles(t *testing.T) {
 			t.Fatalf("track %d row changed: %+v -> %+v", i, before[i], after[i])
 		}
 	}
-	if after[1].Name != "Song Two (Remastered)" || after[0].State != domain.SlotInLibrary {
+	if after[1].Name != "Song Two (Remastered)" || after[0].State != mediafiles.SlotInLibrary {
 		t.Fatalf("after %+v", after)
 	}
 	var sid int64
@@ -575,7 +577,7 @@ func TestSetAlbumPressing(t *testing.T) {
 		t.Fatal(err)
 	}
 	after := tracksOf(t, s, al[rgOld].ID)
-	if len(after) != 4 || after[3].Disc != 2 || after[3].State != domain.SlotWanted {
+	if len(after) != 4 || after[3].Disc != 2 || after[3].State != mediafiles.SlotWanted {
 		t.Fatalf("deluxe tracks %+v", after)
 	}
 	for i := 0; i < 3; i++ {
@@ -627,7 +629,7 @@ func TestAlbumGate(t *testing.T) {
 	fm.mu.Unlock()
 	id := addLabArtist(t, svc, AlbumsAll)
 	part := albumsOf(t, s, id)[rgNext].ID
-	if tr := tracksOf(t, s, part); len(tr) != 2 || tr[0].State != domain.SlotNotOutYet || tr[0].Reason != "out on 2026-10-14" {
+	if tr := tracksOf(t, s, part); len(tr) != 2 || tr[0].State != mediafiles.SlotNotOutYet || tr[0].Reason != "out on 2026-10-14" {
 		t.Fatalf("before the date %+v", tr)
 	}
 	if n, err := svc.OpenTrackGates(ctx); err != nil || n != 0 {
@@ -638,7 +640,7 @@ func TestAlbumGate(t *testing.T) {
 	if n, err := svc.OpenTrackGates(ctx); err != nil || n != 2 {
 		t.Fatalf("opened %d %v", n, err)
 	}
-	if tr := tracksOf(t, s, part); tr[0].State != domain.SlotWanted {
+	if tr := tracksOf(t, s, part); tr[0].State != mediafiles.SlotWanted {
 		t.Fatalf("after the date %+v", tr)
 	}
 	fm.mu.Lock()
@@ -654,7 +656,7 @@ func TestAlbumGate(t *testing.T) {
 	if err != nil || len(out.Closed) != 2 {
 		t.Fatalf("moved later: %+v %v", out, err)
 	}
-	if tr := tracksOf(t, s, part); tr[0].State != domain.SlotNotOutYet {
+	if tr := tracksOf(t, s, part); tr[0].State != mediafiles.SlotNotOutYet {
 		t.Fatalf("moved later %+v", tr)
 	}
 }
@@ -669,7 +671,7 @@ func TestArtistDroppedByMusicBrainz(t *testing.T) {
 	if err != nil || !out.Dropped {
 		t.Fatalf("%+v %v", out, err)
 	}
-	var ti domain.Title
+	var ti mediafiles.Title
 	_ = database.Get(context.Background(), s.Read(), "titles", id, &ti)
 	if ti.DroppedAt == nil || ti.State != "active" || len(albumsOf(t, s, id)) != 7 {
 		t.Fatalf("dropped artist %+v", ti)
@@ -694,7 +696,7 @@ func TestShouldRefreshArtist(t *testing.T) {
 		{ago(3 * day), "ended", ago(40 * day), false},
 	}
 	for i, c := range cases {
-		ti := domain.Title{RefreshedAt: c.refreshed, Status: c.status}
+		ti := mediafiles.Title{RefreshedAt: c.refreshed, Status: c.status}
 		if got, why := ShouldRefreshArtist(ti, c.newest, now); got != c.want {
 			t.Errorf("case %d: %v (%s), want %v", i, got, why, c.want)
 		}

@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
@@ -34,13 +36,13 @@ func (f homeFixture) write(fn func(ins func(table string, v any))) {
 }
 
 // title adds a title and its main version.
-func (f homeFixture) title(kind, name string) (domain.Title, domain.Version) {
+func (f homeFixture) title(kind, name string) (mediafiles.Title, mediafiles.Version) {
 	src := map[string]string{"movie": "tmdb", "show": "tvmaze", "artist": "musicbrainz"}[kind]
-	t := domain.Title{Kind: kind, Name: name, SortName: name, MetadataSource: src, WhyAdded: "by_hand", State: "active", NewPartsPolicy: "all", ReleaseGate: "released", GateDriver: "none", Status: "released"}
-	var v domain.Version
+	t := mediafiles.Title{Kind: kind, Name: name, SortName: name, MetadataSource: src, WhyAdded: "by_hand", State: "active", NewPartsPolicy: "all", ReleaseGate: "released", GateDriver: "none", Status: "released"}
+	var v mediafiles.Version
 	f.write(func(ins func(string, any)) {
 		ins("titles", &t)
-		v = domain.Version{TitleID: t.ID, Label: "Main", IsMain: true, LibraryFolderID: 1, PickRulesID: 1, FolderName: name}
+		v = mediafiles.Version{TitleID: t.ID, Label: "Main", IsMain: true, LibraryFolderID: 1, PickRulesID: 1, FolderName: name}
 		ins("versions", &v)
 	})
 	// Made long ago, so a show is not "New show".
@@ -48,20 +50,20 @@ func (f homeFixture) title(kind, name string) (domain.Title, domain.Version) {
 	return t, v
 }
 
-func (f homeFixture) part(t domain.Title, kind string, n *int, name string) int64 {
-	p := domain.Part{TitleID: t.ID, Kind: kind, Number: n, Name: name, KeepUpToDate: true, Included: true}
+func (f homeFixture) part(t mediafiles.Title, kind string, n *int, name string) int64 {
+	p := mediafiles.Part{TitleID: t.ID, Kind: kind, Number: n, Name: name, KeepUpToDate: true, Included: true}
 	f.write(func(ins func(string, any)) { ins("parts", &p) })
 	return p.ID
 }
 
 // item adds one item with its main-copy slot; added set gives it a file that came in then.
-func (f homeFixture) item(it domain.Item, v domain.Version, added *time.Time, state string) domain.Slot {
-	var slot domain.Slot
+func (f homeFixture) item(it mediafiles.Item, v mediafiles.Version, added *time.Time, state string) mediafiles.Slot {
+	var slot mediafiles.Slot
 	f.write(func(ins func(string, any)) {
 		ins("items", &it)
-		slot = domain.Slot{ItemID: it.ID, VersionID: v.ID, State: domain.SlotState(state)}
+		slot = mediafiles.Slot{ItemID: it.ID, VersionID: v.ID, State: mediafiles.SlotState(state)}
 		if added != nil {
-			file := domain.File{VersionID: v.ID, RelativePath: fmt.Sprintf("f%d.mkv", it.ID), AddedAt: *added, Origin: "imported", PlacedBy: "move", Role: "main", State: "present"}
+			file := mediafiles.File{VersionID: v.ID, RelativePath: fmt.Sprintf("f%d.mkv", it.ID), AddedAt: *added, Origin: "imported", PlacedBy: "move", Role: "main", State: "present"}
 			ins("files", &file)
 			slot.FileID = &file.ID
 		}
@@ -104,9 +106,9 @@ func TestHomeArrivalsCountsOnlyNewFiles(t *testing.T) {
 	a, av := f.title("show", "Old Five")
 	a1, a5 := f.part(a, "season", homeNum(1), "Season 1"), f.part(a, "season", homeNum(5), "Season 5")
 	for e := 1; e <= 10; e++ {
-		f.item(domain.Item{TitleID: a.ID, PartID: &a5, Kind: "episode", AirDate: &aired, Numbers: domain.Numbers{Season: homeNum(5), Episode: homeNum(e)}}, av, &old, "in_library")
+		f.item(mediafiles.Item{TitleID: a.ID, PartID: &a5, Kind: "episode", AirDate: &aired, Numbers: mediafiles.Numbers{Season: homeNum(5), Episode: homeNum(e)}}, av, &old, "in_library")
 	}
-	f.item(domain.Item{TitleID: a.ID, PartID: &a1, Kind: "episode", AirDate: &aired, Numbers: domain.Numbers{Season: homeNum(1), Episode: homeNum(3)}}, av, &fresh, "in_library")
+	f.item(mediafiles.Item{TitleID: a.ID, PartID: &a1, Kind: "episode", AirDate: &aired, Numbers: mediafiles.Numbers{Season: homeNum(1), Episode: homeNum(3)}}, av, &fresh, "in_library")
 
 	// Nine episodes from a month ago and one from today, same season.
 	b, bv := f.title("show", "One New")
@@ -117,26 +119,26 @@ func TestHomeArrivalsCountsOnlyNewFiles(t *testing.T) {
 		if e == 10 {
 			at = &fresh
 		}
-		f.item(domain.Item{TitleID: b.ID, PartID: &b5, Kind: "episode", AirDate: &aired, Numbers: domain.Numbers{Season: homeNum(5), Episode: homeNum(e)}}, bv, at, "in_library")
+		f.item(mediafiles.Item{TitleID: b.ID, PartID: &b5, Kind: "episode", AirDate: &aired, Numbers: mediafiles.Numbers{Season: homeNum(5), Episode: homeNum(e)}}, bv, at, "in_library")
 	}
 
 	// Nothing new: a show, an artist with old albums, a movie.
 	c, cv := f.title("show", "Quiet Show")
 	c1 := f.part(c, "season", homeNum(1), "Season 1")
-	f.item(domain.Item{TitleID: c.ID, PartID: &c1, Kind: "episode", AirDate: &aired}, cv, &old, "in_library")
+	f.item(mediafiles.Item{TitleID: c.ID, PartID: &c1, Kind: "episode", AirDate: &aired}, cv, &old, "in_library")
 	ar, arv := f.title("artist", "Old Band")
 	for _, name := range []string{"First", "Second"} {
 		al := f.part(ar, "album", nil, name)
-		f.item(domain.Item{TitleID: ar.ID, PartID: &al, Kind: "track"}, arv, &old, "in_library")
+		f.item(mediafiles.Item{TitleID: ar.ID, PartID: &al, Kind: "track"}, arv, &old, "in_library")
 	}
 	m, mv := f.title("movie", "Old Movie")
-	f.item(domain.Item{TitleID: m.ID, Kind: "movie"}, mv, &old, "in_library")
+	f.item(mediafiles.Item{TitleID: m.ID, Kind: "movie"}, mv, &old, "in_library")
 
 	// One new album, one old one.
 	nb, nbv := f.title("artist", "New Band")
 	oldAlbum, newAlbum := f.part(nb, "album", nil, "Back Catalog"), f.part(nb, "album", nil, "Fresh Record")
-	f.item(domain.Item{TitleID: nb.ID, PartID: &oldAlbum, Kind: "track"}, nbv, &old, "in_library")
-	f.item(domain.Item{TitleID: nb.ID, PartID: &newAlbum, Kind: "track"}, nbv, &fresh, "in_library")
+	f.item(mediafiles.Item{TitleID: nb.ID, PartID: &oldAlbum, Kind: "track"}, nbv, &old, "in_library")
+	f.item(mediafiles.Item{TitleID: nb.ID, PartID: &newAlbum, Kind: "track"}, nbv, &fresh, "in_library")
 
 	cards, err := homeArrivals(context.Background(), s.Read(), "t.state != 'removed'", nil, now)
 	if err != nil {
@@ -189,20 +191,20 @@ func TestHomeSoonDays(t *testing.T) {
 	dayText := day.Format("2006-01-02")
 	u, uv := f.title("show", "Day Only")
 	u2 := f.part(u, "season", homeNum(2), "Season 2")
-	f.item(domain.Item{TitleID: u.ID, PartID: &u2, Kind: "episode", AirDate: &dayEnd, AirDay: &dayText, Numbers: domain.Numbers{Season: homeNum(2), Episode: homeNum(1)}}, uv, nil, "not_out_yet")
+	f.item(mediafiles.Item{TitleID: u.ID, PartID: &u2, Kind: "episode", AirDate: &dayEnd, AirDay: &dayText, Numbers: mediafiles.Numbers{Season: homeNum(2), Episode: homeNum(1)}}, uv, nil, "not_out_yet")
 
 	// A timed episode at 02:00 UTC is 21:00 the evening before here.
 	timedAt := midnight(9).Add(2 * time.Hour)
 	tm, tv := f.title("show", "Prime Time")
 	t1 := f.part(tm, "season", homeNum(1), "Season 1")
-	f.item(domain.Item{TitleID: tm.ID, PartID: &t1, Kind: "episode", AirDate: &timedAt, AirTimed: true, Numbers: domain.Numbers{Season: homeNum(1), Episode: homeNum(4)}}, tv, nil, "not_out_yet")
+	f.item(mediafiles.Item{TitleID: tm.ID, PartID: &t1, Kind: "episode", AirDate: &timedAt, AirTimed: true, Numbers: mediafiles.Numbers{Season: homeNum(1), Episode: homeNum(4)}}, tv, nil, "not_out_yet")
 
 	// Two movies with a disc date in ten days: one already on disk.
 	disc := midnight(10)
 	have, hv := f.title("movie", "Have It")
-	f.item(domain.Item{TitleID: have.ID, Kind: "movie"}, hv, &now, "in_library")
+	f.item(mediafiles.Item{TitleID: have.ID, Kind: "movie"}, hv, &now, "in_library")
 	want, wv := f.title("movie", "Want It")
-	f.item(domain.Item{TitleID: want.ID, Kind: "movie"}, wv, nil, "wanted")
+	f.item(mediafiles.Item{TitleID: want.ID, Kind: "movie"}, wv, nil, "wanted")
 	for _, id := range []int64{have.ID, want.ID} {
 		f.exec(`UPDATE titles SET physical_date = ? WHERE id = ?`, database.FormatTime(disc), id)
 	}
@@ -267,7 +269,7 @@ func TestHomeAskProgressStates(t *testing.T) {
 	ids := map[string]int64{}
 	for state, progress := range states {
 		m, v := f.title("movie", "Asked "+state)
-		slot := f.item(domain.Item{TitleID: m.ID, Kind: "movie"}, v, nil, "downloading")
+		slot := f.item(mediafiles.Item{TitleID: m.ID, Kind: "movie"}, v, nil, "downloading")
 		ids[state] = m.ID
 		var did int64
 		f.write(func(ins func(string, any)) {

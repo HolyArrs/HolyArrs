@@ -14,6 +14,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 
@@ -88,10 +90,10 @@ type Subtitle struct {
 
 // fileCtx is everything about one main File a search needs.
 type fileCtx struct {
-	file    domain.File
-	title   domain.Title
-	item    domain.Item
-	version domain.Version
+	file    mediafiles.File
+	title   mediafiles.Title
+	item    mediafiles.Item
+	version mediafiles.Version
 	lib     string // the Library folder's path
 }
 

@@ -14,10 +14,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/naming"
 )
 
 // adoptTMDB stands in for TMDB in the adopt tests.
@@ -144,7 +145,7 @@ func TestAdoptMovesNothing(t *testing.T) {
 	if res[0].TitleID == 0 || res[1].TitleID == 0 || res[2].TitleID == 0 || res[3].Error == "" || !strings.Contains(res[4].Error, "already") {
 		t.Fatalf("results %+v", res)
 	}
-	files, _ := database.Select[domain.File](ctx, s.Read(), "files", "1=1 ORDER BY id")
+	files, _ := database.Select[mediafiles.File](ctx, s.Read(), "files", "1=1 ORDER BY id")
 	if len(files) != 2 {
 		t.Fatalf("files %+v", files)
 	}
@@ -158,20 +159,20 @@ func TestAdoptMovesNothing(t *testing.T) {
 			t.Fatalf("file %+v", f)
 		}
 	}
-	vs, _ := database.Select[domain.Version](ctx, s.Read(), "versions", "title_id = ?", res[1].TitleID)
+	vs, _ := database.Select[mediafiles.Version](ctx, s.Read(), "versions", "title_id = ?", res[1].TitleID)
 	if len(vs) != 1 || vs[0].FolderName != "Heat (1995) {tmdb-949}" {
 		t.Fatalf("version %+v", vs)
 	}
-	for i, want := range []domain.SlotState{domain.SlotInLibrary, domain.SlotBetterWanted, domain.SlotWanted} {
+	for i, want := range []mediafiles.SlotState{mediafiles.SlotInLibrary, mediafiles.SlotBetterWanted, mediafiles.SlotWanted} {
 		sl := slotsOf(t, s, res[i].TitleID)
 		if sl[0].State != want {
 			t.Errorf("%s: slot %s, want %s", res[i].Folder, sl[0].State, want)
 		}
-		if want != domain.SlotWanted && (sl[0].FileID == nil || *sl[0].FileID == 0) {
+		if want != mediafiles.SlotWanted && (sl[0].FileID == nil || *sl[0].FileID == 0) {
 			t.Errorf("%s: slot has no file", res[i].Folder)
 		}
 	}
-	var ti domain.Title
+	var ti mediafiles.Title
 	_ = database.Get(ctx, s.Read(), "titles", res[0].TitleID, &ti)
 	if ti.WhyAdded != "import" {
 		t.Fatalf("why added %s", ti.WhyAdded)
@@ -201,7 +202,7 @@ func TestRescanMountGoneIsAWarning(t *testing.T) {
 		t.Fatalf("%+v %v", res, err)
 	}
 	states := func() map[string]string {
-		fs, _ := database.Select[domain.File](ctx, s.Read(), "files", "1=1")
+		fs, _ := database.Select[mediafiles.File](ctx, s.Read(), "files", "1=1")
 		m := map[string]string{}
 		for _, f := range fs {
 			m[f.RelativePath] = f.State + "/" + f.Origin
@@ -336,9 +337,9 @@ func TestPlanAdoptIsCappedAndGoesOn(t *testing.T) {
 	for i := range 13 {
 		writeFile(t, filepath.Join(lf.Path, fmt.Sprintf("Movie %02d (2001)", i), "m.mkv"), "m")
 	}
-	ns := naming.Defaults()
+	ns := mediafiles.NamingDefaults()
 	ns.AdoptScanLimit = 10
-	if err := naming.Save(context.Background(), s, ns, domain.System); err != nil {
+	if err := mediafiles.PutNamingSettings(context.Background(), s, ns, domain.System); err != nil {
 		t.Fatal(err)
 	}
 	p, err := PlanAdoptFrom(context.Background(), s.Read(), adoptTMDB, lf.ID, "")

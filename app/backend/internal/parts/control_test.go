@@ -10,10 +10,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 )
@@ -47,9 +47,9 @@ func newFix(t *testing.T) *fix {
 		if err := tx.QueryRow("SELECT id FROM pick_rules LIMIT 1").Scan(&pr); err != nil {
 			return err
 		}
-		lf := &domain.LibraryFolder{Path: t.TempDir(), Kind: "movie", Label: "Movies", Health: "ok", SameDiskAs: []int64{}}
+		lf := &mediafiles.LibraryFolder{Path: t.TempDir(), Kind: "movie", Label: "Movies", Health: "ok", SameDiskAs: []int64{}}
 		y := 2020
-		ti := &domain.Title{Kind: "movie", GateDriver: "none", Name: "Salt Choir", SortName: "salt choir", Year: &y, Aliases: []string{}, SourceIDs: map[string]string{},
+		ti := &mediafiles.Title{Kind: "movie", GateDriver: "none", Name: "Salt Choir", SortName: "salt choir", Year: &y, Aliases: []string{}, SourceIDs: map[string]string{},
 			MetadataSource: "local", NewPartsPolicy: "all", ReleaseGate: "released", MusicTypes: []string{}, WhyAdded: "by_hand", Artwork: []string{}, Status: "released", State: "active", KeepUpToDate: true}
 		if _, err := database.Insert(tx, "library_folders", lf, domain.System); err != nil {
 			return err
@@ -57,15 +57,15 @@ func newFix(t *testing.T) *fix {
 		if _, err := database.Insert(tx, "titles", ti, domain.System); err != nil {
 			return err
 		}
-		it := &domain.Item{TitleID: ti.ID, Kind: "movie", KeepUpToDate: true}
+		it := &mediafiles.Item{TitleID: ti.ID, Kind: "movie", KeepUpToDate: true}
 		if _, err := database.Insert(tx, "items", it, domain.System); err != nil {
 			return err
 		}
-		ver := &domain.Version{TitleID: ti.ID, Label: "HD", PickRulesID: pr, LibraryFolderID: lf.ID, FolderName: "Salt Choir", IsMain: true, KeepUpToDate: true}
+		ver := &mediafiles.Version{TitleID: ti.ID, Label: "HD", PickRulesID: pr, LibraryFolderID: lf.ID, FolderName: "Salt Choir", IsMain: true, KeepUpToDate: true}
 		if _, err := database.Insert(tx, "versions", ver, domain.System); err != nil {
 			return err
 		}
-		sl := &domain.Slot{ItemID: it.ID, VersionID: ver.ID, State: domain.SlotDownloading}
+		sl := &mediafiles.Slot{ItemID: it.ID, VersionID: ver.ID, State: mediafiles.SlotDownloading}
 		if _, err := database.Insert(tx, "slots", sl, domain.System); err != nil {
 			return err
 		}
@@ -94,7 +94,7 @@ func newFix(t *testing.T) *fix {
 				// The import moves the Slot through importing to in the
 				// Library, as the importer's state machine does.
 				if kind == "import_download" {
-					if err := store.MoveSlot(context.Background(), s, f.slotID, domain.SlotImporting, "", domain.System); err != nil {
+					if err := mediafiles.MoveSlot(context.Background(), s, f.slotID, mediafiles.SlotImporting, "", domain.System); err != nil {
 						return err
 					}
 				}
@@ -104,7 +104,7 @@ func newFix(t *testing.T) *fix {
 					return ctx.Err()
 				}
 				if kind == "import_download" {
-					return store.MoveSlot(context.Background(), s, f.slotID, domain.SlotInLibrary, "", domain.System)
+					return mediafiles.MoveSlot(context.Background(), s, f.slotID, mediafiles.SlotInLibrary, "", domain.System)
 				}
 			}
 			return nil
@@ -173,13 +173,13 @@ func (f *fix) waitJob(t *testing.T, id int64, want string) {
 	}
 }
 
-func (f *fix) slotState(t *testing.T) domain.SlotState {
+func (f *fix) slotState(t *testing.T) mediafiles.SlotState {
 	t.Helper()
 	var st string
 	if err := f.s.Read().QueryRow("SELECT state FROM slots WHERE id = ?", f.slotID).Scan(&st); err != nil {
 		t.Fatal(err)
 	}
-	return domain.SlotState(st)
+	return mediafiles.SlotState(st)
 }
 
 var owner = domain.Actor{Kind: "user", ID: 1}
@@ -195,7 +195,7 @@ func TestOffAndOnDuringAnImport(t *testing.T) {
 	if err := f.c.Set(context.Background(), Movies, false, owner); err != nil {
 		t.Fatal(err)
 	}
-	if f.slotState(t) != domain.SlotImporting {
+	if f.slotState(t) != mediafiles.SlotImporting {
 		t.Fatalf("slot %s while the import runs", f.slotState(t))
 	}
 	grab := f.enqueue(t, "grab", &domain.Subject{Type: "slot", ID: f.slotID}, "grab:1")
@@ -207,7 +207,7 @@ func TestOffAndOnDuringAnImport(t *testing.T) {
 	}
 	close(f.gates["import_download"])
 	f.waitJob(t, imp, "done")
-	if f.slotState(t) != domain.SlotInLibrary {
+	if f.slotState(t) != mediafiles.SlotInLibrary {
 		t.Fatalf("slot %s after the import", f.slotState(t))
 	}
 	time.Sleep(100 * time.Millisecond)
@@ -271,7 +271,7 @@ func TestRestartDuringADownloadAndAnImport(t *testing.T) {
 	f.waitJob(t, grab, "done")
 	f.waitJob(t, imp, "done")
 	f.waitJob(t, search, "done")
-	if !f.c.On(Movies) || f.slotState(t) != domain.SlotInLibrary {
+	if !f.c.On(Movies) || f.slotState(t) != mediafiles.SlotInLibrary {
 		t.Fatalf("after restart: on %v, slot %s", f.c.On(Movies), f.slotState(t))
 	}
 	if f.count("grab") != 1 || f.count("import_download") != 1 || f.count("search_slot") != 1 {
@@ -295,7 +295,7 @@ func TestRestartNeverCutsOffAJob(t *testing.T) {
 	}
 	close(f.gates["import_download"])
 	f.waitJob(t, imp, "done")
-	if f.count("import_download") != 1 || f.slotState(t) != domain.SlotInLibrary {
+	if f.count("import_download") != 1 || f.slotState(t) != mediafiles.SlotInLibrary {
 		t.Fatalf("import ran %d times, slot %s", f.count("import_download"), f.slotState(t))
 	}
 }

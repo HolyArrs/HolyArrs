@@ -4,12 +4,14 @@ import (
 	"context"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/archive"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/unrar"
 )
 
-func importOnDisk(t *testing.T, free int64, files map[string][]byte) (*domain.Import, world, map[string]string) {
+func importOnDisk(t *testing.T, free int64, files map[string][]byte) (*mediafiles.Import, world, map[string]string) {
 	t.Helper()
 	fakeDisk(t, free)
 	w := packedWorld(t, files)

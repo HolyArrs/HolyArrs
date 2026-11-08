@@ -8,8 +8,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 )
 
@@ -45,7 +46,7 @@ func (h *handler) withFiles(ctx context.Context, eps []episode) error {
 		return nil
 	}
 	db := h.Store.Read()
-	fs, err := database.Select[domain.File](ctx, db, "files", "id IN "+idList(ids))
+	fs, err := database.Select[mediafiles.File](ctx, db, "files", "id IN "+idList(ids))
 	if err != nil || len(fs) == 0 {
 		return err
 	}
@@ -53,11 +54,11 @@ func (h *handler) withFiles(ctx context.Context, eps []episode) error {
 	for _, f := range fs {
 		vids = append(vids, f.VersionID)
 	}
-	vs, err := database.Select[domain.Version](ctx, db, "versions", "id IN "+idList(vids))
+	vs, err := database.Select[mediafiles.Version](ctx, db, "versions", "id IN "+idList(vids))
 	if err != nil {
 		return err
 	}
-	versions := map[int64]domain.Version{}
+	versions := map[int64]mediafiles.Version{}
 	for _, v := range vs {
 		versions[v.ID] = v
 	}

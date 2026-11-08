@@ -9,10 +9,12 @@ import (
 	"syscall"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
-func refusedClearly(t *testing.T, w world, imp *domain.Import, why string, before map[string]string) {
+func refusedClearly(t *testing.T, w world, imp *mediafiles.Import, why string, before map[string]string) {
 	t.Helper()
 	if imp.State != "failed" || lastWhy(imp) != why {
 		t.Fatalf("state %s, last step %q; want failed, %q (plan %+v)", imp.State, lastWhy(imp), why, imp.Plan)
@@ -21,7 +23,7 @@ func refusedClearly(t *testing.T, w world, imp *domain.Import, why string, befor
 	if err := w.s.Read().QueryRow(`SELECT state, last_reason FROM slots WHERE id = ?`, w.slotID).Scan(&state, &reason); err != nil {
 		t.Fatal(err)
 	}
-	if state != string(domain.SlotNeedsADecision) || reason != why {
+	if state != string(mediafiles.SlotNeedsADecision) || reason != why {
 		t.Fatalf("slot %q, reason %q; want needs a decision, %q", state, reason, why)
 	}
 	var summary string
@@ -47,7 +49,7 @@ func refusedClearly(t *testing.T, w world, imp *domain.Import, why string, befor
 	noLeftovers(t, filepath.Dir(w.dl))
 }
 
-func importEdge(t *testing.T, files map[string][]byte) (*domain.Import, world, map[string]string) {
+func importEdge(t *testing.T, files map[string][]byte) (*mediafiles.Import, world, map[string]string) {
 	t.Helper()
 	fakeDisk(t, 10<<30)
 	w := packedWorld(t, files)

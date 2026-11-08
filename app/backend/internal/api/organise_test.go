@@ -11,6 +11,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
@@ -39,7 +41,7 @@ func organiseWorld(t *testing.T) (url string, s *database.Store, lib string, tit
 		if err := tx.QueryRow("SELECT v.id, s.id FROM versions v JOIN slots s ON s.version_id = v.id WHERE v.title_id = ?", titleID).Scan(&vid, &sid); err != nil {
 			return err
 		}
-		f := &domain.File{SlotIDs: []int64{sid}, VersionID: vid, RelativePath: rel, Size: 5, AddedAt: time.Now(), Languages: []string{},
+		f := &mediafiles.File{SlotIDs: []int64{sid}, VersionID: vid, RelativePath: rel, Size: 5, AddedAt: time.Now(), Languages: []string{},
 			MediaInfo: map[string]any{}, ReleaseName: &release, Origin: "imported", PlacedBy: "hardlink", Role: "main", State: "present"}
 		id, err := database.Insert(tx, "files", f, domain.System)
 		fileID = id
@@ -84,7 +86,7 @@ func TestRenameTitleAPI(t *testing.T) {
 	if j := waitJob(t, url, q.JobID); j.State != "done" || j.Result["renamed"] != float64(1) {
 		t.Fatalf("job %+v", j)
 	}
-	var f domain.File
+	var f mediafiles.File
 	_ = database.Get(context.Background(), s.Read(), "files", fid, &f)
 	if f.RelativePath != want {
 		t.Fatalf("file %q", f.RelativePath)
@@ -203,7 +205,7 @@ func TestDeleteTitleAPI(t *testing.T) {
 	if !strings.Contains(b, `"applied":true`) {
 		t.Fatalf("apply %s", b)
 	}
-	var f domain.File
+	var f mediafiles.File
 	_ = database.Get(context.Background(), s.Read(), "files", fid, &f)
 	if f.State != "gone" || !strings.HasPrefix(f.RelativePath, ".holyarrs-replaced/") {
 		t.Fatalf("file %+v", f)
@@ -271,7 +273,7 @@ func TestScanAndAdoptAPI(t *testing.T) {
 	if j := waitJob(t, url, q.JobID); j.State != "done" || j.Result["adopted"] != float64(1) {
 		t.Fatalf("adopt %+v", j)
 	}
-	var f domain.File
+	var f mediafiles.File
 	if err := s.Read().QueryRow("SELECT origin, relative_path FROM files").Scan(&f.Origin, &f.RelativePath); err != nil ||
 		f.Origin != "adopted" || f.RelativePath != "Dune - Part Two (2024)/Dune.Part.Two.2024.1080p.WEB-DL.mkv" {
 		t.Fatalf("file %+v %v", f, err)

@@ -17,6 +17,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
@@ -199,7 +201,7 @@ func TestTitleOfAnOffPart(t *testing.T) {
 	f := newCtl(t, false)
 	var id int64
 	err := f.s.Write(context.Background(), func(tx *sql.Tx) error {
-		ti := &domain.Title{Kind: "movie", GateDriver: "none", Name: "Salt Choir", SortName: "salt choir", Aliases: []string{}, SourceIDs: map[string]string{},
+		ti := &mediafiles.Title{Kind: "movie", GateDriver: "none", Name: "Salt Choir", SortName: "salt choir", Aliases: []string{}, SourceIDs: map[string]string{},
 			MetadataSource: "local", NewPartsPolicy: "all", ReleaseGate: "released", MusicTypes: []string{}, WhyAdded: "by_hand", Artwork: []string{}, Status: "released", State: "active"}
 		var err error
 		id, err = database.Insert(tx, "titles", ti, domain.System)

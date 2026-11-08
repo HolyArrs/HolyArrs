@@ -6,13 +6,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"io"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
@@ -22,7 +24,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/naming"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
@@ -105,7 +106,7 @@ type world struct {
 	m     *manifest
 	out   io.Writer
 	by    domain.Actor
-	ns    naming.Settings
+	ns    mediafiles.NamingSettings
 	// Downloads is the save folder (as the Downloader and HolyArrs see it).
 	Downloads string
 	// sabINI is the lab SABnzbd config file the key is read from ("" skips SABnzbd).
@@ -153,7 +154,7 @@ func openWorld(ctx context.Context, o options, p providers, out io.Writer) (*wor
 		s.Close()
 		return nil, err
 	}
-	ns, err := naming.Read(ctx, s.Read())
+	ns, err := mediafiles.ReadNaming(ctx, s.Read())
 	if err != nil {
 		s.Close()
 		return nil, err
@@ -332,7 +333,7 @@ func (w *world) summary(ctx context.Context) error {
 // folder whose path is a Windows path mangled by Git Bash (it can never be
 // reached from the container) is removed when no title uses it.
 func (w *world) cleanUps(ctx context.Context) error {
-	lfs, err := database.Select[domain.LibraryFolder](ctx, w.s.Read(), "library_folders", "1=1 ORDER BY id")
+	lfs, err := database.Select[mediafiles.LibraryFolder](ctx, w.s.Read(), "library_folders", "1=1 ORDER BY id")
 	if err != nil {
 		return err
 	}
@@ -381,13 +382,13 @@ func (w *world) folders(ctx context.Context) error {
 }
 
 // folderOf returns the first Library folder of a kind.
-func (w *world) folderOf(ctx context.Context, kind string) (domain.LibraryFolder, error) {
-	fs, err := database.Select[domain.LibraryFolder](ctx, w.s.Read(), "library_folders", "kind = ? ORDER BY id LIMIT 1", kind)
+func (w *world) folderOf(ctx context.Context, kind string) (mediafiles.LibraryFolder, error) {
+	fs, err := database.Select[mediafiles.LibraryFolder](ctx, w.s.Read(), "library_folders", "kind = ? ORDER BY id LIMIT 1", kind)
 	if err != nil {
-		return domain.LibraryFolder{}, err
+		return mediafiles.LibraryFolder{}, err
 	}
 	if len(fs) == 0 {
-		return domain.LibraryFolder{}, fmt.Errorf("no %s Library folder", kind)
+		return mediafiles.LibraryFolder{}, fmt.Errorf("no %s Library folder", kind)
 	}
 	return fs[0], nil
 }

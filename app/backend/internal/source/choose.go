@@ -12,12 +12,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/judge"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // turnedDownList selects Releases on the Turned down list: turned down whole, or for some Slots only.
@@ -125,9 +125,9 @@ func (s *Searcher) Choose(ctx context.Context, releaseID, slotID int64, force bo
 	}
 
 	// A music Slot that already has a copy as good is treated as refused, not silently replaced.
-	if c.cur != nil && domain.IsMusicRules(c.pr.Body) {
-		jr := judge.Release{Name: rel.Name, Parse: releasename.Parse(rel.Name, releasename.Hints{Size: rel.Size, Music: true}), Size: rel.Size, Protocol: rel.Protocol}
-		if !judge.Gains(jr, c.pr.Body, c.cur) {
+	if c.cur != nil && mediafiles.IsMusicRules(c.pr.Body) {
+		jr := mediafiles.ReleaseFacts{Name: rel.Name, Parse: releasename.Parse(rel.Name, releasename.Hints{Size: rel.Size, Music: true}), Size: rel.Size, Protocol: rel.Protocol}
+		if !mediafiles.Gains(jr, c.pr.Body, c.cur) {
 			refused = true
 			overridden = append(overridden, trackName(c.it)+" already has a copy as good")
 		}
@@ -150,10 +150,10 @@ func (s *Searcher) Choose(ctx context.Context, releaseID, slotID int64, force bo
 		ch.Forced = true
 		ch.Warnings = append(ch.Warnings, "sent although it failed: "+strings.Join(overridden, "; "))
 	}
-	if c.sl.State == domain.SlotNotOutYet {
+	if c.sl.State == mediafiles.SlotNotOutYet {
 		ch.Warnings = append(ch.Warnings, "the Release gate is skipped: this Title is not out yet")
 	}
-	if c.sl.State == domain.SlotInLibrary {
+	if c.sl.State == mediafiles.SlotInLibrary {
 		ch.Warnings = append(ch.Warnings, "this Version already has a good enough copy; the new one will replace it")
 	}
 	// The state is read again inside the write, so a copy protected or a Slot taken since the check above stops the pick.
@@ -181,7 +181,7 @@ func (s *Searcher) Choose(ctx context.Context, releaseID, slotID int64, force bo
 				return err
 			}
 		}
-		return moveSlotTx(tx, slotID, domain.SlotChosen, "chosen by hand: "+rel.Name, by, rel.ID)
+		return moveSlotTx(tx, slotID, mediafiles.SlotChosen, "chosen by hand: "+rel.Name, by, rel.ID)
 	})
 	if err != nil {
 		return Choice{}, err
@@ -191,7 +191,7 @@ func (s *Searcher) Choose(ctx context.Context, releaseID, slotID int64, force bo
 		data["reasons_overridden"] = overridden
 	}
 	s.addEvent(ctx, by, nil, c.ti.ID, slotID, EventChosenByHand, "Chosen by hand: "+rel.Name, data)
-	s.publish("slot", map[string]any{"id": slotID, "state": domain.SlotChosen, "reason": "chosen by hand: " + rel.Name})
+	s.publish("slot", map[string]any{"id": slotID, "state": mediafiles.SlotChosen, "reason": "chosen by hand: " + rel.Name})
 	if s.OnChosen != nil {
 		s.OnChosen(ctx, slotID, rel.ID)
 	}
@@ -421,14 +421,14 @@ func failReasons(rel domain.Release) []string {
 }
 
 // canTakePick reports whether a Slot in this state can be given a Release now.
-func canTakePick(st domain.SlotState) bool {
-	return !busySlot(st) && st != domain.SlotRemoved &&
-		(domain.Transition(st, domain.SlotChosen) == nil || domain.Transition(st, domain.SlotSearching) == nil)
+func canTakePick(st mediafiles.SlotState) bool {
+	return !busySlot(st) && st != mediafiles.SlotRemoved &&
+		(mediafiles.Transition(st, mediafiles.SlotChosen) == nil || mediafiles.Transition(st, mediafiles.SlotSearching) == nil)
 }
 
 // busySlot reports whether a Slot already has work in flight.
-func busySlot(st domain.SlotState) bool {
-	return st == domain.SlotChosen || st == domain.SlotDownloading || st == domain.SlotImporting || st == domain.SlotSearching
+func busySlot(st mediafiles.SlotState) bool {
+	return st == mediafiles.SlotChosen || st == mediafiles.SlotDownloading || st == mediafiles.SlotImporting || st == mediafiles.SlotSearching
 }
 
 // unholdTx sends every Slot that was holding the Release back to looking. A Slot with a file goes to better wanted so the file is kept.
@@ -452,14 +452,14 @@ func unholdTx(tx *sql.Tx, releaseID int64, reason string, by domain.Actor) error
 	}
 	rows.Close()
 	for _, h := range list {
-		to := domain.SlotWanted
+		to := mediafiles.SlotWanted
 		if h.hasFile {
-			to = domain.SlotBetterWanted
+			to = mediafiles.SlotBetterWanted
 		}
 		if _, err := tx.Exec("UPDATE slots SET held_release_id = NULL, next_try_at = NULL WHERE id = ?", h.id); err != nil {
 			return err
 		}
-		if err := store.MoveSlotTx(tx, h.id, to, reason, by); err != nil {
+		if err := mediafiles.MoveSlotTx(tx, h.id, to, reason, by); err != nil {
 			return err
 		}
 	}
@@ -498,11 +498,11 @@ func (s *Searcher) packSlots(ctx context.Context, rel domain.Release) (out []int
 	if kind != "show" && kind != "artist" {
 		return nil, nil, kind
 	}
-	jr := judge.Release{Name: rel.Name, Parse: releasename.Parse(rel.Name, releasename.Hints{Size: rel.Size, Show: kind == "show", Music: kind == "artist"}), Size: rel.Size, Protocol: rel.Protocol}
+	jr := mediafiles.ReleaseFacts{Name: rel.Name, Parse: releasename.Parse(rel.Name, releasename.Hints{Size: rel.Size, Show: kind == "show", Music: kind == "artist"}), Size: rel.Size, Protocol: rel.Protocol}
 	for _, id := range rel.MatchedSlotIDs {
 		var st string
 		if s.Store.Read().QueryRowContext(ctx, "SELECT state FROM slots WHERE id = ?", id).Scan(&st) != nil ||
-			!canTakePick(domain.SlotState(st)) || turnedDownFor(rel, id) {
+			!canTakePick(mediafiles.SlotState(st)) || turnedDownFor(rel, id) {
 			continue
 		}
 		if slotHasProtectedCopy(ctx, s.Store.Read(), id) {
@@ -515,7 +515,7 @@ func (s *Searcher) packSlots(ctx context.Context, rel domain.Release) (out []int
 			}
 			continue
 		}
-		if c, err := s.loadSlot(ctx, id); err == nil && c.cur != nil && !judge.Gains(jr, c.pr.Body, c.cur) {
+		if c, err := s.loadSlot(ctx, id); err == nil && c.cur != nil && !mediafiles.Gains(jr, c.pr.Body, c.cur) {
 			what := episodeLabel(c.it)
 			if kind == "artist" {
 				what = trackName(c.it)
@@ -590,7 +590,7 @@ func (s *Searcher) unprotectedSlots(ctx context.Context, rel domain.Release) []i
 	for _, id := range rel.MatchedSlotIDs {
 		var st string
 		if s.Store.Read().QueryRowContext(ctx, "SELECT state FROM slots WHERE id = ?", id).Scan(&st) != nil ||
-			!canTakePick(domain.SlotState(st)) || turnedDownFor(rel, id) || slotHasProtectedCopy(ctx, s.Store.Read(), id) {
+			!canTakePick(mediafiles.SlotState(st)) || turnedDownFor(rel, id) || slotHasProtectedCopy(ctx, s.Store.Read(), id) {
 			continue
 		}
 		out = append(out, id)
@@ -599,7 +599,7 @@ func (s *Searcher) unprotectedSlots(ctx context.Context, rel domain.Release) []i
 }
 
 // episodeLabel names an episode as S01E02 for messages.
-func episodeLabel(it domain.Item) string {
+func episodeLabel(it mediafiles.Item) string {
 	if it.Numbers.Season == nil || it.Numbers.Episode == nil {
 		return "an episode"
 	}
@@ -641,19 +641,19 @@ func (s *Searcher) chooseMany(ctx context.Context, rel domain.Release, slots []i
 			if !canTakePick(st) {
 				continue
 			}
-			if st == domain.SlotNotOutYet && !slices.Contains(ch.Warnings, notAired) {
+			if st == mediafiles.SlotNotOutYet && !slices.Contains(ch.Warnings, notAired) {
 				ch.Warnings = append(ch.Warnings, notAired)
 			}
 			if err := passOverHeldTx(tx, id, rel.ID, by); err != nil {
 				return err
 			}
-			if err := moveSlotTx(tx, id, domain.SlotChosen, "chosen by hand: "+rel.Name, by, rel.ID); err != nil {
+			if err := moveSlotTx(tx, id, mediafiles.SlotChosen, "chosen by hand: "+rel.Name, by, rel.ID); err != nil {
 				return err
 			}
 			took = append(took, id)
 		}
 		if len(took) == 0 {
-			return busyErr(domain.SlotChosen)
+			return busyErr(mediafiles.SlotChosen)
 		}
 		return pickReleaseTx(tx, rel.ID, "chosen", nil, took, by)
 	})
@@ -669,7 +669,7 @@ func (s *Searcher) chooseMany(ctx context.Context, rel domain.Release, slots []i
 	_ = s.Store.Read().QueryRowContext(ctx, "SELECT i.title_id FROM slots s JOIN items i ON i.id = s.item_id WHERE s.id = ?", took[0]).Scan(&titleID)
 	for _, id := range took {
 		s.addEvent(ctx, by, nil, titleID, id, EventChosenByHand, "Chosen by hand: "+rel.Name, data)
-		s.publish("slot", map[string]any{"id": id, "state": domain.SlotChosen, "reason": "chosen by hand: " + rel.Name})
+		s.publish("slot", map[string]any{"id": id, "state": mediafiles.SlotChosen, "reason": "chosen by hand: " + rel.Name})
 	}
 	if s.OnChosen != nil {
 		s.OnChosen(ctx, took[0], rel.ID)

@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
@@ -261,7 +263,7 @@ func albumsNotKept(ctx context.Context, db querier, titleID int64, want []domain
 	if err := db.QueryRowContext(ctx, "SELECT keep_up_to_date FROM titles WHERE id = ?", titleID).Scan(&artistKeep); err != nil {
 		return nil, err
 	}
-	parts, err := database.Select[domain.Part](ctx, db, "parts", "title_id = ? AND kind = 'album' AND dropped_at IS NULL ORDER BY release_date IS NULL, release_date, id", titleID)
+	parts, err := database.Select[mediafiles.Part](ctx, db, "parts", "title_id = ? AND kind = 'album' AND dropped_at IS NULL ORDER BY release_date IS NULL, release_date, id", titleID)
 	if err != nil {
 		return nil, err
 	}
@@ -275,7 +277,7 @@ func albumsNotKept(ctx context.Context, db querier, titleID int64, want []domain
 		return out, nil
 	}
 	for _, w := range want {
-		i := slices.IndexFunc(parts, func(p domain.Part) bool { return p.SourceIDs["musicbrainz"] == w.MBID })
+		i := slices.IndexFunc(parts, func(p mediafiles.Part) bool { return p.SourceIDs["musicbrainz"] == w.MBID })
 		if i < 0 {
 			// An album the Library does not know yet could never be kept
 			// up to date by approving: refused until a refresh lists it.
@@ -291,7 +293,7 @@ func albumsNotKept(ctx context.Context, db querier, titleID int64, want []domain
 	return out, nil
 }
 
-func partAlbum(p domain.Part) domain.AskAlbum {
+func partAlbum(p mediafiles.Part) domain.AskAlbum {
 	a := domain.AskAlbum{MBID: p.SourceIDs["musicbrainz"], Name: p.Name}
 	if p.ReleaseDate != nil {
 		a.Year = p.ReleaseDate.Year()
@@ -313,7 +315,7 @@ func musicReady(ctx context.Context, db querier, titleID int64, albums []string,
 			args = append(args, id)
 		}
 	}
-	parts, err := database.Select[domain.Part](ctx, db, "parts", where, args...)
+	parts, err := database.Select[mediafiles.Part](ctx, db, "parts", where, args...)
 	if err != nil || len(parts) == 0 || (len(albums) > 0 && len(parts) < len(albums)) {
 		return false, err
 	}
@@ -411,7 +413,7 @@ func (s *Service) addArtistForAsk(ctx context.Context, a domain.Ask, set Setting
 			return 0, err
 		}
 	}
-	parts, err := database.Select[domain.Part](ctx, db, "parts", "title_id = ? AND kind = 'album' AND dropped_at IS NULL ORDER BY id", tid)
+	parts, err := database.Select[mediafiles.Part](ctx, db, "parts", "title_id = ? AND kind = 'album' AND dropped_at IS NULL ORDER BY id", tid)
 	if err != nil {
 		return 0, err
 	}
@@ -430,7 +432,7 @@ func (s *Service) addArtistForAsk(ctx context.Context, a domain.Ask, set Setting
 		if err := s.Library.IncludeAlbumsThen(ctx, tid, widen, searchAfter, by.actor()); err != nil {
 			return 0, err
 		}
-		if parts, err = database.Select[domain.Part](ctx, db, "parts", "title_id = ? AND kind = 'album' AND dropped_at IS NULL ORDER BY id", tid); err != nil {
+		if parts, err = database.Select[mediafiles.Part](ctx, db, "parts", "title_id = ? AND kind = 'album' AND dropped_at IS NULL ORDER BY id", tid); err != nil {
 			return 0, err
 		}
 	}

@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
@@ -54,19 +56,19 @@ func packWorld(t *testing.T) (*world, *Manager, int64, []int64) {
 	ctx := context.Background()
 	ids := []int64{w.slotID}
 	err := w.s.Write(ctx, func(tx *sql.Tx) error {
-		var sl domain.Slot
+		var sl mediafiles.Slot
 		if err := tx.QueryRow("SELECT item_id, version_id FROM slots WHERE id = ?", w.slotID).Scan(&sl.ItemID, &sl.VersionID); err != nil {
 			return err
 		}
 		for i := 0; i < 2; i++ {
-			it := &domain.Item{Kind: "movie"}
+			it := &mediafiles.Item{Kind: "movie"}
 			if err := tx.QueryRow("SELECT title_id FROM items WHERE id = ?", sl.ItemID).Scan(&it.TitleID); err != nil {
 				return err
 			}
 			if _, err := database.Insert(tx, "items", it, domain.System); err != nil {
 				return err
 			}
-			o := &domain.Slot{ItemID: it.ID, VersionID: sl.VersionID, State: domain.SlotChosen, ChosenReleaseID: &w.relID}
+			o := &mediafiles.Slot{ItemID: it.ID, VersionID: sl.VersionID, State: mediafiles.SlotChosen, ChosenReleaseID: &w.relID}
 			if _, err := database.Insert(tx, "slots", o, domain.System); err != nil {
 				return err
 			}

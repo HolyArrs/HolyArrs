@@ -9,6 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 
@@ -34,7 +36,7 @@ var (
 		CinemaDate: d("2027-02-01")}
 )
 
-func addFolder(t *testing.T, s *database.Store) domain.LibraryFolder {
+func addFolder(t *testing.T, s *database.Store) mediafiles.LibraryFolder {
 	t.Helper()
 	lf, err := AddFolder(context.Background(), s, FolderInput{Path: t.TempDir(), Kind: "movie", Label: "Movies"}, nil, domain.System)
 	if err != nil {
@@ -43,9 +45,9 @@ func addFolder(t *testing.T, s *database.Store) domain.LibraryFolder {
 	return lf
 }
 
-func slotsOf(t *testing.T, s *database.Store, titleID int64) []domain.Slot {
+func slotsOf(t *testing.T, s *database.Store, titleID int64) []mediafiles.Slot {
 	t.Helper()
-	sl, err := database.Select[domain.Slot](context.Background(), s.Read(), "slots", "item_id IN (SELECT id FROM items WHERE title_id = ?) ORDER BY id", titleID)
+	sl, err := database.Select[mediafiles.Slot](context.Background(), s.Read(), "slots", "item_id IN (SELECT id FROM items WHERE title_id = ?) ORDER BY id", titleID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -66,17 +68,17 @@ func TestAddMovieOnceWithGateAndRefusals(t *testing.T) {
 	if err != nil || id == 0 {
 		t.Fatalf("id %d err %v", id, err)
 	}
-	var ti domain.Title
+	var ti mediafiles.Title
 	_ = database.Get(ctx, s.Read(), "titles", id, &ti)
 	if ti.SortName != "dune part two" || ti.Year == nil || *ti.Year != 2024 || ti.ReleaseGate != "released" || ti.GateDelayDays != 0 ||
 		ti.GateDriver != "digital" || ti.GateOpensAt == nil || !ti.GateOpensAt.Equal(*d("2024-04-16")) || ti.Status != "released" ||
 		ti.WhyAdded != "by_hand" || ti.MetadataSource != "tmdb" || !ti.KeepUpToDate {
 		t.Fatalf("title %+v", ti)
 	}
-	vs, _ := database.Select[domain.Version](ctx, s.Read(), "versions", "title_id = ?", id)
+	vs, _ := database.Select[mediafiles.Version](ctx, s.Read(), "versions", "title_id = ?", id)
 	sl := slotsOf(t, s, id)
 	if len(vs) != 1 || vs[0].FolderName != "Dune - Part Two (2024)" || !vs[0].IsMain || vs[0].LibraryFolderID != lf.ID ||
-		len(sl) != 1 || sl[0].State != domain.SlotWanted {
+		len(sl) != 1 || sl[0].State != mediafiles.SlotWanted {
 		t.Fatalf("versions %+v slots %+v", vs, sl)
 	}
 
@@ -85,7 +87,7 @@ func TestAddMovieOnceWithGateAndRefusals(t *testing.T) {
 		t.Fatalf("second add: %v", err)
 	}
 
-	if _, err := AddNeverAdd(ctx, s, domain.NeverAdd{SourceIDs: map[string]string{"tmdb": "900001"}, Name: "The Lantern Keepers", Reason: "not for us"}, domain.System); err != nil {
+	if _, err := AddNeverAdd(ctx, s, mediafiles.NeverAdd{SourceIDs: map[string]string{"tmdb": "900001"}, Name: "The Lantern Keepers", Reason: "not for us"}, domain.System); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := AddMovie(ctx, s, future, AddOptions{}, nil, now, domain.System); !errors.Is(err, ErrNeverAdd) {
@@ -104,9 +106,9 @@ func TestAddMovieOnceWithGateAndRefusals(t *testing.T) {
 		t.Fatal(err)
 	}
 	fs := slotsOf(t, s, fid)
-	var ft domain.Title
+	var ft mediafiles.Title
 	_ = database.Get(ctx, s.Read(), "titles", fid, &ft)
-	if fs[0].State != domain.SlotNotOutYet || fs[0].LastReason == nil || *fs[0].LastReason != "release gate: searching from 2027-02-04 (cinema date)" ||
+	if fs[0].State != mediafiles.SlotNotOutYet || fs[0].LastReason == nil || *fs[0].LastReason != "release gate: searching from 2027-02-04 (cinema date)" ||
 		ft.KeepUpToDate || ft.WhyAdded != "import" || ft.Status != "announced" {
 		t.Fatalf("future slot %+v title %+v", fs[0], ft)
 	}
@@ -160,7 +162,7 @@ func TestGateDefaultsSetting(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	var ti domain.Title
+	var ti mediafiles.Title
 	_ = database.Get(ctx, s.Read(), "titles", id, &ti)
 	if ti.ReleaseGate != GateInCinemas || ti.GateDelayDays != 2 || ti.GateOpensAt.Format("2006-01-02") != "2027-02-03" {
 		t.Fatalf("title from new defaults %+v", ti)
@@ -235,7 +237,7 @@ func TestFolderChecksAndCRUD(t *testing.T) {
 	if err != nil || !changed || got.Health != "missing" {
 		t.Fatalf("recheck %+v %v %v", got, changed, err)
 	}
-	var stored domain.LibraryFolder
+	var stored mediafiles.LibraryFolder
 	_ = database.Get(ctx, s.Read(), "library_folders", g.ID, &stored)
 	if stored.Health != "missing" || stored.HealthReason == "" {
 		t.Fatalf("stored %+v", stored)
@@ -302,7 +304,7 @@ func TestAddQueuesRefreshScanSearchInOrder(t *testing.T) {
 	if got := <-searched; got != slotsOf(t, s, id)[0].ID {
 		t.Fatalf("searched slot %d", got)
 	}
-	var ti domain.Title
+	var ti mediafiles.Title
 	_ = database.Get(ctx, s.Read(), "titles", id, &ti)
 	if ti.RefreshedAt == nil {
 		t.Fatal("not refreshed")
@@ -352,12 +354,12 @@ func TestEditPickRulesGoodEnoughWithDryRun(t *testing.T) {
 	}
 	// Put a 1080p WEB file in the library: good enough under Standard.
 	sl := slotsOf(t, s, id)[0]
-	strict := domain.GoodEveryday()
+	strict := mediafiles.GoodEveryday()
 	strict.GoodEnoughAt = "2160p_web"
 	var strictID int64
 	err = s.Write(ctx, func(tx *sql.Tx) error {
 		name := "Dune.Part.Two.2024.1080p.WEB-DL.DDP5.1.H.264-GRP"
-		f := &domain.File{SlotIDs: []int64{sl.ID}, VersionID: sl.VersionID, RelativePath: name + ".mkv", Size: 1, AddedAt: now,
+		f := &mediafiles.File{SlotIDs: []int64{sl.ID}, VersionID: sl.VersionID, RelativePath: name + ".mkv", Size: 1, AddedAt: now,
 			Languages: []string{}, MediaInfo: map[string]any{}, ReleaseName: &name, Origin: "imported", PlacedBy: "hardlink", Role: "main", State: "present"}
 		if _, err := database.Insert(tx, "files", f, domain.System); err != nil {
 			return err
@@ -366,7 +368,7 @@ func TestEditPickRulesGoodEnoughWithDryRun(t *testing.T) {
 			return err
 		}
 		var err error
-		strictID, err = database.Insert(tx, "pick_rules", &domain.PickRules{Name: "Strict", Kinds: []string{"movie"}, Revision: 1, Body: strict}, domain.System)
+		strictID, err = database.Insert(tx, "pick_rules", &mediafiles.PickRules{Name: "Strict", Kinds: []string{"movie"}, Revision: 1, Body: strict}, domain.System)
 		return err
 	})
 	if err != nil {
@@ -376,14 +378,14 @@ func TestEditPickRulesGoodEnoughWithDryRun(t *testing.T) {
 	if err != nil || !res.DryRun || res.GoodEnoughChange != 1 || len(res.SlotChanges) != 1 || res.SlotChanges[0].To != "better_wanted" {
 		t.Fatalf("dry run %+v %v", res, err)
 	}
-	if got := slotsOf(t, s, id)[0]; got.State != domain.SlotInLibrary || !got.GoodEnough {
+	if got := slotsOf(t, s, id)[0]; got.State != mediafiles.SlotInLibrary || !got.GoodEnough {
 		t.Fatalf("dry run changed the slot: %+v", got)
 	}
 	res, err = svc.Edit(ctx, id, TitleChange{PickRulesID: &strictID}, false, domain.System)
 	if err != nil || res.GoodEnoughChange != 1 {
 		t.Fatalf("edit %+v %v", res, err)
 	}
-	if got := slotsOf(t, s, id)[0]; got.State != domain.SlotBetterWanted || got.GoodEnough {
+	if got := slotsOf(t, s, id)[0]; got.State != mediafiles.SlotBetterWanted || got.GoodEnough {
 		t.Fatalf("after edit: %+v", got)
 	}
 	// Turning Keep up to date off stops looking for a better copy.
@@ -391,7 +393,7 @@ func TestEditPickRulesGoodEnoughWithDryRun(t *testing.T) {
 	if _, err := svc.Edit(ctx, id, TitleChange{KeepUpToDate: &off}, false, domain.System); err != nil {
 		t.Fatal(err)
 	}
-	if got := slotsOf(t, s, id)[0]; got.State != domain.SlotInLibrary {
+	if got := slotsOf(t, s, id)[0]; got.State != mediafiles.SlotInLibrary {
 		t.Fatalf("keep off: %+v", got)
 	}
 }
@@ -452,7 +454,7 @@ func TestMoveDryRunThenApply(t *testing.T) {
 	_ = os.MkdirAll(dir, 0o755)
 	_ = os.WriteFile(filepath.Join(dir, "dune.mkv"), []byte("movie bytes"), 0o644)
 	err = s.Write(ctx, func(tx *sql.Tx) error {
-		_, err := database.Insert(tx, "files", &domain.File{SlotIDs: []int64{sl.ID}, VersionID: sl.VersionID, RelativePath: "Dune - Part Two (2024)/dune.mkv", Size: 11, AddedAt: now,
+		_, err := database.Insert(tx, "files", &mediafiles.File{SlotIDs: []int64{sl.ID}, VersionID: sl.VersionID, RelativePath: "Dune - Part Two (2024)/dune.mkv", Size: 11, AddedAt: now,
 			Languages: []string{}, MediaInfo: map[string]any{}, Origin: "imported", PlacedBy: "copy", Role: "main", State: "present"}, domain.System)
 		return err
 	})
@@ -470,7 +472,7 @@ func TestMoveDryRunThenApply(t *testing.T) {
 	if _, err := os.Stat(filepath.Join(dir, "dune.mkv")); err != nil {
 		t.Fatal("dry run moved the file")
 	}
-	var v domain.Version
+	var v mediafiles.Version
 	_ = database.Get(ctx, s.Read(), "versions", sl.VersionID, &v)
 	if v.LibraryFolderID != from.ID {
 		t.Fatal("dry run changed the Version folder")
@@ -506,7 +508,7 @@ func TestMoveRefusesFoundFiles(t *testing.T) {
 	}
 	sl := slotsOf(t, s, id)[0]
 	_ = s.Write(ctx, func(tx *sql.Tx) error {
-		_, err := database.Insert(tx, "files", &domain.File{SlotIDs: []int64{}, VersionID: sl.VersionID, RelativePath: "Dune - Part Two (2024)/x.mkv", AddedAt: now,
+		_, err := database.Insert(tx, "files", &mediafiles.File{SlotIDs: []int64{}, VersionID: sl.VersionID, RelativePath: "Dune - Part Two (2024)/x.mkv", AddedAt: now,
 			Languages: []string{}, MediaInfo: map[string]any{}, Origin: "found", PlacedBy: "none", Role: "main", State: "present"}, domain.System)
 		return err
 	})
@@ -560,7 +562,7 @@ func TestScanFindsImportedFile(t *testing.T) {
 	_ = os.MkdirAll(dir, 0o755)
 	_ = os.WriteFile(filepath.Join(dir, "dune.mkv"), []byte("x"), 0o644)
 	if err := s.Write(ctx, func(tx *sql.Tx) error {
-		_, err := database.Insert(tx, "files", &domain.File{SlotIDs: []int64{sl.ID}, VersionID: sl.VersionID, RelativePath: "Dune - Part Two (2024)/dune.mkv", Size: 1, AddedAt: now,
+		_, err := database.Insert(tx, "files", &mediafiles.File{SlotIDs: []int64{sl.ID}, VersionID: sl.VersionID, RelativePath: "Dune - Part Two (2024)/dune.mkv", Size: 1, AddedAt: now,
 			Languages: []string{}, MediaInfo: map[string]any{}, Origin: "imported", PlacedBy: "copy", Role: "main", State: "present"}, domain.System)
 		return err
 	}); err != nil {

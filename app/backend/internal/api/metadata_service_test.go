@@ -20,6 +20,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
@@ -264,7 +266,7 @@ func newMetadataAppRig(t *testing.T, service *metadata.Service, directMusic ...m
 	for _, kind := range []string{"movie", "show", "music"} {
 		path := t.TempDir()
 		if err := st.Write(ctx, func(tx *sql.Tx) error {
-			_, err := database.Insert(tx, "library_folders", &domain.LibraryFolder{Path: path, Kind: kind, Label: strings.ToUpper(kind[:1]) + kind[1:], Health: "ok", SameDiskAs: []int64{}}, domain.System)
+			_, err := database.Insert(tx, "library_folders", &mediafiles.LibraryFolder{Path: path, Kind: kind, Label: strings.ToUpper(kind[:1]) + kind[1:], Health: "ok", SameDiskAs: []int64{}}, domain.System)
 			return err
 		}); err != nil {
 			t.Fatal(err)

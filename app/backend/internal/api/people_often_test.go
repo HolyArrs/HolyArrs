@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
@@ -27,7 +29,7 @@ func TestOftenWorksWithCountsLibraryShowsAndHidesUnderFour(t *testing.T) {
 		t.Helper()
 		year := 2020
 		err := s.Write(context.Background(), func(tx *sql.Tx) error {
-			title := domain.Title{Kind: kind, Name: name, SortName: name, Year: &year, SourceIDs: map[string]string{"tmdb": tmdb}, MetadataSource: "tmdb", NewPartsPolicy: "all",
+			title := mediafiles.Title{Kind: kind, Name: name, SortName: name, Year: &year, SourceIDs: map[string]string{"tmdb": tmdb}, MetadataSource: "tmdb", NewPartsPolicy: "all",
 				WhyAdded: "by_hand", State: "active", ReleaseGate: "released", GateDriver: "none", Status: "released", People: people}
 			_, err := database.Insert(tx, "titles", &title, domain.System)
 			return err

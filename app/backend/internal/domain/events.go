@@ -1,5 +1,7 @@
 package domain
 
+import "github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 // Event kinds used from M1 step 1 on. Older kinds (title_added,
 // release_chosen, download_started and so on) keep their names.
 const (
@@ -57,12 +59,12 @@ const (
 
 // Event kinds for History, Alerts and health (5.1.10 to 5.1.14).
 const (
-	EventNeedsDecision    = "needs_decision"      // a Slot moved to needs_a_decision
-	EventLibraryRescanned = "library_rescanned"   // the regular rescan of every Library folder ran
-	EventHealthBroken     = "health_broken"       // a health check started failing
-	EventHealthRecovered  = "health_recovered"    // a failing health check passes again
-	EventMediaRefreshed   = "media_server_told"   // a media server was asked to look at a folder again
-	EventMediaFailed      = "media_server_failed" // a media server could not be told
+	EventNeedsDecision    = mediafiles.EventNeedsDecision // a Slot moved to needs_a_decision
+	EventLibraryRescanned = "library_rescanned"           // the regular rescan of every Library folder ran
+	EventHealthBroken     = "health_broken"               // a health check started failing
+	EventHealthRecovered  = "health_recovered"            // a failing health check passes again
+	EventMediaRefreshed   = "media_server_told"           // a media server was asked to look at a folder again
+	EventMediaFailed      = "media_server_failed"         // a media server could not be told
 )
 
 // EventControl is a control used by the owner or an admin (3.7.7): a part

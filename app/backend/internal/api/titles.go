@@ -13,6 +13,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/asks"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
@@ -116,7 +118,7 @@ func (a *API) addTitle(w http.ResponseWriter, r *http.Request) {
 			log.Printf("api: follow on add: %v", err)
 		}
 	}
-	var t domain.Title
+	var t mediafiles.Title
 	if err := database.Get(r.Context(), a.s.Store.Read(), "titles", id, &t); err != nil {
 		internal(w, err)
 		return
@@ -309,7 +311,7 @@ type FolderView struct {
 	HealthCheckedAt  *time.Time `json:"health_checked_at,omitempty"`
 }
 
-func folderView(f domain.LibraryFolder) FolderView {
+func folderView(f mediafiles.LibraryFolder) FolderView {
 	return FolderView{ID: f.ID, Path: f.Path, Kind: f.Kind, Label: f.Label, DefaultPickRules: f.DefaultPickRules, FreeSpace: f.FreeSpace,
 		Health: f.Health, HealthReason: f.HealthReason, HealthCheckedAt: f.HealthCheckedAt}
 }
@@ -324,7 +326,7 @@ type NeverAddView struct {
 	CreatedAt time.Time         `json:"created_at"`
 }
 
-func neverAddView(n domain.NeverAdd) NeverAddView {
+func neverAddView(n mediafiles.NeverAdd) NeverAddView {
 	return NeverAddView{ID: n.ID, Kind: n.Kind, SourceIDs: n.SourceIDs, Name: n.Name, Reason: n.Reason, CreatedAt: n.CreatedAt}
 }
 
@@ -340,7 +342,7 @@ type PickRulesView struct {
 }
 
 func (a *API) listPickRules(w http.ResponseWriter, r *http.Request) {
-	ps, err := database.Select[domain.PickRules](r.Context(), a.s.Store.Read(), "pick_rules", "1=1 ORDER BY id")
+	ps, err := database.Select[mediafiles.PickRules](r.Context(), a.s.Store.Read(), "pick_rules", "1=1 ORDER BY id")
 	if err != nil {
 		internal(w, err)
 		return
@@ -362,7 +364,7 @@ func (a *API) listPickRules(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *API) listFolders(w http.ResponseWriter, r *http.Request) {
-	fs, err := database.Select[domain.LibraryFolder](r.Context(), a.s.Store.Read(), "library_folders", "1=1 ORDER BY id")
+	fs, err := database.Select[mediafiles.LibraryFolder](r.Context(), a.s.Store.Read(), "library_folders", "1=1 ORDER BY id")
 	if err != nil {
 		internal(w, err)
 		return
@@ -461,7 +463,7 @@ func (a *API) addNeverAdd(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusBadRequest, "tmdb_id and name are needed; kind is movie (the default) or show")
 		return
 	}
-	n, err := library.AddNeverAdd(r.Context(), a.s.Store, domain.NeverAdd{Kind: body.Kind, SourceIDs: map[string]string{"tmdb": body.TMDB}, Name: body.Name, Reason: body.Reason}, actor(r))
+	n, err := library.AddNeverAdd(r.Context(), a.s.Store, mediafiles.NeverAdd{Kind: body.Kind, SourceIDs: map[string]string{"tmdb": body.TMDB}, Name: body.Name, Reason: body.Reason}, actor(r))
 	if err != nil {
 		libraryError(w, err)
 		return
@@ -543,7 +545,7 @@ func (a *API) refreshTitles(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	for _, tid := range body.TitleIDs {
-		var t domain.Title
+		var t mediafiles.Title
 		if err := database.Get(r.Context(), a.s.Store.Read(), "titles", tid, &t); err != nil {
 			fail(w, http.StatusNotFound, "no Title "+itoa(tid))
 			return

@@ -12,6 +12,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/backup"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
@@ -122,8 +124,8 @@ func TestDownloaderAttemptRoutesRedactAndAbandon(t *testing.T) {
 		if err := tx.QueryRow("SELECT id FROM pick_rules LIMIT 1").Scan(&pickRulesID); err != nil {
 			return err
 		}
-		folder := &domain.LibraryFolder{Path: t.TempDir(), Kind: "movie", Label: "Attempt movies", Health: "ok", SameDiskAs: []int64{}}
-		title := &domain.Title{Kind: "movie", GateDriver: "none", Name: "Signal Harbor", SortName: "signal harbor", Aliases: []string{}, SourceIDs: map[string]string{},
+		folder := &mediafiles.LibraryFolder{Path: t.TempDir(), Kind: "movie", Label: "Attempt movies", Health: "ok", SameDiskAs: []int64{}}
+		title := &mediafiles.Title{Kind: "movie", GateDriver: "none", Name: "Signal Harbor", SortName: "signal harbor", Aliases: []string{}, SourceIDs: map[string]string{},
 			MetadataSource: "local", NewPartsPolicy: "all", ReleaseGate: "released", MusicTypes: []string{}, WhyAdded: "by_hand", Artwork: []string{}, Status: "released", State: "active"}
 		for _, record := range []struct {
 			table string
@@ -133,15 +135,15 @@ func TestDownloaderAttemptRoutesRedactAndAbandon(t *testing.T) {
 				return err
 			}
 		}
-		item := &domain.Item{TitleID: title.ID, Kind: "movie"}
+		item := &mediafiles.Item{TitleID: title.ID, Kind: "movie"}
 		if _, err := database.Insert(tx, "items", item, domain.System); err != nil {
 			return err
 		}
-		version := &domain.Version{TitleID: title.ID, Label: "HD", PickRulesID: pickRulesID, LibraryFolderID: folder.ID, FolderName: "Signal Harbor", IsMain: true}
+		version := &mediafiles.Version{TitleID: title.ID, Label: "HD", PickRulesID: pickRulesID, LibraryFolderID: folder.ID, FolderName: "Signal Harbor", IsMain: true}
 		if _, err := database.Insert(tx, "versions", version, domain.System); err != nil {
 			return err
 		}
-		slot := &domain.Slot{ItemID: item.ID, VersionID: version.ID, State: domain.SlotChosen}
+		slot := &mediafiles.Slot{ItemID: item.ID, VersionID: version.ID, State: mediafiles.SlotChosen}
 		if _, err := database.Insert(tx, "slots", slot, domain.System); err != nil {
 			return err
 		}

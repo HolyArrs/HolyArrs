@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
@@ -167,7 +169,7 @@ func TestCollectionConfirmationRejectsChangedFinishedDownloadNeedsDecisionIdenti
 			if _, err := database.Insert(tx, "downloads", d, domain.System); err != nil {
 				return err
 			}
-			im := &domain.Import{DownloadID: &d.ID, FromPath: "download", Kind: "movie", Plan: []domain.PlanStep{}, Mode: "auto", Result: []domain.PlaceResult{}, State: importState}
+			im := &mediafiles.Import{DownloadID: &d.ID, FromPath: "download", Kind: "movie", Plan: []mediafiles.PlanStep{}, Mode: "auto", Result: []mediafiles.PlaceResult{}, State: importState}
 			if _, err := database.Insert(tx, "imports", im, domain.System); err != nil {
 				return err
 			}
@@ -266,7 +268,7 @@ func TestLargeCollectionSelectionIsDeterministicAndBounded(t *testing.T) {
 }
 
 func TestCollectionPartialFailureCanBeReviewedAndRetried(t *testing.T) {
-	svc, s, lf, cid, ids := func() (*Service, *database.Store, domain.LibraryFolder, int64, []int64) {
+	svc, s, lf, cid, ids := func() (*Service, *database.Store, mediafiles.LibraryFolder, int64, []int64) {
 		svc, s, lf, first, files := deleteWorld(t)
 		secondMovie := dune
 		secondMovie.Name, secondMovie.Year, secondMovie.IDs = "Dune", 2021, map[string]string{"tmdb": "438631"}

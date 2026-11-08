@@ -16,18 +16,17 @@ import (
 	"sync"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/judge"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/naming"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Episode is one known episode of a show.
 type Episode struct {
-	Ref    judge.EpisodeRef
+	Ref    mediafiles.EpisodeRef
 	Name   string
 	SlotID int64
 	Wanted bool
@@ -37,16 +36,16 @@ type Episode struct {
 type ShowTarget struct {
 	LibraryPath string
 	FolderName  string
-	Show        judge.TitleRef
+	Show        mediafiles.TitleRef
 	IDs         map[string]string
 	Order       string
 	Episodes    []Episode
 	ReleaseName string
-	Naming      *naming.Settings
+	Naming      *mediafiles.NamingSettings
 }
 
 func (t ShowTarget) episodePath(p releasename.Result, source string, eps []Episode) string {
-	ns := naming.Defaults()
+	ns := mediafiles.NamingDefaults()
 	if t.Naming != nil {
 		ns = *t.Naming
 	}
@@ -54,14 +53,14 @@ func (t ShowTarget) episodePath(p releasename.Result, source string, eps []Episo
 	release := strings.TrimSuffix(filepath.Base(source), ext)
 	f := EpisodeFactsFor(t.Show.Name, t.Show.Year, t.IDs, t.Order, p, release, ext, eps)
 	if !ns.RenameOnImport {
-		return path.Join(t.FolderName, naming.SeasonFolder(ns, f.Season), naming.CleanWith(ns, release)+strings.ToLower(ext))
+		return path.Join(t.FolderName, mediafiles.SeasonFolder(ns, f.Season), mediafiles.CleanWith(ns, release)+strings.ToLower(ext))
 	}
-	return naming.EpisodePath(ns, t.FolderName, f)
+	return mediafiles.EpisodePath(ns, t.FolderName, f)
 }
 
 // EpisodeFactsFor builds the naming facts for one episode file.
-func EpisodeFactsFor(show string, year int, ids map[string]string, order string, p releasename.Result, release, ext string, eps []Episode) naming.EpisodeFacts {
-	f := naming.EpisodeFacts{Facts: naming.FactsFrom(show, year, ids, p, release, ext), Order: order}
+func EpisodeFactsFor(show string, year int, ids map[string]string, order string, p releasename.Result, release, ext string, eps []Episode) mediafiles.EpisodeFacts {
+	f := mediafiles.EpisodeFacts{NameFacts: mediafiles.FactsFrom(show, year, ids, p, release, ext), Order: order}
 	for i, e := range eps {
 		if i == 0 {
 			f.Season, f.AirDate = e.Ref.Season, e.Ref.AirDay
@@ -82,19 +81,19 @@ func labels(eps []Episode) string {
 }
 
 // PlanEpisodes turns candidate files into copy steps for a show.
-func PlanEpisodes(cands []Candidate, t ShowTarget) []domain.PlanStep {
+func PlanEpisodes(cands []Candidate, t ShowTarget) []mediafiles.PlanStep {
 	t.Show.Kind = "show"
-	lib := []judge.TitleRef{t.Show}
-	refs := make([]judge.EpisodeRef, len(t.Episodes))
+	lib := []mediafiles.TitleRef{t.Show}
+	refs := make([]mediafiles.EpisodeRef, len(t.Episodes))
 	byItem := map[int64]Episode{}
 	for i, e := range t.Episodes {
 		refs[i] = e.Ref
 		byItem[e.Ref.ItemID] = e
 	}
-	var steps []domain.PlanStep
+	var steps []mediafiles.PlanStep
 	for _, c := range cands {
 		ext := strings.ToLower(filepath.Ext(c.Path))
-		s := domain.PlanStep{SourceFile: c.Path, TargetSlotIDs: []int64{}, Why: []string{}}
+		s := mediafiles.PlanStep{SourceFile: c.Path, TargetSlotIDs: []int64{}, Why: []string{}}
 		p := releasename.Parse(filepath.Base(c.Path), releasename.Hints{Size: c.Size, Show: true})
 		switch {
 		case programExt[ext] || p.Has("executable") || p.Has("double_extension"):
@@ -105,16 +104,16 @@ func PlanEpisodes(cands []Candidate, t ShowTarget) []domain.PlanStep {
 			s.Method, s.Why = "refuse", []string{"a sample, not the full video"}
 		case !p.IsShow():
 			s.Method, s.Why = "skip", []string{"the file name gives no episode numbers; left alone"}
-		case judge.IsPack(p):
+		case mediafiles.IsPack(p):
 			s.Method, s.Why = "skip", []string{"the file name names whole seasons, not episodes; left alone"}
 		default:
-			m := judge.MatchTitle(p, lib)
+			m := mediafiles.MatchTitle(p, lib)
 			if m.Title == nil && strings.TrimSpace(p.Title.Value) == "" {
 				for _, alt := range []string{filepath.Base(filepath.Dir(c.Path)), t.ReleaseName} {
 					if alt == "" {
 						continue
 					}
-					if fm := judge.MatchTitle(releasename.Parse(alt, releasename.Hints{Show: true}), lib); fm.Title != nil {
+					if fm := mediafiles.MatchTitle(releasename.Parse(alt, releasename.Hints{Show: true}), lib); fm.Title != nil {
 						m = fm
 						break
 					}
@@ -124,7 +123,7 @@ func PlanEpisodes(cands []Candidate, t ShowTarget) []domain.PlanStep {
 				s.Method, s.Why = "refuse", []string{"does not match the show: " + m.Detail}
 				break
 			}
-			found, why := judge.MatchEpisodes(p, t.Order, refs)
+			found, why := mediafiles.MatchEpisodes(p, t.Order, refs)
 			if len(found) == 0 {
 				s.Method, s.Why = "skip", []string{why + "; left alone"}
 				break
@@ -201,19 +200,19 @@ func heldFrom(recorded []string, rel string) string {
 }
 
 type showSlot struct {
-	sl      domain.Slot
-	it      domain.Item
+	sl      mediafiles.Slot
+	it      mediafiles.Item
 	live    bool
 	step    int
 	lie     string
 	outcome string
-	to      domain.SlotState
+	to      mediafiles.SlotState
 	reason  string
 }
 
 var showImportEntered func(id int64)
 
-func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain.Downloader, dryRun bool, by domain.Actor) (*domain.Import, error) {
+func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain.Downloader, dryRun bool, by domain.Actor) (*mediafiles.Import, error) {
 	if !dryRun {
 		mu, _ := im.runs.LoadOrStore(d.ID, &sync.Mutex{})
 		mu.(*sync.Mutex).Lock()
@@ -227,8 +226,8 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 	}
 	db := im.Store.Read()
 	slots := map[int64]*showSlot{}
-	var ver domain.Version
-	var ti domain.Title
+	var ver mediafiles.Version
+	var ti mediafiles.Title
 	for i, id := range d.SlotIDs {
 		ss := &showSlot{step: -1}
 		if err := database.Get(ctx, db, "slots", id, &ss.sl); err != nil {
@@ -248,7 +247,7 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 		if ss.sl.VersionID != ver.ID || ss.it.TitleID != ti.ID {
 			return nil, fmt.Errorf("download %d fills Slots of more than one show or Version", d.ID)
 		}
-		ss.live = ss.sl.State == domain.SlotDownloading || ss.sl.State == domain.SlotImporting
+		ss.live = ss.sl.State == mediafiles.SlotDownloading || ss.sl.State == mediafiles.SlotImporting
 		slots[id] = ss
 	}
 	liveAny := false
@@ -258,15 +257,15 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 	if !dryRun && !liveAny {
 		return nil, fmt.Errorf("no Slot of download %d waits for it; nothing to import", d.ID)
 	}
-	var lf domain.LibraryFolder
+	var lf mediafiles.LibraryFolder
 	if err := database.Get(ctx, db, "library_folders", ver.LibraryFolderID, &lf); err != nil {
 		return nil, err
 	}
-	var pr domain.PickRules
+	var pr mediafiles.PickRules
 	if err := database.Get(ctx, db, "pick_rules", ver.PickRulesID, &pr); err != nil {
 		return nil, err
 	}
-	ns, err := naming.Read(ctx, db)
+	ns, err := mediafiles.ReadNaming(ctx, db)
 	if err != nil {
 		return nil, err
 	}
@@ -285,11 +284,11 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 		itemWhere = "title_id = ? AND kind = 'track' AND dropped_at IS NULL AND part_id = ?"
 		args = append(args, *part)
 	}
-	items, err := database.Select[domain.Item](ctx, db, "items", itemWhere, args...)
+	items, err := database.Select[mediafiles.Item](ctx, db, "items", itemWhere, args...)
 	if err != nil {
 		return nil, err
 	}
-	verSlots, err := database.Select[domain.Slot](ctx, db, "slots", "version_id = ?", ver.ID)
+	verSlots, err := database.Select[mediafiles.Slot](ctx, db, "slots", "version_id = ?", ver.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -305,17 +304,17 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 	if d.ReleaseID != nil {
 		_ = db.QueryRowContext(ctx, "SELECT name FROM releases WHERE id = ?", *d.ReleaseID).Scan(&relName)
 	}
-	t := ShowTarget{LibraryPath: lf.Path, Show: judge.TitleRef{ID: ti.ID, Name: ti.Name, Aliases: ti.Aliases, Year: year, Kind: "show"},
-		IDs: ti.SourceIDs, Order: naming.OrderAired, ReleaseName: relName, Naming: &ns}
+	t := ShowTarget{LibraryPath: lf.Path, Show: mediafiles.TitleRef{ID: ti.ID, Name: ti.Name, Aliases: ti.Aliases, Year: year, Kind: "show"},
+		IDs: ti.SourceIDs, Order: mediafiles.OrderAired, ReleaseName: relName, Naming: &ns}
 	if ti.EpisodeOrder != nil && *ti.EpisodeOrder != "" {
 		t.Order = *ti.EpisodeOrder
 	}
 	t.FolderName = safeName(ver.FolderName)
 	if t.FolderName == "" || t.FolderName == "." || t.FolderName == ".." {
-		t.FolderName = naming.ShowFolder(ns, naming.Facts{Title: ti.Name, Year: year})
+		t.FolderName = mediafiles.ShowFolder(ns, mediafiles.NameFacts{Title: ti.Name, Year: year})
 	}
 	for _, it := range items {
-		e := Episode{Ref: judge.EpisodeRef{ItemID: it.ID}, SlotID: slotOf[it.ID]}
+		e := Episode{Ref: mediafiles.EpisodeRef{ItemID: it.ID}, SlotID: slotOf[it.ID]}
 		if it.Numbers.Season != nil {
 			e.Ref.Season = *it.Numbers.Season
 		}
@@ -339,7 +338,7 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 	root, rootOK := domain.MapPath(d.SavePath, dr.PathMap)
 	cands, bad := candidates(root, d.FilesSeen)
 	if !rootOK {
-		cands, bad = nil, []domain.PlanStep{unpackStep(d.SavePath, "the Downloader reported a folder with \"..\" in it")}
+		cands, bad = nil, []mediafiles.PlanStep{unpackStep(d.SavePath, "the Downloader reported a folder with \"..\" in it")}
 	}
 	unpacked, cleanup, unpackWhy := unpackRars(ctx, d.ID, root, cands, rules, dryRun)
 	defer cleanup()
@@ -347,7 +346,7 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 	if unpackWhy != "" {
 		bad = append(bad, unpackStep(root, unpackWhy))
 	}
-	var plan []domain.PlanStep
+	var plan []mediafiles.PlanStep
 	if music {
 		at, err := albumTarget(ctx, db, lf, ver, ti, items, slotOf, slots, dryRun, ns)
 		if err != nil {
@@ -372,7 +371,7 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 			}
 		}
 	}
-	olds := map[int][]domain.File{}
+	olds := map[int][]mediafiles.File{}
 	inspected := map[string]map[string]any{}
 	fakes := im.refuseFakes(ctx, db)
 	var claimed int64
@@ -391,7 +390,7 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 				continue
 			}
 			seen[*ss.sl.FileID] = true
-			var f domain.File
+			var f mediafiles.File
 			if err := database.Get(ctx, db, "files", *ss.sl.FileID, &f); err == nil && f.State == "present" {
 				olds[i] = append(olds[i], f)
 			}
@@ -482,7 +481,7 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 			}
 		}
 	}
-	imp := &domain.Import{DownloadID: &d.ID, FromPath: root, Kind: map[bool]string{false: "episodes", true: "tracks"}[music], Plan: plan, Result: []domain.PlaceResult{}, Mode: "dry_run", State: "planned"}
+	imp := &mediafiles.Import{DownloadID: &d.ID, FromPath: root, Kind: map[bool]string{false: "episodes", true: "tracks"}[music], Plan: plan, Result: []mediafiles.PlaceResult{}, Mode: "dry_run", State: "planned"}
 	if dryRun {
 		return imp, nil
 	}
@@ -492,7 +491,7 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 		im.lowSpace(ctx, lowSpace, firstSlot, ti.ID, d.ID, by)
 	}
 
-	prior, err := database.Select[domain.Import](ctx, db, "imports", "download_id = ? AND state = 'placing' ORDER BY id DESC LIMIT 1", d.ID)
+	prior, err := database.Select[mediafiles.Import](ctx, db, "imports", "download_id = ? AND state = 'placing' ORDER BY id DESC LIMIT 1", d.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -511,7 +510,7 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 		}
 	}
 	for _, st := range plan {
-		r := domain.PlaceResult{SourceFile: st.SourceFile, Outcome: "pending", PlacedBy: "none"}
+		r := mediafiles.PlaceResult{SourceFile: st.SourceFile, Outcome: "pending", PlacedBy: "none"}
 		if st.Method == "hardlink" {
 			r.Outcome = "placing"
 		}
@@ -521,8 +520,8 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 	var moved []int64
 	if err := im.Store.Write(ctx, func(tx *sql.Tx) error {
 		for _, id := range d.SlotIDs {
-			if ss := slots[id]; ss.live && ss.sl.State == domain.SlotDownloading {
-				if err := store.MoveSlotTx(tx, id, domain.SlotImporting, "importing", by); err != nil {
+			if ss := slots[id]; ss.live && ss.sl.State == mediafiles.SlotDownloading {
+				if err := mediafiles.MoveSlotTx(tx, id, mediafiles.SlotImporting, "importing", by); err != nil {
 					return err
 				}
 				moved = append(moved, id)
@@ -537,7 +536,7 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 		return nil, err
 	}
 	for _, id := range moved {
-		im.publish("slot", map[string]any{"id": id, "state": domain.SlotImporting})
+		im.publish("slot", map[string]any{"id": id, "state": mediafiles.SlotImporting})
 	}
 	swept := map[string]bool{}
 	for _, st := range plan {
@@ -546,7 +545,7 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 			sweepStaleParts(filepath.Dir(st.TargetPath))
 		}
 	}
-	whole := func(f domain.File) bool {
+	whole := func(f mediafiles.File) bool {
 		for _, id := range f.SlotIDs {
 			if !filled[id] {
 				return false
@@ -554,7 +553,7 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 		}
 		return true
 	}
-	abs := func(f domain.File) string { return filepath.Join(lf.Path, filepath.FromSlash(f.RelativePath)) }
+	abs := func(f mediafiles.File) string { return filepath.Join(lf.Path, filepath.FromSlash(f.RelativePath)) }
 	save := func() error {
 		return im.Store.Write(ctx, func(tx *sql.Tx) error { return database.Update(tx, "imports", imp, by) })
 	}
@@ -750,9 +749,9 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 			if music && relName != "" {
 				name = relName
 			}
-			f := &domain.File{SlotIDs: step.TargetSlotIDs, VersionID: ver.ID, RelativePath: filepath.ToSlash(rel), Size: size, AddedAt: now,
-				Quality:   domain.Quality{Resolution: p.Resolution.Value, Source: p.Source.Value, Codec: p.Codec.Value, HDR: p.HDR.Value},
-				Languages: p.Languages, MediaInfo: map[string]any{"step": judge.StepFor(p)}, ReleaseName: &name, Origin: "imported", PlacedBy: r.PlacedBy,
+			f := &mediafiles.File{SlotIDs: step.TargetSlotIDs, VersionID: ver.ID, RelativePath: filepath.ToSlash(rel), Size: size, AddedAt: now,
+				Quality:   mediafiles.Quality{Resolution: p.Resolution.Value, Source: p.Source.Value, Codec: p.Codec.Value, HDR: p.HDR.Value},
+				Languages: p.Languages, MediaInfo: map[string]any{"step": mediafiles.StepFor(p)}, ReleaseName: &name, Origin: "imported", PlacedBy: r.PlacedBy,
 				FellBack: r.FellBack, Role: "main", State: "present"}
 			for k, value := range inspected[step.SourceFile] {
 				f.MediaInfo[k] = value
@@ -761,7 +760,7 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 				f.Languages = InspectedLanguages(inspected[step.SourceFile])
 			}
 			if music {
-				f.Quality = domain.Quality{Source: strings.TrimPrefix(strings.ToLower(filepath.Ext(step.SourceFile)), ".")}
+				f.Quality = mediafiles.Quality{Source: strings.TrimPrefix(strings.ToLower(filepath.Ext(step.SourceFile)), ".")}
 			}
 			if f.Languages == nil {
 				f.Languages = []string{}
@@ -780,22 +779,22 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 			if r.FellBack {
 				how += " (hardlink not possible)"
 			}
-			ge := judge.ReachesGoodEnough(name, pr.Body)
+			ge := mediafiles.ReachesGoodEnough(name, pr.Body)
 			for _, sid := range step.TargetSlotIDs {
 				ss := slots[sid]
 				if _, err := tx.Exec("UPDATE slots SET file_id = ?, active_download_id = NULL, good_enough = ? WHERE id = ?", id, ge, sid); err != nil {
 					return err
 				}
-				ss.to, ss.reason = domain.SlotInLibrary, "placed by "+how
+				ss.to, ss.reason = mediafiles.SlotInLibrary, "placed by "+how
 				if len(olds[i]) > 0 {
 					ss.reason += "; replaced " + fileName(olds[i][0])
 				}
-				if err := store.MoveSlotTx(tx, sid, ss.to, ss.reason, by); err != nil {
+				if err := mediafiles.MoveSlotTx(tx, sid, ss.to, ss.reason, by); err != nil {
 					return err
 				}
 				if !ge && kept(ss) {
-					ss.to = domain.SlotBetterWanted
-					if err := store.MoveSlotTx(tx, sid, ss.to, ss.reason+"; below good enough, so a better copy is sought", by); err != nil {
+					ss.to = mediafiles.SlotBetterWanted
+					if err := mediafiles.MoveSlotTx(tx, sid, ss.to, ss.reason+"; below good enough, so a better copy is sought", by); err != nil {
 						return err
 					}
 				}
@@ -816,29 +815,29 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 				}
 				switch {
 				case ss.outcome == "lied" && !hasFile:
-					ss.to = domain.SlotRejected
+					ss.to = mediafiles.SlotRejected
 				case ss.outcome == "lied":
-					ss.to = domain.SlotInLibrary
+					ss.to = mediafiles.SlotInLibrary
 				case hasFile:
-					ss.to = domain.SlotBetterWanted
+					ss.to = mediafiles.SlotBetterWanted
 				default:
-					ss.to = domain.SlotWanted
+					ss.to = mediafiles.SlotWanted
 				}
-				if err := store.MoveSlotTx(tx, id, ss.to, ss.reason, by); err != nil {
+				if err := mediafiles.MoveSlotTx(tx, id, ss.to, ss.reason, by); err != nil {
 					return err
 				}
-				if ss.to == domain.SlotInLibrary && kept(ss) && !ss.sl.GoodEnough {
-					ss.to = domain.SlotBetterWanted
-					if err := store.MoveSlotTx(tx, id, ss.to, ss.reason+"; the copy in place stays and a better one is sought", by); err != nil {
+				if ss.to == mediafiles.SlotInLibrary && kept(ss) && !ss.sl.GoodEnough {
+					ss.to = mediafiles.SlotBetterWanted
+					if err := mediafiles.MoveSlotTx(tx, id, ss.to, ss.reason+"; the copy in place stays and a better one is sought", by); err != nil {
 						return err
 					}
 				}
-				if ss.to != domain.SlotInLibrary {
+				if ss.to != mediafiles.SlotInLibrary {
 					lookAgain = append(lookAgain, id)
 				}
 			default:
-				ss.to = domain.SlotNeedsADecision
-				if err := store.MoveSlotTx(tx, id, ss.to, ss.reason, by); err != nil {
+				ss.to = mediafiles.SlotNeedsADecision
+				if err := mediafiles.MoveSlotTx(tx, id, ss.to, ss.reason, by); err != nil {
 					return err
 				}
 			}
@@ -910,7 +909,7 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 		im.publish("event", e)
 	}
 	for oldID, newID := range newFiles {
-		var f domain.File
+		var f mediafiles.File
 		if database.Get(ctx, im.Store.Read(), "files", oldID, &f) != nil || f.State != "replaced" {
 			continue
 		}
@@ -943,7 +942,7 @@ func anyStuck(slots map[int64]*showSlot) bool {
 	return false
 }
 
-func refLabel(it domain.Item) string {
+func refLabel(it mediafiles.Item) string {
 	if it.Kind == "track" {
 		d, n := 1, 0
 		if it.Numbers.Disc != nil {
@@ -964,7 +963,7 @@ func refLabel(it domain.Item) string {
 	return fmt.Sprintf("S%02dE%02d", s, e)
 }
 
-func fileName(f domain.File) string {
+func fileName(f mediafiles.File) string {
 	if f.ReleaseName != nil && *f.ReleaseName != "" {
 		return *f.ReleaseName
 	}

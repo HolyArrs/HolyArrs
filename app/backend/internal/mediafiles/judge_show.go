@@ -1,4 +1,4 @@
-package judge
+package mediafiles
 
 import (
 	"fmt"
@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
 // matchShow picks the show among same-named candidates. Show names carry
@@ -183,7 +182,7 @@ func firstEpisode(p releasename.Result) int {
 // Gains says whether a Release would be a better copy than a File in
 // place under the rules (pick-rules.md section 4); no File in place is
 // always a gain. Used per episode for season packs.
-func Gains(rel Release, rules domain.PickRulesBody, cur *Current) bool {
+func Gains(rel ReleaseFacts, rules PickRulesBody, cur *Current) bool {
 	if cur == nil {
 		return true
 	}

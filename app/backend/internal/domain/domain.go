@@ -25,16 +25,6 @@ type (
 // System is the actor for changes HolyArrs makes on its own.
 var System = database.System
 
-// Pressing is one specific release of an album.
-type Pressing struct {
-	Name       string `json:"name"`
-	TrackCount int    `json:"track_count"`
-	Format     string `json:"format"`
-	Country    string `json:"country"`
-	SourceID   string `json:"source_id"`
-	Preferred  bool   `json:"preferred"`
-}
-
 // PressingTrack is one track on a Pressing.
 type PressingTrack struct {
 	ID          string `json:"id"`           // MusicBrainz track id

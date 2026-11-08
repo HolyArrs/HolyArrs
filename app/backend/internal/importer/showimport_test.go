@@ -11,9 +11,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/judge"
 )
 
 const packName = "Copper.Valley.S01.1080p.WEB.H264-HOLYARRS"
@@ -50,18 +51,18 @@ func showSetup(t *testing.T, dlEps []int, files ...string) showWorld {
 	err = s.Write(context.Background(), func(tx *sql.Tx) error {
 		var pr int64
 		_ = tx.QueryRow("SELECT id FROM pick_rules LIMIT 1").Scan(&pr)
-		lf := &domain.LibraryFolder{Path: w.lib, Kind: "show", Label: "Shows", Health: "ok", SameDiskAs: []int64{}}
+		lf := &mediafiles.LibraryFolder{Path: w.lib, Kind: "show", Label: "Shows", Health: "ok", SameDiskAs: []int64{}}
 		if _, err := database.Insert(tx, "library_folders", lf, domain.System); err != nil {
 			return err
 		}
 		order := "aired"
-		ti := &domain.Title{Kind: "show", GateDriver: "none", Name: "Copper Valley", SortName: "copper valley", Year: ptr(2025), Aliases: []string{},
+		ti := &mediafiles.Title{Kind: "show", GateDriver: "none", Name: "Copper Valley", SortName: "copper valley", Year: ptr(2025), Aliases: []string{},
 			SourceIDs: map[string]string{}, MetadataSource: "local", NewPartsPolicy: "all", ReleaseGate: "released", EpisodeOrder: &order,
 			MusicTypes: []string{}, WhyAdded: "by_hand", Artwork: []string{}, Status: "running", State: "active", KeepUpToDate: true}
 		if _, err := database.Insert(tx, "titles", ti, domain.System); err != nil {
 			return err
 		}
-		v := &domain.Version{TitleID: ti.ID, Label: "Main", PickRulesID: pr, LibraryFolderID: lf.ID, FolderName: w.folder, IsMain: true, KeepUpToDate: true}
+		v := &mediafiles.Version{TitleID: ti.ID, Label: "Main", PickRulesID: pr, LibraryFolderID: lf.ID, FolderName: w.folder, IsMain: true, KeepUpToDate: true}
 		if _, err := database.Insert(tx, "versions", v, domain.System); err != nil {
 			return err
 		}
@@ -69,16 +70,16 @@ func showSetup(t *testing.T, dlEps []int, files ...string) showWorld {
 		names := []string{"", "The Mill", "Flood", "Ash", "Spring"}
 		for n := 1; n <= 4; n++ {
 			season, num, name := 1, n, names[n]
-			it := &domain.Item{TitleID: ti.ID, Kind: "episode", Numbers: domain.Numbers{Season: &season, Episode: &num}, Name: &name, KeepUpToDate: true,
+			it := &mediafiles.Item{TitleID: ti.ID, Kind: "episode", Numbers: mediafiles.Numbers{Season: &season, Episode: &num}, Name: &name, KeepUpToDate: true,
 				SourceIDs: map[string]string{}}
 			if _, err := database.Insert(tx, "items", it, domain.System); err != nil {
 				return err
 			}
-			state := domain.SlotWanted
+			state := mediafiles.SlotWanted
 			if slices.Contains(dlEps, n) {
-				state = domain.SlotDownloading
+				state = mediafiles.SlotDownloading
 			}
-			sl := &domain.Slot{ItemID: it.ID, VersionID: v.ID, State: state}
+			sl := &mediafiles.Slot{ItemID: it.ID, VersionID: v.ID, State: state}
 			if _, err := database.Insert(tx, "slots", sl, domain.System); err != nil {
 				return err
 			}
@@ -121,18 +122,18 @@ func showSetup(t *testing.T, dlEps []int, files ...string) showWorld {
 	return w
 }
 
-func (w showWorld) slot(t *testing.T, n int) domain.Slot {
+func (w showWorld) slot(t *testing.T, n int) mediafiles.Slot {
 	t.Helper()
-	var sl domain.Slot
+	var sl mediafiles.Slot
 	if err := database.Get(context.Background(), w.s.Read(), "slots", w.slots[n], &sl); err != nil {
 		t.Fatal(err)
 	}
 	return sl
 }
 
-func (w showWorld) file(t *testing.T, id int64) domain.File {
+func (w showWorld) file(t *testing.T, id int64) mediafiles.File {
 	t.Helper()
-	var f domain.File
+	var f mediafiles.File
 	if err := database.Get(context.Background(), w.s.Read(), "files", id, &f); err != nil {
 		t.Fatal(err)
 	}
@@ -166,7 +167,7 @@ func TestSeasonPackFillsEveryEpisode(t *testing.T) {
 	names := []string{"", "The Mill", "Flood", "Ash"}
 	for n := 1; n <= 3; n++ {
 		sl := w.slot(t, n)
-		if sl.State != domain.SlotInLibrary && sl.State != domain.SlotBetterWanted || sl.FileID == nil || sl.ActiveDownloadID != nil {
+		if sl.State != mediafiles.SlotInLibrary && sl.State != mediafiles.SlotBetterWanted || sl.FileID == nil || sl.ActiveDownloadID != nil {
 			t.Fatalf("E%d slot %+v", n, sl)
 		}
 		f := w.file(t, *sl.FileID)
@@ -180,7 +181,7 @@ func TestSeasonPackFillsEveryEpisode(t *testing.T) {
 			t.Fatalf("E%d not hardlinked: %v", n, err)
 		}
 	}
-	if sl := w.slot(t, 4); sl.State != domain.SlotWanted {
+	if sl := w.slot(t, 4); sl.State != mediafiles.SlotWanted {
 		t.Fatalf("E04 was not in the download but is %s", sl.State)
 	}
 	if r := w.release(t); r.State == "turned_down" {
@@ -208,10 +209,10 @@ func TestPartialPackSettlesEachEpisode(t *testing.T) {
 		}
 	}
 	e3 := w.slot(t, 3)
-	if e3.State != domain.SlotWanted || e3.ActiveDownloadID != nil || !strings.Contains(*e3.LastReason, "did not hold S01E03") {
+	if e3.State != mediafiles.SlotWanted || e3.ActiveDownloadID != nil || !strings.Contains(*e3.LastReason, "did not hold S01E03") {
 		t.Fatalf("E03 %+v %v", e3, *e3.LastReason)
 	}
-	if e4 := w.slot(t, 4); e4.State != domain.SlotWanted || e4.FileID != nil {
+	if e4 := w.slot(t, 4); e4.State != mediafiles.SlotWanted || e4.FileID != nil {
 		t.Fatalf("E04 was placed though not asked: %+v", e4)
 	}
 	if len(again) != 1 || again[0] != w.slots[3] {
@@ -259,7 +260,7 @@ func TestShowImportNothingMatched(t *testing.T) {
 	if err != nil || imp.State != "failed" {
 		t.Fatalf("%v %+v", err, imp)
 	}
-	if sl := w.slot(t, 1); sl.State != domain.SlotNeedsADecision || sl.ActiveDownloadID == nil {
+	if sl := w.slot(t, 1); sl.State != mediafiles.SlotNeedsADecision || sl.ActiveDownloadID == nil {
 		t.Fatalf("slot %+v", sl)
 	}
 	if r := w.release(t); r.State == "turned_down" {
@@ -275,7 +276,7 @@ func TestPackFileLowerThanItsName(t *testing.T) {
 	if err != nil || imp.State != "partly_done" {
 		t.Fatalf("%v %+v", err, imp)
 	}
-	if sl := w.slot(t, 2); sl.State != domain.SlotRejected {
+	if sl := w.slot(t, 2); sl.State != mediafiles.SlotRejected {
 		t.Fatalf("E02 %+v", sl)
 	}
 	if len(again) != 1 || again[0] != w.slots[2] {
@@ -291,7 +292,7 @@ func TestEpisodeBetterCopyReplacesOld(t *testing.T) {
 	write(t, filepath.Join(w.lib, filepath.FromSlash(rel)), 100)
 	var oldID int64
 	if err := w.s.Write(ctx, func(tx *sql.Tx) error {
-		f := &domain.File{SlotIDs: []int64{w.slots[1]}, VersionID: w.vID, RelativePath: rel, Size: 100, AddedAt: time.Now().Add(-time.Hour),
+		f := &mediafiles.File{SlotIDs: []int64{w.slots[1]}, VersionID: w.vID, RelativePath: rel, Size: 100, AddedAt: time.Now().Add(-time.Hour),
 			Languages: []string{}, MediaInfo: map[string]any{}, ReleaseName: &old, Origin: "imported", PlacedBy: "hardlink", Role: "main", State: "present"}
 		id, err := database.Insert(tx, "files", f, domain.System)
 		oldID = id
@@ -336,7 +337,7 @@ func TestShowImportResumesAfterCrash(t *testing.T) {
 	if err == nil {
 		t.Fatal("no crash")
 	}
-	if sl := w.slot(t, 1); sl.State != domain.SlotImporting {
+	if sl := w.slot(t, 1); sl.State != mediafiles.SlotImporting {
 		t.Fatalf("after crash %s", sl.State)
 	}
 	imp, err := (&Importer{Store: w.s}).Import(ctx, w.dlID, false, domain.System)
@@ -360,7 +361,7 @@ func TestShowImportFreeSpace(t *testing.T) {
 		t.Fatalf("%v %+v", err, imp)
 	}
 	sl := w.slot(t, 1)
-	if sl.State != domain.SlotNeedsADecision || !strings.Contains(*sl.LastReason, "free space") {
+	if sl.State != mediafiles.SlotNeedsADecision || !strings.Contains(*sl.LastReason, "free space") {
 		t.Fatalf("slot %+v %s", sl, *sl.LastReason)
 	}
 	if entries, _ := os.ReadDir(w.lib); len(entries) != 0 {
@@ -396,8 +397,8 @@ func TestPlanEpisodesDailyAndAbsolute(t *testing.T) {
 	day := filepath.Join(dl, "Night.Talk.2026.03.14.Guests.1080p.WEB.H264-HOLYARRS.mkv")
 	write(t, day, 10)
 	cands, _ := Scan(dl)
-	tg := ShowTarget{LibraryPath: lib, FolderName: "Night Talk", Show: judge.TitleRef{ID: 1, Name: "Night Talk"}, Order: "daily",
-		Episodes: []Episode{{Ref: judge.EpisodeRef{ItemID: 9, Season: 2026, Episode: 31, AirDay: "2026-03-14"}, Name: "Guests", SlotID: 5, Wanted: true}}}
+	tg := ShowTarget{LibraryPath: lib, FolderName: "Night Talk", Show: mediafiles.TitleRef{ID: 1, Name: "Night Talk"}, Order: "daily",
+		Episodes: []Episode{{Ref: mediafiles.EpisodeRef{ItemID: 9, Season: 2026, Episode: 31, AirDay: "2026-03-14"}, Name: "Guests", SlotID: 5, Wanted: true}}}
 	steps := PlanEpisodes(cands, tg)
 	if len(steps) != 1 || steps[0].Method != "hardlink" || filepath.ToSlash(steps[0].TargetPath) != filepath.ToSlash(filepath.Join(lib, "Night Talk", "Season 2026", "Night Talk - 2026-03-14 - Guests 1080p WEB.mkv")) {
 		t.Fatalf("daily %+v", steps)
@@ -405,8 +406,8 @@ func TestPlanEpisodesDailyAndAbsolute(t *testing.T) {
 	dl2 := t.TempDir()
 	write(t, filepath.Join(dl2, "[SubsPlease] Blade Song - 112 (1080p) [ABCD1234].mkv"), 10)
 	cands, _ = Scan(dl2)
-	tg = ShowTarget{LibraryPath: lib, FolderName: "Blade Song", Show: judge.TitleRef{ID: 2, Name: "Blade Song"}, Order: "absolute",
-		Episodes: []Episode{{Ref: judge.EpisodeRef{ItemID: 3, Season: 5, Episode: 12, Absolute: 112}, SlotID: 8, Wanted: true}}}
+	tg = ShowTarget{LibraryPath: lib, FolderName: "Blade Song", Show: mediafiles.TitleRef{ID: 2, Name: "Blade Song"}, Order: "absolute",
+		Episodes: []Episode{{Ref: mediafiles.EpisodeRef{ItemID: 3, Season: 5, Episode: 12, Absolute: 112}, SlotID: 8, Wanted: true}}}
 	steps = PlanEpisodes(cands, tg)
 	if len(steps) != 1 || steps[0].Method != "hardlink" || steps[0].TargetSlotIDs[0] != 8 ||
 		filepath.Base(steps[0].TargetPath) != "Blade Song - S05E12 - 112 - 1080p WEB.mkv" {
@@ -415,8 +416,8 @@ func TestPlanEpisodesDailyAndAbsolute(t *testing.T) {
 	dl3 := t.TempDir()
 	write(t, filepath.Join(dl3, "Other.Show.S01E01.1080p.WEB.H264-X.mkv"), 10)
 	cands, _ = Scan(dl3)
-	tg = ShowTarget{LibraryPath: lib, FolderName: "Copper Valley", Show: judge.TitleRef{ID: 1, Name: "Copper Valley"}, Order: "aired",
-		Episodes: []Episode{{Ref: judge.EpisodeRef{ItemID: 1, Season: 1, Episode: 1}, SlotID: 1, Wanted: true}}}
+	tg = ShowTarget{LibraryPath: lib, FolderName: "Copper Valley", Show: mediafiles.TitleRef{ID: 1, Name: "Copper Valley"}, Order: "aired",
+		Episodes: []Episode{{Ref: mediafiles.EpisodeRef{ItemID: 1, Season: 1, Episode: 1}, SlotID: 1, Wanted: true}}}
 	if steps = PlanEpisodes(cands, tg); steps[0].Method != "refuse" {
 		t.Fatalf("other show %+v", steps)
 	}
@@ -561,7 +562,7 @@ func TestStrandedSweepNeverDoubleImports(t *testing.T) {
 		t.Fatalf("files %d imports %d", files, imports)
 	}
 	for k := 1; k <= 3; k++ {
-		if sl := w.slot(t, k); sl.State != domain.SlotInLibrary && sl.State != domain.SlotBetterWanted {
+		if sl := w.slot(t, k); sl.State != mediafiles.SlotInLibrary && sl.State != mediafiles.SlotBetterWanted {
 			t.Fatalf("E%d %s", k, sl.State)
 		}
 	}

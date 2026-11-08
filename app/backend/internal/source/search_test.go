@@ -10,6 +10,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
@@ -50,29 +52,29 @@ func seed(t *testing.T, srcURL string) fixture {
 	f.s = s
 	err = s.Write(context.Background(), func(tx *sql.Tx) error {
 		var pr int64
-		if err := tx.QueryRow("SELECT id FROM pick_rules WHERE name = ?", domain.GoodEverydayName).Scan(&pr); err != nil {
+		if err := tx.QueryRow("SELECT id FROM pick_rules WHERE name = ?", mediafiles.GoodEverydayName).Scan(&pr); err != nil {
 			return err
 		}
-		lf := &domain.LibraryFolder{Path: t.TempDir(), Kind: "movie", Label: "Movies", Health: "ok", SameDiskAs: []int64{}}
+		lf := &mediafiles.LibraryFolder{Path: t.TempDir(), Kind: "movie", Label: "Movies", Health: "ok", SameDiskAs: []int64{}}
 		if _, err := database.Insert(tx, "library_folders", lf, domain.System); err != nil {
 			return err
 		}
-		ti := &domain.Title{Kind: "movie", GateDriver: "none", Name: "Dune: Part Two", SortName: "dune part two", Year: ptr(2024),
+		ti := &mediafiles.Title{Kind: "movie", GateDriver: "none", Name: "Dune: Part Two", SortName: "dune part two", Year: ptr(2024),
 			Aliases: []string{}, SourceIDs: map[string]string{"imdb": "tt15239678", "tmdb": "693134"}, MetadataSource: "local",
 			KeepUpToDate: true, NewPartsPolicy: "all", ReleaseGate: "released", MusicTypes: []string{}, WhyAdded: "by_hand",
 			Artwork: []string{}, Status: "released", State: "active"}
 		if _, err := database.Insert(tx, "titles", ti, domain.System); err != nil {
 			return err
 		}
-		it := &domain.Item{TitleID: ti.ID, Kind: "movie", KeepUpToDate: true}
+		it := &mediafiles.Item{TitleID: ti.ID, Kind: "movie", KeepUpToDate: true}
 		if _, err := database.Insert(tx, "items", it, domain.System); err != nil {
 			return err
 		}
-		v := &domain.Version{TitleID: ti.ID, Label: "HD", PickRulesID: pr, LibraryFolderID: lf.ID, FolderName: "Dune Part Two (2024)", KeepUpToDate: true, IsMain: true}
+		v := &mediafiles.Version{TitleID: ti.ID, Label: "HD", PickRulesID: pr, LibraryFolderID: lf.ID, FolderName: "Dune Part Two (2024)", KeepUpToDate: true, IsMain: true}
 		if _, err := database.Insert(tx, "versions", v, domain.System); err != nil {
 			return err
 		}
-		sl := &domain.Slot{ItemID: it.ID, VersionID: v.ID, State: domain.SlotWanted}
+		sl := &mediafiles.Slot{ItemID: it.ID, VersionID: v.ID, State: mediafiles.SlotWanted}
 		if _, err := database.Insert(tx, "slots", sl, domain.System); err != nil {
 			return err
 		}
@@ -152,11 +154,11 @@ func TestHandle_ChoosesWinner(t *testing.T) {
 		t.Fatalf("job %s: %+v", j.State, j.Error)
 	}
 	ctx := context.Background()
-	var sl domain.Slot
+	var sl mediafiles.Slot
 	if err := database.Get(ctx, f.s.Read(), "slots", f.slotID, &sl); err != nil {
 		t.Fatal(err)
 	}
-	if sl.State != domain.SlotChosen {
+	if sl.State != mediafiles.SlotChosen {
 		t.Fatalf("slot state %s (%v)", sl.State, sl.LastReason)
 	}
 	rels, err := database.Select[domain.Release](ctx, f.s.Read(), "releases", "1=1 ORDER BY id")
@@ -205,9 +207,9 @@ func TestHandle_NothingPasses(t *testing.T) {
 	if j.State != "done" {
 		t.Fatalf("job %s", j.State)
 	}
-	var sl domain.Slot
+	var sl mediafiles.Slot
 	_ = database.Get(context.Background(), f.s.Read(), "slots", f.slotID, &sl)
-	if sl.State != domain.SlotWanted || sl.LastReason == nil || !strings.Contains(*sl.LastReason, "no Release") {
+	if sl.State != mediafiles.SlotWanted || sl.LastReason == nil || !strings.Contains(*sl.LastReason, "no Release") {
 		t.Fatalf("slot %s %v", sl.State, sl.LastReason)
 	}
 }
@@ -227,9 +229,9 @@ func TestHandle_PausesFailingSource(t *testing.T) {
 	if src.Extra["failures"] != "1" {
 		t.Fatalf("failures %q", src.Extra["failures"])
 	}
-	var sl domain.Slot
+	var sl mediafiles.Slot
 	_ = database.Get(context.Background(), f.s.Read(), "slots", f.slotID, &sl)
-	if sl.State != domain.SlotWanted {
+	if sl.State != mediafiles.SlotWanted {
 		t.Fatalf("slot %s", sl.State)
 	}
 }

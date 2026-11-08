@@ -1,13 +1,11 @@
-package judge
+package mediafiles
 
 import (
 	"testing"
-
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
 func TestReachesGoodEnough(t *testing.T) {
-	r := domain.GoodEveryday()
+	r := GoodEveryday()
 	cases := map[string]bool{
 		"Dune.Part.Two.2024.1080p.WEB-DL.DDP5.1.H.264-GRP": true,
 		"Dune.Part.Two.2024.720p.WEB-DL.DDP5.1.H.264-GRP":  false,

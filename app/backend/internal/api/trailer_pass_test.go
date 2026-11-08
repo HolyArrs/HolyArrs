@@ -14,6 +14,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
@@ -148,7 +150,7 @@ func TestTrailerPassCoversEveryCard(t *testing.T) {
 		if _, err := tx.Exec(`INSERT INTO explore_prefs (member_id, services, region) VALUES (1, '8', 'US')`); err != nil {
 			return err
 		}
-		_, err := database.Insert(tx, "never_add", &domain.NeverAdd{Kind: "movie", SourceIDs: map[string]string{"tmdb": "205"}, Name: "T205", Reason: "test", CreatedAt: time.Now()}, domain.System)
+		_, err := database.Insert(tx, "never_add", &mediafiles.NeverAdd{Kind: "movie", SourceIDs: map[string]string{"tmdb": "205"}, Name: "T205", Reason: "test", CreatedAt: time.Now()}, domain.System)
 		return err
 	}); err != nil {
 		t.Fatal(err)

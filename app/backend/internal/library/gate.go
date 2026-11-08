@@ -3,7 +3,7 @@ package library
 import (
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 )
 
 // Release gate choices for a movie.
@@ -26,7 +26,7 @@ type Dates struct {
 }
 
 // DatesOf reads a Title's release dates.
-func DatesOf(t domain.Title) Dates {
+func DatesOf(t mediafiles.Title) Dates {
 	return Dates{Cinema: t.CinemaDate, Digital: t.DigitalDate, Physical: t.PhysicalDate}
 }
 

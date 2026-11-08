@@ -9,6 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
@@ -43,7 +45,7 @@ func TestHandle_TurnedDownNeverPickedAndForceNeeded(t *testing.T) {
 		t.Fatalf("err %v", err)
 	}
 	ch, err := sr.Choose(ctx, again.ID, 0, true, domain.Actor{Kind: "user", ID: 1})
-	if err != nil || !ch.Forced || len(ch.Warnings) == 0 || slotState(t, f).State != domain.SlotChosen {
+	if err != nil || !ch.Forced || len(ch.Warnings) == 0 || slotState(t, f).State != mediafiles.SlotChosen {
 		t.Fatalf("forced choice %+v %v", ch, err)
 	}
 	evs, _ := f.s.RecentEvents(ctx, 5)
@@ -64,11 +66,11 @@ func TestHandle_GateSkippedOnlyByHand(t *testing.T) {
 	exec(t, f, "UPDATE slots SET state = 'not_out_yet'")
 	sr := &Searcher{Store: f.s}
 	runKind(t, f, sr, KindSearchSlot, &domain.Subject{Type: "slot", ID: f.slotID}, nil)
-	if slotState(t, f).State != domain.SlotNotOutYet || lf.hits != 0 {
+	if slotState(t, f).State != mediafiles.SlotNotOutYet || lf.hits != 0 {
 		t.Fatal("an automatic search ran on a Slot not out yet")
 	}
 	runKind(t, f, sr, KindSearchSlot, &domain.Subject{Type: "slot", ID: f.slotID}, map[string]any{"by_hand": true})
-	if slotState(t, f).State != domain.SlotChosen {
+	if slotState(t, f).State != mediafiles.SlotChosen {
 		t.Fatalf("hand search: %s", slotState(t, f).State)
 	}
 	rel := relByName(t, f, web1080)
@@ -94,7 +96,7 @@ func TestHandle_BetterCopySearch(t *testing.T) {
 			_, _ = tx.Exec("UPDATE files SET state = 'replaced'")
 			var vid int64
 			_ = tx.QueryRow("SELECT version_id FROM slots WHERE id = ?", f.slotID).Scan(&vid)
-			fl := &domain.File{SlotIDs: []int64{f.slotID}, VersionID: vid, RelativePath: "Dune/" + name + ".mkv", AddedAt: time.Now(), Languages: []string{},
+			fl := &mediafiles.File{SlotIDs: []int64{f.slotID}, VersionID: vid, RelativePath: "Dune/" + name + ".mkv", AddedAt: time.Now(), Languages: []string{},
 				MediaInfo: map[string]any{}, ReleaseName: &name, Origin: "imported", PlacedBy: "hardlink", Role: "main", State: "present"}
 			id, err := database.Insert(tx, "files", fl, domain.System)
 			if err != nil {
@@ -118,7 +120,7 @@ func TestHandle_BetterCopySearch(t *testing.T) {
 	if got := relByName(t, f, web1080); got.State != "refused" || !strings.Contains(fmt.Sprint(got.Verdict["reasons"]), "good_enough_already") {
 		t.Fatalf("good enough copy still replaced: %s", got.State)
 	}
-	if slotState(t, f).State != domain.SlotBetterWanted {
+	if slotState(t, f).State != mediafiles.SlotBetterWanted {
 		t.Fatalf("slot %s", slotState(t, f).State)
 	}
 }
@@ -165,7 +167,7 @@ func TestLists_PagingAndRemoval(t *testing.T) {
 	if n, err := sr.RemoveHeld(ctx, held[0], domain.System); err != nil || n != 1 {
 		t.Fatalf("remove %d %v", n, err)
 	}
-	if sl := slotState(t, f); sl.State != domain.SlotWanted || sl.HeldReleaseID != nil {
+	if sl := slotState(t, f); sl.State != mediafiles.SlotWanted || sl.HeldReleaseID != nil {
 		t.Fatalf("slot %s", sl.State)
 	}
 	if _, err := sr.RemoveHeld(ctx, held[0], domain.System); !errors.Is(err, ErrState) {

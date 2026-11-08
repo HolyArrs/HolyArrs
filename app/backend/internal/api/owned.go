@@ -11,6 +11,8 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/asks"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
@@ -168,10 +170,10 @@ func max64(a, b float64) float64 {
 // asks of every Title, read in a few queries, so listing all Titles does
 // not query them once per Title.
 type titleBatch struct {
-	slots     map[int64][]domain.Slot // by title id (movies only)
+	slots     map[int64][]mediafiles.Slot // by title id (movies only)
 	downloads map[int64]domain.Download
-	files     map[int64]domain.File
-	labels    map[int64]domain.Version
+	files     map[int64]mediafiles.File
+	labels    map[int64]mediafiles.Version
 	asks      map[int64][]asks.View
 }
 
@@ -185,8 +187,8 @@ func batchOf(ctx context.Context) *titleBatch {
 // withTitleBatch reads the batch for all Titles and keeps it on ctx for titleView.
 func (a *API) withTitleBatch(ctx context.Context) (context.Context, error) {
 	db := a.s.Store.Read()
-	b := &titleBatch{slots: map[int64][]domain.Slot{}, downloads: map[int64]domain.Download{}, files: map[int64]domain.File{},
-		labels: map[int64]domain.Version{}, asks: map[int64][]asks.View{}}
+	b := &titleBatch{slots: map[int64][]mediafiles.Slot{}, downloads: map[int64]domain.Download{}, files: map[int64]mediafiles.File{},
+		labels: map[int64]mediafiles.Version{}, asks: map[int64][]asks.View{}}
 	itemTitle := map[int64]int64{}
 	rows, err := db.QueryContext(ctx, `SELECT i.id, i.title_id FROM items i JOIN titles t ON t.id = i.title_id WHERE t.kind = 'movie'`)
 	if err != nil {
@@ -205,7 +207,7 @@ func (a *API) withTitleBatch(ctx context.Context) (context.Context, error) {
 		return ctx, err
 	}
 	movieSlots := "item_id IN (SELECT i.id FROM items i JOIN titles t ON t.id = i.title_id WHERE t.kind = 'movie')"
-	ss, err := database.Select[domain.Slot](ctx, db, "slots", movieSlots+" ORDER BY id")
+	ss, err := database.Select[mediafiles.Slot](ctx, db, "slots", movieSlots+" ORDER BY id")
 	if err != nil {
 		return ctx, err
 	}
@@ -219,14 +221,14 @@ func (a *API) withTitleBatch(ctx context.Context) (context.Context, error) {
 	for _, d := range ds {
 		b.downloads[d.ID] = d
 	}
-	fs, err := database.Select[domain.File](ctx, db, "files", "id IN (SELECT file_id FROM slots WHERE "+movieSlots+")")
+	fs, err := database.Select[mediafiles.File](ctx, db, "files", "id IN (SELECT file_id FROM slots WHERE "+movieSlots+")")
 	if err != nil {
 		return ctx, err
 	}
 	for _, f := range fs {
 		b.files[f.ID] = f
 	}
-	vs, err := database.Select[domain.Version](ctx, db, "versions", "title_id IN (SELECT id FROM titles WHERE kind = 'movie')")
+	vs, err := database.Select[mediafiles.Version](ctx, db, "versions", "title_id IN (SELECT id FROM titles WHERE kind = 'movie')")
 	if err != nil {
 		return ctx, err
 	}

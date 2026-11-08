@@ -1,4 +1,4 @@
-package naming
+package mediafiles
 
 import (
 	"fmt"
@@ -62,7 +62,7 @@ type TrackFacts struct {
 	Ext         string // with the dot
 }
 
-func (s *Settings) fillMusic() {
+func (s *NamingSettings) fillMusic() {
 	for _, f := range []struct {
 		p   *string
 		def string
@@ -75,7 +75,7 @@ func (s *Settings) fillMusic() {
 }
 
 // validateMusic says what is wrong with the music patterns.
-func (s Settings) validateMusic() error {
+func (s NamingSettings) validateMusic() error {
 	for _, p := range []struct{ name, pat, need, alt string }{
 		{"artist folder pattern", s.ArtistFolderPattern, "artist", "artist_sort"},
 		{"album folder pattern", s.AlbumFolderPattern, "album", ""},
@@ -156,7 +156,7 @@ func theLast(n string) string {
 // fit renders pat and, when the name is longer than n bytes, shortens the
 // value of key (the album or track name) so the rest (the year, the track
 // number) stays whole; capName cuts what is still too long.
-func fit(s Settings, pat string, vals map[string]string, key string, n int) string {
+func fit(s NamingSettings, pat string, vals map[string]string, key string, n int) string {
 	out := renderVals(s, pat, vals)
 	for i := 0; len(out) > n && i < 6 && vals[key] != ""; i++ {
 		v := vals[key]
@@ -175,7 +175,7 @@ func fit(s Settings, pat string, vals map[string]string, key string, n int) stri
 }
 
 // ArtistFolder names an artist folder from the artist folder pattern.
-func ArtistFolder(s Settings, f TrackFacts) string {
+func ArtistFolder(s NamingSettings, f TrackFacts) string {
 	s.fillMusic()
 	name := fit(s, s.ArtistFolderPattern, musicVals(f), "artist", MusicMaxComponent)
 	if name == "" {
@@ -186,7 +186,7 @@ func ArtistFolder(s Settings, f TrackFacts) string {
 
 // AlbumFolder names an album folder from the album folder pattern; an
 // album name that cleans to nothing is "Unknown album".
-func AlbumFolder(s Settings, f TrackFacts) string {
+func AlbumFolder(s NamingSettings, f TrackFacts) string {
 	s.fillMusic()
 	if clean(s, f.Album) == "" {
 		f.Album = "Unknown album"
@@ -200,7 +200,7 @@ func AlbumFolder(s Settings, f TrackFacts) string {
 
 // DiscFolder names the folder of one disc ("" unless disc folders are on
 // and the album has more than one disc).
-func DiscFolder(s Settings, f TrackFacts) string {
+func DiscFolder(s NamingSettings, f TrackFacts) string {
 	s.fillMusic()
 	if !s.DiscFolders || f.Discs < 2 || f.Disc < 1 {
 		return ""
@@ -211,7 +211,7 @@ func DiscFolder(s Settings, f TrackFacts) string {
 // TrackFile names a track file (with its extension): the multi-disc
 // pattern on an album of more than one disc without disc folders, the
 // track pattern otherwise.
-func TrackFile(s Settings, f TrackFacts) string {
+func TrackFile(s NamingSettings, f TrackFacts) string {
 	s.fillMusic()
 	pat := s.TrackPattern
 	if f.Discs > 1 && !s.DiscFolders {
@@ -229,6 +229,6 @@ func TrackFile(s Settings, f TrackFacts) string {
 // forward slashes: the artist folder, the album folder, the disc folder
 // (when on) and the file. An import and a rename both use it, so a rename
 // preview is what a rename does.
-func TrackPath(s Settings, artistFolder string, f TrackFacts) string {
+func TrackPath(s NamingSettings, artistFolder string, f TrackFacts) string {
 	return path.Join(artistFolder, AlbumFolder(s, f), DiscFolder(s, f), TrackFile(s, f))
 }

@@ -10,6 +10,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
@@ -116,7 +118,7 @@ func TestNZBGetJournalSurvivesRestartAndPinsOriginal(t *testing.T) {
 	if err != nil || len(a) != 1 || a[0].State != "resolved" {
 		t.Fatal(a, err)
 	}
-	if got := w.slot(t); got.State != domain.SlotDownloading {
+	if got := w.slot(t); got.State != mediafiles.SlotDownloading {
 		t.Fatal(got.State)
 	}
 }
@@ -131,13 +133,13 @@ func TestNZBGetJournalAbandonedPairAllowsDifferentRelease(t *testing.T) {
 	if err := m.AbandonAttempt(ctx, d.ID, a.ID, domain.System); err != nil {
 		t.Fatal(err)
 	}
-	if sl := w.slot(t); sl.State != domain.SlotNeedsADecision || sl.ChosenReleaseID != nil {
+	if sl := w.slot(t); sl.State != mediafiles.SlotNeedsADecision || sl.ChosenReleaseID != nil {
 		t.Fatal("abandon did not release the choice for a person's decision", sl)
 	}
 	if _, err := (&source.Searcher{Store: w.s}).Choose(ctx, w.relID, w.slotID, true, domain.System); !errors.Is(err, source.ErrBusy) {
 		t.Fatal("abandoned Release could be chosen again", err)
 	}
-	if sl := w.slot(t); sl.State != domain.SlotNeedsADecision || sl.ChosenReleaseID != nil {
+	if sl := w.slot(t); sl.State != mediafiles.SlotNeedsADecision || sl.ChosenReleaseID != nil {
 		t.Fatal("refused choice stranded the Slot", sl)
 	}
 	var rel domain.Release
@@ -155,7 +157,7 @@ func TestNZBGetJournalAbandonedPairAllowsDifferentRelease(t *testing.T) {
 	if err := m.AbandonAttempt(ctx, d.ID, a.ID, domain.System); err != nil {
 		t.Fatal(err)
 	}
-	if sl := w.slot(t); sl.State != domain.SlotChosen || sl.ChosenReleaseID == nil || *sl.ChosenReleaseID != rel.ID {
+	if sl := w.slot(t); sl.State != mediafiles.SlotChosen || sl.ChosenReleaseID == nil || *sl.ChosenReleaseID != rel.ID {
 		t.Fatal("repeated abandon changed the newer choice", sl)
 	}
 	e := &attemptEngine{add: func(r AddRequest) (string, error) {
@@ -208,12 +210,12 @@ func TestOptionalJournalAbandonOnlyReleasesCurrentCoveredChoices(t *testing.T) {
 		t.Run(change, func(t *testing.T) {
 			w, m, d := journalWorld(t)
 			ctx := context.Background()
-			var second domain.Slot
+			var second mediafiles.Slot
 			if err := w.s.Write(ctx, func(tx *sql.Tx) error {
 				if err := database.Get(ctx, tx, "slots", w.slotID, &second); err != nil {
 					return err
 				}
-				var item domain.Item
+				var item mediafiles.Item
 				if err := database.Get(ctx, tx, "items", second.ItemID, &item); err != nil {
 					return err
 				}
@@ -255,19 +257,19 @@ func TestOptionalJournalAbandonOnlyReleasesCurrentCoveredChoices(t *testing.T) {
 			}); err != nil {
 				t.Fatal(err)
 			}
-			var before domain.Slot
+			var before mediafiles.Slot
 			if err := database.Get(ctx, w.s.Read(), "slots", second.ID, &before); err != nil {
 				t.Fatal(err)
 			}
 			if err := m.AbandonAttempt(ctx, d.ID, a.ID, domain.System); err != nil {
 				t.Fatal(err)
 			}
-			var after domain.Slot
+			var after mediafiles.Slot
 			if err := database.Get(ctx, w.s.Read(), "slots", second.ID, &after); err != nil {
 				t.Fatal(err)
 			}
 			if change == "none" {
-				if after.State != domain.SlotNeedsADecision || after.ChosenReleaseID != nil {
+				if after.State != mediafiles.SlotNeedsADecision || after.ChosenReleaseID != nil {
 					t.Fatal("covered choice was not released", after)
 				}
 			} else if after.State != before.State || !after.UpdatedAt.Equal(before.UpdatedAt) ||
@@ -276,10 +278,10 @@ func TestOptionalJournalAbandonOnlyReleasesCurrentCoveredChoices(t *testing.T) {
 				t.Fatal("abandon changed another or newer choice", change, before, after)
 			}
 			if sl := w.slot(t); change == "version_recreated" || change == "release_recreated" {
-				if sl.State != domain.SlotChosen {
+				if sl.State != mediafiles.SlotChosen {
 					t.Fatal("old attempt changed a replacement identity", sl)
 				}
-			} else if sl.State != domain.SlotNeedsADecision || sl.ChosenReleaseID != nil {
+			} else if sl.State != mediafiles.SlotNeedsADecision || sl.ChosenReleaseID != nil {
 				t.Fatal("original current choice was not released", sl)
 			}
 		})
@@ -316,7 +318,7 @@ func TestOptionalGrabChoiceChangedDuringSendKeepsAttemptPending(t *testing.T) {
 			if err := w.s.Read().QueryRow("SELECT count(*) FROM downloads").Scan(&count); err != nil || count != 0 {
 				t.Fatal("changed identity or choice wrote a Download", count, err)
 			}
-			if sl := w.slot(t); sl.State != domain.SlotChosen {
+			if sl := w.slot(t); sl.State != mediafiles.SlotChosen {
 				t.Fatal("late result moved a changed choice", sl.State)
 			}
 			if a, err := m.Attempts(ctx, d.ID); err != nil || len(a) != 1 || a[0].State != "pending" {
@@ -344,7 +346,7 @@ func TestNZBGetJournalFailedDownloadWriteKeepsPending(t *testing.T) {
 	if len(a) != 1 || a[0].State != "pending" {
 		t.Fatal(a)
 	}
-	if got := w.slot(t); got.State != domain.SlotChosen {
+	if got := w.slot(t); got.State != mediafiles.SlotChosen {
 		t.Fatal(got.State)
 	}
 	if err := w.s.Write(ctx, func(tx *sql.Tx) error { _, err := tx.Exec("DROP TRIGGER reject_test_download"); return err }); err != nil {
@@ -502,7 +504,7 @@ func TestOptionalJournalDoesNotBindReusedIDs(t *testing.T) {
 				t.Fatal(err)
 			}
 			var rel domain.Release
-			var sl domain.Slot
+			var sl mediafiles.Slot
 			if err := database.Get(ctx, w.s.Read(), "releases", w.relID, &rel); err != nil {
 				t.Fatal(err)
 			}
@@ -652,21 +654,21 @@ func TestOptionalJournalConcurrentFinalizationReusesDownload(t *testing.T) {
 func TestOptionalJournalPackDoesNotBindRecreatedSecondarySlot(t *testing.T) {
 	w, m, _ := journalWorld(t)
 	ctx := context.Background()
-	var second domain.Slot
+	var second mediafiles.Slot
 	if err := w.s.Write(ctx, func(tx *sql.Tx) error {
-		var first domain.Slot
+		var first mediafiles.Slot
 		if err := database.Get(ctx, tx, "slots", w.slotID, &first); err != nil {
 			return err
 		}
-		var item domain.Item
+		var item mediafiles.Item
 		if err := database.Get(ctx, tx, "items", first.ItemID, &item); err != nil {
 			return err
 		}
-		item = domain.Item{TitleID: item.TitleID, Kind: "movie"}
+		item = mediafiles.Item{TitleID: item.TitleID, Kind: "movie"}
 		if _, err := database.Insert(tx, "items", &item, domain.System); err != nil {
 			return err
 		}
-		second = domain.Slot{ItemID: item.ID, VersionID: first.VersionID, State: domain.SlotChosen, ChosenReleaseID: &w.relID}
+		second = mediafiles.Slot{ItemID: item.ID, VersionID: first.VersionID, State: mediafiles.SlotChosen, ChosenReleaseID: &w.relID}
 		if _, err := database.Insert(tx, "slots", &second, domain.System); err != nil {
 			return err
 		}
@@ -710,7 +712,7 @@ func TestOptionalJournalPackDoesNotBindRecreatedSecondarySlot(t *testing.T) {
 	if err := database.Get(ctx, w.s.Read(), "slots", second.ID, &second); err != nil {
 		t.Fatal(err)
 	}
-	if second.State != domain.SlotChosen || second.ActiveDownloadID != nil || second.ChosenReleaseID == nil || *second.ChosenReleaseID != w.relID {
+	if second.State != mediafiles.SlotChosen || second.ActiveDownloadID != nil || second.ChosenReleaseID == nil || *second.ChosenReleaseID != w.relID {
 		t.Fatal("late response moved the recreated secondary Slot", second)
 	}
 }
@@ -724,11 +726,11 @@ func TestOptionalJournalPackSharesOneAppend(t *testing.T) {
 		if err := tx.QueryRow("SELECT s.version_id, i.title_id FROM slots s JOIN items i ON i.id = s.item_id WHERE s.id = ?", w.slotID).Scan(&versionID, &titleID); err != nil {
 			return err
 		}
-		item := &domain.Item{TitleID: titleID, Kind: "movie"}
+		item := &mediafiles.Item{TitleID: titleID, Kind: "movie"}
 		if _, err := database.Insert(tx, "items", item, domain.System); err != nil {
 			return err
 		}
-		sl := &domain.Slot{ItemID: item.ID, VersionID: versionID, State: domain.SlotChosen, ChosenReleaseID: &w.relID}
+		sl := &mediafiles.Slot{ItemID: item.ID, VersionID: versionID, State: mediafiles.SlotChosen, ChosenReleaseID: &w.relID}
 		if _, err := database.Insert(tx, "slots", sl, domain.System); err != nil {
 			return err
 		}
@@ -790,11 +792,11 @@ func TestOptionalJournalDifferentVersionsKeepSeparateIntents(t *testing.T) {
 	ctx := context.Background()
 	var secondSlot int64
 	if err := w.s.Write(ctx, func(tx *sql.Tx) error {
-		var sl domain.Slot
+		var sl mediafiles.Slot
 		if err := database.Get(ctx, tx, "slots", w.slotID, &sl); err != nil {
 			return err
 		}
-		var version domain.Version
+		var version mediafiles.Version
 		if err := database.Get(ctx, tx, "versions", sl.VersionID, &version); err != nil {
 			return err
 		}

@@ -17,6 +17,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
@@ -98,17 +100,17 @@ func newWorld(t *testing.T) *world {
 	err = s.Write(context.Background(), func(tx *sql.Tx) error {
 		var pr int64
 		_ = tx.QueryRow("SELECT id FROM pick_rules LIMIT 1").Scan(&pr)
-		lf := &domain.LibraryFolder{Path: w.lib, Kind: "movie", Label: "Movies", Health: "ok", SameDiskAs: []int64{}}
+		lf := &mediafiles.LibraryFolder{Path: w.lib, Kind: "movie", Label: "Movies", Health: "ok", SameDiskAs: []int64{}}
 		if _, err := database.Insert(tx, "library_folders", lf, domain.System); err != nil {
 			return err
 		}
-		ti := &domain.Title{Kind: "movie", GateDriver: "none", Name: "Arrival", SortName: "arrival", MetadataSource: "local", NewPartsPolicy: "all",
+		ti := &mediafiles.Title{Kind: "movie", GateDriver: "none", Name: "Arrival", SortName: "arrival", MetadataSource: "local", NewPartsPolicy: "all",
 			ReleaseGate: "released", WhyAdded: "by_hand", Status: "released", State: "active", SourceIDs: map[string]string{}, Aliases: []string{}, MusicTypes: []string{}, Artwork: []string{}}
 		if _, err := database.Insert(tx, "titles", ti, domain.System); err != nil {
 			return err
 		}
 		w.title = ti.ID
-		_, err := database.Insert(tx, "versions", &domain.Version{TitleID: ti.ID, Label: "HD", PickRulesID: pr, LibraryFolderID: lf.ID, FolderName: "Arrival (2016)", IsMain: true}, domain.System)
+		_, err := database.Insert(tx, "versions", &mediafiles.Version{TitleID: ti.ID, Label: "HD", PickRulesID: pr, LibraryFolderID: lf.ID, FolderName: "Arrival (2016)", IsMain: true}, domain.System)
 		return err
 	})
 	if err != nil {

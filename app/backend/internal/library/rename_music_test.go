@@ -9,9 +9,10 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/naming"
 )
 
 // addLabArtist adds the lab artist with its details fetched: albums,
@@ -56,11 +57,11 @@ func trackSlots(t *testing.T, s *database.Store, titleID int64) map[string]int64
 }
 
 // putTrack writes a track file and its File row.
-func putTrack(t *testing.T, s *database.Store, root string, vID int64, rel, origin string, slotIDs ...int64) domain.File {
+func putTrack(t *testing.T, s *database.Store, root string, vID int64, rel, origin string, slotIDs ...int64) mediafiles.File {
 	t.Helper()
 	writeFile(t, filepath.Join(root, filepath.FromSlash(rel)), "audio:"+rel)
 	release := "Lab Band - Old Days (2010) [FLAC]"
-	f := domain.File{SlotIDs: slotIDs, VersionID: vID, RelativePath: rel, Size: 10, AddedAt: now, Languages: []string{}, Quality: domain.Quality{Source: "flac"},
+	f := mediafiles.File{SlotIDs: slotIDs, VersionID: vID, RelativePath: rel, Size: 10, AddedAt: now, Languages: []string{}, Quality: mediafiles.Quality{Source: "flac"},
 		MediaInfo: map[string]any{}, ReleaseName: &release, Origin: origin, PlacedBy: "hardlink", Role: "main", State: "present"}
 	if slotIDs == nil {
 		f.SlotIDs = []int64{}
@@ -140,10 +141,10 @@ func TestRenameTracksPreviewMatchesResult(t *testing.T) {
 	}
 
 	// New patterns: disc folders, The-last artist words in the track name.
-	ns, _ := naming.Read(ctx, s.Read())
+	ns, _ := mediafiles.ReadNaming(ctx, s.Read())
 	ns.DiscFolders = true
 	ns.AlbumFolderPattern = "{year} - {album}"
-	if err := naming.Save(ctx, s, ns, domain.System); err != nil {
+	if err := mediafiles.PutNamingSettings(ctx, s, ns, domain.System); err != nil {
 		t.Fatal(err)
 	}
 	plan, _, _ = PlanRenameHashed(ctx, s.Read(), []int64{id})
@@ -175,16 +176,16 @@ func TestRenameTracksCaseOnlyAndPlanHash(t *testing.T) {
 	if err != nil || len(plan) != 1 || plan[0].To != "Lab Band/Middle (2018)/01 - Song m1.mp3" {
 		t.Fatalf("%+v %v", plan, err)
 	}
-	ns, _ := naming.Read(ctx, s.Read())
+	ns, _ := mediafiles.ReadNaming(ctx, s.Read())
 	ns.TrackPattern = "{track}. {track_title}"
-	if err := naming.Save(ctx, s, ns, domain.System); err != nil {
+	if err := mediafiles.PutNamingSettings(ctx, s, ns, domain.System); err != nil {
 		t.Fatal(err)
 	}
 	if _, h2, _ := PlanRenameHashed(ctx, s.Read(), []int64{id}); h2 == hash {
 		t.Fatal("the plan hash did not change with the patterns")
 	}
-	ns.TrackPattern = naming.DefaultTrackPattern
-	_ = naming.Save(ctx, s, ns, domain.System)
+	ns.TrackPattern = mediafiles.DefaultTrackPattern
+	_ = mediafiles.PutNamingSettings(ctx, s, ns, domain.System)
 	plan, _, _ = PlanRenameHashed(ctx, s.Read(), []int64{id})
 	if n, err := svc.ApplyRename(ctx, plan, 0, domain.System); err != nil || n != 1 {
 		t.Fatalf("renamed %d %v", n, err)

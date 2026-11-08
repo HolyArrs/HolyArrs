@@ -13,11 +13,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/judge"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // KindSearchSlot is the job kind that searches every enabled Source for one Slot.
@@ -254,19 +254,19 @@ func (s *Searcher) Handle(ctx context.Context, r *jobs.Run) error {
 	from := c.sl.State
 	switch {
 	case show:
-	case from == domain.SlotNotOutYet && (handSearch || skipGate),
-		from == domain.SlotWanted, from == domain.SlotBetterWanted, from == domain.SlotStalled, from == domain.SlotFailed, from == domain.SlotRejected:
-		if err := store.MoveSlot(ctx, s.Store, slotID, domain.SlotSearching, "searching", by); err != nil {
+	case from == mediafiles.SlotNotOutYet && (handSearch || skipGate),
+		from == mediafiles.SlotWanted, from == mediafiles.SlotBetterWanted, from == mediafiles.SlotStalled, from == mediafiles.SlotFailed, from == mediafiles.SlotRejected:
+		if err := mediafiles.MoveSlot(ctx, s.Store, slotID, mediafiles.SlotSearching, "searching", by); err != nil {
 			return err
 		}
-		s.publish("slot", map[string]any{"id": slotID, "state": domain.SlotSearching})
+		s.publish("slot", map[string]any{"id": slotID, "state": mediafiles.SlotSearching})
 	// A person chose to search again from a decision they had to make.
-	case from == domain.SlotNeedsADecision && handSearch:
-		if err := store.MoveSlot(ctx, s.Store, slotID, domain.SlotSearching, "searching again by hand", by); err != nil {
+	case from == mediafiles.SlotNeedsADecision && handSearch:
+		if err := mediafiles.MoveSlot(ctx, s.Store, slotID, mediafiles.SlotSearching, "searching again by hand", by); err != nil {
 			return err
 		}
-		s.publish("slot", map[string]any{"id": slotID, "state": domain.SlotSearching})
-	case from == domain.SlotSearching, from == domain.SlotHeld && handSearch:
+		s.publish("slot", map[string]any{"id": slotID, "state": mediafiles.SlotSearching})
+	case from == mediafiles.SlotSearching, from == mediafiles.SlotHeld && handSearch:
 	default:
 		r.SetResult(map[string]any{"skipped": "slot is " + string(from)})
 		return nil
@@ -275,14 +275,14 @@ func (s *Searcher) Handle(ctx context.Context, r *jobs.Run) error {
 	if !show {
 		defer func() {
 			ctx := context.WithoutCancel(ctx)
-			if s.slotState(ctx, slotID) != domain.SlotSearching {
+			if s.slotState(ctx, slotID) != mediafiles.SlotSearching {
 				return
 			}
 			to := restState(c, from)
-			if from == domain.SlotNeedsADecision {
+			if from == mediafiles.SlotNeedsADecision {
 				to = from
 			}
-			if store.MoveSlot(ctx, s.Store, slotID, to, "the search stopped before it finished", by) == nil {
+			if mediafiles.MoveSlot(ctx, s.Store, slotID, to, "the search stopped before it finished", by) == nil {
 				s.publish("slot", map[string]any{"id": slotID, "state": to})
 			}
 		}()
@@ -299,7 +299,7 @@ func (s *Searcher) Handle(ctx context.Context, r *jobs.Run) error {
 	var shows showSet
 	if isShow {
 		var ep *epSlot
-		if shows, ep, err = s.episodeSet(ctx, c, from != domain.SlotNotOutYet); err != nil {
+		if shows, ep, err = s.episodeSet(ctx, c, from != mediafiles.SlotNotOutYet); err != nil {
 			return err
 		}
 		q = showQuery(ti, ep.ref.Season, ep)
@@ -311,8 +311,8 @@ func (s *Searcher) Handle(ctx context.Context, r *jobs.Run) error {
 	jobID := r.Job.ID
 
 	if reason, data, ok, failed := noAnswer(failures, answered, skipped); ok {
-		if !show && from != domain.SlotHeld {
-			_ = store.MoveSlot(ctx, s.Store, slotID, restState(c, from), reason, by)
+		if !show && from != mediafiles.SlotHeld {
+			_ = mediafiles.MoveSlot(ctx, s.Store, slotID, restState(c, from), reason, by)
 			s.publish("slot", map[string]any{"id": slotID, "state": restState(c, from), "reason": reason})
 		}
 		s.addEvent(ctx, by, &jobID, ti.ID, slotID, EventSearchFailed, reason, data)
@@ -322,9 +322,9 @@ func (s *Searcher) Handle(ctx context.Context, r *jobs.Run) error {
 		return errors.New(reason)
 	}
 	all = dedupe(all)
-	out := from != domain.SlotNotOutYet
-	var rels []judge.Release
-	var vs []judge.Verdict
+	out := from != mediafiles.SlotNotOutYet
+	var rels []mediafiles.ReleaseFacts
+	var vs []mediafiles.Verdict
 	if isShow {
 		rels, vs, err = s.judgeShow(ctx, shows, all, handSearch, skipGate, s.showRules(ctx))
 	} else {
@@ -381,7 +381,7 @@ func (s *Searcher) Handle(ctx context.Context, r *jobs.Run) error {
 			data["warning"] = "the Release gate was skipped"
 		}
 		s.addEvent(ctx, by, &jobID, ti.ID, slotID, EventReleaseChosen, fmt.Sprintf("Chose %s out of %d Releases", name, len(all)), data)
-		s.publish("slot", map[string]any{"id": slotID, "state": domain.SlotChosen, "reason": "chose " + name})
+		s.publish("slot", map[string]any{"id": slotID, "state": mediafiles.SlotChosen, "reason": "chose " + name})
 		r.SetResult(result)
 		if s.OnChosen != nil {
 			s.OnChosen(ctx, slotID, ids[winner])
@@ -397,22 +397,22 @@ func (s *Searcher) Handle(ctx context.Context, r *jobs.Run) error {
 		}
 		result["held_release_id"] = ids[winner]
 		s.addEvent(ctx, by, &jobID, ti.ID, slotID, EventReleaseHeld, "Holding "+name, map[string]any{"release_id": ids[winner]})
-		s.publish("slot", map[string]any{"id": slotID, "state": domain.SlotHeld, "reason": "holding " + name})
+		s.publish("slot", map[string]any{"id": slotID, "state": mediafiles.SlotHeld, "reason": "holding " + name})
 		r.SetResult(result)
 	default:
 		reason := fmt.Sprintf("no Release passed the Pick rules (%d found, %d refused)", len(all), refused)
-		if from != domain.SlotHeld {
+		if from != mediafiles.SlotHeld {
 			to := restState(c, from)
 			// A failed download with no other release and no copy in place goes to a person. With a copy it keeps looking for a better one.
-			if from == domain.SlotFailed && c.cur == nil {
-				to = domain.SlotNeedsADecision
+			if from == mediafiles.SlotFailed && c.cur == nil {
+				to = mediafiles.SlotNeedsADecision
 				reason = "the download failed and no other Release passed the Pick rules (" + strconv.Itoa(len(all)) + " found, " + strconv.Itoa(refused) + " refused)"
 			}
-			if from == domain.SlotNeedsADecision {
-				to = domain.SlotNeedsADecision
+			if from == mediafiles.SlotNeedsADecision {
+				to = mediafiles.SlotNeedsADecision
 				reason = "searched again and no Release passed the Pick rules (" + strconv.Itoa(len(all)) + " found, " + strconv.Itoa(refused) + " refused)"
 			}
-			if err := store.MoveSlot(ctx, s.Store, slotID, to, reason, by); err != nil {
+			if err := mediafiles.MoveSlot(ctx, s.Store, slotID, to, reason, by); err != nil {
 				return err
 			}
 			s.publish("slot", map[string]any{"id": slotID, "state": to, "reason": reason})
@@ -527,7 +527,7 @@ func systemActor() string {
 // SweepSearching puts Slots left searching longer than olderThan back to
 // looking, after a crash cut a search off. It runs at start, before any job.
 func (s *Searcher) SweepSearching(ctx context.Context, olderThan time.Duration) (int, error) {
-	slots, err := database.Select[domain.Slot](ctx, s.Store.Read(), "slots", "state = 'searching' AND updated_at < ?",
+	slots, err := database.Select[mediafiles.Slot](ctx, s.Store.Read(), "slots", "state = 'searching' AND updated_at < ?",
 		database.FormatTime(time.Now().Add(-olderThan)))
 	if err != nil {
 		return 0, err
@@ -538,8 +538,8 @@ func (s *Searcher) SweepSearching(ctx context.Context, olderThan time.Duration) 
 		if err != nil {
 			continue
 		}
-		to := restState(c, domain.SlotSearching)
-		if store.MoveSlot(ctx, s.Store, sl.ID, to, "a search was cut off; looking again", domain.System) == nil {
+		to := restState(c, mediafiles.SlotSearching)
+		if mediafiles.MoveSlot(ctx, s.Store, sl.ID, to, "a search was cut off; looking again", domain.System) == nil {
 			n++
 		}
 	}

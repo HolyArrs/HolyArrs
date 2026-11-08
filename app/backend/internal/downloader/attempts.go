@@ -11,10 +11,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 var (
@@ -134,7 +135,7 @@ func (m *Manager) AbandonAttempt(ctx context.Context, downloaderID, attemptID in
 			if n == 0 {
 				continue
 			}
-			if err := store.MoveSlotTx(tx, c.id, domain.SlotNeedsADecision, "send abandoned; inspect the Downloader before choosing another Release", by); err != nil {
+			if err := mediafiles.MoveSlotTx(tx, c.id, mediafiles.SlotNeedsADecision, "send abandoned; inspect the Downloader before choosing another Release", by); err != nil {
 				return err
 			}
 			moved = append(moved, c.id)
@@ -143,7 +144,7 @@ func (m *Manager) AbandonAttempt(ctx context.Context, downloaderID, attemptID in
 	})
 	if err == nil {
 		for _, id := range moved {
-			m.publish("slot", map[string]any{"id": id, "state": domain.SlotNeedsADecision})
+			m.publish("slot", map[string]any{"id": id, "state": mediafiles.SlotNeedsADecision})
 		}
 	}
 	return err
@@ -181,11 +182,11 @@ func (m *Manager) claimAttempt(ctx context.Context, d domain.Downloader, release
 			if a.DownloaderID != d.ID {
 				return ErrUncertain
 			}
-			var current domain.Slot
+			var current mediafiles.Slot
 			if err := database.Get(ctx, tx, "slots", slotID, &current); err != nil {
 				return err
 			}
-			if current.State != domain.SlotChosen || current.ChosenReleaseID == nil || *current.ChosenReleaseID != releaseID {
+			if current.State != mediafiles.SlotChosen || current.ChosenReleaseID == nil || *current.ChosenReleaseID != releaseID {
 				return errors.New("the Slot is no longer chosen for this Release")
 			}
 			return nil
@@ -204,11 +205,11 @@ func (m *Manager) claimAttempt(ctx context.Context, d domain.Downloader, release
 		} else if !errors.Is(err, sql.ErrNoRows) {
 			return err
 		}
-		var currentSlot domain.Slot
+		var currentSlot mediafiles.Slot
 		if err := database.Get(ctx, tx, "slots", slotID, &currentSlot); err != nil {
 			return err
 		}
-		if currentSlot.State != domain.SlotChosen || currentSlot.ChosenReleaseID == nil || *currentSlot.ChosenReleaseID != releaseID {
+		if currentSlot.State != mediafiles.SlotChosen || currentSlot.ChosenReleaseID == nil || *currentSlot.ChosenReleaseID != releaseID {
 			return errors.New("the Slot is no longer chosen for this Release")
 		}
 		var current domain.Downloader

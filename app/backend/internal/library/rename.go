@@ -16,11 +16,10 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
-
-	"github.com/HolyArrs/holyarrs/app/backend/internal/judge"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/naming"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
@@ -181,7 +180,7 @@ var renameCrash func(stage string) error
 
 // fileFacts are the naming facts for a File already in the Library: the
 // same ones its import used (the release name and its quality step).
-func fileFacts(t domain.Title, f domain.File) naming.Facts {
+func fileFacts(t mediafiles.Title, f mediafiles.File) mediafiles.NameFacts {
 	release := ""
 	if f.ReleaseName != nil {
 		release = *f.ReleaseName
@@ -191,7 +190,7 @@ func fileFacts(t domain.Title, f domain.File) naming.Facts {
 		year = *t.Year
 	}
 	ext := path.Ext(f.RelativePath)
-	fa := naming.FactsFrom(t.Name, year, t.SourceIDs, releasename.Parse(release, releasename.Hints{}), release, ext)
+	fa := mediafiles.FactsFrom(t.Name, year, t.SourceIDs, releasename.Parse(release, releasename.Hints{}), release, ext)
 	if edition, ok := f.MediaInfo["edition"].(string); ok {
 		fa.Edition = edition
 	}
@@ -202,10 +201,10 @@ func fileFacts(t domain.Title, f domain.File) naming.Facts {
 }
 
 // fileEpisodes lists the episodes a File holds, in episode order.
-func fileEpisodes(ctx context.Context, db reader, f domain.File) ([]importer.Episode, error) {
+func fileEpisodes(ctx context.Context, db reader, f mediafiles.File) ([]importer.Episode, error) {
 	var out []importer.Episode
 	for _, sid := range f.SlotIDs {
-		var it domain.Item
+		var it mediafiles.Item
 		var itemID int64
 		if err := db.QueryRowContext(ctx, "SELECT item_id FROM slots WHERE id = ?", sid).Scan(&itemID); err != nil {
 			continue
@@ -213,7 +212,7 @@ func fileEpisodes(ctx context.Context, db reader, f domain.File) ([]importer.Epi
 		if err := database.Get(ctx, db, "items", itemID, &it); err != nil {
 			return nil, err
 		}
-		e := importer.Episode{Ref: judge.EpisodeRef{ItemID: it.ID}, SlotID: sid}
+		e := importer.Episode{Ref: mediafiles.EpisodeRef{ItemID: it.ID}, SlotID: sid}
 		if it.Numbers.Season != nil {
 			e.Ref.Season = *it.Numbers.Season
 		}
@@ -241,7 +240,7 @@ func fileEpisodes(ctx context.Context, db reader, f domain.File) ([]importer.Epi
 }
 
 // episodeFacts are the naming facts of an episode File in the Library.
-func episodeFacts(t domain.Title, f domain.File, eps []importer.Episode) naming.EpisodeFacts {
+func episodeFacts(t mediafiles.Title, f mediafiles.File, eps []importer.Episode) mediafiles.EpisodeFacts {
 	release := ""
 	if f.ReleaseName != nil {
 		release = *f.ReleaseName
@@ -250,7 +249,7 @@ func episodeFacts(t domain.Title, f domain.File, eps []importer.Episode) naming.
 	if t.Year != nil {
 		year = *t.Year
 	}
-	order := naming.OrderAired
+	order := mediafiles.OrderAired
 	if t.EpisodeOrder != nil && *t.EpisodeOrder != "" {
 		order = *t.EpisodeOrder
 	}
@@ -263,34 +262,34 @@ func episodeFacts(t domain.Title, f domain.File, eps []importer.Episode) naming.
 
 // albumFacts are an album's naming facts and its disc count.
 type albumFacts struct {
-	f     naming.TrackFacts
+	f     mediafiles.TrackFacts
 	discs int
 }
 
 // trackFacts are the naming facts of a track File in the Library: its
 // track (the first Slot's), album (and its id) and artist. ok is false for
 // a File that holds no track.
-func trackFacts(ctx context.Context, db reader, t domain.Title, f domain.File, cache map[int64]albumFacts) (naming.TrackFacts, int64, bool, error) {
+func trackFacts(ctx context.Context, db reader, t mediafiles.Title, f mediafiles.File, cache map[int64]albumFacts) (mediafiles.TrackFacts, int64, bool, error) {
 	if len(f.SlotIDs) == 0 {
-		return naming.TrackFacts{}, 0, false, nil
+		return mediafiles.TrackFacts{}, 0, false, nil
 	}
-	var it domain.Item
+	var it mediafiles.Item
 	var itemID int64
 	if err := db.QueryRowContext(ctx, "SELECT item_id FROM slots WHERE id = ?", f.SlotIDs[0]).Scan(&itemID); err != nil {
-		return naming.TrackFacts{}, 0, false, nil
+		return mediafiles.TrackFacts{}, 0, false, nil
 	}
 	if err := database.Get(ctx, db, "items", itemID, &it); err != nil {
-		return naming.TrackFacts{}, 0, false, err
+		return mediafiles.TrackFacts{}, 0, false, err
 	}
 	if it.Kind != "track" || it.PartID == nil {
-		return naming.TrackFacts{}, 0, false, nil
+		return mediafiles.TrackFacts{}, 0, false, nil
 	}
 	af, ok := cache[*it.PartID]
 	if !ok {
 		var err error
 		af.f, af.discs, err = importer.AlbumFacts(ctx, db, t.Name, *it.PartID)
 		if err != nil {
-			return naming.TrackFacts{}, 0, false, err
+			return mediafiles.TrackFacts{}, 0, false, err
 		}
 		cache[*it.PartID] = af
 	}
@@ -313,7 +312,7 @@ func trackFacts(ctx context.Context, db reader, t domain.Title, f domain.File, c
 // (every Title when titleIDs is empty) under the naming settings. Files that
 // would keep their name are left out. Nothing on disk changes.
 func PlanRename(ctx context.Context, db reader, titleIDs []int64) ([]RenameStep, error) {
-	ns, err := naming.Read(ctx, db)
+	ns, err := mediafiles.ReadNaming(ctx, db)
 	if err != nil {
 		return nil, err
 	}
@@ -323,7 +322,7 @@ func PlanRename(ctx context.Context, db reader, titleIDs []int64) ([]RenameStep,
 // PlanRenameHashed is PlanRename with the plan hash a rename must be
 // asked with, so it does only what this preview showed.
 func PlanRenameHashed(ctx context.Context, db reader, titleIDs []int64) ([]RenameStep, string, error) {
-	ns, err := naming.Read(ctx, db)
+	ns, err := mediafiles.ReadNaming(ctx, db)
 	if err != nil {
 		return nil, "", err
 	}
@@ -336,7 +335,7 @@ func PlanRenameHashed(ctx context.Context, db reader, titleIDs []int64) ([]Renam
 
 // planHash is the SHA-256 of every step's file, old and new name and skip,
 // and of the naming settings.
-func planHash(plan []RenameStep, ns naming.Settings) string {
+func planHash(plan []RenameStep, ns mediafiles.NamingSettings) string {
 	h := sha256.New()
 	ns.AdoptScanLimit, ns.MusicAdoptScanLimit = 0, 0 // not naming choices
 	set, _ := json.Marshal(ns)
@@ -350,7 +349,7 @@ func planHash(plan []RenameStep, ns naming.Settings) string {
 	return hex.EncodeToString(h.Sum(nil))
 }
 
-func planRename(ctx context.Context, db reader, ns naming.Settings, titleIDs []int64) ([]RenameStep, error) {
+func planRename(ctx context.Context, db reader, ns mediafiles.NamingSettings, titleIDs []int64) ([]RenameStep, error) {
 	where, args := "state != 'removed' ORDER BY sort_name, id", []any{}
 	if len(titleIDs) > 0 {
 		where = "state != 'removed' AND id IN (" + strings.TrimSuffix(strings.Repeat("?,", len(titleIDs)), ",") + ") ORDER BY sort_name, id"
@@ -358,13 +357,13 @@ func planRename(ctx context.Context, db reader, ns naming.Settings, titleIDs []i
 			args = append(args, id)
 		}
 	}
-	titles, err := database.Select[domain.Title](ctx, db, "titles", where, args...)
+	titles, err := database.Select[mediafiles.Title](ctx, db, "titles", where, args...)
 	if err != nil {
 		return nil, err
 	}
 	out := []RenameStep{}
 	for _, t := range titles {
-		files, err := database.Select[domain.File](ctx, db, "files",
+		files, err := database.Select[mediafiles.File](ctx, db, "files",
 			"state = 'present' AND role = 'main' AND version_id IN (SELECT id FROM versions WHERE title_id = ?) ORDER BY id", t.ID)
 		if err != nil {
 			return nil, err
@@ -372,8 +371,8 @@ func planRename(ctx context.Context, db reader, ns naming.Settings, titleIDs []i
 		taken := map[string]bool{}
 		albums := map[int64]albumFacts{}
 		for _, f := range files {
-			var v domain.Version
-			var lf domain.LibraryFolder
+			var v mediafiles.Version
+			var lf mediafiles.LibraryFolder
 			if err := database.Get(ctx, db, "versions", f.VersionID, &v); err != nil {
 				return nil, err
 			}
@@ -383,9 +382,9 @@ func planRename(ctx context.Context, db reader, ns naming.Settings, titleIDs []i
 			st := RenameStep{FileID: f.ID, TitleID: t.ID, TitleName: t.Name, VersionID: v.ID, LibraryFolderID: lf.ID, Origin: f.Origin,
 				From: f.RelativePath, root: lf.Path}
 			facts := fileFacts(t, f)
-			to := path.Join(path.Dir(f.RelativePath), importer.EditionFileName(naming.File(ns, facts), facts.Edition))
+			to := path.Join(path.Dir(f.RelativePath), importer.EditionFileName(mediafiles.FileName(ns, facts), facts.Edition))
 			if path.Dir(f.RelativePath) == "." {
-				to = path.Join(v.FolderName, importer.EditionFileName(naming.File(ns, facts), facts.Edition))
+				to = path.Join(v.FolderName, importer.EditionFileName(mediafiles.FileName(ns, facts), facts.Edition))
 			}
 			if t.Kind == "show" {
 				// An episode file: show folder, season folder, episode name,
@@ -397,7 +396,7 @@ func planRename(ctx context.Context, db reader, ns naming.Settings, titleIDs []i
 				if len(eps) == 0 {
 					continue
 				}
-				to = naming.EpisodePath(ns, v.FolderName, episodeFacts(t, f, eps))
+				to = mediafiles.EpisodePath(ns, v.FolderName, episodeFacts(t, f, eps))
 			}
 			if t.Kind == "artist" {
 				// A track file: artist folder, album folder, disc folder,
@@ -409,7 +408,7 @@ func planRename(ctx context.Context, db reader, ns naming.Settings, titleIDs []i
 				if !ok {
 					continue
 				}
-				to = naming.TrackPath(ns, v.FolderName, tf)
+				to = mediafiles.TrackPath(ns, v.FolderName, tf)
 				st.AlbumID = partID
 			}
 			fromAbs := filepath.Join(lf.Path, filepath.FromSlash(f.RelativePath))
@@ -759,7 +758,7 @@ func (s *Service) finishRename(ctx context.Context, stepID, fileID int64, from, 
 			return err
 		}
 	}
-	var f domain.File
+	var f mediafiles.File
 	err = s.Store.Write(ctx, func(tx *sql.Tx) error {
 		if err := database.Get(ctx, tx, "files", fileID, &f); err != nil {
 			return err

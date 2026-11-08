@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/alerts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
@@ -117,7 +119,7 @@ func SaveSettings(ctx context.Context, st *database.Store, s Settings, by domain
 	}
 	db := st.Read()
 	if s.LibraryFolderID != 0 {
-		var lf domain.LibraryFolder
+		var lf mediafiles.LibraryFolder
 		if err := database.Get(ctx, db, "library_folders", s.LibraryFolderID, &lf); errors.Is(err, database.ErrNotFound) {
 			return library.ErrNoFolder
 		} else if err != nil {
@@ -128,7 +130,7 @@ func SaveSettings(ctx context.Context, st *database.Store, s Settings, by domain
 		}
 	}
 	if s.ShowLibraryFolderID != 0 {
-		var lf domain.LibraryFolder
+		var lf mediafiles.LibraryFolder
 		if err := database.Get(ctx, db, "library_folders", s.ShowLibraryFolderID, &lf); errors.Is(err, database.ErrNotFound) {
 			return library.ErrNoFolder
 		} else if err != nil {
@@ -139,7 +141,7 @@ func SaveSettings(ctx context.Context, st *database.Store, s Settings, by domain
 		}
 	}
 	if s.MusicLibraryFolderID != 0 {
-		var lf domain.LibraryFolder
+		var lf mediafiles.LibraryFolder
 		if err := database.Get(ctx, db, "library_folders", s.MusicLibraryFolderID, &lf); errors.Is(err, database.ErrNotFound) {
 			return library.ErrNoFolder
 		} else if err != nil {

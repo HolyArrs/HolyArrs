@@ -11,6 +11,8 @@ import (
 	"testing/fstest"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
@@ -75,7 +77,7 @@ func TestM1RollForwardFromStage4(t *testing.T) {
 	if len(backups) != 1 {
 		t.Fatalf("backups before 0007: %v", backups)
 	}
-	ts, err := database.Select[domain.Title](ctx, s.Read(), "titles", "")
+	ts, err := database.Select[mediafiles.Title](ctx, s.Read(), "titles", "")
 	if err != nil || len(ts) != 1 {
 		t.Fatalf("titles %v %v", ts, err)
 	}
@@ -94,17 +96,17 @@ func TestM1RollForwardFromStage4(t *testing.T) {
 		if err := database.Update(tx, "titles", &ti, domain.System); err != nil {
 			return err
 		}
-		_, err := database.Insert(tx, "never_add", &domain.NeverAdd{Kind: "movie", SourceIDs: map[string]string{"tmdb": "42"}, Name: "Skip Me", Reason: "test"}, domain.System)
+		_, err := database.Insert(tx, "never_add", &mediafiles.NeverAdd{Kind: "movie", SourceIDs: map[string]string{"tmdb": "42"}, Name: "Skip Me", Reason: "test"}, domain.System)
 		return err
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	var back domain.Title
+	var back mediafiles.Title
 	if err := database.Get(ctx, s.Read(), "titles", ti.ID, &back); err != nil || back.CinemaDate == nil || !back.CinemaDate.Equal(cinema) || !back.GateOpensAt.Equal(opens) {
 		t.Fatalf("title back %+v %v", back, err)
 	}
-	na, err := database.Select[domain.NeverAdd](ctx, s.Read(), "never_add", "json_extract(source_ids, '$.tmdb') = ?", "42")
+	na, err := database.Select[mediafiles.NeverAdd](ctx, s.Read(), "never_add", "json_extract(source_ids, '$.tmdb') = ?", "42")
 	if err != nil || len(na) != 1 || na[0].Name != "Skip Me" {
 		t.Fatalf("never_add %v %v", na, err)
 	}
@@ -118,7 +120,7 @@ func TestM1RollForwardFromStage4(t *testing.T) {
 	}
 	// Library folders keep a reason for their health.
 	err = s.Write(ctx, func(tx *sql.Tx) error {
-		_, err := database.Insert(tx, "library_folders", &domain.LibraryFolder{Path: dir, Kind: "movie", Label: "M", Health: "missing", HealthReason: "gone", SameDiskAs: []int64{}}, domain.System)
+		_, err := database.Insert(tx, "library_folders", &mediafiles.LibraryFolder{Path: dir, Kind: "movie", Label: "M", Health: "missing", HealthReason: "gone", SameDiskAs: []int64{}}, domain.System)
 		return err
 	})
 	if err != nil {

@@ -10,14 +10,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/judge"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // KindSearchAlbum is the Job kind that searches Sources for one album.
@@ -39,15 +38,15 @@ var extraFileExts = map[string]bool{"log": true, "cue": true, "m3u": true, "m3u8
 	"gif": true, "bmp": true, "webp": true, "nfo": true, "txt": true, "pdf": true, "sfv": true, "md5": true, "accurip": true}
 
 // albumLooking are the Slot states an album search can pick for. Failed, rejected and stalled tracks are tried again.
-var albumLooking = []domain.SlotState{domain.SlotWanted, domain.SlotBetterWanted, domain.SlotFailed, domain.SlotRejected, domain.SlotStalled}
+var albumLooking = []mediafiles.SlotState{mediafiles.SlotWanted, mediafiles.SlotBetterWanted, mediafiles.SlotFailed, mediafiles.SlotRejected, mediafiles.SlotStalled}
 
 // albumSet is one album of one artist with the tracks it is judged against. target holds the Slots this search is working for, and notOut those among them that are not out yet.
 type albumSet struct {
-	ti     domain.Title
-	ver    domain.Version
-	pr     domain.PickRules
-	part   domain.Part
-	albums []judge.AlbumRef
+	ti     mediafiles.Title
+	ver    mediafiles.Version
+	pr     mediafiles.PickRules
+	part   mediafiles.Part
+	albums []mediafiles.AlbumRef
 	tracks []trackSlot
 	target map[int64]bool
 	notOut map[int64]bool
@@ -55,9 +54,9 @@ type albumSet struct {
 
 // trackSlot is a track with its Slot in the Version being searched, the copy it holds, and whether it is kept up to date.
 type trackSlot struct {
-	it   domain.Item
-	sl   *domain.Slot
-	cur  *judge.Current
+	it   mediafiles.Item
+	sl   *mediafiles.Slot
+	cur  *mediafiles.Current
 	kept bool
 	disc int
 }
@@ -80,16 +79,16 @@ func (s *Searcher) HandleAlbum(ctx context.Context, r *jobs.Run) error {
 	db := s.Store.Read()
 	by := jobActor(r)
 	jobID := r.Job.ID
-	var part domain.Part
+	var part mediafiles.Part
 	if err := database.Get(ctx, db, "parts", r.Job.Subject.ID, &part); err != nil || part.Kind != "album" {
 		return fmt.Errorf("album %d: not found", r.Job.Subject.ID)
 	}
-	var ti domain.Title
+	var ti mediafiles.Title
 	if err := database.Get(ctx, db, "titles", part.TitleID, &ti); err != nil {
 		return err
 	}
 	vid, _ := r.Job.Params["version_id"].(float64)
-	var ver domain.Version
+	var ver mediafiles.Version
 	if err := database.Get(ctx, db, "versions", int64(vid), &ver); err != nil || ver.TitleID != ti.ID {
 		return fmt.Errorf("search_album needs a version_id of the artist")
 	}
@@ -111,7 +110,7 @@ func (s *Searcher) HandleAlbum(ctx context.Context, r *jobs.Run) error {
 		if t.sl == nil || !(t.kept || anyTrack || show) {
 			continue
 		}
-		notOut := t.sl.State == domain.SlotNotOutYet
+		notOut := t.sl.State == mediafiles.SlotNotOutYet
 		if show || slices.Contains(albumLooking, t.sl.State) || notOut && (hand && !keptOnly || skipGate) {
 			looking = append(looking, t)
 		}
@@ -129,31 +128,31 @@ func (s *Searcher) HandleAlbum(ctx context.Context, r *jobs.Run) error {
 		}
 		ctx := context.WithoutCancel(ctx)
 		for _, t := range looking {
-			if !set.target[t.sl.ID] || s.slotState(ctx, t.sl.ID) != domain.SlotSearching {
+			if !set.target[t.sl.ID] || s.slotState(ctx, t.sl.ID) != mediafiles.SlotSearching {
 				continue
 			}
-			to := domain.SlotWanted
+			to := mediafiles.SlotWanted
 			switch {
 			case set.notOut[t.sl.ID]:
-				to = domain.SlotNotOutYet
-			case t.cur != nil || t.sl.State == domain.SlotBetterWanted:
-				to = domain.SlotBetterWanted
+				to = mediafiles.SlotNotOutYet
+			case t.cur != nil || t.sl.State == mediafiles.SlotBetterWanted:
+				to = mediafiles.SlotBetterWanted
 			}
-			_ = store.MoveSlot(ctx, s.Store, t.sl.ID, to, reason, by)
+			_ = mediafiles.MoveSlot(ctx, s.Store, t.sl.ID, to, reason, by)
 			s.publish("slot", map[string]any{"id": t.sl.ID, "state": to, "reason": reason})
 		}
 	}
 	defer rest("the album search stopped before it finished")
 	targets := []int64{}
 	for _, t := range looking {
-		if t.sl.State == domain.SlotNotOutYet {
+		if t.sl.State == mediafiles.SlotNotOutYet {
 			set.notOut[t.sl.ID] = true
 		}
 		if !show {
-			if err := store.MoveSlot(ctx, s.Store, t.sl.ID, domain.SlotSearching, "searching "+part.Name, by); err != nil {
+			if err := mediafiles.MoveSlot(ctx, s.Store, t.sl.ID, mediafiles.SlotSearching, "searching "+part.Name, by); err != nil {
 				continue
 			}
-			s.publish("slot", map[string]any{"id": t.sl.ID, "state": domain.SlotSearching})
+			s.publish("slot", map[string]any{"id": t.sl.ID, "state": mediafiles.SlotSearching})
 		}
 		set.target[t.sl.ID] = true
 		targets = append(targets, t.sl.ID)
@@ -297,33 +296,33 @@ func (set albumSet) labels() map[int64]string {
 }
 
 // loadAlbum reads the album's tracks in disc and track order, with each Slot and the copy it holds, and the artist's other albums for matching names.
-func (s *Searcher) loadAlbum(ctx context.Context, ti domain.Title, ver domain.Version, part domain.Part) (albumSet, error) {
+func (s *Searcher) loadAlbum(ctx context.Context, ti mediafiles.Title, ver mediafiles.Version, part mediafiles.Part) (albumSet, error) {
 	db := s.Store.Read()
 	set := albumSet{ti: ti, ver: ver, part: part, target: map[int64]bool{}, notOut: map[int64]bool{}}
 	if err := database.Get(ctx, db, "pick_rules", ver.PickRulesID, &set.pr); err != nil {
 		return set, err
 	}
-	parts, err := database.Select[domain.Part](ctx, db, "parts", "title_id = ? AND kind = 'album' AND dropped_at IS NULL", ti.ID)
+	parts, err := database.Select[mediafiles.Part](ctx, db, "parts", "title_id = ? AND kind = 'album' AND dropped_at IS NULL", ti.ID)
 	if err != nil {
 		return set, err
 	}
 	for _, p := range parts {
-		a := judge.AlbumRef{PartID: p.ID, Name: p.Name}
+		a := mediafiles.AlbumRef{PartID: p.ID, Name: p.Name}
 		if p.ReleaseDate != nil {
 			a.Year = p.ReleaseDate.Year()
 		}
 		set.albums = append(set.albums, a)
 	}
-	its, err := database.Select[domain.Item](ctx, db, "items", `part_id = ? AND kind = 'track' AND dropped_at IS NULL
+	its, err := database.Select[mediafiles.Item](ctx, db, "items", `part_id = ? AND kind = 'track' AND dropped_at IS NULL
 		ORDER BY json_extract(numbers, '$.disc'), json_extract(numbers, '$.track')`, part.ID)
 	if err != nil {
 		return set, err
 	}
-	slots, err := database.Select[domain.Slot](ctx, db, "slots", "version_id = ? AND item_id IN (SELECT id FROM items WHERE part_id = ?)", ver.ID, part.ID)
+	slots, err := database.Select[mediafiles.Slot](ctx, db, "slots", "version_id = ? AND item_id IN (SELECT id FROM items WHERE part_id = ?)", ver.ID, part.ID)
 	if err != nil {
 		return set, err
 	}
-	byItem := map[int64]*domain.Slot{}
+	byItem := map[int64]*mediafiles.Slot{}
 	for i := range slots {
 		byItem[slots[i].ItemID] = &slots[i]
 	}
@@ -343,12 +342,12 @@ func (s *Searcher) loadAlbum(ctx context.Context, ti domain.Title, ver domain.Ve
 }
 
 // ref describes the artist for matching release names.
-func (set albumSet) ref() judge.TitleRef {
-	return judge.TitleRef{ID: set.ti.ID, Name: set.ti.Name, Aliases: set.ti.Aliases, Kind: "artist"}
+func (set albumSet) ref() mediafiles.TitleRef {
+	return mediafiles.TitleRef{ID: set.ti.ID, Name: set.ti.Name, Aliases: set.ti.Aliases, Kind: "artist"}
 }
 
 // judgeAlbum judges and ranks every candidate as an album. A Release date with only a month or year does not gate, since the day is unknown.
-func (s *Searcher) judgeAlbum(ctx context.Context, set albumSet, all []found, hand, skipGate bool, rules musicRules) ([]judge.Release, []judge.Verdict) {
+func (s *Searcher) judgeAlbum(ctx context.Context, set albumSet, all []found, hand, skipGate bool, rules musicRules) ([]mediafiles.ReleaseFacts, []mediafiles.Verdict) {
 	bad := s.dangerousSeen(ctx)
 	turned := map[int64][]string{}
 	turnedFor := func(slotID int64) []string {
@@ -365,29 +364,29 @@ func (s *Searcher) judgeAlbum(ctx context.Context, set albumSet, all []found, ha
 	if set.part.ReleaseDate != nil && (set.part.ReleaseDatePrecision == nil || *set.part.ReleaseDatePrecision == "day") {
 		outSince = set.part.ReleaseDate
 	}
-	rels := make([]judge.Release, len(all))
-	vs := make([]judge.Verdict, len(all))
+	rels := make([]mediafiles.ReleaseFacts, len(all))
+	vs := make([]mediafiles.Verdict, len(all))
 	for i, f := range all {
 		p := releasename.Parse(f.item.Title, releasename.Hints{Size: f.item.Size, Music: true})
-		rels[i] = judge.Release{Name: f.item.Title, Parse: p, Size: f.item.Size, Protocol: f.item.Protocol, Seeders: f.item.Seeders,
+		rels[i] = mediafiles.ReleaseFacts{Name: f.item.Title, Parse: p, Size: f.item.Size, Protocol: f.item.Protocol, Seeders: f.item.Seeders,
 			PublishedAt: f.item.Published, InfoHash: f.item.InfoHash, SourcePriority: f.src.Priority, Dangerous: bad.has(listingHash(f.item.InfoHash, f.item.Link), f.item.Title)}
-		ss := judge.SlotSet{Match: judge.MatchTitle(p, []judge.TitleRef{tref}), MinSeeders: f.src.MinSeeders, HandSearch: hand, SkipGate: skipGate, Out: true,
+		ss := mediafiles.SlotSet{Match: mediafiles.MatchTitle(p, []mediafiles.TitleRef{tref}), MinSeeders: f.src.MinSeeders, HandSearch: hand, SkipGate: skipGate, Out: true,
 			OutSince: outSince, Checks: checks}
 		if ss.Match.Title != nil {
 			set.lines(&ss, rels[i], f.item.Files, rules, turnedFor)
 		}
-		vs[i] = judge.Judge(rels[i], ss, set.pr.Body)
+		vs[i] = mediafiles.Judge(rels[i], ss, set.pr.Body)
 	}
-	judge.Rank(rels, vs, set.pr.Body)
+	mediafiles.Rank(rels, vs, set.pr.Body)
 	return rels, vs
 }
 
 // lines adds the album-level checks to a Release's slot set: which album it holds, which discs, whether the track count fits, and which tracks would gain. A failing check ends the list early. Only tracks that would all gain are set on the Release, so an album is never mixed from copies.
-func (set albumSet) lines(ss *judge.SlotSet, rel judge.Release, files int, rules musicRules, turnedFor func(int64) []string) {
+func (set albumSet) lines(ss *mediafiles.SlotSet, rel mediafiles.ReleaseFacts, files int, rules musicRules, turnedFor func(int64) []string) {
 	p := rel.Parse
 	m := p.Music
 	add := func(rule, effect, detail string) {
-		ss.MatchReasons = append(ss.MatchReasons, judge.Reason{Step: "match", Rule: rule, Effect: effect, Detail: detail})
+		ss.MatchReasons = append(ss.MatchReasons, mediafiles.Reason{Step: "match", Rule: rule, Effect: effect, Detail: detail})
 	}
 	if p.Kind.Value == releasename.KindDiscography {
 		if !rules.discography {
@@ -396,7 +395,7 @@ func (set albumSet) lines(ss *judge.SlotSet, rel judge.Release, files int, rules
 		}
 		add("discography", "warn", "a whole discography, taken for "+set.part.Name)
 	} else {
-		a, warn, why := judge.MatchAlbum(p, set.ti.Name, set.albums)
+		a, warn, why := mediafiles.MatchAlbum(p, set.ti.Name, set.albums)
 		switch {
 		case a == nil:
 			add("album", "fail", why)
@@ -475,7 +474,7 @@ func (set albumSet) lines(ss *judge.SlotSet, rel judge.Release, files int, rules
 			}
 			continue
 		}
-		if !judge.Gains(rel, set.pr.Body, t.cur) {
+		if !mediafiles.Gains(rel, set.pr.Body, t.cur) {
 			noGain = append(noGain, trackName(t.it))
 			continue
 		}
@@ -510,7 +509,7 @@ func hasOrHave(n int) string {
 }
 
 // trackName names a track by title, or by number when it has none.
-func trackName(it domain.Item) string {
+func trackName(it mediafiles.Item) string {
 	if it.Name != nil && *it.Name != "" {
 		return *it.Name
 	}
@@ -539,7 +538,7 @@ func joinInts(ns []int) string {
 }
 
 // albumQuery builds the Source query for an album.
-func albumQuery(ti domain.Title, part domain.Part) Query {
+func albumQuery(ti mediafiles.Title, part mediafiles.Part) Query {
 	q := Query{Music: true, Artist: ti.Name, Album: part.Name, Title: ti.Name + " " + part.Name}
 	if part.ReleaseDate != nil {
 		q.Year = part.ReleaseDate.Year()
@@ -594,7 +593,7 @@ func (s *Searcher) feedArtist(ctx context.Context, by domain.Actor, jobID *int64
 	rules := s.musicRules(ctx)
 	for _, k := range order {
 		group := groups[k]
-		var part domain.Part
+		var part mediafiles.Part
 		if err := database.Get(ctx, s.Store.Read(), "parts", k.part, &part); err != nil {
 			continue
 		}
@@ -615,7 +614,7 @@ func (s *Searcher) feedArtist(ctx context.Context, by domain.Actor, jobID *int64
 				continue
 			}
 			set.target[c.sl.ID] = true
-			if c.sl.State == domain.SlotHeld && c.sl.HeldReleaseID != nil {
+			if c.sl.State == mediafiles.SlotHeld && c.sl.HeldReleaseID != nil {
 				heldNow[c.sl.ID] = *c.sl.HeldReleaseID
 				dup := false
 				for _, f := range cands {

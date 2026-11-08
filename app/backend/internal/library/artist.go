@@ -13,10 +13,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/naming"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
@@ -209,7 +210,7 @@ func (s *Service) artistSearch(ctx context.Context, p metadata.ArtistProvider, k
 }
 
 // applyArtist copies looked-up details onto an artist Title.
-func applyArtist(t *domain.Title, a metadata.Artist) {
+func applyArtist(t *mediafiles.Title, a metadata.Artist) {
 	t.Name, t.SortName = a.Name, sortName(a.Name)
 	ids := map[string]string{}
 	for k, v := range t.SourceIDs {
@@ -290,9 +291,9 @@ func (s *Service) AddArtist(ctx context.Context, id string, opt ArtistAddOptions
 	}
 	keep := opt.KeepUpToDate == nil || *opt.KeepUpToDate
 
-	var lf domain.LibraryFolder
+	var lf mediafiles.LibraryFolder
 	if opt.LibraryFolderID == 0 {
-		fs, err := database.Select[domain.LibraryFolder](ctx, db, "library_folders", "kind = 'music' ORDER BY id LIMIT 1")
+		fs, err := database.Select[mediafiles.LibraryFolder](ctx, db, "library_folders", "kind = 'music' ORDER BY id LIMIT 1")
 		if err != nil {
 			return 0, 0, err
 		}
@@ -315,12 +316,12 @@ func (s *Service) AddArtist(ctx context.Context, id string, opt ArtistAddOptions
 	if err != nil {
 		return 0, 0, err
 	}
-	ns, err := naming.Read(ctx, db)
+	ns, err := mediafiles.ReadNaming(ctx, db)
 	if err != nil {
 		return 0, 0, err
 	}
 	now := s.now()
-	var t domain.Title
+	var t mediafiles.Title
 	var sync ArtistSync
 	err = s.Store.Write(ctx, func(tx *sql.Tx) error {
 		if existing, err := ArtistByMBID(ctx, tx, a.MBID); err != nil {
@@ -347,12 +348,12 @@ func (s *Service) AddArtist(ctx context.Context, id string, opt ArtistAddOptions
 		}
 		if prID == 0 {
 			// A folder whose default is for movies and shows gets the music default.
-			if err := tx.QueryRow("SELECT id FROM pick_rules WHERE name = ?", domain.MusicDefaultName).Scan(&prID); err != nil {
+			if err := tx.QueryRow("SELECT id FROM pick_rules WHERE name = ?", mediafiles.MusicDefaultName).Scan(&prID); err != nil {
 				return fmt.Errorf("pick rules: %w", err)
 			}
 		}
 		choice := opt.Albums
-		t = domain.Title{Kind: "artist", Aliases: []string{}, SourceIDs: map[string]string{}, MetadataSource: "musicbrainz", KeepUpToDate: keep,
+		t = mediafiles.Title{Kind: "artist", Aliases: []string{}, SourceIDs: map[string]string{}, MetadataSource: "musicbrainz", KeepUpToDate: keep,
 			NewPartsPolicy: policy, ReleaseGate: GateReleased, MusicTypes: opt.AlbumTypes, MusicSecondary: opt.SecondaryTypes,
 			MusicStatuses: opt.ReleaseStatuses, WhyAdded: opt.WhyAdded, Artwork: []string{}, State: "active", GateDriver: "none",
 			AlbumChoice: &choice, RefreshedAt: &now}
@@ -360,7 +361,7 @@ func (s *Service) AddArtist(ctx context.Context, id string, opt ArtistAddOptions
 		if _, err := database.Insert(tx, "titles", &t, by); err != nil {
 			return err
 		}
-		v := &domain.Version{TitleID: t.ID, Label: "Main", PickRulesID: prID, LibraryFolderID: lf.ID, FolderName: naming.ArtistFolder(ns, naming.TrackFacts{Artist: t.Name}), KeepUpToDate: keep, IsMain: true}
+		v := &mediafiles.Version{TitleID: t.ID, Label: "Main", PickRulesID: prID, LibraryFolderID: lf.ID, FolderName: mediafiles.ArtistFolder(ns, mediafiles.TrackFacts{Artist: t.Name}), KeepUpToDate: keep, IsMain: true}
 		if opt.Adopt != nil && opt.Adopt.FolderName != "" {
 			v.FolderName = opt.Adopt.FolderName
 		}
@@ -436,7 +437,7 @@ func (a *ArtistSync) add(b ArtistSync) {
 
 // newAlbumKeep says whether an album a refresh found (or newly included)
 // starts kept up to date: the artist's new-album choice decides.
-func newAlbumKeep(t domain.Title, release *time.Time) bool {
+func newAlbumKeep(t mediafiles.Title, release *time.Time) bool {
 	if !t.KeepUpToDate {
 		return false
 	}
@@ -459,7 +460,7 @@ func partHeld(tx *sql.Tx, partID int64) (bool, error) {
 
 // statusOK reports whether an album's stored Pressings allow it: it has
 // none yet, or one with a counted status.
-func statusOK(tx *sql.Tx, t domain.Title, partID int64) (bool, error) {
+func statusOK(tx *sql.Tx, t mediafiles.Title, partID int64) (bool, error) {
 	rows, err := tx.Query("SELECT status FROM pressings WHERE part_id = ?", partID)
 	if err != nil {
 		return false, err
@@ -484,13 +485,13 @@ func statusOK(tx *sql.Tx, t domain.Title, partID int64) (bool, error) {
 // match by MusicBrainz id, so rows, Slots and Files survive. An album the
 // source no longer lists is removed when nothing holds it, else flagged;
 // when the source's list is cut short (a.Partial) nothing is removed.
-func syncAlbumsTx(ctx context.Context, tx *sql.Tx, t domain.Title, a metadata.Artist, choice string, now time.Time, by domain.Actor) (ArtistSync, error) {
+func syncAlbumsTx(ctx context.Context, tx *sql.Tx, t mediafiles.Title, a metadata.Artist, choice string, now time.Time, by domain.Actor) (ArtistSync, error) {
 	var out ArtistSync
-	parts, err := database.Select[domain.Part](ctx, tx, "parts", "title_id = ? AND kind = 'album'", t.ID)
+	parts, err := database.Select[mediafiles.Part](ctx, tx, "parts", "title_id = ? AND kind = 'album'", t.ID)
 	if err != nil {
 		return out, err
 	}
-	byMBID := map[string]*domain.Part{}
+	byMBID := map[string]*mediafiles.Part{}
 	for i := range parts {
 		byMBID[parts[i].SourceIDs["musicbrainz"]] = &parts[i]
 	}
@@ -578,8 +579,8 @@ func syncAlbumsTx(ctx context.Context, tx *sql.Tx, t domain.Title, a metadata.Ar
 		} else {
 			keep = keep && newAlbumKeep(t, date)
 		}
-		p := &domain.Part{TitleID: t.ID, Kind: "album", Name: al.Name, ReleaseType: str(typ), ReleaseDate: date, ReleaseDatePrecision: prec, KeepUpToDate: keep,
-			SourceIDs: map[string]string{"musicbrainz": al.MBID}, Pressings: []domain.Pressing{}, SecondaryTypes: sec, Included: kinds,
+		p := &mediafiles.Part{TitleID: t.ID, Kind: "album", Name: al.Name, ReleaseType: str(typ), ReleaseDate: date, ReleaseDatePrecision: prec, KeepUpToDate: keep,
+			SourceIDs: map[string]string{"musicbrainz": al.MBID}, Pressings: []mediafiles.Pressing{}, SecondaryTypes: sec, Included: kinds,
 			Disambiguation: str(al.Disambiguation)}
 		if _, err := database.Insert(tx, "parts", p, by); err != nil {
 			return out, err
@@ -668,12 +669,12 @@ func dropTracksTx(tx *sql.Tx, partID int64, keep map[int64]bool, now time.Time, 
 // chosen Pressing's tracks. An album none of whose Pressings has a counted
 // status stops being included. An empty ps changes nothing; with cut (the
 // source's list was cut short) Pressings it did not list are kept.
-func syncPressingsTx(ctx context.Context, tx *sql.Tx, t domain.Title, partID int64, ps []metadata.Pressing, cut bool, rule string, now time.Time, by domain.Actor) (ArtistSync, error) {
+func syncPressingsTx(ctx context.Context, tx *sql.Tx, t mediafiles.Title, partID int64, ps []metadata.Pressing, cut bool, rule string, now time.Time, by domain.Actor) (ArtistSync, error) {
 	var out ArtistSync
 	if len(ps) == 0 {
 		return out, nil
 	}
-	var p domain.Part
+	var p mediafiles.Part
 	if err := database.Get(ctx, tx, "parts", partID, &p); err != nil {
 		return out, err
 	}
@@ -774,22 +775,22 @@ func syncPressingsTx(ctx context.Context, tx *sql.Tx, t domain.Title, partID int
 // tracks get one Slot per Version, not out yet or wanted by the album's
 // release date. No tracks changes nothing: an empty list is never taken
 // to mean every track went.
-func syncTracksTx(ctx context.Context, tx *sql.Tx, titleID int64, p domain.Part, tracks []domain.PressingTrack, now time.Time, by domain.Actor) (ArtistSync, error) {
+func syncTracksTx(ctx context.Context, tx *sql.Tx, titleID int64, p mediafiles.Part, tracks []domain.PressingTrack, now time.Time, by domain.Actor) (ArtistSync, error) {
 	var out ArtistSync
 	if len(tracks) == 0 {
 		return out, nil
 	}
-	items, err := database.Select[domain.Item](ctx, tx, "items", "part_id = ? AND kind = 'track' ORDER BY id", p.ID)
+	items, err := database.Select[mediafiles.Item](ctx, tx, "items", "part_id = ? AND kind = 'track' ORDER BY id", p.ID)
 	if err != nil {
 		return out, err
 	}
-	versions, err := database.Select[domain.Version](ctx, tx, "versions", "title_id = ?", titleID)
+	versions, err := database.Select[mediafiles.Version](ctx, tx, "versions", "title_id = ?", titleID)
 	if err != nil {
 		return out, err
 	}
 	claimed := map[int64]bool{}
-	match := make([]*domain.Item, len(tracks))
-	find := func(ok func(it domain.Item, tr domain.PressingTrack) bool) {
+	match := make([]*mediafiles.Item, len(tracks))
+	find := func(ok func(it mediafiles.Item, tr domain.PressingTrack) bool) {
 		for i, tr := range tracks {
 			if match[i] != nil {
 				continue
@@ -802,13 +803,13 @@ func syncTracksTx(ctx context.Context, tx *sql.Tx, titleID int64, p domain.Part,
 			}
 		}
 	}
-	find(func(it domain.Item, tr domain.PressingTrack) bool {
+	find(func(it mediafiles.Item, tr domain.PressingTrack) bool {
 		return tr.ID != "" && it.SourceIDs["musicbrainz"] == tr.ID
 	})
-	find(func(it domain.Item, tr domain.PressingTrack) bool {
+	find(func(it mediafiles.Item, tr domain.PressingTrack) bool {
 		return tr.RecordingID != "" && it.RecordingID != nil && *it.RecordingID == tr.RecordingID
 	})
-	find(func(it domain.Item, tr domain.PressingTrack) bool {
+	find(func(it mediafiles.Item, tr domain.PressingTrack) bool {
 		return it.Numbers.Disc != nil && it.Numbers.Track != nil && *it.Numbers.Disc == tr.Disc && *it.Numbers.Track == tr.Number
 	})
 	res, err := dropTracksTx(tx, p.ID, claimed, now, by)
@@ -844,19 +845,19 @@ func syncTracksTx(ctx context.Context, tx *sql.Tx, titleID int64, p domain.Part,
 			out.TracksChanged++
 			continue
 		}
-		it := &domain.Item{TitleID: titleID, PartID: &p.ID, Kind: "track", Numbers: domain.Numbers{Disc: &disc, Track: &num}, Name: &name,
+		it := &mediafiles.Item{TitleID: titleID, PartID: &p.ID, Kind: "track", Numbers: mediafiles.Numbers{Disc: &disc, Track: &num}, Name: &name,
 			AirDate: p.ReleaseDate, KeepUpToDate: p.KeepUpToDate, RecordingID: &rec, LengthMS: length, SourceIDs: map[string]string{"musicbrainz": tr.ID}}
 		if _, err := database.Insert(tx, "items", it, by); err != nil {
 			return out, err
 		}
 		out.TracksAdded++
-		state := domain.SlotNotOutYet
+		state := mediafiles.SlotNotOutYet
 		if open {
-			state = domain.SlotWanted
+			state = mediafiles.SlotWanted
 		}
 		for _, v := range versions {
 			r := reason
-			if _, err := database.Insert(tx, "slots", &domain.Slot{ItemID: it.ID, VersionID: v.ID, State: state, LastReason: &r}, by); err != nil {
+			if _, err := database.Insert(tx, "slots", &mediafiles.Slot{ItemID: it.ID, VersionID: v.ID, State: state, LastReason: &r}, by); err != nil {
 				return out, err
 			}
 		}
@@ -870,9 +871,9 @@ var ErrNotMusicRules = errors.New("these Pick rules are for movies and shows; ch
 
 // musicRulesTx says the Pick rules judge music.
 func musicRulesTx(tx *sql.Tx, id int64) bool {
-	var pr domain.PickRules
+	var pr mediafiles.PickRules
 	if err := database.Get(context.Background(), tx, "pick_rules", id, &pr); err != nil {
 		return false
 	}
-	return domain.IsMusicRules(pr.Body)
+	return mediafiles.IsMusicRules(pr.Body)
 }

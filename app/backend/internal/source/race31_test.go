@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
@@ -49,7 +51,7 @@ func TestFeedCheck_SlotAlreadyDownloading(t *testing.T) {
 	beforeSettle = func(int64) { exec(t, f, "UPDATE slots SET state = 'downloading'") }
 	t.Cleanup(func() { beforeSettle = nil })
 	j := runKind(t, f, sr, KindFeedCheck, nil, nil)
-	if j.State != "done" || called != 0 || slotState(t, f).State != domain.SlotDownloading {
+	if j.State != "done" || called != 0 || slotState(t, f).State != mediafiles.SlotDownloading {
 		t.Fatalf("job %s chosen %d slot %s", j.State, called, slotState(t, f).State)
 	}
 	if st := relByName(t, f, web1080).State; st == "chosen" {

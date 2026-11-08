@@ -1,4 +1,4 @@
-package judge
+package mediafiles
 
 import (
 	"fmt"
@@ -19,7 +19,7 @@ const (
 // day posted, the day out or the size is not known the check cannot run:
 // an automatic search says so in a warning line, and holds the Release for
 // a person's choice when Checks.HoldUnknown is on (fail-open by default).
-func (v *Verdict) earlyAndTiny(rel Release, set SlotSet) {
+func (v *Verdict) earlyAndTiny(rel ReleaseFacts, set SlotSet) {
 	c := set.Checks
 	unknown := func(rule, detail string) {
 		if set.HandSearch {

@@ -21,6 +21,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
@@ -274,8 +276,8 @@ func pathID(w http.ResponseWriter, r *http.Request) (int64, bool) {
 // missing id is database.ErrNotFound, so every route answers 404 for them.
 // Title ids are never reused (titles are only ever marked removed), which
 // is what lets an app keep the id it was given.
-func (h *handler) title(ctx context.Context, id int64, kind string) (domain.Title, error) {
-	var t domain.Title
+func (h *handler) title(ctx context.Context, id int64, kind string) (mediafiles.Title, error) {
+	var t mediafiles.Title
 	if err := database.Get(ctx, h.Store.Read(), "titles", id, &t); err != nil {
 		return t, err
 	}

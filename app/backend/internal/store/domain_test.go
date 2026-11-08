@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
@@ -46,18 +48,18 @@ func roundTrip(t *testing.T, s *database.Store, table string, v any, fresh any) 
 func TestSeededGoodEveryday(t *testing.T) {
 	s, _ := openTest(t, database.Options{})
 	var id int64
-	if err := s.Read().QueryRow("SELECT id FROM pick_rules WHERE name = ?", domain.GoodEverydayName).Scan(&id); err != nil {
+	if err := s.Read().QueryRow("SELECT id FROM pick_rules WHERE name = ?", mediafiles.GoodEverydayName).Scan(&id); err != nil {
 		t.Fatal(err)
 	}
-	var pr domain.PickRules
+	var pr mediafiles.PickRules
 	if err := database.Get(context.Background(), s.Read(), "pick_rules", id, &pr); err != nil {
 		t.Fatal(err)
 	}
 	if !pr.Preset || pr.Revision != 1 {
 		t.Fatalf("preset flags wrong: %+v", pr)
 	}
-	if !reflect.DeepEqual(pr.Body, domain.GoodEveryday()) {
-		t.Fatalf("seeded body differs from domain.GoodEveryday()\n got  %+v\n want %+v", pr.Body, domain.GoodEveryday())
+	if !reflect.DeepEqual(pr.Body, mediafiles.GoodEveryday()) {
+		t.Fatalf("seeded body differs from mediafiles.GoodEveryday()\n got  %+v\n want %+v", pr.Body, mediafiles.GoodEveryday())
 	}
 }
 
@@ -70,30 +72,30 @@ func TestCreateAndReadEveryRecord(t *testing.T) {
 
 	var prID int64
 	_ = s.Read().QueryRow("SELECT id FROM pick_rules LIMIT 1").Scan(&prID)
-	body := domain.GoodEveryday()
+	body := mediafiles.GoodEveryday()
 	body.MinPoints = -5
-	roundTrip(t, s, "pick_rules", &domain.PickRules{Name: "Mine", Kinds: []string{"movie"}, Revision: 2, Body: body}, &domain.PickRules{})
+	roundTrip(t, s, "pick_rules", &mediafiles.PickRules{Name: "Mine", Kinds: []string{"movie"}, Revision: 2, Body: body}, &mediafiles.PickRules{})
 
-	lf := &domain.LibraryFolder{Path: "/movies", Kind: "movie", Label: "Movies", DefaultPickRules: &prID,
+	lf := &mediafiles.LibraryFolder{Path: "/movies", Kind: "movie", Label: "Movies", DefaultPickRules: &prID,
 		FreeSpace: 1 << 40, Health: "ok", HealthCheckedAt: &now, SameDiskAs: []int64{1}}
-	roundTrip(t, s, "library_folders", lf, &domain.LibraryFolder{})
+	roundTrip(t, s, "library_folders", lf, &mediafiles.LibraryFolder{})
 
-	ti := &domain.Title{Kind: "movie", GateDriver: "none", Name: "The Lantern Keepers", SortName: "lantern keepers", Year: ptr(2021),
+	ti := &mediafiles.Title{Kind: "movie", GateDriver: "none", Name: "The Lantern Keepers", SortName: "lantern keepers", Year: ptr(2021),
 		OriginalLanguage: ptr("en"), Aliases: []string{"Lantern Keepers"}, SourceIDs: map[string]string{"tmdb": "1"},
 		MetadataSource: "local", KeepUpToDate: true, NewPartsPolicy: "all", ReleaseGate: "released",
 		WhyAdded: "by_hand", Status: "released", State: "active", RefreshedAt: &now}
-	roundTrip(t, s, "titles", ti, &domain.Title{})
+	roundTrip(t, s, "titles", ti, &mediafiles.Title{})
 
-	pa := &domain.Part{TitleID: ti.ID, Kind: "season", Number: ptr(1), Name: "Season 1", ReleaseDate: &now,
-		SourceIDs: map[string]string{}, Pressings: []domain.Pressing{{Name: "CD", TrackCount: 10, Preferred: true}}}
-	roundTrip(t, s, "parts", pa, &domain.Part{})
+	pa := &mediafiles.Part{TitleID: ti.ID, Kind: "season", Number: ptr(1), Name: "Season 1", ReleaseDate: &now,
+		SourceIDs: map[string]string{}, Pressings: []mediafiles.Pressing{{Name: "CD", TrackCount: 10, Preferred: true}}}
+	roundTrip(t, s, "parts", pa, &mediafiles.Part{})
 
-	it := &domain.Item{TitleID: ti.ID, Kind: "movie", Runtime: ptr(118), KeepUpToDate: true, AirDate: &now}
-	roundTrip(t, s, "items", it, &domain.Item{})
+	it := &mediafiles.Item{TitleID: ti.ID, Kind: "movie", Runtime: ptr(118), KeepUpToDate: true, AirDate: &now}
+	roundTrip(t, s, "items", it, &mediafiles.Item{})
 
-	ve := &domain.Version{TitleID: ti.ID, Label: "HD", PickRulesID: prID, LibraryFolderID: lf.ID,
+	ve := &mediafiles.Version{TitleID: ti.ID, Label: "HD", PickRulesID: prID, LibraryFolderID: lf.ID,
 		FolderName: "The Lantern Keepers (2021)", KeepUpToDate: true, IsMain: true}
-	roundTrip(t, s, "versions", ve, &domain.Version{})
+	roundTrip(t, s, "versions", ve, &mediafiles.Version{})
 
 	so := &domain.Source{Name: "fake", Protocol: "torrent", Format: "torznab", URL: "http://fake:9117",
 		UseFor: domain.SourceUse{AutoSearch: true}, Kinds: []string{"movie"}, Categories: map[string][]int{"movie": {2000}},
@@ -120,20 +122,20 @@ func TestCreateAndReadEveryRecord(t *testing.T) {
 		SavePath: "/downloads", StartedAt: &now, StartedBy: owner}
 	roundTrip(t, s, "downloads", dn, &domain.Download{})
 
-	im := &domain.Import{DownloadID: &dn.ID, FromPath: "/downloads/a", Kind: "movie", Mode: "auto",
-		Plan:      []domain.PlanStep{{SourceFile: "a.mkv", TargetSlotIDs: []int64{1}, TargetPath: "x/a.mkv", Method: "hardlink", Confidence: 0.98, Why: []string{"title"}}},
-		Result:    []domain.PlaceResult{{SourceFile: "a.mkv", Outcome: "placed", PlacedBy: "copy", FellBack: true}},
+	im := &mediafiles.Import{DownloadID: &dn.ID, FromPath: "/downloads/a", Kind: "movie", Mode: "auto",
+		Plan:      []mediafiles.PlanStep{{SourceFile: "a.mkv", TargetSlotIDs: []int64{1}, TargetPath: "x/a.mkv", Method: "hardlink", Confidence: 0.98, Why: []string{"title"}}},
+		Result:    []mediafiles.PlaceResult{{SourceFile: "a.mkv", Outcome: "placed", PlacedBy: "copy", FellBack: true}},
 		DecidedBy: &owner, State: "done"}
-	roundTrip(t, s, "imports", im, &domain.Import{})
+	roundTrip(t, s, "imports", im, &mediafiles.Import{})
 
-	fi := &domain.File{SlotIDs: []int64{1}, VersionID: ve.ID, RelativePath: "x/a.mkv", Size: 1, AddedAt: now,
-		Quality: domain.Quality{Resolution: 1080, Source: "web_dl"}, Languages: []string{"en"}, MediaInfo: map[string]any{},
+	fi := &mediafiles.File{SlotIDs: []int64{1}, VersionID: ve.ID, RelativePath: "x/a.mkv", Size: 1, AddedAt: now,
+		Quality: mediafiles.Quality{Resolution: 1080, Source: "web_dl"}, Languages: []string{"en"}, MediaInfo: map[string]any{},
 		ReleaseName: ptr(re.Name), Group: ptr("QUILL"), Origin: "imported", PlacedBy: "copy", FellBack: true, Role: "main", State: "present"}
-	roundTrip(t, s, "files", fi, &domain.File{})
+	roundTrip(t, s, "files", fi, &mediafiles.File{})
 
-	sl := &domain.Slot{ItemID: it.ID, VersionID: ve.ID, State: domain.SlotInLibrary, FileID: &fi.ID, GoodEnough: true,
+	sl := &mediafiles.Slot{ItemID: it.ID, VersionID: ve.ID, State: mediafiles.SlotInLibrary, FileID: &fi.ID, GoodEnough: true,
 		ActiveDownloadID: &dn.ID, LastReason: ptr("placed"), NextTryAt: &now}
-	roundTrip(t, s, "slots", sl, &domain.Slot{})
+	roundTrip(t, s, "slots", sl, &mediafiles.Slot{})
 
 	roundTrip(t, s, "schedules", &domain.Schedule{Kind: "round_trip_check", EverySeconds: 900, NextRun: &now, Enabled: true}, &domain.Schedule{})
 	roundTrip(t, s, "settings", &domain.Setting{Group: "this_app", Key: "url_base", Value: "/"}, &domain.Setting{})
@@ -176,8 +178,8 @@ func TestSlotStateCheckAndMoves(t *testing.T) {
 	err := s.Write(ctx, func(tx *sql.Tx) error {
 		var prID int64
 		_ = tx.QueryRow("SELECT id FROM pick_rules LIMIT 1").Scan(&prID)
-		lf := &domain.LibraryFolder{Path: "/m", Kind: "movie", Label: "M", Health: "ok", SameDiskAs: []int64{}}
-		ti := &domain.Title{Kind: "movie", GateDriver: "none", Name: "A", SortName: "a", MetadataSource: "local", NewPartsPolicy: "all",
+		lf := &mediafiles.LibraryFolder{Path: "/m", Kind: "movie", Label: "M", Health: "ok", SameDiskAs: []int64{}}
+		ti := &mediafiles.Title{Kind: "movie", GateDriver: "none", Name: "A", SortName: "a", MetadataSource: "local", NewPartsPolicy: "all",
 			ReleaseGate: "released", WhyAdded: "by_hand", Status: "released", State: "active"}
 		for _, x := range []struct {
 			t string
@@ -187,38 +189,38 @@ func TestSlotStateCheckAndMoves(t *testing.T) {
 				return err
 			}
 		}
-		it := &domain.Item{TitleID: ti.ID, Kind: "movie"}
+		it := &mediafiles.Item{TitleID: ti.ID, Kind: "movie"}
 		if _, err := database.Insert(tx, "items", it, owner); err != nil {
 			return err
 		}
-		ve := &domain.Version{TitleID: ti.ID, Label: "HD", PickRulesID: prID, LibraryFolderID: lf.ID, FolderName: "A"}
+		ve := &mediafiles.Version{TitleID: ti.ID, Label: "HD", PickRulesID: prID, LibraryFolderID: lf.ID, FolderName: "A"}
 		if _, err := database.Insert(tx, "versions", ve, owner); err != nil {
 			return err
 		}
-		if _, err := database.Insert(tx, "slots", &domain.Slot{ItemID: it.ID, VersionID: ve.ID, State: "bogus"}, owner); err == nil {
+		if _, err := database.Insert(tx, "slots", &mediafiles.Slot{ItemID: it.ID, VersionID: ve.ID, State: "bogus"}, owner); err == nil {
 			return errors.New("bogus slot state accepted by the table")
 		}
 		var err error
-		slotID, err = database.Insert(tx, "slots", &domain.Slot{ItemID: it.ID, VersionID: ve.ID, State: domain.SlotWanted}, owner)
+		slotID, err = database.Insert(tx, "slots", &mediafiles.Slot{ItemID: it.ID, VersionID: ve.ID, State: mediafiles.SlotWanted}, owner)
 		return err
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := MoveSlot(ctx, s, slotID, domain.SlotInLibrary, "", owner); err == nil {
+	if err := mediafiles.MoveSlot(ctx, s, slotID, mediafiles.SlotInLibrary, "", owner); err == nil {
 		t.Fatal("wanted -> in_library accepted")
 	}
-	if err := MoveSlot(ctx, s, slotID, domain.SlotSearching, "search started", owner); err != nil {
+	if err := mediafiles.MoveSlot(ctx, s, slotID, mediafiles.SlotSearching, "search started", owner); err != nil {
 		t.Fatal(err)
 	}
-	var sl domain.Slot
+	var sl mediafiles.Slot
 	if err := database.Get(ctx, s.Read(), "slots", slotID, &sl); err != nil {
 		t.Fatal(err)
 	}
-	if sl.State != domain.SlotSearching || sl.LastReason == nil || *sl.LastReason != "search started" {
+	if sl.State != mediafiles.SlotSearching || sl.LastReason == nil || *sl.LastReason != "search started" {
 		t.Fatalf("slot after move: %+v", sl)
 	}
-	if err := MoveSlot(ctx, s, 9999, domain.SlotSearching, "", owner); !errors.Is(err, database.ErrNotFound) {
+	if err := mediafiles.MoveSlot(ctx, s, 9999, mediafiles.SlotSearching, "", owner); !errors.Is(err, database.ErrNotFound) {
 		t.Fatalf("missing slot: %v", err)
 	}
 }
@@ -250,26 +252,26 @@ func TestUpdate(t *testing.T) {
 func TestSeededFourK(t *testing.T) {
 	s, _ := openTest(t, database.Options{})
 	var id int64
-	if err := s.Read().QueryRow("SELECT id FROM pick_rules WHERE name = ?", domain.FourKName).Scan(&id); err != nil {
+	if err := s.Read().QueryRow("SELECT id FROM pick_rules WHERE name = ?", mediafiles.FourKName).Scan(&id); err != nil {
 		t.Fatal(err)
 	}
-	var pr domain.PickRules
+	var pr mediafiles.PickRules
 	if err := database.Get(context.Background(), s.Read(), "pick_rules", id, &pr); err != nil {
 		t.Fatal(err)
 	}
-	if !pr.Preset || !reflect.DeepEqual(pr.Body, domain.FourK()) {
-		t.Fatalf("seeded 4K preset differs from domain.FourK()\n got  %+v\n want %+v", pr.Body, domain.FourK())
+	if !pr.Preset || !reflect.DeepEqual(pr.Body, mediafiles.FourK()) {
+		t.Fatalf("seeded 4K preset differs from mediafiles.FourK()\n got  %+v\n want %+v", pr.Body, mediafiles.FourK())
 	}
 }
 
 func TestSeededSaveSpaceAndBest(t *testing.T) {
 	s, _ := openTest(t, database.Options{})
-	for name, want := range map[string]domain.PickRulesBody{domain.SaveSpaceName: domain.SaveSpace(), domain.BestName: domain.Best()} {
+	for name, want := range map[string]mediafiles.PickRulesBody{mediafiles.SaveSpaceName: mediafiles.SaveSpace(), mediafiles.BestName: mediafiles.Best()} {
 		var id int64
 		if err := s.Read().QueryRow("SELECT id FROM pick_rules WHERE name = ?", name).Scan(&id); err != nil {
 			t.Fatal(name, err)
 		}
-		var pr domain.PickRules
+		var pr mediafiles.PickRules
 		if err := database.Get(context.Background(), s.Read(), "pick_rules", id, &pr); err != nil {
 			t.Fatal(err)
 		}
@@ -281,21 +283,21 @@ func TestSeededSaveSpaceAndBest(t *testing.T) {
 
 func TestSeededMusicPresets(t *testing.T) {
 	s, _ := openTest(t, database.Options{})
-	for name, want := range map[string]domain.PickRulesBody{domain.LosslessFirstName: domain.LosslessFirst(),
-		domain.Lossy320Name: domain.Lossy320(), domain.AnyMusicName: domain.AnyMusic()} {
+	for name, want := range map[string]mediafiles.PickRulesBody{mediafiles.LosslessFirstName: mediafiles.LosslessFirst(),
+		mediafiles.Lossy320Name: mediafiles.Lossy320(), mediafiles.AnyMusicName: mediafiles.AnyMusic()} {
 		var id int64
 		if err := s.Read().QueryRow("SELECT id FROM pick_rules WHERE name = ?", name).Scan(&id); err != nil {
 			t.Fatal(name, err)
 		}
-		var pr domain.PickRules
+		var pr mediafiles.PickRules
 		if err := database.Get(context.Background(), s.Read(), "pick_rules", id, &pr); err != nil {
 			t.Fatal(err)
 		}
-		if !pr.Preset || !reflect.DeepEqual(pr.Kinds, []string{"music"}) || !reflect.DeepEqual(pr.Body, want) || !domain.IsMusicRules(pr.Body) {
+		if !pr.Preset || !reflect.DeepEqual(pr.Kinds, []string{"music"}) || !reflect.DeepEqual(pr.Body, want) || !mediafiles.IsMusicRules(pr.Body) {
 			t.Fatalf("seeded %s differs\n got  %+v\n want %+v", name, pr.Body, want)
 		}
 	}
-	if domain.IsMusicRules(domain.GoodEveryday()) || domain.IsMusicRules(domain.FourK()) {
+	if mediafiles.IsMusicRules(mediafiles.GoodEveryday()) || mediafiles.IsMusicRules(mediafiles.FourK()) {
 		t.Fatal("video presets read as music")
 	}
 }

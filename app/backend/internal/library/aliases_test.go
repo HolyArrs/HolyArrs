@@ -6,7 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
@@ -30,12 +31,12 @@ func TestMergeAliasesCap(t *testing.T) {
 }
 
 func TestApplyFillsAliasesForMovieAndShow(t *testing.T) {
-	var mv domain.Title
+	var mv mediafiles.Title
 	applyMovie(&mv, metadata.Movie{Name: "Amelie", Year: 2001, OtherNames: []string{"Le Fabuleux Destin d'Amélie Poulain", "Amélie", "2001"}}, time.Now())
 	if !slices.Equal(mv.Aliases, []string{"Le Fabuleux Destin d'Amélie Poulain"}) {
 		t.Errorf("movie aliases %q", mv.Aliases)
 	}
-	sh := domain.Title{Aliases: []string{"Kept Name"}}
+	sh := mediafiles.Title{Aliases: []string{"Kept Name"}}
 	applyShow(&sh, metadata.Show{Name: "Money Heist", Status: "ended", OtherNames: []string{"La Casa de Papel", "Haus des Geldes"}})
 	if !slices.Equal(sh.Aliases, []string{"Kept Name", "La Casa de Papel", "Haus des Geldes"}) {
 		t.Errorf("show aliases %q", sh.Aliases)

@@ -1,4 +1,4 @@
-package tagset
+package mediafiles
 
 import (
 	"reflect"
@@ -6,14 +6,14 @@ import (
 )
 
 func TestClean(t *testing.T) {
-	got := Clean([]string{" Kids ", "kids", "4K  Only", "", ",", "anime,"})
+	got := CleanTags([]string{" Kids ", "kids", "4K  Only", "", ",", "anime,"})
 	if want := []string{"4k-only", "anime", "kids"}; !reflect.DeepEqual(got, want) {
 		t.Fatalf("got %v, want %v", got, want)
 	}
-	if got := Clean(nil); got == nil || len(got) != 0 {
+	if got := CleanTags(nil); got == nil || len(got) != 0 {
 		t.Fatalf("nil in: %#v", got)
 	}
-	long := Clean([]string{"abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"})
+	long := CleanTags([]string{"abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"})
 	if len([]rune(long[0])) != MaxLen {
 		t.Fatalf("not cut: %q", long[0])
 	}

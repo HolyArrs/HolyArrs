@@ -11,6 +11,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
@@ -63,8 +65,8 @@ func (sc RemoveScope) Check() error {
 // show. Nothing changes. A file is held only when every episode it holds
 // is deleted; a multi-episode file that also holds an episode that stays
 // is kept for it.
-func planRemoveEpisodes(ctx context.Context, db reader, titleID int64, sc RemoveScope, c RemoveChoice, now time.Time) (RemovePlan, domain.Title, map[int64]bool, error) {
-	var t domain.Title
+func planRemoveEpisodes(ctx context.Context, db reader, titleID int64, sc RemoveScope, c RemoveChoice, now time.Time) (RemovePlan, mediafiles.Title, map[int64]bool, error) {
+	var t mediafiles.Title
 	if err := database.Get(ctx, db, "titles", titleID, &t); err != nil {
 		return RemovePlan{}, t, nil, err
 	}
@@ -86,7 +88,7 @@ func planRemoveEpisodes(ctx context.Context, db reader, titleID int64, sc Remove
 	if c.NeverAdd {
 		return RemovePlan{}, t, nil, ErrNeverAddWholeShow
 	}
-	var items []domain.Item
+	var items []mediafiles.Item
 	var err error
 	albumName := ""
 	switch {
@@ -94,13 +96,13 @@ func planRemoveEpisodes(ctx context.Context, db reader, titleID int64, sc Remove
 		if err := db.QueryRowContext(ctx, "SELECT name FROM parts WHERE id = ? AND title_id = ? AND kind = 'album'", *sc.AlbumID, t.ID).Scan(&albumName); err != nil {
 			return RemovePlan{}, t, nil, ErrNoSuchAlbumHere
 		}
-		items, err = database.Select[domain.Item](ctx, db, "items", "title_id = ? AND kind = 'track' AND part_id = ? ORDER BY id", t.ID, *sc.AlbumID)
+		items, err = database.Select[mediafiles.Item](ctx, db, "items", "title_id = ? AND kind = 'track' AND part_id = ? ORDER BY id", t.ID, *sc.AlbumID)
 	case len(sc.TrackIDs) > 0:
 		args := []any{t.ID}
 		for _, id := range sc.TrackIDs {
 			args = append(args, id)
 		}
-		items, err = database.Select[domain.Item](ctx, db, "items", "title_id = ? AND kind = 'track' AND id IN ("+strings.TrimSuffix(strings.Repeat("?,", len(sc.TrackIDs)), ",")+") ORDER BY id", args...)
+		items, err = database.Select[mediafiles.Item](ctx, db, "items", "title_id = ? AND kind = 'track' AND id IN ("+strings.TrimSuffix(strings.Repeat("?,", len(sc.TrackIDs)), ",")+") ORDER BY id", args...)
 		if err == nil && len(items) != len(uniq(sc.TrackIDs)) {
 			return RemovePlan{}, t, nil, ErrNoSuchTrack
 		}
@@ -112,13 +114,13 @@ func planRemoveEpisodes(ctx context.Context, db reader, titleID int64, sc Remove
 		if n == 0 {
 			return RemovePlan{}, t, nil, ErrNoSuchSeason
 		}
-		items, err = database.Select[domain.Item](ctx, db, "items", "title_id = ? AND kind = 'episode' AND json_extract(numbers, '$.season') = ? ORDER BY id", t.ID, *sc.Season)
+		items, err = database.Select[mediafiles.Item](ctx, db, "items", "title_id = ? AND kind = 'episode' AND json_extract(numbers, '$.season') = ? ORDER BY id", t.ID, *sc.Season)
 	case len(sc.EpisodeIDs) > 0:
 		args := []any{t.ID}
 		for _, id := range sc.EpisodeIDs {
 			args = append(args, id)
 		}
-		items, err = database.Select[domain.Item](ctx, db, "items", "title_id = ? AND kind = 'episode' AND id IN ("+strings.TrimSuffix(strings.Repeat("?,", len(sc.EpisodeIDs)), ",")+") ORDER BY id", args...)
+		items, err = database.Select[mediafiles.Item](ctx, db, "items", "title_id = ? AND kind = 'episode' AND id IN ("+strings.TrimSuffix(strings.Repeat("?,", len(sc.EpisodeIDs)), ",")+") ORDER BY id", args...)
 		if err == nil && len(items) != len(uniq(sc.EpisodeIDs)) {
 			return RemovePlan{}, t, nil, ErrNoSuchEpisode
 		}
@@ -172,7 +174,7 @@ func planRemoveEpisodes(ctx context.Context, db reader, titleID int64, sc Remove
 		}
 		p.Episodes = append(p.Episodes, fmt.Sprintf("S%02dE%02d", deref(it.Numbers.Season), deref(it.Numbers.Episode)))
 	}
-	files, err := database.Select[domain.File](ctx, db, "files",
+	files, err := database.Select[mediafiles.File](ctx, db, "files",
 		"state IN ('present', 'missing') AND version_id IN (SELECT id FROM versions WHERE title_id = ?) ORDER BY id", t.ID)
 	if err != nil {
 		return p, t, nil, err
@@ -193,8 +195,8 @@ func planRemoveEpisodes(ctx context.Context, db reader, titleID int64, sc Remove
 		if len(in) == 0 {
 			continue // not a file of these episodes
 		}
-		var v domain.Version
-		var lf domain.LibraryFolder
+		var v mediafiles.Version
+		var lf mediafiles.LibraryFolder
 		if err := database.Get(ctx, db, "versions", f.VersionID, &v); err != nil {
 			return p, t, nil, err
 		}
@@ -286,7 +288,7 @@ func trackLabelOf(ctx context.Context, db reader, slotID int64) string {
 	if db.QueryRowContext(ctx, "SELECT item_id FROM slots WHERE id = ?", slotID).Scan(&itemID) != nil {
 		return ""
 	}
-	var it domain.Item
+	var it mediafiles.Item
 	if database.Get(ctx, db, "items", itemID, &it) != nil {
 		return ""
 	}
@@ -294,7 +296,7 @@ func trackLabelOf(ctx context.Context, db reader, slotID int64) string {
 }
 
 // trackItemLabel names a track item with its album.
-func trackItemLabel(ctx context.Context, db reader, it domain.Item) string {
+func trackItemLabel(ctx context.Context, db reader, it mediafiles.Item) string {
 	album := ""
 	discs := 1
 	if it.PartID != nil {

@@ -1,4 +1,4 @@
-package store
+package mediafiles
 
 import (
 	"context"
@@ -9,17 +9,20 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
+
+// EventNeedsDecision is the event kind written when a Slot moves to
+// needs_a_decision.
+const EventNeedsDecision = "needs_decision"
 
 // MoveSlot moves a Slot to a new state, refusing moves that model.md
 // section 4 does not allow. reason is kept as the Slot's last_reason.
-func MoveSlot(ctx context.Context, s *database.Store, slotID int64, to domain.SlotState, reason string, by domain.Actor) error {
+func MoveSlot(ctx context.Context, s *database.Store, slotID int64, to SlotState, reason string, by database.Actor) error {
 	return s.Write(ctx, func(tx *sql.Tx) error { return MoveSlotTx(tx, slotID, to, reason, by) })
 }
 
 // MoveSlotTx is MoveSlot inside a write transaction the caller already holds.
-func MoveSlotTx(tx *sql.Tx, slotID int64, to domain.SlotState, reason string, by domain.Actor) error {
+func MoveSlotTx(tx *sql.Tx, slotID int64, to SlotState, reason string, by database.Actor) error {
 	var from string
 	if err := tx.QueryRow("SELECT state FROM slots WHERE id = ?", slotID).Scan(&from); err != nil {
 		if err == sql.ErrNoRows {
@@ -27,7 +30,7 @@ func MoveSlotTx(tx *sql.Tx, slotID int64, to domain.SlotState, reason string, by
 		}
 		return err
 	}
-	if err := domain.Transition(domain.SlotState(from), to); err != nil {
+	if err := Transition(SlotState(from), to); err != nil {
 		return err
 	}
 	var r any
@@ -36,7 +39,7 @@ func MoveSlotTx(tx *sql.Tx, slotID int64, to domain.SlotState, reason string, by
 	}
 	_, err := tx.Exec("UPDATE slots SET state = ?, last_reason = ?, updated_at = ?, updated_by = ? WHERE id = ?",
 		string(to), r, database.FormatTime(time.Now()), actorJSON(by), slotID)
-	if err == nil && to == domain.SlotNeedsADecision && from != string(to) {
+	if err == nil && to == SlotNeedsADecision && from != string(to) {
 		needsDecision(tx, slotID, reason, by)
 	}
 	return err
@@ -44,7 +47,7 @@ func MoveSlotTx(tx *sql.Tx, slotID int64, to domain.SlotState, reason string, by
 
 // needsDecision writes a needs_decision Event once the move to
 // needs_a_decision has committed, so History and Alerts hear of it.
-func needsDecision(tx *sql.Tx, slotID int64, reason string, by domain.Actor) {
+func needsDecision(tx *sql.Tx, slotID int64, reason string, by database.Actor) {
 	s := database.StoreOf(tx)
 	if s == nil {
 		return
@@ -53,7 +56,7 @@ func needsDecision(tx *sql.Tx, slotID int64, reason string, by domain.Actor) {
 	var name string
 	_ = tx.QueryRow("SELECT t.id, t.name FROM slots s JOIN items i ON i.id = s.item_id JOIN titles t ON t.id = i.title_id WHERE s.id = ?", slotID).Scan(&titleID, &name)
 	database.AfterCommit(tx, func() {
-		e := &domain.Event{Actor: by, Kind: domain.EventNeedsDecision, SlotID: &slotID, Summary: "Needs a decision: " + name,
+		e := &database.Event{Actor: by, Kind: EventNeedsDecision, SlotID: &slotID, Summary: "Needs a decision: " + name,
 			Data: map[string]any{"reason": reason}, GroupKey: "slot:" + strconv.FormatInt(slotID, 10)}
 		if titleID > 0 {
 			e.TitleID = &titleID
@@ -64,7 +67,7 @@ func needsDecision(tx *sql.Tx, slotID int64, reason string, by domain.Actor) {
 	})
 }
 
-func actorJSON(a domain.Actor) string {
+func actorJSON(a database.Actor) string {
 	b, _ := json.Marshal(a)
 	return string(b)
 }

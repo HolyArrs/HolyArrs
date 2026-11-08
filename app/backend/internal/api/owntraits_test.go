@@ -7,8 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/judge"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 )
 
 // Your own traits (#97): made, changed and removed here, judged at once,
@@ -20,30 +19,30 @@ import (
 // route: DELETE /api/v1/own-traits/{id}
 func TestOwnTraitsMadeJudgedAndRemoved(t *testing.T) {
 	srv, _, _ := libSetup(t)
-	t.Cleanup(func() { judge.SetOwnTraits(nil) })
+	t.Cleanup(func() { mediafiles.SetOwnTraits(nil) })
 
 	var tr OwnTraitView
 	_ = json.Unmarshal(do(t, "POST", srv.URL+"/api/v1/own-traits", `{"name":" Favourite group ","match":"group","terms":["HOLYARRS",""," /^lantern$/ "]}`, 201), &tr)
-	if tr.ID == 0 || tr.Key != domain.OwnTraitKey(tr.ID) || tr.Name != "Favourite group" || !slices.Equal(tr.Terms, []string{"HOLYARRS", "/^lantern$/"}) {
+	if tr.ID == 0 || tr.Key != mediafiles.OwnTraitKey(tr.ID) || tr.Name != "Favourite group" || !slices.Equal(tr.Terms, []string{"HOLYARRS", "/^lantern$/"}) {
 		t.Fatalf("create %+v", tr)
 	}
 	do(t, "POST", srv.URL+"/api/v1/own-traits", `{"name":"favourite GROUP","match":"name","terms":["x"]}`, 409)
 
 	// A Pick rule gives it points and must-have; the judge sees it at once.
-	b := domain.GoodEveryday()
-	b.Traits = append(b.Traits, domain.TraitPoints{Trait: tr.Key, Points: 300})
+	b := mediafiles.GoodEveryday()
+	b.Traits = append(b.Traits, mediafiles.TraitPoints{Trait: tr.Key, Points: 300})
 	b.MustHave = []string{tr.Key}
 	var p pickRulesDetail
 	_ = json.Unmarshal(do(t, "POST", srv.URL+"/api/v1/pick-rules", ruleJSON(t, "Mine", []string{"movie"}, b), 201), &p)
 	name := "Dune.Part.Two.2024.1080p.WEB-DL.DDP5.1.H.264-HOLYARRS"
-	if got := judge.CurrentOf(name, time.Time{}, p.Body).Points; got < 300 {
+	if got := mediafiles.CurrentOf(name, time.Time{}, p.Body).Points; got < 300 {
 		t.Fatalf("points with the trait = %d, want 300 or more", got)
 	}
 
 	// A change of terms is judged at once too.
 	path := fmt.Sprintf("%s/api/v1/own-traits/%d", srv.URL, tr.ID)
 	_ = json.Unmarshal(do(t, "PUT", path, `{"name":"Favourite group","match":"group","terms":["LANTERN"]}`, 200), &tr)
-	if got := judge.CurrentOf(name, time.Time{}, p.Body).Points; got >= 300 {
+	if got := mediafiles.CurrentOf(name, time.Time{}, p.Body).Points; got >= 300 {
 		t.Fatalf("points after the change = %d, want under 300", got)
 	}
 
@@ -65,7 +64,7 @@ func TestOwnTraitsMadeJudgedAndRemoved(t *testing.T) {
 	}
 	var after pickRulesDetail
 	_ = json.Unmarshal(do(t, "GET", fmt.Sprintf("%s/api/v1/pick-rules/%d", srv.URL, p.ID), "", 200), &after)
-	if len(after.Body.MustHave) != 0 || slices.ContainsFunc(after.Body.Traits, func(x domain.TraitPoints) bool { return x.Trait == tr.Key }) || after.Revision != 2 {
+	if len(after.Body.MustHave) != 0 || slices.ContainsFunc(after.Body.Traits, func(x mediafiles.TraitPoints) bool { return x.Trait == tr.Key }) || after.Revision != 2 {
 		t.Fatalf("pick rules after delete %+v", after)
 	}
 	do(t, "DELETE", path, "", 404)
@@ -98,7 +97,7 @@ func TestOwnTraitsMadeJudgedAndRemoved(t *testing.T) {
 
 func TestOwnTraitFieldErrors(t *testing.T) {
 	srv, _, _ := libSetup(t)
-	t.Cleanup(func() { judge.SetOwnTraits(nil) })
+	t.Cleanup(func() { mediafiles.SetOwnTraits(nil) })
 	for _, c := range []struct{ body, field string }{
 		{`{"name":"","match":"name","terms":["x"]}`, "name"},
 		{`{"name":"A","match":"title","terms":["x"]}`, "match"},

@@ -4,11 +4,12 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/naming"
 )
 
 // organiseRoutes are the Organise routes (stage 5.1): naming and rename,
@@ -231,13 +232,13 @@ func (a *API) getJob(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *API) getNaming(w http.ResponseWriter, r *http.Request) {
-	ns, err := naming.Read(r.Context(), a.s.Store.Read())
+	ns, err := mediafiles.ReadNaming(r.Context(), a.s.Store.Read())
 	if err != nil {
 		internal(w, err)
 		return
 	}
 	file, folder := namingExamples(ns)
-	writeJSON(w, http.StatusOK, map[string]any{"naming": ns, "words": naming.Words, "example": file, "example_folder": folder,
+	writeJSON(w, http.StatusOK, map[string]any{"naming": ns, "words": mediafiles.Words, "example": file, "example_folder": folder,
 		"example_episodes": episodeExamples(ns), "example_music": musicExamples(ns)})
 }
 
@@ -245,44 +246,44 @@ func (a *API) getNaming(w http.ResponseWriter, r *http.Request) {
 // of a two-disc album, and a track of a various-artists compilation. Its
 // {track_artist} is the album's artist, as on every real import until
 // track credits are read.
-func musicExamples(ns naming.Settings) map[string]string {
-	one := naming.TrackFacts{Artist: "The Lab Lanterns", Album: "Small Hours", AlbumType: "album", Year: 2025, Disc: 1, Discs: 1, Track: 3,
+func musicExamples(ns mediafiles.NamingSettings) map[string]string {
+	one := mediafiles.TrackFacts{Artist: "The Lab Lanterns", Album: "Small Hours", AlbumType: "album", Year: 2025, Disc: 1, Discs: 1, Track: 3,
 		Title: "Harbour Light", Ext: ".flac"}
 	two := one
 	two.Album, two.Edition, two.Disc, two.Discs, two.Track, two.Title = "Long Night", "deluxe", 2, 2, 4, "Second Wind"
-	va := naming.TrackFacts{Artist: "Various Artists", Album: "Lab Mix: Volume 1", AlbumType: "album", Year: 2024, Disc: 1, Discs: 1, Track: 5,
+	va := mediafiles.TrackFacts{Artist: "Various Artists", Album: "Lab Mix: Volume 1", AlbumType: "album", Year: 2024, Disc: 1, Discs: 1, Track: 5,
 		Title: "Night", Ext: ".mp3"}
-	artist := naming.ArtistFolder(ns, one)
+	artist := mediafiles.ArtistFolder(ns, one)
 	return map[string]string{
 		"artist_folder": artist,
-		"album_folder":  naming.AlbumFolder(ns, one),
-		"track":         naming.TrackPath(ns, artist, one),
-		"multi_disc":    naming.TrackPath(ns, artist, two),
-		"various":       naming.TrackPath(ns, naming.ArtistFolder(ns, va), va),
+		"album_folder":  mediafiles.AlbumFolder(ns, one),
+		"track":         mediafiles.TrackPath(ns, artist, one),
+		"multi_disc":    mediafiles.TrackPath(ns, artist, two),
+		"various":       mediafiles.TrackPath(ns, mediafiles.ArtistFolder(ns, va), va),
 	}
 }
 
 // episodeExamples names sample episodes by the show patterns: one episode,
 // a multi-episode file, a daily show and an anime running number.
-func episodeExamples(ns naming.Settings) map[string]string {
-	show := naming.Facts{Title: "Copper Valley", Year: 2025, Step: "1080p_web", Group: "HOLYARRS", Ext: ".mkv"}
-	folder := naming.ShowFolder(ns, show)
+func episodeExamples(ns mediafiles.NamingSettings) map[string]string {
+	show := mediafiles.NameFacts{Title: "Copper Valley", Year: 2025, Step: "1080p_web", Group: "HOLYARRS", Ext: ".mkv"}
+	folder := mediafiles.ShowFolder(ns, show)
 	return map[string]string{
 		"show_folder": folder,
-		"episode":     naming.EpisodePath(ns, folder, naming.EpisodeFacts{Facts: show, Order: naming.OrderAired, Season: 1, Episodes: []int{2}, Titles: []string{"The Mill"}}),
-		"multi":       naming.EpisodePath(ns, folder, naming.EpisodeFacts{Facts: show, Order: naming.OrderAired, Season: 1, Episodes: []int{2, 3}, Titles: []string{"The Mill", "Flood"}}),
-		"daily":       naming.EpisodePath(ns, "Night Talk", naming.EpisodeFacts{Facts: naming.Facts{Title: "Night Talk", Step: "1080p_web", Ext: ".mkv"}, Order: naming.OrderDaily, Season: 2026, Episodes: []int{31}, AirDate: "2026-03-14", Titles: []string{"Guests"}}),
-		"anime":       naming.EpisodePath(ns, "Blade Song", naming.EpisodeFacts{Facts: naming.Facts{Title: "Blade Song", Step: "1080p_web", Ext: ".mkv"}, Order: naming.OrderAbsolute, Season: 5, Episodes: []int{12}, Absolute: []int{112}, Titles: []string{"Rain"}}),
-		"special":     naming.EpisodePath(ns, folder, naming.EpisodeFacts{Facts: show, Order: naming.OrderAired, Season: 0, Episodes: []int{1}, Titles: []string{"Behind the scenes"}}),
+		"episode":     mediafiles.EpisodePath(ns, folder, mediafiles.EpisodeFacts{NameFacts: show, Order: mediafiles.OrderAired, Season: 1, Episodes: []int{2}, Titles: []string{"The Mill"}}),
+		"multi":       mediafiles.EpisodePath(ns, folder, mediafiles.EpisodeFacts{NameFacts: show, Order: mediafiles.OrderAired, Season: 1, Episodes: []int{2, 3}, Titles: []string{"The Mill", "Flood"}}),
+		"daily":       mediafiles.EpisodePath(ns, "Night Talk", mediafiles.EpisodeFacts{NameFacts: mediafiles.NameFacts{Title: "Night Talk", Step: "1080p_web", Ext: ".mkv"}, Order: mediafiles.OrderDaily, Season: 2026, Episodes: []int{31}, AirDate: "2026-03-14", Titles: []string{"Guests"}}),
+		"anime":       mediafiles.EpisodePath(ns, "Blade Song", mediafiles.EpisodeFacts{NameFacts: mediafiles.NameFacts{Title: "Blade Song", Step: "1080p_web", Ext: ".mkv"}, Order: mediafiles.OrderAbsolute, Season: 5, Episodes: []int{12}, Absolute: []int{112}, Titles: []string{"Rain"}}),
+		"special":     mediafiles.EpisodePath(ns, folder, mediafiles.EpisodeFacts{NameFacts: show, Order: mediafiles.OrderAired, Season: 0, Episodes: []int{1}, Titles: []string{"Behind the scenes"}}),
 	}
 }
 
 // namingExamples names one sample movie by the settings, so the screen can
 // show what a pattern gives.
-func namingExamples(ns naming.Settings) (file, folder string) {
-	file = naming.File(ns, naming.Facts{Title: "Dune: Part Two", Year: 2024, Step: "1080p_bluray", Group: "HOLYARRS", TMDB: "693134",
+func namingExamples(ns mediafiles.NamingSettings) (file, folder string) {
+	file = mediafiles.FileName(ns, mediafiles.NameFacts{Title: "Dune: Part Two", Year: 2024, Step: "1080p_bluray", Group: "HOLYARRS", TMDB: "693134",
 		IMDB: "tt15239678", Release: "Dune.Part.Two.2024.1080p.BluRay.x264-HOLYARRS", Ext: ".mkv"})
-	folder = naming.Folder(ns, naming.Facts{Title: "Dune: Part Two", Year: 2024, TMDB: "693134", IMDB: "tt15239678"})
+	folder = mediafiles.Folder(ns, mediafiles.NameFacts{Title: "Dune: Part Two", Year: 2024, TMDB: "693134", IMDB: "tt15239678"})
 	return file, folder
 }
 
@@ -290,7 +291,7 @@ func namingExamples(ns naming.Settings) (file, folder string) {
 // nothing is saved.
 func (a *API) namingExample(w http.ResponseWriter, r *http.Request) {
 	// Fields left out keep their saved value.
-	ns, err := naming.Read(r.Context(), a.s.Store.Read())
+	ns, err := mediafiles.ReadNaming(r.Context(), a.s.Store.Read())
 	if err != nil {
 		internal(w, err)
 		return
@@ -308,7 +309,7 @@ func (a *API) namingExample(w http.ResponseWriter, r *http.Request) {
 
 func (a *API) putNaming(w http.ResponseWriter, r *http.Request) {
 	// Fields left out keep their saved value.
-	ns, err := naming.Read(r.Context(), a.s.Store.Read())
+	ns, err := mediafiles.ReadNaming(r.Context(), a.s.Store.Read())
 	if err != nil {
 		internal(w, err)
 		return
@@ -316,7 +317,7 @@ func (a *API) putNaming(w http.ResponseWriter, r *http.Request) {
 	if !decode(w, r, &ns, `send {"file_pattern","folder_pattern","colon","illegal","rename_on_import"}`) {
 		return
 	}
-	if err := naming.Save(r.Context(), a.s.Store, ns, actor(r)); err != nil {
+	if err := mediafiles.PutNamingSettings(r.Context(), a.s.Store, ns, actor(r)); err != nil {
 		fail(w, http.StatusBadRequest, err.Error())
 		return
 	}

@@ -9,6 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
@@ -28,7 +30,7 @@ func upgradeWorld(t *testing.T, file, rel, old string) (world, int64, int64) {
 		if _, err := tx.Exec("UPDATE items SET keep_up_to_date = 1"); err != nil {
 			return err
 		}
-		if _, err := tx.Exec("UPDATE versions SET keep_up_to_date = 1, pick_rules_id = (SELECT id FROM pick_rules WHERE name = ?)", domain.GoodEverydayName); err != nil {
+		if _, err := tx.Exec("UPDATE versions SET keep_up_to_date = 1, pick_rules_id = (SELECT id FROM pick_rules WHERE name = ?)", mediafiles.GoodEverydayName); err != nil {
 			return err
 		}
 		src := &domain.Source{Name: "Lab", Protocol: "torrent", Format: "torznab", URL: "http://x", Kinds: []string{}, Categories: map[string][]int{}, State: "enabled", Extra: map[string]string{}}
@@ -50,7 +52,7 @@ func upgradeWorld(t *testing.T, file, rel, old string) (world, int64, int64) {
 		}
 		rp := filepath.ToSlash(filepath.Join("Dune - Part Two (2024)", old+".mkv"))
 		write(t, filepath.Join(w.lib, filepath.FromSlash(rp)), 100)
-		f := &domain.File{SlotIDs: []int64{w.slotID}, VersionID: w.vID, RelativePath: rp, Size: 100, AddedAt: time.Now().Add(-time.Hour),
+		f := &mediafiles.File{SlotIDs: []int64{w.slotID}, VersionID: w.vID, RelativePath: rp, Size: 100, AddedAt: time.Now().Add(-time.Hour),
 			Languages: []string{}, MediaInfo: map[string]any{}, ReleaseName: &old, Origin: "imported", PlacedBy: "hardlink", Role: "main", State: "present"}
 		if oldID, err = database.Insert(tx, "files", f, domain.System); err != nil {
 			return err
@@ -64,9 +66,9 @@ func upgradeWorld(t *testing.T, file, rel, old string) (world, int64, int64) {
 	return w, relID, oldID
 }
 
-func slotOf(t *testing.T, w world) domain.Slot {
+func slotOf(t *testing.T, w world) mediafiles.Slot {
 	t.Helper()
-	var sl domain.Slot
+	var sl mediafiles.Slot
 	if err := database.Get(context.Background(), w.s.Read(), "slots", w.slotID, &sl); err != nil {
 		t.Fatal(err)
 	}
@@ -90,7 +92,7 @@ func TestImportRejectsLyingFile(t *testing.T) {
 	if rel.State != "turned_down" || rel.Verdict["turned_down_reason"] != "file is 720p, name said 1080p" {
 		t.Fatalf("release %s %v", rel.State, rel.Verdict)
 	}
-	if sl := slotOf(t, w); sl.State != domain.SlotRejected || sl.FileID != nil {
+	if sl := slotOf(t, w); sl.State != mediafiles.SlotRejected || sl.FileID != nil {
 		t.Fatalf("slot %s", sl.State)
 	}
 	if entries, _ := os.ReadDir(w.lib); len(entries) != 0 {
@@ -112,7 +114,7 @@ func TestBetterCopyReplacesOldAndStopsAtGoodEnough(t *testing.T) {
 	if imp.Plan[0].ReplacesFileID == nil || *imp.Plan[0].ReplacesFileID != oldID {
 		t.Fatalf("plan does not name the replaced File: %+v", imp.Plan[0])
 	}
-	var old domain.File
+	var old mediafiles.File
 	_ = database.Get(ctx, w.s.Read(), "files", oldID, &old)
 	if old.State != "replaced" {
 		t.Fatalf("old file %s", old.State)
@@ -128,7 +130,7 @@ func TestBetterCopyReplacesOldAndStopsAtGoodEnough(t *testing.T) {
 		t.Fatalf("old copy not in the holding folder: %v", held)
 	}
 	sl := slotOf(t, w)
-	if sl.State != domain.SlotInLibrary || !sl.GoodEnough || sl.FileID == nil || *sl.FileID == oldID {
+	if sl.State != mediafiles.SlotInLibrary || !sl.GoodEnough || sl.FileID == nil || *sl.FileID == oldID {
 		t.Fatalf("slot %s good enough %v", sl.State, sl.GoodEnough)
 	}
 }
@@ -138,7 +140,7 @@ func TestBelowGoodEnoughKeepsLooking(t *testing.T) {
 	if _, err := (&Importer{Store: w.s}).Import(context.Background(), w.dlID, false, domain.System); err != nil {
 		t.Fatal(err)
 	}
-	if sl := slotOf(t, w); sl.State != domain.SlotBetterWanted || sl.GoodEnough || sl.FileID == nil {
+	if sl := slotOf(t, w); sl.State != mediafiles.SlotBetterWanted || sl.GoodEnough || sl.FileID == nil {
 		t.Fatalf("slot %s good enough %v", sl.State, sl.GoodEnough)
 	}
 }
@@ -156,7 +158,7 @@ func TestImportNeverDowngrades(t *testing.T) {
 	if why, _ := rel.Verdict["turned_down_reason"].(string); rel.State != "turned_down" || !strings.Contains(why, "lower than the copy in place") {
 		t.Fatalf("release %s %v", rel.State, rel.Verdict)
 	}
-	var old domain.File
+	var old mediafiles.File
 	_ = database.Get(ctx, w.s.Read(), "files", oldID, &old)
 	if sl := slotOf(t, w); old.State != "present" || sl.FileID == nil || *sl.FileID != oldID {
 		t.Fatalf("old file %s, slot file %v", old.State, sl.FileID)
@@ -175,7 +177,7 @@ func TestProperWithTheSameFileName(t *testing.T) {
 	if err != nil || fi.Size() != 2048 {
 		t.Fatalf("new copy not in place: %v", err)
 	}
-	var old domain.File
+	var old mediafiles.File
 	_ = database.Get(ctx, w.s.Read(), "files", oldID, &old)
 	if old.State != "replaced" {
 		t.Fatalf("old %s", old.State)
@@ -200,7 +202,7 @@ func TestSameNameWhenOldFileIsGone(t *testing.T) {
 	if held, _ := filepath.Glob(filepath.Join(w.lib, HoldingDir, "*", "*", "*")); len(held) != 0 {
 		t.Fatalf("something was held aside: %v", held)
 	}
-	var old domain.File
+	var old mediafiles.File
 	_ = database.Get(ctx, w.s.Read(), "files", oldID, &old)
 	if old.State != "replaced" || strings.HasPrefix(old.RelativePath, HoldingDir) {
 		t.Fatalf("old %s %s", old.State, old.RelativePath)
@@ -239,7 +241,7 @@ func TestReplaceSurvivesCrash(t *testing.T) {
 			if fi, _ := os.Stat(held[0]); fi == nil || fi.Size() != 100 {
 				t.Fatal("the held copy is not the old one")
 			}
-			var old domain.File
+			var old mediafiles.File
 			_ = database.Get(ctx, w.s.Read(), "files", oldID, &old)
 			rel, _ := filepath.Rel(w.lib, held[0])
 			if old.State != "replaced" || old.RelativePath != filepath.ToSlash(rel) {
@@ -294,7 +296,7 @@ func TestLyingFileKeepsSlotWithItsFile(t *testing.T) {
 	if err != nil || imp.State != "rejected" {
 		t.Fatalf("import %+v %v", imp, err)
 	}
-	if sl := slotOf(t, w); sl.State != domain.SlotBetterWanted || sl.FileID == nil || *sl.FileID != oldID {
+	if sl := slotOf(t, w); sl.State != mediafiles.SlotBetterWanted || sl.FileID == nil || *sl.FileID != oldID {
 		t.Fatalf("slot %s file %v", sl.State, sl.FileID)
 	}
 }

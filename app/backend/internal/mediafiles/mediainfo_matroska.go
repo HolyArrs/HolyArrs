@@ -1,4 +1,4 @@
-package mediainfo
+package mediafiles
 
 import (
 	"encoding/binary"

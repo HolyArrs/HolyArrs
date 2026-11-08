@@ -9,6 +9,8 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
@@ -45,7 +47,7 @@ func TestTagsOnDownloadersSourcesAndTitles(t *testing.T) {
 
 	var titleID int64
 	if err := s.Write(context.Background(), func(tx *sql.Tx) error {
-		ti := &domain.Title{Kind: "movie", GateDriver: "none", Name: "Lantern", SortName: "lantern", Aliases: []string{}, SourceIDs: map[string]string{},
+		ti := &mediafiles.Title{Kind: "movie", GateDriver: "none", Name: "Lantern", SortName: "lantern", Aliases: []string{}, SourceIDs: map[string]string{},
 			MetadataSource: "local", KeepUpToDate: true, NewPartsPolicy: "all", ReleaseGate: "released", MusicTypes: []string{}, WhyAdded: "by_hand",
 			Artwork: []string{}, Status: "released", State: "active"}
 		if _, err := database.Insert(tx, "titles", ti, domain.System); err != nil {

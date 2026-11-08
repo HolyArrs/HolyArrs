@@ -4,7 +4,7 @@
 //
 // A pattern is plain text with words in braces, such as
 // "{title} ({year}) {quality}". The words are listed in Words.
-package naming
+package mediafiles
 
 import (
 	"context"
@@ -17,9 +17,6 @@ import (
 	"time"
 	"unicode"
 	"unicode/utf8"
-
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/judge"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
@@ -82,8 +79,8 @@ var Words = map[string]string{
 // showWords may appear only in show patterns.
 var showWords = map[string]bool{"season_padded": true, "season": true, "episode": true, "episode_title": true, "air_date": true, "absolute": true}
 
-// Settings are the naming settings.
-type Settings struct {
+// NamingSettings are the naming settings.
+type NamingSettings struct {
 	FilePattern   string `json:"file_pattern"`
 	FolderPattern string `json:"folder_pattern"`
 	Colon         string `json:"colon"`
@@ -152,9 +149,9 @@ const DefaultAdoptScanLimit = 5000
 // unless changed.
 const DefaultMusicAdoptScanLimit = 200
 
-// Defaults are the settings before anyone changes them.
-func Defaults() Settings {
-	s := Settings{FilePattern: DefaultFilePattern, FolderPattern: DefaultFolderPattern, Colon: ColonSmart, Illegal: IllegalReplace, RenameOnImport: true,
+// NamingDefaults are the settings before anyone changes them.
+func NamingDefaults() NamingSettings {
+	s := NamingSettings{FilePattern: DefaultFilePattern, FolderPattern: DefaultFolderPattern, Colon: ColonSmart, Illegal: IllegalReplace, RenameOnImport: true,
 		AdoptScanLimit: DefaultAdoptScanLimit, MusicAdoptScanLimit: DefaultMusicAdoptScanLimit, SeasonFolders: true, MusicReadTags: true}
 	s.fillShows()
 	return s
@@ -162,7 +159,7 @@ func Defaults() Settings {
 
 // fillShows gives empty show patterns their default (settings saved
 // before shows had patterns).
-func (s *Settings) fillShows() {
+func (s *NamingSettings) fillShows() {
 	for _, f := range []struct {
 		p   *string
 		def string
@@ -180,7 +177,7 @@ func (s *Settings) fillShows() {
 }
 
 // Validate says what is wrong with s, in plain words.
-func (s Settings) Validate() error {
+func (s NamingSettings) Validate() error {
 	s.fillShows() // show patterns left empty take their default
 	if s.AdoptScanLimit != 0 && (s.AdoptScanLimit < 10 || s.AdoptScanLimit > 100000) {
 		return errors.New("the folders read per scan must be from 10 to 100000")
@@ -286,8 +283,8 @@ func wordsOf(pat string) (map[string]bool, error) {
 	}
 }
 
-// Facts are what a name is made from.
-type Facts struct {
+// NameFacts are what a name is made from.
+type NameFacts struct {
 	Title   string
 	Year    int
 	Step    string // quality step, such as 1080p_bluray
@@ -303,9 +300,9 @@ type Facts struct {
 // take; most file systems stop at 255.
 const MaxComponent = 200
 
-// File renders a file name (with its extension) from the file pattern,
+// FileName renders a file name (with its extension) from the file pattern,
 // at most MaxComponent bytes with the extension kept.
-func File(s Settings, f Facts) string {
+func FileName(s NamingSettings, f NameFacts) string {
 	ext := strings.ToLower(f.Ext)
 	name := capName(render(s, s.FilePattern, f), MaxComponent-len(ext))
 	if name == "" {
@@ -316,7 +313,7 @@ func File(s Settings, f Facts) string {
 
 // Folder renders a movie folder name from the folder pattern, at most
 // MaxComponent bytes.
-func Folder(s Settings, f Facts) string {
+func Folder(s NamingSettings, f NameFacts) string {
 	name := capName(render(s, s.FolderPattern, f), MaxComponent)
 	if name == "" {
 		return "Unnamed"
@@ -339,15 +336,15 @@ func capName(name string, n int) string {
 	return strings.TrimRight(name[:n], " -_.")
 }
 
-// Clean makes one name safe on every file system with the default rules.
-func Clean(name string) string { return clean(Defaults(), name) }
+// CleanName makes one name safe on every file system with the default rules.
+func CleanName(name string) string { return clean(NamingDefaults(), name) }
 
 // CleanWith makes one name safe with s's colon and character rules.
-func CleanWith(s Settings, name string) string { return clean(s, name) }
+func CleanWith(s NamingSettings, name string) string { return clean(s, name) }
 
-func render(s Settings, pat string, f Facts) string { return renderVals(s, pat, values(f)) }
+func render(s NamingSettings, pat string, f NameFacts) string { return renderVals(s, pat, values(f)) }
 
-func values(f Facts) map[string]string {
+func values(f NameFacts) map[string]string {
 	res, src := splitStep(f.Step)
 	quality := strings.TrimSpace(res + " " + src)
 	year := ""
@@ -358,7 +355,7 @@ func values(f Facts) map[string]string {
 		"resolution": res, "source": src, "edition": f.Edition, "group": f.Group, "tmdb": f.TMDB, "imdb": f.IMDB, "release": f.Release}
 }
 
-func renderVals(s Settings, pat string, vals map[string]string) string {
+func renderVals(s NamingSettings, pat string, vals map[string]string) string {
 	var b strings.Builder
 	for rest := pat; rest != ""; {
 		open := strings.IndexByte(rest, '{')
@@ -423,7 +420,7 @@ func sortTitle(t string) string {
 	return t
 }
 
-func clean(s Settings, name string) string {
+func clean(s NamingSettings, name string) string {
 	switch s.Colon {
 	case ColonDash:
 		name = strings.ReplaceAll(name, ":", "-")
@@ -486,9 +483,9 @@ func reserved(n string) bool {
 
 const group = "where_files_go"
 
-// Read reads the naming settings; unset or broken ones keep their default.
-func Read(ctx context.Context, db database.Lister) (Settings, error) {
-	s := Defaults()
+// ReadNaming reads the naming settings; unset or broken ones keep their default.
+func ReadNaming(ctx context.Context, db database.Lister) (NamingSettings, error) {
+	s := NamingDefaults()
 	rows, err := db.QueryContext(ctx, "SELECT key, value FROM settings WHERE grp = ?", group)
 	if err != nil {
 		return s, err
@@ -561,7 +558,7 @@ func Read(ctx context.Context, db database.Lister) (Settings, error) {
 	}
 	s.fillShows()
 	if s.Validate() != nil {
-		d := Defaults()
+		d := NamingDefaults()
 		d.RenameOnImport = s.RenameOnImport
 		d.SeasonFolders = s.SeasonFolders
 		d.DiscFolders = s.DiscFolders
@@ -577,9 +574,9 @@ func Read(ctx context.Context, db database.Lister) (Settings, error) {
 	return s, nil
 }
 
-// Save stores valid naming settings. then, when given, runs in the same
+// PutNamingSettings stores valid naming settings. then, when given, runs in the same
 // transaction (the move tool marks its change there).
-func Save(ctx context.Context, st *database.Store, s Settings, by domain.Actor, then ...func(tx *sql.Tx) error) error {
+func PutNamingSettings(ctx context.Context, st *database.Store, s NamingSettings, by database.Actor, then ...func(tx *sql.Tx) error) error {
 	s.fillShows()
 	if err := s.Validate(); err != nil {
 		return err
@@ -617,9 +614,9 @@ func Save(ctx context.Context, st *database.Store, s Settings, by domain.Actor, 
 	})
 }
 
-// FactsFrom builds Facts from a parsed release name: what an import knows.
-func FactsFrom(title string, year int, ids map[string]string, p releasename.Result, release, ext string) Facts {
-	f := Facts{Title: title, Year: year, Step: judge.StepFor(p), Group: p.Group.Value, Release: release, Ext: ext,
+// FactsFrom builds NameFacts from a parsed release name: what an import knows.
+func FactsFrom(title string, year int, ids map[string]string, p releasename.Result, release, ext string) NameFacts {
+	f := NameFacts{Title: title, Year: year, Step: StepFor(p), Group: p.Group.Value, Release: release, Ext: ext,
 		TMDB: ids["tmdb"], IMDB: ids["imdb"]}
 	if len(p.Edition) > 0 {
 		f.Edition = strings.Join(p.Edition, " ")

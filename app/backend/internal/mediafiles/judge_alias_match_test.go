@@ -1,8 +1,9 @@
-package judge
+package mediafiles
 
 import (
-	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 	"testing"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 )
 
 // A release named with a local name of a non-anime movie or show finds its

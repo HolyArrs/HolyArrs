@@ -4,14 +4,15 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"net/http"
+	"strconv"
+	"time"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
-	"net/http"
-	"strconv"
-	"time"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 )
 
 func (a *API) copyRoutes(m *http.ServeMux) {
@@ -113,13 +114,13 @@ func (a *API) titleCopies(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	files, err := database.Select[domain.File](r.Context(), a.s.Store.Read(), "files", `version_id IN (SELECT id FROM versions WHERE title_id = ?) AND role = 'main' AND state IN ('present','missing') ORDER BY version_id,id`, t.ID)
+	files, err := database.Select[mediafiles.File](r.Context(), a.s.Store.Read(), "files", `version_id IN (SELECT id FROM versions WHERE title_id = ?) AND role = 'main' AND state IN ('present','missing') ORDER BY version_id,id`, t.ID)
 	if err != nil {
 		internal(w, err)
 		return
 	}
 	if files == nil {
-		files = []domain.File{}
+		files = []mediafiles.File{}
 	}
 	versions, err := a.titleVersions(r.Context(), t.ID)
 	if err != nil {
@@ -130,7 +131,7 @@ func (a *API) titleCopies(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *API) titleVersions(ctx context.Context, titleID int64) ([]VersionView, error) {
-	vs, err := database.Select[domain.Version](ctx, a.s.Store.Read(), "versions", "title_id = ? ORDER BY is_main DESC,id", titleID)
+	vs, err := database.Select[mediafiles.Version](ctx, a.s.Store.Read(), "versions", "title_id = ? ORDER BY is_main DESC,id", titleID)
 	out := []VersionView{}
 	for _, v := range vs {
 		out = append(out, versionView(ctx, a.s.Store.Read(), v))
@@ -177,7 +178,7 @@ func (a *API) retryMovieImport(r *http.Request, downloadID int64) (int64, error)
 		if len(d.SlotIDs) != 1 || d.State != "finished" && d.State != "seeding" {
 			return library.ErrCopyChoice
 		}
-		var sl domain.Slot
+		var sl mediafiles.Slot
 		if err := database.Get(r.Context(), tx, "slots", d.SlotIDs[0], &sl); err != nil {
 			return err
 		}
@@ -185,10 +186,10 @@ func (a *API) retryMovieImport(r *http.Request, downloadID int64) (int64, error)
 		if err := tx.QueryRow(`SELECT t.kind,t.state FROM titles t JOIN items i ON i.title_id=t.id WHERE i.id=?`, sl.ItemID).Scan(&kind, &state); err != nil {
 			return err
 		}
-		if kind != "movie" || state == "removed" || sl.State != domain.SlotNeedsADecision || sl.ActiveDownloadID == nil || *sl.ActiveDownloadID != d.ID {
+		if kind != "movie" || state == "removed" || sl.State != mediafiles.SlotNeedsADecision || sl.ActiveDownloadID == nil || *sl.ActiveDownloadID != d.ID {
 			return fmt.Errorf("%w: this download no longer waits for a decision", library.ErrCopyChoice)
 		}
-		if err := store.MoveSlotTx(tx, sl.ID, domain.SlotImporting, "retrying after an explicit edition choice", actor(r)); err != nil {
+		if err := mediafiles.MoveSlotTx(tx, sl.ID, mediafiles.SlotImporting, "retrying after an explicit edition choice", actor(r)); err != nil {
 			return err
 		}
 		key := "import:" + itoa(downloadID)

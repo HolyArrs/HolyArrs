@@ -11,6 +11,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
@@ -29,7 +31,7 @@ func TestGrabHeld_SlotMissingFromPickList(t *testing.T) {
 	var chosen []int64
 	sr := &Searcher{Store: f.s, OnChosen: func(_ context.Context, slotID, _ int64) { chosen = append(chosen, slotID) }}
 	runKind(t, f, sr, KindGrabHeld, nil, nil)
-	if sl := slotState(t, f); sl.State != domain.SlotChosen || len(chosen) != 1 || chosen[0] != f.slotID {
+	if sl := slotState(t, f); sl.State != mediafiles.SlotChosen || len(chosen) != 1 || chosen[0] != f.slotID {
 		t.Fatalf("slot %s, chosen %v", sl.State, chosen)
 	}
 }
@@ -116,9 +118,9 @@ func TestGrabHeld_PackTellsEverySlot(t *testing.T) {
 // TestHandPack_SkipsEpisodeThatWouldNotGain checks that a season pack chosen by hand leaves out an episode whose copy is already as good, with a warning that names it.
 func TestHandPack_SkipsEpisodeThatWouldNotGain(t *testing.T) {
 	ts := &tvServer{answer: func(url.Values) []string { return nil }}
-	f := seedShow(t, ts.start(t), func(label string, sl *domain.Slot) {
+	f := seedShow(t, ts.start(t), func(label string, sl *mediafiles.Slot) {
 		if label == "S01E01" {
-			sl.State = domain.SlotInLibrary
+			sl.State = mediafiles.SlotInLibrary
 		}
 	})
 	addFile(t, f, f.slots["S01E01"], "Copper.Valley.S01E01.1080p.WEB-DL.H.264-OTHER")
@@ -145,7 +147,7 @@ func TestHandPack_SkipsEpisodeThatWouldNotGain(t *testing.T) {
 	if want := ids[1:]; !slices.Equal(ch.SlotIDs, want) {
 		t.Fatalf("chosen for %v, want %v", ch.SlotIDs, want)
 	}
-	if f.state(t, "S01E01") != domain.SlotInLibrary {
+	if f.state(t, "S01E01") != mediafiles.SlotInLibrary {
 		t.Fatalf("S01E01 %s", f.state(t, "S01E01"))
 	}
 	if !slices.ContainsFunc(ch.Warnings, func(w string) bool { return strings.Contains(w, "S01E01") }) {
@@ -190,7 +192,7 @@ func TestStoppedSearches_LeaveNoSlotSearching(t *testing.T) {
 				t.Fatal(err)
 			}
 			deadline := time.Now().Add(5 * time.Second)
-			for f.state(t, c.labels[0]) != domain.SlotSearching {
+			for f.state(t, c.labels[0]) != mediafiles.SlotSearching {
 				if time.Now().After(deadline) {
 					t.Fatalf("never searching: %s", f.state(t, c.labels[0]))
 				}
@@ -198,7 +200,7 @@ func TestStoppedSearches_LeaveNoSlotSearching(t *testing.T) {
 			}
 			q.Stop()
 			for _, l := range c.labels {
-				if st := f.state(t, l); st != domain.SlotWanted {
+				if st := f.state(t, l); st != mediafiles.SlotWanted {
 					t.Errorf("%s left %s", l, st)
 				}
 			}
@@ -218,7 +220,7 @@ func TestSweepStale_Searching(t *testing.T) {
 	if err != nil || n != 1 {
 		t.Fatalf("swept %d %v", n, err)
 	}
-	if f.state(t, "S01E01") != domain.SlotWanted || f.state(t, "S01E02") != domain.SlotSearching {
+	if f.state(t, "S01E01") != mediafiles.SlotWanted || f.state(t, "S01E02") != mediafiles.SlotSearching {
 		t.Fatalf("%s %s", f.state(t, "S01E01"), f.state(t, "S01E02"))
 	}
 }
@@ -243,7 +245,7 @@ func holdForFeed(t *testing.T) (fixture, domain.Release) {
 	feedOn(t, f)
 	waitMinutes(t, f, 60)
 	runKind(t, f, &Searcher{Store: f.s}, KindFeedCheck, nil, nil)
-	if sl := slotState(t, f); sl.State != domain.SlotHeld {
+	if sl := slotState(t, f); sl.State != mediafiles.SlotHeld {
 		t.Fatalf("slot %s", sl.State)
 	}
 	exec(t, f, "UPDATE slots SET next_try_at = ?", database.FormatTime(time.Now().Add(-time.Minute)))

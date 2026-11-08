@@ -10,24 +10,25 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/naming"
 )
 
 // putFile writes a file under the Library folder and records it as a File
 // of the Title's main Version with the given origin.
-func putFile(t *testing.T, s *database.Store, lf domain.LibraryFolder, titleID int64, rel, release, origin string) domain.File {
+func putFile(t *testing.T, s *database.Store, lf mediafiles.LibraryFolder, titleID int64, rel, release, origin string) mediafiles.File {
 	t.Helper()
 	ctx := context.Background()
 	writeFile(t, filepath.Join(lf.Path, filepath.FromSlash(rel)), "video:"+rel)
-	vs, err := database.Select[domain.Version](ctx, s.Read(), "versions", "title_id = ? AND is_main = 1", titleID)
+	vs, err := database.Select[mediafiles.Version](ctx, s.Read(), "versions", "title_id = ? AND is_main = 1", titleID)
 	if err != nil || len(vs) != 1 {
 		t.Fatalf("versions %v %v", vs, err)
 	}
 	sl := slotsOf(t, s, titleID)
-	f := domain.File{SlotIDs: []int64{sl[0].ID}, VersionID: vs[0].ID, RelativePath: rel, Size: 10, AddedAt: now, Languages: []string{},
+	f := mediafiles.File{SlotIDs: []int64{sl[0].ID}, VersionID: vs[0].ID, RelativePath: rel, Size: 10, AddedAt: now, Languages: []string{},
 		MediaInfo: map[string]any{}, ReleaseName: &release, Origin: origin, PlacedBy: "hardlink", Role: "main", State: "present"}
 	if origin != "imported" {
 		f.PlacedBy = "none"
@@ -38,7 +39,7 @@ func putFile(t *testing.T, s *database.Store, lf domain.LibraryFolder, titleID i
 	return f
 }
 
-func renameWorld(t *testing.T) (*Service, *database.Store, domain.LibraryFolder, int64) {
+func renameWorld(t *testing.T) (*Service, *database.Store, mediafiles.LibraryFolder, int64) {
 	t.Helper()
 	s := open(t)
 	lf := addFolder(t, s)
@@ -49,9 +50,9 @@ func renameWorld(t *testing.T) (*Service, *database.Store, domain.LibraryFolder,
 	return &Service{Store: s, Now: func() time.Time { return now }}, s, lf, id
 }
 
-func fileRow(t *testing.T, s *database.Store, id int64) domain.File {
+func fileRow(t *testing.T, s *database.Store, id int64) mediafiles.File {
 	t.Helper()
-	var f domain.File
+	var f mediafiles.File
 	if err := database.Get(context.Background(), s.Read(), "files", id, &f); err != nil {
 		t.Fatal(err)
 	}
@@ -65,8 +66,8 @@ func TestRenamePreviewMatchesResult(t *testing.T) {
 	ctx := context.Background()
 	imp := putFile(t, s, lf, id, "Dune - Part Two (2024)/Dune.Part.Two.2024.1080p.BluRay.x264-HOLYARRS.mkv", "Dune.Part.Two.2024.1080p.BluRay.x264-HOLYARRS", "imported")
 	found := putFile(t, s, lf, id, "Dune - Part Two (2024)/extra cut.mkv", "Dune.Part.Two.2024.2160p.WEB-DL-X", "found")
-	if err := naming.Save(ctx, s, naming.Settings{FilePattern: "{title} ({year}) [{quality}] {group}", FolderPattern: naming.DefaultFolderPattern,
-		Colon: naming.ColonSpaceDashSpace, Illegal: naming.IllegalReplace, RenameOnImport: true}, domain.System); err != nil {
+	if err := mediafiles.PutNamingSettings(ctx, s, mediafiles.NamingSettings{FilePattern: "{title} ({year}) [{quality}] {group}", FolderPattern: mediafiles.DefaultFolderPattern,
+		Colon: mediafiles.ColonSpaceDashSpace, Illegal: mediafiles.IllegalReplace, RenameOnImport: true}, domain.System); err != nil {
 		t.Fatal(err)
 	}
 	preview, err := PlanRename(ctx, s.Read(), []int64{id})

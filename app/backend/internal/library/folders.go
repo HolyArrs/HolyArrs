@@ -12,6 +12,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
@@ -154,8 +156,8 @@ func overlaps(a, b string) bool {
 
 // AddFolder adds a Library folder after checking it. then, when given,
 // runs in the same transaction with the new id.
-func AddFolder(ctx context.Context, s *database.Store, in FolderInput, downloadPaths []string, by domain.Actor, then ...func(tx *sql.Tx, id int64) error) (domain.LibraryFolder, error) {
-	var lf domain.LibraryFolder
+func AddFolder(ctx context.Context, s *database.Store, in FolderInput, downloadPaths []string, by domain.Actor, then ...func(tx *sql.Tx, id int64) error) (mediafiles.LibraryFolder, error) {
+	var lf mediafiles.LibraryFolder
 	if in.Path == "" || !filepath.IsAbs(in.Path) {
 		return lf, ErrFolderPath
 	}
@@ -171,10 +173,10 @@ func AddFolder(ctx context.Context, s *database.Store, in FolderInput, downloadP
 		in.Label = filepath.Base(in.Path)
 	}
 	now := time.Now().UTC()
-	lf = domain.LibraryFolder{Path: in.Path, Kind: in.Kind, Label: in.Label, DefaultPickRules: in.DefaultPickRules,
+	lf = mediafiles.LibraryFolder{Path: in.Path, Kind: in.Kind, Label: in.Label, DefaultPickRules: in.DefaultPickRules,
 		FreeSpace: max(h.FreeSpace, 0), Health: h.State, HealthReason: h.Reason, HealthCheckedAt: &now, SameDiskAs: []int64{}}
 	err := s.Write(ctx, func(tx *sql.Tx) error {
-		all, err := database.Select[domain.LibraryFolder](ctx, tx, "library_folders", "")
+		all, err := database.Select[mediafiles.LibraryFolder](ctx, tx, "library_folders", "")
 		if err != nil {
 			return err
 		}
@@ -245,14 +247,14 @@ type FolderChange struct {
 }
 
 // UpdateFolder changes a Library folder's label and default Pick rules.
-func UpdateFolder(ctx context.Context, s *database.Store, id int64, c FolderChange, by domain.Actor) (domain.LibraryFolder, error) {
-	var lf domain.LibraryFolder
+func UpdateFolder(ctx context.Context, s *database.Store, id int64, c FolderChange, by domain.Actor) (mediafiles.LibraryFolder, error) {
+	var lf mediafiles.LibraryFolder
 	err := s.Write(ctx, func(tx *sql.Tx) error {
 		if err := database.Get(ctx, tx, "library_folders", id, &lf); err != nil {
 			return err
 		}
 		if c.Label != nil && *c.Label != "" && *c.Label != lf.Label {
-			all, err := database.Select[domain.LibraryFolder](ctx, tx, "library_folders", "")
+			all, err := database.Select[mediafiles.LibraryFolder](ctx, tx, "library_folders", "")
 			if err != nil {
 				return err
 			}
@@ -274,7 +276,7 @@ func UpdateFolder(ctx context.Context, s *database.Store, id int64, c FolderChan
 
 // freeLabel says whether label is free among the folders of kind (skipping
 // the folder with id skip). With number, a taken label gets " 2", " 3" and so on.
-func freeLabel(all []domain.LibraryFolder, kind, label string, skip int64, number bool) (string, bool) {
+func freeLabel(all []mediafiles.LibraryFolder, kind, label string, skip int64, number bool) (string, bool) {
 	taken := func(l string) bool {
 		for _, o := range all {
 			if o.ID != skip && o.Kind == kind && strings.EqualFold(o.Label, l) {
@@ -324,7 +326,7 @@ func DeleteFolder(ctx context.Context, s *database.Store, id int64) error {
 // time, and only its free space is read again (no probe files, so a
 // sleeping disk is not written to). A folder never checked, or last found
 // missing or not writable, gets the full test anyway.
-func RecheckFolder(ctx context.Context, s *database.Store, id int64, downloadPaths []string, by domain.Actor, quick bool) (lf domain.LibraryFolder, changed bool, err error) {
+func RecheckFolder(ctx context.Context, s *database.Store, id int64, downloadPaths []string, by domain.Actor, quick bool) (lf mediafiles.LibraryFolder, changed bool, err error) {
 	if err := database.Get(ctx, s.Read(), "library_folders", id, &lf); err != nil {
 		return lf, false, err
 	}

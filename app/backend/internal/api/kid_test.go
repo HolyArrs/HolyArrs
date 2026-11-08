@@ -16,6 +16,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 
@@ -310,7 +312,7 @@ func (k *kidRig) add(t *testing.T, kind, name, tmdbID, rating string, id int64, 
 		if kind == "artist" {
 			ids, src = map[string]string{"musicbrainz": "5b11f4ce-a62d-471e-81fc-a69a8278c7da"}, "musicbrainz"
 		}
-		title := domain.Title{Kind: kind, Name: name, SortName: strings.ToLower(name), SourceIDs: ids, MetadataSource: src, Rating: rating,
+		title := mediafiles.Title{Kind: kind, Name: name, SortName: strings.ToLower(name), SourceIDs: ids, MetadataSource: src, Rating: rating,
 			WhyAdded: "by_hand", State: "active", NewPartsPolicy: "all", ReleaseGate: "released", GateDriver: "none", Status: "released",
 			CinemaDate: cinema, KeepUpToDate: true}
 		if _, err := database.Insert(tx, "titles", &title, domain.System); err != nil {
@@ -333,15 +335,15 @@ func (k *kidRig) add(t *testing.T, kind, name, tmdbID, rating string, id int64, 
 		if err := tx.QueryRow("SELECT id FROM library_folders WHERE kind = 'movie' ORDER BY id LIMIT 1").Scan(&folderID); err != nil {
 			return err
 		}
-		item := domain.Item{TitleID: title.ID, Kind: "movie", Name: &title.Name}
+		item := mediafiles.Item{TitleID: title.ID, Kind: "movie", Name: &title.Name}
 		if _, err := database.Insert(tx, "items", &item, domain.System); err != nil {
 			return err
 		}
-		version := domain.Version{TitleID: title.ID, Label: "Main", IsMain: true, LibraryFolderID: folderID, PickRulesID: rulesID}
+		version := mediafiles.Version{TitleID: title.ID, Label: "Main", IsMain: true, LibraryFolderID: folderID, PickRulesID: rulesID}
 		if _, err := database.Insert(tx, "versions", &version, domain.System); err != nil {
 			return err
 		}
-		_, err := database.Insert(tx, "slots", &domain.Slot{ItemID: item.ID, VersionID: version.ID, State: domain.SlotWanted}, domain.System)
+		_, err := database.Insert(tx, "slots", &mediafiles.Slot{ItemID: item.ID, VersionID: version.ID, State: mediafiles.SlotWanted}, domain.System)
 		return err
 	})
 	if err != nil {

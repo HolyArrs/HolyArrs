@@ -21,6 +21,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/alerts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
@@ -29,7 +31,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Stage 4.2 on the lab, inside the lab network, from a container that the
@@ -150,7 +151,7 @@ func labNoSizeFloors(t *testing.T, s *database.Store) {
 	}
 }
 
-func newLabShow(t *testing.T, qb string, state domain.SlotState) labShow {
+func newLabShow(t *testing.T, qb string, state mediafiles.SlotState) labShow {
 	t.Helper()
 	s, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
@@ -164,34 +165,34 @@ func newLabShow(t *testing.T, qb string, state domain.SlotState) labShow {
 		if err := tx.QueryRow("SELECT id FROM pick_rules LIMIT 1").Scan(&pr); err != nil {
 			return err
 		}
-		lf := &domain.LibraryFolder{Path: x.shows, Kind: "show", Label: "Shows", Health: "ok", SameDiskAs: []int64{}}
+		lf := &mediafiles.LibraryFolder{Path: x.shows, Kind: "show", Label: "Shows", Health: "ok", SameDiskAs: []int64{}}
 		if _, err := database.Insert(tx, "library_folders", lf, domain.System); err != nil {
 			return err
 		}
 		y, order := 2025, "aired"
-		ti := &domain.Title{Kind: "show", GateDriver: "none", Name: "Copper Valley", SortName: "copper valley", Year: &y, Aliases: []string{},
+		ti := &mediafiles.Title{Kind: "show", GateDriver: "none", Name: "Copper Valley", SortName: "copper valley", Year: &y, Aliases: []string{},
 			SourceIDs: map[string]string{}, MetadataSource: "local", NewPartsPolicy: "all", ReleaseGate: "released", EpisodeOrder: &order, MusicTypes: []string{},
 			WhyAdded: "by_hand", Artwork: []string{}, Status: "running", State: "active", KeepUpToDate: true}
 		if _, err := database.Insert(tx, "titles", ti, domain.System); err != nil {
 			return err
 		}
 		season := 1
-		p := &domain.Part{TitleID: ti.ID, Kind: "season", Number: &season, Name: "Season 1", KeepUpToDate: true, SourceIDs: map[string]string{}, Pressings: []domain.Pressing{}}
+		p := &mediafiles.Part{TitleID: ti.ID, Kind: "season", Number: &season, Name: "Season 1", KeepUpToDate: true, SourceIDs: map[string]string{}, Pressings: []mediafiles.Pressing{}}
 		if _, err := database.Insert(tx, "parts", p, domain.System); err != nil {
 			return err
 		}
-		v := &domain.Version{TitleID: ti.ID, Label: "Main", PickRulesID: pr, LibraryFolderID: lf.ID, FolderName: "Copper Valley (2025)", IsMain: true, KeepUpToDate: true}
+		v := &mediafiles.Version{TitleID: ti.ID, Label: "Main", PickRulesID: pr, LibraryFolderID: lf.ID, FolderName: "Copper Valley (2025)", IsMain: true, KeepUpToDate: true}
 		if _, err := database.Insert(tx, "versions", v, domain.System); err != nil {
 			return err
 		}
 		x.titleID, x.partID, x.verID = ti.ID, p.ID, v.ID
 		for n, name := range []string{"The Mill", "Flood", "Ash"} {
 			ep, name := n+1, name
-			it := &domain.Item{TitleID: ti.ID, PartID: &p.ID, Kind: "episode", Numbers: domain.Numbers{Season: &season, Episode: &ep}, Name: &name, KeepUpToDate: true, SourceIDs: map[string]string{}}
+			it := &mediafiles.Item{TitleID: ti.ID, PartID: &p.ID, Kind: "episode", Numbers: mediafiles.Numbers{Season: &season, Episode: &ep}, Name: &name, KeepUpToDate: true, SourceIDs: map[string]string{}}
 			if _, err := database.Insert(tx, "items", it, domain.System); err != nil {
 				return err
 			}
-			sl := &domain.Slot{ItemID: it.ID, VersionID: v.ID, State: state}
+			sl := &mediafiles.Slot{ItemID: it.ID, VersionID: v.ID, State: state}
 			if _, err := database.Insert(tx, "slots", sl, domain.System); err != nil {
 				return err
 			}
@@ -294,7 +295,7 @@ func labRows(t *testing.T, url string) []DownloadRow {
 func TestLabSeasonPackImports(t *testing.T) {
 	qb := labQbit()
 	ctx := context.Background()
-	x := newLabShow(t, qb, domain.SlotChosen)
+	x := newLabShow(t, qb, mediafiles.SlotChosen)
 	const pack = "Copper.Valley.S01.1080p.WEB.H264-HOLYARRS"
 	var files []labFile
 	for n := 1; n <= 3; n++ {
@@ -420,7 +421,7 @@ func TestLabSeasonPackImports(t *testing.T) {
 func TestLabBrokenEpisodeNextGrabbed(t *testing.T) {
 	qb := labQbit()
 	ctx := context.Background()
-	x := newLabShow(t, qb, domain.SlotChosen)
+	x := newLabShow(t, qb, mediafiles.SlotChosen)
 	ep := x.slots[1] // S01E02
 	const broken, next = "Copper.Valley.S01E02.1080p.WEB.H264-BROKEN", "Copper.Valley.S01E02.720p.WEB.H264-HOLYARRS"
 	bf := labFile{name: broken + ".mkv", data: video(9, 400<<10)}
@@ -448,10 +449,10 @@ func TestLabBrokenEpisodeNextGrabbed(t *testing.T) {
 	var nextDL int64
 	m.OnFailed = func(ctx context.Context, slotID int64) {
 		if err := x.s.Write(ctx, func(tx *sql.Tx) error {
-			if err := store.MoveSlotTx(tx, slotID, domain.SlotSearching, "searching", domain.System); err != nil {
+			if err := mediafiles.MoveSlotTx(tx, slotID, mediafiles.SlotSearching, "searching", domain.System); err != nil {
 				return err
 			}
-			if err := store.MoveSlotTx(tx, slotID, domain.SlotChosen, "chose the next", domain.System); err != nil {
+			if err := mediafiles.MoveSlotTx(tx, slotID, mediafiles.SlotChosen, "chose the next", domain.System); err != nil {
 				return err
 			}
 			_, err := tx.Exec("UPDATE slots SET chosen_release_id = ? WHERE id = ?", nextID, slotID)

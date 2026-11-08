@@ -14,6 +14,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 
@@ -164,7 +166,7 @@ func TestShouldRefresh(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			ti := domain.Title{RefreshedAt: c.fetched, CinemaDate: c.ds.Cinema, DigitalDate: c.ds.Digital, PhysicalDate: c.ds.Physical}
+			ti := mediafiles.Title{RefreshedAt: c.fetched, CinemaDate: c.ds.Cinema, DigitalDate: c.ds.Digital, PhysicalDate: c.ds.Physical}
 			yes, why := ShouldRefresh(ti, now)
 			if yes != c.want || why != c.why {
 				t.Fatalf("got %v %q", yes, why)
@@ -245,7 +247,7 @@ func TestRefreshPlanChangedListDroppedAndArtwork(t *testing.T) {
 	if err != nil || out.GateDriver != "digital" || out.GateOpensAt == nil || !strings.HasPrefix(*out.GateOpensAt, "2026-12-20") {
 		t.Fatalf("refresh second %+v %v", out, err)
 	}
-	var t2 domain.Title
+	var t2 mediafiles.Title
 	_ = database.Get(ctx, s.Read(), "titles", id2, &t2)
 	if t2.Name != "Second Renamed" || t2.DigitalDate == nil || t2.RefreshedAt == nil {
 		t.Fatalf("second after refresh %+v", t2)
@@ -254,7 +256,7 @@ func TestRefreshPlanChangedListDroppedAndArtwork(t *testing.T) {
 	if _, err := svc.RefreshTitle(ctx, id1, domain.System, nil); err != nil {
 		t.Fatal(err)
 	}
-	var t1 domain.Title
+	var t1 mediafiles.Title
 	_ = database.Get(ctx, s.Read(), "titles", id1, &t1)
 	if len(t1.Artwork) != 1 || !strings.HasPrefix(t1.Artwork[0], "poster:") {
 		t.Fatalf("artwork %v", t1.Artwork)
@@ -299,7 +301,7 @@ func TestGateCrossingAtTheRightTime(t *testing.T) {
 	svc := &Service{Store: s, Now: func() time.Time { return clock }}
 	m := metadata.Movie{Name: "Soon", Year: 2026, IDs: map[string]string{"tmdb": "7"}, CinemaDate: d("2026-09-01"), DigitalDate: d("2026-10-20")}
 	id, _ := AddMovie(ctx, s, m, AddOptions{}, nil, now, domain.System)
-	if slotsOf(t, s, id)[0].State != domain.SlotNotOutYet {
+	if slotsOf(t, s, id)[0].State != mediafiles.SlotNotOutYet {
 		t.Fatal("should start not out yet")
 	}
 	writes := s.WriteCount()
@@ -315,7 +317,7 @@ func TestGateCrossingAtTheRightTime(t *testing.T) {
 		t.Fatalf("on the day: %d %v", n, err)
 	}
 	sl := slotsOf(t, s, id)[0]
-	if sl.State != domain.SlotWanted || sl.LastReason == nil || !strings.Contains(*sl.LastReason, "2026-10-20 (digital date)") {
+	if sl.State != mediafiles.SlotWanted || sl.LastReason == nil || !strings.Contains(*sl.LastReason, "2026-10-20 (digital date)") {
 		t.Fatalf("slot %+v", sl)
 	}
 	es, _ := s.RecentEvents(ctx, 5)

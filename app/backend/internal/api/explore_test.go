@@ -12,6 +12,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/explore"
@@ -318,7 +320,7 @@ func TestExploreFinishCollection(t *testing.T) {
 	a, s, f := exploreRig(t)
 	ctx := context.Background()
 	err := s.Write(ctx, func(tx *sql.Tx) error {
-		own := domain.Title{Kind: "movie", Name: "Saga 1", SortName: "saga 1", SourceIDs: map[string]string{"tmdb": "501"}, MetadataSource: "tmdb", NewPartsPolicy: "all", WhyAdded: "by_hand", State: "active", ReleaseGate: "released", GateDriver: "none", Status: "released"}
+		own := mediafiles.Title{Kind: "movie", Name: "Saga 1", SortName: "saga 1", SourceIDs: map[string]string{"tmdb": "501"}, MetadataSource: "tmdb", NewPartsPolicy: "all", WhyAdded: "by_hand", State: "active", ReleaseGate: "released", GateDriver: "none", Status: "released"}
 		if _, err := database.Insert(tx, "titles", &own, domain.System); err != nil {
 			return err
 		}

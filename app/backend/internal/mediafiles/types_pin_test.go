@@ -1,12 +1,15 @@
-package domain
+package mediafiles
 
 import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 )
 
 // catalogRecords are the library records, pinned field by field before they
@@ -53,9 +56,9 @@ func TestCatalogRecordJSONIsFrozen(t *testing.T) {
 	at := time.Date(2026, 1, 2, 3, 4, 5, 0, time.UTC)
 	year := 1999
 	recs := []any{
-		Title{Meta: Meta{ID: 7, CreatedAt: at, UpdatedAt: at, CreatedBy: System, UpdatedBy: System}, Kind: "movie", Name: "Pin", Year: &year},
-		Slot{Meta: Meta{ID: 3, CreatedAt: at, UpdatedAt: at}, State: SlotState("wanted")},
-		File{Meta: Meta{ID: 4, CreatedAt: at, UpdatedAt: at}, RelativePath: "pin.mkv", Size: 42},
+		Title{Meta: database.Meta{ID: 7, CreatedAt: at, UpdatedAt: at, CreatedBy: database.System, UpdatedBy: database.System}, Kind: "movie", Name: "Pin", Year: &year},
+		Slot{Meta: database.Meta{ID: 3, CreatedAt: at, UpdatedAt: at}, State: SlotState("wanted")},
+		File{Meta: database.Meta{ID: 4, CreatedAt: at, UpdatedAt: at}, RelativePath: "pin.mkv", Size: 42},
 		GoodEveryday(),
 	}
 	var b strings.Builder
@@ -68,4 +71,16 @@ func TestCatalogRecordJSONIsFrozen(t *testing.T) {
 		b.WriteString("\n")
 	}
 	checkGolden(t, "pin_catalog_json.golden.json", b.String())
+}
+
+// fieldLayout lists a record's fields in order, with their tags.
+func fieldLayout(v any) string {
+	t := reflect.TypeOf(v)
+	var b strings.Builder
+	for i := 0; i < t.NumField(); i++ {
+		f := t.Field(i)
+		typ := strings.NewReplacer("mediafiles.", "", "database.", "").Replace(f.Type.String())
+		b.WriteString(f.Name + " " + typ + " `" + string(f.Tag) + "`\n")
+	}
+	return b.String()
 }

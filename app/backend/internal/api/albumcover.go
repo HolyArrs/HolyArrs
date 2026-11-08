@@ -4,8 +4,9 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 )
 
@@ -31,7 +32,7 @@ func (a *API) albumCoverArt(w http.ResponseWriter, r *http.Request) {
 		noPicture(w)
 		return
 	}
-	var t domain.Title
+	var t mediafiles.Title
 	if err := database.Get(r.Context(), a.s.Store.Read(), "titles", p.TitleID, &t); err != nil {
 		http.NotFound(w, r)
 		return

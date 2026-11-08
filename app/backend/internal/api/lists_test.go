@@ -12,8 +12,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
@@ -100,7 +101,7 @@ func TestOutsideListsAPI(t *testing.T) {
 	do(t, "POST", srv.URL+"/api/v1/outside-lists", `{"name":"LAB LIST","kind":"tmdb_list","ref":"8"}`, 409)
 	deadline := time.Now().Add(5 * time.Second)
 	for {
-		ts, _ := database.Select[domain.Title](ctx, s.Read(), "titles", "1=1")
+		ts, _ := database.Select[mediafiles.Title](ctx, s.Read(), "titles", "1=1")
 		if len(ts) == 1 {
 			if ts[0].WhyAdded != "list" || ts[0].Name != "Dune: Part Two" {
 				t.Fatalf("title %+v", ts[0])
@@ -169,7 +170,7 @@ func TestOutsideListsAPI(t *testing.T) {
 // goodEverydayBody is the Standard rules body as JSON, for new rules.
 func goodEverydayBody(t *testing.T) string {
 	t.Helper()
-	b, err := json.Marshal(domain.GoodEveryday())
+	b, err := json.Marshal(mediafiles.GoodEveryday())
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -10,6 +10,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
@@ -46,7 +48,7 @@ func TestImportRefusesCopyWithoutFreeSpace(t *testing.T) {
 	sl := slotOf(t, w)
 	var reason string
 	_ = w.s.Read().QueryRow("SELECT COALESCE(last_reason, '') FROM slots WHERE id = ?", w.slotID).Scan(&reason)
-	if sl.State != domain.SlotNeedsADecision || !strings.Contains(reason, "not enough free space") {
+	if sl.State != mediafiles.SlotNeedsADecision || !strings.Contains(reason, "not enough free space") {
 		t.Fatalf("slot %s %q", sl.State, reason)
 	}
 }
@@ -133,7 +135,7 @@ func TestReplaceWithNewNameSurvivesCrashAfterHold(t *testing.T) {
 	if len(held) != 1 {
 		t.Fatalf("held %v", held)
 	}
-	var old domain.File
+	var old mediafiles.File
 	_ = database.Get(ctx, w.s.Read(), "files", oldID, &old)
 	rel, _ := filepath.Rel(w.lib, held[0])
 	if old.State != "replaced" || old.RelativePath != filepath.ToSlash(rel) {

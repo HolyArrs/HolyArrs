@@ -6,7 +6,8 @@ import (
 	"path"
 	"strings"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles"
 )
 
@@ -25,7 +26,7 @@ func coverName(file string) (kind string, px int) {
 }
 
 // posterOf is the title's stored poster ("poster:<cache name>"), or "".
-func posterOf(t domain.Title) string {
+func posterOf(t mediafiles.Title) string {
 	for _, a := range t.Artwork {
 		if name, ok := strings.CutPrefix(a, "poster:"); ok && name != "" {
 			return a
@@ -39,7 +40,7 @@ func posterOf(t domain.Title) string {
 // url points at this side's covers route, as the old apps point at their
 // own cover cache; remoteUrl keeps the original address where one is
 // known and is empty for a stored poster, which has none.
-func (h *handler) libraryImages(ctx context.Context, t domain.Title) []image {
+func (h *handler) libraryImages(ctx context.Context, t mediafiles.Title) []image {
 	out := []image{}
 	at := h.base(ctx) + "/MediaCover/" + itoa(t.ID) + "/"
 	if posterOf(t) != "" {

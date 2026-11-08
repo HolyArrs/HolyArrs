@@ -11,6 +11,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 
@@ -72,9 +74,9 @@ func withPictureWorld(t *testing.T, svc *Service, w *pictureWorld) {
 	svc.Artwork = &ArtworkCache{Dir: filepath.Join(t.TempDir(), "art"), Allowed: []string{w.srv.URL + "/"}, HTTP: &http.Client{}}
 }
 
-func titleOf(t *testing.T, s *database.Store, id int64) domain.Title {
+func titleOf(t *testing.T, s *database.Store, id int64) mediafiles.Title {
 	t.Helper()
-	var ti domain.Title
+	var ti mediafiles.Title
 	if err := database.Get(context.Background(), s.Read(), "titles", id, &ti); err != nil {
 		t.Fatal(err)
 	}

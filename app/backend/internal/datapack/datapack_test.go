@@ -13,8 +13,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/judge"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
@@ -89,7 +90,7 @@ func TestDecodeRejectsNumericAndCollectionCaps(t *testing.T) {
 	tests[0].PickRules[0].Rules.Traits[0].Points = 10001
 	tests[1].PickRules = slices.Clone(base.PickRules)
 	limits := maps.Clone(base.PickRules[0].Rules.SizeLimits)
-	limits["1080p_web"] = domain.SizeLimit{Min: 10, Max: -1}
+	limits["1080p_web"] = mediafiles.SizeLimit{Min: 10, Max: -1}
 	tests[1].PickRules[0].Rules.SizeLimits = limits
 	tests[2].PickRules = make([]PickRule, MaxPickRules+1)
 	for i := range tests[2].PickRules {
@@ -143,7 +144,7 @@ func TestPickRuleTraitContextsAndDuplicateNames(t *testing.T) {
 	video := p.PickRules[0]
 	music := video
 	music.Kinds = []string{"music"}
-	music.Rules = domain.LosslessFirst()
+	music.Rules = mediafiles.LosslessFirst()
 	for name, rule := range map[string]PickRule{"video": video, "music": music} {
 		t.Run(name, func(t *testing.T) {
 			for _, field := range []string{"traits", "must_have"} {
@@ -151,7 +152,7 @@ func TestPickRuleTraitContextsAndDuplicateNames(t *testing.T) {
 				bad.Rules.Traits = slices.Clone(rule.Rules.Traits)
 				bad.Rules.MustHave = slices.Clone(rule.Rules.MustHave)
 				if field == "traits" {
-					bad.Rules.Traits = []domain.TraitPoints{{Trait: "sample", Points: 1}}
+					bad.Rules.Traits = []mediafiles.TraitPoints{{Trait: "sample", Points: 1}}
 				} else {
 					bad.Rules.MustHave = []string{"sample"}
 				}
@@ -200,16 +201,16 @@ func TestMaximumAcceptedPerMinuteLimitStaysSafeInJudge(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	p.PickRules[0].Rules.SizeLimits = map[string]domain.SizeLimit{
+	p.PickRules[0].Rules.SizeLimits = map[string]mediafiles.SizeLimit{
 		"1080p_web": {Min: 1 << 50, Max: 1 << 50, PerMinute: true},
 	}
 	if err := p.Validate(); err != nil {
 		t.Fatalf("maximum data-pack size limit rejected: %v", err)
 	}
 	parsed := releasename.Parse("Example.Movie.2025.1080p.WEB-DL.H265-TEST", releasename.Hints{})
-	title := judge.TitleRef{ID: 1, Name: "Example Movie", Year: 2025}
-	v := judge.Judge(judge.Release{Name: "Example.Movie.2025.1080p.WEB-DL.H265-TEST", Parse: parsed, Size: 1 << 30}, judge.SlotSet{
-		Match: judge.Match{Title: &title, Conf: releasename.Sure, Detail: "test match"}, SlotIDs: []int64{1}, RuntimeMinutes: 9000, Out: true,
+	title := mediafiles.TitleRef{ID: 1, Name: "Example Movie", Year: 2025}
+	v := mediafiles.Judge(mediafiles.ReleaseFacts{Name: "Example.Movie.2025.1080p.WEB-DL.H265-TEST", Parse: parsed, Size: 1 << 30}, mediafiles.SlotSet{
+		Match: mediafiles.Match{Title: &title, Conf: releasename.Sure, Detail: "test match"}, SlotIDs: []int64{1}, RuntimeMinutes: 9000, Out: true,
 	}, p.PickRules[0].Rules)
 	for _, reason := range v.Reasons {
 		if reason.Step == "hard" && reason.Rule == "size" && reason.Effect == "fail" {
@@ -432,7 +433,7 @@ func TestApplyRuleNameConflictRollsBackAllSelections(t *testing.T) {
 		t.Fatal(err)
 	}
 	if err := st.Write(ctx, func(tx *sql.Tx) error {
-		_, err := database.Insert(tx, "pick_rules", &domain.PickRules{Name: "Balanced web copy", Kinds: []string{"movie"}, Revision: 1, Body: domain.GoodEveryday()}, domain.System)
+		_, err := database.Insert(tx, "pick_rules", &mediafiles.PickRules{Name: "Balanced web copy", Kinds: []string{"movie"}, Revision: 1, Body: mediafiles.GoodEveryday()}, domain.System)
 		return err
 	}); err != nil {
 		t.Fatal(err)
@@ -500,12 +501,12 @@ func TestPickRuleWithOwnTraitIsRefused(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, edit := range []func(*domain.PickRulesBody){
-		func(b *domain.PickRulesBody) {
-			b.Traits = append(slices.Clone(b.Traits), domain.TraitPoints{Trait: "own:3", Points: 10})
+	for _, edit := range []func(*mediafiles.PickRulesBody){
+		func(b *mediafiles.PickRulesBody) {
+			b.Traits = append(slices.Clone(b.Traits), mediafiles.TraitPoints{Trait: "own:3", Points: 10})
 		},
-		func(b *domain.PickRulesBody) { b.MustHave = []string{"own:3"} },
-		func(b *domain.PickRulesBody) { b.Never = append(slices.Clone(b.Never), "own:3") },
+		func(b *mediafiles.PickRulesBody) { b.MustHave = []string{"own:3"} },
+		func(b *mediafiles.PickRulesBody) { b.Never = append(slices.Clone(b.Never), "own:3") },
 	} {
 		bad := p.PickRules[0]
 		edit(&bad.Rules)

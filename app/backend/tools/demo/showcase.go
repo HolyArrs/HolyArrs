@@ -16,6 +16,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 
@@ -26,7 +28,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/naming"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
@@ -256,7 +257,7 @@ func (w *world) showcaseWipe(ctx context.Context) error {
 	}); err != nil {
 		return err
 	}
-	ts, err := database.Select[domain.Title](ctx, db, "titles", "state != 'removed' ORDER BY id")
+	ts, err := database.Select[mediafiles.Title](ctx, db, "titles", "state != 'removed' ORDER BY id")
 	if err != nil {
 		return err
 	}
@@ -328,7 +329,7 @@ func (w *world) showcaseClearDownloads(ctx context.Context) error {
 	// choice would move them, so no Review rows remain.
 	var decided int
 	if err := w.s.Write(ctx, func(tx *sql.Tx) error {
-		r, err := tx.Query("SELECT id, file_id IS NOT NULL FROM slots WHERE state = ?", string(domain.SlotNeedsADecision))
+		r, err := tx.Query("SELECT id, file_id IS NOT NULL FROM slots WHERE state = ?", string(mediafiles.SlotNeedsADecision))
 		if err != nil {
 			return err
 		}
@@ -347,11 +348,11 @@ func (w *world) showcaseClearDownloads(ctx context.Context) error {
 		}
 		r.Close()
 		for _, x := range ss {
-			to := domain.SlotWanted
+			to := mediafiles.SlotWanted
 			if x.copy {
-				to = domain.SlotBetterWanted
+				to = mediafiles.SlotBetterWanted
 			}
-			if err := store.MoveSlotTx(tx, x.id, to, "showcase: no stand-in downloads", w.by); err != nil {
+			if err := mediafiles.MoveSlotTx(tx, x.id, to, "showcase: no stand-in downloads", w.by); err != nil {
 				return err
 			}
 			decided++
@@ -554,7 +555,7 @@ func (w *world) showcaseMovies(ctx context.Context) error {
 		return err
 	}
 	var fourK int64
-	_ = w.s.Read().QueryRowContext(ctx, "SELECT id FROM pick_rules WHERE name = ?", domain.FourKName).Scan(&fourK)
+	_ = w.s.Read().QueryRowContext(ctx, "SELECT id FROM pick_rules WHERE name = ?", mediafiles.FourKName).Scan(&fourK)
 	for i, e := range showcaseMovieList {
 		key := "movie:" + e.TMDB
 		if w.m.Titles[key] != 0 || e.Ask != "" {
@@ -655,7 +656,7 @@ func (w *world) showcaseShows(ctx context.Context) error {
 		if err := w.claim(ctx, old); err != nil {
 			return fmt.Errorf("%s: %w", sh.Name, err)
 		}
-		folder := naming.ShowFolder(w.ns, naming.Facts{Title: sh.Name, Year: sh.Year, TMDB: sh.IDs["tmdb"], IMDB: sh.IDs["imdb"]})
+		folder := mediafiles.ShowFolder(w.ns, mediafiles.NameFacts{Title: sh.Name, Year: sh.Year, TMDB: sh.IDs["tmdb"], IMDB: sh.IDs["imdb"]})
 		dir := filepath.Join(lf.Path, folder)
 		if !hasVideo(dir) {
 			eps := episodesWithFiles(sh, e.showEntry, time.Now())
@@ -669,9 +670,9 @@ func (w *world) showcaseShows(ctx context.Context) error {
 			}
 			for j, ep := range eps {
 				release := fmt.Sprintf("%s.S%02dE%02d.%s", dotted(sh.Name), ep.Season, ep.Number, qualityTags[e.Quality])
-				facts := naming.FactsFrom(sh.Name, sh.Year, sh.IDs, parseName(release), release, ".mkv")
-				ef := naming.EpisodeFacts{Facts: facts, Order: naming.OrderAired, Season: ep.Season, Episodes: []int{ep.Number}, Titles: []string{ep.Name}}
-				rel := naming.EpisodePath(w.ns, folder, ef)
+				facts := mediafiles.FactsFrom(sh.Name, sh.Year, sh.IDs, parseName(release), release, ".mkv")
+				ef := mediafiles.EpisodeFacts{NameFacts: facts, Order: mediafiles.OrderAired, Season: ep.Season, Episodes: []int{ep.Number}, Titles: []string{ep.Name}}
+				rel := mediafiles.EpisodePath(w.ns, folder, ef)
 				if err := w.placeholder(filepath.Join(lf.Path, filepath.FromSlash(rel)), i*1000+j); err != nil {
 					return err
 				}
@@ -769,7 +770,7 @@ func (w *world) showcaseArtists(ctx context.Context) error {
 // keepAlbums keeps up to n studio albums spread over the career, or with
 // allBut every studio album except the newest allBut.
 func (w *world) keepAlbums(ctx context.Context, id int64, n, allBut int) int {
-	parts, err := database.Select[domain.Part](ctx, w.s.Read(), "parts",
+	parts, err := database.Select[mediafiles.Part](ctx, w.s.Read(), "parts",
 		"title_id = ? AND kind = 'album' AND included = 1 AND release_type = 'album' AND release_date IS NOT NULL AND release_date < ? ORDER BY release_date",
 		id, database.FormatTime(time.Now()))
 	if err != nil {
@@ -795,7 +796,7 @@ func (w *world) keepAlbums(ctx context.Context, id int64, n, allBut int) int {
 // adoptArtist writes one placeholder per wanted track (named "NN - Track"
 // inside "Album (Year)"), deletes the artist and adopts its folder, so the
 // albums are matched to the files by the app's own adopt.
-func (w *world) adoptArtist(ctx context.Context, lf domain.LibraryFolder, id int64, e showcaseArtist) (int64, error) {
+func (w *world) adoptArtist(ctx context.Context, lf mediafiles.LibraryFolder, id int64, e showcaseArtist) (int64, error) {
 	db := w.s.Read()
 	var folder string
 	if err := db.QueryRowContext(ctx, "SELECT folder_name FROM versions WHERE title_id = ? AND is_main = 1", id).Scan(&folder); err != nil {

@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
@@ -26,7 +28,7 @@ func TestRenameUsesCheckedEditionOnceAndKeepsVersionsSeparate(t *testing.T) {
 		t.Fatal(err)
 	}
 	other := putFile(t, s, lf, titleID, "other.mkv", "Dune.Part.Two.2024.Theatrical.Cut.2160p.WEB-DL-HOLYARRS", "imported")
-	otherSlots, err := database.Select[domain.Slot](ctx, s.Read(), "slots", "version_id = ? ORDER BY id", otherVersion.ID)
+	otherSlots, err := database.Select[mediafiles.Slot](ctx, s.Read(), "slots", "version_id = ? ORDER BY id", otherVersion.ID)
 	if err != nil || len(otherSlots) != 1 {
 		t.Fatalf("other Version slots: %+v, %v", otherSlots, err)
 	}

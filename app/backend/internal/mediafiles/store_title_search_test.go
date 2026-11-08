@@ -1,4 +1,4 @@
-package store
+package mediafiles
 
 import (
 	"context"
@@ -11,7 +11,6 @@ import (
 	"testing/fstest"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
 func TestTitleSearchMigrationAndIndexMaintenance(t *testing.T) {
@@ -30,7 +29,7 @@ func TestTitleSearchMigrationAndIndexMaintenance(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	title := domain.Title{Kind: "movie", Name: "Amélie", SortName: "amelie", Aliases: []string{"Le Fabuleux Destin", "Fête\nNoire", "Light & Shadow"}, MetadataSource: "tmdb", WhyAdded: "by_hand", State: "active"}
+	title := Title{Kind: "movie", Name: "Amélie", SortName: "amelie", Aliases: []string{"Le Fabuleux Destin", "Fête\nNoire", "Light & Shadow"}, MetadataSource: "tmdb", WhyAdded: "by_hand", State: "active"}
 	title.NewPartsPolicy, title.ReleaseGate, title.GateDriver, title.Status = "all", "released", "none", "announced"
 	err = s.Write(context.Background(), func(tx *sql.Tx) error {
 		// The old schema lacks later title columns, so write the row by hand.
@@ -101,7 +100,7 @@ func TestTitleSearchMigrationAndIndexMaintenance(t *testing.T) {
 	if err := s.Write(context.Background(), func(tx *sql.Tx) error {
 		// database.Store.Update writes all columns even when only unrelated metadata changed.
 		title.Status = "released"
-		return database.Update(tx, "titles", &title, domain.System)
+		return database.Update(tx, "titles", &title, database.System)
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -110,7 +109,7 @@ func TestTitleSearchMigrationAndIndexMaintenance(t *testing.T) {
 	}
 	if err := s.Write(context.Background(), func(tx *sql.Tx) error {
 		title.Name, title.SortName, title.Aliases = "Cidade de Deus", "cidade de deus", []string{"City of God"}
-		return database.Update(tx, "titles", &title, domain.System)
+		return database.Update(tx, "titles", &title, database.System)
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -127,7 +126,7 @@ func TestTitleSearchMigrationAndIndexMaintenance(t *testing.T) {
 	match("cidade", 0)
 	if err := s.Write(context.Background(), func(tx *sql.Tx) error {
 		title.ID = 0
-		_, err := database.Insert(tx, "titles", &title, domain.System)
+		_, err := database.Insert(tx, "titles", &title, database.System)
 		return err
 	}); err != nil {
 		t.Fatal(err)
@@ -138,7 +137,7 @@ func TestTitleSearchMigrationAndIndexMaintenance(t *testing.T) {
 	for _, state := range []string{"removed", "active"} {
 		if err := s.Write(context.Background(), func(tx *sql.Tx) error {
 			title.State = state
-			return database.Update(tx, "titles", &title, domain.System)
+			return database.Update(tx, "titles", &title, database.System)
 		}); err != nil {
 			t.Fatal(err)
 		}
@@ -178,9 +177,9 @@ func TestSearchTitlesOriginalNameAccentsAndYear(t *testing.T) {
 	orig := "Le Fabuleux Destin d'Amélie Poulain"
 	add := func(name string, year int, original *string) {
 		t.Helper()
-		title := domain.Title{Kind: "movie", Name: name, SortName: name, Year: &year, OriginalName: original, MetadataSource: "tmdb", WhyAdded: "by_hand", State: "active",
+		title := Title{Kind: "movie", Name: name, SortName: name, Year: &year, OriginalName: original, MetadataSource: "tmdb", WhyAdded: "by_hand", State: "active",
 			NewPartsPolicy: "all", ReleaseGate: "released", GateDriver: "none", Status: "released"}
-		if err := s.Write(context.Background(), func(tx *sql.Tx) error { _, err := database.Insert(tx, "titles", &title, domain.System); return err }); err != nil {
+		if err := s.Write(context.Background(), func(tx *sql.Tx) error { _, err := database.Insert(tx, "titles", &title, database.System); return err }); err != nil {
 			t.Fatal(err)
 		}
 	}

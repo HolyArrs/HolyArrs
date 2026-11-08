@@ -9,11 +9,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/tagset"
 )
 
 var (
@@ -314,7 +315,7 @@ func fill(in Input, d *domain.Downloader, isNew bool) error {
 		d.ClearFinished = true
 	}
 	if in.Tags != nil || isNew || d.Tags == nil {
-		d.Tags = tagset.Clean(in.Tags)
+		d.Tags = mediafiles.CleanTags(in.Tags)
 	}
 	if isNew {
 		d.AfterImport, d.State = "leave", "ok"

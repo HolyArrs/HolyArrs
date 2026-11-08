@@ -1,4 +1,4 @@
-package judge
+package mediafiles
 
 import (
 	"strings"
@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
 var musicLib = []TitleRef{
@@ -88,12 +87,12 @@ func musicCase(t *testing.T, id string) string {
 }
 
 func TestMusicVerdicts(t *testing.T) {
-	rules := domain.LosslessFirst()
+	rules := LosslessFirst()
 	for _, c := range musicVerdicts {
 		t.Run(c.id, func(t *testing.T) {
 			name := musicCase(t, c.id)
 			p := releasename.Parse(name, releasename.Hints{Music: true})
-			rel := Release{Name: name, Parse: p, Size: c.size << 20, Protocol: "torrent", PublishedAt: time.Now().Add(-time.Hour)}
+			rel := ReleaseFacts{Name: name, Parse: p, Size: c.size << 20, Protocol: "torrent", PublishedAt: time.Now().Add(-time.Hour)}
 			m := MatchTitle(p, musicLib)
 			if m.Title == nil || m.Title.ID != 1 {
 				t.Fatalf("matched %+v", m)
@@ -127,7 +126,7 @@ func TestMusicVerdicts(t *testing.T) {
 }
 
 func TestMusicGoodEnoughAndBetter(t *testing.T) {
-	rules := domain.LosslessFirst()
+	rules := LosslessFirst()
 	mp3 := musicCase(t, "U04")
 	flac := musicCase(t, "U01")
 	if ReachesGoodEnough(mp3, rules) || !ReachesGoodEnough(flac, rules) {
@@ -138,19 +137,19 @@ func TestMusicGoodEnoughAndBetter(t *testing.T) {
 		t.Fatalf("current %+v", cur)
 	}
 	p := releasename.Parse(flac, releasename.Hints{Music: true})
-	if !Gains(Release{Name: flac, Parse: p}, rules, &cur) {
+	if !Gains(ReleaseFacts{Name: flac, Parse: p}, rules, &cur) {
 		t.Fatal("lossless should replace a 320 copy")
 	}
 	low := releasename.Parse(mp3, releasename.Hints{Music: true})
 	fl := CurrentOf(flac, time.Now(), rules)
-	if Gains(Release{Name: mp3, Parse: low}, rules, &fl) {
+	if Gains(ReleaseFacts{Name: mp3, Parse: low}, rules, &fl) {
 		t.Fatal("a 320 copy never replaces lossless")
 	}
 	if s, i := StepOf(flac, rules); s != "lossless" || i != 3 {
 		t.Fatalf("step of %s %d", s, i)
 	}
 	// Video Pick rules cannot judge music and say why.
-	v := Judge(Release{Name: flac, Parse: p, Size: 400 << 20}, SlotSet{Match: MatchTitle(p, musicLib), SlotIDs: []int64{1}, Out: true}, domain.GoodEveryday())
+	v := Judge(ReleaseFacts{Name: flac, Parse: p, Size: 400 << 20}, SlotSet{Match: MatchTitle(p, musicLib), SlotIDs: []int64{1}, Out: true}, GoodEveryday())
 	if v.Passed || !strings.Contains(v.Reasons[len(v.Reasons)-1].Detail+fmtReasons(v), "no music steps") {
 		t.Fatalf("video rules judged music: %+v", v.Reasons)
 	}
@@ -250,7 +249,7 @@ func TestMusicMatchingSameYearRefused(t *testing.T) {
 func TestMusicSafetyWordExplained(t *testing.T) {
 	name := "Velvet Cartography - Password Songs (2019) [FLAC]"
 	p := releasename.Parse(name, releasename.Hints{Music: true})
-	v := Judge(Release{Name: name, Parse: p, Size: 400 << 20}, SlotSet{Match: MatchTitle(p, musicLib), SlotIDs: []int64{1}, RuntimeMinutes: 45, Out: true}, domain.LosslessFirst())
+	v := Judge(ReleaseFacts{Name: name, Parse: p, Size: 400 << 20}, SlotSet{Match: MatchTitle(p, musicLib), SlotIDs: []int64{1}, RuntimeMinutes: 45, Out: true}, LosslessFirst())
 	if v.Passed || !strings.Contains(fmtReasons(v), "archive needs a password") {
 		t.Fatalf("%+v", v.Reasons)
 	}

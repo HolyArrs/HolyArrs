@@ -11,6 +11,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
@@ -56,7 +58,7 @@ func (a *API) searchTitle(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusBadRequest, "item_id, season, album_id and version_id are for shows and artists")
 		return
 	}
-	slots, err := database.Select[domain.Slot](r.Context(), a.s.Store.Read(), "slots",
+	slots, err := database.Select[mediafiles.Slot](r.Context(), a.s.Store.Read(), "slots",
 		"item_id IN (SELECT id FROM items WHERE title_id = ?) ORDER BY id", t.ID)
 	if err != nil {
 		internal(w, err)

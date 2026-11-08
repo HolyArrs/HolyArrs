@@ -11,6 +11,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
@@ -80,10 +82,10 @@ func TestEpisodeCaseOnlyRenames(t *testing.T) {
 		slots[label] = sid
 	}
 	rows.Close()
-	put := func(rel string, slotIDs ...int64) domain.File {
+	put := func(rel string, slotIDs ...int64) mediafiles.File {
 		writeFile(t, filepath.Join(lf.Path, filepath.FromSlash(rel)), "video:"+rel)
 		release := "Lab.Show.1080p.WEB.H264-HOLYARRS"
-		f := domain.File{SlotIDs: slotIDs, VersionID: vID, RelativePath: rel, Size: 10, AddedAt: now, Languages: []string{},
+		f := mediafiles.File{SlotIDs: slotIDs, VersionID: vID, RelativePath: rel, Size: 10, AddedAt: now, Languages: []string{},
 			MediaInfo: map[string]any{"step": "1080p_web"}, ReleaseName: &release, Origin: "imported", PlacedBy: "hardlink", Role: "main", State: "present"}
 		if err := s.Write(ctx, func(tx *sql.Tx) error { _, err := database.Insert(tx, "files", &f, domain.System); return err }); err != nil {
 			t.Fatal(err)

@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
@@ -59,19 +61,19 @@ func TestShowsMigrationKeepsMovies(t *testing.T) {
 	if b, _ := filepath.Glob(filepath.Join(dir, "backups", "main-pre-update-*-to-*.db")); len(b) != 1 {
 		t.Fatalf("backups before 0020: %v", b)
 	}
-	var back domain.Title
+	var back mediafiles.Title
 	if err := database.Get(ctx, s.Read(), "titles", 1, &back); err != nil {
 		t.Fatal(err)
 	}
 	if back.Name != "Old Movie" || back.Kind != "movie" || back.SeasonChoice != nil || back.Network != nil || back.GateDriver != "digital" {
 		t.Fatalf("movie after the migration %+v", back)
 	}
-	var bi domain.Item
+	var bi mediafiles.Item
 	if err := database.Get(ctx, s.Read(), "items", 1, &bi); err != nil || bi.Kind != "movie" || bi.AirDay != nil || bi.DroppedAt != nil || len(bi.SourceIDs) != 0 {
 		t.Fatalf("movie item %+v %v", bi, err)
 	}
-	var bs domain.Slot
-	if err := database.Get(ctx, s.Read(), "slots", 1, &bs); err != nil || bs.State != domain.SlotInLibrary {
+	var bs mediafiles.Slot
+	if err := database.Get(ctx, s.Read(), "slots", 1, &bs); err != nil || bs.State != mediafiles.SlotInLibrary {
 		t.Fatalf("slot %+v %v", bs, err)
 	}
 	var n int
@@ -101,16 +103,16 @@ func TestEpisodeRows(t *testing.T) {
 	ctx := context.Background()
 	air := time.Date(2026, 1, 5, 2, 0, 0, 0, time.UTC)
 	day := "2026-01-04"
-	var show domain.Title
-	var eps []domain.Item
+	var show mediafiles.Title
+	var eps []mediafiles.Item
 	var slots []int64
 	err := s.Write(ctx, func(tx *sql.Tx) error {
-		lf := domain.LibraryFolder{Path: dir, Kind: "show", Label: "Shows", Health: "ok", SameDiskAs: []int64{}}
+		lf := mediafiles.LibraryFolder{Path: dir, Kind: "show", Label: "Shows", Health: "ok", SameDiskAs: []int64{}}
 		if _, err := database.Insert(tx, "library_folders", &lf, domain.System); err != nil {
 			return err
 		}
 		choice, order, net, at, tz := "future", "aired", "Lab TV", "21:00", "America/New_York"
-		show = domain.Title{Kind: "show", Name: "Lab Show", SortName: "lab show", Aliases: []string{}, SourceIDs: map[string]string{"tmdb": "100", "tvdb": "200"},
+		show = mediafiles.Title{Kind: "show", Name: "Lab Show", SortName: "lab show", Aliases: []string{}, SourceIDs: map[string]string{"tmdb": "100", "tvdb": "200"},
 			MetadataSource: "tmdb", EpisodeOrder: &order, KeepUpToDate: true, NewPartsPolicy: "all", ReleaseGate: "released", MusicTypes: []string{},
 			WhyAdded: "by_hand", Artwork: []string{}, Status: "running", State: "active", GateDriver: "none",
 			SeasonChoice: &choice, Network: &net, AirTime: &at, TimeZone: &tz}
@@ -121,17 +123,17 @@ func TestEpisodeRows(t *testing.T) {
 		if err := tx.QueryRow("SELECT id FROM pick_rules ORDER BY id LIMIT 1").Scan(&pr); err != nil {
 			return err
 		}
-		v := domain.Version{TitleID: show.ID, Label: "Main", PickRulesID: pr, LibraryFolderID: lf.ID, FolderName: "Lab Show", KeepUpToDate: true, IsMain: true}
+		v := mediafiles.Version{TitleID: show.ID, Label: "Main", PickRulesID: pr, LibraryFolderID: lf.ID, FolderName: "Lab Show", KeepUpToDate: true, IsMain: true}
 		if _, err := database.Insert(tx, "versions", &v, domain.System); err != nil {
 			return err
 		}
 		for _, sn := range []int{0, 1} {
-			p := domain.Part{TitleID: show.ID, Kind: "season", Number: intp(sn), Name: "Season", KeepUpToDate: sn > 0, SourceIDs: map[string]string{}, Pressings: []domain.Pressing{}}
+			p := mediafiles.Part{TitleID: show.ID, Kind: "season", Number: intp(sn), Name: "Season", KeepUpToDate: sn > 0, SourceIDs: map[string]string{}, Pressings: []mediafiles.Pressing{}}
 			if _, err := database.Insert(tx, "parts", &p, domain.System); err != nil {
 				return err
 			}
 			for ep := 1; ep <= 2; ep++ {
-				it := domain.Item{TitleID: show.ID, PartID: &p.ID, Kind: "episode", Numbers: domain.Numbers{Season: intp(sn), Episode: intp(ep)},
+				it := mediafiles.Item{TitleID: show.ID, PartID: &p.ID, Kind: "episode", Numbers: mediafiles.Numbers{Season: intp(sn), Episode: intp(ep)},
 					AirDate: &air, AirDay: &day, KeepUpToDate: sn > 0, SourceIDs: map[string]string{"tmdb": "e1"}}
 				if sn > 0 {
 					it.Numbers.Absolute = intp(ep)
@@ -140,7 +142,7 @@ func TestEpisodeRows(t *testing.T) {
 					return err
 				}
 				eps = append(eps, it)
-				sl := domain.Slot{ItemID: it.ID, VersionID: v.ID, State: domain.SlotNotOutYet}
+				sl := mediafiles.Slot{ItemID: it.ID, VersionID: v.ID, State: mediafiles.SlotNotOutYet}
 				if _, err := database.Insert(tx, "slots", &sl, domain.System); err != nil {
 					return err
 				}
@@ -148,7 +150,7 @@ func TestEpisodeRows(t *testing.T) {
 			}
 		}
 		// One file holds S01E01 and S01E02.
-		f := domain.File{SlotIDs: []int64{slots[2], slots[3]}, VersionID: v.ID, RelativePath: "Lab Show/Season 01/Lab Show - S01E01-E02.mkv",
+		f := mediafiles.File{SlotIDs: []int64{slots[2], slots[3]}, VersionID: v.ID, RelativePath: "Lab Show/Season 01/Lab Show - S01E01-E02.mkv",
 			Languages: []string{}, Origin: "imported", PlacedBy: "hardlink", Role: "main", State: "present"}
 		if _, err := database.Insert(tx, "files", &f, domain.System); err != nil {
 			return err
@@ -159,11 +161,11 @@ func TestEpisodeRows(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	var back domain.Title
+	var back mediafiles.Title
 	if err := database.Get(ctx, s.Read(), "titles", show.ID, &back); err != nil || *back.SeasonChoice != "future" || *back.TimeZone != "America/New_York" {
 		t.Fatalf("show back %+v %v", back, err)
 	}
-	var bi domain.Item
+	var bi mediafiles.Item
 	if err := database.Get(ctx, s.Read(), "items", eps[2].ID, &bi); err != nil || *bi.Numbers.Season != 1 || *bi.Numbers.Absolute != 1 || *bi.AirDay != day ||
 		!bi.AirDate.Equal(air) || bi.SourceIDs["tmdb"] != "e1" {
 		t.Fatalf("episode back %+v %v", bi, err)

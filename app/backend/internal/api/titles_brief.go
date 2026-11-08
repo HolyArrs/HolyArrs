@@ -4,7 +4,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 )
 
@@ -28,7 +29,7 @@ type briefSlot struct {
 	State string `json:"state"`
 }
 
-func (a *API) listTitlesBrief(w http.ResponseWriter, r *http.Request, ts []domain.Title) {
+func (a *API) listTitlesBrief(w http.ResponseWriter, r *http.Request, ts []mediafiles.Title) {
 	// Like the full list, only movies carry their slots (all of them, by id).
 	slots := map[int64][]briefSlot{}
 	rows, err := a.s.Store.Read().QueryContext(r.Context(), `SELECT i.title_id, s.state FROM slots s

@@ -1,4 +1,4 @@
-package domain
+package mediafiles
 
 import (
 	"errors"
@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"strings"
 	"unicode/utf8"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 )
 
 // OwnTrait is a trait a person makes (#97): a test on a Release's name or
@@ -14,7 +16,7 @@ import (
 // the key OwnTraitKey(id). Each term is plain words, matched anywhere in
 // the name (or as the whole group) ignoring case, or a /pattern/.
 type OwnTrait struct {
-	Meta
+	database.Meta
 	Name  string   `db:"name"`
 	Match string   `db:"match"` // name, group
 	Terms []string `db:"terms,json"`

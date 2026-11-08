@@ -11,6 +11,8 @@ import (
 	"unicode"
 	"unicode/utf8"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"golang.org/x/text/language"
@@ -90,8 +92,8 @@ func labelTaken(tx *sql.Tx, titleID, exceptID int64, label string) (bool, error)
 
 // checkVersionFolder finds and checks a Library folder for a new Version.
 // A show's Version needs a show Library folder; every other title a movie one.
-func checkVersionFolder(ctx context.Context, db database.Querier, id int64, titleKind string, downloadPaths []string) (domain.LibraryFolder, error) {
-	var lf domain.LibraryFolder
+func checkVersionFolder(ctx context.Context, db database.Querier, id int64, titleKind string, downloadPaths []string) (mediafiles.LibraryFolder, error) {
+	var lf mediafiles.LibraryFolder
 	if err := database.Get(ctx, db, "library_folders", id, &lf); errors.Is(err, database.ErrNotFound) {
 		return lf, ErrNoFolder
 	} else if err != nil {
@@ -114,8 +116,8 @@ func checkVersionFolder(ctx context.Context, db database.Querier, id int64, titl
 // state follows the title's Release gate. When another Version of the title
 // already sits in the same Library folder, the folder name gets the label in
 // brackets so the copies never share a folder.
-func addVersionTx(ctx context.Context, tx *sql.Tx, t domain.Title, in VersionInput, now time.Time, by domain.Actor) (domain.Version, error) {
-	var v domain.Version
+func addVersionTx(ctx context.Context, tx *sql.Tx, t mediafiles.Title, in VersionInput, now time.Time, by domain.Actor) (mediafiles.Version, error) {
+	var v mediafiles.Version
 	label, err := cleanLabel(in.Label)
 	if err != nil {
 		return v, err
@@ -125,7 +127,7 @@ func addVersionTx(ctx context.Context, tx *sql.Tx, t domain.Title, in VersionInp
 	} else if taken {
 		return v, ErrVersionLabel
 	}
-	mains, err := database.Select[domain.Version](ctx, tx, "versions", "title_id = ? ORDER BY is_main DESC, id LIMIT 1", t.ID)
+	mains, err := database.Select[mediafiles.Version](ctx, tx, "versions", "title_id = ? ORDER BY is_main DESC, id LIMIT 1", t.ID)
 	if err != nil {
 		return v, err
 	}
@@ -172,18 +174,18 @@ func addVersionTx(ctx context.Context, tx *sql.Tx, t domain.Title, in VersionInp
 	if clash > 0 {
 		return v, ErrVersionFolder
 	}
-	v = domain.Version{TitleID: t.ID, Label: label, PickRulesID: in.PickRulesID, LibraryFolderID: in.LibraryFolderID,
+	v = mediafiles.Version{TitleID: t.ID, Label: label, PickRulesID: in.PickRulesID, LibraryFolderID: in.LibraryFolderID,
 		FolderName: folder, KeepUpToDate: keep, Edition: edition, AudioLanguages: audio}
 	if _, err := database.Insert(tx, "versions", &v, by); err != nil {
 		return v, err
 	}
-	items, err := database.Select[domain.Item](ctx, tx, "items", "title_id = ? ORDER BY id", t.ID)
+	items, err := database.Select[mediafiles.Item](ctx, tx, "items", "title_id = ? ORDER BY id", t.ID)
 	if err != nil {
 		return v, err
 	}
-	state := domain.SlotNotOutYet
+	state := mediafiles.SlotNotOutYet
 	if GateOpen(t.GateDriver, t.GateOpensAt, now) {
-		state = domain.SlotWanted
+		state = mediafiles.SlotWanted
 	}
 	reason := gateReason(t.GateDriver, t.GateOpensAt)
 	var wait time.Duration
@@ -198,12 +200,12 @@ func addVersionTx(ctx context.Context, tx *sql.Tx, t domain.Title, in VersionInp
 		if it.Kind == "episode" {
 			// Each episode opens on its own air date, as in the main Version.
 			open, r := EpisodeGate(it.AirDate, wait, now)
-			state, reason = domain.SlotNotOutYet, r
+			state, reason = mediafiles.SlotNotOutYet, r
 			if open {
-				state = domain.SlotWanted
+				state = mediafiles.SlotWanted
 			}
 		}
-		sl := &domain.Slot{ItemID: it.ID, VersionID: v.ID, State: state, LastReason: &reason}
+		sl := &mediafiles.Slot{ItemID: it.ID, VersionID: v.ID, State: state, LastReason: &reason}
 		if _, err := database.Insert(tx, "slots", sl, by); err != nil {
 			return v, err
 		}
@@ -213,10 +215,10 @@ func addVersionTx(ctx context.Context, tx *sql.Tx, t domain.Title, in VersionInp
 
 // AddVersion adds one more wanted copy (for example 4K) to a title that is
 // already in the Library.
-func AddVersion(ctx context.Context, s *database.Store, titleID int64, in VersionInput, downloadPaths []string, now time.Time, by domain.Actor) (domain.Version, error) {
+func AddVersion(ctx context.Context, s *database.Store, titleID int64, in VersionInput, downloadPaths []string, now time.Time, by domain.Actor) (mediafiles.Version, error) {
 	unlock := s.LockFiles()
 	defer unlock()
-	var v domain.Version
+	var v mediafiles.Version
 	if _, err := cleanLabel(in.Label); err != nil {
 		return v, err
 	}
@@ -232,7 +234,7 @@ func AddVersion(ctx context.Context, s *database.Store, titleID int64, in Versio
 		}
 	}
 	err := s.Write(ctx, func(tx *sql.Tx) error {
-		var t domain.Title
+		var t mediafiles.Title
 		if err := database.Get(ctx, tx, "titles", titleID, &t); err != nil {
 			return err
 		}
@@ -247,8 +249,8 @@ func AddVersion(ctx context.Context, s *database.Store, titleID int64, in Versio
 }
 
 // versionOf reads a Version and checks it belongs to the title.
-func versionOf(ctx context.Context, q database.Querier, titleID, versionID int64) (domain.Version, error) {
-	var v domain.Version
+func versionOf(ctx context.Context, q database.Querier, titleID, versionID int64) (mediafiles.Version, error) {
+	var v mediafiles.Version
 	if err := database.Get(ctx, q, "versions", versionID, &v); err != nil {
 		return v, err
 	}
@@ -260,16 +262,16 @@ func versionOf(ctx context.Context, q database.Querier, titleID, versionID int64
 
 // EditVersion changes one Version's label, Pick rules or Keep up to date.
 // Moving a Version to another Library folder is the move Job's work.
-func EditVersion(ctx context.Context, s *database.Store, titleID, versionID int64, c VersionChange, by domain.Actor) (domain.Version, error) {
+func EditVersion(ctx context.Context, s *database.Store, titleID, versionID int64, c VersionChange, by domain.Actor) (mediafiles.Version, error) {
 	unlock := s.LockFiles()
 	defer unlock()
-	var v domain.Version
+	var v mediafiles.Version
 	err := s.Write(ctx, func(tx *sql.Tx) error {
 		var err error
 		if v, err = versionOf(ctx, tx, titleID, versionID); err != nil {
 			return err
 		}
-		var t domain.Title
+		var t mediafiles.Title
 		if err := database.Get(ctx, tx, "titles", titleID, &t); err != nil {
 			return err
 		}
@@ -410,7 +412,7 @@ func CheckAudioLanguages(kind string, audio []string) error {
 }
 
 // VersionEvent records a change to a title's Versions in History.
-func (s *Service) VersionEvent(ctx context.Context, t domain.Title, summary string, v domain.Version, by domain.Actor) {
+func (s *Service) VersionEvent(ctx context.Context, t mediafiles.Title, summary string, v mediafiles.Version, by domain.Actor) {
 	s.event(ctx, &domain.Event{Actor: by, Kind: domain.EventVersionChanged, TitleID: &t.ID, Summary: summary + " of " + t.Name,
 		Data:     map[string]any{"version_id": v.ID, "label": v.Label, "pick_rules_id": v.PickRulesID, "library_folder_id": v.LibraryFolderID},
 		GroupKey: groupKey(t.ID)})

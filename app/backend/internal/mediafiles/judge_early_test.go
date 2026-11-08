@@ -1,4 +1,4 @@
-package judge
+package mediafiles
 
 import (
 	"strings"
@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
 func reasonOf(v Verdict, rule string) (Reason, bool) {
@@ -24,26 +23,26 @@ func reasonOf(v Verdict, rule string) (Reason, bool) {
 func TestPostedEarly(t *testing.T) {
 	out := time.Date(2026, 5, 1, 0, 0, 0, 0, time.UTC)
 	name := "The.Lantern.Keepers.2021.1080p.WEB-DL.H264-HOLYARRS"
-	rel := Release{Name: name, Parse: releasename.Parse(name, releasename.Hints{}), Size: 4 * gb, Protocol: "torrent", Seeders: ptr(50),
+	rel := ReleaseFacts{Name: name, Parse: releasename.Parse(name, releasename.Hints{}), Size: 4 * gb, Protocol: "torrent", Seeders: ptr(50),
 		PublishedAt: out.Add(-72 * time.Hour)}
 	set := setFor(t, rel, nil)
 	set.OutSince, set.Checks = &out, Checks{Early: true, Grace: 24 * time.Hour, Tiny: true}
-	v := Judge(rel, set, domain.GoodEveryday())
+	v := Judge(rel, set, GoodEveryday())
 	if r, ok := reasonOf(v, "safety:posted_early"); !ok || r.Effect != "fail" || v.Passed {
 		t.Fatalf("early: %+v", v.Reasons)
 	}
 	hand := set
 	hand.HandSearch = true
-	if r, ok := reasonOf(Judge(rel, hand, domain.GoodEveryday()), "safety:posted_early"); !ok || r.Effect != "warn" {
+	if r, ok := reasonOf(Judge(rel, hand, GoodEveryday()), "safety:posted_early"); !ok || r.Effect != "warn" {
 		t.Fatalf("hand search: %+v", r)
 	}
 	rel.PublishedAt = out.Add(-12 * time.Hour) // inside the grace
-	if _, ok := reasonOf(Judge(rel, set, domain.GoodEveryday()), "safety:posted_early"); ok {
+	if _, ok := reasonOf(Judge(rel, set, GoodEveryday()), "safety:posted_early"); ok {
 		t.Fatal("refused inside the grace")
 	}
 	rel.PublishedAt = out.Add(-72 * time.Hour)
 	set.Checks.Early = false
-	if _, ok := reasonOf(Judge(rel, set, domain.GoodEveryday()), "safety:posted_early"); ok {
+	if _, ok := reasonOf(Judge(rel, set, GoodEveryday()), "safety:posted_early"); ok {
 		t.Fatal("refused with the check off")
 	}
 }
@@ -52,10 +51,10 @@ func TestPostedEarly(t *testing.T) {
 // for an album's tracks.
 func TestTooSmall(t *testing.T) {
 	name := "The.Lantern.Keepers.2021.1080p.WEB-DL.H264-HOLYARRS"
-	rel := Release{Name: name, Parse: releasename.Parse(name, releasename.Hints{}), Size: 30 * mb, Protocol: "torrent", Seeders: ptr(50)}
+	rel := ReleaseFacts{Name: name, Parse: releasename.Parse(name, releasename.Hints{}), Size: 30 * mb, Protocol: "torrent", Seeders: ptr(50)}
 	set := setFor(t, rel, nil)
 	set.Checks = Checks{Tiny: true}
-	rules := domain.GoodEveryday()
+	rules := GoodEveryday()
 	rules.SizeLimits = nil
 	if r, ok := reasonOf(Judge(rel, set, rules), "safety:too_small"); !ok || r.Effect != "fail" {
 		t.Fatalf("30 MB for 118 minutes: %+v", r)
@@ -71,9 +70,9 @@ func TestTooSmall(t *testing.T) {
 	}
 	album := "Northern Lanterns - Harbour Songs (2024) [FLAC]"
 	p := releasename.Parse(album, releasename.Hints{Music: true})
-	mrel := Release{Name: album, Parse: p, Size: 2 << 20}
+	mrel := ReleaseFacts{Name: album, Parse: p, Size: 2 << 20}
 	mset := SlotSet{Match: MatchTitle(p, musicLib), SlotIDs: []int64{1, 2, 3, 4, 5, 6}, Out: true, Checks: Checks{Tiny: true}}
-	if r, ok := reasonOf(Judge(mrel, mset, domain.GoodEveryday()), "safety:too_small"); !ok || r.Effect != "fail" {
+	if r, ok := reasonOf(Judge(mrel, mset, GoodEveryday()), "safety:too_small"); !ok || r.Effect != "fail" {
 		t.Fatalf("2 MB for 6 tracks: %+v", r)
 	}
 }
@@ -83,10 +82,10 @@ func TestTooSmall(t *testing.T) {
 // person's own search adds no line.
 func TestUnknownSizeAndDate(t *testing.T) {
 	name := "The.Lantern.Keepers.2021.1080p.WEB-DL.H264-HOLYARRS"
-	rel := Release{Name: name, Parse: releasename.Parse(name, releasename.Hints{}), Protocol: "torrent", Seeders: ptr(50)}
+	rel := ReleaseFacts{Name: name, Parse: releasename.Parse(name, releasename.Hints{}), Protocol: "torrent", Seeders: ptr(50)}
 	set := setFor(t, rel, nil)
 	set.Checks = Checks{Early: true, Tiny: true}
-	rules := domain.GoodEveryday()
+	rules := GoodEveryday()
 	rules.SizeLimits = nil
 	v := Judge(rel, set, rules)
 	for _, rule := range []string{"safety:size_unknown", "safety:date_unknown"} {
@@ -114,11 +113,11 @@ func TestUnknownSizeAndDate(t *testing.T) {
 func TestPackFloorWithoutRuntimes(t *testing.T) {
 	// Judged as one Release over unknown-length episodes: the floor only.
 	name := "The.Lantern.Keepers.2021.1080p.WEB-DL.H264-HOLYARRS"
-	rel := Release{Name: name, Parse: releasename.Parse(name, releasename.Hints{}), Size: 150 * mb, Protocol: "torrent", Seeders: ptr(50)}
+	rel := ReleaseFacts{Name: name, Parse: releasename.Parse(name, releasename.Hints{}), Size: 150 * mb, Protocol: "torrent", Seeders: ptr(50)}
 	set := setFor(t, rel, nil)
 	set.RuntimeMinutes, set.FloorEpisodes = 0, 10
 	set.Checks = Checks{Tiny: true, EpisodeMinutes: 20}
-	rules := domain.GoodEveryday()
+	rules := GoodEveryday()
 	rules.SizeLimits = nil
 	if r, ok := reasonOf(Judge(rel, set, rules), "safety:too_small"); !ok || r.Effect != "fail" || !strings.Contains(r.Detail, "200 minutes") {
 		t.Fatalf("150 MB for 10 episodes: %+v", r)

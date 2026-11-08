@@ -6,6 +6,8 @@ import (
 	"slices"
 	"strconv"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/asks"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
@@ -104,7 +106,7 @@ func (a *API) makeReport(w http.ResponseWriter, r *http.Request) {
 	}
 	// The same title check as GET /titles/{id}: no such title and a title
 	// above a Kid's limit answer alike, and a title of a part that is off waits.
-	var t domain.Title
+	var t mediafiles.Title
 	if err := database.Get(r.Context(), a.s.Store.Read(), "titles", in.TitleID, &t); err != nil || !a.titleAllowed(r, t) {
 		if err != nil && !errors.Is(err, database.ErrNotFound) {
 			internal(w, err)

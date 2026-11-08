@@ -1,4 +1,4 @@
-package domain
+package mediafiles
 
 // Ladder steps, low to high (pick-rules.md section 5).
 var Ladder = []string{

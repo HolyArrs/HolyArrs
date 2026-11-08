@@ -10,11 +10,11 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Live search (music plan 2026-10-22, Phase 4): the search field's dropdown.
@@ -227,7 +227,7 @@ func mergeSuggest(rows []SuggestRow) []SuggestRow {
 func (a *API) suggestLocal(r *http.Request, q, kind string, music bool) []SuggestRow {
 	ctx := withLookupMemo(r.Context())
 	out := []SuggestRow{}
-	visible := func(t domain.Title) bool {
+	visible := func(t mediafiles.Title) bool {
 		if p, ok := parts.ForTitleKind(t.Kind); ok && !a.partIsOn(p) && !a.s.Parts.SafeMode {
 			return false
 		}
@@ -235,7 +235,7 @@ func (a *API) suggestLocal(r *http.Request, q, kind string, music bool) []Sugges
 	}
 	scopeOf := map[string]string{"movie": "movie", "show": "show", "artist": "music"}
 	if kind != "people" {
-		if ts, err := store.SearchTitles(ctx, a.s.Store, q); err == nil {
+		if ts, err := mediafiles.SearchTitles(ctx, a.s.Store, q); err == nil {
 			n := 0
 			for _, t := range ts {
 				if n == 3*suggestFromEach {

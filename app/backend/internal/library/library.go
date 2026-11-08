@@ -13,15 +13,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/judge"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/naming"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Errors from adding a movie.
@@ -195,9 +194,9 @@ func AddMovie(ctx context.Context, s *database.Store, m metadata.Movie, opt AddO
 
 	// Pick the Library folder and check it on disk before taking the writer.
 	db := s.Read()
-	var lf domain.LibraryFolder
+	var lf mediafiles.LibraryFolder
 	if opt.LibraryFolderID == 0 {
-		fs, err := database.Select[domain.LibraryFolder](ctx, db, "library_folders", "kind = 'movie' ORDER BY id LIMIT 1")
+		fs, err := database.Select[mediafiles.LibraryFolder](ctx, db, "library_folders", "kind = 'movie' ORDER BY id LIMIT 1")
 		if err != nil {
 			return 0, err
 		}
@@ -231,7 +230,7 @@ func AddMovie(ctx context.Context, s *database.Store, m metadata.Movie, opt AddO
 		}
 	}
 
-	ns, err := naming.Read(ctx, db)
+	ns, err := mediafiles.ReadNaming(ctx, db)
 	if err != nil {
 		return 0, err
 	}
@@ -244,9 +243,9 @@ func AddMovie(ctx context.Context, s *database.Store, m metadata.Movie, opt AddO
 	ds := Dates{Cinema: m.CinemaDate, Digital: m.DigitalDate, Physical: m.PhysicalDate}
 	driver, opens := Gate(gate, delay, ds)
 	aliases := append([]string{}, opt.Aliases...)
-	state := domain.SlotNotOutYet
+	state := mediafiles.SlotNotOutYet
 	if GateOpen(driver, opens, now) {
-		state = domain.SlotWanted
+		state = mediafiles.SlotWanted
 	}
 	unlock := s.LockFiles()
 	defer unlock()
@@ -267,13 +266,13 @@ func AddMovie(ctx context.Context, s *database.Store, m metadata.Movie, opt AddO
 			prID = *lf.DefaultPickRules
 		}
 		if prID == 0 {
-			if err := tx.QueryRow("SELECT id FROM pick_rules WHERE name = ?", domain.GoodEverydayName).Scan(&prID); err != nil {
+			if err := tx.QueryRow("SELECT id FROM pick_rules WHERE name = ?", mediafiles.GoodEverydayName).Scan(&prID); err != nil {
 				return fmt.Errorf("pick rules: %w", err)
 			}
 		} else if err := pickRulesFor(tx, &prID, "movie"); err != nil {
 			return err
 		}
-		t := &domain.Title{Kind: "movie", Aliases: aliases, MetadataSource: "tmdb", KeepUpToDate: keep, NewPartsPolicy: "all",
+		t := &mediafiles.Title{Kind: "movie", Aliases: aliases, MetadataSource: "tmdb", KeepUpToDate: keep, NewPartsPolicy: "all",
 			ReleaseGate: gate, GateDelayDays: delay, MusicTypes: []string{}, WhyAdded: opt.WhyAdded, Artwork: []string{},
 			State: "active", GateDriver: driver, GateOpensAt: opens}
 		applyMovie(t, m, now)
@@ -283,7 +282,7 @@ func AddMovie(ctx context.Context, s *database.Store, m metadata.Movie, opt AddO
 		if err := syncMovieCollectionTx(ctx, tx, t.ID, m); err != nil {
 			return err
 		}
-		it := &domain.Item{TitleID: t.ID, Kind: "movie", KeepUpToDate: keep}
+		it := &mediafiles.Item{TitleID: t.ID, Kind: "movie", KeepUpToDate: keep}
 		if m.Runtime > 0 {
 			rt := m.Runtime
 			it.Runtime = &rt
@@ -295,19 +294,19 @@ func AddMovie(ctx context.Context, s *database.Store, m metadata.Movie, opt AddO
 		if t.Year != nil {
 			year = *t.Year
 		}
-		folderName := naming.Folder(ns, naming.Facts{Title: t.Name, Year: year, TMDB: t.SourceIDs["tmdb"], IMDB: t.SourceIDs["imdb"]})
+		folderName := mediafiles.Folder(ns, mediafiles.NameFacts{Title: t.Name, Year: year, TMDB: t.SourceIDs["tmdb"], IMDB: t.SourceIDs["imdb"]})
 		if opt.Adopt != nil {
 			folderName = opt.Adopt.FolderName
 		}
-		v := &domain.Version{TitleID: t.ID, Label: "Main", PickRulesID: prID, LibraryFolderID: lf.ID,
+		v := &mediafiles.Version{TitleID: t.ID, Label: "Main", PickRulesID: prID, LibraryFolderID: lf.ID,
 			FolderName: folderName, KeepUpToDate: keep, IsMain: true}
 		if _, err := database.Insert(tx, "versions", v, by); err != nil {
 			return err
 		}
 		reason := gateReason(driver, opens)
-		sl := &domain.Slot{ItemID: it.ID, VersionID: v.ID, State: state, LastReason: &reason}
+		sl := &mediafiles.Slot{ItemID: it.ID, VersionID: v.ID, State: state, LastReason: &reason}
 		if opt.Adopt != nil && opt.Adopt.File != "" {
-			sl.State = domain.SlotInLibrary
+			sl.State = mediafiles.SlotInLibrary
 			why := "adopted from " + opt.Adopt.FolderName
 			sl.LastReason = &why
 		}
@@ -331,7 +330,7 @@ func AddMovie(ctx context.Context, s *database.Store, m metadata.Movie, opt AddO
 }
 
 // applyMovie copies looked-up details onto a Title (not its gate choice).
-func applyMovie(t *domain.Title, m metadata.Movie, now time.Time) {
+func applyMovie(t *mediafiles.Title, m metadata.Movie, now time.Time) {
 	t.Name, t.SortName = m.Name, sortName(m.Name)
 	ids := map[string]string{}
 	for k, v := range t.SourceIDs {
@@ -362,7 +361,7 @@ func applyMovie(t *domain.Title, m metadata.Movie, now time.Time) {
 }
 
 // applyDetails copies the screen details; a fresh lookup replaces them all.
-func applyDetails(t *domain.Title, backdrop, logo string, genres []string, rating string, people []string, runtime int) {
+func applyDetails(t *mediafiles.Title, backdrop, logo string, genres []string, rating string, people []string, runtime int) {
 	t.Backdrop, t.Logo, t.Rating, t.RuntimeMinutes = backdrop, logo, rating, max(runtime, 0)
 	t.Genres = append([]string{}, genres...)
 	t.People = append([]string{}, people...)
@@ -398,9 +397,9 @@ func adoptFile(ctx context.Context, tx *sql.Tx, a Adoption, slotID, versionID, p
 	ext := path.Ext(a.File)
 	release := strings.TrimSuffix(path.Base(a.File), ext)
 	p := releasename.Parse(release, releasename.Hints{Size: a.Size})
-	f := &domain.File{SlotIDs: []int64{slotID}, VersionID: versionID, RelativePath: a.File, Size: a.Size, AddedAt: now,
-		Quality:   domain.Quality{Resolution: p.Resolution.Value, Source: p.Source.Value, Codec: p.Codec.Value, HDR: p.HDR.Value},
-		Languages: inspectedLanguages(a.MediaInfo), MediaInfo: map[string]any{"step": judge.StepFor(p)}, ReleaseName: &release, Origin: "adopted",
+	f := &mediafiles.File{SlotIDs: []int64{slotID}, VersionID: versionID, RelativePath: a.File, Size: a.Size, AddedAt: now,
+		Quality:   mediafiles.Quality{Resolution: p.Resolution.Value, Source: p.Source.Value, Codec: p.Codec.Value, HDR: p.HDR.Value},
+		Languages: inspectedLanguages(a.MediaInfo), MediaInfo: map[string]any{"step": mediafiles.StepFor(p)}, ReleaseName: &release, Origin: "adopted",
 		PlacedBy: "none", Role: "main", State: "present"}
 	if f.Languages == nil {
 		f.Languages = []string{}
@@ -415,16 +414,16 @@ func adoptFile(ctx context.Context, tx *sql.Tx, a Adoption, slotID, versionID, p
 	if err != nil {
 		return err
 	}
-	var pr domain.PickRules
+	var pr mediafiles.PickRules
 	if err := database.Get(ctx, tx, "pick_rules", pickRulesID, &pr); err != nil {
 		return err
 	}
-	ge := judge.ReachesGoodEnough(release, pr.Body)
+	ge := mediafiles.ReachesGoodEnough(release, pr.Body)
 	if _, err := tx.Exec("UPDATE slots SET file_id = ?, good_enough = ? WHERE id = ?", fileID, ge, slotID); err != nil {
 		return err
 	}
 	if !ge && keep {
-		return store.MoveSlotTx(tx, slotID, domain.SlotBetterWanted, "adopted below good enough, so a better copy is sought", by)
+		return mediafiles.MoveSlotTx(tx, slotID, mediafiles.SlotBetterWanted, "adopted below good enough, so a better copy is sought", by)
 	}
 	return nil
 }

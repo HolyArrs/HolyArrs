@@ -1,13 +1,14 @@
 package importer
 
 import (
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"strings"
 	"testing"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 )
 
 func TestCopyRequirementsNeverUseLanguageLabelsAsAudioProof(t *testing.T) {
-	v := domain.Version{Edition: "Director's Cut", AudioLanguages: []string{"en", "fr"}}
+	v := mediafiles.Version{Edition: "Director's Cut", AudioLanguages: []string{"en", "fr"}}
 	name := "Harbor.of.Glass.2018.Directors.Cut.1080p.BluRay.ENGLISH.FRENCH"
 	facts := map[string]any{"inspection_status": "complete", "audio_languages": []string{"en"}}
 	if why := copyRefusal(v, name, name, "", facts); why == "" {
@@ -29,13 +30,13 @@ func TestCopyRequirementsNeverUseLanguageLabelsAsAudioProof(t *testing.T) {
 	if facts["edition_source"] != "confirmed" {
 		t.Fatal("manual choice was not recorded")
 	}
-	if why := copyRefusal(domain.Version{}, "unknown", "", "", map[string]any{}); why != "" {
+	if why := copyRefusal(mediafiles.Version{}, "unknown", "", "", map[string]any{}); why != "" {
 		t.Fatal("old quality-only Version changed:", why)
 	}
 }
 
 func TestMultipleEditionLabelsRequireExplicitConfirmation(t *testing.T) {
-	v := domain.Version{Edition: "Directors Cut Extended"}
+	v := mediafiles.Version{Edition: "Directors Cut Extended"}
 	facts := map[string]any{}
 	name := "Harbor.of.Glass.2018.Directors.Cut.Extended.1080p.BluRay"
 	if why := copyRefusal(v, name, name, "", facts); !strings.Contains(why, "ambiguous") {
@@ -52,7 +53,7 @@ func TestMultipleEditionLabelsRequireExplicitConfirmation(t *testing.T) {
 func TestMultipleEditionLabelsDoNotConstrainLegacyVersion(t *testing.T) {
 	facts := map[string]any{}
 	name := "Harbor.of.Glass.2018.Directors.Cut.Extended.1080p.BluRay"
-	if why := copyRefusal(domain.Version{}, name, name, "", facts); why != "" {
+	if why := copyRefusal(mediafiles.Version{}, name, name, "", facts); why != "" {
 		t.Fatalf("unconstrained Version refused ambiguous labels: %s", why)
 	}
 	if edition := facts["edition"]; edition != "" {

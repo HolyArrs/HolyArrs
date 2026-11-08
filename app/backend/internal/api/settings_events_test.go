@@ -10,6 +10,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
@@ -44,7 +46,7 @@ func TestSettingsChangeAreas(t *testing.T) {
 // Removing an item straight in the Downloader is logged as download_removed
 // by the person who did it.
 func TestClientItemRemoveEvent(t *testing.T) {
-	x := seed41(t, domain.SlotDownloading, "downloading")
+	x := seed41(t, mediafiles.SlotDownloading, "downloading")
 	f := &allClient{}
 	exec41(t, x.s, "UPDATE downloaders SET url = ?", f.server(t).URL)
 	var did int64
@@ -62,7 +64,7 @@ func TestClientItemRemoveEvent(t *testing.T) {
 // A change to a named item keeps its name (read before a delete, after a
 // change or add) in data.name and the summary.
 func TestSettingsChangedName(t *testing.T) {
-	x := seed41(t, domain.SlotDownloading, "downloading")
+	x := seed41(t, mediafiles.SlotDownloading, "downloading")
 	var did int64
 	_ = x.s.Read().QueryRow("SELECT id FROM downloaders").Scan(&did)
 	h := x.api.logSettingsChanges(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -98,7 +100,7 @@ func TestSettingsChangedName(t *testing.T) {
 // Saving the search or Downloader settings leaves one audit Event (area and
 // who) and never the older setting_changed row that held the values sent.
 func TestSettingsSaveLeavesOnlyTheAuditEvent(t *testing.T) {
-	x := seed41(t, domain.SlotDownloading, "downloading")
+	x := seed41(t, mediafiles.SlotDownloading, "downloading")
 	for _, area := range []string{"search", "downloaders"} {
 		body := do(t, "GET", x.srv.URL+"/api/v1/settings/"+area, "", http.StatusOK)
 		do(t, "PUT", x.srv.URL+"/api/v1/settings/"+area, string(body), http.StatusOK)
@@ -128,7 +130,7 @@ func TestSettingsSaveLeavesOnlyTheAuditEvent(t *testing.T) {
 // History rows name the member who did them, so readers without the
 // member list still see who.
 func TestEventsNameTheMember(t *testing.T) {
-	x := seed41(t, domain.SlotDownloading, "downloading")
+	x := seed41(t, mediafiles.SlotDownloading, "downloading")
 	exec41(t, x.s, `INSERT INTO users(id, created_at, created_by, updated_at, updated_by, name, role, password_hash) VALUES (7, 't', '{}', 't', '{}', 'mara', 'member', 'x')`)
 	id, name := int64(7), "mara"
 	if err := x.s.AddEvent(context.Background(), &domain.Event{Actor: domain.Actor{Kind: "user", ID: id}, Kind: "title_added", Summary: "added"}); err != nil {

@@ -1,4 +1,4 @@
-package judge
+package mediafiles
 
 import (
 	"regexp"
@@ -6,7 +6,6 @@ import (
 	"sync/atomic"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
 // Own traits (#97) are the traits a person makes. The judge reads them from
@@ -25,12 +24,12 @@ var ownTraits atomic.Pointer[map[int64]ownTrait]
 
 // SetOwnTraits replaces the own traits the judge knows. A term that is not
 // a readable pattern is skipped (CheckOwnTrait refuses those on save).
-func SetOwnTraits(ts []domain.OwnTrait) {
+func SetOwnTraits(ts []OwnTrait) {
 	m := make(map[int64]ownTrait, len(ts))
 	for _, t := range ts {
 		o := ownTrait{name: t.Name, group: t.Match == "group"}
 		for _, term := range t.Terms {
-			if p, ok := domain.TermPattern(term); ok {
+			if p, ok := TermPattern(term); ok {
 				if re, err := regexp.Compile("(?i)" + p); err == nil {
 					o.pats = append(o.pats, re)
 				}

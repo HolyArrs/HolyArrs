@@ -10,14 +10,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/judge"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/tagset"
 )
 
 const (
@@ -72,7 +71,7 @@ const (
 )
 
 // lookingStates are the Slot states a feed check picks for: missing, a better copy wanted, or holding a Release that something better may beat.
-var lookingStates = []domain.SlotState{domain.SlotWanted, domain.SlotBetterWanted, domain.SlotHeld}
+var lookingStates = []mediafiles.SlotState{mediafiles.SlotWanted, mediafiles.SlotBetterWanted, mediafiles.SlotHeld}
 
 // askCatchUpPerRun is the most approved-ask titles one missing search catches up, since each is searched in full. A variable so tests can change it.
 var askCatchUpPerRun = 3
@@ -212,30 +211,30 @@ func (s *Searcher) HandleFeed(ctx context.Context, r *jobs.Run) error {
 	if err != nil {
 		return err
 	}
-	hasShow := slices.ContainsFunc(refs, func(r judge.TitleRef) bool { return r.Kind == "show" })
-	hasArtist := slices.ContainsFunc(refs, func(r judge.TitleRef) bool { return r.Kind == "artist" })
+	hasShow := slices.ContainsFunc(refs, func(r mediafiles.TitleRef) bool { return r.Kind == "show" })
+	hasArtist := slices.ContainsFunc(refs, func(r mediafiles.TitleRef) bool { return r.Kind == "artist" })
 	byTitle := map[int64][]found{}
 	for _, f := range all {
-		m := judge.MatchTitle(releasename.Parse(f.item.Title, releasename.Hints{Size: f.item.Size}), refs)
+		m := mediafiles.MatchTitle(releasename.Parse(f.item.Title, releasename.Hints{Size: f.item.Size}), refs)
 		if m.Title == nil && hasShow {
 
 			// Read again as a show name ("Part 2" before tags, "- 12").
-			m = judge.MatchTitle(releasename.Parse(f.item.Title, releasename.Hints{Size: f.item.Size, Show: true}), refs)
+			m = mediafiles.MatchTitle(releasename.Parse(f.item.Title, releasename.Hints{Size: f.item.Size, Show: true}), refs)
 		}
 		if m.Title == nil && hasArtist {
 
 			// Read again as an album name ("Artist - Album (Year) [FLAC]").
-			m = judge.MatchTitle(releasename.Parse(f.item.Title, releasename.Hints{Size: f.item.Size, Music: true}), refs)
+			m = mediafiles.MatchTitle(releasename.Parse(f.item.Title, releasename.Hints{Size: f.item.Size, Music: true}), refs)
 		}
 
 		// A tagged Source's Release goes only to a Title sharing a tag. It is matched against every wanted Title first, so it never lands on a look-alike because the right one was left out.
-		if m.Title != nil && tagset.SourceServes(f.src.Tags, m.Title.Tags) {
+		if m.Title != nil && mediafiles.SourceServes(f.src.Tags, m.Title.Tags) {
 			byTitle[m.Title.ID] = append(byTitle[m.Title.ID], f)
 		}
 	}
 	ctxs := make(map[int64][]slotCtx, len(byTitle))
 	for titleID := range byTitle {
-		slots, err := database.Select[domain.Slot](ctx, db, "slots", `state IN (?, ?, ?) AND item_id IN (
+		slots, err := database.Select[mediafiles.Slot](ctx, db, "slots", `state IN (?, ?, ?) AND item_id IN (
 			SELECT id FROM items WHERE title_id = ?) ORDER BY id`,
 			string(lookingStates[0]), string(lookingStates[1]), string(lookingStates[2]), titleID)
 		if err != nil {
@@ -278,7 +277,7 @@ func (s *Searcher) HandleFeed(ctx context.Context, r *jobs.Run) error {
 					cands[k].relID = id
 				}
 			}
-			if c.sl.State == domain.SlotHeld && c.sl.HeldReleaseID != nil {
+			if c.sl.State == mediafiles.SlotHeld && c.sl.HeldReleaseID != nil {
 				if f, ok := s.storedFound(ctx, *c.sl.HeldReleaseID); ok {
 					cands = append(cands, f)
 				}
@@ -311,7 +310,7 @@ func (s *Searcher) HandleFeed(ctx context.Context, r *jobs.Run) error {
 				}
 				chosen++
 				s.addEvent(ctx, by, &jobID, c.ti.ID, c.sl.ID, EventReleaseChosen, "Feed check chose "+name, map[string]any{"release_id": ids[w]})
-				s.publish("slot", map[string]any{"id": c.sl.ID, "state": domain.SlotChosen, "reason": "chose " + name})
+				s.publish("slot", map[string]any{"id": c.sl.ID, "state": mediafiles.SlotChosen, "reason": "chose " + name})
 				if s.OnChosen != nil {
 					s.OnChosen(ctx, c.sl.ID, ids[w])
 				}
@@ -324,7 +323,7 @@ func (s *Searcher) HandleFeed(ctx context.Context, r *jobs.Run) error {
 				}
 				held++
 				s.addEvent(ctx, by, &jobID, c.ti.ID, c.sl.ID, EventReleaseHeld, "Feed check holding "+name, map[string]any{"release_id": ids[w]})
-				s.publish("slot", map[string]any{"id": c.sl.ID, "state": domain.SlotHeld, "reason": "holding " + name})
+				s.publish("slot", map[string]any{"id": c.sl.ID, "state": mediafiles.SlotHeld, "reason": "holding " + name})
 			}
 		}
 	}
@@ -374,13 +373,13 @@ func (s *Searcher) HandleSearchMissing(ctx context.Context, r *jobs.Run) error {
 	if s.Queue == nil {
 		return fmt.Errorf("search_missing needs the job queue")
 	}
-	states := []string{string(domain.SlotWanted)}
+	states := []string{string(mediafiles.SlotWanted)}
 	limit := defaultMissingCount
 	if n, err := strconv.Atoi(Setting(ctx, db, SettingMissingCount)); err == nil && n >= 0 {
 		limit = min(n, maxMissingCount)
 	}
 	if Setting(ctx, db, SettingMissingBetter) == "true" {
-		states = append(states, string(domain.SlotBetterWanted))
+		states = append(states, string(mediafiles.SlotBetterWanted))
 	}
 	if w, _ := r.Job.Params["which"].(string); w != "" {
 
@@ -390,9 +389,9 @@ func (s *Searcher) HandleSearchMissing(ctx context.Context, r *jobs.Run) error {
 		}
 		switch w {
 		case "missing":
-			states = []string{string(domain.SlotWanted)}
+			states = []string{string(mediafiles.SlotWanted)}
 		case "better":
-			states = []string{string(domain.SlotBetterWanted)}
+			states = []string{string(mediafiles.SlotBetterWanted)}
 		default:
 			return fmt.Errorf("which must be missing or better")
 		}
@@ -404,8 +403,8 @@ func (s *Searcher) HandleSearchMissing(ctx context.Context, r *jobs.Run) error {
 		limit = maxMissingCount
 	}
 	skipGate := Setting(ctx, db, SettingRespectsGate) == "false"
-	if skipGate && states[0] == string(domain.SlotWanted) {
-		states = append(states, string(domain.SlotNotOutYet))
+	if skipGate && states[0] == string(mediafiles.SlotWanted) {
+		states = append(states, string(mediafiles.SlotNotOutYet))
 	}
 	ph := strings.TrimSuffix(strings.Repeat("?, ", len(states)), ", ")
 
@@ -435,7 +434,7 @@ func (s *Searcher) HandleSearchMissing(ctx context.Context, r *jobs.Run) error {
 	asked := 0
 	var askTitles []string
 	var startAfter time.Time
-	if titleID == 0 && states[0] == string(domain.SlotWanted) && limit > 0 {
+	if titleID == 0 && states[0] == string(mediafiles.SlotWanted) && limit > 0 {
 		var onApprove string
 		_ = db.QueryRowContext(ctx, "SELECT value FROM settings WHERE grp = 'this_app' AND key = 'ask_search_on_approve'").Scan(&onApprove)
 		approveOn := onApprove != "false"
@@ -581,7 +580,7 @@ func Setting(ctx context.Context, db *sql.DB, key string) string {
 }
 
 // Checks reads the early-release and fake-size settings that judging needs.
-func Checks(ctx context.Context, db *sql.DB) judge.Checks {
+func Checks(ctx context.Context, db *sql.DB) mediafiles.Checks {
 	grace := DefaultEarlyGrace
 	if n, err := strconv.Atoi(Setting(ctx, db, SettingEarlyGrace)); err == nil && n >= 0 && n <= 720 {
 		grace = n
@@ -590,23 +589,23 @@ func Checks(ctx context.Context, db *sql.DB) judge.Checks {
 	if n, err := strconv.Atoi(Setting(ctx, db, SettingEpisodeMinutes)); err == nil && n >= 1 && n <= 240 {
 		minutes = n
 	}
-	return judge.Checks{Early: Setting(ctx, db, SettingRefuseEarly) != "false", Grace: time.Duration(grace) * time.Hour,
+	return mediafiles.Checks{Early: Setting(ctx, db, SettingRefuseEarly) != "false", Grace: time.Duration(grace) * time.Hour,
 		Tiny: Setting(ctx, db, SettingRefuseTiny) != "false", HoldUnknown: Setting(ctx, db, SettingHoldUnknown) == "true",
 		EpisodeMinutes: minutes}
 }
 
 // wantedTitleRefs lists one small record per active Title that still has a Slot looking, so a feed can be matched without loading every Slot.
-func (s *Searcher) wantedTitleRefs(ctx context.Context) ([]judge.TitleRef, error) {
-	titles, err := database.Select[domain.Title](ctx, s.Store.Read(), "titles", `state = 'active' AND EXISTS (
+func (s *Searcher) wantedTitleRefs(ctx context.Context) ([]mediafiles.TitleRef, error) {
+	titles, err := database.Select[mediafiles.Title](ctx, s.Store.Read(), "titles", `state = 'active' AND EXISTS (
 		SELECT 1 FROM items i JOIN slots sl ON sl.item_id = i.id
 		WHERE i.title_id = titles.id AND sl.state IN (?, ?, ?)) ORDER BY sort_name, id`,
 		string(lookingStates[0]), string(lookingStates[1]), string(lookingStates[2]))
 	if err != nil {
 		return nil, err
 	}
-	refs := make([]judge.TitleRef, 0, len(titles))
+	refs := make([]mediafiles.TitleRef, 0, len(titles))
 	for _, title := range titles {
-		ref := judge.TitleRef{ID: title.ID, Name: title.Name, Aliases: title.Aliases, Tags: title.Tags}
+		ref := mediafiles.TitleRef{ID: title.ID, Name: title.Name, Aliases: title.Aliases, Tags: title.Tags}
 		if title.Year != nil {
 			ref.Year = *title.Year
 		}
@@ -643,7 +642,7 @@ func (s *Searcher) storedFound(ctx context.Context, id int64) (found, bool) {
 
 // grabHeld chooses the Held Releases whose wait is over and returns how many Slots were settled.
 func (s *Searcher) grabHeld(ctx context.Context, by domain.Actor, jobID *int64, now time.Time) (int, error) {
-	slots, err := database.Select[domain.Slot](ctx, s.Store.Read(), "slots",
+	slots, err := database.Select[mediafiles.Slot](ctx, s.Store.Read(), "slots",
 		"state = 'held' AND held_release_id IS NOT NULL AND next_try_at <= ? ORDER BY next_try_at, id", database.FormatTime(now))
 	if err != nil {
 		return 0, err
@@ -702,7 +701,7 @@ func (s *Searcher) grabHeld(ctx context.Context, by domain.Actor, jobID *int64, 
 		_ = s.Store.Read().QueryRowContext(ctx, "SELECT title_id FROM items WHERE id = ?", sl.ItemID).Scan(&titleID)
 		for _, id := range pick {
 			s.addEvent(ctx, by, jobID, titleID, id, EventReleaseChosen, "Wait over, chose "+rel.Name, map[string]any{"release_id": rel.ID, "was_held": true})
-			s.publish("slot", map[string]any{"id": id, "state": domain.SlotChosen, "reason": "chose " + rel.Name})
+			s.publish("slot", map[string]any{"id": id, "state": mediafiles.SlotChosen, "reason": "chose " + rel.Name})
 		}
 		if s.OnChosen != nil {
 			s.OnChosen(ctx, sl.ID, rel.ID)
@@ -712,7 +711,7 @@ func (s *Searcher) grabHeld(ctx context.Context, by domain.Actor, jobID *int64, 
 }
 
 // movieOut returns a movie's first known release day: cinema, digital or disc.
-func movieOut(t domain.Title) *time.Time {
+func movieOut(t mediafiles.Title) *time.Time {
 	var first *time.Time
 	for _, d := range []*time.Time{t.CinemaDate, t.DigitalDate, t.PhysicalDate} {
 		if d != nil && (first == nil || d.Before(*first)) {

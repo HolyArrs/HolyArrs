@@ -6,6 +6,8 @@ import (
 	"slices"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
@@ -15,20 +17,20 @@ func TestGrabPackFillsEverySlot(t *testing.T) {
 	ctx := context.Background()
 	var others []int64
 	err := w.s.Write(ctx, func(tx *sql.Tx) error {
-		var sl domain.Slot
+		var sl mediafiles.Slot
 		if err := tx.QueryRow("SELECT item_id, version_id FROM slots WHERE id = ?", w.slotID).Scan(&sl.ItemID, &sl.VersionID); err != nil {
 			return err
 		}
-		for _, st := range []domain.SlotState{domain.SlotChosen, domain.SlotWanted} {
-			it := &domain.Item{TitleID: 1, Kind: "movie"}
+		for _, st := range []mediafiles.SlotState{mediafiles.SlotChosen, mediafiles.SlotWanted} {
+			it := &mediafiles.Item{TitleID: 1, Kind: "movie"}
 			if err := tx.QueryRow("SELECT title_id FROM items WHERE id = ?", sl.ItemID).Scan(&it.TitleID); err != nil {
 				return err
 			}
 			if _, err := database.Insert(tx, "items", it, domain.System); err != nil {
 				return err
 			}
-			o := &domain.Slot{ItemID: it.ID, VersionID: sl.VersionID, State: st}
-			if st == domain.SlotChosen {
+			o := &mediafiles.Slot{ItemID: it.ID, VersionID: sl.VersionID, State: st}
+			if st == mediafiles.SlotChosen {
 				o.ChosenReleaseID = &w.relID
 			}
 			if _, err := database.Insert(tx, "slots", o, domain.System); err != nil {
@@ -56,13 +58,13 @@ func TestGrabPackFillsEverySlot(t *testing.T) {
 		var st string
 		var dl sql.NullInt64
 		_ = w.s.Read().QueryRow("SELECT state, active_download_id FROM slots WHERE id = ?", sid).Scan(&st, &dl)
-		if st != string(domain.SlotDownloading) || dl.Int64 != id {
+		if st != string(mediafiles.SlotDownloading) || dl.Int64 != id {
 			t.Fatalf("slot %d %s %v", sid, st, dl)
 		}
 	}
 	var st string
 	_ = w.s.Read().QueryRow("SELECT state FROM slots WHERE id = ?", others[1]).Scan(&st)
-	if st != string(domain.SlotWanted) {
+	if st != string(mediafiles.SlotWanted) {
 		t.Fatalf("wanted slot moved to %s", st)
 	}
 }
@@ -72,12 +74,12 @@ func TestGrabPackLeavesSlotChosenForAnother(t *testing.T) {
 	ctx := context.Background()
 	var other int64
 	err := w.s.Write(ctx, func(tx *sql.Tx) error {
-		var sl domain.Slot
+		var sl mediafiles.Slot
 		var titleID int64
 		if err := tx.QueryRow("SELECT s.item_id, s.version_id, i.title_id FROM slots s JOIN items i ON i.id = s.item_id WHERE s.id = ?", w.slotID).Scan(&sl.ItemID, &sl.VersionID, &titleID); err != nil {
 			return err
 		}
-		it := &domain.Item{TitleID: titleID, Kind: "movie"}
+		it := &mediafiles.Item{TitleID: titleID, Kind: "movie"}
 		if _, err := database.Insert(tx, "items", it, domain.System); err != nil {
 			return err
 		}
@@ -86,7 +88,7 @@ func TestGrabPackLeavesSlotChosenForAnother(t *testing.T) {
 			SELECT created_at, created_by, updated_at, updated_by, source_id, name || '.other', link_ref || 'x', protocol, size, state, verdict, matched_slot_ids, found_by FROM releases WHERE id = ? RETURNING id`, w.relID).Scan(&otherRel); err != nil {
 			return err
 		}
-		o := &domain.Slot{ItemID: it.ID, VersionID: sl.VersionID, State: domain.SlotChosen, ChosenReleaseID: &otherRel}
+		o := &mediafiles.Slot{ItemID: it.ID, VersionID: sl.VersionID, State: mediafiles.SlotChosen, ChosenReleaseID: &otherRel}
 		if _, err := database.Insert(tx, "slots", o, domain.System); err != nil {
 			return err
 		}
@@ -107,7 +109,7 @@ func TestGrabPackLeavesSlotChosenForAnother(t *testing.T) {
 	}
 	var st string
 	_ = w.s.Read().QueryRow("SELECT state FROM slots WHERE id = ?", other).Scan(&st)
-	if st != string(domain.SlotChosen) {
+	if st != string(mediafiles.SlotChosen) {
 		t.Fatalf("slot chosen for another Release moved to %s", st)
 	}
 }
@@ -122,11 +124,11 @@ func TestGrabPackKeepsToOneVersion(t *testing.T) {
 			w.slotID).Scan(&itemID, &titleID, &lf, &pr); err != nil {
 			return err
 		}
-		v := &domain.Version{TitleID: titleID, Label: "4K", PickRulesID: pr, LibraryFolderID: lf, FolderName: "Dune Part Two (2024) [4K]"}
+		v := &mediafiles.Version{TitleID: titleID, Label: "4K", PickRulesID: pr, LibraryFolderID: lf, FolderName: "Dune Part Two (2024) [4K]"}
 		if _, err := database.Insert(tx, "versions", v, domain.System); err != nil {
 			return err
 		}
-		o := &domain.Slot{ItemID: itemID, VersionID: v.ID, State: domain.SlotChosen, ChosenReleaseID: &w.relID}
+		o := &mediafiles.Slot{ItemID: itemID, VersionID: v.ID, State: mediafiles.SlotChosen, ChosenReleaseID: &w.relID}
 		if _, err := database.Insert(tx, "slots", o, domain.System); err != nil {
 			return err
 		}
@@ -146,7 +148,7 @@ func TestGrabPackKeepsToOneVersion(t *testing.T) {
 	}
 	var st string
 	_ = w.s.Read().QueryRow("SELECT state FROM slots WHERE id = ?", other).Scan(&st)
-	if st != string(domain.SlotChosen) {
+	if st != string(mediafiles.SlotChosen) {
 		t.Fatalf("the 4K Slot moved to %s", st)
 	}
 }

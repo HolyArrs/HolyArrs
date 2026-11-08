@@ -1,4 +1,4 @@
-package store
+package mediafiles
 
 import (
 	"context"
@@ -7,51 +7,50 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
-func addMovieCopy(t *testing.T, s *database.Store, name, codec, inspection string, protected bool) (domain.Title, domain.Version, domain.File, domain.Slot) {
+func addMovieCopy(t *testing.T, s *database.Store, name, codec, inspection string, protected bool) (Title, Version, File, Slot) {
 	t.Helper()
-	var title domain.Title
-	var version domain.Version
-	var file domain.File
-	var slot domain.Slot
+	var title Title
+	var version Version
+	var file File
+	var slot Slot
 	err := s.Write(context.Background(), func(tx *sql.Tx) error {
 		var folderID, rulesID int64
 		if err := tx.QueryRow("SELECT id FROM library_folders ORDER BY id LIMIT 1").Scan(&folderID); err != nil {
-			folder := &domain.LibraryFolder{Path: t.TempDir(), Kind: "movie", Label: name, Health: "ok", SameDiskAs: []int64{}}
+			folder := &LibraryFolder{Path: t.TempDir(), Kind: "movie", Label: name, Health: "ok", SameDiskAs: []int64{}}
 			var err error
-			folderID, err = database.Insert(tx, "library_folders", folder, domain.System)
+			folderID, err = database.Insert(tx, "library_folders", folder, database.System)
 			if err != nil {
 				return err
 			}
 		}
 		if err := tx.QueryRow("SELECT id FROM pick_rules ORDER BY id LIMIT 1").Scan(&rulesID); err != nil {
-			rules := &domain.PickRules{Name: name, Kinds: []string{"movie"}, Revision: 1, Body: domain.PickRulesBody{}}
+			rules := &PickRules{Name: name, Kinds: []string{"movie"}, Revision: 1, Body: PickRulesBody{}}
 			var err error
-			rulesID, err = database.Insert(tx, "pick_rules", rules, domain.System)
+			rulesID, err = database.Insert(tx, "pick_rules", rules, database.System)
 			if err != nil {
 				return err
 			}
 		}
-		title = domain.Title{Kind: "movie", Name: name, SortName: name, Aliases: []string{}, SourceIDs: map[string]string{}, MetadataSource: "local", NewPartsPolicy: "all", ReleaseGate: "released", GateDriver: "none", WhyAdded: "by_hand", Artwork: []string{}, State: "active", Status: "released", MusicTypes: []string{}}
-		if _, err := database.Insert(tx, "titles", &title, domain.System); err != nil {
+		title = Title{Kind: "movie", Name: name, SortName: name, Aliases: []string{}, SourceIDs: map[string]string{}, MetadataSource: "local", NewPartsPolicy: "all", ReleaseGate: "released", GateDriver: "none", WhyAdded: "by_hand", Artwork: []string{}, State: "active", Status: "released", MusicTypes: []string{}}
+		if _, err := database.Insert(tx, "titles", &title, database.System); err != nil {
 			return err
 		}
-		item := &domain.Item{TitleID: title.ID, Kind: "movie", Numbers: domain.Numbers{}, KeepUpToDate: true, SourceIDs: map[string]string{}}
-		if _, err := database.Insert(tx, "items", item, domain.System); err != nil {
+		item := &Item{TitleID: title.ID, Kind: "movie", Numbers: Numbers{}, KeepUpToDate: true, SourceIDs: map[string]string{}}
+		if _, err := database.Insert(tx, "items", item, database.System); err != nil {
 			return err
 		}
-		version = domain.Version{TitleID: title.ID, Label: "4K", PickRulesID: rulesID, LibraryFolderID: folderID, FolderName: name, KeepUpToDate: true, IsMain: true, Edition: "Director's cut", AudioLanguages: []string{"en"}}
-		if _, err := database.Insert(tx, "versions", &version, domain.System); err != nil {
+		version = Version{TitleID: title.ID, Label: "4K", PickRulesID: rulesID, LibraryFolderID: folderID, FolderName: name, KeepUpToDate: true, IsMain: true, Edition: "Director's cut", AudioLanguages: []string{"en"}}
+		if _, err := database.Insert(tx, "versions", &version, database.System); err != nil {
 			return err
 		}
-		file = domain.File{VersionID: version.ID, Protected: protected, SlotIDs: []int64{}, RelativePath: name + ".mkv", Size: 42, AddedAt: time.Now().UTC(), Quality: domain.Quality{Codec: "av1"}, Languages: []string{}, MediaInfo: map[string]any{"inspection_status": inspection, "container": "matroska", "video_codec": codec, "audio_languages": []string{"ja", "en"}, "audio_tracks": 2, "audio_unknown": false}, Origin: "imported", PlacedBy: "move", Role: "main", State: "present"}
-		if _, err := database.Insert(tx, "files", &file, domain.System); err != nil {
+		file = File{VersionID: version.ID, Protected: protected, SlotIDs: []int64{}, RelativePath: name + ".mkv", Size: 42, AddedAt: time.Now().UTC(), Quality: Quality{Codec: "av1"}, Languages: []string{}, MediaInfo: map[string]any{"inspection_status": inspection, "container": "matroska", "video_codec": codec, "audio_languages": []string{"ja", "en"}, "audio_tracks": 2, "audio_unknown": false}, Origin: "imported", PlacedBy: "move", Role: "main", State: "present"}
+		if _, err := database.Insert(tx, "files", &file, database.System); err != nil {
 			return err
 		}
-		slot = domain.Slot{ItemID: item.ID, VersionID: version.ID, State: domain.SlotInLibrary, FileID: &file.ID}
-		if _, err := database.Insert(tx, "slots", &slot, domain.System); err != nil {
+		slot = Slot{ItemID: item.ID, VersionID: version.ID, State: SlotInLibrary, FileID: &file.ID}
+		if _, err := database.Insert(tx, "slots", &slot, database.System); err != nil {
 			return err
 		}
 		_, err := tx.Exec("UPDATE files SET slot_ids = json_array(?) WHERE id = ?", slot.ID, file.ID)

@@ -3,7 +3,7 @@
 // One reader serves Matroska/WebM and MP4/MOV. It reads only headers (never
 // samples), and hard limits on elements, nesting, tracks and bytes per read
 // keep a hostile file from hanging it or making it allocate much.
-package mediainfo
+package mediafiles
 
 import (
 	"errors"

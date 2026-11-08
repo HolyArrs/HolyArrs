@@ -9,8 +9,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
@@ -127,7 +128,7 @@ var sourceNames = map[string]string{"web_dl": "WEBDL", "web_rip": "WEBRip", "tv"
 // the Library folder root, the answer's relativePath to the title folder.
 // The quality name is source-resolution (WEBDL-1080p), which Bazarr
 // splits on the dash.
-func mediaFileOf(f domain.File, root, folder string) *mediaFile {
+func mediaFileOf(f mediafiles.File, root, folder string) *mediaFile {
 	mf := &mediaFile{ID: f.ID, RelativePath: strings.TrimPrefix(f.RelativePath, folder+"/"),
 		Path: filepath.Join(root, filepath.FromSlash(f.RelativePath)), Size: f.Size, DateAdded: utc(f.AddedAt), Languages: languagesOf(f.Languages)}
 	if f.ReleaseName != nil {
@@ -175,7 +176,7 @@ func mediaFileOf(f domain.File, root, folder string) *mediaFile {
 // leaves out what a lookup answer leaves out.
 func (h *handler) loadMovies(ctx context.Context, lookup bool, where string, args ...any) ([]movie, error) {
 	db := h.Store.Read()
-	ts, err := database.Select[domain.Title](ctx, db, "titles", "kind = 'movie' AND state != 'removed' AND "+where+" ORDER BY sort_name, id", args...)
+	ts, err := database.Select[mediafiles.Title](ctx, db, "titles", "kind = 'movie' AND state != 'removed' AND "+where+" ORDER BY sort_name, id", args...)
 	if err != nil || len(ts) == 0 {
 		return []movie{}, err
 	}
@@ -191,12 +192,12 @@ func (h *handler) loadMovies(ctx context.Context, lookup bool, where string, arg
 	if err != nil {
 		return nil, err
 	}
-	fs, err := database.Select[domain.File](ctx, db, "files", `id IN (SELECT s.file_id FROM slots s JOIN items i ON i.id = s.item_id
+	fs, err := database.Select[mediafiles.File](ctx, db, "files", `id IN (SELECT s.file_id FROM slots s JOIN items i ON i.id = s.item_id
 		JOIN versions v ON v.id = s.version_id AND v.is_main = 1 WHERE i.kind = 'movie' AND s.file_id IS NOT NULL AND i.title_id IN `+idList(ids)+`)`)
 	if err != nil {
 		return nil, err
 	}
-	fileOf := map[int64]domain.File{}
+	fileOf := map[int64]mediafiles.File{}
 	for _, f := range fs {
 		fileOf[f.VersionID] = f
 	}

@@ -1,4 +1,4 @@
-package naming
+package mediafiles
 
 import (
 	"strings"
@@ -7,7 +7,7 @@ import (
 )
 
 func TestTrackPathDefaults(t *testing.T) {
-	s := Defaults()
+	s := NamingDefaults()
 	f := TrackFacts{Artist: "Lab Lanterns", Album: "Small Hours", Year: 2025, Disc: 1, Discs: 1, Track: 3, Title: "Tide", Ext: ".FLAC"}
 	if got := TrackPath(s, "Lab Lanterns", f); got != "Lab Lanterns/Small Hours (2025)/03 - Tide.flac" {
 		t.Fatalf("single disc: %q", got)
@@ -21,13 +21,13 @@ func TestTrackPathDefaults(t *testing.T) {
 		t.Fatalf("disc folders: %q", got)
 	}
 	f = TrackFacts{Artist: "A", Album: "B", Track: 7, Ext: ".mp3"}
-	if got := TrackPath(Defaults(), "A", f); got != "A/B/07.mp3" {
+	if got := TrackPath(NamingDefaults(), "A", f); got != "A/B/07.mp3" {
 		t.Fatalf("no year, no title: %q", got)
 	}
 }
 
 func TestMusicPatterns(t *testing.T) {
-	s := Defaults()
+	s := NamingDefaults()
 	s.ArtistFolderPattern = "{artist_sort}"
 	s.AlbumFolderPattern = "{year} - {album} [{edition}] ({album_type})"
 	s.TrackPattern = "{track} - {track_artist} - {track_title} [{format}]"
@@ -54,7 +54,7 @@ func TestMusicPatterns(t *testing.T) {
 }
 
 func TestMusicColonAndIllegal(t *testing.T) {
-	s := Defaults()
+	s := NamingDefaults()
 	f := TrackFacts{Artist: "AC/DC", Album: "Live: At \"Home\"?", Year: 1992, Track: 2, Title: "What*s <Next>|", Ext: ".mp3", Discs: 1, Disc: 1}
 	got := TrackPath(s, ArtistFolder(s, f), f)
 	if got != "AC-DC/Live - At 'Home' (1992)/02 - What-s Next.mp3" {
@@ -64,16 +64,16 @@ func TestMusicColonAndIllegal(t *testing.T) {
 	if got := AlbumFolder(s, f); got != "Live At Home (1992)" {
 		t.Fatalf("remove: %q", got)
 	}
-	if got := AlbumFolder(Defaults(), TrackFacts{Album: "..", Year: 2001}); got != "Unknown album (2001)" {
+	if got := AlbumFolder(NamingDefaults(), TrackFacts{Album: "..", Year: 2001}); got != "Unknown album (2001)" {
 		t.Fatalf("empty album: %q", got)
 	}
-	if got := AlbumFolder(Defaults(), TrackFacts{Album: "CON"}); got != "CON_" {
+	if got := AlbumFolder(NamingDefaults(), TrackFacts{Album: "CON"}); got != "CON_" {
 		t.Fatalf("reserved: %q", got)
 	}
 }
 
 func TestMusicLongNamesKeepYearAndNumber(t *testing.T) {
-	s := Defaults()
+	s := NamingDefaults()
 	long := strings.Repeat("é", 300)
 	f := TrackFacts{Artist: long, Album: long, Year: 2024, Track: 12, Title: long, Ext: ".flac", Disc: 1, Discs: 1}
 	album := AlbumFolder(s, f)
@@ -91,30 +91,30 @@ func TestMusicLongNamesKeepYearAndNumber(t *testing.T) {
 
 func TestMusicValidate(t *testing.T) {
 	for _, c := range []struct {
-		set  func(*Settings)
+		set  func(*NamingSettings)
 		want string
 	}{
-		{func(s *Settings) { s.ArtistFolderPattern = "{album}" }, "must hold {artist} or {artist_sort}"},
-		{func(s *Settings) { s.AlbumFolderPattern = "{year}" }, "must hold {album}"},
-		{func(s *Settings) { s.TrackPattern = "{track_title}" }, "must hold {track}"},
-		{func(s *Settings) { s.MultiDiscTrackPattern = "{track} - {track_title}" }, "must hold {disc}"},
-		{func(s *Settings) { s.MultiDiscTrackPattern = "{disc} - {track_title}" }, "must hold {track}"},
-		{func(s *Settings) { s.DiscFolderPattern = "CD" }, "must hold {disc}"},
-		{func(s *Settings) { s.TrackPattern = "{track} {quality}" }, "cannot use {quality}"},
-		{func(s *Settings) { s.AlbumFolderPattern = "{album}/{year}" }, "folder separator"},
-		{func(s *Settings) { s.FilePattern = "{title} {artist}" }, "cannot use music words"},
-		{func(s *Settings) { s.EpisodePattern = "{title} {episode} {track}" }, "cannot use music words"},
+		{func(s *NamingSettings) { s.ArtistFolderPattern = "{album}" }, "must hold {artist} or {artist_sort}"},
+		{func(s *NamingSettings) { s.AlbumFolderPattern = "{year}" }, "must hold {album}"},
+		{func(s *NamingSettings) { s.TrackPattern = "{track_title}" }, "must hold {track}"},
+		{func(s *NamingSettings) { s.MultiDiscTrackPattern = "{track} - {track_title}" }, "must hold {disc}"},
+		{func(s *NamingSettings) { s.MultiDiscTrackPattern = "{disc} - {track_title}" }, "must hold {track}"},
+		{func(s *NamingSettings) { s.DiscFolderPattern = "CD" }, "must hold {disc}"},
+		{func(s *NamingSettings) { s.TrackPattern = "{track} {quality}" }, "cannot use {quality}"},
+		{func(s *NamingSettings) { s.AlbumFolderPattern = "{album}/{year}" }, "folder separator"},
+		{func(s *NamingSettings) { s.FilePattern = "{title} {artist}" }, "cannot use music words"},
+		{func(s *NamingSettings) { s.EpisodePattern = "{title} {episode} {track}" }, "cannot use music words"},
 	} {
-		s := Defaults()
+		s := NamingDefaults()
 		c.set(&s)
 		if err := s.Validate(); err == nil || !strings.Contains(err.Error(), c.want) {
 			t.Errorf("want %q, got %v", c.want, err)
 		}
 	}
-	if err := Defaults().Validate(); err != nil {
+	if err := NamingDefaults().Validate(); err != nil {
 		t.Fatal(err)
 	}
-	s := Settings{FilePattern: DefaultFilePattern, FolderPattern: DefaultFolderPattern, Colon: ColonSmart, Illegal: IllegalReplace}
+	s := NamingSettings{FilePattern: DefaultFilePattern, FolderPattern: DefaultFolderPattern, Colon: ColonSmart, Illegal: IllegalReplace}
 	if err := s.Validate(); err != nil {
 		t.Fatalf("empty music patterns take their default: %v", err)
 	}

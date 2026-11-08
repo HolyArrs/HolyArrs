@@ -9,10 +9,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // fakeShows is a show details source over fixed answers, keyed by
@@ -86,7 +87,7 @@ func labShow(source, id string) metadata.Show {
 		}}
 }
 
-func addShowFolder(t *testing.T, s *database.Store) domain.LibraryFolder {
+func addShowFolder(t *testing.T, s *database.Store) mediafiles.LibraryFolder {
 	t.Helper()
 	lf, err := AddFolder(context.Background(), s, FolderInput{Path: t.TempDir(), Kind: "show", Label: "Shows"}, nil, domain.System)
 	if err != nil {
@@ -97,13 +98,13 @@ func addShowFolder(t *testing.T, s *database.Store) domain.LibraryFolder {
 
 // seedShow writes a show Title with a main Version, then syncs it from sh
 // with the given season choice, the way an add does.
-func seedShow(t *testing.T, s *database.Store, sh metadata.Show, choice string) domain.Title {
+func seedShow(t *testing.T, s *database.Store, sh metadata.Show, choice string) mediafiles.Title {
 	t.Helper()
 	ctx := context.Background()
 	lf := addShowFolder(t, s)
 	defs, _ := ReadShowDefaults(ctx, s.Read())
 	order := OrderAired
-	ti := domain.Title{Kind: "show", Aliases: []string{}, MetadataSource: sh.Source, EpisodeOrder: &order, KeepUpToDate: true, NewPartsPolicy: "all",
+	ti := mediafiles.Title{Kind: "show", Aliases: []string{}, MetadataSource: sh.Source, EpisodeOrder: &order, KeepUpToDate: true, NewPartsPolicy: "all",
 		ReleaseGate: GateReleased, MusicTypes: []string{}, WhyAdded: "by_hand", Artwork: []string{}, State: "active", GateDriver: "none", SeasonChoice: &choice}
 	applyShow(&ti, sh)
 	ti.RefreshedAt = &now
@@ -112,10 +113,10 @@ func seedShow(t *testing.T, s *database.Store, sh metadata.Show, choice string) 
 			return err
 		}
 		var pr int64
-		if err := tx.QueryRow("SELECT id FROM pick_rules WHERE name = ?", domain.GoodEverydayName).Scan(&pr); err != nil {
+		if err := tx.QueryRow("SELECT id FROM pick_rules WHERE name = ?", mediafiles.GoodEverydayName).Scan(&pr); err != nil {
 			return err
 		}
-		if _, err := database.Insert(tx, "versions", &domain.Version{TitleID: ti.ID, Label: "Main", PickRulesID: pr, LibraryFolderID: lf.ID,
+		if _, err := database.Insert(tx, "versions", &mediafiles.Version{TitleID: ti.ID, Label: "Main", PickRulesID: pr, LibraryFolderID: lf.ID,
 			FolderName: "Lab Show", KeepUpToDate: true, IsMain: true}, domain.System); err != nil {
 			return err
 		}
@@ -134,7 +135,7 @@ type epRow struct {
 	Keep    bool
 	Abs     *int
 	SlotID  int64
-	State   domain.SlotState
+	State   mediafiles.SlotState
 	Reason  string
 	Dropped bool
 	IDs     map[string]string
@@ -144,7 +145,7 @@ type epRow struct {
 func episodes(t *testing.T, s *database.Store, titleID int64) map[string]epRow {
 	t.Helper()
 	ctx := context.Background()
-	its, err := database.Select[domain.Item](ctx, s.Read(), "items", "title_id = ? AND kind = 'episode'", titleID)
+	its, err := database.Select[mediafiles.Item](ctx, s.Read(), "items", "title_id = ? AND kind = 'episode'", titleID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -154,7 +155,7 @@ func episodes(t *testing.T, s *database.Store, titleID int64) map[string]epRow {
 		if it.Name != nil {
 			r.Name = *it.Name
 		}
-		sl, _ := database.Select[domain.Slot](ctx, s.Read(), "slots", "item_id = ?", it.ID)
+		sl, _ := database.Select[mediafiles.Slot](ctx, s.Read(), "slots", "item_id = ?", it.ID)
 		if len(sl) == 1 {
 			r.SlotID, r.State = sl[0].ID, sl[0].State
 			if sl[0].LastReason != nil {
@@ -192,8 +193,8 @@ func TestShowRefreshFromTMDB(t *testing.T) {
 		t.Fatalf("episodes %v", eps)
 	}
 	// The air-date gate: aired episodes are wanted, the rest not out yet.
-	for k, want := range map[string]domain.SlotState{"S00E01": domain.SlotWanted, "S01E01": domain.SlotWanted, "S02E01": domain.SlotWanted,
-		"S02E02": domain.SlotNotOutYet, "S02E03": domain.SlotNotOutYet} {
+	for k, want := range map[string]mediafiles.SlotState{"S00E01": mediafiles.SlotWanted, "S01E01": mediafiles.SlotWanted, "S02E01": mediafiles.SlotWanted,
+		"S02E02": mediafiles.SlotNotOutYet, "S02E03": mediafiles.SlotNotOutYet} {
 		if eps[k].State != want {
 			t.Errorf("%s state %s, want %s (%s)", k, eps[k].State, want, eps[k].Reason)
 		}
@@ -205,7 +206,7 @@ func TestShowRefreshFromTMDB(t *testing.T) {
 	// The source changes: S01E02 renamed, S02E01 moved a week later, a new
 	// S02E04, S02E03 gone (nothing holds it), S01E01 gone but it has a File.
 	err := s.Write(ctx, func(tx *sql.Tx) error {
-		f := &domain.File{SlotIDs: []int64{eps["S01E01"].SlotID}, VersionID: 1, RelativePath: "Lab Show/Season 01/a.mkv", Languages: []string{},
+		f := &mediafiles.File{SlotIDs: []int64{eps["S01E01"].SlotID}, VersionID: 1, RelativePath: "Lab Show/Season 01/a.mkv", Languages: []string{},
 			Origin: "imported", PlacedBy: "hardlink", Role: "main", State: "present"}
 		if _, err := database.Insert(tx, "files", f, domain.System); err != nil {
 			return err
@@ -213,7 +214,7 @@ func TestShowRefreshFromTMDB(t *testing.T) {
 		if _, err := tx.Exec("UPDATE slots SET file_id = ? WHERE id = ?", f.ID, eps["S01E01"].SlotID); err != nil {
 			return err
 		}
-		return store.MoveSlotTx(tx, eps["S01E01"].SlotID, domain.SlotSearching, "", domain.System)
+		return mediafiles.MoveSlotTx(tx, eps["S01E01"].SlotID, mediafiles.SlotSearching, "", domain.System)
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -242,7 +243,7 @@ func TestShowRefreshFromTMDB(t *testing.T) {
 	if after["S01E02"].Name != "Second, renamed" || after["S01E02"].ItemID != eps["S01E02"].ItemID {
 		t.Fatalf("renamed %+v", after["S01E02"])
 	}
-	if after["S02E01"].State != domain.SlotNotOutYet || after["S02E04"].State != domain.SlotNotOutYet || !after["S02E04"].Keep {
+	if after["S02E01"].State != mediafiles.SlotNotOutYet || after["S02E04"].State != mediafiles.SlotNotOutYet || !after["S02E04"].Keep {
 		t.Fatalf("moved and new %+v %+v", after["S02E01"], after["S02E04"])
 	}
 	evs, _, _ := s.Events(ctx, database.EventFilter{TitleID: ti.ID, Limit: 500})
@@ -260,7 +261,7 @@ func TestShowRefreshFromTMDB(t *testing.T) {
 	if out, err := svc.RefreshShow(ctx, ti.ID, domain.System, nil); err != nil || !out.Dropped {
 		t.Fatalf("forgotten %+v %v", out, err)
 	}
-	var back domain.Title
+	var back mediafiles.Title
 	_ = database.Get(ctx, s.Read(), "titles", ti.ID, &back)
 	if back.DroppedAt == nil || len(episodes(t, s, ti.ID)) != 6 {
 		t.Fatalf("forgotten show %+v", back)
@@ -289,7 +290,7 @@ func TestSwitchShowSource(t *testing.T) {
 	if maze.calls[0] != "tvdb:200" {
 		t.Fatalf("TVMaze asked %v; the TVDB id comes first when it has no id of its own", maze.calls)
 	}
-	var back domain.Title
+	var back mediafiles.Title
 	_ = database.Get(ctx, s.Read(), "titles", ti.ID, &back)
 	if back.MetadataSource != "tvmaze" || back.SourceIDs["tvmaze"] != "300" || back.SourceIDs["tmdb"] != "100" {
 		t.Fatalf("title after switch %+v", back)
@@ -376,7 +377,7 @@ func TestRefreshKeepsSpecialsByEpisodeID(t *testing.T) {
 	svc := showService(s, metadata.ShowSources{"tvmaze": src})
 	eps := episodes(t, s, ti.ID)
 	err := s.Write(ctx, func(tx *sql.Tx) error {
-		f := &domain.File{SlotIDs: []int64{eps["S00E01"].SlotID}, VersionID: 1, RelativePath: "Lab Show/Specials/behind.mkv", Languages: []string{},
+		f := &mediafiles.File{SlotIDs: []int64{eps["S00E01"].SlotID}, VersionID: 1, RelativePath: "Lab Show/Specials/behind.mkv", Languages: []string{},
 			Origin: "imported", PlacedBy: "hardlink", Role: "main", State: "present"}
 		if _, err := database.Insert(tx, "files", f, domain.System); err != nil {
 			return err
@@ -403,7 +404,7 @@ func TestRefreshKeepsSpecialsByEpisodeID(t *testing.T) {
 	if after["S00E03"].ItemID != eps["S00E02"].ItemID || after["S00E03"].Name != "Lab Tour" {
 		t.Fatalf("second special %+v", after["S00E03"])
 	}
-	if n := after["S00E01"]; n.ItemID == eps["S00E01"].ItemID || n.ItemID == eps["S00E02"].ItemID || n.Name != "Early Look" || n.State == domain.SlotInLibrary {
+	if n := after["S00E01"]; n.ItemID == eps["S00E01"].ItemID || n.ItemID == eps["S00E02"].ItemID || n.Name != "Early Look" || n.State == mediafiles.SlotInLibrary {
 		t.Fatalf("new special %+v", n)
 	}
 	var fileSlot int64
@@ -459,7 +460,7 @@ func TestFutureSeasonsOnlyRefresh(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	var ti domain.Title
+	var ti mediafiles.Title
 	_ = database.Get(ctx, s.Read(), "titles", id, &ti)
 	if ti.FutureFrom == nil || !ti.FutureFrom.Equal(now) {
 		t.Fatalf("future_from %v", ti.FutureFrom)
@@ -503,7 +504,7 @@ func TestKeepFutureOnExistingShow(t *testing.T) {
 	if eps["S01E01"].Keep || eps["S02E01"].Keep || !eps["S02E02"].Keep || !eps["S02E03"].Keep {
 		t.Fatalf("eps %+v", eps)
 	}
-	var ti domain.Title
+	var ti mediafiles.Title
 	_ = database.Get(ctx, s.Read(), "titles", id, &ti)
 	if !ti.KeepUpToDate || ti.NewPartsPolicy != "all" || ti.FutureFrom == nil || *ti.SeasonChoice != SeasonsFuture {
 		t.Fatalf("title %+v", ti)

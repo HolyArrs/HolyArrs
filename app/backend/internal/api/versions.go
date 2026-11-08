@@ -6,8 +6,9 @@ import (
 	"path/filepath"
 	"strconv"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 )
 
@@ -25,7 +26,7 @@ type VersionView struct {
 	AudioLanguages  []string `json:"audio_languages"`
 }
 
-func versionView(ctx context.Context, db database.Querier, v domain.Version) VersionView {
+func versionView(ctx context.Context, db database.Querier, v mediafiles.Version) VersionView {
 	out := VersionView{ID: v.ID, Label: v.Label, Main: v.IsMain, PickRulesID: v.PickRulesID, LibraryFolderID: v.LibraryFolderID,
 		KeepUpToDate: v.KeepUpToDate, Edition: v.Edition, AudioLanguages: v.AudioLanguages}
 	if out.AudioLanguages == nil {
@@ -83,7 +84,7 @@ func (m *lookupMemo) folder(ctx context.Context, db database.Querier, id int64) 
 		seen = m.folders
 	}
 	return memoRead(seen, id, func() (string, bool) {
-		var lf domain.LibraryFolder
+		var lf mediafiles.LibraryFolder
 		err := database.Get(ctx, db, "library_folders", id, &lf)
 		return lf.Path, err == nil
 	})
@@ -95,7 +96,7 @@ func (m *lookupMemo) rules(ctx context.Context, db database.Querier, id int64) (
 		seen = m.picks
 	}
 	return memoRead(seen, id, func() (string, bool) {
-		var pr domain.PickRules
+		var pr mediafiles.PickRules
 		err := database.Get(ctx, db, "pick_rules", id, &pr)
 		return pr.Name, err == nil
 	})
@@ -115,7 +116,7 @@ func (a *API) publishTitle(r *http.Request, id int64) {
 	if a.s.Live == nil {
 		return
 	}
-	var t domain.Title
+	var t mediafiles.Title
 	if database.Get(r.Context(), a.s.Store.Read(), "titles", id, &t) != nil {
 		return
 	}
@@ -175,7 +176,7 @@ func (a *API) deleteVersion(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	var v domain.Version
+	var v mediafiles.Version
 	_ = database.Get(r.Context(), a.s.Store.Read(), "versions", vid, &v)
 	if err := library.RemoveVersion(r.Context(), a.s.Store, t.ID, vid, actor(r)); err != nil {
 		libraryError(w, err)

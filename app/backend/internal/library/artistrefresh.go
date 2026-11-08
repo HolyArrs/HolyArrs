@@ -9,6 +9,8 @@ import (
 	"slices"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 
@@ -39,7 +41,7 @@ type ArtistRefresh struct {
 // (dropped_at), never deleted.
 func (s *Service) RefreshArtist(ctx context.Context, titleID int64, by domain.Actor, jobID *int64) (ArtistRefresh, error) {
 	var out ArtistRefresh
-	var t domain.Title
+	var t mediafiles.Title
 	if err := database.Get(ctx, s.Store.Read(), "titles", titleID, &t); err != nil {
 		return out, err
 	}
@@ -102,7 +104,7 @@ func (s *Service) RefreshArtist(ctx context.Context, titleID int64, by domain.Ac
 			log.Printf("library: stand-in picture for artist %d: %v", titleID, err)
 		}
 	}
-	albums, err := database.Select[domain.Part](ctx, s.Store.Read(), "parts", "title_id = ? AND kind = 'album' AND included = 1 AND dropped_at IS NULL ORDER BY release_date, id", titleID)
+	albums, err := database.Select[mediafiles.Part](ctx, s.Store.Read(), "parts", "title_id = ? AND kind = 'album' AND included = 1 AND dropped_at IS NULL ORDER BY release_date, id", titleID)
 	if err != nil {
 		return out, err
 	}
@@ -163,7 +165,7 @@ const (
 // fetched, yes; over 30 days since the last fetch, yes; under 12 hours, no;
 // still active and over 2 days, yes; newest album out in the last 30 days,
 // yes; else no.
-func ShouldRefreshArtist(t domain.Title, newest *time.Time, now time.Time) (yes bool, why string) {
+func ShouldRefreshArtist(t mediafiles.Title, newest *time.Time, now time.Time) (yes bool, why string) {
 	if t.RefreshedAt == nil {
 		return true, "never fetched"
 	}
@@ -184,7 +186,7 @@ func ShouldRefreshArtist(t domain.Title, newest *time.Time, now time.Time) (yes 
 // ArtistRefreshPlan picks the artists a refresh-all run covers.
 func (s *Service) ArtistRefreshPlan(ctx context.Context, byHand bool) (ids []int64, why map[int64]string, err error) {
 	db := s.Store.Read()
-	ts, err := database.Select[domain.Title](ctx, db, "titles", "kind = 'artist' AND state != 'removed' ORDER BY sort_name, id")
+	ts, err := database.Select[mediafiles.Title](ctx, db, "titles", "kind = 'artist' AND state != 'removed' ORDER BY sort_name, id")
 	if err != nil {
 		return nil, nil, err
 	}
@@ -253,9 +255,9 @@ func (s *Service) handleRefreshArtists(ctx context.Context, r *jobs.Run) error {
 // SetAlbum switches Keep up to date for an album and its tracks, and/or
 // chooses its Pressing by MusicBrainz id or row id (a person's choice,
 // kept across refreshes); the tracks follow the new Pressing at once.
-func (s *Service) SetAlbum(ctx context.Context, partID int64, keep *bool, pressingID int64, by domain.Actor) (domain.Part, error) {
-	var p domain.Part
-	var t domain.Title
+func (s *Service) SetAlbum(ctx context.Context, partID int64, keep *bool, pressingID int64, by domain.Actor) (mediafiles.Part, error) {
+	var p mediafiles.Part
+	var t mediafiles.Title
 	var changed []string
 	err := s.Store.Write(ctx, func(tx *sql.Tx) error {
 		if err := database.Get(ctx, tx, "parts", partID, &p); err != nil {
@@ -375,8 +377,8 @@ type ArtistChoices struct {
 // SetArtistChoices changes an artist's new-album choice and album kinds,
 // then queues a details refresh so albums now included get their Pressings
 // and tracks (and albums no longer included lose theirs).
-func (s *Service) SetArtistChoices(ctx context.Context, titleID int64, c ArtistChoices, by domain.Actor) (domain.Title, int64, error) {
-	var t domain.Title
+func (s *Service) SetArtistChoices(ctx context.Context, titleID int64, c ArtistChoices, by domain.Actor) (mediafiles.Title, int64, error) {
+	var t mediafiles.Title
 	err := s.Store.Write(ctx, func(tx *sql.Tx) error {
 		if err := database.Get(ctx, tx, "titles", titleID, &t); err != nil {
 			return err
@@ -444,7 +446,7 @@ type AlbumSummary struct {
 // Albums summarises an artist's albums (newest first) from their tracks
 // and the main Version's Slots.
 func Albums(ctx context.Context, db database.Lister, titleID int64) ([]AlbumSummary, error) {
-	parts, err := database.Select[domain.Part](ctx, db, "parts", "title_id = ? AND kind = 'album' ORDER BY release_date IS NULL, release_date DESC, id", titleID)
+	parts, err := database.Select[mediafiles.Part](ctx, db, "parts", "title_id = ? AND kind = 'album' ORDER BY release_date IS NULL, release_date DESC, id", titleID)
 	if err != nil {
 		return nil, err
 	}
@@ -493,11 +495,11 @@ type trackState struct {
 }
 
 // AlbumOf summarises one album.
-func AlbumOf(ctx context.Context, db database.Lister, p domain.Part) (AlbumSummary, error) {
+func AlbumOf(ctx context.Context, db database.Lister, p mediafiles.Part) (AlbumSummary, error) {
 	return albumSummary(ctx, db, p)
 }
 
-func albumSummary(ctx context.Context, db database.Lister, p domain.Part) (AlbumSummary, error) {
+func albumSummary(ctx context.Context, db database.Lister, p mediafiles.Part) (AlbumSummary, error) {
 	ps, err := database.Select[domain.AlbumPressing](ctx, db, "pressings", "part_id = ?", p.ID)
 	if err != nil {
 		return AlbumSummary{}, err
@@ -524,7 +526,7 @@ func albumSummary(ctx context.Context, db database.Lister, p domain.Part) (Album
 }
 
 // summarise builds one album's summary from its pressings and track states.
-func summarise(p domain.Part, ps []domain.AlbumPressing, ts []trackState) AlbumSummary {
+func summarise(p mediafiles.Part, ps []domain.AlbumPressing, ts []trackState) AlbumSummary {
 	a := AlbumSummary{ID: p.ID, MBID: p.SourceIDs["musicbrainz"], Name: p.Name, SecondaryTypes: p.SecondaryTypes, ReleaseDate: p.ReleaseDate,
 		Included: p.Included, KeepUpToDate: p.KeepUpToDate, Dropped: p.DroppedAt != nil}
 	if p.ReleaseType != nil {
@@ -544,15 +546,15 @@ func summarise(p domain.Part, ps []domain.AlbumPressing, ts []trackState) AlbumS
 	}
 	for _, t := range ts {
 		a.Tracks++
-		switch domain.SlotState(t.state) {
-		case domain.SlotInLibrary:
+		switch mediafiles.SlotState(t.state) {
+		case mediafiles.SlotInLibrary:
 			a.InLibrary++
-		case domain.SlotBetterWanted:
+		case mediafiles.SlotBetterWanted:
 			a.InLibrary++
 			a.BetterWanted++
-		case domain.SlotNotOutYet:
+		case mediafiles.SlotNotOutYet:
 			a.NotOutYet++
-		case domain.SlotWanted:
+		case mediafiles.SlotWanted:
 			if t.keep {
 				a.Missing++
 			}
@@ -605,8 +607,8 @@ func Totals(ctx context.Context, db database.Querier, titleID int64, now time.Ti
 		COALESCE(sum(s.state IN (?, ?, ?, ?)), 0), COALESCE(sum(s.state IN (?, ?)), 0) FROM items i
 		LEFT JOIN slots s ON s.item_id = i.id AND s.version_id = (SELECT id FROM versions WHERE title_id = ? ORDER BY is_main DESC, id LIMIT 1)
 		WHERE i.title_id = ? AND i.kind = 'track' AND i.part_id IN (SELECT id FROM parts WHERE title_id = ? AND kind = 'album')`,
-		domain.SlotInLibrary, domain.SlotBetterWanted, domain.SlotBetterWanted, domain.SlotNotOutYet, domain.SlotWanted,
-		domain.SlotChosen, domain.SlotDownloading, domain.SlotStalled, domain.SlotImporting, domain.SlotFailed, domain.SlotNeedsADecision, titleID, titleID, titleID).
+		mediafiles.SlotInLibrary, mediafiles.SlotBetterWanted, mediafiles.SlotBetterWanted, mediafiles.SlotNotOutYet, mediafiles.SlotWanted,
+		mediafiles.SlotChosen, mediafiles.SlotDownloading, mediafiles.SlotStalled, mediafiles.SlotImporting, mediafiles.SlotFailed, mediafiles.SlotNeedsADecision, titleID, titleID, titleID).
 		Scan(&t.Tracks, &t.InLibrary, &t.BetterWanted, &t.NotOutYet, &t.Missing, &t.Downloading, &t.Failed)
 	return t, err
 }
@@ -629,8 +631,8 @@ func (s *Service) ChooseEdition(ctx context.Context, partID int64, release strin
 		return false, err
 	}
 	if id == 0 {
-		var p domain.Part
-		var t domain.Title
+		var p mediafiles.Part
+		var t mediafiles.Title
 		if err := database.Get(ctx, s.Store.Read(), "parts", partID, &p); err != nil {
 			return false, err
 		}
@@ -679,7 +681,7 @@ func (s *Service) IncludeAlbumsThen(ctx context.Context, titleID int64, partIDs 
 	if len(partIDs) == 0 {
 		return nil
 	}
-	var t domain.Title
+	var t mediafiles.Title
 	err := s.Store.Write(ctx, func(tx *sql.Tx) error {
 		if err := database.Get(ctx, tx, "titles", titleID, &t); err != nil {
 			return err
@@ -688,7 +690,7 @@ func (s *Service) IncludeAlbumsThen(ctx context.Context, titleID int64, partIDs 
 			return ErrNotArtist
 		}
 		for _, id := range partIDs {
-			var p domain.Part
+			var p mediafiles.Part
 			if err := database.Get(ctx, tx, "parts", id, &p); err != nil {
 				return err
 			}

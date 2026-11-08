@@ -14,6 +14,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
@@ -55,18 +57,18 @@ func folderKindOf(kind string) (string, error) {
 // PlanMove works out moving a Title's main Version into another Library
 // folder (other Versions keep their own folders). Nothing on disk changes.
 func PlanMove(ctx context.Context, db database.Querier, lister database.Lister, titleID, folderID int64) ([]MovePlan, error) {
-	var to domain.LibraryFolder
+	var to mediafiles.LibraryFolder
 	if err := database.Get(ctx, db, "library_folders", folderID, &to); err != nil {
 		return nil, ErrNoFolder
 	}
-	var t domain.Title
+	var t mediafiles.Title
 	if err := database.Get(ctx, db, "titles", titleID, &t); err != nil {
 		return nil, err
 	}
 	if want, wrong := folderKindOf(t.Kind); to.Kind != want {
 		return nil, wrong
 	}
-	vs, err := database.Select[domain.Version](ctx, lister, "versions", "title_id = ? AND is_main = 1 ORDER BY id", titleID)
+	vs, err := database.Select[mediafiles.Version](ctx, lister, "versions", "title_id = ? AND is_main = 1 ORDER BY id", titleID)
 	if err != nil {
 		return nil, err
 	}
@@ -81,7 +83,7 @@ func PlanMove(ctx context.Context, db database.Querier, lister database.Lister, 
 		}
 		p := MovePlan{VersionID: v.ID, FromDir: from, ToDir: filepath.Join(to.Path, v.FolderName), Steps: []MoveStep{},
 			fromRoot: fromLib.Path, toRoot: to.Path}
-		files, err := database.Select[domain.File](ctx, lister, "files", "version_id = ? AND state = 'present' ORDER BY id", v.ID)
+		files, err := database.Select[mediafiles.File](ctx, lister, "files", "version_id = ? AND state = 'present' ORDER BY id", v.ID)
 		if err != nil {
 			return nil, err
 		}
@@ -142,7 +144,7 @@ func (s *Service) handleMove(ctx context.Context, r *jobs.Run) error {
 			return jobError{code: "blocked", msg: p.Blocked}
 		}
 	}
-	var lf domain.LibraryFolder
+	var lf mediafiles.LibraryFolder
 	if err := database.Get(ctx, db, "library_folders", int64(fid), &lf); err != nil {
 		return err
 	}

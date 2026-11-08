@@ -8,17 +8,18 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
 type pickRulesDetail struct {
-	ID       int64                `json:"id"`
-	Name     string               `json:"name"`
-	Kinds    []string             `json:"kinds"`
-	Preset   bool                 `json:"preset"`
-	Revision int                  `json:"revision"`
-	Body     domain.PickRulesBody `json:"body"`
+	ID       int64                    `json:"id"`
+	Name     string                   `json:"name"`
+	Kinds    []string                 `json:"kinds"`
+	Preset   bool                     `json:"preset"`
+	Revision int                      `json:"revision"`
+	Body     mediafiles.PickRulesBody `json:"body"`
 	InUse    struct {
 		Versions       int `json:"versions"`
 		LibraryFolders int `json:"library_folders"`
@@ -28,7 +29,7 @@ type pickRulesDetail struct {
 	} `json:"in_use"`
 }
 
-func ruleJSON(t *testing.T, name string, kinds []string, b domain.PickRulesBody) string {
+func ruleJSON(t *testing.T, name string, kinds []string, b mediafiles.PickRulesBody) string {
 	t.Helper()
 	raw, err := json.Marshal(map[string]any{"name": name, "kinds": kinds, "body": b})
 	if err != nil {
@@ -59,7 +60,7 @@ func ruleByName(t *testing.T, base, name string) PickRulesView {
 func TestCreateEditDeletePickRules(t *testing.T) {
 	srv, _, _ := libSetup(t)
 	var p pickRulesDetail
-	_ = json.Unmarshal(do(t, "POST", srv.URL+"/api/v1/pick-rules", ruleJSON(t, "Small files", []string{"movie"}, domain.GoodEveryday()), 201), &p)
+	_ = json.Unmarshal(do(t, "POST", srv.URL+"/api/v1/pick-rules", ruleJSON(t, "Small files", []string{"movie"}, mediafiles.GoodEveryday()), 201), &p)
 	if p.ID == 0 || p.Name != "Small files" || p.Revision != 1 || p.Preset || len(p.Body.Steps) == 0 {
 		t.Fatalf("create %+v", p)
 	}
@@ -69,7 +70,7 @@ func TestCreateEditDeletePickRules(t *testing.T) {
 	if got.ID != p.ID || got.Name != "Small files" || got.InUse.Versions != 0 {
 		t.Fatalf("get %+v", got)
 	}
-	b := domain.GoodEveryday()
+	b := mediafiles.GoodEveryday()
 	b.MinPoints = 25
 	_ = json.Unmarshal(do(t, "PUT", path, ruleJSON(t, "Smaller files", []string{"movie", "show"}, b), 200), &got)
 	if got.Name != "Smaller files" || got.Revision != 2 || got.Body.MinPoints != 25 || len(got.Kinds) != 2 {
@@ -90,21 +91,23 @@ func TestPickRulesFieldErrors(t *testing.T) {
 	cases := []struct {
 		name  string
 		kinds []string
-		edit  func(*domain.PickRulesBody)
+		edit  func(*mediafiles.PickRulesBody)
 		field string
 	}{
 		{"", []string{"movie"}, nil, "name"},
 		{"x", []string{"book"}, nil, "kinds"},
-		{"x", []string{"movie"}, func(b *domain.PickRulesBody) { b.GoodEnoughAt = "cam" }, "body.good_enough_at"},
-		{"x", []string{"movie"}, func(b *domain.PickRulesBody) { b.Steps = nil }, "body.steps"},
-		{"x", []string{"movie"}, func(b *domain.PickRulesBody) { b.Traits = []domain.TraitPoints{{Trait: "glitter"}} }, "body.traits"},
-		{"x", []string{"movie"}, func(b *domain.PickRulesBody) { b.Protocol.Prefer = "ftp" }, "body.protocol.prefer"},
-		{"x", []string{"movie"}, func(b *domain.PickRulesBody) { b.Protocol.WaitMinutesTorrent = -1 }, "body.protocol.wait_minutes_torrent"},
-		{"x", []string{"movie"}, func(b *domain.PickRulesBody) { b.SizeLimits = map[string]domain.SizeLimit{"*": {Min: 2, Max: 1}} }, "body.size_limits"},
-		{"x", []string{"movie"}, func(b *domain.PickRulesBody) { b.ProperPolicy.MaxAgeDays = -1 }, "body.proper_policy.max_age_days"},
+		{"x", []string{"movie"}, func(b *mediafiles.PickRulesBody) { b.GoodEnoughAt = "cam" }, "body.good_enough_at"},
+		{"x", []string{"movie"}, func(b *mediafiles.PickRulesBody) { b.Steps = nil }, "body.steps"},
+		{"x", []string{"movie"}, func(b *mediafiles.PickRulesBody) { b.Traits = []mediafiles.TraitPoints{{Trait: "glitter"}} }, "body.traits"},
+		{"x", []string{"movie"}, func(b *mediafiles.PickRulesBody) { b.Protocol.Prefer = "ftp" }, "body.protocol.prefer"},
+		{"x", []string{"movie"}, func(b *mediafiles.PickRulesBody) { b.Protocol.WaitMinutesTorrent = -1 }, "body.protocol.wait_minutes_torrent"},
+		{"x", []string{"movie"}, func(b *mediafiles.PickRulesBody) {
+			b.SizeLimits = map[string]mediafiles.SizeLimit{"*": {Min: 2, Max: 1}}
+		}, "body.size_limits"},
+		{"x", []string{"movie"}, func(b *mediafiles.PickRulesBody) { b.ProperPolicy.MaxAgeDays = -1 }, "body.proper_policy.max_age_days"},
 	}
 	for _, c := range cases {
-		b := domain.GoodEveryday()
+		b := mediafiles.GoodEveryday()
 		if c.edit != nil {
 			c.edit(&b)
 		}
@@ -122,7 +125,7 @@ func TestPickRulesFieldErrors(t *testing.T) {
 
 func TestPickRulesNameTaken(t *testing.T) {
 	srv, _, _ := libSetup(t)
-	b := string(do(t, "POST", srv.URL+"/api/v1/pick-rules", ruleJSON(t, "standARD", []string{"movie"}, domain.GoodEveryday()), 409))
+	b := string(do(t, "POST", srv.URL+"/api/v1/pick-rules", ruleJSON(t, "standARD", []string{"movie"}, mediafiles.GoodEveryday()), 409))
 	if !strings.Contains(b, `"field":"name"`) {
 		t.Fatalf("taken: %s", b)
 	}
@@ -130,9 +133,9 @@ func TestPickRulesNameTaken(t *testing.T) {
 
 func TestPresetKeepsNameAndKinds(t *testing.T) {
 	srv, _, _ := libSetup(t)
-	ge := ruleByName(t, srv.URL, domain.GoodEverydayName)
+	ge := ruleByName(t, srv.URL, mediafiles.GoodEverydayName)
 	path := fmt.Sprintf("%s/api/v1/pick-rules/%d", srv.URL, ge.ID)
-	b := domain.GoodEveryday()
+	b := mediafiles.GoodEveryday()
 	b.MinPoints = 3
 	do(t, "PUT", path, ruleJSON(t, "Renamed", ge.Kinds, b), 409)
 	do(t, "PUT", path, ruleJSON(t, ge.Name, []string{"movie"}, b), 409)
@@ -145,7 +148,7 @@ func TestPresetKeepsNameAndKinds(t *testing.T) {
 
 func TestPresetCannotBeRemoved(t *testing.T) {
 	srv, _, _ := libSetup(t)
-	ge := ruleByName(t, srv.URL, domain.GoodEverydayName)
+	ge := ruleByName(t, srv.URL, mediafiles.GoodEverydayName)
 	b := string(do(t, "DELETE", fmt.Sprintf("%s/api/v1/pick-rules/%d", srv.URL, ge.ID), "", 409))
 	if !strings.Contains(b, "ready-made") {
 		t.Fatalf("delete preset: %s", b)
@@ -155,7 +158,7 @@ func TestPresetCannotBeRemoved(t *testing.T) {
 func TestPickRulesInUseCountsEveryReference(t *testing.T) {
 	srv, st, _ := libSetup(t)
 	var p pickRulesDetail
-	_ = json.Unmarshal(do(t, "POST", srv.URL+"/api/v1/pick-rules", ruleJSON(t, "Mine", []string{"movie", "show"}, domain.GoodEveryday()), 201), &p)
+	_ = json.Unmarshal(do(t, "POST", srv.URL+"/api/v1/pick-rules", ruleJSON(t, "Mine", []string{"movie", "show"}, mediafiles.GoodEveryday()), 201), &p)
 	var lf FolderView
 	_ = json.Unmarshal(do(t, "POST", srv.URL+"/api/v1/library-folders", fmt.Sprintf(`{"path":%q,"kind":"movie","label":"Movies","default_pick_rules_id":%d}`, t.TempDir(), p.ID), 201), &lf)
 	do(t, "POST", srv.URL+"/api/v1/titles", fmt.Sprintf(`{"id":"tmdb:693134","pick_rules_id":%d}`, p.ID), 201)
@@ -190,18 +193,18 @@ func TestPickRulesInUseCountsEveryReference(t *testing.T) {
 func TestInUseCannotDropAKindOrSwitchLadder(t *testing.T) {
 	srv, _, _ := libSetup(t)
 	var p pickRulesDetail
-	_ = json.Unmarshal(do(t, "POST", srv.URL+"/api/v1/pick-rules", ruleJSON(t, "Mine", []string{"movie", "show"}, domain.GoodEveryday()), 201), &p)
+	_ = json.Unmarshal(do(t, "POST", srv.URL+"/api/v1/pick-rules", ruleJSON(t, "Mine", []string{"movie", "show"}, mediafiles.GoodEveryday()), 201), &p)
 	do(t, "POST", srv.URL+"/api/v1/library-folders", fmt.Sprintf(`{"path":%q,"kind":"movie","label":"Movies"}`, t.TempDir()), 201)
 	do(t, "POST", srv.URL+"/api/v1/titles", fmt.Sprintf(`{"id":"tmdb:693134","pick_rules_id":%d}`, p.ID), 201)
 	path := fmt.Sprintf("%s/api/v1/pick-rules/%d", srv.URL, p.ID)
-	do(t, "PUT", path, ruleJSON(t, "Mine", []string{"show"}, domain.GoodEveryday()), 409)
-	do(t, "PUT", path, ruleJSON(t, "Mine", []string{"music"}, domain.LosslessFirst()), 409)
-	do(t, "PUT", path, ruleJSON(t, "Mine", []string{"movie"}, domain.GoodEveryday()), 200)
+	do(t, "PUT", path, ruleJSON(t, "Mine", []string{"show"}, mediafiles.GoodEveryday()), 409)
+	do(t, "PUT", path, ruleJSON(t, "Mine", []string{"music"}, mediafiles.LosslessFirst()), 409)
+	do(t, "PUT", path, ruleJSON(t, "Mine", []string{"movie"}, mediafiles.GoodEveryday()), 200)
 }
 
 func TestPickRulesEditNeedsSettings(t *testing.T) {
 	k := newAskRig(t)
-	body := ruleJSON(t, "Mine", []string{"movie"}, domain.GoodEveryday())
+	body := ruleJSON(t, "Mine", []string{"movie"}, mediafiles.GoodEveryday())
 	k.ana.call("POST", "/api/v1/pick-rules", body, 403)
 	k.owner.call("PUT", fmt.Sprintf("/api/v1/users/%d", k.bo.id), `{"perms":["ask","manage_library"]}`, 200)
 	k.bo.call("POST", "/api/v1/pick-rules", body, 403)

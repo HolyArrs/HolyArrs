@@ -1,4 +1,4 @@
-package judge
+package mediafiles
 
 import (
 	"math"
@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
 func TestPerMinuteSizeLimitArithmeticSaturates(t *testing.T) {
@@ -17,17 +16,17 @@ func TestPerMinuteSizeLimitArithmeticSaturates(t *testing.T) {
 		release string
 		hints   releasename.Hints
 		title   TitleRef
-		rules   domain.PickRulesBody
+		rules   PickRulesBody
 		step    string
 	}{
-		{name: "video", release: "Example.Movie.2025.1080p.WEB-DL.H265-TEST", title: TitleRef{ID: 1, Name: "Example Movie", Year: 2025}, rules: domain.GoodEveryday(), step: "1080p_web"},
-		{name: "music", release: musicCase(t, "U01"), hints: releasename.Hints{Music: true}, title: TitleRef{ID: 2, Name: "Velvet Cartography", Kind: "artist"}, rules: domain.LosslessFirst(), step: "lossless"},
+		{name: "video", release: "Example.Movie.2025.1080p.WEB-DL.H265-TEST", title: TitleRef{ID: 1, Name: "Example Movie", Year: 2025}, rules: GoodEveryday(), step: "1080p_web"},
+		{name: "music", release: musicCase(t, "U01"), hints: releasename.Hints{Music: true}, title: TitleRef{ID: 2, Name: "Velvet Cartography", Kind: "artist"}, rules: LosslessFirst(), step: "lossless"},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			tc.rules.SizeLimits = map[string]domain.SizeLimit{tc.step: {Min: 1 << 50, Max: 1 << 50, PerMinute: true}}
+			tc.rules.SizeLimits = map[string]SizeLimit{tc.step: {Min: 1 << 50, Max: 1 << 50, PerMinute: true}}
 			p := releasename.Parse(tc.release, tc.hints)
-			v := Judge(Release{Name: tc.release, Parse: p, Size: 1 << 30}, SlotSet{
+			v := Judge(ReleaseFacts{Name: tc.release, Parse: p, Size: 1 << 30}, SlotSet{
 				Match: Match{Title: &tc.title, Conf: releasename.Sure, Detail: "test match"}, SlotIDs: []int64{1}, RuntimeMinutes: 9000, Out: true,
 			}, tc.rules)
 			if !hasFail(v, "hard", "size") {
@@ -39,11 +38,6 @@ func TestPerMinuteSizeLimitArithmeticSaturates(t *testing.T) {
 		})
 	}
 }
-
-const (
-	mb = int64(1) << 20
-	gb = int64(1) << 30
-)
 
 // The fixed library from release-names-testset.md (movies only).
 var library = []TitleRef{
@@ -71,7 +65,7 @@ type row struct {
 	Files    []string
 	Current  *Current
 	Outcome  string   // chosen or refused
-	Points   int      // checked when the Release passes
+	Points   int      // checked when the ReleaseFacts passes
 	Codes    []string // refusal codes that must be present
 	Warnings []string // warning codes that must be present
 	Title    int64    // matched Title id, 0 for none
@@ -156,19 +150,19 @@ func defaultSize(res int) int64 {
 	return 2 * gb
 }
 
-func release(r row) Release {
+func release(r row) ReleaseFacts {
 	p := releasename.Parse(r.Name, releasename.Hints{Size: r.Size, FileList: r.Files})
 	size := r.Size
 	if size == 0 {
 		size = defaultSize(p.Resolution.Value)
 	}
-	return Release{Name: r.Name, Parse: p, Size: size, Protocol: "torrent", Seeders: ptr(85),
+	return ReleaseFacts{Name: r.Name, Parse: p, Size: size, Protocol: "torrent", Seeders: ptr(85),
 		PublishedAt: time.Now().Add(-6 * time.Hour), Files: r.Files}
 }
 
 func ptr[T any](v T) *T { return &v }
 
-func setFor(t *testing.T, rel Release, cur *Current) SlotSet {
+func setFor(t *testing.T, rel ReleaseFacts, cur *Current) SlotSet {
 	t.Helper()
 	m := MatchTitle(rel.Parse, library)
 	runtime := 120
@@ -189,7 +183,7 @@ func codes(v Verdict, effect string) []string {
 }
 
 func TestMovieVerdicts(t *testing.T) {
-	rules := domain.GoodEveryday()
+	rules := GoodEveryday()
 	for _, r := range rows {
 		t.Run(r.ID, func(t *testing.T) {
 			rel := release(r)
@@ -248,7 +242,7 @@ func dump(v Verdict) string {
 func TestAllHardRefusalsAtOnce(t *testing.T) {
 	// Worked example C: hardcoded subs and cam are both reported.
 	rel := release(row{Name: "The.Lantern.Keepers.2021.1080p.HDCAM.HC.x264-GRAVELY", Size: 1400 * mb})
-	v := Judge(rel, setFor(t, rel, nil), domain.GoodEveryday())
+	v := Judge(rel, setFor(t, rel, nil), GoodEveryday())
 	fails := codes(v, "fail")
 	for _, c := range []string{"hard.never:hardcoded_subs", "step.not_allowed"} {
 		if !slices.Contains(fails, c) {
@@ -264,7 +258,7 @@ func TestAllHardRefusalsAtOnce(t *testing.T) {
 
 func TestHardChecksRunInSpecOrder(t *testing.T) {
 	rel := release(row{Name: "The.Lantern.Keepers.2021.1080p.WEB-DL.H.264-QUILL.exe"})
-	v := Judge(rel, setFor(t, rel, nil), domain.GoodEveryday())
+	v := Judge(rel, setFor(t, rel, nil), GoodEveryday())
 	var order []string
 	for _, r := range v.Reasons {
 		if r.Step != "hard" {
@@ -290,9 +284,9 @@ func TestHardChecksRunInSpecOrder(t *testing.T) {
 
 func TestRankWorkedExamples(t *testing.T) {
 	// Worked examples A and B: same step, B loses on points.
-	rules := domain.GoodEveryday()
+	rules := GoodEveryday()
 	var vs []Verdict
-	var rels []Release
+	var rels []ReleaseFacts
 	for _, name := range []string{
 		"The.Lantern.Keepers.2021.1080p.WEBRip.x264.AAC-TINCAN",
 		"The.Lantern.Keepers.2021.1080p.WEB-DL.DDP5.1.H.265-QUILL",
@@ -320,24 +314,24 @@ func TestRankWorkedExamples(t *testing.T) {
 }
 
 func TestRankQualityFirst(t *testing.T) {
-	rules := domain.GoodEveryday()
+	rules := GoodEveryday()
 	a := release(row{Name: "Saltwater.Choir.2022.720p.WEB-DL.H.265-QUILL"})  // 720p_web, 15 points
 	b := release(row{Name: "Saltwater.Choir.2022.1080p.WEBRip.x264-TINCAN"}) // 1080p_web, 0 points
 	vs := []Verdict{Judge(a, setFor(t, a, nil), rules), Judge(b, setFor(t, b, nil), rules)}
-	Rank([]Release{a, b}, vs, rules)
+	Rank([]ReleaseFacts{a, b}, vs, rules)
 	if vs[1].Outcome != "chosen" {
 		t.Fatalf("quality_then_points: the higher step wins\n%s", dump(vs[0]))
 	}
 	rules.Order = "points_then_quality"
 	vs = []Verdict{Judge(a, setFor(t, a, nil), rules), Judge(b, setFor(t, b, nil), rules)}
-	Rank([]Release{a, b}, vs, rules)
+	Rank([]ReleaseFacts{a, b}, vs, rules)
 	if vs[0].Outcome != "chosen" {
 		t.Fatal("points_then_quality: more points wins")
 	}
 }
 
 func TestProtocolWaitHolds(t *testing.T) {
-	rules := domain.GoodEveryday()
+	rules := GoodEveryday()
 	rules.Protocol.WaitMinutesTorrent = 60
 	rel := release(row{Name: "Saltwater.Choir.2022.720p.WEB-DL.x264-TINCAN"})
 	rel.PublishedAt = time.Now().Add(-10 * time.Minute)
@@ -353,7 +347,7 @@ func TestProtocolWaitHolds(t *testing.T) {
 }
 
 func TestGateSeedersAndTurnedDown(t *testing.T) {
-	rules := domain.GoodEveryday()
+	rules := GoodEveryday()
 	rel := release(row{Name: "Saltwater.Choir.2022.720p.WEB-DL.x264-TINCAN"})
 	rel.Seeders = ptr(0)
 	set := setFor(t, rel, nil)

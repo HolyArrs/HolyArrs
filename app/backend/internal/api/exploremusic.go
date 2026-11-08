@@ -11,8 +11,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/explore"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
@@ -313,7 +314,7 @@ type musicArtist struct {
 // (the metadata server's sharp photo first) when the artist has a
 // MusicBrainz id, with the saved library artwork as the route's fallback;
 // without an id, the saved artwork alone.
-func artistImage(t domain.Title) string {
+func artistImage(t mediafiles.Title) string {
 	saved := ""
 	if l := artworkLinks(t.Artwork); len(l) > 0 && strings.HasPrefix(l[0], "/api/v1/artwork/") {
 		saved = l[0]
@@ -377,7 +378,7 @@ func (a *API) exploreMusic(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	titles, err := database.Select[domain.Title](ctx, db, "titles", "kind = 'artist' AND state != 'removed' ORDER BY id")
+	titles, err := database.Select[mediafiles.Title](ctx, db, "titles", "kind = 'artist' AND state != 'removed' ORDER BY id")
 	if err != nil {
 		internal(w, err)
 		return
@@ -489,7 +490,7 @@ func (a *API) exploreMusic(w http.ResponseWriter, r *http.Request) {
 		return c
 	}
 	var names []nameKey
-	albumCard := func(m *musicArtist, p domain.Part) MusicCard {
+	albumCard := func(m *musicArtist, p mediafiles.Part) MusicCard {
 		rg := strings.ToLower(p.SourceIDs["musicbrainz"])
 		c := MusicCard{Key: "album:" + strconv.FormatInt(p.ID, 10), Kind: "album", MBID: rg, Name: p.Name, Artist: m.name, ArtistMBID: m.mbid, TitleID: m.id, PartID: p.ID, Date: dayOf(p.ReleaseDate)}
 		if rg != "" {
@@ -516,7 +517,7 @@ func (a *API) exploreMusic(w http.ResponseWriter, r *http.Request) {
 	var hero *MusicCard
 	var heroAlts, heroAlbums, heroEPs []MusicCard
 	{
-		ps, err := database.Select[domain.Part](ctx, db, "parts", `kind = 'album' AND dropped_at IS NULL AND release_date >= ? AND release_date < ?
+		ps, err := database.Select[mediafiles.Part](ctx, db, "parts", `kind = 'album' AND dropped_at IS NULL AND release_date >= ? AND release_date < ?
 			AND lower(coalesce(release_type, '')) IN ('album', 'ep', 'single') AND secondary_types = '[]' AND coalesce(release_date_precision, 'day') != 'year'
 			AND title_id IN (SELECT id FROM titles WHERE kind = 'artist' AND state != 'removed') ORDER BY release_date DESC, id`,
 			now.AddDate(0, 0, -90).Format("2006-01-02"), now.AddDate(0, 0, 180).Format("2006-01-02"))
@@ -603,7 +604,7 @@ func (a *API) exploreMusic(w http.ResponseWriter, r *http.Request) {
 	// Missing albums: studio albums of artists you have that have no music
 	// yet, artists with music first, a few each, newest first.
 	{
-		ps, err := database.Select[domain.Part](ctx, db, "parts", `kind = 'album' AND dropped_at IS NULL AND release_date IS NOT NULL AND release_date <= ?
+		ps, err := database.Select[mediafiles.Part](ctx, db, "parts", `kind = 'album' AND dropped_at IS NULL AND release_date IS NOT NULL AND release_date <= ?
 			AND lower(coalesce(release_type, '')) = 'album' AND secondary_types = '[]'
 			AND title_id IN (SELECT id FROM titles WHERE kind = 'artist' AND state != 'removed')
 			AND NOT EXISTS (SELECT 1 FROM items i JOIN slots s ON s.item_id = i.id WHERE i.part_id = parts.id AND s.file_id IS NOT NULL)
@@ -612,7 +613,7 @@ func (a *API) exploreMusic(w http.ResponseWriter, r *http.Request) {
 			internal(w, err)
 			return
 		}
-		by := map[int64][]domain.Part{}
+		by := map[int64][]mediafiles.Part{}
 		for _, p := range ps {
 			if len(by[p.TitleID]) < 3 {
 				by[p.TitleID] = append(by[p.TitleID], p)

@@ -13,6 +13,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/alerts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/asks"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
@@ -21,7 +23,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/lists"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/naming"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles"
 )
@@ -835,10 +836,10 @@ func (r *run) rules(it Item) (string, string) {
 }
 
 // seededWait is the protocol block the ready-made Pick rules come with.
-var seededWait = domain.ProtocolRule{Prefer: "either"}
+var seededWait = mediafiles.ProtocolRule{Prefer: "either"}
 
 // untouchedWait says a protocol block is still as it came.
-func untouchedWait(p domain.ProtocolRule) bool {
+func untouchedWait(p mediafiles.ProtocolRule) bool {
 	if p.Prefer == "" {
 		p.Prefer = "either"
 	}
@@ -853,11 +854,11 @@ func (r *run) protocol(it Item) (string, string) {
 	if id == 0 {
 		return ResNotFound, "the ready-made Pick rules " + pp.Preset + " are not here any more"
 	}
-	var cur domain.PickRules
+	var cur mediafiles.PickRules
 	if err := database.Get(r.ctx, r.m.Store.Read(), "pick_rules", id, &cur); err != nil {
 		return ResFailed, err.Error()
 	}
-	want := domain.ProtocolRule{Prefer: pp.Prefer, WaitMinutesUsenet: pp.WaitUsenet, WaitMinutesTorrent: pp.WaitTorrent, SkipWaitAtGoodEnough: pp.SkipAtGoodEnough}
+	want := mediafiles.ProtocolRule{Prefer: pp.Prefer, WaitMinutesUsenet: pp.WaitUsenet, WaitMinutesTorrent: pp.WaitTorrent, SkipWaitAtGoodEnough: pp.SkipAtGoodEnough}
 	switch {
 	case cur.Body.Protocol == want:
 		return ResAlready, pp.Preset + " already waits this way"
@@ -1324,7 +1325,7 @@ func (r *run) neverAdd(it Item) (string, string) {
 	if r.dry {
 		return ResCreate, "added to the Never-add list"
 	}
-	row := domain.NeverAdd{Kind: n.Kind, SourceIDs: n.IDs, Name: it.Name, Reason: "moved from the old app's exclusions"}
+	row := mediafiles.NeverAdd{Kind: n.Kind, SourceIDs: n.IDs, Name: it.Name, Reason: "moved from the old app's exclusions"}
 	var id int64
 	err := r.m.Store.Write(r.ctx, func(tx *sql.Tx) error {
 		var err error
@@ -1409,7 +1410,7 @@ func (r *run) downloader(it Item) (string, string) {
 }
 
 // setNaming puts one moved naming value on s.
-func setNaming(s *naming.Settings, k, v string) {
+func setNaming(s *mediafiles.NamingSettings, k, v string) {
 	switch k {
 	case "rename_on_import":
 		s.RenameOnImport = v == "true"
@@ -1437,7 +1438,7 @@ func setNaming(s *naming.Settings, k, v string) {
 }
 
 func (r *run) naming(it Item) (string, string) {
-	cur, err := naming.Read(r.ctx, r.m.Store.Read())
+	cur, err := mediafiles.ReadNaming(r.ctx, r.m.Store.Read())
 	if err != nil {
 		return ResFailed, err.Error()
 	}
@@ -1456,7 +1457,7 @@ func (r *run) naming(it Item) (string, string) {
 	}
 	before, _ := json.Marshal(cur)
 	after, _ := json.Marshal(it.Naming)
-	err = naming.Save(r.ctx, r.m.Store, next, r.by, func(tx *sql.Tx) error {
+	err = mediafiles.PutNamingSettings(r.ctx, r.m.Store, next, r.by, func(tx *sql.Tx) error {
 		return r.markTx(tx, it.Key, "naming", 0, string(before), string(after))
 	})
 	return result(err, ResChanged, it.Detail+"; nothing on disk is renamed")
@@ -2397,11 +2398,11 @@ func (m *Mover) undoOne(ctx context.Context, x madeRow, by domain.Actor) (string
 		return ResRemoved, "the default weekly limits are back as they were"
 	case "naming":
 		var moved map[string]string
-		var old naming.Settings
+		var old mediafiles.NamingSettings
 		if x.after == "" || json.Unmarshal([]byte(x.after), &moved) != nil || json.Unmarshal([]byte(x.before), &old) != nil {
 			return ResKept, keptUnknown
 		}
-		cur, err := naming.Read(ctx, m.Store.Read())
+		cur, err := mediafiles.ReadNaming(ctx, m.Store.Read())
 		if err != nil {
 			return ResFailed, err.Error()
 		}
@@ -2412,7 +2413,7 @@ func (m *Mover) undoOne(ctx context.Context, x madeRow, by domain.Actor) (string
 		if !reflect.DeepEqual(same, cur) {
 			return ResKept, keptChanged
 		}
-		if err := naming.Save(ctx, m.Store, old, by); err != nil {
+		if err := mediafiles.PutNamingSettings(ctx, m.Store, old, by); err != nil {
 			return ResFailed, err.Error()
 		}
 		return ResRemoved, "naming is back as it was"
@@ -2432,11 +2433,11 @@ func (m *Mover) undoOne(ctx context.Context, x madeRow, by domain.Actor) (string
 		}
 		return ResRemoved, "the default languages are back as they were"
 	case "pick_rules_protocol":
-		var old, moved domain.ProtocolRule
+		var old, moved mediafiles.ProtocolRule
 		if x.after == "" || json.Unmarshal([]byte(x.before), &old) != nil || json.Unmarshal([]byte(x.after), &moved) != nil {
 			return ResKept, keptUnknown
 		}
-		var cur domain.PickRules
+		var cur mediafiles.PickRules
 		if err := database.Get(ctx, m.Store.Read(), "pick_rules", x.row, &cur); errors.Is(err, database.ErrNotFound) {
 			return ResKept, "already gone"
 		} else if err != nil {

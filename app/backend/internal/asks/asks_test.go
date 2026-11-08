@@ -9,6 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/alerts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
@@ -148,7 +150,7 @@ func newRig(t *testing.T) *rig {
 	r := &rig{st: st, fake: &fakeAlerts{}, clock: time.Date(2026, 10, 13, 12, 0, 0, 0, time.UTC)}
 	ids := map[string]int64{}
 	err = st.Write(ctx, func(tx *sql.Tx) error {
-		if _, err := database.Insert(tx, "library_folders", &domain.LibraryFolder{Path: t.TempDir(), Kind: "movie", Label: "Movies", Health: "ok", SameDiskAs: []int64{}}, domain.System); err != nil {
+		if _, err := database.Insert(tx, "library_folders", &mediafiles.LibraryFolder{Path: t.TempDir(), Kind: "movie", Label: "Movies", Health: "ok", SameDiskAs: []int64{}}, domain.System); err != nil {
 			return err
 		}
 		for _, u := range []struct{ name, role string }{{"luis", "owner"}, {"ana", "member"}, {"bo", "member"}} {
@@ -235,7 +237,7 @@ func TestAskJoinApproveAndAlreadyInLibrary(t *testing.T) {
 	if got.State != domain.AskApproved || got.TitleID == nil || got.DecidedBy == nil || *got.DecidedBy != r.luis.UserID || got.AutoApproved {
 		t.Fatalf("approved %+v", got)
 	}
-	var ti domain.Title
+	var ti mediafiles.Title
 	_ = database.Get(ctx, r.st.Read(), "titles", *got.TitleID, &ti)
 	if ti.WhyAdded != "ask" {
 		t.Fatalf("why added %q", ti.WhyAdded)
@@ -675,7 +677,7 @@ func TestApproveWithAudioLanguages(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	var v domain.Version
+	var v mediafiles.Version
 	if err := r.st.Read().QueryRowContext(ctx, "SELECT id FROM versions WHERE title_id = ? AND is_main = 1", *got.TitleID).Scan(&v.ID); err != nil {
 		t.Fatal(err)
 	}
@@ -703,7 +705,7 @@ func TestApproveLeavesAnExistingTitlesAudioAlone(t *testing.T) {
 	if err != nil || got.TitleID == nil || *got.TitleID != tid {
 		t.Fatalf("approve %+v %v", got, err)
 	}
-	var v domain.Version
+	var v mediafiles.Version
 	if err := r.st.Read().QueryRowContext(ctx, "SELECT id FROM versions WHERE title_id = ? AND is_main = 1", tid).Scan(&v.ID); err != nil {
 		t.Fatal(err)
 	}

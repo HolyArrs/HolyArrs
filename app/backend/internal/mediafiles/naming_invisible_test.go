@@ -1,4 +1,4 @@
-package naming
+package mediafiles
 
 import "testing"
 
@@ -17,16 +17,16 @@ func TestCleanDropsBidiAndZeroWidth(t *testing.T) {
 		{"Word" + u(0x2060) + "Joiner" + u(0xFEFF), "WordJoiner"},
 		{"Beyonc" + u(0xE9) + " " + u(0x2013) + " Halo", "Beyonc" + u(0xE9) + " " + u(0x2013) + " Halo"},
 	} {
-		if got := Clean(c.in); got != c.want {
+		if got := CleanName(c.in); got != c.want {
 			t.Errorf("Clean(%q) = %q, want %q", c.in, got, c.want)
 		}
 	}
 	// Movies and shows use the same rules.
-	s := Defaults()
-	if got := Folder(s, Facts{Title: "Dune" + u(0x200B, 0x202E), Year: 2021}); got != "Dune (2021)" {
+	s := NamingDefaults()
+	if got := Folder(s, NameFacts{Title: "Dune" + u(0x200B, 0x202E), Year: 2021}); got != "Dune (2021)" {
 		t.Errorf("movie folder %q", got)
 	}
-	if got := ShowFolder(s, Facts{Title: u(0xFEFF) + "Severance", Year: 2022}); got != "Severance (2022)" {
+	if got := ShowFolder(s, NameFacts{Title: u(0xFEFF) + "Severance", Year: 2022}); got != "Severance (2022)" {
 		t.Errorf("show folder %q", got)
 	}
 }

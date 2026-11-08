@@ -5,12 +5,11 @@ import (
 	"database/sql"
 	"errors"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/judge"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/tagset"
 )
 
 // errDryRun rolls back a dry-run edit after its changes were worked out.
@@ -66,7 +65,7 @@ func (s *Service) Edit(ctx context.Context, titleID int64, c TitleChange, dryRun
 	if c.GateDelayDays != nil && (*c.GateDelayDays < 0 || *c.GateDelayDays > 365) {
 		return res, ErrBadDelay
 	}
-	var cur domain.Title
+	var cur mediafiles.Title
 	if err := database.Get(ctx, s.Store.Read(), "titles", titleID, &cur); err != nil {
 		return res, err
 	}
@@ -81,9 +80,9 @@ func (s *Service) Edit(ctx context.Context, titleID int64, c TitleChange, dryRun
 	case c.NewSeasons != nil && *c.NewSeasons != "all" && *c.NewSeasons != "none":
 		return res, ErrBadNewSeasons
 	}
-	var newFolder *domain.LibraryFolder
+	var newFolder *mediafiles.LibraryFolder
 	if c.LibraryFolderID != nil {
-		var lf domain.LibraryFolder
+		var lf mediafiles.LibraryFolder
 		if err := database.Get(ctx, s.Store.Read(), "library_folders", *c.LibraryFolderID, &lf); err != nil {
 			return res, ErrNoFolder
 		}
@@ -96,7 +95,7 @@ func (s *Service) Edit(ctx context.Context, titleID int64, c TitleChange, dryRun
 		newFolder = &lf
 	}
 	now := s.now()
-	var t domain.Title
+	var t mediafiles.Title
 	var opened, closed []int64
 	needMove := false
 	err := s.Store.Write(ctx, func(tx *sql.Tx) error {
@@ -129,7 +128,7 @@ func (s *Service) Edit(ctx context.Context, titleID int64, c TitleChange, dryRun
 			t.NewPartsPolicy = *c.NewSeasons
 		}
 		if c.Tags != nil {
-			t.Tags = tagset.Clean(*c.Tags)
+			t.Tags = mediafiles.CleanTags(*c.Tags)
 		} else if t.Tags == nil {
 			t.Tags = []string{}
 		}
@@ -139,7 +138,7 @@ func (s *Service) Edit(ctx context.Context, titleID int64, c TitleChange, dryRun
 		if err := database.Update(tx, "titles", &t, by); err != nil {
 			return err
 		}
-		vs, err := database.Select[domain.Version](ctx, tx, "versions", "title_id = ?", titleID)
+		vs, err := database.Select[mediafiles.Version](ctx, tx, "versions", "title_id = ?", titleID)
 		if err != nil {
 			return err
 		}
@@ -183,10 +182,10 @@ func (s *Service) Edit(ctx context.Context, titleID int64, c TitleChange, dryRun
 			}
 		}
 		for _, id := range opened {
-			res.SlotChanges = append(res.SlotChanges, SlotChange{SlotID: id, From: string(domain.SlotNotOutYet), To: string(domain.SlotWanted)})
+			res.SlotChanges = append(res.SlotChanges, SlotChange{SlotID: id, From: string(mediafiles.SlotNotOutYet), To: string(mediafiles.SlotWanted)})
 		}
 		for _, id := range closed {
-			res.SlotChanges = append(res.SlotChanges, SlotChange{SlotID: id, From: string(domain.SlotWanted), To: string(domain.SlotNotOutYet)})
+			res.SlotChanges = append(res.SlotChanges, SlotChange{SlotID: id, From: string(mediafiles.SlotWanted), To: string(mediafiles.SlotNotOutYet)})
 		}
 		if dryRun {
 			return errDryRun
@@ -221,18 +220,18 @@ func (s *Service) Edit(ctx context.Context, titleID int64, c TitleChange, dryRun
 
 // goodEnoughTx works out the Good enough flag of each of the Version's Slots
 // with a File, and swaps in_library and better_wanted to match.
-func goodEnoughTx(ctx context.Context, tx *sql.Tx, v domain.Version, keep bool, by domain.Actor) ([]SlotChange, error) {
-	var pr domain.PickRules
+func goodEnoughTx(ctx context.Context, tx *sql.Tx, v mediafiles.Version, keep bool, by domain.Actor) ([]SlotChange, error) {
+	var pr mediafiles.PickRules
 	if err := database.Get(ctx, tx, "pick_rules", v.PickRulesID, &pr); err != nil {
 		return nil, err
 	}
-	slots, err := database.Select[domain.Slot](ctx, tx, "slots", "version_id = ? AND file_id IS NOT NULL", v.ID)
+	slots, err := database.Select[mediafiles.Slot](ctx, tx, "slots", "version_id = ? AND file_id IS NOT NULL", v.ID)
 	if err != nil {
 		return nil, err
 	}
 	var out []SlotChange
 	for _, sl := range slots {
-		var f domain.File
+		var f mediafiles.File
 		if err := database.Get(ctx, tx, "files", *sl.FileID, &f); err != nil {
 			continue
 		}
@@ -240,19 +239,19 @@ func goodEnoughTx(ctx context.Context, tx *sql.Tx, v domain.Version, keep bool, 
 		if f.ReleaseName != nil && *f.ReleaseName != "" {
 			name = *f.ReleaseName
 		}
-		ge := judge.ReachesGoodEnough(name, pr.Body) && fileMeetsVersionChoices(v, f)
+		ge := mediafiles.ReachesGoodEnough(name, pr.Body) && fileMeetsVersionChoices(v, f)
 		to := sl.State
 		switch {
-		case sl.State == domain.SlotInLibrary && !ge && keep && v.KeepUpToDate:
-			to = domain.SlotBetterWanted
-		case sl.State == domain.SlotBetterWanted && (ge || !keep):
-			to = domain.SlotInLibrary
+		case sl.State == mediafiles.SlotInLibrary && !ge && keep && v.KeepUpToDate:
+			to = mediafiles.SlotBetterWanted
+		case sl.State == mediafiles.SlotBetterWanted && (ge || !keep):
+			to = mediafiles.SlotInLibrary
 		}
 		if to == sl.State && ge == sl.GoodEnough {
 			continue
 		}
 		if to != sl.State {
-			if err := store.MoveSlotTx(tx, sl.ID, to, "Pick rules, copy requirements or Keep up to date changed", by); err != nil {
+			if err := mediafiles.MoveSlotTx(tx, sl.ID, to, "Pick rules, copy requirements or Keep up to date changed", by); err != nil {
 				return nil, err
 			}
 		}
@@ -264,7 +263,7 @@ func goodEnoughTx(ctx context.Context, tx *sql.Tx, v domain.Version, keep bool, 
 	return out, nil
 }
 
-func fileMeetsVersionChoices(v domain.Version, f domain.File) bool {
+func fileMeetsVersionChoices(v mediafiles.Version, f mediafiles.File) bool {
 	if v.Edition != "" {
 		edition, _ := f.MediaInfo["edition"].(string)
 		if edition == "" || importer.EditionKey(edition) != importer.EditionKey(v.Edition) {

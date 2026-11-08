@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
@@ -67,7 +69,7 @@ func TestImportRefusedWhenUnder100MBWouldBeLeft(t *testing.T) {
 			if ents, _ := os.ReadDir(filepath.Join(w.lib, "Dune - Part Two (2024)")); len(ents) != 0 {
 				t.Fatalf("something was written: %v", ents)
 			}
-			if sl := slotOf(t, w); sl.State != domain.SlotNeedsADecision {
+			if sl := slotOf(t, w); sl.State != mediafiles.SlotNeedsADecision {
 				t.Fatalf("slot %s", sl.State)
 			}
 			if len(hooked) != 1 || hooked[0] != w.lib {
@@ -121,9 +123,9 @@ func TestGuardBooksSpaceAcrossImports(t *testing.T) {
 	fakeDisk(t, 100*mb+3*mb)
 	sameDiskOf = func(string, string) bool { return false }
 	t.Cleanup(func() { sameDiskOf = sameDisk })
-	plan := func(name string) ([]domain.PlanStep, []Candidate) {
+	plan := func(name string) ([]mediafiles.PlanStep, []Candidate) {
 		src := filepath.Join(dl, name+".mkv")
-		return []domain.PlanStep{{SourceFile: src, Method: "hardlink", TargetPath: filepath.Join(lib, name, name+".mkv"), Why: []string{}}},
+		return []mediafiles.PlanStep{{SourceFile: src, Method: "hardlink", TargetPath: filepath.Join(lib, name, name+".mkv"), Why: []string{}}},
 			[]Candidate{{Path: src, Size: 2 * mb}}
 	}
 	im := &Importer{}

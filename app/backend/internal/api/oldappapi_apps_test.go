@@ -16,6 +16,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
@@ -60,7 +62,7 @@ func (f *oldAppFix) addLabMovie() int64 {
 }
 
 // putFileAs puts fl in the Library for a Slot, as an import would.
-func (f *oldAppFix) putFileAs(sl domain.Slot, fl domain.File) int64 {
+func (f *oldAppFix) putFileAs(sl mediafiles.Slot, fl mediafiles.File) int64 {
 	f.t.Helper()
 	fl.SlotIDs, fl.VersionID, fl.AddedAt = []int64{sl.ID}, sl.VersionID, time.Now().UTC()
 	fl.Origin, fl.PlacedBy, fl.Role, fl.State = "imported", "hardlink", "main", "present"
@@ -154,8 +156,8 @@ func TestOldAppBazarrSync(t *testing.T) {
 	f.storeWide(showID, "https://image.tmdb.org/t/p/w1280/lab-show-wide.jpg")
 	slots := f.slotsOf(showID)
 	scene := "Lab.Show.S01E01.1080p.WEB-DL.H264-LAB"
-	f.putFileAs(slots[[2]int{1, 1}], domain.File{RelativePath: "Lab Show (2025)/Season 01/Lab Show - S01E01.mkv", Size: 5 << 20, ReleaseName: &scene,
-		Quality: domain.Quality{Resolution: 1080, Source: "web_dl", Codec: "h264", Audio: "AAC"}, Languages: []string{"en", "ja"}})
+	f.putFileAs(slots[[2]int{1, 1}], mediafiles.File{RelativePath: "Lab Show (2025)/Season 01/Lab Show - S01E01.mkv", Size: 5 << 20, ReleaseName: &scene,
+		Quality: mediafiles.Quality{Resolution: 1080, Source: "web_dl", Codec: "h264", Audio: "AAC"}, Languages: []string{"en", "ja"}})
 
 	arrList(t, "rootfolder", f.arrOK(son, "GET", s+"rootfolder", "", 200), 1)
 	all := arrList(t, "series", f.arrOK(son, "GET", s+"series", "", 200), 1)
@@ -238,8 +240,8 @@ func TestOldAppBazarrSync(t *testing.T) {
 	}
 	f.storePoster(movieID, "https://image.tmdb.org/t/p/w342/dune.png")
 	f.storeWide(movieID, "https://image.tmdb.org/t/p/w1280/dune-wide.jpg")
-	f.putFileAs(f.slotsOf(movieID)[[2]int{0, 0}], domain.File{RelativePath: "Dune Part Two (2024)/Dune Part Two (2024).mkv", Size: 9 << 20,
-		ReleaseName: &scene, Quality: domain.Quality{Resolution: 2160, Source: "bluray", Audio: "TrueHD"}, Languages: []string{"en"},
+	f.putFileAs(f.slotsOf(movieID)[[2]int{0, 0}], mediafiles.File{RelativePath: "Dune Part Two (2024)/Dune Part Two (2024).mkv", Size: 9 << 20,
+		ReleaseName: &scene, Quality: mediafiles.Quality{Resolution: 2160, Source: "bluray", Audio: "TrueHD"}, Languages: []string{"en"},
 		MediaInfo: map[string]any{"video_codec": "h265"}})
 	m := fields(t, "bazarr movie", arrList(t, "movies", f.arrOK(rad, "GET", r+"movie", "", 200), 1)[0], []string{"id", "title", "path", "tmdbId",
 		"imdbId", "images", "monitored", "year", "sortTitle", "alternateTitles", "overview", "tags", "originalLanguage", "hasFile", "movieFile"})

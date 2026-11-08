@@ -18,9 +18,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 const (
@@ -243,10 +244,10 @@ func labReplace(t *testing.T, base, key, nzbBase string) {
 	var next int64
 	m.OnFailed = func(ctx context.Context, slotID int64) {
 		if err := w.s.Write(ctx, func(tx *sql.Tx) error {
-			if err := store.MoveSlotTx(tx, slotID, domain.SlotSearching, "searching", domain.System); err != nil {
+			if err := mediafiles.MoveSlotTx(tx, slotID, mediafiles.SlotSearching, "searching", domain.System); err != nil {
 				return err
 			}
-			if err := store.MoveSlotTx(tx, slotID, domain.SlotChosen, "chose the next", domain.System); err != nil {
+			if err := mediafiles.MoveSlotTx(tx, slotID, mediafiles.SlotChosen, "chose the next", domain.System); err != nil {
 				return err
 			}
 			_, err := tx.Exec("UPDATE slots SET chosen_release_id = ? WHERE id = ?", rels[labNext], slotID)

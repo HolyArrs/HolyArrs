@@ -9,6 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
@@ -79,23 +81,23 @@ func TestHomeRowsOverHTTP(t *testing.T) {
 	now := time.Now()
 	err := s.Write(context.Background(), func(tx *sql.Tx) error {
 		ins := func(table string, v any) error { _, err := database.Insert(tx, table, v, domain.System); return err }
-		movie := domain.Title{Kind: "movie", Name: "Fresh Movie", SortName: "fresh movie", MetadataSource: "tmdb", WhyAdded: "by_hand", State: "active", NewPartsPolicy: "all", ReleaseGate: "released", GateDriver: "none", Status: "released"}
-		wanted := domain.Title{Kind: "movie", Name: "Wanted Movie", SortName: "wanted movie", MetadataSource: "tmdb", WhyAdded: "by_hand", State: "active", NewPartsPolicy: "all", ReleaseGate: "released", GateDriver: "none", Status: "released"}
-		for _, title := range []*domain.Title{&movie, &wanted} {
+		movie := mediafiles.Title{Kind: "movie", Name: "Fresh Movie", SortName: "fresh movie", MetadataSource: "tmdb", WhyAdded: "by_hand", State: "active", NewPartsPolicy: "all", ReleaseGate: "released", GateDriver: "none", Status: "released"}
+		wanted := mediafiles.Title{Kind: "movie", Name: "Wanted Movie", SortName: "wanted movie", MetadataSource: "tmdb", WhyAdded: "by_hand", State: "active", NewPartsPolicy: "all", ReleaseGate: "released", GateDriver: "none", Status: "released"}
+		for _, title := range []*mediafiles.Title{&movie, &wanted} {
 			if err := ins("titles", title); err != nil {
 				return err
 			}
-			item := domain.Item{TitleID: title.ID, Kind: "movie", Name: &title.Name}
+			item := mediafiles.Item{TitleID: title.ID, Kind: "movie", Name: &title.Name}
 			if err := ins("items", &item); err != nil {
 				return err
 			}
-			version := domain.Version{TitleID: title.ID, Label: "Main", IsMain: true, LibraryFolderID: 1, PickRulesID: 1, FolderName: title.Name}
+			version := mediafiles.Version{TitleID: title.ID, Label: "Main", IsMain: true, LibraryFolderID: 1, PickRulesID: 1, FolderName: title.Name}
 			if err := ins("versions", &version); err != nil {
 				return err
 			}
-			slot := domain.Slot{ItemID: item.ID, VersionID: version.ID, State: "wanted"}
+			slot := mediafiles.Slot{ItemID: item.ID, VersionID: version.ID, State: "wanted"}
 			if title == &movie {
-				file := domain.File{VersionID: version.ID, RelativePath: "fresh.mkv", AddedAt: now.Add(-time.Hour), Origin: "imported", PlacedBy: "move", Role: "main", State: "present"}
+				file := mediafiles.File{VersionID: version.ID, RelativePath: "fresh.mkv", AddedAt: now.Add(-time.Hour), Origin: "imported", PlacedBy: "move", Role: "main", State: "present"}
 				if err := ins("files", &file); err != nil {
 					return err
 				}
@@ -130,18 +132,18 @@ func TestHomeLibraryCounts(t *testing.T) {
 	num := func(n int) *int { return &n }
 	err := s.Write(ctx, func(tx *sql.Tx) error {
 		ins := func(table string, v any) error { _, err := database.Insert(tx, table, v, domain.System); return err }
-		title := func(kind, name string) (domain.Title, domain.Version, error) {
+		title := func(kind, name string) (mediafiles.Title, mediafiles.Version, error) {
 			src := map[string]string{"movie": "tmdb", "show": "tvmaze", "artist": "musicbrainz"}[kind]
-			t := domain.Title{Kind: kind, Name: name, SortName: name, MetadataSource: src, WhyAdded: "by_hand", State: "active", NewPartsPolicy: "all", ReleaseGate: "released", GateDriver: "none", Status: "released"}
+			t := mediafiles.Title{Kind: kind, Name: name, SortName: name, MetadataSource: src, WhyAdded: "by_hand", State: "active", NewPartsPolicy: "all", ReleaseGate: "released", GateDriver: "none", Status: "released"}
 			if err := ins("titles", &t); err != nil {
-				return t, domain.Version{}, err
+				return t, mediafiles.Version{}, err
 			}
-			v := domain.Version{TitleID: t.ID, Label: "Main", IsMain: true, LibraryFolderID: 1, PickRulesID: 1, FolderName: name}
+			v := mediafiles.Version{TitleID: t.ID, Label: "Main", IsMain: true, LibraryFolderID: 1, PickRulesID: 1, FolderName: name}
 			return t, v, ins("versions", &v)
 		}
 		// item adds one item with its main-copy slot; state in_library gets a file of size bytes.
-		item := func(t domain.Title, v domain.Version, kind string, part *int64, state string, size int64, dropped bool) error {
-			it := domain.Item{TitleID: t.ID, PartID: part, Kind: kind, KeepUpToDate: true}
+		item := func(t mediafiles.Title, v mediafiles.Version, kind string, part *int64, state string, size int64, dropped bool) error {
+			it := mediafiles.Item{TitleID: t.ID, PartID: part, Kind: kind, KeepUpToDate: true}
 			if dropped {
 				now := time.Now()
 				it.DroppedAt = &now
@@ -149,9 +151,9 @@ func TestHomeLibraryCounts(t *testing.T) {
 			if err := ins("items", &it); err != nil {
 				return err
 			}
-			slot := domain.Slot{ItemID: it.ID, VersionID: v.ID, State: domain.SlotState(state)}
+			slot := mediafiles.Slot{ItemID: it.ID, VersionID: v.ID, State: mediafiles.SlotState(state)}
 			if state == "in_library" {
-				f := domain.File{VersionID: v.ID, RelativePath: fmt.Sprintf("f%d.mkv", it.ID), Size: size, AddedAt: time.Now(), Origin: "imported", PlacedBy: "move", Role: "main", State: "present"}
+				f := mediafiles.File{VersionID: v.ID, RelativePath: fmt.Sprintf("f%d.mkv", it.ID), Size: size, AddedAt: time.Now(), Origin: "imported", PlacedBy: "move", Role: "main", State: "present"}
 				if err := ins("files", &f); err != nil {
 					return err
 				}
@@ -159,8 +161,8 @@ func TestHomeLibraryCounts(t *testing.T) {
 			}
 			return ins("slots", &slot)
 		}
-		part := func(t domain.Title, kind string, n *int, included bool) (*int64, error) {
-			p := domain.Part{TitleID: t.ID, Kind: kind, Number: n, Name: "p", KeepUpToDate: true, Included: included}
+		part := func(t mediafiles.Title, kind string, n *int, included bool) (*int64, error) {
+			p := mediafiles.Part{TitleID: t.ID, Kind: kind, Number: n, Name: "p", KeepUpToDate: true, Included: included}
 			err := ins("parts", &p)
 			return &p.ID, err
 		}

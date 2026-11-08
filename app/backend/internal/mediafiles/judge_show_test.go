@@ -1,4 +1,4 @@
-package judge
+package mediafiles
 
 import (
 	"slices"
@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
 // The show part of the fixed library in release-names-testset.md, next to
@@ -95,7 +94,7 @@ func showEpisodes(id int64) []EpisodeRef {
 }
 
 func TestShowVerdicts(t *testing.T) {
-	rules := domain.GoodEveryday()
+	rules := GoodEveryday()
 	for _, r := range showRows {
 		t.Run(r.ID, func(t *testing.T) {
 			p := releasename.Parse(r.Name, releasename.Hints{Size: r.Size, Show: true})
@@ -126,7 +125,7 @@ func TestShowVerdicts(t *testing.T) {
 					size = 1200 * mb
 				}
 			}
-			rel := Release{Name: r.Name, Parse: p, Size: size, Protocol: "torrent", Seeders: ptr(85), PublishedAt: time.Now().Add(-6 * time.Hour)}
+			rel := ReleaseFacts{Name: r.Name, Parse: p, Size: size, Protocol: "torrent", Seeders: ptr(85), PublishedAt: time.Now().Add(-6 * time.Hour)}
 			v := Judge(rel, set, rules)
 			if v.Outcome != r.Outcome {
 				t.Fatalf("outcome %s, want %s:\n%s", v.Outcome, r.Outcome, dump(v))
@@ -156,34 +155,34 @@ func TestEpisodeNameNeverMatchesMovie(t *testing.T) {
 }
 
 func TestShowGateDetail(t *testing.T) {
-	rules := domain.GoodEveryday()
+	rules := GoodEveryday()
 	p := releasename.Parse("Copper.Valley.S04.1080p.WEB-DL.H.264-QUILL", releasename.Hints{})
 	set := SlotSet{Match: MatchTitle(p, showLibrary), SlotIDs: []int64{1}, MinSeeders: ptr(1), RuntimeMinutes: 450,
 		GateDetail: "not every episode of season 4 has aired"}
-	v := Judge(Release{Name: p.Original, Parse: p, Size: 12 * gb, Protocol: "torrent", Seeders: ptr(9)}, set, rules)
+	v := Judge(ReleaseFacts{Name: p.Original, Parse: p, Size: 12 * gb, Protocol: "torrent", Seeders: ptr(9)}, set, rules)
 	if v.Outcome != "refused" || !slices.Contains(codes(v, "fail"), "hard.gate") {
 		t.Fatalf("S28 %s\n%s", v.Outcome, dump(v))
 	}
 }
 
 func TestRankEpisodes(t *testing.T) {
-	rules := domain.GoodEveryday()
-	mk := func(name string, slots ...int64) (Release, Verdict) {
+	rules := GoodEveryday()
+	mk := func(name string, slots ...int64) (ReleaseFacts, Verdict) {
 		p := releasename.Parse(name, releasename.Hints{})
 		set := SlotSet{Match: MatchTitle(p, showLibrary), SlotIDs: slots, Out: true, RuntimeMinutes: 45 * len(slots)}
-		rel := Release{Name: name, Parse: p, Size: int64(len(slots)) * 1200 * mb, Protocol: "torrent", PublishedAt: time.Now().Add(-time.Hour)}
+		rel := ReleaseFacts{Name: name, Parse: p, Size: int64(len(slots)) * 1200 * mb, Protocol: "torrent", PublishedAt: time.Now().Add(-time.Hour)}
 		return rel, Judge(rel, set, rules)
 	}
 	r1, v1 := mk("Copper.Valley.S01E01.1080p.WEB-DL.H.264-QUILL", 1)
 	r2, v2 := mk("Copper.Valley.S01.1080p.WEB-DL.H.264-QUILL", 1, 2, 3)
-	rels, vs := []Release{r1, r2}, []Verdict{v1, v2}
+	rels, vs := []ReleaseFacts{r1, r2}, []Verdict{v1, v2}
 	Rank(rels, vs, rules)
 	if vs[1].Rank != 1 {
 		t.Fatalf("same quality: the season pack should win:\n%s\n%s", dump(vs[0]), dump(vs[1]))
 	}
 	// A better single episode beats a pack on quality...
 	r3, v3 := mk("Copper.Valley.S01E01.1080p.WEB-DL.H.265-QUILL", 1)
-	rels, vs = []Release{r3, r2}, []Verdict{v3, v2}
+	rels, vs = []ReleaseFacts{r3, r2}, []Verdict{v3, v2}
 	Rank(rels, vs, rules)
 	if vs[0].Rank != 1 {
 		t.Fatalf("quality first: %v %v", vs[0].Rank, vs[1].Rank)
@@ -199,9 +198,9 @@ func TestRankEpisodes(t *testing.T) {
 }
 
 func TestGainsPerEpisode(t *testing.T) {
-	rules := domain.GoodEveryday()
+	rules := GoodEveryday()
 	p := releasename.Parse("Copper.Valley.S01.1080p.WEB-DL.H.264-QUILL", releasename.Hints{})
-	rel := Release{Name: p.Original, Parse: p}
+	rel := ReleaseFacts{Name: p.Original, Parse: p}
 	if !Gains(rel, rules, nil) {
 		t.Fatal("a missing episode always gains")
 	}
