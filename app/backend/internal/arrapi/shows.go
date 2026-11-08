@@ -14,6 +14,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/shows"
 )
 
 // series is a show as the Sonarr side answers it. Empty values are left
@@ -439,7 +440,7 @@ func (h *handler) lookupSeries(w http.ResponseWriter, r *http.Request) {
 		internalError(w, err)
 		return
 	}
-	var shows []metadata.Show
+	var list []metadata.Show
 	kind, v, hasKind := strings.Cut(term, ":")
 	kind = strings.ToLower(strings.TrimSpace(kind))
 	if kind == "tvdbid" {
@@ -463,25 +464,25 @@ func (h *handler) lookupSeries(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 		}
-		sh, err := h.Library.LookupShow(ctx, kind+":"+v, defs.Source)
+		sh, err := shows.New(h.Library).LookupShow(ctx, kind+":"+v, defs.Source)
 		if err != nil && !errors.Is(err, metadata.ErrShowNotFound) && !errors.Is(err, metadata.ErrNoTVDBKey) && !errors.Is(err, library.ErrNoShowSources) {
 			message(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 		if err == nil {
-			shows = []metadata.Show{sh}
+			list = []metadata.Show{sh}
 		}
 	} else if h.Library.Shows != nil {
 		p, err := h.Library.Shows.Get(defs.Source)
 		if err == nil {
-			shows, err = p.SearchShows(ctx, term)
+			list, err = p.SearchShows(ctx, term)
 		}
 		if err != nil {
 			message(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 	}
-	for _, sh := range shows {
+	for _, sh := range list {
 		id, err := library.ShowByIDs(ctx, h.Store.Read(), sh.IDs)
 		if err != nil {
 			internalError(w, err)

@@ -1,8 +1,9 @@
-package library
+package shows
 
 import (
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
@@ -13,7 +14,7 @@ import (
 func TestMapEpisodeFilesTakesTheFolderShowsOtherNames(t *testing.T) {
 	sh := metadata.Show{Name: "The Office", Year: 2005, OtherNames: []string{"The Office (U.S.)", "The Office US"},
 		Episodes: []metadata.Episode{{Season: 1, Number: 1}, {Season: 1, Number: 2}}}
-	vids := []AdoptVideo{{Path: "Season 1/The Office (US) - S01E01 - Pilot.mkv", Size: 1 << 20},
+	vids := []library.AdoptVideo{{Path: "Season 1/The Office (US) - S01E01 - Pilot.mkv", Size: 1 << 20},
 		{Path: "Season 1/The Office (US) - S01E02 - Diversity Day.mkv", Size: 1 << 20}}
 	for _, f := range mapEpisodeFiles(vids, sh, "aired") {
 		if len(f.Episodes) != 1 {
@@ -21,7 +22,7 @@ func TestMapEpisodeFilesTakesTheFolderShowsOtherNames(t *testing.T) {
 		}
 	}
 	// Another show's file in the folder is still left alone.
-	other := mapEpisodeFiles([]AdoptVideo{{Path: "Parks and Recreation - S01E01.mkv", Size: 1 << 20}}, sh, "aired")
+	other := mapEpisodeFiles([]library.AdoptVideo{{Path: "Parks and Recreation - S01E01.mkv", Size: 1 << 20}}, sh, "aired")
 	if len(other[0].Episodes) != 0 {
 		t.Fatalf("another show's file was matched: %+v", other[0])
 	}

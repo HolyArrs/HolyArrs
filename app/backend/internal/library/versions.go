@@ -55,7 +55,7 @@ type VersionChange struct {
 // [label]"): at most 40 bytes of plain text, no path or wildcard
 // characters, no brackets, no control, direction or zero-width
 // characters, no trailing dot, and not a name Windows keeps for devices.
-func cleanLabel(l string) (string, error) {
+func CleanLabel(l string) (string, error) {
 	l = strings.TrimSpace(l)
 	if l == "" || len(l) > 40 || !utf8.ValidString(l) || strings.ContainsAny(l, `/\:*?"<>|[]`) || strings.HasSuffix(l, ".") {
 		return "", ErrVersionLabel
@@ -92,7 +92,7 @@ func labelTaken(tx *sql.Tx, titleID, exceptID int64, label string) (bool, error)
 
 // checkVersionFolder finds and checks a Library folder for a new Version.
 // A show's Version needs a show Library folder; every other title a movie one.
-func checkVersionFolder(ctx context.Context, db database.Querier, id int64, titleKind string, downloadPaths []string) (mediafiles.LibraryFolder, error) {
+func CheckVersionFolder(ctx context.Context, db database.Querier, id int64, titleKind string, downloadPaths []string) (mediafiles.LibraryFolder, error) {
 	var lf mediafiles.LibraryFolder
 	if err := database.Get(ctx, db, "library_folders", id, &lf); errors.Is(err, database.ErrNotFound) {
 		return lf, ErrNoFolder
@@ -116,9 +116,9 @@ func checkVersionFolder(ctx context.Context, db database.Querier, id int64, titl
 // state follows the title's Release gate. When another Version of the title
 // already sits in the same Library folder, the folder name gets the label in
 // brackets so the copies never share a folder.
-func addVersionTx(ctx context.Context, tx *sql.Tx, t mediafiles.Title, in VersionInput, now time.Time, by domain.Actor) (mediafiles.Version, error) {
+func AddVersionTx(ctx context.Context, tx *sql.Tx, t mediafiles.Title, in VersionInput, now time.Time, by domain.Actor) (mediafiles.Version, error) {
 	var v mediafiles.Version
-	label, err := cleanLabel(in.Label)
+	label, err := CleanLabel(in.Label)
 	if err != nil {
 		return v, err
 	}
@@ -141,7 +141,7 @@ func addVersionTx(ctx context.Context, tx *sql.Tx, t mediafiles.Title, in Versio
 	}
 	if in.PickRulesID == 0 {
 		in.PickRulesID = main.PickRulesID
-	} else if err := pickRulesFor(tx, &in.PickRulesID, t.Kind); err != nil {
+	} else if err := PickRulesFor(tx, &in.PickRulesID, t.Kind); err != nil {
 		return v, err
 	}
 	if in.LibraryFolderID == 0 {
@@ -219,7 +219,7 @@ func AddVersion(ctx context.Context, s *database.Store, titleID int64, in Versio
 	unlock := s.LockFiles()
 	defer unlock()
 	var v mediafiles.Version
-	if _, err := cleanLabel(in.Label); err != nil {
+	if _, err := CleanLabel(in.Label); err != nil {
 		return v, err
 	}
 	if in.LibraryFolderID != 0 {
@@ -229,7 +229,7 @@ func AddVersion(ctx context.Context, s *database.Store, titleID int64, in Versio
 		} else if err != nil {
 			return v, err
 		}
-		if _, err := checkVersionFolder(ctx, s.Read(), in.LibraryFolderID, kind, downloadPaths); err != nil {
+		if _, err := CheckVersionFolder(ctx, s.Read(), in.LibraryFolderID, kind, downloadPaths); err != nil {
 			return v, err
 		}
 	}
@@ -242,7 +242,7 @@ func AddVersion(ctx context.Context, s *database.Store, titleID int64, in Versio
 			return ErrAlreadyRemoved
 		}
 		var err error
-		v, err = addVersionTx(ctx, tx, t, in, now, by)
+		v, err = AddVersionTx(ctx, tx, t, in, now, by)
 		return err
 	})
 	return v, err
@@ -279,7 +279,7 @@ func EditVersion(ctx context.Context, s *database.Store, titleID, versionID int6
 			return ErrAlreadyRemoved
 		}
 		if c.Label != nil {
-			l, err := cleanLabel(*c.Label)
+			l, err := CleanLabel(*c.Label)
 			if err != nil {
 				return err
 			}
@@ -291,7 +291,7 @@ func EditVersion(ctx context.Context, s *database.Store, titleID, versionID int6
 			v.Label = l
 		}
 		if c.PickRulesID != nil {
-			if err := pickRulesFor(tx, c.PickRulesID, t.Kind); err != nil {
+			if err := PickRulesFor(tx, c.PickRulesID, t.Kind); err != nil {
 				return err
 			}
 			v.PickRulesID = *c.PickRulesID
@@ -374,7 +374,7 @@ func copyChoices(kind, edition string, audio []string) (string, []string, error)
 		if kind != "movie" {
 			return "", nil, errors.New("editions apply to movie copies")
 		}
-		if _, err := cleanLabel(edition); err != nil || strings.ContainsAny(edition, "{}") {
+		if _, err := CleanLabel(edition); err != nil || strings.ContainsAny(edition, "{}") {
 			return "", nil, errors.New("edition needs a plain label of at most 40 characters")
 		}
 	}
@@ -413,7 +413,7 @@ func CheckAudioLanguages(kind string, audio []string) error {
 
 // VersionEvent records a change to a title's Versions in History.
 func (s *Service) VersionEvent(ctx context.Context, t mediafiles.Title, summary string, v mediafiles.Version, by domain.Actor) {
-	s.event(ctx, &domain.Event{Actor: by, Kind: domain.EventVersionChanged, TitleID: &t.ID, Summary: summary + " of " + t.Name,
+	s.Emit(ctx, &domain.Event{Actor: by, Kind: domain.EventVersionChanged, TitleID: &t.ID, Summary: summary + " of " + t.Name,
 		Data:     map[string]any{"version_id": v.ID, "label": v.Label, "pick_rules_id": v.PickRulesID, "library_folder_id": v.LibraryFolderID},
-		GroupKey: groupKey(t.ID)})
+		GroupKey: GroupKey(t.ID)})
 }

@@ -89,7 +89,7 @@ func (s *Service) Edit(ctx context.Context, titleID int64, c TitleChange, dryRun
 		if want, wrong := folderKindOf(cur.Kind); lf.Kind != want {
 			return res, wrong
 		}
-		if h := CheckFolder(lf.Path, s.downloadPaths(ctx)); !h.Usable() {
+		if h := CheckFolder(lf.Path, s.DownloadFolders(ctx)); !h.Usable() {
 			return res, &FolderError{Health: h}
 		}
 		newFolder = &lf
@@ -146,7 +146,7 @@ func (s *Service) Edit(ctx context.Context, titleID int64, c TitleChange, dryRun
 			// Pick rules and Library folder here are the main Version's;
 			// other Versions are changed one by one.
 			if c.PickRulesID != nil && v.IsMain && *c.PickRulesID != v.PickRulesID {
-				if err := pickRulesFor(tx, c.PickRulesID, t.Kind); err != nil {
+				if err := PickRulesFor(tx, c.PickRulesID, t.Kind); err != nil {
 					return err
 				}
 				v.PickRulesID = *c.PickRulesID
@@ -204,8 +204,8 @@ func (s *Service) Edit(ctx context.Context, titleID int64, c TitleChange, dryRun
 	if dryRun {
 		return res, nil
 	}
-	s.event(ctx, &domain.Event{Actor: by, Kind: domain.EventTitleEdited, TitleID: &titleID, Summary: "Changed " + t.Name,
-		Data: map[string]any{"change": c, "slot_changes": res.SlotChanges}, GroupKey: groupKey(titleID)})
+	s.Emit(ctx, &domain.Event{Actor: by, Kind: domain.EventTitleEdited, TitleID: &titleID, Summary: "Changed " + t.Name,
+		Data: map[string]any{"change": c, "slot_changes": res.SlotChanges}, GroupKey: GroupKey(titleID)})
 	s.gateEvents(ctx, t, opened, closed, by, nil)
 	if needMove {
 		id, _, err := s.Queue.Enqueue(ctx, KindMoveTitle, &domain.Subject{Type: "title", ID: titleID},

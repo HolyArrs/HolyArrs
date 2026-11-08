@@ -1,4 +1,4 @@
-package library
+package shows
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
@@ -25,7 +26,7 @@ func dayOnly(sh metadata.Show) metadata.Show {
 	return sh
 }
 
-// Calendar air times: an episode whose details source knows only the day
+// library.Calendar air times: an episode whose details source knows only the day
 // is an all-day entry (timed false, its day), never its day's end shown as
 // a time; once TVMaze lists the exact time for the same show, the refresh
 // stores that time and the calendar shows it.
@@ -40,7 +41,7 @@ func TestCalendarUntimedThenTVMazeTime(t *testing.T) {
 		t.Fatal(err)
 	}
 	from := time.Date(2026, 10, 11, 0, 0, 0, 0, time.UTC)
-	es, err := Calendar(ctx, s.Read(), from, from.AddDate(0, 0, 14), CalendarShows)
+	es, err := library.Calendar(ctx, s.Read(), from, from.AddDate(0, 0, 14), library.CalendarShows)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -54,7 +55,7 @@ func TestCalendarUntimedThenTVMazeTime(t *testing.T) {
 	}
 	// Just the day's last range day: a day-only episode on it is listed by
 	// its day, though its stored day end falls past the range.
-	if es, _ := Calendar(ctx, s.Read(), from, time.Date(2026, 10, 12, 0, 0, 0, 0, time.UTC), CalendarShows); len(es) != 1 || es[0].AirDay != "2026-10-11" {
+	if es, _ := library.Calendar(ctx, s.Read(), from, time.Date(2026, 10, 12, 0, 0, 0, 0, time.UTC), library.CalendarShows); len(es) != 1 || es[0].AirDay != "2026-10-11" {
 		t.Fatalf("last day %+v", es)
 	}
 
@@ -63,7 +64,7 @@ func TestCalendarUntimedThenTVMazeTime(t *testing.T) {
 	if _, err := svc.RefreshShow(ctx, id, domain.System, nil); err != nil {
 		t.Fatal(err)
 	}
-	es, _ = Calendar(ctx, s.Read(), from, from.AddDate(0, 0, 14), CalendarShows)
+	es, _ = library.Calendar(ctx, s.Read(), from, from.AddDate(0, 0, 14), library.CalendarShows)
 	if len(es) != 2 || !es[0].Timed || !es[0].Date.Equal(time.Date(2026, 10, 12, 2, 0, 0, 0, time.UTC)) || es[0].AirDay != "2026-10-11" ||
 		!es[1].Timed || !es[1].Date.Equal(time.Date(2026, 10, 19, 2, 0, 0, 0, time.UTC)) {
 		t.Fatalf("timed entries %+v", es)

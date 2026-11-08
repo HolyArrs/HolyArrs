@@ -355,7 +355,7 @@ func (c *ArtworkCache) download(ctx context.Context, url string, reject func(htt
 	if err := os.Rename(tmp.Name(), path); err != nil {
 		_ = os.Remove(tmp.Name())
 		// A new picture another download stored first (it may be open
-		// for a reader, so it cannot be replaced on Windows) is the same
+		// for a Reader, so it cannot be replaced on Windows) is the same
 		// picture: that is a success.
 		if _, serr := os.Stat(path); serr == nil && etag == "" {
 			return resp.StatusCode, nil

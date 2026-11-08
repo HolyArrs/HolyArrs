@@ -88,11 +88,9 @@ app/backend/internal/importer/manual.go
 app/backend/internal/importer/rules.go
 app/backend/internal/importer/shows.go
 app/backend/internal/importer/upgrade.go
-app/backend/internal/library/addshow.go
 app/backend/internal/library/adopt.go
 app/backend/internal/library/adoptcopy.go
 app/backend/internal/library/adoptmusic.go
-app/backend/internal/library/adoptshows.go
 app/backend/internal/library/artist.go
 app/backend/internal/library/artistpictures.go
 app/backend/internal/library/artistrefresh.go
@@ -114,9 +112,7 @@ app/backend/internal/library/refresh.go
 app/backend/internal/library/refreshall.go
 app/backend/internal/library/rename.go
 app/backend/internal/library/service.go
-app/backend/internal/library/showrefresh.go
-app/backend/internal/library/shows.go
-app/backend/internal/library/showschedule.go
+app/backend/internal/library/show_shared.go
 app/backend/internal/library/standin.go
 app/backend/internal/library/title_defaults.go
 app/backend/internal/library/versions.go
@@ -142,6 +138,11 @@ app/backend/internal/requests/store_reports.go
 app/backend/internal/requests/store_settings.go
 app/backend/internal/requests/store_steps.go
 app/backend/internal/requests/store_views.go
+app/backend/internal/shows/add.go
+app/backend/internal/shows/adopt.go
+app/backend/internal/shows/refresh.go
+app/backend/internal/shows/schedule.go
+app/backend/internal/shows/service.go
 app/backend/internal/sources/store.go
 app/backend/internal/sources/store_health.go
 app/backend/internal/sources/store_releases.go

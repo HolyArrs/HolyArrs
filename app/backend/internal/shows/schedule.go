@@ -1,4 +1,4 @@
-package library
+package shows
 
 import (
 	"context"
@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
@@ -91,7 +92,7 @@ func (s *Service) ShowRefreshPlan(ctx context.Context, byHand bool) (ids []int64
 		return nil, nil, err
 	}
 	why = map[int64]string{}
-	now := s.now()
+	now := s.Clock()
 	for _, t := range ts {
 		if byHand {
 			ids, why[t.ID] = append(ids, t.ID), "by hand"
@@ -113,11 +114,11 @@ func (s *Service) ShowRefreshPlan(ctx context.Context, byHand bool) (ids []int64
 // Slot crosses, so an idle Library causes no disk writes.
 func (s *Service) OpenEpisodeGates(ctx context.Context) (int, error) {
 	db := s.Store.Read()
-	defs, err := ReadShowDefaults(ctx, db)
+	defs, err := library.ReadShowDefaults(ctx, db)
 	if err != nil {
 		return 0, err
 	}
-	now := s.now()
+	now := s.Clock()
 	wait := time.Duration(defs.WaitMinutes) * time.Minute
 	rows, err := db.QueryContext(ctx, `SELECT DISTINCT i.title_id FROM slots s JOIN items i ON i.id = s.item_id JOIN titles t ON t.id = i.title_id
 		WHERE i.kind = 'episode' AND s.state = 'not_out_yet' AND t.state != 'removed' AND i.air_date IS NOT NULL AND i.air_date <= ?`,
@@ -171,7 +172,7 @@ func (s *Service) handleRefreshShows(ctx context.Context, r *jobs.Run) error {
 			return ctx.Err()
 		}
 		_ = r.Progress(ctx, float64(i)/float64(len(ids)), fmt.Sprintf("refreshing show %d of %d", i+1, len(ids)))
-		out, err := s.RefreshShow(ctx, id, jobActor(r), &r.Job.ID)
+		out, err := s.RefreshShow(ctx, id, library.JobActor(r), &r.Job.ID)
 		if err != nil {
 			if errors.Is(err, metadata.ErrNoAccess) && s.allOn(ctx, "tmdb") {
 				return err // every other show would fail the same way

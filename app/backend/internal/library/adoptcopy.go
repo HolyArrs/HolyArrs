@@ -100,7 +100,7 @@ func (s *Service) AdoptMovieCopy(ctx context.Context, titleID, versionID int64, 
 			}
 			foundID = existing[0].ID
 		}
-		f = mediafiles.File{VersionID: v.ID, SlotIDs: []int64{slot.ID}, RelativePath: filepath.ToSlash(rel), Size: fi.Size(), AddedAt: s.now(), Languages: inspectedLanguages(facts),
+		f = mediafiles.File{VersionID: v.ID, SlotIDs: []int64{slot.ID}, RelativePath: filepath.ToSlash(rel), Size: fi.Size(), AddedAt: s.now(), Languages: InspectedLanguages(facts),
 			MediaInfo: facts, Quality: mediafiles.Quality{Resolution: p.Resolution.Value, Source: p.Source.Value, Codec: p.Codec.Value, HDR: p.HDR.Value}, ReleaseName: &name, Origin: "adopted", PlacedBy: "none", Role: "main", State: "present"}
 		if foundID == 0 {
 			if _, err := database.Insert(tx, "files", &f, by); err != nil {
@@ -112,11 +112,11 @@ func (s *Service) AdoptMovieCopy(ctx context.Context, titleID, versionID int64, 
 				return err
 			}
 		}
-		_, err = tx.Exec(`UPDATE slots SET file_id = ?, state = 'in_library', last_reason = 'adopted an existing copy', updated_at = ?, updated_by = ? WHERE id = ?`, f.ID, database.FormatTime(s.now()), actorText(by), slot.ID)
+		_, err = tx.Exec(`UPDATE slots SET file_id = ?, state = 'in_library', last_reason = 'adopted an existing copy', updated_at = ?, updated_by = ? WHERE id = ?`, f.ID, database.FormatTime(s.now()), ActorText(by), slot.ID)
 		return err
 	})
 	if err == nil {
-		s.event(ctx, &domain.Event{Actor: by, Kind: domain.EventAdopted, TitleID: &titleID, Summary: "Adopted an existing " + v.Label + " copy", Data: map[string]any{"file_id": f.ID, "version_id": v.ID, "edition": edition, "edition_source": source}, GroupKey: groupKey(titleID)})
+		s.Emit(ctx, &domain.Event{Actor: by, Kind: domain.EventAdopted, TitleID: &titleID, Summary: "Adopted an existing " + v.Label + " copy", Data: map[string]any{"file_id": f.ID, "version_id": v.ID, "edition": edition, "edition_source": source}, GroupKey: GroupKey(titleID)})
 	}
 	return f, err
 }

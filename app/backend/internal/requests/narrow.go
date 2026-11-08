@@ -11,6 +11,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/shows"
 )
 
 // ErrNotAskedPart is a season or album the approver kept that the ask
@@ -55,7 +56,7 @@ func (s *Service) narrow(ctx context.Context, a domain.Ask, opt ApproveOptions) 
 			if err != nil {
 				return a, err
 			}
-			sh, err := s.Library.LookupShow(ctx, a.Ref, defs.Source)
+			sh, err := shows.New(s.Library).LookupShow(ctx, a.Ref, defs.Source)
 			if err != nil {
 				return a, err
 			}

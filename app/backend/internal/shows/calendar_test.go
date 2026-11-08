@@ -1,4 +1,4 @@
-package library
+package shows
 
 import (
 	"context"
@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 )
 
 // 5.2.7: the calendar lists episodes by their exact air time (the browser
@@ -21,7 +22,7 @@ func TestCalendarEpisodes(t *testing.T) {
 		t.Fatal(err)
 	}
 	from := time.Date(2026, 10, 12, 0, 0, 0, 0, time.UTC)
-	es, err := Calendar(ctx, s.Read(), from, from.AddDate(0, 0, 14))
+	es, err := library.Calendar(ctx, s.Read(), from, from.AddDate(0, 0, 14))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -36,16 +37,16 @@ func TestCalendarEpisodes(t *testing.T) {
 	if es[1].EpisodeName != "Next Week" {
 		t.Fatalf("second %+v", es[1])
 	}
-	if ms, _ := Calendar(ctx, s.Read(), from, from.AddDate(0, 0, 14), CalendarMovies); len(ms) != 0 {
+	if ms, _ := library.Calendar(ctx, s.Read(), from, from.AddDate(0, 0, 14), library.CalendarMovies); len(ms) != 0 {
 		t.Fatalf("movies only %+v", ms)
 	}
-	if ss, _ := Calendar(ctx, s.Read(), from, from.AddDate(0, 0, 14), CalendarShows); len(ss) != 2 {
+	if ss, _ := library.Calendar(ctx, s.Read(), from, from.AddDate(0, 0, 14), library.CalendarShows); len(ss) != 2 {
 		t.Fatalf("shows only %+v", ss)
 	}
-	if _, err := svc.Remove(ctx, id, RemoveChoice{}, true, domain.System); err != nil {
+	if _, err := svc.Remove(ctx, id, library.RemoveChoice{}, true, domain.System); err != nil {
 		t.Fatal(err)
 	}
-	if es, _ := Calendar(ctx, s.Read(), from, from.AddDate(0, 0, 14)); len(es) != 0 {
+	if es, _ := library.Calendar(ctx, s.Read(), from, from.AddDate(0, 0, 14)); len(es) != 0 {
 		t.Fatalf("a deleted show's episodes %+v", es)
 	}
 }
@@ -73,7 +74,7 @@ func TestCalendarAirDayInLocalRange(t *testing.T) {
 		want bool
 	}{{12, false}, {13, true}, {14, false}} {
 		from := time.Date(2026, 10, c.day, 0, 0, 0, 0, plus2)
-		es, err := Calendar(ctx, s.Read(), from, from.AddDate(0, 0, 1), CalendarShows)
+		es, err := library.Calendar(ctx, s.Read(), from, from.AddDate(0, 0, 1), library.CalendarShows)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -118,7 +119,7 @@ func TestCalendarEpisodesQueriesDoNotGrow(t *testing.T) {
 			from = time.Date(2026, 10, 12, 0, 0, 0, 0, time.UTC)
 		}
 		c := &countingReader{db: s.Read()}
-		es, err := calendarEpisodes(ctx, c, from, from.AddDate(0, 0, days))
+		es, err := library.CalendarEpisodes(ctx, c, from, from.AddDate(0, 0, days))
 		if err != nil {
 			t.Fatal(err)
 		}

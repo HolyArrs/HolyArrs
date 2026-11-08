@@ -8,11 +8,11 @@ import (
 	"strings"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/shows"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
 )
 
@@ -132,7 +132,7 @@ func (a *API) searchShow(w http.ResponseWriter, r *http.Request, t mediafiles.Ti
 	default:
 		// The whole show: every season with an episode kept up to date
 		// that is looking for a copy, in a show and Version kept up to date.
-		list, err := library.ShowSeasonsToSearch(ctx, db, t.ID)
+		list, err := shows.ShowSeasonsToSearch(ctx, db, t.ID)
 		if err != nil {
 			internal(w, err)
 			return

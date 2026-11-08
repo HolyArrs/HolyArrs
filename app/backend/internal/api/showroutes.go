@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/shows"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
@@ -31,11 +32,11 @@ func (a *API) showRoutes(m *http.ServeMux) {
 // showError answers show refusals with a status and a reason; anything
 // else goes to libraryError.
 func showError(w http.ResponseWriter, err error) {
-	var dup *library.ShowAlreadyAddedError
+	var dup *shows.ShowAlreadyAddedError
 	switch {
 	case errors.As(err, &dup):
 		writeJSON(w, http.StatusConflict, map[string]any{"error": err.Error(), "title_id": dup.TitleID})
-	case errors.Is(err, library.ErrNoShowFolder), errors.Is(err, library.ErrShowNeverAdd):
+	case errors.Is(err, library.ErrNoShowFolder), errors.Is(err, shows.ErrShowNeverAdd):
 		fail(w, http.StatusConflict, err.Error())
 	case errors.Is(err, library.ErrBadSeasonChoice), errors.Is(err, library.ErrBadNewSeasons), errors.Is(err, library.ErrBadOrder),
 		errors.Is(err, library.ErrBadWait), errors.Is(err, library.ErrNotShowFolder), errors.Is(err, library.ErrMovieOnly),
@@ -85,16 +86,16 @@ func (a *API) lookupShows(w http.ResponseWriter, r *http.Request) {
 	if a.kidLimited(w, r) {
 		return
 	}
-	var shows []metadata.Show
+	var list []metadata.Show
 	low := strings.ToLower(term)
 	if k, _, ok := strings.Cut(low, ":"); ok && (k == "tmdb" || k == "tvdb" || k == "tvmaze" || k == "imdb") {
-		sh, err := a.s.Library.LookupShow(r.Context(), k+":"+strings.TrimSpace(term[len(k)+1:]), source)
+		sh, err := shows.New(a.s.Library).LookupShow(r.Context(), k+":"+strings.TrimSpace(term[len(k)+1:]), source)
 		if err != nil && !errors.Is(err, metadata.ErrShowNotFound) {
 			showError(w, err)
 			return
 		}
 		if err == nil {
-			shows = []metadata.Show{sh}
+			list = []metadata.Show{sh}
 		}
 	} else {
 		p, err := a.showSource(source)
@@ -102,13 +103,13 @@ func (a *API) lookupShows(w http.ResponseWriter, r *http.Request) {
 			showError(w, err)
 			return
 		}
-		if shows, err = p.SearchShows(r.Context(), term); err != nil {
+		if list, err = p.SearchShows(r.Context(), term); err != nil {
 			showError(w, err)
 			return
 		}
 	}
 	out := []ShowResult{}
-	for _, sh := range a.kidShows(r.Context(), a.kidMax(r), shows) {
+	for _, sh := range a.kidShows(r.Context(), a.kidMax(r), list) {
 		sh.Episodes = nil
 		v := ShowResult{Show: sh}
 		var err error
@@ -145,7 +146,7 @@ const addShowHelp = `send {"id": "tmdb:<number>"} (or tvdb:, tvmaze:, imdb:) wit
 func (a *API) addShow(w http.ResponseWriter, r *http.Request) {
 	var body struct {
 		ID string `json:"id"`
-		library.ShowAddOptions
+		shows.ShowAddOptions
 		Follow *bool `json:"follow"` // put it on the adder's calendar (default true)
 	}
 	sent, ok := decodeKeys(w, r, &body, addShowHelp)
@@ -161,7 +162,7 @@ func (a *API) addShow(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusBadRequest, addShowHelp)
 		return
 	}
-	id, jobID, err := a.s.Library.AddShow(r.Context(), strings.TrimSpace(body.ID), body.ShowAddOptions, actor(r))
+	id, jobID, err := shows.New(a.s.Library).AddShow(r.Context(), strings.TrimSpace(body.ID), body.ShowAddOptions, actor(r))
 	if err != nil {
 		showError(w, err)
 		return
@@ -202,7 +203,7 @@ func (a *API) listSeasons(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	ss, err := library.Seasons(r.Context(), a.s.Store.Read(), t.ID, time.Now())
+	ss, err := shows.Seasons(r.Context(), a.s.Store.Read(), t.ID, time.Now())
 	if err != nil {
 		internal(w, err)
 		return
@@ -232,11 +233,11 @@ func (a *API) setSeason(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusBadRequest, keepHelp)
 		return
 	}
-	if err := a.s.Library.SetSeason(r.Context(), t.ID, n, *body.KeepUpToDate, actor(r)); err != nil {
+	if err := shows.New(a.s.Library).SetSeason(r.Context(), t.ID, n, *body.KeepUpToDate, actor(r)); err != nil {
 		showError(w, err)
 		return
 	}
-	ss, err := library.Seasons(r.Context(), a.s.Store.Read(), t.ID, time.Now())
+	ss, err := shows.Seasons(r.Context(), a.s.Store.Read(), t.ID, time.Now())
 	if err != nil {
 		internal(w, err)
 		return
@@ -390,7 +391,7 @@ func (a *API) setEpisode(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusBadRequest, keepHelp)
 		return
 	}
-	it, err := a.s.Library.SetEpisode(r.Context(), id, *body.KeepUpToDate, actor(r))
+	it, err := shows.New(a.s.Library).SetEpisode(r.Context(), id, *body.KeepUpToDate, actor(r))
 	if errors.Is(err, database.ErrNotFound) {
 		fail(w, http.StatusNotFound, "no such episode")
 		return
@@ -420,7 +421,7 @@ func (a *API) putShowSettings(w http.ResponseWriter, r *http.Request) {
 	if !decode(w, r, &d, "send any of season_choice, new_seasons, episode_order, details_source, keep_specials, episode_wait_minutes") {
 		return
 	}
-	if err := library.SetShowDefaults(r.Context(), a.s.Store, d, actor(r)); err != nil {
+	if err := shows.SetShowDefaults(r.Context(), a.s.Store, d, actor(r)); err != nil {
 		showError(w, err)
 		return
 	}

@@ -1,4 +1,4 @@
-package library
+package shows
 
 import (
 	"context"
@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
@@ -89,7 +90,7 @@ func labShow(source, id string) metadata.Show {
 
 func addShowFolder(t *testing.T, s *database.Store) mediafiles.LibraryFolder {
 	t.Helper()
-	lf, err := AddFolder(context.Background(), s, FolderInput{Path: t.TempDir(), Kind: "show", Label: "Shows"}, nil, domain.System)
+	lf, err := library.AddFolder(context.Background(), s, library.FolderInput{Path: t.TempDir(), Kind: "show", Label: "Shows"}, nil, domain.System)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -102,10 +103,10 @@ func seedShow(t *testing.T, s *database.Store, sh metadata.Show, choice string) 
 	t.Helper()
 	ctx := context.Background()
 	lf := addShowFolder(t, s)
-	defs, _ := ReadShowDefaults(ctx, s.Read())
-	order := OrderAired
+	defs, _ := library.ReadShowDefaults(ctx, s.Read())
+	order := library.OrderAired
 	ti := mediafiles.Title{Kind: "show", Aliases: []string{}, MetadataSource: sh.Source, EpisodeOrder: &order, KeepUpToDate: true, NewPartsPolicy: "all",
-		ReleaseGate: GateReleased, MusicTypes: []string{}, WhyAdded: "by_hand", Artwork: []string{}, State: "active", GateDriver: "none", SeasonChoice: &choice}
+		ReleaseGate: library.GateReleased, MusicTypes: []string{}, WhyAdded: "by_hand", Artwork: []string{}, State: "active", GateDriver: "none", SeasonChoice: &choice}
 	applyShow(&ti, sh)
 	ti.RefreshedAt = &now
 	err := s.Write(ctx, func(tx *sql.Tx) error {
@@ -176,7 +177,7 @@ func two(n int) string {
 }
 
 func showService(s *database.Store, sources metadata.ShowSources) *Service {
-	return &Service{Store: s, Shows: sources, Now: func() time.Time { return now }}
+	return New(&library.Service{Store: s, Shows: sources, Now: func() time.Time { return now }})
 }
 
 func TestShowRefreshFromTMDB(t *testing.T) {
@@ -185,7 +186,7 @@ func TestShowRefreshFromTMDB(t *testing.T) {
 	tmdb := &fakeShows{}
 	sh := labShow("tmdb", "100")
 	tmdb.set(sh, "tmdb:100")
-	ti := seedShow(t, s, sh, SeasonsAll)
+	ti := seedShow(t, s, sh, library.SeasonsAll)
 	svc := showService(s, metadata.ShowSources{"tmdb": tmdb})
 
 	eps := episodes(t, s, ti.ID)
@@ -279,7 +280,7 @@ func TestSwitchShowSource(t *testing.T) {
 	ms.Episodes[2].Name = "Second (TVMaze)"
 	ms.Episodes = append(ms.Episodes, metadata.Episode{Season: 2, Number: 4, Name: "Extra", AirDate: tm("2026-11-02T02:00:00Z"), AirDay: "2026-11-01", ID: "tvmaze-204"})
 	maze.set(ms, "tvdb:200", "tvmaze:300") // TVMaze finds it by its TVDB id
-	ti := seedShow(t, s, sh, SeasonsAll)
+	ti := seedShow(t, s, sh, library.SeasonsAll)
 	before := episodes(t, s, ti.ID)
 	svc := showService(s, metadata.ShowSources{"tmdb": tmdb, "tvmaze": maze, "tvdb": &fakeShows{err: metadata.ErrNoTVDBKey}})
 
@@ -373,7 +374,7 @@ func TestRefreshKeepsSpecialsByEpisodeID(t *testing.T) {
 	sh := labShow("tvmaze", "300")
 	sh.Episodes = append(sh.Episodes, metadata.Episode{Season: 0, Number: 2, Name: "Lab Tour", AirDate: tm("2025-04-01T12:00:00Z"), AirDay: "2025-04-01", ID: "tvmaze-s2"})
 	src.set(sh, "tvmaze:300")
-	ti := seedShow(t, s, sh, SeasonsAll)
+	ti := seedShow(t, s, sh, library.SeasonsAll)
 	svc := showService(s, metadata.ShowSources{"tvmaze": src})
 	eps := episodes(t, s, ti.ID)
 	err := s.Write(ctx, func(tx *sql.Tx) error {
@@ -422,7 +423,7 @@ func TestRefreshKeepsSearchingAndHeldEpisodes(t *testing.T) {
 	src := &fakeShows{}
 	sh := labShow("tmdb", "100")
 	src.set(sh, "tmdb:100")
-	ti := seedShow(t, s, sh, SeasonsAll)
+	ti := seedShow(t, s, sh, library.SeasonsAll)
 	svc := showService(s, metadata.ShowSources{"tmdb": src})
 	eps := episodes(t, s, ti.ID)
 	err := s.Write(ctx, func(tx *sql.Tx) error {
@@ -456,7 +457,7 @@ func TestFutureSeasonsOnlyRefresh(t *testing.T) {
 	svc, s, tmdb, _ := addShowService(t)
 	ctx := context.Background()
 	addShowFolder(t, s)
-	id, _, err := svc.AddShow(ctx, "tmdb:100", ShowAddOptions{Seasons: SeasonsFuture}, domain.System)
+	id, _, err := svc.AddShow(ctx, "tmdb:100", ShowAddOptions{Seasons: library.SeasonsFuture}, domain.System)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -493,7 +494,7 @@ func TestKeepFutureOnExistingShow(t *testing.T) {
 	svc, s, _, _ := addShowService(t)
 	ctx := context.Background()
 	addShowFolder(t, s)
-	id, _, err := svc.AddShow(ctx, "tmdb:100", ShowAddOptions{Seasons: SeasonsNone, NewSeasons: "none"}, domain.System)
+	id, _, err := svc.AddShow(ctx, "tmdb:100", ShowAddOptions{Seasons: library.SeasonsNone, NewSeasons: "none"}, domain.System)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -506,7 +507,7 @@ func TestKeepFutureOnExistingShow(t *testing.T) {
 	}
 	var ti mediafiles.Title
 	_ = database.Get(ctx, s.Read(), "titles", id, &ti)
-	if !ti.KeepUpToDate || ti.NewPartsPolicy != "all" || ti.FutureFrom == nil || *ti.SeasonChoice != SeasonsFuture {
+	if !ti.KeepUpToDate || ti.NewPartsPolicy != "all" || ti.FutureFrom == nil || *ti.SeasonChoice != library.SeasonsFuture {
 		t.Fatalf("title %+v", ti)
 	}
 	ss, _ := Seasons(ctx, s.Read(), id, now)

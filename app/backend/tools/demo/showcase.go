@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/shows"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
@@ -639,7 +640,7 @@ func (w *world) showcaseShows(ctx context.Context) error {
 		if w.m.Titles[key] != 0 {
 			continue
 		}
-		sh, err := w.lib.LookupShow(ctx, "tmdb:"+e.TMDB, "tmdb")
+		sh, err := shows.New(w.lib).LookupShow(ctx, "tmdb:"+e.TMDB, "tmdb")
 		if err != nil {
 			w.skip("show %s (tmdb %s): %v", e.Name, e.TMDB, err)
 			continue
@@ -677,23 +678,23 @@ func (w *world) showcaseShows(ctx context.Context) error {
 				}
 			}
 		}
-		opt := library.ShowAddOptions{LibraryFolderID: lf.ID, Seasons: e.Choice, EpisodeOrder: e.Order, Source: "tmdb", NewSeasons: "all"}
+		opt := shows.ShowAddOptions{LibraryFolderID: lf.ID, Seasons: e.Choice, EpisodeOrder: e.Order, Source: "tmdb", NewSeasons: "all"}
 		if e.Keep == "off" {
 			off := false
 			opt.KeepUpToDate = &off
 		}
-		var a *library.ShowAdoption
+		var a *shows.ShowAdoption
 		if hasVideo(dir) {
-			a = &library.ShowAdoption{FolderName: folder}
+			a = &shows.ShowAdoption{FolderName: folder}
 			opt.Adopt, opt.WhyAdded = a, "import"
 		}
-		id, _, err := w.lib.AddShow(ctx, "tmdb:"+e.TMDB, opt, w.by)
+		id, _, err := shows.New(w.lib).AddShow(ctx, "tmdb:"+e.TMDB, opt, w.by)
 		if err != nil {
 			return fmt.Errorf("%s: %w", sh.Name, err)
 		}
 		w.m.Titles[key] = id
 		if e.Specials > 0 {
-			if err := w.lib.SetSeason(ctx, id, 0, true, w.by); err != nil {
+			if err := shows.New(w.lib).SetSeason(ctx, id, 0, true, w.by); err != nil {
 				w.say("   %s specials: %v", sh.Name, err)
 			}
 		}

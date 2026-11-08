@@ -1,4 +1,4 @@
-package library
+package shows
 
 import (
 	"context"
@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
@@ -88,11 +89,11 @@ func TestPlanShowAdopt(t *testing.T) {
 		t.Fatal("a dry run changed something")
 	}
 	// A movie folder is not scanned as shows, and the other way round.
-	if _, err := PlanAdoptFrom(ctx, s.Read(), adoptTMDB, lf.ID, ""); err != ErrNotMovieFolder {
+	if _, err := library.PlanAdoptFrom(ctx, s.Read(), adoptTMDB, lf.ID, ""); err != library.ErrNotMovieFolder {
 		t.Errorf("movie plan on a show folder: %v", err)
 	}
 	mf := addFolder(t, s)
-	if _, err := PlanShowAdoptFrom(ctx, s.Read(), svc.Shows, mf.ID, ""); err != ErrNotShowFolder {
+	if _, err := PlanShowAdoptFrom(ctx, s.Read(), svc.Shows, mf.ID, ""); err != library.ErrNotShowFolder {
 		t.Errorf("show plan on a movie folder: %v", err)
 	}
 }
@@ -106,7 +107,7 @@ func TestAdoptShowMovesNothing(t *testing.T) {
 	lf := addShowFolder(t, s)
 	showTree(t, lf.Path)
 	before := snapshot(t, lf.Path)
-	res, err := svc.Adopt(ctx, lf.ID, []AdoptChoice{{Folder: "Lab Show (2025)", ID: "tmdb:100"}, {Folder: "../x", ID: "tmdb:100"}, {Folder: "Nope", ID: "tmdb:100"}}, domain.System)
+	res, err := svc.Adopt(ctx, lf.ID, []library.AdoptChoice{{Folder: "Lab Show (2025)", ID: "tmdb:100"}, {Folder: "../x", ID: "tmdb:100"}, {Folder: "Nope", ID: "tmdb:100"}}, domain.System)
 	if err != nil || len(res) != 3 {
 		t.Fatalf("%+v %v", res, err)
 	}
@@ -166,7 +167,7 @@ func TestAdoptShowMovesNothing(t *testing.T) {
 	if err := os.Rename(filepath.Join(lf.Path, "Holiday Videos"), filepath.Join(lf.Path, "Lab Show")); err != nil {
 		t.Fatal(err)
 	}
-	res, _ = svc.Adopt(ctx, lf.ID, []AdoptChoice{{Folder: "Lab Show", ID: "tmdb:100"}}, domain.System)
+	res, _ = svc.Adopt(ctx, lf.ID, []library.AdoptChoice{{Folder: "Lab Show", ID: "tmdb:100"}}, domain.System)
 	if res[0].Error == "" {
 		t.Error("the show was adopted twice")
 	}
@@ -180,7 +181,7 @@ func TestRescanShowFolder(t *testing.T) {
 	ctx := context.Background()
 	lf := addShowFolder(t, s)
 	showTree(t, lf.Path)
-	res, err := svc.Adopt(ctx, lf.ID, []AdoptChoice{{Folder: "Lab Show (2025)", ID: "tmdb:100"}}, domain.System)
+	res, err := svc.Adopt(ctx, lf.ID, []library.AdoptChoice{{Folder: "Lab Show (2025)", ID: "tmdb:100"}}, domain.System)
 	if err != nil || res[0].Error != "" {
 		t.Fatalf("%+v %v", res, err)
 	}

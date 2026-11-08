@@ -31,7 +31,7 @@ var (
 	ErrBadGate         = errors.New("release_gate must be announced, in_cinemas or released")
 	ErrBadDelay        = errors.New("gate_delay_days must be between 0 and 365")
 	ErrNoMetadataIDs   = errors.New("the movie has no TMDB id")
-	errUnknownWhyAdded = errors.New("unknown why_added")
+	ErrUnknownWhyAdded = errors.New("unknown why_added")
 )
 
 // AlreadyAddedError says the movie is already in the Library.
@@ -129,7 +129,7 @@ func SetGateDefaults(ctx context.Context, s *database.Store, g GateDefaults, by 
 			"bulk_search_respects_gate": strconv.FormatBool(g.BulkRespectsGate)} {
 			_, err := tx.Exec(`INSERT INTO settings (grp, key, value, created_at, created_by, updated_at, updated_by) VALUES ('what_to_pick', ?, ?, ?, ?, ?, ?)
 				ON CONFLICT (grp, key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at, updated_by = excluded.updated_by`,
-				k, v, now, actorText(by), now, actorText(by))
+				k, v, now, ActorText(by), now, ActorText(by))
 			if err != nil {
 				return err
 			}
@@ -171,7 +171,7 @@ func AddMovie(ctx context.Context, s *database.Store, m metadata.Movie, opt AddO
 	switch opt.WhyAdded {
 	case "by_hand", "list", "series_follow", "ask", "import", "migration":
 	default:
-		return 0, errUnknownWhyAdded
+		return 0, ErrUnknownWhyAdded
 	}
 	defs, err := ReadGateDefaults(ctx, s.Read())
 	if err != nil {
@@ -220,11 +220,11 @@ func AddMovie(ctx context.Context, s *database.Store, m metadata.Movie, opt AddO
 		return 0, ErrTooManyVersions
 	}
 	for _, mv := range opt.MoreVersions {
-		if _, err := cleanLabel(mv.Label); err != nil {
+		if _, err := CleanLabel(mv.Label); err != nil {
 			return 0, err
 		}
 		if mv.LibraryFolderID != 0 && mv.LibraryFolderID != lf.ID {
-			if _, err := checkVersionFolder(ctx, db, mv.LibraryFolderID, "movie", downloadPaths); err != nil {
+			if _, err := CheckVersionFolder(ctx, db, mv.LibraryFolderID, "movie", downloadPaths); err != nil {
 				return 0, err
 			}
 		}
@@ -269,7 +269,7 @@ func AddMovie(ctx context.Context, s *database.Store, m metadata.Movie, opt AddO
 			if err := tx.QueryRow("SELECT id FROM pick_rules WHERE name = ?", mediafiles.GoodEverydayName).Scan(&prID); err != nil {
 				return fmt.Errorf("pick rules: %w", err)
 			}
-		} else if err := pickRulesFor(tx, &prID, "movie"); err != nil {
+		} else if err := PickRulesFor(tx, &prID, "movie"); err != nil {
 			return err
 		}
 		t := &mediafiles.Title{Kind: "movie", Aliases: aliases, MetadataSource: "tmdb", KeepUpToDate: keep, NewPartsPolicy: "all",
@@ -319,7 +319,7 @@ func AddMovie(ctx context.Context, s *database.Store, m metadata.Movie, opt AddO
 			}
 		}
 		for _, mv := range opt.MoreVersions {
-			if _, err := addVersionTx(ctx, tx, *t, mv, now, by); err != nil {
+			if _, err := AddVersionTx(ctx, tx, *t, mv, now, by); err != nil {
 				return err
 			}
 		}
@@ -331,7 +331,7 @@ func AddMovie(ctx context.Context, s *database.Store, m metadata.Movie, opt AddO
 
 // applyMovie copies looked-up details onto a Title (not its gate choice).
 func applyMovie(t *mediafiles.Title, m metadata.Movie, now time.Time) {
-	t.Name, t.SortName = m.Name, sortName(m.Name)
+	t.Name, t.SortName = m.Name, SortName(m.Name)
 	ids := map[string]string{}
 	for k, v := range t.SourceIDs {
 		ids[k] = v
@@ -354,14 +354,14 @@ func applyMovie(t *mediafiles.Title, m metadata.Movie, now time.Time) {
 		t.OriginalLanguage = &l
 	}
 	t.CinemaDate, t.DigitalDate, t.PhysicalDate = m.CinemaDate, m.DigitalDate, m.PhysicalDate
-	t.Aliases = mergeAliases(t.Aliases, m.Name, m.OtherNames)
+	t.Aliases = MergeAliases(t.Aliases, m.Name, m.OtherNames)
 	t.Status = titleStatus(Stage(DatesOf(*t), now))
-	applyDetails(t, m.Backdrop, m.Logo, m.Genres, m.Rating, m.People, m.Runtime)
+	ApplyDetails(t, m.Backdrop, m.Logo, m.Genres, m.Rating, m.People, m.Runtime)
 	t.Directors, t.Studio = append([]string{}, m.Directors...), m.Studio
 }
 
 // applyDetails copies the screen details; a fresh lookup replaces them all.
-func applyDetails(t *mediafiles.Title, backdrop, logo string, genres []string, rating string, people []string, runtime int) {
+func ApplyDetails(t *mediafiles.Title, backdrop, logo string, genres []string, rating string, people []string, runtime int) {
 	t.Backdrop, t.Logo, t.Rating, t.RuntimeMinutes = backdrop, logo, rating, max(runtime, 0)
 	t.Genres = append([]string{}, genres...)
 	t.People = append([]string{}, people...)
@@ -380,7 +380,7 @@ func gateReason(driver string, opens *time.Time) string {
 	return fmt.Sprintf("release gate: searching from %s (%s)", opens.Format("2006-01-02"), what)
 }
 
-func sortName(n string) string {
+func SortName(n string) string {
 	c := releasename.CleanName(n)
 	for _, a := range []string{"the ", "a ", "an "} {
 		if strings.HasPrefix(c, a) {
@@ -399,7 +399,7 @@ func adoptFile(ctx context.Context, tx *sql.Tx, a Adoption, slotID, versionID, p
 	p := releasename.Parse(release, releasename.Hints{Size: a.Size})
 	f := &mediafiles.File{SlotIDs: []int64{slotID}, VersionID: versionID, RelativePath: a.File, Size: a.Size, AddedAt: now,
 		Quality:   mediafiles.Quality{Resolution: p.Resolution.Value, Source: p.Source.Value, Codec: p.Codec.Value, HDR: p.HDR.Value},
-		Languages: inspectedLanguages(a.MediaInfo), MediaInfo: map[string]any{"step": mediafiles.StepFor(p)}, ReleaseName: &release, Origin: "adopted",
+		Languages: InspectedLanguages(a.MediaInfo), MediaInfo: map[string]any{"step": mediafiles.StepFor(p)}, ReleaseName: &release, Origin: "adopted",
 		PlacedBy: "none", Role: "main", State: "present"}
 	if f.Languages == nil {
 		f.Languages = []string{}

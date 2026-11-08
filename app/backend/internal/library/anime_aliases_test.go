@@ -23,7 +23,7 @@ func TestAnimeAliasesKeptAndSearched(t *testing.T) {
 		return []string{"Sen to Chihiro no Kamikakushi", "千と千尋の神隠し"}
 	}}
 	m := metadata.Movie{Name: "Spirited Away", Year: 2001, IDs: map[string]string{"tmdb": "129"}, Genres: []string{"Animation"}}
-	opt := AddOptions{Aliases: svc.animeAliases(ctx, "movie", m.IDs["tmdb"], m.Name)}
+	opt := AddOptions{Aliases: svc.AnimeAliases(ctx, "movie", m.IDs["tmdb"], m.Name)}
 	id, err := AddMovie(ctx, s, m, opt, nil, now, domain.System)
 	if err != nil {
 		t.Fatal(err)
@@ -40,10 +40,10 @@ func TestAnimeAliasesKeptAndSearched(t *testing.T) {
 		}
 	}
 	// No hook, no names: an empty list, never nil.
-	if a := (&Service{}).animeAliases(ctx, "show", "1", "x"); a == nil || len(a) != 0 {
+	if a := (&Service{}).AnimeAliases(ctx, "show", "1", "x"); a == nil || len(a) != 0 {
 		t.Fatalf("no hook %v", a)
 	}
-	if a := (&Service{AnimeNames: func(context.Context, string, string, string) []string { return nil }}).animeAliases(ctx, "show", "1", "x"); a == nil {
+	if a := (&Service{AnimeNames: func(context.Context, string, string, string) []string { return nil }}).AnimeAliases(ctx, "show", "1", "x"); a == nil {
 		t.Fatal("nil aliases")
 	}
 }

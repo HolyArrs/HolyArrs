@@ -80,7 +80,7 @@ type CollectionReview struct {
 // ListCollections returns provider collections with at least one currently
 // owned movie. Provider membership is persisted separately; this read never
 // invents membership from names or folders.
-func ListCollections(ctx context.Context, db reader) ([]MovieCollection, error) {
+func ListCollections(ctx context.Context, db Reader) ([]MovieCollection, error) {
 	rows, err := db.QueryContext(ctx, `SELECT c.id, c.source_id, c.name, count(t.id), group_concat(t.id)
 		FROM movie_collections c
 		JOIN movie_collection_titles ct ON ct.collection_id = c.id
@@ -109,7 +109,7 @@ func ListCollections(ctx context.Context, db reader) ([]MovieCollection, error) 
 
 // CollectionDetails returns the exact currently owned movies and their
 // Versions and Files. It does not read or modify media on disk.
-func CollectionDetails(ctx context.Context, db reader, id int64) (CollectionDetail, error) {
+func CollectionDetails(ctx context.Context, db Reader, id int64) (CollectionDetail, error) {
 	var out CollectionDetail
 	err := db.QueryRowContext(ctx, "SELECT id, source_id, name FROM movie_collections WHERE id = ?", id).
 		Scan(&out.ID, &out.SourceID, &out.Name)
@@ -236,7 +236,7 @@ func removeRoots(files []RemoveFile) []string {
 	return out
 }
 
-func pendingCollectionDownloads(ctx context.Context, db reader, titleID int64) ([]collectionDownloadToken, error) {
+func pendingCollectionDownloads(ctx context.Context, db Reader, titleID int64) ([]collectionDownloadToken, error) {
 	rows, err := db.QueryContext(ctx, `SELECT d.id, d.state FROM downloads d
 		WHERE (d.state IN ('sent', 'queued', 'downloading', 'stalled', 'paused')
 			OR d.state IN ('finished', 'seeding')

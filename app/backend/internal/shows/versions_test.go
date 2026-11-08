@@ -1,4 +1,4 @@
-package library
+package shows
 
 import (
 	"context"
@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
@@ -28,8 +29,8 @@ func TestShowVersions(t *testing.T) {
 	if err := s.Read().QueryRow("SELECT id FROM pick_rules WHERE name = ?", mediafiles.FourKName).Scan(&fourK); err != nil {
 		t.Fatal(err)
 	}
-	id, _, err := svc.AddShow(ctx, "tmdb:100", ShowAddOptions{Seasons: SeasonsAll,
-		MoreVersions: []VersionInput{{Label: "4K", PickRulesID: fourK}}}, domain.System)
+	id, _, err := svc.AddShow(ctx, "tmdb:100", ShowAddOptions{Seasons: library.SeasonsAll,
+		MoreVersions: []library.VersionInput{{Label: "4K", PickRulesID: fourK}}}, domain.System)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -47,7 +48,7 @@ func TestShowVersions(t *testing.T) {
 	}
 
 	// A third Version added later opens on the same air dates.
-	v3, err := AddVersion(ctx, s, id, VersionInput{Label: "Remux"}, nil, now, domain.System)
+	v3, err := library.AddVersion(ctx, s, id, library.VersionInput{Label: "Remux"}, nil, now, domain.System)
 	if err != nil || !strings.HasSuffix(v3.FolderName, "[Remux]") {
 		t.Fatalf("third %+v %v", v3, err)
 	}
@@ -61,14 +62,14 @@ func TestShowVersions(t *testing.T) {
 	}
 
 	// Movie folders are refused for a show's Version.
-	mf, err := AddFolder(ctx, s, FolderInput{Path: t.TempDir(), Kind: "movie", Label: "Movies"}, nil, domain.System)
+	mf, err := library.AddFolder(ctx, s, library.FolderInput{Path: t.TempDir(), Kind: "movie", Label: "Movies"}, nil, domain.System)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := AddVersion(ctx, s, id, VersionInput{Label: "X", LibraryFolderID: mf.ID}, nil, now, domain.System); !errors.Is(err, ErrNotShowFolder) {
+	if _, err := library.AddVersion(ctx, s, id, library.VersionInput{Label: "X", LibraryFolderID: mf.ID}, nil, now, domain.System); !errors.Is(err, library.ErrNotShowFolder) {
 		t.Fatalf("movie folder: %v", err)
 	}
-	if _, _, err := svc.AddShow(ctx, "tvmaze:300", ShowAddOptions{MoreVersions: []VersionInput{{Label: "4K", LibraryFolderID: mf.ID}}}, domain.System); !errors.Is(err, ErrNotShowFolder) {
+	if _, _, err := svc.AddShow(ctx, "tvmaze:300", ShowAddOptions{MoreVersions: []library.VersionInput{{Label: "4K", LibraryFolderID: mf.ID}}}, domain.System); !errors.Is(err, library.ErrNotShowFolder) {
 		t.Fatalf("add with movie folder: %v", err)
 	}
 
@@ -81,7 +82,7 @@ func TestShowVersions(t *testing.T) {
 	if err := exec("UPDATE slots SET state = 'downloading' WHERE id = ?", slotID); err != nil {
 		t.Fatal(err)
 	}
-	if err := RemoveVersion(ctx, s, id, vs[1].ID, domain.System); !errors.Is(err, ErrVersionBusy) {
+	if err := library.RemoveVersion(ctx, s, id, vs[1].ID, domain.System); !errors.Is(err, library.ErrVersionBusy) {
 		t.Fatalf("busy: %v", err)
 	}
 	// A finished download waiting on its import (here in Needs a decision)
@@ -103,7 +104,7 @@ func TestShowVersions(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	if err := RemoveVersion(ctx, s, id, vs[1].ID, domain.System); !errors.Is(err, ErrVersionBusy) {
+	if err := library.RemoveVersion(ctx, s, id, vs[1].ID, domain.System); !errors.Is(err, library.ErrVersionBusy) {
 		t.Fatalf("finished download waiting on import: %v", err)
 	}
 	if err := s.Write(ctx, func(tx *sql.Tx) error {
@@ -119,10 +120,10 @@ func TestShowVersions(t *testing.T) {
 	if err := s.Write(ctx, func(tx *sql.Tx) error { _, err := database.Insert(tx, "files", f, domain.System); return err }); err != nil {
 		t.Fatal(err)
 	}
-	if err := RemoveVersion(ctx, s, id, vs[1].ID, domain.System); !errors.Is(err, ErrVersionHasFiles) {
+	if err := library.RemoveVersion(ctx, s, id, vs[1].ID, domain.System); !errors.Is(err, library.ErrVersionHasFiles) {
 		t.Fatalf("files: %v", err)
 	}
-	if err := RemoveVersion(ctx, s, id, v3.ID, domain.System); err != nil {
+	if err := library.RemoveVersion(ctx, s, id, v3.ID, domain.System); err != nil {
 		t.Fatal(err)
 	}
 	_ = s.Read().QueryRow("SELECT count(*) FROM slots WHERE version_id = ?", v3.ID).Scan(&n)
@@ -130,8 +131,8 @@ func TestShowVersions(t *testing.T) {
 		t.Fatalf("slots left %d", n)
 	}
 
-	// The Calendar lists each episode once, with both Versions' states.
-	es, err := Calendar(ctx, s.Read(), now.AddDate(-2, 0, 0), now.AddDate(0, 1, 0), CalendarShows)
+	// The library.Calendar lists each episode once, with both Versions' states.
+	es, err := library.Calendar(ctx, s.Read(), now.AddDate(-2, 0, 0), now.AddDate(0, 1, 0), library.CalendarShows)
 	if err != nil || len(es) == 0 {
 		t.Fatalf("calendar %v %v", es, err)
 	}
@@ -150,7 +151,7 @@ func TestShowVersionsRename(t *testing.T) {
 	svc, s, _, _ := addShowService(t)
 	ctx := context.Background()
 	lf := addShowFolder(t, s)
-	id, _, err := svc.AddShow(ctx, "tmdb:100", ShowAddOptions{Seasons: SeasonsAll, MoreVersions: []VersionInput{{Label: "4K"}}}, domain.System)
+	id, _, err := svc.AddShow(ctx, "tmdb:100", ShowAddOptions{Seasons: library.SeasonsAll, MoreVersions: []library.VersionInput{{Label: "4K"}}}, domain.System)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -175,7 +176,7 @@ func TestShowVersionsRename(t *testing.T) {
 		}
 		put = append(put, f)
 	}
-	plan, err := PlanRename(ctx, s.Read(), []int64{id})
+	plan, err := library.PlanRename(ctx, s.Read(), []int64{id})
 	if err != nil || len(plan) != 2 {
 		t.Fatalf("plan %+v %v", plan, err)
 	}
@@ -194,7 +195,7 @@ func TestShowVersionsRename(t *testing.T) {
 	// Deleting the episode with its files takes every Version's copy.
 	var itemID int64
 	_ = s.Read().QueryRow(`SELECT id FROM items WHERE title_id = ? AND json_extract(numbers, '$.season') = 1 AND json_extract(numbers, '$.episode') = 1`, id).Scan(&itemID)
-	p, err := svc.RemoveEpisodes(ctx, id, RemoveScope{EpisodeIDs: []int64{itemID}}, RemoveChoice{DeleteFiles: true}, true, domain.System)
+	p, err := svc.RemoveEpisodes(ctx, id, library.RemoveScope{EpisodeIDs: []int64{itemID}}, library.RemoveChoice{DeleteFiles: true}, true, domain.System)
 	if err != nil || len(p.Held) != 2 {
 		t.Fatalf("delete %+v %v", p, err)
 	}

@@ -14,6 +14,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/shows"
 )
 
 func (r *run) titleHere(t *TitlePlan) int64 {
@@ -135,7 +136,7 @@ func (r *run) title(it Item) (string, string) {
 		return ResFailed, "adopted, but its choices were not kept: " + err.Error()
 	}
 	for _, n := range t.SeasonsOff {
-		_ = r.m.Library.SetSeason(r.ctx, id, n, false, r.by) // a season the show does not have is fine
+		_ = shows.New(r.m.Library).SetSeason(r.ctx, id, n, false, r.by) // a season the show does not have is fine
 	}
 	d := "uses the folder " + filepath.ToSlash(dir) + " where it is"
 	if res[0].File != "" {

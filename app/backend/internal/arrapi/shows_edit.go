@@ -9,6 +9,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/shows"
 )
 
 // seriesIn is what an app sends to add or change a show; other fields are
@@ -58,7 +59,7 @@ func (h *handler) addSeries(w http.ResponseWriter, r *http.Request) {
 	}
 	// Left out, monitored counts as false, as in the old apps.
 	keep := in.Monitored != nil && *in.Monitored
-	opt := library.ShowAddOptions{LibraryFolderID: folder, PickRulesID: in.QualityProfileID, KeepUpToDate: &keep,
+	opt := shows.ShowAddOptions{LibraryFolderID: folder, PickRulesID: in.QualityProfileID, KeepUpToDate: &keep,
 		NewSeasons: "all", EpisodeOrder: episodeOrder(in.SeriesType), SearchOnAdd: in.AddOptions.SearchForMissingEpisodes}
 	if strings.EqualFold(in.MonitorNewItems, "none") {
 		opt.NewSeasons = "none"
@@ -73,13 +74,13 @@ func (h *handler) addSeries(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
-	id, _, err := h.Library.AddShow(ctx, "tvdb:"+itoa(in.TvdbID), opt, actor(r))
-	var dup *library.ShowAlreadyAddedError
+	id, _, err := shows.New(h.Library).AddShow(ctx, "tvdb:"+itoa(in.TvdbID), opt, actor(r))
+	var dup *shows.ShowAlreadyAddedError
 	switch {
 	case errors.As(err, &dup):
 		refuse(w, failure{PropertyName: "TvdbId", ErrorMessage: "this show is already in the HolyArrs Library", AttemptedValue: in.TvdbID, ErrorCode: "AlreadyInLibrary"})
 		return
-	case errors.Is(err, library.ErrShowNeverAdd):
+	case errors.Is(err, shows.ErrShowNeverAdd):
 		refuse(w, failure{PropertyName: "TvdbId", ErrorMessage: "this show is on HolyArrs' Never-add list", AttemptedValue: in.TvdbID})
 		return
 	case errors.Is(err, metadata.ErrShowNotFound), errors.Is(err, metadata.ErrNoTVDBKey):
@@ -169,7 +170,7 @@ func (h *handler) putSeries(w http.ResponseWriter, r *http.Request) {
 	for _, se := range in.Seasons {
 		for _, p := range parts {
 			if p.Number != nil && *p.Number == se.SeasonNumber && p.KeepUpToDate != se.Monitored {
-				if err := h.Library.SetSeason(ctx, t.ID, se.SeasonNumber, se.Monitored, by); err != nil {
+				if err := shows.New(h.Library).SetSeason(ctx, t.ID, se.SeasonNumber, se.Monitored, by); err != nil {
 					internalError(w, err)
 					return
 				}

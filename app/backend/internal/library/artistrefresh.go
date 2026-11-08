@@ -67,12 +67,12 @@ func (s *Service) RefreshArtist(ctx context.Context, titleID int64, by domain.Ac
 		first := t.DroppedAt == nil
 		err := s.Store.Write(ctx, func(tx *sql.Tx) error {
 			_, err := tx.Exec("UPDATE titles SET dropped_at = COALESCE(dropped_at, ?), refreshed_at = ?, updated_at = ?, updated_by = ? WHERE id = ?",
-				database.FormatTime(now), database.FormatTime(now), database.FormatTime(now), actorText(by), titleID)
+				database.FormatTime(now), database.FormatTime(now), database.FormatTime(now), ActorText(by), titleID)
 			return err
 		})
 		if err == nil && first {
-			s.event(ctx, &domain.Event{Actor: by, Kind: domain.EventTitleDropped, TitleID: &titleID, JobID: jobID,
-				Summary: t.Name + " is no longer known to MusicBrainz; kept and flagged", GroupKey: groupKey(titleID)})
+			s.Emit(ctx, &domain.Event{Actor: by, Kind: domain.EventTitleDropped, TitleID: &titleID, JobID: jobID,
+				Summary: t.Name + " is no longer known to MusicBrainz; kept and flagged", GroupKey: GroupKey(titleID)})
 		}
 		return out, err
 	}
@@ -142,10 +142,10 @@ func (s *Service) RefreshArtist(ctx context.Context, titleID int64, by domain.Ac
 	data := map[string]any{"albums_added": out.AlbumsAdded, "albums_changed": out.AlbumsChanged, "albums_removed": out.AlbumsRemoved,
 		"albums_dropped": out.AlbumsDropped, "pressings_chosen": out.PressingsChosen, "tracks_added": out.TracksAdded,
 		"tracks_changed": out.TracksChanged, "tracks_removed": out.TracksRemoved, "tracks_dropped": out.TracksDropped}
-	s.event(ctx, &domain.Event{Actor: by, Kind: domain.EventTitleRefreshed, TitleID: &titleID, JobID: jobID,
-		Summary: "Refreshed details of " + t.Name + " from MusicBrainz", Data: data, GroupKey: groupKey(titleID)})
+	s.Emit(ctx, &domain.Event{Actor: by, Kind: domain.EventTitleRefreshed, TitleID: &titleID, JobID: jobID,
+		Summary: "Refreshed details of " + t.Name + " from MusicBrainz", Data: data, GroupKey: GroupKey(titleID)})
 	if out.AlbumsAdded+out.AlbumsRemoved+out.AlbumsDropped+out.TracksAdded+out.TracksRemoved+out.TracksDropped > 0 {
-		s.event(ctx, &domain.Event{Actor: by, Kind: domain.EventAlbumsChanged, TitleID: &titleID, JobID: jobID, GroupKey: groupKey(titleID), Data: data,
+		s.Emit(ctx, &domain.Event{Actor: by, Kind: domain.EventAlbumsChanged, TitleID: &titleID, JobID: jobID, GroupKey: GroupKey(titleID), Data: data,
 			Summary: fmt.Sprintf("%s: %d new albums, %d removed, %d no longer listed but kept; %d new tracks, %d removed, %d no longer listed but kept",
 				t.Name, out.AlbumsAdded, out.AlbumsRemoved, out.AlbumsDropped, out.TracksAdded, out.TracksRemoved, out.TracksDropped)})
 	}
@@ -231,7 +231,7 @@ func (s *Service) handleRefreshArtists(ctx context.Context, r *jobs.Run) error {
 			return ctx.Err()
 		}
 		_ = r.Progress(ctx, float64(i)/float64(len(ids)), fmt.Sprintf("refreshing artist %d of %d", i+1, len(ids)))
-		out, err := s.RefreshArtist(ctx, id, jobActor(r), &r.Job.ID)
+		out, err := s.RefreshArtist(ctx, id, JobActor(r), &r.Job.ID)
 		if err != nil {
 			if errors.Is(err, metadata.ErrMusicBusy) || errors.Is(err, ErrNoMusicSource) {
 				return err
@@ -279,7 +279,7 @@ func (s *Service) SetAlbum(ctx context.Context, partID int64, keep *bool, pressi
 				return err
 			}
 			if _, err := tx.Exec("UPDATE items SET keep_up_to_date = ?, updated_at = ?, updated_by = ? WHERE part_id = ? AND kind = 'track'",
-				*keep, database.FormatTime(now), actorText(by), p.ID); err != nil {
+				*keep, database.FormatTime(now), ActorText(by), p.ID); err != nil {
 				return err
 			}
 			changed = append(changed, "Keep up to date "+map[bool]string{true: "on", false: "off"}[*keep])
@@ -296,7 +296,7 @@ func (s *Service) SetAlbum(ctx context.Context, partID int64, keep *bool, pressi
 					return err
 				}
 				if _, err := tx.Exec("UPDATE pressings SET chosen = 1, chosen_by = 'person', updated_at = ?, updated_by = ? WHERE id = ?",
-					database.FormatTime(now), actorText(by), pr.ID); err != nil {
+					database.FormatTime(now), ActorText(by), pr.ID); err != nil {
 					return err
 				}
 				if _, err := syncTracksTx(ctx, tx, t.ID, p, pr.Tracks, now, by); err != nil {
@@ -317,8 +317,8 @@ func (s *Service) SetAlbum(ctx context.Context, partID int64, keep *bool, pressi
 	if pressingID != 0 {
 		data["pressing_id"] = pressingID
 	}
-	s.event(ctx, &domain.Event{Actor: by, Kind: domain.EventAlbumChanged, TitleID: &t.ID, Summary: fmt.Sprintf("%s: %s: %s", t.Name, p.Name, joinWords(changed)),
-		Data: data, GroupKey: groupKey(t.ID)})
+	s.Emit(ctx, &domain.Event{Actor: by, Kind: domain.EventAlbumChanged, TitleID: &t.ID, Summary: fmt.Sprintf("%s: %s: %s", t.Name, p.Name, joinWords(changed)),
+		Data: data, GroupKey: GroupKey(t.ID)})
 	return p, nil
 }
 
@@ -412,9 +412,9 @@ func (s *Service) SetArtistChoices(ctx context.Context, titleID int64, c ArtistC
 	if err != nil {
 		return t, 0, err
 	}
-	s.event(ctx, &domain.Event{Actor: by, Kind: domain.EventArtistChanged, TitleID: &t.ID, Summary: t.Name + ": album choices changed",
+	s.Emit(ctx, &domain.Event{Actor: by, Kind: domain.EventArtistChanged, TitleID: &t.ID, Summary: t.Name + ": album choices changed",
 		Data: map[string]any{"new_albums": NewAlbumsOf(t.NewPartsPolicy), "album_types": t.MusicTypes, "secondary_types": t.MusicSecondary,
-			"release_statuses": t.MusicStatuses}, GroupKey: groupKey(t.ID)})
+			"release_statuses": t.MusicStatuses}, GroupKey: GroupKey(t.ID)})
 	jobID, _, err := s.Queue.Enqueue(ctx, KindRefreshTitle, &domain.Subject{Type: "title", ID: t.ID}, map[string]any{"new": true},
 		fmt.Sprintf("refresh_title:%d", t.ID), by)
 	return t, jobID, err
@@ -705,7 +705,7 @@ func (s *Service) IncludeAlbumsThen(ctx context.Context, titleID int64, partIDs 
 					return err
 				}
 				if _, err := tx.Exec("UPDATE items SET keep_up_to_date = 1, updated_at = ?, updated_by = ? WHERE part_id = ? AND kind = 'track'",
-					database.FormatTime(s.now()), actorText(by), p.ID); err != nil {
+					database.FormatTime(s.now()), ActorText(by), p.ID); err != nil {
 					return err
 				}
 			}
@@ -715,8 +715,8 @@ func (s *Service) IncludeAlbumsThen(ctx context.Context, titleID int64, partIDs 
 	if err != nil {
 		return err
 	}
-	s.event(ctx, &domain.Event{Actor: by, Kind: domain.EventArtistChanged, TitleID: &t.ID, Summary: t.Name + ": asked albums included and kept up to date; album kinds unchanged",
-		Data: map[string]any{"part_ids": partIDs}, GroupKey: groupKey(t.ID)})
+	s.Emit(ctx, &domain.Event{Actor: by, Kind: domain.EventArtistChanged, TitleID: &t.ID, Summary: t.Name + ": asked albums included and kept up to date; album kinds unchanged",
+		Data: map[string]any{"part_ids": partIDs}, GroupKey: GroupKey(t.ID)})
 	params := map[string]any{"new": true}
 	if search {
 		params["then"] = []any{KindScanTitle, stepSearchWanted}

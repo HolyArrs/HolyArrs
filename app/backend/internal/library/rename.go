@@ -32,7 +32,7 @@ import (
 const KindRename = "rename_files"
 
 // reader reads rows and single rows (the store's read pool fits).
-type reader interface {
+type Reader interface {
 	database.Lister
 	database.Querier
 }
@@ -201,7 +201,7 @@ func fileFacts(t mediafiles.Title, f mediafiles.File) mediafiles.NameFacts {
 }
 
 // fileEpisodes lists the episodes a File holds, in episode order.
-func fileEpisodes(ctx context.Context, db reader, f mediafiles.File) ([]importer.Episode, error) {
+func fileEpisodes(ctx context.Context, db Reader, f mediafiles.File) ([]importer.Episode, error) {
 	var out []importer.Episode
 	for _, sid := range f.SlotIDs {
 		var it mediafiles.Item
@@ -269,7 +269,7 @@ type albumFacts struct {
 // trackFacts are the naming facts of a track File in the Library: its
 // track (the first Slot's), album (and its id) and artist. ok is false for
 // a File that holds no track.
-func trackFacts(ctx context.Context, db reader, t mediafiles.Title, f mediafiles.File, cache map[int64]albumFacts) (mediafiles.TrackFacts, int64, bool, error) {
+func trackFacts(ctx context.Context, db Reader, t mediafiles.Title, f mediafiles.File, cache map[int64]albumFacts) (mediafiles.TrackFacts, int64, bool, error) {
 	if len(f.SlotIDs) == 0 {
 		return mediafiles.TrackFacts{}, 0, false, nil
 	}
@@ -311,7 +311,7 @@ func trackFacts(ctx context.Context, db reader, t mediafiles.Title, f mediafiles
 // PlanRename works out the new name of every main File of the given Titles
 // (every Title when titleIDs is empty) under the naming settings. Files that
 // would keep their name are left out. Nothing on disk changes.
-func PlanRename(ctx context.Context, db reader, titleIDs []int64) ([]RenameStep, error) {
+func PlanRename(ctx context.Context, db Reader, titleIDs []int64) ([]RenameStep, error) {
 	ns, err := mediafiles.ReadNaming(ctx, db)
 	if err != nil {
 		return nil, err
@@ -321,7 +321,7 @@ func PlanRename(ctx context.Context, db reader, titleIDs []int64) ([]RenameStep,
 
 // PlanRenameHashed is PlanRename with the plan hash a rename must be
 // asked with, so it does only what this preview showed.
-func PlanRenameHashed(ctx context.Context, db reader, titleIDs []int64) ([]RenameStep, string, error) {
+func PlanRenameHashed(ctx context.Context, db Reader, titleIDs []int64) ([]RenameStep, string, error) {
 	ns, err := mediafiles.ReadNaming(ctx, db)
 	if err != nil {
 		return nil, "", err
@@ -349,7 +349,7 @@ func planHash(plan []RenameStep, ns mediafiles.NamingSettings) string {
 	return hex.EncodeToString(h.Sum(nil))
 }
 
-func planRename(ctx context.Context, db reader, ns mediafiles.NamingSettings, titleIDs []int64) ([]RenameStep, error) {
+func planRename(ctx context.Context, db Reader, ns mediafiles.NamingSettings, titleIDs []int64) ([]RenameStep, error) {
 	where, args := "state != 'removed' ORDER BY sort_name, id", []any{}
 	if len(titleIDs) > 0 {
 		where = "state != 'removed' AND id IN (" + strings.TrimSuffix(strings.Repeat("?,", len(titleIDs)), ",") + ") ORDER BY sort_name, id"
@@ -764,7 +764,7 @@ func (s *Service) finishRename(ctx context.Context, stepID, fileID int64, from, 
 			return err
 		}
 		if _, err := tx.Exec("UPDATE files SET relative_path = ?, updated_at = ?, updated_by = ? WHERE id = ?",
-			toRel, database.FormatTime(s.now()), actorText(by), fileID); err != nil {
+			toRel, database.FormatTime(s.now()), ActorText(by), fileID); err != nil {
 			return err
 		}
 		_, err := tx.Exec("UPDATE rename_steps SET state = 'done', error = NULL WHERE id = ?", stepID)
@@ -775,9 +775,9 @@ func (s *Service) finishRename(ctx context.Context, stepID, fileID int64, from, 
 	}
 	var titleID int64
 	_ = s.Store.Read().QueryRowContext(ctx, "SELECT title_id FROM versions WHERE id = ?", f.VersionID).Scan(&titleID)
-	s.event(ctx, &domain.Event{Actor: by, Kind: domain.EventRenamed, TitleID: &titleID,
+	s.Emit(ctx, &domain.Event{Actor: by, Kind: domain.EventRenamed, TitleID: &titleID,
 		Summary: "Renamed " + path.Base(f.RelativePath) + " to " + path.Base(toRel),
-		Data:    map[string]any{"file_id": fileID, "from": f.RelativePath, "to": toRel, "slot_ids": f.SlotIDs}, GroupKey: groupKey(titleID)})
+		Data:    map[string]any{"file_id": fileID, "from": f.RelativePath, "to": toRel, "slot_ids": f.SlotIDs}, GroupKey: GroupKey(titleID)})
 	return nil
 }
 
@@ -904,7 +904,7 @@ func idsParam(v any) []int64 {
 // handleRename finishes any cut-off rename, then plans again with the same
 // code the preview used and carries the plan out.
 func (s *Service) handleRename(ctx context.Context, r *jobs.Run) error {
-	by := jobActor(r)
+	by := JobActor(r)
 	unlock := s.Store.LockFiles()
 	defer unlock()
 	// A recovery that fails marks its steps failed; it never blocks this run.

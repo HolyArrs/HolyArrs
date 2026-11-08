@@ -8,6 +8,7 @@ import (
 	"errors"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/shows"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/updates"
@@ -626,23 +627,23 @@ type TitleView struct {
 
 // ShowInfo is what a show's page needs besides the shared Title fields.
 type ShowInfo struct {
-	DetailsSource string                  `json:"details_source"`
-	EpisodeOrder  string                  `json:"episode_order"`
-	SeasonChoice  string                  `json:"season_choice,omitempty"`
-	NewSeasons    string                  `json:"new_seasons"`
-	Status        string                  `json:"status"`
-	Network       string                  `json:"network,omitempty"`
-	AirTime       string                  `json:"air_time,omitempty"`
-	TimeZone      string                  `json:"time_zone,omitempty"`
-	Seasons       []library.SeasonSummary `json:"seasons"`
-	Episodes      int                     `json:"episodes"`
-	Missing       int                     `json:"missing"`
-	NotOutYet     int                     `json:"not_out_yet"`
-	InLibrary     int                     `json:"in_library"`
-	BetterWanted  int                     `json:"better_wanted"`
-	Downloading   int                     `json:"downloading"`
-	Failed        int                     `json:"failed"`
-	NextAirDate   *time.Time              `json:"next_air_date,omitempty"`
+	DetailsSource string                `json:"details_source"`
+	EpisodeOrder  string                `json:"episode_order"`
+	SeasonChoice  string                `json:"season_choice,omitempty"`
+	NewSeasons    string                `json:"new_seasons"`
+	Status        string                `json:"status"`
+	Network       string                `json:"network,omitempty"`
+	AirTime       string                `json:"air_time,omitempty"`
+	TimeZone      string                `json:"time_zone,omitempty"`
+	Seasons       []shows.SeasonSummary `json:"seasons"`
+	Episodes      int                   `json:"episodes"`
+	Missing       int                   `json:"missing"`
+	NotOutYet     int                   `json:"not_out_yet"`
+	InLibrary     int                   `json:"in_library"`
+	BetterWanted  int                   `json:"better_wanted"`
+	Downloading   int                   `json:"downloading"`
+	Failed        int                   `json:"failed"`
+	NextAirDate   *time.Time            `json:"next_air_date,omitempty"`
 	// SeasonCount counts numbered seasons (specials left out); LastAirDate
 	// is the most recent episode that has aired.
 	SeasonCount int        `json:"season_count"`
@@ -657,7 +658,7 @@ func strOr(p *string) string {
 }
 
 func (a *API) showInfo(ctx context.Context, t mediafiles.Title) (*ShowInfo, error) {
-	ss, err := library.Seasons(ctx, a.s.Store.Read(), t.ID, time.Now())
+	ss, err := shows.Seasons(ctx, a.s.Store.Read(), t.ID, time.Now())
 	if err != nil {
 		return nil, err
 	}

@@ -211,7 +211,7 @@ var ErrNotVideoRules = errors.New("these Pick rules are for music; choose Pick r
 
 // pickRulesFor checks that Pick rules exist and fit a title kind: music
 // rules for an artist, movie and show rules for every other title.
-func pickRulesFor(tx *sql.Tx, id *int64, titleKind string) error {
+func PickRulesFor(tx *sql.Tx, id *int64, titleKind string) error {
 	if err := pickRulesExist(tx, id); err != nil || id == nil {
 		return err
 	}
@@ -338,7 +338,7 @@ func RecheckFolder(ctx context.Context, s *database.Store, id int64, downloadPat
 			now := time.Now().UTC()
 			err = s.Write(ctx, func(tx *sql.Tx) error {
 				_, err := tx.Exec(`UPDATE library_folders SET health_reason = ?, free_space = ?, updated_at = ?, updated_by = ? WHERE id = ?`,
-					reason, max(free, 0), database.FormatTime(now), actorText(by), id)
+					reason, max(free, 0), database.FormatTime(now), ActorText(by), id)
 				return err
 			})
 			lf.HealthReason, lf.FreeSpace = reason, max(free, 0)
@@ -351,7 +351,7 @@ func RecheckFolder(ctx context.Context, s *database.Store, id int64, downloadPat
 	err = s.Write(ctx, func(tx *sql.Tx) error {
 		_, err := tx.Exec(`UPDATE library_folders SET health = ?, health_reason = ?, free_space = ?, health_checked_at = ?,
 			updated_at = ?, updated_by = ? WHERE id = ?`,
-			h.State, h.Reason, max(h.FreeSpace, 0), database.FormatTime(now), database.FormatTime(now), actorText(by), id)
+			h.State, h.Reason, max(h.FreeSpace, 0), database.FormatTime(now), database.FormatTime(now), ActorText(by), id)
 		return err
 	})
 	lf.Health, lf.HealthReason, lf.FreeSpace, lf.HealthCheckedAt = h.State, h.Reason, max(h.FreeSpace, 0), &now
@@ -376,7 +376,7 @@ func freeSpaceReason(reason string, free int64) string {
 	return strings.Join(parts, "; ")
 }
 
-func actorText(a domain.Actor) string {
+func ActorText(a domain.Actor) string {
 	b, _ := json.Marshal(a)
 	return string(b)
 }

@@ -1,4 +1,4 @@
-package library
+package shows
 
 import (
 	"context"
@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
@@ -23,8 +24,8 @@ func addShowService(t *testing.T) (*Service, *database.Store, *fakeShows, *fakeS
 	tmdb.set(labShow("tmdb", "100"), "tmdb:100", "tvdb:200", "imdb:tt0100")
 	maze.set(labShow("tvmaze", "300"), "tvmaze:300", "tvdb:200", "imdb:tt0100")
 	q := jobs.New(s, jobs.Options{})
-	svc := &Service{Store: s, Queue: q, Shows: metadata.ShowSources{"tmdb": tmdb, "tvmaze": maze, "tvdb": &fakeShows{err: metadata.ErrNoTVDBKey}},
-		Now: func() time.Time { return now }}
+	svc := New(&library.Service{Store: s, Queue: q, Shows: metadata.ShowSources{"tmdb": tmdb, "tvmaze": maze, "tvdb": &fakeShows{err: metadata.ErrNoTVDBKey}},
+		Now: func() time.Time { return now }})
 	return svc, s, tmdb, maze
 }
 
@@ -40,15 +41,15 @@ func TestAddShowSeasonChoices(t *testing.T) {
 		seasons  map[int]bool
 		eps      map[string]bool
 	}{
-		{SeasonsAll, false, map[int]bool{0: false, 1: true, 2: true},
+		{library.SeasonsAll, false, map[int]bool{0: false, 1: true, 2: true},
 			map[string]bool{"S00E01": false, "S01E01": true, "S01E02": true, "S02E01": true, "S02E02": true, "S02E03": true}},
-		{SeasonsAll, true, map[int]bool{0: true, 1: true, 2: true},
+		{library.SeasonsAll, true, map[int]bool{0: true, 1: true, 2: true},
 			map[string]bool{"S00E01": true, "S01E01": true, "S02E03": true}},
-		{SeasonsFuture, false, map[int]bool{0: false, 1: false, 2: true},
+		{library.SeasonsFuture, false, map[int]bool{0: false, 1: false, 2: true},
 			map[string]bool{"S00E01": false, "S01E01": false, "S01E02": false, "S02E01": false, "S02E02": true, "S02E03": true}},
-		{SeasonsLatest, false, map[int]bool{0: false, 1: false, 2: true},
+		{library.SeasonsLatest, false, map[int]bool{0: false, 1: false, 2: true},
 			map[string]bool{"S00E01": false, "S01E01": false, "S01E02": false, "S02E01": true, "S02E02": true, "S02E03": true}},
-		{SeasonsNone, false, map[int]bool{0: false, 1: false, 2: false},
+		{library.SeasonsNone, false, map[int]bool{0: false, 1: false, 2: false},
 			map[string]bool{"S00E01": false, "S01E01": false, "S02E02": false, "S02E03": false}},
 	}
 	for _, c := range cases {
@@ -61,7 +62,7 @@ func TestAddShowSeasonChoices(t *testing.T) {
 			ctx := context.Background()
 			addShowFolder(t, s)
 			if c.specials {
-				d, _ := ReadShowDefaults(ctx, s.Read())
+				d, _ := library.ReadShowDefaults(ctx, s.Read())
 				d.KeepSpecials = true
 				if err := SetShowDefaults(ctx, s, d, domain.System); err != nil {
 					t.Fatal(err)
@@ -92,7 +93,7 @@ func TestAddShowSeasonChoices(t *testing.T) {
 			}
 			var ti mediafiles.Title
 			_ = database.Get(ctx, s.Read(), "titles", id, &ti)
-			if ti.Kind != "show" || *ti.SeasonChoice != c.choice || ti.NewPartsPolicy != "all" || *ti.EpisodeOrder != OrderAired ||
+			if ti.Kind != "show" || *ti.SeasonChoice != c.choice || ti.NewPartsPolicy != "all" || *ti.EpisodeOrder != library.OrderAired ||
 				ti.MetadataSource != "tmdb" || ti.Status != "running" || ti.SourceIDs["tvdb"] != "200" || ti.RefreshedAt == nil {
 				t.Errorf("title %+v", ti)
 			}
@@ -104,7 +105,7 @@ func TestAddShowSeasonChoices(t *testing.T) {
 // rows are the same, the order is stored, absolute numbers and air days
 // are there for the absolute and daily orders to use.
 func TestAddShowEpisodeOrders(t *testing.T) {
-	for _, order := range []string{OrderAired, OrderDaily, OrderAbsolute} {
+	for _, order := range []string{library.OrderAired, library.OrderDaily, library.OrderAbsolute} {
 		t.Run(order, func(t *testing.T) {
 			svc, s, _, _ := addShowService(t)
 			ctx := context.Background()
@@ -131,7 +132,7 @@ func TestAddShowEpisodeOrders(t *testing.T) {
 				if it.AirDay != nil {
 					day = *it.AirDay
 				}
-				if !eqInt(it.Numbers.Absolute, want[i].abs) || day != want[i].day {
+				if !library.EqInt(it.Numbers.Absolute, want[i].abs) || day != want[i].day {
 					t.Errorf("item %d: absolute %v day %q, want %v %q", i, it.Numbers.Absolute, day, want[i].abs, want[i].day)
 				}
 			}
@@ -144,11 +145,11 @@ func ip(n int) *int { return &n }
 func TestAddShowRefusals(t *testing.T) {
 	svc, s, _, maze := addShowService(t)
 	ctx := context.Background()
-	if _, _, err := svc.AddShow(ctx, "tmdb:100", ShowAddOptions{}, domain.System); !errors.Is(err, ErrNoShowFolder) {
+	if _, _, err := svc.AddShow(ctx, "tmdb:100", ShowAddOptions{}, domain.System); !errors.Is(err, library.ErrNoShowFolder) {
 		t.Fatalf("no folder: %v", err)
 	}
 	movies := addFolder(t, s)
-	if _, _, err := svc.AddShow(ctx, "tmdb:100", ShowAddOptions{LibraryFolderID: movies.ID}, domain.System); !errors.Is(err, ErrNotShowFolder) {
+	if _, _, err := svc.AddShow(ctx, "tmdb:100", ShowAddOptions{LibraryFolderID: movies.ID}, domain.System); !errors.Is(err, library.ErrNotShowFolder) {
 		t.Fatalf("movie folder: %v", err)
 	}
 	addShowFolder(t, s)
@@ -193,7 +194,7 @@ func TestShowSwitchesAndEdit(t *testing.T) {
 	if err := svc.SetSeason(ctx, id, 1, false, domain.System); err != nil {
 		t.Fatal(err)
 	}
-	if err := svc.SetSeason(ctx, id, 7, true, domain.System); !errors.Is(err, ErrNoSuchSeason) {
+	if err := svc.SetSeason(ctx, id, 7, true, domain.System); !errors.Is(err, library.ErrNoSuchSeason) {
 		t.Fatalf("no season 7: %v", err)
 	}
 	eps := episodes(t, s, id)
@@ -209,31 +210,31 @@ func TestShowSwitchesAndEdit(t *testing.T) {
 	}
 
 	// Edit: the Release gate is for movies; order and new seasons are for shows.
-	gate := GateAnnounced
-	if _, err := svc.Edit(ctx, id, TitleChange{ReleaseGate: &gate}, false, domain.System); !errors.Is(err, ErrMovieOnly) {
+	gate := library.GateAnnounced
+	if _, err := svc.Edit(ctx, id, library.TitleChange{ReleaseGate: &gate}, false, domain.System); !errors.Is(err, library.ErrMovieOnly) {
 		t.Fatalf("gate on a show: %v", err)
 	}
 	bad := "dvd"
-	if _, err := svc.Edit(ctx, id, TitleChange{EpisodeOrder: &bad}, false, domain.System); !errors.Is(err, ErrBadOrder) {
+	if _, err := svc.Edit(ctx, id, library.TitleChange{EpisodeOrder: &bad}, false, domain.System); !errors.Is(err, library.ErrBadOrder) {
 		t.Fatalf("bad order: %v", err)
 	}
-	order, none, off := OrderAbsolute, "none", false
-	if _, err := svc.Edit(ctx, id, TitleChange{EpisodeOrder: &order, NewSeasons: &none, KeepUpToDate: &off}, false, domain.System); err != nil {
+	order, none, off := library.OrderAbsolute, "none", false
+	if _, err := svc.Edit(ctx, id, library.TitleChange{EpisodeOrder: &order, NewSeasons: &none, KeepUpToDate: &off}, false, domain.System); err != nil {
 		t.Fatal(err)
 	}
 	var ti mediafiles.Title
 	_ = database.Get(ctx, s.Read(), "titles", id, &ti)
 	after := episodes(t, s, id)
-	if *ti.EpisodeOrder != OrderAbsolute || ti.NewPartsPolicy != "none" || ti.KeepUpToDate || !after["S02E01"].Keep || after["S02E01"].State != mediafiles.SlotWanted {
+	if *ti.EpisodeOrder != library.OrderAbsolute || ti.NewPartsPolicy != "none" || ti.KeepUpToDate || !after["S02E01"].Keep || after["S02E01"].State != mediafiles.SlotWanted {
 		t.Fatalf("after edit %+v %+v", ti, after["S02E01"])
 	}
 	// Edit on a movie refuses show choices.
 	lf := addFolder(t, s)
-	mid, err := AddMovie(ctx, s, dune, AddOptions{LibraryFolderID: lf.ID}, nil, now, domain.System)
+	mid, err := library.AddMovie(ctx, s, dune, library.AddOptions{LibraryFolderID: lf.ID}, nil, now, domain.System)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := svc.Edit(ctx, mid, TitleChange{EpisodeOrder: &order}, false, domain.System); !errors.Is(err, ErrShowOnly) {
+	if _, err := svc.Edit(ctx, mid, library.TitleChange{EpisodeOrder: &order}, false, domain.System); !errors.Is(err, library.ErrShowOnly) {
 		t.Fatalf("order on a movie: %v", err)
 	}
 }
@@ -241,18 +242,18 @@ func TestShowSwitchesAndEdit(t *testing.T) {
 func TestShowDefaultsSetting(t *testing.T) {
 	s := open(t)
 	ctx := context.Background()
-	d, err := ReadShowDefaults(ctx, s.Read())
-	if err != nil || d != (ShowDefaults{SeasonChoice: "all", NewSeasons: "all", EpisodeOrder: "aired", Source: "tmdb"}) {
+	d, err := library.ReadShowDefaults(ctx, s.Read())
+	if err != nil || d != (library.ShowDefaults{SeasonChoice: "all", NewSeasons: "all", EpisodeOrder: "aired", Source: "tmdb"}) {
 		t.Fatalf("defaults %+v %v", d, err)
 	}
-	want := ShowDefaults{SeasonChoice: "future", NewSeasons: "none", EpisodeOrder: "daily", Source: "tvmaze", KeepSpecials: true, WaitMinutes: 90}
+	want := library.ShowDefaults{SeasonChoice: "future", NewSeasons: "none", EpisodeOrder: "daily", Source: "tvmaze", KeepSpecials: true, WaitMinutes: 90}
 	if err := SetShowDefaults(ctx, s, want, domain.System); err != nil {
 		t.Fatal(err)
 	}
-	if got, _ := ReadShowDefaults(ctx, s.Read()); got != want {
+	if got, _ := library.ReadShowDefaults(ctx, s.Read()); got != want {
 		t.Fatalf("back %+v", got)
 	}
-	for _, bad := range []ShowDefaults{{SeasonChoice: "x", NewSeasons: "all", EpisodeOrder: "aired", Source: "tmdb"},
+	for _, bad := range []library.ShowDefaults{{SeasonChoice: "x", NewSeasons: "all", EpisodeOrder: "aired", Source: "tmdb"},
 		{SeasonChoice: "all", NewSeasons: "all", EpisodeOrder: "aired", Source: "tmdb", WaitMinutes: -1}} {
 		if err := SetShowDefaults(ctx, s, bad, domain.System); err == nil {
 			t.Errorf("%+v accepted", bad)

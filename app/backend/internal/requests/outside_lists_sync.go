@@ -21,6 +21,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/shows"
 )
 
 // maxPages caps how many pages of one list a sync reads, so a huge list
@@ -254,7 +255,7 @@ func (s *OutsideLists) addShow(ctx context.Context, l domain.OutsideList, e entr
 	} else if on {
 		return "never_add", "", nil
 	}
-	opt := library.ShowAddOptions{LibraryFolderID: l.LibraryFolderID, KeepUpToDate: &l.KeepUpToDate, Seasons: l.Seasons,
+	opt := shows.ShowAddOptions{LibraryFolderID: l.LibraryFolderID, KeepUpToDate: &l.KeepUpToDate, Seasons: l.Seasons,
 		NewSeasons: l.NewSeasons, SearchOnAdd: l.SearchOnAdd, WhyAdded: "list"}
 	if l.Seasons == SeasonsFirst {
 		opt.Seasons, opt.FirstSeason = "", true
@@ -262,8 +263,8 @@ func (s *OutsideLists) addShow(ctx context.Context, l domain.OutsideList, e entr
 	if l.PickRulesID != nil {
 		opt.PickRulesID = *l.PickRulesID
 	}
-	id, _, err := s.Library.AddShow(ctx, lookup, opt, by)
-	var dup *library.ShowAlreadyAddedError
+	id, _, err := shows.New(s.Library).AddShow(ctx, lookup, opt, by)
+	var dup *shows.ShowAlreadyAddedError
 	switch {
 	case err == nil:
 		name := e.name
@@ -271,7 +272,7 @@ func (s *OutsideLists) addShow(ctx context.Context, l domain.OutsideList, e entr
 		return "added", name, nil
 	case errors.As(err, &dup):
 		return "already", "", nil
-	case errors.Is(err, library.ErrShowNeverAdd):
+	case errors.Is(err, shows.ErrShowNeverAdd):
 		return "never_add", "", nil
 	}
 	return "failed", "", err

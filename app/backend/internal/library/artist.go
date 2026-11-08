@@ -210,7 +210,7 @@ func (s *Service) artistSearch(ctx context.Context, p metadata.ArtistProvider, k
 
 // applyArtist copies looked-up details onto an artist Title.
 func applyArtist(t *mediafiles.Title, a metadata.Artist) {
-	t.Name, t.SortName = a.Name, sortName(a.Name)
+	t.Name, t.SortName = a.Name, SortName(a.Name)
 	ids := map[string]string{}
 	for k, v := range t.SourceIDs {
 		ids[k] = v
@@ -286,7 +286,7 @@ func (s *Service) AddArtist(ctx context.Context, id string, opt ArtistAddOptions
 	switch opt.WhyAdded {
 	case "by_hand", "list", "series_follow", "ask", "import", "migration":
 	default:
-		return 0, 0, errUnknownWhyAdded
+		return 0, 0, ErrUnknownWhyAdded
 	}
 	keep := opt.KeepUpToDate == nil || *opt.KeepUpToDate
 
@@ -308,7 +308,7 @@ func (s *Service) AddArtist(ctx context.Context, id string, opt ArtistAddOptions
 	if lf.Kind != "music" {
 		return 0, 0, ErrNotMusicFolder
 	}
-	if h := CheckFolder(lf.Path, s.downloadPaths(ctx)); !h.Usable() {
+	if h := CheckFolder(lf.Path, s.DownloadFolders(ctx)); !h.Usable() {
 		return 0, 0, &FolderError{Health: h}
 	}
 	a, err := p.Artist(ctx, mbid)
@@ -374,10 +374,10 @@ func (s *Service) AddArtist(ctx context.Context, id string, opt ArtistAddOptions
 	if err != nil {
 		return 0, 0, err
 	}
-	s.event(ctx, &domain.Event{Actor: by, Kind: domain.EventTitleAdded, TitleID: &t.ID, Summary: "Added " + t.Name,
+	s.Emit(ctx, &domain.Event{Actor: by, Kind: domain.EventTitleAdded, TitleID: &t.ID, Summary: "Added " + t.Name,
 		Data: map[string]any{"why_added": t.WhyAdded, "albums": opt.Albums, "new_albums": opt.NewAlbums, "album_types": opt.AlbumTypes,
 			"secondary_types": opt.SecondaryTypes, "release_statuses": opt.ReleaseStatuses, "albums_added": sync.AlbumsAdded},
-		GroupKey: groupKey(t.ID)})
+		GroupKey: GroupKey(t.ID)})
 	// The picture Job finds the artist's pictures at once, apart from the
 	// MusicBrainz refresh, so the add waits on neither.
 	if _, _, err := s.Queue.Enqueue(ctx, KindArtistPictures, &domain.Subject{Type: "title", ID: t.ID}, nil,
@@ -453,7 +453,7 @@ func newAlbumKeep(t mediafiles.Title, release *time.Time) bool {
 // Download.
 func partHeld(tx *sql.Tx, partID int64) (bool, error) {
 	var n int
-	err := tx.QueryRow("SELECT count(*) FROM slots WHERE item_id IN (SELECT id FROM items WHERE part_id = ?) AND ("+holdingSlots+")", partID).Scan(&n)
+	err := tx.QueryRow("SELECT count(*) FROM slots WHERE item_id IN (SELECT id FROM items WHERE part_id = ?) AND ("+HoldingSlots+")", partID).Scan(&n)
 	return n > 0, err
 }
 
@@ -535,10 +535,10 @@ func syncAlbumsTx(ctx context.Context, tx *sql.Tx, t mediafiles.Title, a metadat
 				return out, err
 			}
 			included := (kinds || p.KeepUpToDate) && ok
-			dateMoved := !eqTime(p.ReleaseDate, date)
-			changed := p.Name != al.Name || !eqStr(p.ReleaseType, str(typ)) || !slices.Equal(p.SecondaryTypes, sec) || dateMoved ||
-				!eqStr(p.ReleaseDatePrecision, prec) ||
-				!eqStr(p.Disambiguation, str(al.Disambiguation)) || p.DroppedAt != nil || p.Included != included
+			dateMoved := !EqTime(p.ReleaseDate, date)
+			changed := p.Name != al.Name || !EqStr(p.ReleaseType, str(typ)) || !slices.Equal(p.SecondaryTypes, sec) || dateMoved ||
+				!EqStr(p.ReleaseDatePrecision, prec) ||
+				!EqStr(p.Disambiguation, str(al.Disambiguation)) || p.DroppedAt != nil || p.Included != included
 			if !changed {
 				continue
 			}
@@ -641,7 +641,7 @@ func dropTracksTx(tx *sql.Tx, partID int64, keep map[int64]bool, now time.Time, 
 			continue
 		}
 		var held int
-		if err := tx.QueryRow("SELECT count(*) FROM slots WHERE item_id = ? AND ("+holdingSlots+")", r.id).Scan(&held); err != nil {
+		if err := tx.QueryRow("SELECT count(*) FROM slots WHERE item_id = ? AND ("+HoldingSlots+")", r.id).Scan(&held); err != nil {
 			return out, err
 		}
 		if held == 0 {
@@ -653,7 +653,7 @@ func dropTracksTx(tx *sql.Tx, partID int64, keep map[int64]bool, now time.Time, 
 		}
 		if !r.dropped {
 			if _, err := tx.Exec("UPDATE items SET dropped_at = ?, updated_at = ?, updated_by = ? WHERE id = ?",
-				database.FormatTime(now), database.FormatTime(now), actorText(by), r.id); err != nil {
+				database.FormatTime(now), database.FormatTime(now), ActorText(by), r.id); err != nil {
 				return out, err
 			}
 			out.TracksDropped++
@@ -826,8 +826,8 @@ func syncTracksTx(ctx context.Context, tx *sql.Tx, titleID int64, p mediafiles.P
 		}
 		disc, num := tr.Disc, tr.Number
 		if it := match[i]; it != nil {
-			changed := !eqStr(it.Name, &name) || !eqStr(it.RecordingID, &rec) || !eqInt(it.LengthMS, length) || it.SourceIDs["musicbrainz"] != tr.ID ||
-				!eqInt(it.Numbers.Disc, &disc) || !eqInt(it.Numbers.Track, &num) || it.DroppedAt != nil || !eqTime(it.AirDate, p.ReleaseDate)
+			changed := !EqStr(it.Name, &name) || !EqStr(it.RecordingID, &rec) || !EqInt(it.LengthMS, length) || it.SourceIDs["musicbrainz"] != tr.ID ||
+				!EqInt(it.Numbers.Disc, &disc) || !EqInt(it.Numbers.Track, &num) || it.DroppedAt != nil || !EqTime(it.AirDate, p.ReleaseDate)
 			if !changed {
 				continue
 			}

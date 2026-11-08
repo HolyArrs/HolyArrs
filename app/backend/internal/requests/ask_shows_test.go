@@ -15,6 +15,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/shows"
 )
 
 // fakeShows answers one show by any of its ids.
@@ -161,7 +162,7 @@ func TestShowAskForSeasonsNotKeptYet(t *testing.T) {
 	r := showRig(t)
 	ctx := context.Background()
 	// luis adds the show with only the latest season kept.
-	tid, _, err := r.svc.Library.AddShow(ctx, "tmdb:100", library.ShowAddOptions{Seasons: "latest"}, domain.System)
+	tid, _, err := shows.New(r.svc.Library).AddShow(ctx, "tmdb:100", shows.ShowAddOptions{Seasons: "latest"}, domain.System)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -337,7 +338,7 @@ func TestShowNeverAddAndTurnDown(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := r.svc.AskShow(ctx, r.bo, "tmdb:100", nil); !errors.Is(err, library.ErrShowNeverAdd) {
+	if _, err := r.svc.AskShow(ctx, r.bo, "tmdb:100", nil); !errors.Is(err, shows.ErrShowNeverAdd) {
 		t.Fatalf("never add: %v", err)
 	}
 }
@@ -532,7 +533,7 @@ func TestShowAskFutureSeasonsOnly(t *testing.T) {
 func TestShowAskFutureOnlyForShowInLibrary(t *testing.T) {
 	r := showRig(t)
 	ctx := context.Background()
-	tid, _, err := r.svc.Library.AddShow(ctx, "tmdb:100", library.ShowAddOptions{Seasons: "none", NewSeasons: "none"}, domain.System)
+	tid, _, err := shows.New(r.svc.Library).AddShow(ctx, "tmdb:100", shows.ShowAddOptions{Seasons: "none", NewSeasons: "none"}, domain.System)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -8,7 +8,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
@@ -58,56 +57,6 @@ func TestTitleDefaultsSaveAndValidate(t *testing.T) {
 	got, saved, err := ReadTitleDefaults(ctx, s.Read())
 	if err != nil || got != d || len(saved) != 8 || !saved["movie_search_on_add"] || !saved["show_pick_rules_id"] {
 		t.Fatalf("read back %+v saved %v err %v", got, saved, err)
-	}
-}
-
-// TestAddShowSearchOnAdd: a show added with search_on_add gets, after its
-// folder scan, an automatic search of each season looking for a copy: no
-// by_hand, so the release gate still holds back what is not out yet.
-func TestAddShowSearchOnAdd(t *testing.T) {
-	svc, s, _, _ := addShowService(t)
-	ctx := context.Background()
-	addShowFolder(t, s)
-	id, jobID, err := svc.AddShow(ctx, "tmdb:100", ShowAddOptions{SearchOnAdd: true}, domain.System)
-	if err != nil {
-		t.Fatal(err)
-	}
-	var scan domain.Job
-	if err := database.Get(ctx, s.Read(), "jobs", jobID, &scan); err != nil {
-		t.Fatal(err)
-	}
-	if scan.Kind != KindScanTitle {
-		t.Fatalf("first job %s", scan.Kind)
-	}
-	if n := countJobs(t, s, "search_season"); n != 0 {
-		t.Fatalf("search before the scan: %d", n)
-	}
-	if err := svc.next(ctx, &jobs.Run{Job: scan}, id); err != nil {
-		t.Fatal(err)
-	}
-	ss, err := database.Select[domain.Job](ctx, s.Read(), "jobs", "kind = 'search_season' ORDER BY id")
-	if err != nil || len(ss) == 0 {
-		t.Fatalf("season searches %v %v", ss, err)
-	}
-	for _, j := range ss {
-		if _, hand := j.Params["by_hand"]; hand || j.Params["kept_only"] != nil || j.Params["version_id"] == nil || j.Subject == nil || j.Subject.Type != "part" {
-			t.Fatalf("season search %+v", j)
-		}
-	}
-	// Without search_on_add the scan is the last step.
-	svc2, s2, _, _ := addShowService(t)
-	addShowFolder(t, s2)
-	id2, jobID2, err := svc2.AddShow(ctx, "tmdb:100", ShowAddOptions{}, domain.System)
-	if err != nil {
-		t.Fatal(err)
-	}
-	var scan2 domain.Job
-	_ = database.Get(ctx, s2.Read(), "jobs", jobID2, &scan2)
-	if err := svc2.next(ctx, &jobs.Run{Job: scan2}, id2); err != nil {
-		t.Fatal(err)
-	}
-	if n := countJobs(t, s2, "search_season"); n != 0 {
-		t.Fatalf("searched without search_on_add: %d", n)
 	}
 }
 

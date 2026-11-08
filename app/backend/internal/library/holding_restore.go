@@ -215,7 +215,7 @@ func (s *Service) restoreOne(ctx context.Context, h heldRow, by domain.Actor) (s
 			subsBack = append(subsBack, orig)
 		}
 	}
-	ts, who := database.FormatTime(s.now()), actorText(by)
+	ts, who := database.FormatTime(s.now()), ActorText(by)
 	err := s.Store.Write(ctx, func(tx *sql.Tx) error {
 		if _, err := tx.Exec("UPDATE files SET state = 'present', relative_path = ?, updated_at = ?, updated_by = ? WHERE id = ?", h.Path, ts, who, h.ID); err != nil {
 			return err
@@ -251,7 +251,7 @@ func (s *Service) restoreOne(ctx context.Context, h heldRow, by domain.Actor) (s
 		return "", err
 	}
 	titleID := h.TitleID
-	s.event(ctx, &domain.Event{Actor: by, Kind: domain.EventFileBack, TitleID: &titleID, Summary: "Restored " + filepath.Base(h.Path) + " from the holding folder",
-		Data: map[string]any{"file_id": h.ID, "from": h.HeldPath, "to": h.Path, "subtitles": subsBack, "title_back": h.TitleDeleted}, GroupKey: groupKey(titleID)})
+	s.Emit(ctx, &domain.Event{Actor: by, Kind: domain.EventFileBack, TitleID: &titleID, Summary: "Restored " + filepath.Base(h.Path) + " from the holding folder",
+		Data: map[string]any{"file_id": h.ID, "from": h.HeldPath, "to": h.Path, "subtitles": subsBack, "title_back": h.TitleDeleted}, GroupKey: GroupKey(titleID)})
 	return "", nil
 }

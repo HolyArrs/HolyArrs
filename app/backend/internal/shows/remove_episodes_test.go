@@ -1,4 +1,4 @@
-package library
+package shows
 
 import (
 	"context"
@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
@@ -25,7 +26,7 @@ func showDeleteWorld(t *testing.T) (*Service, *database.Store, mediafiles.Librar
 	ctx := context.Background()
 	lf := addShowFolder(t, s)
 	showTree(t, lf.Path)
-	res, err := svc.Adopt(ctx, lf.ID, []AdoptChoice{{Folder: "Lab Show (2025)", ID: "tmdb:100"}}, domain.System)
+	res, err := svc.Adopt(ctx, lf.ID, []library.AdoptChoice{{Folder: "Lab Show (2025)", ID: "tmdb:100"}}, domain.System)
 	if err != nil || res[0].Error != "" {
 		t.Fatalf("%+v %v", res, err)
 	}
@@ -43,7 +44,7 @@ func TestDeleteShowKeepsFilesAndNeverAdd(t *testing.T) {
 	svc, s, lf, id := showDeleteWorld(t)
 	ctx := context.Background()
 	before := snapshot(t, lf.Path)
-	p, err := svc.Remove(ctx, id, RemoveChoice{NeverAdd: true}, true, domain.System)
+	p, err := svc.Remove(ctx, id, library.RemoveChoice{NeverAdd: true}, true, domain.System)
 	if err != nil || !p.Applied || p.Scope != "title" || len(p.Held) != 0 || len(p.Kept) != 6 {
 		t.Fatalf("plan %+v %v", p, err)
 	}
@@ -58,7 +59,7 @@ func TestDeleteShowKeepsFilesAndNeverAdd(t *testing.T) {
 	if _, _, err := svc.AddShow(ctx, "tmdb:100", ShowAddOptions{}, domain.System); !errors.Is(err, ErrShowNeverAdd) {
 		t.Fatalf("add again: %v", err)
 	}
-	if _, err := svc.Remove(ctx, id, RemoveChoice{}, false, domain.System); !errors.Is(err, ErrAlreadyRemoved) {
+	if _, err := svc.Remove(ctx, id, library.RemoveChoice{}, false, domain.System); !errors.Is(err, library.ErrAlreadyRemoved) {
 		t.Fatalf("again: %v", err)
 	}
 }
@@ -70,14 +71,14 @@ func TestDeleteShowFilesDryRunIsApply(t *testing.T) {
 	svc, s, lf, id := showDeleteWorld(t)
 	ctx := context.Background()
 	before := s.WriteCount()
-	dry, err := svc.Remove(ctx, id, RemoveChoice{DeleteFiles: true}, false, domain.System)
+	dry, err := svc.Remove(ctx, id, library.RemoveChoice{DeleteFiles: true}, false, domain.System)
 	if err != nil || s.WriteCount() != before || dry.Applied {
 		t.Fatalf("dry run %v", err)
 	}
 	if dry.HoldingDays != 7 || len(dry.Held) != 3 || len(dry.Kept) != 3 {
 		t.Fatalf("dry %+v", dry)
 	}
-	p, err := svc.Remove(ctx, id, RemoveChoice{DeleteFiles: true}, true, domain.System)
+	p, err := svc.Remove(ctx, id, library.RemoveChoice{DeleteFiles: true}, true, domain.System)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -110,7 +111,7 @@ func TestDeleteSeason(t *testing.T) {
 	svc, s, lf, id := showDeleteWorld(t)
 	ctx := context.Background()
 	two := 2
-	p, err := svc.RemoveEpisodes(ctx, id, RemoveScope{Season: &two}, RemoveChoice{DeleteFiles: true}, true, domain.System)
+	p, err := svc.RemoveEpisodes(ctx, id, library.RemoveScope{Season: &two}, library.RemoveChoice{DeleteFiles: true}, true, domain.System)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -151,7 +152,7 @@ func TestDeleteEpisodeOfMultiEpisodeFile(t *testing.T) {
 	svc, s, lf, id := showDeleteWorld(t)
 	ctx := context.Background()
 	eps := episodes(t, s, id)
-	p, err := svc.RemoveEpisodes(ctx, id, RemoveScope{EpisodeIDs: []int64{eps["S02E01"].ItemID}}, RemoveChoice{DeleteFiles: true}, true, domain.System)
+	p, err := svc.RemoveEpisodes(ctx, id, library.RemoveScope{EpisodeIDs: []int64{eps["S02E01"].ItemID}}, library.RemoveChoice{DeleteFiles: true}, true, domain.System)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -166,7 +167,7 @@ func TestDeleteEpisodeOfMultiEpisodeFile(t *testing.T) {
 		t.Errorf("after %+v %+v", after["S02E01"], after["S02E02"])
 	}
 	// Both of its episodes: now the file is held.
-	p, err = svc.RemoveEpisodes(ctx, id, RemoveScope{EpisodeIDs: []int64{eps["S02E01"].ItemID, eps["S02E02"].ItemID}}, RemoveChoice{DeleteFiles: true}, true, domain.System)
+	p, err = svc.RemoveEpisodes(ctx, id, library.RemoveScope{EpisodeIDs: []int64{eps["S02E01"].ItemID, eps["S02E02"].ItemID}}, library.RemoveChoice{DeleteFiles: true}, true, domain.System)
 	if err != nil || len(p.Held) != 1 || onDisk(lf, multiFile) {
 		t.Fatalf("both %+v %v", p, err)
 	}
@@ -179,25 +180,25 @@ func TestDeleteEpisodesRefusals(t *testing.T) {
 	ctx := context.Background()
 	one, nine := 1, 9
 	cases := []struct {
-		sc   RemoveScope
-		c    RemoveChoice
+		sc   library.RemoveScope
+		c    library.RemoveChoice
 		want error
 	}{
-		{RemoveScope{Season: &one}, RemoveChoice{NeverAdd: true}, ErrNeverAddWholeShow},
-		{RemoveScope{Season: &nine}, RemoveChoice{}, ErrNoSuchSeason},
-		{RemoveScope{EpisodeIDs: []int64{99999}}, RemoveChoice{}, ErrNoSuchEpisode},
-		{RemoveScope{}, RemoveChoice{}, ErrNoEpisodesChosen},
+		{library.RemoveScope{Season: &one}, library.RemoveChoice{NeverAdd: true}, library.ErrNeverAddWholeShow},
+		{library.RemoveScope{Season: &nine}, library.RemoveChoice{}, library.ErrNoSuchSeason},
+		{library.RemoveScope{EpisodeIDs: []int64{99999}}, library.RemoveChoice{}, library.ErrNoSuchEpisode},
+		{library.RemoveScope{}, library.RemoveChoice{}, library.ErrNoEpisodesChosen},
 	}
 	for i, c := range cases {
 		if _, err := svc.RemoveEpisodes(ctx, id, c.sc, c.c, true, domain.System); !errors.Is(err, c.want) {
 			t.Errorf("case %d: %v, want %v", i, err, c.want)
 		}
 	}
-	movie, err := AddMovie(ctx, s, dune, AddOptions{LibraryFolderID: addFolder(t, s).ID}, nil, now, domain.System)
+	movie, err := library.AddMovie(ctx, s, dune, library.AddOptions{LibraryFolderID: addFolder(t, s).ID}, nil, now, domain.System)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := svc.RemoveEpisodes(ctx, movie, RemoveScope{Season: &one}, RemoveChoice{}, false, domain.System); !errors.Is(err, ErrNotShow) {
+	if _, err := svc.RemoveEpisodes(ctx, movie, library.RemoveScope{Season: &one}, library.RemoveChoice{}, false, domain.System); !errors.Is(err, library.ErrNotShow) {
 		t.Errorf("movie: %v", err)
 	}
 
@@ -221,9 +222,9 @@ func TestDeleteRemovesOnlySeasonFoldersItEmptied(t *testing.T) {
 		var err error
 		if season {
 			two := 2
-			_, err = svc.RemoveEpisodes(ctx, id, RemoveScope{Season: &two}, RemoveChoice{DeleteFiles: true}, true, domain.System)
+			_, err = svc.RemoveEpisodes(ctx, id, library.RemoveScope{Season: &two}, library.RemoveChoice{DeleteFiles: true}, true, domain.System)
 		} else {
-			_, err = svc.Remove(ctx, id, RemoveChoice{DeleteFiles: true}, true, domain.System)
+			_, err = svc.Remove(ctx, id, library.RemoveChoice{DeleteFiles: true}, true, domain.System)
 		}
 		if err != nil {
 			t.Fatal(err)

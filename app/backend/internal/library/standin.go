@@ -240,7 +240,7 @@ func (s *Service) healArtistArt(ctx context.Context, id int64, name, mbid string
 	var n int64
 	err := s.Store.Write(ctx, func(tx *sql.Tx) error {
 		res, err := tx.Exec("UPDATE titles SET artwork = ?, updated_at = ?, updated_by = ? WHERE id = ? AND artwork = ?",
-			string(newJSON), database.FormatTime(s.now()), actorText(by), id, string(oldJSON))
+			string(newJSON), database.FormatTime(s.now()), ActorText(by), id, string(oldJSON))
 		if err == nil {
 			n, err = res.RowsAffected()
 		}
@@ -303,7 +303,7 @@ func (s *Service) RepairArtistStandIns(ctx context.Context, by domain.Actor) (St
 			out.Trimmed = append(out.Trimmed, t.Name)
 		}
 	}
-	now, who := database.FormatTime(s.now()), actorText(by)
+	now, who := database.FormatTime(s.now()), ActorText(by)
 	err = s.Store.Write(ctx, func(tx *sql.Tx) error {
 		_, err := tx.Exec(`INSERT INTO settings (grp, key, value, created_at, created_by, updated_at, updated_by) VALUES ('this_app', ?, ?, ?, ?, ?, ?)
 			ON CONFLICT (grp, key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at, updated_by = excluded.updated_by`,

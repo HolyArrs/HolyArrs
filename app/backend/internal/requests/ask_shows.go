@@ -15,6 +15,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/shows"
 )
 
 // errAskedMeanwhile says someone asked for the same show while this ask was
@@ -58,7 +59,7 @@ func (s *Service) askShow(ctx context.Context, p Person, id string, seasons []in
 	if err != nil {
 		return Result{}, err
 	}
-	sh, err := s.Library.LookupShow(ctx, id, defs.Source)
+	sh, err := shows.New(s.Library).LookupShow(ctx, id, defs.Source)
 	if err != nil {
 		return Result{}, err
 	}
@@ -139,7 +140,7 @@ func (s *Service) askShow(ctx context.Context, p Person, id string, seasons []in
 	if never, err := library.ShowOnNeverAdd(ctx, db, sh.IDs); err != nil {
 		return Result{}, err
 	} else if never {
-		return Result{}, library.ErrShowNeverAdd
+		return Result{}, shows.ErrShowNeverAdd
 	}
 	if err := s.checkLimit(ctx, db, p, KindShows); err != nil {
 		return Result{}, err
@@ -427,7 +428,7 @@ func (s *Service) addShowForAsk(ctx context.Context, a domain.Ask, set Settings,
 		return 0, err
 	}
 	if tid == 0 {
-		o := library.ShowAddOptions{LibraryFolderID: opt.LibraryFolderID, PickRulesID: opt.PickRulesID, Seasons: "all", WhyAdded: "ask"}
+		o := shows.ShowAddOptions{LibraryFolderID: opt.LibraryFolderID, PickRulesID: opt.PickRulesID, Seasons: "all", WhyAdded: "ask"}
 		if !wholeShow(a) {
 			o.Seasons = "none"
 		}
@@ -440,8 +441,8 @@ func (s *Service) addShowForAsk(ctx context.Context, a domain.Ask, set Settings,
 		if o.PickRulesID == 0 {
 			o.PickRulesID = set.ShowPickRulesID
 		}
-		var dup *library.ShowAlreadyAddedError
-		tid, _, err = s.Library.AddShow(ctx, a.Ref, o, by.actor())
+		var dup *shows.ShowAlreadyAddedError
+		tid, _, err = shows.New(s.Library).AddShow(ctx, a.Ref, o, by.actor())
 		switch {
 		case errors.As(err, &dup):
 			tid = dup.TitleID
@@ -452,7 +453,7 @@ func (s *Service) addShowForAsk(ctx context.Context, a domain.Ask, set Settings,
 		}
 	}
 	if a.FutureOnly {
-		return tid, s.Library.KeepFuture(ctx, tid, by.actor())
+		return tid, shows.New(s.Library).KeepFuture(ctx, tid, by.actor())
 	}
 	db := s.Store.Read()
 	var showKeep bool
@@ -480,12 +481,12 @@ func (s *Service) addShowForAsk(ctx context.Context, a domain.Ask, set Settings,
 		if err != nil {
 			return 0, err
 		}
-		if err := s.Library.SetSeason(ctx, tid, n, true, by.actor()); err != nil && !errors.Is(err, library.ErrNoSuchSeason) {
+		if err := shows.New(s.Library).SetSeason(ctx, tid, n, true, by.actor()); err != nil && !errors.Is(err, library.ErrNoSuchSeason) {
 			return 0, err
 		}
 	}
 	for _, e := range a.Episodes {
-		if err := s.Library.KeepEpisodes(ctx, tid, e.Season, e.Episodes, by.actor()); err != nil && !errors.Is(err, library.ErrNoSuchSeason) {
+		if err := shows.New(s.Library).KeepEpisodes(ctx, tid, e.Season, e.Episodes, by.actor()); err != nil && !errors.Is(err, library.ErrNoSuchSeason) {
 			return 0, err
 		}
 	}

@@ -14,6 +14,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/shows"
 )
 
 // ErrBadTMDBID says a TMDB id is not a positive number.
@@ -55,7 +56,7 @@ func (s *Service) FollowShowTMDB(ctx context.Context, p Person, tmdbID string) (
 		if err != nil {
 			return 0, err
 		}
-		sh, err := s.Library.LookupShow(ctx, "tmdb:"+tmdbID, defs.Source)
+		sh, err := shows.New(s.Library).LookupShow(ctx, "tmdb:"+tmdbID, defs.Source)
 		if err != nil {
 			return 0, err
 		}

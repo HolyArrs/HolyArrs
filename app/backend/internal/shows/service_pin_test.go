@@ -1,4 +1,4 @@
-package library
+package shows
 
 import (
 	"context"
@@ -10,6 +10,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
@@ -125,14 +126,14 @@ func TestT10PinEpisodeLabel(t *testing.T) {
 	s, ti := t10SeedLab(t)
 	eps := episodes(t, s, ti.ID)
 	ctx := context.Background()
-	if got := episodeLabel(ctx, s.Read(), eps["S01E02"].SlotID); got != "S01E02" {
+	if got := library.EpisodeLabel(ctx, s.Read(), eps["S01E02"].SlotID); got != "S01E02" {
 		t.Fatalf("label %q", got)
 	}
-	if got := episodeLabel(ctx, s.Read(), eps["S00E01"].SlotID); got != "S00E01" {
+	if got := library.EpisodeLabel(ctx, s.Read(), eps["S00E01"].SlotID); got != "S00E01" {
 		t.Fatalf("specials label %q", got)
 	}
 	// No slot: both numbers read as NULL and print as zero.
-	if got := episodeLabel(ctx, s.Read(), 424242); got != "S00E00" {
+	if got := library.EpisodeLabel(ctx, s.Read(), 424242); got != "S00E00" {
 		t.Fatalf("unknown slot label %q", got)
 	}
 }
@@ -209,20 +210,20 @@ func TestT10PinRemoveEpisodesCountsActiveDownloads(t *testing.T) {
 	}
 	svc := showService(s, nil)
 	season := 1
-	p, err := svc.RemoveEpisodes(ctx, ti.ID, RemoveScope{Season: &season}, RemoveChoice{}, false, domain.System)
+	p, err := svc.RemoveEpisodes(ctx, ti.ID, library.RemoveScope{Season: &season}, library.RemoveChoice{}, false, domain.System)
 	if err != nil || p.ActiveDownloads != 1 {
 		t.Fatalf("season 1: %d %v", p.ActiveDownloads, err)
 	}
-	p, err = svc.RemoveEpisodes(ctx, ti.ID, RemoveScope{EpisodeIDs: []int64{eps["S02E01"].ItemID}}, RemoveChoice{}, false, domain.System)
+	p, err = svc.RemoveEpisodes(ctx, ti.ID, library.RemoveScope{EpisodeIDs: []int64{eps["S02E01"].ItemID}}, library.RemoveChoice{}, false, domain.System)
 	if err != nil || p.ActiveDownloads != 1 {
 		t.Fatalf("episode: %d %v", p.ActiveDownloads, err)
 	}
-	p, err = svc.RemoveEpisodes(ctx, ti.ID, RemoveScope{EpisodeIDs: []int64{eps["S02E02"].ItemID}}, RemoveChoice{}, false, domain.System)
+	p, err = svc.RemoveEpisodes(ctx, ti.ID, library.RemoveScope{EpisodeIDs: []int64{eps["S02E02"].ItemID}}, library.RemoveChoice{}, false, domain.System)
 	if err != nil || p.ActiveDownloads != 0 {
 		t.Fatalf("untouched episode: %d %v", p.ActiveDownloads, err)
 	}
 	// Whole title: the delete.go variant of the same count.
-	pw, err := svc.Remove(ctx, ti.ID, RemoveChoice{}, false, domain.System)
+	pw, err := svc.Remove(ctx, ti.ID, library.RemoveChoice{}, false, domain.System)
 	if err != nil || pw.ActiveDownloads != 2 {
 		t.Fatalf("whole show: %d %v", pw.ActiveDownloads, err)
 	}

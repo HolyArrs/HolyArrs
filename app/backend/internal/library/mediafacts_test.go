@@ -24,10 +24,10 @@ func TestInspectLibraryVideoBackfill(t *testing.T) {
 	fi, _ := os.Stat(full)
 	old := map[string]any{"inspection_status": "complete", "inspection_size": float64(fi.Size()),
 		"inspection_modified": strconv.FormatInt(fi.ModTime().UnixNano(), 10), "edition": "Director's Cut", "resolution": "2160p"}
-	if _, changed := inspectLibraryVideo(root, "Movie (2020)/Movie.mkv", old, false); changed {
+	if _, changed := InspectLibraryVideo(root, "Movie (2020)/Movie.mkv", old, false); changed {
 		t.Fatal("unchanged file read again without a backfill")
 	}
-	info, changed := inspectLibraryVideo(root, "Movie (2020)/Movie.mkv", old, true)
+	info, changed := InspectLibraryVideo(root, "Movie (2020)/Movie.mkv", old, true)
 	if !changed || importer.NeedsFacts(info) {
 		t.Fatalf("backfill did not read: %v %+v", changed, info)
 	}
@@ -42,12 +42,12 @@ func TestInspectLibraryVideoBackfill(t *testing.T) {
 	}
 	fi, _ = os.Stat(bad)
 	old["inspection_size"], old["inspection_modified"] = float64(fi.Size()), strconv.FormatInt(fi.ModTime().UnixNano(), 10)
-	if info, changed := inspectLibraryVideo(root, "Movie (2020)/Bad.mkv", old, true); changed || info["resolution"] != "2160p" {
+	if info, changed := InspectLibraryVideo(root, "Movie (2020)/Bad.mkv", old, true); changed || info["resolution"] != "2160p" {
 		t.Fatalf("failed backfill replaced facts: %v %+v", changed, info)
 	}
 	// A changed file is still read, and its failure stored.
 	old["inspection_size"] = float64(1)
-	if info, changed := inspectLibraryVideo(root, "Movie (2020)/Bad.mkv", old, false); !changed || info["inspection_status"] != "error" {
+	if info, changed := InspectLibraryVideo(root, "Movie (2020)/Bad.mkv", old, false); !changed || info["inspection_status"] != "error" {
 		t.Fatalf("changed file: %v %+v", changed, info)
 	}
 }

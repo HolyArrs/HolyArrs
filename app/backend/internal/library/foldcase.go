@@ -12,7 +12,7 @@ import (
 // differ only in case as one name. It probes dir, or the nearest parent
 // whose name has a letter, by asking for that name with its case swapped;
 // with nothing to probe it goes by the platform (Windows and macOS fold).
-func foldsCase(dir string) bool {
+func FoldsCase(dir string) bool {
 	for p := filepath.Clean(dir); ; {
 		base := filepath.Base(p)
 		if swapped := swapCase(base); swapped != base {
@@ -49,7 +49,7 @@ func sameFolderName(a, b string, fold bool) bool {
 }
 
 // folderKey is a folder name as a map key for the filesystem.
-func folderKey(name string, fold bool) string {
+func FolderKey(name string, fold bool) string {
 	if fold {
 		return strings.ToLower(name)
 	}

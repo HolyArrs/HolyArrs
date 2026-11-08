@@ -76,8 +76,8 @@ func (s *Service) SetFileChoice(ctx context.Context, titleID, fileID int64, choi
 		return database.Update(tx, "files", &f, by)
 	})
 	if err == nil {
-		s.event(ctx, &domain.Event{Actor: by, Kind: "file_choice_changed", TitleID: &titleID, Summary: "Changed copy choices for " + f.RelativePath,
-			Data: map[string]any{"file_id": f.ID, "protected": f.Protected, "edition": f.MediaInfo["edition"], "protection_acknowledged": choice.AcknowledgeProtection}, GroupKey: groupKey(titleID)})
+		s.Emit(ctx, &domain.Event{Actor: by, Kind: "file_choice_changed", TitleID: &titleID, Summary: "Changed copy choices for " + f.RelativePath,
+			Data: map[string]any{"file_id": f.ID, "protected": f.Protected, "edition": f.MediaInfo["edition"], "protection_acknowledged": choice.AcknowledgeProtection}, GroupKey: GroupKey(titleID)})
 	}
 	return f, err
 }
@@ -94,7 +94,7 @@ func (s *Service) KeepAndAddVersion(ctx context.Context, titleID, fileID int64, 
 	if err := database.Get(ctx, s.Store.Read(), "titles", titleID, &title); err != nil {
 		return mediafiles.Version{}, err
 	}
-	if _, err := checkVersionFolder(ctx, s.Store.Read(), in.LibraryFolderID, title.Kind, s.downloadPaths(ctx)); err != nil {
+	if _, err := CheckVersionFolder(ctx, s.Store.Read(), in.LibraryFolderID, title.Kind, s.DownloadFolders(ctx)); err != nil {
 		return mediafiles.Version{}, err
 	}
 	var v mediafiles.Version
@@ -103,7 +103,7 @@ func (s *Service) KeepAndAddVersion(ctx context.Context, titleID, fileID int64, 
 		if err != nil {
 			return err
 		}
-		if v, err = addVersionTx(ctx, tx, title, in, s.now(), by); err != nil {
+		if v, err = AddVersionTx(ctx, tx, title, in, s.now(), by); err != nil {
 			return err
 		}
 		f.Protected = true
@@ -147,8 +147,8 @@ func (s *Service) ConfirmDownloadEdition(ctx context.Context, downloadID int64, 
 		return database.Update(tx, "downloads", &d, by)
 	})
 	if err == nil {
-		s.event(ctx, &domain.Event{Actor: by, Kind: "download_edition_confirmed", TitleID: &titleID, DownloadID: &downloadID,
-			Summary: "Confirmed movie edition: " + edition, Data: map[string]any{"edition": edition}, GroupKey: groupKey(titleID)})
+		s.Emit(ctx, &domain.Event{Actor: by, Kind: "download_edition_confirmed", TitleID: &titleID, DownloadID: &downloadID,
+			Summary: "Confirmed movie edition: " + edition, Data: map[string]any{"edition": edition}, GroupKey: GroupKey(titleID)})
 	}
 	return err
 }

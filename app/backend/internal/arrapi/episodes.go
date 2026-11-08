@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/shows"
 )
 
 // episode is one episode as the Sonarr side answers it.
@@ -175,7 +176,7 @@ func (h *handler) monitorEpisodes(w http.ResponseWriter, r *http.Request) {
 		if e.Monitored == in.Monitored {
 			continue
 		}
-		if _, err := h.Library.SetEpisode(ctx, e.ID, in.Monitored, by); err != nil {
+		if _, err := shows.New(h.Library).SetEpisode(ctx, e.ID, in.Monitored, by); err != nil {
 			internalError(w, err)
 			return
 		}

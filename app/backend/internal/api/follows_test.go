@@ -8,6 +8,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/shows"
 )
 
 // route: PUT /api/v1/titles/{id}/follow
@@ -16,7 +17,7 @@ import (
 // route: GET /api/v1/my/follows
 func TestFollowOverHTTP(t *testing.T) {
 	r := newShowAskRig(t)
-	tid, _, err := r.asks.Library.AddShow(context.Background(), "tmdb:100", library.ShowAddOptions{Seasons: "all"}, domain.System)
+	tid, _, err := shows.New(r.asks.Library).AddShow(context.Background(), "tmdb:100", shows.ShowAddOptions{Seasons: "all"}, domain.System)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -75,7 +76,7 @@ func TestFollowShowByTMDBOverHTTP(t *testing.T) {
 	r.ana.call("PUT", "/api/v1/metadata/show/abc/follow", "", 400)
 
 	// The show lands: the follow moves to the Library title and ana hears.
-	tid, _, err := r.asks.Library.AddShow(context.Background(), "tmdb:100", library.ShowAddOptions{Seasons: "all"}, domain.System)
+	tid, _, err := shows.New(r.asks.Library).AddShow(context.Background(), "tmdb:100", shows.ShowAddOptions{Seasons: "all"}, domain.System)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -151,7 +151,7 @@ func (s *Service) handleRefreshTitles(ctx context.Context, r *jobs.Run) error {
 			}
 		}
 		_ = r.Progress(ctx, float64(i)/float64(len(ids)), fmt.Sprintf("refreshing %d of %d", i+1, len(ids)))
-		out, err := s.RefreshTitle(ctx, id, jobActor(r), &r.Job.ID)
+		out, err := s.RefreshTitle(ctx, id, JobActor(r), &r.Job.ID)
 		if err != nil {
 			if errors.Is(err, metadata.ErrNoAccess) {
 				return err // every other movie would fail the same way
@@ -212,7 +212,7 @@ func (s *Service) GatesPass(ctx context.Context) error {
 	for _, g := range []struct {
 		what string
 		open func(context.Context) (int, error)
-	}{{"gates", s.OpenGates}, {"episode gates", s.OpenEpisodeGates}, {"album gates", s.OpenTrackGates}} {
+	}{{"gates", s.OpenGates}, {"episode gates", s.openEpisodeGates}, {"album gates", s.OpenTrackGates}} {
 		if _, err := g.open(ctx); err != nil && ctx.Err() == nil {
 			log.Printf("library: %s: %v", g.what, err)
 			if first == nil {
@@ -319,7 +319,7 @@ func movieDetails(e *CalendarEntry, t mediafiles.Title, series map[int64]string)
 }
 
 // movieSeries names the movie series each title belongs to.
-func movieSeries(ctx context.Context, db reader, ids []any) (map[int64]string, error) {
+func movieSeries(ctx context.Context, db Reader, ids []any) (map[int64]string, error) {
 	out := map[int64]string{}
 	if len(ids) == 0 {
 		return out, nil
@@ -370,7 +370,7 @@ const (
 // release days of its artists' albums, by date, then cinema, digital,
 // physical, episode, album. titles narrows it to movies, shows or music
 // ("" or all: every one).
-func Calendar(ctx context.Context, db reader, from, to time.Time, titles ...string) ([]CalendarEntry, error) {
+func Calendar(ctx context.Context, db Reader, from, to time.Time, titles ...string) ([]CalendarEntry, error) {
 	which := CalendarAll
 	if len(titles) > 0 && titles[0] != "" {
 		which = titles[0]
@@ -378,7 +378,7 @@ func Calendar(ctx context.Context, db reader, from, to time.Time, titles ...stri
 	order := map[string]int{"cinema": 0, "digital": 1, "physical": 2, "episode": 3, "album": 4}
 	out := []CalendarEntry{}
 	if which == CalendarAll || which == CalendarShows {
-		eps, err := calendarEpisodes(ctx, db, from, to)
+		eps, err := CalendarEpisodes(ctx, db, from, to)
 		if err != nil {
 			return nil, err
 		}
@@ -449,7 +449,7 @@ func sortEntries(es []CalendarEntry, order map[string]int) {
 // calendarAlbums lists the included albums of artists in the Library whose
 // release day falls in [from, to), each with how many of its tracks are in
 // the Library.
-func calendarAlbums(ctx context.Context, db reader, from, to time.Time) ([]CalendarEntry, error) {
+func calendarAlbums(ctx context.Context, db Reader, from, to time.Time) ([]CalendarEntry, error) {
 	// An album known only by month or year has no release day: left out.
 	parts, err := database.Select[mediafiles.Part](ctx, db, "parts", `kind = 'album' AND included = 1 AND dropped_at IS NULL
 		AND coalesce(release_date_precision, 'day') = 'day'
@@ -493,12 +493,12 @@ func calendarAlbums(ctx context.Context, db reader, from, to time.Time) ([]Calen
 	return out, nil
 }
 
-// calendarEpisodes lists the episodes of shows in the Library airing in
+// CalendarEpisodes lists the episodes of shows in the Library airing in
 // [from, to): by their exact air time, or by their air day when the time
 // is unknown. An air day is a local date: it is listed when that day, in
 // from's time zone, overlaps the range. The query reads a day either side
 // and the exact test is made here.
-func calendarEpisodes(ctx context.Context, db reader, from, to time.Time) ([]CalendarEntry, error) {
+func CalendarEpisodes(ctx context.Context, db Reader, from, to time.Time) ([]CalendarEntry, error) {
 	items, err := database.Select[mediafiles.Item](ctx, db, "items", `kind = 'episode' AND dropped_at IS NULL
 		AND title_id IN (SELECT id FROM titles WHERE kind = 'show' AND state != 'removed')
 		AND ((air_timed = 1 AND air_date >= ? AND air_date < ?) OR ((air_timed = 0 OR air_date IS NULL) AND air_day >= ? AND air_day <= ?)) ORDER BY id`,

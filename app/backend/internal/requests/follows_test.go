@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/shows"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/alerts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
@@ -18,7 +19,7 @@ import (
 func TestFollowShowGetsNewEpisodeNotices(t *testing.T) {
 	r := showRig(t)
 	ctx := context.Background()
-	tid, _, err := r.svc.Library.AddShow(ctx, "tmdb:100", library.ShowAddOptions{Seasons: "all"}, domain.System)
+	tid, _, err := shows.New(r.svc.Library).AddShow(ctx, "tmdb:100", shows.ShowAddOptions{Seasons: "all"}, domain.System)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -73,7 +74,7 @@ func TestFollowShowGetsNewEpisodeNotices(t *testing.T) {
 func TestFollowRefusals(t *testing.T) {
 	r := showRig(t)
 	ctx := context.Background()
-	tid, _, err := r.svc.Library.AddShow(ctx, "tmdb:100", library.ShowAddOptions{Seasons: "all"}, domain.System)
+	tid, _, err := shows.New(r.svc.Library).AddShow(ctx, "tmdb:100", shows.ShowAddOptions{Seasons: "all"}, domain.System)
 	if err != nil {
 		t.Fatal(err)
 	}

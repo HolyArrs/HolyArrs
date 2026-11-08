@@ -1,4 +1,4 @@
-package library
+package shows
 
 import (
 	"context"
@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
@@ -20,7 +21,7 @@ func TestRenameEpisodesPreviewMatchesResult(t *testing.T) {
 	svc, s, _, _ := addShowService(t)
 	ctx := context.Background()
 	lf := addShowFolder(t, s)
-	id, _, err := svc.AddShow(ctx, "tmdb:100", ShowAddOptions{Seasons: SeasonsAll}, domain.System)
+	id, _, err := svc.AddShow(ctx, "tmdb:100", ShowAddOptions{Seasons: library.SeasonsAll}, domain.System)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -51,7 +52,7 @@ func TestRenameEpisodesPreviewMatchesResult(t *testing.T) {
 	}
 	multi := put("Lab Show (2025)/Lab.Show.S01E01E02.1080p.WEB.H264-HOLYARRS.mkv", "Lab.Show.S01E01E02.1080p.WEB.H264-HOLYARRS", slots["S01E01"], slots["S01E02"])
 	special := put("Lab Show (2025)/Season 0/Lab.Show.S00E01.1080p.WEB.H264-HOLYARRS.mkv", "Lab.Show.S00E01.1080p.WEB.H264-HOLYARRS", slots["S00E01"])
-	plan, err := PlanRename(ctx, s.Read(), []int64{id})
+	plan, err := library.PlanRename(ctx, s.Read(), []int64{id})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -78,7 +79,7 @@ func TestRenameEpisodesPreviewMatchesResult(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	if again, _ := PlanRename(ctx, s.Read(), []int64{id}); len(again) != 0 {
+	if again, _ := library.PlanRename(ctx, s.Read(), []int64{id}); len(again) != 0 {
 		t.Fatalf("still to rename: %+v", again)
 	}
 }

@@ -65,7 +65,7 @@ func (sc RemoveScope) Check() error {
 // show. Nothing changes. A file is held only when every episode it holds
 // is deleted; a multi-episode file that also holds an episode that stays
 // is kept for it.
-func planRemoveEpisodes(ctx context.Context, db reader, titleID int64, sc RemoveScope, c RemoveChoice, now time.Time) (RemovePlan, mediafiles.Title, map[int64]bool, error) {
+func planRemoveEpisodes(ctx context.Context, db Reader, titleID int64, sc RemoveScope, c RemoveChoice, now time.Time) (RemovePlan, mediafiles.Title, map[int64]bool, error) {
 	var t mediafiles.Title
 	if err := database.Get(ctx, db, "titles", titleID, &t); err != nil {
 		return RemovePlan{}, t, nil, err
@@ -136,16 +136,16 @@ func planRemoveEpisodes(ctx context.Context, db reader, titleID int64, sc Remove
 	}
 	sort.Slice(items, func(i, j int) bool {
 		a, b := items[i].Numbers, items[j].Numbers
-		if deref(a.Season) != deref(b.Season) {
-			return deref(a.Season) < deref(b.Season)
+		if Deref(a.Season) != Deref(b.Season) {
+			return Deref(a.Season) < Deref(b.Season)
 		}
-		if deref(a.Disc) != deref(b.Disc) {
-			return deref(a.Disc) < deref(b.Disc)
+		if Deref(a.Disc) != Deref(b.Disc) {
+			return Deref(a.Disc) < Deref(b.Disc)
 		}
-		if deref(a.Track) != deref(b.Track) {
-			return deref(a.Track) < deref(b.Track)
+		if Deref(a.Track) != Deref(b.Track) {
+			return Deref(a.Track) < Deref(b.Track)
 		}
-		return deref(a.Episode) < deref(b.Episode)
+		return Deref(a.Episode) < Deref(b.Episode)
 	})
 	scope := "episodes"
 	switch {
@@ -158,7 +158,7 @@ func planRemoveEpisodes(ctx context.Context, db reader, titleID int64, sc Remove
 	}
 	p := RemovePlan{TitleID: t.ID, Name: t.Name, Scope: scope, Season: sc.Season, Episodes: []string{}, Choice: c, Held: []RemoveFile{}, Kept: []RemoveFile{},
 		HoldingDays: rules.HoldingDays, AlbumID: sc.AlbumID, Album: albumName}
-	label := func(sid int64) string { return episodeLabel(ctx, db, sid) }
+	label := func(sid int64) string { return EpisodeLabel(ctx, db, sid) }
 	if sc.music() {
 		p.Tracks = []string{}
 		label = func(sid int64) string { return trackLabelOf(ctx, db, sid) }
@@ -172,7 +172,7 @@ func planRemoveEpisodes(ctx context.Context, db reader, titleID int64, sc Remove
 			p.Tracks = append(p.Tracks, trackItemLabel(ctx, db, it))
 			continue
 		}
-		p.Episodes = append(p.Episodes, fmt.Sprintf("S%02dE%02d", deref(it.Numbers.Season), deref(it.Numbers.Episode)))
+		p.Episodes = append(p.Episodes, fmt.Sprintf("S%02dE%02d", Deref(it.Numbers.Season), Deref(it.Numbers.Episode)))
 	}
 	files, err := database.Select[mediafiles.File](ctx, db, "files",
 		"state IN ('present', 'missing') AND version_id IN (SELECT id FROM versions WHERE title_id = ?) ORDER BY id", t.ID)
@@ -283,7 +283,7 @@ func itemArgs(sc RemoveScope) []any {
 
 // trackLabelOf names the track a Slot is for: "Old Days: track 03 Song",
 // "Old Days: disc 2 track 01 Song" on an album of more than one disc.
-func trackLabelOf(ctx context.Context, db reader, slotID int64) string {
+func trackLabelOf(ctx context.Context, db Reader, slotID int64) string {
 	var itemID int64
 	if db.QueryRowContext(ctx, "SELECT item_id FROM slots WHERE id = ?", slotID).Scan(&itemID) != nil {
 		return ""
@@ -296,7 +296,7 @@ func trackLabelOf(ctx context.Context, db reader, slotID int64) string {
 }
 
 // trackItemLabel names a track item with its album.
-func trackItemLabel(ctx context.Context, db reader, it mediafiles.Item) string {
+func trackItemLabel(ctx context.Context, db Reader, it mediafiles.Item) string {
 	album := ""
 	discs := 1
 	if it.PartID != nil {
@@ -305,9 +305,9 @@ func trackItemLabel(ctx context.Context, db reader, it mediafiles.Item) string {
 		_ = db.QueryRowContext(ctx, "SELECT max(json_extract(numbers, '$.disc')) FROM items WHERE part_id = ? AND kind = 'track' AND dropped_at IS NULL", *it.PartID).Scan(&d)
 		discs = max(1, int(d.Int64))
 	}
-	l := fmt.Sprintf("track %02d", deref(it.Numbers.Track))
+	l := fmt.Sprintf("track %02d", Deref(it.Numbers.Track))
 	if discs > 1 {
-		l = fmt.Sprintf("disc %d track %02d", max(1, deref(it.Numbers.Disc)), deref(it.Numbers.Track))
+		l = fmt.Sprintf("disc %d track %02d", max(1, Deref(it.Numbers.Disc)), Deref(it.Numbers.Track))
 	}
 	if it.Name != nil && *it.Name != "" {
 		l += " " + *it.Name
@@ -345,7 +345,7 @@ func (s *Service) RemoveEpisodes(ctx context.Context, titleID int64, sc RemoveSc
 		return p, err
 	}
 	err = s.Store.Write(ctx, func(tx *sql.Tx) error {
-		ts, who := database.FormatTime(s.now()), actorText(by)
+		ts, who := database.FormatTime(s.now()), ActorText(by)
 		for id := range set {
 			if _, err := tx.Exec("UPDATE items SET keep_up_to_date = 0, updated_at = ?, updated_by = ? WHERE id = ?", ts, who, id); err != nil {
 				return err
@@ -404,8 +404,8 @@ func (s *Service) RemoveEpisodes(ctx context.Context, titleID int64, sc RemoveSc
 		data = map[string]any{"album_id": sc.AlbumID, "album": p.Album, "tracks": p.Tracks, "item_ids": p.itemIDs, "delete_files": c.DeleteFiles,
 			"held": len(p.Held), "kept": len(p.Kept), "folders": folders}
 	}
-	s.event(ctx, &domain.Event{Actor: by, Kind: domain.EventEpisodesRemoved, TitleID: &t.ID, Summary: "Deleted " + what + " from the Library",
-		Data: data, GroupKey: groupKey(t.ID)})
-	s.publish("title", map[string]any{"id": t.ID})
+	s.Emit(ctx, &domain.Event{Actor: by, Kind: domain.EventEpisodesRemoved, TitleID: &t.ID, Summary: "Deleted " + what + " from the Library",
+		Data: data, GroupKey: GroupKey(t.ID)})
+	s.Publish("title", map[string]any{"id": t.ID})
 	return p, nil
 }

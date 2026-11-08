@@ -11,6 +11,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/shows"
 )
 
 func TestKidFollowByTMDBKeepsTheLimit(t *testing.T) {
@@ -54,7 +55,7 @@ func TestLandingDropsFollowersOverTheirLimit(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	tid, _, err := r.svc.Library.AddShow(ctx, "tmdb:100", library.ShowAddOptions{Seasons: "all"}, domain.System)
+	tid, _, err := shows.New(r.svc.Library).AddShow(ctx, "tmdb:100", shows.ShowAddOptions{Seasons: "all"}, domain.System)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -126,7 +126,7 @@ func TestRescanPersistsActualLanguagesAndAuditActor(t *testing.T) {
 	_, _, f := currentCriteriaCopy(t, s, id, map[string]any{"inspection_size": 0, "inspection_modified": "0"}, false)
 	if err := s.Write(context.Background(), func(tx *sql.Tx) error {
 		_, err := tx.Exec("UPDATE files SET relative_path = ?, languages = json('[\"en\"]'), updated_at = ?, updated_by = json(?) WHERE id = ?",
-			rel, database.FormatTime(now.Add(-time.Hour)), actorText(domain.System), f.ID)
+			rel, database.FormatTime(now.Add(-time.Hour)), ActorText(domain.System), f.ID)
 		return err
 	}); err != nil {
 		t.Fatal(err)

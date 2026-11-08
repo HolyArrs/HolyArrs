@@ -16,6 +16,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/shows"
 )
 
 // doneID is the command id of a command that had nothing to queue, above
@@ -137,7 +138,7 @@ func (h *handler) runCommand(ctx context.Context, name string, in commandIn, by 
 		}
 		// Every season with an episode kept up to date that still looks
 		// for a copy.
-		list, err := library.ShowSeasonsToSearch(ctx, h.Store.Read(), in.SeriesID)
+		list, err := shows.ShowSeasonsToSearch(ctx, h.Store.Read(), in.SeriesID)
 		if err != nil {
 			return nil, err
 		}

@@ -1,4 +1,4 @@
-package library
+package shows
 
 import (
 	"context"
@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
@@ -66,7 +67,7 @@ func TestEpisodeBecomesWantedOnTime(t *testing.T) {
 		ctx := context.Background()
 		addShowFolder(t, s)
 		if wait > 0 {
-			d, _ := ReadShowDefaults(ctx, s.Read())
+			d, _ := library.ReadShowDefaults(ctx, s.Read())
 			d.WaitMinutes = wait
 			if err := SetShowDefaults(ctx, s, d, domain.System); err != nil {
 				t.Fatal(err)
@@ -158,9 +159,9 @@ func TestShowRefreshScheduleJob(t *testing.T) {
 	ctx := context.Background()
 	src := &fakeShows{}
 	q := jobs.New(s, jobs.Options{Workers: 1, PollInterval: 5 * time.Millisecond, BaseBackoff: 10 * time.Millisecond})
-	svc := &Service{Store: s, Queue: q, Shows: metadata.ShowSources{"tmdb": src}, Now: func() time.Time { return now }}
+	svc := New(&library.Service{Store: s, Queue: q, Shows: metadata.ShowSources{"tmdb": src}, Now: func() time.Time { return now }})
 	svc.Register(q)
-	q.Handle(KindScanTitle, func(context.Context, *jobs.Run) error { return nil })
+	q.Handle(library.KindScanTitle, func(context.Context, *jobs.Run) error { return nil })
 	addShowFolder(t, s)
 	mk := func(id, name, status string, fetched time.Duration) int64 {
 		sh := labShow("tmdb", id)

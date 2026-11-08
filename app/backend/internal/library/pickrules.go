@@ -52,7 +52,7 @@ var askRuleKeys = map[string]string{"ask_pick_rules_id": "movie", "ask_show_pick
 var defaultRuleKeys = map[string]string{"movie_pick_rules_id": "movie", "show_pick_rules_id": "show"}
 
 // pickRulesUse counts the uses of id and the kinds they need.
-func pickRulesUse(ctx context.Context, q reader, id int64) (Use, map[string]bool, error) {
+func pickRulesUse(ctx context.Context, q Reader, id int64) (Use, map[string]bool, error) {
 	var u Use
 	kinds := map[string]bool{}
 	rows, err := q.QueryContext(ctx, `SELECT t.kind, count(*) FROM versions v JOIN titles t ON t.id = v.title_id WHERE v.pick_rules_id = ? GROUP BY t.kind`, id)

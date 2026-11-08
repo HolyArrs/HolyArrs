@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/shows"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
@@ -347,7 +348,7 @@ func outcome(r Result, err error, ref string) (string, string, *int64, string) {
 		return WatchInLibrary, ref, nil, ""
 	case errors.As(err, &le):
 		return WatchLimit, ref, nil, err.Error()
-	case errors.Is(err, library.ErrNeverAdd), errors.Is(err, library.ErrShowNeverAdd):
+	case errors.Is(err, library.ErrNeverAdd), errors.Is(err, shows.ErrShowNeverAdd):
 		return WatchSkipped, ref, nil, "It is on the Never add list."
 	case errors.Is(err, ErrAboveLimit):
 		return WatchSkipped, ref, nil, err.Error()

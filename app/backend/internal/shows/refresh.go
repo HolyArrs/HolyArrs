@@ -1,4 +1,4 @@
-package library
+package shows
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
@@ -44,7 +45,7 @@ func (s *Service) refreshShow(ctx context.Context, titleID int64, switchTo strin
 		return out, err
 	}
 	if t.Kind != "show" {
-		return out, ErrNotShow
+		return out, library.ErrNotShow
 	}
 	source := t.MetadataSource
 	if switchTo != "" {
@@ -55,11 +56,11 @@ func (s *Service) refreshShow(ctx context.Context, titleID int64, switchTo strin
 	if err != nil {
 		return out, err
 	}
-	defs, err := ReadShowDefaults(ctx, s.Store.Read())
+	defs, err := library.ReadShowDefaults(ctx, s.Store.Read())
 	if err != nil {
 		return out, err
 	}
-	now := s.now()
+	now := s.Clock()
 	sh, err := lookupShow(metadata.NoCache(ctx), p, source, t.SourceIDs)
 	if errors.Is(err, metadata.ErrShowNotFound) {
 		if switchTo != "" && switchTo != t.MetadataSource {
@@ -69,12 +70,12 @@ func (s *Service) refreshShow(ctx context.Context, titleID int64, switchTo strin
 		first := t.DroppedAt == nil
 		err := s.Store.Write(ctx, func(tx *sql.Tx) error {
 			_, err := tx.Exec("UPDATE titles SET dropped_at = COALESCE(dropped_at, ?), refreshed_at = ?, updated_at = ?, updated_by = ? WHERE id = ?",
-				database.FormatTime(now), database.FormatTime(now), database.FormatTime(now), actorText(by), titleID)
+				database.FormatTime(now), database.FormatTime(now), database.FormatTime(now), library.ActorText(by), titleID)
 			return err
 		})
 		if err == nil && first {
-			s.event(ctx, &domain.Event{Actor: by, Kind: domain.EventTitleDropped, TitleID: &titleID, JobID: jobID,
-				Summary: t.Name + " is no longer known to " + sourceName(source) + "; kept and flagged", GroupKey: groupKey(titleID)})
+			s.Emit(ctx, &domain.Event{Actor: by, Kind: domain.EventTitleDropped, TitleID: &titleID, JobID: jobID,
+				Summary: t.Name + " is no longer known to " + sourceName(source) + "; kept and flagged", GroupKey: library.GroupKey(titleID)})
 		}
 		return out, err
 	}
@@ -106,19 +107,19 @@ func (s *Service) refreshShow(ctx context.Context, titleID int64, switchTo strin
 	if err != nil {
 		return out, err
 	}
-	s.cachePoster(ctx, titleID, sh.Poster, by)
+	s.CachePoster(ctx, titleID, sh.Poster, by)
 	if was != source {
-		s.event(ctx, &domain.Event{Actor: by, Kind: domain.EventSourceSwitched, TitleID: &titleID, JobID: jobID,
-			Summary: t.Name + " now follows " + sourceName(source), Data: map[string]any{"from": was, "to": source}, GroupKey: groupKey(titleID)})
+		s.Emit(ctx, &domain.Event{Actor: by, Kind: domain.EventSourceSwitched, TitleID: &titleID, JobID: jobID,
+			Summary: t.Name + " now follows " + sourceName(source), Data: map[string]any{"from": was, "to": source}, GroupKey: library.GroupKey(titleID)})
 	}
-	s.event(ctx, &domain.Event{Actor: by, Kind: domain.EventTitleRefreshed, TitleID: &titleID, JobID: jobID,
-		Summary: "Refreshed details of " + t.Name + " from " + sourceName(source), GroupKey: groupKey(titleID),
+	s.Emit(ctx, &domain.Event{Actor: by, Kind: domain.EventTitleRefreshed, TitleID: &titleID, JobID: jobID,
+		Summary: "Refreshed details of " + t.Name + " from " + sourceName(source), GroupKey: library.GroupKey(titleID),
 		Data: map[string]any{"details_source": source, "status": t.Status, "seasons_added": out.SeasonsAdded, "episodes_added": out.EpisodesAdded,
 			"episodes_changed": out.EpisodesChanged, "episodes_removed": out.EpisodesRemoved, "episodes_dropped": out.EpisodesDropped}})
 	if out.SeasonsAdded+out.EpisodesAdded+out.EpisodesRemoved+out.EpisodesDropped > 0 {
-		s.event(ctx, &domain.Event{Actor: by, Kind: domain.EventEpisodesChanged, TitleID: &titleID, JobID: jobID,
+		s.Emit(ctx, &domain.Event{Actor: by, Kind: domain.EventEpisodesChanged, TitleID: &titleID, JobID: jobID,
 			Summary: fmt.Sprintf("%s: %d new seasons, %d new episodes, %d removed, %d no longer listed but kept", t.Name,
-				out.SeasonsAdded, out.EpisodesAdded, out.EpisodesRemoved, out.EpisodesDropped), GroupKey: groupKey(titleID),
+				out.SeasonsAdded, out.EpisodesAdded, out.EpisodesRemoved, out.EpisodesDropped), GroupKey: library.GroupKey(titleID),
 			Data: map[string]any{"seasons_added": out.SeasonsAdded, "episodes_added": out.EpisodesAdded, "episodes_removed": out.EpisodesRemoved, "episodes_dropped": out.EpisodesDropped}})
 	}
 	s.episodeGateEvents(ctx, t, out.Opened, out.Closed, by, jobID)
@@ -147,17 +148,9 @@ func (s *Service) episodeGateEvents(ctx context.Context, t mediafiles.Title, ope
 	}{{opened, domain.EventGateOpened, mediafiles.SlotWanted, " has aired: it is wanted now"}, {closed, domain.EventGateClosed, mediafiles.SlotNotOutYet, " has not aired yet: its air date moved"}} {
 		for _, id := range list.ids {
 			slot := id
-			name := t.Name + " " + episodeLabel(ctx, s.Store.Read(), slot)
-			s.event(ctx, &domain.Event{Actor: by, Kind: list.kind, TitleID: &t.ID, SlotID: &slot, JobID: jobID, Summary: name + list.says, GroupKey: groupKey(t.ID)})
-			s.publish("slot", map[string]any{"id": slot, "state": list.to})
+			name := t.Name + " " + library.EpisodeLabel(ctx, s.Store.Read(), slot)
+			s.Emit(ctx, &domain.Event{Actor: by, Kind: list.kind, TitleID: &t.ID, SlotID: &slot, JobID: jobID, Summary: name + list.says, GroupKey: library.GroupKey(t.ID)})
+			s.Publish("slot", map[string]any{"id": slot, "state": list.to})
 		}
 	}
-}
-
-// episodeLabel is "S01E02" for a Slot's episode.
-func episodeLabel(ctx context.Context, db database.Querier, slotID int64) string {
-	var se, ep sql.NullInt64
-	_ = db.QueryRowContext(ctx, `SELECT json_extract(i.numbers, '$.season'), json_extract(i.numbers, '$.episode') FROM items i
-		JOIN slots s ON s.item_id = i.id WHERE s.id = ?`, slotID).Scan(&se, &ep)
-	return fmt.Sprintf("S%02dE%02d", se.Int64, ep.Int64)
 }

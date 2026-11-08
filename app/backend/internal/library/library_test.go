@@ -170,7 +170,7 @@ func TestGateDefaultsSetting(t *testing.T) {
 }
 
 func TestSortName(t *testing.T) {
-	if got := sortName("The Matrix"); got != "matrix" {
+	if got := SortName("The Matrix"); got != "matrix" {
 		t.Fatalf("got %q", got)
 	}
 }

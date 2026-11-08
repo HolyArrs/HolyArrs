@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/shows"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
@@ -130,7 +131,7 @@ func onlySpecials() metadata.Show {
 
 func TestFirstSeason_SpecialsCountOnlyWhenAlone(t *testing.T) {
 	e, lf := showEnv(t)
-	id, _, err := e.svc.Library.AddShow(context.Background(), "tmdb:700006", library.ShowAddOptions{LibraryFolderID: lf.ID, FirstSeason: true}, domain.System)
+	id, _, err := shows.New(e.svc.Library).AddShow(context.Background(), "tmdb:700006", shows.ShowAddOptions{LibraryFolderID: lf.ID, FirstSeason: true}, domain.System)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -141,7 +142,7 @@ func TestFirstSeason_SpecialsCountOnlyWhenAlone(t *testing.T) {
 
 func TestFirstSeason_NoSeasonOneUsesEarliestNumbered(t *testing.T) {
 	e, lf := showEnv(t)
-	id, _, err := e.svc.Library.AddShow(context.Background(), "tmdb:700005", library.ShowAddOptions{LibraryFolderID: lf.ID, FirstSeason: true}, domain.System)
+	id, _, err := shows.New(e.svc.Library).AddShow(context.Background(), "tmdb:700005", shows.ShowAddOptions{LibraryFolderID: lf.ID, FirstSeason: true}, domain.System)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -153,7 +154,7 @@ func TestFirstSeason_NoSeasonOneUsesEarliestNumbered(t *testing.T) {
 // keptSeasons lists a show's seasons kept up to date.
 func keptSeasons(t *testing.T, s *database.Store, titleID int64) map[int]bool {
 	t.Helper()
-	ss, err := library.Seasons(context.Background(), s.Read(), titleID, now)
+	ss, err := shows.Seasons(context.Background(), s.Read(), titleID, now)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -232,7 +233,7 @@ func TestSync_TMDBShowListUsesItsSeasonChoice(t *testing.T) {
 		t.Fatal(err)
 	}
 	// Gull Watch is in the Library already, added by hand.
-	if _, _, err := e.svc.Library.AddShow(ctx, "tmdb:700002", library.ShowAddOptions{LibraryFolderID: lf.ID}, domain.System); err != nil {
+	if _, _, err := shows.New(e.svc.Library).AddShow(ctx, "tmdb:700002", shows.ShowAddOptions{LibraryFolderID: lf.ID}, domain.System); err != nil {
 		t.Fatal(err)
 	}
 	l, err := AddOutsideList(ctx, e.s, OutsideListInput{Name: "Shows", Kind: ListTMDB, Ref: "61", TitleKind: "show", Seasons: SeasonsFirst, NewSeasons: "none", SearchOnAdd: true}, domain.System)

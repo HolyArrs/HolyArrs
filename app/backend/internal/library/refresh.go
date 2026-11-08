@@ -49,9 +49,7 @@ func (s *Service) RefreshTitle(ctx context.Context, titleID int64, by domain.Act
 		return out, err
 	}
 	if t.Kind == "show" {
-		r, err := s.RefreshShow(ctx, titleID, by, jobID)
-		out.Dropped, out.GateDriver, out.Opened, out.Closed = r.Dropped, "air_date", r.Opened, r.Closed
-		return out, err
+		return s.showParts().Refresh(ctx, titleID, by, jobID)
 	}
 	if t.Kind == "artist" {
 		r, err := s.RefreshArtist(ctx, titleID, by, jobID)
@@ -69,12 +67,12 @@ func (s *Service) RefreshTitle(ctx context.Context, titleID int64, by domain.Act
 		first := t.DroppedAt == nil
 		err := s.Store.Write(ctx, func(tx *sql.Tx) error {
 			_, err := tx.Exec("UPDATE titles SET dropped_at = COALESCE(dropped_at, ?), refreshed_at = ?, updated_at = ?, updated_by = ? WHERE id = ?",
-				database.FormatTime(now), database.FormatTime(now), database.FormatTime(now), actorText(by), titleID)
+				database.FormatTime(now), database.FormatTime(now), database.FormatTime(now), ActorText(by), titleID)
 			return err
 		})
 		if err == nil && first {
-			s.event(ctx, &domain.Event{Actor: by, Kind: domain.EventTitleDropped, TitleID: &titleID, JobID: jobID,
-				Summary: t.Name + " is no longer known to the metadata source; kept and flagged", GroupKey: groupKey(titleID)})
+			s.Emit(ctx, &domain.Event{Actor: by, Kind: domain.EventTitleDropped, TitleID: &titleID, JobID: jobID,
+				Summary: t.Name + " is no longer known to the metadata source; kept and flagged", GroupKey: GroupKey(titleID)})
 		}
 		return out, err
 	}
@@ -114,20 +112,20 @@ func (s *Service) RefreshTitle(ctx context.Context, titleID int64, by domain.Act
 		return out, err
 	}
 	out.GateDriver, out.Opened, out.Closed = t.GateDriver, opened, closed
-	s.cachePoster(ctx, titleID, m.Poster, by)
+	s.CachePoster(ctx, titleID, m.Poster, by)
 	if t.GateOpensAt != nil {
 		v := t.GateOpensAt.Format(time.RFC3339)
 		out.GateOpensAt = &v
 	}
-	s.event(ctx, &domain.Event{Actor: by, Kind: domain.EventTitleRefreshed, TitleID: &titleID, JobID: jobID,
-		Summary: "Refreshed details of " + t.Name, GroupKey: groupKey(titleID),
+	s.Emit(ctx, &domain.Event{Actor: by, Kind: domain.EventTitleRefreshed, TitleID: &titleID, JobID: jobID,
+		Summary: "Refreshed details of " + t.Name, GroupKey: GroupKey(titleID),
 		Data: map[string]any{"gate_driver": t.GateDriver, "gate_opens_at": out.GateOpensAt, "cinema_date": t.CinemaDate,
 			"digital_date": t.DigitalDate, "physical_date": t.PhysicalDate}})
 	s.gateEvents(ctx, t, opened, closed, by, jobID)
 	return out, nil
 }
 
-func groupKey(titleID int64) string { return "title:" + strconv.FormatInt(titleID, 10) }
+func GroupKey(titleID int64) string { return "title:" + strconv.FormatInt(titleID, 10) }
 
 // applyGateTx moves the Title's Slots across its gate: not_out_yet to wanted
 // once open, and wanted back to not_out_yet when the gate moved later.
@@ -163,17 +161,17 @@ func applyGateTx(ctx context.Context, tx *sql.Tx, t mediafiles.Title, now time.T
 func (s *Service) gateEvents(ctx context.Context, t mediafiles.Title, opened, closed []int64, by domain.Actor, jobID *int64) {
 	for _, id := range opened {
 		slot := id
-		s.event(ctx, &domain.Event{Actor: by, Kind: domain.EventGateOpened, TitleID: &t.ID, SlotID: &slot, JobID: jobID,
+		s.Emit(ctx, &domain.Event{Actor: by, Kind: domain.EventGateOpened, TitleID: &t.ID, SlotID: &slot, JobID: jobID,
 			Summary: t.Name + " is out: searching may start", Data: map[string]any{"gate_driver": t.GateDriver, "gate_opens_at": t.GateOpensAt},
-			GroupKey: groupKey(t.ID)})
-		s.publish("slot", map[string]any{"id": slot, "state": mediafiles.SlotWanted})
+			GroupKey: GroupKey(t.ID)})
+		s.Publish("slot", map[string]any{"id": slot, "state": mediafiles.SlotWanted})
 	}
 	for _, id := range closed {
 		slot := id
-		s.event(ctx, &domain.Event{Actor: by, Kind: domain.EventGateClosed, TitleID: &t.ID, SlotID: &slot, JobID: jobID,
+		s.Emit(ctx, &domain.Event{Actor: by, Kind: domain.EventGateClosed, TitleID: &t.ID, SlotID: &slot, JobID: jobID,
 			Summary: t.Name + " is not out yet: " + gateReason(t.GateDriver, t.GateOpensAt),
-			Data:    map[string]any{"gate_driver": t.GateDriver, "gate_opens_at": t.GateOpensAt}, GroupKey: groupKey(t.ID)})
-		s.publish("slot", map[string]any{"id": slot, "state": mediafiles.SlotNotOutYet})
+			Data:    map[string]any{"gate_driver": t.GateDriver, "gate_opens_at": t.GateOpensAt}, GroupKey: GroupKey(t.ID)})
+		s.Publish("slot", map[string]any{"id": slot, "state": mediafiles.SlotNotOutYet})
 	}
 }
 
@@ -187,18 +185,18 @@ func (s *Service) handleRefreshTitle(ctx context.Context, r *jobs.Run) error {
 	if isNew, _ := r.Job.Params["new"].(bool); isNew {
 		ctx = useCache(ctx) // an artist just added: its answers are fresh in the cache
 	}
-	out, err := s.RefreshTitle(ctx, titleID, jobActor(r), &r.Job.ID)
+	out, err := s.RefreshTitle(ctx, titleID, JobActor(r), &r.Job.ID)
 	if err != nil {
 		return fmt.Errorf("refresh: %w", err)
 	}
 	r.SetResult(map[string]any{"dropped": out.Dropped, "gate_driver": out.GateDriver, "gate_opens_at": out.GateOpensAt,
 		"gate_opened": len(out.Opened), "gate_closed": len(out.Closed)})
-	return s.next(ctx, r, titleID)
+	return s.RunNextStep(ctx, r, titleID)
 }
 
 // cachePoster stores the poster in the artwork cache (a smaller size than
 // the search answer shows) and records it on the Title. A failure only logs.
-func (s *Service) cachePoster(ctx context.Context, titleID int64, poster string, by domain.Actor) {
+func (s *Service) CachePoster(ctx context.Context, titleID int64, poster string, by domain.Actor) {
 	if s.Artwork == nil || poster == "" {
 		return
 	}
@@ -210,7 +208,7 @@ func (s *Service) cachePoster(ctx context.Context, titleID int64, poster string,
 	art := `["poster:` + name + `"]`
 	err = s.Store.Write(ctx, func(tx *sql.Tx) error {
 		_, err := tx.Exec("UPDATE titles SET artwork = ?, updated_at = ?, updated_by = ? WHERE id = ? AND artwork != ?",
-			art, database.FormatTime(s.now()), actorText(by), titleID, art)
+			art, database.FormatTime(s.now()), ActorText(by), titleID, art)
 		return err
 	})
 	if err != nil {

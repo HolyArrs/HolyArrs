@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/shows"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
@@ -94,14 +95,14 @@ type addedShow struct {
 		Kind  string `json:"kind"`
 		Slots []any  `json:"slots"`
 		Show  struct {
-			DetailsSource string                  `json:"details_source"`
-			EpisodeOrder  string                  `json:"episode_order"`
-			SeasonChoice  string                  `json:"season_choice"`
-			NewSeasons    string                  `json:"new_seasons"`
-			Seasons       []library.SeasonSummary `json:"seasons"`
-			Episodes      int                     `json:"episodes"`
-			Missing       int                     `json:"missing"`
-			NotOutYet     int                     `json:"not_out_yet"`
+			DetailsSource string                `json:"details_source"`
+			EpisodeOrder  string                `json:"episode_order"`
+			SeasonChoice  string                `json:"season_choice"`
+			NewSeasons    string                `json:"new_seasons"`
+			Seasons       []shows.SeasonSummary `json:"seasons"`
+			Episodes      int                   `json:"episodes"`
+			Missing       int                   `json:"missing"`
+			NotOutYet     int                   `json:"not_out_yet"`
 		} `json:"show"`
 	} `json:"title"`
 	JobID int64 `json:"job_id"`
@@ -150,13 +151,13 @@ func TestShowsAPI(t *testing.T) {
 	}
 
 	var seasons struct {
-		Seasons []library.SeasonSummary `json:"seasons"`
+		Seasons []shows.SeasonSummary `json:"seasons"`
 	}
 	_ = json.Unmarshal(do(t, "GET", fmt.Sprintf("%s/titles/%d/seasons", u, id), "", 200), &seasons)
 	if len(seasons.Seasons) != 3 || seasons.Seasons[1].KeepUpToDate || !seasons.Seasons[2].KeepUpToDate || seasons.Seasons[1].Aired != 2 {
 		t.Fatalf("seasons %+v", seasons)
 	}
-	var one library.SeasonSummary
+	var one shows.SeasonSummary
 	_ = json.Unmarshal(do(t, "PUT", fmt.Sprintf("%s/titles/%d/seasons/1", u, id), `{"keep_up_to_date":true}`, 200), &one)
 	if !one.KeepUpToDate || one.Missing != 2 {
 		t.Fatalf("season 1 on %+v", one)

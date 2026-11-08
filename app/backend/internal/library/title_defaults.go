@@ -93,7 +93,7 @@ func checkKindDefaults(tx *sql.Tx, kind string, kd KindDefaults) error {
 	}
 	if kd.PickRulesID != 0 {
 		id := kd.PickRulesID
-		return pickRulesFor(tx, &id, kind)
+		return PickRulesFor(tx, &id, kind)
 	}
 	return nil
 }
@@ -128,7 +128,7 @@ func SetTitleDefaults(ctx context.Context, s *database.Store, d TitleDefaults, k
 				"keep_up_to_date": strconv.FormatBool(kd.KeepUpToDate), "search_on_add": strconv.FormatBool(kd.SearchOnAdd)}[name]
 			_, err := tx.Exec(`INSERT INTO settings (grp, key, value, created_at, created_by, updated_at, updated_by) VALUES ('what_to_pick', ?, ?, ?, ?, ?, ?)
 				ON CONFLICT (grp, key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at, updated_by = excluded.updated_by`,
-				k, v, now, actorText(by), now, actorText(by))
+				k, v, now, ActorText(by), now, ActorText(by))
 			if err != nil {
 				return err
 			}

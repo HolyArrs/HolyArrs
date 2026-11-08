@@ -70,7 +70,7 @@ type Service struct {
 }
 
 // animeAliases are the anime's other titles, or an empty list.
-func (s *Service) animeAliases(ctx context.Context, kind, tmdbID, name string) []string {
+func (s *Service) AnimeAliases(ctx context.Context, kind, tmdbID, name string) []string {
 	if s.AnimeNames == nil || tmdbID == "" {
 		return []string{}
 	}
@@ -91,7 +91,7 @@ func (s *Service) now() time.Time {
 func (s *Service) Register(q *jobs.Queue) {
 	q.Handle(KindRefreshTitle, s.handleRefreshTitle)
 	q.Handle(KindRefreshTitles, s.handleRefreshTitles)
-	q.Handle(KindRefreshShows, s.handleRefreshShows)
+	s.showParts().RegisterJobs(q)
 	q.Handle(KindRefreshArtists, s.handleRefreshArtists)
 	q.Handle(KindArtistPictures, s.handleArtistPictures)
 	q.Handle(KindScanTitle, s.handleScan)
@@ -104,24 +104,24 @@ func (s *Service) Register(q *jobs.Queue) {
 	q.Handle(KindRescan, s.handleRescan)
 }
 
-func (s *Service) publish(topic string, v any) {
+func (s *Service) Publish(topic string, v any) {
 	if s.Live != nil {
 		s.Live.Publish(topic, v)
 	}
 }
 
-func (s *Service) event(ctx context.Context, e *domain.Event) {
+func (s *Service) Emit(ctx context.Context, e *domain.Event) {
 	if err := s.Store.AddEvent(ctx, e); err != nil {
 		log.Printf("library: event %s: %v", e.Kind, err)
 		return
 	}
-	s.publish("event", e)
+	s.Publish("event", e)
 }
 
-func jobActor(r *jobs.Run) domain.Actor { return domain.Actor{Kind: "job", ID: r.Job.ID} }
+func JobActor(r *jobs.Run) domain.Actor { return domain.Actor{Kind: "job", ID: r.Job.ID} }
 
 // downloadPaths lists the Downloader folders for hardlink checks.
-func (s *Service) downloadPaths(ctx context.Context) []string {
+func (s *Service) DownloadFolders(ctx context.Context) []string {
 	ps, err := DownloadPaths(ctx, s.Store.Read(), s.SavePath)
 	if err != nil {
 		log.Printf("library: downloader paths: %v", err)
@@ -133,15 +133,15 @@ func (s *Service) downloadPaths(ctx context.Context) []string {
 // folder scan and, when asked, a search (Radarr's order for a new movie).
 func (s *Service) Add(ctx context.Context, m metadata.Movie, opt AddOptions, by domain.Actor) (int64, int64, error) {
 	if slices.Contains(m.Genres, "Animation") {
-		opt.Aliases = s.animeAliases(ctx, "movie", m.IDs["tmdb"], m.Name)
+		opt.Aliases = s.AnimeAliases(ctx, "movie", m.IDs["tmdb"], m.Name)
 	}
-	id, err := AddMovie(ctx, s.Store, m, opt, s.downloadPaths(ctx), s.now(), by)
+	id, err := AddMovie(ctx, s.Store, m, opt, s.DownloadFolders(ctx), s.now(), by)
 	if err != nil {
 		return 0, 0, err
 	}
 	var t mediafiles.Title
 	_ = database.Get(ctx, s.Store.Read(), "titles", id, &t)
-	s.event(ctx, &domain.Event{Actor: by, Kind: domain.EventTitleAdded, TitleID: &id, Summary: "Added " + t.Name,
+	s.Emit(ctx, &domain.Event{Actor: by, Kind: domain.EventTitleAdded, TitleID: &id, Summary: "Added " + t.Name,
 		Data: map[string]any{"why_added": t.WhyAdded, "release_gate": t.ReleaseGate, "gate_delay_days": t.GateDelayDays,
 			"gate_driver": t.GateDriver, "search_on_add": opt.SearchOnAdd}, GroupKey: "title:" + strconv.FormatInt(id, 10)})
 	then := []any{KindScanTitle}
@@ -154,14 +154,14 @@ func (s *Service) Add(ctx context.Context, m metadata.Movie, opt AddOptions, by 
 }
 
 // next queues the step after this one in a chain: refresh, then scan, then search.
-func (s *Service) next(ctx context.Context, r *jobs.Run, titleID int64) error {
+func (s *Service) RunNextStep(ctx context.Context, r *jobs.Run, titleID int64) error {
 	raw, _ := r.Job.Params["then"].([]any)
 	if len(raw) == 0 {
 		return nil
 	}
 	kind, _ := raw[0].(string)
 	rest := raw[1:]
-	by := jobActor(r)
+	by := JobActor(r)
 	switch kind {
 	case KindScanTitle:
 		_, _, err := s.Queue.Enqueue(ctx, KindScanTitle, &domain.Subject{Type: "title", ID: titleID},
@@ -169,8 +169,8 @@ func (s *Service) next(ctx context.Context, r *jobs.Run, titleID int64) error {
 		return err
 	case KindSearchSlot:
 		return s.searchTitle(ctx, titleID, by)
-	case stepSearchShow:
-		return s.searchShow(ctx, titleID, by)
+	case StepSearchShow:
+		return s.showParts().SearchShow(ctx, titleID, by)
 	case stepSearchWanted:
 		return s.searchWanted(ctx, titleID, by)
 	}
@@ -239,7 +239,7 @@ func (s *Service) handleScan(ctx context.Context, r *jobs.Run) error {
 		} else if st, err := os.Stat(dir); err == nil && st.IsDir() {
 			res["exists"] = true
 			_ = filepath.WalkDir(dir, func(p string, d os.DirEntry, err error) error {
-				if err == nil && d.IsDir() && p != dir && nasSystemDir(d.Name()) {
+				if err == nil && d.IsDir() && p != dir && NasSystemDir(d.Name()) {
 					return filepath.SkipDir
 				}
 				if err == nil && !d.IsDir() && videoExt[strings.ToLower(filepath.Ext(p))] {
@@ -266,9 +266,9 @@ func (s *Service) handleScan(ctx context.Context, r *jobs.Run) error {
 		out = append(out, res)
 	}
 	r.SetResult(map[string]any{"versions": out})
-	s.event(ctx, &domain.Event{Actor: jobActor(r), Kind: domain.EventFolderScanned, TitleID: &titleID, JobID: &r.Job.ID,
+	s.Emit(ctx, &domain.Event{Actor: JobActor(r), Kind: domain.EventFolderScanned, TitleID: &titleID, JobID: &r.Job.ID,
 		Summary: "Looked at the folder", Data: map[string]any{"versions": out}, GroupKey: "title:" + strconv.FormatInt(titleID, 10)})
-	return s.next(ctx, r, titleID)
+	return s.RunNextStep(ctx, r, titleID)
 }
 
 // handleCheckFolders checks every Library folder and records changes.
@@ -277,7 +277,7 @@ func (s *Service) handleCheckFolders(ctx context.Context, r *jobs.Run) error {
 	if err != nil {
 		return err
 	}
-	paths := s.downloadPaths(ctx)
+	paths := s.DownloadFolders(ctx)
 	// A timed run only reads, so disks that sleep are not woken by probe
 	// writes. Run now, and a changed Downloader folder list, run the full
 	// write and hardlink test.
@@ -290,7 +290,7 @@ func (s *Service) handleCheckFolders(ctx context.Context, r *jobs.Run) error {
 	bad := 0
 	for i, f := range fs {
 		_ = r.Progress(ctx, float64(i)/float64(len(fs)), "checking "+f.Label)
-		lf, changed, err := RecheckFolder(ctx, s.Store, f.ID, paths, jobActor(r), quick)
+		lf, changed, err := RecheckFolder(ctx, s.Store, f.ID, paths, JobActor(r), quick)
 		if err != nil {
 			return err
 		}
@@ -298,10 +298,10 @@ func (s *Service) handleCheckFolders(ctx context.Context, r *jobs.Run) error {
 			bad++
 		}
 		if changed {
-			s.event(ctx, &domain.Event{Actor: jobActor(r), Kind: domain.EventFolderHealth, JobID: &r.Job.ID,
+			s.Emit(ctx, &domain.Event{Actor: JobActor(r), Kind: domain.EventFolderHealth, JobID: &r.Job.ID,
 				Summary: fmt.Sprintf("Library folder %s: %s", lf.Label, lf.Health),
 				Data:    map[string]any{"library_folder_id": lf.ID, "health": lf.Health, "reason": lf.HealthReason, "was": f.Health}})
-			s.publish("library_folder", lf)
+			s.Publish("library_folder", lf)
 		}
 	}
 	if !quick {

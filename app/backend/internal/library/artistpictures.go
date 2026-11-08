@@ -113,7 +113,7 @@ func (s *Service) fillArt(ctx context.Context, titleID int64, name string, by do
 	var n int64
 	err := s.Store.Write(ctx, func(tx *sql.Tx) error {
 		res, err := tx.Exec("UPDATE titles SET artwork = ?, updated_at = ?, updated_by = ? WHERE id = ? AND "+emptyArtwork,
-			`["poster:`+name+`"]`, database.FormatTime(s.now()), actorText(by), titleID)
+			`["poster:`+name+`"]`, database.FormatTime(s.now()), ActorText(by), titleID)
 		if err == nil {
 			n, err = res.RowsAffected()
 		}
@@ -131,7 +131,7 @@ func (s *Service) fillWide(ctx context.Context, titleID int64, backdrop, logo st
 		_, err := tx.Exec(`UPDATE titles SET backdrop = CASE WHEN backdrop = '' THEN ? ELSE backdrop END,
 			logo = CASE WHEN logo = '' THEN ? ELSE logo END, updated_at = ?, updated_by = ?
 			WHERE id = ? AND ((backdrop = '' AND ? != '') OR (logo = '' AND ? != ''))`,
-			backdrop, logo, database.FormatTime(s.now()), actorText(by), titleID, backdrop, logo)
+			backdrop, logo, database.FormatTime(s.now()), ActorText(by), titleID, backdrop, logo)
 		return err
 	})
 	if err != nil {
@@ -190,7 +190,7 @@ func (s *Service) FillAllArtistPictures(ctx context.Context, by domain.Actor, r 
 }
 
 func (s *Service) handleArtistPictures(ctx context.Context, r *jobs.Run) error {
-	by := jobActor(r)
+	by := JobActor(r)
 	if sub := r.Job.Subject; sub != nil && sub.Type == "title" && sub.ID != 0 {
 		src, err := s.FillArtistPictures(ctx, sub.ID, by)
 		if err != nil {

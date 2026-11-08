@@ -134,9 +134,9 @@ func (s *Service) handleMove(ctx context.Context, r *jobs.Run) error {
 	}
 	if !apply {
 		r.SetResult(map[string]any{"dry_run": true, "plans": plans, "files": files})
-		s.event(ctx, &domain.Event{Actor: jobActor(r), Kind: domain.EventTitleMovePlanned, TitleID: &titleID, JobID: &r.Job.ID,
+		s.Emit(ctx, &domain.Event{Actor: JobActor(r), Kind: domain.EventTitleMovePlanned, TitleID: &titleID, JobID: &r.Job.ID,
 			Summary: fmt.Sprintf("Planned moving %d files to another Library folder (dry run)", files),
-			Data:    map[string]any{"plans": plans}, GroupKey: groupKey(titleID)})
+			Data:    map[string]any{"plans": plans}, GroupKey: GroupKey(titleID)})
 		return nil
 	}
 	for _, p := range plans {
@@ -165,7 +165,7 @@ func (s *Service) handleMove(ctx context.Context, r *jobs.Run) error {
 		}
 		err := s.Store.Write(ctx, func(tx *sql.Tx) error {
 			_, err := tx.Exec("UPDATE versions SET library_folder_id = ?, updated_at = ?, updated_by = ? WHERE id = ?",
-				int64(fid), database.FormatTime(s.now()), actorText(jobActor(r)), p.VersionID)
+				int64(fid), database.FormatTime(s.now()), ActorText(JobActor(r)), p.VersionID)
 			return err
 		})
 		if err != nil {
@@ -178,9 +178,9 @@ func (s *Service) handleMove(ctx context.Context, r *jobs.Run) error {
 		}
 	}
 	r.SetResult(map[string]any{"dry_run": false, "plans": plans, "files": moved})
-	s.event(ctx, &domain.Event{Actor: jobActor(r), Kind: domain.EventTitleMoved, TitleID: &titleID, JobID: &r.Job.ID,
+	s.Emit(ctx, &domain.Event{Actor: JobActor(r), Kind: domain.EventTitleMoved, TitleID: &titleID, JobID: &r.Job.ID,
 		Summary: fmt.Sprintf("Moved %d files to Library folder %s", moved, lf.Label), Data: map[string]any{"plans": plans},
-		GroupKey: groupKey(titleID)})
+		GroupKey: GroupKey(titleID)})
 	return nil
 }
 
@@ -389,7 +389,7 @@ func caseRename(from, to, proof string) error {
 	if !os.SameFile(src, dst) {
 		return fmt.Errorf("%s already exists and is a different file; HolyArrs never replaces it", to)
 	}
-	if exactName(to) {
+	if ExactName(to) {
 		return nil // already renamed
 	}
 	if err := os.Rename(from, tmp); err != nil {
@@ -446,7 +446,7 @@ func folderCase(from, to string) (bool, error) {
 	if err != nil || !os.SameFile(src, dst) {
 		return false, nil // two folders: the file moves as any other
 	}
-	if exactName(to) {
+	if ExactName(to) {
 		return true, nil
 	}
 	if err := os.Rename(from, tmp); err != nil {
@@ -478,11 +478,11 @@ func distinctEntries(from, to string) bool {
 	if strings.EqualFold(bf, bt) {
 		return false
 	}
-	return exactName(from) && exactName(to)
+	return ExactName(from) && ExactName(to)
 }
 
-// exactName reports whether p's folder lists p's name with the same case.
-func exactName(p string) bool {
+// ExactName reports whether p's folder lists p's name with the same case.
+func ExactName(p string) bool {
 	ents, err := os.ReadDir(filepath.Dir(p))
 	if err != nil {
 		return false

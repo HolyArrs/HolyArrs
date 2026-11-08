@@ -135,7 +135,7 @@ type RemovePlan struct {
 }
 
 // planRemove works out a delete. Nothing changes.
-func planRemove(ctx context.Context, db reader, titleID int64, c RemoveChoice, now time.Time) (RemovePlan, mediafiles.Title, error) {
+func planRemove(ctx context.Context, db Reader, titleID int64, c RemoveChoice, now time.Time) (RemovePlan, mediafiles.Title, error) {
 	var t mediafiles.Title
 	if err := database.Get(ctx, db, "titles", titleID, &t); err != nil {
 		return RemovePlan{}, t, err
@@ -172,7 +172,7 @@ func planRemove(ctx context.Context, db reader, titleID int64, c RemoveChoice, n
 		for _, sid := range f.SlotIDs {
 			switch t.Kind {
 			case "show":
-				rf.Episodes = append(rf.Episodes, episodeLabel(ctx, db, sid))
+				rf.Episodes = append(rf.Episodes, EpisodeLabel(ctx, db, sid))
 			case "artist":
 				rf.Episodes = append(rf.Episodes, trackLabelOf(ctx, db, sid))
 			}
@@ -248,7 +248,7 @@ func (s *Service) removeLocked(ctx context.Context, titleID int64, c RemoveChoic
 		what = "artist"
 	}
 	err = s.Store.Write(ctx, func(tx *sql.Tx) error {
-		ts, who := database.FormatTime(s.now()), actorText(by)
+		ts, who := database.FormatTime(s.now()), ActorText(by)
 		if _, err := tx.Exec("UPDATE titles SET state = 'removed', keep_up_to_date = 0, updated_at = ?, updated_by = ? WHERE id = ?", ts, who, t.ID); err != nil {
 			return err
 		}
@@ -303,9 +303,9 @@ func (s *Service) removeLocked(ctx context.Context, titleID int64, c RemoveChoic
 		s.removeEmptyFolders(ctx, t.ID, p.Held, true)
 	}
 	p.Applied = true
-	s.event(ctx, &domain.Event{Actor: by, Kind: domain.EventTitleRemoved, TitleID: &t.ID, Summary: "Deleted " + t.Name + " from the Library",
-		Data: map[string]any{"delete_files": c.DeleteFiles, "never_add": c.NeverAdd, "protection_acknowledged": c.AcknowledgeProtection, "held": len(p.Held), "kept": len(p.Kept)}, GroupKey: groupKey(t.ID)})
-	s.publish("title", map[string]any{"id": t.ID, "state": "removed"})
+	s.Emit(ctx, &domain.Event{Actor: by, Kind: domain.EventTitleRemoved, TitleID: &t.ID, Summary: "Deleted " + t.Name + " from the Library",
+		Data: map[string]any{"delete_files": c.DeleteFiles, "never_add": c.NeverAdd, "protection_acknowledged": c.AcknowledgeProtection, "held": len(p.Held), "kept": len(p.Kept)}, GroupKey: GroupKey(t.ID)})
+	s.Publish("title", map[string]any{"id": t.ID, "state": "removed"})
 	return p, nil
 }
 
@@ -400,7 +400,7 @@ func (s *Service) holdFiles(ctx context.Context, p *RemovePlan, titleID int64, b
 	for i, h := range p.Held {
 		err := s.Store.Write(ctx, func(tx *sql.Tx) error {
 			_, err := tx.Exec("UPDATE files SET state = 'gone', relative_path = ?, updated_at = ?, updated_by = ? WHERE id = ?",
-				h.To, database.FormatTime(s.now()), actorText(by), h.FileID)
+				h.To, database.FormatTime(s.now()), ActorText(by), h.FileID)
 			if err == nil {
 				// Built-in tracks leave with the video; a beside subtitle's
 				// row changes only once that subtitle has moved (below).
@@ -495,8 +495,8 @@ func (s *Service) holdFiles(ctx context.Context, p *RemovePlan, titleID int64, b
 			}
 			return nil
 		})
-		s.event(ctx, &domain.Event{Actor: by, Kind: domain.EventFileHeld, TitleID: &titleID, Summary: "Moved " + filepath.Base(h.Path) + " to the holding folder",
-			Data: map[string]any{"file_id": h.FileID, "from": h.Path, "to": h.To, "episodes": h.Episodes, "subtitles": subs}, GroupKey: groupKey(titleID)})
+		s.Emit(ctx, &domain.Event{Actor: by, Kind: domain.EventFileHeld, TitleID: &titleID, Summary: "Moved " + filepath.Base(h.Path) + " to the holding folder",
+			Data: map[string]any{"file_id": h.FileID, "from": h.Path, "to": h.To, "episodes": h.Episodes, "subtitles": subs}, GroupKey: GroupKey(titleID)})
 	}
 	return nil
 }
@@ -549,12 +549,12 @@ func (s *Service) CleanHolding(ctx context.Context, by domain.Actor) (int, error
 			if err := s.Store.Write(ctx, func(tx *sql.Tx) error {
 				_, err := tx.Exec(`UPDATE files SET state = 'gone', updated_at = ?, updated_by = ? WHERE state IN ('replaced', 'gone')
 					AND substr(relative_path, 1, ?) = ? AND version_id IN (SELECT id FROM versions WHERE library_folder_id = ?)`,
-					database.FormatTime(s.now()), actorText(by), len(prefix), prefix, lf.ID)
+					database.FormatTime(s.now()), ActorText(by), len(prefix), prefix, lf.ID)
 				return err
 			}); err != nil {
 				return n, err
 			}
-			s.event(ctx, &domain.Event{Actor: by, Kind: domain.EventHoldingCleaned,
+			s.Emit(ctx, &domain.Event{Actor: by, Kind: domain.EventHoldingCleaned,
 				Summary: fmt.Sprintf("Emptied %s from the holding folder of %s", e.Name(), lf.Label),
 				Data:    map[string]any{"library_folder_id": lf.ID, "day": e.Name(), "kept_days": rules.HoldingDays}})
 		}
@@ -563,7 +563,7 @@ func (s *Service) CleanHolding(ctx context.Context, by domain.Actor) (int, error
 }
 
 func (s *Service) handleCleanHolding(ctx context.Context, r *jobs.Run) error {
-	n, err := s.CleanHolding(ctx, jobActor(r))
+	n, err := s.CleanHolding(ctx, JobActor(r))
 	r.SetResult(map[string]any{"days_emptied": n})
 	return err
 }

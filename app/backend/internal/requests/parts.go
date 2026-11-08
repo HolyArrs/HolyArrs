@@ -15,6 +15,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/shows"
 )
 
 // What an ask is made of is stored once, when it is asked for: a show's
@@ -125,7 +126,7 @@ func (s *Service) StoreParts(ctx context.Context, id int64) error {
 		if err != nil {
 			return err
 		}
-		sh, err := s.Library.LookupShow(ctx, a.Ref, defs.Source)
+		sh, err := shows.New(s.Library).LookupShow(ctx, a.Ref, defs.Source)
 		if err != nil {
 			return err
 		}

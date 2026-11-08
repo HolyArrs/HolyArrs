@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/shows"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
@@ -176,7 +177,7 @@ func (a *API) editTitle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if c.DetailsSource != nil && !dry && *c.DetailsSource != t.MetadataSource {
-		if _, err := a.s.Library.SwitchSource(r.Context(), t.ID, *c.DetailsSource, actor(r)); err != nil {
+		if _, err := shows.New(a.s.Library).SwitchSource(r.Context(), t.ID, *c.DetailsSource, actor(r)); err != nil {
 			showError(w, err)
 			return
 		}
@@ -529,7 +530,7 @@ func (a *API) refreshTitles(w http.ResponseWriter, r *http.Request) {
 	}
 	ids := []int64{}
 	if len(body.TitleIDs) == 0 {
-		for _, kind := range []string{library.KindRefreshTitles, library.KindRefreshShows, library.KindRefreshArtists} {
+		for _, kind := range []string{library.KindRefreshTitles, shows.KindRefreshShows, library.KindRefreshArtists} {
 			id, _, err := a.s.Queue.Enqueue(r.Context(), kind, nil, map[string]any{"by_hand": true}, kind+":by_hand", actor(r))
 			if err != nil {
 				internal(w, err)

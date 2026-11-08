@@ -117,7 +117,7 @@ func albumFolderName(folder, artist string) (string, int) {
 		y, _ := strconv.Atoi(m[1])
 		return strings.TrimSpace(m[2]), y
 	}
-	return folderName(s)
+	return FolderName(s)
 }
 
 // artistScore says how well an artist found fits a folder name (0..1).
@@ -145,7 +145,7 @@ func listAudio(lib, folder string, limit int) []AdoptVideo {
 		}
 		rel, _ := filepath.Rel(root, p)
 		if e.IsDir() {
-			if p != root && (strings.HasPrefix(e.Name(), ".") || nasSystemDir(e.Name()) || strings.Count(rel, string(filepath.Separator)) >= maxScanDepth) {
+			if p != root && (strings.HasPrefix(e.Name(), ".") || NasSystemDir(e.Name()) || strings.Count(rel, string(filepath.Separator)) >= maxScanDepth) {
 				return filepath.SkipDir
 			}
 			return nil
@@ -202,7 +202,7 @@ func matchAlbums(dirs []albumDir, artist string, refs []albumRef) ([]*albumRef, 
 	for i, d := range dirs {
 		name, year := albumFolderName(d.name, artist)
 		for j, r := range refs {
-			sc := nameScore(name, year, r.Name, r.Year)
+			sc := NameScore(name, year, r.Name, r.Year)
 			if sc >= MatchUnsure {
 				pairs = append(pairs, pair{i, j, sc})
 			}
@@ -313,14 +313,14 @@ func cutAlbumFiles(al *AdoptAlbum) {
 // the Pressing they fit. Nothing is written. At most the music scan limit
 // of artist folders are read; its lookups are background lookups that
 // wait behind imports, searches and staff.
-func PlanMusicAdoptFrom(ctx context.Context, db reader, artists metadata.ArtistProvider, folderID int64, after string) (AdoptPlan, error) {
+func PlanMusicAdoptFrom(ctx context.Context, db Reader, artists metadata.ArtistProvider, folderID int64, after string) (AdoptPlan, error) {
 	return planMusicAdopt(ctx, db, artists, folderID, after, nil, nil)
 }
 
 // planMusicAdopt is PlanMusicAdoptFrom that goes on from seed (the part a
 // stopped scan finished) and hands save the plan so far after each artist
 // folder (More and Next set, Partial on).
-func planMusicAdopt(ctx context.Context, db reader, artists metadata.ArtistProvider, folderID int64, after string, seed *AdoptPlan,
+func planMusicAdopt(ctx context.Context, db Reader, artists metadata.ArtistProvider, folderID int64, after string, seed *AdoptPlan,
 	save func(AdoptPlan) error) (AdoptPlan, error) {
 	ctx = metadata.MemberLookup(ctx)
 	var lf mediafiles.LibraryFolder
@@ -360,11 +360,11 @@ func planMusicAdopt(ctx context.Context, db reader, artists metadata.ArtistProvi
 	if err != nil {
 		return p, err
 	}
-	fold := foldsCase(lf.Path)
+	fold := FoldsCase(lf.Path)
 	for _, v := range vs {
-		known[folderKey(v.FolderName, fold)] = v.TitleID
+		known[FolderKey(v.FolderName, fold)] = v.TitleID
 	}
-	p.Warning = mountWarning(ctx, db, lf, len(ents))
+	p.Warning = MountWarning(ctx, db, lf, len(ents))
 	var saveErr error
 	add := func(c AdoptCandidate) {
 		if len(c.Files) > maxAlbumFileDetail {
@@ -379,7 +379,7 @@ func planMusicAdopt(ctx context.Context, db reader, artists metadata.ArtistProvi
 		}
 	}
 	for _, e := range ents {
-		if !e.IsDir() || strings.HasPrefix(e.Name(), ".") || nasSystemDir(e.Name()) || e.Name() == importer.HoldingDir || (after != "" && e.Name() <= after) {
+		if !e.IsDir() || strings.HasPrefix(e.Name(), ".") || NasSystemDir(e.Name()) || e.Name() == importer.HoldingDir || (after != "" && e.Name() <= after) {
 			continue
 		}
 		if len(p.Folders) >= p.Limit {
@@ -387,7 +387,7 @@ func planMusicAdopt(ctx context.Context, db reader, artists metadata.ArtistProvi
 			break
 		}
 		c := AdoptCandidate{Folder: e.Name(), ParsedName: e.Name(), Videos: []AdoptVideo{}, Others: []AdoptMatch{}, Albums: []AdoptAlbum{}}
-		if id, ok := known[folderKey(e.Name(), fold)]; ok {
+		if id, ok := known[FolderKey(e.Name(), fold)]; ok {
 			c.Status, c.Why, c.TitleID = "in_library", "this folder already belongs to an artist in the Library", id
 			add(c)
 			continue
@@ -562,7 +562,7 @@ func (s *Service) adoptArtistOne(ctx context.Context, lf mediafiles.LibraryFolde
 	if fi, err := os.Lstat(filepath.Join(lf.Path, c.Folder)); err != nil || !fi.IsDir() {
 		return r, errors.New("no such folder in the Library folder")
 	}
-	if taken, err := folderTaken(ctx, s.Store.Read(), lf, c.Folder); err != nil {
+	if taken, err := FolderTaken(ctx, s.Store.Read(), lf, c.Folder); err != nil {
 		return r, err
 	} else if taken {
 		return r, errors.New("this folder already belongs to an artist in the Library")
@@ -586,9 +586,9 @@ func (s *Service) adoptArtistOne(ctx context.Context, lf mediafiles.LibraryFolde
 	if len(a.Unknown) > 0 {
 		summary += fmt.Sprintf(", %d files left alone", len(a.Unknown))
 	}
-	s.event(ctx, &domain.Event{Actor: by, Kind: domain.EventAdopted, TitleID: &id, Summary: summary,
+	s.Emit(ctx, &domain.Event{Actor: by, Kind: domain.EventAdopted, TitleID: &id, Summary: summary,
 		Data:     map[string]any{"library_folder_id": lf.ID, "folder": c.Folder, "id": c.ID, "files": a.Adopted, "albums": a.Albums, "left_alone": a.Unknown},
-		GroupKey: groupKey(id)})
+		GroupKey: GroupKey(id)})
 	return r, nil
 }
 

@@ -257,7 +257,7 @@ func SetMusicDefaults(ctx context.Context, s *database.Store, d MusicDefaults, b
 			}
 			_, err := tx.Exec(`INSERT INTO settings (grp, key, value, created_at, created_by, updated_at, updated_by) VALUES (?, ?, ?, ?, ?, ?, ?)
 				ON CONFLICT (grp, key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at, updated_by = excluded.updated_by`,
-				gk[0], gk[1], v, now, actorText(by), now, actorText(by))
+				gk[0], gk[1], v, now, ActorText(by), now, ActorText(by))
 			if err != nil {
 				return err
 			}
@@ -566,12 +566,12 @@ func (s *Service) trackGateEvents(ctx context.Context, t mediafiles.Title, opene
 				order = append(order, album)
 			}
 			byAlbum[album] = append(byAlbum[album], id)
-			s.publish("slot", map[string]any{"id": id, "state": list.to})
+			s.Publish("slot", map[string]any{"id": id, "state": list.to})
 		}
 		for _, album := range order {
 			ids := byAlbum[album]
-			s.event(ctx, &domain.Event{Actor: by, Kind: list.kind, TitleID: &t.ID, JobID: jobID, Summary: fmt.Sprintf("%s: %s%s", t.Name, album, list.says),
-				Data: map[string]any{"album": album, "slot_ids": ids, "tracks": len(ids)}, GroupKey: groupKey(t.ID)})
+			s.Emit(ctx, &domain.Event{Actor: by, Kind: list.kind, TitleID: &t.ID, JobID: jobID, Summary: fmt.Sprintf("%s: %s%s", t.Name, album, list.says),
+				Data: map[string]any{"album": album, "slot_ids": ids, "tracks": len(ids)}, GroupKey: GroupKey(t.ID)})
 		}
 	}
 }

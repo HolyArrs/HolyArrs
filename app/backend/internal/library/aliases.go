@@ -37,7 +37,7 @@ func usableAlias(clean string) bool {
 // mergeAliases keeps the names a Title already has, then adds the usable new
 // ones, skipping repeats (same clean name) and the Title's own name, up to
 // maxAliases.
-func mergeAliases(have []string, name string, more []string) []string {
+func MergeAliases(have []string, name string, more []string) []string {
 	out := make([]string, 0, len(have)+len(more))
 	seen := map[string]bool{releasename.CleanName(name): true}
 	add := func(list []string, filter bool) {

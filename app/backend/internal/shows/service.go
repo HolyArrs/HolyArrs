@@ -1,14 +1,14 @@
-package library
+package shows
 
 import (
 	"context"
 	"database/sql"
 	"errors"
-	"fmt"
 	"sort"
 	"strconv"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
@@ -16,111 +16,19 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
-// Season choices: which seasons are kept up to date when a show is added.
-const (
-	SeasonsAll    = "all"
-	SeasonsFuture = "future"
-	SeasonsLatest = "latest"
-	SeasonsNone   = "none"
-)
-
-// Episode orders a show can follow.
-const (
-	OrderAired    = "aired"
-	OrderDaily    = "daily"
-	OrderAbsolute = "absolute"
-)
-
-// Errors about shows.
-var (
-	ErrBadSeasonChoice = errors.New("seasons must be all, future, latest or none")
-	ErrBadNewSeasons   = errors.New("new_seasons must be all or none")
-	ErrBadOrder        = errors.New("episode_order must be aired, daily or absolute")
-	ErrBadWait         = errors.New("episode_wait_minutes must be between 0 and 10080")
-	ErrNotShow         = errors.New("that Title is not a show")
-	ErrShowOnly        = errors.New("that choice is for shows only")
-	ErrMovieOnly       = errors.New("the Release gate is for movies; shows are searched once each episode has aired")
-	ErrNoShowFolder    = errors.New("no show Library folder")
-	ErrNotShowFolder   = errors.New("that Library folder is not for shows")
-	ErrNoShowSources   = errors.New("show details sources are not set up")
-	ErrNoSuchSeason    = errors.New("the show has no such season")
-)
-
-// ValidSeasonChoice reports whether c is a season choice.
-func ValidSeasonChoice(c string) bool {
-	return c == SeasonsAll || c == SeasonsFuture || c == SeasonsLatest || c == SeasonsNone
-}
-
-// ValidOrder reports whether o is an episode order HolyArrs follows.
-func ValidOrder(o string) bool { return o == OrderAired || o == OrderDaily || o == OrderAbsolute }
-
-// ShowDefaults are the show settings (What to pick).
-type ShowDefaults struct {
-	SeasonChoice string `json:"season_choice"` // all, future, latest, none
-	NewSeasons   string `json:"new_seasons"`   // all, none
-	EpisodeOrder string `json:"episode_order"` // aired, daily, absolute
-	Source       string `json:"details_source"`
-	KeepSpecials bool   `json:"keep_specials"`
-	WaitMinutes  int    `json:"episode_wait_minutes"` // after the air time before an episode is wanted
-}
-
-// ReadShowDefaults reads the show settings; unset or odd values take the
-// recommended defaults (all seasons, new seasons kept, aired order, TMDB,
-// specials off, no wait).
-func ReadShowDefaults(ctx context.Context, db database.Lister) (ShowDefaults, error) {
-	d := ShowDefaults{SeasonChoice: SeasonsAll, NewSeasons: "all", EpisodeOrder: OrderAired, Source: "tmdb"}
-	rows, err := db.QueryContext(ctx, `SELECT key, value FROM settings WHERE grp = 'what_to_pick' AND key IN
-		('show_season_choice', 'show_new_seasons', 'show_episode_order', 'show_details_source', 'keep_specials', 'episode_wait_minutes')`)
-	if err != nil {
-		return d, err
-	}
-	defer rows.Close()
-	for rows.Next() {
-		var k, v string
-		if err := rows.Scan(&k, &v); err != nil {
-			return d, err
-		}
-		switch k {
-		case "show_season_choice":
-			if ValidSeasonChoice(v) {
-				d.SeasonChoice = v
-			}
-		case "show_new_seasons":
-			if v == "all" || v == "none" {
-				d.NewSeasons = v
-			}
-		case "show_episode_order":
-			if ValidOrder(v) {
-				d.EpisodeOrder = v
-			}
-		case "show_details_source":
-			if metadata.ValidShowSource(v) {
-				d.Source = v
-			}
-		case "keep_specials":
-			d.KeepSpecials = v == "true"
-		case "episode_wait_minutes":
-			if n, err := strconv.Atoi(v); err == nil && n >= 0 && n <= 10080 {
-				d.WaitMinutes = n
-			}
-		}
-	}
-	return d, rows.Err()
-}
-
 // SetShowDefaults stores the show settings.
-func SetShowDefaults(ctx context.Context, s *database.Store, d ShowDefaults, by domain.Actor) error {
+func SetShowDefaults(ctx context.Context, s *database.Store, d library.ShowDefaults, by domain.Actor) error {
 	switch {
-	case !ValidSeasonChoice(d.SeasonChoice):
-		return ErrBadSeasonChoice
+	case !library.ValidSeasonChoice(d.SeasonChoice):
+		return library.ErrBadSeasonChoice
 	case d.NewSeasons != "all" && d.NewSeasons != "none":
-		return ErrBadNewSeasons
-	case !ValidOrder(d.EpisodeOrder):
-		return ErrBadOrder
+		return library.ErrBadNewSeasons
+	case !library.ValidOrder(d.EpisodeOrder):
+		return library.ErrBadOrder
 	case !metadata.ValidShowSource(d.Source):
 		return metadata.ErrUnknownSource
 	case d.WaitMinutes < 0 || d.WaitMinutes > 10080:
-		return ErrBadWait
+		return library.ErrBadWait
 	}
 	vals := map[string]string{"show_season_choice": d.SeasonChoice, "show_new_seasons": d.NewSeasons, "show_episode_order": d.EpisodeOrder,
 		"show_details_source": d.Source, "keep_specials": strconv.FormatBool(d.KeepSpecials), "episode_wait_minutes": strconv.Itoa(d.WaitMinutes)}
@@ -129,7 +37,7 @@ func SetShowDefaults(ctx context.Context, s *database.Store, d ShowDefaults, by 
 		for k, v := range vals {
 			_, err := tx.Exec(`INSERT INTO settings (grp, key, value, created_at, created_by, updated_at, updated_by) VALUES ('what_to_pick', ?, ?, ?, ?, ?, ?)
 				ON CONFLICT (grp, key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at, updated_by = excluded.updated_by`,
-				k, v, now, actorText(by), now, actorText(by))
+				k, v, now, library.ActorText(by), now, library.ActorText(by))
 			if err != nil {
 				return err
 			}
@@ -138,27 +46,10 @@ func SetShowDefaults(ctx context.Context, s *database.Store, d ShowDefaults, by 
 	})
 }
 
-// EpisodeGate says whether an episode that airs at air is out at now,
-// counting wait after the air time, and why in one phrase. An episode with
-// no air date is never out.
-func EpisodeGate(air *time.Time, wait time.Duration, now time.Time) (open bool, reason string) {
-	if air == nil {
-		return false, "no air date yet"
-	}
-	from := air.Add(wait)
-	if now.Before(from) {
-		if wait > 0 {
-			return false, fmt.Sprintf("airs %s UTC; wanted from %s UTC", air.UTC().Format("2006-01-02 15:04"), from.UTC().Format("2006-01-02 15:04"))
-		}
-		return false, "airs " + air.UTC().Format("2006-01-02 15:04") + " UTC"
-	}
-	return true, "aired " + air.UTC().Format("2006-01-02 15:04") + " UTC"
-}
-
 // showSources returns the sources, or an error when there are none.
 func (s *Service) showSource(name string) (metadata.ShowProvider, error) {
 	if s.Shows == nil {
-		return nil, ErrNoShowSources
+		return nil, library.ErrNoShowSources
 	}
 	return s.Shows.Get(name)
 }
@@ -246,7 +137,7 @@ func (s *Service) addAirTimes(ctx context.Context, sh *metadata.Show) {
 
 // applyShow copies looked-up details onto a show Title.
 func applyShow(t *mediafiles.Title, sh metadata.Show) {
-	t.Name, t.SortName = sh.Name, sortName(sh.Name)
+	t.Name, t.SortName = sh.Name, library.SortName(sh.Name)
 	ids := map[string]string{}
 	for k, v := range t.SourceIDs {
 		ids[k] = v
@@ -270,14 +161,14 @@ func applyShow(t *mediafiles.Title, sh metadata.Show) {
 	}
 	t.Overview, t.OriginalLanguage = str(sh.Overview), str(sh.OriginalLanguage)
 	t.Network, t.AirTime, t.TimeZone = str(sh.Network), str(sh.AirTime), str(sh.TimeZone)
-	t.Aliases = mergeAliases(t.Aliases, sh.Name, sh.OtherNames)
+	t.Aliases = library.MergeAliases(t.Aliases, sh.Name, sh.OtherNames)
 	switch sh.Status {
 	case "ended", "announced", "running":
 		t.Status = sh.Status
 	default:
 		t.Status = "running"
 	}
-	applyDetails(t, sh.Backdrop, sh.Logo, sh.Genres, sh.Rating, sh.People, sh.Runtime)
+	library.ApplyDetails(t, sh.Backdrop, sh.Logo, sh.Genres, sh.Rating, sh.People, sh.Runtime)
 }
 
 // absolutes gives each regular episode its absolute number: the source's,
@@ -332,14 +223,14 @@ func seasonKeep(t mediafiles.Title, number, latest int, choice string, keepSpeci
 		return false
 	}
 	if number == 0 {
-		return keepSpecials && (choice == SeasonsAll || choice == SeasonsFuture || (choice == "" && t.NewPartsPolicy == "all"))
+		return keepSpecials && (choice == library.SeasonsAll || choice == library.SeasonsFuture || (choice == "" && t.NewPartsPolicy == "all"))
 	}
 	switch choice {
-	case SeasonsAll, SeasonsFuture:
+	case library.SeasonsAll, library.SeasonsFuture:
 		return true
-	case SeasonsLatest:
+	case library.SeasonsLatest:
 		return number == latest
-	case SeasonsNone:
+	case library.SeasonsNone:
 		return false
 	}
 	return t.NewPartsPolicy == "all"
@@ -348,7 +239,7 @@ func seasonKeep(t mediafiles.Title, number, latest int, choice string, keepSpeci
 // futureCut is the moment before which an episode is not wanted: now when
 // a show is added with Future seasons only, else its stored future_from.
 func futureCut(t mediafiles.Title, choice string, now time.Time) *time.Time {
-	if choice == SeasonsFuture {
+	if choice == library.SeasonsFuture {
 		return &now
 	}
 	if choice == "" {
@@ -357,15 +248,12 @@ func futureCut(t mediafiles.Title, choice string, now time.Time) *time.Time {
 	return nil
 }
 
-// activeStates are Slot states where a Download or File holds the episode.
-const holdingSlots = `file_id IS NOT NULL OR active_download_id IS NOT NULL OR held_release_id IS NOT NULL OR state IN ('searching', 'held', 'chosen', 'downloading', 'stalled', 'importing', 'needs_a_decision', 'in_library', 'better_wanted')`
-
 // syncShowTx brings a show's seasons, episodes and Slots in line with sh.
 // choice is the season choice when the show is being added, "" on a
 // refresh. Episodes are matched by the source's own episode id first, then
 // by (season, episode), so rows, Slots and Files survive a refresh, a
 // renumbered special and a change of details source.
-func syncShowTx(ctx context.Context, tx *sql.Tx, t mediafiles.Title, sh metadata.Show, defs ShowDefaults, choice string, now time.Time, by domain.Actor) (ShowSync, error) {
+func syncShowTx(ctx context.Context, tx *sql.Tx, t mediafiles.Title, sh metadata.Show, defs library.ShowDefaults, choice string, now time.Time, by domain.Actor) (ShowSync, error) {
 	var out ShowSync
 	parts, err := database.Select[mediafiles.Part](ctx, tx, "parts", "title_id = ? AND kind = 'season'", t.ID)
 	if err != nil {
@@ -493,7 +381,7 @@ func syncShowTx(ctx context.Context, tx *sql.Tx, t mediafiles.Title, sh metadata
 			continue
 		}
 		var held int
-		if err := tx.QueryRow("SELECT count(*) FROM slots WHERE item_id = ? AND ("+holdingSlots+")", it.ID).Scan(&held); err != nil {
+		if err := tx.QueryRow("SELECT count(*) FROM slots WHERE item_id = ? AND ("+library.HoldingSlots+")", it.ID).Scan(&held); err != nil {
 			return out, err
 		}
 		if held == 0 {
@@ -562,8 +450,8 @@ func syncShowTx(ctx context.Context, tx *sql.Tx, t mediafiles.Title, sh metadata
 			if e.ID != "" {
 				ids[sh.Source] = e.ID
 			}
-			changed := !eqStr(it.Name, name) || !eqTime(it.AirDate, e.AirDate) || it.AirTimed != (e.Timed && e.AirDate != nil) || !eqStr(it.AirDay, day) || !eqInt(it.Runtime, runtime) ||
-				!eqInt(it.Numbers.Absolute, absolute) || it.Still != e.Still || it.DroppedAt != nil || len(ids) != len(it.SourceIDs) || ids[sh.Source] != it.SourceIDs[sh.Source] ||
+			changed := !library.EqStr(it.Name, name) || !library.EqTime(it.AirDate, e.AirDate) || it.AirTimed != (e.Timed && e.AirDate != nil) || !library.EqStr(it.AirDay, day) || !library.EqInt(it.Runtime, runtime) ||
+				!library.EqInt(it.Numbers.Absolute, absolute) || it.Still != e.Still || it.DroppedAt != nil || len(ids) != len(it.SourceIDs) || ids[sh.Source] != it.SourceIDs[sh.Source] ||
 				it.PartID == nil || *it.PartID != p.ID || *it.Numbers.Season != e.Season || *it.Numbers.Episode != e.Number
 			if !changed {
 				continue
@@ -592,7 +480,7 @@ func syncShowTx(ctx context.Context, tx *sql.Tx, t mediafiles.Title, sh metadata
 			return out, err
 		}
 		out.EpisodesAdded++
-		open, reason := EpisodeGate(e.AirDate, wait, now)
+		open, reason := library.EpisodeGate(e.AirDate, wait, now)
 		state := mediafiles.SlotNotOutYet
 		if open {
 			state = mediafiles.SlotWanted
@@ -604,7 +492,7 @@ func syncShowTx(ctx context.Context, tx *sql.Tx, t mediafiles.Title, sh metadata
 			}
 		}
 	}
-	if choice == SeasonsFuture {
+	if choice == library.SeasonsFuture {
 		// Future seasons only: a season with nothing still to air is not wanted.
 		ahead := map[int]bool{}
 		listedIn := map[int]bool{}
@@ -655,12 +543,6 @@ func syncShowTx(ctx context.Context, tx *sql.Tx, t mediafiles.Title, sh metadata
 	return out, err
 }
 
-func eqStr(a, b *string) bool { return (a == nil) == (b == nil) && (a == nil || *a == *b) }
-func eqInt(a, b *int) bool    { return (a == nil) == (b == nil) && (a == nil || *a == *b) }
-func eqTime(a, b *time.Time) bool {
-	return (a == nil) == (b == nil) && (a == nil || a.Equal(*b))
-}
-
 // episodeGatesTx moves a show's episode Slots across the air-date gate:
 // not_out_yet to wanted once aired (plus the wait), and wanted back to
 // not_out_yet when the air date moved later. titleID 0 means every show.
@@ -704,7 +586,7 @@ func episodeGatesTx(ctx context.Context, tx *sql.Tx, titleID int64, wait time.Du
 		return nil, nil, err
 	}
 	for _, r := range rs {
-		open, reason := EpisodeGate(r.air, wait, now)
+		open, reason := library.EpisodeGate(r.air, wait, now)
 		switch {
 		case open && r.state == string(mediafiles.SlotNotOutYet):
 			if err := mediafiles.MoveSlotTx(tx, r.id, mediafiles.SlotWanted, reason, by); err != nil {

@@ -114,10 +114,10 @@ const (
 
 // listVideos finds the video files in one movie folder, samples left out,
 // biggest first. Symlinks are never followed.
-// nasSystemDir reports whether name is a folder a NAS or OS keeps for
+// NasSystemDir reports whether name is a folder a NAS or OS keeps for
 // itself (thumbnails, recycle bins, snapshots). Folder walks skip them:
 // they hold no media of the person's, and reading them wakes disks.
-func nasSystemDir(name string) bool {
+func NasSystemDir(name string) bool {
 	switch strings.ToLower(name) {
 	case "@eadir", "#recycle", "@recycle", "#snapshot", "lost+found", "$recycle.bin", "system volume information":
 		return true
@@ -125,10 +125,10 @@ func nasSystemDir(name string) bool {
 	return false
 }
 
-func listVideos(lib, folder string) []AdoptVideo { return listVideosN(lib, folder, maxScanVideos) }
+func listVideos(lib, folder string) []AdoptVideo { return ListVideosN(lib, folder, maxScanVideos) }
 
 // listVideosN is listVideos reading at most limit videos.
-func listVideosN(lib, folder string, limit int) []AdoptVideo {
+func ListVideosN(lib, folder string, limit int) []AdoptVideo {
 	root := filepath.Join(lib, folder)
 	var out []AdoptVideo
 	_ = filepath.WalkDir(root, func(p string, e fs.DirEntry, err error) error {
@@ -138,7 +138,7 @@ func listVideosN(lib, folder string, limit int) []AdoptVideo {
 		rel, _ := filepath.Rel(root, p)
 		if e.IsDir() {
 			lower := strings.ToLower(e.Name())
-			if p != root && (strings.HasPrefix(e.Name(), ".") || nasSystemDir(e.Name()) || lower == "sample" || lower == "samples" || strings.Count(rel, string(filepath.Separator)) >= maxScanDepth) {
+			if p != root && (strings.HasPrefix(e.Name(), ".") || NasSystemDir(e.Name()) || lower == "sample" || lower == "samples" || strings.Count(rel, string(filepath.Separator)) >= maxScanDepth) {
 				return filepath.SkipDir
 			}
 			return nil
@@ -165,11 +165,11 @@ func listVideosN(lib, folder string, limit int) []AdoptVideo {
 
 // score says how well a movie fits a folder's parsed name and year (0..1).
 func score(name string, year int, m metadata.Movie) float64 {
-	return nameScore(name, year, m.Name, m.Year)
+	return NameScore(name, year, m.Name, m.Year)
 }
 
 // nameScore says how well a found name and year fit a folder's (0..1).
-func nameScore(name string, year int, mName string, mYear int) float64 {
+func NameScore(name string, year int, mName string, mYear int) float64 {
 	s := wordScore(name, mName)
 	switch {
 	case year == 0:
@@ -207,12 +207,12 @@ func wordScore(name, other string) float64 {
 	return float64(both) / float64(max(len(wa), len(wb)))
 }
 
-var reFolderYear = regexp.MustCompile(`^(.+?)[\s._-]*[(\[]?((?:18|19|20)\d{2})[)\]]?\s*$`)
+var ReFolderYear = regexp.MustCompile(`^(.+?)[\s._-]*[(\[]?((?:18|19|20)\d{2})[)\]]?\s*$`)
 
 // folderName reads "Name (Year)" and its usual variants from a folder
 // name; a release-style name goes through the release parser.
-func folderName(s string) (string, int) {
-	if m := reFolderYear.FindStringSubmatch(s); m != nil {
+func FolderName(s string) (string, int) {
+	if m := ReFolderYear.FindStringSubmatch(s); m != nil {
 		y, _ := strconv.Atoi(m[2])
 		return strings.Trim(m[1], " -._(["), y
 	}
@@ -234,7 +234,7 @@ func matchFolder(ctx context.Context, md metadata.Provider, folder string) (stri
 			return "", 0, nil, err
 		}
 	}
-	name, year := folderName(strings.TrimSpace(reTMDBTag.ReplaceAllString(folder, "")))
+	name, year := FolderName(strings.TrimSpace(reTMDBTag.ReplaceAllString(folder, "")))
 	ms, err := md.Search(ctx, name, year)
 	if err == nil && len(ms) == 0 && year != 0 {
 		ms, err = md.Search(ctx, name, 0)
@@ -258,13 +258,13 @@ func matchFolder(ctx context.Context, md metadata.Provider, folder string) (stri
 
 // PlanAdopt scans a Library folder: each folder in it is matched to a
 // movie with a confidence score. Nothing is written anywhere.
-func PlanAdopt(ctx context.Context, db reader, md metadata.Provider, folderID int64) (AdoptPlan, error) {
+func PlanAdopt(ctx context.Context, db Reader, md metadata.Provider, folderID int64) (AdoptPlan, error) {
 	return PlanAdoptFrom(ctx, db, md, folderID, "")
 }
 
 // PlanAdoptFrom is PlanAdopt for the folders whose names sort after after,
 // at most the scan limit of them.
-func PlanAdoptFrom(ctx context.Context, db reader, md metadata.Provider, folderID int64, after string) (AdoptPlan, error) {
+func PlanAdoptFrom(ctx context.Context, db Reader, md metadata.Provider, folderID int64, after string) (AdoptPlan, error) {
 	var lf mediafiles.LibraryFolder
 	if err := database.Get(ctx, db, "library_folders", folderID, &lf); err != nil {
 		return AdoptPlan{}, ErrNoFolder
@@ -289,9 +289,9 @@ func PlanAdoptFrom(ctx context.Context, db reader, md metadata.Provider, folderI
 	for _, v := range vs {
 		known[strings.ToLower(v.FolderName)] = v.TitleID
 	}
-	p.Warning = mountWarning(ctx, db, lf, len(ents))
+	p.Warning = MountWarning(ctx, db, lf, len(ents))
 	for _, e := range ents {
-		if !e.IsDir() || strings.HasPrefix(e.Name(), ".") || nasSystemDir(e.Name()) || (after != "" && e.Name() <= after) {
+		if !e.IsDir() || strings.HasPrefix(e.Name(), ".") || NasSystemDir(e.Name()) || (after != "" && e.Name() <= after) {
 			continue
 		}
 		if len(p.Folders) >= p.Limit {
@@ -402,7 +402,7 @@ func (s *Service) Adopt(ctx context.Context, folderID int64, choices []AdoptChoi
 			continue
 		}
 		if lf.Kind == "show" {
-			r, err := s.adoptShowOne(ctx, lf, c, by)
+			r, err := s.showParts().AdoptOne(ctx, lf, c, by)
 			if err != nil {
 				r.Error = err.Error()
 			}
@@ -427,7 +427,7 @@ func (s *Service) adoptOne(ctx context.Context, lf mediafiles.LibraryFolder, c A
 	if fi, err := os.Lstat(filepath.Join(lf.Path, c.Folder)); err != nil || !fi.IsDir() {
 		return 0, "", errors.New("no such folder in the Library folder")
 	}
-	if taken, err := folderTaken(ctx, s.Store.Read(), lf, c.Folder); err != nil {
+	if taken, err := FolderTaken(ctx, s.Store.Read(), lf, c.Folder); err != nil {
 		return 0, "", err
 	} else if taken {
 		return 0, "", errors.New("this folder already belongs to a movie in the Library")
@@ -444,12 +444,12 @@ func (s *Service) adoptOne(ctx context.Context, lf mediafiles.LibraryFolder, c A
 		a.File, a.Size = vids[0].Path, vids[0].Size
 	}
 	id, err := AddMovie(ctx, s.Store, m, AddOptions{LibraryFolderID: lf.ID, WhyAdded: "import", Adopt: a,
-		ReleaseGate: c.ReleaseGate, GateDelayDays: c.GateDelayDays}, s.downloadPaths(ctx), s.now(), by)
+		ReleaseGate: c.ReleaseGate, GateDelayDays: c.GateDelayDays}, s.DownloadFolders(ctx), s.now(), by)
 	if err != nil {
 		return 0, "", err
 	}
-	s.event(ctx, &domain.Event{Actor: by, Kind: domain.EventAdopted, TitleID: &id, Summary: "Adopted " + m.Name + " from " + c.Folder,
-		Data: map[string]any{"library_folder_id": lf.ID, "folder": c.Folder, "file": a.File, "tmdb_id": c.TMDB}, GroupKey: groupKey(id)})
+	s.Emit(ctx, &domain.Event{Actor: by, Kind: domain.EventAdopted, TitleID: &id, Summary: "Adopted " + m.Name + " from " + c.Folder,
+		Data: map[string]any{"library_folder_id": lf.ID, "folder": c.Folder, "file": a.File, "tmdb_id": c.TMDB}, GroupKey: GroupKey(id)})
 	return id, a.File, nil
 }
 
@@ -498,7 +498,7 @@ func (s *Service) handleScanLibrary(ctx context.Context, r *jobs.Run) error {
 	var err error
 	switch lf.Kind {
 	case "show":
-		p, err = PlanShowAdoptFrom(ctx, s.Store.Read(), s.Shows, lf.ID, after)
+		p, err = s.showParts().PlanAdopt(ctx, lf.ID, after)
 	case "music":
 		// A restarted scan goes on from the part it saved; each artist
 		// folder's result is saved as it is done.
@@ -519,7 +519,7 @@ func (s *Service) handleScanLibrary(ctx context.Context, r *jobs.Run) error {
 		return err
 	}
 	r.SetResult(map[string]any{"dry_run": true, "plan": p})
-	s.event(ctx, &domain.Event{Actor: jobActor(r), Kind: domain.EventLibraryScanned, JobID: &r.Job.ID,
+	s.Emit(ctx, &domain.Event{Actor: JobActor(r), Kind: domain.EventLibraryScanned, JobID: &r.Job.ID,
 		Summary: fmt.Sprintf("Scanned %s: %d matched, %d unsure, %d unmatched", p.Path, p.Counts["matched"], p.Counts["unsure"], p.Counts["unmatched"]),
 		Data:    map[string]any{"library_folder_id": p.LibraryFolderID, "counts": p.Counts}})
 	return nil
@@ -538,7 +538,7 @@ func (s *Service) handleAdopt(ctx context.Context, r *jobs.Run) error {
 		id, _ := m["id"].(string)
 		cs = append(cs, AdoptChoice{Folder: f, TMDB: t, ID: id})
 	}
-	res, err := s.Adopt(ctx, r.Job.Subject.ID, cs, jobActor(r))
+	res, err := s.Adopt(ctx, r.Job.Subject.ID, cs, JobActor(r))
 	adopted := 0
 	for _, x := range res {
 		if x.TitleID != 0 {
@@ -619,7 +619,7 @@ func (s *Service) Rescan(ctx context.Context, by domain.Actor) (RescanResult, er
 		}
 		if why := unreachable(lf.Path, len(files)); why != "" {
 			res.Unreachable++
-			s.event(ctx, &domain.Event{Actor: by, Kind: domain.EventFolderUnreachable,
+			s.Emit(ctx, &domain.Event{Actor: by, Kind: domain.EventFolderUnreachable,
 				Summary: "Library folder " + lf.Label + " cannot be reached (" + why + "); no file was marked missing",
 				Data:    map[string]any{"library_folder_id": lf.ID, "path": lf.Path, "reason": why}})
 			continue
@@ -636,7 +636,7 @@ func (s *Service) Rescan(ctx context.Context, by domain.Actor) (RescanResult, er
 			_, statErr := os.Stat(filepath.Join(lf.Path, filepath.FromSlash(f.RelativePath)))
 			if lf.Kind != "music" && f.Role == "main" && statErr == nil {
 				backfill := backfillLeft > 0 && importer.NeedsFacts(f.MediaInfo)
-				if info, changed := inspectLibraryVideo(lf.Path, f.RelativePath, f.MediaInfo, backfill); changed {
+				if info, changed := InspectLibraryVideo(lf.Path, f.RelativePath, f.MediaInfo, backfill); changed {
 					if err := s.updateFileInspection(ctx, f.ID, info, by); err != nil {
 						return res, err
 					}
@@ -662,7 +662,7 @@ func (s *Service) Rescan(ctx context.Context, by domain.Actor) (RescanResult, er
 		massGone := (gone >= 2 && gone == present) || (gone >= massGoneMin && gone*2 > present)
 		if massGone {
 			res.Unreachable++
-			s.event(ctx, &domain.Event{Actor: by, Kind: domain.EventFolderUnreachable,
+			s.Emit(ctx, &domain.Event{Actor: by, Kind: domain.EventFolderUnreachable,
 				Summary: fmt.Sprintf("Library folder %s: %d of %d files are gone at once; is a drive or share not mounted? No file was marked missing", lf.Label, gone, present),
 				Data:    map[string]any{"library_folder_id": lf.ID, "path": lf.Path, "reason": "most files gone at once", "gone": gone, "known": present}})
 		}
@@ -685,7 +685,7 @@ func (s *Service) Rescan(ctx context.Context, by domain.Actor) (RescanResult, er
 		}
 		res.Found += n
 	}
-	s.event(ctx, &domain.Event{Actor: by, Kind: domain.EventLibraryRescanned,
+	s.Emit(ctx, &domain.Event{Actor: by, Kind: domain.EventLibraryRescanned,
 		Summary: fmt.Sprintf("Rescanned %d Library folders: %d missing, %d back, %d found, %d not reachable", res.Folders, res.Missing, res.Back, res.Found, res.Unreachable),
 		Data:    map[string]any{"folders": res.Folders, "missing": res.Missing, "back": res.Back, "found": res.Found, "unreachable": res.Unreachable}})
 	return res, nil
@@ -717,7 +717,7 @@ const backfillPerRescan = 300
 // confirmed edition, are retained. An unchanged file is read again only when
 // backfill is set, and a failed read of it (a network share timing out)
 // keeps the old facts so a later rescan tries again.
-func inspectLibraryVideo(root, relative string, old map[string]any, backfill bool) (map[string]any, bool) {
+func InspectLibraryVideo(root, relative string, old map[string]any, backfill bool) (map[string]any, bool) {
 	rel := filepath.FromSlash(relative)
 	if !filepath.IsLocal(rel) {
 		return nil, false
@@ -755,7 +755,7 @@ func inspectLibraryVideo(root, relative string, old map[string]any, backfill boo
 	return merged, true
 }
 
-func inspectedLanguages(info map[string]any) []string {
+func InspectedLanguages(info map[string]any) []string {
 	langs, _ := info["audio_languages"].([]string)
 	if langs == nil {
 		return []string{}
@@ -768,13 +768,13 @@ func (s *Service) updateFileInspection(ctx context.Context, fileID int64, info m
 	if err != nil {
 		return err
 	}
-	languages, err := json.Marshal(inspectedLanguages(info))
+	languages, err := json.Marshal(InspectedLanguages(info))
 	if err != nil {
 		return err
 	}
 	return s.Store.Write(ctx, func(tx *sql.Tx) error {
 		_, err := tx.Exec("UPDATE files SET media_info = json(?), languages = json(?), updated_at = ?, updated_by = json(?) WHERE id = ?",
-			string(raw), string(languages), database.FormatTime(s.now()), actorText(by), fileID)
+			string(raw), string(languages), database.FormatTime(s.now()), ActorText(by), fileID)
 		return err
 	})
 }
@@ -799,7 +799,7 @@ func unreachable(dir string, known int) string {
 func (s *Service) setFileState(ctx context.Context, f mediafiles.File, to string, by domain.Actor) error {
 	if err := s.Store.Write(ctx, func(tx *sql.Tx) error {
 		_, err := tx.Exec("UPDATE files SET state = ?, checked_at = ?, updated_at = ?, updated_by = ? WHERE id = ?",
-			to, database.FormatTime(s.now()), database.FormatTime(s.now()), actorText(by), f.ID)
+			to, database.FormatTime(s.now()), database.FormatTime(s.now()), ActorText(by), f.ID)
 		return err
 	}); err != nil {
 		return err
@@ -824,7 +824,7 @@ func (s *Service) setFileState(ctx context.Context, f mediafiles.File, to string
 					labels = append(labels, "– "+trackLabelOf(ctx, s.Store.Read(), sid))
 					continue
 				}
-				labels = append(labels, episodeLabel(ctx, s.Store.Read(), sid))
+				labels = append(labels, EpisodeLabel(ctx, s.Store.Read(), sid))
 			}
 			what := "file not on disk"
 			if to == "present" {
@@ -833,8 +833,8 @@ func (s *Service) setFileState(ctx context.Context, f mediafiles.File, to string
 			summary = name + " " + strings.Join(labels, ", ") + ": " + what + " (" + f.RelativePath + ")"
 		}
 	}
-	s.event(ctx, &domain.Event{Actor: by, Kind: kind, TitleID: &titleID, Summary: summary,
-		Data: map[string]any{"file_id": f.ID, "path": f.RelativePath}, GroupKey: groupKey(titleID)})
+	s.Emit(ctx, &domain.Event{Actor: by, Kind: kind, TitleID: &titleID, Summary: summary,
+		Data: map[string]any{"file_id": f.ID, "path": f.RelativePath}, GroupKey: GroupKey(titleID)})
 	return nil
 }
 
@@ -860,7 +860,7 @@ func (s *Service) recordFound(ctx context.Context, lf mediafiles.LibraryFolder, 
 			continue
 		}
 		if lf.Kind == "show" {
-			m, err := s.recordFoundEpisodes(ctx, lf, v, known, by)
+			m, err := s.showParts().RecordFound(ctx, lf, v, known, by)
 			n += m
 			if err != nil {
 				return n, err
@@ -877,13 +877,13 @@ func (s *Service) recordFound(ctx context.Context, lf mediafiles.LibraryFolder, 
 				continue
 			}
 			release := strings.TrimSuffix(path.Base(vid.Path), path.Ext(vid.Path))
-			info, _ := inspectLibraryVideo(lf.Path, vid.Path, nil, false)
+			info, _ := InspectLibraryVideo(lf.Path, vid.Path, nil, false)
 			if info == nil {
 				info = map[string]any{}
 			}
 			f := &mediafiles.File{SlotIDs: []int64{}, VersionID: v.ID, RelativePath: vid.Path, Size: vid.Size, AddedAt: s.now(), Languages: []string{},
 				MediaInfo: info, ReleaseName: &release, Origin: "found", PlacedBy: "none", Role: "main", State: "present"}
-			f.Languages = inspectedLanguages(info)
+			f.Languages = InspectedLanguages(info)
 			if err := s.Store.Write(ctx, func(tx *sql.Tx) error { _, err := database.Insert(tx, "files", f, by); return err }); err != nil {
 				return n, err
 			}
@@ -895,7 +895,7 @@ func (s *Service) recordFound(ctx context.Context, lf mediafiles.LibraryFolder, 
 }
 
 func (s *Service) handleRescan(ctx context.Context, r *jobs.Run) error {
-	res, err := s.Rescan(ctx, jobActor(r))
+	res, err := s.Rescan(ctx, JobActor(r))
 	r.SetResult(map[string]any{"folders": res.Folders, "unreachable": res.Unreachable, "missing": res.Missing, "back": res.Back, "found": res.Found})
 	return err
 }

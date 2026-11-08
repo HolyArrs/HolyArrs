@@ -67,7 +67,7 @@ func (s *Service) HealServerPlaceholders(ctx context.Context) (int, error) {
 		}
 	}
 	now := database.FormatTime(s.now())
-	by := actorText(domain.System)
+	by := ActorText(domain.System)
 	err = s.Store.Write(ctx, func(tx *sql.Tx) error {
 		if len(bad) > 0 {
 			if err := dropPlaceholderRefs(tx, bad, now, by); err != nil {
