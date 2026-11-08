@@ -67,4 +67,4 @@ One line per word. Where older apps such as Sonarr and Radarr use another name, 
 ## Related
 
 - [FAQ](../help/faq/)
-- [Moving from other apps](../migrate/)
+- [Moving from other apps](../migrate/index.md)
