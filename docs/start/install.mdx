@@ -1,0 +1,234 @@
+---
+title: Install
+description: Run HolyArrs in Docker with compose, open it on port 6262 and make the owner account.
+level: Start
+sidebar: { order: 1, label: "Step 1 of 5: Install" }
+---
+
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+
+Get HolyArrs running in Docker and open in your browser.
+
+## Before you start
+
+- A machine with Docker and Docker Compose.
+- Your media folders, or a place to make them. Read [Folders](../folders/) first if you want instant moves instead of copies.
+- On Unraid or Synology, use [Platforms](../../run/platforms/) instead of this page.
+
+## Install with compose
+
+1. Make a config folder on a local disk, such as `/srv/holyarrs/config`. A network share does not work.
+2. Find the user that owns your media:
+
+   ```sh
+   id youruser
+   # uid=1000(youruser) gid=1000(youruser)
+   ```
+
+   The `uid` is your `PUID`, the `gid` is your `PGID`. PUID and PGID are the user and group HolyArrs runs as, so files it writes belong to you.
+3. Save this as `compose.yaml` and change the paths on the left of each `:`.
+
+<Tabs syncKey="os">
+<TabItem label="Linux and NAS">
+
+```yaml
+services:
+  holyarrs:
+    image: holyarrs/holyarrs:beta
+    container_name: holyarrs
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Etc/UTC
+    volumes:
+      - /srv/holyarrs/config:/config
+      - /srv/data:/data   # one parent folder with downloads and media inside
+    ports:
+      - 6262:6262
+    restart: unless-stopped
+```
+
+</TabItem>
+<TabItem label="Docker Desktop (Windows, Mac)">
+
+Docker Desktop host folders are not safe for the database, so `/config` uses a named volume. Media can stay a host folder.
+
+```yaml
+services:
+  holyarrs:
+    image: holyarrs/holyarrs:beta
+    container_name: holyarrs
+    environment:
+      - TZ=Etc/UTC
+    volumes:
+      - holyarrs-config:/config
+      - C:/Media:/data
+    ports:
+      - 6262:6262
+    restart: unless-stopped
+
+volumes:
+  holyarrs-config:
+```
+
+</TabItem>
+</Tabs>
+
+4. Start it:
+
+   ```sh
+   docker compose up -d
+   docker compose ps
+   ```
+
+   You should see `holyarrs` as `healthy` within a minute.
+5. Open `http://your-server:6262`.
+
+   You should see the page to make the owner account.
+
+:::caution
+There is no default password. Whoever opens a new HolyArrs first becomes the owner. Make the account now, then go to [First run](../first-run/).
+:::
+
+<details class="ha-more"><summary>Prefer docker run</summary>
+
+```sh
+docker run -d \
+  --name=holyarrs \
+  -e PUID=1000 \
+  -e PGID=1000 \
+  -e TZ=Etc/UTC \
+  -p 6262:6262 \
+  -v /srv/holyarrs/config:/config \
+  -v /srv/data:/data \
+  --restart unless-stopped \
+  holyarrs/holyarrs:beta
+```
+
+</details>
+
+## Choices
+
+### Image tag
+
+| Tag | Gets a version |
+|---|---|
+| `beta` | First |
+| `latest`, `stable` | After it has been out for a while |
+
+### Required and optional
+
+Only `/config` and port `6262` are required. `/movies`, `/tv`, `/music` and `/downloads` mounts also work, but each one is a separate mount, so imports become full copies. One shared parent folder avoids that. See [Folders](../folders/).
+
+### Keep the master key
+
+The first start makes `/config/holyarrs.key`. It encrypts stored passwords and keys. Backups never contain it. Save a copy now with **Settings > Backups > Download key kit**. Without it, a backup cannot be restored on a new machine.
+
+### Do not open the port to the internet
+
+Do not forward `6262` on your router. Use a VPN such as Tailscale, or a reverse proxy with HTTPS. See [URL base and reverse proxies](../../run/url-base/).
+
+## If it does not work
+
+Run the doctor first. It checks config, folders, network and clock, and says how to fix each problem.
+
+- Running: `docker exec holyarrs /holyarrs doctor`
+- Keeps restarting: `docker compose run --rm holyarrs doctor`
+
+| You see | Fix |
+|---|---|
+| Config folder is on a shared or network folder | Use a local disk. On Docker Desktop, use a named volume. On Unraid, `/mnt/<pool>/appdata/holyarrs`. |
+| Config folder cannot be written | Remove `:ro`, and check `PUID:PGID` own the folder. |
+| Permission denied | Give the `PUID` user write access to every mounted folder. |
+| Unknown host name | Open HolyArrs by IP, then add the name under **Settings > Sign-in and security > Allowed host names**. |
+| Warnings that `/config` is not mapped | Your data dies with the container. Copy it out with `docker cp holyarrs:/config ./holyarrs-config`, map that folder, recreate. |
+
+More in [Troubleshooting](../../help/troubleshooting/).
+
+## For experts
+
+<details class="ha-more"><summary>Environment variables</summary>
+
+| Variable | What it does | Default |
+|---|---|---|
+| `PUID`, `PGID` | User and group HolyArrs runs as | `1000`, `1000` |
+| `TZ` | Time zone, such as `Europe/Amsterdam` | `Etc/UTC` in the example |
+| `UMASK` | Permission bits new files leave out. `002` lets the group write | `022` |
+| `HOLYARRS_SAVE_PATH` | Downloader save folder, as the downloader sees it. Sent with every download | Downloader's own setting |
+| `HOLYARRS_ALLOWED_HOSTS` | Extra host names, comma separated | IPs and `localhost` |
+| `HOLYARRS_TRUSTED_PROXIES` | Reverse proxy address or network | none |
+| `HOLYARRS_URL_BASE` | Serve under a path | none |
+| `HOLYARRS_MASTER_KEY_FILE` | Read the master key from its own file | `/config/holyarrs.key` |
+| `HOLYARRS_ALLOW_DESKTOP_FOLDER` | `1` starts on a Docker Desktop host folder on a Mac you checked. Warns every start | off |
+| `HOLYARRS_CONFIG_IN_MEMORY` | `yes` allows `/config` in memory, for test boxes | off |
+
+Any variable can come from a file: prefix the name with `FILE__` and give the path, such as `FILE__HOLYARRS_ALLOWED_HOSTS=/run/secrets/hosts`. One trailing newline is dropped. A missing file stops HolyArrs and the log names the variable, never the value. Full list in [Environment variables](../../reference/env-vars/).
+
+</details>
+
+<details class="ha-more"><summary>User, group and capabilities</summary>
+
+The container starts as root only to set up, gives `/config` to `PUID:PGID` when needed, then switches user for good. The first log line shows user, group and umask.
+
+- HolyArrs never changes owners on media or download folders. Give `PUID` write access yourself.
+- Storage that cannot change owners (NFS root squash, SMB, read-only) logs a warning. Make `/config` writable by hand.
+- Switching needs `CHOWN`, `DAC_OVERRIDE`, `SETUID` and `SETGID`. Docker grants them by default. Without them HolyArrs stops; it never falls back to root. `PUID=0` and `PGID=0` run as root on purpose.
+- `group_add:` groups are kept.
+- `user: "1000:1000"` (or Kubernetes `runAsUser`) skips the switch. `PUID` and `PGID` are then ignored and `/config` must already be writable.
+- `read_only: true` works with a `tmpfs` on `/tmp`. Only `/config` and `/tmp` are written.
+
+</details>
+
+<details class="ha-more"><summary>Rootless Docker and Podman</summary>
+
+In rootless mode, ids other than root map to high numbers on the host, so `PUID=1000` leaves `/config` owned by a stranger.
+
+| You run | `docker info` / `podman info` shows | Use |
+|---|---|---|
+| Normal Docker | no `rootless` | `PUID`, `PGID` as usual |
+| Rootless Docker | `rootless` under Security Options | `PUID=0`, `PGID=0` |
+| Rootless Podman | `rootless: true` | `PUID=0`, `PGID=0`, or keep-id below |
+
+`PUID=0` is safe only in rootless mode. Podman keep-id Quadlet, `~/.config/containers/systemd/holyarrs.container`:
+
+```ini
+[Container]
+Image=holyarrs/holyarrs:beta
+UserNS=keep-id
+User=%U:%G
+Volume=%h/holyarrs/config:/config:Z
+PublishPort=6262:6262
+HealthCmd=["/holyarrs","-healthcheck"]
+HealthInterval=30s
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=default.target
+```
+
+- `:Z` is for SELinux. Use `:z` on folders shared with the downloader, and neither on NFS or SMB.
+- Give the health check as a list; the image has no shell.
+- Keep `Restart=always` and run `loginctl enable-linger $USER` once to start after reboot without signing in.
+- Fix a folder already owned by a high id: `podman unshare chown -R 0:0 ~/holyarrs/config`.
+
+</details>
+
+<details class="ha-more"><summary>The image</summary>
+
+- Built for amd64, arm64 and 32-bit ARM.
+- No shell, so `docker exec -it ... sh` does not work. Read logs with `docker logs holyarrs` or `/config/logs/holyarrs.log`.
+- Built-in commands work: `/holyarrs doctor`, `/holyarrs reset-owner` (with `-i`), `/holyarrs restore --pre-update`.
+- On about 2.5 GiB of memory or less, low-memory mode turns on by itself and the first log line says so.
+- A restore stages, then exits with status `75` so Docker restarts it and applies it. Keep a restart policy.
+- Build your own: `docker build --file deploy/Dockerfile --tag holyarrs:local .`
+
+</details>
+
+## Related
+
+- [Folders](../folders/)
+- [First run](../first-run/)
+- [Platforms](../../run/platforms/)
+- [Updates](../../run/updates/)
