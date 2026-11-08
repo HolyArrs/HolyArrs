@@ -1,14 +1,20 @@
 package arrapi
 
 import (
+	"bytes"
+	"context"
 	"encoding/json"
+	"io"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"slices"
+	"strconv"
 	"strings"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
@@ -183,5 +189,54 @@ func TestIndexerWrite_BadBodyRefused(t *testing.T) {
 	}
 	if cutName(strings.Repeat("é", 90), 80) != strings.Repeat("é", 40) || cutName("a"+strings.Repeat("é", 90), 80) != "a"+strings.Repeat("é", 39) {
 		t.Error("cutName")
+	}
+}
+
+// A write from Prowlarr tells the rest of the app: a saved Source reaches the
+// searcher, a removed one stops being searched.
+func TestIndexerWriteTellsTheApp(t *testing.T) {
+	st := settingsStore(t)
+	v, err := secrets.Open(context.Background(), st, make([]byte, secrets.KeySize))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var saved, removed []int64
+	d := Deps{Store: st, Secrets: v,
+		SourceSaved:   func(s domain.Source) { saved = append(saved, s.ID) },
+		SourceRemoved: func(id int64) { removed = append(removed, id) }}
+	srv := Sonarr(d)
+	ctx := webserver.ContextWith(context.Background(), webserver.Caller{UserID: 1, Via: "api_key", Role: webserver.RoleOwner,
+		Perms: webserver.DefaultPerms(webserver.RoleOwner), Scopes: []string{webserver.ScopeCompat}})
+	send := func(method, path string, body map[string]any) *httptest.ResponseRecorder {
+		var rd io.Reader
+		if body != nil {
+			b, _ := json.Marshal(body)
+			rd = bytes.NewReader(b)
+		}
+		rec := httptest.NewRecorder()
+		srv.ServeHTTP(rec, httptest.NewRequest(method, path, rd).WithContext(ctx))
+		return rec
+	}
+	body := prowlarrBody(&handler{side: "sonarr"}, "torznab", nil)
+	rec := send("POST", "/sonarr/api/v3/indexer?forceSave=true", body)
+	if rec.Code != 201 || len(saved) != 1 {
+		t.Fatalf("add: %d %s saved %v", rec.Code, rec.Body, saved)
+	}
+	var made struct {
+		ID int64 `json:"id"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &made); err != nil || made.ID == 0 || saved[0] != made.ID {
+		t.Fatalf("id: %v %s saved %v", err, rec.Body, saved)
+	}
+	id := strconv.FormatInt(made.ID, 10)
+	body["name"] = "Lab Tracker renamed"
+	if rec = send("PUT", "/sonarr/api/v3/indexer/"+id+"?forceSave=true", body); rec.Code != 202 || len(saved) != 2 {
+		t.Fatalf("put: %d %s saved %v", rec.Code, rec.Body, saved)
+	}
+	if len(removed) != 0 {
+		t.Fatalf("removed too early: %v", removed)
+	}
+	if rec = send("DELETE", "/sonarr/api/v3/indexer/"+id, nil); rec.Code != 200 || !slices.Equal(removed, []int64{made.ID}) {
+		t.Fatalf("delete: %d %s removed %v", rec.Code, rec.Body, removed)
 	}
 }
