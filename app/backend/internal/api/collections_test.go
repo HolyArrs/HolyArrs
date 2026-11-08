@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/movies"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
@@ -82,7 +83,7 @@ func TestCollectionHandlersPreviewAndApply(t *testing.T) {
 	}
 	body := `{"title_ids":[` + itoa(titleID) + `],"delete_files":false,"never_add":false,"acknowledge_protection":false}`
 	preview := do(t, http.MethodPost, base+"/"+id+"/remove/preview", body, http.StatusOK)
-	var review library.CollectionReview
+	var review movies.CollectionReview
 	if err := json.Unmarshal(preview, &review); err != nil || review.ReviewToken == "" {
 		t.Fatalf("review %+v, err %v", review, err)
 	}
@@ -97,7 +98,9 @@ func TestCollectionHandlersPreviewAndApply(t *testing.T) {
 func TestCollectionHandlerRejectsStaleReview(t *testing.T) {
 	a, _, cid, titleID := collectionAPI(t)
 	body := `{"title_ids":[` + itoa(titleID) + `],"review_token":"old"}`
-	w := callCollection(t, a.removeCollection, http.MethodPost, "/api/v1/collections/x/remove", itoa(cid), body)
+	mux := http.NewServeMux()
+	(&movies.Handlers{Lib: a.s.Library, KidMax: a.kidMax, AllowedTitleIDs: a.allowedTitleIDs}).Routes(mux)
+	w := callCollection(t, mux.ServeHTTP, http.MethodPost, "/api/v1/collections/"+itoa(cid)+"/remove", itoa(cid), body)
 	if w.Code != http.StatusConflict || !strings.Contains(w.Body.String(), "review") {
 		t.Fatalf("stale %d %s", w.Code, w.Body.String())
 	}

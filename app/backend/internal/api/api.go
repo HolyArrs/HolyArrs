@@ -8,6 +8,7 @@ import (
 	"errors"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/movies"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/shows"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
@@ -404,10 +405,7 @@ func (a *API) Routes(rt *webserver.Router) {
 	m.HandleFunc("GET /api/v1/jobs", a.listJobs)
 	a.peopleRoutes(m)
 	a.copyRoutes(m)
-	m.HandleFunc("GET /api/v1/collections", a.listCollections)
-	m.HandleFunc("GET /api/v1/collections/{id}", a.getCollection)
-	m.HandleFunc("POST /api/v1/collections/{id}/remove/preview", a.previewCollectionRemoval)
-	m.HandleFunc("POST /api/v1/collections/{id}/remove", a.removeCollection)
+	(&movies.Handlers{Lib: a.s.Library, KidMax: a.kidMax, AllowedTitleIDs: a.allowedTitleIDs}).Routes(m)
 	m.HandleFunc("GET /api/v1/library/copies", a.listLibraryCopies)
 	m.HandleFunc("POST /api/v1/library/copies/search/preview", a.previewLibraryCopySearch)
 	m.HandleFunc("POST /api/v1/library/copies/search", a.searchLibraryCopies)

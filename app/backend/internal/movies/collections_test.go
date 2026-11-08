@@ -1,4 +1,4 @@
-package library
+package movies
 
 import (
 	"context"
@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
@@ -21,7 +22,7 @@ func collectionWorld(t *testing.T) (*Service, *database.Store, int64, []int64) {
 	secondMovie.Name = "Dune"
 	secondMovie.Year = 2021
 	secondMovie.IDs = map[string]string{"tmdb": "438631"}
-	second, err := AddMovie(context.Background(), s, secondMovie, AddOptions{}, nil, now, domain.System)
+	second, err := library.AddMovie(context.Background(), s, secondMovie, library.AddOptions{}, nil, now, domain.System)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -48,11 +49,11 @@ func collectionWorld(t *testing.T) (*Service, *database.Store, int64, []int64) {
 func TestCollectionPreviewIsStableAndKeepsFilesByDefault(t *testing.T) {
 	svc, s, cid, ids := collectionWorld(t)
 	before := s.WriteCount()
-	a, err := svc.PreviewCollectionRemoval(context.Background(), cid, nil, RemoveChoice{})
+	a, err := svc.PreviewCollectionRemoval(context.Background(), cid, nil, library.RemoveChoice{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	b, err := svc.PreviewCollectionRemoval(context.Background(), cid, []int64{ids[1], ids[0]}, RemoveChoice{})
+	b, err := svc.PreviewCollectionRemoval(context.Background(), cid, []int64{ids[1], ids[0]}, library.RemoveChoice{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -66,11 +67,11 @@ func TestCollectionPreviewIsStableAndKeepsFilesByDefault(t *testing.T) {
 
 func TestCollectionConfirmationRejectsChangedMembershipAndChoices(t *testing.T) {
 	svc, s, cid, ids := collectionWorld(t)
-	r, err := svc.PreviewCollectionRemoval(context.Background(), cid, ids, RemoveChoice{})
+	r, err := svc.PreviewCollectionRemoval(context.Background(), cid, ids, library.RemoveChoice{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := svc.RemoveCollection(context.Background(), cid, ids, RemoveChoice{NeverAdd: true}, r.ReviewToken, domain.System); !errors.Is(err, ErrCollectionReviewChanged) {
+	if _, err := svc.RemoveCollection(context.Background(), cid, ids, library.RemoveChoice{NeverAdd: true}, r.ReviewToken, domain.System); !errors.Is(err, ErrCollectionReviewChanged) {
 		t.Fatalf("changed choices: %v", err)
 	}
 	if err := s.Write(context.Background(), func(tx *sql.Tx) error {
@@ -79,14 +80,14 @@ func TestCollectionConfirmationRejectsChangedMembershipAndChoices(t *testing.T) 
 	}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := svc.RemoveCollection(context.Background(), cid, ids, RemoveChoice{}, r.ReviewToken, domain.System); !errors.Is(err, ErrCollectionReviewChanged) {
+	if _, err := svc.RemoveCollection(context.Background(), cid, ids, library.RemoveChoice{}, r.ReviewToken, domain.System); !errors.Is(err, ErrCollectionReviewChanged) {
 		t.Fatalf("changed membership: %v", err)
 	}
 }
 
 func TestCollectionConfirmationRejectsChangedFileProtection(t *testing.T) {
 	svc, s, cid, ids := collectionWorld(t)
-	r, err := svc.PreviewCollectionRemoval(context.Background(), cid, ids, RemoveChoice{})
+	r, err := svc.PreviewCollectionRemoval(context.Background(), cid, ids, library.RemoveChoice{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -96,7 +97,7 @@ func TestCollectionConfirmationRejectsChangedFileProtection(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := svc.RemoveCollection(context.Background(), cid, ids, RemoveChoice{}, r.ReviewToken, domain.System); !errors.Is(err, ErrCollectionReviewChanged) {
+	if _, err := svc.RemoveCollection(context.Background(), cid, ids, library.RemoveChoice{}, r.ReviewToken, domain.System); !errors.Is(err, ErrCollectionReviewChanged) {
 		t.Fatalf("changed protection: %v", err)
 	}
 }
@@ -131,7 +132,7 @@ func TestCollectionConfirmationRejectsChangedPendingDownloadIdentity(t *testing.
 	}); err != nil {
 		t.Fatal(err)
 	}
-	review, err := svc.PreviewCollectionRemoval(ctx, cid, ids, RemoveChoice{})
+	review, err := svc.PreviewCollectionRemoval(ctx, cid, ids, library.RemoveChoice{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -144,7 +145,7 @@ func TestCollectionConfirmationRejectsChangedPendingDownloadIdentity(t *testing.
 	}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := svc.RemoveCollection(ctx, cid, ids, RemoveChoice{}, review.ReviewToken, domain.System); !errors.Is(err, ErrCollectionReviewChanged) {
+	if _, err := svc.RemoveCollection(ctx, cid, ids, library.RemoveChoice{}, review.ReviewToken, domain.System); !errors.Is(err, ErrCollectionReviewChanged) {
 		t.Fatalf("changed pending download identity: %v", err)
 	}
 }
@@ -184,7 +185,7 @@ func TestCollectionConfirmationRejectsChangedFinishedDownloadNeedsDecisionIdenti
 	}); err != nil {
 		t.Fatal(err)
 	}
-	review, err := svc.PreviewCollectionRemoval(ctx, cid, ids, RemoveChoice{})
+	review, err := svc.PreviewCollectionRemoval(ctx, cid, ids, library.RemoveChoice{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -197,7 +198,7 @@ func TestCollectionConfirmationRejectsChangedFinishedDownloadNeedsDecisionIdenti
 	}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := svc.RemoveCollection(ctx, cid, ids, RemoveChoice{}, review.ReviewToken, domain.System); !errors.Is(err, ErrCollectionReviewChanged) {
+	if _, err := svc.RemoveCollection(ctx, cid, ids, library.RemoveChoice{}, review.ReviewToken, domain.System); !errors.Is(err, ErrCollectionReviewChanged) {
 		t.Fatalf("changed finished download needing a decision: %v", err)
 	}
 }
@@ -210,7 +211,7 @@ func TestCollectionProtectedTitleSkippedAsAWhole(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	r, err := svc.PreviewCollectionRemoval(context.Background(), cid, ids, RemoveChoice{})
+	r, err := svc.PreviewCollectionRemoval(context.Background(), cid, ids, library.RemoveChoice{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -223,7 +224,7 @@ func TestCollectionProtectedTitleSkippedAsAWhole(t *testing.T) {
 	if protectedReview == nil || !protectedReview.Protected || protectedReview.Skip == "" {
 		t.Fatalf("protected title was not explained: %+v", r.Titles)
 	}
-	done, err := svc.RemoveCollection(context.Background(), cid, ids, RemoveChoice{}, r.ReviewToken, domain.System)
+	done, err := svc.RemoveCollection(context.Background(), cid, ids, library.RemoveChoice{}, r.ReviewToken, domain.System)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -243,7 +244,7 @@ func TestCollectionProtectedTitleSkippedAsAWhole(t *testing.T) {
 func TestCollectionRejectsOutsideOrEmptySelection(t *testing.T) {
 	svc, _, cid, _ := collectionWorld(t)
 	for _, selected := range [][]int64{{}, {999999}} {
-		if _, err := svc.PreviewCollectionRemoval(context.Background(), cid, selected, RemoveChoice{}); !errors.Is(err, ErrCollectionSelection) {
+		if _, err := svc.PreviewCollectionRemoval(context.Background(), cid, selected, library.RemoveChoice{}); !errors.Is(err, ErrCollectionSelection) {
 			t.Fatalf("selection %v: %v", selected, err)
 		}
 	}
@@ -258,7 +259,7 @@ func TestLargeCollectionSelectionIsDeterministicAndBounded(t *testing.T) {
 	if err != nil || len(selected) != 2000 {
 		t.Fatalf("selected %d, err %v", len(selected), err)
 	}
-	if a, b := collectionReviewToken(d, selected, RemoveChoice{}, nil), collectionReviewToken(d, append([]int64(nil), selected...), RemoveChoice{}, nil); a == "" || a != b {
+	if a, b := collectionReviewToken(d, selected, library.RemoveChoice{}, nil), collectionReviewToken(d, append([]int64(nil), selected...), library.RemoveChoice{}, nil); a == "" || a != b {
 		t.Fatalf("tokens %q %q", a, b)
 	}
 	tooMany := make([]int64, 5001)
@@ -272,7 +273,7 @@ func TestCollectionPartialFailureCanBeReviewedAndRetried(t *testing.T) {
 		svc, s, lf, first, files := deleteWorld(t)
 		secondMovie := dune
 		secondMovie.Name, secondMovie.Year, secondMovie.IDs = "Dune", 2021, map[string]string{"tmdb": "438631"}
-		second, err := AddMovie(context.Background(), s, secondMovie, AddOptions{}, nil, now, domain.System)
+		second, err := library.AddMovie(context.Background(), s, secondMovie, library.AddOptions{}, nil, now, domain.System)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -298,11 +299,11 @@ func TestCollectionPartialFailureCanBeReviewedAndRetried(t *testing.T) {
 		return svc, s, lf, cid, []int64{first, second}
 	}()
 	_ = lf
-	r, err := svc.PreviewCollectionRemoval(context.Background(), cid, ids, RemoveChoice{DeleteFiles: true})
+	r, err := svc.PreviewCollectionRemoval(context.Background(), cid, ids, library.RemoveChoice{DeleteFiles: true})
 	if err != nil {
 		t.Fatal(err)
 	}
-	done, err := svc.RemoveCollection(context.Background(), cid, ids, RemoveChoice{DeleteFiles: true}, r.ReviewToken, domain.System)
+	done, err := svc.RemoveCollection(context.Background(), cid, ids, library.RemoveChoice{DeleteFiles: true}, r.ReviewToken, domain.System)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -313,11 +314,11 @@ func TestCollectionPartialFailureCanBeReviewedAndRetried(t *testing.T) {
 	if statuses[ids[0]] != "failed" || statuses[ids[1]] != "removed" {
 		t.Fatalf("partial results %+v", done.Results)
 	}
-	retry, err := svc.PreviewCollectionRemoval(context.Background(), cid, []int64{ids[0]}, RemoveChoice{})
+	retry, err := svc.PreviewCollectionRemoval(context.Background(), cid, []int64{ids[0]}, library.RemoveChoice{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := svc.RemoveCollection(context.Background(), cid, []int64{ids[0]}, RemoveChoice{}, retry.ReviewToken, domain.System); err != nil {
+	if _, err := svc.RemoveCollection(context.Background(), cid, []int64{ids[0]}, library.RemoveChoice{}, retry.ReviewToken, domain.System); err != nil {
 		t.Fatal(err)
 	}
 	var active int
@@ -340,11 +341,11 @@ func TestCollectionRemovalPreservesSharedMembership(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	r, err := svc.PreviewCollectionRemoval(context.Background(), cid, []int64{ids[0]}, RemoveChoice{})
+	r, err := svc.PreviewCollectionRemoval(context.Background(), cid, []int64{ids[0]}, library.RemoveChoice{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := svc.RemoveCollection(context.Background(), cid, []int64{ids[0]}, RemoveChoice{}, r.ReviewToken, domain.System); err != nil {
+	if _, err := svc.RemoveCollection(context.Background(), cid, []int64{ids[0]}, library.RemoveChoice{}, r.ReviewToken, domain.System); err != nil {
 		t.Fatal(err)
 	}
 	var memberships int

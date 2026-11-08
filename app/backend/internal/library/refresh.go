@@ -89,7 +89,7 @@ func (s *Service) RefreshTitle(ctx context.Context, titleID int64, by domain.Act
 		if t.State == "removed" {
 			return database.ErrNotFound
 		}
-		if err := syncMovieCollectionTx(ctx, tx, t.ID, m); err != nil {
+		if err := syncMovieCollection(ctx, tx, t.ID, m); err != nil {
 			return err
 		}
 		applyMovie(&t, m, now)

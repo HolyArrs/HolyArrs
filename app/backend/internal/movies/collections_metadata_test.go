@@ -1,4 +1,4 @@
-package library
+package movies
 
 import (
 	"context"
@@ -8,6 +8,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
@@ -108,7 +109,7 @@ func TestAddAndRefreshSyncConfirmedMovieCollection(t *testing.T) {
 	initial := dune
 	initial.CollectionKnown = true
 	initial.Collection = &metadata.MovieCollection{ID: "726871", Name: "Dune Collection"}
-	titleID, err := AddMovie(ctx, s, initial, AddOptions{}, nil, now, domain.System)
+	titleID, err := library.AddMovie(ctx, s, initial, library.AddOptions{}, nil, now, domain.System)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -117,7 +118,7 @@ func TestAddAndRefreshSyncConfirmedMovieCollection(t *testing.T) {
 	}
 	updated := initial
 	updated.Collection = nil
-	svc := &Service{Store: s, Metadata: &metadata.Static{Movies: []metadata.Movie{updated}}, Now: func() time.Time { return now }}
+	svc := New(&library.Service{Store: s, Metadata: &metadata.Static{Movies: []metadata.Movie{updated}}, Now: func() time.Time { return now }})
 	if _, err := svc.RefreshTitle(ctx, titleID, domain.System, nil); err != nil {
 		t.Fatal(err)
 	}

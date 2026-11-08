@@ -26,7 +26,7 @@ func dayOnly(sh metadata.Show) metadata.Show {
 	return sh
 }
 
-// library.Calendar air times: an episode whose details source knows only the day
+// Calendar air times: an episode whose details source knows only the day
 // is an all-day entry (timed false, its day), never its day's end shown as
 // a time; once TVMaze lists the exact time for the same show, the refresh
 // stores that time and the calendar shows it.

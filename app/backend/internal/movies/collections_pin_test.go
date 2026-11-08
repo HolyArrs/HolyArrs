@@ -1,4 +1,4 @@
-package library
+package movies
 
 import (
 	"context"
@@ -12,6 +12,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
@@ -23,7 +24,7 @@ func t10AddMovies(t *testing.T, s *database.Store, n int, tmdbBase int) []int64 
 	ids := make([]int64, 0, n)
 	for i := 0; i < n; i++ {
 		m := metadata.Movie{Name: fmt.Sprintf("Pin Movie %03d", i), Year: 2000 + i%20, IDs: map[string]string{"tmdb": fmt.Sprint(tmdbBase + i)}}
-		id, err := AddMovie(context.Background(), s, m, AddOptions{}, nil, now, domain.System)
+		id, err := library.AddMovie(context.Background(), s, m, library.AddOptions{}, nil, now, domain.System)
 		if err != nil {
 			t.Fatal(err)
 		}

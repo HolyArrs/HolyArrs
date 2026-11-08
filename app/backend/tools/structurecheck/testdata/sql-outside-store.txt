@@ -94,8 +94,6 @@ app/backend/internal/library/adoptmusic.go
 app/backend/internal/library/artist.go
 app/backend/internal/library/artistpictures.go
 app/backend/internal/library/artistrefresh.go
-app/backend/internal/library/collection_metadata.go
-app/backend/internal/library/collections.go
 app/backend/internal/library/delete.go
 app/backend/internal/library/deleteshows.go
 app/backend/internal/library/edit.go
@@ -122,6 +120,8 @@ app/backend/internal/migrate/apply_settings.go
 app/backend/internal/migrate/apply_titles.go
 app/backend/internal/migrate/backup_files.go
 app/backend/internal/migrate/moves.go
+app/backend/internal/movies/collections.go
+app/backend/internal/movies/collections_metadata.go
 app/backend/internal/parts/control.go
 app/backend/internal/requests/store_ask.go
 app/backend/internal/requests/store_ask_episodes.go

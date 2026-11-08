@@ -279,7 +279,7 @@ func AddMovie(ctx context.Context, s *database.Store, m metadata.Movie, opt AddO
 		if _, err := database.Insert(tx, "titles", t, by); err != nil {
 			return err
 		}
-		if err := syncMovieCollectionTx(ctx, tx, t.ID, m); err != nil {
+		if err := syncMovieCollection(ctx, tx, t.ID, m); err != nil {
 			return err
 		}
 		it := &mediafiles.Item{TitleID: t.ID, Kind: "movie", KeepUpToDate: keep}

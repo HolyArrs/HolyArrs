@@ -58,6 +58,9 @@ type RemoveFile struct {
 	root      string
 }
 
+// Root is the Library folder path the file lives under.
+func (f RemoveFile) Root() string { return f.root }
+
 // holdSubtitles plans the subtitle files beside a video that is held: each
 // goes to its own free place in the same day of the holding folder. The
 // two files of a VobSub pair get the same free name (name.N.idx and
@@ -133,6 +136,9 @@ type RemovePlan struct {
 	ActiveDownloads int `json:"active_downloads"`
 	itemIDs         []int64
 }
+
+// ItemIDs are the episode or track Items a partial removal ends.
+func (p RemovePlan) ItemIDs() []int64 { return p.itemIDs }
 
 // planRemove works out a delete. Nothing changes.
 func planRemove(ctx context.Context, db Reader, titleID int64, c RemoveChoice, now time.Time) (RemovePlan, mediafiles.Title, error) {
@@ -224,12 +230,12 @@ func planRemove(ctx context.Context, db Reader, titleID int64, c RemoveChoice, n
 func (s *Service) Remove(ctx context.Context, titleID int64, c RemoveChoice, apply bool, by domain.Actor) (RemovePlan, error) {
 	unlock := s.Store.LockFiles()
 	defer unlock()
-	return s.removeLocked(ctx, titleID, c, apply, by)
+	return s.RemoveLocked(ctx, titleID, c, apply, by)
 }
 
-// removeLocked is also used by a collection confirmation that already holds
+// RemoveLocked is also used by a collection confirmation that already holds
 // placement coordination while validating its membership review.
-func (s *Service) removeLocked(ctx context.Context, titleID int64, c RemoveChoice, apply bool, by domain.Actor) (RemovePlan, error) {
+func (s *Service) RemoveLocked(ctx context.Context, titleID int64, c RemoveChoice, apply bool, by domain.Actor) (RemovePlan, error) {
 	p, t, err := planRemove(ctx, s.Store.Read(), titleID, c, s.now())
 	if err != nil || !apply {
 		return p, err

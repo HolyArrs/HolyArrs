@@ -131,7 +131,7 @@ func TestShowVersions(t *testing.T) {
 		t.Fatalf("slots left %d", n)
 	}
 
-	// The library.Calendar lists each episode once, with both Versions' states.
+	// The Calendar lists each episode once, with both Versions' states.
 	es, err := library.Calendar(ctx, s.Read(), now.AddDate(-2, 0, 0), now.AddDate(0, 1, 0), library.CalendarShows)
 	if err != nil || len(es) == 0 {
 		t.Fatalf("calendar %v %v", es, err)
