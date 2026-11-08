@@ -1,4 +1,4 @@
-package api
+package mediafiles
 
 import (
 	"net/http"
