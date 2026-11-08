@@ -466,9 +466,7 @@ func (a *API) Routes(rt *webserver.Router) {
 	m.HandleFunc("GET /api/v1/explore/browse", a.searchBrowse)
 	m.HandleFunc("GET /api/v1/explore/browse/section", a.searchBrowseSection)
 	m.HandleFunc("GET /api/v1/explore/browse/category", a.searchBrowseCategory)
-	m.HandleFunc("GET /api/v1/explore/strip", a.exploreStrip)
-	m.HandleFunc("POST /api/v1/explore/strip/counts", a.exploreStripCounts)
-	m.HandleFunc("DELETE /api/v1/explore/strip/counts", a.exploreStripReset)
+	a.disc.StripRoutes(m)
 	if startup.FeatureOn(features.RowTitleStats) {
 		m.HandleFunc("GET /api/v1/explore/title-stats", a.exploreTitleStats)
 	}

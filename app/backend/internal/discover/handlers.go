@@ -65,6 +65,8 @@ type Deps struct {
 	AllowedTitleIDs func(ctx context.Context, max string, ids []int64) (map[int64]bool, error)
 	KnownGenres     func(mbid string) []string
 	ReadCardArt     func(ctx context.Context, keys [][2]string, lang string) map[string]CardArtRow
+	// Strip is the Browse glue for the Explore strip.
+	Strip StripBrowse
 }
 
 // ServiceTopFetch reads one region's per-service top lists.
