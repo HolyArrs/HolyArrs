@@ -1,4 +1,4 @@
-package api
+package main
 
 import (
 	"context"
@@ -24,7 +24,7 @@ func TestAlsoDeclinedLiveForApproversOnly(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	hub := r.api.s.Live
+	hub := r.live
 	before := hub.Clients()
 	owner := liveSetup{}.streamWith(t, ctx, r.owner.c, r.srv.URL+"/live")
 	bo := liveSetup{}.streamWith(t, ctx, r.bo.c, r.srv.URL+"/live")

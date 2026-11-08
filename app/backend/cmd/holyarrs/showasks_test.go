@@ -1,4 +1,4 @@
-package api
+package main
 
 import (
 	"encoding/json"
@@ -51,7 +51,7 @@ func TestShowAskOverHTTP(t *testing.T) {
 	}
 	// The show search tells ana she asked already.
 	var look struct {
-		Shows []ShowResult `json:"shows"`
+		Shows []showResult `json:"shows"`
 	}
 	_ = json.Unmarshal(r.ana.call("GET", "/api/v1/shows/lookup?term=tmdb:100", "", 200), &look)
 	if len(look.Shows) != 1 || look.Shows[0].Ask == nil || !look.Shows[0].Ask.Mine || look.Shows[0].Ask.ID != a.ID || len(look.Shows[0].Ask.Seasons) != 1 {
