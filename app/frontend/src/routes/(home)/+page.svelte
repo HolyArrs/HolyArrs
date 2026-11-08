@@ -15,9 +15,9 @@
 	import { stageOf, decisions } from '#lib/downloads/index.ts';
 	import { artGone, lightOnDark } from '#lib/art-check.ts';
 	import { askArtist, askDetails, wantDetails } from '#lib/requests/index.ts';
-	import { arrivedHead, attention, downloadMoved, downloadingNow, fallbackRows, freeSpace, arrivedTitle, groupAttention, homeFailures, homeStrip, libraryCards, moreLink, n, partCount, shownState, uncheckedLine, type Attention, type AttentionGroup, type HomeAnswer, type HomeCard, type HomeRow } from '#lib/home.ts';
+	import { arrivedHead, attention, downloadMoved, downloadingNow, fallbackRows, freeSpace, arrivedTitle, groupAttention, homeFailures, homeStrip, libraryCards, moreLink, n, partCount, shownState, uncheckedLine, type Attention, type AttentionGroup, type HomeAnswer, type HomeCard, type HomeRow } from './home.ts';
 	import { METADATA_DOWN, metadataOutage, MetadataNotice } from '#lib/metadata/index.ts';
-	import { homeFacts, homeGreeting, homeNews, localDay } from '#lib/home-line.ts';
+	import { homeFacts, homeGreeting, homeNews, localDay } from './home-line.ts';
 	import type { Health, HealthChecks } from '#lib/health/index.ts';
 	import { onMount } from 'svelte';
 	import { SvelteSet } from 'svelte/reactivity';

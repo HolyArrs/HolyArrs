@@ -2,9 +2,9 @@
 // the time of day, the day of the week and what is happening in the household.
 // Pure functions only: the page passes in what it already loaded, and the same
 // person gets the same line all day (seeded by date and name, never random).
-import { looksLikeId } from './core/plain.ts';
+import { looksLikeId } from '#lib/core/plain.ts';
 import type { HomeAnswer } from './home.ts';
-import type { Ask } from './core/types.ts';
+import type { Ask } from '#lib/core/types.ts';
 
 export type TimeBucket = 'early' | 'morning' | 'afternoon' | 'evening' | 'late';
 

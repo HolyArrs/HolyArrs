@@ -4,14 +4,9 @@
 		"hooks.server.ts"
 	],
 	"flat": [
-		"lib/art-check.ts",
-		"lib/home-line.test.ts",
-		"lib/home-line.ts",
-		"lib/home.test.ts",
-		"lib/home.ts"
+		"lib/art-check.ts"
 	],
 	"routeTests": [
-		"routes/home-style.test.ts",
 		"routes/settings/alerts/hints.test.ts",
 		"routes/settings/alerts/kind.test.ts",
 		"routes/settings/sign-in/local-networks.test.ts",

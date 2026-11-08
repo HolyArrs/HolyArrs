@@ -2,7 +2,7 @@
 	import { resolve } from '$app/paths';
 	import { personName } from '#lib/core/plain.ts';
 	import { setBase } from '#lib/core/paths.ts';
-	setBase(resolve('/'));
+	setBase(resolve('/(home)'));
 	import { to, appPath } from '#lib/core/paths.ts';
 	import '../app.css';
 	import { onMount, tick, type Snippet } from 'svelte';
