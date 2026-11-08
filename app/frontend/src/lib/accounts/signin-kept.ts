@@ -1,10 +1,10 @@
 import { THUMB_W, sized, type ArtPick, type ArtShot } from './signin-art.ts';
 import { to } from '#lib/core/paths.ts';
 
+export type Thumb = { url: string; t24: string; t64: string; pos: string };
+
 const CACHE = 'holyarrs-signin-art';
 const SEED = 'holyarrs-signin-seed'; // The style element app.html adds for the first frame.
-
-export type Thumb = { url: string; t24: string; t64: string; pos: string };
 
 export function screen() {
 	return { vw: window.innerWidth, vh: window.innerHeight, dpr: window.devicePixelRatio || 1 };
@@ -29,6 +29,7 @@ export async function ready(url: string): Promise<boolean> {
 
 /** Same-origin pictures only (lists kept from before held TMDB addresses), under the app's base path. */
 export const local = (u: unknown) => typeof u === 'string' && u.startsWith('/') && !u.startsWith('//');
+
 export function ownShots(list: unknown, prefix: boolean): ArtShot[] {
 	if (!Array.isArray(list)) return [];
 	const at = (u: string) => (prefix ? to(u) : u);

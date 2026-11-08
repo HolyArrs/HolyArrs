@@ -29,15 +29,6 @@ export const ABOUT_ITEMS: AboutItem[] = [
 const DEFAULTS = ABOUT_ITEMS.filter((i) => i.on).map((i) => i.id);
 const KEY = 'holyarrs.about-3';
 
-function stored(): string[] {
-	try {
-		const raw = localStorage.getItem(KEY);
-		return raw ? (JSON.parse(raw) as unknown[]).filter((x): x is string => ABOUT_ITEMS.some((i) => i.id === x)) : DEFAULTS;
-	} catch {
-		return DEFAULTS;
-	}
-}
-
 export const aboutPicks = $state<{ list: string[] }>({ list: typeof window === 'undefined' ? DEFAULTS : stored() });
 export const aboutIsDefault = () => aboutPicks.list.length === DEFAULTS.length && DEFAULTS.every((d) => aboutPicks.list.includes(d));
 
@@ -69,3 +60,12 @@ const BY_LABEL: Record<string, string> = {
 
 /** Whether a row (by its label) is picked; any other label is a score. */
 export const aboutShown = (label: string, picks: string[]) => picks.includes(label.startsWith('link:') ? 'links' : (BY_LABEL[label] ?? 'scores'));
+
+function stored(): string[] {
+	try {
+		const raw = localStorage.getItem(KEY);
+		return raw ? (JSON.parse(raw) as unknown[]).filter((x): x is string => ABOUT_ITEMS.some((i) => i.id === x)) : DEFAULTS;
+	} catch {
+		return DEFAULTS;
+	}
+}

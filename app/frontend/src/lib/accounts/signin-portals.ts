@@ -1,5 +1,8 @@
 // Timing for the sign-in corner portals (SigninPortals.svelte): a hole opens in one corner, a short conga line of media symbols runs along the screen edge to a hole in the next corner, falls in, and both holes close. Pure functions so the timeline is unit tested.
 
+/** Corners clockwise from top right: TR, TL, BL, BR (the run goes TR, TL, BL, BR, TR). */
+export type Corner = 0 | 1 | 2 | 3;
+
 export const START_S = 9; // First leg, once the page has settled.
 export const LEG_GAP_S = 16; // One leg starts every 16 s: about 11 s of quiet between legs.
 export const COUNT = 7; // Symbols per leg.
@@ -7,9 +10,6 @@ export const SPACING_S = 0.24; // Between symbols leaving the hole.
 export const TRAVEL_S = 2.2; // One symbol, hole to hole.
 export const OPEN_S = 0.6;
 export const CLOSE_S = 0.6;
-
-/** Corners clockwise from top right: TR, TL, BL, BR (the run goes TR, TL, BL, BR, TR). */
-export type Corner = 0 | 1 | 2 | 3;
 
 export const clamp01 = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);
 export const easeInOutSine = (p: number) => -(Math.cos(Math.PI * p) - 1) / 2;
@@ -24,6 +24,7 @@ export function legAt(t: number, legs: number): { index: number; local: number }
 
 /** The whole leg: the last symbol lands, then the far hole closes. */
 export const LEAD_S = 0.36; // The first symbol leaves once the hole is half open.
+
 export const LEG_S = LEAD_S + (COUNT - 1) * SPACING_S + TRAVEL_S + 0.1 + CLOSE_S;
 
 /** A hole's size (0 is shut) and squash at leg time `local`. `from` holes open at 0 and close once the last symbol has left; `to` holes open just before the first symbol arrives and close after the last one falls in. */

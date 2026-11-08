@@ -23,6 +23,8 @@ export type PlexWatchlist = {
 	items: WatchlistItem[];
 };
 
+type Asker = { id: number; name: string; from_watchlist?: boolean };
+
 const stateWords: Record<string, string> = {
 	asked: 'Asked for',
 	joined: 'Joined an ask',
@@ -43,8 +45,6 @@ export function watchlistStateWord(state: string): string {
 export function showWatchlistCard(v: PlexWatchlist | null): boolean {
 	return !!v && v.on && v.linked && v.may_ask;
 }
-
-type Asker = { id: number; name: string; from_watchlist?: boolean };
 
 /** "From your Plex watchlist" (or someone's) for an ask made from one; "" otherwise. */
 export function watchlistLine(people: Asker[] | undefined, me: number | undefined): string {

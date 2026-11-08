@@ -1,28 +1,14 @@
-// People who signed in on this device, newest first, with the way each one used, so a shared screen (a TV, a family tablet) can switch between them. Names, ways and a small copy of each picture; each switch is still a full sign-in.
-const KEY = 'holyarrs.recent-people';
-const MAX = 6;
-
 export type RecentWay = 'password' | 'plex' | 'jellyfin' | 'emby' | 'oidc';
+
 // `login` is the name typed for a Jellyfin or Emby account, when it differs; `pic` a small JPEG of their profile picture, as a data: address, and `picFrom` the picture address it was copied from (it changes with the picture).
 export type RecentPerson = { name: string; way: RecentWay; login?: string; pic?: string; picFrom?: string };
 
-const WAYS: readonly string[] = ['password', 'plex', 'jellyfin', 'emby', 'oidc'];
+// People who signed in on this device, newest first, with the way each one used, so a shared screen (a TV, a family tablet) can switch between them. Names, ways and a small copy of each picture; each switch is still a full sign-in.
+const KEY = 'holyarrs.recent-people';
 
-function read(v: unknown): RecentPerson | null {
-	// Older lists hold plain names: those people used the password.
-	if (typeof v === 'string') return v ? { name: v, way: 'password' } : null;
-	if (!v || typeof v !== 'object') return null;
-	const o = v as Record<string, unknown>;
-	if (typeof o.name !== 'string' || !o.name) return null;
-	const way = typeof o.way === 'string' && WAYS.includes(o.way) ? (o.way as RecentWay) : 'password';
-	const p: RecentPerson = { name: o.name, way };
-	if (typeof o.login === 'string' && o.login && o.login !== o.name) p.login = o.login;
-	if (typeof o.pic === 'string' && o.pic.startsWith('data:image/jpeg;base64,') && o.pic.length < 40_000) {
-		p.pic = o.pic;
-		if (typeof o.picFrom === 'string') p.picFrom = o.picFrom;
-	}
-	return p;
-}
+const MAX = 6;
+
+const WAYS: readonly string[] = ['password', 'plex', 'jellyfin', 'emby', 'oidc'];
 
 export function recentPeople(): RecentPerson[] {
 	try {
@@ -36,14 +22,6 @@ export function recentPeople(): RecentPerson[] {
 		return out.slice(0, MAX);
 	} catch {
 		return [];
-	}
-}
-
-function save(people: RecentPerson[]) {
-	try {
-		localStorage.setItem(KEY, JSON.stringify(people.slice(0, MAX)));
-	} catch {
-		// Private windows may refuse storage; the list just stays empty.
 	}
 }
 
@@ -96,5 +74,29 @@ export async function keepPersonPic(name: string, src: string | null) {
 		setPersonPic(name, c.toDataURL('image/jpeg', 0.82), src);
 	} catch {
 		// No copy: the row keeps the letter.
+	}
+}
+
+function read(v: unknown): RecentPerson | null {
+	// Older lists hold plain names: those people used the password.
+	if (typeof v === 'string') return v ? { name: v, way: 'password' } : null;
+	if (!v || typeof v !== 'object') return null;
+	const o = v as Record<string, unknown>;
+	if (typeof o.name !== 'string' || !o.name) return null;
+	const way = typeof o.way === 'string' && WAYS.includes(o.way) ? (o.way as RecentWay) : 'password';
+	const p: RecentPerson = { name: o.name, way };
+	if (typeof o.login === 'string' && o.login && o.login !== o.name) p.login = o.login;
+	if (typeof o.pic === 'string' && o.pic.startsWith('data:image/jpeg;base64,') && o.pic.length < 40_000) {
+		p.pic = o.pic;
+		if (typeof o.picFrom === 'string') p.picFrom = o.picFrom;
+	}
+	return p;
+}
+
+function save(people: RecentPerson[]) {
+	try {
+		localStorage.setItem(KEY, JSON.stringify(people.slice(0, MAX)));
+	} catch {
+		// Private windows may refuse storage; the list just stays empty.
 	}
 }

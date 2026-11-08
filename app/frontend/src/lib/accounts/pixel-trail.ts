@@ -1,5 +1,10 @@
 // The sign-in page's pixel language, ported from the website's hero effect: the same 8x8 media symbols (film frame, music note, play), the same cross-shaped spray along the pointer path, the same 0.3 s energy decay with a 0.04 floor, and alpha capped at 0.65. Here it lives inside one button at a time instead of the hero, and the same grid drives the page's block transitions.
 
+export type Grid = { cols: number; rows: number; cell: number; energy: Float32Array };
+export type Side = 'left' | 'right' | 'top' | 'bottom';
+
+export type TrailOpts = { selector?: string; color?: string; busy?: boolean; fail?: number };
+
 export const MASKS = [
 	['11111111', '10100101', '10000001', '10011001', '10011001', '10000001', '10100101', '11111111'],
 	['00111110', '00111110', '00100010', '00100010', '00100010', '11100110', '11101110', '01001100'],
@@ -14,15 +19,15 @@ export const MAX_ALPHA = 0.65;
 export function columnsForWidth(width: number): number {
 	return width >= 1280 ? 36 : width >= 992 ? 30 : width >= 768 ? 22 : 12;
 }
+
 export function siteCell(width: number): number {
 	return width / columnsForWidth(width);
 }
+
 // The site's symbol pixel: a tenth of a cell, 3 to 5 px.
 export function pixelFor(cell: number): number {
 	return Math.max(3, Math.min(5, Math.round(cell / 10)));
 }
-
-export type Grid = { cols: number; rows: number; cell: number; energy: Float32Array };
 
 // A button-sized grid: cells just big enough for one 3 px symbol (24 px), stretched so whole columns fill the width.
 export function buttonGrid(width: number, height: number): Grid {
@@ -101,10 +106,10 @@ const calmQuery = () => typeof matchMedia === 'function' && matchMedia('(prefers
 
 // Timings for the button effects (ms).
 export const SWEEP_MS = 520;
+
 export const BURST_MS = 350;
 export const BUSY_MS = 1100;
 export const FLICKER_MS = 320;
-export type Side = 'left' | 'right' | 'top' | 'bottom';
 
 // Which edge the pointer came in through (vertical distances scaled to the width).
 export function entrySide(w: number, h: number, x: number, y: number): Side {
@@ -174,8 +179,6 @@ export function flicker(g: Grid, step: number) {
 	const order = blockOrder(g.energy.length, 11 + step * 7);
 	for (let i = 0; i < g.energy.length; i++) if (order[i] < 0.35) g.energy[i] = Math.max(g.energy[i], 0.75);
 }
-
-export type TrailOpts = { selector?: string; color?: string; busy?: boolean; fail?: number };
 
 // Svelte action: the pixel layer inside one button, clipped to its shape. `node` may wrap the button; the first match of `selector` hosts the canvas. Hover or keyboard focus: a sweep from the entry side, then an ambient shimmer; the pointer trail adds on top. Press (pointer, Enter, Space or a form submit): a burst from the press point with a 0.97 press. `busy`: a looping band. `fail` (a counter): a shake and a flicker. Frames run only while hovered, focused, busy or cells are lit: 0 fps idle. Reduced motion: nothing runs (the page keeps a static press and the spinner).
 export function pixelTrail(node: HTMLElement, opts: TrailOpts = {}) {
@@ -407,14 +410,6 @@ export function blockMask(cols: number, rows: number, order: Float32Array, k: nu
 	return `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${cols} ${rows}" preserveAspectRatio="none" shape-rendering="crispEdges">${rects}</svg>`)}")`;
 }
 
-function setMask(el: HTMLElement, v: string) {
-	el.style.setProperty('mask-image', v);
-	el.style.setProperty('-webkit-mask-image', v);
-	el.style.setProperty('mask-size', '100% 100%');
-	el.style.setProperty('-webkit-mask-size', '100% 100%');
-	el.style.setProperty('mask-repeat', 'no-repeat');
-	el.style.setProperty('-webkit-mask-repeat', 'no-repeat');
-}
 export function clearMask(el: HTMLElement) {
 	for (const p of ['mask-image', '-webkit-mask-image', 'mask-size', '-webkit-mask-size', 'mask-repeat', '-webkit-mask-repeat']) el.style.removeProperty(p);
 }
@@ -462,4 +457,13 @@ export function blockDissolve(el: HTMLElement, { duration = 320, cell = 24, dir 
 		};
 		requestAnimationFrame(frame);
 	});
+}
+
+function setMask(el: HTMLElement, v: string) {
+	el.style.setProperty('mask-image', v);
+	el.style.setProperty('-webkit-mask-image', v);
+	el.style.setProperty('mask-size', '100% 100%');
+	el.style.setProperty('-webkit-mask-size', '100% 100%');
+	el.style.setProperty('mask-repeat', 'no-repeat');
+	el.style.setProperty('-webkit-mask-repeat', 'no-repeat');
 }

@@ -2,36 +2,13 @@
 
 export type Theme = 'light' | 'dark';
 export type ThemeChoice = Theme | 'system';
+
 const KEY = 'holyarrs-theme';
-
-function systemTheme(): Theme {
-	if (typeof matchMedia === 'undefined') return 'light';
-	return matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-}
-
-function storedChoice(): ThemeChoice {
-	try {
-		const t = localStorage.getItem(KEY);
-		return t === 'light' || t === 'dark' ? t : 'system';
-	} catch {
-		return 'system';
-	}
-}
-
-function current(): Theme {
-	if (typeof document === 'undefined') return 'light';
-	return document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
-}
 
 export const theme = $state<{ value: Theme; choice: ThemeChoice }>({
 	value: current(),
 	choice: typeof document === 'undefined' ? 'system' : storedChoice()
 });
-
-function apply(t: Theme) {
-	theme.value = t;
-	if (typeof document !== 'undefined') document.documentElement.dataset.theme = t;
-}
 
 export function setTheme(t: ThemeChoice) {
 	theme.choice = t;
@@ -53,4 +30,29 @@ if (typeof matchMedia !== 'undefined') {
 	} catch {
 		// Old browsers without addEventListener on media queries keep the first answer.
 	}
+}
+
+
+function systemTheme(): Theme {
+	if (typeof matchMedia === 'undefined') return 'light';
+	return matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
+
+function storedChoice(): ThemeChoice {
+	try {
+		const t = localStorage.getItem(KEY);
+		return t === 'light' || t === 'dark' ? t : 'system';
+	} catch {
+		return 'system';
+	}
+}
+
+function current(): Theme {
+	if (typeof document === 'undefined') return 'light';
+	return document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
+}
+
+function apply(t: Theme) {
+	theme.value = t;
+	if (typeof document !== 'undefined') document.documentElement.dataset.theme = t;
 }
