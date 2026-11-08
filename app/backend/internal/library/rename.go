@@ -24,8 +24,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles/subtext"
 )
 
 // KindRename is the Job that renames Files to the naming pattern.
@@ -95,7 +93,7 @@ func besideSubtitles(root, rel string) [][]string {
 	var out [][]string
 	for _, e := range ents {
 		n := e.Name()
-		if !e.Type().IsRegular() || !subtitles.IsBeside(base, n) {
+		if !e.Type().IsRegular() || !subtitleNames().IsBeside(base, n) {
 			continue
 		}
 		one := path.Join(path.Dir(rel), n)
@@ -122,7 +120,7 @@ func textSub(p string) bool {
 	defer f.Close()
 	head := make([]byte, 4096)
 	n, _ := io.ReadFull(f, head)
-	return subtext.TextSub(head[:n])
+	return subtitleNames().TextSub(head[:n])
 }
 
 // planSubtitles works out where each subtitle beside a renamed video goes:

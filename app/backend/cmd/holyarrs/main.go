@@ -450,6 +450,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	if pictures != nil {
 		pictures.UserAgent = metadata.UserAgentFor(version)
 	}
+	library.UseSubtitleNames(subtitles.Names{})
 	lib := &library.Service{Store: s, Queue: q, Metadata: md, Live: hub, SavePath: c.SavePath, ArtistImages: pictures,
 		ImageServer: hosted.Service.Base() + "/v1/img",
 		Artwork: &library.ArtworkCache{Dir: filepath.Join(c.ConfigDir, "artwork"), Allowed: []string{metadata.ImageBase + "/", hosted.Service.Base() + "/v1/img/"},
