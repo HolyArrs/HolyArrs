@@ -2,9 +2,8 @@
 import type { AskInfo } from './inbox.ts';
 import type { Ask } from '../core/types.ts';
 
-export const STAGE_WEIGHT = { asked: 8, approved: 30, getting: 45, getting_end: 92, ready: 100 } as const;
-
 export type Stage = 'asked' | 'upcoming' | 'searching' | 'downloading' | 'importing' | 'getting' | 'ready' | 'declined' | 'failed';
+
 export interface Life {
 	stage: Stage;
 	/** 0 to 100: how much of the line is filled. */
@@ -45,6 +44,8 @@ export interface LifeFacts {
 	/** Not looked for yet: when the search for missing looks next. */
 	nextSearch?: string;
 }
+
+export const STAGE_WEIGHT = { asked: 8, approved: 30, getting: 45, getting_end: 92, ready: 100 } as const;
 
 /** Places an ask on its line; `facts` adds what is known beyond its state. */
 export function lifecycle(a: Pick<Ask, 'state' | 'title_id'>, facts: LifeFacts = {}): Life {
@@ -88,27 +89,7 @@ export function lifecycle(a: Pick<Ask, 'state' | 'title_id'>, facts: LifeFacts =
 	return { stage: 'getting', pct: lo + (hi - lo) * p, tone: 'go', label: 'Processing' };
 }
 
-function failedLife(f: LifeFacts): Life {
-	const life: Life = { stage: 'failed', pct: STAGE_WEIGHT.approved, tone: 'bad', label: 'Failed' };
-	if (f.reason) life.reason = f.reason;
-	return life;
-}
-
 const word = (n: number, unit: string) => `${n} ${n === 1 ? unit.slice(0, -1) : unit}`;
-
-/** Ready names what came in ("Ready · 2 albums") and what is left to request. */
-function ready(f: LifeFacts): Life {
-	const part = f.partial;
-	const life: Life = { stage: 'ready', pct: 100, tone: 'ok', label: part?.unit && part.total > 0 ? `Ready · ${word(part.total, part.unit)}` : 'Ready' };
-	// Whole seasons or albums not asked for come first; otherwise unticked episodes or songs. The unit stays when known: "2 more seasons available", "3 more episodes available".
-	const one = (n: number, unit: string) => (n === 1 ? unit.slice(0, -1) : unit);
-	// "More" counts whole seasons or albums, also when only episodes or songs were asked.
-	const whole = part?.unit === 'episodes' ? 'seasons' : part?.unit === 'songs' ? 'albums' : part?.unit;
-	const inside = whole === 'seasons' ? 'episodes' : 'songs';
-	if (f.more && f.more > 0) life.more = whole ? `${f.more} more ${one(f.more, whole)} available` : `${f.more} more available`;
-	else if (f.skipped && f.skipped > 0 && whole) life.more = `${f.skipped} more ${one(f.skipped, inside)} available`;
-	return life;
-}
 
 const day = (iso: string) => iso.slice(0, 10);
 
@@ -133,4 +114,24 @@ export function upcoming(
 	if (a.kind === 'artist' || info.status === 'Released') return '';
 	const ds = [info.dates.theaters, info.dates.digital, info.dates.physical].filter(Boolean);
 	return ds.length ? later(ds) : '';
+}
+
+function failedLife(f: LifeFacts): Life {
+	const life: Life = { stage: 'failed', pct: STAGE_WEIGHT.approved, tone: 'bad', label: 'Failed' };
+	if (f.reason) life.reason = f.reason;
+	return life;
+}
+
+/** Ready names what came in ("Ready · 2 albums") and what is left to request. */
+function ready(f: LifeFacts): Life {
+	const part = f.partial;
+	const life: Life = { stage: 'ready', pct: 100, tone: 'ok', label: part?.unit && part.total > 0 ? `Ready · ${word(part.total, part.unit)}` : 'Ready' };
+	// Whole seasons or albums not asked for come first; otherwise unticked episodes or songs. The unit stays when known: "2 more seasons available", "3 more episodes available".
+	const one = (n: number, unit: string) => (n === 1 ? unit.slice(0, -1) : unit);
+	// "More" counts whole seasons or albums, also when only episodes or songs were asked.
+	const whole = part?.unit === 'episodes' ? 'seasons' : part?.unit === 'songs' ? 'albums' : part?.unit;
+	const inside = whole === 'seasons' ? 'episodes' : 'songs';
+	if (f.more && f.more > 0) life.more = whole ? `${f.more} more ${one(f.more, whole)} available` : `${f.more} more available`;
+	else if (f.skipped && f.skipped > 0 && whole) life.more = `${f.skipped} more ${one(f.skipped, inside)} available`;
+	return life;
 }

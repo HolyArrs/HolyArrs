@@ -8,6 +8,28 @@ import { appPicture, type ArtistCoreData } from '../music/index.ts';
 import { api } from '../core/api.ts';
 import type { Ask } from '../core/types.ts';
 
+/** An ask's lists the server stored when it was asked for: episodes by season number, songs by album id. */
+export interface StoredParts {
+	seasons: Record<string, EpisodeInfo[]>;
+	albums: Record<string, AlbumSong[]>;
+}
+
+/** A song of an album, as the album page lists it. */
+export interface AlbumSong {
+	disc: number;
+	number: number;
+	name: string;
+	length_ms?: number;
+	recording_id?: string;
+}
+
+/** What the Requests panel shows of an artist: the round photo, the banner pictures and the albums (release groups). */
+export interface AskArtist {
+	image: string | null;
+	backgrounds: string[];
+	albums: ArtistAlbum[] | null;
+}
+
 const got = $state<Record<string, TitleDetails | null>>({});
 const info = $state<Record<string, AskInfo | null>>({});
 const eps = $state<Record<string, EpisodeInfo[] | null>>({});
@@ -57,11 +79,6 @@ export function seasonEpisodes(tmdb: string, season: number): EpisodeInfo[] | nu
 	return eps[k] ?? null;
 }
 
-/** An ask's lists the server stored when it was asked for: episodes by season number, songs by album id. */
-export interface StoredParts {
-	seasons: Record<string, EpisodeInfo[]>;
-	albums: Record<string, AlbumSong[]>;
-}
 const stored = $state<Record<number, StoredParts | null>>({});
 const askedStored = new Set<number>();
 
@@ -78,30 +95,13 @@ export function storedParts(a: Pick<Ask, 'id' | 'kind'> | null | undefined): Sto
 	return stored[a.id] ?? null;
 }
 
-/** A song of an album, as the album page lists it. */
-export interface AlbumSong {
-	disc: number;
-	number: number;
-	name: string;
-	length_ms?: number;
-	recording_id?: string;
-}
 /** A song's id for ticks: its recording, else disc and number. */
 export const songKey = (t: AlbumSong) => t.recording_id || `${t.disc}-${t.number}`;
+
 const songs = $state<Record<string, AlbumSong[] | null>>({});
 const askedSongs = new Set<string>();
 const songQueue: (() => Promise<void>)[] = [];
 let songsRunning = 0;
-function nextSongs() {
-	while (songsRunning < 3 && songQueue.length) {
-		const job = songQueue.shift()!;
-		songsRunning++;
-		void job().finally(() => {
-			songsRunning--;
-			nextSongs();
-		});
-	}
-}
 
 /** An album's songs (null until known), asked once through the album page's answer, at most 3 albums at a time. */
 export function albumSongs(album: string, artist: string): AlbumSong[] | null {
@@ -128,12 +128,6 @@ export function albumSongs(album: string, artist: string): AlbumSong[] | null {
 	return songs[album] ?? null;
 }
 
-/** What the Requests panel shows of an artist: the round photo, the banner pictures and the albums (release groups). */
-export interface AskArtist {
-	image: string | null;
-	backgrounds: string[];
-	albums: ArtistAlbum[] | null;
-}
 const artists = $state<Record<string, AskArtist>>({});
 const askedArtists = new Set<string>();
 const empty: AskArtist = { image: null, backgrounds: [], albums: null };
@@ -182,4 +176,15 @@ export function musicKinds(): MusicKinds {
 			.catch(() => {});
 	}
 	return kinds;
+}
+
+function nextSongs() {
+	while (songsRunning < 3 && songQueue.length) {
+		const job = songQueue.shift()!;
+		songsRunning++;
+		void job().finally(() => {
+			songsRunning--;
+			nextSongs();
+		});
+	}
 }

@@ -10,9 +10,30 @@ export interface TitleLive {
 	download?: { phase: 'downloading' | 'importing' | 'stuck' | 'failed'; progress: number; reason?: string; id?: number };
 }
 
+/** What a title page says about its parts (seasons or albums), as much as the window needs. */
+export interface PartCounts {
+	/** Season number or album mbid. */
+	key: string | number;
+	/** The whole part is in the Library. */
+	complete: boolean;
+	/** false: not counted in "n more available" (a single, remix, bootleg, or a season with nothing aired yet). */
+	real?: boolean;
+	/** Episodes aired or tracks the part holds, and how many of them are in the Library (for parts asked only in part). */
+	size?: number;
+	have?: number;
+}
+
+/** A part asked only in part: a season with single episodes, an album with kept songs. */
+export interface PartPick {
+	key: string | number;
+	/** How many episodes or songs were kept. */
+	count: number;
+}
+
 const DOWNLOADING = new Set(['waiting', 'downloading', 'stalled', 'paused']);
 const IMPORTING = new Set(['importing', 'waiting_to_import']);
 const FAILED = new Set(['failed', 'vanished']);
+
 // Downloaded, but the import is waiting on a person (Downloads > Needs a decision).
 const STUCK = new Set(['needs_a_decision', 'import_refused']);
 
@@ -68,26 +89,6 @@ export function stepFacts(step: AskStep | undefined): LifeFacts {
 		}
 	}
 	return {};
-}
-
-/** What a title page says about its parts (seasons or albums), as much as the window needs. */
-export interface PartCounts {
-	/** Season number or album mbid. */
-	key: string | number;
-	/** The whole part is in the Library. */
-	complete: boolean;
-	/** false: not counted in "n more available" (a single, remix, bootleg, or a season with nothing aired yet). */
-	real?: boolean;
-	/** Episodes aired or tracks the part holds, and how many of them are in the Library (for parts asked only in part). */
-	size?: number;
-	have?: number;
-}
-
-/** A part asked only in part: a season with single episodes, an album with kept songs. */
-export interface PartPick {
-	key: string | number;
-	/** How many episodes or songs were kept. */
-	count: number;
 }
 
 // Title words that mark a release as not a real album (MusicBrainz sometimes leaves these untyped).

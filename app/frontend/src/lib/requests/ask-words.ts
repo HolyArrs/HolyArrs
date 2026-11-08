@@ -3,6 +3,14 @@
 import type { AskLimit, LimitKind } from './types.ts';
 import type { Ask, AskState } from '../core/types.ts';
 
+export type RequestsView = 'waiting' | 'all' | 'mine';
+
+/** The Requests tabs. Failed is an approved ask that never reached the Library. */
+export type AskTab = 'waiting' | 'approved' | 'declined' | 'done' | 'failed';
+
+/** The approvers' tabs, simpler than the members' five: Pending waits for an answer, Processing is approved and not in the Library yet (failed ones too), Done is in the Library or declined. */
+export type ApproverTab = 'pending' | 'processing' | 'done';
+
 /** The chip colour for an ask state. */
 export function askTone(state: AskState): 'wait' | 'ok' | 'fail' | '' {
 	return ({ asked: 'wait', approved: '', turned_down: 'fail', available: 'ok' } as const)[state] ?? '';
@@ -94,10 +102,9 @@ export const momentWords: Record<string, [string, string]> = {
 
 /** Go to the people who asked (and the staff for a new ask). */
 export const askMoments = ['ask_waiting', 'ask_approved', 'ask_turned_down', 'ask_ready', 'new_episodes', 'new_albums', 'report_made', 'report_fixed'] as const;
+
 /** Go to the staff. */
 export const libraryMoments = ['grab', 'import', 'rename', 'add', 'delete', 'health', 'needs_decision'] as const;
-
-export type RequestsView = 'waiting' | 'all' | 'mine';
 
 /** Counts the asks in each Requests view. */
 export function viewCounts(asks: Pick<Ask, 'state' | 'mine'>[]): Record<RequestsView, number> {
@@ -110,8 +117,6 @@ export function firstView(asks: Pick<Ask, 'state' | 'mine'>[]): RequestsView {
 	return n.waiting ? 'waiting' : n.all ? 'all' : 'mine';
 }
 
-/** The Requests tabs. Failed is an approved ask that never reached the Library. */
-export type AskTab = 'waiting' | 'approved' | 'declined' | 'done' | 'failed';
 export const askTabs: { tab: AskTab; label: string }[] = [
 	{ tab: 'waiting', label: 'Waiting' },
 	{ tab: 'approved', label: 'Approved' },
@@ -141,8 +146,6 @@ export function firstTab(asks: Pick<Ask, 'state' | 'title_id'>[]): AskTab {
 	return askTabs.find((t) => n[t.tab] > 0)?.tab ?? 'waiting';
 }
 
-/** The approvers' tabs, simpler than the members' five: Pending waits for an answer, Processing is approved and not in the Library yet (failed ones too), Done is in the Library or declined. */
-export type ApproverTab = 'pending' | 'processing' | 'done';
 export const approverTabs: { tab: ApproverTab; label: string }[] = [
 	{ tab: 'pending', label: 'Waiting' },
 	{ tab: 'processing', label: 'Processing' },

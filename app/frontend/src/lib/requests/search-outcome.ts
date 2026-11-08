@@ -17,6 +17,7 @@ export const MEMBER_LINE = 'No results yet';
 
 // Pause reasons from the server, in the reason words of source-health.ts.
 const reasonOf: Record<string, string> = { rate_limited: 'slowed', down: 'down', blocked: 'blocked', login_refused: 'key' };
+
 const fallback: Record<string, string> = { slowed: 'Slowed down', down: 'Down', blocked: 'Blocked', key: 'Key refused' };
 
 /** Why one Source gave nothing, in lower case. */

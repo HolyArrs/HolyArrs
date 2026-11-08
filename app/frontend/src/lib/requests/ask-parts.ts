@@ -22,18 +22,9 @@ export interface MusicKinds {
 	album_types: string[];
 	secondary_types: string[];
 }
-export const musicDefaults: MusicKinds = { album_types: ['album', 'ep'], secondary_types: ['studio'] };
 
 /** The kinds an album is counted under, in this order. */
 export type AlbumKind = 'albums' | 'singles' | 'live' | 'compilations' | 'other';
-const kindWords: Record<AlbumKind, [string, string]> = {
-	albums: ['album', 'albums'],
-	singles: ['single or EP', 'singles & EPs'],
-	live: ['live album', 'live albums'],
-	compilations: ['compilation', 'compilations'],
-	other: ['soundtrack or remix', 'soundtracks & remixes']
-};
-const kindOrder: AlbumKind[] = ['albums', 'singles', 'live', 'compilations', 'other'];
 
 /** One album row: the main edition, with the other editions of the same album under it. */
 export interface AlbumGroup {
@@ -45,6 +36,56 @@ export interface AlbumGroup {
 	/** The other editions (deluxe, remaster, anniversary), oldest first. */
 	editions: { mbid: string; name: string; year?: number }[];
 }
+
+/** A season row of a show ask. */
+export interface SeasonRow {
+	number: number;
+	episodes: number;
+	year?: number;
+	/** The single episodes asked for; absent means the whole season. */
+	asked?: number[];
+}
+
+/** The tick state of a season: every episode, some, or none. */
+export type SeasonTick = 'all' | 'some' | 'none';
+
+/** One season as the approver sees it: its episodes, the ones asked for, and the ones ticked. */
+export interface SeasonPick {
+	number: number;
+	/** Every episode number of the season (from the list, else 1 to count). */
+	all: number[];
+	/** The episodes the person asked for. */
+	asked: number[];
+	/** The episodes that will be added (ticked). */
+	ticked: number[];
+	tick: SeasonTick;
+}
+
+/** What the approver keeps of a music or TV ask before approving. */
+export interface PartsPick {
+	/** Seasons kept (show asks); null when all are. */
+	seasons: number[] | null;
+	/** Single episodes kept in partly ticked seasons (show asks); null when none. */
+	episodes?: { season: number; episodes: number[] }[] | null;
+	/** Songs kept in partly ticked albums (recording ids); null when none. */
+	songs?: { album: string; recordings: string[] }[] | null;
+	/** Album ids kept, every edition of each kept album (artist asks); null when all are. */
+	albums: string[] | null;
+	/** Everything was unticked: nothing to approve. */
+	empty: boolean;
+}
+
+export const musicDefaults: MusicKinds = { album_types: ['album', 'ep'], secondary_types: ['studio'] };
+
+const kindWords: Record<AlbumKind, [string, string]> = {
+	albums: ['album', 'albums'],
+	singles: ['single or EP', 'singles & EPs'],
+	live: ['live album', 'live albums'],
+	compilations: ['compilation', 'compilations'],
+	other: ['soundtrack or remix', 'soundtracks & remixes']
+};
+
+const kindOrder: AlbumKind[] = ['albums', 'singles', 'live', 'compilations', 'other'];
 
 // Words that mark an edition of an album rather than a new album.
 const editionWords = /\b(deluxe|remaster(ed)?|anniversary|expanded|edition|version|explicit|clean|bonus|special|super|collector'?s?|reissue|mono|stereo|japan(ese)?|uk|us|international|tour|platinum|complete|legacy|redux|\d{1,2}(st|nd|rd|th))\b/i;
@@ -137,15 +178,6 @@ export function askAlbums(a: Pick<Ask, 'albums'>, artist: ArtistAlbum[] | null, 
 	return (artist ?? []).filter((x) => keptByDefault(x, kinds));
 }
 
-/** A season row of a show ask. */
-export interface SeasonRow {
-	number: number;
-	episodes: number;
-	year?: number;
-	/** The single episodes asked for; absent means the whole season. */
-	asked?: number[];
-}
-
 /** The seasons a show ask is for: the ones it names (whole, or with single episodes), or every regular season of a whole-show ask. */
 export function askSeasons(a: Pick<Ask, 'seasons' | 'future_only'> & Pick<Partial<Ask>, 'episodes'>, seasons: SeasonInfo[]): SeasonRow[] {
 	if (a.future_only) return [];
@@ -159,21 +191,6 @@ export function askSeasons(a: Pick<Ask, 'seasons' | 'future_only'> & Pick<Partia
 			const asked = a.seasons?.includes(n) ? undefined : single.find((e) => e.season === n)?.episodes;
 			return { number: n, episodes: s?.episode_count ?? 0, year: s?.year, ...(asked ? { asked: [...new Set(asked)].sort((x, y) => x - y) } : {}) };
 		});
-}
-
-/** The tick state of a season: every episode, some, or none. */
-export type SeasonTick = 'all' | 'some' | 'none';
-
-/** One season as the approver sees it: its episodes, the ones asked for, and the ones ticked. */
-export interface SeasonPick {
-	number: number;
-	/** Every episode number of the season (from the list, else 1 to count). */
-	all: number[];
-	/** The episodes the person asked for. */
-	asked: number[];
-	/** The episodes that will be added (ticked). */
-	ticked: number[];
-	tick: SeasonTick;
 }
 
 const range = (n: number) => Array.from({ length: n }, (_, i) => i + 1);
@@ -216,20 +233,6 @@ export function keptWords(kept: number, all: number, noun: string, extra = ''): 
 	const many = all === 1 ? noun : `${noun}s`;
 	const head = kept === all ? (all === 1 ? `1 ${noun}` : `All ${all} ${many}`) : `${kept} of ${all} ${many}`;
 	return extra ? `${head} · ${extra}` : head;
-}
-
-/** What the approver keeps of a music or TV ask before approving. */
-export interface PartsPick {
-	/** Seasons kept (show asks); null when all are. */
-	seasons: number[] | null;
-	/** Single episodes kept in partly ticked seasons (show asks); null when none. */
-	episodes?: { season: number; episodes: number[] }[] | null;
-	/** Songs kept in partly ticked albums (recording ids); null when none. */
-	songs?: { album: string; recordings: string[] }[] | null;
-	/** Album ids kept, every edition of each kept album (artist asks); null when all are. */
-	albums: string[] | null;
-	/** Everything was unticked: nothing to approve. */
-	empty: boolean;
 }
 
 /** Adds the song total to the album counts: "... · 112 songs", "... · 98 of 112 songs" (while lists load: the songs known so far). */

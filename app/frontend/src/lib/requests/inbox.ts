@@ -8,12 +8,14 @@ export interface SeasonInfo {
 	episode_count: number;
 	year?: number;
 }
+
 /** An episode as a season's metadata answer lists it. */
 export interface EpisodeInfo {
 	number: number;
 	name?: string;
 	air_day?: string;
 }
+
 /** What the metadata answer adds to an ask's summary. */
 export interface AskInfo {
 	seasons: SeasonInfo[];
@@ -49,6 +51,7 @@ export function runtimeShort(min: number | undefined): string {
 }
 
 const day = (iso: string) => iso.slice(0, 10);
+
 /** When something happened ("Mar 3") in the viewer's own time zone, never later than now. */
 export function whenDate(iso: string, now = new Date()): string {
 	const t = new Date(iso);
@@ -114,6 +117,7 @@ export const audioLanguages: { code: string; name: string }[] = [
 	{ code: 'sv', name: 'Swedish' },
 	{ code: 'tr', name: 'Turkish' }
 ];
+
 /** Names a base code ("ko" is Korean); unknown codes read as themselves. */
 export function languageName(code: string | undefined): string {
 	if (!code) return '';

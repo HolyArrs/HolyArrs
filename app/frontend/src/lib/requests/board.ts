@@ -7,6 +7,7 @@ import type { LifeFacts } from './lifecycle.ts';
 import type { TitleDetails } from '../metadata/index.ts';
 import type { Ask } from '../core/types.ts';
 import type { LibraryFolder, PickRulesView } from '../core/types.ts';
+import { detailPath } from '../metadata/index.ts';
 
 /** The approver's choices for one ask: Pick rules (0 is the default), audio languages (empty is any), a note, and the seasons or albums kept (absent means all of the ask). */
 export interface DecideOptions {
@@ -19,23 +20,6 @@ export interface DecideOptions {
 	albums?: string[];
 	/** Songs kept in partly ticked albums (recording ids). */
 	songs?: { album: string; recordings: string[] }[];
-}
-import { detailPath } from '../metadata/index.ts';
-
-/** Where a title's name links: the Library page once added, else its title page or artist page. */
-export function askHref(a: Pick<Ask, 'kind' | 'tmdb_id' | 'ref' | 'title_id'>): string {
-	if (a.title_id && a.title_id > 0) return `/library/${a.title_id}`;
-	if (a.kind === 'artist') {
-		const mbid = a.ref?.startsWith('mbid:') ? a.ref.slice(5) : '';
-		return mbid ? `/music/artist/${encodeURIComponent(mbid)}` : '';
-	}
-	if (!a.tmdb_id) return '';
-	return detailPath(a.kind === 'show' ? 'show' : 'movie', a.tmdb_id);
-}
-
-/** An ask's kind for a small tag. */
-export function kindWord(kind: string): string {
-	return kind === 'show' ? 'TV show' : kind === 'artist' ? 'Music' : 'Movie';
 }
 
 /** A person who asked, with what the page knows about them. */
@@ -53,38 +37,6 @@ export interface Member {
 	name: string;
 	avatar?: string | null;
 	max_rating?: string;
-}
-
-/** Puts asks under the first person who asked, biggest group first, then by name. */
-export function personGroups<T extends Pick<Ask, 'asked_by' | 'people'>>(asks: T[]): { id: number; name: string; asks: T[] }[] {
-	const by = new Map<number, { id: number; name: string; asks: T[] }>();
-	for (const a of asks) {
-		const who = a.people[0] ?? a.asked_by;
-		const g = by.get(who.id) ?? { id: who.id, name: who.name, asks: [] };
-		g.asks.push(a);
-		by.set(who.id, g);
-	}
-	return [...by.values()].sort((x, y) => y.asks.length - x.asks.length || x.name.localeCompare(y.name));
-}
-
-/** Keeps a focus position inside a list of n after a move (wraps). */
-export function stepIndex(i: number, step: number, n: number): number {
-	if (n <= 0) return 0;
-	return (((i + step) % n) + n) % n;
-}
-
-/** The cache key for a title's details; '' when the ask has none to fetch (music, or no TMDB id). */
-export function detailKey(a: Pick<Ask, 'kind' | 'tmdb_id'>): string {
-	if (a.kind === 'artist' || !a.tmdb_id) return '';
-	return `${a.kind === 'show' ? 'show' : 'movie'}:${a.tmdb_id}`;
-}
-
-/** A runtime in words: "1 h 52 min", "48 min". */
-export function runtimeLine(min: number | undefined): string {
-	if (!min) return '';
-	const h = Math.floor(min / 60);
-	const m = min % 60;
-	return h ? (m ? `${h} h ${m} min` : `${h} h`) : `${m} min`;
 }
 
 /** What every variant gets from the page: the asks, the real handlers and the shared words. */
@@ -158,4 +110,52 @@ export interface BoardCtx {
 	readonly people: { id: number; name: string; n: number }[];
 	/** The signed-in member (the poster size and panel are kept per member). */
 	readonly me: number | undefined;
+}
+
+/** Where a title's name links: the Library page once added, else its title page or artist page. */
+export function askHref(a: Pick<Ask, 'kind' | 'tmdb_id' | 'ref' | 'title_id'>): string {
+	if (a.title_id && a.title_id > 0) return `/library/${a.title_id}`;
+	if (a.kind === 'artist') {
+		const mbid = a.ref?.startsWith('mbid:') ? a.ref.slice(5) : '';
+		return mbid ? `/music/artist/${encodeURIComponent(mbid)}` : '';
+	}
+	if (!a.tmdb_id) return '';
+	return detailPath(a.kind === 'show' ? 'show' : 'movie', a.tmdb_id);
+}
+
+/** An ask's kind for a small tag. */
+export function kindWord(kind: string): string {
+	return kind === 'show' ? 'TV show' : kind === 'artist' ? 'Music' : 'Movie';
+}
+
+/** Puts asks under the first person who asked, biggest group first, then by name. */
+export function personGroups<T extends Pick<Ask, 'asked_by' | 'people'>>(asks: T[]): { id: number; name: string; asks: T[] }[] {
+	const by = new Map<number, { id: number; name: string; asks: T[] }>();
+	for (const a of asks) {
+		const who = a.people[0] ?? a.asked_by;
+		const g = by.get(who.id) ?? { id: who.id, name: who.name, asks: [] };
+		g.asks.push(a);
+		by.set(who.id, g);
+	}
+	return [...by.values()].sort((x, y) => y.asks.length - x.asks.length || x.name.localeCompare(y.name));
+}
+
+/** Keeps a focus position inside a list of n after a move (wraps). */
+export function stepIndex(i: number, step: number, n: number): number {
+	if (n <= 0) return 0;
+	return (((i + step) % n) + n) % n;
+}
+
+/** The cache key for a title's details; '' when the ask has none to fetch (music, or no TMDB id). */
+export function detailKey(a: Pick<Ask, 'kind' | 'tmdb_id'>): string {
+	if (a.kind === 'artist' || !a.tmdb_id) return '';
+	return `${a.kind === 'show' ? 'show' : 'movie'}:${a.tmdb_id}`;
+}
+
+/** A runtime in words: "1 h 52 min", "48 min". */
+export function runtimeLine(min: number | undefined): string {
+	if (!min) return '';
+	const h = Math.floor(min / 60);
+	const m = min % 60;
+	return h ? (m ? `${h} h ${m} min` : `${h} h`) : `${m} min`;
 }

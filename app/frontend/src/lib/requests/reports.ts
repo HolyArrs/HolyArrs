@@ -6,24 +6,6 @@ export type ReportKind = 'picture' | 'sound' | 'subtitles' | 'wont_play' | 'othe
 export type ReportState = 'open' | 'fixed';
 export type ReportFilter = ReportState | 'all';
 
-/** The problem kinds, in the order the sheet shows them. */
-export const reportKinds: { kind: ReportKind; label: string; hint: string }[] = [
-	{ kind: 'picture', label: 'Picture', hint: 'Blurry, blocky, the wrong shape or no picture' },
-	{ kind: 'sound', label: 'Sound', hint: 'No sound, out of sync or the wrong language' },
-	{ kind: 'subtitles', label: 'Subtitles', hint: 'Missing, out of sync or the wrong language' },
-	{ kind: 'wont_play', label: "Won't play", hint: 'It does not start, stops or keeps stuttering' },
-	{ kind: 'other', label: 'Other', hint: 'Something else is wrong' }
-];
-
-export const reportFilters: { filter: ReportFilter; label: string }[] = [
-	{ filter: 'open', label: 'Open' },
-	{ filter: 'fixed', label: 'Fixed' },
-	{ filter: 'all', label: 'All' }
-];
-
-/** The longest note or reply the server takes. */
-export const noteMax = 500;
-
 export interface ReportWho {
 	id: number;
 	name: string;
@@ -71,6 +53,24 @@ export interface ReportInput {
 	album_id?: number | null;
 	version_id?: number | null;
 }
+
+/** The problem kinds, in the order the sheet shows them. */
+export const reportKinds: { kind: ReportKind; label: string; hint: string }[] = [
+	{ kind: 'picture', label: 'Picture', hint: 'Blurry, blocky, the wrong shape or no picture' },
+	{ kind: 'sound', label: 'Sound', hint: 'No sound, out of sync or the wrong language' },
+	{ kind: 'subtitles', label: 'Subtitles', hint: 'Missing, out of sync or the wrong language' },
+	{ kind: 'wont_play', label: "Won't play", hint: 'It does not start, stops or keeps stuttering' },
+	{ kind: 'other', label: 'Other', hint: 'Something else is wrong' }
+];
+
+export const reportFilters: { filter: ReportFilter; label: string }[] = [
+	{ filter: 'open', label: 'Open' },
+	{ filter: 'fixed', label: 'Fixed' },
+	{ filter: 'all', label: 'All' }
+];
+
+/** The longest note or reply the server takes. */
+export const noteMax = 500;
 
 /** Names a problem kind; unknown kinds keep their own word. */
 export function kindLabel(kind: string): string {
