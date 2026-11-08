@@ -51,11 +51,6 @@ One app for movies, shows and music, from asking to watching.
 - Changed: Idles under 250 MB, runs on 1 GB machines. ([#83](https://github.com/HolyArrs/holyarrs/issues/83)) ([#4](https://github.com/HolyArrs/holyarrs/issues/4))
 - Changed: Pages open in under a second. ([#82](https://github.com/HolyArrs/holyarrs/issues/82))
 
-## Install
-- Step-by-step install guide. ([#73](https://github.com/HolyArrs/holyarrs/issues/73))
-- Runs under /holyarrs behind your proxy. ([#74](https://github.com/HolyArrs/holyarrs/issues/74))
-- Changed: Smaller download. ([#84](https://github.com/HolyArrs/holyarrs/issues/84))
-
 ## Also new
 - Your other apps keep working through the arr API. ([#79](https://github.com/HolyArrs/holyarrs/issues/79))
 - Anime matched to the right episodes. ([#63](https://github.com/HolyArrs/holyarrs/issues/63))
@@ -71,7 +66,11 @@ One app for movies, shows and music, from asking to watching.
 - Locked down by default, password guessing slowed down. ([#85](https://github.com/HolyArrs/holyarrs/issues/85)) ([#86](https://github.com/HolyArrs/holyarrs/issues/86))
 - Tracker passkeys and server details stay out of logs and pages. ([#89](https://github.com/HolyArrs/holyarrs/issues/89)) ([#88](https://github.com/HolyArrs/holyarrs/issues/88))
 
-## Get the image
+## Install
+- Step-by-step install guide. ([#73](https://github.com/HolyArrs/holyarrs/issues/73))
+- Runs under /holyarrs behind your proxy. ([#74](https://github.com/HolyArrs/holyarrs/issues/74))
+- Changed: Smaller download. ([#84](https://github.com/HolyArrs/holyarrs/issues/84))
+
 Docker Hub:
 
 `holyarrs/holyarrs:1.0.0`

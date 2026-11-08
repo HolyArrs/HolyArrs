@@ -48,7 +48,7 @@ class Golden(unittest.TestCase):
     def test_section_order(self):
         self.assertEqual(headings(notes.render_github(load(), {})), [
             "Highlights", "Requests", "Library", "Downloads", "Indexers", "Accounts", "Health",
-            "Setup", "Install", "Also new", "Security", "Get the image", "Thanks"])
+            "Setup", "Also new", "Security", "Install", "Thanks"])
         gh = notes.render_github(load(), {})
         self.assertTrue(gh.rstrip().endswith("_95 issues done, 4 still building, 48 people credited._"))
         self.assertTrue(gh.startswith(load()["theme"]))
@@ -81,9 +81,17 @@ class Shape(unittest.TestCase):
 
     def test_image_line(self):
         body = notes.render_github(load(), {})
-        self.assertIn("## Get the image\nDocker Hub:\n\n`holyarrs/holyarrs:1.0.0`\n\n`holyarrs/holyarrs:latest`", body)
+        self.assertIn("## Install\n- Step-by-step install guide. ([#73]", body)
+        self.assertIn("([#84](https://github.com/HolyArrs/holyarrs/issues/84))\n\nDocker Hub:\n\n"
+                      "`holyarrs/holyarrs:1.0.0`\n\n`holyarrs/holyarrs:latest`\n\n## Thanks", body)
+        self.assertNotIn("Get the image", body)
         self.assertNotIn("ghcr", body.lower())
         self.assertNotIn("## Docs", body)
+
+    def test_install_without_place_lines_is_just_the_image(self):
+        n = load()
+        del n["groups"]["Install"]
+        self.assertIn("## Install\nDocker Hub:\n\n`holyarrs/holyarrs:1.0.0`", notes.render_github(n, {}))
 
     def test_docs_link_only_when_set(self):
         n = load()

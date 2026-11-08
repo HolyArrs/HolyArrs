@@ -117,16 +117,24 @@ def login_for(c, cmap):
     return cmap.get(b) or cmap.get("u/" + b)
 
 
+def credit_key(c):
+    """One name per person: the Reddit name, else the GitHub login."""
+    return bare(c["name"]) if not empty(c.get("name")) else "@" + str(c.get("github", ""))
+
+
 def credit_line(c, cmap):
-    name = "u/" + bare(c["name"])
     login = login_for(c, cmap)
+    if empty(c.get("name")):
+        name = "@" + str(c["github"])
+        return "[%s](%s)" % (name, c["link"]) if c.get("link") else name
+    name = "u/" + bare(c["name"])
     text = "[%s](%s)" % (name, c["link"]) if c.get("link") else name
     return text + (" (@%s)" % login if login else "")
 
 
 def sorted_credits(n):
     cs = items(n.get("credits"))
-    return sorted(cs, key=lambda c: (-len(c.get("issues") or []), bare(c["name"]).lower()))
+    return sorted(cs, key=lambda c: (-len(c.get("issues") or []), credit_key(c).lstrip("@").lower()))
 
 
 def bullets(lines):
@@ -170,9 +178,11 @@ def render_github(n, cmap):
     hl = items(n.get("highlights"))
     if hl:
         blocks.append("## Highlights\n" + bullets(hl_line(h) for h in hl))
-    also = []
+    also, install = [], []
     for place, lines in groups(n):
-        if len(lines) >= 3:
+        if place == "Install":
+            install = lines  # shown with the image lines further down
+        elif len(lines) >= 3:
             blocks.append("## %s\n%s" % (place, bullets(lines)))
         else:
             also += lines
@@ -184,10 +194,11 @@ def render_github(n, cmap):
             blocks.append("## %s\n%s" % (title, bullets(lines)))
     # Practical and credit parts sit at the bottom; assets stay in GitHub's own box.
     imgs = images(n)
-    if imgs:
-        rows = ["%s:\n\n`%s:%s`\n\n`%s:latest`" % (i["registry"], i["name"], n["version"], i["name"])
-                for i in imgs]
-        blocks.append("## Get the image\n" + "\n\n".join(rows))
+    rows = ["%s:\n\n`%s:%s`\n\n`%s:latest`" % (i["registry"], i["name"], n["version"], i["name"])
+            for i in imgs]
+    if install or rows:
+        parts = ([bullets(install)] if install else []) + rows
+        blocks.append("## Install\n" + "\n\n".join(parts))
     if not empty(n.get("docs_url")):
         blocks.append("## Docs\n[Read the docs](%s)" % n["docs_url"])
     cs = sorted_credits(n)
@@ -326,13 +337,13 @@ def check(n, cmap):
             elif difflib.SequenceMatcher(None, no_refs(a).lower(), no_refs(c).lower()).ratio() > 0.8:
                 warnings.append("near-identical lines: %r / %r" % (a, c))
     cs = items(n.get("credits"))
-    names = {bare(c.get("name", "")).lower() for c in cs}
+    names = {credit_key(c).lower() for c in cs if not (empty(c.get("name")) and empty(c.get("github")))}
     people = (n.get("stats") or {}).get("people_credited")
     if isinstance(people, int) and cs and people != len(names):
         warnings.append("stats.people_credited is %d but credits list %d names" % (people, len(names)))
     for c in cs:
-        if empty(c.get("name")):
-            errors.append("credit without a name")
+        if empty(c.get("name")) and empty(c.get("github")):
+            errors.append("credit without a name or github login")
             continue
         login = login_for(c, cmap)
         if login and not LOGIN.fullmatch(str(login)):
