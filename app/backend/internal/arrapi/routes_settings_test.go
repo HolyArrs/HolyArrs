@@ -2,8 +2,10 @@ package arrapi
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
@@ -73,5 +75,45 @@ func TestSaveSwitchesBothAndNil(t *testing.T) {
 	}
 	if switchValue(ctx, st, settingOn) != "off" || switchValue(ctx, st, settingDeleteFile) != "on" {
 		t.Fatal("nil overwrote, or off not saved")
+	}
+}
+
+// Without sign-in no key can be made or deleted, and the settings still list
+// both sides with no key.
+func TestSettingsWithoutSignIn(t *testing.T) {
+	h := &Handlers{Deps: Deps{Store: settingsStore(t)}}
+	req := httptest.NewRequest("POST", "/api/v1/settings/old-app-api/keys/sonarr", nil)
+	req.SetPathValue("side", "sonarr")
+	rec := httptest.NewRecorder()
+	h.makeKey(rec, req)
+	if rec.Code != http.StatusConflict || !strings.Contains(rec.Body.String(), "sign-in is off") {
+		t.Fatalf("makeKey: %d %s", rec.Code, rec.Body)
+	}
+	req2 := httptest.NewRequest("DELETE", "/api/v1/settings/old-app-api/keys/sonarr", nil)
+	req2.SetPathValue("side", "sonarr")
+	rec2 := httptest.NewRecorder()
+	h.deleteKey(rec2, req2)
+	if rec2.Code != http.StatusNotFound {
+		t.Fatalf("deleteKey: %d", rec2.Code)
+	}
+	rec3 := httptest.NewRecorder()
+	h.getSettings(rec3, httptest.NewRequest("GET", "/api/v1/settings/old-app-api", nil))
+	if rec3.Code != http.StatusOK {
+		t.Fatalf("getSettings: %d %s", rec3.Code, rec3.Body)
+	}
+	var out struct {
+		Enabled bool             `json:"enabled"`
+		Sides   []map[string]any `json:"sides"`
+	}
+	if err := json.Unmarshal(rec3.Body.Bytes(), &out); err != nil {
+		t.Fatal(err)
+	}
+	if out.Enabled || len(out.Sides) != 2 {
+		t.Fatalf("settings: %s", rec3.Body)
+	}
+	for _, s := range out.Sides {
+		if _, has := s["key"]; has {
+			t.Errorf("side %v shows a key", s["side"])
+		}
 	}
 }
