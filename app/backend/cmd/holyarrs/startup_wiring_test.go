@@ -4,7 +4,6 @@ import (
 	"context"
 	"slices"
 	"testing"
-	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
@@ -69,18 +68,13 @@ func TestStartup_SubtitleEventsQueueSearch(t *testing.T) {
 			if err := s.AddEvent(ctx, &domain.Event{Kind: "adopted", Summary: "adopted"}); err != nil {
 				t.Fatal(err)
 			}
-			if c.wantJob {
-				deadline := time.Now().Add(10 * time.Second)
-				for lookJobs(t, s) <= base && time.Now().Before(deadline) {
-					time.Sleep(50 * time.Millisecond)
-				}
-				if lookJobs(t, s) <= base {
-					t.Fatal("the Event queued no subtitle look")
-				}
-				return
+			// Event hooks run on AddEvent's caller, so the Job (if any) is
+			// already queued here.
+			n := lookJobs(t, s)
+			if c.wantJob && n <= base {
+				t.Fatal("the Event queued no subtitle look")
 			}
-			time.Sleep(500 * time.Millisecond)
-			if n := lookJobs(t, s); n != base {
+			if !c.wantJob && n != base {
 				t.Fatalf("a subtitle look was queued (%d -> %d)", base, n)
 			}
 		})
