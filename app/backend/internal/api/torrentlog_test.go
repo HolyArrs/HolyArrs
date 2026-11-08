@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 func TestTorrentLogStateLines(t *testing.T) {
@@ -90,7 +90,7 @@ func TestTorrentLogDerivedLines(t *testing.T) {
 // State changes the reader sees become log lines; old lines prune; tracker
 // lines never keep a passkey.
 func TestTorrentLogRecordsAndPrunes(t *testing.T) {
-	s, err := store.Open(t.TempDir(), store.Options{})
+	s, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -126,7 +126,7 @@ func TestTorrentLogRecordsAndPrunes(t *testing.T) {
 // A remove through HolyArrs and a Downloader delete drop a torrent's
 // tracker memory and rows.
 func TestTorrentLogForgetsGoneTorrents(t *testing.T) {
-	s, err := store.Open(t.TempDir(), store.Options{})
+	s, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -157,7 +157,7 @@ func TestTorrentLogForgetsGoneTorrents(t *testing.T) {
 
 // Removals match lower-case hashes in batches.
 func TestForgetTorrentsInBatches(t *testing.T) {
-	s, err := store.Open(t.TempDir(), store.Options{})
+	s, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}

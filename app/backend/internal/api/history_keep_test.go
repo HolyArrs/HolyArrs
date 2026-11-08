@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 )
 
 // History keep times live in Settings > This app: routine 30 days and the
@@ -41,7 +41,7 @@ func TestHistoryKeepSetting(t *testing.T) {
 	if c := put(auth.RoleAdmin, `{"autoplay_trailers": false}`); c != 200 {
 		t.Fatalf("admin autoplay answered %d", c)
 	}
-	es, _, err := a.s.Store.Events(context.Background(), store.EventFilter{Kinds: []string{EventSettingsChanged}})
+	es, _, err := a.s.Store.Events(context.Background(), database.EventFilter{Kinds: []string{EventSettingsChanged}})
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 )
 
 // MatchFunc looks one client item up and links it when sure. It must never
@@ -73,7 +73,7 @@ func (s *Sync) matchStep(ctx context.Context) int {
 	}
 	now := s.now()
 	rows, err := s.DB.Read().QueryContext(ctx, `SELECT downloader_id, key, name, category, attempts FROM dl_match_queue
-		WHERE outcome = '' AND next_try_at <= ? ORDER BY priority, next_try_at LIMIT ?`, now.UTC().Format(store.TimeLayout), matchBurst)
+		WHERE outcome = '' AND next_try_at <= ? ORDER BY priority, next_try_at LIMIT ?`, now.UTC().Format(database.TimeLayout), matchBurst)
 	if err != nil {
 		return 0
 	}
@@ -103,7 +103,7 @@ func (s *Sync) matchStep(ctx context.Context) int {
 					out = "nomatch"
 				}
 				_, e := tx.Exec("UPDATE dl_match_queue SET attempts = ?, next_try_at = ?, last_error = ?, outcome = ? WHERE downloader_id = ? AND key = ?",
-					tries, at.Add(matchBackoff(tries)).UTC().Format(store.TimeLayout), firstLine(err.Error()), out, r.id, r.key)
+					tries, at.Add(matchBackoff(tries)).UTC().Format(database.TimeLayout), firstLine(err.Error()), out, r.id, r.key)
 				return e
 			}
 			var tid any

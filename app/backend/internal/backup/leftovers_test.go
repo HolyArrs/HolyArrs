@@ -13,7 +13,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 )
 
 func put(t *testing.T, p, body string) {
@@ -40,13 +40,13 @@ func read(t *testing.T, p string) string {
 // start removes them. Before-restore folders and a staged restore stay.
 func TestCleanLeftoversRemovesOnlyCutOffWork(t *testing.T) {
 	dir := t.TempDir()
-	put(t, filepath.Join(dir, ".backup-123", store.MainFile), strings.Repeat("x", 1000))
+	put(t, filepath.Join(dir, ".backup-123", database.MainFile), strings.Repeat("x", 1000))
 	put(t, filepath.Join(dir, ".restore-456", "upload.zip"), strings.Repeat("y", 500))
 	put(t, filepath.Join(dir, "backups", "holyarrs-backup-manual-20261101T000000.000Z.zip.part"), strings.Repeat("z", 100))
 	keep := []string{
-		filepath.Join(dir, store.MainFile),
+		filepath.Join(dir, database.MainFile),
 		filepath.Join(dir, StagedDir, readyFile),
-		filepath.Join(dir, "backups", "before-restore-20261101T000000.000Z", store.MainFile),
+		filepath.Join(dir, "backups", "before-restore-20261101T000000.000Z", database.MainFile),
 		filepath.Join(dir, "backups", "holyarrs-backup-manual-20261101T000000.000Z.zip"),
 		filepath.Join(dir, ".backup-note"), // a file, not a folder we made
 	}
@@ -131,22 +131,22 @@ func TestDiskFullErrorIsPlain(t *testing.T) {
 func restoreState(t *testing.T, k int) (string, journal) {
 	t.Helper()
 	dir := t.TempDir()
-	put(t, filepath.Join(dir, store.MainFile), "old-main")
-	put(t, filepath.Join(dir, store.MainFile+"-wal"), "old-main-wal")
-	put(t, filepath.Join(dir, store.EventsFile), "old-events")
-	put(t, filepath.Join(dir, StagedDir, store.MainFile), "new-main")
-	put(t, filepath.Join(dir, StagedDir, store.EventsFile), "new-events")
+	put(t, filepath.Join(dir, database.MainFile), "old-main")
+	put(t, filepath.Join(dir, database.MainFile+"-wal"), "old-main-wal")
+	put(t, filepath.Join(dir, database.EventsFile), "old-events")
+	put(t, filepath.Join(dir, StagedDir, database.MainFile), "new-main")
+	put(t, filepath.Join(dir, StagedDir, database.EventsFile), "new-events")
 	put(t, filepath.Join(dir, StagedDir, readyFile), "x")
 	keepRel := filepath.Join("backups", "before-restore-20261101T000000.000Z")
 	if err := os.MkdirAll(filepath.Join(dir, keepRel), 0o750); err != nil {
 		t.Fatal(err)
 	}
 	j := journal{Keep: keepRel, Moves: []journalMove{
-		{From: store.MainFile, To: filepath.Join(keepRel, store.MainFile)},
-		{From: store.MainFile + "-wal", To: filepath.Join(keepRel, store.MainFile+"-wal")},
-		{From: filepath.Join(StagedDir, store.MainFile), To: store.MainFile},
-		{From: store.EventsFile, To: filepath.Join(keepRel, store.EventsFile)},
-		{From: filepath.Join(StagedDir, store.EventsFile), To: store.EventsFile},
+		{From: database.MainFile, To: filepath.Join(keepRel, database.MainFile)},
+		{From: database.MainFile + "-wal", To: filepath.Join(keepRel, database.MainFile+"-wal")},
+		{From: filepath.Join(StagedDir, database.MainFile), To: database.MainFile},
+		{From: database.EventsFile, To: filepath.Join(keepRel, database.EventsFile)},
+		{From: filepath.Join(StagedDir, database.EventsFile), To: database.EventsFile},
 	}}
 	if err := writeJournal(dir, j); err != nil {
 		t.Fatal(err)
@@ -186,14 +186,14 @@ func TestCutOffRestoreIsFinishedAtEveryStep(t *testing.T) {
 		if strings.Contains(out, "undo") || !strings.Contains(out, "finished") || !strings.Contains(out, j.Keep) {
 			t.Errorf("k=%d: log %q", k, out)
 		}
-		if got := read(t, filepath.Join(dir, store.MainFile)); got != "new-main" {
+		if got := read(t, filepath.Join(dir, database.MainFile)); got != "new-main" {
 			t.Errorf("k=%d: main %q", k, got)
 		}
-		if got := read(t, filepath.Join(dir, store.EventsFile)); got != "new-events" {
+		if got := read(t, filepath.Join(dir, database.EventsFile)); got != "new-events" {
 			t.Errorf("k=%d: events %q", k, got)
 		}
 		keep := filepath.Join(dir, j.Keep)
-		for f, want := range map[string]string{store.MainFile: "old-main", store.MainFile + "-wal": "old-main-wal", store.EventsFile: "old-events"} {
+		for f, want := range map[string]string{database.MainFile: "old-main", database.MainFile + "-wal": "old-main-wal", database.EventsFile: "old-events"} {
 			if got := read(t, filepath.Join(keep, f)); got != want {
 				t.Errorf("k=%d: kept %s %q", k, f, got)
 			}
@@ -212,7 +212,7 @@ func TestCutOffRestoreIsFinishedAtEveryStep(t *testing.T) {
 // says so; the old databases are back.
 func TestCutOffRestoreUndoneWhenItCannotFinish(t *testing.T) {
 	dir, _ := restoreState(t, 3)
-	if err := os.Remove(filepath.Join(dir, StagedDir, store.EventsFile)); err != nil {
+	if err := os.Remove(filepath.Join(dir, StagedDir, database.EventsFile)); err != nil {
 		t.Fatal(err)
 	}
 	buf := captureLog(t)
@@ -222,12 +222,12 @@ func TestCutOffRestoreUndoneWhenItCannotFinish(t *testing.T) {
 	if out := buf.String(); !strings.Contains(out, "undone") || strings.Contains(out, "has been finished") {
 		t.Errorf("log %q", out)
 	}
-	for f, want := range map[string]string{store.MainFile: "old-main", store.MainFile + "-wal": "old-main-wal", store.EventsFile: "old-events"} {
+	for f, want := range map[string]string{database.MainFile: "old-main", database.MainFile + "-wal": "old-main-wal", database.EventsFile: "old-events"} {
 		if got := read(t, filepath.Join(dir, f)); got != want {
 			t.Errorf("%s %q", f, got)
 		}
 	}
-	if got := read(t, filepath.Join(dir, StagedDir, store.MainFile)); got != "new-main" {
+	if got := read(t, filepath.Join(dir, StagedDir, database.MainFile)); got != "new-main" {
 		t.Errorf("staged main not put back: %q", got)
 	}
 }

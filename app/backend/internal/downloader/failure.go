@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/archive"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/judge"
@@ -154,14 +155,14 @@ func fakeReason(files []File, protocol string) string {
 // their name as the reason, then the failure path runs.
 func (m *Manager) MarkFailed(ctx context.Context, downloadID int64, by domain.Actor, who string) error {
 	var d domain.Download
-	if err := store.Get(ctx, m.Store.Read(), "downloads", downloadID, &d); err != nil {
+	if err := database.Get(ctx, m.Store.Read(), "downloads", downloadID, &d); err != nil {
 		return err
 	}
 	if !isActive(d.State) {
 		return ErrNotActive
 	}
 	var dr domain.Downloader
-	if err := store.Get(ctx, m.Store.Read(), "downloaders", d.DownloaderID, &dr); err != nil {
+	if err := database.Get(ctx, m.Store.Read(), "downloaders", d.DownloaderID, &dr); err != nil {
 		return err
 	}
 	next := d
@@ -199,13 +200,13 @@ func (m *Manager) failed(ctx context.Context, dr domain.Downloader, old, next do
 		if !isActive(cur) {
 			return ErrNotActive // another path got there first
 		}
-		if err := store.Update(tx, "downloads", &next, by); err != nil {
+		if err := database.Update(tx, "downloads", &next, by); err != nil {
 			return err
 		}
 		if replace && next.ReleaseID != nil {
 			if _, err := tx.Exec(`UPDATE releases SET state = 'turned_down', hold_until = NULL,
 				verdict = json_set(COALESCE(verdict, '{}'), '$.turned_down_reason', ?), updated_at = ? WHERE id = ?`,
-				"the download failed: "+reason, store.FormatTime(m.now()), *next.ReleaseID); err != nil {
+				"the download failed: "+reason, database.FormatTime(m.now()), *next.ReleaseID); err != nil {
 				return err
 			}
 		}
@@ -359,11 +360,11 @@ func (m *Manager) Discard(ctx context.Context, downloadID int64) error {
 		return nil
 	}
 	var d domain.Download
-	if err := store.Get(ctx, m.Store.Read(), "downloads", downloadID, &d); err != nil {
+	if err := database.Get(ctx, m.Store.Read(), "downloads", downloadID, &d); err != nil {
 		return err
 	}
 	var dr domain.Downloader
-	if err := store.Get(ctx, m.Store.Read(), "downloaders", d.DownloaderID, &dr); err != nil {
+	if err := database.Get(ctx, m.Store.Read(), "downloaders", d.DownloaderID, &dr); err != nil {
 		return err
 	}
 	e, err := m.engine(ctx, dr)
@@ -394,14 +395,14 @@ type RemoveChoice struct {
 // back to wanted (better_wanted with a copy in place).
 func (m *Manager) Remove(ctx context.Context, downloadID int64, c RemoveChoice, by domain.Actor, who string) error {
 	var d domain.Download
-	if err := store.Get(ctx, m.Store.Read(), "downloads", downloadID, &d); err != nil {
+	if err := database.Get(ctx, m.Store.Read(), "downloads", downloadID, &d); err != nil {
 		return err
 	}
 	if !isActive(d.State) {
 		return ErrNotActive
 	}
 	var dr domain.Downloader
-	if err := store.Get(ctx, m.Store.Read(), "downloaders", d.DownloaderID, &dr); err != nil {
+	if err := database.Get(ctx, m.Store.Read(), "downloaders", d.DownloaderID, &dr); err != nil {
 		return err
 	}
 	reason := "removed"
@@ -421,7 +422,7 @@ func (m *Manager) Remove(ctx context.Context, downloadID int64, c RemoveChoice, 
 		if !isActive(cur) {
 			return ErrNotActive
 		}
-		if err := store.Update(tx, "downloads", &next, by); err != nil {
+		if err := database.Update(tx, "downloads", &next, by); err != nil {
 			return err
 		}
 		// Recorded first, so a crash or a Downloader that is down never
@@ -432,7 +433,7 @@ func (m *Manager) Remove(ctx context.Context, downloadID int64, c RemoveChoice, 
 		if c.TurnDown && next.ReleaseID != nil {
 			if _, err := tx.Exec(`UPDATE releases SET state = 'turned_down', hold_until = NULL,
 				verdict = json_set(COALESCE(verdict, '{}'), '$.turned_down_reason', ?), updated_at = ? WHERE id = ?`,
-				"the download was "+reason, store.FormatTime(m.now()), *next.ReleaseID); err != nil {
+				"the download was "+reason, database.FormatTime(m.now()), *next.ReleaseID); err != nil {
 				return err
 			}
 		}
@@ -517,7 +518,7 @@ func (m *Manager) retryRemovals(ctx context.Context) {
 	_ = rows.Close()
 	for _, p := range list {
 		var dr domain.Downloader
-		if err := store.Get(ctx, m.Store.Read(), "downloaders", p.downloader, &dr); err != nil {
+		if err := database.Get(ctx, m.Store.Read(), "downloaders", p.downloader, &dr); err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
 				m.removalDone(ctx, p.id)
 			}

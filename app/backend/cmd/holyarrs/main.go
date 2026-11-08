@@ -2,14 +2,13 @@
 package main
 
 import (
-	"github.com/HolyArrs/holyarrs/app/backend/internal/feature"
 	"bufio"
 	"context"
 	"database/sql"
 	"errors"
 	"flag"
 	"fmt"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/lowmem"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/musicsync"
 	"io"
@@ -27,33 +26,40 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/alerts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/api"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/applog"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/asks"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/backup"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/bridge"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/compress"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/dlsync"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/doctor"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/health"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/lists"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/live"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediaserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/migrate"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/runas"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/supervisor"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/urlbase"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/files"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/logs"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/features"
 )
 
 var version = "0.0.0-skeleton"
@@ -108,12 +114,12 @@ func parseFlags(args []string, errOut io.Writer) (config, error) {
 	fs.StringVar(&c.Movies, "movies", env("HOLYARRS_MOVIES", ""), "movie Library folder to add on start")
 	fs.StringVar(&c.SavePath, "save-path", env("HOLYARRS_SAVE_PATH", ""), "where the Downloader saves (same path in both containers)")
 	fs.BoolVar(&c.SafeMode, "safe-mode", envOn(EnvSafeMode), "start only the core: sign-in, the Library, settings, backups and health ("+EnvSafeMode+"=1)")
-	fs.StringVar(&c.URLBase, "url-base", env(urlbase.Env, ""), "serve under this path behind a reverse proxy, such as /holyarrs ("+urlbase.Env+")")
+	fs.StringVar(&c.URLBase, "url-base", env(webserver.URLBaseEnv, ""), "serve under this path behind a reverse proxy, such as /holyarrs ("+webserver.URLBaseEnv+")")
 	if err := fs.Parse(args); err != nil {
 		return c, err
 	}
 	fs.Visit(func(f *flag.Flag) { c.urlBaseFlag = c.urlBaseFlag || f.Name == "url-base" })
-	base, err := urlbase.Clean(c.URLBase)
+	base, err := webserver.CleanURLBase(c.URLBase)
 	if err != nil {
 		fmt.Fprintln(errOut, "-url-base:", err)
 		return c, err
@@ -126,7 +132,7 @@ func parseFlags(args []string, errOut io.Writer) (config, error) {
 }
 
 // ensure adds the configured Source, Downloader and Library folder once.
-func ensure(ctx context.Context, s *store.Store, c config) error {
+func ensure(ctx context.Context, s *database.Store, c config) error {
 	return s.Write(ctx, func(tx *sql.Tx) error {
 		exists := func(q string, arg any) (bool, error) {
 			var n int
@@ -143,7 +149,7 @@ func ensure(ctx context.Context, s *store.Store, c config) error {
 				return err
 			}
 			if !ok {
-				if _, err := store.Insert(tx, "library_folders", &domain.LibraryFolder{Path: c.Movies, Kind: "movie", Label: "Movies",
+				if _, err := database.Insert(tx, "library_folders", &domain.LibraryFolder{Path: c.Movies, Kind: "movie", Label: "Movies",
 					Health: "unknown", SameDiskAs: []int64{}}, domain.System); err != nil {
 					return err
 				}
@@ -155,7 +161,7 @@ func ensure(ctx context.Context, s *store.Store, c config) error {
 				return err
 			}
 			if !ok {
-				if _, err := store.Insert(tx, "sources", &domain.Source{Name: "Lab fake indexer", Protocol: "torrent", Format: "torznab",
+				if _, err := database.Insert(tx, "sources", &domain.Source{Name: "Lab fake indexer", Protocol: "torrent", Format: "torznab",
 					URL: c.SourceURL, UseFor: domain.SourceUse{Feed: false, AutoSearch: true, HandSearch: true}, Kinds: []string{"movie"},
 					Categories: map[string][]int{"movie": {2000}}, Limits: domain.SourceLimits{GapMS: 2000, SearchesPerWindow: 100, WindowSeconds: 3600},
 					Priority: 25, State: "enabled", Extra: map[string]string{}, AllowLocal: true}, domain.System); err != nil {
@@ -174,7 +180,7 @@ func ensure(ctx context.Context, s *store.Store, c config) error {
 				return err
 			}
 			if !ok {
-				if _, err := store.Insert(tx, "downloaders", &domain.Downloader{Name: "Lab qBittorrent", Adapter: "qbittorrent", Protocol: "torrent",
+				if _, err := database.Insert(tx, "downloaders", &domain.Downloader{Name: "Lab qBittorrent", Adapter: "qbittorrent", Protocol: "torrent",
 					URL: c.QbitURL, Category: "holyarrs", Priority: 1, PathMap: []domain.PathMap{}, AfterImport: "leave", State: "ok", AllowLocal: true}, domain.System); err != nil {
 					return err
 				}
@@ -285,11 +291,11 @@ const safeNextFile = "safe-mode-next"
 // runOpts are test hooks for serve.
 type runOpts struct {
 	// wrap changes each supervised loop before it starts (tests inject crashes).
-	wrap func(supervisor.Loop) supervisor.Loop
+	wrap func(jobs.Loop) jobs.Loop
 	// reg replaces the Registry (tests set short restart delays).
-	reg *supervisor.Registry
+	reg *jobs.Registry
 	// ready is told the Registry and the address once the server listens.
-	ready func(reg *supervisor.Registry, addr string)
+	ready func(reg *jobs.Registry, addr string)
 	// kinds is told every Job kind with a Handler.
 	kinds func([]string)
 	// parts is told the parts Control once it is made.
@@ -297,7 +303,7 @@ type runOpts struct {
 }
 
 func run(c config) error {
-	useMemoryMode()
+	startup.UseMemoryMode()
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 	return serve(ctx, c, runOpts{})
@@ -309,9 +315,10 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	defer stop()
 	reg := o.reg
 	if reg == nil {
-		reg = supervisor.NewRegistry()
+		reg = jobs.NewRegistry()
 	}
-	supervisor.SetDefault(reg)
+	jobs.SetDefault(reg)
+	database.SetEventGuard(jobs.Guard)
 	const notStarted = "Safe mode: not started. Restart without safe mode to turn it on."
 	if err := os.MkdirAll(c.ConfigDir, 0o750); err != nil {
 		return err
@@ -319,9 +326,9 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	// The app log for the log viewer: every line also goes to a capped
 	// file in the config folder, secrets masked; the program output (docker
 	// logs) is masked the same way.
-	applogs, err := applog.Open(filepath.Join(c.ConfigDir, "logs"))
+	applogs, err := logs.Open(filepath.Join(c.ConfigDir, "logs"))
 	if err != nil {
-		if nw := store.NotWritable(c.ConfigDir, err); nw != nil {
+		if nw := database.NotWritable(c.ConfigDir, err); nw != nil {
 			return refuseEarly(ctx, c, nw)
 		}
 		return fmt.Errorf("log folder: %w", err)
@@ -339,13 +346,13 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	// optional), and stops and starts it when a part or the stage is
 	// switched.
 	pc := &parts.Control{Reg: reg, SafeMode: c.SafeMode}
-	loop := func(l supervisor.Loop) {
+	loop := func(l jobs.Loop) {
 		if o.wrap != nil {
 			l = o.wrap(l)
 		}
 		pc.Add(l, false)
 	}
-	optional := func(l supervisor.Loop) {
+	optional := func(l jobs.Loop) {
 		if o.wrap != nil {
 			l = o.wrap(l)
 		}
@@ -356,9 +363,9 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	}
 	// The lock tells tools that change a stopped config folder (holyarrs-demo)
 	// that HolyArrs runs here; the system drops it when the process ends.
-	unlock, err := store.LockDir(c.ConfigDir)
+	unlock, err := files.LockDir(c.ConfigDir)
 	if err != nil {
-		if nw := store.NotWritable(c.ConfigDir, err); nw != nil {
+		if nw := database.NotWritable(c.ConfigDir, err); nw != nil {
 			return refuseEarly(ctx, c, nw)
 		}
 		return fmt.Errorf("config folder %s: %w", c.ConfigDir, err)
@@ -368,7 +375,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	// (alive) and shows a short page; the real API takes over once ready.
 	swap := &swapHandler{}
 	var updating atomic.Bool
-	swap.set(urlbase.Handler(c.URLBase, startingHandler(&updating)))
+	swap.set(webserver.UnderURLBase(c.URLBase, startingHandler(&updating)))
 	srv := newServer(c.Addr, swap)
 	ln, err := net.Listen("tcp", c.Addr)
 	if err != nil {
@@ -393,7 +400,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	if _, err := backup.ApplyStaged(c.ConfigDir); err != nil {
 		return fmt.Errorf("restore: %w", err)
 	}
-	s, err := store.Open(c.ConfigDir, store.Options{OnUpdating: func() { updating.Store(true) }, CacheKiB: lowmem.Pick(0, 4000), ReaderCacheKiB: lowmem.Pick(0, 2000)})
+	s, err := database.Open(c.ConfigDir, database.Options{OnUpdating: func() { updating.Store(true) }, CacheKiB: startup.LowMemoryPick(0, 4000), ReaderCacheKiB: startup.LowMemoryPick(0, 2000)})
 	if err != nil {
 		if !needsPerson(err) {
 			return err
@@ -407,7 +414,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		// Older than the data: the page may offer to put back the data
 		// from before the update; once it has, stop so the app starts on it.
 		putBackDone := make(chan struct{})
-		swap.set(urlbase.Handler(c.URLBase, refusedHandler(c.ConfigDir, err, putBackDone)))
+		swap.set(webserver.UnderURLBase(c.URLBase, refusedHandler(c.ConfigDir, err, putBackDone)))
 		select {
 		case <-ctx.Done():
 			return err
@@ -426,7 +433,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	}
 	// A base saved in Settings is used when the start setting is left
 	// unset; HOLYARRS_URL_BASE=/ forces none.
-	if _, set := os.LookupEnv(urlbase.Env); !set && !c.urlBaseFlag && c.URLBase == "" {
+	if _, set := os.LookupEnv(webserver.URLBaseEnv); !set && !c.urlBaseFlag && c.URLBase == "" {
 		if saved := api.SavedURLBase(ctx, s.Read()); saved != "" {
 			c.URLBase = saved
 			log.Printf("holyarrs: URL base %s (saved in Settings)", saved)
@@ -454,7 +461,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	// above: keep a plain page up instead of exiting into a restart loop.
 	hold := func(err error) error {
 		log.Printf("holyarrs: not started: %v", err)
-		swap.set(urlbase.Handler(c.URLBase, failedHandler(publicReason(err))))
+		swap.set(webserver.UnderURLBase(c.URLBase, failedHandler(publicReason(err))))
 		<-ctx.Done()
 		return err
 	}
@@ -476,7 +483,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		// mount, an owner fixed on the host), then exit so the restart
 		// policy starts the app with it.
 		log.Printf("holyarrs: not started: %v", err)
-		swap.set(urlbase.Handler(c.URLBase, failedHandler(publicReason(err))))
+		swap.set(webserver.UnderURLBase(c.URLBase, failedHandler(publicReason(err))))
 		p := named
 		if p == "" {
 			p = filepath.Join(c.ConfigDir, secrets.KeyFile)
@@ -518,7 +525,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	if err := refreshLogSecrets(ctx); err != nil {
 		return fmt.Errorf("log masking: %w", err)
 	}
-	loop(supervisor.Loop{Name: "log_secrets", Label: "Log masking", Every: time.Minute, Run: refreshLogSecrets})
+	loop(jobs.Loop{Name: "log_secrets", Label: "Log masking", Every: time.Minute, Run: refreshLogSecrets})
 	bm := &backup.Manager{Store: s, Dir: c.ConfigDir, Version: version, CheckKey: func(p string) error { return secrets.CheckFile(p, key) },
 		Key: key, KeyFromEnv: os.Getenv(secrets.EnvKeyFile) != "", Stop: ctx}
 	if _, err := bm.AdoptMigrationCopies(); err != nil {
@@ -527,14 +534,14 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	if err := bm.AfterStart(ctx); err != nil {
 		return err
 	}
-	loop(supervisor.Loop{Name: "backups", Label: "Backups", Every: 10 * time.Minute, Deadline: 2 * time.Hour, Run: bm.Pass})
+	loop(jobs.Loop{Name: "backups", Label: "Backups", Every: 10 * time.Minute, Deadline: 2 * time.Hour, Run: bm.Pass})
 	if err := ensure(ctx, s, c); err != nil {
 		return fmt.Errorf("setup: %w", err)
 	}
 	// After ensure, so folders added from the environment on a first start
 	// are checked too.
 	logFolderCheck(ctx, s.Read(), c.SavePath)
-	hub := live.NewHub(live.Options{Merge: dlsync.MergePatch})
+	hub := webserver.NewLiveHub(webserver.LiveOptions{Merge: dlsync.MergePatch})
 	pools := jobs.DefaultPools
 	if c.SafeMode {
 		pools = map[jobs.Pool]int{jobs.PoolCore: jobs.DefaultPools[jobs.PoolCore]}
@@ -725,8 +732,8 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	}
 	he.Register(q)
 	// History clean-up: once a day, old Events past their keep time.
-	q.Handle(store.KindCleanHistory, func(ctx context.Context, r *jobs.Run) error {
-		n, err := s.PruneEvents(ctx, store.ReadHistoryKeep(ctx, s.Read()), time.Now().UTC())
+	q.Handle(database.KindCleanHistory, func(ctx context.Context, r *jobs.Run) error {
+		n, err := s.PruneEvents(ctx, database.ReadHistoryKeep(ctx, s.Read()), time.Now().UTC())
 		r.SetResult(map[string]any{"removed": n})
 		return err
 	})
@@ -740,7 +747,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	// that finds nothing to do.
 	var watchlists atomic.Pointer[asks.Watchlists]
 	q.Handle(asks.KindPlexWatchlists, func(ctx context.Context, r *jobs.Run) error {
-		if !feature.On(feature.PlexWatchlists) {
+		if !startup.FeatureOn(features.PlexWatchlists) {
 			r.SetResult(map[string]any{"skipped": "held back"})
 			return nil
 		}
@@ -751,7 +758,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		return nil
 	})
 	q.ProbeSchedule(asks.KindPlexWatchlists, func(ctx context.Context, now time.Time) (bool, any, error) {
-		if !feature.On(feature.PlexWatchlists) {
+		if !startup.FeatureOn(features.PlexWatchlists) {
 			return false, nil, nil
 		}
 		if w := watchlists.Load(); w != nil {
@@ -764,7 +771,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	subs.Register(q)
 	if !c.SafeMode {
 		s.OnEvent(func(e domain.Event) {
-			if pc.On(parts.Subtitles) && feature.On(feature.SubtitleSites) {
+			if pc.On(parts.Subtitles) && startup.FeatureOn(features.SubtitleSites) {
 				subs.OnEvent(e)
 			}
 		})
@@ -786,22 +793,22 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	defer q.Stop()
 	for p, label := range map[jobs.Pool]string{jobs.PoolCore: "Core workers", jobs.PoolIO: "Search and download workers", jobs.PoolHeavy: "Import and scan workers"} {
 		if pools[p] == 0 {
-			reg.Set(supervisor.StageKey("jobs_"+string(p)), "stage", label, supervisor.Off, notStarted)
+			reg.Set(jobs.StageKey("jobs_"+string(p)), "stage", label, jobs.Off, notStarted)
 			continue
 		}
-		reg.Set(supervisor.StageKey("jobs_"+string(p)), "stage", label, supervisor.Running, "")
+		reg.Set(jobs.StageKey("jobs_"+string(p)), "stage", label, jobs.Running, "")
 	}
-	optional(supervisor.Loop{Name: "downloads", Label: "Download sync", Run: func(ctx context.Context) error {
+	optional(jobs.Loop{Name: "downloads", Label: "Download sync", Run: func(ctx context.Context) error {
 		// The reader lives and dies with this loop: it stops after dm.Run
 		// returns (or panics), then flushes with its own deadline.
 		dls.Around(ctx, dm.Run)
 		return nil
 	}})
-	optional(supervisor.Loop{Name: "schedules", Label: "Schedules", Every: time.Minute, Run: func(ctx context.Context) error {
+	optional(jobs.Loop{Name: "schedules", Label: "Schedules", Every: time.Minute, Run: func(ctx context.Context) error {
 		_, err := q.RunSchedules(ctx, time.Now().UTC())
 		return err
 	}})
-	optional(supervisor.Loop{Name: "stranded_imports", Label: "Stranded imports", Every: 10 * time.Minute, Run: func(ctx context.Context) error {
+	optional(jobs.Loop{Name: "stranded_imports", Label: "Stranded imports", Every: 10 * time.Minute, Run: func(ctx context.Context) error {
 		n, err := im.RequeueStranded(ctx, func(ctx context.Context, id int64) {
 			enqueue(ctx, importer.KindImport, domain.Subject{Type: "download", ID: id}, nil, fmt.Sprintf("import:%d", id))
 		})
@@ -810,7 +817,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		}
 		return err
 	}})
-	optional(supervisor.Loop{Name: "gates", Label: "Release gates", Every: time.Minute, Run: lib.GatesPass})
+	optional(jobs.Loop{Name: "gates", Label: "Release gates", Every: time.Minute, Run: lib.GatesPass})
 
 	sso, err := auth.SSOFromEnv(c.URLBase)
 	if err != nil {
@@ -818,7 +825,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	}
 	au := auth.New(s, auth.Options{Vault: vault, SafeMode: c.SafeMode, SSO: sso, ConfigUnmapped: unmapped != ""})
 	defer au.Close()
-	loop(supervisor.Loop{Name: "sessions", Label: "Session clean-up", Every: time.Hour, Run: au.Cleanup})
+	loop(jobs.Loop{Name: "sessions", Label: "Session clean-up", Every: time.Hour, Run: au.Cleanup})
 	var restarting atomic.Bool
 	restart := func() {
 		time.Sleep(500 * time.Millisecond) // let the answer reach the page
@@ -859,7 +866,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	defer sender.Wait()
 	wish := &asks.Service{Store: s, Library: lib, Metadata: md, Alerts: sender, Live: hub}
 	readyCheck.Store(wish)
-	optional(supervisor.Loop{Name: "wishlist", Label: "Requests ready check", Every: 30 * time.Second, Run: func(ctx context.Context) error {
+	optional(jobs.Loop{Name: "wishlist", Label: "Requests ready check", Every: 30 * time.Second, Run: func(ctx context.Context) error {
 		if _, err := wish.CheckReady(ctx); err != nil {
 			return err
 		}
@@ -877,13 +884,13 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	go wish.BackfillParts(context.Background())
 	wish.WatchEpisodes()
 	wish.WatchTMDBFollows()
-	reg.Set(supervisor.StageKey("alerts"), "stage", "Alerts", supervisor.Running, "")
+	reg.Set(jobs.StageKey("alerts"), "stage", "Alerts", jobs.Running, "")
 	if c.SafeMode {
-		reg.Set(supervisor.StageKey("media_servers"), "stage", "Media-server refresh", supervisor.Off, notStarted)
+		reg.Set(jobs.StageKey("media_servers"), "stage", "Media-server refresh", jobs.Off, notStarted)
 	} else {
-		reg.Set(supervisor.StageKey("media_servers"), "stage", "Media-server refresh", supervisor.Running, "")
+		reg.Set(jobs.StageKey("media_servers"), "stage", "Media-server refresh", jobs.Running, "")
 	}
-	reg.Set(supervisor.StageKey("events"), "stage", "Event hooks", supervisor.Running, "")
+	reg.Set(jobs.StageKey("events"), "stage", "Event hooks", jobs.Running, "")
 	defer wish.Wait()
 	// Deezer marks and artist bios come from the metadata server; only the
 	// direct stand-in (a Deezer stand-in in tests, or
@@ -922,14 +929,14 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	startTrailers(a, he)
 	// Health starts once every check is wired (the trailers check comes
 	// from the API), so its first run sees them all.
-	reg.Set(supervisor.StageKey("health"), "stage", "Health checks", supervisor.Running, "")
+	reg.Set(jobs.StageKey("health"), "stage", "Health checks", jobs.Running, "")
 	reg.GoGuard("health", func() {
 		if _, err := he.Run(ctx); err != nil && ctx.Err() == nil {
 			log.Printf("health: %v", err)
 		}
 	})
 	pc.Start(ctx)
-	swap.set(urlbase.Handler(c.URLBase, compress.Handler(limitBodies(a.Handler()))))
+	swap.set(routes(a, c))
 	log.Printf("holyarrs %s: config %s, listening on %s%s", version, c.ConfigDir, ln.Addr(), c.URLBase)
 	if o.ready != nil {
 		o.ready(reg, ln.Addr().String())
@@ -1007,7 +1014,7 @@ func artistImages() *metadata.ArtistImages {
 // Its own clients reach public addresses only, or the local network too
 // (never cloud metadata addresses) when the music settings allow it or
 // the stand-in is used.
-func musicSource(s *store.Store, version string) *metadata.MusicBrainz {
+func musicSource(s *database.Store, version string) *metadata.MusicBrainz {
 	env := os.Getenv("HOLYARRS_MUSICBRAINZ_URL")
 	client := func(allow func(net.IP) bool) *http.Client {
 		t := http.DefaultTransport.(*http.Transport).Clone()
@@ -1062,7 +1069,7 @@ func healthcheck(base string) int {
 // FILE__HOLYARRS_URL_BASE and FILE__HOLYARRS_HEALTH_URL work; it never
 // switches user or sets UMASK.
 func healthcheckCmd() int {
-	if err := runas.LoadFileEnv(os.Environ(), os.ReadFile, os.Setenv); err != nil {
+	if err := startup.LoadFileEnv(os.Environ(), os.ReadFile, os.Setenv); err != nil {
 		log.Printf("holyarrs: %v", err)
 		return 1
 	}
@@ -1078,7 +1085,7 @@ func main() {
 	// FILE__, UMASK and PUID/PGID come first, for the server and for every
 	// command that opens the database, so a root docker exec never leaves
 	// root-owned files. Started as root on Linux this restarts as PUID:PGID.
-	if err := runas.Start(configDirArg(os.Args[1:])); err != nil {
+	if err := startup.StartRunAs(configDirArg(os.Args[1:])); err != nil {
 		log.Printf("holyarrs: %v", err)
 		os.Exit(1)
 	}
@@ -1113,7 +1120,7 @@ func main() {
 // logFolderCheck logs one line on the Library and download folders, and a
 // WARN line with the fix for each problem folder. It takes a few seconds at
 // most: a folder that is slower (a hung network share) is skipped with a note.
-func logFolderCheck(ctx context.Context, db store.Lister, savePath string) {
+func logFolderCheck(ctx context.Context, db database.Lister, savePath string) {
 	sum, warns := doctor.Startup(ctx, db, savePath, 3*time.Second)
 	log.Printf("holyarrs: %s", sum)
 	for _, w := range warns {
@@ -1159,7 +1166,7 @@ func resetOwner(args []string) int {
 		log.Printf("reset-owner: %v", err)
 		return 1
 	}
-	s, err := store.Open(c.ConfigDir, store.Options{})
+	s, err := database.Open(c.ConfigDir, database.Options{})
 	if err != nil {
 		log.Printf("reset-owner: %v", err)
 		return 1

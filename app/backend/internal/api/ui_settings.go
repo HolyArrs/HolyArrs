@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // App-wide look settings everyone's browser reads: today only whether
@@ -68,7 +68,7 @@ func (a *API) uiSettings(ctx context.Context) UISettings {
 	if err != nil || !artworkCacheSizes[gb] {
 		gb = int(library.DefaultArtworkCap >> 30)
 	}
-	k := store.ReadHistoryKeep(ctx, a.s.Store.Read())
+	k := database.ReadHistoryKeep(ctx, a.s.Store.Read())
 	return UISettings{AutoplayTrailers: v != "off", SigninLibraryArt: l == "on", ArtworkCacheGB: gb,
 		HistoryRoutineDays: k.RoutineDays, HistoryOtherDays: k.OtherDays, CountInstall: CountInstall(ctx, a.s.Store.Read())}
 }
@@ -115,7 +115,7 @@ func (a *API) putUISettings(w http.ResponseWriter, r *http.Request) {
 			fail(w, http.StatusForbidden, "only the owner may change how long History is kept")
 			return
 		}
-		k := store.ReadHistoryKeep(r.Context(), a.s.Store.Read())
+		k := database.ReadHistoryKeep(r.Context(), a.s.Store.Read())
 		if in.RoutineDays != nil {
 			k.RoutineDays = *in.RoutineDays
 		}
@@ -123,7 +123,7 @@ func (a *API) putUISettings(w http.ResponseWriter, r *http.Request) {
 			k.OtherDays = *in.OtherDays
 		}
 		if err := a.s.Store.SaveHistoryKeep(r.Context(), k, actor(r)); err != nil {
-			if errors.Is(err, store.ErrHistoryKeep) {
+			if errors.Is(err, database.ErrHistoryKeep) {
 				fail(w, http.StatusBadRequest, err.Error())
 				return
 			}
@@ -136,7 +136,7 @@ func (a *API) putUISettings(w http.ResponseWriter, r *http.Request) {
 			fail(w, http.StatusBadRequest, "artwork_cache_gb is 1, 2, 5, 10 or 20")
 			return
 		}
-		now := store.FormatTime(time.Now())
+		now := database.FormatTime(time.Now())
 		by, _ := json.Marshal(actor(r))
 		if err := a.s.Store.Write(r.Context(), func(tx *sql.Tx) error {
 			_, err := tx.Exec(`INSERT INTO settings (grp, key, value, created_at, created_by, updated_at, updated_by) VALUES ('this_app', ?, ?, ?, ?, ?, ?)
@@ -154,7 +154,7 @@ func (a *API) putUISettings(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 		v := map[bool]string{true: "on", false: "off"}[*on]
-		now := store.FormatTime(time.Now())
+		now := database.FormatTime(time.Now())
 		by, _ := json.Marshal(actor(r))
 		err := a.s.Store.Write(r.Context(), func(tx *sql.Tx) error {
 			_, err := tx.Exec(`INSERT INTO settings (grp, key, value, created_at, created_by, updated_at, updated_by) VALUES ('this_app', ?, ?, ?, ?, ?, ?)

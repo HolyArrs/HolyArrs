@@ -4,9 +4,9 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // albumCoverArt serves a Library album's cover for the title pages (the
@@ -32,7 +32,7 @@ func (a *API) albumCoverArt(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var t domain.Title
-	if err := store.Get(r.Context(), a.s.Store.Read(), "titles", p.TitleID, &t); err != nil {
+	if err := database.Get(r.Context(), a.s.Store.Read(), "titles", p.TitleID, &t); err != nil {
 		http.NotFound(w, r)
 		return
 	}

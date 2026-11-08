@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Runs against the lab qBittorrent with our own Dune test torrent, added in a
@@ -23,7 +23,7 @@ func TestLabQbitClientItem(t *testing.T) {
 	if base == "" {
 		base = "http://qbittorrent:8090"
 	}
-	s, err := store.Open(t.TempDir(), store.Options{})
+	s, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -33,7 +33,7 @@ func TestLabQbitClientItem(t *testing.T) {
 	err = s.Write(ctx, func(tx *sql.Tx) error {
 		d := &domain.Downloader{Name: "Lab qBittorrent", Adapter: "qbittorrent", Protocol: "torrent", URL: base, Category: "holyarrs", Priority: 1,
 			PathMap: []domain.PathMap{}, AfterImport: "leave", State: "ok", AllowLocal: true, Writable: true}
-		_, err := store.Insert(tx, "downloaders", d, domain.System)
+		_, err := database.Insert(tx, "downloaders", d, domain.System)
 		did = d.ID
 		return err
 	})

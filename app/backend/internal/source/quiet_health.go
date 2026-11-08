@@ -5,8 +5,8 @@ import (
 	"slices"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Quiet successful feed checks must not wake the disk merely to record that
@@ -41,7 +41,7 @@ func (q *quietSourceCalls) prune(now time.Time) {
 			delete(q.days, day)
 		}
 	}
-	kept := store.FormatTime(now.Add(-keepCalls))
+	kept := database.FormatTime(now.Add(-keepCalls))
 	q.recent = slices.DeleteFunc(q.recent, func(c Call) bool { return c.At < kept })
 }
 
@@ -52,7 +52,7 @@ func (s *Searcher) rememberQuietFeedCall(ctx context.Context, src domain.Source,
 	// takes the same lock in ForgetSource, so a finishing probe cannot restore
 	// deleted history. Source revisions also distinguish a reused row ID.
 	var current domain.Source
-	if err := store.Get(ctx, s.Store.Read(), "sources", src.ID, &current); err != nil ||
+	if err := database.Get(ctx, s.Store.Read(), "sources", src.ID, &current); err != nil ||
 		feedSourceFingerprint([]domain.Source{src}) != feedSourceFingerprint([]domain.Source{current}) {
 		return
 	}
@@ -79,7 +79,7 @@ func (s *Searcher) rememberQuietFeedCall(ctx context.Context, src domain.Source,
 	d.calls++
 	d.ms += int64(ms)
 	q.days[day] = d
-	q.recent = append(q.recent, Call{At: store.FormatTime(at), Op: "feed", OK: true, MS: ms})
+	q.recent = append(q.recent, Call{At: database.FormatTime(at), Op: "feed", OK: true, MS: ms})
 	slices.SortStableFunc(q.recent, func(a, b Call) int { return compareCallTime(a, b) })
 	if len(q.recent) > 20 {
 		q.recent = q.recent[:20]
@@ -98,7 +98,7 @@ func compareCallTime(a, b Call) int {
 
 func addQuietSummary(sum Summary, q *quietSourceCalls, now time.Time) Summary {
 	if !q.last.Before(now.Add(-keepCalls)) {
-		last := store.FormatTime(q.last)
+		last := database.FormatTime(q.last)
 		if sum.LastSuccess == nil || *sum.LastSuccess < last {
 			sum.LastSuccess = &last
 		}

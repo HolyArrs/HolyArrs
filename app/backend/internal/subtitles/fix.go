@@ -9,9 +9,9 @@ import (
 	"path"
 	"path/filepath"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles/subtext"
 )
 
@@ -21,7 +21,7 @@ var ErrNotBeside = errors.New("only a subtitle file beside the video can be chan
 
 func (s *Service) besideRow(ctx context.Context, id int64) (Subtitle, *fileCtx, error) {
 	var row Subtitle
-	if err := store.Get(ctx, s.Store.Read(), "subtitles", id, &row); err != nil {
+	if err := database.Get(ctx, s.Store.Read(), "subtitles", id, &row); err != nil {
 		return row, nil, ErrNotFound
 	}
 	if row.Place != "beside" || row.State != "present" || row.RelativePath == nil {
@@ -111,12 +111,12 @@ func (s *Service) TurnDown(ctx context.Context, id int64, reason string, by doma
 		return err
 	}
 	err = s.Store.Write(ctx, func(tx *sql.Tx) error {
-		if _, err := tx.ExecContext(ctx, "UPDATE subtitles SET state = 'replaced', updated_at = ? WHERE id = ?", store.FormatTime(now()), row.ID); err != nil {
+		if _, err := tx.ExecContext(ctx, "UPDATE subtitles SET state = 'replaced', updated_at = ? WHERE id = ?", database.FormatTime(now()), row.ID); err != nil {
 			return err
 		}
 		_, err := tx.ExecContext(ctx, `INSERT INTO subtitle_turned_down (created_at, created_by, updated_at, updated_by, file_id, site_name, site_key, reason)
 			VALUES (?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT (file_id, site_name, site_key) DO NOTHING`,
-			store.FormatTime(now()), actorJSON(by), store.FormatTime(now()), actorJSON(by), row.FileID, *row.SiteName, *row.SiteKey, reason)
+			database.FormatTime(now()), actorJSON(by), database.FormatTime(now()), actorJSON(by), row.FileID, *row.SiteName, *row.SiteKey, reason)
 		return err
 	})
 	if err != nil {
@@ -162,7 +162,7 @@ func (s *Service) Choose(ctx context.Context, fileID int64, siteName, key string
 					continue
 				}
 				t := target{want: o.Want, beat: -1}
-				old, _ := store.Select[Subtitle](ctx, s.Store.Read(), "subtitles",
+				old, _ := database.Select[Subtitle](ctx, s.Store.Read(), "subtitles",
 					"file_id = ? AND place = 'beside' AND state = 'present' AND origin IN ('fetched', 'by_hand') AND language = ? AND forced = ?",
 					fileID, o.Want.Language, o.Want.Forced)
 				if len(old) > 0 {

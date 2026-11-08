@@ -21,12 +21,13 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 const (
@@ -241,7 +242,7 @@ func mustInt(v string) int {
 
 type metadataAppRig struct {
 	t      *testing.T
-	store  *store.Store
+	store  *database.Store
 	lib    *library.Service
 	owner  *signedIn
 	member *signedIn
@@ -254,7 +255,7 @@ func newMetadataAppRig(t *testing.T, service *metadata.Service, directMusic ...m
 	log.SetOutput(io.Discard)
 	t.Cleanup(func() { log.SetOutput(previousLog) })
 	dir := t.TempDir()
-	st, err := store.Open(dir, store.Options{})
+	st, err := database.Open(dir, database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -263,7 +264,7 @@ func newMetadataAppRig(t *testing.T, service *metadata.Service, directMusic ...m
 	for _, kind := range []string{"movie", "show", "music"} {
 		path := t.TempDir()
 		if err := st.Write(ctx, func(tx *sql.Tx) error {
-			_, err := store.Insert(tx, "library_folders", &domain.LibraryFolder{Path: path, Kind: kind, Label: strings.ToUpper(kind[:1]) + kind[1:], Health: "ok", SameDiskAs: []int64{}}, domain.System)
+			_, err := database.Insert(tx, "library_folders", &domain.LibraryFolder{Path: path, Kind: kind, Label: strings.ToUpper(kind[:1]) + kind[1:], Health: "ok", SameDiskAs: []int64{}}, domain.System)
 			return err
 		}); err != nil {
 			t.Fatal(err)
@@ -671,7 +672,7 @@ func acceptanceDirectMusic() metadata.ArtistProvider {
 	}
 }
 
-func assertStoredIdentity(t *testing.T, st *store.Store, titleID int64, kind, source, want string) {
+func assertStoredIdentity(t *testing.T, st *database.Store, titleID int64, kind, source, want string) {
 	t.Helper()
 	var gotKind, got string
 	if err := st.Read().QueryRow("SELECT kind, json_extract(source_ids, '$.'||?) FROM titles WHERE id = ?", source, titleID).Scan(&gotKind, &got); err != nil {
@@ -682,7 +683,7 @@ func assertStoredIdentity(t *testing.T, st *store.Store, titleID int64, kind, so
 	}
 }
 
-func assertTitleAddedBy(t *testing.T, st *store.Store, titleID, userID int64) {
+func assertTitleAddedBy(t *testing.T, st *database.Store, titleID, userID int64) {
 	t.Helper()
 	var actorKind string
 	var actorID int64
@@ -701,7 +702,7 @@ func assertLegacyMetadataRevoked(t *testing.T, r *metadataAppRig) {
 	}
 }
 
-func assertAskIdentity(t *testing.T, st *store.Store, askID, askedBy int64, ref string) {
+func assertAskIdentity(t *testing.T, st *database.Store, askID, askedBy int64, ref string) {
 	t.Helper()
 	var gotAskedBy int64
 	var gotRef, tmdbID string
@@ -714,7 +715,7 @@ func assertAskIdentity(t *testing.T, st *store.Store, askID, askedBy int64, ref 
 	}
 }
 
-func assertMusicRows(t *testing.T, st *store.Store, titleID int64) {
+func assertMusicRows(t *testing.T, st *database.Store, titleID int64) {
 	t.Helper()
 	var album, pressing, recording string
 	if err := st.Read().QueryRow("SELECT json_extract(source_ids, '$.musicbrainz') FROM parts WHERE title_id = ? AND kind = 'album'", titleID).Scan(&album); err != nil {
@@ -736,7 +737,7 @@ type metadataCounts struct {
 	Data                              [sha256.Size]byte
 }
 
-func metadataStateCounts(t *testing.T, st *store.Store) metadataCounts {
+func metadataStateCounts(t *testing.T, st *database.Store) metadataCounts {
 	t.Helper()
 	var out metadataCounts
 	for _, q := range []struct {

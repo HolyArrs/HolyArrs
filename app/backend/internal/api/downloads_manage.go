@@ -9,9 +9,9 @@ import (
 	"strings"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Hand steering of a torrent Downloader from the Downloads screen, the way
@@ -88,7 +88,7 @@ func (a *API) addTorrents(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var dr domain.Downloader
-	if err := store.Get(r.Context(), a.s.Store.Read(), "downloaders", id, &dr); err != nil || dr.Removed {
+	if err := database.Get(r.Context(), a.s.Store.Read(), "downloaders", id, &dr); err != nil || dr.Removed {
 		fail(w, http.StatusNotFound, downloader.ErrNoDownloader.Error())
 		return
 	}
@@ -408,7 +408,7 @@ func (a *API) onTrackers(w http.ResponseWriter, r *http.Request, call func(t dow
 func (a *API) trackerURLsOK(w http.ResponseWriter, r *http.Request, urls []string) bool {
 	id, _ := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	var dr domain.Downloader
-	if err := store.Get(r.Context(), a.s.Store.Read(), "downloaders", id, &dr); err != nil || dr.Removed {
+	if err := database.Get(r.Context(), a.s.Store.Read(), "downloaders", id, &dr); err != nil || dr.Removed {
 		fail(w, http.StatusNotFound, downloader.ErrNoDownloader.Error())
 		return false
 	}

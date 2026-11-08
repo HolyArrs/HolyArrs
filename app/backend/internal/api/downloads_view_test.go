@@ -15,9 +15,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/dlsync"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // countDriver wraps the SQLite driver and counts every query it runs.
@@ -57,7 +57,7 @@ var (
 )
 
 // countingPool opens a read pool on s's main file whose queries are counted.
-func countingPool(t *testing.T, s *store.Store) *sql.DB {
+func countingPool(t *testing.T, s *database.Store) *sql.DB {
 	t.Helper()
 	countOnce.Do(func() {
 		base, err := sql.Open("sqlite", ":memory:")
@@ -67,7 +67,7 @@ func countingPool(t *testing.T, s *store.Store) *sql.DB {
 		sql.Register("sqlite-count", countDriver{base.Driver(), &countReads})
 		_ = base.Close()
 	})
-	db, err := sql.Open("sqlite-count", "file:"+filepath.ToSlash(filepath.Join(s.Dir(), store.MainFile))+"?_pragma=query_only(1)&_pragma=busy_timeout(5000)")
+	db, err := sql.Open("sqlite-count", "file:"+filepath.ToSlash(filepath.Join(s.Dir(), database.MainFile))+"?_pragma=query_only(1)&_pragma=busy_timeout(5000)")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -193,7 +193,7 @@ func TestDownloadsViewQueryCount(t *testing.T) {
 		for i := range 99 {
 			n := &domain.Download{DownloaderID: d.DownloaderID, ReleaseID: &x.relID, SlotIDs: []int64{x.slotID}, ExternalID: fmt.Sprintf("%040x", 0xabc000+i),
 				State: "downloading", FilesSeen: []domain.SeenFile{}, StartedBy: domain.System}
-			if _, err := store.Insert(tx, "downloads", n, domain.System); err != nil {
+			if _, err := database.Insert(tx, "downloads", n, domain.System); err != nil {
 				return err
 			}
 		}

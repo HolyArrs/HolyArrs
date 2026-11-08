@@ -8,9 +8,10 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/health"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/outside"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/supervisor"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 )
 
 // route: GET /api/v1/health/checks
@@ -70,23 +71,23 @@ func TestHealthSettingsOverHTTP(t *testing.T) {
 
 // route: GET /api/v1/health/states
 func TestHealthStatesOverHTTP(t *testing.T) {
-	reg := supervisor.NewRegistry()
-	reg.Set(supervisor.StageKey("backups"), "stage", "Backups", supervisor.Retrying, "the disk is full")
-	s, err := store.Open(t.TempDir(), store.Options{})
+	reg := jobs.NewRegistry()
+	reg.Set(jobs.StageKey("backups"), "stage", "Backups", jobs.Retrying, "the disk is full")
+	s, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = s.Close() })
 	// Other tests in this package trip breakers in the process-wide outside
 	// registry; read an empty one so only this fixture's states show.
-	eng := &health.Engine{Store: s, Version: "test", Outside: func() []outside.State { return nil }}
+	eng := &health.Engine{Store: s, Version: "test", Outside: func() []outbound.State { return nil }}
 	srv := httptest.NewServer(New(Server{Store: s, Metadata: metadata.Lab(), Version: "test", States: reg, SafeMode: true, Health: eng}).Handler())
 	t.Cleanup(srv.Close)
 	exec41(t, s, `INSERT INTO downloaders (created_at, created_by, updated_at, updated_by, name, adapter, protocol, url, category, priority, path_map, after_import, state)
 		VALUES ('2026-10-01T00:00:00Z', '{}', '2026-10-01T00:00:00Z', '{}', 'Lab qBittorrent', 'qbittorrent', 'torrent', 'http://qb', 'holyarrs', 1, '[]', 'leave', 'auth_failed')`)
 	var got struct {
-		SafeMode bool                `json:"safe_mode"`
-		States   []supervisor.Status `json:"states"`
+		SafeMode bool          `json:"safe_mode"`
+		States   []jobs.Status `json:"states"`
 	}
 	if err := json.Unmarshal(do(t, "GET", srv.URL+"/api/v1/health/states", "", 200), &got); err != nil {
 		t.Fatal(err)
@@ -94,19 +95,19 @@ func TestHealthStatesOverHTTP(t *testing.T) {
 	if !got.SafeMode || len(got.States) != 2 {
 		t.Fatalf("%+v", got)
 	}
-	if st := got.States[0]; st.Key != "stage:backups" || st.State != supervisor.Retrying || st.Reason != "the disk is full" {
+	if st := got.States[0]; st.Key != "stage:backups" || st.State != jobs.Retrying || st.Reason != "the disk is full" {
 		t.Fatalf("stage %+v", st)
 	}
-	if l := got.States[1]; l.Key != "link:downloader:1" || l.State != supervisor.Failed || !strings.Contains(l.Reason, "turned down the sign-in") {
+	if l := got.States[1]; l.Key != "link:downloader:1" || l.State != jobs.Failed || !strings.Contains(l.Reason, "turned down the sign-in") {
 		t.Fatalf("link %+v", l)
 	}
 	// Without a Registry the list still answers, as an empty list.
-	s2, err := store.Open(t.TempDir(), store.Options{})
+	s2, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = s2.Close() })
-	srv2 := httptest.NewServer(New(Server{Store: s2, Metadata: metadata.Lab(), Version: "test", Health: &health.Engine{Store: s2, Version: "test", Outside: func() []outside.State { return nil }}}).Handler())
+	srv2 := httptest.NewServer(New(Server{Store: s2, Metadata: metadata.Lab(), Version: "test", Health: &health.Engine{Store: s2, Version: "test", Outside: func() []outbound.State { return nil }}}).Handler())
 	t.Cleanup(srv2.Close)
 	if b := do(t, "GET", srv2.URL+"/api/v1/health/states", "", 200); string(b) != `{"safe_mode":false,"states":[]}`+"\n" {
 		t.Fatalf("empty: %s", b)

@@ -8,9 +8,9 @@ import (
 	"slices"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Show search over HTTP (stage 3.2): the existing search routes take an
@@ -50,7 +50,7 @@ func TestShowSearchOverHTTP(t *testing.T) {
 		var js []domain.Job
 		for _, j := range out.JobIDs {
 			var job domain.Job
-			if err := store.Get(ctx, s.Read(), "jobs", j, &job); err != nil {
+			if err := database.Get(ctx, s.Read(), "jobs", j, &job); err != nil {
 				t.Fatal(err)
 			}
 			js = append(js, job)
@@ -90,7 +90,7 @@ func TestShowSearchOverHTTP(t *testing.T) {
 	err := s.Write(ctx, func(tx *sql.Tx) error {
 		src := &domain.Source{Name: "Lab", Protocol: "torrent", Format: "torznab", URL: "http://x", Kinds: []string{}, Categories: map[string][]int{},
 			State: "enabled", Extra: map[string]string{}}
-		if _, err := store.Insert(tx, "sources", src, domain.System); err != nil {
+		if _, err := database.Insert(tx, "sources", src, domain.System); err != nil {
 			return err
 		}
 		srcID = src.ID
@@ -98,12 +98,12 @@ func TestShowSearchOverHTTP(t *testing.T) {
 			Size: 3 << 30, Flags: []string{}, Parsed: map[string]any{}, MatchedSlotIDs: []int64{s1, s2}, FoundBy: "hand_search", JobID: &seasonJob.ID,
 			State: "judged", Verdict: map[string]any{"outcome": "chosen", "passed": true, "rank": 1, "reasons": []any{
 				map[string]any{"step": "match", "rule": "episode", "effect": "pass", "detail": "holds S01E01, S01E02"}}}}
-		if _, err := store.Insert(tx, "releases", rel, domain.System); err != nil {
+		if _, err := database.Insert(tx, "releases", rel, domain.System); err != nil {
 			return err
 		}
 		relID = rel.ID
 		_, err := tx.Exec("UPDATE jobs SET state = 'done', result = '{\"releases\":1,\"refused\":0,\"chosen_release_id\":null}', ended_at = ? WHERE id = ?",
-			store.FormatTime(seasonJob.CreatedAt), seasonJob.ID)
+			database.FormatTime(seasonJob.CreatedAt), seasonJob.ID)
 		return err
 	})
 	if err != nil {

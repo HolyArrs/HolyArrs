@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/applog"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/logs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/doctor"
 )
 
@@ -26,14 +26,14 @@ var (
 func redactBundle(s string) string {
 	lines := strings.Split(s, "\n")
 	for i, l := range lines {
-		l = applog.RedactPatterns(l)
-		l = bundleHeader.ReplaceAllString(l, "${1}${2}"+applog.Hidden)
+		l = logs.RedactPatterns(l)
+		l = bundleHeader.ReplaceAllString(l, "${1}${2}"+logs.Hidden)
 		l = bundlePair.ReplaceAllStringFunc(l, func(m string) string {
 			sm := bundlePair.FindStringSubmatch(m)
-			if strings.Trim(sm[3], `"'`) == applog.Hidden {
+			if strings.Trim(sm[3], `"'`) == logs.Hidden {
 				return m
 			}
-			return sm[1] + sm[2] + applog.Hidden
+			return sm[1] + sm[2] + logs.Hidden
 		})
 		lines[i] = l
 	}

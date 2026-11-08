@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 )
 
 func TestStartingPageAnswersHealth(t *testing.T) {
@@ -39,7 +39,7 @@ func TestStartingPageAnswersHealth(t *testing.T) {
 // unhealthy, instead of exiting into a restart loop.
 func TestNewerDataKeepsAPlainPage(t *testing.T) {
 	dir := t.TempDir()
-	db, err := sql.Open("sqlite", filepath.Join(dir, store.MainFile))
+	db, err := sql.Open("sqlite", filepath.Join(dir, database.MainFile))
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -10,9 +10,9 @@ import (
 	"unicode"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Guards for the hand steering routes: what a person may name as a folder
@@ -76,7 +76,7 @@ func (a *API) clientFolder(ctx context.Context, downloaderID int64, category, fo
 		return category, folder, nil
 	}
 	var dr domain.Downloader
-	if err := store.Get(ctx, a.s.Store.Read(), "downloaders", downloaderID, &dr); err != nil || dr.Removed {
+	if err := database.Get(ctx, a.s.Store.Read(), "downloaders", downloaderID, &dr); err != nil || dr.Removed {
 		return "", "", downloader.ErrNoDownloader
 	}
 	var base downloader.SaveBase

@@ -8,9 +8,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 type titleDefaultsAnswer struct {
@@ -19,10 +19,10 @@ type titleDefaultsAnswer struct {
 }
 
 // thenOf reads the chain steps of an add's first job.
-func thenOf(t *testing.T, st *store.Store, jobID int64) []string {
+func thenOf(t *testing.T, st *database.Store, jobID int64) []string {
 	t.Helper()
 	var j domain.Job
-	if err := store.Get(context.Background(), st.Read(), "jobs", jobID, &j); err != nil {
+	if err := database.Get(context.Background(), st.Read(), "jobs", jobID, &j); err != nil {
 		t.Fatal(err)
 	}
 	var out []string

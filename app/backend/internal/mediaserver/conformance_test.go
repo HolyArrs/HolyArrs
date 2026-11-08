@@ -7,7 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/adaptertest"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound/adaptertest"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 

@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
@@ -141,7 +142,7 @@ func cleanList(v []string, allowed []string) ([]string, bool) {
 
 // ReadMusicDefaults reads the music settings; unset or odd values take the
 // recommended defaults.
-func ReadMusicDefaults(ctx context.Context, db store.Lister) (MusicDefaults, error) {
+func ReadMusicDefaults(ctx context.Context, db database.Lister) (MusicDefaults, error) {
 	d := DefaultMusic()
 	rows, err := db.QueryContext(ctx, `SELECT grp, key, value FROM settings WHERE (grp = 'what_to_pick' AND key LIKE 'music\_%' ESCAPE '\')
 		OR (grp = 'links' AND key IN ('musicbrainz_url', 'musicbrainz_cache_hours', 'musicbrainz_allow_local'))`)
@@ -238,7 +239,7 @@ func (d *MusicDefaults) Check() error {
 }
 
 // SetMusicDefaults stores the music settings.
-func SetMusicDefaults(ctx context.Context, s *store.Store, d MusicDefaults, by domain.Actor) error {
+func SetMusicDefaults(ctx context.Context, s *database.Store, d MusicDefaults, by domain.Actor) error {
 	if err := d.Check(); err != nil {
 		return err
 	}
@@ -247,7 +248,7 @@ func SetMusicDefaults(ctx context.Context, s *store.Store, d MusicDefaults, by d
 		"secondary_types": enc(d.SecondaryTypes), "release_statuses": enc(d.ReleaseStatuses), "pressing_rule": d.PressingRule,
 		"musicbrainz_url": d.MusicBrainzURL, "cache_hours": strconv.Itoa(d.CacheHours), "allow_local": strconv.FormatBool(d.AllowLocal)}
 	return s.Write(ctx, func(tx *sql.Tx) error {
-		now := store.FormatTime(time.Now())
+		now := database.FormatTime(time.Now())
 		for f, v := range vals {
 			gk, ok := musicKeys[f]
 			if !ok {
@@ -471,7 +472,7 @@ func trackGatesTx(ctx context.Context, tx *sql.Tx, titleID int64, now time.Time,
 			return nil, nil, err
 		}
 		if air.Valid {
-			if t, err := time.Parse(store.TimeLayout, air.String); err == nil {
+			if t, err := time.Parse(database.TimeLayout, air.String); err == nil {
 				r.air = &t
 			}
 		}
@@ -508,7 +509,7 @@ func trackGatesTx(ctx context.Context, tx *sql.Tx, titleID int64, now time.Time,
 func (s *Service) OpenTrackGates(ctx context.Context) (int, error) {
 	now := s.now()
 	rows, err := s.Store.Read().QueryContext(ctx, `SELECT DISTINCT i.title_id FROM slots s JOIN items i ON i.id = s.item_id JOIN titles t ON t.id = i.title_id
-		WHERE i.kind = 'track' AND s.state = 'not_out_yet' AND t.state != 'removed' AND i.air_date IS NOT NULL AND i.air_date <= ?`, store.FormatTime(now))
+		WHERE i.kind = 'track' AND s.state = 'not_out_yet' AND t.state != 'removed' AND i.air_date IS NOT NULL AND i.air_date <= ?`, database.FormatTime(now))
 	if err != nil {
 		return 0, err
 	}
@@ -527,7 +528,7 @@ func (s *Service) OpenTrackGates(ctx context.Context) (int, error) {
 		var t domain.Title
 		var opened []int64
 		err := s.Store.Write(ctx, func(tx *sql.Tx) error {
-			if err := store.Get(ctx, tx, "titles", id, &t); err != nil {
+			if err := database.Get(ctx, tx, "titles", id, &t); err != nil {
 				return err
 			}
 			var err error

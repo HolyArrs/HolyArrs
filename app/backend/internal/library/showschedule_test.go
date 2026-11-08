@@ -8,10 +8,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 func TestShouldRefreshShow(t *testing.T) {
@@ -93,7 +94,7 @@ func TestEpisodeBecomesWantedOnTime(t *testing.T) {
 		if eps["S02E02"].State != domain.SlotWanted || eps["S02E03"].State != domain.SlotNotOutYet || !strings.HasPrefix(eps["S02E02"].Reason, "aired 2026-10-19 02:00") {
 			t.Fatalf("wait %d: after the air time %+v", wait, eps)
 		}
-		es, _, _ := s.Events(ctx, store.EventFilter{TitleID: id, Kinds: []string{domain.EventGateOpened}})
+		es, _, _ := s.Events(ctx, database.EventFilter{TitleID: id, Kinds: []string{domain.EventGateOpened}})
 		if len(es) != 1 || !strings.Contains(es[0].Summary, "S02E02") || es[0].SlotID == nil || *es[0].SlotID != eps["S02E02"].SlotID {
 			t.Fatalf("wait %d: events %+v", wait, es)
 		}
@@ -170,7 +171,7 @@ func TestShowRefreshScheduleJob(t *testing.T) {
 		}
 		at := now.Add(-fetched)
 		if err := s.Write(ctx, func(tx *sql.Tx) error {
-			_, err := tx.Exec("UPDATE titles SET refreshed_at = ? WHERE id = ?", store.FormatTime(at), tid)
+			_, err := tx.Exec("UPDATE titles SET refreshed_at = ? WHERE id = ?", database.FormatTime(at), tid)
 			return err
 		}); err != nil {
 			t.Fatal(err)
@@ -185,7 +186,7 @@ func TestShowRefreshScheduleJob(t *testing.T) {
 	// The ended show's last episode aired long ago, the lab show's S02E01
 	// yesterday: make the ended one old.
 	if err := s.Write(ctx, func(tx *sql.Tx) error {
-		_, err := tx.Exec("UPDATE items SET air_date = ? WHERE title_id = ? AND air_date > ?", store.FormatTime(now.AddDate(-1, 0, 0)), ended, store.FormatTime(now.AddDate(-1, 0, 0)))
+		_, err := tx.Exec("UPDATE items SET air_date = ? WHERE title_id = ? AND air_date > ?", database.FormatTime(now.AddDate(-1, 0, 0)), ended, database.FormatTime(now.AddDate(-1, 0, 0)))
 		return err
 	}); err != nil {
 		t.Fatal(err)
@@ -217,7 +218,7 @@ func TestShowRefreshScheduleJob(t *testing.T) {
 		t.Fatalf("job %+v", job)
 	}
 	var g domain.Title
-	_ = store.Get(ctx, s.Read(), "titles", gone, &g)
+	_ = database.Get(ctx, s.Read(), "titles", gone, &g)
 	if g.DroppedAt == nil {
 		t.Fatal("the show the source forgot is not flagged")
 	}

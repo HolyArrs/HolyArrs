@@ -9,15 +9,16 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
-func open(t *testing.T) *store.Store {
+func open(t *testing.T) *database.Store {
 	t.Helper()
-	s, err := store.Open(t.TempDir(), store.Options{})
+	s, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -33,7 +34,7 @@ var (
 		CinemaDate: d("2027-02-01")}
 )
 
-func addFolder(t *testing.T, s *store.Store) domain.LibraryFolder {
+func addFolder(t *testing.T, s *database.Store) domain.LibraryFolder {
 	t.Helper()
 	lf, err := AddFolder(context.Background(), s, FolderInput{Path: t.TempDir(), Kind: "movie", Label: "Movies"}, nil, domain.System)
 	if err != nil {
@@ -42,9 +43,9 @@ func addFolder(t *testing.T, s *store.Store) domain.LibraryFolder {
 	return lf
 }
 
-func slotsOf(t *testing.T, s *store.Store, titleID int64) []domain.Slot {
+func slotsOf(t *testing.T, s *database.Store, titleID int64) []domain.Slot {
 	t.Helper()
-	sl, err := store.Select[domain.Slot](context.Background(), s.Read(), "slots", "item_id IN (SELECT id FROM items WHERE title_id = ?) ORDER BY id", titleID)
+	sl, err := database.Select[domain.Slot](context.Background(), s.Read(), "slots", "item_id IN (SELECT id FROM items WHERE title_id = ?) ORDER BY id", titleID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -66,13 +67,13 @@ func TestAddMovieOnceWithGateAndRefusals(t *testing.T) {
 		t.Fatalf("id %d err %v", id, err)
 	}
 	var ti domain.Title
-	_ = store.Get(ctx, s.Read(), "titles", id, &ti)
+	_ = database.Get(ctx, s.Read(), "titles", id, &ti)
 	if ti.SortName != "dune part two" || ti.Year == nil || *ti.Year != 2024 || ti.ReleaseGate != "released" || ti.GateDelayDays != 0 ||
 		ti.GateDriver != "digital" || ti.GateOpensAt == nil || !ti.GateOpensAt.Equal(*d("2024-04-16")) || ti.Status != "released" ||
 		ti.WhyAdded != "by_hand" || ti.MetadataSource != "tmdb" || !ti.KeepUpToDate {
 		t.Fatalf("title %+v", ti)
 	}
-	vs, _ := store.Select[domain.Version](ctx, s.Read(), "versions", "title_id = ?", id)
+	vs, _ := database.Select[domain.Version](ctx, s.Read(), "versions", "title_id = ?", id)
 	sl := slotsOf(t, s, id)
 	if len(vs) != 1 || vs[0].FolderName != "Dune - Part Two (2024)" || !vs[0].IsMain || vs[0].LibraryFolderID != lf.ID ||
 		len(sl) != 1 || sl[0].State != domain.SlotWanted {
@@ -104,7 +105,7 @@ func TestAddMovieOnceWithGateAndRefusals(t *testing.T) {
 	}
 	fs := slotsOf(t, s, fid)
 	var ft domain.Title
-	_ = store.Get(ctx, s.Read(), "titles", fid, &ft)
+	_ = database.Get(ctx, s.Read(), "titles", fid, &ft)
 	if fs[0].State != domain.SlotNotOutYet || fs[0].LastReason == nil || *fs[0].LastReason != "release gate: searching from 2027-02-04 (cinema date)" ||
 		ft.KeepUpToDate || ft.WhyAdded != "import" || ft.Status != "announced" {
 		t.Fatalf("future slot %+v title %+v", fs[0], ft)
@@ -132,7 +133,7 @@ func TestAddMovieRefusesUnusableFolder(t *testing.T) {
 	}
 }
 
-func count(t *testing.T, s *store.Store, table string) int {
+func count(t *testing.T, s *database.Store, table string) int {
 	t.Helper()
 	var n int
 	if err := s.Read().QueryRow("SELECT count(*) FROM " + table).Scan(&n); err != nil {
@@ -160,7 +161,7 @@ func TestGateDefaultsSetting(t *testing.T) {
 		t.Fatal(err)
 	}
 	var ti domain.Title
-	_ = store.Get(ctx, s.Read(), "titles", id, &ti)
+	_ = database.Get(ctx, s.Read(), "titles", id, &ti)
 	if ti.ReleaseGate != GateInCinemas || ti.GateDelayDays != 2 || ti.GateOpensAt.Format("2006-01-02") != "2027-02-03" {
 		t.Fatalf("title from new defaults %+v", ti)
 	}
@@ -235,14 +236,14 @@ func TestFolderChecksAndCRUD(t *testing.T) {
 		t.Fatalf("recheck %+v %v %v", got, changed, err)
 	}
 	var stored domain.LibraryFolder
-	_ = store.Get(ctx, s.Read(), "library_folders", g.ID, &stored)
+	_ = database.Get(ctx, s.Read(), "library_folders", g.ID, &stored)
 	if stored.Health != "missing" || stored.HealthReason == "" {
 		t.Fatalf("stored %+v", stored)
 	}
 }
 
 // runQueue starts a queue with the library's handlers and a fake search.
-func runQueue(t *testing.T, s *store.Store, md metadata.Provider) (*Service, *jobs.Queue, chan int64) {
+func runQueue(t *testing.T, s *database.Store, md metadata.Provider) (*Service, *jobs.Queue, chan int64) {
 	t.Helper()
 	q := jobs.New(s, jobs.Options{Workers: 2, PollInterval: 5 * time.Millisecond, BaseBackoff: 10 * time.Millisecond})
 	svc := &Service{Store: s, Queue: q, Metadata: md, Now: func() time.Time { return now }}
@@ -256,11 +257,11 @@ func runQueue(t *testing.T, s *store.Store, md metadata.Provider) (*Service, *jo
 	return svc, q, searched
 }
 
-func waitJobs(t *testing.T, s *store.Store, n int) []domain.Job {
+func waitJobs(t *testing.T, s *database.Store, n int) []domain.Job {
 	t.Helper()
 	deadline := time.Now().Add(5 * time.Second)
 	for time.Now().Before(deadline) {
-		js, _ := store.Select[domain.Job](context.Background(), s.Read(), "jobs", "1=1 ORDER BY id")
+		js, _ := database.Select[domain.Job](context.Background(), s.Read(), "jobs", "1=1 ORDER BY id")
 		done := 0
 		for _, j := range js {
 			if j.State == "done" || j.State == "failed" {
@@ -272,7 +273,7 @@ func waitJobs(t *testing.T, s *store.Store, n int) []domain.Job {
 		}
 		time.Sleep(10 * time.Millisecond)
 	}
-	js, _ := store.Select[domain.Job](context.Background(), s.Read(), "jobs", "1=1 ORDER BY id")
+	js, _ := database.Select[domain.Job](context.Background(), s.Read(), "jobs", "1=1 ORDER BY id")
 	t.Fatalf("jobs never settled: %+v", js)
 	return nil
 }
@@ -302,7 +303,7 @@ func TestAddQueuesRefreshScanSearchInOrder(t *testing.T) {
 		t.Fatalf("searched slot %d", got)
 	}
 	var ti domain.Title
-	_ = store.Get(ctx, s.Read(), "titles", id, &ti)
+	_ = database.Get(ctx, s.Read(), "titles", id, &ti)
 	if ti.RefreshedAt == nil {
 		t.Fatal("not refreshed")
 	}
@@ -358,14 +359,14 @@ func TestEditPickRulesGoodEnoughWithDryRun(t *testing.T) {
 		name := "Dune.Part.Two.2024.1080p.WEB-DL.DDP5.1.H.264-GRP"
 		f := &domain.File{SlotIDs: []int64{sl.ID}, VersionID: sl.VersionID, RelativePath: name + ".mkv", Size: 1, AddedAt: now,
 			Languages: []string{}, MediaInfo: map[string]any{}, ReleaseName: &name, Origin: "imported", PlacedBy: "hardlink", Role: "main", State: "present"}
-		if _, err := store.Insert(tx, "files", f, domain.System); err != nil {
+		if _, err := database.Insert(tx, "files", f, domain.System); err != nil {
 			return err
 		}
 		if _, err := tx.Exec("UPDATE slots SET state = 'in_library', file_id = ?, good_enough = 1 WHERE id = ?", f.ID, sl.ID); err != nil {
 			return err
 		}
 		var err error
-		strictID, err = store.Insert(tx, "pick_rules", &domain.PickRules{Name: "Strict", Kinds: []string{"movie"}, Revision: 1, Body: strict}, domain.System)
+		strictID, err = database.Insert(tx, "pick_rules", &domain.PickRules{Name: "Strict", Kinds: []string{"movie"}, Revision: 1, Body: strict}, domain.System)
 		return err
 	})
 	if err != nil {
@@ -451,7 +452,7 @@ func TestMoveDryRunThenApply(t *testing.T) {
 	_ = os.MkdirAll(dir, 0o755)
 	_ = os.WriteFile(filepath.Join(dir, "dune.mkv"), []byte("movie bytes"), 0o644)
 	err = s.Write(ctx, func(tx *sql.Tx) error {
-		_, err := store.Insert(tx, "files", &domain.File{SlotIDs: []int64{sl.ID}, VersionID: sl.VersionID, RelativePath: "Dune - Part Two (2024)/dune.mkv", Size: 11, AddedAt: now,
+		_, err := database.Insert(tx, "files", &domain.File{SlotIDs: []int64{sl.ID}, VersionID: sl.VersionID, RelativePath: "Dune - Part Two (2024)/dune.mkv", Size: 11, AddedAt: now,
 			Languages: []string{}, MediaInfo: map[string]any{}, Origin: "imported", PlacedBy: "copy", Role: "main", State: "present"}, domain.System)
 		return err
 	})
@@ -470,7 +471,7 @@ func TestMoveDryRunThenApply(t *testing.T) {
 		t.Fatal("dry run moved the file")
 	}
 	var v domain.Version
-	_ = store.Get(ctx, s.Read(), "versions", sl.VersionID, &v)
+	_ = database.Get(ctx, s.Read(), "versions", sl.VersionID, &v)
 	if v.LibraryFolderID != from.ID {
 		t.Fatal("dry run changed the Version folder")
 	}
@@ -488,7 +489,7 @@ func TestMoveDryRunThenApply(t *testing.T) {
 	if _, err := os.Stat(dir); !os.IsNotExist(err) {
 		t.Fatal("old empty folder left behind")
 	}
-	_ = store.Get(ctx, s.Read(), "versions", sl.VersionID, &v)
+	_ = database.Get(ctx, s.Read(), "versions", sl.VersionID, &v)
 	if v.LibraryFolderID != to.ID {
 		t.Fatal("Version folder not changed")
 	}
@@ -505,7 +506,7 @@ func TestMoveRefusesFoundFiles(t *testing.T) {
 	}
 	sl := slotsOf(t, s, id)[0]
 	_ = s.Write(ctx, func(tx *sql.Tx) error {
-		_, err := store.Insert(tx, "files", &domain.File{SlotIDs: []int64{}, VersionID: sl.VersionID, RelativePath: "Dune - Part Two (2024)/x.mkv", AddedAt: now,
+		_, err := database.Insert(tx, "files", &domain.File{SlotIDs: []int64{}, VersionID: sl.VersionID, RelativePath: "Dune - Part Two (2024)/x.mkv", AddedAt: now,
 			Languages: []string{}, MediaInfo: map[string]any{}, Origin: "found", PlacedBy: "none", Role: "main", State: "present"}, domain.System)
 		return err
 	})
@@ -559,7 +560,7 @@ func TestScanFindsImportedFile(t *testing.T) {
 	_ = os.MkdirAll(dir, 0o755)
 	_ = os.WriteFile(filepath.Join(dir, "dune.mkv"), []byte("x"), 0o644)
 	if err := s.Write(ctx, func(tx *sql.Tx) error {
-		_, err := store.Insert(tx, "files", &domain.File{SlotIDs: []int64{sl.ID}, VersionID: sl.VersionID, RelativePath: "Dune - Part Two (2024)/dune.mkv", Size: 1, AddedAt: now,
+		_, err := database.Insert(tx, "files", &domain.File{SlotIDs: []int64{sl.ID}, VersionID: sl.VersionID, RelativePath: "Dune - Part Two (2024)/dune.mkv", Size: 1, AddedAt: now,
 			Languages: []string{}, MediaInfo: map[string]any{}, Origin: "imported", PlacedBy: "copy", Role: "main", State: "present"}, domain.System)
 		return err
 	}); err != nil {
@@ -572,7 +573,7 @@ func TestScanFindsImportedFile(t *testing.T) {
 	deadline := time.Now().Add(5 * time.Second)
 	for time.Now().Before(deadline) {
 		var j domain.Job
-		_ = store.Get(ctx, s.Read(), "jobs", jid, &j)
+		_ = database.Get(ctx, s.Read(), "jobs", jid, &j)
 		if j.State == "done" {
 			v := j.Result["versions"].([]any)[0].(map[string]any)
 			if v["known_present"] != float64(1) || v["known_absent"] != float64(0) {

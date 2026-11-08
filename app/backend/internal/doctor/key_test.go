@@ -14,8 +14,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 )
 
 // keySection is the doctor section for the master key.
@@ -33,7 +33,7 @@ func keyPrint(key []byte) string {
 func keyedConfig(t *testing.T) (string, []byte) {
 	t.Helper()
 	dir := t.TempDir()
-	s, err := store.Open(dir, store.Options{})
+	s, err := database.Open(dir, database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -201,7 +201,7 @@ func TestDoctorKeyFromEnvFile(t *testing.T) {
 // is made on first start.
 func TestDoctorKeyFreshInstall(t *testing.T) {
 	dir := t.TempDir()
-	s, err := store.Open(dir, store.Options{})
+	s, err := database.Open(dir, database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -216,7 +216,7 @@ func TestDoctorKeyFreshInstall(t *testing.T) {
 // start even on a fresh install, so the doctor must not pass it.
 func TestDoctorKeyFromEnvFileMissing(t *testing.T) {
 	dir := t.TempDir()
-	s, err := store.Open(dir, store.Options{})
+	s, err := database.Open(dir, database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}

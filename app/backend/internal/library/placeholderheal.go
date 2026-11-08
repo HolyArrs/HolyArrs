@@ -11,8 +11,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // serverPlaceholders are the SHA-256 sums of pictures known to be only a
@@ -66,7 +66,7 @@ func (s *Service) HealServerPlaceholders(ctx context.Context) (int, error) {
 			bad[e.Name()] = true
 		}
 	}
-	now := store.FormatTime(s.now())
+	now := database.FormatTime(s.now())
 	by := actorText(domain.System)
 	err = s.Store.Write(ctx, func(tx *sql.Tx) error {
 		if len(bad) > 0 {

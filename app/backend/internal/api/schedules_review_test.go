@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/applog"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/logs"
 )
 
 // Turning automatic work off does not change who may run it by hand.
@@ -48,7 +48,7 @@ func TestScheduleErrorsMasked(t *testing.T) {
 		t.Fatal(err)
 	}
 	s := scheduleNamed(t, got, "feed_check")
-	if strings.Contains(s.LastJobError, "XXXX_SECRET_KEY") || strings.Contains(s.LastJobError, "pw@") || !strings.Contains(s.LastJobError, applog.Hidden) {
+	if strings.Contains(s.LastJobError, "XXXX_SECRET_KEY") || strings.Contains(s.LastJobError, "pw@") || !strings.Contains(s.LastJobError, logs.Hidden) {
 		t.Fatalf("error shown: %q", s.LastJobError)
 	}
 }

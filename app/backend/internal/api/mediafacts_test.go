@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // The title page reads the stored header facts (resolution, audio codec,
@@ -25,7 +25,7 @@ func TestTitleViewCarriesHeaderFacts(t *testing.T) {
 			Languages: []string{"en"}, Origin: "imported", PlacedBy: "copy", Role: "main", State: "present",
 			MediaInfo: map[string]any{"resolution": "1080p", "width": 1920, "height": 800, "audio_codec": "eac3",
 				"audio_channels": "5.1", "subtitle_languages": []string{"en", "fr"}, "runtime_seconds": 9960}}
-		if _, err := store.Insert(tx, "files", f, domain.System); err != nil {
+		if _, err := database.Insert(tx, "files", f, domain.System); err != nil {
 			return err
 		}
 		_, err := tx.Exec("UPDATE slots SET state = 'in_library', file_id = ? WHERE id = ?", f.ID, slot.ID)

@@ -10,7 +10,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 )
 
 // The old-app API (decision 0008): /sonarr/ and /radarr/ answer apps such
@@ -95,7 +95,7 @@ func (a *Auth) checkCompatKey(ctx context.Context, side, k string) (Who, bool) {
 	now := a.now()
 	if !used.Valid || now.Sub(parseTime(used.String)) > touchEvery {
 		_ = a.s.WriteCore(ctx, func(tx *sql.Tx) error {
-			_, err := tx.Exec("UPDATE compat_keys SET last_used_at = ? WHERE side = ?", store.FormatTime(now), side)
+			_, err := tx.Exec("UPDATE compat_keys SET last_used_at = ? WHERE side = ?", database.FormatTime(now), side)
 			return err
 		})
 	}
@@ -154,7 +154,7 @@ func (a *Auth) MakeCompatKey(r *http.Request, side string) (string, error) {
 	k := hex.EncodeToString(b)
 	who, _ := From(r.Context())
 	by, _ := json.Marshal(Actor(r.Context()))
-	now := store.FormatTime(a.now())
+	now := database.FormatTime(a.now())
 	err := a.s.WriteCore(r.Context(), func(tx *sql.Tx) error {
 		_, err := tx.Exec(`INSERT INTO compat_keys(side, created_at, created_by, owner_user_id, hash, hint) VALUES (?, ?, ?, ?, ?, ?)
 			ON CONFLICT (side) DO UPDATE SET created_at = excluded.created_at, created_by = excluded.created_by, owner_user_id = excluded.owner_user_id,

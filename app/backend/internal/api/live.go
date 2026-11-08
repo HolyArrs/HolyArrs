@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/live"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
 // interestEvery is how often one session's interest counts; more calls in
@@ -25,17 +25,17 @@ type interestState struct {
 // liveViewer is who holds a /live stream: managers receive every event,
 // anyone else only events for their own items. Without sign-in everyone
 // runs the app.
-func (a *API) liveViewer(r *http.Request) live.Viewer {
+func (a *API) liveViewer(r *http.Request) webserver.LiveViewer {
 	who, ok := auth.From(r.Context())
 	if !ok {
-		return live.Viewer{All: a.s.Auth == nil, Approve: a.s.Auth == nil}
+		return webserver.LiveViewer{All: a.s.Auth == nil, Approve: a.s.Auth == nil}
 	}
-	return live.Viewer{UserID: who.UserID, All: who.Has(auth.PermManageLibrary), Approve: who.Has(auth.PermApprove)}
+	return webserver.LiveViewer{UserID: who.UserID, All: who.Has(auth.PermManageLibrary), Approve: who.Has(auth.PermApprove)}
 }
 
 // liveViewerNow is liveViewer read again from the sign-in itself, for a
 // stream that is already open: false once that sign-in no longer works.
-func (a *API) liveViewerNow(r *http.Request) (live.Viewer, bool) {
+func (a *API) liveViewerNow(r *http.Request) (webserver.LiveViewer, bool) {
 	if a.s.Auth == nil {
 		return a.liveViewer(r), true
 	}
@@ -43,9 +43,9 @@ func (a *API) liveViewerNow(r *http.Request) (live.Viewer, bool) {
 	// route but My account, so an open stream ends too.
 	who, ok := a.s.Auth.Still(r)
 	if !ok || who.MustTwoFactor {
-		return live.Viewer{}, false
+		return webserver.LiveViewer{}, false
 	}
-	return live.Viewer{UserID: who.UserID, All: who.Has(auth.PermManageLibrary), Approve: who.Has(auth.PermApprove)}, true
+	return webserver.LiveViewer{UserID: who.UserID, All: who.Has(auth.PermManageLibrary), Approve: who.Has(auth.PermApprove)}, true
 }
 
 // liveRecheck has every open /live stream check its viewer again after a

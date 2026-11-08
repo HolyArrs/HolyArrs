@@ -13,8 +13,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Made-up tokens in the shapes the apps give.
@@ -68,7 +68,7 @@ func noSecret(t *testing.T, where, s string) {
 
 // secretsKeptOut checks the error, its logged detail, the Alert's last
 // result and the Event never hold a secret.
-func secretsKeptOut(t *testing.T, s *store.Store, a domain.Alert, err error) {
+func secretsKeptOut(t *testing.T, s *database.Store, a domain.Alert, err error) {
 	t.Helper()
 	noSecret(t, "the error", err.Error())
 	var f *failure
@@ -76,9 +76,9 @@ func secretsKeptOut(t *testing.T, s *store.Store, a domain.Alert, err error) {
 		noSecret(t, "the logged detail", f.detail.Error())
 	}
 	var fresh domain.Alert
-	_ = store.Get(context.Background(), s.Read(), "alerts", a.ID, &fresh)
+	_ = database.Get(context.Background(), s.Read(), "alerts", a.ID, &fresh)
 	noSecret(t, "the last result", fresh.LastError)
-	evs, _ := store.Select[domain.Event](context.Background(), s.ReadEvents(), "events", "kind = ?", domain.EventAlertFailed)
+	evs, _ := database.Select[domain.Event](context.Background(), s.ReadEvents(), "events", "kind = ?", domain.EventAlertFailed)
 	raw, _ := json.Marshal(evs)
 	noSecret(t, "the event", string(raw))
 }
@@ -413,7 +413,7 @@ func TestNtfyTokenCanBeRemoved(t *testing.T) {
 		t.Fatalf("change %+v %v", b, err)
 	}
 	var fresh domain.Alert
-	if err := store.Get(ctx, s.Read(), "alerts", a.ID, &fresh); err != nil || fresh.PasswordSecretID != nil {
+	if err := database.Get(ctx, s.Read(), "alerts", a.ID, &fresh); err != nil || fresh.PasswordSecretID != nil {
 		t.Fatalf("stored %+v %v", fresh, err)
 	}
 	if _, err := v.Get(ctx, was); err == nil {
@@ -458,10 +458,10 @@ func TestNtfyTokenCanBeRemoved(t *testing.T) {
 	}
 }
 
-func mustGet(t *testing.T, s *store.Store, id int64) domain.Alert {
+func mustGet(t *testing.T, s *database.Store, id int64) domain.Alert {
 	t.Helper()
 	var a domain.Alert
-	if err := store.Get(context.Background(), s.Read(), "alerts", id, &a); err != nil {
+	if err := database.Get(context.Background(), s.Read(), "alerts", id, &a); err != nil {
 		t.Fatal(err)
 	}
 	return a

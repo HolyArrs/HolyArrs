@@ -14,23 +14,23 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/supervisor"
 )
 
 // runApp starts the app and returns its address, its parts Control and a
 // stop function that returns what serve returned.
-func runApp(t *testing.T, c config) (string, *parts.Control, *supervisor.Registry, func() error) {
+func runApp(t *testing.T, c config) (string, *parts.Control, *jobs.Registry, func() error) {
 	t.Helper()
 	c.Addr = "127.0.0.1:0"
 	type up struct {
-		reg  *supervisor.Registry
+		reg  *jobs.Registry
 		addr string
 	}
 	ready := make(chan up, 1)
 	var pc *parts.Control
-	o := runOpts{ready: func(reg *supervisor.Registry, addr string) { ready <- up{reg, addr} }, parts: func(c *parts.Control) { pc = c }}
+	o := runOpts{ready: func(reg *jobs.Registry, addr string) { ready <- up{reg, addr} }, parts: func(c *parts.Control) { pc = c }}
 	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan error, 1)
 	go func() { done <- serve(ctx, c, o) }()
@@ -67,7 +67,7 @@ func TestEveryLoopAndJobKindHasAPart(t *testing.T) {
 	var kinds []string
 	var loops []string
 	reg, _ := startApp(t, config{}, runOpts{kinds: func(k []string) { kinds = k },
-		wrap: func(l supervisor.Loop) supervisor.Loop { loops = append(loops, l.Name); return l }})
+		wrap: func(l jobs.Loop) jobs.Loop { loops = append(loops, l.Name); return l }})
 	if len(kinds) < 20 || len(loops) < 5 {
 		t.Fatalf("only %d kinds and %d loops", len(kinds), len(loops))
 	}
@@ -103,7 +103,7 @@ func TestPartSwitchesSurviveARestart(t *testing.T) {
 	if err := pc.Set(context.Background(), parts.Wishlist, false, domain.System); err != nil {
 		t.Fatal(err)
 	}
-	waitState(t, reg, "wishlist", supervisor.Off)
+	waitState(t, reg, "wishlist", jobs.Off)
 	if err := stop(); err != nil {
 		t.Fatal(err)
 	}
@@ -111,10 +111,10 @@ func TestPartSwitchesSurviveARestart(t *testing.T) {
 	if pc.On(parts.Music) || pc.On(parts.Wishlist) || !pc.On(parts.Movies) {
 		t.Fatalf("after a restart, off: %v", pc.Off())
 	}
-	if st, _ := reg.Get(supervisor.StageKey("wishlist")); st.State != supervisor.Off || st.Reason != "Requests is off." {
+	if st, _ := reg.Get(jobs.StageKey("wishlist")); st.State != jobs.Off || st.Reason != "Requests is off." {
 		t.Fatalf("wishlist stage after a restart: %+v", st)
 	}
-	waitState(t, reg, "gates", supervisor.Running)
+	waitState(t, reg, "gates", jobs.Running)
 	if err := stop(); err != nil {
 		t.Fatal(err)
 	}
@@ -124,11 +124,11 @@ func TestPartSwitchesSurviveARestart(t *testing.T) {
 	}
 }
 
-func waitState(t *testing.T, reg *supervisor.Registry, stage string, want supervisor.State) {
+func waitState(t *testing.T, reg *jobs.Registry, stage string, want jobs.State) {
 	t.Helper()
 	deadline := time.Now().Add(10 * time.Second)
 	for {
-		st, _ := reg.Get(supervisor.StageKey(stage))
+		st, _ := reg.Get(jobs.StageKey(stage))
 		if st.State == want {
 			return
 		}
@@ -195,7 +195,7 @@ func TestRestartInSafeModeFromTheControls(t *testing.T) {
 	if len(pc.Off()) != len(parts.All) {
 		t.Fatalf("the start after was not in safe mode: off %v", pc.Off())
 	}
-	if st, _ := reg.Get(supervisor.StageKey("schedules")); st.State != supervisor.Off {
+	if st, _ := reg.Get(jobs.StageKey("schedules")); st.State != jobs.Off {
 		t.Fatalf("schedules in safe mode: %+v", st)
 	}
 	if err := stop(); err != nil {

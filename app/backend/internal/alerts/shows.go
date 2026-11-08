@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Show names the show a message is about.
@@ -54,7 +54,7 @@ type Settings struct {
 
 // ReadSettings reads the Alert settings; unset or odd ones keep their
 // default (one Alert per pack, at most 25 per-episode Alerts).
-func ReadSettings(ctx context.Context, db store.Querier) Settings {
+func ReadSettings(ctx context.Context, db database.Querier) Settings {
 	s := Settings{PackAlerts: PackOne, EachLimit: DefaultEachLimit}
 	var v string
 	if db.QueryRowContext(ctx, "SELECT value FROM settings WHERE key = 'pack_alerts' AND grp IN ('alerts', 'links') ORDER BY grp = 'alerts' DESC LIMIT 1").Scan(&v) == nil && (v == PackOne || v == PackEach) {
@@ -72,7 +72,7 @@ func ReadSettings(ctx context.Context, db store.Querier) Settings {
 const MaxEachLimit = 500
 
 // SaveSettings stores the Alert settings in the alerts group.
-func SaveSettings(ctx context.Context, st *store.Store, s Settings, by domain.Actor) error {
+func SaveSettings(ctx context.Context, st *database.Store, s Settings, by domain.Actor) error {
 	if s.PackAlerts != PackOne && s.PackAlerts != PackEach {
 		return fmt.Errorf("pack_alerts must be %s or %s", PackOne, PackEach)
 	}
@@ -83,7 +83,7 @@ func SaveSettings(ctx context.Context, st *store.Store, s Settings, by domain.Ac
 		return fmt.Errorf("each_limit must be 1 to %d", MaxEachLimit)
 	}
 	actor, _ := json.Marshal(by)
-	now := store.FormatTime(time.Now())
+	now := database.FormatTime(time.Now())
 	return st.Write(ctx, func(tx *sql.Tx) error {
 		for _, kv := range [][2]string{{"pack_alerts", s.PackAlerts}, {"each_limit", strconv.Itoa(s.EachLimit)}} {
 			if _, err := tx.Exec(`INSERT INTO settings (grp, key, value, created_at, created_by, updated_at, updated_by) VALUES ('alerts', ?, ?, ?, ?, ?, ?)
@@ -100,11 +100,11 @@ func SaveSettings(ctx context.Context, st *store.Store, s Settings, by domain.Ac
 // slotIDsOf finds the Slots an Event is about: those it names (an import
 // names the ones it placed), else its Download's, else its own Slot.
 // SlotIDsOf lists the Slots an Event is about.
-func SlotIDsOf(ctx context.Context, db store.Querier, e domain.Event) []int64 {
+func SlotIDsOf(ctx context.Context, db database.Querier, e domain.Event) []int64 {
 	return slotIDsOf(ctx, db, e)
 }
 
-func slotIDsOf(ctx context.Context, db store.Querier, e domain.Event) []int64 {
+func slotIDsOf(ctx context.Context, db database.Querier, e domain.Event) []int64 {
 	for _, k := range []string{"placed_slot_ids", "slot_ids"} {
 		if raw, ok := e.Data[k].([]any); ok && len(raw) > 0 {
 			var out []int64
@@ -135,7 +135,7 @@ func slotIDsOf(ctx context.Context, db store.Querier, e domain.Event) []int64 {
 }
 
 // episodesOf lists the episodes of Slots, in episode order, each once.
-func episodesOf(ctx context.Context, db store.Querier, slotIDs []int64) []Episode {
+func episodesOf(ctx context.Context, db database.Querier, slotIDs []int64) []Episode {
 	var out []Episode
 	seen := map[[2]int]bool{}
 	for _, id := range slotIDs {

@@ -9,17 +9,17 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/supervisor"
 )
 
 // musicOffControl is a parts Control with Music turned off.
-func musicOffControl(t *testing.T, s *store.Store) *parts.Control {
+func musicOffControl(t *testing.T, s *database.Store) *parts.Control {
 	t.Helper()
-	pc := &parts.Control{Store: s, Reg: supervisor.NewRegistry(), Drain: time.Second, Logf: func(string, ...any) {}}
+	pc := &parts.Control{Store: s, Reg: jobs.NewRegistry(), Drain: time.Second, Logf: func(string, ...any) {}}
 	if err := pc.Load(context.Background()); err != nil {
 		t.Fatal(err)
 	}
@@ -33,7 +33,7 @@ func musicOffControl(t *testing.T, s *store.Store) *parts.Control {
 // starts: no music goroutine runs and the metadata server is never asked.
 // Turning Music on starts them.
 func TestMusicWarmUpDoesNotRunWhenMusicIsOff(t *testing.T) {
-	s, err := store.Open(t.TempDir(), store.Options{})
+	s, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -95,7 +95,7 @@ func musicGoroutines() string {
 // With Music off, the music Job kinds (artist refresh, artist pictures,
 // album search) are not queued.
 func TestMusicJobKindsAreOffWhenMusicIsOff(t *testing.T) {
-	s, err := store.Open(t.TempDir(), store.Options{})
+	s, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -111,7 +111,7 @@ func TestMusicJobKindsAreOffWhenMusicIsOff(t *testing.T) {
 // With Music off, the shared handlers' Music provider gives nothing and
 // starts no build; turned on, it answers again.
 func TestMusicProviderFollowsThePart(t *testing.T) {
-	s, err := store.Open(t.TempDir(), store.Options{})
+	s, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}

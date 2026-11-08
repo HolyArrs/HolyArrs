@@ -11,12 +11,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // organiseWorld adds a movie Library folder and Dune with one imported file.
-func organiseWorld(t *testing.T) (url string, s *store.Store, lib string, titleID, fileID int64) {
+func organiseWorld(t *testing.T) (url string, s *database.Store, lib string, titleID, fileID int64) {
 	t.Helper()
 	srv, s, _ := libSetup(t)
 	lib = t.TempDir()
@@ -41,7 +41,7 @@ func organiseWorld(t *testing.T) (url string, s *store.Store, lib string, titleI
 		}
 		f := &domain.File{SlotIDs: []int64{sid}, VersionID: vid, RelativePath: rel, Size: 5, AddedAt: time.Now(), Languages: []string{},
 			MediaInfo: map[string]any{}, ReleaseName: &release, Origin: "imported", PlacedBy: "hardlink", Role: "main", State: "present"}
-		id, err := store.Insert(tx, "files", f, domain.System)
+		id, err := database.Insert(tx, "files", f, domain.System)
 		fileID = id
 		return err
 	})
@@ -85,7 +85,7 @@ func TestRenameTitleAPI(t *testing.T) {
 		t.Fatalf("job %+v", j)
 	}
 	var f domain.File
-	_ = store.Get(context.Background(), s.Read(), "files", fid, &f)
+	_ = database.Get(context.Background(), s.Read(), "files", fid, &f)
 	if f.RelativePath != want {
 		t.Fatalf("file %q", f.RelativePath)
 	}
@@ -204,7 +204,7 @@ func TestDeleteTitleAPI(t *testing.T) {
 		t.Fatalf("apply %s", b)
 	}
 	var f domain.File
-	_ = store.Get(context.Background(), s.Read(), "files", fid, &f)
+	_ = database.Get(context.Background(), s.Read(), "files", fid, &f)
 	if f.State != "gone" || !strings.HasPrefix(f.RelativePath, ".holyarrs-replaced/") {
 		t.Fatalf("file %+v", f)
 	}

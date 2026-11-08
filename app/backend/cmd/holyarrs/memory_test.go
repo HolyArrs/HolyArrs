@@ -17,9 +17,10 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/lowmem"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // The memory runs (3.7.10, decision 0007 "Switches" and "Memory limit
@@ -169,8 +170,8 @@ func TestMemoryChild(t *testing.T) {
 		t.Skip("started by TestMemoryPartsRuns")
 	}
 	if strings.HasSuffix(mode, "-low") {
-		lowmem.Set(true)
-		t.Cleanup(func() { lowmem.Set(false) })
+		startup.SetLowMemory(true)
+		t.Cleanup(func() { startup.SetLowMemory(false) })
 	}
 	base := measure(mode)
 	a := startFaultApp(t, runOpts{})
@@ -241,7 +242,7 @@ func procStatus(key string) uint64 {
 
 // loadFixture adds the Library: movies with a file each, and shows with
 // seasons of episodes, half of them with files. It returns the Items.
-func loadFixture(t *testing.T, s *store.Store, dir string) int {
+func loadFixture(t *testing.T, s *database.Store, dir string) int {
 	t.Helper()
 	ctx := context.Background()
 	items := 0
@@ -255,7 +256,7 @@ func loadFixture(t *testing.T, s *store.Store, dir string) int {
 			if err := os.MkdirAll(p, 0o755); err != nil {
 				return 0, err
 			}
-			return store.Insert(tx, "library_folders", &domain.LibraryFolder{Path: p, Kind: kind, Label: label, Health: "ok", SameDiskAs: []int64{}}, domain.System)
+			return database.Insert(tx, "library_folders", &domain.LibraryFolder{Path: p, Kind: kind, Label: label, Health: "ok", SameDiskAs: []int64{}}, domain.System)
 		}
 		mf, err := folder("movie", "Movies")
 		if err != nil {
@@ -268,7 +269,7 @@ func loadFixture(t *testing.T, s *store.Store, dir string) int {
 		now := time.Now().UTC()
 		file := func(slot, ver int64, rel string) error {
 			name := rel
-			id, err := store.Insert(tx, "files", &domain.File{SlotIDs: []int64{slot}, VersionID: ver, RelativePath: rel, Size: 4 << 30, AddedAt: now,
+			id, err := database.Insert(tx, "files", &domain.File{SlotIDs: []int64{slot}, VersionID: ver, RelativePath: rel, Size: 4 << 30, AddedAt: now,
 				Languages: []string{"en"}, MediaInfo: map[string]any{}, ReleaseName: &name, Origin: "imported", PlacedBy: "hardlink", Role: "main", State: "present"}, domain.System)
 			if err != nil {
 				return err
@@ -280,22 +281,22 @@ func loadFixture(t *testing.T, s *store.Store, dir string) int {
 			year := 1960 + i%60
 			name := fmt.Sprintf("Fixture Movie %04d", i)
 			overview := strings.Repeat("A plain overview of a movie for the memory run. ", 6)
-			tid, err := store.Insert(tx, "titles", &domain.Title{Kind: "movie", Name: name, SortName: name, Year: &year, Overview: &overview, Aliases: []string{},
+			tid, err := database.Insert(tx, "titles", &domain.Title{Kind: "movie", Name: name, SortName: name, Year: &year, Overview: &overview, Aliases: []string{},
 				SourceIDs: map[string]string{"tmdb": strconv.Itoa(100000 + i)}, MetadataSource: "tmdb", KeepUpToDate: true, NewPartsPolicy: "all",
 				ReleaseGate: "released", MusicTypes: []string{}, WhyAdded: "by_hand", Artwork: []string{}, Status: "released", State: "active", GateDriver: "none"}, domain.System)
 			if err != nil {
 				return err
 			}
 			folderName := fmt.Sprintf("%s (%d)", name, year)
-			ver, err := store.Insert(tx, "versions", &domain.Version{TitleID: tid, Label: "HD", PickRulesID: rules, LibraryFolderID: mf, FolderName: folderName, KeepUpToDate: true, IsMain: true}, domain.System)
+			ver, err := database.Insert(tx, "versions", &domain.Version{TitleID: tid, Label: "HD", PickRulesID: rules, LibraryFolderID: mf, FolderName: folderName, KeepUpToDate: true, IsMain: true}, domain.System)
 			if err != nil {
 				return err
 			}
-			item, err := store.Insert(tx, "items", &domain.Item{TitleID: tid, Kind: "movie", KeepUpToDate: true, SourceIDs: map[string]string{}}, domain.System)
+			item, err := database.Insert(tx, "items", &domain.Item{TitleID: tid, Kind: "movie", KeepUpToDate: true, SourceIDs: map[string]string{}}, domain.System)
 			if err != nil {
 				return err
 			}
-			slot, err := store.Insert(tx, "slots", &domain.Slot{ItemID: item, VersionID: ver, State: "wanted"}, domain.System)
+			slot, err := database.Insert(tx, "slots", &domain.Slot{ItemID: item, VersionID: ver, State: "wanted"}, domain.System)
 			if err != nil {
 				return err
 			}
@@ -309,14 +310,14 @@ func loadFixture(t *testing.T, s *store.Store, dir string) int {
 		for i := range fixtureShows {
 			year := 1990 + i%30
 			name := fmt.Sprintf("Fixture Show %03d", i)
-			tid, err := store.Insert(tx, "titles", &domain.Title{Kind: "show", Name: name, SortName: name, Year: &year, Aliases: []string{},
+			tid, err := database.Insert(tx, "titles", &domain.Title{Kind: "show", Name: name, SortName: name, Year: &year, Aliases: []string{},
 				SourceIDs: map[string]string{"tmdb": strconv.Itoa(200000 + i)}, MetadataSource: "tmdb", KeepUpToDate: true, NewPartsPolicy: "all",
 				ReleaseGate: "released", MusicTypes: []string{}, WhyAdded: "by_hand", Artwork: []string{}, Status: "running", State: "active", GateDriver: "none"}, domain.System)
 			if err != nil {
 				return err
 			}
 			folderName := fmt.Sprintf("%s (%d)", name, year)
-			ver, err := store.Insert(tx, "versions", &domain.Version{TitleID: tid, Label: "HD", PickRulesID: rules, LibraryFolderID: sf, FolderName: folderName, KeepUpToDate: true, IsMain: true}, domain.System)
+			ver, err := database.Insert(tx, "versions", &domain.Version{TitleID: tid, Label: "HD", PickRulesID: rules, LibraryFolderID: sf, FolderName: folderName, KeepUpToDate: true, IsMain: true}, domain.System)
 			if err != nil {
 				return err
 			}
@@ -325,12 +326,12 @@ func loadFixture(t *testing.T, s *store.Store, dir string) int {
 					se, ep := se, ep
 					epName := fmt.Sprintf("Episode %d", ep)
 					air := time.Date(2010+se, time.Month(1+ep%12), 1+ep, 0, 0, 0, 0, time.UTC)
-					item, err := store.Insert(tx, "items", &domain.Item{TitleID: tid, Kind: "episode", Numbers: domain.Numbers{Season: &se, Episode: &ep},
+					item, err := database.Insert(tx, "items", &domain.Item{TitleID: tid, Kind: "episode", Numbers: domain.Numbers{Season: &se, Episode: &ep},
 						Name: &epName, AirDate: &air, KeepUpToDate: true, SourceIDs: map[string]string{}}, domain.System)
 					if err != nil {
 						return err
 					}
-					slot, err := store.Insert(tx, "slots", &domain.Slot{ItemID: item, VersionID: ver, State: "wanted"}, domain.System)
+					slot, err := database.Insert(tx, "slots", &domain.Slot{ItemID: item, VersionID: ver, State: "wanted"}, domain.System)
 					if err != nil {
 						return err
 					}

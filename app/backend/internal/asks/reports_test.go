@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/alerts"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // libCopies is a title put straight into the Library: one item per numbers
@@ -24,7 +24,7 @@ type libCopies struct {
 	slots    map[[2]int64]int64
 }
 
-func addCopies(t *testing.T, st *store.Store, kind, name string, numbers []domain.Numbers, labels []string, withFiles bool) libCopies {
+func addCopies(t *testing.T, st *database.Store, kind, name string, numbers []domain.Numbers, labels []string, withFiles bool) libCopies {
 	t.Helper()
 	c := libCopies{files: map[[2]int64]int64{}, slots: map[[2]int64]int64{}}
 	err := st.Write(context.Background(), func(tx *sql.Tx) error {
@@ -33,26 +33,26 @@ func addCopies(t *testing.T, st *store.Store, kind, name string, numbers []domai
 			return err
 		}
 		rules := &domain.PickRules{Name: "Rules " + name, Kinds: []string{kind}, Revision: 1}
-		if _, err := store.Insert(tx, "pick_rules", rules, domain.System); err != nil {
+		if _, err := database.Insert(tx, "pick_rules", rules, domain.System); err != nil {
 			return err
 		}
 		ti := &domain.Title{Kind: kind, GateDriver: "none", Name: name, SortName: strings.ToLower(name), MetadataSource: "local", NewPartsPolicy: "all", ReleaseGate: "released",
 			WhyAdded: "by_hand", Status: "released", State: "active", SourceIDs: map[string]string{}, Aliases: []string{}, MusicTypes: []string{}, Artwork: []string{}}
-		if _, err := store.Insert(tx, "titles", ti, domain.System); err != nil {
+		if _, err := database.Insert(tx, "titles", ti, domain.System); err != nil {
 			return err
 		}
 		c.title = ti.ID
 		itemKind := map[string]string{"movie": "movie", "show": "episode"}[kind]
 		for _, n := range numbers {
 			it := &domain.Item{TitleID: ti.ID, Kind: itemKind, Numbers: n, KeepUpToDate: true, SourceIDs: map[string]string{}}
-			if _, err := store.Insert(tx, "items", it, domain.System); err != nil {
+			if _, err := database.Insert(tx, "items", it, domain.System); err != nil {
 				return err
 			}
 			c.items = append(c.items, it.ID)
 		}
 		for i, l := range labels {
 			v := &domain.Version{TitleID: ti.ID, Label: l, PickRulesID: rules.ID, LibraryFolderID: folder, FolderName: name + " " + l, KeepUpToDate: true, IsMain: i == 0, AudioLanguages: []string{}}
-			if _, err := store.Insert(tx, "versions", v, domain.System); err != nil {
+			if _, err := database.Insert(tx, "versions", v, domain.System); err != nil {
 				return err
 			}
 			c.versions = append(c.versions, v.ID)
@@ -61,13 +61,13 @@ func addCopies(t *testing.T, st *store.Store, kind, name string, numbers []domai
 				if withFiles {
 					f := &domain.File{SlotIDs: []int64{}, VersionID: v.ID, RelativePath: name + "/" + l + "/" + strconv.FormatInt(it, 10) + ".mkv", AddedAt: time.Now().UTC(),
 						Languages: []string{}, MediaInfo: map[string]any{}, Origin: "imported", PlacedBy: "move", Role: "main", State: "present"}
-					if _, err := store.Insert(tx, "files", f, domain.System); err != nil {
+					if _, err := database.Insert(tx, "files", f, domain.System); err != nil {
 						return err
 					}
 					sl.State, sl.FileID = domain.SlotInLibrary, &f.ID
 					c.files[[2]int64{it, v.ID}] = f.ID
 				}
-				if _, err := store.Insert(tx, "slots", sl, domain.System); err != nil {
+				if _, err := database.Insert(tx, "slots", sl, domain.System); err != nil {
 					return err
 				}
 				c.slots[[2]int64{it, v.ID}] = sl.ID
@@ -186,7 +186,7 @@ func TestReportFixAndReopen(t *testing.T) {
 	if _, err := r.svc.ReopenReport(ctx, r.luis, bo.ID); !errors.Is(err, ErrReportOpen) {
 		t.Fatalf("reopen an open one: %v", err)
 	}
-	if _, err := r.svc.FixReport(ctx, r.luis, 9999, ""); !errors.Is(err, store.ErrNotFound) {
+	if _, err := r.svc.FixReport(ctx, r.luis, 9999, ""); !errors.Is(err, database.ErrNotFound) {
 		t.Fatalf("fix missing: %v", err)
 	}
 }
@@ -205,7 +205,7 @@ func TestReportChecksAndEpisodes(t *testing.T) {
 		{ReportInput{TitleID: movie.title, Kind: "smell"}, ErrReportKind},
 		{ReportInput{TitleID: movie.title, Kind: "other", Note: strings.Repeat("x", 501)}, ErrNoteLength},
 		{ReportInput{TitleID: empty.title, Kind: "other"}, ErrNotInLibrary},
-		{ReportInput{TitleID: 9999, Kind: "other"}, store.ErrNotFound},
+		{ReportInput{TitleID: 9999, Kind: "other"}, database.ErrNotFound},
 		{ReportInput{TitleID: movie.title, Kind: "other", ItemID: show.items[0]}, ErrReportPart},
 		{ReportInput{TitleID: movie.title, Kind: "other", Season: intp(1)}, ErrReportPart},
 		{ReportInput{TitleID: show.title, Kind: "other", ItemID: show.items[0], Season: intp(1)}, ErrReportPart},

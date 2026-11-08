@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 func TestProtectedMultiEpisodeCopyCannotBeReplaced(t *testing.T) {
@@ -26,7 +26,7 @@ func TestProtectedMultiEpisodeCopyCannotBeReplaced(t *testing.T) {
 	var oldID int64
 	if err := w.s.Write(ctx, func(tx *sql.Tx) error {
 		f := &domain.File{Protected: true, SlotIDs: []int64{w.slots[1], w.slots[2]}, VersionID: w.vID, RelativePath: rel, Size: int64(len(before)), AddedAt: time.Now().Add(-time.Hour), Languages: []string{}, MediaInfo: map[string]any{}, ReleaseName: &oldName, Origin: "imported", PlacedBy: "hardlink", Role: "main", State: "present"}
-		id, err := store.Insert(tx, "files", f, domain.System)
+		id, err := database.Insert(tx, "files", f, domain.System)
 		oldID = id
 		if err != nil {
 			return err

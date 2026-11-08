@@ -23,13 +23,14 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/fsplain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/files"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/runas"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Status marks one finding.
@@ -114,7 +115,7 @@ type Options struct {
 	// DB is the main database to read the folders from. Nil opens it
 	// read-only from ConfigDir (and skips the Library folders when there
 	// is none yet).
-	DB       store.Lister
+	DB       database.Lister
 	SavePath string
 	// MetadataURL is the metadata server; empty means HOLYARRS_METADATA_URL
 	// or the default server.
@@ -135,7 +136,7 @@ func Run(ctx context.Context, o Options) Report {
 	var r Report
 	uid, gid := os.Geteuid(), os.Getegid()
 	appChecks(&r, o.Version, uid, gid)
-	configChecks(&r, o.ConfigDir, uid, gid, store.NetworkShare)
+	configChecks(&r, o.ConfigDir, uid, gid, database.NetworkShare)
 	if o.ConfigDir != "" {
 		if lockProbe != nil {
 			lockChecks(&r, o.ConfigDir, lockProbe)
@@ -146,7 +147,7 @@ func Run(ctx context.Context, o Options) Report {
 	db := o.DB
 	skipFolders := false
 	if db == nil && o.ConfigDir != "" {
-		if d, err := store.OpenReadOnly(o.ConfigDir); err == nil {
+		if d, err := database.OpenReadOnly(o.ConfigDir); err == nil {
 			defer d.Close()
 			db = d
 			skipFolders = schemaChecks(&r, d)
@@ -208,8 +209,8 @@ func Run(ctx context.Context, o Options) Report {
 // HolyArrs) the folders cannot be read yet: it says so in one WARN and
 // returns true, so the folder checks are skipped.
 func schemaChecks(r *Report, db *sql.DB) bool {
-	know, _ := store.SchemaVersions()
-	have, err := store.SchemaVersion(db)
+	know, _ := database.SchemaVersions()
+	have, err := database.SchemaVersion(db)
 	if err != nil {
 		have = 0 // no schema_migrations table yet: setup has barely started
 	}
@@ -219,7 +220,7 @@ func schemaChecks(r *Report, db *sql.DB) bool {
 			"if HolyArrs is starting, run doctor again in a few seconds; if it is stopped, start it so the update can finish")
 		return true
 	case have > know:
-		r.add("Config folder", Warn, (&store.NewerDataError{Have: have, Know: know}).Error(),
+		r.add("Config folder", Warn, (&database.NewerDataError{Have: have, Know: know}).Error(),
 			"run the newer HolyArrs again, or restore a backup made by this version")
 		return true
 	}
@@ -296,7 +297,7 @@ func appChecks(r *Report, version string, uid, gid int) {
 		}
 		r.add(s, st, "running as "+ids(uid, gid)+", groups "+groups+", umask "+umask(), fix)
 	}
-	inside := runas.InContainer(func(p string) bool { _, err := os.Stat(p); return err == nil }, os.Getenv)
+	inside := startup.InContainer(func(p string) bool { _, err := os.Stat(p); return err == nil }, os.Getenv)
 	r.add(s, OK, "in a container: "+yesNo(inside), "")
 	if t := selinuxType(); t != "" {
 		r.add(s, OK, "SELinux: on ("+t+")", "")
@@ -309,7 +310,7 @@ func selinuxType() string {
 	if err != nil {
 		return ""
 	}
-	return fsplain.SELinuxType(string(b))
+	return files.SELinuxType(string(b))
 }
 
 func yesNo(b bool) string {
@@ -382,7 +383,7 @@ func configChecks(r *Report, dir string, uid, gid int, share func(string) (bool,
 		r.add(s, OK, "writable", "")
 	} else {
 		text := "not writable"
-		if why := fsplain.Why(err); why != "" {
+		if why := files.Why(err); why != "" {
 			text += ": " + why
 		}
 		r.add(s, Fail, text, writeFix(dir, uid, gid, owner, err))
@@ -400,27 +401,27 @@ func configChecks(r *Report, dir string, uid, gid int, share func(string) (bool,
 		r.add(s, Warn, "could not tell whether it is a local disk: "+err.Error(), "")
 	case !on:
 		text := "on a local disk (the database must be local)"
-		if fs := store.MountType(dir); fs != "" {
+		if fs := database.MountType(dir); fs != "" {
 			text += ", mount type " + fs // for support: names the filesystem
 		}
 		r.add(s, OK, text, "")
-	case store.InMemory(kind):
-		if store.ConfigInMemoryAllowed() {
-			r.add(s, Warn, "in memory ("+kind+"), kept there because "+store.EnvConfigInMemory+" is set; everything in it is lost at the next restart", "put /config on a disk and remove "+store.EnvConfigInMemory)
+	case database.InMemory(kind):
+		if database.ConfigInMemoryAllowed() {
+			r.add(s, Warn, "in memory ("+kind+"), kept there because "+database.EnvConfigInMemory+" is set; everything in it is lost at the next restart", "put /config on a disk and remove "+database.EnvConfigInMemory)
 		} else {
 			r.add(s, Fail, "in memory ("+kind+"); everything in it is lost at the next restart, so HolyArrs will not start",
 				"put /config on a disk (on Unraid: /mnt/<pool>/appdata/holyarrs, and check that the pool exists)")
 		}
-	case kind == "fakeowner" && store.DesktopFolderAllowed():
-		r.add(s, Warn, "a Docker Desktop folder share, used because "+store.EnvAllowDesktopFolder+" is set; file locks there may not work", store.ShareFix(kind))
+	case kind == "fakeowner" && database.DesktopFolderAllowed():
+		r.add(s, Warn, "a Docker Desktop folder share, used because "+database.EnvAllowDesktopFolder+" is set; file locks there may not work", database.ShareFix(kind))
 	default:
 		text := "on a shared or network folder (" + kind + "); the database must be on a local disk"
-		if fs := store.MountType(dir); fs != "" {
-			if label, _ := fsplain.Family(fs); label != "" {
+		if fs := database.MountType(dir); fs != "" {
+			if label, _ := files.Family(fs); label != "" {
 				text = "on " + label + " (" + fs + "); the database must be on a local disk"
 			}
 		}
-		r.add(s, Fail, text, store.ShareFix(kind))
+		r.add(s, Fail, text, database.ShareFix(kind))
 	}
 }
 
@@ -469,7 +470,7 @@ var unmappedConfig = UnmappedConfig
 // unsure).
 func UnmappedConfig(dir string) string {
 	exists := func(p string) bool { _, err := os.Stat(p); return err == nil }
-	if !runas.InContainer(exists, os.Getenv) {
+	if !startup.InContainer(exists, os.Getenv) {
 		return ""
 	}
 	b, err := os.ReadFile("/proc/self/mountinfo")
@@ -482,7 +483,7 @@ func UnmappedConfig(dir string) string {
 			dir = r
 		}
 	}
-	return fsplain.Unmapped(string(b), filepath.ToSlash(dir))
+	return files.Unmapped(string(b), filepath.ToSlash(dir))
 }
 
 // writable creates and removes a temporary file in dir.
@@ -568,7 +569,7 @@ func clockChecks(r *Report, now time.Time, tz string) {
 }
 
 // readFolders lists the Library folders (path, kind).
-func readFolders(ctx context.Context, db store.Lister) ([][2]string, error) {
+func readFolders(ctx context.Context, db database.Lister) ([][2]string, error) {
 	rows, err := db.QueryContext(ctx, "SELECT path, kind FROM library_folders ORDER BY kind, path")
 	if err != nil {
 		return nil, err

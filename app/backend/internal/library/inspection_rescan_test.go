@@ -11,8 +11,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 func inspectionMP4Track(handler, codec, extendedLanguage, packedLanguage string) []byte {
@@ -74,7 +74,7 @@ func TestRescanInspectsMovieFilesAndSkipsUnchanged(t *testing.T) {
 		t.Fatalf("adopt: %+v %v", res, err)
 	}
 	var adopted domain.File
-	files, _ := store.Select[domain.File](context.Background(), s.Read(), "files", "origin = 'adopted'")
+	files, _ := database.Select[domain.File](context.Background(), s.Read(), "files", "origin = 'adopted'")
 	if len(files) != 1 {
 		t.Fatalf("adopted files: %+v", files)
 	}
@@ -92,7 +92,7 @@ func TestRescanInspectsMovieFilesAndSkipsUnchanged(t *testing.T) {
 	if err != nil || got.Found != 1 {
 		t.Fatalf("rescan: %+v %v", got, err)
 	}
-	if err := store.Get(context.Background(), s.Read(), "files", adopted.ID, &adopted); err != nil {
+	if err := database.Get(context.Background(), s.Read(), "files", adopted.ID, &adopted); err != nil {
 		t.Fatal(err)
 	}
 	if !adopted.Protected || adopted.MediaInfo["video_codec"] != "hevc" || adopted.MediaInfo["edition"] != "Director's Cut" || adopted.MediaInfo["edition_source"] != "confirmed" {
@@ -105,7 +105,7 @@ func TestRescanInspectsMovieFilesAndSkipsUnchanged(t *testing.T) {
 	if err := s.Read().QueryRow("SELECT id FROM files WHERE relative_path = ?", foundRel).Scan(&found.ID); err != nil {
 		t.Fatal(err)
 	}
-	if err := store.Get(context.Background(), s.Read(), "files", found.ID, &found); err != nil {
+	if err := database.Get(context.Background(), s.Read(), "files", found.ID, &found); err != nil {
 		t.Fatal(err)
 	}
 	if found.MediaInfo["video_codec"] != "hevc" || found.MediaInfo["edition"] != "Extended" || found.MediaInfo["edition_source"] != "name" {
@@ -144,7 +144,7 @@ func TestShowAdoptionAndFoundFilesUseInspectedHeaders(t *testing.T) {
 	if err := s.Read().QueryRow("SELECT id FROM files WHERE relative_path = ?", adoptedRel).Scan(&adopted.ID); err != nil {
 		t.Fatal(err)
 	}
-	if err := store.Get(context.Background(), s.Read(), "files", adopted.ID, &adopted); err != nil {
+	if err := database.Get(context.Background(), s.Read(), "files", adopted.ID, &adopted); err != nil {
 		t.Fatal(err)
 	}
 	if adopted.MediaInfo["video_codec"] != "hevc" || fmt.Sprint(adopted.MediaInfo["audio_languages"]) != "[fr]" {
@@ -160,7 +160,7 @@ func TestShowAdoptionAndFoundFilesUseInspectedHeaders(t *testing.T) {
 	if err := s.Read().QueryRow("SELECT id FROM files WHERE relative_path = ?", foundRel).Scan(&found.ID); err != nil {
 		t.Fatal(err)
 	}
-	if err := store.Get(context.Background(), s.Read(), "files", found.ID, &found); err != nil {
+	if err := database.Get(context.Background(), s.Read(), "files", found.ID, &found); err != nil {
 		t.Fatal(err)
 	}
 	if found.Origin != "found" || found.MediaInfo["video_codec"] != "hevc" || fmt.Sprint(found.MediaInfo["audio_languages"]) != "[fr]" {

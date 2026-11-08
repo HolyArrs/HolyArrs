@@ -1,14 +1,14 @@
 package main
 
 import (
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
-	"time"
-	"database/sql"
 	"context"
+	"database/sql"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"io"
 	"net/http"
 	"strings"
 	"testing"
+	"time"
 )
 
 // The whole app under /holyarrs: pages, files, the API, sign-in redirects
@@ -69,11 +69,11 @@ func TestServesUnderURLBase(t *testing.T) {
 // HOLYARRS_URL_BASE variable wins over it (B3, must be 100%).
 func TestSavedURLBaseAppliesAtNextStartAndEnvWins(t *testing.T) {
 	dir := t.TempDir()
-	s, err := store.Open(dir, store.Options{})
+	s, err := database.Open(dir, database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	now := store.FormatTime(time.Now())
+	now := database.FormatTime(time.Now())
 	if err := s.Write(context.Background(), func(tx *sql.Tx) error {
 		_, err := tx.Exec(`INSERT INTO settings (grp, key, value, created_at, created_by, updated_at, updated_by) VALUES ('this_app', 'url_base', '"/saved"', ?, '"test"', ?, '"test"')`, now, now)
 		return err

@@ -19,10 +19,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 const combinedPinnedFeed = `<?xml version="1.0"?><rss version="2.0"><channel>
@@ -46,7 +46,7 @@ func combinedKnownFiles(shape combinedShape) int {
 	return shape.Movies*4/5 + shape.Shows*shape.EpisodesPerShow/2
 }
 
-func seedCombinedScale(t *testing.T, s *store.Store, shape combinedShape, feedURL, mediaRoot string) error {
+func seedCombinedScale(t *testing.T, s *database.Store, shape combinedShape, feedURL, mediaRoot string) error {
 	t.Helper()
 	if shape.Movies < 1 || shape.Shows < 1 || shape.EpisodesPerShow < 2 || shape.Feeds < 1 {
 		return errors.New("combined scale shape needs movies, shows, at least two episodes, and feeds")
@@ -59,7 +59,7 @@ func seedCombinedScale(t *testing.T, s *store.Store, shape combinedShape, feedUR
 		return err
 	}
 	return s.Write(context.Background(), func(tx *sql.Tx) error {
-		now := store.FormatTime(time.Now().UTC())
+		now := database.FormatTime(time.Now().UTC())
 		actor := `{"kind":"system"}`
 		var rules int64
 		if err := tx.QueryRow("SELECT id FROM pick_rules ORDER BY id LIMIT 1").Scan(&rules); err != nil {
@@ -389,7 +389,7 @@ func TestCombinedScaleFixtureAndAuthenticatedRescan(t *testing.T) {
 	defer feed.Close()
 	dir := t.TempDir()
 	mediaRoot := filepath.Join(dir, "combined-media")
-	s, err := store.Open(dir, store.Options{})
+	s, err := database.Open(dir, database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}

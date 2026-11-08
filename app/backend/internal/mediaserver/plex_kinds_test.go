@@ -13,8 +13,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // fakePlexAll plays a Plex server with a movie, a TV and a music library
@@ -55,17 +55,17 @@ func addTitle(t *testing.T, w *world, base, libName, kind, name, folder, rel str
 			lfKind = "music"
 		}
 		lf := &domain.LibraryFolder{Path: filepath.Join(base, libName), Kind: lfKind, Label: libName, Health: "ok", SameDiskAs: []int64{}}
-		if _, err := store.Insert(tx, "library_folders", lf, domain.System); err != nil {
+		if _, err := database.Insert(tx, "library_folders", lf, domain.System); err != nil {
 			return err
 		}
 		ti := &domain.Title{Kind: kind, GateDriver: "none", Name: name, SortName: strings.ToLower(name), MetadataSource: "local", NewPartsPolicy: "all",
 			ReleaseGate: "released", WhyAdded: "by_hand", Status: "running", State: "active", SourceIDs: map[string]string{}, Aliases: []string{}, MusicTypes: []string{}, Artwork: []string{}}
-		if _, err := store.Insert(tx, "titles", ti, domain.System); err != nil {
+		if _, err := database.Insert(tx, "titles", ti, domain.System); err != nil {
 			return err
 		}
 		titleID = ti.ID
 		v := &domain.Version{TitleID: ti.ID, Label: "Main", PickRulesID: pr, LibraryFolderID: lf.ID, FolderName: folder, IsMain: true}
-		if _, err := store.Insert(tx, "versions", v, domain.System); err != nil {
+		if _, err := database.Insert(tx, "versions", v, domain.System); err != nil {
 			return err
 		}
 		one := 1
@@ -74,17 +74,17 @@ func addTitle(t *testing.T, w *world, base, libName, kind, name, folder, rel str
 			itemKind = "track"
 		}
 		it := &domain.Item{TitleID: ti.ID, Kind: itemKind, Numbers: domain.Numbers{Track: &one}, SourceIDs: map[string]string{}}
-		if _, err := store.Insert(tx, "items", it, domain.System); err != nil {
+		if _, err := database.Insert(tx, "items", it, domain.System); err != nil {
 			return err
 		}
 		sl := &domain.Slot{ItemID: it.ID, VersionID: v.ID, State: domain.SlotInLibrary}
-		if _, err := store.Insert(tx, "slots", sl, domain.System); err != nil {
+		if _, err := database.Insert(tx, "slots", sl, domain.System); err != nil {
 			return err
 		}
 		slotID = sl.ID
 		f := &domain.File{SlotIDs: []int64{sl.ID}, VersionID: v.ID, RelativePath: rel, Languages: []string{}, MediaInfo: map[string]any{}, Origin: "imported",
 			PlacedBy: "hardlink", Role: "main", State: "present"}
-		if _, err := store.Insert(tx, "files", f, domain.System); err != nil {
+		if _, err := database.Insert(tx, "files", f, domain.System); err != nil {
 			return err
 		}
 		_, err := tx.Exec("UPDATE slots SET file_id = ? WHERE id = ?", f.ID, sl.ID)

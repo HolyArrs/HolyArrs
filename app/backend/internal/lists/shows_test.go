@@ -10,10 +10,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // labShows answers show lookups by any of a made-up show's ids.
@@ -150,7 +150,7 @@ func TestFirstSeasonWithoutSeasonOne(t *testing.T) {
 }
 
 // keptSeasons lists a show's seasons kept up to date.
-func keptSeasons(t *testing.T, s *store.Store, titleID int64) map[int]bool {
+func keptSeasons(t *testing.T, s *database.Store, titleID int64) map[int]bool {
 	t.Helper()
 	ss, err := library.Seasons(context.Background(), s.Read(), titleID, now)
 	if err != nil {

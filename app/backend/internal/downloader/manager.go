@@ -16,8 +16,10 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/outside"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/tagset"
@@ -33,7 +35,7 @@ type Publisher interface {
 
 // Manager sends Releases to Downloaders and keeps Download records in step.
 type Manager struct {
-	Store    *store.Store
+	Store    *database.Store
 	Live     Publisher                                 // may be nil
 	Engine   func(d domain.Downloader) (Engine, error) // nil means the built-in adapters
 	SavePath string                                    // where the Downloader saves, as it sees it
@@ -272,7 +274,7 @@ func (m *Manager) HandleGrab(ctx context.Context, r *jobs.Run) error {
 		// No Downloader takes the title's tags: trying again changes nothing
 		// until a person changes tags, so the Slot waits on a decision.
 		// A Slot that moved on meanwhile refuses the change: nothing is left to do then.
-		_ = m.Store.MoveSlot(ctx, r.Job.Subject.ID, domain.SlotNeedsADecision, te.Error(), domain.Actor{Kind: "job", ID: r.Job.ID})
+		_ = store.MoveSlot(ctx, m.Store, r.Job.Subject.ID, domain.SlotNeedsADecision, te.Error(), domain.Actor{Kind: "job", ID: r.Job.ID})
 		r.SetResult(map[string]any{"not_sent": te.Error()})
 		return nil
 	}
@@ -343,7 +345,7 @@ func (m *Manager) giveUp(ctx context.Context, slotID, releaseID int64, reason st
 		if turnDown {
 			if _, err := tx.ExecContext(ctx, `UPDATE releases SET state = 'turned_down', hold_until = NULL,
 				verdict = json_set(COALESCE(verdict, '{}'), '$.turned_down_reason', ?), updated_at = ? WHERE id = ?`,
-				"could not be sent: "+reason, store.FormatTime(m.now()), releaseID); err != nil {
+				"could not be sent: "+reason, database.FormatTime(m.now()), releaseID); err != nil {
 				return err
 			}
 		}
@@ -365,11 +367,11 @@ func (m *Manager) giveUp(ctx context.Context, slotID, releaseID int64, reason st
 func (m *Manager) Grab(ctx context.Context, slotID, releaseID int64, by domain.Actor) (int64, error) {
 	db := m.Store.Read()
 	var rel domain.Release
-	if err := store.Get(ctx, db, "releases", releaseID, &rel); err != nil {
+	if err := database.Get(ctx, db, "releases", releaseID, &rel); err != nil {
 		return 0, fmt.Errorf("release %d: %w", releaseID, err)
 	}
 	var sl domain.Slot
-	if err := store.Get(ctx, db, "slots", slotID, &sl); err != nil {
+	if err := database.Get(ctx, db, "slots", slotID, &sl); err != nil {
 		return 0, fmt.Errorf("slot %d: %w", slotID, err)
 	}
 	// A stopped semantic pair remains terminal even after abandonment has
@@ -384,7 +386,7 @@ func (m *Manager) Grab(ctx context.Context, slotID, releaseID int64, by domain.A
 	if sl.State != domain.SlotChosen {
 		if sl.ActiveDownloadID != nil && sl.State == domain.SlotDownloading {
 			var prior domain.Download
-			if err := store.Get(ctx, db, "downloads", *sl.ActiveDownloadID, &prior); err == nil && prior.ReleaseID != nil && *prior.ReleaseID == releaseID && slices.Contains(prior.SlotIDs, slotID) && isActive(prior.State) {
+			if err := database.Get(ctx, db, "downloads", *sl.ActiveDownloadID, &prior); err == nil && prior.ReleaseID != nil && *prior.ReleaseID == releaseID && slices.Contains(prior.SlotIDs, slotID) && isActive(prior.State) {
 				return prior.ID, nil
 			}
 		}
@@ -393,7 +395,7 @@ func (m *Manager) Grab(ctx context.Context, slotID, releaseID int64, by domain.A
 	if sl.ChosenReleaseID == nil || *sl.ChosenReleaseID != releaseID {
 		return 0, errors.New("the Slot is no longer chosen for this Release")
 	}
-	all, err := store.Select[domain.Downloader](ctx, db, "downloaders", "protocol = ? AND removed = 0 ORDER BY priority, id", rel.Protocol)
+	all, err := database.Select[domain.Downloader](ctx, db, "downloaders", "protocol = ? AND removed = 0 ORDER BY priority, id", rel.Protocol)
 	if err != nil {
 		return 0, err
 	}
@@ -410,7 +412,7 @@ func (m *Manager) Grab(ctx context.Context, slotID, releaseID int64, by domain.A
 	// finished Download that already went through an Import is an old one
 	// (the same Release chosen again): it is sent again, not waited on.
 	var dl *domain.Download
-	if prior, err := store.Select[domain.Download](ctx, db, "downloads",
+	if prior, err := database.Select[domain.Download](ctx, db, "downloads",
 		"release_id = ? AND state IN ("+activeStates+", 'finished') AND EXISTS (SELECT 1 FROM json_each(slot_ids) WHERE value = ?)"+
 			" AND NOT EXISTS (SELECT 1 FROM imports i WHERE i.download_id = downloads.id AND (i.state = 'rejected' OR downloads.state = 'finished')) ORDER BY id DESC LIMIT 1",
 		rel.ID, slotID); err != nil {
@@ -420,7 +422,7 @@ func (m *Manager) Grab(ctx context.Context, slotID, releaseID int64, by domain.A
 	}
 	var d domain.Downloader
 	if dl != nil {
-		if err := store.Get(ctx, db, "downloaders", dl.DownloaderID, &d); err != nil {
+		if err := database.Get(ctx, db, "downloaders", dl.DownloaderID, &d); err != nil {
 			return 0, err
 		}
 	} else {
@@ -428,7 +430,7 @@ func (m *Manager) Grab(ctx context.Context, slotID, releaseID int64, by domain.A
 		var skipped []string
 		if attempt != nil {
 			var original domain.Downloader
-			if err := store.Get(ctx, db, "downloaders", attempt.DownloaderID, &original); err != nil {
+			if err := database.Get(ctx, db, "downloaders", attempt.DownloaderID, &original); err != nil {
 				return 0, errors.Join(ErrUncertain, err)
 			}
 			original.Category = attempt.category
@@ -490,7 +492,7 @@ func (m *Manager) Grab(ctx context.Context, slotID, releaseID int64, by domain.A
 		// Another caller can reconcile an accepted send before its original
 		// caller returns. Adopt that committed pair instead of resetting it.
 		if dl.ID == 0 {
-			prior, err := store.Select[domain.Download](ctx, tx, "downloads", `downloader_id = ? AND external_id = ? AND release_id = ?
+			prior, err := database.Select[domain.Download](ctx, tx, "downloads", `downloader_id = ? AND external_id = ? AND release_id = ?
 				AND state IN (`+activeStates+`, 'finished') AND EXISTS (SELECT 1 FROM json_each(slot_ids) WHERE value = ?)
 				AND NOT EXISTS (SELECT 1 FROM imports i WHERE i.download_id = downloads.id AND (i.state = 'rejected' OR downloads.state = 'finished')) LIMIT 1`, d.ID, dl.ExternalID, rel.ID, slotID)
 			if err != nil {
@@ -536,7 +538,7 @@ func (m *Manager) Grab(ctx context.Context, slotID, releaseID int64, by domain.A
 			}
 		}
 		var current domain.Slot
-		if err := store.Get(ctx, tx, "slots", slotID, &current); err != nil {
+		if err := database.Get(ctx, tx, "slots", slotID, &current); err != nil {
 			return err
 		}
 		if current.State != domain.SlotChosen || current.ChosenReleaseID == nil || *current.ChosenReleaseID != rel.ID ||
@@ -587,10 +589,10 @@ func (m *Manager) Grab(ctx context.Context, slotID, releaseID int64, by domain.A
 					return fmt.Errorf("%s gave the id of Download %d, which is still active", d.Name, old)
 				}
 				dl.ID = old
-				if err := store.Update(tx, "downloads", dl, by); err != nil {
+				if err := database.Update(tx, "downloads", dl, by); err != nil {
 					return err
 				}
-			} else if _, err := store.Insert(tx, "downloads", dl, by); err != nil {
+			} else if _, err := database.Insert(tx, "downloads", dl, by); err != nil {
 				return err
 			}
 		}
@@ -714,7 +716,7 @@ func (m *Manager) send(ctx context.Context, d domain.Downloader, rel domain.Rele
 		}
 	}
 	var src domain.Source
-	if err := store.Get(ctx, m.Store.Read(), "sources", rel.SourceID, &src); err != nil {
+	if err := database.Get(ctx, m.Store.Read(), "sources", rel.SourceID, &src); err != nil {
 		return "", errors.New("the Release's Source could not be read")
 	}
 	allowLocal := src.AllowLocal
@@ -883,7 +885,7 @@ const activeStates = "'sent', 'queued', 'downloading', 'stalled', 'paused'"
 func (m *Manager) SyncOnce(ctx context.Context) (int, error) {
 	m.retryRemovals(ctx)
 	db := m.Store.Read()
-	dls, err := store.Select[domain.Download](ctx, db, "downloads", "state IN ("+activeStates+") ORDER BY id")
+	dls, err := database.Select[domain.Download](ctx, db, "downloads", "state IN ("+activeStates+") ORDER BY id")
 	if err != nil || len(dls) == 0 {
 		return 0, err
 	}
@@ -897,7 +899,7 @@ func (m *Manager) SyncOnce(ctx context.Context) (int, error) {
 	var errs []error
 	for did, list := range byDownloader {
 		var dr domain.Downloader
-		if err := store.Get(ctx, db, "downloaders", did, &dr); err != nil {
+		if err := database.Get(ctx, db, "downloaders", did, &dr); err != nil {
 			errs = append(errs, err)
 			continue
 		}
@@ -1085,9 +1087,9 @@ func (m *Manager) apply(ctx context.Context, dr domain.Downloader, d domain.Down
 	// snapshot read: Mark failed (or another path) may have moved it since,
 	// and a stale snapshot is dropped.
 	if err := m.Store.Write(ctx, func(tx *sql.Tx) error {
-		return store.UpdateWhere(tx, "downloads", &next, domain.System, "state = ?", d.State)
+		return database.UpdateWhere(tx, "downloads", &next, domain.System, "state = ?", d.State)
 	}); err != nil {
-		return !errors.Is(err, store.ErrNotFound)
+		return !errors.Is(err, database.ErrNotFound)
 	}
 	m.publish("download", next)
 	if next.State != d.State {
@@ -1126,7 +1128,7 @@ func (m *Manager) stateMoved(ctx context.Context, from string, d *domain.Downloa
 	}
 	for _, sid := range d.SlotIDs {
 		if to != "" {
-			if err := m.Store.MoveSlot(ctx, sid, to, reason, domain.System); err == nil {
+			if err := store.MoveSlot(ctx, m.Store, sid, to, reason, domain.System); err == nil {
 				m.publish("slot", map[string]any{"id": sid, "state": to, "reason": reason})
 			}
 		}
@@ -1229,7 +1231,7 @@ func strPtr(s string) *string { return &s }
 func unreachable(err error) bool {
 	var ne net.Error
 	var status adapterHTTPError
-	return errors.Is(err, ErrAuth) || errors.Is(err, outside.ErrSuppressed) || errors.Is(err, errDownloaderUnavailable) ||
+	return errors.Is(err, ErrAuth) || errors.Is(err, outbound.ErrSuppressed) || errors.Is(err, errDownloaderUnavailable) ||
 		errors.As(err, &status) && (status.status == 408 || status.status == 429 || status.status >= 500) ||
 		errors.Is(err, source.ErrAddressRefused) || errors.Is(err, context.DeadlineExceeded) || errors.As(err, &ne)
 }
@@ -1324,7 +1326,7 @@ func (e *TagsError) Error() string {
 }
 
 // slotTitleTags reads the tags of the title a Slot's Item belongs to.
-func slotTitleTags(ctx context.Context, db store.Querier, itemID int64) ([]string, error) {
+func slotTitleTags(ctx context.Context, db database.Querier, itemID int64) ([]string, error) {
 	var raw string
 	err := db.QueryRowContext(ctx, "SELECT t.tags FROM items i JOIN titles t ON t.id = i.title_id WHERE i.id = ?", itemID).Scan(&raw)
 	if errors.Is(err, sql.ErrNoRows) {

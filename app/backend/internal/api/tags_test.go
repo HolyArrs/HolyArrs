@@ -9,8 +9,8 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Tags (#108) on Downloaders, Sources and titles: cleaned on save, kept
@@ -48,14 +48,14 @@ func TestTagsOnDownloadersSourcesAndTitles(t *testing.T) {
 		ti := &domain.Title{Kind: "movie", GateDriver: "none", Name: "Lantern", SortName: "lantern", Aliases: []string{}, SourceIDs: map[string]string{},
 			MetadataSource: "local", KeepUpToDate: true, NewPartsPolicy: "all", ReleaseGate: "released", MusicTypes: []string{}, WhyAdded: "by_hand",
 			Artwork: []string{}, Status: "released", State: "active"}
-		if _, err := store.Insert(tx, "titles", ti, domain.System); err != nil {
+		if _, err := database.Insert(tx, "titles", ti, domain.System); err != nil {
 			return err
 		}
 		titleID = ti.ID
 		// A title saved without tags holds JSON null: GET /tags must skip it.
 		other := *ti
 		other.ID, other.Name, other.SortName, other.Tags = 0, "Untagged", "untagged", nil
-		_, err := store.Insert(tx, "titles", &other, domain.System)
+		_, err := database.Insert(tx, "titles", &other, domain.System)
 		return err
 	}); err != nil {
 		t.Fatal(err)

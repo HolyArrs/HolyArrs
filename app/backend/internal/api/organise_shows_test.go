@@ -11,18 +11,19 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // showOrganiseSetup is a server with running Jobs, the fake show sources
 // and a show Library folder holding the lab show with three episodes.
-func showOrganiseSetup(t *testing.T) (url string, s *store.Store, lib string, folderID int64) {
+func showOrganiseSetup(t *testing.T) (url string, s *database.Store, lib string, folderID int64) {
 	t.Helper()
-	s, err := store.Open(t.TempDir(), store.Options{})
+	s, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -117,7 +118,7 @@ func TestScanAndAdoptShowsAPI(t *testing.T) {
 	}
 }
 
-func count41(t *testing.T, s *store.Store, table string) int {
+func count41(t *testing.T, s *database.Store, table string) int {
 	t.Helper()
 	var n int
 	if err := s.Read().QueryRow("SELECT count(*) FROM " + table).Scan(&n); err != nil {

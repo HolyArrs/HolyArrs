@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -12,8 +13,6 @@ import (
 	"strings"
 	"testing"
 	"time"
-
-	"github.com/HolyArrs/holyarrs/app/backend/internal/routehits"
 )
 
 // signInAIApp runs the sign-in an AI app does (MCP authorization): learn
@@ -23,7 +22,7 @@ func TestAIAppSignsInWithoutAPastedKey(t *testing.T) {
 	m := http.NewServeMux()
 	m.HandleFunc("GET /api/v1/titles", okHandler)
 	f.a.Routes(m)
-	f.srv.Config.Handler = f.a.Middleware(mcpEcho(routehits.Wrap(m)))
+	f.srv.Config.Handler = f.a.Middleware(mcpEcho(webserver.RecordRouteHits(m)))
 	c := client(t)
 	csrf := setupOwner(t, f, c)
 	bare := &http.Client{CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
@@ -212,7 +211,7 @@ func TestAIResourceFollowsTheAddressUsed(t *testing.T) {
 	f := setup(t, Options{})
 	m := http.NewServeMux()
 	f.a.Routes(m)
-	f.srv.Config.Handler = f.a.Middleware(mcpEcho(routehits.Wrap(m)))
+	f.srv.Config.Handler = f.a.Middleware(mcpEcho(webserver.RecordRouteHits(m)))
 	bare := &http.Client{}
 	resp, _ := call(t, bare, "POST", f.srv.URL+"/mcp", `{}`, nil)
 	if wa := resp.Header.Get("WWW-Authenticate"); !strings.Contains(wa, `/.well-known/oauth-protected-resource/mcp"`) {
@@ -280,7 +279,7 @@ func TestAIAppSignsInWithAMetadataDocument(t *testing.T) {
 	f := setup(t, Options{})
 	m := http.NewServeMux()
 	f.a.Routes(m)
-	f.srv.Config.Handler = f.a.Middleware(mcpEcho(routehits.Wrap(m)))
+	f.srv.Config.Handler = f.a.Middleware(mcpEcho(webserver.RecordRouteHits(m)))
 	c := client(t)
 	csrf := setupOwner(t, f, c)
 	var docURL string

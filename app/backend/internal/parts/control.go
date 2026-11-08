@@ -14,9 +14,10 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/supervisor"
 )
 
 // Errors a control answers with; their text is shown to people.
@@ -52,8 +53,8 @@ const DefaultDrain = 2 * time.Minute
 // pauses, resumes and restarts single stages. It is the queue's Gate:
 // Jobs of a part that is off wait in the queue.
 type Control struct {
-	Store *store.Store
-	Reg   *supervisor.Registry
+	Store *database.Store
+	Reg   *jobs.Registry
 	// SafeMode forces every part off (not saved) and refuses switches.
 	SafeMode bool
 	// Jobs is the queue, for waiting on running Jobs during a restart.
@@ -74,7 +75,7 @@ type Control struct {
 
 // entry is one stage this Control starts and stops.
 type entry struct {
-	l        supervisor.Loop
+	l        jobs.Loop
 	owner    Owner
 	optional bool // not started in safe mode
 	cancel   context.CancelFunc
@@ -136,8 +137,8 @@ func (c *Control) flag() { c.active.Store(len(c.off) > 0 || len(c.hold) > 0) }
 
 // Add registers a background loop of owner (from Loops) for Start. An
 // optional loop is not started in safe mode.
-func (c *Control) Add(l supervisor.Loop, optional bool) {
-	owner, ok := Loops[l.Name]
+func (c *Control) Add(l jobs.Loop, optional bool) {
+	owner, ok := startup.OwnerOf(startup.LoopOwners, l.Name)
 	if !ok {
 		owner = Core
 		c.logf("parts: loop %s has no row in the parts table; treated as core", l.Name)
@@ -181,9 +182,9 @@ func (c *Control) onLocked(p Part) bool {
 // startLocked starts e unless it runs, is paused, or its part is off; a
 // loop whose last run has not returned is never started twice.
 func (c *Control) startLocked(e *entry) error {
-	key := supervisor.StageKey(e.l.Name)
+	key := jobs.StageKey(e.l.Name)
 	if e.optional && c.SafeMode {
-		c.Reg.Set(key, "stage", e.l.Label, supervisor.Off, notStarted)
+		c.Reg.Set(key, "stage", e.l.Label, jobs.Off, notStarted)
 		return ErrSafeMode
 	}
 	if e.cancel != nil {
@@ -197,11 +198,11 @@ func (c *Control) startLocked(e *entry) error {
 		}
 	}
 	if e.paused != "" {
-		c.Reg.Set(key, "stage", e.l.Label, supervisor.Off, e.paused)
+		c.Reg.Set(key, "stage", e.l.Label, jobs.Off, e.paused)
 		return nil
 	}
 	if !c.ownerOnLocked(e.owner) {
-		c.Reg.Set(key, "stage", e.l.Label, supervisor.Off, offReason(e.owner))
+		c.Reg.Set(key, "stage", e.l.Label, jobs.Off, offReason(e.owner))
 		return nil
 	}
 	if c.ctx == nil {
@@ -235,11 +236,11 @@ func (c *Control) stop(e *entry, why string, wait time.Duration) bool {
 	defer t.Stop()
 	select {
 	case <-done:
-		c.Reg.Set(supervisor.StageKey(e.l.Name), "stage", e.l.Label, supervisor.Off, why)
+		c.Reg.Set(jobs.StageKey(e.l.Name), "stage", e.l.Label, jobs.Off, why)
 		return true
 	case <-t.C:
-		c.Reg.Update(supervisor.StageKey(e.l.Name), func(s *supervisor.Status) {
-			s.State, s.Stuck = supervisor.Failed, true
+		c.Reg.Update(jobs.StageKey(e.l.Name), func(s *jobs.Status) {
+			s.State, s.Stuck = jobs.Failed, true
 			s.Reason = "Asked to stop, but its pass has not returned (stuck). It is not started again until it does; a whole-app restart clears it."
 		})
 		return false
@@ -377,7 +378,7 @@ func (c *Control) save(ctx context.Context, off []Part, by domain.Actor) error {
 	}
 	raw, _ := json.Marshal(off)
 	actor, _ := json.Marshal(by)
-	now := store.FormatTime(time.Now())
+	now := database.FormatTime(time.Now())
 	return c.Store.Write(ctx, func(tx *sql.Tx) error {
 		_, err := tx.Exec(`INSERT INTO settings (grp, key, value, created_at, created_by, updated_at, updated_by) VALUES (?, ?, ?, ?, ?, ?, ?)
 			ON CONFLICT (grp, key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at, updated_by = excluded.updated_by`,
@@ -593,7 +594,7 @@ func (c *Control) RestartStage(name string) error {
 // Statuses are the parts' states for the health page: off with the reason,
 // starting while a restart waits, else the worst state of the part's
 // loops (failed, retrying), else running.
-func (c *Control) Statuses() []supervisor.Status {
+func (c *Control) Statuses() []jobs.Status {
 	c.mu.Lock()
 	c.init()
 	type row struct {
@@ -613,26 +614,26 @@ func (c *Control) Statuses() []supervisor.Status {
 		rows = append(rows, r)
 	}
 	c.mu.Unlock()
-	out := make([]supervisor.Status, 0, len(rows))
+	out := make([]jobs.Status, 0, len(rows))
 	for _, r := range rows {
-		st := supervisor.Status{Key: "part:" + string(r.p), Kind: "part", Name: r.p.Label(), State: supervisor.Running}
+		st := jobs.Status{Key: "part:" + string(r.p), Kind: "part", Name: r.p.Label(), State: jobs.Running}
 		switch {
 		case r.off != "":
-			st.State, st.Reason = supervisor.Off, r.off
+			st.State, st.Reason = jobs.Off, r.off
 		case r.hold:
-			st.State, st.Reason = supervisor.Starting, "Restarting: waiting for its running Jobs to finish."
+			st.State, st.Reason = jobs.Starting, "Restarting: waiting for its running Jobs to finish."
 		default:
 			for _, name := range r.stages {
-				s, ok := c.Reg.Get(supervisor.StageKey(name))
+				s, ok := c.Reg.Get(jobs.StageKey(name))
 				if !ok {
 					continue
 				}
-				if s.State == supervisor.Failed || (s.State == supervisor.Retrying && st.State != supervisor.Failed) ||
-					(s.State == supervisor.Starting && st.State == supervisor.Running) {
+				if s.State == jobs.Failed || (s.State == jobs.Retrying && st.State != jobs.Failed) ||
+					(s.State == jobs.Starting && st.State == jobs.Running) {
 					st.State, st.Reason, st.Since = s.State, s.Name+": "+s.Reason, s.Since
 				}
 			}
-			if st.State == supervisor.Starting {
+			if st.State == jobs.Starting {
 				st.Reason = ""
 			}
 		}
@@ -646,7 +647,7 @@ func (c *Control) Active() bool { return c.active.Load() }
 
 // KindOff reports whether scheduled Jobs of kind are not to be queued.
 func (c *Control) KindOff(kind string) bool {
-	o, ok := JobKinds[kind]
+	o, ok := startup.OwnerOf(startup.JobOwners, kind)
 	if !ok || o == ByTitle {
 		return false
 	}
@@ -657,7 +658,7 @@ func (c *Control) KindOff(kind string) bool {
 // an owner that is off (title-decided kinds are not listed).
 func (c *Control) OffKinds() []string {
 	var out []string
-	for k, o := range JobKinds {
+	for k, o := range startup.OwnersOf(startup.JobOwners) {
 		if o != ByTitle && !c.OwnerOn(o) {
 			out = append(out, k)
 		}
@@ -666,14 +667,14 @@ func (c *Control) OffKinds() []string {
 }
 
 // Held reports whether a queued Job must wait because its part is off.
-func (c *Control) Held(ctx context.Context, db store.Querier, kind string, subject *domain.Subject) bool {
+func (c *Control) Held(ctx context.Context, db database.Querier, kind string, subject *domain.Subject) bool {
 	return !c.OwnerOn(c.jobPart(ctx, db, kind, subject))
 }
 
 // jobPart resolves a Job's owner; a title-decided Job whose title cannot
 // be found counts as shared media work.
-func (c *Control) jobPart(ctx context.Context, db store.Querier, kind string, subject *domain.Subject) Owner {
-	o, ok := JobKinds[kind]
+func (c *Control) jobPart(ctx context.Context, db database.Querier, kind string, subject *domain.Subject) Owner {
+	o, ok := startup.OwnerOf(startup.JobOwners, kind)
 	if !ok {
 		return Core
 	}
@@ -687,7 +688,7 @@ func (c *Control) jobPart(ctx context.Context, db store.Querier, kind string, su
 }
 
 // SubjectPart finds the part of the title a Job subject is about.
-func SubjectPart(ctx context.Context, db store.Querier, subject *domain.Subject) (Part, bool) {
+func SubjectPart(ctx context.Context, db database.Querier, subject *domain.Subject) (Part, bool) {
 	if subject == nil {
 		return "", false
 	}
@@ -717,7 +718,7 @@ func SubjectPart(ctx context.Context, db store.Querier, subject *domain.Subject)
 }
 
 // TitlePart finds the part of one title by its id.
-func TitlePart(ctx context.Context, db store.Querier, id string) (Part, bool) {
+func TitlePart(ctx context.Context, db database.Querier, id string) (Part, bool) {
 	n, err := strconv.ParseInt(strings.TrimSpace(id), 10, 64)
 	if err != nil {
 		return "", false

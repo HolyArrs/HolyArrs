@@ -12,10 +12,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // New & Popular → Music: new albums, EPs and singles to ask for (or add).
@@ -630,7 +630,7 @@ func (a *API) exploreNewMusic(w http.ResponseWriter, r *http.Request) {
 	}
 	db := a.s.Store.Read()
 	in := musicNewInput{data: d, owned: map[string]int64{}, images: map[string]string{}, follows: map[string]bool{}}
-	titles, err := store.Select[domain.Title](ctx, db, "titles", "kind = 'artist' AND state != 'removed' ORDER BY id")
+	titles, err := database.Select[domain.Title](ctx, db, "titles", "kind = 'artist' AND state != 'removed' ORDER BY id")
 	if err != nil {
 		internal(w, err)
 		return
@@ -643,7 +643,7 @@ func (a *API) exploreNewMusic(w http.ResponseWriter, r *http.Request) {
 			in.images[id] = artistImage(t)
 		}
 	}
-	ps, err := store.Select[domain.Part](ctx, db, "parts", `kind = 'album' AND dropped_at IS NULL AND release_date >= ? AND release_date <= ?
+	ps, err := database.Select[domain.Part](ctx, db, "parts", `kind = 'album' AND dropped_at IS NULL AND release_date >= ? AND release_date <= ?
 		AND lower(coalesce(release_type, '')) IN ('album', 'ep', 'single') AND secondary_types = '[]' AND coalesce(release_date_precision, 'day') = 'day'
 		AND title_id IN (SELECT id FROM titles WHERE kind = 'artist' AND state != 'removed') ORDER BY release_date DESC, id`,
 		now.AddDate(0, 0, -musicNewLibrary).Format("2006-01-02"), now.AddDate(0, 0, musicNewAhead).Format("2006-01-02T15:04:05Z"))
@@ -724,7 +724,7 @@ func (a *API) landAlbumFollows(ctx context.Context, now time.Time) {
 			}
 		}
 		rows.Close()
-		at := store.FormatTime(now)
+		at := database.FormatTime(now)
 		for _, l := range all {
 			if _, err := tx.Exec("INSERT INTO messages (created_at, user_id, kind, text) VALUES (?, ?, 'ready', ?)", at, l.user, l.name+" by "+l.artist+" is out. Ask for it from New & Popular → Music."); err != nil {
 				return err
@@ -791,7 +791,7 @@ func (a *API) putAlbumFollow(w http.ResponseWriter, r *http.Request) {
 	}
 	if err := a.s.Store.Write(r.Context(), func(tx *sql.Tx) error {
 		_, err := tx.Exec(`INSERT INTO album_follows (user_id, mbid, name, artist, release_date, created_at) VALUES (?, ?, ?, ?, ?, ?)
-			ON CONFLICT DO NOTHING`, a.person(r).UserID, id, body.Name, body.Artist, body.ReleaseDate, store.FormatTime(time.Now()))
+			ON CONFLICT DO NOTHING`, a.person(r).UserID, id, body.Name, body.Artist, body.ReleaseDate, database.FormatTime(time.Now()))
 		return err
 	}); err != nil {
 		internal(w, err)

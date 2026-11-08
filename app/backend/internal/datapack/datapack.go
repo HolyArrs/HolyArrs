@@ -18,8 +18,9 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/judge"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/naming"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/parse"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 )
 
 const (
@@ -291,7 +292,7 @@ func (r ReleaseTest) validate() error {
 	if !knownQuality(r.Expected.Quality) {
 		return fmt.Errorf("expected quality %q is unknown", r.Expected.Quality)
 	}
-	p := parse.Parse(r.ReleaseName, parse.Hints{Show: r.Hints.Show, Music: r.Hints.Music})
+	p := releasename.Parse(r.ReleaseName, releasename.Hints{Show: r.Hints.Show, Music: r.Hints.Music})
 	actual := ExpectedFacts{Kind: p.Kind.Value, Quality: judge.StepFor(p), Resolution: p.Resolution.Value,
 		Source: p.Source.Value, Codec: p.Codec.Value, Flags: p.Flags}
 	if !equalFacts(actual, r.Expected) {
@@ -402,7 +403,7 @@ func requireEOF(d *json.Decoder) error {
 }
 
 // Import validates everything before storing one inactive pack in one write.
-func Import(ctx context.Context, st *store.Store, raw []byte, by domain.Actor) (Pack, error) {
+func Import(ctx context.Context, st *database.Store, raw []byte, by domain.Actor) (Pack, error) {
 	p, err := Decode(raw)
 	if err != nil {
 		if errors.Is(err, ErrTooLarge) {
@@ -428,7 +429,7 @@ func Import(ctx context.Context, st *store.Store, raw []byte, by domain.Actor) (
 		if !errors.Is(err, sql.ErrNoRows) {
 			return err
 		}
-		now := store.FormatTime(time.Now())
+		now := database.FormatTime(time.Now())
 		_, err = tx.ExecContext(ctx, `INSERT INTO settings (grp, key, value, created_at, created_by, updated_at, updated_by) VALUES ('this_app', ?, ?, ?, ?, ?, ?)`,
 			key, string(canonical), now, string(actor), now, string(actor))
 		return err
@@ -439,7 +440,7 @@ func Import(ctx context.Context, st *store.Store, raw []byte, by domain.Actor) (
 	return p, nil
 }
 
-func List(ctx context.Context, st *store.Store) ([]Summary, error) {
+func List(ctx context.Context, st *database.Store) ([]Summary, error) {
 	rows, err := st.Read().QueryContext(ctx, `SELECT value FROM settings WHERE grp = 'this_app' AND key GLOB 'data_pack:*' ORDER BY key`)
 	if err != nil {
 		return nil, err
@@ -460,7 +461,7 @@ func List(ctx context.Context, st *store.Store) ([]Summary, error) {
 	return out, rows.Err()
 }
 
-func Export(ctx context.Context, st *store.Store, id string) ([]byte, error) {
+func Export(ctx context.Context, st *database.Store, id string) ([]byte, error) {
 	if err := validID("data pack", id); err != nil {
 		return nil, invalidInput(err)
 	}

@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Roadmap 3.1.2: a turned-down Release is never picked again; choosing it
@@ -99,7 +99,7 @@ func TestBetterCopySearch(t *testing.T) {
 			_ = tx.QueryRow("SELECT version_id FROM slots WHERE id = ?", f.slotID).Scan(&vid)
 			fl := &domain.File{SlotIDs: []int64{f.slotID}, VersionID: vid, RelativePath: "Dune/" + name + ".mkv", AddedAt: time.Now(), Languages: []string{},
 				MediaInfo: map[string]any{}, ReleaseName: &name, Origin: "imported", PlacedBy: "hardlink", Role: "main", State: "present"}
-			id, err := store.Insert(tx, "files", fl, domain.System)
+			id, err := database.Insert(tx, "files", fl, domain.System)
 			if err != nil {
 				return err
 			}
@@ -145,7 +145,7 @@ func TestListsPagingAndRemoval(t *testing.T) {
 			if st == "held" {
 				r.HoldUntil = &until
 			}
-			id, err := store.Insert(tx, "releases", r, domain.System)
+			id, err := database.Insert(tx, "releases", r, domain.System)
 			if err != nil {
 				return err
 			}

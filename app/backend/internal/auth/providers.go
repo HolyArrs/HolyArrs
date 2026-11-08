@@ -17,8 +17,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Setting up outside sign-in from Settings (owner only): link the owner's
@@ -510,12 +510,12 @@ func (a *Auth) importPeople(w http.ResponseWriter, r *http.Request) {
 				}
 				u.Perms, u.MaxRating = kidPerms, "PG"
 			}
-			id, err := store.Insert(tx, "users", u, Actor(ctx))
+			id, err := database.Insert(tx, "users", u, Actor(ctx))
 			if err != nil {
 				return err
 			}
 			if _, err := tx.Exec("INSERT INTO user_links(user_id, provider, external_id, external_name, created_at) VALUES (?, ?, ?, ?, ?)",
-				id, kind, p.ID, truncate(p.Name, 200), store.FormatTime(a.now())); err != nil {
+				id, kind, p.ID, truncate(p.Name, 200), database.FormatTime(a.now())); err != nil {
 				return err
 			}
 			made = append(made, name)

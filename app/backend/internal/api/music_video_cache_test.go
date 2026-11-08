@@ -7,19 +7,19 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Cache audit 2026-10-23, finding 2: a pending, failed or empty video
 // answer is not kept an hour; a non-empty list is kept on disk and
 // re-checked daily in the background.
 
-func videoAPI(t *testing.T, st *store.Store, vids func(context.Context, string) ([]metadata.ArtistVideo, error)) *API {
+func videoAPI(t *testing.T, st *database.Store, vids func(context.Context, string) ([]metadata.ArtistVideo, error)) *API {
 	t.Helper()
 	if st == nil {
 		var err error
-		st, err = store.Open(t.TempDir(), store.Options{})
+		st, err = database.Open(t.TempDir(), database.Options{})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -66,7 +66,7 @@ func TestVideosEmptyKeptMinutes(t *testing.T) {
 }
 
 func TestVideosOnDiskAndRecheckedDaily(t *testing.T) {
-	st, err := store.Open(t.TempDir(), store.Options{})
+	st, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}

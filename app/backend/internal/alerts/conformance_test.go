@@ -12,10 +12,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/adaptertest"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound/adaptertest"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 func TestAlertAdapterConformance(t *testing.T) {
@@ -49,7 +49,7 @@ func (m memoryAlert) Send(ctx context.Context, _ Message) error {
 	return m.err
 }
 
-func alertOperation(t *testing.T, s *store.Store, v *secrets.Vault, kind string, fail bool) func(context.Context) error {
+func alertOperation(t *testing.T, s *database.Store, v *secrets.Vault, kind string, fail bool) func(context.Context) error {
 	t.Helper()
 	name := "success"
 	if fail {

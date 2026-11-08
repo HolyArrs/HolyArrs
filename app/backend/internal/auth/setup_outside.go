@@ -17,8 +17,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // First-run setup through an outside account: the owner is made from a
@@ -105,7 +105,7 @@ func (a *Auth) makeOwnerTx(tx *sql.Tx, provider, extName, newHost string) (int64
 		}
 		name = fmt.Sprintf("%s-%d", base, i)
 	}
-	id, err := store.Insert(tx, "users", &domain.User{Name: name, Role: RoleOwner, State: "active", Perms: "[]"}, domain.System)
+	id, err := database.Insert(tx, "users", &domain.User{Name: name, Role: RoleOwner, State: "active", Perms: "[]"}, domain.System)
 	if err != nil || newHost == "" {
 		return id, name, nil, err
 	}
@@ -358,7 +358,7 @@ func (a *Auth) setupMediaServer(w http.ResponseWriter, r *http.Request) {
 			return err
 		}
 		if _, err := tx.Exec("INSERT INTO user_links(user_id, provider, external_id, external_name, created_at) VALUES (?, ?, ?, ?, ?)",
-			id, kind, got.User.ID, truncate(got.User.Name, 200), store.FormatTime(a.now())); err != nil {
+			id, kind, got.User.ID, truncate(got.User.Name, 200), database.FormatTime(a.now())); err != nil {
 			return err
 		}
 		// The same keys Settings > Sign-in saves, so it shows this way on.

@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Disks that sleep: the timed Library folder check must not write probe
@@ -19,7 +19,7 @@ import (
 
 // folderCheckQueue starts a queue with the library's handlers and the
 // given Downloader save path.
-func folderCheckQueue(t *testing.T, s *store.Store, savePath string) (*Service, *jobs.Queue) {
+func folderCheckQueue(t *testing.T, s *database.Store, savePath string) (*Service, *jobs.Queue) {
 	t.Helper()
 	q := jobs.New(s, jobs.Options{Workers: 1, PollInterval: 5 * time.Millisecond, BaseBackoff: 10 * time.Millisecond})
 	svc := &Service{Store: s, Queue: q, SavePath: savePath, Now: func() time.Time { return now }}
@@ -33,7 +33,7 @@ func folderCheckQueue(t *testing.T, s *store.Store, savePath string) (*Service, 
 
 // runFolderCheck queues one check_library_folders Job with params and
 // waits for it to end.
-func runFolderCheck(t *testing.T, s *store.Store, q *jobs.Queue, params map[string]any) {
+func runFolderCheck(t *testing.T, s *database.Store, q *jobs.Queue, params map[string]any) {
 	t.Helper()
 	ctx := context.Background()
 	id, _, err := q.Enqueue(ctx, KindCheckFolders, nil, params, "", domain.System)
@@ -43,7 +43,7 @@ func runFolderCheck(t *testing.T, s *store.Store, q *jobs.Queue, params map[stri
 	deadline := time.Now().Add(5 * time.Second)
 	for time.Now().Before(deadline) {
 		var j domain.Job
-		if err := store.Get(ctx, s.Read(), "jobs", id, &j); err != nil {
+		if err := database.Get(ctx, s.Read(), "jobs", id, &j); err != nil {
 			t.Fatal(err)
 		}
 		switch j.State {
@@ -57,10 +57,10 @@ func runFolderCheck(t *testing.T, s *store.Store, q *jobs.Queue, params map[stri
 	t.Fatal("folder check never ended")
 }
 
-func storedFolder(t *testing.T, s *store.Store, id int64) domain.LibraryFolder {
+func storedFolder(t *testing.T, s *database.Store, id int64) domain.LibraryFolder {
 	t.Helper()
 	var lf domain.LibraryFolder
-	if err := store.Get(context.Background(), s.Read(), "library_folders", id, &lf); err != nil {
+	if err := database.Get(context.Background(), s.Read(), "library_folders", id, &lf); err != nil {
 		t.Fatal(err)
 	}
 	return lf
@@ -157,7 +157,7 @@ func TestRunNowFolderCheckStillProbes(t *testing.T) {
 // gone shows as missing.
 func TestTimedFolderCheckProbesWhenItMust(t *testing.T) {
 	ctx := context.Background()
-	setHealth := func(t *testing.T, s *store.Store, id int64, health string, checked bool) {
+	setHealth := func(t *testing.T, s *database.Store, id int64, health string, checked bool) {
 		t.Helper()
 		q := "UPDATE library_folders SET health = ?, health_reason = 'set by the test' WHERE id = ?"
 		if !checked {

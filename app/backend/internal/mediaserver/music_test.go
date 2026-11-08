@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // 4.15.5: a music change is scoped to the album folder: an album import
@@ -24,32 +24,32 @@ func TestFoldersOfMusicScopedToAlbum(t *testing.T) {
 		var pr int64
 		_ = tx.QueryRow("SELECT id FROM pick_rules LIMIT 1").Scan(&pr)
 		lf := &domain.LibraryFolder{Path: lib, Kind: "music", Label: "Music", Health: "ok", SameDiskAs: []int64{}}
-		if _, err := store.Insert(tx, "library_folders", lf, domain.System); err != nil {
+		if _, err := database.Insert(tx, "library_folders", lf, domain.System); err != nil {
 			return err
 		}
 		ti := &domain.Title{Kind: "artist", GateDriver: "none", Name: "Lab Lanterns", SortName: "lab lanterns", MetadataSource: "musicbrainz", NewPartsPolicy: "all",
 			ReleaseGate: "released", WhyAdded: "by_hand", Status: "running", State: "active", SourceIDs: map[string]string{}, Aliases: []string{}, MusicTypes: []string{}, Artwork: []string{}}
-		if _, err := store.Insert(tx, "titles", ti, domain.System); err != nil {
+		if _, err := database.Insert(tx, "titles", ti, domain.System); err != nil {
 			return err
 		}
 		artist = ti.ID
 		v := &domain.Version{TitleID: ti.ID, Label: "Main", PickRulesID: pr, LibraryFolderID: lf.ID, FolderName: "Lab Lanterns", IsMain: true}
-		if _, err := store.Insert(tx, "versions", v, domain.System); err != nil {
+		if _, err := database.Insert(tx, "versions", v, domain.System); err != nil {
 			return err
 		}
 		for i, rel := range []string{"Lab Lanterns/Small Hours (2025)/01 - A.flac", "Lab Lanterns/Small Hours (2025)/CD2/01 - B.flac"} {
 			n := i + 1
 			it := &domain.Item{TitleID: ti.ID, Kind: "track", Numbers: domain.Numbers{Track: &n}, SourceIDs: map[string]string{}}
-			if _, err := store.Insert(tx, "items", it, domain.System); err != nil {
+			if _, err := database.Insert(tx, "items", it, domain.System); err != nil {
 				return err
 			}
 			sl := &domain.Slot{ItemID: it.ID, VersionID: v.ID, State: domain.SlotInLibrary}
-			if _, err := store.Insert(tx, "slots", sl, domain.System); err != nil {
+			if _, err := database.Insert(tx, "slots", sl, domain.System); err != nil {
 				return err
 			}
 			f := &domain.File{SlotIDs: []int64{sl.ID}, VersionID: v.ID, RelativePath: rel, Languages: []string{}, MediaInfo: map[string]any{}, Origin: "imported",
 				PlacedBy: "hardlink", Role: "main", State: "present"}
-			if _, err := store.Insert(tx, "files", f, domain.System); err != nil {
+			if _, err := database.Insert(tx, "files", f, domain.System); err != nil {
 				return err
 			}
 			if _, err := tx.Exec("UPDATE slots SET file_id = ? WHERE id = ?", f.ID, sl.ID); err != nil {

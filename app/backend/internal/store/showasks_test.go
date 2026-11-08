@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
@@ -14,7 +15,7 @@ import (
 func TestShowAsksMigrationKeepsAsks(t *testing.T) {
 	dir := t.TempDir()
 	ctx := context.Background()
-	old, err := Open(dir, Options{MainMigrations: upTo(t, 20)})
+	old, err := database.Open(dir, database.Options{MainMigrations: upTo(t, 20)})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -43,13 +44,13 @@ func TestShowAsksMigrationKeepsAsks(t *testing.T) {
 	}
 	_ = old.Close()
 
-	s, err := Open(dir, Options{})
+	s, err := database.Open(dir, database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer s.Close()
 	var a domain.Ask
-	if err := Get(ctx, s.Read(), "asks", 1, &a); err != nil {
+	if err := database.Get(ctx, s.Read(), "asks", 1, &a); err != nil {
 		t.Fatal(err)
 	}
 	if a.Kind != "movie" || a.Name != "Dune: Part Two" || a.Ref != "tmdb:693134" || a.SourceIDs["tmdb"] != "693134" || len(a.Seasons) != 0 || a.Seasons == nil {

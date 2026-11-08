@@ -10,10 +10,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // fakeShowSource answers fixed shows by "<kind>:<id>".
@@ -69,9 +70,9 @@ func apiShow(source, id string) metadata.Show {
 		}}
 }
 
-func showSetup(t *testing.T) (*httptest.Server, *store.Store, *fakeShowSource, *fakeShowSource) {
+func showSetup(t *testing.T) (*httptest.Server, *database.Store, *fakeShowSource, *fakeShowSource) {
 	t.Helper()
-	s, err := store.Open(t.TempDir(), store.Options{})
+	s, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}

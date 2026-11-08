@@ -7,8 +7,8 @@ import (
 	"slices"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // addUHD gives the show fixture a 4K Version (the 4K Pick rules) with one
@@ -25,17 +25,17 @@ func addUHD(t *testing.T, f showFix) (int64, map[string]int64) {
 		}
 		main := mustVersion(t, f)
 		v := &domain.Version{TitleID: f.titleID, Label: "4K", PickRulesID: pr, LibraryFolderID: main.LibraryFolderID, FolderName: main.FolderName + " [4K]", KeepUpToDate: true}
-		if _, err := store.Insert(tx, "versions", v, domain.System); err != nil {
+		if _, err := database.Insert(tx, "versions", v, domain.System); err != nil {
 			return err
 		}
 		vid = v.ID
 		for label, id := range f.slots {
 			var hd domain.Slot
-			if err := store.Get(ctx, tx, "slots", id, &hd); err != nil {
+			if err := database.Get(ctx, tx, "slots", id, &hd); err != nil {
 				return err
 			}
 			sl := &domain.Slot{ItemID: hd.ItemID, VersionID: v.ID, State: hd.State}
-			if _, err := store.Insert(tx, "slots", sl, domain.System); err != nil {
+			if _, err := database.Insert(tx, "slots", sl, domain.System); err != nil {
 				return err
 			}
 			slots[label] = sl.ID
@@ -93,7 +93,7 @@ func TestSeasonSearchPerVersion(t *testing.T) {
 		t.Fatalf("4K job %s %+v", j.State, j.Error)
 	}
 	var uhdPack domain.Release
-	rs, _ := store.Select[domain.Release](context.Background(), f.s.Read(), "releases", "name = ? AND state = 'chosen'", "Copper.Valley.S01.2160p.WEB-DL.DV.HDR.H.265-QUILL")
+	rs, _ := database.Select[domain.Release](context.Background(), f.s.Read(), "releases", "name = ? AND state = 'chosen'", "Copper.Valley.S01.2160p.WEB-DL.DV.HDR.H.265-QUILL")
 	if len(rs) != 1 {
 		t.Fatalf("4K pack chosen %d times", len(rs))
 	}

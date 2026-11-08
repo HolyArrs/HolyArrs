@@ -15,10 +15,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/explore"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/supervisor"
 )
 
 // The Explore category strip, picked on the server for each member from the
@@ -165,7 +166,7 @@ func (a *API) exploreStrip(w http.ResponseWriter, r *http.Request) {
 			complete = false
 			missing := explore.BrowseSections[i:]
 			bg, cancel := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Minute)
-			go supervisor.Guard("explore-strip-build", func() {
+			go jobs.Guard("explore-strip-build", func() {
 				defer cancel()
 				for _, x := range missing {
 					if _, have, _ := share.get(x.ID); !have {
@@ -289,7 +290,7 @@ func (a *API) stripTasteRefs(ctx context.Context, member int64, kid bool, now ti
 			var t tasteRef
 			var at string
 			err := rows.Scan(&t.kind, &t.tmdbID, &at)
-			when, _ := time.Parse(store.TimeLayout, at)
+			when, _ := time.Parse(database.TimeLayout, at)
 			t.weight = 2 * math.Exp(-math.Max(0, now.Sub(when).Hours()/24)/120)
 			return t, err
 		}, member)
@@ -379,7 +380,7 @@ func (a *API) fetchStripKeywords(member int64, refs []tasteRef) {
 	if _, busy := stripFetches.LoadOrStore(key, true); busy {
 		return
 	}
-	go supervisor.Guard("explore-strip-keywords", func() {
+	go jobs.Guard("explore-strip-keywords", func() {
 		defer stripFetches.Delete(key)
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 		defer cancel()

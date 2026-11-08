@@ -13,14 +13,17 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/naming"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
@@ -44,7 +47,7 @@ func newManifest() *manifest {
 	return &manifest{Titles: map[string]int64{}, Steps: map[string]bool{}}
 }
 
-func readManifest(ctx context.Context, db store.Querier) (*manifest, error) {
+func readManifest(ctx context.Context, db database.Querier) (*manifest, error) {
 	var v string
 	err := db.QueryRowContext(ctx, "SELECT value FROM settings WHERE grp = 'this_app' AND key = ?", manifestKey).Scan(&v)
 	if errors.Is(err, sql.ErrNoRows) {
@@ -71,7 +74,7 @@ func (w *world) saveManifest(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	now := store.FormatTime(time.Now())
+	now := database.FormatTime(time.Now())
 	return w.s.Write(ctx, func(tx *sql.Tx) error {
 		_, err := tx.Exec(`INSERT INTO settings (grp, key, value, created_at, created_by, updated_at, updated_by) VALUES ('this_app', ?, ?, ?, ?, ?, ?)
 			ON CONFLICT (grp, key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at, updated_by = excluded.updated_by`,
@@ -91,7 +94,7 @@ type providers struct {
 // stopped config folder.
 type world struct {
 	o     options
-	s     *store.Store
+	s     *database.Store
 	vault *secrets.Vault
 	lib   *library.Service
 	sr    *source.Searcher
@@ -130,7 +133,7 @@ func (w *world) say(format string, a ...any) { fmt.Fprintf(w.out, format+"\n", a
 // openWorld opens the config folder with the app's store, vault and
 // services. Nothing runs in the background: no Job queue, no searches.
 func openWorld(ctx context.Context, o options, p providers, out io.Writer) (*world, error) {
-	s, err := store.Open(o.ConfigDir, store.Options{})
+	s, err := database.Open(o.ConfigDir, database.Options{})
 	if err != nil {
 		return nil, err
 	}
@@ -189,7 +192,7 @@ func (o options) downloads() string {
 // realProviders are TMDB (token from HOLYARRS_TMDB_TOKEN_FILE, read by the
 // app's own client and never printed) and MusicBrainz at one request a
 // second with its answers cached, as the app runs them.
-func realProviders(s *store.Store) (providers, error) {
+func realProviders(s *database.Store) (providers, error) {
 	f := os.Getenv(metadata.EnvTokenFile)
 	if f == "" {
 		return providers{}, fmt.Errorf("%s is not set: the seed looks titles up on TMDB with the lab's token file", metadata.EnvTokenFile)
@@ -328,7 +331,7 @@ func (w *world) summary(ctx context.Context) error {
 // folder whose path is a Windows path mangled by Git Bash (it can never be
 // reached from the container) is removed when no title uses it.
 func (w *world) cleanUps(ctx context.Context) error {
-	lfs, err := store.Select[domain.LibraryFolder](ctx, w.s.Read(), "library_folders", "1=1 ORDER BY id")
+	lfs, err := database.Select[domain.LibraryFolder](ctx, w.s.Read(), "library_folders", "1=1 ORDER BY id")
 	if err != nil {
 		return err
 	}
@@ -378,7 +381,7 @@ func (w *world) folders(ctx context.Context) error {
 
 // folderOf returns the first Library folder of a kind.
 func (w *world) folderOf(ctx context.Context, kind string) (domain.LibraryFolder, error) {
-	fs, err := store.Select[domain.LibraryFolder](ctx, w.s.Read(), "library_folders", "kind = ? ORDER BY id LIMIT 1", kind)
+	fs, err := database.Select[domain.LibraryFolder](ctx, w.s.Read(), "library_folders", "kind = ? ORDER BY id LIMIT 1", kind)
 	if err != nil {
 		return domain.LibraryFolder{}, err
 	}

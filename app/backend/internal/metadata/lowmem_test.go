@@ -2,21 +2,20 @@ package metadata
 
 import (
 	"fmt"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
 	"testing"
 	"time"
-
-	"github.com/HolyArrs/holyarrs/app/backend/internal/lowmem"
 )
 
 // Low-memory mode keeps at most 150 TMDB answers in memory (the Disk copy
 // answers the rest); off, the cap stays 1000.
 func TestTMDBMemoryCapLowMemory(t *testing.T) {
-	t.Cleanup(func() { lowmem.Set(false) })
+	t.Cleanup(func() { startup.SetLowMemory(false) })
 	for _, c := range []struct {
 		low bool
 		cap int
 	}{{false, maxCache}, {true, 150}} {
-		lowmem.Set(c.low)
+		startup.SetLowMemory(c.low)
 		tm := &TMDB{}
 		for i := range c.cap + 1 {
 			tm.remember(fmt.Sprint("u", i), cached{body: []byte("x"), at: time.Now()})
@@ -30,7 +29,7 @@ func TestTMDBMemoryCapLowMemory(t *testing.T) {
 // Expired show and music answers are dropped at most once a minute when a
 // new one is kept, never left until the cache is full.
 func TestGetterDropsExpiredAnswers(t *testing.T) {
-	t.Cleanup(func() { lowmem.Set(false) })
+	t.Cleanup(func() { startup.SetLowMemory(false) })
 	g := &getter{}
 	now := time.Now()
 	g.put("old", []byte("o"), time.Hour, now.Add(-2*time.Hour))
@@ -46,7 +45,7 @@ func TestGetterDropsExpiredAnswers(t *testing.T) {
 	if _, ok := g.cache["new"]; !ok {
 		t.Fatal("the new answer was not kept")
 	}
-	lowmem.Set(true)
+	startup.SetLowMemory(true)
 	g = &getter{}
 	for i := range 251 {
 		g.put(fmt.Sprint("k", i), []byte("x"), time.Hour, now)

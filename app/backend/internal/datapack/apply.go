@@ -12,9 +12,9 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/naming"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 var ErrStaleApproval = errors.New("data pack preview is stale")
@@ -78,7 +78,7 @@ type queryer interface {
 	QueryRowContext(context.Context, string, ...any) *sql.Row
 }
 
-func Preview(ctx context.Context, st *store.Store, packID string, selection Selection) (ApplyPreview, error) {
+func Preview(ctx context.Context, st *database.Store, packID string, selection Selection) (ApplyPreview, error) {
 	return buildPreview(ctx, st.Read(), packID, selection)
 }
 
@@ -145,7 +145,7 @@ func buildPreview(ctx context.Context, q queryer, packID string, selection Selec
 	return preview, nil
 }
 
-func Apply(ctx context.Context, st *store.Store, packID string, selection Selection, approvalHash string, by domain.Actor) (ApplyResult, error) {
+func Apply(ctx context.Context, st *database.Store, packID string, selection Selection, approvalHash string, by domain.Actor) (ApplyResult, error) {
 	if len(approvalHash) != sha256.Size*2 {
 		return ApplyResult{}, ErrStaleApproval
 	}
@@ -168,7 +168,7 @@ func Apply(ctx context.Context, st *store.Store, packID string, selection Select
 			return err
 		}
 		for _, rule := range rules {
-			if _, err := store.Insert(tx, "pick_rules", &domain.PickRules{Name: rule.Name, Kinds: slices.Clone(rule.Kinds), Revision: 1, Preset: false, Body: rule.Rules}, by); err != nil {
+			if _, err := database.Insert(tx, "pick_rules", &domain.PickRules{Name: rule.Name, Kinds: slices.Clone(rule.Kinds), Revision: 1, Preset: false, Body: rule.Rules}, by); err != nil {
 				return err
 			}
 		}
@@ -181,7 +181,7 @@ func Apply(ctx context.Context, st *store.Store, packID string, selection Select
 				return err
 			}
 			actor, _ := json.Marshal(by)
-			now := store.FormatTime(time.Now())
+			now := database.FormatTime(time.Now())
 			values := namingValues(chosenNaming.Patterns)
 			for _, key := range sortedKeys(values) {
 				if _, err := tx.ExecContext(ctx, `INSERT INTO settings (grp, key, value, created_at, created_by, updated_at, updated_by) VALUES ('where_files_go', ?, ?, ?, ?, ?, ?)

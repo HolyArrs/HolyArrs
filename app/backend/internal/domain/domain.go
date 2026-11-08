@@ -2,25 +2,28 @@
 // types. Field tags name the database columns; ",json" marks a JSON column.
 package domain
 
-import "time"
+import (
+	"time"
 
-// Actor says who made a change: a user, a job, a linked app or the system.
-type Actor struct {
-	Kind string `json:"kind"` // user, job, link, system
-	ID   int64  `json:"id,omitempty"`
-}
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
+)
+
+// The row envelope lives in core/database; these names stay for callers
+// until the records move to their owners.
+type (
+	Actor   = database.Actor
+	Meta    = database.Meta
+	Subject = database.Subject
+	Event   = database.Event
+
+	Job      = jobs.Job
+	JobError = jobs.JobError
+	Schedule = jobs.Schedule
+)
 
 // System is the actor for changes HolyArrs makes on its own.
-var System = Actor{Kind: "system"}
-
-// Meta is on every record.
-type Meta struct {
-	ID        int64     `db:"id"`
-	CreatedAt time.Time `db:"created_at"`
-	CreatedBy Actor     `db:"created_by,json"`
-	UpdatedAt time.Time `db:"updated_at"`
-	UpdatedBy Actor     `db:"updated_by,json"`
-}
+var System = database.System
 
 // LibraryFolder is a folder on disk where finished files of one kind are kept.
 type LibraryFolder struct {
@@ -468,64 +471,6 @@ type File struct {
 	Role         string         `db:"role"` // main, subtitle, artwork, info, lyrics
 	ParentFileID *int64         `db:"parent_file_id"`
 	State        string         `db:"state"` // present, missing, gone, replaced
-}
-
-// Subject is what a Job is about.
-type Subject struct {
-	Type string `json:"type"`
-	ID   int64  `json:"id"`
-}
-
-// JobError says why a Job failed.
-type JobError struct {
-	Code    string `json:"code"`
-	Message string `json:"message"`
-}
-
-// Job is background work stored in the database.
-type Job struct {
-	Meta
-	Kind         string         `db:"kind"`
-	Subject      *Subject       `db:"subject,json"`
-	Params       map[string]any `db:"params,json"`
-	Priority     string         `db:"priority"` // now, normal, idle
-	State        string         `db:"state"`    // queued, running, done, failed, cancelled
-	Progress     float64        `db:"progress"`
-	ProgressNote *string        `db:"progress_note"`
-	Attempt      int            `db:"attempt"`
-	MaxAttempts  int            `db:"max_attempts"`
-	RunAfter     time.Time      `db:"run_after"`
-	StartedAt    *time.Time     `db:"started_at"`
-	EndedAt      *time.Time     `db:"ended_at"`
-	Result       map[string]any `db:"result,json"`
-	Error        *JobError      `db:"error,json"`
-	AskedBy      Actor          `db:"asked_by,json"`
-	DedupeKey    *string        `db:"dedupe_key"`
-}
-
-// Schedule runs a Job kind on a timer.
-type Schedule struct {
-	Meta
-	Kind         string     `db:"kind"`
-	EverySeconds int64      `db:"every_seconds"`
-	LastRun      *time.Time `db:"last_run"`
-	NextRun      *time.Time `db:"next_run"`
-	Enabled      bool       `db:"enabled"`
-}
-
-// Event is one line of history. Events live in the events database.
-type Event struct {
-	Meta
-	At         time.Time      `db:"at"`
-	Actor      Actor          `db:"actor,json"`
-	Kind       string         `db:"kind"`
-	TitleID    *int64         `db:"title_id"`
-	SlotID     *int64         `db:"slot_id"`
-	DownloadID *int64         `db:"download_id"`
-	JobID      *int64         `db:"job_id"`
-	Summary    string         `db:"summary"`
-	Data       map[string]any `db:"data,json"`
-	GroupKey   string         `db:"group_key"`
 }
 
 // User is a person who signs in: the one owner, admins and members.

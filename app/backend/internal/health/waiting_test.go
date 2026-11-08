@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // waiting finds the check about downloads that wait because their
@@ -29,10 +29,10 @@ func (w *world) addWaitingDownload(t *testing.T, since time.Time) int64 {
 	d := &domain.Download{DownloaderID: 1, ExternalID: "29be7bfa8759643f2d5dac9f94d516c3378696ed", State: "paused", StateReason: &reason,
 		SlotIDs: []int64{}, FilesSeen: []domain.SeenFile{}}
 	if err := w.s.Write(context.Background(), func(tx *sql.Tx) error {
-		if _, err := store.Insert(tx, "downloads", d, domain.System); err != nil {
+		if _, err := database.Insert(tx, "downloads", d, domain.System); err != nil {
 			return err
 		}
-		_, err := tx.Exec("UPDATE downloads SET updated_at = ? WHERE id = ?", store.FormatTime(since), d.ID)
+		_, err := tx.Exec("UPDATE downloads SET updated_at = ? WHERE id = ?", database.FormatTime(since), d.ID)
 		return err
 	}); err != nil {
 		t.Fatal(err)
@@ -57,7 +57,7 @@ func TestWaitingDownloadsCheck(t *testing.T) {
 	if !ok || c.State != Warning || !strings.Contains(c.Message, "1 download") || !strings.Contains(c.Message, "recheck") {
 		t.Fatalf("one waiting download: %+v (found %v)", c, ok)
 	}
-	w.exec(t, "UPDATE downloads SET updated_at = ? WHERE id = ?", store.FormatTime(w.now.Add(-4*24*time.Hour)), id)
+	w.exec(t, "UPDATE downloads SET updated_at = ? WHERE id = ?", database.FormatTime(w.now.Add(-4*24*time.Hour)), id)
 	if c, ok := waiting(w.run(t)); !ok || c.State != Error {
 		t.Fatalf("waiting 4 days: %+v (found %v), want error", c, ok)
 	}
@@ -66,7 +66,7 @@ func TestWaitingDownloadsCheck(t *testing.T) {
 		t.Fatalf("one waiting download should read \"recheck it\": %q", c.Message)
 	}
 	w.exec(t, `INSERT INTO downloads (created_at, created_by, updated_at, updated_by, downloader_id, slot_ids, external_id, state, state_reason, files_seen, started_by)
-		VALUES ('2026-10-01T00:00:00Z', '{}', ?, '{}', 1, '[]', 'bbbb', 'paused', 'the Downloader can''t use the files of this download: is the share mounted?', '[]', '{}')`, store.FormatTime(w.now.Add(-time.Hour)))
+		VALUES ('2026-10-01T00:00:00Z', '{}', ?, '{}', 1, '[]', 'bbbb', 'paused', 'the Downloader can''t use the files of this download: is the share mounted?', '[]', '{}')`, database.FormatTime(w.now.Add(-time.Hour)))
 	if c, ok := waiting(w.run(t)); !ok || !strings.Contains(c.Message, "2 downloads") || !strings.Contains(c.Message, "recheck them in") {
 		t.Fatalf("two waiting downloads should read \"recheck them\": %+v (found %v)", c, ok)
 	}

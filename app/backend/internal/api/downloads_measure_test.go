@@ -17,8 +17,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Option B refetch cost (downloads live plan, Phase 1): bytes and server
@@ -39,7 +39,7 @@ func TestDownloadsViewRefetchCost(t *testing.T) {
 			for i := range own - 1 {
 				n := &domain.Download{DownloaderID: did, ReleaseID: &x.relID, SlotIDs: []int64{x.slotID}, ExternalID: fmt.Sprintf("%040x", 0xabc000+i),
 					State: "downloading", Progress: 0.4, Speed: 1 << 20, FilesSeen: []domain.SeenFile{}, StartedBy: domain.System}
-				if _, err := store.Insert(tx, "downloads", n, domain.System); err != nil {
+				if _, err := database.Insert(tx, "downloads", n, domain.System); err != nil {
 					return err
 				}
 			}

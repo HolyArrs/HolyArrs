@@ -8,10 +8,10 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/asks"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/ratings"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Reports (#95): anyone signed in reports a problem with a title in the
@@ -41,7 +41,7 @@ func reportError(w http.ResponseWriter, err error) {
 		fail(w, http.StatusConflict, err.Error())
 	case errors.Is(err, asks.ErrTooManyReports):
 		fail(w, http.StatusTooManyRequests, err.Error())
-	case errors.Is(err, store.ErrNotFound):
+	case errors.Is(err, database.ErrNotFound):
 		fail(w, http.StatusNotFound, "no such report")
 	default:
 		internal(w, err)
@@ -105,8 +105,8 @@ func (a *API) makeReport(w http.ResponseWriter, r *http.Request) {
 	// The same title check as GET /titles/{id}: no such title and a title
 	// above a Kid's limit answer alike, and a title of a part that is off waits.
 	var t domain.Title
-	if err := store.Get(r.Context(), a.s.Store.Read(), "titles", in.TitleID, &t); err != nil || !a.titleAllowed(r, t) {
-		if err != nil && !errors.Is(err, store.ErrNotFound) {
+	if err := database.Get(r.Context(), a.s.Store.Read(), "titles", in.TitleID, &t); err != nil || !a.titleAllowed(r, t) {
+		if err != nil && !errors.Is(err, database.ErrNotFound) {
 			internal(w, err)
 			return
 		}

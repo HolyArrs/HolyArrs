@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Log, cue, playlist, cover and text files are not counted as tracks.
@@ -61,7 +61,7 @@ func TestChooseAlbumMixNeedsConfirm(t *testing.T) {
 		name := "Velvet Cartography - Low Tide Atlas (2019) [FLAC 24-96]"
 		fl := &domain.File{SlotIDs: []int64{f.slots[ltaTracks[0]]}, VersionID: f.verID, RelativePath: "1-1.flac", Size: 1, AddedAt: time.Now(),
 			Languages: []string{}, MediaInfo: map[string]any{}, ReleaseName: &name, Origin: "imported", PlacedBy: "copy", Role: "main", State: "present"}
-		if _, err := store.Insert(tx, "files", fl, domain.System); err != nil {
+		if _, err := database.Insert(tx, "files", fl, domain.System); err != nil {
 			return err
 		}
 		_, err := tx.Exec("UPDATE slots SET state = 'better_wanted', file_id = ? WHERE id = ?", fl.ID, f.slots[ltaTracks[0]])

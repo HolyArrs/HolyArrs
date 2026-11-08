@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // nearCapShare is how full a limit is before Settings says it is close.
@@ -14,7 +14,7 @@ const nearCapShare = 0.8
 
 // NearCap says whether a Source used 80% or more of its searches or picks
 // in its window, with the words to show. A limit of 0 means no limit.
-func NearCap(ctx context.Context, st *store.Store, src domain.Source, now time.Time) (bool, string) {
+func NearCap(ctx context.Context, st *database.Store, src domain.Source, now time.Time) (bool, string) {
 	l := src.Limits
 	if l.SearchesPerWindow <= 0 && l.GrabsPerWindow <= 0 {
 		return false, ""
@@ -23,7 +23,7 @@ func NearCap(ctx context.Context, st *store.Store, src domain.Source, now time.T
 	if window <= 0 {
 		window = 24 * time.Hour
 	}
-	since := store.FormatTime(now.Add(-window))
+	since := database.FormatTime(now.Add(-window))
 	db := st.Read()
 	if l.SearchesPerWindow > 0 {
 		var n int

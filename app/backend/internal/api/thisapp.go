@@ -10,12 +10,13 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/applog"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/logs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/health"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/runas"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
 )
 
 // maxLogDownload caps the log download (the newest whole lines).
@@ -88,14 +89,14 @@ func (a *API) storage(w http.ResponseWriter, r *http.Request) {
 	free := importer.FreeSpace(dir)
 	out := []PathInfo{
 		{Name: "Config folder", Path: dir, Free: free},
-		{Name: "Main database", Path: filepath.Join(dir, store.MainFile), Bytes: fileSize(filepath.Join(dir, store.MainFile)), Free: free},
-		{Name: "History database", Path: filepath.Join(dir, store.EventsFile), Bytes: fileSize(filepath.Join(dir, store.EventsFile)), Free: free},
+		{Name: "Main database", Path: filepath.Join(dir, database.MainFile), Bytes: fileSize(filepath.Join(dir, database.MainFile)), Free: free},
+		{Name: "History database", Path: filepath.Join(dir, database.EventsFile), Bytes: fileSize(filepath.Join(dir, database.EventsFile)), Free: free},
 		{Name: "Backups", Path: filepath.Join(dir, "backups"), Free: free},
 		{Name: "Artwork", Path: filepath.Join(dir, "artwork"), Free: free},
 	}
 	if a.s.Log != nil {
-		out = append(out, PathInfo{Name: "Log files", Path: a.s.Log.Dir(), Bytes: fileSize(filepath.Join(a.s.Log.Dir(), applog.FileName)) +
-			fileSize(filepath.Join(a.s.Log.Dir(), applog.OldName)), Free: free})
+		out = append(out, PathInfo{Name: "Log files", Path: a.s.Log.Dir(), Bytes: fileSize(filepath.Join(a.s.Log.Dir(), logs.FileName)) +
+			fileSize(filepath.Join(a.s.Log.Dir(), logs.OldName)), Free: free})
 	}
 	media := []PathInfo{}
 	rows, err := a.s.Store.Read().QueryContext(r.Context(), "SELECT path, kind, label FROM library_folders ORDER BY kind, path")
@@ -142,9 +143,9 @@ func (a *API) logsReady(w http.ResponseWriter, r *http.Request) bool {
 // shown), q=text, from=, to= (a date or an RFC 3339 time), offset, limit.
 func (a *API) readLogs(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
-	f := applog.Filter{Level: q.Get("level"), Text: q.Get("q"), Limit: limit(r, 100)}
+	f := logs.Filter{Level: q.Get("level"), Text: q.Get("q"), Limit: limit(r, 100)}
 	switch f.Level {
-	case "", applog.Info, applog.Warning, applog.Error:
+	case "", logs.Info, logs.Warning, logs.Error:
 	default:
 		fail(w, http.StatusBadRequest, "level is info, warning or error")
 		return
@@ -185,7 +186,7 @@ func (a *API) readLogs(w http.ResponseWriter, r *http.Request) {
 	}
 	lines, total := a.s.Log.Read(f)
 	if lines == nil {
-		lines = []applog.Line{}
+		lines = []logs.Line{}
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"lines": lines, "total": total, "offset": f.Offset, "limit": f.Limit})
 }
@@ -227,7 +228,7 @@ func (a *API) aboutView(ctx context.Context) AboutView {
 		ConfigDir: a.configDir(), UptimeS: int64(time.Since(a.s.Started).Seconds()), Started: a.s.Started.UTC().Format(time.RFC3339),
 	}
 	// Docker, Podman, Kubernetes and the rest: the update steps are the same.
-	v.Docker = runas.InContainer(func(p string) bool { _, err := os.Stat(p); return err == nil }, os.Getenv)
+	v.Docker = startup.InContainer(func(p string) bool { _, err := os.Stat(p); return err == nil }, os.Getenv)
 	if exe, err := os.Executable(); err == nil {
 		v.StartDir = filepath.Dir(exe)
 	}

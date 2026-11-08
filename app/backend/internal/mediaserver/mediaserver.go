@@ -24,11 +24,13 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/outside"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/supervisor"
 )
 
 // Changes a folder can have.
@@ -135,7 +137,7 @@ func nameUsed(tx *sql.Tx, name string, id int64) error {
 }
 
 // Add stores a media server; its token goes to the vault.
-func Add(ctx context.Context, s *store.Store, v *secrets.Vault, in Input, by domain.Actor) (domain.MediaServer, error) {
+func Add(ctx context.Context, s *database.Store, v *secrets.Vault, in Input, by domain.Actor) (domain.MediaServer, error) {
 	var m domain.MediaServer
 	if err := fill(in, &m, true); err != nil {
 		return m, err
@@ -149,7 +151,7 @@ func Add(ctx context.Context, s *store.Store, v *secrets.Vault, in Input, by dom
 			return err
 		}
 		m.TokenSecretID = &id
-		_, err = store.Insert(tx, "media_servers", &m, by)
+		_, err = database.Insert(tx, "media_servers", &m, by)
 		return err
 	})
 	return m, err
@@ -157,9 +159,9 @@ func Add(ctx context.Context, s *store.Store, v *secrets.Vault, in Input, by dom
 
 // Change saves a media server; an empty token keeps the stored one, unless
 // the address moved to another host or scheme.
-func Change(ctx context.Context, s *store.Store, v *secrets.Vault, id int64, in Input, by domain.Actor) (domain.MediaServer, error) {
+func Change(ctx context.Context, s *database.Store, v *secrets.Vault, id int64, in Input, by domain.Actor) (domain.MediaServer, error) {
 	var m domain.MediaServer
-	if err := store.Get(ctx, s.Read(), "media_servers", id, &m); err != nil {
+	if err := database.Get(ctx, s.Read(), "media_servers", id, &m); err != nil {
 		return m, err
 	}
 	old := m
@@ -185,16 +187,16 @@ func Change(ctx context.Context, s *store.Store, v *secrets.Vault, id int64, in 
 			}
 			m.TokenSecretID = &nid
 		}
-		return store.Update(tx, "media_servers", &m, by)
+		return database.Update(tx, "media_servers", &m, by)
 	})
 	return m, err
 }
 
 // Remove deletes a media server and its token.
-func Remove(ctx context.Context, s *store.Store, id int64) error {
+func Remove(ctx context.Context, s *database.Store, id int64) error {
 	return s.Write(ctx, func(tx *sql.Tx) error {
 		var m domain.MediaServer
-		if err := store.Get(ctx, tx, "media_servers", id, &m); err != nil {
+		if err := database.Get(ctx, tx, "media_servers", id, &m); err != nil {
 			return err
 		}
 		if m.TokenSecretID != nil {
@@ -217,7 +219,7 @@ func originOf(raw string) string {
 
 // Linker tells media servers about changed movie, show and music folders.
 type Linker struct {
-	Store *store.Store
+	Store *database.Store
 	Vault *secrets.Vault
 	// Delay gathers changes before they are sent, so a rename of many files
 	// is one call per folder (default 10 s).
@@ -388,7 +390,7 @@ func (l *Linker) queue(ctx context.Context, folder, change, kind string) {
 		l.wg.Add(1)
 		l.timer = time.AfterFunc(d, func() {
 			defer l.wg.Done()
-			supervisor.Guard("media_servers", func() { l.Flush(context.WithoutCancel(ctx)) })
+			jobs.Guard("media_servers", func() { l.Flush(context.WithoutCancel(ctx)) })
 		})
 	}
 }
@@ -409,7 +411,7 @@ func (l *Linker) Stop() {
 		defer l.wg.Done()
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
-		supervisor.Guard("media_servers", func() { l.Flush(ctx) })
+		jobs.Guard("media_servers", func() { l.Flush(ctx) })
 	}()
 }
 
@@ -423,7 +425,7 @@ func (l *Linker) Flush(ctx context.Context) {
 	if len(batch) == 0 {
 		return
 	}
-	ms, err := store.Select[domain.MediaServer](ctx, l.Store.Read(), "media_servers", "enabled = 1 ORDER BY id")
+	ms, err := database.Select[domain.MediaServer](ctx, l.Store.Read(), "media_servers", "enabled = 1 ORDER BY id")
 	if err != nil {
 		log.Printf("media servers: %v", err)
 		return
@@ -486,7 +488,7 @@ func winPath(p string) bool {
 }
 
 func (l *Linker) record(ctx context.Context, m domain.MediaServer, sent []Update, sendErr error) {
-	now := store.FormatTime(time.Now())
+	now := database.FormatTime(time.Now())
 	msg := ""
 	if sendErr != nil {
 		msg = sendErr.Error()
@@ -553,17 +555,17 @@ func (l *Linker) do(ctx context.Context, m domain.MediaServer, method, path stri
 	if body != nil {
 		rd = bytes.NewReader(body)
 	}
-	op, err := outside.Begin(ctx, outside.Target{Kind: "media_server", Identity: []string{strconv.FormatInt(m.ID, 10), m.Kind, m.URL, tok}})
+	op, err := outbound.Begin(ctx, outbound.Target{Kind: "media_server", Identity: []string{strconv.FormatInt(m.ID, 10), m.Kind, m.URL, tok}})
 	if err != nil {
 		return nil, err
 	}
-	outcome := outside.Canceled
+	outcome := outbound.Canceled
 	defer func() { op.Finish(outcome) }()
 	rctx, cancel := op.AttemptContext(ctx, 20*time.Second)
 	defer cancel()
 	req, err := http.NewRequestWithContext(rctx, method, m.URL+path, rd)
 	if err != nil {
-		outcome = outside.TerminalFailure
+		outcome = outbound.TerminalFailure
 		return nil, ErrURL
 	}
 	req.Header.Set("Accept", "application/json")
@@ -582,7 +584,7 @@ func (l *Linker) do(ctx context.Context, m domain.MediaServer, method, path stri
 	}
 	resp, err := client(m).Do(req)
 	if err != nil {
-		outcome = outside.HTTPOutcome(0, err, ctx)
+		outcome = outbound.HTTPOutcome(0, err, ctx)
 		var ue *url.Error
 		if errors.As(err, &ue) {
 			err = ue.Err
@@ -597,10 +599,10 @@ func (l *Linker) do(ctx context.Context, m domain.MediaServer, method, path stri
 		readErr = closeErr
 	}
 	if readErr != nil {
-		outcome = outside.HTTPOutcome(resp.StatusCode, readErr, ctx)
+		outcome = outbound.HTTPOutcome(resp.StatusCode, readErr, ctx)
 		return nil, errors.New("reading the server answer failed")
 	}
-	outcome = outside.HTTPOutcome(resp.StatusCode, nil, ctx)
+	outcome = outbound.HTTPOutcome(resp.StatusCode, nil, ctx)
 	switch {
 	case resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden:
 		return nil, errors.New("the server turned down the token")
@@ -740,7 +742,7 @@ func (l *Linker) Test(ctx context.Context, m domain.MediaServer) (string, error)
 			res = strings.TrimSpace(info.ServerName + " " + info.Version)
 		}
 	}
-	now := store.FormatTime(time.Now())
+	now := database.FormatTime(time.Now())
 	_ = l.Store.Write(context.WithoutCancel(ctx), func(tx *sql.Tx) error {
 		if err != nil {
 			log.Printf("media servers: %s: test: %v", m.Name, err)

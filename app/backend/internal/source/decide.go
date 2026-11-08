@@ -13,7 +13,9 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/judge"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/parse"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
@@ -43,19 +45,19 @@ type slotCtx struct {
 func (s *Searcher) loadSlot(ctx context.Context, slotID int64) (slotCtx, error) {
 	db := s.Store.Read()
 	var c slotCtx
-	if err := store.Get(ctx, db, "slots", slotID, &c.sl); err != nil {
+	if err := database.Get(ctx, db, "slots", slotID, &c.sl); err != nil {
 		return c, fmt.Errorf("slot %d: %w", slotID, err)
 	}
-	if err := store.Get(ctx, db, "versions", c.sl.VersionID, &c.ver); err != nil {
+	if err := database.Get(ctx, db, "versions", c.sl.VersionID, &c.ver); err != nil {
 		return c, err
 	}
-	if err := store.Get(ctx, db, "items", c.sl.ItemID, &c.it); err != nil {
+	if err := database.Get(ctx, db, "items", c.sl.ItemID, &c.it); err != nil {
 		return c, err
 	}
-	if err := store.Get(ctx, db, "titles", c.it.TitleID, &c.ti); err != nil {
+	if err := database.Get(ctx, db, "titles", c.it.TitleID, &c.ti); err != nil {
 		return c, err
 	}
-	if err := store.Get(ctx, db, "pick_rules", c.ver.PickRulesID, &c.pr); err != nil {
+	if err := database.Get(ctx, db, "pick_rules", c.ver.PickRulesID, &c.pr); err != nil {
 		return c, err
 	}
 	// The same reading of the copy in place as the searches (#43).
@@ -120,7 +122,7 @@ func (s *Searcher) judgeAll(ctx context.Context, c slotCtx, all []found, out, ha
 	rels := make([]judge.Release, len(all))
 	vs := make([]judge.Verdict, len(all))
 	for i, f := range all {
-		p := parse.Parse(f.item.Title, parse.Hints{Size: f.item.Size})
+		p := releasename.Parse(f.item.Title, releasename.Hints{Size: f.item.Size})
 		rels[i] = judge.Release{Name: f.item.Title, Parse: p, Size: f.item.Size, Protocol: f.item.Protocol, Seeders: f.item.Seeders,
 			PublishedAt: f.item.Published, InfoHash: f.item.InfoHash, SourcePriority: f.src.Priority, Dangerous: bad.has(listingHash(f.item.InfoHash, f.item.Link), f.item.Title)}
 		m := judge.MatchTitle(p, []judge.TitleRef{ref})
@@ -149,7 +151,7 @@ func (s *Searcher) overGrabLimit(ctx context.Context, src domain.Source, now tim
 	}
 	// Downloads started from its Releases, plus Releases chosen and not yet
 	// sent (a pick is a pick before the Downloader has it).
-	since := store.FormatTime(now.Add(-window))
+	since := database.FormatTime(now.Add(-window))
 	var n int
 	err := s.Store.Read().QueryRowContext(ctx, `SELECT
 		(SELECT count(*) FROM downloads d JOIN releases r ON r.id = d.release_id WHERE r.source_id = ? AND d.created_at > ?) +
@@ -237,7 +239,7 @@ func (s *Searcher) storeAll(ctx context.Context, by domain.Actor, jobID *int64, 
 					verdict = json_set(json(?), '$.by_slot', json_patch(COALESCE(json_extract(verdict, '$.by_slot'), '{}'), json(?))),
 					matched_slot_ids = (SELECT json_group_array(value) FROM (SELECT value FROM json_each(matched_slot_ids) UNION SELECT value FROM json_each(?))),
 					updated_at = ?, updated_by = ? WHERE id = ?`,
-					state, timeOrNil(hold), jsonText(toMap(v)), jsonText(bySlot), jsonText(nonNil(v.SlotIDs)), store.FormatTime(time.Now()), actorText(by), f.relID)
+					state, timeOrNil(hold), jsonText(toMap(v)), jsonText(bySlot), jsonText(nonNil(v.SlotIDs)), database.FormatTime(time.Now()), actorText(by), f.relID)
 				if err != nil {
 					return err
 				}
@@ -260,7 +262,7 @@ func (s *Searcher) storeAll(ctx context.Context, by domain.Actor, jobID *int64, 
 				h := f.item.InfoHash
 				rel.InfoHash = &h
 			}
-			id, err := store.Insert(tx, "releases", rel, by)
+			id, err := database.Insert(tx, "releases", rel, by)
 			if err != nil {
 				return err
 			}
@@ -318,7 +320,7 @@ func moveSlotTx(tx *sql.Tx, slotID int64, to domain.SlotState, reason string, by
 				return busyErr(from)
 			}
 		}
-		_, err := tx.Exec("UPDATE slots SET last_reason = ?, updated_at = ?, updated_by = ? WHERE id = ?", reason, store.FormatTime(time.Now()), actorText(by), slotID)
+		_, err := tx.Exec("UPDATE slots SET last_reason = ?, updated_at = ?, updated_by = ? WHERE id = ?", reason, database.FormatTime(time.Now()), actorText(by), slotID)
 		return err
 	}
 	if domain.Transition(from, to) != nil && from != domain.SlotSearching {
@@ -381,7 +383,7 @@ func (s *Searcher) settleHeld(ctx context.Context, slotID, releaseID int64, name
 		if err := moveSlotTx(tx, slotID, domain.SlotHeld, "holding "+name, by, releaseID); err != nil {
 			return err
 		}
-		if _, err := tx.Exec("UPDATE slots SET held_release_id = ?, next_try_at = ? WHERE id = ?", releaseID, store.FormatTime(until), slotID); err != nil {
+		if _, err := tx.Exec("UPDATE slots SET held_release_id = ?, next_try_at = ? WHERE id = ?", releaseID, database.FormatTime(until), slotID); err != nil {
 			return err
 		}
 		return pickReleaseTx(tx, releaseID, "held", &until, []int64{slotID}, by)
@@ -397,7 +399,7 @@ func (s *Searcher) settleHeld(ctx context.Context, slotID, releaseID int64, name
 func (s *Searcher) lostRace(ctx context.Context, releaseID int64, by domain.Actor) {
 	_ = s.Store.Write(ctx, func(tx *sql.Tx) error {
 		_, err := tx.Exec(`UPDATE releases SET state = 'passed_over', hold_until = NULL, updated_at = ?, updated_by = ?
-			WHERE id = ? AND state IN ('judged', 'held')`, store.FormatTime(time.Now()), actorText(by), releaseID)
+			WHERE id = ? AND state IN ('judged', 'held')`, database.FormatTime(time.Now()), actorText(by), releaseID)
 		return err
 	})
 }
@@ -411,7 +413,7 @@ func passOverHeldTx(tx *sql.Tx, slotID, keep int64, by domain.Actor) error {
 	}
 	if held.Valid && held.Int64 != keep {
 		if _, err := tx.Exec(`UPDATE releases SET state = 'passed_over', hold_until = NULL, updated_at = ?, updated_by = ?
-			WHERE id = ? AND state = 'held'`, store.FormatTime(time.Now()), actorText(by), held.Int64); err != nil {
+			WHERE id = ? AND state = 'held'`, database.FormatTime(time.Now()), actorText(by), held.Int64); err != nil {
 			return err
 		}
 	}
@@ -461,5 +463,5 @@ func timeOrNil(t *time.Time) any {
 	if t == nil {
 		return nil
 	}
-	return store.FormatTime(*t)
+	return database.FormatTime(*t)
 }

@@ -1,9 +1,8 @@
 package judge
 
 import (
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 	"testing"
-
-	"github.com/HolyArrs/holyarrs/app/backend/internal/parse"
 )
 
 // A release named with a local name of a non-anime movie or show finds its
@@ -24,7 +23,7 @@ func TestMatchTitleByLocalName(t *testing.T) {
 		{"La.Casa.de.Otro.S01E01.1080p.WEB-DL.H.264-GRP", 0},
 	}
 	for _, c := range cases {
-		m := MatchTitle(parse.Parse(c.name, parse.Hints{}), lib)
+		m := MatchTitle(releasename.Parse(c.name, releasename.Hints{}), lib)
 		var got int64
 		if m.Title != nil {
 			got = m.Title.ID

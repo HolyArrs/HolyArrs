@@ -10,9 +10,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/explore"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/supervisor"
 )
 
 // The trailer pass: the only place trailers are looked up on YouTube. On a
@@ -45,8 +45,8 @@ var (
 )
 
 // TrailerLoops are the trailer pass's loop.
-func (a *API) TrailerLoops() []supervisor.Loop {
-	return []supervisor.Loop{{Name: "trailer_pass", Label: "Trailer read-ahead", Run: a.trailerPassLoop}}
+func (a *API) TrailerLoops() []jobs.Loop {
+	return []jobs.Loop{{Name: "trailer_pass", Label: "Trailer read-ahead", Run: a.trailerPassLoop}}
 }
 
 func (a *API) trailerPassLoop(ctx context.Context) error {

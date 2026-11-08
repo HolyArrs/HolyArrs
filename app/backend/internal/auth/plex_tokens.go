@@ -8,8 +8,8 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Each person's Plex token (#102): kept sealed in the vault on their Plex
@@ -138,7 +138,7 @@ func (a *Auth) linkPlexTx(tx *sql.Tx, userID int64, extID, name, tok string, by 
 		ref = id
 	}
 	_, err = tx.Exec("INSERT INTO user_links(user_id, provider, external_id, external_name, created_at, token_secret_id) VALUES (?, 'plex', ?, ?, ?, ?)",
-		userID, extID, truncate(name, 200), store.FormatTime(a.now()), ref)
+		userID, extID, truncate(name, 200), database.FormatTime(a.now()), ref)
 	return moved, err
 }
 

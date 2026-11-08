@@ -14,9 +14,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // ClientStatus is what a Downloader says about itself as a whole. Sizes
@@ -163,7 +163,7 @@ func (m *Manager) ControlEngine(ctx context.Context, d domain.Downloader, call f
 // Download's id in that Downloader. A sync follows so the new state shows.
 func (m *Manager) Control(ctx context.Context, downloadID int64, call func(e Engine, id string) error) error {
 	var d domain.Download
-	if err := store.Get(ctx, m.Store.Read(), "downloads", downloadID, &d); err != nil {
+	if err := database.Get(ctx, m.Store.Read(), "downloads", downloadID, &d); err != nil {
 		return err
 	}
 	if !isActive(d.State) {
@@ -173,7 +173,7 @@ func (m *Manager) Control(ctx context.Context, downloadID int64, call func(e Eng
 		return ErrNotFound
 	}
 	var dr domain.Downloader
-	if err := store.Get(ctx, m.Store.Read(), "downloaders", d.DownloaderID, &dr); err != nil {
+	if err := database.Get(ctx, m.Store.Read(), "downloaders", d.DownloaderID, &dr); err != nil {
 		return err
 	}
 	err := m.ControlEngine(ctx, dr, func(e Engine) error { return call(e, d.ExternalID) })
@@ -187,7 +187,7 @@ func (m *Manager) Control(ctx context.Context, downloadID int64, call func(e Eng
 // seeding torrent the client still holds (anything but cleaned up or gone).
 func (m *Manager) Inspect(ctx context.Context, downloadID int64, call func(e Engine, id string) error) error {
 	var d domain.Download
-	if err := store.Get(ctx, m.Store.Read(), "downloads", downloadID, &d); err != nil {
+	if err := database.Get(ctx, m.Store.Read(), "downloads", downloadID, &d); err != nil {
 		return err
 	}
 	if !Inspectable(d.State) {
@@ -197,7 +197,7 @@ func (m *Manager) Inspect(ctx context.Context, downloadID int64, call func(e Eng
 		return ErrNotFound
 	}
 	var dr domain.Downloader
-	if err := store.Get(ctx, m.Store.Read(), "downloaders", d.DownloaderID, &dr); err != nil {
+	if err := database.Get(ctx, m.Store.Read(), "downloaders", d.DownloaderID, &dr); err != nil {
 		return err
 	}
 	return m.ControlEngine(ctx, dr, func(e Engine) error { return call(e, d.ExternalID) })
@@ -217,7 +217,7 @@ var ErrNoDownloader = errors.New("no such Downloader")
 // sync follows so the new state shows.
 func (m *Manager) ControlItem(ctx context.Context, downloaderID int64, hash string, write bool, call func(e Engine, id string) error) error {
 	var dr domain.Downloader
-	if err := store.Get(ctx, m.Store.Read(), "downloaders", downloaderID, &dr); err != nil || dr.Removed {
+	if err := database.Get(ctx, m.Store.Read(), "downloaders", downloaderID, &dr); err != nil || dr.Removed {
 		return ErrNoDownloader
 	}
 	var h string
@@ -263,7 +263,7 @@ func UsenetID(id string) (string, error) {
 // touches HolyArrs' download records; when write is true a sync follows.
 func (m *Manager) ControlTorrentClient(ctx context.Context, downloaderID int64, write bool, call func(e Engine) error) error {
 	var dr domain.Downloader
-	if err := store.Get(ctx, m.Store.Read(), "downloaders", downloaderID, &dr); err != nil || dr.Removed {
+	if err := database.Get(ctx, m.Store.Read(), "downloaders", downloaderID, &dr); err != nil || dr.Removed {
 		return ErrNoDownloader
 	}
 	if dr.Protocol != "torrent" {
@@ -278,7 +278,7 @@ func (m *Manager) ControlTorrentClient(ctx context.Context, downloaderID int64, 
 
 // Downloaders lists the Downloaders in use, in priority order.
 func (m *Manager) Downloaders(ctx context.Context) ([]domain.Downloader, error) {
-	ds, err := store.Select[domain.Downloader](ctx, m.Store.Read(), "downloaders", "removed = 0 ORDER BY priority, name")
+	ds, err := database.Select[domain.Downloader](ctx, m.Store.Read(), "downloaders", "removed = 0 ORDER BY priority, name")
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	}

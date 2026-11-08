@@ -14,9 +14,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 func TestCompatibilityPlanKeepsLeastPrivilegeStableIdentityAndPerKindLimits(t *testing.T) {
@@ -92,7 +92,7 @@ func TestCompatibilityNumericPersonIdentityIsOnlyReusableWithinOneMove(t *testin
 	newMove := func() int64 {
 		var id int64
 		if err := l.st.Write(ctx, func(tx *sql.Tx) error {
-			res, err := tx.Exec("INSERT INTO moves (created_at, owner_id, state) VALUES (?,1,'running')", store.FormatTime(time.Now().UTC()))
+			res, err := tx.Exec("INSERT INTO moves (created_at, owner_id, state) VALUES (?,1,'running')", database.FormatTime(time.Now().UTC()))
 			if err == nil {
 				id, err = res.LastInsertId()
 			}
@@ -135,7 +135,7 @@ func TestCompatibilitySkippedPeopleCannotOwnOrDecideLaterMoveRequest(t *testing.
 	newMove := func() int64 {
 		var id int64
 		if err := l.st.Write(ctx, func(tx *sql.Tx) error {
-			res, err := tx.Exec("INSERT INTO moves (created_at, owner_id, state) VALUES (?,1,'running')", store.FormatTime(time.Now().UTC()))
+			res, err := tx.Exec("INSERT INTO moves (created_at, owner_id, state) VALUES (?,1,'running')", database.FormatTime(time.Now().UTC()))
 			if err == nil {
 				id, err = res.LastInsertId()
 			}
@@ -156,7 +156,7 @@ func TestCompatibilitySkippedPeopleCannotOwnOrDecideLaterMoveRequest(t *testing.
 	oldAsker, oldDecider := first.people[asker.Key], first.people[decider.Key]
 	if err := l.st.Write(ctx, func(tx *sql.Tx) error {
 		for _, tmdb := range []string{"700078", "700079", "700080"} {
-			if _, err := store.Insert(tx, "titles", &domain.Title{Kind: "movie", Name: "Numeric guard " + tmdb, SortName: "numeric guard " + tmdb,
+			if _, err := database.Insert(tx, "titles", &domain.Title{Kind: "movie", Name: "Numeric guard " + tmdb, SortName: "numeric guard " + tmdb,
 				Aliases: []string{}, SourceIDs: map[string]string{"tmdb": tmdb}, MetadataSource: "tmdb", Artwork: []string{}, State: "active",
 				Status: "released", ReleaseGate: "released", GateDriver: "none", NewPartsPolicy: "all", WhyAdded: "migration"}, domain.System); err != nil {
 				return err
@@ -242,7 +242,7 @@ func TestCompatibilityPersonChoicePrecedesPriorIdentityMarks(t *testing.T) {
 	newMove := func() int64 {
 		var id int64
 		if err := l.st.Write(ctx, func(tx *sql.Tx) error {
-			res, err := tx.Exec("INSERT INTO moves (created_at, owner_id, state) VALUES (?,1,'running')", store.FormatTime(time.Now().UTC()))
+			res, err := tx.Exec("INSERT INTO moves (created_at, owner_id, state) VALUES (?,1,'running')", database.FormatTime(time.Now().UTC()))
 			if err == nil {
 				id, err = res.LastInsertId()
 			}
@@ -280,7 +280,7 @@ func TestCompatibilityPersonChoicePrecedesPriorIdentityMarks(t *testing.T) {
 	mergeIDs := make([]int64, 2)
 	if err := l.st.Write(ctx, func(tx *sql.Tx) error {
 		for i, name := range []string{"Chosen merge asker", "Chosen merge decider"} {
-			id, err := store.Insert(tx, "users", &domain.User{Name: name, Role: "member", PasswordHash: "", State: "disabled", Perms: "[]"}, domain.System)
+			id, err := database.Insert(tx, "users", &domain.User{Name: name, Role: "member", PasswordHash: "", State: "disabled", Perms: "[]"}, domain.System)
 			if err != nil {
 				return err
 			}
@@ -296,7 +296,7 @@ func TestCompatibilityPersonChoicePrecedesPriorIdentityMarks(t *testing.T) {
 	addMovie := func(ref string) {
 		t.Helper()
 		if err := l.st.Write(ctx, func(tx *sql.Tx) error {
-			_, err := store.Insert(tx, "titles", &domain.Title{Kind: "movie", Name: "Choice guard " + ref, SortName: "choice guard " + ref,
+			_, err := database.Insert(tx, "titles", &domain.Title{Kind: "movie", Name: "Choice guard " + ref, SortName: "choice guard " + ref,
 				Aliases: []string{}, SourceIDs: map[string]string{"tmdb": ref}, MetadataSource: "tmdb", Artwork: []string{}, State: "active",
 				Status: "released", ReleaseGate: "released", GateDriver: "none", NewPartsPolicy: "all", WhyAdded: "migration"}, domain.System)
 			return err
@@ -439,7 +439,7 @@ func TestCompatibilityLegacyQueuedMoveWithoutApprovalFailsClosed(t *testing.T) {
 	if err := l.st.Write(ctx, func(tx *sql.Tx) error {
 		snaps, _ := json.Marshal(l.snaps)
 		choices, _ := json.Marshal(Choices{PathRules: l.rules, People: l.people})
-		res, err := tx.Exec("INSERT INTO moves (created_at, owner_id, snapshots, choices, state) VALUES (?,1,?,?,'queued')", store.FormatTime(time.Now().UTC()), string(snaps), string(choices))
+		res, err := tx.Exec("INSERT INTO moves (created_at, owner_id, snapshots, choices, state) VALUES (?,1,?,?,'queued')", database.FormatTime(time.Now().UTC()), string(snaps), string(choices))
 		if err == nil {
 			moveID, err = res.LastInsertId()
 		}
@@ -502,12 +502,12 @@ func TestCompatibilityFailedSupervisedUndoCanBeRetried(t *testing.T) {
 	ctx := context.Background()
 	var moveID, userID int64
 	if err := l.st.Write(ctx, func(tx *sql.Tx) error {
-		res, err := tx.Exec("INSERT INTO moves (created_at, owner_id, state) VALUES (?,1,'done')", store.FormatTime(time.Now().UTC()))
+		res, err := tx.Exec("INSERT INTO moves (created_at, owner_id, state) VALUES (?,1,'done')", database.FormatTime(time.Now().UTC()))
 		if err != nil {
 			return err
 		}
 		moveID, _ = res.LastInsertId()
-		userID, err = store.Insert(tx, "users", &domain.User{Name: "undo retry", Role: "member", State: "disabled", Perms: "[]"}, domain.System)
+		userID, err = database.Insert(tx, "users", &domain.User{Name: "undo retry", Role: "member", State: "disabled", Perms: "[]"}, domain.System)
 		if err != nil {
 			return err
 		}
@@ -596,26 +596,26 @@ func TestCompatibilityAppliesArtistAlbumAndPressingPolicy(t *testing.T) {
 	var titleID, partID, oldPressing, wantedPressing int64
 	err := l.st.Write(ctx, func(tx *sql.Tx) error {
 		var err error
-		titleID, err = store.Insert(tx, "titles", &domain.Title{Kind: "artist", Name: "Artist", SortName: "artist", Aliases: []string{},
+		titleID, err = database.Insert(tx, "titles", &domain.Title{Kind: "artist", Name: "Artist", SortName: "artist", Aliases: []string{},
 			SourceIDs: map[string]string{"musicbrainz": "056e4f3e-d505-4dad-8ec1-d04f521cbb56"}, MetadataSource: "musicbrainz",
 			KeepUpToDate: true, NewPartsPolicy: "all", ReleaseGate: "released", MusicTypes: []string{"album", "ep"}, WhyAdded: "migration",
 			Artwork: []string{}, Status: "running", State: "active", GateDriver: "none", MusicSecondary: []string{"studio"}, MusicStatuses: []string{"official"}}, domain.System)
 		if err != nil {
 			return err
 		}
-		partID, err = store.Insert(tx, "parts", &domain.Part{TitleID: titleID, Kind: "album", Name: "Album", KeepUpToDate: true,
+		partID, err = database.Insert(tx, "parts", &domain.Part{TitleID: titleID, Kind: "album", Name: "Album", KeepUpToDate: true,
 			SourceIDs: map[string]string{"musicbrainz": "11111111-1111-1111-1111-111111111111"}, Pressings: []domain.Pressing{}, SecondaryTypes: []string{}, Included: true}, domain.System)
 		if err != nil {
 			return err
 		}
-		if oldPressing, err = store.Insert(tx, "pressings", &domain.AlbumPressing{PartID: partID, MBID: "33333333-3333-3333-3333-333333333333", Name: "Old", Formats: []string{}, Tracks: []domain.PressingTrack{}, Chosen: true, ChosenBy: "auto"}, domain.System); err != nil {
+		if oldPressing, err = database.Insert(tx, "pressings", &domain.AlbumPressing{PartID: partID, MBID: "33333333-3333-3333-3333-333333333333", Name: "Old", Formats: []string{}, Tracks: []domain.PressingTrack{}, Chosen: true, ChosenBy: "auto"}, domain.System); err != nil {
 			return err
 		}
-		wantedPressing, err = store.Insert(tx, "pressings", &domain.AlbumPressing{PartID: partID, MBID: "22222222-2222-2222-2222-222222222222", Name: "Wanted", Formats: []string{}, Tracks: []domain.PressingTrack{}, ChosenBy: "auto"}, domain.System)
+		wantedPressing, err = database.Insert(tx, "pressings", &domain.AlbumPressing{PartID: partID, MBID: "22222222-2222-2222-2222-222222222222", Name: "Wanted", Formats: []string{}, Tracks: []domain.PressingTrack{}, ChosenBy: "auto"}, domain.System)
 		if err != nil {
 			return err
 		}
-		_, err = store.Insert(tx, "items", &domain.Item{TitleID: titleID, PartID: &partID, Kind: "track", Numbers: domain.Numbers{}, KeepUpToDate: true}, domain.System)
+		_, err = database.Insert(tx, "items", &domain.Item{TitleID: titleID, PartID: &partID, Kind: "track", Numbers: domain.Numbers{}, KeepUpToDate: true}, domain.System)
 		return err
 	})
 	if err != nil {
@@ -623,7 +623,7 @@ func TestCompatibilityAppliesArtistAlbumAndPressingPolicy(t *testing.T) {
 	}
 	var moveID int64
 	err = l.st.Write(ctx, func(tx *sql.Tx) error {
-		res, e := tx.Exec("INSERT INTO moves (created_at, owner_id, state) VALUES (?,1,'running')", store.FormatTime(time.Now().UTC()))
+		res, e := tx.Exec("INSERT INTO moves (created_at, owner_id, state) VALUES (?,1,'running')", database.FormatTime(time.Now().UTC()))
 		if e == nil {
 			moveID, e = res.LastInsertId()
 		}
@@ -655,7 +655,7 @@ func TestCompatibilityAppliesArtistAlbumAndPressingPolicy(t *testing.T) {
 		t.Fatal(err)
 	}
 	if err := l.st.Write(ctx, func(tx *sql.Tx) error {
-		_, e := tx.Exec("UPDATE pressings SET dropped_at=? WHERE id=?", store.FormatTime(time.Now().UTC()), oldPressing)
+		_, e := tx.Exec("UPDATE pressings SET dropped_at=? WHERE id=?", database.FormatTime(time.Now().UTC()), oldPressing)
 		return e
 	}); err != nil {
 		t.Fatal(err)
@@ -725,7 +725,7 @@ func TestCompatibilityAppliesArtistAlbumAndPressingPolicy(t *testing.T) {
 		t.Fatal(err)
 	}
 	err = l.st.Write(ctx, func(tx *sql.Tx) error {
-		res, e := tx.Exec("INSERT INTO moves (created_at, owner_id, state) VALUES (?,1,'running')", store.FormatTime(time.Now().UTC()))
+		res, e := tx.Exec("INSERT INTO moves (created_at, owner_id, state) VALUES (?,1,'running')", database.FormatTime(time.Now().UTC()))
 		if e == nil {
 			moveID, e = res.LastInsertId()
 		}
@@ -846,19 +846,19 @@ func TestCompatibilityAskPersonUndoRejectsReusedAskOrUserRows(t *testing.T) {
 	var askID, userID, moveID int64
 	if err := l.st.Write(ctx, func(tx *sql.Tx) error {
 		var err error
-		userID, err = store.Insert(tx, "users", &domain.User{Name: "joined owner", Role: "member", State: "disabled", Perms: "[]"}, domain.System)
+		userID, err = database.Insert(tx, "users", &domain.User{Name: "joined owner", Role: "member", State: "disabled", Perms: "[]"}, domain.System)
 		if err != nil {
 			return err
 		}
 		asked := time.Date(2026, 10, 1, 12, 0, 0, 0, time.UTC)
-		askID, err = store.Insert(tx, "asks", &domain.Ask{Kind: "movie", TMDBID: "700020", Name: "Existing", State: "asked", AskedBy: 1, AskedAt: asked, Ref: "tmdb:700020", SourceIDs: map[string]string{"tmdb": "700020"}, Seasons: []int{}, Albums: []domain.AskAlbum{}}, domain.System)
+		askID, err = database.Insert(tx, "asks", &domain.Ask{Kind: "movie", TMDBID: "700020", Name: "Existing", State: "asked", AskedBy: 1, AskedAt: asked, Ref: "tmdb:700020", SourceIDs: map[string]string{"tmdb": "700020"}, Seasons: []int{}, Albums: []domain.AskAlbum{}}, domain.System)
 		if err != nil {
 			return err
 		}
-		if _, err := tx.Exec("INSERT INTO ask_people (ask_id,user_id,asked_at,counted) VALUES (?,?,?,0)", askID, 1, store.FormatTime(asked)); err != nil {
+		if _, err := tx.Exec("INSERT INTO ask_people (ask_id,user_id,asked_at,counted) VALUES (?,?,?,0)", askID, 1, database.FormatTime(asked)); err != nil {
 			return err
 		}
-		res, err := tx.Exec("INSERT INTO moves (created_at, owner_id, state) VALUES (?,1,'running')", store.FormatTime(time.Now().UTC()))
+		res, err := tx.Exec("INSERT INTO moves (created_at, owner_id, state) VALUES (?,1,'running')", database.FormatTime(time.Now().UTC()))
 		if err == nil {
 			moveID, err = res.LastInsertId()
 		}
@@ -898,15 +898,15 @@ func TestCompatibilityNewAskCreationRejectsReplacedAskerAndDecider(t *testing.T)
 	var moveID, askerID, deciderID int64
 	if err := l.st.Write(ctx, func(tx *sql.Tx) error {
 		var err error
-		askerID, err = store.Insert(tx, "users", &domain.User{Name: "asker cas", Role: "member", State: "disabled", Perms: "[]"}, domain.System)
+		askerID, err = database.Insert(tx, "users", &domain.User{Name: "asker cas", Role: "member", State: "disabled", Perms: "[]"}, domain.System)
 		if err != nil {
 			return err
 		}
-		deciderID, err = store.Insert(tx, "users", &domain.User{Name: "decider cas", Role: "admin", State: "disabled", Perms: "[]"}, domain.System)
+		deciderID, err = database.Insert(tx, "users", &domain.User{Name: "decider cas", Role: "admin", State: "disabled", Perms: "[]"}, domain.System)
 		if err != nil {
 			return err
 		}
-		res, err := tx.Exec("INSERT INTO moves (created_at, owner_id, state) VALUES (?,1,'running')", store.FormatTime(time.Now().UTC()))
+		res, err := tx.Exec("INSERT INTO moves (created_at, owner_id, state) VALUES (?,1,'running')", database.FormatTime(time.Now().UTC()))
 		if err == nil {
 			moveID, err = res.LastInsertId()
 		}
@@ -1007,16 +1007,16 @@ func TestCompatibilityLegacyPersonMarkCannotRecycleIdentity(t *testing.T) {
 	var uid int64
 	err := l.st.Write(ctx, func(tx *sql.Tx) error {
 		var e error
-		uid, e = store.Insert(tx, "users", &domain.User{Name: "legacy", Role: "member", State: "disabled", Perms: "[]"}, domain.System)
+		uid, e = database.Insert(tx, "users", &domain.User{Name: "legacy", Role: "member", State: "disabled", Perms: "[]"}, domain.System)
 		if e != nil {
 			return e
 		}
-		res, e := tx.Exec("INSERT INTO moves (created_at, owner_id, state) VALUES (?,1,'done')", store.FormatTime(time.Now().UTC()))
+		res, e := tx.Exec("INSERT INTO moves (created_at, owner_id, state) VALUES (?,1,'done')", database.FormatTime(time.Now().UTC()))
 		if e != nil {
 			return e
 		}
 		mid, _ := res.LastInsertId()
-		_, e = tx.Exec("INSERT INTO move_made (move_id,key,what,row_id,created_at) VALUES (?,'person:seerr:2','user',?,?)", mid, uid, store.FormatTime(time.Now().UTC()))
+		_, e = tx.Exec("INSERT INTO move_made (move_id,key,what,row_id,created_at) VALUES (?,'person:seerr:2','user',?,?)", mid, uid, database.FormatTime(time.Now().UTC()))
 		return e
 	})
 	if err != nil {
@@ -1031,7 +1031,7 @@ func TestCompatibilityLegacyPersonMarkCannotRecycleIdentity(t *testing.T) {
 			return err
 		}
 		var err error
-		replacement, err = store.Insert(tx, "users", &domain.User{Name: "replacement", Role: "member", State: "disabled", Perms: "[]"}, domain.System)
+		replacement, err = database.Insert(tx, "users", &domain.User{Name: "replacement", Role: "member", State: "disabled", Perms: "[]"}, domain.System)
 		if err != nil {
 			return err
 		}
@@ -1061,7 +1061,7 @@ func TestCompatibilityLegacyPersonMarkMissingRowRetries(t *testing.T) {
 	l := newMoveLab(t)
 	ctx := context.Background()
 	if err := l.st.Write(ctx, func(tx *sql.Tx) error {
-		now := store.FormatTime(time.Now().UTC())
+		now := database.FormatTime(time.Now().UTC())
 		res, err := tx.Exec("INSERT INTO moves (created_at, owner_id, state) VALUES (?,1,'done')", now)
 		if err != nil {
 			return err
@@ -1114,7 +1114,7 @@ func TestCompatibilityRenamedStablePersonIsReused(t *testing.T) {
 	newMove := func() int64 {
 		var id int64
 		if err := l.st.Write(ctx, func(tx *sql.Tx) error {
-			res, err := tx.Exec("INSERT INTO moves (created_at, owner_id, state) VALUES (?,1,'running')", store.FormatTime(time.Date(2026, 10, 15, 12, 0, 0, 0, time.UTC)))
+			res, err := tx.Exec("INSERT INTO moves (created_at, owner_id, state) VALUES (?,1,'running')", database.FormatTime(time.Date(2026, 10, 15, 12, 0, 0, 0, time.UTC)))
 			if err == nil {
 				id, err = res.LastInsertId()
 			}
@@ -1158,7 +1158,7 @@ func TestCompatibilityReusedUserIDDoesNotStealStableIdentity(t *testing.T) {
 	newMove := func() int64 {
 		var id int64
 		if err := l.st.Write(ctx, func(tx *sql.Tx) error {
-			res, err := tx.Exec("INSERT INTO moves (created_at, owner_id, state) VALUES (?,1,'running')", store.FormatTime(time.Date(2026, 10, 15, 12, 0, 0, 0, time.UTC)))
+			res, err := tx.Exec("INSERT INTO moves (created_at, owner_id, state) VALUES (?,1,'running')", database.FormatTime(time.Date(2026, 10, 15, 12, 0, 0, 0, time.UTC)))
 			if err == nil {
 				id, err = res.LastInsertId()
 			}
@@ -1183,11 +1183,11 @@ func TestCompatibilityReusedUserIDDoesNotStealStableIdentity(t *testing.T) {
 			return err
 		}
 		var err error
-		replacementID, err = store.Insert(tx, "users", &domain.User{Name: "Replacement", Role: "member", State: "disabled", Perms: "[]"}, domain.System)
+		replacementID, err = database.Insert(tx, "users", &domain.User{Name: "Replacement", Role: "member", State: "disabled", Perms: "[]"}, domain.System)
 		if err != nil {
 			return err
 		}
-		_, err = tx.Exec("UPDATE users SET created_at=? WHERE id=?", store.FormatTime(time.Date(2026, 10, 15, 13, 0, 0, 0, time.UTC)), replacementID)
+		_, err = tx.Exec("UPDATE users SET created_at=? WHERE id=?", database.FormatTime(time.Date(2026, 10, 15, 13, 0, 0, 0, time.UTC)), replacementID)
 		return err
 	}); err != nil {
 		t.Fatal(err)
@@ -1210,11 +1210,11 @@ func TestCompatibilityMusicUndoRejectsReplacedTitle(t *testing.T) {
 	var titleID, moveID int64
 	if err := l.st.Write(ctx, func(tx *sql.Tx) error {
 		var err error
-		titleID, err = store.Insert(tx, "titles", &domain.Title{Kind: "artist", Name: "Original", SortName: "original", Aliases: []string{}, SourceIDs: map[string]string{"musicbrainz": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"}, MetadataSource: "musicbrainz", Artwork: []string{}, Status: "running", State: "active", ReleaseGate: "released", GateDriver: "none", NewPartsPolicy: "all", WhyAdded: "migration", MusicTypes: []string{}, MusicSecondary: []string{}, MusicStatuses: []string{}}, domain.System)
+		titleID, err = database.Insert(tx, "titles", &domain.Title{Kind: "artist", Name: "Original", SortName: "original", Aliases: []string{}, SourceIDs: map[string]string{"musicbrainz": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"}, MetadataSource: "musicbrainz", Artwork: []string{}, Status: "running", State: "active", ReleaseGate: "released", GateDriver: "none", NewPartsPolicy: "all", WhyAdded: "migration", MusicTypes: []string{}, MusicSecondary: []string{}, MusicStatuses: []string{}}, domain.System)
 		if err != nil {
 			return err
 		}
-		res, err := tx.Exec("INSERT INTO moves (created_at, owner_id, state) VALUES (?,1,'running')", store.FormatTime(time.Date(2026, 10, 15, 12, 0, 0, 0, time.UTC)))
+		res, err := tx.Exec("INSERT INTO moves (created_at, owner_id, state) VALUES (?,1,'running')", database.FormatTime(time.Date(2026, 10, 15, 12, 0, 0, 0, time.UTC)))
 		if err == nil {
 			moveID, err = res.LastInsertId()
 		}
@@ -1235,7 +1235,7 @@ func TestCompatibilityMusicUndoRejectsReplacedTitle(t *testing.T) {
 		t.Fatal(err)
 	}
 	if err := l.st.Write(ctx, func(tx *sql.Tx) error {
-		_, err := tx.Exec("UPDATE titles SET name='Replacement', created_at=? WHERE id=?", store.FormatTime(time.Date(2026, 10, 15, 13, 0, 0, 0, time.UTC)), titleID)
+		_, err := tx.Exec("UPDATE titles SET name='Replacement', created_at=? WHERE id=?", database.FormatTime(time.Date(2026, 10, 15, 13, 0, 0, 0, time.UTC)), titleID)
 		return err
 	}); err != nil {
 		t.Fatal(err)
@@ -1287,17 +1287,17 @@ func TestCompatibilityDecisionTimeGapsAndStaleTitleMarksAreExplicit(t *testing.T
 	var titleID, moveID int64
 	if err := l.st.Write(ctx, func(tx *sql.Tx) error {
 		var err error
-		titleID, err = store.Insert(tx, "titles", &domain.Title{Kind: "movie", Name: "Removed", SortName: "removed", Aliases: []string{}, SourceIDs: map[string]string{"tmdb": "999999"}, MetadataSource: "tmdb", Artwork: []string{}, State: "removed", Status: "released", ReleaseGate: "released", GateDriver: "none", NewPartsPolicy: "all", WhyAdded: "migration"}, domain.System)
+		titleID, err = database.Insert(tx, "titles", &domain.Title{Kind: "movie", Name: "Removed", SortName: "removed", Aliases: []string{}, SourceIDs: map[string]string{"tmdb": "999999"}, MetadataSource: "tmdb", Artwork: []string{}, State: "removed", Status: "released", ReleaseGate: "released", GateDriver: "none", NewPartsPolicy: "all", WhyAdded: "migration"}, domain.System)
 		if err != nil {
 			return err
 		}
-		res, err := tx.Exec("INSERT INTO moves (created_at, owner_id, state) VALUES (?,1,'done')", store.FormatTime(time.Now().UTC()))
+		res, err := tx.Exec("INSERT INTO moves (created_at, owner_id, state) VALUES (?,1,'done')", database.FormatTime(time.Now().UTC()))
 		if err != nil {
 			return err
 		}
 		moveID, _ = res.LastInsertId()
 		fp := fingerprint(ctx, tx, "title", titleID)
-		_, err = tx.Exec("INSERT INTO move_made (move_id,key,what,row_id,fingerprint,created_at) VALUES (?,'title:movie:tmdb:999999','title',?,?,?)", moveID, titleID, fp, store.FormatTime(time.Now().UTC()))
+		_, err = tx.Exec("INSERT INTO move_made (move_id,key,what,row_id,fingerprint,created_at) VALUES (?,'title:movie:tmdb:999999','title',?,?,?)", moveID, titleID, fp, database.FormatTime(time.Now().UTC()))
 		return err
 	}); err != nil {
 		t.Fatal(err)
@@ -1323,7 +1323,7 @@ func TestCompatibilityAskUndoPreservesLaterPeople(t *testing.T) {
 	move := func() int64 {
 		var id int64
 		if err := l.st.Write(ctx, func(tx *sql.Tx) error {
-			res, err := tx.Exec("INSERT INTO moves (created_at, owner_id, state) VALUES (?,1,'running')", store.FormatTime(time.Date(2026, 10, 15, 12, 0, 0, 0, time.UTC)))
+			res, err := tx.Exec("INSERT INTO moves (created_at, owner_id, state) VALUES (?,1,'running')", database.FormatTime(time.Date(2026, 10, 15, 12, 0, 0, 0, time.UTC)))
 			if err == nil {
 				id, err = res.LastInsertId()
 			}
@@ -1354,7 +1354,7 @@ func TestCompatibilityAskUndoPreservesLaterPeople(t *testing.T) {
 	var personB int64
 	if err := l.st.Write(ctx, func(tx *sql.Tx) error {
 		var err error
-		personB, err = store.Insert(tx, "users", &domain.User{Name: "later", Role: "member", State: "disabled", Perms: "[]"}, domain.System)
+		personB, err = database.Insert(tx, "users", &domain.User{Name: "later", Role: "member", State: "disabled", Perms: "[]"}, domain.System)
 		return err
 	}); err != nil {
 		t.Fatal(err)
@@ -1387,7 +1387,7 @@ func TestCompatibilityAskUndoPreservesLaterPeople(t *testing.T) {
 		t.Fatal(err)
 	}
 	if err := l.st.Write(ctx, func(tx *sql.Tx) error {
-		_, err := tx.Exec("UPDATE ask_people SET asked_at=? WHERE ask_id=? AND user_id=?", store.FormatTime(time.Date(2026, 10, 15, 13, 0, 0, 0, time.UTC)), markA.row, personB)
+		_, err := tx.Exec("UPDATE ask_people SET asked_at=? WHERE ask_id=? AND user_id=?", database.FormatTime(time.Date(2026, 10, 15, 13, 0, 0, 0, time.UTC)), markA.row, personB)
 		return err
 	}); err != nil {
 		t.Fatal(err)
@@ -1415,7 +1415,7 @@ func TestCompatibilityAskUndoPreservesLaterPeople(t *testing.T) {
 	moveC := move()
 	markC := makeAsk(moveC, "ask:seerr:c", "tmdb:700002")
 	if err := l.st.Write(ctx, func(tx *sql.Tx) error {
-		_, err := tx.Exec("INSERT INTO ask_people (ask_id,user_id,asked_at,counted) VALUES (?,?,?,0)", markC.row, personB, store.FormatTime(time.Date(2026, 10, 15, 13, 0, 0, 0, time.UTC)))
+		_, err := tx.Exec("INSERT INTO ask_people (ask_id,user_id,asked_at,counted) VALUES (?,?,?,0)", markC.row, personB, database.FormatTime(time.Date(2026, 10, 15, 13, 0, 0, 0, time.UTC)))
 		return err
 	}); err != nil {
 		t.Fatal(err)
@@ -1521,7 +1521,7 @@ func TestCompatibilitySameMoveAskClaimsDoNotBlockFullUndo(t *testing.T) {
 	newMove := func() int64 {
 		var id int64
 		if err := l.st.Write(ctx, func(tx *sql.Tx) error {
-			res, err := tx.Exec("INSERT INTO moves (created_at, owner_id, state) VALUES (?,1,'running')", store.FormatTime(time.Now().UTC()))
+			res, err := tx.Exec("INSERT INTO moves (created_at, owner_id, state) VALUES (?,1,'running')", database.FormatTime(time.Now().UTC()))
 			if err == nil {
 				id, err = res.LastInsertId()
 			}
@@ -1562,16 +1562,16 @@ func TestCompatibilitySameMoveAskClaimsDoNotBlockFullUndo(t *testing.T) {
 	var existingAsk, personID int64
 	if err := l.st.Write(ctx, func(tx *sql.Tx) error {
 		var err error
-		personID, err = store.Insert(tx, "users", &domain.User{Name: "same move relation", Role: "member", State: "disabled", Perms: "[]"}, domain.System)
+		personID, err = database.Insert(tx, "users", &domain.User{Name: "same move relation", Role: "member", State: "disabled", Perms: "[]"}, domain.System)
 		if err != nil {
 			return err
 		}
 		asked := time.Date(2026, 10, 1, 12, 0, 0, 0, time.UTC)
-		existingAsk, err = store.Insert(tx, "asks", &domain.Ask{Kind: "movie", TMDBID: "700041", Name: "existing", State: "asked", AskedBy: 1, AskedAt: asked, Ref: "tmdb:700041", SourceIDs: map[string]string{"tmdb": "700041"}, Seasons: []int{}, Albums: []domain.AskAlbum{}}, domain.System)
+		existingAsk, err = database.Insert(tx, "asks", &domain.Ask{Kind: "movie", TMDBID: "700041", Name: "existing", State: "asked", AskedBy: 1, AskedAt: asked, Ref: "tmdb:700041", SourceIDs: map[string]string{"tmdb": "700041"}, Seasons: []int{}, Albums: []domain.AskAlbum{}}, domain.System)
 		if err != nil {
 			return err
 		}
-		_, err = tx.Exec("INSERT INTO ask_people (ask_id,user_id,asked_at,counted) VALUES (?,?,?,0)", existingAsk, 1, store.FormatTime(asked))
+		_, err = tx.Exec("INSERT INTO ask_people (ask_id,user_id,asked_at,counted) VALUES (?,?,?,0)", existingAsk, 1, database.FormatTime(asked))
 		return err
 	}); err != nil {
 		t.Fatal(err)
@@ -1621,7 +1621,7 @@ func TestCompatibilityMissingRequestTimesUsePersistedMoveTime(t *testing.T) {
 	moveAt := time.Date(2026, 10, 15, 14, 30, 0, 0, time.UTC)
 	var moveID int64
 	if err := l.st.Write(ctx, func(tx *sql.Tx) error {
-		res, err := tx.Exec("INSERT INTO moves (created_at, owner_id, state) VALUES (?,1,'running')", store.FormatTime(moveAt))
+		res, err := tx.Exec("INSERT INTO moves (created_at, owner_id, state) VALUES (?,1,'running')", database.FormatTime(moveAt))
 		if err == nil {
 			moveID, err = res.LastInsertId()
 		}
@@ -1638,8 +1638,8 @@ func TestCompatibilityMissingRequestTimesUsePersistedMoveTime(t *testing.T) {
 	if err := l.st.Read().QueryRow("SELECT asked_at FROM ask_people WHERE ask_id = (SELECT id FROM asks WHERE ref='tmdb:604')").Scan(&asked); err != nil {
 		t.Fatal(err)
 	}
-	if asked != store.FormatTime(moveAt) {
-		t.Fatalf("missing source time used %q, want persisted move time %q", asked, store.FormatTime(moveAt))
+	if asked != database.FormatTime(moveAt) {
+		t.Fatalf("missing source time used %q, want persisted move time %q", asked, database.FormatTime(moveAt))
 	}
 	r.moveAt = time.Time{}
 	l.mv.Now = func() time.Time { return moveAt.Add(48 * time.Hour) }
@@ -1653,7 +1653,7 @@ func TestCompatibilityAskSettingsUndoRestoresRawValue(t *testing.T) {
 	ctx := context.Background()
 	var moveID int64
 	if err := l.st.Write(ctx, func(tx *sql.Tx) error {
-		now := store.FormatTime(time.Now().UTC())
+		now := database.FormatTime(time.Now().UTC())
 		if _, err := tx.Exec("INSERT INTO settings (grp,key,value,created_at,created_by,updated_at,updated_by) VALUES ('this_app','ask_movies_per_week','custom-raw',?,'{}',?,'{}')", now, now); err != nil {
 			return err
 		}
@@ -1688,7 +1688,7 @@ func TestCompatibilityAskSettingsUndoKeepsTransactionLocalChange(t *testing.T) {
 	ctx := context.Background()
 	var moveID int64
 	if err := l.st.Write(ctx, func(tx *sql.Tx) error {
-		now := store.FormatTime(time.Now().UTC())
+		now := database.FormatTime(time.Now().UTC())
 		res, err := tx.Exec("INSERT INTO moves (created_at, owner_id, state) VALUES (?,1,'running')", now)
 		if err == nil {
 			moveID, err = res.LastInsertId()
@@ -1727,14 +1727,14 @@ func TestCompatibilityMusicRestoreRollsBackWhenExpectedRowDisappears(t *testing.
 	var titleID int64
 	if err := l.st.Write(ctx, func(tx *sql.Tx) error {
 		var err error
-		titleID, err = store.Insert(tx, "titles", &domain.Title{Kind: "artist", Name: "Artist", SortName: "artist", Aliases: []string{}, SourceIDs: map[string]string{"musicbrainz": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"}, MetadataSource: "musicbrainz", Artwork: []string{}, Status: "running", State: "active", ReleaseGate: "released", GateDriver: "none", NewPartsPolicy: "all", WhyAdded: "migration", MusicTypes: []string{}, MusicSecondary: []string{}, MusicStatuses: []string{}}, domain.System)
+		titleID, err = database.Insert(tx, "titles", &domain.Title{Kind: "artist", Name: "Artist", SortName: "artist", Aliases: []string{}, SourceIDs: map[string]string{"musicbrainz": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"}, MetadataSource: "musicbrainz", Artwork: []string{}, Status: "running", State: "active", ReleaseGate: "released", GateDriver: "none", NewPartsPolicy: "all", WhyAdded: "migration", MusicTypes: []string{}, MusicSecondary: []string{}, MusicStatuses: []string{}}, domain.System)
 		return err
 	}); err != nil {
 		t.Fatal(err)
 	}
 	state := musicState{KeepUpToDate: false, NewAlbums: "none", Types: "[]", Secondary: "[]", Statuses: "[]", Parts: []musicPartState{{PartID: 999999}}}
 	err := l.st.Write(ctx, func(tx *sql.Tx) error {
-		return restoreMusicState(tx, titleID, state, domain.Actor{Kind: "user", ID: 1}, store.FormatTime(time.Now().UTC()))
+		return restoreMusicState(tx, titleID, state, domain.Actor{Kind: "user", ID: 1}, database.FormatTime(time.Now().UTC()))
 	})
 	if !errors.Is(err, errUndoChanged) {
 		t.Fatalf("missing expected music row did not abort restore: %v", err)

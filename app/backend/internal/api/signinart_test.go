@@ -11,16 +11,16 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // signinRig is an API with Library titles (kind, rating) and fake images:
 // every title has a 3840-wide textless backdrop, a poster and a logo.
 func signinRig(t *testing.T, titles [][2]string) (*API, *int) {
 	t.Helper()
-	s, err := store.Open(t.TempDir(), store.Options{})
+	s, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -30,7 +30,7 @@ func signinRig(t *testing.T, titles [][2]string) (*API, *int) {
 			id := strconv.Itoa(100 + i)
 			ti := domain.Title{Kind: k[0], Name: "Secret Name " + id, SortName: "secret " + id, SourceIDs: map[string]string{"tmdb": id}, Rating: k[1],
 				MetadataSource: "tmdb", NewPartsPolicy: "all", WhyAdded: "by_hand", State: "active", ReleaseGate: "released", GateDriver: "none", Status: "released"}
-			if _, err := store.Insert(tx, "titles", &ti, domain.System); err != nil {
+			if _, err := database.Insert(tx, "titles", &ti, domain.System); err != nil {
 				return err
 			}
 		}

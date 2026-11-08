@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 )
 
 func TestSSOIdentityOwnerAndStableMapping(t *testing.T) {
@@ -46,11 +46,11 @@ func TestSSOLinkRechecksLiveSessionInWriter(t *testing.T) {
 	}{
 		{"revoked", "DELETE FROM sessions", nil},
 		{"disabled", "UPDATE users SET state = 'disabled'", nil},
-		{"stale", "UPDATE sessions SET local_auth_at = ?", func(f *fixture) string { return store.FormatTime(f.clock.now().Add(-10 * time.Minute)) }},
-		{"future", "UPDATE sessions SET local_auth_at = ?", func(f *fixture) string { return store.FormatTime(f.clock.now().Add(time.Second)) }},
+		{"stale", "UPDATE sessions SET local_auth_at = ?", func(f *fixture) string { return database.FormatTime(f.clock.now().Add(-10 * time.Minute)) }},
+		{"future", "UPDATE sessions SET local_auth_at = ?", func(f *fixture) string { return database.FormatTime(f.clock.now().Add(time.Second)) }},
 		{"legacy", "UPDATE sessions SET local_auth_at = ''", nil},
 		{"origin_changed", "UPDATE sessions SET auth_method = 'legacy'", nil},
-		{"expired", "UPDATE sessions SET expires_at = ?", func(f *fixture) string { return store.FormatTime(f.clock.now()) }},
+		{"expired", "UPDATE sessions SET expires_at = ?", func(f *fixture) string { return database.FormatTime(f.clock.now()) }},
 		{"family_changed", "UPDATE sessions SET family = 'replacement'", nil},
 	} {
 		t.Run(tc.name, func(t *testing.T) {

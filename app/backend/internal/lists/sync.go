@@ -16,11 +16,13 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/outside"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 )
 
 // maxPages caps how much of one list is read in one sync.
@@ -28,7 +30,7 @@ const maxPages = 20
 
 // Service reads Outside lists and adds their movies or shows.
 type Service struct {
-	Store    *store.Store
+	Store    *database.Store
 	Queue    *jobs.Queue
 	Library  *library.Service
 	Metadata metadata.Provider
@@ -98,7 +100,7 @@ func (s *Service) handle(ctx context.Context, r *jobs.Run) error {
 	if v, ok := r.Job.Params["list_id"].(float64); ok && v > 0 {
 		res, err := s.Sync(ctx, int64(v), by)
 		out := map[string]any{"list_id": int64(v), "result": res}
-		if err != nil && !errors.Is(err, store.ErrNotFound) {
+		if err != nil && !errors.Is(err, database.ErrNotFound) {
 			// The problem is on the list for people to see; trying again
 			// with the same key or link would not help.
 			out["problem"] = err.Error()
@@ -278,7 +280,7 @@ func (s *Service) record(ctx context.Context, l domain.OutsideList, res Result, 
 	text := describe(res)
 	err := s.Store.Write(ctx, func(tx *sql.Tx) error {
 		_, err := tx.Exec("UPDATE outside_lists SET last_synced_at = ?, last_result = ?, last_error = ?, updated_at = ? WHERE id = ?",
-			store.FormatTime(now), text, problem, store.FormatTime(now), l.ID)
+			database.FormatTime(now), text, problem, database.FormatTime(now), l.ID)
 		return err
 	})
 	if err != nil {
@@ -304,17 +306,17 @@ func (s *Service) get(ctx context.Context, what, endpoint, u string, head map[st
 	for _, k := range []string{"Authorization", "trakt-api-key", "X-Trakt-Client-Id"} {
 		identity = append(identity, head[k])
 	}
-	op, err := outside.Begin(ctx, outside.Target{Kind: "outside_list", Identity: identity})
+	op, err := outbound.Begin(ctx, outbound.Target{Kind: "outside_list", Identity: identity})
 	if err != nil {
 		return nil, err
 	}
-	outcome := outside.Canceled
+	outcome := outbound.Canceled
 	defer func() { op.Finish(outcome) }()
 	rctx, cancel := op.AttemptContext(ctx, 15*time.Second)
 	defer cancel()
 	req, err := http.NewRequestWithContext(rctx, http.MethodGet, u, nil)
 	if err != nil {
-		outcome = outside.TerminalFailure
+		outcome = outbound.TerminalFailure
 		return nil, err
 	}
 	req.Header.Set("Accept", "application/json")
@@ -323,7 +325,7 @@ func (s *Service) get(ctx context.Context, what, endpoint, u string, head map[st
 	}
 	resp, err := s.client().Do(req)
 	if err != nil {
-		outcome = outside.HTTPOutcome(0, err, ctx)
+		outcome = outbound.HTTPOutcome(0, err, ctx)
 		return nil, fmt.Errorf("%s did not answer", what)
 	}
 	body, readErr := io.ReadAll(io.LimitReader(resp.Body, 4<<20))
@@ -331,10 +333,10 @@ func (s *Service) get(ctx context.Context, what, endpoint, u string, head map[st
 		readErr = closeErr
 	}
 	if readErr != nil {
-		outcome = outside.HTTPOutcome(resp.StatusCode, readErr, ctx)
+		outcome = outbound.HTTPOutcome(resp.StatusCode, readErr, ctx)
 		return nil, fmt.Errorf("%s sent an answer that could not be read", what)
 	}
-	outcome = outside.HTTPOutcome(resp.StatusCode, nil, ctx)
+	outcome = outbound.HTTPOutcome(resp.StatusCode, nil, ctx)
 	switch {
 	case resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden:
 		return nil, fmt.Errorf("%s refused the key; check it in Settings", what)
@@ -345,13 +347,13 @@ func (s *Service) get(ctx context.Context, what, endpoint, u string, head map[st
 	}
 	if err := json.NewDecoder(bytes.NewReader(body)).Decode(into); err != nil {
 		if rctx.Err() != nil && ctx.Err() == nil {
-			outcome = outside.TransientFailure
+			outcome = outbound.TransientFailure
 		} else {
-			outcome = outside.TerminalFailure
+			outcome = outbound.TerminalFailure
 		}
 		return nil, fmt.Errorf("%s sent something that is not a list", what)
 	}
-	outcome = outside.Success
+	outcome = outbound.Success
 	return resp.Header, nil
 }
 

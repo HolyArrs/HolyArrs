@@ -9,6 +9,7 @@ import json
 import os
 from pathlib import Path, PurePosixPath
 import re
+import shutil
 import subprocess
 import tarfile
 import tempfile
@@ -19,7 +20,6 @@ GO_IMAGE = "golang:1.27.3@sha256:e519d3b0a5b285e5aa53ab9eef02bc6bbb9cb04608389b7
 TARGETS = {"linux-amd64": ("linux", "amd64", ""),
            "linux-arm64": ("linux", "arm64", ""),
            "linux-armv7": ("linux", "arm", "7"),
-           "linux-386": ("linux", "386", ""),
            "windows-amd64": ("windows", "amd64", "")}
 SOURCE_DIRS = {"app", "deploy", "scripts", "docs", ".github"}
 SOURCE_FILES = {"go.mod", "go.sum", "LICENSE", "README.md", "SECURITY.md",
@@ -90,9 +90,21 @@ def snapshot(ref: str, destination: Path) -> tuple[str, int, dict[str, int]]:
             target.write_bytes(source.extractfile(member).read())
             target.chmod(member.mode & 0o777)
             modes[member.name] = 0o755 if member.mode & 0o111 else 0o644
-    if not (destination / "app/frontend/dist/index.html").is_file():
-        raise ValueError("committed embedded web assets are missing")
     return commit, epoch, modes
+
+
+def build_ui(source: Path, node_modules: Path) -> Path:
+    """Builds the web app from the snapshot and returns the finished dist folder.
+
+    The build runs in a copy, so the source archive never holds installed
+    packages or build output.
+    """
+    work = source.parent / "ui"
+    shutil.copytree(source / "app/frontend", work, ignore=shutil.ignore_patterns("dist", "node_modules", ".svelte-kit"))
+    shutil.copytree(node_modules, work / "node_modules")
+    npm = "npm.cmd" if os.name == "nt" else "npm"
+    run([npm, "run", "build"], cwd=work)
+    return work / "dist"
 
 
 def web_notices(source: Path, node_modules: Path) -> bytes:
@@ -183,6 +195,9 @@ def build(args: argparse.Namespace) -> None:
         source_name = f"holyarrs-{version}-source.tar.gz"
         archive(result / source_name, files, epoch)
         source_hash = digest((result / source_name).read_bytes())
+        # The pages are built after the source archive, which holds committed files only.
+        shutil.copytree(build_ui(source, Path(os.path.abspath(args.web_node_modules))),
+                        source / "app/frontend/dist", dirs_exist_ok=True)
         for target in targets:
             print("Building " + target, flush=True)
             executable = "holyarrs.exe" if TARGETS[target][0] == "windows" else "holyarrs"

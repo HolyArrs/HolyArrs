@@ -18,14 +18,15 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/asks"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Roadmap #139 on the lab, from a throwaway container in the lab network
@@ -72,7 +73,7 @@ func TestLabAskLiveProgress(t *testing.T) {
 	}))
 	t.Cleanup(slow.Close)
 
-	s, err := store.Open(t.TempDir(), store.Options{})
+	s, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -80,22 +81,22 @@ func TestLabAskLiveProgress(t *testing.T) {
 	movies := t.TempDir()
 	var ana int64
 	err = s.Write(context.Background(), func(tx *sql.Tx) error {
-		if _, err := store.Insert(tx, "library_folders", &domain.LibraryFolder{Path: movies, Kind: "movie", Label: "Movies", Health: "ok", SameDiskAs: []int64{}}, domain.System); err != nil {
+		if _, err := database.Insert(tx, "library_folders", &domain.LibraryFolder{Path: movies, Kind: "movie", Label: "Movies", Health: "ok", SameDiskAs: []int64{}}, domain.System); err != nil {
 			return err
 		}
 		var err error
-		if ana, err = store.Insert(tx, "users", &domain.User{Name: "ana", Role: "member", State: "active"}, domain.System); err != nil {
+		if ana, err = database.Insert(tx, "users", &domain.User{Name: "ana", Role: "member", State: "active"}, domain.System); err != nil {
 			return err
 		}
 		so := &domain.Source{Name: "Lab", Protocol: "torrent", Format: "torznab", URL: slow.URL + "/api", AllowLocal: true,
 			UseFor: domain.SourceUse{AutoSearch: true, HandSearch: true}, Kinds: []string{"movie"}, Categories: map[string][]int{"movie": {2000}},
 			Priority: 25, State: "enabled", Extra: map[string]string{}}
-		if _, err := store.Insert(tx, "sources", so, domain.System); err != nil {
+		if _, err := database.Insert(tx, "sources", so, domain.System); err != nil {
 			return err
 		}
 		d := &domain.Downloader{Name: "Lab qBittorrent", Adapter: "qbittorrent", Protocol: "torrent", URL: labQbit(), Category: cat, Priority: 1,
 			PathMap: []domain.PathMap{}, AfterImport: "leave", State: "ok", AllowLocal: true}
-		_, err = store.Insert(tx, "downloaders", d, domain.System)
+		_, err = database.Insert(tx, "downloaders", d, domain.System)
 		return err
 	})
 	if err != nil {

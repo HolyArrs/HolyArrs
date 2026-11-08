@@ -13,10 +13,10 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/asks"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/ratings"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // writeTaggedJSON writes v with an ETag (a hash of the body) and, unless
@@ -205,28 +205,28 @@ func (a *API) withTitleBatch(ctx context.Context) (context.Context, error) {
 		return ctx, err
 	}
 	movieSlots := "item_id IN (SELECT i.id FROM items i JOIN titles t ON t.id = i.title_id WHERE t.kind = 'movie')"
-	ss, err := store.Select[domain.Slot](ctx, db, "slots", movieSlots+" ORDER BY id")
+	ss, err := database.Select[domain.Slot](ctx, db, "slots", movieSlots+" ORDER BY id")
 	if err != nil {
 		return ctx, err
 	}
 	for _, s := range ss {
 		b.slots[itemTitle[s.ItemID]] = append(b.slots[itemTitle[s.ItemID]], s)
 	}
-	ds, err := store.Select[domain.Download](ctx, db, "downloads", "id IN (SELECT active_download_id FROM slots WHERE "+movieSlots+")")
+	ds, err := database.Select[domain.Download](ctx, db, "downloads", "id IN (SELECT active_download_id FROM slots WHERE "+movieSlots+")")
 	if err != nil {
 		return ctx, err
 	}
 	for _, d := range ds {
 		b.downloads[d.ID] = d
 	}
-	fs, err := store.Select[domain.File](ctx, db, "files", "id IN (SELECT file_id FROM slots WHERE "+movieSlots+")")
+	fs, err := database.Select[domain.File](ctx, db, "files", "id IN (SELECT file_id FROM slots WHERE "+movieSlots+")")
 	if err != nil {
 		return ctx, err
 	}
 	for _, f := range fs {
 		b.files[f.ID] = f
 	}
-	vs, err := store.Select[domain.Version](ctx, db, "versions", "title_id IN (SELECT id FROM titles WHERE kind = 'movie')")
+	vs, err := database.Select[domain.Version](ctx, db, "versions", "title_id IN (SELECT id FROM titles WHERE kind = 'movie')")
 	if err != nil {
 		return ctx, err
 	}

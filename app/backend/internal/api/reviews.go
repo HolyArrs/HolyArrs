@@ -1,7 +1,6 @@
 package api
 
 import (
-	"github.com/HolyArrs/holyarrs/app/backend/internal/feature"
 	"context"
 	"encoding/json"
 	"errors"
@@ -10,9 +9,11 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/features"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/ratings"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
 )
 
 // The Trakt VIP access token is kept encrypted next to the Trakt client id.
@@ -37,7 +38,7 @@ var reviewSources = []reviewSource{
 	}},
 	{ID: "trakt", Name: "Trakt", Orders: []string{metadata.ReviewsNewest, metadata.ReviewsHelpful}, lister: func(a *API, ctx context.Context) (metadata.ReviewLister, bool) {
 		id, token := a.traktKeys(ctx)
-		if id == "" || token == "" || !feature.On(feature.TraktLists) {
+		if id == "" || token == "" || !startup.FeatureOn(features.TraktLists) {
 			return nil, false
 		}
 		return &metadata.Trakt{Base: a.s.TraktBase, ClientID: id, Token: token}, true

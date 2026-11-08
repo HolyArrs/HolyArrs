@@ -22,9 +22,9 @@ import (
 	"unicode/utf8"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // AI connections (roadmap #89): AI assistants such as Claude reach a few
@@ -137,7 +137,7 @@ func (a *API) putAISettings(w http.ResponseWriter, r *http.Request) {
 	}
 	if in.Enabled != nil {
 		v := map[bool]string{true: "on", false: "off"}[*in.Enabled]
-		now := store.FormatTime(time.Now())
+		now := database.FormatTime(time.Now())
 		by, _ := json.Marshal(actor(r))
 		if err := a.s.Store.Write(r.Context(), func(tx *sql.Tx) error {
 			_, err := tx.Exec(`INSERT INTO settings (grp, key, value, created_at, created_by, updated_at, updated_by) VALUES ('this_app', ?, ?, ?, ?, ?, ?)

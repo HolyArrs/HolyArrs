@@ -14,10 +14,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 type countingMovies struct {
@@ -44,7 +45,7 @@ func (p *countingMovies) Movie(ctx context.Context, id string) (metadata.Movie, 
 	return p.movies.Movie(ctx, id)
 }
 
-func addRefreshMovies(t *testing.T, s *store.Store, count int) *metadata.Static {
+func addRefreshMovies(t *testing.T, s *database.Store, count int) *metadata.Static {
 	t.Helper()
 	addFolder(t, s)
 	ms := make([]metadata.Movie, 0, count)
@@ -58,7 +59,7 @@ func addRefreshMovies(t *testing.T, s *store.Store, count int) *metadata.Static 
 	return &metadata.Static{Movies: ms}
 }
 
-func setMovieRefreshSchedule(t *testing.T, s *store.Store, enabled bool) {
+func setMovieRefreshSchedule(t *testing.T, s *database.Store, enabled bool) {
 	t.Helper()
 	if err := s.Write(context.Background(), func(tx *sql.Tx) error {
 		_, err := tx.Exec("UPDATE schedules SET enabled = ? WHERE kind = ?", enabled, KindRefreshTitles)
@@ -68,12 +69,12 @@ func setMovieRefreshSchedule(t *testing.T, s *store.Store, enabled bool) {
 	}
 }
 
-func waitRefreshJob(t *testing.T, s *store.Store, id int64) domain.Job {
+func waitRefreshJob(t *testing.T, s *database.Store, id int64) domain.Job {
 	t.Helper()
 	deadline := time.Now().Add(3 * time.Second)
 	for {
 		var j domain.Job
-		if err := store.Get(context.Background(), s.Read(), "jobs", id, &j); err == nil && (j.State == "done" || j.State == "failed" || j.State == "cancelled") {
+		if err := database.Get(context.Background(), s.Read(), "jobs", id, &j); err == nil && (j.State == "done" || j.State == "failed" || j.State == "cancelled") {
 			return j
 		}
 		if time.Now().After(deadline) {
@@ -245,7 +246,7 @@ func TestRefreshPlanChangedListDroppedAndArtwork(t *testing.T) {
 		t.Fatalf("refresh second %+v %v", out, err)
 	}
 	var t2 domain.Title
-	_ = store.Get(ctx, s.Read(), "titles", id2, &t2)
+	_ = database.Get(ctx, s.Read(), "titles", id2, &t2)
 	if t2.Name != "Second Renamed" || t2.DigitalDate == nil || t2.RefreshedAt == nil {
 		t.Fatalf("second after refresh %+v", t2)
 	}
@@ -254,7 +255,7 @@ func TestRefreshPlanChangedListDroppedAndArtwork(t *testing.T) {
 		t.Fatal(err)
 	}
 	var t1 domain.Title
-	_ = store.Get(ctx, s.Read(), "titles", id1, &t1)
+	_ = database.Get(ctx, s.Read(), "titles", id1, &t1)
 	if len(t1.Artwork) != 1 || !strings.HasPrefix(t1.Artwork[0], "poster:") {
 		t.Fatalf("artwork %v", t1.Artwork)
 	}
@@ -274,7 +275,7 @@ func TestRefreshPlanChangedListDroppedAndArtwork(t *testing.T) {
 			t.Fatalf("dropped %+v %v", out, err)
 		}
 	}
-	_ = store.Get(ctx, s.Read(), "titles", id1, &t1)
+	_ = database.Get(ctx, s.Read(), "titles", id1, &t1)
 	if t1.DroppedAt == nil || t1.State != "active" {
 		t.Fatalf("dropped title %+v", t1)
 	}

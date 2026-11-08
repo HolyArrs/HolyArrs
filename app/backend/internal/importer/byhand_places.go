@@ -17,8 +17,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // MaxImportFolders is the most extra import folders one may add.
@@ -84,7 +84,7 @@ func absAnyOS(p string) bool {
 }
 
 // ReadImportFolders reads the extra import folders; a broken value is none.
-func ReadImportFolders(ctx context.Context, db store.Lister) ([]string, error) {
+func ReadImportFolders(ctx context.Context, db database.Lister) ([]string, error) {
 	rows, err := db.QueryContext(ctx, "SELECT value FROM settings WHERE grp = ? AND key = ?", importFoldersGroup, importFoldersKey)
 	if err != nil {
 		return []string{}, err
@@ -108,14 +108,14 @@ func ReadImportFolders(ctx context.Context, db store.Lister) ([]string, error) {
 
 // SaveImportFolders stores a checked list of extra import folders and
 // returns it as stored.
-func SaveImportFolders(ctx context.Context, s *store.Store, in []string, by domain.Actor) ([]string, error) {
+func SaveImportFolders(ctx context.Context, s *database.Store, in []string, by domain.Actor) ([]string, error) {
 	list, err := CleanImportFolders(in)
 	if err != nil {
 		return nil, err
 	}
 	raw, _ := json.Marshal(list)
 	err = s.Write(ctx, func(tx *sql.Tx) error {
-		now := store.FormatTime(time.Now())
+		now := database.FormatTime(time.Now())
 		_, err := tx.Exec(`INSERT INTO settings (grp, key, value, created_at, created_by, updated_at, updated_by) VALUES (?, ?, ?, ?, ?, ?, ?)
 			ON CONFLICT (grp, key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at, updated_by = excluded.updated_by`,
 			importFoldersGroup, importFoldersKey, string(raw), now, actorText(by), now, actorText(by))
@@ -220,14 +220,14 @@ func samePath(a, b string) bool {
 // byHandPlaces reads the places: Library folders, the save path and the
 // HolyArrs side of every path map of each Downloader still set up, and
 // the extras.
-func (im *Importer) byHandPlaces(ctx context.Context, db store.Lister, folders []domain.LibraryFolder) (ByHandPlaces, error) {
+func (im *Importer) byHandPlaces(ctx context.Context, db database.Lister, folders []domain.LibraryFolder) (ByHandPlaces, error) {
 	ps := ByHandPlaces{Library: []string{}, Downloaders: []string{}, Extra: []string{}}
 	for _, lf := range folders {
 		if !wholeDisk(lf.Path) {
 			ps.Library = append(ps.Library, lf.Path)
 		}
 	}
-	dls, err := store.Select[domain.Downloader](ctx, db, "downloaders", "removed = 0")
+	dls, err := database.Select[domain.Downloader](ctx, db, "downloaders", "removed = 0")
 	if err != nil {
 		return ps, err
 	}
@@ -251,7 +251,7 @@ func (im *Importer) byHandPlaces(ctx context.Context, db store.Lister, folders [
 // ByHandPlaces reads the places a path given by hand may be in.
 func (im *Importer) ByHandPlaces(ctx context.Context) (ByHandPlaces, error) {
 	db := im.Store.Read()
-	folders, err := store.Select[domain.LibraryFolder](ctx, db, "library_folders", "1 = 1")
+	folders, err := database.Select[domain.LibraryFolder](ctx, db, "library_folders", "1 = 1")
 	if err != nil {
 		return ByHandPlaces{}, err
 	}

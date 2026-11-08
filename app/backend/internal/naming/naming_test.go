@@ -6,8 +6,8 @@ import (
 	"testing"
 	"unicode/utf8"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 var dune = Facts{Title: "Dune: Part Two", Year: 2024, Step: "1080p_bluray", Group: "HOLYARRS", TMDB: "693134", IMDB: "tt15239678",
@@ -103,7 +103,7 @@ func TestValidateRefusesBadPatterns(t *testing.T) {
 }
 
 func TestSettingsReadAndSave(t *testing.T) {
-	s, err := store.Open(t.TempDir(), store.Options{})
+	s, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}

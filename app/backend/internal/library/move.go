@@ -14,10 +14,10 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // MoveStep is one File in a move plan.
@@ -54,19 +54,19 @@ func folderKindOf(kind string) (string, error) {
 
 // PlanMove works out moving a Title's main Version into another Library
 // folder (other Versions keep their own folders). Nothing on disk changes.
-func PlanMove(ctx context.Context, db store.Querier, lister store.Lister, titleID, folderID int64) ([]MovePlan, error) {
+func PlanMove(ctx context.Context, db database.Querier, lister database.Lister, titleID, folderID int64) ([]MovePlan, error) {
 	var to domain.LibraryFolder
-	if err := store.Get(ctx, db, "library_folders", folderID, &to); err != nil {
+	if err := database.Get(ctx, db, "library_folders", folderID, &to); err != nil {
 		return nil, ErrNoFolder
 	}
 	var t domain.Title
-	if err := store.Get(ctx, db, "titles", titleID, &t); err != nil {
+	if err := database.Get(ctx, db, "titles", titleID, &t); err != nil {
 		return nil, err
 	}
 	if want, wrong := folderKindOf(t.Kind); to.Kind != want {
 		return nil, wrong
 	}
-	vs, err := store.Select[domain.Version](ctx, lister, "versions", "title_id = ? AND is_main = 1 ORDER BY id", titleID)
+	vs, err := database.Select[domain.Version](ctx, lister, "versions", "title_id = ? AND is_main = 1 ORDER BY id", titleID)
 	if err != nil {
 		return nil, err
 	}
@@ -81,7 +81,7 @@ func PlanMove(ctx context.Context, db store.Querier, lister store.Lister, titleI
 		}
 		p := MovePlan{VersionID: v.ID, FromDir: from, ToDir: filepath.Join(to.Path, v.FolderName), Steps: []MoveStep{},
 			fromRoot: fromLib.Path, toRoot: to.Path}
-		files, err := store.Select[domain.File](ctx, lister, "files", "version_id = ? AND state = 'present' ORDER BY id", v.ID)
+		files, err := database.Select[domain.File](ctx, lister, "files", "version_id = ? AND state = 'present' ORDER BY id", v.ID)
 		if err != nil {
 			return nil, err
 		}
@@ -143,7 +143,7 @@ func (s *Service) handleMove(ctx context.Context, r *jobs.Run) error {
 		}
 	}
 	var lf domain.LibraryFolder
-	if err := store.Get(ctx, db, "library_folders", int64(fid), &lf); err != nil {
+	if err := database.Get(ctx, db, "library_folders", int64(fid), &lf); err != nil {
 		return err
 	}
 	if h := CheckFolder(lf.Path, nil); !h.Usable() {
@@ -163,7 +163,7 @@ func (s *Service) handleMove(ctx context.Context, r *jobs.Run) error {
 		}
 		err := s.Store.Write(ctx, func(tx *sql.Tx) error {
 			_, err := tx.Exec("UPDATE versions SET library_folder_id = ?, updated_at = ?, updated_by = ? WHERE id = ?",
-				int64(fid), store.FormatTime(s.now()), actorText(jobActor(r)), p.VersionID)
+				int64(fid), database.FormatTime(s.now()), actorText(jobActor(r)), p.VersionID)
 			return err
 		})
 		if err != nil {

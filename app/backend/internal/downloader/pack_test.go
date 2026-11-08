@@ -6,8 +6,8 @@ import (
 	"slices"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // A season pack chosen for several Slots is one Download for all of them
@@ -26,14 +26,14 @@ func TestGrabPackFillsEverySlot(t *testing.T) {
 			if err := tx.QueryRow("SELECT title_id FROM items WHERE id = ?", sl.ItemID).Scan(&it.TitleID); err != nil {
 				return err
 			}
-			if _, err := store.Insert(tx, "items", it, domain.System); err != nil {
+			if _, err := database.Insert(tx, "items", it, domain.System); err != nil {
 				return err
 			}
 			o := &domain.Slot{ItemID: it.ID, VersionID: sl.VersionID, State: st}
 			if st == domain.SlotChosen {
 				o.ChosenReleaseID = &w.relID
 			}
-			if _, err := store.Insert(tx, "slots", o, domain.System); err != nil {
+			if _, err := database.Insert(tx, "slots", o, domain.System); err != nil {
 				return err
 			}
 			others = append(others, o.ID)
@@ -83,7 +83,7 @@ func TestGrabPackLeavesSlotChosenForAnother(t *testing.T) {
 			return err
 		}
 		it := &domain.Item{TitleID: titleID, Kind: "movie"}
-		if _, err := store.Insert(tx, "items", it, domain.System); err != nil {
+		if _, err := database.Insert(tx, "items", it, domain.System); err != nil {
 			return err
 		}
 		// Another Release, chosen for the other Slot since.
@@ -93,7 +93,7 @@ func TestGrabPackLeavesSlotChosenForAnother(t *testing.T) {
 			return err
 		}
 		o := &domain.Slot{ItemID: it.ID, VersionID: sl.VersionID, State: domain.SlotChosen, ChosenReleaseID: &otherRel}
-		if _, err := store.Insert(tx, "slots", o, domain.System); err != nil {
+		if _, err := database.Insert(tx, "slots", o, domain.System); err != nil {
 			return err
 		}
 		other = o.ID
@@ -132,11 +132,11 @@ func TestGrabPackKeepsToOneVersion(t *testing.T) {
 			return err
 		}
 		v := &domain.Version{TitleID: titleID, Label: "4K", PickRulesID: pr, LibraryFolderID: lf, FolderName: "Dune Part Two (2024) [4K]"}
-		if _, err := store.Insert(tx, "versions", v, domain.System); err != nil {
+		if _, err := database.Insert(tx, "versions", v, domain.System); err != nil {
 			return err
 		}
 		o := &domain.Slot{ItemID: itemID, VersionID: v.ID, State: domain.SlotChosen, ChosenReleaseID: &w.relID}
-		if _, err := store.Insert(tx, "slots", o, domain.System); err != nil {
+		if _, err := database.Insert(tx, "slots", o, domain.System); err != nil {
 			return err
 		}
 		other = o.ID

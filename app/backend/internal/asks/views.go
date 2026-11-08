@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // StateLabels are the words people see for ask states.
@@ -81,7 +81,7 @@ type View struct {
 // Views reads asks matching where (SQL on asks a), newest first.
 func (s *Service) Views(ctx context.Context, where string, args ...any) ([]View, error) {
 	db := s.Store.Read()
-	as, err := store.Select[domain.Ask](ctx, db, "asks a", where+" ORDER BY CASE a.state WHEN 'asked' THEN 0 ELSE 1 END, a.asked_at DESC, a.id DESC", args...)
+	as, err := database.Select[domain.Ask](ctx, db, "asks a", where+" ORDER BY CASE a.state WHEN 'asked' THEN 0 ELSE 1 END, a.asked_at DESC, a.id DESC", args...)
 	if err != nil {
 		return nil, err
 	}
@@ -273,9 +273,9 @@ func Messages(ctx context.Context, db *sql.DB, userID int64, limit int) ([]Messa
 		if err := rows.Scan(&m.ID, &at, &m.Kind, &m.Text, &m.AskID, &m.TitleID, &read, &m.ReportID); err != nil {
 			return out, 0, err
 		}
-		m.CreatedAt, _ = time.Parse(store.TimeLayout, at)
+		m.CreatedAt, _ = time.Parse(database.TimeLayout, at)
 		if read.Valid {
-			t, _ := time.Parse(store.TimeLayout, read.String)
+			t, _ := time.Parse(database.TimeLayout, read.String)
 			m.ReadAt = &t
 		}
 		out = append(out, m)
@@ -284,9 +284,9 @@ func Messages(ctx context.Context, db *sql.DB, userID int64, limit int) ([]Messa
 }
 
 // MarkRead marks all of a person's messages as read.
-func MarkRead(ctx context.Context, st *store.Store, userID int64) error {
+func MarkRead(ctx context.Context, st *database.Store, userID int64) error {
 	return st.Write(ctx, func(tx *sql.Tx) error {
-		_, err := tx.Exec("UPDATE messages SET read_at = ? WHERE user_id = ? AND read_at IS NULL", store.FormatTime(time.Now()), userID)
+		_, err := tx.Exec("UPDATE messages SET read_at = ? WHERE user_id = ? AND read_at IS NULL", database.FormatTime(time.Now()), userID)
 		return err
 	})
 }

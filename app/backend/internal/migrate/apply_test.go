@@ -10,18 +10,19 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/lists"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/naming"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles"
 )
 
 type moveLab struct {
-	st     *store.Store
+	st     *database.Store
 	q      *jobs.Queue
 	mv     *Mover
 	movies string // the movies folder as this server sees it
@@ -37,7 +38,7 @@ func newMoveLab(t *testing.T) *moveLab { return newMoveLabWith(t, nil) }
 // newMoveLabWith lets a test change the three Snapshots before they are kept.
 func newMoveLabWith(t *testing.T, change func(radarr, bazarr, seerr *Snapshot)) *moveLab {
 	t.Helper()
-	st, err := store.Open(t.TempDir(), store.Options{})
+	st, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -45,7 +46,7 @@ func newMoveLabWith(t *testing.T, change func(radarr, bazarr, seerr *Snapshot)) 
 	ctx := context.Background()
 	// The owner, so moved asks of unknown askers have someone.
 	err = st.Write(ctx, func(tx *sql.Tx) error {
-		_, err := store.Insert(tx, "users", &domain.User{Name: "owner", Role: "owner", PasswordHash: "x", State: "active", Perms: "[]"}, domain.System)
+		_, err := database.Insert(tx, "users", &domain.User{Name: "owner", Role: "owner", PasswordHash: "x", State: "active", Perms: "[]"}, domain.System)
 		return err
 	})
 	if err != nil {
@@ -450,7 +451,7 @@ func (l *moveLab) readWait(t *testing.T, name string) (int64, domain.ProtocolRul
 		t.Fatal(err)
 	}
 	var p domain.PickRules
-	if err := store.Get(context.Background(), l.st.Read(), "pick_rules", id, &p); err != nil {
+	if err := database.Get(context.Background(), l.st.Read(), "pick_rules", id, &p); err != nil {
 		t.Fatal(err)
 	}
 	return id, p.Body.Protocol
@@ -461,7 +462,7 @@ func (l *moveLab) setWait(t *testing.T, id int64, w domain.ProtocolRule) {
 	t.Helper()
 	ctx := context.Background()
 	var p domain.PickRules
-	if err := store.Get(ctx, l.st.Read(), "pick_rules", id, &p); err != nil {
+	if err := database.Get(ctx, l.st.Read(), "pick_rules", id, &p); err != nil {
 		t.Fatal(err)
 	}
 	p.Body.Protocol = w

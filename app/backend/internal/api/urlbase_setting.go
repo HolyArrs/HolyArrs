@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/urlbase"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
 // The URL base saved from Settings; HOLYARRS_URL_BASE or -url-base win
@@ -26,7 +26,7 @@ func SavedURLBase(ctx context.Context, db *sql.DB) string {
 	if json.Unmarshal([]byte(raw), &v) != nil {
 		return ""
 	}
-	b, err := urlbase.Clean(v)
+	b, err := webserver.CleanURLBase(v)
 	if err != nil {
 		return ""
 	}
@@ -55,14 +55,14 @@ func (a *API) putURLBase(w http.ResponseWriter, r *http.Request) {
 	if !decode(w, r, &body, `send {"url_base": "/holyarrs"}, or "" for none`) {
 		return
 	}
-	b, err := urlbase.Clean(body.URLBase)
+	b, err := webserver.CleanURLBase(body.URLBase)
 	if err != nil {
 		fail(w, http.StatusBadRequest, err.Error())
 		return
 	}
 	raw, _ := json.Marshal(b)
 	by, _ := json.Marshal(actor(r))
-	now := store.FormatTime(time.Now())
+	now := database.FormatTime(time.Now())
 	err = a.s.Store.Write(r.Context(), func(tx *sql.Tx) error {
 		_, err := tx.Exec(`INSERT INTO settings (grp, key, value, created_at, created_by, updated_at, updated_by) VALUES (?, ?, ?, ?, ?, ?, ?)
 			ON CONFLICT (grp, key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at, updated_by = excluded.updated_by`,

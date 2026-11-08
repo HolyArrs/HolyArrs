@@ -13,9 +13,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/ratings"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Invites.
@@ -40,7 +40,7 @@ func (a *Auth) signInSetting(ctx context.Context, key string) string {
 
 func putSetting(tx *sql.Tx, grp, key, value string, by domain.Actor, now time.Time) error {
 	actor, _ := json.Marshal(by)
-	t := store.FormatTime(now)
+	t := database.FormatTime(now)
 	_, err := tx.Exec(`INSERT INTO settings(grp, key, value, created_at, created_by, updated_at, updated_by)
 		VALUES (?, ?, ?, ?, ?, ?, ?)
 		ON CONFLICT(grp, key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at, updated_by = excluded.updated_by`,
@@ -346,7 +346,7 @@ func (a *Auth) editUser(w http.ResponseWriter, r *http.Request) {
 	actor, _ := json.Marshal(Actor(r.Context()))
 	err = a.s.WriteCore(r.Context(), func(tx *sql.Tx) error {
 		if _, err := tx.Exec("UPDATE users SET role = ?, perms = ?, state = ?, max_rating = ?, rating_country = ?, updated_at = ?, updated_by = ? WHERE id = ?",
-			newRole, permsJSON(perms), newState, maxRating, country, store.FormatTime(a.now()), string(actor), id); err != nil {
+			newRole, permsJSON(perms), newState, maxRating, country, database.FormatTime(a.now()), string(actor), id); err != nil {
 			return err
 		}
 		if newState != "active" {
@@ -472,7 +472,7 @@ func (a *Auth) setUserPassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	err = a.s.WriteCore(r.Context(), func(tx *sql.Tx) error {
-		if _, err := tx.Exec("UPDATE users SET password_hash = ?, updated_at = ? WHERE id = ?", h, store.FormatTime(a.now()), id); err != nil {
+		if _, err := tx.Exec("UPDATE users SET password_hash = ?, updated_at = ? WHERE id = ?", h, database.FormatTime(a.now()), id); err != nil {
 			return err
 		}
 		if _, err := tx.Exec("DELETE FROM sessions WHERE user_id = ?", id); err != nil {
@@ -598,7 +598,7 @@ func (a *Auth) makeInvite(w http.ResponseWriter, r *http.Request) {
 	err = a.s.WriteCore(r.Context(), func(tx *sql.Tx) error {
 		_, err := tx.Exec(`INSERT INTO invites(hash, created_at, created_by, role, perms, note, expires_at, max_rating, rating_country)
 			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-			sum(tok), store.FormatTime(now), by.UserID, body.Role, permsJSON(perms), body.Note, store.FormatTime(expires), maxRating, country)
+			sum(tok), database.FormatTime(now), by.UserID, body.Role, permsJSON(perms), body.Note, database.FormatTime(expires), maxRating, country)
 		return err
 	})
 	if err != nil {
@@ -608,7 +608,7 @@ func (a *Auth) makeInvite(w http.ResponseWriter, r *http.Request) {
 	log.Printf("auth: user %d made a %s invite", by.UserID, body.Role)
 	a.accountEvent(r, by.UserID, "invite_made", byName(r)+" made an invite for a new "+body.Role, map[string]any{"role": body.Role, "days": body.Days})
 	writeJSON(w, http.StatusCreated, map[string]any{"id": sum(tok), "path": invitePath + tok, "role": body.Role, "perms": perms,
-		"expires_at": store.FormatTime(expires), "note": "This link is shown only now and works once.",
+		"expires_at": database.FormatTime(expires), "note": "This link is shown only now and works once.",
 		"max_rating": maxRating, "rating_country": country})
 }
 
@@ -706,7 +706,7 @@ func (a *Auth) inviteUser(tx *sql.Tx, tok string) (domain.User, error) {
 
 // useInvite marks an invite used by the new user id, inside the same write.
 func (a *Auth) useInvite(tx *sql.Tx, tok string, id int64) error {
-	res, err := tx.Exec("UPDATE invites SET used_at = ?, used_by = ? WHERE hash = ? AND used_at IS NULL", store.FormatTime(a.now()), id, sum(tok))
+	res, err := tx.Exec("UPDATE invites SET used_at = ?, used_by = ? WHERE hash = ? AND used_at IS NULL", database.FormatTime(a.now()), id, sum(tok))
 	if err != nil {
 		return err
 	}
@@ -760,7 +760,7 @@ func (a *Auth) acceptInvite(w http.ResponseWriter, r *http.Request) {
 			return errNameTaken
 		}
 		u.Name, u.PasswordHash = c.Name, h
-		if id, err = store.Insert(tx, "users", &u, domain.System); err != nil {
+		if id, err = database.Insert(tx, "users", &u, domain.System); err != nil {
 			return err
 		}
 		return a.useInvite(tx, tok, id)
@@ -843,7 +843,7 @@ func (a *Auth) changePassword(w http.ResponseWriter, r *http.Request) {
 		keep = sum(ck.Value)
 	}
 	err = a.s.WriteCore(r.Context(), func(tx *sql.Tx) error {
-		if _, err := tx.Exec("UPDATE users SET password_hash = ?, updated_at = ? WHERE id = ?", h, store.FormatTime(a.now()), who.UserID); err != nil {
+		if _, err := tx.Exec("UPDATE users SET password_hash = ?, updated_at = ? WHERE id = ?", h, database.FormatTime(a.now()), who.UserID); err != nil {
 			return err
 		}
 		if _, err := tx.Exec("DELETE FROM sessions WHERE user_id = ? AND hash != ?", who.UserID, keep); err != nil {

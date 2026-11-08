@@ -6,7 +6,7 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 )
 
 // A movie folder that is not a full path (Git Bash's "C:/Program Files/Git/..."
@@ -16,7 +16,7 @@ func TestEnsureSkipsAPathThatIsNotFull(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		t.Skip("C:/... is a full path on Windows")
 	}
-	s, err := store.Open(t.TempDir(), store.Options{})
+	s, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}

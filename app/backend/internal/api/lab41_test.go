@@ -11,11 +11,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Stage 4.1: one real run from nothing to done, inside the lab network:
@@ -35,7 +35,7 @@ func TestLabMovieZeroToDone(t *testing.T) {
 	const hash = "29be7bfa8759643f2d5dac9f94d516c3378696ed"
 	const cat = "holyarrs-lab41"
 	ctx := context.Background()
-	s, err := store.Open(t.TempDir(), store.Options{})
+	s, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -52,34 +52,34 @@ func TestLabMovieZeroToDone(t *testing.T) {
 		ti := &domain.Title{Kind: "movie", GateDriver: "none", Name: "Dune: Part Two", SortName: "dune part two", Year: &y, Aliases: []string{},
 			SourceIDs: map[string]string{}, MetadataSource: "local", NewPartsPolicy: "all", ReleaseGate: "released", MusicTypes: []string{},
 			WhyAdded: "by_hand", Artwork: []string{}, Status: "released", State: "active", KeepUpToDate: true}
-		if _, err := store.Insert(tx, "library_folders", lf, domain.System); err != nil {
+		if _, err := database.Insert(tx, "library_folders", lf, domain.System); err != nil {
 			return err
 		}
-		if _, err := store.Insert(tx, "titles", ti, domain.System); err != nil {
+		if _, err := database.Insert(tx, "titles", ti, domain.System); err != nil {
 			return err
 		}
 		it := &domain.Item{TitleID: ti.ID, Kind: "movie", KeepUpToDate: true}
-		if _, err := store.Insert(tx, "items", it, domain.System); err != nil {
+		if _, err := database.Insert(tx, "items", it, domain.System); err != nil {
 			return err
 		}
 		v := &domain.Version{TitleID: ti.ID, Label: "HD", PickRulesID: pr, LibraryFolderID: lf.ID, FolderName: "Dune Part Two (2024)", IsMain: true, KeepUpToDate: true}
-		if _, err := store.Insert(tx, "versions", v, domain.System); err != nil {
+		if _, err := database.Insert(tx, "versions", v, domain.System); err != nil {
 			return err
 		}
 		sl := &domain.Slot{ItemID: it.ID, VersionID: v.ID, State: domain.SlotChosen}
-		if _, err := store.Insert(tx, "slots", sl, domain.System); err != nil {
+		if _, err := database.Insert(tx, "slots", sl, domain.System); err != nil {
 			return err
 		}
 		src := &domain.Source{Name: "Lab", Protocol: "torrent", Format: "torznab", URL: "http://fake-indexer/api", AllowLocal: true /* the lab indexer is at home (#152) */, Kinds: []string{}, Categories: map[string][]int{},
 			State: "enabled", Extra: map[string]string{}}
-		if _, err := store.Insert(tx, "sources", src, domain.System); err != nil {
+		if _, err := database.Insert(tx, "sources", src, domain.System); err != nil {
 			return err
 		}
 		h := hash
 		rel := &domain.Release{SourceID: src.ID, Name: "Dune.Part.Two.2024.1080p.WEB.H264-HOLYARRS", LinkRef: "http://fake-indexer/dune-part-two.torrent",
 			Protocol: "torrent", Size: 29588180, InfoHash: &h, Flags: []string{}, Parsed: map[string]any{}, MatchedSlotIDs: []int64{sl.ID},
 			Verdict: map[string]any{}, FoundBy: "auto_search", State: "chosen"}
-		if _, err := store.Insert(tx, "releases", rel, domain.System); err != nil {
+		if _, err := database.Insert(tx, "releases", rel, domain.System); err != nil {
 			return err
 		}
 		if _, err := tx.Exec("UPDATE slots SET chosen_release_id = ? WHERE id = ?", rel.ID, sl.ID); err != nil {
@@ -87,7 +87,7 @@ func TestLabMovieZeroToDone(t *testing.T) {
 		}
 		d := &domain.Downloader{Name: "Lab qBittorrent", Adapter: "qbittorrent", Protocol: "torrent", URL: qb, Category: cat, Priority: 1,
 			PathMap: []domain.PathMap{}, AfterImport: "leave", State: "ok", AllowLocal: true}
-		if _, err := store.Insert(tx, "downloaders", d, domain.System); err != nil {
+		if _, err := database.Insert(tx, "downloaders", d, domain.System); err != nil {
 			return err
 		}
 		slotID, relID = sl.ID, rel.ID

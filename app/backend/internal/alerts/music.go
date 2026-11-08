@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 )
 
 // Artist names the artist a message is about.
@@ -46,7 +46,7 @@ func (t Track) albumName() string {
 }
 
 // tracksOf lists the tracks of Slots, by album, disc and number, each once.
-func tracksOf(ctx context.Context, db store.Querier, slotIDs []int64) []Track {
+func tracksOf(ctx context.Context, db database.Querier, slotIDs []int64) []Track {
 	var out []Track
 	seen := map[int64]bool{}
 	for _, id := range slotIDs {

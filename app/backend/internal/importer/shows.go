@@ -19,7 +19,9 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/judge"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/naming"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/parse"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
@@ -47,7 +49,7 @@ type ShowTarget struct {
 
 // episodePath is where a file holding eps goes, relative to the Library
 // folder, by the naming settings (the same function a rename uses).
-func (t ShowTarget) episodePath(p parse.Result, source string, eps []Episode) string {
+func (t ShowTarget) episodePath(p releasename.Result, source string, eps []Episode) string {
 	ns := naming.Defaults()
 	if t.Naming != nil {
 		ns = *t.Naming
@@ -62,7 +64,7 @@ func (t ShowTarget) episodePath(p parse.Result, source string, eps []Episode) st
 }
 
 // EpisodeFactsFor builds the naming facts of a file holding eps.
-func EpisodeFactsFor(show string, year int, ids map[string]string, order string, p parse.Result, release, ext string, eps []Episode) naming.EpisodeFacts {
+func EpisodeFactsFor(show string, year int, ids map[string]string, order string, p releasename.Result, release, ext string, eps []Episode) naming.EpisodeFacts {
 	f := naming.EpisodeFacts{Facts: naming.FactsFrom(show, year, ids, p, release, ext), Order: order}
 	for i, e := range eps {
 		if i == 0 {
@@ -101,7 +103,7 @@ func PlanEpisodes(cands []Candidate, t ShowTarget) []domain.PlanStep {
 	for _, c := range cands {
 		ext := strings.ToLower(filepath.Ext(c.Path))
 		s := domain.PlanStep{SourceFile: c.Path, TargetSlotIDs: []int64{}, Why: []string{}}
-		p := parse.Parse(filepath.Base(c.Path), parse.Hints{Size: c.Size, Show: true})
+		p := releasename.Parse(filepath.Base(c.Path), releasename.Hints{Size: c.Size, Show: true})
 		switch {
 		case programExt[ext] || p.Has("executable") || p.Has("double_extension"):
 			s.Method, s.Why = "refuse", []string{"a program file, not a video"}
@@ -122,7 +124,7 @@ func PlanEpisodes(cands []Candidate, t ShowTarget) []domain.PlanStep {
 					if alt == "" {
 						continue
 					}
-					if fm := judge.MatchTitle(parse.Parse(alt, parse.Hints{Show: true}), lib); fm.Title != nil {
+					if fm := judge.MatchTitle(releasename.Parse(alt, releasename.Hints{Show: true}), lib); fm.Title != nil {
 						m = fm
 						break
 					}
@@ -240,7 +242,7 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 		if showImportEntered != nil {
 			showImportEntered(d.ID)
 		}
-		if err := store.Get(ctx, im.Store.Read(), "downloads", d.ID, &d); err != nil {
+		if err := database.Get(ctx, im.Store.Read(), "downloads", d.ID, &d); err != nil {
 			return nil, err
 		}
 	}
@@ -250,17 +252,17 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 	var ti domain.Title
 	for i, id := range d.SlotIDs {
 		ss := &showSlot{step: -1}
-		if err := store.Get(ctx, db, "slots", id, &ss.sl); err != nil {
+		if err := database.Get(ctx, db, "slots", id, &ss.sl); err != nil {
 			return nil, err
 		}
-		if err := store.Get(ctx, db, "items", ss.sl.ItemID, &ss.it); err != nil {
+		if err := database.Get(ctx, db, "items", ss.sl.ItemID, &ss.it); err != nil {
 			return nil, err
 		}
 		if i == 0 {
-			if err := store.Get(ctx, db, "versions", ss.sl.VersionID, &ver); err != nil {
+			if err := database.Get(ctx, db, "versions", ss.sl.VersionID, &ver); err != nil {
 				return nil, err
 			}
-			if err := store.Get(ctx, db, "titles", ss.it.TitleID, &ti); err != nil {
+			if err := database.Get(ctx, db, "titles", ss.it.TitleID, &ti); err != nil {
 				return nil, err
 			}
 		}
@@ -278,11 +280,11 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 		return nil, fmt.Errorf("no Slot of download %d waits for it; nothing to import", d.ID)
 	}
 	var lf domain.LibraryFolder
-	if err := store.Get(ctx, db, "library_folders", ver.LibraryFolderID, &lf); err != nil {
+	if err := database.Get(ctx, db, "library_folders", ver.LibraryFolderID, &lf); err != nil {
 		return nil, err
 	}
 	var pr domain.PickRules
-	if err := store.Get(ctx, db, "pick_rules", ver.PickRulesID, &pr); err != nil {
+	if err := database.Get(ctx, db, "pick_rules", ver.PickRulesID, &pr); err != nil {
 		return nil, err
 	}
 	ns, err := naming.Read(ctx, db)
@@ -306,11 +308,11 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 		itemWhere = "title_id = ? AND kind = 'track' AND dropped_at IS NULL AND part_id = ?"
 		args = append(args, *part)
 	}
-	items, err := store.Select[domain.Item](ctx, db, "items", itemWhere, args...)
+	items, err := database.Select[domain.Item](ctx, db, "items", itemWhere, args...)
 	if err != nil {
 		return nil, err
 	}
-	verSlots, err := store.Select[domain.Slot](ctx, db, "slots", "version_id = ?", ver.ID)
+	verSlots, err := database.Select[domain.Slot](ctx, db, "slots", "version_id = ?", ver.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -417,7 +419,7 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 			}
 			seen[*ss.sl.FileID] = true
 			var f domain.File
-			if err := store.Get(ctx, db, "files", *ss.sl.FileID, &f); err == nil && f.State == "present" {
+			if err := database.Get(ctx, db, "files", *ss.sl.FileID, &f); err == nil && f.State == "present" {
 				olds[i] = append(olds[i], f)
 			}
 		}
@@ -521,7 +523,7 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 	}
 
 	// A run cut off after placing left an import in placing: reuse it.
-	prior, err := store.Select[domain.Import](ctx, db, "imports", "download_id = ? AND state = 'placing' ORDER BY id DESC LIMIT 1", d.ID)
+	prior, err := database.Select[domain.Import](ctx, db, "imports", "download_id = ? AND state = 'placing' ORDER BY id DESC LIMIT 1", d.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -558,9 +560,9 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 			}
 		}
 		if imp.ID > 0 {
-			return store.Update(tx, "imports", imp, by)
+			return database.Update(tx, "imports", imp, by)
 		}
-		_, err := store.Insert(tx, "imports", imp, by)
+		_, err := database.Insert(tx, "imports", imp, by)
 		return err
 	}); err != nil {
 		return nil, err
@@ -588,7 +590,7 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 	}
 	abs := func(f domain.File) string { return filepath.Join(lf.Path, filepath.FromSlash(f.RelativePath)) }
 	save := func() error {
-		return im.Store.Write(ctx, func(tx *sql.Tx) error { return store.Update(tx, "imports", imp, by) })
+		return im.Store.Write(ctx, func(tx *sql.Tx) error { return database.Update(tx, "imports", imp, by) })
 	}
 	// An old File at the very path the new one takes steps aside first,
 	// recorded before it moves, and comes back if the new one fails.
@@ -753,7 +755,7 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 						}
 					}
 					if _, err := tx.Exec("UPDATE files SET slot_ids = ?, updated_at = ?, updated_by = ? WHERE id = ?",
-						jsonIDs(rest), store.FormatTime(now), actorText(by), f.ID); err != nil {
+						jsonIDs(rest), database.FormatTime(now), actorText(by), f.ID); err != nil {
 						return err
 					}
 					continue
@@ -767,7 +769,7 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 					rel += "#replaced-" + strconv.FormatInt(f.ID, 10)
 				}
 				if _, err := tx.Exec("UPDATE files SET state = 'replaced', relative_path = ?, updated_at = ?, updated_by = ? WHERE id = ?",
-					rel, store.FormatTime(now), actorText(by), f.ID); err != nil {
+					rel, database.FormatTime(now), actorText(by), f.ID); err != nil {
 					return err
 				}
 			}
@@ -785,7 +787,7 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 			if fi, err := os.Stat(step.TargetPath); err == nil {
 				size = fi.Size()
 			}
-			p := parse.Parse(filepath.Base(step.SourceFile), parse.Hints{Show: !music})
+			p := releasename.Parse(filepath.Base(step.SourceFile), releasename.Hints{Show: !music})
 			name := strings.TrimSuffix(filepath.Base(step.SourceFile), filepath.Ext(step.SourceFile))
 			if music && relName != "" {
 				// A track's file name says nothing of its quality: the
@@ -811,7 +813,7 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 			if g := p.Group.Value; g != "" {
 				f.Group = &g
 			}
-			id, err := store.Insert(tx, "files", f, by)
+			id, err := database.Insert(tx, "files", f, by)
 			if err != nil {
 				return err
 			}
@@ -902,7 +904,7 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 		default:
 			imp.State = "failed"
 		}
-		return store.Update(tx, "imports", imp, by)
+		return database.Update(tx, "imports", imp, by)
 	})
 	if err != nil {
 		return imp, err
@@ -956,7 +958,7 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 	}
 	for oldID, newID := range newFiles {
 		var f domain.File
-		if store.Get(ctx, im.Store.Read(), "files", oldID, &f) != nil || f.State != "replaced" {
+		if database.Get(ctx, im.Store.Read(), "files", oldID, &f) != nil || f.State != "replaced" {
 			continue
 		}
 		e := &domain.Event{Actor: by, Kind: "file_replaced", TitleID: &titleID, SlotID: &firstSlot, DownloadID: &dlID,
@@ -1053,6 +1055,6 @@ func turnDownForTx(tx *sql.Tx, releaseID int64, slotIDs []int64, by domain.Actor
 	}
 	_, err := tx.Exec(`UPDATE releases SET state = 'turned_down', hold_until = NULL,
 		verdict = json_set(json_set(COALESCE(verdict, '{}'), '$.turned_down_slot_ids', json(?)), '$.turned_down_reason', ?), updated_at = ?, updated_by = ? WHERE id = ?`,
-		jsonIDs(ids), "the files did not fill these episodes", store.FormatTime(time.Now()), actorText(by), releaseID)
+		jsonIDs(ids), "the files did not fill these episodes", database.FormatTime(time.Now()), actorText(by), releaseID)
 	return err
 }

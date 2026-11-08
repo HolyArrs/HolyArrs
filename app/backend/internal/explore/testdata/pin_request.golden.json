@@ -1,0 +1,23 @@
+{
+  "List": "s",
+  "Kind": "s",
+  "Ref": "s",
+  "Genre": "s",
+  "From": "s",
+  "To": "s",
+  "Services": "s",
+  "Region": "s",
+  "MinVote": 1.5,
+  "MinVotes": 7,
+  "MaxVotes": 7,
+  "Sort": "s",
+  "AirFrom": "s",
+  "AirTo": "s",
+  "Types": "s",
+  "Keywords": "s",
+  "Genres": "s",
+  "Without": "s",
+  "Lang": "s",
+  "Cert": "s",
+  "Scope": "s"
+}

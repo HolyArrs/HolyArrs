@@ -10,13 +10,14 @@ import (
 	"testing"
 	"testing/fstest"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/files"
 )
 
 // mainPlus is this build's main migrations plus one more.
 func mainPlus(t *testing.T, extra string) fstest.MapFS {
 	t.Helper()
-	src := os.DirFS(filepath.Join("..", "..", "internal", "store", "migrations", "main"))
+	src := os.DirFS(filepath.Join("..", "..", "internal", "core", "database", "migrations", "main"))
 	out := fstest.MapFS{}
 	es, err := fs.ReadDir(src, ".")
 	if err != nil {
@@ -42,12 +43,12 @@ func restoreRun(t *testing.T, args ...string) (int, string) {
 func oldThenNew(t *testing.T, extra string) (string, error) {
 	t.Helper()
 	dir := t.TempDir()
-	s, err := store.Open(dir, store.Options{})
+	s, err := database.Open(dir, database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
 	_ = s.Close()
-	s, err = store.Open(dir, store.Options{MainMigrations: mainPlus(t, extra)})
+	s, err = database.Open(dir, database.Options{MainMigrations: mainPlus(t, extra)})
 	if err == nil {
 		_ = s.Close()
 	}
@@ -56,7 +57,7 @@ func oldThenNew(t *testing.T, extra string) (string, error) {
 
 func openVersion(t *testing.T, dir string) (int, error) {
 	t.Helper()
-	s, err := store.Open(dir, store.Options{})
+	s, err := database.Open(dir, database.Options{})
 	if err != nil {
 		return 0, err
 	}
@@ -72,8 +73,8 @@ func TestRestorePreUpdateAfterDowngrade(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = store.Open(dir, store.Options{})
-	var nd *store.NewerDataError
+	_, err = database.Open(dir, database.Options{})
+	var nd *database.NewerDataError
 	if !errors.As(err, &nd) || !needsPerson(err) {
 		t.Fatalf("got %v", err)
 	}
@@ -93,11 +94,11 @@ func TestRestorePreUpdateAfterDowngrade(t *testing.T) {
 		t.Fatalf("after restore: version %d, %v", v, err)
 	}
 	// Undoable: the newer data is kept aside.
-	kept, _ := filepath.Glob(filepath.Join(dir, "backups", "before-restore-*", store.MainFile))
+	kept, _ := filepath.Glob(filepath.Join(dir, "backups", "before-restore-*", database.MainFile))
 	if len(kept) != 1 || !strings.Contains(out, "before-restore-") {
 		t.Fatalf("kept %v, out %q", kept, out)
 	}
-	s, err := store.Open(filepath.Dir(kept[0]), store.Options{MainMigrations: mainPlus(t, "CREATE TABLE future(x);")})
+	s, err := database.Open(filepath.Dir(kept[0]), database.Options{MainMigrations: mainPlus(t, "CREATE TABLE future(x);")})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -111,7 +112,7 @@ func TestRestorePreUpdateAfterDowngrade(t *testing.T) {
 // page; restore --pre-update still works.
 func TestRestoreAfterFailedMigration(t *testing.T) {
 	dir, err := oldThenNew(t, "CREATE TABLE future(x); INSERT INTO nope VALUES (1);")
-	if !errors.Is(err, store.ErrMigration) || !needsPerson(err) || !strings.Contains(publicReason(err), "restore --pre-update") {
+	if !errors.Is(err, database.ErrMigration) || !needsPerson(err) || !strings.Contains(publicReason(err), "restore --pre-update") {
 		t.Fatalf("got %v", err)
 	}
 	before, err := openVersion(t, dir)
@@ -132,7 +133,7 @@ func TestRestoreRefusedWhileRunning(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	unlock, err := store.LockDir(dir)
+	unlock, err := files.LockDir(dir)
 	if err != nil {
 		t.Fatal(err)
 	}

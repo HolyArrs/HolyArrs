@@ -8,9 +8,9 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/alerts"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 func TestFollowShowGetsNewEpisodeNotices(t *testing.T) {
@@ -113,10 +113,10 @@ func TestFollowArtistGetsNewAlbumNotices(t *testing.T) {
 		}
 		one := 1
 		it := &domain.Item{TitleID: tid, PartID: &partID, Kind: "track", Numbers: domain.Numbers{Track: &one}, SourceIDs: map[string]string{}}
-		if _, err := store.Insert(tx, "items", it, domain.System); err != nil {
+		if _, err := database.Insert(tx, "items", it, domain.System); err != nil {
 			return err
 		}
-		id, err := store.Insert(tx, "slots", &domain.Slot{ItemID: it.ID, VersionID: versionID, State: domain.SlotWanted}, domain.System)
+		id, err := database.Insert(tx, "slots", &domain.Slot{ItemID: it.ID, VersionID: versionID, State: domain.SlotWanted}, domain.System)
 		slots = append(slots, id)
 		return err
 	})

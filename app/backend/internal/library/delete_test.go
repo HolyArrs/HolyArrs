@@ -10,12 +10,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
-func deleteWorld(t *testing.T) (*Service, *store.Store, domain.LibraryFolder, int64, [3]domain.File) {
+func deleteWorld(t *testing.T) (*Service, *database.Store, domain.LibraryFolder, int64, [3]domain.File) {
 	t.Helper()
 	svc, s, lf, id := renameWorld(t)
 	imp := putFile(t, s, lf, id, "Dune - Part Two (2024)/Dune - Part Two (2024) 1080p BluRay.mkv", "Dune.Part.Two.2024.1080p.BluRay-HOLYARRS", "imported")
@@ -46,7 +46,7 @@ func TestDeleteKeepsFilesByDefault(t *testing.T) {
 		}
 	}
 	var ti domain.Title
-	_ = store.Get(ctx, s.Read(), "titles", id, &ti)
+	_ = database.Get(ctx, s.Read(), "titles", id, &ti)
 	if ti.State != "removed" || ti.KeepUpToDate {
 		t.Fatalf("title %s keep %v", ti.State, ti.KeepUpToDate)
 	}

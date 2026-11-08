@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 )
 
 // Sign-ins (good and bad), sign-outs and API keys made or deleted land in
@@ -26,7 +26,7 @@ func TestAuthEvents(t *testing.T) {
 		t.Fatalf("delete key: %d", resp.StatusCode)
 	}
 	own.do(t, f, "POST", "/api/v1/auth/logout", "")
-	es, _, err := f.s.Events(context.Background(), store.EventFilter{Limit: 100})
+	es, _, err := f.s.Events(context.Background(), database.EventFilter{Limit: 100})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -62,7 +62,7 @@ func TestFailedSignInUnknownNameAndCollapse(t *testing.T) {
 	}
 	f.clock.add(11 * time.Minute)
 	call(t, c, "POST", f.srv.URL+"/api/v1/auth/login", `{"name":"luis","password":"wrong one"}`, nil)
-	es, _, err := f.s.Events(context.Background(), store.EventFilter{Kinds: []string{"sign_in_failed"}})
+	es, _, err := f.s.Events(context.Background(), database.EventFilter{Kinds: []string{"sign_in_failed"}})
 	if err != nil || len(es) != 2 {
 		t.Fatalf("rows %d %v", len(es), err)
 	}
@@ -90,7 +90,7 @@ func TestFailedSignInCollapseWindow(t *testing.T) {
 	fail("luis") // inside the window: counted
 	f.clock.add(6 * time.Minute)
 	fail("luis") // 12 minutes after the first: a new row, though only 6 after the last
-	es, _, err := f.s.Events(context.Background(), store.EventFilter{Kinds: []string{"sign_in_failed"}})
+	es, _, err := f.s.Events(context.Background(), database.EventFilter{Kinds: []string{"sign_in_failed"}})
 	if err != nil || len(es) != 3 {
 		t.Fatalf("rows %d %v", len(es), err)
 	}
@@ -102,7 +102,7 @@ func TestFailedSignInCollapseWindow(t *testing.T) {
 	}
 	old := es[len(es)-1]
 	if len(luis) != 2 || old.Data["name"] != "luis" || old.Data["count"] != float64(2) || !old.At.Equal(first) ||
-		old.Data["last_at"] != store.FormatTime(first.Add(6*time.Minute)) {
+		old.Data["last_at"] != database.FormatTime(first.Add(6*time.Minute)) {
 		t.Fatalf("first luis row %+v at %v", old.Data, old.At)
 	}
 	if es[0].Data["name"] != "luis" || es[0].Data["count"] != float64(1) {
@@ -132,7 +132,7 @@ func TestTwoFactorTurnedOffAndAccountEvents(t *testing.T) {
 	}
 	call(t, client(t), "POST", f.srv.URL+"/api/v1/auth/login", `{"name":"ana","password":"another long test passphrase"}`, nil)
 
-	es, _, err := f.s.Events(context.Background(), store.EventFilter{Limit: 200})
+	es, _, err := f.s.Events(context.Background(), database.EventFilter{Limit: 200})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -189,7 +189,7 @@ func TestReauthBackupCodesAndResetEvents(t *testing.T) {
 	if err := ResetOwner(context.Background(), f.s, "luis", pw); err != nil {
 		t.Fatal(err)
 	}
-	es, _, err := f.s.Events(context.Background(), store.EventFilter{Limit: 200})
+	es, _, err := f.s.Events(context.Background(), database.EventFilter{Limit: 200})
 	if err != nil {
 		t.Fatal(err)
 	}

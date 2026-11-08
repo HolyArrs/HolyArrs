@@ -11,8 +11,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Settings are the health check settings on This app.
@@ -48,7 +48,7 @@ type Settings struct {
 var ErrSettings = errors.New("every_minutes is 1 to 1440, flap_guard 1 to 20, low_space_mb 0 to 16777216, and update_check_url an http or https link without a name, password, query or fragment (it may hold no secret), or empty; update_check_every_days is 1, 3, 7, 14 or 30")
 
 // ReadSettings reads the health check settings.
-func ReadSettings(ctx context.Context, s *store.Store) (Settings, error) {
+func ReadSettings(ctx context.Context, s *database.Store) (Settings, error) {
 	e := &Engine{Store: s}
 	out := Settings{FlapGuard: e.intSetting(ctx, settingGuard, 2, 1, 20), LowSpaceMB: e.intSetting(ctx, settingLowMB, 1024, 0, 1<<24),
 		UpdateCheckURL: e.setting(ctx, settingUpdateURL), EveryMinutes: 5, UpdateCheckDefault: DefaultReleaseFeed}
@@ -67,7 +67,7 @@ func ReadSettings(ctx context.Context, s *store.Store) (Settings, error) {
 }
 
 // SaveSettings checks and stores the health check settings.
-func SaveSettings(ctx context.Context, s *store.Store, in Settings, by domain.Actor) error {
+func SaveSettings(ctx context.Context, s *database.Store, in Settings, by domain.Actor) error {
 	in.UpdateCheckURL = strings.TrimSpace(in.UpdateCheckURL)
 	if in.EveryMinutes < 1 || in.EveryMinutes > 1440 || in.FlapGuard < 1 || in.FlapGuard > 20 || in.LowSpaceMB < 0 || in.LowSpaceMB > 1<<24 {
 		return ErrSettings
@@ -81,7 +81,7 @@ func SaveSettings(ctx context.Context, s *store.Store, in Settings, by domain.Ac
 			return ErrSettings
 		}
 	}
-	now := store.FormatTime(time.Now())
+	now := database.FormatTime(time.Now())
 	byText, _ := json.Marshal(by)
 	return s.Write(ctx, func(tx *sql.Tx) error {
 		vals := map[string]string{settingGuard: strconv.Itoa(in.FlapGuard), settingLowMB: strconv.Itoa(in.LowSpaceMB), settingUpdateURL: in.UpdateCheckURL}

@@ -14,6 +14,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Live search (music plan 2026-10-22, Phase 4): the search field's dropdown.
@@ -234,7 +235,7 @@ func (a *API) suggestLocal(r *http.Request, q, kind string, music bool) []Sugges
 	}
 	scopeOf := map[string]string{"movie": "movie", "show": "show", "artist": "music"}
 	if kind != "people" {
-		if ts, err := a.s.Store.SearchTitles(ctx, q); err == nil {
+		if ts, err := store.SearchTitles(ctx, a.s.Store, q); err == nil {
 			n := 0
 			for _, t := range ts {
 				if n == 3*suggestFromEach {

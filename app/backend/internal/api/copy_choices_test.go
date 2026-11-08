@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 func TestCopyChoiceRoutesAdoptProtectAndKeepAnother(t *testing.T) {
@@ -78,12 +78,12 @@ func TestDownloadEditionConfirmationRetriesOnlyCurrentWaitingMovie(t *testing.T)
 	var did int64
 	if err := s.Write(context.Background(), func(tx *sql.Tx) error {
 		dr := domain.Downloader{Adapter: "sabnzbd", Name: "Lab", Protocol: "usenet", URL: "http://lab.invalid", PathMap: []domain.PathMap{}, AfterImport: "leave", State: "ok"}
-		if _, err := store.Insert(tx, "downloaders", &dr, domain.System); err != nil {
+		if _, err := database.Insert(tx, "downloaders", &dr, domain.System); err != nil {
 			return err
 		}
 		d := domain.Download{DownloaderID: dr.ID, ExternalID: "lab-copy", SlotIDs: []int64{sid}, State: "finished", FilesSeen: []domain.SeenFile{}, StartedBy: domain.System}
 		var err error
-		did, err = store.Insert(tx, "downloads", &d, domain.System)
+		did, err = database.Insert(tx, "downloads", &d, domain.System)
 		if err != nil {
 			return err
 		}

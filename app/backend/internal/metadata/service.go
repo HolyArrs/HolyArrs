@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"io"
 	"math/rand/v2"
 	"net"
@@ -14,8 +15,6 @@ import (
 	"strings"
 	"sync/atomic"
 	"time"
-
-	"github.com/HolyArrs/holyarrs/app/backend/internal/outside"
 )
 
 var (
@@ -116,7 +115,7 @@ func serviceContext(ctx context.Context) (context.Context, context.CancelFunc) {
 }
 
 func serviceFallback(ctx context.Context, err error) bool {
-	return ctx.Err() == nil && (errors.Is(err, ErrServiceUnavailable) || errors.Is(err, ErrServiceBusy) || errors.Is(err, ErrServicePending) || errors.Is(err, ErrServiceIncomplete) || errors.Is(err, outside.ErrSuppressed))
+	return ctx.Err() == nil && (errors.Is(err, ErrServiceUnavailable) || errors.Is(err, ErrServiceBusy) || errors.Is(err, ErrServicePending) || errors.Is(err, ErrServiceIncomplete) || errors.Is(err, outbound.ErrSuppressed))
 }
 
 type serviceEnvelope struct {
@@ -313,22 +312,22 @@ func (s *Service) get(ctx context.Context, path, provider, id string, q url.Valu
 	if IsAhead(ctx) {
 		lane = "ahead"
 	}
-	op, e := outside.Begin(ctx, outside.Target{Kind: "metadata_service", Identity: []string{s.base, tok, lane}})
+	op, e := outbound.Begin(ctx, outbound.Target{Kind: "metadata_service", Identity: []string{s.base, tok, lane}})
 	if e != nil {
-		if errors.Is(e, outside.ErrSuppressed) {
+		if errors.Is(e, outbound.ErrSuppressed) {
 			return out, ErrServiceUnavailable
 		}
 		return out, e
 	}
 	defer func() {
-		result := outside.TerminalFailure
+		result := outbound.TerminalFailure
 		switch {
 		case err == nil:
-			result = outside.Success
+			result = outbound.Success
 		case errors.Is(err, context.Canceled), errors.Is(err, context.DeadlineExceeded):
-			result = outside.Canceled
+			result = outbound.Canceled
 		case errors.Is(err, ErrServiceUnavailable), errors.Is(err, ErrServiceBusy):
-			result = outside.TransientFailure
+			result = outbound.TransientFailure
 		}
 		op.Finish(result)
 	}()

@@ -11,18 +11,19 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/migrate"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // moveSetup serves the API with a running move Job and one kept Radarr
 // snapshot whose movie folder is on this machine under another path.
-func moveSetup(t *testing.T, safe bool) (*httptest.Server, *store.Store, int64, string) {
+func moveSetup(t *testing.T, safe bool) (*httptest.Server, *database.Store, int64, string) {
 	t.Helper()
-	st, err := store.Open(t.TempDir(), store.Options{})
+	st, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}

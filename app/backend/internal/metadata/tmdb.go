@@ -14,8 +14,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/lowmem"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/outside"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
 )
 
 // ErrNoAccess means TMDB or the metadata server refused the credential, or none is set.
@@ -170,7 +170,7 @@ func (t *TMDB) kept(ctx context.Context, u string, disk bool) (cached, bool) {
 func (t *TMDB) remember(u string, c cached) {
 	t.mu.Lock()
 	// Low-memory mode keeps fewer answers here: the Disk copy answers the rest.
-	if t.cache == nil || len(t.cache) >= lowmem.Pick(maxCache, 150) {
+	if t.cache == nil || len(t.cache) >= startup.LowMemoryPick(maxCache, 150) {
 		t.cache = map[string]cached{}
 	}
 	t.cache[u] = c
@@ -291,14 +291,14 @@ func (t *TMDB) fetch(ctx context.Context, u string) ([]byte, error) {
 	if ahead {
 		lane = "ahead"
 	}
-	op, err := outside.Begin(ctx, outside.Target{Kind: "metadata_tmdb", Identity: []string{t.base(), tok, lane}})
+	op, err := outbound.Begin(ctx, outbound.Target{Kind: "metadata_tmdb", Identity: []string{t.base(), tok, lane}})
 	if err != nil {
-		if errors.Is(err, outside.ErrSuppressed) {
+		if errors.Is(err, outbound.ErrSuppressed) {
 			return nil, fmt.Errorf("TMDB: %w (%w)", ErrServiceUnavailable, err)
 		}
 		return nil, err
 	}
-	outcome := outside.Canceled
+	outcome := outbound.Canceled
 	defer func() { op.Finish(outcome) }()
 	cl := t.HTTP
 	if cl == nil {
@@ -319,7 +319,7 @@ func (t *TMDB) fetch(ctx context.Context, u string) ([]byte, error) {
 		aheadRequest(ctx, req)
 		resp, err := cl.Do(req)
 		if err != nil {
-			outcome = outside.HTTPOutcome(0, err, ctx)
+			outcome = outbound.HTTPOutcome(0, err, ctx)
 			cancel()
 			return nil, fmt.Errorf("TMDB: %w (%w)", ErrServiceUnavailable, stripURL(err))
 		}
@@ -329,18 +329,18 @@ func (t *TMDB) fetch(ctx context.Context, u string) ([]byte, error) {
 		}
 		cancel()
 		if err != nil {
-			outcome = outside.HTTPOutcome(resp.StatusCode, err, ctx)
+			outcome = outbound.HTTPOutcome(resp.StatusCode, err, ctx)
 			return nil, fmt.Errorf("TMDB: %w", stripURL(err))
 		}
 		switch {
 		case resp.StatusCode == http.StatusOK:
-			outcome = outside.Success
+			outcome = outbound.Success
 			return body, nil
 		case resp.StatusCode == http.StatusNotFound:
-			outcome = outside.TerminalFailure
+			outcome = outbound.TerminalFailure
 			return nil, ErrNotFound
 		case resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden:
-			outcome = outside.TerminalFailure
+			outcome = outbound.TerminalFailure
 			return nil, ErrNoAccess
 		case resp.StatusCode == http.StatusTooManyRequests && try == 0 && !ahead:
 			d, _ := strconv.Atoi(resp.Header.Get("Retry-After"))
@@ -352,10 +352,10 @@ func (t *TMDB) fetch(ctx context.Context, u string) ([]byte, error) {
 		case resp.StatusCode == http.StatusTooManyRequests:
 			// Fetch-ahead does not wait inside the call: it holds back instead.
 			t.hold.set(resp.Header.Get("Retry-After"), body, time.Now())
-			outcome = outside.TransientFailure
+			outcome = outbound.TransientFailure
 			return nil, ErrRateLimited
 		default:
-			outcome = outside.HTTPOutcome(resp.StatusCode, nil, ctx)
+			outcome = outbound.HTTPOutcome(resp.StatusCode, nil, ctx)
 			if resp.StatusCode == http.StatusServiceUnavailable {
 				t.hold.set(resp.Header.Get("Retry-After"), body, time.Now())
 			}

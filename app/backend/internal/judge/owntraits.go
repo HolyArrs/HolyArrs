@@ -5,8 +5,8 @@ import (
 	"strings"
 	"sync/atomic"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/parse"
 )
 
 // Own traits (#97) are the traits a person makes. The judge reads them from
@@ -48,7 +48,7 @@ func SetOwnTraits(ts []domain.OwnTrait) {
 // ownMatches is traitMatches for an own trait: the name test finds any term
 // in the Release name, the group test needs the release group to be one of
 // the words or fit one of the patterns.
-func ownMatches(id int64, p parse.Result) (bool, string) {
+func ownMatches(id int64, p releasename.Result) (bool, string) {
 	all := ownTraits.Load()
 	if all == nil {
 		return false, "unknown trait"

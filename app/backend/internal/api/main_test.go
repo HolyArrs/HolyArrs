@@ -4,10 +4,10 @@ import (
 	"os"
 	"strings"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/feature"
 	"testing"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/routehits"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/youtube"
 )
 
@@ -15,12 +15,12 @@ import (
 // never served to a test request.
 func TestMain(m *testing.M) {
 	// Held-back features are tested switched on (internal/feature).
-	os.Setenv("HOLYARRS_FLAGS", strings.Join(feature.Held, ","))
-	wrapMux = routehits.Wrap
+	os.Setenv("HOLYARRS_FLAGS", strings.Join(startup.HeldFeatures(), ","))
+	wrapMux = webserver.RecordRouteHits
 	// The music cover preload runs only in the tests that ask for it.
 	musicPreloadOn = false
 	// YouTube itself is never asked: a test that looks a video up points
 	// the reader at a fake (fakeReader); any other lookup fails at once.
 	trailerReader = &youtube.Reader{Base: "http://127.0.0.1:1"}
-	os.Exit(routehits.Check(m.Run(), "."))
+	os.Exit(webserver.CheckRouteHits(m.Run(), "."))
 }

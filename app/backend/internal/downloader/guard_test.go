@@ -7,7 +7,8 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/outside"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
 )
 
@@ -21,15 +22,15 @@ func (s *guardedStub) Health(context.Context) (Health, error)          { s.calls
 func (s *guardedStub) Add(context.Context, AddRequest) (string, error) { s.calls++; return "", s.err }
 
 func TestDownloaderGuardCountsLogicalCallsWithoutReplayingAdd(t *testing.T) {
-	r := outside.New([]byte("isolated-test-registry-key"), outside.Options{Threshold: 2, Cooldown: time.Minute})
+	r := outbound.New([]byte("isolated-test-registry-key"), outbound.Options{Threshold: 2, Cooldown: time.Minute})
 	s := &guardedStub{err: errDownloaderUnavailable}
-	g := &guardedEngine{Engine: s, target: outside.Target{Kind: "downloader", Identity: []string{"owned"}}, begin: r.Begin}
+	g := &guardedEngine{Engine: s, target: outbound.Target{Kind: "downloader", Identity: []string{"owned"}}, begin: r.Begin}
 	for range 2 {
 		if _, err := g.Add(context.Background(), AddRequest{}); !errors.Is(err, errDownloaderUnavailable) {
 			t.Fatal(err)
 		}
 	}
-	if _, err := g.Add(context.Background(), AddRequest{}); !errors.Is(err, outside.ErrSuppressed) {
+	if _, err := g.Add(context.Background(), AddRequest{}); !errors.Is(err, outbound.ErrSuppressed) {
 		t.Fatal(err)
 	}
 	if s.calls != 2 {
@@ -42,9 +43,9 @@ func TestDownloaderGuardCountsLogicalCallsWithoutReplayingAdd(t *testing.T) {
 
 func TestDownloaderGuardDoesNotTripForSignInOrCancellation(t *testing.T) {
 	for _, cause := range []error{ErrAuth, ErrNotFound, ErrCategory, context.Canceled} {
-		r := outside.New([]byte("isolated-test-registry-key"), outside.Options{Threshold: 1})
+		r := outbound.New([]byte("isolated-test-registry-key"), outbound.Options{Threshold: 1})
 		s := &guardedStub{err: cause}
-		g := &guardedEngine{Engine: s, target: outside.Target{Kind: "downloader"}, begin: r.Begin}
+		g := &guardedEngine{Engine: s, target: outbound.Target{Kind: "downloader"}, begin: r.Begin}
 		ctx := context.Background()
 		if cause == context.Canceled {
 			var cancel context.CancelFunc
@@ -62,8 +63,8 @@ func TestDownloaderGuardDoesNotTripForSignInOrCancellation(t *testing.T) {
 
 func TestDownloaderGuardClassifiesTemporaryHTTPFailures(t *testing.T) {
 	for _, status := range []int{408, 429, 503} {
-		r := outside.New([]byte("isolated-test-registry-key"), outside.Options{Threshold: 1})
-		g := &guardedEngine{Engine: &guardedStub{err: adapterHTTPError{status}}, target: outside.Target{Kind: "downloader"}, begin: r.Begin}
+		r := outbound.New([]byte("isolated-test-registry-key"), outbound.Options{Threshold: 1})
+		g := &guardedEngine{Engine: &guardedStub{err: adapterHTTPError{status}}, target: outbound.Target{Kind: "downloader"}, begin: r.Begin}
 		_, _ = g.Health(context.Background())
 		if len(r.States()) != 1 {
 			t.Fatalf("HTTP%d did not trip", status)
@@ -78,8 +79,8 @@ func TestOptionalPolicyRefusalDoesNotTripDownloaderGuard(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			r := outside.New([]byte("isolated-test-registry-key"), outside.Options{Threshold: 1})
-			g := &guardedEngine{Engine: e, target: outside.Target{Kind: "downloader"}, begin: r.Begin}
+			r := outbound.New([]byte("isolated-test-registry-key"), outbound.Options{Threshold: 1})
+			g := &guardedEngine{Engine: e, target: outbound.Target{Kind: "downloader"}, begin: r.Begin}
 			for range 2 {
 				if _, err := g.Health(context.Background()); !errors.Is(err, source.ErrAddressRefused) {
 					t.Fatalf("policy cause lost: %v", err)

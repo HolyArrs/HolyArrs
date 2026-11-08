@@ -13,6 +13,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/naming"
@@ -61,7 +62,7 @@ func ArtistMBID(id string) (string, bool) {
 }
 
 // ArtistByMBID finds the artist Title with a MusicBrainz id; 0 when none.
-func ArtistByMBID(ctx context.Context, db store.Querier, mbid string) (int64, error) {
+func ArtistByMBID(ctx context.Context, db database.Querier, mbid string) (int64, error) {
 	var id int64
 	err := db.QueryRowContext(ctx, "SELECT id FROM titles WHERE kind = 'artist' AND state != 'removed' AND json_extract(source_ids, '$.musicbrainz') = ?", mbid).Scan(&id)
 	if errors.Is(err, sql.ErrNoRows) {
@@ -71,7 +72,7 @@ func ArtistByMBID(ctx context.Context, db store.Querier, mbid string) (int64, er
 }
 
 // ArtistOnNeverAdd says whether the artist is on the Never-add list.
-func ArtistOnNeverAdd(ctx context.Context, db store.Querier, mbid string) (bool, error) {
+func ArtistOnNeverAdd(ctx context.Context, db database.Querier, mbid string) (bool, error) {
 	var n int
 	err := db.QueryRowContext(ctx, "SELECT count(*) FROM never_add WHERE kind = 'artist' AND json_extract(source_ids, '$.musicbrainz') = ?", mbid).Scan(&n)
 	return n > 0, err
@@ -291,7 +292,7 @@ func (s *Service) AddArtist(ctx context.Context, id string, opt ArtistAddOptions
 
 	var lf domain.LibraryFolder
 	if opt.LibraryFolderID == 0 {
-		fs, err := store.Select[domain.LibraryFolder](ctx, db, "library_folders", "kind = 'music' ORDER BY id LIMIT 1")
+		fs, err := database.Select[domain.LibraryFolder](ctx, db, "library_folders", "kind = 'music' ORDER BY id LIMIT 1")
 		if err != nil {
 			return 0, 0, err
 		}
@@ -299,7 +300,7 @@ func (s *Service) AddArtist(ctx context.Context, id string, opt ArtistAddOptions
 			return 0, 0, ErrNoMusicFolder
 		}
 		lf = fs[0]
-	} else if err := store.Get(ctx, db, "library_folders", opt.LibraryFolderID, &lf); errors.Is(err, store.ErrNotFound) {
+	} else if err := database.Get(ctx, db, "library_folders", opt.LibraryFolderID, &lf); errors.Is(err, database.ErrNotFound) {
 		return 0, 0, ErrNoMusicFolder
 	} else if err != nil {
 		return 0, 0, err
@@ -356,14 +357,14 @@ func (s *Service) AddArtist(ctx context.Context, id string, opt ArtistAddOptions
 			MusicStatuses: opt.ReleaseStatuses, WhyAdded: opt.WhyAdded, Artwork: []string{}, State: "active", GateDriver: "none",
 			AlbumChoice: &choice, RefreshedAt: &now}
 		applyArtist(&t, a)
-		if _, err := store.Insert(tx, "titles", &t, by); err != nil {
+		if _, err := database.Insert(tx, "titles", &t, by); err != nil {
 			return err
 		}
 		v := &domain.Version{TitleID: t.ID, Label: "Main", PickRulesID: prID, LibraryFolderID: lf.ID, FolderName: naming.ArtistFolder(ns, naming.TrackFacts{Artist: t.Name}), KeepUpToDate: keep, IsMain: true}
 		if opt.Adopt != nil && opt.Adopt.FolderName != "" {
 			v.FolderName = opt.Adopt.FolderName
 		}
-		if _, err := store.Insert(tx, "versions", v, by); err != nil {
+		if _, err := database.Insert(tx, "versions", v, by); err != nil {
 			return err
 		}
 		var err error
@@ -485,7 +486,7 @@ func statusOK(tx *sql.Tx, t domain.Title, partID int64) (bool, error) {
 // when the source's list is cut short (a.Partial) nothing is removed.
 func syncAlbumsTx(ctx context.Context, tx *sql.Tx, t domain.Title, a metadata.Artist, choice string, now time.Time, by domain.Actor) (ArtistSync, error) {
 	var out ArtistSync
-	parts, err := store.Select[domain.Part](ctx, tx, "parts", "title_id = ? AND kind = 'album'", t.ID)
+	parts, err := database.Select[domain.Part](ctx, tx, "parts", "title_id = ? AND kind = 'album'", t.ID)
 	if err != nil {
 		return out, err
 	}
@@ -549,13 +550,13 @@ func syncAlbumsTx(ctx context.Context, tx *sql.Tx, t domain.Title, a metadata.Ar
 			}
 			p.Name, p.ReleaseType, p.SecondaryTypes, p.ReleaseDate, p.Disambiguation, p.DroppedAt, p.Included = al.Name, str(typ), sec, date, str(al.Disambiguation), nil, included
 			p.ReleaseDatePrecision = prec
-			if err := store.Update(tx, "parts", p, by); err != nil {
+			if err := database.Update(tx, "parts", p, by); err != nil {
 				return out, err
 			}
 			if dateMoved {
 				var d any
 				if date != nil {
-					d = store.FormatTime(*date)
+					d = database.FormatTime(*date)
 				}
 				if _, err := tx.Exec("UPDATE items SET air_date = ? WHERE part_id = ? AND kind = 'track'", d, p.ID); err != nil {
 					return out, err
@@ -580,7 +581,7 @@ func syncAlbumsTx(ctx context.Context, tx *sql.Tx, t domain.Title, a metadata.Ar
 		p := &domain.Part{TitleID: t.ID, Kind: "album", Name: al.Name, ReleaseType: str(typ), ReleaseDate: date, ReleaseDatePrecision: prec, KeepUpToDate: keep,
 			SourceIDs: map[string]string{"musicbrainz": al.MBID}, Pressings: []domain.Pressing{}, SecondaryTypes: sec, Included: kinds,
 			Disambiguation: str(al.Disambiguation)}
-		if _, err := store.Insert(tx, "parts", p, by); err != nil {
+		if _, err := database.Insert(tx, "parts", p, by); err != nil {
 			return out, err
 		}
 		out.AlbumsAdded++
@@ -603,7 +604,7 @@ func syncAlbumsTx(ctx context.Context, tx *sql.Tx, t domain.Title, a metadata.Ar
 		if p.DroppedAt == nil {
 			d := now
 			p.DroppedAt = &d
-			if err := store.Update(tx, "parts", p, by); err != nil {
+			if err := database.Update(tx, "parts", p, by); err != nil {
 				return out, err
 			}
 			out.AlbumsDropped++
@@ -652,7 +653,7 @@ func dropTracksTx(tx *sql.Tx, partID int64, keep map[int64]bool, now time.Time, 
 		}
 		if !r.dropped {
 			if _, err := tx.Exec("UPDATE items SET dropped_at = ?, updated_at = ?, updated_by = ? WHERE id = ?",
-				store.FormatTime(now), store.FormatTime(now), actorText(by), r.id); err != nil {
+				database.FormatTime(now), database.FormatTime(now), actorText(by), r.id); err != nil {
 				return out, err
 			}
 			out.TracksDropped++
@@ -673,10 +674,10 @@ func syncPressingsTx(ctx context.Context, tx *sql.Tx, t domain.Title, partID int
 		return out, nil
 	}
 	var p domain.Part
-	if err := store.Get(ctx, tx, "parts", partID, &p); err != nil {
+	if err := database.Get(ctx, tx, "parts", partID, &p); err != nil {
 		return out, err
 	}
-	rows, err := store.Select[domain.AlbumPressing](ctx, tx, "pressings", "part_id = ?", partID)
+	rows, err := database.Select[domain.AlbumPressing](ctx, tx, "pressings", "part_id = ?", partID)
 	if err != nil {
 		return out, err
 	}
@@ -706,10 +707,10 @@ func syncPressingsTx(ctx context.Context, tx *sql.Tx, t domain.Title, partID int
 		row.Name, row.Status, row.Country, row.Date, row.Disambiguation, row.Formats, row.TrackCount, row.Tracks, row.DroppedAt =
 			mp.Name, mp.Status, mp.Country, mp.Date, mp.Disambiguation, formats, len(tracks), tracks, nil
 		if row.ID == 0 {
-			if _, err := store.Insert(tx, "pressings", row, by); err != nil {
+			if _, err := database.Insert(tx, "pressings", row, by); err != nil {
 				return out, err
 			}
-		} else if err := store.Update(tx, "pressings", row, by); err != nil {
+		} else if err := database.Update(tx, "pressings", row, by); err != nil {
 			return out, err
 		}
 		kept = append(kept, *row)
@@ -730,7 +731,7 @@ func syncPressingsTx(ctx context.Context, tx *sql.Tx, t domain.Title, partID int
 	if len(kept) > 0 && !countable {
 		if p.Included {
 			p.Included, p.KeepUpToDate = false, false
-			if err := store.Update(tx, "parts", &p, by); err != nil {
+			if err := database.Update(tx, "parts", &p, by); err != nil {
 				return out, err
 			}
 			out.AlbumsChanged++
@@ -778,11 +779,11 @@ func syncTracksTx(ctx context.Context, tx *sql.Tx, titleID int64, p domain.Part,
 	if len(tracks) == 0 {
 		return out, nil
 	}
-	items, err := store.Select[domain.Item](ctx, tx, "items", "part_id = ? AND kind = 'track' ORDER BY id", p.ID)
+	items, err := database.Select[domain.Item](ctx, tx, "items", "part_id = ? AND kind = 'track' ORDER BY id", p.ID)
 	if err != nil {
 		return out, err
 	}
-	versions, err := store.Select[domain.Version](ctx, tx, "versions", "title_id = ?", titleID)
+	versions, err := database.Select[domain.Version](ctx, tx, "versions", "title_id = ?", titleID)
 	if err != nil {
 		return out, err
 	}
@@ -837,7 +838,7 @@ func syncTracksTx(ctx context.Context, tx *sql.Tx, titleID int64, p domain.Part,
 			ids["musicbrainz"] = tr.ID
 			it.Name, it.RecordingID, it.LengthMS, it.SourceIDs, it.Numbers.Disc, it.Numbers.Track, it.DroppedAt, it.AirDate =
 				&name, &rec, length, ids, &disc, &num, nil, p.ReleaseDate
-			if err := store.Update(tx, "items", it, by); err != nil {
+			if err := database.Update(tx, "items", it, by); err != nil {
 				return out, err
 			}
 			out.TracksChanged++
@@ -845,7 +846,7 @@ func syncTracksTx(ctx context.Context, tx *sql.Tx, titleID int64, p domain.Part,
 		}
 		it := &domain.Item{TitleID: titleID, PartID: &p.ID, Kind: "track", Numbers: domain.Numbers{Disc: &disc, Track: &num}, Name: &name,
 			AirDate: p.ReleaseDate, KeepUpToDate: p.KeepUpToDate, RecordingID: &rec, LengthMS: length, SourceIDs: map[string]string{"musicbrainz": tr.ID}}
-		if _, err := store.Insert(tx, "items", it, by); err != nil {
+		if _, err := database.Insert(tx, "items", it, by); err != nil {
 			return out, err
 		}
 		out.TracksAdded++
@@ -855,7 +856,7 @@ func syncTracksTx(ctx context.Context, tx *sql.Tx, titleID int64, p domain.Part,
 		}
 		for _, v := range versions {
 			r := reason
-			if _, err := store.Insert(tx, "slots", &domain.Slot{ItemID: it.ID, VersionID: v.ID, State: state, LastReason: &r}, by); err != nil {
+			if _, err := database.Insert(tx, "slots", &domain.Slot{ItemID: it.ID, VersionID: v.ID, State: state, LastReason: &r}, by); err != nil {
 				return out, err
 			}
 		}
@@ -870,7 +871,7 @@ var ErrNotMusicRules = errors.New("these Pick rules are for movies and shows; ch
 // musicRulesTx says the Pick rules judge music.
 func musicRulesTx(tx *sql.Tx, id int64) bool {
 	var pr domain.PickRules
-	if err := store.Get(context.Background(), tx, "pick_rules", id, &pr); err != nil {
+	if err := database.Get(context.Background(), tx, "pick_rules", id, &pr); err != nil {
 		return false
 	}
 	return domain.IsMusicRules(pr.Body)

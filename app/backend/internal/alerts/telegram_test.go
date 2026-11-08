@@ -11,9 +11,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // A made-up bot token in the shape @BotFather gives.
@@ -46,7 +46,7 @@ func fakeTelegram(t *testing.T, answer func(n int) (int, string)) func() []tgCal
 	return func() []tgCall { mu.Lock(); defer mu.Unlock(); return append([]tgCall{}, got...) }
 }
 
-func addTelegramVault(t *testing.T, s *store.Store, v *secrets.Vault) domain.Alert {
+func addTelegramVault(t *testing.T, s *database.Store, v *secrets.Vault) domain.Alert {
 	t.Helper()
 	a, err := Add(context.Background(), s, v, Input{Name: "TG", Kind: "telegram", BotToken: tgToken, ChatID: "42", AllowLocal: &yes}, domain.System)
 	if err != nil {
@@ -90,7 +90,7 @@ func TestTelegramSendsPlainText(t *testing.T) {
 		t.Fatalf("plain text must not set parse_mode: %v", b)
 	}
 	var fresh domain.Alert
-	if err := store.Get(ctx, s.Read(), "alerts", a.ID, &fresh); err != nil || fresh.LastSentAt == nil || fresh.LastError != "" {
+	if err := database.Get(ctx, s.Read(), "alerts", a.ID, &fresh); err != nil || fresh.LastSentAt == nil || fresh.LastError != "" {
 		t.Fatalf("result %+v %v", fresh, err)
 	}
 }
@@ -98,7 +98,7 @@ func TestTelegramSendsPlainText(t *testing.T) {
 func TestTelegramRefusals(t *testing.T) {
 	cases := []struct {
 		name, body, want string
-		code               int
+		code             int
 	}{
 		{"refused token", `{"ok":false,"error_code":401,"description":"Unauthorized"}`, "Telegram refused the bot token", 401},
 		{"unknown token", `{"ok":false,"error_code":404,"description":"Not Found"}`, "Telegram refused the bot token", 404},
@@ -125,11 +125,11 @@ func TestTelegramRefusals(t *testing.T) {
 			}
 			noToken(t, "the error", err.Error())
 			var fresh domain.Alert
-			_ = store.Get(ctx, s.Read(), "alerts", a.ID, &fresh)
+			_ = database.Get(ctx, s.Read(), "alerts", a.ID, &fresh)
 			if !strings.HasPrefix(fresh.LastError, c.want) {
 				t.Fatalf("last error %q", fresh.LastError)
 			}
-			evs, err := store.Select[domain.Event](ctx, s.ReadEvents(), "events", "kind = ?", domain.EventAlertFailed)
+			evs, err := database.Select[domain.Event](ctx, s.ReadEvents(), "events", "kind = ?", domain.EventAlertFailed)
 			if err != nil || len(evs) != 1 {
 				t.Fatalf("events %v %v", evs, err)
 			}

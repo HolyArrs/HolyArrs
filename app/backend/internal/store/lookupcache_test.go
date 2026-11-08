@@ -4,12 +4,14 @@ import (
 	"context"
 	"testing"
 	"time"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 )
 
 // TestLookupCacheExpiry: a body is answered until its expiry, replaced by
 // a newer Put, and expired rows are dropped by later Puts.
 func TestLookupCacheExpiry(t *testing.T) {
-	s, _ := openTest(t, Options{})
+	s, _ := openTest(t, database.Options{})
 	ctx := context.Background()
 	c := LookupCache{Store: s}
 	now := time.Date(2026, 10, 13, 12, 0, 0, 0, time.UTC)

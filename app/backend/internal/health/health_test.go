@@ -9,12 +9,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 type world struct {
-	s    *store.Store
+	s    *database.Store
 	e    *Engine
 	lib  string
 	free int64
@@ -25,7 +25,7 @@ type world struct {
 
 func newWorld(t *testing.T) *world {
 	t.Helper()
-	s, err := store.Open(t.TempDir(), store.Options{})
+	s, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -63,7 +63,7 @@ func (w *world) run(t *testing.T) map[string]domain.HealthCheck {
 
 func (w *world) events(t *testing.T) []domain.Event {
 	t.Helper()
-	es, _, err := w.s.Events(context.Background(), store.EventFilter{Kinds: []string{"health_*"}, Limit: 500})
+	es, _, err := w.s.Events(context.Background(), database.EventFilter{Kinds: []string{"health_*"}, Limit: 500})
 	if err != nil {
 		t.Fatal(err)
 	}

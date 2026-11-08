@@ -9,8 +9,8 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // ClearFinished takes a Usenet download out of SABnzbd or NZBGet, finished
@@ -20,11 +20,11 @@ import (
 // that refuses is logged in History and the Import stays done.
 func (m *Manager) ClearFinished(ctx context.Context, downloadID int64) {
 	var d domain.Download
-	if err := store.Get(ctx, m.Store.Read(), "downloads", downloadID, &d); err != nil || d.ReleaseID == nil || d.ExternalID == "" {
+	if err := database.Get(ctx, m.Store.Read(), "downloads", downloadID, &d); err != nil || d.ReleaseID == nil || d.ExternalID == "" {
 		return
 	}
 	var dr domain.Downloader
-	if err := store.Get(ctx, m.Store.Read(), "downloaders", d.DownloaderID, &dr); err != nil {
+	if err := database.Get(ctx, m.Store.Read(), "downloaders", d.DownloaderID, &dr); err != nil {
 		return
 	}
 	if dr.Protocol != "usenet" || !dr.ClearFinished || readOnlyFor(dr) {
@@ -48,7 +48,7 @@ func (m *Manager) ClearFinished(ctx context.Context, downloadID int64) {
 	// the Downloader shares with it (its path map, or the save root).
 	var relName string
 	var rel domain.Release
-	if store.Get(ctx, m.Store.Read(), "releases", *d.ReleaseID, &rel) == nil {
+	if database.Get(ctx, m.Store.Read(), "releases", *d.ReleaseID, &rel) == nil {
 		relName = rel.Name
 	}
 	said := "Cleared the imported download from " + dr.Name

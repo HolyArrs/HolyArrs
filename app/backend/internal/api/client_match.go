@@ -13,10 +13,10 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/parse"
 )
 
 // Matching torrents HolyArrs did not send (Sonarr's and Radarr's "match
@@ -34,7 +34,6 @@ const (
 	linkNotMedia = "not_media"
 	linkSkipped  = "skipped"
 )
-
 
 // Candidate is one looked-up choice for a torrent.
 type Candidate struct {
@@ -79,7 +78,7 @@ func guessOf(name, category string) guess {
 	cat := strings.ToLower(category)
 	tvHint := strings.Contains(cat, "tv") || strings.Contains(cat, "show") || strings.Contains(cat, "series") || strings.Contains(cat, "sonarr")
 	movieHint := strings.Contains(cat, "movie") || strings.Contains(cat, "film") || strings.Contains(cat, "radarr")
-	p := parse.Parse(name, parse.Hints{Show: tvHint})
+	p := releasename.Parse(name, releasename.Hints{Show: tvHint})
 	g := guess{title: strings.TrimSpace(p.Title.Value), year: p.Year.Value}
 	if g.title == "" || p.IsMusic() || p.Has("executable") {
 		return guess{}
@@ -88,7 +87,7 @@ func guessOf(name, category string) guess {
 	case p.IsShow():
 		g.kind = "show"
 		g.seasons, g.episodes = p.Show.Seasons, p.Show.Episodes
-		g.complete = p.Kind.Value == parse.KindComplete
+		g.complete = p.Kind.Value == releasename.KindComplete
 	case tvHint:
 		g.kind = "show"
 		g.complete = true

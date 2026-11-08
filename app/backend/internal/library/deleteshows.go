@@ -11,9 +11,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Refusals of a season or episode delete.
@@ -65,7 +65,7 @@ func (sc RemoveScope) Check() error {
 // is kept for it.
 func planRemoveEpisodes(ctx context.Context, db reader, titleID int64, sc RemoveScope, c RemoveChoice, now time.Time) (RemovePlan, domain.Title, map[int64]bool, error) {
 	var t domain.Title
-	if err := store.Get(ctx, db, "titles", titleID, &t); err != nil {
+	if err := database.Get(ctx, db, "titles", titleID, &t); err != nil {
 		return RemovePlan{}, t, nil, err
 	}
 	if err := sc.Check(); err != nil {
@@ -94,13 +94,13 @@ func planRemoveEpisodes(ctx context.Context, db reader, titleID int64, sc Remove
 		if err := db.QueryRowContext(ctx, "SELECT name FROM parts WHERE id = ? AND title_id = ? AND kind = 'album'", *sc.AlbumID, t.ID).Scan(&albumName); err != nil {
 			return RemovePlan{}, t, nil, ErrNoSuchAlbumHere
 		}
-		items, err = store.Select[domain.Item](ctx, db, "items", "title_id = ? AND kind = 'track' AND part_id = ? ORDER BY id", t.ID, *sc.AlbumID)
+		items, err = database.Select[domain.Item](ctx, db, "items", "title_id = ? AND kind = 'track' AND part_id = ? ORDER BY id", t.ID, *sc.AlbumID)
 	case len(sc.TrackIDs) > 0:
 		args := []any{t.ID}
 		for _, id := range sc.TrackIDs {
 			args = append(args, id)
 		}
-		items, err = store.Select[domain.Item](ctx, db, "items", "title_id = ? AND kind = 'track' AND id IN ("+strings.TrimSuffix(strings.Repeat("?,", len(sc.TrackIDs)), ",")+") ORDER BY id", args...)
+		items, err = database.Select[domain.Item](ctx, db, "items", "title_id = ? AND kind = 'track' AND id IN ("+strings.TrimSuffix(strings.Repeat("?,", len(sc.TrackIDs)), ",")+") ORDER BY id", args...)
 		if err == nil && len(items) != len(uniq(sc.TrackIDs)) {
 			return RemovePlan{}, t, nil, ErrNoSuchTrack
 		}
@@ -112,13 +112,13 @@ func planRemoveEpisodes(ctx context.Context, db reader, titleID int64, sc Remove
 		if n == 0 {
 			return RemovePlan{}, t, nil, ErrNoSuchSeason
 		}
-		items, err = store.Select[domain.Item](ctx, db, "items", "title_id = ? AND kind = 'episode' AND json_extract(numbers, '$.season') = ? ORDER BY id", t.ID, *sc.Season)
+		items, err = database.Select[domain.Item](ctx, db, "items", "title_id = ? AND kind = 'episode' AND json_extract(numbers, '$.season') = ? ORDER BY id", t.ID, *sc.Season)
 	case len(sc.EpisodeIDs) > 0:
 		args := []any{t.ID}
 		for _, id := range sc.EpisodeIDs {
 			args = append(args, id)
 		}
-		items, err = store.Select[domain.Item](ctx, db, "items", "title_id = ? AND kind = 'episode' AND id IN ("+strings.TrimSuffix(strings.Repeat("?,", len(sc.EpisodeIDs)), ",")+") ORDER BY id", args...)
+		items, err = database.Select[domain.Item](ctx, db, "items", "title_id = ? AND kind = 'episode' AND id IN ("+strings.TrimSuffix(strings.Repeat("?,", len(sc.EpisodeIDs)), ",")+") ORDER BY id", args...)
 		if err == nil && len(items) != len(uniq(sc.EpisodeIDs)) {
 			return RemovePlan{}, t, nil, ErrNoSuchEpisode
 		}
@@ -172,7 +172,7 @@ func planRemoveEpisodes(ctx context.Context, db reader, titleID int64, sc Remove
 		}
 		p.Episodes = append(p.Episodes, fmt.Sprintf("S%02dE%02d", deref(it.Numbers.Season), deref(it.Numbers.Episode)))
 	}
-	files, err := store.Select[domain.File](ctx, db, "files",
+	files, err := database.Select[domain.File](ctx, db, "files",
 		"state IN ('present', 'missing') AND version_id IN (SELECT id FROM versions WHERE title_id = ?) ORDER BY id", t.ID)
 	if err != nil {
 		return p, t, nil, err
@@ -195,10 +195,10 @@ func planRemoveEpisodes(ctx context.Context, db reader, titleID int64, sc Remove
 		}
 		var v domain.Version
 		var lf domain.LibraryFolder
-		if err := store.Get(ctx, db, "versions", f.VersionID, &v); err != nil {
+		if err := database.Get(ctx, db, "versions", f.VersionID, &v); err != nil {
 			return p, t, nil, err
 		}
-		if err := store.Get(ctx, db, "library_folders", v.LibraryFolderID, &lf); err != nil {
+		if err := database.Get(ctx, db, "library_folders", v.LibraryFolderID, &lf); err != nil {
 			return p, t, nil, err
 		}
 		rf := RemoveFile{FileID: f.ID, LibraryFolderID: lf.ID, Origin: f.Origin, Path: f.RelativePath, Episodes: append(in, out...), Protected: f.Protected, root: lf.Path}
@@ -287,7 +287,7 @@ func trackLabelOf(ctx context.Context, db reader, slotID int64) string {
 		return ""
 	}
 	var it domain.Item
-	if store.Get(ctx, db, "items", itemID, &it) != nil {
+	if database.Get(ctx, db, "items", itemID, &it) != nil {
 		return ""
 	}
 	return trackItemLabel(ctx, db, it)
@@ -343,7 +343,7 @@ func (s *Service) RemoveEpisodes(ctx context.Context, titleID int64, sc RemoveSc
 		return p, err
 	}
 	err = s.Store.Write(ctx, func(tx *sql.Tx) error {
-		ts, who := store.FormatTime(s.now()), actorText(by)
+		ts, who := database.FormatTime(s.now()), actorText(by)
 		for id := range set {
 			if _, err := tx.Exec("UPDATE items SET keep_up_to_date = 0, updated_at = ?, updated_by = ? WHERE id = ?", ts, who, id); err != nil {
 				return err

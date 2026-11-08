@@ -46,6 +46,8 @@ class PackagingTests(unittest.TestCase):
             return b""
 
         with tempfile.TemporaryDirectory() as directory:
+            ui_dist = Path(directory) / "ui-dist"
+            ui_dist.mkdir()
             outputs = []
             profiles = []
             for low_resource in (False, True):
@@ -56,9 +58,10 @@ class PackagingTests(unittest.TestCase):
                                           web_node_modules="existing-modules", low_resource=low_resource)
                 with patch.object(package, "snapshot", side_effect=snapshot), \
                      patch.object(package, "web_notices", return_value=b"web notices\n"), \
+                     patch.object(package, "build_ui", return_value=ui_dist), \
                      patch.object(package, "run", side_effect=docker):
                     package.build(args)
-                self.assertEqual(len(commands), 14)
+                self.assertEqual(len(commands), 12)
                 normalized = []
                 for command in commands:
                     plain = command.copy()
@@ -116,7 +119,7 @@ class PackagingTests(unittest.TestCase):
 
     def test_all_selected_targets_have_exact_tuples(self):
         self.assertEqual(package.TARGETS["linux-armv7"], ("linux", "arm", "7"))
-        self.assertEqual(set(package.TARGETS), {"linux-amd64", "linux-arm64", "linux-armv7", "linux-386", "windows-amd64"})
+        self.assertEqual(set(package.TARGETS), {"linux-amd64", "linux-arm64", "linux-armv7", "windows-amd64"})
 
     def test_archive_rejects_absolute_and_traversal_members(self):
         with tempfile.TemporaryDirectory() as directory:

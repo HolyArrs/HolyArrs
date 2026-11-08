@@ -18,7 +18,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/backup"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 )
 
 // The crash-loop test is the closest local stand-in for pulling the power:
@@ -99,7 +99,7 @@ func TestCrashHelper(t *testing.T) {
 	mode, dir, _ := strings.Cut(spec, ":")
 	switch mode {
 	case "update":
-		s, err := store.Open(dir, store.Options{MainMigrations: crashFS(4)})
+		s, err := database.Open(dir, database.Options{MainMigrations: crashFS(4)})
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(3)
@@ -207,7 +207,7 @@ func checkSound(t *testing.T, path string) {
 // openBase makes a config folder at schema 1 (no backup: new data).
 func openBase(t *testing.T, dir string) {
 	t.Helper()
-	s, err := store.Open(dir, store.Options{MainMigrations: crashFS(1)})
+	s, err := database.Open(dir, database.Options{MainMigrations: crashFS(1)})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -220,12 +220,12 @@ func cleanRefs(t *testing.T) map[int]state {
 	refs := map[int]state{}
 	for v := 1; v <= 4; v++ {
 		dir := t.TempDir()
-		s, err := store.Open(dir, store.Options{MainMigrations: crashFS(v)})
+		s, err := database.Open(dir, database.Options{MainMigrations: crashFS(v)})
 		if err != nil {
 			t.Fatal(err)
 		}
 		_ = s.Close()
-		refs[v] = readState(t, filepath.Join(dir, store.MainFile))
+		refs[v] = readState(t, filepath.Join(dir, database.MainFile))
 	}
 	return refs
 }
@@ -257,7 +257,7 @@ func crashRuns(t *testing.T) (int, *rand.Rand, int64) {
 // then the backup manager adopts the raw copies and prunes, as the app does.
 func goodStart(t *testing.T, dir string) {
 	t.Helper()
-	s, err := store.Open(dir, store.Options{MainMigrations: crashFS(4)})
+	s, err := database.Open(dir, database.Options{MainMigrations: crashFS(4)})
 	if err != nil {
 		t.Fatalf("restart after kill: %v", err)
 	}
@@ -283,7 +283,7 @@ func TestCrashLoopDuringUpdate(t *testing.T) {
 		t.Fatalf("clean child update: %v", err)
 	}
 	window := time.Since(t0)
-	if got := readState(t, filepath.Join(cal, store.MainFile)); got != refs[4] {
+	if got := readState(t, filepath.Join(cal, database.MainFile)); got != refs[4] {
 		t.Fatalf("child update differs from a clean run: %+v vs %+v", got, refs[4])
 	}
 	t.Logf("clean child update takes %v; kills land in 0..%v", window, window*6/5)
@@ -293,7 +293,7 @@ func TestCrashLoopDuringUpdate(t *testing.T) {
 	for i := 0; i < runs; i++ {
 		dir := t.TempDir()
 		openBase(t, dir)
-		before := readState(t, filepath.Join(dir, store.MainFile))
+		before := readState(t, filepath.Join(dir, database.MainFile))
 		delay := time.Duration(rng.Int63n(int64(window * 6 / 5)))
 		cmd := startChild(t, "update", dir)
 		time.Sleep(delay)
@@ -302,7 +302,7 @@ func TestCrashLoopDuringUpdate(t *testing.T) {
 
 		// Where did the kill land?
 		parts, _ := filepath.Glob(filepath.Join(dir, "backups", "*.partial"))
-		mid := readState(t, filepath.Join(dir, store.MainFile))
+		mid := readState(t, filepath.Join(dir, database.MainFile))
 		phase := fmt.Sprintf("v%d", mid.version)
 		if len(parts) > 0 {
 			phase = "backup"
@@ -310,7 +310,7 @@ func TestCrashLoopDuringUpdate(t *testing.T) {
 		phases[phase]++
 
 		goodStart(t, dir)
-		main := filepath.Join(dir, store.MainFile)
+		main := filepath.Join(dir, database.MainFile)
 		checkSound(t, main)
 		if got := readState(t, main); got != refs[4] {
 			t.Fatalf("run %d (kill at %v, %s): after restart %+v, clean %+v", i, delay, phase, got, refs[4])
@@ -403,7 +403,7 @@ func TestCrashLoopDuringRestore(t *testing.T) {
 		if _, err := backup.ApplyStaged(dir); err != nil {
 			t.Fatalf("run %d: recovery: %v", i, err)
 		}
-		main := filepath.Join(dir, store.MainFile)
+		main := filepath.Join(dir, database.MainFile)
 		checkSound(t, main)
 		switch s := readState(t, main); s {
 		case oldS:

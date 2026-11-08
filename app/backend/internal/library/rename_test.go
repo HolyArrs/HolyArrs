@@ -10,19 +10,19 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/naming"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // putFile writes a file under the Library folder and records it as a File
 // of the Title's main Version with the given origin.
-func putFile(t *testing.T, s *store.Store, lf domain.LibraryFolder, titleID int64, rel, release, origin string) domain.File {
+func putFile(t *testing.T, s *database.Store, lf domain.LibraryFolder, titleID int64, rel, release, origin string) domain.File {
 	t.Helper()
 	ctx := context.Background()
 	writeFile(t, filepath.Join(lf.Path, filepath.FromSlash(rel)), "video:"+rel)
-	vs, err := store.Select[domain.Version](ctx, s.Read(), "versions", "title_id = ? AND is_main = 1", titleID)
+	vs, err := database.Select[domain.Version](ctx, s.Read(), "versions", "title_id = ? AND is_main = 1", titleID)
 	if err != nil || len(vs) != 1 {
 		t.Fatalf("versions %v %v", vs, err)
 	}
@@ -32,13 +32,13 @@ func putFile(t *testing.T, s *store.Store, lf domain.LibraryFolder, titleID int6
 	if origin != "imported" {
 		f.PlacedBy = "none"
 	}
-	if err := s.Write(ctx, func(tx *sql.Tx) error { _, err := store.Insert(tx, "files", &f, domain.System); return err }); err != nil {
+	if err := s.Write(ctx, func(tx *sql.Tx) error { _, err := database.Insert(tx, "files", &f, domain.System); return err }); err != nil {
 		t.Fatal(err)
 	}
 	return f
 }
 
-func renameWorld(t *testing.T) (*Service, *store.Store, domain.LibraryFolder, int64) {
+func renameWorld(t *testing.T) (*Service, *database.Store, domain.LibraryFolder, int64) {
 	t.Helper()
 	s := open(t)
 	lf := addFolder(t, s)
@@ -49,10 +49,10 @@ func renameWorld(t *testing.T) (*Service, *store.Store, domain.LibraryFolder, in
 	return &Service{Store: s, Now: func() time.Time { return now }}, s, lf, id
 }
 
-func fileRow(t *testing.T, s *store.Store, id int64) domain.File {
+func fileRow(t *testing.T, s *database.Store, id int64) domain.File {
 	t.Helper()
 	var f domain.File
-	if err := store.Get(context.Background(), s.Read(), "files", id, &f); err != nil {
+	if err := database.Get(context.Background(), s.Read(), "files", id, &f); err != nil {
 		t.Fatal(err)
 	}
 	return f
@@ -347,7 +347,7 @@ func TestRenameFailedRecoveryDoesNotBlock(t *testing.T) {
 	f := putFile(t, s, lf, id, "Dune - Part Two (2024)/x.mkv", "Dune.Part.Two.2024.2160p.WEB-DL-HOLYARRS", "adopted")
 	if err := s.Write(ctx, func(tx *sql.Tx) error {
 		_, err := tx.Exec(`INSERT INTO rename_steps (created_at, file_id, from_path, to_path, to_rel, state) VALUES (?, ?, ?, ?, ?, 'pending')`,
-			store.FormatTime(now), f.ID, filepath.Join(lf.Path, "gone.mkv"), filepath.Join(lf.Path, "also gone.mkv"), "also gone.mkv")
+			database.FormatTime(now), f.ID, filepath.Join(lf.Path, "gone.mkv"), filepath.Join(lf.Path, "also gone.mkv"), "also gone.mkv")
 		return err
 	}); err != nil {
 		t.Fatal(err)

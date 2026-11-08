@@ -18,18 +18,18 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 type clock struct{ t time.Time }
 
 func (c *clock) now() time.Time { return c.t }
 
-func setup(t *testing.T) (*Manager, *store.Store, *clock, string) {
+func setup(t *testing.T) (*Manager, *database.Store, *clock, string) {
 	t.Helper()
 	dir := t.TempDir()
-	s, err := store.Open(dir, store.Options{})
+	s, err := database.Open(dir, database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -63,7 +63,7 @@ func TestCreateHoldsDatabaseAndVersionNeverKeyOrMedia(t *testing.T) {
 		t.Fatal(err)
 	}
 	got := names(t, info.Path)
-	want := []string{"backup.json", store.EventsFile, store.MainFile}
+	want := []string{"backup.json", database.EventsFile, database.MainFile}
 	sort.Strings(want)
 	if strings.Join(got, ",") != strings.Join(want, ",") {
 		t.Fatalf("zip holds %v", got)
@@ -296,11 +296,11 @@ func TestStageRefusesBadZips(t *testing.T) {
 	meta, _ := json.Marshal(Meta{App: "holyarrs", SchemaMain: 999})
 	for name, body := range map[string][]byte{
 		"not a zip":     []byte("hello"),
-		"no meta":       zipBytes(t, map[string][]byte{store.MainFile: []byte("x")}),
+		"no meta":       zipBytes(t, map[string][]byte{database.MainFile: []byte("x")}),
 		"path escape":   zipBytes(t, map[string][]byte{"backup.json": []byte(`{"app":"holyarrs"}`), "../evil": []byte("x")}),
-		"newer schema":  zipBytes(t, map[string][]byte{"backup.json": meta, store.MainFile: []byte("x")}),
-		"broken db":     zipBytes(t, map[string][]byte{"backup.json": []byte(`{"app":"holyarrs","schema_main":1}`), store.MainFile: []byte("not sqlite")}),
-		"other app zip": zipBytes(t, map[string][]byte{"backup.json": []byte(`{"app":"other"}`), store.MainFile: []byte("x")}),
+		"newer schema":  zipBytes(t, map[string][]byte{"backup.json": meta, database.MainFile: []byte("x")}),
+		"broken db":     zipBytes(t, map[string][]byte{"backup.json": []byte(`{"app":"holyarrs","schema_main":1}`), database.MainFile: []byte("not sqlite")}),
+		"other app zip": zipBytes(t, map[string][]byte{"backup.json": []byte(`{"app":"other"}`), database.MainFile: []byte("x")}),
 	} {
 		if err := m.Stage(ctx, bytes.NewReader(body)); err == nil {
 			t.Fatalf("%s: accepted", name)
@@ -324,7 +324,7 @@ func TestRestoreSwapsOnRestart(t *testing.T) {
 	ctx := context.Background()
 	write := func(name string) {
 		err := s.Write(ctx, func(tx *sql.Tx) error {
-			_, err := store.Insert(tx, "library_folders", &domain.LibraryFolder{Path: "/m/" + name, Kind: "movie", Label: name,
+			_, err := database.Insert(tx, "library_folders", &domain.LibraryFolder{Path: "/m/" + name, Kind: "movie", Label: name,
 				Health: "ok", SameDiskAs: []int64{}}, domain.System)
 			return err
 		})
@@ -348,7 +348,7 @@ func TestRestoreSwapsOnRestart(t *testing.T) {
 	if err != nil || !done {
 		t.Fatalf("apply %v %v", done, err)
 	}
-	s2, err := store.Open(dir, store.Options{})
+	s2, err := database.Open(dir, database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -361,14 +361,14 @@ func TestRestoreSwapsOnRestart(t *testing.T) {
 	if again, _ := ApplyStaged(dir); again {
 		t.Fatal("staged restore applied twice")
 	}
-	old, _ := filepath.Glob(filepath.Join(dir, "backups", "before-restore-*", store.MainFile))
+	old, _ := filepath.Glob(filepath.Join(dir, "backups", "before-restore-*", database.MainFile))
 	if len(old) != 1 {
 		t.Fatalf("replaced database not kept: %v", old)
 	}
 }
 
 func TestApplyStagedRollsBackARecoverableSwapFailure(t *testing.T) {
-	for _, failDB := range []string{store.MainFile, store.EventsFile} {
+	for _, failDB := range []string{database.MainFile, database.EventsFile} {
 		t.Run(failDB, func(t *testing.T) {
 			dir := t.TempDir()
 			staged := filepath.Join(dir, StagedDir)
@@ -378,7 +378,7 @@ func TestApplyStagedRollsBackARecoverableSwapFailure(t *testing.T) {
 			if err := os.WriteFile(filepath.Join(staged, readyFile), []byte("ready"), 0o600); err != nil {
 				t.Fatal(err)
 			}
-			for _, db := range []string{store.MainFile, store.EventsFile} {
+			for _, db := range []string{database.MainFile, database.EventsFile} {
 				if err := os.WriteFile(filepath.Join(dir, db), []byte("old-"+db), 0o600); err != nil {
 					t.Fatal(err)
 				}
@@ -405,7 +405,7 @@ func TestApplyStagedRollsBackARecoverableSwapFailure(t *testing.T) {
 			if done || err == nil {
 				t.Fatalf("apply = %v, %v; want a rolled-back failure", done, err)
 			}
-			for _, db := range []string{store.MainFile, store.EventsFile} {
+			for _, db := range []string{database.MainFile, database.EventsFile} {
 				for _, tc := range []struct{ path, want string }{
 					{filepath.Join(dir, db), "old-" + db},
 					{filepath.Join(dir, db+"-wal"), "old-wal-" + db},
@@ -453,7 +453,7 @@ func TestStageCapsTotalUnpackedSize(t *testing.T) {
 	defer func() { maxUnpacked = old }()
 	big := bytes.Repeat([]byte("a"), 1000) // each entry is under the cap, the sum is not
 	z := zipBytes(t, map[string][]byte{MetaFile: append([]byte(`{"app":"holyarrs"}`), bytes.Repeat([]byte(" "), 900)...),
-		store.MainFile: big})
+		database.MainFile: big})
 	err := m.Stage(context.Background(), bytes.NewReader(z))
 	if err == nil || !strings.Contains(err.Error(), "too large") {
 		t.Fatalf("total size not capped: %v", err)
@@ -472,7 +472,7 @@ func crashAfterFirstMove(t *testing.T) string {
 	if err := os.WriteFile(filepath.Join(staged, readyFile), []byte("ready"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	for _, db := range []string{store.MainFile, store.EventsFile} {
+	for _, db := range []string{database.MainFile, database.EventsFile} {
 		if err := os.WriteFile(filepath.Join(dir, db), []byte("old-"+db), 0o600); err != nil {
 			t.Fatal(err)
 		}
@@ -501,7 +501,7 @@ func crashAfterFirstMove(t *testing.T) string {
 	if _, err := os.Stat(filepath.Join(dir, JournalFile)); err != nil {
 		t.Fatalf("no journal after the cut: %v", err)
 	}
-	if _, err := os.Stat(filepath.Join(dir, store.MainFile)); err == nil {
+	if _, err := os.Stat(filepath.Join(dir, database.MainFile)); err == nil {
 		t.Fatal("first move did not happen")
 	}
 	return dir
@@ -509,7 +509,7 @@ func crashAfterFirstMove(t *testing.T) string {
 
 func wantFiles(t *testing.T, dir, prefix string) {
 	t.Helper()
-	for _, db := range []string{store.MainFile, store.EventsFile} {
+	for _, db := range []string{database.MainFile, database.EventsFile} {
 		got, err := os.ReadFile(filepath.Join(dir, db))
 		if err != nil || string(got) != prefix+db {
 			t.Fatalf("%s = %q, %v; want %q", db, got, err, prefix+db)
@@ -530,7 +530,7 @@ func TestRestoreCutOffAfterFirstMoveIsFinished(t *testing.T) {
 	if Staged(dir) {
 		t.Fatal("staged restore still waiting")
 	}
-	old, _ := filepath.Glob(filepath.Join(dir, "backups", "before-restore-*", store.MainFile))
+	old, _ := filepath.Glob(filepath.Join(dir, "backups", "before-restore-*", database.MainFile))
 	if len(old) != 1 {
 		t.Fatalf("replaced database not kept: %v", old)
 	}

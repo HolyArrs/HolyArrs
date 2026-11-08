@@ -21,5 +21,5 @@ bin/
 !/app/frontend/dist/.gitkeep
 /app/tests/.tmp/
 /app/tests/.tmp-*/
-/app/tests/live-push.spec.ts-snapshots/
+/app/tests/whole-app/live-push.spec.ts-snapshots/
 deploy/metadata/live/egress.env

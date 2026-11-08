@@ -11,12 +11,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/outside"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 )
 
 // slowArtists holds Artist and Pressings until release closes, counting
@@ -137,7 +138,7 @@ func TestMusicPagesFailingSourceNo502(t *testing.T) {
 // Top songs start with the page (not after the artist) and show on a cold
 // artist page; a failure leaves them out (Deezer's list stands in).
 func TestArtistPageTopSongsCold(t *testing.T) {
-	s, err := store.Open(t.TempDir(), store.Options{})
+	s, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -159,7 +160,7 @@ func TestArtistPageTopSongsCold(t *testing.T) {
 // Side data survives a restart (lookup_cache), an old answer is served at
 // once and asked again in the background, and a miss is remembered.
 func TestMusicSideKeptStaleAndMiss(t *testing.T) {
-	s, err := store.Open(t.TempDir(), store.Options{})
+	s, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -213,7 +214,7 @@ func TestMusicSideKeptStaleAndMiss(t *testing.T) {
 
 // Held, retrying or slow details answer 503 with Retry-After, not 502.
 func TestDiscoverFailBusy(t *testing.T) {
-	for _, err := range []error{outside.ErrSuppressed, metadata.ErrServiceUnavailable, metadata.ErrRateLimited, context.DeadlineExceeded} {
+	for _, err := range []error{outbound.ErrSuppressed, metadata.ErrServiceUnavailable, metadata.ErrRateLimited, context.DeadlineExceeded} {
 		w := httptest.NewRecorder()
 		discoverFail(w, err)
 		if w.Code != http.StatusServiceUnavailable || w.Header().Get("Retry-After") == "" {

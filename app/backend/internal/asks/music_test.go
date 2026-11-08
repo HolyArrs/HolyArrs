@@ -10,10 +10,10 @@ import (
 	"testing"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/alerts"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // fakeArtists answers one artist with its albums.
@@ -63,9 +63,9 @@ func musicRig(t *testing.T) *rig {
 	return r
 }
 
-func albumKeeps(t *testing.T, st *store.Store, titleID int64) map[string]bool {
+func albumKeeps(t *testing.T, st *database.Store, titleID int64) map[string]bool {
 	t.Helper()
-	ps, err := store.Select[domain.Part](context.Background(), st.Read(), "parts", "title_id = ? AND kind = 'album'", titleID)
+	ps, err := database.Select[domain.Part](context.Background(), st.Read(), "parts", "title_id = ? AND kind = 'album'", titleID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -120,7 +120,7 @@ func TestArtistAskAlbumsJoinApproveAndAskAgain(t *testing.T) {
 		t.Fatalf("approved %+v", got)
 	}
 	var tt domain.Title
-	if err := store.Get(ctx, r.st.Read(), "titles", *got.TitleID, &tt); err != nil {
+	if err := database.Get(ctx, r.st.Read(), "titles", *got.TitleID, &tt); err != nil {
 		t.Fatal(err)
 	}
 	if tt.Kind != "artist" || tt.WhyAdded != "ask" || !tt.KeepUpToDate {
@@ -192,7 +192,7 @@ func TestArtistAskWholeArtistAndKindsLeftOut(t *testing.T) {
 }
 
 // addTracks gives an album n tracks with Slots in the main Version.
-func addTracks(t *testing.T, st *store.Store, titleID int64, album string, n int, state domain.SlotState) {
+func addTracks(t *testing.T, st *database.Store, titleID int64, album string, n int, state domain.SlotState) {
 	t.Helper()
 	ctx := context.Background()
 	err := st.Write(ctx, func(tx *sql.Tx) error {
@@ -206,10 +206,10 @@ func addTracks(t *testing.T, st *store.Store, titleID int64, album string, n int
 		for i := 1; i <= n; i++ {
 			disc, num := 1, i
 			it := &domain.Item{TitleID: titleID, PartID: &partID, Kind: "track", Numbers: domain.Numbers{Disc: &disc, Track: &num}, KeepUpToDate: true, SourceIDs: map[string]string{}}
-			if _, err := store.Insert(tx, "items", it, domain.System); err != nil {
+			if _, err := database.Insert(tx, "items", it, domain.System); err != nil {
 				return err
 			}
-			if _, err := store.Insert(tx, "slots", &domain.Slot{ItemID: it.ID, VersionID: versionID, State: state}, domain.System); err != nil {
+			if _, err := database.Insert(tx, "slots", &domain.Slot{ItemID: it.ID, VersionID: versionID, State: state}, domain.System); err != nil {
 				return err
 			}
 		}
@@ -417,7 +417,7 @@ func TestArtistApproveIncludesOnlyAskedAlbum(t *testing.T) {
 		t.Fatalf("album keeps %v", keeps)
 	}
 	var tt domain.Title
-	if err := store.Get(ctx, r.st.Read(), "titles", *got.TitleID, &tt); err != nil {
+	if err := database.Get(ctx, r.st.Read(), "titles", *got.TitleID, &tt); err != nil {
 		t.Fatal(err)
 	}
 	if !reflect.DeepEqual(tt.MusicSecondary, defs.SecondaryTypes) || !reflect.DeepEqual(tt.MusicTypes, defs.AlbumTypes) {
@@ -431,7 +431,7 @@ func TestArtistApproveIncludesOnlyAskedAlbum(t *testing.T) {
 	if _, err := r.svc.Library.RefreshArtist(ctx, *got.TitleID, domain.System, nil); err != nil {
 		t.Fatal(err)
 	}
-	ps, err := store.Select[domain.Part](ctx, r.st.Read(), "parts", "title_id = ? AND kind = 'album'", *got.TitleID)
+	ps, err := database.Select[domain.Part](ctx, r.st.Read(), "parts", "title_id = ? AND kind = 'album'", *got.TitleID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -458,7 +458,7 @@ func TestIncludedAlbumSurvivesRefreshBeforeKeep(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	ps, err := store.Select[domain.Part](ctx, r.st.Read(), "parts", "title_id = ? AND kind = 'album' AND name = 'Live Night'", tid)
+	ps, err := database.Select[domain.Part](ctx, r.st.Read(), "parts", "title_id = ? AND kind = 'album' AND name = 'Live Night'", tid)
 	if err != nil || len(ps) != 1 || ps[0].Included {
 		t.Fatalf("left-out album %v %v", ps, err)
 	}
@@ -469,7 +469,7 @@ func TestIncludedAlbumSurvivesRefreshBeforeKeep(t *testing.T) {
 		t.Fatal(err)
 	}
 	var p domain.Part
-	if err := store.Get(ctx, r.st.Read(), "parts", ps[0].ID, &p); err != nil {
+	if err := database.Get(ctx, r.st.Read(), "parts", ps[0].ID, &p); err != nil {
 		t.Fatal(err)
 	}
 	if !p.Included || !p.KeepUpToDate {

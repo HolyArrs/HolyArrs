@@ -12,8 +12,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // v7Fixed is the v7 tests' clock (2001-10-30 turns 25 within the window).
@@ -84,7 +84,7 @@ func v7Rig(t *testing.T, name string) (*askRig, *int, *v7Household) {
 	}
 	ids := map[string]int64{}
 	err = r.st.Write(context.Background(), func(tx *sql.Tx) error {
-		ts, by := store.FormatTime(v7Fixed), `{"kind":"system"}`
+		ts, by := database.FormatTime(v7Fixed), `{"kind":"system"}`
 		ex := func(q string, args ...any) int64 {
 			res, err := tx.Exec(q, args...)
 			if err != nil {

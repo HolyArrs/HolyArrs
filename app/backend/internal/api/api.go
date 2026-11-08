@@ -3,12 +3,12 @@
 package api
 
 import (
-	"github.com/HolyArrs/holyarrs/app/backend/internal/feature"
 	"context"
 	"database/sql"
 	"encoding/json"
 	"errors"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/dlsync"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
 	"log"
 	"net/http"
@@ -20,39 +20,45 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/alerts"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/applog"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/asks"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/bridge"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/backup"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/bridge"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/health"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/lists"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/live"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/logs"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediaserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/migrate"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/musicsync"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/supervisor"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/features"
 )
 
 // Server is what the API needs.
 type Server struct {
-	Store *store.Store
+	Store *database.Store
 	// DLSync is the background download reader (downloads.sync = on); nil
 	// keeps the Downloads view's own client reads.
 	DLSync   *dlsync.Sync
 	Queue    *jobs.Queue
-	Live     *live.Hub
+	Live     *webserver.LiveHub
 	Metadata metadata.Provider
 	Version  string
 	Started  time.Time
@@ -138,7 +144,7 @@ type Server struct {
 	// Subtitles runs subtitle work; New makes one when nil.
 	Subtitles *subtitles.Service
 	// States holds the state of every supervised stage (may be nil).
-	States *supervisor.Registry
+	States *jobs.Registry
 	// SafeMode says the app started with only the core.
 	SafeMode bool
 	// Parts switches the five parts and the stages (nil: every part on,
@@ -152,7 +158,7 @@ type Server struct {
 	// when it cannot arrange the exit. Tests record the call instead.
 	ExitApp func(how string) error
 	// Log is the app log for the log viewer and download (nil: none kept).
-	Log *applog.Log
+	Log *logs.Log
 	// ConfigDir and SavePath are shown on This app (ConfigDir defaults to
 	// the database folder).
 	ConfigDir string
@@ -170,7 +176,7 @@ type API struct {
 	bridgeSvc  *bridge.Service
 	// tlog is the torrent log's last seen state per torrent (torrentlog.go).
 	tlog torrentLog
-	// interest limits each session's live interest calls (live.go).
+	// interest limits each session's live interest calls (webserver.go).
 	interest interestState
 	// dlHealth is the health last pushed per client (downloads_live.go).
 	dlHealth dlHealthSent
@@ -448,7 +454,7 @@ func (a *API) Handler() http.Handler {
 	m.HandleFunc("GET /api/v1/explore/strip", a.exploreStrip)
 	m.HandleFunc("POST /api/v1/explore/strip/counts", a.exploreStripCounts)
 	m.HandleFunc("DELETE /api/v1/explore/strip/counts", a.exploreStripReset)
-	if feature.On(feature.RowTitleStats) {
+	if startup.FeatureOn(features.RowTitleStats) {
 		m.HandleFunc("GET /api/v1/explore/title-stats", a.exploreTitleStats)
 	}
 	m.HandleFunc("GET /api/v1/music-trending", a.musicTrending)
@@ -462,7 +468,7 @@ func (a *API) Handler() http.Handler {
 	m.HandleFunc("GET /api/v1/extras/{kind}/{id}", a.titleExtras)
 	m.HandleFunc("GET /api/v1/wiki/{kind}/{id}", a.wikiFacts)
 	if a.s.Secrets != nil {
-		if feature.On(feature.TraktLists) {
+		if startup.FeatureOn(features.TraktLists) {
 			m.HandleFunc("GET /api/v1/settings/trakt-key", a.getTraktKey)
 			m.HandleFunc("PUT /api/v1/settings/trakt-key", a.putTraktKey)
 			m.HandleFunc("GET /api/v1/settings/trakt-token", a.getTraktToken)
@@ -472,7 +478,7 @@ func (a *API) Handler() http.Handler {
 		m.HandleFunc("PUT /api/v1/settings/tvdb-key", a.putTVDBKey)
 	}
 	a.askRoutes(m)
-	if feature.On(feature.PlexWatchlists) {
+	if startup.FeatureOn(features.PlexWatchlists) {
 		a.watchlistRoutes(m)
 	}
 	a.reportRoutes(m)
@@ -489,7 +495,7 @@ func (a *API) Handler() http.Handler {
 	// start page answers it with 503).
 	m.HandleFunc("GET /readyz", func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write([]byte("ready\n")) })
 	a.liveRoutes(m)
-	if feature.On(feature.AIApps) {
+	if startup.FeatureOn(features.AIApps) {
 		a.mcpRoutes(m)
 	}
 	a.oldAppRoutes(m)
@@ -761,7 +767,7 @@ func (a *API) titleView(ctx context.Context, t domain.Title) (TitleView, error) 
 	var vs []domain.Version
 	if facts != nil {
 		vs = facts.versions[t.ID]
-	} else if vs, err = store.Select[domain.Version](ctx, db, "versions", "title_id = ? ORDER BY is_main DESC, id", t.ID); err != nil {
+	} else if vs, err = database.Select[domain.Version](ctx, db, "versions", "title_id = ? ORDER BY is_main DESC, id", t.ID); err != nil {
 		return v, err
 	}
 	for _, ver := range vs {
@@ -795,7 +801,7 @@ func (a *API) titleView(ctx context.Context, t domain.Title) (TitleView, error) 
 	var slots []domain.Slot
 	if batch != nil {
 		slots = batch.slots[t.ID]
-	} else if slots, err = store.Select[domain.Slot](ctx, db, "slots",
+	} else if slots, err = database.Select[domain.Slot](ctx, db, "slots",
 		"item_id IN (SELECT id FROM items WHERE title_id = ?) ORDER BY id", t.ID); err != nil {
 		return v, err
 	}
@@ -804,7 +810,7 @@ func (a *API) titleView(ctx context.Context, t domain.Title) (TitleView, error) 
 		if batch != nil {
 			ver = batch.labels[s.VersionID]
 		} else {
-			_ = store.Get(ctx, db, "versions", s.VersionID, &ver)
+			_ = database.Get(ctx, db, "versions", s.VersionID, &ver)
 		}
 		sv := SlotView{ID: s.ID, Version: ver.Label, VersionID: ver.ID, State: string(s.State), StateLabel: StateLabels[s.State], DownloadID: s.ActiveDownloadID}
 		if s.LastReason != nil {
@@ -816,7 +822,7 @@ func (a *API) titleView(ctx context.Context, t domain.Title) (TitleView, error) 
 			if batch != nil {
 				d, found = batch.downloads[*s.ActiveDownloadID]
 			} else {
-				found = store.Get(ctx, db, "downloads", *s.ActiveDownloadID, &d) == nil
+				found = database.Get(ctx, db, "downloads", *s.ActiveDownloadID, &d) == nil
 			}
 			if found {
 				dv := downloadView(d)
@@ -829,7 +835,7 @@ func (a *API) titleView(ctx context.Context, t domain.Title) (TitleView, error) 
 			if batch != nil {
 				f, found = batch.files[*s.FileID]
 			} else {
-				found = store.Get(ctx, db, "files", *s.FileID, &f) == nil
+				found = database.Get(ctx, db, "files", *s.FileID, &f) == nil
 			}
 			if found {
 				sv.File = &f
@@ -880,7 +886,7 @@ func gateReason(t domain.Title, open bool) string {
 }
 
 func (a *API) listTitles(w http.ResponseWriter, r *http.Request) {
-	ts, err := a.s.Store.SearchTitles(r.Context(), r.URL.Query().Get("q"))
+	ts, err := store.SearchTitles(r.Context(), a.s.Store, r.URL.Query().Get("q"))
 	if errors.Is(err, store.ErrTitleSearchQuery) {
 		fail(w, http.StatusBadRequest, err.Error())
 		return
@@ -931,7 +937,7 @@ func (a *API) titleID(w http.ResponseWriter, r *http.Request) (domain.Title, boo
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	var t domain.Title
 	if err == nil {
-		err = store.Get(r.Context(), a.s.Store.Read(), "titles", id, &t)
+		err = database.Get(r.Context(), a.s.Store.Read(), "titles", id, &t)
 	}
 	if err != nil {
 		fail(w, http.StatusNotFound, "no such Title")
@@ -949,7 +955,7 @@ func limit(r *http.Request, def int) int {
 }
 
 func (a *API) listDownloads(w http.ResponseWriter, r *http.Request) {
-	ds, err := store.Select[domain.Download](r.Context(), a.s.Store.Read(), "downloads", "1=1 ORDER BY id DESC LIMIT ?", limit(r, 50))
+	ds, err := database.Select[domain.Download](r.Context(), a.s.Store.Read(), "downloads", "1=1 ORDER BY id DESC LIMIT ?", limit(r, 50))
 	if err != nil {
 		internal(w, err)
 		return
@@ -961,7 +967,7 @@ func (a *API) listDownloads(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *API) listImports(w http.ResponseWriter, r *http.Request) {
-	is, err := store.Select[domain.Import](r.Context(), a.s.Store.Read(), "imports", "1=1 ORDER BY id DESC LIMIT ?", limit(r, 20))
+	is, err := database.Select[domain.Import](r.Context(), a.s.Store.Read(), "imports", "1=1 ORDER BY id DESC LIMIT ?", limit(r, 20))
 	if err != nil {
 		internal(w, err)
 		return
@@ -999,7 +1005,7 @@ func parseDay(v string) (time.Time, error) {
 // to is a day that is included (or an exact time that is not).
 func (a *API) listEvents(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
-	f := store.EventFilter{Limit: limit(r, 50)}
+	f := database.EventFilter{Limit: limit(r, 50)}
 	if v := q.Get("title"); v != "" {
 		id, err := strconv.ParseInt(v, 10, 64)
 		if err != nil || id <= 0 {
@@ -1175,7 +1181,7 @@ func (a *API) listEvents(w http.ResponseWriter, r *http.Request) {
 	// The audit trail (sign-ins, API keys, settings changes) is only for
 	// the owner and people who manage users or settings.
 	if who, signed := auth.From(r.Context()); signed && !who.MaySeeAudit() {
-		f.HideKinds = store.AuditEventKinds
+		f.HideKinds = database.AuditEventKinds
 	}
 	// Asks' Events name who asked and who decided, with the decline note:
 	// only for people who approve, as on the asks routes.
@@ -1236,7 +1242,7 @@ func (a *API) listEvents(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *API) listJobs(w http.ResponseWriter, r *http.Request) {
-	js, err := store.Select[domain.Job](r.Context(), a.s.Store.Read(), "jobs", "1=1 ORDER BY id DESC LIMIT ?", limit(r, 50))
+	js, err := database.Select[domain.Job](r.Context(), a.s.Store.Read(), "jobs", "1=1 ORDER BY id DESC LIMIT ?", limit(r, 50))
 	if err != nil {
 		internal(w, err)
 		return

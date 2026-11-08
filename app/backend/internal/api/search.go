@@ -11,9 +11,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Search routes (stage 3.1): searching a Title, the releases a search found
@@ -56,7 +56,7 @@ func (a *API) searchTitle(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusBadRequest, "item_id, season, album_id and version_id are for shows and artists")
 		return
 	}
-	slots, err := store.Select[domain.Slot](r.Context(), a.s.Store.Read(), "slots",
+	slots, err := database.Select[domain.Slot](r.Context(), a.s.Store.Read(), "slots",
 		"item_id IN (SELECT id FROM items WHERE title_id = ?) ORDER BY id", t.ID)
 	if err != nil {
 		internal(w, err)
@@ -282,7 +282,7 @@ func (a *API) titleReleases(w http.ResponseWriter, r *http.Request) {
 			internal(w, err)
 			return
 		}
-		rels, err := store.Select[domain.Release](r.Context(), db, "releases", in+` ORDER BY CASE state WHEN 'chosen' THEN 0 WHEN 'held' THEN 1
+		rels, err := database.Select[domain.Release](r.Context(), db, "releases", in+` ORDER BY CASE state WHEN 'chosen' THEN 0 WHEN 'held' THEN 1
 			WHEN 'judged' THEN 2 WHEN 'passed_over' THEN 3 WHEN 'turned_down' THEN 5 ELSE 4 END,
 			COALESCE(json_extract(verdict, '$.rank'), 9999), id LIMIT ? OFFSET ?`, append(jobIDs, n, off)...)
 		if err != nil {
@@ -295,7 +295,7 @@ func (a *API) titleReleases(w http.ResponseWriter, r *http.Request) {
 		a.named(r.Context(), out)
 	}
 	// Searches of this Title still running, so a screen can wait for them.
-	js, err := store.Select[domain.Job](r.Context(), db, "jobs", `state IN ('queued', 'running') AND (
+	js, err := database.Select[domain.Job](r.Context(), db, "jobs", `state IN ('queued', 'running') AND (
 		kind = ? AND json_extract(subject, '$.type') = 'slot'
 			AND json_extract(subject, '$.id') IN (SELECT s.id FROM slots s JOIN items i ON i.id = s.item_id WHERE i.title_id = ?)
 		OR kind IN (?, ?) AND json_extract(subject, '$.type') = 'part' AND json_extract(subject, '$.id') IN (SELECT id FROM parts WHERE title_id = ?)) ORDER BY id`,
@@ -376,7 +376,7 @@ func (a *API) turnDownRelease(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var rel domain.Release
-	if err := store.Get(r.Context(), a.s.Store.Read(), "releases", id, &rel); err != nil {
+	if err := database.Get(r.Context(), a.s.Store.Read(), "releases", id, &rel); err != nil {
 		internal(w, err)
 		return
 	}
@@ -598,7 +598,7 @@ func (a *API) putSearchSettings(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	by := actor(r)
-	now := store.FormatTime(time.Now())
+	now := database.FormatTime(time.Now())
 	byText := actorJSONText(by)
 	err = a.s.Store.Write(r.Context(), func(tx *sql.Tx) error {
 		feedOn, feedEvery := in.FeedCheckMinutes > 0, in.FeedCheckMinutes*60
@@ -681,12 +681,12 @@ func (a *API) searches(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	db := a.s.Store.Read()
 	kinds := "kind IN (?, ?, ?, ?, ?)"
-	running, err := store.Select[domain.Job](ctx, db, "jobs", kinds+" AND state IN ('queued', 'running') ORDER BY id LIMIT 100", searchKinds...)
+	running, err := database.Select[domain.Job](ctx, db, "jobs", kinds+" AND state IN ('queued', 'running') ORDER BY id LIMIT 100", searchKinds...)
 	if err != nil {
 		internal(w, err)
 		return
 	}
-	recent, err := store.Select[domain.Job](ctx, db, "jobs", kinds+" AND state IN ('done', 'failed') AND ended_at IS NOT NULL ORDER BY ended_at DESC, id DESC LIMIT ?",
+	recent, err := database.Select[domain.Job](ctx, db, "jobs", kinds+" AND state IN ('done', 'failed') AND ended_at IS NOT NULL ORDER BY ended_at DESC, id DESC LIMIT ?",
 		append(searchKinds, limit(r, 10))...)
 	if err != nil {
 		internal(w, err)

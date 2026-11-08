@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"encoding/binary"
 	"fmt"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"hash/crc32"
 	"image"
 	"image/png"
@@ -15,8 +16,6 @@ import (
 	"strings"
 	"testing"
 	"time"
-
-	"github.com/HolyArrs/holyarrs/app/backend/internal/routehits"
 )
 
 // Backup files hold the whole database, password hashes included: only the
@@ -149,7 +148,7 @@ func TestPlexJoinIgnoresOwnServer(t *testing.T) {
 	m.HandleFunc("GET /api/v2/resources", func(w http.ResponseWriter, _ *http.Request) {
 		_, _ = w.Write([]byte(`[{"clientIdentifier":"machine-1","provides":"server","owned":true}]`))
 	})
-	p := httptest.NewServer(routehits.Wrap(m))
+	p := httptest.NewServer(webserver.RecordRouteHits(m))
 	t.Cleanup(p.Close)
 	f := gated(t, Options{PlexURL: p.URL, PlexAppURL: "https://app.example.test"})
 	own := ownerOf(t, f)

@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // TestHeldJobsDoNotStarveTheirPool: 300 held Music Jobs (title-decided
@@ -20,7 +20,7 @@ func TestHeldJobsDoNotStarveTheirPool(t *testing.T) {
 		ti := &domain.Title{Kind: "artist", GateDriver: "none", Name: "Low Bells", SortName: "low bells", Aliases: []string{}, SourceIDs: map[string]string{},
 			MetadataSource: "local", NewPartsPolicy: "all", ReleaseGate: "released", MusicTypes: []string{}, WhyAdded: "by_hand", Artwork: []string{}, Status: "released", State: "active"}
 		var err error
-		if music, err = store.Insert(tx, "titles", ti, domain.System); err != nil {
+		if music, err = database.Insert(tx, "titles", ti, domain.System); err != nil {
 			return err
 		}
 		return tx.QueryRow("SELECT id FROM titles WHERE kind = 'movie' LIMIT 1").Scan(&movie)

@@ -11,10 +11,12 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/judge"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/parse"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/tagset"
 )
 
@@ -51,8 +53,8 @@ func (s *Searcher) HandleFeed(ctx context.Context, r *jobs.Run) error {
 	jobID := r.Job.ID
 	now := time.Now().UTC()
 	db := s.Store.Read()
-	srcs, err := store.Select[domain.Source](ctx, db, "sources",
-		"(state = 'enabled' OR (state = 'paused' AND paused_until <= ?)) ORDER BY priority, id", store.FormatTime(now))
+	srcs, err := database.Select[domain.Source](ctx, db, "sources",
+		"(state = 'enabled' OR (state = 'paused' AND paused_until <= ?)) ORDER BY priority, id", database.FormatTime(now))
 	if err != nil {
 		return err
 	}
@@ -173,14 +175,14 @@ func (s *Searcher) HandleFeed(ctx context.Context, r *jobs.Run) error {
 	hasArtist := slices.ContainsFunc(refs, func(r judge.TitleRef) bool { return r.Kind == "artist" })
 	byTitle := map[int64][]found{}
 	for _, f := range all {
-		m := judge.MatchTitle(parse.Parse(f.item.Title, parse.Hints{Size: f.item.Size}), refs)
+		m := judge.MatchTitle(releasename.Parse(f.item.Title, releasename.Hints{Size: f.item.Size}), refs)
 		if m.Title == nil && hasShow {
 			// Read again as a show name ("Part 2" before tags, "- 12").
-			m = judge.MatchTitle(parse.Parse(f.item.Title, parse.Hints{Size: f.item.Size, Show: true}), refs)
+			m = judge.MatchTitle(releasename.Parse(f.item.Title, releasename.Hints{Size: f.item.Size, Show: true}), refs)
 		}
 		if m.Title == nil && hasArtist {
 			// Read again as an album name ("Artist - Album (Year) [FLAC]").
-			m = judge.MatchTitle(parse.Parse(f.item.Title, parse.Hints{Size: f.item.Size, Music: true}), refs)
+			m = judge.MatchTitle(releasename.Parse(f.item.Title, releasename.Hints{Size: f.item.Size, Music: true}), refs)
 		}
 		// A tagged Source's release goes only to a title sharing a tag (#108).
 		// It is matched against every wanted title first, so it never lands
@@ -191,7 +193,7 @@ func (s *Searcher) HandleFeed(ctx context.Context, r *jobs.Run) error {
 	}
 	ctxs := make(map[int64][]slotCtx, len(byTitle))
 	for titleID := range byTitle {
-		slots, err := store.Select[domain.Slot](ctx, db, "slots", `state IN (?, ?, ?) AND item_id IN (
+		slots, err := database.Select[domain.Slot](ctx, db, "slots", `state IN (?, ?, ?) AND item_id IN (
 			SELECT id FROM items WHERE title_id = ?) ORDER BY id`,
 			string(lookingStates[0]), string(lookingStates[1]), string(lookingStates[2]), titleID)
 		if err != nil {
@@ -303,7 +305,7 @@ func (s *Searcher) HandleFeed(ctx context.Context, r *jobs.Run) error {
 }
 
 func (s *Searcher) wantedTitleRefs(ctx context.Context) ([]judge.TitleRef, error) {
-	titles, err := store.Select[domain.Title](ctx, s.Store.Read(), "titles", `state = 'active' AND EXISTS (
+	titles, err := database.Select[domain.Title](ctx, s.Store.Read(), "titles", `state = 'active' AND EXISTS (
 		SELECT 1 FROM items i JOIN slots sl ON sl.item_id = i.id
 		WHERE i.title_id = titles.id AND sl.state IN (?, ?, ?)) ORDER BY sort_name, id`,
 		string(lookingStates[0]), string(lookingStates[1]), string(lookingStates[2]))
@@ -333,7 +335,7 @@ func (s *Searcher) ProbeGrabHeld(ctx context.Context, now time.Time) (bool, any,
 	var due bool
 	err := s.Store.Read().QueryRowContext(ctx, `SELECT EXISTS (
 		SELECT 1 FROM slots WHERE state = 'held' AND held_release_id IS NOT NULL AND next_try_at <= ?)`,
-		store.FormatTime(now.UTC())).Scan(&due)
+		database.FormatTime(now.UTC())).Scan(&due)
 	return due, nil, err
 }
 
@@ -341,11 +343,11 @@ func (s *Searcher) ProbeGrabHeld(ctx context.Context, now time.Time) (bool, any,
 // as stored, already without keys).
 func (s *Searcher) storedFound(ctx context.Context, id int64) (found, bool) {
 	var rel domain.Release
-	if err := store.Get(ctx, s.Store.Read(), "releases", id, &rel); err != nil || rel.State != "held" {
+	if err := database.Get(ctx, s.Store.Read(), "releases", id, &rel); err != nil || rel.State != "held" {
 		return found{}, false
 	}
 	var src domain.Source
-	if err := store.Get(ctx, s.Store.Read(), "sources", rel.SourceID, &src); err != nil {
+	if err := database.Get(ctx, s.Store.Read(), "sources", rel.SourceID, &src); err != nil {
 		return found{}, false
 	}
 	it := Item{Title: rel.Name, Link: rel.LinkRef, Size: rel.Size, Protocol: rel.Protocol, Seeders: rel.Seeders, Peers: rel.Peers}
@@ -370,8 +372,8 @@ func (s *Searcher) HandleGrabHeld(ctx context.Context, r *jobs.Run) error {
 }
 
 func (s *Searcher) grabHeld(ctx context.Context, by domain.Actor, jobID *int64, now time.Time) (int, error) {
-	slots, err := store.Select[domain.Slot](ctx, s.Store.Read(), "slots",
-		"state = 'held' AND held_release_id IS NOT NULL AND next_try_at <= ? ORDER BY next_try_at, id", store.FormatTime(now))
+	slots, err := database.Select[domain.Slot](ctx, s.Store.Read(), "slots",
+		"state = 'held' AND held_release_id IS NOT NULL AND next_try_at <= ? ORDER BY next_try_at, id", database.FormatTime(now))
 	if err != nil {
 		return 0, err
 	}
@@ -382,7 +384,7 @@ func (s *Searcher) grabHeld(ctx context.Context, by domain.Actor, jobID *int64, 
 			continue
 		}
 		var rel domain.Release
-		if err := store.Get(ctx, s.Store.Read(), "releases", *sl.HeldReleaseID, &rel); err != nil || rel.State != "held" {
+		if err := database.Get(ctx, s.Store.Read(), "releases", *sl.HeldReleaseID, &rel); err != nil || rel.State != "held" {
 			continue
 		}
 		if s.dangerousRel(ctx, rel) {
@@ -392,7 +394,7 @@ func (s *Searcher) grabHeld(ctx context.Context, by domain.Actor, jobID *int64, 
 				// Only while it is still held: a person may have chosen it meanwhile.
 				res, err := tx.Exec(`UPDATE releases SET state = 'refused', hold_until = NULL,
 					verdict = json_set(COALESCE(verdict, '{}'), '$.outcome', 'refused', '$.dangerous_files', json('true')), updated_at = ?, updated_by = ? WHERE id = ? AND state = 'held'`,
-					store.FormatTime(now), actorText(by), rel.ID)
+					database.FormatTime(now), actorText(by), rel.ID)
 				if err != nil {
 					return err
 				}

@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // upgradeWorld is setup with the downloaded file renamed to file, the
@@ -35,12 +35,12 @@ func upgradeWorld(t *testing.T, file, rel, old string) (world, int64, int64) {
 			return err
 		}
 		src := &domain.Source{Name: "Lab", Protocol: "torrent", Format: "torznab", URL: "http://x", Kinds: []string{}, Categories: map[string][]int{}, State: "enabled", Extra: map[string]string{}}
-		if _, err := store.Insert(tx, "sources", src, domain.System); err != nil {
+		if _, err := database.Insert(tx, "sources", src, domain.System); err != nil {
 			return err
 		}
 		r := &domain.Release{SourceID: src.ID, Name: rel, LinkRef: "http://x/1.torrent", Protocol: "torrent", Flags: []string{}, Parsed: map[string]any{},
 			MatchedSlotIDs: []int64{w.slotID}, Verdict: map[string]any{}, FoundBy: "auto_search", State: "chosen"}
-		id, err := store.Insert(tx, "releases", r, domain.System)
+		id, err := database.Insert(tx, "releases", r, domain.System)
 		if err != nil {
 			return err
 		}
@@ -55,7 +55,7 @@ func upgradeWorld(t *testing.T, file, rel, old string) (world, int64, int64) {
 		write(t, filepath.Join(w.lib, filepath.FromSlash(rp)), 100)
 		f := &domain.File{SlotIDs: []int64{w.slotID}, VersionID: w.vID, RelativePath: rp, Size: 100, AddedAt: time.Now().Add(-time.Hour),
 			Languages: []string{}, MediaInfo: map[string]any{}, ReleaseName: &old, Origin: "imported", PlacedBy: "hardlink", Role: "main", State: "present"}
-		if oldID, err = store.Insert(tx, "files", f, domain.System); err != nil {
+		if oldID, err = database.Insert(tx, "files", f, domain.System); err != nil {
 			return err
 		}
 		_, err = tx.Exec("UPDATE slots SET file_id = ? WHERE id = ?", oldID, w.slotID)
@@ -70,7 +70,7 @@ func upgradeWorld(t *testing.T, file, rel, old string) (world, int64, int64) {
 func slotOf(t *testing.T, w world) domain.Slot {
 	t.Helper()
 	var sl domain.Slot
-	if err := store.Get(context.Background(), w.s.Read(), "slots", w.slotID, &sl); err != nil {
+	if err := database.Get(context.Background(), w.s.Read(), "slots", w.slotID, &sl); err != nil {
 		t.Fatal(err)
 	}
 	return sl
@@ -91,7 +91,7 @@ func TestImportRejectsLyingFile(t *testing.T) {
 		t.Fatalf("import %s", imp.State)
 	}
 	var rel domain.Release
-	_ = store.Get(ctx, w.s.Read(), "releases", relID, &rel)
+	_ = database.Get(ctx, w.s.Read(), "releases", relID, &rel)
 	if rel.State != "turned_down" || rel.Verdict["turned_down_reason"] != "file is 720p, name said 1080p" {
 		t.Fatalf("release %s %v", rel.State, rel.Verdict)
 	}
@@ -118,7 +118,7 @@ func TestBetterCopyReplacesOldAndStopsAtGoodEnough(t *testing.T) {
 		t.Fatalf("plan does not name the replaced File: %+v", imp.Plan[0])
 	}
 	var old domain.File
-	_ = store.Get(ctx, w.s.Read(), "files", oldID, &old)
+	_ = database.Get(ctx, w.s.Read(), "files", oldID, &old)
 	if old.State != "replaced" {
 		t.Fatalf("old file %s", old.State)
 	}
@@ -157,12 +157,12 @@ func TestImportNeverDowngrades(t *testing.T) {
 		t.Fatalf("import %v %v", imp, err)
 	}
 	var rel domain.Release
-	_ = store.Get(ctx, w.s.Read(), "releases", relID, &rel)
+	_ = database.Get(ctx, w.s.Read(), "releases", relID, &rel)
 	if why, _ := rel.Verdict["turned_down_reason"].(string); rel.State != "turned_down" || !strings.Contains(why, "lower than the copy in place") {
 		t.Fatalf("release %s %v", rel.State, rel.Verdict)
 	}
 	var old domain.File
-	_ = store.Get(ctx, w.s.Read(), "files", oldID, &old)
+	_ = database.Get(ctx, w.s.Read(), "files", oldID, &old)
 	if sl := slotOf(t, w); old.State != "present" || sl.FileID == nil || *sl.FileID != oldID {
 		t.Fatalf("old file %s, slot file %v", old.State, sl.FileID)
 	}
@@ -183,7 +183,7 @@ func TestProperWithTheSameFileName(t *testing.T) {
 		t.Fatalf("new copy not in place: %v", err)
 	}
 	var old domain.File
-	_ = store.Get(ctx, w.s.Read(), "files", oldID, &old)
+	_ = database.Get(ctx, w.s.Read(), "files", oldID, &old)
 	if old.State != "replaced" {
 		t.Fatalf("old %s", old.State)
 	}
@@ -210,7 +210,7 @@ func TestSameNameWhenOldFileIsGone(t *testing.T) {
 		t.Fatalf("something was held aside: %v", held)
 	}
 	var old domain.File
-	_ = store.Get(ctx, w.s.Read(), "files", oldID, &old)
+	_ = database.Get(ctx, w.s.Read(), "files", oldID, &old)
 	if old.State != "replaced" || strings.HasPrefix(old.RelativePath, HoldingDir) {
 		t.Fatalf("old %s %s", old.State, old.RelativePath)
 	}
@@ -252,7 +252,7 @@ func TestReplaceSurvivesCrash(t *testing.T) {
 				t.Fatal("the held copy is not the old one")
 			}
 			var old domain.File
-			_ = store.Get(ctx, w.s.Read(), "files", oldID, &old)
+			_ = database.Get(ctx, w.s.Read(), "files", oldID, &old)
 			rel, _ := filepath.Rel(w.lib, held[0])
 			if old.State != "replaced" || old.RelativePath != filepath.ToSlash(rel) {
 				t.Fatalf("old %s %s, held at %s", old.State, old.RelativePath, rel)

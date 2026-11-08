@@ -7,8 +7,8 @@ import (
 	"testing"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/asks"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 func reportOf(t *testing.T, b []byte) asks.ReportView {
@@ -92,11 +92,11 @@ func TestReportsOverHTTP(t *testing.T) {
 	err := r.st.Write(ctx, func(tx *sql.Tx) error {
 		ti := &domain.Title{Kind: "movie", GateDriver: "none", Name: "Wanted Only", SortName: "wanted only", MetadataSource: "local", NewPartsPolicy: "all", ReleaseGate: "released",
 			WhyAdded: "by_hand", Status: "released", State: "active", SourceIDs: map[string]string{}, Aliases: []string{}, MusicTypes: []string{}, Artwork: []string{}}
-		if _, err := store.Insert(tx, "titles", ti, domain.System); err != nil {
+		if _, err := database.Insert(tx, "titles", ti, domain.System); err != nil {
 			return err
 		}
 		wanted = ti.ID
-		_, err := store.Insert(tx, "items", &domain.Item{TitleID: ti.ID, Kind: "movie", Numbers: domain.Numbers{}, KeepUpToDate: true, SourceIDs: map[string]string{}}, domain.System)
+		_, err := database.Insert(tx, "items", &domain.Item{TitleID: ti.ID, Kind: "movie", Numbers: domain.Numbers{}, KeepUpToDate: true, SourceIDs: map[string]string{}}, domain.System)
 		return err
 	})
 	if err != nil {

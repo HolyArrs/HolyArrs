@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 )
 
 // masterKeyChecks reads the master key (HOLYARRS_MASTER_KEY_FILE or holyarrs.key
@@ -81,7 +81,7 @@ func masterKeyChecks(r *Report, dir string) {
 	case !saved:
 		r.add(s, OK, "key fingerprint "+fp+" (no saved secrets yet)", "")
 	default:
-		if err := secrets.CheckFile(filepath.Join(dir, store.MainFile), key); errors.Is(err, secrets.ErrWrongKey) {
+		if err := secrets.CheckFile(filepath.Join(dir, database.MainFile), key); errors.Is(err, secrets.ErrWrongKey) {
 			r.add(s, Fail, "the key in "+p+" (fingerprint "+fp+") does not match this database",
 				"put back the key file that belongs to this database; a new key cannot open the saved secrets")
 		} else if err != nil {

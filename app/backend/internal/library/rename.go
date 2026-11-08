@@ -18,11 +18,13 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/judge"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/naming"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/parse"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles/subtext"
 )
@@ -32,8 +34,8 @@ const KindRename = "rename_files"
 
 // reader reads rows and single rows (the store's read pool fits).
 type reader interface {
-	store.Lister
-	store.Querier
+	database.Lister
+	database.Querier
 }
 
 // RenameStep is one File in a rename. From and To are relative to the
@@ -189,7 +191,7 @@ func fileFacts(t domain.Title, f domain.File) naming.Facts {
 		year = *t.Year
 	}
 	ext := path.Ext(f.RelativePath)
-	fa := naming.FactsFrom(t.Name, year, t.SourceIDs, parse.Parse(release, parse.Hints{}), release, ext)
+	fa := naming.FactsFrom(t.Name, year, t.SourceIDs, releasename.Parse(release, releasename.Hints{}), release, ext)
 	if edition, ok := f.MediaInfo["edition"].(string); ok {
 		fa.Edition = edition
 	}
@@ -208,7 +210,7 @@ func fileEpisodes(ctx context.Context, db reader, f domain.File) ([]importer.Epi
 		if err := db.QueryRowContext(ctx, "SELECT item_id FROM slots WHERE id = ?", sid).Scan(&itemID); err != nil {
 			continue
 		}
-		if err := store.Get(ctx, db, "items", itemID, &it); err != nil {
+		if err := database.Get(ctx, db, "items", itemID, &it); err != nil {
 			return nil, err
 		}
 		e := importer.Episode{Ref: judge.EpisodeRef{ItemID: it.ID}, SlotID: sid}
@@ -252,7 +254,7 @@ func episodeFacts(t domain.Title, f domain.File, eps []importer.Episode) naming.
 	if t.EpisodeOrder != nil && *t.EpisodeOrder != "" {
 		order = *t.EpisodeOrder
 	}
-	fa := importer.EpisodeFactsFor(t.Name, year, t.SourceIDs, order, parse.Parse(release, parse.Hints{Show: true}), release, path.Ext(f.RelativePath), eps)
+	fa := importer.EpisodeFactsFor(t.Name, year, t.SourceIDs, order, releasename.Parse(release, releasename.Hints{Show: true}), release, path.Ext(f.RelativePath), eps)
 	if step, ok := f.MediaInfo["step"].(string); ok && step != "" {
 		fa.Step = step
 	}
@@ -277,7 +279,7 @@ func trackFacts(ctx context.Context, db reader, t domain.Title, f domain.File, c
 	if err := db.QueryRowContext(ctx, "SELECT item_id FROM slots WHERE id = ?", f.SlotIDs[0]).Scan(&itemID); err != nil {
 		return naming.TrackFacts{}, 0, false, nil
 	}
-	if err := store.Get(ctx, db, "items", itemID, &it); err != nil {
+	if err := database.Get(ctx, db, "items", itemID, &it); err != nil {
 		return naming.TrackFacts{}, 0, false, err
 	}
 	if it.Kind != "track" || it.PartID == nil {
@@ -356,13 +358,13 @@ func planRename(ctx context.Context, db reader, ns naming.Settings, titleIDs []i
 			args = append(args, id)
 		}
 	}
-	titles, err := store.Select[domain.Title](ctx, db, "titles", where, args...)
+	titles, err := database.Select[domain.Title](ctx, db, "titles", where, args...)
 	if err != nil {
 		return nil, err
 	}
 	out := []RenameStep{}
 	for _, t := range titles {
-		files, err := store.Select[domain.File](ctx, db, "files",
+		files, err := database.Select[domain.File](ctx, db, "files",
 			"state = 'present' AND role = 'main' AND version_id IN (SELECT id FROM versions WHERE title_id = ?) ORDER BY id", t.ID)
 		if err != nil {
 			return nil, err
@@ -372,10 +374,10 @@ func planRename(ctx context.Context, db reader, ns naming.Settings, titleIDs []i
 		for _, f := range files {
 			var v domain.Version
 			var lf domain.LibraryFolder
-			if err := store.Get(ctx, db, "versions", f.VersionID, &v); err != nil {
+			if err := database.Get(ctx, db, "versions", f.VersionID, &v); err != nil {
 				return nil, err
 			}
-			if err := store.Get(ctx, db, "library_folders", v.LibraryFolderID, &lf); err != nil {
+			if err := database.Get(ctx, db, "library_folders", v.LibraryFolderID, &lf); err != nil {
 				return nil, err
 			}
 			st := RenameStep{FileID: f.ID, TitleID: t.ID, TitleName: t.Name, VersionID: v.ID, LibraryFolderID: lf.ID, Origin: f.Origin,
@@ -525,7 +527,7 @@ func (s *Service) applyRenameLocked(ctx context.Context, plan []RenameStep, jobI
 				continue
 			}
 			res, err := tx.Exec(`INSERT INTO rename_steps (created_at, job_id, file_id, from_path, to_path, to_rel, state, error) VALUES (?, ?, ?, ?, ?, ?, 'pending', ?)`,
-				store.FormatTime(s.now()), nullID(jobID), st.FileID, from,
+				database.FormatTime(s.now()), nullID(jobID), st.FileID, from,
 				filepath.Join(st.root, filepath.FromSlash(st.To)), st.To, rw.proof.value)
 			if err != nil {
 				return err
@@ -540,7 +542,7 @@ func (s *Service) applyRenameLocked(ctx context.Context, plan []RenameStep, jobI
 				proof := rw.subProofs[proofIndex]
 				proofIndex++
 				res, err := tx.Exec(`INSERT INTO rename_steps (created_at, job_id, file_id, from_path, to_path, to_rel, state, part, error) VALUES (?, ?, ?, ?, ?, ?, 'pending', 'subtitle', ?)`,
-					store.FormatTime(s.now()), nullID(jobID), st.FileID, subFrom,
+					database.FormatTime(s.now()), nullID(jobID), st.FileID, subFrom,
 					filepath.Join(st.root, filepath.FromSlash(m.To)), m.To, proof.value)
 				if err != nil {
 					return err
@@ -707,7 +709,7 @@ func (s *Service) finishSubtitleRename(ctx context.Context, stepID, fileID int64
 	}
 	return s.Store.Write(ctx, func(tx *sql.Tx) error {
 		if _, err := tx.Exec("UPDATE subtitles SET relative_path = ?, updated_at = ? WHERE file_id = ? AND relative_path = ?",
-			toRel, store.FormatTime(s.now()), fileID, fromRel); err != nil {
+			toRel, database.FormatTime(s.now()), fileID, fromRel); err != nil {
 			return err
 		}
 		_, err := tx.Exec("UPDATE rename_steps SET state = 'done', error = NULL WHERE id = ?", stepID)
@@ -759,11 +761,11 @@ func (s *Service) finishRename(ctx context.Context, stepID, fileID int64, from, 
 	}
 	var f domain.File
 	err = s.Store.Write(ctx, func(tx *sql.Tx) error {
-		if err := store.Get(ctx, tx, "files", fileID, &f); err != nil {
+		if err := database.Get(ctx, tx, "files", fileID, &f); err != nil {
 			return err
 		}
 		if _, err := tx.Exec("UPDATE files SET relative_path = ?, updated_at = ?, updated_by = ? WHERE id = ?",
-			toRel, store.FormatTime(s.now()), actorText(by), fileID); err != nil {
+			toRel, database.FormatTime(s.now()), actorText(by), fileID); err != nil {
 			return err
 		}
 		_, err := tx.Exec("UPDATE rename_steps SET state = 'done', error = NULL WHERE id = ?", stepID)

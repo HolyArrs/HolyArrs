@@ -14,11 +14,13 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/explore"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/lowmem"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/ratings"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/supervisor"
 )
 
 // The Explore engine's server side: the background pool job (its own
@@ -121,20 +123,20 @@ func (a *API) StartExplore(ctx context.Context) {
 	a.applyArtworkCap(ctx) // the picture cache size from Settings
 	a.s.Store.OnEvent(a.exploreOnEvent)
 	a.s.Store.OnEvent(a.musicOnEvent)
-	go supervisor.Guard("explore", func() { a.exploreLoop(ctx) })
+	go jobs.Guard("explore", func() { a.exploreLoop(ctx) })
 	// The warmers fetch ahead of anyone: they carry X-Fetch: ahead, keep to
 	// the slower pace, wait out the server's hold and have their own
 	// breaker, so a restart's warm-up never makes a person's page fail.
 	warm := metadata.Ahead(ctx)
-	go supervisor.Guard("explore-service-top-warm", func() { a.warmServiceTop(warm) })
-	go supervisor.Guard("explore-genre-warm", func() { a.warmGenres(warm) })
+	go jobs.Guard("explore-service-top-warm", func() { a.warmServiceTop(warm) })
+	go jobs.Guard("explore-genre-warm", func() { a.warmGenres(warm) })
 	startBackdropDark(ctx)
 	a.startMusicSync(ctx)
-	go supervisor.Guard("explore-browse-warm", func() { a.warmBrowse(warm) })
+	go jobs.Guard("explore-browse-warm", func() { a.warmBrowse(warm) })
 	if a.musicTplOn() {
 		// The music catalog bundle is read once at start, so the first music
 		// page does not wait for its download.
-		go supervisor.Guard("music-bundle-warm", func() {
+		go jobs.Guard("music-bundle-warm", func() {
 			// Then every engine page's covers are stored ahead (musicpreload.go):
 			// the household's own region joins when its pages are first asked.
 			a.tplPreload(a.musicBundle(ctx, time.Now().UTC()), "us")
@@ -172,7 +174,7 @@ func switchesFor(kind string) []string {
 // markMemberStale marks the member's pools stale, due now.
 func (a *API) markMemberStale(ctx context.Context, member int64, due time.Time) {
 	_ = a.s.Store.Write(ctx, func(tx *sql.Tx) error {
-		_, err := tx.Exec("UPDATE explore_pool SET stale = 1, due = ? WHERE member_id = ?", store.FormatTime(due), member)
+		_, err := tx.Exec("UPDATE explore_pool SET stale = 1, due = ? WHERE member_id = ?", database.FormatTime(due), member)
 		return err
 	})
 	for _, sw := range exploreSwitches {
@@ -186,7 +188,7 @@ func (a *API) markSwitchStale(ctx context.Context, kind string, due time.Time) {
 	sws := switchesFor(kind)
 	var keys []poolKey
 	_ = a.s.Store.Write(ctx, func(tx *sql.Tx) error {
-		_, err := tx.Exec("UPDATE explore_pool SET stale = 1, due = ? WHERE type_switch IN (?, ?)", store.FormatTime(due), sws[0], sws[1])
+		_, err := tx.Exec("UPDATE explore_pool SET stale = 1, due = ? WHERE type_switch IN (?, ?)", database.FormatTime(due), sws[0], sws[1])
 		return err
 	})
 	rows, err := a.s.Store.Read().QueryContext(ctx, "SELECT DISTINCT member_id, type_switch FROM explore_pool WHERE type_switch IN (?, ?)", sws[0], sws[1])
@@ -249,7 +251,7 @@ func (a *API) runDue(ctx context.Context) {
 	e.mu.Lock()
 	if e.slots == nil {
 		// Low-memory mode builds one pool at a time (catching up after a restart takes longer).
-		e.slots = make(chan struct{}, lowmem.Pick(exploreWorkers, 1))
+		e.slots = make(chan struct{}, startup.LowMemoryPick(exploreWorkers, 1))
 	}
 	slots := e.slots
 	e.mu.Unlock()
@@ -264,7 +266,7 @@ func (a *API) runDue(ctx context.Context) {
 			<-slots
 			return
 		}
-		go supervisor.Guard("explore-build", func() {
+		go jobs.Guard("explore-build", func() {
 			defer func() {
 				e.mu.Lock()
 				delete(e.building, k)
@@ -733,7 +735,7 @@ func (a *API) exploreInput(ctx context.Context, m exploreMember, sw string, now 
 		}
 		_ = json.Unmarshal([]byte(genres), &t.Genres)
 		_ = json.Unmarshal([]byte(people), &t.People)
-		t.Added, _ = time.Parse(store.TimeLayout, added)
+		t.Added, _ = time.Parse(database.TimeLayout, added)
 		key := t.Kind + ":" + t.TMDBID
 		in.Owned[key] = true
 		if m.kid && !ratings.Allows(m.maxRating, t.Kind, t.Rating) {
@@ -777,7 +779,7 @@ func (a *API) exploreInput(ctx context.Context, m exploreMember, sw string, now 
 			rows.Close()
 			return in, err
 		}
-		s.At, _ = time.Parse(store.TimeLayout, at)
+		s.At, _ = time.Parse(database.TimeLayout, at)
 		asks = append(asks, s)
 		if s.Member == m.id && open {
 			in.MyAsks = append([]explore.Item{{TMDBID: s.TMDBID, Kind: s.Kind, Name: s.Name, Year: s.Year, Poster: poster, Genres: []string{}}}, in.MyAsks...)
@@ -826,7 +828,7 @@ func exploreReturning(ctx context.Context, db *sql.DB, now time.Time) ([]explore
 		FROM titles t JOIN items i ON i.title_id = t.id AND i.kind = 'episode' AND i.dropped_at IS NULL AND i.air_date > ?
 		WHERE t.kind = 'show' AND t.state != 'removed' AND json_extract(t.source_ids, '$.tmdb') IS NOT NULL
 		GROUP BY t.id HAVING next >= ? AND next <= ? ORDER BY next, t.id LIMIT 40`,
-		store.FormatTime(now), store.FormatTime(now.AddDate(0, 0, 7)), store.FormatTime(now.AddDate(0, 0, 60)))
+		database.FormatTime(now), database.FormatTime(now.AddDate(0, 0, 7)), database.FormatTime(now.AddDate(0, 0, 60)))
 	if err != nil {
 		return nil, err
 	}
@@ -844,7 +846,7 @@ func exploreReturning(ctx context.Context, db *sql.DB, now time.Time) ([]explore
 		if links := artworkLinks(art); len(links) > 0 {
 			it.Poster = links[0]
 		}
-		if d, err := time.Parse(store.TimeLayout, next); err == nil {
+		if d, err := time.Parse(database.TimeLayout, next); err == nil {
 			it.Released = d.Format("2006-01-02")
 		}
 		it.Kind, it.Owned = "show", true
@@ -957,7 +959,7 @@ func (a *API) buildPool(ctx context.Context, member int64, sw string) error {
 	err = a.s.Store.Write(ctx, func(tx *sql.Tx) error {
 		_, err := tx.Exec(`INSERT INTO explore_pool (member_id, type_switch, day, built_at, stale, due, pool) VALUES (?, ?, ?, ?, 0, NULL, ?)
 			ON CONFLICT (member_id, type_switch, day) DO UPDATE SET built_at = excluded.built_at, stale = 0, due = NULL, pool = excluded.pool`,
-			member, sw, day, store.FormatTime(now), string(raw))
+			member, sw, day, database.FormatTime(now), string(raw))
 		return err
 	})
 	if err != nil {

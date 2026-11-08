@@ -13,7 +13,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/files"
 )
 
 // options are the flags every command shares, plus seed's own.
@@ -115,8 +115,8 @@ func refused(err error) bool {
 // runs, so the app cannot start while a command changes the folder. A
 // held lock means the app runs.
 func lockConfig(dir string) (func(), error) {
-	unlock, err := store.LockDir(dir)
-	if errors.Is(err, store.ErrDirLocked) {
+	unlock, err := files.LockDir(dir)
+	if errors.Is(err, files.ErrDirLocked) {
 		return nil, errRunning
 	}
 	if err != nil {

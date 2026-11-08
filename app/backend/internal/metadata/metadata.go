@@ -5,10 +5,9 @@ package metadata
 import (
 	"context"
 	"errors"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 	"strings"
 	"time"
-
-	"github.com/HolyArrs/holyarrs/app/backend/internal/parse"
 )
 
 // ErrNotFound is returned when no movie has the id.
@@ -97,10 +96,10 @@ func Lab() *Static {
 
 // Search matches by clean name, and by year when year is not 0.
 func (s *Static) Search(_ context.Context, query string, year int) ([]Movie, error) {
-	q := parse.CleanName(query)
+	q := releasename.CleanName(query)
 	var out []Movie
 	for _, m := range s.Movies {
-		if (q == "" || strings.Contains(parse.CleanName(m.Name), q)) && (year == 0 || m.Year == year) {
+		if (q == "" || strings.Contains(releasename.CleanName(m.Name), q)) && (year == 0 || m.Year == year) {
 			out = append(out, m)
 		}
 	}

@@ -10,8 +10,8 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 const (
@@ -81,7 +81,7 @@ type viewRows struct {
 	Downloads []DownloadRow `json:"downloads"`
 }
 
-func countDownloads(t *testing.T, s *store.Store) int {
+func countDownloads(t *testing.T, s *database.Store) int {
 	t.Helper()
 	var n int
 	if err := s.Read().QueryRow("SELECT COUNT(*) FROM downloads").Scan(&n); err != nil {
@@ -155,7 +155,7 @@ func TestDownloadsViewKnownHash(t *testing.T) {
 		if err := tx.QueryRow("SELECT downloader_id FROM downloads").Scan(&dr); err != nil {
 			return err
 		}
-		_, err := store.Insert(tx, "downloads", &domain.Download{DownloaderID: dr, SlotIDs: []int64{}, ExternalID: "ffffffffffffffffffffffffffffffffffffffff", State: "cleaned",
+		_, err := database.Insert(tx, "downloads", &domain.Download{DownloaderID: dr, SlotIDs: []int64{}, ExternalID: "ffffffffffffffffffffffffffffffffffffffff", State: "cleaned",
 			FilesSeen: []domain.SeenFile{}, StartedBy: domain.System}, domain.System)
 		return err
 	})
@@ -254,7 +254,7 @@ func TestClientItemsNeedManageLibrary(t *testing.T) {
 	err := r.st.Write(context.Background(), func(tx *sql.Tx) error {
 		dr := &domain.Downloader{Writable: true, Name: "Q", Adapter: "qbittorrent", Protocol: "torrent", URL: qb.URL, Category: "holyarrs", Priority: 1,
 			PathMap: []domain.PathMap{}, AfterImport: "leave", State: "ok", AllowLocal: true}
-		_, err := store.Insert(tx, "downloaders", dr, domain.System)
+		_, err := database.Insert(tx, "downloaders", dr, domain.System)
 		did = dr.ID
 		return err
 	})

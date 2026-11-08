@@ -9,11 +9,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/naming"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // ShowAddOptions are the choices made when adding a show. Empty values take
@@ -55,7 +55,7 @@ func (e *ShowAlreadyAddedError) Error() string {
 var ErrShowNeverAdd = errors.New("this show is on the Never-add list")
 
 // ShowByIDs finds a show Title sharing any of ids; 0 when there is none.
-func ShowByIDs(ctx context.Context, db store.Querier, ids map[string]string) (int64, error) {
+func ShowByIDs(ctx context.Context, db database.Querier, ids map[string]string) (int64, error) {
 	for _, k := range []string{"tvdb", "tmdb", "tvmaze", "imdb"} {
 		v := ids[k]
 		if v == "" {
@@ -74,11 +74,11 @@ func ShowByIDs(ctx context.Context, db store.Querier, ids map[string]string) (in
 }
 
 // ShowOnNeverAdd says whether a show with any of ids is on the Never-add list.
-func ShowOnNeverAdd(ctx context.Context, db store.Querier, ids map[string]string) (bool, error) {
+func ShowOnNeverAdd(ctx context.Context, db database.Querier, ids map[string]string) (bool, error) {
 	return showOnNeverAdd(ctx, db, ids)
 }
 
-func showOnNeverAdd(ctx context.Context, db store.Querier, ids map[string]string) (bool, error) {
+func showOnNeverAdd(ctx context.Context, db database.Querier, ids map[string]string) (bool, error) {
 	for _, k := range []string{"tvdb", "tmdb", "tvmaze", "imdb"} {
 		if ids[k] == "" {
 			continue
@@ -188,7 +188,7 @@ func (s *Service) AddShow(ctx context.Context, id string, opt ShowAddOptions, by
 
 	var lf domain.LibraryFolder
 	if opt.LibraryFolderID == 0 {
-		fs, err := store.Select[domain.LibraryFolder](ctx, db, "library_folders", "kind = 'show' ORDER BY id LIMIT 1")
+		fs, err := database.Select[domain.LibraryFolder](ctx, db, "library_folders", "kind = 'show' ORDER BY id LIMIT 1")
 		if err != nil {
 			return 0, 0, err
 		}
@@ -196,7 +196,7 @@ func (s *Service) AddShow(ctx context.Context, id string, opt ShowAddOptions, by
 			return 0, 0, ErrNoShowFolder
 		}
 		lf = fs[0]
-	} else if err := store.Get(ctx, db, "library_folders", opt.LibraryFolderID, &lf); errors.Is(err, store.ErrNotFound) {
+	} else if err := database.Get(ctx, db, "library_folders", opt.LibraryFolderID, &lf); errors.Is(err, database.ErrNotFound) {
 		return 0, 0, ErrNoShowFolder
 	} else if err != nil {
 		return 0, 0, err
@@ -270,7 +270,7 @@ func (s *Service) AddShow(ctx context.Context, id string, opt ShowAddOptions, by
 			NewPartsPolicy: opt.NewSeasons, ReleaseGate: GateReleased, MusicTypes: []string{}, WhyAdded: opt.WhyAdded, Artwork: []string{},
 			State: "active", GateDriver: "none", SeasonChoice: &choice, FutureFrom: from, RefreshedAt: &now}
 		applyShow(&t, sh)
-		if _, err := store.Insert(tx, "titles", &t, by); err != nil {
+		if _, err := database.Insert(tx, "titles", &t, by); err != nil {
 			return err
 		}
 		year := 0
@@ -282,7 +282,7 @@ func (s *Service) AddShow(ctx context.Context, id string, opt ShowAddOptions, by
 			folder = opt.Adopt.FolderName
 		}
 		v := &domain.Version{TitleID: t.ID, Label: "Main", PickRulesID: prID, LibraryFolderID: lf.ID, FolderName: folder, KeepUpToDate: keep, IsMain: true}
-		if _, err := store.Insert(tx, "versions", v, by); err != nil {
+		if _, err := database.Insert(tx, "versions", v, by); err != nil {
 			return err
 		}
 		var err error
@@ -294,7 +294,7 @@ func (s *Service) AddShow(ctx context.Context, id string, opt ShowAddOptions, by
 		// episodes, in the same write, so the scan and search after the
 		// add already see them.
 		if keep {
-			ts, who := store.FormatTime(now), actorText(by)
+			ts, who := database.FormatTime(now), actorText(by)
 			if opt.FirstSeason {
 				var first sql.NullInt64
 				if err := tx.QueryRow("SELECT COALESCE(MIN(CASE WHEN number >= 1 THEN number END), MIN(number)) FROM parts WHERE title_id = ? AND kind = 'season'", t.ID).Scan(&first); err != nil {
@@ -371,7 +371,7 @@ type SeasonVersion struct{ PartID, VersionID int64 }
 // ShowSeasonsToSearch lists, for a whole-show search, every season with an
 // episode kept up to date that is looking for a copy, in a show and
 // Version kept up to date.
-func ShowSeasonsToSearch(ctx context.Context, db store.Lister, titleID int64) ([]SeasonVersion, error) {
+func ShowSeasonsToSearch(ctx context.Context, db database.Lister, titleID int64) ([]SeasonVersion, error) {
 	rows, err := db.QueryContext(ctx, `SELECT DISTINCT p.id, s.version_id FROM parts p JOIN items i ON i.part_id = p.id JOIN slots s ON s.item_id = i.id
 		JOIN titles t ON t.id = p.title_id JOIN versions v ON v.id = s.version_id
 		WHERE p.title_id = ? AND t.keep_up_to_date = 1 AND v.keep_up_to_date = 1 AND p.keep_up_to_date = 1 AND i.keep_up_to_date = 1 AND i.dropped_at IS NULL
@@ -408,7 +408,7 @@ func (s *Service) searchShow(ctx context.Context, titleID int64, by domain.Actor
 	return nil
 }
 
-func countWanted(ctx context.Context, db store.Querier, titleID int64) int {
+func countWanted(ctx context.Context, db database.Querier, titleID int64) int {
 	var n int
 	_ = db.QueryRowContext(ctx, "SELECT count(*) FROM slots WHERE state = 'wanted' AND item_id IN (SELECT id FROM items WHERE title_id = ?)", titleID).Scan(&n)
 	return n
@@ -418,7 +418,7 @@ func countWanted(ctx context.Context, db store.Querier, titleID int64) int {
 func (s *Service) SetSeason(ctx context.Context, titleID int64, number int, keep bool, by domain.Actor) error {
 	var t domain.Title
 	err := s.Store.Write(ctx, func(tx *sql.Tx) error {
-		if err := store.Get(ctx, tx, "titles", titleID, &t); err != nil {
+		if err := database.Get(ctx, tx, "titles", titleID, &t); err != nil {
 			return err
 		}
 		if t.Kind != "show" {
@@ -430,7 +430,7 @@ func (s *Service) SetSeason(ctx context.Context, titleID int64, number int, keep
 		} else if err != nil {
 			return err
 		}
-		ts, who := store.FormatTime(s.now()), actorText(by)
+		ts, who := database.FormatTime(s.now()), actorText(by)
 		if _, err := tx.Exec("UPDATE parts SET keep_up_to_date = ?, updated_at = ?, updated_by = ? WHERE id = ?", keep, ts, who, partID); err != nil {
 			return err
 		}
@@ -456,7 +456,7 @@ func (s *Service) KeepEpisodes(ctx context.Context, titleID int64, number int, e
 	}
 	var t domain.Title
 	err := s.Store.Write(ctx, func(tx *sql.Tx) error {
-		if err := store.Get(ctx, tx, "titles", titleID, &t); err != nil {
+		if err := database.Get(ctx, tx, "titles", titleID, &t); err != nil {
 			return err
 		}
 		if t.Kind != "show" {
@@ -469,7 +469,7 @@ func (s *Service) KeepEpisodes(ctx context.Context, titleID int64, number int, e
 		} else if err != nil {
 			return err
 		}
-		ts, who := store.FormatTime(s.now()), actorText(by)
+		ts, who := database.FormatTime(s.now()), actorText(by)
 		if !keep {
 			if _, err := tx.Exec("UPDATE parts SET keep_up_to_date = 1, updated_at = ?, updated_by = ? WHERE id = ?", ts, who, partID); err != nil {
 				return err
@@ -501,7 +501,7 @@ func (s *Service) KeepEpisodes(ctx context.Context, titleID int64, number int, e
 func (s *Service) KeepFuture(ctx context.Context, titleID int64, by domain.Actor) error {
 	var t domain.Title
 	err := s.Store.Write(ctx, func(tx *sql.Tx) error {
-		if err := store.Get(ctx, tx, "titles", titleID, &t); err != nil {
+		if err := database.Get(ctx, tx, "titles", titleID, &t); err != nil {
 			return err
 		}
 		if t.Kind != "show" {
@@ -510,10 +510,10 @@ func (s *Service) KeepFuture(ctx context.Context, titleID int64, by domain.Actor
 		now := s.now()
 		choice := SeasonsFuture
 		t.KeepUpToDate, t.NewPartsPolicy, t.SeasonChoice, t.FutureFrom = true, "all", &choice, &now
-		if err := store.Update(tx, "titles", &t, by); err != nil {
+		if err := database.Update(tx, "titles", &t, by); err != nil {
 			return err
 		}
-		ts, who := store.FormatTime(now), actorText(by)
+		ts, who := database.FormatTime(now), actorText(by)
 		ahead := "(air_date IS NULL OR air_date > ?)"
 		if _, err := tx.Exec("UPDATE items SET keep_up_to_date = 1, updated_at = ?, updated_by = ? WHERE title_id = ? AND kind = 'episode' AND keep_up_to_date = 0 AND "+ahead,
 			ts, who, titleID, ts); err != nil {
@@ -535,14 +535,14 @@ func (s *Service) KeepFuture(ctx context.Context, titleID int64, by domain.Actor
 func (s *Service) SetEpisode(ctx context.Context, itemID int64, keep bool, by domain.Actor) (domain.Item, error) {
 	var it domain.Item
 	err := s.Store.Write(ctx, func(tx *sql.Tx) error {
-		if err := store.Get(ctx, tx, "items", itemID, &it); err != nil {
+		if err := database.Get(ctx, tx, "items", itemID, &it); err != nil {
 			return err
 		}
 		if it.Kind != "episode" {
-			return store.ErrNotFound
+			return database.ErrNotFound
 		}
 		it.KeepUpToDate = keep
-		return store.Update(tx, "items", &it, by)
+		return database.Update(tx, "items", &it, by)
 	})
 	if err != nil {
 		return it, err
@@ -583,8 +583,8 @@ type SeasonSummary struct {
 
 // Seasons summarises a show's seasons from its episodes and the main
 // Version's Slots.
-func Seasons(ctx context.Context, db store.Lister, titleID int64, now time.Time) ([]SeasonSummary, error) {
-	parts, err := store.Select[domain.Part](ctx, db, "parts", "title_id = ? AND kind = 'season' ORDER BY number", titleID)
+func Seasons(ctx context.Context, db database.Lister, titleID int64, now time.Time) ([]SeasonSummary, error) {
+	parts, err := database.Select[domain.Part](ctx, db, "parts", "title_id = ? AND kind = 'season' ORDER BY number", titleID)
 	if err != nil {
 		return nil, err
 	}
@@ -621,7 +621,7 @@ func Seasons(ctx context.Context, db store.Lister, titleID int64, now time.Time)
 		ss := &out[idx]
 		ss.Episodes++
 		if air.Valid {
-			if at, err := time.Parse(store.TimeLayout, air.String); err == nil {
+			if at, err := time.Parse(database.TimeLayout, air.String); err == nil {
 				if !at.After(now) {
 					ss.Aired++
 				} else if ss.NextAirDate == nil || at.Before(*ss.NextAirDate) {

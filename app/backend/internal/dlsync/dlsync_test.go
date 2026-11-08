@@ -9,11 +9,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
-func jobs(js ...downloader.Job) map[string]downloader.Job {
+func jobSnapshot(js ...downloader.Job) map[string]downloader.Job {
 	m := map[string]downloader.Job{}
 	for _, j := range js {
 		m[j.ID] = j
@@ -22,13 +22,13 @@ func jobs(js ...downloader.Job) map[string]downloader.Job {
 }
 
 func TestDiffAddChangeRemoveTransition(t *testing.T) {
-	prev := jobs(
+	prev := jobSnapshot(
 		downloader.Job{ID: "a", State: downloader.StateDownloading, Progress: 0.2, Speed: 100},
 		downloader.Job{ID: "b", State: downloader.StateDownloading, Progress: 0.5},
 		downloader.Job{ID: "c", State: downloader.StatePaused},
 		downloader.Job{ID: "f", Files: []downloader.File{{Name: "x"}}},
 	)
-	cur := jobs(
+	cur := jobSnapshot(
 		downloader.Job{ID: "a", State: downloader.StateDownloading, Progress: 0.3, Speed: 100},
 		downloader.Job{ID: "b", State: downloader.StateFinished, Progress: 1},
 		downloader.Job{ID: "d", State: downloader.StateQueued},
@@ -55,11 +55,11 @@ func TestDiffAddChangeRemoveTransition(t *testing.T) {
 func TestDiffLimitsPointer(t *testing.T) {
 	a := downloader.Job{ID: "a", Limits: &downloader.ShareLimits{Ratio: 1}}
 	b := downloader.Job{ID: "a", Limits: &downloader.ShareLimits{Ratio: 1}}
-	if !Diff(jobs(a), jobs(b)).Empty() {
+	if !Diff(jobSnapshot(a), jobSnapshot(b)).Empty() {
 		t.Fatal("equal limits behind different pointers counted as a change")
 	}
 	b.Limits = &downloader.ShareLimits{Ratio: 2}
-	if c := Diff(jobs(a), jobs(b)); len(c.Changed) != 1 || c.Changed[0].Fields[0] != "Limits" {
+	if c := Diff(jobSnapshot(a), jobSnapshot(b)); len(c.Changed) != 1 || c.Changed[0].Fields[0] != "Limits" {
 		t.Fatalf("%+v", c)
 	}
 }
@@ -219,13 +219,12 @@ func TestCursorsSharedSessionAndParseErrorDropsCursor(t *testing.T) {
 	}
 }
 
-func openDB(t *testing.T) *store.Store {
+func openDB(t *testing.T) *database.Store {
 	t.Helper()
-	s, err := store.Open(t.TempDir(), store.Options{})
+	s, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = s.Close() })
 	return s
 }
-

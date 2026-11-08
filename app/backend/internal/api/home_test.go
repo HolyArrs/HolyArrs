@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 func TestHomeRowOrderPerRole(t *testing.T) {
@@ -78,7 +78,7 @@ func TestHomeRowsOverHTTP(t *testing.T) {
 	}
 	now := time.Now()
 	err := s.Write(context.Background(), func(tx *sql.Tx) error {
-		ins := func(table string, v any) error { _, err := store.Insert(tx, table, v, domain.System); return err }
+		ins := func(table string, v any) error { _, err := database.Insert(tx, table, v, domain.System); return err }
 		movie := domain.Title{Kind: "movie", Name: "Fresh Movie", SortName: "fresh movie", MetadataSource: "tmdb", WhyAdded: "by_hand", State: "active", NewPartsPolicy: "all", ReleaseGate: "released", GateDriver: "none", Status: "released"}
 		wanted := domain.Title{Kind: "movie", Name: "Wanted Movie", SortName: "wanted movie", MetadataSource: "tmdb", WhyAdded: "by_hand", State: "active", NewPartsPolicy: "all", ReleaseGate: "released", GateDriver: "none", Status: "released"}
 		for _, title := range []*domain.Title{&movie, &wanted} {
@@ -129,7 +129,7 @@ func TestHomeLibraryCounts(t *testing.T) {
 	ctx := context.Background()
 	num := func(n int) *int { return &n }
 	err := s.Write(ctx, func(tx *sql.Tx) error {
-		ins := func(table string, v any) error { _, err := store.Insert(tx, table, v, domain.System); return err }
+		ins := func(table string, v any) error { _, err := database.Insert(tx, table, v, domain.System); return err }
 		title := func(kind, name string) (domain.Title, domain.Version, error) {
 			src := map[string]string{"movie": "tmdb", "show": "tvmaze", "artist": "musicbrainz"}[kind]
 			t := domain.Title{Kind: kind, Name: name, SortName: name, MetadataSource: src, WhyAdded: "by_hand", State: "active", NewPartsPolicy: "all", ReleaseGate: "released", GateDriver: "none", Status: "released"}
@@ -188,7 +188,7 @@ func TestHomeLibraryCounts(t *testing.T) {
 		if err != nil {
 			return err
 		}
-		if _, err := tx.Exec("UPDATE parts SET dropped_at = ? WHERE id = ?", store.FormatTime(time.Now()), *s3); err != nil {
+		if _, err := tx.Exec("UPDATE parts SET dropped_at = ? WHERE id = ?", database.FormatTime(time.Now()), *s3); err != nil {
 			return err
 		}
 		if err := item(sh, sv, "episode", s3, "in_library", 500, false); err != nil {

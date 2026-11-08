@@ -7,11 +7,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/dlsync"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // With setting downloads.sync = on the background reader (package dlsync)
@@ -86,7 +86,7 @@ func (a *API) syncTrouble(ctx context.Context) []ClientHealth {
 	if !a.syncOn() {
 		return out
 	}
-	ds, err := store.Select[domain.Downloader](ctx, a.read(), "downloaders", "1=1")
+	ds, err := database.Select[domain.Downloader](ctx, a.read(), "downloaders", "1=1")
 	if err != nil {
 		return out
 	}
@@ -272,7 +272,7 @@ func (a *API) rematch(ctx context.Context) int {
 	}
 	_ = a.s.Store.Write(ctx, func(tx *sql.Tx) error {
 		res, err := tx.ExecContext(ctx, "UPDATE dl_match_queue SET attempts = 0, next_try_at = ?, outcome = '', last_error = '' WHERE outcome IN "+outs,
-			time.Now().UTC().Format(store.TimeLayout))
+			time.Now().UTC().Format(database.TimeLayout))
 		if err == nil {
 			n, _ = res.RowsAffected()
 		}

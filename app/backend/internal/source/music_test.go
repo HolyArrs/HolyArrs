@@ -12,8 +12,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 const musicCaps = `<?xml version="1.0" encoding="UTF-8"?>
@@ -108,11 +108,11 @@ func seedArtist(t *testing.T, srcURL string) artistFix {
 			Aliases: []string{}, SourceIDs: map[string]string{"musicbrainz": "mb-vc"}, MetadataSource: "musicbrainz",
 			KeepUpToDate: true, NewPartsPolicy: "all", ReleaseGate: "released", MusicTypes: []string{"album"}, WhyAdded: "by_hand",
 			Artwork: []string{}, Status: "running", State: "active"}
-		if _, err := store.Insert(tx, "titles", ti, domain.System); err != nil {
+		if _, err := database.Insert(tx, "titles", ti, domain.System); err != nil {
 			return err
 		}
 		v := &domain.Version{TitleID: ti.ID, Label: "Main", PickRulesID: pr, LibraryFolderID: lf, FolderName: "Velvet Cartography", KeepUpToDate: true, IsMain: true}
-		if _, err := store.Insert(tx, "versions", v, domain.System); err != nil {
+		if _, err := database.Insert(tx, "versions", v, domain.System); err != nil {
 			return err
 		}
 		f.titleID, f.verID = ti.ID, v.ID
@@ -124,7 +124,7 @@ func seedArtist(t *testing.T, srcURL string) artistFix {
 			date := a.date
 			p := &domain.Part{TitleID: ti.ID, Kind: "album", Name: a.name, ReleaseType: ptr("album"), ReleaseDate: &date, KeepUpToDate: true,
 				Included: true, SourceIDs: map[string]string{}, Pressings: []domain.Pressing{}, SecondaryTypes: []string{}}
-			if _, err := store.Insert(tx, "parts", p, domain.System); err != nil {
+			if _, err := database.Insert(tx, "parts", p, domain.System); err != nil {
 				return err
 			}
 			f.albums[a.name] = p.ID
@@ -132,14 +132,14 @@ func seedArtist(t *testing.T, srcURL string) artistFix {
 				for k := 1; k <= n; k++ {
 					it := &domain.Item{TitleID: ti.ID, PartID: &p.ID, Kind: "track", Numbers: domain.Numbers{Disc: ptr(d + 1), Track: ptr(k)},
 						Name: ptr(fmt.Sprintf("%s %d-%d", a.name, d+1, k)), AirDate: &date, LengthMS: ptr(9 * 60_000), KeepUpToDate: true, SourceIDs: map[string]string{}}
-					if _, err := store.Insert(tx, "items", it, domain.System); err != nil {
+					if _, err := database.Insert(tx, "items", it, domain.System); err != nil {
 						return err
 					}
 					sl := &domain.Slot{ItemID: it.ID, VersionID: v.ID, State: domain.SlotWanted}
 					if date.After(now) {
 						sl.State = domain.SlotNotOutYet
 					}
-					if _, err := store.Insert(tx, "slots", sl, domain.System); err != nil {
+					if _, err := database.Insert(tx, "slots", sl, domain.System); err != nil {
 						return err
 					}
 					f.slots[fmt.Sprintf("%s %d-%d", a.name, d+1, k)] = sl.ID
@@ -287,7 +287,7 @@ func TestAlbumBetterCopy(t *testing.T) {
 			name := "Velvet Cartography - Low Tide Atlas (2019) [MP3 320]"
 			fl := &domain.File{SlotIDs: []int64{f.slots[l]}, VersionID: f.verID, RelativePath: l + ".mp3", Size: 1, AddedAt: time.Now(),
 				Languages: []string{}, MediaInfo: map[string]any{}, ReleaseName: &name, Origin: "imported", PlacedBy: "copy", Role: "main", State: "present"}
-			if _, err := store.Insert(tx, "files", fl, domain.System); err != nil {
+			if _, err := database.Insert(tx, "files", fl, domain.System); err != nil {
 				return err
 			}
 			if _, err := tx.Exec("UPDATE slots SET state = 'better_wanted', file_id = ? WHERE id = ?", fl.ID, f.slots[l]); err != nil {
@@ -424,7 +424,7 @@ func TestChooseLossyAlbumOverLosslessNeedsForce(t *testing.T) {
 			name := flac
 			fl := &domain.File{SlotIDs: []int64{f.slots[l]}, VersionID: f.verID, RelativePath: l + ".flac", Size: 1, AddedAt: time.Now(),
 				Languages: []string{}, MediaInfo: map[string]any{}, ReleaseName: &name, Origin: "imported", PlacedBy: "copy", Role: "main", State: "present"}
-			if _, err := store.Insert(tx, "files", fl, domain.System); err != nil {
+			if _, err := database.Insert(tx, "files", fl, domain.System); err != nil {
 				return err
 			}
 			if _, err := tx.Exec("UPDATE slots SET state = 'better_wanted', file_id = ? WHERE id = ?", fl.ID, f.slots[l]); err != nil {
@@ -471,7 +471,7 @@ func TestCurrentCopyKnownByExtension(t *testing.T) {
 			name := "Velvet Cartography - Low Tide Atlas (2019)"
 			fl := &domain.File{SlotIDs: []int64{f.slots[l]}, VersionID: f.verID, RelativePath: l + ".flac", Size: 1, AddedAt: time.Now(),
 				Languages: []string{}, MediaInfo: map[string]any{}, ReleaseName: &name, Origin: "adopted", PlacedBy: "none", Role: "main", State: "present"}
-			if _, err := store.Insert(tx, "files", fl, domain.System); err != nil {
+			if _, err := database.Insert(tx, "files", fl, domain.System); err != nil {
 				return err
 			}
 			if _, err := tx.Exec("UPDATE slots SET state = 'better_wanted', file_id = ? WHERE id = ?", fl.ID, f.slots[l]); err != nil {
@@ -507,7 +507,7 @@ func TestTAKCopyKnownAtSearch(t *testing.T) {
 			name := "Velvet Cartography - Low Tide Atlas (2019)"
 			fl := &domain.File{SlotIDs: []int64{f.slots[l]}, VersionID: f.verID, RelativePath: l + ".tak", Size: 1, AddedAt: time.Now(),
 				Languages: []string{}, MediaInfo: map[string]any{}, ReleaseName: &name, Origin: "adopted", PlacedBy: "none", Role: "main", State: "present"}
-			if _, err := store.Insert(tx, "files", fl, domain.System); err != nil {
+			if _, err := database.Insert(tx, "files", fl, domain.System); err != nil {
 				return err
 			}
 			if _, err := tx.Exec("UPDATE slots SET state = 'better_wanted', file_id = ? WHERE id = ?", fl.ID, f.slots[l]); err != nil {

@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // A file_replaced Event keeps the old and new quality and release names.
@@ -16,7 +16,7 @@ func TestFileReplacedKeepsOldAndNewQuality(t *testing.T) {
 	if _, err := (&Importer{Store: w.s}).Import(ctx, w.dlID, false, domain.System); err != nil {
 		t.Fatal(err)
 	}
-	es, _, err := w.s.Events(ctx, store.EventFilter{Kinds: []string{"file_replaced"}})
+	es, _, err := w.s.Events(ctx, database.EventFilter{Kinds: []string{"file_replaced"}})
 	if err != nil || len(es) != 1 {
 		t.Fatalf("events %v %v", es, err)
 	}

@@ -19,12 +19,14 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/naming"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/parse"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/ratings"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Job kinds for an existing library.
@@ -184,7 +186,7 @@ func nameScore(name string, year int, mName string, mYear int) float64 {
 // wordScore says how alike two names are by their words (0..1): 1 when
 // they clean to the same words, else the share of words both hold.
 func wordScore(name, other string) float64 {
-	a, b := parse.CleanName(name), parse.CleanName(other)
+	a, b := releasename.CleanName(name), releasename.CleanName(other)
 	switch {
 	case a == "" || b == "":
 		return 0
@@ -214,7 +216,7 @@ func folderName(s string) (string, int) {
 		y, _ := strconv.Atoi(m[2])
 		return strings.Trim(m[1], " -._(["), y
 	}
-	p := parse.Parse(s, parse.Hints{})
+	p := releasename.Parse(s, releasename.Hints{})
 	if p.Title.Value != "" && p.Year.Value != 0 {
 		return p.Title.Value, p.Year.Value
 	}
@@ -264,7 +266,7 @@ func PlanAdopt(ctx context.Context, db reader, md metadata.Provider, folderID in
 // at most the scan limit of them.
 func PlanAdoptFrom(ctx context.Context, db reader, md metadata.Provider, folderID int64, after string) (AdoptPlan, error) {
 	var lf domain.LibraryFolder
-	if err := store.Get(ctx, db, "library_folders", folderID, &lf); err != nil {
+	if err := database.Get(ctx, db, "library_folders", folderID, &lf); err != nil {
 		return AdoptPlan{}, ErrNoFolder
 	}
 	if lf.Kind != "movie" {
@@ -280,7 +282,7 @@ func PlanAdoptFrom(ctx context.Context, db reader, md metadata.Provider, folderI
 		return p, fmt.Errorf("the Library folder cannot be read: %w", err)
 	}
 	known := map[string]int64{}
-	vs, err := store.Select[domain.Version](ctx, db, "versions", "library_folder_id = ? AND title_id IN (SELECT id FROM titles WHERE state != 'removed')", lf.ID)
+	vs, err := database.Select[domain.Version](ctx, db, "versions", "library_folder_id = ? AND title_id IN (SELECT id FROM titles WHERE state != 'removed')", lf.ID)
 	if err != nil {
 		return p, err
 	}
@@ -386,7 +388,7 @@ type AdoptResult struct {
 // written. One bad choice does not stop the others.
 func (s *Service) Adopt(ctx context.Context, folderID int64, choices []AdoptChoice, by domain.Actor) ([]AdoptResult, error) {
 	var lf domain.LibraryFolder
-	if err := store.Get(ctx, s.Store.Read(), "library_folders", folderID, &lf); err != nil {
+	if err := database.Get(ctx, s.Store.Read(), "library_folders", folderID, &lf); err != nil {
 		return nil, ErrNoFolder
 	}
 	out := make([]AdoptResult, 0, len(choices))
@@ -457,7 +459,7 @@ func (s *Service) adoptOne(ctx context.Context, lf domain.LibraryFolder, c Adopt
 // that reached the limit).
 func (s *Service) ScanFolder(ctx context.Context, folderID int64, after string, by domain.Actor) (int64, error) {
 	var lf domain.LibraryFolder
-	if err := store.Get(ctx, s.Store.Read(), "library_folders", folderID, &lf); err != nil {
+	if err := database.Get(ctx, s.Store.Read(), "library_folders", folderID, &lf); err != nil {
 		return 0, ErrNoFolder
 	}
 	if lf.Kind != "movie" && lf.Kind != "show" && lf.Kind != "music" {
@@ -472,7 +474,7 @@ func (s *Service) ScanFolder(ctx context.Context, folderID int64, after string, 
 // With follow, the person who started it follows every title brought in.
 func (s *Service) AdoptLater(ctx context.Context, folderID int64, choices []AdoptChoice, follow bool, by domain.Actor) (int64, error) {
 	var lf domain.LibraryFolder
-	if err := store.Get(ctx, s.Store.Read(), "library_folders", folderID, &lf); err != nil {
+	if err := database.Get(ctx, s.Store.Read(), "library_folders", folderID, &lf); err != nil {
 		return 0, ErrNoFolder
 	}
 	raw := make([]any, 0, len(choices))
@@ -489,7 +491,7 @@ func (s *Service) handleScanLibrary(ctx context.Context, r *jobs.Run) error {
 	}
 	after, _ := r.Job.Params["after"].(string)
 	var lf domain.LibraryFolder
-	if err := store.Get(ctx, s.Store.Read(), "library_folders", r.Job.Subject.ID, &lf); err != nil {
+	if err := database.Get(ctx, s.Store.Read(), "library_folders", r.Job.Subject.ID, &lf); err != nil {
 		return ErrNoFolder
 	}
 	var p AdoptPlan
@@ -562,7 +564,7 @@ func (s *Service) followAdopted(ctx context.Context, by domain.Actor, res []Adop
 	if err := s.Store.Read().QueryRowContext(ctx, "SELECT max_rating FROM users WHERE id = ?", by.ID).Scan(&max); err != nil {
 		return nil // no such person: nothing to follow
 	}
-	now := store.FormatTime(time.Now())
+	now := database.FormatTime(time.Now())
 	return s.Store.Write(ctx, func(tx *sql.Tx) error {
 		for _, x := range res {
 			if x.TitleID == 0 {
@@ -604,13 +606,13 @@ func (s *Service) Rescan(ctx context.Context, by domain.Actor) (RescanResult, er
 	var res RescanResult
 	backfillLeft := backfillPerRescan
 	db := s.Store.Read()
-	lfs, err := store.Select[domain.LibraryFolder](ctx, db, "library_folders", "kind IN ('movie', 'show', 'music') ORDER BY id")
+	lfs, err := database.Select[domain.LibraryFolder](ctx, db, "library_folders", "kind IN ('movie', 'show', 'music') ORDER BY id")
 	if err != nil {
 		return res, err
 	}
 	for _, lf := range lfs {
 		res.Folders++
-		files, err := store.Select[domain.File](ctx, db, "files", `state IN ('present', 'missing') AND version_id IN
+		files, err := database.Select[domain.File](ctx, db, "files", `state IN ('present', 'missing') AND version_id IN
 			(SELECT v.id FROM versions v JOIN titles t ON t.id = v.title_id WHERE v.library_folder_id = ? AND t.state != 'removed') ORDER BY id`, lf.ID)
 		if err != nil {
 			return res, err
@@ -772,7 +774,7 @@ func (s *Service) updateFileInspection(ctx context.Context, fileID int64, info m
 	}
 	return s.Store.Write(ctx, func(tx *sql.Tx) error {
 		_, err := tx.Exec("UPDATE files SET media_info = json(?), languages = json(?), updated_at = ?, updated_by = json(?) WHERE id = ?",
-			string(raw), string(languages), store.FormatTime(s.now()), actorText(by), fileID)
+			string(raw), string(languages), database.FormatTime(s.now()), actorText(by), fileID)
 		return err
 	})
 }
@@ -797,7 +799,7 @@ func unreachable(dir string, known int) string {
 func (s *Service) setFileState(ctx context.Context, f domain.File, to string, by domain.Actor) error {
 	if err := s.Store.Write(ctx, func(tx *sql.Tx) error {
 		_, err := tx.Exec("UPDATE files SET state = ?, checked_at = ?, updated_at = ?, updated_by = ? WHERE id = ?",
-			to, store.FormatTime(s.now()), store.FormatTime(s.now()), actorText(by), f.ID)
+			to, database.FormatTime(s.now()), database.FormatTime(s.now()), actorText(by), f.ID)
 		return err
 	}); err != nil {
 		return err
@@ -839,7 +841,7 @@ func (s *Service) setFileState(ctx context.Context, f domain.File, to string, by
 // recordFound records unknown videos in the movies' own folders as found
 // Files: shown, never renamed, moved or deleted.
 func (s *Service) recordFound(ctx context.Context, lf domain.LibraryFolder, known map[string]bool, by domain.Actor) (int, error) {
-	vs, err := store.Select[domain.Version](ctx, s.Store.Read(), "versions",
+	vs, err := database.Select[domain.Version](ctx, s.Store.Read(), "versions",
 		"library_folder_id = ? AND title_id IN (SELECT id FROM titles WHERE state != 'removed') ORDER BY id", lf.ID)
 	if err != nil {
 		return 0, err
@@ -882,7 +884,7 @@ func (s *Service) recordFound(ctx context.Context, lf domain.LibraryFolder, know
 			f := &domain.File{SlotIDs: []int64{}, VersionID: v.ID, RelativePath: vid.Path, Size: vid.Size, AddedAt: s.now(), Languages: []string{},
 				MediaInfo: info, ReleaseName: &release, Origin: "found", PlacedBy: "none", Role: "main", State: "present"}
 			f.Languages = inspectedLanguages(info)
-			if err := s.Store.Write(ctx, func(tx *sql.Tx) error { _, err := store.Insert(tx, "files", f, by); return err }); err != nil {
+			if err := s.Store.Write(ctx, func(tx *sql.Tx) error { _, err := database.Insert(tx, "files", f, by); return err }); err != nil {
 				return n, err
 			}
 			n++

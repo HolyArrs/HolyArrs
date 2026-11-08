@@ -11,11 +11,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/explore"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Explore â†’ Music: every row the page shows, built here so they share one
@@ -377,7 +377,7 @@ func (a *API) exploreMusic(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	titles, err := store.Select[domain.Title](ctx, db, "titles", "kind = 'artist' AND state != 'removed' ORDER BY id")
+	titles, err := database.Select[domain.Title](ctx, db, "titles", "kind = 'artist' AND state != 'removed' ORDER BY id")
 	if err != nil {
 		internal(w, err)
 		return
@@ -516,7 +516,7 @@ func (a *API) exploreMusic(w http.ResponseWriter, r *http.Request) {
 	var hero *MusicCard
 	var heroAlts, heroAlbums, heroEPs []MusicCard
 	{
-		ps, err := store.Select[domain.Part](ctx, db, "parts", `kind = 'album' AND dropped_at IS NULL AND release_date >= ? AND release_date < ?
+		ps, err := database.Select[domain.Part](ctx, db, "parts", `kind = 'album' AND dropped_at IS NULL AND release_date >= ? AND release_date < ?
 			AND lower(coalesce(release_type, '')) IN ('album', 'ep', 'single') AND secondary_types = '[]' AND coalesce(release_date_precision, 'day') != 'year'
 			AND title_id IN (SELECT id FROM titles WHERE kind = 'artist' AND state != 'removed') ORDER BY release_date DESC, id`,
 			now.AddDate(0, 0, -90).Format("2006-01-02"), now.AddDate(0, 0, 180).Format("2006-01-02"))
@@ -603,7 +603,7 @@ func (a *API) exploreMusic(w http.ResponseWriter, r *http.Request) {
 	// Missing albums: studio albums of artists you have that have no music
 	// yet, artists with music first, a few each, newest first.
 	{
-		ps, err := store.Select[domain.Part](ctx, db, "parts", `kind = 'album' AND dropped_at IS NULL AND release_date IS NOT NULL AND release_date <= ?
+		ps, err := database.Select[domain.Part](ctx, db, "parts", `kind = 'album' AND dropped_at IS NULL AND release_date IS NOT NULL AND release_date <= ?
 			AND lower(coalesce(release_type, '')) = 'album' AND secondary_types = '[]'
 			AND title_id IN (SELECT id FROM titles WHERE kind = 'artist' AND state != 'removed')
 			AND NOT EXISTS (SELECT 1 FROM items i JOIN slots s ON s.item_id = i.id WHERE i.part_id = parts.id AND s.file_id IS NOT NULL)

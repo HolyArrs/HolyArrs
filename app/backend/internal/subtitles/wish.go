@@ -8,8 +8,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Hearing-impaired choices in a wish.
@@ -93,7 +93,7 @@ type Resolved struct {
 }
 
 // titleKind reads a title's kind, refusing music.
-func titleKind(ctx context.Context, db store.Querier, titleID int64) (string, error) {
+func titleKind(ctx context.Context, db database.Querier, titleID int64) (string, error) {
 	var kind string
 	if err := db.QueryRowContext(ctx, "SELECT kind FROM titles WHERE id = ?", titleID).Scan(&kind); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -113,7 +113,7 @@ func WishFor(ctx context.Context, db *sql.DB, titleID, versionID, itemID int64) 
 	if _, err := titleKind(ctx, db, titleID); err != nil {
 		return Resolved{}, err
 	}
-	rows, err := store.Select[Wish](ctx, db, "subtitle_wishes", "title_id = ? AND (item_id = ? OR version_id = ? OR (item_id IS NULL AND version_id IS NULL))",
+	rows, err := database.Select[Wish](ctx, db, "subtitle_wishes", "title_id = ? AND (item_id = ? OR version_id = ? OR (item_id IS NULL AND version_id IS NULL))",
 		titleID, itemID, versionID)
 	if err != nil {
 		return Resolved{}, err
@@ -154,7 +154,7 @@ func Wishes(ctx context.Context, db *sql.DB, titleID int64) ([]Wish, error) {
 	if _, err := titleKind(ctx, db, titleID); err != nil {
 		return nil, err
 	}
-	ws, err := store.Select[Wish](ctx, db, "subtitle_wishes", "title_id = ? ORDER BY item_id IS NOT NULL, version_id IS NOT NULL, id", titleID)
+	ws, err := database.Select[Wish](ctx, db, "subtitle_wishes", "title_id = ? ORDER BY item_id IS NOT NULL, version_id IS NOT NULL, id", titleID)
 	if ws == nil {
 		ws = []Wish{}
 	}
@@ -164,7 +164,7 @@ func Wishes(ctx context.Context, db *sql.DB, titleID int64) ([]Wish, error) {
 // SetWish stores the wish of a title (versionID and itemID 0), one of its
 // Versions or one of its episodes. inherit removes the row instead, so the
 // place inherits again. The Version or episode must belong to the title.
-func SetWish(ctx context.Context, st *store.Store, titleID, versionID, itemID int64, wants []Want, inherit bool, by domain.Actor) error {
+func SetWish(ctx context.Context, st *database.Store, titleID, versionID, itemID int64, wants []Want, inherit bool, by domain.Actor) error {
 	if versionID != 0 && itemID != 0 {
 		return errors.New("a wish is for a title, a Version or an episode, not two at once")
 	}
@@ -203,7 +203,7 @@ func SetWish(ctx context.Context, st *store.Store, titleID, versionID, itemID in
 		if itemID != 0 {
 			w.ItemID = &itemID
 		}
-		_, err := store.Insert(tx, "subtitle_wishes", w, by)
+		_, err := database.Insert(tx, "subtitle_wishes", w, by)
 		return err
 	})
 }

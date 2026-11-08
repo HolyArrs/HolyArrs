@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	musicscore "github.com/HolyArrs/holyarrs/app/backend/internal/music/score"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
@@ -75,7 +76,7 @@ func (a *API) musicDiskRead(ctx context.Context, prefix string, ids []string, no
 		for _, id := range part {
 			args = append(args, musicDiskPrefix+prefix+id)
 		}
-		args = append(args, store.FormatTime(now))
+		args = append(args, database.FormatTime(now))
 		rows, err := a.s.Store.Read().QueryContext(ctx, "SELECT key, body FROM lookup_cache WHERE key IN (?"+strings.Repeat(",?", len(part)-1)+") AND expires_at > ?", args...)
 		if err != nil {
 			return out
@@ -100,7 +101,7 @@ func (a *API) musicDiskWrite(ctx context.Context, prefix string, vals map[string
 	if a.s.Store == nil || len(vals) == 0 || ctx.Err() != nil {
 		return
 	}
-	at, exp := store.FormatTime(now), store.FormatTime(now.Add(musicArtistTTL))
+	at, exp := database.FormatTime(now), database.FormatTime(now.Add(musicArtistTTL))
 	_ = a.s.Store.Write(ctx, func(tx *sql.Tx) error {
 		for id, v := range vals {
 			b, err := json.Marshal(v)

@@ -10,8 +10,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // b2-1 (decision 32, A-lite): the old apps' path rewrites for a download
@@ -327,7 +327,7 @@ func TestMoveNotesPathMappingsWhenDownloaderAlreadyHere(t *testing.T) {
 	local := t.TempDir()
 	// Set up by hand before the move.
 	if err := l.st.Write(context.Background(), func(tx *sql.Tx) error {
-		_, err := store.Insert(tx, "downloaders", &domain.Downloader{Name: "My qBit", Adapter: "qbittorrent", Protocol: "torrent", URL: "http://qbit:8080",
+		_, err := database.Insert(tx, "downloaders", &domain.Downloader{Name: "My qBit", Adapter: "qbittorrent", Protocol: "torrent", URL: "http://qbit:8080",
 			Category: "holyarrs", Priority: 1, PathMap: []domain.PathMap{}, AfterImport: "leave", State: "ok"}, domain.System)
 		return err
 	}); err != nil {
@@ -366,7 +366,7 @@ func TestMoveNotesFolderMapsNotVisible(t *testing.T) {
 		l := newMoveLab(t)
 		if already {
 			if err := l.st.Write(context.Background(), func(tx *sql.Tx) error {
-				_, err := store.Insert(tx, "downloaders", &domain.Downloader{Name: "My qBit", Adapter: "qbittorrent", Protocol: "torrent", URL: "http://qbit:8080",
+				_, err := database.Insert(tx, "downloaders", &domain.Downloader{Name: "My qBit", Adapter: "qbittorrent", Protocol: "torrent", URL: "http://qbit:8080",
 					Category: "holyarrs", Priority: 1, PathMap: []domain.PathMap{}, AfterImport: "leave", State: "ok"}, domain.System)
 				return err
 			}); err != nil {

@@ -12,8 +12,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 const tvCaps = `<?xml version="1.0" encoding="UTF-8"?>
@@ -99,11 +99,11 @@ func seedShow(t *testing.T, srcURL string, set func(label string, sl *domain.Slo
 			Aliases: []string{}, SourceIDs: map[string]string{"tvdb": "4242"}, MetadataSource: "tvmaze", EpisodeOrder: ptr("aired"),
 			KeepUpToDate: true, NewPartsPolicy: "all", ReleaseGate: "released", MusicTypes: []string{}, WhyAdded: "by_hand",
 			Artwork: []string{}, Status: "running", State: "active", OriginalLanguage: ptr("en")}
-		if _, err := store.Insert(tx, "titles", ti, domain.System); err != nil {
+		if _, err := database.Insert(tx, "titles", ti, domain.System); err != nil {
 			return err
 		}
 		v := &domain.Version{TitleID: ti.ID, Label: "HD", PickRulesID: pr, LibraryFolderID: lf, FolderName: "Copper Valley", KeepUpToDate: true, IsMain: true}
-		if _, err := store.Insert(tx, "versions", v, domain.System); err != nil {
+		if _, err := database.Insert(tx, "versions", v, domain.System); err != nil {
 			return err
 		}
 		f.titleID, f.verID = ti.ID, v.ID
@@ -114,7 +114,7 @@ func seedShow(t *testing.T, srcURL string, set func(label string, sl *domain.Slo
 		for season := 1; season <= 2; season++ {
 			p := &domain.Part{TitleID: ti.ID, Kind: "season", Number: ptr(season), Name: fmt.Sprintf("Season %d", season), KeepUpToDate: true,
 				SourceIDs: map[string]string{}, Pressings: []domain.Pressing{}}
-			if _, err := store.Insert(tx, "parts", p, domain.System); err != nil {
+			if _, err := database.Insert(tx, "parts", p, domain.System); err != nil {
 				return err
 			}
 			f.parts[season] = p.ID
@@ -124,7 +124,7 @@ func seedShow(t *testing.T, srcURL string, set func(label string, sl *domain.Slo
 				day := air.Format("2006-01-02")
 				it := &domain.Item{TitleID: ti.ID, PartID: &p.ID, Kind: "episode", Numbers: domain.Numbers{Season: ptr(season), Episode: ptr(n)},
 					Name: ptr(fmt.Sprintf("Episode %d", n)), AirDate: &air, AirDay: &day, Runtime: ptr(45), KeepUpToDate: true, SourceIDs: map[string]string{}}
-				if _, err := store.Insert(tx, "items", it, domain.System); err != nil {
+				if _, err := database.Insert(tx, "items", it, domain.System); err != nil {
 					return err
 				}
 				label := fmt.Sprintf("S%02dE%02d", season, n)
@@ -135,7 +135,7 @@ func seedShow(t *testing.T, srcURL string, set func(label string, sl *domain.Slo
 				if set != nil {
 					set(label, sl)
 				}
-				if _, err := store.Insert(tx, "slots", sl, domain.System); err != nil {
+				if _, err := database.Insert(tx, "slots", sl, domain.System); err != nil {
 					return err
 				}
 				f.slots[label], f.items[label] = sl.ID, it.ID
@@ -375,7 +375,7 @@ func addFile(t *testing.T, f showFix, slotID int64, name string) {
 		fl := &domain.File{SlotIDs: []int64{slotID}, VersionID: f.verID, RelativePath: "Season 01/" + name + ".mkv", Size: 1200 << 20,
 			AddedAt: time.Now().Add(-48 * time.Hour), Languages: []string{}, MediaInfo: map[string]any{}, ReleaseName: &name, Origin: "imported",
 			PlacedBy: "move", State: "present", Role: "main"}
-		if _, err := store.Insert(tx, "files", fl, domain.System); err != nil {
+		if _, err := database.Insert(tx, "files", fl, domain.System); err != nil {
 			return err
 		}
 		_, err := tx.Exec("UPDATE slots SET file_id = ? WHERE id = ?", fl.ID, slotID)
@@ -388,7 +388,7 @@ func addFile(t *testing.T, f showFix, slotID int64, name string) {
 
 func setSetting(t *testing.T, f fixture, key, value string) {
 	t.Helper()
-	now := store.FormatTime(time.Now())
+	now := database.FormatTime(time.Now())
 	if err := f.s.Write(context.Background(), func(tx *sql.Tx) error {
 		_, err := tx.Exec(`INSERT INTO settings (grp, key, value, created_at, created_by, updated_at, updated_by) VALUES ('what_to_pick', ?, ?, ?, '{}', ?, '{}')
 			ON CONFLICT (grp, key) DO UPDATE SET value = excluded.value`, key, value, now, now)
@@ -451,7 +451,7 @@ func asNeedsForce(err error, nf **NeedsForceError) bool {
 
 func mustTitle(t *testing.T, f showFix) domain.Title {
 	var ti domain.Title
-	if err := store.Get(context.Background(), f.s.Read(), "titles", f.titleID, &ti); err != nil {
+	if err := database.Get(context.Background(), f.s.Read(), "titles", f.titleID, &ti); err != nil {
 		t.Fatal(err)
 	}
 	return ti
@@ -459,7 +459,7 @@ func mustTitle(t *testing.T, f showFix) domain.Title {
 
 func mustVersion(t *testing.T, f showFix) domain.Version {
 	var v domain.Version
-	if err := store.Get(context.Background(), f.s.Read(), "versions", f.verID, &v); err != nil {
+	if err := database.Get(context.Background(), f.s.Read(), "versions", f.verID, &v); err != nil {
 		t.Fatal(err)
 	}
 	return v

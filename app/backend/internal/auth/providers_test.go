@@ -3,14 +3,13 @@ package auth
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"sync/atomic"
 	"testing"
 	"time"
-
-	"github.com/HolyArrs/holyarrs/app/backend/internal/routehits"
 )
 
 const ownerPlexTok = "owner-plex-token-SECRET"
@@ -47,7 +46,7 @@ func fakePlexOwner(t *testing.T) *httptest.Server {
 			{"id":22,"title":"Little","restricted":true,"sharedServers":[{"machineIdentifier":"mine-1"}]},
 			{"id":23,"username":"elsewhere","sharedServers":[{"machineIdentifier":"other"}]}]`))
 	}))
-	s := httptest.NewServer(routehits.Wrap(m))
+	s := httptest.NewServer(webserver.RecordRouteHits(m))
 	t.Cleanup(s.Close)
 	return s
 }

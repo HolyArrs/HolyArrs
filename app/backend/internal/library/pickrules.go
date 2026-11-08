@@ -8,8 +8,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 var (
@@ -133,7 +133,7 @@ func pickRulesUse(ctx context.Context, q reader, id int64) (Use, map[string]bool
 }
 
 // PickRulesUse counts what uses one Pick rule.
-func PickRulesUse(ctx context.Context, st *store.Store, id int64) (Use, error) {
+func PickRulesUse(ctx context.Context, st *database.Store, id int64) (Use, error) {
 	u, _, err := pickRulesUse(ctx, st.Read(), id)
 	return u, err
 }
@@ -150,7 +150,7 @@ func nameTaken(tx *sql.Tx, name string, not int64) error {
 }
 
 // CreatePickRules checks and stores new Pick rules.
-func CreatePickRules(ctx context.Context, st *store.Store, in PickRulesInput, by domain.Actor) (domain.PickRules, error) {
+func CreatePickRules(ctx context.Context, st *database.Store, in PickRulesInput, by domain.Actor) (domain.PickRules, error) {
 	in.Name = strings.TrimSpace(in.Name)
 	p := domain.PickRules{Name: in.Name, Kinds: in.Kinds, Revision: 1, Body: in.Body}
 	if err := domain.CheckPickRules(in.Name, in.Kinds, in.Body); err != nil {
@@ -163,7 +163,7 @@ func CreatePickRules(ctx context.Context, st *store.Store, in PickRulesInput, by
 		if err := checkOwnKeys(tx, in.Body); err != nil {
 			return err
 		}
-		_, err := store.Insert(tx, "pick_rules", &p, by)
+		_, err := database.Insert(tx, "pick_rules", &p, by)
 		return err
 	})
 	return p, err
@@ -173,14 +173,14 @@ func CreatePickRules(ctx context.Context, st *store.Store, in PickRulesInput, by
 // rule keeps its name and kinds; a rule in use keeps every kind something
 // uses and its ladder. then, when given, runs in the same transaction after
 // the change.
-func UpdatePickRules(ctx context.Context, st *store.Store, id int64, in PickRulesInput, by domain.Actor, then ...func(tx *sql.Tx) error) (domain.PickRules, error) {
+func UpdatePickRules(ctx context.Context, st *database.Store, id int64, in PickRulesInput, by domain.Actor, then ...func(tx *sql.Tx) error) (domain.PickRules, error) {
 	in.Name = strings.TrimSpace(in.Name)
 	var p domain.PickRules
 	if err := domain.CheckPickRules(in.Name, in.Kinds, in.Body); err != nil {
 		return p, err
 	}
 	err := st.Write(ctx, func(tx *sql.Tx) error {
-		if err := store.Get(ctx, tx, "pick_rules", id, &p); err != nil {
+		if err := database.Get(ctx, tx, "pick_rules", id, &p); err != nil {
 			return err
 		}
 		if p.Preset && (in.Name != p.Name || !sameKinds(in.Kinds, p.Kinds)) {
@@ -208,7 +208,7 @@ func UpdatePickRules(ctx context.Context, st *store.Store, id int64, in PickRule
 		}
 		p.Name, p.Kinds, p.Body = in.Name, in.Kinds, in.Body
 		p.Revision++
-		if err := store.Update(tx, "pick_rules", &p, by); err != nil {
+		if err := database.Update(tx, "pick_rules", &p, by); err != nil {
 			return err
 		}
 		for _, f := range then {
@@ -229,10 +229,10 @@ func sameKinds(a, b []string) bool {
 }
 
 // DeletePickRules removes Pick rules nothing uses. Ready-made rules stay.
-func DeletePickRules(ctx context.Context, st *store.Store, id int64, by domain.Actor) error {
+func DeletePickRules(ctx context.Context, st *database.Store, id int64, by domain.Actor) error {
 	return st.Write(ctx, func(tx *sql.Tx) error {
 		var p domain.PickRules
-		if err := store.Get(ctx, tx, "pick_rules", id, &p); err != nil {
+		if err := database.Get(ctx, tx, "pick_rules", id, &p); err != nil {
 			return err
 		}
 		if p.Preset {
@@ -253,7 +253,7 @@ func DeletePickRules(ctx context.Context, st *store.Store, id int64, by domain.A
 // PickRulesUses counts what uses each Pick rule, for every rule at once: the
 // same counts as PickRulesUse, from one grouped query per kind of use. A rule
 // nothing uses has no entry.
-func PickRulesUses(ctx context.Context, st *store.Store) (map[int64]Use, error) {
+func PickRulesUses(ctx context.Context, st *database.Store) (map[int64]Use, error) {
 	q := st.Read()
 	out := map[int64]Use{}
 	count := func(query string, add func(u *Use, n int)) error {

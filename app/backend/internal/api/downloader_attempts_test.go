@@ -16,10 +16,11 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/backup"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/live"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 func TestDownloaderAttemptErrorsArePublicSentinels(t *testing.T) {
@@ -61,7 +62,7 @@ func TestDownloaderAttemptRoutePolicy(t *testing.T) {
 
 func TestDownloaderAttemptAbandonNeedsCSRF(t *testing.T) {
 	dir := t.TempDir()
-	s, err := store.Open(dir, store.Options{})
+	s, err := database.Open(dir, database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -71,7 +72,7 @@ func TestDownloaderAttemptAbandonNeedsCSRF(t *testing.T) {
 		t.Fatal(err)
 	}
 	au := auth.New(s, auth.Options{Vault: vault})
-	srv := httptest.NewServer(New(Server{Store: s, Metadata: metadata.Lab(), Version: "test", Auth: au, Secrets: vault, Live: live.NewHub(live.Options{}),
+	srv := httptest.NewServer(New(Server{Store: s, Metadata: metadata.Lab(), Version: "test", Auth: au, Secrets: vault, Live: webserver.NewLiveHub(webserver.LiveOptions{}),
 		Backups: &backup.Manager{Store: s, Dir: dir, Version: "test"}}).Handler())
 	t.Cleanup(srv.Close)
 	jar, _ := cookiejar.New(nil)
@@ -128,29 +129,29 @@ func TestDownloaderAttemptRoutesRedactAndAbandon(t *testing.T) {
 			table string
 			value any
 		}{{"library_folders", folder}, {"titles", title}} {
-			if _, err := store.Insert(tx, record.table, record.value, domain.System); err != nil {
+			if _, err := database.Insert(tx, record.table, record.value, domain.System); err != nil {
 				return err
 			}
 		}
 		item := &domain.Item{TitleID: title.ID, Kind: "movie"}
-		if _, err := store.Insert(tx, "items", item, domain.System); err != nil {
+		if _, err := database.Insert(tx, "items", item, domain.System); err != nil {
 			return err
 		}
 		version := &domain.Version{TitleID: title.ID, Label: "HD", PickRulesID: pickRulesID, LibraryFolderID: folder.ID, FolderName: "Signal Harbor", IsMain: true}
-		if _, err := store.Insert(tx, "versions", version, domain.System); err != nil {
+		if _, err := database.Insert(tx, "versions", version, domain.System); err != nil {
 			return err
 		}
 		slot := &domain.Slot{ItemID: item.ID, VersionID: version.ID, State: domain.SlotChosen}
-		if _, err := store.Insert(tx, "slots", slot, domain.System); err != nil {
+		if _, err := database.Insert(tx, "slots", slot, domain.System); err != nil {
 			return err
 		}
 		source := &domain.Source{Name: "Attempt source", Protocol: "usenet", Format: "newznab", URL: "http://example.invalid", Kinds: []string{}, Categories: map[string][]int{}, State: "enabled", Extra: map[string]string{}}
-		if _, err := store.Insert(tx, "sources", source, domain.System); err != nil {
+		if _, err := database.Insert(tx, "sources", source, domain.System); err != nil {
 			return err
 		}
 		release := &domain.Release{SourceID: source.ID, Name: "Signal.Harbor.2026.1080p-WEB-HOLYARRS", LinkRef: "http://example.invalid/release.nzb", Protocol: "usenet", Size: 1,
 			Flags: []string{}, Parsed: map[string]any{}, MatchedSlotIDs: []int64{slot.ID}, Verdict: map[string]any{}, FoundBy: "auto_search", State: "chosen"}
-		if _, err := store.Insert(tx, "releases", release, domain.System); err != nil {
+		if _, err := database.Insert(tx, "releases", release, domain.System); err != nil {
 			return err
 		}
 		downloader := &domain.Downloader{Name: "Attempt NZBGet", Adapter: "nzbget", Protocol: "usenet", URL: "http://example.invalid", Category: "holyarrs", Priority: 1,
@@ -158,7 +159,7 @@ func TestDownloaderAttemptRoutesRedactAndAbandon(t *testing.T) {
 		other := &domain.Downloader{Name: "Other NZBGet", Adapter: "nzbget", Protocol: "usenet", URL: "http://other.invalid", Category: "holyarrs", Priority: 2,
 			PathMap: []domain.PathMap{}, AfterImport: "leave", State: "ok"}
 		for _, value := range []*domain.Downloader{downloader, other} {
-			if _, err := store.Insert(tx, "downloaders", value, domain.System); err != nil {
+			if _, err := database.Insert(tx, "downloaders", value, domain.System); err != nil {
 				return err
 			}
 		}

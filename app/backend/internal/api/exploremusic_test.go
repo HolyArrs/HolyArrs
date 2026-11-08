@@ -13,9 +13,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // genreArtists is fakeArtists plus MusicBrainz genres.
@@ -72,10 +72,10 @@ func (m musicRowsAnswer) row(id string) *MusicRow {
 func TestExploreMusicRows(t *testing.T) {
 	_, s := discoverRig(t, newDiscoverTMDB(t).provider())
 	now := time.Now().UTC()
-	day := func(d int) string { return store.FormatTime(now.AddDate(0, 0, d).Truncate(24 * time.Hour)) }
+	day := func(d int) string { return database.FormatTime(now.AddDate(0, 0, d).Truncate(24 * time.Hour)) }
 	owned, other := mid('a', 1), mid('b', 2)
 	err := s.Write(context.Background(), func(tx *sql.Tx) error {
-		ts, by := store.FormatTime(now), `{"kind":"system"}`
+		ts, by := database.FormatTime(now), `{"kind":"system"}`
 		ex := func(q string, args ...any) int64 {
 			res, err := tx.Exec(q, args...)
 			if err != nil {

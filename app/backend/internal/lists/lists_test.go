@@ -12,11 +12,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Test-only stand-ins; the fakes refuse anything else.
@@ -94,7 +95,7 @@ func fakeTrakt(t *testing.T) *httptest.Server {
 }
 
 type env struct {
-	s     *store.Store
+	s     *database.Store
 	q     *jobs.Queue
 	svc   *Service
 	lf    domain.LibraryFolder
@@ -104,7 +105,7 @@ type env struct {
 
 func setup(t *testing.T) *env {
 	t.Helper()
-	s, err := store.Open(t.TempDir(), store.Options{})
+	s, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -129,9 +130,9 @@ func setup(t *testing.T) *env {
 	return &env{s: s, q: q, svc: svc, lf: lf, hits: hits, clock: &clock}
 }
 
-func titles(t *testing.T, s *store.Store) map[string]domain.Title {
+func titles(t *testing.T, s *database.Store) map[string]domain.Title {
 	t.Helper()
-	ts, err := store.Select[domain.Title](context.Background(), s.Read(), "titles", "1=1")
+	ts, err := database.Select[domain.Title](context.Background(), s.Read(), "titles", "1=1")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -177,7 +178,7 @@ func TestListInputChecks(t *testing.T) {
 	if err := Remove(ctx, e.s, l.ID); err != nil {
 		t.Fatal(err)
 	}
-	if err := Remove(ctx, e.s, l.ID); !errors.Is(err, store.ErrNotFound) {
+	if err := Remove(ctx, e.s, l.ID); !errors.Is(err, database.ErrNotFound) {
 		t.Fatalf("remove twice: %v", err)
 	}
 	// A step given to Add runs with the new id in the same write; when it
@@ -229,7 +230,7 @@ func TestTMDBListAddsMoviesAndSkipsNeverAdd(t *testing.T) {
 	if res.Added != 0 || res.Already != 1 || res.NeverAdd != 1 {
 		t.Fatalf("second %+v", res)
 	}
-	evs, _ := store.Select[domain.Event](ctx, e.s.ReadEvents(), "events", "kind = ?", domain.EventListSynced)
+	evs, _ := database.Select[domain.Event](ctx, e.s.ReadEvents(), "events", "kind = ?", domain.EventListSynced)
 	if len(evs) != 2 {
 		t.Fatalf("events %d", len(evs))
 	}
@@ -302,7 +303,7 @@ func TestScheduledSyncOnlyDueEnabledLists(t *testing.T) {
 		deadline := time.Now().Add(5 * time.Second)
 		for time.Now().Before(deadline) {
 			var j domain.Job
-			_ = store.Get(ctx, e.s.Read(), "jobs", id, &j)
+			_ = database.Get(ctx, e.s.Read(), "jobs", id, &j)
 			if j.State == "done" || j.State == "failed" {
 				if j.State == "failed" {
 					t.Fatalf("job failed: %+v", j.Error)

@@ -14,10 +14,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/files"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/health"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 func day(s string) *time.Time {
@@ -63,25 +64,25 @@ func testWorld(t *testing.T) (options, string) {
 	if err := os.WriteFile(lab, []byte("a real lab video"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	s, err := store.Open(o.ConfigDir, store.Options{})
+	s, err := database.Open(o.ConfigDir, database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
 	err = s.Write(context.Background(), func(tx *sql.Tx) error {
-		if _, err := store.Insert(tx, "library_folders", &domain.LibraryFolder{Path: filepath.Join(o.MediaRoot, "movies"), Kind: "movie", Label: "Movies",
+		if _, err := database.Insert(tx, "library_folders", &domain.LibraryFolder{Path: filepath.Join(o.MediaRoot, "movies"), Kind: "movie", Label: "Movies",
 			Health: "ok", SameDiskAs: []int64{}}, domain.System); err != nil {
 			return err
 		}
-		if _, err := store.Insert(tx, "library_folders", &domain.LibraryFolder{Path: "C:/Program Files/Git/data/media/movies", Kind: "movie", Label: "Movies",
+		if _, err := database.Insert(tx, "library_folders", &domain.LibraryFolder{Path: "C:/Program Files/Git/data/media/movies", Kind: "movie", Label: "Movies",
 			Health: "missing", SameDiskAs: []int64{}}, domain.System); err != nil {
 			return err
 		}
-		if _, err := store.Insert(tx, "sources", &domain.Source{Name: "Lab fake indexer", Protocol: "torrent", Format: "torznab", URL: "http://fake-indexer/api",
+		if _, err := database.Insert(tx, "sources", &domain.Source{Name: "Lab fake indexer", Protocol: "torrent", Format: "torznab", URL: "http://fake-indexer/api",
 			UseFor: domain.SourceUse{AutoSearch: true, HandSearch: true}, Kinds: []string{"movie"}, Categories: map[string][]int{"movie": {2000}},
 			Priority: 25, State: "enabled", Extra: map[string]string{}, AllowLocal: true}, domain.System); err != nil {
 			return err
 		}
-		_, err := store.Insert(tx, "downloaders", &domain.Downloader{Name: "Lab qBittorrent", Adapter: "qbittorrent", Protocol: "torrent",
+		_, err := database.Insert(tx, "downloaders", &domain.Downloader{Name: "Lab qBittorrent", Adapter: "qbittorrent", Protocol: "torrent",
 			URL: "http://qbittorrent:8090", Category: "holyarrs", Priority: 1, PathMap: []domain.PathMap{}, AfterImport: "leave", State: "ok", AllowLocal: true}, domain.System)
 		return err
 	})
@@ -157,14 +158,14 @@ func TestSeedAddsThroughTheAppAndResets(t *testing.T) {
 		t.Fatalf("wrong id added or not said\n%s", out)
 	}
 	want := map[string]string{
-		"603":     "in_library",       // adopted at a good copy
-		"550":     "in_library",       // adopted low, upgraded by a grab and import
-		"329":     "in_library",       // grabbed and imported
-		"496243":  "held",             // a Release held until its wait ends
-		"274":     "wanted",           // no download is seeded (no fake Review rows)
-		"280":     "wanted",           // two Releases turned down by hand
-		"545611":  "failed",           // the download failed; a search is queued
-		"1003596": "not_out_yet",      // upcoming
+		"603":     "in_library",  // adopted at a good copy
+		"550":     "in_library",  // adopted low, upgraded by a grab and import
+		"329":     "in_library",  // grabbed and imported
+		"496243":  "held",        // a Release held until its wait ends
+		"274":     "wanted",      // no download is seeded (no fake Review rows)
+		"280":     "wanted",      // two Releases turned down by hand
+		"545611":  "failed",      // the download failed; a search is queued
+		"1003596": "not_out_yet", // upcoming
 	}
 	for id, st := range want {
 		if got := slotState(t, w, id); got != st {
@@ -196,7 +197,7 @@ func TestSeedAddsThroughTheAppAndResets(t *testing.T) {
 	}
 	var newest string
 	_ = w.s.ReadEvents().QueryRow("SELECT max(at) FROM events WHERE kind = 'import_done'").Scan(&newest)
-	if newest == "" || newest > store.FormatTime(time.Now().Add(-12*time.Hour)) {
+	if newest == "" || newest > database.FormatTime(time.Now().Add(-12*time.Hour)) {
 		t.Fatalf("imports are not spread back in time: newest %q", newest)
 	}
 	// The app's own checks agree: a rescan finds nothing missing, the
@@ -279,7 +280,7 @@ func TestSeedRefusesWhileTheAppRunsOrOutsideTheLab(t *testing.T) {
 	}
 	// The app's own lock on the config folder refuses, -force or not.
 	locked := t.TempDir()
-	unlock, err := store.LockDir(locked)
+	unlock, err := files.LockDir(locked)
 	if err != nil {
 		t.Fatal(err)
 	}

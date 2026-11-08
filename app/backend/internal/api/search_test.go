@@ -8,16 +8,17 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // searchWorld adds Dune with one wanted Slot, a Source and three Releases
 // from one hand search Job: one that passed, one passed over, one refused.
-func searchWorld(t *testing.T) (srvURL string, s *store.Store, q *jobs.Queue, titleID, slotID int64, rels map[string]int64) {
+func searchWorld(t *testing.T) (srvURL string, s *database.Store, q *jobs.Queue, titleID, slotID int64, rels map[string]int64) {
 	t.Helper()
 	srv, s, q := setup(t)
 	var resp struct {
@@ -29,11 +30,11 @@ func searchWorld(t *testing.T) (srvURL string, s *store.Store, q *jobs.Queue, ti
 	err := s.Write(context.Background(), func(tx *sql.Tx) error {
 		src := &domain.Source{Name: "Lab", Protocol: "torrent", Format: "torznab", URL: "http://x", Kinds: []string{}, Categories: map[string][]int{},
 			State: "enabled", Extra: map[string]string{}}
-		if _, err := store.Insert(tx, "sources", src, domain.System); err != nil {
+		if _, err := database.Insert(tx, "sources", src, domain.System); err != nil {
 			return err
 		}
 		job := &domain.Job{Kind: source.KindSearchSlot, Params: map[string]any{}, Priority: "normal", State: "done", RunAfter: time.Now(), AskedBy: domain.System, MaxAttempts: 1}
-		if _, err := store.Insert(tx, "jobs", job, domain.System); err != nil {
+		if _, err := database.Insert(tx, "jobs", job, domain.System); err != nil {
 			return err
 		}
 		for _, r := range []struct {
@@ -51,7 +52,7 @@ func searchWorld(t *testing.T) (srvURL string, s *store.Store, q *jobs.Queue, ti
 		} {
 			rel := &domain.Release{SourceID: src.ID, Name: r.name, LinkRef: "http://x/" + r.name, Protocol: "torrent", Flags: []string{}, Parsed: map[string]any{},
 				MatchedSlotIDs: []int64{slotID}, Verdict: r.verdict, FoundBy: "hand_search", JobID: &job.ID, State: r.state}
-			id, err := store.Insert(tx, "releases", rel, domain.System)
+			id, err := database.Insert(tx, "releases", rel, domain.System)
 			if err != nil {
 				return err
 			}
@@ -149,7 +150,7 @@ func TestReleasesListChooseAndForce(t *testing.T) {
 func TestHeldAndTurnedDownLists(t *testing.T) {
 	u, s, _, _, slotID, rels := searchWorld(t)
 	ctx := context.Background()
-	until := store.FormatTime(time.Now().Add(time.Hour))
+	until := database.FormatTime(time.Now().Add(time.Hour))
 	if err := s.Write(ctx, func(tx *sql.Tx) error {
 		if _, err := tx.Exec("UPDATE releases SET state = 'held', hold_until = ? WHERE id IN (?, ?)", until, rels["judged"], rels["passed_over"]); err != nil {
 			return err
@@ -214,7 +215,7 @@ func TestBulkSearchesQueueJobs(t *testing.T) {
 	}
 	_ = json.Unmarshal(do(t, "POST", u+"/api/v1/titles/"+itoa(titleID)+"/search", `{"choose":false,"slot_id":`+itoa(slotID)+`}`, 202), &shown)
 	var sj domain.Job
-	if len(shown.JobIDs) != 1 || store.Get(context.Background(), s.Read(), "jobs", shown.JobIDs[0], &sj) != nil || sj.Params["choose"] != false || sj.Params["by_hand"] != true {
+	if len(shown.JobIDs) != 1 || database.Get(context.Background(), s.Read(), "jobs", shown.JobIDs[0], &sj) != nil || sj.Params["choose"] != false || sj.Params["by_hand"] != true {
 		t.Fatalf("show search %+v %v", shown, sj.Params)
 	}
 	do(t, "POST", u+"/api/v1/titles/"+itoa(titleID)+"/search", `{"slot_id":999}`, 404)
@@ -224,7 +225,7 @@ func TestBulkSearchesQueueJobs(t *testing.T) {
 		}
 		_ = json.Unmarshal(do(t, "POST", u+"/api/v1/search/"+path, "", 202), &out)
 		var j domain.Job
-		if len(out.JobIDs) != 1 || store.Get(context.Background(), s.Read(), "jobs", out.JobIDs[0], &j) != nil || j.Kind != kind {
+		if len(out.JobIDs) != 1 || database.Get(context.Background(), s.Read(), "jobs", out.JobIDs[0], &j) != nil || j.Kind != kind {
 			t.Fatalf("%s: %+v %s", path, out, j.Kind)
 		}
 		if path != "feed-check" && j.Params["which"] != path {
@@ -237,7 +238,7 @@ func TestBulkSearchesQueueJobs(t *testing.T) {
 	}
 	_ = json.Unmarshal(do(t, "POST", u+"/api/v1/search/missing", `{"kind":"movie"}`, 202), &one)
 	var j domain.Job
-	if len(one.JobIDs) != 1 || store.Get(context.Background(), s.Read(), "jobs", one.JobIDs[0], &j) != nil || j.Params["kind"] != "movie" || j.DedupeKey == nil || *j.DedupeKey != "search_missing:missing:movie" {
+	if len(one.JobIDs) != 1 || database.Get(context.Background(), s.Read(), "jobs", one.JobIDs[0], &j) != nil || j.Params["kind"] != "movie" || j.DedupeKey == nil || *j.DedupeKey != "search_missing:missing:movie" {
 		t.Fatalf("kind: %+v %v", one, j.Params)
 	}
 	do(t, "POST", u+"/api/v1/search/missing", `{"kind":"book"}`, 400)
@@ -302,18 +303,18 @@ func TestSearchesRunningAndFound(t *testing.T) {
 	if err := s.Write(context.Background(), func(tx *sql.Tx) error {
 		run := &domain.Job{Kind: source.KindSearchSlot, Subject: &domain.Subject{Type: "slot", ID: slotID}, Params: map[string]any{"by_hand": true},
 			Priority: "normal", State: "running", Progress: 0.5, ProgressNote: &note, RunAfter: time.Now(), AskedBy: domain.System, MaxAttempts: 1}
-		if _, err := store.Insert(tx, "jobs", run, domain.System); err != nil {
+		if _, err := database.Insert(tx, "jobs", run, domain.System); err != nil {
 			return err
 		}
 		ended := time.Now()
 		done := &domain.Job{Kind: source.KindSearchSlot, Subject: &domain.Subject{Type: "slot", ID: slotID}, Params: map[string]any{}, Priority: "normal",
 			State: "done", RunAfter: time.Now(), EndedAt: &ended, AskedBy: domain.System, MaxAttempts: 1,
 			Result: map[string]any{"releases": 3, "refused": 1, "chosen_release_id": rels["judged"]}}
-		if _, err := store.Insert(tx, "jobs", done, domain.System); err != nil {
+		if _, err := database.Insert(tx, "jobs", done, domain.System); err != nil {
 			return err
 		}
 		feed := &domain.Job{Kind: source.KindFeedCheck, Params: map[string]any{}, Priority: "normal", State: "queued", RunAfter: time.Now(), AskedBy: domain.System, MaxAttempts: 1}
-		_, err := store.Insert(tx, "jobs", feed, domain.System)
+		_, err := database.Insert(tx, "jobs", feed, domain.System)
 		return err
 	}); err != nil {
 		t.Fatal(err)
@@ -348,14 +349,14 @@ func TestTitleReleasesListsUnmatched(t *testing.T) {
 	if err := s.Write(context.Background(), func(tx *sql.Tx) error {
 		job := &domain.Job{Kind: source.KindSearchSlot, Subject: &domain.Subject{Type: "slot", ID: slotID}, Params: map[string]any{}, Priority: "normal",
 			State: "done", RunAfter: time.Now(), AskedBy: domain.System, MaxAttempts: 1}
-		if _, err := store.Insert(tx, "jobs", job, domain.System); err != nil {
+		if _, err := database.Insert(tx, "jobs", job, domain.System); err != nil {
 			return err
 		}
 		rel := &domain.Release{SourceID: 1, Name: "Dune.Part.Two.2031.1080p.WEB-DL", LinkRef: "http://x/u", Protocol: "torrent", Flags: []string{}, Parsed: map[string]any{},
 			MatchedSlotIDs: []int64{}, FoundBy: "hand_search", JobID: &job.ID, State: "refused", Verdict: map[string]any{"outcome": "refused", "reasons": []any{
 				map[string]any{"step": "match", "rule": "none", "effect": "fail", "detail": "no Title in the library is called that"}}}}
 		var err error
-		unmatched, err = store.Insert(tx, "releases", rel, domain.System)
+		unmatched, err = database.Insert(tx, "releases", rel, domain.System)
 		return err
 	}); err != nil {
 		t.Fatal(err)
@@ -383,7 +384,7 @@ func TestHandSearchNotDedupedByBulk(t *testing.T) {
 		key := "search_slot:" + itoa(slotID)
 		j := &domain.Job{Kind: source.KindSearchSlot, Subject: &domain.Subject{Type: "slot", ID: slotID}, Params: map[string]any{"bulk": true},
 			Priority: "normal", State: "queued", RunAfter: time.Now().Add(time.Hour), AskedBy: domain.System, MaxAttempts: 1, DedupeKey: &key}
-		id, err := store.Insert(tx, "jobs", j, domain.System)
+		id, err := database.Insert(tx, "jobs", j, domain.System)
 		bulkID = id
 		return err
 	}); err != nil {

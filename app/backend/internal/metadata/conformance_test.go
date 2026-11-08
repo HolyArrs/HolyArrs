@@ -3,13 +3,12 @@ package metadata
 import (
 	"context"
 	"errors"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound/adaptertest"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
-
-	"github.com/HolyArrs/holyarrs/app/backend/internal/adaptertest"
 )
 
 func TestMetadataAdapterConformance(t *testing.T) {

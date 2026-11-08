@@ -6,8 +6,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/supervisor"
 )
 
 // watchOnTTL is how long a title's TMDB watch providers are kept per
@@ -88,7 +88,7 @@ func (a *API) queueWatchOn(keys []string) {
 	if len(todo) == 0 {
 		return
 	}
-	go supervisor.Guard("watch-on", func() {
+	go jobs.Guard("watch-on", func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 		defer cancel()
 		for _, k := range todo {

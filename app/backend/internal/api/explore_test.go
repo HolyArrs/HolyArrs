@@ -12,10 +12,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/explore"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // recordingTMDB is a fake TMDB that records every request it gets (the
@@ -64,7 +64,7 @@ func (f *recordingTMDB) provider() *metadata.TMDB {
 	return &metadata.TMDB{BaseURL: f.srv.URL + "/3", Access: func(context.Context) (string, error) { return "fake-read-value", nil }, Gap: time.Millisecond}
 }
 
-func exploreRig(t *testing.T) (*API, *store.Store, *recordingTMDB) {
+func exploreRig(t *testing.T) (*API, *database.Store, *recordingTMDB) {
 	t.Helper()
 	f := newRecordingTMDB(t)
 	_, s := discoverRig(t, f.provider())
@@ -81,7 +81,7 @@ func exploreRig(t *testing.T) (*API, *store.Store, *recordingTMDB) {
 	return a, s, f
 }
 
-func poolState(t *testing.T, s *store.Store, member int64, sw string) (bool, bool) {
+func poolState(t *testing.T, s *database.Store, member int64, sw string) (bool, bool) {
 	t.Helper()
 	var stale bool
 	err := s.Read().QueryRow("SELECT stale FROM explore_pool WHERE member_id = ? AND type_switch = ?", member, sw).Scan(&stale)
@@ -172,10 +172,10 @@ func TestExplorePoolBuildPrivacy(t *testing.T) {
 	ctx := context.Background()
 	err := s.Write(ctx, func(tx *sql.Tx) error {
 		ask := domain.Ask{Kind: "movie", TMDBID: "777", Name: "Secret Ask", State: domain.AskAsked, AskedBy: 2, AskedAt: time.Now(), SourceIDs: map[string]string{"tmdb": "777"}}
-		if _, err := store.Insert(tx, "asks", &ask, domain.System); err != nil {
+		if _, err := database.Insert(tx, "asks", &ask, domain.System); err != nil {
 			return err
 		}
-		_, err := tx.Exec("INSERT INTO ask_people (ask_id, user_id, asked_at, counted) VALUES (?, 2, ?, 1)", ask.ID, store.FormatTime(time.Now()))
+		_, err := tx.Exec("INSERT INTO ask_people (ask_id, user_id, asked_at, counted) VALUES (?, 2, ?, 1)", ask.ID, database.FormatTime(time.Now()))
 		return err
 	})
 	if err != nil {
@@ -319,7 +319,7 @@ func TestExploreFinishCollection(t *testing.T) {
 	ctx := context.Background()
 	err := s.Write(ctx, func(tx *sql.Tx) error {
 		own := domain.Title{Kind: "movie", Name: "Saga 1", SortName: "saga 1", SourceIDs: map[string]string{"tmdb": "501"}, MetadataSource: "tmdb", NewPartsPolicy: "all", WhyAdded: "by_hand", State: "active", ReleaseGate: "released", GateDriver: "none", Status: "released"}
-		if _, err := store.Insert(tx, "titles", &own, domain.System); err != nil {
+		if _, err := database.Insert(tx, "titles", &own, domain.System); err != nil {
 			return err
 		}
 		res, err := tx.Exec("INSERT INTO movie_collections(source_id, name) VALUES('tmdb:77', 'Saga')")

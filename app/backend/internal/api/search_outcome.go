@@ -4,8 +4,8 @@ import (
 	"net/http"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // searchOutcome tells whether a Title's newest search came back empty.
@@ -17,7 +17,7 @@ func (a *API) searchOutcome(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	es, _, err := a.s.Store.Events(r.Context(), store.EventFilter{TitleID: t.ID, Limit: 1,
+	es, _, err := a.s.Store.Events(r.Context(), database.EventFilter{TitleID: t.ID, Limit: 1,
 		Kinds: []string{source.EventSearchDone, source.EventSearchFailed, source.EventReleaseChosen}})
 	if err != nil {
 		fail(w, http.StatusInternalServerError, err.Error())

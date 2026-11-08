@@ -15,7 +15,9 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/judge"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediainfo"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/parse"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
@@ -45,7 +47,7 @@ func plainStep(s string) string { return strings.ReplaceAll(s, "_", " ") }
 func checkUpgrade(ctx context.Context, db *sql.DB, sl domain.Slot, ver domain.Version, d domain.Download, plan []domain.PlanStep, fakes fakeRules, minutes int) (upgrade, error) {
 	u := upgrade{facts: map[string]map[string]any{}}
 	var pr domain.PickRules
-	if err := store.Get(ctx, db, "pick_rules", ver.PickRulesID, &pr); err != nil {
+	if err := database.Get(ctx, db, "pick_rules", ver.PickRulesID, &pr); err != nil {
 		return u, err
 	}
 	u.rules = pr.Body
@@ -54,7 +56,7 @@ func checkUpgrade(ctx context.Context, db *sql.DB, sl domain.Slot, ver domain.Ve
 	}
 	if sl.FileID != nil {
 		var f domain.File
-		if err := store.Get(ctx, db, "files", *sl.FileID, &f); err == nil && f.State == "present" {
+		if err := database.Get(ctx, db, "files", *sl.FileID, &f); err == nil && f.State == "present" {
 			u.old = &f
 			u.oldName = strings.TrimSuffix(filepath.Base(f.RelativePath), filepath.Ext(f.RelativePath))
 			if f.ReleaseName != nil && *f.ReleaseName != "" {
@@ -133,7 +135,7 @@ func checkUpgrade(ctx context.Context, db *sql.DB, sl domain.Slot, ver domain.Ve
 // in place (oldName, when hasOld). "" means it may be placed.
 func lieOf(name, relName string, hasOld bool, oldName string, rules domain.PickRulesBody, facts map[string]any) string {
 	fStep, fIdx := judge.StepOf(name, rules)
-	fp := parse.Parse(name, parse.Hints{}).Resolution
+	fp := releasename.Parse(name, releasename.Hints{}).Resolution
 	shown := mediainfo.Info{Width: factInt(facts, "width"), Height: factInt(facts, "height"), DisplayWidth: factInt(facts, "display_width")}
 	if real := shown.Resolution(); real > 0 {
 		// The picture size read from the file beats any name: a 720p file
@@ -141,24 +143,24 @@ func lieOf(name, relName string, hasOld bool, oldName string, rules domain.PickR
 		// else the file's own name.
 		claim := fp
 		if relName != "" {
-			if rp := parse.Parse(relName, parse.Hints{}).Resolution; rp.Conf == parse.Sure && rp.Value > 0 {
+			if rp := releasename.Parse(relName, releasename.Hints{}).Resolution; rp.Conf == releasename.Sure && rp.Value > 0 {
 				claim = rp
 			}
 		}
-		if claim.Conf == parse.Sure && claim.Value > real {
+		if claim.Conf == releasename.Sure && claim.Value > real {
 			return fmt.Sprintf("file is %dp, name said %dp", real, claim.Value)
 		}
 	} else if relName != "" {
 		// The resolution in the file's own name against the Release name's.
-		rp := parse.Parse(relName, parse.Hints{}).Resolution
+		rp := releasename.Parse(relName, releasename.Hints{}).Resolution
 		fr, rr := fp.Value, rp.Value
-		if fp.Conf == parse.Sure && rp.Conf == parse.Sure && fr > 0 && rr > fr {
+		if fp.Conf == releasename.Sure && rp.Conf == releasename.Sure && fr > 0 && rr > fr {
 			return fmt.Sprintf("file is %dp, name said %dp", fr, rr)
 		}
 	}
 	// Only a file name that parses with confidence is compared with the
 	// copy in place; a plainer name than its Release is not a lie.
-	sure := parse.Parse(name, parse.Hints{}).Source.Conf == parse.Sure
+	sure := releasename.Parse(name, releasename.Hints{}).Source.Conf == releasename.Sure
 	if fIdx >= 0 && sure && hasOld {
 		if oStep, oIdx := judge.StepOf(oldName, rules); oIdx > fIdx {
 			return fmt.Sprintf("file is %s, lower than the copy in place (%s)", plainStep(fStep), plainStep(oStep))
@@ -321,12 +323,12 @@ func (im *Importer) reject(ctx context.Context, imp *domain.Import, sl domain.Sl
 	}
 	imp.State, imp.Mode = "rejected", "auto"
 	err := im.Store.Write(ctx, func(tx *sql.Tx) error {
-		if _, err := store.Insert(tx, "imports", imp, by); err != nil {
+		if _, err := database.Insert(tx, "imports", imp, by); err != nil {
 			return err
 		}
 		if d.ReleaseID != nil {
 			if _, err := tx.Exec(`UPDATE releases SET state = 'turned_down', verdict = json_set(COALESCE(verdict, '{}'), '$.turned_down_reason', ?),
-				updated_at = ?, updated_by = ? WHERE id = ?`, why, store.FormatTime(time.Now()), actorText(by), *d.ReleaseID); err != nil {
+				updated_at = ?, updated_by = ? WHERE id = ?`, why, database.FormatTime(time.Now()), actorText(by), *d.ReleaseID); err != nil {
 				return err
 			}
 		}

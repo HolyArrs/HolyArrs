@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Folder is the outcome of checking one Library or download folder.
@@ -92,7 +92,7 @@ func (f Folder) Check(uid, gid int) Check {
 // from the download folders included. The checks run side by side; one
 // that is not done within budget is marked slow and left behind. db may
 // be nil (only savePath is checked then).
-func CheckFolders(ctx context.Context, db store.Lister, savePath string, budget time.Duration) ([]Folder, error) {
+func CheckFolders(ctx context.Context, db database.Lister, savePath string, budget time.Duration) ([]Folder, error) {
 	var libs [][2]string
 	downloads := []string{}
 	if savePath != "" {
@@ -175,7 +175,7 @@ func Summary(fs []Folder) string {
 
 // Startup checks the folders within budget and returns the summary line
 // and one warning line per problem folder, each with its fix.
-func Startup(ctx context.Context, db store.Lister, savePath string, budget time.Duration) (string, []string) {
+func Startup(ctx context.Context, db database.Lister, savePath string, budget time.Duration) (string, []string) {
 	fs, err := CheckFolders(ctx, db, savePath, budget)
 	if err != nil {
 		return "folders: not checked: " + err.Error(), nil

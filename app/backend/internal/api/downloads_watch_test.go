@@ -9,7 +9,8 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/live"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
@@ -22,7 +23,7 @@ func viewAs(t *testing.T, x *dl41, who auth.Who) []DownloadRow {
 // viewAt is viewAs at a given address (?asked=1 for the Requests page).
 func viewAt(t *testing.T, x *dl41, who auth.Who, url string) []DownloadRow {
 	t.Helper()
-	a := New(Server{Store: x.s, Queue: x.q, Live: live.NewHub(live.Options{Heartbeat: time.Second}), Metadata: metadata.Lab(), Version: "test"})
+	a := New(Server{Store: x.s, Queue: x.q, Live: webserver.NewLiveHub(webserver.LiveOptions{Heartbeat: time.Second}), Metadata: metadata.Lab(), Version: "test"})
 	r := httptest.NewRequest("GET", url, nil)
 	r = r.WithContext(auth.ContextWith(r.Context(), who))
 	w := httptest.NewRecorder()

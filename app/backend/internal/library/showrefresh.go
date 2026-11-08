@@ -6,9 +6,9 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // ShowRefresh says what one show details refresh did.
@@ -38,7 +38,7 @@ func (s *Service) SwitchSource(ctx context.Context, titleID int64, source string
 func (s *Service) refreshShow(ctx context.Context, titleID int64, switchTo string, by domain.Actor, jobID *int64) (ShowRefresh, error) {
 	var out ShowRefresh
 	var t domain.Title
-	if err := store.Get(ctx, s.Store.Read(), "titles", titleID, &t); err != nil {
+	if err := database.Get(ctx, s.Store.Read(), "titles", titleID, &t); err != nil {
 		return out, err
 	}
 	if t.Kind != "show" {
@@ -67,7 +67,7 @@ func (s *Service) refreshShow(ctx context.Context, titleID int64, switchTo strin
 		first := t.DroppedAt == nil
 		err := s.Store.Write(ctx, func(tx *sql.Tx) error {
 			_, err := tx.Exec("UPDATE titles SET dropped_at = COALESCE(dropped_at, ?), refreshed_at = ?, updated_at = ?, updated_by = ? WHERE id = ?",
-				store.FormatTime(now), store.FormatTime(now), store.FormatTime(now), actorText(by), titleID)
+				database.FormatTime(now), database.FormatTime(now), database.FormatTime(now), actorText(by), titleID)
 			return err
 		})
 		if err == nil && first {
@@ -87,14 +87,14 @@ func (s *Service) refreshShow(ctx context.Context, titleID int64, switchTo strin
 	s.addAirTimes(metadata.NoCache(ctx), &sh)
 	was := t.MetadataSource
 	err = s.Store.Write(ctx, func(tx *sql.Tx) error {
-		if err := store.Get(ctx, tx, "titles", titleID, &t); err != nil {
+		if err := database.Get(ctx, tx, "titles", titleID, &t); err != nil {
 			return err
 		}
 		applyShow(&t, sh)
 		t.MetadataSource = source
 		t.DroppedAt = nil
 		t.RefreshedAt = &now
-		if err := store.Update(tx, "titles", &t, by); err != nil {
+		if err := database.Update(tx, "titles", &t, by); err != nil {
 			return err
 		}
 		var err error
@@ -153,7 +153,7 @@ func (s *Service) episodeGateEvents(ctx context.Context, t domain.Title, opened,
 }
 
 // episodeLabel is "S01E02" for a Slot's episode.
-func episodeLabel(ctx context.Context, db store.Querier, slotID int64) string {
+func episodeLabel(ctx context.Context, db database.Querier, slotID int64) string {
 	var se, ep sql.NullInt64
 	_ = db.QueryRowContext(ctx, `SELECT json_extract(i.numbers, '$.season'), json_extract(i.numbers, '$.episode') FROM items i
 		JOIN slots s ON s.item_id = i.id WHERE s.id = ?`, slotID).Scan(&se, &ep)

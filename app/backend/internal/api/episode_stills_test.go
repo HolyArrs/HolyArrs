@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 func TestEpisodesCarryStillAndRuntime(t *testing.T) {
@@ -15,14 +15,14 @@ func TestEpisodesCarryStillAndRuntime(t *testing.T) {
 	var titleID int64
 	err := s.Write(context.Background(), func(tx *sql.Tx) error {
 		show := domain.Title{Kind: "show", Name: "S", SortName: "s", SourceIDs: map[string]string{"tmdb": "9"}, MetadataSource: "tmdb", NewPartsPolicy: "all", WhyAdded: "by_hand", State: "active", ReleaseGate: "released", GateDriver: "none", Status: "running"}
-		if _, err := store.Insert(tx, "titles", &show, domain.System); err != nil {
+		if _, err := database.Insert(tx, "titles", &show, domain.System); err != nil {
 			return err
 		}
 		titleID = show.ID
 		season, ep, rt := 1, 1, 44
 		it := domain.Item{TitleID: show.ID, Kind: "episode", Numbers: domain.Numbers{Season: &season, Episode: &ep}, Runtime: &rt,
 			Still: "https://img.test/w780/s1.jpg", SourceIDs: map[string]string{}}
-		_, err := store.Insert(tx, "items", &it, domain.System)
+		_, err := database.Insert(tx, "items", &it, domain.System)
 		return err
 	})
 	if err != nil {

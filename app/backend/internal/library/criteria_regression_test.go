@@ -8,11 +8,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
-func currentCriteriaCopy(t *testing.T, s *store.Store, titleID int64, facts map[string]any, protected bool) (domain.Version, domain.Slot, domain.File) {
+func currentCriteriaCopy(t *testing.T, s *database.Store, titleID int64, facts map[string]any, protected bool) (domain.Version, domain.Slot, domain.File) {
 	t.Helper()
 	ctx := context.Background()
 	v := versionsOf(t, s, titleID)[0]
@@ -21,7 +21,7 @@ func currentCriteriaCopy(t *testing.T, s *store.Store, titleID int64, facts map[
 	f := domain.File{Protected: protected, SlotIDs: []int64{slot.ID}, VersionID: v.ID, RelativePath: filepath.ToSlash(filepath.Join(v.FolderName, release+".mkv")),
 		AddedAt: now, Languages: []string{"en"}, MediaInfo: facts, ReleaseName: &release, Origin: "imported", PlacedBy: "hardlink", Role: "main", State: "present"}
 	if err := s.Write(ctx, func(tx *sql.Tx) error {
-		if _, err := store.Insert(tx, "files", &f, domain.System); err != nil {
+		if _, err := database.Insert(tx, "files", &f, domain.System); err != nil {
 			return err
 		}
 		_, err := tx.Exec("UPDATE slots SET file_id = ?, state = 'in_library', good_enough = 1 WHERE id = ?", f.ID, slot.ID)
@@ -53,13 +53,13 @@ func TestEditVersionReevaluatesActualCopyCriteria(t *testing.T) {
 			if _, err := EditVersion(context.Background(), s, id, file.VersionID, tc.change, domain.System); err != nil {
 				t.Fatal(err)
 			}
-			if err := store.Get(context.Background(), s.Read(), "slots", slot.ID, &slot); err != nil {
+			if err := database.Get(context.Background(), s.Read(), "slots", slot.ID, &slot); err != nil {
 				t.Fatal(err)
 			}
 			if slot.State != domain.SlotBetterWanted || slot.GoodEnough {
 				t.Fatalf("mismatching protected copy stayed good enough: %+v", slot)
 			}
-			if err := store.Get(context.Background(), s.Read(), "files", file.ID, &file); err != nil || !file.Protected {
+			if err := database.Get(context.Background(), s.Read(), "files", file.ID, &file); err != nil || !file.Protected {
 				t.Fatalf("protection changed: %+v %v", file, err)
 			}
 		})
@@ -80,7 +80,7 @@ func TestEditVersionPreservesUnconstrainedQualityBehavior(t *testing.T) {
 	if _, err := EditVersion(context.Background(), s, id, v.ID, VersionChange{KeepUpToDate: &keep}, domain.System); err != nil {
 		t.Fatal(err)
 	}
-	if err := store.Get(context.Background(), s.Read(), "slots", slot.ID, &slot); err != nil {
+	if err := database.Get(context.Background(), s.Read(), "slots", slot.ID, &slot); err != nil {
 		t.Fatal(err)
 	}
 	if slot.State != domain.SlotInLibrary || !slot.GoodEnough {
@@ -124,7 +124,7 @@ func TestRescanPersistsActualLanguagesAndAuditActor(t *testing.T) {
 	_, _, f := currentCriteriaCopy(t, s, id, map[string]any{"inspection_size": 0, "inspection_modified": "0"}, false)
 	if err := s.Write(context.Background(), func(tx *sql.Tx) error {
 		_, err := tx.Exec("UPDATE files SET relative_path = ?, languages = json('[\"en\"]'), updated_at = ?, updated_by = json(?) WHERE id = ?",
-			rel, store.FormatTime(now.Add(-time.Hour)), actorText(domain.System), f.ID)
+			rel, database.FormatTime(now.Add(-time.Hour)), actorText(domain.System), f.ID)
 		return err
 	}); err != nil {
 		t.Fatal(err)
@@ -134,7 +134,7 @@ func TestRescanPersistsActualLanguagesAndAuditActor(t *testing.T) {
 	if _, err := svc.Rescan(context.Background(), actor); err != nil {
 		t.Fatal(err)
 	}
-	if err := store.Get(context.Background(), s.Read(), "files", f.ID, &f); err != nil {
+	if err := database.Get(context.Background(), s.Read(), "files", f.ID, &f); err != nil {
 		t.Fatal(err)
 	}
 	if len(f.Languages) != 1 || f.Languages[0] != "fr" {

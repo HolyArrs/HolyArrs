@@ -14,9 +14,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles/container"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles/subtext"
 )
@@ -40,7 +41,7 @@ type Publisher interface {
 
 // Service runs subtitle work.
 type Service struct {
-	Store *store.Store
+	Store *database.Store
 	Live  Publisher // may be nil
 	// Vault keeps the account details of sites that need an account.
 	Vault *secrets.Vault
@@ -124,7 +125,7 @@ var ErrNotMain = errors.New("not a video of a movie or an episode in the Library
 func (s *Service) load(ctx context.Context, fileID int64) (*fileCtx, error) {
 	db := s.Store.Read()
 	fc := &fileCtx{}
-	if err := store.Get(ctx, db, "files", fileID, &fc.file); err != nil {
+	if err := database.Get(ctx, db, "files", fileID, &fc.file); err != nil {
 		return nil, ErrNotFound
 	}
 	if fc.file.Role != "main" || fc.file.State != "present" || len(fc.file.SlotIDs) == 0 {
@@ -134,16 +135,16 @@ func (s *Service) load(ctx context.Context, fileID int64) (*fileCtx, error) {
 	if err := db.QueryRowContext(ctx, "SELECT item_id FROM slots WHERE id = ?", fc.file.SlotIDs[0]).Scan(&itemID); err != nil {
 		return nil, ErrNotMain
 	}
-	if err := store.Get(ctx, db, "items", itemID, &fc.item); err != nil {
+	if err := database.Get(ctx, db, "items", itemID, &fc.item); err != nil {
 		return nil, err
 	}
 	if fc.item.Kind != "movie" && fc.item.Kind != "episode" {
 		return nil, ErrMusic
 	}
-	if err := store.Get(ctx, db, "versions", fc.file.VersionID, &fc.version); err != nil {
+	if err := database.Get(ctx, db, "versions", fc.file.VersionID, &fc.version); err != nil {
 		return nil, err
 	}
-	if err := store.Get(ctx, db, "titles", fc.item.TitleID, &fc.title); err != nil {
+	if err := database.Get(ctx, db, "titles", fc.item.TitleID, &fc.title); err != nil {
 		return nil, err
 	}
 	if err := db.QueryRowContext(ctx, "SELECT path FROM library_folders WHERE id = ?", fc.version.LibraryFolderID).Scan(&fc.lib); err != nil {
@@ -348,14 +349,14 @@ func (s *Service) look(ctx context.Context, fc *fileCtx, by domain.Actor) (Statu
 			}
 			for _, h := range inside {
 				idx, codec := h.Track, h.Codec
-				if _, err := store.Insert(tx, "subtitles", &Subtitle{FileID: fc.file.ID, Language: h.Language, Forced: h.Forced, HearingImpaired: h.HearingImpaired,
+				if _, err := database.Insert(tx, "subtitles", &Subtitle{FileID: fc.file.ID, Language: h.Language, Forced: h.Forced, HearingImpaired: h.HearingImpaired,
 					Place: "built_in", TrackIndex: &idx, Codec: &codec, Origin: "found", State: "present", Sync: map[string]any{}}, by); err != nil {
 					return err
 				}
 			}
 		}
 		// Beside files: new ones are found; recorded ones no longer there are gone.
-		rows, err := store.Select[Subtitle](ctx, tx, "subtitles", "file_id = ? AND place = 'beside' AND state = 'present'", fc.file.ID)
+		rows, err := database.Select[Subtitle](ctx, tx, "subtitles", "file_id = ? AND place = 'beside' AND state = 'present'", fc.file.ID)
 		if err != nil {
 			return err
 		}
@@ -366,7 +367,7 @@ func (s *Service) look(ctx context.Context, fc *fileCtx, by domain.Actor) (Statu
 				there = there || (r.RelativePath != nil && *r.RelativePath == h.Path)
 			}
 			if !there {
-				if _, err := tx.ExecContext(ctx, "UPDATE subtitles SET state = 'gone', updated_at = ? WHERE id = ?", store.FormatTime(now()), r.ID); err != nil {
+				if _, err := tx.ExecContext(ctx, "UPDATE subtitles SET state = 'gone', updated_at = ? WHERE id = ?", database.FormatTime(now()), r.ID); err != nil {
 					return err
 				}
 				continue
@@ -378,13 +379,13 @@ func (s *Service) look(ctx context.Context, fc *fileCtx, by domain.Actor) (Statu
 				continue
 			}
 			p := h.Path
-			if _, err := store.Insert(tx, "subtitles", &Subtitle{FileID: fc.file.ID, Language: h.Language, Forced: h.Forced, HearingImpaired: h.HearingImpaired,
+			if _, err := database.Insert(tx, "subtitles", &Subtitle{FileID: fc.file.ID, Language: h.Language, Forced: h.Forced, HearingImpaired: h.HearingImpaired,
 				Place: "beside", RelativePath: &p, Origin: "found", State: "present", Sync: map[string]any{}}, by); err != nil {
 				return err
 			}
 		}
 		// Wish rows: one per missing want; met ones go.
-		wishRows, err := store.Select[Subtitle](ctx, tx, "subtitles", "file_id = ? AND place = 'wish'", fc.file.ID)
+		wishRows, err := database.Select[Subtitle](ctx, tx, "subtitles", "file_id = ? AND place = 'wish'", fc.file.ID)
 		if err != nil {
 			return err
 		}
@@ -403,7 +404,7 @@ func (s *Service) look(ctx context.Context, fc *fileCtx, by domain.Actor) (Statu
 			if _, err := tx.ExecContext(ctx, `INSERT INTO subtitles (created_at, created_by, updated_at, updated_by, file_id, language, forced, hearing_impaired, place, origin, state)
 				VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'wish', 'fetched', 'wanted')
 				ON CONFLICT (file_id, language, forced) WHERE place = 'wish' DO UPDATE SET hearing_impaired = excluded.hearing_impaired`,
-				store.FormatTime(now()), actorJSON(by), store.FormatTime(now()), actorJSON(by), fc.file.ID, m.Language, m.Forced, m.HearingImpaired == HIOnly); err != nil {
+				database.FormatTime(now()), actorJSON(by), database.FormatTime(now()), actorJSON(by), fc.file.ID, m.Language, m.Forced, m.HearingImpaired == HIOnly); err != nil {
 				return err
 			}
 		}
@@ -416,7 +417,7 @@ func (s *Service) look(ctx context.Context, fc *fileCtx, by domain.Actor) (Statu
 			ON CONFLICT (file_id) DO UPDATE SET looked_at = excluded.looked_at, wish = excluded.wish,
 				video_hash = CASE WHEN video_size IS excluded.video_size AND video_modified IS excluded.video_modified THEN video_hash END,
 				video_size = excluded.video_size, video_modified = excluded.video_modified, video_read = excluded.video_read`,
-			fc.file.ID, store.FormatTime(now()), string(wishJSON), size, mod, read)
+			fc.file.ID, database.FormatTime(now()), string(wishJSON), size, mod, read)
 		return err
 	})
 	sort.SliceStable(st.Haves, func(i, j int) bool { return st.Haves[i].Language < st.Haves[j].Language })
@@ -455,7 +456,7 @@ func FilesOf(ctx context.Context, db *sql.DB, titleID, itemID int64) ([]int64, e
 
 // ListFor lists the subtitle rows of a File, newest first within a place.
 func ListFor(ctx context.Context, db *sql.DB, fileID int64) ([]Subtitle, error) {
-	rs, err := store.Select[Subtitle](ctx, db, "subtitles", "file_id = ? ORDER BY place, language, id DESC", fileID)
+	rs, err := database.Select[Subtitle](ctx, db, "subtitles", "file_id = ? ORDER BY place, language, id DESC", fileID)
 	if rs == nil {
 		rs = []Subtitle{}
 	}

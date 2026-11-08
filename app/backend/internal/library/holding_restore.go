@@ -10,9 +10,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // HeldFile is one deleted file still waiting in a holding folder.
@@ -77,7 +77,7 @@ func (s *Service) heldFiles(ctx context.Context, id int64) ([]heldRow, error) {
 		}
 		h.Path = rest
 		h.TitleDeleted = h.state == "removed"
-		h.DeletedAt, _ = time.Parse(store.TimeLayout, at)
+		h.DeletedAt, _ = time.Parse(database.TimeLayout, at)
 		if h.DeletedAt.IsZero() {
 			h.DeletedAt = d
 		}
@@ -215,7 +215,7 @@ func (s *Service) restoreOne(ctx context.Context, h heldRow, by domain.Actor) (s
 			subsBack = append(subsBack, orig)
 		}
 	}
-	ts, who := store.FormatTime(s.now()), actorText(by)
+	ts, who := database.FormatTime(s.now()), actorText(by)
 	err := s.Store.Write(ctx, func(tx *sql.Tx) error {
 		if _, err := tx.Exec("UPDATE files SET state = 'present', relative_path = ?, updated_at = ?, updated_by = ? WHERE id = ?", h.Path, ts, who, h.ID); err != nil {
 			return err

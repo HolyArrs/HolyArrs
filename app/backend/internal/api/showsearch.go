@@ -7,10 +7,10 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Show search (stage 3.2): an episode, a season or the whole show, by hand.
@@ -38,7 +38,7 @@ func (a *API) searchShow(w http.ResponseWriter, r *http.Request, t domain.Title,
 		fail(w, http.StatusBadRequest, "say which episode (slot_id or item_id) or season to list Releases for")
 		return
 	}
-	vs, err := store.Select[domain.Version](ctx, db, "versions", "title_id = ? ORDER BY is_main DESC, id", t.ID)
+	vs, err := database.Select[domain.Version](ctx, db, "versions", "title_id = ? ORDER BY is_main DESC, id", t.ID)
 	if err != nil {
 		internal(w, err)
 		return
@@ -87,7 +87,7 @@ func (a *API) searchShow(w http.ResponseWriter, r *http.Request, t domain.Title,
 	switch {
 	case in.SlotID != nil:
 		var sl domain.Slot
-		if err := store.Get(ctx, db, "slots", *in.SlotID, &sl); err != nil || !a.slotOfTitle(ctx, sl.ItemID, t.ID) || !verOK(sl.VersionID) {
+		if err := database.Get(ctx, db, "slots", *in.SlotID, &sl); err != nil || !a.slotOfTitle(ctx, sl.ItemID, t.ID) || !verOK(sl.VersionID) {
 			fail(w, http.StatusNotFound, "no such Slot on this show")
 			return
 		}
@@ -100,7 +100,7 @@ func (a *API) searchShow(w http.ResponseWriter, r *http.Request, t domain.Title,
 			fail(w, http.StatusNotFound, "no such episode on this show")
 			return
 		}
-		slots, err := store.Select[domain.Slot](ctx, db, "slots", "item_id = ? ORDER BY id", *in.ItemID)
+		slots, err := database.Select[domain.Slot](ctx, db, "slots", "item_id = ? ORDER BY id", *in.ItemID)
 		if err != nil {
 			internal(w, err)
 			return
@@ -168,7 +168,7 @@ func (a *API) episodeLabels(ctx context.Context, slotIDs []int64) string {
 		if db.QueryRowContext(ctx, "SELECT item_id FROM slots WHERE id = ?", id).Scan(&itemID) != nil {
 			continue
 		}
-		if store.Get(ctx, db, "items", itemID, &it) != nil || it.Kind != "episode" {
+		if database.Get(ctx, db, "items", itemID, &it) != nil || it.Kind != "episode" {
 			continue
 		}
 		l := source.EpisodeLabel(it)

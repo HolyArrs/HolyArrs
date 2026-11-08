@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // M2: a bulk search with the gate setting off may pick for a Slot not out
@@ -113,7 +113,7 @@ func TestBulkSearchCappedAndStaggered(t *testing.T) {
 	runKind(t, f, &Searcher{Store: f.s}, KindSearchMissing, nil, map[string]any{"which": "missing"}, func(q *jobs.Queue) {
 		q.Handle(KindSearchSlot, func(context.Context, *jobs.Run) error { return nil })
 	})
-	js, _ := store.Select[domain.Job](context.Background(), f.s.Read(), "jobs", "kind = 'search_slot' ORDER BY id")
+	js, _ := database.Select[domain.Job](context.Background(), f.s.Read(), "jobs", "kind = 'search_slot' ORDER BY id")
 	if len(js) != 2 {
 		t.Fatalf("%d searches queued", len(js))
 	}

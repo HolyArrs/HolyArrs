@@ -1,0 +1,15 @@
+{
+  "name": "s",
+  "kind": "s",
+  "title_kind": "s",
+  "ref": "s",
+  "library_folder_id": 7,
+  "pick_rules_id": 7,
+  "keep_up_to_date": true,
+  "search_on_add": true,
+  "release_gate": "s",
+  "seasons": "s",
+  "new_seasons": "s",
+  "enabled": true,
+  "sync_every_hours": 7
+}

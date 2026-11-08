@@ -11,9 +11,9 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/explore"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // newNow is the rig's clock: the fake TMDB dates every title 2026-09-01.
@@ -306,7 +306,7 @@ func TestKidExploreNew(t *testing.T) {
 // titles last; the hot row is that service's chart, new only; bad asks 400.
 func TestExploreNewServiceList(t *testing.T) {
 	a, srv, reads := newRig(t)
-	ts := store.FormatTime(newNow)
+	ts := database.FormatTime(newNow)
 	if err := a.s.Store.Write(context.Background(), func(tx *sql.Tx) error {
 		_, err := tx.Exec(`INSERT INTO titles (created_at, created_by, updated_at, updated_by, kind, name, sort_name, source_ids, metadata_source, why_added, state)
 			VALUES (?, 1, ?, 1, 'show', 'S1612', 'S1612', '{"tmdb":"1612"}', 'tmdb', 'by_hand', 'active')`, ts, ts)

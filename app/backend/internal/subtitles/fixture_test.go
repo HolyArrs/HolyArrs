@@ -7,13 +7,13 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 )
 
 // fix is a small library: a movie with one File, a show with two episodes
 // (one File each, the first with a second Version), and an artist.
 type fix struct {
-	st                          *store.Store
+	st                          *database.Store
 	lib                         string
 	movie, show, artist         int64
 	movieItem, ep1, ep2         int64
@@ -25,13 +25,13 @@ const sysActor = `{"kind":"system"}`
 
 func newFix(t *testing.T) *fix {
 	t.Helper()
-	st, err := store.Open(t.TempDir(), store.Options{})
+	st, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = st.Close() })
 	f := &fix{st: st, lib: t.TempDir()}
-	ts := store.FormatTime(now())
+	ts := database.FormatTime(now())
 	ins := func(tx *sql.Tx, q string, args ...any) int64 {
 		t.Helper()
 		res, err := tx.Exec(q, args...)

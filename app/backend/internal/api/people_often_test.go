@@ -6,9 +6,9 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // echoPeople finds every searched name as itself and has 16 TV credits.
@@ -29,7 +29,7 @@ func TestOftenWorksWithCountsLibraryShowsAndHidesUnderFour(t *testing.T) {
 		err := s.Write(context.Background(), func(tx *sql.Tx) error {
 			title := domain.Title{Kind: kind, Name: name, SortName: name, Year: &year, SourceIDs: map[string]string{"tmdb": tmdb}, MetadataSource: "tmdb", NewPartsPolicy: "all",
 				WhyAdded: "by_hand", State: "active", ReleaseGate: "released", GateDriver: "none", Status: "released", People: people}
-			_, err := store.Insert(tx, "titles", &title, domain.System)
+			_, err := database.Insert(tx, "titles", &title, domain.System)
 			return err
 		})
 		if err != nil {

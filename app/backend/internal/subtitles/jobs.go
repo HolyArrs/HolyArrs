@@ -11,10 +11,10 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Register adds the subtitle Job kinds to the queue and makes the queue
@@ -91,7 +91,7 @@ func (s *Service) dueFiles(ctx context.Context, batch int) ([]int64, error) {
 	var out []int64
 	seen := map[int64]bool{}
 	rows, err := db.QueryContext(ctx, `SELECT DISTINCT file_id FROM subtitles WHERE place = 'wish' AND state IN ('wanted', 'none_good_enough')
-		AND (next_try_at IS NULL OR next_try_at <= ?) ORDER BY next_try_at IS NOT NULL, next_try_at LIMIT ?`, store.FormatTime(now()), batch)
+		AND (next_try_at IS NULL OR next_try_at <= ?) ORDER BY next_try_at IS NOT NULL, next_try_at LIMIT ?`, database.FormatTime(now()), batch)
 	if err != nil {
 		return nil, err
 	}
@@ -197,7 +197,7 @@ func (s *Service) handleBetter(ctx context.Context, r *jobs.Run) error {
 		r.SetResult(map[string]any{"skipped": "better subtitles are off"})
 		return nil
 	}
-	since := store.FormatTime(now().AddDate(0, 0, -set.BetterDays))
+	since := database.FormatTime(now().AddDate(0, 0, -set.BetterDays))
 	rows, err := s.Store.Read().QueryContext(ctx, `SELECT DISTINCT file_id FROM subtitles WHERE place = 'beside' AND state = 'present' AND origin = 'fetched'
 		AND score < 99 AND saved_at >= ? ORDER BY saved_at LIMIT ?`, since, set.Batch)
 	if err != nil {
@@ -222,7 +222,7 @@ func (s *Service) handleBetter(ctx context.Context, r *jobs.Run) error {
 
 // OnEvent starts a search when an Import placed a File, and when a better
 // copy replaced one (its subtitles are then held aside with it). Hook it to
-// store.OnEvent.
+// database.OnEvent.
 func (s *Service) OnEvent(e domain.Event) {
 	ctx := context.Background()
 	switch e.Kind {
@@ -311,7 +311,7 @@ func libRel(lib, p string) string {
 // holdWithVideo moves the beside subtitles HolyArrs saved for a replaced
 // video into the holding folder with it; their rows become replaced.
 func (s *Service) holdWithVideo(ctx context.Context, oldFileID, newFileID int64, by domain.Actor) {
-	rows, err := store.Select[Subtitle](ctx, s.Store.Read(), "subtitles",
+	rows, err := database.Select[Subtitle](ctx, s.Store.Read(), "subtitles",
 		"file_id = ? AND place = 'beside' AND state = 'present' AND origin IN ('fetched', 'by_hand')", oldFileID)
 	if err != nil || len(rows) == 0 {
 		return
@@ -336,7 +336,7 @@ func (s *Service) holdWithVideo(ctx context.Context, oldFileID, newFileID int64,
 			continue
 		}
 		_ = s.Store.Write(ctx, func(tx *sql.Tx) error {
-			_, err := tx.ExecContext(ctx, "UPDATE subtitles SET state = 'replaced', updated_at = ? WHERE id = ?", store.FormatTime(now()), r.ID)
+			_, err := tx.ExecContext(ctx, "UPDATE subtitles SET state = 'replaced', updated_at = ? WHERE id = ?", database.FormatTime(now()), r.ID)
 			return err
 		})
 		var titleID int64
@@ -437,7 +437,7 @@ func MissingList(ctx context.Context, db *sql.DB, mf MissingFilter, limit, offse
 			return nil, 0, err
 		}
 		if next.Valid {
-			if t, err := time.Parse(store.TimeLayout, next.String); err == nil {
+			if t, err := time.Parse(database.TimeLayout, next.String); err == nil {
 				m.NextTryAt = &t
 			}
 		}

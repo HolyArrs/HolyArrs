@@ -17,9 +17,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 var yes, no = true, false
@@ -77,7 +77,7 @@ func fakeServer(t *testing.T, kind string, libRoot string) (*httptest.Server, fu
 }
 
 type world struct {
-	s     *store.Store
+	s     *database.Store
 	v     *secrets.Vault
 	lib   string
 	title int64
@@ -85,7 +85,7 @@ type world struct {
 
 func newWorld(t *testing.T) *world {
 	t.Helper()
-	s, err := store.Open(t.TempDir(), store.Options{})
+	s, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -99,16 +99,16 @@ func newWorld(t *testing.T) *world {
 		var pr int64
 		_ = tx.QueryRow("SELECT id FROM pick_rules LIMIT 1").Scan(&pr)
 		lf := &domain.LibraryFolder{Path: w.lib, Kind: "movie", Label: "Movies", Health: "ok", SameDiskAs: []int64{}}
-		if _, err := store.Insert(tx, "library_folders", lf, domain.System); err != nil {
+		if _, err := database.Insert(tx, "library_folders", lf, domain.System); err != nil {
 			return err
 		}
 		ti := &domain.Title{Kind: "movie", GateDriver: "none", Name: "Arrival", SortName: "arrival", MetadataSource: "local", NewPartsPolicy: "all",
 			ReleaseGate: "released", WhyAdded: "by_hand", Status: "released", State: "active", SourceIDs: map[string]string{}, Aliases: []string{}, MusicTypes: []string{}, Artwork: []string{}}
-		if _, err := store.Insert(tx, "titles", ti, domain.System); err != nil {
+		if _, err := database.Insert(tx, "titles", ti, domain.System); err != nil {
 			return err
 		}
 		w.title = ti.ID
-		_, err := store.Insert(tx, "versions", &domain.Version{TitleID: ti.ID, Label: "HD", PickRulesID: pr, LibraryFolderID: lf.ID, FolderName: "Arrival (2016)", IsMain: true}, domain.System)
+		_, err := database.Insert(tx, "versions", &domain.Version{TitleID: ti.ID, Label: "HD", PickRulesID: pr, LibraryFolderID: lf.ID, FolderName: "Arrival (2016)", IsMain: true}, domain.System)
 		return err
 	})
 	if err != nil {
@@ -147,7 +147,7 @@ func TestPlexPathScopedRefresh(t *testing.T) {
 	if !strings.Contains(cs[1].query, "path=") || !strings.Contains(cs[1].query, "Arrival") {
 		t.Fatalf("not path-scoped: %s", cs[1].query)
 	}
-	es, _, _ := w.s.Events(ctx, store.EventFilter{Kinds: []string{domain.EventMediaRefreshed}})
+	es, _, _ := w.s.Events(ctx, database.EventFilter{Kinds: []string{domain.EventMediaRefreshed}})
 	if len(es) != 1 || es[0].Data["change"] != Modified {
 		t.Fatalf("events %+v", es)
 	}
@@ -162,7 +162,7 @@ func TestPlexPathScopedRefresh(t *testing.T) {
 
 func mustGet(t *testing.T, w *world, id int64) domain.MediaServer {
 	var m domain.MediaServer
-	if err := store.Get(context.Background(), w.s.Read(), "media_servers", id, &m); err != nil {
+	if err := database.Get(context.Background(), w.s.Read(), "media_servers", id, &m); err != nil {
 		t.Fatal(err)
 	}
 	return m
@@ -290,7 +290,7 @@ func TestTestButtonAndTokenNeverLogged(t *testing.T) {
 	l.Queue(ctx, w.folder(), Created)
 	l.Wait()
 	m = mustGet(t, w, m.ID)
-	es, _, _ := w.s.Events(ctx, store.EventFilter{Kinds: []string{"media_server_*"}})
+	es, _, _ := w.s.Events(ctx, database.EventFilter{Kinds: []string{"media_server_*"}})
 	evs, _ := json.Marshal(es)
 	for _, where := range []string{logs.String(), m.LastError, string(evs)} {
 		if strings.Contains(where, tok) || strings.Contains(where, "wrong-1") {

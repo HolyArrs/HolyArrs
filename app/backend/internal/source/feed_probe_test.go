@@ -13,9 +13,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 func TestFeedProbeIsReadOnlyAndFindsMatchingRelease(t *testing.T) {
@@ -57,7 +57,7 @@ func TestFeedProbeRunsDurableJobForSourceRecovery(t *testing.T) {
 	f := seed(t, lf.url(t))
 	feedOn(t, f)
 	exec(t, f, `UPDATE sources SET state = 'paused', paused_until = ?, extra = json_set(extra, '$.failures', '2')`,
-		store.FormatTime(time.Now().Add(-time.Minute)))
+		database.FormatTime(time.Now().Add(-time.Minute)))
 	writes := f.s.WriteCount()
 	needed, prepared, err := (&Searcher{Store: f.s}).ProbeFeed(context.Background(), time.Now())
 	if err != nil || !needed || prepared == nil {
@@ -73,7 +73,7 @@ func runScheduledFeed(t *testing.T, f fixture, sr *Searcher, beforeStart func())
 	ctx := context.Background()
 	now := time.Now().UTC()
 	exec(t, f, "UPDATE schedules SET enabled = 0")
-	exec(t, f, "UPDATE schedules SET enabled = 1, next_run = ? WHERE kind = ?", store.FormatTime(now.Add(-time.Minute)), KindFeedCheck)
+	exec(t, f, "UPDATE schedules SET enabled = 1, next_run = ? WHERE kind = ?", database.FormatTime(now.Add(-time.Minute)), KindFeedCheck)
 	q := jobs.New(f.s, jobs.Options{Workers: 1, BaseBackoff: time.Hour, PollInterval: 5 * time.Millisecond})
 	sr.Queue = q
 	sr.Register(q)
@@ -91,7 +91,7 @@ func runScheduledFeed(t *testing.T, f fixture, sr *Searcher, beforeStart func())
 	defer q.Stop()
 	deadline := time.Now().Add(5 * time.Second)
 	for time.Now().Before(deadline) {
-		js, err := store.Select[domain.Job](ctx, f.s.Read(), "jobs", "kind = ? ORDER BY id DESC LIMIT 1", KindFeedCheck)
+		js, err := database.Select[domain.Job](ctx, f.s.Read(), "jobs", "kind = ? ORDER BY id DESC LIMIT 1", KindFeedCheck)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -119,7 +119,7 @@ func TestScheduledPreparedFeedScrubsReflectedKey(t *testing.T) {
 	if hits != 1 || string(b) == "" || strings.Contains(string(b), secret) {
 		t.Fatalf("hits %d job %s", hits, b)
 	}
-	events, _, err := f.s.Events(context.Background(), store.EventFilter{Limit: 50})
+	events, _, err := f.s.Events(context.Background(), database.EventFilter{Limit: 50})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -153,7 +153,7 @@ func TestScheduledFeedDiscardsPreparedAnswerAfterSourceEdit(t *testing.T) {
 	f := seed(t, first.url(t))
 	feedOn(t, f)
 	j := runScheduledFeed(t, f, &Searcher{Store: f.s}, func() {
-		exec(t, f, "UPDATE sources SET url = ?, updated_at = ? WHERE id = ?", second.url(t), store.FormatTime(time.Now()), f.srcID)
+		exec(t, f, "UPDATE sources SET url = ?, updated_at = ? WHERE id = ?", second.url(t), database.FormatTime(time.Now()), f.srcID)
 	})
 	if first.hits != 1 || second.hits != 1 || j.Result["chosen"] != float64(0) || slotState(t, f).State != domain.SlotWanted {
 		t.Fatalf("requests first=%d second=%d result %+v", first.hits, second.hits, j.Result)
@@ -174,7 +174,7 @@ func TestScheduledFeedRefetchesWhenWantedKindsChange(t *testing.T) {
 	feedOn(t, f)
 	exec(t, f, "UPDATE sources SET kinds = '[]' WHERE id = ?", f.srcID)
 	runScheduledFeed(t, f, &Searcher{Store: f.s}, func() {
-		exec(t, f, "UPDATE titles SET kind = 'show', updated_at = ?", store.FormatTime(time.Now()))
+		exec(t, f, "UPDATE titles SET kind = 'show', updated_at = ?", database.FormatTime(time.Now()))
 	})
 	mu.Lock()
 	defer mu.Unlock()
@@ -189,7 +189,7 @@ func TestFeedProbeTimeoutDiscardsPartialPreparedBatch(t *testing.T) {
 	f := seed(t, srv.URL)
 	feedOn(t, f)
 	var base domain.Source
-	if err := store.Get(context.Background(), f.s.Read(), "sources", f.srcID, &base); err != nil {
+	if err := database.Get(context.Background(), f.s.Read(), "sources", f.srcID, &base); err != nil {
 		t.Fatal(err)
 	}
 	if err := f.s.Write(context.Background(), func(tx *sql.Tx) error {
@@ -197,7 +197,7 @@ func TestFeedProbeTimeoutDiscardsPartialPreparedBatch(t *testing.T) {
 			src := base
 			src.ID = 0
 			src.Name = fmt.Sprintf("blocked %d", i)
-			if _, err := store.Insert(tx, "sources", &src, domain.System); err != nil {
+			if _, err := database.Insert(tx, "sources", &src, domain.System); err != nil {
 				return err
 			}
 		}
@@ -249,7 +249,7 @@ func TestFeedProbeDoesNotAttachQuietHistoryAfterSourceReuse(t *testing.T) {
 		src := &domain.Source{Name: "Replacement", Protocol: "torrent", Format: "torznab", URL: srv.URL,
 			UseFor: domain.SourceUse{Feed: true}, Kinds: []string{"movie"}, Categories: map[string][]int{"movie": {2000}},
 			Priority: 25, State: "enabled", Extra: map[string]string{}, AllowLocal: true}
-		id, err := store.Insert(tx, "sources", src, domain.System)
+		id, err := database.Insert(tx, "sources", src, domain.System)
 		replacementID = id
 		return err
 	}); err != nil {

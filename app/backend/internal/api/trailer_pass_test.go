@@ -14,12 +14,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/explore"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/supervisor"
 )
 
 // passPool is a stored pool: Trending (the hero's source) and two more
@@ -36,12 +37,12 @@ func passPool(member int64, sw string, kid bool) explore.Pool {
 		Rows: []explore.Row{{ID: "trending", Type: explore.TypeTrending, Items: items(100)}, {ID: "best", Type: explore.TypeBest, Items: items(200)}, {ID: "classics", Type: explore.TypeClassics, Items: items(300)}}}
 }
 
-func storePool(t *testing.T, st *store.Store, p explore.Pool) {
+func storePool(t *testing.T, st *database.Store, p explore.Pool) {
 	t.Helper()
 	raw, _ := json.Marshal(p)
 	err := st.Write(context.Background(), func(tx *sql.Tx) error {
 		_, err := tx.Exec(`INSERT INTO explore_pool (member_id, type_switch, day, built_at, stale, due, pool) VALUES (?, ?, ?, ?, 0, NULL, ?)`,
-			p.Member, p.Switch, p.Date, store.FormatTime(time.Now()), string(raw))
+			p.Member, p.Switch, p.Date, database.FormatTime(time.Now()), string(raw))
 		return err
 	})
 	if err != nil {
@@ -104,7 +105,7 @@ func catchLog(t *testing.T) *syncBuf {
 // passRig is an API whose trailer key is the metadata server's pick, which
 // notes each title asked for (once per first lookup); "107" has none. The
 // gap between lookups is 0.
-func passRig(t *testing.T, st *store.Store, pc *parts.Control) (*API, func() []string) {
+func passRig(t *testing.T, st *database.Store, pc *parts.Control) (*API, func() []string) {
 	t.Helper()
 	gap := trailerPassGap
 	trailerPassGap = 0
@@ -147,7 +148,7 @@ func TestTrailerPassCoversEveryCard(t *testing.T) {
 		if _, err := tx.Exec(`INSERT INTO explore_prefs (member_id, services, region) VALUES (1, '8', 'US')`); err != nil {
 			return err
 		}
-		_, err := store.Insert(tx, "never_add", &domain.NeverAdd{Kind: "movie", SourceIDs: map[string]string{"tmdb": "205"}, Name: "T205", Reason: "test", CreatedAt: time.Now()}, domain.System)
+		_, err := database.Insert(tx, "never_add", &domain.NeverAdd{Kind: "movie", SourceIDs: map[string]string{"tmdb": "205"}, Name: "T205", Reason: "test", CreatedAt: time.Now()}, domain.System)
 		return err
 	}); err != nil {
 		t.Fatal(err)
@@ -415,7 +416,7 @@ func TestTrailerPassSkips(t *testing.T) {
 	}
 	do(t, "PUT", srv.URL+"/api/v1/settings/ui", `{"autoplay_trailers":true}`, 200)
 
-	pc := &parts.Control{Store: st, Reg: supervisor.NewRegistry(), Drain: time.Second, Logf: func(string, ...any) {}}
+	pc := &parts.Control{Store: st, Reg: jobs.NewRegistry(), Drain: time.Second, Logf: func(string, ...any) {}}
 	if err := pc.Load(context.Background()); err != nil {
 		t.Fatal(err)
 	}

@@ -8,9 +8,9 @@ import (
 	"testing"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Only people who may change settings flip "HolyArrs can change this
@@ -73,7 +73,7 @@ func TestClientItemChangeEvents(t *testing.T) {
 	do(t, "POST", base+"/items/"+outHash+"/pause", "", http.StatusOK)
 	do(t, "POST", base+"/items/"+outHash+"/resume", "", http.StatusOK)
 	do(t, "POST", base+"/bulk", `{"action":"pause","hashes":["`+outHash+`","`+seedHash+`"]}`, http.StatusOK)
-	es, _, err := x.s.Events(context.Background(), store.EventFilter{Kinds: []string{"download_changed"}})
+	es, _, err := x.s.Events(context.Background(), database.EventFilter{Kinds: []string{"download_changed"}})
 	if err != nil || len(es) != 3 {
 		t.Fatalf("events %+v %v", es, err)
 	}

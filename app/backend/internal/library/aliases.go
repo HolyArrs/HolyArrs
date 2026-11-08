@@ -1,10 +1,9 @@
 package library
 
 import (
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 	"strings"
 	"unicode/utf8"
-
-	"github.com/HolyArrs/holyarrs/app/backend/internal/parse"
 )
 
 // maxAliases caps the other names kept on one Title.
@@ -40,11 +39,11 @@ func usableAlias(clean string) bool {
 // maxAliases.
 func mergeAliases(have []string, name string, more []string) []string {
 	out := make([]string, 0, len(have)+len(more))
-	seen := map[string]bool{parse.CleanName(name): true}
+	seen := map[string]bool{releasename.CleanName(name): true}
 	add := func(list []string, filter bool) {
 		for _, a := range list {
 			a = strings.TrimSpace(a)
-			c := parse.CleanName(a)
+			c := releasename.CleanName(a)
 			if c == "" || seen[c] || len(out) >= maxAliases || (filter && !usableAlias(c)) {
 				continue
 			}

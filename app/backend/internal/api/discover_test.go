@@ -12,11 +12,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/supervisor"
 )
 
 type discoverTMDB struct {
@@ -88,9 +88,9 @@ func (f *discoverTMDB) provider() *metadata.TMDB {
 	return &metadata.TMDB{BaseURL: f.srv.URL + "/3", Access: func(context.Context) (string, error) { return "fake-read-value", nil }, Gap: time.Millisecond}
 }
 
-func discoverRig(t *testing.T, p metadata.Provider, off ...parts.Part) (*httptest.Server, *store.Store) {
+func discoverRig(t *testing.T, p metadata.Provider, off ...parts.Part) (*httptest.Server, *database.Store) {
 	t.Helper()
-	s, err := store.Open(t.TempDir(), store.Options{})
+	s, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -100,22 +100,22 @@ func discoverRig(t *testing.T, p metadata.Provider, off ...parts.Part) (*httptes
 			return err
 		}
 		title := domain.Title{Kind: "movie", Name: "M11", SortName: "m11", SourceIDs: map[string]string{"tmdb": "11"}, MetadataSource: "tmdb", NewPartsPolicy: "all", WhyAdded: "by_hand", State: "active", ReleaseGate: "released", GateDriver: "none", Status: "released"}
-		if _, err := store.Insert(tx, "titles", &title, domain.System); err != nil {
+		if _, err := database.Insert(tx, "titles", &title, domain.System); err != nil {
 			return err
 		}
 		show := domain.Title{Kind: "show", Name: "S22", SortName: "s22", SourceIDs: map[string]string{"tmdb": "22", "tvdb": "9"}, MetadataSource: "tmdb", NewPartsPolicy: "all", WhyAdded: "by_hand", State: "active", ReleaseGate: "released", GateDriver: "none", Status: "running"}
-		if _, err := store.Insert(tx, "titles", &show, domain.System); err != nil {
+		if _, err := database.Insert(tx, "titles", &show, domain.System); err != nil {
 			return err
 		}
 		never := domain.NeverAdd{Kind: "movie", SourceIDs: map[string]string{"tmdb": "13"}, Name: "M13", Reason: "test", CreatedAt: time.Now()}
-		if _, err := store.Insert(tx, "never_add", &never, domain.System); err != nil {
+		if _, err := database.Insert(tx, "never_add", &never, domain.System); err != nil {
 			return err
 		}
 		ask := domain.Ask{Kind: "movie", TMDBID: "12", Name: "M12", State: domain.AskAsked, AskedBy: 1, AskedAt: time.Now(), SourceIDs: map[string]string{"tmdb": "12"}}
-		if _, err := store.Insert(tx, "asks", &ask, domain.System); err != nil {
+		if _, err := database.Insert(tx, "asks", &ask, domain.System); err != nil {
 			return err
 		}
-		_, err := tx.Exec("INSERT INTO ask_people (ask_id, user_id, asked_at, counted) VALUES (?, 1, ?, 1)", ask.ID, store.FormatTime(time.Now()))
+		_, err := tx.Exec("INSERT INTO ask_people (ask_id, user_id, asked_at, counted) VALUES (?, 1, ?, 1)", ask.ID, database.FormatTime(time.Now()))
 		return err
 	})
 	if err != nil {
@@ -123,7 +123,7 @@ func discoverRig(t *testing.T, p metadata.Provider, off ...parts.Part) (*httptes
 	}
 	var pc *parts.Control
 	if len(off) > 0 {
-		pc = &parts.Control{Store: s, Reg: supervisor.NewRegistry(), Drain: time.Second, Logf: func(string, ...any) {}}
+		pc = &parts.Control{Store: s, Reg: jobs.NewRegistry(), Drain: time.Second, Logf: func(string, ...any) {}}
 		if err := pc.Load(context.Background()); err != nil {
 			t.Fatal(err)
 		}
@@ -314,7 +314,7 @@ func TestMetadataDetailsRowsCarryCardLogos(t *testing.T) {
 	f := newDiscoverTMDB(t)
 	srv, s := discoverRig(t, f.provider())
 	if err := s.Write(context.Background(), func(tx *sql.Tx) error {
-		_, err := tx.Exec(`INSERT INTO card_art (kind, tmdb_id, lang, art, logo, has_title, fetched_at) VALUES ('movie', '12', 'en', '', 'https://img/logo12.png', 0, ?)`, store.FormatTime(time.Now()))
+		_, err := tx.Exec(`INSERT INTO card_art (kind, tmdb_id, lang, art, logo, has_title, fetched_at) VALUES ('movie', '12', 'en', '', 'https://img/logo12.png', 0, ?)`, database.FormatTime(time.Now()))
 		return err
 	}); err != nil {
 		t.Fatal(err)

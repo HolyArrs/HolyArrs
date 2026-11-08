@@ -11,19 +11,20 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // musicOrganiseSetup is a server with running Jobs, the fake MusicBrainz
 // and a music Library folder holding Lab Band: First Light on the deluxe
 // Pressing (three tracks), a live album the album kinds leave out, and a
 // loose file.
-func musicOrganiseSetup(t *testing.T) (url string, s *store.Store, lib string, folderID int64) {
+func musicOrganiseSetup(t *testing.T) (url string, s *database.Store, lib string, folderID int64) {
 	t.Helper()
-	s, err := store.Open(t.TempDir(), store.Options{})
+	s, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}

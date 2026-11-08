@@ -10,22 +10,23 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/live"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
 // An ask's Event names who asked, who decided and the decline note, so on
 // /live it reaches people who approve only, not every manager; other
 // Events (Reports) still reach managers (coord-1330a).
 func TestAskEventsReachOnlyApproversLive(t *testing.T) {
-	st, err := store.Open(t.TempDir(), store.Options{})
+	st, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = st.Close() })
-	hub := live.NewHub(live.Options{})
-	srv := httptest.NewServer(hub.Handler(func(r *http.Request) live.Viewer {
-		return live.Viewer{UserID: 2, All: r.URL.Query().Get("all") == "1", Approve: r.URL.Query().Get("approve") == "1"}
+	hub := webserver.NewLiveHub(webserver.LiveOptions{})
+	srv := httptest.NewServer(hub.Handler(func(r *http.Request) webserver.LiveViewer {
+		return webserver.LiveViewer{UserID: 2, All: r.URL.Query().Get("all") == "1", Approve: r.URL.Query().Get("approve") == "1"}
 	}))
 	defer srv.Close()
 	ctx, cancel := context.WithCancel(context.Background())

@@ -22,8 +22,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 type hookGot struct {
@@ -56,7 +56,7 @@ func quick() []time.Duration {
 	return []time.Duration{time.Millisecond, time.Millisecond, time.Millisecond}
 }
 
-func movieWorld(t *testing.T, s *store.Store) int64 {
+func movieWorld(t *testing.T, s *database.Store) int64 {
 	t.Helper()
 	var id int64
 	err := s.Write(context.Background(), func(tx *sql.Tx) error {
@@ -65,7 +65,7 @@ func movieWorld(t *testing.T, s *store.Store) int64 {
 			ReleaseGate: "released", WhyAdded: "by_hand", Status: "released", State: "active", SourceIDs: map[string]string{"tmdb": "329865"},
 			Aliases: []string{}, MusicTypes: []string{}, Artwork: []string{}}
 		var err error
-		id, err = store.Insert(tx, "titles", ti, domain.System)
+		id, err = database.Insert(tx, "titles", ti, domain.System)
 		return err
 	})
 	if err != nil {
@@ -128,7 +128,7 @@ func TestWebhookPayloadIsSigned(t *testing.T) {
 		t.Fatal(err)
 	}
 	var b domain.Alert
-	_ = store.Get(ctx, s.Read(), "alerts", a.ID, &b)
+	_ = database.Get(ctx, s.Read(), "alerts", a.ID, &b)
 	if err := snd.SendOne(ctx, b, Message{Moment: MomentTest, Subject: "t", Text: "t"}); err != nil {
 		t.Fatal(err)
 	}
@@ -280,8 +280,8 @@ func TestWebhookSecretNeverLogged(t *testing.T) {
 		t.Fatal("closed server accepted")
 	}
 	var b domain.Alert
-	_ = store.Get(ctx, s.Read(), "alerts", a.ID, &b)
-	es, _, _ := s.Events(ctx, store.EventFilter{Kinds: []string{domain.EventAlertFailed}})
+	_ = database.Get(ctx, s.Read(), "alerts", a.ID, &b)
+	es, _, _ := s.Events(ctx, database.EventFilter{Kinds: []string{domain.EventAlertFailed}})
 	evs, _ := json.Marshal(es)
 	for _, where := range []string{logs.String(), b.LastError, string(evs)} {
 		if strings.Contains(where, "hk-1234") || strings.Contains(where, "lt-1234") {

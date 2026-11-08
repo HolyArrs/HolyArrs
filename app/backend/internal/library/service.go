@@ -15,10 +15,11 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/live"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Job kinds run by the library.
@@ -33,14 +34,14 @@ const (
 
 // Service runs the library's Jobs and the work behind the API.
 type Service struct {
-	Store    *store.Store
+	Store    *database.Store
 	Queue    *jobs.Queue
 	Metadata metadata.Provider
 	// Shows are the show details sources (tmdb, tvmaze, tvdb); nil has none.
 	Shows metadata.ShowSources
 	// Artists is MusicBrainz (or a mirror); nil has no music details.
 	Artists metadata.ArtistProvider
-	Live    *live.Hub
+	Live    *webserver.LiveHub
 	// Artwork caches posters; nil keeps no pictures.
 	Artwork *ArtworkCache
 	// ArtistImages reads Deezer's artist profiles (top songs, explicit
@@ -137,7 +138,7 @@ func (s *Service) Add(ctx context.Context, m metadata.Movie, opt AddOptions, by 
 		return 0, 0, err
 	}
 	var t domain.Title
-	_ = store.Get(ctx, s.Store.Read(), "titles", id, &t)
+	_ = database.Get(ctx, s.Store.Read(), "titles", id, &t)
 	s.event(ctx, &domain.Event{Actor: by, Kind: domain.EventTitleAdded, TitleID: &id, Summary: "Added " + t.Name,
 		Data: map[string]any{"why_added": t.WhyAdded, "release_gate": t.ReleaseGate, "gate_delay_days": t.GateDelayDays,
 			"gate_driver": t.GateDriver, "search_on_add": opt.SearchOnAdd}, GroupKey: "title:" + strconv.FormatInt(id, 10)})
@@ -184,7 +185,7 @@ func (s *Service) searchTitle(ctx context.Context, titleID int64, by domain.Acto
 	if kind == "artist" {
 		return nil // albums are searched from stage 3.3
 	}
-	slots, err := store.Select[domain.Slot](ctx, s.Store.Read(), "slots",
+	slots, err := database.Select[domain.Slot](ctx, s.Store.Read(), "slots",
 		"item_id IN (SELECT id FROM items WHERE title_id = ?) AND state IN ('wanted', 'better_wanted') ORDER BY id", titleID)
 	if err != nil {
 		return err
@@ -199,9 +200,9 @@ func (s *Service) searchTitle(ctx context.Context, titleID int64, by domain.Acto
 }
 
 // versionFolder is a Version's folder on disk.
-func versionFolder(ctx context.Context, db store.Querier, v domain.Version) (string, domain.LibraryFolder, error) {
+func versionFolder(ctx context.Context, db database.Querier, v domain.Version) (string, domain.LibraryFolder, error) {
 	var lf domain.LibraryFolder
-	if err := store.Get(ctx, db, "library_folders", v.LibraryFolderID, &lf); err != nil {
+	if err := database.Get(ctx, db, "library_folders", v.LibraryFolderID, &lf); err != nil {
 		return "", lf, err
 	}
 	return filepath.Join(lf.Path, v.FolderName), lf, nil
@@ -219,7 +220,7 @@ func (s *Service) handleScan(ctx context.Context, r *jobs.Run) error {
 	}
 	titleID := r.Job.Subject.ID
 	db := s.Store.Read()
-	vs, err := store.Select[domain.Version](ctx, db, "versions", "title_id = ? ORDER BY id", titleID)
+	vs, err := database.Select[domain.Version](ctx, db, "versions", "title_id = ? ORDER BY id", titleID)
 	if err != nil {
 		return err
 	}
@@ -246,7 +247,7 @@ func (s *Service) handleScan(ctx context.Context, r *jobs.Run) error {
 				return nil
 			})
 		}
-		files, err := store.Select[domain.File](ctx, db, "files", "version_id = ? AND state = 'present' AND role = 'main'", v.ID)
+		files, err := database.Select[domain.File](ctx, db, "files", "version_id = ? AND state = 'present' AND role = 'main'", v.ID)
 		if err != nil {
 			return err
 		}
@@ -270,7 +271,7 @@ func (s *Service) handleScan(ctx context.Context, r *jobs.Run) error {
 
 // handleCheckFolders checks every Library folder and records changes.
 func (s *Service) handleCheckFolders(ctx context.Context, r *jobs.Run) error {
-	fs, err := store.Select[domain.LibraryFolder](ctx, s.Store.Read(), "library_folders", "1=1 ORDER BY id")
+	fs, err := database.Select[domain.LibraryFolder](ctx, s.Store.Read(), "library_folders", "1=1 ORDER BY id")
 	if err != nil {
 		return err
 	}
@@ -311,8 +312,8 @@ func (s *Service) handleCheckFolders(ctx context.Context, r *jobs.Run) error {
 }
 
 // NeverAddList returns the Never-add list, newest first.
-func NeverAddList(ctx context.Context, db store.Lister) ([]domain.NeverAdd, error) {
-	out, err := store.Select[domain.NeverAdd](ctx, db, "never_add", "1=1 ORDER BY id DESC")
+func NeverAddList(ctx context.Context, db database.Lister) ([]domain.NeverAdd, error) {
+	out, err := database.Select[domain.NeverAdd](ctx, db, "never_add", "1=1 ORDER BY id DESC")
 	if out == nil {
 		out = []domain.NeverAdd{}
 	}
@@ -321,7 +322,7 @@ func NeverAddList(ctx context.Context, db store.Lister) ([]domain.NeverAdd, erro
 
 // AddNeverAdd puts a movie, or a show when n.Kind is show, on the
 // Never-add list by its TMDB id.
-func AddNeverAdd(ctx context.Context, s *store.Store, n domain.NeverAdd, by domain.Actor) (domain.NeverAdd, error) {
+func AddNeverAdd(ctx context.Context, s *database.Store, n domain.NeverAdd, by domain.Actor) (domain.NeverAdd, error) {
 	if n.SourceIDs["tmdb"] == "" {
 		return n, ErrNoMetadataIDs
 	}
@@ -336,21 +337,21 @@ func AddNeverAdd(ctx context.Context, s *store.Store, n domain.NeverAdd, by doma
 		if err != nil || on {
 			return err
 		}
-		_, err = store.Insert(tx, "never_add", &n, by)
+		_, err = database.Insert(tx, "never_add", &n, by)
 		return err
 	})
 	return n, err
 }
 
 // RemoveNeverAdd takes one entry off the Never-add list.
-func RemoveNeverAdd(ctx context.Context, s *store.Store, id int64) error {
+func RemoveNeverAdd(ctx context.Context, s *database.Store, id int64) error {
 	return s.Write(ctx, func(tx *sql.Tx) error {
 		res, err := tx.Exec("DELETE FROM never_add WHERE id = ?", id)
 		if err != nil {
 			return err
 		}
 		if n, _ := res.RowsAffected(); n == 0 {
-			return store.ErrNotFound
+			return database.ErrNotFound
 		}
 		return nil
 	})

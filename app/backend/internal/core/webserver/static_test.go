@@ -1,7 +1,6 @@
 package webserver
 
 import (
-	"github.com/HolyArrs/holyarrs/app/backend/internal/urlbase"
 	"io/fs"
 	"net/http"
 	"net/http/httptest"
@@ -78,7 +77,7 @@ func TestNoBannedWords(t *testing.T) {
 }
 
 func TestServesUnderAURLBase(t *testing.T) {
-	h := urlbase.Handler("/holyarrs", Handler())
+	h := UnderURLBase("/holyarrs", Handler())
 	get := func(p string) *httptest.ResponseRecorder {
 		w := httptest.NewRecorder()
 		h.ServeHTTP(w, httptest.NewRequest(http.MethodGet, p, nil))

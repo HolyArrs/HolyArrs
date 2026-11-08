@@ -6,8 +6,8 @@ import (
 	"errors"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Source states as people see them.
@@ -85,7 +85,7 @@ var maxCallsPerSource = 50000
 
 // Record keeps one call to a Source for its stats, and drops calls older
 // than 90 days and the oldest past maxCallsPerSource.
-func Record(ctx context.Context, s *store.Store, sourceID int64, op string, took time.Duration, err error) {
+func Record(ctx context.Context, s *database.Store, sourceID int64, op string, took time.Duration, err error) {
 	kind := ""
 	if err != nil {
 		kind = KindDown
@@ -97,10 +97,10 @@ func Record(ctx context.Context, s *store.Store, sourceID int64, op string, took
 	now := time.Now().UTC()
 	_ = s.Write(ctx, func(tx *sql.Tx) error {
 		if _, err := tx.Exec("INSERT INTO source_calls(source_id, at, op, ok, ms, error_kind) VALUES (?, ?, ?, ?, ?, ?)",
-			sourceID, store.FormatTime(now), op, err == nil, took.Milliseconds(), kind); err != nil {
+			sourceID, database.FormatTime(now), op, err == nil, took.Milliseconds(), kind); err != nil {
 			return err
 		}
-		if _, err := tx.Exec("DELETE FROM source_calls WHERE source_id = ? AND at < ?", sourceID, store.FormatTime(now.Add(-keepCalls))); err != nil {
+		if _, err := tx.Exec("DELETE FROM source_calls WHERE source_id = ? AND at < ?", sourceID, database.FormatTime(now.Add(-keepCalls))); err != nil {
 			return err
 		}
 		_, err := tx.Exec(`DELETE FROM source_calls WHERE source_id = ? AND id <= (SELECT id FROM source_calls WHERE source_id = ?
@@ -122,7 +122,7 @@ type Summary struct {
 // lookup is one Source and a time window, on the (source_id, at) index; the
 // last success and failure are looked for within the kept record only.
 func Summarise(ctx context.Context, db *sql.DB, now time.Time) (map[int64]Summary, error) {
-	day, kept := since(now, 1), store.FormatTime(now.Add(-keepCalls))
+	day, kept := since(now, 1), database.FormatTime(now.Add(-keepCalls))
 	rows, err := db.QueryContext(ctx, `SELECT s.id,
 		(SELECT max(at) FROM source_calls c WHERE c.source_id = s.id AND c.at >= ? AND c.ok = 1),
 		(SELECT max(at) FROM source_calls c WHERE c.source_id = s.id AND c.at >= ? AND c.ok = 0),
@@ -147,7 +147,7 @@ func Summarise(ctx context.Context, db *sql.DB, now time.Time) (map[int64]Summar
 }
 
 func since(now time.Time, days int) string {
-	return store.FormatTime(now.Add(-time.Duration(days) * 24 * time.Hour))
+	return database.FormatTime(now.Add(-time.Duration(days) * 24 * time.Hour))
 }
 
 // Day is one day of a Source's calls and grabs (UTC).

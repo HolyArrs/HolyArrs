@@ -3,9 +3,8 @@ package api
 import (
 	"bytes"
 	_ "embed"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"net/http"
-
-	"github.com/HolyArrs/holyarrs/app/backend/internal/urlbase"
 )
 
 // openapiJSON describes every /api/v1 route. It is generated from the code
@@ -20,7 +19,7 @@ var openapiJSON []byte
 func (a *API) openapi(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	b := openapiJSON
-	if base := urlbase.From(r.Context()); base != "" {
+	if base := webserver.URLBaseFrom(r.Context()); base != "" {
 		b = bytes.Replace(b, []byte(`"servers": [
     {
       "url": "/"`), []byte(`"servers": [

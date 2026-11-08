@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // showTree is a show Library folder as people keep one: the lab show with
@@ -119,7 +119,7 @@ func TestAdoptShowMovesNothing(t *testing.T) {
 	}
 	id := res[0].TitleID
 	var v domain.Version
-	vs, _ := store.Select[domain.Version](ctx, s.Read(), "versions", "title_id = ?", id)
+	vs, _ := database.Select[domain.Version](ctx, s.Read(), "versions", "title_id = ?", id)
 	v = vs[0]
 	if v.FolderName != "Lab Show (2025)" || v.LibraryFolderID != lf.ID {
 		t.Fatalf("version %+v", v)
@@ -133,7 +133,7 @@ func TestAdoptShowMovesNothing(t *testing.T) {
 	if eps["S02E03"].State == domain.SlotInLibrary || eps["S00E01"].State == domain.SlotInLibrary {
 		t.Error("an episode with no file is in the library")
 	}
-	files, _ := store.Select[domain.File](ctx, s.Read(), "files", "version_id = ? ORDER BY id", v.ID)
+	files, _ := database.Select[domain.File](ctx, s.Read(), "files", "version_id = ? ORDER BY id", v.ID)
 	if len(files) != 3 {
 		t.Fatalf("files %+v", files)
 	}
@@ -152,7 +152,7 @@ func TestAdoptShowMovesNothing(t *testing.T) {
 	if multi != 1 {
 		t.Error("the multi-episode file does not hold two episodes")
 	}
-	if es, _, _ := svc.Store.Events(ctx, store.EventFilter{Kinds: []string{domain.EventAdopted}}); len(es) != 1 ||
+	if es, _, _ := svc.Store.Events(ctx, database.EventFilter{Kinds: []string{domain.EventAdopted}}); len(es) != 1 ||
 		es[0].Summary != "Adopted Lab Show from Lab Show (2025): 4 episodes in 3 files, 3 files left alone" {
 		t.Errorf("adopted Event %+v", es)
 	}
@@ -200,7 +200,7 @@ func TestRescanShowFolder(t *testing.T) {
 	if err := s.Read().QueryRow("SELECT id FROM files WHERE relative_path LIKE '%S02E03%'").Scan(&found.ID); err != nil {
 		t.Fatal(err)
 	}
-	_ = store.Get(ctx, s.Read(), "files", found.ID, &found)
+	_ = database.Get(ctx, s.Read(), "files", found.ID, &found)
 	if found.Origin != "found" || len(found.SlotIDs) != 1 || found.SlotIDs[0] != eps["S02E03"].SlotID {
 		t.Errorf("found %+v", found)
 	}

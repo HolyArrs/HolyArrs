@@ -11,8 +11,9 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/judge"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/parse"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/tagset"
 )
 
@@ -54,8 +55,8 @@ func (s *Searcher) ProbeFeed(ctx context.Context, now time.Time) (bool, any, err
 		return true, nil, err
 	}
 	db := s.Store.Read()
-	srcs, err := store.Select[domain.Source](ctx, db, "sources",
-		"(state = 'enabled' OR (state = 'paused' AND paused_until <= ?)) ORDER BY priority, id", store.FormatTime(now.UTC()))
+	srcs, err := database.Select[domain.Source](ctx, db, "sources",
+		"(state = 'enabled' OR (state = 'paused' AND paused_until <= ?)) ORDER BY priority, id", database.FormatTime(now.UTC()))
 	if err != nil {
 		return true, nil, err
 	}
@@ -139,21 +140,21 @@ func (s *Searcher) ProbeFeed(ctx context.Context, now time.Time) (bool, any, err
 			if seen {
 				continue
 			}
-			p := parse.Parse(item.Title, parse.Hints{Size: item.Size})
+			p := releasename.Parse(item.Title, releasename.Hints{Size: item.Size})
 			m := judge.MatchTitle(p, refs)
 			if m.Title == nil && hasShow {
-				m = judge.MatchTitle(parse.Parse(item.Title, parse.Hints{Size: item.Size, Show: true}), refs)
+				m = judge.MatchTitle(releasename.Parse(item.Title, releasename.Hints{Size: item.Size, Show: true}), refs)
 			}
 			if m.Title == nil && hasArtist {
-				m = judge.MatchTitle(parse.Parse(item.Title, parse.Hints{Size: item.Size, Music: true}), refs)
+				m = judge.MatchTitle(releasename.Parse(item.Title, releasename.Hints{Size: item.Size, Music: true}), refs)
 			}
 			if m.Title != nil && tagset.SourceServes(answer.src.Tags, m.Title.Tags) {
 				return true, prepared, nil
 			}
 		}
 	}
-	current, err := store.Select[domain.Source](ctx, db, "sources",
-		"(state = 'enabled' OR (state = 'paused' AND paused_until <= ?)) ORDER BY priority, id", store.FormatTime(now.UTC()))
+	current, err := database.Select[domain.Source](ctx, db, "sources",
+		"(state = 'enabled' OR (state = 'paused' AND paused_until <= ?)) ORDER BY priority, id", database.FormatTime(now.UTC()))
 	if err != nil {
 		return true, nil, err
 	}

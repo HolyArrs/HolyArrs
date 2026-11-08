@@ -35,10 +35,12 @@ import (
 	"unicode/utf8"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/outside"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Moments an Alert can speak for.
@@ -191,7 +193,7 @@ var DefaultBackoff = []time.Duration{5 * time.Second, 30 * time.Second, 2 * time
 
 // Sender sends messages through every Alert that is on for the moment.
 type Sender struct {
-	Store *store.Store
+	Store *database.Store
 	Vault *secrets.Vault
 	// OnResult is told when an Alert's last result changes (may be nil).
 	OnResult func(domain.Alert)
@@ -226,7 +228,7 @@ func client(a domain.Alert) *http.Client {
 // failing does not stop the others; the errors are joined, recorded on the
 // Alert and written as an Event.
 func (s *Sender) Send(ctx context.Context, m Message) error {
-	as, err := store.Select[domain.Alert](ctx, s.Store.Read(), "alerts", "enabled = 1 ORDER BY id")
+	as, err := database.Select[domain.Alert](ctx, s.Store.Read(), "alerts", "enabled = 1 ORDER BY id")
 	if err != nil {
 		return err
 	}
@@ -245,11 +247,11 @@ func (s *Sender) Send(ctx context.Context, m Message) error {
 // SendOne sends m through one Alert, trying again after each Backoff wait
 // while the failure is worth it, and records the result on the Alert.
 func (s *Sender) SendOne(ctx context.Context, a domain.Alert, m Message) error {
-	op, err := outside.Begin(ctx, alertTarget(a))
+	op, err := outbound.Begin(ctx, alertTarget(a))
 	if err != nil {
 		return err
 	}
-	outcome := outside.Canceled
+	outcome := outbound.Canceled
 	defer func() { op.Finish(outcome) }()
 	waits := s.Backoff
 	if waits == nil {
@@ -274,11 +276,11 @@ func (s *Sender) SendOne(ctx context.Context, a domain.Alert, m Message) error {
 
 // TestOne sends m once, with no new tries (the Send a test button).
 func (s *Sender) TestOne(ctx context.Context, a domain.Alert, m Message) error {
-	op, err := outside.Begin(ctx, alertTarget(a))
+	op, err := outbound.Begin(ctx, alertTarget(a))
 	if err != nil {
 		return err
 	}
-	outcome := outside.Canceled
+	outcome := outbound.Canceled
 	defer func() { op.Finish(outcome) }()
 	err = s.attempt(ctx, op, a, m)
 	outcome = alertOutcome(ctx, err)
@@ -286,7 +288,7 @@ func (s *Sender) TestOne(ctx context.Context, a domain.Alert, m Message) error {
 	return err
 }
 
-func (s *Sender) attempt(ctx context.Context, op *outside.Operation, a domain.Alert, m Message) error {
+func (s *Sender) attempt(ctx context.Context, op *outbound.Operation, a domain.Alert, m Message) error {
 	caller := ctx
 	ctx, cancel := op.AttemptContext(ctx, 30*time.Second)
 	defer cancel()
@@ -318,7 +320,7 @@ func (s *Sender) attempt(ctx context.Context, op *outside.Operation, a domain.Al
 	return err
 }
 
-func alertTarget(a domain.Alert) outside.Target {
+func alertTarget(a domain.Alert) outbound.Target {
 	ids := []string{strconv.FormatInt(a.ID, 10), a.Kind, a.SMTPHost, strconv.Itoa(a.SMTPPort), a.SMTPSecurity, a.SMTPUser, a.ServerURL}
 	for _, id := range []*int64{a.URLSecretID, a.PasswordSecretID} {
 		if id == nil {
@@ -327,24 +329,24 @@ func alertTarget(a domain.Alert) outside.Target {
 			ids = append(ids, strconv.FormatInt(*id, 10))
 		}
 	}
-	return outside.Target{Kind: "alert", Identity: ids}
+	return outbound.Target{Kind: "alert", Identity: ids}
 }
 
-func alertOutcome(ctx context.Context, err error) outside.Outcome {
+func alertOutcome(ctx context.Context, err error) outbound.Outcome {
 	if ctx.Err() != nil {
-		return outside.Canceled
+		return outbound.Canceled
 	}
 	if err == nil {
-		return outside.Success
+		return outbound.Success
 	}
 	if retryable(err) {
-		return outside.TransientFailure
+		return outbound.TransientFailure
 	}
-	return outside.TerminalFailure
+	return outbound.TerminalFailure
 }
 
 func (s *Sender) record(ctx context.Context, a domain.Alert, m Message, sendErr error) {
-	now := store.FormatTime(time.Now())
+	now := database.FormatTime(time.Now())
 	msg := ""
 	if sendErr != nil {
 		msg = sendErr.Error()
@@ -374,7 +376,7 @@ func (s *Sender) record(ctx context.Context, a domain.Alert, m Message, sendErr 
 	}
 	if s.OnResult != nil {
 		var fresh domain.Alert
-		if store.Get(ctx, s.Store.Read(), "alerts", a.ID, &fresh) == nil {
+		if database.Get(ctx, s.Store.Read(), "alerts", a.ID, &fresh) == nil {
 			s.OnResult(fresh)
 		}
 	}

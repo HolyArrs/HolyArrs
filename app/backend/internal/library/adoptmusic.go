@@ -15,13 +15,13 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/judge"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediainfo"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/naming"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/tags"
 )
 
@@ -325,7 +325,7 @@ func planMusicAdopt(ctx context.Context, db reader, artists metadata.ArtistProvi
 	save func(AdoptPlan) error) (AdoptPlan, error) {
 	ctx = metadata.MemberLookup(ctx)
 	var lf domain.LibraryFolder
-	if err := store.Get(ctx, db, "library_folders", folderID, &lf); err != nil {
+	if err := database.Get(ctx, db, "library_folders", folderID, &lf); err != nil {
 		return AdoptPlan{}, ErrNoFolder
 	}
 	if lf.Kind != "music" {
@@ -357,7 +357,7 @@ func planMusicAdopt(ctx context.Context, db reader, artists metadata.ArtistProvi
 		return p, fmt.Errorf("the Library folder cannot be read: %w", err)
 	}
 	known := map[string]int64{}
-	vs, err := store.Select[domain.Version](ctx, db, "versions", "library_folder_id = ? AND title_id IN (SELECT id FROM titles WHERE state != 'removed')", lf.ID)
+	vs, err := database.Select[domain.Version](ctx, db, "versions", "library_folder_id = ? AND title_id IN (SELECT id FROM titles WHERE state != 'removed')", lf.ID)
 	if err != nil {
 		return p, err
 	}
@@ -599,18 +599,18 @@ func (s *Service) adoptArtistOne(ctx context.Context, lf domain.LibraryFolder, c
 func (s *Service) adoptAlbums(ctx context.Context, lf domain.LibraryFolder, titleID int64, a *MusicAdoption, by domain.Actor) error {
 	db := s.Store.Read()
 	var t domain.Title
-	if err := store.Get(ctx, db, "titles", titleID, &t); err != nil {
+	if err := database.Get(ctx, db, "titles", titleID, &t); err != nil {
 		return err
 	}
 	var v domain.Version
 	if err := db.QueryRowContext(ctx, "SELECT id FROM versions WHERE title_id = ? AND is_main = 1", titleID).Scan(&v.ID); err != nil {
 		return err
 	}
-	if err := store.Get(ctx, db, "versions", v.ID, &v); err != nil {
+	if err := database.Get(ctx, db, "versions", v.ID, &v); err != nil {
 		return err
 	}
 	var pr domain.PickRules
-	if err := store.Get(ctx, db, "pick_rules", v.PickRulesID, &pr); err != nil {
+	if err := database.Get(ctx, db, "pick_rules", v.PickRulesID, &pr); err != nil {
 		return err
 	}
 	ns, err := naming.Read(ctx, db)
@@ -625,7 +625,7 @@ func (s *Service) adoptAlbums(ctx context.Context, lf domain.LibraryFolder, titl
 	if len(statuses) == 0 {
 		statuses = defs.ReleaseStatuses
 	}
-	parts, err := store.Select[domain.Part](ctx, db, "parts", "title_id = ? AND kind = 'album' AND dropped_at IS NULL ORDER BY id", titleID)
+	parts, err := database.Select[domain.Part](ctx, db, "parts", "title_id = ? AND kind = 'album' AND dropped_at IS NULL ORDER BY id", titleID)
 	if err != nil {
 		return err
 	}
@@ -655,7 +655,7 @@ func (s *Service) adoptAlbums(ctx context.Context, lf domain.LibraryFolder, titl
 			}
 			continue
 		}
-		ps, err := store.Select[domain.AlbumPressing](ctx, db, "pressings", "part_id = ? AND dropped_at IS NULL ORDER BY id", r.PartID)
+		ps, err := database.Select[domain.AlbumPressing](ctx, db, "pressings", "part_id = ? AND dropped_at IS NULL ORDER BY id", r.PartID)
 		if err != nil {
 			return err
 		}
@@ -664,7 +664,7 @@ func (s *Service) adoptAlbums(ctx context.Context, lf domain.LibraryFolder, titl
 				return err
 			}
 		}
-		items, err := store.Select[domain.Item](ctx, db, "items", "part_id = ? AND kind = 'track' AND dropped_at IS NULL ORDER BY id", r.PartID)
+		items, err := database.Select[domain.Item](ctx, db, "items", "part_id = ? AND kind = 'track' AND dropped_at IS NULL ORDER BY id", r.PartID)
 		if err != nil {
 			return err
 		}
@@ -705,7 +705,7 @@ func (s *Service) adoptAlbums(ctx context.Context, lf domain.LibraryFolder, titl
 				file := &domain.File{SlotIDs: []int64{f.slot}, VersionID: v.ID, RelativePath: f.Path, Size: f.Size, AddedAt: s.now(),
 					Quality: domain.Quality{Source: strings.TrimPrefix(ext, ".")}, Languages: []string{}, MediaInfo: map[string]any{},
 					ReleaseName: &release, Origin: "adopted", PlacedBy: "none", Role: "main", State: "present"}
-				fileID, err := store.Insert(tx, "files", file, by)
+				fileID, err := database.Insert(tx, "files", file, by)
 				if err != nil {
 					return err
 				}
@@ -750,7 +750,7 @@ func (s *Service) recordFoundTracks(ctx context.Context, lf domain.LibraryFolder
 		release := strings.TrimSuffix(path.Base(f.Path), path.Ext(f.Path))
 		file := &domain.File{SlotIDs: []int64{}, VersionID: v.ID, RelativePath: f.Path, Size: f.Size, AddedAt: s.now(), Languages: []string{},
 			MediaInfo: map[string]any{}, ReleaseName: &release, Origin: "found", PlacedBy: "none", Role: "main", State: "present"}
-		if err := s.Store.Write(ctx, func(tx *sql.Tx) error { _, err := store.Insert(tx, "files", file, by); return err }); err != nil {
+		if err := s.Store.Write(ctx, func(tx *sql.Tx) error { _, err := database.Insert(tx, "files", file, by); return err }); err != nil {
 			return n, err
 		}
 		n++

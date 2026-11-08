@@ -5,9 +5,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/supervisor"
 )
 
 // startMusicSync starts the artist package copy (internal/musicsync): its
@@ -34,7 +34,7 @@ func (a *API) startMusicSync(ctx context.Context) {
 			}
 		}
 	}
-	go supervisor.Guard("music-package-sync", func() { p.Run(metadata.Ahead(ctx)) })
+	go jobs.Guard("music-package-sync", func() { p.Run(metadata.Ahead(ctx)) })
 }
 
 // wantPackages names to the server (package-want) the artists a music

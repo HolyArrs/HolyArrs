@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 )
 
 func TestSessionPollingForThirtyMinutesDoesNotWrite(t *testing.T) {
@@ -61,8 +61,8 @@ func TestAPIKeyUseIsRecordedAtFirstUseAndAfterAnHour(t *testing.T) {
 		t.Fatalf("first key use: %d", resp.StatusCode)
 	}
 	first := readLastUsed()
-	if !first.Valid || first.String != store.FormatTime(f.clock.now()) {
-		t.Fatalf("first key use = %v, want %s", first, store.FormatTime(f.clock.now()))
+	if !first.Valid || first.String != database.FormatTime(f.clock.now()) {
+		t.Fatalf("first key use = %v, want %s", first, database.FormatTime(f.clock.now()))
 	}
 	before := f.s.WriteCount()
 
@@ -84,7 +84,7 @@ func TestAPIKeyUseIsRecordedAtFirstUseAndAfterAnHour(t *testing.T) {
 	if got := f.s.WriteCount(); got != before+1 {
 		t.Fatalf("key use after hour write count = %d, want one", got-before)
 	}
-	if used := readLastUsed(); !used.Valid || used.String != store.FormatTime(f.clock.now()) {
-		t.Fatalf("key use after hour = %v, want %s", used, store.FormatTime(f.clock.now()))
+	if used := readLastUsed(); !used.Valid || used.String != database.FormatTime(f.clock.now()) {
+		t.Fatalf("key use after hour = %v, want %s", used, database.FormatTime(f.clock.now()))
 	}
 }

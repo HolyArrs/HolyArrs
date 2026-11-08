@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Step says where an approved ask is right now, from the server's own
@@ -200,7 +200,7 @@ func parseAt(at sql.NullString) (time.Time, bool) {
 	if !at.Valid || at.String == "" {
 		return time.Time{}, false
 	}
-	if t, err := time.Parse(store.TimeLayout, at.String); err == nil {
+	if t, err := time.Parse(database.TimeLayout, at.String); err == nil {
 		return t, true
 	}
 	t, err := time.Parse(time.RFC3339Nano, at.String)

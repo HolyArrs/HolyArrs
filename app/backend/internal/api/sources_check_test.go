@@ -9,14 +9,14 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // route: POST /api/v1/sources/check
 func TestCheckAllSources(t *testing.T) {
-	st, err := store.Open(t.TempDir(), store.Options{})
+	st, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -37,7 +37,7 @@ func TestCheckAllSources(t *testing.T) {
 	t.Cleanup(bad.Close)
 	add := func(name, url, state string) {
 		_ = st.Write(context.Background(), func(tx *sql.Tx) error {
-			_, err := store.Insert(tx, "sources", &domain.Source{Name: name, Protocol: "torrent", Format: "torznab", URL: url + "/api", State: state,
+			_, err := database.Insert(tx, "sources", &domain.Source{Name: name, Protocol: "torrent", Format: "torznab", URL: url + "/api", State: state,
 				AllowLocal: true, Kinds: []string{}, Categories: map[string][]int{}, UseFor: domain.SourceUse{AutoSearch: true, HandSearch: true}}, domain.System)
 			if err != nil {
 				t.Fatal(err)

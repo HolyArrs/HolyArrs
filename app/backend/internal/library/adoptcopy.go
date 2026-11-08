@@ -10,8 +10,9 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/parse"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 )
 
 type CopyAdoption struct {
@@ -30,14 +31,14 @@ func (s *Service) AdoptMovieCopy(ctx context.Context, titleID, versionID int64, 
 		return f, err
 	}
 	var t domain.Title
-	if err := store.Get(ctx, s.Store.Read(), "titles", titleID, &t); err != nil {
+	if err := database.Get(ctx, s.Store.Read(), "titles", titleID, &t); err != nil {
 		return f, err
 	}
 	if t.Kind != "movie" || t.State == "removed" {
 		return f, fmt.Errorf("%w: choose a current movie", ErrCopyChoice)
 	}
 	var lf domain.LibraryFolder
-	if err := store.Get(ctx, s.Store.Read(), "library_folders", v.LibraryFolderID, &lf); err != nil {
+	if err := database.Get(ctx, s.Store.Read(), "library_folders", v.LibraryFolderID, &lf); err != nil {
 		return f, err
 	}
 	rel := filepath.FromSlash(in.RelativePath)
@@ -72,10 +73,10 @@ func (s *Service) AdoptMovieCopy(ctx context.Context, titleID, versionID int64, 
 	}
 	facts["edition"], facts["edition_source"] = edition, source
 	name := strings.TrimSuffix(filepath.Base(abs), filepath.Ext(abs))
-	p := parse.Parse(name, parse.Hints{})
+	p := releasename.Parse(name, releasename.Hints{})
 	err = s.Store.Write(ctx, func(tx *sql.Tx) error {
 		var slot domain.Slot
-		slots, err := store.Select[domain.Slot](ctx, tx, "slots", "version_id = ?", v.ID)
+		slots, err := database.Select[domain.Slot](ctx, tx, "slots", "version_id = ?", v.ID)
 		if err != nil {
 			return err
 		}
@@ -86,7 +87,7 @@ func (s *Service) AdoptMovieCopy(ctx context.Context, titleID, versionID int64, 
 		if slot.FileID != nil || slot.ActiveDownloadID != nil || slot.State == domain.SlotRemoved {
 			return fmt.Errorf("%w: this Version already has a copy or download", ErrCopyChoice)
 		}
-		existing, err := store.Select[domain.File](ctx, tx, "files", `version_id IN (SELECT id FROM versions WHERE library_folder_id = ?) AND lower(relative_path) = lower(?) AND state IN ('present','missing')`, lf.ID, filepath.ToSlash(rel))
+		existing, err := database.Select[domain.File](ctx, tx, "files", `version_id IN (SELECT id FROM versions WHERE library_folder_id = ?) AND lower(relative_path) = lower(?) AND state IN ('present','missing')`, lf.ID, filepath.ToSlash(rel))
 		if err != nil {
 			return err
 		}
@@ -100,16 +101,16 @@ func (s *Service) AdoptMovieCopy(ctx context.Context, titleID, versionID int64, 
 		f = domain.File{VersionID: v.ID, SlotIDs: []int64{slot.ID}, RelativePath: filepath.ToSlash(rel), Size: fi.Size(), AddedAt: s.now(), Languages: inspectedLanguages(facts),
 			MediaInfo: facts, Quality: domain.Quality{Resolution: p.Resolution.Value, Source: p.Source.Value, Codec: p.Codec.Value, HDR: p.HDR.Value}, ReleaseName: &name, Origin: "adopted", PlacedBy: "none", Role: "main", State: "present"}
 		if foundID == 0 {
-			if _, err := store.Insert(tx, "files", &f, by); err != nil {
+			if _, err := database.Insert(tx, "files", &f, by); err != nil {
 				return err
 			}
 		} else {
 			f.ID = foundID
-			if err := store.Update(tx, "files", &f, by); err != nil {
+			if err := database.Update(tx, "files", &f, by); err != nil {
 				return err
 			}
 		}
-		_, err = tx.Exec(`UPDATE slots SET file_id = ?, state = 'in_library', last_reason = 'adopted an existing copy', updated_at = ?, updated_by = ? WHERE id = ?`, f.ID, store.FormatTime(s.now()), actorText(by), slot.ID)
+		_, err = tx.Exec(`UPDATE slots SET file_id = ?, state = 'in_library', last_reason = 'adopted an existing copy', updated_at = ?, updated_by = ? WHERE id = ?`, f.ID, database.FormatTime(s.now()), actorText(by), slot.ID)
 		return err
 	})
 	if err == nil {

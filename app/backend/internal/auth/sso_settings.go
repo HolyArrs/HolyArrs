@@ -5,13 +5,12 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"log"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/HolyArrs/holyarrs/app/backend/internal/urlbase"
 )
 
 // Single sign-on (OpenID Connect) set up from Settings, and unlinking
@@ -123,7 +122,7 @@ func (a *Auth) suggestedRedirect(r *http.Request) string {
 	if r.TLS != nil || a.behindHTTPS(r) {
 		scheme = "https"
 	}
-	return scheme + "://" + r.Host + urlbase.From(r.Context()) + "/api/v1/auth/oidc/callback"
+	return scheme + "://" + r.Host + webserver.URLBaseFrom(r.Context()) + "/api/v1/auth/oidc/callback"
 }
 
 // SSOView is the single sign-on setup as Settings shows it. Never a secret.
@@ -306,7 +305,7 @@ func (a *Auth) putSSO(w http.ResponseWriter, r *http.Request) {
 			fail(w, http.StatusBadRequest, "check the issuer, client id and callback address: the issuer and callback must be https:// addresses, and the callback must end in /api/v1/auth/oidc/callback")
 			return
 		}
-		if !strings.HasSuffix(next.RedirectURL, urlbase.From(ctx)+"/api/v1/auth/oidc/callback") {
+		if !strings.HasSuffix(next.RedirectURL, webserver.URLBaseFrom(ctx)+"/api/v1/auth/oidc/callback") {
 			fail(w, http.StatusBadRequest, "the callback address does not match this HolyArrs's URL base")
 			return
 		}

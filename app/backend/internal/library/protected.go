@@ -6,8 +6,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 var ErrCopyChoice = errors.New("invalid copy choice")
@@ -18,9 +18,9 @@ type FileChoice struct {
 	AcknowledgeProtection bool    `json:"acknowledge_protection"`
 }
 
-func ownedFile(ctx context.Context, q store.Querier, titleID, fileID int64) (domain.File, domain.Version, error) {
+func ownedFile(ctx context.Context, q database.Querier, titleID, fileID int64) (domain.File, domain.Version, error) {
 	var f domain.File
-	if err := store.Get(ctx, q, "files", fileID, &f); err != nil {
+	if err := database.Get(ctx, q, "files", fileID, &f); err != nil {
 		return f, domain.Version{}, err
 	}
 	v, err := versionOf(ctx, q, titleID, f.VersionID)
@@ -31,7 +31,7 @@ func ownedFile(ctx context.Context, q store.Querier, titleID, fileID int64) (dom
 		return f, v, fmt.Errorf("%w: choose a current main copy", ErrCopyChoice)
 	}
 	var t domain.Title
-	if err := store.Get(ctx, q, "titles", titleID, &t); err != nil {
+	if err := database.Get(ctx, q, "titles", titleID, &t); err != nil {
 		return f, v, err
 	}
 	if t.State == "removed" {
@@ -71,7 +71,7 @@ func (s *Service) SetFileChoice(ctx context.Context, titleID, fileID int64, choi
 			}
 			f.MediaInfo["edition"], f.MediaInfo["edition_source"] = edition, "confirmed"
 		}
-		return store.Update(tx, "files", &f, by)
+		return database.Update(tx, "files", &f, by)
 	})
 	if err == nil {
 		s.event(ctx, &domain.Event{Actor: by, Kind: "file_choice_changed", TitleID: &titleID, Summary: "Changed copy choices for " + f.RelativePath,
@@ -89,7 +89,7 @@ func (s *Service) KeepAndAddVersion(ctx context.Context, titleID, fileID int64, 
 	unlock := s.Store.LockFiles()
 	defer unlock()
 	var title domain.Title
-	if err := store.Get(ctx, s.Store.Read(), "titles", titleID, &title); err != nil {
+	if err := database.Get(ctx, s.Store.Read(), "titles", titleID, &title); err != nil {
 		return domain.Version{}, err
 	}
 	if _, err := checkVersionFolder(ctx, s.Store.Read(), in.LibraryFolderID, title.Kind, s.downloadPaths(ctx)); err != nil {
@@ -105,7 +105,7 @@ func (s *Service) KeepAndAddVersion(ctx context.Context, titleID, fileID int64, 
 			return err
 		}
 		f.Protected = true
-		return store.Update(tx, "files", &f, by)
+		return database.Update(tx, "files", &f, by)
 	})
 	if err == nil {
 		s.VersionEvent(ctx, title, "Protected the existing copy and added the "+v.Label+" Version", v, by)
@@ -125,7 +125,7 @@ func (s *Service) ConfirmDownloadEdition(ctx context.Context, downloadID int64, 
 	var titleID int64
 	err = s.Store.Write(ctx, func(tx *sql.Tx) error {
 		var d domain.Download
-		if err := store.Get(ctx, tx, "downloads", downloadID, &d); err != nil {
+		if err := database.Get(ctx, tx, "downloads", downloadID, &d); err != nil {
 			return err
 		}
 		if d.State != "finished" && d.State != "seeding" {
@@ -142,7 +142,7 @@ func (s *Service) ConfirmDownloadEdition(ctx context.Context, downloadID int64, 
 			return fmt.Errorf("%w: choose a current movie download", ErrCopyChoice)
 		}
 		d.ConfirmedEdition = edition
-		return store.Update(tx, "downloads", &d, by)
+		return database.Update(tx, "downloads", &d, by)
 	})
 	if err == nil {
 		s.event(ctx, &domain.Event{Actor: by, Kind: "download_edition_confirmed", TitleID: &titleID, DownloadID: &downloadID,

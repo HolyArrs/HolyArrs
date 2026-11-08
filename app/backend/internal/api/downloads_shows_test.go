@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // seedPack turns seed41's movie into a show whose pack Download covers
@@ -33,12 +33,12 @@ func seedPack(t *testing.T) (*dl41, []int64) {
 			st := map[int]domain.SlotState{2: domain.SlotInLibrary, 3: domain.SlotNeedsADecision}[n]
 			season, ep, name := 1, n, map[int]string{2: "Flood", 3: "Ash"}[n]
 			it := &domain.Item{TitleID: titleID, Kind: "episode", Numbers: domain.Numbers{Season: &season, Episode: &ep}, Name: &name, KeepUpToDate: true, SourceIDs: map[string]string{}}
-			if _, err := store.Insert(tx, "items", it, domain.System); err != nil {
+			if _, err := database.Insert(tx, "items", it, domain.System); err != nil {
 				return err
 			}
 			reason := "the file could not be placed: a file HolyArrs did not place is already at the target"
 			sl := &domain.Slot{ItemID: it.ID, VersionID: verID, State: st, LastReason: &reason}
-			if _, err := store.Insert(tx, "slots", sl, domain.System); err != nil {
+			if _, err := database.Insert(tx, "slots", sl, domain.System); err != nil {
 				return err
 			}
 			ids = append(ids, sl.ID)

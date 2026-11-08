@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
@@ -85,7 +86,7 @@ func labShow(source, id string) metadata.Show {
 		}}
 }
 
-func addShowFolder(t *testing.T, s *store.Store) domain.LibraryFolder {
+func addShowFolder(t *testing.T, s *database.Store) domain.LibraryFolder {
 	t.Helper()
 	lf, err := AddFolder(context.Background(), s, FolderInput{Path: t.TempDir(), Kind: "show", Label: "Shows"}, nil, domain.System)
 	if err != nil {
@@ -96,7 +97,7 @@ func addShowFolder(t *testing.T, s *store.Store) domain.LibraryFolder {
 
 // seedShow writes a show Title with a main Version, then syncs it from sh
 // with the given season choice, the way an add does.
-func seedShow(t *testing.T, s *store.Store, sh metadata.Show, choice string) domain.Title {
+func seedShow(t *testing.T, s *database.Store, sh metadata.Show, choice string) domain.Title {
 	t.Helper()
 	ctx := context.Background()
 	lf := addShowFolder(t, s)
@@ -107,14 +108,14 @@ func seedShow(t *testing.T, s *store.Store, sh metadata.Show, choice string) dom
 	applyShow(&ti, sh)
 	ti.RefreshedAt = &now
 	err := s.Write(ctx, func(tx *sql.Tx) error {
-		if _, err := store.Insert(tx, "titles", &ti, domain.System); err != nil {
+		if _, err := database.Insert(tx, "titles", &ti, domain.System); err != nil {
 			return err
 		}
 		var pr int64
 		if err := tx.QueryRow("SELECT id FROM pick_rules WHERE name = ?", domain.GoodEverydayName).Scan(&pr); err != nil {
 			return err
 		}
-		if _, err := store.Insert(tx, "versions", &domain.Version{TitleID: ti.ID, Label: "Main", PickRulesID: pr, LibraryFolderID: lf.ID,
+		if _, err := database.Insert(tx, "versions", &domain.Version{TitleID: ti.ID, Label: "Main", PickRulesID: pr, LibraryFolderID: lf.ID,
 			FolderName: "Lab Show", KeepUpToDate: true, IsMain: true}, domain.System); err != nil {
 			return err
 		}
@@ -140,10 +141,10 @@ type epRow struct {
 }
 
 // episodes reads a show's episodes by "SxxEyy".
-func episodes(t *testing.T, s *store.Store, titleID int64) map[string]epRow {
+func episodes(t *testing.T, s *database.Store, titleID int64) map[string]epRow {
 	t.Helper()
 	ctx := context.Background()
-	its, err := store.Select[domain.Item](ctx, s.Read(), "items", "title_id = ? AND kind = 'episode'", titleID)
+	its, err := database.Select[domain.Item](ctx, s.Read(), "items", "title_id = ? AND kind = 'episode'", titleID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -153,7 +154,7 @@ func episodes(t *testing.T, s *store.Store, titleID int64) map[string]epRow {
 		if it.Name != nil {
 			r.Name = *it.Name
 		}
-		sl, _ := store.Select[domain.Slot](ctx, s.Read(), "slots", "item_id = ?", it.ID)
+		sl, _ := database.Select[domain.Slot](ctx, s.Read(), "slots", "item_id = ?", it.ID)
 		if len(sl) == 1 {
 			r.SlotID, r.State = sl[0].ID, sl[0].State
 			if sl[0].LastReason != nil {
@@ -173,7 +174,7 @@ func two(n int) string {
 	return string(rune('0'+n/10)) + string(rune('0'+n%10))
 }
 
-func showService(s *store.Store, sources metadata.ShowSources) *Service {
+func showService(s *database.Store, sources metadata.ShowSources) *Service {
 	return &Service{Store: s, Shows: sources, Now: func() time.Time { return now }}
 }
 
@@ -206,7 +207,7 @@ func TestShowRefreshFromTMDB(t *testing.T) {
 	err := s.Write(ctx, func(tx *sql.Tx) error {
 		f := &domain.File{SlotIDs: []int64{eps["S01E01"].SlotID}, VersionID: 1, RelativePath: "Lab Show/Season 01/a.mkv", Languages: []string{},
 			Origin: "imported", PlacedBy: "hardlink", Role: "main", State: "present"}
-		if _, err := store.Insert(tx, "files", f, domain.System); err != nil {
+		if _, err := database.Insert(tx, "files", f, domain.System); err != nil {
 			return err
 		}
 		if _, err := tx.Exec("UPDATE slots SET file_id = ? WHERE id = ?", f.ID, eps["S01E01"].SlotID); err != nil {
@@ -244,7 +245,7 @@ func TestShowRefreshFromTMDB(t *testing.T) {
 	if after["S02E01"].State != domain.SlotNotOutYet || after["S02E04"].State != domain.SlotNotOutYet || !after["S02E04"].Keep {
 		t.Fatalf("moved and new %+v %+v", after["S02E01"], after["S02E04"])
 	}
-	evs, _, _ := s.Events(ctx, store.EventFilter{TitleID: ti.ID, Limit: 500})
+	evs, _, _ := s.Events(ctx, database.EventFilter{TitleID: ti.ID, Limit: 500})
 	kinds := map[string]int{}
 	for _, e := range evs {
 		kinds[e.Kind]++
@@ -260,7 +261,7 @@ func TestShowRefreshFromTMDB(t *testing.T) {
 		t.Fatalf("forgotten %+v %v", out, err)
 	}
 	var back domain.Title
-	_ = store.Get(ctx, s.Read(), "titles", ti.ID, &back)
+	_ = database.Get(ctx, s.Read(), "titles", ti.ID, &back)
 	if back.DroppedAt == nil || len(episodes(t, s, ti.ID)) != 6 {
 		t.Fatalf("forgotten show %+v", back)
 	}
@@ -289,7 +290,7 @@ func TestSwitchShowSource(t *testing.T) {
 		t.Fatalf("TVMaze asked %v; the TVDB id comes first when it has no id of its own", maze.calls)
 	}
 	var back domain.Title
-	_ = store.Get(ctx, s.Read(), "titles", ti.ID, &back)
+	_ = database.Get(ctx, s.Read(), "titles", ti.ID, &back)
 	if back.MetadataSource != "tvmaze" || back.SourceIDs["tvmaze"] != "300" || back.SourceIDs["tmdb"] != "100" {
 		t.Fatalf("title after switch %+v", back)
 	}
@@ -321,7 +322,7 @@ func TestSwitchShowSource(t *testing.T) {
 	if _, err := svc.SwitchSource(ctx, ti.ID, "tvmaze", domain.System); !errors.Is(err, metadata.ErrShowNotFound) {
 		t.Fatalf("unknown on tvmaze: %v", err)
 	}
-	_ = store.Get(ctx, s.Read(), "titles", ti.ID, &back)
+	_ = database.Get(ctx, s.Read(), "titles", ti.ID, &back)
 	if back.MetadataSource != "tmdb" || back.DroppedAt != nil {
 		t.Fatalf("after a refused switch %+v", back)
 	}
@@ -377,7 +378,7 @@ func TestRefreshKeepsSpecialsByEpisodeID(t *testing.T) {
 	err := s.Write(ctx, func(tx *sql.Tx) error {
 		f := &domain.File{SlotIDs: []int64{eps["S00E01"].SlotID}, VersionID: 1, RelativePath: "Lab Show/Specials/behind.mkv", Languages: []string{},
 			Origin: "imported", PlacedBy: "hardlink", Role: "main", State: "present"}
-		if _, err := store.Insert(tx, "files", f, domain.System); err != nil {
+		if _, err := database.Insert(tx, "files", f, domain.System); err != nil {
 			return err
 		}
 		_, err := tx.Exec("UPDATE slots SET file_id = ?, state = 'in_library' WHERE id = ?", f.ID, eps["S00E01"].SlotID)
@@ -459,7 +460,7 @@ func TestFutureSeasonsOnlyRefresh(t *testing.T) {
 		t.Fatal(err)
 	}
 	var ti domain.Title
-	_ = store.Get(ctx, s.Read(), "titles", id, &ti)
+	_ = database.Get(ctx, s.Read(), "titles", id, &ti)
 	if ti.FutureFrom == nil || !ti.FutureFrom.Equal(now) {
 		t.Fatalf("future_from %v", ti.FutureFrom)
 	}
@@ -503,7 +504,7 @@ func TestKeepFutureOnExistingShow(t *testing.T) {
 		t.Fatalf("eps %+v", eps)
 	}
 	var ti domain.Title
-	_ = store.Get(ctx, s.Read(), "titles", id, &ti)
+	_ = database.Get(ctx, s.Read(), "titles", id, &ti)
 	if !ti.KeepUpToDate || ti.NewPartsPolicy != "all" || ti.FutureFrom == nil || *ti.SeasonChoice != SeasonsFuture {
 		t.Fatalf("title %+v", ti)
 	}

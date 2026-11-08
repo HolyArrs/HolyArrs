@@ -12,9 +12,9 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // aiFix is a signed-in app with an owner, a member and their keys.
@@ -308,9 +308,9 @@ func TestMCPConfirmAndHistory(t *testing.T) {
 	}
 }
 
-func aiEvents(t *testing.T, s *store.Store) []domain.Event {
+func aiEvents(t *testing.T, s *database.Store) []domain.Event {
 	t.Helper()
-	es, _, err := s.Events(context.Background(), store.EventFilter{Kinds: []string{"ai_*"}, Limit: 50})
+	es, _, err := s.Events(context.Background(), database.EventFilter{Kinds: []string{"ai_*"}, Limit: 50})
 	if err != nil {
 		t.Fatal(err)
 	}

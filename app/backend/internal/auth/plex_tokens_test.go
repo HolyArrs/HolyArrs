@@ -4,14 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"sync"
 	"sync/atomic"
 	"testing"
-
-	"github.com/HolyArrs/holyarrs/app/backend/internal/routehits"
 )
 
 // Test-only Plex sign-ins: each fake PIN hands out the one the test chose.
@@ -69,7 +68,7 @@ func newPlexPeople(t *testing.T) *plexPeople {
 		}
 		_, _ = w.Write([]byte(u))
 	})
-	p.srv = httptest.NewServer(routehits.Wrap(m))
+	p.srv = httptest.NewServer(webserver.RecordRouteHits(m))
 	t.Cleanup(p.srv.Close)
 	return p
 }

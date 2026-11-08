@@ -11,10 +11,10 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/compat"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/urlbase"
 )
 
 // The old-app API (roadmap #85, decision 0008): Seerr and Overseerr add
@@ -151,7 +151,7 @@ func (a *API) oldAppAnswer(r *http.Request) (map[string]any, error) {
 	}
 	sides := []OldAppSide{}
 	for _, s := range auth.CompatSides {
-		v := OldAppSide{Side: s, Path: urlbase.From(r.Context()) + "/" + s}
+		v := OldAppSide{Side: s, Path: webserver.URLBaseFrom(r.Context()) + "/" + s}
 		v.URL = scheme + "://" + r.Host + v.Path
 		for i := range keys {
 			if keys[i].Side == s {
@@ -192,7 +192,7 @@ func (a *API) putOldAppAPI(w http.ResponseWriter, r *http.Request) {
 // switches; a nil one is left as it is. Setup steps in this package (such
 // as connecting Prowlarr) turn the API on through it.
 func (a *API) saveOldAppSwitches(ctx context.Context, who domain.Actor, enabled, deleteFiles *bool) error {
-	now := store.FormatTime(time.Now())
+	now := database.FormatTime(time.Now())
 	by, _ := json.Marshal(who)
 	return a.s.Store.Write(ctx, func(tx *sql.Tx) error {
 		for key, v := range map[string]*bool{settingOldAppAPI: enabled, settingOldAppDelete: deleteFiles} {
@@ -245,7 +245,7 @@ func (a *API) makeOldAppKey(w http.ResponseWriter, r *http.Request) {
 		internal(w, err)
 		return
 	}
-	writeJSON(w, http.StatusCreated, map[string]any{"side": side, "key": k, "path": urlbase.From(r.Context()) + "/" + side,
+	writeJSON(w, http.StatusCreated, map[string]any{"side": side, "key": k, "path": webserver.URLBaseFrom(r.Context()) + "/" + side,
 		"note": "This key is shown only now. Paste it into Seerr or Overseerr as the API key; an older key for this side no longer works."})
 }
 

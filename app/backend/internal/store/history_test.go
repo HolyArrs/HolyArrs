@@ -8,11 +8,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
 func TestEventsFilterAndPaging(t *testing.T) {
-	s, _ := openTest(t, Options{})
+	s, _ := openTest(t, database.Options{})
 	ctx := context.Background()
 	day := time.Date(2026, 10, 1, 12, 0, 0, 0, time.UTC)
 	one, two := int64(1), int64(2)
@@ -37,19 +38,19 @@ func TestEventsFilterAndPaging(t *testing.T) {
 	}
 	cases := []struct {
 		name  string
-		f     EventFilter
+		f     database.EventFilter
 		want  []string
 		total int
 	}{
-		{"all newest first", EventFilter{}, []string{"import_x_y", "renamed", "import_failed", "import_done", "title_added"}, 5},
-		{"by movie", EventFilter{TitleID: 1}, []string{"import_done", "title_added"}, 2},
-		{"by kind", EventFilter{Kinds: []string{"renamed", "title_added"}}, []string{"renamed", "title_added"}, 2},
-		{"by prefix", EventFilter{Kinds: []string{"import_*"}}, []string{"import_x_y", "import_failed", "import_done"}, 3},
+		{"all newest first", database.EventFilter{}, []string{"import_x_y", "renamed", "import_failed", "import_done", "title_added"}, 5},
+		{"by movie", database.EventFilter{TitleID: 1}, []string{"import_done", "title_added"}, 2},
+		{"by kind", database.EventFilter{Kinds: []string{"renamed", "title_added"}}, []string{"renamed", "title_added"}, 2},
+		{"by prefix", database.EventFilter{Kinds: []string{"import_*"}}, []string{"import_x_y", "import_failed", "import_done"}, 3},
 		// _ in a prefix is a plain character, not a LIKE wildcard.
-		{"prefix underscore is literal", EventFilter{Kinds: []string{"import_x_*"}}, []string{"import_x_y"}, 1},
-		{"date range", EventFilter{From: day.Add(24 * time.Hour), To: day.Add(72 * time.Hour)}, []string{"import_failed", "import_done"}, 2},
-		{"paging", EventFilter{Limit: 2, Offset: 2}, []string{"import_failed", "import_done"}, 5},
-		{"movie and kind", EventFilter{TitleID: 2, Kinds: []string{"import_*"}}, []string{"import_failed"}, 1},
+		{"prefix underscore is literal", database.EventFilter{Kinds: []string{"import_x_*"}}, []string{"import_x_y"}, 1},
+		{"date range", database.EventFilter{From: day.Add(24 * time.Hour), To: day.Add(72 * time.Hour)}, []string{"import_failed", "import_done"}, 2},
+		{"paging", database.EventFilter{Limit: 2, Offset: 2}, []string{"import_failed", "import_done"}, 5},
+		{"movie and kind", database.EventFilter{TitleID: 2, Kinds: []string{"import_*"}}, []string{"import_failed"}, 1},
 	}
 	for _, c := range cases {
 		es, total, err := s.Events(ctx, c.f)
@@ -70,7 +71,7 @@ func TestEventsFilterAndPaging(t *testing.T) {
 }
 
 func TestOnEventHearsEveryStoredEvent(t *testing.T) {
-	s, _ := openTest(t, Options{})
+	s, _ := openTest(t, database.Options{})
 	var mu sync.Mutex
 	var heard []string
 	s.OnEvent(func(e domain.Event) {
@@ -87,11 +88,11 @@ func TestOnEventHearsEveryStoredEvent(t *testing.T) {
 }
 
 func TestAfterCommitRunsOnlyAfterACommit(t *testing.T) {
-	s, _ := openTest(t, Options{})
+	s, _ := openTest(t, database.Options{})
 	ctx := context.Background()
 	ran := 0
 	if err := s.Write(ctx, func(tx *sql.Tx) error {
-		AfterCommit(tx, func() { ran++ })
+		database.AfterCommit(tx, func() { ran++ })
 		if ran != 0 {
 			t.Error("ran before the commit")
 		}
@@ -103,7 +104,7 @@ func TestAfterCommitRunsOnlyAfterACommit(t *testing.T) {
 		t.Fatalf("ran %d times after a commit", ran)
 	}
 	_ = s.Write(ctx, func(tx *sql.Tx) error {
-		AfterCommit(tx, func() { ran++ })
+		database.AfterCommit(tx, func() { ran++ })
 		return errors.New("roll back")
 	})
 	if ran != 1 {
@@ -114,7 +115,7 @@ func TestAfterCommitRunsOnlyAfterACommit(t *testing.T) {
 // A Slot that moves to needs_a_decision leaves a needs_decision Event with
 // its movie and reason, once the move has committed.
 func TestNeedsDecisionEvent(t *testing.T) {
-	s, _ := openTest(t, Options{})
+	s, _ := openTest(t, database.Options{})
 	ctx := context.Background()
 	var slotID, titleID int64
 	err := s.Write(ctx, func(tx *sql.Tx) error {
@@ -123,32 +124,32 @@ func TestNeedsDecisionEvent(t *testing.T) {
 		lf := &domain.LibraryFolder{Path: "/m", Kind: "movie", Label: "M", Health: "ok", SameDiskAs: []int64{}}
 		ti := &domain.Title{Kind: "movie", GateDriver: "none", Name: "Arrival", SortName: "arrival", MetadataSource: "local", NewPartsPolicy: "all",
 			ReleaseGate: "released", WhyAdded: "by_hand", Status: "released", State: "active"}
-		if _, err := Insert(tx, "library_folders", lf, owner); err != nil {
+		if _, err := database.Insert(tx, "library_folders", lf, owner); err != nil {
 			return err
 		}
-		if _, err := Insert(tx, "titles", ti, owner); err != nil {
+		if _, err := database.Insert(tx, "titles", ti, owner); err != nil {
 			return err
 		}
 		titleID = ti.ID
 		it := &domain.Item{TitleID: ti.ID, Kind: "movie"}
-		if _, err := Insert(tx, "items", it, owner); err != nil {
+		if _, err := database.Insert(tx, "items", it, owner); err != nil {
 			return err
 		}
 		ve := &domain.Version{TitleID: ti.ID, Label: "HD", PickRulesID: prID, LibraryFolderID: lf.ID, FolderName: "A"}
-		if _, err := Insert(tx, "versions", ve, owner); err != nil {
+		if _, err := database.Insert(tx, "versions", ve, owner); err != nil {
 			return err
 		}
 		var err error
-		slotID, err = Insert(tx, "slots", &domain.Slot{ItemID: it.ID, VersionID: ve.ID, State: domain.SlotImporting}, owner)
+		slotID, err = database.Insert(tx, "slots", &domain.Slot{ItemID: it.ID, VersionID: ve.ID, State: domain.SlotImporting}, owner)
 		return err
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := s.MoveSlot(ctx, slotID, domain.SlotNeedsADecision, "nothing could be placed", owner); err != nil {
+	if err := MoveSlot(ctx, s, slotID, domain.SlotNeedsADecision, "nothing could be placed", owner); err != nil {
 		t.Fatal(err)
 	}
-	es, _, err := s.Events(ctx, EventFilter{Kinds: []string{domain.EventNeedsDecision}})
+	es, _, err := s.Events(ctx, database.EventFilter{Kinds: []string{domain.EventNeedsDecision}})
 	if err != nil || len(es) != 1 {
 		t.Fatalf("events %v %v", es, err)
 	}
@@ -163,7 +164,7 @@ func TestNeedsDecisionEvent(t *testing.T) {
 func TestAlertsKeptByWebhookMigration(t *testing.T) {
 	dir := t.TempDir()
 	ctx := context.Background()
-	old, err := Open(dir, Options{MainMigrations: upTo(t, 18)})
+	old, err := database.Open(dir, database.Options{MainMigrations: upTo(t, 18)})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -176,13 +177,13 @@ func TestAlertsKeptByWebhookMigration(t *testing.T) {
 		t.Fatal(err)
 	}
 	_ = old.Close()
-	s, err := Open(dir, Options{})
+	s, err := database.Open(dir, database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer s.Close()
 	var a domain.Alert
-	if err := Get(ctx, s.Read(), "alerts", 7, &a); err != nil {
+	if err := database.Get(ctx, s.Read(), "alerts", 7, &a); err != nil {
 		t.Fatal(err)
 	}
 	if a.Name != "Family" || a.Kind != "email" || len(a.Moments) != 1 || a.URLSecretID == nil || *a.URLSecretID != 3 || a.SMTPHost != "mail.test" ||
@@ -196,7 +197,7 @@ func TestAlertsKeptByWebhookMigration(t *testing.T) {
 func TestAlertsKeptByTelegramMigration(t *testing.T) {
 	dir := t.TempDir()
 	ctx := context.Background()
-	old, err := Open(dir, Options{MainMigrations: upTo(t, 81)})
+	old, err := database.Open(dir, database.Options{MainMigrations: upTo(t, 81)})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -211,13 +212,13 @@ func TestAlertsKeptByTelegramMigration(t *testing.T) {
 	}
 	_ = old.Close()
 	// All migrations: domain.Alert reads columns later ones add.
-	s, err := Open(dir, Options{})
+	s, err := database.Open(dir, database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer s.Close()
 	var a domain.Alert
-	if err := Get(ctx, s.Read(), "alerts", 9, &a); err != nil {
+	if err := database.Get(ctx, s.Read(), "alerts", 9, &a); err != nil {
 		t.Fatal(err)
 	}
 	if a.Name != "Home hook" || a.Kind != "webhook" || a.Enabled || len(a.Moments) != 1 || a.URLSecretID == nil || *a.URLSecretID != 4 ||
@@ -239,7 +240,7 @@ func TestAlertsKeptByTelegramMigration(t *testing.T) {
 func TestAlertsKeptByMoreAppsMigration(t *testing.T) {
 	dir := t.TempDir()
 	ctx := context.Background()
-	old, err := Open(dir, Options{MainMigrations: upTo(t, 83)})
+	old, err := database.Open(dir, database.Options{MainMigrations: upTo(t, 83)})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -254,13 +255,13 @@ func TestAlertsKeptByMoreAppsMigration(t *testing.T) {
 		t.Fatal(err)
 	}
 	_ = old.Close()
-	s, err := Open(dir, Options{})
+	s, err := database.Open(dir, database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer s.Close()
 	var a domain.Alert
-	if err := Get(ctx, s.Read(), "alerts", 9, &a); err != nil {
+	if err := database.Get(ctx, s.Read(), "alerts", 9, &a); err != nil {
 		t.Fatal(err)
 	}
 	if a.Name != "Family TG" || a.Kind != "telegram" || a.Enabled || len(a.Moments) != 1 || a.URLSecretID == nil || *a.URLSecretID != 4 ||
@@ -289,7 +290,7 @@ func TestAlertsKeptByMoreAppsMigration(t *testing.T) {
 func TestSettingsKeptByAlertsGroupMigration(t *testing.T) {
 	dir := t.TempDir()
 	ctx := context.Background()
-	old, err := Open(dir, Options{MainMigrations: upTo(t, 22)})
+	old, err := database.Open(dir, database.Options{MainMigrations: upTo(t, 22)})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -305,7 +306,7 @@ func TestSettingsKeptByAlertsGroupMigration(t *testing.T) {
 	_ = old.Read().QueryRow("SELECT COUNT(*) FROM settings").Scan(&before)
 	_ = old.Close()
 	// Up to 0023 only: later migrations seed settings of their own.
-	s, err := Open(dir, Options{MainMigrations: upTo(t, 23)})
+	s, err := database.Open(dir, database.Options{MainMigrations: upTo(t, 23)})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -326,7 +327,7 @@ func TestSettingsKeptByAlertsGroupMigration(t *testing.T) {
 
 // A hook that crashes is caught: the Event is stored and the next hook hears it.
 func TestOnEventHookCrashIsContained(t *testing.T) {
-	s, _ := openTest(t, Options{})
+	s, _ := openTest(t, database.Options{})
 	heard := 0
 	s.OnEvent(func(domain.Event) { panic("hook crash") })
 	s.OnEvent(func(domain.Event) { heard++ })

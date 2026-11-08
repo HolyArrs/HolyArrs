@@ -9,10 +9,11 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // KindArtistPictures fills missing artist pictures: one artist (queued
@@ -35,7 +36,7 @@ const emptyArtwork = "(artwork IS NULL OR artwork IN ('', '[]', 'null'))"
 // again. Artwork, backdrop or logo already set is never replaced.
 func (s *Service) FillArtistPictures(ctx context.Context, titleID int64, by domain.Actor) (string, error) {
 	var t domain.Title
-	if err := store.Get(ctx, s.Store.Read(), "titles", titleID, &t); err != nil {
+	if err := database.Get(ctx, s.Store.Read(), "titles", titleID, &t); err != nil {
 		return "", err
 	}
 	if t.Kind != "artist" {
@@ -50,7 +51,7 @@ func (s *Service) FillArtistPictures(ctx context.Context, titleID int64, by doma
 		if healed, err = s.healArtistArt(ctx, titleID, t.Name, mbid, t.Artwork, by); err != nil {
 			return "", err
 		}
-		if err := store.Get(ctx, s.Store.Read(), "titles", titleID, &t); err != nil {
+		if err := database.Get(ctx, s.Store.Read(), "titles", titleID, &t); err != nil {
 			return "", err
 		}
 	}
@@ -110,7 +111,7 @@ func (s *Service) fillArt(ctx context.Context, titleID int64, name string, by do
 	var n int64
 	err := s.Store.Write(ctx, func(tx *sql.Tx) error {
 		res, err := tx.Exec("UPDATE titles SET artwork = ?, updated_at = ?, updated_by = ? WHERE id = ? AND "+emptyArtwork,
-			`["poster:`+name+`"]`, store.FormatTime(s.now()), actorText(by), titleID)
+			`["poster:`+name+`"]`, database.FormatTime(s.now()), actorText(by), titleID)
 		if err == nil {
 			n, err = res.RowsAffected()
 		}
@@ -128,7 +129,7 @@ func (s *Service) fillWide(ctx context.Context, titleID int64, backdrop, logo st
 		_, err := tx.Exec(`UPDATE titles SET backdrop = CASE WHEN backdrop = '' THEN ? ELSE backdrop END,
 			logo = CASE WHEN logo = '' THEN ? ELSE logo END, updated_at = ?, updated_by = ?
 			WHERE id = ? AND ((backdrop = '' AND ? != '') OR (logo = '' AND ? != ''))`,
-			backdrop, logo, store.FormatTime(s.now()), actorText(by), titleID, backdrop, logo)
+			backdrop, logo, database.FormatTime(s.now()), actorText(by), titleID, backdrop, logo)
 		return err
 	})
 	if err != nil {
@@ -161,7 +162,7 @@ func (s *Service) FillAllArtistPictures(ctx context.Context, by domain.Actor, r 
 		return out, err
 	}
 	out.StandIn = repair
-	ts, err := store.Select[domain.Title](ctx, s.Store.Read(), "titles", "kind = 'artist' AND state != 'removed' AND "+emptyArtwork+" ORDER BY sort_name, id")
+	ts, err := database.Select[domain.Title](ctx, s.Store.Read(), "titles", "kind = 'artist' AND state != 'removed' AND "+emptyArtwork+" ORDER BY sort_name, id")
 	if err != nil {
 		return out, err
 	}

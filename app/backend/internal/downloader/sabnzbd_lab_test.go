@@ -18,6 +18,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
@@ -246,7 +247,7 @@ func labReplace(t *testing.T, base, key, nzbBase string) {
 		}
 		r := &domain.Release{SourceID: 1, Name: n, LinkRef: link, Protocol: "usenet", Size: 1, Flags: []string{}, Parsed: map[string]any{},
 			MatchedSlotIDs: []int64{w.slotID}, Verdict: map[string]any{}, FoundBy: "auto_search", State: "judged"}
-		if err := w.s.Write(ctx, func(tx *sql.Tx) error { _, err := store.Insert(tx, "releases", r, domain.System); return err }); err != nil {
+		if err := w.s.Write(ctx, func(tx *sql.Tx) error { _, err := database.Insert(tx, "releases", r, domain.System); return err }); err != nil {
 			t.Fatal(err)
 		}
 		rels[n] = r.ID

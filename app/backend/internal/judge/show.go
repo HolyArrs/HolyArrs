@@ -5,25 +5,25 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/parse"
 )
 
 // matchShow picks the show among same-named candidates. Show names carry
 // no year as a rule, so a single candidate is sure; a year in the name
 // tells shows of the same name apart.
-func matchShow(p parse.Result, cands []*TitleRef) Match {
+func matchShow(p releasename.Result, cands []*TitleRef) Match {
 	if p.Year.Value > 0 {
 		for _, t := range cands {
 			if t.Year == p.Year.Value {
-				return Match{Title: t, Conf: parse.Sure, Detail: fmt.Sprintf("%s (%d) by clean name and year", t.Name, t.Year)}
+				return Match{Title: t, Conf: releasename.Sure, Detail: fmt.Sprintf("%s (%d) by clean name and year", t.Name, t.Year)}
 			}
 		}
 	}
 	if len(cands) == 1 {
-		return Match{Title: cands[0], Conf: parse.Sure, Detail: cands[0].Name + " by clean name"}
+		return Match{Title: cands[0], Conf: releasename.Sure, Detail: cands[0].Name + " by clean name"}
 	}
-	return Match{Conf: parse.Unknown, Detail: fmt.Sprintf("%d shows are called %q and the name gives no year that tells them apart", len(cands), p.Title.Value)}
+	return Match{Conf: releasename.Unknown, Detail: fmt.Sprintf("%d shows are called %q and the name gives no year that tells them apart", len(cands), p.Title.Value)}
 }
 
 // EpisodeRef is one episode of a show as the matcher sees it.
@@ -39,26 +39,26 @@ type EpisodeRef struct {
 func (e EpisodeRef) Label() string { return fmt.Sprintf("S%02dE%02d", e.Season, e.Episode) }
 
 // isPack says the Release holds whole seasons.
-func isPack(p parse.Result) bool {
+func isPack(p releasename.Result) bool {
 	switch p.Kind.Value {
-	case parse.KindSeasonPack, parse.KindMultiSeason, parse.KindComplete:
+	case releasename.KindSeasonPack, releasename.KindMultiSeason, releasename.KindComplete:
 		return true
 	}
 	return false
 }
 
 // IsPack says a show Release holds one or more whole seasons.
-func IsPack(p parse.Result) bool { return isPack(p) }
+func IsPack(p releasename.Result) bool { return isPack(p) }
 
 // MatchEpisodes finds the episodes of a show that a Release holds, using
 // the show's episode order (aired, daily or absolute). It returns the
 // episodes found and, when some numbers name no episode, why.
-func MatchEpisodes(p parse.Result, order string, eps []EpisodeRef) ([]EpisodeRef, string) {
+func MatchEpisodes(p releasename.Result, order string, eps []EpisodeRef) ([]EpisodeRef, string) {
 	sh := p.Show
 	if sh == nil {
 		return nil, "the name gives no episode numbers"
 	}
-	if sh.Conf == parse.Guess {
+	if sh.Conf == releasename.Guess {
 		return nil, strings.Join(p.Notes, "; ") + "; pick the episode by hand"
 	}
 	var out []EpisodeRef
@@ -70,25 +70,25 @@ func MatchEpisodes(p parse.Result, order string, eps []EpisodeRef) ([]EpisodeRef
 		}
 	}
 	switch p.Kind.Value {
-	case parse.KindSeasonPack, parse.KindMultiSeason:
+	case releasename.KindSeasonPack, releasename.KindMultiSeason:
 		find(func(e EpisodeRef) bool { return slices.Contains(sh.Seasons, e.Season) })
 		if len(out) == 0 {
 			return nil, fmt.Sprintf("the show has no episodes in season %s", seasonList(sh.Seasons))
 		}
 		return out, ""
-	case parse.KindComplete:
+	case releasename.KindComplete:
 		find(func(e EpisodeRef) bool { return e.Season > 0 })
 		if len(out) == 0 {
 			return nil, "the show has no episodes yet"
 		}
 		return out, ""
-	case parse.KindDaily:
+	case releasename.KindDaily:
 		find(func(e EpisodeRef) bool { return e.AirDay == sh.AirDate })
 		if len(out) == 0 {
 			return nil, "no episode aired on " + sh.AirDate
 		}
 		return out, ""
-	case parse.KindAbsolute:
+	case releasename.KindAbsolute:
 		var missing []string
 		for _, n := range sh.Absolute {
 			i := slices.IndexFunc(eps, func(e EpisodeRef) bool { return e.Absolute == n })
@@ -134,7 +134,7 @@ func seasonList(ns []int) string {
 // episodeOrder ranks two show Releases of equal quality, points and
 // protocol: a season pack first; then, for anime (running numbers), more
 // episodes; for other shows, fewer; then the lower first episode.
-func episodeOrder(a, b parse.Result) (int, string) {
+func episodeOrder(a, b releasename.Result) (int, string) {
 	if !a.IsShow() || !b.IsShow() {
 		return 0, ""
 	}
@@ -146,7 +146,7 @@ func episodeOrder(a, b parse.Result) (int, string) {
 	}
 	na, nb := episodeCount(a), episodeCount(b)
 	if na != nb {
-		more := a.Kind.Value == parse.KindAbsolute || b.Kind.Value == parse.KindAbsolute
+		more := a.Kind.Value == releasename.KindAbsolute || b.Kind.Value == releasename.KindAbsolute
 		if (na > nb) == more {
 			return -1, "on episodes held"
 		}
@@ -161,14 +161,14 @@ func episodeOrder(a, b parse.Result) (int, string) {
 	return 0, ""
 }
 
-func episodeCount(p parse.Result) int {
+func episodeCount(p releasename.Result) int {
 	if p.Show == nil {
 		return 0
 	}
 	return max(len(p.Show.Episodes), len(p.Show.Absolute), 1)
 }
 
-func firstEpisode(p parse.Result) int {
+func firstEpisode(p releasename.Result) int {
 	switch {
 	case p.Show == nil:
 		return 0

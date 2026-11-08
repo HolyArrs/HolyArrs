@@ -10,14 +10,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 func (w *world) release(t *testing.T) domain.Release {
 	t.Helper()
 	var r domain.Release
-	if err := store.Get(context.Background(), w.s.Read(), "releases", w.relID, &r); err != nil {
+	if err := database.Get(context.Background(), w.s.Read(), "releases", w.relID, &r); err != nil {
 		t.Fatal(err)
 	}
 	return r
@@ -164,7 +164,7 @@ func TestMarkFailedWhileStalled(t *testing.T) {
 // Fake clock: stalled after the stall time, acted on after the act time.
 func TestStalledThenActedOn(t *testing.T) {
 	w, m := setup(t)
-	letChange(t, m) // it removes an item already in the Downloader
+	letChange(t, m)                 // it removes an item already in the Downloader
 	m.StallAfter, m.ActAfter = 0, 0 // read the settings: 6 h and 24 h
 	id := grabbed(t, w, m)
 	ctx := context.Background()

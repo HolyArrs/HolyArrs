@@ -25,10 +25,13 @@ import (
 	"unicode"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/judge"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/naming"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/parse"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
@@ -58,7 +61,7 @@ type Target struct {
 
 // fileName names one imported file by the naming settings (the same
 // function a rename uses).
-func (t Target) fileName(p parse.Result, source string) string {
+func (t Target) fileName(p releasename.Result, source string) string {
 	ns := naming.Defaults()
 	if t.Naming != nil {
 		ns = *t.Naming
@@ -131,7 +134,7 @@ func Scan(root string) ([]Candidate, error) {
 	return out, err
 }
 
-func isSample(path string, p parse.Result) bool {
+func isSample(path string, p releasename.Result) bool {
 	if p.Has("sample") {
 		return true
 	}
@@ -188,13 +191,13 @@ func lengthWords(secs int) string {
 	return strconv.Itoa(secs/60) + " minutes"
 }
 
-func confidence(c parse.Conf) float64 {
+func confidence(c releasename.Conf) float64 {
 	switch c {
-	case parse.Sure:
+	case releasename.Sure:
 		return 1
-	case parse.Likely:
+	case releasename.Likely:
 		return 0.7
-	case parse.Guess:
+	case releasename.Guess:
 		return 0.4
 	}
 	return 0
@@ -212,10 +215,10 @@ func Plan(cands []Candidate, t Target) []domain.PlanStep {
 	for _, c := range cands {
 		ext := strings.ToLower(filepath.Ext(c.Path))
 		s := domain.PlanStep{SourceFile: c.Path, TargetSlotIDs: []int64{}, Why: []string{}}
-		p := parse.Parse(filepath.Base(c.Path), parse.Hints{Size: c.Size})
+		p := releasename.Parse(filepath.Base(c.Path), releasename.Hints{Size: c.Size})
 		if p.Title.Value == "" {
 			// The file name alone may lack the title; try its folder.
-			p = parse.Parse(filepath.Base(filepath.Dir(c.Path)), parse.Hints{Size: c.Size})
+			p = releasename.Parse(filepath.Base(filepath.Dir(c.Path)), releasename.Hints{Size: c.Size})
 		}
 		switch {
 		case programExt[ext] || p.Has("executable") || p.Has("double_extension"):
@@ -229,7 +232,7 @@ func Plan(cands []Candidate, t Target) []domain.PlanStep {
 			if m.Title == nil && p.Year.Value == 0 {
 				// A plain file name such as movie-1080p.mkv: its folder (the
 				// Release name) says which Title it is.
-				if fp := parse.Parse(filepath.Base(filepath.Dir(c.Path)), parse.Hints{Size: c.Size}); fp.Title.Value != "" {
+				if fp := releasename.Parse(filepath.Base(filepath.Dir(c.Path)), releasename.Hints{Size: c.Size}); fp.Title.Value != "" {
 					if fm := judge.MatchTitle(fp, []judge.TitleRef{ref}); fm.Title != nil {
 						m = fm
 					}
@@ -602,7 +605,7 @@ type Publisher interface {
 
 // Importer imports finished Downloads through the store.
 type Importer struct {
-	Store *store.Store
+	Store *database.Store
 	Live  Publisher // may be nil
 	Ops   Ops
 	// SavePath is where completed downloads are, as HolyArrs sees it
@@ -745,7 +748,7 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 	defer unlock()
 	db := im.Store.Read()
 	var d domain.Download
-	if err := store.Get(ctx, db, "downloads", downloadID, &d); err != nil {
+	if err := database.Get(ctx, db, "downloads", downloadID, &d); err != nil {
 		return nil, fmt.Errorf("download %d: %w", downloadID, err)
 	}
 	if d.State != "finished" && d.State != "seeding" {
@@ -755,7 +758,7 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 		return nil, fmt.Errorf("download %d has no Slot", downloadID)
 	}
 	var dr domain.Downloader
-	if err := store.Get(ctx, db, "downloaders", d.DownloaderID, &dr); err != nil {
+	if err := database.Get(ctx, db, "downloaders", d.DownloaderID, &dr); err != nil {
 		return nil, err
 	}
 	var sl domain.Slot
@@ -763,7 +766,7 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 	var lf domain.LibraryFolder
 	var it domain.Item
 	var ti domain.Title
-	if err := store.Get(ctx, db, "slots", d.SlotIDs[0], &sl); err != nil {
+	if err := database.Get(ctx, db, "slots", d.SlotIDs[0], &sl); err != nil {
 		return nil, err
 	}
 	var kind, titleState string
@@ -796,14 +799,14 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 		id    int64
 		dst   any
 	}{{"versions", sl.VersionID, &ver}, {"items", sl.ItemID, &it}} {
-		if err := store.Get(ctx, db, g.table, g.id, g.dst); err != nil {
+		if err := database.Get(ctx, db, g.table, g.id, g.dst); err != nil {
 			return nil, err
 		}
 	}
-	if err := store.Get(ctx, db, "library_folders", ver.LibraryFolderID, &lf); err != nil {
+	if err := database.Get(ctx, db, "library_folders", ver.LibraryFolderID, &lf); err != nil {
 		return nil, err
 	}
-	if err := store.Get(ctx, db, "titles", it.TitleID, &ti); err != nil {
+	if err := database.Get(ctx, db, "titles", it.TitleID, &ti); err != nil {
 		return nil, err
 	}
 	year := 0
@@ -877,7 +880,7 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 		return imp, nil
 	}
 	// A run cut off after placing left an import in placing: reuse it.
-	prior, err := store.Select[domain.Import](ctx, db, "imports", "download_id = ? AND state = 'placing' ORDER BY id DESC LIMIT 1", d.ID)
+	prior, err := database.Select[domain.Import](ctx, db, "imports", "download_id = ? AND state = 'placing' ORDER BY id DESC LIMIT 1", d.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -912,9 +915,9 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 			moved = true
 		}
 		if imp.ID > 0 {
-			return store.Update(tx, "imports", imp, by)
+			return database.Update(tx, "imports", imp, by)
 		}
-		_, err := store.Insert(tx, "imports", imp, by)
+		_, err := database.Insert(tx, "imports", imp, by)
 		return err
 	}); err != nil {
 		return nil, err
@@ -954,7 +957,7 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 				}
 			}
 			imp.Result[sameIdx].HeldAside = to
-			if err := im.Store.Write(ctx, func(tx *sql.Tx) error { return store.Update(tx, "imports", imp, by) }); err != nil {
+			if err := im.Store.Write(ctx, func(tx *sql.Tx) error { return database.Update(tx, "imports", imp, by) }); err != nil {
 				return imp, err
 			}
 			if err := moveFile(oldAbs, to); err != nil {
@@ -1009,7 +1012,7 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 							break
 						}
 					}
-					err = im.Store.Write(ctx, func(tx *sql.Tx) error { return store.Update(tx, "imports", imp, by) })
+					err = im.Store.Write(ctx, func(tx *sql.Tx) error { return database.Update(tx, "imports", imp, by) })
 				}
 				if err == nil {
 					err = moveFile(oldAbs, to)
@@ -1080,7 +1083,7 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 				relPath += "#replaced-" + strconv.FormatInt(up.old.ID, 10)
 			}
 			if _, err := tx.Exec("UPDATE files SET state = 'replaced', relative_path = ?, updated_at = ?, updated_by = ? WHERE id = ?",
-				relPath, store.FormatTime(now), actorText(by), up.old.ID); err != nil {
+				relPath, database.FormatTime(now), actorText(by), up.old.ID); err != nil {
 				return err
 			}
 		}
@@ -1099,7 +1102,7 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 			if err != nil {
 				return err
 			}
-			p := parse.Parse(filepath.Base(step.SourceFile), parse.Hints{})
+			p := releasename.Parse(filepath.Base(step.SourceFile), releasename.Hints{})
 			size := sizes[i]
 			name := strings.TrimSuffix(filepath.Base(step.SourceFile), filepath.Ext(step.SourceFile))
 			newName = name
@@ -1116,7 +1119,7 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 			if g := p.Group.Value; g != "" {
 				f.Group = &g
 			}
-			id, err := store.Insert(tx, "files", f, by)
+			id, err := database.Insert(tx, "files", f, by)
 			if err != nil {
 				return err
 			}
@@ -1130,7 +1133,7 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 		default:
 			imp.State = "failed"
 		}
-		if err := store.Update(tx, "imports", imp, by); err != nil {
+		if err := database.Update(tx, "imports", imp, by); err != nil {
 			return err
 		}
 		ge := false

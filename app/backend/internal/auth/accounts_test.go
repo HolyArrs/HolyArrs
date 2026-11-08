@@ -11,16 +11,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/routehits"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
 // gated is a fixture with the permission gate and a secrets vault, like the
 // real program.
 func gated(t *testing.T, opt Options) *fixture {
 	t.Helper()
-	s, err := store.Open(t.TempDir(), store.Options{})
+	s, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -38,7 +38,7 @@ func gated(t *testing.T, opt Options) *fixture {
 	m.HandleFunc("POST /api/v1/titles", okHandler)
 	m.HandleFunc("GET /api/v1/not-in-the-table", okHandler)
 	a.Routes(m)
-	srv := httptest.NewServer(a.Middleware(routehits.Wrap(Gate(m))))
+	srv := httptest.NewServer(a.Middleware(webserver.RecordRouteHits(Gate(m))))
 	t.Cleanup(srv.Close)
 	return &fixture{srv: srv, a: a, s: s, clock: c}
 }
@@ -494,7 +494,7 @@ func newFakePlex(t *testing.T) *fakePlex {
 	m.HandleFunc("GET /api/v2/resources", func(w http.ResponseWriter, _ *http.Request) {
 		_, _ = fmt.Fprintf(w, `[{"clientIdentifier":%q,"provides":"server"}]`, p.server)
 	})
-	p.srv = httptest.NewServer(routehits.Wrap(m))
+	p.srv = httptest.NewServer(webserver.RecordRouteHits(m))
 	t.Cleanup(p.srv.Close)
 	return p
 }
@@ -638,7 +638,7 @@ func fakeMediaServer(t *testing.T, logouts *atomic.Int32) *httptest.Server {
 		}
 		w.WriteHeader(204)
 	})
-	s := httptest.NewServer(routehits.Wrap(m))
+	s := httptest.NewServer(webserver.RecordRouteHits(m))
 	t.Cleanup(s.Close)
 	return s
 }

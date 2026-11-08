@@ -10,8 +10,8 @@ import (
 	"testing"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/routehits"
 )
 
 // routePackages are the packages that register /api/v1 routes on the
@@ -49,7 +49,7 @@ func generateSpec(t *testing.T) []byte {
 	}
 	var registered []string
 	for _, dir := range routePackages {
-		rs, err := routehits.Registered(dir)
+		rs, err := webserver.RegisteredRoutes(dir)
 		if err != nil {
 			t.Fatal(err)
 		}

@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 func (w *world) addDownloader(t *testing.T, d *domain.Downloader) int64 {
@@ -26,7 +26,7 @@ func (w *world) addDownloader(t *testing.T, d *domain.Downloader) int64 {
 	if d.Category == "" {
 		d.Category = "holyarrs"
 	}
-	if err := w.s.Write(context.Background(), func(tx *sql.Tx) error { _, err := store.Insert(tx, "downloaders", d, domain.System); return err }); err != nil {
+	if err := w.s.Write(context.Background(), func(tx *sql.Tx) error { _, err := database.Insert(tx, "downloaders", d, domain.System); return err }); err != nil {
 		t.Fatal(err)
 	}
 	return d.ID
@@ -35,7 +35,7 @@ func (w *world) addDownloader(t *testing.T, d *domain.Downloader) int64 {
 func (w *world) downloader(t *testing.T, id int64) domain.Downloader {
 	t.Helper()
 	var d domain.Downloader
-	if err := store.Get(context.Background(), w.s.Read(), "downloaders", id, &d); err != nil {
+	if err := database.Get(context.Background(), w.s.Read(), "downloaders", id, &d); err != nil {
 		t.Fatal(err)
 	}
 	return d
@@ -85,7 +85,7 @@ func TestGrabSkipsARestingDownloader(t *testing.T) {
 	if d := w.downloader(t, dead); d.FailCount != 2 {
 		t.Fatalf("the resting Downloader was asked: %+v", d)
 	} // The sent Event names the movie, the Release, the Downloader and the folder.
-	es, _, _ := w.s.Events(context.Background(), store.EventFilter{Kinds: []string{"download_sent"}})
+	es, _, _ := w.s.Events(context.Background(), database.EventFilter{Kinds: []string{"download_sent"}})
 	if len(es) != 1 || es[0].TitleID == nil || es[0].SlotID == nil || es[0].Data["release"] == nil || es[0].Data["downloader"] == nil {
 		t.Fatalf("sent events %+v", es)
 	}
@@ -187,21 +187,21 @@ func TestGrabsToOneHostAreSpaced(t *testing.T) {
 	var slot2, rel2 int64
 	if err := w.s.Write(ctx, func(tx *sql.Tx) error {
 		var sl domain.Slot
-		if err := store.Get(ctx, w.s.Read(), "slots", w.slotID, &sl); err != nil {
+		if err := database.Get(ctx, w.s.Read(), "slots", w.slotID, &sl); err != nil {
 			return err
 		}
 		it := &domain.Item{TitleID: 1, Kind: "movie"}
-		if _, err := store.Insert(tx, "items", it, domain.System); err != nil {
+		if _, err := database.Insert(tx, "items", it, domain.System); err != nil {
 			return err
 		}
 		s2 := &domain.Slot{ItemID: it.ID, VersionID: sl.VersionID, State: domain.SlotChosen}
-		if _, err := store.Insert(tx, "slots", s2, domain.System); err != nil {
+		if _, err := database.Insert(tx, "slots", s2, domain.System); err != nil {
 			return err
 		}
 		r := &domain.Release{SourceID: 1, Name: "Other.2024.1080p.WEB.H264-HOLYARRS", LinkRef: "http://fake-indexer/other.torrent", Protocol: "torrent",
 			Size: 1, InfoHash: ptr("1111111111111111111111111111111111111111"), Flags: []string{}, Parsed: map[string]any{}, MatchedSlotIDs: []int64{s2.ID},
 			Verdict: map[string]any{}, FoundBy: "auto_search", State: "chosen"}
-		if _, err := store.Insert(tx, "releases", r, domain.System); err != nil {
+		if _, err := database.Insert(tx, "releases", r, domain.System); err != nil {
 			return err
 		}
 		if _, err := tx.Exec("UPDATE slots SET chosen_release_id = ? WHERE id = ?", r.ID, s2.ID); err != nil {
@@ -252,7 +252,7 @@ func TestSabnzbdThroughTheManager(t *testing.T) {
 	if err := w.s.Write(ctx, func(tx *sql.Tx) error {
 		r := &domain.Release{SourceID: 1, Name: "Lab.Usenet.Movie.2024.1080p.WEB.H264-HOLYARRS", LinkRef: "http://fake-indexer/good.nzb", Protocol: "usenet",
 			Size: 1238952, Flags: []string{}, Parsed: map[string]any{}, MatchedSlotIDs: []int64{w.slotID}, Verdict: map[string]any{}, FoundBy: "auto_search", State: "chosen"}
-		if _, err := store.Insert(tx, "releases", r, domain.System); err != nil {
+		if _, err := database.Insert(tx, "releases", r, domain.System); err != nil {
 			return err
 		}
 		relID = r.ID

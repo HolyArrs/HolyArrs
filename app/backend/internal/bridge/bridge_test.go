@@ -14,10 +14,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Bridges (#96) against a fake Jackett and a fake Prowlarr on this machine.
@@ -70,9 +71,9 @@ func (f *fakeJackett) set(ids ...string) {
 	f.sites = ids
 }
 
-func openStore(t *testing.T) (*store.Store, *secrets.Vault) {
+func openStore(t *testing.T) (*database.Store, *secrets.Vault) {
 	t.Helper()
-	s, err := store.Open(t.TempDir(), store.Options{})
+	s, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}

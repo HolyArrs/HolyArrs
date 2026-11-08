@@ -8,8 +8,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // LogLine is one torrent log line (the API's line format).
@@ -56,7 +56,7 @@ type matchWrite struct {
 // persister batches what the reader saw into dl_items, torrent_log and
 // dl_match_queue. It writes nothing when nothing changed.
 type persister struct {
-	db    *store.Store
+	db    *database.Store
 	lines LinesFunc
 	now   func() time.Time
 
@@ -177,7 +177,7 @@ func (p *persister) flush(ctx context.Context) error {
 	}
 	p.dirty, p.logs, p.matches, p.urgent, p.flushed = map[itemKey]itemWrite{}, nil, nil, false, now
 	p.mu.Unlock()
-	at := now.UTC().Format(store.TimeLayout)
+	at := now.UTC().Format(database.TimeLayout)
 	err := p.db.Write(ctx, func(tx *sql.Tx) error {
 		for k, w := range dirty {
 			if w.gone {
@@ -200,7 +200,7 @@ func (p *persister) flush(ctx context.Context) error {
 		for _, l := range logs {
 			for _, line := range l.lines {
 				if _, err := tx.Exec("INSERT INTO torrent_log (downloader_id, hash, at, kind, summary) VALUES (?, ?, ?, ?, ?)",
-					l.id, strings.ToLower(l.key), l.at.UTC().Format(store.TimeLayout), line.Kind, line.Summary); err != nil {
+					l.id, strings.ToLower(l.key), l.at.UTC().Format(database.TimeLayout), line.Kind, line.Summary); err != nil {
 					return err
 				}
 			}
@@ -225,7 +225,7 @@ func (p *persister) flush(ctx context.Context) error {
 			}
 		}
 		if sweep {
-			cut := now.Add(-goneKeep).UTC().Format(store.TimeLayout)
+			cut := now.Add(-goneKeep).UTC().Format(database.TimeLayout)
 			if _, err := tx.Exec("DELETE FROM dl_items WHERE gone_at IS NOT NULL AND gone_at < ?", cut); err != nil {
 				return err
 			}

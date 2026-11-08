@@ -2,14 +2,13 @@ package auth
 
 import (
 	"context"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"net/http"
 	"net/http/httptest"
 	"regexp"
 	"slices"
 	"strings"
 	"testing"
-
-	"github.com/HolyArrs/holyarrs/app/backend/internal/routehits"
 )
 
 // allRoutes is every route the server registers on its mux: the /api/v1
@@ -19,7 +18,7 @@ func allRoutes(t *testing.T) []string {
 	t.Helper()
 	seen := map[string]bool{}
 	for _, dir := range []string{".", "../api", "../backup"} {
-		rs, err := routehits.Registered(dir)
+		rs, err := webserver.RegisteredRoutes(dir)
 		if err != nil {
 			t.Fatal(err)
 		}

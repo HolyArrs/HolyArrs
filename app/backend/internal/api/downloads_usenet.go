@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Usenet extras on the Downloads page: Retry for a failed job, and the
@@ -168,7 +168,7 @@ func (a *API) rekeyItem(ctx context.Context, downloaderID int64, oldID, newID st
 			}
 		}
 		_, err := tx.ExecContext(ctx, "INSERT INTO torrent_log (downloader_id, hash, at, kind, summary) VALUES (?, ?, ?, ?, ?)",
-			downloaderID, n, time.Now().UTC().Format(store.TimeLayout), "retried", "Sent back to the queue to try again")
+			downloaderID, n, time.Now().UTC().Format(database.TimeLayout), "retried", "Sent back to the queue to try again")
 		return err
 	})
 	if err == nil && o != n {

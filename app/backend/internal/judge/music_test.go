@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/parse"
 )
 
 var musicLib = []TitleRef{
@@ -92,7 +92,7 @@ func TestMusicVerdicts(t *testing.T) {
 	for _, c := range musicVerdicts {
 		t.Run(c.id, func(t *testing.T) {
 			name := musicCase(t, c.id)
-			p := parse.Parse(name, parse.Hints{Music: true})
+			p := releasename.Parse(name, releasename.Hints{Music: true})
 			rel := Release{Name: name, Parse: p, Size: c.size << 20, Protocol: "torrent", PublishedAt: time.Now().Add(-time.Hour)}
 			m := MatchTitle(p, musicLib)
 			if m.Title == nil || m.Title.ID != 1 {
@@ -137,11 +137,11 @@ func TestMusicGoodEnoughAndBetter(t *testing.T) {
 	if cur.Step != "lossy_high" {
 		t.Fatalf("current %+v", cur)
 	}
-	p := parse.Parse(flac, parse.Hints{Music: true})
+	p := releasename.Parse(flac, releasename.Hints{Music: true})
 	if !Gains(Release{Name: flac, Parse: p}, rules, &cur) {
 		t.Fatal("lossless should replace a 320 copy")
 	}
-	low := parse.Parse(mp3, parse.Hints{Music: true})
+	low := releasename.Parse(mp3, releasename.Hints{Music: true})
 	fl := CurrentOf(flac, time.Now(), rules)
 	if Gains(Release{Name: mp3, Parse: low}, rules, &fl) {
 		t.Fatal("a 320 copy never replaces lossless")
@@ -171,7 +171,7 @@ func TestMusicSteps(t *testing.T) {
 		"A - B (2019) [WAV]": "lossless", "A - B (2019) [FLAC 16-48]": "lossless", "A - B (2019) [DSD]": "lossless_hires",
 		"A - B (2019) [24bit]": "lossless_hires", "A - B (2019)": "", "A - B (2019) [Lossless]": "lossless",
 	} {
-		if got := StepFor(parse.Parse(in, parse.Hints{Music: true})); got != want {
+		if got := StepFor(releasename.Parse(in, releasename.Hints{Music: true})); got != want {
 			t.Errorf("%s: %q, want %q", in, got, want)
 		}
 	}
@@ -198,7 +198,7 @@ func TestMusicMatching(t *testing.T) {
 		{"Velvet Cartography Harbour Songs 2021 FLAC", 1, 11, false, false},
 	}
 	for _, c := range cases {
-		p := parse.Parse(c.name, parse.Hints{Music: true})
+		p := releasename.Parse(c.name, releasename.Hints{Music: true})
 		m := MatchTitle(p, musicLib)
 		if m.Title == nil || m.Title.ID != c.artist {
 			t.Errorf("%s: artist %+v", c.name, m)
@@ -215,10 +215,10 @@ func TestMusicMatching(t *testing.T) {
 		}
 	}
 	// A music name never matches a movie, nor a movie name an artist.
-	if m := MatchTitle(parse.Parse("Velvet.Cartography.2019.1080p.WEB-DL-QUILL", parse.Hints{}), musicLib); m.Title == nil || m.Title.ID != 4 {
+	if m := MatchTitle(releasename.Parse("Velvet.Cartography.2019.1080p.WEB-DL-QUILL", releasename.Hints{}), musicLib); m.Title == nil || m.Title.ID != 4 {
 		t.Errorf("movie matched %+v", m)
 	}
-	if m := MatchTitle(parse.Parse("VA - Summer Static Vol 3 (2020) [MP3 320]", parse.Hints{Music: true}), musicLib); m.Title != nil {
+	if m := MatchTitle(releasename.Parse("VA - Summer Static Vol 3 (2020) [MP3 320]", releasename.Hints{Music: true}), musicLib); m.Title != nil {
 		t.Errorf("various artists matched %+v", m)
 	}
 }
@@ -237,7 +237,7 @@ func TestMusicMatchingSameYearRefused(t *testing.T) {
 		{"Velvet Cartography - Echoes (2021) [FLAC]", []AlbumRef{{PartID: 1, Name: "Echoes", Year: 2020}, {PartID: 2, Name: "Echoes", Year: 2022}}},
 	}
 	for _, c := range cases {
-		p := parse.Parse(c.name, parse.Hints{Music: true})
+		p := releasename.Parse(c.name, releasename.Hints{Music: true})
 		a, _, why := MatchAlbum(p, "Velvet Cartography", c.albums)
 		if a != nil || !strings.Contains(why, "2 albums are called") {
 			t.Errorf("%s: got %+v, why %q", c.name, a, why)
@@ -249,7 +249,7 @@ func TestMusicMatchingSameYearRefused(t *testing.T) {
 // with a reason that says why, never dropped silently.
 func TestMusicSafetyWordExplained(t *testing.T) {
 	name := "Velvet Cartography - Password Songs (2019) [FLAC]"
-	p := parse.Parse(name, parse.Hints{Music: true})
+	p := releasename.Parse(name, releasename.Hints{Music: true})
 	v := Judge(Release{Name: name, Parse: p, Size: 400 << 20}, SlotSet{Match: MatchTitle(p, musicLib), SlotIDs: []int64{1}, RuntimeMinutes: 45, Out: true}, domain.LosslessFirst())
 	if v.Passed || !strings.Contains(fmtReasons(v), "archive needs a password") {
 		t.Fatalf("%+v", v.Reasons)

@@ -11,10 +11,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/supervisor"
 )
 
 func TestScaleSeededSourceUsesItsStoredLocalNetworkPermission(t *testing.T) {
@@ -25,7 +25,7 @@ func TestScaleSeededSourceUsesItsStoredLocalNetworkPermission(t *testing.T) {
 	}))
 	defer feed.Close()
 
-	s, err := store.Open(t.TempDir(), store.Options{})
+	s, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -34,7 +34,7 @@ func TestScaleSeededSourceUsesItsStoredLocalNetworkPermission(t *testing.T) {
 	if err := seedScale(t, s, spec, feed.URL, filepath.Join(t.TempDir(), "media")); err != nil {
 		t.Fatal(err)
 	}
-	sources, err := store.Select[domain.Source](context.Background(), s.Read(), "sources", "1 ORDER BY id")
+	sources, err := database.Select[domain.Source](context.Background(), s.Read(), "sources", "1 ORDER BY id")
 	if err != nil || len(sources) != 1 {
 		t.Fatalf("stored Sources %d: %v", len(sources), err)
 	}
@@ -49,7 +49,7 @@ func TestScaleSeededSourceUsesItsStoredLocalNetworkPermission(t *testing.T) {
 }
 
 func TestScaleLiveJobsBlocksOnlyQueuedAndRunning(t *testing.T) {
-	s, err := store.Open(t.TempDir(), store.Options{})
+	s, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -57,9 +57,9 @@ func TestScaleLiveJobsBlocksOnlyQueuedAndRunning(t *testing.T) {
 	now := time.Now().UTC()
 	err = s.Write(context.Background(), func(tx *sql.Tx) error {
 		for i, state := range []string{"queued", "running", "done", "failed", "cancelled"} {
-			at := store.FormatTime(now.Add(time.Duration(i+1) * time.Hour))
+			at := database.FormatTime(now.Add(time.Duration(i+1) * time.Hour))
 			_, err := tx.Exec(`INSERT INTO jobs (created_at, created_by, updated_at, updated_by, kind, state, attempt, run_after, asked_by) VALUES (?, '{"kind":"system"}', ?, '{"kind":"system"}', ?, ?, ?, ?, '{"kind":"system"}')`,
-				store.FormatTime(now), store.FormatTime(now), "fixture-"+state, state, i+1, at)
+				database.FormatTime(now), database.FormatTime(now), "fixture-"+state, state, i+1, at)
 			if err != nil {
 				return err
 			}
@@ -80,13 +80,13 @@ func TestScaleLiveJobsBlocksOnlyQueuedAndRunning(t *testing.T) {
 }
 
 func TestScaleQuietWaitsForFirstSchedulePass(t *testing.T) {
-	reg := supervisor.NewRegistry()
-	reg.Set(supervisor.StageKey("schedules"), "stage", "Schedules", supervisor.Running, "")
+	reg := jobs.NewRegistry()
+	reg.Set(jobs.StageKey("schedules"), "stage", "Schedules", jobs.Running, "")
 	if scaleSchedulerPassed(reg) {
 		t.Fatal("scheduler without a completed pass was treated as quiet")
 	}
 	now := time.Now().UTC()
-	reg.Update(supervisor.StageKey("schedules"), func(status *supervisor.Status) { status.LastPass = &now })
+	reg.Update(jobs.StageKey("schedules"), func(status *jobs.Status) { status.LastPass = &now })
 	if !scaleSchedulerPassed(reg) {
 		t.Fatal("completed first schedule pass did not unblock quiet detection")
 	}

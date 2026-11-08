@@ -14,8 +14,9 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/outside"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 )
 
 // DefaultReleaseFeed is the HolyArrs project's newest-release address.
@@ -168,7 +169,7 @@ func (e *Engine) ResetUpdate(ctx context.Context) {
 }
 
 func (e *Engine) saveSetting(ctx context.Context, key, value string) error {
-	now := store.FormatTime(time.Now())
+	now := database.FormatTime(time.Now())
 	by, _ := json.Marshal(domain.System)
 	return e.Store.Write(ctx, func(tx *sql.Tx) error {
 		_, err := tx.Exec(`INSERT INTO settings (grp, key, value, created_at, created_by, updated_at, updated_by) VALUES ('this_app', ?, ?, ?, ?, ?, ?)
@@ -211,17 +212,17 @@ func (e *Engine) client(ctx context.Context) *http.Client {
 // 404 or an empty list means nothing is published yet.
 func (e *Engine) readLatest(ctx context.Context, link string) (latest, page string, none bool, err error) {
 	caller := ctx
-	op, err := outside.Begin(ctx, outside.Target{Kind: "update_feed", Identity: []string{link}})
+	op, err := outbound.Begin(ctx, outbound.Target{Kind: "update_feed", Identity: []string{link}})
 	if err != nil {
 		return "", "", false, err
 	}
-	outcome := outside.Canceled
+	outcome := outbound.Canceled
 	defer func() { op.Finish(outcome) }()
 	ctx, cancel := op.AttemptContext(ctx, updateTimeout)
 	defer cancel()
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, link, nil)
 	if err != nil {
-		outcome = outside.TerminalFailure
+		outcome = outbound.TerminalFailure
 		return "", "", false, errors.New("the release feed is not a link")
 	}
 	req.Header.Set("Accept", "application/vnd.github+json, application/json;q=0.9, text/plain;q=0.8")
@@ -238,7 +239,7 @@ func (e *Engine) readLatest(ctx context.Context, link string) (latest, page stri
 	}
 	resp, err := c.Do(req)
 	if err != nil {
-		outcome = outside.HTTPOutcome(0, err, caller)
+		outcome = outbound.HTTPOutcome(0, err, caller)
 		return "", "", false, errors.New("the release feed did not answer")
 	}
 	b, err := io.ReadAll(io.LimitReader(resp.Body, updateMaxBody+1))
@@ -246,10 +247,10 @@ func (e *Engine) readLatest(ctx context.Context, link string) (latest, page stri
 		err = closeErr
 	}
 	if err != nil {
-		outcome = outside.HTTPOutcome(resp.StatusCode, err, caller)
+		outcome = outbound.HTTPOutcome(resp.StatusCode, err, caller)
 		return "", "", false, errors.New("the release feed's answer could not be read")
 	}
-	outcome = outside.HTTPOutcome(resp.StatusCode, nil, caller)
+	outcome = outbound.HTTPOutcome(resp.StatusCode, nil, caller)
 	if resp.StatusCode == http.StatusNotFound {
 		return "", "", true, nil
 	}
@@ -257,7 +258,7 @@ func (e *Engine) readLatest(ctx context.Context, link string) (latest, page stri
 		return "", "", false, fmt.Errorf("the release feed answered %d", resp.StatusCode)
 	}
 	if len(b) > updateMaxBody {
-		outcome = outside.TerminalFailure
+		outcome = outbound.TerminalFailure
 		return "", "", false, errors.New("the release feed's answer is too large")
 	}
 	text := strings.TrimSpace(string(b))
@@ -276,7 +277,7 @@ func (e *Engine) readLatest(ctx context.Context, link string) (latest, page stri
 		if strings.HasPrefix(text, "[") {
 			var list []release
 			if err := json.Unmarshal(b, &list); err != nil {
-				outcome = outside.TerminalFailure
+				outcome = outbound.TerminalFailure
 				return "", "", false, errors.New("the release feed's answer is not readable")
 			}
 			for _, r := range list {
@@ -289,7 +290,7 @@ func (e *Engine) readLatest(ctx context.Context, link string) (latest, page stri
 				return "", "", true, nil
 			}
 		} else if err := json.Unmarshal(b, &one); err != nil {
-			outcome = outside.TerminalFailure
+			outcome = outbound.TerminalFailure
 			return "", "", false, errors.New("the release feed's answer is not readable")
 		}
 		latest = one.Tag
@@ -301,10 +302,10 @@ func (e *Engine) readLatest(ctx context.Context, link string) (latest, page stri
 		latest = text
 	}
 	if latest == "" || len(latest) > 40 || strings.ContainsAny(latest, " \n\t<>\"") {
-		outcome = outside.TerminalFailure
+		outcome = outbound.TerminalFailure
 		return "", "", false, errors.New("the release feed's answer has no version")
 	}
-	outcome = outside.Success
+	outcome = outbound.Success
 	return latest, page, false, nil
 }
 

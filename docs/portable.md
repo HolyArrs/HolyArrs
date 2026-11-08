@@ -32,7 +32,7 @@ setting is a target within the container's hard limit. The option leaves normal
 build defaults unchanged. Python assembles the archives on the host, outside
 these container limits; apply host process limits separately when needed.
 
-The default matrix is Linux amd64, arm64, armv7 (`GOARM=7`), 386 and Windows
+The default matrix is Linux amd64, arm64, armv7 (`GOARM=7`) and Windows
 amd64. Every selected target must build or the command fails without
 publishing the output directory. To select a subset, pass `--targets` with
 comma-separated names. Linux amd64 uses `GOAMD64=v1`; arm64 uses `GOARM64=v8.0`.
@@ -124,7 +124,7 @@ lost. Test recovery with a disposable config copy first. See [Backups](backups.m
 | Windows amd64 | Native disposable first-run, restart and backup/recovery when a receipt records them | Service installation, ACL hardening and a separate user's experience |
 | Linux amd64 | Cross-build plus native Linux runtime only when a receipt records it | NAS OS and catalog installation |
 | Linux arm64 | Cross-build | Native ARM64 hardware and day-long resource gates |
-| Linux armv7 and 386 | Mandatory selected-target cross-build for these candidates | Native runtime and platform installation; historical support policy remains in decision 0002 |
+| Linux armv7 | Mandatory selected-target cross-build for these candidates | Native runtime and platform installation; historical support policy remains in decision 0002 |
 | Unraid, Synology, QNAP, TrueNAS | Unraid template preparation only | Every actual NAS installation check |
 
 Exact tested versions and hashes belong in the candidate's acceptance receipt.

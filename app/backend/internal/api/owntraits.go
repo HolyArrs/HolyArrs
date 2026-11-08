@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // OwnTraitView is one of your own traits (#97). Key is how Pick rules name it.
@@ -43,7 +43,7 @@ func ownTraitError(w http.ResponseWriter, err error) {
 	switch {
 	case errors.As(err, &fe):
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": fe.Text, "field": fe.Field})
-	case errors.Is(err, store.ErrNotFound):
+	case errors.Is(err, database.ErrNotFound):
 		fail(w, http.StatusNotFound, "no such trait")
 	case errors.Is(err, library.ErrOwnTraitName):
 		writeJSON(w, http.StatusConflict, map[string]string{"error": "Another of your traits already has this name.", "field": "name"})

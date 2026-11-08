@@ -11,8 +11,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 )
 
 // A missing master key for a database with saved secrets: the app keeps
@@ -21,7 +21,7 @@ import (
 func TestMissingKeyKeepsAPlainPage(t *testing.T) {
 	t.Setenv(secrets.EnvKeyFile, "")
 	dir := t.TempDir()
-	s, err := store.Open(dir, store.Options{})
+	s, err := database.Open(dir, database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}

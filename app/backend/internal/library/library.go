@@ -18,7 +18,9 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/judge"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/naming"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/parse"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
@@ -86,7 +88,7 @@ type GateDefaults struct {
 
 // ReadGateDefaults reads the Release gate settings (open choice 1; the
 // recommended "released" + 0 days, bulk searches respect the gate, when unset).
-func ReadGateDefaults(ctx context.Context, db store.Lister) (GateDefaults, error) {
+func ReadGateDefaults(ctx context.Context, db database.Lister) (GateDefaults, error) {
 	g := GateDefaults{Gate: GateReleased, BulkRespectsGate: true}
 	rows, err := db.QueryContext(ctx, "SELECT key, value FROM settings WHERE grp = 'what_to_pick' AND key IN ('release_gate', 'gate_delay_days', 'bulk_search_respects_gate')")
 	if err != nil {
@@ -115,7 +117,7 @@ func ReadGateDefaults(ctx context.Context, db store.Lister) (GateDefaults, error
 }
 
 // SetGateDefaults stores the Release gate settings.
-func SetGateDefaults(ctx context.Context, s *store.Store, g GateDefaults, by domain.Actor) error {
+func SetGateDefaults(ctx context.Context, s *database.Store, g GateDefaults, by domain.Actor) error {
 	if !ValidGate(g.Gate) {
 		return ErrBadGate
 	}
@@ -123,7 +125,7 @@ func SetGateDefaults(ctx context.Context, s *store.Store, g GateDefaults, by dom
 		return ErrBadDelay
 	}
 	return s.Write(ctx, func(tx *sql.Tx) error {
-		now := store.FormatTime(time.Now())
+		now := database.FormatTime(time.Now())
 		for k, v := range map[string]string{"release_gate": g.Gate, "gate_delay_days": strconv.Itoa(g.DelayDays),
 			"bulk_search_respects_gate": strconv.FormatBool(g.BulkRespectsGate)} {
 			_, err := tx.Exec(`INSERT INTO settings (grp, key, value, created_at, created_by, updated_at, updated_by) VALUES ('what_to_pick', ?, ?, ?, ?, ?, ?)
@@ -138,7 +140,7 @@ func SetGateDefaults(ctx context.Context, s *store.Store, g GateDefaults, by dom
 }
 
 // TitleByTMDB finds a movie Title by TMDB id; 0 when there is none.
-func TitleByTMDB(ctx context.Context, db store.Querier, tmdbID string) (int64, error) {
+func TitleByTMDB(ctx context.Context, db database.Querier, tmdbID string) (int64, error) {
 	var id int64
 	err := db.QueryRowContext(ctx, "SELECT id FROM titles WHERE kind = 'movie' AND state != 'removed' AND json_extract(source_ids, '$.tmdb') = ?", tmdbID).Scan(&id)
 	if errors.Is(err, sql.ErrNoRows) {
@@ -148,7 +150,7 @@ func TitleByTMDB(ctx context.Context, db store.Querier, tmdbID string) (int64, e
 }
 
 // OnNeverAdd reports whether a TMDB id is on the Never-add list.
-func OnNeverAdd(ctx context.Context, db store.Querier, tmdbID string) (bool, error) {
+func OnNeverAdd(ctx context.Context, db database.Querier, tmdbID string) (bool, error) {
 	var n int
 	err := db.QueryRowContext(ctx, "SELECT count(*) FROM never_add WHERE kind = 'movie' AND json_extract(source_ids, '$.tmdb') = ?", tmdbID).Scan(&n)
 	return n > 0, err
@@ -159,7 +161,7 @@ func OnNeverAdd(ctx context.Context, db store.Querier, tmdbID string) (bool, err
 // Release gate and the movie's dates. It is refused when the movie is
 // already in the Library, on the Never-add list, or the Library folder is
 // not usable. Queuing the follow-up Jobs is the caller's part.
-func AddMovie(ctx context.Context, s *store.Store, m metadata.Movie, opt AddOptions, downloadPaths []string, now time.Time, by domain.Actor) (int64, error) {
+func AddMovie(ctx context.Context, s *database.Store, m metadata.Movie, opt AddOptions, downloadPaths []string, now time.Time, by domain.Actor) (int64, error) {
 	tmdbID := m.IDs["tmdb"]
 	if tmdbID == "" {
 		return 0, ErrNoMetadataIDs
@@ -195,7 +197,7 @@ func AddMovie(ctx context.Context, s *store.Store, m metadata.Movie, opt AddOpti
 	db := s.Read()
 	var lf domain.LibraryFolder
 	if opt.LibraryFolderID == 0 {
-		fs, err := store.Select[domain.LibraryFolder](ctx, db, "library_folders", "kind = 'movie' ORDER BY id LIMIT 1")
+		fs, err := database.Select[domain.LibraryFolder](ctx, db, "library_folders", "kind = 'movie' ORDER BY id LIMIT 1")
 		if err != nil {
 			return 0, err
 		}
@@ -203,7 +205,7 @@ func AddMovie(ctx context.Context, s *store.Store, m metadata.Movie, opt AddOpti
 			return 0, ErrNoFolder
 		}
 		lf = fs[0]
-	} else if err := store.Get(ctx, db, "library_folders", opt.LibraryFolderID, &lf); errors.Is(err, store.ErrNotFound) {
+	} else if err := database.Get(ctx, db, "library_folders", opt.LibraryFolderID, &lf); errors.Is(err, database.ErrNotFound) {
 		return 0, ErrNoFolder
 	} else if err != nil {
 		return 0, err
@@ -275,7 +277,7 @@ func AddMovie(ctx context.Context, s *store.Store, m metadata.Movie, opt AddOpti
 			ReleaseGate: gate, GateDelayDays: delay, MusicTypes: []string{}, WhyAdded: opt.WhyAdded, Artwork: []string{},
 			State: "active", GateDriver: driver, GateOpensAt: opens}
 		applyMovie(t, m, now)
-		if _, err := store.Insert(tx, "titles", t, by); err != nil {
+		if _, err := database.Insert(tx, "titles", t, by); err != nil {
 			return err
 		}
 		if err := syncMovieCollectionTx(ctx, tx, t.ID, m); err != nil {
@@ -286,7 +288,7 @@ func AddMovie(ctx context.Context, s *store.Store, m metadata.Movie, opt AddOpti
 			rt := m.Runtime
 			it.Runtime = &rt
 		}
-		if _, err := store.Insert(tx, "items", it, by); err != nil {
+		if _, err := database.Insert(tx, "items", it, by); err != nil {
 			return err
 		}
 		year := 0
@@ -299,7 +301,7 @@ func AddMovie(ctx context.Context, s *store.Store, m metadata.Movie, opt AddOpti
 		}
 		v := &domain.Version{TitleID: t.ID, Label: "Main", PickRulesID: prID, LibraryFolderID: lf.ID,
 			FolderName: folderName, KeepUpToDate: keep, IsMain: true}
-		if _, err := store.Insert(tx, "versions", v, by); err != nil {
+		if _, err := database.Insert(tx, "versions", v, by); err != nil {
 			return err
 		}
 		reason := gateReason(driver, opens)
@@ -309,7 +311,7 @@ func AddMovie(ctx context.Context, s *store.Store, m metadata.Movie, opt AddOpti
 			why := "adopted from " + opt.Adopt.FolderName
 			sl.LastReason = &why
 		}
-		if _, err := store.Insert(tx, "slots", sl, by); err != nil {
+		if _, err := database.Insert(tx, "slots", sl, by); err != nil {
 			return err
 		}
 		if opt.Adopt != nil && opt.Adopt.File != "" {
@@ -380,7 +382,7 @@ func gateReason(driver string, opens *time.Time) string {
 }
 
 func sortName(n string) string {
-	c := parse.CleanName(n)
+	c := releasename.CleanName(n)
 	for _, a := range []string{"the ", "a ", "an "} {
 		if strings.HasPrefix(c, a) {
 			return strings.TrimPrefix(c, a)
@@ -395,7 +397,7 @@ func sortName(n string) string {
 func adoptFile(ctx context.Context, tx *sql.Tx, a Adoption, slotID, versionID, pickRulesID int64, keep bool, now time.Time, by domain.Actor) error {
 	ext := path.Ext(a.File)
 	release := strings.TrimSuffix(path.Base(a.File), ext)
-	p := parse.Parse(release, parse.Hints{Size: a.Size})
+	p := releasename.Parse(release, releasename.Hints{Size: a.Size})
 	f := &domain.File{SlotIDs: []int64{slotID}, VersionID: versionID, RelativePath: a.File, Size: a.Size, AddedAt: now,
 		Quality:   domain.Quality{Resolution: p.Resolution.Value, Source: p.Source.Value, Codec: p.Codec.Value, HDR: p.HDR.Value},
 		Languages: inspectedLanguages(a.MediaInfo), MediaInfo: map[string]any{"step": judge.StepFor(p)}, ReleaseName: &release, Origin: "adopted",
@@ -409,12 +411,12 @@ func adoptFile(ctx context.Context, tx *sql.Tx, a Adoption, slotID, versionID, p
 	if g := p.Group.Value; g != "" {
 		f.Group = &g
 	}
-	fileID, err := store.Insert(tx, "files", f, by)
+	fileID, err := database.Insert(tx, "files", f, by)
 	if err != nil {
 		return err
 	}
 	var pr domain.PickRules
-	if err := store.Get(ctx, tx, "pick_rules", pickRulesID, &pr); err != nil {
+	if err := database.Get(ctx, tx, "pick_rules", pickRulesID, &pr); err != nil {
 		return err
 	}
 	ge := judge.ReachesGoodEnough(release, pr.Body)

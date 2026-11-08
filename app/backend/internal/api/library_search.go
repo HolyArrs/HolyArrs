@@ -9,6 +9,7 @@ import (
 
 	"golang.org/x/text/unicode/norm"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
@@ -69,7 +70,7 @@ func (a *API) librarySearch(w http.ResponseWriter, r *http.Request) {
 	}
 	ctx := withLookupMemo(r.Context())
 	if kind != "people" {
-		ts, err := a.s.Store.SearchTitles(ctx, term)
+		ts, err := store.SearchTitles(ctx, a.s.Store, term)
 		if errors.Is(err, store.ErrTitleSearchQuery) {
 			fail(w, http.StatusBadRequest, err.Error())
 			return
@@ -122,7 +123,7 @@ func (a *API) librarySearch(w http.ResponseWriter, r *http.Request) {
 
 func (a *API) libraryAlbums(r *http.Request, words []string, visible func(domain.Title) bool) ([]LibraryAlbum, error) {
 	pre, args := foldPrefilter("name", words)
-	ps, err := store.Select[domain.Part](r.Context(), a.s.Store.Read(), "parts", "kind = 'album' AND dropped_at IS NULL"+pre+" ORDER BY name, id", args...)
+	ps, err := database.Select[domain.Part](r.Context(), a.s.Store.Read(), "parts", "kind = 'album' AND dropped_at IS NULL"+pre+" ORDER BY name, id", args...)
 	if err != nil {
 		return nil, err
 	}
@@ -139,7 +140,7 @@ func (a *API) libraryAlbums(r *http.Request, words []string, visible func(domain
 		t, seen := artists[p.TitleID]
 		if !seen {
 			var x domain.Title
-			if err := store.Get(r.Context(), a.s.Store.Read(), "titles", p.TitleID, &x); err == nil && visible(x) {
+			if err := database.Get(r.Context(), a.s.Store.Read(), "titles", p.TitleID, &x); err == nil && visible(x) {
 				t = &x
 			}
 			artists[p.TitleID] = t
@@ -165,7 +166,7 @@ func (a *API) libraryAlbums(r *http.Request, words []string, visible func(domain
 
 func (a *API) libraryPeople(r *http.Request, words []string, visible func(domain.Title) bool) ([]LibraryPerson, error) {
 	pre, args := foldPrefilter("people", words)
-	ts, err := store.Select[domain.Title](r.Context(), a.s.Store.Read(), "titles", "state != 'removed' AND people != '[]'"+pre+" ORDER BY sort_name, id", args...)
+	ts, err := database.Select[domain.Title](r.Context(), a.s.Store.Read(), "titles", "state != 'removed' AND people != '[]'"+pre+" ORDER BY sort_name, id", args...)
 	if err != nil {
 		return nil, err
 	}

@@ -13,29 +13,30 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/live"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
-func setup(t *testing.T) (*httptest.Server, *store.Store, *jobs.Queue) {
+func setup(t *testing.T) (*httptest.Server, *database.Store, *jobs.Queue) {
 	t.Helper()
-	s, err := store.Open(t.TempDir(), store.Options{})
+	s, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = s.Close() })
 	err = s.Write(context.Background(), func(tx *sql.Tx) error {
-		_, err := store.Insert(tx, "library_folders", &domain.LibraryFolder{Path: t.TempDir(), Kind: "movie", Label: "Movies", Health: "ok", SameDiskAs: []int64{}}, domain.System)
+		_, err := database.Insert(tx, "library_folders", &domain.LibraryFolder{Path: t.TempDir(), Kind: "movie", Label: "Movies", Health: "ok", SameDiskAs: []int64{}}, domain.System)
 		return err
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
 	q := jobs.New(s, jobs.Options{Workers: 1, PollInterval: 5 * time.Millisecond})
-	hub := live.NewHub(live.Options{Heartbeat: time.Second})
+	hub := webserver.NewLiveHub(webserver.LiveOptions{Heartbeat: time.Second})
 	srv := httptest.NewServer(New(Server{Store: s, Queue: q, Live: hub, Metadata: metadata.Lab(), Version: "test"}).Handler())
 	t.Cleanup(srv.Close)
 	return srv, s, q
@@ -161,7 +162,7 @@ func TestLiveStreamOpens(t *testing.T) {
 }
 
 func TestSignInGuardsRoutes(t *testing.T) {
-	s, err := store.Open(t.TempDir(), store.Options{})
+	s, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -192,7 +193,7 @@ func TestSourcesShowMaskedKey(t *testing.T) {
 	srv, s, _ := setup(t)
 	ref := int64(42)
 	err := s.Write(context.Background(), func(tx *sql.Tx) error {
-		_, err := store.Insert(tx, "sources", &domain.Source{Name: "S", Protocol: "torrent", Format: "torznab", URL: "http://x/api",
+		_, err := database.Insert(tx, "sources", &domain.Source{Name: "S", Protocol: "torrent", Format: "torznab", URL: "http://x/api",
 			SecretRef: &ref, Kinds: []string{"movie"}, Categories: map[string][]int{}, State: "enabled", Extra: map[string]string{}}, domain.System)
 		return err
 	})
@@ -223,7 +224,7 @@ func TestMetadataSearchAndAttribution(t *testing.T) {
 // route: PUT /api/v1/settings/tmdb-token
 // route: GET /api/v1/settings/tmdb-token
 func TestNoTMDBKeyRoutes(t *testing.T) {
-	s, err := store.Open(t.TempDir(), store.Options{})
+	s, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}

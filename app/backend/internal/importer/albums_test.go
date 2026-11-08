@@ -14,8 +14,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 const albumRel = "Lab Band - First Light (2020) [FLAC]"
@@ -24,7 +24,7 @@ const albumRel = "Lab Band - First Light (2020) [FLAC]"
 // two when discs is 2) in one Version, and a finished Download filling
 // every track.
 type albumWorld struct {
-	s      *store.Store
+	s      *database.Store
 	dl     string
 	lib    string
 	dlID   int64
@@ -35,7 +35,7 @@ type albumWorld struct {
 
 func albumSetup(t *testing.T, discs int, files ...string) albumWorld {
 	t.Helper()
-	s, err := store.Open(t.TempDir(), store.Options{})
+	s, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -52,23 +52,23 @@ func albumSetup(t *testing.T, discs int, files ...string) albumWorld {
 		var pr int64
 		_ = tx.QueryRow("SELECT id FROM pick_rules WHERE name = 'Lossless first' ").Scan(&pr)
 		lf := &domain.LibraryFolder{Path: w.lib, Kind: "music", Label: "Music", Health: "ok", SameDiskAs: []int64{}}
-		if _, err := store.Insert(tx, "library_folders", lf, domain.System); err != nil {
+		if _, err := database.Insert(tx, "library_folders", lf, domain.System); err != nil {
 			return err
 		}
 		ti := &domain.Title{Kind: "artist", GateDriver: "none", Name: "Lab Band", SortName: "lab band", Aliases: []string{},
 			SourceIDs: map[string]string{}, MetadataSource: "local", NewPartsPolicy: "all", ReleaseGate: "released",
 			MusicTypes: []string{}, WhyAdded: "by_hand", Artwork: []string{}, Status: "running", State: "active", KeepUpToDate: true}
-		if _, err := store.Insert(tx, "titles", ti, domain.System); err != nil {
+		if _, err := database.Insert(tx, "titles", ti, domain.System); err != nil {
 			return err
 		}
 		v := &domain.Version{TitleID: ti.ID, Label: "Main", PickRulesID: pr, LibraryFolderID: lf.ID, FolderName: "Lab Band", IsMain: true, KeepUpToDate: true}
-		if _, err := store.Insert(tx, "versions", v, domain.System); err != nil {
+		if _, err := database.Insert(tx, "versions", v, domain.System); err != nil {
 			return err
 		}
 		rd := time.Date(2020, 5, 1, 0, 0, 0, 0, time.UTC)
 		p := &domain.Part{TitleID: ti.ID, Kind: "album", Name: "First Light", ReleaseDate: &rd, KeepUpToDate: true, SourceIDs: map[string]string{},
 			Pressings: []domain.Pressing{}, SecondaryTypes: []string{}, Included: true}
-		if _, err := store.Insert(tx, "parts", p, domain.System); err != nil {
+		if _, err := database.Insert(tx, "parts", p, domain.System); err != nil {
 			return err
 		}
 		names := []string{"Dawn", "Glass River", "Night Train", "Last Call"}
@@ -83,32 +83,32 @@ func albumSetup(t *testing.T, discs int, files ...string) albumWorld {
 			}
 			it := &domain.Item{TitleID: ti.ID, PartID: &p.ID, Kind: "track", Numbers: domain.Numbers{Disc: &disc, Track: &num}, Name: &name,
 				KeepUpToDate: true, SourceIDs: map[string]string{}}
-			if _, err := store.Insert(tx, "items", it, domain.System); err != nil {
+			if _, err := database.Insert(tx, "items", it, domain.System); err != nil {
 				return err
 			}
 			sl := &domain.Slot{ItemID: it.ID, VersionID: v.ID, State: domain.SlotDownloading}
-			if _, err := store.Insert(tx, "slots", sl, domain.System); err != nil {
+			if _, err := database.Insert(tx, "slots", sl, domain.System); err != nil {
 				return err
 			}
 			w.slots, w.tracks = append(w.slots, sl.ID), append(w.tracks, it.ID)
 		}
 		d := &domain.Downloader{Name: "q", Adapter: "qbittorrent", Protocol: "torrent", URL: "http://q", Category: "holyarrs", PathMap: []domain.PathMap{}, AfterImport: "leave", State: "ok"}
-		if _, err := store.Insert(tx, "downloaders", d, domain.System); err != nil {
+		if _, err := database.Insert(tx, "downloaders", d, domain.System); err != nil {
 			return err
 		}
 		src := &domain.Source{Name: "Lab", Protocol: "torrent", Format: "torznab", URL: "http://x", Kinds: []string{}, Categories: map[string][]int{}, State: "enabled", Extra: map[string]string{}}
-		if _, err := store.Insert(tx, "sources", src, domain.System); err != nil {
+		if _, err := database.Insert(tx, "sources", src, domain.System); err != nil {
 			return err
 		}
 		r := &domain.Release{SourceID: src.ID, Name: albumRel, LinkRef: "http://x/1.torrent", Protocol: "torrent", Flags: []string{}, Parsed: map[string]any{},
 			MatchedSlotIDs: w.slots, Verdict: map[string]any{}, FoundBy: "auto_search", State: "chosen"}
-		if _, err := store.Insert(tx, "releases", r, domain.System); err != nil {
+		if _, err := database.Insert(tx, "releases", r, domain.System); err != nil {
 			return err
 		}
 		w.relID = r.ID
 		dl := &domain.Download{DownloaderID: d.ID, ReleaseID: &r.ID, SlotIDs: w.slots, ExternalID: "album", Progress: 1, State: "finished",
 			FilesSeen: seen, SavePath: w.dl, StartedBy: domain.System}
-		if _, err := store.Insert(tx, "downloads", dl, domain.System); err != nil {
+		if _, err := database.Insert(tx, "downloads", dl, domain.System); err != nil {
 			return err
 		}
 		w.dlID = dl.ID
@@ -124,7 +124,7 @@ func albumSetup(t *testing.T, discs int, files ...string) albumWorld {
 func (w albumWorld) state(t *testing.T, i int) domain.SlotState {
 	t.Helper()
 	var sl domain.Slot
-	if err := store.Get(context.Background(), w.s.Read(), "slots", w.slots[i], &sl); err != nil {
+	if err := database.Get(context.Background(), w.s.Read(), "slots", w.slots[i], &sl); err != nil {
 		t.Fatal(err)
 	}
 	return sl.State
@@ -313,7 +313,7 @@ func (w albumWorld) haveTracks(t *testing.T, ext, listing string) {
 			name := listing
 			f := &domain.File{SlotIDs: []int64{w.slots[i]}, VersionID: verID, RelativePath: rel, Size: 4096, AddedAt: time.Now(), Languages: []string{},
 				MediaInfo: map[string]any{}, ReleaseName: &name, Origin: "imported", PlacedBy: "copy", Role: "main", State: "present"}
-			if _, err := store.Insert(tx, "files", f, domain.System); err != nil {
+			if _, err := database.Insert(tx, "files", f, domain.System); err != nil {
 				return err
 			}
 			if _, err := tx.Exec("UPDATE slots SET file_id = ? WHERE id = ?", f.ID, w.slots[i]); err != nil {

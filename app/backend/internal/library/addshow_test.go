@@ -7,13 +7,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
-func addShowService(t *testing.T) (*Service, *store.Store, *fakeShows, *fakeShows) {
+func addShowService(t *testing.T) (*Service, *database.Store, *fakeShows, *fakeShows) {
 	t.Helper()
 	s := open(t)
 	tmdb, maze := &fakeShows{}, &fakeShows{}
@@ -88,7 +89,7 @@ func TestAddShowSeasonChoices(t *testing.T) {
 				t.Errorf("states %s %s", eps["S01E01"].State, eps["S02E02"].State)
 			}
 			var ti domain.Title
-			_ = store.Get(ctx, s.Read(), "titles", id, &ti)
+			_ = database.Get(ctx, s.Read(), "titles", id, &ti)
 			if ti.Kind != "show" || *ti.SeasonChoice != c.choice || ti.NewPartsPolicy != "all" || *ti.EpisodeOrder != OrderAired ||
 				ti.MetadataSource != "tmdb" || ti.Status != "running" || ti.SourceIDs["tvdb"] != "200" || ti.RefreshedAt == nil {
 				t.Errorf("title %+v", ti)
@@ -111,11 +112,11 @@ func TestAddShowEpisodeOrders(t *testing.T) {
 				t.Fatal(err)
 			}
 			var ti domain.Title
-			_ = store.Get(ctx, s.Read(), "titles", id, &ti)
+			_ = database.Get(ctx, s.Read(), "titles", id, &ti)
 			if *ti.EpisodeOrder != order {
 				t.Fatalf("order %s", *ti.EpisodeOrder)
 			}
-			its, _ := store.Select[domain.Item](ctx, s.Read(), "items", "title_id = ? ORDER BY json_extract(numbers, '$.season'), json_extract(numbers, '$.episode')", id)
+			its, _ := database.Select[domain.Item](ctx, s.Read(), "items", "title_id = ? ORDER BY json_extract(numbers, '$.season'), json_extract(numbers, '$.episode')", id)
 			if len(its) != 6 {
 				t.Fatalf("items %d", len(its))
 			}
@@ -166,7 +167,7 @@ func TestAddShowRefusals(t *testing.T) {
 		t.Fatal(err)
 	}
 	var ti domain.Title
-	_ = store.Get(ctx, s.Read(), "titles", id, &ti)
+	_ = database.Get(ctx, s.Read(), "titles", id, &ti)
 	if ti.MetadataSource != "tvmaze" || ti.SourceIDs["tvmaze"] != "300" || ti.SourceIDs["tmdb"] != "100" || ti.NewPartsPolicy != "none" {
 		t.Fatalf("tvmaze show %+v (asked %v)", ti, maze.calls)
 	}
@@ -219,7 +220,7 @@ func TestShowSwitchesAndEdit(t *testing.T) {
 		t.Fatal(err)
 	}
 	var ti domain.Title
-	_ = store.Get(ctx, s.Read(), "titles", id, &ti)
+	_ = database.Get(ctx, s.Read(), "titles", id, &ti)
 	after := episodes(t, s, id)
 	if *ti.EpisodeOrder != OrderAbsolute || ti.NewPartsPolicy != "none" || ti.KeepUpToDate || !after["S02E01"].Keep || after["S02E01"].State != domain.SlotWanted {
 		t.Fatalf("after edit %+v %+v", ti, after["S02E01"])
@@ -272,7 +273,7 @@ func TestSeasonsCountMainVersionOnly(t *testing.T) {
 		t.Fatal(err)
 	}
 	err = s.Write(ctx, func(tx *sql.Tx) error {
-		ts, by := store.FormatTime(now), `{"kind":"system"}`
+		ts, by := database.FormatTime(now), `{"kind":"system"}`
 		res, err := tx.Exec(`INSERT INTO versions (created_at, created_by, updated_at, updated_by, title_id, label, pick_rules_id, library_folder_id, folder_name, is_main)
 			SELECT ?, ?, ?, ?, title_id, '4K', pick_rules_id, library_folder_id, folder_name, 0 FROM versions WHERE title_id = ?`, ts, by, ts, by, id)
 		if err != nil {

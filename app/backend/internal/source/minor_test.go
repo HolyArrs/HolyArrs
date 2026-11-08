@@ -12,8 +12,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 func TestKeyAgainWhenTheProxyOfAPlainHTTPSourceChanges(t *testing.T) {
@@ -148,7 +148,7 @@ func TestSummaryAndRecordAreBounded(t *testing.T) {
 	// A success older than the record keeps is not the last success.
 	if err := f.s.Write(ctx, func(tx *sql.Tx) error {
 		_, err := tx.Exec("INSERT INTO source_calls(source_id, at, op, ok, ms, error_kind) VALUES (?, ?, 'search', 1, 5, '')",
-			f.srcID, store.FormatTime(now.Add(-100*24*time.Hour)))
+			f.srcID, database.FormatTime(now.Add(-100*24*time.Hour)))
 		return err
 	}); err != nil {
 		t.Fatal(err)

@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 type householdFixture struct {
@@ -31,7 +31,7 @@ type householdFixture struct {
 
 // loadHousehold writes testdata/household_small.json into the store and
 // answers each artist's title id by name.
-func loadHousehold(t *testing.T, s *store.Store, now time.Time) map[string]int64 {
+func loadHousehold(t *testing.T, s *database.Store, now time.Time) map[string]int64 {
 	t.Helper()
 	raw, err := os.ReadFile("testdata/household_small.json")
 	if err != nil {
@@ -43,7 +43,7 @@ func loadHousehold(t *testing.T, s *store.Store, now time.Time) map[string]int64
 	}
 	ids := map[string]int64{}
 	err = s.Write(context.Background(), func(tx *sql.Tx) error {
-		ts, by := store.FormatTime(now), `{"kind":"system"}`
+		ts, by := database.FormatTime(now), `{"kind":"system"}`
 		ex := func(q string, args ...any) int64 {
 			res, err := tx.Exec(q, args...)
 			if err != nil {
@@ -70,7 +70,7 @@ func loadHousehold(t *testing.T, s *store.Store, now time.Time) map[string]int64
 					b, _ := json.Marshal(al.Secondary)
 					sec = string(b)
 				}
-				day := store.FormatTime(now.AddDate(0, 0, al.Days).Truncate(24 * time.Hour))
+				day := database.FormatTime(now.AddDate(0, 0, al.Days).Truncate(24 * time.Hour))
 				pid := ex(`INSERT INTO parts (created_at, created_by, updated_at, updated_by, title_id, kind, name, release_type, release_date, release_date_precision, source_ids, secondary_types, included)
 					VALUES (?, ?, ?, ?, ?, 'album', ?, ?, ?, 'day', ?, ?, 1)`, ts, by, ts, by, tid, al.Name, al.Type, day, `{"musicbrainz":"`+al.MBID+`"}`, sec)
 				if !al.Have {

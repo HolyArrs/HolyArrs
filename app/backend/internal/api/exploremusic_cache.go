@@ -10,10 +10,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/supervisor"
 )
 
 // Explore → Music answers are built once and kept a minute per member, so
@@ -179,8 +179,8 @@ func (a *API) genresFilling() bool {
 
 // MusicLoops are Music's background loops. Main adds them to the parts
 // Control, so they run only while Music is on and stop when it is turned off.
-func (a *API) MusicLoops() []supervisor.Loop {
-	return []supervisor.Loop{{Name: "music_warm", Label: "Music read-ahead", Run: func(ctx context.Context) error {
+func (a *API) MusicLoops() []jobs.Loop {
+	return []jobs.Loop{{Name: "music_warm", Label: "Music read-ahead", Run: func(ctx context.Context) error {
 		// Explore → Music v7 first: its layer 1 is read back from disk (or
 		// fetched) within seconds of start, before the slower read-ahead.
 		select {
@@ -219,7 +219,7 @@ func (a *API) warmMusic(ctx context.Context) {
 	if _, ok := a.genreProvider(); !ok {
 		return
 	}
-	titles, err := store.Select[domain.Title](ctx, a.s.Store.Read(), "titles", "kind = 'artist' AND state != 'removed' ORDER BY id")
+	titles, err := database.Select[domain.Title](ctx, a.s.Store.Read(), "titles", "kind = 'artist' AND state != 'removed' ORDER BY id")
 	if err != nil {
 		return
 	}

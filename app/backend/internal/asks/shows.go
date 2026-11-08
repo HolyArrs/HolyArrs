@@ -11,10 +11,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // errAskedMeanwhile says someone asked for the same show while this ask was
@@ -174,10 +174,10 @@ func (s *Service) askShow(ctx context.Context, p Person, id string, seasons []in
 		if err := s.checkLimit(ctx, tx, p, KindShows); err != nil {
 			return err
 		}
-		if _, err := store.Insert(tx, "asks", &a, p.actor()); err != nil {
+		if _, err := database.Insert(tx, "asks", &a, p.actor()); err != nil {
 			return err
 		}
-		_, err = tx.Exec("INSERT INTO ask_people (ask_id, user_id, asked_at, counted) VALUES (?, ?, ?, 1)", a.ID, p.UserID, store.FormatTime(now))
+		_, err = tx.Exec("INSERT INTO ask_people (ask_id, user_id, asked_at, counted) VALUES (?, ?, ?, 1)", a.ID, p.UserID, database.FormatTime(now))
 		return err
 	})
 	if errors.Is(err, errAskedMeanwhile) && !retried {
@@ -253,7 +253,7 @@ func widen(a, b []int) []int {
 
 // openShowAsks finds the open asks (waiting or approved) for a show with
 // any of ids, oldest first.
-func openShowAsks(ctx context.Context, q store.Lister, ids map[string]string) ([]domain.Ask, error) {
+func openShowAsks(ctx context.Context, q database.Lister, ids map[string]string) ([]domain.Ask, error) {
 	var or []string
 	var args []any
 	for _, k := range []string{"tmdb", "tvdb", "tvmaze", "imdb"} {
@@ -265,7 +265,7 @@ func openShowAsks(ctx context.Context, q store.Lister, ids map[string]string) ([
 	if len(or) == 0 {
 		return nil, nil
 	}
-	return store.Select[domain.Ask](ctx, q, "asks", "kind = 'show' AND state IN ('asked', 'approved') AND ("+strings.Join(or, " OR ")+") ORDER BY id", args...)
+	return database.Select[domain.Ask](ctx, q, "asks", "kind = 'show' AND state IN ('asked', 'approved') AND ("+strings.Join(or, " OR ")+") ORDER BY id", args...)
 }
 
 // joinWider adds p to a waiting show ask that asks for fewer seasons, and
@@ -301,13 +301,13 @@ func (s *Service) joinWiderWith(ctx context.Context, p Person, o domain.Ask, kin
 			}
 		}
 		grow(&cur)
-		if err := store.Update(tx, "asks", &cur, p.actor()); err != nil {
+		if err := database.Update(tx, "asks", &cur, p.actor()); err != nil {
 			return err
 		}
 		if already {
 			return nil
 		}
-		_, err = tx.Exec("INSERT INTO ask_people (ask_id, user_id, asked_at, counted) VALUES (?, ?, ?, 1)", o.ID, p.UserID, store.FormatTime(s.now()))
+		_, err = tx.Exec("INSERT INTO ask_people (ask_id, user_id, asked_at, counted) VALUES (?, ?, ?, 1)", o.ID, p.UserID, database.FormatTime(s.now()))
 		return err
 	})
 	if err != nil {
@@ -412,7 +412,7 @@ func showReady(ctx context.Context, db querier, titleID int64, seasons []int, ep
 			args = append(args, n)
 		}
 	}
-	args = append(args, store.FormatTime(now))
+	args = append(args, database.FormatTime(now))
 	var aired, ready int
 	err := db.QueryRowContext(ctx, `SELECT count(*), coalesce(sum(CASE WHEN s.state IN ('in_library', 'better_wanted') THEN 1 ELSE 0 END), 0)
 		FROM items i JOIN parts p ON p.id = i.part_id
@@ -498,7 +498,7 @@ func (s *Service) addShowForAsk(ctx context.Context, a domain.Ask, set Settings,
 // readyShows finds approved show asks whose asked-for seasons are all in
 // the Library (every aired episode has a file).
 func (s *Service) readyShows(ctx context.Context) ([]domain.Ask, error) {
-	as, err := store.Select[domain.Ask](ctx, s.Store.Read(), "asks", "kind = 'show' AND state = 'approved' AND title_id IS NOT NULL ORDER BY id")
+	as, err := database.Select[domain.Ask](ctx, s.Store.Read(), "asks", "kind = 'show' AND state = 'approved' AND title_id IS NOT NULL ORDER BY id")
 	if err != nil {
 		return nil, err
 	}

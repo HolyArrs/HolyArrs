@@ -11,10 +11,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // What an ask is made of is stored once, when it is asked for: a show's
@@ -73,7 +73,7 @@ func (s *Service) BackfillParts(ctx context.Context) {
 	if !s.PrefetchParts {
 		return
 	}
-	as, err := store.Select[domain.Ask](ctx, s.Store.Read(), "asks", "state = 'asked' AND kind IN ('show', 'artist') ORDER BY id")
+	as, err := database.Select[domain.Ask](ctx, s.Store.Read(), "asks", "state = 'asked' AND kind IN ('show', 'artist') ORDER BY id")
 	if err != nil {
 		log.Printf("asks: backfill lists: %v", err)
 		return
@@ -106,7 +106,7 @@ func (s *Service) putPart(ctx context.Context, key string, v any) error {
 	}
 	return s.Store.Write(ctx, func(tx *sql.Tx) error {
 		_, err := tx.ExecContext(ctx, "INSERT INTO ask_parts (key, body, fetched_at) VALUES (?, ?, ?) ON CONFLICT(key) DO UPDATE SET body = excluded.body, fetched_at = excluded.fetched_at",
-			key, string(b), store.FormatTime(s.now()))
+			key, string(b), database.FormatTime(s.now()))
 		return err
 	})
 }

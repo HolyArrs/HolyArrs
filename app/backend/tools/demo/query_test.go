@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 )
 
 // query reads only the Library, search, download and History tables:
@@ -14,7 +14,7 @@ import (
 // may carry keys), nor the schema.
 func TestQueryReadsOnlyListedTables(t *testing.T) {
 	dir := t.TempDir()
-	s, err := store.Open(dir, store.Options{})
+	s, err := database.Open(dir, database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -6,9 +6,9 @@ import (
 	"path/filepath"
 	"strconv"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // VersionView is one wanted copy of a title as the API shows it.
@@ -25,7 +25,7 @@ type VersionView struct {
 	AudioLanguages  []string `json:"audio_languages"`
 }
 
-func versionView(ctx context.Context, db store.Querier, v domain.Version) VersionView {
+func versionView(ctx context.Context, db database.Querier, v domain.Version) VersionView {
 	out := VersionView{ID: v.ID, Label: v.Label, Main: v.IsMain, PickRulesID: v.PickRulesID, LibraryFolderID: v.LibraryFolderID,
 		KeepUpToDate: v.KeepUpToDate, Edition: v.Edition, AudioLanguages: v.AudioLanguages}
 	if out.AudioLanguages == nil {
@@ -77,26 +77,26 @@ func deref(p *string) string {
 	return *p
 }
 
-func (m *lookupMemo) folder(ctx context.Context, db store.Querier, id int64) (string, bool) {
+func (m *lookupMemo) folder(ctx context.Context, db database.Querier, id int64) (string, bool) {
 	var seen map[int64]*string
 	if m != nil {
 		seen = m.folders
 	}
 	return memoRead(seen, id, func() (string, bool) {
 		var lf domain.LibraryFolder
-		err := store.Get(ctx, db, "library_folders", id, &lf)
+		err := database.Get(ctx, db, "library_folders", id, &lf)
 		return lf.Path, err == nil
 	})
 }
 
-func (m *lookupMemo) rules(ctx context.Context, db store.Querier, id int64) (string, bool) {
+func (m *lookupMemo) rules(ctx context.Context, db database.Querier, id int64) (string, bool) {
 	var seen map[int64]*string
 	if m != nil {
 		seen = m.picks
 	}
 	return memoRead(seen, id, func() (string, bool) {
 		var pr domain.PickRules
-		err := store.Get(ctx, db, "pick_rules", id, &pr)
+		err := database.Get(ctx, db, "pick_rules", id, &pr)
 		return pr.Name, err == nil
 	})
 }
@@ -116,7 +116,7 @@ func (a *API) publishTitle(r *http.Request, id int64) {
 		return
 	}
 	var t domain.Title
-	if store.Get(r.Context(), a.s.Store.Read(), "titles", id, &t) != nil {
+	if database.Get(r.Context(), a.s.Store.Read(), "titles", id, &t) != nil {
 		return
 	}
 	if v, err := a.titleView(r.Context(), t); err == nil {
@@ -176,7 +176,7 @@ func (a *API) deleteVersion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var v domain.Version
-	_ = store.Get(r.Context(), a.s.Store.Read(), "versions", vid, &v)
+	_ = database.Get(r.Context(), a.s.Store.Read(), "versions", vid, &v)
 	if err := library.RemoveVersion(r.Context(), a.s.Store, t.ID, vid, actor(r)); err != nil {
 		libraryError(w, err)
 		return

@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 )
 
 // newFamily is a session's public id: random, never the cookie or its hash.
@@ -53,7 +53,7 @@ func (a *Auth) listSessions(ctx context.Context, userID int64, current string) (
 	now := a.now()
 	rows, err := a.s.Read().QueryContext(ctx, `SELECT family, created_at, last_seen_at, expires_at, user_agent FROM sessions
 		WHERE user_id = ? AND replaced = 0 AND expires_at > ? AND last_seen_at >= ? ORDER BY last_seen_at DESC, created_at DESC`,
-		userID, store.FormatTime(now), store.FormatTime(now.Add(-IdleTimeout)))
+		userID, database.FormatTime(now), database.FormatTime(now.Add(-IdleTimeout)))
 	if err != nil {
 		return nil, err
 	}

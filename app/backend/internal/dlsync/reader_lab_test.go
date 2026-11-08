@@ -16,9 +16,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // The reader and the Manager together against the lab qBittorrent only
@@ -65,7 +65,7 @@ func TestLabReaderGrabToFinished(t *testing.T) {
 	run := func(reader bool) (time.Duration, map[string]int) {
 		_ = q.Remove(context.Background(), testHash, true)
 		time.Sleep(2 * time.Second)
-		db, err := store.Open(t.TempDir(), store.Options{})
+		db, err := database.Open(t.TempDir(), database.Options{})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -73,7 +73,7 @@ func TestLabReaderGrabToFinished(t *testing.T) {
 		err = db.Write(context.Background(), func(tx *sql.Tx) error {
 			d := &domain.Downloader{Name: "Lab qBittorrent", Adapter: "qbittorrent", Protocol: "torrent", URL: front.URL, Category: "holyarrs-labtest", Priority: 1,
 				PathMap: []domain.PathMap{}, AfterImport: "leave", State: "ok", AllowLocal: true}
-			_, err := store.Insert(tx, "downloaders", d, domain.System)
+			_, err := database.Insert(tx, "downloaders", d, domain.System)
 			return err
 		})
 		if err != nil {
@@ -103,7 +103,7 @@ func TestLabReaderGrabToFinished(t *testing.T) {
 		}
 		err = db.Write(context.Background(), func(tx *sql.Tx) error {
 			dl := &domain.Download{DownloaderID: 1, SlotIDs: []int64{}, ExternalID: testHash, State: "sent", FilesSeen: []domain.SeenFile{}, StartedBy: domain.System, ProgressAt: &start}
-			_, err := store.Insert(tx, "downloads", dl, domain.System)
+			_, err := database.Insert(tx, "downloads", dl, domain.System)
 			return err
 		})
 		if err != nil {

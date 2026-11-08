@@ -9,10 +9,11 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 func (a *API) sourceRoutes(m *http.ServeMux) {
@@ -77,7 +78,7 @@ func sourceView(x domain.Source, sum source.Summary) SourceView {
 }
 
 func (a *API) listSources(w http.ResponseWriter, r *http.Request) {
-	srcs, err := store.Select[domain.Source](r.Context(), a.s.Store.Read(), "sources", "1=1 ORDER BY priority, name")
+	srcs, err := database.Select[domain.Source](r.Context(), a.s.Store.Read(), "sources", "1=1 ORDER BY priority, name")
 	if err != nil {
 		internal(w, err)
 		return
@@ -118,7 +119,7 @@ func sourceError(w http.ResponseWriter, err error) {
 		fail(w, http.StatusConflict, err.Error())
 	case errors.Is(err, source.ErrNoVault):
 		fail(w, http.StatusServiceUnavailable, err.Error())
-	case errors.Is(err, store.ErrNotFound):
+	case errors.Is(err, database.ErrNotFound):
 		fail(w, http.StatusNotFound, "no such Source")
 	case errors.Is(err, source.ErrName), errors.Is(err, source.ErrFormat), errors.Is(err, source.ErrProtocol), errors.Is(err, source.ErrURL),
 		errors.Is(err, source.ErrPriority), errors.Is(err, source.ErrLimits), errors.Is(err, source.ErrKinds), errors.Is(err, source.ErrUse),
@@ -224,7 +225,7 @@ func (a *API) testSource(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var x domain.Source
-	if err := store.Get(r.Context(), a.s.Store.Read(), "sources", id, &x); err != nil {
+	if err := database.Get(r.Context(), a.s.Store.Read(), "sources", id, &x); err != nil {
 		sourceError(w, err)
 		return
 	}
@@ -239,7 +240,7 @@ func (a *API) trySource(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var x domain.Source
-	if err := store.Get(r.Context(), a.s.Store.Read(), "sources", id, &x); err != nil {
+	if err := database.Get(r.Context(), a.s.Store.Read(), "sources", id, &x); err != nil {
 		sourceError(w, err)
 		return
 	}
@@ -278,7 +279,7 @@ func (a *API) runTest(w http.ResponseWriter, r *http.Request, x domain.Source, r
 		out["text"] = source.Explain(err)
 		if repause && x.State == "enabled" && a.s.Search != nil {
 			a.s.Search.TryFailed(context.WithoutCancel(r.Context()), x, err)
-			if store.Get(r.Context(), a.s.Store.Read(), "sources", x.ID, &x) == nil {
+			if database.Get(r.Context(), a.s.Store.Read(), "sources", x.ID, &x) == nil {
 				a.publishSource(x)
 			}
 		}
@@ -305,7 +306,7 @@ func (a *API) sourceStats(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var x domain.Source
-	if err := store.Get(r.Context(), a.s.Store.Read(), "sources", id, &x); err != nil {
+	if err := database.Get(r.Context(), a.s.Store.Read(), "sources", id, &x); err != nil {
 		sourceError(w, err)
 		return
 	}

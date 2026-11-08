@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Everything in the client: the Downloads screen lists every torrent a
@@ -50,7 +50,7 @@ func (a *API) clientRows(ctx context.Context, names map[int64]domain.Downloader,
 // still name them) by id, in one read.
 func (a *API) downloaderNames(ctx context.Context) map[int64]domain.Downloader {
 	names := map[int64]domain.Downloader{}
-	if all, err := store.Select[domain.Downloader](ctx, a.read(), "downloaders", "1=1"); err == nil {
+	if all, err := database.Select[domain.Downloader](ctx, a.read(), "downloaders", "1=1"); err == nil {
 		for _, d := range all {
 			names[d.ID] = d
 		}
@@ -186,7 +186,7 @@ func (a *API) knownTitles(ctx context.Context, downloaderID int64, rows []Downlo
 		for _, h := range part {
 			args = append(args, h)
 		}
-		ds, err := store.Select[domain.Download](ctx, db, "downloads", "downloader_id = ? AND lower(external_id) IN (?"+strings.Repeat(", ?", len(part)-1)+")", args...)
+		ds, err := database.Select[domain.Download](ctx, db, "downloads", "downloader_id = ? AND lower(external_id) IN (?"+strings.Repeat(", ?", len(part)-1)+")", args...)
 		if err != nil {
 			continue
 		}

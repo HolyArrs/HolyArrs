@@ -11,9 +11,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // slotPubs records the Slot ids published live.
@@ -45,7 +45,7 @@ func holdForFeed(t *testing.T) (fixture, domain.Release) {
 	if sl := slotState(t, f); sl.State != domain.SlotHeld {
 		t.Fatalf("slot %s", sl.State)
 	}
-	exec(t, f, "UPDATE slots SET next_try_at = ?", store.FormatTime(time.Now().Add(-time.Minute)))
+	exec(t, f, "UPDATE slots SET next_try_at = ?", database.FormatTime(time.Now().Add(-time.Minute)))
 	return f, relByName(t, f, tv720)
 }
 
@@ -101,12 +101,12 @@ func TestGrabHeldPackTellsEverySlot(t *testing.T) {
 		rel := &domain.Release{SourceID: f.srcID, Name: "Copper.Valley.S01.1080p.WEB-DL.H.264-QUILL", LinkRef: "x", Protocol: "torrent",
 			Flags: []string{}, Parsed: map[string]any{}, MatchedSlotIDs: ids, FoundBy: "feed", State: "held",
 			Verdict: map[string]any{"pick_slot_ids": ids}}
-		if _, err := store.Insert(tx, "releases", rel, domain.System); err != nil {
+		if _, err := database.Insert(tx, "releases", rel, domain.System); err != nil {
 			return err
 		}
 		relID = rel.ID
 		for _, id := range ids {
-			if _, err := tx.Exec("UPDATE slots SET state = 'held', held_release_id = ?, next_try_at = ? WHERE id = ?", relID, store.FormatTime(time.Now().Add(-time.Minute)), id); err != nil {
+			if _, err := tx.Exec("UPDATE slots SET state = 'held', held_release_id = ?, next_try_at = ? WHERE id = ?", relID, database.FormatTime(time.Now().Add(-time.Minute)), id); err != nil {
 				return err
 			}
 		}
@@ -159,7 +159,7 @@ func TestHandPackSkipsEpisodeThatWouldNotGain(t *testing.T) {
 	err := f.s.Write(ctx, func(tx *sql.Tx) error {
 		rel := &domain.Release{SourceID: f.srcID, Name: "Copper.Valley.S01.720p.HDTV.x264-OXBOW", LinkRef: "x", Protocol: "torrent",
 			Flags: []string{}, Parsed: map[string]any{}, MatchedSlotIDs: ids, FoundBy: "hand_search", State: "judged", Verdict: map[string]any{}}
-		if _, err := store.Insert(tx, "releases", rel, domain.System); err != nil {
+		if _, err := database.Insert(tx, "releases", rel, domain.System); err != nil {
 			return err
 		}
 		relID = rel.ID
@@ -241,7 +241,7 @@ func TestStoppedSearchesLeaveNoSlotSearching(t *testing.T) {
 func TestSweepStaleSearching(t *testing.T) {
 	ts := &tvServer{answer: func(url.Values) []string { return nil }}
 	f := seedShow(t, ts.start(t), nil)
-	old := store.FormatTime(time.Now().Add(-2 * time.Hour))
+	old := database.FormatTime(time.Now().Add(-2 * time.Hour))
 	exec(t, f.fixture, "UPDATE slots SET state = 'searching', updated_at = ? WHERE id = ?", old, f.slots["S01E01"])
 	exec(t, f.fixture, "UPDATE slots SET state = 'searching' WHERE id = ?", f.slots["S01E02"])
 	sr := &Searcher{Store: f.s}

@@ -10,11 +10,12 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/alerts"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // fakeAlerts keeps what would have been sent.
@@ -123,7 +124,7 @@ func TestAlertFailureDoesNotStrandQueue(t *testing.T) {
 
 type rig struct {
 	svc   *Service
-	st    *store.Store
+	st    *database.Store
 	fake  *fakeAlerts
 	clock time.Time
 	ana   Person
@@ -138,7 +139,7 @@ func movie(name string, year int, tmdb string) metadata.Movie {
 
 func newRig(t *testing.T) *rig {
 	t.Helper()
-	st, err := store.Open(t.TempDir(), store.Options{})
+	st, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -147,11 +148,11 @@ func newRig(t *testing.T) *rig {
 	r := &rig{st: st, fake: &fakeAlerts{}, clock: time.Date(2026, 10, 13, 12, 0, 0, 0, time.UTC)}
 	ids := map[string]int64{}
 	err = st.Write(ctx, func(tx *sql.Tx) error {
-		if _, err := store.Insert(tx, "library_folders", &domain.LibraryFolder{Path: t.TempDir(), Kind: "movie", Label: "Movies", Health: "ok", SameDiskAs: []int64{}}, domain.System); err != nil {
+		if _, err := database.Insert(tx, "library_folders", &domain.LibraryFolder{Path: t.TempDir(), Kind: "movie", Label: "Movies", Health: "ok", SameDiskAs: []int64{}}, domain.System); err != nil {
 			return err
 		}
 		for _, u := range []struct{ name, role string }{{"luis", "owner"}, {"ana", "member"}, {"bo", "member"}} {
-			id, err := store.Insert(tx, "users", &domain.User{Name: u.name, Role: u.role, State: "active"}, domain.System)
+			id, err := database.Insert(tx, "users", &domain.User{Name: u.name, Role: u.role, State: "active"}, domain.System)
 			if err != nil {
 				return err
 			}
@@ -235,7 +236,7 @@ func TestAskJoinApproveAndAlreadyInLibrary(t *testing.T) {
 		t.Fatalf("approved %+v", got)
 	}
 	var ti domain.Title
-	_ = store.Get(ctx, r.st.Read(), "titles", *got.TitleID, &ti)
+	_ = database.Get(ctx, r.st.Read(), "titles", *got.TitleID, &ti)
 	if ti.WhyAdded != "ask" {
 		t.Fatalf("why added %q", ti.WhyAdded)
 	}
@@ -336,7 +337,7 @@ func TestLimitWindowSaysWhenToTryAgain(t *testing.T) {
 	if l, _ := r.svc.LimitOf(ctx, r.ana); l.Movies.Used != 1 || l.Movies.Left != 1 {
 		t.Fatalf("after a week %+v", l)
 	}
-	if err := SetPersonLimit(ctx, r.st, 999, PersonLimit{Movies: &one}); !errors.Is(err, store.ErrNotFound) {
+	if err := SetPersonLimit(ctx, r.st, 999, PersonLimit{Movies: &one}); !errors.Is(err, database.ErrNotFound) {
 		t.Fatalf("no such user: %v", err)
 	}
 	if err := SaveSettings(ctx, r.st, Settings{MoviesPerWeek: -1}, domain.System); !errors.Is(err, ErrPerWeek) {
@@ -355,7 +356,7 @@ func TestAutoApproveAddsAndSearches(t *testing.T) {
 	if res.Ask.State != domain.AskApproved || !res.Ask.AutoApproved || res.Ask.TitleID == nil {
 		t.Fatalf("auto %+v", res.Ask)
 	}
-	js, err := store.Select[domain.Job](ctx, r.st.Read(), "jobs", "kind = 'refresh_title'")
+	js, err := database.Select[domain.Job](ctx, r.st.Read(), "jobs", "kind = 'refresh_title'")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -369,7 +370,7 @@ func TestAutoApproveAddsAndSearches(t *testing.T) {
 	// With search on approve off, the movie is added but not searched.
 	_ = SaveSettings(ctx, r.st, Settings{MoviesPerWeek: 10, SearchOnApprove: false}, domain.System)
 	res, _ = r.svc.Ask(ctx, r.ana, "900002")
-	js, _ = store.Select[domain.Job](ctx, r.st.Read(), "jobs", "kind = 'refresh_title' AND json_extract(subject, '$.id') = ?", *res.Ask.TitleID)
+	js, _ = database.Select[domain.Job](ctx, r.st.Read(), "jobs", "kind = 'refresh_title' AND json_extract(subject, '$.id') = ?", *res.Ask.TitleID)
 	if len(js) != 1 || strings.Contains(strings.Join(anyStrings(js[0].Params["then"]), ","), "search_slot") {
 		t.Fatalf("jobs %+v", js)
 	}
@@ -678,7 +679,7 @@ func TestApproveWithAudioLanguages(t *testing.T) {
 	if err := r.st.Read().QueryRowContext(ctx, "SELECT id FROM versions WHERE title_id = ? AND is_main = 1", *got.TitleID).Scan(&v.ID); err != nil {
 		t.Fatal(err)
 	}
-	if err := store.Get(ctx, r.st.Read(), "versions", v.ID, &v); err != nil {
+	if err := database.Get(ctx, r.st.Read(), "versions", v.ID, &v); err != nil {
 		t.Fatal(err)
 	}
 	if strings.Join(v.AudioLanguages, ",") != "ja,en" {
@@ -706,7 +707,7 @@ func TestApproveLeavesAnExistingTitlesAudioAlone(t *testing.T) {
 	if err := r.st.Read().QueryRowContext(ctx, "SELECT id FROM versions WHERE title_id = ? AND is_main = 1", tid).Scan(&v.ID); err != nil {
 		t.Fatal(err)
 	}
-	if err := store.Get(ctx, r.st.Read(), "versions", v.ID, &v); err != nil {
+	if err := database.Get(ctx, r.st.Read(), "versions", v.ID, &v); err != nil {
 		t.Fatal(err)
 	}
 	// Changing a title already in the Library is a Library edit: the approval leaves it as it was.
@@ -806,7 +807,7 @@ func TestAlsoDeclinedShowsWithoutTMDBID(t *testing.T) {
 				a.State, a.DecidedBy, a.DecidedAt = domain.AskTurnedDown, by, &at
 			}
 			var err error
-			id, err = store.Insert(tx, "asks", a, domain.System)
+			id, err = database.Insert(tx, "asks", a, domain.System)
 			return err
 		}); err != nil {
 			t.Fatal(err)

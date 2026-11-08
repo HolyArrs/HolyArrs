@@ -14,10 +14,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/naming"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // adoptTMDB stands in for TMDB in the adopt tests.
@@ -144,7 +144,7 @@ func TestAdoptMovesNothing(t *testing.T) {
 	if res[0].TitleID == 0 || res[1].TitleID == 0 || res[2].TitleID == 0 || res[3].Error == "" || !strings.Contains(res[4].Error, "already") {
 		t.Fatalf("results %+v", res)
 	}
-	files, _ := store.Select[domain.File](ctx, s.Read(), "files", "1=1 ORDER BY id")
+	files, _ := database.Select[domain.File](ctx, s.Read(), "files", "1=1 ORDER BY id")
 	if len(files) != 2 {
 		t.Fatalf("files %+v", files)
 	}
@@ -158,7 +158,7 @@ func TestAdoptMovesNothing(t *testing.T) {
 			t.Fatalf("file %+v", f)
 		}
 	}
-	vs, _ := store.Select[domain.Version](ctx, s.Read(), "versions", "title_id = ?", res[1].TitleID)
+	vs, _ := database.Select[domain.Version](ctx, s.Read(), "versions", "title_id = ?", res[1].TitleID)
 	if len(vs) != 1 || vs[0].FolderName != "Heat (1995) {tmdb-949}" {
 		t.Fatalf("version %+v", vs)
 	}
@@ -172,7 +172,7 @@ func TestAdoptMovesNothing(t *testing.T) {
 		}
 	}
 	var ti domain.Title
-	_ = store.Get(ctx, s.Read(), "titles", res[0].TitleID, &ti)
+	_ = database.Get(ctx, s.Read(), "titles", res[0].TitleID, &ti)
 	if ti.WhyAdded != "import" {
 		t.Fatalf("why added %s", ti.WhyAdded)
 	}
@@ -201,7 +201,7 @@ func TestRescanMountGoneIsAWarning(t *testing.T) {
 		t.Fatalf("%+v %v", res, err)
 	}
 	states := func() map[string]string {
-		fs, _ := store.Select[domain.File](ctx, s.Read(), "files", "1=1")
+		fs, _ := database.Select[domain.File](ctx, s.Read(), "files", "1=1")
 		m := map[string]string{}
 		for _, f := range fs {
 			m[f.RelativePath] = f.State + "/" + f.Origin
@@ -221,7 +221,7 @@ func TestRescanMountGoneIsAWarning(t *testing.T) {
 	if got["Heat (1995) {tmdb-949}/heat.avi"] != "missing/adopted" || got["Dune - Part Two (2024)/bonus.mkv"] != "present/found" || r.Missing != 1 || r.Found != 1 {
 		t.Fatalf("states %v result %+v", got, r)
 	}
-	if es, _, _ := svc.Store.Events(ctx, store.EventFilter{Kinds: []string{domain.EventLibraryRescanned}}); len(es) != 1 || es[0].Data["missing"] != float64(1) {
+	if es, _, _ := svc.Store.Events(ctx, database.EventFilter{Kinds: []string{domain.EventLibraryRescanned}}); len(es) != 1 || es[0].Data["missing"] != float64(1) {
 		t.Fatalf("rescan events %+v", es)
 	}
 	// It comes back.

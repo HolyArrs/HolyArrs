@@ -1,7 +1,6 @@
 package api
 
 import (
-	"github.com/HolyArrs/holyarrs/app/backend/internal/feature"
 	"context"
 	"database/sql"
 	"net/http"
@@ -9,7 +8,9 @@ import (
 	"time"
 	_ "time/tzdata" // viewers' time zones, on hosts without a zone database
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/explore"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/features"
 )
 
 // exploreMoment is the viewer's local time: the tz query value or the
@@ -86,7 +87,7 @@ func (a *API) exploreTitleCount(ctx context.Context, member int64, field string,
 			keep = append(keep, l)
 		}
 	}
-	if len(keep) == 0 || !feature.On(feature.RowTitleStats) {
+	if len(keep) == 0 || !startup.FeatureOn(features.RowTitleStats) {
 		return
 	}
 	day := explore.Day(a.exploreNow())

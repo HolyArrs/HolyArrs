@@ -14,8 +14,9 @@ import (
 	"testing"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/files"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 )
 
 // A made-up secrets file; every value starts with "your-" and is
@@ -49,7 +50,7 @@ var cliValues = []string{"your-tvdb-key-1", "your-trakt-id-2", "your-feed-key-3"
 func configDir(t *testing.T) string {
 	t.Helper()
 	dir := t.TempDir()
-	s, err := store.Open(dir, store.Options{})
+	s, err := database.Open(dir, database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -157,7 +158,7 @@ func TestImportSecretsRefuses(t *testing.T) {
 // through its API with the owner key in a header.
 func TestImportSecretsThroughAPI(t *testing.T) {
 	dir := configDir(t)
-	unlock, err := store.LockDir(dir)
+	unlock, err := files.LockDir(dir)
 	if err != nil {
 		t.Fatal(err)
 	}

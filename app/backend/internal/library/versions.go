@@ -11,8 +11,8 @@ import (
 	"unicode"
 	"unicode/utf8"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 	"golang.org/x/text/language"
 )
 
@@ -90,9 +90,9 @@ func labelTaken(tx *sql.Tx, titleID, exceptID int64, label string) (bool, error)
 
 // checkVersionFolder finds and checks a Library folder for a new Version.
 // A show's Version needs a show Library folder; every other title a movie one.
-func checkVersionFolder(ctx context.Context, db store.Querier, id int64, titleKind string, downloadPaths []string) (domain.LibraryFolder, error) {
+func checkVersionFolder(ctx context.Context, db database.Querier, id int64, titleKind string, downloadPaths []string) (domain.LibraryFolder, error) {
 	var lf domain.LibraryFolder
-	if err := store.Get(ctx, db, "library_folders", id, &lf); errors.Is(err, store.ErrNotFound) {
+	if err := database.Get(ctx, db, "library_folders", id, &lf); errors.Is(err, database.ErrNotFound) {
 		return lf, ErrNoFolder
 	} else if err != nil {
 		return lf, err
@@ -125,12 +125,12 @@ func addVersionTx(ctx context.Context, tx *sql.Tx, t domain.Title, in VersionInp
 	} else if taken {
 		return v, ErrVersionLabel
 	}
-	mains, err := store.Select[domain.Version](ctx, tx, "versions", "title_id = ? ORDER BY is_main DESC, id LIMIT 1", t.ID)
+	mains, err := database.Select[domain.Version](ctx, tx, "versions", "title_id = ? ORDER BY is_main DESC, id LIMIT 1", t.ID)
 	if err != nil {
 		return v, err
 	}
 	if len(mains) == 0 {
-		return v, store.ErrNotFound
+		return v, database.ErrNotFound
 	}
 	main := mains[0]
 	edition, audio, err := copyChoices(t.Kind, in.Edition, in.AudioLanguages)
@@ -174,10 +174,10 @@ func addVersionTx(ctx context.Context, tx *sql.Tx, t domain.Title, in VersionInp
 	}
 	v = domain.Version{TitleID: t.ID, Label: label, PickRulesID: in.PickRulesID, LibraryFolderID: in.LibraryFolderID,
 		FolderName: folder, KeepUpToDate: keep, Edition: edition, AudioLanguages: audio}
-	if _, err := store.Insert(tx, "versions", &v, by); err != nil {
+	if _, err := database.Insert(tx, "versions", &v, by); err != nil {
 		return v, err
 	}
-	items, err := store.Select[domain.Item](ctx, tx, "items", "title_id = ? ORDER BY id", t.ID)
+	items, err := database.Select[domain.Item](ctx, tx, "items", "title_id = ? ORDER BY id", t.ID)
 	if err != nil {
 		return v, err
 	}
@@ -204,7 +204,7 @@ func addVersionTx(ctx context.Context, tx *sql.Tx, t domain.Title, in VersionInp
 			}
 		}
 		sl := &domain.Slot{ItemID: it.ID, VersionID: v.ID, State: state, LastReason: &reason}
-		if _, err := store.Insert(tx, "slots", sl, by); err != nil {
+		if _, err := database.Insert(tx, "slots", sl, by); err != nil {
 			return v, err
 		}
 	}
@@ -213,7 +213,7 @@ func addVersionTx(ctx context.Context, tx *sql.Tx, t domain.Title, in VersionInp
 
 // AddVersion adds one more wanted copy (for example 4K) to a title that is
 // already in the Library.
-func AddVersion(ctx context.Context, s *store.Store, titleID int64, in VersionInput, downloadPaths []string, now time.Time, by domain.Actor) (domain.Version, error) {
+func AddVersion(ctx context.Context, s *database.Store, titleID int64, in VersionInput, downloadPaths []string, now time.Time, by domain.Actor) (domain.Version, error) {
 	unlock := s.LockFiles()
 	defer unlock()
 	var v domain.Version
@@ -223,7 +223,7 @@ func AddVersion(ctx context.Context, s *store.Store, titleID int64, in VersionIn
 	if in.LibraryFolderID != 0 {
 		var kind string
 		if err := s.Read().QueryRowContext(ctx, "SELECT kind FROM titles WHERE id = ?", titleID).Scan(&kind); errors.Is(err, sql.ErrNoRows) {
-			return v, store.ErrNotFound
+			return v, database.ErrNotFound
 		} else if err != nil {
 			return v, err
 		}
@@ -233,7 +233,7 @@ func AddVersion(ctx context.Context, s *store.Store, titleID int64, in VersionIn
 	}
 	err := s.Write(ctx, func(tx *sql.Tx) error {
 		var t domain.Title
-		if err := store.Get(ctx, tx, "titles", titleID, &t); err != nil {
+		if err := database.Get(ctx, tx, "titles", titleID, &t); err != nil {
 			return err
 		}
 		if t.State == "removed" {
@@ -247,20 +247,20 @@ func AddVersion(ctx context.Context, s *store.Store, titleID int64, in VersionIn
 }
 
 // versionOf reads a Version and checks it belongs to the title.
-func versionOf(ctx context.Context, q store.Querier, titleID, versionID int64) (domain.Version, error) {
+func versionOf(ctx context.Context, q database.Querier, titleID, versionID int64) (domain.Version, error) {
 	var v domain.Version
-	if err := store.Get(ctx, q, "versions", versionID, &v); err != nil {
+	if err := database.Get(ctx, q, "versions", versionID, &v); err != nil {
 		return v, err
 	}
 	if v.TitleID != titleID {
-		return v, store.ErrNotFound
+		return v, database.ErrNotFound
 	}
 	return v, nil
 }
 
 // EditVersion changes one Version's label, Pick rules or Keep up to date.
 // Moving a Version to another Library folder is the move Job's work.
-func EditVersion(ctx context.Context, s *store.Store, titleID, versionID int64, c VersionChange, by domain.Actor) (domain.Version, error) {
+func EditVersion(ctx context.Context, s *database.Store, titleID, versionID int64, c VersionChange, by domain.Actor) (domain.Version, error) {
 	unlock := s.LockFiles()
 	defer unlock()
 	var v domain.Version
@@ -270,7 +270,7 @@ func EditVersion(ctx context.Context, s *store.Store, titleID, versionID int64, 
 			return err
 		}
 		var t domain.Title
-		if err := store.Get(ctx, tx, "titles", titleID, &t); err != nil {
+		if err := database.Get(ctx, tx, "titles", titleID, &t); err != nil {
 			return err
 		}
 		if t.State == "removed" {
@@ -310,7 +310,7 @@ func EditVersion(ctx context.Context, s *store.Store, titleID, versionID int64, 
 				return fmt.Errorf("%w: %v", ErrCopyChoice, err)
 			}
 		}
-		if err := store.Update(tx, "versions", &v, by); err != nil {
+		if err := database.Update(tx, "versions", &v, by); err != nil {
 			return err
 		}
 		_, err = goodEnoughTx(ctx, tx, v, t.KeepUpToDate && v.KeepUpToDate, by)
@@ -324,7 +324,7 @@ func EditVersion(ctx context.Context, s *store.Store, titleID, versionID int64, 
 // with a download or import under way, nor a finished download still
 // waiting to be imported (also one waiting in Needs a decision); its Slots
 // go with it.
-func RemoveVersion(ctx context.Context, s *store.Store, titleID, versionID int64, by domain.Actor) error {
+func RemoveVersion(ctx context.Context, s *database.Store, titleID, versionID int64, by domain.Actor) error {
 	unlock := s.LockFiles()
 	defer unlock()
 	return s.Write(ctx, func(tx *sql.Tx) error {

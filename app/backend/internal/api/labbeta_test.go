@@ -18,15 +18,17 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // The last beta lab checks (#41 #46 #47 #48 #49 #50 #52; #43 is in
@@ -185,7 +187,7 @@ func labOwnFile(t *testing.T, cat, name, file string, seed byte) labFeedItem {
 // labMovie is Dune: Part Two with one movie Slot in a Version, a Source,
 // the lab qBittorrent, and the job queue wired as cmd/holyarrs wires it.
 type labMovie struct {
-	s      *store.Store
+	s      *database.Store
 	srv    *httptest.Server
 	q      *jobs.Queue
 	m      *downloader.Manager
@@ -212,7 +214,7 @@ type labMovieOpts struct {
 func newLabMovie(t *testing.T, o labMovieOpts) *labMovie {
 	t.Helper()
 	ctx := context.Background()
-	s, err := store.Open(t.TempDir(), store.Options{})
+	s, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -237,11 +239,11 @@ func newLabMovie(t *testing.T, o labMovieOpts) *labMovie {
 			o.rules(&body)
 		}
 		pr := &domain.PickRules{Name: "Lab " + t.Name(), Kinds: []string{"movie"}, Revision: 1, Body: body}
-		if _, err := store.Insert(tx, "pick_rules", pr, domain.System); err != nil {
+		if _, err := database.Insert(tx, "pick_rules", pr, domain.System); err != nil {
 			return err
 		}
 		lf := &domain.LibraryFolder{Path: x.movies, Kind: "movie", Label: "Movies", Health: "ok", SameDiskAs: []int64{}}
-		if _, err := store.Insert(tx, "library_folders", lf, domain.System); err != nil {
+		if _, err := database.Insert(tx, "library_folders", lf, domain.System); err != nil {
 			return err
 		}
 		y := 2024
@@ -254,19 +256,19 @@ func newLabMovie(t *testing.T, o labMovieOpts) *labMovie {
 			SourceIDs: map[string]string{}, MetadataSource: "local", NewPartsPolicy: "all", ReleaseGate: "released", MusicTypes: []string{},
 			WhyAdded: "by_hand", Artwork: []string{}, Status: status, State: "active", KeepUpToDate: true,
 			DigitalDate: &digital, GateDriver: "digital", GateOpensAt: &digital}
-		if _, err := store.Insert(tx, "titles", ti, domain.System); err != nil {
+		if _, err := database.Insert(tx, "titles", ti, domain.System); err != nil {
 			return err
 		}
 		it := &domain.Item{TitleID: ti.ID, Kind: "movie", KeepUpToDate: true}
-		if _, err := store.Insert(tx, "items", it, domain.System); err != nil {
+		if _, err := database.Insert(tx, "items", it, domain.System); err != nil {
 			return err
 		}
 		v := &domain.Version{TitleID: ti.ID, Label: "HD", PickRulesID: pr.ID, LibraryFolderID: lf.ID, FolderName: "Dune Part Two (2024)", IsMain: true, KeepUpToDate: true}
-		if _, err := store.Insert(tx, "versions", v, domain.System); err != nil {
+		if _, err := database.Insert(tx, "versions", v, domain.System); err != nil {
 			return err
 		}
 		sl := &domain.Slot{ItemID: it.ID, VersionID: v.ID, State: state}
-		if _, err := store.Insert(tx, "slots", sl, domain.System); err != nil {
+		if _, err := database.Insert(tx, "slots", sl, domain.System); err != nil {
 			return err
 		}
 		x.title, x.slot, x.ver = ti.ID, sl.ID, v.ID
@@ -274,7 +276,7 @@ func newLabMovie(t *testing.T, o labMovieOpts) *labMovie {
 			so := &domain.Source{Name: "Lab", Protocol: "torrent", Format: "torznab", URL: o.feed, AllowLocal: true,
 				UseFor: domain.SourceUse{Feed: true, AutoSearch: true, HandSearch: true}, Kinds: []string{"movie"}, Categories: map[string][]int{"movie": {2000}},
 				Priority: 25, State: "enabled", Extra: map[string]string{}}
-			if _, err := store.Insert(tx, "sources", so, domain.System); err != nil {
+			if _, err := database.Insert(tx, "sources", so, domain.System); err != nil {
 				return err
 			}
 		}
@@ -284,7 +286,7 @@ func newLabMovie(t *testing.T, o labMovieOpts) *labMovie {
 		}
 		d := &domain.Downloader{Name: "Lab qBittorrent", Adapter: "qbittorrent", Protocol: "torrent", URL: labQbit(), Category: o.cat, Priority: 1,
 			PathMap: pm, AfterImport: "leave", State: "ok", AllowLocal: true}
-		_, err := store.Insert(tx, "downloaders", d, domain.System)
+		_, err := database.Insert(tx, "downloaders", d, domain.System)
 		return err
 	})
 	if err != nil {
@@ -435,7 +437,7 @@ func (x *labMovie) placed() (domain.File, bool) {
 	if !fid.Valid {
 		return f, false
 	}
-	if err := store.Get(context.Background(), x.s.Read(), "files", fid.Int64, &f); err != nil {
+	if err := database.Get(context.Background(), x.s.Read(), "files", fid.Int64, &f); err != nil {
 		return f, false
 	}
 	return f, f.State == "present"
@@ -720,7 +722,7 @@ func TestLabBeta48WaitForBetter(t *testing.T) {
 	t.Logf("during the wait the feed check (%s) held %s; 720p %s (%s)", foundBy, heldName, rels[labDune720].State, rels[labDune720].has("rank.lost"))
 	// The wait is over: the scheduled check chooses what was held.
 	if err := x.s.Write(context.Background(), func(tx *sql.Tx) error {
-		_, err := tx.Exec("UPDATE slots SET next_try_at = ? WHERE id = ?", store.FormatTime(time.Now().Add(-time.Minute)), x.slot)
+		_, err := tx.Exec("UPDATE slots SET next_try_at = ? WHERE id = ?", database.FormatTime(time.Now().Add(-time.Minute)), x.slot)
 		return err
 	}); err != nil {
 		t.Fatal(err)
@@ -762,7 +764,7 @@ func TestLabBeta52StartWhenOut(t *testing.T) {
 		t.Fatalf("gate opened early: %d %v", n, err)
 	}
 	// The digital date passes.
-	past := store.FormatTime(time.Now().Add(-time.Hour))
+	past := database.FormatTime(time.Now().Add(-time.Hour))
 	if err := x.s.Write(context.Background(), func(tx *sql.Tx) error {
 		_, err := tx.Exec("UPDATE titles SET digital_date = ?, gate_opens_at = ?, status = 'released' WHERE id = ?", past, past, x.title)
 		return err

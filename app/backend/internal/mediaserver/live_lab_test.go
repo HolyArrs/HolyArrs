@@ -15,13 +15,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/naming"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 const labRelease = "HolyArrs.Lab.Signal.2026.1080p.WEB.H264-HOLYARRS"
@@ -74,12 +75,12 @@ func waitItems(t *testing.T, base, token string, want int, pathPart string) []je
 	}
 }
 
-func waitJob(t *testing.T, s *store.Store, id int64) domain.Job {
+func waitJob(t *testing.T, s *database.Store, id int64) domain.Job {
 	t.Helper()
 	deadline := time.Now().Add(20 * time.Second)
 	for {
 		var j domain.Job
-		if err := store.Get(context.Background(), s.Read(), "jobs", id, &j); err != nil {
+		if err := database.Get(context.Background(), s.Read(), "jobs", id, &j); err != nil {
 			t.Fatal(err)
 		}
 		if j.State == "done" {
@@ -109,7 +110,7 @@ func TestLiveJellyfinImporterRenameDelete(t *testing.T) {
 	}
 	ctx := context.Background()
 	dbDir := filepath.Join(root, "holyarrs-db")
-	s, err := store.Open(dbDir, store.Options{})
+	s, err := database.Open(dbDir, database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -152,34 +153,34 @@ func TestLiveJellyfinImporterRenameDelete(t *testing.T) {
 		title := &domain.Title{Kind: "movie", GateDriver: "none", Name: "HolyArrs Lab Signal", SortName: "holyarrs lab signal", Year: &year,
 			Aliases: []string{}, SourceIDs: map[string]string{}, MetadataSource: "local", NewPartsPolicy: "all", ReleaseGate: "released",
 			MusicTypes: []string{}, WhyAdded: "by_hand", Artwork: []string{}, Status: "released", State: "active"}
-		if _, err := store.Insert(tx, "library_folders", folder, domain.System); err != nil {
+		if _, err := database.Insert(tx, "library_folders", folder, domain.System); err != nil {
 			return err
 		}
-		if _, err := store.Insert(tx, "titles", title, domain.System); err != nil {
+		if _, err := database.Insert(tx, "titles", title, domain.System); err != nil {
 			return err
 		}
 		item := &domain.Item{TitleID: title.ID, Kind: "movie"}
-		if _, err := store.Insert(tx, "items", item, domain.System); err != nil {
+		if _, err := database.Insert(tx, "items", item, domain.System); err != nil {
 			return err
 		}
 		version := &domain.Version{TitleID: title.ID, Label: "HD", PickRulesID: pickRulesID, LibraryFolderID: folder.ID,
 			FolderName: importer.FolderName(title.Name, year), IsMain: true}
-		if _, err := store.Insert(tx, "versions", version, domain.System); err != nil {
+		if _, err := database.Insert(tx, "versions", version, domain.System); err != nil {
 			return err
 		}
 		slot := &domain.Slot{ItemID: item.ID, VersionID: version.ID, State: domain.SlotDownloading}
-		if _, err := store.Insert(tx, "slots", slot, domain.System); err != nil {
+		if _, err := database.Insert(tx, "slots", slot, domain.System); err != nil {
 			return err
 		}
 		downloader := &domain.Downloader{Name: "Disposable", Adapter: "qbittorrent", Protocol: "torrent", URL: "http://lab.invalid",
 			Category: "holyarrs", PathMap: []domain.PathMap{}, AfterImport: "leave", State: "ok"}
-		if _, err := store.Insert(tx, "downloaders", downloader, domain.System); err != nil {
+		if _, err := database.Insert(tx, "downloaders", downloader, domain.System); err != nil {
 			return err
 		}
 		download := &domain.Download{DownloaderID: downloader.ID, SlotIDs: []int64{slot.ID}, ExternalID: "media-server-lab",
 			Progress: 1, State: "finished", FilesSeen: []domain.SeenFile{{Name: filepath.Base(sourceFile), Size: stat.Size()}},
 			SavePath: downloadRoot, StartedBy: domain.System}
-		if _, err := store.Insert(tx, "downloads", download, domain.System); err != nil {
+		if _, err := database.Insert(tx, "downloads", download, domain.System); err != nil {
 			return err
 		}
 		titleID, downloadID = title.ID, download.ID
@@ -230,7 +231,7 @@ func TestLiveJellyfinImporterRenameDelete(t *testing.T) {
 	waitItems(t, base, token, 0, "")
 	t.Log("delete visible: matching Jellyfin item count=0")
 
-	events, _, err := s.Events(ctx, store.EventFilter{Kinds: []string{domain.EventMediaRefreshed}})
+	events, _, err := s.Events(ctx, database.EventFilter{Kinds: []string{domain.EventMediaRefreshed}})
 	if err != nil || len(events) != 3 {
 		t.Fatalf("media refresh events=%d: %v", len(events), err)
 	}

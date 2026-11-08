@@ -9,10 +9,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // fakeMusic is MusicBrainz over fixed answers.
@@ -142,7 +143,7 @@ func labMusic() *fakeMusic {
 	}
 }
 
-func musicService(t *testing.T) (*Service, *store.Store, *fakeMusic, domain.LibraryFolder) {
+func musicService(t *testing.T) (*Service, *database.Store, *fakeMusic, domain.LibraryFolder) {
 	t.Helper()
 	s := open(t)
 	fm := labMusic()
@@ -162,9 +163,9 @@ type albumRow struct {
 	Dropped  bool
 }
 
-func albumsOf(t *testing.T, s *store.Store, titleID int64) map[string]albumRow {
+func albumsOf(t *testing.T, s *database.Store, titleID int64) map[string]albumRow {
 	t.Helper()
-	ps, err := store.Select[domain.Part](context.Background(), s.Read(), "parts", "title_id = ? AND kind = 'album'", titleID)
+	ps, err := database.Select[domain.Part](context.Background(), s.Read(), "parts", "title_id = ? AND kind = 'album'", titleID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -188,7 +189,7 @@ type trackRow struct {
 	Dropped bool
 }
 
-func tracksOf(t *testing.T, s *store.Store, partID int64) []trackRow {
+func tracksOf(t *testing.T, s *database.Store, partID int64) []trackRow {
 	t.Helper()
 	rows, err := s.Read().Query(`SELECT i.id, COALESCE(i.name, ''), COALESCE(i.recording_id, ''), json_extract(i.numbers, '$.disc'), json_extract(i.numbers, '$.track'),
 		COALESCE(sl.id, 0), COALESCE(sl.state, ''), COALESCE(sl.last_reason, ''), i.keep_up_to_date, i.dropped_at IS NOT NULL
@@ -209,9 +210,9 @@ func tracksOf(t *testing.T, s *store.Store, partID int64) []trackRow {
 	return out
 }
 
-func chosenOf(t *testing.T, s *store.Store, partID int64) domain.AlbumPressing {
+func chosenOf(t *testing.T, s *database.Store, partID int64) domain.AlbumPressing {
 	t.Helper()
-	ps, err := store.Select[domain.AlbumPressing](context.Background(), s.Read(), "pressings", "part_id = ? AND chosen = 1", partID)
+	ps, err := database.Select[domain.AlbumPressing](context.Background(), s.Read(), "pressings", "part_id = ? AND chosen = 1", partID)
 	if err != nil || len(ps) != 1 {
 		t.Fatalf("chosen pressing of %d: %v %v", partID, ps, err)
 	}
@@ -243,7 +244,7 @@ func TestAddArtistAlbumChoices(t *testing.T) {
 				t.Fatalf("add: %v (job %d)", err, jobID)
 			}
 			var ti domain.Title
-			if err := store.Get(context.Background(), s.Read(), "titles", id, &ti); err != nil {
+			if err := database.Get(context.Background(), s.Read(), "titles", id, &ti); err != nil {
 				t.Fatal(err)
 			}
 			if ti.Kind != "artist" || ti.MetadataSource != "musicbrainz" || ti.SourceIDs["musicbrainz"] != labArtist || *ti.AlbumChoice != c.choice ||
@@ -269,7 +270,7 @@ func TestAddArtistAlbumChoices(t *testing.T) {
 				}
 			}
 			var vs []domain.Version
-			if vs, err = store.Select[domain.Version](context.Background(), s.Read(), "versions", "title_id = ?", id); err != nil || len(vs) != 1 || vs[0].FolderName != "Lab Band" {
+			if vs, err = database.Select[domain.Version](context.Background(), s.Read(), "versions", "title_id = ?", id); err != nil || len(vs) != 1 || vs[0].FolderName != "Lab Band" {
 				t.Fatalf("version %+v %v", vs, err)
 			}
 			var n int
@@ -311,7 +312,7 @@ func TestAddArtistRefusals(t *testing.T) {
 	other := "a0000000-0000-0000-0000-000000000002"
 	fm.artists[other] = metadata.Artist{MBID: other, Name: "Kept Out", Status: "running"}
 	_ = s.Write(ctx, func(tx *sql.Tx) error {
-		_, err := store.Insert(tx, "never_add", &domain.NeverAdd{Kind: "artist", SourceIDs: map[string]string{"musicbrainz": other}, Name: "Kept Out"}, domain.System)
+		_, err := database.Insert(tx, "never_add", &domain.NeverAdd{Kind: "artist", SourceIDs: map[string]string{"musicbrainz": other}, Name: "Kept Out"}, domain.System)
 		return err
 	})
 	if _, _, err := svc.AddArtist(ctx, other, ArtistAddOptions{}, domain.System); !errors.Is(err, ErrArtistNeverAdd) {
@@ -374,7 +375,7 @@ func TestRefreshArtistMakesTracks(t *testing.T) {
 		t.Fatalf("Next Record has no Pressings yet: %+v", tr)
 	}
 	var ti domain.Title
-	_ = store.Get(context.Background(), s.Read(), "titles", id, &ti)
+	_ = database.Get(context.Background(), s.Read(), "titles", id, &ti)
 	if ti.RefreshedAt == nil || !ti.RefreshedAt.Equal(now) {
 		t.Fatalf("refreshed_at %v", ti.RefreshedAt)
 	}
@@ -453,7 +454,7 @@ func TestRefreshArtistKeepsRowsSlotsAndFiles(t *testing.T) {
 		}
 		f := domain.File{SlotIDs: []int64{before[0].SlotID}, VersionID: vid, RelativePath: "Lab Band/Old Days/01 Song 1.flac", Languages: []string{},
 			Origin: "imported", PlacedBy: "hardlink", Role: "main", State: "present"}
-		if _, err := store.Insert(tx, "files", &f, domain.System); err != nil {
+		if _, err := database.Insert(tx, "files", &f, domain.System); err != nil {
 			return err
 		}
 		fileID = f.ID
@@ -569,7 +570,7 @@ func TestSetAlbumPressing(t *testing.T) {
 	id := addLabArtist(t, svc, AlbumsAll)
 	al := albumsOf(t, s, id)
 	before := tracksOf(t, s, al[rgOld].ID)
-	ps, _ := store.Select[domain.AlbumPressing](ctx, s.Read(), "pressings", "part_id = ? AND mbid = ?", al[rgOld].ID, relOldDx)
+	ps, _ := database.Select[domain.AlbumPressing](ctx, s.Read(), "pressings", "part_id = ? AND mbid = ?", al[rgOld].ID, relOldDx)
 	if _, err := svc.SetAlbum(ctx, al[rgOld].ID, nil, ps[0].ID, domain.System); err != nil {
 		t.Fatal(err)
 	}
@@ -601,7 +602,7 @@ func TestSetAlbumPressing(t *testing.T) {
 	if _, err := svc.SetAlbum(ctx, al[rgLive].ID, &on, 0, domain.System); !errors.Is(err, ErrAlbumNotIncluded) {
 		t.Fatalf("live album: %v", err)
 	}
-	other, _ := store.Select[domain.AlbumPressing](ctx, s.Read(), "pressings", "part_id = ?", al[rgMid].ID)
+	other, _ := database.Select[domain.AlbumPressing](ctx, s.Read(), "pressings", "part_id = ?", al[rgMid].ID)
 	if _, err := svc.SetAlbum(ctx, al[rgOld].ID, nil, other[0].ID, domain.System); !errors.Is(err, ErrNoSuchPressing) {
 		t.Fatalf("another album's pressing: %v", err)
 	}
@@ -669,7 +670,7 @@ func TestArtistDroppedByMusicBrainz(t *testing.T) {
 		t.Fatalf("%+v %v", out, err)
 	}
 	var ti domain.Title
-	_ = store.Get(context.Background(), s.Read(), "titles", id, &ti)
+	_ = database.Get(context.Background(), s.Read(), "titles", id, &ti)
 	if ti.DroppedAt == nil || ti.State != "active" || len(albumsOf(t, s, id)) != 7 {
 		t.Fatalf("dropped artist %+v", ti)
 	}
@@ -751,7 +752,7 @@ func TestArtistRefreshPlan(t *testing.T) {
 		t.Fatalf("by hand %v %v", ids, why)
 	}
 	_ = s.Write(ctx, func(tx *sql.Tx) error {
-		_, err := tx.Exec("UPDATE titles SET refreshed_at = ? WHERE id = ?", store.FormatTime(now.Add(-72*time.Hour)), id)
+		_, err := tx.Exec("UPDATE titles SET refreshed_at = ? WHERE id = ?", database.FormatTime(now.Add(-72*time.Hour)), id)
 		return err
 	})
 	if ids, why, _ := svc.ArtistRefreshPlan(ctx, false); len(ids) != 1 || why[id] != "still active" {
@@ -775,7 +776,7 @@ func TestRefreshLeavesAlbumWhenPressingsFail(t *testing.T) {
 			ctx := context.Background()
 			id := addLabArtist(t, svc, AlbumsAll)
 			al := albumsOf(t, s, id)
-			ps, _ := store.Select[domain.AlbumPressing](ctx, s.Read(), "pressings", "part_id = ? AND mbid = ?", al[rgOld].ID, relOldDx)
+			ps, _ := database.Select[domain.AlbumPressing](ctx, s.Read(), "pressings", "part_id = ? AND mbid = ?", al[rgOld].ID, relOldDx)
 			if _, err := svc.SetAlbum(ctx, al[rgOld].ID, nil, ps[0].ID, domain.System); err != nil {
 				t.Fatal(err)
 			}

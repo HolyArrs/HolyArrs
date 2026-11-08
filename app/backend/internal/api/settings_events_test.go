@@ -11,8 +11,8 @@ import (
 	"testing"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 func TestSettingsChangeAreas(t *testing.T) {
@@ -50,7 +50,7 @@ func TestClientItemRemoveEvent(t *testing.T) {
 	var did int64
 	_ = x.s.Read().QueryRow("SELECT id FROM downloaders").Scan(&did)
 	do(t, "POST", x.srv.URL+"/api/v1/downloaders/"+itoa(did)+"/items/"+strings.ToUpper(outHash)+"/remove", `{"delete_files":true}`, http.StatusOK)
-	es, _, err := x.s.Events(context.Background(), store.EventFilter{Kinds: []string{"download_removed"}})
+	es, _, err := x.s.Events(context.Background(), database.EventFilter{Kinds: []string{"download_removed"}})
 	if err != nil || len(es) != 1 {
 		t.Fatalf("events %v %v", es, err)
 	}
@@ -76,7 +76,7 @@ func TestSettingsChangedName(t *testing.T) {
 	for _, m := range []string{"PUT", "DELETE"} {
 		h.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(m, "/api/v1/downloaders/"+itoa(did), nil))
 	}
-	es, _, err := x.s.Events(context.Background(), store.EventFilter{Kinds: []string{EventSettingsChanged}})
+	es, _, err := x.s.Events(context.Background(), database.EventFilter{Kinds: []string{EventSettingsChanged}})
 	if err != nil || len(es) != 2 {
 		t.Fatalf("events %v %v", es, err)
 	}
@@ -103,11 +103,11 @@ func TestSettingsSaveLeavesOnlyTheAuditEvent(t *testing.T) {
 		body := do(t, "GET", x.srv.URL+"/api/v1/settings/"+area, "", http.StatusOK)
 		do(t, "PUT", x.srv.URL+"/api/v1/settings/"+area, string(body), http.StatusOK)
 	}
-	old, _, err := x.s.Events(context.Background(), store.EventFilter{Kinds: []string{"setting_changed"}})
+	old, _, err := x.s.Events(context.Background(), database.EventFilter{Kinds: []string{"setting_changed"}})
 	if err != nil || len(old) != 0 {
 		t.Fatalf("setting_changed rows %v %v", old, err)
 	}
-	es, _, err := x.s.Events(context.Background(), store.EventFilter{Kinds: []string{EventSettingsChanged}})
+	es, _, err := x.s.Events(context.Background(), database.EventFilter{Kinds: []string{EventSettingsChanged}})
 	if err != nil || len(es) != 2 {
 		t.Fatalf("settings_changed rows %v %v", es, err)
 	}
@@ -175,7 +175,7 @@ func TestSignInSettingsAreAudited(t *testing.T) {
 	if st, b := call("PUT", "/api/v1/auth/settings", body); st >= 300 {
 		t.Fatalf("put %d %s", st, b)
 	}
-	es, _, err := f.s.Events(context.Background(), store.EventFilter{Kinds: []string{EventSettingsChanged}})
+	es, _, err := f.s.Events(context.Background(), database.EventFilter{Kinds: []string{EventSettingsChanged}})
 	if err != nil || len(es) != 1 || es[0].Data["area"] != "sign-in" {
 		t.Fatalf("events %+v %v", es, err)
 	}

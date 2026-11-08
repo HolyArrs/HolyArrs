@@ -19,8 +19,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/qr"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Two-factor sign-in: time-based six-digit codes (RFC 6238, SHA-1, 30 s)
@@ -184,7 +184,7 @@ func (a *Auth) checkCode(ctx context.Context, userID int64, code string) (bool, 
 	var n int64
 	err = a.s.WriteCore(ctx, func(tx *sql.Tx) error {
 		res, err := tx.Exec("UPDATE backup_codes SET used_at = ? WHERE user_id = ? AND hash = ? AND used_at IS NULL",
-			store.FormatTime(a.now()), userID, sum(bc))
+			database.FormatTime(a.now()), userID, sum(bc))
 		if err == nil {
 			n, err = res.RowsAffected()
 		}

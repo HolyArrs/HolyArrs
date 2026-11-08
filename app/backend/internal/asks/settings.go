@@ -10,9 +10,9 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/alerts"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // DefaultPerWeek is each kind's weekly limit when none is set: 10 movies,
@@ -65,7 +65,7 @@ var settingKeys = []string{"ask_movies_per_week", "ask_library_folder_id", "ask_
 
 // ReadSettings reads the Request settings (10 a week of each kind, search
 // on approve).
-func ReadSettings(ctx context.Context, db store.Lister) (Settings, error) {
+func ReadSettings(ctx context.Context, db database.Lister) (Settings, error) {
 	s := Settings{MoviesPerWeek: DefaultPerWeek, ShowsPerWeek: DefaultPerWeek, MusicPerWeek: DefaultPerWeek, SearchOnApprove: true}
 	args := make([]any, len(settingKeys))
 	for i, k := range settingKeys {
@@ -109,7 +109,7 @@ func ReadSettings(ctx context.Context, db store.Lister) (Settings, error) {
 }
 
 // SaveSettings checks and stores the Request settings.
-func SaveSettings(ctx context.Context, st *store.Store, s Settings, by domain.Actor) error {
+func SaveSettings(ctx context.Context, st *database.Store, s Settings, by domain.Actor) error {
 	for _, n := range []int{s.MoviesPerWeek, s.ShowsPerWeek, s.MusicPerWeek} {
 		if n < 0 || n > 1000 {
 			return ErrPerWeek
@@ -118,7 +118,7 @@ func SaveSettings(ctx context.Context, st *store.Store, s Settings, by domain.Ac
 	db := st.Read()
 	if s.LibraryFolderID != 0 {
 		var lf domain.LibraryFolder
-		if err := store.Get(ctx, db, "library_folders", s.LibraryFolderID, &lf); errors.Is(err, store.ErrNotFound) {
+		if err := database.Get(ctx, db, "library_folders", s.LibraryFolderID, &lf); errors.Is(err, database.ErrNotFound) {
 			return library.ErrNoFolder
 		} else if err != nil {
 			return err
@@ -129,7 +129,7 @@ func SaveSettings(ctx context.Context, st *store.Store, s Settings, by domain.Ac
 	}
 	if s.ShowLibraryFolderID != 0 {
 		var lf domain.LibraryFolder
-		if err := store.Get(ctx, db, "library_folders", s.ShowLibraryFolderID, &lf); errors.Is(err, store.ErrNotFound) {
+		if err := database.Get(ctx, db, "library_folders", s.ShowLibraryFolderID, &lf); errors.Is(err, database.ErrNotFound) {
 			return library.ErrNoFolder
 		} else if err != nil {
 			return err
@@ -140,7 +140,7 @@ func SaveSettings(ctx context.Context, st *store.Store, s Settings, by domain.Ac
 	}
 	if s.MusicLibraryFolderID != 0 {
 		var lf domain.LibraryFolder
-		if err := store.Get(ctx, db, "library_folders", s.MusicLibraryFolderID, &lf); errors.Is(err, store.ErrNotFound) {
+		if err := database.Get(ctx, db, "library_folders", s.MusicLibraryFolderID, &lf); errors.Is(err, database.ErrNotFound) {
 			return library.ErrNoFolder
 		} else if err != nil {
 			return err
@@ -163,7 +163,7 @@ func SaveSettings(ctx context.Context, st *store.Store, s Settings, by domain.Ac
 	}
 	who, _ := json.Marshal(by)
 	return st.Write(ctx, func(tx *sql.Tx) error {
-		now := store.FormatTime(time.Now())
+		now := database.FormatTime(time.Now())
 		vals := []string{strconv.Itoa(s.MoviesPerWeek), strconv.FormatInt(s.LibraryFolderID, 10), strconv.FormatInt(s.PickRulesID, 10), strconv.FormatBool(s.SearchOnApprove),
 			strconv.FormatInt(s.ShowLibraryFolderID, 10), strconv.FormatInt(s.ShowPickRulesID, 10), strconv.Itoa(s.ShowsPerWeek),
 			strconv.FormatInt(s.MusicLibraryFolderID, 10), strconv.FormatInt(s.MusicPickRulesID, 10), strconv.Itoa(s.MusicPerWeek), strconv.FormatBool(s.PlexWatchlists)}
@@ -189,7 +189,7 @@ type PersonLimit struct {
 
 // SetPersonLimit sets one person's own weekly limits, one per kind; nil
 // goes back to that kind's default. It replaces the older all-kinds value.
-func SetPersonLimit(ctx context.Context, st *store.Store, userID int64, l PersonLimit) error {
+func SetPersonLimit(ctx context.Context, st *database.Store, userID int64, l PersonLimit) error {
 	for _, n := range []*int{l.Movies, l.Shows, l.Music} {
 		if n != nil && (*n < 0 || *n > 1000) {
 			return ErrPerWeek
@@ -201,7 +201,7 @@ func SetPersonLimit(ctx context.Context, st *store.Store, userID int64, l Person
 			return err
 		}
 		if n == 0 {
-			return store.ErrNotFound
+			return database.ErrNotFound
 		}
 		_, err := tx.Exec(`INSERT INTO user_ask_settings (user_id, per_week, movies_per_week, shows_per_week, music_per_week) VALUES (?, NULL, ?, ?, ?)
 			ON CONFLICT (user_id) DO UPDATE SET per_week = NULL, movies_per_week = excluded.movies_per_week,
@@ -226,7 +226,7 @@ var (
 )
 
 // ReadTargets reads where Alerts reach a person.
-func ReadTargets(ctx context.Context, db store.Querier, userID int64) (Targets, error) {
+func ReadTargets(ctx context.Context, db database.Querier, userID int64) (Targets, error) {
 	var t Targets
 	on := true
 	t.NewEpisodes = &on
@@ -238,7 +238,7 @@ func ReadTargets(ctx context.Context, db store.Querier, userID int64) (Targets, 
 }
 
 // SaveTargets stores where Alerts reach a person.
-func SaveTargets(ctx context.Context, st *store.Store, userID int64, t Targets) error {
+func SaveTargets(ctx context.Context, st *database.Store, userID int64, t Targets) error {
 	if t.Email != "" && !alerts.CheckAddress(t.Email) {
 		return ErrEmail
 	}

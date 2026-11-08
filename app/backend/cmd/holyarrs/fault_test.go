@@ -17,8 +17,8 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/supervisor"
 )
 
 // The fault runs (3.7.10, decision 0007 "Containment"): a crash in every
@@ -41,7 +41,7 @@ type faultApp struct {
 	base string
 	dir  string
 	pc   *parts.Control
-	reg  *supervisor.Registry
+	reg  *jobs.Registry
 }
 
 // startFaultApp runs the app with o and makes the owner.
@@ -132,7 +132,7 @@ func report(t *testing.T, line string) {
 	_, _ = fmt.Fprintln(f, line)
 }
 
-func waitStage(t *testing.T, reg *supervisor.Registry, key string, ok func(supervisor.Status) bool) supervisor.Status {
+func waitStage(t *testing.T, reg *jobs.Registry, key string, ok func(jobs.Status) bool) jobs.Status {
 	t.Helper()
 	deadline := time.Now().Add(20 * time.Second)
 	for {
@@ -150,22 +150,22 @@ func waitStage(t *testing.T, reg *supervisor.Registry, key string, ok func(super
 // Every supervised loop crashes on every pass: while they all fail and
 // retry, sign-in, the Library and a backup still work.
 func TestFaultCrashInEveryLoop(t *testing.T) {
-	reg := supervisor.NewRegistry()
+	reg := jobs.NewRegistry()
 	reg.BaseDelay, reg.MaxDelay = 20*time.Millisecond, 100*time.Millisecond
 	reg.Logf = func(string, ...any) {}
-	wrap := func(l supervisor.Loop) supervisor.Loop {
+	wrap := func(l jobs.Loop) jobs.Loop {
 		name := l.Name
 		l.Run = func(context.Context) error { panic("injected crash in " + name) }
 		return l
 	}
 	a := startFaultApp(t, runOpts{reg: reg, wrap: wrap})
 	for _, name := range supervisedLoops {
-		waitStage(t, reg, supervisor.StageKey(name), func(s supervisor.Status) bool { return s.Restarts >= 2 })
+		waitStage(t, reg, jobs.StageKey(name), func(s jobs.Status) bool { return s.Restarts >= 2 })
 	}
 	a.coreWorks("every loop crashing on every pass")
 	for _, name := range supervisedLoops {
-		st, _ := reg.Get(supervisor.StageKey(name))
-		if st.State != supervisor.Failed && st.State != supervisor.Retrying && st.State != supervisor.Running {
+		st, _ := reg.Get(jobs.StageKey(name))
+		if st.State != jobs.Failed && st.State != jobs.Retrying && st.State != jobs.Running {
 			t.Errorf("%s: %+v", name, st)
 		}
 		if st.Restarts < 2 {
@@ -302,7 +302,7 @@ func TestFaultBadOutsideServices(t *testing.T) {
 		t.Fatalf("health states %d %s", st, body)
 	}
 	var states struct {
-		Links []supervisor.Status `json:"states"`
+		Links []jobs.Status `json:"states"`
 	}
 	if err := json.Unmarshal([]byte(body), &states); err != nil {
 		t.Fatalf("health states: %v %s", err, body)
@@ -319,7 +319,7 @@ func TestFaultBadOutsideServices(t *testing.T) {
 			// A failed "test now" does not move a Source or a subtitle
 			// site off running: their state follows failed searches
 			// (back-off), which this run does not make.
-			if s.State == supervisor.Running && (l.kind == "downloader" || l.kind == "media_server") {
+			if s.State == jobs.Running && (l.kind == "downloader" || l.kind == "media_server") {
 				t.Errorf("%s still shows running after hanging and erroring", key)
 			}
 		}
@@ -332,11 +332,11 @@ func TestFaultBadOutsideServices(t *testing.T) {
 // A pass that ignores its deadline is shown stuck and never started a
 // second time; sign-in, the Library and a backup still work.
 func TestFaultPassIgnoresItsDeadline(t *testing.T) {
-	reg := supervisor.NewRegistry()
+	reg := jobs.NewRegistry()
 	reg.Logf = func(string, ...any) {}
 	block := make(chan struct{})
 	var starts atomic.Int32
-	wrap := func(l supervisor.Loop) supervisor.Loop {
+	wrap := func(l jobs.Loop) jobs.Loop {
 		if l.Name != "gates" {
 			return l
 		}
@@ -350,8 +350,8 @@ func TestFaultPassIgnoresItsDeadline(t *testing.T) {
 	}
 	a := startFaultApp(t, runOpts{reg: reg, wrap: wrap})
 	t.Cleanup(func() { close(block) }) // runs before the app stops
-	st := waitStage(t, reg, supervisor.StageKey("gates"), func(s supervisor.Status) bool { return s.Stuck })
-	if st.State != supervisor.Failed || !strings.Contains(st.Reason, "Stuck") {
+	st := waitStage(t, reg, jobs.StageKey("gates"), func(s jobs.Status) bool { return s.Stuck })
+	if st.State != jobs.Failed || !strings.Contains(st.Reason, "Stuck") {
 		t.Errorf("stuck stage: %+v", st)
 	}
 	a.coreWorks("one pass ignoring its deadline")

@@ -67,9 +67,6 @@ jobs:
           - goarch: amd64
             goarm: ""
             test_exec: ""
-          - goarch: "386"
-            goarm: ""
-            test_exec: ""
           - goarch: arm64
             goarm: ""
             test_exec: qemu-aarch64-static
@@ -89,6 +86,14 @@ jobs:
         with:
           go-version: "1.27.3"
           cache: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "24"
+      # The Go tests serve the built pages, so they need them first.
+      - name: Build the web app
+        run: |
+          npm --prefix app/frontend ci --ignore-scripts --no-audit --no-fund
+          npm --prefix app/frontend run build
       - name: Build and vet ${{ matrix.goarch }}
         run: |
           set -o pipefail
@@ -196,6 +201,14 @@ jobs:
         with:
           go-version: "1.27.3"
           cache: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "24"
+      # The Go tests serve the built pages, so they need them first.
+      - name: Build the web app
+        run: |
+          npm --prefix app/frontend ci --ignore-scripts --no-audit --no-fund
+          npm --prefix app/frontend run build
       - name: API spec matches the code (contract)
         run: |
           set -o pipefail
@@ -323,6 +336,14 @@ jobs:
         with:
           go-version: "1.27.3"
           cache: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "24"
+      # The Go tests serve the built pages, so they need them first.
+      - name: Build the web app
+        run: |
+          npm --prefix app/frontend ci --ignore-scripts --no-audit --no-fund
+          npm --prefix app/frontend run build
       - name: Race detector
         run: |
           set -o pipefail

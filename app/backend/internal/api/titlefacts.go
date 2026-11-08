@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
@@ -21,7 +22,7 @@ type titleFacts struct {
 type titleFactsKey struct{}
 
 // withTitleFacts reads the facts for all Titles and keeps them on ctx for titleView.
-func withTitleFacts(ctx context.Context, db store.Lister) (context.Context, error) {
+func withTitleFacts(ctx context.Context, db database.Lister) (context.Context, error) {
 	f := &titleFacts{sizes: map[int64]int64{}, activity: map[int64]time.Time{}, versions: map[int64][]domain.Version{}}
 	rows, err := db.QueryContext(ctx, `SELECT v.title_id, COALESCE(SUM(f.size), 0) FROM files f JOIN versions v ON v.id = f.version_id GROUP BY v.title_id`)
 	if err != nil {
@@ -55,7 +56,7 @@ func withTitleFacts(ctx context.Context, db store.Lister) (context.Context, erro
 			rows.Close()
 			return ctx, err
 		}
-		if t, err := time.Parse(store.TimeLayout, at.String); at.Valid && err == nil {
+		if t, err := time.Parse(database.TimeLayout, at.String); at.Valid && err == nil {
 			f.activity[id] = t
 		}
 	}
@@ -63,7 +64,7 @@ func withTitleFacts(ctx context.Context, db store.Lister) (context.Context, erro
 	if err := rows.Err(); err != nil {
 		return ctx, err
 	}
-	vs, err := store.Select[domain.Version](ctx, db, "versions", "1 = 1 ORDER BY title_id, is_main DESC, id")
+	vs, err := database.Select[domain.Version](ctx, db, "versions", "1 = 1 ORDER BY title_id, is_main DESC, id")
 	if err != nil {
 		return ctx, err
 	}

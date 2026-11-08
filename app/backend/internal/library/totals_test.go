@@ -6,8 +6,8 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // TestAlbumsBatchMatchesOne: the batched Albums answers what AlbumOf
@@ -26,7 +26,7 @@ func TestAlbumsBatchMatchesOne(t *testing.T) {
 	if err != nil || len(sums) == 0 {
 		t.Fatalf("albums %v %v", sums, err)
 	}
-	parts, err := store.Select[domain.Part](ctx, s.Read(), "parts", "title_id = ? AND kind = 'album'", id)
+	parts, err := database.Select[domain.Part](ctx, s.Read(), "parts", "title_id = ? AND kind = 'album'", id)
 	if err != nil {
 		t.Fatal(err)
 	}

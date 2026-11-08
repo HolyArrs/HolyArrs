@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"github.com/HolyArrs/holyarrs/app/backend/internal/feature"
 	"context"
 	"crypto/subtle"
 	"database/sql"
@@ -18,8 +17,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/features"
 )
 
 // Sign-in through an outside account: Plex (a PIN that the person confirms
@@ -66,7 +67,7 @@ type WayView struct {
 
 func (a *Auth) way(ctx context.Context, p string) WayView {
 	v := WayView{
-		On:       a.signInSetting(ctx, p+"_on") == "true" && (p != ProviderEmby || feature.On(feature.EmbySignIn)),
+		On:       a.signInSetting(ctx, p+"_on") == "true" && (p != ProviderEmby || startup.FeatureOn(features.EmbySignIn)),
 		URL:      a.signInSetting(ctx, p+"_url"),
 		ServerID: a.signInSetting(ctx, p+"_server_id"),
 		Join:     a.signInSetting(ctx, p+"_join"),
@@ -87,7 +88,7 @@ func (a *Auth) clientID(ctx context.Context) string {
 	_ = a.s.WriteCore(ctx, func(tx *sql.Tx) error {
 		_, err := tx.Exec(`INSERT INTO settings(grp, key, value, created_at, created_by, updated_at, updated_by)
 			VALUES (?, ?, ?, ?, '{"kind":"system"}', ?, '{"kind":"system"}') ON CONFLICT(grp, key) DO NOTHING`,
-			settingsGroup, signInPrefix+keyClientID, id, store.FormatTime(a.now()), store.FormatTime(a.now()))
+			settingsGroup, signInPrefix+keyClientID, id, database.FormatTime(a.now()), database.FormatTime(a.now()))
 		return err
 	})
 	return a.signInSetting(ctx, keyClientID)
@@ -396,12 +397,12 @@ func (a *Auth) linkedUser(ctx context.Context, provider, extID, extName string, 
 			return err
 		}
 		u.Name = name
-		id, err = store.Insert(tx, "users", &u, domain.System)
+		id, err = database.Insert(tx, "users", &u, domain.System)
 		if err != nil {
 			return err
 		}
 		_, err = tx.Exec("INSERT INTO user_links(user_id, provider, external_id, external_name, created_at) VALUES (?, ?, ?, ?, ?)",
-			id, provider, extID, truncate(extName, 200), store.FormatTime(a.now()))
+			id, provider, extID, truncate(extName, 200), database.FormatTime(a.now()))
 		return err
 	})
 	if err == nil {

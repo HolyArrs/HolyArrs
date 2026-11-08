@@ -7,11 +7,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
-func fourKRules(t *testing.T, s *store.Store) int64 {
+func fourKRules(t *testing.T, s *database.Store) int64 {
 	t.Helper()
 	var id int64
 	if err := s.Read().QueryRow("SELECT id FROM pick_rules WHERE name = ?", domain.FourKName).Scan(&id); err != nil {
@@ -20,9 +20,9 @@ func fourKRules(t *testing.T, s *store.Store) int64 {
 	return id
 }
 
-func versionsOf(t *testing.T, s *store.Store, titleID int64) []domain.Version {
+func versionsOf(t *testing.T, s *database.Store, titleID int64) []domain.Version {
 	t.Helper()
-	vs, err := store.Select[domain.Version](context.Background(), s.Read(), "versions", "title_id = ? ORDER BY id", titleID)
+	vs, err := database.Select[domain.Version](context.Background(), s.Read(), "versions", "title_id = ? ORDER BY id", titleID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -82,7 +82,7 @@ func TestAddVersionRules(t *testing.T) {
 	if _, err := AddVersion(ctx, s, id, VersionInput{Label: "x", PickRulesID: 999}, nil, now, domain.System); !errors.Is(err, ErrNoPickRules) {
 		t.Fatalf("bad rules: %v", err)
 	}
-	if _, err := AddVersion(ctx, s, 999, VersionInput{Label: "x"}, nil, now, domain.System); !errors.Is(err, store.ErrNotFound) {
+	if _, err := AddVersion(ctx, s, 999, VersionInput{Label: "x"}, nil, now, domain.System); !errors.Is(err, database.ErrNotFound) {
 		t.Fatalf("no title: %v", err)
 	}
 
@@ -115,7 +115,7 @@ func TestRemoveVersion(t *testing.T) {
 	if err := RemoveVersion(ctx, s, id, vs[0].ID, domain.System); !errors.Is(err, ErrMainVersion) {
 		t.Fatalf("main: %v", err)
 	}
-	if err := RemoveVersion(ctx, s, 999, vs[1].ID, domain.System); !errors.Is(err, store.ErrNotFound) {
+	if err := RemoveVersion(ctx, s, 999, vs[1].ID, domain.System); !errors.Is(err, database.ErrNotFound) {
 		t.Fatalf("wrong title: %v", err)
 	}
 	if err := RemoveVersion(ctx, s, id, vs[1].ID, domain.System); err != nil {

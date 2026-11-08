@@ -9,9 +9,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/tagset"
 )
 
@@ -194,7 +195,7 @@ func dropSecret(tx *sql.Tx, d *domain.Downloader) error {
 
 // Add stores a new Downloader, its key or password in the vault.
 // then, when given, runs in the same transaction with the new id.
-func Add(ctx context.Context, s *store.Store, v *secrets.Vault, in Input, by domain.Actor, then ...func(tx *sql.Tx, id int64) error) (domain.Downloader, error) {
+func Add(ctx context.Context, s *database.Store, v *secrets.Vault, in Input, by domain.Actor, then ...func(tx *sql.Tx, id int64) error) (domain.Downloader, error) {
 	var d domain.Downloader
 	if err := fill(in, &d, true); err != nil {
 		return d, err
@@ -212,7 +213,7 @@ func Add(ctx context.Context, s *store.Store, v *secrets.Vault, in Input, by dom
 		if err := putSecret(tx, v, &d, in.Secret, by); err != nil {
 			return err
 		}
-		id, err := store.Insert(tx, "downloaders", &d, by)
+		id, err := database.Insert(tx, "downloaders", &d, by)
 		if err != nil {
 			return err
 		}
@@ -227,14 +228,14 @@ func Add(ctx context.Context, s *store.Store, v *secrets.Vault, in Input, by dom
 }
 
 // Change edits a Downloader. A new host needs the key typed again.
-func Change(ctx context.Context, s *store.Store, v *secrets.Vault, id int64, in Input, by domain.Actor) (domain.Downloader, error) {
+func Change(ctx context.Context, s *database.Store, v *secrets.Vault, id int64, in Input, by domain.Actor) (domain.Downloader, error) {
 	var d domain.Downloader
 	err := s.Write(ctx, func(tx *sql.Tx) error {
-		if err := store.Get(ctx, tx, "downloaders", id, &d); err != nil {
+		if err := database.Get(ctx, tx, "downloaders", id, &d); err != nil {
 			return err
 		}
 		if d.Removed {
-			return store.ErrNotFound
+			return database.ErrNotFound
 		}
 		if n, err := pendingAttemptCount(tx, id); err != nil {
 			return err
@@ -287,7 +288,7 @@ func Change(ctx context.Context, s *store.Store, v *secrets.Vault, id int64, in 
 		if d.State != "disabled" {
 			d.State = "ok"
 		}
-		return store.Update(tx, "downloaders", &d, by)
+		return database.Update(tx, "downloaders", &d, by)
 	})
 	return d, err
 }
@@ -301,14 +302,14 @@ func activeCount(tx *sql.Tx, id int64) (int, error) {
 
 // Remove deletes a Downloader. One with Download history is kept hidden
 // (its name freed, its key dropped); one with active Downloads is refused.
-func Remove(ctx context.Context, s *store.Store, id int64, by domain.Actor) error {
+func Remove(ctx context.Context, s *database.Store, id int64, by domain.Actor) error {
 	return s.Write(ctx, func(tx *sql.Tx) error {
 		var d domain.Downloader
-		if err := store.Get(ctx, tx, "downloaders", id, &d); err != nil {
+		if err := database.Get(ctx, tx, "downloaders", id, &d); err != nil {
 			return err
 		}
 		if d.Removed {
-			return store.ErrNotFound
+			return database.ErrNotFound
 		}
 		if n, err := pendingAttemptCount(tx, id); err != nil {
 			return err
@@ -335,26 +336,26 @@ func Remove(ctx context.Context, s *store.Store, id int64, by domain.Actor) erro
 		}
 		d.Removed, d.State = true, "disabled"
 		d.Name = d.Name + " (removed " + strconv.FormatInt(id, 10) + ")"
-		return store.Update(tx, "downloaders", &d, by)
+		return database.Update(tx, "downloaders", &d, by)
 	})
 }
 
 // SetPaused pauses (send nothing new) or resumes a Downloader.
-func SetPaused(ctx context.Context, s *store.Store, id int64, paused bool, by domain.Actor) (domain.Downloader, error) {
+func SetPaused(ctx context.Context, s *database.Store, id int64, paused bool, by domain.Actor) (domain.Downloader, error) {
 	var d domain.Downloader
 	err := s.Write(ctx, func(tx *sql.Tx) error {
-		if err := store.Get(ctx, tx, "downloaders", id, &d); err != nil {
+		if err := database.Get(ctx, tx, "downloaders", id, &d); err != nil {
 			return err
 		}
 		if d.Removed {
-			return store.ErrNotFound
+			return database.ErrNotFound
 		}
 		if paused {
 			d.State = "disabled"
 		} else {
 			d.State, d.BackoffUntil, d.FailCount, d.LastError = "ok", nil, 0, ""
 		}
-		return store.Update(tx, "downloaders", &d, by)
+		return database.Update(tx, "downloaders", &d, by)
 	})
 	return d, err
 }

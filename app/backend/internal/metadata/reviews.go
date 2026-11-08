@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"io"
 	"net/http"
 	"net/url"
@@ -13,8 +14,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/HolyArrs/holyarrs/app/backend/internal/outside"
 )
 
 // Review is one written review or comment on a title, as plain text.
@@ -185,17 +184,17 @@ func (k *Trakt) get(ctx context.Context, path string, into any) (http.Header, er
 	if base == "" {
 		base = "https://api.trakt.tv"
 	}
-	op, err := outside.Begin(ctx, outside.Target{Kind: "metadata_trakt", Identity: []string{base, k.ClientID, k.Token}})
+	op, err := outbound.Begin(ctx, outbound.Target{Kind: "metadata_trakt", Identity: []string{base, k.ClientID, k.Token}})
 	if err != nil {
 		return nil, err
 	}
-	outcome := outside.Canceled
+	outcome := outbound.Canceled
 	defer func() { op.Finish(outcome) }()
 	actx, cancel := op.AttemptContext(ctx, 10*time.Second)
 	defer cancel()
 	req, err := http.NewRequestWithContext(actx, http.MethodGet, base+path, nil)
 	if err != nil {
-		outcome = outside.TerminalFailure
+		outcome = outbound.TerminalFailure
 		return nil, err
 	}
 	req.Header.Set("trakt-api-version", "2")
@@ -208,29 +207,29 @@ func (k *Trakt) get(ctx context.Context, path string, into any) (http.Header, er
 	}
 	resp, err := cl.Do(req)
 	if err != nil {
-		outcome = outside.TransientFailure
+		outcome = outbound.TransientFailure
 		return nil, fmt.Errorf("Trakt did not answer")
 	}
 	defer resp.Body.Close()
 	switch {
 	case resp.StatusCode == 401 || resp.StatusCode == 403 || resp.StatusCode == 426:
-		outcome = outside.TerminalFailure
+		outcome = outbound.TerminalFailure
 		return nil, ErrTraktLocked
 	case resp.StatusCode == 404:
-		outcome = outside.Success
+		outcome = outbound.Success
 		return nil, ErrNotFound
 	case resp.StatusCode == 429:
-		outcome = outside.TransientFailure
+		outcome = outbound.TransientFailure
 		return nil, ErrRateLimited
 	case resp.StatusCode != 200:
-		outcome = outside.TransientFailure
+		outcome = outbound.TransientFailure
 		return nil, fmt.Errorf("Trakt answered %d", resp.StatusCode)
 	}
 	if err := json.NewDecoder(io.LimitReader(resp.Body, 4<<20)).Decode(into); err != nil {
-		outcome = outside.TransientFailure
+		outcome = outbound.TransientFailure
 		return nil, fmt.Errorf("Trakt: odd answer: %w", err)
 	}
-	outcome = outside.Success
+	outcome = outbound.Success
 	return resp.Header, nil
 }
 

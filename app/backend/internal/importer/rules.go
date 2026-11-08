@@ -10,8 +10,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // FileRules are the settings for where files go that are not naming: how
@@ -47,7 +47,7 @@ func (r FileRules) Validate() error {
 }
 
 // ReadFileRules reads the rules; unset or broken values keep their default.
-func ReadFileRules(ctx context.Context, db store.Lister) (FileRules, error) {
+func ReadFileRules(ctx context.Context, db database.Lister) (FileRules, error) {
 	r := DefaultFileRules()
 	rows, err := db.QueryContext(ctx, "SELECT key, value FROM settings WHERE grp = 'where_files_go' AND key IN ('holding_days', 'min_free_mb', 'skip_free_space_check')")
 	if err != nil {
@@ -77,12 +77,12 @@ func ReadFileRules(ctx context.Context, db store.Lister) (FileRules, error) {
 }
 
 // SaveFileRules stores valid rules.
-func SaveFileRules(ctx context.Context, s *store.Store, r FileRules, by domain.Actor) error {
+func SaveFileRules(ctx context.Context, s *database.Store, r FileRules, by domain.Actor) error {
 	if err := r.Validate(); err != nil {
 		return err
 	}
 	return s.Write(ctx, func(tx *sql.Tx) error {
-		now := store.FormatTime(time.Now())
+		now := database.FormatTime(time.Now())
 		for k, v := range map[string]string{"holding_days": strconv.Itoa(r.HoldingDays), "min_free_mb": strconv.Itoa(r.MinFreeMB),
 			"skip_free_space_check": strconv.FormatBool(r.SkipFreeSpaceCheck)} {
 			if _, err := tx.Exec(`INSERT INTO settings (grp, key, value, created_at, created_by, updated_at, updated_by) VALUES ('where_files_go', ?, ?, ?, ?, ?, ?)

@@ -17,7 +17,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/outside"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
 )
 
@@ -367,11 +367,11 @@ func (c *client) do(ctx context.Context, method, raw string, body []byte, hdr ma
 	if err := c.wait(ctx); err != nil {
 		return nil, err
 	}
-	op, err := outside.Begin(ctx, outside.Target{Kind: "subtitle_site", Identity: []string{c.cfg.URL, c.cfg.Key, c.cfg.Username, c.cfg.Password}})
+	op, err := outbound.Begin(ctx, outbound.Target{Kind: "subtitle_site", Identity: []string{c.cfg.URL, c.cfg.Key, c.cfg.Username, c.cfg.Password}})
 	if err != nil {
 		return nil, &Error{Kind: KindDown, Msg: err.Error()}
 	}
-	outcome := outside.Canceled
+	outcome := outbound.Canceled
 	defer func() { op.Finish(outcome) }()
 	rctx, cancel := op.AttemptContext(ctx, c.cfg.Timeout)
 	defer cancel()
@@ -381,7 +381,7 @@ func (c *client) do(ctx context.Context, method, raw string, body []byte, hdr ma
 	}
 	req, err := http.NewRequestWithContext(rctx, method, raw, rd)
 	if err != nil {
-		outcome = outside.TerminalFailure
+		outcome = outbound.TerminalFailure
 		return nil, &Error{Kind: KindUnreadable, Msg: "bad site address"}
 	}
 	req.Header.Set("User-Agent", c.agent())
@@ -405,7 +405,7 @@ func (c *client) do(ctx context.Context, method, raw string, body []byte, hdr ma
 	}
 	resp, err := c.http.Do(req)
 	if err != nil {
-		outcome = outside.HTTPOutcome(0, err, ctx)
+		outcome = outbound.HTTPOutcome(0, err, ctx)
 		if ctx.Err() != nil {
 			return nil, ctx.Err()
 		}
@@ -427,18 +427,18 @@ func (c *client) do(ctx context.Context, method, raw string, body []byte, hdr ma
 		err = closeErr
 	}
 	if err != nil {
-		outcome = outside.HTTPOutcome(resp.StatusCode, err, ctx)
+		outcome = outbound.HTTPOutcome(resp.StatusCode, err, ctx)
 		return nil, &Error{Kind: KindDown, Msg: "reading the answer failed"}
 	}
-	outcome = outside.HTTPOutcome(resp.StatusCode, nil, ctx)
+	outcome = outbound.HTTPOutcome(resp.StatusCode, nil, ctx)
 	if int64(len(out)) > limit {
-		outcome = outside.TerminalFailure
+		outcome = outbound.TerminalFailure
 		return nil, &Error{Kind: KindUnreadable, Msg: fmt.Sprintf("the answer is over %d bytes", limit)}
 	}
 	if c.status != nil {
 		if e := c.status(resp, out); e != nil {
-			if outcome != outside.TransientFailure {
-				outcome = outside.TerminalFailure
+			if outcome != outbound.TransientFailure {
+				outcome = outbound.TerminalFailure
 			}
 			return nil, e
 		}

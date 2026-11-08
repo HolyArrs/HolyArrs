@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 func TestCleanByHandPath(t *testing.T) {
@@ -104,11 +104,11 @@ func TestByHandShow(t *testing.T) {
 			t.Fatalf("file %d not on disk: %v", n, err)
 		}
 	}
-	es, _, _ := w.s.Events(ctx, store.EventFilter{Kinds: []string{"import_done"}})
+	es, _, _ := w.s.Events(ctx, database.EventFilter{Kinds: []string{"import_done"}})
 	if len(es) != 2 || es[0].SlotID == nil || es[0].Data["by_hand"] != true {
 		t.Fatalf("events %+v", es)
 	}
-	imps, _ := store.Select[domain.Import](ctx, w.s.Read(), "imports", "mode = 'by_hand'")
+	imps, _ := database.Select[domain.Import](ctx, w.s.Read(), "imports", "mode = 'by_hand'")
 	if len(imps) != 2 || imps[0].State != "done" {
 		t.Fatalf("imports %+v", imps)
 	}
@@ -152,7 +152,7 @@ func TestByHandMovie(t *testing.T) {
 		t.Fatalf("target %s", res[0].Target)
 	}
 	var sl domain.Slot
-	_ = store.Get(ctx, w.s.Read(), "slots", w.slotID, &sl)
+	_ = database.Get(ctx, w.s.Read(), "slots", w.slotID, &sl)
 	if sl.FileID == nil || *sl.FileID != res[0].FileID {
 		t.Fatalf("slot %+v", sl)
 	}

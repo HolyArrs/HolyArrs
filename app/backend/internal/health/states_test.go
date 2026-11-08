@@ -8,9 +8,10 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/outside"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/supervisor"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 )
 
 // Every linked app reaches each state it can be in, with a reason in plain
@@ -22,7 +23,7 @@ func TestLinkStates(t *testing.T) {
 	now := time.Now().UTC()
 	err := w.s.Write(ctx, func(tx *sql.Tx) error {
 		src := func(name, state string, reason *string) error {
-			_, err := store.Insert(tx, "sources", &domain.Source{Name: name, Protocol: "torrent", Format: "torznab", URL: "http://x/" + name,
+			_, err := database.Insert(tx, "sources", &domain.Source{Name: name, Protocol: "torrent", Format: "torznab", URL: "http://x/" + name,
 				UseFor: domain.SourceUse{AutoSearch: true}, Kinds: []string{"movie"}, Categories: map[string][]int{"movie": {2000}},
 				Limits: domain.SourceLimits{GapMS: 2000, SearchesPerWindow: 100, WindowSeconds: 3600}, Priority: 25, State: state,
 				PauseReason: reason, Extra: map[string]string{}}, domain.System)
@@ -37,7 +38,7 @@ func TestLinkStates(t *testing.T) {
 			}
 		}
 		for _, x := range []struct{ n, st string }{{"d-ok", "ok"}, {"d-off", "disabled"}, {"d-down", "unreachable"}, {"d-auth", "auth_failed"}} {
-			if _, err := store.Insert(tx, "downloaders", &domain.Downloader{Name: x.n, Adapter: "qbittorrent", Protocol: "torrent", URL: "http://q/" + x.n,
+			if _, err := database.Insert(tx, "downloaders", &domain.Downloader{Name: x.n, Adapter: "qbittorrent", Protocol: "torrent", URL: "http://q/" + x.n,
 				Category: "c", Priority: 1, PathMap: []domain.PathMap{}, AfterImport: "leave", State: x.st, LastError: "dial tcp 10.9.8.7:8080: /srv/private"}, domain.System); err != nil {
 				return err
 			}
@@ -54,7 +55,7 @@ func TestLinkStates(t *testing.T) {
 		for _, m := range []domain.MediaServer{{Name: "m-ok", Enabled: true, LastOKAt: &now}, {Name: "m-off"}, {Name: "m-new", Enabled: true},
 			{Name: "m-bad", Enabled: true, LastError: "401 from http://10.9.8.7/x?token=abc"}} {
 			m.Kind, m.URL = "jellyfin", "http://j/"+m.Name
-			if _, err := store.Insert(tx, "media_servers", &m, domain.System); err != nil {
+			if _, err := database.Insert(tx, "media_servers", &m, domain.System); err != nil {
 				return err
 			}
 		}
@@ -67,15 +68,15 @@ func TestLinkStates(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	got := map[string]supervisor.Status{}
+	got := map[string]jobs.Status{}
 	for _, l := range ls {
 		got[l.Name] = l
 	}
-	want := map[string]supervisor.State{
-		"s-ok": supervisor.Running, "s-off": supervisor.Off, "s-down": supervisor.Retrying, "s-key": supervisor.Failed, "s-broken": supervisor.Failed,
-		"d-ok": supervisor.Running, "d-off": supervisor.Off, "d-down": supervisor.Retrying, "d-auth": supervisor.Failed,
-		"t-ok": supervisor.Running, "t-off": supervisor.Off, "t-slow": supervisor.Retrying, "t-key": supervisor.Failed,
-		"m-ok": supervisor.Running, "m-off": supervisor.Off, "m-new": supervisor.Starting, "m-bad": supervisor.Failed,
+	want := map[string]jobs.State{
+		"s-ok": jobs.Running, "s-off": jobs.Off, "s-down": jobs.Retrying, "s-key": jobs.Failed, "s-broken": jobs.Failed,
+		"d-ok": jobs.Running, "d-off": jobs.Off, "d-down": jobs.Retrying, "d-auth": jobs.Failed,
+		"t-ok": jobs.Running, "t-off": jobs.Off, "t-slow": jobs.Retrying, "t-key": jobs.Failed,
+		"m-ok": jobs.Running, "m-off": jobs.Off, "m-new": jobs.Starting, "m-bad": jobs.Failed,
 	}
 	if len(got) != len(want) {
 		t.Fatalf("got %d links: %+v", len(got), ls)
@@ -88,7 +89,7 @@ func TestLinkStates(t *testing.T) {
 		if strings.Contains(l.Reason, "10.9.8.7") || strings.Contains(l.Reason, "/srv") || strings.Contains(l.Reason, "token") {
 			t.Errorf("%s: reason %q shows detail that belongs in the log", name, l.Reason)
 		}
-		if (st == supervisor.Running) != (l.Reason == "") {
+		if (st == jobs.Running) != (l.Reason == "") {
 			t.Errorf("%s: reason %q in state %s", name, l.Reason, l.State)
 		}
 	}
@@ -102,8 +103,8 @@ func TestLinkStates(t *testing.T) {
 func TestOutsideCallRowsHideTheBreakerID(t *testing.T) {
 	w := newWorld(t)
 	const fp = "B68gdslpF06jsy8_OogpQb7_"
-	w.e.Outside = func() []outside.State {
-		return []outside.State{
+	w.e.Outside = func() []outbound.State {
+		return []outbound.State{
 			{ID: fp, Kind: "metadata_tmdb", Status: "retrying", Reason: "It does not answer; HolyArrs tries again on its own."},
 			{ID: "Zz9_other-fingerprint", Kind: "metadata_tmdb", Status: "retrying"},
 			{ID: "Qq1_third", Kind: "downloader", Status: "retrying"},
@@ -113,7 +114,7 @@ func TestOutsideCallRowsHideTheBreakerID(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	var calls []supervisor.Status
+	var calls []jobs.Status
 	for _, l := range ls {
 		if l.Kind == "outside_call" {
 			calls = append(calls, l)
@@ -124,7 +125,7 @@ func TestOutsideCallRowsHideTheBreakerID(t *testing.T) {
 	}
 	want := []struct{ name, key string }{{"Metadata server", "outside:metadata_tmdb:1"}, {"Metadata server", "outside:metadata_tmdb:2"}, {"Downloader", "outside:downloader:1"}}
 	for i, c := range calls {
-		if c.Name != want[i].name || c.Key != want[i].key || c.State != supervisor.Retrying {
+		if c.Name != want[i].name || c.Key != want[i].key || c.State != jobs.Retrying {
 			t.Errorf("row %d = %q %q %v, want %q %q retrying", i, c.Name, c.Key, c.State, want[i].name, want[i].key)
 		}
 		for _, id := range []string{fp, "Zz9_other-fingerprint", "Qq1_third"} {

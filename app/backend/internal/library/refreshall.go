@@ -11,10 +11,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // KindRefreshTitles is the 24 h details refresh, or every movie by hand.
@@ -66,7 +67,7 @@ func changedSince(lastStart time.Time) time.Time {
 // provider has a changed list, the movies on it are refreshed; when that
 // list is empty or unavailable the rules decide (ShouldRefresh).
 func (s *Service) RefreshPlan(ctx context.Context, byHand bool, lastStart *time.Time) (ids []int64, why map[int64]string, err error) {
-	ts, err := store.Select[domain.Title](ctx, s.Store.Read(), "titles", "kind = 'movie' AND state != 'removed' ORDER BY id")
+	ts, err := database.Select[domain.Title](ctx, s.Store.Read(), "titles", "kind = 'movie' AND state != 'removed' ORDER BY id")
 	if err != nil {
 		return nil, nil, err
 	}
@@ -179,8 +180,8 @@ func (s *Service) movieRefreshScheduleOn(ctx context.Context) (bool, error) {
 // causes no disk writes.
 func (s *Service) OpenGates(ctx context.Context) (int, error) {
 	now := s.now()
-	ids, err := store.Select[domain.Title](ctx, s.Store.Read(), "titles", `state != 'removed' AND (gate_driver = 'announced' OR (gate_opens_at IS NOT NULL AND gate_opens_at <= ?))
-		AND id IN (SELECT i.title_id FROM items i JOIN slots sl ON sl.item_id = i.id WHERE sl.state = 'not_out_yet')`, store.FormatTime(now))
+	ids, err := database.Select[domain.Title](ctx, s.Store.Read(), "titles", `state != 'removed' AND (gate_driver = 'announced' OR (gate_opens_at IS NOT NULL AND gate_opens_at <= ?))
+		AND id IN (SELECT i.title_id FROM items i JOIN slots sl ON sl.item_id = i.id WHERE sl.state = 'not_out_yet')`, database.FormatTime(now))
 	if err != nil || len(ids) == 0 {
 		return 0, err
 	}
@@ -235,11 +236,11 @@ type CalendarEntry struct {
 	Episode     *int   `json:"episode,omitempty"`
 	EpisodeName string `json:"episode_name,omitempty"`
 	// TMDB is the show's or movie's TMDB id, for reading its description.
-	TMDB string `json:"tmdb,omitempty"`
-	AirDay      string `json:"air_day,omitempty"`
-	Timed       bool   `json:"timed"`
-	Runtime     int    `json:"runtime,omitempty"` // minutes
-	Network     string `json:"network,omitempty"`
+	TMDB    string `json:"tmdb,omitempty"`
+	AirDay  string `json:"air_day,omitempty"`
+	Timed   bool   `json:"timed"`
+	Runtime int    `json:"runtime,omitempty"` // minutes
+	Network string `json:"network,omitempty"`
 	// State is the main Version's Slot state of the episode.
 	State        string `json:"state,omitempty"`
 	KeepUpToDate bool   `json:"keep_up_to_date,omitempty"`
@@ -392,8 +393,8 @@ func Calendar(ctx context.Context, db reader, from, to time.Time, titles ...stri
 		sortEntries(out, order)
 		return out, nil
 	}
-	f, t := store.FormatTime(from), store.FormatTime(to)
-	ts, err := store.Select[domain.Title](ctx, db, "titles", `kind = 'movie' AND state != 'removed' AND (
+	f, t := database.FormatTime(from), database.FormatTime(to)
+	ts, err := database.Select[domain.Title](ctx, db, "titles", `kind = 'movie' AND state != 'removed' AND (
 		(cinema_date >= ? AND cinema_date < ?) OR (digital_date >= ? AND digital_date < ?) OR (physical_date >= ? AND physical_date < ?))`,
 		f, t, f, t, f, t)
 	if err != nil {
@@ -448,10 +449,10 @@ func sortEntries(es []CalendarEntry, order map[string]int) {
 // the Library.
 func calendarAlbums(ctx context.Context, db reader, from, to time.Time) ([]CalendarEntry, error) {
 	// An album known only by month or year has no release day: left out.
-	parts, err := store.Select[domain.Part](ctx, db, "parts", `kind = 'album' AND included = 1 AND dropped_at IS NULL
+	parts, err := database.Select[domain.Part](ctx, db, "parts", `kind = 'album' AND included = 1 AND dropped_at IS NULL
 		AND coalesce(release_date_precision, 'day') = 'day'
 		AND release_date >= ? AND release_date < ? AND title_id IN (SELECT id FROM titles WHERE kind = 'artist' AND state != 'removed') ORDER BY id`,
-		store.FormatTime(from), store.FormatTime(to))
+		database.FormatTime(from), database.FormatTime(to))
 	if err != nil {
 		return nil, err
 	}
@@ -460,7 +461,7 @@ func calendarAlbums(ctx context.Context, db reader, from, to time.Time) ([]Calen
 	for _, p := range parts {
 		t, seen := artists[p.TitleID]
 		if !seen {
-			if err := store.Get(ctx, db, "titles", p.TitleID, &t); err != nil {
+			if err := database.Get(ctx, db, "titles", p.TitleID, &t); err != nil {
 				return nil, err
 			}
 			artists[p.TitleID] = t
@@ -483,7 +484,7 @@ func calendarAlbums(ctx context.Context, db reader, from, to time.Time) ([]Calen
 		if len(p.SecondaryTypes) == 0 {
 			_ = db.QueryRowContext(ctx, `SELECT 1 + count(*) FROM parts WHERE title_id = ? AND kind = 'album' AND dropped_at IS NULL
 				AND coalesce(release_type, '') = coalesce(?, '') AND coalesce(secondary_types, '[]') = '[]'
-				AND release_date IS NOT NULL AND release_date < ? AND id != ?`, p.TitleID, p.ReleaseType, store.FormatTime(*p.ReleaseDate), p.ID).Scan(&e.Nth)
+				AND release_date IS NOT NULL AND release_date < ? AND id != ?`, p.TitleID, p.ReleaseType, database.FormatTime(*p.ReleaseDate), p.ID).Scan(&e.Nth)
 		}
 		out = append(out, e)
 	}
@@ -496,10 +497,10 @@ func calendarAlbums(ctx context.Context, db reader, from, to time.Time) ([]Calen
 // from's time zone, overlaps the range. The query reads a day either side
 // and the exact test is made here.
 func calendarEpisodes(ctx context.Context, db reader, from, to time.Time) ([]CalendarEntry, error) {
-	items, err := store.Select[domain.Item](ctx, db, "items", `kind = 'episode' AND dropped_at IS NULL
+	items, err := database.Select[domain.Item](ctx, db, "items", `kind = 'episode' AND dropped_at IS NULL
 		AND title_id IN (SELECT id FROM titles WHERE kind = 'show' AND state != 'removed')
 		AND ((air_timed = 1 AND air_date >= ? AND air_date < ?) OR ((air_timed = 0 OR air_date IS NULL) AND air_day >= ? AND air_day <= ?)) ORDER BY id`,
-		store.FormatTime(from), store.FormatTime(to), from.AddDate(0, 0, -1).Format("2006-01-02"), to.AddDate(0, 0, 1).Format("2006-01-02"))
+		database.FormatTime(from), database.FormatTime(to), from.AddDate(0, 0, -1).Format("2006-01-02"), to.AddDate(0, 0, 1).Format("2006-01-02"))
 	if err != nil {
 		return nil, err
 	}
@@ -517,7 +518,7 @@ func calendarEpisodes(ctx context.Context, db reader, from, to time.Time) ([]Cal
 				titleIDs = append(titleIDs, it.TitleID)
 			}
 		}
-		ts, err := store.Select[domain.Title](ctx, db, "titles", "id IN ("+marks(len(titleIDs))+")", titleIDs...)
+		ts, err := database.Select[domain.Title](ctx, db, "titles", "id IN ("+marks(len(titleIDs))+")", titleIDs...)
 		if err != nil {
 			return nil, err
 		}
@@ -546,7 +547,7 @@ func calendarEpisodes(ctx context.Context, db reader, from, to time.Time) ([]Cal
 	for _, it := range items {
 		t, ok := shows[it.TitleID]
 		if !ok {
-			return nil, store.ErrNotFound
+			return nil, database.ErrNotFound
 		}
 		e := CalendarEntry{TitleID: t.ID, Name: t.Name, Year: t.Year, Kind: "episode", ItemID: it.ID, Season: it.Numbers.Season, Episode: it.Numbers.Episode,
 			KeepUpToDate: it.KeepUpToDate, Poster: posterOf(t), Backdrop: t.Backdrop, Still: it.Still, TMDB: t.SourceIDs["tmdb"]}

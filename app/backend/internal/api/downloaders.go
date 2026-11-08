@@ -13,11 +13,12 @@ import (
 	"unicode/utf8"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 func (a *API) downloaderRoutes(m *http.ServeMux) {
@@ -95,7 +96,7 @@ func (a *API) manager() *downloader.Manager {
 func (a *API) listDownloaders(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	db := a.s.Store.Read()
-	dls, err := store.Select[domain.Downloader](ctx, db, "downloaders", "removed = 0 ORDER BY priority, name")
+	dls, err := database.Select[domain.Downloader](ctx, db, "downloaders", "removed = 0 ORDER BY priority, name")
 	if err != nil {
 		internal(w, err)
 		return
@@ -135,7 +136,7 @@ func downloaderError(w http.ResponseWriter, err error) {
 		fail(w, http.StatusConflict, err.Error())
 	case errors.Is(err, downloader.ErrNoVault):
 		fail(w, http.StatusServiceUnavailable, err.Error())
-	case errors.Is(err, store.ErrNotFound), errors.Is(err, sql.ErrNoRows):
+	case errors.Is(err, database.ErrNotFound), errors.Is(err, sql.ErrNoRows):
 		fail(w, http.StatusNotFound, "no such Downloader")
 	case errors.Is(err, downloader.ErrName), errors.Is(err, downloader.ErrAdapter), errors.Is(err, downloader.ErrURL), errors.Is(err, downloader.ErrCategory), errors.Is(err, downloader.ErrDelugeLabel),
 		errors.Is(err, downloader.ErrPriority), errors.Is(err, downloader.ErrPathMap), errors.Is(err, downloader.ErrUsername), errors.Is(err, downloader.ErrKeyNeed),
@@ -300,7 +301,7 @@ func (a *API) abandonDownloaderAttempt(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := a.manager().AbandonAttempt(r.Context(), downloaderID, attemptID, actor(r)); err != nil {
-		if errors.Is(err, store.ErrNotFound) || errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, database.ErrNotFound) || errors.Is(err, sql.ErrNoRows) {
 			fail(w, http.StatusNotFound, "no such send attempt")
 			return
 		}
@@ -351,8 +352,8 @@ func (a *API) testDownloader(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var d domain.Downloader
-	if err := store.Get(r.Context(), a.s.Store.Read(), "downloaders", id, &d); err != nil || d.Removed {
-		downloaderError(w, store.ErrNotFound)
+	if err := database.Get(r.Context(), a.s.Store.Read(), "downloaders", id, &d); err != nil || d.Removed {
+		downloaderError(w, database.ErrNotFound)
 		return
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), 20*time.Second)
@@ -371,7 +372,7 @@ func (a *API) testDownloader(w http.ResponseWriter, r *http.Request) {
 			out["text"] = out["text"].(string) + " " + h.Note
 		}
 	}
-	_ = store.Get(r.Context(), a.s.Store.Read(), "downloaders", id, &d)
+	_ = database.Get(r.Context(), a.s.Store.Read(), "downloaders", id, &d)
 	out["health"] = downloader.HealthOf(d, time.Now())
 	a.publishDownloader(d)
 	writeJSON(w, http.StatusOK, out)
@@ -389,7 +390,7 @@ func (a *API) markFailed(w http.ResponseWriter, r *http.Request) {
 	}
 	err := a.manager().MarkFailed(r.Context(), id, actor(r), who)
 	switch {
-	case errors.Is(err, store.ErrNotFound), errors.Is(err, sql.ErrNoRows):
+	case errors.Is(err, database.ErrNotFound), errors.Is(err, sql.ErrNoRows):
 		fail(w, http.StatusNotFound, "no such download")
 	case errors.Is(err, downloader.ErrNotActive):
 		fail(w, http.StatusConflict, err.Error())
@@ -397,7 +398,7 @@ func (a *API) markFailed(w http.ResponseWriter, r *http.Request) {
 		internal(w, err)
 	default:
 		var d domain.Download
-		_ = store.Get(r.Context(), a.s.Store.Read(), "downloads", id, &d)
+		_ = database.Get(r.Context(), a.s.Store.Read(), "downloads", id, &d)
 		writeJSON(w, http.StatusOK, downloadView(d))
 	}
 }
@@ -558,7 +559,7 @@ func (a *API) putDownloaderSettings(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	by := actor(r)
-	now := store.FormatTime(time.Now())
+	now := database.FormatTime(time.Now())
 	byText := actorJSONText(by)
 	vals := []struct{ grp, key, value string }{
 		{"links", downloader.SettingStallAfter, strconv.FormatFloat(in.StalledAfterHours, 'f', -1, 64)},

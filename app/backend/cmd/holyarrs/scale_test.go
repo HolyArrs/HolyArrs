@@ -18,12 +18,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/supervisor"
 )
 
 // The scale checks are intentionally opt-in: each one creates a large fresh
@@ -240,17 +241,17 @@ func TestScaleAcceptanceChild(t *testing.T) {
 	if spec.Name == "combined" {
 		probe := scaleFullTextProbe(spec)
 		fullTextStarted := time.Now()
-		if err := control.Store.RebuildTitleSearch(context.Background()); err != nil {
+		if err := store.RebuildTitleSearch(context.Background(), control.Store); err != nil {
 			t.Fatalf("rebuild title search: %v", err)
 		}
 		fullTextRebuildMillis = time.Since(fullTextStarted).Milliseconds()
-		if matches, err := control.Store.SearchTitles(context.Background(), probe); err != nil || len(matches) != 1 || matches[0].Name != probe {
+		if matches, err := store.SearchTitles(context.Background(), control.Store, probe); err != nil || len(matches) != 1 || matches[0].Name != probe {
 			t.Fatalf("rebuilt title search returned %d matches (%v): %v", len(matches), matches, err)
 		}
 		fullTextStatus = "available: rebuilt and queried"
 	}
 
-	storedSources, err := store.Select[domain.Source](context.Background(), control.Store.Read(), "sources", "format = 'rss' ORDER BY id")
+	storedSources, err := database.Select[domain.Source](context.Background(), control.Store.Read(), "sources", "format = 'rss' ORDER BY id")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -297,7 +298,7 @@ func TestScaleAcceptanceChild(t *testing.T) {
 		go func() {
 			defer lockWG.Done()
 			lockErrs <- control.Store.Write(context.Background(), func(tx *sql.Tx) error {
-				_, err := tx.Exec("UPDATE titles SET updated_at = ? WHERE id = ?", store.FormatTime(time.Now().UTC()), 1+i%spec.Titles)
+				_, err := tx.Exec("UPDATE titles SET updated_at = ? WHERE id = ?", database.FormatTime(time.Now().UTC()), 1+i%spec.Titles)
 				return err
 			})
 		}()
@@ -497,7 +498,7 @@ func TestScaleAcceptanceChild(t *testing.T) {
 	}
 }
 
-func startScaleApp(t *testing.T, c config, o runOpts) (*supervisor.Registry, string) {
+func startScaleApp(t *testing.T, c config, o runOpts) (*jobs.Registry, string) {
 	t.Helper()
 	addr := strings.TrimSpace(os.Getenv(envScaleBrowserAddr))
 	if addr == "" {
@@ -508,11 +509,11 @@ func startScaleApp(t *testing.T, c config, o runOpts) (*supervisor.Registry, str
 	}
 	c.Addr = addr
 	type up struct {
-		reg  *supervisor.Registry
+		reg  *jobs.Registry
 		addr string
 	}
 	ready := make(chan up, 1)
-	o.ready = func(reg *supervisor.Registry, actual string) { ready <- up{reg: reg, addr: actual} }
+	o.ready = func(reg *jobs.Registry, actual string) { ready <- up{reg: reg, addr: actual} }
 	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan error, 1)
 	go func() { done <- serve(ctx, c, o) }()
@@ -644,7 +645,7 @@ func TestScaleSeedChild(t *testing.T) {
 		t.Fatal("scale seed paths are missing")
 	}
 	started := time.Now()
-	s, err := store.Open(dir, store.Options{WriteCap: -1})
+	s, err := database.Open(dir, database.Options{WriteCap: -1})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -660,13 +661,13 @@ func TestScaleSeedChild(t *testing.T) {
 	fmt.Println("SCALESEED " + string(b))
 }
 
-func seedScale(t *testing.T, s *store.Store, spec scaleSpec, feedURL, mediaRoot string) error {
+func seedScale(t *testing.T, s *database.Store, spec scaleSpec, feedURL, mediaRoot string) error {
 	t.Helper()
 	if spec.Name == "combined" {
 		return seedCombinedScale(t, s, combinedScaleShape, feedURL, mediaRoot)
 	}
 	return s.Write(context.Background(), func(tx *sql.Tx) error {
-		now := store.FormatTime(time.Now().UTC())
+		now := database.FormatTime(time.Now().UTC())
 		actor := `{"kind":"system"}`
 		var rules int64
 		if err := tx.QueryRow("SELECT id FROM pick_rules ORDER BY id LIMIT 1").Scan(&rules); err != nil {
@@ -797,7 +798,7 @@ func seedScale(t *testing.T, s *store.Store, spec scaleSpec, feedURL, mediaRoot 
 	})
 }
 
-func scaleCounts(t *testing.T, s *store.Store, spec scaleSpec) (titles, items int) {
+func scaleCounts(t *testing.T, s *database.Store, spec scaleSpec) (titles, items int) {
 	t.Helper()
 	if spec.Name == "combined" {
 		if err := s.Read().QueryRow("SELECT count(*) FROM titles WHERE kind IN ('movie', 'show')").Scan(&titles); err != nil {
@@ -859,7 +860,7 @@ func databaseBytes(t *testing.T, dir string) int64 {
 	return total
 }
 
-func waitForScaleQuiet(t *testing.T, s *store.Store, reg *supervisor.Registry, limit time.Duration) {
+func waitForScaleQuiet(t *testing.T, s *database.Store, reg *jobs.Registry, limit time.Duration) {
 	t.Helper()
 	deadline := time.Now().Add(limit)
 	writes, bytes := s.WriteCount(), procWriteBytes(t)
@@ -887,23 +888,23 @@ func waitForScaleQuiet(t *testing.T, s *store.Store, reg *supervisor.Registry, l
 	t.Fatalf("application did not become write-idle within %v; schedules passed: %t; live jobs: %+v", limit, scaleSchedulerPassed(reg), live)
 }
 
-func scaleSchedulerPassed(reg *supervisor.Registry) bool {
+func scaleSchedulerPassed(reg *jobs.Registry) bool {
 	if reg == nil {
 		return false
 	}
-	status, ok := reg.Get(supervisor.StageKey("schedules"))
+	status, ok := reg.Get(jobs.StageKey("schedules"))
 	return ok && status.LastPass != nil
 }
 
-func scaleLiveJobs(s *store.Store) ([]scaleJobDiagnostic, error) {
+func scaleLiveJobs(s *database.Store) ([]scaleJobDiagnostic, error) {
 	return scaleJobDiagnostics(s, "state IN ('queued', 'running')", nil)
 }
 
-func scaleJobsUpdatedSince(s *store.Store, since time.Time) ([]scaleJobDiagnostic, error) {
-	return scaleJobDiagnostics(s, "updated_at >= ?", []any{store.FormatTime(since)})
+func scaleJobsUpdatedSince(s *database.Store, since time.Time) ([]scaleJobDiagnostic, error) {
+	return scaleJobDiagnostics(s, "updated_at >= ?", []any{database.FormatTime(since)})
 }
 
-func scaleJobDiagnostics(s *store.Store, where string, args []any) ([]scaleJobDiagnostic, error) {
+func scaleJobDiagnostics(s *database.Store, where string, args []any) ([]scaleJobDiagnostic, error) {
 	rows, err := s.Read().Query("SELECT id, kind, state, attempt FROM jobs WHERE "+where+" ORDER BY id", args...)
 	if err != nil {
 		return nil, err

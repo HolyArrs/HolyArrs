@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/lowmem"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 func artistID(i int) string { return fmt.Sprintf("b8a7c51f-362c-4dcb-a259-%012d", i) }
@@ -55,9 +55,9 @@ func (f *fakeSource) WantMusicPackage(_ context.Context, mbid string) error {
 	return nil
 }
 
-func openStore(t *testing.T) *store.Store {
+func openStore(t *testing.T) *database.Store {
 	t.Helper()
-	s, err := store.Open(t.TempDir(), store.Options{})
+	s, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -148,11 +148,11 @@ func TestSyncCopiesPackagesAndPictures(t *testing.T) {
 // Low-memory mode copies every 3 hours instead of every 30 minutes; a set
 // schedule always wins.
 func TestScheduleLowMemory(t *testing.T) {
-	t.Cleanup(func() { lowmem.Set(false) })
+	t.Cleanup(func() { startup.SetLowMemory(false) })
 	if got := (&Sync{}).schedule(); got != DefaultEvery {
 		t.Fatalf("off: %v", got)
 	}
-	lowmem.Set(true)
+	startup.SetLowMemory(true)
 	if got := (&Sync{}).schedule(); got != LowMemoryEvery {
 		t.Fatalf("low: %v", got)
 	}

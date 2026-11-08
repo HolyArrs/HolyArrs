@@ -6,9 +6,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/urlbase"
 )
 
 // trailerBatchMax is how many titles one batch may name.
@@ -98,7 +98,7 @@ func (a *API) trailerBatch(w http.ResponseWriter, r *http.Request) {
 			s := e.s
 			if s.Type == "hls" {
 				if rid := a.trailerRelay.register(a.person(r).UserID, s.URL, s.ExpiresAt); rid != "" {
-					s.ProxyURL = urlbase.From(r.Context()) + "/api/v1/trailer/stream/" + rid + "/manifest.m3u8"
+					s.ProxyURL = webserver.URLBaseFrom(r.Context()) + "/api/v1/trailer/stream/" + rid + "/manifest.m3u8"
 				}
 			}
 			out.Streams[id] = s

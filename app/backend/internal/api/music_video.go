@@ -11,7 +11,8 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/urlbase"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/youtube"
 )
 
@@ -58,7 +59,7 @@ type artistVideoCache struct {
 	// failed is when asking the metadata server about an artist last
 	// failed (not "no such artist"): the pass waits artistFailWait.
 	failed map[string]time.Time
-	now  func() time.Time
+	now    func() time.Time
 }
 
 // noteFailed remembers that asking about mbid failed at now. Entries older
@@ -362,7 +363,7 @@ func (a *API) videoView(r *http.Request, v metadata.ArtistVideo, s TrailerStream
 	if dur <= 0 {
 		dur = s.Duration
 	}
-	return ArtistVideoView{Key: v.ID, ProxyURL: urlbase.From(r.Context()) + "/api/v1/trailer/stream/" + id + "/manifest.m3u8",
+	return ArtistVideoView{Key: v.ID, ProxyURL: webserver.URLBaseFrom(r.Context()) + "/api/v1/trailer/stream/" + id + "/manifest.m3u8",
 		Start: videoStart(v, s), Duration: dur, ExpiresAt: s.ExpiresAt}, true
 }
 

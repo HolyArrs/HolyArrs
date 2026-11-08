@@ -10,17 +10,19 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/supervisor"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 )
 
 type fix struct {
-	s            *store.Store
+	s            *database.Store
 	q            *jobs.Queue
 	c            *Control
-	reg          *supervisor.Registry
+	reg          *jobs.Registry
 	slotID, dlID int64
 	runs         sync.Map // kind -> *atomic.Int32
 	gates        map[string]chan struct{}
@@ -32,12 +34,12 @@ type fix struct {
 // queue's gate.
 func newFix(t *testing.T) *fix {
 	t.Helper()
-	s, err := store.Open(t.TempDir(), store.Options{})
+	s, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = s.Close() })
-	f := &fix{s: s, reg: supervisor.NewRegistry(), started: make(chan string, 20),
+	f := &fix{s: s, reg: jobs.NewRegistry(), started: make(chan string, 20),
 		gates: map[string]chan struct{}{"import_download": make(chan struct{}), "grab": make(chan struct{})}}
 	f.reg.Logf = func(string, ...any) {}
 	err = s.Write(context.Background(), func(tx *sql.Tx) error {
@@ -49,31 +51,31 @@ func newFix(t *testing.T) *fix {
 		y := 2020
 		ti := &domain.Title{Kind: "movie", GateDriver: "none", Name: "Salt Choir", SortName: "salt choir", Year: &y, Aliases: []string{}, SourceIDs: map[string]string{},
 			MetadataSource: "local", NewPartsPolicy: "all", ReleaseGate: "released", MusicTypes: []string{}, WhyAdded: "by_hand", Artwork: []string{}, Status: "released", State: "active", KeepUpToDate: true}
-		if _, err := store.Insert(tx, "library_folders", lf, domain.System); err != nil {
+		if _, err := database.Insert(tx, "library_folders", lf, domain.System); err != nil {
 			return err
 		}
-		if _, err := store.Insert(tx, "titles", ti, domain.System); err != nil {
+		if _, err := database.Insert(tx, "titles", ti, domain.System); err != nil {
 			return err
 		}
 		it := &domain.Item{TitleID: ti.ID, Kind: "movie", KeepUpToDate: true}
-		if _, err := store.Insert(tx, "items", it, domain.System); err != nil {
+		if _, err := database.Insert(tx, "items", it, domain.System); err != nil {
 			return err
 		}
 		ver := &domain.Version{TitleID: ti.ID, Label: "HD", PickRulesID: pr, LibraryFolderID: lf.ID, FolderName: "Salt Choir", IsMain: true, KeepUpToDate: true}
-		if _, err := store.Insert(tx, "versions", ver, domain.System); err != nil {
+		if _, err := database.Insert(tx, "versions", ver, domain.System); err != nil {
 			return err
 		}
 		sl := &domain.Slot{ItemID: it.ID, VersionID: ver.ID, State: domain.SlotDownloading}
-		if _, err := store.Insert(tx, "slots", sl, domain.System); err != nil {
+		if _, err := database.Insert(tx, "slots", sl, domain.System); err != nil {
 			return err
 		}
 		dr := &domain.Downloader{Name: "Q", Adapter: "qbittorrent", Protocol: "torrent", URL: "http://127.0.0.1:9", Category: "holyarrs", Priority: 1,
 			PathMap: []domain.PathMap{}, AfterImport: "leave", State: "ok"}
-		if _, err := store.Insert(tx, "downloaders", dr, domain.System); err != nil {
+		if _, err := database.Insert(tx, "downloaders", dr, domain.System); err != nil {
 			return err
 		}
 		dl := &domain.Download{DownloaderID: dr.ID, SlotIDs: []int64{sl.ID}, ExternalID: "abcd", State: "finished", FilesSeen: []domain.SeenFile{}, StartedBy: domain.System}
-		if _, err := store.Insert(tx, "downloads", dl, domain.System); err != nil {
+		if _, err := database.Insert(tx, "downloads", dl, domain.System); err != nil {
 			return err
 		}
 		f.slotID, f.dlID = sl.ID, dl.ID
@@ -92,7 +94,7 @@ func newFix(t *testing.T) *fix {
 				// The import moves the Slot through importing to in the
 				// Library, as the importer's state machine does.
 				if kind == "import_download" {
-					if err := s.MoveSlot(context.Background(), f.slotID, domain.SlotImporting, "", domain.System); err != nil {
+					if err := store.MoveSlot(context.Background(), s, f.slotID, domain.SlotImporting, "", domain.System); err != nil {
 						return err
 					}
 				}
@@ -102,7 +104,7 @@ func newFix(t *testing.T) *fix {
 					return ctx.Err()
 				}
 				if kind == "import_download" {
-					return s.MoveSlot(context.Background(), f.slotID, domain.SlotInLibrary, "", domain.System)
+					return store.MoveSlot(context.Background(), s, f.slotID, domain.SlotInLibrary, "", domain.System)
 				}
 			}
 			return nil
@@ -248,7 +250,7 @@ func TestRestartDuringADownloadAndAnImport(t *testing.T) {
 		}
 		time.Sleep(time.Millisecond)
 	}
-	if st := f.c.Statuses()[0]; st.State != supervisor.Starting {
+	if st := f.c.Statuses()[0]; st.State != jobs.Starting {
 		t.Fatalf("Movies while restarting: %+v", st)
 	}
 	search := f.enqueue(t, "search_slot", &domain.Subject{Type: "slot", ID: f.slotID}, "search_slot:1")
@@ -341,7 +343,7 @@ func TestSwitchesAreSaved(t *testing.T) {
 	if err := f.c.Set(context.Background(), Music, false, owner); err != nil {
 		t.Fatal(err)
 	}
-	next := &Control{Store: f.s, Reg: supervisor.NewRegistry()}
+	next := &Control{Store: f.s, Reg: jobs.NewRegistry()}
 	if err := next.Load(context.Background()); err != nil {
 		t.Fatal(err)
 	}
@@ -349,7 +351,7 @@ func TestSwitchesAreSaved(t *testing.T) {
 		t.Fatalf("after a restart: off %v", next.Off())
 	}
 	// Safe mode forces every part off, without changing what is saved.
-	safe := &Control{Store: f.s, Reg: supervisor.NewRegistry(), SafeMode: true}
+	safe := &Control{Store: f.s, Reg: jobs.NewRegistry(), SafeMode: true}
 	if err := safe.Load(context.Background()); err != nil {
 		t.Fatal(err)
 	}
@@ -357,7 +359,7 @@ func TestSwitchesAreSaved(t *testing.T) {
 		t.Fatalf("safe mode: off %v", safe.Off())
 	}
 	for _, st := range safe.Statuses() {
-		if st.State != supervisor.Off || !strings.Contains(st.Reason, "Safe mode") {
+		if st.State != jobs.Off || !strings.Contains(st.Reason, "Safe mode") {
 			t.Fatalf("safe mode state: %+v", st)
 		}
 	}
@@ -373,9 +375,9 @@ func TestSwitchesAreSaved(t *testing.T) {
 // paused core stage stays off until resumed; a failed loop shows on its
 // part.
 func TestPartLoopsAndStages(t *testing.T) {
-	reg := supervisor.NewRegistry()
+	reg := jobs.NewRegistry()
 	reg.Logf = func(string, ...any) {}
-	s, err := store.Open(t.TempDir(), store.Options{})
+	s, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -386,14 +388,14 @@ func TestPartLoopsAndStages(t *testing.T) {
 	}
 	var gates, backups atomic.Int32
 	var fail atomic.Bool
-	c.Add(supervisor.Loop{Name: "gates", Label: "Release gates", Every: 5 * time.Millisecond, Run: func(context.Context) error {
+	c.Add(jobs.Loop{Name: "gates", Label: "Release gates", Every: 5 * time.Millisecond, Run: func(context.Context) error {
 		gates.Add(1)
 		if fail.Load() {
 			return errors.New("details source down")
 		}
 		return nil
 	}}, true)
-	c.Add(supervisor.Loop{Name: "backups", Label: "Backups", Every: 5 * time.Millisecond, Run: func(context.Context) error { backups.Add(1); return nil }}, false)
+	c.Add(jobs.Loop{Name: "backups", Label: "Backups", Every: 5 * time.Millisecond, Run: func(context.Context) error { backups.Add(1); return nil }}, false)
 	ctx, cancel := context.WithCancel(context.Background())
 	t.Cleanup(func() { cancel(); reg.Wait() })
 	c.Start(ctx)
@@ -416,7 +418,7 @@ func TestPartLoopsAndStages(t *testing.T) {
 	if gates.Load() != n {
 		t.Fatal("gates ran while Movies was off")
 	}
-	if st, _ := reg.Get(supervisor.StageKey("gates")); st.State != supervisor.Off || st.Reason != "Movies is off." {
+	if st, _ := reg.Get(jobs.StageKey("gates")); st.State != jobs.Off || st.Reason != "Movies is off." {
 		t.Fatalf("gates stage: %+v", st)
 	}
 	if err := c.Resume("gates"); !errors.As(err, new(OffError)) {
@@ -428,20 +430,20 @@ func TestPartLoopsAndStages(t *testing.T) {
 	waitFor("gates again", func() bool { return gates.Load() > n+2 })
 
 	fail.Store(true)
-	waitFor("movies retrying", func() bool { return c.Statuses()[0].State == supervisor.Retrying })
+	waitFor("movies retrying", func() bool { return c.Statuses()[0].State == jobs.Retrying })
 	// Fixed plain words; the error itself stays in the log.
 	if st := c.Statuses()[0]; strings.Contains(st.Reason, "details source down") || !strings.Contains(st.Reason, "Release gates: The last pass failed") {
 		t.Fatalf("movies: %+v", st)
 	}
 	fail.Store(false)
-	waitFor("movies running", func() bool { return c.Statuses()[0].State == supervisor.Running })
+	waitFor("movies running", func() bool { return c.Statuses()[0].State == jobs.Running })
 
 	if err := c.Pause("backups", "Luis"); err != nil {
 		t.Fatal(err)
 	}
 	b := backups.Load()
 	time.Sleep(40 * time.Millisecond)
-	if st, _ := reg.Get(supervisor.StageKey("backups")); backups.Load() != b || st.State != supervisor.Off || st.Reason != "Paused by Luis." {
+	if st, _ := reg.Get(jobs.StageKey("backups")); backups.Load() != b || st.State != jobs.Off || st.Reason != "Paused by Luis." {
 		t.Fatalf("paused backups ran or shows %+v", st)
 	}
 	if err := c.Set(ctx, Movies, false, owner); err != nil { // a part switch leaves a paused stage paused
@@ -512,9 +514,9 @@ func TestScreenOwner(t *testing.T) {
 // Log masking is never paused or restarted on its own, is not offered as a
 // controllable stage, and keeps running.
 func TestLogMaskingIsNeverPaused(t *testing.T) {
-	reg := supervisor.NewRegistry()
+	reg := jobs.NewRegistry()
 	reg.Logf = func(string, ...any) {}
-	s, err := store.Open(t.TempDir(), store.Options{})
+	s, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -524,8 +526,8 @@ func TestLogMaskingIsNeverPaused(t *testing.T) {
 		t.Fatal(err)
 	}
 	var masks, backups atomic.Int32
-	c.Add(supervisor.Loop{Name: "log_secrets", Label: "Log masking", Every: 5 * time.Millisecond, Run: func(context.Context) error { masks.Add(1); return nil }}, false)
-	c.Add(supervisor.Loop{Name: "backups", Label: "Backups", Every: 5 * time.Millisecond, Run: func(context.Context) error { backups.Add(1); return nil }}, false)
+	c.Add(jobs.Loop{Name: "log_secrets", Label: "Log masking", Every: 5 * time.Millisecond, Run: func(context.Context) error { masks.Add(1); return nil }}, false)
+	c.Add(jobs.Loop{Name: "backups", Label: "Backups", Every: 5 * time.Millisecond, Run: func(context.Context) error { backups.Add(1); return nil }}, false)
 	ctx, cancel := context.WithCancel(context.Background())
 	t.Cleanup(func() { cancel(); reg.Wait() })
 	c.Start(ctx)
@@ -557,7 +559,7 @@ func TestLogMaskingIsNeverPaused(t *testing.T) {
 		}
 		time.Sleep(2 * time.Millisecond)
 	}
-	if st, _ := reg.Get(supervisor.StageKey("backups")); st.State != supervisor.Running {
+	if st, _ := reg.Get(jobs.StageKey("backups")); st.State != jobs.Running {
 		t.Fatalf("backups after restart: %+v", st)
 	}
 }

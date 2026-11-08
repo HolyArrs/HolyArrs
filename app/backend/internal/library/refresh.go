@@ -10,8 +10,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
@@ -42,7 +44,7 @@ type RefreshOutcome struct {
 func (s *Service) RefreshTitle(ctx context.Context, titleID int64, by domain.Actor, jobID *int64) (RefreshOutcome, error) {
 	var out RefreshOutcome
 	var t domain.Title
-	if err := store.Get(ctx, s.Store.Read(), "titles", titleID, &t); err != nil {
+	if err := database.Get(ctx, s.Store.Read(), "titles", titleID, &t); err != nil {
 		return out, err
 	}
 	if t.Kind == "show" {
@@ -66,7 +68,7 @@ func (s *Service) RefreshTitle(ctx context.Context, titleID int64, by domain.Act
 		first := t.DroppedAt == nil
 		err := s.Store.Write(ctx, func(tx *sql.Tx) error {
 			_, err := tx.Exec("UPDATE titles SET dropped_at = COALESCE(dropped_at, ?), refreshed_at = ?, updated_at = ?, updated_by = ? WHERE id = ?",
-				store.FormatTime(now), store.FormatTime(now), store.FormatTime(now), actorText(by), titleID)
+				database.FormatTime(now), database.FormatTime(now), database.FormatTime(now), actorText(by), titleID)
 			return err
 		})
 		if err == nil && first {
@@ -82,11 +84,11 @@ func (s *Service) RefreshTitle(ctx context.Context, titleID int64, by domain.Act
 	defer unlock()
 	var opened, closed []int64
 	err = s.Store.Write(ctx, func(tx *sql.Tx) error {
-		if err := store.Get(ctx, tx, "titles", titleID, &t); err != nil {
+		if err := database.Get(ctx, tx, "titles", titleID, &t); err != nil {
 			return err
 		}
 		if t.State == "removed" {
-			return store.ErrNotFound
+			return database.ErrNotFound
 		}
 		if err := syncMovieCollectionTx(ctx, tx, t.ID, m); err != nil {
 			return err
@@ -95,7 +97,7 @@ func (s *Service) RefreshTitle(ctx context.Context, titleID int64, by domain.Act
 		t.DroppedAt = nil
 		t.RefreshedAt = &now
 		t.GateDriver, t.GateOpensAt = Gate(t.ReleaseGate, t.GateDelayDays, DatesOf(t))
-		if err := store.Update(tx, "titles", &t, by); err != nil {
+		if err := database.Update(tx, "titles", &t, by); err != nil {
 			return err
 		}
 		if m.Runtime > 0 {
@@ -129,7 +131,7 @@ func groupKey(titleID int64) string { return "title:" + strconv.FormatInt(titleI
 // applyGateTx moves the Title's Slots across its gate: not_out_yet to wanted
 // once open, and wanted back to not_out_yet when the gate moved later.
 func applyGateTx(ctx context.Context, tx *sql.Tx, t domain.Title, now time.Time, by domain.Actor) (opened, closed []int64, err error) {
-	slots, err := store.Select[domain.Slot](ctx, tx, "slots",
+	slots, err := database.Select[domain.Slot](ctx, tx, "slots",
 		"item_id IN (SELECT id FROM items WHERE title_id = ?) AND state IN ('not_out_yet', 'wanted')", t.ID)
 	if err != nil {
 		return nil, nil, err
@@ -207,7 +209,7 @@ func (s *Service) cachePoster(ctx context.Context, titleID int64, poster string,
 	art := `["poster:` + name + `"]`
 	err = s.Store.Write(ctx, func(tx *sql.Tx) error {
 		_, err := tx.Exec("UPDATE titles SET artwork = ?, updated_at = ?, updated_by = ? WHERE id = ? AND artwork != ?",
-			art, store.FormatTime(s.now()), actorText(by), titleID, art)
+			art, database.FormatTime(s.now()), actorText(by), titleID, art)
 		return err
 	})
 	if err != nil {

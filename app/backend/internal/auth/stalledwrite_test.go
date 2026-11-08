@@ -9,14 +9,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/routehits"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
 // Sign-in succeeds while another write is held up on purpose, and while
 // more ordinary writes wait behind it.
 func TestSignInWhileAWriteIsStalled(t *testing.T) {
-	s, err := store.Open(t.TempDir(), store.Options{WriteCap: 300 * time.Millisecond})
+	s, err := database.Open(t.TempDir(), database.Options{WriteCap: 300 * time.Millisecond})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -26,7 +26,7 @@ func TestSignInWhileAWriteIsStalled(t *testing.T) {
 	m := http.NewServeMux()
 	m.HandleFunc("GET /{$}", okHandler)
 	a.Routes(m)
-	srv := httptest.NewServer(a.Middleware(routehits.Wrap(m)))
+	srv := httptest.NewServer(a.Middleware(webserver.RecordRouteHits(m)))
 	t.Cleanup(srv.Close)
 	f := &fixture{srv: srv, a: a, s: s, clock: c}
 	setupOwner(t, f, client(t))

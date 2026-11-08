@@ -13,8 +13,8 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Prowlarr's app sync (roadmap #85, phase 2): Prowlarr writes its indexers
@@ -95,7 +95,7 @@ func prowlarrManaged(m map[string]any) string {
 
 func (f *oldAppFix) source(id int64) (domain.Source, error) {
 	var src domain.Source
-	err := store.Get(context.Background(), f.s.Read(), "sources", id, &src)
+	err := database.Get(context.Background(), f.s.Read(), "sources", id, &src)
 	return src, err
 }
 

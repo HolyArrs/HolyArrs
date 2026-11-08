@@ -6,9 +6,9 @@ import (
 	"net/url"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/jobs"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // 4.2.2: a failed season pack turns its Release down for every episode and
@@ -29,16 +29,16 @@ func TestFailedPackSearchesSeasonAgain(t *testing.T) {
 	if err := f.s.Write(ctx, func(tx *sql.Tx) error {
 		r := &domain.Release{SourceID: f.srcID, Name: failed, LinkRef: "http://x/1", Protocol: "torrent", Flags: []string{}, Parsed: map[string]any{},
 			MatchedSlotIDs: pack, Verdict: map[string]any{"turned_down_reason": "the download failed"}, FoundBy: "auto_search", State: "turned_down"}
-		if _, err := store.Insert(tx, "releases", r, domain.System); err != nil {
+		if _, err := database.Insert(tx, "releases", r, domain.System); err != nil {
 			return err
 		}
 		dr := &domain.Downloader{Name: "q", Adapter: "qbittorrent", Protocol: "torrent", URL: "http://q", Category: "c", PathMap: []domain.PathMap{}, AfterImport: "leave", State: "ok"}
-		if _, err := store.Insert(tx, "downloaders", dr, domain.System); err != nil {
+		if _, err := database.Insert(tx, "downloaders", dr, domain.System); err != nil {
 			return err
 		}
 		for n, ids := range [][]int64{pack, {f.slots["S02E01"]}} {
 			d := &domain.Download{DownloaderID: dr.ID, ReleaseID: &r.ID, SlotIDs: ids, ExternalID: string(rune('a' + n)), State: "failed", FilesSeen: []domain.SeenFile{}, StartedBy: domain.System}
-			if _, err := store.Insert(tx, "downloads", d, domain.System); err != nil {
+			if _, err := database.Insert(tx, "downloads", d, domain.System); err != nil {
 				return err
 			}
 			for _, id := range ids {

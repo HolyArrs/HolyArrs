@@ -16,20 +16,21 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/outside"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 )
 
 var yes = true
 
-func open(t *testing.T) (*store.Store, *secrets.Vault) {
+func open(t *testing.T) (*database.Store, *secrets.Vault) {
 	t.Helper()
 	// Breakers are process-wide and keyed by Alert id, which every fresh
 	// database starts at 1 again: start and end each test with none.
-	outside.Reset()
-	t.Cleanup(outside.Reset)
-	s, err := store.Open(t.TempDir(), store.Options{})
+	outbound.Reset()
+	t.Cleanup(outbound.Reset)
+	s, err := database.Open(t.TempDir(), database.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -159,7 +160,7 @@ func TestDiscordNamesThePeopleWhoAsked(t *testing.T) {
 		t.Fatalf("staff content %q", c)
 	}
 	var fresh domain.Alert
-	_ = store.Get(ctx, s.Read(), "alerts", a.ID, &fresh)
+	_ = database.Get(ctx, s.Read(), "alerts", a.ID, &fresh)
 	if fresh.LastSentAt == nil || fresh.LastError != "" {
 		t.Fatalf("result %+v", fresh)
 	}
@@ -189,7 +190,7 @@ func TestMomentsOffAndFailuresAreRecorded(t *testing.T) {
 		t.Fatalf("error %v", err)
 	}
 	var fresh domain.Alert
-	_ = store.Get(ctx, s.Read(), "alerts", bad.ID, &fresh)
+	_ = database.Get(ctx, s.Read(), "alerts", bad.ID, &fresh)
 	if !strings.Contains(fresh.LastError, "500") {
 		t.Fatalf("last error %q", fresh.LastError)
 	}
@@ -280,7 +281,7 @@ func TestAlertInputChecks(t *testing.T) {
 	if n != 0 {
 		t.Fatalf("%d secrets left", n)
 	}
-	if err := Remove(ctx, s, a.ID); err != store.ErrNotFound {
+	if err := Remove(ctx, s, a.ID); err != database.ErrNotFound {
 		t.Fatalf("again: %v", err)
 	}
 }
@@ -327,7 +328,7 @@ func TestLocalServersNeedTheLocalNetworkChoice(t *testing.T) {
 		t.Fatalf("sent to a local mail server: %v", err)
 	}
 	var fresh domain.Alert
-	_ = store.Get(ctx, s.Read(), "alerts", a.ID, &fresh)
+	_ = database.Get(ctx, s.Read(), "alerts", a.ID, &fresh)
 	if fresh.LastError == "" || strings.Contains(fresh.LastError, "127.0.0.1") {
 		t.Fatalf("last error %q", fresh.LastError)
 	}
@@ -350,7 +351,7 @@ func TestDiscordRedirectsAreNotFollowed(t *testing.T) {
 		t.Fatalf("redirect followed: %v, %d posts", err, len(posts()))
 	}
 	var fresh domain.Alert
-	_ = store.Get(ctx, s.Read(), "alerts", a.ID, &fresh)
+	_ = database.Get(ctx, s.Read(), "alerts", a.ID, &fresh)
 	es, _ := s.RecentEvents(ctx, 10)
 	for _, txt := range []string{fresh.LastError, fmt.Sprint(es[0].Data)} {
 		if strings.Contains(txt, "http") || strings.Contains(txt, "127.0.0.1") || strings.Contains(txt, "secret-token") {

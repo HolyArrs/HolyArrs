@@ -10,19 +10,19 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/dlsync"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/live"
 )
 
 // dlStreams opens /live streams on the API's hub as a manager (uid 0) or
 // as non-manager people, without the sign-in layer.
-func dlStreams(t *testing.T, ctx context.Context, hub *live.Hub, uids ...int64) (map[int64]<-chan liveFrame, func(uid int64, last string) <-chan liveFrame) {
+func dlStreams(t *testing.T, ctx context.Context, hub *webserver.LiveHub, uids ...int64) (map[int64]<-chan liveFrame, func(uid int64, last string) <-chan liveFrame) {
 	t.Helper()
-	srv := httptest.NewServer(hub.Handler(func(r *http.Request) live.Viewer {
+	srv := httptest.NewServer(hub.Handler(func(r *http.Request) webserver.LiveViewer {
 		id, _ := strconv.ParseInt(r.URL.Query().Get("u"), 10, 64)
-		return live.Viewer{UserID: id, All: id == 0}
+		return webserver.LiveViewer{UserID: id, All: id == 0}
 	}))
 	t.Cleanup(srv.Close)
 	x := liveSetup{srv: srv}
@@ -43,7 +43,7 @@ func dlPatches(t *testing.T, fs []liveFrame) []dlsync.Patch {
 	t.Helper()
 	var out []dlsync.Patch
 	for _, f := range fs {
-		if f.topic != live.TopicDL {
+		if f.topic != webserver.LiveTopicDL {
 			continue
 		}
 		var p dlsync.Patch

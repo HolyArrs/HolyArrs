@@ -304,11 +304,11 @@ def summary_with(text: str, table: str) -> str:
 
 
 def dist_files(dist: Path) -> list[str]:
-    """The files the build copied from static/ (everything outside _app and the page itself)."""
+    """The files the build copied from static/ (everything outside _app, the page itself and the .gitkeep placeholder)."""
     out = []
     for f in sorted(dist.rglob("*")):
         rel = f.relative_to(dist).as_posix()
-        if f.is_file() and not rel.startswith("_app/") and rel not in ("index.html", "index.html.br"):
+        if f.is_file() and not rel.startswith("_app/") and rel not in ("index.html", "index.html.br", ".gitkeep"):
             out.append(rel.removesuffix(".br"))
     return sorted(set(out))
 

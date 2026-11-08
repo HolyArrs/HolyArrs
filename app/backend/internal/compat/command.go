@@ -11,10 +11,10 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // doneID is the command id of a command that had nothing to queue, above
@@ -70,7 +70,7 @@ func (h *handler) command(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ids, err := h.runCommand(r.Context(), name, in, actor(r))
-	if errors.Is(err, store.ErrNotFound) {
+	if errors.Is(err, database.ErrNotFound) {
 		notFound(w)
 		return
 	}
@@ -106,7 +106,7 @@ func (h *handler) runCommand(ctx context.Context, name string, in commandIn, by 
 	}
 	// searchSlots hand-searches each Slot of the items; one Job per Slot.
 	searchSlots := func(where string, args ...any) error {
-		slots, err := store.Select[domain.Slot](ctx, h.Store.Read(), "slots", where+" ORDER BY id", args...)
+		slots, err := database.Select[domain.Slot](ctx, h.Store.Read(), "slots", where+" ORDER BY id", args...)
 		if err != nil {
 			return err
 		}
@@ -151,13 +151,13 @@ func (h *handler) runCommand(ctx context.Context, name string, in commandIn, by 
 			return nil, err
 		}
 		if in.SeasonNumber == nil {
-			return nil, store.ErrNotFound
+			return nil, database.ErrNotFound
 		}
 		var partID int64
 		if err := h.Store.Read().QueryRowContext(ctx, "SELECT id FROM parts WHERE title_id = ? AND kind = 'season' AND number = ?", in.SeriesID, *in.SeasonNumber).Scan(&partID); err != nil {
-			return nil, store.ErrNotFound
+			return nil, database.ErrNotFound
 		}
-		vs, err := store.Select[domain.Version](ctx, h.Store.Read(), "versions", "title_id = ? ORDER BY is_main DESC, id", in.SeriesID)
+		vs, err := database.Select[domain.Version](ctx, h.Store.Read(), "versions", "title_id = ? ORDER BY is_main DESC, id", in.SeriesID)
 		if err != nil {
 			return nil, err
 		}
@@ -256,7 +256,7 @@ func (h *handler) commandRecord(ctx context.Context, ids []int64, name string, b
 		return rec
 	}
 	var j domain.Job
-	if err := store.Get(ctx, h.Store.Read(), "jobs", ids[0], &j); err != nil {
+	if err := database.Get(ctx, h.Store.Read(), "jobs", ids[0], &j); err != nil {
 		rec.ID, rec.Status, rec.Result, rec.Started, rec.Ended, rec.StateChangeTime, rec.Duration = ids[0], "queued", "unknown", nil, nil, nil, ""
 		return rec
 	}
@@ -307,7 +307,7 @@ func (h *handler) getCommand(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var j domain.Job
-	if err := store.Get(r.Context(), h.Store.Read(), "jobs", id, &j); err != nil {
+	if err := database.Get(r.Context(), h.Store.Read(), "jobs", id, &j); err != nil {
 		internalError(w, err)
 		return
 	}

@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
@@ -65,7 +66,7 @@ type ShowDefaults struct {
 // ReadShowDefaults reads the show settings; unset or odd values take the
 // recommended defaults (all seasons, new seasons kept, aired order, TMDB,
 // specials off, no wait).
-func ReadShowDefaults(ctx context.Context, db store.Lister) (ShowDefaults, error) {
+func ReadShowDefaults(ctx context.Context, db database.Lister) (ShowDefaults, error) {
 	d := ShowDefaults{SeasonChoice: SeasonsAll, NewSeasons: "all", EpisodeOrder: OrderAired, Source: "tmdb"}
 	rows, err := db.QueryContext(ctx, `SELECT key, value FROM settings WHERE grp = 'what_to_pick' AND key IN
 		('show_season_choice', 'show_new_seasons', 'show_episode_order', 'show_details_source', 'keep_specials', 'episode_wait_minutes')`)
@@ -107,7 +108,7 @@ func ReadShowDefaults(ctx context.Context, db store.Lister) (ShowDefaults, error
 }
 
 // SetShowDefaults stores the show settings.
-func SetShowDefaults(ctx context.Context, s *store.Store, d ShowDefaults, by domain.Actor) error {
+func SetShowDefaults(ctx context.Context, s *database.Store, d ShowDefaults, by domain.Actor) error {
 	switch {
 	case !ValidSeasonChoice(d.SeasonChoice):
 		return ErrBadSeasonChoice
@@ -123,7 +124,7 @@ func SetShowDefaults(ctx context.Context, s *store.Store, d ShowDefaults, by dom
 	vals := map[string]string{"show_season_choice": d.SeasonChoice, "show_new_seasons": d.NewSeasons, "show_episode_order": d.EpisodeOrder,
 		"show_details_source": d.Source, "keep_specials": strconv.FormatBool(d.KeepSpecials), "episode_wait_minutes": strconv.Itoa(d.WaitMinutes)}
 	return s.Write(ctx, func(tx *sql.Tx) error {
-		now := store.FormatTime(time.Now())
+		now := database.FormatTime(time.Now())
 		for k, v := range vals {
 			_, err := tx.Exec(`INSERT INTO settings (grp, key, value, created_at, created_by, updated_at, updated_by) VALUES ('what_to_pick', ?, ?, ?, ?, ?, ?)
 				ON CONFLICT (grp, key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at, updated_by = excluded.updated_by`,
@@ -365,7 +366,7 @@ const holdingSlots = `file_id IS NOT NULL OR active_download_id IS NOT NULL OR h
 // renumbered special and a change of details source.
 func syncShowTx(ctx context.Context, tx *sql.Tx, t domain.Title, sh metadata.Show, defs ShowDefaults, choice string, now time.Time, by domain.Actor) (ShowSync, error) {
 	var out ShowSync
-	parts, err := store.Select[domain.Part](ctx, tx, "parts", "title_id = ? AND kind = 'season'", t.ID)
+	parts, err := database.Select[domain.Part](ctx, tx, "parts", "title_id = ? AND kind = 'season'", t.ID)
 	if err != nil {
 		return out, err
 	}
@@ -394,7 +395,7 @@ func syncShowTx(ctx context.Context, tx *sql.Tx, t domain.Title, sh metadata.Sho
 				p.Name, changed = nm, true
 			}
 			if changed {
-				if err := store.Update(tx, "parts", p, by); err != nil {
+				if err := database.Update(tx, "parts", p, by); err != nil {
 					return nil, err
 				}
 			}
@@ -410,7 +411,7 @@ func syncShowTx(ctx context.Context, tx *sql.Tx, t domain.Title, sh metadata.Sho
 		num := n
 		p := &domain.Part{TitleID: t.ID, Kind: "season", Number: &num, Name: name, KeepUpToDate: seasonKeep(t, n, latest, choice, defs.KeepSpecials),
 			SourceIDs: map[string]string{}, Pressings: []domain.Pressing{}}
-		if _, err := store.Insert(tx, "parts", p, by); err != nil {
+		if _, err := database.Insert(tx, "parts", p, by); err != nil {
 			return nil, err
 		}
 		partBy[n] = p
@@ -422,7 +423,7 @@ func syncShowTx(ctx context.Context, tx *sql.Tx, t domain.Title, sh metadata.Sho
 			return out, err
 		}
 	}
-	items, err := store.Select[domain.Item](ctx, tx, "items", "title_id = ? AND kind = 'episode'", t.ID)
+	items, err := database.Select[domain.Item](ctx, tx, "items", "title_id = ? AND kind = 'episode'", t.ID)
 	if err != nil {
 		return out, err
 	}
@@ -433,7 +434,7 @@ func syncShowTx(ctx context.Context, tx *sql.Tx, t domain.Title, sh metadata.Sho
 			itemBy[[2]int{*n.Season, *n.Episode}] = &items[i]
 		}
 	}
-	versions, err := store.Select[domain.Version](ctx, tx, "versions", "title_id = ?", t.ID)
+	versions, err := database.Select[domain.Version](ctx, tx, "versions", "title_id = ?", t.ID)
 	if err != nil {
 		return out, err
 	}
@@ -512,7 +513,7 @@ func syncShowTx(ctx context.Context, tx *sql.Tx, t domain.Title, sh metadata.Sho
 				neg := -int(it.ID)
 				it.Numbers.Episode = &neg
 			}
-			if err := store.Update(tx, "items", it, by); err != nil {
+			if err := database.Update(tx, "items", it, by); err != nil {
 				return out, err
 			}
 		}
@@ -523,7 +524,7 @@ func syncShowTx(ctx context.Context, tx *sql.Tx, t domain.Title, sh metadata.Sho
 		if *it.Numbers.Season != key[0] || *it.Numbers.Episode != key[1] {
 			neg := -int(it.ID)
 			it.Numbers.Episode = &neg
-			if err := store.Update(tx, "items", it, by); err != nil {
+			if err := database.Update(tx, "items", it, by); err != nil {
 				return out, err
 			}
 		}
@@ -570,7 +571,7 @@ func syncShowTx(ctx context.Context, tx *sql.Tx, t domain.Title, sh metadata.Sho
 			it.Numbers.Season, it.Numbers.Episode = &season, &number
 			it.Name, it.AirDate, it.AirDay, it.Runtime, it.Numbers.Absolute, it.DroppedAt, it.SourceIDs, it.PartID = name, e.AirDate, day, runtime, absolute, nil, ids, &p.ID
 			it.Still, it.AirTimed = e.Still, e.Timed && e.AirDate != nil
-			if err := store.Update(tx, "items", it, by); err != nil {
+			if err := database.Update(tx, "items", it, by); err != nil {
 				return out, err
 			}
 			out.EpisodesChanged++
@@ -586,7 +587,7 @@ func syncShowTx(ctx context.Context, tx *sql.Tx, t domain.Title, sh metadata.Sho
 		if e.ID != "" {
 			it.SourceIDs[sh.Source] = e.ID
 		}
-		if _, err := store.Insert(tx, "items", it, by); err != nil {
+		if _, err := database.Insert(tx, "items", it, by); err != nil {
 			return out, err
 		}
 		out.EpisodesAdded++
@@ -597,7 +598,7 @@ func syncShowTx(ctx context.Context, tx *sql.Tx, t domain.Title, sh metadata.Sho
 		}
 		for _, v := range versions {
 			r := reason
-			if _, err := store.Insert(tx, "slots", &domain.Slot{ItemID: it.ID, VersionID: v.ID, State: state, LastReason: &r}, by); err != nil {
+			if _, err := database.Insert(tx, "slots", &domain.Slot{ItemID: it.ID, VersionID: v.ID, State: state, LastReason: &r}, by); err != nil {
 				return out, err
 			}
 		}
@@ -615,7 +616,7 @@ func syncShowTx(ctx context.Context, tx *sql.Tx, t domain.Title, sh metadata.Sho
 		for n, p := range partBy {
 			if p.KeepUpToDate && listedIn[n] && !ahead[n] {
 				p.KeepUpToDate = false
-				if err := store.Update(tx, "parts", p, by); err != nil {
+				if err := database.Update(tx, "parts", p, by); err != nil {
 					return out, err
 				}
 			}
@@ -644,7 +645,7 @@ func syncShowTx(ctx context.Context, tx *sql.Tx, t domain.Title, sh metadata.Sho
 		} else if p.DroppedAt == nil {
 			d := now
 			p.DroppedAt = &d
-			if err := store.Update(tx, "parts", p, by); err != nil {
+			if err := database.Update(tx, "parts", p, by); err != nil {
 				return out, err
 			}
 		}
@@ -689,7 +690,7 @@ func episodeGatesTx(ctx context.Context, tx *sql.Tx, titleID int64, wait time.Du
 			return nil, nil, err
 		}
 		if air.Valid {
-			if t, err := time.Parse(store.TimeLayout, air.String); err == nil {
+			if t, err := time.Parse(database.TimeLayout, air.String); err == nil {
 				r.air = &t
 			} else if t, err := time.Parse(time.RFC3339Nano, air.String); err == nil {
 				r.air = &t

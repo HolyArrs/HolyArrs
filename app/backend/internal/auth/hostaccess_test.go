@@ -12,9 +12,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/routehits"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
 // These tests cover sign-in behind HTTPS proxies and tailscale serve, the
@@ -70,7 +70,7 @@ func loginOn(t *testing.T, f *fixture, c *http.Client, host string, hdr map[stri
 }
 
 // gatedOn is the gated fixture on an existing store: a restart of the app.
-func gatedOn(t *testing.T, s *store.Store, opt Options) *fixture {
+func gatedOn(t *testing.T, s *database.Store, opt Options) *fixture {
 	t.Helper()
 	v, err := secrets.Open(context.Background(), s, make([]byte, secrets.KeySize))
 	if err != nil {
@@ -85,7 +85,7 @@ func gatedOn(t *testing.T, s *store.Store, opt Options) *fixture {
 	m.HandleFunc("POST /api/v1/titles", okHandler)
 	m.HandleFunc("GET /api/v1/not-in-the-table", okHandler)
 	a.Routes(m)
-	srv := httptest.NewServer(a.Middleware(routehits.Wrap(Gate(m))))
+	srv := httptest.NewServer(a.Middleware(webserver.RecordRouteHits(Gate(m))))
 	t.Cleanup(srv.Close)
 	return &fixture{srv: srv, a: a, s: s, clock: c}
 }

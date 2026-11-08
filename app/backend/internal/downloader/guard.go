@@ -8,7 +8,8 @@ import (
 	"strconv"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/outside"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
 )
 
@@ -24,8 +25,8 @@ func (e adapterHTTPError) Error() string {
 // reconciliation. It never retries a mutation or counts a session challenge.
 type guardedEngine struct {
 	Engine
-	target outside.Target
-	begin  func(context.Context, outside.Target) (*outside.Operation, error)
+	target outbound.Target
+	begin  func(context.Context, outbound.Target) (*outbound.Operation, error)
 }
 
 func protectEngine(e Engine, d domain.Downloader, instance string) Engine {
@@ -33,7 +34,7 @@ func protectEngine(e Engine, d domain.Downloader, instance string) Engine {
 	if d.SecretRef != nil {
 		secret = strconv.FormatInt(*d.SecretRef, 10)
 	}
-	return &guardedEngine{Engine: e, target: outside.Target{Kind: "downloader", Identity: []string{instance, strconv.FormatInt(d.ID, 10), d.Adapter, d.URL, d.Username, secret, d.Category, strconv.FormatBool(d.AllowLocal)}}, begin: outside.Begin}
+	return &guardedEngine{Engine: e, target: outbound.Target{Kind: "downloader", Identity: []string{instance, strconv.FormatInt(d.ID, 10), d.Adapter, d.URL, d.Username, secret, d.Category, strconv.FormatBool(d.AllowLocal)}}, begin: outbound.Begin}
 }
 
 func (g *guardedEngine) run(ctx context.Context, call func() error) error {
@@ -42,27 +43,27 @@ func (g *guardedEngine) run(ctx context.Context, call func() error) error {
 		return err
 	}
 	err = call()
-	outcome := outside.Success
+	outcome := outbound.Success
 	if ctx.Err() != nil {
-		outcome = outside.Canceled
+		outcome = outbound.Canceled
 	} else if err != nil {
 		var network net.Error
 		var status adapterHTTPError
 		switch {
 		case errors.Is(err, ErrReadOnly):
 			// Refused here, before the client: proves nothing about it.
-			outcome = outside.Canceled
+			outcome = outbound.Canceled
 		case errors.Is(err, ErrSyncParse):
 			// A garbled change feed is a passing failure, never a refusal.
-			outcome = outside.TransientFailure
+			outcome = outbound.TransientFailure
 		case errors.Is(err, source.ErrAddressRefused):
-			outcome = outside.TerminalFailure
+			outcome = outbound.TerminalFailure
 		case errors.As(err, &status):
-			outcome = outside.HTTPOutcome(status.status, nil, ctx)
+			outcome = outbound.HTTPOutcome(status.status, nil, ctx)
 		case errors.Is(err, errDownloaderUnavailable) || errors.As(err, &network) || errors.Is(err, context.DeadlineExceeded):
-			outcome = outside.TransientFailure
+			outcome = outbound.TransientFailure
 		default:
-			outcome = outside.TerminalFailure
+			outcome = outbound.TerminalFailure
 		}
 	}
 	op.Finish(outcome)
@@ -96,7 +97,7 @@ func (g *guardedEngine) Remove(ctx context.Context, id string, files bool) error
 
 // SyncMain, History, Queue and ListAll are the guarded Syncer. They are methods of
 // the guard itself so the background reader never reaches an optional part
-// around outside.Begin (as ControlEngine's unwrapping would allow).
+// around outbound.Begin (as ControlEngine's unwrapping would allow).
 func (g *guardedEngine) SyncMain(ctx context.Context, rid int64) (d MainData, err error) {
 	s, ok := g.Engine.(MainSyncer)
 	if !ok {

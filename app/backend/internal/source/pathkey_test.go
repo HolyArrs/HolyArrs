@@ -7,14 +7,14 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/secrets"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 const tlPasskey = "0f3a9c2b7d1e4f5a8b6c0d9e2f1a3b4c"
 
-func storedURL(t *testing.T, s *store.Store, id int64) string {
+func storedURL(t *testing.T, s *database.Store, id int64) string {
 	t.Helper()
 	var u string
 	if err := s.Read().QueryRow("SELECT url FROM sources WHERE id = ?", id).Scan(&u); err != nil {
@@ -162,7 +162,7 @@ func TestHidePathKeysMovesOldRows(t *testing.T) {
 		Kinds: []string{"tv"}, Categories: map[string][]int{}, Priority: 25, State: "enabled", Extra: map[string]string{}}
 	err := s.Write(ctx, func(tx *sql.Tx) error {
 		for _, x := range []*domain.Source{src, plain} {
-			if _, err := store.Insert(tx, "sources", x, domain.System); err != nil {
+			if _, err := database.Insert(tx, "sources", x, domain.System); err != nil {
 				return err
 			}
 		}
@@ -187,7 +187,7 @@ func TestHidePathKeysMovesOldRows(t *testing.T) {
 		t.Fatalf("plain address changed: %q", got)
 	}
 	var moved domain.Source
-	if err := store.Get(ctx, s.Read(), "sources", src.ID, &moved); err != nil {
+	if err := database.Get(ctx, s.Read(), "sources", src.ID, &moved); err != nil {
 		t.Fatal(err)
 	}
 	cfg, err := ConfigFor(ctx, moved, v)
@@ -211,14 +211,14 @@ func TestHidePathKeysCleansOldReleaseLinks(t *testing.T) {
 		if err := putSecret(tx, v, &src.SecretRef, "source_api_key", "tp="+qkey, domain.System); err != nil {
 			return err
 		}
-		if _, err := store.Insert(tx, "sources", src, domain.System); err != nil {
+		if _, err := database.Insert(tx, "sources", src, domain.System); err != nil {
 			return err
 		}
 		// As an older cleanLink stored them: the query key hidden, the path one not.
 		for _, l := range []string{cleanLink(withKey, []string{qkey}), plainLink} {
 			r := &domain.Release{SourceID: src.ID, Name: "R", LinkRef: l, Protocol: "torrent", Flags: []string{}, Parsed: map[string]any{},
 				MatchedSlotIDs: []int64{}, FoundBy: "feed", State: "seen"}
-			if _, err := store.Insert(tx, "releases", r, domain.System); err != nil {
+			if _, err := database.Insert(tx, "releases", r, domain.System); err != nil {
 				return err
 			}
 			rels = append(rels, r)
@@ -271,7 +271,7 @@ func TestMaskedPathKeyErrorsSayWhy(t *testing.T) {
 		t.Fatalf("no passkey stored: %v", err)
 	}
 	var now domain.Source
-	if err := store.Get(ctx, s.Read(), "sources", src.ID, &now); err != nil {
+	if err := database.Get(ctx, s.Read(), "sources", src.ID, &now); err != nil {
 		t.Fatal(err)
 	}
 	cfg, err := ConfigFor(ctx, now, v)

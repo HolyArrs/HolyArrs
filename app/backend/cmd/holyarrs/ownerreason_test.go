@@ -5,13 +5,13 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 )
 
 // A named volume has no host folder: the permission refusal must not send
 // the person to fix the owner "on the host" only.
 func TestNotWritableReasonFitsANamedVolume(t *testing.T) {
-	msg := publicReason(fmt.Errorf("%w: %s", store.ErrNotWritable, "/config"))
+	msg := publicReason(fmt.Errorf("%w: %s", database.ErrNotWritable, "/config"))
 	if strings.Contains(msg, "own the folder on the host") {
 		t.Errorf("names only a host fix: %s", msg)
 	}

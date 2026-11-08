@@ -4,7 +4,6 @@
 package lists
 
 import (
-	"github.com/HolyArrs/holyarrs/app/backend/internal/feature"
 	"context"
 	"database/sql"
 	"errors"
@@ -14,9 +13,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/features"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // Kinds of Outside list, and the Job kind that reads them.
@@ -75,7 +76,7 @@ func NormalRef(kind, ref string) (string, error) {
 			return m[1], nil
 		}
 	case KindTrakt:
-		if !feature.On(feature.TraktLists) {
+		if !startup.FeatureOn(features.TraktLists) {
 			return "", ErrKind
 		}
 		if m := traktURL.FindStringSubmatch(ref); m != nil {
@@ -152,7 +153,7 @@ func fill(ctx context.Context, tx *sql.Tx, in Input, l *domain.OutsideList) erro
 		}
 	}
 	var lf domain.LibraryFolder
-	if err := store.Get(ctx, tx, "library_folders", folder, &lf); errors.Is(err, store.ErrNotFound) {
+	if err := database.Get(ctx, tx, "library_folders", folder, &lf); errors.Is(err, database.ErrNotFound) {
 		return noFolder
 	} else if err != nil {
 		return err
@@ -163,7 +164,7 @@ func fill(ctx context.Context, tx *sql.Tx, in Input, l *domain.OutsideList) erro
 	var rules *int64
 	if in.PickRulesID != 0 {
 		var pr domain.PickRules
-		if err := store.Get(ctx, tx, "pick_rules", in.PickRulesID, &pr); errors.Is(err, store.ErrNotFound) {
+		if err := database.Get(ctx, tx, "pick_rules", in.PickRulesID, &pr); errors.Is(err, database.ErrNotFound) {
 			return library.ErrNoPickRules
 		} else if err != nil {
 			return err
@@ -191,13 +192,13 @@ func fill(ctx context.Context, tx *sql.Tx, in Input, l *domain.OutsideList) erro
 
 // Add saves a new Outside list. then, when given, runs in the same
 // transaction with the new id.
-func Add(ctx context.Context, s *store.Store, in Input, by domain.Actor, then ...func(tx *sql.Tx, id int64) error) (domain.OutsideList, error) {
+func Add(ctx context.Context, s *database.Store, in Input, by domain.Actor, then ...func(tx *sql.Tx, id int64) error) (domain.OutsideList, error) {
 	var l domain.OutsideList
 	err := s.Write(ctx, func(tx *sql.Tx) error {
 		if err := fill(ctx, tx, in, &l); err != nil {
 			return err
 		}
-		id, err := store.Insert(tx, "outside_lists", &l, by)
+		id, err := database.Insert(tx, "outside_lists", &l, by)
 		if err != nil {
 			return err
 		}
@@ -213,10 +214,10 @@ func Add(ctx context.Context, s *store.Store, in Input, by domain.Actor, then ..
 
 // Edit changes a list. A new reference or kind (of list or of title)
 // forgets the last sync.
-func Edit(ctx context.Context, s *store.Store, id int64, in Input, by domain.Actor) (domain.OutsideList, error) {
+func Edit(ctx context.Context, s *database.Store, id int64, in Input, by domain.Actor) (domain.OutsideList, error) {
 	var l domain.OutsideList
 	err := s.Write(ctx, func(tx *sql.Tx) error {
-		if err := store.Get(ctx, tx, "outside_lists", id, &l); err != nil {
+		if err := database.Get(ctx, tx, "outside_lists", id, &l); err != nil {
 			return err
 		}
 		kind, ref, titleKind := l.Kind, l.Ref, l.TitleKind
@@ -226,35 +227,35 @@ func Edit(ctx context.Context, s *store.Store, id int64, in Input, by domain.Act
 		if kind != l.Kind || ref != l.Ref || titleKind != l.TitleKind {
 			l.LastSyncedAt, l.LastResult, l.LastError = nil, "", ""
 		}
-		return store.Update(tx, "outside_lists", &l, by)
+		return database.Update(tx, "outside_lists", &l, by)
 	})
 	return l, err
 }
 
 // Remove deletes a list. Titles it added stay in the Library.
-func Remove(ctx context.Context, s *store.Store, id int64) error {
+func Remove(ctx context.Context, s *database.Store, id int64) error {
 	return s.Write(ctx, func(tx *sql.Tx) error {
 		res, err := tx.Exec("DELETE FROM outside_lists WHERE id = ?", id)
 		if err != nil {
 			return err
 		}
 		if n, _ := res.RowsAffected(); n == 0 {
-			return store.ErrNotFound
+			return database.ErrNotFound
 		}
 		return nil
 	})
 }
 
 // Get reads one list.
-func Get(ctx context.Context, db store.Querier, id int64) (domain.OutsideList, error) {
+func Get(ctx context.Context, db database.Querier, id int64) (domain.OutsideList, error) {
 	var l domain.OutsideList
-	err := store.Get(ctx, db, "outside_lists", id, &l)
+	err := database.Get(ctx, db, "outside_lists", id, &l)
 	return l, err
 }
 
 // All lists every Outside list by name.
-func All(ctx context.Context, db store.Lister) ([]domain.OutsideList, error) {
-	out, err := store.Select[domain.OutsideList](ctx, db, "outside_lists", "1=1 ORDER BY name COLLATE NOCASE")
+func All(ctx context.Context, db database.Lister) ([]domain.OutsideList, error) {
+	out, err := database.Select[domain.OutsideList](ctx, db, "outside_lists", "1=1 ORDER BY name COLLATE NOCASE")
 	if out == nil {
 		out = []domain.OutsideList{}
 	}

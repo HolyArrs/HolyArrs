@@ -6,8 +6,8 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 type calendarFollowAnswer struct {
@@ -34,7 +34,7 @@ func TestCalendarSaysWhoFollows(t *testing.T) {
 	a := addMovie(t, srv.URL, `{"id":"tmdb:900001"}`)
 	if err := st.Write(context.Background(), func(tx *sql.Tx) error {
 		for _, u := range []struct{ name, role, state string }{{"luis", "owner", "active"}, {"ana", "member", "active"}, {"gone", "member", "disabled"}} {
-			if _, err := store.Insert(tx, "users", &domain.User{Name: u.name, Role: u.role, State: u.state}, domain.System); err != nil {
+			if _, err := database.Insert(tx, "users", &domain.User{Name: u.name, Role: u.role, State: u.state}, domain.System); err != nil {
 				return err
 			}
 		}

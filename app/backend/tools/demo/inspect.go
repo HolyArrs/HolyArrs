@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 )
 
 // inspectTables are counted by the inspect command. Secret tables (users,
@@ -20,7 +20,7 @@ var inspectTables = []string{"titles", "parts", "items", "versions", "slots", "f
 // inspect prints table counts, the schema versions and a few states, read
 // only, so the database is never changed.
 func inspect(ctx context.Context, dir string, out io.Writer) error {
-	db, err := sql.Open("sqlite", "file:"+filepath.ToSlash(filepath.Join(dir, store.MainFile))+"?mode=ro")
+	db, err := sql.Open("sqlite", "file:"+filepath.ToSlash(filepath.Join(dir, database.MainFile))+"?mode=ro")
 	if err != nil {
 		return err
 	}
@@ -29,7 +29,7 @@ func inspect(ctx context.Context, dir string, out io.Writer) error {
 	if err := db.QueryRowContext(ctx, "SELECT max(version) FROM schema_migrations").Scan(&v); err != nil {
 		return err
 	}
-	mainV, _ := store.SchemaVersions()
+	mainV, _ := database.SchemaVersions()
 	fmt.Fprintf(out, "schema: database %d, this program %d\n", v, mainV)
 	for _, t := range inspectTables {
 		var n int
@@ -69,7 +69,7 @@ func inspect(ctx context.Context, dir string, out io.Writer) error {
 		}
 		rows.Close()
 	}
-	ev, err := sql.Open("sqlite", "file:"+filepath.ToSlash(filepath.Join(dir, store.EventsFile))+"?mode=ro")
+	ev, err := sql.Open("sqlite", "file:"+filepath.ToSlash(filepath.Join(dir, database.EventsFile))+"?mode=ro")
 	if err != nil {
 		return err
 	}
@@ -100,7 +100,7 @@ var queryTables = map[string]bool{"titles": true, "parts": true, "items": true, 
 // query prints the rows of one read-only query on the main database; it
 // may name only the tables in queryTables.
 func query(ctx context.Context, dir, q string, out io.Writer) error {
-	db, err := sql.Open("sqlite", "file:"+filepath.ToSlash(filepath.Join(dir, store.MainFile))+"?mode=ro")
+	db, err := sql.Open("sqlite", "file:"+filepath.ToSlash(filepath.Join(dir, database.MainFile))+"?mode=ro")
 	if err != nil {
 		return err
 	}
@@ -159,7 +159,7 @@ var fingerprintTables = []string{"users", "sessions", "api_keys", "secrets", "ba
 // fingerprint prints "table id hash" for every row of the sign-in tables
 // and of the settings, read only.
 func fingerprint(ctx context.Context, dir string, out io.Writer) error {
-	db, err := sql.Open("sqlite", "file:"+filepath.ToSlash(filepath.Join(dir, store.MainFile))+"?mode=ro")
+	db, err := sql.Open("sqlite", "file:"+filepath.ToSlash(filepath.Join(dir, database.MainFile))+"?mode=ro")
 	if err != nil {
 		return err
 	}

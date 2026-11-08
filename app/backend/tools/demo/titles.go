@@ -17,8 +17,9 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/naming"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/parse"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 )
 
 // sameName says whether a looked-up name is the expected one (letters and
@@ -197,7 +198,7 @@ func (w *world) skip(format string, a ...any) {
 // adopts it, as Library > Adopt does.
 func (w *world) adoptMovie(ctx context.Context, lf domain.LibraryFolder, m metadata.Movie, e movieEntry, seed int) (int64, error) {
 	release := movieRelease(m, e.Quality)
-	p := parse.Parse(release, parse.Hints{})
+	p := releasename.Parse(release, releasename.Hints{})
 	facts := naming.FactsFrom(m.Name, m.Year, m.IDs, p, release, ".mkv")
 	folder := naming.Folder(w.ns, facts)
 	dir := filepath.Join(lf.Path, folder)
@@ -302,7 +303,7 @@ func (w *world) shows(ctx context.Context) error {
 					q = "hdtv720"
 				}
 				release := fmt.Sprintf("%s.S%02dE%02d.%s", dotted(sh.Name), ep.Season, ep.Number, qualityTags[q])
-				p := parse.Parse(release, parse.Hints{})
+				p := releasename.Parse(release, releasename.Hints{})
 				facts := naming.FactsFrom(sh.Name, sh.Year, sh.IDs, p, release, ".mkv")
 				ef := naming.EpisodeFacts{Facts: facts, Order: naming.OrderAired, Season: ep.Season, Episodes: []int{ep.Number}, Titles: []string{ep.Name}}
 				rel := naming.EpisodePath(w.ns, folder, ef)
@@ -416,9 +417,9 @@ func (w *world) artists(ctx context.Context) error {
 			return fmt.Errorf("%s: %w", e.Name, err)
 		}
 		w.m.Titles[key] = id
-		parts, err := store.Select[domain.Part](ctx, w.s.Read(), "parts",
+		parts, err := database.Select[domain.Part](ctx, w.s.Read(), "parts",
 			"title_id = ? AND kind = 'album' AND included = 1 AND release_type = 'album' AND release_date IS NOT NULL AND release_date < ? ORDER BY release_date",
-			id, store.FormatTime(time.Now()))
+			id, database.FormatTime(time.Now()))
 		if err != nil {
 			return err
 		}
@@ -472,7 +473,7 @@ func spread(n, k int) []int {
 // posters refreshes every movie and show without a cached poster, which
 // fills the artwork cache through the app's own refresh.
 func (w *world) posters(ctx context.Context) error {
-	ts, err := store.Select[domain.Title](ctx, w.s.Read(), "titles", "kind IN ('movie', 'show') AND state != 'removed' AND artwork NOT LIKE '%poster:%' ORDER BY id")
+	ts, err := database.Select[domain.Title](ctx, w.s.Read(), "titles", "kind IN ('movie', 'show') AND state != 'removed' AND artwork NOT LIKE '%poster:%' ORDER BY id")
 	if err != nil {
 		return err
 	}

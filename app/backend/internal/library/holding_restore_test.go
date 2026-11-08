@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
 // A deleted movie's held files are listed with where they came from, and a
@@ -46,7 +46,7 @@ func TestRestoreHeldBringsTheMovieBack(t *testing.T) {
 		t.Fatalf("row %+v", f)
 	}
 	var ti domain.Title
-	_ = store.Get(ctx, s.Read(), "titles", id, &ti)
+	_ = database.Get(ctx, s.Read(), "titles", id, &ti)
 	if ti.State != "active" {
 		t.Fatalf("title %s", ti.State)
 	}
