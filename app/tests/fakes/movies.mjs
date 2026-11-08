@@ -21,9 +21,9 @@ export const tmdbMovies = [
 	{ id: 900033, title: 'Cobalt Orrery', release_date: '2016-05-05', imdb_id: 'tt9000330', overview: 'A model of the planets that keeps better time than the sky.', dates: [[3, '2016-05-05'], [4, '2016-07-01']] },
 	{ id: 900034, title: 'Thistle Almanac', release_date: '2015-07-07', imdb_id: 'tt9000340', overview: 'A farm almanac that predicts the wrong year.', dates: [[3, '2015-07-07'], [4, '2015-09-01']] },
 	{ id: 900035, title: 'Marigold Bellows', release_date: '2014-04-04', imdb_id: 'tt9000350', overview: 'An accordion repaired one fold at a time.', dates: [[3, '2014-04-04'], [4, '2014-06-01']] },
-	// Followed while in the Library without a file (requests.spec): the follower hears once its file is in.
+	// Followed while in the Library without a file (decisions.spec): the follower hears once its file is in.
 	{ id: 900037, title: 'Heron Clockwork', release_date: '2015-11-11', imdb_id: 'tt9000370', overview: 'A clock that keeps time by the herons on the river.', dates: [[3, '2015-11-11'], [4, '2016-01-01']] },
-	// The ask whose download fails (requests.spec): its two good Releases are marked failed.
+	// The ask whose download fails (decisions.spec): its two good Releases are marked failed.
 	{ id: 900036, title: 'Garnet Sextant', release_date: '2013-08-08', imdb_id: 'tt9000360', overview: 'A sextant that steers by stars no one else can see.', dates: [[3, '2013-08-08'], [4, '2013-10-01']] },
 	// The Downloader tests add this one and mark its download failed.
 	{ id: 900011, title: 'Iron Lullaby', release_date: '2015-03-03', imdb_id: 'tt9000110', overview: 'A lullaby forged for a sleeping city.', dates: [[3, '2015-03-03'], [4, '2015-05-01']] },
@@ -63,13 +63,13 @@ export const tmdbMovies = [
 	{ id: 900502, title: 'Aster Funicular', release_date: '2017-05-05', imdb_id: 'tt9005020', overview: 'A hillside railway that only climbs for passengers in love.', dates: [[3, '2017-05-05'], [4, '2017-07-01']], trailer: 'asterAge001', videos: [['asterAge001', 'Aster Funicular red band trailer', true], ['asterPlay02', 'Aster Funicular trailer 2', false]] },
 	{ id: 900503, title: 'Gossamer Weir', release_date: '2018-07-07', imdb_id: 'tt9005030', overview: 'A river weir spun overnight by spiders.', dates: [[3, '2018-07-07'], [4, '2018-09-01']], trailer: 'weirGone001', videos: [['weirGone001', 'Gossamer Weir official trailer', true], ['weirGone002', 'Gossamer Weir trailer 2', false]] },
 	{ id: 900504, title: 'Pumice Belfry', release_date: '2019-09-09', imdb_id: 'tt9005040', overview: 'A bell tower so light it floats off in a storm.', dates: [[3, '2019-09-09'], [4, '2019-11-01']], trailer: 'pumiceBel01', videos: [['pumiceBel01', 'Pumice Belfry official trailer', true]] },
-	// Only requests.spec.ts (#136): asked again and declined by three admins in turn.
+	// Only decisions.spec.ts (#136): asked again and declined by three admins in turn.
 	{ id: 900601, title: 'Harrow Teaspoon', release_date: '2015-04-04', imdb_id: 'tt9006010', overview: 'A teaspoon that stirs the whole village awake.', dates: [[3, '2015-04-04'], [4, '2015-06-01']] },
-	// Only requests.spec.ts (#139): a member's open Requests page follows its decision live.
+	// Only decisions.spec.ts (#139): a member's open Requests page follows its decision live.
 	{ id: 900602, title: 'Quince Lamplight', release_date: '2016-05-05', imdb_id: 'tt9006020', overview: 'A lamplighter who only lights the lamps no one walks under.', dates: [[3, '2016-05-05'], [4, '2016-07-01']] },
-	// Only requests.spec.ts (#139): approved, nothing found for it; its steps show live.
+	// Only decisions.spec.ts (#139): approved, nothing found for it; its steps show live.
 	{ id: 900603, title: 'Rook Lantern', release_date: '2017-02-02', imdb_id: 'tt9006030', overview: 'A lantern a rook carries across the moor each night.', dates: [[3, '2017-02-02'], [4, '2017-04-01']] },
-	// Only requests.spec.ts (#139): approved, found and downloaded; the member sees each step.
+	// Only decisions.spec.ts (#139): approved, found and downloaded; the member sees each step.
 	{ id: 900604, title: 'Cobalt Weathervane', release_date: '2018-03-03', imdb_id: 'tt9006040', overview: 'A weathervane that points to whoever is lost.', dates: [[3, '2018-03-03'], [4, '2018-05-01']] }
 ];
 

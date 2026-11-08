@@ -47,7 +47,7 @@ export default defineConfig({
 		{ name: 'movies', testMatch: '**/movies/movies.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['setup'] },
 		{ name: 'lists', testMatch: '**/requests/lists.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['setup'] },
 		// The Requests page at phone width: a member asks, the owner approves from a phone.
-		{ name: 'requests', testMatch: '**/requests/requests.spec.ts', grepInvert: /follows a Library artist/, use: { ...devices['Pixel 7'] }, dependencies: ['setup'] },
+		{ name: 'requests', testMatch: ['**/requests/asking.spec.ts', '**/requests/decisions.spec.ts'], use: { ...devices['Pixel 7'] }, dependencies: ['setup'] },
 		// Sources: add, test, a wrong key, pause, the health page, an rss feed.
 		{ name: 'sources', testMatch: '**/sources/sources.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['setup'] },
 		// Search: Choose a release, Held and Turned down, Home, Settings > Search.
@@ -80,7 +80,7 @@ export default defineConfig({
 		// Organise for music: music naming with a live example, rename an album's tracks from its page, import an artist folder (nothing moves, a single left out), delete a track to the holding folder, an album's History, album days on the Calendar, a phone, delete an artist with Never-add.
 		{ name: 'musicorganise', testMatch: '**/music/musicorganise.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['musicdownloads'] },
 		// Requests: a member follows a Library artist. After the music projects, so it uses their music folder.
-		{ name: 'requestsmusic', testMatch: '**/requests/requests.spec.ts', grep: /follows a Library artist/, use: { ...devices['Pixel 7'] }, dependencies: ['musicorganise'] },
+		{ name: 'requestsmusic', testMatch: '**/requests/follows-library-artist.spec.ts', use: { ...devices['Pixel 7'] }, dependencies: ['musicorganise'] },
 		// Subtitles: English and Spanish as the default languages, the Pass marks, Subtitle sites (the lab's fake site, one that needs your account), every movie missing Spanish with Search all, a movie's and an episode's subtitles (languages, Choose a subtitle, Sync fix, Turn down), History, a phone, accessibility, members see none of it.
 		{ name: 'subtitles', testMatch: '**/subtitles/subtitles.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['shows'] },
 		// Several Versions per show: add a show with a 4K Version, both Versions searched with their own pack, History names the Version, change, add and remove Versions, a busy Version stays, a phone.
@@ -110,6 +110,6 @@ export default defineConfig({
 		// Trailers: the trailer pass looks titles up on a fake YouTube; the title hero plays the kept address, an age-restricted trailer gives way to the next, removed ones say so on screen, a title not looked up yet plays in YouTube's player.
 		{ name: 'trailers', testMatch: '**/metadata/trailers.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['setup'] },
 		// Library tools: Movie series, Recently deleted and Import files by hand from the Add menu; a phone.
-		{ name: 'librarytools', testMatch: /library-[a-z0-9-]+\.spec\.ts$/, use: { ...devices['Desktop Chrome'] }, dependencies: ['search', 'kid'] }
+		{ name: 'librarytools', testMatch: /[\\/]library-[a-z0-9-]+\.spec\.ts$/, use: { ...devices['Desktop Chrome'] }, dependencies: ['search', 'kid'] }
 	]
 });
