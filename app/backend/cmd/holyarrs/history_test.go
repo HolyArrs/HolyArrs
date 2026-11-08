@@ -1,4 +1,4 @@
-package api
+package main
 
 import (
 	"context"
@@ -19,7 +19,7 @@ import (
 // route: GET /api/v1/events
 func TestEventsFilters(t *testing.T) {
 	t.Parallel()
-	srv, s, _ := setup(t)
+	srv, s, _ := lbSetup(t)
 	ctx := context.Background()
 	ti := addTitleFor(t, s, "Arrival")
 	day := time.Date(2026, 10, 1, 9, 0, 0, 0, time.UTC)
@@ -42,7 +42,7 @@ func TestEventsFilters(t *testing.T) {
 	}
 	get := func(q string, want int) page {
 		var p page
-		b := do(t, "GET", srv.URL+"/api/v1/events?"+q, "", want)
+		b := lbDo(t, "GET", srv.URL+"/api/v1/events?"+q, "", want)
 		if want == 200 {
 			if err := json.Unmarshal(b, &p); err != nil {
 				t.Fatal(err)
@@ -53,7 +53,7 @@ func TestEventsFilters(t *testing.T) {
 	if p := get("", 200); p.Total != 5 || p.Events[0].Kind != "title_removed" || p.Events[0].TitleName != "Arrival" || p.Events[0].Data["path"] == nil {
 		t.Fatalf("all: %+v", p)
 	}
-	if p := get("title="+itoa(ti), 200); p.Total != 4 {
+	if p := get("title="+lbItoa(ti), 200); p.Total != 4 {
 		t.Fatalf("by movie: %+v", p)
 	}
 	if p := get("kind=import_*,renamed", 200); p.Total != 2 {
@@ -94,7 +94,7 @@ func TestEveryLoopStepLeavesAnEvent(t *testing.T) {
 		"decide":   {"domain.EventNeedsDecision"},
 	}
 	var code strings.Builder
-	err := filepath.WalkDir("..", func(p string, d os.DirEntry, err error) error {
+	err := filepath.WalkDir("../../internal", func(p string, d os.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}

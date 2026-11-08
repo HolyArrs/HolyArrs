@@ -1,4 +1,4 @@
-package api
+package main
 
 import (
 	"context"
@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/api"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
@@ -15,12 +17,12 @@ import (
 
 // route: GET /api/v1/titles/owned
 func TestTitlesOwned(t *testing.T) {
-	srv, _, _ := setup(t)
-	do(t, "POST", srv.URL+"/api/v1/titles", `{"id":"tmdb:693134"}`, 201)
+	srv, _, _ := lbSetup(t)
+	lbDo(t, "POST", srv.URL+"/api/v1/titles", `{"id":"tmdb:693134"}`, 201)
 	var got struct {
 		Items []mediafiles.OwnedItem `json:"items"`
 	}
-	if err := json.Unmarshal(do(t, "GET", srv.URL+"/api/v1/titles/owned", "", 200), &got); err != nil {
+	if err := json.Unmarshal(lbDo(t, "GET", srv.URL+"/api/v1/titles/owned", "", 200), &got); err != nil {
 		t.Fatal(err)
 	}
 	if len(got.Items) != 1 || got.Items[0].Kind != "movie" || got.Items[0].TMDB != "693134" || got.Items[0].ID == 0 || got.Items[0].State != "wanted" {
@@ -49,18 +51,18 @@ func TestTitlesOwned(t *testing.T) {
 
 // The SQL prefilter never drops a row foldMatch keeps.
 func TestFoldPrefilterKeepsMatches(t *testing.T) {
-	_, st, _ := setup(t)
+	_, st, _ := lbSetup(t)
 	db := st.Read()
 	for _, c := range []struct {
 		name, q string
 	}{{"Amélie", "amel"}, {"The Dark Knight", "dark kni"}, {"Ünïcode Song", "unicode"}, {"AC/DC Live", "ac dc"}} {
-		words := foldWords(c.q)
+		words := mediafiles.FoldWords(c.q)
 		pre, args := mediafiles.FoldPrefilter("n", words)
 		var n int
 		if err := db.QueryRow("SELECT count(*) FROM (SELECT ? AS n) WHERE 1 = 1"+pre, append([]any{c.name}, args...)...).Scan(&n); err != nil {
 			t.Fatal(err)
 		}
-		if foldMatch(c.name, words) != (n == 1) {
+		if mediafiles.FoldMatch(c.name, words) != (n == 1) {
 			t.Fatalf("%q %q: sql %d", c.name, c.q, n)
 		}
 	}
@@ -68,28 +70,28 @@ func TestFoldPrefilterKeepsMatches(t *testing.T) {
 
 // Kept outside answers survive a restart (they live in SQLite).
 func TestKeptOnDisk(t *testing.T) {
-	_, st, _ := setup(t)
-	a := New(Server{Store: st, Version: "test"})
-	keepOnDisk(context.Background(), a, "extras|movie:1", metadata.TitleExtras{Logo: "x", Scores: []metadata.OutsideScore{}})
-	b := New(Server{Store: st, Version: "test"})
-	k, ok := loadKept[metadata.TitleExtras](context.Background(), b, "extras|movie:1")
-	if !ok || k.v.Logo != "x" || time.Since(k.at) > time.Minute {
+	_, st, _ := lbSetup(t)
+	_ = api.New(api.Server{Store: st, Version: "test"})
+	metadata.KeepOnDisk(context.Background(), st, "extras|movie:1", metadata.TitleExtras{Logo: "x", Scores: []metadata.OutsideScore{}})
+	_ = api.New(api.Server{Store: st, Version: "test"})
+	k, ok := metadata.LoadKept[metadata.TitleExtras](context.Background(), st, "extras|movie:1")
+	if !ok || k.V.Logo != "x" || time.Since(k.At) > time.Minute {
 		t.Fatalf("%+v %v", k, ok)
 	}
 }
 
 // A member sees "requested" only for their own asks (as titleAsks).
 func TestTitlesOwnedAsksArePerPerson(t *testing.T) {
-	r := newAskRig(t)
-	a := askOf(t, r.ana.call("POST", "/api/v1/asks", `{"id":"tmdb:693134"}`, 201))
-	r.owner.call("POST", "/api/v1/asks/"+itoa(a.ID)+"/approve", `{}`, 200)
+	r := lbNewAskRig(t)
+	a := lbAskOf(t, r.ana.call("POST", "/api/v1/asks", `{"id":"tmdb:693134"}`, 201))
+	r.owner.call("POST", "/api/v1/asks/"+lbItoa(a.ID)+"/approve", `{}`, 200)
 	// Members cannot read the Library; a viewer without the right to approve can.
 	state := func(who webserver.Caller) string {
 		req := httptest.NewRequest("GET", "/api/v1/titles/owned", nil)
 		req = req.WithContext(webserver.ContextWith(req.Context(), who))
 		rec := httptest.NewRecorder()
 		m := http.NewServeMux()
-		r.api.ownedHandlers().Routes(m)
+		(&mediafiles.OwnedHandlers{Store: r.st, KidMax: accounts.KidMax, RatingAllows: metadata.RatingAllows, KindOn: func(string) bool { return true }}).Routes(m)
 		m.ServeHTTP(rec, req)
 		var got struct {
 			Items []mediafiles.OwnedItem `json:"items"`
@@ -116,14 +118,14 @@ func TestTitlesOwnedAsksArePerPerson(t *testing.T) {
 // The wiki copy on disk is keyed without the caller's name, and each kind
 // of kept answer is capped.
 func TestKeptKeysBounded(t *testing.T) {
-	_, st, _ := setup(t)
+	_, st, _ := lbSetup(t)
 	old := metadata.KeptPerPrefix
 	metadata.KeptPerPrefix = 40
 	t.Cleanup(func() { metadata.KeptPerPrefix = old })
-	a := New(Server{Store: st, Version: "test"})
+	_ = api.New(api.Server{Store: st, Version: "test"})
 	ctx := context.Background()
 	for i := range metadata.KeptPerPrefix + 5 {
-		keepOnDisk(ctx, a, "extras|movie:"+itoa(int64(i+1)), metadata.TitleExtras{Scores: []metadata.OutsideScore{}})
+		metadata.KeepOnDisk(ctx, st, "extras|movie:"+lbItoa(int64(i+1)), metadata.TitleExtras{Scores: []metadata.OutsideScore{}})
 	}
 	var n int
 	if err := st.Read().QueryRow("SELECT count(*) FROM lookup_cache WHERE key LIKE 'extras|%'").Scan(&n); err != nil || n != metadata.KeptPerPrefix {
@@ -133,8 +135,8 @@ func TestKeptKeysBounded(t *testing.T) {
 
 // A bogus name cannot change what another caller gets for a person.
 func TestWikiNameCannotPoison(t *testing.T) {
-	_, st, _ := setup(t)
-	a := New(Server{Store: st, Version: "test", WikiPerson: func(_ context.Context, id, name string) (metadata.WikiEntity, error) {
+	_, st, _ := lbSetup(t)
+	a := api.New(api.Server{Store: st, Version: "test", WikiPerson: func(_ context.Context, id, name string) (metadata.WikiEntity, error) {
 		return metadata.WikiEntity{Born: "by " + name}, nil
 	}})
 	get := func(q string) metadata.WikiFacts {
@@ -142,7 +144,7 @@ func TestWikiNameCannotPoison(t *testing.T) {
 		req.SetPathValue("kind", "person")
 		req.SetPathValue("id", "5")
 		rec := httptest.NewRecorder()
-		titleRoute(a, rec, req)
+		a.Handler().ServeHTTP(rec, req)
 		var v metadata.WikiFacts
 		_ = json.Unmarshal(rec.Body.Bytes(), &v)
 		return v
@@ -154,8 +156,8 @@ func TestWikiNameCannotPoison(t *testing.T) {
 		t.Fatalf("shared answer poisoned: %+v", v)
 	}
 	// A fresh process reads the disk copy: still the name-free one.
-	b := New(Server{Store: st, Version: "test"})
-	if k, ok := loadKept[metadata.WikiFacts](context.Background(), b, "wiki|person:5"); !ok || k.v.Born != "by " {
+	_ = api.New(api.Server{Store: st, Version: "test"})
+	if k, ok := metadata.LoadKept[metadata.WikiFacts](context.Background(), st, "wiki|person:5"); !ok || k.V.Born != "by " {
 		t.Fatalf("disk %+v %v", k, ok)
 	}
 }

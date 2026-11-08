@@ -1,4 +1,4 @@
-package api
+package main
 
 import (
 	"context"
@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/api"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
@@ -40,7 +41,7 @@ func moveSetup(t *testing.T, safe bool) (*httptest.Server, *database.Store, int6
 		t.Fatal(err)
 	}
 	t.Cleanup(q.Stop)
-	srv := httptest.NewServer(New(Server{Store: st, Queue: q, Library: lib, Metadata: metadata.Lab(), Version: "test", Mover: mv, SafeMode: safe}).Handler())
+	srv := httptest.NewServer(api.New(api.Server{Store: st, Queue: q, Library: lib, Metadata: metadata.Lab(), Version: "test", Mover: mv, SafeMode: safe}).Handler())
 	t.Cleanup(srv.Close)
 	snap := &migrate.Snapshot{Kind: migrate.Radarr, Via: migrate.ViaBackup, Version: "6.4.4",
 		Folders: []migrate.Folder{{Path: "/movies"}},
@@ -81,30 +82,30 @@ func TestMoveRoutes(t *testing.T) {
 
 	// The plan: groups with counts, not-moved reasons, and a suggestion
 	// when no rule is given and the old path is not here.
-	b := do(t, "POST", base+"plan", moveBody(snap, films), 200)
+	b := lbDo(t, "POST", base+"plan", moveBody(snap, films), 200)
 	var plan struct {
 		Plan   migrate.Plan   `json:"plan"`
 		Counts map[string]int `json:"counts"`
 	}
-	decodeJSON(t, b, &plan)
+	lbDecodeJSON(t, b, &plan)
 	if plan.Counts["titles"] != 1 || plan.Counts["sources"] != 1 || plan.Counts["not_moved"] == 0 || !strings.Contains(string(b), "HolyArrs has no tags") {
 		t.Fatalf("plan %s", b)
 	}
-	do(t, "POST", base+"plan", `{"snapshots":[`+itoa(snap)+`],"skip":["nothing"]}`, 400)
-	do(t, "POST", base+"plan", `{"snapshots":[`+itoa(snap)+`],"path_rules":[{"from":"/movies/../etc","to":"/x"}]}`, 400)
-	do(t, "POST", base+"plan", `{"snapshots":[]}`, 400)
-	do(t, "POST", base+"plan", `{"snapshots":[999]}`, 404)
-	do(t, "POST", base+"plan", `not json`, 400)
+	lbDo(t, "POST", base+"plan", `{"snapshots":[`+lbItoa(snap)+`],"skip":["nothing"]}`, 400)
+	lbDo(t, "POST", base+"plan", `{"snapshots":[`+lbItoa(snap)+`],"path_rules":[{"from":"/movies/../etc","to":"/x"}]}`, 400)
+	lbDo(t, "POST", base+"plan", `{"snapshots":[]}`, 400)
+	lbDo(t, "POST", base+"plan", `{"snapshots":[999]}`, 404)
+	lbDo(t, "POST", base+"plan", `not json`, 400)
 
 	// The dry run says what would happen and changes nothing.
-	b = do(t, "POST", base+"dry-run", moveBody(snap, films), 200)
+	b = lbDo(t, "POST", base+"dry-run", moveBody(snap, films), 200)
 	if !strings.Contains(string(b), `"result":"adopt"`) || !strings.Contains(string(b), `"dry":true`) {
 		t.Fatalf("dry run %s", b)
 	}
 	var dry struct {
 		PlanHash string `json:"plan_hash"`
 	}
-	decodeJSON(t, b, &dry)
+	lbDecodeJSON(t, b, &dry)
 	if len(dry.PlanHash) != 64 {
 		t.Fatalf("dry run without a plan hash: %s", b)
 	}
@@ -116,31 +117,31 @@ func TestMoveRoutes(t *testing.T) {
 
 	// Approve: bound to the dry run (no hash, or another plan's: 409), then
 	// a supervised Job with a report.
-	do(t, "POST", base+"moves", moveBody(snap, films), 409)
-	if b = do(t, "POST", base+"moves", moveBodyHash(snap, films, dry.PlanHash, "titles"), 409); !strings.Contains(string(b), "dry run again") {
+	lbDo(t, "POST", base+"moves", moveBody(snap, films), 409)
+	if b = lbDo(t, "POST", base+"moves", moveBodyHash(snap, films, dry.PlanHash, "titles"), 409); !strings.Contains(string(b), "dry run again") {
 		t.Fatalf("changed plan %s", b)
 	}
-	b = do(t, "POST", base+"moves", moveBodyHash(snap, films, dry.PlanHash), 202)
+	b = lbDo(t, "POST", base+"moves", moveBodyHash(snap, films, dry.PlanHash), 202)
 	var started struct {
 		Move  migrate.Move `json:"move"`
 		JobID int64        `json:"job_id"`
 	}
-	decodeJSON(t, b, &started)
+	lbDecodeJSON(t, b, &started)
 	if started.JobID == 0 || started.Move.State != "queued" {
 		t.Fatalf("start %s", b)
 	}
-	id := itoa(started.Move.ID)
+	id := lbItoa(started.Move.ID)
 	var got struct {
 		Move migrate.Move `json:"move"`
 	}
 	for i := 0; i < 500 && got.Move.State != "done"; i++ {
-		decodeJSON(t, do(t, "GET", base+"moves/"+id, "", 200), &got)
+		lbDecodeJSON(t, lbDo(t, "GET", base+"moves/"+id, "", 200), &got)
 		time.Sleep(10 * time.Millisecond)
 	}
 	if got.Move.State != "done" || got.Move.Report.Counts[migrate.ResAdopted] != 1 {
 		t.Fatalf("move %+v", got.Move)
 	}
-	if b = do(t, "GET", base+"moves", "", 200); !strings.Contains(string(b), `"state":"done"`) {
+	if b = lbDo(t, "GET", base+"moves", "", 200); !strings.Contains(string(b), `"state":"done"`) {
 		t.Fatalf("list %s", b)
 	}
 	resp, err := http.Get(base + "moves/" + id + "/report")
@@ -152,22 +153,22 @@ func TestMoveRoutes(t *testing.T) {
 		!strings.Contains(resp.Header.Get("Content-Disposition"), "holyarrs-move-"+id+".md") {
 		t.Fatalf("report %d %v", resp.StatusCode, resp.Header)
 	}
-	do(t, "GET", base+"moves/999", "", 404)
-	do(t, "GET", base+"moves/x/report", "", 404)
+	lbDo(t, "GET", base+"moves/999", "", 404)
+	lbDo(t, "GET", base+"moves/x/report", "", 404)
 
 	// Undo: a supervised Job of its own, once.
-	if b = do(t, "POST", base+"moves/"+id+"/undo", "", 202); !strings.Contains(string(b), `"undo_job_id"`) {
+	if b = lbDo(t, "POST", base+"moves/"+id+"/undo", "", 202); !strings.Contains(string(b), `"undo_job_id"`) {
 		t.Fatalf("undo %s", b)
 	}
 	for i := 0; i < 500 && got.Move.State != "undone"; i++ {
-		decodeJSON(t, do(t, "GET", base+"moves/"+id, "", 200), &got)
+		lbDecodeJSON(t, lbDo(t, "GET", base+"moves/"+id, "", 200), &got)
 		time.Sleep(10 * time.Millisecond)
 	}
 	if got.Move.State != "undone" || got.Move.Report.Counts[migrate.ResRemoved] == 0 {
 		t.Fatalf("undo %+v", got.Move)
 	}
-	do(t, "POST", base+"moves/"+id+"/undo", "", 409)
-	do(t, "POST", base+"moves/999/undo", "", 404)
+	lbDo(t, "POST", base+"moves/"+id+"/undo", "", 409)
+	lbDo(t, "POST", base+"moves/999/undo", "", 404)
 }
 
 // TestMoveSafeModeRefuses: safe mode keeps the Library still.
@@ -175,6 +176,6 @@ func TestMoveSafeModeRefuses(t *testing.T) {
 	t.Parallel()
 	srv, _, snap, films := moveSetup(t, true)
 	base := srv.URL + "/api/v1/migrate/"
-	do(t, "POST", base+"dry-run", moveBody(snap, films), 200)
-	do(t, "POST", base+"moves", moveBody(snap, films), 409)
+	lbDo(t, "POST", base+"dry-run", moveBody(snap, films), 200)
+	lbDo(t, "POST", base+"moves", moveBody(snap, films), 409)
 }

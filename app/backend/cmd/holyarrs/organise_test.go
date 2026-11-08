@@ -1,4 +1,4 @@
-package api
+package main
 
 import (
 	"context"
@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/api"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
@@ -20,13 +21,13 @@ import (
 // organiseWorld adds a movie Library folder and Dune with one imported file.
 func organiseWorld(t *testing.T) (url string, s *database.Store, lib string, titleID, fileID int64) {
 	t.Helper()
-	srv, s, _ := libSetup(t)
+	srv, s, _ := lbLibSetup(t)
 	lib = t.TempDir()
-	do(t, "POST", srv.URL+"/api/v1/library-folders", fmt.Sprintf(`{"path":%q,"kind":"movie"}`, lib), 201)
+	lbDo(t, "POST", srv.URL+"/api/v1/library-folders", fmt.Sprintf(`{"path":%q,"kind":"movie"}`, lib), 201)
 	var added struct {
-		Title TitleView `json:"title"`
+		Title api.TitleView `json:"title"`
 	}
-	_ = json.Unmarshal(do(t, "POST", srv.URL+"/api/v1/titles", `{"id":"tmdb:693134"}`, 201), &added)
+	_ = json.Unmarshal(lbDo(t, "POST", srv.URL+"/api/v1/titles", `{"id":"tmdb:693134"}`, 201), &added)
 	titleID = added.Title.ID
 	rel := "Dune - Part Two (2024)/Dune.Part.Two.2024.1080p.BluRay.x264-HOLYARRS.mkv"
 	if err := os.MkdirAll(filepath.Join(lib, "Dune - Part Two (2024)"), 0o755); err != nil {
@@ -58,7 +59,7 @@ func waitJob(t *testing.T, url string, id int64) domain.Job {
 	deadline := time.Now().Add(5 * time.Second)
 	for {
 		var j domain.Job
-		_ = json.Unmarshal(do(t, "GET", url+"/api/v1/jobs/"+itoa(id), "", 200), &j)
+		_ = json.Unmarshal(lbDo(t, "GET", url+"/api/v1/jobs/"+lbItoa(id), "", 200), &j)
 		if j.State == "done" || j.State == "failed" || time.Now().After(deadline) {
 			return j
 		}
@@ -72,18 +73,18 @@ func waitJob(t *testing.T, url string, id int64) domain.Job {
 func TestRenameTitleAPI(t *testing.T) {
 	t.Parallel()
 	url, s, lib, id, fid := organiseWorld(t)
-	b := string(do(t, "GET", url+"/api/v1/titles/"+itoa(id)+"/rename", "", 200))
+	b := string(lbDo(t, "GET", url+"/api/v1/titles/"+lbItoa(id)+"/rename", "", 200))
 	want := "Dune - Part Two (2024)/Dune - Part Two (2024) 1080p BluRay.mkv"
 	if !strings.Contains(b, `"to":"`+want+`"`) {
 		t.Fatalf("preview %s", b)
 	}
-	do(t, "GET", url+"/api/v1/titles/999/rename", "", 404)
+	lbDo(t, "GET", url+"/api/v1/titles/999/rename", "", 404)
 	var q struct {
 		JobID int64 `json:"job_id"`
 	}
 	// 5.1.7 important 3: the rename needs the hash of the preview it follows.
-	do(t, "POST", url+"/api/v1/titles/"+itoa(id)+"/rename", `{}`, 400)
-	_ = json.Unmarshal(do(t, "POST", url+"/api/v1/titles/"+itoa(id)+"/rename", `{"plan_hash":"`+planHashOf(t, b)+`"}`, 202), &q)
+	lbDo(t, "POST", url+"/api/v1/titles/"+lbItoa(id)+"/rename", `{}`, 400)
+	_ = json.Unmarshal(lbDo(t, "POST", url+"/api/v1/titles/"+lbItoa(id)+"/rename", `{"plan_hash":"`+planHashOf(t, b)+`"}`, 202), &q)
 	if j := waitJob(t, url, q.JobID); j.State != "done" || j.Result["renamed"] != float64(1) {
 		t.Fatalf("job %+v", j)
 	}
@@ -95,8 +96,8 @@ func TestRenameTitleAPI(t *testing.T) {
 	if _, err := os.Stat(filepath.Join(lib, filepath.FromSlash(want))); err != nil {
 		t.Fatal(err)
 	}
-	do(t, "GET", url+"/api/v1/jobs/99999", "", 404)
-	do(t, "POST", url+"/api/v1/titles/"+itoa(id)+"/rename", `{"file_ids":"x"}`, 400)
+	lbDo(t, "GET", url+"/api/v1/jobs/99999", "", 404)
+	lbDo(t, "POST", url+"/api/v1/titles/"+lbItoa(id)+"/rename", `{"file_ids":"x"}`, 400)
 }
 
 // route: GET /api/v1/rename
@@ -104,29 +105,29 @@ func TestRenameTitleAPI(t *testing.T) {
 func TestRenameLibraryAPI(t *testing.T) {
 	t.Parallel()
 	url, _, _, _, _ := organiseWorld(t)
-	b := string(do(t, "GET", url+"/api/v1/rename", "", 200))
+	b := string(lbDo(t, "GET", url+"/api/v1/rename", "", 200))
 	if !strings.Contains(b, `"title_name":"Dune: Part Two"`) || !strings.Contains(b, `"from":"Dune - Part Two (2024)/Dune.Part.Two`) {
 		t.Fatalf("preview %s", b)
 	}
 	var q struct {
 		JobID int64 `json:"job_id"`
 	}
-	do(t, "POST", url+"/api/v1/rename", "", 400)
-	do(t, "POST", url+"/api/v1/rename", `{}`, 400)
+	lbDo(t, "POST", url+"/api/v1/rename", "", 400)
+	lbDo(t, "POST", url+"/api/v1/rename", `{}`, 400)
 	// A preview that no longer matches (the naming settings changed after
 	// it) is refused and nothing moves.
-	do(t, "PUT", url+"/api/v1/settings/naming",
+	lbDo(t, "PUT", url+"/api/v1/settings/naming",
 		`{"file_pattern":"{title} {year}","folder_pattern":"{title} ({year})","colon":"remove","illegal":"replace","rename_on_import":true}`, 200)
-	_ = json.Unmarshal(do(t, "POST", url+"/api/v1/rename", `{"plan_hash":"`+planHashOf(t, b)+`"}`, 202), &q)
+	_ = json.Unmarshal(lbDo(t, "POST", url+"/api/v1/rename", `{"plan_hash":"`+planHashOf(t, b)+`"}`, 202), &q)
 	if j := waitJob(t, url, q.JobID); j.State != "failed" || j.Error == nil || !strings.Contains(j.Error.Message, "preview again") {
 		t.Fatalf("stale job %+v", j)
 	}
-	b = string(do(t, "GET", url+"/api/v1/rename", "", 200))
-	_ = json.Unmarshal(do(t, "POST", url+"/api/v1/rename", `{"plan_hash":"`+planHashOf(t, b)+`"}`, 202), &q)
+	b = string(lbDo(t, "GET", url+"/api/v1/rename", "", 200))
+	_ = json.Unmarshal(lbDo(t, "POST", url+"/api/v1/rename", `{"plan_hash":"`+planHashOf(t, b)+`"}`, 202), &q)
 	if j := waitJob(t, url, q.JobID); j.State != "done" || j.Result["renamed"] != float64(1) {
 		t.Fatalf("job %+v", j)
 	}
-	if b := string(do(t, "GET", url+"/api/v1/rename", "", 200)); !strings.HasPrefix(b, "{\"plan_hash\":") || !strings.Contains(b, "\"steps\":[]") {
+	if b := string(lbDo(t, "GET", url+"/api/v1/rename", "", 200)); !strings.HasPrefix(b, "{\"plan_hash\":") || !strings.Contains(b, "\"steps\":[]") {
 		t.Fatalf("after %s", b)
 	}
 }
@@ -147,17 +148,17 @@ func planHashOf(t *testing.T, preview string) string {
 func TestNamingSettingsAPI(t *testing.T) {
 	t.Parallel()
 	url, _, _, id, _ := organiseWorld(t)
-	b := string(do(t, "GET", url+"/api/v1/settings/naming", "", 200))
+	b := string(lbDo(t, "GET", url+"/api/v1/settings/naming", "", 200))
 	if !strings.Contains(b, `"file_pattern":"{title} ({year}) {quality}"`) || !strings.Contains(b, `"example":"Dune - Part Two (2024) 1080p BluRay.mkv"`) {
 		t.Fatalf("get %s", b)
 	}
-	b = string(do(t, "PUT", url+"/api/v1/settings/naming",
+	b = string(lbDo(t, "PUT", url+"/api/v1/settings/naming",
 		`{"file_pattern":"{title} {year} [{tmdb}]","folder_pattern":"{title} ({year})","colon":"remove","illegal":"replace","rename_on_import":true}`, 200))
 	if !strings.Contains(b, `"example":"Dune Part Two 2024 [693134].mkv"`) {
 		t.Fatalf("put %s", b)
 	}
-	do(t, "PUT", url+"/api/v1/settings/naming", `{"file_pattern":"{nope}","folder_pattern":"{title}","colon":"smart","illegal":"replace"}`, 400)
-	if b := string(do(t, "GET", url+"/api/v1/titles/"+itoa(id)+"/rename", "", 200)); !strings.Contains(b, "Dune Part Two 2024 [693134].mkv") {
+	lbDo(t, "PUT", url+"/api/v1/settings/naming", `{"file_pattern":"{nope}","folder_pattern":"{title}","colon":"smart","illegal":"replace"}`, 400)
+	if b := string(lbDo(t, "GET", url+"/api/v1/titles/"+lbItoa(id)+"/rename", "", 200)); !strings.Contains(b, "Dune Part Two 2024 [693134].mkv") {
 		t.Fatalf("preview after change %s", b)
 	}
 }
@@ -166,14 +167,14 @@ func TestNamingSettingsAPI(t *testing.T) {
 func TestNamingExampleAPI(t *testing.T) {
 	t.Parallel()
 	url, _, _, _, _ := organiseWorld(t)
-	b := string(do(t, "POST", url+"/api/v1/settings/naming/example",
+	b := string(lbDo(t, "POST", url+"/api/v1/settings/naming/example",
 		`{"file_pattern":"{title} [{year}]","folder_pattern":"{sort_title}","colon":"dash","illegal":"replace"}`, 200))
 	if !strings.Contains(b, `"example":"Dune- Part Two [2024].mkv"`) || !strings.Contains(b, `"example_folder":"Dune- Part Two"`) {
 		t.Fatalf("example %s", b)
 	}
-	do(t, "POST", url+"/api/v1/settings/naming/example", `{"file_pattern":"{nope}","folder_pattern":"{title}","colon":"smart","illegal":"replace"}`, 400)
+	lbDo(t, "POST", url+"/api/v1/settings/naming/example", `{"file_pattern":"{nope}","folder_pattern":"{title}","colon":"smart","illegal":"replace"}`, 400)
 	// Nothing was saved.
-	if b := string(do(t, "GET", url+"/api/v1/settings/naming", "", 200)); !strings.Contains(b, `"file_pattern":"{title} ({year}) {quality}"`) {
+	if b := string(lbDo(t, "GET", url+"/api/v1/settings/naming", "", 200)); !strings.Contains(b, `"file_pattern":"{title} ({year}) {quality}"`) {
 		t.Fatalf("saved %s", b)
 	}
 }
@@ -183,14 +184,14 @@ func TestNamingExampleAPI(t *testing.T) {
 func TestFileRulesAPI(t *testing.T) {
 	t.Parallel()
 	url, _, _, _, _ := organiseWorld(t)
-	if b := string(do(t, "GET", url+"/api/v1/settings/files", "", 200)); !strings.Contains(b, `"holding_days":7`) || !strings.Contains(b, `"min_free_mb":100`) {
+	if b := string(lbDo(t, "GET", url+"/api/v1/settings/files", "", 200)); !strings.Contains(b, `"holding_days":7`) || !strings.Contains(b, `"min_free_mb":100`) {
 		t.Fatalf("get %s", b)
 	}
-	do(t, "PUT", url+"/api/v1/settings/files", `{"holding_days":14,"min_free_mb":50}`, 400)
-	if b := string(do(t, "PUT", url+"/api/v1/settings/files", `{"holding_days":14,"min_free_mb":200,"skip_free_space_check":false}`, 200)); !strings.Contains(b, `"holding_days":14`) {
+	lbDo(t, "PUT", url+"/api/v1/settings/files", `{"holding_days":14,"min_free_mb":50}`, 400)
+	if b := string(lbDo(t, "PUT", url+"/api/v1/settings/files", `{"holding_days":14,"min_free_mb":200,"skip_free_space_check":false}`, 200)); !strings.Contains(b, `"holding_days":14`) {
 		t.Fatalf("put %s", b)
 	}
-	if b := string(do(t, "GET", url+"/api/v1/settings/files", "", 200)); !strings.Contains(b, `"min_free_mb":200`) {
+	if b := string(lbDo(t, "GET", url+"/api/v1/settings/files", "", 200)); !strings.Contains(b, `"min_free_mb":200`) {
 		t.Fatalf("after %s", b)
 	}
 }
@@ -199,15 +200,15 @@ func TestFileRulesAPI(t *testing.T) {
 func TestDeleteTitleAPI(t *testing.T) {
 	t.Parallel()
 	url, s, lib, id, fid := organiseWorld(t)
-	path := url + "/api/v1/titles/" + itoa(id) + "/delete"
-	b := string(do(t, "POST", path, `{"delete_files":true}`, 200))
+	path := url + "/api/v1/titles/" + lbItoa(id) + "/delete"
+	b := string(lbDo(t, "POST", path, `{"delete_files":true}`, 200))
 	if !strings.Contains(b, `"applied":false`) || !strings.Contains(b, `"to":".holyarrs-replaced/`) || !strings.Contains(b, `"holding_days":7`) {
 		t.Fatalf("plan %s", b)
 	}
 	if _, err := os.Stat(filepath.Join(lib, "Dune - Part Two (2024)")); err != nil {
 		t.Fatal("the plan changed the disk")
 	}
-	b = string(do(t, "POST", path, `{"delete_files":true,"never_add":true,"apply":true}`, 200))
+	b = string(lbDo(t, "POST", path, `{"delete_files":true,"never_add":true,"apply":true}`, 200))
 	if !strings.Contains(b, `"applied":true`) {
 		t.Fatalf("apply %s", b)
 	}
@@ -216,12 +217,12 @@ func TestDeleteTitleAPI(t *testing.T) {
 	if f.State != "gone" || !strings.HasPrefix(f.RelativePath, ".holyarrs-replaced/") {
 		t.Fatalf("file %+v", f)
 	}
-	if b := string(do(t, "GET", url+"/api/v1/never-add", "", 200)); !strings.Contains(b, `"693134"`) {
+	if b := string(lbDo(t, "GET", url+"/api/v1/never-add", "", 200)); !strings.Contains(b, `"693134"`) {
 		t.Fatalf("never-add %s", b)
 	}
-	do(t, "POST", path, `{}`, 409)
-	do(t, "POST", url+"/api/v1/titles/999/delete", "", 404)
-	do(t, "POST", path, `{"apply":"yes"}`, 400)
+	lbDo(t, "POST", path, `{}`, 409)
+	lbDo(t, "POST", url+"/api/v1/titles/999/delete", "", 404)
+	lbDo(t, "POST", path, `{"apply":"yes"}`, 400)
 }
 
 // route: POST /api/v1/holding/clean
@@ -231,7 +232,7 @@ func TestCleanHoldingAPI(t *testing.T) {
 	var q struct {
 		JobID int64 `json:"job_id"`
 	}
-	_ = json.Unmarshal(do(t, "POST", url+"/api/v1/holding/clean", "", 202), &q)
+	_ = json.Unmarshal(lbDo(t, "POST", url+"/api/v1/holding/clean", "", 202), &q)
 	if j := waitJob(t, url, q.JobID); j.State != "done" || j.Result["days_emptied"] != float64(0) {
 		t.Fatalf("job %+v", j)
 	}
@@ -242,7 +243,7 @@ func TestCleanHoldingAPI(t *testing.T) {
 // route: POST /api/v1/library/rescan
 func TestScanAndAdoptAPI(t *testing.T) {
 	t.Parallel()
-	srv, s, _ := libSetup(t)
+	srv, s, _ := lbLibSetup(t)
 	url := srv.URL
 	lib := t.TempDir()
 	if err := os.MkdirAll(filepath.Join(lib, "Dune - Part Two (2024)"), 0o755); err != nil {
@@ -255,28 +256,28 @@ func TestScanAndAdoptAPI(t *testing.T) {
 	var lf struct {
 		ID int64 `json:"id"`
 	}
-	_ = json.Unmarshal(do(t, "POST", url+"/api/v1/library-folders", fmt.Sprintf(`{"path":%q,"kind":"movie"}`, lib), 201), &lf)
+	_ = json.Unmarshal(lbDo(t, "POST", url+"/api/v1/library-folders", fmt.Sprintf(`{"path":%q,"kind":"movie"}`, lib), 201), &lf)
 	var q struct {
 		JobID int64 `json:"job_id"`
 	}
-	_ = json.Unmarshal(do(t, "POST", url+"/api/v1/library-folders/"+itoa(lf.ID)+"/scan", "", 202), &q)
+	_ = json.Unmarshal(lbDo(t, "POST", url+"/api/v1/library-folders/"+lbItoa(lf.ID)+"/scan", "", 202), &q)
 	j := waitJob(t, url, q.JobID)
 	b, _ := json.Marshal(j.Result)
 	if j.State != "done" || !strings.Contains(string(b), `"status":"matched"`) || !strings.Contains(string(b), `"tmdb_id":"693134"`) {
 		t.Fatalf("scan %s %s", j.State, b)
 	}
 	// 5.1.7 minor 9: "scan the rest" starts after the last folder read.
-	_ = json.Unmarshal(do(t, "POST", url+"/api/v1/library-folders/"+itoa(lf.ID)+"/scan", `{"after":"Dune - Part Two (2024)"}`, 202), &q)
+	_ = json.Unmarshal(lbDo(t, "POST", url+"/api/v1/library-folders/"+lbItoa(lf.ID)+"/scan", `{"after":"Dune - Part Two (2024)"}`, 202), &q)
 	j = waitJob(t, url, q.JobID)
 	b, _ = json.Marshal(j.Result)
 	if j.State != "done" || !strings.Contains(string(b), `"folders":[]`) || !strings.Contains(string(b), `"limit":5000`) {
 		t.Fatalf("scan the rest %s %s", j.State, b)
 	}
-	do(t, "POST", url+"/api/v1/library-folders/"+itoa(lf.ID)+"/scan", `{"after":5}`, 400)
-	do(t, "POST", url+"/api/v1/library-folders/999/scan", "", 409)
-	do(t, "POST", url+"/api/v1/library-folders/"+itoa(lf.ID)+"/adopt", `{"folders":[]}`, 400)
-	do(t, "POST", url+"/api/v1/library-folders/"+itoa(lf.ID)+"/adopt", `{"folders":[{"folder":"x"}]}`, 400)
-	_ = json.Unmarshal(do(t, "POST", url+"/api/v1/library-folders/"+itoa(lf.ID)+"/adopt",
+	lbDo(t, "POST", url+"/api/v1/library-folders/"+lbItoa(lf.ID)+"/scan", `{"after":5}`, 400)
+	lbDo(t, "POST", url+"/api/v1/library-folders/999/scan", "", 409)
+	lbDo(t, "POST", url+"/api/v1/library-folders/"+lbItoa(lf.ID)+"/adopt", `{"folders":[]}`, 400)
+	lbDo(t, "POST", url+"/api/v1/library-folders/"+lbItoa(lf.ID)+"/adopt", `{"folders":[{"folder":"x"}]}`, 400)
+	_ = json.Unmarshal(lbDo(t, "POST", url+"/api/v1/library-folders/"+lbItoa(lf.ID)+"/adopt",
 		`{"folders":[{"folder":"Dune - Part Two (2024)","tmdb_id":"693134"}]}`, 202), &q)
 	if j := waitJob(t, url, q.JobID); j.State != "done" || j.Result["adopted"] != float64(1) {
 		t.Fatalf("adopt %+v", j)
@@ -289,7 +290,7 @@ func TestScanAndAdoptAPI(t *testing.T) {
 	if _, err := os.Stat(video); err != nil {
 		t.Fatal("the video moved")
 	}
-	_ = json.Unmarshal(do(t, "POST", url+"/api/v1/library/rescan", "", 202), &q)
+	_ = json.Unmarshal(lbDo(t, "POST", url+"/api/v1/library/rescan", "", 202), &q)
 	if j := waitJob(t, url, q.JobID); j.State != "done" || j.Result["folders"] != float64(1) {
 		t.Fatalf("rescan %+v", j)
 	}
@@ -300,18 +301,18 @@ func TestScanAndAdoptAPI(t *testing.T) {
 func TestNamingShowPatternsAPI(t *testing.T) {
 	t.Parallel()
 	url, _, _, _, _ := organiseWorld(t)
-	b := string(do(t, "GET", url+"/api/v1/settings/naming", "", 200))
+	b := string(lbDo(t, "GET", url+"/api/v1/settings/naming", "", 200))
 	if !strings.Contains(b, `"episode_pattern":"{title} - {episode} - {episode_title} {quality}"`) ||
 		!strings.Contains(b, `"episode":"Copper Valley (2025)/Season 1/Copper Valley - S01E02 - The Mill 1080p WEB.mkv"`) ||
 		!strings.Contains(b, `"multi":"Copper Valley (2025)/Season 1/Copper Valley - S01E02-E03 - The Mill + Flood 1080p WEB.mkv"`) {
 		t.Fatalf("get %s", b)
 	}
-	b = string(do(t, "PUT", url+"/api/v1/settings/naming", `{"episode_pattern":"{title} {episode}","season_folders":false}`, 200))
+	b = string(lbDo(t, "PUT", url+"/api/v1/settings/naming", `{"episode_pattern":"{title} {episode}","season_folders":false}`, 200))
 	if !strings.Contains(b, `"file_pattern":"{title} ({year}) {quality}"`) || !strings.Contains(b, `"episode":"Copper Valley (2025)/Copper Valley S01E02.mkv"`) {
 		t.Fatalf("put %s", b)
 	}
-	do(t, "PUT", url+"/api/v1/settings/naming", `{"episode_pattern":"{title} {quality}"}`, 400)
-	b = string(do(t, "POST", url+"/api/v1/settings/naming/example", `{"season_folder_pattern":"S{season}"}`, 200))
+	lbDo(t, "PUT", url+"/api/v1/settings/naming", `{"episode_pattern":"{title} {quality}"}`, 400)
+	b = string(lbDo(t, "POST", url+"/api/v1/settings/naming/example", `{"season_folder_pattern":"S{season}"}`, 200))
 	if !strings.Contains(b, `"special":"Copper Valley (2025)/Specials/`) && !strings.Contains(b, `Copper Valley (2025)/Copper Valley S00E01.mkv`) {
 		t.Fatalf("example %s", b)
 	}

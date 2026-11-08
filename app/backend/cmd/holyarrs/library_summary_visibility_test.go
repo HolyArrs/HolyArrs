@@ -1,4 +1,4 @@
-package api
+package main
 
 import (
 	"context"
@@ -63,13 +63,13 @@ func readLibrarySummary(t *testing.T, base string) struct {
 		Total   int                             `json:"total"`
 		Missing []mediafiles.LibraryMissingView `json:"missing"`
 	}
-	decodeJSON(t, do(t, http.MethodGet, base+"/api/v1/library-summary", "", http.StatusOK), &got)
+	lbDecodeJSON(t, lbDo(t, http.MethodGet, base+"/api/v1/library-summary", "", http.StatusOK), &got)
 	return got
 }
 
 func TestLibrarySummaryHidesTitlesOwnedByOffParts(t *testing.T) {
 	t.Parallel()
-	f := newCtl(t, false)
+	f := lbNewCtl(t, false)
 	addSummaryTitle(t, f.s, "movie", "Missing Movie", mediafiles.SlotWanted)
 	addSummaryTitle(t, f.s, "show", "Visible Show", "")
 	addSummaryTitle(t, f.s, "artist", "Visible Artist", "")
@@ -79,13 +79,13 @@ func TestLibrarySummaryHidesTitlesOwnedByOffParts(t *testing.T) {
 		t.Fatalf("all parts on: %+v", got)
 	}
 
-	confirmTwice(t, f.srv.URL+"/api/v1/parts/music/off", http.StatusOK)
+	lbConfirmTwice(t, f.srv.URL+"/api/v1/parts/music/off", http.StatusOK)
 	got = readLibrarySummary(t, f.srv.URL)
 	if got.Total != 2 || len(got.Missing) != 1 {
 		t.Fatalf("music off: %+v", got)
 	}
 
-	confirmTwice(t, f.srv.URL+"/api/v1/parts/movies/off", http.StatusOK)
+	lbConfirmTwice(t, f.srv.URL+"/api/v1/parts/movies/off", http.StatusOK)
 	got = readLibrarySummary(t, f.srv.URL)
 	if got.Total != 1 || len(got.Missing) != 0 {
 		t.Fatalf("music and movies off: %+v", got)
@@ -94,7 +94,7 @@ func TestLibrarySummaryHidesTitlesOwnedByOffParts(t *testing.T) {
 
 func TestLibrarySummaryKeepsAllKindsVisibleInSafeMode(t *testing.T) {
 	t.Parallel()
-	f := newCtlMode(t, false, true)
+	f := lbNewCtlMode(t, false, true)
 	addSummaryTitle(t, f.s, "movie", "Safe Movie", mediafiles.SlotSearching)
 	addSummaryTitle(t, f.s, "show", "Safe Show", "")
 	addSummaryTitle(t, f.s, "artist", "Safe Artist", "")
@@ -107,7 +107,7 @@ func TestLibrarySummaryKeepsAllKindsVisibleInSafeMode(t *testing.T) {
 
 func TestLibrarySummaryCompletesForFullSizeLibrary(t *testing.T) {
 	t.Parallel()
-	f := newCtl(t, false)
+	f := lbNewCtl(t, false)
 	var pickRulesID int64
 	folder := mediafiles.LibraryFolder{Path: t.TempDir(), Kind: "movie", Label: "Scale movies", Health: "ok", SameDiskAs: []int64{}}
 	err := f.s.Write(context.Background(), func(tx *sql.Tx) error {
@@ -175,7 +175,7 @@ func TestLibrarySummaryCompletesForFullSizeLibrary(t *testing.T) {
 		Total   int                             `json:"total"`
 		Missing []mediafiles.LibraryMissingView `json:"missing"`
 	}
-	decodeJSON(t, body, &got)
+	lbDecodeJSON(t, body, &got)
 	if got.Total != 10000 || len(got.Missing) != 8 {
 		t.Fatalf("full-size summary after %s: %+v", time.Since(started), got)
 	}
@@ -183,13 +183,13 @@ func TestLibrarySummaryCompletesForFullSizeLibrary(t *testing.T) {
 
 func TestLibrarySummaryAuthAndReadScope(t *testing.T) {
 	t.Parallel()
-	r := newAskRig(t)
+	r := lbNewAskRig(t)
 	addSummaryTitle(t, r.st, "show", "Member Show", "")
-	do(t, http.MethodGet, r.srv.URL+"/api/v1/library-summary", "", http.StatusUnauthorized)
+	lbDo(t, http.MethodGet, r.srv.URL+"/api/v1/library-summary", "", http.StatusUnauthorized)
 	var memberSummary struct {
 		Total int `json:"total"`
 	}
-	decodeJSON(t, r.ana.call(http.MethodGet, "/api/v1/library-summary", "", http.StatusOK), &memberSummary)
+	lbDecodeJSON(t, r.ana.call(http.MethodGet, "/api/v1/library-summary", "", http.StatusOK), &memberSummary)
 	if memberSummary.Total != 1 {
 		t.Fatalf("member summary: %+v", memberSummary)
 	}
@@ -206,18 +206,18 @@ func TestLibrarySummaryAuthAndReadScope(t *testing.T) {
 		return got.Key
 	}
 
-	if status, body := keyCall(t, r.srv.URL, makeKey("summary read", "read"), http.MethodGet, "/api/v1/library-summary", ""); status != http.StatusOK {
+	if status, body := lbKeyCall(t, r.srv.URL, makeKey("summary read", "read"), http.MethodGet, "/api/v1/library-summary", ""); status != http.StatusOK {
 		t.Fatalf("read key: %d %s", status, body)
 	} else {
 		var readSummary struct {
 			Total int `json:"total"`
 		}
-		decodeJSON(t, []byte(body), &readSummary)
+		lbDecodeJSON(t, []byte(body), &readSummary)
 		if readSummary.Total != 1 {
 			t.Fatalf("read summary: %+v", readSummary)
 		}
 	}
-	if status, body := keyCall(t, r.srv.URL, makeKey("summary write", "write"), http.MethodGet, "/api/v1/library-summary", ""); status != http.StatusForbidden {
+	if status, body := lbKeyCall(t, r.srv.URL, makeKey("summary write", "write"), http.MethodGet, "/api/v1/library-summary", ""); status != http.StatusForbidden {
 		t.Fatalf("write key: %d %s", status, body)
 	}
 }

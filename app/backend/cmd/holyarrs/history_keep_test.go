@@ -1,4 +1,4 @@
-package api
+package main
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/api"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/health"
@@ -16,8 +17,13 @@ import (
 // the owner may change them, and each change is logged as settings_changed.
 func TestHistoryKeepSetting(t *testing.T) {
 	t.Parallel()
-	a, _ := signinRig(t, nil)
-	if s := health.UISettingsOf(context.Background(), a.s.Store); s.HistoryRoutineDays != 30 || s.HistoryOtherDays != 0 {
+	st, err := database.Open(t.TempDir(), database.Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = st.Close() })
+	a := api.New(api.Server{Store: st, Version: "test"})
+	if s := health.UISettingsOf(context.Background(), st); s.HistoryRoutineDays != 30 || s.HistoryOtherDays != 0 {
 		t.Fatalf("defaults %+v", s)
 	}
 	put := func(role, body string) int {
@@ -36,14 +42,14 @@ func TestHistoryKeepSetting(t *testing.T) {
 	if c := put(webserver.RoleOwner, `{"history_other_days": 365}`); c != 200 {
 		t.Fatalf("365 answered %d", c)
 	}
-	if s := health.UISettingsOf(context.Background(), a.s.Store); s.HistoryRoutineDays != 30 || s.HistoryOtherDays != 365 {
+	if s := health.UISettingsOf(context.Background(), st); s.HistoryRoutineDays != 30 || s.HistoryOtherDays != 365 {
 		t.Fatalf("after put %+v", s)
 	}
 	// Other this_app switches stay open to settings people.
 	if c := put(webserver.RoleAdmin, `{"autoplay_trailers": false}`); c != 200 {
 		t.Fatalf("admin autoplay answered %d", c)
 	}
-	es, _, err := a.s.Store.Events(context.Background(), database.EventFilter{Kinds: []string{health.EventSettingsChanged}})
+	es, _, err := st.Events(context.Background(), database.EventFilter{Kinds: []string{health.EventSettingsChanged}})
 	if err != nil {
 		t.Fatal(err)
 	}

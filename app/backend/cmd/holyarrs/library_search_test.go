@@ -1,4 +1,4 @@
-package api
+package main
 
 import (
 	"context"
@@ -17,7 +17,7 @@ import (
 // route: GET /api/v1/library/search
 func TestLibrarySearch(t *testing.T) {
 	t.Parallel()
-	k := newKidRig(t)
+	k := lbNewKidRig(t)
 	err := k.st.Write(context.Background(), func(tx *sql.Tx) error {
 		for _, q := range []struct {
 			sql  string
@@ -44,7 +44,7 @@ func TestLibrarySearch(t *testing.T) {
 		Albums []mediafiles.LibraryAlbum  `json:"albums"`
 		People []mediafiles.LibraryPerson `json:"people"`
 	}
-	ask := func(s *signedIn, q string) answer {
+	ask := func(s *lbSignedIn, q string) answer {
 		t.Helper()
 		var a answer
 		if err := json.Unmarshal(s.call("GET", "/api/v1/library/search?"+q, "", 200), &a); err != nil {
@@ -60,15 +60,15 @@ func TestLibrarySearch(t *testing.T) {
 		return out
 	}
 	start := time.Now()
-	sameNames(t, "name, folded", names(ask(k.owner, "q=GENTLE")), "Gentle Meadow")
+	lbSameNames(t, "name, folded", names(ask(k.owner, "q=GENTLE")), "Gentle Meadow")
 	if d := time.Since(start); d > 500*time.Millisecond {
 		t.Errorf("library search took %v", d)
 	}
-	sameNames(t, "original name", names(ask(k.owner, "q=prairie")), "Gentle Meadow")
-	sameNames(t, "year", names(ask(k.owner, "q=gentle%202021")), "Gentle Meadow")
-	sameNames(t, "wrong year", names(ask(k.owner, "q=gentle%201999")))
-	sameNames(t, "movies scope", names(ask(k.owner, "q=static&kind=movie")))
-	sameNames(t, "music scope", names(ask(k.owner, "q=static&kind=music")), "Loud Static")
+	lbSameNames(t, "original name", names(ask(k.owner, "q=prairie")), "Gentle Meadow")
+	lbSameNames(t, "year", names(ask(k.owner, "q=gentle%202021")), "Gentle Meadow")
+	lbSameNames(t, "wrong year", names(ask(k.owner, "q=gentle%201999")))
+	lbSameNames(t, "movies scope", names(ask(k.owner, "q=static&kind=movie")))
+	lbSameNames(t, "music scope", names(ask(k.owner, "q=static&kind=music")), "Loud Static")
 	if a := ask(k.owner, "q=under&kind=music"); len(a.Albums) != 1 || a.Albums[0].Artist != "Loud Static" {
 		t.Fatalf("album by folded name: %+v", a.Albums)
 	} else if a.Albums[0].Image != music.ArtPrefix+"album/abc-1" {
@@ -82,13 +82,13 @@ func TestLibrarySearch(t *testing.T) {
 		t.Fatalf("people scope: %+v", a)
 	}
 	// A Kid limited to PG never sees titles above the limit, nor their people.
-	sameNames(t, "kid", names(ask(k.kai, "q=iron")))
+	lbSameNames(t, "kid", names(ask(k.kai, "q=iron")))
 	kid := ask(k.kai, "q=zoe&kind=people")
 	if len(kid.People) != 1 || len(kid.People[0].Titles) != 1 || kid.People[0].Titles[0].Name != "Gentle Meadow" {
 		t.Fatalf("kid people: %+v", kid.People)
 	}
-	if body := string(k.kai.call("GET", "/api/v1/library/search?q=zoe", "", 200)); mentionsBlocked(body) != "" {
-		t.Fatalf("kid sees %q: %s", mentionsBlocked(body), body)
+	if body := string(k.kai.call("GET", "/api/v1/library/search?q=zoe", "", 200)); lbMentionsBlocked(body) != "" {
+		t.Fatalf("kid sees %q: %s", lbMentionsBlocked(body), body)
 	}
 	k.owner.call("GET", "/api/v1/library/search?q=x&kind=nope", "", 400)
 }

@@ -1,4 +1,4 @@
-package api
+package main
 
 import (
 	"context"
@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/api"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
@@ -17,11 +18,11 @@ import (
 // subtitle languages) from each Slot's file; the API passes them through.
 func TestTitleViewCarriesHeaderFacts(t *testing.T) {
 	t.Parallel()
-	srv, s, _ := setup(t)
+	srv, s, _ := lbSetup(t)
 	var resp struct {
-		Title TitleView `json:"title"`
+		Title api.TitleView `json:"title"`
 	}
-	_ = json.Unmarshal(do(t, "POST", srv.URL+"/api/v1/titles", `{"id":"tmdb:693134"}`, 201), &resp)
+	_ = json.Unmarshal(lbDo(t, "POST", srv.URL+"/api/v1/titles", `{"id":"tmdb:693134"}`, 201), &resp)
 	slot := resp.Title.Slots[0]
 	err := s.Write(context.Background(), func(tx *sql.Tx) error {
 		f := &mediafiles.File{SlotIDs: []int64{slot.ID}, VersionID: slot.VersionID, RelativePath: "Dune/Dune.mkv", Size: 10, AddedAt: time.Now(),
@@ -37,8 +38,8 @@ func TestTitleViewCarriesHeaderFacts(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	var got TitleView
-	_ = json.Unmarshal(do(t, "GET", srv.URL+"/api/v1/titles/"+itoa(resp.Title.ID), "", 200), &got)
+	var got api.TitleView
+	_ = json.Unmarshal(lbDo(t, "GET", srv.URL+"/api/v1/titles/"+lbItoa(resp.Title.ID), "", 200), &got)
 	if len(got.Slots) == 0 || got.Slots[0].File == nil {
 		t.Fatalf("no file on the slot: %+v", got.Slots)
 	}

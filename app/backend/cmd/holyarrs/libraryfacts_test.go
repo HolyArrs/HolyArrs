@@ -1,4 +1,4 @@
-package api
+package main
 
 import (
 	"context"
@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/api"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
@@ -47,7 +48,7 @@ func TestLibraryFacts(t *testing.T) {
 			ex(`INSERT INTO items (created_at, created_by, updated_at, updated_by, title_id, kind, air_date) VALUES (?, ?, ?, ?, ?, 'episode', ?)`, ts, by, ts, by, show, day(d))
 			if i < 2 {
 				ex(`INSERT INTO files (created_at, created_by, updated_at, updated_by, slot_ids, version_id, relative_path, size, added_at, origin, placed_by) VALUES (?, ?, ?, ?, '[]', ?, ?, ?, ?, 'imported', 'copy')`,
-					ts, by, ts, by, ver, "e"+itoa(int64(i))+".mkv", int64(1000*(i+1)), ts)
+					ts, by, ts, by, ver, "e"+lbItoa(int64(i))+".mkv", int64(1000*(i+1)), ts)
 			}
 		}
 		return nil
@@ -72,14 +73,14 @@ func TestLibraryFacts(t *testing.T) {
 // as an artwork cache link.
 func TestExtrasBanner(t *testing.T) {
 	t.Parallel()
-	a := New(Server{Version: "test", ImageBase: "https://api.example.test/v1/img", ExtraArt: func(_ context.Context, kind, id string) (metadata.ServerArt, error) {
+	a := api.New(api.Server{Version: "test", ImageBase: "https://api.example.test/v1/img", ExtraArt: func(_ context.Context, kind, id string) (metadata.ServerArt, error) {
 		return metadata.ServerArt{Banner: "https://api.example.test/v1/img/title-banner/tv-1/1000.webp"}, nil
 	}})
 	r := httptest.NewRequest("GET", "/api/v1/extras/show/1", nil)
 	r.SetPathValue("kind", "show")
 	r.SetPathValue("id", "1")
 	w := httptest.NewRecorder()
-	titleRoute(a, w, r)
+	a.Handler().ServeHTTP(w, r)
 	var got metadata.TitleExtras
 	if err := json.Unmarshal(w.Body.Bytes(), &got); err != nil || got.Banner != "/api/v1/artwork/img/title-banner/tv-1/1000.webp" {
 		t.Fatalf("banner = %q, %v (%s)", got.Banner, err, w.Body.String())
