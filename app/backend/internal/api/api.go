@@ -427,7 +427,8 @@ func (a *API) Routes(rt *webserver.Router) {
 	m.HandleFunc("GET /api/v1/metadata/{kind}/{tmdb_id}", a.metadataDetails)
 	m.HandleFunc("GET /api/v1/metadata/show/{tmdb_id}/seasons/{number}", a.metadataSeason)
 	m.HandleFunc("GET /api/v1/metadata/{kind}/{tmdb_id}/more-from", a.metadataMoreFrom)
-	m.HandleFunc("GET /api/v1/metadata/{kind}/{tmdb_id}/reviews", a.metadataReviews)
+	reviews := a.reviewHandlers()
+	reviews.Routes(m)
 	m.HandleFunc("GET /api/v1/metadata/{kind}/{tmdb_id}/anime", a.metadataAnime)
 	a.trailers.Routes(m)
 	m.HandleFunc("GET /api/v1/settings/ui", a.getUISettings)
@@ -471,8 +472,7 @@ func (a *API) Routes(rt *webserver.Router) {
 		if startup.FeatureOn(features.TraktLists) {
 			m.HandleFunc("GET /api/v1/settings/trakt-key", a.getTraktKey)
 			m.HandleFunc("PUT /api/v1/settings/trakt-key", a.putTraktKey)
-			m.HandleFunc("GET /api/v1/settings/trakt-token", a.getTraktToken)
-			m.HandleFunc("PUT /api/v1/settings/trakt-token", a.putTraktToken)
+			reviews.TokenRoutes(m)
 		}
 		m.HandleFunc("GET /api/v1/settings/tvdb-key", a.getTVDBKey)
 		m.HandleFunc("PUT /api/v1/settings/tvdb-key", a.putTVDBKey)

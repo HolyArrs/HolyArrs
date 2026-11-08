@@ -10,6 +10,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/requests"
 )
 
@@ -149,7 +150,7 @@ func (a *API) syncOutsideList(w http.ResponseWriter, r *http.Request) {
 }
 
 // The Trakt app key (client id) is kept encrypted like the TMDB token.
-const traktKeyGroup, traktKeyName = "links", "trakt_client_id"
+const traktKeyGroup, traktKeyName = metadata.TraktKeyGroup, metadata.TraktKeyName
 
 func (a *API) getTraktKey(w http.ResponseWriter, r *http.Request) {
 	k, err := a.s.Secrets.Setting(r.Context(), traktKeyGroup, traktKeyName)

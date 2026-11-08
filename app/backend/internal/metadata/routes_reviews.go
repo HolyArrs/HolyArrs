@@ -1,25 +1,71 @@
-package api
+package metadata
 
 import (
 	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
+	"slices"
 	"strconv"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/features"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
-// The Trakt VIP access token is kept encrypted next to the Trakt client id.
-const traktTokenName = "trakt_access_token"
+// The Trakt client id and VIP access token are kept encrypted together.
+const (
+	TraktKeyGroup  = "links"
+	TraktKeyName   = "trakt_client_id"
+	traktTokenName = "trakt_access_token"
+)
 
 // reviewTTL is how long one page of a source's reviews is kept.
 var reviewTTL = map[string]time.Duration{"tmdb": 6 * time.Hour, "trakt": 10 * time.Minute}
+
+// ReviewCache keeps pages of reviews; the caller owns the memory.
+type ReviewCache interface {
+	GetReviews(key string) (*ReviewPage, time.Time, bool)
+	PutReviews(key string, p *ReviewPage)
+}
+
+// ReviewHandlers serves the ratings and reviews routes and the Trakt VIP
+// token setting. What belongs to other modules comes in as functions.
+type ReviewHandlers struct {
+	Provider  Provider
+	Secrets   *secrets.Vault
+	TraktBase string
+	// TraktOn says the Trakt feature is switched on.
+	TraktOn func() bool
+	// PartOn says the part for a title kind (movie, show) is on.
+	PartOn func(kind string) bool
+	// KidLimited answers 429 and returns true when a Kid is over the limit.
+	KidLimited func(w http.ResponseWriter, r *http.Request) bool
+	// KidMax is the signed-in person's age-rating limit; "" for none.
+	KidMax func(r *http.Request) string
+	// LibraryRating is the Library title's rating; false when not there.
+	LibraryRating func(ctx context.Context, kind, tmdbID string) (string, bool)
+	// Details returns the title's details, cached by the caller.
+	Details func(ctx context.Context, d Discoverer, kind, id string) (*Details, error)
+	Cache   ReviewCache
+	// Caching sets the Vary and Cache-Control headers of an Explore answer.
+	Caching func(w http.ResponseWriter, r *http.Request)
+	// Fail answers a provider error.
+	Fail  func(w http.ResponseWriter, err error)
+	Actor func(r *http.Request) database.Actor
+}
+
+// Routes registers the reviews route.
+func (h *ReviewHandlers) Routes(m *http.ServeMux) {
+	m.HandleFunc("GET /api/v1/metadata/{kind}/{tmdb_id}/reviews", h.metadataReviews)
+}
+
+// TokenRoutes registers the Trakt VIP token setting.
+func (h *ReviewHandlers) TokenRoutes(m *http.ServeMux) {
+	m.HandleFunc("GET /api/v1/settings/trakt-token", h.getTraktToken)
+	m.HandleFunc("PUT /api/v1/settings/trakt-token", h.putTraktToken)
+}
 
 // reviewSource is one place ratings and reviews come from. More sources
 // (TVDB and so on) are added to reviewSources.
@@ -28,32 +74,32 @@ type reviewSource struct {
 	Name   string
 	Orders []string
 	// lister returns the source's reader, or false when it is not set up.
-	lister func(a *API, ctx context.Context) (metadata.ReviewLister, bool)
+	lister func(h *ReviewHandlers, ctx context.Context) (ReviewLister, bool)
 }
 
 var reviewSources = []reviewSource{
-	{ID: "tmdb", Name: "TMDB", Orders: []string{metadata.ReviewsNewest}, lister: func(a *API, ctx context.Context) (metadata.ReviewLister, bool) {
-		return metadata.ReviewListerFor(ctx, a.s.Metadata)
+	{ID: "tmdb", Name: "TMDB", Orders: []string{ReviewsNewest}, lister: func(h *ReviewHandlers, ctx context.Context) (ReviewLister, bool) {
+		return ReviewListerFor(ctx, h.Provider)
 	}},
-	{ID: "trakt", Name: "Trakt", Orders: []string{metadata.ReviewsNewest, metadata.ReviewsHelpful}, lister: func(a *API, ctx context.Context) (metadata.ReviewLister, bool) {
-		id, token := a.traktKeys(ctx)
-		if id == "" || token == "" || !startup.FeatureOn(features.TraktLists) {
+	{ID: "trakt", Name: "Trakt", Orders: []string{ReviewsNewest, ReviewsHelpful}, lister: func(h *ReviewHandlers, ctx context.Context) (ReviewLister, bool) {
+		id, token := h.traktKeys(ctx)
+		if id == "" || token == "" || h.TraktOn == nil || !h.TraktOn() {
 			return nil, false
 		}
-		return &metadata.Trakt{Base: a.s.TraktBase, ClientID: id, Token: token}, true
+		return &Trakt{Base: h.TraktBase, ClientID: id, Token: token}, true
 	}},
 }
 
 // traktKeys reads the Trakt client id and VIP token; empty when not set.
-func (a *API) traktKeys(ctx context.Context) (string, string) {
-	if a.s.Secrets == nil {
+func (h *ReviewHandlers) traktKeys(ctx context.Context) (string, string) {
+	if h.Secrets == nil {
 		return "", ""
 	}
-	id, err := a.s.Secrets.Setting(ctx, traktKeyGroup, traktKeyName)
+	id, err := h.Secrets.Setting(ctx, TraktKeyGroup, TraktKeyName)
 	if err != nil {
 		return "", ""
 	}
-	token, err := a.s.Secrets.Setting(ctx, traktKeyGroup, traktTokenName)
+	token, err := h.Secrets.Setting(ctx, TraktKeyGroup, traktTokenName)
 	if err != nil {
 		return "", ""
 	}
@@ -70,7 +116,7 @@ type reviewSourceView struct {
 // one source's score and one page of its written reviews, with the
 // sources that are set up. TMDB is always there; Trakt only once the
 // owner saved its key and VIP token. A Kid gets the score but no reviews.
-func (a *API) metadataReviews(w http.ResponseWriter, r *http.Request) {
+func (h *ReviewHandlers) metadataReviews(w http.ResponseWriter, r *http.Request) {
 	kind, id := r.PathValue("kind"), r.PathValue("tmdb_id")
 	if kind != "movie" && kind != "show" {
 		webserver.Fail(w, http.StatusBadRequest, "kind must be movie or show")
@@ -92,17 +138,17 @@ func (a *API) metadataReviews(w http.ResponseWriter, r *http.Request) {
 	}
 	order := q.Get("order")
 	if order == "" {
-		order = metadata.ReviewsNewest
+		order = ReviewsNewest
 	}
-	if order != metadata.ReviewsNewest && order != metadata.ReviewsHelpful {
+	if order != ReviewsNewest && order != ReviewsHelpful {
 		webserver.Fail(w, http.StatusBadRequest, "order must be newest or helpful")
 		return
 	}
-	if len(a.kindsOn(kind)) == 0 {
+	if !h.PartOn(kind) {
 		webserver.Fail(w, http.StatusConflict, "that part is off")
 		return
 	}
-	if a.kidLimited(w, r) {
+	if h.KidLimited(w, r) {
 		return
 	}
 	src := q.Get("source")
@@ -110,11 +156,11 @@ func (a *API) metadataReviews(w http.ResponseWriter, r *http.Request) {
 		src = "tmdb"
 	}
 	var sources []reviewSourceView
-	var chosen metadata.ReviewLister
+	var chosen ReviewLister
 	var orders []string
 	known := false
 	for _, s := range reviewSources {
-		l, ok := s.lister(a, r.Context())
+		l, ok := s.lister(h, r.Context())
 		if s.ID == src {
 			known = true
 		}
@@ -134,87 +180,72 @@ func (a *API) metadataReviews(w http.ResponseWriter, r *http.Request) {
 		webserver.Fail(w, http.StatusNotFound, "that source is not set up")
 		return
 	}
-	if !contains(orders, order) {
+	if !slices.Contains(orders, order) {
 		order = orders[0]
 	}
-	d, ok := metadata.DiscovererFor(r.Context(), a.s.Metadata)
+	d, ok := DiscovererFor(r.Context(), h.Provider)
 	if !ok {
 		webserver.Fail(w, http.StatusNotImplemented, "Explore is not available here")
 		return
 	}
-	dkey := "details|" + kind + "|" + id
-	de, dcached := a.discover.get(dkey)
-	if !dcached || time.Since(de.at) >= discoverTTL["details"] {
-		det, err := d.Details(r.Context(), kind, id)
-		if err != nil {
-			discoverFail(w, err)
-			return
-		}
-		de = discoverEntry{at: time.Now(), details: &det}
-		a.discover.put(dkey, de)
+	det, err := h.Details(r.Context(), d, kind, id)
+	if err != nil {
+		h.Fail(w, err)
+		return
 	}
-	max := a.kidMax(r)
+	max := h.KidMax(r)
 	if max != "" {
-		rating, inLibrary := a.libraryRating(r.Context(), kind, id)
+		rating, inLibrary := h.LibraryRating(r.Context(), kind, id)
 		if !inLibrary {
-			rating = de.details.Rating
+			rating = det.Rating
 		}
-		if !metadata.RatingAllows(max, kind, rating) {
-			webserver.Fail(w, http.StatusForbidden, aboveLimit)
+		if !RatingAllows(max, kind, rating) {
+			webserver.Fail(w, http.StatusForbidden, AboveLimit)
 			return
 		}
 	}
 	key := "reviews|" + src + "|" + kind + "|" + id + "|" + order + "|" + strconv.Itoa(page)
-	e, cached := a.discover.get(key)
+	rp, at, cached := h.Cache.GetReviews(key)
 	if max != "" && src == "tmdb" {
 		// A Kid sees TMDB's score only, which the details already hold.
-		e, cached = discoverEntry{at: time.Now(), reviews: &metadata.ReviewPage{Page: page, Pages: 1}}, true
+		rp, at, cached = &ReviewPage{Page: page, Pages: 1}, time.Now(), true
 	}
-	if !cached || time.Since(e.at) >= reviewTTL[src] {
-		rp, err := chosen.Reviews(r.Context(), kind, id, page, order)
+	if !cached || time.Since(at) >= reviewTTL[src] {
+		fresh, err := chosen.Reviews(r.Context(), kind, id, page, order)
 		switch {
 		case err == nil:
-			e = discoverEntry{at: time.Now(), reviews: &rp}
-			a.discover.put(key, e)
-		case cached && errors.Is(err, metadata.ErrRateLimited):
-		case src == "trakt" && errors.Is(err, metadata.ErrTraktLocked):
+			rp = &fresh
+			h.Cache.PutReviews(key, rp)
+		case cached && errors.Is(err, ErrRateLimited):
+		case src == "trakt" && errors.Is(err, ErrTraktLocked):
 			webserver.Fail(w, http.StatusBadGateway, "Trakt refused the key; check the client id and VIP token in Settings")
 			return
 		default:
-			discoverFail(w, err)
+			h.Fail(w, err)
 			return
 		}
 	}
-	out := *e.reviews
+	out := *rp
 	if src == "tmdb" {
-		out.Score, out.Votes = de.details.Score, de.details.Votes
+		out.Score, out.Votes = det.Score, det.Votes
 	}
 	hidden := false
 	if max != "" {
-		out.Reviews, hidden = []metadata.Review{}, true
+		out.Reviews, hidden = []Review{}, true
 	}
-	a.exploreCaching(w, r, "")
+	h.Caching(w, r)
 	webserver.WriteJSON(w, http.StatusOK, struct {
 		Source  string             `json:"source"`
 		Sources []reviewSourceView `json:"sources"`
 		Order   string             `json:"order"`
-		metadata.ReviewPage
+		ReviewPage
 		ReviewsHidden bool `json:"reviews_hidden,omitempty"`
 	}{Source: src, Sources: sources, Order: order, ReviewPage: out, ReviewsHidden: hidden})
 }
 
-func contains(list []string, s string) bool {
-	for _, v := range list {
-		if v == s {
-			return true
-		}
-	}
-	return false
-}
-
 // getTraktToken answers whether the Trakt VIP token is set (masked).
-func (a *API) getTraktToken(w http.ResponseWriter, r *http.Request) {
-	k, err := a.s.Secrets.Setting(r.Context(), traktKeyGroup, traktTokenName)
+func (h *ReviewHandlers) getTraktToken(w http.ResponseWriter, r *http.Request) {
+	k, err := h.Secrets.Setting(r.Context(), TraktKeyGroup, traktTokenName)
 	if err != nil {
 		webserver.Internal(w, "api", err)
 		return
@@ -223,7 +254,7 @@ func (a *API) getTraktToken(w http.ResponseWriter, r *http.Request) {
 }
 
 // putTraktToken saves the Trakt VIP access token encrypted; never logged.
-func (a *API) putTraktToken(w http.ResponseWriter, r *http.Request) {
+func (h *ReviewHandlers) putTraktToken(w http.ResponseWriter, r *http.Request) {
 	if !webserver.RequireStrong(w, r) {
 		return
 	}
@@ -234,7 +265,7 @@ func (a *API) putTraktToken(w http.ResponseWriter, r *http.Request) {
 		webserver.Fail(w, http.StatusBadRequest, `send {"token": "<Trakt VIP access token>"}`)
 		return
 	}
-	if err := a.s.Secrets.SetSetting(r.Context(), traktKeyGroup, traktTokenName, body.Token, actor(r)); err != nil {
+	if err := h.Secrets.SetSetting(r.Context(), TraktKeyGroup, traktTokenName, body.Token, h.Actor(r)); err != nil {
 		webserver.Internal(w, "api", err)
 		return
 	}

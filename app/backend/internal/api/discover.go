@@ -18,7 +18,9 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/features"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 )
 
@@ -787,4 +789,54 @@ func (a *API) watchServices(w http.ResponseWriter, r *http.Request) {
 	a.discover.put(key, discoverEntry{at: time.Now(), services: out})
 	a.exploreCaching(w, r, "private, max-age=3600")
 	webserver.WriteJSON(w, http.StatusOK, map[string]any{"region": region, "services": out})
+}
+
+// reviewHandlers builds the metadata review routes on this package's
+// Explore cache, Kid limits and part switches.
+func (a *API) reviewHandlers() *metadata.ReviewHandlers {
+	return &metadata.ReviewHandlers{
+		Provider:      a.s.Metadata,
+		Secrets:       a.s.Secrets,
+		TraktBase:     a.s.TraktBase,
+		TraktOn:       func() bool { return startup.FeatureOn(features.TraktLists) },
+		PartOn:        func(kind string) bool { return len(a.kindsOn(kind)) > 0 },
+		KidLimited:    a.kidLimited,
+		KidMax:        a.kidMax,
+		LibraryRating: a.libraryRating,
+		Details:       a.cachedDetails,
+		Cache:         (*reviewCache)(a),
+		Caching:       func(w http.ResponseWriter, r *http.Request) { a.exploreCaching(w, r, "") },
+		Fail:          discoverFail,
+		Actor:         actor,
+	}
+}
+
+// cachedDetails is a title's details through the Explore cache.
+func (a *API) cachedDetails(ctx context.Context, d metadata.Discoverer, kind, id string) (*metadata.Details, error) {
+	key := "details|" + kind + "|" + id
+	e, ok := a.discover.get(key)
+	if !ok || time.Since(e.at) >= discoverTTL["details"] {
+		det, err := d.Details(ctx, kind, id)
+		if err != nil {
+			return nil, err
+		}
+		e = discoverEntry{at: time.Now(), details: &det}
+		a.discover.put(key, e)
+	}
+	return e.details, nil
+}
+
+// reviewCache keeps review pages in the Explore cache.
+type reviewCache API
+
+func (c *reviewCache) GetReviews(key string) (*metadata.ReviewPage, time.Time, bool) {
+	e, ok := c.discover.get(key)
+	if !ok || e.reviews == nil {
+		return nil, time.Time{}, false
+	}
+	return e.reviews, e.at, true
+}
+
+func (c *reviewCache) PutReviews(key string, p *metadata.ReviewPage) {
+	c.discover.put(key, discoverEntry{at: time.Now(), reviews: p})
 }
