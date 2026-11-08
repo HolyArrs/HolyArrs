@@ -61,7 +61,7 @@ func (h *Handlers) savedMoveKeys(w http.ResponseWriter, r *http.Request) {
 	webserver.WriteJSON(w, http.StatusOK, map[string]any{"saved": list})
 }
 
-// forgetMoveKeys deletes every saved old-app key (?kind= for one).
+// forgetMoveKeys deletes every saved arr key (?kind= for one).
 func (h *Handlers) forgetMoveKeys(w http.ResponseWriter, r *http.Request) {
 	if !webserver.RequireStrong(w, r) {
 		return

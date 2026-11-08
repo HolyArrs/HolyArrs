@@ -462,7 +462,7 @@ var RoutePerms = map[string]webserver.Perm{
 	"POST /api/v1/auth/media-server/{kind}/test": webserver.NeedOwner,
 	"POST /api/v1/auth/import/{kind}/preview":    webserver.NeedOwner,
 	"POST /api/v1/auth/import/{kind}":            webserver.NeedOwner,
-	// The secrets file and the old-app keys it saves are the owner's.
+	// The secrets file and the arr keys it saves are the owner's.
 	"POST /api/v1/settings/import-secrets": webserver.NeedOwner,
 	"GET /api/v1/migrate/saved-keys":       webserver.NeedOwner,
 	"DELETE /api/v1/migrate/saved-keys":    webserver.NeedOwner,
@@ -501,7 +501,7 @@ var RoutePerms = map[string]webserver.Perm{
 	"POST /api/v1/schedules/{kind}/run": webserver.PermManageLibrary,
 	"PUT /api/v1/schedules/{kind}":      webserver.PermSettings,
 
-	// The old-app API: one row per method on each prefix;
+	// The arr API: one row per method on each prefix;
 	// every route behind them reads or changes the Library.
 	"GET /sonarr/":    webserver.PermManageLibrary,
 	"POST /sonarr/":   webserver.PermManageLibrary,
@@ -554,7 +554,7 @@ var ScopeNotes = map[string]string{
 	webserver.ScopeControl:    "The controls: part switches, stage pause, resume and restart, reconnecting one linked app, whole-app restart, restart in safe mode and shut down.",
 	webserver.ScopeAll:        "Read, write and admin together (every route but the controls). Every key made before scopes existed holds this one.",
 	webserver.ScopeMCP:        "An AI connection only: the AI tools route and nothing else. The tools act as the key's person, within their permissions.",
-	webserver.ScopeCompat:     "The old-app API only (/sonarr/ and /radarr/, for Seerr and Overseerr). Only the keys made for it (POST /api/v1/settings/old-app-api/keys/{side}) hold this scope; an API key cannot be made with it.",
+	webserver.ScopeCompat:     "The arr API only (/sonarr/ and /radarr/, for Seerr and Overseerr). Only the keys made for it (POST /api/v1/settings/old-app-api/keys/{side}) hold this scope; an API key cannot be made with it.",
 }
 
 // Gate checks every signed-in request against RoutePerms. It must sit

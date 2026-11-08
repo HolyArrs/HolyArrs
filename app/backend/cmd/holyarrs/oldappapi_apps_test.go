@@ -23,7 +23,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 )
 
-// The other apps that read the old-app API (roadmap #85, phase 2): Bazarr
+// The other apps that read the arr API (roadmap #85, phase 2): Bazarr
 // copies the Library for subtitles, Unpackerr polls the download list,
 // and Homepage's start-page widgets read counts and lists. Their calls
 // and the fields they read come from the Sonarr, Radarr and Bazarr

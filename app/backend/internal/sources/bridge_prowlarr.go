@@ -13,7 +13,7 @@ import (
 // BridgeProwlarr is a client for a Prowlarr the person runs. HolyArrs adds itself
 // there as an app for each side that is on (the Sonarr kind for TV, the
 // Radarr kind for movies), then asks it to sync. Prowlarr then writes its
-// sites into HolyArrs through the old-app API.
+// sites into HolyArrs through the arr API.
 type BridgeProwlarr struct {
 	URL  string
 	Key  string
@@ -25,7 +25,7 @@ type BridgeSide struct {
 	Kind string // Sonarr or Radarr, the app type name in Prowlarr
 	Name string // the entry's name in Prowlarr
 	Base string // the address Prowlarr uses to reach this side of HolyArrs
-	Key  string // the old-app key; empty keeps the one Prowlarr has
+	Key  string // the arr key; empty keeps the one Prowlarr has
 }
 
 // app is one connected-app entry, kept as loose JSON so fields HolyArrs does

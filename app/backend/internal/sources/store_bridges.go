@@ -91,7 +91,7 @@ func bridgeSources(ctx context.Context, q database.Lister, bridgeID int64) ([]do
 	return database.Select[domain.Source](ctx, q, "sources", "json_extract(extra, '$.bridge') = ? ORDER BY id", strconv.FormatInt(bridgeID, 10))
 }
 
-// prowlarrSources lists the old-app Sources whose address starts with a pattern from likePrefix.
+// prowlarrSources lists the arr Sources whose address starts with a pattern from likePrefix.
 func prowlarrSources(ctx context.Context, q database.Lister, pattern string) ([]domain.Source, error) {
 	return database.Select[domain.Source](ctx, q, "sources",
 		"json_extract(extra, '$.old_app') IS NOT NULL AND lower(url) LIKE lower(?) ESCAPE '\\' ORDER BY id", pattern)

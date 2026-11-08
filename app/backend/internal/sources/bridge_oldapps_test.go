@@ -12,7 +12,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 )
 
-// fakeOldApps records what the bridge flow asks of the old-app side.
+// fakeOldApps records what the bridge flow asks of the arr side.
 type fakeOldApps struct {
 	calls    []string
 	on       bool
@@ -48,7 +48,7 @@ func addProwlarrBridge(t *testing.T, h *Handlers, url string, keys string) *http
 }
 
 // When Prowlarr refuses the app entries, the keys this request made are
-// deleted again and the old-app API goes back off. A key typed in is never
+// deleted again and the arr API goes back off. A key typed in is never
 // made or deleted.
 func TestAddProwlarrBridgeRollsBackOldAppKeysOnFailure(t *testing.T) {
 	f := newFakeProwlarr(t)
@@ -67,7 +67,7 @@ func TestAddProwlarrBridgeRollsBackOldAppKeysOnFailure(t *testing.T) {
 		t.Fatalf("calls %v want %v", old.calls, want)
 	}
 	if old.on {
-		t.Fatal("old-app API left on")
+		t.Fatal("arr API left on")
 	}
 	if bs, err := h.bridges().List(context.Background()); err != nil || len(bs) != 0 {
 		t.Fatalf("bridge kept: %v %v", bs, err)

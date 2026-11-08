@@ -515,7 +515,7 @@ var routeOwners = map[string]Owner{
 	"GET /api/v1/settings/release-gate":                    movies,
 	"PUT /api/v1/settings/release-gate":                    movies,
 
-	// The old-app API (decision 0008): the Sonarr side is TV shows, the
+	// The arr API (decision 0008): the Sonarr side is TV shows, the
 	// Radarr side Movies; its settings are core.
 	"GET /sonarr/":    shows,
 	"POST /sonarr/":   shows,

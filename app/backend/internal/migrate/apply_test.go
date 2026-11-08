@@ -636,7 +636,7 @@ func TestMoveOutsideLists(t *testing.T) {
 	}
 }
 
-// A finished move forgets every old-app key kept for "Read again".
+// A finished move forgets every arr key kept for "Read again".
 func TestFinishedMoveForgetsKeptKeys(t *testing.T) {
 	l := newMoveLab(t)
 	err := l.st.Write(context.Background(), func(tx *sql.Tx) error {

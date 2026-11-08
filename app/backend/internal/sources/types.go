@@ -30,7 +30,7 @@ type Catalog interface {
 	PartLabel(ctx context.Context, partID int64) (titleID int64, title, season, album string)
 }
 
-// OldApps is the old-app (Sonarr and Radarr style) side of connecting
+// OldApps is the arr (Sonarr and Radarr style) side of connecting
 // Prowlarr: its keys and its on switch live outside this package.
 type OldApps interface {
 	// CanMakeKeys is false when the app runs without sign-in, so no key can be made.

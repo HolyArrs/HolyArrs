@@ -374,7 +374,7 @@ func (s *BridgeService) Probe(ctx context.Context, _ time.Time) (bool, any, erro
 }
 
 // RecordProwlarr keeps the outcome of a Prowlarr connect or sync. Prowlarr
-// writes its Sources through the old-app API, so they are counted there.
+// writes its Sources through the arr API, so they are counted there.
 func (s *BridgeService) RecordProwlarr(ctx context.Context, b Bridge, err error) {
 	s.record(ctx, b, s.SourceCount(ctx, b), false, err)
 }
@@ -391,7 +391,7 @@ func (s *BridgeService) quiet(id int64, at time.Time) {
 
 // sourcesOf returns the Sources a bridge brought in. For Jackett these are
 // the ones it made. For Prowlarr they are the ones its app sync wrote, which
-// are old-app Sources whose feed is on this Prowlarr.
+// are arr Sources whose feed is on this Prowlarr.
 func (s *BridgeService) sourcesOf(ctx context.Context, b Bridge) ([]domain.Source, error) {
 	if b.Kind == BridgeKindProwlarr {
 		return prowlarrSources(ctx, s.Store.Read(), likePrefix(b.URL))

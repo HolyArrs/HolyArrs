@@ -12,7 +12,7 @@ import (
 // Middleware lets only signed-in requests through.
 func (a *Auth) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// The old-app API takes only its own keys. Like an API key, such a
+		// The arr API takes only its own keys. Like an API key, such a
 		// key is no browser credential, so the host and origin checks do
 		// not apply (Seerr calls from a Docker neighbour by name). A
 		// missing or wrong key gets a bare 401, as the old apps answer.

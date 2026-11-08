@@ -96,7 +96,7 @@ func TestRDPAIToolAnswerShapes(t *testing.T) {
 }
 
 // The AI switch is one row in the settings table (group this_app, key
-// mcp_enabled, on or off); the old-app switches are rows of the same group.
+// mcp_enabled, on or off); the arr switches are rows of the same group.
 func TestRDPSettingsRowsOfAIAndOldAppAPI(t *testing.T) {
 	f := newAIFix(t)
 	read := func(key string) (value, by string, n int) {
@@ -120,7 +120,7 @@ func TestRDPSettingsRowsOfAIAndOldAppAPI(t *testing.T) {
 	if v, _, n := read("mcp_enabled"); v != "off" || n != 1 {
 		t.Fatalf("off: %q %d", v, n)
 	}
-	// The old-app API: each switch its own row; a missing field leaves its row alone.
+	// The arr API: each switch its own row; a missing field leaves its row alone.
 	f.call(f.own, f.csrf, "", "PUT", "/api/v1/settings/old-app-api", `{"enabled":true}`)
 	if v, _, n := read("old_app_api"); v != "on" || n != 1 {
 		t.Fatalf("old_app_api: %q %d", v, n)

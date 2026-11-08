@@ -123,7 +123,7 @@ func (m *Mover) setState(ctx context.Context, id int64, state string, rep *Repor
 			return err
 		}
 		if state == "done" && (rep == nil || rep.Counts[ResFailed] == 0) {
-			// A finished move forgets every old-app key kept for "Read
+			// A finished move forgets every arr key kept for "Read
 			// again" (the move credentials and their vault rows).
 			// While any item failed (say the metadata server was down) the
 			// keys stay, so "move again" needs no retyping; the next clean

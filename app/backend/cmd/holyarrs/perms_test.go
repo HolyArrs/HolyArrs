@@ -137,7 +137,7 @@ func TestMemberIsRefusedEveryStaffRoute(t *testing.T) {
 		if need == "signed_in" || need == "self" || need == webserver.NeedPublic || need == webserver.PermAsk || path == "/" || path == "/login" {
 			continue
 		}
-		// The old-app API takes no session at all, only its own keys;
+		// The arr API takes no session at all, only its own keys;
 		// TestOldAppMemberKeyRefused checks a member's key gets 403.
 		if accounts.ArrSide(path) != "" {
 			continue

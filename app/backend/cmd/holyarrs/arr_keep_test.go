@@ -1,6 +1,6 @@
 package main
 
-// Helpers kept for the api tests that still use the old-app, migrate and AI
+// Helpers kept for the api tests that still use the arr, migrate and AI
 // fixtures; the tests themselves moved to cmd/holyarrs.
 
 import (

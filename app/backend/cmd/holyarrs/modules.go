@@ -68,7 +68,7 @@ func (c libraryCatalog) PartLabel(ctx context.Context, partID int64) (int64, str
 	return c.a.partLabel(ctx, partID)
 }
 
-// oldApps is the old-app key and switch side of connecting Prowlarr.
+// oldApps is the arr key and switch side of connecting Prowlarr.
 type oldApps struct{ a *handlers }
 
 func (o oldApps) CanMakeKeys() bool { return o.a.s.Auth != nil }
@@ -109,7 +109,7 @@ func actorJSONText(a domain.Actor) string {
 	return string(b)
 }
 
-// arr is the old-app API: the Sonarr and Radarr prefixes and their settings.
+// arr is the arr API: the Sonarr and Radarr prefixes and their settings.
 func (a *handlers) arr() *arrapi.Handlers {
 	return &arrapi.Handlers{
 		Deps: arrapi.Deps{Store: a.s.Store, Library: a.s.Library, Metadata: a.s.Metadata, Queue: a.s.Queue,

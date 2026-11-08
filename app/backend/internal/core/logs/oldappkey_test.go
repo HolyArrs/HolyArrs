@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-// The old-app API (decision 0008) takes its key in the address, as Seerr
+// The arr API (decision 0008) takes its key in the address, as Seerr
 // and Overseerr send it. Every form a log line can carry it in is masked:
 // the apikey query value in any case, the X-Api-Key header and the
 // Authorization header with or without Bearer.

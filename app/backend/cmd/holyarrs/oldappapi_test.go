@@ -31,7 +31,7 @@ import (
 )
 
 // oldAppFix is a signed-in app with a show and a movie Library folder,
-// the lab show and movie to add, and the old-app API turned on with a key
+// the lab show and movie to add, and the arr API turned on with a key
 // per side. Its Job queue never runs, so every Job a call queues stays
 // queued and can be checked.
 type oldAppFix struct {
@@ -75,7 +75,7 @@ func (f *oldAppFix) session(method, path, body string) (int, string) {
 	return st, b
 }
 
-// arr calls the old-app API the way Seerr does: the key in the address.
+// arr calls the arr API the way Seerr does: the key in the address.
 func (f *oldAppFix) arr(key, method, path, body string) (int, http.Header, string) {
 	f.t.Helper()
 	sep := "?"
@@ -157,7 +157,7 @@ func newOldAppFix(t *testing.T, base ...string) *oldAppFix {
 	return f
 }
 
-// turnOn switches the old-app API on and makes both keys.
+// turnOn switches the arr API on and makes both keys.
 func (f *oldAppFix) turnOn() {
 	f.t.Helper()
 	if st, body := f.session("PUT", "/api/v1/settings/old-app-api", `{"enabled":true}`); st != 200 || !strings.Contains(body, `"enabled":true`) {
@@ -248,11 +248,11 @@ func TestOldAppSwitchAndKeys(t *testing.T) {
 	if st, _ := f.session("POST", "/api/v1/settings/old-app-api/keys/lidarr", ""); st != 404 {
 		t.Fatalf("unknown side: %d", st)
 	}
-	// An old-app key cannot be made as a HolyArrs API key.
+	// An arr key cannot be made as a HolyArrs API key.
 	if st, body := f.session("POST", "/api/v1/auth/keys", `{"label":"x","scopes":["compat"]}`); st != 400 {
 		t.Fatalf("compat scope on an API key: %d %s", st, body)
 	}
-	// An admin-only API key cannot make an old-app key, which can change
+	// An admin-only API key cannot make an arr key, which can change
 	// the Library; a key holding write too can.
 	for scopes, want := range map[string]int{`["admin"]`: 403, `["all"]`: 201} {
 		st, hak := f.session("POST", "/api/v1/auth/keys", `{"label":"x","scopes":`+scopes+`}`)
@@ -335,9 +335,9 @@ func TestOldAppKeyPlaces(t *testing.T) {
 			t.Errorf("%s: %d %q, want a bare 401", name, st, b)
 		}
 	}
-	// The old-app key reaches nothing else.
+	// The arr key reaches nothing else.
 	if st, _, _ := f.call(http.DefaultClient, "", "GET", "/api/v1/titles", "", "X-Api-Key", k); st != 401 {
-		t.Errorf("old-app key on /api/v1: %d", st)
+		t.Errorf("arr key on /api/v1: %d", st)
 	}
 	// Writes from a Docker neighbour (another host name, no Origin) pass:
 	// a key is no browser credential.

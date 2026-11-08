@@ -1400,7 +1400,7 @@
         "type": "object"
       },
       "Bridge": {
-        "description": "A connected Jackett or Prowlarr. Jackett: HolyArrs keeps one Torznab Source per site set up there. Prowlarr: HolyArrs is an app in Prowlarr, which writes its sites in through the old-app API.",
+        "description": "A connected Jackett or Prowlarr. Jackett: HolyArrs keeps one Torznab Source per site set up there. Prowlarr: HolyArrs is an app in Prowlarr, which writes its sites in through the arr API.",
         "properties": {
           "callback_url": {
             "description": "Prowlarr only: how Prowlarr reaches HolyArrs.",
@@ -1464,7 +1464,7 @@
             "additionalProperties": {
               "type": "string"
             },
-            "description": "Prowlarr only: old-app keys typed in, by side (sonarr, radarr), used instead of making new ones.",
+            "description": "Prowlarr only: arr keys typed in, by side (sonarr, radarr), used instead of making new ones.",
             "type": "object"
           },
           "kind": {
@@ -1475,7 +1475,7 @@
             "type": "string"
           },
           "new_keys": {
-            "description": "Prowlarr only: replace an old-app key that exists already (an app using it must get the new one).",
+            "description": "Prowlarr only: replace an arr key that exists already (an app using it must get the new one).",
             "type": "boolean"
           },
           "url": {
@@ -12149,7 +12149,7 @@
         "x-holyarrs-scope": "read"
       },
       "post": {
-        "description": "Jackett: reads its sites with the key and adds one Torznab Source per site (categories from each site's caps; the Sources may reach the local network), then keeps them in step every 6 hours. Prowlarr: turns the old-app API on if needed, makes an old-app key for each side that has none (needs a recent password sign-in), adds HolyArrs to Prowlarr as an app on each side whose part is on (Sonarr kind for TV, Radarr kind for movies), and asks it to sync. A Jackett or Prowlarr already connected at that address takes the new key (and for Prowlarr the new callback address) instead. A failed Prowlarr connect takes back the keys it made and the switch it turned on.",
+        "description": "Jackett: reads its sites with the key and adds one Torznab Source per site (categories from each site's caps; the Sources may reach the local network), then keeps them in step every 6 hours. Prowlarr: turns the arr API on if needed, makes an arr key for each side that has none (needs a recent password sign-in), adds HolyArrs to Prowlarr as an app on each side whose part is on (Sonarr kind for TV, Radarr kind for movies), and asks it to sync. A Jackett or Prowlarr already connected at that address takes the new key (and for Prowlarr the new callback address) instead. A failed Prowlarr connect takes back the keys it made and the switch it turned on.",
         "operationId": "addBridge",
         "requestBody": {
           "content": {
@@ -12185,7 +12185,7 @@
                 }
               }
             },
-            "description": "Connected. For Prowlarr, keys holds the old-app keys made now, by side, shown only this once."
+            "description": "Connected. For Prowlarr, keys holds the arr keys made now, by side, shown only this once."
           },
           "400": {
             "content": {
@@ -12210,7 +12210,7 @@
                 }
               }
             },
-            "description": "Making an old-app key needs a recent password sign-in."
+            "description": "Making an arr key needs a recent password sign-in."
           },
           "409": {
             "content": {
@@ -12225,7 +12225,7 @@
                 }
               }
             },
-            "description": "Already connected (field is url); or a side has an old-app key already (need is keys, sides names them): send new_keys or keys; or Movies and TV shows are both off."
+            "description": "Already connected (field is url); or a side has an arr key already (need is keys, sides names them): send new_keys or keys; or Movies and TV shows are both off."
           },
           "502": {
             "content": {
@@ -12295,7 +12295,7 @@
     },
     "/api/v1/bridges/test": {
       "post": {
-        "description": "Checks the address and key and saves nothing. Jackett: the sites set up there. Prowlarr: its version, and for each side whether an old-app key exists (have) or would be made (new).",
+        "description": "Checks the address and key and saves nothing. Jackett: the sites set up there. Prowlarr: its version, and for each side whether an arr key exists (have) or would be made (new).",
         "operationId": "testBridge",
         "requestBody": {
           "content": {
@@ -20108,7 +20108,7 @@
     },
     "/api/v1/migrate/saved-keys": {
       "delete": {
-        "description": "Deletes every saved old-app key, or one with ?kind=radarr (and so on).",
+        "description": "Deletes every saved arr key, or one with ?kind=radarr (and so on).",
         "operationId": "forgetSavedMoveKeys",
         "parameters": [
           {
@@ -20155,7 +20155,7 @@
             "description": "Not the owner, not a password sign-in, or a key without the admin scope."
           }
         },
-        "summary": "Forget saved old-app keys",
+        "summary": "Forget saved arr keys",
         "x-holyarrs-part": "core",
         "x-holyarrs-permission": "owner",
         "x-holyarrs-scope": "admin"
@@ -24062,7 +24062,7 @@
     },
     "/api/v1/settings/import-secrets": {
       "post": {
-        "description": "Stores each filled-in item of the parsed secrets file through the same code as the Settings screens, every secret in the vault. Sources and Downloaders are made paused, Alerts and media servers off; old-app keys are saved for the Move tool. `holyarrs import-secrets` sends this while HolyArrs runs. The answer names items and results only.",
+        "description": "Stores each filled-in item of the parsed secrets file through the same code as the Settings screens, every secret in the vault. Sources and Downloaders are made paused, Alerts and media servers off; arr keys are saved for the Move tool. `holyarrs import-secrets` sends this while HolyArrs runs. The answer names items and results only.",
         "operationId": "importSecrets",
         "requestBody": {
           "content": {
@@ -24359,13 +24359,13 @@
     },
     "/api/v1/settings/old-app-api": {
       "get": {
-        "description": "Whether the old-app API is on, whether a delete from those apps may take files, and per side (sonarr, radarr) the address to paste into Seerr or Overseerr and the key's hint, maker and last use. Key values are never shown here.",
+        "description": "Whether the arr API is on, whether a delete from those apps may take files, and per side (sonarr, radarr) the address to paste into Seerr or Overseerr and the key's hint, maker and last use. Key values are never shown here.",
         "responses": {
           "200": {
             "description": "OK"
           }
         },
-        "summary": "Old-app API settings",
+        "summary": "Arr API settings",
         "x-holyarrs-part": "core",
         "x-holyarrs-permission": "settings",
         "x-holyarrs-scope": "admin"
@@ -24377,7 +24377,7 @@
             "description": "OK"
           }
         },
-        "summary": "Turn the old-app API on or off",
+        "summary": "Turn the arr API on or off",
         "x-holyarrs-part": "core",
         "x-holyarrs-permission": "settings",
         "x-holyarrs-scope": "write"
@@ -24404,7 +24404,7 @@
             "description": "No key for this side"
           }
         },
-        "summary": "Remove an old-app API key",
+        "summary": "Remove an arr API key",
         "x-holyarrs-part": "core",
         "x-holyarrs-permission": "settings",
         "x-holyarrs-scope": "admin"
@@ -24426,7 +24426,7 @@
             "description": "The new key"
           }
         },
-        "summary": "Make an old-app API key",
+        "summary": "Make an arr API key",
         "x-holyarrs-part": "core",
         "x-holyarrs-permission": "settings",
         "x-holyarrs-scope": "admin"
@@ -30286,7 +30286,7 @@
   "x-holyarrs-scopes": {
     "admin": "People, invites, ask limits, API keys, password and two-factor sign-in, sign-in settings, backups (list, download, restore) and the outside-service key settings: every route only the owner or an admin may use, the key and sign-in routes of My account, and every GET route not marked read. Making or promoting an admin also needs the control scope.",
     "all": "Read, write and admin together (every route but the controls). Every key made before scopes existed holds this one.",
-    "compat": "The old-app API only (/sonarr/ and /radarr/, for Seerr and Overseerr). Only the keys made for it (POST /api/v1/settings/old-app-api/keys/{side}) hold this scope; an API key cannot be made with it.",
+    "compat": "The arr API only (/sonarr/ and /radarr/, for Seerr and Overseerr). Only the keys made for it (POST /api/v1/settings/old-app-api/keys/{side}) hold this scope; an API key cannot be made with it.",
     "control": "The controls: part switches, stage pause, resume and restart, reconnecting one linked app, whole-app restart, restart in safe mode and shut down.",
     "health_read": "Health states only, for monitoring companions.",
     "mcp": "An AI connection only: the AI tools route and nothing else. The tools act as the key's person, within their permissions.",

@@ -20,7 +20,7 @@ const (
 const settingsGroup = "this_app"
 
 // Handlers serves the Sonarr and Radarr prefixes and their settings routes.
-// The prefixes answer 404 until the owner turns the old-app API on, and each
+// The prefixes answer 404 until the owner turns the arr API on, and each
 // side has a key of its own.
 type Handlers struct {
 	Deps
@@ -60,7 +60,7 @@ func (h *Handlers) switchOn(ctx context.Context, key string) bool {
 	return switchValue(ctx, h.Store, key) == "on"
 }
 
-// On reports whether the old-app API is switched on.
+// On reports whether the arr API is switched on.
 func (h *Handlers) On(ctx context.Context) bool { return h.switchOn(ctx, settingOn) }
 
 // deleteFilesOn says whether a delete from those apps may take the
@@ -70,7 +70,7 @@ func (h *Handlers) deleteFilesOn(ctx context.Context) bool {
 	return h.switchOn(ctx, settingDeleteFile)
 }
 
-// Gate answers 404 for both prefixes while the old-app API is off.
+// Gate answers 404 for both prefixes while the arr API is off.
 func (h *Handlers) Gate(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if accounts.ArrSide(r.URL.Path) != "" && !h.On(r.Context()) {
@@ -143,7 +143,7 @@ func (h *Handlers) putSettings(w http.ResponseWriter, r *http.Request) {
 	h.getSettings(w, r)
 }
 
-// SaveSwitches saves the old-app API's on/off and delete-files
+// SaveSwitches saves the arr API's on/off and delete-files
 // switches; a nil one is left as it is. Setup steps in this package (such
 // as connecting Prowlarr) turn the API on through it.
 func (h *Handlers) SaveSwitches(ctx context.Context, who domain.Actor, enabled, deleteFiles *bool) error {

@@ -38,7 +38,7 @@ func importSecrets(args []string, stdout, stderr io.Writer) int {
 	dir := fs.String("config", "/config", "HolyArrs's config folder (used when HolyArrs is stopped)")
 	dry := fs.Bool("dry-run", false, "only say what would be set")
 	del := fs.Bool("delete", false, "after a fully successful run, overwrite the file with zeros and delete it")
-	forget := fs.Bool("forget-move-credentials", false, "delete every old-app key saved for the Move tool, then stop")
+	forget := fs.Bool("forget-move-credentials", false, "delete every arr key saved for the Move tool, then stop")
 	shared := fs.Bool("allow-readable-file", false, "accept a file other users may read (Docker Desktop shows every file as readable)")
 	httpLAN := fs.Bool("allow-http-lan", false, "send the owner key and the file over plain http to a local-network address (not only this machine)")
 	if err := fs.Parse(args); err != nil {

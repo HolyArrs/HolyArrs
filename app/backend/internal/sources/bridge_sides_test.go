@@ -6,7 +6,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 )
 
-// Prowlarr only gets the old-app sides whose part is switched on.
+// Prowlarr only gets the arr sides whose part is switched on.
 func TestProwlarrSidesFollowParts(t *testing.T) {
 	h := &Handlers{PartOn: func(p parts.Part) bool { return p == parts.Movies }}
 	s := h.prowlarrSides("http://h:6262")

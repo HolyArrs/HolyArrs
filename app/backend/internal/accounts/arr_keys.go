@@ -11,7 +11,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
-// The old-app API: /sonarr/ and /radarr/ answer apps such
+// The arr API: /sonarr/ and /radarr/ answer apps such
 // as Seerr and Overseerr as Sonarr and Radarr would. Those apps send their
 // key in the address, so these keys are their own kind: one per side, kept
 // apart from HolyArrs API keys (hak_), never accepted anywhere else, and

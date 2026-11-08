@@ -23,7 +23,7 @@ const sourceCaps = `<?xml version="1.0"?><caps><limits max="50"/><searching><sea
 <movie-search available="yes" supportedParams="q,imdbid"/></searching><categories><category id="2000"/></categories></caps>`
 
 // fakeProwlarrApps keeps the apps written to it and, on a sync, does what
-// Prowlarr does: writes one site into each app through its old-app API.
+// Prowlarr does: writes one site into each app through its arr API.
 type fakeProwlarrApps struct {
 	*httptest.Server
 	mu           sync.Mutex
@@ -146,7 +146,7 @@ func TestBridgeProwlarrConnectUsesTheOldAppSync(t *testing.T) {
 	if st != 200 || !strings.Contains(out, "Prowlarr 2.6.5.5623 answered.") || !strings.Contains(out, `"sonarr":"new"`) || !strings.Contains(out, `"radarr":"new"`) {
 		t.Fatalf("test %d %s", st, out)
 	}
-	// An API key without the admin scope cannot have old-app keys made and
+	// An API key without the admin scope cannot have arr keys made and
 	// sent to an address it names (the same gates as making one by hand).
 	st, out = f.session("POST", "/api/v1/auth/keys", `{"label":"rw","scopes":["read","write"]}`)
 	if st != 201 {
@@ -163,7 +163,7 @@ func TestBridgeProwlarrConnectUsesTheOldAppSync(t *testing.T) {
 	var keys int
 	_ = f.s.Read().QueryRow("SELECT count(*) FROM compat_keys").Scan(&keys)
 	if keys != 0 {
-		t.Fatalf("%d old-app keys were made for a refused call", keys)
+		t.Fatalf("%d arr keys were made for a refused call", keys)
 	}
 	// Making the keys is a risky action: a sign-in whose password proof is
 	// older than 10 minutes is asked to confirm it, and nothing is made. The
@@ -182,14 +182,14 @@ func TestBridgeProwlarrConnectUsesTheOldAppSync(t *testing.T) {
 		t.Helper()
 		_ = f.s.Read().QueryRow("SELECT count(*) FROM compat_keys").Scan(&keys)
 		if keys != 0 {
-			t.Fatalf("%d old-app keys were made for %s", keys, what)
+			t.Fatalf("%d arr keys were made for %s", keys, what)
 		}
 	}
 	// The setup session after its 24-hour cap.
 	dayAgo := database.FormatTime(time.Now().Add(-25 * time.Hour))
 	exec("UPDATE sessions SET local_auth_at = ?, created_at = ?", hourAgo, dayAgo)
 	if st, out := f.session("POST", "/api/v1/bridges", body); st != 403 || !strings.Contains(out, `"reauth"`) {
-		t.Fatalf("setup session after its day made old-app keys: %d %s", st, out)
+		t.Fatalf("setup session after its day made arr keys: %d %s", st, out)
 	}
 	noKeys("an old setup session")
 	// A normal password sign-in with a stale proof.
@@ -202,12 +202,12 @@ func TestBridgeProwlarrConnectUsesTheOldAppSync(t *testing.T) {
 	otherCSRF := aiField(out, "csrf")
 	exec("UPDATE sessions SET local_auth_at = ? WHERE family NOT LIKE 'setup.%'", hourAgo)
 	if st, _, out := f.call(other, otherCSRF, "POST", "/api/v1/bridges", body); st != 403 || !strings.Contains(out, `"reauth"`) {
-		t.Fatalf("stale sign-in made old-app keys: %d %s", st, out)
+		t.Fatalf("stale sign-in made arr keys: %d %s", st, out)
 	}
 	noKeys("a stale sign-in")
 	// The setup session inside its hour connects with no fresh password proof.
 	exec("UPDATE sessions SET created_at = ? WHERE family LIKE 'setup.%'", database.FormatTime(time.Now().Add(-50*time.Minute)))
-	// Connect: the old-app API turns on, a key is made per side, HolyArrs is
+	// Connect: the arr API turns on, a key is made per side, HolyArrs is
 	// added to Prowlarr on both sides, and Prowlarr's sync writes the Sources.
 	st, out = f.session("POST", "/api/v1/bridges", body)
 	if st != 201 {
@@ -219,7 +219,7 @@ func TestBridgeProwlarrConnectUsesTheOldAppSync(t *testing.T) {
 		t.Fatalf("view %+v", v)
 	}
 	if st, body := f.session("GET", "/api/v1/settings/old-app-api", ""); st != 200 || !strings.Contains(body, `"enabled":true`) {
-		t.Fatalf("old-app API not on: %s", body)
+		t.Fatalf("arr API not on: %s", body)
 	}
 	p.mu.Lock()
 	if len(p.apps) != 2 || p.syncs != 1 || p.pushed[f.srv.URL+"/sonarr"] != 1 || p.pushed[f.srv.URL+"/radarr"] != 1 {
@@ -252,7 +252,7 @@ func TestBridgeProwlarrConnectUsesTheOldAppSync(t *testing.T) {
 	}
 }
 
-// A connect Prowlarr refuses takes back what it made: the old-app keys and
+// A connect Prowlarr refuses takes back what it made: the arr keys and
 // the switch it turned on, and the entry it had written there.
 func TestBridgeProwlarrRefusedConnectTakesBackItsKeys(t *testing.T) {
 	t.Parallel()
@@ -266,10 +266,10 @@ func TestBridgeProwlarrRefusedConnectTakesBackItsKeys(t *testing.T) {
 	var keys int
 	_ = f.s.Read().QueryRow("SELECT count(*) FROM compat_keys").Scan(&keys)
 	if keys != 0 {
-		t.Fatalf("%d old-app keys left by a refused connect", keys)
+		t.Fatalf("%d arr keys left by a refused connect", keys)
 	}
 	if st, out := f.session("GET", "/api/v1/settings/old-app-api", ""); st != 200 || !strings.Contains(out, `"enabled":false`) {
-		t.Fatalf("old-app API left on: %s", out)
+		t.Fatalf("arr API left on: %s", out)
 	}
 	p.mu.Lock()
 	defer p.mu.Unlock()

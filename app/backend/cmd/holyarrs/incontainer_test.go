@@ -5,7 +5,7 @@ import (
 )
 
 // Podman, Kubernetes and containerd leave no /.dockerenv, but the image sets
-// container=oci. The old-app status must still say it runs in a container.
+// container=oci. The arr status must still say it runs in a container.
 func TestOldAppStatusSeesAnyContainer(t *testing.T) {
 	t.Setenv("container", "oci")
 	f := newOldAppFix(t)

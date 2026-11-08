@@ -23,7 +23,7 @@ const (
 	// ScopeMCP is an AI key: it reaches only the AI connection route, and all
 	// does not include it.
 	ScopeMCP = "mcp"
-	// ScopeCompat is held only by old-app API keys; no other key can be made
+	// ScopeCompat is held only by arr API keys; no other key can be made
 	// with it, and all does not include it.
 	ScopeCompat = "compat"
 )

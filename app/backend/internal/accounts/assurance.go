@@ -53,7 +53,7 @@ var riskyRoutes = map[string]bool{
 	"POST /api/v1/auth/two-factor/backup-codes": true,
 	"POST /api/v1/users/{id}/password":          true,
 	"POST /api/v1/users/{id}/two-factor/reset":  true,
-	// API keys, AI keys and old-app API keys.
+	// API keys, AI keys and arr API keys.
 	"POST /api/v1/auth/keys":                          true,
 	"DELETE /api/v1/auth/keys/{id}":                   true,
 	"POST /api/v1/auth/ai-connect":                    true,

@@ -39,7 +39,7 @@ type ShowAddOptions struct {
 	// Adopt keeps a show folder found on disk as it is, with its files.
 	Adopt *ShowAdoption `json:"-"`
 	// SeasonNumbers, when not nil, are exactly the seasons kept up to
-	// date (Seasons is then none): the old-app API's per-season choice.
+	// date (Seasons is then none): the arr API's per-season choice.
 	SeasonNumbers []int `json:"-"`
 	// FirstSeason keeps only the show's first season up to date: season 1,
 	// else the lowest numbered season after it, else Specials (Luis, 11-03).

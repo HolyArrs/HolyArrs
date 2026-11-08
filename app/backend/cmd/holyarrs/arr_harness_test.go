@@ -1,6 +1,6 @@
 package main
 
-// Helpers copied from the api tests for the full-server migrate, old-app API
+// Helpers copied from the api tests for the full-server migrate, arr API
 // and AI tests here. Names carry an arr prefix so they never clash with other
 // helpers in this package.
 

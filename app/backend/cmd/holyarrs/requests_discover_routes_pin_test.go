@@ -8,7 +8,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 )
 
-// rdpRoutes is what each route of requests, discover, migrate, the old-app
+// rdpRoutes is what each route of requests, discover, migrate, the arr
 // API settings and the AI connection needs today: {permission, key scope}.
 // These routes move out of internal/api; the table must stay true after (R16).
 var rdpRoutes = map[string][2]string{

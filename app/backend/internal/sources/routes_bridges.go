@@ -39,10 +39,10 @@ type bridgeBody struct {
 	URL         string `json:"url"`
 	Key         string `json:"key"`
 	CallbackURL string `json:"callback_url"`
-	// NewKeys lets the setup replace an old-app key that exists already
+	// NewKeys lets the setup replace an arr key that exists already
 	// (an app using the old one must get the new one).
 	NewKeys bool `json:"new_keys"`
-	// Keys are old-app keys typed in, by side (sonarr, radarr), used instead of making new ones.
+	// Keys are arr keys typed in, by side (sonarr, radarr), used instead of making new ones.
 	Keys map[string]string `json:"keys"`
 }
 
@@ -270,7 +270,7 @@ func siteCountText(n int) string {
 	return strconv.Itoa(n) + " sites"
 }
 
-// compatSides says which old-app sides already have a key.
+// compatSides says which arr sides already have a key.
 func (h *Handlers) compatSides(ctx context.Context) (map[string]bool, error) {
 	return h.OldApps.KeySides(ctx)
 }
@@ -339,11 +339,11 @@ func (h *Handlers) addBridge(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if len(replace) > 0 {
-		webserver.WriteJSON(w, http.StatusConflict, map[string]any{"error": "HolyArrs already has an old-app key for this. Make a new one (an app using the old one, such as Seerr, must get the new one too), or type the key you have.", "need": "keys", "sides": replace})
+		webserver.WriteJSON(w, http.StatusConflict, map[string]any{"error": "HolyArrs already has an arr key for this. Make a new one (an app using the old one, such as Seerr, must get the new one too), or type the key you have.", "need": "keys", "sides": replace})
 		return
 	}
 	// What this request made, so a failure takes it back: keys for sides
-	// that had none, and the old-app API switch.
+	// that had none, and the arr API switch.
 	made := map[string]string{}
 	var fresh []string
 	turnedOn := false
@@ -361,7 +361,7 @@ func (h *Handlers) addBridge(w http.ResponseWriter, r *http.Request) {
 		if s.Key != "" || !h.OldApps.CanMakeKeys() {
 			continue
 		}
-		// The same gates as making an old-app key by hand: a recent password
+		// The same gates as making an arr key by hand: a recent password
 		// sign-in, an API key with the admin scope, and a person who may
 		// manage the Library (the key acts as them).
 		if !webserver.RequireStrong(w, r) {
@@ -369,21 +369,21 @@ func (h *Handlers) addBridge(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		// Making a key is a risky action: a browser session confirms its
-		// password first, as on the old-app key routes (only here, so adding
+		// password first, as on the arr key routes (only here, so adding
 		// a bridge without a new key never asks).
 		if who, ok := webserver.From(r.Context()); ok && who.Via == "session" && !accounts.RecentLocal(r) {
 			undo()
-			webserver.WriteJSON(w, http.StatusForbidden, map[string]string{"error": "confirm your local password again before making an old-app key", "code": "reauth"})
+			webserver.WriteJSON(w, http.StatusForbidden, map[string]string{"error": "confirm your local password again before making an arr key", "code": "reauth"})
 			return
 		}
 		if who, ok := webserver.From(r.Context()); ok && !who.HasScope(webserver.ScopeAdmin) {
 			undo()
-			webserver.Fail(w, http.StatusForbidden, "this API key needs the admin scope to make an old-app key")
+			webserver.Fail(w, http.StatusForbidden, "this API key needs the admin scope to make an arr key")
 			return
 		}
 		if who, ok := webserver.From(r.Context()); ok && !who.Has(webserver.PermManageLibrary) {
 			undo()
-			webserver.Fail(w, http.StatusForbidden, "the old-app key acts as you, and your account may not manage the Library")
+			webserver.Fail(w, http.StatusForbidden, "the arr key acts as you, and your account may not manage the Library")
 			return
 		}
 		side := sideOf(s.Kind)
