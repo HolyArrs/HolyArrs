@@ -334,7 +334,7 @@ func (a *API) newServiceLists(ctx context.Context, h newHousehold, kinds map[str
 		picked[s] = true
 	}
 	for _, sv := range list.Services {
-		id := serviceTopProviders[sv.Service]
+		id := discover.ServiceTopProviders[sv.Service]
 		if id == 0 || (len(picked) > 0 && !picked[id]) {
 			continue
 		}
@@ -367,7 +367,7 @@ func newCharts(list metadata.ServiceTop, h newHousehold, kind string) ([]streami
 	var marks []streamingMark
 	var lists [][]engine.Item
 	for _, sv := range list.Services {
-		id := serviceTopProviders[sv.Service]
+		id := discover.ServiceTopProviders[sv.Service]
 		if id == 0 || sv.Source != "streaming-availability" || (len(picked) > 0 && !picked[id]) {
 			continue
 		}

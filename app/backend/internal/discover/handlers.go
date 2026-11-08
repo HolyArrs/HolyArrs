@@ -38,7 +38,16 @@ type Deps struct {
 	OpenShowAsk    func(ctx context.Context, ids map[string]string, me int64) (*requests.AskBrief, error)
 	FillCardArt    func(r *http.Request, items []ItemView)
 	QueueCardItems func(ctx context.Context, items []engine.Item)
+	// ServiceTop gives the metadata server's per-service top list reader
+	// (nil when there is none); ServiceTopCache and WatchOn are api's caches.
+	ServiceTop      func() ServiceTopFetch
+	ServiceTopCache *ServiceTopCache
+	WatchOn         *WatchOn
+	FillTrailerKeys func(r *http.Request, items []ItemView)
 }
+
+// ServiceTopFetch reads one region's per-service top lists.
+type ServiceTopFetch func(ctx context.Context, region string) (metadata.ServiceTop, error)
 
 // Handlers serves the Explore routes. Its state fields are private and
 // zero-value ready, so &Handlers{Deps: d} works.
@@ -73,6 +82,7 @@ func (h *Handlers) Routes(m *http.ServeMux) {
 	reviews.Routes(m)
 	m.HandleFunc("GET /api/v1/discover", h.discoverRow)
 	m.HandleFunc("GET /api/v1/watch-services", h.watchServices)
+	m.HandleFunc("GET /api/v1/explore/service-top", h.exploreServiceTop)
 }
 
 // TokenRoutes registers the Trakt VIP token setting (api registers it only

@@ -18,8 +18,7 @@ import (
 // Netflix's own weekly Top 10 instead of TMDB popularity.
 const netflixService = "8"
 
-// topServicesMax is how many ranked titles the row shows.
-const topServicesMax = 10
+const topServicesMax = discover.TopServicesMax
 
 // genreMoodMin is the fewest titles a genre page's mood row needs.
 const genreMoodMin = 8
@@ -109,7 +108,7 @@ func (a *API) exploreTop(w http.ResponseWriter, r *http.Request) {
 			if i == topServicesMax {
 				break
 			}
-			items = append(items, rankedView{discoverItemView: v, Rank: i + 1})
+			items = append(items, rankedView{ItemView: v, Rank: i + 1})
 		}
 	}
 	a.fillTopArt(r, items)
@@ -122,12 +121,12 @@ func (a *API) exploreTop(w http.ResponseWriter, r *http.Request) {
 func (a *API) fillTopArt(r *http.Request, items []rankedView) {
 	views := make([]discoverItemView, len(items))
 	for i := range items {
-		views[i] = items[i].discoverItemView
+		views[i] = items[i].ItemView
 	}
 	a.fillTrailerKeys(r, views)
 	a.fillCardArt(r, views)
 	for i := range items {
-		items[i].discoverItemView = views[i]
+		items[i].ItemView = views[i]
 	}
 }
 

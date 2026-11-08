@@ -473,7 +473,6 @@ func (a *API) Routes(rt *webserver.Router) {
 	m.HandleFunc("GET /api/v1/explore/head", a.exploreHead)
 	m.HandleFunc("GET /api/v1/explore/tail", a.exploreTail)
 	m.HandleFunc("GET /api/v1/explore/top", a.exploreTop)
-	m.HandleFunc("GET /api/v1/explore/service-top", a.exploreServiceTop)
 	m.HandleFunc("GET /api/v1/explore/genre", a.exploreGenre)
 	m.HandleFunc("GET /api/v1/explore/genre-row", a.exploreGenreRow)
 	m.HandleFunc("GET /api/v1/explore/new", a.exploreNew)
