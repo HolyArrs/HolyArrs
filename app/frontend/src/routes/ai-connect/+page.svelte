@@ -70,8 +70,8 @@
 		<p class="muted">{info.client_name} did not get access. You can close this tab.</p>
 	{:else}
 		<!-- Any app can send any name, so the return address leads; the name is marked unless it comes back to this computer. -->
-		<h2 data-testid="ai-connect-host">An app at <b>{info.returns_to}</b> wants to use HolyArrs as {session.s.name}</h2>
-		<p class="small muted" data-testid="ai-connect-name">Calls itself {info.client_name}{#if !info.name_verified} (unverified){/if}</p>
+		<h2 data-testid="ai-connect-host"><b>{info.returns_to}</b> wants to use HolyArrs as {session.s.name}</h2>
+		<p class="small muted" data-testid="ai-connect-name">Says it's {info.client_name}{#if !info.name_verified} · not verified{/if}</p>
 		<ul class="can small">
 			<li>Look up your Library, calendar, downloads and your own requests.</li>
 			<li>Find titles, and ask for one after checking with you first.</li>
