@@ -9,7 +9,9 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/shows"
 )
 
 // The Library table reads size on disk and the last aired episode.
@@ -53,15 +55,15 @@ func TestLibraryFacts(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	size, err := titleSize(context.Background(), s.Read(), show)
+	size, err := mediafiles.TitleSize(context.Background(), s.Read(), show)
 	if err != nil || size != 3000 {
 		t.Fatalf("size = %d, %v; want 3000", size, err)
 	}
-	last, err := lastAired(context.Background(), s.Read(), show, now)
+	last, err := shows.LastAired(context.Background(), s.Read(), show, now)
 	if err != nil || last == nil || !last.Equal(now.AddDate(0, 0, -3)) {
 		t.Fatalf("last aired = %v, %v; want three days ago", last, err)
 	}
-	if none, _ := lastAired(context.Background(), s.Read(), show+99, now); none != nil {
+	if none, _ := shows.LastAired(context.Background(), s.Read(), show+99, now); none != nil {
 		t.Fatalf("unknown show has a last aired date: %v", none)
 	}
 }

@@ -6,14 +6,11 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/shows"
 )
 
-// titleSize sums the size of every file kept for a title, across all its
-// Versions, for the Library's size column.
-// titleActivity is the newest grab (a Download for one of its Slots) or
+// TitleActivity is the newest grab (a Download for one of its Slots) or
 // import (a file in one of its Versions); nil when there is none.
-func titleActivity(ctx context.Context, db database.Lister, titleID int64) (*time.Time, error) {
+func TitleActivity(ctx context.Context, db database.Lister, titleID int64) (*time.Time, error) {
 	rows, err := db.QueryContext(ctx, `SELECT max(at) FROM (
 		SELECT max(added_at) AS at FROM files WHERE version_id IN (SELECT id FROM versions WHERE title_id = ?)
 		UNION ALL
@@ -39,7 +36,9 @@ func titleActivity(ctx context.Context, db database.Lister, titleID int64) (*tim
 	return &t, nil
 }
 
-func titleSize(ctx context.Context, db database.Lister, titleID int64) (int64, error) {
+// TitleSize sums the size of every file kept for a title, across all its
+// Versions, for the Library's size column.
+func TitleSize(ctx context.Context, db database.Lister, titleID int64) (int64, error) {
 	rows, err := db.QueryContext(ctx, `SELECT COALESCE(SUM(size), 0) FROM files
 		WHERE version_id IN (SELECT id FROM versions WHERE title_id = ?)`, titleID)
 	if err != nil {
@@ -53,9 +52,4 @@ func titleSize(ctx context.Context, db database.Lister, titleID int64) (int64, e
 		}
 	}
 	return n, rows.Err()
-}
-
-// lastAired is the newest air date of a show's episodes on or before now.
-func lastAired(ctx context.Context, db database.Lister, titleID int64, now time.Time) (*time.Time, error) {
-	return shows.LastAired(ctx, db, titleID, now)
 }

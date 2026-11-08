@@ -662,10 +662,10 @@ func (a *API) titleView(ctx context.Context, t mediafiles.Title) (TitleView, err
 			v.LastActivity = &at
 		}
 	} else {
-		if v.SizeBytes, err = titleSize(ctx, db, t.ID); err != nil {
+		if v.SizeBytes, err = mediafiles.TitleSize(ctx, db, t.ID); err != nil {
 			return v, err
 		}
-		if v.LastActivity, err = titleActivity(ctx, db, t.ID); err != nil {
+		if v.LastActivity, err = mediafiles.TitleActivity(ctx, db, t.ID); err != nil {
 			return v, err
 		}
 	}

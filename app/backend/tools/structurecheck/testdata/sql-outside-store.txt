@@ -27,7 +27,6 @@ app/backend/internal/api/fresh.go
 app/backend/internal/api/home.go
 app/backend/internal/api/kid.go
 app/backend/internal/api/library_summary.go
-app/backend/internal/api/libraryfacts.go
 app/backend/internal/api/music.go
 app/backend/internal/api/musicpages.go
 app/backend/internal/api/musicsearch.go
