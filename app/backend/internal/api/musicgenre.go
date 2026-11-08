@@ -4,15 +4,14 @@ import (
 	"context"
 	"net/http"
 	"net/url"
-	"regexp"
 	"sort"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/music/rowtpl"
 	musicscore "github.com/HolyArrs/holyarrs/app/backend/internal/music/score"
 )
@@ -23,7 +22,7 @@ import (
 // and the genre's popular artists. Movies and Shows genre pages are the
 // old ones, untouched.
 
-var musicSlugRe = regexp.MustCompile(`^[a-z0-9-]{1,40}$`)
+var musicSlugRe = music.SlugRe
 
 // musicSlug is a genre name's URL name, the metadata server's rule.
 func musicSlug(name string) string {
@@ -84,66 +83,19 @@ func musicGenreArts(g metadata.MusicGenre) []string {
 	return out
 }
 
-// musicGenreArtCache keeps tile pictures by slug and version.
-type musicGenreArtCache struct {
-	mu   sync.Mutex
-	pics map[string]genrePic
-}
-
-type genrePic struct {
-	b  []byte
-	at time.Time
-}
-
-const genreArtMax = 200
-
-// musicGenreArt answers GET /api/v1/music/genre-art/{slug}?v=: the grey
-// tile picture from the metadata server, kept in memory.
-func (a *API) musicGenreArt(w http.ResponseWriter, r *http.Request) {
-	slug, v := r.PathValue("slug"), r.URL.Query().Get("v")
-	n, _ := strconv.Atoi(r.URL.Query().Get("n"))
-	if n < 0 || n > 3 {
-		http.NotFound(w, r)
-		return
+// genreArtHandlers serves the genre tile pictures; the metadata call is
+// read per request so a later change to it is seen.
+func (a *API) genreArtHandlers() music.GenreArtHandlers {
+	return music.GenreArtHandlers{
+		Tile: func(ctx context.Context, slug, v string) ([]byte, error) {
+			if a.s.MusicGenreTile == nil {
+				return nil, metadata.ErrNotFound
+			}
+			return a.s.MusicGenreTile(ctx, slug, v)
+		},
+		KidMax: a.kidMax,
+		Cache:  &a.genreArt,
 	}
-	if a.kidMax(r) != "" || !musicSlugRe.MatchString(slug) || len(v) > 32 || a.s.MusicGenreTile == nil {
-		http.NotFound(w, r)
-		return
-	}
-	// Photo n of the slideshow is "<slug>.<n>" on the metadata server.
-	name := slug
-	if n > 0 {
-		name += "." + strconv.Itoa(n)
-	}
-	key := name + "?" + v
-	c := &a.genreArt
-	c.mu.Lock()
-	got, ok := c.pics[key]
-	c.mu.Unlock()
-	pic := got.b
-	if !ok {
-		fetched, err := a.s.MusicGenreTile(r.Context(), name, v)
-		if err != nil {
-			http.NotFound(w, r)
-			return
-		}
-		pic = fetched
-		c.mu.Lock()
-		if c.pics == nil {
-			c.pics = map[string]genrePic{}
-		}
-		keepUnder(c.pics, genreArtMax, func(p genrePic) time.Time { return p.at })
-		c.pics[key] = genrePic{b: pic, at: time.Now()}
-		c.mu.Unlock()
-	}
-	w.Header().Set("Content-Type", "image/jpeg")
-	if v != "" {
-		// v is the picture's content version: a new picture gets a new URL.
-		w.Header().Set("Cache-Control", "private, max-age=604800, immutable")
-	} else {
-		w.Header().Set("Cache-Control", "private, max-age=3600")
-	}
-	_, _ = w.Write(pic)
 }
 
 // musicGenrePage answers GET /api/v1/music/genre/{slug}?region=.

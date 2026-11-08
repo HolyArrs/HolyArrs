@@ -223,7 +223,7 @@ type API struct {
 	// musicv2 holds the music_rows_v2 cache layers.
 	musicv2 musicV2State
 	// genreArt keeps genre tile pictures.
-	genreArt musicGenreArtCache
+	genreArt music.GenreArtCache
 	// signin keeps the sign-in page's art and its per-address budget.
 	signin signinArtState
 	// signinSeed keeps the first sign-in slide's tiny thumbnails.
@@ -468,7 +468,7 @@ func (a *API) Routes(rt *webserver.Router) {
 	m.HandleFunc("GET /api/v1/music/genre/{slug}", a.musicGenrePage)
 	m.HandleFunc("GET /api/v1/music/browse/{kind}/{slug}", a.musicBrowsePage)
 	m.HandleFunc("GET /api/v1/music/browse-tiles", a.musicBrowseTiles)
-	m.HandleFunc("GET /api/v1/music/genre-art/{slug}", a.musicGenreArt)
+	a.genreArtHandlers().Routes(m)
 	a.titles.Routes(m)
 	if a.s.Secrets != nil {
 		if startup.FeatureOn(features.TraktLists) {
