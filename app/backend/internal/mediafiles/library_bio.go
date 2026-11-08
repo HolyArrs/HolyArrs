@@ -13,10 +13,11 @@ import (
 // view shows two or three lines of it.
 const libraryBioMax = 320
 
-// keptArtistBio is the start of the artist's Wikipedia summary as the music
+// KeptArtistBio is the start of the artist's Wikipedia summary as the music
 // pages already keep it (the metadata server's by MusicBrainz id, else the
 // stand-in's by name). It only reads what is stored: never an outside call.
-func (a *API) keptArtistBio(ctx context.Context, mbid, name string) string {
+// read returns a kept answer by key (ok false when none or a kept miss).
+func KeptArtistBio(ctx context.Context, mbid, name string, read func(ctx context.Context, key string) (json.RawMessage, bool)) string {
 	keys := []string{}
 	if mbid != "" {
 		keys = append(keys, "bio2:"+strings.ToLower(mbid))
@@ -25,12 +26,12 @@ func (a *API) keptArtistBio(ctx context.Context, mbid, name string) string {
 		keys = append(keys, "bio:"+strings.ToLower(n))
 	}
 	for _, k := range keys {
-		row, ok := a.sideRead(ctx, k)
-		if !ok || row.Miss || len(row.V) == 0 {
+		v, ok := read(ctx, k)
+		if !ok || len(v) == 0 {
 			continue
 		}
 		var b *metadata.WikiSummary
-		if json.Unmarshal(row.V, &b) != nil || b == nil {
+		if json.Unmarshal(v, &b) != nil || b == nil {
 			continue
 		}
 		if s := shortBio(b.Extract); s != "" {

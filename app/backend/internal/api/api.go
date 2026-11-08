@@ -846,7 +846,7 @@ func (a *API) listTitles(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if v.Artist != nil {
-			v.Artist.Bio = a.keptArtistBio(r.Context(), v.Artist.MBID, t.Name)
+			v.Artist.Bio = mediafiles.KeptArtistBio(r.Context(), v.Artist.MBID, t.Name, a.sideKept)
 		}
 		if !manage {
 			v.Copy = nil
