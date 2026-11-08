@@ -173,12 +173,12 @@ class PromoteWorkflow(unittest.TestCase):
 
 class InstallDocsTag(unittest.TestCase):
     def test_docs_point_at_beta_until_first_stable(self):
-        text = read(ROOT / "docs" / "user" / "getting-started" / "install.md")
+        text = read(ROOT / "docs" / "start" / "install.mdx")
         self.assertIn("holyarrs/holyarrs:beta", text)
         self.assertNotIn("holyarrs:latest", text)
 
     def test_user_text_names_docker_hub_only(self):
-        pages = [*sorted((ROOT / "docs").rglob("*.md")), ROOT / "README.md", ROOT / "releases" / "notes-1.0.0.toml"]
+        pages = [*sorted((ROOT / "docs").rglob("*.md*")), ROOT / "README.md", ROOT / "releases" / "notes-1.0.0.toml"]
         for page in pages:
             with self.subTest(page=page.name):
                 self.assertNotIn("ghcr", page.read_text(encoding="utf-8", errors="replace").lower())

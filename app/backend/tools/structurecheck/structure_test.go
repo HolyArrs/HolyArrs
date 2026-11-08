@@ -148,7 +148,7 @@ func walkSource(t *testing.T, root string, fn func(rel string, d fs.DirEntry)) {
 
 func TestTopLayout(t *testing.T) {
 	root := repoRoot(t)
-	for _, d := range []string{"app/backend/cmd/holyarrs", "app/backend/internal/core", "app/frontend/src", "app/tests", "deploy", "docs/user", "docs/dev"} {
+	for _, d := range []string{"app/backend/cmd/holyarrs", "app/backend/internal/core", "app/frontend/src", "app/tests", "deploy", "docs/start", "docs/dev"} {
 		if !exists(root, d) {
 			t.Errorf("%s is missing", d)
 		}

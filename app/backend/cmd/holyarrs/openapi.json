@@ -24073,7 +24073,7 @@
                     "type": "boolean"
                   },
                   "file": {
-                    "description": "The secrets file as JSON, with the same keys (see docs/user/getting-started/import-secrets.md). Unknown keys are refused.",
+                    "description": "The secrets file as JSON, with the same keys (see docs/migrate/import-secrets.md). Unknown keys are refused.",
                     "type": "object"
                   }
                 },

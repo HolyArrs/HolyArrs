@@ -5,8 +5,8 @@ import re
 import unittest
 
 ROOT = pathlib.Path(__file__).resolve().parents[3]
-INSTALL = ROOT / "docs" / "user" / "getting-started" / "install.md"
-UNRAID = ROOT / "docs" / "user" / "platforms" / "unraid.md"
+INSTALL = ROOT / "docs" / "start" / "install.mdx"
+UNRAID = ROOT / "docs" / "run" / "platforms.md"
 RELEASING = ROOT / "docs" / "dev" / "releasing.md"
 
 

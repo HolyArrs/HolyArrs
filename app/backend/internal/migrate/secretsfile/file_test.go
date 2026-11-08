@@ -180,7 +180,7 @@ func TestDecodeJSONRefusesUnknown(t *testing.T) {
 // The template in docs (the same one beside the owner's file) reads, and
 // importing it as it is skips every item.
 func TestTemplateParses(t *testing.T) {
-	b, err := os.ReadFile(filepath.Join("..", "..", "..", "..", "..", "docs", "user", "getting-started", "holyarrs-secrets.template.yaml"))
+	b, err := os.ReadFile(filepath.Join("..", "..", "..", "..", "..", "docs", "migrate", "holyarrs-secrets.template.yaml"))
 	if err != nil {
 		t.Fatal(err)
 	}

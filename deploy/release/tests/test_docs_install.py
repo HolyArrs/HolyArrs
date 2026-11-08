@@ -5,16 +5,20 @@ import textwrap
 import unittest
 
 ROOT = pathlib.Path(__file__).resolve().parents[3]
-INSTALL = ROOT / "docs" / "user" / "getting-started" / "install.md"
-PLATFORMS = ROOT / "docs" / "user" / "platforms"
-UNRAID = PLATFORMS / "unraid.md"
-SYNOLOGY = PLATFORMS / "synology.md"
+INSTALL = ROOT / "docs" / "start" / "install.mdx"
+# NAS, Unraid, Synology, QNAP and TrueNAS share one page.
+PLATFORMS = ROOT / "docs" / "run" / "platforms.md"
+UNRAID = PLATFORMS
+SYNOLOGY = PLATFORMS
 RELEASING = ROOT / "docs" / "dev" / "releasing.md"
-GUIDES = [INSTALL, PLATFORMS / "nas.md", UNRAID, SYNOLOGY]
+GUIDES = [INSTALL, PLATFORMS]
 
 
 def section(text: str, heading: str) -> str:
     m = re.search(r"^(#+)\s+" + re.escape(heading) + r"[^\n]*\n(.*?)(?=^#{1,6}\s|\Z)", text, re.M | re.S)
+    if not m:
+        # New-layout pages keep expert parts in <details><summary>heading</summary> blocks.
+        m = re.search(r"(<)summary[^>]*>" + re.escape(heading) + r"</summary>\n(.*?)</details>", text, re.S)
     return m.group(2) if m else ""
 
 
@@ -44,11 +48,16 @@ class InstallGuides(unittest.TestCase):
     def test_anchors_resolve(self):
         def slugs(text):
             return {re.sub(r"[^a-z0-9 _-]", "", h.strip().lower()).replace(" ", "-")
-                    for h in re.findall(r"^#+\s+(.+)$", text, re.M)} | set(re.findall(r'<a id="([^"]+)"', text))
-        for g in [*GUIDES, *sorted((ROOT / "docs" / "user").rglob("*.md")), ROOT / "README.md"]:
+                    for h in re.findall(r"^#+\s+(.+)$", text, re.M)} | set(re.findall(r'<(?:a|summary)[^>]* id="([^"]+)"', text))
+        pages = sorted(p for p in (ROOT / "docs").rglob("*.md*") if p.name != "third-party-notices.md")
+        for g in [*GUIDES, *pages, ROOT / "README.md"]:
             text = g.read_text(encoding="utf-8")
             for target, anchor in re.findall(r"\]\(([^)#:]*)#([^)]+)\)", text):
                 page = (g.parent / target) if target else g
+                if target.endswith("/"):
+                    # Site-style folder links resolve like the page URL: from the page's own folder or one up.
+                    stem = target.rstrip("/")
+                    page = next((p for base in (g.parent, g.parent.parent) for p in (base / (stem + ".md"), base / (stem + ".mdx"), base / stem / "index.md") if p.is_file()), page)
                 with self.subTest(guide=g.name, anchor=anchor):
                     self.assertIn(anchor, slugs(page.read_text(encoding="utf-8")))
 

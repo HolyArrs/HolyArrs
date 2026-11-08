@@ -106,7 +106,7 @@ class PackagingTests(unittest.TestCase):
         self.assertEqual(package.checked_version("0.0.0-candidate.1+gabcdef0"), "0.0.0-candidate.1+gabcdef0")
 
     def test_archive_bytes_are_reproducible_and_modes_survive(self):
-        files = {"docs/user/getting-started/install.md": (b"instructions\n", 0o644), "holyarrs": (b"binary", 0o755)}
+        files = {"docs/start/install.mdx": (b"instructions\n", 0o644), "holyarrs": (b"binary", 0o755)}
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             for suffix in ("tar.gz", "zip"):

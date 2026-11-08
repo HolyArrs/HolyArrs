@@ -1,69 +1,176 @@
-# Releasing
+---
+title: Releasing
+description: Write release notes, check a build, publish an image and take a bad release back. For maintainers.
+level: Expert
+sidebar: { order: 6 }
+---
 
-This page is for maintainers who cut a release.
+Turn a tested build into a release. This page is for maintainers.
 
-## Versions
+:::caution
+Publishing is off until the maintainer starts a release. Do not tag, publish or move an image tag on your own.
+:::
 
-Release tags are plain numbers: `1.0.0`, `1.1.0`, `1.1.1`. Every release is built from a tag on the main branch.
+## Before you start
 
-## Image tags
+- Every check in [Testing](testing.md) passes, including a full end-to-end run and the long and fault runs.
+- `CHANGELOG.md` has the new version.
+- Python 3 is installed for the release scripts.
 
-The release workflow builds one image for `linux/amd64`, `linux/arm64` and `linux/arm/v7` and pushes it to Docker Hub as `holyarrs/holyarrs`.
+## Prepare a release
 
-- A new version lands on `:beta` and on its own version tag.
-- `:latest` and `:stable` move only after that version has run well for a while.
+1. Write `releases/notes-<version>.toml`, for example `releases/notes-1.0.0.toml`. See [Release notes file](#release-notes-file).
+2. Check it:
 
-## Before you tag
+   ```sh
+   python deploy/release/notes.py 1.0.0 --check
+   ```
 
-1. Every check in [Testing](testing.md) passes, including a full end-to-end run.
-2. The `overnight` tests pass.
-3. `CHANGELOG.md` has the new version.
-4. `THIRD_PARTY_NOTICES.md` is current. Check it with `python3 deploy/release/notices.py --check`.
-5. The image builds with `docker build --file deploy/Dockerfile .` and starts on a fresh config folder.
+   You should see no errors. A banned word, an em dash, a date, launch talk or a repeated highlight issue exits 1.
 
-## Release notes
+3. Build the release texts:
 
-Every release text is built from one file, `releases/notes-<version>.toml` (TOML, read with Python's built-in `tomllib`). Write only that file; never hand-edit what it builds.
+   ```sh
+   python deploy/release/notes.py 1.0.0
+   ```
 
-- `version` (plain `X.Y.Z`), `theme` (one line), `images` (a list of `{registry, name}`; Docker Hub `holyarrs/holyarrs` only), optional `docs_url` (empty = no Docs link) and exactly 3 `[[highlights]]`, each with `line`, `issues` (list of issue numbers) and `shot`. A highlight shows once, at the top; its issues appear in no group line.
-- `[groups]`: one list of lines per place (Requests, Library, Downloads...). Lines are new by default; only non-new lines start `Changed: `, `Fixed: ` or `Docs: `. Every line ends with its issue, for example `(#46)`. Places with fewer than 3 lines are shown together under Also new.
-- Optional: `[before_you_update]` (`breaking`, `manual_steps`, `backup`, `rollback`), `security`, `known_issues`, `credits` (`name`, `link`, `github`, `issues`) and `[stats]`. Leave anything empty that has nothing real in it; empty parts are hidden everywhere.
-- GitHub logins only when known, either in the notes file or in `releases/credits-map.json` (keyed by the bare or the `u/` name).
-- Release body order: theme, Highlights, places (Requests, Library, Downloads, Indexers, Accounts, Health, Setup, Install), Also new, Security, Known issues, Before you update, Image, Thanks, stats line. Assets stay in GitHub's own box below the body.
+   You should find 7 files in `releases/out/1.0.0/`.
 
-Check it, then build:
+4. Check the third-party notices:
 
+   ```sh
+   python3 deploy/release/notices.py --check
+   ```
+
+5. Build the image and start it on a fresh config folder:
+
+   ```sh
+   docker build --file deploy/Dockerfile .
+   ```
+
+   You should see the first-run wizard.
+
+6. Hand the tag to the maintainer. A release starts from a version tag on the main branch.
+
+## Choices
+
+### Version and tag names
+
+| Thing | Name |
+|---|---|
+| Git tag | `v1.0.0`, or `v1.0.0-rc.1` for a candidate |
+| Image tag and notes `version` | `1.0.0` |
+
+The workflow refuses any other tag shape.
+
+### Beta first, stable later
+
+A new version lands on `:beta` and on its version tag. `:beta` only moves to a newer version. `:stable`, `:latest` and the short tags `X` and `X.Y` move only when the maintainer starts the promote run for a version that ran well on beta. That run takes the image digest from the release run, and it never moves `:stable` back to an older version.
+
+### Take a release back
+
+1. Move `:beta` to the previous version.
+2. Mark the bad version in the update list so installs do not offer it.
+3. Keep the tag.
+
+## If it does not work
+
+**Symptom.** `notes.py --check` exits 1.
+**Cause.** The notes file breaks a rule. The message names the line.
+**Fix.** Edit the notes file, never the files in `releases/out`, and run it again.
+
+**Symptom.** The workflow stops with a message about the tag.
+**Cause.** The tag is not `vX.Y.Z` or `vX.Y.Z-rc.N`.
+**Fix.** Make a tag with that shape.
+
+**Symptom.** The beta run says `beta stays on` a version.
+**Cause.** You tagged an older version than the current beta.
+**Fix.** Tag a newer one. Beta never moves back.
+
+## For experts
+
+<details class="ha-more"><summary id="release-notes-file">Release notes file</summary>
+
+Every release text comes from one file. Never hand-edit what it builds.
+
+| Field | Content |
+|---|---|
+| `version` | Plain `X.Y.Z` |
+| `theme` | One line |
+| `images` | List of `{registry, name}`. Docker Hub `holyarrs/holyarrs` only |
+| `docs_url` | Optional. Empty means no Docs link |
+| `[[highlights]]` | Exactly 3, each with `line`, `issues` and `shot`. Their issues appear in no group line |
+| `[groups]` | Lines per place. New is the default. Others start `Changed: `, `Fixed: ` or `Docs: `. Each ends with its issue, such as `(#46)`. A place with under 3 lines goes under Also new |
+| Optional | `[before_you_update]` (`breaking`, `manual_steps`, `backup`, `rollback`), `security`, `known_issues`, `credits`, `[stats]`. Empty parts are hidden |
+
+Use a GitHub login only when it is known, in the notes file or in `releases/credits-map.json`.
+
+Body order: theme, Highlights, places (Requests, Library, Downloads, Indexers, Accounts, Health, Setup, Install), Also new, Security, Known issues, Before you update, Image, Thanks, stats line.
+
+| Output in `releases/out/<version>/` | Used for |
+|---|---|
+| `changelog.md` | The changelog entry |
+| `github.md` | The GitHub release body |
+| `update-notes.json` | The notes the app shows |
+| `reddit.txt` | The Reddit post |
+| `discord-dm.txt`, `discord-announce.md` | Discord. Each stays under 1,000 characters |
+| `roadmap-card.json` | The roadmap card |
+
+`notes.py` takes `--file` (another notes file), `--map` (another credits map), `--out` (another output folder) and `--date`. `--check` warns on long lines and near repeats.
+
+</details>
+
+<details class="ha-more"><summary>The image workflow</summary>
+
+The `release` workflow runs from a version tag only, and publishing is switched off until the maintainer authorizes a release. When on, it:
+
+1. Runs `go test ./...` before building.
+2. Builds one image for `linux/amd64`, `linux/arm64` and `linux/arm/v7`.
+3. Pushes `holyarrs/holyarrs` with the version tag, and `beta` when the version is newer than the current beta.
+4. Checks that every platform and the digest match.
+5. Signs the image with cosign and attaches an SBOM.
+
+The `promote` workflow starts by hand, runs as a dry run unless you switch that off, and moves the stable tags by digest.
+
+</details>
+
+<details class="ha-more"><summary>Update list</summary>
+
+The app reads a signed update list. Each release adds its entry and signs it. The signing key never goes in the repo. HolyArrs refuses a list it cannot verify.
+
+After a release, check that the image's version label matches the tag, and watch new issues for the first day:
+
+```sh
+docker inspect --format '{{ index .Config.Labels "org.opencontainers.image.version" }}' holyarrs
 ```
-python deploy/release/notes.py 1.0.0 --check
-python deploy/release/notes.py 1.0.0
-```
 
-The second command writes `changelog.md`, `github.md`, `update-notes.json`, `reddit.txt`, `discord-dm.txt`, `discord-announce.md` and `roadmap-card.json` to `releases/out/1.0.0/`. `--check` exits 1 on any error (banned words, em dashes, dates or launch talk, a highlight issue repeated in a group, a Discord text over 1,000 characters) and prints warnings for long lines and near-repeats.
+</details>
 
-## Update list
+<details class="ha-more"><summary>Unraid test template</summary>
 
-The update check in the app reads a signed update list. Each release adds its entry and signs the list. The signing key never goes in the repo. HolyArrs refuses a list it can't verify.
-
-## After a release
-
-- Check that the new image starts and its version label matches the tag:
-  `docker inspect --format '{{ index .Config.Labels "org.opencontainers.image.version" }}' holyarrs`
-- Watch new issues for the first day.
-
-## Taking a release back
-
-If a release is bad, move `:beta` back to the previous version and mark the bad one in the update list, so installs don't offer it. Keep the tag.
-
-## Unraid test template
-
-No NAS package is published yet. `deploy/release/nas-template.py` writes an Unraid user template for testing one exact image on your own box. It does not pull, install or publish anything.
+`deploy/release/nas-template.py` writes an Unraid user template for one exact image. It pulls, installs and publishes nothing.
 
 ```sh
 python deploy/release/nas-template.py --image 'holyarrs/holyarrs@sha256:<digest>' --config '/mnt/<pool>/appdata/holyarrs-test' --movies /mnt/user/holyarrs-test-data/movies --downloads /mnt/user/holyarrs-test-data/downloads --port 6262 --output holyarrs-test.xml
 ```
 
-- Use the registry manifest digest of the image you checked, not a Docker image ID.
-- `--config` must be a pool path such as `/mnt/<pool>/appdata/holyarrs-test`. `/mnt/user` and `/mnt/user0` are FUSE paths, and the tool refuses them.
-- `--movies`, `--tv`, `--music` and `--downloads` are optional. Separate media paths are separate mounts, so imports between them are copied.
-- The template sets `PUID=99`, `PGID=100` and `UMASK=022`. Give that account write access to the test media.
-- Put the file in `/boot/config/plugins/dockerMan/templates-user/` and pick it under Docker > Add Container > Template.
+Replace `<digest>` and `<pool>`.
+
+| Flag | Notes |
+|---|---|
+| `--image` | The registry manifest digest, not a Docker image ID |
+| `--config` | A pool path. The tool refuses `/mnt/user` and `/mnt/user0` |
+| `--movies`, `--tv`, `--music`, `--downloads` | Optional. Separate paths are separate mounts, so imports copy |
+| `--port` | Defaults to `6262` |
+| `--allowed-hosts` | Optional, comma-separated host names |
+| `--output` | The XML file to write |
+
+The template sets `PUID=99`, `PGID=100` and `UMASK=022`. Give that account write access to the test media. Put the file in `/boot/config/plugins/dockerMan/templates-user/` and pick it under **Docker > Add Container > Template**.
+
+</details>
+
+## Related
+
+- [Testing](testing.md)
+- [Contributing](contributing.md)
+- [Updates](../run/updates.md)

@@ -36,22 +36,22 @@ services:
 
 Keep `/config` on a local disk. HolyArrs refuses to run its database from a network share.
 
-Full guide: [Install HolyArrs with Docker](docs/user/getting-started/install.md). NAS guides live in [docs/user/platforms](docs/user/platforms/).
+Full guide: [Install HolyArrs with Docker](docs/start/install.mdx). NAS guides live in [docs/run/platforms.md](docs/run/platforms.md).
 
 ## Keep your master key safe
 
-HolyArrs encrypts stored passwords, keys and tokens with the file `holyarrs.key` in your config folder. Backups do not include it. Copy it somewhere safe. Without it, a restored backup can't open your stored secrets. See [Backups](docs/user/backups/).
+HolyArrs encrypts stored passwords, keys and tokens with the file `holyarrs.key` in your config folder. Backups do not include it. Copy it somewhere safe. Without it, a restored backup can't open your stored secrets. See [Backups](docs/run/backups.md).
 
 ## Metadata
 
-You don't need any API keys. Titles, artwork and charts come from the HolyArrs metadata server. See [Metadata](docs/user/metadata/).
+You don't need any API keys. Titles, artwork and charts come from the HolyArrs metadata server. See [Metadata](docs/library/metadata.md).
 
 ## When something goes wrong
 
 - Follow the log: `docker logs -f holyarrs`
 - Check your setup: `docker exec holyarrs /holyarrs doctor`
 - Locked out of the owner account: `docker exec -i holyarrs /holyarrs reset-owner`
-- More help: [docs/user/help](docs/user/help/)
+- More help: [docs/help](docs/help/)
 
 Ask questions on [Discord](https://discord.com/invite/mthsvesKpC). Share ideas on [r/HolyArrs](https://www.reddit.com/r/HolyArrs/). Report bugs in Issues.
 

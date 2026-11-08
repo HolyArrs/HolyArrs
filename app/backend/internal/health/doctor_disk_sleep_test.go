@@ -58,28 +58,28 @@ func readDoc(t *testing.T, name string) string {
 	return string(b)
 }
 
-// docs/user/help/troubleshooting.md uses the same words as the start-up line.
+// docs/help/troubleshooting.md uses the same words as the start-up line.
 func TestSupportDocNamesSleepingDisks(t *testing.T) {
-	doc := readDoc(t, filepath.Join("user", "help", "troubleshooting.md"))
+	doc := readDoc(t, filepath.Join("help", "troubleshooting.md"))
 	for _, want := range []string{"not checked", "waking from sleep", "3 seconds"} {
 		if !strings.Contains(doc, want) {
-			t.Errorf("docs/user/help/troubleshooting.md does not say %q", want)
+			t.Errorf("docs/help/troubleshooting.md does not say %q", want)
 		}
 	}
 	// Download folders are not checked on a timer, so no promise of a later
 	// check.
 	if strings.Contains(doc, "checked again later") {
-		t.Error("docs/user/help/troubleshooting.md still says the folder is checked again later")
+		t.Error("docs/help/troubleshooting.md still says the folder is checked again later")
 	}
 }
 
-// docs/user/platforms/nas.md has a "Disks that sleep" section with the advice people on a
+// docs/run/platforms.md has a "Disks that sleep" section with the advice people on a
 // NAS need.
 func TestNASDocHasDisksThatSleep(t *testing.T) {
-	doc := readDoc(t, filepath.Join("user", "platforms", "nas.md"))
-	i := strings.Index(doc, "## Let your disks sleep")
+	doc := readDoc(t, filepath.Join("run", "platforms.md"))
+	i := strings.Index(doc, "### Let your disks sleep")
 	if i < 0 {
-		t.Fatal(`docs/user/platforms/nas.md has no "## Let your disks sleep" section`)
+		t.Fatal(`docs/run/platforms.md has no "### Let your disks sleep" section`)
 	}
 	sec := doc[i+3:]
 	if j := strings.Index(sec, "\n## "); j >= 0 {
