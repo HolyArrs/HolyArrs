@@ -1,0 +1,77 @@
+---
+title: Lidarr, Bazarr and Prowlarr
+description: What comes over from Lidarr, Bazarr, Prowlarr, qBittorrent and SABnzbd when you move to HolyArrs.
+level: Setup
+sidebar: { order: 3 }
+---
+
+Move your music, subtitle languages, Sources and Downloaders. The steps match [Move from other apps](index.md); this page lists what each app brings.
+
+## Move them
+
+1. Open **Settings > Move from other apps** and click **Add an app** for each app.
+2. Type the address and API key, or the backup path, and click **Check connection**. For qBittorrent, type the user name and password, or its API key on version 5.2 and later.
+3. Read each app, then go through **Choose**, **Try it** and **Move**. You should see each app's groups in **Choose**.
+
+## Lidarr
+
+| From Lidarr | In HolyArrs |
+| --- | --- |
+| Library folders | Library folders for music. |
+| Artists | Titles, matched by MusicBrainz id, folders and files in place. A watched artist gets **Keep up to date**. Nothing is searched for. |
+| Quality profiles | The closest **Pick rules** preset (Lossless first, Lossy 320 or V0, Any music). |
+| Exclusions | The **Never-add** list. |
+| Untagged default wait rule | Waits on the matched Pick rules, up to 7 days. |
+| Indexers, download clients, remote path mappings, naming, notifications | Same as for [Sonarr and Radarr](sonarr-radarr.md#what-comes-over). |
+
+Stays behind: metadata profiles, import lists for music, custom formats, release word rules and tags.
+
+## Bazarr
+
+| From Bazarr | In HolyArrs |
+| --- | --- |
+| Default language profile | Default subtitle languages. |
+| Podnapisi and Gestdown | **Subtitle sites**. Held back in this version. |
+
+Stays behind: other subtitle sites and their accounts. Add them under **Settings > Subtitles**, or from a file with [Import keys from a file](import-secrets.md).
+
+## Prowlarr
+
+| From Prowlarr | In HolyArrs |
+| --- | --- |
+| Torznab, Newznab and RSS indexers | **Sources**, added paused and blocked from your home network. |
+| Download clients | **Downloaders**, added paused. |
+
+Stays behind: app links, sync profiles, indexer proxies and notification kinds HolyArrs does not have.
+
+:::tip
+To keep Prowlarr running and let it push Sources into HolyArrs instead, see [Old-app API](../reference/old-app-api.md).
+:::
+
+## qBittorrent and SABnzbd
+
+| From | In HolyArrs |
+| --- | --- |
+| qBittorrent, SABnzbd | A **Downloader**, added paused, using the `holyarrs` category so it never picks up the old apps' downloads. |
+
+Stays behind: download categories and SABnzbd's usenet servers.
+
+## Before you turn things on
+
+1. Type each Source's key in **Settings > Sources**, then resume it.
+2. Type each Downloader's password or key in **Settings > Downloaders**, then resume it.
+3. Turn on **May reach the local network** only for items on your home network.
+
+## If it does not work
+
+| Symptom | Cause | Fix |
+| --- | --- | --- |
+| qBittorrent read fails | Wrong user name or password, or the key on a version before 5.2. | Use the user name and password from qBittorrent's Web UI settings. |
+| A Downloader at home does not answer | **May reach the local network** is off. | Turn it on for that Downloader. |
+| Subtitle sites do nothing | They are held back in this version. | Use default subtitle languages for now. |
+
+## Related
+
+- [Move from other apps](index.md)
+- [Read your old apps](what-is-read.md)
+- [Request apps](requests-apps.md)
