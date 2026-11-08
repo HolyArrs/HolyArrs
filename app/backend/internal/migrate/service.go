@@ -1,7 +1,9 @@
-// Package migrate reads the setup of an old app (Radarr, Sonarr, Lidarr,
-// Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent, SABnzbd) into a
-// Snapshot: plain data with no secrets, kept in the main database until
-// the move (stage 6.2) maps it to HolyArrs.
+// Package migrate brings an owner's setup over from the apps they are
+// leaving (Radarr, Sonarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr,
+// qBittorrent, SABnzbd). It reads each app into a Snapshot, plain data with
+// no secrets kept in the main database, plans the move from the Snapshots and
+// runs it as a job that can be undone. The owner's secrets file and the keys
+// kept for "Read again" live in the secretsfile sub-package.
 //
 // A reader works from the app's API (an address and a key the owner types
 // on the move screen, kept only in memory) or from a backup: a zip, a

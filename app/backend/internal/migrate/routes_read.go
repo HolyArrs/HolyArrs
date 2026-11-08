@@ -17,8 +17,8 @@ import (
 )
 
 func (h *Handlers) readRoutes(r *webserver.Router) {
-	r.Handle("POST /api/v1/migrate/probe", webserver.NeedUsers, http.HandlerFunc(h.migrateProbe))
-	r.Handle("POST /api/v1/migrate/read", webserver.NeedUsers, http.HandlerFunc(h.migrateRead))
+	r.Handle("POST /api/v1/migrate/probe", webserver.NeedUsers, http.HandlerFunc(h.probe))
+	r.Handle("POST /api/v1/migrate/read", webserver.NeedUsers, http.HandlerFunc(h.read))
 	r.Handle("GET /api/v1/migrate/snapshots", webserver.NeedUsers, http.HandlerFunc(h.listSnapshots))
 	r.Handle("GET /api/v1/migrate/snapshots/{id}", webserver.NeedUsers, http.HandlerFunc(h.getSnapshot))
 	r.Handle("DELETE /api/v1/migrate/snapshots/{id}", webserver.NeedUsers, http.HandlerFunc(h.deleteSnapshot))
@@ -43,9 +43,9 @@ type MigrateSourceInput struct {
 	UseSavedKey bool `json:"use_saved_key"`
 }
 
-// migrateSource reads and checks the body; it answers and returns false
+// source reads and checks the body; it answers and returns false
 // on a bad one. saved says the read uses a saved key.
-func (h *Handlers) migrateSource(w http.ResponseWriter, r *http.Request) (src Source, savedID secretsfile.MoveCredentialVersion, ok bool) {
+func (h *Handlers) source(w http.ResponseWriter, r *http.Request) (src Source, savedID secretsfile.MoveCredentialVersion, ok bool) {
 	var in MigrateSourceInput
 	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 16<<10)).Decode(&in); err != nil {
 		webserver.Fail(w, http.StatusBadRequest, "the body must be JSON naming the app and an address or a backup path")
@@ -90,8 +90,8 @@ func (h *Handlers) migrateSource(w http.ResponseWriter, r *http.Request) (src So
 		Path: in.Path, AllowLocal: in.AllowLocal, Limits: h.Limits}, savedID, true
 }
 
-// migrateFail answers a reader's error in plain words.
-func migrateFail(w http.ResponseWriter, err error) {
+// fail answers a reader's error in plain words.
+func fail(w http.ResponseWriter, err error) {
 	switch {
 	case errors.Is(err, ErrUnreachable), errors.Is(err, ErrBadAnswer):
 		webserver.Fail(w, http.StatusBadGateway, err.Error())
@@ -117,11 +117,11 @@ func migrateFail(w http.ResponseWriter, err error) {
 	}
 }
 
-func (h *Handlers) migrateProbe(w http.ResponseWriter, r *http.Request) {
+func (h *Handlers) probe(w http.ResponseWriter, r *http.Request) {
 	if !auth.RequireStrong(w, r) {
 		return
 	}
-	src, _, ok := h.migrateSource(w, r)
+	src, _, ok := h.source(w, r)
 	if !ok {
 		return
 	}
@@ -129,17 +129,17 @@ func (h *Handlers) migrateProbe(w http.ResponseWriter, r *http.Request) {
 	defer cancel()
 	info, err := Probe(ctx, src)
 	if err != nil {
-		migrateFail(w, err)
+		fail(w, err)
 		return
 	}
 	webserver.WriteJSON(w, http.StatusOK, map[string]any{"app": info})
 }
 
-func (h *Handlers) migrateRead(w http.ResponseWriter, r *http.Request) {
+func (h *Handlers) read(w http.ResponseWriter, r *http.Request) {
 	if !auth.RequireStrong(w, r) {
 		return
 	}
-	src, usedSaved, ok := h.migrateSource(w, r)
+	src, usedSaved, ok := h.source(w, r)
 	if !ok {
 		return
 	}
@@ -148,7 +148,7 @@ func (h *Handlers) migrateRead(w http.ResponseWriter, r *http.Request) {
 	movesDone := h.movesDone(r.Context())
 	snap, err := Read(ctx, src)
 	if err != nil {
-		migrateFail(w, err)
+		fail(w, err)
 		return
 	}
 	var saved Saved
@@ -159,7 +159,7 @@ func (h *Handlers) migrateRead(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		if errors.Is(err, ErrSnapshotTooBig) {
-			migrateFail(w, err)
+			fail(w, err)
 			return
 		}
 		webserver.Internal(w, "migrate", err)

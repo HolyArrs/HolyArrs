@@ -1,4 +1,4 @@
-// Package importsecrets reads the owner's secrets file (one YAML file with
+// Package secretsfile reads the owner's secrets file (one YAML file with
 // keys, passwords and addresses for the outside services HolyArrs links to)
 // and stores each filled-in item through the same code the Settings screens
 // use, with every secret in the vault.

@@ -96,8 +96,9 @@ type Mover struct {
 	Store   *database.Store
 	Library *library.Service
 	Queue   *jobs.Queue
-	// PartOn says whether a part is on (movies, shows, music, subtitles,
-	// wishlist); nil counts every part on.
+	// PartOn says whether a part is on. The part keys are movies, shows,
+	// music, subtitles and wishlist (the requests part keeps its old key);
+	// nil counts every part on.
 	PartOn func(part string) bool
 	Now    func() time.Time
 }
@@ -1896,7 +1897,7 @@ func (m *Mover) setState(ctx context.Context, id int64, state string, rep *Repor
 		}
 		if state == "done" && (rep == nil || rep.Counts[ResFailed] == 0) {
 			// A finished move forgets every old-app key kept for "Read
-			// again" (importsecrets' move credentials and their vault rows).
+			// again" (the move credentials and their vault rows).
 			// While any item failed (say the metadata server was down) the
 			// keys stay, so "move again" needs no retyping; the next clean
 			// move forgets them.
