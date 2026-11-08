@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 )
@@ -34,7 +34,7 @@ var updateSpec = flag.Bool("update", false, "rewrite openapi.json from the code 
 
 // generateSpec builds openapi.json from the code: the operations are
 // exactly the registered /api/v1 routes, and each one's permission
-// (auth.RoutePerms), API key scope (auth.RouteScope), part (parts.Routes)
+// (accounts.RoutePerms), API key scope (accounts.RouteScope), part (parts.Routes)
 // and path parameters come from the route table. The written parts
 // (summaries, descriptions, bodies, answers) are kept from the current
 // file; a new route gets an empty entry that fails the check below until
@@ -71,12 +71,12 @@ func generateSpec(t *testing.T) []byte {
 		if op == nil {
 			op = map[string]any{"summary": "", "responses": map[string]any{}}
 		}
-		perm := string(auth.RoutePerms[r])
+		perm := string(accounts.RoutePerms[r])
 		if perm == "" {
 			perm = "owner"
 		}
 		op["x-holyarrs-permission"] = perm
-		op["x-holyarrs-scope"] = auth.RouteScope(r)
+		op["x-holyarrs-scope"] = accounts.RouteScope(r)
 		op["x-holyarrs-part"] = string(parts.Routes()[r])
 		params, _ := op["parameters"].([]any)
 		for _, p := range param.FindAllStringSubmatch(path, -1) {
@@ -101,8 +101,8 @@ func generateSpec(t *testing.T) []byte {
 	}
 	doc["paths"] = paths
 	scopes := map[string]any{}
-	for _, sc := range auth.Scopes {
-		scopes[sc] = auth.ScopeNotes[sc]
+	for _, sc := range accounts.Scopes {
+		scopes[sc] = accounts.ScopeNotes[sc]
 	}
 	doc["x-holyarrs-scopes"] = scopes
 	var buf bytes.Buffer

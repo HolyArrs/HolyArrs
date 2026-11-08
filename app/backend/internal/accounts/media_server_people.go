@@ -1,4 +1,4 @@
-package auth
+package accounts
 
 import (
 	"context"
@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
@@ -75,14 +76,14 @@ func (a *Auth) plexOwner(ctx context.Context) map[string]any {
 }
 
 func (a *Auth) plexLinkStart(w http.ResponseWriter, r *http.Request) {
-	if !RequireStrong(w, r) {
+	if !webserver.RequireStrong(w, r) {
 		return
 	}
 	a.startPin(w, r, pinOwner)
 }
 
 func (a *Auth) plexLinkFinish(w http.ResponseWriter, r *http.Request) {
-	if !RequireStrong(w, r) {
+	if !webserver.RequireStrong(w, r) {
 		return
 	}
 	if a.vault == nil {
@@ -124,7 +125,7 @@ func (a *Auth) plexLinkFinish(w http.ResponseWriter, r *http.Request) {
 			servers = append(servers, map[string]string{"id": x.ClientIdentifier, "name": x.Name})
 		}
 	}
-	me := Actor(ctx)
+	me := webserver.Actor(ctx)
 	extID := strconv.FormatInt(user.ID, 10)
 	var moved bool
 	err = a.s.WriteCore(ctx, func(tx *sql.Tx) error {
@@ -155,11 +156,11 @@ func (a *Auth) plexLinkFinish(w http.ResponseWriter, r *http.Request) {
 var errTaken = errors.New("linked to someone else")
 
 func (a *Auth) plexUnlink(w http.ResponseWriter, r *http.Request) {
-	if !RequireStrong(w, r) {
+	if !webserver.RequireStrong(w, r) {
 		return
 	}
 	ctx := r.Context()
-	me := Actor(ctx)
+	me := webserver.Actor(ctx)
 	if err := a.s.WriteCore(ctx, func(tx *sql.Tx) error {
 		if err := dropLinkTokensTx(tx, "provider = 'plex' AND user_id = ?", me.ID); err != nil {
 			return err
@@ -217,7 +218,7 @@ func checkServerURL(raw string) (string, error) {
 }
 
 func (a *Auth) mediaServerTest(w http.ResponseWriter, r *http.Request) {
-	if !RequireStrong(w, r) {
+	if !webserver.RequireStrong(w, r) {
 		return
 	}
 	kind := r.PathValue("kind")
@@ -266,7 +267,7 @@ func (a *Auth) mediaServerTest(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *Auth) importPreview(w http.ResponseWriter, r *http.Request) {
-	if !RequireStrong(w, r) {
+	if !webserver.RequireStrong(w, r) {
 		return
 	}
 	ctx := r.Context()
@@ -434,7 +435,7 @@ func (a *Auth) serverPeople(w http.ResponseWriter, r *http.Request, kind string)
 var errImportKidSkip = errors.New("kid import while skipping local sign-in")
 
 func (a *Auth) importPeople(w http.ResponseWriter, r *http.Request) {
-	if !RequireStrong(w, r) {
+	if !webserver.RequireStrong(w, r) {
 		return
 	}
 	ctx := r.Context()
@@ -468,7 +469,7 @@ func (a *Auth) importPeople(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	kidPerms := permsJSON([]Perm{PermAsk})
+	kidPerms := permsJSON([]webserver.Perm{webserver.PermAsk})
 	made, skipped := []string{}, 0
 	err := a.s.WriteCore(ctx, func(tx *sql.Tx) error {
 		for _, pick := range body.People {
@@ -499,7 +500,7 @@ func (a *Auth) importPeople(w http.ResponseWriter, r *http.Request) {
 				}
 				name = fmt.Sprintf("%s-%d", base, i)
 			}
-			u := &domain.User{Name: name, Role: RoleMember, State: "active", Perms: permsJSON(DefaultPerms(RoleMember))}
+			u := &domain.User{Name: name, Role: webserver.RoleMember, State: "active", Perms: permsJSON(webserver.DefaultPerms(webserver.RoleMember))}
 			kid := p.Kid
 			if pick.Kid != nil {
 				kid = *pick.Kid // clearing a restricted flag was confirmed above
@@ -510,7 +511,7 @@ func (a *Auth) importPeople(w http.ResponseWriter, r *http.Request) {
 				}
 				u.Perms, u.MaxRating = kidPerms, "PG"
 			}
-			id, err := database.Insert(tx, "users", u, Actor(ctx))
+			id, err := database.Insert(tx, "users", u, webserver.Actor(ctx))
 			if err != nil {
 				return err
 			}
@@ -532,7 +533,7 @@ func (a *Auth) importPeople(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Printf("auth: imported %d %s people (skipped %d)", len(made), kind, skipped)
 	if len(made) > 0 {
-		a.accountEvent(r, Actor(r.Context()).ID, "people_imported", byName(r)+" imported "+itoa(int64(len(made)))+" "+kind+" accounts as members",
+		a.accountEvent(r, webserver.Actor(r.Context()).ID, "people_imported", byName(r)+" imported "+itoa(int64(len(made)))+" "+kind+" accounts as members",
 			map[string]any{"count": len(made), "provider": kind})
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"made": made, "skipped": skipped})

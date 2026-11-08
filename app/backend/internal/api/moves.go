@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/migrate"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 )
@@ -91,7 +91,7 @@ func isRuleError(err error) bool {
 }
 
 func (a *API) loadPlan(w http.ResponseWriter, r *http.Request) (*migrate.Plan, MoveInput, bool) {
-	if !auth.RequireStrong(w, r) {
+	if !webserver.RequireStrong(w, r) {
 		return nil, MoveInput{}, false
 	}
 	in, ok := moveInput(w, r)
@@ -136,7 +136,7 @@ func (a *API) refuseSafe(w http.ResponseWriter) bool {
 }
 
 func (a *API) startMove(w http.ResponseWriter, r *http.Request) {
-	if !auth.RequireStrong(w, r) || a.refuseSafe(w) {
+	if !webserver.RequireStrong(w, r) || a.refuseSafe(w) {
 		return
 	}
 	in, ok := moveInput(w, r)
@@ -152,7 +152,7 @@ func (a *API) startMove(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *API) listMoves(w http.ResponseWriter, r *http.Request) {
-	if !auth.RequireStrong(w, r) {
+	if !webserver.RequireStrong(w, r) {
 		return
 	}
 	ms, err := migrate.ListMoves(r.Context(), a.s.Store)
@@ -164,7 +164,7 @@ func (a *API) listMoves(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *API) oneMove(w http.ResponseWriter, r *http.Request) (migrate.Move, bool) {
-	if !auth.RequireStrong(w, r) {
+	if !webserver.RequireStrong(w, r) {
 		return migrate.Move{}, false
 	}
 	id, ok := pathID(w, r)

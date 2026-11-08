@@ -4,7 +4,7 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
 )
 
@@ -90,7 +90,7 @@ func (a *API) getImportFolders(w http.ResponseWriter, r *http.Request) {
 // signed in with a password or an admin key, since they widen what import
 // by hand may read.
 func (a *API) putImportFolders(w http.ResponseWriter, r *http.Request) {
-	if !auth.RequireStrong(w, r) {
+	if !webserver.RequireStrong(w, r) {
 		return
 	}
 	var body struct {

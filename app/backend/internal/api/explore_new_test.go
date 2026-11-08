@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/explore"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
@@ -152,7 +152,7 @@ func TestExploreNewPage(t *testing.T) {
 func TestExploreNewAcceptance(t *testing.T) {
 	a, srv, _ := newRig(t)
 	r := httptest.NewRequest("GET", "/api/v1/explore/new", nil)
-	r = r.WithContext(auth.ContextWith(r.Context(), auth.Who{UserID: 1, Role: auth.RoleAdmin}))
+	r = r.WithContext(webserver.ContextWith(r.Context(), webserver.Caller{UserID: 1, Role: webserver.RoleAdmin}))
 	var pg newPage
 	for i := 0; i < 40; i++ {
 		var building bool
@@ -206,7 +206,7 @@ func TestExploreNewAcceptance(t *testing.T) {
 func TestExploreNewHeroNotesTrailers(t *testing.T) {
 	a, _, _ := newRig(t)
 	r := httptest.NewRequest("GET", "/api/v1/explore/new?language=de", nil)
-	r = r.WithContext(auth.ContextWith(r.Context(), auth.Who{UserID: 1, Role: auth.RoleAdmin}))
+	r = r.WithContext(webserver.ContextWith(r.Context(), webserver.Caller{UserID: 1, Role: webserver.RoleAdmin}))
 	var pg newPage
 	for i := 0; i < 40; i++ {
 		var building bool
@@ -215,7 +215,7 @@ func TestExploreNewHeroNotesTrailers(t *testing.T) {
 		}
 		time.Sleep(50 * time.Millisecond)
 	}
-	kid := r.WithContext(auth.ContextWith(r.Context(), auth.Who{UserID: 1, Role: auth.RoleMember, MaxRating: "PG-13"}))
+	kid := r.WithContext(webserver.ContextWith(r.Context(), webserver.Caller{UserID: 1, Role: webserver.RoleMember, MaxRating: "PG-13"}))
 	if _, err := a.newHero(kid, pg, 1); err != nil {
 		t.Fatal(err)
 	}

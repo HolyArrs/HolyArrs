@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
@@ -151,7 +151,7 @@ func TestRestartInSafeModeFromTheControls(t *testing.T) {
 	post := func(path, body, csrf string) (int, map[string]any) {
 		req, _ := http.NewRequest("POST", base+path, strings.NewReader(body))
 		req.Header.Set("Content-Type", "application/json")
-		req.Header.Set(auth.CSRFHeader, csrf)
+		req.Header.Set(accounts.CSRFHeader, csrf)
 		resp, err := cl.Do(req)
 		if err != nil {
 			t.Fatal(err)

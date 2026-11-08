@@ -10,10 +10,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/logs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/health"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
@@ -163,7 +163,7 @@ func TestUpdateFeedHoldsNoSecret(t *testing.T) {
 	if got := a.updateView(r, in).Feed; got != "https://x.example/feed" {
 		t.Fatalf("owner sees %q", got)
 	}
-	mgr := r.WithContext(auth.ContextWith(r.Context(), auth.Who{UserID: 2, Role: auth.RoleMember, Perms: []auth.Perm{auth.PermManageLibrary}}))
+	mgr := r.WithContext(webserver.ContextWith(r.Context(), webserver.Caller{UserID: 2, Role: webserver.RoleMember, Perms: []webserver.Perm{webserver.PermManageLibrary}}))
 	if got := a.updateView(mgr, in).Feed; got != "" {
 		t.Fatalf("manager sees %q", got)
 	}

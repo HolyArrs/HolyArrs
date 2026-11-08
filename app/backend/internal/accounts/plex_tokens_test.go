@@ -1,16 +1,17 @@
-package auth
+package accounts
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"sync"
 	"sync/atomic"
 	"testing"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
 // Test-only Plex sign-ins: each fake PIN hands out the one the test chose.

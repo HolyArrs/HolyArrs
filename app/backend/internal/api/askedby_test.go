@@ -11,8 +11,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/asks"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
@@ -127,7 +127,7 @@ func TestAskedByEveryoneSees(t *testing.T) {
 	r.ana.call("GET", "/api/v1/my/ask-privacy", "", 404)
 	r.ana.call("PUT", "/api/v1/my/ask-privacy", `{"show_my_name":true}`, 405)
 	for _, k := range []string{"GET /api/v1/my/ask-privacy", "PUT /api/v1/my/ask-privacy"} {
-		if _, ok := auth.RoutePerms[k]; ok {
+		if _, ok := accounts.RoutePerms[k]; ok {
 			t.Fatalf("%s is still in the route table", k)
 		}
 		if _, ok := parts.Routes()[k]; ok {

@@ -9,8 +9,8 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
 )
@@ -23,11 +23,11 @@ import (
 // No identity attached means no, unless the server runs without sign-in
 // (Auth nil, tests only).
 func (a *API) mayPickAnyFolder(ctx context.Context) bool {
-	who, ok := auth.From(ctx)
+	who, ok := webserver.From(ctx)
 	if !ok {
 		return a.s.Auth == nil
 	}
-	return who.Has(auth.PermSettings) && who.HasScope(auth.ScopeAdmin)
+	return who.Has(webserver.PermSettings) && who.HasScope(webserver.ScopeAdmin)
 }
 
 var errFolder = errors.New("the folder is a subfolder name inside the Downloader's own folder (no full paths, drive letters or ..)")

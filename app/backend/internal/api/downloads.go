@@ -13,8 +13,8 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
@@ -307,14 +307,14 @@ func (a *API) downloadsView(w http.ResponseWriter, r *http.Request) {
 	// People who may not manage the Library watch only the downloads for
 	// titles they asked for, and act on none of them.
 	// (No person on the request: the sign-in layer is off, as in tests.)
-	who, ok := auth.From(r.Context())
-	manage := !ok || who.Has(auth.PermManageLibrary)
+	who, ok := webserver.From(r.Context())
+	manage := !ok || who.Has(webserver.PermManageLibrary)
 	where, args := "1=1", []any{}
 	// People who approve read the downloads of every approved ask on the
 	// Requests page (?asked=1), as they read everyone's asks there (#139);
 	// the rows stay the plain ones members get.
 	asked := r.URL.Query().Get("asked") == "1"
-	if !manage && !(asked && ok && who.Has(auth.PermApprove)) {
+	if !manage && !(asked && ok && who.Has(webserver.PermApprove)) {
 		where = `EXISTS (SELECT 1 FROM json_each(downloads.slot_ids) j JOIN slots s ON s.id = j.value JOIN items i ON i.id = s.item_id
 			JOIN asks a ON a.title_id = i.title_id JOIN ask_people p ON p.ask_id = a.id WHERE p.user_id = ?)`
 		args = append(args, who.UserID)
@@ -688,7 +688,7 @@ func (a *API) removeDownload(w http.ResponseWriter, r *http.Request) {
 		c.SearchAgain = *in.SearchAgain
 	}
 	who := ""
-	if p, ok := auth.From(r.Context()); ok {
+	if p, ok := webserver.From(r.Context()); ok {
 		who = p.Name
 	}
 	err = a.manager().Remove(r.Context(), id, c, actor(r), who)
@@ -898,7 +898,7 @@ func (a *API) decide(w http.ResponseWriter, r *http.Request) {
 	}
 	by := actor(r)
 	who := "someone"
-	if p, ok := auth.From(r.Context()); ok {
+	if p, ok := webserver.From(r.Context()); ok {
 		who = p.Name
 	}
 	switch in.Action {

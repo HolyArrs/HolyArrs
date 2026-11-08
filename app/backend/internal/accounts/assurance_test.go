@@ -1,4 +1,4 @@
-package auth
+package accounts
 
 import (
 	"context"
@@ -12,6 +12,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
 func setSessionAssurance(t *testing.T, f *fixture, query string, args ...any) {
@@ -24,13 +26,13 @@ func setSessionAssurance(t *testing.T, f *fixture, query string, args ...any) {
 	}
 }
 
-func meOf(t *testing.T, f *fixture, p person) Who {
+func meOf(t *testing.T, f *fixture, p person) webserver.Caller {
 	t.Helper()
 	resp, out := p.do(t, f, http.MethodGet, "/api/v1/auth/me", "")
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("me: %d %s", resp.StatusCode, out)
 	}
-	var who Who
+	var who webserver.Caller
 	if err := json.Unmarshal([]byte(out), &who); err != nil {
 		t.Fatal(err)
 	}
@@ -107,17 +109,17 @@ func TestTwoFactorTicketPreservesOutsideAuthMethod(t *testing.T) {
 }
 
 func TestRecentLocalRequiresBrowserSessionAndCompletedTwoFactor(t *testing.T) {
-	ctx := ContextWith(context.Background(), Who{Via: "session", LocalRecent: true})
+	ctx := webserver.ContextWith(context.Background(), webserver.Caller{Via: "session", LocalRecent: true})
 	req := httptest.NewRequest(http.MethodPost, "/", nil).WithContext(ctx)
 	if !RecentLocal(req) {
 		t.Fatal("recent local browser session refused")
 	}
-	for _, who := range []Who{
+	for _, who := range []webserver.Caller{
 		{Via: "api_key", LocalRecent: true},
 		{Via: "session", LocalRecent: false},
 		{Via: "session", LocalRecent: true, MustTwoFactor: true},
 	} {
-		req = req.WithContext(ContextWith(context.Background(), who))
+		req = req.WithContext(webserver.ContextWith(context.Background(), who))
 		if RecentLocal(req) {
 			t.Fatalf("RecentLocal accepted %+v", who)
 		}
@@ -125,12 +127,12 @@ func TestRecentLocalRequiresBrowserSessionAndCompletedTwoFactor(t *testing.T) {
 }
 
 // gateCode sends one request for pattern through Gate, signed in as who.
-func gateCode(pattern string, who Who) (int, string) {
+func gateCode(pattern string, who webserver.Caller) (int, string) {
 	mux := http.NewServeMux()
 	mux.HandleFunc(pattern, func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusTeapot) })
 	method, path, _ := cutRoute(pattern)
 	path = regexp.MustCompile(`\{[^}]*\}`).ReplaceAllString(path, "1")
-	r := httptest.NewRequest(method, path, nil).WithContext(ContextWith(context.Background(), who))
+	r := httptest.NewRequest(method, path, nil).WithContext(webserver.ContextWith(context.Background(), who))
 	w := httptest.NewRecorder()
 	Gate(mux).ServeHTTP(w, r)
 	return w.Code, w.Body.String()
@@ -162,7 +164,7 @@ func TestGateAsksStaleBrowserSessionOnlyOnRiskyRoutes(t *testing.T) {
 	}; !slices.Equal(all, want) {
 		t.Errorf("risky routes = %q", all)
 	}
-	stale := Who{UserID: 1, Via: "session", Role: RoleOwner, Perms: DefaultPerms(RoleOwner)}
+	stale := webserver.Caller{UserID: 1, Via: "session", Role: webserver.RoleOwner, Perms: webserver.DefaultPerms(webserver.RoleOwner)}
 	fresh := stale
 	fresh.LocalRecent = true
 	var riskyGets []string
@@ -207,7 +209,7 @@ func TestGateAsksStaleBrowserSessionOnlyOnRiskyRoutes(t *testing.T) {
 }
 
 func TestGateRecoveryAndNonSessionSignIns(t *testing.T) {
-	stale := Who{UserID: 1, Via: "session", Role: RoleOwner, Perms: DefaultPerms(RoleOwner)}
+	stale := webserver.Caller{UserID: 1, Via: "session", Role: webserver.RoleOwner, Perms: webserver.DefaultPerms(webserver.RoleOwner)}
 	for _, p := range []string{
 		"GET /api/v1/titles", "GET /api/v1/auth/me", "POST /api/v1/auth/logout", "POST /api/v1/auth/reauth",
 		"GET /api/v1/auth/sessions", "DELETE /api/v1/auth/sessions", "DELETE /api/v1/auth/sessions/{sid}",
@@ -230,7 +232,7 @@ func TestGateRecoveryAndNonSessionSignIns(t *testing.T) {
 	for p := range RoutePerms {
 		sc := RouteScope(p)
 		code, _ := gateCode(p, localSkip)
-		if (sc == ScopeAdmin || sc == ScopeControl) && !recentLocalExempt(p, localSkip) {
+		if (sc == webserver.ScopeAdmin || sc == webserver.ScopeControl) && !recentLocalExempt(p, localSkip) {
 			if code != http.StatusForbidden {
 				t.Errorf("local-network skip reached %s: %d", p, code)
 			}

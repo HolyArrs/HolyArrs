@@ -1,4 +1,4 @@
-package auth
+package accounts
 
 import (
 	"context"
@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
 func TestSSOIdentityOwnerAndStableMapping(t *testing.T) {
@@ -34,7 +35,7 @@ func TestSSOIdentityOwnerAndStableMapping(t *testing.T) {
 		t.Fatal("email matched a different subject")
 	}
 	var role, perms string
-	if err := f.s.Read().QueryRow("SELECT role, perms FROM users WHERE id = ?", id).Scan(&role, &perms); err != nil || role != RoleMember || perms != `["ask"]` {
+	if err := f.s.Read().QueryRow("SELECT role, perms FROM users WHERE id = ?", id).Scan(&role, &perms); err != nil || role != webserver.RoleMember || perms != `["ask"]` {
 		t.Fatal("external identity elevated permissions")
 	}
 }

@@ -1,7 +1,7 @@
-// Package auth signs the owner in: the first-run setup, password sign-in with
+// Package accounts signs the owner in: the first-run setup, password sign-in with
 // back-off, session cookies, CSRF checks, API keys for scripts and the
 // "skip sign-in on the local network" choice (off by default).
-package auth
+package accounts
 
 import (
 	"context"
@@ -246,74 +246,14 @@ func New(s *database.Store, opt Options) *Auth {
 	return a
 }
 
-type ctxKey struct{}
-
-// Who is the signed-in person on a request.
-type Who struct {
-	UserID int64
-	Name   string
-	Via    string // session, api_key, local_network
-	CSRF   string
-	Role   string
-	Perms  []Perm
-	// TwoFactor says two-factor sign-in is on for this person.
-	TwoFactor bool
-	// MustTwoFactor is set for an admin without two-factor sign-in when the
-	// owner requires it; they may only reach My account until they turn it on.
-	MustTwoFactor bool
-	// AuthMethod records how the browser session was established. LocalRecent
-	// is true only for a non-future local proof less than ten minutes old.
-	AuthMethod  string `json:"auth_method"`
-	LocalRecent bool   `json:"local_recent"`
-	// OutsideRecent is true for a Plex, Jellyfin or Emby sign-in less than
-	// ten minutes old: the proof a person with no password yet can give.
-	OutsideRecent bool `json:"outside_recent"`
-	// SetupRecent is true for the session first-run owner setup started,
-	// until the first-run wizard is done (at most setupRecentFor); it then
-	// counts as LocalRecent.
-	SetupRecent bool `json:"setup_recent"`
-	// Scopes are an API key's scopes (see Scopes); empty for
-	// a session, which holds every scope.
-	Scopes []string
-	// MaxRating is a Kid's age-rating limit ("" for no limit) and
-	// RatingCountry the country whose ratings apply (US). Both are read from
-	// the users row on every request, so a changed limit holds at once.
-	MaxRating     string
-	RatingCountry string
-	// KeyID and KeyLabel name the API key a request came with (0 and ""
-	// for a session); AI connections write them into History.
-	KeyID    int64
-	KeyLabel string
-}
-
 // userCols are the users columns fill reads, prefixed with u.
 const userCols = "u.id, u.name, u.role, u.perms, u.totp_secret_id IS NOT NULL, u.max_rating, u.rating_country"
 
 // fill completes who from a row of userCols and the sign-in settings.
-func (a *Auth) fill(who *Who, perms string) {
+func (a *Auth) fill(who *webserver.Caller, perms string) {
 	who.Perms = parsePerms(perms)
-	who.MustTwoFactor = who.Role == RoleAdmin && !who.TwoFactor && a.requireAdmin2FA.Load()
+	who.MustTwoFactor = who.Role == webserver.RoleAdmin && !who.TwoFactor && a.requireAdmin2FA.Load()
 	who.RatingCountry = countryOr(who.RatingCountry)
-}
-
-// From returns who made the request, if anyone.
-func From(ctx context.Context) (Who, bool) {
-	w, ok := ctx.Value(ctxKey{}).(Who)
-	return w, ok
-}
-
-// ContextWith puts who on ctx as the signed-in person (in-process callers
-// and tests; requests get it from Middleware).
-func ContextWith(ctx context.Context, who Who) context.Context {
-	return context.WithValue(ctx, ctxKey{}, who)
-}
-
-// Actor is the request's actor for "who and when".
-func Actor(ctx context.Context) domain.Actor {
-	if w, ok := From(ctx); ok {
-		return domain.Actor{Kind: "user", ID: w.UserID}
-	}
-	return domain.System
 }
 
 func token(n int) string {
@@ -389,29 +329,6 @@ func (a *Auth) localPeer(r *http.Request) bool {
 	return ok && a.isLocal(addr)
 }
 
-// Strong reports whether the request uses a browser session or an API key.
-// It is kept for compatibility at handler boundaries; sensitive browser
-// routes separately require RecentLocal in Gate. Requests let in by the
-// local-network skip are not strong:
-// they may not make API keys, change sign-in or security settings, read or
-// replace secrets, or restore backups.
-func Strong(ctx context.Context) bool {
-	w, ok := From(ctx)
-	return ok && (w.Via == "session" || w.Via == "api_key")
-}
-
-// RequireStrong writes 403 and returns false when the request is not Strong.
-func RequireStrong(w http.ResponseWriter, r *http.Request) bool {
-	if _, ok := From(r.Context()); !ok {
-		return true // no Auth in front (tests)
-	}
-	if !Strong(r.Context()) {
-		fail(w, http.StatusForbidden, "sign in with your password for this")
-		return false
-	}
-	return true
-}
-
 // behindHTTPS believes X-Forwarded-Proto only from a trusted proxy.
 func (a *Auth) behindHTTPS(r *http.Request) bool {
 	if r.TLS != nil {
@@ -450,7 +367,7 @@ func (a *Auth) Middleware(next http.Handler) http.Handler {
 				w.WriteHeader(http.StatusUnauthorized)
 				return
 			}
-			next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), ctxKey{}, who)))
+			next.ServeHTTP(w, r.WithContext(webserver.ContextWith(r.Context(), who)))
 			return
 		}
 		if aiPublic(r) {
@@ -497,7 +414,7 @@ func (a *Auth) Middleware(next http.Handler) http.Handler {
 				fail(w, http.StatusUnauthorized, "API key not accepted")
 				return
 			}
-			next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), ctxKey{}, who)))
+			next.ServeHTTP(w, r.WithContext(webserver.ContextWith(r.Context(), who)))
 			return
 		}
 		if who, ok := a.session(w, r); ok {
@@ -510,7 +427,7 @@ func (a *Auth) Middleware(next http.Handler) http.Handler {
 					return
 				}
 			}
-			next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), ctxKey{}, who)))
+			next.ServeHTTP(w, r.WithContext(webserver.ContextWith(r.Context(), who)))
 			return
 		}
 		if a.skipLocal.Load() && a.hostAllowed(r) && a.localPeer(r) {
@@ -518,8 +435,8 @@ func (a *Auth) Middleware(next http.Handler) http.Handler {
 				if unsafeMethod(r.Method) && a.refuse(w, r, true) {
 					return
 				}
-				who := Who{UserID: id, Name: name, Via: "local_network", Role: RoleOwner, Perms: DefaultPerms(RoleOwner)}
-				next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), ctxKey{}, who)))
+				who := webserver.Caller{UserID: id, Name: name, Via: "local_network", Role: webserver.RoleOwner, Perms: webserver.DefaultPerms(webserver.RoleOwner)}
+				next.ServeHTTP(w, r.WithContext(webserver.ContextWith(r.Context(), who)))
 				return
 			}
 		}
@@ -559,6 +476,7 @@ func (a *Auth) Routes(m *http.ServeMux) {
 	a.twoFactorRoutes(m)
 	a.userRoutes(m)
 	a.avatarRoutes(m)
+	a.profileRoutes(m)
 	a.sessionRoutes(m)
 	a.outsideRoutes(m)
 	a.providerRoutes(m)
@@ -1276,19 +1194,19 @@ func parseTime(s string) time.Time {
 
 // session checks the cookie, ends idle or old sessions, and rotates the id
 // once an hour while the session is used.
-func (a *Auth) session(w http.ResponseWriter, r *http.Request) (Who, bool) {
+func (a *Auth) session(w http.ResponseWriter, r *http.Request) (webserver.Caller, bool) {
 	ck, err := r.Cookie(CookieName)
 	if err != nil || ck.Value == "" {
-		return Who{}, false
+		return webserver.Caller{}, false
 	}
 	h := sum(ck.Value)
-	var who Who
+	var who webserver.Caller
 	var created, rotated, seen, expires, perms, localAuthAt, family string
 	err = a.s.Read().QueryRowContext(r.Context(), `SELECT `+userCols+`, s.csrf, s.created_at, s.rotated_at, s.last_seen_at, s.expires_at, s.auth_method, s.local_auth_at, s.family
 		FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.hash = ? AND u.state = 'active'`, h).
 		Scan(&who.UserID, &who.Name, &who.Role, &perms, &who.TwoFactor, &who.MaxRating, &who.RatingCountry, &who.CSRF, &created, &rotated, &seen, &expires, &who.AuthMethod, &localAuthAt, &family)
 	if err != nil {
-		return Who{}, false
+		return webserver.Caller{}, false
 	}
 	a.fill(&who, perms)
 	now := a.now()
@@ -1310,7 +1228,7 @@ func (a *Auth) session(w http.ResponseWriter, r *http.Request) (Who, bool) {
 			return err
 		})
 		a.setCookie(w, r, "", -1)
-		return Who{}, false
+		return webserver.Caller{}, false
 	}
 	who.Via = "session"
 	t := database.FormatTime(now)
@@ -1344,8 +1262,8 @@ func (a *Auth) session(w http.ResponseWriter, r *http.Request) (Who, bool) {
 }
 
 func (a *Auth) logout(w http.ResponseWriter, r *http.Request) {
-	if who, ok := From(r.Context()); ok && who.UserID != 0 {
-		a.event(r, Actor(r.Context()), "signed_out", who.Name+" signed out", map[string]any{"name": who.Name})
+	if who, ok := webserver.From(r.Context()); ok && who.UserID != 0 {
+		a.event(r, webserver.Actor(r.Context()), "signed_out", who.Name+" signed out", map[string]any{"name": who.Name})
 	}
 	if ck, err := r.Cookie(CookieName); err == nil {
 		_ = a.s.WriteCore(r.Context(), func(tx *sql.Tx) error {
@@ -1359,13 +1277,13 @@ func (a *Auth) logout(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *Auth) me(w http.ResponseWriter, r *http.Request) {
-	who, _ := From(r.Context())
+	who, _ := webserver.From(r.Context())
 	// People who joined through a media server have no password until they set one.
 	hasPassword := true
 	_ = a.s.Read().QueryRowContext(r.Context(), "SELECT password_hash != '' FROM users WHERE id = ?", who.UserID).Scan(&hasPassword)
 	// The owner stays in the first-run wizard until it is finished.
 	setupOpen := false
-	if who.Role == RoleOwner {
+	if who.Role == webserver.RoleOwner {
 		setupOpen = database.SettingOr(r.Context(), a.s.Read(), settingsGroup, settingFirstRunDone, "") != "1"
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"id": who.UserID, "name": who.Name, "via": who.Via, "csrf": who.CSRF, "role": who.Role,
@@ -1395,18 +1313,18 @@ func (a *Auth) Cleanup(ctx context.Context) error {
 	})
 }
 
-func (a *Auth) checkKey(ctx context.Context, k string) (Who, bool) {
+func (a *Auth) checkKey(ctx context.Context, k string) (webserver.Caller, bool) {
 	if !strings.HasPrefix(k, keyPrefix) {
-		return Who{}, false
+		return webserver.Caller{}, false
 	}
-	var who Who
+	var who webserver.Caller
 	var keyID int64
 	var used sql.NullString
 	var perms, scope string
 	err := a.s.Read().QueryRowContext(ctx, `SELECT k.id, k.label, k.last_used_at, k.scope, `+userCols+` FROM api_keys k JOIN users u ON u.id = k.owner_user_id
 		WHERE k.hash = ? AND u.state = 'active'`, sum(k)).Scan(&keyID, &who.KeyLabel, &used, &scope, &who.UserID, &who.Name, &who.Role, &perms, &who.TwoFactor, &who.MaxRating, &who.RatingCountry)
 	if err != nil {
-		return Who{}, false
+		return webserver.Caller{}, false
 	}
 	a.fill(&who, perms)
 	who.Scopes = parseScopes(scope)
@@ -1423,7 +1341,7 @@ func (a *Auth) checkKey(ctx context.Context, k string) (Who, bool) {
 }
 
 func (a *Auth) makeKey(w http.ResponseWriter, r *http.Request) {
-	if !RequireStrong(w, r) {
+	if !webserver.RequireStrong(w, r) {
 		return
 	}
 	var body struct {
@@ -1439,16 +1357,16 @@ func (a *Auth) makeKey(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusBadRequest, "give the key a label of 1 to 64 characters")
 		return
 	}
-	who, _ := From(r.Context())
+	who, _ := webserver.From(r.Context())
 	if len(body.Scopes) == 0 {
-		body.Scopes = []string{ScopeAll}
+		body.Scopes = []string{webserver.ScopeAll}
 	}
 	for _, sc := range body.Scopes {
 		if !slices.Contains(Scopes, sc) {
 			fail(w, http.StatusBadRequest, "scopes are "+strings.Join(Scopes, ", ")+" (all includes read, write and admin)")
 			return
 		}
-		if sc == ScopeCompat {
+		if sc == webserver.ScopeCompat {
 			fail(w, http.StatusBadRequest, "old-app API keys are made with POST /api/v1/settings/old-app-api/keys/{side}, not here")
 			return
 		}
@@ -1456,12 +1374,12 @@ func (a *Auth) makeKey(w http.ResponseWriter, r *http.Request) {
 			fail(w, http.StatusForbidden, "a key cannot make a key with a scope it does not hold")
 			return
 		}
-		if sc == ScopeControl && !who.Has(needUsers) {
+		if sc == webserver.ScopeControl && !who.Has(webserver.NeedUsers) {
 			fail(w, http.StatusForbidden, "only the owner and admins may make a key with the control scope")
 			return
 		}
 	}
-	if slices.Contains(body.Scopes, ScopeMCP) && len(slices.Compact(slices.Sorted(slices.Values(body.Scopes)))) > 1 {
+	if slices.Contains(body.Scopes, webserver.ScopeMCP) && len(slices.Compact(slices.Sorted(slices.Values(body.Scopes)))) > 1 {
 		fail(w, http.StatusBadRequest, "an AI key (mcp) holds no other scope")
 		return
 	}
@@ -1469,7 +1387,7 @@ func (a *Auth) makeKey(w http.ResponseWriter, r *http.Request) {
 	scopeJSON, _ := json.Marshal(body.Scopes)
 	k := keyPrefix + token(32)
 	now := database.FormatTime(a.now())
-	actor, _ := json.Marshal(Actor(r.Context()))
+	actor, _ := json.Marshal(webserver.Actor(r.Context()))
 	var id int64
 	err := a.s.WriteCore(r.Context(), func(tx *sql.Tx) error {
 		res, err := tx.Exec(`INSERT INTO api_keys(created_at, created_by, updated_at, updated_by, owner_user_id, label, scope, hash, hint)
@@ -1485,7 +1403,7 @@ func (a *Auth) makeKey(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusInternalServerError, "something went wrong; see the log")
 		return
 	}
-	a.event(r, Actor(r.Context()), "api_key_created", "API key "+body.Label+" created", map[string]any{"key_id": id, "label": body.Label, "scopes": body.Scopes})
+	a.event(r, webserver.Actor(r.Context()), "api_key_created", "API key "+body.Label+" created", map[string]any{"key_id": id, "label": body.Label, "scopes": body.Scopes})
 	writeJSON(w, http.StatusCreated, map[string]any{"id": id, "label": body.Label, "scopes": body.Scopes, "key": k,
 		"note": "This key is shown only now. Send it in the " + APIKeyHeader + " header."})
 }
@@ -1514,13 +1432,13 @@ func parseScopes(s string) []string {
 }
 
 func (a *Auth) listKeys(w http.ResponseWriter, r *http.Request) {
-	if !RequireStrong(w, r) {
+	if !webserver.RequireStrong(w, r) {
 		return
 	}
 	// The owner sees every key; others see their own.
-	who, _ := From(r.Context())
+	who, _ := webserver.From(r.Context())
 	rows, err := a.s.Read().QueryContext(r.Context(), "SELECT id, label, hint, created_at, last_used_at, scope FROM api_keys WHERE ? OR owner_user_id = ? ORDER BY id",
-		who.Role == RoleOwner, who.UserID)
+		who.Role == webserver.RoleOwner, who.UserID)
 	if err != nil {
 		fail(w, http.StatusInternalServerError, "something went wrong; see the log")
 		return
@@ -1546,7 +1464,7 @@ func (a *Auth) listKeys(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *Auth) deleteKey(w http.ResponseWriter, r *http.Request) {
-	if !RequireStrong(w, r) {
+	if !webserver.RequireStrong(w, r) {
 		return
 	}
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
@@ -1556,10 +1474,10 @@ func (a *Auth) deleteKey(w http.ResponseWriter, r *http.Request) {
 	}
 	var n int64
 	var label string
-	who, _ := From(r.Context())
+	who, _ := webserver.From(r.Context())
 	err = a.s.WriteCore(r.Context(), func(tx *sql.Tx) error {
 		_ = tx.QueryRow("SELECT label FROM api_keys WHERE id = ?", id).Scan(&label)
-		res, err := tx.Exec("DELETE FROM api_keys WHERE id = ? AND (? OR owner_user_id = ?)", id, who.Role == RoleOwner, who.UserID)
+		res, err := tx.Exec("DELETE FROM api_keys WHERE id = ? AND (? OR owner_user_id = ?)", id, who.Role == webserver.RoleOwner, who.UserID)
 		if err == nil {
 			n, err = res.RowsAffected()
 		}
@@ -1573,7 +1491,7 @@ func (a *Auth) deleteKey(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusNotFound, "no such key")
 		return
 	}
-	a.event(r, Actor(r.Context()), "api_key_deleted", "API key "+label+" deleted", map[string]any{"key_id": id, "label": label})
+	a.event(r, webserver.Actor(r.Context()), "api_key_deleted", "API key "+label+" deleted", map[string]any{"key_id": id, "label": label})
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -1660,7 +1578,7 @@ func (a *Auth) accountEvent(r *http.Request, userID int64, action, summary strin
 	for k, v := range extra {
 		data[k] = v
 	}
-	a.event(r, Actor(r.Context()), EventAccountChanged, summary, data)
+	a.event(r, webserver.Actor(r.Context()), EventAccountChanged, summary, data)
 }
 
 // userName is a member's name ("member <id>" when it cannot be read).
@@ -1674,7 +1592,7 @@ func (a *Auth) userName(ctx context.Context, id int64) string {
 
 // byName is who made a change, for an Event line.
 func byName(r *http.Request) string {
-	if who, ok := From(r.Context()); ok && who.Name != "" {
+	if who, ok := webserver.From(r.Context()); ok && who.Name != "" {
 		return who.Name
 	}
 	return "someone"

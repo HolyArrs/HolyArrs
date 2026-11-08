@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importsecrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/migrate"
 )
@@ -64,7 +64,7 @@ func (a *API) migrateSource(w http.ResponseWriter, r *http.Request) (src migrate
 	}
 	if in.UseSavedKey {
 		// Fail closed: only a signed-in owner may use a saved key.
-		if who, signed := auth.From(r.Context()); !signed || who.Role != auth.RoleOwner {
+		if who, signed := webserver.From(r.Context()); !signed || who.Role != webserver.RoleOwner {
 			fail(w, http.StatusForbidden, "only the owner may use a saved key")
 			return migrate.Source{}, importsecrets.MoveCredentialVersion{}, false
 		}
@@ -125,7 +125,7 @@ func migrateFail(w http.ResponseWriter, err error) {
 }
 
 func (a *API) migrateProbe(w http.ResponseWriter, r *http.Request) {
-	if !auth.RequireStrong(w, r) {
+	if !webserver.RequireStrong(w, r) {
 		return
 	}
 	src, _, ok := a.migrateSource(w, r)
@@ -143,7 +143,7 @@ func (a *API) migrateProbe(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *API) migrateRead(w http.ResponseWriter, r *http.Request) {
-	if !auth.RequireStrong(w, r) {
+	if !webserver.RequireStrong(w, r) {
 		return
 	}
 	src, usedSaved, ok := a.migrateSource(w, r)
@@ -188,7 +188,7 @@ func (a *API) keepMoveKey(r *http.Request, src migrate.Source, usedSaved imports
 	if usedSaved.SecretID != 0 || src.Path != "" || src.URL == "" {
 		return
 	}
-	if who, signed := auth.From(r.Context()); !signed || who.Role != auth.RoleOwner {
+	if who, signed := webserver.From(r.Context()); !signed || who.Role != webserver.RoleOwner {
 		return
 	}
 	c := importsecrets.MoveCredential{Address: src.URL, APIKey: src.Key, Username: src.Username, Password: src.Password, AllowLocalNetwork: src.AllowLocal}
@@ -205,7 +205,7 @@ func (a *API) movesDone(ctx context.Context) int {
 }
 
 func (a *API) listSnapshots(w http.ResponseWriter, r *http.Request) {
-	if !auth.RequireStrong(w, r) {
+	if !webserver.RequireStrong(w, r) {
 		return
 	}
 	list, err := migrate.List(r.Context(), a.s.Store)
@@ -226,7 +226,7 @@ func snapshotID(w http.ResponseWriter, r *http.Request) (int64, bool) {
 }
 
 func (a *API) getSnapshot(w http.ResponseWriter, r *http.Request) {
-	if !auth.RequireStrong(w, r) {
+	if !webserver.RequireStrong(w, r) {
 		return
 	}
 	id, ok := snapshotID(w, r)
@@ -246,7 +246,7 @@ func (a *API) getSnapshot(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *API) deleteSnapshot(w http.ResponseWriter, r *http.Request) {
-	if !auth.RequireStrong(w, r) {
+	if !webserver.RequireStrong(w, r) {
 		return
 	}
 	id, ok := snapshotID(w, r)

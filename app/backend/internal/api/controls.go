@@ -12,14 +12,14 @@ import (
 	"sync"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 )
 
 // controlRoutes are the part switches and the owner and admin controls
 // (3.7.6 and 3.7.7). The controls need the owner or an admin and, for an
-// API key, the control scope (auth.RouteScopes).
+// API key, the control scope (accounts.RouteScopes).
 func (a *API) controlRoutes(m *http.ServeMux) {
 	m.HandleFunc("GET /api/v1/parts", a.listParts)
 	m.HandleFunc("POST /api/v1/parts/{part}/on", a.partOn)
@@ -205,7 +205,7 @@ func (a *API) confirmed(w http.ResponseWriter, r *http.Request, what string) boo
 
 // whoName names the person for an Event summary.
 func whoName(r *http.Request) string {
-	if who, ok := auth.From(r.Context()); ok && who.Name != "" {
+	if who, ok := webserver.From(r.Context()); ok && who.Name != "" {
 		return who.Name
 	}
 	return "The owner"
@@ -214,7 +214,7 @@ func whoName(r *http.Request) string {
 // controlEvent writes the Event for a control: who, what and when.
 func (a *API) controlEvent(r *http.Request, action, target, summary string) {
 	data := map[string]any{"action": action, "target": target}
-	if who, ok := auth.From(r.Context()); ok {
+	if who, ok := webserver.From(r.Context()); ok {
 		data["via"] = who.Via
 	}
 	_ = a.s.Store.AddEvent(context.WithoutCancel(r.Context()), &domain.Event{Actor: actor(r), Kind: domain.EventControl,
@@ -249,7 +249,7 @@ func controlError(w http.ResponseWriter, err error) {
 }
 
 func (a *API) partOn(w http.ResponseWriter, r *http.Request) {
-	if !auth.RequireStrong(w, r) {
+	if !webserver.RequireStrong(w, r) {
 		return
 	}
 	p, ok := a.partFrom(w, r)
@@ -265,7 +265,7 @@ func (a *API) partOn(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *API) partOff(w http.ResponseWriter, r *http.Request) {
-	if !auth.RequireStrong(w, r) {
+	if !webserver.RequireStrong(w, r) {
 		return
 	}
 	p, ok := a.partFrom(w, r)
@@ -281,7 +281,7 @@ func (a *API) partOff(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *API) partRestart(w http.ResponseWriter, r *http.Request) {
-	if !auth.RequireStrong(w, r) {
+	if !webserver.RequireStrong(w, r) {
 		return
 	}
 	p, ok := a.partFrom(w, r)
@@ -303,7 +303,7 @@ func (a *API) partRestart(w http.ResponseWriter, r *http.Request) {
 
 func (a *API) stageControl(action string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if !auth.RequireStrong(w, r) {
+		if !webserver.RequireStrong(w, r) {
 			return
 		}
 		if a.s.Parts == nil {
@@ -342,10 +342,10 @@ func (a *API) stageControl(action string) http.HandlerFunc {
 // settings permission, like the test routes it runs, and writes its Event
 // only when the linked app exists (an unknown id answers 404 first).
 func (a *API) linkRestart(w http.ResponseWriter, r *http.Request) {
-	if !auth.RequireStrong(w, r) {
+	if !webserver.RequireStrong(w, r) {
 		return
 	}
-	if who, ok := auth.From(r.Context()); ok && !who.Has(auth.PermSettings) {
+	if who, ok := webserver.From(r.Context()); ok && !who.Has(webserver.PermSettings) {
 		fail(w, http.StatusForbidden, "your account may not do this; ask the owner")
 		return
 	}
@@ -404,7 +404,7 @@ func (a *API) appExit(how string) http.HandlerFunc {
 		"shutdown":  "shut HolyArrs down",
 	}[how]
 	return func(w http.ResponseWriter, r *http.Request) {
-		if !auth.RequireStrong(w, r) {
+		if !webserver.RequireStrong(w, r) {
 			return
 		}
 		if a.s.ExitApp == nil {

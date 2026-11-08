@@ -1,4 +1,4 @@
-package auth
+package accounts
 
 import (
 	"bytes"
@@ -6,7 +6,6 @@ import (
 	"database/sql"
 	"encoding/binary"
 	"fmt"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"hash/crc32"
 	"image"
 	"image/png"
@@ -16,13 +15,15 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
 // Backup files hold the whole database, password hashes included: only the
 // owner may download or delete them.
 func TestBackupFilesOwnerOnly(t *testing.T) {
 	for _, p := range []string{"GET /api/v1/backups/{name}", "DELETE /api/v1/backups/{name}"} {
-		if RoutePerms[p] != needOwner {
+		if RoutePerms[p] != webserver.NeedOwner {
 			t.Errorf("%s needs %q, want owner", p, RoutePerms[p])
 		}
 	}

@@ -3,7 +3,7 @@ package api
 import (
 	"context"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
@@ -32,8 +32,8 @@ func trimForViewer(ctx context.Context, v TitleView) TitleView {
 // seesLibraryDetail reports whether the person may see the details
 // trimForViewer leaves out; true with no person on the request.
 func seesLibraryDetail(ctx context.Context) bool {
-	who, ok := auth.From(ctx)
-	return !ok || who.Has(auth.PermManageLibrary)
+	who, ok := webserver.From(ctx)
+	return !ok || who.Has(webserver.PermManageLibrary)
 }
 
 // trimFile copies f without its path, release name, group, fingerprint and

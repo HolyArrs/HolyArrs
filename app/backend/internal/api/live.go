@@ -8,7 +8,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
@@ -26,11 +25,11 @@ type interestState struct {
 // anyone else only events for their own items. Without sign-in everyone
 // runs the app.
 func (a *API) liveViewer(r *http.Request) webserver.LiveViewer {
-	who, ok := auth.From(r.Context())
+	who, ok := webserver.From(r.Context())
 	if !ok {
 		return webserver.LiveViewer{All: a.s.Auth == nil, Approve: a.s.Auth == nil}
 	}
-	return webserver.LiveViewer{UserID: who.UserID, All: who.Has(auth.PermManageLibrary), Approve: who.Has(auth.PermApprove)}
+	return webserver.LiveViewer{UserID: who.UserID, All: who.Has(webserver.PermManageLibrary), Approve: who.Has(webserver.PermApprove)}
 }
 
 // liveViewerNow is liveViewer read again from the sign-in itself, for a
@@ -45,7 +44,7 @@ func (a *API) liveViewerNow(r *http.Request) (webserver.LiveViewer, bool) {
 	if !ok || who.MustTwoFactor {
 		return webserver.LiveViewer{}, false
 	}
-	return webserver.LiveViewer{UserID: who.UserID, All: who.Has(auth.PermManageLibrary), Approve: who.Has(auth.PermApprove)}, true
+	return webserver.LiveViewer{UserID: who.UserID, All: who.Has(webserver.PermManageLibrary), Approve: who.Has(webserver.PermApprove)}, true
 }
 
 // liveRecheck has every open /live stream check its viewer again after a
@@ -100,7 +99,7 @@ func (a *API) liveInterest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	key := "anon"
-	if who, ok := auth.From(r.Context()); ok {
+	if who, ok := webserver.From(r.Context()); ok {
 		key = who.Via + ":" + strconv.FormatInt(who.UserID, 10) + ":" + who.CSRF
 	}
 	now := time.Now()

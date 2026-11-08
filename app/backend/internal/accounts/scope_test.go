@@ -1,14 +1,15 @@
-package auth
+package accounts
 
 import (
 	"context"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"net/http"
 	"net/http/httptest"
 	"regexp"
 	"slices"
 	"strings"
 	"testing"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
 // allRoutes is every route the server registers on its mux: the /api/v1
@@ -52,22 +53,22 @@ func TestEveryRouteChecksItsScope(t *testing.T) {
 	}
 	gate := Gate(mux)
 	param := regexp.MustCompile(`\{[^}]+\}`)
-	keys := [][]string{{ScopeRead}, {ScopeWrite}, {ScopeAdmin}, {ScopeControl}, {ScopeAll}, {ScopeRead, ScopeControl}}
+	keys := [][]string{{webserver.ScopeRead}, {webserver.ScopeWrite}, {webserver.ScopeAdmin}, {webserver.ScopeControl}, {webserver.ScopeAll}, {webserver.ScopeRead, webserver.ScopeControl}}
 	counts := map[string]int{}
 	for _, r := range routes {
 		scope := RouteScope(r)
-		if !slices.Contains(Scopes, scope) || scope == ScopeAll {
+		if !slices.Contains(Scopes, scope) || scope == webserver.ScopeAll {
 			t.Fatalf("%s: scope %q is not one a route can need", r, scope)
 		}
 		counts[scope]++
 		method, path, _ := strings.Cut(r, " ")
 		path = param.ReplaceAllString(path, "1")
 		for _, held := range keys {
-			who := Who{UserID: 1, Role: RoleOwner, Via: "api_key", Scopes: held}
-			req := httptest.NewRequest(method, path, nil).WithContext(context.WithValue(context.Background(), ctxKey{}, who))
+			who := webserver.Caller{UserID: 1, Role: webserver.RoleOwner, Via: "api_key", Scopes: held}
+			req := httptest.NewRequest(method, path, nil).WithContext(webserver.ContextWith(context.Background(), who))
 			rec := httptest.NewRecorder()
 			gate.ServeHTTP(rec, req)
-			want := ScopesCover(held, scope)
+			want := webserver.ScopesCover(held, scope)
 			got := rec.Code == http.StatusTeapot
 			if want != got {
 				t.Errorf("%s (needs %s) with key %v: got %d, want through=%v", r, scope, held, rec.Code, want)
@@ -77,8 +78,8 @@ func TestEveryRouteChecksItsScope(t *testing.T) {
 			}
 		}
 		// A session holds every scope.
-		req := httptest.NewRequest(method, path, nil).WithContext(context.WithValue(context.Background(), ctxKey{}, Who{
-			UserID: 1, Role: RoleOwner, Via: "session", AuthMethod: AuthMethodLocalPassword, LocalRecent: true,
+		req := httptest.NewRequest(method, path, nil).WithContext(webserver.ContextWith(context.Background(), webserver.Caller{
+			UserID: 1, Role: webserver.RoleOwner, Via: "session", AuthMethod: AuthMethodLocalPassword, LocalRecent: true,
 		}))
 		rec := httptest.NewRecorder()
 		gate.ServeHTTP(rec, req)
@@ -86,7 +87,7 @@ func TestEveryRouteChecksItsScope(t *testing.T) {
 			t.Errorf("%s with a session: %d", r, rec.Code)
 		}
 	}
-	for _, sc := range []string{ScopeRead, ScopeWrite, ScopeAdmin, ScopeControl} {
+	for _, sc := range []string{webserver.ScopeRead, webserver.ScopeWrite, webserver.ScopeAdmin, webserver.ScopeControl} {
 		if counts[sc] == 0 {
 			t.Errorf("no route needs %s", sc)
 		}
@@ -102,7 +103,7 @@ func TestKeyScopeCannotBeRaised(t *testing.T) {
 			if strings.HasPrefix(r, "PUT ") || strings.HasPrefix(r, "PATCH ") {
 				t.Errorf("%s edits a key; a key's scopes are fixed when it is made", r)
 			}
-			if RouteScope(r) != ScopeAdmin {
+			if RouteScope(r) != webserver.ScopeAdmin {
 				t.Errorf("%s needs %s, want admin", r, RouteScope(r))
 			}
 		}
@@ -113,16 +114,16 @@ func TestKeyScopeCannotBeRaised(t *testing.T) {
 		want string
 		ok   bool
 	}{
-		{[]string{ScopeAll}, ScopeRead, true},
-		{[]string{ScopeAll}, ScopeAdmin, true},
-		{[]string{ScopeAll}, ScopeControl, false},
-		{[]string{ScopeAdmin}, ScopeAll, false},
-		{[]string{ScopeAdmin}, ScopeWrite, false},
-		{[]string{ScopeRead, ScopeWrite, ScopeAdmin}, ScopeAll, false},
-		{[]string{ScopeControl}, ScopeRead, false},
+		{[]string{webserver.ScopeAll}, webserver.ScopeRead, true},
+		{[]string{webserver.ScopeAll}, webserver.ScopeAdmin, true},
+		{[]string{webserver.ScopeAll}, webserver.ScopeControl, false},
+		{[]string{webserver.ScopeAdmin}, webserver.ScopeAll, false},
+		{[]string{webserver.ScopeAdmin}, webserver.ScopeWrite, false},
+		{[]string{webserver.ScopeRead, webserver.ScopeWrite, webserver.ScopeAdmin}, webserver.ScopeAll, false},
+		{[]string{webserver.ScopeControl}, webserver.ScopeRead, false},
 	}
 	for _, c := range cases {
-		if got := ScopesCover(c.held, c.want); got != c.ok {
+		if got := webserver.ScopesCover(c.held, c.want); got != c.ok {
 			t.Errorf("held %v asking %s: %v, want %v", c.held, c.want, got, c.ok)
 		}
 	}

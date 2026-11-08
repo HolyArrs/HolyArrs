@@ -16,7 +16,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 )
@@ -69,7 +69,7 @@ func (a *faultApp) call(c *http.Client, csrf, method, path, body string) (int, s
 	req, _ := http.NewRequest(method, a.base+path, strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	if csrf != "" {
-		req.Header.Set(auth.CSRFHeader, csrf)
+		req.Header.Set(accounts.CSRFHeader, csrf)
 	}
 	began := time.Now()
 	resp, err := c.Do(req)
@@ -276,7 +276,7 @@ func TestFaultBadOutsideServices(t *testing.T) {
 		go func() {
 			defer wg.Done()
 			req, _ := http.NewRequest("POST", a.base+fmt.Sprintf(l.test, l.id), nil)
-			req.Header.Set(auth.CSRFHeader, who.CSRF)
+			req.Header.Set(accounts.CSRFHeader, who.CSRF)
 			if resp, err := c.Do(req); err == nil {
 				resp.Body.Close()
 			}

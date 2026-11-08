@@ -21,8 +21,8 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 )
@@ -190,8 +190,8 @@ func (a *API) mcp(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusMethodNotAllowed, "send MCP messages with POST")
 		return
 	}
-	who, ok := auth.From(r.Context())
-	if !ok || who.Via != "api_key" || !slices.Contains(who.Scopes, auth.ScopeMCP) {
+	who, ok := webserver.From(r.Context())
+	if !ok || who.Via != "api_key" || !slices.Contains(who.Scopes, webserver.ScopeMCP) {
 		fail(w, http.StatusForbidden, "use an AI key (Settings > AI connections)")
 		return
 	}
@@ -333,8 +333,8 @@ type aiTool struct {
 	name, title, about string
 	action             bool
 	schema             map[string]any
-	off                func(a *API, who auth.Who) string
-	run                func(a *API, r *http.Request, who auth.Who, args map[string]any) (any, error)
+	off                func(a *API, who webserver.Caller) string
+	run                func(a *API, r *http.Request, who webserver.Caller, args map[string]any) (any, error)
 }
 
 // aiFail is a tool error said to the AI in plain words.
@@ -357,7 +357,7 @@ var (
 )
 
 // Who may see a tool.
-func aiMediaOff(a *API, _ auth.Who) string {
+func aiMediaOff(a *API, _ webserver.Caller) string {
 	for _, p := range []parts.Part{parts.Movies, parts.Shows, parts.Music} {
 		if a.partIsOn(p) {
 			return ""
@@ -366,15 +366,15 @@ func aiMediaOff(a *API, _ auth.Who) string {
 	return "Movies, TV shows and Music are off"
 }
 
-func aiAsksOff(a *API, who auth.Who) string {
+func aiAsksOff(a *API, who webserver.Caller) string {
 	if !a.partIsOn(parts.Wishlist) {
 		return "Requests is off"
 	}
 	return ""
 }
 
-func aiNeedPerm(p auth.Perm, base func(*API, auth.Who) string) func(*API, auth.Who) string {
-	return func(a *API, who auth.Who) string {
+func aiNeedPerm(p webserver.Perm, base func(*API, webserver.Caller) string) func(*API, webserver.Caller) string {
+	return func(a *API, who webserver.Caller) string {
 		if why := base(a, who); why != "" {
 			return why
 		}
@@ -385,7 +385,7 @@ func aiNeedPerm(p auth.Perm, base func(*API, auth.Who) string) func(*API, auth.W
 	}
 }
 
-func aiAlways(*API, auth.Who) string { return "" }
+func aiAlways(*API, webserver.Caller) string { return "" }
 
 // aiTools lists the tools in a fixed order.
 func (a *API) aiTools() []aiTool {
@@ -402,16 +402,16 @@ func (a *API) aiTools() []aiTool {
 		{name: "my_asks", title: "My requests", about: "The person's own requests and their state, and how many more they may ask for.",
 			schema: aiObj(map[string]any{}), off: aiAsksOff, run: toolMyAsks},
 		{name: "health", title: "Health", about: "Whether HolyArrs and the apps it uses are working.",
-			schema: aiObj(map[string]any{}), off: aiNeedPerm(auth.PermManageLibrary, aiAlways), run: toolHealth},
+			schema: aiObj(map[string]any{}), off: aiNeedPerm(webserver.PermManageLibrary, aiAlways), run: toolHealth},
 		{name: "ask_for_title", title: "Ask for a title", action: true,
 			about:  "Ask for a movie or show by its TMDB id. The first call returns a summary and a confirm_token; call again with the token after the person agrees.",
 			schema: aiObj(map[string]any{"tmdb_id": aiStrProp("The TMDB id, like 693134."), "kind": map[string]any{"type": "string", "enum": []string{"movie", "show"}}, "confirm_token": aiTokProp}, "tmdb_id"),
-			off:    aiNeedPerm(auth.PermAsk, aiAsksOff), run: toolAsk},
+			off:    aiNeedPerm(webserver.PermAsk, aiAsksOff), run: toolAsk},
 	}
 }
 
 // callTool runs one tool; wait is set when the key is over its action limit.
-func (a *API) callTool(r *http.Request, who auth.Who, name string, args map[string]any) (map[string]any, time.Duration) {
+func (a *API) callTool(r *http.Request, who webserver.Caller, name string, args map[string]any) (map[string]any, time.Duration) {
 	i := slices.IndexFunc(a.aiTools(), func(t aiTool) bool { return t.name == name })
 	if i < 0 {
 		return aiToolError("there is no tool called " + aiClean(name, 60)), 0
@@ -447,14 +447,14 @@ func aiToolError(msg string) map[string]any {
 }
 
 // aiCall runs one app route as who with only scope, the way the app would.
-func (a *API) aiCall(r *http.Request, who auth.Who, scope, method, path string, body any) (int, any) {
+func (a *API) aiCall(r *http.Request, who webserver.Caller, scope, method, path string, body any) (int, any) {
 	var rd io.Reader
 	if body != nil {
 		b, _ := json.Marshal(body)
 		rd = bytes.NewReader(b)
 	}
 	who.Scopes = []string{scope}
-	req := httptest.NewRequestWithContext(auth.ContextWith(r.Context(), who), method, path, rd)
+	req := httptest.NewRequestWithContext(webserver.ContextWith(r.Context(), who), method, path, rd)
 	req.RemoteAddr, req.Host = r.RemoteAddr, r.Host
 	if body != nil {
 		req.Header.Set("Content-Type", "application/json")
@@ -470,8 +470,8 @@ func (a *API) aiCall(r *http.Request, who auth.Who, scope, method, path string, 
 }
 
 // aiRead is aiCall for a GET that must answer 200.
-func (a *API) aiRead(r *http.Request, who auth.Who, path string) (any, error) {
-	code, v := a.aiCall(r, who, auth.ScopeRead, http.MethodGet, path, nil)
+func (a *API) aiRead(r *http.Request, who webserver.Caller, path string) (any, error) {
+	code, v := a.aiCall(r, who, webserver.ScopeRead, http.MethodGet, path, nil)
 	if code != http.StatusOK {
 		return nil, aiFail{aiRouteError(code, v)}
 	}
@@ -503,7 +503,7 @@ func aiNum(args map[string]any, k string) int64 {
 	return n
 }
 
-func toolSearch(a *API, r *http.Request, who auth.Who, args map[string]any) (any, error) {
+func toolSearch(a *API, r *http.Request, who webserver.Caller, args map[string]any) (any, error) {
 	q := aiStr(args, "query")
 	if q == "" {
 		return nil, aiFail{"send a query"}
@@ -511,7 +511,7 @@ func toolSearch(a *API, r *http.Request, who auth.Who, args map[string]any) (any
 	return a.aiRead(r, who, "/api/v1/search?q="+url.QueryEscape(aiClean(q, 200)))
 }
 
-func toolLibrary(a *API, r *http.Request, who auth.Who, args map[string]any) (any, error) {
+func toolLibrary(a *API, r *http.Request, who webserver.Caller, args map[string]any) (any, error) {
 	n := aiStr(args, "name")
 	if n == "" {
 		return nil, aiFail{"send a name"}
@@ -523,7 +523,7 @@ func toolLibrary(a *API, r *http.Request, who auth.Who, args map[string]any) (an
 	return a.aiRead(r, who, "/api/v1/library/search?q="+url.QueryEscape(aiClean(n, 200))+"&kind="+url.QueryEscape(kind))
 }
 
-func toolCalendar(a *API, r *http.Request, who auth.Who, args map[string]any) (any, error) {
+func toolCalendar(a *API, r *http.Request, who webserver.Caller, args map[string]any) (any, error) {
 	days := aiNum(args, "days")
 	if days < 1 || days > 60 {
 		days = 14
@@ -533,13 +533,13 @@ func toolCalendar(a *API, r *http.Request, who auth.Who, args map[string]any) (a
 	return a.aiRead(r, who, "/api/v1/calendar?from="+from.Format("2006-01-02")+"&to="+to.Format("2006-01-02"))
 }
 
-func toolDownloads(a *API, r *http.Request, who auth.Who, _ map[string]any) (any, error) {
+func toolDownloads(a *API, r *http.Request, who webserver.Caller, _ map[string]any) (any, error) {
 	return a.aiRead(r, who, "/api/v1/downloads/view")
 }
 
 // toolMyAsks is the person's own requests only: other people's requests
 // stay off AI connections.
-func toolMyAsks(a *API, r *http.Request, who auth.Who, _ map[string]any) (any, error) {
+func toolMyAsks(a *API, r *http.Request, who webserver.Caller, _ map[string]any) (any, error) {
 	v, err := a.aiRead(r, who, "/api/v1/asks?mine=1")
 	if err != nil {
 		return nil, err
@@ -548,7 +548,7 @@ func toolMyAsks(a *API, r *http.Request, who auth.Who, _ map[string]any) (any, e
 	if m, ok := v.(map[string]any); ok {
 		out["asks"] = m["asks"]
 	}
-	if who.Has(auth.PermAsk) {
+	if who.Has(webserver.PermAsk) {
 		if l, err := a.aiRead(r, who, "/api/v1/asks/limit"); err == nil {
 			out["limit"] = l
 		}
@@ -556,14 +556,14 @@ func toolMyAsks(a *API, r *http.Request, who auth.Who, _ map[string]any) (any, e
 	return out, nil
 }
 
-func toolHealth(a *API, r *http.Request, who auth.Who, _ map[string]any) (any, error) {
+func toolHealth(a *API, r *http.Request, who webserver.Caller, _ map[string]any) (any, error) {
 	return a.aiRead(r, who, "/api/v1/health/states")
 }
 
 // confirmStep is the first or second call of an action. On the first it
 // returns a token to hand back; on the second it checks the token and
 // says to go ahead.
-func (a *API) confirmStep(who auth.Who, tool string, args map[string]any, summary map[string]any) (map[string]any, bool, error) {
+func (a *API) confirmStep(who webserver.Caller, tool string, args map[string]any, summary map[string]any) (map[string]any, bool, error) {
 	key := tool + "|" + aiStr(args, "tmdb_id") + "|" + aiStr(args, "kind") + "|" + aiStr(args, "ask_id") + "|" + aiStr(args, "note")
 	now := a.ai.clock()
 	a.ai.mu.Lock()
@@ -601,7 +601,7 @@ func (a *API) confirmStep(who auth.Who, tool string, args map[string]any, summar
 	return nil, true, nil
 }
 
-func toolAsk(a *API, r *http.Request, who auth.Who, args map[string]any) (any, error) {
+func toolAsk(a *API, r *http.Request, who webserver.Caller, args map[string]any) (any, error) {
 	id := aiStr(args, "tmdb_id")
 	if id == "" || len(id) > 12 || strings.Trim(id, "0123456789") != "" {
 		return nil, aiFail{"send tmdb_id as digits, like 693134"}
@@ -647,12 +647,12 @@ func toolAsk(a *API, r *http.Request, who auth.Who, args map[string]any) (any, e
 	if err != nil || !goAhead {
 		return out, err
 	}
-	code, v := a.aiCall(r, who, auth.ScopeWrite, http.MethodPost, "/api/v1/asks", map[string]any{"id": "tmdb:" + id, "kind": kind})
+	code, v := a.aiCall(r, who, webserver.ScopeWrite, http.MethodPost, "/api/v1/asks", map[string]any{"id": "tmdb:" + id, "kind": kind})
 	return a.aiActed(r, who, "ask_for_title", args, "ai_ask_made", "asked for", code, v)
 }
 
 // aiActed writes the action to History and answers it.
-func (a *API) aiActed(r *http.Request, who auth.Who, tool string, args map[string]any, kind, did string, code int, v any) (any, error) {
+func (a *API) aiActed(r *http.Request, who webserver.Caller, tool string, args map[string]any, kind, did string, code int, v any) (any, error) {
 	ok := code >= 200 && code < 300
 	name := ""
 	var titleID *int64

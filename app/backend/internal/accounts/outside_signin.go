@@ -1,4 +1,4 @@
-package auth
+package accounts
 
 import (
 	"context"
@@ -19,6 +19,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/features"
 )
@@ -144,7 +145,7 @@ func (a *Auth) getSettings(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *Auth) putSettings(w http.ResponseWriter, r *http.Request) {
-	if !RequireStrong(w, r) {
+	if !webserver.RequireStrong(w, r) {
 		return
 	}
 	var body struct {
@@ -287,7 +288,7 @@ func (a *Auth) putSettings(w http.ResponseWriter, r *http.Request) {
 	if body.AllowedHosts != nil {
 		// A browser session with a recent password only (Gate asks for the
 		// password again); never an API key.
-		if who, ok := From(r.Context()); ok && who.Via != "session" {
+		if who, ok := webserver.From(r.Context()); ok && who.Via != "session" {
 			fail(w, http.StatusForbidden, "change Allowed host names in the browser, signed in with your password")
 			return
 		}
@@ -304,7 +305,7 @@ func (a *Auth) putSettings(w http.ResponseWriter, r *http.Request) {
 		v, _ := json.Marshal(hosts)
 		set[settingsGroup+"/"+signInPrefix+keyAllowedHosts] = string(v)
 	}
-	by := Actor(r.Context())
+	by := webserver.Actor(r.Context())
 	err := a.s.WriteCore(r.Context(), func(tx *sql.Tx) error {
 		for k, v := range set {
 			grp, key, _ := strings.Cut(k, "/")
@@ -379,13 +380,13 @@ func (a *Auth) linkedUser(ctx context.Context, provider, extID, extName string, 
 		// The outside account's name (from the server) goes with the refusal.
 		return 0, strings.TrimSpace(extName), errNotAllowed
 	}
-	u := domain.User{Role: RoleMember, State: "active", Perms: permsJSON(DefaultPerms(RoleMember))}
+	u := domain.User{Role: webserver.RoleMember, State: "active", Perms: permsJSON(webserver.DefaultPerms(webserver.RoleMember))}
 	if kid {
 		if a.skipLocal.Load() {
 			// A Kid could not be told apart from the owner at home.
 			return 0, "", errKidSkipLocal
 		}
-		u.Perms, u.MaxRating = permsJSON([]Perm{PermAsk}), "PG"
+		u.Perms, u.MaxRating = permsJSON([]webserver.Perm{webserver.PermAsk}), "PG"
 	}
 	base := outsideBase(provider, extName)
 	err = a.s.WriteCore(ctx, func(tx *sql.Tx) error {
@@ -598,7 +599,7 @@ func (a *Auth) startPin(w http.ResponseWriter, r *http.Request, purpose string) 
 	a.mu.Lock()
 	p := &pin{ip: ip, alt: alt, secret: secret, expires: now.Add(pinLife), purpose: purpose}
 	if purpose == pinMine {
-		p.userID = Actor(ctx).ID
+		p.userID = webserver.Actor(ctx).ID
 	}
 	a.pins[got.ID] = p
 	a.mu.Unlock()
@@ -695,7 +696,7 @@ func (a *Auth) checkPin(w http.ResponseWriter, r *http.Request, purpose string) 
 	}
 	a.mu.Lock()
 	p := a.pins[body.ID]
-	ok := p != nil && p.purpose == purpose && (purpose != pinMine || p.userID == Actor(ctx).ID) && p.ip == a.clientKey(r) && a.now().Before(p.expires) && pinSecretMatches(r, body.ID, p.secret)
+	ok := p != nil && p.purpose == purpose && (purpose != pinMine || p.userID == webserver.Actor(ctx).ID) && p.ip == a.clientKey(r) && a.now().Before(p.expires) && pinSecretMatches(r, body.ID, p.secret)
 	soon := ok && !p.checked.IsZero() && a.now().Sub(p.checked) < pinCheckGap
 	if ok && !soon {
 		p.checked = a.now()

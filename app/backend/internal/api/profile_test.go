@@ -6,6 +6,12 @@ import (
 	"testing"
 )
 
+// myProfile is the answer of the profile routes.
+type myProfile struct {
+	DisplayName string `json:"display_name"`
+	Username    string `json:"username"`
+}
+
 func TestMyProfileDisplayName(t *testing.T) {
 	r := newAskRig(t)
 	var p myProfile

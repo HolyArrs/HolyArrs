@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
@@ -49,7 +49,7 @@ func unknownRefs(from, n int) []ratingRef {
 }
 
 func kidCtx(id int64) context.Context {
-	return auth.ContextWith(context.Background(), auth.Who{UserID: id, Role: auth.RoleMember, MaxRating: "PG"})
+	return webserver.ContextWith(context.Background(), webserver.Caller{UserID: id, Role: webserver.RoleMember, MaxRating: "PG"})
 }
 
 // TestKidRatingLookupsCappedPerRequest: one request looks up at most 24

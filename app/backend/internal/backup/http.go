@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
@@ -75,14 +75,14 @@ func (m *Manager) Routes(mux *http.ServeMux, restart func()) {
 			fail(w, http.StatusBadRequest, `send {"preset": "balanced"|"light"|"careful"}`)
 			return
 		}
-		if err := m.SetPreset(r.Context(), body.Preset, auth.Actor(r.Context())); err != nil {
+		if err := m.SetPreset(r.Context(), body.Preset, webserver.Actor(r.Context())); err != nil {
 			fail(w, http.StatusBadRequest, err.Error())
 			return
 		}
 		writeJSON(w, http.StatusOK, map[string]any{"preset": body.Preset})
 	})
 	mux.HandleFunc("GET /api/v1/backups/{name}", func(w http.ResponseWriter, r *http.Request) {
-		if !auth.RequireStrong(w, r) {
+		if !webserver.RequireStrong(w, r) {
 			return
 		}
 		f, err := m.Open(r.PathValue("name"))
@@ -101,7 +101,7 @@ func (m *Manager) Routes(mux *http.ServeMux, restart func()) {
 		_, _ = io.Copy(w, f)
 	})
 	mux.HandleFunc("DELETE /api/v1/backups/{name}", func(w http.ResponseWriter, r *http.Request) {
-		if !auth.RequireStrong(w, r) {
+		if !webserver.RequireStrong(w, r) {
 			return
 		}
 		if err := m.Delete(r.PathValue("name")); err != nil {
@@ -112,7 +112,7 @@ func (m *Manager) Routes(mux *http.ServeMux, restart func()) {
 		w.WriteHeader(http.StatusNoContent)
 	})
 	mux.HandleFunc("POST /api/v1/backups/restore", func(w http.ResponseWriter, r *http.Request) {
-		if !auth.RequireStrong(w, r) {
+		if !webserver.RequireStrong(w, r) {
 			return
 		}
 		if err := m.Stage(r.Context(), http.MaxBytesReader(w, r.Body, MaxUpload)); err != nil {
@@ -137,9 +137,9 @@ func (m *Manager) audit(r *http.Request, action, name string) {
 		return
 	}
 	who := "someone"
-	if w, ok := auth.From(r.Context()); ok && w.Name != "" {
+	if w, ok := webserver.From(r.Context()); ok && w.Name != "" {
 		who = w.Name
 	}
-	_ = m.Store.AddEvent(context.WithoutCancel(r.Context()), &domain.Event{Actor: auth.Actor(r.Context()), Kind: "backup_used",
+	_ = m.Store.AddEvent(context.WithoutCancel(r.Context()), &domain.Event{Actor: webserver.Actor(r.Context()), Kind: "backup_used",
 		Summary: "Backup " + name + " " + action + " by " + who, Data: map[string]any{"action": action, "name": name}})
 }

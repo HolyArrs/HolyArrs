@@ -21,7 +21,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
@@ -185,7 +184,7 @@ func (h *handler) serve(mux *http.ServeMux) http.Handler {
 // front of every Location on its way out.
 func (h *handler) base(ctx context.Context) string { return webserver.URLBaseFrom(ctx) + "/" + h.side }
 
-func actor(r *http.Request) domain.Actor { return auth.Actor(r.Context()) }
+func actor(r *http.Request) domain.Actor { return webserver.Actor(r.Context()) }
 
 // utc is a time written the old apps' way: UTC, whole seconds, a Z.
 type utc time.Time

@@ -12,7 +12,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/backup"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
@@ -38,23 +38,23 @@ func TestDownloaderAttemptRoutePolicy(t *testing.T) {
 		"GET /api/v1/downloaders/{id}/attempts",
 		"POST /api/v1/downloaders/{id}/attempts/{attemptID}/abandon",
 	}
-	withSettings := auth.Who{Role: auth.RoleAdmin, Perms: []auth.Perm{auth.PermSettings}}
-	withoutSettings := auth.Who{Role: auth.RoleAdmin}
-	member := auth.Who{Role: auth.RoleMember, Perms: []auth.Perm{auth.PermAsk}}
+	withSettings := webserver.Caller{Role: webserver.RoleAdmin, Perms: []webserver.Perm{webserver.PermSettings}}
+	withoutSettings := webserver.Caller{Role: webserver.RoleAdmin}
+	member := webserver.Caller{Role: webserver.RoleMember, Perms: []webserver.Perm{webserver.PermAsk}}
 	for _, pattern := range patterns {
-		if got := auth.RoutePerms[pattern]; got != auth.PermSettings {
+		if got := accounts.RoutePerms[pattern]; got != webserver.PermSettings {
 			t.Errorf("%s permission = %q, want settings", pattern, got)
 		}
-		if got := auth.RouteScope(pattern); got != auth.ScopeAdmin {
+		if got := accounts.RouteScope(pattern); got != webserver.ScopeAdmin {
 			t.Errorf("%s scope = %q, want admin", pattern, got)
 		}
-		if !withSettings.Has(auth.RoutePerms[pattern]) {
+		if !withSettings.Has(accounts.RoutePerms[pattern]) {
 			t.Errorf("settings admin cannot use %s", pattern)
 		}
-		if withoutSettings.Has(auth.RoutePerms[pattern]) {
+		if withoutSettings.Has(accounts.RoutePerms[pattern]) {
 			t.Errorf("admin without settings can use %s", pattern)
 		}
-		if member.Has(auth.RoutePerms[pattern]) {
+		if member.Has(accounts.RoutePerms[pattern]) {
 			t.Errorf("member can use %s", pattern)
 		}
 	}
@@ -71,7 +71,7 @@ func TestDownloaderAttemptAbandonNeedsCSRF(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	au := auth.New(s, auth.Options{Vault: vault})
+	au := accounts.New(s, accounts.Options{Vault: vault})
 	srv := httptest.NewServer(New(Server{Store: s, Metadata: metadata.Lab(), Version: "test", Auth: au, Secrets: vault, Live: webserver.NewLiveHub(webserver.LiveOptions{}),
 		Backups: &backup.Manager{Store: s, Dir: dir, Version: "test"}}).Handler())
 	t.Cleanup(srv.Close)
@@ -80,7 +80,7 @@ func TestDownloaderAttemptAbandonNeedsCSRF(t *testing.T) {
 	call := func(csrf string) (int, string) {
 		req, _ := http.NewRequest(http.MethodPost, srv.URL+"/api/v1/downloaders/1/attempts/1/abandon", nil)
 		if csrf != "" {
-			req.Header.Set(auth.CSRFHeader, csrf)
+			req.Header.Set(accounts.CSRFHeader, csrf)
 		}
 		resp, err := client.Do(req)
 		if err != nil {

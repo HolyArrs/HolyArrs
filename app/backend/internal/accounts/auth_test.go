@@ -1,4 +1,4 @@
-package auth
+package accounts
 
 import (
 	"context"
@@ -50,7 +50,7 @@ func setup(t *testing.T, opt Options) *fixture {
 	m := http.NewServeMux()
 	m.HandleFunc("GET /{$}", okHandler)
 	m.HandleFunc("GET /api/v1/strong", func(w http.ResponseWriter, r *http.Request) {
-		if RequireStrong(w, r) {
+		if webserver.RequireStrong(w, r) {
 			okHandler(w, r)
 		}
 	})

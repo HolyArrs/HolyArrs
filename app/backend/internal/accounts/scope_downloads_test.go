@@ -1,14 +1,16 @@
-package auth
+package accounts
 
 import (
 	"slices"
 	"testing"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
 // 4.2 review: the Downloads, Needs a decision, naming and live routes
 // the show downloads work touched stay closed to members.
 func TestShowDownloadRoutesClosedToMembers(t *testing.T) {
-	member := DefaultPerms(RoleMember)
+	member := webserver.DefaultPerms(webserver.RoleMember)
 	for _, p := range []string{
 		"GET /api/v1/downloads/view", "POST /api/v1/downloads/{id}/remove", "POST /api/v1/downloads/{id}/mark-failed",
 		"GET /api/v1/needs-decision", "POST /api/v1/needs-decision/{id}/decide",

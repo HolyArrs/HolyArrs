@@ -9,7 +9,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/ratings"
@@ -32,8 +33,8 @@ const aboveLimit = "This title is rated above what this account may see."
 // kidMax is the signed-in person's age-rating limit: "" for no limit, for
 // owners and admins, and without sign-in.
 func (a *API) kidMax(r *http.Request) string {
-	who, ok := auth.From(r.Context())
-	if !ok || who.Role != auth.RoleMember {
+	who, ok := webserver.From(r.Context())
+	if !ok || who.Role != webserver.RoleMember {
 		return ""
 	}
 	return who.MaxRating
@@ -199,7 +200,7 @@ func (a *API) lookupRating(ctx context.Context, ref ratingRef) (string, bool) {
 // titles left without a rating are false.
 func (a *API) kidAllowed(ctx context.Context, max string, refs []ratingRef, n int) []bool {
 	out := make([]bool, len(refs))
-	who, _ := auth.From(ctx)
+	who, _ := webserver.From(ctx)
 	left := ratingLookupsPerRequest
 	found := 0
 	for i := 0; i < len(refs) && (n <= 0 || found < n); i += ratingLookups {
@@ -374,9 +375,9 @@ func (a *API) kidGate(m *http.ServeMux, next http.Handler) http.Handler {
 			return
 		}
 		_, pattern := m.Handler(r)
-		who, _ := auth.From(r.Context())
-		need, known := auth.RoutePerms[pattern]
-		if !known || !who.Has(need) || !who.HasScope(auth.RouteScope(pattern)) {
+		who, _ := webserver.From(r.Context())
+		need, known := accounts.RoutePerms[pattern]
+		if !known || !who.Has(need) || !who.HasScope(accounts.RouteScope(pattern)) {
 			next.ServeHTTP(w, r)
 			return
 		}

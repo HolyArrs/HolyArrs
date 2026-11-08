@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
 func (a *API) askedByRoutes(m *http.ServeMux) {
@@ -17,7 +17,7 @@ func (a *API) askedByRoutes(m *http.ServeMux) {
 
 // viewer is the signed-in person's id (1, the owner, without sign-in).
 func viewer(ctx context.Context) int64 {
-	if who, ok := auth.From(ctx); ok {
+	if who, ok := webserver.From(ctx); ok {
 		return who.UserID
 	}
 	return 1

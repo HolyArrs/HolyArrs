@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
 )
@@ -85,11 +85,11 @@ func TestDownloadRowFieldsHiddenFromMember(t *testing.T) {
 	exec41(t, x.s, `INSERT INTO asks (id, created_at, created_by, updated_at, updated_by, kind, tmdb_id, name, state, title_id, asked_by, asked_at)
 		SELECT 1, 't', '{}', 't', '{}', 'movie', '1', 'Salt Choir', 'approved', t.id, 2, 't' FROM titles t LIMIT 1`)
 	exec41(t, x.s, `INSERT INTO ask_people (ask_id, user_id, asked_at) VALUES (1, 2, 't')`)
-	mine := viewAs(t, x, auth.Who{UserID: 2, Role: auth.RoleMember, Perms: []auth.Perm{auth.PermAsk}, Via: "session"})
+	mine := viewAs(t, x, webserver.Caller{UserID: 2, Role: webserver.RoleMember, Perms: []webserver.Perm{webserver.PermAsk}, Via: "session"})
 	if len(mine) != 1 || mine[0].SourceName != "" || mine[0].SourceID != 0 || mine[0].RequestedBy != "" {
 		t.Fatalf("member row %+v", mine)
 	}
-	own := viewAs(t, x, auth.Who{UserID: 1, Role: auth.RoleOwner, Via: "session"})
+	own := viewAs(t, x, webserver.Caller{UserID: 1, Role: webserver.RoleOwner, Via: "session"})
 	if len(own) != 1 || own[0].SourceName != "Lab" || own[0].SourceID == 0 || own[0].RequestedBy != "ana" {
 		t.Fatalf("owner row %+v", own)
 	}

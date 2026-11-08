@@ -1,15 +1,16 @@
-package auth
+package accounts
 
 import (
 	"context"
 	"encoding/json"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"net"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
 // route: POST /api/v1/auth/setup/plex/start

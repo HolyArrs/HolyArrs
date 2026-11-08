@@ -1,4 +1,4 @@
-package auth
+package accounts
 
 import (
 	"context"
@@ -9,6 +9,7 @@ import (
 	"strconv"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
@@ -50,7 +51,7 @@ func (a *Auth) PlexToken(ctx context.Context, userID int64) (string, error) {
 	if ref.Valid {
 		return a.vault.Get(ctx, ref.Int64)
 	}
-	if role == RoleOwner {
+	if role == webserver.RoleOwner {
 		return a.vault.Setting(ctx, settingsGroup, signInPrefix+keyPlexOwner)
 	}
 	return "", nil
@@ -145,7 +146,7 @@ func (a *Auth) linkPlexTx(tx *sql.Tx, userID int64, extID, name, tok string, by 
 // myPlexLink says whether my Plex account is linked, as whom, and whether
 // its sign-in is kept (so my watchlist can be read).
 func (a *Auth) myPlexLink(w http.ResponseWriter, r *http.Request) {
-	who, ok := From(r.Context())
+	who, ok := webserver.From(r.Context())
 	if !ok || who.UserID == 0 {
 		fail(w, http.StatusForbidden, "sign in first")
 		return
@@ -159,7 +160,7 @@ func (a *Auth) myPlexLink(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	kept := ref.Valid
-	if err == nil && !kept && who.Role == RoleOwner && a.vault != nil {
+	if err == nil && !kept && who.Role == webserver.RoleOwner && a.vault != nil {
 		v, _ := a.vault.Setting(r.Context(), settingsGroup, signInPrefix+keyPlexOwner)
 		kept = v != ""
 	}
@@ -210,7 +211,7 @@ func (a *Auth) myPlexLinkFinish(w http.ResponseWriter, r *http.Request) {
 	if cookie != nil && cookie.Value != "" {
 		proof.hash = sum(cookie.Value)
 	}
-	me := Actor(ctx)
+	me := webserver.Actor(ctx)
 	var moved bool
 	err = a.s.WriteCore(ctx, func(tx *sql.Tx) error {
 		if proof.hash == "" || proof.family == "" {
@@ -237,7 +238,7 @@ func (a *Auth) myPlexLinkFinish(w http.ResponseWriter, r *http.Request) {
 	if moved {
 		a.dropTickets(func(t *ticket) bool { return t.userID == who.UserID && t.method == ProviderPlex })
 	}
-	if who.Role == RoleOwner {
+	if who.Role == webserver.RoleOwner {
 		// The owner's import of people uses the same Plex account.
 		if err := a.vault.SetSetting(ctx, settingsGroup, signInPrefix+keyPlexOwner, tok, me); err != nil {
 			serverError(w, "plex link", err)
@@ -252,7 +253,7 @@ func (a *Auth) myPlexLinkFinish(w http.ResponseWriter, r *http.Request) {
 // myPlexUnlink removes my Plex link and its kept token and ends the sessions
 // Plex signed in; refused when it is my only way to sign in.
 func (a *Auth) myPlexUnlink(w http.ResponseWriter, r *http.Request) {
-	who, ok := From(r.Context())
+	who, ok := webserver.From(r.Context())
 	if !ok || who.UserID == 0 || !RecentLocal(r) {
 		writeJSON(w, http.StatusForbidden, map[string]string{"error": "confirm your local password again before using this route", "code": "reauth"})
 		return
@@ -301,8 +302,8 @@ func (a *Auth) myPlexUnlink(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	a.dropTickets(func(t *ticket) bool { return t.userID == who.UserID && t.method == ProviderPlex })
-	if who.Role == RoleOwner && a.vault != nil {
-		if err := a.vault.SetSetting(ctx, settingsGroup, signInPrefix+keyPlexOwner, "", Actor(ctx)); err != nil {
+	if who.Role == webserver.RoleOwner && a.vault != nil {
+		if err := a.vault.SetSetting(ctx, settingsGroup, signInPrefix+keyPlexOwner, "", webserver.Actor(ctx)); err != nil {
 			serverError(w, "plex unlink", err)
 			return
 		}

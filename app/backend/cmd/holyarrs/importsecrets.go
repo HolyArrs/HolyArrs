@@ -17,7 +17,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/files"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
@@ -295,7 +295,7 @@ func callApp(ctx context.Context, method, addr, key string, body any, out any) e
 	if err != nil {
 		return errors.New("holyarrs.address is not a usable address")
 	}
-	req.Header.Set(auth.APIKeyHeader, key)
+	req.Header.Set(accounts.APIKeyHeader, key)
 	req.Header.Set("Content-Type", "application/json")
 	client := &http.Client{Timeout: 2 * time.Minute, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
 	resp, err := client.Do(req)

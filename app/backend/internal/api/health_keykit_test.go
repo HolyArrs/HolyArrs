@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
 // Only the owner can download the key kit, so only the owner is told to;
@@ -15,10 +15,10 @@ func TestKeyKitWarningNamesTheOwner(t *testing.T) {
 	a, _ := signinRig(t, nil)
 	exec41(t, a.s.Store, `INSERT INTO health_checks (check_key, kind, subject, state, message, since, checked_at, streak, confirmed)
 		VALUES ('backups:key', 'backups', 'Backups', 'warning', 'Download your key kit: Backups don''t include the master key', '2026-11-01T00:00:00Z', '2026-11-01T00:00:00Z', 2, 'warning')`)
-	msg := func(who auth.Who) string {
+	msg := func(who webserver.Caller) string {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest("GET", "/api/v1/health/checks", nil)
-		r = r.WithContext(auth.ContextWith(r.Context(), who))
+		r = r.WithContext(webserver.ContextWith(r.Context(), who))
 		a.Handler().ServeHTTP(w, r)
 		var out struct {
 			Checks []struct{ Key, Message string } `json:"checks"`
@@ -32,10 +32,10 @@ func TestKeyKitWarningNamesTheOwner(t *testing.T) {
 		t.Fatalf("no backups:key in %s", w.Body.String())
 		return ""
 	}
-	if m := msg(auth.Who{UserID: 1, Role: auth.RoleOwner}); !strings.HasPrefix(m, "Download your key kit") {
+	if m := msg(webserver.Caller{UserID: 1, Role: webserver.RoleOwner}); !strings.HasPrefix(m, "Download your key kit") {
 		t.Errorf("owner: %q", m)
 	}
-	admin := msg(auth.Who{UserID: 3, Role: "admin", Perms: []auth.Perm{auth.PermSettings}})
+	admin := msg(webserver.Caller{UserID: 3, Role: "admin", Perms: []webserver.Perm{webserver.PermSettings}})
 	if !strings.Contains(admin, "owner") || strings.HasPrefix(admin, "Download") {
 		t.Errorf("admin: %q", admin)
 	}
@@ -47,10 +47,10 @@ func TestKeyKitStatusNamesTheOwner(t *testing.T) {
 	a, _ := signinRig(t, nil)
 	exec41(t, a.s.Store, `INSERT INTO health_checks (check_key, kind, subject, state, message, since, checked_at, streak, confirmed)
 		VALUES ('backups:key', 'backups', 'Backups', 'warning', 'Download your key kit: Backups don''t include the master key', '2026-11-01T00:00:00Z', '2026-11-01T00:00:00Z', 2, 'warning')`)
-	text := func(who auth.Who) string {
+	text := func(who webserver.Caller) string {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest("GET", "/api/v1/settings/status", nil)
-		r = r.WithContext(auth.ContextWith(r.Context(), who))
+		r = r.WithContext(webserver.ContextWith(r.Context(), who))
 		a.Handler().ServeHTTP(w, r)
 		var out struct {
 			Items []struct{ Text string } `json:"items"`
@@ -64,11 +64,11 @@ func TestKeyKitStatusNamesTheOwner(t *testing.T) {
 		t.Fatalf("no key kit item in %d %s", w.Code, w.Body.String())
 		return ""
 	}
-	owner := auth.Who{UserID: 1, Role: auth.RoleOwner}
+	owner := webserver.Caller{UserID: 1, Role: webserver.RoleOwner}
 	if m := text(owner); !strings.Contains(m, "Download your key kit") {
 		t.Errorf("owner: %q", m)
 	}
-	if m := text(auth.Who{UserID: 3, Role: "admin", Perms: []auth.Perm{auth.PermSettings}}); !strings.Contains(m, "Ask the owner") || strings.Contains(m, "Download your key kit") {
+	if m := text(webserver.Caller{UserID: 3, Role: "admin", Perms: []webserver.Perm{webserver.PermSettings}}); !strings.Contains(m, "Ask the owner") || strings.Contains(m, "Download your key kit") {
 		t.Errorf("admin: %q", m)
 	}
 	if m := text(owner); !strings.Contains(m, "Download your key kit") {

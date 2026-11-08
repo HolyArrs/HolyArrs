@@ -1,4 +1,4 @@
-package auth
+package accounts
 
 import (
 	"context"
@@ -260,7 +260,7 @@ func (a *Auth) aiResource(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{
 		"resource":                 o + aiRoutePath(r.PathValue("path")),
 		"authorization_servers":    []string{o},
-		"scopes_supported":         []string{ScopeMCP},
+		"scopes_supported":         []string{webserver.ScopeMCP},
 		"bearer_methods_supported": []string{"header"},
 		"resource_name":            "HolyArrs",
 	})
@@ -278,7 +278,7 @@ func (a *Auth) aiServer(w http.ResponseWriter, r *http.Request) {
 		"grant_types_supported":                          []string{"authorization_code"},
 		"code_challenge_methods_supported":               []string{"S256"},
 		"token_endpoint_auth_methods_supported":          []string{"none"},
-		"scopes_supported":                               []string{ScopeMCP},
+		"scopes_supported":                               []string{webserver.ScopeMCP},
 		"authorization_response_iss_parameter_supported": true,
 		"client_id_metadata_document_supported":          true,
 	})
@@ -361,7 +361,7 @@ func (a *Auth) checkAIRequest(ctx context.Context, q url.Values) (req aiRequest,
 	case len(req.state) > 4<<10 || len(req.resource) > 1024:
 		return req, false, "invalid_request", "state or resource too long"
 	}
-	if s := q.Get("scope"); s != "" && !slices.Contains(strings.Fields(s), ScopeMCP) {
+	if s := q.Get("scope"); s != "" && !slices.Contains(strings.Fields(s), webserver.ScopeMCP) {
 		return req, false, "invalid_scope", "the only scope is mcp"
 	}
 	return req, false, "", ""
@@ -434,10 +434,10 @@ func (a *Auth) aiConnectInfo(w http.ResponseWriter, r *http.Request) {
 
 // aiConnectAllow is the person allowing the app: it gets a one-time code.
 func (a *Auth) aiConnectAllow(w http.ResponseWriter, r *http.Request) {
-	if !RequireStrong(w, r) {
+	if !webserver.RequireStrong(w, r) {
 		return
 	}
-	who, _ := From(r.Context())
+	who, _ := webserver.From(r.Context())
 	if who.Via != "session" {
 		fail(w, http.StatusForbidden, "allow AI apps from your browser")
 		return
@@ -499,7 +499,7 @@ func (a *Auth) aiToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	aiCORS(w)
-	writeJSON(w, http.StatusOK, map[string]any{"access_token": k, "token_type": "Bearer", "scope": ScopeMCP})
+	writeJSON(w, http.StatusOK, map[string]any{"access_token": k, "token_type": "Bearer", "scope": webserver.ScopeMCP})
 }
 
 // issueAIKey makes the signed-in app's AI key, owned by the person who
@@ -516,7 +516,7 @@ func (a *Auth) issueAIKey(r *http.Request, c aiCode) (string, error) {
 	now := database.FormatTime(a.now())
 	by := domain.Actor{Kind: "user", ID: c.user}
 	actor, _ := json.Marshal(by)
-	scopes, _ := json.Marshal([]string{ScopeMCP})
+	scopes, _ := json.Marshal([]string{webserver.ScopeMCP})
 	var id int64
 	err := a.s.WriteCore(r.Context(), func(tx *sql.Tx) error {
 		res, err := tx.Exec(`INSERT INTO api_keys(created_at, created_by, updated_at, updated_by, owner_user_id, label, scope, hash, hint)
@@ -531,7 +531,7 @@ func (a *Auth) issueAIKey(r *http.Request, c aiCode) (string, error) {
 		return "", err
 	}
 	a.event(r.WithContext(context.WithoutCancel(r.Context())), by, "api_key_created", "AI app "+c.client.Name+" signed in",
-		map[string]any{"key_id": id, "label": c.client.Name, "scopes": []string{ScopeMCP}, "via": "sign_in"})
+		map[string]any{"key_id": id, "label": c.client.Name, "scopes": []string{webserver.ScopeMCP}, "via": "sign_in"})
 	return k, nil
 }
 

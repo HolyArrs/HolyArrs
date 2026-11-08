@@ -13,7 +13,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/backup"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
@@ -23,7 +23,7 @@ import (
 )
 
 // TestEveryRouteHasAPermission reads every route the program registers and
-// checks auth.RoutePerms names what it needs (or that it is public). A route
+// checks accounts.RoutePerms names what it needs (or that it is public). A route
 // missing from the table is owner-only, which is safe but usually a mistake.
 func TestEveryRouteHasAPermission(t *testing.T) {
 	re := regexp.MustCompile(`m(?:ux)?\.Handle(?:Func)?\("([A-Z]+ [^"]*)"(\+RestorePath)?`)
@@ -53,8 +53,8 @@ func TestEveryRouteHasAPermission(t *testing.T) {
 					p += backup.RestorePath
 				}
 				seen++
-				if _, ok := auth.RoutePerms[p]; !ok && !public[p] {
-					t.Errorf("%s: route %q has no entry in auth.RoutePerms", f, p)
+				if _, ok := accounts.RoutePerms[p]; !ok && !public[p] {
+					t.Errorf("%s: route %q has no entry in accounts.RoutePerms", f, p)
 				}
 			}
 		}
@@ -80,7 +80,7 @@ func TestMemberIsRefusedEveryStaffRoute(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	au := auth.New(s, auth.Options{Vault: v})
+	au := accounts.New(s, accounts.Options{Vault: v})
 	srv := httptest.NewServer(New(Server{Store: s, Metadata: metadata.Lab(), Version: "test", Auth: au, Secrets: v, Live: webserver.NewLiveHub(webserver.LiveOptions{}),
 		Backups: &backup.Manager{Store: s, Dir: dir, Version: "test"}, Restart: func() {}}).Handler())
 	t.Cleanup(srv.Close)
@@ -88,7 +88,7 @@ func TestMemberIsRefusedEveryStaffRoute(t *testing.T) {
 	signed := func(method, path, body string, c *http.Client, csrf string) (int, string) {
 		req, _ := http.NewRequest(method, srv.URL+path, strings.NewReader(body))
 		req.Header.Set("Content-Type", "application/json")
-		req.Header.Set(auth.CSRFHeader, csrf)
+		req.Header.Set(accounts.CSRFHeader, csrf)
 		resp, err := c.Do(req)
 		if err != nil {
 			t.Fatal(err)
@@ -129,15 +129,15 @@ func TestMemberIsRefusedEveryStaffRoute(t *testing.T) {
 
 	fill := strings.NewReplacer("{id}", "1", "{name}", "x.db", "{token}", "x", "{kind}", "jellyfin")
 	checked := 0
-	for pattern, need := range auth.RoutePerms {
+	for pattern, need := range accounts.RoutePerms {
 		method, path, _ := strings.Cut(pattern, " ")
 		// Members may ask for titles (Requests), so those routes are theirs.
-		if need == "signed_in" || need == "self" || need == auth.NeedPublic || need == auth.PermAsk || path == "/" || path == "/login" {
+		if need == "signed_in" || need == "self" || need == webserver.NeedPublic || need == webserver.PermAsk || path == "/" || path == "/login" {
 			continue
 		}
 		// The old-app API takes no session at all, only its own keys;
 		// TestOldAppMemberKeyRefused checks a member's key gets 403.
-		if auth.CompatSide(path) != "" {
+		if accounts.CompatSide(path) != "" {
 			continue
 		}
 		st, body := signed(method, fill.Replace(path), "{}", mem, memCSRF)

@@ -3,12 +3,12 @@ package api
 import (
 	"context"
 	"encoding/json"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
@@ -91,12 +91,12 @@ func TestMetadataAnimeKidGate(t *testing.T) {
 		asked = append(asked, id)
 		return metadata.AnimeMap{}, metadata.ErrNotFound
 	}})
-	kid := auth.Who{UserID: 7, Role: auth.RoleMember, MaxRating: "TV-Y7"}
+	kid := webserver.Caller{UserID: 7, Role: webserver.RoleMember, MaxRating: "TV-Y7"}
 	call := func(id string) int {
 		r := httptest.NewRequest("GET", "/api/v1/metadata/show/"+id+"/anime", nil)
 		r.SetPathValue("kind", "show")
 		r.SetPathValue("tmdb_id", id)
-		r = r.WithContext(auth.ContextWith(r.Context(), kid))
+		r = r.WithContext(webserver.ContextWith(r.Context(), kid))
 		w := httptest.NewRecorder()
 		a.metadataAnime(w, r)
 		return w.Code

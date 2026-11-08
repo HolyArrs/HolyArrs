@@ -1,9 +1,11 @@
-package auth
+package accounts
 
 import (
 	"net/http"
 	"strings"
 	"testing"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
 const keyKitRoute = "POST /api/v1/system/key-kit"
@@ -12,7 +14,7 @@ const keyKitRoute = "POST /api/v1/system/key-kit"
 // password (and two-factor code when enrolled), never a read key, never a
 // stale session, never an admin.
 func TestKeyKitRoutePolicy(t *testing.T) {
-	if need, ok := RoutePerms[keyKitRoute]; !ok || need != needOwner {
+	if need, ok := RoutePerms[keyKitRoute]; !ok || need != webserver.NeedOwner {
 		t.Fatalf("RoutePerms[%q] = %q, %v; want owner only", keyKitRoute, need, ok)
 	}
 	if !riskyRoutes[keyKitRoute] {
@@ -21,11 +23,11 @@ func TestKeyKitRoutePolicy(t *testing.T) {
 	if ReadRoutes[keyKitRoute] {
 		t.Fatalf("%s must not be open to read keys", keyKitRoute)
 	}
-	if sc := RouteScope(keyKitRoute); sc == ScopeRead || sc == ScopeHealthRead || sc == ScopeWrite {
+	if sc := RouteScope(keyKitRoute); sc == webserver.ScopeRead || sc == webserver.ScopeHealthRead || sc == webserver.ScopeWrite {
 		t.Fatalf("%s scope %q is too wide", keyKitRoute, sc)
 	}
 
-	owner := Who{UserID: 1, Via: "session", Role: RoleOwner, Perms: DefaultPerms(RoleOwner)}
+	owner := webserver.Caller{UserID: 1, Via: "session", Role: webserver.RoleOwner, Perms: webserver.DefaultPerms(webserver.RoleOwner)}
 	if code, body := gateCode(keyKitRoute, owner); code != http.StatusForbidden || !strings.Contains(body, `"reauth"`) {
 		t.Errorf("stale owner session: %d %s; want 403 reauth", code, body)
 	}
@@ -34,15 +36,15 @@ func TestKeyKitRoutePolicy(t *testing.T) {
 	if code, body := gateCode(keyKitRoute, fresh); code != http.StatusTeapot {
 		t.Errorf("fresh owner session refused: %d %s", code, body)
 	}
-	admin := Who{UserID: 2, Via: "session", Role: RoleAdmin, Perms: DefaultPerms(RoleAdmin), LocalRecent: true, TwoFactor: true}
+	admin := webserver.Caller{UserID: 2, Via: "session", Role: webserver.RoleAdmin, Perms: webserver.DefaultPerms(webserver.RoleAdmin), LocalRecent: true, TwoFactor: true}
 	if code, body := gateCode(keyKitRoute, admin); code != http.StatusForbidden {
 		t.Errorf("fresh admin session reached the key kit: %d %s", code, body)
 	}
-	readKey := Who{UserID: 1, Via: "api_key", Role: RoleOwner, Perms: DefaultPerms(RoleOwner), Scopes: []string{ScopeRead}}
+	readKey := webserver.Caller{UserID: 1, Via: "api_key", Role: webserver.RoleOwner, Perms: webserver.DefaultPerms(webserver.RoleOwner), Scopes: []string{webserver.ScopeRead}}
 	if code, body := gateCode(keyKitRoute, readKey); code != http.StatusForbidden {
 		t.Errorf("read API key reached the key kit: %d %s", code, body)
 	}
-	trusted := Who{UserID: 1, Via: "local_network", Role: RoleOwner, Perms: DefaultPerms(RoleOwner)}
+	trusted := webserver.Caller{UserID: 1, Via: "local_network", Role: webserver.RoleOwner, Perms: webserver.DefaultPerms(webserver.RoleOwner)}
 	if code, body := gateCode(keyKitRoute, trusted); code != http.StatusForbidden {
 		t.Errorf("trusted-network skip reached the key kit: %d %s", code, body)
 	}

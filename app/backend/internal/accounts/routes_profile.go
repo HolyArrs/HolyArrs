@@ -1,4 +1,4 @@
-package api
+package accounts
 
 import (
 	"database/sql"
@@ -6,12 +6,14 @@ import (
 	"strings"
 	"unicode"
 	"unicode/utf8"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
 // My profile: the display name each person sets for themselves. The sign-in
 // name (username) and the role are not editable here; an owner changes a
 // role on Users and roles, and the username stays what people sign in with.
-func (a *API) profileRoutes(m *http.ServeMux) {
+func (a *Auth) profileRoutes(m *http.ServeMux) {
 	m.HandleFunc("GET /api/v1/my/profile", a.getProfile)
 	m.HandleFunc("PUT /api/v1/my/profile", a.putProfile)
 }
@@ -38,22 +40,26 @@ func cleanDisplayName(s string) (string, bool) {
 	return s, true
 }
 
-func (a *API) getProfile(w http.ResponseWriter, r *http.Request) {
-	who := a.person(r)
+func (a *Auth) getProfile(w http.ResponseWriter, r *http.Request) {
+	who, ok := webserver.From(r.Context())
+	if !ok {
+		fail(w, http.StatusUnauthorized, "sign in first")
+		return
+	}
 	p := myProfile{Username: who.Name}
-	err := a.s.Store.Read().QueryRowContext(r.Context(), "SELECT display_name FROM user_profiles WHERE user_id = ?", who.UserID).Scan(&p.DisplayName)
+	err := a.s.Read().QueryRowContext(r.Context(), "SELECT display_name FROM user_profiles WHERE user_id = ?", who.UserID).Scan(&p.DisplayName)
 	if err != nil && err != sql.ErrNoRows {
-		internal(w, err)
+		webserver.Internal(w, "accounts", err)
 		return
 	}
 	writeJSON(w, http.StatusOK, p)
 }
 
-func (a *API) putProfile(w http.ResponseWriter, r *http.Request) {
+func (a *Auth) putProfile(w http.ResponseWriter, r *http.Request) {
 	var in struct {
 		DisplayName string `json:"display_name"`
 	}
-	if !decode(w, r, &in, `send {"display_name": "..."}`) {
+	if !webserver.Decode(w, r, &in, `send {"display_name": "..."}`) {
 		return
 	}
 	name, ok := cleanDisplayName(in.DisplayName)
@@ -61,14 +67,14 @@ func (a *API) putProfile(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusBadRequest, "pick a display name of up to 64 characters")
 		return
 	}
-	me := a.person(r).UserID
-	err := a.s.Store.Write(r.Context(), func(tx *sql.Tx) error {
+	me, _ := webserver.From(r.Context())
+	err := a.s.WriteCore(r.Context(), func(tx *sql.Tx) error {
 		_, err := tx.Exec(`INSERT INTO user_profiles (user_id, display_name) VALUES (?, ?)
-			ON CONFLICT (user_id) DO UPDATE SET display_name = excluded.display_name`, me, name)
+			ON CONFLICT (user_id) DO UPDATE SET display_name = excluded.display_name`, me.UserID, name)
 		return err
 	})
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "accounts", err)
 		return
 	}
 	a.getProfile(w, r)

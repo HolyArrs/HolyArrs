@@ -7,7 +7,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"io"
 	"net/http"
 	"net/url"
@@ -17,8 +16,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/asks"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
@@ -474,7 +476,7 @@ var showcaseMembers = []struct{ Name, MaxRating string }{
 // members adds the requesters with no password: they exist to ask, and
 // nobody signs in as them.
 func (w *world) members(ctx context.Context) error {
-	perms, _ := json.Marshal(auth.DefaultPerms(auth.RoleMember))
+	perms, _ := json.Marshal(webserver.DefaultPerms(webserver.RoleMember))
 	for _, m := range showcaseMembers {
 		var n int
 		if err := w.s.Read().QueryRowContext(ctx, "SELECT count(*) FROM users WHERE name = ?", m.Name).Scan(&n); err != nil {
@@ -483,7 +485,7 @@ func (w *world) members(ctx context.Context) error {
 		if n > 0 {
 			continue
 		}
-		u := &domain.User{Name: m.Name, Role: auth.RoleMember, State: "active", Perms: string(perms), MaxRating: m.MaxRating, RatingCountry: "US"}
+		u := &domain.User{Name: m.Name, Role: webserver.RoleMember, State: "active", Perms: string(perms), MaxRating: m.MaxRating, RatingCountry: "US"}
 		if err := w.s.Write(ctx, func(tx *sql.Tx) error { _, err := database.Insert(tx, "users", u, w.by); return err }); err != nil {
 			return err
 		}
@@ -497,27 +499,27 @@ func (w *world) members(ctx context.Context) error {
 // and password come from stdin, never from flags, so they stay out of
 // process lists and shell history. It never touches the owner.
 func (w *world) showcaseAgent(ctx context.Context, in io.Reader) error {
-	name, pw, err := auth.ReadNewOwner(in)
+	name, pw, err := accounts.ReadNewOwner(in)
 	if err != nil {
 		return err
 	}
-	h, err := auth.HashPassword(pw)
+	h, err := accounts.HashPassword(pw)
 	if err != nil {
 		return err
 	}
-	perms, _ := json.Marshal(auth.DefaultPerms(auth.RoleAdmin))
+	perms, _ := json.Marshal(webserver.DefaultPerms(webserver.RoleAdmin))
 	err = w.s.Write(ctx, func(tx *sql.Tx) error {
 		var id int64
 		var role string
 		err := tx.QueryRow("SELECT id, role FROM users WHERE name = ?", name).Scan(&id, &role)
 		if errors.Is(err, sql.ErrNoRows) {
-			_, err = database.Insert(tx, "users", &domain.User{Name: name, Role: auth.RoleAdmin, PasswordHash: h, State: "active", Perms: string(perms), RatingCountry: "US"}, w.by)
+			_, err = database.Insert(tx, "users", &domain.User{Name: name, Role: webserver.RoleAdmin, PasswordHash: h, State: "active", Perms: string(perms), RatingCountry: "US"}, w.by)
 			return err
 		}
 		if err != nil {
 			return err
 		}
-		if role == auth.RoleOwner {
+		if role == webserver.RoleOwner {
 			return fmt.Errorf("%q is the owner; pick another name for the agents' account", name)
 		}
 		_, err = tx.Exec("UPDATE users SET password_hash = ?, state = 'active' WHERE id = ?", h, id)

@@ -1,11 +1,12 @@
-package auth
+package accounts
 
 import (
-	"context"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
 func TestHealthReadScopeOnlyReachesHealthStates(t *testing.T) {
@@ -23,7 +24,7 @@ func TestHealthReadScopeOnlyReachesHealthStates(t *testing.T) {
 		})
 	}
 	gate := Gate(mux)
-	who := Who{UserID: 1, Role: RoleOwner, Via: "api_key", Scopes: []string{ScopeHealthRead}}
+	who := webserver.Caller{UserID: 1, Role: webserver.RoleOwner, Via: "api_key", Scopes: []string{webserver.ScopeHealthRead}}
 
 	cases := []struct {
 		method string
@@ -40,7 +41,7 @@ func TestHealthReadScopeOnlyReachesHealthStates(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.method+" "+tc.path, func(t *testing.T) {
 			req := httptest.NewRequest(tc.method, tc.path, nil)
-			req = req.WithContext(context.WithValue(req.Context(), ctxKey{}, who))
+			req = req.WithContext(webserver.ContextWith(req.Context(), who))
 			rec := httptest.NewRecorder()
 			gate.ServeHTTP(rec, req)
 			if rec.Code != tc.want {
@@ -51,16 +52,16 @@ func TestHealthReadScopeOnlyReachesHealthStates(t *testing.T) {
 }
 
 func TestBroadReadScopesStillReachHealthStates(t *testing.T) {
-	if got := RouteScope("GET /api/v1/health/states"); got != ScopeHealthRead {
-		t.Fatalf("health states scope = %q, want %q", got, ScopeHealthRead)
+	if got := RouteScope("GET /api/v1/health/states"); got != webserver.ScopeHealthRead {
+		t.Fatalf("health states scope = %q, want %q", got, webserver.ScopeHealthRead)
 	}
-	for _, held := range [][]string{{ScopeHealthRead}, {ScopeRead}, {ScopeAll}} {
-		if !ScopesCover(held, ScopeHealthRead) {
+	for _, held := range [][]string{{webserver.ScopeHealthRead}, {webserver.ScopeRead}, {webserver.ScopeAll}} {
+		if !webserver.ScopesCover(held, webserver.ScopeHealthRead) {
 			t.Errorf("scope %v no longer covers health states", held)
 		}
 	}
-	for _, requested := range []string{ScopeRead, ScopeWrite, ScopeAdmin, ScopeControl} {
-		if ScopesCover([]string{ScopeHealthRead}, requested) {
+	for _, requested := range []string{webserver.ScopeRead, webserver.ScopeWrite, webserver.ScopeAdmin, webserver.ScopeControl} {
+		if webserver.ScopesCover([]string{webserver.ScopeHealthRead}, requested) {
 			t.Errorf("health_read unexpectedly covers %q", requested)
 		}
 	}

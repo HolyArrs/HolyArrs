@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
@@ -31,10 +31,10 @@ func (f *aiFix) call(c *http.Client, csrf, key, method, path, body string, hdr .
 	req, _ := http.NewRequest(method, f.srv.URL+path, strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	if csrf != "" {
-		req.Header.Set(auth.CSRFHeader, csrf)
+		req.Header.Set(accounts.CSRFHeader, csrf)
 	}
 	if key != "" {
-		req.Header.Set(auth.APIKeyHeader, key)
+		req.Header.Set(accounts.APIKeyHeader, key)
 	}
 	for i := 0; i+1 < len(hdr); i += 2 {
 		req.Header.Set(hdr[i], hdr[i+1])

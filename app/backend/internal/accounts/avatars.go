@@ -1,4 +1,4 @@
-package auth
+package accounts
 
 import (
 	"bytes"
@@ -20,6 +20,7 @@ import (
 	_ "golang.org/x/image/webp" // registers the WebP decoder
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
 const (
@@ -91,7 +92,7 @@ func makeAvatar(raw []byte) ([]byte, error) {
 }
 
 func (a *Auth) putAvatar(w http.ResponseWriter, r *http.Request) {
-	who, _ := From(r.Context())
+	who, _ := webserver.From(r.Context())
 	raw, err := io.ReadAll(http.MaxBytesReader(w, r.Body, avatarMaxUpload))
 	if err != nil {
 		var tooBig *http.MaxBytesError
@@ -127,7 +128,7 @@ func (a *Auth) putAvatar(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *Auth) deleteAvatar(w http.ResponseWriter, r *http.Request) {
-	who, _ := From(r.Context())
+	who, _ := webserver.From(r.Context())
 	err := a.s.WriteCore(r.Context(), func(tx *sql.Tx) error {
 		_, err := tx.Exec("DELETE FROM user_avatars WHERE user_id = ?", who.UserID)
 		return err

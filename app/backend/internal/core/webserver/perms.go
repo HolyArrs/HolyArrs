@@ -40,13 +40,6 @@ const (
 // AllPerms lists the permissions in the order screens show them.
 var AllPerms = []Perm{PermAsk, PermAutoApprove, PermApprove, PermManageLibrary, PermSettings}
 
-// Caller is the person behind a request, as far as the router cares.
-type Caller struct {
-	UserID int64
-	Role   string
-	Perms  []Perm
-}
-
 // Authenticator turns a request into its Caller. Accounts implements it, so
 // no module has to import accounts to ask who is calling.
 type Authenticator interface {

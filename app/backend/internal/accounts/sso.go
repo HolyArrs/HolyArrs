@@ -1,4 +1,4 @@
-package auth
+package accounts
 
 import (
 	"errors"
@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"os"
 	"strings"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
 // SSOOptions is operator-owned startup configuration, never writable by a provider.
@@ -171,11 +173,11 @@ func (a *Auth) ssoRoutes(m *http.ServeMux) {
 	m.HandleFunc("POST /api/v1/auth/forward/link", a.forwardLink)
 }
 
-func (a *Auth) requireSSOLink(w http.ResponseWriter, r *http.Request) (Who, bool) {
-	who, ok := From(r.Context())
+func (a *Auth) requireSSOLink(w http.ResponseWriter, r *http.Request) (webserver.Caller, bool) {
+	who, ok := webserver.From(r.Context())
 	if !ok || who.Via != "session" || !who.LocalRecent || who.MustTwoFactor {
 		fail(w, http.StatusForbidden, "confirm your local password in My account before linking")
-		return Who{}, false
+		return webserver.Caller{}, false
 	}
 	return who, true
 }

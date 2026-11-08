@@ -1,4 +1,4 @@
-package auth
+package accounts
 
 import (
 	"context"
@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
 // newKey tries the risky "make an API key" route and says whether it went
@@ -175,17 +177,17 @@ func TestOutsideSetupSessionCountsAsRecent(t *testing.T) {
 // A required two-factor enrollment still wins over the setup mark, and only
 // a browser session counts.
 func TestRecentLocalSetupMarkLimits(t *testing.T) {
-	ok := func(who Who) bool {
-		r := (&http.Request{}).WithContext(ContextWith(context.Background(), who))
+	ok := func(who webserver.Caller) bool {
+		r := (&http.Request{}).WithContext(webserver.ContextWith(context.Background(), who))
 		return RecentLocal(r)
 	}
-	if !ok(Who{Via: "session", SetupRecent: true}) {
+	if !ok(webserver.Caller{Via: "session", SetupRecent: true}) {
 		t.Fatal("setup session refused")
 	}
-	if ok(Who{Via: "session", SetupRecent: true, MustTwoFactor: true}) {
+	if ok(webserver.Caller{Via: "session", SetupRecent: true, MustTwoFactor: true}) {
 		t.Fatal("setup mark skipped a required two-factor enrollment")
 	}
-	if ok(Who{Via: "api_key", SetupRecent: true}) {
+	if ok(webserver.Caller{Via: "api_key", SetupRecent: true}) {
 		t.Fatal("setup mark worked for an API key")
 	}
 }

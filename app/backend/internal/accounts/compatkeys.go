@@ -1,4 +1,4 @@
-package auth
+package accounts
 
 import (
 	"context"
@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
 // The old-app API (decision 0008): /sonarr/ and /radarr/ answer apps such
@@ -77,17 +78,17 @@ func compatLink(r *http.Request) (string, bool) {
 
 // checkCompatKey finds the person behind a side's key. The key works only
 // on its own side, and only while its maker's account is active.
-func (a *Auth) checkCompatKey(ctx context.Context, side, k string) (Who, bool) {
+func (a *Auth) checkCompatKey(ctx context.Context, side, k string) (webserver.Caller, bool) {
 	if len(k) != 32 {
-		return Who{}, false
+		return webserver.Caller{}, false
 	}
-	var who Who
+	var who webserver.Caller
 	var used sql.NullString
 	var perms string
 	err := a.s.Read().QueryRowContext(ctx, `SELECT k.last_used_at, `+userCols+` FROM compat_keys k JOIN users u ON u.id = k.owner_user_id
 		WHERE k.side = ? AND k.hash = ? AND u.state = 'active'`, side, sum(k)).Scan(&used, &who.UserID, &who.Name, &who.Role, &perms, &who.TwoFactor, &who.MaxRating, &who.RatingCountry)
 	if err != nil {
-		return Who{}, false
+		return webserver.Caller{}, false
 	}
 	a.fill(&who, perms)
 	// Seerr calls every minute: the last-used time is written at most once
@@ -100,7 +101,7 @@ func (a *Auth) checkCompatKey(ctx context.Context, side, k string) (Who, bool) {
 		})
 	}
 	who.Via = "api_key"
-	who.Scopes = []string{ScopeCompat}
+	who.Scopes = []string{webserver.ScopeCompat}
 	who.KeyLabel = "old-app API (" + side + ")"
 	return who, true
 }
@@ -152,8 +153,8 @@ func (a *Auth) MakeCompatKey(r *http.Request, side string) (string, error) {
 		return "", err
 	}
 	k := hex.EncodeToString(b)
-	who, _ := From(r.Context())
-	by, _ := json.Marshal(Actor(r.Context()))
+	who, _ := webserver.From(r.Context())
+	by, _ := json.Marshal(webserver.Actor(r.Context()))
 	now := database.FormatTime(a.now())
 	err := a.s.WriteCore(r.Context(), func(tx *sql.Tx) error {
 		_, err := tx.Exec(`INSERT INTO compat_keys(side, created_at, created_by, owner_user_id, hash, hint) VALUES (?, ?, ?, ?, ?, ?)
@@ -164,7 +165,7 @@ func (a *Auth) MakeCompatKey(r *http.Request, side string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	a.event(r, Actor(r.Context()), "api_key_created", "Old-app API key ("+side+") made", map[string]any{"old_app_side": side})
+	a.event(r, webserver.Actor(r.Context()), "api_key_created", "Old-app API key ("+side+") made", map[string]any{"old_app_side": side})
 	return k, nil
 }
 
@@ -181,6 +182,6 @@ func (a *Auth) DeleteCompatKey(r *http.Request, side string) (bool, error) {
 	if err != nil || n == 0 {
 		return false, err
 	}
-	a.event(r, Actor(r.Context()), "api_key_deleted", "Old-app API key ("+side+") removed", map[string]any{"old_app_side": side})
+	a.event(r, webserver.Actor(r.Context()), "api_key_deleted", "Old-app API key ("+side+") removed", map[string]any{"old_app_side": side})
 	return true, nil
 }

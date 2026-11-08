@@ -1,4 +1,4 @@
-package auth
+package accounts
 
 // Plan B4 (single sign-on proof): the gaps the live Authelia run found or
 // could not reach with a real provider.

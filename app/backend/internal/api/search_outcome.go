@@ -3,8 +3,8 @@ package api
 import (
 	"net/http"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
 )
 
@@ -31,8 +31,8 @@ func (a *API) searchOutcome(w http.ResponseWriter, r *http.Request) {
 	e := es[0]
 	out["empty"] = true
 	out["at"] = e.At
-	who, signed := auth.From(r.Context())
-	if signed && who.Has(auth.PermSettings) {
+	who, signed := webserver.From(r.Context())
+	if signed && who.Has(webserver.PermSettings) {
 		srcs := []any{}
 		if list, ok := e.Data["sources"].([]any); ok {
 			srcs = list

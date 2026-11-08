@@ -1,11 +1,10 @@
-package auth
+package accounts
 
 import (
 	"context"
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -13,6 +12,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
 // signInAIApp runs the sign-in an AI app does (MCP authorization): learn
@@ -265,7 +266,7 @@ func TestAIRedirectRules(t *testing.T) {
 func mcpEcho(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if mcpPath(r.URL.Path) {
-			who, _ := From(r.Context())
+			who, _ := webserver.From(r.Context())
 			_, _ = w.Write([]byte("AI app " + who.KeyLabel))
 			return
 		}

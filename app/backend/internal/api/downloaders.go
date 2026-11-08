@@ -4,8 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/dlsync"
 	"net/http"
 	"strconv"
 	"strings"
@@ -13,7 +11,10 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/dlsync"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
@@ -174,7 +175,7 @@ func (a *API) publishDownloader(d domain.Downloader) {
 }
 
 func (a *API) addDownloader(w http.ResponseWriter, r *http.Request) {
-	if !auth.RequireStrong(w, r) {
+	if !webserver.RequireStrong(w, r) {
 		return
 	}
 	in, ok := readDownloader(w, r)
@@ -191,7 +192,7 @@ func (a *API) addDownloader(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *API) editDownloader(w http.ResponseWriter, r *http.Request) {
-	if !auth.RequireStrong(w, r) {
+	if !webserver.RequireStrong(w, r) {
 		return
 	}
 	id, ok := idIn(w, r, "Downloader")
@@ -213,7 +214,7 @@ func (a *API) editDownloader(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *API) deleteDownloader(w http.ResponseWriter, r *http.Request) {
-	if !auth.RequireStrong(w, r) {
+	if !webserver.RequireStrong(w, r) {
 		return
 	}
 	id, ok := idIn(w, r, "Downloader")
@@ -385,7 +386,7 @@ func (a *API) markFailed(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	who := ""
-	if p, ok := auth.From(r.Context()); ok {
+	if p, ok := webserver.From(r.Context()); ok {
 		who = p.Name
 	}
 	err := a.manager().MarkFailed(r.Context(), id, actor(r), who)

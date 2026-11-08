@@ -17,7 +17,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 
@@ -88,7 +88,7 @@ func newCtlMode(t *testing.T, withAuth, safe bool) *ctlFix {
 			return nil
 		}}
 	if withAuth {
-		srvOpts.Auth = auth.New(s, auth.Options{})
+		srvOpts.Auth = accounts.New(s, accounts.Options{})
 	}
 	f.api = New(srvOpts)
 	f.srv = httptest.NewServer(f.api.Handler())
@@ -361,10 +361,10 @@ func TestControlsNeedRoleAndScope(t *testing.T) {
 		req, _ := http.NewRequest(method, f.srv.URL+path, strings.NewReader(body))
 		req.Header.Set("Content-Type", "application/json")
 		if csrf != "" {
-			req.Header.Set(auth.CSRFHeader, csrf)
+			req.Header.Set(accounts.CSRFHeader, csrf)
 		}
 		if key != "" {
-			req.Header.Set(auth.APIKeyHeader, key)
+			req.Header.Set(accounts.APIKeyHeader, key)
 		}
 		resp, err := c.Do(req)
 		if err != nil {

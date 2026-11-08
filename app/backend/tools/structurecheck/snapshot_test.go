@@ -14,7 +14,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 )
 
@@ -157,7 +157,7 @@ func TestRouteTableUnchanged(t *testing.T) {
 	for _, r := range registeredRoutes(t, root) {
 		seen[r] = true
 	}
-	for r := range auth.RoutePerms {
+	for r := range accounts.RoutePerms {
 		seen[r] = true
 	}
 	for r := range parts.Routes() {
@@ -168,7 +168,7 @@ func TestRouteTableUnchanged(t *testing.T) {
 	}
 	var got []string
 	for r := range seen {
-		need, ok := auth.RoutePerms[r]
+		need, ok := accounts.RoutePerms[r]
 		perm := string(need)
 		if !ok {
 			perm = "unlisted"
@@ -178,7 +178,7 @@ func TestRouteTableUnchanged(t *testing.T) {
 			part = string(o)
 		}
 		got = append(got, fmt.Sprintf("%s auth=%s scope=%s assurance=%t part=%s",
-			r, perm, auth.RouteScope(r), auth.SessionNeedsRecentLocal(r), part))
+			r, perm, accounts.RouteScope(r), accounts.SessionNeedsRecentLocal(r), part))
 	}
 	slices.Sort(got)
 	compare(t, "route-table.txt", got)

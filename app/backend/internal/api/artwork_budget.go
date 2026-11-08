@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
 // artworkMissesPerMinute caps the pictures one person can make the server
@@ -36,7 +36,7 @@ func (b *artworkBudget) allow(who int64, now time.Time) bool {
 // artworkMissOK counts one cache miss for the person asking; past the
 // budget it answers 429 and returns false.
 func (a *API) artworkMissOK(w http.ResponseWriter, r *http.Request) bool {
-	who, _ := auth.From(r.Context())
+	who, _ := webserver.From(r.Context())
 	if a.artMisses.allow(who.UserID, time.Now()) {
 		return true
 	}

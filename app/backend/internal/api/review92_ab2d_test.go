@@ -3,13 +3,10 @@ package api
 import (
 	"context"
 	"database/sql"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -22,6 +19,10 @@ import (
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
 // A flood of /login opens while the sign-in art is stale starts one
@@ -51,11 +52,11 @@ func TestDownloadRowPathHiddenFromMember(t *testing.T) {
 	exec41(t, x.s, `INSERT INTO asks (id, created_at, created_by, updated_at, updated_by, kind, tmdb_id, name, state, title_id, asked_by, asked_at)
 		SELECT 1, 't', '{}', 't', '{}', 'movie', '1', 'Salt Choir', 'approved', t.id, 2, 't' FROM titles t LIMIT 1`)
 	exec41(t, x.s, `INSERT INTO ask_people (ask_id, user_id, asked_at) VALUES (1, 2, 't')`)
-	mine := viewAs(t, x, auth.Who{UserID: 2, Role: auth.RoleMember, Perms: []auth.Perm{auth.PermAsk}, Via: "session"})
+	mine := viewAs(t, x, webserver.Caller{UserID: 2, Role: webserver.RoleMember, Perms: []webserver.Perm{webserver.PermAsk}, Via: "session"})
 	if len(mine) != 1 || mine[0].Path != "" {
 		t.Fatalf("member row %+v", mine)
 	}
-	own := viewAs(t, x, auth.Who{UserID: 1, Role: auth.RoleOwner, Via: "session"})
+	own := viewAs(t, x, webserver.Caller{UserID: 1, Role: webserver.RoleOwner, Via: "session"})
 	if len(own) != 1 || own[0].Path == "" {
 		t.Fatalf("owner row %+v", own)
 	}
@@ -82,18 +83,18 @@ func TestTitleViewTrimmedForMember(t *testing.T) {
 	if err != nil || len(ts) != 1 {
 		t.Fatal(err)
 	}
-	view := func(who auth.Who) TitleView {
-		v, err := a.titleView(auth.ContextWith(context.Background(), who), ts[0])
+	view := func(who webserver.Caller) TitleView {
+		v, err := a.titleView(webserver.ContextWith(context.Background(), who), ts[0])
 		if err != nil {
 			t.Fatal(err)
 		}
 		return v
 	}
-	own := view(auth.Who{UserID: 1, Role: auth.RoleOwner, Via: "session"})
+	own := view(webserver.Caller{UserID: 1, Role: webserver.RoleOwner, Via: "session"})
 	if own.FolderPath == "" || len(own.Slots) == 0 || own.Slots[0].Reason == "" {
 		t.Fatalf("owner view %+v", own)
 	}
-	mine := view(auth.Who{UserID: 2, Role: auth.RoleMember, Perms: []auth.Perm{auth.PermAsk}, Via: "session"})
+	mine := view(webserver.Caller{UserID: 2, Role: webserver.RoleMember, Perms: []webserver.Perm{webserver.PermAsk}, Via: "session"})
 	if mine.FolderPath != "" || mine.PickRulesName != "" || mine.LibraryFolderID != 0 || mine.Slots[0].Reason != "" {
 		t.Fatalf("member view %+v", mine)
 	}
@@ -103,7 +104,7 @@ func TestTitleViewTrimmedForMember(t *testing.T) {
 		}
 	}
 	f := domain.File{RelativePath: "Movies/Secret (2020)/x.mkv", Size: 9}
-	got := trimForViewer(auth.ContextWith(context.Background(), auth.Who{UserID: 2, Role: auth.RoleMember, Via: "session"}), TitleView{Slots: []SlotView{{File: &f}}})
+	got := trimForViewer(webserver.ContextWith(context.Background(), webserver.Caller{UserID: 2, Role: webserver.RoleMember, Via: "session"}), TitleView{Slots: []SlotView{{File: &f}}})
 	if got.Slots[0].File.RelativePath != "" || got.Slots[0].File.Size != 9 || f.RelativePath == "" {
 		t.Fatalf("file %+v", got.Slots[0].File)
 	}

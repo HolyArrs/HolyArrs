@@ -1,8 +1,10 @@
-package auth
+package accounts
 
 import (
 	"context"
 	"net/http"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
 type familyKey struct{}
@@ -27,18 +29,18 @@ func (a *Auth) WithSessionFamily(r *http.Request) *http.Request {
 // session. A long-lived stream (/live) asks it now and then, so a sign-out,
 // an ended session, a disabled account or changed rights reach a stream
 // that is already open. ok is false when that sign-in no longer works.
-func (a *Auth) Still(r *http.Request) (Who, bool) {
-	who, ok := From(r.Context())
+func (a *Auth) Still(r *http.Request) (webserver.Caller, bool) {
+	who, ok := webserver.From(r.Context())
 	if !ok {
-		return Who{}, false
+		return webserver.Caller{}, false
 	}
 	switch who.Via {
 	case "session":
 		ck, err := r.Cookie(CookieName)
 		if err != nil || ck.Value == "" {
-			return Who{}, false
+			return webserver.Caller{}, false
 		}
-		var fresh Who
+		var fresh webserver.Caller
 		var perms, seen, expires string
 		// The newest session of the family the stream opened with, else the
 		// presented one. Signing out, ending sessions or disabling the
@@ -51,11 +53,11 @@ func (a *Auth) Still(r *http.Request) (Who, bool) {
 			FROM sessions s JOIN users u ON u.id = s.user_id AND u.state = 'active' `+q, arg).
 			Scan(&fresh.UserID, &fresh.Name, &fresh.Role, &perms, &fresh.TwoFactor, &fresh.MaxRating, &fresh.RatingCountry, &seen, &expires)
 		if err != nil {
-			return Who{}, false
+			return webserver.Caller{}, false
 		}
 		now := a.now()
 		if !now.Before(parseTime(expires)) || now.Sub(parseTime(seen)) > IdleTimeout {
-			return Who{}, false
+			return webserver.Caller{}, false
 		}
 		a.fill(&fresh, perms)
 		fresh.Via = "session"
@@ -65,7 +67,7 @@ func (a *Auth) Still(r *http.Request) (Who, bool) {
 	case "local_network":
 		id, _, ok := a.owner(r.Context())
 		if !ok || id != who.UserID || !a.skipLocal.Load() || !a.localPeer(r) {
-			return Who{}, false
+			return webserver.Caller{}, false
 		}
 		return who, true
 	}

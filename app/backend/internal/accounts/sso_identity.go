@@ -1,4 +1,4 @@
-package auth
+package accounts
 
 import (
 	"context"
@@ -11,6 +11,7 @@ import (
 	"unicode"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
@@ -107,7 +108,7 @@ func (a *Auth) ssoIdentity(ctx context.Context, kind, issuer, subject, display s
 					break
 				}
 			}
-			id, err = database.Insert(tx, "users", &domain.User{Name: name, Role: RoleMember, State: "active", Perms: permsJSON(DefaultPerms(RoleMember))}, domain.System)
+			id, err = database.Insert(tx, "users", &domain.User{Name: name, Role: webserver.RoleMember, State: "active", Perms: permsJSON(webserver.DefaultPerms(webserver.RoleMember))}, domain.System)
 			if err != nil {
 				return err
 			}

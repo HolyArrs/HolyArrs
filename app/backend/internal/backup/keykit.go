@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
@@ -71,7 +71,7 @@ func keyKitFile(key []byte) []byte {
 func (m *Manager) keyKitRoute(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/v1/system/key-kit", func(w http.ResponseWriter, r *http.Request) {
 		// A browser session only: never an API key or a trusted-network skip.
-		if who, ok := auth.From(r.Context()); ok && who.Via != "session" {
+		if who, ok := webserver.From(r.Context()); ok && who.Via != "session" {
 			fail(w, http.StatusForbidden, "sign in with your password in the browser to download the key kit")
 			return
 		}
@@ -82,14 +82,14 @@ func (m *Manager) keyKitRoute(mux *http.ServeMux) {
 		fp := secrets.Fingerprint(m.Key)
 		body := keyKitFile(m.Key)
 		if m.Store != nil {
-			if err := m.setSetting(r.Context(), settingKeyKit, fp, auth.Actor(r.Context())); err != nil {
+			if err := m.setSetting(r.Context(), settingKeyKit, fp, webserver.Actor(r.Context())); err != nil {
 				log.Printf("backup: saving the key kit state: %v", err)
 			}
 			who := "someone"
-			if u, ok := auth.From(r.Context()); ok && u.Name != "" {
+			if u, ok := webserver.From(r.Context()); ok && u.Name != "" {
 				who = u.Name
 			}
-			_ = m.Store.AddEvent(context.WithoutCancel(r.Context()), &domain.Event{Actor: auth.Actor(r.Context()), Kind: "backup_used",
+			_ = m.Store.AddEvent(context.WithoutCancel(r.Context()), &domain.Event{Actor: webserver.Actor(r.Context()), Kind: "backup_used",
 				Summary: "Master key kit (fingerprint " + fp + ") downloaded by " + who,
 				Data:    map[string]any{"action": "key_kit", "fingerprint": fp}})
 		}

@@ -1,8 +1,10 @@
-package auth
+package accounts
 
 import (
 	"strings"
 	"testing"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
 // neverRead lists GET routes that hand out the database, secrets, hashes,
@@ -24,7 +26,7 @@ var neverRead = []string{
 
 func TestSecretRoutesNeedAdmin(t *testing.T) {
 	for _, r := range neverRead {
-		if got := RouteScope(r); got != ScopeAdmin {
+		if got := RouteScope(r); got != webserver.ScopeAdmin {
 			t.Errorf("%s needs %q, want admin", r, got)
 		}
 		if ReadRoutes[r] {
@@ -56,7 +58,7 @@ func TestEveryGETHasAnExplicitScope(t *testing.T) {
 }
 
 func TestUnlistedGETFailsClosed(t *testing.T) {
-	if got := RouteScope("GET /api/v1/made-up-new-route"); got != ScopeAdmin {
+	if got := RouteScope("GET /api/v1/made-up-new-route"); got != webserver.ScopeAdmin {
 		t.Errorf("an unlisted GET needs %q, want admin", got)
 	}
 }

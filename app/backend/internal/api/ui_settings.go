@@ -9,8 +9,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 )
 
@@ -111,7 +111,7 @@ func (a *API) putUISettings(w http.ResponseWriter, r *http.Request) {
 	}
 	if in.RoutineDays != nil || in.OtherDays != nil {
 		// History is also the audit trail: only the owner sets how long it lasts.
-		if who, signed := auth.From(r.Context()); !signed || who.Role != auth.RoleOwner {
+		if who, signed := webserver.From(r.Context()); !signed || who.Role != webserver.RoleOwner {
 			fail(w, http.StatusForbidden, "only the owner may change how long History is kept")
 			return
 		}

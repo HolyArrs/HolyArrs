@@ -20,7 +20,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 
@@ -274,7 +274,7 @@ func newMetadataAppRig(t *testing.T, service *metadata.Service, directMusic ...m
 	if err != nil {
 		t.Fatal(err)
 	}
-	au := auth.New(st, auth.Options{Vault: vault})
+	au := accounts.New(st, accounts.Options{Vault: vault})
 	q := jobs.New(st, jobs.Options{})
 	var artists metadata.ArtistProvider
 	if len(directMusic) > 0 {

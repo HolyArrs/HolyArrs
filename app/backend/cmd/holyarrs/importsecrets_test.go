@@ -13,7 +13,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/files"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
@@ -168,7 +168,7 @@ func TestImportSecretsThroughAPI(t *testing.T) {
 		File   map[string]any `json:"file"`
 	}
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Header.Get(auth.APIKeyHeader) != "your-owner-key-6" {
+		if r.Header.Get(accounts.APIKeyHeader) != "your-owner-key-6" {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}

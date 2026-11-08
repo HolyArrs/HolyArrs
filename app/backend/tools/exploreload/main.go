@@ -28,7 +28,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
@@ -160,7 +160,7 @@ func seed(args []string) {
 	if err := os.WriteFile(filepath.Join(*dir, passFile), []byte(pass), 0o600); err != nil {
 		log.Fatal(err)
 	}
-	hash, err := auth.HashPassword(pass)
+	hash, err := accounts.HashPassword(pass)
 	if err != nil {
 		log.Fatal(err)
 	}

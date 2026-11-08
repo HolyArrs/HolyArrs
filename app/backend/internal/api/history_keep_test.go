@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
 // History keep times live in Settings > This app: routine 30 days and the
@@ -21,24 +21,24 @@ func TestHistoryKeepSetting(t *testing.T) {
 	put := func(role, body string) int {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest("PUT", "/api/v1/settings/ui", strings.NewReader(body))
-		r = r.WithContext(auth.ContextWith(r.Context(), auth.Who{UserID: 1, Name: "luis", Role: role}))
+		r = r.WithContext(webserver.ContextWith(r.Context(), webserver.Caller{UserID: 1, Name: "luis", Role: role}))
 		a.Handler().ServeHTTP(w, r)
 		return w.Code
 	}
-	if c := put(auth.RoleAdmin, `{"history_other_days": 7}`); c != 403 {
+	if c := put(webserver.RoleAdmin, `{"history_other_days": 7}`); c != 403 {
 		t.Fatalf("admin answered %d", c)
 	}
-	if c := put(auth.RoleOwner, `{"history_routine_days": -1}`); c != 400 {
+	if c := put(webserver.RoleOwner, `{"history_routine_days": -1}`); c != 400 {
 		t.Fatalf("-1 answered %d", c)
 	}
-	if c := put(auth.RoleOwner, `{"history_other_days": 365}`); c != 200 {
+	if c := put(webserver.RoleOwner, `{"history_other_days": 365}`); c != 200 {
 		t.Fatalf("365 answered %d", c)
 	}
 	if s := a.uiSettings(context.Background()); s.HistoryRoutineDays != 30 || s.HistoryOtherDays != 365 {
 		t.Fatalf("after put %+v", s)
 	}
 	// Other this_app switches stay open to settings people.
-	if c := put(auth.RoleAdmin, `{"autoplay_trailers": false}`); c != 200 {
+	if c := put(webserver.RoleAdmin, `{"autoplay_trailers": false}`); c != 200 {
 		t.Fatalf("admin autoplay answered %d", c)
 	}
 	es, _, err := a.s.Store.Events(context.Background(), database.EventFilter{Kinds: []string{EventSettingsChanged}})

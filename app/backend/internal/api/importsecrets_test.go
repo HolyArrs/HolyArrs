@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importsecrets"
 )
 
@@ -15,7 +15,7 @@ import (
 func keyCall(t *testing.T, base, key, method, path, body string) (int, string) {
 	t.Helper()
 	req, _ := http.NewRequest(method, base+path, strings.NewReader(body))
-	req.Header.Set(auth.APIKeyHeader, key)
+	req.Header.Set(accounts.APIKeyHeader, key)
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {

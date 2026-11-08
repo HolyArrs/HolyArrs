@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/logs"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
 // Turning automatic work off does not change who may run it by hand.
@@ -22,10 +22,10 @@ func TestRunScheduleTurnedOff(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	staff := auth.Who{UserID: 2, Role: auth.RoleAdmin, Via: "session", Perms: []auth.Perm{auth.PermManageLibrary}}
+	staff := webserver.Caller{UserID: 2, Role: webserver.RoleAdmin, Via: "session", Perms: []webserver.Perm{webserver.PermManageLibrary}}
 	r := httptest.NewRequest(http.MethodPost, "/api/v1/schedules/feed_check/run", nil)
 	r.SetPathValue("kind", "feed_check")
-	r = r.WithContext(auth.ContextWith(r.Context(), staff))
+	r = r.WithContext(webserver.ContextWith(r.Context(), staff))
 	w := httptest.NewRecorder()
 	f.api.runSchedule(w, r)
 	if w.Code != http.StatusAccepted {

@@ -10,8 +10,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 )
 
@@ -121,8 +121,8 @@ func homeArtOf(backdrop, logo string, artwork sql.NullString) homeArt {
 // and the rows only the server can fill (Just arrived, New season,
 // Following, Coming soon).
 func (a *API) home(w http.ResponseWriter, r *http.Request) {
-	who, signed := auth.From(r.Context())
-	v := homeViewer{Owner: !signed || who.Has(auth.PermManageLibrary), Approver: !signed || who.Has(auth.PermApprove), Kid: a.kidMax(r) != ""}
+	who, signed := webserver.From(r.Context())
+	v := homeViewer{Owner: !signed || who.Has(webserver.PermManageLibrary), Approver: !signed || who.Has(webserver.PermApprove), Kid: a.kidMax(r) != ""}
 	if v.Kid {
 		v.Owner, v.Approver = false, false
 	}
@@ -170,7 +170,7 @@ func (a *API) home(w http.ResponseWriter, r *http.Request) {
 		run(func() error {
 			return db.QueryRowContext(ctx, "SELECT count(*) FROM slots WHERE state = 'failed'").Scan(&failed)
 		})
-		if !signed || who.Has(auth.PermSettings) {
+		if !signed || who.Has(webserver.PermSettings) {
 			run(func() error {
 				return db.QueryRowContext(ctx, "SELECT count(*) FROM health_checks WHERE confirmed != 'ok'").Scan(&sick)
 			})

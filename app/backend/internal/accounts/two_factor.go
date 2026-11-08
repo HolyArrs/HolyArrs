@@ -1,4 +1,4 @@
-package auth
+package accounts
 
 import (
 	"context"
@@ -19,8 +19,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts/qr"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/qr"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
 // Two-factor sign-in: time-based six-digit codes (RFC 6238, SHA-1, 30 s)
@@ -265,14 +266,14 @@ func (a *Auth) loginTwoFactor(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *Auth) twoFactorSetup(w http.ResponseWriter, r *http.Request) {
-	if !RequireStrong(w, r) {
+	if !webserver.RequireStrong(w, r) {
 		return
 	}
 	if a.vault == nil {
 		fail(w, http.StatusServiceUnavailable, "two-factor sign-in needs the master key; see the log")
 		return
 	}
-	who, _ := From(r.Context())
+	who, _ := webserver.From(r.Context())
 	if who.TwoFactor {
 		fail(w, http.StatusConflict, "two-factor sign-in is already on; turn it off first to start over")
 		return
@@ -290,7 +291,7 @@ func (a *Auth) twoFactorSetup(w http.ResponseWriter, r *http.Request) {
 				return err
 			}
 		}
-		id, err := a.vault.PutTx(tx, "two_factor", secret, Actor(r.Context()))
+		id, err := a.vault.PutTx(tx, "two_factor", secret, webserver.Actor(r.Context()))
 		if err != nil {
 			return err
 		}
@@ -350,7 +351,7 @@ func newBackupCodes(tx *sql.Tx, userID int64) ([]string, error) {
 }
 
 func (a *Auth) twoFactorEnable(w http.ResponseWriter, r *http.Request) {
-	if !RequireStrong(w, r) {
+	if !webserver.RequireStrong(w, r) {
 		return
 	}
 	b, ok := readCode(w, r)
@@ -361,7 +362,7 @@ func (a *Auth) twoFactorEnable(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusServiceUnavailable, "two-factor sign-in needs the master key; see the log")
 		return
 	}
-	who, _ := From(r.Context())
+	who, _ := webserver.From(r.Context())
 	var pid sql.NullInt64
 	if err := a.s.Read().QueryRowContext(r.Context(), "SELECT totp_pending_id FROM users WHERE id = ?", who.UserID).Scan(&pid); err != nil || !pid.Valid {
 		fail(w, http.StatusConflict, "start two-factor setup first")
@@ -411,14 +412,14 @@ func clearTwoFactor(tx *sql.Tx, userID int64) error {
 }
 
 func (a *Auth) twoFactorDisable(w http.ResponseWriter, r *http.Request) {
-	if !RequireStrong(w, r) {
+	if !webserver.RequireStrong(w, r) {
 		return
 	}
 	b, ok := readCode(w, r)
 	if !ok {
 		return
 	}
-	who, _ := From(r.Context())
+	who, _ := webserver.From(r.Context())
 	if !a.codeOrFail(w, r, who, b.Code) {
 		return
 	}
@@ -433,14 +434,14 @@ func (a *Auth) twoFactorDisable(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *Auth) twoFactorNewCodes(w http.ResponseWriter, r *http.Request) {
-	if !RequireStrong(w, r) {
+	if !webserver.RequireStrong(w, r) {
 		return
 	}
 	b, ok := readCode(w, r)
 	if !ok {
 		return
 	}
-	who, _ := From(r.Context())
+	who, _ := webserver.From(r.Context())
 	if !a.codeOrFail(w, r, who, b.Code) {
 		return
 	}
@@ -460,7 +461,7 @@ func (a *Auth) twoFactorNewCodes(w http.ResponseWriter, r *http.Request) {
 
 // codeOrFail checks a code for a signed-in person, with the same back-off as
 // sign-in so a stolen session cannot guess codes quickly.
-func (a *Auth) codeOrFail(w http.ResponseWriter, r *http.Request, who Who, code string) bool {
+func (a *Auth) codeOrFail(w http.ResponseWriter, r *http.Request, who webserver.Caller, code string) bool {
 	if !who.TwoFactor {
 		fail(w, http.StatusConflict, "two-factor sign-in is off")
 		return false

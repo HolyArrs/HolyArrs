@@ -1,4 +1,4 @@
-package auth
+package accounts
 
 import (
 	"context"
@@ -6,6 +6,8 @@ import (
 	"net/http/httptest"
 	"testing"
 	"time"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
 // An open stream follows its session through the hourly cookie change, and
@@ -17,7 +19,7 @@ func TestStillFollowsTheSessionFamily(t *testing.T) {
 	stream := func(family bool) *http.Request {
 		r := httptest.NewRequest(http.MethodGet, "/live", nil)
 		r.AddCookie(&http.Cookie{Name: CookieName, Value: ck.Value})
-		r = r.WithContext(ContextWith(context.Background(), Who{UserID: 1, Via: "session", Role: RoleOwner}))
+		r = r.WithContext(webserver.ContextWith(context.Background(), webserver.Caller{UserID: 1, Via: "session", Role: webserver.RoleOwner}))
 		if family {
 			r = f.a.WithSessionFamily(r)
 		}
@@ -37,7 +39,7 @@ func TestStillFollowsTheSessionFamily(t *testing.T) {
 		t.Fatal("the replaced cookie still works on its own (the check is not testing rotation)")
 	}
 	who, ok := f.a.Still(open)
-	if !ok || who.UserID == 0 || who.Role != RoleOwner {
+	if !ok || who.UserID == 0 || who.Role != webserver.RoleOwner {
 		t.Fatalf("stream lost its sign-in at the hourly cookie change: %+v %v", who, ok)
 	}
 	if resp, _ := own.do(t, f, http.MethodPost, "/api/v1/auth/logout", ""); resp.StatusCode != http.StatusNoContent {

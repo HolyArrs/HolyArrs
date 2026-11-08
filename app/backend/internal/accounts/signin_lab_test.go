@@ -1,6 +1,6 @@
 //go:build labms
 
-package auth
+package accounts
 
 import (
 	"encoding/json"
@@ -14,6 +14,8 @@ import (
 	"strings"
 	"sync/atomic"
 	"testing"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
 func TestAcceptanceLabJellyfinSignInMakesMemberAndEndsOutsideSession(t *testing.T) {
@@ -86,7 +88,7 @@ func TestAcceptanceLabJellyfinSignInMakesMemberAndEndsOutsideSession(t *testing.
 		Name string `json:"name"`
 		Role string `json:"role"`
 	}
-	if resp.StatusCode != http.StatusOK || json.Unmarshal([]byte(body), &me) != nil || me.Name == "" || me.Role != RoleMember {
+	if resp.StatusCode != http.StatusOK || json.Unmarshal([]byte(body), &me) != nil || me.Name == "" || me.Role != webserver.RoleMember {
 		t.Fatalf("the outside sign-in did not create a signed-in member: status=%d role=%q", resp.StatusCode, me.Role)
 	}
 
@@ -94,7 +96,7 @@ func TestAcceptanceLabJellyfinSignInMakesMemberAndEndsOutsideSession(t *testing.
 	err = f.s.Read().QueryRow(`SELECT u.name, u.role, u.state, u.password_hash, l.external_id
 		FROM user_links l JOIN users u ON u.id = l.user_id WHERE l.provider = ?`, ProviderJellyfin).
 		Scan(&name, &role, &state, &passwordHash, &externalID)
-	if err != nil || name != me.Name || role != RoleMember || state != "active" || passwordHash != "" || externalID == "" {
+	if err != nil || name != me.Name || role != webserver.RoleMember || state != "active" || passwordHash != "" || externalID == "" {
 		t.Fatalf("the Jellyfin link was not stored as an outside-only member: query_error=%v role=%q state=%q", err, role, state)
 	}
 	if authenticationCalls.Load() != 1 || logoutRequests.Load() != 1 || completedLogouts.Load() != 1 || proxyErrors.Load() != 0 {

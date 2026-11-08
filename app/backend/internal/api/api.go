@@ -6,9 +6,9 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/dlsync"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
 	"log"
 	"net/http"
 	"net/url"
@@ -18,10 +18,12 @@ import (
 	"sync"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/alerts"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/asks"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/backup"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/bridge"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
@@ -63,7 +65,7 @@ type Server struct {
 	Started  time.Time
 	// Auth guards every route but the health check and the sign-in page.
 	// Nil serves without sign-in (tests only).
-	Auth *auth.Auth
+	Auth *accounts.Auth
 	// Backups serves the backup routes when set; Restart is called after a
 	// restore is staged.
 	Backups *backup.Manager
@@ -309,8 +311,8 @@ func New(s Server) *API {
 
 // actor is the signed-in person; without sign-in (tests) it is the owner.
 func actor(r *http.Request) domain.Actor {
-	if _, ok := auth.From(r.Context()); ok {
-		return auth.Actor(r.Context())
+	if _, ok := webserver.From(r.Context()); ok {
+		return webserver.Actor(r.Context())
 	}
 	return domain.Actor{Kind: "user", ID: 1}
 }
@@ -483,7 +485,6 @@ func (a *API) Routes(rt *webserver.Router) {
 	}
 	a.reportRoutes(m)
 	a.askedByRoutes(m)
-	a.profileRoutes(m)
 	a.followRoutes(m)
 	a.controlRoutes(m)
 	a.migrateRoutes(m)
@@ -521,8 +522,8 @@ func (a *API) Handler() http.Handler {
 func (a *API) Chain(rt *webserver.Router) http.Handler {
 	m := rt.Mux()
 	if a.s.Auth != nil {
-		a.ai.inner = a.kidGate(m, a.partGate(m, auth.Gate(m)))
-		return secure(a.oldAppGate(a.s.Auth.Middleware(wrapMux(a.liveRecheck(a.logSettingsChanges(a.forgetStatusOnWrite(a.kidGate(m, a.partGate(m, auth.Gate(m))))))))))
+		a.ai.inner = a.kidGate(m, a.partGate(m, accounts.Gate(m)))
+		return secure(a.oldAppGate(a.s.Auth.Middleware(wrapMux(a.liveRecheck(a.logSettingsChanges(a.forgetStatusOnWrite(a.kidGate(m, a.partGate(m, accounts.Gate(m))))))))))
 	}
 	a.ai.inner = a.partGate(m, m)
 	return secure(a.oldAppGate(wrapMux(a.logSettingsChanges(a.forgetStatusOnWrite(a.partGate(m, m))))))
@@ -895,8 +896,8 @@ func (a *API) listTitles(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	out := []TitleView{}
-	who, signed := auth.From(r.Context())
-	manage := !signed || who.Has(auth.PermManageLibrary)
+	who, signed := webserver.From(r.Context())
+	manage := !signed || who.Has(webserver.PermManageLibrary)
 	ctx, err := withTitleFacts(withLookupMemo(r.Context()), a.s.Store.Read())
 	if err == nil && len(ts) > 0 {
 		ctx, err = a.withTitleBatch(ctx)
@@ -1175,12 +1176,12 @@ func (a *API) listEvents(w http.ResponseWriter, r *http.Request) {
 	}
 	// The audit trail (sign-ins, API keys, settings changes) is only for
 	// the owner and people who manage users or settings.
-	if who, signed := auth.From(r.Context()); signed && !who.MaySeeAudit() {
+	if who, signed := webserver.From(r.Context()); signed && !who.MaySeeAudit() {
 		f.HideKinds = database.AuditEventKinds
 	}
 	// Asks' Events name who asked and who decided, with the decline note:
 	// only for people who approve, as on the asks routes.
-	if who, signed := auth.From(r.Context()); signed && !who.Has(auth.PermApprove) {
+	if who, signed := webserver.From(r.Context()); signed && !who.Has(webserver.PermApprove) {
 		f.HideKinds = append(slices.Clone(f.HideKinds), domain.AskEventKinds...)
 	}
 	if f.SourceID > 0 {

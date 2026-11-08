@@ -11,7 +11,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
 )
@@ -107,7 +107,7 @@ func TestClientFolderWithoutSettings(t *testing.T) {
 	x, _, _ := manageBase(t)
 	var did int64
 	_ = x.s.Read().QueryRow("SELECT id FROM downloaders").Scan(&did)
-	ctx := auth.ContextWith(context.Background(), auth.Who{UserID: 7, Via: "session", Perms: []auth.Perm{auth.PermManageLibrary}})
+	ctx := webserver.ContextWith(context.Background(), webserver.Caller{UserID: 7, Via: "session", Perms: []webserver.Perm{webserver.PermManageLibrary}})
 	if _, _, err := x.api.clientFolder(ctx, did, "linux", "/etc", true); !errors.Is(err, errFolder) {
 		t.Fatalf("absolute: %v", err)
 	}
@@ -123,7 +123,7 @@ func TestClientFolderWithoutSettings(t *testing.T) {
 	if _, f, err := x.api.clientFolder(ctx, did, "music", "x", true); err != nil || f != "/data/downloads/x" {
 		t.Fatalf("default root %q %v", f, err)
 	}
-	admin := auth.ContextWith(context.Background(), auth.Who{UserID: 1, Via: "session", Perms: []auth.Perm{auth.PermManageLibrary, auth.PermSettings}})
+	admin := webserver.ContextWith(context.Background(), webserver.Caller{UserID: 1, Via: "session", Perms: []webserver.Perm{webserver.PermManageLibrary, webserver.PermSettings}})
 	if _, f, err := x.api.clientFolder(admin, did, "anything", "/srv/media", true); err != nil || f != "/srv/media" {
 		t.Fatalf("admin %q %v", f, err)
 	}
@@ -181,10 +181,10 @@ func TestShareLimitsOutsideNeedSettings(t *testing.T) {
 	x, f, _ := manageBase(t)
 	var did int64
 	_ = x.s.Read().QueryRow("SELECT id FROM downloaders").Scan(&did)
-	member := auth.Who{UserID: 7, Via: "session", Perms: []auth.Perm{auth.PermManageLibrary}, Scopes: []string{auth.ScopeWrite}}
-	owner := auth.Who{UserID: 1, Via: "session", Perms: []auth.Perm{auth.PermManageLibrary, auth.PermSettings}, Scopes: []string{auth.ScopeAdmin, auth.ScopeWrite}}
-	call := func(who auth.Who, body string) int {
-		req := httptest.NewRequest("POST", "/x", strings.NewReader(body)).WithContext(auth.ContextWith(context.Background(), who))
+	member := webserver.Caller{UserID: 7, Via: "session", Perms: []webserver.Perm{webserver.PermManageLibrary}, Scopes: []string{webserver.ScopeWrite}}
+	owner := webserver.Caller{UserID: 1, Via: "session", Perms: []webserver.Perm{webserver.PermManageLibrary, webserver.PermSettings}, Scopes: []string{webserver.ScopeAdmin, webserver.ScopeWrite}}
+	call := func(who webserver.Caller, body string) int {
+		req := httptest.NewRequest("POST", "/x", strings.NewReader(body)).WithContext(webserver.ContextWith(context.Background(), who))
 		req.SetPathValue("id", itoa(did))
 		rec := httptest.NewRecorder()
 		x.api.shareLimits(rec, req)
@@ -278,9 +278,9 @@ func TestLocationWithoutSettings(t *testing.T) {
 	x, f, _ := manageBase(t)
 	var did int64
 	_ = x.s.Read().QueryRow("SELECT id FROM downloaders").Scan(&did)
-	member := auth.Who{UserID: 7, Via: "session", Perms: []auth.Perm{auth.PermManageLibrary}, Scopes: []string{auth.ScopeWrite}}
+	member := webserver.Caller{UserID: 7, Via: "session", Perms: []webserver.Perm{webserver.PermManageLibrary}, Scopes: []string{webserver.ScopeWrite}}
 	call := func(body string) int {
-		req := httptest.NewRequest("POST", "/x", strings.NewReader(body)).WithContext(auth.ContextWith(context.Background(), member))
+		req := httptest.NewRequest("POST", "/x", strings.NewReader(body)).WithContext(webserver.ContextWith(context.Background(), member))
 		req.SetPathValue("id", itoa(did))
 		rec := httptest.NewRecorder()
 		x.api.setLocation(rec, req)

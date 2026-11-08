@@ -1,4 +1,4 @@
-package auth
+package accounts
 
 import (
 	"database/sql"
@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
@@ -42,7 +43,7 @@ const (
 // before the wizard is done, see setupRecentFor) and no unfinished two-factor
 // enrollment requirement. Other outside sign-ins and API keys never satisfy it.
 func RecentLocal(r *http.Request) bool {
-	who, ok := From(r.Context())
+	who, ok := webserver.From(r.Context())
 	return ok && who.Via == "session" && (who.LocalRecent || who.SetupRecent) && !who.MustTwoFactor
 }
 
@@ -102,7 +103,7 @@ var riskyRoutes = map[string]bool{
 // password proof first. A browser session needs one only on a risky route.
 // Every other kind of sign-in without an API key (the trusted-network skip)
 // can never show one, so it keeps off every admin and control route.
-func needsRecentLocal(pattern string, who Who) bool {
+func needsRecentLocal(pattern string, who webserver.Caller) bool {
 	if who.Via == "api_key" || recentLocalExempt(pattern, who) {
 		return false
 	}
@@ -110,13 +111,13 @@ func needsRecentLocal(pattern string, who Who) bool {
 		return riskyRoutes[pattern]
 	}
 	sc := RouteScope(pattern)
-	return sc == ScopeAdmin || sc == ScopeControl
+	return sc == webserver.ScopeAdmin || sc == webserver.ScopeControl
 }
 
 // recentLocalExempt keeps the recovery path open when a browser session has
 // no recent local proof. Two-factor setup and enable are open only while an
 // administrator is required to enroll, so that policy cannot lock them out.
-func recentLocalExempt(pattern string, who Who) bool {
+func recentLocalExempt(pattern string, who webserver.Caller) bool {
 	switch pattern {
 	case "GET /api/v1/auth/me", "POST /api/v1/auth/logout", "POST /api/v1/auth/reauth", "POST /api/v1/auth/setup/done",
 		"GET /api/v1/auth/sessions", "DELETE /api/v1/auth/sessions", "DELETE /api/v1/auth/sessions/{sid}":
@@ -149,7 +150,7 @@ type reauthBody struct {
 // reauth replaces the complete current session family after checking the
 // local password and, when enrolled, a current two-factor or backup code.
 func (a *Auth) reauth(w http.ResponseWriter, r *http.Request) {
-	who, ok := From(r.Context())
+	who, ok := webserver.From(r.Context())
 	if !ok || who.Via != "session" {
 		fail(w, http.StatusForbidden, "sign in in the browser before confirming your password")
 		return
@@ -236,12 +237,12 @@ func deletePresentedFamily(tx *sql.Tx, rawCookie string) error {
 // mark of the caller's session: its family loses the setup prefix, so the
 // session (and its rotations) is an ordinary one from here on.
 func (a *Auth) setupDone(w http.ResponseWriter, r *http.Request) {
-	who, ok := From(r.Context())
+	who, ok := webserver.From(r.Context())
 	if !ok || who.Via != "session" {
 		fail(w, http.StatusForbidden, "sign in in the browser first")
 		return
 	}
-	if who.Role != RoleOwner {
+	if who.Role != webserver.RoleOwner {
 		fail(w, http.StatusForbidden, "only the owner finishes first-run setup")
 		return
 	}

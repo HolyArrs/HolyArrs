@@ -10,8 +10,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/logs"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/health"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
 
@@ -40,7 +40,7 @@ func (a *API) getUpdate(w http.ResponseWriter, r *http.Request) {
 // updateView shows the feed only to people who may change settings, and
 // then as scheme, host and path only (never a name, password or query).
 func (a *API) updateView(r *http.Request, u health.UpdateInfo) health.UpdateInfo {
-	if who, ok := auth.From(r.Context()); ok && !who.Has(auth.PermSettings) {
+	if who, ok := webserver.From(r.Context()); ok && !who.Has(webserver.PermSettings) {
 		u.Feed = ""
 		return u
 	}

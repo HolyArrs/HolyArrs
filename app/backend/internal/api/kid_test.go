@@ -16,7 +16,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
@@ -245,7 +245,7 @@ func newKidRig(t *testing.T, off ...parts.Part) *kidRig {
 			}
 		}
 	}
-	a := New(Server{Store: st, Queue: q, Metadata: prov, Version: "test", Auth: auth.New(st, auth.Options{Vault: v}), Secrets: v, Live: hub, Library: lib,
+	a := New(Server{Store: st, Queue: q, Metadata: prov, Version: "test", Auth: accounts.New(st, accounts.Options{Vault: v}), Secrets: v, Live: hub, Library: lib,
 		Parts: pc})
 	srv := httptest.NewServer(a.Handler())
 	t.Cleanup(srv.Close)
@@ -703,12 +703,12 @@ func TestKidCannotReachBlockedTitleAnywhere(t *testing.T) {
 	}
 	ok := map[string]bool{}
 	checked := 0
-	for pattern, need := range auth.RoutePerms {
+	for pattern, need := range accounts.RoutePerms {
 		method, path, _ := strings.Cut(pattern, " ")
 		if method != "GET" || !strings.HasPrefix(path, "/api/v1/") {
 			continue
 		}
-		if need != auth.PermAsk && string(need) != "signed_in" && string(need) != "self" {
+		if need != webserver.PermAsk && string(need) != "signed_in" && string(need) != "self" {
 			continue
 		}
 		var urls []string

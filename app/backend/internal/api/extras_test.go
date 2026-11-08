@@ -9,7 +9,7 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
@@ -90,19 +90,19 @@ func TestTitleExtrasKidGate(t *testing.T) {
 			asked++
 			return metadata.ServerArt{Logo: "https://api.example.test/v1/img/title-logo/movie-1/1200.png"}, nil
 		}})
-	call := func(who *auth.Who, kind, id string) int {
+	call := func(who *webserver.Caller, kind, id string) int {
 		r := httptest.NewRequest("GET", "/api/v1/extras/"+kind+"/"+id, nil)
 		r.SetPathValue("kind", kind)
 		r.SetPathValue("id", id)
 		if who != nil {
-			r = r.WithContext(auth.ContextWith(r.Context(), *who))
+			r = r.WithContext(webserver.ContextWith(r.Context(), *who))
 		}
 		w := httptest.NewRecorder()
 		a.titleExtras(w, r)
 		return w.Code
 	}
-	kid := &auth.Who{UserID: 7, Role: auth.RoleMember, MaxRating: "TV-Y7"}
-	owner := &auth.Who{UserID: 1, Role: auth.RoleOwner}
+	kid := &webserver.Caller{UserID: 7, Role: webserver.RoleMember, MaxRating: "TV-Y7"}
+	owner := &webserver.Caller{UserID: 1, Role: webserver.RoleOwner}
 	// The owner fills the cache for a title above the Kid's limit.
 	if c := call(owner, "show", "9400"); c != 200 {
 		t.Fatalf("owner %d", c)

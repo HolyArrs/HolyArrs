@@ -13,8 +13,8 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/asks"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
@@ -39,7 +39,7 @@ func (s *signedIn) call(method, path, body string, want int) []byte {
 	s.t.Helper()
 	req, _ := http.NewRequest(method, s.base+path, strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set(auth.CSRFHeader, s.csrf)
+	req.Header.Set(accounts.CSRFHeader, s.csrf)
 	resp, err := s.c.Do(req)
 	if err != nil {
 		s.t.Fatal(err)
@@ -80,7 +80,7 @@ func newAskRig(t *testing.T) *askRig {
 	if err != nil {
 		t.Fatal(err)
 	}
-	au := auth.New(st, auth.Options{Vault: v})
+	au := accounts.New(st, accounts.Options{Vault: v})
 	md := &metadata.Static{Movies: []metadata.Movie{metadata.Lab().Movies[0],
 		{Name: "Paper Harbour", Year: 2023, IDs: map[string]string{"tmdb": "900002"}},
 		{Name: "Quiet Orchard", Year: 2022, IDs: map[string]string{"tmdb": "900003"}}}}
@@ -276,7 +276,7 @@ func TestLimitTurnDownAndTakeBackOverHTTP(t *testing.T) {
 
 	a := askOf(t, r.ana.call("POST", "/api/v1/asks", `{"id":"tmdb:693134"}`, 201))
 	req, _ := http.NewRequest("POST", r.srv.URL+"/api/v1/asks", strings.NewReader(`{"id":"tmdb:900002"}`))
-	req.Header.Set(auth.CSRFHeader, r.ana.csrf)
+	req.Header.Set(accounts.CSRFHeader, r.ana.csrf)
 	resp, err := r.ana.c.Do(req)
 	if err != nil {
 		t.Fatal(err)

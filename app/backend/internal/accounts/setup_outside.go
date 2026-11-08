@@ -1,4 +1,4 @@
-package auth
+package accounts
 
 import (
 	"context"
@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
@@ -105,7 +106,7 @@ func (a *Auth) makeOwnerTx(tx *sql.Tx, provider, extName, newHost string) (int64
 		}
 		name = fmt.Sprintf("%s-%d", base, i)
 	}
-	id, err := database.Insert(tx, "users", &domain.User{Name: name, Role: RoleOwner, State: "active", Perms: "[]"}, domain.System)
+	id, err := database.Insert(tx, "users", &domain.User{Name: name, Role: webserver.RoleOwner, State: "active", Perms: "[]"}, domain.System)
 	if err != nil || newHost == "" {
 		return id, name, nil, err
 	}

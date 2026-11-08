@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
 // TVDBKeyGroup and TVDBKeyName are where the person's own TVDB key is kept
@@ -23,7 +23,7 @@ func (a *API) getTVDBKey(w http.ResponseWriter, r *http.Request) {
 
 // putTVDBKey stores the key; an empty key turns TVDB off.
 func (a *API) putTVDBKey(w http.ResponseWriter, r *http.Request) {
-	if !auth.RequireStrong(w, r) {
+	if !webserver.RequireStrong(w, r) {
 		return
 	}
 	var body struct {

@@ -6,7 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
@@ -20,10 +20,10 @@ func TestAuditEventsHiddenFromHistoryReaders(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	list := func(who auth.Who, query string) (int, int) {
+	list := func(who webserver.Caller, query string) (int, int) {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest("GET", "/api/v1/events"+query, nil)
-		r = r.WithContext(auth.ContextWith(r.Context(), who))
+		r = r.WithContext(webserver.ContextWith(r.Context(), who))
 		a.Handler().ServeHTTP(w, r)
 		var out struct {
 			Events []json.RawMessage `json:"events"`
@@ -32,12 +32,12 @@ func TestAuditEventsHiddenFromHistoryReaders(t *testing.T) {
 		_ = json.Unmarshal(w.Body.Bytes(), &out)
 		return len(out.Events), out.Total
 	}
-	member := auth.Who{UserID: 2, Role: "member", Perms: []auth.Perm{auth.PermManageLibrary}}
-	readKey := auth.Who{UserID: 1, Role: auth.RoleOwner, Via: "api_key", Scopes: []string{auth.ScopeRead}}
-	settings := auth.Who{UserID: 3, Role: "member", Perms: []auth.Perm{auth.PermSettings}}
-	owner := auth.Who{UserID: 1, Role: auth.RoleOwner}
+	member := webserver.Caller{UserID: 2, Role: "member", Perms: []webserver.Perm{webserver.PermManageLibrary}}
+	readKey := webserver.Caller{UserID: 1, Role: webserver.RoleOwner, Via: "api_key", Scopes: []string{webserver.ScopeRead}}
+	settings := webserver.Caller{UserID: 3, Role: "member", Perms: []webserver.Perm{webserver.PermSettings}}
+	owner := webserver.Caller{UserID: 1, Role: webserver.RoleOwner}
 	for name, c := range map[string]struct {
-		who         auth.Who
+		who         webserver.Caller
 		query       string
 		rows, total int
 	}{

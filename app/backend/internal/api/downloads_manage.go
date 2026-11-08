@@ -8,8 +8,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
 )
@@ -248,11 +248,11 @@ func (a *API) bulkHashesOK(w http.ResponseWriter, hashes []string) bool {
 // key. No identity attached means no, unless the server runs without
 // sign-in (Auth nil, tests only).
 func (a *API) mayChangeOutside(ctx context.Context, downloaderID int64, hashes []string) bool {
-	who, ok := auth.From(ctx)
+	who, ok := webserver.From(ctx)
 	if !ok {
 		return a.s.Auth == nil
 	}
-	if who.Has(auth.PermSettings) && who.HasScope(auth.ScopeAdmin) {
+	if who.Has(webserver.PermSettings) && who.HasScope(webserver.ScopeAdmin) {
 		return true
 	}
 	for _, h := range hashes {

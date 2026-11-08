@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
@@ -83,9 +83,9 @@ func TestTitlesOwnedAsksArePerPerson(t *testing.T) {
 	a := askOf(t, r.ana.call("POST", "/api/v1/asks", `{"id":"tmdb:693134"}`, 201))
 	r.owner.call("POST", "/api/v1/asks/"+itoa(a.ID)+"/approve", `{}`, 200)
 	// Members cannot read the Library; a viewer without the right to approve can.
-	state := func(who auth.Who) string {
+	state := func(who webserver.Caller) string {
 		req := httptest.NewRequest("GET", "/api/v1/titles/owned", nil)
-		req = req.WithContext(auth.ContextWith(req.Context(), who))
+		req = req.WithContext(webserver.ContextWith(req.Context(), who))
 		rec := httptest.NewRecorder()
 		r.api.titlesOwned(rec, req)
 		var got struct {
@@ -99,13 +99,13 @@ func TestTitlesOwnedAsksArePerPerson(t *testing.T) {
 		}
 		return "missing"
 	}
-	if s := state(auth.Who{UserID: r.ana.id}); s != "requested" {
+	if s := state(webserver.Caller{UserID: r.ana.id}); s != "requested" {
 		t.Fatalf("ana %s", s)
 	}
-	if s := state(auth.Who{UserID: r.bo.id}); s != "wanted" {
+	if s := state(webserver.Caller{UserID: r.bo.id}); s != "wanted" {
 		t.Fatalf("bo %s", s)
 	}
-	if s := state(auth.Who{UserID: r.bo.id, Perms: []auth.Perm{auth.PermApprove}}); s != "requested" {
+	if s := state(webserver.Caller{UserID: r.bo.id, Perms: []webserver.Perm{webserver.PermApprove}}); s != "requested" {
 		t.Fatalf("approver %s", s)
 	}
 }

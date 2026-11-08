@@ -4,8 +4,8 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/health"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
@@ -26,14 +26,14 @@ const keyKitForOthers = "Ask the owner for the key kit: Backups don't include th
 
 // notOwner says whether the caller is signed in and is not the owner.
 func notOwner(r *http.Request) bool {
-	who, ok := auth.From(r.Context())
-	return ok && who.Role != auth.RoleOwner
+	who, ok := webserver.From(r.Context())
+	return ok && who.Role != webserver.RoleOwner
 }
 
 // ownerWords rewords the key kit warning for people who are not the owner:
 // only the owner can download the kit.
 func ownerWords(r *http.Request, cs []domain.HealthCheck) {
-	if who, ok := auth.From(r.Context()); !ok || who.Role == auth.RoleOwner {
+	if who, ok := webserver.From(r.Context()); !ok || who.Role == webserver.RoleOwner {
 		return
 	}
 	for i := range cs {

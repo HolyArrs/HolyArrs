@@ -8,9 +8,10 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/bridge"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 )
 
@@ -318,24 +319,24 @@ func (a *API) addBridge(w http.ResponseWriter, r *http.Request) {
 		// The same gates as making an old-app key by hand: a recent password
 		// sign-in, an API key with the admin scope, and a person who may
 		// manage the Library (the key acts as them).
-		if !auth.RequireStrong(w, r) {
+		if !webserver.RequireStrong(w, r) {
 			undo()
 			return
 		}
 		// Making a key is a risky action: a browser session confirms its
 		// password first, as on the old-app key routes (only here, so adding
 		// a bridge without a new key never asks).
-		if who, ok := auth.From(r.Context()); ok && who.Via == "session" && !auth.RecentLocal(r) {
+		if who, ok := webserver.From(r.Context()); ok && who.Via == "session" && !accounts.RecentLocal(r) {
 			undo()
 			writeJSON(w, http.StatusForbidden, map[string]string{"error": "confirm your local password again before making an old-app key", "code": "reauth"})
 			return
 		}
-		if who, ok := auth.From(r.Context()); ok && !who.HasScope(auth.ScopeAdmin) {
+		if who, ok := webserver.From(r.Context()); ok && !who.HasScope(webserver.ScopeAdmin) {
 			undo()
 			fail(w, http.StatusForbidden, "this API key needs the admin scope to make an old-app key")
 			return
 		}
-		if who, ok := auth.From(r.Context()); ok && !who.Has(auth.PermManageLibrary) {
+		if who, ok := webserver.From(r.Context()); ok && !who.Has(webserver.PermManageLibrary) {
 			undo()
 			fail(w, http.StatusForbidden, "the old-app key acts as you, and your account may not manage the Library")
 			return

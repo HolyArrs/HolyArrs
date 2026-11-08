@@ -7,8 +7,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
 )
@@ -17,8 +18,8 @@ import (
 // Downloader": it rides on the Downloader edit, which needs that permission.
 func TestWritableNeedsSettingsPermission(t *testing.T) {
 	for _, route := range []string{"POST /api/v1/downloaders", "PUT /api/v1/downloaders/{id}"} {
-		if auth.RoutePerms[route] != auth.PermSettings {
-			t.Errorf("%s: %v", route, auth.RoutePerms[route])
+		if accounts.RoutePerms[route] != webserver.PermSettings {
+			t.Errorf("%s: %v", route, accounts.RoutePerms[route])
 		}
 	}
 }

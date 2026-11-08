@@ -8,10 +8,9 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/musicsync"
 	"io"
 	"log"
 	"net"
@@ -25,11 +24,14 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/musicsync"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/alerts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/api"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/asks"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/backup"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/bridge"
 
@@ -809,11 +811,11 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	}})
 	optional(jobs.Loop{Name: "gates", Label: "Release gates", Every: time.Minute, Run: lib.GatesPass})
 
-	sso, err := auth.SSOFromEnv(c.URLBase)
+	sso, err := accounts.SSOFromEnv(c.URLBase)
 	if err != nil {
 		return err
 	}
-	au := auth.New(s, auth.Options{Vault: vault, SafeMode: c.SafeMode, SSO: sso, ConfigUnmapped: unmapped != ""})
+	au := accounts.New(s, accounts.Options{Vault: vault, SafeMode: c.SafeMode, SSO: sso, ConfigUnmapped: unmapped != ""})
 	defer au.Close()
 	loop(jobs.Loop{Name: "sessions", Label: "Session clean-up", Every: time.Hour, Run: au.Cleanup})
 	var restarting atomic.Bool
@@ -1151,7 +1153,7 @@ func resetOwner(args []string) int {
 	if err != nil {
 		return 2
 	}
-	name, pw, err := auth.ReadNewOwner(os.Stdin)
+	name, pw, err := accounts.ReadNewOwner(os.Stdin)
 	if err != nil {
 		log.Printf("reset-owner: %v", err)
 		return 1
@@ -1162,7 +1164,7 @@ func resetOwner(args []string) int {
 		return 1
 	}
 	defer s.Close()
-	if err := auth.ResetOwner(context.Background(), s, name, pw); err != nil {
+	if err := accounts.ResetOwner(context.Background(), s, name, pw); err != nil {
 		log.Printf("reset-owner: %v", err)
 		return 1
 	}

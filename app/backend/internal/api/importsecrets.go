@@ -5,7 +5,7 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importsecrets"
 )
 
@@ -23,7 +23,7 @@ func (a *API) importSecretsRoutes(m *http.ServeMux) {
 // importSecrets stores a parsed secrets file: {"dry_run": false, "file":
 // {...}}. The answer names items and results only, never a value.
 func (a *API) importSecrets(w http.ResponseWriter, r *http.Request) {
-	if !auth.RequireStrong(w, r) {
+	if !webserver.RequireStrong(w, r) {
 		return
 	}
 	body, err := io.ReadAll(http.MaxBytesReader(w, r.Body, importsecrets.MaxSize*2))
@@ -53,7 +53,7 @@ func (a *API) importSecrets(w http.ResponseWriter, r *http.Request) {
 // savedMoveKeys lists the old apps with a saved key and their addresses;
 // never a key.
 func (a *API) savedMoveKeys(w http.ResponseWriter, r *http.Request) {
-	if !auth.RequireStrong(w, r) {
+	if !webserver.RequireStrong(w, r) {
 		return
 	}
 	list, err := importsecrets.ListMoveCredentials(r.Context(), a.s.Store, a.s.Secrets)
@@ -66,7 +66,7 @@ func (a *API) savedMoveKeys(w http.ResponseWriter, r *http.Request) {
 
 // forgetMoveKeys deletes every saved old-app key (?kind= for one).
 func (a *API) forgetMoveKeys(w http.ResponseWriter, r *http.Request) {
-	if !auth.RequireStrong(w, r) {
+	if !webserver.RequireStrong(w, r) {
 		return
 	}
 	n, err := importsecrets.ForgetMoveCredential(r.Context(), a.s.Store, r.URL.Query().Get("kind"))

@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/compat"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
@@ -118,7 +118,7 @@ func (a *API) oldAppDeleteFiles(ctx context.Context) bool {
 // oldAppGate answers 404 for both prefixes while the old-app API is off.
 func (a *API) oldAppGate(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if auth.CompatSide(r.URL.Path) != "" && !a.oldAppOn(r.Context()) {
+		if accounts.CompatSide(r.URL.Path) != "" && !a.oldAppOn(r.Context()) {
 			http.NotFound(w, r)
 			return
 		}
@@ -132,13 +132,13 @@ type OldAppSide struct {
 	// Path is the address to paste into Seerr or Overseerr as the URL base
 	// (with this server's host and port); URL is the whole address as this
 	// request reached HolyArrs.
-	Path string              `json:"path"`
-	URL  string              `json:"url"`
-	Key  *auth.CompatKeyView `json:"key,omitempty"` // nil: no key made yet
+	Path string                  `json:"path"`
+	URL  string                  `json:"url"`
+	Key  *accounts.CompatKeyView `json:"key,omitempty"` // nil: no key made yet
 }
 
 func (a *API) oldAppAnswer(r *http.Request) (map[string]any, error) {
-	var keys []auth.CompatKeyView
+	var keys []accounts.CompatKeyView
 	if a.s.Auth != nil {
 		var err error
 		if keys, err = a.s.Auth.CompatKeys(r.Context()); err != nil {
@@ -150,7 +150,7 @@ func (a *API) oldAppAnswer(r *http.Request) (map[string]any, error) {
 		scheme = "https"
 	}
 	sides := []OldAppSide{}
-	for _, s := range auth.CompatSides {
+	for _, s := range accounts.CompatSides {
 		v := OldAppSide{Side: s, Path: webserver.URLBaseFrom(r.Context()) + "/" + s}
 		v.URL = scheme + "://" + r.Host + v.Path
 		for i := range keys {
@@ -223,21 +223,21 @@ func (a *API) makeOldAppKey(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusConflict, "sign-in is off, so no key can be made")
 		return
 	}
-	if !auth.RequireStrong(w, r) {
+	if !webserver.RequireStrong(w, r) {
 		return
 	}
 	// The new key can change the Library, so a HolyArrs API key making it
 	// must hold the write scope too: a key never makes one that reaches more.
-	if who, ok := auth.From(r.Context()); ok && !who.HasScope(auth.ScopeWrite) {
+	if who, ok := webserver.From(r.Context()); ok && !who.HasScope(webserver.ScopeWrite) {
 		fail(w, http.StatusForbidden, "this API key needs the write scope to make a key that changes the Library")
 		return
 	}
-	if who, ok := auth.From(r.Context()); ok && !who.Has(auth.PermManageLibrary) {
+	if who, ok := webserver.From(r.Context()); ok && !who.Has(webserver.PermManageLibrary) {
 		fail(w, http.StatusForbidden, "the key acts as you, and your account may not manage the Library")
 		return
 	}
 	k, err := a.s.Auth.MakeCompatKey(r, side)
-	if errors.Is(err, auth.ErrNoCompatSide) {
+	if errors.Is(err, accounts.ErrNoCompatSide) {
 		fail(w, http.StatusNotFound, err.Error())
 		return
 	}
@@ -255,7 +255,7 @@ func (a *API) deleteOldAppKey(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusNotFound, "no such key")
 		return
 	}
-	if !auth.RequireStrong(w, r) {
+	if !webserver.RequireStrong(w, r) {
 		return
 	}
 	ok, err := a.s.Auth.DeleteCompatKey(r, side)

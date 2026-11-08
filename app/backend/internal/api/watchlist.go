@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/asks"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
@@ -37,8 +37,8 @@ type watchlistView struct {
 }
 
 func mayAsk(r *http.Request) bool {
-	who, ok := auth.From(r.Context())
-	return !ok || who.Has(auth.PermAsk)
+	who, ok := webserver.From(r.Context())
+	return !ok || who.Has(webserver.PermAsk)
 }
 
 func (a *API) watchlistView(r *http.Request) (watchlistView, error) {

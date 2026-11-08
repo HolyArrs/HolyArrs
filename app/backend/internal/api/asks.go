@@ -14,9 +14,9 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/alerts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/asks"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
@@ -56,20 +56,20 @@ func (a *API) askRoutes(m *http.ServeMux) {
 // person is the signed-in person as Requests sees them. Without
 // sign-in (tests) it is user 1 with every right.
 func (a *API) person(r *http.Request) asks.Person {
-	who, ok := auth.From(r.Context())
+	who, ok := webserver.From(r.Context())
 	if !ok {
 		var name string
 		_ = a.s.Store.Read().QueryRowContext(r.Context(), "SELECT name FROM users WHERE id = 1").Scan(&name)
 		return asks.Person{UserID: 1, Name: name, AutoApprove: true, NoLimit: true}
 	}
-	return asks.Person{UserID: who.UserID, Name: who.Name, AutoApprove: who.Has(auth.PermAutoApprove), NoLimit: who.Has(auth.PermApprove),
+	return asks.Person{UserID: who.UserID, Name: who.Name, AutoApprove: who.Has(webserver.PermAutoApprove), NoLimit: who.Has(webserver.PermApprove),
 		MaxRating: a.kidMax(r)}
 }
 
 // mayApprove says whether the signed-in person decides asks.
 func mayApprove(r *http.Request) bool {
-	who, ok := auth.From(r.Context())
-	return !ok || who.Has(auth.PermApprove)
+	who, ok := webserver.From(r.Context())
+	return !ok || who.Has(webserver.PermApprove)
 }
 
 func askError(w http.ResponseWriter, err error) {
@@ -456,7 +456,7 @@ func (a *API) listAskLimits(w http.ResponseWriter, r *http.Request) {
 	rows.Close()
 	out := []askLimitView{}
 	for _, x := range list {
-		p := asks.Person{UserID: x.v.UserID, NoLimit: x.v.Role == auth.RoleOwner || strings.Contains(x.perms, `"`+string(auth.PermApprove)+`"`)}
+		p := asks.Person{UserID: x.v.UserID, NoLimit: x.v.Role == webserver.RoleOwner || strings.Contains(x.perms, `"`+string(webserver.PermApprove)+`"`)}
 		l, err := a.s.Asks.LimitOf(ctx, p)
 		if err != nil {
 			internal(w, err)
@@ -672,7 +672,7 @@ func readAlert(w http.ResponseWriter, r *http.Request) (alerts.Input, bool) {
 }
 
 func (a *API) addAlert(w http.ResponseWriter, r *http.Request) {
-	if !auth.RequireStrong(w, r) {
+	if !webserver.RequireStrong(w, r) {
 		return
 	}
 	in, ok := readAlert(w, r)
@@ -697,7 +697,7 @@ func alertID(w http.ResponseWriter, r *http.Request) (int64, bool) {
 }
 
 func (a *API) editAlert(w http.ResponseWriter, r *http.Request) {
-	if !auth.RequireStrong(w, r) {
+	if !webserver.RequireStrong(w, r) {
 		return
 	}
 	id, ok := alertID(w, r)
@@ -717,7 +717,7 @@ func (a *API) editAlert(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *API) deleteAlert(w http.ResponseWriter, r *http.Request) {
-	if !auth.RequireStrong(w, r) {
+	if !webserver.RequireStrong(w, r) {
 		return
 	}
 	id, ok := alertID(w, r)
@@ -735,7 +735,7 @@ func (a *API) deleteAlert(w http.ResponseWriter, r *http.Request) {
 // it; an email Alert sends it to the staff address, else to the person
 // testing (their own email from My account).
 func (a *API) testAlert(w http.ResponseWriter, r *http.Request) {
-	if !auth.RequireStrong(w, r) {
+	if !webserver.RequireStrong(w, r) {
 		return
 	}
 	id, ok := alertID(w, r)
@@ -847,8 +847,8 @@ func hideDeciderNames(vs []asks.View) {
 // titleAsks are the asks that led to a Title: who asked and who decided.
 // People who do not approve see only the asks they are part of.
 func (a *API) titleAsks(ctx context.Context, titleID int64) ([]asks.View, error) {
-	who, ok := auth.From(ctx)
-	if !ok || who.Has(auth.PermApprove) {
+	who, ok := webserver.From(ctx)
+	if !ok || who.Has(webserver.PermApprove) {
 		return a.s.Asks.Views(ctx, "a.title_id = ?", titleID)
 	}
 	vs, err := a.s.Asks.Views(ctx, "a.title_id = ? AND EXISTS (SELECT 1 FROM ask_people p WHERE p.ask_id = a.id AND p.user_id = ?)", titleID, who.UserID)

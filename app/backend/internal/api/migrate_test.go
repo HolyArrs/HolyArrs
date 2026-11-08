@@ -10,7 +10,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
 // fakeRadarr answers the few Radarr calls the read makes (written from the
@@ -141,7 +142,7 @@ func TestMigratePermissions(t *testing.T) {
 	withKey := func(k, method, path, body string) int {
 		req, _ := http.NewRequest(method, r.srv.URL+path, strings.NewReader(body))
 		req.Header.Set("Content-Type", "application/json")
-		req.Header.Set(auth.APIKeyHeader, k)
+		req.Header.Set(accounts.APIKeyHeader, k)
 		resp, err := http.DefaultClient.Do(req)
 		if err != nil {
 			t.Fatal(err)
@@ -164,8 +165,8 @@ func TestMigratePermissions(t *testing.T) {
 	}
 	for _, p := range []string{"POST /api/v1/migrate/probe", "POST /api/v1/migrate/read", "GET /api/v1/migrate/snapshots",
 		"GET /api/v1/migrate/snapshots/{id}", "DELETE /api/v1/migrate/snapshots/{id}"} {
-		if auth.RouteScope(p) != auth.ScopeAdmin {
-			t.Errorf("%s scope %s", p, auth.RouteScope(p))
+		if accounts.RouteScope(p) != webserver.ScopeAdmin {
+			t.Errorf("%s scope %s", p, accounts.RouteScope(p))
 		}
 	}
 }

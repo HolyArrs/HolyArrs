@@ -11,8 +11,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
 func dataPackServer(t *testing.T) (*httptest.Server, *database.Store, string) {
@@ -252,7 +253,7 @@ func TestDataPackRoutesAreOwnerOnlyAndNeedAdminScope(t *testing.T) {
 		}
 		return got.Key
 	}
-	for _, scope := range []string{auth.ScopeHealthRead, auth.ScopeRead, auth.ScopeWrite} {
+	for _, scope := range []string{webserver.ScopeHealthRead, webserver.ScopeRead, webserver.ScopeWrite} {
 		key := makeKey(scope)
 		for _, rt := range routes {
 			if status, body := keyCall(t, r.srv.URL, key, rt.method, rt.path, rt.body); status != http.StatusForbidden {
@@ -260,7 +261,7 @@ func TestDataPackRoutesAreOwnerOnlyAndNeedAdminScope(t *testing.T) {
 			}
 		}
 	}
-	admin := makeKey(auth.ScopeAdmin)
+	admin := makeKey(webserver.ScopeAdmin)
 	wants := []int{http.StatusOK, http.StatusOK, http.StatusOK, http.StatusOK, http.StatusConflict, http.StatusConflict}
 	for i, rt := range routes {
 		if status, body := keyCall(t, r.srv.URL, admin, rt.method, rt.path, rt.body); status != wants[i] {
@@ -273,14 +274,14 @@ func TestDataPackRoutesAreOwnerOnlyAndNeedAdminScope(t *testing.T) {
 		"POST /api/v1/data-packs/validate", "POST /api/v1/data-packs", "POST /api/v1/data-packs/{id}/apply",
 	}
 	for _, route := range patterns {
-		if got, ok := auth.RoutePerms[route]; !ok || got != auth.Perm("owner") {
+		if got, ok := accounts.RoutePerms[route]; !ok || got != webserver.Perm("owner") {
 			t.Errorf("%s permission=%q, want owner", route, got)
 		}
-		if got := auth.RouteScope(route); got != auth.ScopeAdmin {
+		if got := accounts.RouteScope(route); got != webserver.ScopeAdmin {
 			t.Errorf("%s scope=%s, want admin", route, got)
 		}
-		for _, scope := range []string{auth.ScopeHealthRead, auth.ScopeRead, auth.ScopeWrite} {
-			if auth.ScopesCover([]string{scope}, auth.ScopeAdmin) {
+		for _, scope := range []string{webserver.ScopeHealthRead, webserver.ScopeRead, webserver.ScopeWrite} {
+			if webserver.ScopesCover([]string{scope}, webserver.ScopeAdmin) {
 				t.Errorf("%s unexpectedly covers data-pack admin scope", scope)
 			}
 		}

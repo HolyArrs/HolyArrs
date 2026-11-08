@@ -14,7 +14,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/music/rowtpl"
 	musicscore "github.com/HolyArrs/holyarrs/app/backend/internal/music/score"
@@ -188,8 +188,11 @@ func TestTplKillSwitch(t *testing.T) {
 func TestTplKidGetsNothing(t *testing.T) {
 	r := tplRig(t)
 	reads := 0
-	r.api.s.MusicPools = func(context.Context, string) ([]byte, string, error) { reads++; return nil, "", errors.New("must not be read") }
-	kid := auth.Who{UserID: 7, Role: auth.RoleMember, MaxRating: "PG"}
+	r.api.s.MusicPools = func(context.Context, string) ([]byte, string, error) {
+		reads++
+		return nil, "", errors.New("must not be read")
+	}
+	kid := webserver.Caller{UserID: 7, Role: webserver.RoleMember, MaxRating: "PG"}
 	for _, c := range []struct {
 		path string
 		vals map[string]string
@@ -206,7 +209,7 @@ func TestTplKidGetsNothing(t *testing.T) {
 		for k, v := range c.vals {
 			req.SetPathValue(k, v)
 		}
-		req = req.WithContext(auth.ContextWith(req.Context(), kid))
+		req = req.WithContext(webserver.ContextWith(req.Context(), kid))
 		w := httptest.NewRecorder()
 		c.h(w, req)
 		body := w.Body.String()

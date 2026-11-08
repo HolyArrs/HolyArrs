@@ -1,4 +1,4 @@
-package auth
+package accounts
 
 import (
 	"context"
@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/ratings"
 )
@@ -38,18 +39,18 @@ func (a *Auth) signInSetting(ctx context.Context, key string) string {
 
 // UserView is a user as the Users screen shows them.
 type UserView struct {
-	ID        int64         `json:"id"`
-	Name      string        `json:"name"`
-	Role      string        `json:"role"`
-	State     string        `json:"state"`
-	Perms     []Perm        `json:"perms"`
-	TwoFactor bool          `json:"two_factor"`
-	Password  bool          `json:"password"` // signs in with a HolyArrs password
-	Links     []LinkView    `json:"links"`
-	SSOLinks  []SSOLinkView `json:"sso_links"` // single sign-on and trusted proxy identities
-	CreatedAt string        `json:"created_at"`
-	Avatar    *string       `json:"avatar"` // the picture's address, or null
-	LastSeen  *string       `json:"last_seen_at,omitempty"`
+	ID        int64            `json:"id"`
+	Name      string           `json:"name"`
+	Role      string           `json:"role"`
+	State     string           `json:"state"`
+	Perms     []webserver.Perm `json:"perms"`
+	TwoFactor bool             `json:"two_factor"`
+	Password  bool             `json:"password"` // signs in with a HolyArrs password
+	Links     []LinkView       `json:"links"`
+	SSOLinks  []SSOLinkView    `json:"sso_links"` // single sign-on and trusted proxy identities
+	CreatedAt string           `json:"created_at"`
+	Avatar    *string          `json:"avatar"` // the picture's address, or null
+	LastSeen  *string          `json:"last_seen_at,omitempty"`
 	// MaxRating is a Kid's age-rating limit ("" for no limit).
 	MaxRating     string `json:"max_rating"`
 	RatingCountry string `json:"rating_country"`
@@ -66,7 +67,7 @@ func countryOr(c string) string {
 // kidLimit checks an age-rating limit asked for a person of role and
 // returns it as stored, or an error in plain words for a 400. A limit is
 // refused while sign-in is skipped on the local network (skipLocal).
-func kidLimit(role, max, country string, perms []Perm, skipLocal bool) (string, string, error) {
+func kidLimit(role, max, country string, perms []webserver.Perm, skipLocal bool) (string, string, error) {
 	max, country = ratings.Norm(max), countryOr(country)
 	if !ratings.Valid(max) {
 		return "", "", fmt.Errorf("unknown age rating %q: pick one of %s, or leave it empty for no limit", max, ratings.Choices())
@@ -74,7 +75,7 @@ func kidLimit(role, max, country string, perms []Perm, skipLocal bool) (string, 
 	if !ratings.ValidCountry(country) {
 		return "", "", errors.New("Only US age ratings are known for now.")
 	}
-	if max != "" && role != RoleMember {
+	if max != "" && role != webserver.RoleMember {
 		return "", "", errors.New("Only members can have an age-rating limit.")
 	}
 	if max != "" && skipLocal {
@@ -84,7 +85,7 @@ func kidLimit(role, max, country string, perms []Perm, skipLocal bool) (string, 
 		// A Kid may only ask: any other permission would open routes
 		// (live events, downloads, history, jobs) the limit does not cover.
 		for _, p := range perms {
-			if p != PermAsk && p != PermAutoApprove {
+			if p != webserver.PermAsk && p != webserver.PermAutoApprove {
 				return "", "", errors.New("A Kid account can only ask for titles.")
 			}
 		}
@@ -153,7 +154,7 @@ func (a *Auth) listUsers(w http.ResponseWriter, r *http.Request) {
 			serverError(w, "users", err)
 			return
 		}
-		u.Perms = Who{Role: u.Role, Perms: parsePerms(perms)}.Effective()
+		u.Perms = webserver.Caller{Role: u.Role, Perms: parsePerms(perms)}.Effective()
 		u.RatingCountry = countryOr(u.RatingCountry)
 		u.Links = []LinkView{}
 		u.SSOLinks = []SSOLinkView{}
@@ -197,16 +198,16 @@ func (a *Auth) listUsers(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"users": out, "perms": AllPerms})
+	writeJSON(w, http.StatusOK, map[string]any{"users": out, "perms": webserver.AllPerms})
 }
 
 // mayGrant checks the permissions an owner or admin hands out: an admin may
 // only give what they hold, and only to members.
-func mayGrant(by Who, role string, perms []Perm) error {
-	if by.Role == RoleOwner {
+func mayGrant(by webserver.Caller, role string, perms []webserver.Perm) error {
+	if by.Role == webserver.RoleOwner {
 		return nil
 	}
-	if role != RoleMember {
+	if role != webserver.RoleMember {
 		return errors.New("only the owner can make admins")
 	}
 	for _, p := range perms {
@@ -217,10 +218,10 @@ func mayGrant(by Who, role string, perms []Perm) error {
 	return nil
 }
 
-func readPerms(raw []string) ([]Perm, error) {
-	out := []Perm{}
+func readPerms(raw []string) ([]webserver.Perm, error) {
+	out := []webserver.Perm{}
 	for _, s := range raw {
-		p := Perm(s)
+		p := webserver.Perm(s)
 		if !validPerm(p) {
 			return nil, fmt.Errorf("unknown permission %q", s)
 		}
@@ -235,8 +236,8 @@ func readPerms(raw []string) ([]Perm, error) {
 // control scope included, so an API key may invite or promote an admin
 // only when it holds the control scope itself. The admin scope does not
 // imply control. It writes 403 and returns false otherwise.
-func mayMakeAdmin(w http.ResponseWriter, by Who) bool {
-	if by.Via == "api_key" && !ScopesCover(by.Scopes, ScopeControl) {
+func mayMakeAdmin(w http.ResponseWriter, by webserver.Caller) bool {
+	if by.Via == "api_key" && !webserver.ScopesCover(by.Scopes, webserver.ScopeControl) {
 		fail(w, http.StatusForbidden, "making an admin with an API key needs the control scope")
 		return false
 	}
@@ -244,10 +245,10 @@ func mayMakeAdmin(w http.ResponseWriter, by Who) bool {
 }
 
 func (a *Auth) editUser(w http.ResponseWriter, r *http.Request) {
-	if !RequireStrong(w, r) {
+	if !webserver.RequireStrong(w, r) {
 		return
 	}
-	by, _ := From(r.Context())
+	by, _ := webserver.From(r.Context())
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
 		fail(w, http.StatusNotFound, "no such user")
@@ -275,12 +276,12 @@ func (a *Auth) editUser(w http.ResponseWriter, r *http.Request) {
 		serverError(w, "edit user", err)
 		return
 	}
-	if role == RoleOwner {
+	if role == webserver.RoleOwner {
 		fail(w, http.StatusForbidden, "the owner cannot be changed here; use the reset-owner command to change the owner")
 		return
 	}
 	oldRating, oldCountry := maxRating, country
-	if by.Role != RoleOwner && role != RoleMember {
+	if by.Role != webserver.RoleOwner && role != webserver.RoleMember {
 		fail(w, http.StatusForbidden, "only the owner can change an admin")
 		return
 	}
@@ -290,12 +291,12 @@ func (a *Auth) editUser(w http.ResponseWriter, r *http.Request) {
 	}
 	newRole, newState, perms := role, state, parsePerms(permsRaw)
 	if body.Role != nil {
-		if *body.Role != RoleAdmin && *body.Role != RoleMember {
+		if *body.Role != webserver.RoleAdmin && *body.Role != webserver.RoleMember {
 			fail(w, http.StatusBadRequest, "role must be admin or member")
 			return
 		}
 		if *body.Role != role {
-			perms = DefaultPerms(*body.Role)
+			perms = webserver.DefaultPerms(*body.Role)
 		}
 		newRole = *body.Role
 	}
@@ -314,7 +315,7 @@ func (a *Auth) editUser(w http.ResponseWriter, r *http.Request) {
 	}
 	if body.MaxRating != nil {
 		maxRating = *body.MaxRating
-	} else if newRole != RoleMember {
+	} else if newRole != webserver.RoleMember {
 		maxRating = "" // making someone an admin clears their limit
 	}
 	if body.RatingCountry != nil {
@@ -324,14 +325,14 @@ func (a *Auth) editUser(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	if newRole == RoleAdmin && role != RoleAdmin && !mayMakeAdmin(w, by) {
+	if newRole == webserver.RoleAdmin && role != webserver.RoleAdmin && !mayMakeAdmin(w, by) {
 		return
 	}
 	if err := mayGrant(by, newRole, perms); err != nil {
 		fail(w, http.StatusForbidden, err.Error())
 		return
 	}
-	actor, _ := json.Marshal(Actor(r.Context()))
+	actor, _ := json.Marshal(webserver.Actor(r.Context()))
 	err = a.s.WriteCore(r.Context(), func(tx *sql.Tx) error {
 		if _, err := tx.Exec("UPDATE users SET role = ?, perms = ?, state = ?, max_rating = ?, rating_country = ?, updated_at = ?, updated_by = ? WHERE id = ?",
 			newRole, permsJSON(perms), newState, maxRating, country, database.FormatTime(a.now()), string(actor), id); err != nil {
@@ -374,14 +375,14 @@ func (a *Auth) editUser(w http.ResponseWriter, r *http.Request) {
 			map[string]any{"role": newRole, "state": newState})
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"id": id, "role": newRole, "state": newState,
-		"perms": Who{Role: newRole, Perms: perms}.Effective(), "max_rating": maxRating, "rating_country": country})
+		"perms": webserver.Caller{Role: newRole, Perms: perms}.Effective(), "max_rating": maxRating, "rating_country": country})
 }
 
 func (a *Auth) resetUserTwoFactor(w http.ResponseWriter, r *http.Request) {
-	if !RequireStrong(w, r) {
+	if !webserver.RequireStrong(w, r) {
 		return
 	}
-	by, _ := From(r.Context())
+	by, _ := webserver.From(r.Context())
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
 		fail(w, http.StatusNotFound, "no such user")
@@ -392,7 +393,7 @@ func (a *Auth) resetUserTwoFactor(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusNotFound, "no such user")
 		return
 	}
-	if role == RoleOwner || (by.Role != RoleOwner && role != RoleMember) {
+	if role == webserver.RoleOwner || (by.Role != webserver.RoleOwner && role != webserver.RoleMember) {
 		fail(w, http.StatusForbidden, "you may reset two-factor sign-in only for people below you; the owner uses the reset-owner command")
 		return
 	}
@@ -416,10 +417,10 @@ func (a *Auth) resetUserTwoFactor(w http.ResponseWriter, r *http.Request) {
 // password when they forgot it. The person is signed out everywhere and their
 // API keys stop, the same as a turned-off account.
 func (a *Auth) setUserPassword(w http.ResponseWriter, r *http.Request) {
-	if !RequireStrong(w, r) {
+	if !webserver.RequireStrong(w, r) {
 		return
 	}
-	by, _ := From(r.Context())
+	by, _ := webserver.From(r.Context())
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
 		fail(w, http.StatusNotFound, "no such user")
@@ -438,7 +439,7 @@ func (a *Auth) setUserPassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Signing in as them must not give an admin more than they already have.
-	if err := mayGrant(by, role, parsePerms(permsRaw)); err != nil && role == RoleMember {
+	if err := mayGrant(by, role, parsePerms(permsRaw)); err != nil && role == webserver.RoleMember {
 		fail(w, http.StatusForbidden, "they may do things you may not, so only the owner can set their password")
 		return
 	}
@@ -446,7 +447,7 @@ func (a *Auth) setUserPassword(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusForbidden, "change your own password from your account")
 		return
 	}
-	if role == RoleOwner || (by.Role != RoleOwner && role != RoleMember) {
+	if role == webserver.RoleOwner || (by.Role != webserver.RoleOwner && role != webserver.RoleMember) {
 		fail(w, http.StatusForbidden, "you may set a password only for people below you; the owner uses the reset-owner command")
 		return
 	}
@@ -483,15 +484,15 @@ func (a *Auth) setUserPassword(w http.ResponseWriter, r *http.Request) {
 
 // InviteView is an invite without its link.
 type InviteView struct {
-	ID        string  `json:"id"`
-	Role      string  `json:"role"`
-	Perms     []Perm  `json:"perms"`
-	Note      string  `json:"note"`
-	CreatedBy string  `json:"created_by"`
-	CreatedAt string  `json:"created_at"`
-	ExpiresAt string  `json:"expires_at"`
-	UsedAt    *string `json:"used_at,omitempty"`
-	UsedBy    *string `json:"used_by,omitempty"`
+	ID        string           `json:"id"`
+	Role      string           `json:"role"`
+	Perms     []webserver.Perm `json:"perms"`
+	Note      string           `json:"note"`
+	CreatedBy string           `json:"created_by"`
+	CreatedAt string           `json:"created_at"`
+	ExpiresAt string           `json:"expires_at"`
+	UsedAt    *string          `json:"used_at,omitempty"`
+	UsedBy    *string          `json:"used_by,omitempty"`
 	// MaxRating is the age-rating limit the new person gets ("" for none).
 	MaxRating     string `json:"max_rating"`
 	RatingCountry string `json:"rating_country"`
@@ -529,10 +530,10 @@ func (a *Auth) listInvites(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *Auth) makeInvite(w http.ResponseWriter, r *http.Request) {
-	if !RequireStrong(w, r) {
+	if !webserver.RequireStrong(w, r) {
 		return
 	}
-	by, _ := From(r.Context())
+	by, _ := webserver.From(r.Context())
 	var body struct {
 		Role          string    `json:"role"`
 		Perms         *[]string `json:"perms"`
@@ -546,13 +547,13 @@ func (a *Auth) makeInvite(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if body.Role == "" {
-		body.Role = RoleMember
+		body.Role = webserver.RoleMember
 	}
-	if body.Role != RoleAdmin && body.Role != RoleMember {
+	if body.Role != webserver.RoleAdmin && body.Role != webserver.RoleMember {
 		fail(w, http.StatusBadRequest, "role must be admin or member")
 		return
 	}
-	perms := DefaultPerms(body.Role)
+	perms := webserver.DefaultPerms(body.Role)
 	if body.Perms != nil {
 		var err error
 		if perms, err = readPerms(*body.Perms); err != nil {
@@ -565,7 +566,7 @@ func (a *Auth) makeInvite(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	if body.Role == RoleAdmin && !mayMakeAdmin(w, by) {
+	if body.Role == webserver.RoleAdmin && !mayMakeAdmin(w, by) {
 		return
 	}
 	if err := mayGrant(by, body.Role, perms); err != nil {
@@ -601,15 +602,15 @@ func (a *Auth) makeInvite(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *Auth) deleteInvite(w http.ResponseWriter, r *http.Request) {
-	if !RequireStrong(w, r) {
+	if !webserver.RequireStrong(w, r) {
 		return
 	}
-	by, _ := From(r.Context())
+	by, _ := webserver.From(r.Context())
 	var n int64
 	err := a.s.WriteCore(r.Context(), func(tx *sql.Tx) error {
 		// Admins may take back only their own invites.
 		res, err := tx.Exec("DELETE FROM invites WHERE hash = ? AND used_at IS NULL AND (? OR created_by = ?)",
-			r.PathValue("id"), by.Role == RoleOwner, by.UserID)
+			r.PathValue("id"), by.Role == webserver.RoleOwner, by.UserID)
 		if err == nil {
 			n, err = res.RowsAffected()
 		}
@@ -686,8 +687,8 @@ func (a *Auth) inviteUser(tx *sql.Tx, tok string) (domain.User, error) {
 		return domain.User{}, errInviteGone
 	}
 	// The link gives only what its maker still holds today.
-	perms = permsJSON(slices.DeleteFunc(parsePerms(perms), func(p Perm) bool {
-		return !(Who{Role: byRole, Perms: parsePerms(byPerms)}).Has(p)
+	perms = permsJSON(slices.DeleteFunc(parsePerms(perms), func(p webserver.Perm) bool {
+		return !(webserver.Caller{Role: byRole, Perms: parsePerms(byPerms)}).Has(p)
 	}))
 	return domain.User{Role: role, State: "active", Perms: perms, MaxRating: maxRating, RatingCountry: countryOr(country)}, nil
 }
@@ -771,10 +772,10 @@ func (a *Auth) acceptInvite(w http.ResponseWriter, r *http.Request) {
 // changePassword sets a new password for the signed-in person after checking
 // the current one; every other session of theirs ends.
 func (a *Auth) changePassword(w http.ResponseWriter, r *http.Request) {
-	if !RequireStrong(w, r) {
+	if !webserver.RequireStrong(w, r) {
 		return
 	}
-	who, _ := From(r.Context())
+	who, _ := webserver.From(r.Context())
 	var body struct {
 		Current string `json:"current"`
 		New     string `json:"new"`
@@ -864,7 +865,7 @@ func (a *Auth) changePassword(w http.ResponseWriter, r *http.Request) {
 }
 
 // samePerms says two permission lists hold the same permissions, in any order.
-func samePerms(x, y []Perm) bool {
+func samePerms(x, y []webserver.Perm) bool {
 	if len(x) != len(y) {
 		return false
 	}

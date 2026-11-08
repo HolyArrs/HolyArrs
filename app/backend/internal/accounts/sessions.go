@@ -1,4 +1,4 @@
-package auth
+package accounts
 
 import (
 	"context"
@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
 // newFamily is a session's public id: random, never the cookie or its hash.
@@ -91,7 +92,7 @@ func (a *Auth) endSessions(ctx context.Context, userID int64, sid, keep string) 
 }
 
 func (a *Auth) mySessions(w http.ResponseWriter, r *http.Request) {
-	who, _ := From(r.Context())
+	who, _ := webserver.From(r.Context())
 	out, err := a.listSessions(r.Context(), who.UserID, a.currentFamily(r))
 	if err != nil {
 		serverError(w, "sessions", err)
@@ -104,14 +105,14 @@ func (a *Auth) mySessions(w http.ResponseWriter, r *http.Request) {
 func (a *Auth) endMyOtherSessions(w http.ResponseWriter, r *http.Request) {
 	// An API key or the local network has no current session: "other"
 	// would be every session.
-	if who, ok := From(r.Context()); ok && who.Via != "session" {
+	if who, ok := webserver.From(r.Context()); ok && who.Via != "session" {
 		fail(w, http.StatusBadRequest, "use a signed-in browser session; an API key has no session of its own to keep")
 		return
 	}
-	if !RequireStrong(w, r) {
+	if !webserver.RequireStrong(w, r) {
 		return
 	}
-	who, _ := From(r.Context())
+	who, _ := webserver.From(r.Context())
 	n, err := a.endSessions(r.Context(), who.UserID, "", a.currentFamily(r))
 	if err != nil {
 		serverError(w, "sessions", err)
@@ -123,10 +124,10 @@ func (a *Auth) endMyOtherSessions(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *Auth) endMySession(w http.ResponseWriter, r *http.Request) {
-	if !RequireStrong(w, r) {
+	if !webserver.RequireStrong(w, r) {
 		return
 	}
-	who, _ := From(r.Context())
+	who, _ := webserver.From(r.Context())
 	n, err := a.endSessions(r.Context(), who.UserID, r.PathValue("sid"), "")
 	if err != nil {
 		serverError(w, "sessions", err)
@@ -144,7 +145,7 @@ func (a *Auth) endMySession(w http.ResponseWriter, r *http.Request) {
 // otherUser finds the person whose sessions an owner or admin looks at.
 // The owner reaches everyone; an admin reaches members and themselves.
 func (a *Auth) otherUser(w http.ResponseWriter, r *http.Request) (int64, bool) {
-	by, _ := From(r.Context())
+	by, _ := webserver.From(r.Context())
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	var role string
 	if err != nil {
@@ -160,7 +161,7 @@ func (a *Auth) otherUser(w http.ResponseWriter, r *http.Request) (int64, bool) {
 		serverError(w, "sessions", err)
 		return 0, false
 	}
-	if by.Role != RoleOwner && id != by.UserID && role != RoleMember {
+	if by.Role != webserver.RoleOwner && id != by.UserID && role != webserver.RoleMember {
 		fail(w, http.StatusForbidden, "only the owner can see or end the owner's and admins' sessions")
 		return 0, false
 	}
@@ -183,14 +184,14 @@ func (a *Auth) userSessions(w http.ResponseWriter, r *http.Request) {
 // endUserSessions ends every session of a person (the caller's own
 // session stays when it is theirs).
 func (a *Auth) endUserSessions(w http.ResponseWriter, r *http.Request) {
-	if !RequireStrong(w, r) {
+	if !webserver.RequireStrong(w, r) {
 		return
 	}
 	id, ok := a.otherUser(w, r)
 	if !ok {
 		return
 	}
-	by, _ := From(r.Context())
+	by, _ := webserver.From(r.Context())
 	n, err := a.endSessions(r.Context(), id, "", a.currentFamily(r))
 	if err != nil {
 		serverError(w, "sessions", err)
@@ -202,14 +203,14 @@ func (a *Auth) endUserSessions(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *Auth) endUserSession(w http.ResponseWriter, r *http.Request) {
-	if !RequireStrong(w, r) {
+	if !webserver.RequireStrong(w, r) {
 		return
 	}
 	id, ok := a.otherUser(w, r)
 	if !ok {
 		return
 	}
-	by, _ := From(r.Context())
+	by, _ := webserver.From(r.Context())
 	n, err := a.endSessions(r.Context(), id, r.PathValue("sid"), "")
 	if err != nil {
 		serverError(w, "sessions", err)

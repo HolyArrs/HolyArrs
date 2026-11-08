@@ -12,8 +12,8 @@ import (
 	"strings"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/asks"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/ratings"
@@ -95,8 +95,8 @@ func (a *API) titlesOwned(w http.ResponseWriter, r *http.Request) {
 	max := a.kidMax(r)
 	// As titleAsks: without the right to approve, only the caller's own
 	// asks mark a title requested (the body, so the ETag, is per person).
-	who, signed := auth.From(r.Context())
-	all := !signed || who.Has(auth.PermApprove)
+	who, signed := webserver.From(r.Context())
+	all := !signed || who.Has(webserver.PermApprove)
 	rows, err := a.s.Store.Read().QueryContext(r.Context(), ownedSQL, all, who.UserID)
 	if err != nil {
 		internal(w, err)
@@ -234,9 +234,9 @@ func (a *API) withTitleBatch(ctx context.Context) (context.Context, error) {
 		b.labels[v.ID] = v
 	}
 	// Asks: the same rules as titleAsks, in one read.
-	who, ok := auth.From(ctx)
+	who, ok := webserver.From(ctx)
 	var views []asks.View
-	if !ok || who.Has(auth.PermApprove) {
+	if !ok || who.Has(webserver.PermApprove) {
 		views, err = a.s.Asks.Views(ctx, "a.title_id IS NOT NULL")
 	} else {
 		views, err = a.s.Asks.Views(ctx, "a.title_id IS NOT NULL AND EXISTS (SELECT 1 FROM ask_people p WHERE p.ask_id = a.id AND p.user_id = ?)", who.UserID)

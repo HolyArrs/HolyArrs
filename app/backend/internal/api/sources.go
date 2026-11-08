@@ -8,8 +8,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
@@ -146,7 +146,7 @@ func (a *API) publishSource(x domain.Source) {
 }
 
 func (a *API) addSource(w http.ResponseWriter, r *http.Request) {
-	if !auth.RequireStrong(w, r) {
+	if !webserver.RequireStrong(w, r) {
 		return
 	}
 	in, ok := readSource(w, r)
@@ -163,7 +163,7 @@ func (a *API) addSource(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *API) editSource(w http.ResponseWriter, r *http.Request) {
-	if !auth.RequireStrong(w, r) {
+	if !webserver.RequireStrong(w, r) {
 		return
 	}
 	id, ok := sourceID(w, r)
@@ -184,7 +184,7 @@ func (a *API) editSource(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *API) deleteSource(w http.ResponseWriter, r *http.Request) {
-	if !auth.RequireStrong(w, r) {
+	if !webserver.RequireStrong(w, r) {
 		return
 	}
 	id, ok := sourceID(w, r)

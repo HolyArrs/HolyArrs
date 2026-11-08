@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
@@ -151,7 +151,7 @@ func TestSignInSettingsAreAudited(t *testing.T) {
 		req, _ := http.NewRequest(method, f.srv.URL+path, strings.NewReader(body))
 		req.Header.Set("Content-Type", "application/json")
 		if csrf != "" {
-			req.Header.Set(auth.CSRFHeader, csrf)
+			req.Header.Set(accounts.CSRFHeader, csrf)
 		}
 		resp, err := c.Do(req)
 		if err != nil {

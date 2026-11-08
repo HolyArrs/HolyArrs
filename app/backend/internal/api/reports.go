@@ -7,8 +7,8 @@ import (
 	"strconv"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/asks"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/ratings"
@@ -27,8 +27,8 @@ func (a *API) reportRoutes(m *http.ServeMux) {
 // mayManageReports says whether the signed-in person sees and closes every
 // report (manage_library; everyone without sign-in in tests).
 func mayManageReports(r *http.Request) bool {
-	who, ok := auth.From(r.Context())
-	return !ok || who.Has(auth.PermManageLibrary)
+	who, ok := webserver.From(r.Context())
+	return !ok || who.Has(webserver.PermManageLibrary)
 }
 
 func reportError(w http.ResponseWriter, err error) {

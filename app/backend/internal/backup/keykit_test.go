@@ -14,8 +14,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
-
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
@@ -158,11 +156,11 @@ func TestKeyKitRefusesAPIKeys(t *testing.T) {
 	m.Key = labKey(5)
 	mux := http.NewServeMux()
 	m.Routes(mux, func() {})
-	for _, who := range []auth.Who{
-		{UserID: 1, Via: "api_key", Role: auth.RoleOwner, Perms: auth.DefaultPerms(auth.RoleOwner), Scopes: []string{auth.ScopeAll}},
-		{UserID: 1, Via: "local_network", Role: auth.RoleOwner, Perms: auth.DefaultPerms(auth.RoleOwner)},
+	for _, who := range []webserver.Caller{
+		{UserID: 1, Via: "api_key", Role: webserver.RoleOwner, Perms: webserver.DefaultPerms(webserver.RoleOwner), Scopes: []string{webserver.ScopeAll}},
+		{UserID: 1, Via: "local_network", Role: webserver.RoleOwner, Perms: webserver.DefaultPerms(webserver.RoleOwner)},
 	} {
-		r := httptest.NewRequest(http.MethodPost, keyKitPath, nil).WithContext(auth.ContextWith(context.Background(), who))
+		r := httptest.NewRequest(http.MethodPost, keyKitPath, nil).WithContext(webserver.ContextWith(context.Background(), who))
 		w := httptest.NewRecorder()
 		mux.ServeHTTP(w, r)
 		if w.Code != http.StatusForbidden {

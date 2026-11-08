@@ -1,4 +1,4 @@
-package auth
+package accounts
 
 import (
 	"context"
@@ -104,15 +104,15 @@ func (a *Auth) ssoSettingsRoutes(m *http.ServeMux) {
 
 // ssoOwner lets only the owner, in a browser session with a recent local
 // password proof, reach the single sign-on setup. API keys never do.
-func ssoOwner(w http.ResponseWriter, r *http.Request) (Who, bool) {
-	who, ok := From(r.Context())
-	if !ok || who.Role != RoleOwner {
+func ssoOwner(w http.ResponseWriter, r *http.Request) (webserver.Caller, bool) {
+	who, ok := webserver.From(r.Context())
+	if !ok || who.Role != webserver.RoleOwner {
 		fail(w, http.StatusForbidden, "only the owner sets up single sign-on")
-		return Who{}, false
+		return webserver.Caller{}, false
 	}
 	if !RecentLocal(r) {
 		writeJSON(w, http.StatusForbidden, map[string]string{"error": "confirm your local password again before using this route", "code": "reauth"})
-		return Who{}, false
+		return webserver.Caller{}, false
 	}
 	return who, true
 }
@@ -186,7 +186,7 @@ func (a *Auth) getSSO(w http.ResponseWriter, r *http.Request) {
 
 // checkOwnerProof checks the password (and two-factor code) sent with a
 // single sign-on change, with the same back-off as confirming a sign-in.
-func (a *Auth) checkOwnerProof(w http.ResponseWriter, r *http.Request, who Who, password, code string) bool {
+func (a *Auth) checkOwnerProof(w http.ResponseWriter, r *http.Request, who webserver.Caller, password, code string) bool {
 	key := "sso-proof:" + itoa(who.UserID)
 	a.mu.Lock()
 	wait := a.waitFor(key, freeTries)
@@ -326,7 +326,7 @@ func (a *Auth) putSSO(w http.ResponseWriter, r *http.Request) {
 		a.swapOIDC(nil)
 	}
 	var linksGone, sessionsGone int64
-	by := Actor(ctx)
+	by := webserver.Actor(ctx)
 	err := a.s.WriteCore(ctx, func(tx *sql.Tx) error {
 		if newSecret != "" || body.PublicClient {
 			if cur.SecretID != 0 {
@@ -474,7 +474,7 @@ func (a *Auth) ssoLinksOf(ctx context.Context, userID int64) []SSOLinkView {
 }
 
 func (a *Auth) mySSOLinks(w http.ResponseWriter, r *http.Request) {
-	who, ok := From(r.Context())
+	who, ok := webserver.From(r.Context())
 	if !ok || who.UserID == 0 {
 		fail(w, http.StatusForbidden, "sign in first")
 		return
@@ -558,7 +558,7 @@ func (a *Auth) unlinkSSO(w http.ResponseWriter, r *http.Request, userID int64, s
 }
 
 func (a *Auth) unlinkMySSO(w http.ResponseWriter, r *http.Request) {
-	who, ok := From(r.Context())
+	who, ok := webserver.From(r.Context())
 	if !ok || !RecentLocal(r) {
 		writeJSON(w, http.StatusForbidden, map[string]string{"error": "confirm your local password again before using this route", "code": "reauth"})
 		return

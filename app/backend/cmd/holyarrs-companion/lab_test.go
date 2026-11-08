@@ -17,9 +17,10 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/api"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
 // This opt-in lab uses the real API and auth with disposable state. Its only
@@ -36,7 +37,7 @@ func TestCompanionContainerLab(t *testing.T) {
 		t.Fatal("disposable store could not start")
 	}
 	defer st.Close()
-	a := auth.New(st, auth.Options{AllowedHosts: []string{"host.docker.internal"}})
+	a := accounts.New(st, accounts.Options{AllowedHosts: []string{"host.docker.internal"}})
 	listener, err := net.Listen("tcp", ":18740")
 	if err != nil {
 		t.Fatal("owned fixture port 18740 is unavailable; nothing was replaced")
@@ -66,7 +67,7 @@ func TestCompanionContainerLab(t *testing.T) {
 		}
 		return answer
 	}
-	if _, err := os.Stat(filepath.Join(st.Dir(), auth.SetupCodeFile)); !errors.Is(err, os.ErrNotExist) {
+	if _, err := os.Stat(filepath.Join(st.Dir(), accounts.SetupCodeFile)); !errors.Is(err, os.ErrNotExist) {
 		t.Fatal("a setup code file was written; first run has no setup code")
 	}
 	var session struct {
@@ -82,11 +83,11 @@ func TestCompanionContainerLab(t *testing.T) {
 		Key string `json:"key"`
 	}
 	if err := json.Unmarshal(request(owner, "POST", "/api/v1/auth/keys", map[string]any{
-		"label": "owned health companion lab", "scopes": []string{auth.ScopeHealthRead},
-	}, map[string]string{auth.CSRFHeader: session.CSRF}, http.StatusCreated), &key); err != nil || key.ID < 1 || key.Key == "" {
+		"label": "owned health companion lab", "scopes": []string{webserver.ScopeHealthRead},
+	}, map[string]string{accounts.CSRFHeader: session.CSRF}, http.StatusCreated), &key); err != nil || key.ID < 1 || key.Key == "" {
 		t.Fatal("task-only key could not be issued")
 	}
-	headers := map[string]string{auth.APIKeyHeader: key.Key}
+	headers := map[string]string{accounts.APIKeyHeader: key.Key}
 	request(http.DefaultClient, "GET", "/api/v1/health/states", nil, headers, http.StatusOK)
 	for _, route := range []string{"/api/v1/titles", "/api/v1/settings/naming", "/api/v1/auth/keys"} {
 		request(http.DefaultClient, "GET", route, nil, headers, http.StatusForbidden)
@@ -149,7 +150,7 @@ func TestCompanionContainerLab(t *testing.T) {
 	if json.Unmarshal(output, &summary) != nil || summary.States == nil {
 		t.Fatal("companion did not return state counts")
 	}
-	request(owner, "DELETE", fmt.Sprintf("/api/v1/auth/keys/%d", key.ID), nil, map[string]string{auth.CSRFHeader: session.CSRF}, http.StatusNoContent)
+	request(owner, "DELETE", fmt.Sprintf("/api/v1/auth/keys/%d", key.ID), nil, map[string]string{accounts.CSRFHeader: session.CSRF}, http.StatusNoContent)
 	request(http.DefaultClient, "GET", "/api/v1/health/states", nil, headers, http.StatusUnauthorized)
 	t.Log("container health read passed; other reads, mutation and scope escalation denied; key revoked; owned container and temporary state cleaned")
 }

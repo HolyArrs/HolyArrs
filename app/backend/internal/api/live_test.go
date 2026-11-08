@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/dlsync"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
@@ -42,7 +42,7 @@ func (x liveSetup) call(t *testing.T, u liveUser, method, path, body string, csr
 	req, _ := http.NewRequest(method, x.srv.URL+path, strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	if csrf {
-		req.Header.Set(auth.CSRFHeader, u.csrf)
+		req.Header.Set(accounts.CSRFHeader, u.csrf)
 	}
 	c := u.c
 	if c == nil {
@@ -73,7 +73,7 @@ func setupLive(t *testing.T) liveSetup {
 	hub := webserver.NewLiveHub(webserver.LiveOptions{})
 	sy := &dlsync.Sync{Store: &dlsync.Store{}, DB: s}
 	x := liveSetup{hub: hub, sy: sy, st: s}
-	x.srv = httptest.NewServer(New(Server{Store: s, Metadata: metadata.Lab(), Version: "test", Auth: auth.New(s, auth.Options{Vault: v}), Secrets: v,
+	x.srv = httptest.NewServer(New(Server{Store: s, Metadata: metadata.Lab(), Version: "test", Auth: accounts.New(s, accounts.Options{Vault: v}), Secrets: v,
 		Live: hub, DLSync: sy}).Handler())
 	t.Cleanup(x.srv.Close)
 	newUser := func() liveUser {
@@ -252,7 +252,7 @@ func TestLiveInterest(t *testing.T) {
 	req, _ := http.NewRequest("POST", x.srv.URL+"/api/v1/live/interest", strings.NewReader(body))
 	req.Header.Set("Origin", "https://evil.example")
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set(auth.CSRFHeader, x.mem.csrf)
+	req.Header.Set(accounts.CSRFHeader, x.mem.csrf)
 	if resp, err := x.mem.c.Do(req); err != nil || resp.StatusCode != 403 {
 		t.Fatalf("cross-origin: %v %v", resp, err)
 	} else {

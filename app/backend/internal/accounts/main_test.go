@@ -1,12 +1,12 @@
-package auth
+package accounts
 
 import (
 	"os"
 	"strings"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/features"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/features"
 
 	"testing"
 )

@@ -7,9 +7,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediaserver"
 )
@@ -93,7 +93,7 @@ func (a *API) listMediaServers(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *API) addMediaServer(w http.ResponseWriter, r *http.Request) {
-	if !auth.RequireStrong(w, r) {
+	if !webserver.RequireStrong(w, r) {
 		return
 	}
 	in, ok := readMediaServer(w, r)
@@ -118,7 +118,7 @@ func mediaServerID(w http.ResponseWriter, r *http.Request) (int64, bool) {
 }
 
 func (a *API) editMediaServer(w http.ResponseWriter, r *http.Request) {
-	if !auth.RequireStrong(w, r) {
+	if !webserver.RequireStrong(w, r) {
 		return
 	}
 	id, ok := mediaServerID(w, r)
@@ -138,7 +138,7 @@ func (a *API) editMediaServer(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *API) deleteMediaServer(w http.ResponseWriter, r *http.Request) {
-	if !auth.RequireStrong(w, r) {
+	if !webserver.RequireStrong(w, r) {
 		return
 	}
 	id, ok := mediaServerID(w, r)
@@ -160,7 +160,7 @@ func (a *API) deleteMediaServer(w http.ResponseWriter, r *http.Request) {
 // testMediaServer checks the address and token: Plex must list a movie
 // library, Jellyfin and Emby must answer their system info.
 func (a *API) testMediaServer(w http.ResponseWriter, r *http.Request) {
-	if !auth.RequireStrong(w, r) {
+	if !webserver.RequireStrong(w, r) {
 		return
 	}
 	id, ok := mediaServerID(w, r)

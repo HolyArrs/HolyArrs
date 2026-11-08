@@ -14,7 +14,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/compat"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
@@ -52,7 +52,7 @@ func (f *oldAppFix) call(c *http.Client, csrf, method, path, body string, hdr ..
 	req, _ := http.NewRequest(method, f.srv.URL+f.base+path, strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	if csrf != "" {
-		req.Header.Set(auth.CSRFHeader, csrf)
+		req.Header.Set(accounts.CSRFHeader, csrf)
 	}
 	for i := 0; i+1 < len(hdr); i += 2 {
 		req.Header.Set(hdr[i], hdr[i+1])
@@ -123,7 +123,7 @@ func newOldAppFix(t *testing.T, base ...string) *oldAppFix {
 		t.Fatal(err)
 	}
 	h := New(Server{Store: s, Queue: q, Library: lib, Metadata: metadata.Lab(), Version: "test",
-		Auth: auth.New(s, auth.Options{}), Parts: pc, Secrets: vault}).Handler()
+		Auth: accounts.New(s, accounts.Options{}), Parts: pc, Secrets: vault}).Handler()
 	f := &oldAppFix{t: t, s: s, pc: pc, showDir: t.TempDir(), movieDir: t.TempDir(), art: art, vault: vault}
 	if len(base) > 0 {
 		h, f.base = webserver.UnderURLBase(base[0], h), base[0]

@@ -14,8 +14,8 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
@@ -354,12 +354,12 @@ func (h *handler) readPush(w http.ResponseWriter, r *http.Request) (push, bool) 
 // with this side's key, made by someone who may change Sources. false
 // means the answer was sent.
 func (h *handler) mayWriteSources(w http.ResponseWriter, r *http.Request) bool {
-	who, ok := auth.From(r.Context())
-	if !ok || who.Via != "api_key" || !slices.Contains(who.Scopes, auth.ScopeCompat) {
+	who, ok := webserver.From(r.Context())
+	if !ok || who.Via != "api_key" || !slices.Contains(who.Scopes, webserver.ScopeCompat) {
 		message(w, http.StatusUnauthorized, "indexers come in only with this side's key")
 		return false
 	}
-	if !who.Has(auth.PermSettings) {
+	if !who.Has(webserver.PermSettings) {
 		message(w, http.StatusForbidden, "the key acts as the person who made it, who may not change Sources")
 		return false
 	}
