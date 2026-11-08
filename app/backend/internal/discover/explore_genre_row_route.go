@@ -4,8 +4,8 @@ import (
 	"context"
 	"net/http"
 
+	engine "github.com/HolyArrs/holyarrs/app/backend/internal/core/rows"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
-	engine "github.com/HolyArrs/holyarrs/app/backend/internal/discover/rows"
 )
 
 // exploreGenreRow answers GET /api/v1/explore/genre-row?type=all|movies|shows:

@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
-	engine "github.com/HolyArrs/holyarrs/app/backend/internal/discover/rows"
+	engine "github.com/HolyArrs/holyarrs/app/backend/internal/core/rows"
 )
 
 // StripRowsMax and StripRowLen bound the row titles a strip request may pass.

@@ -13,7 +13,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata/youtube"
 )
 
 // The artist page hero plays one of the artist's official music videos,
@@ -459,7 +458,7 @@ func (h *Handlers) lookupMusicVideo(ctx context.Context, key, ckey string) (meta
 	now := time.Now()
 	s, err := h.Trailers.Read(ctx, key, key, now, true)
 	if err != nil {
-		if youtube.ReasonOf(err) == "" {
+		if metadata.VideoMissReason(err) == "" {
 			return metadata.TrailerEntry{}, err
 		}
 		e := metadata.TrailerEntry{Miss: now.Add(metadata.TrailerMiss), Reason: metadata.TrailerReasonOf(err)}

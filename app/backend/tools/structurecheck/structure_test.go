@@ -23,7 +23,7 @@ var Modules = []string{"requests", "movies", "shows", "music", "sources", "downl
 	"health", "updates", "setup", "titleview"}
 
 // CoreParts are the packages allowed under internal/core/.
-var CoreParts = []string{"database", "webserver", "outbound", "jobs", "logs", "files", "secrets", "startup", "releasename"}
+var CoreParts = []string{"database", "webserver", "outbound", "jobs", "logs", "files", "secrets", "startup", "releasename", "rows"}
 
 // Until the root move, code still lives in cmd/, internal/ and web/app/src;
 // the guards look there as well as in app/, so they mean the same before

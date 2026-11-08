@@ -3,7 +3,7 @@ package discover
 import (
 	"context"
 
-	engine "github.com/HolyArrs/holyarrs/app/backend/internal/discover/rows"
+	engine "github.com/HolyArrs/holyarrs/app/backend/internal/core/rows"
 )
 
 // awardWindows spread the Award winners lists over the decades, so the

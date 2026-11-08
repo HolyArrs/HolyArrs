@@ -10,8 +10,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	engine "github.com/HolyArrs/holyarrs/app/backend/internal/core/rows"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
-	engine "github.com/HolyArrs/holyarrs/app/backend/internal/discover/rows"
 )
 
 // browseTTL is how long built Browse sections are kept (the lists under

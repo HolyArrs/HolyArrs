@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata/youtube"
 )
 
 // The fake YouTube the music video tests play against (a copy of the
@@ -50,7 +49,7 @@ func fakeReader(t *testing.T, mode string, keys ...string) *ytFake {
 	srv := httptest.NewServer(http.HandlerFunc(f.serve))
 	t.Cleanup(srv.Close)
 	t.Cleanup(func() { close(f.stop) }) // runs first: a slow answer ends
-	old := metadata.UseReader(&youtube.Reader{Base: srv.URL, HTTP: srv.Client()})
+	old := metadata.UseReader(&metadata.VideoReader{Base: srv.URL, HTTP: srv.Client()})
 	t.Cleanup(func() { metadata.UseReader(old) })
 	return f
 }

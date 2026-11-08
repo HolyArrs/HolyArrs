@@ -182,3 +182,19 @@ func (t *Trailers) MarkBad(ctx context.Context, key string, reason youtube.Reaso
 		_ = LookupCache{Store: t.Store}.Put(ctx, t.badKey(key), []byte(reason), now, now.Add(trailerBadKeep))
 	}
 }
+
+// VideoMissReason says why the video reader could not play a video, or ""
+// when err is not one of its known reasons.
+func VideoMissReason(err error) youtube.Reason { return youtube.ReasonOf(err) }
+
+// VideoReader is the built-in video reader, for tests that point it at a
+// fake server.
+type VideoReader = youtube.Reader
+
+// Reasons the video reader gives for a video it cannot play.
+const (
+	VideoAgeRestricted = youtube.AgeRestricted
+	VideoBotCheck      = youtube.BotCheck
+	VideoNetwork       = youtube.Network
+	VideoUnavailable   = youtube.Unavailable
+)

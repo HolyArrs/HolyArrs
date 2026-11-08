@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	engine "github.com/HolyArrs/holyarrs/app/backend/internal/discover/rows"
+	engine "github.com/HolyArrs/holyarrs/app/backend/internal/core/rows"
 )
 
 // route: GET /api/v1/explore/strip

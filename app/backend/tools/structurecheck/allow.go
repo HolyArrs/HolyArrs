@@ -23,17 +23,17 @@ var layers = map[string]int{
 	"alerts":       6,
 	"movies":       7,
 	"shows":        7,
-	"music":        7,
+	"music":        9,
 	"requests":     8,
-	"discover":     9,
+	"discover":     11,
 	"arrapi":       9,
 	"migrate":      9,
 	"ai":           9,
 	"backups":      9,
-	"health":       9,
+	"health":       8,
 	"updates":      9,
 	"setup":        9,
-	"titleview":    9, // Title views above shows, music and requests; same-layer callers get injected funcs
+	"titleview":    10, // Title views sit above shows, music and requests; discover builds on them
 }
 
 // coreRows orders the core packages. A core package imports only core
@@ -42,6 +42,7 @@ var coreRows = map[string]int{
 	"database":    0,
 	"files":       0,
 	"releasename": 0,
+	"rows":        0,
 	"outbound":    1,
 	"secrets":     1,
 	"logs":        2,
