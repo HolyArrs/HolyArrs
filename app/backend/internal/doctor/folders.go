@@ -26,7 +26,7 @@ type Folder struct {
 }
 
 // label is the summary word for each state.
-var label = map[string]string{
+var doctorLabel = map[string]string{
 	"ok":          "ok",
 	"missing":     "missing",
 	"read_only":   "not writable",
@@ -55,30 +55,30 @@ func (f Folder) Check(uid, gid int) Check {
 	if len(facts) > 0 {
 		text += ": " + strings.Join(facts, ", ")
 	}
-	c := Check{Section: "Library and download folders", Status: OK, Text: text}
+	c := Check{Section: "Library and download folders", Status: StatusOK, Text: text}
 	switch f.State {
 	case "missing":
-		c.Status, c.Text = Fail, f.Role+" "+f.Path+": does not exist inside the container"
+		c.Status, c.Text = StatusFail, f.Role+" "+f.Path+": does not exist inside the container"
 		c.Fix = "add the volume for " + f.Path + " to the container, at the same path the Library or download client uses"
 	case "read_only":
-		c.Status, c.Text = Fail, f.Role+" "+f.Path+": not writable"
+		c.Status, c.Text = StatusFail, f.Role+" "+f.Path+": not writable"
 		if f.Owner != "" {
 			c.Text += " (owner " + f.Owner + ")"
 		}
 		c.Fix = writeFix(f.Path, uid, gid, f.Owner, nil)
 	case "no_hardlink":
-		c.Status = Warn
+		c.Status = StatusWarn
 		c.Text += "; no hardlinks from downloads, files will be copied"
 		c.Fix = "put downloads and the Library under one mount on one disk (for example /data/downloads and /data/media) so files are hardlinked, not copied"
 	case "low_space":
-		c.Status = Warn
+		c.Status = StatusWarn
 		c.Fix = "free up space on the disk that holds " + f.Path
 	case "slow":
 		limit := "in time"
 		if f.Budget > 0 {
 			limit = fmt.Sprintf("within %d seconds", int(f.Budget.Round(time.Second)/time.Second))
 		}
-		c.Status, c.Text = Warn, f.Role+" "+f.Path+": did not answer "+limit+" and was skipped (often a disk waking from sleep or a slow network share)"
+		c.Status, c.Text = StatusWarn, f.Role+" "+f.Path+": did not answer "+limit+" and was skipped (often a disk waking from sleep or a slow network share)"
 		c.Fix = "wake the disk or check the share, then run holyarrs doctor again"
 		if f.Budget > 0 && f.Budget < doctorFolderBudget {
 			c.Fix = "run holyarrs doctor to check it without the start-up time limit"
@@ -167,7 +167,7 @@ func Summary(fs []Folder) string {
 	var parts []string
 	for _, s := range order {
 		if n[s] > 0 || s == "ok" {
-			parts = append(parts, fmt.Sprintf("%d %s", n[s], label[s]))
+			parts = append(parts, fmt.Sprintf("%d %s", n[s], doctorLabel[s]))
 		}
 	}
 	return "folders: " + strings.Join(parts, ", ")
@@ -175,7 +175,7 @@ func Summary(fs []Folder) string {
 
 // Startup checks the folders within budget and returns the summary line
 // and one warning line per problem folder, each with its fix.
-func Startup(ctx context.Context, db database.Lister, savePath string, budget time.Duration) (string, []string) {
+func DoctorStartup(ctx context.Context, db database.Lister, savePath string, budget time.Duration) (string, []string) {
 	fs, err := CheckFolders(ctx, db, savePath, budget)
 	if err != nil {
 		return "folders: not checked: " + err.Error(), nil

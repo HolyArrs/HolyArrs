@@ -37,14 +37,14 @@ import (
 type Status string
 
 const (
-	OK   Status = "OK"
-	Warn Status = "WARN"
-	Fail Status = "FAIL"
+	StatusOK   Status = "OK"
+	StatusWarn Status = "WARN"
+	StatusFail Status = "FAIL"
 )
 
 // MinYear is the earliest year a correct clock can show: HolyArrs was
 // built after it, so an earlier date means the clock is wrong.
-const MinYear = 2026
+const ClockMinYear = 2026
 
 // doctorFolderBudget is the default time limit for the folder checks in
 // holyarrs doctor, longer than the 3 seconds at start-up.
@@ -70,7 +70,7 @@ func (r *Report) add(section string, st Status, text, fix string) {
 // Failed reports whether any finding is FAIL.
 func (r Report) Failed() bool {
 	for _, c := range r.Checks {
-		if c.Status == Fail {
+		if c.Status == StatusFail {
 			return true
 		}
 	}
@@ -95,7 +95,7 @@ func (r Report) Text() string {
 			fmt.Fprintf(&b, "        fix: %s\n", c.Fix)
 		}
 	}
-	fmt.Fprintf(&b, "\nResult: %d OK, %d WARN, %d FAIL\n", n[OK], n[Warn], n[Fail])
+	fmt.Fprintf(&b, "\nResult: %d OK, %d WARN, %d FAIL\n", n[StatusOK], n[StatusWarn], n[StatusFail])
 	return b.String()
 }
 
@@ -109,7 +109,7 @@ func (r Report) JSON() []byte {
 }
 
 // Options are what Run checks. Zero values pick the normal setup.
-type Options struct {
+type DoctorOptions struct {
 	Version   string
 	ConfigDir string
 	// DB is the main database to read the folders from. Nil opens it
@@ -132,7 +132,7 @@ type Options struct {
 }
 
 // Run makes the whole report.
-func Run(ctx context.Context, o Options) Report {
+func RunDoctor(ctx context.Context, o DoctorOptions) Report {
 	var r Report
 	uid, gid := os.Geteuid(), os.Getegid()
 	appChecks(&r, o.Version, uid, gid)
@@ -152,11 +152,11 @@ func Run(ctx context.Context, o Options) Report {
 			db = d
 			skipFolders = schemaChecks(&r, d)
 		} else if errors.Is(err, fs.ErrNotExist) {
-			r.add("Config folder", Warn, "no database yet, so no Library folders to check", "start HolyArrs once with this config folder")
+			r.add("Config folder", StatusWarn, "no database yet, so no Library folders to check", "start HolyArrs once with this config folder")
 		} else {
 			// Usually permissions: the database or its -shm/-wal files
 			// cannot be opened by this user.
-			r.add("Config folder", Fail, "cannot open the database read-only, so no Library folders to check: "+err.Error(),
+			r.add("Config folder", StatusFail, "cannot open the database read-only, so no Library folders to check: "+err.Error(),
 				writeFix(o.ConfigDir, uid, gid, configOwner(o.ConfigDir), err))
 		}
 	}
@@ -167,10 +167,10 @@ func Run(ctx context.Context, o Options) Report {
 	if !skipFolders {
 		folders, err := CheckFolders(ctx, db, o.SavePath, budget)
 		if err != nil {
-			r.add("Library and download folders", Warn, "could not read the folders from the database: "+err.Error(), "")
+			r.add("Library and download folders", StatusWarn, "could not read the folders from the database: "+err.Error(), "")
 		}
 		if len(folders) == 0 && err == nil {
-			r.add("Library and download folders", Warn, "no Library or download folders set yet", "add a Library folder in Settings")
+			r.add("Library and download folders", StatusWarn, "no Library or download folders set yet", "add a Library folder in Settings")
 		}
 		for _, f := range folders {
 			c := f.Check(uid, gid)
@@ -194,7 +194,7 @@ func Run(ctx context.Context, o Options) Report {
 	}
 	networkChecks(ctx, &r, raw, timeout, client, net.DefaultResolver.LookupHost)
 	if w := ProxyWarning(os.Getenv); w != "" {
-		r.add("Network", Warn, w, proxyFix)
+		r.add("Network", StatusWarn, w, proxyFix)
 	}
 	now := o.Now
 	if now.IsZero() {
@@ -216,11 +216,11 @@ func schemaChecks(r *Report, db *sql.DB) bool {
 	}
 	switch {
 	case have < know:
-		r.add("Config folder", Warn, "the database is still being set up or updated, so Library folders were not checked",
+		r.add("Config folder", StatusWarn, "the database is still being set up or updated, so Library folders were not checked",
 			"if HolyArrs is starting, run doctor again in a few seconds; if it is stopped, start it so the update can finish")
 		return true
 	case have > know:
-		r.add("Config folder", Warn, (&database.NewerDataError{Have: have, Know: know}).Error(),
+		r.add("Config folder", StatusWarn, (&database.NewerDataError{Have: have, Know: know}).Error(),
 			"run the newer HolyArrs again, or restore a backup made by this version")
 		return true
 	}
@@ -279,9 +279,9 @@ func appChecks(r *Report, version string, uid, gid int) {
 	if version == "" {
 		version = "unknown"
 	}
-	r.add(s, OK, "version "+version+" ("+runtime.GOOS+"/"+runtime.GOARCH+")", "")
+	r.add(s, StatusOK, "version "+version+" ("+runtime.GOOS+"/"+runtime.GOARCH+")", "")
 	if uid < 0 {
-		r.add(s, OK, "running as the current Windows user", "")
+		r.add(s, StatusOK, "running as the current Windows user", "")
 	} else {
 		groups := "none"
 		if gs, err := os.Getgroups(); err == nil && len(gs) > 0 {
@@ -291,16 +291,16 @@ func appChecks(r *Report, version string, uid, gid int) {
 			}
 			groups = strings.Join(parts, ",")
 		}
-		st, fix := OK, ""
+		st, fix := StatusOK, ""
 		if uid == 0 {
-			st, fix = Warn, "running as root: set PUID and PGID to the owner of your media folders (in rootless Docker or Podman, root in the container is your own user on the host, so this is expected there)"
+			st, fix = StatusWarn, "running as root: set PUID and PGID to the owner of your media folders (in rootless Docker or Podman, root in the container is your own user on the host, so this is expected there)"
 		}
 		r.add(s, st, "running as "+ids(uid, gid)+", groups "+groups+", umask "+umask(), fix)
 	}
 	inside := startup.InContainer(func(p string) bool { _, err := os.Stat(p); return err == nil }, os.Getenv)
-	r.add(s, OK, "in a container: "+yesNo(inside), "")
+	r.add(s, StatusOK, "in a container: "+yesNo(inside), "")
 	if t := selinuxType(); t != "" {
-		r.add(s, OK, "SELinux: on ("+t+")", "")
+		r.add(s, StatusOK, "SELinux: on ("+t+")", "")
 	}
 }
 
@@ -370,7 +370,7 @@ func configChecks(r *Report, dir string, uid, gid int, share func(string) (bool,
 	const s = "Config folder"
 	st, err := os.Stat(dir)
 	if err != nil || !st.IsDir() {
-		r.add(s, Fail, dir+": the folder does not exist", "mount a local folder at "+dir+" (the /config volume)")
+		r.add(s, StatusFail, dir+": the folder does not exist", "mount a local folder at "+dir+" (the /config volume)")
 		return
 	}
 	owner, mode := ownerOf(st), st.Mode().String()
@@ -378,50 +378,50 @@ func configChecks(r *Report, dir string, uid, gid int, share func(string) (bool,
 	if owner != "" {
 		text += ", owner " + owner
 	}
-	r.add(s, OK, text, "")
+	r.add(s, StatusOK, text, "")
 	if err := writable(dir); err == nil {
-		r.add(s, OK, "writable", "")
+		r.add(s, StatusOK, "writable", "")
 	} else {
 		text := "not writable"
 		if why := files.Why(err); why != "" {
 			text += ": " + why
 		}
-		r.add(s, Fail, text, writeFix(dir, uid, gid, owner, err))
+		r.add(s, StatusFail, text, writeFix(dir, uid, gid, owner, err))
 	}
 	if free := importer.FreeSpace(dir); free >= 0 {
 		if free < library.MinFreeSpace {
-			r.add(s, Fail, "free space "+Size(free), "free up space on the disk that holds "+dir)
+			r.add(s, StatusFail, "free space "+Size(free), "free up space on the disk that holds "+dir)
 		} else {
-			r.add(s, OK, "free space "+Size(free), "")
+			r.add(s, StatusOK, "free space "+Size(free), "")
 		}
 	}
 	on, kind, err := share(dir)
 	switch {
 	case err != nil:
-		r.add(s, Warn, "could not tell whether it is a local disk: "+err.Error(), "")
+		r.add(s, StatusWarn, "could not tell whether it is a local disk: "+err.Error(), "")
 	case !on:
 		text := "on a local disk (the database must be local)"
 		if fs := files.MountType(dir); fs != "" {
 			text += ", mount type " + fs // for support: names the filesystem
 		}
-		r.add(s, OK, text, "")
+		r.add(s, StatusOK, text, "")
 	case files.InMemory(kind):
 		if files.ConfigInMemoryAllowed() {
-			r.add(s, Warn, "in memory ("+kind+"), kept there because "+files.EnvConfigInMemory+" is set; everything in it is lost at the next restart", "put /config on a disk and remove "+files.EnvConfigInMemory)
+			r.add(s, StatusWarn, "in memory ("+kind+"), kept there because "+files.EnvConfigInMemory+" is set; everything in it is lost at the next restart", "put /config on a disk and remove "+files.EnvConfigInMemory)
 		} else {
-			r.add(s, Fail, "in memory ("+kind+"); everything in it is lost at the next restart, so HolyArrs will not start",
+			r.add(s, StatusFail, "in memory ("+kind+"); everything in it is lost at the next restart, so HolyArrs will not start",
 				"put /config on a disk (on Unraid: /mnt/<pool>/appdata/holyarrs, and check that the pool exists)")
 		}
 	case kind == "fakeowner" && files.DesktopFolderAllowed():
-		r.add(s, Warn, "a Docker Desktop folder share, used because "+files.EnvAllowDesktopFolder+" is set; file locks there may not work", files.ShareFix(kind))
+		r.add(s, StatusWarn, "a Docker Desktop folder share, used because "+files.EnvAllowDesktopFolder+" is set; file locks there may not work", files.ShareFix(kind))
 	default:
 		text := "on a shared or network folder (" + kind + "); the database must be on a local disk"
 		if fs := files.MountType(dir); fs != "" {
-			if label, _ := files.Family(fs); label != "" {
-				text = "on " + label + " (" + fs + "); the database must be on a local disk"
+			if doctorLabel, _ := files.Family(fs); doctorLabel != "" {
+				text = "on " + doctorLabel + " (" + fs + "); the database must be on a local disk"
 			}
 		}
-		r.add(s, Fail, text, files.ShareFix(kind))
+		r.add(s, StatusFail, text, files.ShareFix(kind))
 	}
 }
 
@@ -430,11 +430,11 @@ func configChecks(r *Report, dir string, uid, gid int, share func(string) (bool,
 func lockChecks(r *Report, dir string, probe func(string) error) {
 	const s = "Config folder"
 	if err := probe(dir); err != nil {
-		r.add(s, Warn, "file locks do not work in the config folder ("+err.Error()+"), so the database could be damaged",
+		r.add(s, StatusWarn, "file locks do not work in the config folder ("+err.Error()+"), so the database could be damaged",
 			"use a named volume for /config (-v holyarrs-config:/config), or a local disk")
 		return
 	}
-	r.add(s, OK, "file locks work", "")
+	r.add(s, StatusOK, "file locks work", "")
 }
 
 // unmappedChecks reports a /config that is not mapped to a folder on the
@@ -443,7 +443,7 @@ func unmappedChecks(r *Report, dir, kind string) {
 	if kind == "" {
 		return
 	}
-	r.add("Config folder", Fail, UnmappedText(dir, kind), UnmappedFix(dir))
+	r.add("Config folder", StatusFail, UnmappedText(dir, kind), UnmappedFix(dir))
 }
 
 // UnmappedText says in one line that dir is not mapped, for doctor, the log
@@ -519,7 +519,7 @@ func networkChecks(ctx context.Context, r *Report, raw string, timeout time.Dura
 	const s = "Network"
 	u, err := url.Parse(raw)
 	if err != nil || u.Hostname() == "" {
-		r.add(s, Fail, "the metadata server address is not a valid link", "fix "+metadata.EnvServiceURL+" or leave it unset")
+		r.add(s, StatusFail, "the metadata server address is not a valid link", "fix "+metadata.EnvServiceURL+" or leave it unset")
 		return
 	}
 	host := u.Hostname()
@@ -527,30 +527,30 @@ func networkChecks(ctx context.Context, r *Report, raw string, timeout time.Dura
 	addrs, err := lookup(dctx, host)
 	cancel()
 	if err != nil {
-		r.add(s, Fail, "DNS: cannot resolve "+host, "check the container's DNS (the dns: setting, a VPN or Pi-hole in front of it)")
+		r.add(s, StatusFail, "DNS: cannot resolve "+host, "check the container's DNS (the dns: setting, a VPN or Pi-hole in front of it)")
 	} else {
 		if len(addrs) > 4 {
 			addrs = addrs[:4]
 		}
-		r.add(s, OK, "DNS: "+host+" is "+strings.Join(addrs, ", "), "")
+		r.add(s, StatusOK, "DNS: "+host+" is "+strings.Join(addrs, ", "), "")
 	}
 	target := (&url.URL{Scheme: u.Scheme, Host: u.Host, Path: "/"}).String()
 	hctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 	req, err := http.NewRequestWithContext(hctx, http.MethodGet, target, nil)
 	if err != nil {
-		r.add(s, Fail, "cannot make a request to "+host, "")
+		r.add(s, StatusFail, "cannot make a request to "+host, "")
 		return
 	}
 	start := time.Now()
 	resp, err := client.Do(req)
 	if err != nil {
-		r.add(s, Fail, "metadata server "+host+" could not be reached (waited up to "+timeout.String()+")",
+		r.add(s, StatusFail, "metadata server "+host+" could not be reached (waited up to "+timeout.String()+")",
 			"check the container's internet access (firewall, VPN container, proxy) and that the clock is right")
 		return
 	}
 	_ = resp.Body.Close()
-	r.add(s, OK, fmt.Sprintf("metadata server %s answered (HTTP %d) in %d ms", host, resp.StatusCode, time.Since(start).Milliseconds()), "")
+	r.add(s, StatusOK, fmt.Sprintf("metadata server %s answered (HTTP %d) in %d ms", host, resp.StatusCode, time.Since(start).Milliseconds()), "")
 }
 
 func clockChecks(r *Report, now time.Time, tz string) {
@@ -559,13 +559,13 @@ func clockChecks(r *Report, now time.Time, tz string) {
 		zone, _ := now.Zone()
 		tz = "not set, so " + zone
 	}
-	r.add(s, OK, "time zone (TZ): "+tz, "")
+	r.add(s, StatusOK, "time zone (TZ): "+tz, "")
 	text := "now " + now.Format("2006-01-02 15:04:05 MST")
-	if now.Year() < MinYear {
-		r.add(s, Warn, text+", which is before HolyArrs was built", "set the host's clock right (turn on NTP); a wrong clock breaks HTTPS and schedules")
+	if now.Year() < ClockMinYear {
+		r.add(s, StatusWarn, text+", which is before HolyArrs was built", "set the host's clock right (turn on NTP); a wrong clock breaks HTTPS and schedules")
 		return
 	}
-	r.add(s, OK, text, "")
+	r.add(s, StatusOK, text, "")
 }
 
 // readFolders lists the Library folders (path, kind).

@@ -77,7 +77,7 @@ func TestDesktopOverrideIsAWarning(t *testing.T) {
 	if r.Failed() {
 		t.Fatalf("override set, still FAIL:\n%s", r.Text())
 	}
-	if c := r.Checks[len(r.Checks)-1]; c.Status != Warn || !strings.Contains(c.Text+c.Fix, "HOLYARRS_ALLOW_DESKTOP_FOLDER") {
+	if c := r.Checks[len(r.Checks)-1]; c.Status != StatusWarn || !strings.Contains(c.Text+c.Fix, "HOLYARRS_ALLOW_DESKTOP_FOLDER") {
 		t.Fatalf("want a WARN naming the override, got %+v", c)
 	}
 	r = Report{}
@@ -92,14 +92,14 @@ func TestConfigInMemoryFails(t *testing.T) {
 		var r Report
 		configChecks(&r, t.TempDir(), 1, 1, shareKind(kind))
 		c := r.Checks[len(r.Checks)-1]
-		if c.Status != Fail || !strings.Contains(c.Text, "memory") || strings.Contains(c.Text, "network share") {
+		if c.Status != StatusFail || !strings.Contains(c.Text, "memory") || strings.Contains(c.Text, "network share") {
 			t.Fatalf("%s: %+v", kind, c)
 		}
 	}
 	t.Setenv("HOLYARRS_CONFIG_IN_MEMORY", "yes")
 	var r Report
 	configChecks(&r, t.TempDir(), 1, 1, shareKind("tmpfs"))
-	if c := r.Checks[len(r.Checks)-1]; c.Status != Warn {
+	if c := r.Checks[len(r.Checks)-1]; c.Status != StatusWarn {
 		t.Fatalf("override set: want WARN, got %+v", c)
 	}
 }
@@ -109,7 +109,7 @@ func TestLockProbeOnlyReports(t *testing.T) {
 	var r Report
 	lockChecks(&r, t.TempDir(), func(string) error { return errors.New("locks are ignored here") })
 	c := lastCheck(t, r, "lock")
-	if c.Status != Warn || r.Failed() {
+	if c.Status != StatusWarn || r.Failed() {
 		t.Fatalf("broken lock: want WARN only, got %+v", c)
 	}
 	if !strings.Contains(c.Fix, "named volume") {
@@ -117,7 +117,7 @@ func TestLockProbeOnlyReports(t *testing.T) {
 	}
 	r = Report{}
 	lockChecks(&r, t.TempDir(), func(string) error { return nil })
-	if c := lastCheck(t, r, "lock"); c.Status != OK {
+	if c := lastCheck(t, r, "lock"); c.Status != StatusOK {
 		t.Fatalf("working lock: %+v", c)
 	}
 }
@@ -154,7 +154,7 @@ func TestRootNoteMentionsRootless(t *testing.T) {
 	var r Report
 	appChecks(&r, "1.0.0", 0, 0)
 	c := lastCheck(t, r, "running as 0:0")
-	if c.Status != Warn || !strings.Contains(c.Fix, "rootless") {
+	if c.Status != StatusWarn || !strings.Contains(c.Fix, "rootless") {
 		t.Fatalf("root note: %+v", c)
 	}
 }
@@ -187,7 +187,7 @@ func TestSlowFolderWording(t *testing.T) {
 
 func runDoctorStartup(t *testing.T, dir string) Report {
 	t.Helper()
-	return Run(context.Background(), Options{ConfigDir: dir, MetadataURL: "https://meta.invalid",
+	return RunDoctor(context.Background(), DoctorOptions{ConfigDir: dir, MetadataURL: "https://meta.invalid",
 		HTTP: &http.Client{Transport: failRT{}}, NetTimeout: 100 * time.Millisecond, FolderBudget: time.Second})
 }
 
@@ -218,7 +218,7 @@ func migratedStore(t *testing.T) string {
 // the metadata check at an address that never answers).
 func dataFailed(r Report) bool {
 	for _, c := range r.Checks {
-		if c.Status == Fail && c.Section != "Network" {
+		if c.Status == StatusFail && c.Section != "Network" {
 			return true
 		}
 	}
@@ -232,7 +232,7 @@ func assertSetupWarn(t *testing.T, r Report) {
 		t.Fatalf("mid-setup must not FAIL:\n%s", text)
 	}
 	c := lastCheck(t, r, "still being set up")
-	if c.Status != Warn {
+	if c.Status != StatusWarn {
 		t.Fatalf("want WARN, got %+v", c)
 	}
 	for _, bad := range []string{"SQL logic error", "no such", "could not read the folders", "no Library or download folders set yet"} {
@@ -263,7 +263,7 @@ func TestDoctorOnNewerDataSaysSo(t *testing.T) {
 		t.Fatalf("newer data is a WARN:\n%s", r.Text())
 	}
 	c := lastCheck(t, r, "newer HolyArrs")
-	if c.Status != Warn {
+	if c.Status != StatusWarn {
 		t.Fatalf("want WARN, got %+v", c)
 	}
 	if strings.Contains(r.Text(), "no Library or download folders set yet") {

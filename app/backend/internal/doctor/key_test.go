@@ -64,7 +64,7 @@ func runDoctorEnv(t *testing.T, dir string) Report {
 	t.Helper()
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(204) }))
 	t.Cleanup(srv.Close)
-	return Run(context.Background(), Options{Version: "9.9.9", ConfigDir: dir, SavePath: t.TempDir(), HTTP: srv.Client(),
+	return RunDoctor(context.Background(), DoctorOptions{Version: "9.9.9", ConfigDir: dir, SavePath: t.TempDir(), HTTP: srv.Client(),
 		MetadataURL: srv.URL, Now: time.Date(2030, 1, 2, 3, 4, 5, 0, time.UTC)})
 }
 
@@ -86,7 +86,7 @@ func worstKey(t *testing.T, r Report) Check {
 	}
 	w := cs[0]
 	for _, c := range cs {
-		if c.Status == Fail || (c.Status == Warn && w.Status == OK) {
+		if c.Status == StatusFail || (c.Status == StatusWarn && w.Status == StatusOK) {
 			w = c
 		}
 	}
@@ -110,7 +110,7 @@ func TestDoctorKeyMatches(t *testing.T) {
 	}
 	r := runDoctor(t, dir)
 	c := worstKey(t, r)
-	if c.Status != OK || !strings.Contains(c.Text, keyPrint(key)) {
+	if c.Status != StatusOK || !strings.Contains(c.Text, keyPrint(key)) {
 		t.Fatalf("good key: want OK with fingerprint %s, got %+v\n%s", keyPrint(key), c, r.Text())
 	}
 	noKeyText(t, r, key)
@@ -123,7 +123,7 @@ func TestDoctorKeyMissing(t *testing.T) {
 	}
 	r := runDoctor(t, dir)
 	c := worstKey(t, r)
-	if c.Status != Fail || !strings.Contains(strings.ToLower(c.Text), "missing") || c.Fix == "" {
+	if c.Status != StatusFail || !strings.Contains(strings.ToLower(c.Text), "missing") || c.Fix == "" {
 		t.Fatalf("missing key: want FAIL saying missing, with a fix, got %+v\n%s", c, r.Text())
 	}
 	if _, err := os.Stat(filepath.Join(dir, secrets.KeyFile)); err == nil {
@@ -140,7 +140,7 @@ func TestDoctorKeyWrongForDatabase(t *testing.T) {
 	}
 	r := runDoctor(t, dir)
 	c := worstKey(t, r)
-	if c.Status != Fail || !strings.Contains(strings.ToLower(c.Text), "match") || !strings.Contains(c.Text, keyPrint(other)) {
+	if c.Status != StatusFail || !strings.Contains(strings.ToLower(c.Text), "match") || !strings.Contains(c.Text, keyPrint(other)) {
 		t.Fatalf("wrong key: want FAIL saying it does not match, with the file's fingerprint, got %+v\n%s", c, r.Text())
 	}
 	noKeyText(t, r, other)
@@ -154,7 +154,7 @@ func TestDoctorKeyUnreadable(t *testing.T) {
 		t.Fatal(err)
 	}
 	r := runDoctor(t, dir)
-	if c := worstKey(t, r); c.Status != Fail {
+	if c := worstKey(t, r); c.Status != StatusFail {
 		t.Fatalf("damaged key file: want FAIL, got %+v\n%s", c, r.Text())
 	}
 }
@@ -169,7 +169,7 @@ func TestDoctorKeyLoosePermissions(t *testing.T) {
 	}
 	r := runDoctor(t, dir)
 	c := worstKey(t, r)
-	if c.Status != Warn || !strings.Contains(c.Fix, "chmod 600") {
+	if c.Status != StatusWarn || !strings.Contains(c.Fix, "chmod 600") {
 		t.Fatalf("loose key file: want WARN with a chmod 600 fix, got %+v\n%s", c, r.Text())
 	}
 	noKeyText(t, r, key)
@@ -192,7 +192,7 @@ func TestDoctorKeyFromEnvFile(t *testing.T) {
 	t.Setenv(secrets.EnvKeyFile, named)
 	r := runDoctorEnv(t, dir)
 	c := worstKey(t, r)
-	if c.Status != OK || !strings.Contains(c.Text, keyPrint(key)) {
+	if c.Status != StatusOK || !strings.Contains(c.Text, keyPrint(key)) {
 		t.Fatalf("key from %s: want OK with fingerprint, got %+v\n%s", secrets.EnvKeyFile, c, r.Text())
 	}
 }
@@ -207,7 +207,7 @@ func TestDoctorKeyFreshInstall(t *testing.T) {
 	}
 	_ = s.Close()
 	r := runDoctor(t, dir)
-	if c := worstKey(t, r); c.Status == Fail {
+	if c := worstKey(t, r); c.Status == StatusFail {
 		t.Fatalf("fresh install: key check failed %+v\n%s", c, r.Text())
 	}
 }
@@ -225,7 +225,7 @@ func TestDoctorKeyFromEnvFileMissing(t *testing.T) {
 	t.Setenv(secrets.EnvKeyFile, named)
 	r := runDoctorEnv(t, dir)
 	c := worstKey(t, r)
-	if c.Status != Fail || !strings.Contains(c.Text, secrets.EnvKeyFile) || strings.Contains(c.Text, "first start") {
+	if c.Status != StatusFail || !strings.Contains(c.Text, secrets.EnvKeyFile) || strings.Contains(c.Text, "first start") {
 		t.Fatalf("missing named key file: want Fail naming %s, got %+v\n%s", secrets.EnvKeyFile, c, r.Text())
 	}
 }
@@ -242,7 +242,7 @@ func TestDoctorKeyNoPermission(t *testing.T) {
 	}
 	r := runDoctor(t, dir)
 	c := worstKey(t, r)
-	if c.Status != Fail || !strings.Contains(c.Text, "cannot be read") || strings.Contains(c.Text, "damaged") ||
+	if c.Status != StatusFail || !strings.Contains(c.Text, "cannot be read") || strings.Contains(c.Text, "damaged") ||
 		!strings.Contains(c.Text, "owner") || !strings.Contains(c.Fix, "chown PUID:PGID") || !strings.Contains(c.Fix, "chmod 600") {
 		t.Fatalf("unreadable key: got %+v\n%s", c, r.Text())
 	}
@@ -259,7 +259,7 @@ func TestDoctorKeyPathIsFolder(t *testing.T) {
 	t.Setenv(secrets.EnvKeyFile, named)
 	r := runDoctorEnv(t, dir)
 	c := worstKey(t, r)
-	if c.Status != Fail || !strings.Contains(c.Text, "folder") || strings.Contains(c.Fix, "chmod") {
+	if c.Status != StatusFail || !strings.Contains(c.Text, "folder") || strings.Contains(c.Fix, "chmod") {
 		t.Fatalf("key path is a folder: want FAIL naming the folder without a chmod fix, got %+v\n%s", c, r.Text())
 	}
 }

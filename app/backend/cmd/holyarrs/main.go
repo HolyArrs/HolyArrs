@@ -1116,7 +1116,7 @@ func main() {
 // WARN line with the fix for each problem folder. It takes a few seconds at
 // most: a folder that is slower (a hung network share) is skipped with a note.
 func logFolderCheck(ctx context.Context, db database.Lister, savePath string) {
-	sum, warns := doctor.Startup(ctx, db, savePath, 3*time.Second)
+	sum, warns := doctor.DoctorStartup(ctx, db, savePath, 3*time.Second)
 	log.Printf("holyarrs: %s", sum)
 	for _, w := range warns {
 		log.Printf("holyarrs: %s", w)

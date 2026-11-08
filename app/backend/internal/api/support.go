@@ -56,7 +56,7 @@ func (a *API) supportBundle(w http.ResponseWriter, r *http.Request) {
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
 	defer cancel()
-	rep := doctor.Run(ctx, doctor.Options{Version: a.s.Version, ConfigDir: a.configDir(), DB: a.s.Store.Read(), SavePath: a.s.SavePath,
+	rep := doctor.RunDoctor(ctx, doctor.DoctorOptions{Version: a.s.Version, ConfigDir: a.configDir(), DB: a.s.Store.Read(), SavePath: a.s.SavePath,
 		FolderBudget: 10 * time.Second, NetTimeout: 5 * time.Second})
 	about, _ := json.MarshalIndent(a.aboutView(r.Context()), "", "  ")
 	health, _ := json.MarshalIndent(a.healthView(r.Context()), "", "  ")

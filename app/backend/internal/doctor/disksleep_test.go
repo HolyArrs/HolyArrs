@@ -14,7 +14,7 @@ import (
 // holyarrs doctor), and only the start-up line sends people to the doctor.
 func TestSlowFolderWordsNameSleepingDisks(t *testing.T) {
 	c := (Folder{Role: "Library folder", Path: "/media/movies", State: "slow", Budget: 3 * time.Second}).Check(1, 1)
-	if c.Status != Warn {
+	if c.Status != StatusWarn {
 		t.Fatalf("status %v", c.Status)
 	}
 	want := "Library folder /media/movies: did not answer within 3 seconds and was skipped (often a disk waking from sleep or a slow network share)"

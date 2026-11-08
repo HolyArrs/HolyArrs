@@ -30,7 +30,7 @@ func doctorCmd(args []string, out, errOut io.Writer) int {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
-	r := doctor.Run(ctx, doctor.Options{Version: version, ConfigDir: *dir, SavePath: *save})
+	r := doctor.RunDoctor(ctx, doctor.DoctorOptions{Version: version, ConfigDir: *dir, SavePath: *save})
 	if *asJSON {
 		_, _ = out.Write(r.JSON())
 	} else {

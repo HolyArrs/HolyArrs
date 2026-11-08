@@ -31,7 +31,7 @@ func TestDoctorReportOnAFreshStore(t *testing.T) {
 	}))
 	defer srv.Close()
 	// srv.Client: the app's own dial policy refuses this loopback test server.
-	r := Run(context.Background(), Options{Version: "9.9.9", ConfigDir: dir, SavePath: dl, HTTP: srv.Client(),
+	r := RunDoctor(context.Background(), DoctorOptions{Version: "9.9.9", ConfigDir: dir, SavePath: dl, HTTP: srv.Client(),
 		MetadataURL: srv.URL + "/v1/secret?apikey=SHOULD_NOT_SHOW", Now: time.Date(2030, 1, 2, 3, 4, 5, 0, time.UTC)})
 	text := r.Text()
 	for _, want := range []string{"App", "version 9.9.9", "Config folder", "writable", "local disk", "Network", "answered (HTTP 204)", "Clock", "downloads " + dl, "Result:"} {
@@ -76,7 +76,7 @@ func TestDoctorFolders(t *testing.T) {
 	if states[movies] != "ok" || states[gone] != "missing" || states[dl] != "ok" {
 		t.Fatalf("states %v", states)
 	}
-	sum, warns := Startup(ctx, s.Read(), dl, 10*time.Second)
+	sum, warns := DoctorStartup(ctx, s.Read(), dl, 10*time.Second)
 	if sum != "folders: 2 ok, 1 missing" || len(warns) != 1 || !strings.Contains(warns[0], gone) || !strings.Contains(warns[0], "add the volume") {
 		t.Fatalf("summary %q warns %q", sum, warns)
 	}
@@ -93,13 +93,13 @@ func writeFolder(s *database.Store, path string) error {
 func TestFolderChecksWordsAndSlow(t *testing.T) {
 	f := Folder{Role: "movie library", Path: "/mnt/user/media", State: "read_only", Owner: "0:0"}
 	c := f.Check(99, 100)
-	if c.Status != Fail || !strings.Contains(c.Fix, "chown -R 99:100") || !strings.Contains(c.Fix, "/mnt/user/media") || !strings.Contains(c.Fix, "PUID/PGID") {
+	if c.Status != StatusFail || !strings.Contains(c.Fix, "chown -R 99:100") || !strings.Contains(c.Fix, "/mnt/user/media") || !strings.Contains(c.Fix, "PUID/PGID") {
 		t.Fatalf("%+v", c)
 	}
-	if c := (Folder{Role: "movie library", Path: "/m", State: "no_hardlink", Free: 1 << 30}).Check(1, 1); c.Status != Warn || !strings.Contains(c.Fix, "one mount") {
+	if c := (Folder{Role: "movie library", Path: "/m", State: "no_hardlink", Free: 1 << 30}).Check(1, 1); c.Status != StatusWarn || !strings.Contains(c.Fix, "one mount") {
 		t.Fatalf("%+v", c)
 	}
-	if c := (Folder{Role: "downloads", Path: "/d", State: "slow"}).Check(1, 1); c.Status != Warn || !strings.Contains(c.Text, "skipped") {
+	if c := (Folder{Role: "downloads", Path: "/d", State: "slow"}).Check(1, 1); c.Status != StatusWarn || !strings.Contains(c.Text, "skipped") {
 		t.Fatalf("%+v", c)
 	}
 	if got := Summary([]Folder{{State: "ok"}, {State: "ok"}, {State: "read_only"}, {State: "slow"}}); got != "folders: 2 ok, 1 not writable, 1 not checked (slow to answer)" {
@@ -156,7 +156,7 @@ func TestOpenReadOnlyNeverCreates(t *testing.T) {
 
 func dbChecks(t *testing.T, dir string) []Check {
 	t.Helper()
-	r := Run(context.Background(), Options{ConfigDir: dir, MetadataURL: "https://meta.invalid",
+	r := RunDoctor(context.Background(), DoctorOptions{ConfigDir: dir, MetadataURL: "https://meta.invalid",
 		HTTP: &http.Client{Transport: failRT{}}, NetTimeout: 100 * time.Millisecond, FolderBudget: time.Second})
 	var out []Check
 	for _, c := range r.Checks {
@@ -169,7 +169,7 @@ func dbChecks(t *testing.T, dir string) []Check {
 
 func TestDoctorMissingDatabaseIsAWarning(t *testing.T) {
 	got := dbChecks(t, t.TempDir())
-	if len(got) != 1 || got[0].Status != Warn || !strings.Contains(got[0].Text, "no database yet") {
+	if len(got) != 1 || got[0].Status != StatusWarn || !strings.Contains(got[0].Text, "no database yet") {
 		t.Fatalf("got %+v", got)
 	}
 }
@@ -182,7 +182,7 @@ func TestDoctorUnopenableDatabaseFails(t *testing.T) {
 		t.Fatal(err)
 	}
 	got := dbChecks(t, dir)
-	if len(got) != 1 || got[0].Status != Fail || !strings.Contains(got[0].Text, "cannot open the database") || got[0].Fix == "" {
+	if len(got) != 1 || got[0].Status != StatusFail || !strings.Contains(got[0].Text, "cannot open the database") || got[0].Fix == "" {
 		t.Fatalf("got %+v", got)
 	}
 }
