@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"testing"
+	"time"
 )
 
 type calendarArt struct {
@@ -23,9 +24,18 @@ func TestCalendarEntriesCarryArtwork(t *testing.T) {
 	srv, st, _ := libSetup(t)
 	folder(t, srv.URL, "movie")
 	a := addMovie(t, srv.URL, `{"id":"tmdb:900001"}`)
-	execRow(t, st, `UPDATE titles SET artwork = '["poster:lantern.jpg"]', backdrop = 'https://img.example/lantern-wide.jpg' WHERE id = ?`, a.Title.ID)
+	// The add starts a background artwork refresh that can land after this
+	// UPDATE and clear the backdrop, so set and read again until it holds.
 	var c calendarArt
-	_ = json.Unmarshal(do(t, "GET", srv.URL+"/api/v1/calendar?from=2031-01-01&to=2031-03-01", "", 200), &c)
+	for i := 0; i < 30; i++ {
+		execRow(t, st, `UPDATE titles SET artwork = '["poster:lantern.jpg"]', backdrop = 'https://img.example/lantern-wide.jpg' WHERE id = ?`, a.Title.ID)
+		c = calendarArt{}
+		_ = json.Unmarshal(do(t, "GET", srv.URL+"/api/v1/calendar?from=2031-01-01&to=2031-03-01", "", 200), &c)
+		if len(c.Dates) > 0 && c.Dates[0].Backdrop != "" {
+			break
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
 	if len(c.Dates) == 0 || c.Dates[0].Poster != "/api/v1/artwork/lantern.jpg" || c.Dates[0].Backdrop != "https://img.example/lantern-wide.jpg" || c.Dates[0].Still != "" {
 		t.Fatalf("movie entry %+v", c.Dates)
 	}
