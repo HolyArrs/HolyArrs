@@ -1,147 +1,192 @@
-# Downloaders
+---
+title: Downloaders
+description: Connect qBittorrent, Transmission, Deluge, SABnzbd or NZBGet so HolyArrs can send Releases and import the finished files.
+level: Setup
+---
 
-You want HolyArrs to send what it finds to your download app and bring the finished files into your Library. HolyArrs does not download anything itself. It hands each Release to a Downloader, follows the download, and imports the files when they are ready.
+Connect your download app so HolyArrs can send it Releases and import what finishes.
 
-HolyArrs works with:
+HolyArrs does not download by itself. It hands each Release to a Downloader, follows it, and imports the files.
 
-- **qBittorrent**, **Transmission** and **Deluge** for torrents.
-- **SABnzbd** and **NZBGet** for Usenet.
+| Kind | Apps |
+|---|---|
+| Torrent | qBittorrent, Transmission 4+, Deluge |
+| Usenet | SABnzbd, NZBGet |
 
-Only the owner and admins can see or change Downloaders.
+## Before you start
+
+- You are the owner or an admin. Nobody else sees this page.
+- Your download app is running and you can open its web page.
 
 ## Add a Downloader
 
-1. Open **Settings**, then **Downloaders**.
+1. Open **Settings > Downloaders**.
 2. Press **Add a Downloader**.
 3. Under **Which app**, pick your app.
 4. Fill in **Name**. Any name works.
-5. Fill in **Address**. This is the address of the app's web page, such as `http://192.168.1.10:8090`.
-6. Fill in the sign-in for your app. See [Sign-in for each app](#sign-in-for-each-app).
-7. Check the other settings. See [The Downloader settings](#the-downloader-settings).
-8. Press **Save**.
+5. Fill in **Address**, the app's web page, such as `http://192.168.1.10:8090`.
+6. Fill in the sign-in. See [Sign-in for each app](#sign-in-for-each-app).
+7. Press **Save**, then **Test** on the row. You should see **Working** next to the name.
 
-To check it later, press **Test** on its row. The result shows next to the name.
+:::caution
+If HolyArrs and the Downloader run in separate containers and see the download folder under different paths, imports fail. Fill in the path pair under [Paths](#paths) before the first download.
+:::
 
 ## Sign-in for each app
 
-- **qBittorrent**: under **Sign in with**, pick **API key** or **Username and password**. The API key needs qBittorrent 5.2 or newer. You find it in qBittorrent under Options, Web UI.
-- **Transmission**: a username and password. Leave them empty when Transmission does not ask for them from your network. Transmission 4 or newer is needed.
-- **Deluge**: the Deluge Web UI password. There is no username.
-- **SABnzbd**: the API key. You find it in SABnzbd under Config, General.
-- **NZBGet**: a username and password. Leave them empty only when NZBGet lets HolyArrs in without them.
+| App | What to enter | Where to find it |
+|---|---|---|
+| qBittorrent | **API key** (qBittorrent 5.2+) or **Username and password** | qBittorrent: Options, Web UI |
+| Transmission | Username and password, or empty if it does not ask on your network | Transmission settings |
+| Deluge | Web UI password (no username) | Deluge Web UI |
+| SABnzbd | API key | SABnzbd: Config, General |
+| NZBGet | Username and password, or empty if NZBGet lets HolyArrs in without them | NZBGet settings |
 
-Keys and passwords are stored encrypted and never shown again. To keep the stored one, leave the field alone. When you move a Downloader to another host, type the key or password again. HolyArrs never sends a stored key to a new host by itself.
+HolyArrs stores keys and passwords encrypted and never shows them again. Leave the field alone to keep the stored one. When you change the address to another host, type the key again. HolyArrs never sends a stored key to a new host.
 
-## The Downloader settings
+## Choices
 
 For qBittorrent these sit under **More options**.
 
-- **Category**: HolyArrs puts its downloads in this category and only looks at that category.
-  - qBittorrent makes it if it is missing.
-  - SABnzbd needs it to exist already, under Config, Categories.
-  - Transmission and Deluge store it as a label.
-  - NZBGet gets it as the download category.
-- **Priority**: 1 to 50. The lowest number is used first.
-- **Tags**: only titles with one of these tags use this Downloader.
-- **Downloader's path** and **HolyArrs' path**: fill these in only when the Downloader sees the download folder under a different name than HolyArrs does. This is common when they run in separate containers. For example, `/data/torrents` for the Downloader and `/downloads` for HolyArrs.
-- **Reach the local network**: on for most setups, since Downloaders usually run at home. Turn it off for a Downloader on the internet.
-- **HolyArrs can change this Downloader**: when off, new downloads still go to it, but HolyArrs never pauses, changes or removes anything already in it. See [Keep a Downloader read only](#keep-a-downloader-read-only).
+### Category
 
-## What the states mean
+HolyArrs files its downloads under this category and only looks at that category.
 
-Each Downloader row shows one state.
+| App | How the category works |
+|---|---|
+| qBittorrent | Made for you if missing |
+| SABnzbd | Must exist first, under Config, Categories |
+| Transmission, Deluge | Stored as a label |
+| NZBGet | Sent as the download category |
 
-- **Working**: it answered the last check.
-- **Paused**: you paused it. HolyArrs sends nothing new, but still follows downloads already there.
-- **Resting**: it did not answer, so HolyArrs waits before sending to it again. The row shows until when.
-- **Not answering**: the last check got no answer.
-- **Sign-in refused**: it turned down the key or the sign-in. Check them and test again.
+### Priority and tags
 
-Use **Pause** and **Resume** on the row to stop and start sending.
+**Priority** runs 1 to 50. The lowest number is used first. With **Tags**, only titles that share a tag use this Downloader. Untagged titles use untagged Downloaders.
 
-## How HolyArrs picks a Downloader
+### Paths
 
-- Torrent Releases go to torrent Downloaders. Usenet Releases go to Usenet Downloaders.
-- The lowest priority number goes first. Downloaders with the same number take turns.
-- Paused and resting Downloaders are skipped.
-- If one cannot take a Release, the next one of the same kind is tried. This is the **Try the next Downloader** setting, on by default.
-- Sends to the same Downloader are spaced out, 2 seconds by default.
-- With tags, a title goes to the Downloaders that share one of its tags. An untagged title goes to untagged Downloaders.
+Fill **Downloader's path** and **HolyArrs' path** only when the two apps see the download folder under different names. Example: the Downloader saves to `/data/torrents`, HolyArrs sees it as `/downloads`.
+
+The better fix is one shared parent folder mounted at the same path in both containers. See [Library folders](../library/folders.md).
+
+### Reach the local network
+
+On for most setups, since Downloaders usually run at home. Turn it off for a Downloader on the internet.
+
+### HolyArrs can change this Downloader
+
+Off means new downloads still go there, but HolyArrs never pauses, changes or removes anything already in it. Use it for a Downloader you share with other apps.
 
 ## Follow a download
 
-While a title downloads, its page shows how it is going: waiting its turn, downloading with progress, speed and time left, stalled, or failed with the reason. It updates by itself.
+The title's page shows each download: waiting its turn, downloading with speed and time left, stalled, or failed with the reason.
 
-Press **Mark failed** to end a download you do not want, for example a wrong copy or one that is too slow. HolyArrs then:
+Press **Mark failed** to end a download you do not want. HolyArrs then:
 
-1. turns that Release down for the title so it is not picked again. It shows on the **Turned down** list.
-2. removes it from the Downloader, with its files.
-3. searches again and sends the next best Release.
+1. Adds that Release to the title's **Turned down** list so it is not picked again.
+2. Removes it from the Downloader, with its files.
+3. Searches again and sends the next best Release.
 
 If nothing else passes your rules, the title shows **Needs a decision**.
 
-## When downloads go wrong
+## Row states
 
-HolyArrs handles these the same way as **Mark failed**:
+| State | Meaning |
+|---|---|
+| **Working** | Answered the last check |
+| **Paused** | You paused it. Nothing new is sent; current downloads are still followed |
+| **Resting** | It did not answer, so HolyArrs waits until the time shown |
+| **Not answering** | The last check got no answer |
+| **Sign-in refused** | The key or sign-in was turned down |
 
-- **The Downloader gives up**, for example when parts are missing or a repair failed. The Downloader's reason is shown.
-- **Programs in the download.** A movie never needs files like `.exe`, `.bat`, `.scr` or `.lnk`, even when named `movie.mkv.exe`.
-- **Fakes in the download.** A password note, a torrent with only archives and no video or audio, or a web shortcut with no video or audio beside it. For torrents, HolyArrs reads the file list as soon as it is there, so a fake fails before it downloads.
-- **Files that do not match.** When the files are not what the Release name said, the import is refused and the download is removed.
-- **Stalled.** With no progress for 6 hours, a download is stalled. After 24 hours with no progress, HolyArrs gives up on it. Waiting its turn, paused in the Downloader, and repairing or unpacking at 100% do not count.
-- **Removed outside HolyArrs.** When a download disappears from the Downloader, HolyArrs replaces it with the next Release.
+**Pause** and **Resume** on the row stop and start sending.
 
-## Settings for failed downloads
+## If it does not work
 
-These sit lower on the same Settings page.
+**Symptom:** SABnzbd test fails when **Address** uses a host name.
+**Cause:** SABnzbd refuses host names it does not know.
+**Fix:** Use its IP address, or add HolyArrs' host name to `host_whitelist` in SABnzbd under Config, Special.
 
-| Setting | Default | What it does |
+**Symptom:** SABnzbd says the category is missing.
+**Fix:** Make the category in SABnzbd under Config, Categories, then press **Test**.
+
+**Symptom:** Deluge does not work.
+**Fix:** In the Deluge Web UI, connect to your daemon yourself and turn on the Label plugin. HolyArrs does not pick a daemon.
+
+**Symptom:** A `.torrent` or `.nzb` from a Source with a proxy is refused.
+**Cause:** Transmission, Deluge and NZBGet cannot take those files through a proxied Source yet. Magnet links work.
+
+**Symptom:** A row says **Check whether this download arrived**.
+**Cause:** The connection dropped while Transmission, Deluge or NZBGet was taking a Release. HolyArrs will not send it again by itself, and you cannot change or remove the Downloader until you answer.
+**Fix:**
+1. Look for the download in the Downloader app.
+2. In HolyArrs, press **Give up on it**. The download stays in the Downloader. Pick another Release under **Needs a decision** if you want one.
+
+**Symptom:** **Sign-in refused**.
+**Fix:** Copy the key or password from the Downloader, type it again, press **Test**.
+
+More in [Troubleshooting](../help/troubleshooting.md).
+
+## For experts
+
+<details class="ha-more"><summary>How HolyArrs picks a Downloader</summary>
+
+- Torrent Releases go to torrent Downloaders, Usenet to Usenet.
+- Lowest priority number first. Equal numbers take turns.
+- Paused and resting Downloaders are skipped.
+- If one refuses a Release, the next of the same kind is tried (**Try the next Downloader**).
+- Sends to one Downloader are spaced 2 s apart by default.
+- Tags must match. Untagged titles go to untagged Downloaders.
+
+</details>
+
+<details class="ha-more"><summary>Failed downloads: what counts, and the settings</summary>
+
+HolyArrs treats these like **Mark failed**:
+
+- The Downloader gives up (missing parts, failed repair). Its reason is shown.
+- The download holds programs such as `.exe`, `.bat`, `.scr` or `.lnk`, including `movie.mkv.exe`.
+- The download looks fake: a password note, only archives with no video or audio, or a web shortcut with no media beside it. Torrent file lists are read as soon as they arrive, so a fake fails before it downloads.
+- The files do not match the Release name. The import is refused and the download removed.
+- No progress for the give-up time. Waiting its turn, paused in the Downloader, and repairing or unpacking at 100% do not count.
+- The download was removed outside HolyArrs. It is replaced with the next Release.
+
+These settings sit lower on **Settings > Downloaders**:
+
+| Setting | Default | Change it when |
 |---|---|---|
-| Stalled after (hours) | 6 | When a download counts as stalled. |
-| Give up and try the next Release after | 24 hours | When a stalled download is failed and replaced. |
-| Remove failed downloads from the Downloader | on | Off keeps them in the Downloader so you can look at them. |
-| Fail downloads that hold programs or fakes | on | Off lets them through to the import. |
-| Replace downloads removed outside HolyArrs | on | Off makes the title wait for your decision. |
-| Try the next Downloader | on | Tries another Downloader of the same kind. |
-| Seconds between sends to one Downloader | 2 | 0 turns the spacing off. |
+| Stalled after (hours) | 6 | Your downloads are slow by nature |
+| Give up and try the next Release after | 24 hours | You prefer waiting over replacing |
+| Remove failed downloads from the Downloader | on | You want to inspect failures (off) |
+| Fail downloads that hold programs or fakes | on | Rarely. Off lets them reach the import |
+| Replace downloads removed outside HolyArrs | on | You remove downloads on purpose. Off makes the title wait for you |
+| Try the next Downloader | on | You want one Downloader only |
+| Seconds between sends to one Downloader | 2 | The Downloader chokes on bursts. 0 turns spacing off |
 
-## Keep a Downloader read only
+</details>
 
-Turn off **HolyArrs can change this Downloader** on a Downloader. New downloads still go there, but nothing already in it is paused, changed or removed.
+<details class="ha-more"><summary>Lock a Downloader read only from the server</summary>
 
-To lock this from the server, set `HOLYARRS_READONLY_DOWNLOADERS` to a comma list of Downloader ids or addresses:
+Set `HOLYARRS_READONLY_DOWNLOADERS` to a comma list of Downloader ids or addresses:
 
 ```
 HOLYARRS_READONLY_DOWNLOADERS=http://your-server:8080
 ```
 
-A Downloader on that list stays read only whatever its switch says, even if you remove and add it again. The switch shows as locked, and the Downloads page hides the controls on those rows.
+A listed Downloader stays read only whatever its switch says, even after remove and re-add. The switch shows as locked, and the Downloads page hides controls on its rows.
 
-## Remove a Downloader
+</details>
 
-Press **Remove** on its row. HolyArrs refuses while the Downloader still has active downloads. Pause it, let them finish, then remove it. Downloads already in the app stay there.
+<details class="ha-more"><summary>Removing, NZBGet removals, API</summary>
 
-## Troubleshooting
+- **Remove** is refused while the Downloader has active downloads. Pause it, let them finish, then remove. Downloads already in the app stay there.
+- NZBGet deletes files whenever a download or its history entry is removed, so HolyArrs refuses removals that ask to keep files.
+- Every Downloader route is in `http://your-server:6262/api/v1/openapi.json`.
 
-**SABnzbd test fails with a host name.** SABnzbd refuses calls that use a host name it does not know. Use its IP address in **Address**, or add HolyArrs' host name to `host_whitelist` in SABnzbd under Config, Special.
+</details>
 
-**SABnzbd says the category is missing.** Make the category in SABnzbd under Config, Categories, then test again.
+## Related
 
-**Deluge does not work.** Connect the Deluge Web UI to your daemon yourself first, and turn on the daemon's Label plugin. HolyArrs does not pick a daemon for you.
-
-**A Release from a Source with a proxy is refused.** Transmission, Deluge and NZBGet cannot take a `.torrent` or `.nzb` file from a Source that uses a proxy yet. Magnet links work.
-
-**NZBGet will not keep files on removal.** NZBGet deletes the files when a download or its history entry is removed, so HolyArrs refuses a removal that asks to keep them. Leave the download in NZBGet if you need the original files.
-
-**A row says "Check whether this download arrived".** The connection dropped while Transmission, Deluge or NZBGet was taking a Release, so HolyArrs cannot tell if it arrived. It will not send that Release again on its own. You cannot change or remove the Downloader while this is open.
-
-1. Open the Downloader app and look for the download.
-2. In HolyArrs, press **Give up on it** on that row.
-
-HolyArrs will not retry that Release for the title. The download in your Downloader stays where it is. You can then pick a different Release by hand under **Needs a decision**.
-
-**Sign-in refused.** Check the key or password in your Downloader, type it again in HolyArrs, and press **Test**.
-
-See also [History](history.md) to see every step a download went through.
-
-For your own tools, every Downloader route is in the API description at `http://your-server:6262/api/v1/openapi.json`.
+- [Sources](sources.md)
+- [History](history.md)
+- [Library folders](../library/folders.md)
