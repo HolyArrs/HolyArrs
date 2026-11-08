@@ -11,40 +11,41 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
 // Pins for the subtitle routes (R16) and the title view and missing list on
 // a large library, before the routes and queries move.
 
 // subPerms are the permission levels of every subtitle route today.
-var subPerms = map[string]auth.Perm{
-	"GET /api/v1/subtitles/languages":           auth.PermManageLibrary,
-	"GET /api/v1/settings/subtitles":            auth.PermSettings,
-	"PUT /api/v1/settings/subtitles":            auth.PermSettings,
-	"GET /api/v1/titles/{id}/subtitles":         auth.PermManageLibrary,
-	"PUT /api/v1/titles/{id}/subtitle-wish":     auth.PermManageLibrary,
-	"POST /api/v1/subtitles/search":             auth.PermManageLibrary,
-	"GET /api/v1/subtitles/missing":             auth.PermManageLibrary,
-	"POST /api/v1/subtitles/missing/search":     auth.PermManageLibrary,
-	"POST /api/v1/files/{id}/subtitles/choices": auth.PermManageLibrary,
-	"POST /api/v1/files/{id}/subtitles/choose":  auth.PermManageLibrary,
-	"POST /api/v1/subtitles/{id}/sync":          auth.PermManageLibrary,
-	"POST /api/v1/subtitles/{id}/turn-down":     auth.PermManageLibrary,
-	"GET /api/v1/subtitle-sites":                auth.PermManageLibrary,
-	"GET /api/v1/subtitle-sites/kinds":          auth.PermManageLibrary,
-	"POST /api/v1/subtitle-sites":               auth.PermSettings,
-	"PUT /api/v1/subtitle-sites/{id}":           auth.PermSettings,
-	"DELETE /api/v1/subtitle-sites/{id}":        auth.PermSettings,
-	"POST /api/v1/subtitle-sites/{id}/test":     auth.PermSettings,
+var subPerms = map[string]webserver.Perm{
+	"GET /api/v1/subtitles/languages":           webserver.PermManageLibrary,
+	"GET /api/v1/settings/subtitles":            webserver.PermSettings,
+	"PUT /api/v1/settings/subtitles":            webserver.PermSettings,
+	"GET /api/v1/titles/{id}/subtitles":         webserver.PermManageLibrary,
+	"PUT /api/v1/titles/{id}/subtitle-wish":     webserver.PermManageLibrary,
+	"POST /api/v1/subtitles/search":             webserver.PermManageLibrary,
+	"GET /api/v1/subtitles/missing":             webserver.PermManageLibrary,
+	"POST /api/v1/subtitles/missing/search":     webserver.PermManageLibrary,
+	"POST /api/v1/files/{id}/subtitles/choices": webserver.PermManageLibrary,
+	"POST /api/v1/files/{id}/subtitles/choose":  webserver.PermManageLibrary,
+	"POST /api/v1/subtitles/{id}/sync":          webserver.PermManageLibrary,
+	"POST /api/v1/subtitles/{id}/turn-down":     webserver.PermManageLibrary,
+	"GET /api/v1/subtitle-sites":                webserver.PermManageLibrary,
+	"GET /api/v1/subtitle-sites/kinds":          webserver.PermManageLibrary,
+	"POST /api/v1/subtitle-sites":               webserver.PermSettings,
+	"PUT /api/v1/subtitle-sites/{id}":           webserver.PermSettings,
+	"DELETE /api/v1/subtitle-sites/{id}":        webserver.PermSettings,
+	"POST /api/v1/subtitle-sites/{id}/test":     webserver.PermSettings,
 }
 
 // route: GET /api/v1/subtitles/languages
 // route: GET /api/v1/subtitle-sites
 func TestSubPinSubtitleRoutePerms(t *testing.T) {
 	for p, want := range subPerms {
-		if got, ok := auth.RoutePerms[p]; !ok || got != want {
+		if got, ok := accounts.RoutePerms[p]; !ok || got != want {
 			t.Errorf("%s: permission %q (listed %v), want %q", p, got, ok, want)
 		}
 	}

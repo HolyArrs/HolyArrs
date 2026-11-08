@@ -14,7 +14,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
@@ -33,7 +33,7 @@ const dlPinLib = 1200
 type dlPinWant struct {
 	dlID, titleID        int64
 	title, version, kind string
-	year, titleYear int
+	year, titleYear      int
 	name, source, owner  string
 	album, covers, phase string
 	size                 int64
@@ -51,7 +51,7 @@ type dlPinWorld struct {
 	mcsrf  string
 	ana    int64
 	want   map[int64]*dlPinWant // by download id
-	order  []int64            // download ids, oldest first
+	order  []int64              // download ids, oldest first
 }
 
 func (w *dlPinWorld) get(t *testing.T, c *http.Client, path string) (int, []byte) {
@@ -70,7 +70,7 @@ func (w *dlPinWorld) send(t *testing.T, c *http.Client, csrf, method, path, body
 	t.Helper()
 	req, _ := http.NewRequest(method, w.srv.URL+path, strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set(auth.CSRFHeader, csrf)
+	req.Header.Set(accounts.CSRFHeader, csrf)
 	resp, err := c.Do(req)
 	if err != nil {
 		t.Fatal(err)
@@ -94,7 +94,7 @@ func newDlPinWorld(t *testing.T) *dlPinWorld {
 	if err != nil {
 		t.Fatal(err)
 	}
-	au := auth.New(s, auth.Options{Vault: v})
+	au := accounts.New(s, accounts.Options{Vault: v})
 	srv := httptest.NewServer(New(Server{Store: s, Metadata: metadata.Lab(), Version: "test", Auth: au, Secrets: v,
 		Live: webserver.NewLiveHub(webserver.LiveOptions{})}).Handler())
 	t.Cleanup(srv.Close)
