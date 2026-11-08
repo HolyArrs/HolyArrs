@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/discover"
 	"net/http"
-	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
@@ -50,22 +49,7 @@ type titleExplore struct{ a *API }
 // Details reads a title's details through the discover cache, fetching
 // them when missing or old.
 func (t titleExplore) Details(ctx context.Context, kind, id string) (metadata.Details, error) {
-	a := t.a
-	d, ok := metadata.DiscovererFor(ctx, a.s.Metadata)
-	if !ok {
-		return metadata.Details{}, metadata.ErrServiceUnavailable
-	}
-	key := "details|" + kind + "|" + id
-	e, cached := a.discover.Get(key)
-	if !cached || time.Since(e.At) >= discover.TTL["details"] {
-		det, err := d.Details(ctx, kind, id)
-		if err != nil {
-			return metadata.Details{}, err
-		}
-		e = discoverEntry{At: time.Now(), Details: &det}
-		a.discover.Put(key, e)
-	}
-	return *e.Details, nil
+	return discover.TitleDetails(ctx, &t.a.discover, t.a.s.Metadata, kind, id)
 }
 
 func (t titleExplore) Caching(w http.ResponseWriter, r *http.Request, cache string) {

@@ -99,8 +99,8 @@ func TestKidRatingLightLookupsOwnCache(t *testing.T) {
 	if c := rateCalls.Load(); c != 10 {
 		t.Fatalf("%d rating lookups for 10 titles asked twice", c)
 	}
-	if a.discover.Len() != 1 {
-		t.Fatalf("Explore cache has %d entries, want the 1 it had", a.discover.Len())
+	if a.discoverCache().Len() != 1 {
+		t.Fatalf("Explore cache has %d entries, want the 1 it had", a.discoverCache().Len())
 	}
 }
 

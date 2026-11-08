@@ -64,3 +64,7 @@ func (a *API) newDiscover() *discover.Handlers {
 }
 
 func peopleError(w http.ResponseWriter, err error) { discover.PeopleError(w, err) }
+
+// discoverCache is the Explore row and details cache (for tests, so they
+// keep working when the cache moves into the discover module).
+func (a *API) discoverCache() *discover.Cache { return &a.discover }
