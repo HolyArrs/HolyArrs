@@ -11,7 +11,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
 )
 
 // Show search (stage 3.2): an episode, a season or the whole show, by hand.
@@ -172,7 +172,7 @@ func (a *API) episodeLabels(ctx context.Context, slotIDs []int64) string {
 		if database.Get(ctx, db, "items", itemID, &it) != nil || it.Kind != "episode" {
 			continue
 		}
-		l := source.EpisodeLabel(it)
+		l := sources.EpisodeLabel(it)
 		if !slices.Contains(labels, l) {
 			labels = append(labels, l)
 			if it.Numbers.Season != nil {

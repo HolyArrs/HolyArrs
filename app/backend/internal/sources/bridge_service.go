@@ -1,4 +1,4 @@
-package bridge
+package sources
 
 import (
 	"context"
@@ -16,12 +16,11 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
 )
 
 // KindCheck is the job kind that keeps every Jackett bridge's Sources in
 // step with its sites.
-const KindCheck = "check_bridges"
+const BridgeKindCheck = "check_bridges"
 
 // Keys in a Source's extra data that tie it to the bridge it came from.
 const (
@@ -38,7 +37,7 @@ const (
 )
 
 // ErrTaken says that this Jackett or Prowlarr is already connected.
-var ErrTaken = errors.New("already connected")
+var ErrBridgeTaken = errors.New("already connected")
 
 // Bridge is one connected Jackett or Prowlarr.
 type Bridge struct {
@@ -54,7 +53,7 @@ type Bridge struct {
 }
 
 // Result is what one check of a Jackett did.
-type Result struct {
+type BridgeResult struct {
 	Sites   int `json:"sites"`
 	Added   int `json:"added"`
 	Updated int `json:"updated"`
@@ -63,7 +62,7 @@ type Result struct {
 }
 
 // Service keeps bridges and their Sources.
-type Service struct {
+type BridgeService struct {
 	Store *database.Store
 	Vault *secrets.Vault
 
@@ -77,12 +76,12 @@ type Service struct {
 }
 
 // List returns every bridge, oldest first.
-func (s *Service) List(ctx context.Context) ([]Bridge, error) {
+func (s *BridgeService) List(ctx context.Context) ([]Bridge, error) {
 	return database.Select[Bridge](ctx, s.Store.Read(), "bridges", "1=1 ORDER BY id")
 }
 
 // Get returns one bridge.
-func (s *Service) Get(ctx context.Context, id int64) (Bridge, error) {
+func (s *BridgeService) Get(ctx context.Context, id int64) (Bridge, error) {
 	var b Bridge
 	err := database.Get(ctx, s.Store.Read(), "bridges", id, &b)
 	return b, err
@@ -90,7 +89,7 @@ func (s *Service) Get(ctx context.Context, id int64) (Bridge, error) {
 
 // LastChecked returns the newest check time, a quiet one from memory or the
 // stored one.
-func (s *Service) LastChecked(b Bridge) *time.Time {
+func (s *BridgeService) LastChecked(b Bridge) *time.Time {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if t, ok := s.checked[b.ID]; ok && (b.LastCheck == nil || t.After(*b.LastCheck)) {
@@ -100,7 +99,7 @@ func (s *Service) LastChecked(b Bridge) *time.Time {
 }
 
 // Key returns a bridge's key. It is never shown to the person.
-func (s *Service) Key(ctx context.Context, b Bridge) (string, error) {
+func (s *BridgeService) Key(ctx context.Context, b Bridge) (string, error) {
 	if b.SecretRef == nil || s.Vault == nil {
 		return "", nil
 	}
@@ -109,7 +108,7 @@ func (s *Service) Key(ctx context.Context, b Bridge) (string, error) {
 
 // Add stores a new bridge with its key, or returns ErrTaken when that kind
 // and address are already connected.
-func (s *Service) Add(ctx context.Context, kind, url, key, callback string, by domain.Actor) (Bridge, error) {
+func (s *BridgeService) Add(ctx context.Context, kind, url, key, callback string, by domain.Actor) (Bridge, error) {
 	b := Bridge{Kind: kind, URL: url, CallbackURL: callback, Extra: map[string]string{}}
 	err := s.Store.Write(ctx, func(tx *sql.Tx) error {
 		var n int
@@ -117,7 +116,7 @@ func (s *Service) Add(ctx context.Context, kind, url, key, callback string, by d
 			return err
 		}
 		if n > 0 {
-			return ErrTaken
+			return ErrBridgeTaken
 		}
 		if key != "" {
 			id, err := s.Vault.PutTx(tx, "bridge_api_key", key, by)
@@ -133,7 +132,7 @@ func (s *Service) Add(ctx context.Context, kind, url, key, callback string, by d
 }
 
 // Find returns the bridge of that kind at that address, if one is connected.
-func (s *Service) Find(ctx context.Context, kind, url string) (Bridge, bool) {
+func (s *BridgeService) Find(ctx context.Context, kind, url string) (Bridge, bool) {
 	bs, err := s.List(ctx)
 	if err != nil {
 		return Bridge{}, false
@@ -148,7 +147,7 @@ func (s *Service) Find(ctx context.Context, kind, url string) (Bridge, bool) {
 
 // Update gives a connected bridge a new key and callback address. It is used
 // when the key or HolyArrs's address changed and the person connects again.
-func (s *Service) Update(ctx context.Context, b Bridge, key, callback string, by domain.Actor) (Bridge, error) {
+func (s *BridgeService) Update(ctx context.Context, b Bridge, key, callback string, by domain.Actor) (Bridge, error) {
 	err := s.Store.Write(ctx, func(tx *sql.Tx) error {
 		if key != "" {
 			if b.SecretRef != nil {
@@ -176,7 +175,7 @@ func (s *Service) Update(ctx context.Context, b Bridge, key, callback string, by
 // Remove takes a bridge away and returns how many Sources it had brought in.
 // With keepSources they stay as ordinary Sources that are no longer kept in
 // step; otherwise they are removed too.
-func (s *Service) Remove(ctx context.Context, b Bridge, keepSources bool) (int, error) {
+func (s *BridgeService) Remove(ctx context.Context, b Bridge, keepSources bool) (int, error) {
 	s.work.Lock()
 	defer s.work.Unlock()
 	srcs, err := s.sourcesOf(ctx, b)
@@ -185,7 +184,7 @@ func (s *Service) Remove(ctx context.Context, b Bridge, keepSources bool) (int, 
 	}
 	if !keepSources {
 		for _, src := range srcs {
-			if err := source.Remove(ctx, s.Store, src.ID); err != nil {
+			if err := Remove(ctx, s.Store, src.ID); err != nil {
 				return 0, err
 			}
 		}
@@ -208,7 +207,7 @@ func (s *Service) Remove(ctx context.Context, b Bridge, keepSources bool) (int, 
 }
 
 // SourceCount returns how many Sources a bridge brought in.
-func (s *Service) SourceCount(ctx context.Context, b Bridge) int {
+func (s *BridgeService) SourceCount(ctx context.Context, b Bridge) int {
 	srcs, _ := s.sourcesOf(ctx, b)
 	return len(srcs)
 }
@@ -217,7 +216,7 @@ func (s *Service) SourceCount(ctx context.Context, b Bridge) int {
 // site becomes a Source, a site that is gone loses its Source, and a change
 // of address, key or category follows. Everything else on a Source (name,
 // priority, use, limits, tags) belongs to the person and stays.
-func (s *Service) CheckJackett(ctx context.Context, b Bridge, by domain.Actor) (Result, error) {
+func (s *BridgeService) CheckJackett(ctx context.Context, b Bridge, by domain.Actor) (BridgeResult, error) {
 	s.work.Lock()
 	defer s.work.Unlock()
 	if fresh, err := s.Get(ctx, b.ID); err == nil {
@@ -226,19 +225,19 @@ func (s *Service) CheckJackett(ctx context.Context, b Bridge, by domain.Actor) (
 	}
 	key, err := s.Key(ctx, b)
 	if err != nil {
-		return Result{}, err
+		return BridgeResult{}, err
 	}
-	j := NewJackett(b.URL, key)
+	j := NewBridgeJackett(b.URL, key)
 	sites, err := j.Sites(ctx)
 	if err != nil {
 		s.record(ctx, b, 0, false, err)
-		return Result{}, err
+		return BridgeResult{}, err
 	}
 	have, err := s.sourcesOf(ctx, b)
 	if err != nil {
-		return Result{}, err
+		return BridgeResult{}, err
 	}
-	res := Result{Sites: len(sites)}
+	res := BridgeResult{Sites: len(sites)}
 	bySite := map[string]domain.Source{}
 	for _, src := range have {
 		bySite[src.Extra[extraSite]] = src
@@ -247,7 +246,7 @@ func (s *Service) CheckJackett(ctx context.Context, b Bridge, by domain.Actor) (
 	// Only a Jackett on this machine or the local network gives its Sources
 	// the local-network allowance. A name that can't be looked up keeps the
 	// last answer.
-	local, ok := IsLocal(ctx, b.URL)
+	local, ok := BridgeIsLocal(ctx, b.URL)
 	if !ok {
 		local = b.Extra[extraLocal] == "1"
 	}
@@ -288,8 +287,8 @@ func (s *Service) CheckJackett(ctx context.Context, b Bridge, by domain.Actor) (
 			if src.URL == feed && !keyChanged && sameCategories(src.Categories, site.Categories) && src.AllowLocal == local {
 				continue
 			}
-			in := source.Input{Name: src.Name, URL: feed, APIKey: key, Categories: site.Categories, AllowLocal: &local}
-			if _, err := source.Change(ctx, s.Store, s.Vault, src.ID, in, by); err != nil {
+			in := Input{Name: src.Name, URL: feed, APIKey: key, Categories: site.Categories, AllowLocal: &local}
+			if _, err := Change(ctx, s.Store, s.Vault, src.ID, in, by); err != nil {
 				failed = append(failed, site.Title)
 				continue
 			}
@@ -303,10 +302,10 @@ func (s *Service) CheckJackett(ctx context.Context, b Bridge, by domain.Actor) (
 			res.Skipped++
 			continue
 		}
-		in := source.Input{Name: s.freeName(ctx, site.Title), Format: "torznab", Protocol: "torrent", URL: feed, APIKey: key,
+		in := Input{Name: s.freeName(ctx, site.Title), Format: "torznab", Protocol: "torrent", URL: feed, APIKey: key,
 			Kinds: kinds, Categories: site.Categories, AllowLocal: &local}
 		siteID := site.ID
-		_, err := source.Add(ctx, s.Store, s.Vault, in, by, func(tx *sql.Tx, id int64) error {
+		_, err := Add(ctx, s.Store, s.Vault, in, by, func(tx *sql.Tx, id int64) error {
 			_, err := tx.ExecContext(ctx, `UPDATE sources SET extra = json_set(extra, '$.bridge', ?, '$.bridge_site', ?) WHERE id = ?`,
 				strconv.FormatInt(b.ID, 10), siteID, id)
 			return err
@@ -320,7 +319,7 @@ func (s *Service) CheckJackett(ctx context.Context, b Bridge, by domain.Actor) (
 		res.Added++
 	}
 	for _, src := range bySite {
-		if err := source.Remove(ctx, s.Store, src.ID); err != nil {
+		if err := Remove(ctx, s.Store, src.ID); err != nil {
 			failed = append(failed, src.Name)
 			continue
 		}
@@ -356,20 +355,20 @@ func (s *Service) CheckJackett(ctx context.Context, b Bridge, by domain.Actor) (
 }
 
 // HandleCheck is the scheduled check of every Jackett bridge.
-func (s *Service) HandleCheck(ctx context.Context, r *jobs.Run) error {
+func (s *BridgeService) HandleCheck(ctx context.Context, r *jobs.Run) error {
 	bs, err := s.List(ctx)
 	if err != nil {
 		return err
 	}
-	var total Result
+	var total BridgeResult
 	var failed []string
 	for _, b := range bs {
-		if b.Kind != KindJackett {
+		if b.Kind != BridgeKindJackett {
 			continue
 		}
 		res, err := s.CheckJackett(ctx, b, domain.System)
 		if err != nil {
-			failed = append(failed, b.URL+": "+Words(err))
+			failed = append(failed, b.URL+": "+BridgeWords(err))
 			continue
 		}
 		total.Added += res.Added
@@ -383,20 +382,20 @@ func (s *Service) HandleCheck(ctx context.Context, r *jobs.Run) error {
 
 // Probe says whether there is a Jackett bridge to check. When there is none
 // the scheduled check does not run at all.
-func (s *Service) Probe(ctx context.Context, _ time.Time) (bool, any, error) {
+func (s *BridgeService) Probe(ctx context.Context, _ time.Time) (bool, any, error) {
 	var n int
-	err := s.Store.Read().QueryRowContext(ctx, "SELECT count(*) FROM bridges WHERE kind = ?", KindJackett).Scan(&n)
+	err := s.Store.Read().QueryRowContext(ctx, "SELECT count(*) FROM bridges WHERE kind = ?", BridgeKindJackett).Scan(&n)
 	return n > 0, nil, err
 }
 
 // RecordProwlarr keeps the outcome of a Prowlarr connect or sync. Prowlarr
 // writes its Sources through the old-app API, so they are counted there.
-func (s *Service) RecordProwlarr(ctx context.Context, b Bridge, err error) {
+func (s *BridgeService) RecordProwlarr(ctx context.Context, b Bridge, err error) {
 	s.record(ctx, b, s.SourceCount(ctx, b), false, err)
 }
 
 // quiet remembers a check in memory without writing it.
-func (s *Service) quiet(id int64, at time.Time) {
+func (s *BridgeService) quiet(id int64, at time.Time) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if s.checked == nil {
@@ -408,8 +407,8 @@ func (s *Service) quiet(id int64, at time.Time) {
 // sourcesOf returns the Sources a bridge brought in. For Jackett these are
 // the ones it made. For Prowlarr they are the ones its app sync wrote, which
 // are old-app Sources whose feed is on this Prowlarr.
-func (s *Service) sourcesOf(ctx context.Context, b Bridge) ([]domain.Source, error) {
-	if b.Kind == KindProwlarr {
+func (s *BridgeService) sourcesOf(ctx context.Context, b Bridge) ([]domain.Source, error) {
+	if b.Kind == BridgeKindProwlarr {
 		return database.Select[domain.Source](ctx, s.Store.Read(), "sources",
 			"json_extract(extra, '$.old_app') IS NOT NULL AND lower(url) LIKE lower(?) ESCAPE '\\' ORDER BY id", likePrefix(b.URL))
 	}
@@ -426,11 +425,11 @@ func likePrefix(u string) string {
 // record keeps the outcome of a check. A quiet check (same count, same
 // error, nothing changed) is kept in memory only, so an idle app writes
 // nothing.
-func (s *Service) record(ctx context.Context, b Bridge, sites int, changed bool, err error) {
+func (s *BridgeService) record(ctx context.Context, b Bridge, sites int, changed bool, err error) {
 	now := time.Now().UTC()
 	words := ""
 	if err != nil {
-		words = Words(err)
+		words = BridgeWords(err)
 	}
 	if err != nil {
 		// A failed check keeps the last known count.
@@ -490,7 +489,7 @@ func nonEmpty(m map[string][]int) map[string][]int {
 
 // freeName returns a site's title, or "<title> (Jackett)" and then
 // "<title> (Jackett 2)" and so on, until no Source has that name.
-func (s *Service) freeName(ctx context.Context, title string) string {
+func (s *BridgeService) freeName(ctx context.Context, title string) string {
 	for i := 1; ; i++ {
 		name := title
 		switch {

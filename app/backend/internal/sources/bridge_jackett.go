@@ -1,4 +1,4 @@
-package bridge
+package sources
 
 import (
 	"context"
@@ -13,14 +13,14 @@ import (
 
 // Jackett is a client for a Jackett the person runs. Its key alone lists
 // the configured sites and their categories.
-type Jackett struct {
+type BridgeJackett struct {
 	URL  string // as the person typed it, any base path included
 	Key  string
 	http *http.Client
 }
 
 // Site is one site set up in Jackett.
-type Site struct {
+type BridgeSite struct {
 	ID         string
 	Title      string
 	Type       string           // public, private or semi-private
@@ -50,18 +50,18 @@ type jackettList struct {
 }
 
 // NewJackett returns a client for one Jackett.
-func NewJackett(base, key string) *Jackett {
-	return &Jackett{URL: strings.TrimRight(base, "/"), Key: key, http: client(30 * time.Second)}
+func NewBridgeJackett(base, key string) *BridgeJackett {
+	return &BridgeJackett{URL: strings.TrimRight(base, "/"), Key: key, http: client(30 * time.Second)}
 }
 
 // FeedURL returns the Torznab address of a site in this Jackett.
-func (j *Jackett) FeedURL(id string) string {
+func (j *BridgeJackett) FeedURL(id string) string {
 	return j.URL + "/api/v2.0/indexers/" + url.PathEscape(id) + "/results/torznab/"
 }
 
 // Sites lists the sites set up in this Jackett. Jackett answers a wrong key
 // with status 200 and an error in the body, so the body decides.
-func (j *Jackett) Sites(ctx context.Context) ([]Site, error) {
+func (j *BridgeJackett) Sites(ctx context.Context) ([]BridgeSite, error) {
 	q := url.Values{"apikey": {j.Key}, "t": {"indexers"}, "configured": {"true"}}
 	status, b, err := call(ctx, j.http, http.MethodGet, j.URL+"/api/v2.0/indexers/all/results/torznab/api?"+q.Encode(), nil, nil, 16<<20)
 	if err != nil {
@@ -83,7 +83,7 @@ func (j *Jackett) Sites(ctx context.Context) ([]Site, error) {
 	if l.XMLName.Local != "indexers" {
 		return nil, fail("That address answers, but not like Jackett.")
 	}
-	var out []Site
+	var out []BridgeSite
 	for _, ix := range l.Indexers {
 		id := strings.TrimSpace(ix.ID)
 		// The combined feeds are never sites of their own.
@@ -94,7 +94,7 @@ func (j *Jackett) Sites(ctx context.Context) ([]Site, error) {
 		if title == "" {
 			title = id
 		}
-		out = append(out, Site{ID: id, Title: clipRunes(title, 64), Type: strings.TrimSpace(ix.Type), Categories: kindsOf(ix.Caps.Categories)})
+		out = append(out, BridgeSite{ID: id, Title: clipRunes(title, 64), Type: strings.TrimSpace(ix.Type), Categories: kindsOf(ix.Caps.Categories)})
 	}
 	sort.Slice(out, func(a, b int) bool { return strings.ToLower(out[a].Title) < strings.ToLower(out[b].Title) })
 	return out, nil

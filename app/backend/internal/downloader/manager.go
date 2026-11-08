@@ -21,7 +21,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/tagset"
 )
@@ -450,7 +450,7 @@ func (m *Manager) Grab(ctx context.Context, slotID, releaseID int64, by domain.A
 		// since an old pick list can name a Slot chosen since for another one. Only
 		// Slots of the grabbed Slot's Version count, so one Download never fills two
 		// Versions (the feed check may choose one Release for both).
-		if many := source.PickSlots(rel); len(many) > 1 && slices.Contains(many, slotID) {
+		if many := sources.PickSlots(rel); len(many) > 1 && slices.Contains(many, slotID) {
 			var version int64
 			if err := tx.QueryRow("SELECT version_id FROM slots WHERE id = ?", slotID).Scan(&version); err != nil {
 				return err

@@ -1,31 +1,31 @@
-package api
+package sources
 
 import (
 	"net/http"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
 // searchOutcome tells whether a Title's newest search came back empty.
 // Owners and admins (settings) also get the Sources that were paused or
 // failed, so they can fix them; everyone else only sees that nothing was
 // found yet.
-func (a *API) searchOutcome(w http.ResponseWriter, r *http.Request) {
-	t, ok := a.titleID(w, r)
+func (h *Handlers) searchOutcome(w http.ResponseWriter, r *http.Request) {
+	t, ok := h.Catalog.TitleFromPath(w, r)
 	if !ok {
 		return
 	}
-	es, _, err := a.s.Store.Events(r.Context(), database.EventFilter{TitleID: t.ID, Limit: 1,
-		Kinds: []string{source.EventSearchDone, source.EventSearchFailed, source.EventReleaseChosen}})
+	es, _, err := h.Store.Events(r.Context(), database.EventFilter{TitleID: t.ID, Limit: 1,
+		Kinds: []string{EventSearchDone, EventSearchFailed, EventReleaseChosen}})
 	if err != nil {
-		fail(w, http.StatusInternalServerError, err.Error())
+		webserver.Fail(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 	out := map[string]any{"empty": false}
-	if len(es) == 0 || es[0].Kind == source.EventReleaseChosen {
-		writeJSON(w, http.StatusOK, out)
+	if len(es) == 0 || es[0].Kind == EventReleaseChosen {
+		webserver.WriteJSON(w, http.StatusOK, out)
 		return
 	}
 	e := es[0]
@@ -39,5 +39,5 @@ func (a *API) searchOutcome(w http.ResponseWriter, r *http.Request) {
 		}
 		out["sources"] = srcs
 	}
-	writeJSON(w, http.StatusOK, out)
+	webserver.WriteJSON(w, http.StatusOK, out)
 }

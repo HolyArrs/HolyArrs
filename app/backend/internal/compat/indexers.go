@@ -19,7 +19,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
 )
 
 // Prowlarr's app sync. Prowlarr writes one Newznab or Torznab indexer per
@@ -75,7 +75,7 @@ func (h *handler) schemaFields(torrent bool) []schemaField {
 		{Name: "baseUrl", Label: "Address", Value: "", Type: "text"},
 		{Name: "apiPath", Label: "Feed path", Value: "/api", Type: "text", Advanced: true},
 		{Name: "apiKey", Label: "Key", Value: "", Type: "text"},
-		{Name: "categories", Label: "Categories", Value: source.DefaultCategories[h.sourceKind()], Type: "list"},
+		{Name: "categories", Label: "Categories", Value: sources.DefaultCategories[h.sourceKind()], Type: "list"},
 	}
 	if sonarr {
 		fs = append(fs, schemaField{Name: "animeCategories", Label: "Anime categories", Value: []int{}, Type: "list"},
@@ -538,7 +538,7 @@ func (h *handler) tryPush(w http.ResponseWriter, r *http.Request, p push, stored
 	key := p.key
 	if p.keepKey && stored != nil && stored.SecretRef != nil && h.Secrets != nil {
 		if hostOnly(p.url) != hostOnly(stored.URL) {
-			refuse(w, failure{PropertyName: "ApiKey", ErrorMessage: source.ErrKeyAgain.Error()})
+			refuse(w, failure{PropertyName: "ApiKey", ErrorMessage: sources.ErrKeyAgain.Error()})
 			return false
 		}
 		k, err := h.Secrets.Get(r.Context(), *stored.SecretRef)
@@ -548,11 +548,11 @@ func (h *handler) tryPush(w http.ResponseWriter, r *http.Request, p push, stored
 		}
 		key = k
 	}
-	cfg := source.Config{URL: p.url, APIKey: key, Protocol: p.protocol, Format: p.format, AllowLocal: true, Timeout: 20 * time.Second}
+	cfg := sources.Config{URL: p.url, APIKey: key, Protocol: p.protocol, Format: p.format, AllowLocal: true, Timeout: 20 * time.Second}
 	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
 	defer cancel()
-	if _, err := source.New(cfg).Test(ctx); err != nil {
-		refuse(w, failure{PropertyName: "BaseUrl", ErrorMessage: source.Explain(err), AttemptedValue: p.url})
+	if _, err := sources.New(cfg).Test(ctx); err != nil {
+		refuse(w, failure{PropertyName: "BaseUrl", ErrorMessage: sources.Explain(err), AttemptedValue: p.url})
 		return false
 	}
 	return true
@@ -587,14 +587,14 @@ func sourceFailure(w http.ResponseWriter, err error) {
 	switch {
 	case errors.Is(err, database.ErrNotFound):
 		notFound(w)
-	case errors.Is(err, source.ErrNoVault):
+	case errors.Is(err, sources.ErrNoVault):
 		message(w, http.StatusServiceUnavailable, err.Error())
-	case errors.Is(err, source.ErrNameUsed):
+	case errors.Is(err, sources.ErrNameUsed):
 		refuse(w, failure{PropertyName: "Name", ErrorMessage: err.Error()})
-	case errors.Is(err, source.ErrKeyAgain), errors.Is(err, source.ErrKeyAgainProxy):
+	case errors.Is(err, sources.ErrKeyAgain), errors.Is(err, sources.ErrKeyAgainProxy):
 		refuse(w, failure{PropertyName: "ApiKey", ErrorMessage: err.Error()})
-	case errors.Is(err, source.ErrURL), errors.Is(err, source.ErrPriority), errors.Is(err, source.ErrSeeders), errors.Is(err, source.ErrName),
-		errors.Is(err, source.ErrFormat), errors.Is(err, source.ErrProtocol), errors.Is(err, source.ErrKinds), errors.Is(err, source.ErrUse):
+	case errors.Is(err, sources.ErrURL), errors.Is(err, sources.ErrPriority), errors.Is(err, sources.ErrSeeders), errors.Is(err, sources.ErrName),
+		errors.Is(err, sources.ErrFormat), errors.Is(err, sources.ErrProtocol), errors.Is(err, sources.ErrKinds), errors.Is(err, sources.ErrUse):
 		refuse(w, failure{ErrorMessage: err.Error()})
 	default:
 		internalError(w, err)
@@ -611,8 +611,8 @@ func (h *handler) extras(old map[string]string, p push, name string) map[string]
 	return out
 }
 
-func (p push) input(kind, name string) source.Input {
-	in := source.Input{Name: name, Format: p.format, Protocol: p.protocol, URL: p.url, APIKey: p.key, UseFor: &p.use, Kinds: []string{kind},
+func (p push) input(kind, name string) sources.Input {
+	in := sources.Input{Name: name, Format: p.format, Protocol: p.protocol, URL: p.url, APIKey: p.key, UseFor: &p.use, Kinds: []string{kind},
 		Categories: map[string][]int{kind: p.cats}, MinSeeders: p.seeders, Priority: ptr(p.priority), AllowLocal: ptr(true)}
 	return in
 }
@@ -640,11 +640,11 @@ func (h *handler) addIndexer(w http.ResponseWriter, r *http.Request) {
 	}
 	name, ok := h.pickName(ctx, p.name, 0)
 	if !ok {
-		refuse(w, failure{PropertyName: "Name", ErrorMessage: source.ErrNameUsed.Error(), AttemptedValue: p.name})
+		refuse(w, failure{PropertyName: "Name", ErrorMessage: sources.ErrNameUsed.Error(), AttemptedValue: p.name})
 		return
 	}
 	extra, _ := json.Marshal(h.extras(nil, p, name))
-	src, err := source.Add(ctx, h.Store, h.Secrets, p.input(h.sourceKind(), name), actor(r), func(tx *sql.Tx, id int64) error {
+	src, err := sources.Add(ctx, h.Store, h.Secrets, p.input(h.sourceKind(), name), actor(r), func(tx *sql.Tx, id int64) error {
 		_, err := tx.Exec("UPDATE sources SET state = 'disabled', pause_reason = NULL, paused_until = NULL, extra = ? WHERE id = ?", string(extra), id)
 		return err
 	})
@@ -699,7 +699,7 @@ func (h *handler) putIndexer(w http.ResponseWriter, r *http.Request) {
 	name := src.Name
 	if p.name != valueStringOf(src.Extra[extraBody], "name") || src.Name != src.Extra[extraName] {
 		if name, ok = h.pickName(ctx, p.name, src.ID); !ok {
-			refuse(w, failure{PropertyName: "Name", ErrorMessage: source.ErrNameUsed.Error(), AttemptedValue: p.name})
+			refuse(w, failure{PropertyName: "Name", ErrorMessage: sources.ErrNameUsed.Error(), AttemptedValue: p.name})
 			return
 		}
 	}
@@ -718,7 +718,7 @@ func (h *handler) putIndexer(w http.ResponseWriter, r *http.Request) {
 	// Local network turned back on after a person turned it off counts as
 	// a move too.
 	moved := p.url != src.URL || !src.AllowLocal
-	out, err := source.Change(ctx, h.Store, h.Secrets, src.ID, in, actor(r), func(_ *sql.Tx, s *domain.Source) error {
+	out, err := sources.Change(ctx, h.Store, h.Secrets, src.ID, in, actor(r), func(_ *sql.Tx, s *domain.Source) error {
 		s.Extra = h.extras(s.Extra, p, name)
 		if moved {
 			s.State, s.PauseReason, s.PausedUntil = "disabled", nil, nil
@@ -746,7 +746,7 @@ func (h *handler) deleteIndexer(w http.ResponseWriter, r *http.Request) {
 		internalError(w, err)
 		return
 	}
-	if err := source.Remove(r.Context(), h.Store, id); err != nil {
+	if err := sources.Remove(r.Context(), h.Store, id); err != nil {
 		internalError(w, err)
 		return
 	}

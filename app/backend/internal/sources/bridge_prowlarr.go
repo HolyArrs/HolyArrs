@@ -1,4 +1,4 @@
-package bridge
+package sources
 
 import (
 	"context"
@@ -14,14 +14,14 @@ import (
 // there as an app for each side that is on (the Sonarr kind for TV, the
 // Radarr kind for movies), then asks it to sync. Prowlarr then writes its
 // sites into HolyArrs through the old-app API.
-type Prowlarr struct {
+type BridgeProwlarr struct {
 	URL  string
 	Key  string
 	http *http.Client
 }
 
 // Side is one HolyArrs side that Prowlarr connects to.
-type Side struct {
+type BridgeSide struct {
 	Kind string // Sonarr or Radarr, the app type name in Prowlarr
 	Name string // the entry's name in Prowlarr
 	Base string // the address Prowlarr uses to reach this side of HolyArrs
@@ -33,13 +33,13 @@ type Side struct {
 type app map[string]any
 
 // NewProwlarr returns a client for one Prowlarr.
-func NewProwlarr(url, key string) *Prowlarr {
-	return &Prowlarr{URL: strings.TrimRight(url, "/"), Key: key, http: client(30 * time.Second)}
+func NewBridgeProwlarr(url, key string) *BridgeProwlarr {
+	return &BridgeProwlarr{URL: strings.TrimRight(url, "/"), Key: key, http: client(30 * time.Second)}
 }
 
 // Status checks the key and that the address is a Prowlarr, and returns its
 // version.
-func (p *Prowlarr) Status(ctx context.Context) (string, error) {
+func (p *BridgeProwlarr) Status(ctx context.Context) (string, error) {
 	var st struct {
 		AppName string `json:"appName"`
 		Version string `json:"version"`
@@ -60,7 +60,7 @@ func (p *Prowlarr) Status(ctx context.Context) (string, error) {
 // already points at the same address is changed, never doubled. A new entry
 // starts from Prowlarr's own template so its other settings keep their
 // defaults, the categories to sync among them.
-func (p *Prowlarr) Connect(ctx context.Context, s Side) error {
+func (p *BridgeProwlarr) Connect(ctx context.Context, s BridgeSide) error {
 	var have []app
 	if err := p.do(ctx, http.MethodGet, "/api/v1/applications", nil, &have); err != nil {
 		return err
@@ -112,13 +112,13 @@ func (p *Prowlarr) Connect(ctx context.Context, s Side) error {
 
 // Sync asks Prowlarr to write its sites into every connected app now, the
 // same as its "Sync App Indexers" button.
-func (p *Prowlarr) Sync(ctx context.Context) error {
+func (p *BridgeProwlarr) Sync(ctx context.Context) error {
 	return p.do(ctx, http.MethodPost, "/api/v1/command", map[string]any{"name": "ApplicationIndexerSync", "forceSync": true}, nil)
 }
 
 // Connected says which sides already have an entry pointing at HolyArrs.
 // bases maps a side's kind to the address Prowlarr uses for it.
-func (p *Prowlarr) Connected(ctx context.Context, bases map[string]string) (map[string]bool, error) {
+func (p *BridgeProwlarr) Connected(ctx context.Context, bases map[string]string) (map[string]bool, error) {
 	var have []app
 	if err := p.do(ctx, http.MethodGet, "/api/v1/applications", nil, &have); err != nil {
 		return nil, err
@@ -138,7 +138,7 @@ func (p *Prowlarr) Connected(ctx context.Context, bases map[string]string) (map[
 
 // Disconnect removes the entries that point at these addresses. Prowlarr's
 // next sync then takes its Sources away.
-func (p *Prowlarr) Disconnect(ctx context.Context, bases []string) error {
+func (p *BridgeProwlarr) Disconnect(ctx context.Context, bases []string) error {
 	var have []app
 	if err := p.do(ctx, http.MethodGet, "/api/v1/applications", nil, &have); err != nil {
 		return err
@@ -158,7 +158,7 @@ func (p *Prowlarr) Disconnect(ctx context.Context, bases []string) error {
 
 // do sends one request to Prowlarr, turns its failures into plain words and
 // decodes a JSON answer into out when out is set.
-func (p *Prowlarr) do(ctx context.Context, method, path string, body any, out any) error {
+func (p *BridgeProwlarr) do(ctx context.Context, method, path string, body any, out any) error {
 	status, b, err := call(ctx, p.http, method, p.URL+path, map[string]string{"X-Api-Key": p.Key}, body, 8<<20)
 	if err != nil {
 		return err

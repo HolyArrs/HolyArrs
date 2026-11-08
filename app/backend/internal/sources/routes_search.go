@@ -1,4 +1,4 @@
-package api
+package sources
 
 import (
 	"context"
@@ -13,84 +13,13 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
 )
 
 // Search routes (stage 3.1): searching a Title, the releases a search found
 // with their verdicts, choosing one by hand, turning one down, the Held and
 // Turned down lists, bulk searches and the search settings.
-
-// page reads limit (1 to 500, default def) and offset (0 up) from the query.
-func page(r *http.Request, def int) (int, int) {
-	off, err := strconv.Atoi(r.URL.Query().Get("offset"))
-	if err != nil || off < 0 {
-		off = 0
-	}
-	return limit(r, def), off
-}
-
-// searchTitle queues a search_slot Job for each Slot of the Title that is
-// looking (or the one Slot asked for). Body (optional): {"choose": false}
-// only judges and stores the Releases for a person to choose from;
-// "slot_id" searches one Slot. A search from here is a single-Item hand
-// search: the protocol wait is skipped, and the Release gate too, with a
-// warning in each verdict.
-func (a *API) searchTitle(w http.ResponseWriter, r *http.Request) {
-	t, ok := a.titleID(w, r)
-	if !ok {
-		return
-	}
-	var in showSearchIn
-	if r.ContentLength != 0 && !decode(w, r, &in, `body is {"choose": bool, "slot_id": int}, both optional; for a show also "item_id", "season" and "version_id"; for an artist "album_id", "item_id" and "version_id"`) {
-		return
-	}
-	if t.Kind == "show" {
-		a.searchShow(w, r, t, in)
-		return
-	}
-	if t.Kind == "artist" {
-		a.searchArtist(w, r, t, in)
-		return
-	}
-	if in.ItemID != nil || in.Season != nil || in.VersionID != nil || in.AlbumID != nil {
-		fail(w, http.StatusBadRequest, "item_id, season, album_id and version_id are for shows and artists")
-		return
-	}
-	slots, err := database.Select[domain.Slot](r.Context(), a.s.Store.Read(), "slots",
-		"item_id IN (SELECT id FROM items WHERE title_id = ?) ORDER BY id", t.ID)
-	if err != nil {
-		internal(w, err)
-		return
-	}
-	params := map[string]any{"by_hand": true}
-	if in.Choose != nil && !*in.Choose {
-		params["choose"] = false
-	}
-	ids := []int64{}
-	for _, s := range slots {
-		if in.SlotID != nil && s.ID != *in.SlotID {
-			continue
-		}
-		// Its own key: a bulk search waiting for the same Slot must not
-		// swallow a person's search (which skips the wait and the gate).
-		key := "hand_search_slot:" + itoa(s.ID)
-		if params["choose"] == false {
-			key = "show_slot:" + itoa(s.ID)
-		}
-		id, _, err := a.s.Queue.Enqueue(r.Context(), jobs.KindSearchSlot, &domain.Subject{Type: "slot", ID: s.ID}, params, key, actor(r))
-		if err != nil {
-			internal(w, err)
-			return
-		}
-		ids = append(ids, id)
-	}
-	if in.SlotID != nil && len(ids) == 0 {
-		fail(w, http.StatusNotFound, "no such Slot on this Title")
-		return
-	}
-	writeJSON(w, http.StatusAccepted, map[string]any{"job_ids": ids})
-}
 
 // Reason is one line of a verdict in plain words.
 type Reason struct {
@@ -142,17 +71,17 @@ type ReleaseView struct {
 func releaseView(x domain.Release) ReleaseView {
 	v := ReleaseView{ID: x.ID, Name: x.Name, Size: x.Size, Seeders: x.Seeders, Peers: x.Peers, Protocol: x.Protocol, State: x.State, FoundBy: x.FoundBy,
 		JobID: x.JobID, SourceID: x.SourceID, Published: x.PublishedAt, HoldUntil: x.HoldUntil, Verdict: x.Verdict, CreatedAt: x.CreatedAt,
-		Reasons: []Reason{}, NeedsForce: x.State == "refused" || x.State == "turned_down" || source.RefusedByRules(x)}
+		Reasons: []Reason{}, NeedsForce: x.State == "refused" || x.State == "turned_down" || RefusedByRules(x)}
 	if len(x.MatchedSlotIDs) > 0 {
 		id := x.MatchedSlotIDs[0]
 		v.SlotID = &id
 	}
-	if many := source.PickSlots(x); len(many) > 1 {
+	if many := PickSlots(x); len(many) > 1 {
 		v.SlotIDs = many
 	} else if len(x.MatchedSlotIDs) > 1 {
 		v.SlotIDs = x.MatchedSlotIDs
 	}
-	if only := source.TurnedDownSlots(x); len(only) > 0 {
+	if only := TurnedDownSlots(x); len(only) > 0 {
 		v.turnedSlots = only
 		if x.State == "turned_down" {
 			id := only[0]
@@ -193,8 +122,8 @@ func releaseView(x domain.Release) ReleaseView {
 }
 
 // named fills in Source, Title and Version names for a page of Releases.
-func (a *API) named(ctx context.Context, vs []ReleaseView) {
-	db := a.s.Store.Read()
+func (h *Handlers) named(ctx context.Context, vs []ReleaseView) {
+	db := h.Store.Read()
 	for i := range vs {
 		_ = db.QueryRowContext(ctx, "SELECT name FROM sources WHERE id = ?", vs[i].SourceID).Scan(&vs[i].SourceName)
 		if vs[i].SlotID != nil {
@@ -207,9 +136,9 @@ func (a *API) named(ctx context.Context, vs []ReleaseView) {
 			if len(slots) == 0 {
 				slots = []int64{*vs[i].SlotID}
 			}
-			vs[i].Episode = a.episodeLabels(ctx, slots)
-			vs[i].Album = a.albumLabels(ctx, slots)
-			vs[i].TurnedDownFor = a.episodeLabels(ctx, vs[i].turnedSlots)
+			vs[i].Episode = h.Catalog.EpisodeLabels(ctx, slots)
+			vs[i].Album = h.Catalog.AlbumLabels(ctx, slots)
+			vs[i].TurnedDownFor = h.Catalog.EpisodeLabels(ctx, vs[i].turnedSlots)
 		}
 	}
 }
@@ -217,13 +146,13 @@ func (a *API) named(ctx context.Context, vs []ReleaseView) {
 // titleReleases lists the Releases of the newest search of each Slot of
 // the Title (or of slot_id), winners first, then passed over, then
 // refused; paged with limit and offset.
-func (a *API) titleReleases(w http.ResponseWriter, r *http.Request) {
-	t, ok := a.titleID(w, r)
+func (h *Handlers) titleReleases(w http.ResponseWriter, r *http.Request) {
+	t, ok := h.Catalog.TitleFromPath(w, r)
 	if !ok {
 		return
 	}
-	n, off := page(r, 100)
-	db := a.s.Store.Read()
+	n, off := queryPage(r, 100)
+	db := h.Store.Read()
 	slotFilter := ""
 	var slotArg []any
 	for _, f := range []struct{ param, cond string }{{"slot_id", " AND s.id = ?"}, {"item_id", " AND i.id = ?"},
@@ -234,7 +163,7 @@ func (a *API) titleReleases(w http.ResponseWriter, r *http.Request) {
 		}
 		id, err := strconv.ParseInt(sid, 10, 64)
 		if err != nil {
-			fail(w, http.StatusBadRequest, f.param+" must be a number")
+			webserver.Fail(w, http.StatusBadRequest, f.param+" must be a number")
 			return
 		}
 		slotFilter += f.cond
@@ -260,7 +189,7 @@ func (a *API) titleReleases(w http.ResponseWriter, r *http.Request) {
 			AND EXISTS (SELECT 1 FROM releases r WHERE r.job_id = jb.id)
 	) GROUP BY slot`, args...)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "sources", err)
 		return
 	}
 	var jobIDs []any
@@ -268,7 +197,7 @@ func (a *API) titleReleases(w http.ResponseWriter, r *http.Request) {
 		var id int64
 		if err := rows.Scan(&id); err != nil {
 			rows.Close()
-			internal(w, err)
+			webserver.Internal(w, "sources", err)
 			return
 		}
 		jobIDs = append(jobIDs, id)
@@ -280,20 +209,20 @@ func (a *API) titleReleases(w http.ResponseWriter, r *http.Request) {
 	if len(jobIDs) > 0 {
 		in := "job_id IN (" + strings.TrimSuffix(strings.Repeat("?,", len(jobIDs)), ",") + ")"
 		if err := db.QueryRowContext(r.Context(), "SELECT count(*) FROM releases WHERE "+in, jobIDs...).Scan(&total); err != nil {
-			internal(w, err)
+			webserver.Internal(w, "sources", err)
 			return
 		}
 		rels, err := database.Select[domain.Release](r.Context(), db, "releases", in+` ORDER BY CASE state WHEN 'chosen' THEN 0 WHEN 'held' THEN 1
 			WHEN 'judged' THEN 2 WHEN 'passed_over' THEN 3 WHEN 'turned_down' THEN 5 ELSE 4 END,
 			COALESCE(json_extract(verdict, '$.rank'), 9999), id LIMIT ? OFFSET ?`, append(jobIDs, n, off)...)
 		if err != nil {
-			internal(w, err)
+			webserver.Internal(w, "sources", err)
 			return
 		}
 		for _, x := range rels {
 			out = append(out, releaseView(x))
 		}
-		a.named(r.Context(), out)
+		h.named(r.Context(), out)
 	}
 	// Searches of this Title still running, so a screen can wait for them.
 	js, err := database.Select[domain.Job](r.Context(), db, "jobs", `state IN ('queued', 'running') AND (
@@ -309,32 +238,33 @@ func (a *API) titleReleases(w http.ResponseWriter, r *http.Request) {
 	if running == nil {
 		running = []int64{}
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"releases": out, "total": total, "limit": n, "offset": off, "running_job_ids": running})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"releases": out, "total": total, "limit": n, "offset": off, "running_job_ids": running})
 }
 
-func (a *API) searcher() *source.Searcher { return a.s.Search }
+func (h *Handlers) searcher() *Searcher { return h.search() }
 
-func searchError(w http.ResponseWriter, err error) {
-	var nf *source.NeedsForceError
+// SearchError answers a search refusal with its status and reason.
+func SearchError(w http.ResponseWriter, err error) {
+	var nf *NeedsForceError
 	switch {
 	case errors.As(err, &nf):
-		writeJSON(w, http.StatusConflict, map[string]any{"error": nf.Error(), "needs_force": true, "reasons": nf.Reasons})
-	case errors.Is(err, source.ErrNoRelease):
-		fail(w, http.StatusNotFound, err.Error())
-	case errors.Is(err, source.ErrState):
-		fail(w, http.StatusNotFound, err.Error())
-	case errors.Is(err, source.ErrNoSlot):
-		fail(w, http.StatusBadRequest, err.Error())
-	case errors.Is(err, source.ErrBusy):
-		fail(w, http.StatusConflict, err.Error())
+		webserver.WriteJSON(w, http.StatusConflict, map[string]any{"error": nf.Error(), "needs_force": true, "reasons": nf.Reasons})
+	case errors.Is(err, ErrNoRelease):
+		webserver.Fail(w, http.StatusNotFound, err.Error())
+	case errors.Is(err, ErrState):
+		webserver.Fail(w, http.StatusNotFound, err.Error())
+	case errors.Is(err, ErrNoSlot):
+		webserver.Fail(w, http.StatusBadRequest, err.Error())
+	case errors.Is(err, ErrBusy):
+		webserver.Fail(w, http.StatusConflict, err.Error())
 	default:
-		internal(w, err)
+		webserver.Internal(w, "sources", err)
 	}
 }
 
 // chooseRelease sends a Release a person picked. Body (optional):
 // {"force": bool, "slot_id": int}.
-func (a *API) chooseRelease(w http.ResponseWriter, r *http.Request) {
+func (h *Handlers) chooseRelease(w http.ResponseWriter, r *http.Request) {
 	id, ok := pathID(w, r)
 	if !ok {
 		return
@@ -343,20 +273,20 @@ func (a *API) chooseRelease(w http.ResponseWriter, r *http.Request) {
 		Force  bool  `json:"force"`
 		SlotID int64 `json:"slot_id"`
 	}
-	if r.ContentLength != 0 && !decode(w, r, &in, `body is {"force": bool, "slot_id": int}, both optional`) {
+	if r.ContentLength != 0 && !webserver.Decode(w, r, &in, `body is {"force": bool, "slot_id": int}, both optional`) {
 		return
 	}
-	ch, err := a.searcher().Choose(r.Context(), id, in.SlotID, in.Force, actor(r))
+	ch, err := h.search().Choose(r.Context(), id, in.SlotID, in.Force, actorOf(r))
 	if err != nil {
-		searchError(w, err)
+		SearchError(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, ch)
+	webserver.WriteJSON(w, http.StatusOK, ch)
 }
 
 // turnDownRelease puts a Release on the Turned down list. Body (optional):
 // {"reason": text}.
-func (a *API) turnDownRelease(w http.ResponseWriter, r *http.Request) {
+func (h *Handlers) turnDownRelease(w http.ResponseWriter, r *http.Request) {
 	id, ok := pathID(w, r)
 	if !ok {
 		return
@@ -365,45 +295,45 @@ func (a *API) turnDownRelease(w http.ResponseWriter, r *http.Request) {
 		Reason string `json:"reason"`
 		SlotID int64  `json:"slot_id"`
 	}
-	if r.ContentLength != 0 && !decode(w, r, &in, `body is {"reason": text, "slot_id": int}, both optional`) {
+	if r.ContentLength != 0 && !webserver.Decode(w, r, &in, `body is {"reason": text, "slot_id": int}, both optional`) {
 		return
 	}
 	if len(in.Reason) > 500 {
-		fail(w, http.StatusBadRequest, "reason is at most 500 characters")
+		webserver.Fail(w, http.StatusBadRequest, "reason is at most 500 characters")
 		return
 	}
-	if err := a.searcher().TurnDownFor(r.Context(), id, in.SlotID, strings.TrimSpace(in.Reason), actor(r)); err != nil {
-		searchError(w, err)
+	if err := h.search().TurnDownFor(r.Context(), id, in.SlotID, strings.TrimSpace(in.Reason), actorOf(r)); err != nil {
+		SearchError(w, err)
 		return
 	}
 	var rel domain.Release
-	if err := database.Get(r.Context(), a.s.Store.Read(), "releases", id, &rel); err != nil {
-		internal(w, err)
+	if err := database.Get(r.Context(), h.Store.Read(), "releases", id, &rel); err != nil {
+		webserver.Internal(w, "sources", err)
 		return
 	}
 	v := []ReleaseView{releaseView(rel)}
-	a.named(r.Context(), v)
-	writeJSON(w, http.StatusOK, v[0])
+	h.named(r.Context(), v)
+	webserver.WriteJSON(w, http.StatusOK, v[0])
 }
 
-func (a *API) listState(state string) http.HandlerFunc {
+func (h *Handlers) listState(state string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		n, off := page(r, 50)
-		list, total, err := a.searcher().List(r.Context(), state, n, off)
+		n, off := queryPage(r, 50)
+		list, total, err := h.search().List(r.Context(), state, n, off)
 		if err != nil {
-			internal(w, err)
+			webserver.Internal(w, "sources", err)
 			return
 		}
 		out := make([]ReleaseView, 0, len(list))
 		for _, x := range list {
 			out = append(out, releaseView(x.Release))
 		}
-		a.named(r.Context(), out)
-		writeJSON(w, http.StatusOK, map[string]any{"releases": out, "total": total, "limit": n, "offset": off})
+		h.named(r.Context(), out)
+		webserver.WriteJSON(w, http.StatusOK, map[string]any{"releases": out, "total": total, "limit": n, "offset": off})
 	}
 }
 
-func (a *API) removeFrom(state string, one bool) http.HandlerFunc {
+func (h *Handlers) removeFrom(state string, one bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var id int64
 		if one {
@@ -415,27 +345,27 @@ func (a *API) removeFrom(state string, one bool) http.HandlerFunc {
 		var n int
 		var err error
 		if state == "held" {
-			n, err = a.searcher().RemoveHeld(r.Context(), id, actor(r))
+			n, err = h.search().RemoveHeld(r.Context(), id, actorOf(r))
 		} else {
-			n, err = a.searcher().RemoveTurnedDown(r.Context(), id, actor(r))
+			n, err = h.search().RemoveTurnedDown(r.Context(), id, actorOf(r))
 		}
 		if err != nil {
-			searchError(w, err)
+			SearchError(w, err)
 			return
 		}
-		writeJSON(w, http.StatusOK, map[string]any{"removed": n})
+		webserver.WriteJSON(w, http.StatusOK, map[string]any{"removed": n})
 	}
 }
 
 // bulkSearch queues one search_missing Job for the whole Missing list or
 // the whole Better copy list; {"kind": "movie", "show" or "artist"} keeps it
 // to that kind.
-func (a *API) bulkSearch(which string) http.HandlerFunc {
+func (h *Handlers) bulkSearch(which string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var in struct {
 			Kind string `json:"kind"`
 		}
-		if r.ContentLength != 0 && !decode(w, r, &in, `send nothing for everything, or {"kind": "movie", "show" or "artist"}`) {
+		if r.ContentLength != 0 && !webserver.Decode(w, r, &in, `send nothing for everything, or {"kind": "movie", "show" or "artist"}`) {
 			return
 		}
 		params, key := map[string]any{"which": which}, "search_missing:"+which
@@ -444,25 +374,25 @@ func (a *API) bulkSearch(which string) http.HandlerFunc {
 		case "movie", "show", "artist":
 			params["kind"], key = in.Kind, key+":"+in.Kind
 		default:
-			fail(w, http.StatusBadRequest, `kind must be "movie", "show" or "artist"`)
+			webserver.Fail(w, http.StatusBadRequest, `kind must be "movie", "show" or "artist"`)
 			return
 		}
-		id, _, err := a.s.Queue.Enqueue(r.Context(), jobs.KindSearchMissing, nil, params, key, actor(r))
+		id, _, err := h.Queue.Enqueue(r.Context(), jobs.KindSearchMissing, nil, params, key, actorOf(r))
 		if err != nil {
-			internal(w, err)
+			webserver.Internal(w, "sources", err)
 			return
 		}
-		writeJSON(w, http.StatusAccepted, map[string]any{"job_ids": []int64{id}})
+		webserver.WriteJSON(w, http.StatusAccepted, map[string]any{"job_ids": []int64{id}})
 	}
 }
 
-func (a *API) feedCheckNow(w http.ResponseWriter, r *http.Request) {
-	id, _, err := a.s.Queue.Enqueue(r.Context(), jobs.KindFeedCheck, nil, map[string]any{}, "schedule:"+jobs.KindFeedCheck, actor(r))
+func (h *Handlers) feedCheckNow(w http.ResponseWriter, r *http.Request) {
+	id, _, err := h.Queue.Enqueue(r.Context(), jobs.KindFeedCheck, nil, map[string]any{}, "schedule:"+jobs.KindFeedCheck, actorOf(r))
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "sources", err)
 		return
 	}
-	writeJSON(w, http.StatusAccepted, map[string]any{"job_ids": []int64{id}})
+	webserver.WriteJSON(w, http.StatusAccepted, map[string]any{"job_ids": []int64{id}})
 }
 
 // SearchSettings are the search choices a person can change.
@@ -493,8 +423,8 @@ type SearchSettings struct {
 	EpisodeDefaultMinutes  int  `json:"episode_default_minutes"`   // length taken for an episode of unknown length by the size floor; 1 to 240
 }
 
-func (a *API) readSearchSettings(ctx context.Context) (SearchSettings, error) {
-	db := a.s.Store.Read()
+func (h *Handlers) readSearchSettings(ctx context.Context) (SearchSettings, error) {
+	db := h.Store.Read()
 	var st SearchSettings
 	var every int
 	var enabled bool
@@ -507,101 +437,101 @@ func (a *API) readSearchSettings(ctx context.Context) (SearchSettings, error) {
 	}
 	var missingOn bool
 	_ = db.QueryRowContext(ctx, "SELECT enabled FROM schedules WHERE kind = ?", jobs.KindSearchMissing).Scan(&missingOn)
-	st.MissingSearchCount, _ = strconv.Atoi(source.Setting(ctx, db, source.SettingMissingCount))
+	st.MissingSearchCount, _ = strconv.Atoi(Setting(ctx, db, SettingMissingCount))
 	if !missingOn {
 		st.MissingSearchCount = 0
 	}
-	st.MissingSearchBetter = source.Setting(ctx, db, source.SettingMissingBetter) == "true"
-	st.TryNextDownloader = source.Setting(ctx, db, "try_next_downloader") != "false"
-	st.MissingSearchShows = source.Setting(ctx, db, source.SettingMissingShows) != "false"
+	st.MissingSearchBetter = Setting(ctx, db, SettingMissingBetter) == "true"
+	st.TryNextDownloader = Setting(ctx, db, "try_next_downloader") != "false"
+	st.MissingSearchShows = Setting(ctx, db, SettingMissingShows) != "false"
 	st.SeasonPackUpgrade = "all"
-	if source.Setting(ctx, db, source.SettingPackUpgrade) == "any" {
+	if Setting(ctx, db, SettingPackUpgrade) == "any" {
 		st.SeasonPackUpgrade = "any"
 	}
 	st.SeasonPackPrefer = "rank"
-	if source.Setting(ctx, db, source.SettingPackPrefer) == "always" {
+	if Setting(ctx, db, SettingPackPrefer) == "always" {
 		st.SeasonPackPrefer = "always"
 	}
-	st.MultiSeasonPacks = source.Setting(ctx, db, source.SettingMultiSeason) == "true"
-	st.MissingSearchMusic = source.Setting(ctx, db, source.SettingMissingMusic) != "false"
-	st.MusicDiscographyPacks = source.Setting(ctx, db, source.SettingDiscography) == "true"
-	if n, err := strconv.Atoi(source.Setting(ctx, db, source.SettingTrackTolerance)); err == nil {
+	st.MultiSeasonPacks = Setting(ctx, db, SettingMultiSeason) == "true"
+	st.MissingSearchMusic = Setting(ctx, db, SettingMissingMusic) != "false"
+	st.MusicDiscographyPacks = Setting(ctx, db, SettingDiscography) == "true"
+	if n, err := strconv.Atoi(Setting(ctx, db, SettingTrackTolerance)); err == nil {
 		st.AlbumTrackTolerance = n
 	}
-	st.AlbumExtraFiles, _ = strconv.Atoi(source.Setting(ctx, db, source.SettingExtraFiles))
-	st.ArtistSearchCap = artistSearchCap(ctx, db)
-	ch := source.Checks(ctx, db)
+	st.AlbumExtraFiles, _ = strconv.Atoi(Setting(ctx, db, SettingExtraFiles))
+	st.ArtistSearchCap = ArtistSearchCap(ctx, db)
+	ch := Checks(ctx, db)
 	st.RefuseEarlyReleases, st.EarlyReleaseGraceHours, st.RefuseTinyReleases = ch.Early, int(ch.Grace.Hours()), ch.Tiny
-	st.ImportMinVideoMB, _ = strconv.Atoi(source.Setting(ctx, db, "import_min_video_mb"))
-	st.ImportMinTrackKB, _ = strconv.Atoi(source.Setting(ctx, db, "import_min_track_kb"))
-	st.ImportSizeFloors = source.Setting(ctx, db, source.SettingImportFloors) != "false"
+	st.ImportMinVideoMB, _ = strconv.Atoi(Setting(ctx, db, "import_min_video_mb"))
+	st.ImportMinTrackKB, _ = strconv.Atoi(Setting(ctx, db, "import_min_track_kb"))
+	st.ImportSizeFloors = Setting(ctx, db, SettingImportFloors) != "false"
 	st.HoldUnknownReleases, st.EpisodeDefaultMinutes = ch.HoldUnknown, ch.EpisodeMinutes
 	return st, nil
 }
 
-func (a *API) getSearchSettings(w http.ResponseWriter, r *http.Request) {
-	st, err := a.readSearchSettings(r.Context())
+func (h *Handlers) getSearchSettings(w http.ResponseWriter, r *http.Request) {
+	st, err := h.readSearchSettings(r.Context())
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "sources", err)
 		return
 	}
-	writeJSON(w, http.StatusOK, st)
+	webserver.WriteJSON(w, http.StatusOK, st)
 }
 
-func (a *API) putSearchSettings(w http.ResponseWriter, r *http.Request) {
+func (h *Handlers) putSearchSettings(w http.ResponseWriter, r *http.Request) {
 	// Fields left out keep their value.
-	in, err := a.readSearchSettings(r.Context())
+	in, err := h.readSearchSettings(r.Context())
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "sources", err)
 		return
 	}
-	if !decode(w, r, &in, "body is the search settings") {
+	if !webserver.Decode(w, r, &in, "body is the search settings") {
 		return
 	}
 	if in.SeasonPackUpgrade != "all" && in.SeasonPackUpgrade != "any" {
-		fail(w, http.StatusBadRequest, "season_pack_upgrade is all or any")
+		webserver.Fail(w, http.StatusBadRequest, "season_pack_upgrade is all or any")
 		return
 	}
 	if in.SeasonPackPrefer != "rank" && in.SeasonPackPrefer != "always" {
-		fail(w, http.StatusBadRequest, "season_pack_prefer is rank or always")
+		webserver.Fail(w, http.StatusBadRequest, "season_pack_prefer is rank or always")
 		return
 	}
 	if in.AlbumTrackTolerance < -1 || in.AlbumTrackTolerance > 50 {
-		fail(w, http.StatusBadRequest, "album_track_tolerance is -1 (off) or 0 to 50")
+		webserver.Fail(w, http.StatusBadRequest, "album_track_tolerance is -1 (off) or 0 to 50")
 		return
 	}
 	if in.AlbumExtraFiles < 0 || in.AlbumExtraFiles > 20 {
-		fail(w, http.StatusBadRequest, "album_extra_files is 0 to 20")
+		webserver.Fail(w, http.StatusBadRequest, "album_extra_files is 0 to 20")
 		return
 	}
 	if in.ArtistSearchCap < 1 || in.ArtistSearchCap > 2000 {
-		fail(w, http.StatusBadRequest, "artist_search_cap is 1 to 2000")
+		webserver.Fail(w, http.StatusBadRequest, "artist_search_cap is 1 to 2000")
 		return
 	}
 	if in.EarlyReleaseGraceHours < 0 || in.EarlyReleaseGraceHours > 720 {
-		fail(w, http.StatusBadRequest, "early_release_grace_hours is 0 to 720")
+		webserver.Fail(w, http.StatusBadRequest, "early_release_grace_hours is 0 to 720")
 		return
 	}
 	if in.ImportMinVideoMB < 0 || in.ImportMinVideoMB > 10000 || in.ImportMinTrackKB < 0 || in.ImportMinTrackKB > 100000 {
-		fail(w, http.StatusBadRequest, "import_min_video_mb is 0 to 10000 and import_min_track_kb 0 to 100000")
+		webserver.Fail(w, http.StatusBadRequest, "import_min_video_mb is 0 to 10000 and import_min_track_kb 0 to 100000")
 		return
 	}
 	if in.EpisodeDefaultMinutes < 1 || in.EpisodeDefaultMinutes > 240 {
-		fail(w, http.StatusBadRequest, "episode_default_minutes is 1 to 240")
+		webserver.Fail(w, http.StatusBadRequest, "episode_default_minutes is 1 to 240")
 		return
 	}
 	if in.FeedCheckMinutes != 0 && (in.FeedCheckMinutes < 10 || in.FeedCheckMinutes > 120) {
-		fail(w, http.StatusBadRequest, "feed_check_minutes is 0 (off) or 10 to 120")
+		webserver.Fail(w, http.StatusBadRequest, "feed_check_minutes is 0 (off) or 10 to 120")
 		return
 	}
 	if in.MissingSearchCount < 0 || in.MissingSearchCount > 500 {
-		fail(w, http.StatusBadRequest, "missing_search_count is 0 (off) to 500")
+		webserver.Fail(w, http.StatusBadRequest, "missing_search_count is 0 (off) to 500")
 		return
 	}
-	by := actor(r)
+	by := actorOf(r)
 	now := database.FormatTime(time.Now())
 	byText := actorJSONText(by)
-	err = a.s.Store.Write(r.Context(), func(tx *sql.Tx) error {
+	err = h.Store.Write(r.Context(), func(tx *sql.Tx) error {
 		feedOn, feedEvery := in.FeedCheckMinutes > 0, in.FeedCheckMinutes*60
 		if !feedOn {
 			feedEvery = 15 * 60 // off keeps the default interval for when it is turned on again
@@ -614,18 +544,18 @@ func (a *API) putSearchSettings(w http.ResponseWriter, r *http.Request) {
 			in.MissingSearchCount > 0, now, byText, jobs.KindSearchMissing); err != nil {
 			return err
 		}
-		for k, v := range map[string]string{source.SettingMissingCount: strconv.Itoa(max(in.MissingSearchCount, 0)),
-			source.SettingMissingBetter: strconv.FormatBool(in.MissingSearchBetter), "try_next_downloader": strconv.FormatBool(in.TryNextDownloader),
-			source.SettingMissingShows: strconv.FormatBool(in.MissingSearchShows), source.SettingPackUpgrade: in.SeasonPackUpgrade,
-			source.SettingPackPrefer: in.SeasonPackPrefer, source.SettingMultiSeason: strconv.FormatBool(in.MultiSeasonPacks),
-			source.SettingMissingMusic: strconv.FormatBool(in.MissingSearchMusic), source.SettingDiscography: strconv.FormatBool(in.MusicDiscographyPacks),
-			source.SettingTrackTolerance: strconv.Itoa(in.AlbumTrackTolerance), source.SettingExtraFiles: strconv.Itoa(in.AlbumExtraFiles),
-			source.SettingArtistSearchCap: strconv.Itoa(in.ArtistSearchCap),
-			source.SettingRefuseEarly:     strconv.FormatBool(in.RefuseEarlyReleases), source.SettingEarlyGrace: strconv.Itoa(in.EarlyReleaseGraceHours),
-			source.SettingRefuseTiny: strconv.FormatBool(in.RefuseTinyReleases), "import_min_video_mb": strconv.Itoa(in.ImportMinVideoMB),
-			"import_min_track_kb": strconv.Itoa(in.ImportMinTrackKB), source.SettingImportFloors: strconv.FormatBool(in.ImportSizeFloors),
-			source.SettingHoldUnknown: strconv.FormatBool(in.HoldUnknownReleases), source.SettingEpisodeMinutes: strconv.Itoa(in.EpisodeDefaultMinutes)} {
-			if k == source.SettingMissingCount && in.MissingSearchCount == 0 {
+		for k, v := range map[string]string{SettingMissingCount: strconv.Itoa(max(in.MissingSearchCount, 0)),
+			SettingMissingBetter: strconv.FormatBool(in.MissingSearchBetter), "try_next_downloader": strconv.FormatBool(in.TryNextDownloader),
+			SettingMissingShows: strconv.FormatBool(in.MissingSearchShows), SettingPackUpgrade: in.SeasonPackUpgrade,
+			SettingPackPrefer: in.SeasonPackPrefer, SettingMultiSeason: strconv.FormatBool(in.MultiSeasonPacks),
+			SettingMissingMusic: strconv.FormatBool(in.MissingSearchMusic), SettingDiscography: strconv.FormatBool(in.MusicDiscographyPacks),
+			SettingTrackTolerance: strconv.Itoa(in.AlbumTrackTolerance), SettingExtraFiles: strconv.Itoa(in.AlbumExtraFiles),
+			SettingArtistSearchCap: strconv.Itoa(in.ArtistSearchCap),
+			SettingRefuseEarly:     strconv.FormatBool(in.RefuseEarlyReleases), SettingEarlyGrace: strconv.Itoa(in.EarlyReleaseGraceHours),
+			SettingRefuseTiny: strconv.FormatBool(in.RefuseTinyReleases), "import_min_video_mb": strconv.Itoa(in.ImportMinVideoMB),
+			"import_min_track_kb": strconv.Itoa(in.ImportMinTrackKB), SettingImportFloors: strconv.FormatBool(in.ImportSizeFloors),
+			SettingHoldUnknown: strconv.FormatBool(in.HoldUnknownReleases), SettingEpisodeMinutes: strconv.Itoa(in.EpisodeDefaultMinutes)} {
+			if k == SettingMissingCount && in.MissingSearchCount == 0 {
 				continue // off keeps the last count for when it is turned on again
 			}
 			if _, err := tx.Exec(`INSERT INTO settings (grp, key, value, created_at, created_by, updated_at, updated_by) VALUES ('what_to_pick', ?, ?, ?, ?, ?, ?)
@@ -637,12 +567,12 @@ func (a *API) putSearchSettings(w http.ResponseWriter, r *http.Request) {
 		return nil
 	})
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "sources", err)
 		return
 	}
 	// The change is logged once by logSettingsChanges as an audit Event (area
 	// and who, never the values), so it is not written or sent live here.
-	a.getSearchSettings(w, r)
+	h.getSearchSettings(w, r)
 }
 
 func actorJSONText(a domain.Actor) string {
@@ -678,19 +608,19 @@ var searchKinds = []any{jobs.KindSearchSlot, jobs.KindSearchMissing, jobs.KindFe
 
 // searches lists the search Jobs queued or running, oldest first, and the
 // newest finished ones (limit, default 10) with what each found.
-func (a *API) searches(w http.ResponseWriter, r *http.Request) {
+func (h *Handlers) searches(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	db := a.s.Store.Read()
+	db := h.Store.Read()
 	kinds := "kind IN (?, ?, ?, ?, ?)"
 	running, err := database.Select[domain.Job](ctx, db, "jobs", kinds+" AND state IN ('queued', 'running') ORDER BY id LIMIT 100", searchKinds...)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "sources", err)
 		return
 	}
 	recent, err := database.Select[domain.Job](ctx, db, "jobs", kinds+" AND state IN ('done', 'failed') AND ended_at IS NOT NULL ORDER BY ended_at DESC, id DESC LIMIT ?",
-		append(searchKinds, limit(r, 10))...)
+		append(searchKinds, queryLimit(r, 10))...)
 	if err != nil {
-		internal(w, err)
+		webserver.Internal(w, "sources", err)
 		return
 	}
 	view := func(js []domain.Job) []SearchView {
@@ -713,11 +643,11 @@ func (a *API) searches(w http.ResponseWriter, r *http.Request) {
 					JOIN versions v ON v.id = s.version_id WHERE s.id = ?`, j.Subject.ID).Scan(&tid, &v.TitleName, &v.Version) == nil {
 					v.TitleID = &tid
 				}
-				v.Episode = a.episodeLabels(ctx, []int64{j.Subject.ID})
-				v.Album = a.albumLabels(ctx, []int64{j.Subject.ID})
+				v.Episode = h.Catalog.EpisodeLabels(ctx, []int64{j.Subject.ID})
+				v.Album = h.Catalog.AlbumLabels(ctx, []int64{j.Subject.ID})
 			}
 			if j.Subject != nil && j.Subject.Type == "part" {
-				tid, name, season, album := a.partLabel(ctx, j.Subject.ID)
+				tid, name, season, album := h.Catalog.PartLabel(ctx, j.Subject.ID)
 				if tid > 0 {
 					v.TitleID, v.TitleName, v.Episode, v.Album = &tid, name, season, album
 				}
@@ -756,5 +686,5 @@ func (a *API) searches(w http.ResponseWriter, r *http.Request) {
 		}
 		return out
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"running": view(running), "recent": view(recent)})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"running": view(running), "recent": view(recent)})
 }

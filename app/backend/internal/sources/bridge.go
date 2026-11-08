@@ -1,4 +1,4 @@
-package bridge
+package sources
 
 import (
 	"bytes"
@@ -17,22 +17,22 @@ import (
 
 // The kinds of bridge.
 const (
-	KindJackett  = "jackett"
-	KindProwlarr = "prowlarr"
+	BridgeKindJackett  = "jackett"
+	BridgeKindProwlarr = "prowlarr"
 )
 
 // Error is a failed call to a bridge, worded for the person. It never holds
 // the key.
-type Error struct {
+type BridgeError struct {
 	Words string
 }
 
 // Error returns the plain words of the failure.
-func (e *Error) Error() string { return e.Words }
+func (e *BridgeError) Error() string { return e.Words }
 
 // Words returns what went wrong, worded for the person.
-func Words(err error) string {
-	var be *Error
+func BridgeWords(err error) string {
+	var be *BridgeError
 	if errors.As(err, &be) {
 		return be.Words
 	}
@@ -44,7 +44,7 @@ func Words(err error) string {
 
 // CleanURL checks a bridge address and drops its trailing slash. It must be
 // http or https with a host, and carry no user, password, query or fragment.
-func CleanURL(raw string) (string, error) {
+func BridgeCleanURL(raw string) (string, error) {
 	raw = strings.TrimRight(strings.TrimSpace(raw), "/")
 	u, err := url.Parse(raw)
 	if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" || u.User != nil || u.RawQuery != "" || u.Fragment != "" {
@@ -53,7 +53,7 @@ func CleanURL(raw string) (string, error) {
 	return raw, nil
 }
 
-func fail(format string, args ...any) error { return &Error{Words: fmt.Sprintf(format, args...)} }
+func fail(format string, args ...any) error { return &BridgeError{Words: fmt.Sprintf(format, args...)} }
 
 // client builds an HTTP client for a bridge on the home network. Local
 // addresses are allowed because bridges run there, but a cloud metadata

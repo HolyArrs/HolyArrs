@@ -14,7 +14,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
@@ -251,7 +251,7 @@ func (m *Manager) claimAttempt(ctx context.Context, d domain.Downloader, release
 			return err
 		}
 		covered := []int64{slotID}
-		if many := source.PickSlots(rel); slices.Contains(many, slotID) {
+		if many := sources.PickSlots(rel); slices.Contains(many, slotID) {
 			covered = many
 		}
 		type slotSnapshot struct {

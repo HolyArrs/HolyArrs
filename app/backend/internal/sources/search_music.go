@@ -1,4 +1,4 @@
-package source
+package sources
 
 import (
 	"context"
@@ -666,4 +666,12 @@ func (s *Searcher) feedArtist(ctx context.Context, by domain.Actor, jobID *int64
 		chosen, held = chosen+c1, held+h1
 	}
 	return chosen, held, stored, nil
+}
+
+// ArtistSearchCap is the most album searches one search on an artist queues.
+func ArtistSearchCap(ctx context.Context, db *sql.DB) int {
+	if n, err := strconv.Atoi(Setting(ctx, db, SettingArtistSearchCap)); err == nil && n > 0 {
+		return n
+	}
+	return DefaultArtistSearchCap
 }

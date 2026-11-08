@@ -8,7 +8,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/features"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
 )
 
 // registerHooks hands core the functions, parts and feature names that
@@ -17,7 +17,7 @@ import (
 func registerHooks() {
 	features.Register()
 	parts.Register()
-	secrets.RegisterRewriter("sources", source.EncryptPlainExtras)
+	secrets.RegisterRewriter("sources", sources.EncryptPlainExtras)
 }
 
 // routes returns the handler that serves every route of the app. Each module

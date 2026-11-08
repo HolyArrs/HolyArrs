@@ -1,4 +1,4 @@
-package bridge
+package sources
 
 import (
 	"context"
@@ -11,7 +11,7 @@ import (
 )
 
 // IsLocal is the check Sources use for a local address; tests replace it.
-var IsLocal = LocalAddress
+var BridgeIsLocal = BridgeLocalAddress
 
 // LocalAddress says whether an address is on this machine or a local
 // network (loopback, private and the other ranges Sources refuse). Only a
@@ -19,7 +19,7 @@ var IsLocal = LocalAddress
 // Sources get the local-network allowance. A name counts as local only when
 // every address it resolves to is. ok is false when the name could not be
 // looked up.
-func LocalAddress(ctx context.Context, raw string) (local, ok bool) {
+func BridgeLocalAddress(ctx context.Context, raw string) (local, ok bool) {
 	u, err := url.Parse(raw)
 	if err != nil || u.Hostname() == "" {
 		return false, false

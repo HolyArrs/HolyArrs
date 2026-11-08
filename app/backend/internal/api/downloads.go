@@ -18,6 +18,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloader"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/store"
 )
 
@@ -916,7 +917,7 @@ func (a *API) decide(w http.ResponseWriter, r *http.Request) {
 			err = a.searcher().TurnDown(r.Context(), *dv.ReleaseID, reason, by)
 		}
 		if err != nil {
-			searchError(w, err)
+			sources.SearchError(w, err)
 			return
 		}
 		fallthrough

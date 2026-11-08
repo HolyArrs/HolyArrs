@@ -22,7 +22,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/lists"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/naming"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles"
 )
 
@@ -1351,9 +1351,9 @@ func (r *run) source(it Item) (string, string) {
 	}
 	local := false
 	prio := s.Priority
-	in := source.Input{Name: it.Name, Format: s.Format, Protocol: s.Protocol, URL: s.URL, Kinds: s.Kinds, Categories: s.Categories,
+	in := sources.Input{Name: it.Name, Format: s.Format, Protocol: s.Protocol, URL: s.URL, Kinds: s.Kinds, Categories: s.Categories,
 		MinSeeders: s.MinSeeders, Priority: &prio, AllowLocal: &local}
-	_, err := source.Add(r.ctx, r.m.Store, nil, in, r.by, func(tx *sql.Tx, id int64) error {
+	_, err := sources.Add(r.ctx, r.m.Store, nil, in, r.by, func(tx *sql.Tx, id int64) error {
 		if _, err := tx.Exec("UPDATE sources SET state = 'disabled' WHERE id = ?", id); err != nil {
 			return err
 		}

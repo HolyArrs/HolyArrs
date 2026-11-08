@@ -11,7 +11,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/source"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
 )
 
 // siteReason says why a subtitle site waits, by pause reason.
@@ -39,15 +39,15 @@ func (e *Engine) Links(ctx context.Context) ([]jobs.Status, error) {
 		return nil, err
 	}
 	for _, s := range ss {
-		h := source.HealthOf(s)
+		h := sources.HealthOf(s)
 		switch {
-		case h.State == source.StateDisabled:
+		case h.State == sources.StateDisabled:
 			add("source", s.ID, s.Name, jobs.Off, h.Text)
-		case h.State == source.StateAuthFailed:
+		case h.State == sources.StateAuthFailed:
 			add("source", s.ID, s.Name, jobs.Failed, h.Text)
-		case s.PauseReason != nil && *s.PauseReason == source.KindBroken, s.PauseReason != nil && *s.PauseReason == source.KindBlocked:
+		case s.PauseReason != nil && *s.PauseReason == sources.KindBroken, s.PauseReason != nil && *s.PauseReason == sources.KindBlocked:
 			add("source", s.ID, s.Name, jobs.Failed, h.Text)
-		case h.State == source.StateUnreachable:
+		case h.State == sources.StateUnreachable:
 			add("source", s.ID, s.Name, jobs.Retrying, h.Text)
 		default:
 			add("source", s.ID, s.Name, jobs.Running, "")
