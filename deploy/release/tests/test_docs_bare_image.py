@@ -21,9 +21,9 @@ class ImageTags(unittest.TestCase):
     def test_docs_pull_the_beta_tag(self):
         # Before the first stable there is no :latest; every example pulls the
         # same tag as the main compose file. Placeholders like <tag> are fine.
-        main = re.search(r"ghcr\.io/coderluii/holyarrs:([\w.-]+)", read(DOCS / "install.md")).group(1)
+        main = re.search(r"ghcr\.io/coderluii/holyarrs:([\w.-]+)", read(DOCS / "user" / "getting-started" / "install.md")).group(1)
         self.assertEqual(main, "beta")
-        for page in [*sorted(DOCS.glob("*.md")), ROOT / "README.md"]:
+        for page in [*sorted((DOCS / "user").rglob("*.md")), ROOT / "README.md"]:
             for tag in re.findall(r"ghcr\.io/coderluii/holyarrs:([\w.<>-]+)", read(page)):
                 with self.subTest(page=page.name, tag=tag):
                     self.assertTrue(tag == main or tag.startswith("<"), f"{page.name} pulls :{tag}")
@@ -31,14 +31,14 @@ class ImageTags(unittest.TestCase):
 
 class RestartPolicy(unittest.TestCase):
     def test_nas_guide_names_auto_restart(self):
-        text = read(DOCS / "nas.md")
+        text = read(DOCS / "user" / "platforms" / "nas.md")
         self.assertIn("unless-stopped", text)
         self.assertRegex(text, r"(?i)auto-?restart")
 
 
 class Podman(unittest.TestCase):
     def test_quadlet_is_complete(self):
-        s = section(read(DOCS / "install.md"), "Rootless Docker and Podman")
+        s = section(read(DOCS / "user" / "getting-started" / "install.md"), "Rootless Docker and Podman")
         quadlet = re.search(r"```ini\n(.*?)```", s, re.S).group(1)
         self.assertRegex(quadlet, r"(?m)^Volume=.*:/config:Z$")
         # No shell in the image: a plain-text health command runs through /bin/sh.
@@ -55,7 +55,7 @@ class Podman(unittest.TestCase):
         self.assertIn("systemctl --user enable podman-restart.service", s)
 
     def test_selinux_media_uses_shared_label(self):
-        s = section(read(DOCS / "install.md"), "Rootless Docker and Podman")
+        s = section(read(DOCS / "user" / "getting-started" / "install.md"), "Rootless Docker and Podman")
         note = s[s.index("`:Z`"):].split("\n- ", 1)[0]
         # Media is shared with the Downloader and is often a network share.
         self.assertNotIn("Add it to media folders too", note)
@@ -65,25 +65,25 @@ class Podman(unittest.TestCase):
 
 class HealthDocs(unittest.TestCase):
     def test_health_table_has_every_check(self):
-        s = section(read(DOCS / "alerts-and-health.md"), "Health checks")
+        s = section(read(DOCS / "user" / "health" / "health-checks.md"), "What each check means")
         for row in ("Config folder", "Waiting downloads", "Key kit", "Trailer reader"):
             with self.subTest(row=row):
                 self.assertRegex(s, r"(?m)^\| " + re.escape(row))
 
     def test_key_kit_and_new_machine_pointers(self):
-        health = read(DOCS / "alerts-and-health.md")
-        self.assertIn("](backups.md", health)
-        install = section(read(DOCS / "install.md"), "Keep the master key")
+        health = read(DOCS / "user" / "health" / "health-checks.md")
+        self.assertIn("](../backups/backups.md", health)
+        install = section(read(DOCS / "user" / "getting-started" / "install.md"), "Keep the master key")
         self.assertIn("Download key kit", install)
         self.assertIn("holyarrs.key", install)
         # A named volume has no host folder: point at the docker cp steps.
         self.assertIn("docker cp", install)
         self.assertIn("#docker-desktop-windows-and-mac", install)
-        backups = read(DOCS / "backups.md")
+        backups = read(DOCS / "user" / "backups" / "backups.md")
         self.assertIn("key kit", backups.lower())
 
     def test_trailer_row_warns_only_at_the_limit(self):
-        s = section(read(DOCS / "alerts-and-health.md"), "Health checks")
+        s = section(read(DOCS / "user" / "health" / "health-checks.md"), "What each check means")
         row = re.search(r"(?m)^\| Trailer reader[^\n]*", s).group(0)
         warn = row.split("|")[3]
         # health.go: Warning only once TrailerFailLimit lookups failed; a refusal
@@ -92,30 +92,32 @@ class HealthDocs(unittest.TestCase):
         self.assertIn("5 different videos failed in a row", warn)
 
     def test_paused_row_names_the_share(self):
-        text = read(DOCS / "downloads-movies.md")
-        row = re.search(r"(?m)^\| Paused in the Downloader \|(.*)$", text).group(1)
+        text = read(DOCS / "user" / "movies" / "downloads-movies.md")
+        row = re.search(r"(?m)^\| Paused \|(.*)$", text).group(1)
         self.assertIn("share", row)
         self.assertIn("Check again", row)
 
     def test_schedules_both_switches(self):
-        text = read(DOCS / "schedules.md")
-        self.assertIn("Rescan the Library", text.split("| Job |")[0])
+        text = read(DOCS / "user" / "health" / "schedules.md")
+        switches = re.search(r"(?m)^Two schedules can be turned off:.*$", text).group(0)
+        self.assertIn("Refresh movie details", switches)
+        self.assertIn("Rescan the Library", switches)
         self.assertIn("`rescan_library`", text)
 
     def test_moved_path_maps(self):
-        s = section(read(DOCS / "move-from-other-apps.md"), "What moves")
+        s = section(read(DOCS / "user" / "migrate" / "move-from-other-apps.md"), "What comes over")
         self.assertRegex(s, r"(?i)remote path mappings")
         self.assertIn("not visible here yet", s)
 
     def test_unraid_exclusive_switch(self):
-        self.assertIn("Permit exclusive shares", read(DOCS / "nas.md"))
-        self.assertIn("Permit exclusive shares", read(ROOT / "app" / "backend" / "internal" / "store" / "store.go"))
+        self.assertIn("Permit exclusive shares", read(DOCS / "user" / "platforms" / "unraid.md"))
+        self.assertIn("Permit exclusive shares", read(ROOT / "app" / "backend" / "internal" / "core" / "files" / "configfolder.go"))
 
 
 class Wording(unittest.TestCase):
     def test_button_words_match(self):
         # The Downloads page button says "Check again"; no message may say "Recheck".
-        for p in (ROOT / "app" / "backend" / "internal" / "downloader" / "manager.go", ROOT / "app" / "backend" / "internal" / "health" / "health.go"):
+        for p in (ROOT / "app" / "backend" / "internal" / "downloads" / "manager.go", ROOT / "app" / "backend" / "internal" / "health" / "health.go"):
             with self.subTest(file=p.name):
                 self.assertNotIn("use Recheck", read(p))
                 self.assertIn("Check again", read(p))

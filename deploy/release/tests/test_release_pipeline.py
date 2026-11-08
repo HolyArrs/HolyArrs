@@ -181,7 +181,7 @@ class PromoteWorkflow(unittest.TestCase):
 
 class InstallDocsTag(unittest.TestCase):
     def test_docs_point_at_beta_until_first_stable(self):
-        text = read(ROOT / "docs" / "install.md")
+        text = read(ROOT / "docs" / "user" / "getting-started" / "install.md")
         self.assertIn("ghcr.io/coderluii/holyarrs:beta", text)
         self.assertNotIn("holyarrs:latest", text)
 
