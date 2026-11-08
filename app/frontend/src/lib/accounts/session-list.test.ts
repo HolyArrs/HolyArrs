@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { endedWords, order, others, type SessionRow } from './session-list.ts';
+import { describe, expect, it } from 'vitest';
 
 const row = (id: string, last: string, current = false): SessionRow => ({
 	id,

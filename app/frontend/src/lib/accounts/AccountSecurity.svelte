@@ -1,20 +1,19 @@
 <script lang="ts">
+	import Button from '#lib/ui/Button.svelte';
+	import SettingsCard from '#lib/ui/SettingsCard.svelte';
+	import Confirm from '#lib/ui/Confirm.svelte';
+	import { needsConfirm } from '#lib/ui/sensitive.ts';
+	import QrCode from './QrCode.svelte';
+	import { strong } from './strong-error.ts';
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import { api, ApiError } from '#lib/core/api.ts';
 	import { plainMessage as message } from '#lib/core/settings.ts';
 	import { to } from '#lib/core/paths.ts';
-	import Button from '#lib/ui/Button.svelte';
-	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import { session } from '../core/session.svelte.ts';
 	import { toasts } from '../core/toasts.svelte.ts';
-	import Confirm from '#lib/ui/Confirm.svelte';
-	import QrCode from './QrCode.svelte';
-	import { needsConfirm } from '#lib/ui/sensitive.ts';
-	import { strong } from './strong-error.ts';
 
-	// Two-factor
 	let setup = $state<{ secret: string; uri: string; qr?: string[] } | null>(null);
 	let code = $state('');
 	let offCode = $state('');
@@ -106,8 +105,7 @@
 		}
 	}
 
-	// Single sign-on and trusted proxy identities linked to me. Unlinking one
-	// also signs out the sessions it made; it needs a fresh password sign-in.
+	// Single sign-on and trusted proxy identities linked to me. Unlinking one also signs out the sessions it made and needs a fresh password sign-in.
 	type SsoLink = { kind: 'oidc' | 'forward_auth'; issuer: string; name: string; created_at: string };
 	let myLinks = $state<SsoLink[]>([]);
 	let unlinkKey = $state('');
@@ -183,8 +181,7 @@
 		}
 	}
 
-	// My Plex account: linking keeps its sign-in on the server (never shown),
-	// so my Plex watchlist can be read. Anyone may link one.
+	// My Plex account: linking keeps its sign-in on the server (never shown) so my Plex watchlist can be read. Anyone may link one.
 	type PlexMine = { linked: boolean; name: string; kept: boolean };
 	let plexMine = $state<PlexMine | null>(null);
 	let plexUnlinking = $state(false);
@@ -228,7 +225,7 @@
 			try {
 				win?.close();
 			} catch {
-				// the window may already be gone
+				// The window may already be gone.
 			}
 		}
 	}

@@ -1,17 +1,9 @@
 <script lang="ts">
-	// The sign-in page's edge frame and panel portals. A solid frame sits
-	// inset on every browser edge (as on coderluii.dev). From 11 s in, a hole
-	// tears open in the sign-in panel's glass near one corner, inside its
-	// padding; the page's media symbols (film frame, music note, play;
-	// lib/pixelTrail.ts) rise out of it, run along the padding band to a hole
-	// at the next corner (counter-clockwise from top right, one leg every
-	// 5 s) and dive in; both holes seal. Phones use the floating card the same
-	// way. One canvas, time based; the clock stops while the tab is hidden or
-	// the user is signing in; off with reduced motion.
-	import { onMount } from 'svelte';
+	// The sign-in page's edge frame and panel portals. A solid frame sits inset on every browser edge. From 11 s in, a hole tears open in the sign-in panel's glass near one corner, inside its padding. The page's media symbols (film frame, music note, play; pixel-trail.ts) rise out of it, run along the padding band to a hole at the next corner (counter-clockwise from top right, one leg every 5 s) and dive in; both holes seal. Phones use the floating card the same way. One canvas, time based; the clock stops while the tab is hidden or the user is signing in; off with reduced motion.
 	import { MASKS } from './pixel-trail.ts';
 	import { IDLE_MS } from './signin-art.ts';
 	import { legAt, holeAt, symbolAt, easeInOutSine, clamp01, COUNT, pausesPortals } from './signin-portals.ts';
+	import { onMount } from 'svelte';
 
 	let canvas: HTMLCanvasElement | undefined = $state();
 	let edgeEl: HTMLDivElement | undefined = $state();
@@ -48,7 +40,7 @@
 		let accent = '#ff453a';
 		let sprites: HTMLCanvasElement[] = [];
 		let soft: HTMLCanvasElement[] = [];
-		let PX = 2; // one symbol pixel, whole device pixels so symbols stay crisp
+		let PX = 2; // One symbol pixel, whole device pixels so symbols stay crisp.
 
 		function sprite(mask: readonly string[], blur = 0): HTMLCanvasElement {
 			const pad = 6;
@@ -84,8 +76,7 @@
 			soft = MASKS.map((m) => sprite(m, 2.5));
 		}
 
-		// The frame's inner window has rounded corners: an even-odd path, the
-		// viewport minus a rounded rectangle inset by the frame width.
+		// The frame's inner window has rounded corners: an even-odd path, the viewport minus a rounded rectangle inset by the frame width.
 		function shapeEdge() {
 			if (!edgeEl) return;
 			const cs = getComputedStyle(edgeEl);
@@ -97,13 +88,7 @@
 			edgeEl.style.clipPath = `path(evenodd, '${d}')`;
 		}
 
-		// The path runs inside the panel, along the middle of its padding band,
-		// rounded like the panel's own corners. Corners counter-clockwise from
-		// top right (TR, TL, BL, BR); a hole sits mid-arc at each corner.
-		// The panel is never touched: masking its backdrop-filter layer made the
-		// blur re-render and the panel flicker at each trip's ends. Each hole is
-		// drawn on this canvas, above the panel, as the matching patch of the
-		// wallpaper (same picture, zoom, crossfade and scrim), plus its rim.
+		// The path runs inside the panel, along the middle of its padding band, rounded like the panel's own corners. Corners counter-clockwise from top right (TR, TL, BL, BR); a hole sits mid-arc at each corner. The panel is never touched: masking its backdrop-filter layer made the blur re-render and the panel flicker at each trip's ends. Each hole is drawn on this canvas, above the panel, as the matching patch of the wallpaper (same picture, zoom, crossfade and scrim), plus its rim.
 		let box = { x0: 0, y0: 0, x1: 0, y1: 0, r: [0, 0, 0, 0], band: 0, out: [0, 0, 0, 0], ro: [0, 0, 0, 0] };
 		function measurePanel() {
 			const el = document.querySelector<HTMLElement>('[data-signin-panel]');
@@ -129,9 +114,7 @@
 			const q = r[k];
 			return k === 0 ? [x1 - q, y0 + q] : k === 1 ? [x0 + q, y0 + q] : k === 2 ? [x0 + q, y1 - q] : [x1 - q, y1 - q];
 		}
-		// Where a hole opens: on the corner's diagonal, deep enough that at least
-		// 9 px of clear glass remains between its rim and both panel edges and the
-		// rounded corner (and the content, which starts one padding in).
+		// Where a hole opens: on the corner's diagonal, deep enough that at least 9 px of clear glass remains between its rim and both panel edges and the rounded corner (and the content, which starts one padding in).
 		function holeCentre(k: number): [number, number] {
 			const [ox0, oy0, ox1, oy1] = box.out, q = box.ro[k % 4], R = holeR();
 			const c = Math.max(R + 9, q - (q - R - 9) / Math.SQRT2);
@@ -152,15 +135,11 @@
 			return [bx + rb * Math.cos(a), by + rb * Math.sin(a)];
 		}
 
-		// A cut in the glass: the panel is never touched; the canvas paints the wallpaper inside, and
-		// the canvas adds the rim: an inner shadow under the far (top) edge and a
-		// bright highlight where light catches the near (bottom) cut edge.
-		// 22-24 px across (18 on phones); see holeCentre for the clear glass.
+		// A cut in the glass: the panel is never touched; the canvas paints the wallpaper inside and adds the rim: an inner shadow under the far (top) edge and a bright highlight where light catches the near (bottom) cut edge.
 		function holeR() {
 			return w <= 600 ? 9 : w >= 1440 ? 12 : 11;
 		}
-		// The wallpaper under (x, y): each layer's picture where its zoom has it
-		// now, at its crossfade opacity, then the scrim's darkness at that spot.
+		// The wallpaper under (x, y): each layer's picture where its zoom has it now, at its crossfade opacity, then the scrim's darkness at that spot.
 		function paintWallpaper(c: CanvasRenderingContext2D, x: number, y: number, r: number) {
 			c.fillStyle = '#050507';
 			c.fillRect(x - r, y - r, r * 2, r * 2);
@@ -186,8 +165,7 @@
 			c.fillStyle = `rgb(5 5 7 / ${scrimAt(x, y).toFixed(3)})`;
 			c.fillRect(x - r, y - r, r * 2, r * 2);
 		}
-		// SigninBackdrop's .shade gradients, evaluated at one point (a hole is
-		// small enough that the scrim is flat across it).
+		// SigninBackdrop's .shade gradients, evaluated at one point (a hole is small enough that the scrim is flat across it).
 		function scrimAt(x: number, y: number) {
 			const u = x / w, v = y / h;
 			const ramp = (d: number, stops: [number, number][]) => {
@@ -265,9 +243,7 @@
 			for (let i = 0; i < COUNT; i++) {
 				const p = symbolAt(leg.local, i);
 				if (p === null) continue;
-				// Travel fills 0.08..0.82 of the symbol's time; it rises out of the
-				// first hole before, and after it sits over the far hole's centre and
-				// sinks into its depth (shrinks, blurs, fades).
+				// Travel fills 0.08 to 0.82 of the symbol's time. It rises out of the first hole before, and after it sits over the far hole's centre and sinks into its depth (shrinks, blurs, fades).
 				const u = easeInOutSine(clamp01((p - 0.08) / 0.74));
 				const [lx, ly] = legPoint(k, u);
 				// Ease from the hole centre onto the band path and back off it.
@@ -395,11 +371,9 @@
 <canvas class="portals" bind:this={canvas} aria-hidden="true"></canvas>
 
 <style>
-	/* The coderluii.dev frame: 14 px phone, 18 at 601, 22 at 1280, 24 at 1440, 32 at 1920, 40 at 2560. */
+	/* Frame width: 14 px phone, 18 at 601, 22 at 1280, 24 at 1440, 32 at 1920, 40 at 2560. */
 	.edge, .portals { --frame: 14px; --frame-r: 22px; position: fixed; inset: 0; pointer-events: none; z-index: 2; }
-	/* Clipped in script to the viewport minus a rounded window (radius in the
-	   panel's family). Solid: the page background token --bg. Glass: the
-	   panel's own material, the same blur, saturation and tint. */
+	/* Clipped in script to the viewport minus a rounded window (radius in the panel's family). Solid: the page background token --bg. Glass: the panel's own material, with the same blur, saturation and tint. */
 	.edge { background: var(--bg); }
 	.edge.glass {
 		background: rgb(14 14 18 / 0.46);

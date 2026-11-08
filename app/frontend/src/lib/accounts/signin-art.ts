@@ -1,7 +1,4 @@
-// Sign-in art: which picture, at which size, for this screen. The server
-// answers same-origin picture addresses (its artwork cache, since TMDB sends
-// no CORS header and the reveal draws on a canvas) with each picture's native
-// size; this file picks the served size for the screen it is shown on.
+// Sign-in art: which picture, at which size, for this screen. The server answers same-origin picture addresses (its artwork cache, since TMDB sends no CORS header and the reveal draws on a canvas) with each picture's native size; this file picks the served size for the screen it is shown on.
 
 export type ArtImage = { url: string; w: number; h: number };
 export type ArtShot = { backdrop: ArtImage; poster?: ArtImage; logo: string };
@@ -23,8 +20,7 @@ export type ArtPick = {
 
 /** Screens narrower than this (width / height) are tall: phones in portrait. */
 export const TALL = 0.8;
-/** On a wide screen, a picture at least this wide counts as sharp enough
- * when nothing reaches the full need (ultrawide 5120 px screens). */
+/** On a wide screen, a picture at least this wide counts as sharp enough when nothing reaches the full need (ultrawide 5120 px screens). */
 export const ULTRAWIDE_FLOOR = 3840;
 
 /** The slow zoom's end scale: the picture must stay sharp at it. */
@@ -38,26 +34,20 @@ export function coverNeed(img: { w: number; h: number }, s: Screen): number {
 	return Math.ceil(cssWidth * Math.max(1, s.dpr));
 }
 
-/** A picture address at another size: /t/p/w780/x.jpg -> /t/p/w1280/x.jpg. */
+/** A picture address at another size: /t/p/w780/x.jpg to /t/p/w1280/x.jpg. */
 export function sized(url: string, size: number | 'original'): string {
 	return url.replace(/\/t\/p\/[^/]+\//, `/t/p/${size === 'original' ? 'original' : 'w' + size}/`);
 }
 
 function pickSize(img: ArtImage, kind: ArtPick['kind'], need: number): { url: string; width: number } {
-	// The smallest served size that covers the screen at the zoom's end,
-	// else the largest (the original).
+	// The smallest served size that covers the screen at the zoom's end, else the largest (the original).
 	const fits = SIZES[kind].map((w) => w || img.w).filter((w) => w <= img.w);
 	const w = fits.find((x) => x >= Math.ceil(need * ZOOM)) ?? fits.at(-1) ?? SIZES[kind][0];
 	const original = w === img.w && !SIZES[kind].includes(w);
 	return { url: sized(img.url, original ? 'original' : w), width: w };
 }
 
-/**
- * The picture for this screen, or null when this title has none sharp
- * enough (the caller moves on to the next title rather than stretching).
- * floor relaxes the need for very wide screens: the native width must reach
- * min(need, floor). Pass 0 for the strict gate.
- */
+/** The picture for this screen, or null when this title has none sharp enough (the caller moves on to the next title rather than stretching). `floor` relaxes the need for very wide screens: the native width must reach min(need, floor). Pass 0 for the strict gate. */
 export function pickArt(shot: ArtShot, s: Screen, floor = 0): ArtPick | null {
 	const tall = s.vw / s.vh < TALL;
 	const order: ['backdrop' | 'poster', ArtImage | undefined][] = tall
@@ -75,10 +65,7 @@ export function pickArt(shot: ArtShot, s: Screen, floor = 0): ArtPick | null {
 	return null;
 }
 
-/**
- * The slides for this screen, in order: every shot sharp enough. When none
- * is (a 5120 px ultrawide), the ones at least ULTRAWIDE_FLOOR wide.
- */
+/** The slides for this screen, in order: every shot sharp enough. When none is (a 5120 px ultrawide), the ones at least ULTRAWIDE_FLOOR wide. */
 export function playlist(shots: ArtShot[], s: Screen): { shot: ArtShot; pick: ArtPick }[] {
 	const strict = shots.flatMap((shot) => {
 		const pick = pickArt(shot, s);
@@ -112,12 +99,7 @@ export function providerButtons(ways: readonly Way[]): ProviderButton[] {
 /** One slide, ready to show: backdrop and logo of the same title, both loaded. */
 export type ReadySlide = { shot: ArtShot; pick: ArtPick; logo: string | null };
 
-/**
- * Loads the backdrop and the logo of one title together and returns them as
- * one unit, or null when the backdrop fails (the caller moves on). A missing
- * or broken logo gives logo null: the slide shows no logo rather than another
- * title's. Nothing is shown until both loads have settled.
- */
+/** Loads the backdrop and the logo of one title together and returns them as one unit, or null when the backdrop fails (the caller moves on). A missing or broken logo gives logo null: the slide shows no logo rather than another title's. */
 export async function prepareSlide(
 	entry: { shot: ArtShot; pick: ArtPick },
 	load: (url: string) => Promise<boolean>
@@ -180,12 +162,7 @@ export function easeOut(p: number): number {
 	return 1 - Math.pow(1 - c, 3);
 }
 
-/**
- * The level of one block at ms into the wave: 0 the first-frame mosaic,
- * 1..3 the WAVE_BLOCKS sizes, 4 sharp. f is the block's distance from the
- * panel centre (0) to the farthest corner (1); jitter its offset in ms.
- * The shader in SigninBackdrop.svelte computes the same.
- */
+/** The level of one block at `ms` into the wave: 0 the first-frame mosaic, 1 to 3 the WAVE_BLOCKS sizes, 4 sharp. `f` is the block's distance from the panel centre (0) to the farthest corner (1); `jitter` is its offset in ms. The shader in SigninBackdrop.svelte computes the same. */
 export function waveLevel(ms: number, f: number, jitter = 0): number {
 	const p = easeOut((ms + jitter) / WAVE_MS) * (1 + WAVE_BAND);
 	const s = Math.min(1, Math.max(0, (p - f) / WAVE_BAND));
@@ -197,11 +174,11 @@ export const SIGNIN_GL_EVENT = 'holyarrs:signin-gl';
 // Later picture changes: a softer, quicker mosaic dissolve from an edge or corner.
 export const CYCLE_MS = 20000;
 export const SWAP_MS = 1200;
-export const SWAP_BLOCK = 56; // CSS px: larger than the first reveal's 36 px blocks
+export const SWAP_BLOCK = 56; // CSS px: larger than the first reveal's 36 px blocks.
 export const SWAP_BAND = 0.35;
 export const SWAP_JITTER_MS = 90;
 export const SWAP_DONE_MS = SWAP_MS + SWAP_JITTER_MS;
-export const IDLE_MS = 5000; // the cycle resumes this long after the last interaction
+export const IDLE_MS = 5000; // The cycle resumes this long after the last interaction.
 /** Where a swap's wave starts, as a fraction of the screen (edges and corners). */
 export const SWAP_ORIGINS: readonly (readonly [number, number])[] = [
 	[0, 0.5], [1, 0.5], [0.5, 0], [0.5, 1], [0, 0], [1, 0], [0, 1], [1, 1]

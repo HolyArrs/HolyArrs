@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { ambient, buttonGrid, burst, busyBand, entrySide, flicker, sweep } from './pixel-trail.ts';
+import { describe, expect, it } from 'vitest';
 
 const lit = (e: Float32Array) => e.reduce((n, v) => n + (v > 0 ? 1 : 0), 0);
 
@@ -36,7 +36,7 @@ describe('button pixel effects', () => {
 		expect(g.energy[Math.floor(g.cols / 2)]).toBeGreaterThan(0);
 		expect(g.energy[0]).toBe(0);
 		const f = buttonGrid(312, 52);
-		for (let k = 0; k < 1; k += 1 / 21) burst(f, 156, 26, k); // 350 ms at 60 fps
+		for (let k = 0; k < 1; k += 1 / 21) burst(f, 156, 26, k); // 350 ms at 60 fps.
 		expect(f.energy[0]).toBeGreaterThan(0);
 		expect(f.energy[f.energy.length - 1]).toBeGreaterThan(0);
 	});

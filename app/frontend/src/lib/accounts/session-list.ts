@@ -9,7 +9,7 @@ export interface SessionRow {
 	current: boolean;
 }
 
-/** order puts this device first, then the rest by last use (newest first). */
+/** Puts this device first, then the rest by last use (newest first). */
 export function order(rows: SessionRow[]): SessionRow[] {
 	return [...rows].sort((a, b) => {
 		if (a.current !== b.current) return a.current ? -1 : 1;
@@ -17,12 +17,12 @@ export function order(rows: SessionRow[]): SessionRow[] {
 	});
 }
 
-/** others counts the sessions that are not this device. */
+/** Counts the sessions that are not this device. */
 export function others(rows: SessionRow[]): number {
 	return rows.filter((r) => !r.current).length;
 }
 
-/** endedWords says how many sessions a sign-out ended. */
+/** How many sessions a sign-out ended. */
 export function endedWords(n: number): string {
 	if (n === 0) return 'No other devices were signed in.';
 	return n === 1 ? 'Signed out 1 device.' : `Signed out ${n} devices.`;

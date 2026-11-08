@@ -1,6 +1,5 @@
 <script lang="ts">
-	// Draws a QR code the server made (rows of "1" dark, "0" light) as one
-	// SVG path, with the 4-module quiet zone phones need to find it.
+	// Draws a QR code the server made (rows of "1" dark, "0" light) as one SVG path, with the 4-module quiet zone phones need to find it.
 	let { rows, label }: { rows: string[]; label: string } = $props();
 	const quiet = 4;
 	const size = $derived(rows.length + quiet * 2);

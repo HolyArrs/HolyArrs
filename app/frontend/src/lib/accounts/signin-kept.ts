@@ -1,8 +1,8 @@
-import { to } from '#lib/core/paths.ts';
 import { THUMB_W, sized, type ArtPick, type ArtShot } from './signin-art.ts';
+import { to } from '#lib/core/paths.ts';
 
 const CACHE = 'holyarrs-signin-art';
-const SEED = 'holyarrs-signin-seed'; // the style element app.html adds for the first frame
+const SEED = 'holyarrs-signin-seed'; // The style element app.html adds for the first frame.
 
 export type Thumb = { url: string; t24: string; t64: string; pos: string };
 
@@ -11,9 +11,7 @@ export function screen() {
 }
 
 export async function ready(url: string): Promise<boolean> {
-	// CORS mode: the same cache entry as the reveal's WebGL copy. The
-	// pictures are same-origin, so this never needs a CORS header; should
-	// it fail anyway, a plain load still shows the photo (no reveal).
+	// CORS mode: the same cache entry as the reveal's WebGL copy. The pictures are same-origin, so this never needs a CORS header; should it fail anyway, a plain load still shows the photo (no reveal).
 	for (const cors of [true, false]) {
 		const img = new Image();
 		if (cors) img.crossOrigin = 'anonymous';
@@ -23,7 +21,7 @@ export async function ready(url: string): Promise<boolean> {
 			await img.decode();
 			return true;
 		} catch {
-			/* try the plain load */
+			/* Try the plain load. */
 		}
 	}
 	return false;
@@ -54,17 +52,15 @@ export function readKept(): { shots: ArtShot[]; first?: string; thumb: Thumb | n
 	}
 }
 
-
 export function writeCache(shots: ArtShot[], first: string, thumb: Thumb | null) {
 	try {
 		localStorage.setItem(CACHE, JSON.stringify({ shots, first, thumb: thumb?.url === first ? thumb : null }));
 	} catch {
-		/* private window or full storage: the next visit fetches again */
+		/* Private window or full storage: the next visit fetches again. */
 	}
 }
 
-// A tiny copy of the next visit's first picture: 24 and 64 px wide JPEGs
-// (about 2 KB together). The picture is same-origin, so the canvas can be read back.
+// A tiny copy of the next visit's first picture: 24 and 64 px wide JPEGs (about 2 KB together). The picture is same-origin, so the canvas can be read back.
 export async function makeThumb(pick: ArtPick): Promise<Thumb | null> {
 	const img = new Image();
 	img.crossOrigin = 'anonymous';

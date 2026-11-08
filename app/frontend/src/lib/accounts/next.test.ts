@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { safeNext } from './next.ts';
+import { describe, expect, it } from 'vitest';
 
 describe('sign-in next link', () => {
 	it('keeps paths on this site', () => {

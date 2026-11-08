@@ -1,6 +1,4 @@
-// Which lines a title page's About section shows, picked per browser in
-// Settings › Appearance. The defaults stay short: what helps decide on a
-// request and is not already in the hero (year, length, age rating, genres).
+// Which lines a title page's About section shows, picked per browser in Settings > Appearance. The defaults stay short: what helps decide on a request and is not already in the hero (year, length, age rating, genres).
 
 export type AboutItem = { id: string; group: 'Information' | 'Production' | 'Links' | 'Ratings' | 'Feel'; name: string; on: boolean };
 
@@ -69,5 +67,5 @@ const BY_LABEL: Record<string, string> = {
 	Budget: 'budget', 'Box office': 'boxOffice', Awards: 'awards', 'Best known for': 'awards', Genre: 'genres', Genres: 'genres', Themes: 'themes'
 };
 
-/** aboutShown says whether a row (by its label) is picked; any other label is a score. */
+/** Whether a row (by its label) is picked; any other label is a score. */
 export const aboutShown = (label: string, picks: string[]) => picks.includes(label.startsWith('link:') ? 'links' : (BY_LABEL[label] ?? 'scores'));

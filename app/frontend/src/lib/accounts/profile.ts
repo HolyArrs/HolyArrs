@@ -1,13 +1,13 @@
-// My profile: the display name rules, shared with the server (internal/api/profile.go).
+// My profile: the display name rules, shared with the server.
 
 export const DISPLAY_NAME_MAX = 64;
 
-/** cleanDisplayName trims what was typed; the server trims the same way. */
+/** Trims what was typed; the server trims the same way. */
 export function cleanDisplayName(typed: string): string {
 	return typed.trim();
 }
 
-/** displayNameError says why a typed name can't be saved, or '' when it can. */
+/** Why a typed name cannot be saved, or '' when it can. */
 export function displayNameError(typed: string): string {
 	const s = cleanDisplayName(typed);
 	if ([...s].length > DISPLAY_NAME_MAX) return `Use at most ${DISPLAY_NAME_MAX} characters.`;
@@ -16,7 +16,7 @@ export function displayNameError(typed: string): string {
 	return '';
 }
 
-/** shownName is the display name when set, else the username. */
+/** The display name when set, else the username. */
 export function shownName(displayName: string, username: string): string {
 	return cleanDisplayName(displayName) || username;
 }

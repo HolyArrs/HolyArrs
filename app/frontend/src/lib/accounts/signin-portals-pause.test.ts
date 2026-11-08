@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
 import { pausesPortals } from './signin-portals.ts';
+import { describe, it, expect } from 'vitest';
 
 describe('pausesPortals', () => {
 	it('pauses on a trusted printable or editing key in a field', () => {

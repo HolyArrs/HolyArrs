@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { presetOf, presetPerms, presetsFor } from './presets.ts';
+import { describe, expect, it } from 'vitest';
 import type { Perm } from '../core/session.svelte.ts';
 
 const all: Perm[] = ['ask', 'auto_approve', 'approve', 'manage_library', 'settings'];

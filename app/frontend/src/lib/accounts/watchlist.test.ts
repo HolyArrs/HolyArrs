@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { showWatchlistCard, watchlistLine, watchlistStateWord, type PlexWatchlist } from './watchlist.ts';
+import { describe, expect, it } from 'vitest';
 
 const base: PlexWatchlist = { on: true, linked: true, can_read: true, may_ask: true, movies: false, shows: false, items: [] };
 

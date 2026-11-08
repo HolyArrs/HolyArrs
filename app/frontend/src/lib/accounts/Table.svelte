@@ -1,8 +1,7 @@
 <script lang="ts" generics="Row extends Record<string, unknown>">
 	import type { Snippet } from 'svelte';
 
-	// Dense data table with a sticky header. Pass `cell` to render a column
-	// yourself; otherwise the row value is shown as text.
+	// Dense data table with a sticky header. Pass `cell` to render a column yourself; otherwise the row value is shown as text.
 	type Column = { key: string; label: string; align?: 'start' | 'end' | 'center'; width?: string; hideOnPhone?: boolean };
 	let {
 		columns,

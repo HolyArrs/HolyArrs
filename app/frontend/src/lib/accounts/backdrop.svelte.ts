@@ -1,5 +1,4 @@
-// The app's background behind every page: plain (the default, as Explore looks)
-// or a wall of this Library's posters. Saved in this browser, like the theme.
+// The app's background behind every page: plain (the default, as Explore looks) or a wall of this Library's posters. Saved in this browser, like the theme.
 
 export type Backdrop = 'plain' | 'posters';
 const KEY = 'holyarrs-backdrop';

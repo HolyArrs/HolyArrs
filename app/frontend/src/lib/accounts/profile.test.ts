@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { cleanDisplayName, displayNameError, roleWord, shownName } from './profile.ts';
+import { describe, expect, it } from 'vitest';
 
 describe('display name', () => {
 	it('trims and falls back to the username', () => {

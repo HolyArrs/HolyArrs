@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { LEAD_S, legAt, holeAt, symbolAt, LEG_S, LEG_GAP_S, START_S, COUNT, TRAVEL_S, SPACING_S } from './signin-portals.ts';
+import { describe, expect, it } from 'vitest';
 
 describe('signin portals timeline', () => {
 	it('starts 9 s in and loops the four legs with long rests', () => {
@@ -18,7 +18,7 @@ describe('signin portals timeline', () => {
 	it('holes pop open and are shut outside their window', () => {
 		expect(holeAt(0, 'from').s).toBe(0);
 		expect(holeAt(0.3, 'from').s).toBeGreaterThan(0.5);
-		expect(holeAt(0.3, 'from').s).toBeLessThanOrEqual(1); // soft, no overshoot
+		expect(holeAt(0.3, 'from').s).toBeLessThanOrEqual(1); // Soft, no overshoot.
 		expect(holeAt(0.8, 'from').s).toBe(1);
 		expect(holeAt(0.8, 'to').s).toBe(0);
 	});

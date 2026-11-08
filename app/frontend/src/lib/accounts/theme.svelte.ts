@@ -1,6 +1,4 @@
-// Light, dark or follow the system. The first paint reads the same key in
-// app.html, so the page never flashes the wrong colours. `value` is always the
-// colours in use; `choice` is what the person picked.
+// Light, dark or follow the system. The first paint reads the same key in app.html, so the page never flashes the wrong colours. `value` is always the colours in use; `choice` is what the person picked.
 
 export type Theme = 'light' | 'dark';
 export type ThemeChoice = Theme | 'system';

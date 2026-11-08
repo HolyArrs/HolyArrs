@@ -1,16 +1,5 @@
 ﻿<script lang="ts">
-	// The sign-in page's cinematic backdrop: one full-bleed picture at a
-	// time, a slow Ken Burns move and a soft mosaic dissolve every 20 s.
-	//
-	// The first picture never comes up from black. Frame 0 is a coarse mosaic
-	// of it (24 blocks across), painted by app.html from a thumbnail kept on
-	// this device or put in the page by the server. It then resolves in a
-	// radial wave from the sign-in panel outward: square blocks (36, 12 and
-	// 6 px, the Search sweep's pixel language) sharpen ring by ring over about
-	// 1.8 s on an ease-out, each 36 px cell a little early or late so the ring
-	// is ragged. One WebGL canvas draws it in a single pass per frame; where
-	// the wave is done the canvas is clear and the real picture shows. Each
-	// picture is chosen for this screen (size x DPR) so it is never blurry.
+	// The sign-in page's backdrop: one full-bleed picture at a time, a slow Ken Burns move and a soft mosaic dissolve every 20 s. The first picture never comes up from black. Frame 0 is a coarse mosaic of it (24 blocks across), painted by app.html from a thumbnail kept on this device or put in the page by the server. It then resolves in a radial wave from the sign-in panel outward: square blocks (36, 12 and 6 px, the Search sweep's pixel language) sharpen ring by ring over about 1.8 s on an ease-out, each 36 px cell a little early or late so the ring is ragged. One WebGL canvas draws it in a single pass per frame; where the wave is done the canvas is clear and the real picture shows. Each picture is chosen for this screen (size × DPR) so it is never blurry.
 	import { onMount } from 'svelte';
 	import { api } from '#lib/core/api.ts';
 	import { to } from '#lib/core/paths.ts';
@@ -56,13 +45,13 @@
 
 	function loadImage(src: string): Promise<HTMLImageElement> {
 		const img = new Image();
-		img.crossOrigin = 'anonymous'; // WebGL only takes CORS-clean pictures (same-origin here)
+		img.crossOrigin = 'anonymous'; // WebGL only takes CORS-clean pictures (same-origin here).
 		img.decoding = 'async';
 		img.src = src;
 		return img.decode().then(() => img);
 	}
 
-	/** Lets the panel stagger start (routes/login waits for this so it never runs into a GPU compile). */
+	/** Lets the panel stagger start; routes/login waits for this so it never runs into a GPU compile. */
 	function glReady() {
 		document.documentElement.dataset.signinGl = '1';
 		window.dispatchEvent(new Event(SIGNIN_GL_EVENT));
@@ -94,8 +83,7 @@
 			gl.attachShader(prog, sh);
 		}
 		gl.linkProgram(prog);
-		// Frames wait for the GPU process while it compiles: once three frames
-		// in a row come on time, the compile is behind us.
+		// Frames wait for the GPU process while it compiles: once three frames in a row come on time, the compile is behind us.
 		{
 			let last = 0;
 			let calm = 0;
@@ -107,10 +95,7 @@
 			};
 			requestAnimationFrame(watch);
 		}
-		// The shader compiles on a driver thread where the browser allows it
-		// (KHR_parallel_shader_compile): asking for the link status at once
-		// would block the main thread in the middle of app boot. Until it is
-		// linked, frame 0's CSS mosaic simply stays up.
+		// The shader compiles on a driver thread where the browser allows it (KHR_parallel_shader_compile). Asking for the link status at once would block the main thread in the middle of app boot. Until it is linked, frame 0's CSS mosaic stays up.
 		const par = gl.getExtension('KHR_parallel_shader_compile');
 		let linked = false;
 		function link(): boolean | null {
@@ -187,8 +172,7 @@
 		let seedReady = false;
 		let detReady = false;
 		let full = false;
-		// Frame 0's source: the kept 24 px thumbnail (drawn exactly as app.html
-		// painted it), else the small copy averaged down to the same grid.
+		// Frame 0's source: the kept 24 px thumbnail (drawn exactly as app.html painted it), else the small copy averaged down to the same grid.
 		loadImage(seed.t24 ?? seed.small)
 			.then((img) => {
 				if (stop) return;
@@ -211,9 +195,7 @@
 					detReady = true;
 				})
 				.catch(() => {});
-		// The full picture, shrunk off the main thread so a 4K original never costs a frame. The finest block is 6 px,
-		// so 512 texels across is more than any screen's mosaic needs and uploads in well under a frame.
-		// A CORS-mode copy of the same address (the browser cache answers it); on any failure the plain <img> shows.
+		// The full picture, shrunk off the main thread so a 4K original never costs a frame. The finest block is 6 px, so 512 texels across is more than any screen's mosaic needs and uploads in well under a frame. A CORS-mode copy of the same address (the browser cache answers it); on any failure the plain <img> shows.
 		loadImage(pic.currentSrc || pic.src)
 			.then((img) => createImageBitmap(img, { resizeWidth: Math.min(512, img.naturalWidth), resizeQuality: 'high' }))
 			.then((b) => {
@@ -226,14 +208,12 @@
 				if (!stop) sharp();
 			});
 
-		let start = 0; // when the wave started (0: not yet)
+		let start = 0; // When the wave started (0: not yet).
 		const t0 = performance.now();
 		let raf = 0;
 		function frame(now: number) {
 			if (stop) return;
-			// The first status query is a sync round trip to the GPU process, which
-			// waits out the compile; asked only once the still hold is over, the
-			// compile has long finished and the answer is instant.
+			// The first status query is a sync round trip to the GPU process, which waits out the compile. Asked only once the still hold is over, the compile has long finished and the answer is instant.
 			const ok = seedReady && now - t0 >= REVEAL_HOLD_MS ? link() : null;
 			if (ok === false) {
 				pic!.decode().then(sharp, sharp);
@@ -243,7 +223,7 @@
 				// The wave runs once the full picture is in and the still hold is over.
 				if (!start && full && now - t0 >= REVEAL_HOLD_MS) {
 					start = now;
-					centre(); // the panel has its final size now (the form has replaced the placeholder)
+					centre(); // The panel has its final size now (the form has replaced the placeholder).
 				}
 				const t = start ? now - start : 0;
 				gl!.uniform2f(u('seedSize'), seedSize[0], seedSize[1]);
@@ -271,14 +251,11 @@
 		};
 	}
 
-
 	function swap(node: HTMLElement, origin: number) {
 		const pic = node.querySelector<HTMLImageElement>('img.pic');
 		const canvas = node.querySelector<HTMLCanvasElement>('canvas.mz');
 		let stop = false;
-		// The picture sits at opacity 0 under the canvas, where the browser may skip
-		// decoding it. Decode it now and hand over (canvas off, picture on) only once
-		// it is ready, in one frame, so the old photo never shows through.
+		// The picture sits at opacity 0 under the canvas, where the browser may skip decoding it. Decode it now and hand over (canvas off, picture on) only once it is ready, in one frame, so the old photo never shows through.
 		const decoded = pic ? pic.decode().catch(() => {}) : Promise.resolve();
 		let over = false;
 		const done = () => {
@@ -408,10 +385,7 @@
 		const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
 		still = motion.matches;
 
-		// The next slide sharp enough for the screen as it is now; its picture
-		// is loaded and decoded before it is shown. The first one is the
-		// exception when its thumbnail is kept: its mosaic shows straight away
-		// and refines as the picture arrives.
+		// The next slide sharp enough for the screen as it is now; its picture is loaded and decoded before it is shown. The first one is the exception when its thumbnail is kept: its mosaic shows straight away and refines as the picture arrives.
 		let busy = false;
 		let origin = -1;
 		async function advance() {
@@ -421,9 +395,7 @@
 			for (let tries = 0; tries < list.length; tries++) {
 				at = (at + 1) % list.length;
 				const first = !layers.length;
-				// The first slide's mosaic shows at once: from the kept thumbnail,
-				// or on a first visit from the small size (a few KB, loads well
-				// before the full picture).
+				// The first slide's mosaic shows at once: from the kept thumbnail, or on a first visit from the small size (a few KB, loads well before the full picture).
 				const p = list[at].pick;
 				const kept = thumb?.url === p.url ? thumb : null;
 				const seed: Seed | null = !first ? null : { t24: kept?.t24 ?? null, small: kept?.t64 ?? sized(p.url, p.kind === 'poster' ? 342 : 300) };
@@ -475,15 +447,12 @@
 			clearTimeout(timer);
 			timer = setTimeout(tick, CYCLE_MS);
 		}
-		// Never change the picture while the user is signing in: a field they
-		// focused or typed in (a password manager filling counts as input) holds
-		// the cycle; it resumes 5 s after the last interaction or blur. The
-		// name field's own auto-focus does not count.
+		// Never change the picture while the user is signing in. A field they focused or typed in (a password manager filling counts as input) holds the cycle; it resumes 5 s after the last interaction or blur. The name field's own auto-focus does not count.
 		let lastInput = 0;
 		let engaged = false;
 		const isField = (el: Element | null) => !!el && el.matches('input, textarea, select, [contenteditable="true"]');
 		function tick() {
-			if (document.hidden) return; // resumes on visibilitychange
+			if (document.hidden) return; // Resumes on visibilitychange.
 			const busyUser = interacting(performance.now(), lastInput, isField(document.activeElement), engaged);
 			if (busyUser) {
 				clearTimeout(timer);
@@ -520,9 +489,7 @@
 			}, 400);
 		}
 
-		// A repeat visit starts from the kept list straight away; a first visit
-		// fetches the list now (not in idle time). A fresh list replaces the kept
-		// one for the next slides.
+		// A repeat visit starts from the kept list straight away; a first visit fetches the list now (not in idle time). A fresh list replaces the kept one for the next slides.
 		if (shots.length) {
 			const list = playlist(shots, screen());
 			const i = list.findIndex((e) => e.pick.url === kept.first);
@@ -542,7 +509,7 @@
 				} else writeCache(shots, playlist(shots, screen())[0]?.pick.url ?? '', thumb);
 			})
 			.catch(() => {
-				/* no art: the page stays plain dark */
+				/* No art: the page stays plain dark. */
 			});
 
 		document.addEventListener('visibilitychange', onVisible);
@@ -597,8 +564,7 @@
 		</div>
 	{/each}
 	<div class="shade"></div>
-	<!-- Logos sit above the scrim in their own stack, keyed to the same slide
-	     as the picture: the old one fades out while the new one fades in. -->
+	<!-- Logos sit above the scrim in their own stack, keyed to the same slide as the picture: the old one fades out while the new one fades in. -->
 	{#each layers as l, i (l.key)}
 		{#if l.logo}
 			<img class="logo" class:top={i === layers.length - 1} src={l.logo} alt="" decoding="async" />
@@ -612,8 +578,7 @@
 		inset: 0;
 		z-index: 0;
 		overflow: hidden;
-		/* Shown until (or when no) pictures arrive, e.g. a new install while the
-		   metadata server is busy: a warm glow instead of flat black. */
+		/* Shown until (or when no) pictures arrive, such as a new install while the metadata server is busy: a warm glow instead of flat black. */
 		background:
 			radial-gradient(70% 55% at 50% 105%, rgba(217, 48, 37, 0.28), transparent 70%),
 			radial-gradient(60% 50% at 15% 0%, rgba(120, 70, 40, 0.22), transparent 70%),
@@ -628,8 +593,7 @@
 		opacity: 0;
 		animation: fade-in 1.6s var(--ease-in-out) forwards;
 	}
-	/* The first picture is there at once, as its own mosaic (no fade from
-	   dark); later ones crossfade slowly. */
+	/* The first picture is there at once, as its own mosaic (no fade from dark); later ones crossfade slowly. */
 	.layer.first, .layer.swap { animation: none; opacity: 1; }
 	.layer:not(.top) { animation: none; opacity: 1; }
 	/* The slow zoom moves the picture and its mosaic together. */
@@ -655,8 +619,7 @@
 		pointer-events: none;
 	}
 	.kb:global(.mosaic) .mz { opacity: 1; }
-	/* The slow zoom waits for the canvas: app.html's frame-0 mosaic is unscaled,
-	   so the hand-over lands on the same pixels (no 1-3 px jump at the edges). */
+	/* The slow zoom waits for the canvas: app.html's frame-0 mosaic is unscaled, so the hand-over lands on the same pixels (no 1 to 3 px jump at the edges). */
 	.layer.first .kb:not(:global(.mosaic)):not(:global(.sharp)) { animation-play-state: paused; }
 	/* Until the mosaic has its first frame, nothing sharp peeks through. */
 	.kb:not(:global(.mosaic)):not(:global(.sharp)) .pic { opacity: 0; }
@@ -664,11 +627,9 @@
 	.hi { opacity: 0; transition: opacity var(--dur-hero) var(--ease-in-out); }
 	.kb .hi:global(.in) { opacity: 1; }
 	.kb:global(.sharp) .mz { display: none; }
-	/* A change: the old picture stays sharp underneath until the wave is done;
-	   the new one is only the canvas's blocks until then (no cut). */
+	/* A change: the old picture stays sharp underneath until the wave is done; the new one is only the canvas's blocks until then (no cut). */
 	.layer.swap .kb:not(:global(.sharp)) .pic { opacity: 0; }
-	/* A repeat visit: app.html painted the thumbnail behind the page, so the
-	   dark backgrounds stay clear until the mosaic takes over. */
+	/* A repeat visit: app.html painted the thumbnail behind the page, so the dark backgrounds stay clear until the mosaic takes over. */
 	:global(html.sa-seeded) .art { background: transparent; }
 	.logo {
 		position: absolute;
@@ -686,8 +647,7 @@
 		animation: logo-out 1.6s var(--ease-in-out) forwards;
 	}
 	.logo.top { animation: logo-in 1.6s var(--ease-in-out) forwards; }
-	/* The scrim: a soft vignette, a darker pool behind the centred card so it
-	   reads on bright frames, and a floor for the logo. */
+	/* The scrim: a soft vignette, a darker pool behind the centred card so it reads on bright frames, and a floor for the logo. */
 	.shade {
 		position: absolute;
 		inset: 0;

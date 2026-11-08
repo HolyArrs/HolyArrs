@@ -1,27 +1,27 @@
 <script lang="ts">
-	import { personName } from '#lib/core/plain.ts';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import Avatar from '#lib/ui/Avatar.svelte';
+	import Confirm from '#lib/ui/Confirm.svelte';
+	import SaveBar from '#lib/ui/SaveBar.svelte';
+	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
+	import Sessions from './Sessions.svelte';
+	import AccountSecurity from './AccountSecurity.svelte';
+	import { strong } from './strong-error.ts';
+	import { profile, loadProfile, saveDisplayName } from './profile.svelte.ts';
+	import { displayNameError, roleWord, shownName } from './profile.ts';
+	import { showWatchlistCard, watchlistStateWord, type PlexWatchlist } from './watchlist.ts';
+	import { detailPath } from '../metadata/index.ts';
+	import { onMount } from 'svelte';
+	import { page } from '$app/state';
+	import { personName } from '#lib/core/plain.ts';
 	import { api } from '#lib/core/api.ts';
 	import { plainMessage as message } from '#lib/core/settings.ts';
 	import { session } from '../core/session.svelte.ts';
 	import { toasts } from '../core/toasts.svelte.ts';
-	import Sessions from './Sessions.svelte';
-	import AccountSecurity from './AccountSecurity.svelte';
-	import { strong } from './strong-error.ts';
-	import Confirm from '#lib/ui/Confirm.svelte';
-	import SaveBar from '#lib/ui/SaveBar.svelte';
-	import { onMount } from 'svelte';
-	import { page } from '$app/state';
 	import { to } from '../core/paths.ts';
-	import { detailPath } from '../metadata/index.ts';
-	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
 	import { autoplayPref, setAutoplayPref, type AutoplayPref } from '../core/trailer/trailer.ts';
-	import { profile, loadProfile, saveDisplayName } from './profile.svelte.ts';
-	import { displayNameError, roleWord, shownName } from './profile.ts';
-	import { showWatchlistCard, watchlistStateWord, type PlexWatchlist } from './watchlist.ts';
 
 	// Display name: edited inline; Save is on once it differs.
 	let nameDraft = $state('');
@@ -53,8 +53,7 @@
 	// Where Alerts reach this person (email, Discord).
 	let emailReady = $state(true);
 	let targets = $state<{ email: string; discord_id: string; new_episodes?: boolean }>({ email: '', discord_id: '', new_episodes: true });
-	// Follow: everything I follow. Library titles, movies and shows not in it yet
-	// (by TMDB id, named here), and albums. `unfollow` is the address that stops one.
+	// Follow: everything I follow. Library titles, movies and shows not in it yet (by TMDB id, named here), and albums. `unfollow` is the address that stops one.
 	type Followed = { title_id: number; kind: string; name: string; year?: number; tmdb_id?: string; mbid?: string; artist?: string; unfollow: string };
 	let follows = $state<Followed[]>([]);
 	let unfollowing = $state('');
@@ -97,7 +96,7 @@
 			resetBusy = false;
 		}
 	}
-	// Plex watchlist: new entries are asked for as me (when the owner allows it).
+	// Plex watchlist: new entries are asked for as me, when the owner allows it.
 	let watch = $state<PlexWatchlist | null>(null);
 	let watchBusy = $state(false);
 	async function setWatch(kind: 'movies' | 'shows', on: boolean) {
@@ -184,23 +183,18 @@
 	}
 	const viaShort: Record<string, string> = { session: 'Password or linked account', api_key: 'API key', local_network: 'Local network' };
 
-	// Password
 	let current = $state('');
 	let next = $state('');
 	let again = $state('');
 	let pwError = $state('');
 	let pwBusy = $state(false);
 
-
-	// A linked identity changes how this account can sign in, so it first
-	// requires a recent proof with this account's HolyArrs password.
-	// Password and linking open inline; Confirm asks for the password first when needed.
+	// A linked identity changes how this account can sign in, so it first requires a recent proof with this account's HolyArrs password. Password and linking open inline; Confirm asks for the password first when needed.
 	let pwOpen = $state(false);
 	// The Settings search links to #pw-current, which only exists once the form is open.
 	$effect(() => {
 		if (page.url.hash === '#pw-current' && (session.s.hasPassword || session.s.outsideRecent)) pwOpen = true;
 	});
-
 
 	async function changePassword(e: SubmitEvent) {
 		e.preventDefault();
@@ -473,13 +467,11 @@
 <SaveBar dirty={alertsDirty} form="alerts-form" saving={tgBusy} ondiscard={() => (targets = JSON.parse(savedTargets))} />
 
 <style>
-	/* Profile full width; Preferences and Security pair up; Alerts (with its inputs) and Devices full width. */
 	/* One column, like every Settings page. */
 	.acct { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; align-items: stretch; }
 	.acct > :global(*) { margin: 0; }
 	.pfp { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 	.value { font: var(--t-callout); font-weight: 400; color: var(--text); overflow-wrap: anywhere; min-width: 0; }
-	/* Profile: each field in its own labelled box. */
 	.boxes { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; }
 	.box {
 		display: flex;

@@ -1,16 +1,16 @@
 <script lang="ts">
 	import Button from '#lib/ui/Button.svelte';
 	import StatusPill from '#lib/ui/StatusPill.svelte';
-	// Signed-in devices: My account (path /auth/sessions) or one person on
-	// the Users page (path /users/<id>/sessions).
+	import { endedWords, order, others, type SessionRow } from './session-list.ts';
 	import { onMount } from 'svelte';
 	import { api } from '#lib/core/api.ts';
 	import { plainMessage as message } from '#lib/core/settings.ts';
 	import { toasts } from '../core/toasts.svelte.ts';
 	import { ago, dateTime } from '../core/format.ts';
-	import { endedWords, order, others, type SessionRow } from './session-list.ts';
 
-	// first: how many rows show before Show all (long lists stay short).
+	// Signed-in devices: My account (path /auth/sessions) or one person on the Users page (path /users/<id>/sessions).
+
+	// How many rows show before Show all, so long lists stay short.
 	let { path, name = '', first = Infinity }: { path: string; name?: string; first?: number } = $props();
 	const mine = $derived(path === '/auth/sessions');
 	let rows = $state<SessionRow[] | null>(null);

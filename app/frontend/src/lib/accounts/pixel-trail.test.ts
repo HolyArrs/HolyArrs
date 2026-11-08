@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { blockMask, blockOrder, buttonGrid, columnsForWidth, decay, focusPattern, pixelFor, siteCell, stampPath, FLOOR } from './pixel-trail.ts';
+import { describe, expect, it } from 'vitest';
 
 describe('pixelTrail', () => {
 	it('uses the site grid and symbol pixel', () => {

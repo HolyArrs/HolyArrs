@@ -1,14 +1,9 @@
-// People who signed in on this device, newest first, with the way each one
-// used, so a shared screen (a TV, a family tablet) can switch between them.
-// Names, ways and a small copy of each picture: each switch is still a full
-// sign-in (the server's picture address needs one, so the sign-in page cannot load it).
+// People who signed in on this device, newest first, with the way each one used, so a shared screen (a TV, a family tablet) can switch between them. Names, ways and a small copy of each picture; each switch is still a full sign-in.
 const KEY = 'holyarrs.recent-people';
 const MAX = 6;
 
 export type RecentWay = 'password' | 'plex' | 'jellyfin' | 'emby' | 'oidc';
-// `login` is the name typed for a Jellyfin or Emby account, when it differs;
-// `pic` a small JPEG of their profile picture, as a data: address, and `picFrom`
-// the picture address it was copied from (it changes with the picture).
+// `login` is the name typed for a Jellyfin or Emby account, when it differs; `pic` a small JPEG of their profile picture, as a data: address, and `picFrom` the picture address it was copied from (it changes with the picture).
 export type RecentPerson = { name: string; way: RecentWay; login?: string; pic?: string; picFrom?: string };
 
 const WAYS: readonly string[] = ['password', 'plex', 'jellyfin', 'emby', 'oidc'];
@@ -69,7 +64,7 @@ export function forgetPerson(name: string) {
 	save(recentPeople().filter((o) => o.name !== name));
 }
 
-/** setPersonPic keeps (or, with null, drops) the small copy of a remembered person's picture. */
+/** Keeps (or, with null, drops) the small copy of a remembered person's picture. */
 export function setPersonPic(name: string, pic: string | null, from?: string) {
 	save(
 		recentPeople().map((o) => {
@@ -80,12 +75,7 @@ export function setPersonPic(name: string, pic: string | null, from?: string) {
 	);
 }
 
-/**
- * keepPersonPic copies a signed-in person's picture (src, their picture
- * address) into the device list as a 96 px JPEG, so the sign-in page can show
- * it. It does nothing for someone not remembered here, or when the copy is
- * already of this picture; a null src drops the copy.
- */
+/** Copies a signed-in person's picture (src, their picture address) into the device list as a 96 px JPEG, so the sign-in page can show it. It does nothing for someone not remembered here, or when the copy is already current. */
 export async function keepPersonPic(name: string, src: string | null) {
 	const p = recentPeople().find((o) => o.name === name);
 	if (!p) return;

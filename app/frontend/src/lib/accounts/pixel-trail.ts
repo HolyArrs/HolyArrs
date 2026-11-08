@@ -1,9 +1,4 @@
-// The sign-in page's pixel language, ported from the website's hero effect
-// (site\repo\public\hero-effects.js): the same 8x8 media symbols (film
-// frame, music note, play), the same cross-shaped spray along the pointer
-// path, the same 0.3 s energy decay with a 0.04 floor, and alpha capped at
-// 0.65. Here it lives inside one button at a time instead of the hero, and
-// the same grid drives the page's block transitions.
+// The sign-in page's pixel language, ported from the website's hero effect: the same 8x8 media symbols (film frame, music note, play), the same cross-shaped spray along the pointer path, the same 0.3 s energy decay with a 0.04 floor, and alpha capped at 0.65. Here it lives inside one button at a time instead of the hero, and the same grid drives the page's block transitions.
 
 export const MASKS = [
 	['11111111', '10100101', '10000001', '10011001', '10011001', '10000001', '10100101', '11111111'],
@@ -11,8 +6,8 @@ export const MASKS = [
 	['00100000', '00110000', '00111000', '00111100', '00111100', '00111000', '00110000', '00100000']
 ] as const;
 
-export const DECAY_S = 0.3; // energy time constant, as on the site
-export const FLOOR = 0.04; // energy below this is off
+export const DECAY_S = 0.3; // Energy time constant, as on the site.
+export const FLOOR = 0.04; // Energy below this is off.
 export const MAX_ALPHA = 0.65;
 
 // The site's grid: columns by viewport width, square cells.
@@ -29,8 +24,7 @@ export function pixelFor(cell: number): number {
 
 export type Grid = { cols: number; rows: number; cell: number; energy: Float32Array };
 
-// A button-sized grid: cells just big enough for one 3 px symbol (24 px),
-// stretched so whole columns fill the width.
+// A button-sized grid: cells just big enough for one 3 px symbol (24 px), stretched so whole columns fill the width.
 export function buttonGrid(width: number, height: number): Grid {
 	const cols = Math.max(1, Math.round(width / 26));
 	const cell = width / cols;
@@ -119,8 +113,7 @@ export function entrySide(w: number, h: number, x: number, y: number): Side {
 	return (Object.keys(d) as Side[]).reduce((a, b) => (d[b] < d[a] ? b : a));
 }
 
-// The hover sweep: a two-cell band of symbols crossing the whole button
-// from `side`, k 0..1. Lit cells then fade with the normal decay.
+// The hover sweep: a two-cell band of symbols crossing the whole button from `side`, k 0 to 1. Lit cells then fade with the normal decay.
 export function sweep(g: Grid, side: Side, k: number) {
 	const across = side === 'left' || side === 'right' ? g.cols : g.rows;
 	const front = k * (across + 2) - 1;
@@ -147,7 +140,7 @@ export function ambient(g: Grid, t: number) {
 		}
 }
 
-// The press burst: a ring of symbols from (x, y) out past the farthest corner, k 0..1.
+// The press burst: a ring of symbols from (x, y) out past the farthest corner, k 0 to 1.
 export function burst(g: Grid, x: number, y: number, k: number) {
 	const w = g.cols * g.cell;
 	const h = g.rows * g.cell;
@@ -163,7 +156,7 @@ export function burst(g: Grid, x: number, y: number, k: number) {
 		}
 }
 
-// The busy shimmer: a soft band looping left to right, phase 0..1.
+// The busy shimmer: a soft band looping left to right, phase 0 to 1.
 export function busyBand(g: Grid, phase: number) {
 	const front = phase * (g.cols + 4) - 2;
 	for (let r = 0; r < g.rows; r++)
@@ -184,14 +177,7 @@ export function flicker(g: Grid, step: number) {
 
 export type TrailOpts = { selector?: string; color?: string; busy?: boolean; fail?: number };
 
-// Svelte action: the pixel layer inside one button, clipped to its shape.
-// `node` may wrap the button; the first match of `selector` hosts the canvas.
-// Hover / keyboard focus: a sweep from the entry side, then an ambient
-// shimmer; the pointer trail adds on top. Press (pointer, Enter, Space or a
-// form submit): a burst from the press point with a 0.97 press. `busy`: a
-// looping band. `fail` (a counter): a shake and a flicker.
-// Frames run only while hovered, focused, busy or cells are lit: 0 fps idle.
-// Reduced motion: nothing runs (the page keeps a static press and the spinner).
+// Svelte action: the pixel layer inside one button, clipped to its shape. `node` may wrap the button; the first match of `selector` hosts the canvas. Hover or keyboard focus: a sweep from the entry side, then an ambient shimmer; the pointer trail adds on top. Press (pointer, Enter, Space or a form submit): a burst from the press point with a 0.97 press. `busy`: a looping band. `fail` (a counter): a shake and a flicker. Frames run only while hovered, focused, busy or cells are lit: 0 fps idle. Reduced motion: nothing runs (the page keeps a static press and the spinner).
 export function pixelTrail(node: HTMLElement, opts: TrailOpts = {}) {
 	const host = (opts.selector ? node.querySelector<HTMLElement>(opts.selector) : null) ?? node;
 	let color = opts.color ?? '#ffffff';
@@ -313,7 +299,7 @@ export function pixelTrail(node: HTMLElement, opts: TrailOpts = {}) {
 		queue();
 	}
 	function leave() {
-		lastP = undefined; // the lit cells fade on their own
+		lastP = undefined; // The lit cells fade on their own.
 		hovered = false;
 	}
 	function pressAt(x: number, y: number) {
@@ -414,7 +400,7 @@ export function blockOrder(n: number, seed = 7): Float32Array {
 	return out;
 }
 
-// An SVG mask with the blocks whose order is below k shown (k 0..1).
+// An SVG mask with the blocks whose order is below k shown (k 0 to 1).
 export function blockMask(cols: number, rows: number, order: Float32Array, k: number): string {
 	let rects = '';
 	for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) if (order[r * cols + c] < k) rects += `<rect x="${c}" y="${r}" width="1.02" height="1.02"/>`;
@@ -433,8 +419,7 @@ export function clearMask(el: HTMLElement) {
 	for (const p of ['mask-image', '-webkit-mask-image', 'mask-size', '-webkit-mask-size', 'mask-repeat', '-webkit-mask-repeat']) el.style.removeProperty(p);
 }
 
-// Svelte transition: content appears in site-cell blocks (24 px, the
-// button cell) in a fixed random order, in its own colours.
+// Svelte transition: content appears in site-cell blocks (24 px, the button cell) in a fixed random order, in its own colours.
 export function pixelIn(node: HTMLElement, { duration = 300, cell = 24 }: { duration?: number; cell?: number } = {}) {
 	if (calmQuery() || !duration) return { duration: 0 };
 	const cols = Math.max(1, Math.ceil(node.offsetWidth / cell));

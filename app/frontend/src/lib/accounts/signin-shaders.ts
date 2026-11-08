@@ -1,11 +1,6 @@
 import { SEED_COLS, WAVE_BAND, WAVE_BLOCKS, WAVE_JITTER_MS, WAVE_MS, SWAP_BAND, SWAP_BLOCK, SWAP_JITTER_MS, SWAP_MS } from './signin-art.ts';
 
-// The radial wave, in one fragment shader. Per pixel: its 36 px cell
-// (jitter), its distance from the panel centre, so its level; level 0
-// samples the 24-across frame-0 grid, levels 1-3 square screen blocks
-// (mipmapped, so a block is the average of what it covers), level 4 is
-// clear and the sharp <img> underneath shows. waveLevel in signinArt.ts is
-// the same maths, unit tested.
+// The radial wave, in one fragment shader. Per pixel it finds its 36 px cell (with jitter) and its distance from the panel centre, which gives its level. Level 0 samples the 24-across frame-0 grid, levels 1 to 3 square screen blocks (mipmapped, so a block is the average of what it covers), and level 4 is clear so the sharp <img> underneath shows. waveLevel in signin-art.ts is the same maths, unit tested.
 export const VERT = `#version 300 es
 in vec2 a;
 void main() { gl_Position = vec4(a, 0.0, 1.0); }`;
@@ -59,12 +54,7 @@ if (lv < 1.0) {
 o = vec4(col, 1.0);
 }`;
 
-// Later changes: the same mosaic language, softer and quicker. The new
-// picture dissolves in over the old one through large (56 px), low-contrast
-// blocks, in a wave from one edge or corner, over about 1.2 s on a quartic
-// ease-out. Each block fades in as its own average colour, then resolves to
-// the sharp picture underneath it. The canvas sits in the new picture's
-// Ken Burns box, so at the hand-over the <img> lands on the same pixels.
+// Later changes: the same mosaic language, softer and quicker. The new picture dissolves in over the old one through large (56 px), low-contrast blocks, in a wave from one edge or corner, over about 1.2 s on a quartic ease-out. Each block fades in as its own average colour, then resolves to the sharp picture underneath. The canvas sits in the new picture's Ken Burns box, so at the hand-over the <img> lands on the same pixels.
 export const SWAP_FRAG = `#version 300 es
 precision highp float;
 uniform sampler2D tex;

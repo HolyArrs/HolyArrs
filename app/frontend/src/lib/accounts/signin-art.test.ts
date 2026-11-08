@@ -1,5 +1,5 @@
-import { describe, expect, it, vi } from 'vitest';
 import { coverNeed, pickArt, playlist, prepareSlide, providerButtons, providerTiles, sized, type ArtShot } from './signin-art.ts';
+import { describe, expect, it, vi } from 'vitest';
 
 const B = 'https://image.tmdb.org/t/p/original/';
 const shot = (bw: number, pw?: number): ArtShot => ({
@@ -109,7 +109,7 @@ describe('prepareSlide: backdrop and logo switch as one unit', () => {
 		await Promise.resolve();
 		expect(loaded).toEqual([entry.pick.url, totoro.logo]);
 		await new Promise((r) => setTimeout(r, 0));
-		expect(done).toBe(false); // still waiting on the logo
+		expect(done).toBe(false); // Still waiting on the logo.
 		release();
 		const s = await p;
 		expect(s?.pick.url).toBe(entry.pick.url);

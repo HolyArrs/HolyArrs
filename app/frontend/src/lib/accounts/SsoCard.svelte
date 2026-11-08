@@ -1,8 +1,5 @@
 <script lang="ts">
-	// Single sign-on (OpenID Connect) set up from Settings, for the owner.
-	// The server keeps the rules: the password goes with every save, a saved
-	// secret never follows a new issuer or client id, and moving to another
-	// provider removes the old links. This card says so before it happens.
+	// Single sign-on (OpenID Connect) set up from Settings, for the owner. The server keeps the rules: the password goes with every save, a saved secret never follows a new issuer or client id, and moving to another provider removes the old links.
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import Field from '#lib/ui/Field.svelte';
 	import Button from '#lib/ui/Button.svelte';
@@ -13,7 +10,7 @@
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { session } from '#lib/core/session.svelte.ts';
 
-	// id is the card's anchor; the page passes it so Settings search finds it there.
+	// The card's anchor; the page passes it so Settings search finds it there.
 	let { id = 'sso-card' }: { id?: string } = $props();
 
 	interface SsoView {
@@ -36,10 +33,10 @@
 	let on = $state(false);
 	let issuer = $state('');
 	let clientId = $state('');
-	let typedCred = $state(''); // the client secret as typed; cleared after a save that worked
+	let typedCred = $state(''); // The client secret as typed; cleared after a save that worked.
 	let publicClient = $state(false);
 	let allowJoin = $state(false);
-	let proof = $state(''); // the owner's HolyArrs password, sent with every save
+	let proof = $state(''); // The owner's HolyArrs password, sent with every save.
 	let code = $state('');
 	let busy = $state(false);
 	let saveError = $state('');
@@ -112,7 +109,7 @@
 				allow_join: allowJoin,
 				confirm_everyone: confirmEveryone
 			});
-			fill(out.sso); // clears the typed secret too
+			fill(out.sso); // Clears the typed secret too.
 			proof = code = '';
 			confirmEveryone = false;
 			const gone = [out.links_removed && `${out.links_removed} linked sign-in${out.links_removed === 1 ? '' : 's'} removed`, out.sessions_ended && `${out.sessions_ended} signed out`].filter(Boolean).join(', ');

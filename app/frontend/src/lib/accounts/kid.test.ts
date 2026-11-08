@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { isKid, kidLabel, ratingChoices } from './kid.ts';
+import { describe, expect, it } from 'vitest';
 
 describe('kid ratings', () => {
 	it('offers G, PG, PG-13 and R with the show rating beside each', () => {
