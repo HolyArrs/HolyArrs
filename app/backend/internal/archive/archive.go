@@ -1,5 +1,5 @@
 // Package archive unpacks the other archive kinds a release may come in
-// (#54, the same set Unpackerr reads): 7-Zip (one file or .7z.001 parts),
+// (the same set Unpackerr reads): 7-Zip (one file or .7z.001 parts),
 // zip, tar (plain, gzip, bzip2 or xz) and a single gzip, bzip2 or xz file.
 // RAR sets are internal/unrar's.
 //
