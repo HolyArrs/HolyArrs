@@ -16,7 +16,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/auth"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/backup"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
@@ -53,7 +53,7 @@ func (e *t10Env) call(c t10Client, method, path, body string) (int, []byte) {
 	req, _ := http.NewRequest(method, e.srv.URL+path, strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	if c.csrf != "" {
-		req.Header.Set(auth.CSRFHeader, c.csrf)
+		req.Header.Set(accounts.CSRFHeader, c.csrf)
 	}
 	resp, err := c.c.Do(req)
 	if err != nil {
@@ -81,7 +81,7 @@ func t10Setup(t *testing.T) *t10Env {
 	if err != nil {
 		t.Fatal(err)
 	}
-	au := auth.New(s, auth.Options{Vault: v})
+	au := accounts.New(s, accounts.Options{Vault: v})
 	q := jobs.New(s, jobs.Options{})
 	tmdb := &fakeShowSource{shows: map[string]metadata.Show{"tmdb:100": apiShow("tmdb", "100"), "tvdb:200": apiShow("tmdb", "100")}}
 	lib := &library.Service{Store: s, Queue: q, Artists: apiMusic(), Metadata: metadata.Lab(),
@@ -287,7 +287,7 @@ func TestT10PinMoviesShowsMusicRoutes(t *testing.T) {
 		// Public id-free form of the pattern for the perm table lookup.
 		need := t10Need(pattern)
 		if need == "" {
-			t.Errorf("%s: no route in auth.RoutePerms", pattern)
+			t.Errorf("%s: no route in accounts.RoutePerms", pattern)
 			continue
 		}
 		if st, b := e.call(e.anon, r.method, r.path, r.body); st != http.StatusUnauthorized {
@@ -322,12 +322,12 @@ func TestT10PinMoviesShowsMusicRoutes(t *testing.T) {
 }
 
 // t10Need finds the permission of a concrete request path by matching it
-// against the route patterns in auth.RoutePerms.
+// against the route patterns in accounts.RoutePerms.
 func t10Need(pattern string) string {
 	method, path, _ := strings.Cut(pattern, " ")
 	path, _, _ = strings.Cut(path, "?")
 	segs := strings.Split(path, "/")
-	for p, need := range auth.RoutePerms {
+	for p, need := range accounts.RoutePerms {
 		pm, pp, _ := strings.Cut(p, " ")
 		if pm != method {
 			continue
