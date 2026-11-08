@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/discover"
 	engine "github.com/HolyArrs/holyarrs/app/backend/internal/discover/rows"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
@@ -243,14 +244,7 @@ func (a *API) exploreServiceTop(w http.ResponseWriter, r *http.Request) {
 	webserver.WriteJSON(w, http.StatusOK, out)
 }
 
-// streamingMark says a card's title is on one of the member's streaming
-// services in their region, from the kept per-service lists only. Rank is
-// set when that list is the service's own top today.
-type streamingMark struct {
-	Service int    `json:"service"`
-	Name    string `json:"name"`
-	Rank    int    `json:"rank,omitempty"`
-}
+type streamingMark = discover.StreamingMark
 
 // streamingMarks maps kind:tmdb to the first of the member's services
 // (in their order) whose kept list has it. It never fetches.
@@ -319,7 +313,7 @@ func (a *API) fillStreaming(r *http.Request, rows []exploreRowView) {
 	}
 	// TMDB watch providers first; a service's own top list adds its rank
 	// (and covers titles not read yet).
-	watch := a.watchOnMarks(region, ids, keys)
+	watch := a.watchOn.Marks(region, ids, keys)
 	top := a.streamingMarks(region, ids)
 	if len(watch) == 0 && len(top) == 0 {
 		return

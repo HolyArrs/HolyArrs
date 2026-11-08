@@ -6,10 +6,11 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/datapack"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
 	setupmod "github.com/HolyArrs/holyarrs/app/backend/internal/setup"
-	"fmt"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/discover"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
@@ -214,7 +215,7 @@ type API struct {
 	// serviceTop keeps the per-service top lists for 12 hours.
 	serviceTop serviceTopCache
 	// watchOn keeps each title's TMDB watch providers per region a day.
-	watchOn watchOnCache
+	watchOn discover.WatchOn
 	// music keeps the music trending lists for an hour.
 	music  musicTrendCache
 	rising risingCache
@@ -316,6 +317,7 @@ func New(s Server) *API {
 	a.mf.AlbumNames = a.albumNames
 	a.mf.TitleView = func(ctx context.Context, t mediafiles.Title) (any, error) { return a.titleView(ctx, t) }
 	a.mf.CardArt = a.libraryCardArt
+	a.watchOn.Metadata = s.Metadata
 	a.titles = a.newTitlePages()
 	a.trailers = a.newTrailers()
 	a.ai = &ai.Handlers{Store: s.Store, Version: s.Version, PartOn: a.partIsOn}
