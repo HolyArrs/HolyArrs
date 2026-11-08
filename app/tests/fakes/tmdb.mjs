@@ -84,7 +84,7 @@ export function startTmdbFake() {
 	const tmdb = createServer((req, res) => {
 		const url = new URL(req.url ?? '/', 'http://x');
 		// A made-up HolyArrs release feed for the update check (no sign-in).
-		if (url.pathname === '/releases/latest') return send(res, 200, { tag_name: 'v9.9.9', html_url: 'https://github.com/CoderLuii/holyarrs/releases/tag/v9.9.9' });
+		if (url.pathname === '/releases/latest') return send(res, 200, { tag_name: 'v9.9.9', html_url: 'https://github.com/HolyArrs/holyarrs/releases/tag/v9.9.9' });
 		if (url.pathname === '/readyz' || url.pathname === '/healthz') return send(res, 200, { ok: true });
 		if (url.pathname === '/v1/installations') {
 			if (req.method !== 'POST') return send(res, 405, { error: { code: 'method_not_allowed', retry_after_seconds: 0 } });

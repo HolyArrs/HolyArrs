@@ -4,9 +4,6 @@ export type BackupRow = { name: string; kind: string; created_at: string; detail
 
 export const PROJECT_REPO = 'HolyArrs/holyarrs';
 export const RELEASE_PAGES = `https://github.com/${PROJECT_REPO}/releases/`;
-// The backend update check still names the old repo until internal/updates and
-// internal/api move together (see plan/github/after-first-push.md); drop this then.
-const OLD_RELEASE_PAGES = 'https://github.com/CoderLuii/holyarrs/releases/';
 // The Docker Hub name users install from (release.yml pushes it).
 export const IMAGE = 'holyarrs/holyarrs';
 
@@ -21,7 +18,7 @@ export function updateWords(u: UpdateInfo): string {
 
 // Returns '' when the link is not a plain project release page, so the version shows as text.
 export function releaseLink(link: string | undefined): string {
-	if (!link || !(link.startsWith(RELEASE_PAGES) || link.startsWith(OLD_RELEASE_PAGES))) return '';
+	if (!link || !link.startsWith(RELEASE_PAGES)) return '';
 	try {
 		const u = new URL(link);
 		if (u.href !== link || u.origin !== 'https://github.com' || u.username || u.password || u.search || u.hash || u.pathname.includes('..')) return '';

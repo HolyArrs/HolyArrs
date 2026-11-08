@@ -19,18 +19,18 @@ describe('releaseLink', () => {
 		expect(PROJECT_REPO).toBe('HolyArrs/holyarrs');
 		expect(releaseLink('https://github.com/HolyArrs/holyarrs/releases/tag/v1.2.0')).toBe('https://github.com/HolyArrs/holyarrs/releases/tag/v1.2.0');
 		// Until the backend check moves to the new repo.
-		expect(releaseLink('https://github.com/CoderLuii/holyarrs/releases/tag/v1.2.0')).toBe('https://github.com/CoderLuii/holyarrs/releases/tag/v1.2.0');
+		expect(releaseLink('https://github.com/HolyArrs/holyarrs/releases/tag/v1.2.0')).toBe('https://github.com/HolyArrs/holyarrs/releases/tag/v1.2.0');
 		for (const bad of [
 			undefined,
 			'',
 			'https://example.com/r/v1',
-			'http://github.com/CoderLuii/holyarrs/releases/tag/v1',
-			'https://github.com.evil.example/CoderLuii/holyarrs/releases/x',
-			'https://github.com/CoderLuii/holyarrs/releasesX/tag/v1',
+			'http://github.com/HolyArrs/holyarrs/releases/tag/v1',
+			'https://github.com.evil.example/HolyArrs/holyarrs/releases/x',
+			'https://github.com/HolyArrs/holyarrs/releasesX/tag/v1',
 			'https://github.com/HolyArrs/holyarrs-evil/releases/tag/v1',
 			'https://github.com/HolyArrs/holyarrs/releases/../../x',
-			'https://github.com/CoderLuii/holyarrs/releases/../../x',
-			'https://github.com/CoderLuii/holyarrs/releases/tag/v1?x=1',
+			'https://github.com/HolyArrs/holyarrs/releases/../../x',
+			'https://github.com/HolyArrs/holyarrs/releases/tag/v1?x=1',
 			'javascript:alert(1)'
 		]) {
 			expect(releaseLink(bad)).toBe('');
