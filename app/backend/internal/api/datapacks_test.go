@@ -14,6 +14,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/datapack"
 )
 
 func dataPackServer(t *testing.T) (*httptest.Server, *database.Store, string) {
@@ -137,14 +138,14 @@ func (failingDataPackBody) Read([]byte) (int, error) { return 0, io.ErrClosedPip
 func TestDataPackBodyReadFailuresAreInternal(t *testing.T) {
 	t.Parallel()
 	_, st, _ := dataPackServer(t)
-	a := New(Server{Store: st, Version: "test"})
+	a := dataPackMux(st)
 	for _, call := range []struct {
 		handler func(http.ResponseWriter, *http.Request)
 		path    string
 	}{
-		{a.validateDataPack, "/api/v1/data-packs/validate"},
-		{a.importDataPack, "/api/v1/data-packs"},
-		{a.applyDataPack, "/api/v1/data-packs/home-cinema/apply"},
+		{a.ServeHTTP, "/api/v1/data-packs/validate"},
+		{a.ServeHTTP, "/api/v1/data-packs"},
+		{a.ServeHTTP, "/api/v1/data-packs/home-cinema/apply"},
 	} {
 		r := httptest.NewRequest(http.MethodPost, call.path, nil)
 		r.Body = io.NopCloser(failingDataPackBody{})
@@ -197,15 +198,15 @@ func TestDataPackInternalErrorsAreGeneric(t *testing.T) {
 
 	t.Run("cancelled writes", func(t *testing.T) {
 		_, st, raw := dataPackServer(t)
-		a := New(Server{Store: st, Version: "test"})
+		a := dataPackMux(st)
 		for _, call := range []struct {
 			handler func(http.ResponseWriter, *http.Request)
 			path    string
 			body    string
 			id      string
 		}{
-			{a.importDataPack, "/api/v1/data-packs", raw, ""},
-			{a.applyDataPack, "/api/v1/data-packs/home-cinema/apply", `{"pick_rule_ids":["balanced-web"],"approval_hash":"0000000000000000000000000000000000000000000000000000000000000000"}`, "home-cinema"},
+			{a.ServeHTTP, "/api/v1/data-packs", raw, ""},
+			{a.ServeHTTP, "/api/v1/data-packs/home-cinema/apply", `{"pick_rule_ids":["balanced-web"],"approval_hash":"0000000000000000000000000000000000000000000000000000000000000000"}`, "home-cinema"},
 		} {
 			ctx, cancel := context.WithCancel(context.Background())
 			cancel()
@@ -294,4 +295,11 @@ func TestDataPackRoutesAreOwnerOnlyAndNeedAdminScope(t *testing.T) {
 			}
 		}
 	}
+}
+
+// dataPackMux serves only the data pack routes, without the sign-in chain.
+func dataPackMux(st *database.Store) *http.ServeMux {
+	m := http.NewServeMux()
+	(&datapack.Handlers{Deps: datapack.Deps{Store: st}}).Routes(m)
+	return m
 }

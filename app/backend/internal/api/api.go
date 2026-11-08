@@ -6,6 +6,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/datapack"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/discover"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
@@ -405,7 +406,7 @@ func (a *API) Routes(rt *webserver.Router) {
 	a.musicPageRoutes(m)
 	subtitles.NewHandlers(a.s.Store, a.s.Secrets, a.s.Subtitles).Routes(m)
 	a.thisAppRoutes(m)
-	a.dataPackRoutes(m)
+	(&datapack.Handlers{Deps: datapack.Deps{Store: a.s.Store}}).Routes(m)
 	a.scheduleRoutes(m)
 	m.HandleFunc("GET /api/v1/metadata/search", a.searchMetadata)
 	(&metadata.Handlers{Up: func(ctx context.Context) bool { return a.s.MetadataUp == nil || a.s.MetadataUp(ctx) }}).Routes(m)
