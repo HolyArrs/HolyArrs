@@ -19,12 +19,12 @@
 	} = $props();
 	const cardImg = $derived(wideFace && !wideFailed ? wideFace : picture);
 	const smallCount = $derived(catalog ? catalog.eps + catalog.singles : 0);
-	// One sentence or two of the bio for the About card; the full text is in its sheet.
+	// One or two sentences of the bio for the card; the full text is in the sheet.
 	const bioLine = $derived(hero?.bio?.extract ? hero.bio.extract.split(/(?<=[.!?])\s+/).slice(0, 2).join(' ') : '');
-	// About stills: the wide photo and the square photo take turns with a slow zoom, like the people page.
+	// The wide photo and the square photo take turns with a slow zoom, like the people page.
 	const aboutStills = $derived([wideFace && !wideFailed ? wideFace : '', picture && !photoFailed ? picture : ''].filter((x, i, a): x is string => !!x && a.indexOf(x) === i));
 	let still = $state(0);
-	// The About photos: the wide stills, else the one portrait.
+	// The wide stills, else the one portrait.
 	const shots = $derived(aboutStills.length ? aboutStills : picture ? [picture] : []);
 	$effect(() => {
 		const n = aboutStills.length;
@@ -87,7 +87,6 @@
 	.chg.down { color: var(--fail-text); font-weight: 600; }
 	:global(.artist.tinted) .chg.up { color: #9df5b4; }
 	:global(.artist.tinted) .chg.down { color: #ffb3b3; }
-	/* About: the photo card with its "#N in the world" disc and two lines of the bio; it opens the sheet. */
 	.about { scroll-margin-top: 80px; }
 	.acard { position: relative; display: block; width: 100%; height: clamp(300px, 32vw, 440px); padding: 0; border: 0; border-radius: var(--r-card); overflow: hidden; background: #1c1d21; color: #fff; text-align: left; cursor: pointer; isolation: isolate; box-shadow: 0 0 0 1px rgb(255 255 255 / 8%), 0 24px 60px rgb(0 0 0 / .4); transition: translate var(--dur-slow) var(--ease-out), box-shadow var(--dur-slow) var(--ease-out); }
 	.acard:hover { translate: 0 var(--lift); }
@@ -107,15 +106,11 @@
 	.a-more { align-self: flex-start; margin-top: 6px; padding: 9px 16px; border-radius: 999px; background: rgb(255 255 255 / 14%); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 16%); backdrop-filter: blur(20px) saturate(160%); font: 600 14px/1 var(--font-ui); transition: background var(--dur-fast) var(--ease-out); }
 	.acard:hover .a-more { background: rgb(255 255 255 / 24%); }
 	@media (prefers-reduced-motion: reduce) { .acard:hover { translate: none; } .ab-frame { transition: opacity 1.2s; scale: 1; } }
-	/* The About sheet: an Apple TV-style dark window in the artist's colour, a zooming still with the face, glass tiles, the story. */
 	:global(.ui-sheet:has(.sheet[data-testid='artist-about-sheet'])) { --w: 1040px; max-height: min(92dvh, 980px); --text: #fff; --text-muted: rgb(235 235 245 / .62); --surface-1: rgb(255 255 255 / 7%); --surface-2: rgb(255 255 255 / 12%); --line: rgb(255 255 255 / 10%); --border: rgb(255 255 255 / 10%); color-scheme: dark; color: #fff; background: radial-gradient(120% 70% at 50% 0%, color-mix(in srgb, var(--tint-bg, #2a2c33) 85%, #fff 6%), color-mix(in srgb, var(--tint-bg, #1b1c20) 55%, #050506) 70%); box-shadow: 0 0 0 1px rgb(255 255 255 / 8%), 0 40px 120px rgb(0 0 0 / .6); }
 	.sheet { display: flex; flex-direction: column; gap: 24px; }
 	.chg { font-style: normal; }
 	.chips { display: flex; flex-wrap: wrap; gap: 8px; }
 	.chips span { padding: 8px 14px; border-radius: 999px; background: rgb(255 255 255 / 9%); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 8%); font: 600 13px/1 var(--font-ui); text-transform: capitalize; }
-	/* The photo is the centrepiece: the listener count is its title, the name sits small above it. */
-	/* Small glass cards, one figure each. */
-	/* Trial side-column About: the photo whole on black, a figures column at left, the story at right. */
 	.col-photo { position: relative; margin: 0; height: clamp(260px, 44vh, 420px); border-radius: 18px; overflow: hidden; background: #000; }
 	.col-photo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; opacity: 0; transition: opacity .6s var(--ease-out); }
 	.col-photo img.on { opacity: 1; }

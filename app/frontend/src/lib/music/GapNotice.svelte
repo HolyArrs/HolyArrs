@@ -1,8 +1,7 @@
 <script lang="ts">
 	import type { PageGap } from './music-pages.ts';
 
-	// The metadata server is still getting this (fetching, or waiting in line):
-	// its own words stand in place of the content until it lands. Never "not found".
+	// The metadata server is still getting this (fetching, or waiting in line); its own words stand in place of the content until it lands. Never "not found".
 	let { gap }: { gap: PageGap } = $props();
 </script>
 

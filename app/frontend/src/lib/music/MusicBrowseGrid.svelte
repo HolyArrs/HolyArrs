@@ -2,10 +2,7 @@
 	import Icon from '#lib/ui/Icon.svelte';
 	import MusicTileGrid from './MusicTileGrid.svelte';
 
-	// Explore → Music's Browse and New & Popular → Music's Explore more (flag
-	// music_lists_v1): a heading, two rows of the shared Music tile, and Browse all
-	// for the full list. A tile brings one album cover (cover) or a few to try
-	// (covers); one without is left out, never shown with a placeholder.
+	// Explore > Music's Browse and New & Popular > Music's Explore more: a heading, two rows of the shared Music tile, and Browse all for the full list. A tile brings one album cover or a few to try.
 	type In = { key: string; name: string; href: string; hue?: number; cover?: string; covers?: string[] };
 	let { tiles, allHref, title = 'Browse', rows = 2 }: { tiles: In[]; allHref: string; title?: string; rows?: number } = $props();
 
@@ -23,7 +20,7 @@
 
 <style>
 	.mbg { min-width: 0; }
-	/* Nothing to show (every tile left out): no heading over an empty grid. */
+	/* With every tile left out, no heading shows over an empty grid. */
 	.mbg:not(:has(li:not([hidden]))) { display: none; }
 	header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
 	h2 { font: var(--t-title2); letter-spacing: var(--t-title2-track); }

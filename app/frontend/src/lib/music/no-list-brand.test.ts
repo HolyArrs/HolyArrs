@@ -2,8 +2,7 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-// The world-list source's brand never shows in the app:
-// no UI string, label or code path in src names it.
+// The world-list source's brand never shows in the app: no UI string, label or code path in src names it.
 const brand = new RegExp(['spot', 'ify'].join(''), 'i');
 
 function files(dir: string): string[] {

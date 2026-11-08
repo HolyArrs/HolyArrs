@@ -2,8 +2,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-// Explore Music: the "Your genre" banner came in after the rows and pushed them down
-// (CLS 0.15). Its place is held with the same banner (placeholders) until the rows answer.
+// Explore Music: the "Your genre" banner came in after the rows and pushed them down. Its place is held with the same banner (placeholders) until the rows answer.
 const page = readFileSync(join(__dirname, '..', '..', 'routes', 'explore', '+page.svelte'), 'utf8');
 const rows = readFileSync(join(__dirname, 'MusicTrendingRows.svelte'), 'utf8');
 

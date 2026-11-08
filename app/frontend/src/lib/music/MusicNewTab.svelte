@@ -1,9 +1,7 @@
 <script lang="ts">
 	import { dragScroll } from '#lib/ui/drag-scroll.ts';
 	import { Orbit, SkRail } from '#lib/ui/sk/index.ts';
-	// New & Popular → Music: a shelf of large editorial cards for the week's
-	// biggest new albums, a compact list of fresh tracks, then album rows.
-	// Every action asks for (or adds) music; nothing here plays.
+	// New & Popular > Music: a shelf of large editorial cards for the week's biggest new albums, a compact list of fresh tracks, then album rows. Every action asks for (or adds) music; nothing here plays.
 	import { onMount } from 'svelte';
 	import { api, message } from '../core/api.ts';
 	import { toasts } from '../core/toasts.svelte.ts';
@@ -68,7 +66,7 @@
 	}
 	const canAct = (c: NewMusicCard) => !!c.artist_mbid && (manage || mayAsk) && !c.upcoming;
 
-	/** quick finds the artist and opens the add sheet, or the ask sheet with this album picked. */
+	/** Finds the artist and opens the add sheet, or the ask sheet with this album picked. */
 	async function quick(c: NewMusicCard) {
 		const artist = c.artist || c.name;
 		if (busy || !c.artist_mbid) return;
@@ -126,7 +124,7 @@
 		const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
 		el.scrollBy({ left: dir * el.clientWidth, behavior: still ? 'auto' : 'smooth' });
 	}
-	// Fresh tracks pages a whole set of columns at a time, like the hero.
+	// Fresh tracks page a whole set of columns at a time, like the hero.
 	let trackList = $state<HTMLElement>();
 	let tStart = $state(true);
 	let tEnd = $state(false);
@@ -151,8 +149,7 @@
 
 	const tracks = $derived(answer?.rows.find((r) => r.type === 'np_music_tracks'));
 	const rows = $derived((answer?.rows ?? []).filter((r) => r.type !== 'np_music_tracks'));
-	// Explore more: the shared Music tile, the same mix as Explore's Browse (genres,
-	// moods, a season, decades, activities), two rows and Browse all. Only tiles with a real album cover come.
+	// Explore more: the shared Music tile, the same mix as Explore's Browse (genres, moods, a season, decades, activities), two rows and Browse all. Only tiles with a real album cover come.
 	let more = $state<BrowseTileData[]>([]);
 	onMount(() => {
 		void fetchBrowseTiles(defaultRegion(), api, gone.signal).then(
@@ -288,7 +285,6 @@
 	.music-new { display: flex; flex-direction: column; gap: 48px; --shelf-gap: 20px; --album-item: 200px; }
 	@media (max-width: 767px) { .music-new { --album-item: calc((100cqi - 3 * 20px) / 4.3); } }
 	@media (max-width: 640px) { .music-new { gap: 36px; --album-item: calc((100cqi - 20px) / 2.3); } }
-	/* One header for every shelf: a bold title with a chevron into See all. */
 	.sh h2 { margin: 0; }
 	.sh h2 button { display: inline-flex; align-items: center; gap: 2px; padding: 0; border: 0; background: none; color: var(--text); cursor: pointer; font: var(--t-title-3, 600 20px/1.3 var(--font-ui)); }
 	.sh h2 svg, .back svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; color: var(--text-muted); }
@@ -296,7 +292,6 @@
 	.pager { position: relative; }
 	.pager:hover .paddle.show { opacity: 1; pointer-events: auto; }
 	.pager .paddle { top: 50%; }
-	/* Hero: a shelf of editorial cards, 3 to a screen with a peek of the next. */
 	.hero-wrap { position: relative; --h-cols: calc(31.5% - 13.33px); }
 	.hero { display: grid; grid-auto-flow: column; grid-auto-columns: var(--h-cols); gap: 20px; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; scroll-behavior: smooth; scrollbar-width: none; padding: 4px 2px 10px; }
 	.hero::-webkit-scrollbar { display: none; }
@@ -312,7 +307,6 @@
 	.note-below { display: block; margin-top: 8px; color: var(--text-muted); font-size: 13px; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 	.cover { position: absolute; right: 64px; bottom: 10px; width: 60px; height: 60px; border-radius: 4px; object-fit: cover; box-shadow: 0 2px 10px rgb(0 0 0 / 0.4); }
 	.h-card:hover .art, .h-link:focus-visible .art { transform: translateY(-3px); filter: brightness(1.08); box-shadow: 0 10px 24px rgb(0 0 0 / 0.22); }
-	/* Ask/Add: a round glyph at the art's bottom-right, on hover or focus; the cover sits to its left. */
 	.h-act { position: absolute; bottom: 16px; right: 12px; opacity: 0; transition: opacity var(--dur-fast) var(--ease-out); }
 	.h-card:hover .h-act, .h-card:focus-within .h-act { opacity: 1; }
 	.paddle { position: absolute; top: calc(50% + 2.3em); transform: translateY(-50%); width: 36px; height: 36px; border-radius: 50%; border: 0; display: grid; place-items: center; cursor: pointer; background: color-mix(in srgb, var(--surface-1, var(--bg)) 86%, transparent); color: var(--text); box-shadow: 0 2px 10px rgb(0 0 0 / 0.25); opacity: 0; pointer-events: none; transition: opacity var(--dur) var(--ease-out); z-index: 2; }
@@ -325,7 +319,6 @@
 	@media (max-width: 1023px) { .hero-wrap { --h-cols: calc(48% - 10px); } }
 	@media (max-width: 640px) { .hero-wrap { --h-cols: calc(100% / 1.1 - 10px); } .paddle { display: none; } }
 	@media (prefers-reduced-motion: reduce) { .hero { scroll-behavior: auto; } .art, .paddle, .h-act { transition: none; } .h-card:hover .art { transform: none; } }
-	/* Fresh tracks: song lines (56 tall, 44 art, no dividers), four to a column. */
 	.see-all h2 { margin: 0; font: var(--t-title-3, 600 20px/1.3 var(--font-ui)); }
 	.tracks { list-style: none; margin: 0; padding: 0; display: grid; grid-auto-flow: column; grid-template-rows: repeat(4, 56px); grid-auto-columns: calc(25% - 15px); column-gap: 20px; row-gap: 0; height: 224px; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; scroll-behavior: smooth; scrollbar-width: none; }
 	@media (prefers-reduced-motion: reduce) { .tracks { scroll-behavior: auto; } }
@@ -337,7 +330,6 @@
 	.t-words { flex: 1; min-width: 0; display: flex; flex-direction: column; color: var(--text); text-decoration: none; }
 	.t-name, .t-artist { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 14px; line-height: 1.35; }
 	.t-artist { color: var(--text-muted); font-size: 13px; }
-	/* Explicit lyrics: a small boxed E before the name, as music stores show it. */
 	.explicit { display: inline-grid; place-items: center; inline-size: 14px; block-size: 14px; margin-inline-end: 6px; border-radius: 3px; background: var(--text-muted); color: var(--bg, #000); font-size: 10px; font-weight: 600; line-height: 1; vertical-align: 1px; }
 	@media (max-width: 1023px) { .tracks { grid-auto-columns: calc(50% - 8px); } }
 	@media (max-width: 640px) { .tracks { grid-auto-columns: 88%; } }

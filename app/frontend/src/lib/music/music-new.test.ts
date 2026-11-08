@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { cardBadges, eyebrow, heroNote, rowNote, type NewMusicCard } from './music-new.ts';
+import { describe, expect, it } from 'vitest';
 
 const now = new Date(2026, 9, 21, 12);
 const card = (x: Partial<NewMusicCard>): NewMusicCard => ({ key: 'album:a', kind: 'album', mbid: 'a', name: 'A', artist: 'Ann', genres: [], ...x });

@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { genreHref, musicCardNote, musicStatus, songAskHref } from './music-trending.ts';
+import { describe, expect, it } from 'vitest';
 
 describe('music_rows_v2 helpers', () => {
 	it('maps state to one chip', () => {

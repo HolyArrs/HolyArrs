@@ -46,7 +46,7 @@ export interface WikiBio {
 	license_url: string;
 }
 
-/** ArtistCoreData is the hero's quick answer (?part=core); the full answer extends it. */
+/** The hero's quick answer (?part=core); the full answer extends it. */
 export interface ArtistCoreData {
 	mbid: string;
 	name: string;
@@ -79,7 +79,7 @@ export interface StoreAlbum {
 	image?: string;
 }
 
-/** askAgainOnce asks once more after a pause when the first ask fails, so a slow first load never shows an error. */
+/** Asks once more after a pause when the first ask fails, so a slow first load never shows an error. */
 export function askAgainOnce<T>(ask: () => Promise<T>, pause = 1500, wait: (ms: number) => Promise<void> = (ms) => new Promise((r) => setTimeout(r, ms))): Promise<T> {
 	return ask().catch(async () => {
 		await wait(pause);
@@ -87,7 +87,7 @@ export function askAgainOnce<T>(ask: () => Promise<T>, pause = 1500, wait: (ms: 
 	});
 }
 
-/** shortCount writes 1234 as 1.2K and 81500000 as 81.5M. */
+/** Writes 1234 as 1.2K and 81500000 as 81.5M. */
 export function shortCount(n: number): string {
 	const a = Math.abs(n);
 	const f = (v: number, u: string) => `${v >= 100 ? Math.round(v) : Number(v.toFixed(1))}${u}`;
@@ -97,7 +97,7 @@ export function shortCount(n: number): string {
 	return String(Math.round(a));
 }
 
-/** popularityStats turns an artist's listening figures into stat-band entries; none when nothing is known. */
+/** Turns an artist's listening figures into stat-band entries; none when nothing is known. */
 export function popularityStats(p: ArtistPopularity | undefined | null): { v: string; l: string }[] {
 	if (!p) return [];
 	if (p.monthly_listeners && p.monthly_listeners > 0) {
@@ -111,7 +111,7 @@ export function popularityStats(p: ArtistPopularity | undefined | null): { v: st
 	return [];
 }
 
-/** Listening is the one headline figure an artist has: monthly listeners (with rank and today's change) for the most played, else total plays; null when none is known. */
+/** The one headline figure an artist has: monthly listeners (with rank and today's change) for the most played, else total plays; null when none is known. */
 export interface Listening {
 	n: number;
 	unit: 'monthly listeners' | 'total plays';
@@ -130,13 +130,13 @@ export function listening(p: ArtistPopularity | undefined | null): Listening | n
 	return null;
 }
 
-/** changeWords writes today's listener change as "▲ 387K today" or "▼ 12K today"; empty when there is none. */
+/** Today's listener change as "▲ 387K today" or "▼ 12K today"; empty when there is none. */
 export function changeWords(d: number | undefined | null, tail = ' today'): string {
 	if (!d) return '';
 	return `${d > 0 ? '▲' : '▼'} ${shortCount(d)}${tail}`;
 }
 
-/** fullCount writes 72785924 as 72,785,924. */
+/** Writes 72785924 as 72,785,924. */
 export function fullCount(n: number): string {
 	return Math.round(n).toLocaleString('en-US');
 }
@@ -153,12 +153,12 @@ export interface Catalog {
 }
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 
-/** catalogParts lists the catalog in words: ["16 albums", "5 EPs", "89 singles", "since 2005"], leaving out what is zero. */
+/** The catalog in words: ["16 albums", "5 EPs", "89 singles", "since 2005"], leaving out what is zero. */
 export function catalogParts(c: Catalog): string[] {
 	return [c.albums ? plural(c.albums, 'album', 'albums') : '', c.eps ? plural(c.eps, 'EP', 'EPs') : '', c.singles ? plural(c.singles, 'single', 'singles') : '', c.since ? `since ${c.since}` : ''].filter(Boolean);
 }
 
-/** smallReleasesWord names singles and EPs counted together: "Singles & EPs", or only the kind there is. */
+/** Singles and EPs counted together: "Singles & EPs", or only the kind there is. */
 export function smallReleasesWord(c: Pick<Catalog, 'eps' | 'singles'>): string {
 	if (c.eps && c.singles) return 'Singles & EPs';
 	if (c.eps) return c.eps === 1 ? 'EP' : 'EPs';
@@ -195,10 +195,7 @@ export interface ArtistPageData {
 	gap?: PageGap;
 }
 
-/**
- * musicLoadError turns a failed music page load into calm words. `network` is true only when
- * HolyArrs itself could not be reached, the one case where "check the connection" is true.
- */
+/** Turns a failed music page load into calm words. `network` is true only when HolyArrs itself could not be reached, the one case where "check the connection" is true. */
 export function musicLoadError(e: unknown, thing: 'album' | 'artist'): { text: string; network: boolean } {
 	const status = typeof e === 'object' && e && 'status' in e ? Number((e as { status: unknown }).status) : -1;
 	if (status === 0) return { text: 'HolyArrs is not answering.', network: true };
@@ -208,27 +205,27 @@ export function musicLoadError(e: unknown, thing: 'album' | 'artist'): { text: s
 	return { text: `This ${thing} is taking longer than usual to load.`, network: false };
 }
 
-/** albumArtistFix is the artist to put in the address when the album named a different one than the link did, else ''. */
+/** The artist to put in the address when the album named a different one than the link did, else ''. */
 export function albumArtistFix(linkArtist: string, found: string | undefined): string {
 	const real = (found ?? '').toLowerCase();
 	return real && real !== linkArtist.toLowerCase() ? real : '';
 }
 
-/** PageGap is the metadata server's word on an item it is still getting. */
+/** The metadata server's word on an item it is still getting. */
 export interface PageGap {
 	state: 'fetching' | 'queued';
 	position?: number;
 	message: string;
 }
 
-/** PageCredit is a release on another artist's page or a neighbour's top album. */
+/** A release on another artist's page or a neighbour's top album. */
 export interface PageCredit extends PageAlbum {
 	artist_mbid: string;
 	artist_name: string;
 	listeners?: number;
 }
 
-/** ArtistMoreData answers ?part=more: Essential albums (ids) and Appears on. */
+/** Answers ?part=more: Essential albums (ids) and Appears on. */
 export interface ArtistMoreData {
 	essential: string[];
 	appears_on: PageCredit[];
@@ -243,7 +240,7 @@ export interface PageTrack {
 	have?: 'in_library' | 'downloading' | 'missing' | '';
 }
 
-/** AlbumCoreData is the album hero's quick answer (?part=core). */
+/** The album hero's quick answer (?part=core). */
 export interface AlbumCoreData {
 	mbid: string;
 	name: string;
@@ -256,7 +253,7 @@ export interface AlbumCoreData {
 	kid: boolean;
 }
 
-/** PageEdition is one edition of an album, with its own track list. */
+/** One edition of an album, with its own track list. */
 export interface PageEdition {
 	mbid: string;
 	label: string;
@@ -279,14 +276,14 @@ export interface AlbumPageData extends PageAlbum {
 	gap?: PageGap;
 }
 
-/** artistHref opens an artist's page. */
+/** Opens an artist's page. */
 export const artistHref = (mbid: string) => to(`/music/artist/${mbid}`);
-/** albumHref opens an album's page; the artist id says whose album it is. */
+/** Opens an album's page; the artist id says whose album it is. */
 export const albumHref = (mbid: string, artist: string) => to(`/music/album/${mbid}?artist=${artist}`);
-/** withCover keeps the albums and artists that have a real picture: a row never shows a letter tile. */
+/** Keeps the albums and artists that have a real picture, so a row never shows a letter tile. */
 export const withCover = <T extends { image?: string | null }>(list: readonly T[] | null | undefined): T[] => (list ?? []).filter((x) => !!x.image?.trim());
 
-/** owned is the card's status pill for an album's Library state. */
+/** The card's status pill for an album's Library state. */
 export function owned(a: Pick<PageAlbum, 'state'>, asked = false): { state: 'available' | 'partial' | 'downloading' | 'requested'; label: string } | null {
 	switch (a.state) {
 		case 'complete':
@@ -301,7 +298,7 @@ export function owned(a: Pick<PageAlbum, 'state'>, asked = false): { state: 'ava
 	return asked ? { state: 'requested', label: 'Requested' } : null;
 }
 
-/** inLibrary says the Library keeps the album (any state but left out). */
+/** Whether the Library keeps the album (any state but left out). */
 export const kept = (a: Pick<PageAlbum, 'state'>) => !!a.state && a.state !== 'not_included';
 
 export const SHELVES: { shelf: Shelf; title: string }[] = [
@@ -312,12 +309,12 @@ export const SHELVES: { shelf: Shelf; title: string }[] = [
 	{ shelf: 'other', title: 'Soundtracks, remixes and more' }
 ];
 
-/** shelves splits the out-already albums by shelf (newest first, as served). */
+/** Splits the out-already albums by shelf (newest first, as served). */
 export function shelves(albums: PageAlbum[]): { shelf: Shelf; title: string; albums: PageAlbum[] }[] {
 	return SHELVES.map((s) => ({ ...s, albums: albums.filter((a) => a.shelf === s.shelf && !a.upcoming) })).filter((s) => s.albums.length);
 }
 
-/** minutes says a length like 3:07, or 1 hr 12 min for a whole album. */
+/** A length like 3:07, or 1 hr 12 min for a whole album. */
 export function length(ms: number | undefined, long = false): string {
 	if (!ms) return '';
 	const s = Math.round(ms / 1000);
@@ -328,7 +325,7 @@ export function length(ms: number | undefined, long = false): string {
 	return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 }
 
-/** kindWord names an album's kind for its meta line. */
+/** An album's kind for its meta line. */
 export function kindWord(a: Pick<PageAlbum, 'type' | 'secondary_types'>): string {
 	const sec = a.secondary_types?.[0];
 	if (sec) return sec.charAt(0).toUpperCase() + sec.slice(1);
@@ -336,19 +333,19 @@ export function kindWord(a: Pick<PageAlbum, 'type' | 'secondary_types'>): string
 	return a.type ? a.type.charAt(0).toUpperCase() + a.type.slice(1) : 'Album';
 }
 
-/** haveLine is the hero's "On HolyArrs" line. */
+/** The hero's "On HolyArrs" line. */
 export function haveLine(have: number, total: number): string {
 	if (!total) return '';
 	return `On HolyArrs: ${have} of ${total} ${total === 1 ? 'release' : 'releases'}`;
 }
 
-/** aboutSize writes a byte count as "about 1.2 GB" for the confirm line. */
+/** A byte count as "about 1.2 GB" for the confirm line. */
 export function aboutSize(bytes: number): string {
 	if (bytes >= 1 << 30) return `about ${(bytes / (1 << 30)).toFixed(1)} GB`;
 	return `about ${Math.max(1, Math.round(bytes / (1 << 20)))} MB`;
 }
 
-/** artistKind says what kind of act an artist is, in our words: a person is a solo artist; a group, orchestra or choir is a group. */
+/** What kind of act an artist is, in our words: a person is a solo artist; a group, orchestra or choir is a group. */
 export function artistKind(type?: string): string {
 	switch ((type ?? '').toLowerCase()) {
 		case 'person':
@@ -364,7 +361,7 @@ export function artistKind(type?: string): string {
 	}
 }
 
-/** countryName spells out a two-letter country code (CA: Canada); other codes stay as they are. */
+/** Spells out a two-letter country code (CA: Canada); other codes stay as they are. */
 export function countryName(code?: string): string {
 	const c = (code ?? '').trim();
 	if (!/^[A-Za-z]{2}$/.test(c)) return c;
@@ -375,7 +372,7 @@ export function countryName(code?: string): string {
 	}
 }
 
-/** initialsOf is up to two initials of a name, for a round photo with no picture. */
+/** Up to two initials of a name, for a round photo with no picture. */
 export function initialsOf(name?: string): string {
 	const words = (name ?? '').split(/\s+/).map((w) => w.replace(/[^\p{L}\p{N}]/gu, '')).filter(Boolean);
 	return words.slice(0, 2).map((w) => [...w][0].toUpperCase()).join('');
@@ -384,10 +381,7 @@ export function initialsOf(name?: string): string {
 /** How long the full page answer gets before the quick core part is asked too. */
 export const CORE_AFTER_MS = 250;
 
-/**
- * coreIfSlow asks the quick core part only when the full answer (which holds the
- * core) has not come within `after` ms, so a fast or kept page costs one request.
- */
+/** Asks the quick core part only when the full answer (which holds the core) has not come within `after` ms, so a fast or kept page costs one request. */
 export function coreIfSlow<T>(full: Promise<unknown>, askCore: () => Promise<T>, after = CORE_AFTER_MS, wait: (ms: number) => Promise<void> = (ms) => new Promise((r) => setTimeout(r, ms))): Promise<T | null> {
 	let done = false;
 	const settle = () => (done = true);

@@ -33,7 +33,6 @@
 	</section>
 
 <style>
-	/* Top songs: two columns of five; each row has its number, cover, words, length and … menu. */
 	.block { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
 	.songs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(5, auto); grid-auto-flow: column; gap: 0 24px; margin: 0; padding: 0; list-style: none; }
 	.song { display: grid; grid-template-columns: 32px 48px minmax(0, 1fr) auto 36px; align-items: center; gap: 12px; height: 64px; padding: 0 8px; border-radius: 10px; transition: background var(--dur-fast) var(--ease-out), translate var(--dur) var(--ease-out), box-shadow var(--dur) var(--ease-out); }

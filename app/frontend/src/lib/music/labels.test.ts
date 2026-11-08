@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { albumKind, albumLine, albumState, albumStateOf, albumWords, albumYear, artistProgress, artistState, pressingLabel, toggle, trackLength, extraKinds, word, albumChoices, artistSearchToast, discography, discographyRow, latestRelease } from './labels.ts';
+import { describe, expect, it } from 'vitest';
 import type { ArtistInfo } from '../core/types.ts';
 
 const info = (a: Partial<ArtistInfo>): ArtistInfo => ({

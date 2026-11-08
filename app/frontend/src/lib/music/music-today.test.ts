@@ -1,6 +1,6 @@
-import { describe, expect, it } from 'vitest';
 import { popularityStats, shortCount } from './music-pages.ts';
 import { fetchRisingToday, withRising } from './music-trending.ts';
+import { describe, expect, it } from 'vitest';
 
 describe('artist popularity', () => {
 	it('shows listeners, rank and today for the most played artists', () => {

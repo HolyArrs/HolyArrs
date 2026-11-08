@@ -1,8 +1,6 @@
 <script lang="ts">
 	import { peopleNames } from '../core/plain.ts';
-	// One artist in the Library: the artist page (MusicArtistPage) with its
-	// Overview and Library tabs; the Library tab holds the albums, their
-	// actions and the artist's settings. Below them: who asked.
+	// One artist in the Library: the artist page (ArtistOverview) with its Overview and Library tabs. The Library tab holds the albums, their actions and the artist's settings. Below them: who asked.
 	import { api, message } from '../core/api.ts';
 	import { live } from '../core/live.svelte.ts';
 	import { date } from '../core/format.ts';
@@ -48,8 +46,7 @@
 	const heroKind = $derived(artist?.missing ? 'missing' : 'in_library');
 	// One status vocabulary (title-status.ts); staff also see how many are missing.
 	const heroWords = $derived(audienceStatus(heroKind, staff ? 'staff' : 'member', { tracked: true, titleKind: 'artist' }));
-	// The one artist page (MusicArtistPage) shows the hero, the discography,
-	// similar artists and About; these are the Library's own parts of it.
+	// The artist page shows the hero, the discography, similar artists and About; these are the Library's own parts of it.
 	const lib = $derived<ArtistLibrary>({
 		titleId: title.id,
 		staff,
@@ -71,9 +68,7 @@
 		}
 	}
 
-	// Albums, Pressings and tracks arrive with the refresh after adding:
-	// read again when this artist's Events come in, and every few seconds
-	// while included albums have no tracks yet.
+	// Albums, Pressings and tracks arrive with the refresh after adding. Read again when this artist's Events come in, and every few seconds while included albums have no tracks yet.
 	let again: ReturnType<typeof setTimeout> | undefined;
 	$effect(() => {
 		const soon = (e?: unknown) => {

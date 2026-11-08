@@ -1,16 +1,8 @@
-// An album page's colour: the whole page sits on a deep, muted colour taken
-// from the cover (a dark olive for a green cover, deep maroon for a red one,
-// navy for a blue one, near black for a dark one), with light text on it.
-//
-// The cover's main colour comes from the metadata server's stored picture
-// record (pictures.ts) when the answer carried one; else the page samples
-// the cover it already shows (our own picture address) on a small canvas.
-// Either way the colour is then deepened and muted here so white text reads
-// at 7:1 or better and the softer text (72% white) at 4.5:1 or better.
+// An album page's colour: the whole page sits on a deep, muted colour taken from the cover (dark olive for green, deep maroon for red, navy for blue, near black for dark), with light text on it.
 
 export type Rgb = [number, number, number];
 
-/** AlbumTint is the page colour set: the page, the lower band, and the text tones. */
+/** The page colour set: the page, the lower band and the text tones. */
 export interface AlbumTint {
 	bg: string;
 	band: string;
@@ -18,15 +10,15 @@ export interface AlbumTint {
 	soft: string;
 	rule: string;
 	hover: string;
-	/** contrast is white text on bg (n:1). */
+	/** White text on bg (n:1). */
 	contrast: number;
-	/** softContrast is the soft text tone on bg (n:1). */
+	/** The soft text tone on bg (n:1). */
 	softContrast: number;
 }
 
-/** FALLBACK is the tint of a page whose cover gave no colour: a quiet near black. */
+/** The tint of a page whose cover gave no colour: a quiet near black. */
 export const FALLBACK = '#1d1d22';
-/** SOFT is the softer text's white share. */
+/** The softer text's white share. */
 export const SOFT = 0.72;
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
@@ -68,23 +60,23 @@ function lum([r, g, b]: Rgb): number {
 	return 0.2126 * c(r) + 0.7152 * c(g) + 0.0722 * c(b);
 }
 
-/** contrast is the WCAG contrast ratio of two colours. */
+/** The WCAG contrast ratio of two colours. */
 export function contrast(a: Rgb, b: Rgb): number {
 	const x = lum(a), y = lum(b);
 	return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
 }
 
-/** mix blends white over a colour by a share (0..1). */
+/** Blends white over a colour by a share (0 to 1). */
 function overWhite(c: Rgb, share: number): Rgb {
 	return [c[0] + (255 - c[0]) * share, c[1] + (255 - c[1]) * share, c[2] + (255 - c[2]) * share];
 }
 
-/** deepen turns a cover colour into the page colour: muted, dark, light text at AA (soft) and AAA (white). */
+/** Turns a cover colour into the page colour: muted, dark, with light text at AA (soft) and AAA (white). */
 export function deepen(hex: string | null | undefined): string {
 	const rgb = hex ? hexRgb(hex) : null;
 	if (!rgb) return FALLBACK;
 	const [h, s0, l0] = rgbHsl(rgb);
-	// A grey or very dark cover: a near black with a breath of its hue.
+	// A grey or very dark cover gets a near black with a breath of its hue.
 	if (s0 < 0.1 || l0 < 0.1) return rgbHex(hslRgb([h, Math.min(s0, 0.1), 0.12]));
 	const s = clamp(s0 * 0.7, 0.22, 0.55);
 	let l = clamp(l0 * 0.6, 0.14, 0.3);
@@ -97,7 +89,7 @@ export function deepen(hex: string | null | undefined): string {
 	return rgbHex(hslRgb([h, s, Math.max(l, 0.06)]));
 }
 
-/** tintOf is the page colour set for a cover colour. */
+/** The page colour set for a cover colour. */
 export function tintOf(cover: string | null | undefined): AlbumTint {
 	const bg = deepen(cover);
 	const c = hexRgb(bg) as Rgb;
@@ -116,12 +108,7 @@ export function tintOf(cover: string | null | undefined): AlbumTint {
 	};
 }
 
-/**
- * dominant picks a cover's main colour from its pixels (RGBA bytes): pixels
- * are grouped by hue in 24 bins and weighted by saturation, skipping near
- * white and near black ones; the heaviest bin's average wins. A cover with
- * little colour answers its average, which deepen() turns near black.
- */
+/** Picks a cover's main colour from its pixels (RGBA bytes). Pixels are grouped by hue in 24 bins and weighted by saturation, skipping near white and near black; the heaviest bin's average wins. */
 export function dominant(px: Uint8ClampedArray | number[]): string | null {
 	const bins = Array.from({ length: 24 }, () => ({ w: 0, r: 0, g: 0, b: 0 }));
 	let n = 0, ar = 0, ag = 0, ab = 0;
@@ -137,12 +124,12 @@ export function dominant(px: Uint8ClampedArray | number[]): string | null {
 	}
 	if (!n) return null;
 	const best = bins.reduce((a, b) => (b.w > a.w ? b : a));
-	// Colour must cover a fair share of the picture, else the cover reads as its average.
+	// The colour must cover a fair share of the picture, else the cover reads as its average.
 	if (best.w < n * 0.06) return rgbHex([ar / n, ag / n, ab / n]);
 	return rgbHex([best.r / best.w, best.g / best.w, best.b / best.w]);
 }
 
-/** sampleCover reads a loaded cover image on a 32px canvas; null when it cannot (not same origin, no canvas). */
+/** Reads a loaded cover image on a 32px canvas; null when it cannot (not same origin, no canvas). */
 export function sampleCover(img: HTMLImageElement): string | null {
 	try {
 		const c = document.createElement('canvas');
@@ -158,7 +145,7 @@ export function sampleCover(img: HTMLImageElement): string | null {
 
 let leaving: ReturnType<typeof setTimeout> | undefined;
 
-/** paintWindow puts an album colour on the whole window: <html data-tint="album"> and --tint-* (app.css). */
+/** Puts an album colour on the whole window: <html data-tint="album"> and --tint-* (app.css). */
 export function paintWindow(t: AlbumTint, root: HTMLElement = document.documentElement): void {
 	clearTimeout(leaving);
 	const s = root.style;
@@ -170,7 +157,7 @@ export function paintWindow(t: AlbumTint, root: HTMLElement = document.documentE
 	root.dataset.tint = 'album';
 }
 
-/** unpaintWindow fades the window back: "leaving" keeps the transitions for one slow beat, then all is removed. */
+/** Fades the window back: "leaving" keeps the transitions for one slow beat, then everything is removed. */
 export function unpaintWindow(root: HTMLElement = document.documentElement, ms = 400): void {
 	if (root.dataset.tint !== 'album') return;
 	root.dataset.tint = 'leaving';

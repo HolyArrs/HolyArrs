@@ -1,11 +1,11 @@
+import MusicTileGrid from './MusicTileGrid.svelte';
+import MusicBrowseGrid from './MusicBrowseGrid.svelte';
+import { TILE_PALETTE } from './tile-palette.ts';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { render } from 'svelte/server';
-import MusicTileGrid from './MusicTileGrid.svelte';
-import MusicBrowseGrid from './MusicBrowseGrid.svelte';
-import { TILE_PALETTE } from './tile-palette.ts';
 
 const art = (id: string) => `/api/v1/music-trending/art/album/${id}`;
 const tile = (key: string, covers: string[] = [art(key)]) => ({ key, name: key.split(':')[1], href: `/music/${key.replace(':', '/')}`, covers });
@@ -80,8 +80,7 @@ describe('MusicBrowseGrid', () => {
 	});
 });
 
-// The look: the cover is about half the tile, turned 25 degrees, at the bottom right and cut off;
-// the grid is auto-fill from 190 px, two columns on a phone; motion is switched off on request.
+// The cover is about half the tile, turned 25 degrees, at the bottom right and cut off; the grid is auto-fill from 190 px with two columns on a phone; motion is switched off on request.
 describe('MusicTileGrid style', () => {
 	const src = readFileSync(join(dirname(fileURLToPath(import.meta.url)), 'MusicTileGrid.svelte'), 'utf8');
 	const rule = (sel: string) => src.split('\n').find((l) => l.trimStart().startsWith(`${sel} {`)) ?? '';

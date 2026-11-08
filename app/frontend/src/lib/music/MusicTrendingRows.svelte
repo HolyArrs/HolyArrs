@@ -1,34 +1,31 @@
 <script lang="ts">
 	import Chip from '#lib/ui/Chip.svelte';
-	import { onMount } from 'svelte';
-	import { api, message } from '../core/api.ts';
-	import { toasts } from '../core/toasts.svelte.ts';
-	import { refreshInbox } from '../core/inbox.svelte.ts';
 	import type { OwnedIndex } from '#lib/ui/title-cards.ts';
 	import { defaultRegion } from '#lib/ui/region.ts';
+	import ArtPlaceholder from '#lib/ui/ArtPlaceholder.svelte';
+	import Shelf from '#lib/ui/Shelf.svelte';
+	import PosterCard from '#lib/ui/PosterCard.svelte';
+	import IconButton from '#lib/ui/IconButton.svelte';
+	import EmptyState from '#lib/ui/EmptyState.svelte';
+	import { stableRows } from '#lib/ui/row-window.ts';
 	import { coverFor } from './music-pages.ts';
 	import { heroArtists, heroLine } from './page-hero.ts';
-	import ArtPlaceholder from '#lib/ui/ArtPlaceholder.svelte';
 	import { isNewRelease } from './music-new.ts';
 	import { fetchMusicExplore, fetchMusicExploreMore, fetchRisingToday, withRising, fetchMusicPage, genreHref, musicCardHref, musicCardNote, musicImage, musicStatus, releaseWords, songAskHref, type MusicCardData, type MusicExploreAnswer, type MusicPageKind } from './music-trending.ts';
 	import { reaskWhileFilling } from './reask.ts';
 	import MusicGenreTiles from './MusicGenreTiles.svelte';
 	import MusicBrowseGrid from './MusicBrowseGrid.svelte';
 	import MusicVideoRow from './MusicVideoRow.svelte';
-	import { to } from '../core/paths.ts';
 	import SongLine from './SongLine.svelte';
-	import type { Ask, LibraryFolder, PickRulesView, TitleView } from '../core/types.ts';
 	import type { ArtistSheets, LookupArtist, MusicSettings } from './types.ts';
-	import Shelf from '#lib/ui/Shelf.svelte';
-	import PosterCard from '#lib/ui/PosterCard.svelte';
-	import IconButton from '#lib/ui/IconButton.svelte';
-	import EmptyState from '#lib/ui/EmptyState.svelte';
-	import { stableRows } from '#lib/ui/row-window.ts';
+	import { onMount } from 'svelte';
+	import { api, message } from '../core/api.ts';
+	import { toasts } from '../core/toasts.svelte.ts';
+	import { refreshInbox } from '../core/inbox.svelte.ts';
+	import { to } from '../core/paths.ts';
+	import type { Ask, LibraryFolder, PickRulesView, TitleView } from '../core/types.ts';
 
-	// Explore → Music. The server builds every row (personal first, then the
-	// charts, similar artists, missing albums and genre rows); genre chips
-	// filter them all. Every row says why it is there; albums are square,
-	// artists round, and every card is the same size.
+	// Explore > Music. The server builds every row (personal first, then the charts, similar artists, missing albums and genre rows); genre chips filter them all. Every row says why it is there; albums are square, artists round.
 	const KEY = 'holyarrs.music-trending';
 	let {
 		owned: _owned,
@@ -51,7 +48,7 @@
 	// Genres show as the Movies and Shows category strip under the hero, not as a row.
 	const stripGenres = $derived<StripGenre[]>((answer?.rows ?? []).filter((r) => r.shape === 'tile').flatMap((r) => r.items).map((c) => ({ key: c.key, name: c.name, href: genreHref(c), art: c.image ? (musicImage(c) ?? '') : '', hue: c.hue ?? 0, images: c.images ?? [] })));
 	$effect(() => { genres = stripGenres.length ? stripGenres : browseTiles.map((t) => ({ key: t.key, name: t.name, href: t.href, art: t.cover, hue: t.hue, images: t.cover ? [t.cover] : [] })); });
-	// music_lists_v1: the genres row comes as the Browse grid (colour tiles with a tilted cover).
+	// With the music_lists_v1 flag the genres row comes as the Browse grid (colour tiles with a tilted cover).
 	const browseTiles = $derived((answer?.rows ?? []).filter((r) => r.shape === 'grid').flatMap((r) => r.items).map((c) => ({ key: c.key, name: c.name, href: c.href ? to(c.href) : genreHref(c), hue: c.hue ?? 0, cover: c.cover || (c.image ? (musicImage(c) ?? '') : '') })));
 	let chips = $state<string[]>([]);
 	/** The rows' order as first shown this visit (per genre and region), so later answers never move them. */
@@ -67,7 +64,7 @@
 	let addArtist: ReturnType<ArtistSheets['add']> | undefined = $state();
 	let askArtist: ReturnType<ArtistSheets['ask']> | undefined = $state();
 	let gone: AbortController | undefined;
-	/** music_rows_v7: the next rows' cursor, whether a batch is in flight, and batches read this visit. */
+	/** With music_rows_v7: the next rows' cursor, whether a batch is in flight, and batches read this visit. */
 	let next = $state('');
 	let more = $state(false);
 	let batches = 0;
@@ -121,7 +118,7 @@
 				}, signal).finally(() => {
 					if (!signal.aborted) ready = true;
 				});
-			// music_rows_v7: read again the batches already shown (the plan is fixed for the day).
+			// With music_rows_v7: read again the batches already shown (the plan is fixed for the day).
 			next = a.next ?? '';
 			const had = batches;
 			batches = 0;
@@ -137,7 +134,7 @@
 		}
 	}
 
-	/** moreRows appends the next 6 rows of the day's plan (one batch in flight). */
+	/** Appends the next 6 rows of the day's plan (one batch in flight). */
 	async function moreRows(signal = gone?.signal) {
 		if (!next || more || !answer) return;
 		more = true;
@@ -174,7 +171,7 @@
 		try {
 			localStorage.setItem(KEY, region);
 		} catch {
-			/* the choice is a convenience */
+			/* The choice is a convenience. */
 		}
 		void load();
 	}
@@ -189,7 +186,7 @@
 		try {
 			region = localStorage.getItem(KEY) || region;
 		} catch {
-			/* nothing saved */
+			/* Nothing saved. */
 		}
 		void load();
 		// Genres fill in the background on a first visit: look again once.
@@ -208,7 +205,7 @@
 		return id !== undefined && c.kind === 'artist' ? { ...c, title_id: id } : c;
 	}
 
-	/** quick looks the artist up by name and opens the add (or ask) sheet for the matching MusicBrainz id. */
+	/** Looks the artist up by name and opens the add (or ask) sheet for the matching MusicBrainz id. */
 	async function quick(c: MusicCardData) {
 		const artist = c.artist || c.name;
 		if (busy || !c.artist_mbid) return;
@@ -246,7 +243,7 @@
 		void load();
 	}
 
-	/** The Spotlight row (Apple "New" style): the hero first, then its stand-ins. */
+	/** The Spotlight row: the hero first, then its stand-ins. */
 	const heroes = $derived(answer?.hero ? [answer.hero, ...(answer.hero_alts ?? [])] : []);
 	/** The page hero's collage: the Spotlight and first row's album covers (already stored). */
 	const heroCovers = $derived(
@@ -282,7 +279,6 @@
 {:else if answer || !failed}
 	<section class="music" class:v2={answer?.v2} data-testid="music-trending" aria-busy={!answer || undefined}>
 		{#if slug}
-			<!-- A genre page's band: its tile's hue and grey art, the genre's name. -->
 			<!-- The page hero: the tile's hue as a gradient behind a tilted collage of the page's top covers (preloaded), its words and leading artists, one stat line. -->
 			<div class="band" style:--hue={`hsl(${bandHue} 52% 36%)`} style:--hue2={`hsl(${(bandHue + 40) % 360} 60% 18%)`} data-testid="music-genre-band">
 				<div class="collage" aria-hidden="true">
@@ -298,9 +294,9 @@
 				</div>
 			</div>
 		{/if}
-		<!-- The chip bar keeps its height: placeholder chips until the genres are known. The v2 rows have genre tiles instead. -->
+		<!-- The chip bar keeps its height with placeholder chips until the genres are known; the v2 rows have genre tiles instead. -->
 		{#if answer?.v2}
-			<!-- no chips -->
+			<!-- The v2 rows use genre tiles, so no chips. -->
 		{:else if chips.length}
 			<div class="chips" role="group" aria-label="Genres" data-testid="music-genres">
 				<!-- The same chips as the Movies and Shows genre picker. -->
@@ -340,7 +336,7 @@
 									<img class="sq" src={cv.src} alt="" fetchpriority={hi < 2 ? 'high' : 'auto'} loading={hi < 2 ? 'eager' : 'lazy'} decoding="async" onerror={() => (noCover[c.key] = true)} />
 								{/if}
 								{#if art}
-									<!-- The artist's photo, when there is one, over all of it; the cover then sits small in the corner (as New & Popular). -->
+									<!-- The artist's photo, when there is one, goes over all of it and the cover sits small in the corner. -->
 									<img class="photo" class:in={photoOk[c.key]} src={art} alt="" loading={hi < 2 ? 'eager' : 'lazy'} decoding="async" onload={(e) => ((e.currentTarget as HTMLImageElement).naturalWidth >= 400 && (photoOk[c.key] = true))} />
 								{/if}
 								{#if photoOk[c.key] && cv.src && !noCover[c.key]}<img class="mini" src={coverFor(musicImage(c), 60).src} alt="" decoding="async" />{/if}
@@ -371,7 +367,6 @@
 			{:else}
 			<div class="row">
 			{#if row.id === pickRow}
-				<!-- The chart region sits in its row's header. -->
 				<div class="pick">
 					<select aria-label="Chart region" bind:value={region} onchange={pick}>
 						{#each regions as r (r)}<option value={r}>{regionName(r)}</option>{/each}
@@ -413,7 +408,7 @@
 		{/each}
 
 		{#if next}
-			<!-- music_rows_v7: the next batch loads one viewport before the end; skeletons hold its place. -->
+			<!-- With music_rows_v7 the next batch loads one viewport before the end; skeletons hold its place. -->
 			<div class="more" bind:this={sentinel} aria-busy={more || undefined}>
 				{#if more}
 					{#each [0, 1, 2, 3, 4, 5] as r (r)}
@@ -424,7 +419,7 @@
 		{/if}
 
 		{#if answer?.thin}
-			<!-- Row templates: too little music for this page yet; never a near-empty page. -->
+			<!-- Too little music for this page yet; never a near-empty page. -->
 			<div class="thin" data-testid="music-thin">
 				<p class="thin-title">Not enough music here yet</p>
 				{#if answer.similar?.length}
@@ -458,20 +453,16 @@
 	.chips { height: 38px; flex: none; }
 	.chip { height: 34px; box-sizing: border-box; line-height: 20px; }
 	.sk-chip { display: block; padding: 0; border-color: transparent; cursor: default; }
-	/* A loading row: the header and one row of square cards, at the real row's height. */
 	.sk-shelf { display: flex; flex-direction: column; gap: 12px; overflow: hidden; }
 	.sk-h { display: block; width: 220px; height: 46px; border-radius: 8px; background: var(--surface-2); }
 	.sk-tiles { display: grid; grid-auto-flow: column; grid-auto-columns: var(--explore-item); gap: var(--shelf-gap); padding: 6px 0 14px; }
 	.sk-tile { display: block; aspect-ratio: 1; margin-bottom: 45px; border-radius: var(--r-card); background: var(--surface-2); }
 	.row { position: relative; min-width: 0; }
 	.more { display: flex; flex-direction: column; gap: 32px; min-height: 1px; }
-	/* music_rows_v2: one card size (200), song lines 3 columns. */
 	@media (min-width: 768px) { .music.v2 { --explore-item: 200px; } }
-	/* nowrap: the global .row utility wraps, and a wrapping column flexbox
-	   sizes the tile grid at its 0 px max-content width, so its rows collapse. */
+	/* nowrap: the global .row utility wraps, and a wrapping column flexbox sizes the tile grid at its 0 px max-content width, so its rows collapse. */
 	.plain { display: flex; flex-direction: column; flex-wrap: nowrap; align-items: stretch; gap: 12px; }
 	.rhead { margin: 0; font-size: 17px; font-weight: 700; }
-	/* A Music genre page's band: the tile's look (hue, grey art at .55, radius 10), wider. */
 	.band { position: relative; display: flex; align-items: flex-end; min-height: 260px; padding: 28px 32px; border-radius: 14px; overflow: hidden; background: linear-gradient(135deg, var(--hue), var(--hue2)); color: #fff; isolation: isolate; }
 	.band::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(90deg, rgb(0 0 0 / .55) 0%, rgb(0 0 0 / .2) 55%, transparent 100%), linear-gradient(0deg, rgb(0 0 0 / .45), transparent 60%); }
 	.collage { position: absolute; z-index: -2; top: 50%; left: 45%; right: -6%; display: flex; justify-content: flex-end; gap: 14px; overflow: hidden; transform: translateY(-50%) rotate(-8deg); -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 30%); mask-image: linear-gradient(90deg, transparent 0%, #000 30%); padding: 30px 0; }
@@ -495,7 +486,6 @@
 	@media (max-width: 1023px) { .songs { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 	@media (max-width: 640px) { .songs { grid-template-columns: minmax(0, 1fr); } }
 	.pick { position: absolute; right: 0; top: 0; z-index: 1; display: flex; gap: 8px; align-items: center; }
-	/* Spotlight: Apple "New"-style feature cards, label and title above a wide 16:9 picture. */
 	.music { --spot-item: min(86vw, 430px); }
 	.spot :global(.ui-shelf-head), .spot :global(header) { margin-bottom: 2px; }
 	.feature { display: flex; flex-direction: column; min-width: 0; color: var(--text); text-decoration: none; border-radius: 14px; }

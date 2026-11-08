@@ -6,11 +6,7 @@
 	import { openTheater } from '../core/trailer/theater.svelte.ts';
 	import { pickedSources, type HeroVideo } from '../core/trailer/hero-video.ts';
 
-	// An artist's music videos (GET /music/artists/{mbid}?part=videos) as one row
-	// of small cards, the same row as a title page's trailers: whole cards, each
-	// with the video's own cover (the artist's picture when it cannot load).
-	// Playing one opens the big player on HolyArrs' relay of that video (label
-	// videos refuse YouTube's embedded player), the embed only when there is none.
+	// An artist's music videos (GET /music/artists/{mbid}?part=videos) as one row of small cards, the same row as a title page's trailers: whole cards, each with the video's own cover (the artist's picture when it cannot load).
 	let { mbid, artist, picture }: { mbid: string; artist: string; picture?: string | null } = $props();
 
 	type Item = { id: string; title?: string; duration?: number };
@@ -33,10 +29,7 @@
 	const named = (v: Item) => (v.title ?? '').replace(new RegExp(`^${artist.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*[-–—:|]\\s*`, 'i'), '').trim() || `${artist} music video`;
 	const length = (s?: number) => (s ? `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}` : '');
 
-	// Pointing at a card or focusing it reads the stream the server keeps
-	// (no lookup); only a click asks the server to look that one video up
-	// (play=1). A miss is asked again next time, and so is a relayed stream
-	// past its end.
+	// Pointing at a card or focusing it reads the stream the server keeps (no lookup); only a click asks the server to look that one video up (play=1). A miss is asked again next time, and so is a relayed stream past its end.
 	const streams = new Map<string, Promise<HeroVideo | null>>();
 	function stream(id: string, click = false): Promise<HeroVideo | null> {
 		const k = `${mbid}|${id}|${click ? 'play' : 'kept'}`;

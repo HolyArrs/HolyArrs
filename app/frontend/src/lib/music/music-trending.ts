@@ -1,6 +1,5 @@
 import { versioned } from '../core/pictures.ts';
-// Music trending: the metadata server's weekly lists (ListenBrainz
-// worldwide, Deezer's charts per country) as artist and album rows.
+// Music trending: the metadata server's weekly lists (ListenBrainz worldwide, Deezer's charts per country) as artist and album rows.
 import { api, ApiError, type Client } from '../core/api.ts';
 import type { Fresh } from '#lib/ui/fresh.ts';
 import { to } from '../core/paths.ts';
@@ -36,19 +35,14 @@ export interface MusicTrendCard extends ExploreCard {
 	shape: 'square' | 'round';
 }
 
-/** listeners: "12K listeners this week" (social proof on chart rows), or ''. */
+/** "12K listeners this week" (social proof on chart rows), or ''. */
 export function listeners(n: number | undefined): string {
 	if (!n || n <= 0) return '';
 	const short = n >= 1e6 ? `${(n / 1e6).toFixed(n >= 1e7 ? 0 : 1)}M` : n >= 1e3 ? `${(n / 1e3).toFixed(n >= 1e4 ? 0 : 1)}K` : String(n);
 	return `${short.replace('.0', '')} ${n === 1 ? 'listen' : 'listens'} this week`;
 }
 
-/**
- * musicTrendCards turns an answer into poster cards. Both kinds point at an
- * artist (ref mbid:<artist>), so a card whose artist is in the Library opens
- * the artist page; albums without a known artist are left out. Pictures come
- * through HolyArrs' artwork cache.
- */
+/** Turns an answer into poster cards. Both kinds point at an artist (ref mbid:<artist>), so a card whose artist is in the Library opens the artist page; albums without a known artist are left out. */
 export function musicTrendCards(a: MusicTrendAnswer): MusicTrendCard[] {
 	const out: MusicTrendCard[] = [];
 	for (const d of a.items) {
@@ -73,7 +67,7 @@ export function musicTrendCards(a: MusicTrendAnswer): MusicTrendCard[] {
 	return out;
 }
 
-/** fetchMusicTrend reads one list; a country without one falls back to global; null when there is none. */
+/** Reads one list; a country without one falls back to global; null when there is none. */
 export async function fetchMusicTrend(kind: MusicTrendKind, region: string, client: Pick<Client, 'get'> = api, signal?: AbortSignal): Promise<MusicTrendAnswer | null> {
 	for (const r of region === 'global' ? ['global'] : [region, 'global']) {
 		try {
@@ -86,7 +80,7 @@ export async function fetchMusicTrend(kind: MusicTrendKind, region: string, clie
 	return null;
 }
 
-/** NewAlbum is an album out in the last 60 days from an artist in the Library. */
+/** An album out in the last 60 days from an artist in the Library. */
 export interface NewAlbum {
 	key: string;
 	titleId: number;
@@ -96,7 +90,7 @@ export interface NewAlbum {
 	image: string | null;
 }
 
-/** newFromYourArtists: Library artists' albums out in the last `days` days, newest first (one per album). */
+/** Library artists' albums out in the last `days` days, newest first (one per album). */
 export function newFromYourArtists(entries: CalendarEntry[], now = new Date(), days = 60): NewAlbum[] {
 	const from = now.getTime() - days * 86400000;
 	const seen = new Set<string>();
@@ -111,8 +105,6 @@ export function newFromYourArtists(entries: CalendarEntry[], now = new Date(), d
 		})
 		.map((e) => ({ key: `new-${e.title_id}-${e.part_id ?? e.album}`, titleId: e.title_id, artist: e.name, album: e.album!, date: e.date, image: e.poster ?? null }));
 }
-
-// ---- Explore → Music: every row, built by the server ----
 
 export interface MusicCardData {
 	key: string;
@@ -188,7 +180,7 @@ export interface MusicExploreAnswer {
 	total?: number;
 }
 
-/** fetchMusicGenre reads a Music genre page's rows (Music only; Movies and Shows keep their own genre pages). */
+/** Reads a Music genre page's rows (Music only; Movies and Shows keep their own genre pages). */
 export async function fetchMusicGenre(slug: string, region: string, client: Pick<Client, 'get'> = api, signal?: AbortSignal): Promise<MusicExploreAnswer> {
 	return client.get<MusicExploreAnswer>(`/music/genre/${encodeURIComponent(slug)}?${new URLSearchParams({ region })}`, signal);
 }
@@ -196,20 +188,20 @@ export async function fetchMusicGenre(slug: string, region: string, client: Pick
 /** A Music Browse page kind (music_lists_v1 row templates): genre pages keep their route; moods, seasons, decades and activities have their own. */
 export type MusicPageKind = 'genre' | 'mood' | 'season' | 'decade' | 'activity';
 
-/** fetchMusicPage reads one Music Browse page's rows. */
+/** Reads one Music Browse page's rows. */
 export async function fetchMusicPage(kind: MusicPageKind, slug: string, region: string, client: Pick<Client, 'get'> = api, signal?: AbortSignal): Promise<MusicExploreAnswer> {
 	if (kind === 'genre') return fetchMusicGenre(slug, region, client, signal);
 	return client.get<MusicExploreAnswer>(`/music/browse/${kind}/${encodeURIComponent(slug)}?${new URLSearchParams({ region })}`, signal);
 }
 
-/** fetchMusicExplore reads the Music rows for a genre chip ('' is all) and chart region. */
+/** Reads the Music rows for a genre chip ('' is all) and chart region. */
 export async function fetchMusicExplore(genre: string, region: string, client: Pick<Client, 'get'> = api, signal?: AbortSignal, hour = new Date().getHours()): Promise<MusicExploreAnswer> {
 	const q = new URLSearchParams({ region, hour: String(hour) });
 	if (genre) q.set('genre', genre);
 	return client.get<MusicExploreAnswer>(`/explore/music?${q}`, signal);
 }
 
-/** fetchRisingToday reads the "Rising today" row (round artist cards); null when there is none today or the server did not answer. */
+/** Reads the "Rising today" row (round artist cards); null when there is none today or the server did not answer. */
 export async function fetchRisingToday(client: Pick<Client, 'get'> = api, signal?: AbortSignal): Promise<MusicRowData | null> {
 	try {
 		const r = await client.get<MusicRowData>('/explore/music/rising', signal);
@@ -219,7 +211,7 @@ export async function fetchRisingToday(client: Pick<Client, 'get'> = api, signal
 	}
 }
 
-/** withRising puts the rising row after the trending artists (else third), once. */
+/** Puts the rising row after the trending artists (else third), once. */
 export function withRising<T extends { id: string; type: string }>(rows: T[], rising: T | null): T[] {
 	if (!rising || rows.some((r) => r.id === rising.id)) return rows;
 	const at = rows.findIndex((r) => r.type === 'trending_artists');
@@ -227,7 +219,7 @@ export function withRising<T extends { id: string; type: string }>(rows: T[], ri
 	return [...rows.slice(0, i), rising, ...rows.slice(i)];
 }
 
-/** fetchMusicExploreMore reads the next 6 Music rows of the day's plan (music_rows_v7). */
+/** Reads the next 6 Music rows of the day's plan (music_rows_v7). */
 export async function fetchMusicExploreMore(cursor: string, region: string, client: Pick<Client, 'get'> = api, signal?: AbortSignal): Promise<MusicExploreAnswer> {
 	return client.get<MusicExploreAnswer>(`/explore/music?${new URLSearchParams({ region, cursor })}`, signal);
 }
@@ -239,10 +231,7 @@ function shortDay(d: string): string {
 	return Number.isNaN(t.getTime()) ? d : t.toLocaleDateString(undefined, { day: 'numeric', month: 'short', timeZone: 'UTC' });
 }
 
-/**
- * releaseWords says when an album comes or came out: "Out Sep 25" ahead,
- * "Out now" within 14 days after, "Released Sep 25" after that.
- */
+/** When an album comes or came out: "Out Sep 25" ahead, "Out now" within 14 days after, "Released Sep 25" after that. */
 export function releaseWords(date: string, now = new Date()): string {
 	const t = new Date(`${date}T00:00:00Z`);
 	if (Number.isNaN(t.getTime())) return '';
@@ -253,7 +242,7 @@ export function releaseWords(date: string, now = new Date()): string {
 	return `Released ${shortDay(date)}`;
 }
 
-/** musicCardNote is a card's one-line reason, by the row it is in. */
+/** A card's one-line reason, by the row it is in. */
 export function musicCardNote(row: Pick<MusicRowData, 'type'>, c: MusicCardData): string {
 	const by = c.kind === 'album' && c.artist ? c.artist : '';
 	if (c.note) return c.note;
@@ -284,7 +273,7 @@ export function musicCardNote(row: Pick<MusicRowData, 'type'>, c: MusicCardData)
 	return by;
 }
 
-/** musicStatus is a card's state chip (music_rows_v2): have, asked or approved. */
+/** A card's state chip (music_rows_v2): have, asked or approved. */
 export function musicStatus(c: Pick<MusicCardData, 'state'>): 'in_library' | 'requested' | 'approved' | undefined {
 	switch (c.state) {
 		case 'have':
@@ -297,19 +286,19 @@ export function musicStatus(c: Pick<MusicCardData, 'state'>): 'in_library' | 're
 	return undefined;
 }
 
-/** genreHref opens a genre tile: Search, music scope, until genre pages exist. */
+/** Opens a genre tile: Search, music scope, until genre pages exist. */
 export function genreHref(c: Pick<MusicCardData, 'name'> & Partial<Pick<MusicCardData, 'kind' | 'mbid'>>): string {
 	if (c.kind === 'genre' && c.mbid) return to(`/music/genre/${encodeURIComponent(c.mbid)}`);
 	return to(`/search?q=${encodeURIComponent(c.name)}&kind=music`);
 }
 
-/** songAskHref: a song line asks for its album, so it opens the artist (or a search for the song). */
+/** A song line asks for its album, so it opens the artist (or a search for the song). */
 export function songAskHref(c: Pick<MusicCardData, 'artist_mbid' | 'artist' | 'name'>): string {
 	if (c.artist_mbid) return to(`/music/artist/${c.artist_mbid}`);
 	return to(`/search?q=${encodeURIComponent(`${c.artist ?? ''} ${c.name}`.trim())}&kind=music`);
 }
 
-/** musicCardHref: an album opens its album page, an artist the artist page (any artist, in the Library or not); without MusicBrainz ids the Library page or the artist search. */
+/** An album opens its album page, an artist the artist page (any artist, in the Library or not); without MusicBrainz ids the Library page or the artist search. */
 export function musicCardHref(c: MusicCardData): string {
 	if (c.kind === 'album' && c.mbid && c.artist_mbid) return to(`/music/album/${c.mbid}?artist=${c.artist_mbid}`);
 	const artist = c.kind === 'artist' ? c.mbid || c.artist_mbid : c.artist_mbid;
@@ -319,7 +308,7 @@ export function musicCardHref(c: MusicCardData): string {
 	return to(`/search?q=${encodeURIComponent(c.artist || c.name)}&kind=music`);
 }
 
-/** musicImage puts the server's picture path under the app's base path. */
+/** Puts the server's picture path under the app's base path. */
 export function musicImage(c: Pick<MusicCardData, 'image'>): string | null {
 	return c.image ? to(c.image.startsWith('/') ? versioned(c.image) : c.image) : null;
 }

@@ -1,7 +1,7 @@
-import { describe, expect, it } from 'vitest';
-import { ApiError } from '../core/api.ts';
 import { matchOwned, ownedIndex } from '#lib/ui/title-cards.ts';
 import { fetchMusicExplore, fetchMusicExploreMore, fetchMusicTrend, listeners, releaseWords, musicCardHref, musicCardNote, musicTrendCards, newFromYourArtists, type MusicTrendAnswer } from './music-trending.ts';
+import { describe, expect, it } from 'vitest';
+import { ApiError } from '../core/api.ts';
 import type { TitleView } from '../core/types.ts';
 
 const bts = '0d79fe8e-ba27-4859-bb8c-2f255f346853';

@@ -2,18 +2,7 @@
 	import { assignTileColours } from './tile-palette.ts';
 	import { coverSrc } from './browse-tiles.ts';
 
-	// The one Music Browse tile, on Explore, New & Popular and Search: a flat
-	// bright colour, the name top left in bold white, and one real album cover,
-	// square and turned 25 degrees, at the bottom right and partly cut off. Tiles
-	// sit in an auto-fill grid (about 190 to 240 px wide, 16:9; two columns on a
-	// phone). A tile only ever shows an album cover: one without a cover is left
-	// out, and a cover that fails to load tries the tile's next cover, then takes
-	// the whole tile out of the grid (never a placeholder). Colours come from the
-	// palette by key, none repeated on the grid (music/tile-palette.ts).
-	//
-	// rows: show only that many rows (Explore, New & Popular); the tiles after
-	// them wait hidden, their covers already fetched, to take the place of a tile
-	// that drops out. Left out: every tile shows (Search).
+	// The one Music Browse tile, on Explore, New & Popular and Search: a flat bright colour, the name top left in bold white, and one real album cover, square and turned 25 degrees, at the bottom right and partly cut off.
 	type Tile = { key: string; name: string; href: string; covers: string[] };
 	let { tiles, rows, ghosts = 0 }: { tiles: Tile[]; rows?: number; ghosts?: number } = $props();
 
@@ -72,7 +61,6 @@
 <style>
 	/* About 190 to 240 px wide: 5 across in a 1440 window with the sidebar open, 6 with it folded, 7 on a wide screen. */
 	.mtg { --mtg-min: 190px; --mtg-gap: 16px; display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--mtg-min), 1fr)); gap: var(--mtg-gap); margin: 0; padding: 0; list-style: none; }
-	/* A phone: two across. */
 	@media (max-width: 559px) { .mtg { grid-template-columns: repeat(2, minmax(0, 1fr)); --mtg-gap: 12px; } }
 	li { min-width: 0; container-type: inline-size; }
 	li[hidden] { display: none; }
@@ -87,7 +75,6 @@
 		position: absolute; left: 7%; top: 9%; right: 38%; z-index: 1; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; overflow: hidden;
 		font: 700 clamp(14px, 8.2cqi, 21px) / 1.15 var(--font-ui); letter-spacing: -.01em; overflow-wrap: break-word; hyphens: auto;
 	}
-	/* The cover: half the tile's width, turned 25 degrees, its corner past the edge. */
 	.cover {
 		position: absolute; right: -7%; bottom: -9%; width: 50%; aspect-ratio: 1; object-fit: cover; border-radius: 4px;
 		background: rgb(0 0 0 / .25); transform: rotate(25deg); transform-origin: center; box-shadow: 0 6px 16px rgb(0 0 0 / .4);

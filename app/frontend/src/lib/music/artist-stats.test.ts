@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { catalogParts, changeWords, fullCount, listening, smallReleasesWord } from './music-pages.ts';
+import { describe, expect, it } from 'vitest';
 
 describe('artist stats band helpers', () => {
 	it('writes today’s change up or down, and nothing for zero', () => {

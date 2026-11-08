@@ -77,7 +77,6 @@ describe('createMusicPrefetch', () => {
 		const links = ['/title/movie/1', ...Array.from({ length: 10 }, (_, i) => artist(i))];
 		p.view(links);
 		p.view(links);
-		// The title link names two addresses, each artist one.
 		expect(p.running() + p.pending()).toBe(VIEW_CARDS + 1);
 		p.newPage();
 		p.view([artist(20)]);

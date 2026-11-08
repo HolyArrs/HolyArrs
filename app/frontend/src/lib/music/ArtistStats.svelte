@@ -16,7 +16,6 @@
 	} = $props();
 </script>
 
-<!-- Where concerts would be: listening, and the ask-for-missing button. -->
 {#if (listen || (missing?.count && mayAsk && !manage && !titleId && !allAsked))}
 	{@const up = (listen?.today ?? 0) > 0}
 	<section class="stats" data-testid="artist-stats" aria-label="Listening and releases">
@@ -44,7 +43,6 @@
 {/if}
 
 <style>
-	/* The stats band, where concerts would be: two centred lines between two hairlines. */
 	.chg { font-style: normal; }
 	.stats { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 28px 16px; border-block: 1px solid var(--line); text-align: center; font-variant-numeric: tabular-nums; }
 	.stats p { display: flex; flex-wrap: wrap; justify-content: center; align-items: baseline; margin: 0; }
@@ -54,7 +52,7 @@
 	.st1 b { color: var(--text); font-weight: 700; }
 	.chg.up { color: var(--ok-text); font-weight: 600; }
 	.chg.down { color: var(--fail-text); font-weight: 600; }
-	/* On the artist colour, light tones that read on any deep page colour. */
+	/* On the artist colour, use light tones that read on any deep page colour. */
 	:global(.artist.tinted) .chg.up { color: #9df5b4; }
 	:global(.artist.tinted) .chg.down { color: #ffb3b3; }
 	.st-ask { margin-top: 6px; }

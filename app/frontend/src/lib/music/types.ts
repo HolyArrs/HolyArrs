@@ -11,7 +11,7 @@ export interface PressingTrack {
 	length_ms?: number;
 }
 
-/** PressingView is one Pressing (edition) of an album with its tracks. */
+/** One Pressing (edition) of an album with its tracks. */
 export interface PressingView {
 	id: number;
 	mbid: string;
@@ -41,7 +41,7 @@ export interface TrackView {
 	slots: EpisodeSlot[];
 }
 
-/** AskableAlbum is an album of a looked-up artist as the ask dialog shows it. */
+/** An album of a looked-up artist as the ask dialog shows it. */
 export interface AskableAlbum {
 	mbid: string;
 	name: string;
@@ -52,7 +52,7 @@ export interface AskableAlbum {
 	left_out: boolean;
 }
 
-/** LookupArtist is a MusicBrainz artist with what the Library knows of it. */
+/** A MusicBrainz artist with what the Library knows of it. */
 export interface LookupArtist {
 	mbid: string;
 	name: string;
@@ -62,7 +62,7 @@ export interface LookupArtist {
 	country?: string;
 	status: string;
 	score?: number;
-	/** the artist's picture (music picture route) */
+	/** The artist's picture (music picture route). */
 	image?: string;
 	title_id?: number;
 	never_add?: boolean;
@@ -70,7 +70,7 @@ export interface LookupArtist {
 	ask_albums?: AskableAlbum[];
 }
 
-/** MusicSettings are the add-an-artist defaults and MusicBrainz settings. */
+/** The add-an-artist defaults and MusicBrainz settings. */
 export interface MusicSettings {
 	album_choice: string;
 	new_albums: string;
@@ -82,7 +82,7 @@ export interface MusicSettings {
 	cache_hours: number;
 }
 
-/** ArtistSheets are the ask and add dialogs, handed in by the page because a music part cannot import requests. */
+/** The ask and add dialogs, handed in by the page because a music part cannot import requests. */
 export interface ArtistSheets {
 	ask: Component<
 		{

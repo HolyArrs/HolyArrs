@@ -1,18 +1,10 @@
 <script lang="ts">
 	import Icon from '#lib/ui/Icon.svelte';
 	import Shelf from '#lib/ui/Shelf.svelte';
-	import { to } from '../core/paths.ts';
 	import { genreTintToken } from './genre-tint.ts';
+	import { to } from '../core/paths.ts';
 
-	// The Music genre tiles (Explore's Genres row and the Genres button's picker): a
-	// 16:9 tile in the genre's own colour with its artist photos laid over it in
-	// grey, crossfading one to the next. Each tile runs on its own random timer,
-	// loads and decodes the next photo before it fades, and rests while off screen,
-	// in a hidden tab, or with reduced motion. No photos: the colour's gradient.
-	// The last tile, All genres, is a 2x2 collage of the first four genres' photos.
-	// The Genres button's picker (compact) also serves Movies and TV: their tiles bring
-	// a tint colour and a backdrop, All genres comes first, and a pick may stay on the
-	// page (onpick) instead of following the link.
+	// The Music genre tiles (Explore's Genres row and the Genres button's picker): a 16:9 tile in the genre's own colour with its artist photos laid over it in grey, crossfading one to the next. Each tile runs on its own random timer.
 	type Genre = { key: string; name: string; href: string; art: string; images?: string[]; hue: number; tint?: string };
 	let {
 		genres,
@@ -150,7 +142,7 @@
 {/if}
 
 <style>
-	/* Our own palette: deep hues around the HolyArrs red, one fixed colour per genre. Light mode steps a little brighter. */
+	/* Deep hues around the HolyArrs red, one fixed colour per genre. Light mode steps a little brighter. */
 	:global(:root) {
 		--mg-crimson: #a31d2b; --mg-amber: #9a4a14; --mg-raspberry: #b0245a; --mg-plum: #6a1f5c; --mg-teal: #11585f; --mg-vermilion: #b3341d; --mg-wine: #6e1630;
 		--mg-midnight: #2a2f6b; --mg-magenta: #8f1f7a; --mg-forest: #1f5a3a; --mg-indigo: #4b2370; --mg-blue: #1f4f7a; --mg-charcoal: #3b3438; --mg-rust: #7c3a1d;
@@ -165,8 +157,6 @@
 			--mg-midnight: #3a4190; --mg-magenta: #a82a92; --mg-forest: #26734a; --mg-indigo: #6030a0; --mg-blue: #2a67a0; --mg-charcoal: #4f484c; --mg-rust: #944a24;
 		}
 	}
-	/* The picker is a grid of two columns; on Explore the tiles sit in a Shelf row (250 wide, 16:9). */
-	/* The picker: a wide grid, 5 to 6 across on a desktop, 2 to 3 on a phone. */
 	/* One grid on every tab: 5 across on a desktop, 3 on a tablet, 2 on a phone. */
 	.mgt { display: grid; gap: 10px; grid-template-columns: repeat(5, minmax(0, 1fr)); }
 	@media (max-width: 1023px) { .mgt { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
@@ -184,7 +174,6 @@
 	/* A scrim from the bottom keeps the label at AA contrast over any photo. */
 	.tile::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(0deg, rgba(0, 0, 0, .62), rgba(0, 0, 0, .12) 55%, transparent); }
 	strong { position: absolute; left: 12px; right: 10px; bottom: 9px; font: 700 clamp(14px, 1.25vw, 17px) / 1.15 var(--font-ui); letter-spacing: .005em; overflow-wrap: anywhere; display: flex; align-items: center; gap: 2px; }
-	/* No photos: a clean colour tile with a large label. */
 	.bare strong { font-size: clamp(20px, 1.9vw, 26px); letter-spacing: -.01em; text-transform: capitalize; }
 	.compact strong { left: 8px; right: 6px; bottom: 6px; font-size: 12px; overflow-wrap: normal; }
 	.tile:is(:hover, :focus-visible) { transform: translateY(-2px); box-shadow: 0 10px 22px -12px rgba(0, 0, 0, .6); }

@@ -1,6 +1,6 @@
-import { describe, expect, it, vi } from 'vitest';
 import { coreIfSlow } from './music-pages.ts';
 import { reaskWhileIncomplete, sameLists } from './reask.ts';
+import { describe, expect, it, vi } from 'vitest';
 
 describe('coreIfSlow', () => {
 	it('skips the core when the full answer came in time', async () => {

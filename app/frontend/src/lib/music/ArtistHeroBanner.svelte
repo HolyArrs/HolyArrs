@@ -1,13 +1,13 @@
 <script lang="ts">
-	import { api } from '#lib/core/api.ts';
 	import IconButton from '#lib/ui/IconButton.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
+	import { api } from '#lib/core/api.ts';
 	import { attachHLS, holdStart, screenTarget } from '#lib/core/trailer/hls-player.ts';
 	import { HERO_DELAY, setSoundOn, soundOn } from '#lib/core/trailer/trailer.ts';
 	import { artistVideo, autoplayHere, loadUISettings, nativeHLS } from '#lib/core/trailer/autoplay.svelte.ts';
 	import { heroFullscreen, heroVideoStart, type HeroVideo } from '#lib/core/trailer/hero-video.ts';
 
-	// The artist page's short banner: the wide photo or the music video, the video's controls and full screen.
+	// The artist page's short banner: the wide photo or the music video, with the video's controls and full screen.
 	let { mbid, ready, list, picture, backgrounds, gone, box = $bindable(), onimage }: { mbid: string; ready: boolean; list: string[]; picture: string | null | undefined; backgrounds: string[]; gone: number; box?: HTMLElement; onimage: (img: HTMLImageElement) => void } = $props();
 	let heroIn = $state(false);
 	let heroTry = $state(0);
@@ -17,7 +17,7 @@
 		heroTry = 0;
 	});
 	const heroSrc = $derived(list[heroTry] ?? null);
-	// A new hero picture (a late wide photo) fades in from dark, never pops.
+	// A new hero picture (a late wide photo) fades in from dark instead of popping.
 	$effect(() => {
 		void heroSrc;
 		heroIn = false;
@@ -34,8 +34,7 @@
 	let videoEl: HTMLVideoElement | undefined = $state();
 	let videoMuted = $state(true);
 	let videoPaused = $state(false);
-	// Sound is one choice for the whole app (shared with trailers): turning it
-	// on or off here carries to every later video and trailer.
+	// Sound is one choice for the whole app, shared with trailers: turning it on or off here carries to every later video and trailer.
 	function toggleMute() {
 		if (!videoEl) return;
 		videoEl.muted = !videoEl.muted;
@@ -44,9 +43,7 @@
 	}
 	// When a video ends: the artist's next unplayed video, else the same one again.
 	let playedVideos: string[] = [];
-	// Videos that would not play here (twice: as picked, then at the tallest
-	// picture): never attached again on this page, so a failing stream drops
-	// back to the photo instead of being attached over and over.
+	// Videos that would not play here (twice: as picked, then at the tallest picture) are never attached again on this page, so a failing stream drops back to the photo.
 	let heroBad = new Set<string>();
 	// The key of the video being tried once more at the tallest picture.
 	let heroTall = $state('');
@@ -78,10 +75,7 @@
 		if (videoEl.paused) void videoEl.play().catch(() => {});
 		else videoEl.pause();
 	}
-	// Full screen is the browser's own, on the hero: the video fit whole (black
-	// bars, never stretched or cut) with exit, pause and sound. iPhone Safari
-	// lets only the video itself go full screen, in its own player. Esc or the
-	// exit button leave it.
+	// Full screen is the browser's own, on the hero: the video fits whole (black bars, never stretched or cut) with exit, pause and sound. iPhone Safari lets only the video itself go full screen, in its own player.
 	let heroFull = $state(false);
 	function fullScreen() {
 		const el = videoEl as (HTMLVideoElement & { webkitEnterFullscreen?: () => void }) | undefined;
@@ -93,13 +87,10 @@
 	$effect(() => {
 		if (heroFull && !heroVideo) void document.exitFullscreen().catch(() => {});
 	});
-	// The video keeps the stage while it is paused or between two videos (a
-	// video that ends also fires pause): the banner keeps its size either way.
+	// The video keeps the stage while paused or between two videos (a video that ends also fires pause), so the banner keeps its size either way.
 	let videoIn = $state(false);
 
-	// As with a trailer hero: the beat (HERO_DELAY) starts when the hero
-	// shows, and the video (looked up ahead of time when it could be) is
-	// asked for at the same moment, only where trailers may autoplay.
+	// As with a trailer hero, the beat (HERO_DELAY) starts when the hero shows. The video, looked up ahead of time when possible, is asked for at the same moment, only where trailers may autoplay.
 	let beatDone = $state(false);
 	$effect(() => {
 		const want = mbid;
@@ -125,8 +116,7 @@
 		const v = heroVideo;
 		const el = videoEl;
 		if (!v || !el) return;
-		// One more try at the tallest picture: a stream can carry one rendition
-		// the browser will not decode (one music video's 720p did, its 1080p played).
+		// One more try at the tallest picture: a stream can carry one rendition the browser will not decode (one music video's 720p did, its 1080p played).
 		const tall = heroTall === v.key;
 		let detach: (() => void) | null = null;
 		let stopped = false;
@@ -168,9 +158,7 @@
 		void el
 			.play()
 			.then(() => {
-				// Sound was left on elsewhere: unmute. A browser that pauses an
-				// unmuted video without a recent click keeps it muted, and the
-				// button shows the truth either way.
+				// Sound was left on elsewhere, so unmute. A browser that pauses an unmuted video without a recent click keeps it muted, and the button shows the truth either way.
 				if (!soundOn()) return;
 				el.muted = false;
 				if (el.paused) {
@@ -180,8 +168,7 @@
 				videoMuted = el.muted;
 			})
 			.catch((e: unknown) => {
-				// A play the page itself cut short (the stream was swapped or
-				// detached) is not the video failing.
+				// A play the page itself cut short (the stream was swapped or detached) is not the video failing.
 				if (e instanceof DOMException && e.name === 'AbortError') return;
 				if (heroVideo) heroBad.add(heroVideo.key);
 				videoIn = false;
@@ -189,9 +176,7 @@
 			});
 	});
 
-	// Some music videos carry black bars in the picture itself (an old 4:3
-	// video in a wide frame). The frame is read a few times as it plays; when
-	// both sides are black the video is scaled up just enough to hide them.
+	// Some music videos carry black bars in the picture itself (an old 4:3 video in a wide frame). The frame is read a few times as it plays; when both sides are black the video is scaled up just enough to hide them.
 	let crop = $state(1);
 	let barTimers: ReturnType<typeof setTimeout>[] = [];
 	function sideBars(v: HTMLVideoElement): number {
@@ -210,7 +195,7 @@
 			let left = 0, right = 0;
 			while (left < w / 3 && !lit(left)) left++;
 			while (right < w / 3 && !lit(w - 1 - right)) right++;
-			// Only bars on both sides count (a dark scene on one side is not a bar).
+			// Only bars on both sides count; a dark scene on one side is not a bar.
 			return left >= 2 && right >= 2 ? Math.min(left, right) / w : 0;
 		} catch {
 			return 0;
@@ -244,7 +229,6 @@
 	{/if}
 {/snippet}
 
-<!-- The banner: the wide photo (or the music video) across the content width; it zooms out and darkens as it scrolls away. -->
 <header class="hero" class:paused={videoIn && videoPaused && !heroFull} class:vid={videoIn} class:bare={!heroSrc && !heroVideo} class:full={heroFull} style:--gone={gone.toFixed(3)} bind:this={box} data-hero data-testid="artist-hero">
 	<div class="stage" aria-hidden="true">
 		{@render stageArt()}
@@ -266,7 +250,6 @@
 
 <style>
 	:global(.artist.tinted) .hero { --hero-ink: var(--ar-bg); }
-	/* The short banner (dark in both themes): the wide photo or the music video. It zooms out from 1.1 and darkens as it leaves. */
 	.hero { --hero-ink: #07080a; position: relative; isolation: isolate; overflow: hidden; display: flex; align-items: flex-end; height: clamp(280px, 44vh, 520px); transition: background-color var(--dur-slow) var(--ease-out); -webkit-mask-image: linear-gradient(to bottom, #000 55%, rgb(0 0 0 / .82) 68%, rgb(0 0 0 / .5) 80%, rgb(0 0 0 / .18) 91%, transparent 100%); mask-image: linear-gradient(to bottom, #000 55%, rgb(0 0 0 / .82) 68%, rgb(0 0 0 / .5) 80%, rgb(0 0 0 / .18) 91%, transparent 100%); margin: calc(var(--s-6) * -1) calc(var(--gutter) * -1) 0; background: var(--hero-ink); color: #fff; }
 	.stage { position: absolute; inset: 0; z-index: -2; scale: calc(1.1 - .1 * var(--gone, 0)); transform-origin: 50% 40%; will-change: scale; }
 	.art { width: 100%; height: 100%; object-fit: cover; object-position: center 22%; opacity: 0; transition: opacity var(--dur-slow) var(--ease-out); }
@@ -277,7 +260,6 @@
 	.dim { position: absolute; inset: 0; z-index: -1; background: var(--hero-ink); opacity: calc(var(--gone, 0) * .85); pointer-events: none; }
 	.hero.bare { background: linear-gradient(180deg, color-mix(in srgb, var(--hero-ink) 60%, #3a3d44), var(--hero-ink)); }
 	@media (prefers-reduced-motion: reduce) { .stage { scale: 1; } }
-	/* The video covers the banner at the same size; paused, it hides and the banner shows again. */
 	.clip { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity var(--dur-slow) var(--ease-out); pointer-events: none; }
 	.clip.in { opacity: 1; }
 	.clip { scale: var(--crop, 1); transition: opacity var(--dur-slow) var(--ease-out), scale 600ms var(--ease-out); }
@@ -291,7 +273,6 @@
 	.vexit { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; background: rgb(255 255 255 / 14%); border: 1px solid rgb(255 255 255 / 18%); backdrop-filter: blur(18px) saturate(160%); -webkit-backdrop-filter: blur(18px) saturate(160%); color: #fff; cursor: pointer; transition: background var(--dur-fast) var(--ease-out); }
 	.vexit:hover { background: rgb(255 255 255 / 26%); }
 	.vexit:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
-	/* Full screen: the video alone, fit whole on black, with exit, pause and sound. */
 	.hero.full { height: auto; background: #000; -webkit-mask-image: none; mask-image: none; }
 	.hero.full .stage { scale: 1; }
 	.hero.full .art, .hero.full .shade, .hero.full .dim { display: none; }

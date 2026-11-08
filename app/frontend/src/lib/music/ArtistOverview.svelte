@@ -7,7 +7,7 @@
 		status: string;
 		note: string;
 		nextRelease?: string;
-		/** stamp changes when the page hears the artist changed; the Library tab reads again. */
+		/** Changes when the page hears the artist changed; the Library tab reads again. */
 		stamp?: number;
 		onAsk?: () => void;
 	};
@@ -16,14 +16,6 @@
 <script lang="ts">
 	import { dragScroll } from '#lib/ui/drag-scroll.ts';
 	import PageLoader from '#lib/ui/PageLoader.svelte';
-	import { onMount, tick } from 'svelte';
-	import { beforeNavigate, goto } from '$app/navigation';
-	import { page } from '$app/state';
-	import { paintWindow, sampleCover, tintOf, unpaintWindow } from './album-tint.ts';
-	import { api, message } from '#lib/core/api.ts';
-	import { gapWaits, keepShown, reaskWhileIncomplete } from './reask.ts';
-	import GapNotice from './GapNotice.svelte';
-	import { session } from '#lib/core/session.svelte.ts';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import Shelf from '#lib/ui/Shelf.svelte';
 	import PosterCard from '#lib/ui/PosterCard.svelte';
@@ -32,15 +24,13 @@
 	import ActionButton from '#lib/ui/ActionButton.svelte';
 	import ArtPlaceholder from '#lib/ui/ArtPlaceholder.svelte';
 	import type { MenuItem } from '#lib/ui/Menu.svelte';
-	import { pictureFor, pictureOf } from '#lib/core/pictures.ts';
-	import { refreshInbox } from '#lib/core/inbox.svelte.ts';
-	import { toasts } from '#lib/core/toasts.svelte.ts';
-	import { to } from '#lib/core/paths.ts';
+	import { SkRail, SkRowTitle, SkTrackRow } from '#lib/ui/sk/index.ts';
+	import { paintWindow, sampleCover, tintOf, unpaintWindow } from './album-tint.ts';
+	import { gapWaits, keepShown, reaskWhileIncomplete } from './reask.ts';
+	import GapNotice from './GapNotice.svelte';
 	import { albumYear } from './labels.ts';
 	import { releaseWords } from './music-trending.ts';
-	import { SkRail, SkRowTitle, SkTrackRow } from '#lib/ui/sk/index.ts';
 	import {  musicLoadError, albumHref, appPicture, artistHref,   coverFor, kindWord,  owned, listening,   shortCount, type Catalog, askAgainOnce, coreIfSlow, withCover, shelves as shelvesOf, type ArtistCoreData, type ArtistMoreData, type ArtistPageData, type PageAlbum, type PageArtist, type PageCredit, type PageSong, type Shelf as ShelfKind } from './music-pages.ts';
-	import type { Ask, LibraryFolder, PickRulesView } from '#lib/core/types.ts';
 	import type { ArtistSheets, LookupArtist, MusicSettings } from './types.ts';
 	import ArtistStats from './ArtistStats.svelte';
 	import ArtistTopSongs from './ArtistTopSongs.svelte';
@@ -48,19 +38,23 @@
 	import ArtistHeroBanner from './ArtistHeroBanner.svelte';
 	import ArtistVideos from './ArtistVideos.svelte';
 	import ArtistLibraryTab from './ArtistLibrary.svelte';
+	import { onMount, tick } from 'svelte';
+	import { beforeNavigate, goto } from '$app/navigation';
+	import { page } from '$app/state';
 	import type { Snippet } from 'svelte';
+	import { api, message } from '#lib/core/api.ts';
+	import { session } from '#lib/core/session.svelte.ts';
+	import { pictureFor, pictureOf } from '#lib/core/pictures.ts';
+	import { refreshInbox } from '#lib/core/inbox.svelte.ts';
+	import { toasts } from '#lib/core/toasts.svelte.ts';
+	import { to } from '#lib/core/paths.ts';
+	import type { Ask, LibraryFolder, PickRulesView } from '#lib/core/types.ts';
 
-	// The one artist page: any MusicBrainz artist, in the Library or not. The
-	// Library route passes `library` (its menu, progress and ask) and `below`
-	// (albums to keep, how HolyArrs keeps it, history, requests). HolyArrs asks
-	// for music; it does not play it, so songs lead to their album and to asking for it.
-	// A short banner with the round photo over its edge.
-	// Waits between re-asks of an artist's art when it has no wide photo yet (about 20 s in all).
+	// The one artist page: any MusicBrainz artist, in the Library or not. The Library route passes `library` (its menu, progress and ask) and `below` (albums to keep, how HolyArrs keeps it, history, requests).
 	const ART_RETRY = [1500, 3000, 5000, 10000];
 	let { mbid: rawId, library: lib, below, sheets }: { mbid: string; library?: ArtistLibrary; below?: Snippet; sheets: ArtistSheets } = $props();
 	const mbid = $derived((rawId ?? '').toLowerCase());
-	// Hero first: the core answer (name, picture, bio) draws the hero; the full
-	// answer (albums, songs, links) and the similar artists fill the shelves.
+	// Hero first: the core answer (name, picture, bio) draws the hero; the full answer (albums, songs, links) and the similar artists fill the shelves.
 	let core = $state<ArtistCoreData | null>(null);
 	let data = $state<ArtistPageData | null>(null);
 	let similar = $state<PageArtist[] | null>(null);
@@ -72,13 +66,13 @@
 	let error = $state('');
 	let errorNet = $state(false);
 	let busy = $state(false);
-	// The answer was already kept by the app (fetched ahead or seen within a minute): no loader hold.
+	// The answer was already kept by the app (fetched ahead or seen within a minute), so no loader hold.
 	let fromCache = $state(false);
 	let leave: AbortController | null = null;
 	let lookup = $state<LookupArtist | null>(null);
 	let art = $state<{ logo?: string; backgrounds?: string[]; thumb?: string }>({});
 	let following = $state<boolean | null>(null);
-	// Covers that failed to load show the shared placeholder instead.
+	// Covers that failed to load show the shared placeholder.
 	let badArt = $state(new Set<string>());
 	let folders = $state<LibraryFolder[]>([]);
 	let rules = $state<PickRulesView[]>([]);
@@ -94,13 +88,12 @@
 	const titleId = $derived(lib?.titleId || hero?.title_id || lookup?.title_id || 0);
 	// Overview or Library, for an artist in the Library (?tab=library opens it there).
 	let artistTab = $state<'overview' | 'library'>(typeof location !== 'undefined' && new URLSearchParams(location.search).get('tab') === 'library' ? 'library' : 'overview');
-	/** toLibraryTab is the hero's In Library button: the Library tab, scrolled to. */
+	/** The hero's In Library button: the Library tab, scrolled to. */
 	async function toLibraryTab() {
 		artistTab = 'library';
 		await tick();
 		document.querySelector('[data-testid="artist-tabs"]')?.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
 	}
-
 
 	function load() {
 		const want = mbid;
@@ -118,7 +111,7 @@
 		};
 		// All at once: the hero, the shelves, the similar artists, the artwork and the ask state.
 		const fullRead = askAgainOnce(() => api.get<ArtistPageData>(full));
-		// The full answer holds the core: the quick core part is asked only when the full one is slow.
+		// The full answer holds the core, so the quick core part is asked only when the full one is slow.
 		const coreAsk = coreIfSlow(fullRead, () => api.get<ArtistCoreData>(`/music/artists/${want}?part=core`)).then((c) => {
 			if (!c || want !== mbid) return;
 			if (!data) core = c;
@@ -134,7 +127,7 @@
 				askFollow(data.title_id);
 			}, stop.signal, gapWaits(d));
 		});
-		// The server may still be getting the similar artists (incomplete): the row keeps its placeholder and is asked again, then hides if none came.
+		// The server may still be getting the similar artists: the row keeps its placeholder and is asked again, then hides if none came.
 		const simPath = `/music/artists/${want}?part=similar`;
 		void api.get<{ similar: PageArtist[]; incomplete?: boolean }>(simPath).then((r) => {
 			if (want !== mbid) return;
@@ -144,9 +137,7 @@
 			}, stop.signal);
 		}).catch(() => want === mbid && (similar = []));
 		void api.get<ArtistMoreData>(`/music/artists/${want}?part=more`).then((r) => want === mbid && (more = { ...r, appears_on: withCover(r.appears_on) })).catch(() => want === mbid && (more = { essential: [], appears_on: [] }));
-		// A cold artist's art may still be on its way (the server fetches it
-		// right then): an answer with no wide photo is asked again over about
-		// 20 s, and the photo fades in when it lands.
+		// A cold artist's art may still be on its way, since the server fetches it right then. An answer with no wide photo is asked again over about 20 s, and the photo fades in when it lands.
 		const askArt = (left: number[]) => {
 			void api.get<typeof art>(`/extras/artist/${want}`).then((x) => {
 				if (want !== mbid) return;
@@ -166,7 +157,7 @@
 		void Promise.allSettled([coreAsk, fullAsk]).then(([c, f]) => {
 			if (want !== mbid) return;
 			busy = false;
-			// The shelves failing shows the error; the core failing alone is quiet (the full answer has the hero too).
+			// The shelves failing shows the error; the core failing alone is quiet, because the full answer has the hero too.
 			const bad = f.status === 'rejected' ? f.reason : c.status === 'rejected' && !data ? c.reason : null;
 			if (bad) ({ text: error, network: errorNet } = musicLoadError(bad, 'artist'));
 		});
@@ -189,7 +180,7 @@
 
 	// Phones get their own sizes.
 	let phone = $state(false);
-	// How far the banner has scrolled away (0…1), and whether the name has left the screen.
+	// How far the banner has scrolled away (0 to 1), and whether the name has left the screen.
 	let gone = $state(0);
 	let slimOn = $state(false);
 	let nameEl: HTMLElement | undefined = $state();
@@ -237,9 +228,7 @@
 		measure();
 	});
 
-	// The artist's photo. One the server has not stored yet is asked for
-	// again while the page is open (it fetches it right away, a user is
-	// waiting), and swaps in once stored: no reload needed.
+	// The artist's photo. One the server has not stored yet is asked for again while the page is open (the server fetches it right away) and swaps in once stored, with no reload.
 	let photoTry = $state(0);
 	const PHOTO_RETRY = [20000, 70000, 150000];
 	const picture = $derived.by(() => {
@@ -264,7 +253,7 @@
 		const t = setTimeout(() => (photoTry += 1), PHOTO_RETRY[photoTry]);
 		return () => clearTimeout(t);
 	});
-	// No round photo: crop the wide hero photo into the circle (face sits upper middle); initials only with no image at all.
+	// With no round photo, crop the wide hero photo into the circle (the face sits upper middle); initials only with no image at all.
 	const wideFace = $derived((art.backgrounds ?? [])[0] ?? null);
 	let wideFailed = $state(false);
 	$effect(() => {
@@ -273,12 +262,9 @@
 	});
 	// The banner's main colour tints the slim bar.
 	const tint = $derived(pictureFor('wide', mbid)?.color || pictureFor('artist', mbid)?.color || pictureOf(hero?.image)?.color || '');
-	// The whole window takes the artist's colour (as an album does): the stored
-	// banner sampled once it shows (truer than the stored colour), else the stored one. The banner
-	// fades into it at the bottom, so page and picture read as one.
+	// The whole window takes the artist's colour, as an album does: the stored banner sampled once it shows (truer than the stored colour), else the stored one. The banner fades into it at the bottom.
 	let sampledTint = $state<string | null>(null);
-	// The colour worked out for an artist is kept (per browser), so a return
-	// visit opens in it at once.
+	// The colour worked out for an artist is kept per browser, so a return visit opens in it at once.
 	const tintKey = (id: string) => `holyarrs.artist-tint.${id}`;
 	$effect(() => {
 		const id = mbid;
@@ -295,9 +281,7 @@
 	onMount(() => () => {
 		if (!toTinted) unpaintWindow();
 	});
-	// The colour is read from the artist's round photo (one picture per
-	// artist, so every visitor gets the same colour); the banner only when
-	// there is no photo.
+	// The colour is read from the artist's round photo (one picture per artist, so every visitor gets the same colour); the banner only when there is no photo.
 	$effect(() => {
 		const src = picture, id = mbid;
 		if (!src || sampledTint) return;
@@ -345,7 +329,7 @@
 	const soon = $derived(data?.albums.filter((a) => a.upcoming) ?? []);
 	// Top songs: ten, in two columns of five.
 	const songs = $derived((data?.top ?? []).slice(0, 10));
-	// Similar artists: the 200 px artist circle; smaller on phones so more than one shows.
+	// Similar artists: the 200 px artist circle, smaller on phones so more than one shows.
 	const circle = $derived(phone ? 136 : 200);
 
 	/** The person's ask, or what they may do: ask (members) or add (managers). */
@@ -399,8 +383,7 @@
 		try {
 			if (on) await api.put(`/metadata/album/${a.mbid}/follow`, { name: a.name, artist: hero?.name ?? '', release_date: a.release_date ?? '' });
 			else await api.del(`/metadata/album/${a.mbid}/follow`);
-			// The browser keeps the page answer a minute (max-age=60): fetch it
-			// afresh so a reload or a return visit shows the bell as it is now.
+			// The browser keeps the page answer a minute (max-age=60), so fetch it afresh so a reload or return visit shows the bell as it is now.
 			await fetch(to(`/api/v1/music/artists/${mbid}?similar=0`), { cache: 'reload', headers: { Accept: 'application/json' }, credentials: 'same-origin' }).catch(() => {});
 		} catch (e) {
 			follows = new Map([...follows, [a.mbid, !on]]);
@@ -419,7 +402,7 @@
 			toasts.push("Couldn't copy link", 'fail', { body: 'Select it instead' });
 		}
 	}
-	/** The "…" menu of a top song: open its album, ask for it (add, for managers), copy its link. */
+	/** Menu of a top song: open its album, ask for it (add, for managers), copy its link. */
 	function songItems(s: PageSong): MenuItem[] {
 		if (!s.album_mbid) return [];
 		const href = albumHref(s.album_mbid, mbid);
@@ -486,7 +469,6 @@
 {/snippet}
 
 {#snippet acts()}
-	<!-- The app's own hero buttons (ActionButton): the main one first, where a player puts play. -->
 	<div class="acts">
 		{@render mainAct()}{@render aboutAct()}
 		{@render followAct()}
@@ -497,9 +479,7 @@
 	{#if picture && !photoFailed}<img class="photo" src={picture} alt="" width={size} height={size} fetchpriority="high" onerror={() => (photoFailed = true)} />{:else if wideFace && !wideFailed}<img class="photo crop" src={wideFace} alt="" width={size} height={size} onerror={() => (wideFailed = true)} />{:else}<div class="photo none" aria-hidden="true" data-testid="artist-photo-placeholder"><ArtPlaceholder name={hero?.name ?? ''} shape="circle" /></div>{/if}
 {/snippet}
 
-
 {#snippet compactLine()}
-	<!-- Under the short banner: the round photo over its edge, the name beside it, the buttons at the end of the same line. -->
 	<div class="cline">
 		<span class="c-photo">{@render photo(136)}</span>
 		<div class="c-words">
@@ -536,11 +516,7 @@
 	{/if}
 {/snippet}
 
-
-
-
 {#snippet kindRows()}
-	<!-- The discography: one row per kind of release. -->
 	{#if !rows.length && data?.gap}
 		<GapNotice gap={data.gap} />
 	{:else if rows.length}
@@ -556,7 +532,7 @@
 
 {#snippet storeDisco()}
 	{#if !released.length && data?.store_albums?.length}
-		<!-- MusicBrainz lists nothing for this artist: what a store knows, so the page is not empty. No ask control (a request needs a MusicBrainz id). -->
+		<!-- MusicBrainz lists nothing for this artist, so show what a store knows to keep the page from being empty. No ask control, because a request needs a MusicBrainz id. -->
 		<section class="block" data-testid="store-discography">
 			<h2>Discography</h2>
 			<ul class="grid">
@@ -631,7 +607,6 @@
 	{/if}
 {/snippet}
 
-
 {#snippet loading()}
 	{#if !error}
 		<section class="block" aria-busy="true" aria-label="Loading albums and songs">
@@ -644,7 +619,6 @@
 {/snippet}
 
 {#snippet sections()}
-	<!-- The page under the hero. -->
 	{#if !data}
 		{@render loading()}
 	{:else}
@@ -672,7 +646,6 @@
 			{@render libBits()}
 
 			{#if titleId && manage}
-				<!-- An artist in the Library: Overview (this page) and Library (releases, tracks, settings). -->
 				<div class="ar-tabs" role="tablist" data-testid="artist-tabs">
 					<button type="button" role="tab" class:on={artistTab === 'overview'} aria-selected={artistTab === 'overview'} onclick={() => (artistTab = 'overview')}>Overview</button>
 					<button type="button" role="tab" class:on={artistTab === 'library'} aria-selected={artistTab === 'library'} onclick={() => (artistTab = 'library')}>Library</button>
@@ -704,25 +677,21 @@
 	h2 { margin: 0; font: var(--t-title2); }
 	.quiet { margin: 0; color: var(--text-muted); font: var(--t-subhead); }
 
-	/* Under the banner: the round photo over its edge, the name beside it, the buttons at the end of the same line. */
 	.cline { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: end; gap: 20px; margin-top: calc(var(--gap) * -1 - 52px); position: relative; z-index: 1; }
 	.c-photo { --photo: 136px; display: block; }
 	.photo { width: var(--photo); height: var(--photo); border-radius: 50%; object-fit: cover; flex: none; background: #1c1d21; box-shadow: 0 12px 32px rgb(0 0 0 / .35), 0 0 0 4px var(--bg); }
 	.photo.crop { object-position: 50% 22%; }
-	/* No photo after every source: the shared placeholder, as on every other picture slot. */
 	.photo.none { position: relative; overflow: hidden; }
 	.c-words { display: flex; flex-direction: column; gap: 4px; min-width: 0; padding-bottom: 8px; }
 	.c-words h1 { font-size: clamp(30px, 3vw, 40px); color: var(--text); }
 	.c-line { margin: 0; color: var(--text-muted); font: 600 15px/1.3 var(--font-ui); font-variant-numeric: tabular-nums; }
 	.cline .acts { padding-bottom: 8px; }
 
-	/* The buttons sit on the page: in light mode they take the page's ink. */
 	.acts { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 	:global(html:not([data-theme='dark'])) .cline .acts :global(.ui-act), :global(html:not([data-theme='dark'])) .cline .acts :global(.ui-pop > .trigger) { background: color-mix(in srgb, var(--text) 7%, transparent); border-color: var(--line); color: var(--text); backdrop-filter: none; -webkit-backdrop-filter: none; }
 	:global(html:not([data-theme='dark'])) .cline .acts :global(.ui-act.primary), :global(html:not([data-theme='dark'])) .cline .acts :global(.ui-act[aria-pressed='true']) { background: var(--text); border-color: var(--text); color: var(--bg); }
 	:global(html:not([data-theme='dark'])) .cline .acts :global(.ui-act:focus-visible) { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--text); }
 
-	/* The slim bar: sticky under the top bar (in its space when it hides), tinted from the banner, dark in both themes. */
 	.slimwrap { position: sticky; top: var(--topbar); z-index: 25; height: 0; margin-bottom: calc(var(--gap) * -1); transition: transform var(--bar-glide); }
 	:global(html.bar-hidden) .slimwrap { transform: translateY(calc(-1 * var(--topbar))); }
 	.slim { --tint: #3a3d44; position: absolute; top: 0; left: calc(var(--gutter) * -1); right: calc(var(--gutter) * -1); display: flex; align-items: center; gap: 14px; height: 64px; padding: 0 var(--gutter); box-sizing: border-box; background: color-mix(in srgb, var(--tint) 45%, #0b0c0f); color: #fff; box-shadow: 0 8px 24px rgb(0 0 0 / .22); opacity: 0; translate: 0 -8px; pointer-events: none; transition: opacity var(--dur) var(--ease-out), translate var(--dur) var(--ease-out); }
@@ -742,26 +711,20 @@
 	.cov.small { width: 72px; height: 72px; border-radius: 8px; }
 	.soon-words { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 
-	/* Releases: one row per kind; a grid for essential albums and a store's list. */
 	.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--music-item), 1fr)); gap: 24px 16px; margin: 0; padding: 0; list-style: none; --poster-ratio: 1; }
 	.rows { display: flex; flex-direction: column; gap: var(--gap); }
 	.soon { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: 12px; margin: 0; padding: 0; list-style: none; }
 	.soon li { display: grid; grid-template-columns: 72px minmax(0, 1fr) auto; gap: 14px; align-items: center; padding: 10px; border-radius: var(--r-card); background: var(--surface-1, var(--surface-2)); }
 	.circles { display: flex; gap: 20px; overflow-x: auto; margin: 0; padding: 4px 2px 8px; list-style: none; scrollbar-width: none; }
 
-
-
-	/* Loading. */
 	.sk-songs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 24px; }
 	.sq-rail { --poster-ratio: 1; }
 
-	/* Overview / Library tabs for an artist in the Library: the same underline tabs as a title page. */
 	.ar-tabs { display: flex; gap: 6px; margin-top: calc(var(--gap) * -1 + 16px); border-bottom: 1px solid var(--line); scroll-margin-top: calc(var(--topbar, 56px) + 16px); }
 	.ar-tabs button { height: 40px; padding: 0 14px; border: 0; border-bottom: 2px solid transparent; background: none; color: var(--text-muted); font: 600 14px/1 var(--font-ui); cursor: pointer; }
 	@media (max-width: 767px) and (pointer: coarse) { .ar-tabs button { height: 44px; } }
 	.ar-tabs button.on { color: var(--text); border-bottom-color: var(--text); }
 
-	/* Phones: designed for 390 and 360, not squeezed. */
 	@media (max-width: 767px) {
 		.artist { --music-item: calc((100cqi - var(--shelf-gap, 12px)) / 2.3); --gap: 32px; }
 		.cline { grid-template-columns: minmax(0, 1fr); justify-items: center; text-align: center; gap: 12px; margin-top: calc(var(--gap) * -1 - 56px); }

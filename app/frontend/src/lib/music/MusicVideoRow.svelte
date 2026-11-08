@@ -1,16 +1,12 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import Shelf from '#lib/ui/Shelf.svelte';
+	import { musicCardHref, musicImage, type MusicCardData } from './music-trending.ts';
+	import { onMount } from 'svelte';
 	import { artistVideo, autoplayHere, loadUISettings, nativeHLS, prefetchArtistVideo } from '../core/trailer/autoplay.svelte.ts';
 	import { attachHLS } from '../core/trailer/hls-player.ts';
 	import { heroVideoStart, type HeroVideo } from '../core/trailer/hero-video.ts';
-	import { musicCardHref, musicImage, type MusicCardData } from './music-trending.ts';
 
-	// Music videos people watch (flag music_lists_v1): wide 16:9 cards of charting artists
-	// whose videos the server already knows. A card shows the artist's picture until its
-	// video is ready; then, on hover or focus, the video plays muted over it. Videos follow
-	// the trailers' rules exactly (autoplayHere: never for Kid accounts, with trailers off,
-	// or on a phone, data saver or reduced motion unless this device says "always").
+	// Music videos people watch: wide 16:9 cards of charting artists whose videos the server already knows. A card shows the artist's picture until its video is ready; then, on hover or focus, the video plays muted.
 	let { title, reason, items }: { title: string; reason: string; items: MusicCardData[] } = $props();
 
 	/** Ready videos by artist id; a card without one keeps its picture. */
@@ -20,8 +16,7 @@
 	let videoEl: HTMLVideoElement | undefined = $state();
 	let noPic = $state<Record<string, boolean>>({});
 
-	// Fetched ahead: the first cards' streams resolve while the row is on screen,
-	// within the trailers' budget, so hover plays at once.
+	// Fetched ahead: the first cards' streams resolve while the row is on screen, within the trailers' budget, so hover plays at once.
 	onMount(() => {
 		const ctl = new AbortController();
 		void loadUISettings().then(() => {

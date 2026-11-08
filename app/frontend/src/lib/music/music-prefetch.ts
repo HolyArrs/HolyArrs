@@ -1,14 +1,7 @@
-// Artist and album pages open filled in: the data a
-// music page asks first is fetched ahead when a mouse rests on a link to it
-// (80 ms), when a finger touches one, and for the first cards on screen after
-// a page opens. The answers wait in api.get's shared answers (kept as long as
-// the server's max-age, 60 s), at the exact address the page asks, so the
-// page finds them there. A few at a time, with a cap per page and per minute.
-// Title pages and Library titles are fetched ahead the same way: a title's metadata and lookup, a Library title and then its
-// metadata, kept 30 s even when the server sends no max-age.
+// Artist and album pages open filled in: the data a music page asks first is fetched ahead when a mouse rests on a link to it (80 ms), when a finger touches one, and for the first cards on screen after a page opens.
+import { appPicture, coverFor } from './music-pages.ts';
 import { api } from '../core/api.ts';
 import { DWELL_MS, fastEnough, mainPicture, preloadPicture } from '../core/smart-preload.ts';
-import { appPicture, coverFor } from './music-pages.ts';
 
 const ID = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}';
 const ARTIST = new RegExp(`/music/artist/(${ID})(?:[/?#]|$)`, 'i');
@@ -30,9 +23,7 @@ export const PER_MINUTE = 40;
 /** An address fetched within this long is not fetched again. */
 export const FRESH = 60_000;
 
-/** The addresses a music page link's page asks first: an artist's full
- * answer (it holds the core, and the page asks the core only when the full one
- * is slow), an album's full answer (with its artist, as the page asks it). Others: none. */
+/** The addresses a music page link's page asks first: an artist's full answer (it holds the core; the page asks the core only when the full one is slow) and an album's full answer (with its artist, as the page asks it). Others: none. */
 export function musicPrefetchURLs(href: string | null | undefined): string[] {
 	if (!href) return [];
 	let m = ARTIST.exec(href);
@@ -44,9 +35,7 @@ export function musicPrefetchURLs(href: string | null | undefined): string[] {
 	return artist ? [`/music/albums/${m[1].toLowerCase()}?artist=${artist}&similar=0`] : [];
 }
 
-/** The addresses any page link's page asks first: music pages as above, a
- * title page's metadata and lookup (lib/title-details.ts loadDetails), a
- * Library title's own answer. Others: none. */
+/** The addresses any page link's page asks first: music pages as above, a title page's metadata and lookup (loadDetails), a Library title's own answer. Others: none. */
 export function pagePrefetchURLs(href: string | null | undefined): string[] {
 	if (!href) return [];
 	const music = musicPrefetchURLs(href);
@@ -59,9 +48,7 @@ export function pagePrefetchURLs(href: string | null | undefined): string[] {
 
 type Get = (path: string) => Promise<unknown>;
 
-/** pagePicture is the address a page shows its main picture at, so the copy
- * fetched ahead is the one it uses: an album's hero cover (versioned, at its
- * slot size), an artist's versioned photo, other pages' main picture as is. */
+/** The address a page shows its main picture at, so the copy fetched ahead is the one it uses: an album's hero cover (versioned, at its slot size), an artist's versioned photo, other pages' main picture as is. */
 export function pagePicture(path: string, answer: unknown): string | null {
 	const main = mainPicture(answer);
 	if (!main) return null;
@@ -70,7 +57,7 @@ export function pagePicture(path: string, answer: unknown): string | null {
 	return main;
 }
 
-/** Fetch one address ahead; a Library title then fetches its metadata too, as its page will. */
+/** Fetches one address ahead; a Library title then fetches its metadata too, as its page will. */
 function warmPage(path: string): Promise<unknown> {
 	const answer = api.warm<{ kind?: string; ids?: { tmdb?: string } }>(path, KEEP);
 	// The page's main picture too, when it is one of ours.
@@ -86,7 +73,7 @@ function warmPage(path: string): Promise<unknown> {
 	return answer;
 }
 
-/** The fetch-ahead queue, on its own for tests; installMusicPrefetch uses one for the app. */
+/** The fetch-ahead queue, separate for tests; installMusicPrefetch uses one for the app. */
 export function createMusicPrefetch(get: Get = warmPage, now: () => number = () => Date.now()) {
 	const asked = new Map<string, number>();
 	const started: number[] = [];
@@ -107,7 +94,7 @@ export function createMusicPrefetch(get: Get = warmPage, now: () => number = () 
 		}
 	}
 
-	/** Queue a link's addresses; urgent ones (hover, touch) go first. Answers how many were new. */
+	/** Queues a link's addresses; urgent ones (hover, touch) go first. Returns how many were new. */
 	function want(href: string | null | undefined, urgent: boolean): number {
 		const t = now();
 		while (started.length && t - started[0] >= 60_000) started.shift();
@@ -181,7 +168,7 @@ export function prefetchMusicOnScreen(): void {
 	scans = [700, 2500].map((ms) => setTimeout(() => ahead.view(onScreen()), ms));
 }
 
-/** Forget what was fetched ahead (sign-out); the shared answers are cleared by the client. */
+/** Forgets what was fetched ahead (sign-out); the shared answers are cleared by the client. */
 export function forgetMusicPrefetch(): void {
 	ahead.forget();
 }
