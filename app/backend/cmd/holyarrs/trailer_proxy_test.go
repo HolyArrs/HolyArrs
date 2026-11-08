@@ -1,4 +1,4 @@
-package api
+package main
 
 import (
 	"bufio"
@@ -14,6 +14,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/api"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/discover"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
@@ -87,11 +89,11 @@ func fakeYouTube(t *testing.T) (release chan struct{}) {
 	return release
 }
 
-func proxyRig(t *testing.T) (*httptest.Server, *API) {
+func proxyRig(t *testing.T) (*httptest.Server, *api.API) {
 	t.Helper()
 	fakeReader(t, "ok")
-	_, st := discoverRig(t, trailerTMDB(t))
-	a := New(Server{Store: st, Metadata: trailerTMDB(t), Version: "test"})
+	_, st := trDiscoverRig(t, trailerTMDB(t))
+	a := api.New(api.Server{Store: st, Metadata: trailerTMDB(t), Version: "test"})
 	srv := httptest.NewServer(a.Handler())
 	t.Cleanup(srv.Close)
 	if err := lookUp(t, a, "movie", "11"); err != nil {
@@ -106,7 +108,7 @@ func TestTrailerPassThrough(t *testing.T) {
 	release := fakeYouTube(t)
 	srv, _ := proxyRig(t)
 	var s metadata.TrailerStream
-	_ = json.Unmarshal(do(t, "GET", srv.URL+"/api/v1/trailer/movie/11", "", 200), &s)
+	_ = json.Unmarshal(trDo(t, "GET", srv.URL+"/api/v1/trailer/movie/11", "", 200), &s)
 	if !strings.HasPrefix(s.ProxyURL, "/api/v1/trailer/stream/") || !strings.HasSuffix(s.ProxyURL, "/manifest.m3u8") {
 		t.Fatalf("proxy_url %q", s.ProxyURL)
 	}
@@ -123,7 +125,7 @@ func TestTrailerPassThrough(t *testing.T) {
 		t.Fatalf("%d %v\n%s", res.StatusCode, res.Header, body)
 	}
 	// The variant playlist: its segment and EXT-X-MAP become numbers beside it.
-	list := string(do(t, "GET", base+"seg/0", "", 200))
+	list := string(trDo(t, "GET", base+"seg/0", "", 200))
 	if strings.Contains(list, "googlevideo") || !strings.Contains(list, `URI="1"`) || !strings.Contains(list, "\n2\n") {
 		t.Fatalf("playlist\n%s", list)
 	}
@@ -155,25 +157,25 @@ func TestTrailerPassThrough(t *testing.T) {
 		t.Fatalf("range %d %q %v", res.StatusCode, b, res.Header)
 	}
 	// YouTube refusing (the init address answers 403 here) is a 502.
-	do(t, "GET", base+"seg/1", "", 502)
+	trDo(t, "GET", base+"seg/1", "", 502)
 }
 
 func TestTrailerPassThroughRefusals(t *testing.T) {
 	fakeYouTube(t)
 	srv, a := proxyRig(t)
 	var s metadata.TrailerStream
-	_ = json.Unmarshal(do(t, "GET", srv.URL+"/api/v1/trailer/movie/11", "", 200), &s)
+	_ = json.Unmarshal(trDo(t, "GET", srv.URL+"/api/v1/trailer/movie/11", "", 200), &s)
 	base := srv.URL + strings.TrimSuffix(s.ProxyURL, "manifest.m3u8")
 
 	// An id HolyArrs never handed out, and a number never seen.
-	do(t, "GET", srv.URL+"/api/v1/trailer/stream/0123456789abcdef0123456789abcdef/manifest.m3u8", "", 404)
-	do(t, "GET", base+"seg/0", "", 404)
-	do(t, "GET", base+"seg/x", "", 404)
+	trDo(t, "GET", srv.URL+"/api/v1/trailer/stream/0123456789abcdef0123456789abcdef/manifest.m3u8", "", 404)
+	trDo(t, "GET", base+"seg/0", "", 404)
+	trDo(t, "GET", base+"seg/x", "", 404)
 	// Another person's stream.
-	other := a.trailers.Relay(4242, "https://manifest.googlevideo.com/api/manifest/hls_variant/other/index.m3u8", time.Now().Add(time.Hour))
-	do(t, "GET", srv.URL+"/api/v1/trailer/stream/"+other+"/manifest.m3u8", "", 404)
+	other := a.Trailers().Relay(4242, "https://manifest.googlevideo.com/api/manifest/hls_variant/other/index.m3u8", time.Now().Add(time.Hour))
+	trDo(t, "GET", srv.URL+"/api/v1/trailer/stream/"+other+"/manifest.m3u8", "", 404)
 	// A foreign host is never taken in, and a playlist naming one is refused.
-	if id := a.trailers.Relay(0, "https://evil.example.com/hls_variant/index.m3u8", time.Now().Add(time.Hour)); id != "" {
+	if id := a.Trailers().Relay(0, "https://evil.example.com/hls_variant/index.m3u8", time.Now().Add(time.Hour)); id != "" {
 		t.Fatalf("foreign manifest registered as %s", id)
 	}
 	for _, raw := range []string{"http://manifest.googlevideo.com/x", "https://googlevideo.com.evil.example/x", "https://127.0.0.1/x"} {
@@ -181,8 +183,8 @@ func TestTrailerPassThroughRefusals(t *testing.T) {
 			t.Fatalf("%s allowed", raw)
 		}
 	}
-	evil := a.trailers.Relay(a.person(httptest.NewRequest("GET", "/", nil)).UserID, "https://manifest.googlevideo.com/evil/index.m3u8", time.Now().Add(time.Hour))
-	do(t, "GET", srv.URL+"/api/v1/trailer/stream/"+evil+"/manifest.m3u8", "", 502)
+	evil := a.Trailers().Relay(a.TrailerTest().Person(httptest.NewRequest("GET", "/", nil)).UserID, "https://manifest.googlevideo.com/evil/index.m3u8", time.Now().Add(time.Hour))
+	trDo(t, "GET", srv.URL+"/api/v1/trailer/stream/"+evil+"/manifest.m3u8", "", 502)
 	base2, _ := url.Parse("https://manifest.googlevideo.com/a/b.m3u8")
 	if _, err := metadata.RewriteM3U8([]byte("#EXTM3U\n#EXT-X-MEDIA:TYPE=AUDIO,URI=\"https://evil.example.com/a.m3u8\"\n"), base2, "seg/", func(string) int { return 0 }); err == nil {
 		t.Fatal("foreign URI attribute kept")
@@ -191,8 +193,8 @@ func TestTrailerPassThroughRefusals(t *testing.T) {
 		t.Fatal("not a playlist kept")
 	}
 	// Expired streams are gone.
-	old := a.trailers.Relay(0, "https://manifest.googlevideo.com/api/manifest/hls_variant/old/index.m3u8", time.Now().Add(-time.Minute))
-	do(t, "GET", srv.URL+"/api/v1/trailer/stream/"+old+"/manifest.m3u8", "", 404)
+	old := a.Trailers().Relay(0, "https://manifest.googlevideo.com/api/manifest/hls_variant/old/index.m3u8", time.Now().Add(-time.Minute))
+	trDo(t, "GET", srv.URL+"/api/v1/trailer/stream/"+old+"/manifest.m3u8", "", 404)
 }
 
 // YouTube signs a manifest's addresses afresh on every fetch, so every play
@@ -202,44 +204,44 @@ func TestTrailerPassThroughRefusals(t *testing.T) {
 func TestTrailerPassThroughReplays(t *testing.T) {
 	fakeYouTube(t)
 	srv, a := proxyRig(t)
-	id := a.trailers.Relay(a.person(httptest.NewRequest("GET", "/", nil)).UserID, "https://manifest.googlevideo.com/api/manifest/hls_variant/signed/index.m3u8", time.Now().Add(time.Hour))
+	id := a.Trailers().Relay(a.TrailerTest().Person(httptest.NewRequest("GET", "/", nil)).UserID, "https://manifest.googlevideo.com/api/manifest/hls_variant/signed/index.m3u8", time.Now().Add(time.Hour))
 	base := srv.URL + "/api/v1/trailer/stream/" + id + "/"
-	do(t, "GET", base+"manifest.m3u8", "", 200)
+	trDo(t, "GET", base+"manifest.m3u8", "", 200)
 	var last string
 	for range 2 * relayMaxURLs / signedVariants {
-		list := strings.Split(strings.TrimSpace(string(do(t, "GET", base+"manifest.m3u8", "", 200))), "\n")
+		list := strings.Split(strings.TrimSpace(string(trDo(t, "GET", base+"manifest.m3u8", "", 200))), "\n")
 		last = list[len(list)-1]
 		// The first play's first variant stays in use.
-		do(t, "GET", base+"seg/0", "", 200)
+		trDo(t, "GET", base+"seg/0", "", 200)
 	}
-	if n := a.trailers.RelayAddresses(id); n > relayMaxURLs {
+	if n := a.Trailers().RelayAddresses(id); n > relayMaxURLs {
 		t.Fatalf("stream holds %d addresses", n)
 	}
-	do(t, "GET", base+last, "", 200)
-	do(t, "GET", base+"seg/1", "", 404)
+	trDo(t, "GET", base+last, "", 200)
+	trDo(t, "GET", base+"seg/1", "", 404)
 }
 
 // The trailer key is kept 30 days (memory and SQLite) and Explore cards
 // carry it once known.
 func TestTrailerKeyKept(t *testing.T) {
 	fakeReader(t, "ok")
-	_, st := discoverRig(t, trailerTMDB(t))
-	a := New(Server{Store: st, Metadata: trailerTMDB(t), Version: "test"})
+	_, st := trDiscoverRig(t, trailerTMDB(t))
+	a := api.New(api.Server{Store: st, Metadata: trailerTMDB(t), Version: "test"})
 	ctx := context.Background()
-	if k := a.trailers.KnownKey(ctx, "movie", "11", "en"); k != "" {
+	if k := a.Trailers().KnownKey(ctx, "movie", "11", "en"); k != "" {
 		t.Fatalf("known before lookup: %q", k)
 	}
-	if _, err := a.trailers.ResolveTitle(ctx, "movie", "11", "en"); err != nil {
+	if _, err := a.Trailers().ResolveTitle(ctx, "movie", "11", "en"); err != nil {
 		t.Fatal(err)
 	}
-	b := New(Server{Store: st, Version: "test"}) // a restart, and no metadata source at all
-	if k := b.trailers.KnownKey(ctx, "movie", "11", "en"); k != "trailerKey1" {
+	b := api.New(api.Server{Store: st, Version: "test"}) // a restart, and no metadata source at all
+	if k := b.Trailers().KnownKey(ctx, "movie", "11", "en"); k != "trailerKey1" {
 		t.Fatalf("after restart %q", k)
 	}
-	items := []discoverItemView{{}, {}}
+	items := []discover.ItemView{{}, {}}
 	items[0].Kind, items[0].TMDBID = "movie", "11"
 	items[1].Kind, items[1].TMDBID = "movie", "12"
-	b.fillTrailerKeys(httptest.NewRequest("GET", "/?language=en", nil), items)
+	b.TrailerTest().FillTrailerKeys(httptest.NewRequest("GET", "/?language=en", nil), items)
 	if items[0].TrailerKey != "trailerKey1" || items[1].TrailerKey != "" {
 		t.Fatalf("%+v", items)
 	}
