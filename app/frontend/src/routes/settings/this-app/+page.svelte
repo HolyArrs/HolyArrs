@@ -304,7 +304,7 @@
 	{/if}
 
 	<p class="xs muted" style="margin-top: var(--s-5)">
-		HolyArrs is free software under the GPL-3.0.
+		HolyArrs is free software under the AGPL-3.0.
 	</p>
 {/if}
 

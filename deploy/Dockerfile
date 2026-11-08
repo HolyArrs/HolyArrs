@@ -41,7 +41,7 @@ FROM scratch
 ARG VERSION=dev
 LABEL org.opencontainers.image.title="HolyArrs" \
       org.opencontainers.image.source="https://github.com/CoderLuii/holyarrs" \
-      org.opencontainers.image.licenses="GPL-3.0-only" \
+      org.opencontainers.image.licenses="AGPL-3.0-only" \
       org.opencontainers.image.version="$VERSION"
 COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 COPY --from=build /out/holyarrs /holyarrs
