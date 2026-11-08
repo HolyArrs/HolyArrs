@@ -9,9 +9,9 @@ Fix a problem, get a quick answer or ask a person.
 
 | Page | Use it when |
 |---|---|
-| [Troubleshooting](../troubleshooting/) | Something does not load, download or import |
-| [FAQ](../faq/) | You want a short answer, such as the port or where settings live |
-| [Get support](../get-support/) | You need to ask for help and want to send the right details |
-| [Glossary](../glossary/) | A word on a page or in the app is unfamiliar |
+| [Troubleshooting](./troubleshooting/) | Something does not load, download or import |
+| [FAQ](./faq/) | You want a short answer, such as the port or where settings live |
+| [Get support](./get-support/) | You need to ask for help and want to send the right details |
+| [Glossary](./glossary/) | A word on a page or in the app is unfamiliar |
 
-Start with the first 3 checks on Troubleshooting. They solve most problems.
+Stuck? Start with **First 3 checks** on [Troubleshooting](./troubleshooting/).
