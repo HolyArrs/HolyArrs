@@ -1,8 +1,0 @@
-{
-  "score": 58,
-  "verdict": "needs_changes",
-  "category_match": {"layout": false, "surfaces": false, "functionality": true},
-  "differences": ["Existing login and invite use a two-column marketing composition and bordered card. Reference 560 uses a centered unboxed form on a continuous surface.", "Welcome retains a colored rule and oversized two-column gap."],
-  "suggestions": ["Center the real forms, remove decorative context panels and card borders, retain HolyArrs branding and every authentication state.", "Use neutral dividers for setup and account groups."],
-  "reasoning": "Based on implemented auth source and Intercom web Nov 2025 560.png. This assesses composition only; actual authenticated flows, exact font and motion are unverified."
-}

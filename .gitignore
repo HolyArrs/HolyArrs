@@ -4,11 +4,7 @@ bin/
 *.db-wal
 *.db-shm
 
-# Local agent state and publication-only private material.
-.omc/
-/.omx/
-/.claude/
-/.codex/
+# Local secrets.
 /.env
 /.env.*
 !/.env.example
