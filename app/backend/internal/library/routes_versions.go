@@ -1,106 +1,46 @@
-package api
+package library
 
 import (
 	"context"
 	"net/http"
-	"path/filepath"
 	"strconv"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
-// VersionView is one wanted copy of a title as the API shows it.
-type VersionView struct {
-	ID              int64    `json:"id"`
-	Label           string   `json:"label"`
-	Main            bool     `json:"main"`
-	PickRulesID     int64    `json:"pick_rules_id"`
-	PickRulesName   string   `json:"pick_rules_name"`
-	LibraryFolderID int64    `json:"library_folder_id"`
-	FolderPath      string   `json:"folder_path"`
-	KeepUpToDate    bool     `json:"keep_up_to_date"`
-	Edition         string   `json:"edition"`
-	AudioLanguages  []string `json:"audio_languages"`
+// VersionHandlers serves adding, changing and removing a Title's Versions.
+type VersionHandlers struct {
+	Store *database.Store
+	Lib   *Service
+	// TitleID reads the {id} Title, answering 404 itself.
+	TitleID func(w http.ResponseWriter, r *http.Request) (mediafiles.Title, bool)
+	// Publish sends the changed Title to live pages.
+	Publish func(r *http.Request, id int64)
+	// View is how a Version is shown.
+	View func(ctx context.Context, db database.Querier, v mediafiles.Version) any
+	// Fail answers a library error.
+	Fail func(w http.ResponseWriter, err error)
+	// DownloadPaths are the downloaders' save paths, which a Version folder may not use.
+	DownloadPaths func(r *http.Request) []string
 }
 
-func versionView(ctx context.Context, db database.Querier, v mediafiles.Version) VersionView {
-	out := VersionView{ID: v.ID, Label: v.Label, Main: v.IsMain, PickRulesID: v.PickRulesID, LibraryFolderID: v.LibraryFolderID,
-		KeepUpToDate: v.KeepUpToDate, Edition: v.Edition, AudioLanguages: v.AudioLanguages}
-	if out.AudioLanguages == nil {
-		out.AudioLanguages = []string{}
-	}
-	m, _ := ctx.Value(lookupMemoKey{}).(*lookupMemo)
-	if path, ok := m.folder(ctx, db, v.LibraryFolderID); ok {
-		out.FolderPath = filepath.Join(path, v.FolderName)
-	}
-	if name, ok := m.rules(ctx, db, v.PickRulesID); ok {
-		out.PickRulesName = name
-	}
-	return out
+// Routes registers POST, PUT and DELETE /api/v1/titles/{id}/versions.
+func (h *VersionHandlers) Routes(m *http.ServeMux) {
+	m.HandleFunc("POST /api/v1/titles/{id}/versions", h.addVersion)
+	m.HandleFunc("PUT /api/v1/titles/{id}/versions/{vid}", h.editVersion)
+	m.HandleFunc("DELETE /api/v1/titles/{id}/versions/{vid}", h.deleteVersion)
 }
 
-// lookupMemo keeps the Library folder paths and Pick rules names read during
-// one request, so listing every Title reads each row once, not per Version.
-type lookupMemo struct{ folders, picks map[int64]*string }
-
-type lookupMemoKey struct{}
-
-func withLookupMemo(ctx context.Context) context.Context {
-	return context.WithValue(ctx, lookupMemoKey{}, &lookupMemo{folders: map[int64]*string{}, picks: map[int64]*string{}})
-}
-
-// memoRead answers id from seen, or reads it once with get and keeps it
-// (a nil memo just reads).
-func memoRead(seen map[int64]*string, id int64, get func() (string, bool)) (string, bool) {
-	if seen != nil {
-		if v, ok := seen[id]; ok {
-			return deref(v), v != nil
-		}
+// actor is the signed-in person, or the owner when no session is attached.
+func actor(r *http.Request) domain.Actor {
+	if _, ok := webserver.From(r.Context()); ok {
+		return webserver.Actor(r.Context())
 	}
-	v, ok := get()
-	if seen != nil {
-		if ok {
-			seen[id] = &v
-		} else {
-			seen[id] = nil
-		}
-	}
-	return v, ok
-}
-
-func deref(p *string) string {
-	if p == nil {
-		return ""
-	}
-	return *p
-}
-
-func (m *lookupMemo) folder(ctx context.Context, db database.Querier, id int64) (string, bool) {
-	var seen map[int64]*string
-	if m != nil {
-		seen = m.folders
-	}
-	return memoRead(seen, id, func() (string, bool) {
-		var lf mediafiles.LibraryFolder
-		err := database.Get(ctx, db, "library_folders", id, &lf)
-		return lf.Path, err == nil
-	})
-}
-
-func (m *lookupMemo) rules(ctx context.Context, db database.Querier, id int64) (string, bool) {
-	var seen map[int64]*string
-	if m != nil {
-		seen = m.picks
-	}
-	return memoRead(seen, id, func() (string, bool) {
-		var pr mediafiles.PickRules
-		err := database.Get(ctx, db, "pick_rules", id, &pr)
-		return pr.Name, err == nil
-	})
+	return domain.Actor{Kind: "user", ID: 1}
 }
 
 func versionID(w http.ResponseWriter, r *http.Request) (int64, bool) {
@@ -112,41 +52,27 @@ func versionID(w http.ResponseWriter, r *http.Request) (int64, bool) {
 	return id, true
 }
 
-// publishTitle sends the changed title to live pages.
-func (a *API) publishTitle(r *http.Request, id int64) {
-	if a.s.Live == nil {
-		return
-	}
-	var t mediafiles.Title
-	if database.Get(r.Context(), a.s.Store.Read(), "titles", id, &t) != nil {
-		return
-	}
-	if v, err := a.titleView(r.Context(), t); err == nil {
-		a.publishTitleView(v)
-	}
-}
-
-func (a *API) addVersion(w http.ResponseWriter, r *http.Request) {
-	t, ok := a.titleID(w, r)
+func (h *VersionHandlers) addVersion(w http.ResponseWriter, r *http.Request) {
+	t, ok := h.TitleID(w, r)
 	if !ok {
 		return
 	}
-	var in library.VersionInput
-	if !decode(w, r, &in, `send {"label": "4K"} with optional pick_rules_id, library_folder_id, keep_up_to_date`) {
+	var in VersionInput
+	if !webserver.Decode(w, r, &in, `send {"label": "4K"} with optional pick_rules_id, library_folder_id, keep_up_to_date`) {
 		return
 	}
-	v, err := library.AddVersion(r.Context(), a.s.Store, t.ID, in, a.downloadPaths(r), a.s.Library.Clock(), actor(r))
+	v, err := AddVersion(r.Context(), h.Store, t.ID, in, h.DownloadPaths(r), h.Lib.Clock(), actor(r))
 	if err != nil {
-		libraryError(w, err)
+		h.Fail(w, err)
 		return
 	}
-	a.s.Library.VersionEvent(r.Context(), t, "Added the "+v.Label+" Version", v, actor(r))
-	a.publishTitle(r, t.ID)
-	webserver.WriteJSON(w, http.StatusCreated, versionView(r.Context(), a.s.Store.Read(), v))
+	h.Lib.VersionEvent(r.Context(), t, "Added the "+v.Label+" Version", v, actor(r))
+	h.Publish(r, t.ID)
+	webserver.WriteJSON(w, http.StatusCreated, h.View(r.Context(), h.Store.Read(), v))
 }
 
-func (a *API) editVersion(w http.ResponseWriter, r *http.Request) {
-	t, ok := a.titleID(w, r)
+func (h *VersionHandlers) editVersion(w http.ResponseWriter, r *http.Request) {
+	t, ok := h.TitleID(w, r)
 	if !ok {
 		return
 	}
@@ -154,22 +80,22 @@ func (a *API) editVersion(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	var c library.VersionChange
-	if !decode(w, r, &c, `send any of label, pick_rules_id, keep_up_to_date`) {
+	var c VersionChange
+	if !webserver.Decode(w, r, &c, `send any of label, pick_rules_id, keep_up_to_date`) {
 		return
 	}
-	v, err := library.EditVersion(r.Context(), a.s.Store, t.ID, vid, c, actor(r))
+	v, err := EditVersion(r.Context(), h.Store, t.ID, vid, c, actor(r))
 	if err != nil {
-		libraryError(w, err)
+		h.Fail(w, err)
 		return
 	}
-	a.s.Library.VersionEvent(r.Context(), t, "Changed the "+v.Label+" Version", v, actor(r))
-	a.publishTitle(r, t.ID)
-	webserver.WriteJSON(w, http.StatusOK, versionView(r.Context(), a.s.Store.Read(), v))
+	h.Lib.VersionEvent(r.Context(), t, "Changed the "+v.Label+" Version", v, actor(r))
+	h.Publish(r, t.ID)
+	webserver.WriteJSON(w, http.StatusOK, h.View(r.Context(), h.Store.Read(), v))
 }
 
-func (a *API) deleteVersion(w http.ResponseWriter, r *http.Request) {
-	t, ok := a.titleID(w, r)
+func (h *VersionHandlers) deleteVersion(w http.ResponseWriter, r *http.Request) {
+	t, ok := h.TitleID(w, r)
 	if !ok {
 		return
 	}
@@ -178,12 +104,12 @@ func (a *API) deleteVersion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var v mediafiles.Version
-	_ = database.Get(r.Context(), a.s.Store.Read(), "versions", vid, &v)
-	if err := library.RemoveVersion(r.Context(), a.s.Store, t.ID, vid, actor(r)); err != nil {
-		libraryError(w, err)
+	_ = database.Get(r.Context(), h.Store.Read(), "versions", vid, &v)
+	if err := RemoveVersion(r.Context(), h.Store, t.ID, vid, actor(r)); err != nil {
+		h.Fail(w, err)
 		return
 	}
-	a.s.Library.VersionEvent(r.Context(), t, "Removed the "+v.Label+" Version", v, actor(r))
-	a.publishTitle(r, t.ID)
+	h.Lib.VersionEvent(r.Context(), t, "Removed the "+v.Label+" Version", v, actor(r))
+	h.Publish(r, t.ID)
 	w.WriteHeader(http.StatusNoContent)
 }

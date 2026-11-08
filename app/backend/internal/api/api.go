@@ -364,9 +364,9 @@ func (a *API) Routes(rt *webserver.Router) {
 	m.HandleFunc("GET /api/v1/titles/{id}", a.getTitle)
 	m.HandleFunc("PUT /api/v1/titles/{id}", a.editTitle)
 	m.HandleFunc("POST /api/v1/titles/{id}/move", a.moveTitle)
-	m.HandleFunc("POST /api/v1/titles/{id}/versions", a.addVersion)
-	m.HandleFunc("PUT /api/v1/titles/{id}/versions/{vid}", a.editVersion)
-	m.HandleFunc("DELETE /api/v1/titles/{id}/versions/{vid}", a.deleteVersion)
+	(&library.VersionHandlers{Store: a.s.Store, Lib: a.s.Library, TitleID: a.titleID, Publish: a.publishTitle, View: func(ctx context.Context, db database.Querier, v mediafiles.Version) any {
+		return versionView(ctx, db, v)
+	}, Fail: libraryError, DownloadPaths: a.downloadPaths}).Routes(m)
 	m.HandleFunc("POST /api/v1/titles/{id}/refresh", a.refreshTitle)
 	m.HandleFunc("POST /api/v1/titles/refresh", a.refreshTitles)
 	m.HandleFunc("GET /api/v1/calendar", a.calendar)
