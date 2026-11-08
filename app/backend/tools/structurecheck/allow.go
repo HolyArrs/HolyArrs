@@ -4,7 +4,6 @@ package structurecheck
 // Remove an entry when its file is split.
 var oversized = map[string]bool{
 	"app/frontend/src/lib/downloads/DlSections.svelte":       true,
-	"app/backend/internal/migrate/apply.go":                  true,
 	"app/backend/internal/migrate/plan.go":                   true,
 	"app/frontend/src/lib/TitlePage.svelte":                  true,
 	"app/backend/internal/api/musicpages.go":                 true,
