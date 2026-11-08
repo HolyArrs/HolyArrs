@@ -72,6 +72,8 @@ type Deps struct {
 	GenreLists   func(ctx context.Context, kind string, reqs []engine.Request, wait time.Duration) ([][]engine.Item, bool)
 	NoteTrailers func(lang string, titles [][2]string)
 	WarmMusicNew func()
+	// Strip is the Browse glue for the Explore strip.
+	Strip StripBrowse
 }
 
 // ServiceTopFetch reads one region's per-service top lists.

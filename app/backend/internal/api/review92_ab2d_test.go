@@ -102,8 +102,8 @@ func TestExploreStripCountsCapPerDay(t *testing.T) {
 	name := func(i int) string { return "x" + strings.Repeat("a", i/26) + string(rune('a'+i%26)) }
 	for n := 0; n < 10; n++ {
 		var cs []string
-		for i := 0; i < stripRowsMax; i++ {
-			cs = append(cs, `"`+name(n*stripRowsMax+i)+`"`)
+		for i := 0; i < discover.StripRowsMax; i++ {
+			cs = append(cs, `"`+name(n*discover.StripRowsMax+i)+`"`)
 		}
 		resp, err := http.Post(srv.URL+"/api/v1/explore/strip/counts", "application/json", strings.NewReader(`{"event":"shown","categories":[`+strings.Join(cs, ",")+`]}`))
 		if err != nil {
@@ -115,7 +115,7 @@ func TestExploreStripCountsCapPerDay(t *testing.T) {
 	if err := s.Read().QueryRow("SELECT COUNT(*) FROM explore_category_counts").Scan(&rows); err != nil {
 		t.Fatal(err)
 	}
-	if rows > stripDayCategoriesMax {
+	if rows > discover.StripDayCategoriesMax {
 		t.Fatalf("%d rows in one day", rows)
 	}
 	resp, _ := http.Post(srv.URL+"/api/v1/explore/strip/counts", "application/json", strings.NewReader(`{"event":"open","categories":["`+name(0)+`"]}`))

@@ -63,7 +63,8 @@ func (a *API) newDiscover() *discover.Handlers {
 		TitleView:  a.titleView, KidMovies: a.kidMovies,
 		AllowedTitleIDs: a.allowedTitleIDs, KnownGenres: func(mbid string) []string { return a.mh().KnownGenres(mbid) }, ReadCardArt: a.readCardArt,
 		GenreLists: a.genreLists, NoteTrailers: func(lang string, titles [][2]string) { a.trailers.Note(lang, titles) },
-		WarmMusicNew: func() { a.musicProvider().WarmNew() }}}
+		WarmMusicNew: func() { a.musicProvider().WarmNew() },
+		Strip: a.stripBrowse()}}
 }
 
 func peopleError(w http.ResponseWriter, err error) { discover.PeopleError(w, err) }

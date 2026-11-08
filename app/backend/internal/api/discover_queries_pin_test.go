@@ -286,20 +286,20 @@ func TestRDPStripTasteRefsWeights(t *testing.T) {
 		t.Fatal(err)
 	}
 	count := func(kid bool) (ask, follow, lib int) {
-		refs, err := r.api.stripTasteRefs(ctx, r.ana.id, kid, rdpNow)
+		weights, err := r.api.disc.StripTasteWeights(ctx, r.ana.id, kid, rdpNow)
 		if err != nil {
 			t.Fatal(err)
 		}
-		for _, x := range refs {
+		for _, w := range weights {
 			switch {
-			case x.weight > 1.5:
+			case w > 1.5:
 				ask++
-			case x.weight == 1:
+			case w == 1:
 				follow++
-			case x.weight == 0.25:
+			case w == 0.25:
 				lib++
 			default:
-				t.Fatalf("odd weight %+v", x)
+				t.Fatalf("odd weight %v", w)
 			}
 		}
 		return
