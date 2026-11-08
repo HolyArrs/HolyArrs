@@ -31,4 +31,4 @@ Open **Requests** in the menu (`http://your-server:6262/requests`).
 
 ## Building
 
-Requests made on their own from Plex watchlists or Trakt lists are held back from this release and do not show in the app.
+Automatic requests from Plex watchlists or Trakt lists are not in this release.

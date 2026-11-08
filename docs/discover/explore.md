@@ -92,7 +92,7 @@ Kid accounts see fewer rows, each checked against their age limit. A title with 
 
 ## Building
 
-The owner table showing how row titles perform is held back from this release.
+The owner table of row title performance is not in this release.
 
 ## Related
 

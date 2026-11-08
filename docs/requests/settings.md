@@ -13,7 +13,7 @@ Open **Settings > Request rules** (`http://your-server:6262/settings/requests`).
 1. Under **Weekly limits**, set the number for movies, shows and music.
 2. Save.
 
-Each limit covers a rolling 7 days. The three are separate, so a show ask never uses a movie ask. People who may approve have no limit.
+Each limit covers a rolling 7 days and counts one kind only. Approvers have no limit.
 
 | Limit | Default | Range |
 |---|---|---|
@@ -63,7 +63,7 @@ These apply when an approver leaves folder or quality on **Default**.
 
 ## Building
 
-**Request from Plex watchlists** is held back from this release and does not show in the app.
+**Request from Plex watchlists** is not in this release.
 
 ## Related
 
