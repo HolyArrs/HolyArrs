@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/discover"
 	"net/http"
 	"time"
 
@@ -56,7 +57,7 @@ func (t titleExplore) Details(ctx context.Context, kind, id string) (metadata.De
 	}
 	key := "details|" + kind + "|" + id
 	e, cached := a.discover.Get(key)
-	if !cached || time.Since(e.At) >= discoverTTL["details"] {
+	if !cached || time.Since(e.At) >= discover.TTL["details"] {
 		det, err := d.Details(ctx, kind, id)
 		if err != nil {
 			return metadata.Details{}, err

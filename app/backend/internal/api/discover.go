@@ -24,18 +24,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 )
 
-// discoverTitles are the row headings the app may show.
-var discoverTitles = map[string]string{
-	"trending": "Trending this week", "popular": "Popular", "upcoming": "Coming soon",
-	"similar": "Because you have it", "genre": "More in this genre", "services": "On your services", "best": "Best new releases",
-}
-
-// discoverTTL is how long a row from TMDB is kept.
-var discoverTTL = map[string]time.Duration{
-	"trending": 6 * time.Hour, "popular": 12 * time.Hour, "upcoming": 12 * time.Hour,
-	"similar": 24 * time.Hour, "genre": 24 * time.Hour, "details": 24 * time.Hour, "services": 12 * time.Hour, "best": 24 * time.Hour,
-}
-
 const (
 	discoverMax = 20
 )
@@ -143,7 +131,7 @@ func staleOK(err error) bool {
 func (a *API) cachedRow(ctx context.Context, d metadata.Discoverer, row, kind, ref, genre string) ([]metadata.DiscoverItem, error) {
 	key := row + "|" + kind + "|" + ref + "|" + genre
 	e, ok := a.discover.Get(key)
-	if ok && time.Since(e.At) < discoverTTL[row] {
+	if ok && time.Since(e.At) < discover.TTL[row] {
 		return e.Items, nil
 	}
 	items, err := d.Discover(ctx, row, kind, ref, genre)
@@ -234,7 +222,7 @@ func (a *API) joinItems(ctx context.Context, items []metadata.DiscoverItem, me i
 func (a *API) discoverRow(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 	row, kind, idText, genre := q.Get("row"), q.Get("kind"), q.Get("id"), q.Get("g")
-	if _, ok := discoverTitles[row]; !ok {
+	if _, ok := discover.Titles[row]; !ok {
 		webserver.Fail(w, http.StatusBadRequest, "row must be trending, popular, upcoming, similar, genre, services or best")
 		return
 	}
@@ -326,7 +314,7 @@ func (a *API) discoverRow(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	a.exploreCaching(w, r, "private, max-age=300")
-	webserver.WriteJSON(w, http.StatusOK, map[string]any{"row": row, "title": discoverTitles[row], "items": out})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"row": row, "title": discover.Titles[row], "items": out})
 }
 
 // metadataDetails answers a movie or show page from TMDB, in the Library
@@ -363,7 +351,7 @@ func (a *API) metadataDetails(w http.ResponseWriter, r *http.Request) {
 			a.discover.Put(key, e)
 		}
 	}
-	if cached && e.Details != nil && time.Since(e.At) >= detailsTTL(e) {
+	if cached && e.Details != nil && time.Since(e.At) >= discover.DetailsTTL(e) {
 		// Stale but kept: served now, refreshed in the background.
 		metadata.RefreshOnce(key, func(ctx context.Context) {
 			if det, err := d.Details(ctx, kind, id); err == nil {
@@ -371,7 +359,7 @@ func (a *API) metadataDetails(w http.ResponseWriter, r *http.Request) {
 				keepOnDisk(ctx, a, key, det)
 			}
 		})
-	} else if !cached || time.Since(e.At) >= detailsTTL(e) {
+	} else if !cached || time.Since(e.At) >= discover.DetailsTTL(e) {
 		det, err := d.Details(r.Context(), kind, id)
 		switch {
 		case err == nil:
@@ -446,7 +434,7 @@ func (a *API) metadataDetails(w http.ResponseWriter, r *http.Request) {
 			webserver.Internal(w, "api", err)
 			return
 		}
-		quality = qualityWord(res.Int64)
+		quality = discover.QualityWord(res.Int64)
 	}
 	webserver.WriteJSON(w, http.StatusOK, struct {
 		metadata.Details
@@ -475,48 +463,6 @@ func (a *API) rowCardArt(r *http.Request, items []discoverItemView) {
 	if len(missing) > 0 {
 		a.queueCardItems(context.WithoutCancel(r.Context()), missing)
 	}
-}
-
-// collectionRetry is how long details whose collection could not be read
-// are kept before they are asked for again.
-const collectionRetry = 5 * time.Minute
-
-// detailsTTL is how long a details answer is kept: a day, or a few minutes
-// when its movie collection could not be read.
-func detailsTTL(e discoverEntry) time.Duration {
-	if e.Details != nil && e.Details.CollectionMissed {
-		return collectionRetry
-	}
-	if e.Details != nil && peopleWithoutIDs(e.Details.People) {
-		return 0
-	}
-	if e.Details != nil && len(e.Details.Videos) == 0 {
-		// No trailer yet: asked again soon (the server may find a season's).
-		return 15 * time.Minute
-	}
-	return discoverTTL["details"]
-}
-
-// peopleWithoutIDs is true for details cached before people carried their
-// TMDB ids: credits with no id at all, so the page is read again.
-func peopleWithoutIDs(people []metadata.DetailPerson) bool {
-	for _, p := range people {
-		if p.ID != "" {
-			return false
-		}
-	}
-	return len(people) > 0
-}
-
-// qualityWord names the best picture the Library has: 4K, HD, or nothing.
-func qualityWord(resolution int64) string {
-	switch {
-	case resolution >= 2160:
-		return "4K"
-	case resolution >= 720:
-		return "HD"
-	}
-	return ""
 }
 
 // moreFromMin is the fewest titles a More from row shows; fewer answer none.
@@ -551,10 +497,10 @@ func (a *API) metadataMoreFrom(w http.ResponseWriter, r *http.Request) {
 	}
 	key := "morefrom|" + kind + "|" + id
 	e, cached := a.discover.Get(key)
-	if !cached || time.Since(e.At) >= discoverTTL["details"] {
+	if !cached || time.Since(e.At) >= discover.TTL["details"] {
 		dkey := "details|" + kind + "|" + id
 		de, dcached := a.discover.Get(dkey)
-		if !dcached || time.Since(de.At) >= discoverTTL["details"] {
+		if !dcached || time.Since(de.At) >= discover.TTL["details"] {
 			det, err := d.Details(r.Context(), kind, id)
 			if err != nil {
 				discoverFail(w, err)
@@ -658,7 +604,7 @@ func (a *API) metadataSeason(w http.ResponseWriter, r *http.Request) {
 			}
 			key := "details|show|" + id
 			e, cached := a.discover.Get(key)
-			if !cached || time.Since(e.At) >= discoverTTL["details"] {
+			if !cached || time.Since(e.At) >= discover.TTL["details"] {
 				det, err := d.Details(r.Context(), "show", id)
 				if err != nil {
 					discoverFail(w, err)
@@ -676,7 +622,7 @@ func (a *API) metadataSeason(w http.ResponseWriter, r *http.Request) {
 	}
 	key := "season|" + id + "|" + strconv.Itoa(season)
 	e, cached := a.discover.Get(key)
-	if !cached || time.Since(e.At) >= discoverTTL["details"] {
+	if !cached || time.Since(e.At) >= discover.TTL["details"] {
 		eps, err := l.SeasonEpisodes(r.Context(), id, season)
 		switch {
 		case err == nil:
@@ -765,7 +711,7 @@ func (a *API) reviewHandlers() *metadata.ReviewHandlers {
 func (a *API) cachedDetails(ctx context.Context, d metadata.Discoverer, kind, id string) (*metadata.Details, error) {
 	key := "details|" + kind + "|" + id
 	e, ok := a.discover.Get(key)
-	if !ok || time.Since(e.At) >= discoverTTL["details"] {
+	if !ok || time.Since(e.At) >= discover.TTL["details"] {
 		det, err := d.Details(ctx, kind, id)
 		if err != nil {
 			return nil, err

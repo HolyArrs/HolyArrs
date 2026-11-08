@@ -1,6 +1,7 @@
 package api
 
 import (
+	"github.com/HolyArrs/holyarrs/app/backend/internal/discover"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
@@ -46,10 +47,10 @@ func TestShorterListAndCardKeeps(t *testing.T) {
 // add a season trailer); full details keep the day.
 func TestDetailsWithoutVideosShort(t *testing.T) {
 	t.Parallel()
-	if d := detailsTTL(discoverEntry{Details: &metadata.Details{}}); d > 15*time.Minute {
+	if d := discover.DetailsTTL(discoverEntry{Details: &metadata.Details{}}); d > 15*time.Minute {
 		t.Fatalf("no videos kept %v", d)
 	}
-	if d := detailsTTL(discoverEntry{Details: &metadata.Details{Videos: []metadata.DetailVideo{{Key: "k"}}}}); d != discoverTTL["details"] {
+	if d := discover.DetailsTTL(discoverEntry{Details: &metadata.Details{Videos: []metadata.DetailVideo{{Key: "k"}}}}); d != discover.TTL["details"] {
 		t.Fatalf("videos kept %v", d)
 	}
 }

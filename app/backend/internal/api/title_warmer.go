@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/discover"
 	"strings"
 	"sync"
 	"time"
@@ -142,7 +143,7 @@ func (a *API) warmOne(ctx context.Context, j warmJob) {
 				a.discover.Put(key, e)
 			}
 		}
-		if !cached || e.Details == nil || time.Since(e.At) >= detailsTTL(e) {
+		if !cached || e.Details == nil || time.Since(e.At) >= discover.DetailsTTL(e) {
 			if det, err := d.Details(ctx, j.kind, j.id); err == nil {
 				a.discover.Put(key, discoverEntry{At: time.Now(), Details: &det})
 				keepOnDisk(ctx, a, key, det)
