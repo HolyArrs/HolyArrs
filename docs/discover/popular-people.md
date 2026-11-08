@@ -4,7 +4,7 @@ description: See new and trending titles on streaming services, and browse an ac
 level: Start
 ---
 
-See what just came out and what is popular on streaming, and browse everything one actor or director made.
+See new releases and what is popular on streaming, and browse everything one actor or director made.
 
 ## Find something new
 
