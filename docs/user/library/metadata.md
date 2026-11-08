@@ -6,7 +6,7 @@ level: Start
 
 Get names, dates, posters and ids for your titles with no keys to set up.
 
-HolyArrs fetches them from the HolyArrs metadata server. A new install works without typing anything.
+They come from the HolyArrs metadata server.
 
 ## Check that it works
 

@@ -10,7 +10,6 @@ Find a movie, show or artist you already added. To find something new, use the *
 
 1. Open **Library**.
 2. Type in the search box (**Search library**, or **Search movies**, **Search TV shows**, **Search music** when a kind is picked). The list updates as you type.
-3. Clear the box to see everything again.
 
 The kind and state buttons still apply. Pick **Shows** and **Missing**, then type part of a name.
 

@@ -23,7 +23,7 @@ HolyArrs does not download by itself. It hands each Release to a Downloader, fol
 1. Open **Settings > Downloaders**.
 2. Press **Add a Downloader**.
 3. Under **Which app**, pick your app.
-4. Fill in **Name**. Any name works.
+4. Fill in any **Name**.
 5. Fill in **Address**, the app's web page, such as `http://192.168.1.10:8090`.
 6. Fill in the sign-in. See [Sign-in for each app](#sign-in-for-each-app).
 7. Press **Save**, then **Test** on the row. You should see **Working** next to the name.

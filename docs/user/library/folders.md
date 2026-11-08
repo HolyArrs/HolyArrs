@@ -6,7 +6,7 @@ level: Setup
 
 Tell HolyArrs where your finished movies, shows and music live.
 
-A Library folder is one of those places. You need the **Change settings** permission. First-run setup adds one; add the rest here.
+You need the **Change settings** permission. First-run setup adds one; add the rest here.
 
 ## Before you start
 

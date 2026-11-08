@@ -18,7 +18,7 @@ Most torrent sites have no feed of their own. For those, run Jackett or Prowlarr
 
 ## Link Jackett or Prowlarr
 
-Use this if you already run one of them. It brings in every site at once.
+Already run one of them? Linking brings in every site at once.
 
 1. Open **Settings > Sources** and find the **Prowlarr or Jackett** card.
 2. Press **Link**, then pick **Jackett** or **Prowlarr**.
