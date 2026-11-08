@@ -16,7 +16,7 @@ import (
 )
 
 // Single sign-on (OpenID Connect) set up from Settings, and unlinking
-// single sign-on and trusted proxy identities (#143).
+// single sign-on and trusted proxy identities.
 //
 // - When HOLYARRS_OIDC_ENABLED is present at all, the environment owns
 //   single sign-on: Settings shows it and refuses changes.

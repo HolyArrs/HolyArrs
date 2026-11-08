@@ -268,18 +268,18 @@ var RoutePerms = map[string]webserver.Perm{
 	"POST /api/v1/titles":           webserver.PermManageLibrary,
 	"PUT /api/v1/titles/{id}":       webserver.PermManageLibrary,
 	"POST /api/v1/titles/{id}/move": webserver.PermManageLibrary,
-	// Shows (stage 2.2).
+	// Shows.
 	"POST /api/v1/shows":                       webserver.PermManageLibrary,
 	"PUT /api/v1/titles/{id}/seasons/{number}": webserver.PermManageLibrary,
 	"PUT /api/v1/episodes/{id}":                webserver.PermManageLibrary,
 	"PUT /api/v1/settings/shows":               webserver.PermSettings,
-	// Music (stage 2.3).
+	// Music.
 	"POST /api/v1/artists":           webserver.PermManageLibrary,
 	"PUT /api/v1/titles/{id}/artist": webserver.PermManageLibrary,
 	"PUT /api/v1/albums/{id}":        webserver.PermManageLibrary,
 	"GET /api/v1/settings/music":     webserver.PermManageLibrary,
 	"PUT /api/v1/settings/music":     webserver.PermSettings,
-	// Organise (stage 5.1).
+	// Organise.
 	"GET /api/v1/titles/{id}/rename":            webserver.PermManageLibrary,
 	"POST /api/v1/titles/{id}/rename":           webserver.PermManageLibrary,
 	"GET /api/v1/rename":                        webserver.PermManageLibrary,
@@ -309,7 +309,7 @@ var RoutePerms = map[string]webserver.Perm{
 	"POST /api/v1/titles/refresh":               webserver.PermManageLibrary,
 	"POST /api/v1/titles/{id}/search":           webserver.PermManageLibrary,
 	"GET /api/v1/titles/{id}/releases":          webserver.PermManageLibrary,
-	// Searching (stage 3.1).
+	// Searching.
 	"POST /api/v1/releases/{id}/choose":                          webserver.PermManageLibrary,
 	"POST /api/v1/releases/{id}/turn-down":                       webserver.PermManageLibrary,
 	"GET /api/v1/held":                                           webserver.PermManageLibrary,
@@ -473,7 +473,7 @@ var RoutePerms = map[string]webserver.Perm{
 
 	// Owner only: how people sign in, and putting a backup back.
 	"PUT /api/v1/auth/settings": webserver.NeedOwner,
-	// Single sign-on setup and unlinking someone else: the owner only (#143).
+	// Single sign-on setup and unlinking someone else: the owner only.
 	"GET /api/v1/auth/sso":               webserver.NeedOwner,
 	"PUT /api/v1/auth/sso":               webserver.NeedOwner,
 	"POST /api/v1/auth/sso/test":         webserver.NeedOwner,
@@ -524,7 +524,7 @@ var RoutePerms = map[string]webserver.Perm{
 	"POST /api/v1/schedules/{kind}/run": webserver.PermManageLibrary,
 	"PUT /api/v1/schedules/{kind}":      webserver.PermSettings,
 
-	// The old-app API (decision 0008): one row per method on each prefix;
+	// The old-app API: one row per method on each prefix;
 	// every route behind them reads or changes the Library.
 	"GET /sonarr/":    webserver.PermManageLibrary,
 	"POST /sonarr/":   webserver.PermManageLibrary,

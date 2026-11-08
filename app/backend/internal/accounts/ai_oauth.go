@@ -22,7 +22,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
-// Signing in an AI app (roadmap #89): instead of pasting an AI key, an AI
+// Signing in an AI app: instead of pasting an AI key, an AI
 // app such as Claude Code or Cursor opens HolyArrs in the browser, the person
 // signs in as usual and allows it, and the app gets an AI key of its own
 // (scope mcp) that shows and can be revoked under Settings > AI connections.

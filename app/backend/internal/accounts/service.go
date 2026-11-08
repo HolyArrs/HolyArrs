@@ -1,5 +1,6 @@
-// Package accounts signs the owner in: the first-run setup, password sign-in with
-// back-off, session cookies, CSRF checks, API keys for scripts and the
+// Package accounts decides who is signed in: the first-run owner, password,
+// two-factor, single sign-on and media server sign-in with back-off, session
+// cookies, CSRF checks, API keys, invites, people and their roles, and the
 // "skip sign-in on the local network" choice (off by default).
 package accounts
 
@@ -104,7 +105,8 @@ const (
 	EnvPlexAppURL = "HOLYARRS_PLEX_APP_URL"
 )
 
-// SetupCodeFile holds the one-time first-run code, inside the config folder.
+// SetupCodeFile names the file older builds kept a first-run code in, inside
+// the config folder. Start-up removes it.
 const SetupCodeFile = "setup-code.txt"
 
 // maxChecks caps password checks running at once.
@@ -141,18 +143,17 @@ type Auth struct {
 	// settings change or an unlink holds it to write, so it ends what those made.
 	ssoMu sync.RWMutex
 
-	mu           sync.Mutex
-	fails        map[string]*failure
-	pruneAt      int // fails size at which pruneFails runs again
-	lastPruneAt  time.Time
-	realNames    map[string]bool // lower-case user names, for the full-table rule (isRealName)
-	realNamesAt  time.Time
-	satLogged    time.Time
-	proxyWarned  atomic.Int64                    // unix nanoseconds of the last untrusted-proxy warning (localnet.go)
-	known        map[string]map[string]time.Time // name -> address -> last full sign-in (signInWait)
-	setupFails   map[string]*failure             // wrong setup codes (hosts.go)
-	refusedHosts map[string]bool                 // refused names already logged (hosts.go)
-	setupCode    string
+	mu              sync.Mutex
+	fails           map[string]*failure
+	pruneAt         int // fails size at which pruneFails runs again
+	lastPruneAt     time.Time
+	realNames       map[string]bool // lower-case user names, for the full-table rule (isRealName)
+	realNamesAt     time.Time
+	satLogged       time.Time
+	proxyWarned     atomic.Int64                    // unix nanoseconds of the last untrusted-proxy warning (localnet.go)
+	known           map[string]map[string]time.Time // name -> address -> last full sign-in (signInWait)
+	ownerSetupFails map[string]*failure             // failed first-run owner attempts (hosts.go)
+	refusedHosts    map[string]bool                 // refused names already logged (hosts.go)
 	// codes are AI app sign-ins waiting for their key (aioauth.go).
 	codes aiCodes
 	// cimd reads AI apps' client ID metadata documents (aicimd.go).
@@ -225,7 +226,7 @@ func New(s *database.Store, opt Options) *Auth {
 			log.Printf("auth: ignoring trusted proxy %q: %v", p, err)
 		}
 	}
-	// No setup code (decisions/0009): a code file left by an older version goes.
+	// Remove a code file an older build may have left.
 	if err := os.Remove(filepath.Join(a.s.Dir(), SetupCodeFile)); err != nil && !errors.Is(err, os.ErrNotExist) {
 		log.Printf("auth: could not remove an old setup code file: %v", err)
 	}
@@ -477,7 +478,7 @@ func (a *Auth) Routes(m *http.ServeMux) {
 	a.profileRoutes(m)
 	a.sessionRoutes(m)
 	a.outsideRoutes(m)
-	a.providerRoutes(m)
+	a.mediaServerPeopleRoutes(m)
 	a.plexMineRoutes(m)
 	a.ssoRoutes(m)
 	if startup.FeatureOn(features.AIApps) {
@@ -501,7 +502,7 @@ func (a *Auth) state(w http.ResponseWriter, r *http.Request) {
 type creds struct {
 	Name     string `json:"name"`
 	Password string `json:"password"`
-	Code     string `json:"code,omitempty"` // ignored: first run has no setup code (decisions/0009)
+	Code     string `json:"code,omitempty"` // ignored; first run needs no code
 }
 
 func readCreds(w http.ResponseWriter, r *http.Request) (creds, bool) {
@@ -531,10 +532,8 @@ func (a *Auth) setup(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusConflict, "the owner is already set up; sign in instead")
 		return
 	}
-	// INTENTIONAL (Luis, 2026-11-05, decisions/0009-no-setup-code.md): no
-	// setup code. Whoever opens a fresh HolyArrs first makes the owner, as in
-	// Overseerr; `holyarrs reset-owner` takes it back. Do not re-add a code,
-	// a claim window or a first-run token, and do not suggest it in reviews.
+	// No setup code: whoever opens a fresh HolyArrs first makes the owner;
+	// `holyarrs reset-owner` takes it back.
 	//
 	// A home name (tower.local, nas) is accepted here only with no proxy in
 	// between; it is then saved.

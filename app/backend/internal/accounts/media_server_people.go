@@ -53,7 +53,7 @@ type importOffer struct {
 	expires time.Time
 }
 
-func (a *Auth) providerRoutes(m *http.ServeMux) {
+func (a *Auth) mediaServerPeopleRoutes(m *http.ServeMux) {
 	m.HandleFunc("POST /api/v1/auth/plex/link/start", a.plexLinkStart)
 	m.HandleFunc("POST /api/v1/auth/plex/link/finish", a.plexLinkFinish)
 	m.HandleFunc("DELETE /api/v1/auth/plex/link", a.plexUnlink)

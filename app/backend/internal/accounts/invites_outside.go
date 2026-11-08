@@ -100,7 +100,7 @@ func (a *Auth) invitePlexFinish(w http.ResponseWriter, r *http.Request) {
 	extID := strconv.FormatInt(user.ID, 10)
 	id, name, err := a.inviteJoin(ctx, tok, ProviderPlex, extID, user.Username)
 	if err == nil {
-		a.keepPlexToken(ctx, id, extID, pt) // for their Plex watchlist (#102)
+		a.keepPlexToken(ctx, id, extID, pt) // for their Plex watchlist
 	}
 	a.inviteDone(w, r, ProviderPlex, id, name, err, place{})
 }

@@ -24,8 +24,8 @@ import (
 
 // First-run setup through an outside account: the owner is made from a
 // Plex, Jellyfin or Emby account instead of a name and password. As with
-// setup(), whoever opens a fresh HolyArrs first makes the owner
-// (decisions/0009): no setup code. Every route here works only while there
+// setup(), whoever opens a fresh HolyArrs first makes the owner. No setup
+// code. Every route here works only while there
 // is no owner, and the owner row is made under the same in-transaction count
 // and unique index as setup(), so two people cannot both become the owner.
 
@@ -288,14 +288,14 @@ func (a *Auth) setupMediaServer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	key := "media:" + a.clientKey(r)
-	if a.setupLimited(key) {
+	if a.ownerSetupLimited(key) {
 		w.Header().Set("Retry-After", strconv.Itoa(int(setupWindow.Seconds())))
 		fail(w, http.StatusTooManyRequests, "too many tries; wait a minute and try again")
 		return
 	}
 	// Count the try before the call, so many tries at once cannot all pass
 	// the limit while the first calls are still out.
-	a.setupFail(key)
+	a.noteOwnerSetupFail(key)
 	authz := fmt.Sprintf(`MediaBrowser Client="%s", Device="%s", DeviceId="%s", Version="1"`, product, product, a.clientID(ctx))
 	hdr := map[string]string{"Authorization": authz, "X-Emby-Authorization": authz}
 	var got struct {
@@ -394,11 +394,11 @@ func (a *Auth) setupDiscover(w http.ResponseWriter, r *http.Request) {
 	// Each search counts towards the first-run limit; one runs at a time and
 	// a second caller meanwhile gets an empty list.
 	key := "find:" + a.clientKey(r)
-	if a.setupLimited(key) {
+	if a.ownerSetupLimited(key) {
 		writeJSON(w, http.StatusOK, map[string]any{"servers": out})
 		return
 	}
-	a.setupFail(key)
+	a.noteOwnerSetupFail(key)
 	if a.discovering.CompareAndSwap(false, true) {
 		out = a.discover()
 		a.discovering.Store(false)

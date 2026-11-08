@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-// Client ID metadata documents (MCP authorization, 2025-11-25): an AI app
+// Client ID metadata documents (MCP authorization spec, 2025-11-25 version): an AI app
 // may use an https address as its client_id; the JSON there names the app
 // and its return addresses. Claude, ChatGPT and VS Code use this by default.
 // HolyArrs fetches it once an hour at most, from public addresses only,

@@ -13,7 +13,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/domain"
 )
 
-// Each person's Plex token (#102): kept sealed in the vault on their Plex
+// Each person's Plex token: kept sealed in the vault on their Plex
 // link, from a Plex sign-in or a link made in My account, so Requests can read
 // their Plex watchlist. It never leaves the server. Whatever removes a link or
 // keeps a newer token removes the old vault row in the same write.

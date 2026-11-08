@@ -633,7 +633,7 @@ func (a *Auth) plexFinish(w http.ResponseWriter, r *http.Request) {
 	}
 	id, name, err := a.linkedUser(ctx, ProviderPlex, extID, user.Username, mayJoin, user.Restricted)
 	if err == nil {
-		a.keepPlexToken(ctx, id, extID, tok) // for their Plex watchlist (#102)
+		a.keepPlexToken(ctx, id, extID, tok) // for their Plex watchlist
 	}
 	a.outsideDone(w, r, ProviderPlex, id, name, err, place{})
 }

@@ -18,8 +18,8 @@ import (
 // HOLYARRS_ALLOWED_HOSTS (or Options) or a name saved under "Allowed host
 // names" in Settings. A rebinding page always carries its own name in Host,
 // so it fails here. First-run setup may also be done on a home name
-// (tower.local, nas, media.home.arpa, ...): with the right setup code, no
-// proxy in between, and that name is then saved.
+// (tower.local, nas, media.home.arpa, ...): with no proxy in between, and
+// that name is then saved.
 
 // keyAllowedHosts is the sign-in setting with the saved host names (JSON list).
 const keyAllowedHosts = "allowed_hosts"
@@ -210,33 +210,35 @@ func (a *Auth) savedHostList() []string {
 	return []string{}
 }
 
-// Wrong setup codes: about 10 a minute per client. There is no cap for all
-// clients together: the code is about 120 bits, so spreading tries cannot
-// find it, and a shared cap would let anyone who reaches the port block
-// the owner's setup.
+// Failed first-run owner attempts: about 10 a minute per client. There is no
+// cap for all clients together: a shared cap would let anyone who reaches the
+// port block the owner's setup.
 const (
 	setupTries  = 10
 	setupWindow = time.Minute
 )
 
-func (a *Auth) setupLimited(key string) bool {
+// ownerSetupLimited says whether a client has used up its failed first-run
+// owner attempts for the current minute.
+func (a *Auth) ownerSetupLimited(key string) bool {
 	a.mu.Lock()
 	defer a.mu.Unlock()
-	f := a.setupFails[key]
+	f := a.ownerSetupFails[key]
 	return f != nil && a.now().Sub(f.last) < setupWindow && f.n >= setupTries
 }
 
-func (a *Auth) setupFail(key string) {
+// noteOwnerSetupFail counts one failed first-run owner attempt for a client.
+func (a *Auth) noteOwnerSetupFail(key string) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	now := a.now()
-	if a.setupFails == nil || len(a.setupFails) > 10000 {
-		a.setupFails = map[string]*failure{}
+	if a.ownerSetupFails == nil || len(a.ownerSetupFails) > 10000 {
+		a.ownerSetupFails = map[string]*failure{}
 	}
-	f := a.setupFails[key]
+	f := a.ownerSetupFails[key]
 	if f == nil || now.Sub(f.last) >= setupWindow {
 		f = &failure{last: now}
-		a.setupFails[key] = f
+		a.ownerSetupFails[key] = f
 	}
 	f.n++
 }
