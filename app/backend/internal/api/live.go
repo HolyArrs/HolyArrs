@@ -8,7 +8,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 )
 
 // interestEvery is how often one session's interest counts; more calls in
@@ -63,16 +65,7 @@ func (a *API) liveRecheck(h http.Handler) http.Handler {
 	})
 }
 
-// publishTitleView tells managers' pages a title changed. Its asks name who
-// asked and who decided, with the decline note, so they stay out: pages
-// read the title again from its route, which shows them to approvers only.
-func (a *API) publishTitleView(v TitleView) {
-	if a.s.Live == nil {
-		return
-	}
-	v.Asks = nil
-	a.s.Live.Publish("title", v)
-}
+func (a *API) publishTitleView(v TitleView) { a.tv().PublishView(v) }
 
 func (a *API) liveRoutes(m *http.ServeMux) {
 	if a.s.Live != nil {
@@ -123,4 +116,28 @@ func (a *API) liveInterest(w http.ResponseWriter, r *http.Request) {
 		a.dl.DLSync.Watched()
 	}
 	webserver.WriteJSON(w, http.StatusOK, map[string]any{"ttl_seconds": 60})
+}
+
+// publishTitle sends the changed title to live pages.
+func (a *API) publishTitle(r *http.Request, id int64) {
+	if a.s.Live == nil {
+		return
+	}
+	var t mediafiles.Title
+	if database.Get(r.Context(), a.s.Store.Read(), "titles", id, &t) != nil {
+		return
+	}
+	if v, err := a.titleView(r.Context(), t); err == nil {
+		a.publishTitleView(v)
+	}
+}
+
+// versionID reads the {vid} Version id, answering 404 itself.
+func versionID(w http.ResponseWriter, r *http.Request) (int64, bool) {
+	id, err := strconv.ParseInt(r.PathValue("vid"), 10, 64)
+	if err != nil || id <= 0 {
+		webserver.Fail(w, http.StatusNotFound, "not found")
+		return 0, false
+	}
+	return id, true
 }

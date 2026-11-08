@@ -6,6 +6,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 )
@@ -69,4 +70,14 @@ func (a *API) listTitlesBrief(w http.ResponseWriter, r *http.Request, ts []media
 		out = append(out, b)
 	}
 	webserver.WriteTaggedJSON(w, r, map[string]any{"titles": out})
+}
+
+// ownedHandlers serve the owned-title marks (mediafiles); the part switches,
+// the Kid limit and the age rating check come from here.
+func (a *API) ownedHandlers() *mediafiles.OwnedHandlers {
+	return &mediafiles.OwnedHandlers{Store: a.s.Store, KidMax: a.kidMax, RatingAllows: metadata.RatingAllows,
+		KindOn: func(kind string) bool {
+			p, ok := parts.ForTitleKind(kind)
+			return !ok || a.partIsOn(p) || a.s.Parts.SafeMode
+		}}
 }

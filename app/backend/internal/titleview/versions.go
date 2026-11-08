@@ -1,15 +1,12 @@
-package api
+package titleview
 
 import (
 	"context"
-	"net/http"
 	"path/filepath"
-	"strconv"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
 // VersionView is one wanted copy of a title as the API shows it.
@@ -26,7 +23,7 @@ type VersionView struct {
 	AudioLanguages  []string `json:"audio_languages"`
 }
 
-func versionView(ctx context.Context, db database.Querier, v mediafiles.Version) VersionView {
+func VersionViewOf(ctx context.Context, db database.Querier, v mediafiles.Version) VersionView {
 	out := VersionView{ID: v.ID, Label: v.Label, Main: v.IsMain, PickRulesID: v.PickRulesID, LibraryFolderID: v.LibraryFolderID,
 		KeepUpToDate: v.KeepUpToDate, Edition: v.Edition, AudioLanguages: v.AudioLanguages}
 	if out.AudioLanguages == nil {
@@ -48,7 +45,8 @@ type lookupMemo struct{ folders, picks map[int64]*string }
 
 type lookupMemoKey struct{}
 
-func withLookupMemo(ctx context.Context) context.Context {
+// WithLookupMemo keeps a memo on ctx for VersionViewOf.
+func WithLookupMemo(ctx context.Context) context.Context {
 	return context.WithValue(ctx, lookupMemoKey{}, &lookupMemo{folders: map[int64]*string{}, picks: map[int64]*string{}})
 }
 
@@ -100,28 +98,4 @@ func (m *lookupMemo) rules(ctx context.Context, db database.Querier, id int64) (
 		err := database.Get(ctx, db, "pick_rules", id, &pr)
 		return pr.Name, err == nil
 	})
-}
-
-// publishTitle sends the changed title to live pages.
-func (a *API) publishTitle(r *http.Request, id int64) {
-	if a.s.Live == nil {
-		return
-	}
-	var t mediafiles.Title
-	if database.Get(r.Context(), a.s.Store.Read(), "titles", id, &t) != nil {
-		return
-	}
-	if v, err := a.titleView(r.Context(), t); err == nil {
-		a.publishTitleView(v)
-	}
-}
-
-// versionID reads the {vid} Version id, answering 404 itself.
-func versionID(w http.ResponseWriter, r *http.Request) (int64, bool) {
-	id, err := strconv.ParseInt(r.PathValue("vid"), 10, 64)
-	if err != nil || id <= 0 {
-		webserver.Fail(w, http.StatusNotFound, "not found")
-		return 0, false
-	}
-	return id, true
 }

@@ -1,4 +1,4 @@
-package api
+package titleview
 
 import (
 	"context"
@@ -21,8 +21,8 @@ type titleFacts struct {
 
 type titleFactsKey struct{}
 
-// withTitleFacts reads the facts for all Titles and keeps them on ctx for titleView.
-func withTitleFacts(ctx context.Context, db database.Lister) (context.Context, error) {
+// WithTitleFacts reads the facts for all Titles and keeps them on ctx for View.
+func WithTitleFacts(ctx context.Context, db database.Lister) (context.Context, error) {
 	f := &titleFacts{sizes: map[int64]int64{}, activity: map[int64]time.Time{}, versions: map[int64][]mediafiles.Version{}}
 	rows, err := db.QueryContext(ctx, `SELECT v.title_id, COALESCE(SUM(f.size), 0) FROM files f JOIN versions v ON v.id = f.version_id GROUP BY v.title_id`)
 	if err != nil {
