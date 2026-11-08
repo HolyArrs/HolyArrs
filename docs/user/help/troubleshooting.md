@@ -63,7 +63,7 @@ It exits with 0 when nothing failed and 1 when a line says `FAIL`, so you can us
 
 A support bundle is one zip file with what a helper usually asks for. Owners and admins can download it.
 
-1. Open the `/status` page.
+1. Open the `/health` page.
 2. Click **Download support bundle**.
 
 You can also get it from the API at `GET /api/v1/support/bundle`.

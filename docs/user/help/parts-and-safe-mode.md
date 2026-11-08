@@ -69,7 +69,7 @@ If HolyArrs crashes, the same restart policy brings it back.
 
 ## Health states
 
-The `/status` page and **Settings > Parts** list each background task, part and linked app with a state and a short reason. The same list is at `GET /api/v1/health/states`.
+The `/health` page and **Settings > Parts** list each background task, part and linked app with a state and a short reason. The same list is at `GET /api/v1/health/states`.
 
 | State | Meaning |
 |---|---|
@@ -118,4 +118,4 @@ Every route, with its scope, is listed at `/api/v1/openapi.json`.
 
 **The controls are greyed out or refused.** You signed in without a password on the local network, or your API key lacks the `control` scope. Sign in with your password.
 
-**A task shows failed and stays failed.** Read its reason on the `/status` page. Fix what it says, then click **Restart** for that task, or restart the whole app.
+**A task shows failed and stays failed.** Read its reason on the `/health` page. Fix what it says, then click **Restart** for that task, or restart the whole app.

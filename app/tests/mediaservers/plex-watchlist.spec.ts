@@ -97,7 +97,7 @@ test('a movie and a show on the Plex watchlist become asks, once; a Library movi
 	await own.goto('/settings/account');
 	await expect(own.getByRole('heading', { name: 'Devices' })).toBeVisible();
 	await expect(own.getByRole('heading', { name: 'Plex watchlist' })).toHaveCount(0);
-	await own.goto('/settings/wishlist');
+	await own.goto('/settings/requests');
 	await own.getByLabel('Request from Plex watchlists').check();
 	await own.getByTestId('savebar').getByRole('button', { name: 'Save' }).click();
 	await expect(own.getByText('Request settings saved')).toBeVisible();

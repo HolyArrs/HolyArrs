@@ -4,7 +4,7 @@ You want to know when a new HolyArrs is out, update safely, and go back if somet
 
 ## See if a new version is out
 
-1. Open the **Status** page (`http://your-server:6262/status`).
+1. Open the **Status** page (`http://your-server:6262/health`).
 2. Look at **Updates**. It says one of these:
    - "HolyArrs 1.2.0 is out, newer than this one."
    - "This is the newest version."

@@ -112,7 +112,7 @@ test('leaving with unsaved changes asks first; Stay keeps them, Leave goes', asy
 	await expect(ask).toBeVisible();
 	await ask.getByRole('button', { name: 'Stay' }).click();
 	await expect(ask).toBeHidden();
-	await expect(page).toHaveURL(/\/settings\/wishlist$/);
+	await expect(page).toHaveURL(/\/settings\/requests$/);
 	await expect(page.getByLabel('Movie requests', { exact: true })).toHaveValue('7');
 
 	// Another page of the People group, from its capsule row.

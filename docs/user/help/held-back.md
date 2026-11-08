@@ -36,7 +36,7 @@ To turn it off again, remove the name and restart.
 | `alert_channels_more` | Telegram, ntfy, Gotify, Pushover and webhook alerts | Those kinds in Settings > Alerts. Discord and email stay on. Channels you already made are kept. |
 | `subtitle_sites` | Subtitle sites and subtitle search | Subtitle sites and the subtitle search actions. Your subtitle language choice stays on. |
 | `emby_signin` | Sign in with Emby | The Emby sign-in button and its settings. Emby library refresh still works. |
-| `go_back` | Go back to the previous version | The "go back" steps on the `/status` page. |
+| `go_back` | Go back to the previous version | The "go back" steps on the `/health` page. |
 
 ## Troubleshooting
 

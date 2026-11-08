@@ -11,7 +11,7 @@ const out = path.resolve(__dirname, '../../../.omx/artifacts/visual-ralph/interc
       const context = await browser.newContext({ viewport: { width, height: 900 }, serviceWorkers: 'block', reducedMotion: 'reduce' });
       await context.route('**/*', (route) => route.request().method() === 'GET' ? route.continue() : route.abort());
       const page = await context.newPage();
-      await page.goto('http://127.0.0.1:18746/wishlist', { waitUntil: 'networkidle' });
+      await page.goto('http://127.0.0.1:18746/requests', { waitUntil: 'networkidle' });
       if (width < 600) {
         const review = page.getByRole('button', { name: /^Review / }).first();
         await review.focus();

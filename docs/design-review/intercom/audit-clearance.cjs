@@ -24,7 +24,7 @@ const out = path.resolve(__dirname, '../../../.omx/artifacts/visual-ralph/interc
       await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
       await page.screenshot({ path: path.join(out, width + '-music-end.png') });
       checks.push({ width, albumClearOfNavigation: true, mobileTargetsAtLeast44px: width <= 600 ? true : null });
-      await page.goto('http://127.0.0.1:18746/wishlist', { waitUntil: 'networkidle' });
+      await page.goto('http://127.0.0.1:18746/requests', { waitUntil: 'networkidle' });
       const card = await page.locator('.messages').boundingBox();
       const heading = await page.locator('#h-msg').boundingBox();
       const firstMessage = await page.getByTestId('message').first().boundingBox();

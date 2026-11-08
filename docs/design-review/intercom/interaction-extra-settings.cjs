@@ -100,7 +100,7 @@ const musicRejectedSave = {
 
 const wishlistValidation = {
 	name: 'Requests native validation and successful save',
-	route: '/settings/wishlist',
+	route: '/settings/requests',
 	setup: async (ctx) => {
 		await ctx.routeJSON('GET', '/settings/asks', {
 			movies_per_week: 10, shows_per_week: 10, music_per_week: 10,
@@ -132,7 +132,7 @@ const wishlistValidation = {
 
 const wishlistRejectedSave = {
 	name: 'Requests rejected save recovers without losing form state',
-	route: '/settings/wishlist',
+	route: '/settings/requests',
 	setup: async (ctx) => {
 		await wishlistValidation.setup(ctx);
 		rejected(ctx, 'PUT', '/settings/asks', 'Preview wishlist save intentionally rejected.');

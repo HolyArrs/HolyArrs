@@ -101,7 +101,7 @@ test('a member reports a problem from a phone, in a bottom sheet', async () => {
 	await expect(member.getByTestId('report-sent')).toContainText('Sound');
 
 	await member.getByRole('link', { name: 'See your reports' }).click();
-	await expect(member).toHaveURL(/\/reports/);
+	await expect(member).toHaveURL(/\/requests\/reports/);
 	await expect(member.getByRole('heading', { level: 1, name: 'Your reports' })).toBeVisible();
 	const card = member.getByTestId('report').filter({ hasText: movie });
 	await expect(card).toHaveCount(1);
@@ -119,7 +119,7 @@ test('the owner finds it from Requests and marks it fixed with a reply', async (
 	await expect(link).toContainText(/Reports/);
 	await expect(link).toContainText(/\d+/);
 	await link.click();
-	await expect(own).toHaveURL(/\/reports/);
+	await expect(own).toHaveURL(/\/requests\/reports/);
 	await expect(own.getByRole('heading', { level: 1, name: 'Reports' })).toBeVisible();
 
 	const card = own.getByTestId('report').filter({ hasText: memberName });

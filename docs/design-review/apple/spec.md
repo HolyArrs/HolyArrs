@@ -102,7 +102,7 @@ Each component: typed props, light/dark, keyboard, focus ring, reduced motion, a
 
 `AppShell`, `Sidebar`, `SidebarItem`, `TopBar`, `TabBar` (phone), `CommandPalette`, `PageHeader` (large title, optional subtitle, actions slot, back link), `Shelf` (title + "See all ›" + horizontal scroller with arrows), `PosterCard` (2:3) and `WideCard` (16:9, with progress line and overlay badges), `PersonCircle`, `Hero` (backdrop, logo/title, meta line, badges, description with "Show more", action row), `Badge` (quality: 4K, HDR, Dolby Vision, Atmos, CC, rating; neutral outlined), `StatusPill` (dot + word; kinds: in library, downloading %, wanted, requested, approved, turned down, failed, coming soon), `Button` (variants: primary filled accent, secondary tinted, plain text, destructive; sizes: lg 44, md 36, sm 30 (sm never on phone)), `IconButton` (round), `SegmentedControl`, `Chip`, `Menu`/`Popover` (closes on pick, Escape, outside click, returns focus), `Sheet` (bottom on phone, centred on desktop, native `<dialog>`), `ListRow` (for work screens: leading art, title, subtitle, trailing status/actions), `Table` (dense, sticky header), `SettingsCard`, `EmptyState` (icon, one sentence, one action), `LoadError` (inline once data exists, full only when nothing loaded), `Skeleton`, `ProgressBar`, `Toast`.
 
-Catalog page: route `/ui` (signed-in only, not in navigation), shows every component in every state, in light and dark side by side, with a width switcher.
+Catalog page: route `/dev/ui` (signed-in only, not in navigation), shows every component in every state, in light and dark side by side, with a width switcher.
 
 ## 6. Screens in this milestone
 
@@ -153,7 +153,7 @@ Downloads, Requests, History, Library list/grid, Search results, Calendar, Peopl
 
 ## 9. Done means
 - Svelte check 0/0, unit tests pass, word check passes.
-- Catalog `/ui` shows every component, light and dark.
+- Catalog `/dev/ui` shows every component, light and dark.
 - Home, Explore and a movie and a show title page work at 1440, 1024, 834, 390 and 320, light and dark, with real preview data.
 - Sidebar collapses/expands with mouse, keyboard shortcut and touch; state persists; tablet overlay and phone tab bar work.
 - axe: 0 violations on the new screens; keyboard walk passes; reduced motion verified.

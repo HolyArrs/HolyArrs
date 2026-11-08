@@ -155,7 +155,7 @@ Row actions: Read now, Change, Remove (asks first), Take off (Never-add).
 | MusicBrainz | MusicBrainz address (optional) | text | empty | rare | Y |
 | MusicBrainz | Keep answers for (hours) | number | 24 | rare | Y |
 
-### Requests (`/settings/wishlist`, settings). One form, one Save.
+### Requests (`/settings/requests`, settings). One form, one Save.
 | Card | Label | Control | Default | How often | Adv |
 |---|---|---|---|---|---|
 | Weekly limits | Movie asks, Show asks, Music asks | numbers 0–1000 | 10 each | sometimes | |
