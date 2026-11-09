@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<caps>
+  <server version="1.0" title="Test source"/>
+  <limits max="50" default="25"/>
+  <searching>
+    <search available="yes" supportedParams="q"/>
+    <movie-search available="yes" supportedParams="q,imdbid,tmdbid"/>
+    <tv-search available="no" supportedParams="q"/>
+  </searching>
+  <categories>
+    <category id="2000" name="Movies"><subcat id="2040" name="Movies/HD"/></category>
+    <category id="5000" name="TV"/>
+  </categories>
+</caps>

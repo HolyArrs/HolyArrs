@@ -1,0 +1,24 @@
+{
+  "no_limit": true,
+  "movies": {
+    "per_week": 7,
+    "used": 7,
+    "left": 7,
+    "retry_at": "2026-10-13T12:00:00Z",
+    "no_limit": true
+  },
+  "shows": {
+    "per_week": 7,
+    "used": 7,
+    "left": 7,
+    "retry_at": "2026-10-13T12:00:00Z",
+    "no_limit": true
+  },
+  "music": {
+    "per_week": 7,
+    "used": 7,
+    "left": 7,
+    "retry_at": "2026-10-13T12:00:00Z",
+    "no_limit": true
+  }
+}

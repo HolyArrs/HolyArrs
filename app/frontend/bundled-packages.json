@@ -1,0 +1,68 @@
+[
+	{
+		"name": "@fontsource-variable/geist",
+		"version": "5.3.0",
+		"license": "OFL-1.1",
+		"path": "node_modules/@fontsource-variable/geist"
+	},
+	{
+		"name": "@fontsource/anton",
+		"version": "5.3.0",
+		"license": "OFL-1.1",
+		"path": "node_modules/@fontsource/anton"
+	},
+	{
+		"name": "@fontsource/silkscreen",
+		"version": "5.3.0",
+		"license": "OFL-1.1",
+		"path": "node_modules/@fontsource/silkscreen"
+	},
+	{
+		"name": "@sveltejs/kit",
+		"version": "3.0.1",
+		"license": "MIT",
+		"path": "node_modules/@sveltejs/kit"
+	},
+	{
+		"name": "clsx",
+		"version": "2.1.1",
+		"license": "MIT",
+		"path": "node_modules/clsx"
+	},
+	{
+		"name": "devalue",
+		"version": "5.9.4",
+		"license": "MIT",
+		"path": "node_modules/devalue"
+	},
+	{
+		"name": "esm-env",
+		"version": "1.2.2",
+		"license": "MIT",
+		"path": "node_modules/esm-env"
+	},
+	{
+		"name": "rolldown",
+		"version": "1.2.13",
+		"license": "MIT",
+		"path": "node_modules/rolldown"
+	},
+	{
+		"name": "simple-icons",
+		"version": "14.15.0",
+		"license": "CC0-1.0",
+		"path": "node_modules/simple-icons"
+	},
+	{
+		"name": "svelte",
+		"version": "5.57.2",
+		"license": "MIT",
+		"path": "node_modules/svelte"
+	},
+	{
+		"name": "vite",
+		"version": "8.3.4",
+		"license": "MIT",
+		"path": "node_modules/vite"
+	}
+]

@@ -1,0 +1,43 @@
+name: Bug report
+description: Something in HolyArrs does not work as it should.
+type: Bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Search the open issues first, your bug may already be there.
+        Got a question? Ask on Discord. Got an idea? Post it on r/HolyArrs.
+        Security problems go to the Security tab, never here.
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Settings > This app, or the image tag.
+    validations:
+      required: true
+  - type: dropdown
+    id: install
+    attributes:
+      label: How you run HolyArrs
+      options: [Docker, Docker Compose, Synology, QNAP, TrueNAS, Unraid, Proxmox (Docker), Other]
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: What you did
+      description: The steps that lead to the bug.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected, and what happened
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: Settings > Logs > Download. Keys are masked, but read it through and remove any keys, passwords or addresses before you paste.
+      render: text

@@ -1,0 +1,22 @@
+{
+  "id": 7,
+  "state": "s",
+  "state_label": "s",
+  "mine": true,
+  "people": 7,
+  "seasons": [
+    7
+  ],
+  "albums": [
+    {
+      "mbid": "s",
+      "name": "s",
+      "year": 7,
+      "edition": "s",
+      "songs": [
+        "s"
+      ],
+      "songs_done": true
+    }
+  ]
+}

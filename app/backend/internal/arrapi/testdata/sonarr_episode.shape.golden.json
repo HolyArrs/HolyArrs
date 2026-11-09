@@ -1,0 +1,16 @@
+[
+  {
+    "airDate": "string",
+    "airDateUtc": "string",
+    "episodeFileId": "number",
+    "episodeNumber": "number",
+    "hasFile": "bool",
+    "id": "number",
+    "monitored": "bool",
+    "runtime": "number",
+    "seasonNumber": "number",
+    "seriesId": "number",
+    "tvdbId": "number",
+    "unverifiedSceneNumbering": "bool"
+  }
+]

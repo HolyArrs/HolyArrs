@@ -1,0 +1,28 @@
+{
+  "file_id": 9,
+  "wish": {
+    "languages": [
+      {
+        "language": "en",
+        "hearing_impaired": "normal",
+        "forced": false
+      }
+    ],
+    "from": "default"
+  },
+  "haves": [
+    {
+      "language": "en",
+      "forced": false,
+      "hearing_impaired": true,
+      "place": ""
+    }
+  ],
+  "missing": [
+    {
+      "language": "fr",
+      "hearing_impaired": "either",
+      "forced": true
+    }
+  ]
+}

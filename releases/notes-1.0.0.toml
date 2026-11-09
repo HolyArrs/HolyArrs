@@ -1,0 +1,163 @@
+# Single source for one release. Every place (GitHub, What's New, Reddit, Discord, roadmap) renders from this file.
+# Data: gh issue list -R HolyArrs/HolyArrs --milestone 1.0.0 (2026-11-08). 95 closed, 4 still Building (#100-#103).
+version = "1.0.0"
+theme = "One app for movies, shows and music, from asking to watching."
+images = [
+  {registry = "Docker Hub", name = "holyarrs/holyarrs"},
+]
+docs_url = ""   # set once the docs site is live; empty = no Docs link
+known_issues = []   # empty = section hidden everywhere; fill only with real ones
+security = [
+  "Locked down by default, password guessing slowed down. (#85) (#86)",
+  "Tracker passkeys and server details stay out of logs and pages. (#89) (#88)",
+]
+# From "Asked for by" lines in the closed 1.0.0 issues; link = first comment link given.
+# github = login only when known (issue author/commenter on HolyArrs/HolyArrs, or credits-map.json).
+# Checked 2026-11-08: no requester has a known login yet, so none shown.
+credits = [
+  {name = "u/clayuk62", link = "https://www.reddit.com/r/HolyArrs/comments/1xcnv6u/comment/19rvebi6rzqm8/", issues = [91, 75, 62, 57, 55, 53, 52, 49, 46, 45, 39, 37, 35, 34]},
+  {name = "u/ImportantCustomer503", link = "https://www.reddit.com/r/HolyArrs/comments/1xcnv6u/comment/19rjoguu7t01x/", issues = [78, 56, 42, 34]},
+  {name = "u/Alan_More", link = "https://www.reddit.com/r/HolyArrs/comments/1xdwiil/comment/19rvr1bes8bhc/", issues = [75, 28, 27]},
+  {name = "u/allexiel", link = "https://www.reddit.com/r/HolyArrs/comments/1xcnv6u/comment/19rlfiu3dklts/", issues = [78, 63, 44]},
+  {name = "u/Artistic-Sea-7040", link = "https://www.reddit.com/r/HolyArrs/comments/1xcnv6u/comment/19rqqhfoxm8ao/", issues = [78, 45, 39]},
+  {name = "u/roychassi", link = "https://www.reddit.com/r/HolyArrs/comments/1xfs7u9/", issues = [77, 39, 35]},
+  {name = "u/The_Mdk", link = "https://www.reddit.com/r/SideProject/comments/1xjjuwp/comment/19rwcbh51glqb/", issues = [79, 78, 38]},
+  {name = "u/DeletedUserSaidWhat", link = "https://www.reddit.com/r/HolyArrs/comments/1xcnpvo/comment/19rmfopnt2o76/", issues = [75, 45]},
+  {name = "u/dre10g", link = "https://www.reddit.com/r/radarr/comments/1x5jmmh/comment/pgsghg7/", issues = [83, 53]},
+  {name = "u/meyerjoe83", link = "https://www.reddit.com/r/HolyArrs/comments/1xcnv6u/comment/19rhuwxbf3ngg/", issues = [7, 6]},
+  {name = "u/MrMe_w00t", link = "https://www.reddit.com/r/HolyArrs/comments/1xcnpvo/comment/19rhsj5rvlvyc/", issues = [78, 33]},
+  {name = "u/mythmms", link = "https://www.reddit.com/r/HolyArrs/comments/1xcnpvo/comment/19rhxiew590jm/", issues = [82, 77]},
+  {name = "u/ProfessionalPiece403", link = "https://www.reddit.com/r/HolyArrs/comments/1xcnv6u/comment/19rhur5n00hhh/", issues = [60, 39]},
+  {name = "u/unabatedshagie", link = "https://www.reddit.com/r/radarr/comments/1x5jmmh/comment/pgo2rko/", issues = [26, 21]},
+  {name = "u/0sko59fds24", link = "https://www.reddit.com/r/HolyArrs/comments/1xcnv6u/comment/19rikr8wh80ap/", issues = [42]},
+  {name = "u/_ReaditYesterday_", link = "https://www.reddit.com/r/radarr/comments/1x5jmmh/comment/pgzkpw1/", issues = [39]},
+  {name = "u/Agile_Beyond_6025", link = "https://www.reddit.com/r/HolyArrs/comments/1xcnpvo/comment/19rhsf1tj4cn5/", issues = [91]},
+  {name = "u/Alarmed-Safety-148", issues = [73]},
+  {name = "u/babbyfarm", link = "https://www.reddit.com/r/HolyArrs/comments/1xcnpvo/comment/19rnuuz43wq9x/", issues = [29]},
+  {name = "u/beachplss", issues = [38]},
+  {name = "u/Brufacee", link = "https://www.reddit.com/r/buildinpublic/comments/1xgfobe/comment/19rpkrv4im735/", issues = [78]},
+  {name = "u/Chance_of_Rain_", link = "https://www.reddit.com/r/radarr/comments/1x5jmmh/comment/pgog8ln/", issues = [26]},
+  {name = "u/Cold_Key1086", link = "https://www.reddit.com/r/ClaudeCode/comments/1xfoglc/comment/19ro25f9nf5t0/", issues = [79]},
+  {name = "u/computermaster704", link = "https://www.reddit.com/r/HolyArrs/comments/1xgypk5/", issues = [15]},
+  {name = "u/Content_Debt_8523", link = "https://www.reddit.com/r/radarr/comments/1x5jmmh/comment/pgphbj9/", issues = [62]},
+  {name = "u/di-ty", link = "https://www.reddit.com/r/HolyArrs/comments/1xcnpvo/comment/19ri58dx6xb0k/", issues = [78]},
+  {name = "u/dougalcampbell", link = "https://www.reddit.com/r/radarr/comments/1x5jmmh/comment/ph02ber/", issues = [62]},
+  {name = "u/Farzag", link = "https://www.reddit.com/r/HolyArrs/comments/1xcnpvo/comment/19rmetc2m39c0/", issues = [45]},
+  {name = "u/FR_MajorBob", link = "https://www.reddit.com/r/ClaudeCode/comments/1xj7rth/comment/19rvdaygbx5yb/", issues = [56]},
+  {name = "u/Frazz09", link = "https://www.reddit.com/r/HolyArrs/comments/1xcnv6u/comment/19rmgyk5arybl/", issues = [73]},
+  {name = "u/Fun-Psycho", link = "https://www.reddit.com/r/HolyArrs/comments/1xcnpvo/comment/19rnhuf29iccj/", issues = [75]},
+  {name = "u/Gloomy-Recover-9702", link = "https://www.reddit.com/r/HolyArrs/comments/1xhx23f/", issues = [22]},
+  {name = "u/Greedy-Train-1307", link = "https://www.reddit.com/r/HolyArrs/comments/1xcnpvo/comment/19rihjw7jy2gy/", issues = [15]},
+  {name = "u/hellochase", link = "https://www.reddit.com/r/HolyArrs/comments/1xcnpvo/comment/19rjevqx3gwld/", issues = [75]},
+  {name = "u/iRazvan2745", link = "https://www.reddit.com/r/selfhosted/comments/1x3sv47/comment/pfgz40k/", issues = [83]},
+  {name = "u/l_ft", link = "https://www.reddit.com/r/ChatGPT/comments/1xcdvs9/comment/19rhcq0bwx5no/", issues = [7]},
+  {name = "u/left_on_read_by_gpt", link = "https://www.reddit.com/r/HolyArrs/comments/1xeji08/", issues = [19]},
+  {name = "u/MixBig3614", link = "https://www.reddit.com/r/HolyArrs/comments/1xcnv6u/comment/19riu92ai9w1s/", issues = [52]},
+  {name = "u/nbates80", link = "https://www.reddit.com/r/ChatGPT/comments/1xcdvs9/comment/19rltxchwk15v/", issues = [6]},
+  {name = "u/nothingveryobvious", link = "https://www.reddit.com/r/jellyfin/comments/1xc99nm/comment/19rgvirfg4zsz/", issues = [6]},
+  {name = "u/Numberrthree3", link = "https://www.reddit.com/r/radarr/comments/1x5jmmh/comment/pgmyzz3/", issues = [62]},
+  {name = "u/Nummy01", link = "https://www.reddit.com/r/radarr/comments/1x5jmmh/comment/pgn8b9i/", issues = [69]},
+  {name = "u/OneDisplayOneVGA", link = "https://www.reddit.com/r/PlexServers/comments/1xjnjhf/comment/19s0fvfseb3ls/", issues = [56]},
+  {name = "u/pfc-anon", link = "https://www.reddit.com/r/ClaudeAI/comments/1xcaoox/comment/19rh4yr4okipt/", issues = [78]},
+  {name = "u/Remixmark", link = "https://www.reddit.com/r/radarr/comments/1x5jmmh/comment/ph2za65/", issues = [39]},
+  {name = "u/selop212", link = "https://www.reddit.com/r/radarr/comments/1x5jmmh/comment/phpd9dk/", issues = [82]},
+  {name = "u/shadowlessinthedark", link = "https://www.reddit.com/r/PlexServers/comments/1xjnjhf/comment/19rwlz394be9t/", issues = [76]},
+  {name = "u/Unusual-Classic9849", link = "https://www.reddit.com/r/radarr/comments/1x5jmmh/comment/pgrb79b/", issues = [62]},
+]
+
+# Each highlight shows once, at the top; its issues never appear again in groups.
+[[highlights]]
+line = "Move over from your old apps without starting over."
+issues = [78]
+shot = "Import step of the first-run wizard (GIF, apps found to Added)"
+
+[[highlights]]
+line = "Browse and request movies, shows and music in streaming-style rows."
+issues = [6]
+shot = "Explore home and music Explore, rows scrolling (GIF)"
+
+[[highlights]]
+line = "Every download on one page, stuck ones swapped for you."
+issues = [46, 47]
+shot = "Downloads table with a swapped item"
+
+# place -> lines. New by default; only non-new lines start with "Changed:" or "Fixed:".
+# Order = what users touch most. Places under 3 lines render in "Also new".
+[groups]
+Requests = [
+  "Search results show up as you type. (#21)",
+  "Watch your request move, hear when it's ready. (#34) (#35)",
+  "Approve exactly what you want, with weekly limits. (#33) (#32)",
+  "Ask for music too. (#29)",
+  "Trailers start fast with our trailer reader. (#8)",
+]
+Library = [
+  "HD and 4K copies side by side. (#62)",
+  "Rename with a preview first. (#67)",
+  "Undo a delete. (#70)",
+  "Every file move shows its reason. (#71)",
+  "Hardlinks save space when your folders allow it. (#49)",
+  "Your media server refreshes after each import. (#56)",
+  "Calendar shows what's coming. (#28)",
+]
+Downloads = [
+  "Unpacks archives itself. (#48)",
+  "Keep your torrent or Usenet downloader. (#45)",
+  "Map Docker paths in one place. (#50)",
+]
+Indexers = [
+  "One source list for everything. (#37)",
+  "Bring your Jackett or Prowlarr. (#38)",
+  "Set your own quality rules. (#39)",
+  "See why each release won. (#44)",
+  "Fakes and malware blocked before download. (#42)",
+]
+Accounts = [
+  "Invite the whole family, with age limits per kid. (#18) (#19)",
+  "Two-factor and single sign-on. (#16) (#15)",
+  "Plex or Jellyfin sign-in. (#14)",
+]
+Health = [
+  "Health at a glance. (#52)",
+  "Logs safe to share. (#53)",
+  "See what leaves your server. (#11)",
+]
+Setup = [
+  "First run walks you through folders, downloader and sources. (#75)",
+  "Turn off the parts you don't use. (#76)",
+  "Search every setting from one box. (#54)",
+  "Settings show what people really change. (#95)",
+  "About 70 MB idle with a 12,800-title library. (#83) (#4)",
+  "Pages open in under a second. (#82)",
+]
+Install = [
+  "Step-by-step install guide. (#73)",
+  "Runs under /holyarrs behind your proxy. (#74)",
+  "14.9 MB download, about 48x smaller than the six apps. (#84)",
+]
+Migration = [
+  "Your other apps keep working through the arr API. (#79)",
+]
+Shows = [
+  "Anime matched to the right episodes. (#63)",
+  "Pick only the seasons you want. (#61)",
+]
+Movies = [
+  "Lists that fill your library. (#66)",
+  "Search starts when a movie is out. (#41)",
+]
+Music = [
+  "Music gets its own pages. (#25)",
+  "Lossless stays lossless. (#43)",
+]
+Alerts = [
+  "Alerts go where you already look. (#55)",
+]
+Updates = [
+  "Updates you can undo. (#57)",
+]
+
+[stats]
+issues_done = 95
+still_building = 4
+people_credited = 48

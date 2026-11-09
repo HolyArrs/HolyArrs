@@ -1,0 +1,8 @@
+{
+  "page": "number",
+  "pageSize": "number",
+  "records": [],
+  "sortDirection": "string",
+  "sortKey": "string",
+  "totalRecords": "number"
+}

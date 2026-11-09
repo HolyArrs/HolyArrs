@@ -1,0 +1,21 @@
+bin/
+/config/
+*.db
+*.db-wal
+*.db-shm
+
+# Local secrets.
+/.env
+/.env.*
+!/.env.example
+!/.env.template
+/private-config/
+/exports/
+/captures/
+/app/frontend/static/preview-audit/
+/app/frontend/dist/*
+!/app/frontend/dist/.gitkeep
+/app/tests/.tmp/
+/app/tests/.tmp-*/
+/app/tests/whole-app/live-push.spec.ts-snapshots/
+releases/out/

@@ -1,0 +1,27 @@
+{
+	"compilerOptions": {
+		"target": "ES2022",
+		"module": "ESNext",
+		"moduleResolution": "bundler",
+		"strict": true,
+		"skipLibCheck": true,
+		"allowJs": true,
+		"baseUrl": ".",
+		"paths": {
+			"@playwright/test": [
+				"../frontend/node_modules/@playwright/test/index.mjs"
+			],
+			"@axe-core/playwright": [
+				"../frontend/node_modules/@axe-core/playwright/dist/index.mjs"
+			]
+		},
+		"typeRoots": [
+			"../frontend/node_modules/@types"
+		],
+		"types": [
+			"node"
+		],
+		"noEmit": true,
+		"ignoreDeprecations": "6.0"
+	}
+}

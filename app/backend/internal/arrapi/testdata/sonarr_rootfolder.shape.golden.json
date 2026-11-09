@@ -1,0 +1,9 @@
+[
+  {
+    "accessible": "bool",
+    "freeSpace": "number",
+    "id": "number",
+    "path": "string",
+    "unmappedFolders": []
+  }
+]

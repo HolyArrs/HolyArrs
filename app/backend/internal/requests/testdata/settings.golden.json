@@ -1,0 +1,13 @@
+{
+  "movies_per_week": 7,
+  "shows_per_week": 7,
+  "music_per_week": 7,
+  "library_folder_id": 7,
+  "pick_rules_id": 7,
+  "search_on_approve": true,
+  "show_library_folder_id": 7,
+  "show_pick_rules_id": 7,
+  "music_library_folder_id": 7,
+  "music_pick_rules_id": 7,
+  "plex_watchlists": true
+}

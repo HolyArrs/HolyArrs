@@ -1,0 +1,578 @@
+{
+  "album": {
+    "need": "signed_in",
+    "shape": {
+      "album": {
+        "better_wanted": "number",
+        "id": "number",
+        "in_library": "number",
+        "included": "bool",
+        "keep_up_to_date": "bool",
+        "mbid": "string",
+        "missing": "number",
+        "name": "string",
+        "not_out_yet": "number",
+        "pressings": "number",
+        "release_date": "string",
+        "secondary_types": [],
+        "state": "string",
+        "tracks": "number",
+        "type": "string"
+      },
+      "pressings": [],
+      "title_id": "number"
+    },
+    "status": 200
+  },
+  "album set": {
+    "need": "manage_library",
+    "shape": {
+      "error": "string"
+    },
+    "status": 400
+  },
+  "album tracks": {
+    "need": "signed_in",
+    "shape": {
+      "album_id": "number",
+      "tracks": []
+    },
+    "status": 200
+  },
+  "anime": {
+    "need": "signed_in",
+    "shape": {
+      "alt_names": [],
+      "anime": "bool",
+      "mapped": "bool",
+      "seasons": [],
+      "titles": []
+    },
+    "status": 200
+  },
+  "artist albums": {
+    "need": "signed_in",
+    "shape": {
+      "albums": [
+        {
+          "better_wanted": "number",
+          "id": "number",
+          "in_library": "number",
+          "included": "bool",
+          "keep_up_to_date": "bool",
+          "mbid": "string",
+          "missing": "number",
+          "name": "string",
+          "not_out_yet": "number",
+          "pressings": "number",
+          "release_date": "string",
+          "secondary_types": [],
+          "state": "string",
+          "tracks": "number",
+          "type": "string"
+        }
+      ]
+    },
+    "status": 200
+  },
+  "artist set": {
+    "need": "manage_library",
+    "shape": {
+      "error": "string"
+    },
+    "status": 400
+  },
+  "artists lookup": {
+    "need": "signed_in",
+    "shape": {
+      "artists": [
+        {
+          "image": "string",
+          "mbid": "string",
+          "name": "string",
+          "status": "string",
+          "title_id": "number",
+          "type": "string"
+        }
+      ],
+      "source": "string"
+    },
+    "status": 200
+  },
+  "collection detail": {
+    "need": "signed_in",
+    "shape": {
+      "id": "number",
+      "name": "string",
+      "owned_titles": "number",
+      "source_id": "string",
+      "titles": [
+        {
+          "files": [],
+          "id": "number",
+          "name": "string",
+          "protected": "bool",
+          "state": "string",
+          "version_ids": [
+            "number"
+          ],
+          "year": "number"
+        }
+      ]
+    },
+    "status": 200
+  },
+  "collection missing": {
+    "need": "signed_in",
+    "shape": {
+      "error": "string"
+    },
+    "status": 404
+  },
+  "collection preview": {
+    "need": "manage_library",
+    "shape": {
+      "applied": "bool",
+      "choice": {
+        "acknowledge_protection": "bool",
+        "delete_files": "bool",
+        "never_add": "bool"
+      },
+      "collection": {
+        "id": "number",
+        "name": "string",
+        "owned_titles": "number",
+        "source_id": "string"
+      },
+      "review_token": "string",
+      "titles": [
+        {
+          "files": [],
+          "id": "number",
+          "name": "string",
+          "protected": "bool",
+          "selected": "bool",
+          "state": "string",
+          "version_ids": [
+            "number"
+          ],
+          "year": "number"
+        }
+      ]
+    },
+    "status": 200
+  },
+  "collection remove unconfirmed": {
+    "need": "manage_library",
+    "shape": {
+      "error": "string",
+      "review": {
+        "applied": "bool",
+        "choice": {
+          "acknowledge_protection": "bool",
+          "delete_files": "bool",
+          "never_add": "bool"
+        },
+        "collection": {
+          "id": "number",
+          "name": "string",
+          "owned_titles": "number",
+          "source_id": "string"
+        },
+        "review_token": "string",
+        "titles": [
+          {
+            "files": [],
+            "id": "number",
+            "name": "string",
+            "protected": "bool",
+            "selected": "bool",
+            "state": "string",
+            "version_ids": [
+              "number"
+            ],
+            "year": "number"
+          }
+        ]
+      }
+    },
+    "status": 409
+  },
+  "collections list": {
+    "need": "signed_in",
+    "shape": {
+      "collections": [
+        {
+          "id": "number",
+          "name": "string",
+          "owned_titles": "number",
+          "source_id": "string",
+          "title_ids": [
+            "number"
+          ]
+        }
+      ]
+    },
+    "status": 200
+  },
+  "explore music": {
+    "need": "signed_in",
+    "shape": {
+      "cold": "bool",
+      "genre": "string",
+      "genres": [],
+      "hero": "null",
+      "hero_alts": [],
+      "kid": "bool",
+      "next": "string",
+      "partial": "bool",
+      "region": "string",
+      "regions": [],
+      "rows": [],
+      "total": "number",
+      "v2": "bool",
+      "v7": "bool"
+    },
+    "status": 200
+  },
+  "explore music rising": {
+    "need": "signed_in",
+    "shape": {
+      "error": "string"
+    },
+    "status": 404
+  },
+  "explore new music": {
+    "need": "signed_in",
+    "shape": {
+      "building": "bool",
+      "genres": [],
+      "hero": [],
+      "kid": "bool",
+      "rows": []
+    },
+    "status": 200
+  },
+  "music album page": {
+    "need": "signed_in",
+    "shape": {
+      "artist": {
+        "image": "string",
+        "mbid": "string",
+        "name": "string"
+      },
+      "editions": [
+        {
+          "date": "string",
+          "label": "string",
+          "list": [
+            {
+              "disc": "number",
+              "have": "string",
+              "length_ms": "number",
+              "name": "string",
+              "number": "number"
+            }
+          ],
+          "mbid": "string",
+          "tracks": "number"
+        }
+      ],
+      "image": "string",
+      "kid": "bool",
+      "length_ms": "number",
+      "mbid": "string",
+      "more_by": [
+        {
+          "image": "string",
+          "mbid": "string",
+          "name": "string",
+          "part_id": "number",
+          "release_date": "string",
+          "secondary_types": [],
+          "shelf": "string",
+          "state": "string",
+          "type": "string",
+          "upcoming": "bool"
+        }
+      ],
+      "name": "string",
+      "part_id": "number",
+      "release_date": "string",
+      "secondary_types": [],
+      "shelf": "string",
+      "similar": [],
+      "state": "string",
+      "title_id": "number",
+      "tracks": [
+        {
+          "disc": "number",
+          "have": "string",
+          "length_ms": "number",
+          "name": "string",
+          "number": "number",
+          "recording_id": "string"
+        }
+      ],
+      "type": "string"
+    },
+    "status": 200
+  },
+  "music artist page": {
+    "need": "signed_in",
+    "shape": {
+      "albums": [
+        {
+          "image": "string",
+          "mbid": "string",
+          "name": "string",
+          "part_id": "number",
+          "release_date": "string",
+          "secondary_types": [],
+          "shelf": "string",
+          "state": "string",
+          "type": "string",
+          "upcoming": "bool"
+        }
+      ],
+      "bio": "null",
+      "genres": [],
+      "have": "number",
+      "image": "string",
+      "kid": "bool",
+      "latest": {
+        "image": "string",
+        "mbid": "string",
+        "name": "string",
+        "part_id": "number",
+        "release_date": "string",
+        "secondary_types": [],
+        "shelf": "string",
+        "state": "string",
+        "type": "string"
+      },
+      "mbid": "string",
+      "missing": {
+        "albums": [
+          "string"
+        ],
+        "count": "number",
+        "size_bytes": "number"
+      },
+      "name": "string",
+      "related": [],
+      "similar": [],
+      "status": "string",
+      "title_id": "number",
+      "top": [],
+      "total": "number",
+      "type": "string"
+    },
+    "status": 200
+  },
+  "music browse tiles": {
+    "need": "signed_in",
+    "shape": {
+      "error": "string"
+    },
+    "status": 404
+  },
+  "music genre": {
+    "need": "signed_in",
+    "shape": {
+      "error": "string"
+    },
+    "status": 404
+  },
+  "music settings get": {
+    "need": "manage_library",
+    "shape": {
+      "album_choice": "string",
+      "album_types": [
+        "string"
+      ],
+      "cache_hours": "number",
+      "musicbrainz_allow_local_network": "bool",
+      "musicbrainz_url": "string",
+      "new_albums": "string",
+      "pressing_rule": "string",
+      "release_statuses": [
+        "string"
+      ],
+      "secondary_types": [
+        "string"
+      ]
+    },
+    "status": 200
+  },
+  "music settings put": {
+    "need": "settings",
+    "shape": {
+      "album_choice": "string",
+      "album_types": [
+        "string"
+      ],
+      "cache_hours": "number",
+      "musicbrainz_allow_local_network": "bool",
+      "musicbrainz_url": "string",
+      "new_albums": "string",
+      "pressing_rule": "string",
+      "release_statuses": [
+        "string"
+      ],
+      "secondary_types": [
+        "string"
+      ]
+    },
+    "status": 200
+  },
+  "music trending": {
+    "need": "signed_in",
+    "shape": {
+      "error": "string"
+    },
+    "status": 400
+  },
+  "show episode set": {
+    "need": "manage_library",
+    "shape": {
+      "air_date": "string",
+      "air_day": "string",
+      "episode": "number",
+      "id": "number",
+      "ids": {},
+      "keep_up_to_date": "bool",
+      "name": "string",
+      "season": "number",
+      "slots": []
+    },
+    "status": 200
+  },
+  "show episodes": {
+    "need": "signed_in",
+    "shape": {
+      "episode_order": "string",
+      "episodes": [
+        {
+          "air_date": "string",
+          "air_day": "string",
+          "episode": "number",
+          "id": "number",
+          "ids": {},
+          "keep_up_to_date": "bool",
+          "name": "string",
+          "season": "number",
+          "slots": [
+            {
+              "id": "number",
+              "reason": "string",
+              "state": "string",
+              "state_label": "string",
+              "version": "string",
+              "version_id": "number"
+            }
+          ]
+        }
+      ]
+    },
+    "status": 200
+  },
+  "show season set": {
+    "need": "manage_library",
+    "shape": {
+      "aired": "number",
+      "better_wanted": "number",
+      "downloading": "number",
+      "episodes": "number",
+      "failed": "number",
+      "in_library": "number",
+      "keep_up_to_date": "bool",
+      "missing": "number",
+      "name": "string",
+      "not_out_yet": "number",
+      "number": "number"
+    },
+    "status": 200
+  },
+  "show seasons": {
+    "need": "signed_in",
+    "shape": {
+      "seasons": [
+        {
+          "aired": "number",
+          "better_wanted": "number",
+          "downloading": "number",
+          "episodes": "number",
+          "failed": "number",
+          "in_library": "number",
+          "keep_up_to_date": "bool",
+          "missing": "number",
+          "name": "string",
+          "not_out_yet": "number",
+          "number": "number"
+        }
+      ]
+    },
+    "status": 200
+  },
+  "show settings get": {
+    "need": "manage_library",
+    "shape": {
+      "details_source": "string",
+      "episode_order": "string",
+      "episode_wait_minutes": "number",
+      "keep_specials": "bool",
+      "new_seasons": "string",
+      "season_choice": "string"
+    },
+    "status": 200
+  },
+  "show settings put": {
+    "need": "settings",
+    "shape": {
+      "details_source": "string",
+      "episode_order": "string",
+      "episode_wait_minutes": "number",
+      "keep_specials": "bool",
+      "new_seasons": "string",
+      "season_choice": "string"
+    },
+    "status": 200
+  },
+  "shows lookup": {
+    "need": "signed_in",
+    "shape": {
+      "attribution": "string",
+      "shows": [
+        {
+          "ids": {
+            "imdb": "string",
+            "tmdb": "string",
+            "tvdb": "string"
+          },
+          "name": "string",
+          "network": "string",
+          "seasons": [
+            {
+              "name": "string",
+              "number": "number"
+            }
+          ],
+          "source": "string",
+          "status": "string",
+          "title_id": "number",
+          "year": "number"
+        }
+      ],
+      "source": "string"
+    },
+    "status": 200
+  },
+  "shows lookup no term": {
+    "need": "signed_in",
+    "shape": {
+      "error": "string"
+    },
+    "status": 400
+  }
+}

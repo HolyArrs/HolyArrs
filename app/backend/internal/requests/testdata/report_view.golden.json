@@ -1,0 +1,38 @@
+{
+  "id": 7,
+  "created_at": "2026-10-13T12:00:00Z",
+  "title_id": 7,
+  "title_name": "s",
+  "title_kind": "s",
+  "year": 7,
+  "poster": "s",
+  "album_id": 7,
+  "album_name": "s",
+  "season": 7,
+  "item_id": 7,
+  "episode": 7,
+  "track": 7,
+  "item_name": "s",
+  "version_id": 7,
+  "version": "s",
+  "file_id": 7,
+  "where": "s",
+  "kind": "s",
+  "kind_label": "s",
+  "note": "s",
+  "state": "s",
+  "state_label": "s",
+  "made_by": {
+    "id": 7,
+    "name": "s",
+    "display_name": "s"
+  },
+  "closed_by": {
+    "id": 7,
+    "name": "s",
+    "display_name": "s"
+  },
+  "closed_at": "2026-10-13T12:00:00Z",
+  "reply": "s",
+  "mine": true
+}

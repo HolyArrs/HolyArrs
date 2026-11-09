@@ -1,0 +1,38 @@
+[
+  {
+    "added": "string",
+    "alternateTitles": [],
+    "digitalRelease": "string",
+    "genres": [],
+    "hasFile": "bool",
+    "id": "number",
+    "images": [],
+    "imdbId": "string",
+    "inCinemas": "string",
+    "isAvailable": "bool",
+    "minimumAvailability": "string",
+    "monitored": "bool",
+    "movieFileId": "number",
+    "originalLanguage": {
+      "id": "number",
+      "name": "string"
+    },
+    "path": "string",
+    "qualityProfileId": "number",
+    "rootFolderPath": "string",
+    "runtime": "number",
+    "sizeOnDisk": "number",
+    "sortTitle": "string",
+    "statistics": {
+      "movieFileCount": "number",
+      "releaseGroups": [],
+      "sizeOnDisk": "number"
+    },
+    "status": "string",
+    "tags": [],
+    "title": "string",
+    "titleSlug": "string",
+    "tmdbId": "number",
+    "year": "number"
+  }
+]

@@ -1,0 +1,79 @@
+{
+  "id": 7,
+  "kind": "s",
+  "tmdb_id": "s",
+  "ref": "s",
+  "seasons": [
+    7
+  ],
+  "season_words": "s",
+  "episodes": [
+    {
+      "season": 7,
+      "episodes": [
+        7
+      ]
+    }
+  ],
+  "future_only": true,
+  "four_k": true,
+  "albums": [
+    {
+      "mbid": "s",
+      "name": "s",
+      "year": 7,
+      "edition": "s",
+      "songs": [
+        "s"
+      ],
+      "songs_done": true
+    }
+  ],
+  "artist_id": "s",
+  "album_words": "s",
+  "name": "s",
+  "year": 7,
+  "poster": "s",
+  "state": "s",
+  "state_label": "s",
+  "title_id": 7,
+  "asked_by": {
+    "id": 7,
+    "name": "s",
+    "display_name": "s"
+  },
+  "asked_at": "2026-10-13T12:00:00Z",
+  "people": [
+    {
+      "id": 7,
+      "name": "s",
+      "display_name": "s",
+      "asked_at": "2026-10-13T12:00:00Z",
+      "from_watchlist": true
+    }
+  ],
+  "decided_by": {
+    "id": 7,
+    "name": "s",
+    "display_name": "s"
+  },
+  "decided_at": "2026-10-13T12:00:00Z",
+  "also_declined": [
+    {
+      "id": 7,
+      "name": "s",
+      "display_name": "s"
+    }
+  ],
+  "note": "s",
+  "auto_approved": true,
+  "available_at": "2026-10-13T12:00:00Z",
+  "step": {
+    "kind": "s",
+    "text": "s",
+    "searched_at": "2026-10-13T12:00:00Z",
+    "next_search": "2026-10-13T12:00:00Z"
+  },
+  "problem": "s",
+  "mine": true
+}

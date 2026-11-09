@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+		<meta name="color-scheme" content="dark light" />
+		<meta name="referrer" content="no-referrer" />
+		<link rel="icon" href="/brand/favicon.svg" type="image/svg+xml" />
+		<link rel="icon" href="/favicon.ico" sizes="any" />
+		<link rel="apple-touch-icon" href="/brand/apple-touch-icon-180.png" />
+		<title>HolyArrs</title>
+		<!--holyarrs-font-preload-->
+		<!--holyarrs-signin-seed-->
+		<script>
+			// holyarrs-early: the first data requests start now, beside the app's
+			// scripts, not after them: who is signed in, and the page's main answer
+			// (Home, Explore, an artist, an album, a title, a Library title, Library,
+			// a person, Requests, Downloads). lib/api.ts takes each one once,
+			// for the same address, within 30 s, and drops them all on any change,
+			// a 401 or another session. lib/early.test.ts runs this script.
+			(function () {
+				try {
+					var path = location.pathname, icon = document.querySelector('link[rel=icon]'), href = (icon && icon.getAttribute('href')) || '';
+					// The URL base (behind a proxy at /holyarrs) is what the server put before /brand/.
+					var base = href.indexOf('/brand/') > 0 ? href.slice(0, href.indexOf('/brand/')) : '';
+					if (base && path.indexOf(base) === 0) path = path.slice(base.length);
+					path = path.replace(/\/+$/, '') || '/';
+					if (/^\/(login|welcome|invite)(\/|$)/.test(path)) return;
+					var q = new URLSearchParams(location.search), m;
+					var saved = function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } };
+					// lib/region.ts defaultRegion.
+					var country = function () { var l = navigator.languages || []; for (var i = 0; i < l.length; i++) { var c = /^[a-z]{2,3}-([A-Za-z]{2})$/.exec(l[i]); if (c) return c[1].toUpperCase(); } return 'global'; };
+					var id = '([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})';
+					var asks = ['/auth/me'];
+					if (path === '/') asks.push('/home');
+					else if (path === '/explore') {
+						var type = q.has('type') ? q.get('type') : saved('holyarrs.explore.type');
+						if (type === 'music') {
+							// lib/music/music-trending.ts fetchMusicExplore and fetchRisingToday.
+							asks.push('/explore/music?' + new URLSearchParams({ region: saved('holyarrs.music-trending') || country(), hour: String(new Date().getHours()) }), '/explore/music/rising');
+						} else {
+							// lib/explore.ts headPath with readServices and serviceRegion.
+							var head = new URLSearchParams({ type: type === 'movies' || type === 'shows' ? type : 'all' }), tz;
+							try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone; } catch (e) {}
+							if (tz) head.set('tz', tz);
+							var region = /^[A-Z]{2}$/.test(country()) ? country() : 'US', picked = [];
+							try { var all = JSON.parse(saved('holyarrs.explore.services') || 'null'); if (all && Array.isArray(all[region])) picked = all[region].filter(function (x) { return typeof x === 'number' && x > 0 && x % 1 === 0; }); } catch (e) {}
+							head.set('services', picked.join('|'));
+							head.set('region', region);
+							asks.push('/explore/head?' + head);
+						}
+					} else if ((m = new RegExp('^/music/artist/' + id + '$').exec(path))) {
+						var artist = m[1].toLowerCase();
+						asks.push('/music/artists/' + artist + '?similar=0');
+					} else if ((m = new RegExp('^/music/album/' + id + '$').exec(path))) {
+						var album = m[1].toLowerCase(), by = (q.get('artist') || '').toLowerCase();
+						asks.push('/music/albums/' + album + '?artist=' + by + '&similar=0');
+					} else if ((m = /^\/title\/(movie|show)\/([1-9][0-9]*)$/.exec(path))) {
+						// lib/title-details.ts loadDetails: the metadata answer draws the hero, the lookup adds Library and ask facts.
+						var term = encodeURIComponent('tmdb:' + m[2]);
+						asks.push('/metadata/' + m[1] + '/' + m[2], (m[1] === 'movie' ? '/titles/lookup?term=' : '/shows/lookup?term=') + term);
+					} else if ((m = /^\/library\/([1-9][0-9]*)$/.exec(path))) {
+						asks.push('/titles/' + m[1]);
+					} else if (path === '/library') {
+						asks.push('/titles', '/collections');
+					} else if ((m = /^\/people\/([1-9][0-9]*)$/.exec(path))) {
+						// lib/person-prefetch.ts firstPageURL with peopleSort.
+						var sort = saved('holyarrs.people.sort');
+						if (sort !== 'newest' && sort !== 'popular') sort = 'oldest';
+						asks.push('/people/' + m[1] + '?role=all&sort=' + sort + '&page_size=100&page=1');
+					} else if (path === '/requests') {
+						asks.push('/asks');
+					} else if (path === '/downloads') {
+						asks.push('/downloads/view?limit=100');
+					}
+					var early = (window.__holyarrsEarly = { at: Date.now(), asks: {} });
+					for (var i = 0; i < asks.length; i++) {
+						var url = base + '/api/v1' + asks[i];
+						early.asks[url] = fetch(url, { headers: { Accept: 'application/json' }, credentials: 'same-origin' });
+						// Not taken: no "unhandled rejection" if the network fails.
+						early.asks[url].catch(function () {});
+					}
+				} catch (e) {}
+			})();
+		</script>
+		<script>
+			// A tab opened before an update asks for script files the new build replaced. Instead of an error
+			// page, open where the person was going (or this page) fresh, once: never twice within 10 s.
+			(function () {
+				var going = '', at = 0;
+				document.addEventListener('click', function (e) {
+					var a = e.target && e.target.closest ? e.target.closest('a[href]') : null;
+					if (a && a.origin === location.origin) { going = a.href; at = Date.now(); }
+				}, true);
+				window.addEventListener('vite:preloadError', function (e) {
+					try {
+						var last = Number(sessionStorage.getItem('holyarrs-stale-reload')) || 0;
+						if (Date.now() - last < 10000) return;
+						sessionStorage.setItem('holyarrs-stale-reload', String(Date.now()));
+					} catch (x) {}
+					e.preventDefault();
+					location.assign(going && Date.now() - at < 5000 ? going : location.href);
+				});
+			})();
+		</script>
+		<script>
+			try {
+				var requested = new URLSearchParams(location.search).get('theme');
+				var t = requested === 'light' || requested === 'dark' ? requested : localStorage.getItem('holyarrs-theme');
+				if (requested === 'light' || requested === 'dark') localStorage.setItem('holyarrs-theme', t);
+				if (requested === 'system') localStorage.removeItem('holyarrs-theme');
+				if (t !== 'dark' && t !== 'light') t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+				document.documentElement.dataset.theme = t;
+			} catch (e) {}
+			// The sign-in page paints its panel on the first frame: no boot Orbit,
+			// and the last wallpaper starts loading before any app script.
+			if (/\/login\/?$/.test(location.pathname)) {
+				document.documentElement.classList.add('hl-skip');
+				try {
+					var a = null;
+					try { a = JSON.parse(localStorage.getItem('holyarrs-signin-art') || 'null'); } catch (e) {}
+					// A first-ever visit: the server put the first slide's thumbnails in the page.
+					var inl = document.getElementById('holyarrs-signin-inline');
+					if (!(a && a.thumb) && inl) {
+						var d = JSON.parse(inl.textContent || 'null'), s0 = d && d.shots && d.shots[0];
+						if (s0 && d.seed) {
+							var vw = innerWidth, vh = innerHeight, dpr = Math.max(1, devicePixelRatio || 1);
+							var fit = function (im) { return im && im.w > 0 && im.h > 0 && im.w >= Math.ceil(Math.max(vw, (vh * im.w) / im.h) * dpr); };
+							// Same choice as lib/signinArt.ts pickArt: tall screens take the poster.
+							var kind = vw / vh < 0.8 && d.seed.poster && fit(s0.poster) ? 'poster' : fit(s0.backdrop) ? 'backdrop' : '';
+							var im = kind && s0[kind];
+							if (im && d.seed[kind]) {
+								var sz = kind === 'poster' ? [500, 780] : [780, 1280], need = Math.ceil(Math.max(vw, (vh * im.w) / im.h) * dpr), pw = 0;
+								// Same as lib/signinArt.ts pickSize: the smallest served size that covers, else the largest.
+								for (var i = 0; i < sz.length; i++) if (sz[i] <= im.w) { pw = sz[i]; if (sz[i] >= need) break; }
+								if (pw < need && im.w > pw) pw = -1;
+								var u = pw < 0 ? im.url.replace(/\/t\/p\/[^/]+\//, '/t/p/original/') : pw ? im.url.replace(/\/t\/p\/[^/]+\//, '/t/p/w' + pw + '/') : im.url;
+								a = { first: u, thumb: { url: u, t24: d.seed[kind].t24, t64: d.seed[kind].t64, pos: kind === 'poster' ? '50% 20%' : '50% 30%' } };
+								window.__holyarrsSigninInline = { shots: d.shots, thumb: a.thumb };
+							}
+						}
+					}
+					if (a && typeof a.first === 'string' && /^\/[^\/]/.test(a.first) && a.first.indexOf('/api/v1/public/signin-pic/') >= 0) {
+						var l = document.createElement('link');
+						l.rel = 'preload'; l.as = 'image'; l.href = a.first; l.fetchPriority = 'high'; l.crossOrigin = 'anonymous';
+						document.head.appendChild(l);
+						// First frame: the photo as a coarse mosaic (its kept 24 px thumbnail,
+						// scaled up hard-edged); SigninBackdrop refines it to sharp.
+						var th = a.thumb;
+						if (th && th.url === a.first && /^data:image\/jpeg;base64,[A-Za-z0-9+\/=]+$/.test(th.t24 || '') && /^[0-9.% ]+$/.test(th.pos || '')) {
+							var still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+							var st = document.createElement('style');
+							st.id = 'holyarrs-signin-seed';
+							st.textContent = 'body::before{content:"";position:fixed;inset:0;z-index:0;background:#050507 url(' + th.t24 + ') ' + th.pos + '/cover no-repeat;image-rendering:' + (still ? 'auto' : 'pixelated') + '}';
+							document.head.appendChild(st);
+							document.documentElement.classList.add('sa-seeded');
+						}
+					}
+				} catch (e) {}
+			}
+		</script>
+		%sveltekit.head%
+		<style>
+			#hl{position:fixed;inset:0;z-index:2147483000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;background:#0b0b0c;transition:opacity .25s ease-out}
+			[data-theme='light'] #hl{background:#f5f5f7}
+			#hl[hidden]{display:none}
+			html.hl-skip #hl:not(.handoff){display:none}
+			/* The sign-in page is full-bleed: no light scrollbar gutter down the right edge of the wallpaper. */
+			html.hl-skip{scrollbar-gutter:auto;background:#050507}
+			#hlt{margin:0;font:500 15px/1.3 system-ui,sans-serif;color:#a1a1a6;min-height:1.3em}
+			#hl svg{overflow:visible}
+			/* The ring and the pulse animate whole HTML-level boxes (outer <svg>s), so the compositor keeps them moving while the app's JS boots. */
+			#hl .hw{position:relative;width:104px;height:104px}
+			#hl .hw svg{position:absolute;inset:0;width:100%;height:100%}
+			#hl .rs{animation:hlr 1.17s linear infinite;will-change:transform}
+			#hl .ms{animation:hls 2.6s ease-in-out infinite;will-change:opacity}
+			#hl.nav{background:rgba(0,0,0,.32);animation:hlf .2s}
+			#hl.nav .hw{width:56px;height:56px}
+			#hl.out{opacity:0;pointer-events:none}
+			#hlt{max-width:min(360px,80vw);text-align:center}
+			#hlr{min-height:36px;padding:0 16px;border:0;border-radius:10px;background:#d42d24;color:#fff;font:600 14px/1 system-ui,sans-serif;cursor:pointer}
+			#hlr[hidden]{display:none}
+			#hl.nav #hlr{display:none}
+			/* Sign-in hand-off (lib/loader.ts playHandoff): the veil fades to the app colour while the Orbit glides in from the button. */
+			#hl .hw{transition:transform .56s cubic-bezier(.22,1,.36,1),opacity .3s ease-out}
+			/* The veil is its own layer that fades by opacity only (compositor), not a full-screen background-color repaint each frame. */
+			#hl.handoff{background:transparent;transition:opacity .42s cubic-bezier(.4,0,.2,1)}
+			#hl.handoff::before{content:'';position:absolute;inset:0;z-index:-1;background:#0b0b0c;opacity:0;transition:opacity .56s cubic-bezier(.4,0,.2,1);will-change:opacity}
+			[data-theme='light'] #hl.handoff::before{background:#f5f5f7}
+			#hl.handoff.veil::before{opacity:1}
+			#hl.handoff.out .hw{transform:scale(.86);opacity:0;transition-duration:.42s}
+			html.hl-arrive #main{animation:hla .42s cubic-bezier(.22,1,.36,1) both}
+			@keyframes hla{from{opacity:0;transform:translateY(14px)}}
+			@media (prefers-reduced-motion:reduce){#hl .hw,#hl.handoff,#hl.handoff::before{transition:opacity .3s}}
+			@keyframes hlr{to{transform:rotate(360deg)}}
+			@keyframes hls{0%,100%{opacity:.8}50%{opacity:1}}
+			@keyframes hlf{from{opacity:0}}
+		</style>
+
+	</head>
+	<body data-sveltekit-preload-data="hover">
+		<noscript>HolyArrs needs JavaScript.</noscript>
+		<div style="display: contents">%sveltekit.body%</div>
+		<div id="hl" role="status" aria-label="HolyArrs is loading">
+			<div class="hw"><svg class="ms" viewBox="0 0 100 100" aria-hidden="true"><defs><clipPath id="hlc"><rect x="17.5" y="17.5" width="65" height="65" rx="4" transform="rotate(45 50 50)" /></clipPath></defs><circle cx="50" cy="50" r="46" fill="none" stroke="#7c7c80" stroke-opacity=".3" stroke-width="1.6" /><g class="m"><g transform="translate(14 14) scale(.72)"><rect x="17.5" y="17.5" width="65" height="65" rx="4" transform="rotate(45 50 50)" fill="none" stroke="#3a3d44" stroke-width="2.2" /><g clip-path="url(#hlc)"><rect width="100" height="100" fill="#1c1d21" /><path d="M50 0C42 18 46 32 58 41C70 50 66 70 54 100L110 100L110 0Z" fill="#f23a2e" /><path d="M50 0C42 18 46 32 58 41C70 50 66 70 54 100L110 100L110 0Z" fill="#55585e" transform="rotate(180 50 50)" /></g><path d="M50 26.8Q54.5 44.3 72 48.8Q54.5 53.3 50 70.8Q45.5 53.3 28 48.8Q45.5 44.3 50 26.8Z" fill="#fff" /></g></g></svg><svg class="rs" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="46" fill="none" stroke="#ff453a" stroke-width="1.8" stroke-linecap="round" stroke-dasharray="60 229" /></svg></div>
+			<p id="hlt"></p>
+			<button id="hlr" type="button" hidden>Reload</button>
+		</div>
+		<script>
+			// Boot Orbit words: a status after 3 s, a reload after 10 s.
+			(function () {
+				var hl = document.getElementById('hl'), t = document.getElementById('hlt'), r = document.getElementById('hlr');
+				if (document.documentElement.classList.contains('hl-skip')) hl.hidden = true;
+				// A listener, not an inline onclick: the script policy has no 'unsafe-inline'.
+				if (r) r.addEventListener('click', function () { location.reload(); });
+				function up() { return hl && !hl.hidden && !hl.classList.contains('nav') && !hl.classList.contains('out'); }
+				setTimeout(function () { if (up() && t && !t.textContent) { t.textContent = 'Starting HolyArrs…'; t.dataset.boot = '1'; } }, 3000);
+				setTimeout(function () {
+					if (!up()) return;
+					if (t && (!t.textContent || t.dataset.boot)) t.textContent = 'This is taking longer than usual. The server may still be starting.';
+					if (r) r.hidden = false;
+				}, 10000);
+				new MutationObserver(function () { if (hl.hidden && r) r.hidden = true; }).observe(hl, { attributes: true, attributeFilter: ['hidden'] });
+			})();
+		</script>
+	</body>
+</html>

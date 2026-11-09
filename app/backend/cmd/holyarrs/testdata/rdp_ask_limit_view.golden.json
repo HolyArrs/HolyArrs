@@ -1,0 +1,12 @@
+{
+  "user_id": 7,
+  "name": "s",
+  "role": "s",
+  "movies_per_week": 7,
+  "shows_per_week": 7,
+  "music_per_week": 7,
+  "used": {
+    "s": 7
+  },
+  "no_limit": true
+}

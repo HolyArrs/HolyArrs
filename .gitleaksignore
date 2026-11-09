@@ -1,0 +1,10 @@
+app/backend/cmd/holyarrs/oldappapi_prowlarr_test.go:generic-api-key:26
+app/backend/cmd/holyarrs/tags_test.go:generic-api-key:26
+app/backend/internal/downloads/client_sabnzbd_test.go:generic-api-key:15
+app/backend/internal/downloads/downloaders_test.go:generic-api-key:21
+app/backend/internal/downloads/downloaders_test.go:generic-api-key:94
+app/backend/internal/migrate/review_test.go:generic-api-key:45
+app/backend/internal/sources/path_key_test.go:generic-api-key:16
+app/backend/internal/sources/path_key_test.go:generic-api-key:20
+app/backend/internal/sources/sources_pathkey_test.go:generic-api-key:19
+app/tests/requests/asking.spec.ts:discord-client-id:16

@@ -1,0 +1,603 @@
+// Package parts holds the five parts a person can turn on, off or restart
+// while the app runs (Movies, Shows, Music, Subtitles, Requests), the
+// one table that says which routes, screens, background loops and Job
+// kinds belong to which part, and the Control that switches them.
+// Everything not in a part is the core: sign-in and accounts, Sources,
+// Downloaders and Downloads, Library folders, settings, backups, health,
+// Alerts and the controls themselves. Sources are not a part.
+package parts
+
+import (
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
+)
+
+// Part and Owner are the registry's types; this package fills the registry
+// with the app's parts until each module registers its own.
+type (
+	Part  = startup.Part
+	Owner = startup.Owner
+)
+
+const (
+	Movies    Part = "movies"
+	Shows     Part = "shows"
+	Music     Part = "music"
+	Subtitles Part = "subtitles"
+	Wishlist  Part = "wishlist"
+
+	Core    = startup.Core
+	Media   = startup.Media
+	ByTitle = startup.ByTitle
+)
+
+// All lists the parts in the order screens show them.
+func All() []Part { return startup.Parts() }
+
+// Routes, Screens, Loops and JobKinds are copies of the registry's owners.
+func Routes() map[string]Owner   { return startup.OwnersOf(startup.RouteOwners) }
+func Screens() map[string]Owner  { return startup.OwnersOf(startup.ScreenOwners) }
+func Loops() map[string]Owner    { return startup.OwnersOf(startup.LoopOwners) }
+func JobKinds() map[string]Owner { return startup.OwnersOf(startup.JobOwners) }
+
+// RouteOwner is the owner of one route pattern; ok is false when no part
+// names it.
+func RouteOwner(pattern string) (Owner, bool) { return startup.OwnerOf(startup.RouteOwners, pattern) }
+
+// LoopOwner is the owner of one loop, "" when no part names it.
+func LoopOwner(name string) Owner { o, _ := startup.OwnerOf(startup.LoopOwners, name); return o }
+
+// JobOwner is the owner of one Job kind, "" when no part names it.
+func JobOwner(kind string) Owner { o, _ := startup.OwnerOf(startup.JobOwners, kind); return o }
+
+// Valid reports whether p is a registered part.
+func Valid(p Part) bool { return startup.PartKnown(p) }
+
+// Of is the Owner for one part.
+func Of(p Part) Owner { return Owner(p) }
+
+// ForTitleKind maps a title kind (movie, show, artist) or a Library
+// folder kind (music) to its part.
+func ForTitleKind(kind string) (Part, bool) {
+	switch kind {
+	case "movie":
+		return Movies, true
+	case "show", "episode", "season":
+		return Shows, true
+	case "artist", "music", "album", "track":
+		return Music, true
+	}
+	return "", false
+}
+
+var (
+	movies    = Of(Movies)
+	shows     = Of(Shows)
+	music     = Of(Music)
+	subtitles = Of(Subtitles)
+	wishlist  = Of(Wishlist)
+)
+
+// routeOwners gives every route the server registers its owner. A test in
+// cmd/holyarrs fails for a registered route missing here, and for a row
+// whose route is gone.
+var routeOwners = map[string]Owner{
+	// AI connections: core; each tool checks the parts it needs.
+	"POST /api/v1/mcp":        Core,
+	"GET /api/v1/mcp":         Core,
+	"POST /mcp":               Core,
+	"GET /mcp":                Core,
+	"GET /api/v1/settings/ai": Core,
+	"PUT /api/v1/settings/ai": Core,
+	"GET /.well-known/oauth-protected-resource":           Core,
+	"GET /.well-known/oauth-protected-resource/{path...}": Core,
+	"GET /.well-known/oauth-authorization-server":         Core,
+	"POST /oauth/register":                                Core,
+	"GET /oauth/authorize":                                Core,
+	"POST /oauth/token":                                   Core,
+	"GET /api/v1/auth/ai-connect":                         Core,
+	"POST /api/v1/auth/ai-connect":                        Core,
+
+	"GET /api/v1/data-packs":                            Core,
+	"GET /api/v1/data-packs/{id}":                       Core,
+	"GET /api/v1/data-packs/{id}/preview":               Core,
+	"POST /api/v1/data-packs/validate":                  Core,
+	"POST /api/v1/data-packs":                           Core,
+	"POST /api/v1/data-packs/{id}/apply":                Core,
+	"GET /api/v1/titles/{id}/copies":                    ByTitle,
+	"POST /api/v1/titles/{id}/versions/{vid}/adopt":     ByTitle,
+	"GET /api/v1/people/search":                         movies,
+	"GET /api/v1/people/popular":                        movies,
+	"GET /api/v1/people/shelves":                        movies,
+	"GET /api/v1/people/shelves/{id}":                   movies,
+	"GET /api/v1/people/{id}":                           movies,
+	"GET /api/v1/wiki/{kind}/{id}":                      movies,
+	"POST /api/v1/people/{id}/movies/review":            movies,
+	"GET /api/v1/titles/{id}/people":                    ByTitle,
+	"PUT /api/v1/titles/{id}/files/{fid}/choices":       ByTitle,
+	"POST /api/v1/titles/{id}/files/{fid}/keep-and-add": ByTitle,
+	"PUT /api/v1/downloads/{id}/edition":                Media,
+	"GET /api/v1/collections":                           movies,
+	"GET /api/v1/collections/{id}":                      movies,
+	"POST /api/v1/collections/{id}/remove/preview":      movies,
+	"POST /api/v1/collections/{id}/remove":              movies,
+	"GET /api/v1/library/copies":                        movies,
+	"POST /api/v1/library/copies/search/preview":        movies,
+	"POST /api/v1/library/copies/search":                movies,
+
+	// The app's pages, sign-in, accounts, people and keys.
+	"GET /":                         Core,
+	"GET /login":                    Core,
+	"GET /healthz":                  Core,
+	"GET /readyz":                   Core,
+	"GET /live":                     Core,
+	"POST /api/v1/live/interest":    Core,
+	"GET /api/v1/openapi.json":      Core,
+	"GET /api/v1/auth/state":        Core,
+	"GET /api/v1/public/signin-art": Core,
+	"GET /api/v1/public/signin-pic/t/p/{size}/{file}": Core,
+	"POST /api/v1/auth/setup":                         Core,
+	"POST /api/v1/auth/setup/plex/start":              Core,
+	"POST /api/v1/auth/setup/plex/finish":             Core,
+	"POST /api/v1/auth/setup/media-server/{kind}":     Core,
+	"GET /api/v1/auth/setup/discover":                 Core,
+	"POST /api/v1/auth/login":                         Core,
+	"POST /api/v1/auth/reauth":                        Core,
+	"POST /api/v1/auth/setup/done":                    Core,
+	"POST /api/v1/auth/oidc/start":                    Core,
+	"POST /api/v1/auth/oidc/link":                     Core,
+	"GET /api/v1/auth/oidc/callback":                  Core,
+	"POST /api/v1/auth/oidc/finish":                   Core,
+	"POST /api/v1/auth/oidc/link-finish":              Core,
+	"POST /api/v1/auth/forward/login":                 Core,
+	"POST /api/v1/auth/forward/link":                  Core,
+	"POST /api/v1/auth/login/two-factor":              Core,
+	"POST /api/v1/auth/plex/start":                    Core,
+	"POST /api/v1/auth/plex/finish":                   Core,
+	"POST /api/v1/auth/media-server/{kind}":           Core,
+	"GET /api/v1/auth/invites/{token}":                Core,
+	"POST /api/v1/auth/invites/{token}":               Core,
+	"GET /api/v1/auth/me":                             Core,
+	"POST /api/v1/auth/logout":                        Core,
+	"POST /api/v1/auth/password":                      Core,
+	"POST /api/v1/auth/two-factor/setup":              Core,
+	"POST /api/v1/auth/two-factor/enable":             Core,
+	"POST /api/v1/auth/two-factor/disable":            Core,
+	"POST /api/v1/auth/two-factor/backup-codes":       Core,
+	"GET /api/v1/auth/keys":                           Core,
+	"POST /api/v1/auth/keys":                          Core,
+	"DELETE /api/v1/auth/keys/{id}":                   Core,
+	"GET /api/v1/auth/settings":                       Core,
+	"PUT /api/v1/auth/settings":                       Core,
+	"POST /api/v1/auth/plex/link/start":               Core,
+	"POST /api/v1/auth/plex/link/finish":              Core,
+	"DELETE /api/v1/auth/plex/link":                   Core,
+	"GET /api/v1/auth/sso":                            Core,
+	"PUT /api/v1/auth/sso":                            Core,
+	"POST /api/v1/auth/sso/test":                      Core,
+	"GET /api/v1/auth/sso/links":                      Core,
+	"POST /api/v1/auth/sso/unlink":                    Core,
+	"GET /api/v1/auth/plex/my-link":                   Core,
+	"POST /api/v1/auth/plex/my-link/start":            Core,
+	"POST /api/v1/auth/plex/my-link/finish":           Core,
+	"DELETE /api/v1/auth/plex/my-link":                Core,
+	"POST /api/v1/users/{id}/sso/unlink":              Core,
+	"POST /api/v1/auth/media-server/{kind}/test":      Core,
+	"POST /api/v1/auth/import/{kind}/preview":         Core,
+	"POST /api/v1/auth/import/{kind}":                 Core,
+	"GET /api/v1/users":                               Core,
+	"PUT /api/v1/users/{id}":                          Core,
+	"POST /api/v1/users/{id}/two-factor/reset":        Core,
+	"POST /api/v1/users/{id}/password":                Core,
+	"GET /api/v1/users/invites":                       Core,
+	"POST /api/v1/users/invites":                      Core,
+	"DELETE /api/v1/users/invites/{id}":               Core,
+	"GET /api/v1/auth/sessions":                       Core,
+	"DELETE /api/v1/auth/sessions":                    Core,
+	"DELETE /api/v1/auth/sessions/{sid}":              Core,
+	"GET /api/v1/users/{id}/sessions":                 Core,
+	"POST /api/v1/users/{id}/sessions/end-all":        Core,
+	"DELETE /api/v1/users/{id}/sessions/{sid}":        Core,
+	"PUT /api/v1/account/avatar":                      Core,
+	"DELETE /api/v1/account/avatar":                   Core,
+	"GET /api/v1/users/{id}/avatar":                   Core,
+
+	// Joining through an invite with Plex, Jellyfin or Emby.
+	"POST /api/v1/auth/invites/{token}/plex/start":          Core,
+	"POST /api/v1/auth/invites/{token}/plex/finish":         Core,
+	"POST /api/v1/auth/invites/{token}/media-server/{kind}": Core,
+
+	// Backups, health, Alerts, media servers, history and Jobs.
+	"GET /api/v1/backups":                  Core,
+	"POST /api/v1/backups":                 Core,
+	"PUT /api/v1/backups/settings":         Core,
+	"GET /api/v1/backups/{name}":           Core,
+	"DELETE /api/v1/backups/{name}":        Core,
+	"POST /api/v1/backups/restore":         Core,
+	"POST /api/v1/system/key-kit":          Core,
+	"GET /api/v1/health":                   Core,
+	"GET /api/v1/health/checks":            Core,
+	"GET /api/v1/health/disks":             Core,
+	"POST /api/v1/health/checks/run":       Core,
+	"GET /api/v1/health/states":            Core,
+	"GET /api/v1/settings/health":          Core,
+	"PUT /api/v1/settings/health":          Core,
+	"GET /api/v1/settings/alerts":          Core,
+	"PUT /api/v1/settings/alerts":          Core,
+	"GET /api/v1/settings/url-base":        Core,
+	"PUT /api/v1/settings/url-base":        Core,
+	"GET /api/v1/alerts":                   Core,
+	"POST /api/v1/alerts":                  Core,
+	"PUT /api/v1/alerts/{id}":              Core,
+	"DELETE /api/v1/alerts/{id}":           Core,
+	"POST /api/v1/alerts/{id}/test":        Core,
+	"GET /api/v1/my/alerts":                Core,
+	"PUT /api/v1/my/alerts":                Core,
+	"GET /api/v1/my/profile":               Core,
+	"PUT /api/v1/my/profile":               Core,
+	"GET /api/v1/media-servers":            Core,
+	"POST /api/v1/media-servers":           Core,
+	"PUT /api/v1/media-servers/{id}":       Core,
+	"DELETE /api/v1/media-servers/{id}":    Core,
+	"POST /api/v1/media-servers/{id}/test": Core,
+	"GET /api/v1/events":                   Core,
+	"GET /api/v1/jobs":                     Core,
+	"GET /api/v1/jobs/{id}":                Core,
+	"GET /api/v1/jobs/active":              Core,
+	"GET /api/v1/settings/trakt-key":       Core,
+	"PUT /api/v1/settings/trakt-key":       Core,
+	"GET /api/v1/settings/trakt-token":     Core,
+	"PUT /api/v1/settings/trakt-token":     Core,
+
+	// Library folders.
+	"GET /api/v1/library-folders":             Core,
+	"POST /api/v1/library-folders":            Core,
+	"PUT /api/v1/library-folders/{id}":        Core,
+	"DELETE /api/v1/library-folders/{id}":     Core,
+	"POST /api/v1/library-folders/{id}/check": Core,
+
+	// Sources, Downloaders and Downloads (linked apps are core).
+	"GET /api/v1/sources":                                        Core,
+	"GET /api/v1/bridges":                                        Core,
+	"POST /api/v1/bridges":                                       Core,
+	"POST /api/v1/bridges/find":                                  Core,
+	"POST /api/v1/bridges/test":                                  Core,
+	"POST /api/v1/bridges/{id}/check":                            Core,
+	"DELETE /api/v1/bridges/{id}":                                Core,
+	"GET /api/v1/sources/{id}/stats":                             Core,
+	"POST /api/v1/sources":                                       Core,
+	"PUT /api/v1/sources/{id}":                                   Core,
+	"DELETE /api/v1/sources/{id}":                                Core,
+	"POST /api/v1/sources/{id}/test":                             Core,
+	"POST /api/v1/sources/{id}/pause":                            Core,
+	"POST /api/v1/sources/{id}/resume":                           Core,
+	"POST /api/v1/sources/{id}/try":                              Core,
+	"POST /api/v1/sources/check":                                 Core,
+	"GET /api/v1/titles/{id}/search-outcome":                     ByTitle,
+	"GET /api/v1/downloaders":                                    Core,
+	"GET /api/v1/tags":                                           Core,
+	"POST /api/v1/downloaders":                                   Core,
+	"PUT /api/v1/downloaders/{id}":                               Core,
+	"DELETE /api/v1/downloaders/{id}":                            Core,
+	"POST /api/v1/downloaders/{id}/test":                         Core,
+	"POST /api/v1/downloaders/{id}/pause":                        Core,
+	"POST /api/v1/downloaders/{id}/resume":                       Core,
+	"GET /api/v1/downloaders/{id}/attempts":                      Core,
+	"POST /api/v1/downloaders/{id}/attempts/{attemptID}/abandon": Core,
+	"GET /api/v1/settings/downloaders":                           Core,
+	"PUT /api/v1/settings/downloaders":                           Core,
+	"GET /api/v1/downloads":                                      Core,
+	"GET /api/v1/downloads/view":                                 Core,
+	"POST /api/v1/downloads/{id}/mark-failed":                    Core,
+	"POST /api/v1/downloads/{id}/remove":                         Core,
+	"POST /api/v1/downloads/{id}/pause":                          Core,
+	"POST /api/v1/downloads/{id}/resume":                         Core,
+	"POST /api/v1/downloads/{id}/top":                            Core,
+	"POST /api/v1/downloads/{id}/recheck":                        Core,
+	"POST /api/v1/downloads/{id}/reannounce":                     Core,
+	"GET /api/v1/downloads/{id}/swarm":                           Core,
+	"GET /api/v1/downloads/{id}/detail":                          Core,
+	"GET /api/v1/downloads/{id}/files":                           Core,
+	"PUT /api/v1/downloads/{id}/files":                           Core,
+	"GET /api/v1/downloads/clients":                              Core,
+	"POST /api/v1/downloads/pause-all":                           Core,
+	"POST /api/v1/downloads/resume-all":                          Core,
+	"PUT /api/v1/downloaders/{id}/speed-limit":                   Core,
+	"GET /api/v1/downloads/matches":                              Core,
+	"POST /api/v1/downloads/matches/run":                         Core,
+	"POST /api/v1/downloads/matches/{id}/pick":                   Core,
+	"POST /api/v1/downloaders/{id}/items/{hash}/pause":           Core,
+	"POST /api/v1/downloaders/{id}/items/{hash}/resume":          Core,
+	"POST /api/v1/downloaders/{id}/items/{hash}/top":             Core,
+	"POST /api/v1/downloaders/{id}/items/{hash}/up":              Core,
+	"POST /api/v1/downloaders/{id}/items/{hash}/down":            Core,
+	"POST /api/v1/downloaders/{id}/items/{hash}/bottom":          Core,
+	"POST /api/v1/downloaders/{id}/items/{hash}/priority":        Core,
+	"POST /api/v1/downloaders/{id}/items/{hash}/recheck":         Core,
+	"POST /api/v1/downloaders/{id}/items/{hash}/reannounce":      Core,
+	"POST /api/v1/downloaders/{id}/items/{hash}/remove":          Core,
+	"GET /api/v1/downloaders/{id}/items/{hash}/detail":           Core,
+	"GET /api/v1/downloaders/{id}/items/{hash}/swarm":            Core,
+	"POST /api/v1/downloaders/{id}/items/{hash}/retry":           Core,
+	"GET /api/v1/downloaders/{id}/items/{hash}/usenet":           Core,
+	"GET /api/v1/downloads/{id}/usenet":                          Core,
+	"GET /api/v1/downloaders/{id}/items/{hash}/files":            Core,
+	"PUT /api/v1/downloaders/{id}/items/{hash}/files":            Core,
+	"POST /api/v1/downloaders/{id}/torrents":                     Core,
+	"POST /api/v1/downloaders/{id}/bulk":                         Core,
+	"POST /api/v1/downloaders/{id}/share-limits":                 Core,
+	"POST /api/v1/downloaders/{id}/slow-mode":                    Core,
+	"POST /api/v1/downloaders/{id}/location":                     Core,
+	"POST /api/v1/downloaders/{id}/speed-limits":                 Core,
+	"POST /api/v1/downloaders/{id}/items/{hash}/trackers":        Core,
+	"PUT /api/v1/downloaders/{id}/items/{hash}/trackers":         Core,
+	"POST /api/v1/downloaders/{id}/items/{hash}/trackers/remove": Core,
+	"GET /api/v1/imports":                                        Core,
+
+	// Parts and the controls.
+	"GET /api/v1/parts":                      Core,
+	"POST /api/v1/parts/{part}/on":           Core,
+	"POST /api/v1/parts/{part}/off":          Core,
+	"POST /api/v1/parts/{part}/restart":      Core,
+	"POST /api/v1/stages/{name}/pause":       Core,
+	"POST /api/v1/stages/{name}/resume":      Core,
+	"POST /api/v1/stages/{name}/restart":     Core,
+	"POST /api/v1/links/{kind}/{id}/restart": Core,
+	"POST /api/v1/app/restart":               Core,
+	"POST /api/v1/app/safe-mode":             Core,
+	"POST /api/v1/app/shutdown":              Core,
+	"GET /api/v1/app/storage":                Core,
+	"GET /api/v1/app/about":                  Core,
+	"GET /api/v1/logs":                       Core,
+	"GET /api/v1/logs/download":              Core,
+	"GET /api/v1/support/bundle":             Core,
+	"GET /api/v1/schedules":                  Core,
+	"GET /api/v1/app/update":                 Core,
+	"GET /api/v1/settings/ui":                Core,
+	"PUT /api/v1/settings/ui":                Core,
+	"POST /api/v1/app/update/check":          Core,
+	"POST /api/v1/schedules/{kind}/run":      Core,
+	"PUT /api/v1/schedules/{kind}":           Core,
+
+	// The move tool reads old apps whatever parts are on.
+	"POST /api/v1/migrate/probe":            Core,
+	"POST /api/v1/migrate/read":             Core,
+	"GET /api/v1/migrate/saved-keys":        Core,
+	"DELETE /api/v1/migrate/saved-keys":     Core,
+	"POST /api/v1/settings/import-secrets":  Core,
+	"GET /api/v1/migrate/snapshots":         Core,
+	"GET /api/v1/migrate/snapshots/{id}":    Core,
+	"DELETE /api/v1/migrate/snapshots/{id}": Core,
+	"POST /api/v1/migrate/plan":             Core,
+	"POST /api/v1/migrate/dry-run":          Core,
+	"GET /api/v1/migrate/moves":             Core,
+	"POST /api/v1/migrate/moves":            Core,
+	"GET /api/v1/migrate/moves/{id}":        Core,
+	"GET /api/v1/migrate/moves/{id}/report": Core,
+	"POST /api/v1/migrate/moves/{id}/undo":  Core,
+
+	// Shared by Movies, TV shows and Music.
+	"GET /api/v1/titles":                      Media,
+	"GET /api/v1/titles/owned":                Media,
+	"GET /api/v1/library/search":              Media,
+	"GET /api/v1/search/suggest":              Media,
+	"GET /api/v1/search":                      Media,
+	"GET /api/v1/home":                        Media,
+	"POST /api/v1/titles/refresh":             Media,
+	"GET /api/v1/artwork/{name}":              Media,
+	"GET /api/v1/artwork/tmdb/{size}/{file}":  Media,
+	"GET /api/v1/calendar":                    Media,
+	"GET /api/v1/pick-rules":                  Media,
+	"GET /api/v1/settings/status":             Core,
+	"GET /api/v1/metadata/health":             Core,
+	"GET /api/v1/settings/title-defaults":     Media,
+	"PUT /api/v1/settings/title-defaults":     Media,
+	"GET /api/v1/pick-rules/{id}":             Media,
+	"POST /api/v1/pick-rules":                 Media,
+	"PUT /api/v1/pick-rules/{id}":             Media,
+	"DELETE /api/v1/pick-rules/{id}":          Media,
+	"GET /api/v1/own-traits":                  Media,
+	"POST /api/v1/own-traits":                 Media,
+	"PUT /api/v1/own-traits/{id}":             Media,
+	"DELETE /api/v1/own-traits/{id}":          Media,
+	"GET /api/v1/never-add":                   Media,
+	"POST /api/v1/never-add":                  Media,
+	"DELETE /api/v1/never-add/{id}":           Media,
+	"GET /api/v1/outside-lists":               Media,
+	"POST /api/v1/outside-lists":              Media,
+	"PUT /api/v1/outside-lists/{id}":          Media,
+	"DELETE /api/v1/outside-lists/{id}":       Media,
+	"POST /api/v1/outside-lists/{id}/sync":    Media,
+	"POST /api/v1/releases/{id}/choose":       Media,
+	"POST /api/v1/releases/{id}/turn-down":    Media,
+	"GET /api/v1/held":                        Media,
+	"DELETE /api/v1/held":                     Media,
+	"DELETE /api/v1/held/{id}":                Media,
+	"GET /api/v1/turned-down":                 Media,
+	"DELETE /api/v1/turned-down":              Media,
+	"DELETE /api/v1/turned-down/{id}":         Media,
+	"POST /api/v1/search/missing":             Media,
+	"POST /api/v1/search/better":              Media,
+	"POST /api/v1/search/feed-check":          Media,
+	"GET /api/v1/searches":                    Media,
+	"GET /api/v1/settings/search":             Media,
+	"PUT /api/v1/settings/search":             Media,
+	"GET /api/v1/needs-decision":              Media,
+	"POST /api/v1/needs-decision/{id}/decide": Media,
+	"GET /api/v1/rename":                      Media,
+	"POST /api/v1/rename":                     Media,
+	"GET /api/v1/settings/naming":             Media,
+	"PUT /api/v1/settings/naming":             Media,
+	"POST /api/v1/settings/naming/example":    Media,
+	"GET /api/v1/settings/files":              Media,
+	"PUT /api/v1/settings/files":              Media,
+	"POST /api/v1/holding/clean":              Media,
+	"GET /api/v1/holding":                     Media,
+	"POST /api/v1/holding/restore":            Media,
+	"POST /api/v1/library-folders/{id}/scan":  Media,
+	"POST /api/v1/library-folders/{id}/adopt": Media,
+	"POST /api/v1/manual-import/scan":         Media,
+	"POST /api/v1/manual-import":              Media,
+	"GET /api/v1/settings/import-folders":     Media,
+	"PUT /api/v1/settings/import-folders":     Media,
+
+	// The metadata server's stored title and person pictures.
+	"GET /api/v1/artwork/img/{kind}/{id}/{file}": Media,
+
+	// One title: its kind decides.
+	"GET /api/v1/titles/{id}":                   ByTitle,
+	"PUT /api/v1/titles/{id}":                   ByTitle,
+	"POST /api/v1/titles/{id}/move":             ByTitle,
+	"POST /api/v1/titles/{id}/versions":         ByTitle,
+	"PUT /api/v1/titles/{id}/versions/{vid}":    ByTitle,
+	"DELETE /api/v1/titles/{id}/versions/{vid}": ByTitle,
+	"POST /api/v1/titles/{id}/refresh":          ByTitle,
+	"POST /api/v1/titles/{id}/search":           ByTitle,
+	"GET /api/v1/titles/{id}/releases":          ByTitle,
+	"GET /api/v1/titles/{id}/rename":            ByTitle,
+	"POST /api/v1/titles/{id}/rename":           ByTitle,
+	"POST /api/v1/titles/{id}/delete":           ByTitle,
+
+	// Movies.
+	"POST /api/v1/titles":                                  movies,
+	"GET /api/v1/titles/lookup":                            movies,
+	"GET /api/v1/metadata/search":                          movies,
+	"GET /api/v1/metadata/{kind}/{tmdb_id}":                Media,
+	"GET /api/v1/metadata/{kind}/{tmdb_id}/more-from":      Media,
+	"GET /api/v1/metadata/{kind}/{tmdb_id}/reviews":        Media,
+	"GET /api/v1/metadata/{kind}/{tmdb_id}/anime":          Media,
+	"GET /api/v1/extras/{kind}/{id}":                       Media,
+	"GET /api/v1/metadata/show/{tmdb_id}/seasons/{number}": shows,
+	"GET /api/v1/trailer/batch":                            Media,
+	"GET /api/v1/trailer/{kind}/{tmdb_id}":                 Media,
+	"GET /api/v1/trailer/stream/{id}/manifest.m3u8":        Media,
+	"GET /api/v1/trailer/stream/{id}/seg/{n}":              Media,
+	"GET /api/v1/discover":                                 Media,
+	"GET /api/v1/watch-services":                           Media,
+	"GET /api/v1/explore/head":                             Media,
+	"GET /api/v1/explore/tail":                             Media,
+	"GET /api/v1/explore/top":                              Media,
+	"GET /api/v1/explore/service-top":                      Media,
+	"GET /api/v1/explore/genre":                            Media,
+	"GET /api/v1/explore/genre-row":                        Media,
+	"GET /api/v1/explore/new":                              Media,
+	"GET /api/v1/explore/new/services":                     Media,
+	"GET /api/v1/explore/new/service":                      Media,
+	"GET /api/v1/explore/browse":                           Media,
+	"GET /api/v1/explore/browse/section":                   Media,
+	"GET /api/v1/explore/browse/category":                  Media,
+	"POST /api/v1/explore/counts":                          Media,
+	"GET /api/v1/explore/strip":                            Media,
+	"POST /api/v1/explore/strip/counts":                    Media,
+	"DELETE /api/v1/explore/strip/counts":                  Media,
+	"GET /api/v1/explore/title-stats":                      Media,
+	"GET /api/v1/music-trending":                           music,
+	"GET /api/v1/explore/music":                            music,
+	"GET /api/v1/explore/music/rising":                     music,
+	"GET /api/v1/explore/new/music":                        music,
+	"GET /api/v1/metadata/album/{mbid}/follow":             music,
+	"PUT /api/v1/metadata/album/{mbid}/follow":             music,
+	"DELETE /api/v1/metadata/album/{mbid}/follow":          music,
+	"GET /api/v1/music-trending/art/{kind}/{mbid}":         music,
+	"GET /api/v1/music/genre/{slug}":                       music,
+	"GET /api/v1/music/browse/{kind}/{slug}":               music,
+	"GET /api/v1/music/browse-tiles":                       music,
+	"GET /api/v1/music/genre-art/{slug}":                   music,
+	"GET /api/v1/music/artists/{mbid}":                     music,
+	"GET /api/v1/music/albums/{mbid}":                      music,
+	"GET /api/v1/settings/release-gate":                    movies,
+	"PUT /api/v1/settings/release-gate":                    movies,
+
+	// The arr API (decision 0008): the Sonarr side is TV shows, the
+	// Radarr side Movies; its settings are core.
+	"GET /sonarr/":    shows,
+	"POST /sonarr/":   shows,
+	"PUT /sonarr/":    shows,
+	"DELETE /sonarr/": shows,
+	"GET /radarr/":    movies,
+	"POST /radarr/":   movies,
+	"PUT /radarr/":    movies,
+	"DELETE /radarr/": movies,
+
+	"GET /api/v1/settings/old-app-api":                Core,
+	"PUT /api/v1/settings/old-app-api":                Core,
+	"POST /api/v1/settings/old-app-api/keys/{side}":   Core,
+	"DELETE /api/v1/settings/old-app-api/keys/{side}": Core,
+
+	// Shows.
+	"POST /api/v1/shows":                       shows,
+	"GET /api/v1/shows/lookup":                 shows,
+	"GET /api/v1/settings/shows":               shows,
+	"PUT /api/v1/settings/shows":               shows,
+	"GET /api/v1/titles/{id}/seasons":          shows,
+	"PUT /api/v1/titles/{id}/seasons/{number}": shows,
+	"GET /api/v1/titles/{id}/episodes":         shows,
+	"PUT /api/v1/episodes/{id}":                shows,
+
+	// Music.
+	"POST /api/v1/artists":           music,
+	"GET /api/v1/artists/lookup":     music,
+	"GET /api/v1/settings/music":     music,
+	"PUT /api/v1/settings/music":     music,
+	"GET /api/v1/titles/{id}/albums": music,
+	"PUT /api/v1/titles/{id}/artist": music,
+	"GET /api/v1/albums/{id}":        music,
+	"GET /api/v1/albums/{id}/tracks": music,
+	"GET /api/v1/albums/{id}/cover":  music,
+	"PUT /api/v1/albums/{id}":        music,
+
+	// Subtitles (4.16).
+	"GET /api/v1/settings/subtitles":            subtitles,
+	"PUT /api/v1/settings/subtitles":            subtitles,
+	"GET /api/v1/subtitles/languages":           subtitles,
+	"GET /api/v1/titles/{id}/subtitles":         subtitles,
+	"PUT /api/v1/titles/{id}/subtitle-wish":     subtitles,
+	"POST /api/v1/subtitles/search":             subtitles,
+	"GET /api/v1/subtitles/missing":             subtitles,
+	"POST /api/v1/subtitles/missing/search":     subtitles,
+	"POST /api/v1/files/{id}/subtitles/choices": subtitles,
+	"POST /api/v1/files/{id}/subtitles/choose":  subtitles,
+	"POST /api/v1/subtitles/{id}/sync":          subtitles,
+	"POST /api/v1/subtitles/{id}/turn-down":     subtitles,
+	"GET /api/v1/subtitle-sites":                subtitles,
+	"GET /api/v1/subtitle-sites/kinds":          subtitles,
+	"POST /api/v1/subtitle-sites":               subtitles,
+	"PUT /api/v1/subtitle-sites/{id}":           subtitles,
+	"DELETE /api/v1/subtitle-sites/{id}":        subtitles,
+	"POST /api/v1/subtitle-sites/{id}/test":     subtitles,
+
+	// Requests: asks, limits, and the messages about asks.
+	"GET /api/v1/asks":                               wishlist,
+	"GET /api/v1/asks/{id}":                          wishlist,
+	"GET /api/v1/asks/{id}/parts":                    wishlist,
+	"POST /api/v1/asks":                              wishlist,
+	"GET /api/v1/asks/limit":                         wishlist,
+	"DELETE /api/v1/asks/{id}":                       wishlist,
+	"POST /api/v1/asks/{id}/approve":                 wishlist,
+	"POST /api/v1/asks/{id}/turn-down":               wishlist,
+	"GET /api/v1/ask-limits":                         wishlist,
+	"PUT /api/v1/ask-limits/{id}":                    wishlist,
+	"GET /api/v1/settings/asks":                      wishlist,
+	"GET /api/v1/asked-by":                           wishlist,
+	"GET /api/v1/my/follows":                         wishlist,
+	"GET /api/v1/my/plex-watchlist":                  wishlist,
+	"PUT /api/v1/my/plex-watchlist":                  wishlist,
+	"POST /api/v1/my/plex-watchlist/check":           wishlist,
+	"GET /api/v1/titles/{id}/follow":                 wishlist,
+	"PUT /api/v1/titles/{id}/follow":                 wishlist,
+	"DELETE /api/v1/titles/{id}/follow":              wishlist,
+	"GET /api/v1/metadata/show/{tmdb_id}/follow":     wishlist,
+	"PUT /api/v1/metadata/show/{tmdb_id}/follow":     wishlist,
+	"DELETE /api/v1/metadata/show/{tmdb_id}/follow":  wishlist,
+	"GET /api/v1/metadata/movie/{tmdb_id}/follow":    wishlist,
+	"PUT /api/v1/metadata/movie/{tmdb_id}/follow":    wishlist,
+	"DELETE /api/v1/metadata/movie/{tmdb_id}/follow": wishlist,
+	"PUT /api/v1/settings/asks":                      wishlist,
+	"GET /api/v1/messages":                           wishlist,
+	"POST /api/v1/messages/read":                     wishlist,
+
+	// Reports: problems people report with titles in the Library.
+	"GET /api/v1/reports":              Core,
+	"POST /api/v1/reports":             Core,
+	"POST /api/v1/reports/{id}/fix":    Core,
+	"POST /api/v1/reports/{id}/reopen": Core,
+}

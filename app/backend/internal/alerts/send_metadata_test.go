@@ -1,0 +1,21 @@
+package alerts
+
+import (
+	"errors"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
+	"testing"
+
+	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
+)
+
+// 5.1.7 minor 6: with the local network allowed, link-local and cloud
+// metadata addresses are still refused.
+func TestMetadataRefusedEvenWithLocalNetwork(t *testing.T) {
+	c := client(domain.Alert{AllowLocal: true})
+	for _, u := range []string{"http://169.254.169.254/latest/meta-data/", "http://[fe80::1]/", "http://[fd00:ec2::254]/", "http://100.100.100.200/"} {
+		_, err := c.Get(u)
+		if !errors.Is(err, outbound.ErrAddressRefused) {
+			t.Fatalf("%s: %v", u, err)
+		}
+	}
+}

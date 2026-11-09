@@ -1,0 +1,41 @@
+{
+  "ID": 5,
+  "CreatedAt": "2026-03-04T05:06:07Z",
+  "CreatedBy": {
+    "kind": "user",
+    "id": 2
+  },
+  "UpdatedAt": "2026-03-04T05:06:07Z",
+  "UpdatedBy": {
+    "kind": "system"
+  },
+  "DownloaderID": 3,
+  "ReleaseID": 7,
+  "SlotIDs": [
+    11,
+    12
+  ],
+  "ExternalID": "abcd",
+  "Progress": 0.5,
+  "Speed": 100,
+  "UpSpeed": 5,
+  "Seeds": 4,
+  "Peers": 2,
+  "ETA": 90,
+  "State": "failed",
+  "StateReason": "the client dropped it",
+  "FilesSeen": [
+    {
+      "name": "a.mkv",
+      "size": 1234
+    }
+  ],
+  "SavePath": "/data/x",
+  "StartedAt": "2026-03-04T05:06:07Z",
+  "FinishedAt": "2026-03-04T05:06:07Z",
+  "StartedBy": {
+    "kind": "system"
+  },
+  "ProgressAt": "2026-03-04T05:06:07Z",
+  "ConfirmedEdition": "Director's Cut"
+}

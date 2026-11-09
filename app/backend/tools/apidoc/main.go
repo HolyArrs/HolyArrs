@@ -1,0 +1,229 @@
+// Command apidoc writes docs/dev/api-routes.md from the route-table snapshot used by
+// the structure check. Run it from anywhere inside the repo:
+//
+//	go run ./app/backend/tools/apidoc
+package main
+
+import (
+	"bufio"
+	"fmt"
+	"io/fs"
+	"os"
+	"path/filepath"
+	"regexp"
+	"sort"
+	"strings"
+)
+
+const (
+	snapshotRel = "app/backend/tools/structurecheck/testdata/route-table.txt"
+	docRel      = "docs/dev/api-routes.md"
+)
+
+type route struct {
+	Method, Path, Auth, Purpose string
+}
+
+func main() {
+	root, err := repoRoot()
+	if err != nil {
+		fail(err)
+	}
+	doc, err := build(root)
+	if err != nil {
+		fail(err)
+	}
+	out := filepath.Join(root, filepath.FromSlash(docRel))
+	if err := os.MkdirAll(filepath.Dir(out), 0o755); err != nil {
+		fail(err)
+	}
+	if err := os.WriteFile(out, []byte(doc), 0o644); err != nil {
+		fail(err)
+	}
+}
+
+func fail(err error) {
+	fmt.Fprintln(os.Stderr, "apidoc:", err)
+	os.Exit(1)
+}
+
+func repoRoot() (string, error) {
+	dir, err := os.Getwd()
+	if err != nil {
+		return "", err
+	}
+	for {
+		if _, err := os.Stat(filepath.Join(dir, "go.mod")); err == nil {
+			return dir, nil
+		}
+		up := filepath.Dir(dir)
+		if up == dir {
+			return "", fmt.Errorf("no go.mod above the working directory")
+		}
+		dir = up
+	}
+}
+
+// build returns the full text of docs/dev/api-routes.md.
+func build(root string) (string, error) {
+	routes, err := readSnapshot(filepath.Join(root, filepath.FromSlash(snapshotRel)))
+	if err != nil {
+		return "", err
+	}
+	notes, err := scanComments(root)
+	if err != nil {
+		return "", err
+	}
+	for i := range routes {
+		routes[i].Purpose = notes[routes[i].Method+" "+routes[i].Path]
+	}
+	return render(routes), nil
+}
+
+func readSnapshot(path string) ([]route, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	var out []route
+	sc := bufio.NewScanner(f)
+	for sc.Scan() {
+		line := strings.TrimSpace(sc.Text())
+		if line == "" {
+			continue
+		}
+		fields := strings.Fields(line)
+		if len(fields) < 3 {
+			return nil, fmt.Errorf("bad snapshot line %q", line)
+		}
+		r := route{Method: fields[0], Path: fields[1]}
+		for _, kv := range fields[2:] {
+			if v, ok := strings.CutPrefix(kv, "auth="); ok {
+				r.Auth = v
+			}
+		}
+		out = append(out, r)
+	}
+	return out, sc.Err()
+}
+
+var (
+	reReg     = regexp.MustCompile(`Handle(?:Func)?\("((?:GET|HEAD|POST|PUT|PATCH|DELETE)) (/[^"]*)"`)
+	reTrail   = regexp.MustCompile(`//\s*(.+)$`)
+	reComment = regexp.MustCompile(`^\s*//\s?(.*)$`)
+)
+
+// scanComments finds route registrations that carry a comment: either a
+// trailing comment on the same line or a comment line directly above.
+func scanComments(root string) (map[string]string, error) {
+	notes := map[string]string{}
+	base := filepath.Join(root, "app", "backend")
+	err := filepath.WalkDir(base, func(p string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		rel, _ := filepath.Rel(base, p)
+		rel = filepath.ToSlash(rel)
+		if d.IsDir() {
+			if rel == "tools" || d.Name() == "testdata" || d.Name() == "node_modules" {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		if !strings.HasSuffix(p, ".go") || strings.HasSuffix(p, "_test.go") {
+			return nil
+		}
+		b, err := os.ReadFile(p)
+		if err != nil {
+			return err
+		}
+		lines := strings.Split(string(b), "\n")
+		for i, ln := range lines {
+			m := reReg.FindStringSubmatch(ln)
+			if m == nil {
+				continue
+			}
+			key := m[1] + " " + m[2]
+			if _, done := notes[key]; done {
+				continue
+			}
+			note := ""
+			if t := reTrail.FindStringSubmatch(ln[strings.Index(ln, m[0])+len(m[0]):]); t != nil {
+				note = t[1]
+			} else if i > 0 {
+				if c := reComment.FindStringSubmatch(lines[i-1]); c != nil {
+					note = c[1]
+				}
+			}
+			if note = oneLine(note); note != "" {
+				notes[key] = note
+			}
+		}
+		return nil
+	})
+	return notes, err
+}
+
+func oneLine(s string) string {
+	s = strings.TrimSpace(s)
+	s = strings.ReplaceAll(s, "|", "/")
+	s = strings.ReplaceAll(s, "\u2014", ",")
+	return s
+}
+
+func area(path string) string {
+	if rest, ok := strings.CutPrefix(path, "/api/v1/"); ok {
+		seg, _, _ := strings.Cut(rest, "/")
+		return seg
+	}
+	if path == "/api/v1" {
+		return "api"
+	}
+	return "other"
+}
+
+var methodOrder = map[string]int{"GET": 0, "HEAD": 1, "POST": 2, "PUT": 3, "PATCH": 4, "DELETE": 5}
+
+func render(routes []route) string {
+	groups := map[string][]route{}
+	for _, r := range routes {
+		a := area(r.Path)
+		groups[a] = append(groups[a], r)
+	}
+	names := make([]string, 0, len(groups))
+	for n := range groups {
+		names = append(names, n)
+	}
+	sort.Slice(names, func(i, j int) bool {
+		if (names[i] == "other") != (names[j] == "other") {
+			return names[j] == "other"
+		}
+		return names[i] < names[j]
+	})
+	var sb strings.Builder
+	sb.WriteString("---\ntitle: API routes\ndescription: Every HolyArrs API route with the method, the path and the permission a caller needs.\nlevel: Expert\nsidebar: { order: 8 }\n---\n\n")
+	sb.WriteString("Look up a route and the permission it needs. To call one, start with [The HolyArrs API](api.md).\n\n")
+	sb.WriteString("<!-- Generated by app/backend/tools/apidoc from the route-table snapshot. Do not edit by hand. -->\n\n")
+	fmt.Fprintf(&sb, "%d routes. Regenerate with `go run ./app/backend/tools/apidoc`.\n\n", len(routes))
+	sb.WriteString("The Auth column is the permission a caller needs, as pinned in the snapshot. ")
+	sb.WriteString("The Purpose column is filled only where the route registration has a comment.\n")
+	for _, n := range names {
+		rs := groups[n]
+		sort.Slice(rs, func(i, j int) bool {
+			if rs[i].Path != rs[j].Path {
+				return rs[i].Path < rs[j].Path
+			}
+			return methodOrder[rs[i].Method] < methodOrder[rs[j].Method]
+		})
+		title := n
+		if n == "other" {
+			title = "other (outside /api/v1)"
+		}
+		fmt.Fprintf(&sb, "\n## %s\n\n| Method | Path | Auth | Purpose |\n|---|---|---|---|\n", title)
+		for _, r := range rs {
+			fmt.Fprintf(&sb, "| %s | `%s` | %s | %s |\n", r.Method, r.Path, r.Auth, r.Purpose)
+		}
+	}
+	return sb.String()
+}

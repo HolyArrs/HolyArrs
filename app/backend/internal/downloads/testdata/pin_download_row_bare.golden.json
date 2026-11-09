@@ -1,0 +1,20 @@
+{
+  "id": 6,
+  "state": "sent",
+  "label": "",
+  "text": "",
+  "progress": 0,
+  "speed": 0,
+  "up_speed": 0,
+  "seeds": 0,
+  "peers": 0,
+  "active": false,
+  "phase": "",
+  "name": "",
+  "title": "",
+  "version": "",
+  "downloader": "",
+  "size": 0,
+  "updated_at": "2026-03-04T05:06:07Z",
+  "can_act": false
+}

@@ -1,0 +1,978 @@
+---
+title: API routes
+description: Call the HolyArrs JSON API with a scoped key, and look up every route with the permission it needs.
+level: Expert
+sidebar: { order: 5 }
+---
+
+Call the same JSON API the web app uses, under `/api/v1`, from your own scripts.
+
+## Make your first call
+
+1. Open **Settings > API > API keys** and make a key with only the scopes it needs. Copy it now; it is shown once.
+2. Send it in the `X-Api-Key` header on every call. Never put it in the address.
+3. Call the base address. Under a URL base of `/holyarrs`, it is `http://your-server:6262/holyarrs/api/v1`.
+
+```sh
+export HOLYARRS_KEY=...your key...
+curl -H "X-Api-Key: $HOLYARRS_KEY" "http://your-server:6262/api/v1/health"
+```
+
+You should get JSON back. Errors are `{"error": "plain words"}` with an HTTP status. Secrets come back masked.
+
+**Settings > API** shows the base address, the scopes, example calls, and every route with its scope. The OpenAPI file is at `/api/v1/openapi.json` when you are signed in.
+
+## Scopes
+
+| Scope | Allows |
+|---|---|
+| `health_read` | Only the health feed, for monitoring tools. |
+| `read` | The read routes, health feed included. |
+| `write` | Changes, except admin routes and controls. |
+| `admin` | People, invites, ask limits, API keys, passwords and two-factor, sign-in settings, restore. |
+| `control` | Part switches, stages, linked apps, restart and shut down. |
+| `all` | `read`, `write` and `admin`. Not `control`. |
+
+Seerr, Bazarr and similar apps use the [Old-app API](../reference/old-app-api/) instead, with keys of their own.
+
+## If it does not work
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| 401 on every call | Key wrong or deleted | Make a new key. |
+| 403 | The key's scope doesn't cover the route | Check the route's scope on **Settings > API**. |
+| 404 on every call | URL base missing | Put it before `/api/v1`. |
+
+## For experts
+
+<details class="ha-more"><summary>Metadata server calls</summary>
+
+HolyArrs gets names, pictures and ids from the HolyArrs metadata server. Point an install at another server with `HOLYARRS_METADATA_URL`; the server code isn't in this repo.
+
+**Registration.** On its first lookup, an install calls `POST /v1/installations` with no body. The answer is `201` with `{"schema_version":1,"token":"hai_..."}`. The app stores the token encrypted and sends `Authorization: Bearer <token>` on every lookup. It registers once; after a `401` it doesn't register again, so a revoked install stays revoked. Over the hourly limit per address group, the answer is `429 registration_limit` with `Retry-After`.
+
+| Lookup (all GET) | Route |
+|---|---|
+| Search | `/v1/search?provider=tmdb&kind=movie&q=Example&page=1` |
+| Movie | `/v1/movies/tmdb/{id}` |
+| Show | `/v1/shows/{tmdb or tvmaze}/{id}` |
+| Season | `/v1/shows/tmdb/{id}/seasons/{n}` (season 0 is specials) |
+| Music | `/v1/music/musicbrainz/{artist, release-group, release or recording}/{id}` |
+
+Unknown or repeated parameters are refused. Ids from one provider are never used for another.
+
+A good answer has `schema_version`, `source`, `source_id`, `fetched_at`, `expires_at`, `completeness`, `stale` and `data`. Treat HTML in summaries as plain text.
+
+| Status | Means |
+|---|---|
+| 400 | Bad query, don't retry |
+| 401 | Bad or revoked token, don't retry |
+| 404 | No such record |
+| 429 | Too many calls, wait for `Retry-After` |
+| 503 | Busy, wait and retry once |
+
+</details>
+
+<details class="ha-more"><summary>Adding a route</summary>
+
+Routes live in each module's `routes.go`, registered with method, path and permission, so no route exists without a permission check. `openapi.json` comes from the routes and a test fails when they drift. Once released, paths and field names stay: add fields, don't rename them.
+
+</details>
+
+## All routes
+
+<!-- Copied from docs/dev/api-routes.md, which app/backend/tools/apidoc generates. Regenerate there, then copy. -->
+
+520 routes. Regenerate with `go run ./app/backend/tools/apidoc`.
+
+The Auth column is the permission a caller needs, as pinned in the snapshot. The Purpose column is filled only where the route registration has a comment.
+
+### account
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| PUT | `/api/v1/account/avatar` | self |  |
+| DELETE | `/api/v1/account/avatar` | self |  |
+
+### albums
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| GET | `/api/v1/albums/{id}` | signed_in |  |
+| PUT | `/api/v1/albums/{id}` | manage_library |  |
+| GET | `/api/v1/albums/{id}/cover` | signed_in |  |
+| GET | `/api/v1/albums/{id}/tracks` | signed_in |  |
+
+### alerts
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| GET | `/api/v1/alerts` | settings |  |
+| POST | `/api/v1/alerts` | settings |  |
+| PUT | `/api/v1/alerts/{id}` | settings |  |
+| DELETE | `/api/v1/alerts/{id}` | settings |  |
+| POST | `/api/v1/alerts/{id}/test` | settings |  |
+
+### app
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| GET | `/api/v1/app/about` | settings |  |
+| POST | `/api/v1/app/restart` | users |  |
+| POST | `/api/v1/app/safe-mode` | users |  |
+| POST | `/api/v1/app/shutdown` | users |  |
+| GET | `/api/v1/app/storage` | settings |  |
+| GET | `/api/v1/app/update` | manage_library |  |
+| POST | `/api/v1/app/update/check` | settings |  |
+
+### artists
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| POST | `/api/v1/artists` | manage_library |  |
+| GET | `/api/v1/artists/lookup` | signed_in |  |
+
+### artwork
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| GET | `/api/v1/artwork/img/{kind}/{id}/{file}` | signed_in |  |
+| GET | `/api/v1/artwork/tmdb/{size}/{file}` | signed_in |  |
+| GET | `/api/v1/artwork/{name}` | signed_in |  |
+
+### ask-limits
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| GET | `/api/v1/ask-limits` | users |  |
+| PUT | `/api/v1/ask-limits/{id}` | users |  |
+
+### asked-by
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| GET | `/api/v1/asked-by` | signed_in |  |
+
+### asks
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| GET | `/api/v1/asks` | signed_in |  |
+| POST | `/api/v1/asks` | ask |  |
+| GET | `/api/v1/asks/limit` | ask |  |
+| GET | `/api/v1/asks/{id}` | signed_in |  |
+| DELETE | `/api/v1/asks/{id}` | ask |  |
+| POST | `/api/v1/asks/{id}/approve` | approve |  |
+| GET | `/api/v1/asks/{id}/parts` | signed_in |  |
+| POST | `/api/v1/asks/{id}/turn-down` | approve |  |
+
+### auth
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| GET | `/api/v1/auth/ai-connect` | signed_in |  |
+| POST | `/api/v1/auth/ai-connect` | settings |  |
+| POST | `/api/v1/auth/forward/link` | self |  |
+| POST | `/api/v1/auth/forward/login` | public |  |
+| POST | `/api/v1/auth/import/{kind}` | owner |  |
+| POST | `/api/v1/auth/import/{kind}/preview` | owner |  |
+| GET | `/api/v1/auth/invites/{token}` | unlisted |  |
+| POST | `/api/v1/auth/invites/{token}` | unlisted |  |
+| POST | `/api/v1/auth/invites/{token}/media-server/{kind}` | unlisted |  |
+| POST | `/api/v1/auth/invites/{token}/plex/finish` | unlisted |  |
+| POST | `/api/v1/auth/invites/{token}/plex/start` | unlisted |  |
+| GET | `/api/v1/auth/keys` | settings |  |
+| POST | `/api/v1/auth/keys` | settings |  |
+| DELETE | `/api/v1/auth/keys/{id}` | settings |  |
+| POST | `/api/v1/auth/login` | unlisted |  |
+| POST | `/api/v1/auth/login/two-factor` | unlisted |  |
+| POST | `/api/v1/auth/logout` | self |  |
+| GET | `/api/v1/auth/me` | self |  |
+| POST | `/api/v1/auth/media-server/{kind}` | unlisted |  |
+| POST | `/api/v1/auth/media-server/{kind}/test` | owner |  |
+| GET | `/api/v1/auth/oidc/callback` | public |  |
+| POST | `/api/v1/auth/oidc/finish` | public |  |
+| POST | `/api/v1/auth/oidc/link` | self |  |
+| POST | `/api/v1/auth/oidc/link-finish` | self |  |
+| POST | `/api/v1/auth/oidc/start` | public |  |
+| POST | `/api/v1/auth/password` | self |  |
+| POST | `/api/v1/auth/plex/finish` | unlisted |  |
+| DELETE | `/api/v1/auth/plex/link` | owner |  |
+| POST | `/api/v1/auth/plex/link/finish` | owner |  |
+| POST | `/api/v1/auth/plex/link/start` | owner |  |
+| GET | `/api/v1/auth/plex/my-link` | self |  |
+| DELETE | `/api/v1/auth/plex/my-link` | self |  |
+| POST | `/api/v1/auth/plex/my-link/finish` | self |  |
+| POST | `/api/v1/auth/plex/my-link/start` | self |  |
+| POST | `/api/v1/auth/plex/start` | unlisted |  |
+| POST | `/api/v1/auth/reauth` | self |  |
+| GET | `/api/v1/auth/sessions` | self |  |
+| DELETE | `/api/v1/auth/sessions` | self |  |
+| DELETE | `/api/v1/auth/sessions/{sid}` | self |  |
+| GET | `/api/v1/auth/settings` | settings |  |
+| PUT | `/api/v1/auth/settings` | owner |  |
+| POST | `/api/v1/auth/setup` | unlisted |  |
+| GET | `/api/v1/auth/setup/discover` | unlisted |  |
+| POST | `/api/v1/auth/setup/done` | owner |  |
+| POST | `/api/v1/auth/setup/media-server/{kind}` | unlisted |  |
+| POST | `/api/v1/auth/setup/plex/finish` | unlisted |  |
+| POST | `/api/v1/auth/setup/plex/start` | unlisted |  |
+| GET | `/api/v1/auth/sso` | owner |  |
+| PUT | `/api/v1/auth/sso` | owner |  |
+| GET | `/api/v1/auth/sso/links` | self |  |
+| POST | `/api/v1/auth/sso/test` | owner |  |
+| POST | `/api/v1/auth/sso/unlink` | self |  |
+| GET | `/api/v1/auth/state` | unlisted |  |
+| POST | `/api/v1/auth/two-factor/backup-codes` | self |  |
+| POST | `/api/v1/auth/two-factor/disable` | self |  |
+| POST | `/api/v1/auth/two-factor/enable` | self |  |
+| POST | `/api/v1/auth/two-factor/setup` | self |  |
+
+### backups
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| GET | `/api/v1/backups` | settings |  |
+| POST | `/api/v1/backups` | settings |  |
+| POST | `/api/v1/backups/restore` | owner |  |
+| PUT | `/api/v1/backups/settings` | settings |  |
+| GET | `/api/v1/backups/{name}` | owner |  |
+| DELETE | `/api/v1/backups/{name}` | owner |  |
+
+### bridges
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| GET | `/api/v1/bridges` | manage_library |  |
+| POST | `/api/v1/bridges` | settings |  |
+| POST | `/api/v1/bridges/find` | settings |  |
+| POST | `/api/v1/bridges/test` | settings |  |
+| DELETE | `/api/v1/bridges/{id}` | settings |  |
+| POST | `/api/v1/bridges/{id}/check` | settings |  |
+
+### calendar
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| GET | `/api/v1/calendar` | signed_in |  |
+
+### collections
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| GET | `/api/v1/collections` | signed_in |  |
+| GET | `/api/v1/collections/{id}` | signed_in |  |
+| POST | `/api/v1/collections/{id}/remove` | manage_library |  |
+| POST | `/api/v1/collections/{id}/remove/preview` | manage_library |  |
+
+### data-packs
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| GET | `/api/v1/data-packs` | owner |  |
+| POST | `/api/v1/data-packs` | owner |  |
+| POST | `/api/v1/data-packs/validate` | owner |  |
+| GET | `/api/v1/data-packs/{id}` | owner |  |
+| POST | `/api/v1/data-packs/{id}/apply` | owner |  |
+| GET | `/api/v1/data-packs/{id}/preview` | owner |  |
+
+### discover
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| GET | `/api/v1/discover` | signed_in |  |
+
+### downloaders
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| GET | `/api/v1/downloaders` | manage_library |  |
+| POST | `/api/v1/downloaders` | settings |  |
+| PUT | `/api/v1/downloaders/{id}` | settings |  |
+| DELETE | `/api/v1/downloaders/{id}` | settings |  |
+| GET | `/api/v1/downloaders/{id}/attempts` | settings |  |
+| POST | `/api/v1/downloaders/{id}/attempts/{attemptID}/abandon` | settings |  |
+| POST | `/api/v1/downloaders/{id}/bulk` | manage_library |  |
+| POST | `/api/v1/downloaders/{id}/items/{hash}/bottom` | manage_library |  |
+| GET | `/api/v1/downloaders/{id}/items/{hash}/detail` | manage_library |  |
+| POST | `/api/v1/downloaders/{id}/items/{hash}/down` | manage_library |  |
+| GET | `/api/v1/downloaders/{id}/items/{hash}/files` | manage_library |  |
+| PUT | `/api/v1/downloaders/{id}/items/{hash}/files` | manage_library |  |
+| POST | `/api/v1/downloaders/{id}/items/{hash}/pause` | manage_library |  |
+| POST | `/api/v1/downloaders/{id}/items/{hash}/priority` | manage_library |  |
+| POST | `/api/v1/downloaders/{id}/items/{hash}/reannounce` | manage_library |  |
+| POST | `/api/v1/downloaders/{id}/items/{hash}/recheck` | manage_library |  |
+| POST | `/api/v1/downloaders/{id}/items/{hash}/remove` | manage_library |  |
+| POST | `/api/v1/downloaders/{id}/items/{hash}/resume` | manage_library |  |
+| POST | `/api/v1/downloaders/{id}/items/{hash}/retry` | manage_library |  |
+| GET | `/api/v1/downloaders/{id}/items/{hash}/swarm` | manage_library |  |
+| POST | `/api/v1/downloaders/{id}/items/{hash}/top` | manage_library |  |
+| POST | `/api/v1/downloaders/{id}/items/{hash}/trackers` | manage_library |  |
+| PUT | `/api/v1/downloaders/{id}/items/{hash}/trackers` | manage_library |  |
+| POST | `/api/v1/downloaders/{id}/items/{hash}/trackers/remove` | manage_library |  |
+| POST | `/api/v1/downloaders/{id}/items/{hash}/up` | manage_library |  |
+| GET | `/api/v1/downloaders/{id}/items/{hash}/usenet` | manage_library |  |
+| POST | `/api/v1/downloaders/{id}/location` | manage_library |  |
+| POST | `/api/v1/downloaders/{id}/pause` | settings |  |
+| POST | `/api/v1/downloaders/{id}/resume` | settings |  |
+| POST | `/api/v1/downloaders/{id}/share-limits` | manage_library |  |
+| POST | `/api/v1/downloaders/{id}/slow-mode` | manage_library |  |
+| PUT | `/api/v1/downloaders/{id}/speed-limit` | manage_library |  |
+| POST | `/api/v1/downloaders/{id}/speed-limits` | manage_library |  |
+| POST | `/api/v1/downloaders/{id}/test` | settings |  |
+| POST | `/api/v1/downloaders/{id}/torrents` | manage_library |  |
+
+### downloads
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| GET | `/api/v1/downloads` | manage_library |  |
+| GET | `/api/v1/downloads/clients` | manage_library |  |
+| GET | `/api/v1/downloads/matches` | manage_library |  |
+| POST | `/api/v1/downloads/matches/run` | manage_library |  |
+| POST | `/api/v1/downloads/matches/{id}/pick` | manage_library |  |
+| POST | `/api/v1/downloads/pause-all` | manage_library |  |
+| POST | `/api/v1/downloads/resume-all` | manage_library |  |
+| GET | `/api/v1/downloads/view` | signed_in |  |
+| GET | `/api/v1/downloads/{id}/detail` | manage_library |  |
+| PUT | `/api/v1/downloads/{id}/edition` | manage_library |  |
+| GET | `/api/v1/downloads/{id}/files` | manage_library |  |
+| PUT | `/api/v1/downloads/{id}/files` | manage_library |  |
+| POST | `/api/v1/downloads/{id}/mark-failed` | manage_library |  |
+| POST | `/api/v1/downloads/{id}/pause` | manage_library |  |
+| POST | `/api/v1/downloads/{id}/reannounce` | manage_library |  |
+| POST | `/api/v1/downloads/{id}/recheck` | manage_library |  |
+| POST | `/api/v1/downloads/{id}/remove` | manage_library |  |
+| POST | `/api/v1/downloads/{id}/resume` | manage_library |  |
+| GET | `/api/v1/downloads/{id}/swarm` | manage_library |  |
+| POST | `/api/v1/downloads/{id}/top` | manage_library |  |
+| GET | `/api/v1/downloads/{id}/usenet` | manage_library |  |
+
+### episodes
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| PUT | `/api/v1/episodes/{id}` | manage_library |  |
+
+### events
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| GET | `/api/v1/events` | manage_library |  |
+
+### explore
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| GET | `/api/v1/explore/browse` | signed_in |  |
+| GET | `/api/v1/explore/browse/category` | signed_in |  |
+| GET | `/api/v1/explore/browse/section` | signed_in |  |
+| POST | `/api/v1/explore/counts` | signed_in |  |
+| GET | `/api/v1/explore/genre` | signed_in |  |
+| GET | `/api/v1/explore/genre-row` | signed_in |  |
+| GET | `/api/v1/explore/head` | signed_in |  |
+| GET | `/api/v1/explore/music` | signed_in |  |
+| GET | `/api/v1/explore/music/rising` | signed_in |  |
+| GET | `/api/v1/explore/new` | signed_in |  |
+| GET | `/api/v1/explore/new/music` | signed_in |  |
+| GET | `/api/v1/explore/new/service` | signed_in |  |
+| GET | `/api/v1/explore/new/services` | signed_in |  |
+| GET | `/api/v1/explore/service-top` | signed_in |  |
+| GET | `/api/v1/explore/strip` | signed_in |  |
+| POST | `/api/v1/explore/strip/counts` | signed_in |  |
+| DELETE | `/api/v1/explore/strip/counts` | signed_in |  |
+| GET | `/api/v1/explore/tail` | signed_in |  |
+| GET | `/api/v1/explore/title-stats` | owner |  |
+| GET | `/api/v1/explore/top` | signed_in |  |
+
+### extras
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| GET | `/api/v1/extras/{kind}/{id}` | signed_in |  |
+
+### files
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| POST | `/api/v1/files/{id}/subtitles/choices` | manage_library |  |
+| POST | `/api/v1/files/{id}/subtitles/choose` | manage_library |  |
+
+### health
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| GET | `/api/v1/health` | manage_library |  |
+| GET | `/api/v1/health/checks` | manage_library |  |
+| POST | `/api/v1/health/checks/run` | manage_library |  |
+| GET | `/api/v1/health/disks` | manage_library |  |
+| GET | `/api/v1/health/states` | manage_library |  |
+
+### held
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| GET | `/api/v1/held` | manage_library |  |
+| DELETE | `/api/v1/held` | manage_library |  |
+| DELETE | `/api/v1/held/{id}` | manage_library |  |
+
+### holding
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| GET | `/api/v1/holding` | manage_library |  |
+| POST | `/api/v1/holding/clean` | manage_library |  |
+| POST | `/api/v1/holding/restore` | manage_library |  |
+
+### home
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| GET | `/api/v1/home` | signed_in |  |
+
+### imports
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| GET | `/api/v1/imports` | manage_library |  |
+
+### jobs
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| GET | `/api/v1/jobs` | manage_library |  |
+| GET | `/api/v1/jobs/active` | manage_library |  |
+| GET | `/api/v1/jobs/{id}` | manage_library |  |
+
+### library
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| GET | `/api/v1/library/copies` | manage_library |  |
+| POST | `/api/v1/library/copies/search` | manage_library |  |
+| POST | `/api/v1/library/copies/search/preview` | manage_library |  |
+| GET | `/api/v1/library/search` | signed_in |  |
+
+### library-folders
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| GET | `/api/v1/library-folders` | manage_library |  |
+| POST | `/api/v1/library-folders` | settings |  |
+| PUT | `/api/v1/library-folders/{id}` | settings |  |
+| DELETE | `/api/v1/library-folders/{id}` | settings |  |
+| POST | `/api/v1/library-folders/{id}/adopt` | manage_library |  |
+| POST | `/api/v1/library-folders/{id}/check` | manage_library |  |
+| POST | `/api/v1/library-folders/{id}/scan` | manage_library |  |
+
+### links
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| POST | `/api/v1/links/{kind}/{id}/restart` | users |  |
+
+### live
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| POST | `/api/v1/live/interest` | signed_in |  |
+
+### logs
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| GET | `/api/v1/logs` | users |  |
+| GET | `/api/v1/logs/download` | users |  |
+
+### manual-import
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| POST | `/api/v1/manual-import` | settings |  |
+| POST | `/api/v1/manual-import/scan` | settings |  |
+
+### mcp
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| GET | `/api/v1/mcp` | signed_in |  |
+| POST | `/api/v1/mcp` | signed_in |  |
+
+### media-servers
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| GET | `/api/v1/media-servers` | settings |  |
+| POST | `/api/v1/media-servers` | settings |  |
+| PUT | `/api/v1/media-servers/{id}` | settings |  |
+| DELETE | `/api/v1/media-servers/{id}` | settings |  |
+| POST | `/api/v1/media-servers/{id}/test` | settings |  |
+
+### messages
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| GET | `/api/v1/messages` | signed_in |  |
+| POST | `/api/v1/messages/read` | signed_in |  |
+
+### metadata
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| GET | `/api/v1/metadata/album/{mbid}/follow` | signed_in |  |
+| PUT | `/api/v1/metadata/album/{mbid}/follow` | signed_in |  |
+| DELETE | `/api/v1/metadata/album/{mbid}/follow` | signed_in |  |
+| GET | `/api/v1/metadata/health` | signed_in |  |
+| GET | `/api/v1/metadata/movie/{tmdb_id}/follow` | signed_in |  |
+| PUT | `/api/v1/metadata/movie/{tmdb_id}/follow` | signed_in |  |
+| DELETE | `/api/v1/metadata/movie/{tmdb_id}/follow` | signed_in |  |
+| GET | `/api/v1/metadata/search` | signed_in |  |
+| GET | `/api/v1/metadata/show/{tmdb_id}/follow` | signed_in |  |
+| PUT | `/api/v1/metadata/show/{tmdb_id}/follow` | signed_in |  |
+| DELETE | `/api/v1/metadata/show/{tmdb_id}/follow` | signed_in |  |
+| GET | `/api/v1/metadata/show/{tmdb_id}/seasons/{number}` | signed_in |  |
+| GET | `/api/v1/metadata/{kind}/{tmdb_id}` | signed_in |  |
+| GET | `/api/v1/metadata/{kind}/{tmdb_id}/anime` | signed_in |  |
+| GET | `/api/v1/metadata/{kind}/{tmdb_id}/more-from` | signed_in |  |
+| GET | `/api/v1/metadata/{kind}/{tmdb_id}/reviews` | signed_in |  |
+
+### migrate
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| POST | `/api/v1/migrate/dry-run` | users |  |
+| GET | `/api/v1/migrate/moves` | users |  |
+| POST | `/api/v1/migrate/moves` | users |  |
+| GET | `/api/v1/migrate/moves/{id}` | users |  |
+| GET | `/api/v1/migrate/moves/{id}/report` | users |  |
+| POST | `/api/v1/migrate/moves/{id}/undo` | users |  |
+| POST | `/api/v1/migrate/plan` | users |  |
+| POST | `/api/v1/migrate/probe` | users |  |
+| POST | `/api/v1/migrate/read` | users |  |
+| GET | `/api/v1/migrate/saved-keys` | owner |  |
+| DELETE | `/api/v1/migrate/saved-keys` | owner |  |
+| GET | `/api/v1/migrate/snapshots` | users |  |
+| GET | `/api/v1/migrate/snapshots/{id}` | users |  |
+| DELETE | `/api/v1/migrate/snapshots/{id}` | users |  |
+
+### music
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| GET | `/api/v1/music/albums/{mbid}` | signed_in |  |
+| GET | `/api/v1/music/artists/{mbid}` | signed_in |  |
+| GET | `/api/v1/music/browse-tiles` | signed_in |  |
+| GET | `/api/v1/music/browse/{kind}/{slug}` | signed_in |  |
+| GET | `/api/v1/music/genre-art/{slug}` | signed_in |  |
+| GET | `/api/v1/music/genre/{slug}` | signed_in |  |
+
+### music-trending
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| GET | `/api/v1/music-trending` | signed_in |  |
+| GET | `/api/v1/music-trending/art/{kind}/{mbid}` | signed_in |  |
+
+### my
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| GET | `/api/v1/my/alerts` | signed_in |  |
+| PUT | `/api/v1/my/alerts` | signed_in |  |
+| GET | `/api/v1/my/follows` | signed_in |  |
+| GET | `/api/v1/my/plex-watchlist` | signed_in |  |
+| PUT | `/api/v1/my/plex-watchlist` | signed_in |  |
+| POST | `/api/v1/my/plex-watchlist/check` | signed_in |  |
+| GET | `/api/v1/my/profile` | signed_in |  |
+| PUT | `/api/v1/my/profile` | signed_in |  |
+
+### needs-decision
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| GET | `/api/v1/needs-decision` | manage_library |  |
+| POST | `/api/v1/needs-decision/{id}/decide` | manage_library |  |
+
+### never-add
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| GET | `/api/v1/never-add` | manage_library |  |
+| POST | `/api/v1/never-add` | manage_library |  |
+| DELETE | `/api/v1/never-add/{id}` | manage_library |  |
+
+### openapi.json
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| GET | `/api/v1/openapi.json` | signed_in |  |
+
+### outside-lists
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| GET | `/api/v1/outside-lists` | settings |  |
+| POST | `/api/v1/outside-lists` | settings |  |
+| PUT | `/api/v1/outside-lists/{id}` | settings |  |
+| DELETE | `/api/v1/outside-lists/{id}` | settings |  |
+| POST | `/api/v1/outside-lists/{id}/sync` | settings |  |
+
+### own-traits
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| GET | `/api/v1/own-traits` | manage_library |  |
+| POST | `/api/v1/own-traits` | settings |  |
+| PUT | `/api/v1/own-traits/{id}` | settings |  |
+| DELETE | `/api/v1/own-traits/{id}` | settings |  |
+
+### parts
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| GET | `/api/v1/parts` | signed_in |  |
+| POST | `/api/v1/parts/{part}/off` | users |  |
+| POST | `/api/v1/parts/{part}/on` | users |  |
+| POST | `/api/v1/parts/{part}/restart` | users |  |
+
+### people
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| GET | `/api/v1/people/popular` | signed_in |  |
+| GET | `/api/v1/people/search` | signed_in |  |
+| GET | `/api/v1/people/shelves` | signed_in |  |
+| GET | `/api/v1/people/shelves/{id}` | signed_in |  |
+| GET | `/api/v1/people/{id}` | signed_in |  |
+| POST | `/api/v1/people/{id}/movies/review` | signed_in |  |
+
+### pick-rules
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| GET | `/api/v1/pick-rules` | manage_library |  |
+| POST | `/api/v1/pick-rules` | settings |  |
+| GET | `/api/v1/pick-rules/{id}` | manage_library |  |
+| PUT | `/api/v1/pick-rules/{id}` | settings |  |
+| DELETE | `/api/v1/pick-rules/{id}` | settings |  |
+
+### public
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| GET | `/api/v1/public/signin-art` | public |  |
+| GET | `/api/v1/public/signin-pic/t/p/{size}/{file}` | public | A literal pattern (= signinPicPath + "{size}/{file}"): the route tests read it from the source. |
+
+### releases
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| POST | `/api/v1/releases/{id}/choose` | manage_library |  |
+| POST | `/api/v1/releases/{id}/turn-down` | manage_library |  |
+
+### rename
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| GET | `/api/v1/rename` | manage_library |  |
+| POST | `/api/v1/rename` | manage_library |  |
+
+### reports
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| GET | `/api/v1/reports` | signed_in |  |
+| POST | `/api/v1/reports` | signed_in |  |
+| POST | `/api/v1/reports/{id}/fix` | manage_library |  |
+| POST | `/api/v1/reports/{id}/reopen` | manage_library |  |
+
+### schedules
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| GET | `/api/v1/schedules` | manage_library |  |
+| PUT | `/api/v1/schedules/{kind}` | settings |  |
+| POST | `/api/v1/schedules/{kind}/run` | manage_library |  |
+
+### search
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| GET | `/api/v1/search` | signed_in |  |
+| POST | `/api/v1/search/better` | manage_library |  |
+| POST | `/api/v1/search/feed-check` | manage_library |  |
+| POST | `/api/v1/search/missing` | manage_library |  |
+| GET | `/api/v1/search/suggest` | signed_in |  |
+
+### searches
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| GET | `/api/v1/searches` | manage_library |  |
+
+### settings
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| GET | `/api/v1/settings/ai` | signed_in |  |
+| PUT | `/api/v1/settings/ai` | owner |  |
+| GET | `/api/v1/settings/alerts` | settings |  |
+| PUT | `/api/v1/settings/alerts` | settings |  |
+| GET | `/api/v1/settings/asks` | settings |  |
+| PUT | `/api/v1/settings/asks` | settings |  |
+| GET | `/api/v1/settings/downloaders` | settings |  |
+| PUT | `/api/v1/settings/downloaders` | settings |  |
+| GET | `/api/v1/settings/files` | manage_library |  |
+| PUT | `/api/v1/settings/files` | settings |  |
+| GET | `/api/v1/settings/health` | settings |  |
+| PUT | `/api/v1/settings/health` | settings |  |
+| GET | `/api/v1/settings/import-folders` | settings |  |
+| PUT | `/api/v1/settings/import-folders` | users |  |
+| POST | `/api/v1/settings/import-secrets` | owner |  |
+| GET | `/api/v1/settings/music` | manage_library |  |
+| PUT | `/api/v1/settings/music` | settings |  |
+| GET | `/api/v1/settings/naming` | manage_library |  |
+| PUT | `/api/v1/settings/naming` | settings |  |
+| POST | `/api/v1/settings/naming/example` | manage_library |  |
+| GET | `/api/v1/settings/old-app-api` | settings |  |
+| PUT | `/api/v1/settings/old-app-api` | settings |  |
+| POST | `/api/v1/settings/old-app-api/keys/{side}` | settings |  |
+| DELETE | `/api/v1/settings/old-app-api/keys/{side}` | settings |  |
+| GET | `/api/v1/settings/release-gate` | manage_library |  |
+| PUT | `/api/v1/settings/release-gate` | settings |  |
+| GET | `/api/v1/settings/search` | settings |  |
+| PUT | `/api/v1/settings/search` | settings |  |
+| GET | `/api/v1/settings/shows` | manage_library |  |
+| PUT | `/api/v1/settings/shows` | settings |  |
+| GET | `/api/v1/settings/status` | settings |  |
+| GET | `/api/v1/settings/subtitles` | settings |  |
+| PUT | `/api/v1/settings/subtitles` | settings |  |
+| GET | `/api/v1/settings/title-defaults` | manage_library |  |
+| PUT | `/api/v1/settings/title-defaults` | settings |  |
+| GET | `/api/v1/settings/trakt-key` | settings |  |
+| PUT | `/api/v1/settings/trakt-key` | settings |  |
+| GET | `/api/v1/settings/trakt-token` | owner |  |
+| PUT | `/api/v1/settings/trakt-token` | owner |  |
+| GET | `/api/v1/settings/ui` | signed_in |  |
+| PUT | `/api/v1/settings/ui` | settings |  |
+| GET | `/api/v1/settings/url-base` | settings |  |
+| PUT | `/api/v1/settings/url-base` | settings |  |
+
+### shows
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| POST | `/api/v1/shows` | manage_library |  |
+| GET | `/api/v1/shows/lookup` | signed_in |  |
+
+### sources
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| GET | `/api/v1/sources` | manage_library |  |
+| POST | `/api/v1/sources` | settings |  |
+| POST | `/api/v1/sources/check` | settings |  |
+| PUT | `/api/v1/sources/{id}` | settings |  |
+| DELETE | `/api/v1/sources/{id}` | settings |  |
+| POST | `/api/v1/sources/{id}/pause` | settings |  |
+| POST | `/api/v1/sources/{id}/resume` | settings |  |
+| GET | `/api/v1/sources/{id}/stats` | manage_library |  |
+| POST | `/api/v1/sources/{id}/test` | settings |  |
+| POST | `/api/v1/sources/{id}/try` | settings |  |
+
+### stages
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| POST | `/api/v1/stages/{name}/pause` | users |  |
+| POST | `/api/v1/stages/{name}/restart` | users |  |
+| POST | `/api/v1/stages/{name}/resume` | users |  |
+
+### subtitle-sites
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| GET | `/api/v1/subtitle-sites` | manage_library |  |
+| POST | `/api/v1/subtitle-sites` | settings |  |
+| GET | `/api/v1/subtitle-sites/kinds` | manage_library |  |
+| PUT | `/api/v1/subtitle-sites/{id}` | settings |  |
+| DELETE | `/api/v1/subtitle-sites/{id}` | settings |  |
+| POST | `/api/v1/subtitle-sites/{id}/test` | settings |  |
+
+### subtitles
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| GET | `/api/v1/subtitles/languages` | manage_library |  |
+| GET | `/api/v1/subtitles/missing` | manage_library |  |
+| POST | `/api/v1/subtitles/missing/search` | manage_library |  |
+| POST | `/api/v1/subtitles/search` | manage_library |  |
+| POST | `/api/v1/subtitles/{id}/sync` | manage_library |  |
+| POST | `/api/v1/subtitles/{id}/turn-down` | manage_library |  |
+
+### support
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| GET | `/api/v1/support/bundle` | users |  |
+
+### system
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| POST | `/api/v1/system/key-kit` | owner |  |
+
+### tags
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| GET | `/api/v1/tags` | manage_library |  |
+
+### titles
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| GET | `/api/v1/titles` | signed_in |  |
+| POST | `/api/v1/titles` | manage_library |  |
+| GET | `/api/v1/titles/lookup` | signed_in |  |
+| GET | `/api/v1/titles/owned` | signed_in |  |
+| POST | `/api/v1/titles/refresh` | manage_library |  |
+| GET | `/api/v1/titles/{id}` | signed_in |  |
+| PUT | `/api/v1/titles/{id}` | manage_library |  |
+| GET | `/api/v1/titles/{id}/albums` | signed_in |  |
+| PUT | `/api/v1/titles/{id}/artist` | manage_library |  |
+| GET | `/api/v1/titles/{id}/copies` | manage_library |  |
+| POST | `/api/v1/titles/{id}/delete` | manage_library |  |
+| GET | `/api/v1/titles/{id}/episodes` | signed_in |  |
+| PUT | `/api/v1/titles/{id}/files/{fid}/choices` | manage_library |  |
+| POST | `/api/v1/titles/{id}/files/{fid}/keep-and-add` | manage_library |  |
+| GET | `/api/v1/titles/{id}/follow` | signed_in |  |
+| PUT | `/api/v1/titles/{id}/follow` | signed_in |  |
+| DELETE | `/api/v1/titles/{id}/follow` | signed_in |  |
+| POST | `/api/v1/titles/{id}/move` | manage_library |  |
+| GET | `/api/v1/titles/{id}/people` | signed_in |  |
+| POST | `/api/v1/titles/{id}/refresh` | manage_library |  |
+| GET | `/api/v1/titles/{id}/releases` | manage_library |  |
+| GET | `/api/v1/titles/{id}/rename` | manage_library |  |
+| POST | `/api/v1/titles/{id}/rename` | manage_library |  |
+| POST | `/api/v1/titles/{id}/search` | manage_library |  |
+| GET | `/api/v1/titles/{id}/search-outcome` | signed_in |  |
+| GET | `/api/v1/titles/{id}/seasons` | signed_in |  |
+| PUT | `/api/v1/titles/{id}/seasons/{number}` | manage_library |  |
+| PUT | `/api/v1/titles/{id}/subtitle-wish` | manage_library |  |
+| GET | `/api/v1/titles/{id}/subtitles` | manage_library |  |
+| POST | `/api/v1/titles/{id}/versions` | manage_library |  |
+| PUT | `/api/v1/titles/{id}/versions/{vid}` | manage_library |  |
+| DELETE | `/api/v1/titles/{id}/versions/{vid}` | manage_library |  |
+| POST | `/api/v1/titles/{id}/versions/{vid}/adopt` | manage_library |  |
+
+### trailer
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| GET | `/api/v1/trailer/batch` | signed_in |  |
+| GET | `/api/v1/trailer/stream/{id}/manifest.m3u8` | signed_in |  |
+| GET | `/api/v1/trailer/stream/{id}/seg/{n}` | signed_in |  |
+| GET | `/api/v1/trailer/{kind}/{tmdb_id}` | signed_in |  |
+
+### turned-down
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| GET | `/api/v1/turned-down` | manage_library |  |
+| DELETE | `/api/v1/turned-down` | manage_library |  |
+| DELETE | `/api/v1/turned-down/{id}` | manage_library |  |
+
+### users
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| GET | `/api/v1/users` | users |  |
+| GET | `/api/v1/users/invites` | users |  |
+| POST | `/api/v1/users/invites` | users |  |
+| DELETE | `/api/v1/users/invites/{id}` | users |  |
+| PUT | `/api/v1/users/{id}` | users |  |
+| GET | `/api/v1/users/{id}/avatar` | signed_in |  |
+| POST | `/api/v1/users/{id}/password` | users |  |
+| GET | `/api/v1/users/{id}/sessions` | users |  |
+| POST | `/api/v1/users/{id}/sessions/end-all` | users |  |
+| DELETE | `/api/v1/users/{id}/sessions/{sid}` | users |  |
+| POST | `/api/v1/users/{id}/sso/unlink` | owner |  |
+| POST | `/api/v1/users/{id}/two-factor/reset` | users |  |
+
+### watch-services
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| GET | `/api/v1/watch-services` | signed_in |  |
+
+### wiki
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| GET | `/api/v1/wiki/{kind}/{id}` | signed_in |  |
+
+### other (outside /api/v1)
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| GET | `/` | self |  |
+| POST | `/` | unlisted |  |
+| GET | `/.well-known/oauth-authorization-server` | public |  |
+| GET | `/.well-known/oauth-protected-resource` | public |  |
+| GET | `/.well-known/oauth-protected-resource/{path...}` | public |  |
+| GET | `/calendar` | unlisted |  |
+| POST | `/command` | unlisted |  |
+| GET | `/command/{id}` | unlisted |  |
+| GET | `/episode` | unlisted |  |
+| PUT | `/episode/monitor` | unlisted |  |
+| GET | `/healthz` | unlisted |  |
+| GET | `/indexer` | unlisted |  |
+| POST | `/indexer` | unlisted |  |
+| GET | `/indexer/schema` | unlisted |  |
+| POST | `/indexer/test` | unlisted |  |
+| GET | `/indexer/{id}` | unlisted |  |
+| PUT | `/indexer/{id}` | unlisted |  |
+| DELETE | `/indexer/{id}` | unlisted |  |
+| GET | `/languageprofile` | unlisted |  |
+| GET | `/live` | signed_in |  |
+| GET | `/login` | self |  |
+| GET | `/mcp` | signed_in |  |
+| POST | `/mcp` | signed_in |  |
+| GET | `/mediacover/{id}/{file}` | unlisted |  |
+| GET | `/movie` | unlisted |  |
+| POST | `/movie` | unlisted |  |
+| PUT | `/movie` | unlisted |  |
+| GET | `/movie/lookup` | unlisted |  |
+| GET | `/movie/{id}` | unlisted |  |
+| PUT | `/movie/{id}` | unlisted |  |
+| DELETE | `/movie/{id}` | unlisted |  |
+| GET | `/oauth/authorize` | public |  |
+| POST | `/oauth/register` | public |  |
+| POST | `/oauth/token` | public |  |
+| GET | `/qualityprofile` | unlisted |  |
+| GET | `/queue` | unlisted |  |
+| GET | `/queue/details` | unlisted |  |
+| GET | `/radarr/` | manage_library |  |
+| POST | `/radarr/` | manage_library |  |
+| PUT | `/radarr/` | manage_library |  |
+| DELETE | `/radarr/` | manage_library |  |
+| GET | `/readyz` | unlisted | start page answers it with 503). |
+| GET | `/rootfolder` | unlisted |  |
+| GET | `/series` | unlisted |  |
+| POST | `/series` | unlisted |  |
+| PUT | `/series` | unlisted |  |
+| GET | `/series/lookup` | unlisted |  |
+| GET | `/series/{id}` | unlisted |  |
+| PUT | `/series/{id}` | unlisted |  |
+| DELETE | `/series/{id}` | unlisted |  |
+| GET | `/sonarr/` | manage_library |  |
+| POST | `/sonarr/` | manage_library |  |
+| PUT | `/sonarr/` | manage_library |  |
+| DELETE | `/sonarr/` | manage_library |  |
+| GET | `/system/status` | unlisted |  |
+| GET | `/tag` | unlisted |  |
+| POST | `/tag` | unlisted |  |
+| PUT | `/tag` | unlisted |  |
+| PUT | `/tag/{id}` | unlisted |  |
+| GET | `/wanted/missing` | unlisted |  |

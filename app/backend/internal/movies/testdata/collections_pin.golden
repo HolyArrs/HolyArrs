@@ -1,0 +1,120 @@
+{
+  "detail": {
+    "id": 7,
+    "source_id": "tmdb:726871",
+    "name": "Dune Collection",
+    "owned_titles": 2,
+    "title_ids": [
+      1,
+      2
+    ],
+    "titles": [
+      {
+        "id": 1,
+        "name": "Dune",
+        "year": 2021,
+        "state": "wanted",
+        "version_ids": [
+          3
+        ],
+        "files": [
+          {
+            "id": 9,
+            "version_id": 3,
+            "path": "Dune (2021)/Dune.mkv",
+            "origin": "imported",
+            "state": "present",
+            "protected": true
+          }
+        ],
+        "protected": true
+      },
+      {
+        "id": 2,
+        "name": "Nameless",
+        "state": "wanted",
+        "version_ids": [],
+        "files": [],
+        "protected": false
+      }
+    ]
+  },
+  "list": [
+    {
+      "id": 7,
+      "source_id": "tmdb:726871",
+      "name": "Dune Collection",
+      "owned_titles": 2,
+      "title_ids": [
+        1,
+        2
+      ]
+    },
+    {
+      "id": 8,
+      "source_id": "tmdb:1",
+      "name": "No ids",
+      "owned_titles": 0
+    }
+  ],
+  "review": {
+    "collection": {
+      "id": 7,
+      "source_id": "tmdb:726871",
+      "name": "Dune Collection",
+      "owned_titles": 2,
+      "title_ids": [
+        1,
+        2
+      ]
+    },
+    "titles": [
+      {
+        "id": 1,
+        "name": "Dune",
+        "year": 2021,
+        "state": "wanted",
+        "version_ids": [
+          3
+        ],
+        "files": [
+          {
+            "id": 9,
+            "version_id": 3,
+            "path": "Dune (2021)/Dune.mkv",
+            "origin": "imported",
+            "state": "present",
+            "protected": true
+          }
+        ],
+        "protected": true,
+        "selected": true
+      },
+      {
+        "id": 2,
+        "name": "Nameless",
+        "state": "wanted",
+        "version_ids": [],
+        "files": [],
+        "protected": false,
+        "selected": false,
+        "skip": "protected"
+      }
+    ],
+    "choice": {
+      "delete_files": false,
+      "never_add": false,
+      "acknowledge_protection": false
+    },
+    "review_token": "tok",
+    "applied": false,
+    "results": [
+      {
+        "title_id": 1,
+        "name": "Dune",
+        "status": "failed",
+        "error": "boom"
+      }
+    ]
+  }
+}

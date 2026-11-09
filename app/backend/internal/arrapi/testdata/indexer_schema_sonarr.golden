@@ -1,0 +1,196 @@
+[
+  {
+    "configContract": "NewznabSettings",
+    "downloadClientId": 0,
+    "enableAutomaticSearch": true,
+    "enableInteractiveSearch": true,
+    "enableRss": true,
+    "fields": [
+      {
+        "advanced": false,
+        "label": "Address",
+        "name": "baseUrl",
+        "order": 0,
+        "type": "text",
+        "value": ""
+      },
+      {
+        "advanced": true,
+        "label": "Feed path",
+        "name": "apiPath",
+        "order": 1,
+        "type": "text",
+        "value": "/api"
+      },
+      {
+        "advanced": false,
+        "label": "Key",
+        "name": "apiKey",
+        "order": 2,
+        "type": "text",
+        "value": ""
+      },
+      {
+        "advanced": false,
+        "label": "Categories",
+        "name": "categories",
+        "order": 3,
+        "type": "list",
+        "value": [
+          5000
+        ]
+      },
+      {
+        "advanced": false,
+        "label": "Anime categories",
+        "name": "animeCategories",
+        "order": 4,
+        "type": "list",
+        "value": []
+      },
+      {
+        "advanced": true,
+        "label": "Search anime by season and episode too",
+        "name": "animeStandardFormatSearch",
+        "order": 5,
+        "type": "switch",
+        "value": false
+      },
+      {
+        "advanced": true,
+        "label": "Extra address values",
+        "name": "additionalParameters",
+        "order": 6,
+        "type": "text",
+        "value": ""
+      }
+    ],
+    "implementation": "Newznab",
+    "implementationName": "Newznab",
+    "name": "",
+    "presets": [],
+    "priority": 25,
+    "protocol": "usenet",
+    "seasonSearchMaximumSingleEpisodeAge": 0,
+    "supportsRss": true,
+    "supportsSearch": true,
+    "tags": []
+  },
+  {
+    "configContract": "TorznabSettings",
+    "downloadClientId": 0,
+    "enableAutomaticSearch": true,
+    "enableInteractiveSearch": true,
+    "enableRss": true,
+    "fields": [
+      {
+        "advanced": false,
+        "label": "Address",
+        "name": "baseUrl",
+        "order": 0,
+        "type": "text",
+        "value": ""
+      },
+      {
+        "advanced": true,
+        "label": "Feed path",
+        "name": "apiPath",
+        "order": 1,
+        "type": "text",
+        "value": "/api"
+      },
+      {
+        "advanced": false,
+        "label": "Key",
+        "name": "apiKey",
+        "order": 2,
+        "type": "text",
+        "value": ""
+      },
+      {
+        "advanced": false,
+        "label": "Categories",
+        "name": "categories",
+        "order": 3,
+        "type": "list",
+        "value": [
+          5000
+        ]
+      },
+      {
+        "advanced": false,
+        "label": "Anime categories",
+        "name": "animeCategories",
+        "order": 4,
+        "type": "list",
+        "value": []
+      },
+      {
+        "advanced": true,
+        "label": "Search anime by season and episode too",
+        "name": "animeStandardFormatSearch",
+        "order": 5,
+        "type": "switch",
+        "value": false
+      },
+      {
+        "advanced": true,
+        "label": "Extra address values",
+        "name": "additionalParameters",
+        "order": 6,
+        "type": "text",
+        "value": ""
+      },
+      {
+        "advanced": true,
+        "label": "Least seeders",
+        "name": "minimumSeeders",
+        "order": 7,
+        "type": "number",
+        "value": 1
+      },
+      {
+        "advanced": true,
+        "label": "Seed ratio",
+        "name": "seedCriteria.seedRatio",
+        "order": 8,
+        "type": "number",
+        "value": null
+      },
+      {
+        "advanced": true,
+        "label": "Seed time (minutes)",
+        "name": "seedCriteria.seedTime",
+        "order": 9,
+        "type": "number",
+        "value": null
+      },
+      {
+        "advanced": true,
+        "label": "Season pack seed time (minutes)",
+        "name": "seedCriteria.seasonPackSeedTime",
+        "order": 10,
+        "type": "number",
+        "value": null
+      },
+      {
+        "advanced": true,
+        "label": "Refuse torrents turned down before",
+        "name": "rejectBlocklistedTorrentHashesWhileGrabbing",
+        "order": 11,
+        "type": "switch",
+        "value": false
+      }
+    ],
+    "implementation": "Torznab",
+    "implementationName": "Torznab",
+    "name": "",
+    "presets": [],
+    "priority": 25,
+    "protocol": "torrent",
+    "seasonSearchMaximumSingleEpisodeAge": 0,
+    "supportsRss": true,
+    "supportsSearch": true,
+    "tags": []
+  }
+]

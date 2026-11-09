@@ -1,0 +1,11 @@
+what's in 1.0.0
+
+one app for movies, shows and music, from asking to watching.
+
+- move over from your old apps without starting over
+- browse and request like a streaming app
+- every download on one page, stuck ones swapped for you
+
+thanks to the 48 of you who asked for stuff, you're all named in the notes
+
+https://github.com/HolyArrs/HolyArrs/releases/tag/1.0.0

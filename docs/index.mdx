@@ -1,0 +1,38 @@
+---
+title: HolyArrs docs
+description: Install HolyArrs, move over from your old apps, or look up a setting.
+level: Start
+template: splash
+---
+
+import { CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+HolyArrs finds, downloads and organises your movies, shows and music in one app. Pick where you are.
+
+<CardGrid>
+  <LinkCard title="New to HolyArrs" description="Five steps from install to your first movie in your Library." href="start/install/" />
+  <LinkCard title="Moving from other apps" description="Bring your titles, folders and settings over. Your old apps keep running." href="migrate/" />
+  <LinkCard title="Looking something up" description="Settings, env vars, the old-app API and the route list." href="reference/env-vars/" />
+</CardGrid>
+
+## Start here
+
+| Step | Page | You end with |
+|---|---|---|
+| 1 | [Install](start/install/) | HolyArrs open on port `6262` |
+| 2 | [Folders](start/folders/) | One folder layout that moves files instantly |
+| 3 | [First run](start/first-run/) | An owner account and your Library folders |
+| 4 | [Connect](start/connect/) | A downloader and a source that both pass **Test** |
+| 5 | [First title](start/first-title/) | One movie found, downloaded and in your Library |
+
+Then see [Home and Settings](start/home-and-settings/) to find your way around.
+
+## On a NAS or without Docker
+
+- [Unraid, Synology and other NAS boxes](run/platforms/)
+- [Portable build, no Docker](run/portable/)
+
+## Stuck
+
+- [Troubleshooting](help/troubleshooting/)
+- [Get support](help/get-support/)

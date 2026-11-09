@@ -1,0 +1,212 @@
+{
+  "snapshots": [
+    7
+  ],
+  "apps": [
+    "s"
+  ],
+  "groups": [
+    {
+      "name": "s",
+      "label": "s",
+      "skipped": true,
+      "items": [
+        {
+          "key": "s",
+          "legacy_keys": [
+            "s"
+          ],
+          "name": "s",
+          "from": "s",
+          "detail": "s",
+          "why": "s",
+          "needs": "s",
+          "folder": {
+            "old_path": "s",
+            "path": "s",
+            "kind": "s",
+            "label": "s"
+          },
+          "rules": {
+            "app": "s",
+            "profile": "s",
+            "preset": "s"
+          },
+          "protocol": {
+            "preset": "s",
+            "prefer": "s",
+            "wait_minutes_usenet": 7,
+            "wait_minutes_torrent": 7,
+            "skip_wait_at_good_enough": true,
+            "part": "s"
+          },
+          "title": {
+            "kind": "s",
+            "id": "s",
+            "ids": {
+              "s": "s"
+            },
+            "year": 7,
+            "library": "s",
+            "folder": "s",
+            "keep_up_to_date": true,
+            "pick_rules": "s",
+            "seasons_off": [
+              7
+            ],
+            "unresolved": "s",
+            "music": {
+              "new_albums": "",
+              "album_types": [
+                ""
+              ],
+              "secondary_types": [
+                ""
+              ],
+              "release_statuses": [
+                ""
+              ],
+              "albums": [
+                {
+                  "mbid": "",
+                  "keep_up_to_date": false
+                }
+              ]
+            },
+            "release_gate": "s",
+            "gate_delay_days": 7
+          },
+          "never_add": {
+            "kind": "s",
+            "ids": {
+              "s": "s"
+            }
+          },
+          "outside_list": {
+            "kind": "s",
+            "ref": "s",
+            "library": "s",
+            "pick_rules": "s",
+            "keep_up_to_date": true,
+            "search_on_add": true,
+            "release_gate": "s",
+            "sync_every_hours": 7
+          },
+          "source": {
+            "format": "s",
+            "protocol": "s",
+            "url": "s",
+            "kinds": [
+              "s"
+            ],
+            "categories": {
+              "s": [
+                7
+              ]
+            },
+            "min_seeders": 7,
+            "priority": 7,
+            "needs_key": true,
+            "on": true
+          },
+          "downloader": {
+            "kind": "s",
+            "url": "s",
+            "username": "s",
+            "category": "s",
+            "priority": 7,
+            "needs_input": true,
+            "path_map": [
+              {
+                "theirs": "s",
+                "ours": "s"
+              }
+            ]
+          },
+          "naming": {
+            "s": "s"
+          },
+          "subtitles": {
+            "languages": [
+              {
+                "language": "s",
+                "hearing_impaired": "s",
+                "forced": true
+              }
+            ],
+            "site_kind": "s",
+            "site_url": "s",
+            "needs_account": true
+          },
+          "person": {
+            "app": "s",
+            "source_id": 7,
+            "stable_identity": true,
+            "email": "s",
+            "role": "s",
+            "perms": [
+              "s"
+            ],
+            "per_week": 7,
+            "movies_per_week": 7,
+            "shows_per_week": 7,
+            "was_admin": true,
+            "was_owner": true,
+            "choice": "s"
+          },
+          "ask_settings": {
+            "movies_per_week": 7,
+            "shows_per_week": 7
+          },
+          "ask": {
+            "app": "s",
+            "kind": "s",
+            "ref": "s",
+            "ids": {
+              "s": "s"
+            },
+            "seasons": [
+              7
+            ],
+            "approved": true,
+            "by": "s",
+            "by_name": "s",
+            "decided_by": "s",
+            "asked_at": "s",
+            "decided_at": "s",
+            "note": "s"
+          },
+          "alert": {
+            "kind": "s",
+            "smtp_host": "s",
+            "smtp_port": 7,
+            "smtp_security": "s",
+            "smtp_from": "s",
+            "smtp_user": "s",
+            "staff_to": "s"
+          }
+        }
+      ]
+    }
+  ],
+  "not_moved": [
+    {
+      "group": "s",
+      "from": "s",
+      "what": "s",
+      "why": "s"
+    }
+  ],
+  "needs_input": [
+    "s"
+  ],
+  "notes": [
+    "s"
+  ],
+  "mapped": [
+    "s"
+  ],
+  "old_paths": [
+    "s"
+  ]
+}

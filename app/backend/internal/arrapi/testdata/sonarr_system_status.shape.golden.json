@@ -1,0 +1,19 @@
+{
+  "appName": "string",
+  "branch": "string",
+  "databaseType": "string",
+  "instanceName": "string",
+  "isAdmin": "bool",
+  "isDebug": "bool",
+  "isDocker": "bool",
+  "isLinux": "bool",
+  "isOsx": "bool",
+  "isProduction": "bool",
+  "isUserInteractive": "bool",
+  "isWindows": "bool",
+  "mode": "string",
+  "osName": "string",
+  "runtimeName": "string",
+  "urlBase": "string",
+  "version": "string"
+}

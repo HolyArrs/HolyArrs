@@ -1,0 +1,14 @@
+{
+  "capabilities": {
+    "tools": {
+      "listChanged": "bool"
+    }
+  },
+  "instructions": "string",
+  "protocolVersion": "string",
+  "serverInfo": {
+    "name": "string",
+    "title": "string",
+    "version": "string"
+  }
+}

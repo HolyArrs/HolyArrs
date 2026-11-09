@@ -1,0 +1,86 @@
+{
+  "collection": {
+    "id": "",
+    "name": ""
+  },
+  "episode": {
+    "season": 0,
+    "number": 0
+  },
+  "lab_movie": {
+    "name": "Dune: Part Two",
+    "year": 2024,
+    "overview": "Paul Atreides unites with the Fremen while seeking revenge against those who destroyed his family.",
+    "original_language": "en",
+    "ids": {
+      "imdb": "tt15239678",
+      "tmdb": "693134"
+    },
+    "cinema_date": "2024-03-01T00:00:00Z",
+    "digital_date": "2024-04-16T00:00:00Z",
+    "physical_date": "2024-05-14T00:00:00Z"
+  },
+  "movie": {
+    "name": "",
+    "year": 0,
+    "overview": "",
+    "original_language": "",
+    "ids": null
+  },
+  "movie_credit": {
+    "person": {
+      "id": "",
+      "name": "",
+      "known_for": null
+    },
+    "roles": null,
+    "characters": null
+  },
+  "person": {
+    "id": "",
+    "name": "",
+    "known_for": null
+  },
+  "person_movie": {
+    "movie": {
+      "name": "",
+      "year": 0,
+      "overview": "",
+      "original_language": "",
+      "ids": null
+    },
+    "roles": null,
+    "characters": null
+  },
+  "person_movies": {
+    "movies": null,
+    "complete": false,
+    "provider_pages": 0
+  },
+  "person_page": {
+    "people": null,
+    "page": 0,
+    "total_pages": 0,
+    "total_results": 0
+  },
+  "review": {
+    "author": "",
+    "text": ""
+  },
+  "review_page": {
+    "score": 0,
+    "votes": 0,
+    "reviews": null,
+    "page": 0,
+    "pages": 0
+  },
+  "season": {
+    "number": 0
+  },
+  "show": {
+    "source": "",
+    "name": "",
+    "status": "",
+    "ids": null
+  }
+}

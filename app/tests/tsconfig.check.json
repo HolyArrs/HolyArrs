@@ -1,0 +1,12 @@
+{
+	"extends": "./tsconfig.json",
+	"compilerOptions": {
+		"allowImportingTsExtensions": true,
+		"ignoreDeprecations": "6.0",
+		"paths": {
+			"@playwright/test": ["../frontend/node_modules/@playwright/test/index.d.ts"],
+			"@axe-core/playwright": ["../frontend/node_modules/@axe-core/playwright/dist/index.d.ts"]
+		}
+	},
+	"include": ["./**/*.ts"]
+}

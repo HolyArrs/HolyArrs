@@ -1,0 +1,42 @@
+[
+  {
+    "number": 0,
+    "name": "Specials",
+    "keep_up_to_date": false,
+    "episodes": 1,
+    "aired": 1,
+    "in_library": 0,
+    "missing": 0,
+    "better_wanted": 0,
+    "not_out_yet": 0,
+    "downloading": 0,
+    "failed": 0
+  },
+  {
+    "number": 1,
+    "name": "Season 1",
+    "keep_up_to_date": true,
+    "episodes": 2,
+    "aired": 2,
+    "in_library": 2,
+    "missing": 0,
+    "better_wanted": 1,
+    "not_out_yet": 0,
+    "downloading": 0,
+    "failed": 0
+  },
+  {
+    "number": 2,
+    "name": "Season 2",
+    "keep_up_to_date": true,
+    "episodes": 3,
+    "aired": 1,
+    "in_library": 0,
+    "missing": 0,
+    "better_wanted": 0,
+    "not_out_yet": 0,
+    "downloading": 1,
+    "failed": 1,
+    "next_air_date": "2026-10-19T02:00:00Z"
+  }
+]

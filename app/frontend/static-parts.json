@@ -1,0 +1,46 @@
+{
+	"_about": "Every file in static/ is copied into web/dist as it is. ours: our own files (folders end in /). listed: third-party files, each with a notice in docs/third-party-notices.md (scripts/notices.py). covered_by: a file another notice covers. The build fails on any other file (bundled-packages.ts).",
+	"ours": [
+		"brand/",
+		"why/",
+		"favicon.ico"
+	],
+	"covered_by": [
+		{
+			"path": "vendor/hls-",
+			"package": "hls.js"
+		}
+	],
+	"listed": [
+		{
+			"path": "clients/deluge.svg",
+			"name": "Deluge logo",
+			"licence": "GPL-3.0 (its metadata also names CC-BY-SA-2.0)",
+			"used": "The Deluge logo, deluge/ui/data/pixmaps/deluge.svg from https://github.com/deluge-torrent/deluge, copyright Calum Lind and the Deluge team, under GPL-3.0 as Deluge's AUTHORS file says for its artwork. The file's own metadata also credits Jakub Steiner and Tuomas Kuosmanen under Creative Commons Attribution-ShareAlike 2.0 (https://creativecommons.org/licenses/by-sa/2.0/); that metadata is kept. Shipped unchanged, only to name the client HolyArrs connects to; that project does not make or endorse HolyArrs."
+		},
+		{
+			"path": "clients/nzbget.svg",
+			"name": "NZBGet icon",
+			"licence": "CC-BY-4.0",
+			"used": "The NZBGet icon (nzbget.svg) by selfh.st/icons (https://selfh.st/icons), under Creative Commons Attribution 4.0 (https://creativecommons.org/licenses/by/4.0/), unmodified. The NZBGet name and logo belong to the NZBGet project. Shipped unchanged, only to name the client HolyArrs connects to; that project does not make or endorse HolyArrs."
+		},
+		{
+			"path": "clients/qbittorrent.svg",
+			"name": "qBittorrent logo",
+			"licence": "GPL-2.0-or-later",
+			"used": "The qBittorrent logo, src/icons/qbittorrent-tray.svg from https://github.com/qbittorrent/qBittorrent: raster design by HVS, drawn as a vector and changed by Atif Afzal, under GPL-2.0-or-later as qBittorrent's AUTHORS file says for this image. Shipped unchanged, only to name the client HolyArrs connects to; that project does not make or endorse HolyArrs."
+		},
+		{
+			"path": "clients/sabnzbd.svg",
+			"name": "SABnzbd logo",
+			"licence": "GPL-2.0-or-later",
+			"used": "The SABnzbd logo, icons/logo-arrow.svg from https://github.com/sabnzbd/sabnzbd, copyright The SABnzbd-Team, under GPL-2.0-or-later like the rest of SABnzbd. Shipped unchanged, only to name the client HolyArrs connects to; that project does not make or endorse HolyArrs."
+		},
+		{
+			"path": "clients/transmission.svg",
+			"name": "Transmission logo",
+			"licence": "GPL-2.0-only OR GPL-3.0-only",
+			"used": "The Transmission logo, from the icons folder of https://github.com/transmission/transmission, copyright the Transmission authors, under Transmission's licence (GPL-2.0 or GPL-3.0). Shipped unchanged, only to name the client HolyArrs connects to; that project does not make or endorse HolyArrs."
+		}
+	]
+}

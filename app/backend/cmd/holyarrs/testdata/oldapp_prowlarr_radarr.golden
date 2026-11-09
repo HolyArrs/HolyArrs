@@ -1,0 +1,86 @@
+{
+  "configContract": "NewznabSettings",
+  "downloadClientId": 0,
+  "enableAutomaticSearch": true,
+  "enableInteractiveSearch": true,
+  "enableRss": true,
+  "fields": [
+    {
+      "advanced": false,
+      "label": "Address",
+      "name": "baseUrl",
+      "order": 0,
+      "type": "text",
+      "value": "http://prowlarr:9696/1/"
+    },
+    {
+      "advanced": true,
+      "label": "Feed path",
+      "name": "apiPath",
+      "order": 1,
+      "type": "text",
+      "value": "/api"
+    },
+    {
+      "advanced": false,
+      "label": "Key",
+      "name": "apiKey",
+      "order": 2,
+      "type": "text",
+      "value": "********"
+    },
+    {
+      "advanced": false,
+      "label": "Categories",
+      "name": "categories",
+      "order": 3,
+      "type": "list",
+      "value": [
+        2040,
+        2000
+      ]
+    },
+    {
+      "advanced": true,
+      "label": "Extra address values",
+      "name": "additionalParameters",
+      "order": 4,
+      "type": "text",
+      "value": ""
+    },
+    {
+      "advanced": true,
+      "label": "Languages of multi-language releases",
+      "name": "multiLanguages",
+      "order": 5,
+      "type": "list",
+      "value": []
+    },
+    {
+      "advanced": true,
+      "label": "Search without the year",
+      "name": "removeYear",
+      "order": 6,
+      "type": "switch",
+      "value": false
+    },
+    {
+      "advanced": true,
+      "label": "Required release flags",
+      "name": "requiredFlags",
+      "order": 7,
+      "type": "list",
+      "value": []
+    }
+  ],
+  "id": 1,
+  "implementation": "Newznab",
+  "implementationName": "Newznab",
+  "name": "Lab Tracker (Prowlarr)",
+  "presets": [],
+  "priority": 20,
+  "protocol": "usenet",
+  "supportsRss": true,
+  "supportsSearch": true,
+  "tags": []
+}

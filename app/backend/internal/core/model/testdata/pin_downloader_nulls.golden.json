@@ -1,0 +1,33 @@
+{
+  "ID": 5,
+  "CreatedAt": "2026-03-04T05:06:07Z",
+  "CreatedBy": {
+    "kind": "user",
+    "id": 2
+  },
+  "UpdatedAt": "2026-03-04T05:06:07Z",
+  "UpdatedBy": {
+    "kind": "system"
+  },
+  "Name": "",
+  "Adapter": "",
+  "Protocol": "",
+  "URL": "",
+  "SecretRef": null,
+  "Category": "",
+  "Priority": 0,
+  "PathMap": [],
+  "AfterImport": "",
+  "SeedGoal": {},
+  "State": "",
+  "Username": "",
+  "AllowLocal": false,
+  "BackoffUntil": null,
+  "FailCount": 0,
+  "LastError": "",
+  "CheckedAt": null,
+  "Removed": false,
+  "Writable": false,
+  "ClearFinished": false,
+  "Tags": []
+}
