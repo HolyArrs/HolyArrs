@@ -311,7 +311,7 @@ Use a named volume for `/config`. Media folders can stay host folders. Guide: [I
 
 ## Keep your master key safe
 
-`holyarrs.key` in your config folder unlocks your stored passwords and keys. Backups don't include it, so keep a copy somewhere else. As the owner, open **Settings > Backups** and choose **Download key kit**. See [Backups](https://docs.HolyArrs.com/run/backups/).
+`holyarrs.key` in your config folder is what opens your stored passwords and keys. Backups don't include it, so keep a copy somewhere else. As the owner, open **Settings > Backups** and choose **Download key kit**. See [Backups](https://docs.HolyArrs.com/run/backups/).
 
 ## Updating
 
