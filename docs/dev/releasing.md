@@ -8,7 +8,7 @@ sidebar: { order: 6 }
 Turn a tested build into a release. This page is for maintainers.
 
 :::caution
-Publishing is off until the maintainer starts a release. Do not tag, publish or move an image tag on your own.
+Only the maintainer starts a release. Do not tag, publish or move an image tag on your own.
 :::
 
 ## Before you start
@@ -122,7 +122,7 @@ Body order: theme, Highlights, places (Requests, Library, Downloads, Indexers, A
 
 <details class="ha-more"><summary>The image workflow</summary>
 
-The `release` workflow runs from main only, for the version in `VERSION`, and publishing is switched off until the maintainer authorizes a release. When on, it:
+The `release` workflow runs from main only, for the version in `VERSION`, and only when the maintainer ticks confirm_release. It:
 
 1. Runs `go test ./...` before building.
 2. Builds one image for `linux/amd64`, `linux/arm64` and `linux/arm/v7`.

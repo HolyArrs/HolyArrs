@@ -1,9 +1,7 @@
 name: release
-# Release publishing is withheld until the maintainer separately authorizes a release.
-# This manual workflow remains inert: its only job is permanently skipped and
-# receives no package-write or OIDC permission.
+# Started by hand only: tick confirm_release and type the exact version.
 #
-# When switched on, the maintainer starts it by hand on main and types the
+# The maintainer starts it by hand on main and types the
 # version (1.2.3, or 1.2.3-rc.1 for a candidate). The run makes the v1.2.3 tag
 # itself when it creates the GitHub release; nobody tags by hand. It pushes
 # the same image to Docker Hub (the name users see) and a silent GHCR copy with only two tags:
@@ -13,6 +11,11 @@ name: release
 on:
   workflow_dispatch:
     inputs:
+      confirm_release:
+        description: Release approved by the maintainer for this exact version
+        type: boolean
+        required: true
+        default: false
       version:
         description: Exact version, the same as the VERSION file (for example 1.0.0)
         type: string
@@ -29,16 +32,13 @@ concurrency:
 
 jobs:
   image:
-    if: ${{ false }}
     runs-on: ubuntu-latest
     # The maintainer approves each run in the release environment.
     environment: release
     permissions:
-      contents: read
-      # Switching the job on also grants, here and only here:
-      #   packages: write  (push to GHCR)
-      #   id-token: write  (keyless cosign signing)
-      #   contents: write  (create the GitHub release)
+      contents: write  # create the GitHub release and its tag
+      packages: write  # push to GHCR
+      id-token: write  # keyless cosign signing
     env:
       IMAGE: ghcr.io/holyarrs/holyarrs
       HUB_IMAGE: docker.io/holyarrs/holyarrs
@@ -53,10 +53,12 @@ jobs:
         id: ver
         env:
           REF: ${{ github.ref }}
+          CONFIRM: ${{ inputs.confirm_release }}
           WANT: ${{ inputs.version }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
+          [ "$CONFIRM" = "true" ] || { echo "Tick confirm_release to start a release."; exit 1; }
           [ "$REF" = "refs/heads/main" ] || { echo "A release runs only from main, not $REF."; exit 1; }
           if ! [[ "$WANT" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-rc\.[0-9]+)?$ ]]; then
             echo "The version $WANT is not X.Y.Z or X.Y.Z-rc.N."
