@@ -19,7 +19,7 @@ func labFeed(t *testing.T) string {
 	t.Helper()
 	path := os.Getenv("HOLYARRS_LAB_FEED")
 	if path == "" {
-		path = filepath.Join("..", "..", "..", "..", "..", "research", "lab", "fake-indexer", "results.xml")
+		path = filepath.Join("..", "..", "..", "..", "..", "..", "work", "research", "lab", "fake-indexer", "results.xml")
 	}
 	feed, err := os.ReadFile(path)
 	if err != nil {
