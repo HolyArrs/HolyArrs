@@ -18,7 +18,7 @@ import (
 )
 
 // testdata/*.7z: one 390,000-byte file (noise, then text), packed by
-// 7-Zip 26.04 ("7zz a -t7z -mx=5"): whole, in two -v100k parts, and with a
+// 7-Zip ("7zz a -t7z -mx=5"): whole, in two -v100k parts, and with a
 // password over the names too (-mhe=on).
 const (
 	movie    = "Dune.Part.Two.2024.1080p.WEB.H264-HOLYARRS.mkv"
