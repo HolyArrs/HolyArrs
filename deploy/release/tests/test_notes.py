@@ -82,7 +82,7 @@ class Shape(unittest.TestCase):
     def test_image_line(self):
         body = notes.render_github(load(), {})
         self.assertIn("## Install\n- Step-by-step install guide. ([#73]", body)
-        self.assertIn("([#84](https://github.com/HolyArrs/holyarrs/issues/84))\n\nDocker Hub:\n\n"
+        self.assertIn("([#84](https://github.com/HolyArrs/HolyArrs/issues/84))\n\nDocker Hub:\n\n"
                       "`holyarrs/holyarrs:1.0.0`\n\n`holyarrs/holyarrs:latest`\n\n## Thanks", body)
         self.assertNotIn("Get the image", body)
         self.assertNotIn("ghcr", body.lower())
@@ -168,7 +168,7 @@ class Discord(unittest.TestCase):
         n = load()
         n["theme"] = "word " * 200
         dm = notes.render_discord(n)
-        self.assertIn("What changed: https://github.com/HolyArrs/holyarrs/releases/tag/1.0.0", dm)
+        self.assertIn("What changed: https://github.com/HolyArrs/HolyArrs/releases/tag/1.0.0", dm)
         self.assertTrue(notes.render_discord(n, bold=True).startswith("**HolyArrs 1.0.0 is ready**"))
 
     def test_announce_length_checked(self):

@@ -24,7 +24,7 @@ const (
 )
 
 // ProjectPages is the only allowed home of changelog_url.
-const ProjectPages = "https://github.com/HolyArrs/holyarrs/"
+const ProjectPages = "https://github.com/HolyArrs/HolyArrs/"
 
 // Limits.
 const (

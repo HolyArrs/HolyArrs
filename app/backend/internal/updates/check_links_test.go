@@ -12,15 +12,15 @@ import (
 // The "what is new" link is kept only on the project's own release pages.
 func TestUpdateLinkPinnedToProjectReleases(t *testing.T) {
 	for link, keep := range map[string]bool{
-		"https://github.com/HolyArrs/holyarrs/releases/tag/v1.2.0":          true,
-		"https://github.com/HolyArrs/holyarrs/releases/":                    true,
+		"https://github.com/HolyArrs/HolyArrs/releases/tag/v1.2.0":          true,
+		"https://github.com/HolyArrs/HolyArrs/releases/":                    true,
 		"https://example.com/r/v1.2.0":                                      false,
-		"http://github.com/HolyArrs/holyarrs/releases/tag/v1":               false,
-		"https://github.com.evil.example/HolyArrs/holyarrs/releases/tag/v1": false,
-		"https://github.com/HolyArrs/holyarrs/releasesX/tag/v1":             false,
-		"https://github.com/HolyArrs/holyarrs/releases/../../evil":          false,
-		"https://user@github.com/HolyArrs/holyarrs/releases/tag/v1":         false,
-		"https://github.com:444/HolyArrs/holyarrs/releases/tag/v1":          false,
+		"http://github.com/HolyArrs/HolyArrs/releases/tag/v1":               false,
+		"https://github.com.evil.example/HolyArrs/HolyArrs/releases/tag/v1": false,
+		"https://github.com/HolyArrs/HolyArrs/releasesX/tag/v1":             false,
+		"https://github.com/HolyArrs/HolyArrs/releases/../../evil":          false,
+		"https://user@github.com/HolyArrs/HolyArrs/releases/tag/v1":         false,
+		"https://github.com:444/HolyArrs/HolyArrs/releases/tag/v1":          false,
 		"javascript:alert(1)": false,
 	} {
 		w := newWorld(t)

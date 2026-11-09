@@ -130,7 +130,7 @@ test('a newer release shows a notice; off asks nothing', async () => {
 	const upd = page.getByTestId('status-updates');
 	await upd.getByRole('button', { name: /^Check (now|again)$/ }).click();
 	await expect(upd).toContainText('9.9.9');
-	await expect(upd.getByRole('link', { name: 'What changed' })).toHaveAttribute('href', 'https://github.com/HolyArrs/holyarrs/releases/tag/v9.9.9');
+	await expect(upd.getByRole('link', { name: 'What changed' })).toHaveAttribute('href', 'https://github.com/HolyArrs/HolyArrs/releases/tag/v9.9.9');
 	await page.goto('/settings/health');
 	await expect(page.getByTestId('update-privacy')).toContainText('api.github.com');
 	await page.getByLabel('Check for a newer HolyArrs').uncheck();

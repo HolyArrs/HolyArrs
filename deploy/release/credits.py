@@ -16,7 +16,7 @@ import subprocess
 import sys
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
-REPO = "HolyArrs/holyarrs"
+REPO = "HolyArrs/HolyArrs"
 MAINTAINER = "CoderLuii"
 
 

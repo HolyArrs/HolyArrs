@@ -4,7 +4,7 @@
 
 Please do not open a public issue for a security problem. Report it in one of these ways:
 
-- On GitHub: open the Security tab of https://github.com/HolyArrs/holyarrs and click "Report a vulnerability".
+- On GitHub: open the Security tab of https://github.com/HolyArrs/HolyArrs and click "Report a vulnerability".
 - By email: support@HolyArrs.com
 
 Tell us what you found, how to reproduce it, your HolyArrs version (Settings > This app, or the image tag) and how you run it (Docker, NAS, behind a reverse proxy).
@@ -20,5 +20,5 @@ Only the latest release gets security fixes. Please update before you report.
 Release images are signed with cosign and come with a list of everything inside them (SBOM). To check one:
 
     cosign verify holyarrs/holyarrs:<tag> \
-      --certificate-identity-regexp 'https://github.com/HolyArrs/holyarrs/.github/workflows/release.yml@refs/tags/.*' \
+      --certificate-identity-regexp 'https://github.com/HolyArrs/HolyArrs/.github/workflows/release.yml@refs/tags/.*' \
       --certificate-oidc-issuer https://token.actions.githubusercontent.com

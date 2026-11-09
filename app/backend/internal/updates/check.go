@@ -23,7 +23,7 @@ const DefaultReleaseFeed = "https://api.github.com/repos/" + projectRepo + "/rel
 
 // projectRepo is the project's GitHub repository. A release's "what is new"
 // link is kept only when it is a page under ReleasePages.
-const projectRepo = "HolyArrs/holyarrs"
+const projectRepo = "HolyArrs/HolyArrs"
 
 // ReleasePages is the only prefix a "what is new" link may have.
 const ReleasePages = "https://github.com/" + projectRepo + "/releases/"

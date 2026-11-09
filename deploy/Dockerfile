@@ -40,7 +40,7 @@ RUN mkdir -p /out/config /out/tmp && chown 1000:1000 /out/config && chmod 1777 /
 FROM scratch
 ARG VERSION=dev
 LABEL org.opencontainers.image.title="HolyArrs" \
-      org.opencontainers.image.source="https://github.com/HolyArrs/holyarrs" \
+      org.opencontainers.image.source="https://github.com/HolyArrs/HolyArrs" \
       org.opencontainers.image.licenses="AGPL-3.0-only" \
       org.opencontainers.image.version="$VERSION"
 COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt

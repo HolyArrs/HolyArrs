@@ -40,7 +40,6 @@ Writing code for HolyArrs? Go to [For developers](#for-developers).
 
 - [NAS, Synology and Unraid](run/platforms.md)
 - [Portable archives (no Docker)](run/portable.md)
-- [Health companion](run/companion.md)
 
 ## Help
 

@@ -2,7 +2,7 @@ import type { UpdateInfo } from '../core/types.ts';
 
 export type BackupRow = { name: string; kind: string; created_at: string; detail?: string; from_version?: string; to_version?: string };
 
-export const PROJECT_REPO = 'HolyArrs/holyarrs';
+export const PROJECT_REPO = 'HolyArrs/HolyArrs';
 export const RELEASE_PAGES = `https://github.com/${PROJECT_REPO}/releases/`;
 // The Docker Hub name users install from (release.yml pushes it).
 export const IMAGE = 'holyarrs/holyarrs';

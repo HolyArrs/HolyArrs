@@ -16,21 +16,21 @@ describe('updateWords', () => {
 
 describe('releaseLink', () => {
 	it('opens a release link only when it is a project release page', () => {
-		expect(PROJECT_REPO).toBe('HolyArrs/holyarrs');
-		expect(releaseLink('https://github.com/HolyArrs/holyarrs/releases/tag/v1.2.0')).toBe('https://github.com/HolyArrs/holyarrs/releases/tag/v1.2.0');
+		expect(PROJECT_REPO).toBe('HolyArrs/HolyArrs');
+		expect(releaseLink('https://github.com/HolyArrs/HolyArrs/releases/tag/v1.2.0')).toBe('https://github.com/HolyArrs/HolyArrs/releases/tag/v1.2.0');
 		// Until the backend check moves to the new repo.
-		expect(releaseLink('https://github.com/HolyArrs/holyarrs/releases/tag/v1.2.0')).toBe('https://github.com/HolyArrs/holyarrs/releases/tag/v1.2.0');
+		expect(releaseLink('https://github.com/HolyArrs/HolyArrs/releases/tag/v1.2.0')).toBe('https://github.com/HolyArrs/HolyArrs/releases/tag/v1.2.0');
 		for (const bad of [
 			undefined,
 			'',
 			'https://example.com/r/v1',
-			'http://github.com/HolyArrs/holyarrs/releases/tag/v1',
-			'https://github.com.evil.example/HolyArrs/holyarrs/releases/x',
-			'https://github.com/HolyArrs/holyarrs/releasesX/tag/v1',
-			'https://github.com/HolyArrs/holyarrs-evil/releases/tag/v1',
-			'https://github.com/HolyArrs/holyarrs/releases/../../x',
-			'https://github.com/HolyArrs/holyarrs/releases/../../x',
-			'https://github.com/HolyArrs/holyarrs/releases/tag/v1?x=1',
+			'http://github.com/HolyArrs/HolyArrs/releases/tag/v1',
+			'https://github.com.evil.example/HolyArrs/HolyArrs/releases/x',
+			'https://github.com/HolyArrs/HolyArrs/releasesX/tag/v1',
+			'https://github.com/HolyArrs/HolyArrs-evil/releases/tag/v1',
+			'https://github.com/HolyArrs/HolyArrs/releases/../../x',
+			'https://github.com/HolyArrs/HolyArrs/releases/../../x',
+			'https://github.com/HolyArrs/HolyArrs/releases/tag/v1?x=1',
 			'javascript:alert(1)'
 		]) {
 			expect(releaseLink(bad)).toBe('');
