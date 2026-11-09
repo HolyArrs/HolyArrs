@@ -10,16 +10,16 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles/sites"
 )
 
-// videoStamp is what the last look saw of a video: its size, modified time
-// and the built-in settings its tracks were read with. A video with the same
-// stamp is not read again, so a sleeping disk only answers a stat.
+// videoStamp is what the last look saw of a video: its size, modified time and
+// the built-in settings its tracks were read with. A video with the same stamp
+// is not read again, so a sleeping disk only has to answer a stat.
 type videoStamp struct {
 	Size     int64
 	Modified int64 // unix nanoseconds
 	Read     string
 }
 
-// stampOf stats the video now; ok is false when it cannot be read.
+// stampOf stats the video now. ok is false when it cannot be read.
 func stampOf(video string, set Settings) (videoStamp, bool) {
 	st, err := os.Stat(video)
 	if err != nil || !st.Mode().IsRegular() {
@@ -28,7 +28,7 @@ func stampOf(video string, set Settings) (videoStamp, bool) {
 	return videoStamp{Size: st.Size(), Modified: st.ModTime().UnixNano(), Read: fmt.Sprintf("%t/%t", set.UseBuiltIn, set.IgnorePictureTracks)}, true
 }
 
-// storedStamp is the stamp and hash kept from the last look of fileID.
+// storedStamp returns the stamp and hash kept from the last look at fileID.
 func storedStamp(ctx context.Context, db *sql.DB, fileID int64) (videoStamp, string, bool) {
 	var size, mod sql.NullInt64
 	var read, hash sql.NullString
@@ -63,8 +63,9 @@ func storedBuiltIn(ctx context.Context, db *sql.DB, fileID int64) ([]Have, error
 	return out, nil
 }
 
-// videoHash is the file hash sites match by: the stored one while the video
-// is unchanged since the last look, else read from the file and kept.
+// videoHash returns the file hash that sites match on. It reuses the stored
+// hash while the video is unchanged since the last look, and otherwise reads
+// the file and stores the result.
 func (s *Service) videoHash(ctx context.Context, fc *fileCtx, set Settings) (string, error) {
 	now, nowOK := stampOf(fc.video(), set)
 	if was, hash, ok := storedStamp(ctx, s.Store.Read(), fc.file.ID); ok && nowOK && hash != "" && was == now {

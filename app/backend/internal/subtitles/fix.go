@@ -15,8 +15,8 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles/subtext"
 )
 
-// ErrNotBeside refuses work on subtitles that are not a present file
-// beside the video.
+// ErrNotBeside means the work needs a subtitle file that exists beside the
+// video, and this one does not.
 var ErrNotBeside = errors.New("only a subtitle file beside the video can be changed")
 
 func (s *Service) besideRow(ctx context.Context, id int64) (Subtitle, *fileCtx, error) {
@@ -31,9 +31,9 @@ func (s *Service) besideRow(ctx context.Context, id int64) (Subtitle, *fileCtx, 
 	return row, fc, err
 }
 
-// Sync moves the timing of a subtitle beside the video (offset and
-// frame-rate fix) and writes it under the same name through the safe
-// write; the old text goes to the holding folder.
+// Sync shifts the timing of a subtitle beside the video, by an offset and a
+// frame-rate fix, and writes it back under the same name with the safe write.
+// The previous text moves to the holding folder so it can be restored.
 func (s *Service) Sync(ctx context.Context, id int64, fix subtext.Fix, by domain.Actor) (Subtitle, error) {
 	if err := fix.Check(); err != nil {
 		return Subtitle{}, err
@@ -74,7 +74,7 @@ func (s *Service) Sync(ctx context.Context, id int64, fix subtext.Fix, by domain
 	nr.ID = 0
 	nr.Sync = map[string]any{"offset_ms": fix.OffsetMS, "from_fps": fix.FromFPS, "to_fps": fix.ToFPS, "from_subtitle_id": row.ID}
 	if row.Origin == "found" {
-		nr.Origin = "by_hand" // HolyArrs wrote this one
+		nr.Origin = "by_hand" // written by the app itself
 	}
 	if _, err := s.writeAt(ctx, fc, &nr, out, rel, &row, by); err != nil {
 		return row, err
@@ -87,8 +87,8 @@ func (s *Service) Sync(ctx context.Context, id int64, fix subtext.Fix, by domain
 	return nr, nil
 }
 
-// TurnDown moves a fetched subtitle into the holding folder and never
-// takes that site's subtitle for this File again; a new search follows.
+// TurnDown moves a fetched subtitle to the holding folder and blocks that
+// site's subtitle for this File from now on. A fresh search runs next.
 func (s *Service) TurnDown(ctx context.Context, id int64, reason string, by domain.Actor) error {
 	row, fc, err := s.besideRow(ctx, id)
 	if err != nil {
@@ -132,9 +132,9 @@ func (s *Service) TurnDown(ctx context.Context, id int64, reason string, by doma
 	return nil
 }
 
-// Choose saves a candidate a person picked from a shown search, at any
-// score (the Pass mark is for searches on their own); it replaces a
-// subtitle HolyArrs saved for that language.
+// Choose saves the candidate a person picked from a shown search. Any score
+// is accepted, since the pass mark only guards searches that run alone. It
+// replaces a subtitle the app saved earlier for that language.
 func (s *Service) Choose(ctx context.Context, fileID int64, siteName, key string, by domain.Actor) (string, error) {
 	res, err := s.Search(ctx, fileID, SearchOptions{Show: true}, by)
 	if err != nil {

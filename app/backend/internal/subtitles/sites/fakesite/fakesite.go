@@ -1,4 +1,4 @@
-// Package fakesite is the lab's Subtitle site: a small HTTP server with
+// Package fakesite is the lab's subtitle site: a small HTTP server with
 // made-up subtitles, used by tests and by cmd/holyarrs-fakesubs in the lab.
 // Nothing it serves comes from a real site.
 package fakesite
@@ -36,26 +36,25 @@ type Sub struct {
 	Format          string  `json:"format"`
 	Text            string  `json:"-"`
 	Zipped          bool    `json:"-"` // served inside a zip
-	// Echoed marks a subtitle made up from the query (Echo); its release
-	// name is built from the asked one.
+	// Echoed marks a subtitle invented from the query in Echo mode. Its release
+	// name is derived from the one asked for.
 	Echoed bool `json:"echoed,omitempty"`
 }
 
-// Site serves a catalog. Echo also answers titles it does not know with
-// made-up subtitles built from the query (the lab uses it).
+// Site serves a catalog. With Echo set it also answers unknown titles with
+// made-up subtitles built from the query, which the lab relies on.
 type Site struct {
 	mu       sync.Mutex
 	Subs     []Sub
 	Echo     bool
 	Searches int
-	Fail     int // answer this status to every call when set (tests)
-	// Key, when set, is the key every call must send (X-Api-Key); a
-	// wrong or missing one is refused with 401, like a site that needs an
-	// account.
+	Fail     int // when set, every call answers with this status
+	// Key, when set, must arrive on every call as X-Api-Key. A wrong or missing
+	// key gets a 401, like a site that needs an account.
 	Key string
 }
 
-// Cue is the text of a made-up subtitle: one cue at 1 s, saying line.
+// Cue returns the text of a made-up subtitle with one cue at 1 s saying line.
 func Cue(line string, startMS int) string {
 	f := func(ms int) string {
 		return fmt.Sprintf("%02d:%02d:%02d,%03d", ms/3600000, ms/60000%60, ms/1000%60, ms%1000)
@@ -63,8 +62,8 @@ func Cue(line string, startMS int) string {
 	return "1\r\n" + f(startMS) + " --> " + f(startMS+1500) + "\r\n" + line + "\r\n"
 }
 
-// Lab is the lab catalog: the open movies of the lab library (made-up
-// text), one of them out of sync by two seconds, one packed in a zip.
+// Lab returns the lab catalog: the open movies of the lab library with made-up
+// text, one of them two seconds out of sync and one packed in a zip.
 func Lab() *Site {
 	return &Site{Echo: true, Subs: []Sub{
 		{ID: "bbb-en", Kind: "movie", Language: "en", Release: "Big.Buck.Bunny.2008.1080p.BluRay.x264-LAB", Title: "Big Buck Bunny", Year: 2008, Trusted: true, Format: "srt", Text: Cue("A big rabbit wakes up.", 1000), Downloads: 40},
@@ -106,9 +105,9 @@ func fold(v string) string {
 	return sb.String()
 }
 
-// labRelease is the release name the lab site gives a made-up subtitle:
-// the asked release with the lab's own group, so it shares the release's
-// parts without repeating the name back (an echo would score as exact).
+// labRelease is the release name the lab site gives a made-up subtitle: the
+// asked release with the lab's own group. It shares the release parts without
+// echoing the name, since an echo would score as an exact match.
 func labRelease(asked string) string {
 	if asked == "" {
 		return ""
@@ -131,7 +130,7 @@ func (s *Site) search(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 		if kind == "episode" && sub.Season != season {
-			continue // a site answers the asked season; episodes may differ
+			continue // sites answer for the asked season, so episodes may differ
 		}
 		out = append(out, sub)
 	}
@@ -139,7 +138,7 @@ func (s *Site) search(w http.ResponseWriter, r *http.Request) {
 		year, _ := strconv.Atoi(q.Get("year"))
 		for _, l := range langs {
 			if l == "" || slices.ContainsFunc(out, func(x Sub) bool { return x.Language == l }) {
-				continue // a language the catalog (or an earlier echo) has
+				continue // a language the catalog or an earlier echo already has
 			}
 			id := fmt.Sprintf("echo-%s-%s-%d-%d-%s", fold(title), kind, season, episode, l)
 			sub := Sub{ID: id, Kind: kind, Language: l, Title: title, Year: year, Season: season, Episode: episode, ByID: q.Get("tmdb") != "" || q.Get("tvdb") != "", Release: labRelease(q.Get("release")), Echoed: true,

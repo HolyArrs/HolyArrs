@@ -14,19 +14,19 @@ import (
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 )
 
-// Characterization of the subtitle queries that join files, slots, items,
-// versions, titles and library_folders (another module's tables today).
-// They hold today's results on a large library, with NULL partners (a File
-// with no subtitle rows, no look, a slot with no File), so a later rewrite
-// through mediafiles read functions can be checked against them.
+// These tests pin the results of the subtitle queries that join files,
+// slots, items, versions, titles and library_folders, tables owned by another
+// module. They run on a large library with missing partners, such as a File
+// with no subtitle rows, a File never looked at and a slot with no File, so a
+// later rewrite of these queries can be checked against them.
 
 type subPinBig struct {
 	f         *fix
 	show      int64
 	showVer   int64
 	movies    []int64 // title ids
-	epItem    []int64 // item ids, index = episode number - 1
-	epFile    []int64 // file id per episode, 0 when it has none
+	epItem    []int64 // item ids, indexed by episode number minus one
+	epFile    []int64 // file id of each episode, or 0 when it has none
 	epState   []string
 	movieFile []int64
 	future    string
@@ -37,7 +37,7 @@ const (
 	subPinMovies = 200
 )
 
-// subPinSeed adds a show of subPinEps episodes and subPinMovies movies to the fixture.
+// subPinSeed adds a show with subPinEps episodes and subPinMovies movies to the fixture.
 func subPinSeed(t *testing.T) *subPinBig {
 	t.Helper()
 	f := newFix(t)
@@ -45,7 +45,7 @@ func subPinSeed(t *testing.T) *subPinBig {
 	ts := database.FormatTime(now())
 	b.future = database.FormatTime(now().Add(48 * time.Hour))
 	past := database.FormatTime(now().Add(-48 * time.Hour))
-	// The default wish for every file: English.
+	// Every file starts with the default wish of English.
 	wishAll(t, f, Want{Language: "en", HearingImpaired: HINormal})
 	set := ReadSettings(context.Background(), f.st.Read())
 	wantJSON, _ := json.Marshal(set.Languages)
@@ -74,7 +74,7 @@ func subPinSeed(t *testing.T) *subPinBig {
 			return ins(`INSERT INTO items (created_at, created_by, updated_at, updated_by, title_id, kind, numbers) VALUES (?, ?, ?, ?, ?, ?, ?)`,
 				ts, sysActor, ts, sysActor, tid, kind, numbers)
 		}
-		// slotFile makes the slot and, unless state is "", a File in that state.
+		// slotFile makes a slot and, when state is not empty, a File in that state.
 		slotFile := func(ver, it int64, rel, state string) int64 {
 			slot := ins(`INSERT INTO slots (created_at, created_by, updated_at, updated_by, item_id, version_id, state) VALUES (?, ?, ?, ?, ?, ?, 'in_library')`,
 				ts, sysActor, ts, sysActor, it, ver)
@@ -95,9 +95,9 @@ func subPinSeed(t *testing.T) *subPinBig {
 			state := "present"
 			switch {
 			case i%50 == 49:
-				state = "missing" // a File that is not there
+				state = "missing" // a File that is absent from disk
 			case i%40 == 39:
-				state = "" // a slot with no File at all
+				state = "" // a slot that has no File
 			}
 			b.epItem = append(b.epItem, it)
 			b.epState = append(b.epState, state)
@@ -111,8 +111,8 @@ func subPinSeed(t *testing.T) *subPinBig {
 			b.movies = append(b.movies, tid)
 			b.movieFile = append(b.movieFile, slotFile(ver, it, name+"/"+name+".mkv", "present"))
 		}
-		// Subtitle rows for the show's files. i%3==0 wants English now,
-		// i%3==1 gave up (retry later or due), i%3==2 has no rows at all.
+		// Subtitle rows for the show's files: i%3==0 wants English now, i%3==1 gave
+		// up and retries later or is due, and i%3==2 has no rows.
 		sub := func(file int64, lang, state string, next any) {
 			ins(`INSERT INTO subtitles (created_at, created_by, updated_at, updated_by, file_id, language, place, origin, state, next_try_at)
 				VALUES (?, ?, ?, ?, ?, ?, 'wish', 'found', ?, ?)`, ts, sysActor, ts, sysActor, file, lang, state, next)
@@ -134,7 +134,7 @@ func subPinSeed(t *testing.T) *subPinBig {
 			if i%10 == 0 {
 				sub(id, "fr", "wanted", past)
 			}
-			if i%4 == 0 { // looked at; i%8==0 for the current wish, i%8==4 for an old one
+			if i%4 == 0 { // looked at; i%8==0 under the current wish, i%8==4 under an old one
 				w := string(wantJSON)
 				if i%8 == 4 {
 					w = "[]"
@@ -142,7 +142,7 @@ func subPinSeed(t *testing.T) *subPinBig {
 				ins(`INSERT INTO subtitle_looks (file_id, looked_at, wish) VALUES (?, ?, ?)`, id, ts, w)
 			}
 		}
-		// Movies: even ones are missing English; odd have it present.
+		// Even movies are missing English and odd ones have it.
 		for i, id := range b.movieFile {
 			if i%2 == 0 {
 				sub(id, "en", "wanted", nil)
@@ -159,8 +159,8 @@ func subPinSeed(t *testing.T) *subPinBig {
 	return b
 }
 
-// wishedEps is the show's files that appear in the missing list: present
-// files with a wanted or none_good_enough row for English.
+// missingEps returns the show's files that should be in the missing list:
+// present files with a wanted or none_good_enough row for English.
 func (b *subPinBig) missingEps() []int {
 	var out []int
 	for i, id := range b.epFile {
@@ -179,7 +179,7 @@ func TestSubPinMissingListLargeLibrary(t *testing.T) {
 	ctx := context.Background()
 	db := b.f.st.Read()
 	eps := b.missingEps()
-	// English rows: episodes (+ French on i%10==0 present files of i%3 in 0,1: counted below) and half the movies.
+	// English rows come from the episodes and half the movies; French rows on some present files are counted below.
 	wantEN := len(eps) + subPinMovies/2
 	wantFR := 0
 	for i := range b.epFile {
@@ -194,7 +194,7 @@ func TestSubPinMissingListLargeLibrary(t *testing.T) {
 	if total != wantEN+wantFR || len(rows) != total {
 		t.Fatalf("total %d rows %d, want %d", total, len(rows), wantEN+wantFR)
 	}
-	// Order: title sort name, season, episode, language. "Big Show" < "Movie ...".
+	// Rows sort by title sort name, season, episode, then language, so "Big Show" comes before "Movie ...".
 	if !sort.SliceIsSorted(rows, func(i, j int) bool {
 		a, c := rows[i], rows[j]
 		if a.Title != c.Title {
@@ -229,7 +229,7 @@ func TestSubPinMissingListLargeLibrary(t *testing.T) {
 		first.Language != "en" || first.State != "wanted" || first.FileID != b.epFile[0] || first.ItemID != b.epItem[0] || first.TitleID != b.show || first.NextTryAt != nil {
 		t.Fatalf("first row %+v", first)
 	}
-	// A movie row has NULL season and episode.
+	// A movie row has no season and no episode.
 	var movie *MissingRow
 	for i := range rows {
 		if rows[i].Kind == "movie" {
@@ -240,7 +240,7 @@ func TestSubPinMissingListLargeLibrary(t *testing.T) {
 	if movie == nil || movie.Season != nil || movie.Episode != nil || movie.Title != "Movie 000" || movie.State != "wanted" {
 		t.Fatalf("movie row %+v", movie)
 	}
-	// Excluded: missing Files, slots without Files, beside rows, files with no rows.
+	// Left out: missing Files, slots without Files, beside rows and files with no rows.
 	for _, r := range rows {
 		for i, id := range b.epFile {
 			if id == r.FileID && b.epState[i] != "present" {
@@ -248,12 +248,12 @@ func TestSubPinMissingListLargeLibrary(t *testing.T) {
 			}
 		}
 	}
-	// Paging: a page and the total do not depend on the page.
+	// The total stays the same whatever page is asked for.
 	page, total2, err := MissingList(ctx, db, MissingFilter{}, 50, 100)
 	if err != nil || total2 != total || len(page) != 50 || fmt.Sprint(*page[0].Episode, page[0].FileID, page[49].FileID) != fmt.Sprint(*rows[100].Episode, rows[100].FileID, rows[149].FileID) {
 		t.Fatalf("page %v total %d err %v", len(page), total2, err)
 	}
-	// Filters.
+	// Filters narrow the list.
 	fr, n, _ := MissingList(ctx, db, MissingFilter{Language: "fr"}, 5000, 0)
 	if n != wantFR || len(fr) != wantFR {
 		t.Fatalf("fr %d, want %d", n, wantFR)
@@ -270,7 +270,7 @@ func TestSubPinMissingListLargeLibrary(t *testing.T) {
 	if err != nil || n != 0 || none == nil || len(none) != 0 {
 		t.Fatalf("a title with only present subtitles: %d %v %v", n, none, err)
 	}
-	// A retry time shows when set.
+	// A retry time is shown when one is set.
 	var timed int
 	for _, r := range rows {
 		if r.NextTryAt != nil {
@@ -288,7 +288,7 @@ func TestSubPinMissingTitlesLargeLibrary(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// One show first (sort name), then 100 movies with one missing each.
+	// The show comes first by sort name, then 100 movies with one missing each.
 	if len(got) != 1+subPinMovies/2 {
 		t.Fatalf("%d titles", len(got))
 	}
@@ -330,8 +330,8 @@ func TestSubPinFilesOf(t *testing.T) {
 	if len(one) != 1 || one[0] != b.epFile[1] {
 		t.Fatalf("one item: %v", one)
 	}
-	// An episode with no File, one whose File is missing, an artist and an
-	// unknown title all give nothing (nil, no error).
+	// An episode with no File, an episode whose File is missing, an artist and an
+	// unknown title all return nil with no error.
 	for _, x := range []struct{ title, item int64 }{{b.show, b.epItem[39]}, {b.show, b.epItem[49]}, {b.f.artist, 0}, {999999, 0}} {
 		got, err := FilesOf(ctx, db, x.title, x.item)
 		if err != nil || len(got) != 0 {
@@ -375,8 +375,8 @@ func TestSubPinDueAndStaleFiles(t *testing.T) {
 	b := subPinSeed(t)
 	ctx := context.Background()
 	s := &Service{Store: b.f.st}
-	// Due: wish rows wanted or none_good_enough with no retry time or one
-	// in the past. NULL retry times come first.
+	// Due rows are wanted or none_good_enough with no retry time or a past one.
+	// Rows with no retry time come first.
 	due, err := s.dueFiles(ctx, 40)
 	if err != nil {
 		t.Fatal(err)
@@ -407,10 +407,10 @@ func TestSubPinDueAndStaleFiles(t *testing.T) {
 		}
 		seen[id] = true
 	}
-	// Every present English or French wish that is due, plus the stale ones
-	// (never looked at, or looked at for another wish).
-	// The due read does not look at the File's state: a missing File with a
-	// due wish row is listed; the stale read only takes present main Files.
+	// Expect every present English or French wish that is due, plus the stale
+	// ones that were never looked at or were looked at under another wish.
+	// The due query ignores the File's state, so a missing File with a due row is
+	// listed, while the stale query only takes present main Files.
 	for i, id := range b.epFile {
 		if id == 0 {
 			continue
@@ -423,13 +423,13 @@ func TestSubPinDueAndStaleFiles(t *testing.T) {
 			t.Fatalf("episode %d (%s): listed %v, want %v (due %v stale %v)", i, b.epState[i], seen[id], want, due, stale)
 		}
 	}
-	// Movies were never looked at, so all are stale and listed.
+	// No movie was ever looked at, so all of them are stale and listed.
 	for i, id := range b.movieFile {
 		if !seen[id] {
 			t.Fatalf("movie %d is not listed", i)
 		}
 	}
-	// Stale alone: never looked at first, in file id order.
+	// The stale query alone lists never-looked-at Files first, in file id order.
 	stale, err := s.staleFiles(ctx, 100000, nil, map[int64]bool{})
 	if err != nil {
 		t.Fatal(err)
@@ -451,7 +451,7 @@ func TestSubPinDueAndStaleFiles(t *testing.T) {
 		}
 		lastUnlooked = id
 	}
-	// A current look (i%8==0) is not stale.
+	// A look under the current wish (i%8==0) is not stale.
 	cur := map[int64]bool{}
 	for _, id := range stale {
 		cur[id] = true
@@ -489,7 +489,7 @@ func TestSubPinWishResolution(t *testing.T) {
 			t.Fatalf("item %d: %+v %v", c.item, r, err)
 		}
 	}
-	// A version with no wish of its own falls to the title's.
+	// A version with no wish of its own falls back to the title's wish.
 	r, _ = WishFor(ctx, db, b.show, b.showVer+9999, b.epItem[0])
 	if r.From != FromTitle || r.Wants[0].Language != "fr" {
 		t.Fatalf("title wish %+v", r)
@@ -498,18 +498,18 @@ func TestSubPinWishResolution(t *testing.T) {
 	if err != nil || len(ws) != 3 || ws[0].VersionID != nil || ws[0].ItemID != nil || ws[1].VersionID == nil || ws[2].ItemID == nil {
 		t.Fatalf("wishes %+v %v", ws, err)
 	}
-	// Music has no wish; an unknown title is not found; the artist is refused.
+	// Music has no wish, an unknown title is not found and the artist is refused.
 	if _, err := WishFor(ctx, db, b.f.artist, 0, 0); !errors.Is(err, ErrMusic) {
 		t.Fatalf("artist: %v", err)
 	}
 	if _, err := Wishes(ctx, db, 999999); !errors.Is(err, ErrNotFound) {
 		t.Fatalf("unknown: %v", err)
 	}
-	// An episode of another title is refused.
+	// An episode that belongs to another title is refused.
 	if err := SetWish(ctx, b.f.st, b.movies[0], 0, b.epItem[0], []Want{{Language: "en"}}, false, by); !errors.Is(err, ErrNotFound) {
 		t.Fatalf("foreign episode: %v", err)
 	}
-	// Inherit removes the row.
+	// Inherit deletes the row.
 	if err := SetWish(ctx, b.f.st, b.show, 0, b.epItem[5], nil, true, by); err != nil {
 		t.Fatal(err)
 	}
@@ -521,7 +521,7 @@ func TestSubPinWishResolution(t *testing.T) {
 func TestSubPinListForOrder(t *testing.T) {
 	b := subPinSeed(t)
 	ctx := context.Background()
-	// File of episode 0 has en (wanted) and fr (wanted); add a beside row.
+	// The File of episode 0 wants en and fr; add a beside row as well.
 	ts := database.FormatTime(now())
 	if err := b.f.st.Write(ctx, func(tx *sql.Tx) error {
 		_, err := tx.Exec(`INSERT INTO subtitles (created_at, created_by, updated_at, updated_by, file_id, language, place, origin, state, relative_path)
@@ -534,12 +534,12 @@ func TestSubPinListForOrder(t *testing.T) {
 	if err != nil || len(got) != 3 {
 		t.Fatalf("%d rows %v", len(got), err)
 	}
-	// Ordered by place, language: beside/de, wish/en, wish/fr.
+	// Rows sort by place, then language: beside/de, wish/en, wish/fr.
 	order := []string{got[0].Place + "/" + got[0].Language, got[1].Place + "/" + got[1].Language, got[2].Place + "/" + got[2].Language}
 	if fmt.Sprint(order) != "[beside/de wish/en wish/fr]" {
 		t.Fatalf("order %v", order)
 	}
-	// A File with no rows gives an empty list, not nil.
+	// A File with no rows gives an empty list rather than nil.
 	none, err := ListFor(ctx, b.f.st.Read(), b.epFile[2])
 	if err != nil || none == nil || len(none) != 0 {
 		t.Fatalf("no rows: %#v %v", none, err)

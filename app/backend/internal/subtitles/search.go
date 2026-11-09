@@ -23,28 +23,28 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles/subtext"
 )
 
-// SearchOptions shape one search.
+// SearchOptions changes how one search behaves.
 type SearchOptions struct {
-	// Better also searches again for wished languages whose saved
-	// subtitle scored under 99 and was saved within days (0: any age).
+	// Better also searches again for wanted languages whose saved subtitle
+	// scored under 99 and was saved within BetterDays days (0 means any age).
 	Better     bool
 	BetterDays int
-	// Show only lists candidates (by hand); nothing is saved.
+	// Show only lists the candidates for a person to pick; nothing is saved.
 	Show bool
 }
 
-// Outcome is what a search did for one wished language.
+// Outcome is what a search did for one wanted language.
 type Outcome struct {
 	Want    Want     `json:"want"`
-	Result  string   `json:"result"` // saved, upgraded, none_good_enough, failed, kept
+	Result  string   `json:"result"` // saved, upgraded, none_good_enough, failed or kept
 	Path    string   `json:"path,omitempty"`
 	Score   int      `json:"score,omitempty"`
 	Site    string   `json:"site,omitempty"`
 	Reason  string   `json:"reason,omitempty"`
-	Choices []Scored `json:"choices,omitempty"` // Show only
+	Choices []Scored `json:"choices,omitempty"` // filled only for Show searches
 }
 
-// SearchResult is one File's search.
+// SearchResult is the outcome of searching one File.
 type SearchResult struct {
 	FileID   int64     `json:"file_id"`
 	Status   Status    `json:"status"`
@@ -52,16 +52,16 @@ type SearchResult struct {
 	Asked    []string  `json:"sites_asked"`
 }
 
-// target is one language a search looks for, with the score to beat.
+// target is one language a search looks for, with the score it must beat.
 type target struct {
 	want  Want
-	beat  int       // a candidate must score more than this (-1: any over the Pass mark)
-	old   *Subtitle // the saved one a better one replaces
+	beat  int       // a candidate must score above this; -1 means anything over the pass mark
+	old   *Subtitle // the saved subtitle a better one would replace
 	isNew bool
 }
 
-// Search looks for the File's missing (and, with Better, improvable)
-// subtitles on every usable site and saves the best over the Pass mark.
+// Search looks on every usable site for the File's missing subtitles, plus
+// improvable ones when Better is set, and saves the best one over the pass mark.
 func (s *Service) Search(ctx context.Context, fileID int64, opt SearchOptions, by domain.Actor) (SearchResult, error) {
 	res := SearchResult{FileID: fileID, Outcomes: []Outcome{}, Asked: []string{}}
 	fc, err := s.load(ctx, fileID)
@@ -105,7 +105,7 @@ func (s *Service) Search(ctx context.Context, fileID int64, opt SearchOptions, b
 	q := sites.Query{Kind: fc.item.Kind, Title: v.Title, Year: v.Year, Season: v.Season, Episode: v.Episode, ReleaseName: v.ReleaseName,
 		IMDb: fc.title.SourceIDs["imdb"], TMDB: fc.title.SourceIDs["tmdb"], TVDB: fc.title.SourceIDs["tvdb"]}
 	if h, err := s.videoHash(ctx, fc, set); err == nil && h != "" {
-		q.Hash = h // sites that match by file hash use it; others ignore it
+		q.Hash = h // hash-matching sites use it and the rest ignore it
 	}
 	seenLang := map[string]bool{}
 	for _, t := range targets {
@@ -116,7 +116,7 @@ func (s *Service) Search(ctx context.Context, fileID int64, opt SearchOptions, b
 	}
 	turned := s.turnedDown(ctx, fileID)
 
-	// Ask every usable site once for all languages.
+	// Each usable site is asked once for all languages to keep traffic low.
 	rows, err := usable(ctx, s.Store.Read(), now())
 	if err != nil {
 		return res, err
@@ -168,7 +168,7 @@ func (s *Service) Search(ctx context.Context, fileID int64, opt SearchOptions, b
 		out.Result = "none_good_enough"
 		for _, c := range choices {
 			if c.Score.Refused != "" || c.Score.Total < pass || c.Score.Total <= t.beat {
-				break // ranked: nothing after it is better
+				break // the list is ranked, so nothing after this is better
 			}
 			p, err := s.fetchAndSave(ctx, fc, t, c, bySite[c.Site], set, by)
 			if err != nil {
@@ -190,7 +190,7 @@ func (s *Service) Search(ctx context.Context, fileID int64, opt SearchOptions, b
 	return res, nil
 }
 
-// afterTarget records a target's outcome: wish row state and an Event.
+// afterTarget records how a target ended: its wish row state and an Event.
 func (s *Service) afterTarget(ctx context.Context, fc *fileCtx, t target, out *Outcome, set Settings, by domain.Actor) {
 	titleID, fileID := fc.title.ID, fc.file.ID
 	slotID := fc.file.SlotIDs[0]
@@ -225,8 +225,8 @@ func (s *Service) afterTarget(ctx context.Context, fc *fileCtx, t target, out *O
 	}
 }
 
-// fetchAndSave downloads a candidate, checks it and saves it next to the
-// video, holding a replaced one aside. It returns the saved path.
+// fetchAndSave downloads a candidate, checks it and saves it beside the video,
+// holding any replaced subtitle aside. It returns the saved path.
 func (s *Service) fetchAndSave(ctx context.Context, fc *fileCtx, t target, c Scored, r SiteRow, set Settings, by domain.Actor) (string, error) {
 	site, err := s.client(ctx, r)
 	if err != nil {
@@ -264,7 +264,7 @@ func (s *Service) fetchAndSave(ctx context.Context, fc *fileCtx, t target, c Sco
 	return p, err
 }
 
-// pickEntry prefers SRT, then the first entry.
+// pickEntry prefers an SRT entry and falls back to the first one.
 func pickEntry(es []subtext.Entry) subtext.Entry {
 	for _, e := range es {
 		if e.Format == subtext.SRT {
@@ -276,8 +276,8 @@ func pickEntry(es []subtext.Entry) subtext.Entry {
 
 func (s *Service) failed(ctx context.Context, fc *fileCtx, w Want, site string, err error, by domain.Actor) {
 	titleID, slotID, fileID := fc.title.ID, fc.file.SlotIDs[0], fc.file.ID
-	// Disk errors name full paths; Events and the live stream show them
-	// inside the Library folder only.
+	// Disk errors carry full paths. Events and the live stream must only show
+	// paths inside the Library folder.
 	msg := err.Error()
 	if lib := filepath.Clean(fc.lib); lib != "." && lib != "" {
 		msg = strings.ReplaceAll(msg, lib+string(filepath.Separator), "")
@@ -288,8 +288,8 @@ func (s *Service) failed(ctx context.Context, fc *fileCtx, w Want, site string, 
 		Data:    map[string]any{"file_id": fileID, "language": w.Language, "site": site, "error": msg}, GroupKey: "subtitles:" + itoa(fileID)})
 }
 
-// SubtitleName is the file name of a subtitle for a video: base.lang
-// [.hi|.forced].format.
+// SubtitleName builds a subtitle file name for a video in the form
+// base.lang[.hi|.forced].format.
 func SubtitleName(videoRel, lang string, hi, forced bool, hiSuffix, format string) string {
 	base := strings.TrimSuffix(path.Base(videoRel), path.Ext(videoRel))
 	name := base + "." + lang
@@ -302,14 +302,15 @@ func SubtitleName(videoRel, lang string, hi, forced bool, hiSuffix, format strin
 	return path.Join(path.Dir(videoRel), name+"."+format)
 }
 
-// ErrNotOurs refuses to overwrite a subtitle file HolyArrs did not save.
+// ErrNotOurs refuses to overwrite a subtitle file the app did not save, so a
+// person's own file is never lost.
 var ErrNotOurs = errors.New("a subtitle file HolyArrs did not save is at that name; it is left alone")
 
-// save writes text next to the video under the language-tagged name, by
-// the importer's safe-write rules: the path stays in the Library folder
-// (links followed), the text goes to a temporary file that is synced and
-// renamed in place, and a file already there is held aside into the
-// holding folder when HolyArrs saved it (else the save is refused).
+// save writes text beside the video under its language-tagged name, using the
+// importer's safe-write rules. The path must stay inside the Library folder
+// with links followed. The text goes to a temporary file that is synced and
+// then renamed into place. A file already at the name is held aside in the
+// holding folder if the app saved it; otherwise the save is refused.
 func (s *Service) save(ctx context.Context, fc *fileCtx, row *Subtitle, text, format string, set Settings, old *Subtitle, by domain.Actor) (string, error) {
 	rel := SubtitleName(fc.file.RelativePath, row.Language, row.HearingImpaired, row.Forced, set.HISuffix, format)
 	return s.writeAt(ctx, fc, row, text, rel, old, by)
@@ -320,25 +321,24 @@ type heldSubtitle struct {
 	To   string `json:"to"`
 }
 
-// saveNote extends the saved subtitle row with the exact files held aside
-// before installation. Older notes contain only the embedded Subtitle and
-// still decode here.
+// saveNote adds the exact held-aside files to the saved subtitle row, so an
+// interrupted save can be undone. Notes without them still decode.
 type saveNote struct {
 	Subtitle
 	Held     []heldSubtitle `json:"_held,omitempty"`
 	NewProof string         `json:"_new_proof,omitempty"`
 }
 
-// writeAt is save at a given path relative to the Library folder. A file
-// already at rel must be old's, or one HolyArrs saved; it is held aside.
+// writeAt is save at a path relative to the Library folder. A file already at
+// rel must belong to old or be one the app saved, and it is held aside.
 func (s *Service) writeAt(ctx context.Context, fc *fileCtx, row *Subtitle, text, rel string, old *Subtitle, by domain.Actor) (string, error) {
 	full := filepath.Join(fc.lib, filepath.FromSlash(rel))
 	dir := filepath.Dir(full)
 	if !strings.HasPrefix(full, filepath.Clean(fc.lib)+string(filepath.Separator)) || !importer.InsideReal(fc.lib, dir) {
 		return "", fmt.Errorf("%s is outside the Library folder", rel)
 	}
-	// What is there now that this save replaces: the old saved one (a
-	// better subtitle), and whatever is at the new name.
+	// Collect what this save replaces: the previous saved subtitle when this is a
+	// better one, and whatever sits at the new name.
 	var replace []Subtitle
 	if old != nil {
 		replace = append(replace, *old)
@@ -364,7 +364,7 @@ func (s *Service) writeAt(ctx context.Context, fc *fileCtx, row *Subtitle, text,
 		return "", err
 	}
 	tmpName := tmp.Name()
-	defer os.Remove(tmpName) // gone after the rename; cleans up on failure
+	defer os.Remove(tmpName) // already gone after the rename; removes the leftover on failure
 	if _, err := tmp.WriteString(text); err != nil {
 		tmp.Close()
 		return "", err
@@ -376,13 +376,13 @@ func (s *Service) writeAt(ctx context.Context, fc *fileCtx, row *Subtitle, text,
 	if err := tmp.Close(); err != nil {
 		return "", err
 	}
-	// The save is written down before the disk changes: a save cut off
-	// after its file is in place is finished by the next look.
+	// Record the save before touching the disk, so a save cut off after its file
+	// is in place gets finished by the next look.
 	t := now()
 	row.RelativePath, row.SavedAt = &rel, &t
-	// Pick and journal the exact holding names before moving anything. If the
-	// process stops after a hold but before installation, recovery can put the
-	// old subtitle back instead of losing its only usable name.
+	// Choose and record the exact holding names before moving anything. If the
+	// process stops after a hold but before the new file lands, recovery can put
+	// the old subtitle back instead of losing its only usable name.
 	var held []heldSubtitle
 	seen := map[string]bool{}
 	for _, r := range replace {
@@ -466,7 +466,7 @@ func (s *Service) writeAt(ctx context.Context, fc *fileCtx, row *Subtitle, text,
 		}
 	}
 	if err := renameInto(tmpName, full); err != nil {
-		// The held files go back to their names: nothing changed.
+		// Move the held files back to their names so nothing has changed.
 		putBack()
 		forget()
 		return "", err
@@ -482,19 +482,19 @@ func (s *Service) writeAt(ctx context.Context, fc *fileCtx, row *Subtitle, text,
 	return rel, err
 }
 
-// renameInto puts a written subtitle at its name; tests make it fail.
+// renameInto puts a written subtitle at its final name. Tests swap it to fail.
 var renameInto = os.Rename
 
-// saveCrash lets tests stop a save after its file is in place, before its
-// row is written, as if the process died there.
+// saveCrash lets tests stop a save after its file is in place and before its
+// row is written, as if the process died at that point.
 var saveCrash func() error
 
-// saveHoldCrash lets tests stop a save after old subtitles were held but
-// before the new file was installed, as if the process died there.
+// saveHoldCrash lets tests stop a save after old subtitles were held and
+// before the new file was installed, as if the process died at that point.
 var saveHoldCrash func(held int) error
 
-// recordSave writes a finished save's row: the rows it replaces are
-// replaced, the wish it meets goes, and its subtitle_saves note is removed.
+// recordSave writes the row of a finished save. It marks the rows it replaces
+// as replaced, removes the wish it meets and deletes its subtitle_saves note.
 func (s *Service) recordSave(ctx context.Context, tx *sql.Tx, row *Subtitle, replaceIDs []int64, saveID int64, by domain.Actor) error {
 	ts := database.FormatTime(now())
 	for _, id := range replaceIDs {
@@ -502,7 +502,7 @@ func (s *Service) recordSave(ctx context.Context, tx *sql.Tx, row *Subtitle, rep
 			return err
 		}
 	}
-	// Any other present row at the same name is replaced too (one file, one row).
+	// Any other present row at the same name is replaced too, since one file has one row.
 	if _, err := tx.ExecContext(ctx, "UPDATE subtitles SET state = 'replaced', updated_at = ? WHERE file_id = ? AND place = 'beside' AND state = 'present' AND relative_path = ?",
 		ts, row.FileID, *row.RelativePath); err != nil {
 		return err
@@ -517,9 +517,9 @@ func (s *Service) recordSave(ctx context.Context, tx *sql.Tx, row *Subtitle, rep
 	return err
 }
 
-// finishSaves finishes the saves of a File that were cut off: one whose
-// file is in place gets its row (it is HolyArrs's own file, never found);
-// one whose file is not there is dropped.
+// finishSaves completes a File's saves that were cut off. A save whose file is
+// in place gets its row, marked as the app's own rather than found. A save
+// whose file is absent is dropped.
 func (s *Service) finishSaves(ctx context.Context, tx *sql.Tx, fc *fileCtx) error {
 	rows, err := tx.QueryContext(ctx, "SELECT id, relative_path, row, replace_ids FROM subtitle_saves WHERE file_id = ? ORDER BY id", fc.file.ID)
 	if err != nil {
@@ -646,9 +646,9 @@ func restoreHeldSubtitles(lib string, held []heldSubtitle) error {
 		_, toErr := os.Lstat(h.To)
 		switch {
 		case fromErr == nil && errors.Is(toErr, os.ErrNotExist):
-			continue // already restored
+			continue // already put back
 		case errors.Is(fromErr, os.ErrNotExist) && errors.Is(toErr, os.ErrNotExist):
-			continue // it disappeared before the hold was carried out
+			continue // the file vanished before it could be held
 		case errors.Is(fromErr, os.ErrNotExist) && toErr == nil:
 			if err := os.Rename(h.To, h.From); err != nil {
 				return err

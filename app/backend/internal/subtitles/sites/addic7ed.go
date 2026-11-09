@@ -14,17 +14,16 @@ import (
 	"time"
 )
 
-// addic7ed reads a show-subtitle site that answers HTML pages and needs the
-// person's account for downloads. It signs in itself with the user name and
-// password from the vault (a form post; the session cookie lives only in
-// memory, per site), finds the show by name on the search page, reads the
-// season page's rows (language, version, how complete, hearing impaired,
+// addic7ed reads a show subtitle site that answers with HTML pages and needs
+// the person's account to download. It signs in with the user name and
+// password from the vault through a form post, and keeps the session cookie
+// in memory per site. It finds the show by name on the search page, reads the
+// season page rows (language, version, completeness, hearing impaired and
 // download link) and downloads with the show page as Referer. Shows only.
-//
-// The page shapes are our reading of the site, checked only against fake
-// pages (fakesite.Addic7ed), never the live site. The site is used gently:
-// at least addic7edMinGap between two calls, at most addic7edDailyCap calls
-// a day, and an anti-bot check page makes it rest with a plain reason; it is
+// The page shapes are our reading of the site and are checked only against
+// fake pages in fakesite.Addic7ed, never the live site. The site is used
+// gently: at least addic7edMinGap between calls and at most addic7edDailyCap
+// calls a day. An anti-bot check page makes it rest with a plain reason and is
 // never worked around.
 type addic7ed struct {
 	c *client
@@ -40,7 +39,7 @@ type addic7ed struct {
 type addic7edRedirectState struct{ err error }
 type addic7edRedirectKey struct{}
 
-// Limits of the addic7ed adapter.
+// Limits that keep the addic7ed adapter gentle on the site.
 var addic7edMinGap = 3 * time.Second
 
 const (
@@ -96,7 +95,7 @@ func newAddic7ed(c *client) *addic7ed {
 	return a
 }
 
-// count keeps the daily cap; it rests until midnight UTC once reached.
+// count enforces the daily cap. Once reached, the site rests until midnight UTC.
 func (a *addic7ed) count() error {
 	a.mu.Lock()
 	defer a.mu.Unlock()
@@ -112,7 +111,7 @@ func (a *addic7ed) count() error {
 	return nil
 }
 
-// page fetches a page of the site (GET, or a form POST when form is set)
+// page fetches one page of the site, by GET or by form POST when form is set,
 // and checks it for an anti-bot check.
 func (a *addic7ed) page(ctx context.Context, p string, form url.Values, referer string) ([]byte, error) {
 	if err := a.count(); err != nil {
@@ -162,7 +161,7 @@ func isChallenge(s string) bool {
 	return false
 }
 
-// hasLoginForm says a page asks to sign in (a password field).
+// hasLoginForm reports whether a page asks to sign in, judged by a password field.
 func hasLoginForm(b []byte) bool {
 	found := false
 	tokens(head(b, 256<<10), func(t token) {
@@ -173,7 +172,7 @@ func hasLoginForm(b []byte) bool {
 	return found
 }
 
-// signIn posts the sign-in form; the cookie it sets stays in the jar.
+// signIn posts the sign-in form. The cookie it sets stays in the jar.
 func (a *addic7ed) signIn(ctx context.Context) error {
 	return a.login(ctx, false, 0)
 }
@@ -292,7 +291,7 @@ func (a *addic7ed) Search(ctx context.Context, q Query) ([]Candidate, error) {
 			continue
 		}
 		if !strings.EqualFold(strings.TrimSpace(r.cells[5]), "completed") {
-			continue // still being made
+			continue // still in progress on the site
 		}
 		dl, ok := a.pin(r.href)
 		if !ok {
@@ -313,7 +312,7 @@ func (a *addic7ed) Search(ctx context.Context, q Query) ([]Candidate, error) {
 	return out, nil
 }
 
-// pin keeps a download link only on the site's own host, as a path.
+// pin keeps a download link only when it is on the site's own host, as a path.
 func (a *addic7ed) pin(href string) (string, bool) {
 	if strings.HasPrefix(href, "//") {
 		return "", false
@@ -335,8 +334,8 @@ func (a *addic7ed) pin(href string) (string, bool) {
 	return p, true
 }
 
-// local drops the site address's own path (a site served under a path,
-// such as the lab's fakes) from a link's path.
+// local strips the site address's own path from a link path, for a site served
+// under a path such as the lab's fakes.
 func (a *addic7ed) local(p string) string {
 	if root := strings.TrimRight(a.c.base.Path, "/"); root != "" {
 		if rest, ok := strings.CutPrefix(p, root+"/"); ok {
@@ -423,13 +422,12 @@ var a7Langs = map[string]string{
 
 func langCode(name string) string { return a7Langs[strings.ToLower(strings.TrimSpace(name))] }
 
-// --- a small bounded HTML reader ----------------------------------------
-//
-// It reads tags and text in one pass (each step moves forward, so the work
-// is linear in the page size), skips comments, script and style bodies,
-// and keeps only what the adapter needs: links with their text and table
-// rows with their cell texts and first link. Nested or broken tags are
-// taken as they come; nothing is ever run.
+// A small bounded HTML reader.
+// It reads tags and text in one forward pass, so the work grows linearly with
+// the page size. It skips comments and script and style bodies, and keeps only
+// what the adapter needs: links with their text, and table rows with their
+// cell texts and first link. Nested or broken tags are taken as they come and
+// nothing is ever run.
 
 type link struct{ href, text string }
 
@@ -439,7 +437,7 @@ type row struct {
 }
 
 type token struct {
-	tag       string // lower case; "" for text
+	tag       string // lower case, or "" for text
 	end       bool
 	href      string
 	inputType string
@@ -448,7 +446,7 @@ type token struct {
 	valid     bool
 }
 
-// tokens calls fn for each tag and text run of b.
+// tokens calls fn for each tag and run of text in b.
 func tokens(b []byte, fn func(token)) {
 	i := 0
 	for i < len(b) {
@@ -484,7 +482,7 @@ func tokens(b []byte, fn func(token)) {
 			n++
 		}
 		if n == 0 {
-			continue // <!doctype>, <?...>, stray <
+			continue // doctype, processing instruction or a stray angle bracket
 		}
 		t.tag = strings.ToLower(string(inner[:n]))
 		if !t.end && (t.tag == "script" || t.tag == "style") {
@@ -521,7 +519,7 @@ func tagEnd(b []byte) int {
 	return -1
 }
 
-// attr reads one attribute's value from the inside of a tag.
+// attr reads the value of one attribute from inside a tag.
 func attr(in []byte, name string) string {
 	for i := 0; i < len(in); {
 		for i < len(in) && (isSpace(in[i]) || in[i] == '/') {
@@ -591,7 +589,7 @@ func clip(s string) string {
 	return strings.ToValidUTF8(s, "")
 }
 
-// links answers every link with its text.
+// links returns every link with its text.
 func links(b []byte) []link {
 	var out []link
 	var cur *link
@@ -616,7 +614,7 @@ func links(b []byte) []link {
 	return out
 }
 
-// rows answers the table rows: cell texts and the first link in the row.
+// rows returns the table rows with their cell texts and first link.
 func rows(b []byte) []row {
 	var out []row
 	var cur *row
@@ -663,7 +661,7 @@ func isDownloadHref(href string) bool {
 	return err == nil && (strings.HasPrefix(u.Path, a7Down) || strings.Contains(u.Path, a7Down))
 }
 
-// indexFold finds an ASCII needle in b, any case, in one pass.
+// indexFold finds an ASCII needle in b in any case, in one pass.
 func indexFold(b []byte, needle string) int {
 	for i := 0; i+len(needle) <= len(b); {
 		j := bytes.IndexByte(b[i:], needle[0])

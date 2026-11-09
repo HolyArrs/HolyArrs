@@ -32,7 +32,7 @@ func TestRoutes_SitesOffKeepsBaseRoutes(t *testing.T) {
 		t.Errorf("site list with sites off: %d, want 404", c)
 	}
 
-	// With the feature on, the site routes exist too.
+	// With the feature flag on, the site routes are registered as well.
 	t.Setenv("HOLYARRS_FLAGS", startup.SubtitleSites)
 	m = http.NewServeMux()
 	NewHandlers(f.st, nil, &Service{Store: f.st}).Routes(m)

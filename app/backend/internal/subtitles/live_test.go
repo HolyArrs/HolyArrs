@@ -12,7 +12,8 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles/sites"
 )
 
-// TestLiveSubs does one real search per no-account site. Run by hand only.
+// TestLiveSubs runs one real search on each site that needs no account.
+// It is meant to be run by hand only.
 func TestLiveSubs(t *testing.T) {
 	cases := []struct {
 		kind string
@@ -53,7 +54,8 @@ func TestLiveSubs(t *testing.T) {
 	}
 }
 
-// liveURL lets LIVESUBS_PODNAPISI_URL override the default for one run.
+// liveURL lets an environment variable such as LIVESUBS_PODNAPISI_URL replace
+// the default address for a single run.
 func liveURL(kind, def string) string {
 	if kind == "podnapisi" {
 		if u := os.Getenv("LIVESUBS_PODNAPISI_URL"); u != "" {

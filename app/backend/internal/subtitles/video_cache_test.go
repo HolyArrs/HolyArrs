@@ -15,12 +15,12 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 )
 
-// Disks that sleep: a subtitle look or search does not read the video again
-// when its size and modified time (and the built-in settings) are what was
-// stored last time. The beside-file listing still runs every time.
+// Sleeping disks: a subtitle look or search does not read the video again
+// when its size, modified time and built-in settings match what was stored
+// last time. Beside files are still listed every time.
 
-// sameSizeSameTime replaces the video's bytes with body (same length) and
-// puts its modified time back, so only its content differs.
+// sameSizeSameTime replaces the video's bytes with body of the same length
+// and restores its modified time, so only the content differs.
 func sameSizeSameTime(t *testing.T, p string, body []byte) {
 	t.Helper()
 	st, err := os.Stat(p)
@@ -74,8 +74,8 @@ func TestVideoCache_LookSkipsUnchangedVideo(t *testing.T) {
 		t.Fatal("no built-in rows from the lab file")
 	}
 
-	// Same size, same time, different bytes: the stored tracks are kept, so
-	// the video was not read again and the rows were not rewritten.
+	// Same size and time with different bytes keeps the stored tracks, which
+	// proves the video was not read again and the rows were not rewritten.
 	sameSizeSameTime(t, p, bytes.Repeat([]byte{0}, len(b)))
 	if _, err := s.Look(ctx, f.movieFile, domain.System); err != nil {
 		t.Fatal(err)
@@ -90,7 +90,7 @@ func TestVideoCache_LookSkipsUnchangedVideo(t *testing.T) {
 		}
 	}
 
-	// A new modified time reads the video again (now blank: no tracks).
+	// A new modified time reads the video again, which is now blank with no tracks.
 	later := time.Now().Add(time.Minute)
 	if err := os.Chtimes(p, later, later); err != nil {
 		t.Fatal(err)
@@ -103,8 +103,8 @@ func TestVideoCache_LookSkipsUnchangedVideo(t *testing.T) {
 	}
 }
 
-// Turning built-in subtitles off or on reads the video again even when it
-// did not change.
+// Turning built-in subtitles off or on reads the video again even when the
+// video did not change.
 func TestVideoCache_LookReadsAgainWhenBuiltInSettingsChange(t *testing.T) {
 	f := newFix(t)
 	b, err := os.ReadFile("container/testdata/lab-built-in.mkv")
@@ -136,8 +136,8 @@ func TestVideoCache_LookReadsAgainWhenBuiltInSettingsChange(t *testing.T) {
 	}
 }
 
-// hashSeen wraps the OpenSubtitles-shaped fake and records each search's
-// moviehash.
+// hashSeen wraps the fake shaped like OpenSubtitles and records the moviehash
+// of each search.
 type hashSeen struct {
 	mu     sync.Mutex
 	next   http.Handler
@@ -160,7 +160,7 @@ func TestVideoCache_SearchUsesStoredHashForUnchangedVideo(t *testing.T) {
 	if err := os.WriteFile(p, bytes.Repeat([]byte{1}, 200<<10), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	wishAll(t, f, Want{Language: "pt"}) // nothing on the site: every search asks again
+	wishAll(t, f, Want{Language: "pt"}) // the site has nothing, so every search asks again
 	seen := &hashSeen{next: osLab()}
 	srv := httptest.NewServer(seen)
 	t.Cleanup(srv.Close)

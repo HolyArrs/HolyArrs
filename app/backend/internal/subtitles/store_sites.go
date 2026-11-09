@@ -17,22 +17,22 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles/sites"
 )
 
-// SiteLimits are one site's limits.
+// SiteLimits holds one site's limits.
 type SiteLimits struct {
 	GapMS          int `json:"gap_ms"`
 	PerWindow      int `json:"per_window"`
 	WindowSeconds  int `json:"window_seconds"`
-	DownloadsToDay int `json:"downloads_per_day"` // 0: no cap
+	DownloadsToDay int `json:"downloads_per_day"` // 0 means no cap
 }
 
-// SiteRow is one Subtitle site as stored.
+// SiteRow is one subtitle site as stored.
 type SiteRow struct {
 	domain.Meta
 	Name              string     `db:"name" json:"name"`
 	Kind              string     `db:"kind" json:"kind"`
 	URL               string     `db:"url" json:"url"`
 	SecretRef         *int64     `db:"secret_ref" json:"-"`
-	State             string     `db:"state" json:"state"` // enabled, paused, disabled
+	State             string     `db:"state" json:"state"` // enabled, paused or disabled
 	PauseReason       *string    `db:"pause_reason" json:"pause_reason"`
 	PausedUntil       *time.Time `db:"paused_until" json:"paused_until"`
 	Failures          int        `db:"failures" json:"failures"`
@@ -41,12 +41,12 @@ type SiteRow struct {
 	DownloadsResetAt  *time.Time `db:"downloads_reset_at" json:"downloads_reset_at"`
 	AllowLocalNetwork bool       `db:"allow_local_network" json:"allow_local_network"`
 	Priority          int        `db:"priority" json:"priority"`
-	// HasAccount says the site's account details are in the vault; they
-	// are never sent back.
+	// HasAccount reports that the site's account details are in the vault. The
+	// details themselves are never sent back.
 	HasAccount bool `json:"has_account"`
 }
 
-// Account is what a site that needs an account is given, kept in the
+// Account is what a site that needs an account receives. It is kept in the
 // vault as one sealed value.
 type Account struct {
 	Username string `json:"username,omitempty"`
@@ -77,26 +77,26 @@ type SiteInput struct {
 	Limits            *SiteLimits `json:"limits"`
 	AllowLocalNetwork bool        `json:"allow_local_network"`
 	Priority          int         `json:"priority"`
-	// Account details, for kinds that need an account. Left empty on a
-	// change, the stored ones stay.
+	// Account details for kinds that need an account. Left empty on a change,
+	// the stored details stay.
 	Username string `json:"username"`
 	Password string `json:"password"`
 	APIKey   string `json:"api_key"`
 }
 
 func (in *SiteInput) account() Account {
-	return Account{in.Username, in.Password, in.APIKey} // trimmed by check
+	return Account{in.Username, in.Password, in.APIKey} // already trimmed by check
 }
 
-// ErrNeedsAccount refuses a site that needs an account until its account
-// details are given.
+// ErrNeedsAccount refuses a site that needs an account until its details are
+// given.
 var ErrNeedsAccount = errors.New("this subtitle site needs your account: fill in its account details first")
 
-// ErrNoVault says account details cannot be kept (no vault key).
+// ErrNoVault means account details cannot be stored because the secrets key
+// is not set up.
 var ErrNoVault = errors.New("account details cannot be kept: the secrets key is not set up")
 
-// missingAccount lists the account details a kind asks for that a is
-// without.
+// missingAccount lists the account details kind k asks for that a lacks.
 func missingAccount(k sites.Kind, a Account) []string {
 	var out []string
 	for _, f := range k.Account {
@@ -142,7 +142,7 @@ func (in *SiteInput) check() (sites.Kind, error) {
 	}
 	if in.Limits == nil {
 		in.Limits = &SiteLimits{GapMS: 1000, PerWindow: 60, WindowSeconds: 3600}
-		if k.Kind == "addic7ed" { // a page site used gently: one call in 3 s, 100 a day
+		if k.Kind == "addic7ed" { // a page site used gently: one call per 3 s and 100 a day
 			in.Limits = &SiteLimits{GapMS: 3000, PerWindow: 100, WindowSeconds: 86400}
 		}
 	}
@@ -159,7 +159,7 @@ func (in *SiteInput) check() (sites.Kind, error) {
 	return k, nil
 }
 
-// Sites lists the Subtitle sites, by priority.
+// Sites lists the subtitle sites by priority.
 func Sites(ctx context.Context, db *sql.DB) ([]SiteRow, error) {
 	rs, err := database.Select[SiteRow](ctx, db, "subtitle_sites", "1=1 ORDER BY priority, id")
 	if rs == nil {
@@ -171,8 +171,8 @@ func Sites(ctx context.Context, db *sql.DB) ([]SiteRow, error) {
 	return rs, err
 }
 
-// putAccount seals account details into the vault in tx and returns the
-// new secret's id; old, when set, is removed.
+// putAccount seals account details into the vault within tx and returns the
+// new secret's id. When old is set, that secret is removed.
 func putAccount(tx *sql.Tx, v *secrets.Vault, a Account, old *int64, by domain.Actor) (*int64, error) {
 	if v == nil {
 		return nil, ErrNoVault
@@ -190,9 +190,9 @@ func putAccount(tx *sql.Tx, v *secrets.Vault, a Account, old *int64, by domain.A
 	return &id, nil
 }
 
-// AddSite stores a new site; account details go to the vault. A site that
-// needs an account is refused until every detail it asks for is given.
-// then, when given, runs in the same transaction with the new id.
+// AddSite stores a new site and puts its account details in the vault. A site
+// that needs an account is refused until every detail it asks for is given.
+// When then is given, it runs in the same transaction with the new id.
 func AddSite(ctx context.Context, st *database.Store, v *secrets.Vault, in SiteInput, by domain.Actor, then ...func(tx *sql.Tx, id int64) error) (SiteRow, error) {
 	k, err := in.check()
 	if err != nil {
@@ -233,8 +233,8 @@ func AddSite(ctx context.Context, st *database.Store, v *secrets.Vault, in SiteI
 	return r, err
 }
 
-// EditSite changes a site; turning it on clears a pause. Account details
-// left empty keep the stored ones; any detail given replaces them all.
+// EditSite changes a site, and turning it on clears any pause. Account details
+// left empty keep the stored ones, while any detail given replaces them all.
 func EditSite(ctx context.Context, st *database.Store, v *secrets.Vault, id int64, in SiteInput, by domain.Actor) (SiteRow, error) {
 	var r SiteRow
 	if err := database.Get(ctx, st.Read(), "subtitle_sites", id, &r); err != nil {
@@ -257,7 +257,8 @@ func EditSite(ctx context.Context, st *database.Store, v *secrets.Vault, id int6
 	if k.NeedsAccount && !acct.empty() && len(missingAccount(k, acct)) > 0 {
 		return r, ErrNeedsAccount
 	}
-	// A new address gets the account only when it is given again.
+	// A new address keeps the account only when it is sent again, so details never
+	// follow a site to another host.
 	if k.NeedsAccount && acct.empty() && originOf(in.URL) != originOf(r.URL) {
 		return r, errors.New("the address moved to another site: give the account details again")
 	}
@@ -294,8 +295,8 @@ func originOf(raw string) string {
 	return strings.ToLower(u.Scheme + "://" + u.Host)
 }
 
-// DeleteSite removes a site and its account details; saved subtitles keep
-// its name.
+// DeleteSite removes a site and its account details. Saved subtitles keep its
+// name.
 func DeleteSite(ctx context.Context, st *database.Store, id int64) error {
 	return st.Write(ctx, func(tx *sql.Tx) error {
 		var ref sql.NullInt64
@@ -331,16 +332,16 @@ func (s *Service) account(ctx context.Context, r SiteRow) (Account, error) {
 	return a, err
 }
 
-// TestResult is what testing a site found, in plain words.
+// TestResult is the outcome of testing a site, in plain words.
 type TestResult struct {
 	OK      bool   `json:"ok"`
 	Message string `json:"message"`
 	Found   int    `json:"found"`
 }
 
-// TestSite asks a site one search for a known open movie (or, for a
-// shows-only site, a known show) and says how it went. It changes nothing:
-// a failing test never pauses the site.
+// TestSite runs one search on a site for a known open movie, or a known show
+// on a shows-only site, and reports how it went. It changes nothing, so a
+// failing test never pauses the site.
 func (s *Service) TestSite(ctx context.Context, id int64) (TestResult, error) {
 	var r SiteRow
 	if err := database.Get(ctx, s.Store.Read(), "subtitle_sites", id, &r); err != nil {
@@ -365,7 +366,7 @@ func (s *Service) TestSite(ctx context.Context, id int64) (TestResult, error) {
 	return TestResult{OK: true, Found: len(cs), Message: fmt.Sprintf("The site answered: %d subtitles for a test title.", len(cs))}, nil
 }
 
-// TestWords says in plain words why a site call failed.
+// TestWords explains in plain words why a site call failed.
 func TestWords(err error) string {
 	var fe *sites.Error
 	if !errors.As(err, &fe) {
@@ -387,8 +388,8 @@ func TestWords(err error) string {
 	}
 }
 
-// usable lists sites a search may ask now: enabled, or paused with the
-// pause over.
+// usable lists the sites a search may ask now: enabled ones, and paused ones
+// whose pause is over.
 func usable(ctx context.Context, db *sql.DB, at time.Time) ([]SiteRow, error) {
 	return database.Select[SiteRow](ctx, db, "subtitle_sites",
 		"state = 'enabled' OR (state = 'paused' AND paused_until <= ?) ORDER BY priority, id", database.FormatTime(at))
@@ -476,8 +477,8 @@ func (s *Service) recovered(ctx context.Context, r SiteRow) {
 	})
 }
 
-// countDownload counts one download against the site's day cap; false
-// when the cap is reached (the site then rests until the day resets).
+// countDownload counts one download against the site's daily cap. It returns
+// false once the cap is reached, and the site then rests until the day resets.
 func (s *Service) countDownload(ctx context.Context, r SiteRow) bool {
 	if r.Limits.DownloadsToDay <= 0 {
 		return true
