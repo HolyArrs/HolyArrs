@@ -34,7 +34,7 @@ import (
 // on the lab, from a throwaway container in the lab network
 // with research/lab/downloads at /data/downloads:
 //
-//	HOLYARRS_LAB139_OUT=/src/web/app/src/lib/approvals/testdata/lab139.json go test -tags lab -run TestLabAskLiveProgress ./cmd/holyarrs/
+//	HOLYARRS_LAB139_OUT=/src/app/frontend/src/lib/requests/testdata/lab139.json go test -tags lab -run TestLabAskLiveProgress ./app/backend/cmd/holyarrs/
 //
 // A member asks for Dune: Part Two, the owner approves it (no sign-in),
 // and the app does the rest as it does for real: add, search the lab fake
@@ -45,7 +45,7 @@ import (
 // change. The source is reached through a small local proxy that holds
 // each search for two seconds, so the search can be seen running, and
 // gives the test file's real size. The
-// kept responses feed web/app/src/lib/approvals/live.lab.test.ts.
+// kept responses feed app/frontend/src/lib/requests/live.lab.test.ts.
 func TestLabAskLiveProgress(t *testing.T) {
 	const hash = "29be7bfa8759643f2d5dac9f94d516c3378696ed"
 	const cat = "holyarrs-lab139"

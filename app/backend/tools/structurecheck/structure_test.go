@@ -23,10 +23,8 @@ var Modules = []string{"suggest", "importer", "library", "requests", "movies", "
 // CoreParts are the packages allowed under internal/core/.
 var CoreParts = []string{"database", "webserver", "outbound", "jobs", "logs", "files", "secrets", "startup", "releasename", "model", "parts"}
 
-// Until the root move, code still lives in cmd/, internal/ and web/app/src;
-// the guards look there as well as in app/, so they mean the same before
-// and after the move.
-var sourceRoots = []string{"app", "cmd", "internal", "web"}
+// sourceRoots are the top folders the guards walk.
+var sourceRoots = []string{"app"}
 
 // internalRoots are the folders holding module packages.
 var internalRoots = []string{"app/backend/internal", "internal"}
@@ -362,7 +360,7 @@ func isOldPage(s string) bool {
 // old page address.
 func TestNoOldPageAddresses(t *testing.T) {
 	root := repoRoot(t)
-	for _, base := range []string{"app/frontend/src/routes", "web/app/src/routes"} {
+	for _, base := range []string{"app/frontend/src/routes"} {
 		for _, old := range oldPagePaths {
 			if exists(root, base+old) {
 				t.Errorf("%s%s: route folder at an old page address", base, old)

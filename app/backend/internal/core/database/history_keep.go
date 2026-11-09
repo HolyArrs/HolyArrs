@@ -29,7 +29,7 @@ const (
 const pruneBatch = 2000
 
 // RoutineEventKinds are the kinds the History page files under Routine
-// (web/app/src/lib/history-looks.ts, the routine tab): searches, feed
+// (app/frontend/src/lib/downloads/history-kinds.ts, the routine tier): searches, feed
 // checks, refreshed details and folder scans. Keep the two lists alike.
 var RoutineEventKinds = []string{
 	"search_done", "feed_checked",
