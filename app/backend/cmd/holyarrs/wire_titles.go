@@ -4,9 +4,9 @@ import (
 	"context"
 	"errors"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/discover"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/shows"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/titleview"
 
 	"net/http"
 	"strconv"
@@ -26,10 +26,10 @@ func itoa(n int64) string { return strconv.FormatInt(n, 10) }
 
 // SlotView, TitleView, VersionView and ArtistInfo are the titleview module's views.
 type (
-	SlotView    = titleview.SlotView
-	TitleView   = titleview.TitleView
-	VersionView = titleview.VersionView
-	ArtistInfo  = titleview.ArtistInfo
+	SlotView    = discover.SlotView
+	TitleView   = discover.TitleView
+	VersionView = discover.VersionView
+	ArtistInfo  = discover.ArtistInfo
 )
 
 // showError answers show refusals; anything else goes to library.WriteError.
@@ -58,19 +58,19 @@ func (a *handlers) showInfo(ctx context.Context, t mediafiles.Title) (*ShowInfo,
 // StateLabels are the words people see for Slot states.
 var StateLabels = mediafiles.StateLabels
 
-// artworkLinks is titleview.ArtworkLinks.
-var artworkLinks = titleview.ArtworkLinks
+// artworkLinks is discover.ArtworkLinks.
+var artworkLinks = discover.ArtworkLinks
 
 func (a *handlers) titleView(ctx context.Context, t mediafiles.Title) (TitleView, error) {
 	return a.tv().View(ctx, t)
 }
 
 // tv is the title view builder over this API's services.
-func (a *handlers) tv() *titleview.Handlers {
-	return titleview.New(titleview.Deps{Store: a.s.Store, Asks: a.s.Asks, Live: a.s.Live})
+func (a *handlers) tv() *discover.ViewHandlers {
+	return discover.NewView(discover.ViewDeps{Store: a.s.Store, Asks: a.s.Asks, Live: a.s.Live})
 }
 
-// publishTitle sends the changed title to live pages (titleview.PublishTitle).
+// publishTitle sends the changed title to live pages (discover.PublishTitle).
 func (a *handlers) publishTitle(r *http.Request, id int64) { a.tv().PublishTitle(r.Context(), id) }
 
 func (a *handlers) listTitles(w http.ResponseWriter, r *http.Request) {
@@ -90,7 +90,7 @@ func (a *handlers) listTitles(w http.ResponseWriter, r *http.Request) {
 	out := []TitleView{}
 	who, signed := webserver.From(r.Context())
 	manage := !signed || who.Has(webserver.PermManageLibrary)
-	ctx, err := titleview.WithTitleFacts(titleview.WithLookupMemo(r.Context()), a.s.Store.Read())
+	ctx, err := discover.WithTitleFacts(discover.WithLookupMemo(r.Context()), a.s.Store.Read())
 	if err == nil && len(ts) > 0 {
 		ctx, err = a.tv().WithTitleBatch(ctx)
 	}

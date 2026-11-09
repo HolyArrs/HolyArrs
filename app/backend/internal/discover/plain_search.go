@@ -10,7 +10,6 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/titleview"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
@@ -32,12 +31,12 @@ var showGenres = map[string]string{
 // hide titles, as in the Library search.
 func (h *Handlers) plainSearch(w http.ResponseWriter, r *http.Request) {
 	q := ParsePlainWords(r.URL.Query().Get("q"))
-	out := map[string]any{"query": q, "titles": []titleview.TitleView{}, "more": []ItemView{}}
+	out := map[string]any{"query": q, "titles": []TitleView{}, "more": []ItemView{}}
 	if q.Text == "" {
 		webserver.WriteJSON(w, http.StatusOK, out)
 		return
 	}
-	ctx := titleview.WithLookupMemo(r.Context())
+	ctx := WithLookupMemo(r.Context())
 	views, err := h.plainLibrary(ctx, r, q)
 	if err != nil {
 		webserver.Internal(w, "api", err)
@@ -57,7 +56,7 @@ func (h *Handlers) plainSearch(w http.ResponseWriter, r *http.Request) {
 }
 
 // plainLibrary are the Library titles that fit q, those about q.Words first.
-func (h *Handlers) plainLibrary(ctx context.Context, r *http.Request, q PlainQuery) ([]titleview.TitleView, error) {
+func (h *Handlers) plainLibrary(ctx context.Context, r *http.Request, q PlainQuery) ([]TitleView, error) {
 	name := q.Name
 	if q.Plain {
 		name = q.Text
@@ -98,7 +97,7 @@ func (h *Handlers) plainLibrary(ctx context.Context, r *http.Request, q PlainQue
 		hits = slices.DeleteFunc(hits, func(x hit) bool { return x.about == 0 })
 	}
 	slices.SortStableFunc(hits, func(x, y hit) int { return cmp.Compare(y.about, x.about) })
-	views := []titleview.TitleView{}
+	views := []TitleView{}
 	for _, x := range hits {
 		if len(views) == plainSearchMax {
 			break

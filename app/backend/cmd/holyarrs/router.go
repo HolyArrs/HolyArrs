@@ -10,7 +10,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/movies"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/shows"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/titleview"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/updates"
@@ -58,7 +57,7 @@ func (a *handlers) Routes(rt *webserver.Router) {
 	th := a.titleHandlers()
 	th.Routes(m)
 	(&library.VersionHandlers{Store: a.s.Store, Lib: a.s.Library, TitleID: a.titleID, Publish: a.publishTitle, View: func(ctx context.Context, db database.Querier, v mediafiles.Version) any {
-		return titleview.VersionViewOf(ctx, db, v)
+		return discover.VersionViewOf(ctx, db, v)
 	}, Fail: library.WriteError, DownloadPaths: a.downloadPaths}).Routes(m)
 	th.RefreshRoutes(m)
 	m.HandleFunc("GET /api/v1/artwork/{name}", a.artwork)

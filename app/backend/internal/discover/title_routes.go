@@ -18,7 +18,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/requests"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/shows"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/titleview"
 )
 
 // TitleHandlers serve the Library title routes: add, read, edit, move,
@@ -39,8 +38,8 @@ type TitleHandlers struct {
 	KindDefaultsFor func(ctx context.Context, kind string, sent map[string]json.RawMessage,
 		folder, rules *int64, keep **bool, search *bool) error
 	TitleID          func(http.ResponseWriter, *http.Request) (mediafiles.Title, bool)
-	TitleView        func(ctx context.Context, t mediafiles.Title) (titleview.TitleView, error)
-	PublishTitleView func(v titleview.TitleView)
+	TitleView        func(ctx context.Context, t mediafiles.Title) (TitleView, error)
+	PublishTitleView func(v TitleView)
 	KidMax           func(*http.Request) string
 	KidLimited       func(http.ResponseWriter, *http.Request) bool
 	KidMovies        func(ctx context.Context, max string, ms []metadata.Movie) []metadata.Movie

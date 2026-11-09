@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/requests"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/titleview"
 	"net/http"
 	"slices"
 	"sort"
@@ -130,7 +129,7 @@ type Suggest struct {
 	KidMax        func(*http.Request) string
 	UserID        func(*http.Request) int64
 	TitleAllowed  func(*http.Request, mediafiles.Title) bool
-	TitleView     func(ctx context.Context, t mediafiles.Title) (titleview.TitleView, error)
+	TitleView     func(ctx context.Context, t mediafiles.Title) (TitleView, error)
 	LibraryPeople func(r *http.Request, words []string, visible func(mediafiles.Title) bool) ([]mediafiles.LibraryPerson, error)
 	OpenAsk       func(ctx context.Context, tmdbID string, me int64) (*requests.AskBrief, error)
 	OpenShowAsk   func(ctx context.Context, ids map[string]string, me int64) (*requests.AskBrief, error)
@@ -270,7 +269,7 @@ func mergeSuggest(rows []SuggestRow) []SuggestRow {
 // suggestLocal reads the Library: titles (Kid limits and parts apply),
 // album parts of Library artists, people credited in Library titles.
 func (h *Suggest) suggestLocal(r *http.Request, q, kind string, withMusic bool) []SuggestRow {
-	ctx := titleview.WithLookupMemo(r.Context())
+	ctx := WithLookupMemo(r.Context())
 	out := []SuggestRow{}
 	visible := func(t mediafiles.Title) bool {
 		if p, ok := parts.ForTitleKind(t.Kind); ok && !h.PartOn(p) && !h.SafeMode() {

@@ -23,6 +23,10 @@ app/backend/internal/discover/people.go
 app/backend/internal/discover/people_shelves.go
 app/backend/internal/discover/servicetop_routes.go
 app/backend/internal/discover/signinart.go
+app/backend/internal/discover/store_title_batch.go
+app/backend/internal/discover/store_title_facts.go
+app/backend/internal/discover/title_track_slots.go
+app/backend/internal/discover/title_view.go
 app/backend/internal/discover/trailer_pass.go
 app/backend/internal/discover/trailer_wants.go
 app/backend/internal/downloads/attempts.go
@@ -160,10 +164,6 @@ app/backend/internal/subtitles/settings.go
 app/backend/internal/subtitles/store_sites.go
 app/backend/internal/subtitles/video_facts.go
 app/backend/internal/subtitles/wish.go
-app/backend/internal/titleview/store_batch.go
-app/backend/internal/titleview/store_facts.go
-app/backend/internal/titleview/titleview.go
-app/backend/internal/titleview/track_slots.go
 app/backend/tools/demo/doctor.go
 app/backend/tools/demo/history.go
 app/backend/tools/demo/inspect.go

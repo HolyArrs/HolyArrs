@@ -8,7 +8,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/discover"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/shows"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/titleview"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 
@@ -94,7 +93,7 @@ func buildHandlers(s services) *handlers {
 	a.mf = &mediafiles.Handlers{Deps: mediafiles.Deps{Store: s.Store, Queue: s.Queue, Metadata: s.Metadata, KidMax: a.kidMax, RouteUsable: routeUsable}}
 	a.mf.DetailsRating = a.detailsRating
 	a.mf.KindShown = a.kindShown
-	a.mf.TitleBatch = titleview.WithLookupMemo
+	a.mf.TitleBatch = discover.WithLookupMemo
 	a.mf.AlbumNames = a.albumNames
 	a.mf.TitleView = func(ctx context.Context, t mediafiles.Title) (any, error) { return a.titleView(ctx, t) }
 	a.mf.CardArt = a.explore.Cards.Library
@@ -141,7 +140,7 @@ func buildHandlers(s services) *handlers {
 			}
 			return v, nil
 		},
-		KindDefaultsFor: a.kindDefaultsFor, TitleID: a.titleID, StateLabels: StateLabels, Trim: titleview.TrimEpisodeSlots, LibraryError: library.WriteError})
+		KindDefaultsFor: a.kindDefaultsFor, TitleID: a.titleID, StateLabels: StateLabels, Trim: discover.TrimEpisodeSlots, LibraryError: library.WriteError})
 	// newTrailers built the music handlers before the trailers and shows existed.
 	mh := a.mh()
 	mh.Trailers, mh.SlotOfTitle, mh.SeasonLabel = a.trailers, a.shows.SlotOfTitle, a.shows.SeasonLabel
@@ -160,7 +159,7 @@ func buildHandlers(s services) *handlers {
 	a.dlh = &downloads.Handlers{Deps: downloads.Deps{Store: s.Store, Library: s.Library, Queue: s.Queue, KidMax: a.kidMax,
 		TitleID: a.titleID, PublishTitle: a.publishTitle, LibraryError: library.WriteError,
 		VersionJSON: func(ctx context.Context, v mediafiles.Version) any {
-			return titleview.VersionViewOf(ctx, s.Store.Read(), v)
+			return discover.VersionViewOf(ctx, s.Store.Read(), v)
 		}}}
 	return a
 }

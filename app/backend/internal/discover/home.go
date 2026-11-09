@@ -14,7 +14,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/titleview"
 )
 
 // Home rows, in the words the web app keys on.
@@ -112,7 +111,7 @@ func homeArtOf(backdrop, logo string, artwork sql.NullString) homeArt {
 	a := homeArt{backdrop: backdrop, logo: logo}
 	var posters []string
 	if artwork.Valid && json.Unmarshal([]byte(artwork.String), &posters) == nil {
-		if links := titleview.ArtworkLinks(posters); len(links) > 0 {
+		if links := ArtworkLinks(posters); len(links) > 0 {
 			a.poster = links[0]
 		}
 	}

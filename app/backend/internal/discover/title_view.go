@@ -1,6 +1,4 @@
-// Package titleview builds the Title views the pages show, above the
-// modules whose parts it gathers (shows, music, requests, downloads).
-package titleview
+package discover
 
 import (
 	"context"
@@ -20,23 +18,23 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/shows"
 )
 
-// Deps are the services the views read; field names match api.Server.
-type Deps struct {
+// ViewDeps are the services the views read; field names match api.Server.
+type ViewDeps struct {
 	Store *database.Store
 	Asks  *requests.Service
 	Live  *webserver.LiveHub
 }
 
-// Handlers builds views over Deps.
-type Handlers struct{ Deps }
+// ViewHandlers builds views over ViewDeps.
+type ViewHandlers struct{ ViewDeps }
 
-// New returns Handlers over d.
-func New(d Deps) *Handlers { return &Handlers{Deps: d} }
+// New returns ViewHandlers over d.
+func NewView(d ViewDeps) *ViewHandlers { return &ViewHandlers{ViewDeps: d} }
 
 // PublishView tells managers' pages a title changed. Its asks name who
 // asked and who decided, with the decline note, so they stay out: pages
 // read the title again from its route, which shows them to approvers only.
-func (h *Handlers) PublishView(v TitleView) {
+func (h *ViewHandlers) PublishView(v TitleView) {
 	if h.Live == nil {
 		return
 	}
@@ -149,7 +147,7 @@ func nonNil(s []string) []string {
 // View builds a Title's view: its Versions, Slots, asks and, for shows and
 // artists, their summaries. Batches on ctx (WithTitleFacts, WithTitleBatch)
 // answer instead of per-Title reads.
-func (h *Handlers) View(ctx context.Context, t mediafiles.Title) (TitleView, error) {
+func (h *ViewHandlers) View(ctx context.Context, t mediafiles.Title) (TitleView, error) {
 	db := h.Store.Read()
 	v := TitleView{ID: t.ID, Kind: t.Kind, Name: t.Name, Year: t.Year, Overview: t.Overview, OriginalLanguage: t.OriginalLanguage, IDs: t.SourceIDs, Slots: []SlotView{},
 		KeepUpToDate: t.KeepUpToDate, WhyAdded: t.WhyAdded, ReleaseGate: t.ReleaseGate, GateDelayDays: t.GateDelayDays,
@@ -316,7 +314,7 @@ func gateReason(t mediafiles.Title, open bool) string {
 }
 
 // TitleID reads the {id} Title, answering 404 itself.
-func (h *Handlers) TitleID(w http.ResponseWriter, r *http.Request) (mediafiles.Title, bool) {
+func (h *ViewHandlers) TitleID(w http.ResponseWriter, r *http.Request) (mediafiles.Title, bool) {
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	var t mediafiles.Title
 	if err == nil {
@@ -330,7 +328,7 @@ func (h *Handlers) TitleID(w http.ResponseWriter, r *http.Request) (mediafiles.T
 }
 
 // PublishTitle sends title id's fresh view to live pages.
-func (h *Handlers) PublishTitle(ctx context.Context, id int64) {
+func (h *ViewHandlers) PublishTitle(ctx context.Context, id int64) {
 	if h.Live == nil {
 		return
 	}

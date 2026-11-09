@@ -6,11 +6,11 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/discover"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/requests"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/titleview"
 )
 
 // Wrappers over the Music code moved to internal/music, so the api files
@@ -37,7 +37,7 @@ func (a *handlers) mh() *music.Handlers {
 			},
 			Limit: func(userID int64, now time.Time) bool { return a.discover.Allow(userID, now) },
 			TrackRoutes: func(m *http.ServeMux) {
-				music.TrackHandlers[EpisodeSlot]{Store: a.s.Store, Slots: titleview.TrackSlots}.Routes(m)
+				music.TrackHandlers[EpisodeSlot]{Store: a.s.Store, Slots: discover.TrackSlots}.Routes(m)
 			}}}
 		if a.shows != nil {
 			h.SlotOfTitle, h.SeasonLabel = a.shows.SlotOfTitle, a.shows.SeasonLabel

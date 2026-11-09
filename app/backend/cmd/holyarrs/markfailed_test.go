@@ -13,10 +13,10 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/discover"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/titleview"
 )
 
 // markServer is the whole program without sign-in: marking a Download
@@ -115,7 +115,7 @@ func TestMarkFailedRoute(t *testing.T) {
 		t.Fatal(err)
 	}
 	// The movie page shows the Download in plain words.
-	var tv titleview.TitleView
+	var tv discover.TitleView
 	_ = json.Unmarshal(do(t, "GET", srv.URL+"/api/v1/titles/1", "", 200), &tv)
 	if len(tv.Slots) != 1 || tv.Slots[0].Download == nil || tv.Slots[0].Download.Label != "Downloading" || !tv.Slots[0].Download.Active {
 		t.Fatalf("slot %+v", tv.Slots)

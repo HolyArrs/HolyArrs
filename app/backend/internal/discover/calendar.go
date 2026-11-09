@@ -12,7 +12,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/titleview"
 )
 
 // viewer is the signed-in person's id (1, the owner, when none: as api).
@@ -79,7 +78,7 @@ func (h *Handlers) calendar(w http.ResponseWriter, r *http.Request) {
 	}
 	for i := range es {
 		if es[i].Poster != "" {
-			es[i].Poster = titleview.ArtworkLinks([]string{es[i].Poster})[0]
+			es[i].Poster = ArtworkLinks([]string{es[i].Poster})[0]
 		}
 		// An album carries its artist's genres when already known (read at
 		// start for every Library artist); the calendar never looks them up.

@@ -18,7 +18,7 @@ import (
 // Modules are the module packages allowed under internal/, besides core.
 var Modules = []string{"parts", "importer", "library", "requests", "movies", "shows", "music", "sources", "downloads", "subtitles", "discover",
 	"mediafiles", "metadata", "mediaservers", "accounts", "alerts", "migrate", "arrapi", "ai", "backups",
-	"health", "updates", "setup", "titleview"}
+	"health", "updates", "setup"}
 
 // CoreParts are the packages allowed under internal/core/.
 var CoreParts = []string{"database", "webserver", "outbound", "jobs", "logs", "files", "secrets", "startup", "releasename", "rows", "model"}

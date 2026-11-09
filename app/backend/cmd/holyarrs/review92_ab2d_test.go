@@ -5,7 +5,6 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/discover"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/titleview"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 
@@ -87,7 +86,7 @@ func TestTitleViewTrimmedForMember(t *testing.T) {
 		}
 	}
 	f := mediafiles.File{RelativePath: "Movies/Secret (2020)/x.mkv", Size: 9}
-	got := titleview.TrimForViewer(webserver.ContextWith(context.Background(), webserver.Caller{UserID: 2, Role: webserver.RoleMember, Via: "session"}), TitleView{Slots: []SlotView{{File: &f}}})
+	got := discover.TrimForViewer(webserver.ContextWith(context.Background(), webserver.Caller{UserID: 2, Role: webserver.RoleMember, Via: "session"}), TitleView{Slots: []SlotView{{File: &f}}})
 	if got.Slots[0].File.RelativePath != "" || got.Slots[0].File.Size != 9 || f.RelativePath == "" {
 		t.Fatalf("file %+v", got.Slots[0].File)
 	}

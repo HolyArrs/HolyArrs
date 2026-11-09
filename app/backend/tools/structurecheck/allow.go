@@ -34,7 +34,6 @@ var layers = map[string]int{
 	"health":       10,
 	"updates":      11,
 	"setup":        11,
-	"titleview":    12, // Title views sit above shows, music and requests; discover builds on them
 }
 
 // coreRows orders the core packages. A core package imports only core

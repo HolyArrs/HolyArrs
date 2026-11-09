@@ -1,4 +1,4 @@
-package titleview
+package discover
 
 import (
 	"context"
@@ -29,7 +29,7 @@ func batchOf(ctx context.Context) *titleBatch {
 }
 
 // WithTitleBatch reads the batch for all Titles and keeps it on ctx for View.
-func (h *Handlers) WithTitleBatch(ctx context.Context) (context.Context, error) {
+func (h *ViewHandlers) WithTitleBatch(ctx context.Context) (context.Context, error) {
 	db := h.Store.Read()
 	b := &titleBatch{slots: map[int64][]mediafiles.Slot{}, downloads: map[int64]domain.Download{}, files: map[int64]mediafiles.File{},
 		labels: map[int64]mediafiles.Version{}, asks: map[int64][]requests.View{}}

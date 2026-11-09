@@ -13,7 +13,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	engine "github.com/HolyArrs/holyarrs/app/backend/internal/core/rows"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/titleview"
 )
 
 // newPageTTL is how long a member's built New & Popular page is kept; the
@@ -208,7 +207,7 @@ func (hd *Handlers) newHousehold(ctx context.Context, me int64, now time.Time) n
 			_ = json.Unmarshal([]byte(genres), &e.show.Genres)
 			var art []string
 			_ = json.Unmarshal([]byte(artwork), &art)
-			if links := titleview.ArtworkLinks(art); len(links) > 0 {
+			if links := ArtworkLinks(art); len(links) > 0 {
 				e.show.Poster = links[0]
 			}
 			e.show.Kind, e.show.Owned = "show", true

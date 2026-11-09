@@ -1,4 +1,4 @@
-package titleview
+package discover
 
 import "testing"
 

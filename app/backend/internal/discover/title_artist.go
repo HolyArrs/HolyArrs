@@ -1,4 +1,4 @@
-package titleview
+package discover
 
 import (
 	"context"
@@ -35,7 +35,7 @@ type ArtistInfo struct {
 	Bio string `json:"bio,omitempty"`
 }
 
-func (h *Handlers) artistInfo(ctx context.Context, t mediafiles.Title) (*ArtistInfo, error) {
+func (h *ViewHandlers) artistInfo(ctx context.Context, t mediafiles.Title) (*ArtistInfo, error) {
 	n, err := library.Totals(ctx, h.Store.Read(), t.ID, time.Now())
 	if err != nil {
 		return nil, err

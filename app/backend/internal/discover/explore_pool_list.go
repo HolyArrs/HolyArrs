@@ -13,7 +13,6 @@ import (
 	engine "github.com/HolyArrs/holyarrs/app/backend/internal/core/rows"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/titleview"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
@@ -260,7 +259,7 @@ func ExploreReturning(ctx context.Context, db *sql.DB, now time.Time) ([]engine.
 		_ = json.Unmarshal([]byte(genres), &it.Genres)
 		var art []string
 		_ = json.Unmarshal([]byte(artwork), &art)
-		if links := titleview.ArtworkLinks(art); len(links) > 0 {
+		if links := ArtworkLinks(art); len(links) > 0 {
 			it.Poster = links[0]
 		}
 		if d, err := time.Parse(database.TimeLayout, next); err == nil {

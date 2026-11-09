@@ -13,7 +13,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/requests"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/titleview"
 )
 
 // Deps is what the Explore routes need: services and core types, and funcs
@@ -58,7 +57,7 @@ type Deps struct {
 	LiveSource func(ctx context.Context) Lister
 	// TitleView builds a Library title's full view; KidMovies trims movie
 	// search hits to a Kid's limit (plain-words Search).
-	TitleView func(ctx context.Context, t mediafiles.Title) (titleview.TitleView, error)
+	TitleView func(ctx context.Context, t mediafiles.Title) (TitleView, error)
 	KidMovies func(ctx context.Context, max string, ms []metadata.Movie) []metadata.Movie
 	// AllowedTitleIDs are the Library titles within a Kid's limit;
 	// KnownGenres an artist's cached genres; ReadCardArt the stored card
