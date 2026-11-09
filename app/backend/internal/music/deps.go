@@ -18,22 +18,12 @@ type Deps struct {
 	MusicNew func(ctx context.Context, window string) (metadata.MusicNew, error)
 	// MusicSimilar reads similar artists. Nil removes the rows built on them.
 	MusicSimilar func(ctx context.Context, mbid string) ([]metadata.SimilarArtist, error)
-	// MusicCharts reads region charts for the rows flagged by MusicRowsV2. Nil leaves those rows out.
+	// MusicCharts reads region charts for the Explore rows. Nil leaves those rows out.
 	MusicCharts func(ctx context.Context, region, kind, genre string) (metadata.MusicChart, error)
 	// MusicGenres reads the genre tiles for the same rows. Nil leaves them out.
 	MusicGenres func(ctx context.Context, region string) (metadata.MusicGenres, error)
 	// MusicGenreTile reads the grey picture of a genre tile. Nil keeps every tile a flat color.
 	MusicGenreTile func(ctx context.Context, slug, version string) ([]byte, error)
-	// MusicRowsV2 turns on the chart-based Explore rows. Off keeps the old row builder.
-	MusicRowsV2 bool
-	// MusicRowsV3 adds scores plus the similarity, genre and guest rows to the V2 rows. It needs MusicRowsV2.
-	MusicRowsV3 bool
-	// MusicRowsV6 builds Fresh & Trending from the region charts and adds the Rising row. Off keeps both as before.
-	MusicRowsV6 bool
-	// MusicRowsV7 serves Explore as a daily plan of up to 30 rows, 6 at a time with a cursor, with mixes and artist rows. Off keeps the older page.
-	MusicRowsV7 bool
-	// MusicListsV1 turns on world-list rows on Explore and New & Popular, built from MusicShelves. Off keeps the older pages.
-	MusicListsV1 bool
 	// MusicShelves reads the world-list shelves for a region. Nil leaves the list rows out.
 	MusicShelves func(ctx context.Context, region string) (metadata.MusicShelves, error)
 	// MusicPools reads the music catalog bundle that feeds the row templates, conditional on its etag. Nil keeps the older list rows.

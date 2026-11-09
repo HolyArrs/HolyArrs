@@ -23494,9 +23494,6 @@
           },
           "401": {
             "description": "Sign-in is required."
-          },
-          "404": {
-            "description": "Live search is off (flag live_search)."
           }
         },
         "summary": "Live search suggestions",

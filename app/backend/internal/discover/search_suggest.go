@@ -118,7 +118,6 @@ func pickSuggest(rows []SuggestRow, q string) ([]string, []SuggestRow) {
 // Suggest serves the live search dropdown. Its funcs are read on each
 // request, so a test may change what they return.
 type Suggest struct {
-	LiveSearch    func() bool
 	MusicSuggest  func() func(ctx context.Context, q string) ([]metadata.MusicSuggestion, error)
 	Metadata      func() metadata.Provider
 	Store         func() *database.Store
@@ -151,10 +150,6 @@ func (h *Suggest) Routes(m *http.ServeMux) {
 
 // searchSuggest answers GET /api/v1/search/suggest?q=&kind=all|movie|show|music|people.
 func (h *Suggest) searchSuggest(w http.ResponseWriter, r *http.Request) {
-	if !h.LiveSearch() {
-		webserver.Fail(w, http.StatusNotFound, "live search is off")
-		return
-	}
 	q := strings.TrimSpace(r.URL.Query().Get("q"))
 	kind := r.URL.Query().Get("kind")
 	if kind == "" {

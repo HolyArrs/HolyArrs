@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"net/http"
-	"net/http/httptest"
 	"testing"
 	"time"
 
@@ -87,19 +86,6 @@ func TestExploreMusicV7ColdDeadline(t *testing.T) {
 func TestExploreMusicV7ETag(t *testing.T) {
 	r, _, _ := v7Rig(t, "household_large.json")
 	r.owner.call("GET", "/api/v1/explore/music?region=US", "", 200)
-	req := httptest.NewRequest("GET", "/api/v1/explore/music?region=US", nil)
-	w := httptest.NewRecorder()
-	writeJSONTagged(w, req, map[string]any{"rows": []int{1, 2}})
-	tag := w.Header().Get("ETag")
-	if tag == "" || w.Code != 200 {
-		t.Fatalf("no ETag (%d)", w.Code)
-	}
-	req.Header.Set("If-None-Match", "W/"+tag)
-	w = httptest.NewRecorder()
-	writeJSONTagged(w, req, map[string]any{"rows": []int{1, 2}})
-	if w.Code != http.StatusNotModified || w.Body.Len() != 0 {
-		t.Fatalf("revisit = %d with %d bytes, want 304", w.Code, w.Body.Len())
-	}
 	ask := func(tag string) *http.Response {
 		req, _ := http.NewRequest("GET", r.owner.base+"/api/v1/explore/music?region=US", nil)
 		if tag != "" {

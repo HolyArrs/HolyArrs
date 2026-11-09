@@ -24,7 +24,7 @@ import (
 
 // musicTplOn reports whether the engine serves music pages.
 func (h *Handlers) musicTplOn() bool {
-	return h.MusicListsV1 && !h.MusicRowsTplOff && h.MusicPools != nil
+	return !h.MusicRowsTplOff && h.MusicPools != nil
 }
 
 const (

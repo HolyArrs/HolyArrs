@@ -49,7 +49,6 @@ func musicDeps(svc *metadata.Service, deezer func(context.Context, string) (meta
 	deezerAlbum func(context.Context, int64) (metadata.DeezerAlbumInfo, error),
 	bio func(context.Context, string) (*metadata.WikiSummary, error)) music.Deps {
 	return music.Deps{MusicTrending: svc.MusicTrending, MusicPictures: svc.MusicPictures, MusicNew: svc.MusicNewWindow, MusicSimilar: svc.MusicSimilar, MusicCharts: svc.MusicCharts, MusicGenres: svc.MusicGenreList, MusicGenreTile: svc.MusicGenreTile,
-		MusicRowsV2: true, MusicRowsV3: true, MusicRowsV6: true, MusicRowsV7: true, MusicListsV1: true,
 		MusicShelves: svc.MusicShelves, MusicPools: svc.MusicPools, MusicRowsTplOff: startup.FeatureOn("music_rows_tpl_off"), MusicListeners: svc.MusicListeners, MusicSimilarSet: svc.MusicSimilarSet, MusicArtistData: svc.MusicArtistData,
 		MusicSuggest: svc.MusicSuggest, MusicTopSongs: svc.MusicTopSongs, MusicRising: svc.MusicRisingToday, MusicDiscography: svc.MusicDiscography,
 		MusicDeezer: deezer, MusicDeezerAlbum: deezerAlbum, MusicArtistBio: bio}

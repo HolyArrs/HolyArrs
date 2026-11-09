@@ -157,7 +157,6 @@ func TestComposeMusicTrending(t *testing.T) {
 // route: GET /api/v1/explore/new/music (music_rows_v6)
 func TestExploreNewMusicV6(t *testing.T) {
 	r := newMusicAskRig(t)
-	r.api.s.MusicRowsV6 = true
 	r.api.s.MusicCharts = func(_ context.Context, region, kind, _ string) (metadata.MusicChart, error) {
 		c := metadata.MusicChart{Region: region, Kind: kind, Items: trendChart(time.Now().UTC(), true)}
 		return c, nil
@@ -175,7 +174,6 @@ func TestExploreNewMusicV6(t *testing.T) {
 		t.Fatalf("rows %v", m.Rows)
 	}
 	k := newKidRig(t)
-	k.api.s.MusicRowsV6 = true
 	if code, b := k.kai.get("/api/v1/explore/new/music"); code == 200 && !strings.Contains(b, `"kid":true`) {
 		t.Fatalf("kid answer %s", b)
 	}

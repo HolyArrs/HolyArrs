@@ -26,7 +26,7 @@ const musicShelvesTTL = 30 * time.Minute
 // musicShelvesOf reads a region's shelves (nil without the flag, the
 // server call, or an answer).
 func (h *Handlers) musicShelvesOf(ctx context.Context, region string, now time.Time) *metadata.MusicShelves {
-	if !h.MusicListsV1 || h.MusicShelves == nil {
+	if h.MusicShelves == nil {
 		return nil
 	}
 	key := "shelves:" + strings.ToLower(region)
@@ -780,7 +780,7 @@ func (h *Handlers) musicV7HeadRows() []string {
 	if h.musicTplOn() {
 		return append(append([]string{}, musicV7Head...), "tpl:A01")
 	}
-	if h.MusicListsV1 && h.MusicShelves != nil {
+	if h.MusicShelves != nil {
 		return append(append([]string{}, musicV7Head...), "lists_top_now")
 	}
 	return musicV7Head

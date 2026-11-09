@@ -1,14 +1,12 @@
 package music
 
 import (
-	"bytes"
 	"context"
 	"crypto/hmac"
 	"crypto/rand"
 	"crypto/sha256"
 	"database/sql"
 	"encoding/base64"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -251,7 +249,7 @@ func (h *Handlers) exploreMusicV7(w http.ResponseWriter, r *http.Request) {
 // the v7 families read, so a member's first page of the day needs few or no
 // metadata requests. The household plan is kept like a visit's.
 func (h *Handlers) prewarmMusicV7(ctx context.Context) {
-	if !h.MusicRowsV7 || !h.MusicRowsV3 || h.Store == nil {
+	if h.Store == nil {
 		return
 	}
 	now := time.Now().UTC()
@@ -270,17 +268,10 @@ func (h *Handlers) prewarmMusicV7(ctx context.Context) {
 	defer h.prewarmMusicV7Asked(ctx, key.Date, lib, now)
 	if p != nil && p.Meta != nil {
 		// The first pages' albums and artists: details and pictures ahead.
-		pages := musicV7AheadPages
-		if h.MusicListsV1 {
-			// Every row of the plan: list rows show art at once on any page.
-			pages = musicscore.PlanMax / musicscore.PlanBatch
-		}
-		h.queueAhead(musicV7PagesAhead(p, 0, pages))
+		// Every row of the plan: list rows show art at once on any page.
+		h.queueAhead(musicV7PagesAhead(p, 0, musicscore.PlanMax/musicscore.PlanBatch))
 	}
 }
-
-// musicV7AheadPages is how many v7 pages the prewarm fetches ahead.
-const musicV7AheadPages = 3
 
 // prewarmMusicV7Asked builds today's plan of each recently asked member and
 // region that has none yet.
@@ -444,26 +435,4 @@ func (h *Handlers) musicV7Asked(now time.Time) []musicV7AskKey {
 		out = append(out, e.k)
 	}
 	return out
-}
-
-// writeJSONTagged writes v with a content ETag and answers 304 when the
-// visitor already has it.
-func writeJSONTagged(w http.ResponseWriter, r *http.Request, v any) {
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(v); err != nil {
-		webserver.Internal(w, "api", err)
-		return
-	}
-	sum := sha256.Sum256(buf.Bytes())
-	tag := `"` + hex.EncodeToString(sum[:12]) + `"`
-	w.Header().Set("ETag", tag)
-	for _, t := range strings.Split(r.Header.Get("If-None-Match"), ",") {
-		if t = strings.TrimPrefix(strings.TrimSpace(t), "W/"); t == tag || t == "*" {
-			w.WriteHeader(http.StatusNotModified)
-			return
-		}
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write(buf.Bytes())
 }

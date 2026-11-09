@@ -512,42 +512,16 @@ func (h *Handlers) buildMusicV3(ctx context.Context, member int64, region string
 		}
 	}
 
-	// Order (anchors first, then R), fill with one seen set, gate.
-	byID := map[string]built{}
-	var raw []musicscore.Row
+	// v7 keeps the raw rows: the day's plan orders and fills them.
+	c := &musicV7Cand{metas: map[string]MusicRow{}, cards: map[string]map[string]MusicCard{}, seen: seen}
 	for _, b := range rows {
-		byID[b.meta.ID] = b
-		raw = append(raw, b.row)
+		r := b.row
+		r.Family, r.Disc = musicV7Family(b.meta)
+		c.rows = append(c.rows, r)
+		c.metas[r.ID], c.cards[r.ID] = b.meta, b.cards
 	}
-	if h.MusicRowsV7 {
-		// v7 keeps the raw rows: the day's plan orders and fills them.
-		c := &musicV7Cand{metas: map[string]MusicRow{}, cards: map[string]map[string]MusicCard{}, seen: seen}
-		for _, b := range rows {
-			r := b.row
-			r.Family, r.Disc = musicV7Family(b.meta)
-			c.rows = append(c.rows, r)
-			c.metas[r.ID], c.cards[r.ID] = b.meta, b.cards
-		}
-		ord.v7 = c
-		ord.Rows = []MusicRow{}
-		if h.MusicTrending != nil {
-			if l, err := h.cachedMusicTrend(ctx, "album", "global"); err == nil {
-				ord.Regions = l.Regions
-			}
-		}
-		return ord
-	}
-	for _, r := range musicscore.Dedup(musicscore.Order(raw, member, date), seen) {
-		b := byID[r.ID]
-		m := b.meta
-		for _, it := range r.Items {
-			m.Items = append(m.Items, b.cards[it.Key])
-		}
-		ord.Rows = append(ord.Rows, m)
-	}
-	if ord.Rows == nil {
-		ord.Rows = []MusicRow{}
-	}
+	ord.v7 = c
+	ord.Rows = []MusicRow{}
 	if h.MusicTrending != nil {
 		if l, err := h.cachedMusicTrend(ctx, "album", "global"); err == nil {
 			ord.Regions = l.Regions

@@ -115,8 +115,6 @@ app/backend/internal/migrate/moves.go
 app/backend/internal/movies/collections.go
 app/backend/internal/movies/collections_metadata.go
 app/backend/internal/music/explore_disk.go
-app/backend/internal/music/explore_more.go
-app/backend/internal/music/explore_music_page.go
 app/backend/internal/music/explore_new_music_page.go
 app/backend/internal/music/explore_page.go
 app/backend/internal/music/explore_v2.go

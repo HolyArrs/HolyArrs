@@ -25,7 +25,6 @@ var musicRowMin = map[string]int{
 }
 
 const (
-	musicRowMax = 20
 	// musicGenreTTL keeps an artist's genres; musicSimilarTTL a similar list
 	// (misses an hour).
 	musicGenreTTL   = 7 * 24 * time.Hour
@@ -289,10 +288,6 @@ func (h *Handlers) fetchSimilar(id string, e *musicSimilarEntry) {
 	c.mu.Unlock()
 	close(done)
 }
-
-// musicSimilarWait is how long a Music answer waits for similar artists
-// not read yet; they keep filling for the next visit.
-const musicSimilarWait = 1500 * time.Millisecond
 
 // musicArtist is one artist in the Library.
 type musicArtist struct {

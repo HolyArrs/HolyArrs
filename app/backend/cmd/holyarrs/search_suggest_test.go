@@ -40,7 +40,6 @@ func suggestRig(t *testing.T, delay time.Duration) (*askRig, *atomic.Int32) {
 		movies = append(movies, metadata.Movie{Name: fmt.Sprintf("Radio Days %d", i), Year: 2000 + i, IDs: map[string]string{"tmdb": fmt.Sprint(910000 + i)}})
 	}
 	r.api.s.Metadata = &metadata.Static{Movies: movies}
-	r.api.s.LiveSearch = true
 	calls := &atomic.Int32{}
 	r.api.s.MusicSuggest = func(ctx context.Context, q string) ([]metadata.MusicSuggestion, error) {
 		calls.Add(1)
@@ -107,13 +106,6 @@ func TestSearchSuggestMaxThreePerKind(t *testing.T) {
 			t.Fatalf("music scope shows %+v", it)
 		}
 	}
-}
-
-func TestSearchSuggestFlagOff(t *testing.T) {
-	t.Parallel()
-	r, _ := suggestRig(t, 0)
-	r.api.s.LiveSearch = false
-	r.owner.call("GET", "/api/v1/search/suggest?q=radi", "", 404)
 }
 
 func TestSearchSuggestKidNoMusic(t *testing.T) {

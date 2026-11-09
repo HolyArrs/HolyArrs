@@ -224,9 +224,14 @@
       "hero": "null",
       "hero_alts": [],
       "kid": "bool",
+      "next": "string",
+      "partial": "bool",
       "region": "string",
       "regions": [],
-      "rows": []
+      "rows": [],
+      "total": "number",
+      "v2": "bool",
+      "v7": "bool"
     },
     "status": 200
   },

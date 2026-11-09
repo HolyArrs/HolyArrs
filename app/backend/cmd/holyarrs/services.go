@@ -76,10 +76,6 @@ type services struct {
 	// Deps are the metadata server calls and flags the music code reads
 	// (internal/music).
 	music.Deps
-	// LiveSearch is flag live_search (music plan Phase 4): the search
-	// field's dropdown, GET /api/v1/search/suggest; off answers 404 and
-	// the field shows no dropdown.
-	LiveSearch bool
 	// ExtraArt and ExtraRatings read the server's stored title art and outside ratings
 	// from the metadata server; nil (or a source off there) shows neither.
 	ExtraArt func(ctx context.Context, kind, id string) (metadata.ServerArt, error)

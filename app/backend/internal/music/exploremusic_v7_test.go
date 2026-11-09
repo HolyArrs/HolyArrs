@@ -131,7 +131,6 @@ func v7Rig(t *testing.T, name string) (*askRig, *int, *v7Household) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	r.api.s.MusicRowsV2, r.api.s.MusicRowsV3, r.api.s.MusicRowsV6, r.api.s.MusicRowsV7 = true, true, true, true
 	r.api.musicv2.now = func() time.Time { return v7Fixed }
 	charts, genres := fakeCharts(v7Fixed)
 	r.api.s.MusicGenres = genres
@@ -388,21 +387,6 @@ func TestExploreMusicV7Cursor(t *testing.T) {
 	r.api.musicv2.plans.MarkStale(-1)
 	r.owner.call("GET", "/api/v1/explore/music?region=US", "", 200)
 	r.owner.call("GET", "/api/v1/explore/music?region=US&cursor="+cur, "", 400)
-}
-
-// route: GET /api/v1/explore/music (music_rows_v7 off)
-func TestExploreMusicV7FlagOffSameAsV3(t *testing.T) {
-	t.Parallel()
-	r, _ := v3Rig(t)
-	off := r.ana.call("GET", "/api/v1/explore/music?region=US", "", 200)
-	r2, _ := v3Rig(t)
-	r2.api.s.MusicRowsV7 = false
-	if string(r2.ana.call("GET", "/api/v1/explore/music?region=US", "", 200)) != string(off) {
-		t.Fatal("v7 off must answer the v3 page")
-	}
-	if strings.Contains(string(off), `"next"`) {
-		t.Fatal("v3 page carries a cursor")
-	}
 }
 
 // chipless is stripState with each row's items in key order: asked cards

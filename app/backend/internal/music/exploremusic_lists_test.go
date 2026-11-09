@@ -54,7 +54,6 @@ func fakeShelves(_ context.Context, region string) (metadata.MusicShelves, error
 
 func listRig(t *testing.T, name string) *askRig {
 	r, _, _ := v7Rig(t, name)
-	r.api.s.MusicListsV1 = true
 	r.api.s.MusicShelves = fakeShelves
 	return r
 }
@@ -130,17 +129,6 @@ func rowIDs(rows []MusicRow) []string {
 		out = append(out, r.ID)
 	}
 	return out
-}
-
-// route: GET /api/v1/explore/music (music_lists_v1 off)
-func TestExploreMusicListRowsOffByDefault(t *testing.T) {
-	r, _, _ := v7Rig(t, "household_indie.json")
-	r.api.s.MusicShelves = fakeShelves
-	for _, row := range v7Rows(func() []v7Answer { p, _ := v7Pages(t, r.owner, "US"); return p }()) {
-		if strings.HasPrefix(row.ID, "lists_") || row.Shape == "grid" {
-			t.Fatalf("flag off shows %s", row.ID)
-		}
-	}
 }
 
 func TestNewMusicListRowsLeadWithCharts(t *testing.T) {
