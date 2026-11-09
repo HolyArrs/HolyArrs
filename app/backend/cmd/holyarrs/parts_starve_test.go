@@ -1,4 +1,4 @@
-package parts
+package main
 
 import (
 	"context"
@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
@@ -30,7 +31,7 @@ func TestHeldJobsDoNotStarveTheirPool(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := f.c.Set(context.Background(), Music, false, owner); err != nil {
+	if err := f.c.Set(context.Background(), parts.Music, false, owner); err != nil {
 		t.Fatal(err)
 	}
 	for i := 0; i < 150; i++ {

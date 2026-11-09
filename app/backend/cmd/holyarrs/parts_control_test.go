@@ -1,4 +1,4 @@
-package parts
+package main
 
 import (
 	"context"
@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
@@ -21,7 +22,7 @@ import (
 type fix struct {
 	s            *database.Store
 	q            *jobs.Queue
-	c            *Control
+	c            *parts.Control
 	reg          *jobs.Registry
 	slotID, dlID int64
 	runs         sync.Map // kind -> *atomic.Int32
@@ -110,7 +111,7 @@ func newFix(t *testing.T) *fix {
 			return nil
 		})
 	}
-	f.c = &Control{Store: s, Reg: f.reg, Jobs: f.q, Drain: 5 * time.Second, Logf: func(string, ...any) {}}
+	f.c = &parts.Control{Store: s, Reg: f.reg, Jobs: f.q, Drain: 5 * time.Second, Logf: func(string, ...any) {}}
 	if err := f.c.Load(context.Background()); err != nil {
 		t.Fatal(err)
 	}
@@ -192,7 +193,7 @@ func TestOffAndOnDuringAnImport(t *testing.T) {
 	f := newFix(t)
 	imp := f.enqueue(t, "import_download", &domain.Subject{Type: "download", ID: f.dlID}, "import:1")
 	f.waitStarted(t, "import_download")
-	if err := f.c.Set(context.Background(), Movies, false, owner); err != nil {
+	if err := f.c.Set(context.Background(), parts.Movies, false, owner); err != nil {
 		t.Fatal(err)
 	}
 	if f.slotState(t) != mediafiles.SlotImporting {
@@ -214,7 +215,7 @@ func TestOffAndOnDuringAnImport(t *testing.T) {
 	if st := f.jobState(t, grab); st != "queued" || f.count("grab") != 0 {
 		t.Fatalf("grab is %s (ran %d) while Movies is off", st, f.count("grab"))
 	}
-	if err := f.c.Set(context.Background(), Movies, true, owner); err != nil {
+	if err := f.c.Set(context.Background(), parts.Movies, true, owner); err != nil {
 		t.Fatal(err)
 	}
 	f.waitStarted(t, "grab")
@@ -237,14 +238,14 @@ func TestRestartDuringADownloadAndAnImport(t *testing.T) {
 	f.waitStarted(t, "import_download")
 	done := make(chan int, 1)
 	go func() {
-		left, err := f.c.Restart(context.Background(), Movies)
+		left, err := f.c.Restart(context.Background(), parts.Movies)
 		if err != nil {
 			t.Error(err)
 		}
 		done <- left
 	}()
 	deadline := time.Now().Add(5 * time.Second)
-	for f.c.On(Movies) {
+	for f.c.On(parts.Movies) {
 		if time.Now().After(deadline) {
 			t.Fatal("restart did not hold Movies")
 		}
@@ -271,8 +272,8 @@ func TestRestartDuringADownloadAndAnImport(t *testing.T) {
 	f.waitJob(t, grab, "done")
 	f.waitJob(t, imp, "done")
 	f.waitJob(t, search, "done")
-	if !f.c.On(Movies) || f.slotState(t) != mediafiles.SlotInLibrary {
-		t.Fatalf("after restart: on %v, slot %s", f.c.On(Movies), f.slotState(t))
+	if !f.c.On(parts.Movies) || f.slotState(t) != mediafiles.SlotInLibrary {
+		t.Fatalf("after restart: on %v, slot %s", f.c.On(parts.Movies), f.slotState(t))
 	}
 	if f.count("grab") != 1 || f.count("import_download") != 1 || f.count("search_slot") != 1 {
 		t.Fatalf("runs: grab %d, import %d, search %d", f.count("grab"), f.count("import_download"), f.count("search_slot"))
@@ -286,7 +287,7 @@ func TestRestartNeverCutsOffAJob(t *testing.T) {
 	f.c.Drain = 50 * time.Millisecond
 	imp := f.enqueue(t, "import_download", &domain.Subject{Type: "download", ID: f.dlID}, "import:1")
 	f.waitStarted(t, "import_download")
-	left, err := f.c.Restart(context.Background(), Movies)
+	left, err := f.c.Restart(context.Background(), parts.Movies)
 	if err != nil || left != 1 {
 		t.Fatalf("restart: %d left, %v", left, err)
 	}
@@ -305,34 +306,34 @@ func TestRestartNeverCutsOffAJob(t *testing.T) {
 func TestDependencies(t *testing.T) {
 	f := newFix(t)
 	ctx := context.Background()
-	must := func(p Part, on bool) {
+	must := func(p parts.Part, on bool) {
 		t.Helper()
 		if err := f.c.Set(ctx, p, on, owner); err != nil {
 			t.Fatalf("%s %v: %v", p, on, err)
 		}
 	}
-	refused := func(p Part, on bool, says string) {
+	refused := func(p parts.Part, on bool, says string) {
 		t.Helper()
-		var ne NeedsError
+		var ne parts.NeedsError
 		if err := f.c.Set(ctx, p, on, owner); !errors.As(err, &ne) || !strings.Contains(err.Error(), says) {
 			t.Fatalf("%s %v: %v, want refused with %q", p, on, err, says)
 		}
 	}
-	must(Movies, false)
-	refused(Shows, false, "Turn Subtitles off first")
-	must(Subtitles, false)
-	must(Shows, false)
-	refused(Subtitles, true, "Turn Movies or TV shows on first")
-	refused(Music, false, "Turn Requests off first")
-	must(Wishlist, false)
-	must(Music, false)
-	refused(Wishlist, true, "Turn one of them on first")
-	must(Music, true)
-	must(Wishlist, true)
-	if f.c.On(Subtitles) || !f.c.On(Wishlist) || !f.c.On(Music) {
+	must(parts.Movies, false)
+	refused(parts.Shows, false, "Turn Subtitles off first")
+	must(parts.Subtitles, false)
+	must(parts.Shows, false)
+	refused(parts.Subtitles, true, "Turn Movies or TV shows on first")
+	refused(parts.Music, false, "Turn Requests off first")
+	must(parts.Wishlist, false)
+	must(parts.Music, false)
+	refused(parts.Wishlist, true, "Turn one of them on first")
+	must(parts.Music, true)
+	must(parts.Wishlist, true)
+	if f.c.On(parts.Subtitles) || !f.c.On(parts.Wishlist) || !f.c.On(parts.Music) {
 		t.Fatalf("off now: %v", f.c.Off())
 	}
-	if err := f.c.Set(ctx, "books", false, owner); !errors.Is(err, ErrNoPart) {
+	if err := f.c.Set(ctx, "books", false, owner); !errors.Is(err, parts.ErrNoPart) {
 		t.Fatalf("unknown part: %v", err)
 	}
 }
@@ -340,22 +341,22 @@ func TestDependencies(t *testing.T) {
 // The switches are saved: a new Control (the next start) reads them.
 func TestSwitchesAreSaved(t *testing.T) {
 	f := newFix(t)
-	if err := f.c.Set(context.Background(), Music, false, owner); err != nil {
+	if err := f.c.Set(context.Background(), parts.Music, false, owner); err != nil {
 		t.Fatal(err)
 	}
-	next := &Control{Store: f.s, Reg: jobs.NewRegistry()}
+	next := &parts.Control{Store: f.s, Reg: jobs.NewRegistry()}
 	if err := next.Load(context.Background()); err != nil {
 		t.Fatal(err)
 	}
-	if next.On(Music) || !next.On(Movies) || len(next.Off()) != 1 {
+	if next.On(parts.Music) || !next.On(parts.Movies) || len(next.Off()) != 1 {
 		t.Fatalf("after a restart: off %v", next.Off())
 	}
 	// Safe mode forces every part off, without changing what is saved.
-	safe := &Control{Store: f.s, Reg: jobs.NewRegistry(), SafeMode: true}
+	safe := &parts.Control{Store: f.s, Reg: jobs.NewRegistry(), SafeMode: true}
 	if err := safe.Load(context.Background()); err != nil {
 		t.Fatal(err)
 	}
-	if len(safe.Off()) != len(All()) {
+	if len(safe.Off()) != len(parts.All()) {
 		t.Fatalf("safe mode: off %v", safe.Off())
 	}
 	for _, st := range safe.Statuses() {
@@ -363,10 +364,10 @@ func TestSwitchesAreSaved(t *testing.T) {
 			t.Fatalf("safe mode state: %+v", st)
 		}
 	}
-	if err := safe.Set(context.Background(), Movies, true, owner); !errors.Is(err, ErrSafeMode) {
+	if err := safe.Set(context.Background(), parts.Movies, true, owner); !errors.Is(err, parts.ErrSafeMode) {
 		t.Fatalf("switch in safe mode: %v", err)
 	}
-	if _, err := safe.Restart(context.Background(), Movies); !errors.Is(err, ErrSafeMode) {
+	if _, err := safe.Restart(context.Background(), parts.Movies); !errors.Is(err, parts.ErrSafeMode) {
 		t.Fatalf("restart in safe mode: %v", err)
 	}
 }
@@ -382,7 +383,7 @@ func TestPartLoopsAndStages(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = s.Close() })
-	c := &Control{Store: s, Reg: reg, Logf: func(string, ...any) {}}
+	c := &parts.Control{Store: s, Reg: reg, Logf: func(string, ...any) {}}
 	if err := c.Load(context.Background()); err != nil {
 		t.Fatal(err)
 	}
@@ -410,7 +411,7 @@ func TestPartLoopsAndStages(t *testing.T) {
 		}
 	}
 	waitFor("gates run", func() bool { return gates.Load() > 2 })
-	if err := c.Set(ctx, Movies, false, owner); err != nil {
+	if err := c.Set(ctx, parts.Movies, false, owner); err != nil {
 		t.Fatal(err)
 	}
 	n := gates.Load()
@@ -421,10 +422,10 @@ func TestPartLoopsAndStages(t *testing.T) {
 	if st, _ := reg.Get(jobs.StageKey("gates")); st.State != jobs.Off || st.Reason != "Movies is off." {
 		t.Fatalf("gates stage: %+v", st)
 	}
-	if err := c.Resume("gates"); !errors.As(err, new(OffError)) {
+	if err := c.Resume("gates"); !errors.As(err, new(parts.OffError)) {
 		t.Fatalf("resume a stage of an off part: %v", err)
 	}
-	if err := c.Set(ctx, Movies, true, owner); err != nil {
+	if err := c.Set(ctx, parts.Movies, true, owner); err != nil {
 		t.Fatal(err)
 	}
 	waitFor("gates again", func() bool { return gates.Load() > n+2 })
@@ -446,10 +447,10 @@ func TestPartLoopsAndStages(t *testing.T) {
 	if st, _ := reg.Get(jobs.StageKey("backups")); backups.Load() != b || st.State != jobs.Off || st.Reason != "Paused by Luis." {
 		t.Fatalf("paused backups ran or shows %+v", st)
 	}
-	if err := c.Set(ctx, Movies, false, owner); err != nil { // a part switch leaves a paused stage paused
+	if err := c.Set(ctx, parts.Movies, false, owner); err != nil { // a part switch leaves a paused stage paused
 		t.Fatal(err)
 	}
-	if err := c.Set(ctx, Movies, true, owner); err != nil {
+	if err := c.Set(ctx, parts.Movies, true, owner); err != nil {
 		t.Fatal(err)
 	}
 	if backups.Load() != b {
@@ -462,7 +463,7 @@ func TestPartLoopsAndStages(t *testing.T) {
 	if err := c.RestartStage("backups"); err != nil {
 		t.Fatal(err)
 	}
-	if err := c.Pause("nope", "Luis"); !errors.Is(err, ErrNoStage) {
+	if err := c.Pause("nope", "Luis"); !errors.Is(err, parts.ErrNoStage) {
 		t.Fatalf("unknown stage: %v", err)
 	}
 }
@@ -472,7 +473,7 @@ func TestPartLoopsAndStages(t *testing.T) {
 func TestSchedulesOfAnOffPartWait(t *testing.T) {
 	f := newFix(t)
 	ctx := context.Background()
-	if err := f.c.Set(ctx, Shows, false, owner); err != nil {
+	if err := f.c.Set(ctx, parts.Shows, false, owner); err != nil {
 		t.Fatal(err)
 	}
 	now := time.Now().UTC().Add(48 * time.Hour)
@@ -485,7 +486,7 @@ func TestSchedulesOfAnOffPartWait(t *testing.T) {
 			t.Fatal("refresh_shows was queued while Shows is off")
 		}
 	}
-	if err := f.c.Set(ctx, Shows, true, owner); err != nil {
+	if err := f.c.Set(ctx, parts.Shows, true, owner); err != nil {
 		t.Fatal(err)
 	}
 	kinds, err = f.q.RunSchedules(ctx, now)
@@ -498,15 +499,15 @@ func TestSchedulesOfAnOffPartWait(t *testing.T) {
 }
 
 func TestScreenOwner(t *testing.T) {
-	for path, want := range map[string]Owner{
-		"/library/held": Media, "/library/12": ByTitle, "/library/12/albums/3": Of(Music), "/settings/music": Of(Music),
-		"/requests": Of(Wishlist), "/": Core, "/settings/sources/4": Core,
+	for path, want := range map[string]parts.Owner{
+		"/library/held": parts.Media, "/library/12": parts.ByTitle, "/library/12/albums/3": parts.Of(parts.Music), "/settings/music": parts.Of(parts.Music),
+		"/requests": parts.Of(parts.Wishlist), "/": parts.Core, "/settings/sources/4": parts.Core,
 	} {
-		if got, ok := ScreenOwner(path); !ok || got != want {
+		if got, ok := parts.ScreenOwner(path); !ok || got != want {
 			t.Errorf("%s: %q, want %q", path, got, want)
 		}
 	}
-	if _, ok := ScreenOwner("/nowhere/at/all"); ok {
+	if _, ok := parts.ScreenOwner("/nowhere/at/all"); ok {
 		t.Error("an unknown page has an owner")
 	}
 }
@@ -521,7 +522,7 @@ func TestLogMaskingIsNeverPaused(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = s.Close() })
-	c := &Control{Store: s, Reg: reg, Logf: func(string, ...any) {}}
+	c := &parts.Control{Store: s, Reg: reg, Logf: func(string, ...any) {}}
 	if err := c.Load(context.Background()); err != nil {
 		t.Fatal(err)
 	}
@@ -534,10 +535,10 @@ func TestLogMaskingIsNeverPaused(t *testing.T) {
 	if got := c.Stages(); len(got) != 1 || got[0] != "backups" {
 		t.Fatalf("controllable stages = %v, want only backups", got)
 	}
-	if err := c.Pause("log_secrets", "Luis"); !errors.Is(err, ErrNeverPause) {
+	if err := c.Pause("log_secrets", "Luis"); !errors.Is(err, parts.ErrNeverPause) {
 		t.Fatalf("pause log masking: %v", err)
 	}
-	if err := c.RestartStage("log_secrets"); !errors.Is(err, ErrNeverPause) {
+	if err := c.RestartStage("log_secrets"); !errors.Is(err, parts.ErrNeverPause) {
 		t.Fatalf("restart log masking: %v", err)
 	}
 	n := masks.Load()
