@@ -24,7 +24,7 @@ var (
 	ErrShowNotFound = errors.New("no such show")
 	// ErrNoTVDBKey means TVDB is not used: no key of the person's own is
 	// set, or TVDB refused it.
-	ErrNoTVDBKey = errors.New("TVDB needs your own TVDB key; set it in Settings, or use TMDB or TVMaze for this show")
+	ErrNoTVDBKey = errors.New("TVDB needs a TVDB key, and none is set; use TMDB or TVMaze for this show")
 	// ErrUnknownSource names a details source HolyArrs does not have.
 	ErrUnknownSource = errors.New("show details source must be tmdb, tvmaze or tvdb")
 )
