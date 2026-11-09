@@ -70,10 +70,10 @@ jobs:
             test_exec: ""
           - goarch: arm64
             goarm: ""
-            test_exec: qemu-aarch64-static
+            test_exec: qemu-aarch64
           - goarch: arm
             goarm: "7"
-            test_exec: qemu-arm-static
+            test_exec: qemu-arm
     env:
       CGO_ENABLED: "0"
       GOOS: linux
@@ -105,6 +105,10 @@ jobs:
         run: |
           set -o pipefail
           go test -timeout 60m ./... 2>&1 | sed -E 's/(auth: first run: setup code) [^ ]+/\1 [hidden]/g'
+      # Ubuntu's qemu-user is static, so it runs Go test binaries as they are.
+      - name: Install the emulator
+        if: matrix.test_exec != ''
+        run: sudo apt-get update && sudo apt-get install -y qemu-user
       - name: Test ${{ matrix.goarch }} with userspace QEMU
         if: matrix.test_exec != ''
         env:
@@ -217,7 +221,7 @@ jobs:
       - name: Every route checks its API key scope
         run: |
           set -o pipefail
-          go test -count=1 -run 'Scope' ./app/backend/internal/auth 2>&1 | sed -E 's/(auth: first run: setup code) [^ ]+/\1 [hidden]/g'
+          go test -count=1 -run 'Scope' ./app/backend/internal/accounts 2>&1 | sed -E 's/(auth: first run: setup code) [^ ]+/\1 [hidden]/g'
       - name: Downloader suite (qBittorrent, SABnzbd, the made-up third engine)
         run: |
           set -o pipefail
@@ -275,12 +279,12 @@ jobs:
           go-version: "1.27.3"
           cache: false
       - name: Install the arm64 emulator
-        run: sudo apt-get update && sudo apt-get install -y qemu-user-static
+        run: sudo apt-get update && sudo apt-get install -y qemu-user
       - name: Run the combined arm64 scale check
         id: scale
         continue-on-error: true
         env:
-          QEMU_AARCH64_STATIC: /usr/bin/qemu-aarch64-static
+          QEMU_AARCH64_STATIC: /usr/bin/qemu-aarch64
         run: bash app/tests/setups/scale-check.sh "$RUNNER_TEMP/scale-combined"
       - name: Write combined scale evidence to the job summary
         if: always()
