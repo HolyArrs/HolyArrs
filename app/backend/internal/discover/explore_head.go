@@ -12,8 +12,8 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
-	engine "github.com/HolyArrs/holyarrs/app/backend/internal/core/rows"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
+	engine "github.com/HolyArrs/holyarrs/app/backend/internal/suggest"
 )
 
 // ExploreRowView is one row of the head or tail, with the Library joined.

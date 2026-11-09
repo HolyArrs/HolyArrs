@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"time"
 
-	engine "github.com/HolyArrs/holyarrs/app/backend/internal/core/rows"
+	engine "github.com/HolyArrs/holyarrs/app/backend/internal/suggest"
 )
 
 // WithoutHero drops the hero's titles from rows.

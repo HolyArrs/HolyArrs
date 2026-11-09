@@ -6,8 +6,8 @@ import (
 	"sync"
 	"time"
 
-	engine "github.com/HolyArrs/holyarrs/app/backend/internal/core/rows"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
+	engine "github.com/HolyArrs/holyarrs/app/backend/internal/suggest"
 )
 
 // ExploreGenreParam reads ?genre= for kind: the TMDB genre id and name.

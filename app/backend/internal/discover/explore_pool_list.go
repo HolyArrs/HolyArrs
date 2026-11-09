@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	engine "github.com/HolyArrs/holyarrs/app/backend/internal/core/rows"
+	engine "github.com/HolyArrs/holyarrs/app/backend/internal/suggest"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 

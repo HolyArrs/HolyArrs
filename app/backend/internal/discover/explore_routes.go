@@ -4,8 +4,8 @@ import (
 	"net/http"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
-	engine "github.com/HolyArrs/holyarrs/app/backend/internal/core/rows"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
+	engine "github.com/HolyArrs/holyarrs/app/backend/internal/suggest"
 )
 
 // ExploreSwitch reads ?type=: all (default), movies or shows.

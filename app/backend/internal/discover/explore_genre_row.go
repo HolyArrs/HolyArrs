@@ -3,8 +3,8 @@ package discover
 import (
 	"context"
 
-	engine "github.com/HolyArrs/holyarrs/app/backend/internal/core/rows"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
+	engine "github.com/HolyArrs/holyarrs/app/backend/internal/suggest"
 )
 
 // GenreRowPage drops the titles a row would not show this person: above a

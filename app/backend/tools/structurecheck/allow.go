@@ -12,6 +12,7 @@ var bannedNameAllowed = map[string]bool{}
 // below layer 1 and are ordered by coreRows.
 var layers = map[string]int{
 	"parts":        1, // which parts of the app are on; every module asks it
+	"suggest":      1, // picks and orders rows and shelves
 	"metadata":     1,
 	"accounts":     2,
 	"mediafiles":   3,
@@ -42,7 +43,6 @@ var coreRows = map[string]int{
 	"database":    0,
 	"files":       0,
 	"releasename": 0,
-	"rows":        0,
 	"outbound":    1,
 	"secrets":     1,
 	"logs":        2,

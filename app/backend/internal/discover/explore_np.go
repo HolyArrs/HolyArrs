@@ -11,8 +11,8 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
-	engine "github.com/HolyArrs/holyarrs/app/backend/internal/core/rows"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
+	engine "github.com/HolyArrs/holyarrs/app/backend/internal/suggest"
 )
 
 // newPageTTL is how long a member's built New & Popular page is kept; the

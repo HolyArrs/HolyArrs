@@ -9,8 +9,8 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/discover"
 
-	engine "github.com/HolyArrs/holyarrs/app/backend/internal/core/rows"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
+	engine "github.com/HolyArrs/holyarrs/app/backend/internal/suggest"
 )
 
 func TestWikiFactsBadgesBioAndFallback(t *testing.T) {

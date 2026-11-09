@@ -9,7 +9,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/discover"
 
-	engine "github.com/HolyArrs/holyarrs/app/backend/internal/core/rows"
+	engine "github.com/HolyArrs/holyarrs/app/backend/internal/suggest"
 )
 
 func (f *recordingTMDB) count(part string) int {

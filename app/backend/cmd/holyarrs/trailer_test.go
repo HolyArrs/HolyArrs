@@ -18,9 +18,9 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/discover"
 
-	engine "github.com/HolyArrs/holyarrs/app/backend/internal/core/rows"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata/youtube"
+	engine "github.com/HolyArrs/holyarrs/app/backend/internal/suggest"
 )
 
 // ytFake plays YouTube for the trailer reader: the watch page and the

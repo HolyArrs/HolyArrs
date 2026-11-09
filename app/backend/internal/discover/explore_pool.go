@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	engine "github.com/HolyArrs/holyarrs/app/backend/internal/core/rows"
+	engine "github.com/HolyArrs/holyarrs/app/backend/internal/suggest"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"

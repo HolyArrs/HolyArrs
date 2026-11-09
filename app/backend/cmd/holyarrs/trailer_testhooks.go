@@ -4,11 +4,11 @@ import (
 	"context"
 	"net/http"
 
-	engine "github.com/HolyArrs/holyarrs/app/backend/internal/core/rows"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/discover"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/requests"
+	engine "github.com/HolyArrs/holyarrs/app/backend/internal/suggest"
 )
 
 // TrailerHooks reaches the API parts the trailer tests in cmd/holyarrs

@@ -128,7 +128,7 @@ func TestAlertTestUsesOwnEmail(t *testing.T) {
 		var gotID int64
 		mux := http.NewServeMux()
 		(&Handlers{Store: s, Secrets: v, Sender: &Sender{Store: s, Vault: v, Backoff: []time.Duration{}},
-			Caller: func(*http.Request) (int64, string) { return 7, "Maya" },
+			Caller:   func(*http.Request) (int64, string) { return 7, "Maya" },
 			OwnEmail: func(_ context.Context, id int64) (string, error) { gotID = id; return c.email, c.fail },
 		}).Routes(mux)
 		before := len(mails())

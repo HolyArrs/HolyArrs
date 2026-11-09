@@ -11,7 +11,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/discover"
 
-	engine "github.com/HolyArrs/holyarrs/app/backend/internal/core/rows"
+	engine "github.com/HolyArrs/holyarrs/app/backend/internal/suggest"
 )
 
 // downSource fails while down is set, and always for Ref "gone" (a

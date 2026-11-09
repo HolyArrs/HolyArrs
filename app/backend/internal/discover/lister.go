@@ -9,8 +9,8 @@ import (
 	"sync"
 	"time"
 
-	engine "github.com/HolyArrs/holyarrs/app/backend/internal/core/rows"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
+	engine "github.com/HolyArrs/holyarrs/app/backend/internal/suggest"
 )
 
 // keywordIDs keeps TMDB keyword ids by name (they never change), so a

@@ -10,9 +10,9 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
-	engine "github.com/HolyArrs/holyarrs/app/backend/internal/core/rows"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
+	engine "github.com/HolyArrs/holyarrs/app/backend/internal/suggest"
 )
 
 // ExploreMoment is the viewer's local time: the tz query value or the

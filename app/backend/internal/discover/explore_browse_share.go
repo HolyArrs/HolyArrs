@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	engine "github.com/HolyArrs/holyarrs/app/backend/internal/core/rows"
+	engine "github.com/HolyArrs/holyarrs/app/backend/internal/suggest"
 )
 
 // The exported Browse pieces the Explore strip (still in api) reads.

@@ -4,8 +4,8 @@ import (
 	"context"
 	"strings"
 
-	engine "github.com/HolyArrs/holyarrs/app/backend/internal/core/rows"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
+	engine "github.com/HolyArrs/holyarrs/app/backend/internal/suggest"
 )
 
 // TrailerPassTitles are the movies and shows of every stored Explore pool
