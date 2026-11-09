@@ -34,7 +34,7 @@ func TestEveryScreenHasAPart(t *testing.T) {
 		}
 		pages[path] = true
 		if _, ok := Screens()[path]; !ok {
-			t.Errorf("page %s belongs to no part and is not marked core in internal/parts/table.go", path)
+			t.Errorf("page %s belongs to no part and is not marked core in internal/core/parts/table.go", path)
 		}
 		return nil
 	})

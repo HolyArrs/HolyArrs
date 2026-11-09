@@ -48,7 +48,7 @@ type Options struct {
 }
 
 // Gate holds Jobs back while the part they belong to is off (see
-// internal/parts). Held Jobs stay queued and run once the part is on.
+// internal/core/parts). Held Jobs stay queued and run once the part is on.
 type Gate interface {
 	// Active is false while every part is on: the queue then claims as
 	// it always did.
