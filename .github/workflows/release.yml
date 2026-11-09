@@ -2,7 +2,7 @@ name: release
 # Started by hand only: tick confirm_release and type the exact version.
 #
 # The maintainer starts it by hand on main and types the
-# version (1.2.3, or 1.2.3-rc.1 for a candidate). The run makes the v1.2.3 tag
+# version (1.2.3, or 1.2.3-rc.1 for a candidate). The run makes the 1.2.3 tag
 # itself when it creates the GitHub release; nobody tags by hand. It pushes
 # the same image to Docker Hub (the name users see) and a silent GHCR copy with only two tags:
 # the version, and beta when this version is newer than the current beta.
@@ -66,12 +66,12 @@ jobs:
           fi
           file="$(tr -d '[:space:]' < VERSION)"
           [ "$file" = "$WANT" ] || { echo "VERSION says $file, not $WANT."; exit 1; }
-          if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/v$WANT" >/dev/null 2>&1; then
-            echo "refs/tags/v$WANT already exists: a published version never changes, ship the next one."
+          if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$WANT" >/dev/null 2>&1; then
+            echo "refs/tags/$WANT already exists: a published version never changes, ship the next one."
             exit 1
           fi
           echo "version=$WANT" >> "$GITHUB_OUTPUT"
-          echo "tag=v$WANT" >> "$GITHUB_OUTPUT"
+          echo "tag=$WANT" >> "$GITHUB_OUTPUT"
 
       - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
         with:
@@ -234,7 +234,7 @@ jobs:
             --module-cache "$(go env GOMODCACHE)"
 
       # The notes are this version's CHANGELOG.md section. This step makes
-      # the vX.Y.Z tag on the commit that was built.
+      # the X.Y.Z tag on the commit that was built.
       - name: Create the GitHub release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

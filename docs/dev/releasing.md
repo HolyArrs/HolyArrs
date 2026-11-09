@@ -58,7 +58,7 @@ Only the maintainer starts a release. Do not tag, publish or move an image tag o
 
 | Thing | Name |
 |---|---|
-| Git tag (made by the release run) | `v1.0.0`, or `v1.0.0-rc.1` for a candidate |
+| Git tag (made by the release run) | `1.0.0`, or `1.0.0-rc.1` for a candidate (plain numbers, no v) |
 | Image tag and notes `version` | `1.0.0` |
 
 The workflow refuses any other version shape, a version that differs from the `VERSION` file, and a version that already has a tag.
@@ -80,7 +80,7 @@ A new version lands on `:beta` and on its version tag. `:beta` only moves to a n
 **Fix.** Edit the notes file, never the files in `releases/out`, and run it again.
 
 **Symptom.** The workflow stops with a message about the tag.
-**Cause.** The tag is not `vX.Y.Z` or `vX.Y.Z-rc.N`.
+**Cause.** The version is not `X.Y.Z` or `X.Y.Z-rc.N`.
 **Fix.** Make a tag with that shape.
 
 **Symptom.** The beta run says `beta stays on` a version.
