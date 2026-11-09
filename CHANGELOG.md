@@ -9,7 +9,7 @@ First release. HolyArrs runs movies, shows and music requests, downloads and you
 ### Explore and search
 
 - A start page shows what's new, what's downloading and what needs you.
-- Browse movies, shows and music like a streaming app. Pick a genre for its own rows, or hover a title for a quick look.
+- Browse movies, shows and music like a streaming app (music rows are still being built). Pick a genre for its own rows, or hover a title for a quick look.
 - Explore builds rows from your library and what your family and friends request. It all happens on your server.
 - Popular page with the top new shows and movies, what's trending and what's coming soon, plus a Music tab with this week's biggest albums and tracks.
 - Trailers play on cards and title pages and start fast.
@@ -140,7 +140,7 @@ First release. HolyArrs runs movies, shows and music requests, downloads and you
 
 These are built or planned but are not part of this release.
 
-- Connecting outside apps through a remote MCP server. It is built but off until it's tested with real services.
+- Connecting AI apps through MCP.
 - Plex watchlists that turn into requests.
 - Trakt lists and reviews.
 - Alerts on Telegram, ntfy, Gotify, Pushover or a webhook.
@@ -149,8 +149,8 @@ These are built or planned but are not part of this release.
 - Going back to the previous version in one click.
 - Fixing a copy's edition by hand and protecting a copy from upgrades.
 - Requesting a whole movie series at once.
-- Adding sources without Prowlarr or Jackett.
+- Sites with no feed of their own. Use Jackett or Prowlarr for those for now.
 - Translations, starting with German.
 - Built-in downloads, books and audiobooks, native phone apps and TV apps.
 
-Features that are built but off can be turned on with the `HOLYARRS_FLAGS` setting, at your own risk. See "Features held back in the first release" in the docs.
+Features that are built but off can be turned on with the `HOLYARRS_FLAGS` setting, at your own risk. See [Held-back features](https://docs.HolyArrs.com/run/updates/#held-back-features) in the docs.

@@ -16,7 +16,7 @@
 
 <p align="center"><b>HolyArrs</b> is one self-hosted app for your shows, movies and music.<br>Browse like a streaming app, ask for what you want, and it handles the rest.</p>
 
-<p align="center"><b>14.9 MB download · about 70 MB of RAM idle with 12,800 titles · amd64, arm64, armv7</b><br><sub>The six apps it replaces download 718.2 MB together.</sub></p>
+<p align="center"><b>About 15 MB download · about 140 MB of RAM idle with 10,000 titles · amd64, arm64, armv7</b><br><sub>The six apps it replaces download 718.2 MB together.</sub></p>
 
 <p align="center"><sub>From the maker of <a href="https://github.com/CoderLuii/HolyClaude">HolyClaude</a>, <a href="https://github.com/CoderLuii/HolyCode">HolyCode</a> and <a href="https://github.com/CoderLuii/ChannelWatch">ChannelWatch</a> · 350k+ Docker pulls</sub></p>
 
@@ -41,13 +41,13 @@ Someone asks for a title. HolyArrs searches your Sources, picks the best release
 - **Explore** like a streaming app. Hover a title and the trailer plays.
 - **Requests** for a whole show or one season. You approve, or let trusted people skip the queue.
 - **Pick rules** decide which release wins: size, quality, language.
-- **Subtitles** found and kept with the file.
+- **Subtitles** in the languages you pick, kept with the file. Finding them online comes after 1.0.
 - **Calendar** of what's airing for what you follow.
 - **Move your setup** from Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent and SABnzbd. Try it first, undo it later.
-- **Old-app API**, so Prowlarr can keep pushing Sources to HolyArrs.
+- **Old-app API**, so Prowlarr can keep pushing Sources to HolyArrs once you turn it on.
 - **No API keys needed.** Titles, artwork and charts come from the HolyArrs metadata server.
 - **Stored keys encrypted** with a master key that lives in your config folder.
-- **Tiny.** A 14.9 MB image with nothing but HolyArrs inside, idling around 70 MB of RAM with 12,800 titles.
+- **Tiny.** An image of about 15 MB with nothing but HolyArrs inside, idling around 140 MB of RAM with 10,000 titles.
 
 <details>
 <summary><b>Every page, in motion</b></summary>
@@ -76,9 +76,9 @@ Someone asks for a title. HolyArrs searches your Sources, picks the best release
 | Bazarr | 156.4 MB | | 1 | 1 |
 | Overseerr | 180.8 MB | | 1 | 1 |
 | **Six together** | **718.2 MB** | | **6** | **6** |
-| **HolyArrs** | **14.9 MB** | **~70 MiB** | **1** | **1 (6262)** |
+| **HolyArrs** | **14.9 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>About 48 times smaller. Compressed registry download, linuxserver.io images, amd64, measured 2026-11-08.</sub>
+<sub>About 48 times smaller. Compressed registry download, linuxserver.io images, amd64, measured 2026-11-08. Idle RAM measured with 10,000 titles and 55,000 movies and episodes.</sub>
 
 ## Works with
 
@@ -86,7 +86,7 @@ Someone asks for a title. HolyArrs searches your Sources, picks the best release
 
 - **Downloaders:** qBittorrent, Transmission, Deluge, SABnzbd, NZBGet
 - **Media servers:** Plex, Jellyfin, Emby
-- **Sources:** any Torznab or Newznab indexer, or Prowlarr
+- **Sources:** any Torznab or Newznab indexer, or Prowlarr or Jackett
 - **Moves your setup from:** Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent, SABnzbd
 
 ## Install
@@ -204,14 +204,14 @@ Open **Settings > Move from other apps**, add each old app's address and API key
 | Seerr, Overseerr | People and their waiting or approved requests |
 | qBittorrent, SABnzbd | Downloaders |
 
-Keys and passwords stay behind; you type them in again. Custom formats, tags and history don't come over. Media files never move.
+Keys and passwords stay behind; you type them in again or import them from a file. Custom formats, tags and history don't come over. Media files never move.
 
-HolyArrs only reads your old apps and changes nothing in them, so you can run both side by side. Prowlarr can keep pushing Sources to HolyArrs through the old-app API. Step by step: [Move from other apps](https://docs.HolyArrs.com/migrate/).
+HolyArrs only reads your old apps and changes nothing in them, so you can run both side by side. Prowlarr can keep pushing Sources to HolyArrs through the old-app API once you turn it on. Step by step: [Move from other apps](https://docs.HolyArrs.com/migrate/).
 
 ## Not built yet
 
 - **Downloading by itself.** HolyArrs connects to qBittorrent, SABnzbd and the others. It doesn't replace them.
-- **AI or MCP features.** Not started.
+- **AI or MCP features.** Not in 1.0.
 - **Phone and TV apps.** Not built. The web app works on a phone.
 - **Music in Explore** is still being built.
 
