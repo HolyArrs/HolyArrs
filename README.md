@@ -10,7 +10,7 @@
 <p align="center">
   <a href="https://hub.docker.com/r/holyarrs/holyarrs"><img src="https://img.shields.io/docker/pulls/holyarrs/holyarrs?style=flat-square&logo=docker&logoColor=white&label=pulls&color=3b82f6" alt="Docker pulls"></a>
   <a href="https://hub.docker.com/r/holyarrs/holyarrs"><img src="https://img.shields.io/docker/image-size/holyarrs/holyarrs/latest?style=flat-square&logo=docker&logoColor=white&label=size&color=3b82f6" alt="Image size"></a>
-  <a href="https://github.com/HolyArrs/HolyArrs/releases/latest"><img src="https://img.shields.io/github/v/release/HolyArrs/HolyArrs?style=flat-square&logo=github&label=release&color=3b82f6" alt="Release"></a>
+  <a href="https://hub.docker.com/r/holyarrs/holyarrs/tags"><img src="https://img.shields.io/docker/v/holyarrs/holyarrs?sort=semver&style=flat-square&logo=docker&logoColor=white&label=version&color=3b82f6" alt="Version"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/licence-AGPL--3.0-3b82f6?style=flat-square" alt="Licence: AGPL-3.0"></a>
 </p>
 
