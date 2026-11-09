@@ -6,9 +6,9 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/discover"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/parts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 )
 
 // newTitlePages builds the metadata title-page routes on this API's age

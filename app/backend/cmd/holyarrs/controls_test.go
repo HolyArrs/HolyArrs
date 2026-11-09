@@ -26,7 +26,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/parts"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
@@ -541,7 +541,7 @@ func TestEveryRouteHasAPart(t *testing.T) {
 			for _, m := range re.FindAllStringSubmatch(string(b), -1) {
 				seen[m[1]] = true
 				if _, ok := parts.Routes()[m[1]]; !ok {
-					t.Errorf("%s: route %q belongs to no part and is not marked core in internal/parts/table.go", f, m[1])
+					t.Errorf("%s: route %q belongs to no part and is not marked core in internal/core/parts/table.go", f, m[1])
 				}
 			}
 		}
@@ -551,7 +551,7 @@ func TestEveryRouteHasAPart(t *testing.T) {
 	}
 	for r := range parts.Routes() {
 		if !seen[r] {
-			t.Errorf("internal/parts/table.go lists %q, but no such route is registered", r)
+			t.Errorf("internal/core/parts/table.go lists %q, but no such route is registered", r)
 		}
 	}
 }

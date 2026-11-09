@@ -18,7 +18,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/parts"
 )
 
 // The fault runs (3.7.10, decision 0007 "Containment"): a crash in every

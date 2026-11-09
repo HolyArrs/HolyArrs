@@ -6,7 +6,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/parts"
 )
 
 // exploreMusic answers GET /api/v1/explore/music?genre=<tag>&region=<code>.

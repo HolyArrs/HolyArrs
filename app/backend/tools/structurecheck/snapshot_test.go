@@ -15,7 +15,7 @@ import (
 	"testing"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/parts"
 )
 
 var update = flag.Bool("update", false, "rewrite the testdata snapshots")

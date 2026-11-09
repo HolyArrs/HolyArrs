@@ -15,7 +15,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/ai"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/parts"
 )
 
 // aiFix is a signed-in app with an owner, a member and their keys.

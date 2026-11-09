@@ -3,8 +3,8 @@ package main
 import (
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/parts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/discover"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 )
 
 // TestKidMoreFromAndSeasonRateLimited: more-from and season pages share a

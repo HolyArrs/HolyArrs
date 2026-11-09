@@ -69,7 +69,7 @@ func isStoreFile(rel string) bool {
 // for imports but still hold other owners' tables: store (until t06b splits
 // it) and parts (until t13 splits it).
 func sqlLeftover(rel string) bool {
-	return strings.HasPrefix(rel, internalAt+"store/") || strings.HasPrefix(rel, internalAt+"parts/")
+	return strings.HasPrefix(rel, internalAt+"store/") || strings.HasPrefix(rel, internalAt+"core/parts/")
 }
 
 // sqlFile is what the scan finds in one Go file.

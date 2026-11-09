@@ -3,9 +3,9 @@ package main
 import (
 	"net/http"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/parts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 )
 
 // listTitlesBrief writes GET /api/v1/titles?brief=1 (mediafiles.ListTitlesBrief).

@@ -122,7 +122,7 @@ app/backend/internal/music/music.go
 app/backend/internal/music/pages.go
 app/backend/internal/music/pages_album.go
 app/backend/internal/music/search.go
-app/backend/internal/parts/control.go
+app/backend/internal/core/parts/control.go
 app/backend/internal/requests/owner_name.go
 app/backend/internal/requests/store_ask.go
 app/backend/internal/requests/store_ask_episodes.go

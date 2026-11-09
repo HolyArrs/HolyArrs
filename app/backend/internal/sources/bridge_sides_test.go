@@ -3,7 +3,7 @@ package sources
 import (
 	"testing"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/parts"
 )
 
 // Prowlarr only gets the arr sides whose part is switched on.

@@ -8,10 +8,10 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/parts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/music/rowtpl"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 )
 
 // Music cover preload: everything the UI will show is fetched before

@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/parts"
 )
 
 // fakeOldApps records what the bridge flow asks of the arr side.

@@ -11,7 +11,6 @@ var bannedNameAllowed = map[string]bool{}
 // modules on a lower layer, and only their root package. Core packages sit
 // below layer 1 and are ordered by coreRows.
 var layers = map[string]int{
-	"parts":        1, // which parts of the app are on; every module asks it
 	"suggest":      1, // picks and orders rows and shelves
 	"metadata":     1,
 	"accounts":     2,
@@ -50,6 +49,7 @@ var coreRows = map[string]int{
 	"model":       2,
 	"webserver":   3,
 	"startup":     3,
+	"parts":       4,
 }
 
 // packageHome says where each package under internal/ ends up. A package

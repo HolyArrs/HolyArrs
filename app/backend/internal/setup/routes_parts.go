@@ -5,8 +5,8 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/parts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 )
 
 // PartHandlers are the part switches (3.7.6). They need the owner or an

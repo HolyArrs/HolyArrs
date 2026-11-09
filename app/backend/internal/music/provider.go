@@ -1,6 +1,6 @@
 package music
 
-import "github.com/HolyArrs/holyarrs/app/backend/internal/parts"
+import "github.com/HolyArrs/holyarrs/app/backend/internal/core/parts"
 
 // MusicOn reports whether music belongs in shared answers (live search,
 // New & Popular): the part is on, or safe mode keeps every part's answers.

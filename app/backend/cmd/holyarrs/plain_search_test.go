@@ -7,7 +7,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/parts"
 )
 
 // Search in plain words: the words are understood, the Library is filtered

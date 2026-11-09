@@ -16,12 +16,12 @@ import (
 )
 
 // Modules are the module packages allowed under internal/, besides core.
-var Modules = []string{"parts", "suggest", "importer", "library", "requests", "movies", "shows", "music", "sources", "downloads", "subtitles", "discover",
+var Modules = []string{"suggest", "importer", "library", "requests", "movies", "shows", "music", "sources", "downloads", "subtitles", "discover",
 	"mediafiles", "metadata", "mediaservers", "accounts", "alerts", "migrate", "arrapi", "ai", "backups",
 	"health", "updates", "setup"}
 
 // CoreParts are the packages allowed under internal/core/.
-var CoreParts = []string{"database", "webserver", "outbound", "jobs", "logs", "files", "secrets", "startup", "releasename", "model"}
+var CoreParts = []string{"database", "webserver", "outbound", "jobs", "logs", "files", "secrets", "startup", "releasename", "model", "parts"}
 
 // Until the root move, code still lives in cmd/, internal/ and web/app/src;
 // the guards look there as well as in app/, so they mean the same before

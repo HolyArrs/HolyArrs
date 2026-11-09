@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/parts"
 )
 
 func TestMain(m *testing.M) {

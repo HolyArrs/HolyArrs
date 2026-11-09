@@ -9,8 +9,8 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
 	setupmod "github.com/HolyArrs/holyarrs/app/backend/internal/setup"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/parts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/requests"
 )
 

@@ -21,8 +21,8 @@ import (
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/parts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 )
 
 // The memory runs (3.7.10, decision 0007 "Switches" and "Memory limit

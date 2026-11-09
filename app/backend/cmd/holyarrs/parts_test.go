@@ -16,7 +16,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/parts"
 )
 
 // runApp starts the app and returns its address, its parts Control and a
@@ -73,12 +73,12 @@ func TestEveryLoopAndJobKindHasAPart(t *testing.T) {
 	}
 	for _, k := range kinds {
 		if _, ok := parts.JobKinds()[k]; !ok {
-			t.Errorf("job kind %s belongs to no part in internal/parts/table.go", k)
+			t.Errorf("job kind %s belongs to no part in internal/core/parts/table.go", k)
 		}
 	}
 	for _, l := range loops {
 		if _, ok := parts.Loops()[l]; !ok {
-			t.Errorf("loop %s belongs to no part in internal/parts/table.go", l)
+			t.Errorf("loop %s belongs to no part in internal/core/parts/table.go", l)
 		}
 	}
 	for _, st := range reg.List() {
@@ -87,7 +87,7 @@ func TestEveryLoopAndJobKindHasAPart(t *testing.T) {
 			continue
 		}
 		if _, ok := parts.Loops()[name]; !ok {
-			t.Errorf("stage %s belongs to no part in internal/parts/table.go", name)
+			t.Errorf("stage %s belongs to no part in internal/core/parts/table.go", name)
 		}
 	}
 }

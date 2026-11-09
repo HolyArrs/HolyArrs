@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/parts"
 )
 
 // warmArtItems queues albums and artists (kind, MusicBrainz id) for the
