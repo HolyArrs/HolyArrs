@@ -85,7 +85,7 @@ jobs:
               exit 1
             fi
             cosign verify "$img@$DIGEST" \
-              --certificate-identity-regexp '^https://github\.com/[Cc]oder[Ll]uii/holyarrs/\.github/workflows/release\.yml@refs/tags/v' \
+              --certificate-identity-regexp '^https://github\.com/[Hh]oly[Aa]rrs/[Hh]oly[Aa]rrs/\.github/workflows/release\.yml@refs/heads/main$' \
               --certificate-oidc-issuer https://token.actions.githubusercontent.com >/dev/null
             echo "$img@$DIGEST: signature checked."
           done

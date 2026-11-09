@@ -3,13 +3,20 @@ name: release
 # This manual workflow remains inert: its only job is permanently skipped and
 # receives no package-write or OIDC permission.
 #
-# When switched on, a run from a version tag (v1.2.3 or v1.2.3-rc.1) pushes
+# When switched on, the maintainer starts it by hand on main and types the
+# version (1.2.3, or 1.2.3-rc.1 for a candidate). The run makes the v1.2.3 tag
+# itself when it creates the GitHub release; nobody tags by hand. It pushes
 # the same image to Docker Hub (the name users see) and a silent GHCR copy with only two tags:
 # the version, and beta when this version is newer than the current beta.
 # latest, stable, X and X.Y never move here: promote.yml moves them by
 # digest after the beta has been tried.
 on:
   workflow_dispatch:
+    inputs:
+      version:
+        description: Exact version, the same as the VERSION file (for example 1.0.0)
+        type: string
+        required: true
 
 permissions:
   contents: read
@@ -23,7 +30,7 @@ concurrency:
 jobs:
   image:
     if: ${{ false }}
-    runs-on: [self-hosted, Linux, X64, holyarrs-continuation]
+    runs-on: ubuntu-latest
     # The maintainer approves each run in the release environment.
     environment: release
     permissions:
@@ -36,24 +43,33 @@ jobs:
       IMAGE: ghcr.io/holyarrs/holyarrs
       HUB_IMAGE: docker.io/holyarrs/holyarrs
     steps:
-      - name: Run only from a version tag
-        env:
-          REF: ${{ github.ref }}
-          REF_NAME: ${{ github.ref_name }}
-        run: |
-          set -euo pipefail
-          case "$REF" in
-            refs/tags/v*) ;;
-            *) echo "A release runs only from a version tag (refs/tags/vX.Y.Z), not $REF."; exit 1 ;;
-          esac
-          if ! [[ "$REF_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-rc\.[0-9]+)?$ ]]; then
-            echo "The tag $REF_NAME is not vX.Y.Z or vX.Y.Z-rc.N."
-            exit 1
-          fi
-
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           persist-credentials: false
+
+      # Runs only on main, for the version in the VERSION file, and only when
+      # that version has no tag yet. The tag is made at the end, by the release.
+      - name: Check the version
+        id: ver
+        env:
+          REF: ${{ github.ref }}
+          WANT: ${{ inputs.version }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          [ "$REF" = "refs/heads/main" ] || { echo "A release runs only from main, not $REF."; exit 1; }
+          if ! [[ "$WANT" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-rc\.[0-9]+)?$ ]]; then
+            echo "The version $WANT is not X.Y.Z or X.Y.Z-rc.N."
+            exit 1
+          fi
+          file="$(tr -d '[:space:]' < VERSION)"
+          [ "$file" = "$WANT" ] || { echo "VERSION says $file, not $WANT."; exit 1; }
+          if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/v$WANT" >/dev/null 2>&1; then
+            echo "refs/tags/v$WANT already exists: a published version never changes, ship the next one."
+            exit 1
+          fi
+          echo "version=$WANT" >> "$GITHUB_OUTPUT"
+          echo "tag=v$WANT" >> "$GITHUB_OUTPUT"
 
       - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
         with:
@@ -87,7 +103,7 @@ jobs:
       - name: Move beta only to a newer version
         id: betacheck
         env:
-          REF_NAME: ${{ github.ref_name }}
+          REF_NAME: ${{ steps.ver.outputs.tag }}
         run: |
           set -euo pipefail
           newer() { # is $1 newer than $2? (1.0.0-rc.2 < 1.0.0-rc.10 < 1.0.0)
@@ -125,7 +141,7 @@ jobs:
           flavor: |
             latest=false
           tags: |
-            type=semver,pattern={{version}}
+            type=semver,pattern={{version}},value=${{ steps.ver.outputs.tag }}
             type=raw,value=beta,enable=${{ steps.betacheck.outputs.move == 'true' }}
 
       - name: Push only the version tag and beta
@@ -154,7 +170,7 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          build-args: VERSION=${{ github.ref_name }}
+          build-args: VERSION=${{ steps.ver.outputs.tag }}
           sbom: true
           provenance: mode=max
 
@@ -206,7 +222,7 @@ jobs:
           node-version: "24"
       - name: Package the release files
         env:
-          REF_NAME: ${{ github.ref_name }}
+          REF_NAME: ${{ steps.ver.outputs.tag }}
         run: |
           set -euo pipefail
           npm ci --prefix app/frontend
@@ -215,17 +231,18 @@ jobs:
             --output "$RUNNER_TEMP/assets" --web-node-modules app/frontend/node_modules \
             --module-cache "$(go env GOMODCACHE)"
 
-      # The notes are this version's CHANGELOG.md section.
+      # The notes are this version's CHANGELOG.md section. This step makes
+      # the vX.Y.Z tag on the commit that was built.
       - name: Create the GitHub release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          REF_NAME: ${{ github.ref_name }}
+          REF_NAME: ${{ steps.ver.outputs.tag }}
         run: |
           set -euo pipefail
           python3 deploy/release/changelog_notes.py "$REF_NAME" > "$RUNNER_TEMP/notes.md"
           pre=""
           case "$REF_NAME" in *-*) pre="--prerelease" ;; esac
-          gh release create "$REF_NAME" --verify-tag $pre --title "${REF_NAME#v}" \
+          gh release create "$REF_NAME" --target "$GITHUB_SHA" $pre --title "${REF_NAME#v}" \
             --notes-file "$RUNNER_TEMP/notes.md" "$RUNNER_TEMP"/assets/*
 
       # promote.yml takes this digest to move the stable tags.

@@ -50,7 +50,7 @@ Publishing is off until the maintainer starts a release. Do not tag, publish or 
 
    You should see the first-run wizard.
 
-6. Hand the tag to the maintainer. A release starts from a version tag on the main branch.
+6. Hand the version to the maintainer. A release starts by hand on the main branch; the run makes the tag.
 
 ## Choices
 
@@ -58,10 +58,10 @@ Publishing is off until the maintainer starts a release. Do not tag, publish or 
 
 | Thing | Name |
 |---|---|
-| Git tag | `v1.0.0`, or `v1.0.0-rc.1` for a candidate |
+| Git tag (made by the release run) | `v1.0.0`, or `v1.0.0-rc.1` for a candidate |
 | Image tag and notes `version` | `1.0.0` |
 
-The workflow refuses any other tag shape.
+The workflow refuses any other version shape, a version that differs from the `VERSION` file, and a version that already has a tag.
 
 ### Beta first, stable later
 
@@ -122,7 +122,7 @@ Body order: theme, Highlights, places (Requests, Library, Downloads, Indexers, A
 
 <details class="ha-more"><summary>The image workflow</summary>
 
-The `release` workflow runs from a version tag only, and publishing is switched off until the maintainer authorizes a release. When on, it:
+The `release` workflow runs from main only, for the version in `VERSION`, and publishing is switched off until the maintainer authorizes a release. When on, it:
 
 1. Runs `go test ./...` before building.
 2. Builds one image for `linux/amd64`, `linux/arm64` and `linux/arm/v7`.

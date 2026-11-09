@@ -109,7 +109,9 @@ class ReleaseBuild(unittest.TestCase):
 
     def test_ref_and_tag_guards(self):
         scripts = "\n".join(run_blocks(self.text))
-        self.assertIn("refs/tags/", scripts, "no ref guard: the build must run from a version tag")
+        self.assertIn("refs/heads/main", scripts, "no ref guard: the build must run from main")
+        self.assertIn("refs/tags/", scripts, "no tag guard: a version that already has a tag must stop the run")
+        self.assertIn("VERSION", scripts, "the typed version must match the VERSION file")
         for word in ("latest", "stable"):
             self.assertIn(word, scripts, "the tag guard must fail on " + word)
 
