@@ -133,7 +133,7 @@ Setup = [
 Install = [
   "Step-by-step install guide. (#73)",
   "Runs under /holyarrs behind your proxy. (#74)",
-  "15.1 MB download, about 52x smaller than the six apps. (#84)",
+  "14.9 MB download, about 48x smaller than the six apps. (#84)",
 ]
 Migration = [
   "Your other apps keep working through the arr API. (#79)",
