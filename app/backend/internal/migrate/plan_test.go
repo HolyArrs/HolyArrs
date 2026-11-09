@@ -483,7 +483,7 @@ func TestPlanImportListLines(t *testing.T) {
 }
 
 // TestPlanTagScope: a moved Source, Downloader or Alert that had tags says
-// it now serves every title of its kind and lists the tags; an untagged
+// it serves every title of its kind and lists the tags; an untagged
 // one says nothing. Delay rules name their scope.
 func TestPlanTagScope(t *testing.T) {
 	s := &Snapshot{Kind: Radarr,

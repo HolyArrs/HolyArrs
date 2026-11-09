@@ -1,15 +1,3 @@
-// Package migrate brings an owner's setup over from the apps they are
-// leaving (Radarr, Sonarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr,
-// qBittorrent, SABnzbd). It reads each app into a Snapshot, plain data with
-// no secrets kept in the main database, plans the move from the Snapshots and
-// runs it as a job that can be undone. The owner's secrets file and the keys
-// kept for "Read again" live in the secretsfile sub-package.
-//
-// A reader works from the app's API (an address and a key the owner types
-// on the move screen, kept only in memory) or from a backup: a zip, a
-// folder or a single database or settings file. Backups are opened on a
-// copy in a temporary folder, read only, with size limits; zips are
-// checked like subtitle zips (no entry may leave the archive, no bombs).
 package migrate
 
 import (
