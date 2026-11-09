@@ -82,9 +82,6 @@ func TestImportSecretsRoutes(t *testing.T) {
 	if _, out = keyCall(t, r.srv.URL, k.Key, "POST", "/api/v1/settings/import-secrets", string(body)); !strings.Contains(out, `{"item":"tvdb","result":"unchanged"}`) {
 		t.Fatalf("again %s", out)
 	}
-	if b := r.owner.call("GET", "/api/v1/settings/tvdb-key", "", 200); strings.Contains(string(b), "your-tvdb") {
-		t.Fatalf("tvdb answered %s", b)
-	}
 
 	// The Move screen sees the saved key without the key, and reads with
 	// it as often as it likes.

@@ -1,6 +1,5 @@
 // Plain-words labels, warnings and paging for the Releases list and search status lines.
 import type { Reason, ReleaseView } from '../core/types.ts';
-import type { SearchView } from '../core/types.ts';
 
 export interface Pager {
 	from: number;
@@ -99,42 +98,6 @@ export function pager(total: number, limit: number, offset: number): Pager {
 	const from = Math.min(offset, total - 1) + 1;
 	const to = Math.min(offset + limit, total);
 	return { from, to, prev: offset > 0 ? Math.max(0, offset - limit) : null, next: to < total ? offset + limit : null };
-}
-
-// One readable line per search: what it looks for, where it is, and how it ended.
-export function searchLine(s: SearchView): string {
-	if (s.kind === 'feed_check') return s.state === 'done' ? 'Feeds checked' : 'Checking the feeds of every Source';
-	if (s.kind === 'search_missing')
-		return s.state === 'done' ? 'Searches queued for everything missing' : 'Searching for every movie, episode and album still looking';
-	const name = s.title_name
-		? s.album
-			? `${s.title_name} – ${s.album}`
-			: `${s.title_name}${s.episode ? ` ${s.episode}` : ''}`
-		: s.kind === 'search_season'
-			? 'a season'
-			: s.kind === 'search_album'
-				? 'an album'
-				: 'a movie';
-	const what = `${name}${s.title_name && s.version && s.version !== 'Main' ? ` (${s.version})` : ''}`;
-	if (s.outcome === 'episodes' && s.state === 'done') {
-		return s.found ? `${what}: found ${s.found} ${s.found === 1 ? 'Release' : 'Releases'}, searching the rest episode by episode` : `${what}: searching episode by episode`;
-	}
-	if (s.outcome === 'album' && s.state === 'done') return `${what}: searching the whole album`;
-	if (s.state === 'queued') return `Waiting to search for ${what}`;
-	if (s.state === 'running') return `Searching for ${what}${s.note ? `: ${s.note}` : ''}`;
-	if (s.state === 'failed') return `Search for ${what} failed${s.error ? `: ${s.error}` : ''}`;
-	const n = `${s.found} ${s.found === 1 ? 'Release' : 'Releases'}`;
-	const refused = s.refused ? `, ${s.refused} turned away` : '';
-	switch (s.outcome) {
-		case 'chosen':
-			return `${what}: found ${n}${refused}, chose ${s.picked || 'one'}`;
-		case 'held':
-			return `${what}: found ${n}${refused}, holding ${s.picked || 'one'}`;
-		case 'shown':
-			return `${what}: found ${n}${refused}, ready to choose from`;
-		default:
-			return `${what}: found ${n}${refused}, none passed the Pick rules`;
-	}
 }
 
 // 0 turns feed checks off; otherwise 10 to 120 minutes.

@@ -22,7 +22,6 @@ import (
 // Stage 4.1: the Downloads screen and Needs a decision.
 func (a *Web) downloadsRoutes(m *http.ServeMux) {
 	m.HandleFunc("GET /api/v1/downloads/view", a.DownloadsView)
-	m.HandleFunc("GET /api/v1/downloads/speeds", a.Speeds.Serve)
 	m.HandleFunc("POST /api/v1/downloads/{id}/remove", a.removeDownload)
 	m.HandleFunc("GET /api/v1/needs-decision", a.needsDecision)
 	a.downloadControlRoutes(m)

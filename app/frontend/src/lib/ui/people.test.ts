@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { actionableSelection, byDecade, normalizeSelection, personChips, runReviewed } from './people.ts';
+import { byDecade, normalizeSelection, personChips, runReviewed } from './people.ts';
 
 describe('people filmography actions', () => {
 	it('keeps stable unique TMDB ids in review order', () => {
@@ -26,14 +26,6 @@ describe('people filmography actions', () => {
 		expect(ask).toEqual([{ tmdb_id: '103', ok: true }]);
 	});
 
-	it('keeps stale owned, Never-add and open-ask movies out of submission', () => {
-		expect(actionableSelection([
-			{ name: 'Owned', year: 2020, overview: '', ids: { tmdb: '1' }, title_id: 8 },
-			{ name: 'Never', year: 2021, overview: '', ids: { tmdb: '2' }, never_add: true },
-			{ name: 'Asked', year: 2022, overview: '', ids: { tmdb: '3' }, ask: { id: 4, state: 'asked', state_label: 'Asked', mine: true, people: 1 } },
-			{ name: 'Missing', year: 2023, overview: '', ids: { tmdb: '4' } }
-		])).toEqual(['4']);
-	});
 });
 
 describe('person page helpers', () => {

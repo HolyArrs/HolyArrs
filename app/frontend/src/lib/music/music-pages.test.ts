@@ -1,4 +1,4 @@
-import { albumHref, artistHref, artistKind, countryName, initialsOf, coverFor, haveLine, kindWord, length, owned, shelves, withCover, type PageAlbum } from './music-pages.ts';
+import { albumHref, artistHref, artistKind, countryName, coverFor, kindWord, length, owned, shelves, withCover, type PageAlbum } from './music-pages.ts';
 import { describe, expect, it } from 'vitest';
 
 const al = (over: Partial<PageAlbum>): PageAlbum => ({ mbid: 'm', name: 'N', type: 'album', secondary_types: [], shelf: 'albums', image: '', ...over });
@@ -47,7 +47,6 @@ describe('music pages', () => {
 		expect(length(4320000, true)).toBe('1 hr 12 min');
 		expect(kindWord({ type: 'ep', secondary_types: [] })).toBe('EP');
 		expect(kindWord({ type: 'album', secondary_types: ['live'] })).toBe('Live');
-		expect(haveLine(3, 9)).toBe('On HolyArrs: 3 of 9 releases');
 	});
 });
 
@@ -63,10 +62,5 @@ describe('artist facts', () => {
 		expect(countryName('gb')).toBe('United Kingdom');
 		expect(countryName('XW')).not.toBe('');
 		expect(countryName('')).toBe('');
-	});
-	it('makes initials for a round photo with no picture', () => {
-		expect(initialsOf('Drake')).toBe('D');
-		expect(initialsOf('The Weeknd')).toBe('TW');
-		expect(initialsOf('')).toBe('');
 	});
 });

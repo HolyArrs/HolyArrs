@@ -227,10 +227,6 @@ export function appsFor(r: Row): AIApp[] {
 	return [r.app, ...APP_DATA.filter((d) => d.page === r.page && d.slug !== r.id).map(dataApp)];
 }
 
-export function rowFor(slug: string | null | undefined): Row | undefined {
-	return pickFor(slug)?.row;
-}
-
 // Without sign-in, a command in the cell takes the app's key version so it sends the key.
 export function whereText(r: Row, url: string, signIn = true): string {
 	if (!signIn && r.where.includes('<address>')) {

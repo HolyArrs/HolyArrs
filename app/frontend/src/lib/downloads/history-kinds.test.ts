@@ -1,5 +1,4 @@
-import { burstLine, byWhom, dayLabel, eventsQuery, headVerb, tierOf, titleHref, verbOf } from './history-kinds.ts';
-import { groupDownloads } from './history.ts';
+import { byWhom, dayLabel, eventsQuery, tierOf, titleHref, verbOf } from './history-kinds.ts';
 import { describe, expect, it } from 'vitest';
 import type { EventRecord } from '../core/types.ts';
 
@@ -39,16 +38,6 @@ describe('words', () => {
 		expect(verbOf('download_failed')).toMatchObject({ word: 'Failed', tone: 'fail' });
 		expect(verbOf('title_removed').word).toBe('Deleted');
 		expect(verbOf('subtitle_saved').word).toBe('Subtitles');
-	});
-	it('says how far a folded download got', () => {
-		const rows = groupDownloads([
-			ev('download_failed', '2026-10-21T19:05:03Z', { DownloadID: 7 }),
-			ev('download_sent', '2026-10-21T19:05:02Z', { DownloadID: 7 }),
-			ev('file_replaced', '2026-10-21T19:05:01Z', { DownloadID: 8 }),
-			ev('import_done', '2026-10-21T19:05:00Z', { DownloadID: 8 })
-		]);
-		expect(headVerb(rows[0]).word).toBe('Download failed');
-		expect(headVerb(rows[1]).word).toBe('Upgraded');
 	});
 	it('says who did it', () => {
 		expect(byWhom({ Actor: { kind: 'user', id: 3 }, Data: { asked_by: 'Maya' } })).toBe('Maya');

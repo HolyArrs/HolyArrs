@@ -1,4 +1,4 @@
-import { barTone, facts, historyStatus, historyTotals, inHistory, matches, moving, sizeLine, totals } from './sections.ts';
+import { barTone, facts, historyStatus, historyTotals, inHistory, matches, moving, totals } from './sections.ts';
 import { describe, expect, it } from 'vitest';
 import type { DownloadRow } from '../core/types.ts';
 
@@ -14,10 +14,6 @@ describe('sections', () => {
 	});
 	it('colours bars by state', () => {
 		expect(['downloading', 'waiting', 'paused', 'stalled', 'needs_a_decision'].map((p) => barTone(row({ phase: p })))).toEqual(['go', 'queued', 'held', 'held', 'bad']);
-	});
-	it('writes the size in plain units', () => {
-		expect(sizeLine(row({ size: 3e9, progress: 0.1843 }))).toBe('553 MB / 3 GB');
-		expect(sizeLine(row({ size: 0 }))).toBe('');
 	});
 });
 

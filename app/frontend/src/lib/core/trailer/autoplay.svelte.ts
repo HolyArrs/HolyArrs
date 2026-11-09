@@ -94,10 +94,6 @@ export function setAutoplaySetting(on: boolean) {
 	state.loaded = true;
 }
 
-export function uiAutoplaySetting(): boolean {
-	return state.autoplay;
-}
-
 export function autoplayHere(): boolean {
 	return state.loaded && mayAutoplay({ setting: state.autoplay, kid: session.kid, pref: autoplayPref(), ...browserConditions() });
 }

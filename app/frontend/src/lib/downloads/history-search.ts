@@ -252,8 +252,6 @@ export function stepVerb(row: HistoryRow, tag: Verb): Verb {
 	const s = rowStep(row, tag.word);
 	return { word: s.label, icon: s.icon, tone: s.failed ? 'fail' : tag.tone };
 }
-/** One Event's step, for the details list of every step. */
-export const eventStep = (e: EventRecord, tag: Verb): Verb => stepVerb({ key: String(e.ID), head: e, events: [e], steps: [] }, tag);
 
 /** The Filter's step a kind belongs to (key and word), or undefined for routine work. */
 export function filterStep(kind: string): { key: string; label: string } | undefined {

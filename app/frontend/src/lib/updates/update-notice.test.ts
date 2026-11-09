@@ -1,18 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { IMAGE, PROJECT_REPO, goBackBackup, imageTag, plainVersion, releaseLink, whatsNew, updatePrivacy, updateWords } from './update-notice.ts';
+import { IMAGE, PROJECT_REPO, goBackBackup, imageTag, plainVersion, releaseLink, whatsNew, updatePrivacy } from './update-notice.ts';
 
 const base = { on: true, feed: 'f', newer: false, version: 'v1.0.0' };
-
-describe('updateWords', () => {
-	it('shows a plain sentence for each update state', () => {
-		expect(updateWords({ ...base, on: false })).toContain('off');
-		expect(updateWords(base)).toContain('Not checked yet');
-		expect(updateWords({ ...base, checked_at: 'x', newer: true, latest: 'v2.0.0' })).toBe('HolyArrs 2.0.0 is out, newer than this one.');
-		expect(updateWords({ ...base, checked_at: 'x', problem: 'the release feed did not answer' })).toContain('did not work');
-		expect(updateWords({ ...base, checked_at: 'x', no_release: true })).toBe('No HolyArrs release is published yet.');
-		expect(updateWords({ ...base, checked_at: 'x' })).toBe('This is the newest version.');
-	});
-});
 
 describe('releaseLink', () => {
 	it('opens a release link only when it is a project release page', () => {

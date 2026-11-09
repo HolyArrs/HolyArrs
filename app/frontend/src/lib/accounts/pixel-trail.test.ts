@@ -1,4 +1,4 @@
-import { blockMask, blockOrder, buttonGrid, columnsForWidth, decay, focusPattern, pixelFor, siteCell, stampPath, FLOOR } from './pixel-trail.ts';
+import { blockMask, blockOrder, buttonGrid, columnsForWidth, decay, siteCell, stampPath, FLOOR } from './pixel-trail.ts';
 import { describe, expect, it } from 'vitest';
 
 describe('pixelTrail', () => {
@@ -8,8 +8,6 @@ describe('pixelTrail', () => {
 		expect(columnsForWidth(800)).toBe(22);
 		expect(columnsForWidth(390)).toBe(12);
 		expect(siteCell(1440)).toBe(40);
-		expect(pixelFor(20)).toBe(3);
-		expect(pixelFor(53)).toBe(5);
 	});
 
 	it('sizes a button grid in whole columns', () => {
@@ -43,13 +41,6 @@ describe('pixelTrail', () => {
 		for (let i = 0; i < 200 && on; i++) on = decay(g, 0.05);
 		expect(on).toBe(false);
 		expect(g.energy.every((v) => v === 0 || v >= FLOOR)).toBe(true);
-	});
-
-	it('focus pattern is static and dim', () => {
-		const g = buttonGrid(260, 52);
-		focusPattern(g);
-		expect(Math.max(...g.energy)).toBeLessThan(0.3);
-		expect(g.energy.some((v) => v > 0)).toBe(true);
 	});
 
 	it('block masks reveal in a stable order', () => {

@@ -205,31 +205,6 @@ export function manyWords(kind: string | undefined): { one: string; many: string
 	return null;
 }
 
-/** Where one episode of a download is. */
-export function episodeStateWords(state: string): { text: string; tone: Tone } {
-	switch (state) {
-		case 'in_library':
-		case 'better_wanted':
-			return { text: 'In the Library', tone: 'ok' };
-		case 'needs_a_decision':
-			return { text: 'Review', tone: 'fail' };
-		case 'importing':
-			return { text: 'Importing', tone: 'wait' };
-		case 'downloading':
-		case 'chosen':
-			return { text: 'Downloading', tone: 'wait' };
-		case 'stalled':
-			return { text: 'Stalled', tone: 'fail' };
-		case 'failed':
-		case 'rejected':
-		case 'wanted':
-		case 'searching':
-		case 'held':
-			return { text: 'Looking for another copy', tone: 'wait' };
-	}
-	return { text: state.replaceAll('_', ' '), tone: 'idle' };
-}
-
 /** rowName names a Downloads row: the movie with its year, the show, or
  *  artist and album joined by an en dash, then the year in brackets. */
 export function rowName(r: Pick<DownloadRow, 'title' | 'year' | 'name' | 'kind' | 'album'>): string {

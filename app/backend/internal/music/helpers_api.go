@@ -16,8 +16,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
-// Small helpers the moved api music files share with api (copied, not
-// moved: api keeps its own for the files still there).
+// Small helpers the Music files share (the program keeps its own copies).
 
 const aboveLimit = metadata.AboveLimit
 

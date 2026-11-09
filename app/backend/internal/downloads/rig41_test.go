@@ -113,33 +113,11 @@ func seed41(t *testing.T, slotState mediafiles.SlotState, dlState string) *dl41 
 	return x
 }
 
-func (x *dl41) slotState(t *testing.T) string {
-	t.Helper()
-	var st string
-	_ = x.s.Read().QueryRow("SELECT state FROM slots WHERE id = ?", x.slotID).Scan(&st)
-	return st
-}
-
-func (x *dl41) removed() []string {
-	x.mu.Lock()
-	defer x.mu.Unlock()
-	return append([]string(nil), x.deleted...)
-}
-
 func exec41(t *testing.T, s *database.Store, q string, args ...any) {
 	t.Helper()
 	if err := s.Write(context.Background(), func(tx *sql.Tx) error { _, err := tx.Exec(q, args...); return err }); err != nil {
 		t.Fatal(err)
 	}
-}
-
-func count(t *testing.T, st *database.Store, q string, args ...any) int {
-	t.Helper()
-	var n int
-	if err := st.Read().QueryRow(q, args...).Scan(&n); err != nil {
-		t.Fatal(err)
-	}
-	return n
 }
 
 // feedStore does one background read by hand: every torrent Downloader's

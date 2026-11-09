@@ -13,8 +13,8 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/requests"
 )
 
-// Wrappers over the Music code moved to internal/music, so the api files
-// still here call it as before. They go when their callers move too.
+// Wrappers over the Music code in internal/music, so the files here
+// call it in one short form.
 
 // mh is the Music handlers over this API's services, built once.
 func (a *handlers) mh() *music.Handlers {

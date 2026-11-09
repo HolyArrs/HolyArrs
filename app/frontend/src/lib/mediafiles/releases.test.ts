@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { chooseWarnings, facts, feedMinutesOk, keyReasons, listedName, pager, searchLine, verdict, verdictTone } from './releases.ts';
+import { chooseWarnings, facts, feedMinutesOk, keyReasons, listedName, pager, verdict, verdictTone } from './releases.ts';
 import type { ReleaseView } from '../core/types.ts';
 import type { SearchView } from '../core/types.ts';
 
@@ -79,25 +79,6 @@ describe('search lines', () => {
 	const s = (over: Partial<SearchView>): SearchView => ({
 		job_id: 1, kind: 'search_slot', state: 'done', by_hand: false, only_show: false, title_name: 'Dune', version: 'Main', progress: 0, found: 3, refused: 1, ...over
 	});
-	it('says what runs and what was found', () => {
-		expect(searchLine(s({ state: 'running', note: 'searching Lab' }))).toBe('Searching for Dune: searching Lab');
-		expect(searchLine(s({ state: 'queued', version: '4K' }))).toBe('Waiting to search for Dune (4K)');
-		expect(searchLine(s({ outcome: 'chosen', picked: 'Dune.1080p' }))).toBe('Dune: found 3 Releases, 1 turned away, chose Dune.1080p');
-		expect(searchLine(s({ outcome: 'held', picked: 'Dune.1080p', refused: 0, found: 1 }))).toBe('Dune: found 1 Release, holding Dune.1080p');
-		expect(searchLine(s({ outcome: 'shown' }))).toContain('ready to choose from');
-		expect(searchLine(s({ outcome: 'none' }))).toContain('none passed the Pick rules');
-		expect(searchLine(s({ state: 'failed', error: 'no Source answered' }))).toBe('Search for Dune failed: no Source answered');
-		expect(searchLine(s({ kind: 'feed_check', state: 'running' }))).toBe('Checking the feeds of every Source');
-		expect(searchLine(s({ kind: 'search_missing', state: 'running' }))).toBe('Searching for every movie, episode and album still looking');
-	});
-	it('names shows, episodes and seasons', () => {
-		const ep = { title_name: 'Copper Valley', episode: 'S01E02' };
-		expect(searchLine(s({ ...ep, state: 'running' }))).toBe('Searching for Copper Valley S01E02');
-		expect(searchLine(s({ ...ep, outcome: 'chosen', picked: 'Copper.Valley.S01E02.1080p' }))).toBe('Copper Valley S01E02: found 3 Releases, 1 turned away, chose Copper.Valley.S01E02.1080p');
-		expect(searchLine(s({ kind: 'search_season', title_name: 'Copper Valley', episode: 'S01', state: 'queued', version: '4K' }))).toBe('Waiting to search for Copper Valley S01 (4K)');
-		expect(searchLine(s({ kind: 'search_season', title_name: 'Copper Valley', episode: 'S02', outcome: 'episodes', found: 0 }))).toBe('Copper Valley S02: searching episode by episode');
-		expect(searchLine(s({ kind: 'search_season', title_name: 'Copper Valley', episode: 'S02', outcome: 'episodes', found: 2 }))).toContain('searching the rest episode by episode');
-	});
 	it('checks the feed interval', () => {
 		expect([0, 10, 15, 120].every(feedMinutesOk)).toBe(true);
 		expect([5, 121, -1, 12.5].some(feedMinutesOk)).toBe(false);
@@ -111,9 +92,6 @@ describe('albums', () => {
 			job_id: 1, kind: 'search_album', state: 'done', by_hand: true, only_show: false, title_name: 'Velvet Cartography', album: 'Low Tide Atlas',
 			version: 'Main', progress: 1, found: 2, refused: 1, outcome: 'chosen', picked: 'VC - LTA [FLAC]'
 		};
-		expect(searchLine(s)).toBe('Velvet Cartography – Low Tide Atlas: found 2 Releases, 1 turned away, chose VC - LTA [FLAC]');
-		expect(searchLine({ ...s, kind: 'search_slot', outcome: 'album' })).toBe('Velvet Cartography – Low Tide Atlas: searching the whole album');
-		expect(searchLine({ ...s, title_name: undefined, album: undefined, state: 'queued' })).toBe('Waiting to search for an album');
 	});
 	it('warns before choosing an album Release', () => {
 		const w = chooseWarnings(rel({ gate_skipped: true, slot_ids: [1, 2, 3], album: 'Low Tide Atlas' }), undefined, true, true);

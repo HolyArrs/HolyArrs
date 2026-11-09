@@ -21,39 +21,7 @@ export interface RowWords {
 	quiet: boolean;
 }
 
-export const MOVIE_LOOKS = [
-	{ value: 1, label: 'Genre · length' },
-	{ value: 2, label: 'Director' },
-	{ value: 3, label: 'Where it is out' },
-	{ value: 4, label: 'Star · genre' },
-	{ value: 5, label: 'Part of a set' },
-	{ value: 6, label: 'Director · length' }
-];
-
-export const MUSIC_LOOKS = [
-	{ value: 1, label: 'Kind · songs' },
-	{ value: 2, label: 'Kind · length' },
-	{ value: 3, label: 'Kind · label' },
-	{ value: 4, label: 'Genre · songs' },
-	{ value: 5, label: 'Which release' }
-];
-
 export const DEFAULT_LOOK: Omit<CaptionLook, 'region'> = { movie: 1, music: 5, channels: 'known' };
-
-/** Reads the choices from the address, then from what was kept, else the defaults. */
-export function lookFrom(q: Pick<URLSearchParams, 'get'>, kept: Partial<CaptionLook> | null, region: string): CaptionLook {
-	const num = (v: string | null, max: number) => {
-		const n = Number(v);
-		return v && Number.isInteger(n) && n >= 1 && n <= max ? n : null;
-	};
-	const ch = (v: string | null | undefined): Channels | null => (v === 'all' || v === 'known' ? v : null);
-	return {
-		movie: num(q.get('movie'), 6) ?? num(String(kept?.movie ?? ''), 6) ?? DEFAULT_LOOK.movie,
-		music: num(q.get('music'), 5) ?? num(String(kept?.music ?? ''), 5) ?? DEFAULT_LOOK.music,
-		channels: ch(q.get('channels')) ?? ch(kept?.channels) ?? DEFAULT_LOOK.channels,
-		region
-	};
-}
 
 /** Names that only repeat the number or the day ("Episode 8827", "19/10/2026", "TBA") say nothing. */
 export function fakeEpisodeName(name?: string): boolean {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { realTime, buildRows, groupLine, groupRows, headline, jobTone, linkId, everyKind, needsAttention } from './rows.ts';
+import { realTime, buildRows, groupRows, headline, jobTone, linkId, everyKind, needsAttention } from './rows.ts';
 import { nextRun, type ScheduleRow } from './schedules.ts';
 import type { StageState } from './types.ts';
 
@@ -85,7 +85,6 @@ describe('status rows', () => {
 
 	it('writes the summary lines', () => {
 		const rows = buildRows({ states: [link('source', 1, 'running'), link('source', 2, 'running'), link('source', 3, 'failed'), link('source', 4, 'off')] });
-		expect(groupLine(groupRows(rows)[0])).toBe('2 of 4 working · 1 needs attention · 1 off');
 		expect(headline(rows)).toBe('1 check needs attention');
 		expect(headline(buildRows({ states: [link('source', 1, 'running')] }))).toBe('Everything is working');
 		expect(headline([])).toBe('No sources or downloaders added yet');

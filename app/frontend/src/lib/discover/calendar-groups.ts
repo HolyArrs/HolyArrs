@@ -1,5 +1,5 @@
 // The calendar's words and groupings: card badges, facts lines, day names, month dividers and the cards a busy day folds into.
-import { byDay, entryDay, entryTime, episodeCode, kindWord } from './calendar.ts';
+import { byDay, entryDay, kindWord } from './calendar.ts';
 import type { CalendarEntry } from '../core/types.ts';
 
 /** One card's dates: one, or several of one show (or one movie) on the same day. */
@@ -31,11 +31,6 @@ export function dayChip(day: string, today: string): string {
 	return `${d.toLocaleDateString(undefined, { weekday: 'short' })} ${d.getDate()}`;
 }
 
-/** A generic episode name ("Episode 4", "TBA") says nothing more than the number. */
-export function plainEpisodeName(name?: string): boolean {
-	return !name || /^(episode\s*\d+|tba|tbd)$/i.test(name.trim());
-}
-
 const albumWord = (t?: string) => {
 	const k = (t ?? '').toLowerCase();
 	return k === 'single' ? 'single' : k === 'ep' ? 'EP' : 'album';
@@ -57,32 +52,8 @@ export function entryTitle(e: CalendarEntry): string {
 	return e.kind === 'album' ? (e.album ?? e.name) : e.name;
 }
 
-/** The line under the name: the episode's own name, the artist, or the movie's year. */
-export function entryLine(e: CalendarEntry): string {
-	if (e.kind === 'episode') return plainEpisodeName(e.episode_name) ? '' : (e.episode_name ?? '');
-	if (e.kind === 'album') return e.name;
-	return e.year ? String(e.year) : '';
-}
-
-/** The small facts line: "S23E03 · 20:00 · ABC", "EP · 6 tracks", "Movie release". */
-export function entryFacts(e: CalendarEntry): string {
-	if (e.kind === 'episode') return [episodeCode(e), entryTime(e), e.network].filter(Boolean).join(' · ');
-	if (e.kind === 'album') return [albumWord(e.album_type) === 'EP' ? 'EP' : albumWord(e.album_type).replace(/^./, (c) => c.toUpperCase()), e.tracks ? `${e.tracks} tracks` : ''].filter(Boolean).join(' · ');
-	return kindWord[e.kind];
-}
-
 const movieKinds = new Set<CalendarEntry['kind']>(['cinema', 'digital', 'physical']);
 const shortKind: Record<string, string> = { cinema: 'Cinemas', digital: 'Digital', physical: 'Disc' };
-
-/** A movie's other dates among the loaded ones: "Digital 3 Mar · Disc 2 Apr". */
-export function movieDates(e: CalendarEntry, all: CalendarEntry[]): string {
-	if (!movieKinds.has(e.kind)) return '';
-	return all
-		.filter((x) => x.title_id === e.title_id && x.kind !== e.kind && movieKinds.has(x.kind))
-		.sort((a, b) => (entryDay(a) < entryDay(b) ? -1 : 1))
-		.map((x) => `${shortKind[x.kind]} ${at(entryDay(x)).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}`)
-		.join(' · ');
-}
 
 /** Splits day groups by month for dividers ("November 2026"). */
 export function monthGroups(entries: CalendarEntry[]): { month: string; name: string; days: { day: string; items: CalendarEntry[] }[] }[] {
@@ -127,12 +98,3 @@ export function groupTag(g: CalGroup): string {
 	return words.length > 1 ? `${words.slice(0, -1).join(', ')} and ${words.at(-1)}` : words[0];
 }
 
-/** A card's facts line; several episodes show their span joined by an en dash, then time and network. */
-export function groupFacts(g: CalGroup): string {
-	if (g.entries.length === 1 || g.lead.kind !== 'episode') return entryFacts(g.lead);
-	const eps = [...g.entries].sort((a, b) => (a.season ?? 0) - (b.season ?? 0) || (a.episode ?? 0) - (b.episode ?? 0));
-	const first = eps[0];
-	const last = eps.at(-1)!;
-	const span = first.season === last.season ? `${episodeCode(first)}–E${p2(last.episode)}` : `${episodeCode(first)}–${episodeCode(last)}`;
-	return [span, entryTime(first), first.network].filter(Boolean).join(' · ');
-}

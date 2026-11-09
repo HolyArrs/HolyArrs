@@ -1,5 +1,5 @@
 import { groupDates } from './calendar-groups.ts';
-import { cardLines, rowWords, channelShown, clockTime, episodeWords, fakeEpisodeName, lookFrom, movieCaption, musicCaption, ordinal, runLength, seriesLine, whereOut, type CaptionLook } from './calendar-captions.ts';
+import { cardLines, rowWords, channelShown, clockTime, episodeWords, fakeEpisodeName, movieCaption, musicCaption, ordinal, runLength, seriesLine, whereOut, type CaptionLook } from './calendar-captions.ts';
 import { describe, expect, it } from 'vitest';
 import type { CalendarEntry } from '../core/types.ts';
 
@@ -99,9 +99,3 @@ describe('music captions', () => {
 	});
 });
 
-describe('the choices', () => {
-	it('reads the address, then what was kept, else the defaults', () => {
-		expect(lookFrom(new URLSearchParams('movie=2&music=9&channels=known'), { music: 4 }, 'US')).toEqual({ movie: 2, music: 4, channels: 'known', region: 'US' });
-		expect(lookFrom(new URLSearchParams(''), null, 'global')).toEqual({ movie: 1, music: 5, channels: 'known', region: 'global' });
-	});
-});

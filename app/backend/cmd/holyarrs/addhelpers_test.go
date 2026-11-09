@@ -1,3 +1,3 @@
 package main
 
-// Shared by the calendar tests; the title-defaults tests moved to cmd/holyarrs.
+// Shared by the calendar and title-defaults tests.

@@ -90,7 +90,6 @@ var RoutePerms = map[string]webserver.Perm{
 	"GET /api/v1/library/search":                           webserver.NeedSignedIn,
 	"GET /api/v1/search/suggest":                           webserver.NeedSignedIn,
 	"GET /api/v1/search":                                   webserver.NeedSignedIn,
-	"GET /api/v1/library-summary":                          webserver.NeedSignedIn,
 	"GET /api/v1/home":                                     webserver.NeedSignedIn,
 	"GET /api/v1/titles/{id}":                              webserver.NeedSignedIn,
 	"GET /api/v1/titles/{id}/search-outcome":               webserver.NeedSignedIn,
@@ -274,7 +273,6 @@ var RoutePerms = map[string]webserver.Perm{
 	"POST /api/v1/holding/restore":              webserver.PermManageLibrary,
 	"POST /api/v1/library-folders/{id}/scan":    webserver.PermManageLibrary,
 	"POST /api/v1/library-folders/{id}/adopt":   webserver.PermManageLibrary,
-	"POST /api/v1/library/rescan":               webserver.PermManageLibrary,
 	"POST /api/v1/manual-import/scan":           webserver.PermSettings,
 	"POST /api/v1/manual-import":                webserver.PermSettings,
 	"GET /api/v1/settings/import-folders":       webserver.PermSettings,
@@ -352,7 +350,6 @@ var RoutePerms = map[string]webserver.Perm{
 	"POST /api/v1/downloaders/{id}/attempts/{attemptID}/abandon": webserver.PermSettings,
 	"POST /api/v1/downloads/{id}/mark-failed":                    webserver.PermManageLibrary,
 	"GET /api/v1/downloads/view":                                 webserver.NeedSignedIn, // everyone; non-managers see only their own asks
-	"GET /api/v1/downloads/speeds":                               webserver.PermManageLibrary,
 	"POST /api/v1/downloads/{id}/remove":                         webserver.PermManageLibrary,
 	"POST /api/v1/downloads/{id}/pause":                          webserver.PermManageLibrary,
 	"POST /api/v1/downloads/{id}/resume":                         webserver.PermManageLibrary,
@@ -418,8 +415,6 @@ var RoutePerms = map[string]webserver.Perm{
 	"PUT /api/v1/settings/trakt-key":       webserver.PermSettings,
 	"GET /api/v1/settings/trakt-token":     webserver.NeedOwner,
 	"PUT /api/v1/settings/trakt-token":     webserver.NeedOwner,
-	"GET /api/v1/settings/tvdb-key":        webserver.PermSettings,
-	"PUT /api/v1/settings/tvdb-key":        webserver.PermSettings,
 	"GET /api/v1/outside-lists":            webserver.PermSettings,
 	"POST /api/v1/outside-lists":           webserver.PermSettings,
 	"PUT /api/v1/outside-lists/{id}":       webserver.PermSettings,
@@ -517,7 +512,7 @@ var RoutePerms = map[string]webserver.Perm{
 	"POST /api/v1/settings/old-app-api/keys/{side}":   webserver.PermSettings,
 	"DELETE /api/v1/settings/old-app-api/keys/{side}": webserver.PermSettings,
 
-	// The move tool (6.1): reading an old app's setup reaches other
+	// The move tool: reading an old app's setup reaches other
 	// machines with keys the owner types and keeps what it read, so it is
 	// for the owner and admins with a password sign-in and the admin scope.
 	"POST /api/v1/migrate/probe":            webserver.NeedUsers,

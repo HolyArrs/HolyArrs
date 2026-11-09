@@ -26,9 +26,9 @@ Search and filters live in the page address. Back works, and you can bookmark a 
 
 ### From a title's page
 
-Each title page has a History card with its latest rows. **All rows** opens History for that title only.
+Each title page has a History card with its latest rows. **All … rows** (it shows the count, like **All 12 rows**) opens History for that title only. The title menu also has **All history**.
 
-Example: to see why a movie was grabbed last night, open the movie, press **All rows**, and read the rows for the chosen Release and the send.
+Example: to see why a movie was grabbed last night, open the movie, press **All … rows**, and read the rows for the chosen Release and the send.
 
 ## How long rows are kept
 

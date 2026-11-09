@@ -10,7 +10,7 @@ import (
 
 // rdpRoutes is what each route of requests, discover, migrate, the arr
 // API settings and the AI connection needs today: {permission, key scope}.
-// These routes move out of internal/api; the table must stay true after (R16).
+// The table must stay true as routes move between modules.
 var rdpRoutes = map[string][2]string{
 	"DELETE /api/v1/asks/{id}":                             {"ask", "write"},
 	"DELETE /api/v1/explore/strip/counts":                  {"signed_in", "write"},
@@ -241,8 +241,8 @@ var rdpWrites = []rdpCall{
 	{"POST /api/v1/settings/import-secrets {}", 400, 403, "error", "error"},
 }
 
-// Status, auth level and response shape of the routes that move out of
-// internal/api, as the owner and as a plain member see them.
+// Status, auth level and response shape of these routes, as the owner and
+// as a plain member see them.
 func TestRDPRoutesAsOwnerAndMember(t *testing.T) {
 	r := newAskRig(t)
 	for _, set := range [][]rdpCall{rdpReads, rdpWrites} {

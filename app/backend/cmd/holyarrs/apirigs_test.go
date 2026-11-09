@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"testing"
 	"time"
@@ -70,11 +69,6 @@ func matchStored(t *testing.T, a *handlers) {
 			}
 		}
 	}
-}
-
-func body(m map[string]any) string {
-	b, _ := json.Marshal(m)
-	return string(b)
 }
 
 type viewRows struct {

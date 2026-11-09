@@ -225,17 +225,6 @@ export function needsAttention(rows: StatusRow[]): StatusRow[] {
 	return rows.filter((r) => r.tone === 'fail').concat(rows.filter((r) => r.tone === 'wait'));
 }
 
-export function groupLine(g: StatusGroup): string {
-	if (g.rows.length === 1) return g.rows[0].word;
-	const ok = g.rows.filter((r) => r.tone === 'ok').length;
-	const off = g.rows.filter((r) => r.tone === 'idle').length;
-	const bad = g.rows.length - ok - off;
-	const parts = [`${ok} of ${g.rows.length} ${g.id === 'jobs' ? 'OK' : 'working'}`];
-	if (bad) parts.push(`${bad} need${bad === 1 ? 's' : ''} attention`);
-	if (off) parts.push(`${off} off`);
-	return parts.join(' · ');
-}
-
 export function nothingLinked(rows: StatusRow[]): boolean {
 	return !rows.some((r) => r.group === 'sources' || r.group === 'downloaders');
 }
@@ -257,12 +246,6 @@ export function headline(rows: StatusRow[], linkedKnown = true): string {
 
 export function everyKind(groups: StatusGroup[]): StatusGroup[] {
 	return partKinds.map((k) => ({ id: k.id, label: k.label, rows: groups.find((g) => g.id === k.id)?.rows ?? [] }));
-}
-
-export function groupCounts(g: StatusGroup): { ok: number; bad: number; off: number } {
-	const ok = g.rows.filter((r) => r.tone === 'ok').length;
-	const off = g.rows.filter((r) => r.tone === 'idle').length;
-	return { ok, bad: g.rows.length - ok - off, off };
 }
 
 // Shows how the last run ended, not what the job does now.

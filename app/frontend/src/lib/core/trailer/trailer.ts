@@ -73,7 +73,6 @@ export function heroPictures(main: string | null | undefined, more: string[] | n
 	return out;
 }
 
-
 // Per-device choice: auto follows system settings, always ignores them, never turns trailers off.
 export function autoplayPref(): AutoplayPref {
 	try {
@@ -165,10 +164,6 @@ export function claimPlayer(stop: () => void): () => void {
 	return () => {
 		if (playing?.id === id) playing = null;
 	};
-}
-
-export function playerBusy(): boolean {
-	return playing !== null;
 }
 
 // Remembers a sound-on choice so the next trailer does not start muted.

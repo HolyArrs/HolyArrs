@@ -59,17 +59,6 @@ export function seasonLine(s: SeasonSummary): string {
 	return parts.join(' · ');
 }
 
-// Picks the badge for a show, most urgent need first.
-export function showState(s: ShowInfo | undefined): { state: string; label: string } {
-	if (!s) return { state: '', label: '' };
-	if (s.missing) return { state: 'wanted', label: `${s.missing} missing` };
-	if (s.better_wanted) return { state: 'better_wanted', label: 'Better copy sought' };
-	if (s.in_library && s.in_library >= airedOf(s)) return { state: 'in_library', label: 'In library' };
-	if (s.not_out_yet) return { state: 'not_out_yet', label: 'Not out yet' };
-	if (s.in_library) return { state: 'in_library', label: `${s.in_library} in library` };
-	return { state: '', label: 'Nothing kept yet' };
-}
-
 export function showProgress(s: ShowInfo | undefined): string {
 	if (!s) return '';
 	return `${s.in_library} of ${airedOf(s)} aired episodes in the Library`;

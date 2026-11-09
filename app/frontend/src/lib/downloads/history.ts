@@ -147,21 +147,6 @@ export function readFilter(params: { get(name: string): string | null }, limit =
 		groups, from: day(params.get('from')), to: day(params.get('to')), limit, offset };
 }
 
-/** The page address for the filters. */
-export function filterParams(f: HistoryFilter): string {
-	const q = new URLSearchParams();
-	if (f.title) q.set('title', String(f.title));
-	if (f.episode) q.set('episode', String(f.episode));
-	if (f.groups.length) q.set('kinds', f.groups.join(','));
-	if (f.source) q.set('source', String(f.source));
-	if (f.feed) q.set('feed', '1');
-	if (f.from) q.set('from', f.from);
-	if (f.to) q.set('to', f.to);
-	if (f.offset) q.set('offset', String(f.offset));
-	const s = q.toString();
-	return s ? '?' + s : '';
-}
-
 const detailWords: [string, string][] = [
 	['reason', 'Why'],
 	['release', 'Release'],

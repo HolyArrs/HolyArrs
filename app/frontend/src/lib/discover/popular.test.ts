@@ -1,4 +1,4 @@
-import { cardServices, dayOffset, hasServiceChips, isRanked, leaveOut, newHref, newPath, newServicePath, newServicesPath, parseNewType, pickService, railBell, railLabel } from './popular.ts';
+import { cardServices, dayOffset, hasServiceChips, isRanked, leaveOut, newHref, newPath, newServicePath, newServicesPath, parseNewType, pickService, railLabel } from './popular.ts';
 import { describe, expect, it } from 'vitest';
 
 describe('newServicePath', () => {
@@ -72,10 +72,5 @@ describe('This week rail', () => {
 		expect(railLabel('2026-10-20', today).big).toBe('Yesterday');
 		expect(railLabel('2026-10-22', today).big).toBe('Tomorrow');
 		expect(railLabel('2026-10-24', today)).toEqual({ big: 'Sat', small: 'Oct 24' });
-	});
-	it('a bell on what is coming, Coming when it is in the Library, nothing once out', () => {
-		expect(railBell({ upcoming: true, in_library: false, kind: 'movie' })).toBe('bell');
-		expect(railBell({ upcoming: true, in_library: true, kind: 'show' })).toBe('coming');
-		expect(railBell({ upcoming: false, in_library: false, kind: 'show' })).toBeNull();
 	});
 });

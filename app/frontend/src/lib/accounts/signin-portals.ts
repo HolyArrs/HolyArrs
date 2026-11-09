@@ -25,8 +25,6 @@ export function legAt(t: number, legs: number): { index: number; local: number }
 /** The whole leg: the last symbol lands, then the far hole closes. */
 export const LEAD_S = 0.36; // The first symbol leaves once the hole is half open.
 
-export const LEG_S = LEAD_S + (COUNT - 1) * SPACING_S + TRAVEL_S + 0.1 + CLOSE_S;
-
 /** A hole's size (0 is shut) and squash at leg time `local`. `from` holes open at 0 and close once the last symbol has left; `to` holes open just before the first symbol arrives and close after the last one falls in. */
 export function holeAt(local: number, role: 'from' | 'to'): { s: number; squash: number } {
 	const openAt = role === 'from' ? 0 : LEAD_S + 0.6 * TRAVEL_S - OPEN_S; // Fully open before the first symbol arrives (0.82 of its run).

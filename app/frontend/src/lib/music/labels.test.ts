@@ -1,4 +1,4 @@
-import { albumKind, albumLine, albumState, albumStateOf, albumWords, albumYear, artistProgress, artistState, pressingLabel, toggle, trackLength, extraKinds, word, albumChoices, artistSearchToast, discography, discographyRow, latestRelease } from './labels.ts';
+import { albumKind, albumState, albumStateOf, albumWords, albumYear, artistProgress, pressingLabel, toggle, trackLength, extraKinds, word, albumChoices, discography, discographyRow } from './labels.ts';
 import { describe, expect, it } from 'vitest';
 import type { ArtistInfo } from '../core/types.ts';
 
@@ -22,20 +22,11 @@ describe('music words', () => {
 		const now = Date.parse('2026-10-13T00:00:00Z');
 		expect(albumStateOf({ state: 'no_tracks', release_date: '2099-05-01T00:00:00Z' }, now).label).toBe('Not out yet');
 		expect(albumStateOf({ state: 'no_tracks', release_date: '2020-05-01T00:00:00Z' }, now).label).toBe('No tracks yet');
-		expect(albumLine({ included: false, tracks: 0, in_library: 0, missing: 0 })).toBe('Left out by the album kinds');
-		expect(albumLine({ included: true, tracks: 0, in_library: 0, missing: 0 })).toBe('Tracks come with the next refresh');
-		expect(albumLine({ included: true, tracks: 12, in_library: 8, missing: 4 })).toBe('8 of 12 tracks in the Library · 4 missing');
 	});
 	it('sums an artist up', () => {
 		expect(artistProgress(undefined)).toBe('');
 		expect(artistProgress(info({}))).toBe('3 of 4 albums included; tracks come with the next refresh.');
 		expect(artistProgress(info({ tracks: 12, in_library: 3, missing: 7, not_out_yet: 2 }))).toBe('3 of 12 tracks in the Library · 7 missing · 2 not out yet');
-		expect(artistState(info({ tracks: 4, missing: 2 }))).toEqual({ state: 'wanted', label: '2 missing' });
-		expect(artistState(info({ tracks: 4, in_library: 4 })).label).toBe('In library');
-		expect(artistState(info({ tracks: 5, in_library: 3, better_wanted: 3 }))).toEqual({ state: 'in_library', label: '3 tracks in library' });
-		expect(artistState(info({ tracks: 5, in_library: 1 })).label).toBe('1 track in library');
-		expect(artistState(info({ tracks: 5, in_library: 3, missing: 2 })).label).toBe('2 missing');
-		expect(artistState(info({})).label).toBe('');
 	});
 	it('says lengths, Pressings and asked albums', () => {
 		expect(trackLength(185000)).toBe('3:05');
@@ -54,15 +45,6 @@ describe('music words', () => {
 	});
 });
 
-describe('artist search toast', () => {
-	it('says how many albums were searched and how many were left out', () => {
-		expect(artistSearchToast(0)).toBe('No album is missing a track right now.');
-		expect(artistSearchToast(1)).toBe('Searching for 1 album, a little apart. Home shows what they find.');
-		expect(artistSearchToast(200, 37)).toContain('37 more are left for the next Search now');
-		expect(artistSearchToast(200, 1)).toContain('1 more is left');
-	});
-});
-
 describe('discography', () => {
 	const a = (type: string, secondary_types: string[] = [], release_date?: string) => ({ type, secondary_types, release_date });
 	it('groups albums into rows in page order, newest first', () => {
@@ -71,10 +53,5 @@ describe('discography', () => {
 		expect(rows[0].albums.map((x) => x.release_date)).toEqual(['2021-05-01', '2018-01-01']);
 		expect(rows[1].albums.map((x) => x.type)).toEqual(['ep', 'single']);
 		expect(discographyRow(a('album', ['soundtrack']))).toBe('other');
-	});
-	it('picks the newest album or EP that is out as the latest release', () => {
-		const now = Date.parse('2024-01-01');
-		expect(latestRelease([a('album', [], '2020-01-01'), a('album', [], '2030-01-01'), a('album', ['live'], '2023-01-01')], now)?.release_date).toBe('2020-01-01');
-		expect(latestRelease([a('album')], now)).toBeNull();
 	});
 });

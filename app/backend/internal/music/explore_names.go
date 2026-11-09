@@ -150,15 +150,6 @@ func topGenres(count map[string]int, n int) []string {
 	return list[:min(n, len(list))]
 }
 
-func hasGenre(list []string, g string) bool {
-	for _, x := range list {
-		if x == g {
-			return true
-		}
-	}
-	return false
-}
-
 func derefStr(s *string) string {
 	if s == nil {
 		return ""

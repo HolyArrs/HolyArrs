@@ -9,8 +9,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 )
 
-// The row envelope lives in core/database; these names stay for callers
-// until the records move to their owners.
+// The row envelope lives in core/database; these names keep callers short.
 type (
 	Actor   = database.Actor
 	Meta    = database.Meta

@@ -20,7 +20,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/requests"
 )
 
-// Helpers copied from the api tests for the full-server tests here.
+// Helpers for the full-server tests.
 
 func day(s string) *time.Time {
 	t, _ := time.Parse("2006-01-02", s)

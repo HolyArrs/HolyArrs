@@ -1,19 +1,9 @@
-import { askedByOne, askers, movieRelease, nextWhen, readInfo, runtimeShort } from './inbox.ts';
+import { askedByOne, askers, nextWhen, readInfo } from './inbox.ts';
 import { describe, expect, it } from 'vitest';
 
 const now = new Date('2026-10-27T12:00:00Z');
 
 describe('requests inbox', () => {
-	it('says a runtime and whether a movie is out', () => {
-		expect(runtimeShort(130)).toBe('2h 10m');
-		expect(runtimeShort(48)).toBe('48m');
-		expect(runtimeShort(120)).toBe('2h');
-		expect(movieRelease({ dates: { theaters: '2019-10-11', digital: '2020-01-14' } }, now)).toEqual({ words: 'out now', notOut: '' });
-		expect(movieRelease({ dates: { theaters: '2026-10-01', digital: '2026-12-20' } }, now)).toEqual({ words: 'in cinemas only', notOut: '' });
-		expect(movieRelease({ dates: { theaters: '2027-03-03' } }, now)).toEqual({ words: 'in cinemas Mar 3, 2027', notOut: 'Not out yet · in cinemas Mar 3, 2027' });
-		expect(movieRelease({ dates: {}, status: 'Released' }, now).words).toBe('out now');
-		expect(movieRelease(null, now).words).toBe('');
-	});
 
 	it('reads the metadata parts it needs', () => {
 		const i = readInfo({ seasons: [{ number: 1, episode_count: 10, year: 2020 }], dates: { first_air: '2020-08-14', x: 3 }, status: 'Returning Series', original_language: 'en' });

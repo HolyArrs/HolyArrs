@@ -211,20 +211,6 @@ export function shortCount(n: number): string {
 	return String(Math.round(a));
 }
 
-/** Turns an artist's listening figures into stat-band entries; none when nothing is known. */
-export function popularityStats(p: ArtistPopularity | undefined | null): { v: string; l: string }[] {
-	if (!p) return [];
-	if (p.monthly_listeners && p.monthly_listeners > 0) {
-		const out = [{ v: shortCount(p.monthly_listeners), l: 'Monthly listeners' }];
-		if (p.world_rank && p.world_rank > 0) out.push({ v: `#${p.world_rank}`, l: 'World rank' });
-		const d = p.listeners_change_today ?? 0;
-		if (d) out.push({ v: `${d > 0 ? '+' : '−'}${shortCount(d)}`, l: 'Listeners today' });
-		return out;
-	}
-	if (p.total_plays && p.total_plays > 0) return [{ v: shortCount(p.total_plays), l: 'Total plays' }];
-	return [];
-}
-
 export function listening(p: ArtistPopularity | undefined | null): Listening | null {
 	if (!p) return null;
 	if (p.monthly_listeners && p.monthly_listeners > 0) {
@@ -249,18 +235,6 @@ export function fullCount(n: number): string {
 }
 
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
-
-/** The catalog in words: ["16 albums", "5 EPs", "89 singles", "since 2005"], leaving out what is zero. */
-export function catalogParts(c: Catalog): string[] {
-	return [c.albums ? plural(c.albums, 'album', 'albums') : '', c.eps ? plural(c.eps, 'EP', 'EPs') : '', c.singles ? plural(c.singles, 'single', 'singles') : '', c.since ? `since ${c.since}` : ''].filter(Boolean);
-}
-
-/** Singles and EPs counted together: "Singles & EPs", or only the kind there is. */
-export function smallReleasesWord(c: Pick<Catalog, 'eps' | 'singles'>): string {
-	if (c.eps && c.singles) return 'Singles & EPs';
-	if (c.eps) return c.eps === 1 ? 'EP' : 'EPs';
-	return c.singles === 1 ? 'Single' : 'Singles';
-}
 
 /** Turns a failed music page load into calm words. `network` is true only when HolyArrs itself could not be reached, the one case where "check the connection" is true. */
 export function musicLoadError(e: unknown, thing: 'album' | 'artist'): { text: string; network: boolean } {
@@ -337,12 +311,6 @@ export function kindWord(a: Pick<PageAlbum, 'type' | 'secondary_types'>): string
 	return a.type ? a.type.charAt(0).toUpperCase() + a.type.slice(1) : 'Album';
 }
 
-/** The hero's "On HolyArrs" line. */
-export function haveLine(have: number, total: number): string {
-	if (!total) return '';
-	return `On HolyArrs: ${have} of ${total} ${total === 1 ? 'release' : 'releases'}`;
-}
-
 /** A byte count as "about 1.2 GB" for the confirm line. */
 export function aboutSize(bytes: number): string {
 	if (bytes >= 1 << 30) return `about ${(bytes / (1 << 30)).toFixed(1)} GB`;
@@ -374,12 +342,6 @@ export function countryName(code?: string): string {
 	} catch {
 		return c;
 	}
-}
-
-/** Up to two initials of a name, for a round photo with no picture. */
-export function initialsOf(name?: string): string {
-	const words = (name ?? '').split(/\s+/).map((w) => w.replace(/[^\p{L}\p{N}]/gu, '')).filter(Boolean);
-	return words.slice(0, 2).map((w) => [...w][0].toUpperCase()).join('');
 }
 
 /** How long the full page answer gets before the quick core part is asked too. */

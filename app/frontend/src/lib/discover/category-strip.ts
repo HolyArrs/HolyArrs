@@ -1,6 +1,6 @@
 // The category strip under the Explore hero: the household's Browse categories, one from each section in turn (genre, mood, story, world, era, around the world, collection, then again), from the Browse answers the page already has.
 import type { ExploreType } from './explore-type.ts';
-import { strictTiles, type BrowseTile } from './search-browse.ts';
+import { type BrowseTile } from './search-browse.ts';
 
 /** GET /explore/strip: the member's strip, picked and ordered on the server. */
 export interface StripAnswer {
@@ -9,12 +9,6 @@ export interface StripAnswer {
 	/** Some Browse sections were still building. */
 	partial?: boolean;
 }
-
-/** How many categories the strip shows before All categories. */
-export const STRIP_MAX = 18;
-
-/** The section pattern the strip repeats. */
-export const STRIP_ORDER = ['genres', 'moods', 'stories', 'worlds', 'eras', 'world', 'collections'] as const;
 
 /** The small label above a tile's name, per section. */
 export const SECTION_LABEL: Readonly<Record<string, string>> = {
@@ -40,13 +34,6 @@ const KIN: readonly (readonly string[])[] = [
 	['spanish', 'latin american']
 ];
 
-/** A category's near-duplicate group, or its own name. */
-export function kin(name: string): string {
-	const n = name.toLowerCase();
-	const i = KIN.findIndex((g) => g.includes(n));
-	return i < 0 ? n : `kin${i}`;
-}
-
 /** A small repeatable random generator (mulberry32) from a string. */
 export function seeded(seed: string): () => number {
 	let h = 1779033703;
@@ -71,32 +58,6 @@ export function ranked(tiles: readonly BrowseTile[], rnd: () => number): BrowseT
 		.map((t, i) => ({ t, s: i - (t.count ?? 0) / 1000 + rnd() * 3 }))
 		.sort((a, b) => a.s - b.s)
 		.map((x) => x.t);
-}
-
-/** Takes one category from each section in STRIP_ORDER in turn (a section with none left is skipped), the tab's kind only, one name once, and never a near-duplicate next to the one before it. */
-export function stripTiles(sections: Readonly<Record<string, readonly BrowseTile[]>>, tab: ExploreType, seed: string, max = STRIP_MAX): (BrowseTile & { section: string })[] {
-	const rnd = seeded(seed);
-	const lists = STRIP_ORDER.map((id) => ({ id, left: ranked(strictTiles([...(sections[id] ?? [])], tab), rnd) }));
-	const out: (BrowseTile & { section: string })[] = [];
-	const names = new Set<string>();
-	const kins = new Set<string>();
-	let last = '';
-	for (let round = 0; out.length < max && lists.some((l) => l.left.length); round++) {
-		for (const l of lists) {
-			if (out.length >= max) break;
-			// Drop names already shown; take the first that is not kin to the tile before or anything shown.
-			l.left = l.left.filter((t) => !names.has(t.name.toLowerCase()));
-			let i = l.left.findIndex((t) => !kins.has(kin(t.name)));
-			if (i < 0) i = l.left.findIndex((t) => kin(t.name) !== last);
-			if (i < 0) continue;
-			const [t] = l.left.splice(i, 1);
-			names.add(t.name.toLowerCase());
-			last = kin(t.name);
-			kins.add(last);
-			out.push({ ...t, section: l.id });
-		}
-	}
-	return out;
 }
 
 /** The titles of the rows below, trimmed, once each, at most 40 of up to 80 characters. */

@@ -102,11 +102,6 @@ export function normalizeSelection(ids: string[]): string[] {
 	return out;
 }
 
-// Only films not yet in the library, not blocked and not already asked.
-export function actionableSelection(movies: PersonMovie[]): string[] {
-	return normalizeSelection(movies.filter((movie) => !movie.title_id && !movie.never_add && !movie.ask).map((movie) => movie.ids.tmdb ?? ''));
-}
-
 // Posts one at a time so one failure does not stop the rest.
 export async function runReviewed(
 	post: (path: string, body: Record<string, unknown>) => Promise<unknown>,

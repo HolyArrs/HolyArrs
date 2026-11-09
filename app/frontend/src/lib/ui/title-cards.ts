@@ -2,7 +2,7 @@
 import { pickFrom, type CardArtPick } from './card-art.ts';
 import type { Fresh } from './fresh.ts';
 import type { StatusKind } from './StatusPill.svelte';
-import { audienceStatus, factsOf, titleStatus, type Audience, type TitleStatus } from './title-status.ts';
+import { factsOf, titleStatus, type Audience } from './title-status.ts';
 import type { Component } from 'svelte';
 import type { Ask, AskBrief, AskState, TitleView } from '../core/types.ts';
 
@@ -141,14 +141,7 @@ export function titleCard(t: TitleView, subtitle?: string, key = `t${t.id}`): Ex
 	};
 }
 
-
 export const tmdbArtName = (kind: 'movie' | 'show', tmdb: string) => `tmdb-art-${kind}-${tmdb}`;
-
-export function cardPill(c: ExploreCard, who: Audience): TitleStatus | null {
-	if (!c.status) return null;
-	if (c.statusLabel) return { kind: c.status, label: c.statusLabel };
-	return audienceStatus(c.status, who, { tracked: c.titleId !== undefined, titleKind: c.kind });
-}
 
 export function cardAction(c: ExploreCard, can: { manage: boolean; ask: boolean }): 'add' | 'ask' | null {
 	if (c.titleId !== undefined || c.status === 'in_library') return null;

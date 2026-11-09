@@ -67,7 +67,7 @@ The archive installs no service. Set up auto-restart and hard memory limits in y
 Never point an older program at databases a newer one has changed. To roll back, save the newer config first, then start the old program on its matching old config copy.
 :::
 
-See [Backups](../run/backups/).
+See [Backups](../../run/backups/).
 
 ## If it does not work
 
@@ -113,6 +113,6 @@ The program, licence, third-party notices, guides, a source manifest and the pac
 
 ## Related
 
-- [Install](../start/install/)
-- [Parts and safe mode](../run/parts-safe-mode/)
-- [Updates](../run/updates/)
+- [Install](../../start/install/)
+- [Parts and safe mode](../../run/parts-safe-mode/)
+- [Updates](../../run/updates/)

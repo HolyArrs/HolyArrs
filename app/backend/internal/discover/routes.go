@@ -16,14 +16,13 @@ import (
 )
 
 // Deps is what the Explore routes need: services and core types, and funcs
-// for anything a higher module owns (t14 split design, section 4). Filled
-// as the routes move out of internal/api.
+// for anything a higher module owns.
 type Deps struct {
 	Store     *database.Store
 	Metadata  metadata.Provider
 	Secrets   *secrets.Vault
 	TraktBase string
-	// Cache is the Explore row and details cache shared with api.
+	// Cache is the Explore row and details cache shared with the program.
 	Cache *Cache
 	// Explore is the pool job with its lists and pages.
 	Explore *Explore

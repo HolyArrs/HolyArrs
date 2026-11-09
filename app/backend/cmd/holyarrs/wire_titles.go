@@ -44,13 +44,6 @@ type (
 // ShowInfo is what a show's page needs besides the shared Title fields.
 type ShowInfo = shows.Info
 
-func strOr(p *string) string {
-	if p == nil {
-		return ""
-	}
-	return *p
-}
-
 // StateLabels are the words people see for Slot states.
 var StateLabels = mediafiles.StateLabels
 

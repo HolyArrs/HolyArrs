@@ -1,4 +1,4 @@
-import { coverNeed, pickArt, playlist, prepareSlide, providerButtons, providerTiles, sized, type ArtShot } from './signin-art.ts';
+import { coverNeed, pickArt, playlist, prepareSlide, providerTiles, sized, type ArtShot } from './signin-art.ts';
 import { describe, expect, it, vi } from 'vitest';
 
 const B = 'https://image.tmdb.org/t/p/original/';
@@ -74,20 +74,6 @@ describe('pickArt', () => {
 	it('iPhone without a sharp poster skips the title instead of stretching', () => {
 		expect(pickArt(shot(3840, 780), { vw: 390, vh: 844, dpr: 3 })).toBeNull();
 		expect(pickArt(shot(3840), { vw: 390, vh: 844, dpr: 3 })).toBeNull();
-	});
-});
-
-describe('providerButtons', () => {
-	it('shows only the ways that are on, media servers first, HolyArrs account last', () => {
-		expect(providerButtons(['password']).map((b) => b.label)).toEqual(['Use a HolyArrs account']);
-		expect(providerButtons(['password', 'oidc', 'emby', 'plex', 'jellyfin']).map((b) => b.label)).toEqual([
-			'Continue with Plex',
-			'Continue with Jellyfin',
-			'Continue with Emby',
-			'Continue with single sign-on',
-			'Use a HolyArrs account'
-		]);
-		expect(providerButtons(['plex']).map((b) => b.way)).toEqual(['plex']);
 	});
 });
 

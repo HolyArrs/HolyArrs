@@ -456,7 +456,7 @@ type DownloaderSettings struct {
 	RemoveDeleteFiles bool `json:"remove_delete_files"`
 	RemoveTurnDown    bool `json:"remove_turn_down"`
 	RemoveSearchAgain bool `json:"remove_search_again"`
-	// Sync is the old downloads.sync: always "on" now (the background
+	// Sync is downloads.sync: always "on" now (the background
 	// reader always runs); a saved value is ignored. SABOutside is
 	// downloads.sab_outside; left out of a save, it stays as it is.
 	Sync       *string `json:"downloads_sync,omitempty"`

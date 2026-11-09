@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { fromServer, groupState, needsAttention, pageState, stateWords, type ServerStatus } from './settings-status.ts';
-import { filterSections, groups, grouped, sectionFor, sections, visible } from '../core/settings.ts';
+import { groups, grouped, sectionFor, sections, visible } from '../core/settings.ts';
 import { searchSettings, settingIndex } from '../../routes/settings/(home)/settings-search.ts';
 
 const answer = (over: Partial<ServerStatus> = {}): ServerStatus => ({ items: [], unset: {}, known: [], metadata_up: true, ...over });
@@ -87,13 +87,6 @@ describe('settings groups', () => {
 		const m = grouped(sections).find((g) => g.group.id === 'system')!;
 		expect(m.items.at(-1)?.href).toBe('/settings/danger');
 		expect(grouped(sections).find((g) => g.group.id === 'downloads')!.items.map((i) => i.href)).toContain('/settings/schedules');
-	});
-
-	it('filters the menu by page name, its words or its group', () => {
-		expect(filterSections(sections, 'sched').map((s) => s.label)).toEqual(['Schedules']);
-		expect(filterSections(sections, 'server backups').map((s) => s.label)).toContain('Backups');
-		expect(filterSections(sections, '  ')).toHaveLength(sections.length);
-		expect(filterSections(sections, 'zebra')).toEqual([]);
 	});
 
 	it('finds the page a nested path belongs to', () => {

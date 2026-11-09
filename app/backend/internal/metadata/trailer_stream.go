@@ -47,7 +47,7 @@ const (
 var (
 	// ErrNoTrailer says a title has no trailer at all.
 	ErrNoTrailer = errors.New("no trailer")
-	// ErrNoStream says a title or video has no direct stream (for now).
+	// ErrNoStream says a title or video has no direct stream.
 	ErrNoStream = errors.New("no direct stream")
 )
 

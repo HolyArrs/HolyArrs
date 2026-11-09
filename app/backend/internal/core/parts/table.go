@@ -78,7 +78,7 @@ var (
 )
 
 // routeOwners gives every route the server registers its owner. A test in
-// internal/api fails for a registered route missing here, and for a row
+// cmd/holyarrs fails for a registered route missing here, and for a row
 // whose route is gone.
 var routeOwners = map[string]Owner{
 	// AI connections: core; each tool checks the parts it needs.
@@ -247,8 +247,6 @@ var routeOwners = map[string]Owner{
 	"PUT /api/v1/settings/trakt-key":       Core,
 	"GET /api/v1/settings/trakt-token":     Core,
 	"PUT /api/v1/settings/trakt-token":     Core,
-	"GET /api/v1/settings/tvdb-key":        Core,
-	"PUT /api/v1/settings/tvdb-key":        Core,
 
 	// Library folders.
 	"GET /api/v1/library-folders":             Core,
@@ -289,7 +287,6 @@ var routeOwners = map[string]Owner{
 	"PUT /api/v1/settings/downloaders":                           Core,
 	"GET /api/v1/downloads":                                      Core,
 	"GET /api/v1/downloads/view":                                 Core,
-	"GET /api/v1/downloads/speeds":                               Core,
 	"POST /api/v1/downloads/{id}/mark-failed":                    Core,
 	"POST /api/v1/downloads/{id}/remove":                         Core,
 	"POST /api/v1/downloads/{id}/pause":                          Core,
@@ -361,7 +358,7 @@ var routeOwners = map[string]Owner{
 	"POST /api/v1/schedules/{kind}/run":      Core,
 	"PUT /api/v1/schedules/{kind}":           Core,
 
-	// The move tool (6.1) reads old apps whatever parts are on.
+	// The move tool reads old apps whatever parts are on.
 	"POST /api/v1/migrate/probe":            Core,
 	"POST /api/v1/migrate/read":             Core,
 	"GET /api/v1/migrate/saved-keys":        Core,
@@ -384,7 +381,6 @@ var routeOwners = map[string]Owner{
 	"GET /api/v1/library/search":              Media,
 	"GET /api/v1/search/suggest":              Media,
 	"GET /api/v1/search":                      Media,
-	"GET /api/v1/library-summary":             Media,
 	"GET /api/v1/home":                        Media,
 	"POST /api/v1/titles/refresh":             Media,
 	"GET /api/v1/artwork/{name}":              Media,
@@ -439,7 +435,6 @@ var routeOwners = map[string]Owner{
 	"POST /api/v1/holding/restore":            Media,
 	"POST /api/v1/library-folders/{id}/scan":  Media,
 	"POST /api/v1/library-folders/{id}/adopt": Media,
-	"POST /api/v1/library/rescan":             Media,
 	"POST /api/v1/manual-import/scan":         Media,
 	"POST /api/v1/manual-import":              Media,
 	"GET /api/v1/settings/import-folders":     Media,

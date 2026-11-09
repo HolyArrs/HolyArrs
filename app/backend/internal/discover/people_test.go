@@ -111,7 +111,7 @@ func peopleRig(t *testing.T, p metadata.Provider) (*httptest.Server, *database.S
 	return srv, s
 }
 
-// testHandlers are discover Handlers on s and p with api's wiring for a
+// testHandlers are discover Handlers on s and p with the program's wiring for a
 // signed-out owner (user 1, no age limit, every part on).
 func testHandlers(s *database.Store, p metadata.Provider) *Handlers {
 	mf := &mediafiles.Handlers{Deps: mediafiles.Deps{Store: s, Metadata: p, KidMax: func(*http.Request) string { return "" }}}

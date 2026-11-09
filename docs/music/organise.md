@@ -73,7 +73,7 @@ Empty album and disc folders go with the files. A folder with anything else in i
 
 | Place | What you see |
 |---|---|
-| **History** | The artist page shows the latest rows; **All rows** opens the rest. The album page has its own History: searches, downloads, imports, renames, deletes and pressing changes. |
+| **History** | The artist page shows the latest rows; **All … rows** (with the count) opens the rest. The album page has its own History: searches, downloads, imports, renames, deletes and pressing changes. |
 | **Calendar** | Album release days, with how many tracks you have. Press **Music** for albums only. The phone calendar feed has them as all-day events. |
 | **Alerts** | One Alert per album download, tracks listed one per line. For one per track, set **Settings > Alerts > Season packs** to one Alert each: at most 25 single Alerts, plus one listing the rest. |
 

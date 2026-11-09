@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { bootLine, buildingStatus, holdFor, loadStage, MIN_SHOW_MS, SHOW_AFTER_MS, stageTimers } from './silhouette.ts';
+import { buildingStatus, holdFor, loadStage, MIN_SHOW_MS, SHOW_AFTER_MS, stageTimers } from './silhouette.ts';
 
 describe('silhouette timing', () => {
 	it('stays quiet for the first 150 ms', () => {
@@ -37,11 +37,5 @@ describe('silhouette timing', () => {
 	it('counts building tries', () => {
 		expect(buildingStatus(1)).toBe('Building this page…');
 		expect(buildingStatus(3, 'New & Popular')).toBe('Building New & Popular… try 3');
-	});
-	it('gives the boot screen words after 3 s and a reload after 10 s', () => {
-		expect(bootLine(2_999)).toEqual({ text: '', reload: false });
-		expect(bootLine(3_000).text).toBe('Starting HolyArrs…');
-		expect(bootLine(3_000).reload).toBe(false);
-		expect(bootLine(10_000).reload).toBe(true);
 	});
 });

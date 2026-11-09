@@ -1,10 +1,8 @@
-import { cardAction, cardTmdb, discoverCard, liveCard, tmdbArtName, quality, cardPill, titleCard } from '#lib/ui/title-cards.ts';
+import { cardAction, cardTmdb, discoverCard, liveCard, tmdbArtName, quality } from '#lib/ui/title-cards.ts';
 import { enoughCards, genreCardHref, genreRowAfter } from './explore-type.ts';
-import { discoverTitles, discoverPath, fetchProviderRow } from './explore-picks.ts';
-import { becauseYouHave, comingSoon, orderRecent, fromPerson, genreRows, genresOf, keepFull, kindShelf, readyToWatch, stillLooking, markTransitions, missingEpisodes, overlap, popularInHousehold, recentlyAdded, score, type Facets } from './explore-rows.ts';
-import { pickerServices, toggleService, readServices, writeServices, serviceRegion } from './explore-services.ts';
+import { comingSoon, genreRows, keepFull, markTransitions, missingEpisodes, overlap, recentlyAdded, score, type Facets } from './explore-rows.ts';
+import { pickerServices, readServices, serviceRegion } from './explore-services.ts';
 import { describe, expect, it } from 'vitest';
-import { ApiError } from '../core/api.ts';
 import type { Ask, CalendarEntry, SlotView, TitleView } from '../core/types.ts';
 
 const slot = (state: string, resolution?: number): SlotView =>
@@ -23,21 +21,6 @@ describe('explore cards', () => {
 		expect(quality(t(1, { slots: [slot('in_library', 1080), slot('in_library', 2160)] }))).toBe('4K');
 		expect(quality(t(1, { slots: [slot('in_library', 720)] }))).toBe('720p');
 		expect(quality(t(1))).toBeUndefined();
-	});
-
-	it('picks one overlay with the shared status words: downloading, then in the Library, then asked', () => {
-		const pill = (x: TitleView, who: 'member' | 'staff') => cardPill(titleCard(x), who);
-		expect(pill(t(1, { slots: [slot('downloading'), slot('in_library')] }), 'staff')?.kind).toBe('downloading');
-		expect(pill(t(1, { asks: [ask(1)] }), 'member')).toEqual({ kind: 'requested', label: 'Requested' });
-		expect(pill(t(1, { asks: [ask(1)] }), 'staff')).toEqual({ kind: 'requested', label: 'Waiting' });
-		expect(pill(t(1, { asks: [ask(1)], slots: [slot('in_library')] }), 'member')).toEqual({ kind: 'in_library', label: 'Ready to watch' });
-		expect(pill(t(1, { slots: [slot('in_library')] }), 'staff')).toEqual({ kind: 'in_library', label: 'In your Library' });
-	});
-
-	it('keeps a card label set on purpose, and shows nothing without a status', () => {
-		expect(cardPill({ key: 'k', kind: 'movie', name: 'K', badges: [], status: 'missing', statusLabel: 'Not out yet' }, 'member')).toEqual({ kind: 'missing', label: 'Not out yet' });
-		expect(cardPill({ key: 'k', kind: 'movie', name: 'K', badges: [], status: 'requested' }, 'member')).toEqual({ kind: 'requested', label: 'Requested' });
-		expect(cardPill({ key: 'k', kind: 'movie', name: 'K', badges: [] }, 'member')).toBeNull();
 	});
 
 	it('sorts recently added by id, newest first', () => {
@@ -114,24 +97,6 @@ describe('coming soon wide cards', () => {
 	});
 });
 
-describe('orderRecent', () => {
-	const c = (key: string, kind: 'movie' | 'show' | 'artist', image: string | null) => ({ key, kind, name: key, image, badges: [] });
-	it('puts cards with artwork first and keeps the order otherwise', () => {
-		expect(orderRecent([c('a', 'movie', null), c('b', 'movie', 'b.jpg'), c('c', 'movie', 'c.jpg')]).map((x) => x.key)).toEqual(['b', 'c', 'a']);
-	});
-	it('takes turns between kinds', () => {
-		const out = orderRecent([c('m1', 'movie', 'x'), c('m2', 'movie', 'x'), c('m3', 'movie', 'x'), c('s1', 'show', 'x'), c('a1', 'artist', 'x')]);
-		expect(out.map((x) => x.key)).toEqual(['m1', 's1', 'a1', 'm2', 'm3']);
-	});
-	it('interleaves within the artwork group, then the rest', () => {
-		const out = orderRecent([c('m1', 'movie', null), c('s1', 'show', 'x'), c('m2', 'movie', 'x'), c('a1', 'artist', null)]);
-		expect(out.map((x) => x.key)).toEqual(['s1', 'm2', 'm1', 'a1']);
-	});
-	it('keeps an empty list empty', () => {
-		expect(orderRecent([])).toEqual([]);
-	});
-});
-
 describe('missing episodes', () => {
 	it('lists shows by how many episodes are missing', () => {
 		const show = (id: number, missing: number) => t(id, { kind: 'show', show: { missing } as TitleView['show'] });
@@ -139,29 +104,6 @@ describe('missing episodes', () => {
 		expect(cards.map((c) => c.titleId)).toEqual([3, 1, 4]);
 		expect(cards[2].subtitle).toBe('1 episode missing');
 		expect(cards[0].status).toBe('missing');
-	});
-});
-
-describe('popular in the household', () => {
-	it('ranks by people who asked, joins asks for the same thing, skips turned down', () => {
-		const cards = popularInHousehold(
-			[
-				ask(1, { people: [{ id: 1, name: 'A', asked_at: '' }] }),
-				ask(2, { people: [{ id: 1, name: 'A', asked_at: '' }, { id: 2, name: 'B', asked_at: '' }, { id: 3, name: 'C', asked_at: '' }] }),
-				ask(3, { ref: 'tmdb:901', tmdb_id: '901', people: [{ id: 4, name: 'D', asked_at: '' }] }),
-				ask(4, { state: 'turned_down', people: [{ id: 9, name: 'Z', asked_at: '' }, { id: 8, name: 'Y', asked_at: '' }, { id: 7, name: 'X', asked_at: '' }, { id: 6, name: 'W', asked_at: '' }] })
-			],
-			[]
-		);
-		expect(cards.map((c) => c.ref)).toEqual(['tmdb:902', 'tmdb:901']);
-		expect(cards[0].subtitle).toBe('3 people asked');
-		expect(cards[1].subtitle).toBe('2 people asked');
-		expect(cards[0].status).toBe('requested');
-		expect(cards[0].ask).toEqual({ id: 2, state: 'asked', state_label: 'Pending', mine: false, people: 3 });
-	});
-	it('uses the Library title when the ask led to one', () => {
-		const [c] = popularInHousehold([ask(1, { title_id: 5, mine: true })], [t(5, { slots: [slot('in_library')] })]);
-		expect(c).toMatchObject({ titleId: 5, status: 'in_library', mine: true, subtitle: '1 person asked' });
 	});
 });
 
@@ -176,25 +118,6 @@ describe('ranking', () => {
 		expect(score({ overlap: 2, ageRank: 0, total: 3, asks: 4 })).toBe(4);
 		expect(score({ overlap: 0, ageRank: 0, total: 3, asks: 9 })).toBe(0);
 	});
-	it('builds Because you have from the newest title with enough related titles', () => {
-		const titles = [t(1), t(2), t(3), t(4), t(5)];
-		const facets = new Map([
-			[5, f(['Horror'])],
-			[4, f(['Drama'], ['Ann'])],
-			[3, f(['Drama'])],
-			[2, f(['Drama'], ['Ann'])],
-			[1, f(['Drama'])]
-		]);
-		const r = becauseYouHave(titles, facets, 3)!;
-		expect(r.seed.id).toBe(4);
-		expect(r.cards.map((c) => c.titleId)).toEqual([2, 3, 1]);
-		expect(becauseYouHave(titles, new Map())).toBeNull();
-	});
-	it('does not mix kinds', () => {
-		const titles = [t(1, { kind: 'show' }), t(2), t(3)];
-		const facets = new Map([[3, f(['A'])], [2, f(['A'])], [1, f(['A'])]]);
-		expect(becauseYouHave(titles, facets, 2)).toBeNull();
-	});
 	it('makes genre rows for the biggest genres only', () => {
 		const titles = [1, 2, 3, 4, 5].map((i) => t(i));
 		const facets = new Map(titles.map((x) => [x.id, f(x.id <= 4 ? ['Comedy', 'Family'] : ['Comedy'])]));
@@ -203,17 +126,6 @@ describe('ranking', () => {
 		expect(rows[0]).toMatchObject({ id: 'genre-comedy', title: 'Comedy in your library' });
 		expect(rows[0].cards).toHaveLength(5);
 		expect(genreRows(titles, facets, 3, 6)).toEqual([]);
-	});
-	it('picks the person in the most titles', () => {
-		const titles = [t(1), t(2), t(3)];
-		const facets = new Map([[1, f([], ['Ann', 'Bo'])], [2, f([], ['Bo'])], [3, f([], ['Bo', 'Ann', 'Ann'])]]);
-		expect(fromPerson(titles, facets)).toMatchObject({ person: 'Bo' });
-		expect(fromPerson(titles, facets)!.cards).toHaveLength(3);
-		expect(fromPerson([t(1)], new Map([[1, f([], ['Ann'])]]))).toBeNull();
-	});
-	it('reads genres only when the API sends them', () => {
-		expect(genresOf(t(1))).toEqual([]);
-		expect(genresOf({ ...t(1), genres: ['Drama', 3] } as unknown as TitleView)).toEqual(['Drama']);
 	});
 });
 
@@ -254,23 +166,6 @@ describe('rows on a page', () => {
 });
 
 describe('discover', () => {
-	it('writes the query', () => {
-		expect(discoverPath({ row: 'trending' })).toBe('/discover?row=trending');
-		expect(discoverPath({ row: 'similar', id: 12 })).toBe('/discover?row=similar&id=12');
-		expect(discoverPath({ row: 'genre', g: 'Sci-Fi & Fantasy', kind: 'show' })).toBe('/discover?row=genre&g=Sci-Fi+%26+Fantasy&kind=show');
-	});
-	it('returns null when the server has no discover endpoint', async () => {
-		for (const status of [404, 501]) {
-			const client = { get: async () => { throw new ApiError('nope', status); } };
-			expect(await fetchProviderRow({ row: 'best' }, client as never)).toBeNull();
-		}
-	});
-	it('passes other errors on and answers through', async () => {
-		const bad = { get: async () => { throw new ApiError('down', 500); } };
-		await expect(fetchProviderRow({ row: 'best' }, bad as never)).rejects.toThrow('down');
-		const good = { get: async (p: string) => ({ row: 'best', items: [], p }) };
-		expect(await fetchProviderRow({ row: 'best' }, good as never)).toMatchObject({ p: '/discover?row=best' });
-	});
 	it('turns items into cards', () => {
 		expect(discoverCard({ tmdb_id: '5', kind: 'movie', name: 'M', in_library: true, title_id: 9 }, 'trending')).toMatchObject({ titleId: 9, status: 'in_library', ref: 'tmdb:5' });
 		expect(discoverCard({ tmdb_id: '5', kind: 'show', name: 'S', in_library: false, ask: { id: 1, state: 'asked', state_label: '', mine: true, people: 1 } }, 'p')).toMatchObject({ titleId: undefined, status: 'requested', mine: true });
@@ -286,8 +181,6 @@ describe('cards asked or refused on the page', () => {
 	const card = { key: 'k', kind: 'movie' as const, name: 'K', badges: [], ref: 'tmdb:1' };
 	it('reads the returned ask state, so an auto-approved ask says Approved', () => {
 		expect(liveCard(card, { ask: 'approved' })).toMatchObject({ mine: true, status: 'approved', statusLabel: undefined });
-		expect(cardPill(liveCard(card, { ask: 'approved' }), 'member')).toEqual({ kind: 'approved', label: 'Approved' });
-		expect(cardPill(liveCard(card, { ask: 'asked' }), 'member')).toEqual({ kind: 'requested', label: 'Requested' });
 	});
 	it('turns a card refused as in the Library into a Library card with no action', () => {
 		const c = liveCard(card, { titleId: 7 });
@@ -296,28 +189,6 @@ describe('cards asked or refused on the page', () => {
 	});
 	it('leaves other cards alone', () => {
 		expect(liveCard(card, undefined)).toBe(card);
-	});
-});
-
-describe('library shelves', () => {
-	const list = [
-		t(1, { slots: [slot('in_library')] }),
-		t(2, { slots: [slot('wanted')] }),
-		t(3, { kind: 'show', slots: [slot('in_library')], show: { missing: 2 } as TitleView['show'] }),
-		t(4, { kind: 'show', slots: [slot('in_library')], show: { missing: 0 } as TitleView['show'] }),
-		t(5, { kind: 'artist', slots: [slot('wanted')] })
-	];
-	it('splits the Library by kind, newest first', () => {
-		expect(kindShelf(list, 'show').map((c) => c.titleId)).toEqual([4, 3]);
-		expect(kindShelf(list, 'artist').map((c) => c.titleId)).toEqual([5]);
-	});
-	it('ready to watch needs every copy and no missing episode', () => {
-		expect(readyToWatch(list).map((c) => c.titleId)).toEqual([4, 1]);
-	});
-	it('still looking lists movies and artists still looking, marked missing', () => {
-		const w = stillLooking(list);
-		expect(w.map((c) => c.titleId)).toEqual([5, 2]);
-		expect(w[0].status).toBe('missing');
 	});
 });
 
@@ -336,23 +207,12 @@ describe('on your services', () => {
 		expect(pickerServices(all, [99]).map((s) => s.id)).toEqual([8, 9, 337, 1899, 350, 15, 99]);
 	});
 	it('toggles and remembers per region', () => {
-		expect(toggleService([8], 9)).toEqual([8, 9]);
-		expect(toggleService([8, 9], 8)).toEqual([9]);
 		expect(readServices('US', null)).toBeNull();
 		expect(readServices('US', 'nope')).toBeNull();
-		const raw = writeServices('US', [8, 15], writeServices('GB', [9], null));
-		expect(readServices('US', raw)).toEqual([8, 15]);
-		expect(readServices('GB', raw)).toEqual([9]);
-		expect(readServices('DE', raw)).toBeNull();
 	});
 	it('uses the country, else US', () => {
 		expect(serviceRegion('GB')).toBe('GB');
 		expect(serviceRegion('global')).toBe('US');
-	});
-	it('asks the server with services and region', () => {
-		expect(discoverPath({ row: 'services', services: [8, 337], region: 'US', kind: 'show' })).toBe('/discover?row=services&kind=show&services=8%7C337&region=US');
-		expect(discoverTitles.best).toBe('Best new releases');
-		expect('popular' in discoverTitles).toBe(false);
 	});
 });
 

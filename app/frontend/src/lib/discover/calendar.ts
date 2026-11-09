@@ -59,15 +59,6 @@ export function entryHref(e: Pick<CalendarEntry, 'kind' | 'title_id' | 'part_id'
 	return e.kind === 'album' && e.part_id ? `/library/${e.title_id}/albums/${e.part_id}` : `/library/${e.title_id}`;
 }
 
-/** How much of an album entry is in the Library. */
-export function albumHave(e: Pick<CalendarEntry, 'tracks' | 'have'>): string {
-	const n = e.tracks ?? 0;
-	const h = e.have ?? 0;
-	if (!n) return '';
-	if (h === 0) return 'Not in your Library yet';
-	return h >= n ? 'In your Library' : `${h} of ${n} songs in your Library`;
-}
-
 /** The local day an entry falls on: an episode with an air time on the reader's own day (time zone aware), else its air day; a movie on its date. */
 export function entryDay(e: Pick<CalendarEntry, 'kind' | 'date' | 'timed' | 'air_day'>): string {
 	if (e.kind === 'episode') {
@@ -77,23 +68,9 @@ export function entryDay(e: Pick<CalendarEntry, 'kind' | 'date' | 'timed' | 'air
 	return dayOf(e.date);
 }
 
-/** An episode's local air time (21:00), or '' when unknown. */
-export function entryTime(e: Pick<CalendarEntry, 'kind' | 'date' | 'timed'>): string {
-	if (e.kind !== 'episode' || !e.timed) return '';
-	const d = new Date(e.date);
-	return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
-}
-
 /** S01E02 for an episode entry. */
 export function episodeCode(e: Pick<CalendarEntry, 'season' | 'episode'>): string {
 	return code(e.season ?? 0, e.episode ?? 0);
-}
-
-/** The line an entry shows: the movie, the show and episode, or the artist and album. */
-export function entryName(e: CalendarEntry): string {
-	if (e.kind === 'album') return `${e.name} – ${e.album ?? 'Album'}`;
-	if (e.kind !== 'episode') return `${e.name}${e.year ? ` (${e.year})` : ''}`;
-	return `${e.name} ${episodeCode(e)}${e.episode_name ? ` ${e.episode_name}` : ''}`;
 }
 
 /** Tells entries apart in a list. */
@@ -171,11 +148,6 @@ export function weekStart(d: Date): Date {
 	return new Date(d.getFullYear(), d.getMonth(), d.getDate() - ((d.getDay() + 6) % 7));
 }
 
-/** Moves a week start by n weeks. */
-export function shiftWeek(start: Date, n: number): Date {
-	return new Date(start.getFullYear(), start.getMonth(), start.getDate() + n * 7);
-}
-
 const viewKey = 'holyarrs.calendar-view';
 
 /** Reads ?view=: cards or list. Old layout links still land somewhere sensible (now or 0, the old page, opens List; 1 to 5 open Cards). */
@@ -213,11 +185,6 @@ export function startView(address: string | null | undefined, remembered: Calend
 /** The picture for a calendar entry: the episode still, then the backdrop, then the poster. */
 export function entryArt(e: Pick<CalendarEntry, 'still' | 'backdrop' | 'poster'>): string | null {
 	return e.still || e.backdrop || e.poster || null;
-}
-
-/** The kind icon an entry shows when it has no picture. */
-export function entryIcon(kind: CalendarEntry['kind']): 'tv' | 'music' | 'film' {
-	return kind === 'episode' ? 'tv' : kind === 'album' ? 'music' : 'film';
 }
 
 /** Which dot a calendar item shows on a given day. */

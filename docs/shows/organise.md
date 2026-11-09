@@ -44,7 +44,7 @@ Only files HolyArrs imported or adopted are renamed. A file holding two episodes
 **Also delete the files** moves files to the holding folder. They are removed for good after the holding days (7 by default).
 :::
 
-1. Open the show. Press **Delete** for the whole show, **Delete season** on a season, or **Delete** on an episode's line.
+1. Open the show. Press **Delete show** for the whole show, **Delete Season 1** (or whichever season) on a season, or **Delete episode** on an episode.
 2. Read **What will happen** in the dialog.
 3. Choose your options and confirm.
 
@@ -65,7 +65,7 @@ When files are deleted, your media servers are told to rescan that show's folder
 
 ### History
 
-The show page has a **History** card with the latest rows. **All rows** opens the full History for the show. Rows name their episodes, like "S01E02 The Mill", and their Version when the show has more than one. Each episode has a **History** button with its searches, the release sent, the import, renames, deletes and decisions.
+The show page has a **History** card with the latest rows. **All 12 rows** (the number varies) opens the full History for the show. Rows name their episodes, like "S01E02 The Mill", and their Version when the show has more than one. Each episode has a **History** button with its searches, the release sent, the import, renames, deletes and decisions.
 
 ### Calendar
 

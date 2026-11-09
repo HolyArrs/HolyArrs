@@ -239,7 +239,6 @@ func TestCleanHoldingAPI(t *testing.T) {
 
 // route: POST /api/v1/library-folders/{id}/scan
 // route: POST /api/v1/library-folders/{id}/adopt
-// route: POST /api/v1/library/rescan
 func TestScanAndAdoptAPI(t *testing.T) {
 	t.Parallel()
 	srv, s, _ := lbLibSetup(t)
@@ -289,7 +288,7 @@ func TestScanAndAdoptAPI(t *testing.T) {
 	if _, err := os.Stat(video); err != nil {
 		t.Fatal("the video moved")
 	}
-	_ = json.Unmarshal(lbDo(t, "POST", url+"/api/v1/library/rescan", "", 202), &q)
+	_ = json.Unmarshal(lbDo(t, "POST", url+"/api/v1/schedules/rescan_library/run", "", 202), &q)
 	if j := waitJob(t, url, q.JobID); j.State != "done" || j.Result["folders"] != float64(1) {
 		t.Fatalf("rescan %+v", j)
 	}

@@ -183,7 +183,6 @@ func ScreenOwner(path string) (Owner, bool) {
 var SafeLibrary = map[string]bool{
 	"GET /api/v1/titles":               true,
 	"GET /api/v1/titles/owned":         true,
-	"GET /api/v1/library-summary":      true,
 	"GET /api/v1/home":                 true,
 	"GET /api/v1/artwork/{name}":       true,
 	"GET /api/v1/titles/{id}":          true,

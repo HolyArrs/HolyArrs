@@ -186,8 +186,6 @@ func (h *Handlers) titleReleases(w http.ResponseWriter, r *http.Request) {
 	webserver.WriteJSON(w, http.StatusOK, map[string]any{"releases": out, "total": total, "limit": n, "offset": off, "running_job_ids": running})
 }
 
-func (h *Handlers) searcher() *Searcher { return h.search() }
-
 // SearchError answers a search refusal with its status and reason.
 func SearchError(w http.ResponseWriter, err error) {
 	var nf *NeedsForceError

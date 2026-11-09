@@ -9,8 +9,8 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/music/rowtpl"
 )
 
-// What the code still in api calls on the Music module. Each goes to the
-// caller's own module (discover, search, titles) when that one moves.
+// What the program and other modules (discover, search, titles) call on the
+// Music module.
 
 // ArtPrefix starts every music picture route address.
 const ArtPrefix = musicArtPrefix

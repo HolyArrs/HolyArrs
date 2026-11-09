@@ -12,7 +12,7 @@ A Kid account is a member with an age-rating limit. They see and ask for only mo
 1. Turn off **Skip sign-in on my local network** in **Settings > Sign-in and security**. With it on, everyone at home is the owner, so a limit cannot be set. See [Sign-in and passwords](sign-in.md).
 2. Open **Settings > Users and roles** and start an invite as a **Member**.
 3. Pick an age limit, for example **PG**.
-4. Keep only **Ask for titles**, plus **Asks approved without waiting** if you want.
+4. Keep only **Request titles**, plus **Requests approved without waiting** if you want.
 5. Make the link and give it to the child. You should see the invite listed as open. See [Users and roles](roles.md#invite-someone).
 
 To limit an existing member, pick a limit on their row in **Settings > Users and roles**. It applies from their next click, with no sign-out, and their API keys follow it.

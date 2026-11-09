@@ -1,4 +1,4 @@
-import { askHref, detailKey, kindWord, personGroups, runtimeLine, stepIndex } from './board.ts';
+import { askHref, detailKey, kindWord, stepIndex } from './board.ts';
 import { describe, expect, it } from 'vitest';
 
 const who = (id: number, name: string) => ({ id, name });
@@ -13,21 +13,6 @@ describe('requests page', () => {
 		expect(askHref({ kind: 'movie', tmdb_id: '1', title_id: -1 })).toBe('/title/movie/1');
 	});
 
-	it('groups asks by the first person who asked, biggest first', () => {
-		const maya = who(3, 'Maya');
-		const leo = who(4, 'Leo (Kid)');
-		const asks = [
-			{ id: 1, asked_by: leo, people: [{ ...leo, asked_at: '' }] },
-			{ id: 2, asked_by: maya, people: [{ ...maya, asked_at: '' }] },
-			{ id: 3, asked_by: maya, people: [] }
-		];
-		const g = personGroups(asks);
-		expect(g.map((x) => [x.name, x.asks.length])).toEqual([
-			['Maya', 2],
-			['Leo (Kid)', 1]
-		]);
-	});
-
 	it('wraps the focus position', () => {
 		expect(stepIndex(0, -1, 8)).toBe(7);
 		expect(stepIndex(7, 1, 8)).toBe(0);
@@ -38,10 +23,6 @@ describe('requests page', () => {
 		expect(kindWord('show')).toBe('TV show');
 		expect(kindWord('artist')).toBe('Music');
 		expect(kindWord('movie')).toBe('Movie');
-		expect(runtimeLine(112)).toBe('1 h 52 min');
-		expect(runtimeLine(120)).toBe('2 h');
-		expect(runtimeLine(48)).toBe('48 min');
-		expect(runtimeLine(undefined)).toBe('');
 		expect(detailKey({ kind: 'artist', tmdb_id: '' })).toBe('');
 		expect(detailKey({ kind: 'show', tmdb_id: '5' })).toBe('show:5');
 	});

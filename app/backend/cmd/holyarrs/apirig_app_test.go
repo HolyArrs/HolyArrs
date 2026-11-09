@@ -22,7 +22,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
-// Helpers for the whole-app tests that moved here from internal/api.
+// Helpers for the whole-app tests.
 
 func decodeJSON(t *testing.T, b []byte, v any) {
 	t.Helper()
@@ -138,7 +138,7 @@ func newOwnerRig(t *testing.T) *ownerRig {
 }
 
 // apiServer serves the API without sign-in, with one Movies library folder
-// and the lab metadata, as the api package's own tests did.
+// and the lab metadata.
 func apiServer(t *testing.T) (*httptest.Server, *database.Store) {
 	t.Helper()
 	s, err := database.Open(t.TempDir(), database.Options{})

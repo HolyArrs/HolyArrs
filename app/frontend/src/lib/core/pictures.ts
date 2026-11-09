@@ -59,11 +59,6 @@ export function withVersion(src: string): string {
 	return `${src}${src.includes('?') ? '&' : '?'}pv=${r.v}`;
 }
 
-// Width over height, for reserving space before the image loads.
-export function ratioOf(r: PictureRecord | undefined): number | undefined {
-	return r && r.w > 0 && r.h > 0 ? r.w / r.h : undefined;
-}
-
 export function forgetPictures(): void {
 	records.clear();
 }

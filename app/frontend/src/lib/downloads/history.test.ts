@@ -1,4 +1,4 @@
-import { createLatestOnly, dateRangeProblem, details, downloadSteps, filterParams, groupDownloads, groupLabel, historyQuery, isDownloadStep, kindGroups, kindTone, pageLine, readFilter } from './history.ts';
+import { createLatestOnly, dateRangeProblem, details, downloadSteps, groupDownloads, groupLabel, historyQuery, isDownloadStep, kindGroups, kindTone, pageLine, readFilter } from './history.ts';
 import { describe, expect, it } from 'vitest';
 import type { EventRecord } from '../core/types.ts';
 
@@ -85,8 +85,6 @@ describe('history', () => {
 	it('reads the filters from the page address and writes them back', () => {
 		const f = readFilter(new URLSearchParams('title=3&kinds=grab,bogus,import&from=2026-10-01&to=nope&offset=50'));
 		expect(f).toEqual({ title: 3, groups: ['grab', 'import'], from: '2026-10-01', to: undefined, limit: 50, offset: 50 });
-		expect(filterParams(f)).toBe('?title=3&kinds=grab%2Cimport&from=2026-10-01&offset=50');
-		expect(filterParams(readFilter(new URLSearchParams('title=-1')))).toBe('');
 		expect(readFilter(new URLSearchParams('from=2026-99-99&to=2026-02-30')).from).toBeUndefined();
 		expect(readFilter(new URLSearchParams('from=2026-99-99&to=2026-02-30')).to).toBeUndefined();
 		expect(readFilter(new URLSearchParams('from=2024-02-29')).from).toBe('2024-02-29');
@@ -96,7 +94,6 @@ describe('history', () => {
 		const f = readFilter(new URLSearchParams('source=4&feed=1'));
 		expect(f.source).toBe(4);
 		expect(f.feed).toBe(true);
-		expect(filterParams(f)).toBe('?source=4&feed=1');
 		const q = new URLSearchParams(historyQuery(f));
 		expect(q.get('source')).toBe('4');
 		expect(q.get('feed')).toBe('1');

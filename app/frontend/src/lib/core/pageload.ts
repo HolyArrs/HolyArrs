@@ -9,15 +9,6 @@ export const PAGE_FADE_MS = 200;
 export const PAGE_STATUS_AFTER_MS = 3_000;
 export const PAGE_REASSURE_AFTER_MS = 10_000;
 
-
-// Which loader stage to show after this much waiting.
-export function pageStage(elapsed: number): PageStage {
-	if (elapsed >= PAGE_REASSURE_AFTER_MS) return 'reassure';
-	if (elapsed >= PAGE_STATUS_AFTER_MS) return 'status';
-	if (elapsed >= PAGE_SHOW_AFTER_MS) return 'orbit';
-	return 'hidden';
-}
-
 // Keeps a shown loader up for a minimum time so it does not flash.
 export function pageHoldFor(elapsed: number, cached = false): number {
 	if (cached || elapsed < PAGE_SHOW_AFTER_MS) return 0;

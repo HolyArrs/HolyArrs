@@ -69,7 +69,7 @@ Restart stops HolyArrs cleanly and lets Docker start it again, so set `restart: 
 | Controls are refused | No-password local sign-in, or the key lacks `control` | Sign in with your password. |
 | A task stays failed | It needs you | Read its reason on `/health`, fix it, click **Restart** for that task. |
 
-More fixes: [Troubleshooting](../help/troubleshooting/).
+More fixes: [Troubleshooting](../../help/troubleshooting/).
 
 ## For experts
 
@@ -124,6 +124,6 @@ A key never does more than the person who made it. Scopes can't be changed later
 
 ## Related
 
-- [Health checks](../run/health/)
-- [Backups](../run/backups/)
-- [API routes](../reference/api-routes/)
+- [Health checks](../../run/health/)
+- [Backups](../../run/backups/)
+- [API routes](../../reference/api-routes/)

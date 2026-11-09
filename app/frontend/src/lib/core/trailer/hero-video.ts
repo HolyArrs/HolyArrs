@@ -1,5 +1,4 @@
 // Rules and helpers for the artist hero's muted looping music video.
-import { mayAutoplay, type Conditions } from './trailer.ts';
 import type { TrailerSource } from './autoplay.svelte.ts';
 
 export interface HeroVideo {
@@ -8,11 +7,6 @@ export interface HeroVideo {
 	start: number;
 	duration?: number;
 	expires_at?: string;
-}
-
-// Same rules as trailer autoplay, so the hero never plays where trailers may not.
-export function heroVideoAllowed(c: Conditions): boolean {
-	return mayAutoplay(c);
 }
 
 // Relay first: label videos often refuse the embedded player.

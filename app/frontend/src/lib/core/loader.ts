@@ -10,8 +10,6 @@ export const SETUP_HOLD_MS = 1800;
 // Remembers the last user so a different one gets a welcome line.
 const LAST_USER = 'holyarrs-last-user';
 
-// Sign-in handoff timings; RING is the loader ring size the glide starts from.
-export const GLIDE_MS = 560;
 export const VEIL_MS = 560;
 export const SIGNIN_HOLD_MS = 520;
 export const ARRIVE_MS = 420;
@@ -33,12 +31,6 @@ let settle: () => void = () => {};
 export function handoffFrom(from: Rect, vw: number, vh: number, ring = RING): { x: number; y: number; s: number } {
 	const s = Math.max(0.2, Math.min(1, from.height / ring));
 	return { x: from.left + from.width / 2 - vw / 2, y: from.top + from.height / 2 - vh / 2, s };
-}
-
-// Total handoff time; reduced motion gets a short fixed one.
-export function handoffTotal(readyMs: number, reduced = false): number {
-	if (reduced) return 400;
-	return Math.max(VEIL_MS, readyMs) + SIGNIN_HOLD_MS + ARRIVE_MS;
 }
 
 export function isUserSwitch(last: string | null, name: string): boolean {

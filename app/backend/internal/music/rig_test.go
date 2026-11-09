@@ -45,7 +45,7 @@ type Server struct {
 }
 
 // testAPI is a music Handlers over a test Server; s is kept so a test can
-// swap Library or ImageBase as it did on the api.
+// swap Library or ImageBase.
 type testAPI struct {
 	*Handlers
 	s *Server

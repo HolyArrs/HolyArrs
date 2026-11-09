@@ -1,6 +1,6 @@
 package downloads
 
-// Torrent hashes the route tests share (the api tests keep their own copy).
+// Torrent hashes the route tests share.
 const (
 	routeOwnHash = "abcdabcdabcdabcdabcdabcdabcdabcdabcdabcd"
 	outHash      = "1111111111111111111111111111111111111111"

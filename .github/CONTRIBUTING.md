@@ -43,7 +43,8 @@ Rules that keep it that way:
 - A module talks to another module only through its service (Go) or its `index.ts` (frontend). Never through its store or its files.
 - SQL lives only in a module's store files, over that module's own tables.
 - A page part goes in `lib/ui` only when two or more modules use it.
-- No `util`, `common` or `helpers` folders.
+- No `util`, `common`, `shared` or `helpers` folders.
+- Every outside call goes through `core/outbound`.
 
 The module list and the order modules may depend on each other are in [docs/dev/modules.md](../docs/dev/modules.md). Tests check these rules, so a wrong import fails the build.
 

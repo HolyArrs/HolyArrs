@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { byName, counts, slotNotes, loadChoices, matches, matchesTitleQuery, ofKind, pickId, saveChoices, secondVersion, titleQuery, inLibraryWord, letterOf, firstOfLetter, letters, exceptionChip, missingEpisodes, posterStatus } from './library.ts';
+import { byName, counts, slotNotes, loadChoices, matches, matchesTitleQuery, ofKind, pickId, saveChoices, secondVersion, titleQuery, letterOf, firstOfLetter, letters, exceptionChip, missingEpisodes, posterStatus } from './library.ts';
 import type { TitleView } from '../core/types.ts';
 
 function title(name: string, ...states: string[]): TitleView {
@@ -99,20 +99,6 @@ describe('slotNotes', () => {
 	it('drops gate notes (the Why line says it) and repeats across Versions', () => {
 		const slots = [{ reason: 'release gate: searching from 2023-11-21 (digital date)' }, { reason: 'release gate: searching from 2023-11-21 (digital date)' }, { reason: 'searching' }, { reason: 'searching' }, { reason: '' }];
 		expect(slotNotes(slots)).toEqual(['searching']);
-	});
-});
-
-describe('inLibraryWord', () => {
-	it('names the Versions in the Library when a show has several', () => {
-		expect(inLibraryWord('in_library')).toBe(' · in the Library');
-		expect(inLibraryWord('wanted')).toBe('');
-		const vs = [
-			{ label: 'Main', state: 'in_library' },
-			{ label: '4K', state: 'wanted' }
-		];
-		expect(inLibraryWord('in_library', vs)).toBe(' · in the Library: Main');
-		expect(inLibraryWord('wanted', [{ label: 'Main', state: 'wanted' }, { label: '4K', state: 'in_library' }])).toBe(' · in the Library: 4K');
-		expect(inLibraryWord('wanted', [{ label: 'Main', state: 'wanted' }, { label: '4K', state: 'wanted' }])).toBe('');
 	});
 });
 

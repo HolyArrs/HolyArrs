@@ -110,7 +110,6 @@ func (a *handlers) Routes(rt *webserver.Router) {
 			lists.TraktKeyRoutes(m)
 			a.disc.TokenRoutes(m)
 		}
-		(&shows.TVDBKeyHandlers{Secrets: a.s.Secrets}).Routes(m)
 	}
 	a.askHandlers().Routes(m)
 	(&webserver.URLBaseHandlers{Store: a.s.Store, InUse: a.s.URLBase}).Routes(m)
@@ -128,7 +127,7 @@ func (a *handlers) Routes(rt *webserver.Router) {
 	a.controls.Routes(m)
 	m.HandleFunc("GET /api/v1/openapi.json", a.openapi)
 	m.HandleFunc("GET /api/v1/health", a.health)
-	m.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write([]byte("ok\n")) })
+	m.HandleFunc("GET /healthz", a.healthz)
 	// readyz answers 200 once the app has fully started (until then the
 	// start page answers it with 503).
 	m.HandleFunc("GET /readyz", func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write([]byte("ready\n")) })

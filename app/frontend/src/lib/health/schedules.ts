@@ -110,12 +110,6 @@ export function nextRun(s: string | null | undefined, now = Date.now()): string 
 	return `due ${Math.round(late / 86400)} d ago`;
 }
 
-export function stateTone(s: ScheduleRow['state']): string {
-	if (s === 'running' || s === 'queued') return 'wait';
-	if (s === 'waiting') return 'ok';
-	return '';
-}
-
 // Parts that are off or in safe mode would refuse the run.
 export function mayRun(s: Pick<ScheduleRow, 'state'>): boolean {
 	return s.state !== 'part_off' && s.state !== 'safe_mode';

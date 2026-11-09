@@ -10,7 +10,7 @@ Pick the module your change belongs in, and know which modules it may call.
 ## Before you start
 
 - Read [Architecture](architecture.md) for the folder map and the rules.
-- Each module has the same name in `app/backend/internal/<module>/`, `app/frontend/src/lib/<module>/` and `app/tests/<module>/`.
+- Each module has the same name in `app/backend/internal/<module>/`, and in `app/frontend/src/lib/<module>/` and `app/tests/<module>/` when it has screens or browser tests.
 
 ## Find the right module
 
@@ -24,7 +24,7 @@ Pick the module your change belongs in, and know which modules it may call.
 | `downloads` | Downloaders, the queue, seen files, path maps, tags, copy choices |
 | `subtitles` | Subtitle languages, sites, matching and saving |
 | `discover` | Explore, Popular, Search, People, Calendar, title pages |
-| `suggest` | Picking and ordering rows and shelves |
+| `suggest` | Picking and ordering rows and shelves (backend only) |
 | `mediafiles` | Catalog records, pick rules, naming, data packs, media details |
 | `importer` | File import: unpacking, tags, matching (backend only) |
 | `library` | Library folders, adopting and renaming (backend only) |
@@ -70,7 +70,7 @@ Register it in the module's `routes.go` with its permission. `openapi.json` come
 
 ### New module
 
-Fit your change into the 23 first, and open an issue before you add one. A new module needs its 3 code folders, a place in the layer order in `tools/structurecheck`, and a line in `wiring.go`.
+Fit your change into the 23 first, and open an issue before you add one. A new module needs its backend folder (plus `lib/<module>/` and `app/tests/<module>/` if it has screens), a place in the layer order in `tools/structurecheck`, and a line in `wiring.go`.
 
 ## If it does not work
 

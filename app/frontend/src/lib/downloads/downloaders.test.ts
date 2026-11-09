@@ -1,4 +1,4 @@
-import { decisionName, episodeStateWords, groupDecisions, manyWords, phaseTone, removeBody, removeFilesWords, removeStart, rowName, split, whyWords } from './downloaders.ts';
+import { decisionName, groupDecisions, manyWords, phaseTone, removeBody, removeFilesWords, removeStart, rowName, split, whyWords } from './downloaders.ts';
 import { downloadTone, emptyForm, formBody, formFrom, healthTone, pendingAttempts, percent, timeLeft, type DownloaderAttempt, type DownloaderView } from './downloaders.ts';
 import { describe, expect, it } from 'vitest';
 import { type Decision, type DownloadRow } from '../core/types.ts';
@@ -160,12 +160,6 @@ describe('shows on the Downloads screen and Needs a decision', () => {
 		expect(rowName({ title: 'Dune', year: 2024, name: 'x', kind: 'movie' })).toBe('Dune (2024)');
 		expect(rowName({ title: 'Copper Valley', year: 2025, name: 'x', kind: 'show' })).toBe('Copper Valley');
 		expect(rowName({ title: '', name: 'Some.Release', kind: 'show' })).toBe('Some.Release');
-	});
-	it('says where each episode is', () => {
-		expect(episodeStateWords('in_library')).toEqual({ text: 'In the Library', tone: 'ok' });
-		expect(episodeStateWords('better_wanted').tone).toBe('ok');
-		expect(episodeStateWords('needs_a_decision').tone).toBe('fail');
-		expect(episodeStateWords('wanted').text).toBe('Looking for another copy');
 	});
 	it('names a stuck episode', () => {
 		expect(decisionName(dec(2, { episode: { ...ep(2), name: 'Flood' } }))).toBe('Copper Valley S01E02 Flood');

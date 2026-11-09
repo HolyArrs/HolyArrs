@@ -444,8 +444,3 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 	}
 	return imp, nil
 }
-
-func guardPlan(plan []mediafiles.PlanStep, lib string, cands []Candidate, rules FileRules) *SpaceError {
-	low, _ := guardPlanWith(plan, lib, cands, rules, nil)
-	return low
-}

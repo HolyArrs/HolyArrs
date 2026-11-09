@@ -456,36 +456,6 @@ func TestKidBlockedTitleIs404WithItsPartOff(t *testing.T) {
 	}
 }
 
-func TestKidLibrarySummaryRecent(t *testing.T) {
-	t.Parallel()
-	k := newKidRig(t)
-	var s struct {
-		Total   int `json:"total"`
-		Missing []struct {
-			Name string `json:"name"`
-		} `json:"missing"`
-		Recent []struct {
-			Name string `json:"name"`
-		} `json:"recent"`
-	}
-	b := k.kai.call("GET", "/api/v1/library-summary", "", 200)
-	if err := json.Unmarshal(b, &s); err != nil {
-		t.Fatal(err)
-	}
-	var recent, missing []string
-	for _, r := range s.Recent {
-		recent = append(recent, r.Name)
-	}
-	for _, m := range s.Missing {
-		missing = append(missing, m.Name)
-	}
-	slices.Sort(recent)
-	slices.Sort(missing)
-	if s.Total != 3 || !slices.Equal(recent, []string{"Gentle Meadow", "Harbor Friends", "Paper Kite"}) || !slices.Equal(missing, []string{"Gentle Meadow", "Paper Kite"}) {
-		t.Fatalf("kid summary: %s", b)
-	}
-}
-
 func TestKidCalendar(t *testing.T) {
 	t.Parallel()
 	k := newKidRig(t)
@@ -643,10 +613,6 @@ func TestMemberWithoutLimitSeesEverything(t *testing.T) {
 		"Dark Alley", "Sunny Pond", "Nameless Reel", "Iron Verdict", "Gentle Meadow", "Night Courier", "Blood Coast", "Puppet Lane", "Cold Precinct", "Harbor Friends")
 	k.ana.call("GET", "/api/v1/titles/9102", "", 200)
 	k.ana.call("GET", "/api/v1/metadata/movie/4211", "", 200)
-	b := string(k.ana.call("GET", "/api/v1/library-summary", "", 200))
-	if !strings.Contains(b, `"total":8`) {
-		t.Fatalf("member summary: %s", b)
-	}
 	if b := string(k.ana.call("GET", "/api/v1/people/4901", "", 200)); !strings.Contains(b, "Iron Verdict") || !strings.Contains(b, "Sunny Pond") {
 		t.Fatalf("member person: %s", b)
 	}
@@ -704,7 +670,6 @@ func TestKidCannotReachBlockedTitleAnywhere(t *testing.T) {
 		"/api/v1/people/search":   {"?q=ann"},
 		"/api/v1/discover":        {"?row=trending", "?row=popular", "?row=upcoming", "?row=genre&g=Drama", "?row=similar&id=9102", "?row=similar&id=9104", fmt.Sprintf("?row=similar&id=%d", k.ids["Gentle Meadow"])},
 		"/api/v1/asks":            {"", "?mine=1"},
-		"/api/v1/library-summary": {""},
 		"/api/v1/collections":     {""},
 	}
 	ok := map[string]bool{}
@@ -755,7 +720,7 @@ func TestKidCannotReachBlockedTitleAnywhere(t *testing.T) {
 			}
 		}
 	}
-	for _, must := range []string{"GET /api/v1/titles", "GET /api/v1/library-summary", "GET /api/v1/discover", "GET /api/v1/metadata/search",
+	for _, must := range []string{"GET /api/v1/titles", "GET /api/v1/discover", "GET /api/v1/metadata/search",
 		"GET /api/v1/titles/lookup", "GET /api/v1/shows/lookup", "GET /api/v1/artists/lookup", "GET /api/v1/people/search",
 		"GET /api/v1/people/{id}", "GET /api/v1/collections", "GET /api/v1/asks"} {
 		if !ok[must] {

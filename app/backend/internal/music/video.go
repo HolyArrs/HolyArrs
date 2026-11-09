@@ -367,7 +367,7 @@ func (h *Handlers) videoView(r *http.Request, v metadata.ArtistVideo, s metadata
 }
 
 // videoKnown reads a video's stream from memory or SQLite only; known
-// with a zero stream means it has no direct stream (for now).
+// with a zero stream means it has no direct stream.
 func (h *Handlers) videoKnown(ctx context.Context, id string) (metadata.TrailerStream, bool) {
 	ckey := "musicvideo|" + id
 	now := time.Now()

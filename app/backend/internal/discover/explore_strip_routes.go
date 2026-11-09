@@ -20,7 +20,7 @@ import (
 	engine "github.com/HolyArrs/holyarrs/app/backend/internal/suggest"
 )
 
-// StripBrowse is the Browse glue the strip needs while Browse lives in api.
+// StripBrowse is the Browse glue the strip needs, given by the program.
 type StripBrowse struct {
 	// Page is the member's Browse page, its genre tiles and the Kid flag.
 	Page func(ctx context.Context, r *http.Request, sw string) (engine.Page, []engine.BrowseTile, bool, error)
