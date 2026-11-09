@@ -5,7 +5,7 @@ level: Expert
 sidebar: { order: 1 }
 ---
 
-Point an app that only knows Sonarr or Radarr at HolyArrs. You give it an address ending in `/sonarr` or `/radarr` and a key, and it treats HolyArrs as that app.
+Point an app that only knows Sonarr or Radarr at HolyArrs. Give it an address ending in `/sonarr` or `/radarr` and a key, and it treats HolyArrs as that app.
 
 This is a small API made only for those apps. For your own scripts, use the [HolyArrs API](../reference/api-routes/).
 
@@ -40,7 +40,7 @@ For each key the card shows its last 4 characters, who made it and when it was l
 
 <details class="ha-more"><summary>Sending the key</summary>
 
-HolyArrs reads the key from the first place it finds, in this order. A wrong key in an earlier place is not rescued by a right one later.
+HolyArrs reads the key from the first place it finds, in this order. A wrong key in an earlier place fails, even if a later one is right.
 
 | Order | Place | Example |
 |---|---|---|

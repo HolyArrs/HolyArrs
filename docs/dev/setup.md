@@ -48,7 +48,7 @@ You need no C compiler. Builds use `CGO_ENABLED=0`.
    You should see the first-run wizard. Make the owner account.
 
 :::caution
-The program embeds `app/frontend/dist`. After a change to the web app, build the web app again before the program, or you get the old pages.
+The program embeds `app/frontend/dist`. After a web app change, rebuild the web app before the program, or you get the old pages.
 :::
 
 `-config` takes a folder on local disk and defaults to `/config`. `-addr` changes the listen address and defaults to `:6262`.

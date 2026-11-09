@@ -61,7 +61,7 @@ Seerr, Overseerr, Bazarr and similar apps do not use this API. They talk to Holy
 
 <details class="ha-more"><summary>Add a route</summary>
 
-Routes live in each module's `routes.go`. Each one is registered with its method, its path and the permission it needs, so no route exists without a permission check.
+Routes live in each module's `routes.go`. Each one is registered with its method, path and permission, so every route has a permission check.
 
 `openapi.json` comes from the routes. `TestOpenAPIGenerated` fails when they drift, so update it in the same change. A route-table snapshot also fails when a route is added, removed or moved without a snapshot update.
 

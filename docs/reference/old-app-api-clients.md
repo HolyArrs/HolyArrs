@@ -60,7 +60,7 @@ If it does not work:
 4. Repeat in **Settings > Radarr** with `/radarr` and the Radarr-side key.
 5. Turn Bazarr's live feed off. HolyArrs has none; its scheduled sync finds new files.
 
-HolyArrs has its own subtitle search, held back in this release, so Bazarr is the way to get subtitles for now.
+The built-in subtitle search is held back in this release, so use Bazarr for subtitles.
 
 <details class="ha-more"><summary>What syncs and what doesn't</summary>
 

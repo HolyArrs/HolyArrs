@@ -64,7 +64,7 @@ Below the list, **Season packs** decides what one download with many episodes se
 
 ### Reach the local network
 
-Off by default. Off, a Discord Alert sends only to discord.com and other kinds only to internet servers; a link to this machine or your home network is refused, also after the name is looked up. Turn it on for a mail server or receiver at home. Redirects are never followed.
+Off by default. While off, Discord Alerts go only to discord.com and other kinds only to internet servers; links to this machine or your home network are refused, even after a name lookup. Turn it on for a mail server or receiver at home. Redirects are never followed.
 
 ### Pause an Alert
 

@@ -113,7 +113,7 @@ The doctor runs inside the container as the same user HolyArrs runs as, so it hi
 | `-config <folder>` | Checks another HolyArrs config folder than `/config`. |
 | `-json` | Prints the report as JSON. |
 
-Exit code 0 means nothing failed; 1 means a line says `FAIL`. The report never shows keys, passwords or tokens. It only reads, except a small test file it writes and removes, and, when started as root, handing the config folder to `PUID:PGID` like a normal start.
+Exit code 0 means nothing failed; 1 means a line says `FAIL`. The report never shows keys, passwords or tokens. It only reads, except for a small test file it writes and removes. Started as root, it also hands the config folder to `PUID:PGID`, like a normal start.
 
 If HolyArrs keeps restarting, `docker exec` fails. Run the doctor in a new container with the same folders:
 

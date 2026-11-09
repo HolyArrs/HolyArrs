@@ -1,6 +1,6 @@
 ---
 title: Get support
-description: What to collect, what to hide, and where to ask when HolyArrs needs a second pair of eyes.
+description: What to collect, what to hide, and where to ask for help.
 level: Start
 sidebar: { order: 3 }
 ---

@@ -40,7 +40,7 @@ Movies/
 
 ## Rename files
 
-1. To rename one movie, open it and press **Rename files**. To rename every movie, open **Library**, then **Rename files**.
+1. For one movie, open it and press **Rename files**. For every movie, open **Library**, then **Rename files**.
 2. Read the preview: each file's name now and the name it gets.
 3. Press **Rename**.
 

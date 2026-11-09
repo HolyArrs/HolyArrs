@@ -6,7 +6,7 @@ level: Setup
 
 See what is downloading, how finished episodes are placed and what to do when a download goes wrong. Only the owner and admins see these screens.
 
-When HolyArrs chooses a release, it sends it to a **Downloader** and watches it until each episode is in your Library. For the tabs, **Mark failed** and **Remove**, see [Movie downloads](../movies/downloads.md). They work the same way here.
+When HolyArrs chooses a release, it sends it to a **Downloader** and watches it until each episode is in your Library. The tabs, **Mark failed** and **Remove** all work as on [Movie downloads](../movies/downloads.md).
 
 ## Watch your downloads
 

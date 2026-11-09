@@ -24,7 +24,7 @@ A folder name with an id, like `Copper Valley (2025) {tvdb-81189}`, always match
 
 If one lookup fails, that folder shows as not matched with the reason and the rest go on.
 
-These files are **left alone**, with the reason, and never touched: a file that names another show, a file with no episode in its name, and a smaller copy of an episode another file holds.
+These files are **left alone**, with the reason: a file that names another show, a file with no episode in its name, and a smaller copy of an episode another file holds.
 
 ## Rename episode files
 
