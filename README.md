@@ -302,7 +302,7 @@ Want to build it into a closed product? See [COMMERCIAL.md](COMMERCIAL.md).
 
 ## Credits
 
-Thanks to the metadata providers and open source libraries HolyArrs is built on. The full list is in [CREDITS.md](CREDITS.md).
+Thanks to the metadata providers and open source libraries HolyArrs is built on. The full list is in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 ## Keep it going
 
