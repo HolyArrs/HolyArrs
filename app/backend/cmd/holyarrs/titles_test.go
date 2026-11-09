@@ -211,6 +211,9 @@ func TestRefreshAndCalendarAPI(t *testing.T) {
 	if len(all.JobIDs) != 3 {
 		t.Fatalf("refresh all queues the movie, show and artist refresh: %v", all.JobIDs)
 	}
+	if js, _ := database.Select[domain.Job](context.Background(), s.Read(), "jobs", "kind = 'refresh_shows'"); len(js) != 1 {
+		t.Fatalf("refresh all should queue one refresh_shows Job: %+v", js)
+	}
 	deadline := time.Now().Add(5 * time.Second)
 	for {
 		js, _ := database.Select[domain.Job](context.Background(), s.Read(), "jobs", "kind = 'refresh_titles'")
