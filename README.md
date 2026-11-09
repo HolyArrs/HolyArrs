@@ -36,7 +36,7 @@ HolyArrs is the one app I wanted instead.
 
 Someone asks for a title. HolyArrs searches your Sources, picks the best release with your Pick rules, sends it to your downloader and files it in your library. Your media server hears about it when it lands.
 
-<picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/tiles-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/tiles-light.png" width="100%" alt="Browse like a streaming app. Ask for anything. It finds it. Straight to your downloader. Subtitles, sorted. Into your library." /></picture>
+<picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/tiles-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/tiles-light.png" width="100%" alt="Browse like a streaming app. Ask for anything. It finds it. Straight to your downloader. Subtitles kept. Into your library." /></picture>
 
 - **Explore** like a streaming app. Hover a title and the trailer plays.
 - **Requests** for a whole show or one season. You approve, or let trusted people skip the queue.
