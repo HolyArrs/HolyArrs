@@ -9,8 +9,8 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
 )
 
-// Held subtitle notes may only move files inside the Library folder and its
-// holding folder; restore never overwrites a file.
+// Held subtitle notes may only move files within the Library folder and its
+// holding folder, and a restore never overwrites a file.
 func TestValidateHeldSubtitles_RejectsEscapes(t *testing.T) {
 	lib := t.TempDir()
 	movie := filepath.Join(lib, "Arrival (2016)")
@@ -55,7 +55,7 @@ func TestValidateHeldSubtitles_RejectsEscapes(t *testing.T) {
 		}
 	}
 
-	// Both files there: refuse and touch neither.
+	// When both files exist, refuse and leave both alone.
 	write := func(p, s string) {
 		if err := os.WriteFile(p, []byte(s), 0o644); err != nil {
 			t.Fatal(err)
@@ -74,7 +74,7 @@ func TestValidateHeldSubtitles_RejectsEscapes(t *testing.T) {
 		t.Fatal("held copy changed")
 	}
 
-	// Only the held copy there: it moves back.
+	// When only the held copy exists, it moves back.
 	if err := os.Remove(from); err != nil {
 		t.Fatal(err)
 	}

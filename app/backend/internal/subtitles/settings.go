@@ -14,48 +14,47 @@ import (
 
 // Schedule kinds.
 const (
-	KindMissing = "subtitle_missing" // search every File missing a wished subtitle
-	KindBetter  = "subtitle_better"  // search again for better subtitles saved lately
-	KindSearch  = "subtitle_search"  // search one File
-	KindLook    = "subtitle_look"    // read what Files have after a wish changed; no site asked
+	KindMissing = "subtitle_missing" // search every File missing a wanted subtitle
+	KindBetter  = "subtitle_better"  // search again to improve recently saved subtitles
+	KindSearch  = "subtitle_search"  // search a single File
+	KindLook    = "subtitle_look"    // read what Files have after a wish changed, without asking any site
 )
 
-// Settings are the subtitle settings (group what_to_pick; the two
-// schedules' intervals live on their schedules rows).
+// Settings holds the subtitle settings in the what_to_pick group. The two
+// schedule intervals live on their schedules rows instead.
 type Settings struct {
-	// Languages is the default wish of every movie and show without one.
+	// Languages is the default wish for every movie and show without its own.
 	Languages []Want `json:"languages"`
-	// Pass marks, 0 to 100.
+	// Pass marks, from 0 to 100.
 	PassMarkMovie   int `json:"pass_mark_movie"`
 	PassMarkEpisode int `json:"pass_mark_episode"`
-	// UseBuiltIn counts subtitle tracks inside the video toward the wish;
-	// IgnorePictureTracks leaves picture tracks (PGS, VobSub) out of that.
+	// UseBuiltIn counts subtitle tracks inside the video toward the wish.
+	// IgnorePictureTracks leaves picture tracks such as PGS and VobSub out of it.
 	UseBuiltIn          bool `json:"use_built_in"`
 	IgnorePictureTracks bool `json:"ignore_picture_tracks"`
-	// HISuffix names hearing-impaired files: hi, cc or sdh.
+	// HISuffix is the tag used in hearing-impaired file names: hi, cc or sdh.
 	HISuffix string `json:"hi_suffix"`
-	// SearchHours is how often missing subtitles are searched.
+	// SearchHours is how often missing subtitles are searched for.
 	SearchHours int `json:"search_hours"`
-	// Better turns the search for better subtitles on; BetterHours is how
-	// often it runs, BetterDays how old a saved subtitle may be to qualify.
+	// Better turns on the search for better subtitles. BetterHours is how often
+	// it runs and BetterDays is the most age a saved subtitle may have to qualify.
 	Better      bool `json:"better"`
 	BetterHours int  `json:"better_hours"`
 	BetterDays  int  `json:"better_days"`
-	// Batch caps the Files one scheduled run searches.
+	// Batch caps the Files one scheduled run searches, to spread site load.
 	Batch int `json:"batch"`
-	// Adaptive tries a wish that keeps finding nothing only weekly after
-	// three weeks.
+	// Adaptive drops a wish that keeps finding nothing to a weekly try after
+	// three weeks, to spare the sites.
 	Adaptive bool `json:"adaptive"`
-	// SyncFromFPS and SyncToFPS are the frame-rate change a Sync fix
-	// offers first (a subtitle timed for 25 fps on a 23.976 fps video);
-	// SyncStepMS is the step of its offset buttons. A person can change
-	// all three in the fix itself.
+	// SyncFromFPS and SyncToFPS are the frame-rate change a Sync fix offers first,
+	// such as a subtitle timed for 25 fps on a 23.976 fps video. SyncStepMS is the
+	// step of the offset buttons. A person can change all three in the fix.
 	SyncFromFPS float64 `json:"sync_from_fps"`
 	SyncToFPS   float64 `json:"sync_to_fps"`
 	SyncStepMS  int     `json:"sync_step_ms"`
 }
 
-// DefaultSettings returns the settings used before anyone changes them.
+// DefaultSettings returns the settings in use before anyone changes them.
 func DefaultSettings() Settings {
 	return Settings{Languages: []Want{}, PassMarkMovie: 70, PassMarkEpisode: 90, UseBuiltIn: true, HISuffix: "hi",
 		SearchHours: 6, Better: true, BetterHours: 12, BetterDays: 7, Batch: 100, Adaptive: true,
@@ -94,8 +93,8 @@ var settingKeys = []string{"subtitle_languages", "subtitle_pass_mark_movie", "su
 	"subtitle_ignore_picture_tracks", "subtitle_hi_suffix", "subtitle_better", "subtitle_better_days", "subtitle_batch", "subtitle_adaptive",
 	"subtitle_sync_from_fps", "subtitle_sync_to_fps", "subtitle_sync_step_ms"}
 
-// ReadSettings reads the subtitle settings; unset or odd values keep their
-// defaults.
+// ReadSettings reads the subtitle settings. Unset or odd values keep their
+// defaults so a bad row never breaks subtitles.
 func ReadSettings(ctx context.Context, db *sql.DB) Settings {
 	s := DefaultSettings()
 	rows, err := db.QueryContext(ctx, "SELECT key, value FROM settings WHERE grp = 'what_to_pick' AND key LIKE 'subtitle_%'")
@@ -177,8 +176,8 @@ func ReadSettings(ctx context.Context, db *sql.DB) Settings {
 	return s
 }
 
-// SaveSettings stores the settings and moves the two schedules. then, when
-// given, runs in the same transaction.
+// SaveSettings stores the settings and updates both schedules. When then is
+// given, it runs in the same transaction.
 func SaveSettings(ctx context.Context, st *database.Store, s Settings, by domain.Actor, then ...func(tx *sql.Tx) error) error {
 	if err := s.Validate(); err != nil {
 		return err
@@ -226,7 +225,7 @@ func SaveSettings(ctx context.Context, st *database.Store, s Settings, by domain
 	})
 }
 
-// PassMark is the Pass mark for a kind of Item (movie or episode).
+// PassMark returns the pass mark for a kind of Item, movie or episode.
 func (s Settings) PassMark(itemKind string) int {
 	if itemKind == "episode" {
 		return s.PassMarkEpisode

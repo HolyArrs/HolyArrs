@@ -1,7 +1,7 @@
-// Package container lists the subtitle tracks inside a video. It uses the
-// one bounded header reader in internal/mediainfo (Matroska/WebM and
-// MP4/MOV), so a hostile file can neither hang it nor make it allocate
-// much. Anything it cannot read gives an error and no tracks.
+// Package container lists the subtitle tracks built into a video file.
+// It reads headers through the bounded reader in internal/mediainfo, which
+// covers Matroska, WebM, MP4 and MOV. A hostile file cannot hang it or make
+// it allocate much. A file it cannot read gives an error and no tracks.
 package container
 
 import (
@@ -14,27 +14,27 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 )
 
-// Track is one subtitle track inside a video.
+// Track describes one subtitle track found inside a video.
 type Track struct {
-	Index           int    `json:"index"`    // the container's own track number
-	Codec           string `json:"codec"`    // S_TEXT/UTF8, S_HDMV/PGS, tx3g ...
-	Language        string `json:"language"` // as the file says it (eng, en-US, und)
+	Index           int    `json:"index"`    // track number as the container stores it
+	Codec           string `json:"codec"`    // codec id, such as S_TEXT/UTF8, S_HDMV/PGS or tx3g
+	Language        string `json:"language"` // language exactly as written in the file (eng, en-US, und)
 	Name            string `json:"name,omitempty"`
 	Forced          bool   `json:"forced,omitempty"`
 	HearingImpaired bool   `json:"hearing_impaired,omitempty"`
 	Default         bool   `json:"default,omitempty"`
-	Picture         bool   `json:"picture,omitempty"` // a picture format (PGS, VobSub, DVB)
+	Picture         bool   `json:"picture,omitempty"` // true for picture formats such as PGS, VobSub and DVB
 }
 
-// Errors.
+// Errors returned when a file cannot be read.
 var (
 	ErrUnknownFormat = mediafiles.ErrUnsupported
 	ErrMalformed     = mediafiles.ErrMalformed
 	ErrLimit         = mediafiles.ErrLimit
 )
 
-// Probe lists the subtitle tracks of the file at path. Only regular files
-// are read (links, folders and devices are refused).
+// Probe lists the subtitle tracks of the file at path.
+// It opens regular files only, so links, folders and devices are refused.
 func Probe(path string) ([]Track, error) {
 	fi, err := os.Lstat(path)
 	if err != nil {
@@ -51,7 +51,7 @@ func Probe(path string) ([]Track, error) {
 	return Read(f, fi.Size())
 }
 
-// Read lists the subtitle tracks of a video of size bytes.
+// Read lists the subtitle tracks of a video that is size bytes long.
 func Read(r io.ReadSeeker, size int64) ([]Track, error) {
 	ra, ok := r.(io.ReaderAt)
 	if !ok {
@@ -75,7 +75,7 @@ func Read(r io.ReadSeeker, size int64) ([]Track, error) {
 		if lang == "" {
 			lang = "und"
 			if matroska {
-				lang = "eng" // the Matroska default when none is written
+				lang = "eng" // Matroska treats a missing language as English
 			}
 		}
 		out = append(out, Track{
@@ -87,7 +87,7 @@ func Read(r io.ReadSeeker, size int64) ([]Track, error) {
 	return out, nil
 }
 
-// seekReaderAt reads at an offset through Seek and Read.
+// seekReaderAt gives ReadAt on top of Seek and Read.
 type seekReaderAt struct{ r io.ReadSeeker }
 
 func (s seekReaderAt) ReadAt(p []byte, off int64) (int, error) {
@@ -101,8 +101,8 @@ func (s seekReaderAt) ReadAt(p []byte, off int64) (int, error) {
 	return n, err
 }
 
-// PictureCodec reports whether a track codec is a picture subtitle
-// (PGS, VobSub, DVB, BMP), not text.
+// PictureCodec reports whether a codec stores subtitles as pictures
+// (PGS, VobSub, DVB, BMP) rather than text.
 func PictureCodec(c string) bool { return pictureCodec(c) }
 
 func pictureCodec(c string) bool {

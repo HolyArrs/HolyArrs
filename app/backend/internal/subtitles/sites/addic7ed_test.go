@@ -64,7 +64,7 @@ func TestAddic7edSearchAndDownload(t *testing.T) {
 	if got, err := s.Search(ctx, Query{Kind: "movie", Title: "Quiet Harbour", Languages: []string{"en"}}); err != nil || len(got) != 0 {
 		t.Fatalf("movie %+v %v", got, err)
 	}
-	// French asked too.
+	// Ask for French as well.
 	q := a7Query
 	q.Languages = []string{"en", "fr"}
 	if got, _ := s.Search(ctx, q); len(got) != 2 {
@@ -363,7 +363,7 @@ func TestAddic7edLinksPinned(t *testing.T) {
 	if err != nil || len(got) != 0 {
 		t.Fatalf("off-host link kept: %+v %v", got, err)
 	}
-	// A candidate pointing elsewhere is refused at download too.
+	// A candidate that points elsewhere is refused at download time too.
 	for _, link := range []string{"https://elsewhere.example/download/301\n/show/12", "//elsewhere.example/x\n/show/12", "/download/301\nhttps://evil.example/show/1"} {
 		if _, err := s.Download(context.Background(), Candidate{Key: "301", Link: link}); err == nil {
 			t.Fatalf("followed %q", link)
@@ -417,7 +417,7 @@ func TestAddic7edListed(t *testing.T) {
 	}
 }
 
-// The lab serves the fake under a path; links and cookies follow it.
+// The lab serves the fake under a path, and links and cookies follow it.
 func TestAddic7edUnderAPath(t *testing.T) {
 	old := addic7edMinGap
 	addic7edMinGap = time.Millisecond

@@ -10,7 +10,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles/sites"
 )
 
-// Video is what a candidate is scored against.
+// Video holds what a candidate is scored against.
 type Video struct {
 	Kind        string // movie or episode
 	Title       string
@@ -18,27 +18,27 @@ type Video struct {
 	Year        int
 	Season      int
 	Episode     int
-	ReleaseName string // the File's release name, else its file name
+	ReleaseName string // the File's release name, or its file name when it has none
 	FPS         float64
 }
 
-// Part is one line of a score: what was compared and the points it gave.
+// Part is one line of a score: what was compared and how many points it gave.
 type Part struct {
 	Name    string `json:"name"`
 	Points  int    `json:"points"`
 	Matched bool   `json:"matched"`
 }
 
-// Score is a candidate's points out of 100 and what built them. Refused
-// names why a candidate can never be chosen on its own (wrong title,
-// wrong episode, forced not as wished); its Total is 0.
+// Score is a candidate's points out of 100 and the parts behind them. Refused
+// says why a candidate can never be picked automatically, such as a wrong
+// title, a wrong episode or an unwanted forced track. A refused Total is 0.
 type Score struct {
 	Total   int    `json:"total"`
 	Parts   []Part `json:"parts"`
 	Refused string `json:"refused,omitempty"`
 }
 
-// weights gives the points per scored part, as {episode, movie}. Each column adds up to 100.
+// weights holds the points for each scored part as {episode, movie}. Each column sums to 100.
 var weights = map[string][2]int{
 	"name":       {46, 34},
 	"year":       {22, 16},
@@ -64,14 +64,14 @@ func weight(kind, part string) int {
 	return weights[part][1]
 }
 
-// Caps on what one site answer may cost to score.
+// Limits on how much work one site answer may cause while scoring.
 const (
-	MaxReleaseNames      = 50  // release names scored per candidate
-	MaxCandidatesPerSite = 500 // candidates scored per site and search
+	MaxReleaseNames      = 50  // release names scored for each candidate
+	MaxCandidatesPerSite = 500 // candidates scored for each site in one search
 )
 
-// ScoreCandidate scores one candidate for one wished language. Only the
-// first MaxReleaseNames release names are read.
+// ScoreCandidate scores one candidate for one wanted language. It reads only
+// the first MaxReleaseNames release names so a large answer stays cheap.
 func ScoreCandidate(v Video, w Want, c sites.Candidate) Score {
 	matched := map[string]bool{}
 	refuse := func(why string) Score {
@@ -83,7 +83,7 @@ func ScoreCandidate(v Video, w Want, c sites.Candidate) Score {
 	show := v.Kind == "episode"
 	vr := releasename.Parse(v.ReleaseName, releasename.Hints{Show: show})
 
-	// The candidate's best release name (most release parts matched).
+	// Keep the candidate's release name that matches the most release parts.
 	var best releasename.Result
 	bestN, exact := -1, false
 	for _, name := range c.ReleaseNames[:min(len(c.ReleaseNames), MaxReleaseNames)] {
@@ -100,7 +100,7 @@ func ScoreCandidate(v Video, w Want, c sites.Candidate) Score {
 		}
 	}
 
-	// Name.
+	// Title name.
 	name := c.Title
 	if name == "" && bestN >= 0 {
 		name = best.Title.Value
@@ -152,7 +152,7 @@ func ScoreCandidate(v Video, w Want, c sites.Candidate) Score {
 			matched[p] = true
 		}
 	}
-	// Hearing-impaired as wished (forced was checked above).
+	// Hearing impaired as wanted. Forced was already checked above.
 	switch w.HearingImpaired {
 	case HIOnly:
 		matched["as_wished"] = c.HearingImpaired
@@ -180,7 +180,7 @@ func ScoreCandidate(v Video, w Want, c sites.Candidate) Score {
 	return s
 }
 
-// releaseMatches lists the release parts two parsed names share.
+// releaseMatches lists the release parts two parsed names have in common.
 func releaseMatches(v, c releasename.Result) []string {
 	var out []string
 	if v.Group.Value != "" && strings.EqualFold(v.Group.Value, c.Group.Value) {
@@ -230,16 +230,16 @@ func sameTitle(name, title string, aliases []string) bool {
 	return false
 }
 
-// Scored is a candidate with its score.
+// Scored is a candidate paired with its score.
 type Scored struct {
 	sites.Candidate
 	Score    Score `json:"score"`
-	Priority int   `json:"-"` // the site's priority (lower first)
-	Order    int   `json:"-"` // the site's place in the list
+	Priority int   `json:"-"` // site priority, lower goes first
+	Order    int   `json:"-"` // position of the site in the list
 }
 
-// Rank sorts candidates best first: score, trusted, site priority, most
-// downloads, then site order. Refused candidates go last.
+// Rank sorts candidates best first by score, then trust, site priority, most
+// downloads and site order. Refused candidates always sort last.
 func Rank(cs []Scored) {
 	sort.SliceStable(cs, func(i, j int) bool {
 		a, b := cs[i], cs[j]

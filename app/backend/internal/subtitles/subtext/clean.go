@@ -1,8 +1,8 @@
-// Package subtext reads subtitle text that came from outside: it unpacks
-// zip answers safely, finds the encoding, cleans the text, and moves cue
-// timing (offset and frame-rate fixes) for SRT, ASS and SSA. Everything is
-// done in memory with size caps and no regular expressions over whole
-// files.
+// Package subtext handles subtitle text that came from outside. It unpacks
+// zip answers safely, detects the encoding, cleans the text and shifts cue
+// timing with offset and frame-rate fixes for SRT, ASS and SSA. All work
+// happens in memory with size caps and without regular expressions over whole
+// files, so hostile input stays cheap.
 package subtext
 
 import (
@@ -22,14 +22,14 @@ import (
 	"golang.org/x/text/transform"
 )
 
-// Caps on what is read.
+// Caps on how much is read.
 const (
-	MaxText       = 5 << 20  // bytes of one subtitle
-	MaxArchive    = 8 << 20  // bytes of one download
-	MaxEntries    = 50       // entries in a zip
-	MaxEntryText  = 5 << 20  // bytes of one entry once unpacked
-	MaxUnpacked   = 20 << 20 // bytes of all entries once unpacked
-	MaxEntryRatio = 100      // unpacked to packed, per entry
+	MaxText       = 5 << 20  // bytes in one subtitle
+	MaxArchive    = 8 << 20  // bytes in one download
+	MaxEntries    = 50       // entries in one zip
+	MaxEntryText  = 5 << 20  // bytes in one unpacked entry
+	MaxUnpacked   = 20 << 20 // bytes in all unpacked entries together
+	MaxEntryRatio = 100      // unpacked to packed size, per entry
 )
 
 // Errors.
@@ -39,7 +39,7 @@ var (
 	ErrNotSubtitle = errors.New("not a subtitle")
 )
 
-// Formats a subtitle can be saved as.
+// Formats a subtitle can be saved in.
 const (
 	SRT = "srt"
 	ASS = "ass"
@@ -53,15 +53,14 @@ var Formats = []string{SRT, ASS, SSA, VTT, SUB}
 
 // Entry is one subtitle found in a download.
 type Entry struct {
-	Name   string // the archive entry's base name (only for choosing; never a path)
+	Name   string // base name of the archive entry, used only for choosing and never as a path
 	Format string
 	Data   []byte
 }
 
-// Unpack returns the subtitles in a download: the download itself when it
-// is a subtitle, or the subtitle entries of a zip. RAR and 7z are refused.
-// format is the site's word for the file type, used when the data does not
-// say.
+// Unpack returns the subtitles in a download: the download itself when it is
+// a subtitle, or the subtitle entries of a zip. RAR and 7z are refused.
+// nameHint is the site's file name, used when the data does not reveal the type.
 func Unpack(data []byte, nameHint string) ([]Entry, error) {
 	if len(data) > MaxArchive {
 		return nil, ErrTooBig
@@ -97,10 +96,11 @@ func formatOf(name string) string {
 	return ""
 }
 
-// TextSub says whether the head of a .sub file is clearly text (MicroDVD
-// "{1}{25}..." or SubViewer "[INFORMATION]"): no NUL or other control
-// bytes besides tab, CR and LF, and a first non-blank line that starts with
-// "{" or "[". A picture (VobSub) .sub, or anything unclear, is not text.
+// TextSub reports whether the start of a .sub file is plainly text, such as
+// MicroDVD "{1}{25}..." or SubViewer "[INFORMATION]". It must hold no NUL or
+// other control bytes besides tab, CR and LF, and its first non-blank line
+// must start with "{" or "[". A VobSub picture .sub, or anything unclear, is
+// not text.
 func TextSub(head []byte) bool {
 	head = bytes.TrimPrefix(head, []byte("\xef\xbb\xbf"))
 	for _, c := range head {
@@ -128,10 +128,10 @@ func sniff(b []byte) string {
 	return ""
 }
 
-// unzip reads the subtitle entries of a zip in memory. Entries that are
-// links, hold "..", are absolute or name a drive are refused outright (the
-// whole archive), as are zip bombs: too many entries, an entry too big or
-// unpacking past MaxEntryRatio, or too much in all.
+// unzip reads the subtitle entries of a zip in memory. Entries that are links,
+// contain "..", are absolute or name a drive make the whole archive refused.
+// So do zip bombs: too many entries, an entry too large or past MaxEntryRatio,
+// or too much in total.
 func unzip(data []byte) ([]Entry, error) {
 	zr, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
 	if err != nil {
@@ -166,7 +166,7 @@ func unzip(data []byte) ([]Entry, error) {
 		if err != nil {
 			return nil, fmt.Errorf("%w: %v", ErrArchive, err)
 		}
-		// The header sizes may lie: read at most one byte past the cap.
+		// Header sizes can lie, so read at most one byte past the cap.
 		b, err := io.ReadAll(io.LimitReader(rc, MaxEntryText+1))
 		rc.Close()
 		if err != nil {
@@ -186,10 +186,10 @@ func unzip(data []byte) ([]Entry, error) {
 	return out, nil
 }
 
-// Clean turns subtitle bytes into UTF-8 text without a byte-order mark,
-// NUL bytes or other control characters (tab, CR and LF stay). A UTF-8,
-// UTF-16 or UTF-32 mark is honoured; valid UTF-8 stays as it is; anything
-// else is read as Windows-1252. It refuses text with no timed cue.
+// Clean turns subtitle bytes into UTF-8 text with no byte-order mark, NUL bytes
+// or other control characters; tab, CR and LF stay. A UTF-8, UTF-16 or UTF-32
+// mark is honoured, valid UTF-8 is kept as is and anything else is read as
+// Windows-1252. Text without a timed cue is refused.
 func Clean(b []byte, format string) (string, error) {
 	if len(b) > MaxText {
 		return "", ErrTooBig
@@ -254,7 +254,7 @@ func hasCue(text, format string) bool {
 		}
 		return false
 	case SUB:
-		// MicroDVD: {start}{end}text
+		// MicroDVD lines look like {start}{end}text.
 		for line := range strings.Lines(text) {
 			if strings.HasPrefix(strings.TrimSpace(line), "{") {
 				return true

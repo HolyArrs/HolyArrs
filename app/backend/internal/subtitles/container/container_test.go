@@ -11,9 +11,9 @@ import (
 	"time"
 )
 
-// The lab files are made by ffmpeg from test patterns (no real media):
-// lab-built-in.mkv has English, forced Spanish and English SDH (hearing
-// impaired) text tracks; lab-built-in.mp4 has one English mov_text track.
+// The lab files come from ffmpeg test patterns and hold no real media.
+// lab-built-in.mkv carries English, forced Spanish and English SDH text
+// tracks. lab-built-in.mp4 carries one English mov_text track.
 func TestLabFiles(t *testing.T) {
 	got, err := Probe(filepath.Join("testdata", "lab-built-in.mkv"))
 	if err != nil {
@@ -60,7 +60,7 @@ func TestRefusals(t *testing.T) {
 			}
 		}
 	}
-	// Truncated files give an error, never a panic.
+	// A cut-off file must return an error and never panic.
 	b, _ := os.ReadFile(filepath.Join("testdata", "lab-built-in.mkv"))
 	for _, n := range []int{4, 20, 50, 100, 200} {
 		if _, err := Read(bytes.NewReader(b[:n]), int64(n)); err == nil {
@@ -69,7 +69,7 @@ func TestRefusals(t *testing.T) {
 	}
 }
 
-// Matroska element ids used by the fixtures.
+// Matroska element ids the hand-built fixtures use.
 const (
 	idEBML         = 0x1A45DFA3
 	idDocType      = 0x4282
@@ -87,7 +87,7 @@ const (
 	idLanguage     = 0x22B59C
 )
 
-// ebml writes one element with a 1-byte or 8-byte size.
+// ebml encodes one element with a 1-byte or 8-byte size.
 func ebml(id uint32, body []byte) []byte {
 	var out []byte
 	switch {
@@ -114,16 +114,16 @@ func ebml(id uint32, body []byte) []byte {
 func header() []byte { return ebml(idEBML, ebml(idDocType, []byte("matroska"))) }
 
 func TestHostileMatroska(t *testing.T) {
-	// A Tracks element claiming 1 TB is refused before anything is read.
-	huge := append(header(), 0x18, 0x53, 0x80, 0x67, 0xFF) // segment of unknown size
+	// A Tracks element that claims 1 TB is refused before any read.
+	huge := append(header(), 0x18, 0x53, 0x80, 0x67, 0xFF) // segment with unknown size
 	huge = append(huge, 0x16, 0x54, 0xAE, 0x6B, 0x01, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00)
 	if _, err := Read(bytes.NewReader(huge), int64(len(huge))); !errors.Is(err, ErrLimit) && !errors.Is(err, ErrMalformed) {
 		t.Errorf("huge tracks: %v", err)
 	}
-	// Many tiny Void elements stop at the element limit.
+	// A flood of tiny Void elements stops at the element limit.
 	seg := []byte{}
-	for range 20000 { // past the element budget
-		seg = append(seg, 0xEC, 0x80) // Void, empty
+	for range 20000 { // more than the element budget allows
+		seg = append(seg, 0xEC, 0x80) // empty Void element
 	}
 	many := append(header(), ebml(idSegment, seg)...)
 	start := time.Now()
@@ -133,12 +133,12 @@ func TestHostileMatroska(t *testing.T) {
 	if time.Since(start) > 5*time.Second {
 		t.Error("too slow")
 	}
-	// The wrong doc type is not Matroska.
+	// A file with another doc type is not Matroska.
 	odd := append(ebml(idEBML, ebml(idDocType, []byte("other"))), ebml(idSegment, nil)...)
 	if _, err := Read(bytes.NewReader(odd), int64(len(odd))); !errors.Is(err, ErrUnknownFormat) {
 		t.Errorf("doc type: %v", err)
 	}
-	// A SeekHead pointing at Tracks after the first Cluster is followed.
+	// A SeekHead that points at Tracks placed after the first Cluster is followed.
 	entry := ebml(idTrackEntry, append(append(ebml(idTrackNumber, []byte{3}), ebml(idTrackType, []byte{0x11})...), ebml(idLanguage, []byte("fre"))...))
 	tracks := ebml(idTracks, entry)
 	cluster := ebml(idCluster, []byte{0xE7, 0x81, 0x00})
@@ -158,16 +158,16 @@ func TestHostileMatroska(t *testing.T) {
 	if err != nil || len(got) != 1 || got[0].Language != "fre" || got[0].Index != 3 {
 		t.Fatalf("late tracks: %+v %v", got, err)
 	}
-	// A track without a language is English (the Matroska default); a
-	// picture codec is marked.
+	// A track with no language counts as English, as Matroska says, and a
+	// picture codec is flagged.
 	pgs := ebml(idTrackEntry, append(ebml(idTrackType, []byte{0x11}), ebml(idCodecID, []byte("S_HDMV/PGS"))...))
 	f := append(header(), ebml(idSegment, ebml(idTracks, pgs))...)
 	got, err = Read(bytes.NewReader(f), int64(len(f)))
 	if err != nil || len(got) != 1 || got[0].Language != "eng" || !got[0].Picture {
 		t.Fatalf("pgs: %+v %v", got, err)
 	}
-	// EBML lets strings be empty or padded with zero bytes and integers be
-	// empty (their default): the tracks are still listed, the padding cut.
+	// EBML allows empty or zero-padded strings and empty integers that mean the
+	// default. The tracks still list, with the padding trimmed.
 	padded := ebml(idTrackEntry, bytes.Join([][]byte{
 		ebml(idTrackNumber, []byte{4}), ebml(idTrackType, []byte{0x11}),
 		ebml(idCodecID, []byte("S_TEXT/UTF8\x00")), ebml(idLanguage, []byte("eng\x00\x00")), ebml(0x88, nil),
@@ -190,12 +190,12 @@ func mp4box(typ string, body []byte) []byte {
 }
 
 func TestHostileMP4(t *testing.T) {
-	// A box claiming more than its parent is malformed.
+	// A box that claims more bytes than its parent holds is malformed.
 	bad := append(mp4box("ftyp", []byte("isom")), 0xFF, 0xFF, 0xFF, 0xF0, 'm', 'o', 'o', 'v')
 	if _, err := Read(bytes.NewReader(bad), int64(len(bad))); !errors.Is(err, ErrMalformed) {
 		t.Errorf("oversized: %v", err)
 	}
-	// Deep nesting stops.
+	// Nesting that goes too deep stops.
 	deep := mp4box("trak", nil)
 	for range 20 {
 		deep = mp4box("mdia", deep)
@@ -204,7 +204,7 @@ func TestHostileMP4(t *testing.T) {
 	if _, err := Read(bytes.NewReader(f), int64(len(f))); err != nil && !errors.Is(err, ErrLimit) && !errors.Is(err, ErrMalformed) {
 		t.Errorf("deep: %v", err)
 	}
-	// No moov: malformed.
+	// A file with no moov box is malformed.
 	none := mp4box("ftyp", []byte("isom"))
 	if _, err := Read(bytes.NewReader(none), int64(len(none))); !errors.Is(err, ErrMalformed) {
 		t.Errorf("no moov: %v", err)

@@ -14,15 +14,15 @@ import (
 
 // Hearing-impaired choices in a wish.
 const (
-	HINormal = "normal" // a normal subtitle (a hearing-impaired one counts as there too)
-	HIOnly   = "hi"     // only a hearing-impaired one
-	HIEither = "either" // any
+	HINormal = "normal" // a normal subtitle; a hearing-impaired one also counts
+	HIOnly   = "hi"     // only a hearing-impaired subtitle
+	HIEither = "either" // either kind
 )
 
-// MaxWishLanguages caps the languages of one wish.
+// MaxWishLanguages caps the languages in one wish.
 const MaxWishLanguages = 10
 
-// Want is one language of a wish.
+// Want is one language in a wish.
 type Want struct {
 	Language        string `json:"language"`
 	HearingImpaired string `json:"hearing_impaired"`
@@ -37,9 +37,9 @@ var (
 	ErrNotFound     = errors.New("not found")
 )
 
-// CleanWants checks a wish and gives it in its stored form: two-letter
-// codes, a hearing-impaired choice, no language twice with the same forced
-// switch. Nil means an empty list (no subtitles wanted).
+// CleanWants checks a wish and returns it in stored form: two-letter codes, a
+// hearing-impaired choice and no language listed twice with the same forced
+// switch. Nil becomes an empty list, meaning no subtitles wanted.
 func CleanWants(ws []Want) ([]Want, error) {
 	if len(ws) > MaxWishLanguages {
 		return nil, ErrTooManyWants
@@ -69,7 +69,7 @@ func CleanWants(ws []Want) ([]Want, error) {
 	return out, nil
 }
 
-// Wish is one stored wish row: for a title, a Version of it, or an episode.
+// Wish is one stored wish row, for a title, one of its Versions or an episode.
 type Wish struct {
 	domain.Meta
 	TitleID   int64  `db:"title_id" json:"title_id"`
@@ -78,7 +78,7 @@ type Wish struct {
 	Languages []Want `db:"languages,json" json:"languages"`
 }
 
-// Place names where a wish was found when it is resolved.
+// Places where a resolved wish was found.
 const (
 	FromItem    = "episode"
 	FromVersion = "version"
@@ -92,7 +92,7 @@ type Resolved struct {
 	From  string `json:"from"`
 }
 
-// titleKind reads a title's kind, refusing music.
+// titleKind reads a title's kind and refuses music.
 func titleKind(ctx context.Context, db database.Querier, titleID int64) (string, error) {
 	var kind string
 	if err := db.QueryRowContext(ctx, "SELECT kind FROM titles WHERE id = ?", titleID).Scan(&kind); err != nil {
@@ -107,8 +107,8 @@ func titleKind(ctx context.Context, db database.Querier, titleID int64) (string,
 	return kind, nil
 }
 
-// WishFor resolves the wish of an Item in a Version: the episode's own,
-// else the Version's, else the title's, else the default.
+// WishFor resolves the wish for an Item in a Version: the episode's own, else
+// the Version's, else the title's, else the default.
 func WishFor(ctx context.Context, db *sql.DB, titleID, versionID, itemID int64) (Resolved, error) {
 	if _, err := titleKind(ctx, db, titleID); err != nil {
 		return Resolved{}, err
@@ -149,7 +149,7 @@ func nonNil(ws []Want) []Want {
 	return ws
 }
 
-// Wishes lists a title's own wish rows (title, Versions and episodes).
+// Wishes lists a title's own wish rows for the title, its Versions and episodes.
 func Wishes(ctx context.Context, db *sql.DB, titleID int64) ([]Wish, error) {
 	if _, err := titleKind(ctx, db, titleID); err != nil {
 		return nil, err
@@ -162,8 +162,8 @@ func Wishes(ctx context.Context, db *sql.DB, titleID int64) ([]Wish, error) {
 }
 
 // SetWish stores the wish of a title (versionID and itemID 0), one of its
-// Versions or one of its episodes. inherit removes the row instead, so the
-// place inherits again. The Version or episode must belong to the title.
+// Versions or one of its episodes. inherit deletes the row instead so the place
+// inherits again. The Version or episode must belong to the title.
 func SetWish(ctx context.Context, st *database.Store, titleID, versionID, itemID int64, wants []Want, inherit bool, by domain.Actor) error {
 	if versionID != 0 && itemID != 0 {
 		return errors.New("a wish is for a title, a Version or an episode, not two at once")
@@ -219,7 +219,7 @@ func owned(ctx context.Context, tx *sql.Tx, table string, id, titleID int64) err
 	return nil
 }
 
-// now is time.Now, replaced in tests.
+// now is time.Now in UTC, swapped out in tests.
 var now = func() time.Time { return time.Now().UTC() }
 
 func itoa(n int64) string { return strconv.FormatInt(n, 10) }

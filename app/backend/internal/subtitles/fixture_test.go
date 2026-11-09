@@ -11,7 +11,7 @@ import (
 )
 
 // fix is a small library: a movie with one File, a show with two episodes
-// (one File each, the first with a second Version), and an artist.
+// that have one File each (the first also has a second Version), and an artist.
 type fix struct {
 	st                          *database.Store
 	lib                         string

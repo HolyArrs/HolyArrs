@@ -8,8 +8,8 @@ import (
 	"testing"
 )
 
-// The site's key and sign-in token go only to the site's own host; a
-// download link on another host (a CDN) gets neither.
+// The site's key and sign-in token go only to the site's own host. A download
+// link on another host, such as a CDN, gets neither.
 func TestCredentialsStayOnSiteHost(t *testing.T) {
 	var mu sync.Mutex
 	seen := map[string]http.Header{}

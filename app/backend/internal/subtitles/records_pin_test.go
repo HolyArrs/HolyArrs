@@ -11,7 +11,7 @@ import (
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 )
 
-// JSON goldens for the records the subtitle routes return. Run with
+// JSON goldens for the records the subtitle routes return. Set
 // PIN_UPDATE_GOLDEN=1 to rewrite one on purpose.
 
 func subPinGolden(t *testing.T, name string, v any) {

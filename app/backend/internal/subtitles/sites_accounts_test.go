@@ -49,7 +49,7 @@ func TestAddic7ed_ChallengePausesSite(t *testing.T) {
 	}
 }
 
-// Made-up account details; nothing here is a real account.
+// Made-up account details. None of them is a real account.
 const (
 	mkKey  = "made-up-key-for-tests"
 	mkUser = "lab-person"
@@ -62,8 +62,8 @@ func osLab() *fakesite.OpenSubs {
 	}}
 }
 
-// accountSvc is a Service with a vault and one OpenSubtitles.com-shaped
-// fake site added with the given password.
+// accountSvc builds a Service with a vault and one fake site shaped like
+// OpenSubtitles.com, using the given password.
 func accountSvc(t *testing.T, f *fix, site *fakesite.OpenSubs, pass string) (*Service, int64) {
 	t.Helper()
 	srv := httptest.NewServer(site)
@@ -113,8 +113,8 @@ func TestOpenSubtitles_Saves(t *testing.T) {
 	}
 }
 
-// A refused sign-in rests the site with login_refused; the password never
-// shows in its Events.
+// A refused sign-in rests the site with login_refused, and the password never
+// appears in its Events.
 func TestOpenSubtitles_LoginRefusedPauses(t *testing.T) {
 	f := newFix(t)
 	wishAll(t, f, Want{Language: "en"})
@@ -131,7 +131,7 @@ func TestOpenSubtitles_LoginRefusedPauses(t *testing.T) {
 	}
 }
 
-// No downloads left: the site rests until the reset time the site gave.
+// With no downloads left, the site rests until the reset time it gave.
 func TestOpenSubtitles_QuotaRests(t *testing.T) {
 	f := newFix(t)
 	wishAll(t, f, Want{Language: "en"})

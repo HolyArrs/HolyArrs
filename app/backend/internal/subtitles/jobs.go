@@ -17,8 +17,8 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
 )
 
-// Register adds the subtitle Job kinds to the queue and makes the queue
-// the Service's way to start work later.
+// Register adds the subtitle Job kinds to q and lets the Service use the
+// queue to schedule later work.
 func (s *Service) Register(q *jobs.Queue) {
 	q.Handle(KindSearch, s.handleSearch)
 	q.Handle(KindMissing, s.handleMissing)
@@ -32,7 +32,7 @@ func (s *Service) Register(q *jobs.Queue) {
 	}
 }
 
-// Queue asks for a search of one File (one live Job per File).
+// Queue asks for a search of one File. Each File has at most one live Job.
 func (s *Service) Queue(ctx context.Context, fileID int64, params map[string]any) error {
 	if s.Enqueue == nil {
 		return errors.New("no job queue")
@@ -69,8 +69,8 @@ func (s *Service) handleSearch(ctx context.Context, r *jobs.Run) error {
 	return nil
 }
 
-// handleMissing queues searches for Files whose wish is not met and due,
-// and for Files not looked at since their wish changed; at most Batch.
+// handleMissing queues searches, at most Batch of them, for Files whose wish
+// is unmet and due, and for Files not looked at since their wish changed.
 func (s *Service) handleMissing(ctx context.Context, r *jobs.Run) error {
 	set := ReadSettings(ctx, s.Store.Read())
 	ids, err := s.dueFiles(ctx, set.Batch)
@@ -109,11 +109,11 @@ func (s *Service) dueFiles(ctx context.Context, batch int) ([]int64, error) {
 	return s.staleFiles(ctx, batch, out, seen)
 }
 
-// staleFiles adds to out, up to limit, the Files never looked at or looked
-// at for another wish than they have now.
+// staleFiles appends to out, up to limit, Files that were never looked at or
+// were looked at under a different wish than they have now.
 func (s *Service) staleFiles(ctx context.Context, limit int, out []int64, seen map[int64]bool) ([]int64, error) {
 	db := s.Store.Read()
-	// Files never looked at, or looked at for another wish.
+	// Files never looked at, or looked at under another wish.
 	rows, err := db.QueryContext(ctx, `SELECT DISTINCT f.id, i.title_id, f.version_id, i.id, l.wish FROM files f
 		JOIN slots s ON s.file_id = f.id JOIN items i ON i.id = s.item_id
 		LEFT JOIN subtitle_looks l ON l.file_id = f.id
@@ -154,9 +154,9 @@ func (s *Service) staleFiles(ctx context.Context, limit int, out []int64, seen m
 	return out, nil
 }
 
-// QueueLook asks for a look at every File whose wish changed or that was
-// never looked at: what it has is read from disk and its missing
-// subtitles are listed. No site is asked. One live Job at a time.
+// QueueLook asks for a look at every File whose wish changed or that was never
+// looked at. A look reads what is on disk and lists the missing subtitles
+// without asking any site. Only one look Job runs at a time.
 func (s *Service) QueueLook(ctx context.Context) error {
 	if s.Enqueue == nil {
 		return errors.New("no job queue")
@@ -164,7 +164,8 @@ func (s *Service) QueueLook(ctx context.Context) error {
 	return s.Enqueue(ctx, KindLook, nil, nil, KindLook)
 }
 
-// lookBatch is how many Files one look Job reads; more queue another.
+// lookBatch caps the Files one look Job reads, so a large library is split
+// across several Jobs.
 var lookBatch = 500
 
 func (s *Service) handleLook(ctx context.Context, r *jobs.Run) error {
@@ -183,14 +184,14 @@ func (s *Service) handleLook(ctx context.Context, r *jobs.Run) error {
 	}
 	r.SetResult(map[string]any{"looked": len(ids) - failed, "failed": failed})
 	if len(ids) == lookBatch && failed < len(ids) {
-		// More to read: the next Job goes on where this one stopped.
+		// Files remain, so the next Job carries on from here.
 		_ = s.Enqueue(ctx, KindLook, nil, nil, fmt.Sprintf("%s:%d", KindLook, r.Job.ID))
 	}
 	return nil
 }
 
-// handleBetter queues a better-subtitle search for Files with a subtitle
-// saved by a search in the last BetterDays days that scored under 99.
+// handleBetter queues a search for a better subtitle on Files whose subtitle
+// came from a search in the last BetterDays days and scored under 99.
 func (s *Service) handleBetter(ctx context.Context, r *jobs.Run) error {
 	set := ReadSettings(ctx, s.Store.Read())
 	if !set.Better {
@@ -220,9 +221,9 @@ func (s *Service) handleBetter(ctx context.Context, r *jobs.Run) error {
 	return nil
 }
 
-// OnEvent starts a search when an Import placed a File, and when a better
-// copy replaced one (its subtitles are then held aside with it). Hook it to
-// database.OnEvent.
+// OnEvent starts a search when an Import places a File or a better copy
+// replaces one; in the second case the old subtitles are held aside with the
+// old video. Wire it to database.OnEvent.
 func (s *Service) OnEvent(e domain.Event) {
 	ctx := context.Background()
 	switch e.Kind {
@@ -230,8 +231,8 @@ func (s *Service) OnEvent(e domain.Event) {
 		newID, _ := num(e.Data["new_file_id"])
 		oldID, _ := num(e.Data["old_file_id"])
 		if oldID > 0 {
-			// Here, not in the Job: the import's own Event may have queued
-			// the new File's search already.
+			// This runs here rather than in the Job because the import's own Event may
+			// already have queued a search for the new File.
 			s.holdWithVideo(ctx, oldID, newID, domain.System)
 		}
 		if newID > 0 {
@@ -240,8 +241,8 @@ func (s *Service) OnEvent(e domain.Event) {
 			}
 		}
 	case "adopted":
-		// Files adopted from disk: list what they miss; the schedule
-		// searches them later.
+		// Files adopted from disk get their missing subtitles listed now; the
+		// schedule searches for them later.
 		if err := s.QueueLook(ctx); err != nil {
 			log.Printf("subtitles: queue look after adopting: %v", err)
 		}
@@ -266,7 +267,7 @@ func num(v any) (int64, bool) {
 	return 0, false
 }
 
-// placedFiles finds the main Files the Event's Slots now hold.
+// placedFiles returns the main Files that the Event's Slots now hold.
 func (s *Service) placedFiles(ctx context.Context, e domain.Event) []int64 {
 	var slots []int64
 	for _, k := range []string{"placed_slot_ids", "slot_ids"} {
@@ -298,8 +299,8 @@ func (s *Service) placedFiles(ctx context.Context, e domain.Event) []int64 {
 	return out
 }
 
-// libRel is p relative to the Library folder lib, with forward slashes:
-// Events and History never show where the Library folder is on disk.
+// libRel returns p relative to the Library folder lib with forward slashes,
+// so Events and History never reveal where the library lives on disk.
 func libRel(lib, p string) string {
 	r, err := filepath.Rel(lib, p)
 	if err != nil || !filepath.IsLocal(r) {
@@ -308,8 +309,8 @@ func libRel(lib, p string) string {
 	return filepath.ToSlash(r)
 }
 
-// holdWithVideo moves the beside subtitles HolyArrs saved for a replaced
-// video into the holding folder with it; their rows become replaced.
+// holdWithVideo moves the beside subtitles the app saved for a replaced video
+// into the holding folder along with it, and marks their rows replaced.
 func (s *Service) holdWithVideo(ctx context.Context, oldFileID, newFileID int64, by domain.Actor) {
 	rows, err := database.Select[Subtitle](ctx, s.Store.Read(), "subtitles",
 		"file_id = ? AND place = 'beside' AND state = 'present' AND origin IN ('fetched', 'by_hand')", oldFileID)
@@ -346,7 +347,7 @@ func (s *Service) holdWithVideo(ctx context.Context, oldFileID, newFileID int64,
 	}
 }
 
-// Missing row for the "missing subtitles" list.
+// MissingRow is one entry in the missing subtitles list.
 type MissingRow struct {
 	FileID    int64      `json:"file_id"`
 	ItemID    int64      `json:"item_id"`
@@ -363,17 +364,17 @@ type MissingRow struct {
 	NextTryAt *time.Time `json:"next_try_at,omitempty"`
 }
 
-// MissingFilter narrows the missing subtitles list; empty fields match all.
+// MissingFilter narrows the missing subtitles list. An empty field matches all.
 type MissingFilter struct {
-	Language string // two-letter code
+	Language string // two-letter language code
 	Kind     string // movie or episode
-	TitleID  int64  // one movie or show
+	TitleID  int64  // limits the list to one movie or show
 }
 
 const missingFrom = ` FROM subtitles s JOIN files f ON f.id = s.file_id JOIN slots sl ON sl.id = json_extract(f.slot_ids, '$[0]')
 		JOIN items i ON i.id = sl.item_id JOIN titles t ON t.id = i.title_id WHERE s.place = 'wish' AND s.state IN ('wanted', 'none_good_enough') AND f.state = 'present'`
 
-// MissingTitle is a movie or show with at least one missing subtitle.
+// MissingTitle is a movie or show missing at least one subtitle.
 type MissingTitle struct {
 	ID    int64  `json:"id"`
 	Name  string `json:"name"`
@@ -381,8 +382,8 @@ type MissingTitle struct {
 	Count int    `json:"count"`
 }
 
-// MissingTitles lists the movies and shows missing a wished subtitle, by
-// name, with how many are missing (the list's show filter).
+// MissingTitles lists by name the movies and shows missing a wanted subtitle,
+// with a count for each. It feeds the title filter of the missing list.
 func MissingTitles(ctx context.Context, db *sql.DB) ([]MissingTitle, error) {
 	rows, err := db.QueryContext(ctx, "SELECT t.id, t.name, t.kind, count(*)"+missingFrom+" GROUP BY t.id ORDER BY t.sort_name, t.id")
 	if err != nil {
@@ -400,8 +401,8 @@ func MissingTitles(ctx context.Context, db *sql.DB) ([]MissingTitle, error) {
 	return out, rows.Err()
 }
 
-// MissingList lists wished subtitles not there yet, optionally for one
-// language, kind (movie, episode) or title, by title name then episode.
+// MissingList lists wanted subtitles that are not present yet. It can narrow
+// to one language, kind or title, and sorts by title name, then episode.
 func MissingList(ctx context.Context, db *sql.DB, mf MissingFilter, limit, offset int) ([]MissingRow, int, error) {
 	where := ""
 	var args []any

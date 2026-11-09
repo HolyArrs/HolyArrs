@@ -25,7 +25,7 @@ type queued struct {
 	params map[string]any
 }
 
-// svc is a Service on the fixture with the lab's fake site added.
+// svc builds a Service on the fixture with the lab's fake site added.
 func svc(t *testing.T, f *fix, site *fakesite.Site) (*Service, *[]queued) {
 	t.Helper()
 	srv := httptest.NewServer(site)
@@ -56,7 +56,7 @@ func (f *fix) abs(rel string) string { return filepath.Join(f.lib, filepath.From
 
 const movieRel = "The Lantern (2010)/The Lantern (2010) 1080p BluRay.mkv"
 
-// relInLib says whether v is a path relative to the Library folder.
+// relInLib reports whether v is a path relative to the Library folder.
 func relInLib(v any) bool {
 	p, ok := v.(string)
 	return ok && p != "" && !filepath.IsAbs(p) && !strings.Contains(p, `\`) && !strings.HasPrefix(p, "/")
@@ -71,8 +71,8 @@ func eventsOf(t *testing.T, st *database.Store, kind string) []domain.Event {
 	return es
 }
 
-// A lab file with built-in English (and forced Spanish) is not searched
-// for those; French is.
+// A lab file with built-in English and forced Spanish is not searched for
+// those languages, but French is searched.
 func TestSearch_BuiltInCountsTowardTheWish(t *testing.T) {
 	f := newFix(t)
 	b, err := os.ReadFile(filepath.Join("container", "testdata", "lab-built-in.mkv"))
@@ -97,7 +97,7 @@ func TestSearch_BuiltInCountsTowardTheWish(t *testing.T) {
 	if len(rows) != 3 || rows[0].Place != "built_in" {
 		t.Fatalf("rows %+v", rows)
 	}
-	// With built-in subtitles not counted, English is searched and saved.
+	// When built-in subtitles do not count, English is searched and saved.
 	set := ReadSettings(ctx, f.st.Read())
 	set.UseBuiltIn = false
 	_ = SaveSettings(ctx, f.st, set, domain.System)
@@ -107,7 +107,7 @@ func TestSearch_BuiltInCountsTowardTheWish(t *testing.T) {
 	}
 }
 
-// A lab movie gets its subtitle file, named with its language, and an Event.
+// A lab movie gets a subtitle file named with its language, plus an Event.
 func TestService_SaveNamesAndEvents(t *testing.T) {
 	f := newFix(t)
 	s, _ := svc(t, f, fakesite.Lab())
@@ -131,12 +131,12 @@ func TestService_SaveNamesAndEvents(t *testing.T) {
 	if len(eventsOf(t, f.st, EventSaved)) != 2 {
 		t.Error("saved events")
 	}
-	// Nothing left in the wish; a second search asks nothing.
+	// The wish is now fully met, so a second search asks no site.
 	st, _ := s.Look(ctx, f.movieFile, domain.System)
 	if len(st.Missing) != 0 {
 		t.Fatalf("missing after save: %+v", st.Missing)
 	}
-	// No temporary files left behind.
+	// No temporary files are left behind.
 	ents, _ := os.ReadDir(filepath.Dir(f.abs(want)))
 	for _, e := range ents {
 		if strings.HasPrefix(e.Name(), ".holyarrs-sub") {
@@ -153,8 +153,8 @@ func TestService_SaveNamesAndEvents(t *testing.T) {
 	}
 }
 
-// Weak subtitles are skipped and the wish is tried again later; a zipped
-// answer is unpacked; a found file is never overwritten.
+// Weak subtitles are skipped and the wish is retried later, a zipped answer
+// is unpacked, and a found file is never overwritten.
 func TestService_PassMarkZipAndFoundFiles(t *testing.T) {
 	f := newFix(t)
 	site := &fakesite.Site{Subs: []fakesite.Sub{
@@ -164,7 +164,7 @@ func TestService_PassMarkZipAndFoundFiles(t *testing.T) {
 	s, _ := svc(t, f, site)
 	ctx := context.Background()
 	wishAll(t, f, Want{Language: "en"}, Want{Language: "es"}, Want{Language: "de"})
-	// A German file someone put there counts as present.
+	// A German file a person placed there counts as present.
 	found := "The Lantern (2010)/The Lantern (2010) 1080p BluRay.de.srt"
 	if err := os.WriteFile(f.abs(found), []byte(fakesite.Cue("hallo", 0)), 0o644); err != nil {
 		t.Fatal(err)
@@ -188,11 +188,11 @@ func TestService_PassMarkZipAndFoundFiles(t *testing.T) {
 	if len(eventsOf(t, f.st, EventNoneGood)) != 1 {
 		t.Error("none-good event")
 	}
-	// The found German file was not touched and is recorded as found.
+	// The found German file is untouched and recorded as found.
 	if b, _ := os.ReadFile(f.abs(found)); !strings.Contains(string(b), "hallo") {
 		t.Error("found file changed")
 	}
-	// Saving over a found file's name is refused.
+	// Saving over the name of a found file is refused.
 	fc, _ := s.load(ctx, f.movieFile)
 	_, err = s.save(ctx, fc, &Subtitle{FileID: f.movieFile, Language: "de", Place: "beside", Origin: "fetched", State: "present", Sync: map[string]any{}},
 		fakesite.Cue("x", 0), "srt", DefaultSettings(), nil, domain.System)
@@ -201,7 +201,7 @@ func TestService_PassMarkZipAndFoundFiles(t *testing.T) {
 	}
 }
 
-// A better subtitle replaces the saved one, which goes to the holding folder.
+// A better subtitle replaces the saved one, which moves to the holding folder.
 func TestService_BetterSubtitle(t *testing.T) {
 	f := newFix(t)
 	site := &fakesite.Site{Subs: []fakesite.Sub{
@@ -214,14 +214,14 @@ func TestService_BetterSubtitle(t *testing.T) {
 	if res.Outcomes[0].Result != "saved" || res.Outcomes[0].Score != 72 {
 		t.Fatalf("%+v", res.Outcomes)
 	}
-	// The schedule finds it (72 < 99, saved today).
+	// The schedule picks it up because 72 is under 99 and it was saved today.
 	if err := s.handleBetter(ctx, &jobs.Run{}); err != nil {
 		t.Fatal(err)
 	}
 	if len(*q) != 1 || (*q)[0].params["better"] != true {
 		t.Fatalf("queued %+v", *q)
 	}
-	// Nothing better yet: kept.
+	// Nothing better turns up, so the subtitle is kept.
 	res, _ = s.Search(ctx, f.movieFile, SearchOptions{Better: true, BetterDays: 7}, domain.System)
 	if res.Outcomes[0].Result != "kept" {
 		t.Fatalf("%+v", res.Outcomes)
@@ -247,7 +247,7 @@ func TestService_BetterSubtitle(t *testing.T) {
 	}
 }
 
-// A failing site rests and is not asked again until the rest is over.
+// A failing site rests and is not asked again until the rest ends.
 func TestService_SitePause(t *testing.T) {
 	f := newFix(t)
 	site := fakesite.Lab()
@@ -269,7 +269,7 @@ func TestService_SitePause(t *testing.T) {
 	if len(res.Asked) != 0 {
 		t.Fatalf("asked a resting site: %v", res.Asked)
 	}
-	// After the rest it is asked again, and a good answer clears it.
+	// After the rest it is asked again, and a good answer clears the rest.
 	site.Fail = 0
 	now = func() time.Time { return time.Now().UTC().Add(time.Hour) }
 	t.Cleanup(func() { now = func() time.Time { return time.Now().UTC() } })
@@ -319,20 +319,20 @@ func TestService_SyncAndTurnDown(t *testing.T) {
 	if len(*q) != 1 {
 		t.Fatalf("no new search queued: %+v", *q)
 	}
-	// events carry paths inside the Library folder.
+	// Events carry paths inside the Library folder.
 	if es := eventsOf(t, f.st, EventTurnedDown); len(es) != 1 || !relInLib(es[0].Data["moved_to"]) {
 		t.Fatalf("turned-down event %+v", es)
 	}
-	// The next search does not take the turned-down one again.
+	// The next search does not pick the turned-down subtitle again.
 	res, _ = s.Search(ctx, f.movieFile, SearchOptions{}, domain.System)
 	if res.Outcomes[0].Result != "none_good_enough" {
 		t.Fatalf("%+v", res.Outcomes)
 	}
 }
 
-// A placed import queues a search; a better copy holds the old File's
-// subtitles aside and queues the new File; the missing schedule finds
-// Files not looked at and due wishes.
+// A placed import queues a search. A better copy holds the old File's
+// subtitles aside and queues the new File. The missing schedule finds Files
+// never looked at and wishes that are due.
 func TestService_EventsAndSchedules(t *testing.T) {
 	f := newFix(t)
 	s, q := svc(t, f, fakesite.Lab())
@@ -343,7 +343,7 @@ func TestService_EventsAndSchedules(t *testing.T) {
 	if len(*q) != 1 || (*q)[0].id != f.movieFile {
 		t.Fatalf("%+v", *q)
 	}
-	// Missing schedule: nothing wished, nothing queued; then every File.
+	// With no wish set nothing is queued; after that every File is.
 	*q = nil
 	if err := s.handleMissing(ctx, &jobs.Run{}); err != nil || len(*q) != 0 {
 		t.Fatalf("%v %+v", err, *q)
@@ -353,7 +353,7 @@ func TestService_EventsAndSchedules(t *testing.T) {
 	if len(*q) != 3 {
 		t.Fatalf("queued %+v", *q)
 	}
-	// Looked at with the same wish and met: not queued again.
+	// Files looked at under the same wish and fully met are not queued again.
 	for _, id := range []int64{f.movieFile, f.ep1File, f.ep2File} {
 		if _, err := s.Search(ctx, id, SearchOptions{}, domain.System); err != nil {
 			t.Fatal(err)
@@ -364,7 +364,7 @@ func TestService_EventsAndSchedules(t *testing.T) {
 	if len(*q) != 0 {
 		t.Fatalf("queued again %+v", *q)
 	}
-	// A better copy: the old File's saved subtitle goes to the holding folder.
+	// A better copy moves the old File's saved subtitle to the holding folder.
 	var newFile int64
 	err := f.st.Write(ctx, func(tx *sql.Tx) error {
 		ts := database.FormatTime(now())
@@ -389,7 +389,7 @@ func TestService_EventsAndSchedules(t *testing.T) {
 	if hs := eventsOf(t, f.st, EventHeldWithVideo); len(held) != 1 || len(hs) != 1 || !relInLib(hs[0].Data["moved_to"]) {
 		t.Fatalf("held %v", held)
 	}
-	// The missing list shows wished subtitles not there.
+	// The missing list shows wanted subtitles that are not present.
 	if err := SetWish(ctx, f.st, f.show, 0, 0, []Want{{Language: "es"}}, false, domain.System); err != nil {
 		t.Fatal(err)
 	}
@@ -431,8 +431,7 @@ func (f *fix) slotOf(t *testing.T, fileID int64) int64 {
 	return id
 }
 
-// at most MaxCandidatesPerSite candidates of one site are
-// scored.
+// At most MaxCandidatesPerSite candidates from one site are scored.
 func TestService_SearchCapsCandidatesPerSite(t *testing.T) {
 	f := newFix(t)
 	site := &fakesite.Site{}
@@ -455,8 +454,8 @@ func fetchedRow(fileID int64, lang string) *Subtitle {
 	return &Subtitle{FileID: fileID, Language: lang, Place: "beside", Origin: "fetched", State: "present", Sync: map[string]any{}}
 }
 
-// when the last rename of a save fails, the file it held
-// aside goes back to its name and its row stays present.
+// When the final rename of a save fails, the file it held aside returns to
+// its name and its row stays present.
 func TestService_SaveFailurePutsHeldFileBack(t *testing.T) {
 	f := newFix(t)
 	s, _ := svc(t, f, fakesite.Lab())
@@ -481,9 +480,9 @@ func TestService_SaveFailurePutsHeldFileBack(t *testing.T) {
 	}
 }
 
-// a save cut off after its file is in place but before its
-// row is written is finished by the next look: the file is ours (fetched),
-// never "found", so a later better subtitle may replace it.
+// A save cut off after its file is in place but before its row is written is
+// finished by the next look. The file is marked fetched, never found, so a
+// later better subtitle may still replace it.
 func TestService_SaveCutOffBeforeRowIsRecoveredOnLook(t *testing.T) {
 	f := newFix(t)
 	s, _ := svc(t, f, fakesite.Lab())
@@ -664,8 +663,8 @@ func TestService_SaveCutOffMidHoldDoesNotMistakeOldTargetForNewSubtitle(t *testi
 	}
 }
 
-// a save error sent on Events and the live stream
-// names paths inside the Library folder only, never where it is on disk.
+// A save error sent on Events and the live stream shows only paths inside the
+// Library folder, never where that folder is on disk.
 func TestService_FailedEventHidesLibraryFolder(t *testing.T) {
 	f := newFix(t)
 	s, _ := svc(t, f, fakesite.Lab())

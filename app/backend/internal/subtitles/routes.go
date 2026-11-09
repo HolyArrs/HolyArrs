@@ -18,20 +18,20 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles/subtext"
 )
 
-// Handlers serves the subtitle routes.
+// Handlers serves the subtitle HTTP routes.
 type Handlers struct {
 	store   *database.Store
 	secrets *secrets.Vault
 	svc     *Service
 }
 
-// NewHandlers makes the subtitle routes over a store, the key vault and the
-// subtitle service.
+// NewHandlers builds the subtitle routes on top of a store, the key vault and
+// the subtitle service.
 func NewHandlers(store *database.Store, vault *secrets.Vault, svc *Service) *Handlers {
 	return &Handlers{store: store, secrets: vault, svc: svc}
 }
 
-// Routes adds the subtitle routes.
+// Routes registers the subtitle routes on m.
 func (a *Handlers) Routes(m *http.ServeMux) {
 	m.HandleFunc("GET /api/v1/subtitles/languages", a.subtitleLanguages)
 	m.HandleFunc("GET /api/v1/settings/subtitles", a.getSubtitleSettings)
@@ -86,7 +86,7 @@ func (a *Handlers) getSubtitleSettings(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *Handlers) putSubtitleSettings(w http.ResponseWriter, r *http.Request) {
-	st := ReadSettings(r.Context(), a.store.Read()) // fields left out keep their value
+	st := ReadSettings(r.Context(), a.store.Read()) // fields the request leaves out keep their current value
 	if !webserver.Decode(w, r, &st, `send any of languages, pass_mark_movie, pass_mark_episode, use_built_in, ignore_picture_tracks, hi_suffix, search_hours, better, better_hours, better_days, batch, adaptive, sync_from_fps, sync_to_fps, sync_step_ms`) {
 		return
 	}
@@ -94,12 +94,12 @@ func (a *Handlers) putSubtitleSettings(w http.ResponseWriter, r *http.Request) {
 		webserver.Fail(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	// New default languages: list what every File now misses.
+	// Default languages changed, so list what every File now misses.
 	_ = a.svc.QueueLook(r.Context())
 	webserver.WriteJSON(w, http.StatusOK, ReadSettings(r.Context(), a.store.Read()))
 }
 
-// FileView is one main File with its
+// FileView is one main File together with its subtitle state.
 type FileView struct {
 	FileID       int64      `json:"file_id"`
 	ItemID       int64      `json:"item_id"`
@@ -157,8 +157,8 @@ func (a *Handlers) putSubtitleWish(w http.ResponseWriter, r *http.Request) {
 		subtitleError(w, err)
 		return
 	}
-	// Look at the title's Files now (disk only, no site) so its page lists
-	// what the new wish misses straight away.
+	// Look at the title's Files right away, from disk only, so its page shows
+	// what the new wish is missing without waiting for the schedule.
 	if ids, err := FilesOf(r.Context(), a.store.Read(), t.ID, in.ItemID); err == nil {
 		for _, id := range ids {
 			_, _ = a.svc.Look(r.Context(), id, actorOf(r))
@@ -214,8 +214,8 @@ func (a *Handlers) searchSubtitles(w http.ResponseWriter, r *http.Request) {
 	webserver.WriteJSON(w, http.StatusAccepted, map[string]any{"queued": len(ids), "file_ids": ids, "job_ids": a.subtitleJobIDs(ctx, ids)})
 }
 
-// subtitleJobIDs finds the search Job of each File (the one just queued, or
-// the one already waiting), so a screen can follow them on the Jobs stream.
+// subtitleJobIDs finds the search Job for each File, either the one just
+// queued or one already waiting, so a screen can follow it on the Jobs stream.
 func (a *Handlers) subtitleJobIDs(ctx context.Context, fileIDs []int64) []int64 {
 	out := []int64{}
 	for _, id := range fileIDs {
@@ -436,7 +436,7 @@ func (a *Handlers) deleteSubtitleSite(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// ServeSiteTest tests one subtitle site; the reconnect control runs it too.
+// ServeSiteTest tests one subtitle site. The reconnect control calls it too.
 func (a *Handlers) ServeSiteTest(w http.ResponseWriter, r *http.Request) {
 	id, ok := subID(r)
 	if !ok {
@@ -451,7 +451,7 @@ func (a *Handlers) ServeSiteTest(w http.ResponseWriter, r *http.Request) {
 	webserver.WriteJSON(w, http.StatusOK, res)
 }
 
-// NewService makes the subtitle service for a server that was given none.
+// NewService builds the subtitle service for a server that was not given one.
 func NewService(store *database.Store, vault *secrets.Vault, live *webserver.LiveHub, q *jobs.Queue) *Service {
 	sv := &Service{Store: store, Vault: vault}
 	if live != nil {
@@ -466,7 +466,7 @@ func NewService(store *database.Store, vault *secrets.Vault, live *webserver.Liv
 	return sv
 }
 
-// titleID reads the {id} Title; false means a 404 was already sent.
+// titleID reads the {id} Title. It returns false after it has sent a 404.
 func (a *Handlers) titleID(w http.ResponseWriter, r *http.Request) (mediafiles.Title, bool) {
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	var t mediafiles.Title
@@ -480,8 +480,8 @@ func (a *Handlers) titleID(w http.ResponseWriter, r *http.Request) (mediafiles.T
 	return t, true
 }
 
-// actorOf is the signed-in caller, or the owner when the routes run without
-// sign-in (tests and the first-run setup).
+// actorOf returns the signed-in caller, or the owner when the routes run
+// without sign-in, as in tests and first-run setup.
 func actorOf(r *http.Request) domain.Actor {
 	if _, ok := webserver.From(r.Context()); ok {
 		return webserver.Actor(r.Context())
@@ -489,7 +489,7 @@ func actorOf(r *http.Request) domain.Actor {
 	return domain.Actor{Kind: "user", ID: 1}
 }
 
-// limitOf is the ?limit= value, or def when it is missing or out of range.
+// limitOf returns the ?limit= value, or def when it is missing or out of range.
 func limitOf(r *http.Request, def int) int {
 	n, err := strconv.Atoi(r.URL.Query().Get("limit"))
 	if err != nil || n <= 0 || n > 500 {

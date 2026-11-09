@@ -16,14 +16,14 @@ import (
 	"time"
 )
 
-// The two sites below need the person's own account. Their answer shapes
-// are our reading of each site's public API; they are checked only against
-// fake servers (package fakesite), never against the live sites.
+// The two sites below need the person's own account. Their answer shapes are
+// our reading of each site's public API and are checked only against fake
+// servers in package fakesite, never against the live sites.
 
-// openSubtitles talks to the OpenSubtitles.com REST API: the API key rides
-// in the Api-Key header on every call; searches need nothing more;
-// downloads need a sign-in (username and password) that hands out a bearer
-// token, which is kept for a day and asked for again when refused.
+// openSubtitles talks to the OpenSubtitles.com REST API. Every call sends the
+// API key in the Api-Key header and searches need nothing more. Downloads need
+// a sign-in with username and password, which returns a bearer token. The
+// token is kept for a day and renewed when the site refuses it.
 type openSubtitles struct {
 	c *client
 
@@ -33,8 +33,8 @@ type openSubtitles struct {
 	vip     bool
 }
 
-// osTokenLife is how long a sign-in is used before a new one; the site's
-// tokens last about a day.
+// osTokenLife is how long one sign-in is reused. The site's tokens last about
+// a day, so this renews a little early.
 const osTokenLife = 23 * time.Hour
 
 func newOpenSubtitles(c *client) *openSubtitles {
@@ -44,8 +44,8 @@ func newOpenSubtitles(c *client) *openSubtitles {
 	return &openSubtitles{c: c}
 }
 
-// osStatus reads the site's own answers: 406 is "no downloads left today",
-// with the time the count resets.
+// osStatus reads the site's own error answers. A 406 means no downloads are
+// left today and carries the time the count resets.
 func osStatus(resp *http.Response, body []byte) error {
 	if resp.StatusCode != http.StatusNotAcceptable {
 		return nil
@@ -59,8 +59,8 @@ func osStatus(resp *http.Response, body []byte) error {
 	return e
 }
 
-// untilReset turns the site's reset time into a wait (0 when unreadable,
-// in the past or over a day away).
+// untilReset turns the site's reset time into a wait. It returns 0 when the
+// time is unreadable, in the past or more than a day away.
 func untilReset(at string) time.Duration {
 	t, err := time.Parse(time.RFC3339, strings.TrimSpace(at))
 	if err != nil {
@@ -109,7 +109,7 @@ type osSub struct {
 	} `json:"attributes"`
 }
 
-// idNumber turns "tt0012345" or "12345" into 12345; 0 when it is not one.
+// idNumber turns "tt0012345" or "12345" into 12345, or 0 when it is neither.
 func idNumber(id string) int {
 	n, err := strconv.Atoi(strings.TrimPrefix(strings.ToLower(strings.TrimSpace(id)), "tt"))
 	if err != nil || n <= 0 {
@@ -118,7 +118,7 @@ func idNumber(id string) int {
 	return n
 }
 
-// baseLang is a language code without its region, lower case.
+// baseLang returns a language code in lower case without its region.
 func baseLang(code string) string {
 	code = strings.ToLower(strings.TrimSpace(code))
 	if i := strings.IndexAny(code, "-_"); i > 0 {
@@ -196,7 +196,7 @@ func (o *openSubtitles) Search(ctx context.Context, q Query) ([]Candidate, error
 		}
 		lang := baseLang(a.Language)
 		if !slices.Contains(langs, lang) {
-			continue // the site answered another language
+			continue // the site answered in another language
 		}
 		f := a.Feature
 		c := Candidate{Site: o.c.cfg.Name, Key: strconv.FormatInt(a.Files[0].FileID, 10), Language: lang, HearingImpaired: a.HearingImpaired,
@@ -222,8 +222,8 @@ func (o *openSubtitles) Search(ctx context.Context, q Query) ([]Candidate, error
 	return out, nil
 }
 
-// signIn returns a usable token, signing in when there is none or it is
-// old. fresh forces a new sign-in (the site refused the old token).
+// signIn returns a usable token and signs in when there is none or it is old.
+// fresh forces a new sign-in after the site refused the old token.
 func (o *openSubtitles) signIn(ctx context.Context, fresh bool) (string, error) {
 	o.mu.Lock()
 	defer o.mu.Unlock()
@@ -285,7 +285,7 @@ func (o *openSubtitles) Download(ctx context.Context, c Candidate) ([]byte, erro
 		body, err = o.c.do(ctx, http.MethodPost, raw, b, map[string]string{"Authorization": "Bearer " + token}, "application/json", maxSearchBody, false)
 		var se *Error
 		if err != nil && errors.As(err, &se) && se.Kind == KindLoginRefused && try == 0 {
-			continue // the token ran out: sign in again once
+			continue // the token expired, so sign in again once
 		}
 		if err != nil {
 			return nil, err
@@ -309,12 +309,12 @@ func (o *openSubtitles) Download(ctx context.Context, c Candidate) ([]byte, erro
 	return o.c.fetch(ctx, res.Link, maxDownloadBody)
 }
 
-// subdl answers searches as JSON (the key rides in the query) and hands
-// out zip links on its download host.
+// subdl answers searches as JSON with the key in the query, and hands out zip
+// links on its download host.
 type subdl struct{ c *client }
 
-// subdlDownloadHost is where subdl's zip links live when the site is the
-// real one; a test server serves them itself.
+// subdlDownloadHost is where the real site keeps its zip links. A test server
+// serves them itself.
 const subdlDownloadHost = "https://dl.subdl.com"
 
 type sdSub struct {
@@ -395,7 +395,7 @@ func (s *subdl) Search(ctx context.Context, q Query) ([]Candidate, error) {
 		case strings.Contains(msg, "limit"):
 			return nil, &Error{Kind: KindRateLimited, Msg: "the site asked HolyArrs to slow down"}
 		}
-		return nil, nil // "nothing found" comes back this way
+		return nil, nil // the site reports nothing found this way
 	}
 	title, year := q.Title, q.Year
 	if len(res.Results) > 0 {
@@ -436,14 +436,14 @@ func (s *subdl) Download(ctx context.Context, c Candidate) ([]byte, error) {
 	if strings.EqualFold(s.c.base.Host, "api.subdl.com") {
 		return s.c.fetch(ctx, subdlDownloadHost+c.Link, maxDownloadBody)
 	}
-	// A server of our own (tests, the lab): the zip is on the same host,
-	// beside the API's path.
+	// On our own server, as in tests and the lab, the zip sits on the same host
+	// beside the API path.
 	u := *s.c.base
 	u.Path, u.RawQuery = strings.TrimSuffix(strings.TrimRight(u.Path, "/"), "/api/v1")+c.Link, ""
 	return s.c.do(ctx, http.MethodGet, u.String(), nil, nil, "", maxDownloadBody, false)
 }
 
-// FileHash is the OpenSubtitles-style hash of a video file: its size plus
+// FileHash returns the OpenSubtitles-style hash of a video file: its size plus
 // the 64-bit little-endian words of its first and last 64 KiB, as 16 hex
 // digits. Files under 128 KiB get no hash.
 func FileHash(name string) (string, error) {

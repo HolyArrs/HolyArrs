@@ -58,7 +58,7 @@ func TestGestdownRecorded(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(got) != 2 { // the unfinished one is left out
+	if len(got) != 2 { // the unfinished subtitle is left out
 		t.Fatalf("%+v", got)
 	}
 	if got[0].Key != "a1" || !got[0].MatchedByID || got[0].Season != 1 || got[0].Episode != 2 || !got[0].Corrected || got[0].Downloads != 120 ||
@@ -72,11 +72,11 @@ func TestGestdownRecorded(t *testing.T) {
 	if err != nil || !strings.Contains(string(b), "made up") {
 		t.Fatalf("download %q %v", b, err)
 	}
-	// Movies are not on this site.
+	// This site has no movies.
 	if got, _ := s.Search(ctx, Query{Kind: "movie", Title: "The Lantern"}); len(got) != 0 {
 		t.Error("movie answered")
 	}
-	// An unknown show is no results, not an error.
+	// An unknown show gives no results rather than an error.
 	srv2 := recorded(t, map[string]string{})
 	s2, _ := New("gestdown", cfg(srv2.URL))
 	if got, err := s2.Search(ctx, Query{Kind: "episode", Title: "Nope", Season: 1, Episode: 1, Languages: []string{"en"}}); err != nil || len(got) != 0 {
@@ -168,7 +168,7 @@ func TestErrorsAndPauses(t *testing.T) {
 		{http.StatusUnauthorized, KindLoginRefused, 12 * time.Hour},
 		{http.StatusServiceUnavailable, KindDown, 20 * time.Minute},
 		{http.StatusTeapot, KindUnreadable, 6 * time.Hour},
-		{http.StatusOK, KindUnreadable, 6 * time.Hour}, // over the answer cap
+		{http.StatusOK, KindUnreadable, 6 * time.Hour}, // larger than the answer cap
 	} {
 		status = c.status
 		_, err := s.Search(context.Background(), q)
@@ -195,15 +195,15 @@ func TestErrorsAndPauses(t *testing.T) {
 func TestNetworkRule(t *testing.T) {
 	srv := httptest.NewServer(fakesite.Lab())
 	t.Cleanup(srv.Close)
-	// Without the local-network switch, a site on this machine is refused
-	// after DNS, before anything is sent.
+	// Without the local-network switch, a site on this machine is refused after
+	// DNS and before anything is sent.
 	s, _ := New("fake", Config{Name: "x", URL: srv.URL, GapMS: 1})
 	_, err := s.Search(context.Background(), Query{Kind: "movie", Title: "x", Languages: []string{"en"}})
 	var se *Error
 	if !errors.As(err, &se) || se.Kind != KindBlocked {
 		t.Fatalf("local refused: %v", err)
 	}
-	// Redirects to another host are refused; links off the site too.
+	// Redirects to another host are refused, and so are links off the site.
 	other := httptest.NewServer(fakesite.Lab())
 	t.Cleanup(other.Close)
 	red := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -243,7 +243,7 @@ func TestLimits(t *testing.T) {
 	if !errors.As(err, &se) || se.Kind != KindRateLimited || se.RetryAfter <= 0 {
 		t.Fatalf("third: %v", err)
 	}
-	// The gap spaces calls.
+	// The gap spaces out calls.
 	g, _ := New("fake", Config{Name: "g", URL: srv.URL, GapMS: 150, AllowLocal: true})
 	start := time.Now()
 	for range 3 {
@@ -254,9 +254,9 @@ func TestLimits(t *testing.T) {
 	}
 }
 
-// Review 4.16 (9): a site that repeats our own release name back gives no
-// release name of its own, so it is not counted as an exact release match.
-// The lab site gives its made-up subtitles a release name of their own.
+// A site that repeats our own release name back gives no release name of its
+// own, so it does not count as an exact release match. The lab site gives its
+// made-up subtitles a release name of their own.
 func TestEchoedReleaseIsNotAMatch(t *testing.T) {
 	rel := "Quiet.Harbour.S01E02.1080p.WEB-DL-GRP"
 	srv := recorded(t, map[string]string{"/api/search": `text:{"results": [{"id": "a", "language": "en", "echoed": true, "release": "` + rel + `"}, {"id": "b", "language": "en", "release": "` + rel + `"}]}`})
