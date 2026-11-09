@@ -193,7 +193,7 @@ func FuzzRead(f *testing.F) {
 	})
 }
 
-// 4.15 review: an ID3v2.2 tag with the compression flag set has no frames
+// An ID3v2.2 tag with the compression flag set has no frames
 // this package can read.
 func TestID3v22Compressed(t *testing.T) {
 	b := id3(2, [2]string{"TT2", "Tide"})
@@ -203,7 +203,7 @@ func TestID3v22Compressed(t *testing.T) {
 	}
 }
 
-// 4.15 review: ReadFile reads only regular files; a folder or a link is
+// ReadFile reads only regular files; a folder or a link is
 // refused before it is opened.
 func TestReadFileRegularOnly(t *testing.T) {
 	dir := t.TempDir()
