@@ -18,7 +18,7 @@ import (
 )
 
 // series is a show as the Sonarr side answers it. Empty values are left
-// out, as the old apps do, except the ones callers expect to be there.
+// out, as in the old apps, except the ones callers expect to find.
 type series struct {
 	ID                int64             `json:"id,omitempty"`
 	Title             string            `json:"title"`
@@ -70,9 +70,9 @@ type season struct {
 	Statistics   *seasonCounts `json:"statistics,omitempty"`
 }
 
-// seasonCounts are one season's numbers, as the old apps define
-// them: total counts every episode; count those kept up to date that have
-// aired, plus every one with a file; files those with a file in the main
+// seasonCounts are one season's numbers as the old apps define them.
+// total counts every episode. count covers kept episodes that have aired
+// plus every one with a file. files counts those with a file in the main
 // Version. Seerr calls a season available when files reaches total.
 type seasonCounts struct {
 	NextAiring        *utc     `json:"nextAiring,omitempty"`
@@ -83,7 +83,7 @@ type seasonCounts struct {
 	SizeOnDisk        int64    `json:"sizeOnDisk"`
 	ReleaseGroups     []string `json:"releaseGroups"`
 	PercentOfEpisodes float64  `json:"percentOfEpisodes"`
-	// lastAired is the newest air date gone by, kept up to date or not.
+	// lastAired is the newest past air date, kept or not.
 	lastAired *time.Time
 }
 
@@ -118,7 +118,7 @@ func seriesType(order *string) string {
 	return "standard"
 }
 
-// episodeOrder is the other way round: anime shows go by absolute numbers.
+// episodeOrder maps the other way. Anime shows go by absolute numbers.
 func episodeOrder(t string) string {
 	switch strings.ToLower(t) {
 	case "anime":
@@ -139,7 +139,8 @@ func showStatus(s string) string {
 	return "continuing"
 }
 
-// idList writes ids as an SQL list; they are numbers, never text.
+// idList writes ids as an SQL list. They are numbers, never text, so
+// writing them inline is safe.
 func idList(ids []int64) string {
 	parts := make([]string, len(ids))
 	for i, id := range ids {
@@ -159,8 +160,8 @@ func parseTime(s *string) *time.Time {
 	return &t
 }
 
-// seasonCountsOf reads the counts of every season of the shows in ids in
-// one grouped query (no query per show), keyed by show and season.
+// seasonCountsOf reads the counts of every season of the shows in ids,
+// keyed by show and season. One grouped query avoids a query per show.
 func (h *handler) seasonCountsOf(ctx context.Context, ids []int64) (map[int64]map[int]*seasonCounts, error) {
 	counts, err := library.SeasonCounts(ctx, h.Store.Read(), ids, h.now())
 	if err != nil {
@@ -188,7 +189,7 @@ func (h *handler) seasonCountsOf(ctx context.Context, ids []int64) (map[int64]ma
 	return out, nil
 }
 
-// loadSeries reads the shows in the Library matching where, with their
+// loadSeries reads the Library shows that match where, with their
 // seasons and counts, in a fixed number of queries.
 func (h *handler) loadSeries(ctx context.Context, where string, args ...any) ([]series, error) {
 	db := h.Store.Read()
@@ -246,8 +247,8 @@ func (h *handler) folders(ctx context.Context) (map[int64]mediafiles.LibraryFold
 	return out, err
 }
 
-// folderByPath finds this side's Library folder for a rootFolderPath; an
-// empty path is the default (0).
+// folderByPath finds this side's Library folder for a rootFolderPath. An
+// empty path means the default, 0.
 func (h *handler) folderByPath(ctx context.Context, p string) (int64, bool) {
 	p = strings.TrimRight(strings.TrimSpace(p), `/\`)
 	if p == "" {
@@ -265,7 +266,7 @@ func (h *handler) folderByPath(ctx context.Context, p string) (int64, bool) {
 	return 0, false
 }
 
-// sourceID reads one outside id as a number (0 when unknown).
+// sourceID reads one outside id as a number. It is 0 when unknown.
 func sourceID(ids map[string]string, k string) int64 { return atoi64(ids[k]) }
 
 func (h *handler) librarySeries(ctx context.Context, t mediafiles.Title, parts []mediafiles.Part, v mediafiles.Version, folders map[int64]mediafiles.LibraryFolder, counts map[int]*seasonCounts) series {
@@ -324,7 +325,7 @@ func (h *handler) librarySeries(ctx context.Context, t mediafiles.Title, parts [
 				x := time.Time(*c.PreviousAiring)
 				prev = &x
 			}
-			// The show's last air date leaves the specials out.
+			// Specials do not count toward the show's last air date.
 			if n > 0 && c.lastAired != nil && (last == nil || c.lastAired.After(*last)) {
 				last = c.lastAired
 			}
@@ -333,14 +334,15 @@ func (h *handler) librarySeries(ctx context.Context, t mediafiles.Title, parts [
 	}
 	slices.Sort(all.ReleaseGroups)
 	all.PercentOfEpisodes = percent(all.EpisodeFileCount, all.EpisodeCount)
-	// A single show always carries its counts: Seerr reads them unguarded.
+	// A single show always carries its counts, because Seerr reads them
+	// without a nil check.
 	s.Statistics = &all
 	s.NextAiring, s.PreviousAiring, s.LastAired = utcPtr(next), utcPtr(prev), utcPtr(last)
 	return s
 }
 
-// lookupSeriesOf is a show not in the Library, as a lookup answers it: no
-// id, nothing chosen yet, every season but the specials switched on.
+// lookupSeriesOf builds a show not in the Library as a lookup answers it:
+// no id, nothing chosen yet and every season but the specials on.
 func lookupSeriesOf(sh metadata.Show) series {
 	s := series{Title: sh.Name, Status: showStatus(sh.Status), Ended: sh.Status == "ended", Overview: sh.Overview, Network: sh.Network,
 		AirTime: sh.AirTime, Images: []image{}, Seasons: []season{}, Year: sh.Year, LanguageProfileID: 1, Monitored: true,
@@ -384,8 +386,8 @@ func nonNil(s []string) []string {
 	return s
 }
 
-// listSeries is every show, or the one with ?tvdbId= (a list of zero or
-// one, never a 404).
+// listSeries lists every show, or the one with ?tvdbId=. That gives a
+// list of zero or one, never a 404.
 func (h *handler) listSeries(w http.ResponseWriter, r *http.Request) {
 	where, args := "1=1", []any{}
 	if v := query(r, "tvdbId"); v != "" {
@@ -399,7 +401,7 @@ func (h *handler) listSeries(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, out)
 }
 
-// oneSeries reads one show of the Library; false when it is not there.
+// oneSeries reads one Library show. It returns false when it is not there.
 func (h *handler) oneSeries(ctx context.Context, id int64) (series, bool, error) {
 	out, err := h.loadSeries(ctx, "id = ?", id)
 	if err != nil || len(out) == 0 {
@@ -425,8 +427,8 @@ func (h *handler) getSeries(w http.ResponseWriter, r *http.Request) {
 }
 
 // lookupSeries finds shows by tvdb:, tmdb:, imdb: or tvmaze: id, or by
-// name. A show already in the Library comes back as the Library has it,
-// with its id; any other without one.
+// name. A show already in the Library comes back as stored, with its id.
+// Any other has no id.
 func (h *handler) lookupSeries(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	term := strings.TrimSpace(query(r, "term"))

@@ -45,13 +45,13 @@ func TestWish_WishInheritance(t *testing.T) {
 	en := []Want{{Language: "en", HearingImpaired: HINormal}}
 	es := []Want{{Language: "es", HearingImpaired: HIEither}}
 
-	// Nothing set and an empty default: nothing wanted (nothing is
-	// searched until a title has a language set).
+	// With nothing set and an empty default, nothing is wanted, so nothing is
+	// searched until a title has a language.
 	r, err := WishFor(ctx, db, f.show, f.showVer, f.ep1)
 	if err != nil || r.From != FromDefault || len(r.Wants) != 0 {
 		t.Fatalf("empty default: %+v %v", r, err)
 	}
-	// The default reaches every title without its own wish.
+	// The default reaches every title that has no wish of its own.
 	s := ReadSettings(ctx, db)
 	s.Languages = en
 	if err := SaveSettings(ctx, f.st, s, by); err != nil {
@@ -60,7 +60,7 @@ func TestWish_WishInheritance(t *testing.T) {
 	if r, _ := WishFor(ctx, db, f.movie, f.movieVer, f.movieItem); r.From != FromDefault || r.Wants[0].Language != "en" {
 		t.Fatalf("default: %+v", r)
 	}
-	// Title beats default; Version beats title; episode beats Version.
+	// Title beats default, Version beats title and episode beats Version.
 	if err := SetWish(ctx, f.st, f.show, 0, 0, es, false, by); err != nil {
 		t.Fatal(err)
 	}
@@ -82,7 +82,7 @@ func TestWish_WishInheritance(t *testing.T) {
 	if r, _ := WishFor(ctx, db, f.show, f.show4K, f.ep2); r.From != FromItem || len(r.Wants) != 0 {
 		t.Fatalf("episode with none: %+v", r)
 	}
-	// Setting again replaces; inherit removes.
+	// Setting again replaces the wish, and inherit removes it.
 	if err := SetWish(ctx, f.st, f.show, 0, 0, en, false, by); err != nil {
 		t.Fatal(err)
 	}
@@ -96,7 +96,7 @@ func TestWish_WishInheritance(t *testing.T) {
 	if r, _ := WishFor(ctx, db, f.show, f.showVer, f.ep2); r.From != FromTitle {
 		t.Fatalf("after inherit: %+v", r)
 	}
-	// Music has no subtitles; foreign Versions and episodes are refused.
+	// Music has no subtitles, and Versions or episodes of another title are refused.
 	if err := SetWish(ctx, f.st, f.artist, 0, 0, en, false, by); !errors.Is(err, ErrMusic) {
 		t.Errorf("artist: %v", err)
 	}
@@ -140,8 +140,8 @@ func TestWish_SettingsRoundTrip(t *testing.T) {
 	for _, bad := range []func(*Settings){
 		func(s *Settings) { s.PassMarkMovie = 101 },
 		func(s *Settings) { s.HISuffix = "deaf" },
-		// the suffix goes into file names, so only
-		// the three words pass; path pieces and long text never do.
+		// The suffix ends up in file names, so only the three words pass and path
+		// pieces or long text never do.
 		func(s *Settings) { s.HISuffix = "../../x" },
 		func(s *Settings) { s.HISuffix = "hi/../../x" },
 		func(s *Settings) { s.HISuffix = strings.Repeat("h", 300) },

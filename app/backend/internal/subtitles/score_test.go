@@ -40,7 +40,7 @@ func TestScore_FixedSet(t *testing.T) {
 			ranked = append(ranked, Scored{Candidate: sites.Candidate{Key: string(rune('0' + c.n))}, Score: s})
 		}
 	}
-	// 2 passes the episode Pass mark exactly; 4 does not.
+	// Case 2 meets the episode pass mark exactly and case 4 falls short.
 	if pass.PassMark("episode") != 90 || 88 >= pass.PassMark("episode") {
 		t.Fatal("episode pass mark")
 	}
@@ -54,7 +54,7 @@ func TestScore_FixedSet(t *testing.T) {
 			over++
 		}
 	}
-	if over != 2 { // 5 and 7 pass; 6, 8, 9 and 10 are skipped
+	if over != 2 { // 5 and 7 pass, while 6, 8, 9 and 10 are skipped
 		t.Fatalf("over the pass mark: %d", over)
 	}
 }
@@ -75,7 +75,7 @@ func TestScore_Hints(t *testing.T) {
 	if s := ScoreCandidate(mv, Want{Language: "en", HearingImpaired: HIEither}, c); s.Total != 55 {
 		t.Errorf("fps off: %d", s.Total)
 	}
-	// Every part is listed with what it would give.
+	// Every part is listed with the points it would give.
 	if len(s.Parts) != 11 {
 		t.Errorf("movie parts: %d", len(s.Parts))
 	}
@@ -99,8 +99,8 @@ func TestRank_Ties(t *testing.T) {
 	}
 }
 
-// only the first MaxReleaseNames names of a candidate are
-// scored; an exact name past the cap is not seen.
+// Only the first MaxReleaseNames names of a candidate are scored, so an exact
+// match beyond the cap goes unseen.
 func TestScore_CapsReleaseNames(t *testing.T) {
 	mv := Video{Kind: "movie", Title: "The Lantern", Year: 2010, ReleaseName: "The.Lantern.2010.1080p.BluRay.x264-GRP"}
 	var names []string

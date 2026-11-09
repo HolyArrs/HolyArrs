@@ -9,10 +9,10 @@ import (
 )
 
 // The answer shapes below are our own reading of each site's public API.
-// They are checked against recorded replies in testdata (written by us),
-// never against the live sites.
+// They are checked against replies we recorded in testdata, never against
+// the live sites.
 
-// gestdown serves Addic7ed's show subtitles as JSON (shows only).
+// gestdown serves show subtitles from Addic7ed as JSON. It covers shows only.
 type gestdown struct{ c *client }
 
 type gdShow struct {
@@ -106,7 +106,7 @@ func (g *gestdown) Download(ctx context.Context, c Candidate) ([]byte, error) {
 	return g.c.get(ctx, c.Link, "", maxDownloadBody, false)
 }
 
-// podnapisi answers a search as JSON and a download as a zip.
+// podnapisi answers a search with JSON and a download with a zip.
 type podnapisi struct{ c *client }
 
 type pnSub struct {
@@ -174,7 +174,7 @@ func (p *podnapisi) Search(ctx context.Context, q Query) ([]Candidate, error) {
 			c := Candidate{Site: p.c.cfg.Name, Key: s.ID, Language: lang, ReleaseNames: s.Releases, Title: s.Movie.Title, Year: s.Movie.Year,
 				Uploader: s.Author.Name, Trusted: s.Author.Trusted, FPS: s.FPS, Downloads: s.Stats.Downloads, Link: s.Download}
 			if s.Language != "" && !strings.EqualFold(s.Language, lang) {
-				continue // the site answered another language
+				continue // the site answered in another language
 			}
 			for _, f := range s.Flags {
 				switch f {
@@ -202,7 +202,7 @@ func (p *podnapisi) Download(ctx context.Context, c Candidate) ([]byte, error) {
 	return p.c.get(ctx, c.Link, "", maxDownloadBody, false)
 }
 
-// fake is the lab's Subtitle site (package fakesite serves it).
+// fake is the lab's subtitle site, served by package fakesite.
 type fake struct{ c *client }
 
 type fakeResult struct {
@@ -259,10 +259,9 @@ func (f *fake) Search(ctx context.Context, q Query) ([]Candidate, error) {
 			continue
 		}
 		var rel []string
-		// The lab site marks the subtitles it makes up from our query as
-		// echoed: a release name equal to ours there is our own name
-		// repeated back, not the site's, so it never counts as an exact
-		// release match.
+		// The lab site marks subtitles it builds from our query as echoed. A release
+		// name that equals ours there is just our own name sent back, so it never
+		// counts as an exact release match.
 		if r.Release != "" && !(r.Echoed && sameName(r.Release, q.ReleaseName)) {
 			rel = []string{r.Release}
 		}
@@ -284,7 +283,7 @@ func two(n int) string {
 	return strconv.Itoa(n)
 }
 
-// sameName compares names ignoring case and anything but letters and digits.
+// sameName compares names ignoring case and every character but letters and digits.
 func sameName(a, b string) bool { return fold(a) == fold(b) && fold(a) != "" }
 
 func fold(s string) string {
@@ -297,7 +296,7 @@ func fold(s string) string {
 	return sb.String()
 }
 
-// langName is the English language name Gestdown takes.
+// langNames maps two-letter codes to the English language names Gestdown expects.
 var langNames = map[string]string{"en": "English", "es": "Spanish", "fr": "French", "de": "German", "it": "Italian", "pt": "Portuguese",
 	"nl": "Dutch", "pl": "Polish", "ro": "Romanian", "ru": "Russian", "sv": "Swedish", "tr": "Turkish", "el": "Greek", "he": "Hebrew",
 	"hu": "Hungarian", "cs": "Czech", "da": "Danish", "fi": "Finnish", "no": "Norwegian", "ar": "Arabic", "bg": "Bulgarian", "hr": "Croatian",

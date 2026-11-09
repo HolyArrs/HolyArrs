@@ -21,12 +21,12 @@ func TestRetimeSRT(t *testing.T) {
 	if got != want {
 		t.Fatalf("got %q", got)
 	}
-	// Moving before zero stops at zero.
+	// Shifting before zero stops at zero.
 	got, _ = Retime(srt, SRT, Fix{OffsetMS: -2000})
 	if !strings.Contains(got, "00:00:00,000 --> 00:00:00,500") {
 		t.Fatalf("negative: %q", got)
 	}
-	// 23.976 to 25: a 25 fps subtitle on a 23.976 video plays later.
+	// A 25 fps subtitle on a 23.976 fps video must play later.
 	got, _ = Retime("1\n01:00:00,000 --> 01:00:01,000\nx\n", SRT, Fix{FromFPS: 25, ToFPS: 23.976})
 	if !strings.HasPrefix(got, "1\n01:02:33,754 --> 01:02:34,796") {
 		t.Fatalf("fps: %q", got)
@@ -48,7 +48,7 @@ func TestRetimeVTTAndASS(t *testing.T) {
 	if !strings.Contains(got, "Dialogue: 0,0:00:02.00,0:00:03.50,Default,,0,0,0,,Hello, world, 0:00:09.00\n") {
 		t.Fatalf("ass: %q", got)
 	}
-	// Fields in another order.
+	// Fields in a different order.
 	odd := "[Events]\nFormat: Start, End, Text\nDialogue: 0:00:01.00,0:00:02.00,x\n"
 	got, _ = Retime(odd, SSA, Fix{OffsetMS: 1000})
 	if !strings.Contains(got, "Dialogue: 0:00:02.00,0:00:03.00,x") {
@@ -71,7 +71,7 @@ func TestRetimeRefusals(t *testing.T) {
 }
 
 func TestHostileTimingIsFast(t *testing.T) {
-	// Long lines of arrows and colons stay linear.
+	// Long lines of arrows and colons still take linear time.
 	bad := strings.Repeat(strings.Repeat("0:", 5000)+"-->"+strings.Repeat(":0", 5000)+"\n", 100)
 	start := time.Now()
 	_, _ = Retime(bad, SRT, Fix{OffsetMS: 1})
@@ -82,13 +82,13 @@ func TestHostileTimingIsFast(t *testing.T) {
 }
 
 func TestClean(t *testing.T) {
-	// Windows-1252 becomes UTF-8; NULs and control characters go.
+	// Windows-1252 turns into UTF-8, and NULs and control characters are removed.
 	b := []byte("1\n00:00:01,000 --> 00:00:02,000\nCaf\xe9 \x00na\x07ive\n")
 	got, err := Clean(b, SRT)
 	if err != nil || !strings.Contains(got, "Café naive") {
 		t.Fatalf("%q %v", got, err)
 	}
-	// UTF-16 with a mark.
+	// UTF-16 with a byte-order mark.
 	u16 := []byte{0xFF, 0xFE}
 	for _, r := range "1\n00:00:01,000 --> 00:00:02,000\nñ\n" {
 		u16 = append(u16, byte(r), byte(r>>8))
@@ -96,11 +96,11 @@ func TestClean(t *testing.T) {
 	if got, err := Clean(u16, SRT); err != nil || !strings.Contains(got, "ñ") {
 		t.Fatalf("utf16: %q %v", got, err)
 	}
-	// A UTF-8 mark is dropped.
+	// A UTF-8 byte-order mark is dropped.
 	if got, _ := Clean([]byte("\xEF\xBB\xBF1\n00:00:01,000 --> 00:00:02,000\nx\n"), SRT); strings.HasPrefix(got, "\uFEFF") {
 		t.Fatal("bom kept")
 	}
-	// Not a subtitle.
+	// Not a subtitle at all.
 	for _, bad := range []string{"<html><body>Login</body></html>", "just words", ""} {
 		if _, err := Clean([]byte(bad), SRT); !errors.Is(err, ErrNotSubtitle) {
 			t.Errorf("%q: %v", bad, err)
@@ -148,7 +148,7 @@ func TestUnpack(t *testing.T) {
 			t.Errorf("%s: %v", name, err)
 		}
 	}
-	// A high-ratio entry under the size cap is still a bomb.
+	// An entry with a high ratio is still a bomb even under the size cap.
 	if _, err := Unpack(zipOf(t, map[string][]byte{"r.srt": bytes.Repeat([]byte("0"), 4<<20)}, zip.Deflate), "x.zip"); !errors.Is(err, ErrArchive) {
 		t.Errorf("ratio: %v", err)
 	}
@@ -198,7 +198,7 @@ func FuzzUnpackClean(f *testing.F) {
 	})
 }
 
-// Review 4.16 (2): only a clearly text .sub counts as text.
+// Only a .sub that is plainly text counts as text.
 func TestTextSub(t *testing.T) {
 	for in, want := range map[string]bool{
 		"{1}{25}Hello\n":            true,
@@ -215,8 +215,8 @@ func TestTextSub(t *testing.T) {
 	}
 }
 
-// Review 4.16 (4): a zip entry that is a link is refused, read from the
-// entry's file mode (not raw unix bits).
+// A zip entry that is a link is refused. The check reads the entry's file mode
+// rather than raw unix bits.
 func TestUnpackRefusesSymlinkEntry(t *testing.T) {
 	var buf bytes.Buffer
 	zw := zip.NewWriter(&buf)

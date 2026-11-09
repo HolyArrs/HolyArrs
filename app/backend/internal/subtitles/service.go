@@ -36,20 +36,20 @@ const (
 	EventHeldWithVideo = "subtitle_held"
 )
 
-// Publisher sends live events (live.Hub fits).
+// Publisher sends live events. live.Hub satisfies it.
 type Publisher interface {
 	Publish(topic string, data any) uint64
 }
 
-// Service runs subtitle work.
+// Service runs all subtitle work.
 type Service struct {
 	Store *database.Store
 	Live  Publisher // may be nil
-	// Vault keeps the account details of sites that need an account.
+	// Vault holds the account details of sites that need an account.
 	Vault *secrets.Vault
-	// HTTP replaces every site's HTTP client (tests only).
+	// HTTP replaces every site's HTTP client. Only tests set it.
 	HTTP *http.Client
-	// Enqueue queues a Job (the jobs queue); nil runs nothing later.
+	// Enqueue adds a Job to the jobs queue. When nil, nothing runs later.
 	Enqueue func(ctx context.Context, kind string, subj *domain.Subject, params map[string]any, key string) error
 
 	mu      sync.Mutex
@@ -69,7 +69,7 @@ type Subtitle struct {
 	Language        string         `db:"language" json:"language"`
 	Forced          bool           `db:"forced" json:"forced"`
 	HearingImpaired bool           `db:"hearing_impaired" json:"hearing_impaired"`
-	Place           string         `db:"place" json:"place"` // built_in, beside, wish
+	Place           string         `db:"place" json:"place"` // built_in, beside or wish
 	TrackIndex      *int           `db:"track_index" json:"track_index,omitempty"`
 	Codec           *string        `db:"codec" json:"codec,omitempty"`
 	RelativePath    *string        `db:"relative_path" json:"relative_path,omitempty"`
@@ -78,8 +78,8 @@ type Subtitle struct {
 	SiteKey         *string        `db:"site_key" json:"site_key,omitempty"`
 	Score           *int           `db:"score" json:"score,omitempty"`
 	ScoreParts      []Part         `db:"score_parts,json" json:"score_parts"`
-	Origin          string         `db:"origin" json:"origin"` // found, fetched, by_hand
-	State           string         `db:"state" json:"state"`   // present, replaced, gone, wanted, none_good_enough
+	Origin          string         `db:"origin" json:"origin"` // found, fetched or by_hand
+	State           string         `db:"state" json:"state"`   // present, replaced, gone, wanted or none_good_enough
 	SavedAt         *time.Time     `db:"saved_at" json:"saved_at,omitempty"`
 	Tries           int            `db:"tries" json:"tries"`
 	FirstTriedAt    *time.Time     `db:"first_tried_at" json:"first_tried_at,omitempty"`
@@ -88,16 +88,16 @@ type Subtitle struct {
 	Sync            map[string]any `db:"sync,json" json:"sync"`
 }
 
-// fileCtx is everything about one main File a search needs.
+// fileCtx gathers what a search needs about one main File.
 type fileCtx struct {
 	file    mediafiles.File
 	title   mediafiles.Title
 	item    mediafiles.Item
 	version mediafiles.Version
-	lib     string // the Library folder's path
+	lib     string // path of the Library folder
 }
 
-// video is the File's full path.
+// video returns the File's full path.
 func (fc *fileCtx) video() string {
 	return filepath.Join(fc.lib, filepath.FromSlash(fc.file.RelativePath))
 }
@@ -120,8 +120,8 @@ func (fc *fileCtx) videoFacts() Video {
 	return v
 }
 
-// ErrNotMain refuses Files that are not a present main video of a movie
-// or an episode.
+// ErrNotMain refuses Files that are not a present main video of a movie or an
+// episode.
 var ErrNotMain = errors.New("not a video of a movie or an episode in the Library")
 
 func (s *Service) load(ctx context.Context, fileID int64) (*fileCtx, error) {
@@ -155,19 +155,19 @@ func (s *Service) load(ctx context.Context, fileID int64) (*fileCtx, error) {
 	return fc, nil
 }
 
-// Have is one subtitle that is there for a File.
+// Have is one subtitle a File already has.
 type Have struct {
 	Language        string `json:"language"`
 	Forced          bool   `json:"forced"`
 	HearingImpaired bool   `json:"hearing_impaired"`
 	Place           string `json:"place"`
 	Picture         bool   `json:"picture,omitempty"`
-	Path            string `json:"path,omitempty"` // beside: relative to the Library folder
+	Path            string `json:"path,omitempty"` // for beside subtitles, relative to the Library folder
 	Codec           string `json:"codec,omitempty"`
 	Track           int    `json:"track,omitempty"`
 }
 
-// meets reports whether h is what w wishes for.
+// meets reports whether h satisfies w.
 func meets(w Want, h Have) bool {
 	if h.Language != w.Language || h.Forced != w.Forced {
 		return false
@@ -175,7 +175,7 @@ func meets(w Want, h Have) bool {
 	return w.HearingImpaired != HIOnly || h.HearingImpaired
 }
 
-// Missing lists the wants no Have meets.
+// Missing returns the wants that no Have satisfies.
 func Missing(wants []Want, haves []Have) []Want {
 	out := []Want{}
 	for _, w := range wants {
@@ -190,7 +190,7 @@ func Missing(wants []Want, haves []Have) []Want {
 	return out
 }
 
-// builtIn reads the subtitle tracks inside the video.
+// builtIn reads the subtitle tracks stored inside the video.
 func builtIn(video string, ignorePictures bool) ([]Have, error) {
 	tracks, err := container.Probe(video)
 	if err != nil {
@@ -222,8 +222,8 @@ func hasWord(s, w string) bool {
 	return false
 }
 
-// besideName reads a subtitle file name next to video base: base.LANG
-// [.hi|.cc|.sdh][.forced].EXT. ok is false for other files.
+// besideName parses a subtitle file name beside the video stem base, in the
+// form base.LANG[.hi|.cc|.sdh][.forced].EXT. ok is false for any other file.
 func besideName(base, name string) (Have, bool) {
 	ext := strings.ToLower(path.Ext(name))
 	known := false
@@ -254,14 +254,14 @@ func besideName(base, name string) (Have, bool) {
 	return h, true
 }
 
-// IsBeside says whether name is a subtitle file of the video named base
-// (its name without the extension): base.lang[.hi|.cc|.sdh|.forced].ext.
+// IsBeside reports whether name is a subtitle file for the video stem base,
+// in the form base.lang[.hi|.cc|.sdh|.forced].ext.
 func IsBeside(base, name string) bool {
 	_, ok := besideName(base, name)
 	return ok
 }
 
-// besideFiles lists subtitle files next to the video.
+// besideFiles lists the subtitle files beside the video.
 func besideFiles(fc *fileCtx) ([]Have, error) {
 	video := fc.video()
 	dir := filepath.Dir(video)
@@ -286,7 +286,7 @@ func besideFiles(fc *fileCtx) ([]Have, error) {
 	return out, nil
 }
 
-// Status is what a File has and still wants.
+// Status is what a File has and what it still wants.
 type Status struct {
 	FileID  int64    `json:"file_id"`
 	Wish    Resolved `json:"wish"`
@@ -294,8 +294,8 @@ type Status struct {
 	Missing []Want   `json:"missing"`
 }
 
-// Look reads what a File has (built in and beside), records it, and
-// brings the File's wish rows up to date. It reaches no site.
+// Look reads the subtitles a File has, built in and beside, records them and
+// updates the File's wish rows. It never contacts a site.
 func (s *Service) Look(ctx context.Context, fileID int64, by domain.Actor) (Status, error) {
 	fc, err := s.load(ctx, fileID)
 	if err != nil {
@@ -306,9 +306,9 @@ func (s *Service) Look(ctx context.Context, fileID int64, by domain.Actor) (Stat
 
 func (s *Service) look(ctx context.Context, fc *fileCtx, by domain.Actor) (Status, error) {
 	st := Status{FileID: fc.file.ID, Haves: []Have{}}
-	// Recover an interrupted save before reading beside files. Recovery may
-	// restore a held old subtitle; scanning first would use a stale empty view
-	// and immediately mark that restored row gone.
+	// Recover an interrupted save before scanning beside files. Recovery may put
+	// a held subtitle back, and scanning first would see a stale empty folder and
+	// mark the restored row gone.
 	if err := s.Store.Write(ctx, func(tx *sql.Tx) error {
 		return s.finishSaves(ctx, tx, fc)
 	}); err != nil {
@@ -320,8 +320,8 @@ func (s *Service) look(ctx context.Context, fc *fileCtx, by domain.Actor) (Statu
 	}
 	st.Wish = wish
 	set := ReadSettings(ctx, s.Store.Read())
-	// An unchanged video (same size, modified time and built-in settings
-	// as the last look) is not read again: its recorded tracks stand.
+	// An unchanged video, with the same size, modified time and built-in settings
+	// as at the last look, is not read again and its recorded tracks stay.
 	stamp, stampOK := stampOf(fc.video(), set)
 	was, _, wasOK := storedStamp(ctx, s.Store.Read(), fc.file.ID)
 	same := stampOK && wasOK && was == stamp
@@ -333,7 +333,7 @@ func (s *Service) look(ctx context.Context, fc *fileCtx, by domain.Actor) (Statu
 	} else if set.UseBuiltIn {
 		inside, err = builtIn(fc.video(), set.IgnorePictureTracks)
 		if err != nil {
-			inside = nil // an unreadable video has no built-in subtitles we can trust
+			inside = nil // an unreadable video has no built-in tracks worth trusting
 			stampOK = false
 		}
 	}
@@ -345,7 +345,7 @@ func (s *Service) look(ctx context.Context, fc *fileCtx, by domain.Actor) (Statu
 	st.Missing = Missing(wish.Wants, st.Haves)
 	wishJSON, _ := json.Marshal(wish.Wants)
 	err = s.Store.Write(ctx, func(tx *sql.Tx) error {
-		if !same { // else the recorded built-in rows stand
+		if !same { // otherwise the recorded built-in rows stay
 			if _, err := tx.ExecContext(ctx, "DELETE FROM subtitles WHERE file_id = ? AND place = 'built_in'", fc.file.ID); err != nil {
 				return err
 			}
@@ -357,7 +357,7 @@ func (s *Service) look(ctx context.Context, fc *fileCtx, by domain.Actor) (Statu
 				}
 			}
 		}
-		// Beside files: new ones are found; recorded ones no longer there are gone.
+		// New beside files are recorded as found; recorded ones that vanished become gone.
 		rows, err := database.Select[Subtitle](ctx, tx, "subtitles", "file_id = ? AND place = 'beside' AND state = 'present'", fc.file.ID)
 		if err != nil {
 			return err
@@ -386,7 +386,7 @@ func (s *Service) look(ctx context.Context, fc *fileCtx, by domain.Actor) (Statu
 				return err
 			}
 		}
-		// Wish rows: one per missing want; met ones go.
+		// Keep one wish row per missing want and drop the ones now met.
 		wishRows, err := database.Select[Subtitle](ctx, tx, "subtitles", "file_id = ? AND place = 'wish'", fc.file.ID)
 		if err != nil {
 			return err
@@ -410,7 +410,7 @@ func (s *Service) look(ctx context.Context, fc *fileCtx, by domain.Actor) (Statu
 				return err
 			}
 		}
-		// The video's stamp; a changed video drops its stored hash.
+		// Store the video's stamp. A changed video drops its stored hash.
 		var size, mod, read any
 		if stampOK {
 			size, mod, read = stamp.Size, stamp.Modified, stamp.Read
@@ -431,7 +431,7 @@ func actorJSON(a domain.Actor) string {
 	return string(b)
 }
 
-// FilesOf lists the present main Files of a title (optionally one Item).
+// FilesOf lists the present main Files of a title, or of one Item when itemID is set.
 func FilesOf(ctx context.Context, db *sql.DB, titleID, itemID int64) ([]int64, error) {
 	q := `SELECT DISTINCT f.id FROM files f JOIN slots s ON s.file_id = f.id JOIN items i ON i.id = s.item_id
 		WHERE i.title_id = ? AND f.role = 'main' AND f.state = 'present' AND i.kind IN ('movie', 'episode')`
@@ -456,7 +456,7 @@ func FilesOf(ctx context.Context, db *sql.DB, titleID, itemID int64) ([]int64, e
 	return out, rows.Err()
 }
 
-// ListFor lists the subtitle rows of a File, newest first within a place.
+// ListFor lists a File's subtitle rows, newest first within each place.
 func ListFor(ctx context.Context, db *sql.DB, fileID int64) ([]Subtitle, error) {
 	rs, err := database.Select[Subtitle](ctx, db, "subtitles", "file_id = ? ORDER BY place, language, id DESC", fileID)
 	if rs == nil {

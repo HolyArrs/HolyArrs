@@ -1,5 +1,5 @@
-// Package subtitles owns the subtitles of movies and shows. It keeps what
-// each title wishes for, reads what is already there (built in or beside the
-// video), searches the subtitle sites, scores candidates against the pass
-// mark, saves the best one next to the video and fixes its timing.
+// Package subtitles looks after the subtitles of movies and shows. It records
+// which languages each title wants, reads the subtitles already present inside
+// or beside the video, searches subtitle sites, scores each candidate against
+// the pass mark, saves the best one beside the video and corrects its timing.
 package subtitles

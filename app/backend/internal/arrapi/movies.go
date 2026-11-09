@@ -16,8 +16,9 @@ import (
 )
 
 // movie is a movie as the Radarr side answers it. hasFile, statistics and
-// sizeOnDisk are only on Library reads (GET /movie, /movie/{id}); a lookup
-// leaves them out, as Radarr does, and Seerr acts on that difference.
+// sizeOnDisk appear only on Library reads (GET /movie, /movie/{id}). A
+// lookup leaves them out, as Radarr does, because Seerr acts on that
+// difference.
 type movie struct {
 	ID                  int64             `json:"id,omitempty"`
 	Title               string            `json:"title"`
@@ -75,9 +76,9 @@ type mediaFile struct {
 	MediaInfo    map[string]any `json:"mediaInfo,omitempty"`
 }
 
-// The release stages, from HolyArrs' Release gate to the old apps' names
-// and back. The lowest stage (tba) has no gate of its own: it waits the
-// least, like announced.
+// The release stages map HolyArrs' Release gate to the old apps' names
+// and back. The lowest stage, tba, has no gate of its own, so it maps to
+// announced, which waits the least.
 func availability(gate string) string {
 	switch gate {
 	case library.GateAnnounced:
@@ -100,7 +101,7 @@ func gateOf(stage string) string {
 	return ""
 }
 
-// movieStatus is how far the movie has come out by its dates.
+// movieStatus says how far the movie has come out, by its dates.
 func movieStatus(cinema, digital, physical *time.Time, now time.Time) string {
 	past := func(t *time.Time) bool { return t != nil && !t.After(now) }
 	switch {
@@ -114,19 +115,19 @@ func movieStatus(cinema, digital, physical *time.Time, now time.Time) string {
 	return "tba"
 }
 
-// fileWidths turn a stored vertical resolution into the width-by-height
-// text callers split on "x" (Seerr reads a width of 2000 or more as 4K).
+// fileWidths turn a stored vertical resolution into width-by-height text.
+// Callers split it on "x", and Seerr reads a width of 2000 or more as 4K.
 var fileWidths = map[int]int{2160: 3840, 1440: 2560, 1080: 1920, 720: 1280, 576: 720, 480: 640}
 
 // sourceNames turn the parser's source keys into the old apps' quality
-// names. A key not listed is passed on as it is.
+// names. An unlisted key passes through as it is.
 var sourceNames = map[string]string{"web_dl": "WEBDL", "web_rip": "WEBRip", "tv": "HDTV", "bluray": "Bluray", "remux": "Bluray",
 	"dvd": "DVD", "cam": "CAM", "telesync": "TELESYNC", "disc_image": "BR-DISK"}
 
-// mediaFileOf is a main Version's file; its stored path is relative to
-// the Library folder root, the answer's relativePath to the title folder.
-// The quality name is source-resolution (WEBDL-1080p), which Bazarr
-// splits on the dash.
+// mediaFileOf builds a main Version's file. The stored path is relative
+// to the Library folder root, while relativePath in the answer is
+// relative to the title folder. The quality name is source-resolution,
+// such as WEBDL-1080p, because Bazarr splits it on the dash.
 func mediaFileOf(f mediafiles.File, root, folder string) *mediaFile {
 	mf := &mediaFile{ID: f.ID, RelativePath: strings.TrimPrefix(f.RelativePath, folder+"/"),
 		Path: filepath.Join(root, filepath.FromSlash(f.RelativePath)), Size: f.Size, DateAdded: utc(f.AddedAt), Languages: languagesOf(f.Languages)}
@@ -170,9 +171,9 @@ func mediaFileOf(f mediafiles.File, root, folder string) *mediaFile {
 	return mf
 }
 
-// loadMovies reads the movies in the Library matching where, each with
-// the file of its main Version, in a fixed number of queries. lookup
-// leaves out what a lookup answer leaves out.
+// loadMovies reads the Library movies that match where, each with the
+// file of its main Version, in a fixed number of queries. With lookup set
+// it leaves out what a lookup answer leaves out.
 func (h *handler) loadMovies(ctx context.Context, lookup bool, where string, args ...any) ([]movie, error) {
 	db := h.Store.Read()
 	ts, err := database.Select[mediafiles.Title](ctx, db, "titles", "kind = 'movie' AND state != 'removed' AND "+where+" ORDER BY sort_name, id", args...)
@@ -239,8 +240,8 @@ func (h *handler) loadMovies(ctx context.Context, lookup bool, where string, arg
 	return out, nil
 }
 
-// lookupMovieOf is a movie not in the Library, as a lookup answers it: no
-// id, not monitored, the lowest stage, no profile.
+// lookupMovieOf builds a movie not in the Library as a lookup answers it:
+// no id, not monitored, the lowest stage and no profile.
 func (h *handler) lookupMovieOf(m metadata.Movie) movie {
 	out := movie{Title: m.Name, Status: movieStatus(m.CinemaDate, m.DigitalDate, m.PhysicalDate, h.now()), Overview: m.Overview,
 		InCinemas: utcPtr(m.CinemaDate), PhysicalRelease: utcPtr(m.PhysicalDate), DigitalRelease: utcPtr(m.DigitalDate), Images: []image{},
@@ -255,8 +256,9 @@ func (h *handler) lookupMovieOf(m metadata.Movie) movie {
 	return out
 }
 
-// listMovies is every movie, or the one with ?tmdbId= (a list of zero or
-// one: the reliable "is it in the Library" test).
+// listMovies lists every movie, or the one with ?tmdbId=. That gives a
+// list of zero or one, which callers use as the reliable in-the-Library
+// test.
 func (h *handler) listMovies(w http.ResponseWriter, r *http.Request) {
 	where, args := "1=1", []any{}
 	if v := query(r, "tmdbId"); v != "" {
@@ -295,7 +297,7 @@ func (h *handler) getMovie(w http.ResponseWriter, r *http.Request) {
 }
 
 // lookupMovies finds movies by tmdb: or imdb: id, or by name. A movie in
-// the Library comes back as stored, with its id; any other without one.
+// the Library comes back as stored, with its id. Any other has no id.
 func (h *handler) lookupMovies(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	term := strings.TrimSpace(query(r, "term"))
@@ -375,9 +377,9 @@ type movieIn struct {
 	} `json:"addOptions"`
 }
 
-// addMovie adds a movie. With searchForMovie it is searched after the
-// folder scan, within its Release gate (the old apps treat that search as
-// automatic too).
+// addMovie adds a movie. With searchForMovie the search waits for the
+// folder scan and stays within the Release gate, because the old apps
+// treat that search as automatic too.
 func (h *handler) addMovie(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	var in movieIn
@@ -410,9 +412,9 @@ func (h *handler) addMovie(w http.ResponseWriter, r *http.Request) {
 		internalError(w, err)
 		return
 	}
-	// Left out, monitored counts as true, as in Radarr.
+	// A missing monitored counts as true, as in Radarr.
 	keep := in.Monitored == nil || *in.Monitored
-	// Left out (or unknown), the gate counts as released, as in Radarr.
+	// A missing or unknown gate counts as released, as in Radarr.
 	gate := gateOf(in.MinimumAvailability)
 	if gate == "" {
 		gate = library.GateReleased
@@ -445,10 +447,10 @@ func (h *handler) addMovie(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusCreated, out)
 }
 
-// putMovie changes a movie already in the Library; the id comes from the
+// putMovie changes a movie already in the Library. The id comes from the
 // path or the body. Only monitored, the quality profile and the minimum
-// stage are taken; the folder is left as it is (moving a movie is done in
-// HolyArrs), and a search is sent by the app as a command of its own.
+// stage are taken. The folder stays as it is, because moves are done in
+// HolyArrs. An app sends a search as its own command.
 func (h *handler) putMovie(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	var in movieIn

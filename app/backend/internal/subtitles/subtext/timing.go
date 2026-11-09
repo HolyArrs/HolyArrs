@@ -14,8 +14,8 @@ const (
 	maxTimeMS   = 100*3600*1000 - 1
 )
 
-// Fix is a timing change: times are first scaled by FromFPS/ToFPS (when
-// both are set), then moved by OffsetMS.
+// Fix is a timing change. Times are first scaled by FromFPS/ToFPS when both
+// are set, then shifted by OffsetMS.
 type Fix struct {
 	OffsetMS int64   `json:"offset_ms"`
 	FromFPS  float64 `json:"from_fps,omitempty"`
@@ -25,7 +25,7 @@ type Fix struct {
 // ErrBadFix is a timing change outside its limits.
 var ErrBadFix = errors.New("timing change out of range")
 
-// Check refuses offsets past ten minutes and frame rates outside 1 to 120.
+// Check refuses offsets beyond ten minutes and frame rates outside 1 to 120.
 func (f Fix) Check() error {
 	if f.OffsetMS < -MaxOffsetMS || f.OffsetMS > MaxOffsetMS {
 		return fmt.Errorf("%w: offset_ms must be within ±%d", ErrBadFix, MaxOffsetMS)
@@ -50,8 +50,8 @@ func (f Fix) apply(ms int64) int64 {
 	return min(max(ms, 0), maxTimeMS)
 }
 
-// Retime applies fix to every cue of text (SRT, VTT, ASS or SSA) and
-// returns the new text; everything but the times stays as it was.
+// Retime applies fix to every cue of text in SRT, VTT, ASS or SSA and returns
+// the new text. Everything except the times stays as it was.
 func Retime(text, format string, fix Fix) (string, error) {
 	if err := fix.Check(); err != nil {
 		return "", err
@@ -83,7 +83,7 @@ func retimeCues(text string, fix Fix, vtt bool) (string, error) {
 		end := line[len(body):]
 		_, rest, _ := strings.Cut(body, "-->")
 		rest = strings.TrimLeft(rest, " \t")
-		// rest starts with the end time; what follows it (cue settings) stays.
+		// rest starts with the end time; cue settings after it are kept.
 		tail := ""
 		if i := strings.IndexAny(rest, " \t"); i >= 0 {
 			tail = rest[i:]
@@ -96,8 +96,8 @@ func retimeCues(text string, fix Fix, vtt bool) (string, error) {
 	return sb.String(), nil
 }
 
-// cueTimes reads "HH:MM:SS,mmm --> HH:MM:SS,mmm" (a dot instead of the
-// comma, and MM:SS.mmm without hours, as WebVTT allows).
+// cueTimes reads "HH:MM:SS,mmm --> HH:MM:SS,mmm". It also accepts a dot for the
+// comma and MM:SS.mmm without hours, as WebVTT allows.
 func cueTimes(line string) (int64, int64, bool) {
 	l, r, ok := strings.Cut(strings.TrimSpace(line), "-->")
 	if !ok || len(l) > 20 {
@@ -165,8 +165,8 @@ func fmtCue(ms int64, vtt bool) string {
 	return fmt.Sprintf("%02d:%02d:%02d%s%03d", ms/3600000, ms/60000%60, ms/1000%60, sep, ms%1000)
 }
 
-// retimeASS changes the Start and End fields of Dialogue lines, found by
-// the [Events] Format line (fields 2 and 3 when there is none).
+// retimeASS changes the Start and End fields of Dialogue lines, located by the
+// [Events] Format line, or fields 2 and 3 when there is none.
 func retimeASS(text string, fix Fix) (string, error) {
 	start, end := 1, 2
 	var sb strings.Builder
@@ -189,7 +189,7 @@ func retimeASS(text string, fix Fix) (string, error) {
 			sb.WriteString(line)
 			continue
 		}
-		// The text field (last) may hold commas: split only as far as needed.
+		// The last field is the text and may contain commas, so split only as far as needed.
 		fields := strings.SplitN(rest, ",", max(start, end)+2)
 		if len(fields) <= max(start, end) {
 			sb.WriteString(line)

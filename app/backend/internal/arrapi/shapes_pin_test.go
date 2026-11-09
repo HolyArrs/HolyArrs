@@ -19,8 +19,8 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 )
 
-// shapeOf turns decoded JSON into its structure: object keys in order, each
-// leaf replaced by its type, a list by its first element.
+// shapeOf turns decoded JSON into its structure. Object keys stay in
+// order, each leaf becomes its type and a list becomes its first element.
 func shapeOf(v any) any {
 	switch x := v.(type) {
 	case map[string]any:
@@ -106,8 +106,8 @@ func (r *pinRig) radarr(path string) (int, []byte) {
 	return rec.Code, rec.Body.Bytes()
 }
 
-// The movie list reads titles, main versions, slots and files, ordered by
-// sort name, over a large library.
+// The movie list reads titles, main versions, slots and files over a
+// large library, ordered by sort name.
 func TestPinRadarrMovieList(t *testing.T) {
 	r := newPinRig(t)
 	for i := 0; i < 150; i++ {
@@ -143,7 +143,7 @@ func TestPinRadarrMovieList(t *testing.T) {
 	pinGoldenShape(t, "radarr_movie", func() []byte { _, b := r.radarr("movie?tmdbId=100007"); return b }())
 }
 
-// What the old apps read stays the same shape.
+// The answers the old apps read keep the same shape.
 func TestPinArrAnswerShapes(t *testing.T) {
 	r := newPinRig(t)
 	r.show("Shape Show", "777", true, 2, func(k int) string { return pinDay(-k) })
@@ -163,7 +163,7 @@ func TestPinArrAnswerShapes(t *testing.T) {
 		if st != 200 {
 			t.Fatalf("%s: %d %s", path, st, b)
 		}
-		// The paths and the id of the show hold test directories: look at structure only.
+		// The show's paths and id hold test folders, so only the structure is compared.
 		pinGoldenShape(t, name, b)
 	}
 	rec := httptest.NewRecorder()

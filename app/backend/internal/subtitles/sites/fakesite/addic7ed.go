@@ -10,22 +10,21 @@ import (
 	"time"
 )
 
-// Addic7ed is a fake of a show-subtitle site that serves HTML pages and
-// needs a signed-in account for downloads: a sign-in form that sets a
-// cookie, a show search page, a season page with one table row per
-// subtitle, and downloads that need the cookie and a Referer from the show
-// page. The page shapes are HolyArrs's own, made for tests; every name,
-// password and subtitle is made up by the test that sets it. It never
-// reaches out.
+// Addic7ed fakes a show subtitle site that serves HTML pages and needs a
+// signed-in account to download. It has a sign-in form that sets a cookie, a
+// show search page, a season page with one table row per subtitle, and
+// downloads that need the cookie plus a Referer from the show page. The page
+// shapes are our own, made for tests. Every name, password and subtitle is
+// made up by the test that sets it, and it never contacts the outside.
 type Addic7ed struct {
 	mu   sync.Mutex
 	User string
 	Pass string
 	// Shows maps a show id to its name.
 	Shows map[int]string
-	// Subs are the episode subtitles; ID is the download id (digits),
-	// Title the show's name. Downloads == -1 marks one still being made
-	// (shown 45.3% done).
+	// Subs are the episode subtitles. ID is the numeric download id and Title the
+	// show's name. Downloads == -1 marks a subtitle still in progress, shown as
+	// 45.3% done.
 	Subs []Sub
 	// Challenge answers every page with an anti-bot check page.
 	Challenge bool
@@ -33,14 +32,14 @@ type Addic7ed struct {
 	Hostile string
 	// LinkHost, when set, makes download links absolute on that host.
 	LinkHost string
-	// Expire ends every session once (as if the cookie ran out).
+	// Expire ends every session once, as if the cookie had expired.
 	Expire bool
-	// LoginDelay holds a fake login open so tests can overlap first calls.
+	// LoginDelay keeps a fake login open so tests can overlap first calls.
 	LoginDelay time.Duration
 	// DownloadHTML, when set, answers downloads with this HTML page.
 	DownloadHTML string
-	// Base is the path the fake is served under (the lab serves it at
-	// /addic7ed); links and redirects carry it.
+	// Base is the path the fake is served under, such as /addic7ed in the lab.
+	// Links and redirects include it.
 	Base string
 
 	Logins      int

@@ -1,7 +1,6 @@
-// Package sites talks to Subtitle sites: one small adapter per kind of site
-// behind one interface, a shared HTTP client that keeps each site's limits
-// and HolyArrs's network rule, and the pause each failure earns
-// (design/domain/subtitles.md, section 4).
+// Package sites talks to subtitle sites. Each kind of site has a small adapter
+// behind one interface. A shared HTTP client enforces each site's limits and
+// the app's network rule, and failures map to the pause each one earns.
 package sites
 
 import (
@@ -31,8 +30,8 @@ type Query struct {
 	TMDB        string
 	TVDB        string
 	ReleaseName string
-	// Hash is the video's 64-bit file hash (OpenSubtitles style, 16 hex
-	// digits); empty when the file could not be read.
+	// Hash is the video's 64-bit file hash in OpenSubtitles style as 16 hex
+	// digits. It is empty when the file could not be read.
 	Hash      string
 	Languages []string // two-letter codes
 }
@@ -44,11 +43,10 @@ type Candidate struct {
 	Language        string `json:"language"`
 	HearingImpaired bool   `json:"hearing_impaired"`
 	Forced          bool   `json:"forced"`
-	// ReleaseNames are the release names the site holds for the subtitle
-	// in a field of its own. Only the lab adapter sends our release name
-	// in the query; it leaves out a name equal to ours on a subtitle the
-	// site marks as made up from the query (an echo must not score as an
-	// exact release match).
+	// ReleaseNames are the release names the site keeps for the subtitle in a
+	// separate field. Only the lab adapter sends our release name in the query,
+	// so it drops a name equal to ours on subtitles the site marks as built from
+	// the query. An echo must not score as an exact release match.
 	ReleaseNames []string `json:"release_names,omitempty"`
 	Title        string   `json:"title,omitempty"`
 	Year         int      `json:"year,omitempty"`
@@ -64,13 +62,13 @@ type Candidate struct {
 	Link         string   `json:"-"` // where Download fetches it; never shown
 }
 
-// Site is one Subtitle site.
+// Site is one subtitle site.
 type Site interface {
 	Search(ctx context.Context, q Query) ([]Candidate, error)
 	Download(ctx context.Context, c Candidate) ([]byte, error)
 }
 
-// Kind describes one kind of site HolyArrs can use.
+// Kind describes one kind of site the app can use.
 type Kind struct {
 	Kind         string `json:"kind"`
 	Name         string `json:"name"`
@@ -79,18 +77,18 @@ type Kind struct {
 	Shows        bool   `json:"shows"`
 	NeedsAccount bool   `json:"needs_account"`
 	// Account names the details a site that needs an account asks for:
-	// username, password, api_key.
+	// username, password and api_key.
 	Account []string `json:"account,omitempty"`
 	Note    string   `json:"note,omitempty"`
-	// DefaultOff: a new site of this kind starts turned off unless the
-	// person turns it on in the same step.
+	// DefaultOff means a new site of this kind starts off unless the person turns
+	// it on in the same step.
 	DefaultOff bool `json:"default_off,omitempty"`
-	// Later: listed so people know it is planned, but not built; it cannot
-	// be added yet.
+	// Later means the kind is listed so people know it is planned, but it is not
+	// built and cannot be added yet.
 	Later bool `json:"later,omitempty"`
 }
 
-// Kinds lists the kinds of site, in the order screens show them.
+// Kinds lists the kinds of site in the order screens show them.
 var Kinds = []Kind{
 	{Kind: "opensubtitles", Name: "OpenSubtitles.com", DefaultURL: "https://api.opensubtitles.com/api/v1", Movies: true, Shows: true, NeedsAccount: true,
 		Account: []string{"api_key", "username", "password"},
@@ -108,7 +106,7 @@ var Kinds = []Kind{
 		Note: "The lab's fake site asking for a key, for tests of sites that need your account."},
 }
 
-// KindOf finds a kind.
+// KindOf looks up a kind by name.
 func KindOf(kind string) (Kind, bool) {
 	for _, k := range Kinds {
 		if k.Kind == kind {
@@ -122,19 +120,19 @@ func KindOf(kind string) (Kind, bool) {
 type Config struct {
 	Name       string
 	URL        string
-	Key        string // an API key for kinds that need one; never logged
+	Key        string // API key for kinds that need one; never logged
 	Username   string // account name for kinds that sign in; never logged
 	Password   string // never logged
-	GapMS      int    // least time between two calls (default 1000)
-	PerWindow  int    // most calls per Window (default 60; 0 keeps the default)
+	GapMS      int    // shortest time between two calls, 1000 by default
+	PerWindow  int    // most calls per Window, 60 by default; 0 keeps the default
 	Window     time.Duration
-	Timeout    time.Duration // default 20s
-	AllowLocal bool          // may reach the local network (never cloud metadata)
-	// HTTP replaces the client (tests); the network rule is then the test's.
+	Timeout    time.Duration // 20s by default
+	AllowLocal bool          // may reach the local network, never cloud metadata
+	// HTTP replaces the client in tests. The network rule is then up to the test.
 	HTTP *http.Client
 }
 
-// New makes the site of a kind.
+// New builds the site for a kind.
 func New(kind string, cfg Config) (Site, error) {
 	c, err := newClient(cfg)
 	if err != nil {
@@ -158,7 +156,7 @@ func New(kind string, cfg Config) (Site, error) {
 	return nil, fmt.Errorf("unknown kind of subtitle site %q", kind)
 }
 
-// Error kinds; they are the sites' pause reasons.
+// Error kinds. They double as the sites' pause reasons.
 const (
 	KindDown          = "down"
 	KindRateLimited   = "rate_limited"
@@ -168,7 +166,8 @@ const (
 	KindUnreadable    = "unreadable"
 )
 
-// Error is a failed call to a site. It never holds the URL or a key.
+// Error is a failed call to a site. It never holds the URL or a key, so it is
+// safe to log and show.
 type Error struct {
 	Kind       string
 	RetryAfter time.Duration
@@ -180,8 +179,8 @@ func (e *Error) Error() string { return "subtitle site " + e.Kind + ": " + e.Msg
 // Code lets the jobs queue record the kind.
 func (e *Error) Code() string { return "subtitle_site_" + e.Kind }
 
-// PauseFor is how long a site rests after an error, given how many failures
-// in a row it has had (n, counting this one), at time now.
+// PauseFor returns how long a site rests after err, given n failures in a row
+// counting this one, at time now.
 func PauseFor(err error, n int, now time.Time) (string, time.Duration) {
 	kind, retry := KindDown, time.Duration(0)
 	var se *Error
@@ -195,7 +194,7 @@ func PauseFor(err error, n int, now time.Time) (string, time.Duration) {
 		}
 		return kind, time.Hour
 	case KindDownloadLimit:
-		if retry > 0 { // the site said when its day resets
+		if retry > 0 { // the site said when its daily count resets
 			return kind, min(retry, 24*time.Hour)
 		}
 		next := time.Date(now.Year(), now.Month(), now.Day()+1, 0, 0, 0, 0, time.UTC)
@@ -212,7 +211,7 @@ func PauseFor(err error, n int, now time.Time) (string, time.Duration) {
 	return KindDown, min(d, 6*time.Hour)
 }
 
-// Answer caps.
+// Caps on the size of an answer.
 const (
 	maxSearchBody   = 4 << 20
 	maxDownloadBody = 8 << 20
@@ -223,13 +222,12 @@ type client struct {
 	base *url.URL
 	http *http.Client
 
-	// keyHeader is the header the key rides in (empty: the adapter puts
-	// it elsewhere); userAgent replaces "HolyArrs" for sites that ask for
-	// a named app.
+	// keyHeader is the header that carries the key; empty means the adapter puts
+	// it elsewhere. userAgent replaces "HolyArrs" for sites that want a named app.
 	keyHeader string
 	userAgent string
-	// status, when set, reads a site's own answer to a failed call before
-	// the shared rules (quota answers, for example).
+	// status, when set, reads a site's own answer to a failed call before the
+	// shared rules, for example a quota answer.
 	status func(resp *http.Response, body []byte) error
 
 	mu   sync.Mutex
@@ -317,8 +315,8 @@ func (c *client) wait(ctx context.Context) error {
 	return nil
 }
 
-// ref resolves a path (with query) against the site's address; it must
-// stay on the site's host.
+// ref resolves a path with its query against the site's address. The result
+// must stay on the site's host.
 func (c *client) ref(p string) (string, error) {
 	u, err := c.base.Parse(p)
 	if err != nil || u.Host != c.base.Host || u.Scheme != c.base.Scheme {
@@ -333,8 +331,8 @@ func (c *client) ref(p string) (string, error) {
 	return u.String(), nil
 }
 
-// get fetches a path of the site. A 404 answers nil without an error when
-// missingOK is set.
+// get fetches a path on the site. With missingOK set, a 404 returns nil and
+// no error.
 func (c *client) get(ctx context.Context, p string, accept string, limit int64, missingOK bool) ([]byte, error) {
 	raw, err := c.ref(p)
 	if err != nil {
@@ -343,10 +341,9 @@ func (c *client) get(ctx context.Context, p string, accept string, limit int64, 
 	return c.do(ctx, http.MethodGet, raw, nil, nil, accept, limit, missingOK)
 }
 
-// fetch follows a download link a site handed out. A link on the site's
-// own host is fetched like any path; a link on another host must be https
-// (the site's download servers live there) and still goes through the
-// network rule.
+// fetch follows a download link a site handed out. A link on the site's own
+// host is fetched like any path. A link on another host, where the site's
+// download servers live, must use https and still passes the network rule.
 func (c *client) fetch(ctx context.Context, link string, limit int64) ([]byte, error) {
 	u, err := url.Parse(link)
 	if err != nil || u.User != nil {
@@ -361,7 +358,7 @@ func (c *client) fetch(ctx context.Context, link string, limit int64) ([]byte, e
 	return c.do(ctx, http.MethodGet, u.String(), nil, nil, "", limit, false)
 }
 
-// do sends one call. body, when set, goes as JSON; hdr adds headers.
+// do sends one call. A non-nil body goes as JSON and hdr adds headers.
 func (c *client) do(ctx context.Context, method, raw string, body []byte, hdr map[string]string, accept string, limit int64, missingOK bool) ([]byte, error) {
 	if err := c.wait(ctx); err != nil {
 		return nil, err
@@ -384,8 +381,8 @@ func (c *client) do(ctx context.Context, method, raw string, body []byte, hdr ma
 		return nil, &Error{Kind: KindUnreadable, Msg: "bad site address"}
 	}
 	req.Header.Set("User-Agent", c.agent())
-	// The key and any sign-in header go only to the site's own host and
-	// scheme; a download host elsewhere (a CDN) gets neither.
+	// The key and any sign-in header go only to the site's own host and scheme.
+	// A download host elsewhere, such as a CDN, gets neither.
 	onSite := req.URL.Host == c.base.Host && req.URL.Scheme == c.base.Scheme
 	if !onSite {
 		hdr = nil
@@ -410,7 +407,7 @@ func (c *client) do(ctx context.Context, method, raw string, body []byte, hdr ma
 		}
 		var ue *url.Error
 		if errors.As(err, &ue) {
-			err = ue.Err // drop the URL
+			err = ue.Err // drop the URL so it never leaks
 		}
 		if errors.Is(err, outbound.ErrAddressRefused) {
 			return nil, &Error{Kind: KindBlocked, Msg: "the address is on the local network, which this site may not reach"}

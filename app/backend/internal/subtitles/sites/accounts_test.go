@@ -14,7 +14,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles/sites/fakesite"
 )
 
-// Made-up account details; nothing here is a real account.
+// Made-up account details. None of them is a real account.
 const (
 	fakeKey  = "made-up-key-for-tests"
 	fakeUser = "lab-person"
@@ -75,9 +75,9 @@ func TestOpenSubtitlesSearchAndDownload(t *testing.T) {
 	}
 }
 
-// A refused token is replaced by one new sign-in; a refused sign-in is a
-// login_refused error (the site then rests 12 h); no account details, no
-// download.
+// A refused token is replaced by one new sign-in. A refused sign-in is a
+// login_refused error and the site rests 12 hours. Without account details
+// there is no download.
 func TestOpenSubtitlesSignIn(t *testing.T) {
 	f := osFake()
 	s, _ := osSite(t, f, fakeUser, fakePass)
@@ -102,7 +102,7 @@ func TestOpenSubtitlesSignIn(t *testing.T) {
 	if _, err := none.Download(ctx, c); kindOf(err) != KindLoginRefused {
 		t.Fatalf("no account: %v", err)
 	}
-	// A wrong API key is refused on search too.
+	// A wrong API key is refused on search as well.
 	f2 := osFake()
 	srv := httptest.NewServer(f2)
 	t.Cleanup(srv.Close)
@@ -112,8 +112,8 @@ func TestOpenSubtitlesSignIn(t *testing.T) {
 	}
 }
 
-// The daily download count runs out: the site rests until the reset time
-// it gave.
+// When the daily download count runs out, the site rests until the reset
+// time it gave.
 func TestOpenSubtitlesQuota(t *testing.T) {
 	f := osFake()
 	f.Quota = 0
@@ -144,7 +144,7 @@ func TestOpenSubtitlesHostile(t *testing.T) {
 			t.Errorf("%s: %+v %v", body, got, err)
 		}
 	}
-	// A download link on another host must be https.
+	// A download link on another host must use https.
 	f := osFake()
 	f.LinkHost = "http://192.0.2.1"
 	s, _ := osSite(t, f, fakeUser, fakePass)
@@ -178,7 +178,7 @@ func TestSubdl(t *testing.T) {
 	if err != nil || !bytes.HasPrefix(b, []byte("PK")) {
 		t.Fatalf("zip %v", err)
 	}
-	// Quota used up: the download limit (rests until midnight UTC).
+	// With the quota used up, the download limit applies until midnight UTC.
 	if _, err := s.Download(ctx, got[0]); kindOf(err) != KindRateLimited && kindOf(err) != KindDownloadLimit {
 		t.Fatalf("quota: %v", err)
 	}
@@ -186,11 +186,11 @@ func TestSubdl(t *testing.T) {
 	if err != nil || len(ep) != 1 || ep[0].Episode != 2 || !ep[0].MatchedByID {
 		t.Fatalf("episode %+v %v", ep, err)
 	}
-	// Nothing found is no results, not an error.
+	// Nothing found is an empty result, not an error.
 	if got, err := s.Search(ctx, Query{Kind: "movie", Title: "Nope", Languages: []string{"en"}}); err != nil || len(got) != 0 {
 		t.Fatalf("none %+v %v", got, err)
 	}
-	// A wrong key is login_refused, and the key never shows in the error.
+	// A wrong key is login_refused, and the key never appears in the error.
 	w, _ := New("subdl", Config{Name: "subdl", URL: srv.URL + "/api/v1", Key: "other-made-up-key", GapMS: 1, AllowLocal: true})
 	_, err = w.Search(ctx, Query{Kind: "movie", Title: "The Lantern", Languages: []string{"en"}})
 	if kindOf(err) != KindLoginRefused || strings.Contains(err.Error(), "other-made-up-key") {
@@ -217,7 +217,7 @@ func TestFileHash(t *testing.T) {
 		t.Fatal(err)
 	}
 	h, err := FileHash(p)
-	if err != nil || h != "0000000000032000" { // zeros: the hash is the size
+	if err != nil || h != "0000000000032000" { // all zeros, so the hash equals the size
 		t.Fatalf("%s %v", h, err)
 	}
 	small := filepath.Join(dir, "s.mkv")

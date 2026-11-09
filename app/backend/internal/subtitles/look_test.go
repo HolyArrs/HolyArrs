@@ -7,8 +7,8 @@ import (
 	"time"
 )
 
-// New default languages list what every File misses without asking any
-// site: the look Job reads the Files never looked at, in batches.
+// Setting default languages lists what each File misses without asking any
+// site. The look Job reads never-looked-at Files in batches.
 func TestLookJob_ListsMissingWithoutSites(t *testing.T) {
 	f := newFix(t)
 	ctx := context.Background()
@@ -20,7 +20,7 @@ func TestLookJob_ListsMissingWithoutSites(t *testing.T) {
 	}
 	t.Cleanup(q.Stop)
 	old := lookBatch
-	lookBatch = 1 // one File a Job: the rest go to the next Job
+	lookBatch = 1 // one File per Job so the rest spill into the next Job
 	t.Cleanup(func() { lookBatch = old })
 
 	wishAll(t, f, Want{Language: "es"})

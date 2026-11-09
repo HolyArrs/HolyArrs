@@ -1,14 +1,3 @@
-// Package archive unpacks the other archive kinds a release may come in
-// (the same set Unpackerr reads): 7-Zip (one file or .7z.001 parts),
-// zip, tar (plain, gzip, bzip2 or xz) and a single gzip, bzip2 or xz file.
-// RAR sets are internal/unrar's.
-//
-// It reads untrusted files with the rules of internal/unrar: names pass
-// unrar.CleanName, links and special entries are refused, every file is
-// written through a handle on the target folder (os.Root) and never over an
-// existing one, the output is capped, reading stops when ctx ends, and a
-// password-protected archive is refused. Its errors are unrar's, so the
-// importer gives the same plain reasons.
 package archive
 
 import (

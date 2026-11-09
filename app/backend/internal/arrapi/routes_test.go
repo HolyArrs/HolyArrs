@@ -13,9 +13,9 @@ func serveGET(h http.Handler, path string) *httptest.ResponseRecorder {
 	return rec
 }
 
-// serve folds case and a trailing slash, answers a bare 404 outside the API
-// (Bazarr reads a JSON body there as a version) and puts the version header
-// on every answer.
+// serve folds case and a trailing slash and puts the version header on
+// every answer. Outside the API it answers a bare 404, because Bazarr
+// reads a JSON body there as a version.
 func TestServeRewritesPaths(t *testing.T) {
 	h := Sonarr(Deps{Store: settingsStore(t)})
 
@@ -31,8 +31,8 @@ func TestServeRewritesPaths(t *testing.T) {
 	if rec.Code != 404 || !strings.Contains(rec.Body.String(), `"message"`) || rec.Header().Get("X-Application-Version") != SonarrVersion {
 		t.Fatalf("unknown route: %d %s", rec.Code, rec.Body)
 	}
-	// Covers answer straight after the side too; with no picture source they
-	// are a 404 with a message, not the bare outside-the-API answer.
+	// Covers also answer right after the side. With no picture source they
+	// give a 404 with a message, not the bare outside-the-API answer.
 	rec = serveGET(h, "/sonarr/MediaCover/1/poster.jpg")
 	if rec.Code != 404 || !strings.Contains(rec.Body.String(), "message") {
 		t.Fatalf("direct mediacover: %d %q", rec.Code, rec.Body)

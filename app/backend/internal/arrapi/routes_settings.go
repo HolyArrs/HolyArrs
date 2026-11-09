@@ -10,27 +10,27 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
-// Settings in the this_app group; missing means off.
+// Setting keys in the this_app group. A missing key means off.
 const (
 	settingOn         = "old_app_api"
 	settingDeleteFile = "old_app_api_delete_files"
 )
 
-// settingsGroup is the settings group both switches live in.
+// settingsGroup is the settings group that holds both switches.
 const settingsGroup = "this_app"
 
-// Handlers serves the Sonarr and Radarr prefixes and their settings routes.
-// The prefixes answer 404 until the owner turns the arr API on, and each
-// side has a key of its own.
+// Handlers serves the Sonarr and Radarr prefixes and their settings
+// routes. The prefixes answer 404 until the owner turns the arr API on.
+// Each side has its own key, so one leaked key reaches only one side.
 type Handlers struct {
 	Deps
-	// Auth makes, lists and deletes the keys of the two sides; nil means
+	// Auth makes, lists and deletes the keys of both sides. Nil means
 	// sign-in is off and no key can be made.
 	Auth *accounts.Auth
 }
 
-// Routes registers the two prefixes and their settings. Each prefix has one
-// row per method so the permission, scope and part tables name it.
+// Routes registers the two prefixes and their settings. Each prefix gets
+// one row per method so the permission, scope and part tables can name it.
 func (h *Handlers) Routes(m *webserver.Router) {
 	son := Sonarr(h.deps())
 	rad := Radarr(h.deps())
@@ -48,8 +48,8 @@ func (h *Handlers) Routes(m *webserver.Router) {
 	m.Handle("DELETE /api/v1/settings/old-app-api/keys/{side}", webserver.PermSettings, http.HandlerFunc(h.deleteKey))
 }
 
-// deps is what the two adapters read and call; the delete-files switch is
-// read from the settings.
+// deps returns what the two adapters read and call. The delete-files
+// switch is read from the settings on each use.
 func (h *Handlers) deps() Deps {
 	d := h.Deps
 	d.DeleteFiles = h.deleteFilesOn
@@ -63,9 +63,9 @@ func (h *Handlers) switchOn(ctx context.Context, key string) bool {
 // On reports whether the arr API is switched on.
 func (h *Handlers) On(ctx context.Context) bool { return h.switchOn(ctx, settingOn) }
 
-// deleteFilesOn says whether a delete from those apps may take the
-// files too. Off by default: Seerr keeps its key in plain text, and with
-// this off a leaked key can take titles out of the Library but no files.
+// deleteFilesOn reports whether a delete from those apps may take the
+// files too. It is off by default because Seerr keeps its key in plain
+// text. With it off, a leaked key can remove titles but never files.
 func (h *Handlers) deleteFilesOn(ctx context.Context) bool {
 	return h.switchOn(ctx, settingDeleteFile)
 }
@@ -81,15 +81,15 @@ func (h *Handlers) Gate(next http.Handler) http.Handler {
 	})
 }
 
-// Side is one side as the settings show it.
+// Side is one side as the settings page shows it.
 type Side struct {
 	Side string `json:"side"` // sonarr or radarr
-	// Path is the address to paste into Seerr or Overseerr as the URL base
-	// (with this server's host and port); URL is the whole address as this
-	// request reached HolyArrs.
+	// Path is the URL base to paste into Seerr or Overseerr, next to this
+	// server's host and port. URL is the whole address as this request
+	// reached HolyArrs.
 	Path string               `json:"path"`
 	URL  string               `json:"url"`
-	Key  *accounts.ArrKeyView `json:"key,omitempty"` // nil: no key made yet
+	Key  *accounts.ArrKeyView `json:"key,omitempty"` // nil until a key is made
 }
 
 func (h *Handlers) answer(r *http.Request) (map[string]any, error) {
@@ -143,16 +143,16 @@ func (h *Handlers) putSettings(w http.ResponseWriter, r *http.Request) {
 	h.getSettings(w, r)
 }
 
-// SaveSwitches saves the arr API's on/off and delete-files
-// switches; a nil one is left as it is. Setup steps in this package (such
-// as connecting Prowlarr) turn the API on through it.
+// SaveSwitches saves the arr API's on/off and delete-files switches. A
+// nil switch is left as it is. Setup steps such as connecting Prowlarr
+// turn the API on through it.
 func (h *Handlers) SaveSwitches(ctx context.Context, who domain.Actor, enabled, deleteFiles *bool) error {
 	return saveSwitches(ctx, h.Store, who, map[string]*bool{settingOn: enabled, settingDeleteFile: deleteFiles})
 }
 
-// makeKey makes (or replaces) one side's key and shows it once. The
-// key acts as the person who made it, so they must be allowed to manage
-// the Library, and signed in with their password.
+// makeKey makes or replaces one side's key and shows it once. The key
+// acts as the person who made it, so that person must be allowed to
+// manage the Library and must have signed in with a password.
 func (h *Handlers) makeKey(w http.ResponseWriter, r *http.Request) {
 	side := r.PathValue("side")
 	if side != "sonarr" && side != "radarr" {
@@ -166,8 +166,8 @@ func (h *Handlers) makeKey(w http.ResponseWriter, r *http.Request) {
 	if !webserver.RequireStrong(w, r) {
 		return
 	}
-	// The new key can change the Library, so a HolyArrs API key making it
-	// must hold the write scope too: a key never makes one that reaches more.
+	// The new key can change the Library. A HolyArrs API key making it must
+	// hold the write scope too, so no key can make one that reaches more.
 	if who, ok := webserver.From(r.Context()); ok && !who.HasScope(webserver.ScopeWrite) {
 		webserver.Fail(w, http.StatusForbidden, "this API key needs the write scope to make a key that changes the Library")
 		return

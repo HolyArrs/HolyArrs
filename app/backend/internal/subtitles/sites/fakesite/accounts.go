@@ -12,25 +12,25 @@ import (
 	"time"
 )
 
-// OpenSubs is a fake of the OpenSubtitles.com API shape: an Api-Key on
-// every call, a sign-in that hands out a token, a daily download count.
-// Every key, name and password it knows is made up by the test that sets
-// it. It never reaches out.
+// OpenSubs fakes the shape of the OpenSubtitles.com API: an Api-Key on every
+// call, a sign-in that returns a token and a daily download count. Every key,
+// name and password it knows is made up by the test that sets it, and it
+// never contacts the outside.
 type OpenSubs struct {
 	mu       sync.Mutex
 	Key      string
 	User     string
 	Pass     string
-	Subs     []Sub // Kind movie or episode; ID is the file id (digits)
+	Subs     []Sub // Kind is movie or episode; ID is the numeric file id
 	Quota    int   // downloads left today
 	Logins   int
 	Searches int
-	// Expire, when set, makes the next download refuse the current token
-	// once (as if it ran out).
+	// Expire makes the next download refuse the current token once, as if it
+	// had expired.
 	Expire bool
-	// Hostile, when set, answers every search with this raw body.
+	// Hostile, when set, is the raw body of every search answer.
 	Hostile string
-	// LinkHost, when set, is where download links point instead of the
+	// LinkHost, when set, is the host download links point at instead of the
 	// fake itself.
 	LinkHost string
 	tokens   map[string]bool
@@ -143,16 +143,16 @@ func (o *OpenSubs) file(w http.ResponseWriter, id string) {
 	http.NotFound(w, nil)
 }
 
-// Subdl is a fake of the subdl API shape: the key in the query, search
-// answers with zip links, a daily download count. All values are made up.
+// Subdl fakes the shape of the subdl API: the key in the query, search answers
+// with zip links and a daily download count. Every value is made up.
 type Subdl struct {
 	mu        sync.Mutex
 	Key       string
-	Subs      []Sub // ID is the zip's name
+	Subs      []Sub // ID is the zip file name
 	Quota     int
 	Searches  int
 	Downloads int
-	// Hostile, when set, answers every search with this raw body.
+	// Hostile, when set, is the raw body of every search answer.
 	Hostile string
 }
 
