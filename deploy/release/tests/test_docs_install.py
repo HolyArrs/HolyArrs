@@ -76,7 +76,7 @@ class InstallGuides(unittest.TestCase):
         compose = textwrap.dedent(re.search(r"```yaml\n( *services:\n +holyarrs:\n +image: .*?)```", text, re.S).group(1))
         cli = re.search(r"```sh\n(docker run -d .*?)```", text, re.S).group(1)
         for block in (compose, cli):
-            for want in ("holyarrs/holyarrs:beta", "holyarrs", "PUID=1000", "PGID=1000", "TZ=Etc/UTC",
+            for want in ("holyarrs/holyarrs:latest", "holyarrs", "PUID=1000", "PGID=1000", "TZ=Etc/UTC",
                          ":/config", "6262:6262", "unless-stopped"):
                 with self.subTest(want=want):
                     self.assertIn(want, block)

@@ -32,7 +32,7 @@ Run HolyArrs in Docker and open it in your browser. It takes a few minutes.
    ```yaml
    services:
      holyarrs:
-       image: holyarrs/holyarrs:beta
+       image: holyarrs/holyarrs:latest
        container_name: holyarrs
        environment:
          - PUID=1000
@@ -78,7 +78,7 @@ docker run -d \
   -v /srv/holyarrs/config:/config \
   -v /path/to/movies:/movies `#optional`   -v /path/to/tv:/tv `#optional`   -v /path/to/music:/music `#optional`   -v /path/to/downloads:/downloads `#optional` \
   --restart unless-stopped \
-  holyarrs/holyarrs:beta
+  holyarrs/holyarrs:latest
 ```
 
 ### Image tag
@@ -275,7 +275,7 @@ are not safe. HolyArrs refuses a `/config` there and shows the fix on port
 ```yaml
 services:
   holyarrs:
-    image: holyarrs/holyarrs:beta
+    image: holyarrs/holyarrs:latest
     container_name: holyarrs
     environment:
       - TZ=Etc/UTC
@@ -293,7 +293,7 @@ volumes:
 To move an old config folder into the volume, stop HolyArrs and run:
 
 ```sh
-docker create --name hx -v holyarrs-config:/config holyarrs/holyarrs:beta
+docker create --name hx -v holyarrs-config:/config holyarrs/holyarrs:latest
 docker cp C:\old\config\. hx:/config/
 docker rm hx
 ```
@@ -350,7 +350,7 @@ Never do it with normal Docker or on a NAS.
 
 ```ini
 [Container]
-Image=holyarrs/holyarrs:beta
+Image=holyarrs/holyarrs:latest
 UserNS=keep-id
 User=%U:%G
 Volume=%h/holyarrs/config:/config:Z
@@ -368,7 +368,7 @@ WantedBy=default.target
 Or as one command:
 
 ```sh
-podman run -d --name holyarrs --userns=keep-id --user "$(id -u):$(id -g)" -v ~/holyarrs/config:/config:Z -p 6262:6262 --health-cmd '["/holyarrs","-healthcheck"]' --health-interval 30s --restart always holyarrs/holyarrs:beta
+podman run -d --name holyarrs --userns=keep-id --user "$(id -u):$(id -g)" -v ~/holyarrs/config:/config:Z -p 6262:6262 --health-cmd '["/holyarrs","-healthcheck"]' --health-interval 30s --restart always holyarrs/holyarrs:latest
 ```
 
 - `:Z` is for SELinux systems. Use `:z` on folders the Downloader shares. Use

@@ -25,11 +25,11 @@ def section(text: str, heading: str) -> str:
 
 
 class ImageTags(unittest.TestCase):
-    def test_docs_pull_the_beta_tag(self):
-        # Before the first stable there is no :latest; every example pulls the
+    def test_docs_pull_the_latest_tag(self):
+        # 1.0.0 is promoted to :latest before launch; every example pulls the
         # same tag as the main compose file. Placeholders like <tag> are fine.
         main = re.search(r"(?<![\w./-])holyarrs/holyarrs:([\w.-]+)", read(INSTALL)).group(1)
-        self.assertEqual(main, "beta")
+        self.assertEqual(main, "latest")
         for page in [*pages(), ROOT / "README.md"]:
             for tag in re.findall(r"(?<![\w./-])holyarrs/holyarrs:([\w.<>-]+)", read(page)):
                 with self.subTest(page=page.name, tag=tag):
