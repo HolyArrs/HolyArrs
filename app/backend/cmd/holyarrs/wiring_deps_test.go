@@ -16,7 +16,6 @@ import (
 // Every metadata call and the Deezer and bio reads reach the music module;
 // a nil one would quietly hide rows on Explore and the artist pages.
 func TestMainWiresEveryMusicDep(t *testing.T) {
-	t.Setenv("HOLYARRS_FLAGS", "music_rows_v7")
 	deezer := func(context.Context, string) (metadata.DeezerProfile, error) { return metadata.DeezerProfile{}, nil }
 	album := func(context.Context, int64) (metadata.DeezerAlbumInfo, error) { return metadata.DeezerAlbumInfo{}, nil }
 	bio := func(context.Context, string) (*metadata.WikiSummary, error) { return nil, nil }
@@ -27,8 +26,9 @@ func TestMainWiresEveryMusicDep(t *testing.T) {
 			t.Errorf("music.Deps.%s is not wired", v.Type().Field(i).Name)
 		}
 	}
-	if !d.MusicRowsV7 || d.MusicRowsV2 || d.MusicRowsV3 || d.MusicRowsV6 || d.MusicListsV1 || d.MusicRowsTplOff {
-		t.Fatalf("switches do not follow HOLYARRS_FLAGS: %+v", d)
+	// The new music Explore page is on for everyone.
+	if !d.MusicRowsV7 || !d.MusicRowsV2 || !d.MusicRowsV3 || !d.MusicRowsV6 || !d.MusicListsV1 || d.MusicRowsTplOff {
+		t.Fatalf("music Explore is not fully on: %+v", d)
 	}
 }
 
