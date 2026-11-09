@@ -66,25 +66,25 @@ export default defineConfig({
 		// Shows: a show folder, add a show, seasons and episodes on and off, shows in the Library, a member asks for seasons from a phone and the owner approves from a phone.
 		{ name: 'shows', testMatch: '**/shows/shows.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['movies'] },
 		// Show search: Choose a release for a season (one pack fills both episodes), an episode turned down and searched again, Home and the Turned down list name the episode, a phone.
-		{ name: 'showsearch', testMatch: '**/shows/showsearch.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['shows', 'downloaders'] },
+		{ name: 'showsearch', testMatch: '**/shows/show-search.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['shows', 'downloaders'] },
 		// Show downloads: the Downloads screen names the episodes a download covers, an episode imports, a stuck pack waits on Needs a decision as one card and is settled with one choice, a phone, the episode naming settings.
-		{ name: 'showdownloads', testMatch: '**/shows/showdownloads.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['showsearch', 'search'] },
+		{ name: 'showdownloads', testMatch: '**/shows/show-downloads.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['showsearch', 'search'] },
 		// Organise for shows: import a show folder (nothing moves), rename its episodes, delete an episode of a multi-episode file and a season, an episode's History, this week's episode on the Calendar, pack Alerts, a phone.
-		{ name: 'showorganise', testMatch: '**/shows/showorganise.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['showdownloads'] },
+		{ name: 'showorganise', testMatch: '**/shows/show-organise.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['showdownloads'] },
 		// Music: a music folder, Settings > Music, add an artist from Search, its albums, kinds and Pressings, artists in the Library, a member asks for one single from a phone and the owner approves from a phone.
 		{ name: 'music', testMatch: '**/music/music.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['setup'] },
 		// Music search: Choose a release on the album page (verdicts, one turned down, FLAC chosen for every track), Home and the Turned down list name Artist – Album, Search now on the artist page, the music settings, a phone.
-		{ name: 'musicsearch', testMatch: '**/music/musicsearch.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['music', 'downloaders'] },
+		{ name: 'musicsearch', testMatch: '**/music/music-search.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['music', 'downloaders'] },
 		// Music downloads: the Downloads screen names Artist – Album and its tracks, an album is placed track by track, a stuck track waits on Needs a decision, a phone.
-		{ name: 'musicdownloads', testMatch: '**/music/musicdownloads.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['musicsearch', 'search'] },
+		{ name: 'musicdownloads', testMatch: '**/music/music-downloads.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['musicsearch', 'search'] },
 		// Organise for music: music naming with a live example, rename an album's tracks from its page, import an artist folder (nothing moves, a single left out), delete a track to the holding folder, an album's History, album days on the Calendar, a phone, delete an artist with Never-add.
-		{ name: 'musicorganise', testMatch: '**/music/musicorganise.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['musicdownloads'] },
+		{ name: 'musicorganise', testMatch: '**/music/music-organise.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['musicdownloads'] },
 		// Requests: a member follows a Library artist. After the music projects, so it uses their music folder.
 		{ name: 'requestsmusic', testMatch: '**/requests/follows-library-artist.spec.ts', use: { ...devices['Pixel 7'] }, dependencies: ['musicorganise'] },
 		// Subtitles: English and Spanish as the default languages, the Pass marks, Subtitle sites (the lab's fake site, one that needs your account), every movie missing Spanish with Search all, a movie's and an episode's subtitles (languages, Choose a subtitle, Sync fix, Turn down), History, a phone, accessibility, members see none of it.
 		{ name: 'subtitles', testMatch: '**/subtitles/subtitles.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['shows'] },
 		// Several Versions per show: add a show with a 4K Version, both Versions searched with their own pack, History names the Version, change, add and remove Versions, a busy Version stays, a phone.
-		{ name: 'showversions', testMatch: '**/shows/showversions.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['shows', 'downloaders'] },
+		{ name: 'showversions', testMatch: '**/shows/show-versions.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['shows', 'downloaders'] },
 		// Parts: Requests and Music turned off hide their menu entries and Settings tiles, a direct link says the part is off, its routes answer 409, and on again everything is back.
 		{ name: 'parts', testMatch: '**/whole-app/parts.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['setup'] },
 		// Move from other apps: read a fake old Radarr and Seerr, the plan with a suggested path rule, a dry run, the move and its report, a second try adds nothing, undo, a phone and accessibility.
@@ -98,7 +98,7 @@ export default defineConfig({
 		{ name: 'copychoices', testMatch: '**/whole-app/copy-choices.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['setup'] },
 		// Explore memory: heap, DOM nodes and listeners back to the start after 20 Home, Explore and title rounds.
 		{ name: 'home', testMatch: '**/whole-app/home.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['desktop'] },
-		{ name: 'exploremem', testMatch: '**/whole-app/explore-memory.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['desktop'] },
+		{ name: 'exploremem', testMatch: '**/discover/explore-memory.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['desktop'] },
 		{ name: 'communitybrowse', testMatch: '**/discover/community-browse.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['setup'] },
 		{ name: 'appframe', testMatch: '**/whole-app/appframe.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['setup'] },
 		// Settings: the seven groups, setting search with a deep link and highlight, the save bar and its leave guard, Advanced kept per person, Danger zone, a phone and accessibility.

@@ -30,7 +30,7 @@ export const fakeShows = [
 		episodes: [[1, 1, 'Tick', '2020-02-02'], [1, 2, 'Tock', '2020-02-09']]
 	},
 	{
-		// Kept in HD and 4K (showversions.spec.ts): its searches also answer a 2160p copy.
+		// Kept in HD and 4K (show-versions.spec.ts): its searches also answer a 2160p copy.
 		tmdb: 800006, tvdb: 810006, tvmaze: 820006, imdb: 'tt8000060', name: 'Tidal Atlas', first: '2019-06-02', status: 'Ended', network: 'Lab Five',
 		overview: 'A map of the sea that redraws itself with every tide.',
 		episodes: [[1, 1, 'Ebb', '2019-06-02'], [1, 2, 'Flow', '2019-06-09']],

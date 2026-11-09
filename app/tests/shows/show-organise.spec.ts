@@ -10,7 +10,7 @@ import { axe as scan } from '../helpers/axe.ts';
 // multi-episode file (the file stays) and then the season (its files go to
 // the holding folder), reads an episode's History, finds this week's
 // episode on the Calendar, picks how pack Alerts are told, and checks it all
-// from a phone. Runs after showdownloads.spec.ts.
+// from a phone. Runs after show-downloads.spec.ts.
 test.describe.configure({ mode: 'serial' });
 
 let page: Page;

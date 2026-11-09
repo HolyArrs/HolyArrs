@@ -4,7 +4,7 @@ import { dirname, join } from 'node:path';
 import { moviesDir, noSidewaysScroll, owner, signIn, titleAction, openAdvanced, openInLibrary } from '../helpers/helpers.ts';
 import { axe } from '../helpers/axe.ts';
 
-// Organise for music (4.15.4): runs after musicdownloads.spec.ts, so Tin
+// Organise for music (4.15.4): runs after music-downloads.spec.ts, so Tin
 // Lanterns, Harbour Songs (2019) has three tracks in the music Library
 // folder. Copper Wren sits on disk before HolyArrs knows it. The owner
 // renames Harbour Songs from its album page after changing the album

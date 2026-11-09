@@ -7,7 +7,7 @@ import { axe as scan } from '../helpers/axe.ts';
 import { tmp } from '../helpers/data-folder.ts';
 
 // Show downloads on the Downloads screen and Needs a decision (4.2.3,
-// 4.2.4). Runs after showsearch.spec.ts: the Moss Parade season pack fills
+// 4.2.4). Runs after show-search.spec.ts: the Moss Parade season pack fills
 // S01E01 and S01E02 with one download and Harbour Lights S02E01 (720p) is
 // downloading, both at 40% in the fake qBittorrent.
 test.describe.configure({ mode: 'serial' });

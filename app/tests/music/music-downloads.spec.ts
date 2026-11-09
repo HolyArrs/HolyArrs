@@ -7,7 +7,7 @@ import { axe } from '../helpers/axe.ts';
 import { tmp } from '../helpers/data-folder.ts';
 
 // Album downloads on the Downloads screen and Needs a decision (4.14.2).
-// Runs after musicsearch.spec.ts: the FLAC copy of Tin Lanterns, Harbour
+// Runs after music-search.spec.ts: the FLAC copy of Tin Lanterns, Harbour
 // Songs (four tracks, Song 1.1 to Song 1.4) is downloading in the fake
 // qBittorrent with one download.
 test.describe.configure({ mode: 'serial' });
