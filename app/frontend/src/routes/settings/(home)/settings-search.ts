@@ -47,7 +47,7 @@ export const settingIndex: SettingEntry[] = [
 	e('/settings/title-defaults', 'td-seasons', 'Seasons a new TV show keeps up to date', 'shows seasons monitor all future latest none', true),
 	e('/settings/title-defaults', 'td-new-seasons', 'New seasons of a TV show', 'shows new seasons monitor', true),
 	e('/settings/title-defaults', 'td-order', 'Episode order for new shows', 'shows series type anime daily absolute aired numbering', true),
-	e('/settings/title-defaults', 'td-source', 'Where show details come from', 'shows metadata tmdb tvmaze tvdb details source', true),
+	e('/settings/title-defaults', 'td-source', 'Where show details come from', 'shows metadata tmdb tvmaze details source', true),
 	e('/settings/naming', 'file-pattern', 'Movie file name pattern', 'naming rename format movie file'),
 	e('/settings/naming', 'folder-pattern', 'Movie folder name pattern', 'naming folder format movie'),
 	e('/settings/naming', 'colon', 'A colon in a name becomes', 'colon character replace', true),

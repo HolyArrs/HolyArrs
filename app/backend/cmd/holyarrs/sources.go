@@ -13,12 +13,11 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/shows"
 )
 
 // showSources are the show details sources: TMDB and TVmaze through the
-// metadata server, and TVDB with the person's own key only.
-// HOLYARRS_TVMAZE_URL and HOLYARRS_TVDB_URL point at stand-ins (tests); a
+// metadata server. TVDB is off; TVDB ids are still found through these two.
+// HOLYARRS_TVMAZE_URL points at a stand-in (tests); a
 // TVmaze stand-in is asked directly, and HOLYARRS_DIRECT_SOURCES=1
 // (developers only) keeps the real TVmaze behind the server for TVDB and
 // IMDb ids.
@@ -34,10 +33,6 @@ func showSources(v *secrets.Vault, hosted *metadata.Hosted) metadata.ShowSources
 	return metadata.ShowSources{
 		"tmdb":   hosted.TMDB(),
 		"tvmaze": maze,
-		"tvdb": &metadata.TVDB{BaseURL: os.Getenv("HOLYARRS_TVDB_URL"),
-			Key: func(ctx context.Context) (string, error) {
-				return v.Setting(ctx, shows.TVDBKeyGroup, shows.TVDBKeyName)
-			}},
 	}
 }
 

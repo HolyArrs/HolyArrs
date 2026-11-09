@@ -97,11 +97,10 @@
       "AddShow": {
         "properties": {
           "details_source": {
-            "description": "Where the show's details come from; TVDB needs your own key.",
+            "description": "Where the show's details come from.",
             "enum": [
               "tmdb",
-              "tvmaze",
-              "tvdb"
+              "tvmaze"
             ],
             "type": "string"
           },
@@ -5301,8 +5300,7 @@
           "details_source": {
             "enum": [
               "tmdb",
-              "tvmaze",
-              "tvdb"
+              "tvmaze"
             ],
             "type": "string"
           },
@@ -6499,8 +6497,7 @@
             "description": "Shows only: follow another details source; the show is found there from the ids already known and refreshed, or the change is refused.",
             "enum": [
               "tmdb",
-              "tvmaze",
-              "tvdb"
+              "tvmaze"
             ],
             "type": "string"
           },
@@ -25157,7 +25154,7 @@
                 }
               }
             },
-            "description": "The source is not usable: no TMDB token, or TVDB without your own key."
+            "description": "The source is not usable: no TMDB token."
           }
         },
         "summary": "Add a show",
@@ -25188,8 +25185,7 @@
             "schema": {
               "enum": [
                 "tmdb",
-                "tvmaze",
-                "tvdb"
+                "tvmaze"
               ],
               "type": "string"
             }
@@ -25241,7 +25237,7 @@
                 }
               }
             },
-            "description": "The source is not usable: no TMDB token, or TVDB without your own key."
+            "description": "The source is not usable: no TMDB token."
           }
         },
         "summary": "Look a show up",
@@ -27254,7 +27250,7 @@
                 }
               }
             },
-            "description": "TVDB was chosen without your own TVDB key."
+            "description": "The chosen details source is not usable right now."
           }
         },
         "summary": "Change a title",

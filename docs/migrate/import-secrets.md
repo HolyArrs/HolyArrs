@@ -171,7 +171,7 @@ An unknown key or a file over 256 KB stops the whole import before anything is s
 | Field | Rule |
 | --- | --- |
 | SABnzbd | Needs the full `api_key`. An `nzb_key`, user name or password is skipped and never stored. |
-| `tvdb.unique_user_key`, `trakt.redirect_urls` | Accepted and skipped. |
+| `tvdb.api_key`, `tvdb.unique_user_key`, `trakt.redirect_urls` | Accepted and skipped. |
 | `smtp.host` | Server name only, no scheme or port. |
 | `smtp.port` | 1 to 65535. Default `587`. |
 | `smtp.from` | One plain email address. |
