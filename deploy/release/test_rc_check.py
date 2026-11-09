@@ -22,10 +22,10 @@ class CandidateCheck(unittest.TestCase):
         self.run_git("init", "-q")
         self.run_git("config", "user.name", "Test")
         self.run_git("config", "user.email", "test@example.invalid")
-        self.api = self.repo / "internal/api/openapi.json"
+        self.api = self.repo / "app/backend/cmd/holyarrs/openapi.json"
         self.api.parent.mkdir(parents=True)
         self.api.write_text(json.dumps({"paths": {"/api/v1/old": {"get": {}}}}))
-        self.run_git("add", "internal/api/openapi.json")
+        self.run_git("add", "app/backend/cmd/holyarrs/openapi.json")
         self.run_git("commit", "-qm", "baseline")
         self.base = self.run_git("rev-parse", "HEAD")
         self.run_git("commit", "--allow-empty", "-qm", "synthetic candidate")
@@ -70,10 +70,10 @@ class CandidateCheck(unittest.TestCase):
 
     def test_detects_data_and_removed_route_and_requires_trial(self):
         self.api.write_text('{"paths":{}}')
-        migration = self.repo / "internal/store/migrations/main/0002_fixture.sql"
+        migration = self.repo / "app/backend/internal/core/database/migrations/main/0002_fixture.sql"
         migration.parent.mkdir(parents=True)
         migration.write_text("-- original synthetic migration fixture\n")
-        self.run_git("add", "internal/api/openapi.json", "internal/store/migrations/main/0002_fixture.sql")
+        self.run_git("add", "app/backend/cmd/holyarrs/openapi.json", "app/backend/internal/core/database/migrations/main/0002_fixture.sql")
         self.run_git("commit", "-qm", "candidate")
         manifest = self.manifest()
         manifest["users_on_1_0"] = True
@@ -110,7 +110,7 @@ class CandidateCheck(unittest.TestCase):
 
     def test_self_baseline_cannot_hide_removed_route(self):
         self.api.write_text('{"paths":{}}')
-        self.run_git("add", "internal/api/openapi.json")
+        self.run_git("add", "app/backend/cmd/holyarrs/openapi.json")
         self.run_git("commit", "-qm", "remove synthetic route")
         manifest = self.manifest()
         manifest["baseline"] = manifest["source"]

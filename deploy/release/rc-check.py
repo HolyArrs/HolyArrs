@@ -63,9 +63,9 @@ def check(manifest, repo, artifact, evidence_dir, expected_baseline,
     if type(declared_data) is not bool:
         raise ValueError("stored_data_change must explicitly be true or false after format review")
     data_change = declared_data or bool(git(repo, "diff", "--name-only", baseline, source,
-                                           "--", "internal/store/migrations"))
-    old_routes = routes(git(repo, "show", f"{baseline}:internal/api/openapi.json"))
-    new_routes = routes(git(repo, "show", f"{source}:internal/api/openapi.json"))
+                                           "--", "app/backend/internal/core/database/migrations"))
+    old_routes = routes(git(repo, "show", f"{baseline}:app/backend/cmd/holyarrs/openapi.json"))
+    new_routes = routes(git(repo, "show", f"{source}:app/backend/cmd/holyarrs/openapi.json"))
     removed = sorted(old_routes - new_routes)
     users = manifest.get("users_on_1_0")
     if type(users) is not bool:
