@@ -1,265 +1,107 @@
-name: release
-# Started by hand only: tick confirm_release and type the exact version.
+name: HolyArrs - Release
+run-name: ${{ github.ref_name }}
+
+# Starts when a version tag (1.2.3) is pushed. Tests run on the maintainer's
+# machine before the tag is pushed (work\tooling\check.ps1 -Full).
 #
-# The maintainer starts it by hand on main and types the
-# version (1.2.3, or 1.2.3-rc.1 for a candidate). The run makes the 1.2.3 tag
-# itself when it creates the GitHub release; nobody tags by hand. It pushes
-# the same image to Docker Hub (the name users see) and a silent GHCR copy with only two tags:
-# the version, and beta when this version is newer than the current beta.
-# latest, stable, X and X.Y never move here: promote.yml moves them by
-# digest after the beta has been tried.
+# Repository secrets: DOCKERHUB_USERNAME, DOCKERHUB_TOKEN.
+
 on:
-  workflow_dispatch:
-    inputs:
-      confirm_release:
-        description: Release approved by the maintainer for this exact version
-        type: boolean
-        required: true
-        default: false
-      version:
-        description: Exact version, the same as the VERSION file (for example 1.0.0)
-        type: string
-        required: true
+  push:
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+'
 
-permissions:
-  contents: read
-
-# Runs queue: each one reads the beta the run before it left, so two tags
-# built at once can never move beta back to the older version.
 concurrency:
-  group: release
+  group: holyarrs-release
   cancel-in-progress: false
 
+env:
+  DOCKERHUB_IMAGE: holyarrs/holyarrs
+  GHCR_IMAGE: ghcr.io/holyarrs/holyarrs
+  DOCKER_PLATFORMS: linux/amd64,linux/arm64,linux/arm/v7
+
 jobs:
-  image:
+  build-and-push:
+    name: Build and push Docker image
     runs-on: ubuntu-latest
-    # The maintainer approves each run in the release environment.
-    environment: release
     permissions:
-      contents: write  # create the GitHub release and its tag
-      packages: write  # push to GHCR
-      id-token: write  # keyless cosign signing
-    env:
-      IMAGE: ghcr.io/holyarrs/holyarrs
-      HUB_IMAGE: docker.io/holyarrs/holyarrs
+      contents: read
+      packages: write
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
-        with:
-          persist-credentials: false
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
-      # Runs only on main, for the version in the VERSION file, and only when
-      # that version has no tag yet. The tag is made at the end, by the release.
-      - name: Check the version
-        id: ver
-        env:
-          REF: ${{ github.ref }}
-          CONFIRM: ${{ inputs.confirm_release }}
-          WANT: ${{ inputs.version }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Check the tag matches VERSION
         run: |
-          set -euo pipefail
-          [ "$CONFIRM" = "true" ] || { echo "Tick confirm_release to start a release."; exit 1; }
-          [ "$REF" = "refs/heads/main" ] || { echo "A release runs only from main, not $REF."; exit 1; }
-          if ! [[ "$WANT" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-rc\.[0-9]+)?$ ]]; then
-            echo "The version $WANT is not X.Y.Z or X.Y.Z-rc.N."
-            exit 1
-          fi
           file="$(tr -d '[:space:]' < VERSION)"
-          [ "$file" = "$WANT" ] || { echo "VERSION says $file, not $WANT."; exit 1; }
-          if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$WANT" >/dev/null 2>&1; then
-            echo "refs/tags/$WANT already exists: a published version never changes, ship the next one."
-            exit 1
-          fi
-          echo "version=$WANT" >> "$GITHUB_OUTPUT"
-          echo "tag=$WANT" >> "$GITHUB_OUTPUT"
+          [ "$file" = "$GITHUB_REF_NAME" ] || { echo "::error::VERSION says $file, tag is $GITHUB_REF_NAME."; exit 1; }
 
-      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3.7.0
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
         with:
-          go-version: "1.27.3"
-          cache: false
-      - name: Test before building
-        env:
-          CGO_ENABLED: "0"
-        run: |
-          set -o pipefail
-          go test ./... 2>&1 | sed -E 's/(auth: first run: setup code) [^ ]+/\1 [hidden]/g'
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3.7.0
-      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
-      - uses: sigstore/cosign-installer@398d4b0eeef1380460a10c8013a76f728fb906ac # v3.9.1
-
-      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
+      - name: Login to GHCR
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # A bot collaborator that can reach only holyarrs/holyarrs on Docker Hub.
-      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      # beta only moves forward: an older version or a re-run of an older
-      # tag never takes it back.
-      - name: Move beta only to a newer version
-        id: betacheck
-        env:
-          REF_NAME: ${{ steps.ver.outputs.tag }}
-        run: |
-          set -euo pipefail
-          newer() { # is $1 newer than $2? (1.0.0-rc.2 < 1.0.0-rc.10 < 1.0.0)
-            [ "$1" = "$2" ] && return 1
-            a="${1%%-*}"; b="${2%%-*}"
-            if [ "$a" != "$b" ]; then
-              [ "$(printf '%s\n%s\n' "$a" "$b" | sort -V | tail -n1)" = "$a" ]
-              return
-            fi
-            case "$1" in *-*) ;; *) return 0 ;; esac
-            case "$2" in *-*) ;; *) return 1 ;; esac
-            [ "$(printf '%s\n%s\n' "$1" "$2" | sort -V | tail -n1)" = "$1" ]
-          }
-          new="${REF_NAME#v}"
-          cur=""
-          if docker buildx imagetools inspect "$IMAGE:beta" >/dev/null 2>&1; then
-            cur="$(docker buildx imagetools inspect "$IMAGE:beta" --format '{{ json (index .Image "linux/amd64") }}' \
-              | jq -r '.config.Labels["org.opencontainers.image.version"] // ""')"
-            cur="${cur#v}"
-          fi
-          if [ -z "$cur" ] || newer "$new" "$cur"; then
-            echo "move=true" >> "$GITHUB_OUTPUT"
-            echo "beta moves to $new (was ${cur:-none})."
-          else
-            echo "move=false" >> "$GITHUB_OUTPUT"
-            echo "beta stays on $cur: $new is not newer."
-          fi
-
-      - id: meta
-        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5.10.0
-        with:
-          images: |
-            ${{ env.IMAGE }}
-            ${{ env.HUB_IMAGE }}
-          flavor: |
-            latest=false
-          tags: |
-            type=semver,pattern={{version}},value=${{ steps.ver.outputs.tag }}
-            type=raw,value=beta,enable=${{ steps.betacheck.outputs.move == 'true' }}
-
-      - name: Push only the version tag and beta
-        env:
-          TAGS: ${{ steps.meta.outputs.tags }}
-        run: |
-          set -euo pipefail
-          while IFS= read -r ref; do
-            [ -z "$ref" ] && continue
-            tag="${ref##*:}"
-            case "$tag" in
-              latest|stable) echo "Refusing to push $ref: latest and stable move only through promote.yml."; exit 1 ;;
-            esac
-            if [[ "$tag" =~ ^v?[0-9]+(\.[0-9]+)?$ ]]; then
-              echo "Refusing to push $ref: X and X.Y tags move only through promote.yml."
-              exit 1
-            fi
-          done <<< "$TAGS"
-
-      - id: build
+      - name: Build and push
         uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
         with:
           context: .
           file: deploy/Dockerfile
-          platforms: linux/amd64,linux/arm64,linux/arm/v7
+          platforms: ${{ env.DOCKER_PLATFORMS }}
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          build-args: VERSION=${{ steps.ver.outputs.tag }}
-          sbom: true
-          provenance: mode=max
+          build-args: VERSION=${{ github.ref_name }}
+          tags: |
+            ${{ env.DOCKERHUB_IMAGE }}:${{ github.ref_name }}
+            ${{ env.DOCKERHUB_IMAGE }}:latest
+            ${{ env.GHCR_IMAGE }}:${{ github.ref_name }}
+            ${{ env.GHCR_IMAGE }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
-      - name: Same image on both registries
-        env:
-          DIGEST: ${{ steps.build.outputs.digest }}
-          VERSION: ${{ steps.meta.outputs.version }}
-        run: |
-          set -euo pipefail
-          [[ "$DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]] || { echo "Unexpected digest $DIGEST."; exit 1; }
-          for img in "$IMAGE" "$HUB_IMAGE"; do
-            got="$(docker buildx imagetools inspect "$img:$VERSION" --format '{{ .Manifest.Digest }}')"
-            [ "$got" = "$DIGEST" ] || { echo "$img:$VERSION is $got, not $DIGEST."; exit 1; }
-            plats="$(docker buildx imagetools inspect "$img@$DIGEST" --raw \
-              | jq -r '.manifests[].platform | "\(.os)/\(.architecture)\(if .variant then "/" + .variant else "" end)"')"
-            for p in linux/amd64 linux/arm64 linux/arm/v7; do
-              grep -qx "$p" <<< "$plats" || { echo "$img@$DIGEST has no $p image."; exit 1; }
-            done
-          done
+  update-dockerhub-description:
+    name: Update Docker Hub description
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
-      - name: Sign the image
-        env:
-          DIGEST: ${{ steps.build.outputs.digest }}
-        run: |
-          cosign sign --yes "${IMAGE}@${DIGEST}"
-          cosign sign --yes "${HUB_IMAGE}@${DIGEST}"
-
-      - name: Make the SBOM
-        uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
+      - name: Update Docker Hub description
+        uses: peter-evans/dockerhub-description@1b9a80c056b620d92cedb9d9b5a223409c68ddfa # v5.0.0
         with:
-          image: ${{ env.IMAGE }}@${{ steps.build.outputs.digest }}
-          format: spdx-json
-          output-file: sbom.spdx.json
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          repository: ${{ env.DOCKERHUB_IMAGE }}
+          readme-filepath: README.md
 
-      - name: Attest the SBOM
+  publish-github-release:
+    name: Publish GitHub Release
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - name: Publish the release
         env:
-          DIGEST: ${{ steps.build.outputs.digest }}
+          GH_TOKEN: ${{ github.token }}
         run: |
-          cosign attest --yes --type spdxjson --predicate sbom.spdx.json "${IMAGE}@${DIGEST}"
-          cosign attest --yes --type spdxjson --predicate sbom.spdx.json "${HUB_IMAGE}@${DIGEST}"
-
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        with:
-          name: sbom
-          path: sbom.spdx.json
-
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
-        with:
-          node-version: "24"
-      - name: Package the release files
-        env:
-          REF_NAME: ${{ steps.ver.outputs.tag }}
-        run: |
-          set -euo pipefail
-          npm ci --prefix app/frontend
-          go mod download
-          python3 deploy/release/package.py --ref "$GITHUB_SHA" --version "${REF_NAME#v}" \
-            --output "$RUNNER_TEMP/assets" --web-node-modules app/frontend/node_modules \
-            --module-cache "$(go env GOMODCACHE)"
-
-      # The notes are this version's CHANGELOG.md section. This step makes
-      # the X.Y.Z tag on the commit that was built.
-      - name: Create the GitHub release
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          REF_NAME: ${{ steps.ver.outputs.tag }}
-        run: |
-          set -euo pipefail
-          python3 deploy/release/changelog_notes.py "$REF_NAME" > "$RUNNER_TEMP/notes.md"
-          pre=""
-          case "$REF_NAME" in *-*) pre="--prerelease" ;; esac
-          gh release create "$REF_NAME" --target "$GITHUB_SHA" $pre --title "${REF_NAME#v}" \
-            --notes-file "$RUNNER_TEMP/notes.md" "$RUNNER_TEMP"/assets/*
-
-      # promote.yml takes this digest to move the stable tags.
-      - name: Digest in the run summary
-        env:
-          DIGEST: ${{ steps.build.outputs.digest }}
-          VERSION: ${{ steps.meta.outputs.version }}
-          BETA: ${{ steps.betacheck.outputs.move }}
-        run: |
-          {
-            echo "### Image $VERSION"
-            echo
-            echo "- digest: \`$DIGEST\`"
-            echo "- pushed: \`$IMAGE:$VERSION\`, \`$HUB_IMAGE:$VERSION\`"
-            if [ "$BETA" = "true" ]; then echo "- beta moved to $VERSION"; else echo "- beta not moved"; fi
-            echo
-            echo "To make it stable after the beta soak, start promote.yml with version $VERSION and this digest."
-          } >> "$GITHUB_STEP_SUMMARY"
+          python3 deploy/release/changelog_notes.py "$GITHUB_REF_NAME" > notes.md
+          gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes-file notes.md --verify-tag
