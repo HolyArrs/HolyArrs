@@ -150,7 +150,9 @@ func TestShowSettingsAndEditAPI(t *testing.T) {
 	tu := fmt.Sprintf("%s/titles/%d", u, id)
 	do(t, "PUT", tu, `{"release_gate":"announced"}`, 400)
 	do(t, "PUT", tu, `{"episode_order":"dvd"}`, 400)
-	do(t, "PUT", tu, `{"details_source":"tvdb"}`, 503)
+	if b := string(do(t, "PUT", tu, `{"details_source":"tvdb"}`, 503)); !strings.Contains(b, "TVDB key") {
+		t.Fatalf("switching to TVDB without a key should name the key: %s", b)
+	}
 	do(t, "PUT", tu, `{"details_source":"plex"}`, 400)
 	var edited struct {
 		Title struct {
