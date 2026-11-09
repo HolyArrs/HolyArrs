@@ -11,6 +11,8 @@ import (
 	"sync"
 	"syscall"
 	"time"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 )
 
 // Client ID metadata documents (MCP authorization spec, 2025-11-25 version): an AI app
@@ -48,7 +50,7 @@ func publicOnly(_, address string, _ syscall.RawConn) error {
 		return err
 	}
 	ip := net.ParseIP(host)
-	if ip == nil || ip.IsLoopback() || ip.IsPrivate() || ip.IsLinkLocalUnicast() || ip.IsLinkLocalMulticast() || ip.IsUnspecified() || ip.IsMulticast() {
+	if ip == nil || !outbound.PublicOnly(ip) {
 		return errPrivate
 	}
 	return nil

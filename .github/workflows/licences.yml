@@ -1,6 +1,8 @@
 # .github/workflows/licences.yml
 name: licences
 on: [pull_request, push]
+permissions:
+  contents: read
 jobs:
   go:
     runs-on: ubuntu-latest
