@@ -97,11 +97,11 @@ These point HolyArrs at stand-ins for tests. Leave them unset on a real install.
 
 | Variable | What it does |
 | --- | --- |
-| `HOLYARRS_FLAGS` | Comma-separated feature flags for unfinished features. See [Updates](../run/updates.md). |
+| `HOLYARRS_FLAGS` | Comma-separated switches for features that are off by default in this release. See [Updates](../run/updates.md). |
 | `HOLYARRS_DIRECT_SOURCES` | `1` lets this install ask music and TV sources itself instead of the metadata server. |
 | `HOLYARRS_METADATA_SERVICE_ALLOW_LOCAL` | Allow a metadata server on the local network. |
 | `HOLYARRS_METADATA_COUNT` | Count and log metadata requests. |
-| `HOLYARRS_TMDB_TOKEN_FILE`, `HOLYARRS_TMDB_URL` | Lab TMDB token file and stand-in address. |
+| `HOLYARRS_TMDB_TOKEN_FILE`, `HOLYARRS_TMDB_URL` | Test TMDB token file and stand-in address. |
 | `HOLYARRS_TVDB_URL`, `HOLYARRS_TVMAZE_URL`, `HOLYARRS_MUSICBRAINZ_URL`, `HOLYARRS_DEEZER_URL`, `HOLYARRS_TRAKT_URL`, `HOLYARRS_PLEX_URL`, `HOLYARRS_PLEX_APP_URL`, `HOLYARRS_PLEX_DISCOVER_URL`, `HOLYARRS_PUSHOVER_URL`, `HOLYARRS_TELEGRAM_URL`, `HOLYARRS_YOUTUBE_URL`, `HOLYARRS_RELEASE_FEED` | Stand-in addresses for outside services. |
 | `HOLYARRS_TRAILER_PASS_FIRST`, `HOLYARRS_TRAILER_PASS_EVERY` | Trailer pass timing as durations, such as `2s`. |
 
