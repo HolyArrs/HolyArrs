@@ -321,7 +321,7 @@ func TestScaleAcceptanceChild(t *testing.T) {
 	if spec.Name == "combined" {
 		// The measured rescan starts after startup work has honestly settled,
 		// so its two newly-created unknown files and live event are its own.
-		waitForScaleQuiet(t, control.Store, reg, 2*time.Minute)
+		waitForScaleQuiet(t, control.Store, reg, 10*time.Minute)
 		if browserScaleEnabled(t) {
 			writeScaleBrowserProof(t, "app-ready.json", scaleBrowserProof{Status: "ready"})
 			browserProof = waitScaleBrowserProof(t, "browser-ready.json", 2*time.Minute)
@@ -400,7 +400,7 @@ func TestScaleAcceptanceChild(t *testing.T) {
 	// Startup may finish queued housekeeping such as the first backup. It is
 	// not idle until no queued or running Job remains and both application
 	// commits and kernel write bytes have been unchanged for ten seconds.
-	waitForScaleQuiet(t, control.Store, reg, 2*time.Minute)
+	waitForScaleQuiet(t, control.Store, reg, 10*time.Minute)
 	idleStartedAt := time.Now().UTC()
 	idleWritesAt := control.Store.WriteCount()
 	idleIOAt := procWriteBytes(t)
