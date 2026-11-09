@@ -30,7 +30,7 @@ func (h *Handlers) musicShelvesOf(ctx context.Context, region string, now time.T
 		return nil
 	}
 	key := "shelves:" + strings.ToLower(region)
-	if v, ok := h.musicv2.cand.Get(key, now); ok {
+	if v, ok := h.exploreCache.cand.Get(key, now); ok {
 		return v.(*metadata.MusicShelves)
 	}
 	sh, err := h.MusicShelves(ctx, strings.ToLower(region))
@@ -38,18 +38,18 @@ func (h *Handlers) musicShelvesOf(ctx context.Context, region string, now time.T
 		markMusicMiss(ctx)
 		return nil
 	}
-	h.musicv2.cand.Put(key, &sh, musicShelvesTTL, now)
+	h.exploreCache.cand.Put(key, &sh, musicShelvesTTL, now)
 	// New shelves (container start or a list refresh on the server): every
 	// album and artist they hold is fetched ahead, details and pictures, so
 	// rows show art at once.
 	sig := sh.AsOf + "|" + fmt.Sprint(listCount(&sh))
-	h.musicv2.cursorMu.Lock()
+	h.exploreCache.cursorMu.Lock()
 	if h.listSeen == nil {
 		h.listSeen = map[string]string{}
 	}
 	prev := h.listSeen[key]
 	h.listSeen[key] = sig
-	h.musicv2.cursorMu.Unlock()
+	h.exploreCache.cursorMu.Unlock()
 	first := prev == ""
 	if first && h.Store != nil {
 		// After a restart: the shelves the kept plans were built from.
@@ -68,7 +68,7 @@ func (h *Handlers) musicShelvesOf(ctx context.Context, region string, now time.T
 	if changed && (prev != "" || first) {
 		// The server refreshed its lists (also while this install was
 		// down): today's plans rebuild on the next visit so the new rows show.
-		go h.forgetMusicV7Snaps(-1)
+		go h.forgetMusicSnaps(-1)
 	}
 	return &sh
 }
@@ -774,14 +774,14 @@ func (h *Handlers) musicNewListRows(ctx context.Context, r *http.Request, in mus
 	return hero, out
 }
 
-// musicV7HeadRows is the plan's fixed head: with music_lists_v1 the
+// musicHeadRows is the plan's fixed head: with music_lists_v1 the
 // region's top chart row follows New from your artists and Browse.
-func (h *Handlers) musicV7HeadRows() []string {
+func (h *Handlers) musicHeadRows() []string {
 	if h.musicTplOn() {
-		return append(append([]string{}, musicV7Head...), "tpl:A01")
+		return append(append([]string{}, musicHead...), "tpl:A01")
 	}
 	if h.MusicShelves != nil {
-		return append(append([]string{}, musicV7Head...), "lists_top_now")
+		return append(append([]string{}, musicHead...), "lists_top_now")
 	}
-	return musicV7Head
+	return musicHead
 }

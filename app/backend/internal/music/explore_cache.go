@@ -27,8 +27,8 @@ const (
 	musicAnswerStale = 30 * time.Minute
 	// musicWarmDelay lets the program finish starting before the read-ahead.
 	musicWarmDelay = 5 * time.Second
-	// musicV7WarmDelay is the wait before the v7 prewarm at start.
-	musicV7WarmDelay = time.Second
+	// musicPlanWarmDelay is the wait before the v7 prewarm at start.
+	musicPlanWarmDelay = time.Second
 )
 
 type musicAnswer struct {
@@ -59,7 +59,7 @@ func (h *Handlers) musicOnEvent(ev domain.Event) {
 		h.forgetMusicAnswers()
 	}
 	if ev.Kind == domain.EventTitleAdded || ev.Kind == domain.EventTitleRemoved {
-		h.musicv2.cand.Forget("lib:")
+		h.exploreCache.cand.Forget("lib:")
 		// A music title changes the household's rows: drop only the day
 		// orders (chart candidates stay), once per burst of adds, so the
 		// next visit rebuilds them instead of tomorrow.
@@ -74,13 +74,13 @@ func (h *Handlers) musicOnEvent(ev domain.Event) {
 var musicDayDebounce = 3 * time.Second
 
 func (h *Handlers) clearMusicDaysSoon() {
-	if !h.musicv2.clearing.CompareAndSwap(false, true) {
+	if !h.exploreCache.clearing.CompareAndSwap(false, true) {
 		return
 	}
 	time.AfterFunc(musicDayDebounce, func() {
-		h.musicv2.clearing.Store(false)
-		h.musicv2.days.Clear()
-		h.forgetMusicV7Snaps(-1)
+		h.exploreCache.clearing.Store(false)
+		h.exploreCache.days.Clear()
+		h.forgetMusicSnaps(-1)
 	})
 }
 
@@ -93,15 +93,15 @@ func (h *Handlers) MusicLoops() []jobs.Loop {
 		select {
 		case <-ctx.Done():
 			return nil
-		case <-time.After(musicV7WarmDelay):
+		case <-time.After(musicPlanWarmDelay):
 		}
 		h.beginAhead(ctx)
 		defer h.endAhead()
-		h.prewarmMusicV7(ctx)
+		h.prewarmMusicPlan(ctx)
 		h.warmMusic(ctx)
 		for ctx.Err() == nil {
 			h.prebuildMusic(ctx)
-			h.prewarmMusicV7(ctx)
+			h.prewarmMusicPlan(ctx)
 			// Jittered (±90 min on 3 h) and stretched by the server's switch.
 			select {
 			case <-ctx.Done():

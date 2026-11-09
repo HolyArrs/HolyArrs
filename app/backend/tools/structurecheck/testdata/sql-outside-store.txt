@@ -117,7 +117,7 @@ app/backend/internal/movies/collections_metadata.go
 app/backend/internal/music/explore_disk.go
 app/backend/internal/music/explore_new_music_page.go
 app/backend/internal/music/explore_page.go
-app/backend/internal/music/explore_v2.go
+app/backend/internal/music/explore_state.go
 app/backend/internal/music/music.go
 app/backend/internal/music/pages.go
 app/backend/internal/music/pages_album.go

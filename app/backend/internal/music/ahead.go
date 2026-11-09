@@ -371,10 +371,10 @@ func cardsAhead(cards []MusicCard) []aheadItem {
 	return aheadOf(pairs)
 }
 
-// musicV7PagesAhead lists the items on n pages of a v7 plan from page
+// musicPagesAhead lists the items on n pages of a v7 plan from page
 // from: the same rows the next page loads will serve.
-func musicV7PagesAhead(p *musicscore.Plan, from, n int) []aheadItem {
-	ord, ok := p.Meta.(*musicV2Order)
+func musicPagesAhead(p *musicscore.Plan, from, n int) []aheadItem {
+	ord, ok := p.Meta.(*musicOrder)
 	if !ok || ord == nil || ord.v7 == nil {
 		return nil
 	}

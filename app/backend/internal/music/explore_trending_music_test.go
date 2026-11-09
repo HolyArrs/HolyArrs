@@ -66,7 +66,7 @@ func rowByID(rows []MusicRow, id string) *MusicRow {
 }
 
 func TestComposeMusicTrending(t *testing.T) {
-	now := v3Fixed
+	now := orderFixed
 	// Fewer than 7 days of ranks: no Climbing row.
 	hero, rows := composeMusicTrending(trendInput(now, false), now)
 	if rowByID(rows, "np_music_climbing") != nil {
@@ -155,7 +155,7 @@ func TestComposeMusicTrending(t *testing.T) {
 }
 
 // route: GET /api/v1/explore/new/music (music_rows_v6)
-func TestExploreNewMusicV6(t *testing.T) {
+func TestExploreNewMusic(t *testing.T) {
 	r := newMusicAskRig(t)
 	r.api.s.MusicCharts = func(_ context.Context, region, kind, _ string) (metadata.MusicChart, error) {
 		c := metadata.MusicChart{Region: region, Kind: kind, Items: trendChart(time.Now().UTC(), true)}

@@ -214,14 +214,14 @@ func (h *Handlers) musicGenreChart(ctx context.Context, region, kind, slug strin
 		return nil
 	}
 	key := "chart:" + region + ":" + kind + ":" + slug
-	if v, ok := h.musicv2.cand.Get(key, now); ok {
+	if v, ok := h.exploreCache.cand.Get(key, now); ok {
 		return v.([]metadata.MusicChartItem)
 	}
 	c, err := h.MusicCharts(ctx, region, kind, slug)
 	if err != nil {
 		return nil
 	}
-	h.musicv2.cand.Put(key, c.Items, spread(musicChartTTL, 0.25), now)
+	h.exploreCache.cand.Put(key, c.Items, spread(musicChartTTL, 0.25), now)
 	return c.Items
 }
 

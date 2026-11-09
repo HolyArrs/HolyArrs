@@ -57,10 +57,10 @@ func (h *Handlers) musicBundle(ctx context.Context, now time.Time) *rowtpl.Bundl
 }
 
 func (h *Handlers) readMusicBundle(ctx context.Context, now time.Time) *rowtpl.Bundle {
-	if v, ok := h.musicv2.cand.Get("tpl:bundle", now); ok {
+	if v, ok := h.exploreCache.cand.Get("tpl:bundle", now); ok {
 		return v.(*tplBundle).b
 	}
-	if _, failed := h.musicv2.cand.Get("tpl:fail", now); failed {
+	if _, failed := h.exploreCache.cand.Get("tpl:fail", now); failed {
 		return nil
 	}
 	select {
@@ -70,14 +70,14 @@ func (h *Handlers) readMusicBundle(ctx context.Context, now time.Time) *rowtpl.B
 	}
 	defer func() { <-tplFetch }()
 	// Another request may have filled the cache while this one waited.
-	if v, ok := h.musicv2.cand.Get("tpl:bundle", now); ok {
+	if v, ok := h.exploreCache.cand.Get("tpl:bundle", now); ok {
 		return v.(*tplBundle).b
 	}
-	if _, failed := h.musicv2.cand.Get("tpl:fail", now); failed {
+	if _, failed := h.exploreCache.cand.Get("tpl:fail", now); failed {
 		return nil
 	}
 	var last *tplBundle
-	if v, ok := h.musicv2.cand.Get("tpl:last", now); ok {
+	if v, ok := h.exploreCache.cand.Get("tpl:last", now); ok {
 		last = v.(*tplBundle)
 	}
 	etag := ""
@@ -91,30 +91,30 @@ func (h *Handlers) readMusicBundle(ctx context.Context, now time.Time) *rowtpl.B
 	body, tag, err := h.MusicPools(dctx, etag)
 	switch {
 	case errors.Is(err, metadata.ErrNotModified) && last != nil:
-		h.musicv2.cand.Put("tpl:bundle", last, tplBundleTTL, now)
+		h.exploreCache.cand.Put("tpl:bundle", last, tplBundleTTL, now)
 		return last.b
 	case err != nil:
 		if last != nil {
-			h.musicv2.cand.Put("tpl:bundle", last, 10*time.Minute, now)
+			h.exploreCache.cand.Put("tpl:bundle", last, 10*time.Minute, now)
 			return last.b
 		}
 		// The download's own result decides (the caller cannot cancel it):
 		// a failure, its own timeout included, is kept for minutes.
-		h.musicv2.cand.Put("tpl:fail", true, tplFailTTL, now)
+		h.exploreCache.cand.Put("tpl:fail", true, tplFailTTL, now)
 		return nil
 	}
 	b, err := rowtpl.ParseBundle(body)
 	if err != nil {
 		if last != nil {
-			h.musicv2.cand.Put("tpl:bundle", last, 10*time.Minute, now)
+			h.exploreCache.cand.Put("tpl:bundle", last, 10*time.Minute, now)
 			return last.b
 		}
-		h.musicv2.cand.Put("tpl:fail", true, tplFailTTL, now)
+		h.exploreCache.cand.Put("tpl:fail", true, tplFailTTL, now)
 		return nil
 	}
 	x := &tplBundle{b: b, etag: tag}
-	h.musicv2.cand.Put("tpl:bundle", x, tplBundleTTL, now)
-	h.musicv2.cand.Put("tpl:last", x, tplKeepTTL, now)
+	h.exploreCache.cand.Put("tpl:bundle", x, tplBundleTTL, now)
+	h.exploreCache.cand.Put("tpl:last", x, tplKeepTTL, now)
 	return b
 }
 
@@ -126,16 +126,16 @@ var tplCountsMu sync.Mutex
 // 6 hours, so tiles appear by themselves once their data grows.
 func (h *Handlers) tplCounts(ctx context.Context, b *rowtpl.Bundle, region string, now time.Time) map[string]int {
 	key := "tpl:counts:" + strings.ToLower(region) + ":" + b.Version
-	if v, ok := h.musicv2.cand.Get(key, now); ok {
+	if v, ok := h.exploreCache.cand.Get(key, now); ok {
 		return v.(map[string]int)
 	}
 	tplCountsMu.Lock()
 	defer tplCountsMu.Unlock()
-	if v, ok := h.musicv2.cand.Get(key, now); ok {
+	if v, ok := h.exploreCache.cand.Get(key, now); ok {
 		return v.(map[string]int)
 	}
 	counts := rowtpl.PageCounts(b, now, strings.ToLower(region), tplBlocks(h.musicShelvesOf(ctx, region, now)), rowtpl.BrowseKeys())
-	h.musicv2.cand.Put(key, counts, tplBundleTTL, now)
+	h.exploreCache.cand.Put(key, counts, tplBundleTTL, now)
 	return counts
 }
 
@@ -456,8 +456,8 @@ func (h *Handlers) tplExploreCands(ctx context.Context, member int64, region str
 	return rowtpl.Candidates(c)
 }
 
-// tplV7Row turns an engine candidate into a v7 plan row with its cards.
-func tplV7Row(b *rowtpl.Bundle, cd rowtpl.Cand) (MusicRow, musicscore.Row, []MusicCard, []musicscore.Scored) {
+// tplPlanRow turns an engine candidate into a v7 plan row with its cards.
+func tplPlanRow(b *rowtpl.Bundle, cd rowtpl.Cand) (MusicRow, musicscore.Row, []MusicCard, []musicscore.Scored) {
 	meta := MusicRow{ID: "tpl:" + cd.ID, Type: "tpl_" + cd.Family, Title: cd.Title, Reason: cd.Reason, Shape: cd.Shape}
 	row := musicscore.Row{Prior: musicscore.PriorMixed, Min: rowtpl.RowMin, ChartSet: true, Chart: cd.Chart, Shape: cd.Shape, ArtistRow: cd.Shape == "round"}
 	if cd.Shape != "round" {

@@ -151,7 +151,7 @@ func stripState(t *testing.T, b []byte) string {
 	return string(out)
 }
 
-func TestExploreMusicV2KidFirst(t *testing.T) {
+func TestExploreMusicKidFirst(t *testing.T) {
 	t.Parallel()
 	// Music (and so every explicit card) stays off for age-limited
 	// accounts, flag on or off: the Kid answer comes before the flag.
@@ -160,7 +160,7 @@ func TestExploreMusicV2KidFirst(t *testing.T) {
 		t.Fatal(err)
 	}
 	s := string(b)
-	if strings.Index(s, "h.KidMax(r)") > strings.Index(s, "h.exploreMusicV7(w, r)") {
+	if strings.Index(s, "h.KidMax(r)") > strings.Index(s, "h.exploreMusicPage(w, r)") {
 		t.Fatal("the Kid check must run before the v2 rows")
 	}
 }

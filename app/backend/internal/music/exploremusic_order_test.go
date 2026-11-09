@@ -10,8 +10,8 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
-// v3Fixed is the fixed clock of the Phase 3 golden (ties hash the date).
-var v3Fixed = time.Date(2026, 10, 22, 12, 0, 0, 0, time.UTC)
+// orderFixed is the fixed clock of the Phase 3 golden (ties hash the date).
+var orderFixed = time.Date(2026, 10, 22, 12, 0, 0, 0, time.UTC)
 
 // fakeArtistSource answers the metadata server's artist batches for the
 // household fixture: each band has nine similar artists, rock and pop
@@ -73,11 +73,11 @@ func fakeArtistSource(calls *int) (func(context.Context, []string) (map[string]i
 	return listeners, similar, data
 }
 
-func v3Rig(t *testing.T) (*askRig, *int) {
+func orderRig(t *testing.T) (*askRig, *int) {
 	r := newMusicAskRig(t)
-	loadHousehold(t, r.st, v3Fixed)
-	r.api.musicv2.now = func() time.Time { return v3Fixed }
-	charts, genres := fakeCharts(v3Fixed)
+	loadHousehold(t, r.st, orderFixed)
+	r.api.exploreCache.now = func() time.Time { return orderFixed }
+	charts, genres := fakeCharts(orderFixed)
 	r.api.s.MusicGenres = genres
 	// Genre charts: their own albums (the region chart otherwise).
 	r.api.s.MusicCharts = func(ctx context.Context, region, kind, genre string) (metadata.MusicChart, error) {

@@ -12,9 +12,9 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
-// slowV7 makes the rig's metadata server answer after d and counts its
+// slowPlan makes the rig's metadata server answer after d and counts its
 // requests (the fake slow server of the cold-start tests).
-func slowV7(r *askRig, d time.Duration) *atomic.Int64 {
+func slowPlan(r *askRig, d time.Duration) *atomic.Int64 {
 	n := &atomic.Int64{}
 	l, s, ad := r.api.s.MusicListeners, r.api.s.MusicSimilarSet, r.api.s.MusicArtistData
 	r.api.s.MusicListeners = func(c context.Context, ids []string) (map[string]int64, error) {
@@ -35,17 +35,17 @@ func slowV7(r *askRig, d time.Duration) *atomic.Int64 {
 	return n
 }
 
-// restartV7 forgets every in-memory Music v7 layer, as a restart does; the
+// restartPlan forgets every in-memory Music v7 layer, as a restart does; the
 // store (lookup_cache) stays.
-func restartV7(r *askRig) {
-	now := r.api.musicv2.now
-	r.api.musicv2 = musicV2State{now: now}
+func restartPlan(r *askRig) {
+	now := r.api.exploreCache.now
+	r.api.exploreCache = exploreState{now: now}
 	r.api.forgetMusicAnswers()
 }
 
-func v7PageRows(t *testing.T, b []byte) []byte {
+func planPageRows(t *testing.T, b []byte) []byte {
 	t.Helper()
-	var a v7Answer
+	var a planAnswer
 	if err := json.Unmarshal(b, &a); err != nil {
 		t.Fatal(err)
 	}
@@ -54,11 +54,11 @@ func v7PageRows(t *testing.T, b []byte) []byte {
 }
 
 // route: GET /api/v1/explore/music (music_rows_v7 restart from disk)
-func TestExploreMusicV7RestartServesPlanFromDisk(t *testing.T) {
-	r, _, _ := v7Rig(t, "household_large.json")
+func TestExploreMusicRestartServesPlanFromDisk(t *testing.T) {
+	r, _, _ := planRig(t, "household_large.json")
 	first := r.owner.call("GET", "/api/v1/explore/music?region=US", "", 200)
-	restartV7(r)
-	n := slowV7(r, 500*time.Millisecond)
+	restartPlan(r)
+	n := slowPlan(r, 500*time.Millisecond)
 	start := time.Now()
 	again := r.owner.call("GET", "/api/v1/explore/music?region=US", "", 200)
 	took := time.Since(start)
@@ -68,11 +68,11 @@ func TestExploreMusicV7RestartServesPlanFromDisk(t *testing.T) {
 	if n.Load() != 0 {
 		t.Fatalf("page 1 after restart made %d metadata requests, want 0 (plan on disk)", n.Load())
 	}
-	if !bytes.Equal(v7PageRows(t, first), v7PageRows(t, again)) {
+	if !bytes.Equal(planPageRows(t, first), planPageRows(t, again)) {
 		t.Fatal("page 1 after restart differs from the kept plan")
 	}
 	// Its cursor pages on.
-	var a v7Answer
+	var a planAnswer
 	_ = json.Unmarshal(again, &a)
 	if a.Next == "" {
 		t.Fatal("no next cursor")
@@ -82,12 +82,12 @@ func TestExploreMusicV7RestartServesPlanFromDisk(t *testing.T) {
 }
 
 // route: GET /api/v1/explore/music (music_rows_v7 cold start)
-func TestExploreMusicV7ColdStartUnderBudget(t *testing.T) {
-	r, _, _ := v7Rig(t, "household_large.json")
+func TestExploreMusicColdStartUnderBudget(t *testing.T) {
+	r, _, _ := planRig(t, "household_large.json")
 	// The prewarm (household build) has run before the restart: layer 1 is
 	// on disk, the member has no kept plan of their own.
-	r.api.prewarmMusicV7(context.Background())
-	restartV7(r)
+	r.api.prewarmMusicPlan(context.Background())
+	restartPlan(r)
 	err := r.st.Write(context.Background(), func(tx *sql.Tx) error {
 		_, err := tx.Exec("DELETE FROM lookup_cache WHERE key LIKE ?", musicSnapPrefix+"%")
 		return err
@@ -95,7 +95,7 @@ func TestExploreMusicV7ColdStartUnderBudget(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	n := slowV7(r, 300*time.Millisecond)
+	n := slowPlan(r, 300*time.Millisecond)
 	start := time.Now()
 	r.owner.call("GET", "/api/v1/explore/music?region=US", "", 200)
 	took := time.Since(start)
@@ -109,9 +109,9 @@ func TestExploreMusicV7ColdStartUnderBudget(t *testing.T) {
 }
 
 // route: GET /api/v1/explore/music (music_rows_v7 nothing kept)
-func TestExploreMusicV7EmptyStartParallel(t *testing.T) {
-	r, _, _ := v7Rig(t, "household_large.json")
-	n := slowV7(r, 100*time.Millisecond)
+func TestExploreMusicEmptyStartParallel(t *testing.T) {
+	r, _, _ := planRig(t, "household_large.json")
+	n := slowPlan(r, 100*time.Millisecond)
 	start := time.Now()
 	r.owner.call("GET", "/api/v1/explore/music?region=US", "", 200)
 	took := time.Since(start)

@@ -27,8 +27,8 @@ const (
 	musicLibraryTTL   = 5 * time.Minute
 )
 
-// musicV2State is the flag's cache layers.
-type musicV2State struct {
+// exploreState is the flag's cache layers.
+type exploreState struct {
 	cand musicscore.Candidates
 	days musicscore.Days
 	// seedLog keeps each member's Since you have seeds per day (v3).
@@ -47,15 +47,15 @@ type musicV2State struct {
 	now func() time.Time
 }
 
-// musicV2Order is layer 2: one member's answer for one day, before state.
-type musicV2Order struct {
+// musicOrder is layer 2: one member's answer for one day, before state.
+type musicOrder struct {
 	Hero    *MusicCard
 	Alts    []MusicCard
 	Rows    []MusicRow
 	Regions []string
 	Cold    bool
 	// v7 is the raw candidate rows (flag music_rows_v7).
-	v7 *musicV7Cand
+	v7 *musicCand
 }
 
 // musicLib is the library snapshot the rows are built from (layer 1).
@@ -84,7 +84,7 @@ type musicLibAlbum struct {
 }
 
 func (h *Handlers) musicLibrary(ctx context.Context, now time.Time) (*musicLib, error) {
-	if v, ok := h.musicv2.cand.Get("lib:snapshot", now); ok {
+	if v, ok := h.exploreCache.cand.Get("lib:snapshot", now); ok {
 		return v.(*musicLib), nil
 	}
 	db := h.Store.Read()
@@ -142,7 +142,7 @@ func (h *Handlers) musicLibrary(ctx context.Context, now time.Time) (*musicLib, 
 		}
 	}
 	ts.Close()
-	h.musicv2.cand.Put("lib:snapshot", lib, musicLibraryTTL, now)
+	h.exploreCache.cand.Put("lib:snapshot", lib, musicLibraryTTL, now)
 	return lib, nil
 }
 
@@ -267,7 +267,7 @@ func (h *Handlers) musicChartOf(ctx context.Context, region, kind string, now ti
 		return nil
 	}
 	key := "chart:" + region + ":" + kind
-	if v, ok := h.musicv2.cand.Get(key, now); ok {
+	if v, ok := h.exploreCache.cand.Get(key, now); ok {
 		return v.([]metadata.MusicChartItem)
 	}
 	c, err := h.MusicCharts(ctx, region, kind, "")
@@ -275,7 +275,7 @@ func (h *Handlers) musicChartOf(ctx context.Context, region, kind string, now ti
 		markMusicMiss(ctx)
 		return nil
 	}
-	h.musicv2.cand.Put(key, c.Items, spread(musicChartTTL, 0.25), now)
+	h.exploreCache.cand.Put(key, c.Items, spread(musicChartTTL, 0.25), now)
 	return c.Items
 }
 
@@ -284,7 +284,7 @@ func (h *Handlers) musicGenreTiles(ctx context.Context, region string, now time.
 		return nil
 	}
 	key := "genres:" + region
-	if v, ok := h.musicv2.cand.Get(key, now); ok {
+	if v, ok := h.exploreCache.cand.Get(key, now); ok {
 		return v.([]metadata.MusicGenre)
 	}
 	g, err := h.MusicGenres(ctx, region)
@@ -293,7 +293,7 @@ func (h *Handlers) musicGenreTiles(ctx context.Context, region string, now time.
 		return nil
 	}
 	// Short-lived, so new tile art from the metadata server shows soon.
-	h.musicv2.cand.Put(key, g.Genres, musicGenreListTTL, now)
+	h.exploreCache.cand.Put(key, g.Genres, musicGenreListTTL, now)
 	return g.Genres
 }
 

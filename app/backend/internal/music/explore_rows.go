@@ -17,27 +17,27 @@ import (
 // with, ordered once a day into a plan of up to 30 rows and served 6 at a
 // time behind a signed cursor. Off keeps the v3/v6 page.
 
-// musicV7Cand is one build's raw candidate rows with their cards.
-type musicV7Cand struct {
+// musicCand is one build's raw candidate rows with their cards.
+type musicCand struct {
 	rows  []musicscore.Row
 	metas map[string]MusicRow
 	cards map[string]map[string]MusicCard
 	seen  map[string]bool
 }
 
-// musicV7Head is the plan's fixed head (the Spotlight sits above it).
-var musicV7Head = []string{"new_from", "genres"}
+// musicHead is the plan's fixed head (the Spotlight sits above it).
+var musicHead = []string{"new_from", "genres"}
 
-// musicV7Max is each family's row maximum (others: 1).
-var musicV7Max = map[string]int{"mix": musicscore.MixMax, "because": 4, "genre_shelf": 3, "together": 2,
+// musicPlanMax is each family's row maximum (others: 1).
+var musicPlanMax = map[string]int{"mix": musicscore.MixMax, "because": 4, "genre_shelf": 3, "together": 2,
 	// Row template families (music_lists_v1 engine).
 	"tpl_yr": 1, "tpl_ch": 5, "tpl_co": 3, "tpl_po": 3, "tpl_nw": 5, "tpl_cl": 5, "tpl_de": 3, "tpl_su": 4, "tpl_cr": 6, "tpl_se": 3, "tpl_ar": 4, "tpl_vi": 1, "tpl_di": 3, "tpl_pe": 6}
 
-// musicV7Few is the row count a household answers in one response.
-const musicV7Few = 12
+// musicFew is the row count a household answers in one response.
+const musicFew = 12
 
-// musicV7Family answers a row's family and whether it is a discovery row.
-func musicV7Family(m MusicRow) (string, bool) {
+// musicFamily answers a row's family and whether it is a discovery row.
+func musicFamily(m MusicRow) (string, bool) {
 	if strings.HasPrefix(m.Type, "tpl_") {
 		// Row template families; discovery rows count as such.
 		return m.Type, m.Type == "tpl_di"
@@ -60,9 +60,9 @@ func chartExplicit(l []metadata.MusicChartItem) map[string]bool {
 	return out
 }
 
-// musicV7Rows adds the v7 families to the build (personal households).
+// musicPlanRows adds the v7 families to the build (personal households).
 // yesterday holds yesterday's seeds.
-func (h *Handlers) musicV7Rows(ctx context.Context, member int64, date string, lib *musicLib, acts *musicActs, now time.Time, in personalIn, yesterday map[string]bool) {
+func (h *Handlers) musicPlanRows(ctx context.Context, member int64, date string, lib *musicLib, acts *musicActs, now time.Time, in personalIn, yesterday map[string]bool) {
 	today := dayAt(now, 0)
 	asked := func(mbid string) bool { return mbid != "" && acts.albumState[mbid] != "" }
 	nameOf := map[string]string{}
@@ -285,7 +285,7 @@ func (h *Handlers) musicV7Rows(ctx context.Context, member int64, date string, l
 				seedUsed[ar.mbid] = true
 			}
 		}
-		h.musicv2.seedLog.put(member, date, seedIDs)
+		h.exploreCache.seedLog.put(member, date, seedIDs)
 		bySim := sim
 		var want []string
 		near := map[string]map[string]float64{}
@@ -514,8 +514,8 @@ func joinNames(l []string) string {
 	return strings.Join(l[:len(l)-1], ", ") + " and " + l[len(l)-1]
 }
 
-// musicV7Cursor is one page's position in a pinned plan.
-type musicV7Cursor struct {
+// musicCursor is one page's position in a pinned plan.
+type musicCursor struct {
 	Member  int64
 	Date    string
 	Region  string

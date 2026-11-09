@@ -85,7 +85,7 @@ func (h *Handlers) personalMusicRows(ctx context.Context, member int64, region, 
 	listeners := h.musicListenersOf(ctx, pool, now)
 	// The Since-you-have seeds, logged so tomorrow picks others.
 	yesterday := map[string]bool{}
-	for _, id := range h.musicv2.seedLog.get(member, dayBefore(date)) {
+	for _, id := range h.exploreCache.seedLog.get(member, dayBefore(date)) {
 		yesterday[id] = true
 	}
 	var since []seed
@@ -98,7 +98,7 @@ func (h *Handlers) personalMusicRows(ctx context.Context, member int64, region, 
 	for _, s := range since {
 		sinceIDs = append(sinceIDs, s.ar.mbid)
 	}
-	h.musicv2.seedLog.put(member, date, sinceIDs)
+	h.exploreCache.seedLog.put(member, date, sinceIDs)
 	pOf := func(ids []string) map[string]float64 {
 		var top int64
 		for _, id := range ids {
@@ -328,5 +328,5 @@ func (h *Handlers) personalMusicRows(ctx context.Context, member int64, region, 
 			musicscore.Row{Prior: musicscore.PriorPersonal}, cards, sc, true, true)
 	}
 
-	h.musicV7Rows(ctx, member, date, lib, acts, now, in, yesterday)
+	h.musicPlanRows(ctx, member, date, lib, acts, now, in, yesterday)
 }

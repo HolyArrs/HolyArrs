@@ -16,10 +16,10 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
-// v7Fixed is the v7 tests' clock (30 October 2001 turns 25 within the window).
-var v7Fixed = time.Date(2026, 10, 23, 12, 0, 0, 0, time.UTC)
+// planFixed is the v7 tests' clock (30 October 2001 turns 25 within the window).
+var planFixed = time.Date(2026, 10, 23, 12, 0, 0, 0, time.UTC)
 
-type v7Album struct {
+type planAlbum struct {
 	Name     string `json:"name"`
 	MBID     string `json:"mbid"`
 	Title    string `json:"title"`
@@ -31,7 +31,7 @@ type v7Album struct {
 	Explicit bool   `json:"explicit"`
 }
 
-type v7Artist struct {
+type planArtist struct {
 	Name      string         `json:"name"`
 	MBID      string         `json:"mbid"`
 	Genres    map[string]int `json:"genres"`
@@ -43,33 +43,33 @@ type v7Artist struct {
 	} `json:"similar"`
 	Links  []metadata.ArtistLink    `json:"links"`
 	Guest  []metadata.MusicTopAlbum `json:"guest"`
-	Albums []v7Album                `json:"albums"`
+	Albums []planAlbum              `json:"albums"`
 }
 
-type v7Household struct {
+type planHousehold struct {
 	Follows map[string][]string `json:"follows"`
-	Artists []v7Artist          `json:"artists"`
-	Others  []v7Artist          `json:"others"`
+	Artists []planArtist        `json:"artists"`
+	Others  []planArtist        `json:"others"`
 }
 
-func (al v7Album) day(now time.Time) string {
+func (al planAlbum) day(now time.Time) string {
 	if al.Date != "" {
 		return al.Date
 	}
 	return now.AddDate(0, 0, al.Days).Format("2006-01-02")
 }
 
-// v7Rig loads a testdata/explore_v7 household into the ask rig with flags
+// planRig loads a testdata/explore_v7 household into the ask rig with flags
 // v2, v3, v6 and v7 on, and a fake metadata server answering from the
 // fixture (calls counts its requests).
-func v7Rig(t *testing.T, name string) (*askRig, *int, *v7Household) {
+func planRig(t *testing.T, name string) (*askRig, *int, *planHousehold) {
 	t.Helper()
 	r := newMusicAskRig(t)
 	raw, err := os.ReadFile("testdata/explore_v7/" + name)
 	if err != nil {
 		t.Fatal(err)
 	}
-	var fx v7Household
+	var fx planHousehold
 	if err := json.Unmarshal(raw, &fx); err != nil {
 		t.Fatal(err)
 	}
@@ -84,7 +84,7 @@ func v7Rig(t *testing.T, name string) (*askRig, *int, *v7Household) {
 	}
 	ids := map[string]int64{}
 	err = r.st.Write(context.Background(), func(tx *sql.Tx) error {
-		ts, by := database.FormatTime(v7Fixed), `{"kind":"system"}`
+		ts, by := database.FormatTime(planFixed), `{"kind":"system"}`
 		ex := func(q string, args ...any) int64 {
 			res, err := tx.Exec(q, args...)
 			if err != nil {
@@ -107,7 +107,7 @@ func v7Rig(t *testing.T, name string) (*askRig, *int, *v7Household) {
 			var ver int64
 			for _, al := range a.Albums {
 				pid := ex(`INSERT INTO parts (created_at, created_by, updated_at, updated_by, title_id, kind, name, release_type, release_date, release_date_precision, source_ids, secondary_types, included)
-					VALUES (?, ?, ?, ?, ?, 'album', ?, ?, ?, 'day', ?, '[]', 1)`, ts, by, ts, by, tid, al.Name, al.Type, al.day(v7Fixed)+"T00:00:00Z", `{"musicbrainz":"`+al.MBID+`"}`)
+					VALUES (?, ?, ?, ?, ?, 'album', ?, ?, ?, 'day', ?, '[]', 1)`, ts, by, ts, by, tid, al.Name, al.Type, al.day(planFixed)+"T00:00:00Z", `{"musicbrainz":"`+al.MBID+`"}`)
 				if !al.Have {
 					continue
 				}
@@ -131,8 +131,8 @@ func v7Rig(t *testing.T, name string) (*askRig, *int, *v7Household) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	r.api.musicv2.now = func() time.Time { return v7Fixed }
-	charts, genres := fakeCharts(v7Fixed)
+	r.api.exploreCache.now = func() time.Time { return planFixed }
+	charts, genres := fakeCharts(planFixed)
 	r.api.s.MusicGenres = genres
 	r.api.s.MusicCharts = func(ctx context.Context, region, kind, genre string) (metadata.MusicChart, error) {
 		c, err := charts(ctx, region, kind, genre)
@@ -147,7 +147,7 @@ func v7Rig(t *testing.T, name string) (*askRig, *int, *v7Household) {
 		}
 		return c, err
 	}
-	by := map[string]*v7Artist{}
+	by := map[string]*planArtist{}
 	for i := range fx.Artists {
 		by[fx.Artists[i].MBID] = &fx.Artists[i]
 	}
@@ -199,7 +199,7 @@ func v7Rig(t *testing.T, name string) (*askRig, *int, *v7Household) {
 					if title == "" {
 						title = al.Name
 					}
-					d.Albums = append(d.Albums, metadata.MusicTopAlbum{MBID: al.MBID, Title: title, Type: al.Type, Date: al.day(v7Fixed), Listeners: al.Listen, Artists: []string{id}, ArtistNames: []string{a.Name}})
+					d.Albums = append(d.Albums, metadata.MusicTopAlbum{MBID: al.MBID, Title: title, Type: al.Type, Date: al.day(planFixed), Listeners: al.Listen, Artists: []string{id}, ArtistNames: []string{a.Name}})
 				}
 				sort.SliceStable(d.Albums, func(i, j int) bool { return d.Albums[i].Listeners > d.Albums[j].Listeners })
 				d.Albums = append(d.Albums, a.Guest...)
@@ -226,21 +226,21 @@ func v7Rig(t *testing.T, name string) (*askRig, *int, *v7Household) {
 	return r, &calls, &fx
 }
 
-type v7Answer struct {
+type planAnswer struct {
 	musicRowsAnswer
 	Next  string `json:"next"`
 	Total int    `json:"total"`
 }
 
-// v7Pages reads page 1 and follows next to the end.
-func v7Pages(t *testing.T, who *signedIn, region string) ([]v7Answer, [][]byte) {
+// planPages reads page 1 and follows next to the end.
+func planPages(t *testing.T, who *signedIn, region string) ([]planAnswer, [][]byte) {
 	t.Helper()
-	var out []v7Answer
+	var out []planAnswer
 	var raws [][]byte
 	path := "/api/v1/explore/music?region=" + region
 	for i := 0; i < 8; i++ {
 		b := who.call("GET", path, "", 200)
-		var a v7Answer
+		var a planAnswer
 		if err := json.Unmarshal(b, &a); err != nil {
 			t.Fatal(err)
 		}
@@ -253,7 +253,7 @@ func v7Pages(t *testing.T, who *signedIn, region string) ([]v7Answer, [][]byte) 
 	return out, raws
 }
 
-func v7Rows(pages []v7Answer) []MusicRow {
+func planRowList(pages []planAnswer) []MusicRow {
 	var rows []MusicRow
 	for _, p := range pages {
 		rows = append(rows, p.Rows...)
@@ -281,7 +281,7 @@ func noAlbumTwice(t *testing.T, rows []MusicRow) {
 	}
 }
 
-func v7Types(rows []MusicRow) map[string]int {
+func planTypes(rows []MusicRow) map[string]int {
 	out := map[string]int{}
 	for _, r := range rows {
 		out[r.Type]++
@@ -290,14 +290,14 @@ func v7Types(rows []MusicRow) map[string]int {
 }
 
 // route: GET /api/v1/explore/music (music_rows_v7 paging)
-func TestExploreMusicV7PagingLarge(t *testing.T) {
+func TestExploreMusicPagingLarge(t *testing.T) {
 	t.Parallel()
-	r, calls, _ := v7Rig(t, "household_large.json")
+	r, calls, _ := planRig(t, "household_large.json")
 	start := time.Now()
-	pages, raws := v7Pages(t, r.owner, "US")
+	pages, raws := planPages(t, r.owner, "US")
 	cold := time.Since(start)
 	coldCalls := *calls
-	rows := v7Rows(pages)
+	rows := planRowList(pages)
 	if len(pages) < 4 {
 		t.Fatalf("pages = %d, rows = %d", len(pages), len(rows))
 	}
@@ -312,7 +312,7 @@ func TestExploreMusicV7PagingLarge(t *testing.T) {
 			t.Fatalf("adjacent %s rows at %d", rows[i].Type, i)
 		}
 	}
-	types := v7Types(rows)
+	types := planTypes(rows)
 	t.Logf("rows %d, types %v, cold %v, metadata requests %d", len(rows), types, cold, coldCalls)
 	// Every family the fixture has data for shows (Together needs relations).
 	for _, f := range []string{"new_from", "genres", "fresh_songs", "missing", "top_albums", "coming_soon", "mix", "because", "finish_set", "near_taste", "genre_shelf", "deep_cuts", "anniversary", "together", "guest_spots", "rising"} {
@@ -332,7 +332,7 @@ func TestExploreMusicV7PagingLarge(t *testing.T) {
 	}
 	// Reload and scroll again: byte-identical, no new requests (layer 1 the
 	// same: the fake answers the same data and nothing expired).
-	again, raws2 := v7Pages(t, r.owner, "US")
+	again, raws2 := planPages(t, r.owner, "US")
 	if len(again) != len(pages) {
 		t.Fatal("reload changed the page count")
 	}
@@ -347,10 +347,10 @@ func TestExploreMusicV7PagingLarge(t *testing.T) {
 }
 
 // route: GET /api/v1/explore/music (music_rows_v7 cursor)
-func TestExploreMusicV7Cursor(t *testing.T) {
+func TestExploreMusicCursor(t *testing.T) {
 	t.Parallel()
-	r, _, _ := v7Rig(t, "household_large.json")
-	first, _ := v7Pages(t, r.owner, "US")
+	r, _, _ := planRig(t, "household_large.json")
+	first, _ := planPages(t, r.owner, "US")
 	if first[0].Next == "" {
 		t.Fatal("no cursor on page 1")
 	}
@@ -360,9 +360,9 @@ func TestExploreMusicV7Cursor(t *testing.T) {
 	r.owner.call("GET", "/api/v1/explore/music?region=US&cursor="+cur[:len(cur)-2]+"xx", "", 400)
 	r.owner.call("GET", "/api/v1/explore/music?region=FR&cursor="+cur, "", 400)
 	// An ask between pages changes only chips (ana: household rows).
-	anaPages, anaRaw := v7Pages(t, r.ana, "US")
+	anaPages, anaRaw := planPages(t, r.ana, "US")
 	r.ana.call("POST", "/api/v1/asks", `{"kind":"artist","id":"mbid:`+apiArtist+`","albums":["`+apiAlbum+`"]}`, 201)
-	_, anaRaw2 := v7Pages(t, r.ana, "US")
+	_, anaRaw2 := planPages(t, r.ana, "US")
 	if len(anaRaw) != len(anaRaw2) || len(anaPages) < 2 {
 		t.Fatalf("ana pages %d then %d: %.400s", len(anaRaw), len(anaRaw2), anaRaw2[0])
 	}
@@ -377,14 +377,14 @@ func TestExploreMusicV7Cursor(t *testing.T) {
 		t.Fatal("the ask shows no chip")
 	}
 	before := stripState(t, r.owner.call("GET", "/api/v1/explore/music?region=US&cursor="+cur, "", 200))
-	r.api.musicv2.plans.MarkStale(-1) // a library change: page 1 builds v2
+	r.api.exploreCache.plans.MarkStale(-1) // a library change: page 1 builds v2
 	after := stripState(t, r.owner.call("GET", "/api/v1/explore/music?region=US&cursor="+cur, "", 200))
 	if before != after {
 		t.Fatal("a stale mark changed an open page's rows")
 	}
 	// Two more versions evict version 1: its cursor gets 400.
 	r.owner.call("GET", "/api/v1/explore/music?region=US", "", 200)
-	r.api.musicv2.plans.MarkStale(-1)
+	r.api.exploreCache.plans.MarkStale(-1)
 	r.owner.call("GET", "/api/v1/explore/music?region=US", "", 200)
 	r.owner.call("GET", "/api/v1/explore/music?region=US&cursor="+cur, "", 400)
 }
@@ -414,17 +414,17 @@ func chipless(t *testing.T, b []byte) string {
 }
 
 // route: GET /api/v1/explore/music (music_rows_v7 seeds)
-func TestExploreMusicV7Seeds(t *testing.T) {
+func TestExploreMusicSeeds(t *testing.T) {
 	t.Parallel()
-	r, _, fx := v7Rig(t, "household_ten.json")
+	r, _, fx := planRig(t, "household_ten.json")
 	byName := map[string]string{}
 	for _, a := range fx.Artists {
 		byName[a.Name] = a.MBID
 	}
 	seedsOf := func() (because []string, all map[string]int) {
 		all = map[string]int{}
-		pages, _ := v7Pages(t, r.owner, "US")
-		for _, row := range v7Rows(pages) {
+		pages, _ := planPages(t, r.owner, "US")
+		for _, row := range planRowList(pages) {
 			switch row.Type {
 			case "because", "together":
 				id := row.ID[strings.Index(row.ID, ":")+1:]
@@ -452,7 +452,7 @@ func TestExploreMusicV7Seeds(t *testing.T) {
 		}
 	}
 	// The next day never reuses yesterday's Because seeds.
-	r.api.musicv2.now = func() time.Time { return v7Fixed.AddDate(0, 0, 1) }
+	r.api.exploreCache.now = func() time.Time { return planFixed.AddDate(0, 0, 1) }
 	day2, _ := seedsOf()
 	for _, a := range day2 {
 		for _, b := range day1 {
@@ -464,14 +464,14 @@ func TestExploreMusicV7Seeds(t *testing.T) {
 }
 
 // route: GET /api/v1/explore/music (music_rows_v7 Turning N)
-func TestExploreMusicV7Anniversary(t *testing.T) {
+func TestExploreMusicAnniversary(t *testing.T) {
 	t.Parallel()
 	notes := func(at time.Time) string {
-		r, _, _ := v7Rig(t, "household_large.json")
-		r.api.musicv2.now = func() time.Time { return at }
-		pages, _ := v7Pages(t, r.owner, "US")
+		r, _, _ := planRig(t, "household_large.json")
+		r.api.exploreCache.now = func() time.Time { return at }
+		pages, _ := planPages(t, r.owner, "US")
 		var out []string
-		for _, row := range v7Rows(pages) {
+		for _, row := range planRowList(pages) {
 			if row.Type == "anniversary" {
 				for _, c := range row.Items {
 					if lib := c.State; lib == "have" {
@@ -483,7 +483,7 @@ func TestExploreMusicV7Anniversary(t *testing.T) {
 		}
 		return strings.Join(out, "|")
 	}
-	if n := notes(v7Fixed); !strings.Contains(n, "25 years on Oct 30") {
+	if n := notes(planFixed); !strings.Contains(n, "25 years on Oct 30") {
 		t.Fatalf("2001-10-30 not in Turning N on 2026-10-23: %q", n)
 	}
 	if n := notes(time.Date(2026, 12, 15, 12, 0, 0, 0, time.UTC)); strings.Contains(n, "Oct 30") {
@@ -492,12 +492,12 @@ func TestExploreMusicV7Anniversary(t *testing.T) {
 }
 
 // route: GET /api/v1/explore/music (music_rows_v7 households)
-func TestExploreMusicV7Households(t *testing.T) {
+func TestExploreMusicHouseholds(t *testing.T) {
 	t.Parallel()
-	r, _, _ := v7Rig(t, "household_two_members.json")
+	r, _, _ := planRig(t, "household_two_members.json")
 	look := func(who *signedIn) (mixes, because []string, rows []MusicRow) {
-		pages, _ := v7Pages(t, who, "US")
-		rows = v7Rows(pages)
+		pages, _ := planPages(t, who, "US")
+		rows = planRowList(pages)
 		noAlbumTwice(t, rows)
 		for _, row := range rows {
 			switch row.Type {
@@ -538,13 +538,13 @@ func TestExploreMusicV7Households(t *testing.T) {
 	}
 
 	// Empty library: cold rows only, at most 12, one answer, no empty row.
-	e, _, _ := v7Rig(t, "household_empty.json")
-	pages, _ := v7Pages(t, e.owner, "US")
+	e, _, _ := planRig(t, "household_empty.json")
+	pages, _ := planPages(t, e.owner, "US")
 	if len(pages) != 1 || pages[0].Next != "" {
 		t.Fatalf("cold start paged: %d pages", len(pages))
 	}
 	cold := map[string]bool{"genres": true, "fresh_songs": true, "top_albums": true, "coming_soon": true}
-	if len(pages[0].Rows) > musicV7Few || len(pages[0].Rows) == 0 {
+	if len(pages[0].Rows) > musicFew || len(pages[0].Rows) == 0 {
 		t.Fatalf("cold rows = %d", len(pages[0].Rows))
 	}
 	for _, row := range pages[0].Rows {

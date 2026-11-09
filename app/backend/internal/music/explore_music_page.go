@@ -25,7 +25,7 @@ func (h *Handlers) exploreMusic(w http.ResponseWriter, r *http.Request) {
 		webserver.Fail(w, http.StatusTooManyRequests, "too many Explore requests; try again in a minute")
 		return
 	}
-	h.exploreMusicV7(w, r)
+	h.exploreMusicPage(w, r)
 }
 
 type nameKey struct{ kind, mbid, name, artist, cover string }

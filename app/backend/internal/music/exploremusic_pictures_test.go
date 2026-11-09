@@ -13,9 +13,9 @@ import (
 // Music Explore answers carry the records of the pictures they show, like
 // every other music answer, so the first draw already asks the versioned
 // address and nothing is fetched twice.
-func TestExploreMusicV7CarriesPictureRecords(t *testing.T) {
+func TestExploreMusicCarriesPictureRecords(t *testing.T) {
 	t.Parallel()
-	r, _, _ := v7Rig(t, "household_large.json")
+	r, _, _ := planRig(t, "household_large.json")
 	rec := &metadata.PictureRecord{V: "v1", W: 1200, H: 1200, Color: "#102030"}
 	r.api.s.MusicPictures = func(_ context.Context, artists, albums []string) (metadata.MusicPictures, error) {
 		out := metadata.MusicPictures{Artists: map[string]metadata.ArtistPictures{}, Albums: map[string]metadata.AlbumPictures{}}
@@ -42,7 +42,7 @@ func TestExploreMusicV7CarriesPictureRecords(t *testing.T) {
 	}
 	first := r.owner.call("GET", "/api/v1/explore/music?region=US", "", 200)
 	check("page 1", first)
-	var a v7Answer
+	var a planAnswer
 	_ = json.Unmarshal(first, &a)
 	if a.Next == "" {
 		t.Fatal("no next cursor")

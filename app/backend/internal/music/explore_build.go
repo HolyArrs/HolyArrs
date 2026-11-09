@@ -14,9 +14,9 @@ import (
 	musicscore "github.com/HolyArrs/holyarrs/app/backend/internal/music/score"
 )
 
-// buildMusicV3 builds layer 2 with the Phase 3 scores.
-func (h *Handlers) buildMusicV3(ctx context.Context, member int64, region string, lib *musicLib, acts *musicActs, now time.Time) *musicV2Order {
-	ord := &musicV2Order{}
+// buildMusicOrder builds layer 2 with the Phase 3 scores.
+func (h *Handlers) buildMusicOrder(ctx context.Context, member int64, region string, lib *musicLib, acts *musicActs, now time.Time) *musicOrder {
+	ord := &musicOrder{}
 	date := musicscore.Day(now)
 	today := dayAt(now, 0)
 
@@ -493,7 +493,7 @@ func (h *Handlers) buildMusicV3(ctx context.Context, member int64, region string
 		if b := h.musicBundle(ctx, now); b != nil {
 			h.tplPreload(b, region)
 			for _, cd := range h.tplExploreCands(ctx, member, region, lib, acts, b, shelves, now) {
-				meta, row, cards, sc := tplV7Row(b, cd)
+				meta, row, cards, sc := tplPlanRow(b, cd)
 				addRow(meta, row, cards, sc, false, false)
 			}
 			tplDone = true
@@ -513,10 +513,10 @@ func (h *Handlers) buildMusicV3(ctx context.Context, member int64, region string
 	}
 
 	// v7 keeps the raw rows: the day's plan orders and fills them.
-	c := &musicV7Cand{metas: map[string]MusicRow{}, cards: map[string]map[string]MusicCard{}, seen: seen}
+	c := &musicCand{metas: map[string]MusicRow{}, cards: map[string]map[string]MusicCard{}, seen: seen}
 	for _, b := range rows {
 		r := b.row
-		r.Family, r.Disc = musicV7Family(b.meta)
+		r.Family, r.Disc = musicFamily(b.meta)
 		c.rows = append(c.rows, r)
 		c.metas[r.ID], c.cards[r.ID] = b.meta, b.cards
 	}
