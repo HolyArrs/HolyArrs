@@ -12,7 +12,7 @@ import (
 	musicscore "github.com/HolyArrs/holyarrs/app/backend/internal/music/score"
 )
 
-// World-list rows, flag music_lists_v1 (plan 24 October 2026): the metadata
+// World-list rows (plan 24 October 2026): the metadata
 // server's shelves (daily song charts turned into their albums or artists,
 // weekly album and artist charts, new releases) become rows on Explore →
 // Music and New & Popular → Music. Titles and reason lines come only from
@@ -774,7 +774,7 @@ func (h *Handlers) musicNewListRows(ctx context.Context, r *http.Request, in mus
 	return hero, out
 }
 
-// musicHeadRows is the plan's fixed head: with music_lists_v1 the
+// musicHeadRows is the plan's fixed head: the
 // region's top chart row follows New from your artists and Browse.
 func (h *Handlers) musicHeadRows() []string {
 	if h.musicTplOn() {

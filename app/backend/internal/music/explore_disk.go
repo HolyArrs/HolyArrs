@@ -15,7 +15,7 @@ import (
 	musicscore "github.com/HolyArrs/holyarrs/app/backend/internal/music/score"
 )
 
-// Explore → Music on disk (music_rows_v7): layer 1 (artist data, listeners,
+// Explore → Music on disk: layer 1 (artist data, listeners,
 // similarity) and each member's last day plan are kept in lookup_cache, so
 // the first visit after a restart reads them instead of the metadata server.
 // A plan read from disk is served at once and rebuilt in the background when

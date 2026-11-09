@@ -10,7 +10,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
-// Explore → Music, flag music_rows_v3 (plan 22 October 2026, Phase 3): the v2
+// Explore → Music (plan 22 October 2026, Phase 3): the v2
 // rows with their scores (rows 1, 2, 4, 5, 6, 8), plus Since you have,
 // Finish the set, Artists near your taste, genre shelves and Guest spots;
 // diversity in every scored row and the exploration slot in personal

@@ -76,7 +76,6 @@ type Handlers struct {
 	music        musicTrendCache
 	rising       risingCache
 	musicx       musicExplore
-	musicAns     musicAnswers
 	exploreCache exploreState
 	genreArt     GenreArtCache
 	artistAsked  artistAsked

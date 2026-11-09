@@ -136,7 +136,7 @@ export interface MusicCardData {
 	explicit?: boolean;
 	/** A song line's song (the line asks for its album). */
 	track?: string;
-	/** A genre tile's colour index (flag music_rows_v2). */
+	/** A genre tile's colour index . */
 	hue?: number;
 	/** A genre tile's slideshow of artist photos (image is the first). */
 	images?: string[];
@@ -156,7 +156,7 @@ export interface MusicRowData {
 }
 
 export interface MusicExploreAnswer {
-	/** The music_rows_v2 rows (genre tiles and song lines, no genre chips). */
+	/** Always true now: genre tiles and song lines, no genre chips. */
 	v2?: boolean;
 	kid: boolean;
 	cold: boolean;
@@ -175,9 +175,9 @@ export interface MusicExploreAnswer {
 	similar?: { key: string; name: string; href: string }[];
 	/** A Music genre page's own tile (name, hue, art) for its header band. */
 	tile?: MusicCardData;
-	/** music_rows_v7: the cursor for the next 6 rows ('' or absent: no more). */
+	/** The cursor for the next 6 rows ('' or absent: no more). */
 	next?: string;
-	/** music_rows_v7: the day's planned row count. */
+	/** The day's planned row count. */
 	total?: number;
 }
 

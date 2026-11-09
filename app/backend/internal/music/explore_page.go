@@ -102,7 +102,7 @@ func (h *Handlers) musicCursorOpen(ctx context.Context, s string) (musicCursor, 
 	return c, err1 == nil && err2 == nil && err3 == nil && off > 0 && off%musicscore.PlanBatch == 0
 }
 
-// exploreMusicPage answers GET /api/v1/explore/music with flag music_rows_v7:
+// exploreMusicPage answers GET /api/v1/explore/music with the day's page plan:
 // page 1 (rows 1–6, the Spotlight and the asks row) or, with ?cursor=, the
 // next 6 rows of the same pinned plan.
 func (h *Handlers) exploreMusicPage(w http.ResponseWriter, r *http.Request) {

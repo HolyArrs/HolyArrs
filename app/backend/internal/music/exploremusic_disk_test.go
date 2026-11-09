@@ -40,7 +40,6 @@ func slowPlan(r *askRig, d time.Duration) *atomic.Int64 {
 func restartPlan(r *askRig) {
 	now := r.api.exploreCache.now
 	r.api.exploreCache = exploreState{now: now}
-	r.api.forgetMusicAnswers()
 }
 
 func planPageRows(t *testing.T, b []byte) []byte {

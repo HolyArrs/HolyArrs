@@ -3,7 +3,6 @@ package music
 import (
 	"context"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
@@ -14,49 +13,21 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 )
 
-// Explore → Music answers are built once and kept a minute per member, so
-// switching tabs or coming back reads one cached answer. Only complete
-// answers are kept (every genre and similar list known); an ask or a title
-// added forgets them all. At start the genres of the Library's artists and
+// Explore → Music pages come from the day's plan (explore_page.go).
+// At start the genres of the Library's artists and
 // the charts are read ahead, so the genre chips are there on the first visit.
 
 const (
-	musicAnswerMax = 200
-	// musicAnswerStale is how long a kept answer may stand in for one that
-	// is still missing genres or similar lists.
-	musicAnswerStale = 30 * time.Minute
 	// musicWarmDelay lets the program finish starting before the read-ahead.
 	musicWarmDelay = 5 * time.Second
-	// musicPlanWarmDelay is the wait before the v7 prewarm at start.
+	// musicPlanWarmDelay is the wait before the page-plan prewarm at start.
 	musicPlanWarmDelay = time.Second
 )
 
-type musicAnswer struct {
-	at   time.Time
-	body []byte
-}
-
-type musicAnswers struct {
-	mu sync.Mutex
-	m  map[string]musicAnswer
-}
-
-// forgetMusicAnswers drops every kept answer (an ask, or a title added).
-func (h *Handlers) forgetMusicAnswers() {
-	c := &h.musicAns
-	c.mu.Lock()
-	c.m = nil
-	c.mu.Unlock()
-}
-
-// musicOnEvent forgets the kept answers when an ask or a title changes what they show.
+// musicOnEvent drops cached rows when a title changes what they show.
 func (h *Handlers) musicOnEvent(ev domain.Event) {
 	if !h.PartIsOn(parts.Music) {
 		return
-	}
-	switch ev.Kind {
-	case domain.EventAskMade, domain.EventAskJoined, domain.EventTitleAdded:
-		h.forgetMusicAnswers()
 	}
 	if ev.Kind == domain.EventTitleAdded || ev.Kind == domain.EventTitleRemoved {
 		h.exploreCache.cand.Forget("lib:")

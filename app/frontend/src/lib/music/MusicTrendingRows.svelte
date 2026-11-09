@@ -1,6 +1,5 @@
 <script lang="ts">
-	import Chip from '#lib/ui/Chip.svelte';
-	import type { OwnedIndex } from '#lib/ui/title-cards.ts';
+		import type { OwnedIndex } from '#lib/ui/title-cards.ts';
 	import { defaultRegion } from '#lib/ui/region.ts';
 	import ArtPlaceholder from '#lib/ui/ArtPlaceholder.svelte';
 	import Shelf from '#lib/ui/Shelf.svelte';
@@ -25,7 +24,7 @@
 	import { to } from '../core/paths.ts';
 	import type { Ask, LibraryFolder, PickRulesView, TitleView } from '../core/types.ts';
 
-	// Explore > Music. The server builds every row (personal first, then the charts, similar artists, missing albums and genre rows); genre chips filter them all. Every row says why it is there; albums are square, artists round.
+	// Explore > Music. The server builds every row (personal first, then the charts, similar artists, missing albums and genre rows). Every row says why it is there; albums are square, artists round.
 	const KEY = 'holyarrs.music-trending';
 	let {
 		owned: _owned,
@@ -43,14 +42,12 @@
 	type StripGenre = { key: string; name: string; href: string; art: string; images?: string[]; hue: number };
 
 	let region = $state('global');
-	let genre = $state('');
 	let answer = $state<MusicExploreAnswer | null>(null);
 	// Genres show as the Movies and Shows category strip under the hero, not as a row.
 	const stripGenres = $derived<StripGenre[]>((answer?.rows ?? []).filter((r) => r.shape === 'tile').flatMap((r) => r.items).map((c) => ({ key: c.key, name: c.name, href: genreHref(c), art: c.image ? (musicImage(c) ?? '') : '', hue: c.hue ?? 0, images: c.images ?? [] })));
 	$effect(() => { genres = stripGenres.length ? stripGenres : browseTiles.map((t) => ({ key: t.key, name: t.name, href: t.href, art: t.cover, hue: t.hue, images: t.cover ? [t.cover] : [] })); });
 	// With the music_lists_v1 flag the genres row comes as the Browse grid (colour tiles with a tilted cover).
 	const browseTiles = $derived((answer?.rows ?? []).filter((r) => r.shape === 'grid').flatMap((r) => r.items).map((c) => ({ key: c.key, name: c.name, href: c.href ? to(c.href) : genreHref(c), hue: c.hue ?? 0, cover: c.cover || (c.image ? (musicImage(c) ?? '') : '') })));
-	let chips = $state<string[]>([]);
 	/** The rows' order as first shown this visit (per genre and region), so later answers never move them. */
 	let order: string[] = [];
 	let orderFor = '';
@@ -64,7 +61,7 @@
 	let addArtist: ReturnType<ArtistSheets['add']> | undefined = $state();
 	let askArtist: ReturnType<ArtistSheets['ask']> | undefined = $state();
 	let gone: AbortController | undefined;
-	/** With music_rows_v7: the next rows' cursor, whether a batch is in flight, and batches read this visit. */
+	/** The next rows' cursor, whether a batch is in flight, and batches read this visit. */
 	let next = $state('');
 	let more = $state(false);
 	let batches = 0;
@@ -86,13 +83,13 @@
 		const signal = gone.signal;
 		try {
 			// Rising today is asked with the rows and shown with them (all music, not a genre or chart page).
-			const risingAsk = slug || genre ? Promise.resolve(null) : fetchRisingToday(api, signal);
-			const ask = () => (slug ? fetchMusicPage(kind, slug, region, api, signal) : fetchMusicExplore(genre, region, api, signal));
+			const risingAsk = slug ? Promise.resolve(null) : fetchRisingToday(api, signal);
+			const ask = () => (slug ? fetchMusicPage(kind, slug, region, api, signal) : fetchMusicExplore('', region, api, signal));
 			const a = await ask();
 			const rising = await risingAsk;
 			a.rows = withRising(a.rows, rising);
 			if (signal.aborted) return;
-			const at = `${kind}|${slug}|${genre}|${region}`;
+			const at = `${kind}|${slug}|${region}`;
 			if (at !== orderFor) {
 				order = [];
 				orderFor = at;
@@ -118,13 +115,11 @@
 				}, signal).finally(() => {
 					if (!signal.aborted) ready = true;
 				});
-			// With music_rows_v7: read again the batches already shown (the plan is fixed for the day).
+			// Read again the batches already shown (the plan is fixed for the day).
 			next = a.next ?? '';
 			const had = batches;
 			batches = 0;
 			while (next && batches < had && !signal.aborted) await moreRows(signal);
-			// Chips come from the unfiltered answer, so picking one keeps the rest.
-			if (!genre) chips = a.genres ?? [];
 			if (a.region && a.region !== region) region = a.region;
 		} catch {
 			if (!signal.aborted) {
@@ -176,11 +171,6 @@
 		void load();
 	}
 
-	function chip(g: string) {
-		genre = genre === g ? '' : g;
-		void load();
-	}
-
 	onMount(() => {
 		region = defaultRegion();
 		try {
@@ -189,13 +179,8 @@
 			/* Nothing saved. */
 		}
 		void load();
-		// Genres fill in the background on a first visit: look again once.
-		const again = setTimeout(() => {
-			if (!slug && !genre && chips.length === 0) void load();
-		}, 20000);
 		if (manage) api.get<MusicSettings>('/settings/music').then((r) => (defaults = r)).catch(() => {});
 		return () => {
-			clearTimeout(again);
 			gone?.abort();
 		};
 	});
@@ -277,7 +262,7 @@
 {#if answer?.kid}
 	<EmptyState icon="music" title="Music is not shown on this account" text="Music has no age ratings, so it’s off for age-limited accounts." />
 {:else if answer || !failed}
-	<section class="music" class:v2={answer?.v2} data-testid="music-trending" aria-busy={!answer || undefined}>
+	<section class="music" data-testid="music-trending" aria-busy={!answer || undefined}>
 		{#if slug}
 			<!-- The page hero: the tile's hue as a gradient behind a tilted collage of the page's top covers (preloaded), its words and leading artists, one stat line. -->
 			<div class="band" style:--hue={`hsl(${bandHue} 52% 36%)`} style:--hue2={`hsl(${(bandHue + 40) % 360} 60% 18%)`} data-testid="music-genre-band">
@@ -293,20 +278,6 @@
 					{/if}
 				</div>
 			</div>
-		{/if}
-		<!-- The chip bar keeps its height with placeholder chips until the genres are known; the v2 rows have genre tiles instead. -->
-		{#if answer?.v2}
-			<!-- The v2 rows use genre tiles, so no chips. -->
-		{:else if chips.length}
-			<div class="chips" role="group" aria-label="Genres" data-testid="music-genres">
-				<!-- The same chips as the Movies and Shows genre picker. -->
-				<Chip label="All" selected={genre === ''} onclick={() => chip('')} />
-				{#each chips as g (g)}
-					<span class="cap"><Chip label={g} selected={genre === g} onclick={() => chip(g)} /></span>
-				{/each}
-			</div>
-		{:else}
-			<div class="chips" aria-hidden="true">{#each [52, 64, 88, 72, 96, 60] as w (w)}<span class="chip sk-chip" style:width="{w}px"></span>{/each}</div>
 		{/if}
 		{#if !answer}
 			<div class="sk-spot" aria-hidden="true">{#each [0, 1, 2, 3] as i (i)}<span class="sk-card"><span class="sk-k"></span><span class="sk-t"></span><span class="sk-img"></span></span>{/each}</div>
@@ -373,7 +344,7 @@
 					</select>
 				</div>
 			{/if}
-			<Shelf title={row.type === 'popular_country' ? `Popular in ${regionName(row.id.split(':')[1] ?? '')}` : row.title} subtitle={row.type === 'popular_country' ? `This week's top albums in ${regionName(row.id.split(':')[1] ?? '')}` : row.reason} item={answer?.v2 && row.shape === 'round' ? 'var(--music-circle, var(--explore-item))' : 'var(--explore-item)'}
+			<Shelf title={row.type === 'popular_country' ? `Popular in ${regionName(row.id.split(':')[1] ?? '')}` : row.title} subtitle={row.type === 'popular_country' ? `This week's top albums in ${regionName(row.id.split(':')[1] ?? '')}` : row.reason} item={row.shape === 'round' ? 'var(--music-circle, var(--explore-item))' : 'var(--explore-item)'}
 				items={row.items} key={(c) => c.key} defer={false} placeholder={row.shape === 'square' ? 'square' : 'round'} lines={row.items.some((c) => musicCardNote(row, c)) ? 2 : 1}>
 				{#snippet card(raw: MusicCardData)}
 					{@const c = live(raw)}
@@ -388,7 +359,7 @@
 						kind="artist"
 						subtitle={musicCardNote(row, c) || undefined}
 						badges={c.explicit ? ['E'] : []}
-						status={answer?.v2 ? (row.type !== 'your_asks' ? musicStatus(c) : undefined) : c.kind === 'artist' && c.title_id && row.type !== 'your_asks' ? 'in_library' : undefined}
+						status={row.type !== 'your_asks' ? musicStatus(c) : undefined}
 						shape={c.kind === 'album' ? 'square' : 'round'}
 						fresh={c.fresh}
 						music
@@ -408,7 +379,7 @@
 		{/each}
 
 		{#if next}
-			<!-- With music_rows_v7 the next batch loads one viewport before the end; skeletons hold its place. -->
+			<!-- The next batch loads one viewport before the end; skeletons hold its place. -->
 			<div class="more" bind:this={sentinel} aria-busy={more || undefined}>
 				{#if more}
 					{#each [0, 1, 2, 3, 4, 5] as r (r)}
@@ -430,7 +401,7 @@
 				{/if}
 			</div>
 		{:else if answer && answer.rows.length === 0 && !heroes.length}
-			<EmptyState icon="music" title={slug ? `Nothing charting in ${answer.tile?.name ?? 'this genre'} yet` : genre ? `Nothing tagged ${genre} yet` : 'Music rows are getting ready'} text={genre ? 'Pick another genre, or All.' : 'Charts and suggestions fill in within a few minutes.'} />
+			<EmptyState icon="music" title={slug ? `Nothing charting in ${answer.tile?.name ?? 'this genre'} yet` : 'Music rows are getting ready'} text="Charts and suggestions fill in within a few minutes." />
 		{/if}
 	</section>
 {:else if failed}
@@ -445,21 +416,13 @@
 
 <style>
 	.music { position: relative; display: flex; flex-direction: column; gap: 32px; }
-	.chips { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; margin-bottom: -12px; padding: 2px; }
-	.chips::-webkit-scrollbar { display: none; }
-	.chips :global(.ui-chip) { flex: none; }
-	.cap { display: contents; text-transform: capitalize; }
-	.chip { flex: none; font: inherit; font-size: 14px; font-weight: 500; text-transform: capitalize; padding: 6px 14px; border-radius: 999px; border: 1px solid var(--border, transparent); background: var(--surface-2); color: var(--text); cursor: pointer; }
-	.chips { height: 38px; flex: none; }
-	.chip { height: 34px; box-sizing: border-box; line-height: 20px; }
-	.sk-chip { display: block; padding: 0; border-color: transparent; cursor: default; }
 	.sk-shelf { display: flex; flex-direction: column; gap: 12px; overflow: hidden; }
 	.sk-h { display: block; width: 220px; height: 46px; border-radius: 8px; background: var(--surface-2); }
 	.sk-tiles { display: grid; grid-auto-flow: column; grid-auto-columns: var(--explore-item); gap: var(--shelf-gap); padding: 6px 0 14px; }
 	.sk-tile { display: block; aspect-ratio: 1; margin-bottom: 45px; border-radius: var(--r-card); background: var(--surface-2); }
 	.row { position: relative; min-width: 0; }
 	.more { display: flex; flex-direction: column; gap: 32px; min-height: 1px; }
-	@media (min-width: 768px) { .music.v2 { --explore-item: 200px; } }
+	@media (min-width: 768px) { .music { --explore-item: 200px; } }
 	/* nowrap: the global .row utility wraps, and a wrapping column flexbox sizes the tile grid at its 0 px max-content width, so its rows collapse. */
 	.plain { display: flex; flex-direction: column; flex-wrap: nowrap; align-items: stretch; gap: 12px; }
 	.rhead { margin: 0; font-size: 17px; font-weight: 700; }
