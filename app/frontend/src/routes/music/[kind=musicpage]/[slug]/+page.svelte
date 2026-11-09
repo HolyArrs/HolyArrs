@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { ownedIndex } from '#lib/ui/title-cards.ts';
-	import { artistSheets } from '../../../request-sheets.ts';
+	import { artistSheets } from '#lib/requests/index.ts';
 	import { MusicTrendingRows } from '#lib/music/index.ts';
 	import type { MusicPageKind } from '#lib/music/index.ts';
 	import { onMount } from 'svelte';

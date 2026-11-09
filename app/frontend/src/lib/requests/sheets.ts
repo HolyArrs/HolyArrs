@@ -1,4 +1,7 @@
-import { AddArtistDialog, AskArtistDialog, AskShowDialog, QuickAsk } from '#lib/requests/index.ts';
+import AddArtistDialog from './AddArtistDialog.svelte';
+import AskArtistDialog from './AskArtistDialog.svelte';
+import AskShowDialog from './AskShowDialog.svelte';
+import QuickAsk from './QuickAsk.svelte';
 import type { ArtistSheets } from '#lib/music/index.ts';
 
 /** The requests dialogs that music, show and title parts show, passed in because those modules sit below requests. */

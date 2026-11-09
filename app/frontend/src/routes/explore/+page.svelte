@@ -24,7 +24,7 @@
 	import type { IconName } from '#lib/ui/Icon.svelte';
 	import { EAGER_ROWS, stableRows } from '#lib/ui/row-window.ts';
 	import Icon from '#lib/ui/Icon.svelte';
-	import { artistSheets } from '../request-sheets.ts';
+	import { artistSheets } from '#lib/requests/index.ts';
 	import { libraryTitles, ownedLibrary, partOff, partOn } from '#lib/mediafiles/index.ts';
 	import { anchorDelta, canReturn, putOffsets, readAnchor, readOffsets, type ExploreReturn, headPath, serverRow, tailPath, type HeadAnswer, type TailAnswer, markTransitions, dedupeTop, filterRows, parseType, typeHref, enoughCards, genreRowPath, genreCardHref, genreRowAfter, GENRE_ROW_MAX, ROW_MIN, type GenreRowCard, type ExploreType, TopServicesRow, ExploreHero, CategoryStrip, GenreBanner, leaveOut, newHref, newServicesPath, type NewServicesAnswer, whyShown } from '#lib/discover/index.ts';
 	import { detailPath, remember, MetadataNotice } from '#lib/metadata/index.ts';

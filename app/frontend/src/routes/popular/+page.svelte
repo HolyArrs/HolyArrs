@@ -14,7 +14,7 @@
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
 	import type { IconName } from '#lib/ui/Icon.svelte';
-	import { artistSheets } from '../request-sheets.ts';
+	import { artistSheets } from '#lib/requests/index.ts';
 	import { libraryTitles, ownedLibrary, partOff, partOn, savedDefaults } from '#lib/mediafiles/index.ts';
 	import { detailPath, loadDetails, remember, MetadataNotice } from '#lib/metadata/index.ts';
 	import { QuickAsk } from '#lib/requests/index.ts';

@@ -3,7 +3,7 @@
 	import PageLoader from '#lib/ui/PageLoader.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import IconButton from '#lib/ui/IconButton.svelte';
-	import EmptyState from '#lib/ui/TitleEmpty.svelte';
+	import { TitleEmpty as EmptyState } from '#lib/mediafiles/index.ts';
 	import TitleHero from '#lib/ui/TitleHero.svelte';
 	import ActionButton from '#lib/ui/ActionButton.svelte';
 	import ActionMenu from '#lib/ui/ActionMenu.svelte';

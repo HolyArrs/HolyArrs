@@ -1,7 +1,7 @@
 <script lang="ts">
 	// Empty state card with an icon, message and optional actions.
 	import type { Snippet } from 'svelte';
-	import Icon, { type IconName } from './Icon.svelte';
+	import Icon, { type IconName } from '#lib/ui/Icon.svelte';
 
 	let {
 		icon = 'info',

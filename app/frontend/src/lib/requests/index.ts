@@ -56,3 +56,4 @@ export { createTakeBack } from './take-back.svelte.ts';
 export { createAskLive } from './ask-live.svelte.ts';
 export { createDeclineDialog } from './decline-dialog.svelte.ts';
 export { createAskChoices } from './ask-choices.svelte.ts';
+export { artistSheets, askShowSheet, quickAskSheet } from './sheets.ts';

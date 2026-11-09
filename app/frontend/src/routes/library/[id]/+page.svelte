@@ -8,7 +8,7 @@
 	import { createTitleSearch } from '#lib/mediafiles/index.ts';
 	import '#lib/ui/title-page.css';
 	import PageLoader from '#lib/ui/PageLoader.svelte';
-	import EmptyState from '#lib/ui/TitleEmpty.svelte';
+	import { TitleEmpty as EmptyState } from '#lib/mediafiles/index.ts';
 	import TitleHero, { richMetadata, runtimeWords, shortFolder, type RichMeta } from '#lib/ui/TitleHero.svelte';
 	import ActionButton from '#lib/ui/ActionButton.svelte';
 	import FollowButton from '#lib/ui/FollowButton.svelte';
@@ -26,7 +26,7 @@
 	import { audienceOf, factsOf, titleStatus } from '#lib/ui/title-status.ts';
 	import TitleSection from '#lib/ui/TitleSection.svelte';
 	import type { MenuItem } from '#lib/ui/Menu.svelte';
-	import { artistSheets, askShowSheet, quickAskSheet } from '../../request-sheets.ts';
+	import { artistSheets, askShowSheet, quickAskSheet } from '#lib/requests/index.ts';
 	import { slotNotes, facts, keyReasons, pager, verdict, verdictTone, RenamePreview, CopyControls, deleteSummary, artName, crumbFor, qualityBadges } from '#lib/mediafiles/index.ts';
 	import { ReportSheet } from '#lib/requests/index.ts';
 	import { percent, timeLeft, groupLabel, kindTone } from '#lib/downloads/index.ts';
