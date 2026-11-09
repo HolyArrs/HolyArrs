@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"errors"
+	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles/datapack"
@@ -170,8 +172,18 @@ func (a *handlers) Chain(rt *webserver.Router) http.Handler {
 var wrapMux = func(h http.Handler) http.Handler { return h }
 
 // healthz is open to everyone: it says only whether the database answers.
+// It waits at most 2 s, so a busy database answers 503 well inside the
+// health check's own 5 s limit instead of hanging it.
 func (a *handlers) healthz(w http.ResponseWriter, _ *http.Request) {
-	if _, err := a.s.Store.Version(); err != nil {
+	done := make(chan error, 1)
+	go func() { _, err := a.s.Store.Version(); done <- err }()
+	var err error
+	select {
+	case err = <-done:
+	case <-time.After(2 * time.Second):
+		err = errors.New("timed out")
+	}
+	if err != nil {
 		http.Error(w, "database not answering\n", http.StatusServiceUnavailable)
 		return
 	}

@@ -154,7 +154,7 @@ docker run -d \
 | `TZ` | Your time zone, for the calendar and logs. |
 | `UMASK` | Optional. Permission bits new files leave out, for example `002`. |
 
-More (reverse proxy, URL base, save path): [Environment variables](https://docs.HolyArrs.com/install/#environment-variables).
+More (reverse proxy, URL base, save path): [Environment variables](https://docs.HolyArrs.com/start/install/#environment-variables).
 
 | Platform | Status |
 |---|---|
@@ -167,14 +167,14 @@ More (reverse proxy, URL base, save path): [Environment variables](https://docs.
 <details>
 <summary>On a NAS?</summary>
 
-[Unraid](https://docs.HolyArrs.com/platforms/unraid/) · [Synology](https://docs.HolyArrs.com/platforms/synology/) · [other NAS boxes](https://docs.HolyArrs.com/platforms/nas/)
+[Unraid, Synology and other NAS boxes](https://docs.HolyArrs.com/run/platforms/)
 
 </details>
 
 <details>
 <summary>Keep your master key safe</summary>
 
-`holyarrs.key` in your config folder unlocks your stored passwords and keys. Backups don't include it, so copy it somewhere safe. See [Backups](https://docs.HolyArrs.com/backups/).
+`holyarrs.key` in your config folder unlocks your stored passwords and keys. Backups don't include it, so copy it somewhere safe. See [Backups](https://docs.HolyArrs.com/run/backups/).
 
 </details>
 
@@ -190,7 +190,7 @@ Images live on Docker Hub as [`holyarrs/holyarrs`](https://hub.docker.com/r/holy
 | `1.0.0` | One exact version. It never moves. |
 
 
-Full guide: [Install HolyArrs with Docker](https://docs.HolyArrs.com/install/).
+Full guide: [Install HolyArrs with Docker](https://docs.HolyArrs.com/start/install/).
 
 ## Coming from Sonarr, Radarr and the rest
 

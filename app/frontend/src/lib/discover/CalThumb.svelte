@@ -21,6 +21,5 @@
 
 <style>
 	.th { position: relative; display: block; width: 100%; height: 100%; overflow: hidden; border-radius: inherit; background: var(--surface-2); }
-	.th > :global(.ui-art-ph) { position: absolute; inset: 0; }
 	img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 </style>

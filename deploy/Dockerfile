@@ -56,8 +56,8 @@ COPY docs/third-party-notices.md /docs/third-party-notices.md
 # low-memory mode and aims lower (a quarter of the memory, 192-384 MiB; see
 # docs/run/parts-safe-mode.md). SQLite's page caches and the driver's own heap
 # sit outside that target (measured up to about 69 MiB with a 12,800-Item
-# Library), so about 20 percent of a 500 MB limit stays headroom
-# (releases/3.7-fault-and-memory.md). Set GOMEMLIMIT to choose the target.
+# Library), so about 20 percent of a 500 MB limit stays headroom.
+# Set GOMEMLIMIT to choose the target.
 # No USER line: the image starts as root, gives /config to PUID:PGID (default
 # 1000:1000) when its owner differs, then restarts itself as that user and
 # never keeps running as root. Run with user: "<uid>:<gid>" to skip the switch.

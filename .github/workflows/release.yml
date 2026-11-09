@@ -2,7 +2,7 @@ name: HolyArrs - Release
 run-name: ${{ github.ref_name }}
 
 # Starts when a version tag (1.2.3) is pushed. Tests run on the maintainer's
-# machine before the tag is pushed (work\tooling\check.ps1 -Full).
+# machine before the tag is pushed.
 #
 # Repository secrets: DOCKERHUB_USERNAME, DOCKERHUB_TOKEN.
 

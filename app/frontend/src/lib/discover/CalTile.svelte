@@ -93,7 +93,6 @@
 	.l2 { bottom: 0; left: 8%; right: 8%; height: 40px; opacity: 0.55; }
 	.art { position: relative; display: block; aspect-ratio: 16 / 9; border-radius: var(--r-card); overflow: hidden; background: var(--surface-2); box-shadow: var(--shadow-card), 0 8px 22px -10px rgb(0 0 0 / 0.22); transition: transform var(--dur-slow) var(--ease-out), box-shadow var(--dur-slow) var(--ease-out); }
 	.art:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.art > :global(.ui-art-ph) { position: absolute; inset: 0; }
 	.bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 	.album .bg { object-position: center 30%; }
 	.scrim { position: absolute; inset: 0; background: linear-gradient(to top, rgb(0 0 0 / 0.75), rgb(0 0 0 / 0.08) 60%, transparent); pointer-events: none; }

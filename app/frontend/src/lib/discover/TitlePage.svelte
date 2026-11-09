@@ -580,8 +580,6 @@
 	.atv-links a:hover { color: var(--text); }
 	@media (max-width: 899px) { .atv-cards { grid-template-columns: minmax(0, 1fr); } .atv-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 16px; } }
 	.tagchips.quiet li { background: none; border: 1px solid var(--line); color: var(--text-muted); font-size: 12px; }
-	.tp :global(.facts-grid a) { color: inherit; text-decoration: none; }
-	.tp :global(.facts-grid a:hover) { text-decoration: underline; text-underline-offset: 3px; }
 	.fb { display: inline-flex; align-items: center; gap: 4px; height: 22px; padding: 0 7px; border-radius: 5px; border: 1.5px solid currentColor; font: 700 11.5px/1 var(--font-ui); letter-spacing: .03em; white-space: nowrap; }
 	.tagchips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
 	.tagchips li { display: inline-flex; align-items: center; min-height: 30px; padding: 0 12px; border: 1px solid var(--line); border-radius: 999px; color: var(--text); font: 500 13px/1 var(--font-ui); }

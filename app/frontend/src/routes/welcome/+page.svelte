@@ -652,7 +652,7 @@
 	.add-row:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-top: 12px; align-items: start; }
 	.two > :global(.field) { margin: 0; }
-	.source :global(.settings-card), .source :global(section) { box-shadow: none; }
+	.source :global(section) { box-shadow: none; }
 	/* The wizard heading says it all: no second title in the card. */
 	.sheet.glass .source :global(.ui-settings > header) { display: none; }
 	.source .foot { margin-top: 8px; }

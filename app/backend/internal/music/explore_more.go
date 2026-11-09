@@ -2,9 +2,7 @@ package music
 
 import (
 	"context"
-	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
@@ -47,44 +45,9 @@ type musicCtx struct {
 
 func init() {
 	for t, n := range map[string]int{"fresh": 4, "rising": 4, "classic": 4, "popular_country": 4, "anniversary": 4,
-		"live_eps": 4, "collabs": 4, "debut": 3, "decade": 4, "mood": 4, "soundtracks": 3} {
+		"live_eps": 4, "collabs": 4, "debut": 3, "decade": 4, "mood": 4} {
 		musicRowMin[t] = n
 	}
-}
-
-// soundtrackCache keeps soundtrack lookups for Library movies and shows.
-type soundtrackCache struct {
-	mu      sync.Mutex
-	found   map[int64]soundtrackEntry
-	queue   []soundtrackJob
-	queued  map[int64]bool
-	running bool
-	lookups []time.Time
-}
-
-type soundtrackEntry struct {
-	albums []metadata.Album
-	at     time.Time
-}
-
-type soundtrackJob struct {
-	id   int64
-	name string
-	year int
-}
-
-var musicSoundtracks = map[*Handlers]*soundtrackCache{}
-var musicSoundtracksMu sync.Mutex
-
-func (h *Handlers) soundtracks() *soundtrackCache {
-	musicSoundtracksMu.Lock()
-	defer musicSoundtracksMu.Unlock()
-	c := musicSoundtracks[h]
-	if c == nil {
-		c = &soundtrackCache{found: map[int64]soundtrackEntry{}, queued: map[int64]bool{}}
-		musicSoundtracks[h] = c
-	}
-	return c
 }
 
 // linksOf answers the known collaborators of each artist id.
@@ -99,14 +62,6 @@ func (h *Handlers) linksOf(ids []string) map[string][]metadata.ArtistLink {
 		}
 	}
 	return out
-}
-
-func yearOf(d string) int {
-	if len(d) < 4 {
-		return 0
-	}
-	y, _ := strconv.Atoi(d[:4])
-	return y
 }
 
 func studio(p mediafiles.Part) bool {

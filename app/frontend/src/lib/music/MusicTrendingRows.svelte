@@ -450,7 +450,7 @@
 	@media (max-width: 640px) { .songs { grid-template-columns: minmax(0, 1fr); } }
 	.pick { position: absolute; right: 0; top: 0; z-index: 1; display: flex; gap: 8px; align-items: center; }
 	.music { --spot-item: min(86vw, 430px); }
-	.spot :global(.ui-shelf-head), .spot :global(header) { margin-bottom: 2px; }
+	.spot :global(header) { margin-bottom: 2px; }
 	.feature { display: flex; flex-direction: column; min-width: 0; color: var(--text); text-decoration: none; border-radius: 14px; }
 	.feature:focus-visible { outline: none; }
 	.feature:focus-visible .frame { box-shadow: var(--focus-ring); }
