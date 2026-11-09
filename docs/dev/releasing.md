@@ -50,7 +50,8 @@ Only the maintainer starts a release. Do not tag, publish or move an image tag o
 
    You should see the first-run wizard.
 
-6. Hand the version to the maintainer. A release starts by hand on the main branch; the run makes the tag.
+6. Run every check in [Testing](testing.md) on your machine. Tests run locally, not on GitHub.
+7. Hand the version to the maintainer. The maintainer pushes the version tag on main, and that starts the release.
 
 ## Choices
 
@@ -58,18 +59,18 @@ Only the maintainer starts a release. Do not tag, publish or move an image tag o
 
 | Thing | Name |
 |---|---|
-| Git tag (made by the release run) | `1.0.0`, or `1.0.0-rc.1` for a candidate (plain numbers, no v) |
+| Git tag (pushed by the maintainer) | `1.0.0` (plain numbers, no v) |
 | Image tag and notes `version` | `1.0.0` |
 
-The workflow refuses any other version shape, a version that differs from the `VERSION` file, and a version that already has a tag.
+The workflow starts only for an `X.Y.Z` tag and stops when the tag differs from the `VERSION` file.
 
-### Beta first, stable later
+### Image tags
 
-A new version lands on `:beta` and on its version tag. `:beta` only moves to a newer version. `:stable`, `:latest` and the short tags `X` and `X.Y` move only when the maintainer starts the promote run for a version that ran well on beta. That run takes the image digest from the release run, and it never moves `:stable` back to an older version.
+Each release pushes its version tag and `:latest`.
 
 ### Take a release back
 
-1. Move `:beta` to the previous version.
+1. Push the next version with the fix.
 2. Mark the bad version in the update list so installs do not offer it.
 3. Keep the tag.
 
@@ -79,13 +80,9 @@ A new version lands on `:beta` and on its version tag. `:beta` only moves to a n
 **Cause.** The notes file breaks a rule. The message names the line.
 **Fix.** Edit the notes file, never the files in `releases/out`, and run it again.
 
-**Symptom.** The workflow stops with a message about the tag.
-**Cause.** The version is not `X.Y.Z` or `X.Y.Z-rc.N`.
-**Fix.** Make a tag with that shape.
-
-**Symptom.** The beta run says `beta stays on` a version.
-**Cause.** You tagged an older version than the current beta.
-**Fix.** Tag a newer one. Beta never moves back.
+**Symptom.** The workflow stops with `VERSION says`.
+**Cause.** The tag and the `VERSION` file differ.
+**Fix.** Fix `VERSION` on main and push the next version tag.
 
 ## For experts
 
@@ -122,15 +119,11 @@ Body order: theme, Highlights, places (Requests, Library, Downloads, Indexers, A
 
 <details class="ha-more"><summary>The image workflow</summary>
 
-The `release` workflow runs from main only, for the version in `VERSION`, and only when the maintainer ticks confirm_release. It:
+The `HolyArrs - Release` workflow starts when a version tag is pushed. It has three steps:
 
-1. Runs `go test ./...` before building.
-2. Builds one image for `linux/amd64`, `linux/arm64` and `linux/arm/v7`.
-3. Pushes `holyarrs/holyarrs` with the version tag, and `beta` when the version is newer than the current beta.
-4. Checks that every platform and the digest match.
-5. Signs the image with cosign and attaches an SBOM.
-
-The `promote` workflow starts by hand, runs as a dry run unless you switch that off, and moves the stable tags by digest.
+1. Build and push the image for `linux/amd64`, `linux/arm64` and `linux/arm/v7`, with the version tag and `latest`.
+2. Update the Docker Hub description from `README.md`.
+3. Publish the GitHub release with this version's `CHANGELOG.md` section.
 
 </details>
 

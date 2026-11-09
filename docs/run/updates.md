@@ -84,7 +84,7 @@ All in **Settings > Health checks**. The last three sit under the card's advance
 
 ## Held-back features
 
-Some features are built but not yet tested end to end with real services, so they are off in this release. While held back, their pages and menu items are hidden, their API routes answer "not found" and their jobs do not run. Data you saved for them stays.
+Some features are off by default in this release. Turn them on at your own risk. While held back, their pages and menu items are hidden, their API routes answer "not found" and their jobs do not run. Data you saved for them stays.
 
 To turn one on at your own risk, add its switch to `HOLYARRS_FLAGS`, comma-separated, and restart the container:
 

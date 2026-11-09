@@ -14,11 +14,3 @@ We answer within 7 days and keep you posted while we fix it. When the fix ships,
 ## Supported versions
 
 Only the latest release gets security fixes. Please update before you report.
-
-## Checking an image
-
-Release images are signed with cosign and come with a list of everything inside them (SBOM). To check one:
-
-    cosign verify holyarrs/holyarrs:<tag> \
-      --certificate-identity-regexp 'https://github.com/HolyArrs/HolyArrs/.github/workflows/release.yml@refs/tags/.*' \
-      --certificate-oidc-issuer https://token.actions.githubusercontent.com

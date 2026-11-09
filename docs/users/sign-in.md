@@ -19,7 +19,7 @@ The minimum applies to every new password: the first owner, accepted invites, ch
 HolyArrs slows repeated wrong sign-ins, but a short password is still easy to guess. If HolyArrs is reachable from outside your home, use 12 or more.
 :::
 
-## Skip sign-in on the local network
+## Skip sign-in on my local network
 
 Devices on your home network open HolyArrs as the owner, with no password. Off by default.
 
@@ -47,7 +47,7 @@ One OpenID Connect provider can sign people in. It shows as a button on the sign
 4. Copy the **Callback address** and register that exact address at the provider.
 5. Type your password, plus a two-factor code if you use one, and select **Save**. Every change asks for this.
 
-Then link your own account: sign in with your password, open **My account**, select **Link** on **Linked sign-ins**, confirm your password, then select **Single sign-on**.
+Then link your own account: sign in with your password, open **My account**, under **Linked sign-ins** select **Link**, confirm your password, then select **Single sign-on**.
 
 :::tip
 Keep a working owner password. If the provider is down, password sign-in still works.
@@ -100,7 +100,7 @@ If a reverse proxy already signs people in, HolyArrs accepts the name it passes.
 - `Remote-User`: one stable name, at most 255 bytes. `Remote-Name`: optional display name, at most 200 bytes.
 - Repeated, comma-joined or control-character values are refused. Role headers are ignored.
 
-Keep HolyArrs reachable only through that proxy. Trusting a proxy address means trusting every name it sends. Link it to an account from **My account**: select **Link** on **Linked sign-ins**, then **Trusted proxy**.
+Keep HolyArrs reachable only through that proxy. Trusting a proxy address means trusting every name it sends. Link it to an account from **My account > Link trusted proxy sign-in**.
 
 </details>
 
