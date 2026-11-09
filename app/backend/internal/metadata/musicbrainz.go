@@ -215,7 +215,7 @@ func UserAgentFor(version string) string {
 	if version == "" {
 		version = "dev"
 	}
-	return "HolyArrs/" + version + " ( https://github.com/HolyArrs/holyarrs )"
+	return "HolyArrs/" + version + " ( https://github.com/HolyArrs/HolyArrs )"
 }
 
 // sameHost follows a redirect only on the host first asked, at most 5 times.

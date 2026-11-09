@@ -24,7 +24,6 @@ Follow one request. Someone asks for a movie on Explore.
 
 ```
 app/backend/cmd/holyarrs/            main.go starts the program; wiring.go builds the modules and joins them
-app/backend/cmd/holyarrs-companion/  a small separate program that reads health states over the API
 app/backend/internal/<module>/       one flat folder per module
 app/backend/internal/core/           plumbing every module may use
 app/backend/tools/                   dev-only programs

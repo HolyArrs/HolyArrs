@@ -18,8 +18,8 @@ import sys
 import tomllib
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
-ISSUES = "https://github.com/HolyArrs/holyarrs/issues/"
-RELEASES = "https://github.com/HolyArrs/holyarrs/releases/tag/"
+ISSUES = "https://github.com/HolyArrs/HolyArrs/issues/"
+RELEASES = "https://github.com/HolyArrs/HolyArrs/releases/tag/"
 KNOWN = {"version", "theme", "image", "images", "docs_url", "highlights", "groups",
          "security", "known_issues", "credits", "stats"}
 # Old map format kinds -> the prefix the list format uses ("" = new).

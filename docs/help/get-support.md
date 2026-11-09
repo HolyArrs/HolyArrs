@@ -41,7 +41,7 @@ Secrets are removed, but the bundle can still show folder paths and host names. 
 | Place | Use it for |
 |---|---|
 | [Discord](https://discord.com/invite/mthsvesKpC) | Questions and setup help. |
-| [GitHub Issues](https://github.com/HolyArrs/holyarrs/issues) | Bugs you can repeat. |
+| [GitHub Issues](https://github.com/HolyArrs/HolyArrs/issues) | Bugs you can repeat. |
 | [r/HolyArrs](https://www.reddit.com/r/HolyArrs/) | Ideas. |
 
 In your message, say what you did, what you expected and what happened. Attach the bundle, or paste the doctor output.

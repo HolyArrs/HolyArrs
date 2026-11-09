@@ -14,7 +14,7 @@ Questions go to [Discord](https://discord.com/invite/mthsvesKpC). Ideas go to [r
 
 You need Go (version in `go.mod`), Node.js 22 and make.
 
-    git clone https://github.com/HolyArrs/holyarrs.git
+    git clone https://github.com/HolyArrs/HolyArrs.git
     cd holyarrs
     make ui build
 

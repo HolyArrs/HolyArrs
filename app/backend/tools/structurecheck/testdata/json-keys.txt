@@ -1501,7 +1501,6 @@ started_at
 state
 stateChangeTime
 state_label
-states
 statistics
 stats
 status

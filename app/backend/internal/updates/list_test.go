@@ -14,7 +14,7 @@ var now = time.Date(2026, 10, 23, 12, 0, 0, 0, time.UTC)
 
 func listJSON(serial, gen string, extra string) []byte {
 	return []byte(`{"schema":1,"serial":` + serial + `,"generated_at":"` + gen + `","channels":{"stable":{"version":"v1.2.0",` +
-		`"changelog_url":"https://github.com/HolyArrs/holyarrs/releases/tag/v1.2.0","notes_short":"Fixes"` + extra + `}},"revoked":[]}`)
+		`"changelog_url":"https://github.com/HolyArrs/HolyArrs/releases/tag/v1.2.0","notes_short":"Fixes"` + extra + `}},"revoked":[]}`)
 }
 
 func TestPinnedKeysEmpty(t *testing.T) {
@@ -91,7 +91,7 @@ func TestPlainTextAndLinks(t *testing.T) {
 	k := signtest.New(t)
 	data := []byte(`{"schema":1,"serial":1,"generated_at":"2026-10-23T11:00:00Z","channels":{"stable":{"version":"v1.2.0",` +
 		`"changelog_url":"https://evil.example/x","notes_short":"<b>Big</b> <script>alert(1)</script>fix <a href=\"x\">here</a>` + strings.Repeat("x", 400) + `"},` +
-		`"beta":{"version":"v1.3.0-rc1","changelog_url":"https://github.com/HolyArrs/holyarrs/releases/tag/v1.3.0-rc1"}}}`)
+		`"beta":{"version":"v1.3.0-rc1","changelog_url":"https://github.com/HolyArrs/HolyArrs/releases/tag/v1.3.0-rc1"}}}`)
 	l, err := updates.Parse(data, k.Sign(data, "t"), []updates.PublicKey{k.Pub}, now, 0)
 	if err != nil {
 		t.Fatal(err)
@@ -100,10 +100,10 @@ func TestPlainTextAndLinks(t *testing.T) {
 	if strings.ContainsAny(s.NotesShort, "<>") || !strings.HasPrefix(s.NotesShort, "Big alert(1)fix here") || len([]rune(s.NotesShort)) != 280 {
 		t.Errorf("notes: %q", s.NotesShort)
 	}
-	if s.ChangelogURL != "" || l.Channels["beta"].ChangelogURL != "https://github.com/HolyArrs/holyarrs/releases/tag/v1.3.0-rc1" {
+	if s.ChangelogURL != "" || l.Channels["beta"].ChangelogURL != "https://github.com/HolyArrs/HolyArrs/releases/tag/v1.3.0-rc1" {
 		t.Errorf("links: %q %q", s.ChangelogURL, l.Channels["beta"].ChangelogURL)
 	}
-	for _, bad := range []string{"http://github.com/HolyArrs/holyarrs/x", "https://github.com/HolyArrs/holyarrs-evil/x", "https://github.com/HolyArrs/holyarrs/../x", "javascript:alert(1)", "https://docs.holyarrs.dev/changes"} {
+	for _, bad := range []string{"http://github.com/HolyArrs/HolyArrs/x", "https://github.com/HolyArrs/HolyArrs-evil/x", "https://github.com/HolyArrs/HolyArrs/../x", "javascript:alert(1)", "https://docs.holyarrs.dev/changes"} {
 		if updates.Changelog(bad) != "" {
 			t.Errorf("kept %q", bad)
 		}

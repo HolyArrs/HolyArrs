@@ -12,7 +12,6 @@ Keep a running HolyArrs updated, backed up and healthy.
 - [Updates](updates.md): see a new version, update, go back.
 - [Backups](backups.md): back up, save the master key, restore on a new machine.
 - [Health checks](health.md): what each warning means and how to fix it.
-- [Health companion](companion.md): check health from another container with a read-only key.
 - [Schedules](schedules.md): see what runs on a timer and change how often.
 - [Logs and storage](logs.md): read the log, share it safely, find your files.
 - [Parts and safe mode](parts-safe-mode.md): turn parts off, start in safe mode.
