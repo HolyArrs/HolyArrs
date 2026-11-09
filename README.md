@@ -298,11 +298,7 @@ On your first pull request a bot asks you to accept a short licence agreement ([
 
 HolyArrs is free and open source under the [GNU AGPL-3.0](LICENSE).
 
-Want to build it into a closed product? See [COMMERCIAL.md](COMMERCIAL.md).
-
-## Credits
-
-Thanks to the metadata providers and open source libraries HolyArrs is built on. The full list is in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+Want to build it into a closed product? Email support@HolyArrs.com for a commercial licence.
 
 ## Keep it going
 

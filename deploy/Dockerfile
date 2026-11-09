@@ -48,9 +48,6 @@ COPY --from=build /out/holyarrs /holyarrs
 COPY --from=build --chmod=1777 /out/tmp /tmp
 COPY --from=build --chown=1000:1000 /out/config /config
 COPY LICENSE /LICENSE
-# The licences of every part shipped here (deploy/release/notices.py keeps them complete).
-COPY THIRD_PARTY_NOTICES.md /THIRD_PARTY_NOTICES.md
-COPY docs/third-party-notices.md /docs/third-party-notices.md
 # No GOMEMLIMIT here: the program aims at 384 MiB by itself, and on a small
 # machine or a container limited to about 2.5 GiB or less it turns on its
 # low-memory mode and aims lower (a quarter of the memory, 192-384 MiB; see

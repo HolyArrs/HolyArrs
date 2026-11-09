@@ -36,13 +36,7 @@ Only the maintainer starts a release. Do not tag, publish or move an image tag o
 
    You should find 7 files in `releases/out/1.0.0/`.
 
-4. Check the third-party notices:
-
-   ```sh
-   python3 deploy/release/notices.py --check
-   ```
-
-5. Build the image and start it on a fresh config folder:
+4. Build the image and start it on a fresh config folder:
 
    ```sh
    docker build --file deploy/Dockerfile .
@@ -50,8 +44,8 @@ Only the maintainer starts a release. Do not tag, publish or move an image tag o
 
    You should see the first-run wizard.
 
-6. Run every check in [Testing](testing.md) on your machine. Tests run locally, not on GitHub.
-7. Hand the version to the maintainer. The maintainer pushes the version tag on main, and that starts the release.
+5. Run every check in [Testing](testing.md) on your machine. Tests run locally, not on GitHub.
+6. Hand the version to the maintainer. The maintainer pushes the version tag on main, and that starts the release.
 
 ## Choices
 
