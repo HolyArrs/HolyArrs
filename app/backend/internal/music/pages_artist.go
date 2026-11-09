@@ -277,9 +277,6 @@ const (
 	// musicSideWait caps each optional part of a page (tags, top songs).
 	// A part kept answers at once; one not kept goes on behind the answer.
 	musicSideWait = 800 * time.Millisecond
-	// musicLookupMax bounds a lookup that goes on after the page answered
-	// (pageFlight).
-	musicLookupMax = MusicLookupMax
 )
 
 // musicPageWait caps the essential lookup of an artist or album page: past

@@ -102,7 +102,6 @@ func (a *handlers) stripBrowse() discover.StripBrowse {
 // suggest wires the live search handlers (discover.Suggest) over this API.
 func (a *handlers) suggest() *discover.Suggest {
 	return &discover.Suggest{
-		LiveSearch: func() bool { return a.s.LiveSearch },
 		MusicSuggest: func() func(ctx context.Context, q string) ([]metadata.MusicSuggestion, error) {
 			return a.s.MusicSuggest
 		},

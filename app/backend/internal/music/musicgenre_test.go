@@ -18,7 +18,6 @@ func TestMusicGenrePage(t *testing.T) {
 	now := time.Now().UTC()
 	r := newMusicAskRig(t)
 	loadHousehold(t, r.st, now)
-	r.api.s.MusicRowsV2 = true
 	r.api.s.MusicCharts, r.api.s.MusicGenres = fakeCharts(now)
 
 	r.ana.call("GET", "/api/v1/music/genre/Pop!", "", 400)
@@ -132,7 +131,6 @@ func TestMusicGenrePageWarmsArt(t *testing.T) {
 	now := time.Now().UTC()
 	r := newMusicAskRig(t)
 	loadHousehold(t, r.st, now)
-	r.api.s.MusicRowsV2 = true
 	r.api.s.MusicCharts, r.api.s.MusicGenres = fakeCharts(now)
 	var mu sync.Mutex
 	warmed := map[ArtWarmKey]bool{}
@@ -182,9 +180,7 @@ func TestMusicGenrePageListRows(t *testing.T) {
 	t.Parallel()
 	now := time.Now().UTC()
 	r := newMusicAskRig(t)
-	r.api.s.MusicRowsV2 = true
 	r.api.s.MusicCharts, r.api.s.MusicGenres = fakeCharts(now)
-	r.api.s.MusicListsV1 = true
 	r.api.s.MusicShelves = fakeShelves
 	r.api.musicx.mu.Lock()
 	r.api.musicx.genres = map[string]musicGenreEntry{}

@@ -10,7 +10,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
-// Explore → Music, flag music_rows_v3 (plan 22 October 2026, Phase 3): the v2
+// Explore → Music (plan 22 October 2026, Phase 3): the v2
 // rows with their scores (rows 1, 2, 4, 5, 6, 8), plus Since you have,
 // Finish the set, Artists near your taste, genre shelves and Guest spots;
 // diversity in every scored row and the exploration slot in personal
@@ -81,7 +81,7 @@ func (h *Handlers) musicBatch(ctx context.Context, prefix string, ids []string, 
 			continue
 		}
 		seen[id] = true
-		if v, ok := h.musicv2.cand.Get(prefix+id, now); ok {
+		if v, ok := h.exploreCache.cand.Get(prefix+id, now); ok {
 			if v != nil {
 				out[id] = v
 			}
@@ -95,7 +95,7 @@ func (h *Handlers) musicBatch(ctx context.Context, prefix string, ids []string, 
 		for _, id := range miss {
 			if v, ok := disk[id]; ok {
 				out[id] = v
-				h.musicv2.cand.Put(prefix+id, v, musicArtistTTL, now)
+				h.exploreCache.cand.Put(prefix+id, v, musicArtistTTL, now)
 				continue
 			}
 			rest = append(rest, id)
@@ -128,13 +128,13 @@ func (h *Handlers) musicBatch(ctx context.Context, prefix string, ids []string, 
 				if v, ok := got[id]; ok && v != nil && musicEmpty(v) {
 					// Empty is not final: used now, asked again soon, never on disk.
 					out[id] = v
-					h.musicv2.cand.Put(prefix+id, v, musicEmptyTTL, now)
+					h.exploreCache.cand.Put(prefix+id, v, musicEmptyTTL, now)
 				} else if ok && v != nil {
 					out[id] = v
 					fetched[id] = v
-					h.musicv2.cand.Put(prefix+id, v, musicArtistTTL, now)
+					h.exploreCache.cand.Put(prefix+id, v, musicArtistTTL, now)
 				} else {
-					h.musicv2.cand.Put(prefix+id, nil, musicMissTTL, now)
+					h.exploreCache.cand.Put(prefix+id, nil, musicMissTTL, now)
 				}
 			}
 		}(part)
@@ -216,7 +216,7 @@ func (h *Handlers) musicGenreChartOf(ctx context.Context, region, slug string, n
 		return nil
 	}
 	key := "chart:" + region + ":albums:" + slug
-	if v, ok := h.musicv2.cand.Get(key, now); ok {
+	if v, ok := h.exploreCache.cand.Get(key, now); ok {
 		return v.([]metadata.MusicChartItem)
 	}
 	c, err := h.MusicCharts(ctx, region, "albums", slug)
@@ -224,7 +224,7 @@ func (h *Handlers) musicGenreChartOf(ctx context.Context, region, slug string, n
 		markMusicMiss(ctx)
 		return nil
 	}
-	h.musicv2.cand.Put(key, c.Items, spread(musicChartTTL, 0.25), now)
+	h.exploreCache.cand.Put(key, c.Items, spread(musicChartTTL, 0.25), now)
 	return c.Items
 }
 

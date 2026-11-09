@@ -289,7 +289,7 @@ func TestTplCancelledCallersDuringAFailure(t *testing.T) {
 	if sawCancelled.Load() {
 		t.Fatal("the download used a cancelled request context")
 	}
-	if _, marked := r.api.musicv2.cand.Get("tpl:fail", time.Now()); !marked {
+	if _, marked := r.api.exploreCache.cand.Get("tpl:fail", time.Now()); !marked {
 		t.Fatal("no fail mark after a real failure")
 	}
 }
@@ -317,8 +317,8 @@ func TestTplWaiterRespectsItsContext(t *testing.T) {
 // plan, no album repeats, and the Browse row has at most 18 Browse tiles.
 func TestTplExploreAndNewMusic(t *testing.T) {
 	r := tplRig(t)
-	pages, _ := v7Pages(t, r.owner, "US")
-	rows := v7Rows(pages)
+	pages, _ := planPages(t, r.owner, "US")
+	rows := planRowList(pages)
 	noAlbumTwice(t, rows)
 	tpl, grid := 0, 0
 	for _, row := range rows {
@@ -545,9 +545,9 @@ func TestTplExploreBrowseRowTakesCoversOnlyFromStoredPictures(t *testing.T) {
 			stored[it.ID] = true
 		}
 	}
-	pages, _ := v7Pages(t, r.owner, "US")
+	pages, _ := planPages(t, r.owner, "US")
 	grid := 0
-	for _, row := range v7Rows(pages) {
+	for _, row := range planRowList(pages) {
 		if row.Shape != "grid" {
 			continue
 		}

@@ -13,8 +13,7 @@ import (
 // 7-day-old rank to every chart item (all new entries, so each one
 // gains), and the chart artists get a first release in 2025.
 func risingRig(t *testing.T, ranks bool) *askRig {
-	r, _ := v3Rig(t)
-	r.api.s.MusicRowsV6 = true
+	r, _ := orderRig(t)
 	charts := r.api.s.MusicCharts
 	r.api.s.MusicCharts = func(ctx context.Context, region, kind, genre string) (metadata.MusicChart, error) {
 		c, err := charts(ctx, region, kind, genre)
@@ -40,7 +39,7 @@ func risingRig(t *testing.T, ranks bool) *askRig {
 }
 
 // route: GET /api/v1/explore/music (music_rows_v6 Rising)
-func TestExploreMusicV6Rising(t *testing.T) {
+func TestExploreMusicRising(t *testing.T) {
 	t.Parallel()
 	read := func(r *askRig) musicRowsAnswer {
 		var m musicRowsAnswer
@@ -63,11 +62,5 @@ func TestExploreMusicV6Rising(t *testing.T) {
 		if c.Note == "" || !strings.HasPrefix(c.ArtistMBID, "e") {
 			t.Fatalf("rising card %+v", c)
 		}
-	}
-	// v6 off with the same data: no Rising.
-	r := risingRig(t, true)
-	r.api.s.MusicRowsV6 = false
-	if read(r).row("rising") != nil {
-		t.Fatal("flag off must not show Rising")
 	}
 }

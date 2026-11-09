@@ -150,24 +150,6 @@ func topGenres(count map[string]int, n int) []string {
 	return list[:min(n, len(list))]
 }
 
-func sortedPool(pool map[string]MusicCard) []MusicCard {
-	out := make([]MusicCard, 0, len(pool))
-	for _, c := range pool {
-		out = append(out, c)
-	}
-	sort.Slice(out, func(i, j int) bool {
-		ri, rj := out[i].Rank, out[j].Rank
-		if (ri == 0) != (rj == 0) {
-			return ri == 0 // similar artists (personal) first
-		}
-		if ri != rj {
-			return ri < rj
-		}
-		return out[i].Name < out[j].Name
-	})
-	return out
-}
-
 func hasGenre(list []string, g string) bool {
 	for _, x := range list {
 		if x == g {
@@ -175,26 +157,6 @@ func hasGenre(list []string, g string) bool {
 		}
 	}
 	return false
-}
-
-func uniqCards(list []MusicCard) []MusicCard {
-	seen := map[string]bool{}
-	out := make([]MusicCard, 0, len(list))
-	for _, c := range list {
-		if !seen[c.Key] {
-			seen[c.Key] = true
-			out = append(out, c)
-		}
-	}
-	return out
-}
-
-func titleCase(s string) string {
-	words := strings.Fields(s)
-	for i, w := range words {
-		words[i] = strings.ToUpper(w[:1]) + w[1:]
-	}
-	return strings.Join(words, " ")
 }
 
 func derefStr(s *string) string {

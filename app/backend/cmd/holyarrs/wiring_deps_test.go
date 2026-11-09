@@ -26,9 +26,8 @@ func TestMainWiresEveryMusicDep(t *testing.T) {
 			t.Errorf("music.Deps.%s is not wired", v.Type().Field(i).Name)
 		}
 	}
-	// The new music Explore page is on for everyone.
-	if !d.MusicRowsV7 || !d.MusicRowsV2 || !d.MusicRowsV3 || !d.MusicRowsV6 || !d.MusicListsV1 || d.MusicRowsTplOff {
-		t.Fatalf("music Explore is not fully on: %+v", d)
+	if d.MusicRowsTplOff {
+		t.Fatalf("switches do not follow HOLYARRS_FLAGS: %+v", d)
 	}
 }
 

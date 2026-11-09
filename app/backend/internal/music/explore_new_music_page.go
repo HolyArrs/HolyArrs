@@ -99,16 +99,8 @@ func (h *Handlers) exploreNewMusic(w http.ResponseWriter, r *http.Request) {
 		}
 		rows.Close()
 	}
-	var hero []MusicCard
-	var rows []MusicRow
-	if h.MusicRowsV6 {
-		hero, rows = h.musicTrendingRows(ctx, r, in, now)
-	} else {
-		hero, rows = composeMusicNew(in, now)
-	}
-	if h.MusicListsV1 {
-		hero, rows = h.musicNewListRows(ctx, r, in, hero, rows, now)
-	}
+	hero, rows := h.musicTrendingRows(ctx, r, in, now)
+	hero, rows = h.musicNewListRows(ctx, r, in, hero, rows, now)
 	var names []nameKey
 	for _, c := range hero {
 		names = append(names, nameKey{"album", c.MBID, c.Name, c.Artist, ""}, nameKey{"artist", c.ArtistMBID, c.Artist, "", ""})

@@ -76,8 +76,7 @@ type Handlers struct {
 	music        musicTrendCache
 	rising       risingCache
 	musicx       musicExplore
-	musicAns     musicAnswers
-	musicv2      musicV2State
+	exploreCache exploreState
 	genreArt     GenreArtCache
 	artistAsked  artistAsked
 	ahead        musicAhead
@@ -85,7 +84,7 @@ type Handlers struct {
 	ctl          musicControl
 	artistVideos artistVideoCache
 	// listSeen is each region's last world-list shelves signature
-	// (music_lists_v1), guarded by musicv2.cursorMu.
+	// (music_lists_v1), guarded by exploreCache.cursorMu.
 	listSeen map[string]string
 	lookups  inFlight
 }

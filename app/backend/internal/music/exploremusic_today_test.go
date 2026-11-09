@@ -11,7 +11,7 @@ import (
 // route: GET /api/v1/explore/music/rising
 func TestRisingTodayRow(t *testing.T) {
 	t.Parallel()
-	r, _ := v3Rig(t)
+	r, _ := orderRig(t)
 	r.ana.call("GET", "/api/v1/explore/music/rising", "", 404) // no source: no row
 	asks := 0
 	r.api.s.MusicRising = func(ctx context.Context) (metadata.MusicRising, error) {

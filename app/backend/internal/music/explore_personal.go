@@ -83,9 +83,9 @@ func (h *Handlers) personalMusicRows(ctx context.Context, member int64, region, 
 	}
 	sort.Strings(pool)
 	listeners := h.musicListenersOf(ctx, pool, now)
-	// Artist data for the similar artists of the Since-you-have seeds only.
+	// The Since-you-have seeds, logged so tomorrow picks others.
 	yesterday := map[string]bool{}
-	for _, id := range h.musicv2.seedLog.get(member, dayBefore(date)) {
+	for _, id := range h.exploreCache.seedLog.get(member, dayBefore(date)) {
 		yesterday[id] = true
 	}
 	var since []seed
@@ -94,37 +94,11 @@ func (h *Handlers) personalMusicRows(ctx context.Context, member int64, region, 
 			since = append(since, s)
 		}
 	}
-	var sinceIDs, want []string
+	var sinceIDs []string
 	for _, s := range since {
 		sinceIDs = append(sinceIDs, s.ar.mbid)
-		var ids []string
-		for id, v := range S[s.ar.mbid] {
-			if v >= musicSimilarS && !in.hadMBID[id] {
-				ids = append(ids, id)
-			}
-		}
-		sort.Slice(ids, func(i, j int) bool {
-			if S[s.ar.mbid][ids[i]] != S[s.ar.mbid][ids[j]] {
-				return S[s.ar.mbid][ids[i]] > S[s.ar.mbid][ids[j]]
-			}
-			return ids[i] < ids[j]
-		})
-		want = append(want, ids[:min(15, len(ids))]...)
 	}
-	h.musicv2.seedLog.put(member, date, sinceIDs)
-	simData := h.musicArtistDataOf(ctx, want, now)
-	topAlbum := func(id string) *metadata.MusicTopAlbum {
-		d := simData[id]
-		if d == nil {
-			return nil
-		}
-		for i, al := range d.Albums {
-			if al.Type == "album" && !nonStudioTitle(al.Title) && len(al.Artists) > 0 && al.Artists[0] == id && !in.hadAlbum[al.MBID] {
-				return &d.Albums[i]
-			}
-		}
-		return nil
-	}
+	h.exploreCache.seedLog.put(member, date, sinceIDs)
 	pOf := func(ids []string) map[string]float64 {
 		var top int64
 		for _, id := range ids {
@@ -139,61 +113,6 @@ func (h *Handlers) personalMusicRows(ctx context.Context, member int64, region, 
 			}
 		}
 		return out
-	}
-	topCard := func(id string, al *metadata.MusicTopAlbum) MusicCard {
-		c := MusicCard{Kind: "album", MBID: al.MBID, Name: al.Title, Artist: names[id], ArtistMBID: id, Date: al.Date, Image: "/api/v1/music-trending/art/album/" + al.MBID, Genres: []string{}}
-		if len(al.ArtistNames) > 0 && al.ArtistNames[0] != "" {
-			c.Artist = al.ArtistNames[0]
-		}
-		c.Key = "album:" + al.MBID
-		if i, ok := lib.byMBID[id]; ok {
-			c.TitleID = lib.artists[i].id
-		}
-		return c
-	}
-
-	// Row 9: Since you have {X}, 0.5·S + 0.3·P + 0.2·G_item (v7: the
-	// Because you have rows take its place).
-	if h.MusicRowsV7 {
-		since = nil
-	}
-	for _, s := range since {
-		type cand struct {
-			id string
-			al *metadata.MusicTopAlbum
-		}
-		var list []cand
-		var ids []string
-		for id, v := range S[s.ar.mbid] {
-			if v < musicSimilarS || in.hadMBID[id] {
-				continue
-			}
-			if al := topAlbum(id); al != nil && !asked(al.MBID) {
-				list = append(list, cand{id, al})
-				ids = append(ids, al.MBID)
-			}
-		}
-		for _, c := range list {
-			in.albumListeners[c.al.MBID] = max(in.albumListeners[c.al.MBID], c.al.Listeners)
-		}
-		P := pOf(ids)
-		var cards []MusicCard
-		var sc []musicscore.Scored
-		for _, x := range list {
-			c := topCard(x.id, x.al)
-			sh, top := map[string]float64{}, ""
-			if d := simData[x.id]; d != nil {
-				sh, top = in.sharesOf(d)
-			}
-			g := 0.0
-			for k := range sh {
-				g = max(g, in.G[k])
-			}
-			cards = append(cards, c)
-			sc = append(sc, in.scored(c, musicscore.ScoreSinceYouHave(S[s.ar.mbid][x.id], P[x.al.MBID], g), in.affMBID[x.id], g, top))
-		}
-		in.add(MusicRow{ID: "since:" + s.ar.mbid, Type: "since_have", Title: "Since you have " + s.ar.name, Reason: "Artists close to " + s.ar.name + ": their best-known album", Shape: "square"},
-			musicscore.Row{Prior: musicscore.PriorPersonal, Seed: s.ar.mbid}, cards, sc, true, true)
 	}
 
 	// Row 10: Finish the set, artists with at least half their studio
@@ -359,9 +278,7 @@ func (h *Handlers) personalMusicRows(ctx context.Context, member int64, region, 
 	}
 
 	// Row 13 (Phase 6, flag music_rows_v6): Rising in your genres.
-	if h.MusicRowsV6 {
-		h.risingRow(ctx, region, now, in)
-	}
+	h.risingRow(ctx, region, now, in)
 
 	// Row 14: Guest spots, release groups crediting a Library artist who is
 	// not the primary artist, not had; 0.6·A + 0.4·P.
@@ -411,7 +328,5 @@ func (h *Handlers) personalMusicRows(ctx context.Context, member int64, region, 
 			musicscore.Row{Prior: musicscore.PriorPersonal}, cards, sc, true, true)
 	}
 
-	if h.MusicRowsV7 {
-		h.musicV7Rows(ctx, member, date, lib, acts, now, in, yesterday)
-	}
+	h.musicPlanRows(ctx, member, date, lib, acts, now, in, yesterday)
 }

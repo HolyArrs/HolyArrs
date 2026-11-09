@@ -1,13 +1,8 @@
 package music
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
-	"net/http"
-	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
@@ -15,99 +10,27 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/parts"
 )
 
-// Explore → Music answers are built once and kept a minute per member, so
-// switching tabs or coming back reads one cached answer. Only complete
-// answers are kept (every genre and similar list known); an ask or a title
-// added forgets them all. At start the genres of the Library's artists and
+// Explore → Music pages come from the day's plan (explore_page.go).
+// At start the genres of the Library's artists and
 // the charts are read ahead, so the genre chips are there on the first visit.
 
 const (
-	musicAnswerTTL = time.Minute
-	musicAnswerMax = 200
-	// musicGenreWait is how long a request waits for genres being read:
-	// none. The page answers with the genres known now; the rest are read
-	// in the background and the kept (older) answer stands in meanwhile.
-	musicGenreWait = 0
-	// musicAnswerStale is how long a kept answer may stand in for one that
-	// is still missing genres or similar lists.
-	musicAnswerStale = 30 * time.Minute
 	// musicWarmDelay lets the program finish starting before the read-ahead.
 	musicWarmDelay = 5 * time.Second
-	// musicV7WarmDelay is the wait before the v7 prewarm at start.
-	musicV7WarmDelay = time.Second
+	// musicPlanWarmDelay is the wait before the page-plan prewarm at start.
+	musicPlanWarmDelay = time.Second
 )
 
-type musicAnswer struct {
-	at   time.Time
-	body []byte
-}
-
-type musicAnswers struct {
-	mu sync.Mutex
-	m  map[string]musicAnswer
-}
-
-func musicAnswerKey(user int64, genre, region string, hour int) string {
-	return strconv.FormatInt(user, 10) + "|" + genre + "|" + region + "|" + strconv.Itoa(hour)
-}
-
-// cachedMusicAnswer answers a kept answer younger than musicAnswerTTL.
-func (h *Handlers) cachedMusicAnswer(key string, now time.Time) ([]byte, bool) {
-	c := &h.musicAns
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	e, ok := c.m[key]
-	if !ok || now.Sub(e.at) >= musicAnswerTTL || now.Before(e.at) {
-		return nil, false
-	}
-	return e.body, true
-}
-
-// staleMusicAnswer answers a kept answer younger than musicAnswerStale.
-func (h *Handlers) staleMusicAnswer(key string, now time.Time) ([]byte, bool) {
-	c := &h.musicAns
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	e, ok := c.m[key]
-	if !ok || now.Sub(e.at) >= musicAnswerStale || now.Before(e.at) {
-		return nil, false
-	}
-	return e.body, true
-}
-
-func (h *Handlers) keepMusicAnswer(key string, body []byte, now time.Time) {
-	c := &h.musicAns
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	if c.m == nil || len(c.m) >= musicAnswerMax {
-		c.m = map[string]musicAnswer{}
-	}
-	c.m[key] = musicAnswer{at: now, body: body}
-}
-
-// forgetMusicAnswers drops every kept answer (an ask, or a title added).
-func (h *Handlers) forgetMusicAnswers() {
-	c := &h.musicAns
-	c.mu.Lock()
-	c.m = nil
-	c.mu.Unlock()
-}
-
-// musicOnEvent forgets the kept answers when an ask or a title changes what they show.
+// musicOnEvent drops cached rows when a title changes what they show.
 func (h *Handlers) musicOnEvent(ev domain.Event) {
 	if !h.PartIsOn(parts.Music) {
 		return
 	}
-	switch ev.Kind {
-	case domain.EventAskMade, domain.EventAskJoined, domain.EventTitleAdded:
-		h.forgetMusicAnswers()
-	}
 	if ev.Kind == domain.EventTitleAdded || ev.Kind == domain.EventTitleRemoved {
-		h.musicv2.cand.Forget("lib:")
+		h.exploreCache.cand.Forget("lib:")
 		// A music title changes the household's rows: drop only the day
 		// orders (chart candidates stay), once per burst of adds, so the
 		// next visit rebuilds them instead of tomorrow.
@@ -122,62 +45,14 @@ func (h *Handlers) musicOnEvent(ev domain.Event) {
 var musicDayDebounce = 3 * time.Second
 
 func (h *Handlers) clearMusicDaysSoon() {
-	if !h.musicv2.clearing.CompareAndSwap(false, true) {
+	if !h.exploreCache.clearing.CompareAndSwap(false, true) {
 		return
 	}
 	time.AfterFunc(musicDayDebounce, func() {
-		h.musicv2.clearing.Store(false)
-		h.musicv2.days.Clear()
-		h.forgetMusicV7Snaps(-1)
+		h.exploreCache.clearing.Store(false)
+		h.exploreCache.days.Clear()
+		h.forgetMusicSnaps(-1)
 	})
-}
-
-// writeMusicAnswer writes the answer, and keeps it when it is complete.
-func (h *Handlers) writeMusicAnswer(w http.ResponseWriter, key string, v any, complete bool, now time.Time) {
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(v); err != nil {
-		webserver.Internal(w, "api", err)
-		return
-	}
-	// The answer carries its pictures' records (box, colour, version).
-	b := h.WithPictures(context.Background(), buf.Bytes())
-	if complete {
-		h.keepMusicAnswer(key, b, now)
-	} else if old, ok := h.staleMusicAnswer(key, now); ok {
-		// Still reading genres or similar lists: the last full answer stands in.
-		b = old
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write(b)
-}
-
-// genresWaiting answers the known genres of ids, waiting up to wait for the
-// ones being read (the missing ones are queued); complete says every id
-// has its genres.
-func (h *Handlers) genresWaiting(ids []string, wait time.Duration) (map[string][]string, bool) {
-	want := 0
-	seen := map[string]bool{}
-	for _, id := range ids {
-		if id != "" && !seen[id] {
-			seen[id] = true
-			want++
-		}
-	}
-	got := h.genresOf(ids)
-	end := time.Now().Add(wait)
-	for len(got) < want && time.Now().Before(end) && h.genresFilling() {
-		time.Sleep(25 * time.Millisecond)
-		got = h.genresOf(ids)
-	}
-	return got, len(got) >= want
-}
-
-func (h *Handlers) genresFilling() bool {
-	c := &h.musicx
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	return c.running
 }
 
 // MusicLoops are Music's background loops. Main adds them to the parts
@@ -189,15 +64,15 @@ func (h *Handlers) MusicLoops() []jobs.Loop {
 		select {
 		case <-ctx.Done():
 			return nil
-		case <-time.After(musicV7WarmDelay):
+		case <-time.After(musicPlanWarmDelay):
 		}
 		h.beginAhead(ctx)
 		defer h.endAhead()
-		h.prewarmMusicV7(ctx)
+		h.prewarmMusicPlan(ctx)
 		h.warmMusic(ctx)
 		for ctx.Err() == nil {
 			h.prebuildMusic(ctx)
-			h.prewarmMusicV7(ctx)
+			h.prewarmMusicPlan(ctx)
 			// Jittered (±90 min on 3 h) and stretched by the server's switch.
 			select {
 			case <-ctx.Done():

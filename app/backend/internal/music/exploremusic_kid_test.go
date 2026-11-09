@@ -151,117 +151,16 @@ func stripState(t *testing.T, b []byte) string {
 	return string(out)
 }
 
-// route: GET /api/v1/explore/music (music_rows_v2)
-func TestExploreMusicV2Household(t *testing.T) {
-	t.Parallel()
-	now := time.Now().UTC()
-	r := newMusicAskRig(t)
-	ids := loadHousehold(t, r.st, now)
-	r.api.s.MusicRowsV2 = true
-	r.api.s.MusicCharts, r.api.s.MusicGenres = fakeCharts(now)
-
-	first := r.ana.call("GET", "/api/v1/explore/music?region=US", "", 200)
-	second := r.ana.call("GET", "/api/v1/explore/music?region=US", "", 200)
-	if string(first) != string(second) {
-		t.Fatal("two reads on one day must be byte-identical")
-	}
-	var m musicRowsAnswer
-	_ = json.Unmarshal(first, &m)
-	got := []string{}
-	for _, row := range m.Rows {
-		got = append(got, row.ID)
-	}
-	// Anchors first (new_from, genres), then by row strength.
-	if len(got) < 6 || got[0] != "new_from" || got[1] != "genres" {
-		t.Fatalf("rows %v", got)
-	}
-	if m.Hero == nil || !strings.HasPrefix(m.Hero.Name, "Fresh") {
-		t.Fatalf("hero %+v", m.Hero)
-	}
-	seen := map[string]string{}
-	for _, row := range m.Rows {
-		if len(row.Items) < 6 || len(row.Items) > 20 {
-			t.Fatalf("%s has %d items", row.ID, len(row.Items))
-		}
-		for _, c := range row.Items {
-			if c.Kind == "album" && c.MBID != "" {
-				if prev, ok := seen[c.MBID]; ok {
-					t.Fatalf("%s in %s and %s", c.Name, prev, row.ID)
-				}
-				seen[c.MBID] = row.ID
-			}
-			if strings.HasPrefix(c.Name, "Live") || c.Name == "Quiet New" {
-				t.Fatalf("%s must not show", c.Name)
-			}
-		}
-		if row.ID == "genres" && (row.Shape != "tile" || row.Items[0].Hue == nil) {
-			t.Fatalf("tiles %+v", row)
-		}
-		if row.ID == "fresh_songs" && row.Shape != "song" {
-			t.Fatal("song lines")
-		}
-	}
-	if seen[m.Hero.MBID] != "" {
-		t.Fatal("hero repeated in a row")
-	}
-	top := m.row("top_albums")
-	if top == nil {
-		t.Fatal("no top albums")
-	}
-	var asked *MusicCard
-	for i := range top.Items {
-		if top.Items[i].MBID == apiAlbum {
-			asked = &top.Items[i]
-		}
-	}
-	if asked == nil || !asked.Explicit || asked.State != "" {
-		t.Fatalf("chart album %+v", asked)
-	}
-
-	// An ask: the order stays, only the chip moves (and the asks row shows it).
-	r.ana.call("POST", "/api/v1/asks", `{"kind":"artist","id":"mbid:`+apiArtist+`","albums":["`+apiAlbum+`"]}`, 201)
-	after := r.ana.call("GET", "/api/v1/explore/music?region=US", "", 200)
-	if stripState(t, after) != stripState(t, first) {
-		t.Fatalf("an ask changed the order:\n%s\n%s", stripState(t, first), stripState(t, after))
-	}
-	var m2 musicRowsAnswer
-	_ = json.Unmarshal(after, &m2)
-	for _, c := range m2.row("top_albums").Items {
-		if c.MBID == apiAlbum && c.State != "asked" {
-			t.Fatalf("chip %+v", c)
-		}
-	}
-	if a := m2.row("your_asks"); a == nil || len(a.Items) != 1 || a.Items[0].MBID != apiAlbum {
-		t.Fatalf("asks row %+v", a)
-	}
-	// Another member has no asks row.
-	var m3 musicRowsAnswer
-	_ = json.Unmarshal(r.bo.call("GET", "/api/v1/explore/music?region=US", "", 200), &m3)
-	if m3.row("your_asks") != nil {
-		t.Fatal("bo has no asks")
-	}
-
-	// A follow rebuilds that member's order: the quiet artist's new album joins.
-	r.ana.call("PUT", fmt.Sprintf("/api/v1/titles/%d/follow", ids["Quiet Artist"]), "", 200)
-	followed := r.ana.call("GET", "/api/v1/explore/music?region=US", "", 200)
-	if stripState(t, followed) == stripState(t, after) {
-		t.Fatal("a follow must change the order")
-	}
-	if !strings.Contains(string(followed), "Quiet New") {
-		t.Fatal("the followed artist's new album must show")
-	}
-}
-
-func TestExploreMusicV2KidFirst(t *testing.T) {
+func TestExploreMusicKidFirst(t *testing.T) {
 	t.Parallel()
 	// Music (and so every explicit card) stays off for age-limited
 	// accounts, flag on or off: the Kid answer comes before the flag.
-	b, err := os.ReadFile("explore.go")
+	b, err := os.ReadFile("explore_music_page.go")
 	if err != nil {
 		t.Fatal(err)
 	}
 	s := string(b)
-	if strings.Index(s, "h.KidMax(r)") > strings.Index(s, "h.MusicRowsV2") {
+	if strings.Index(s, "h.KidMax(r)") > strings.Index(s, "h.exploreMusicPage(w, r)") {
 		t.Fatal("the Kid check must run before the v2 rows")
 	}
 }

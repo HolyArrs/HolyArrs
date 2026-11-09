@@ -14,7 +14,7 @@ import (
 
 // Music fetch-ahead: whenever the prebuild or a rebuild picks items for a
 // music row or page (Explore Music, New & Popular Music, genre pages, the
-// next pages of music_rows_v7), their details and pictures are fetched in
+// next pages of the plan), their details and pictures are fetched in
 // the background before anyone opens them. An item fetched once is marked
 // (memory and lookup_cache), so a rebuild that re-ranks the same items
 // makes no fetch for them. Every request carries X-Fetch: ahead, follows
@@ -371,10 +371,10 @@ func cardsAhead(cards []MusicCard) []aheadItem {
 	return aheadOf(pairs)
 }
 
-// musicV7PagesAhead lists the items on n pages of a v7 plan from page
+// musicPagesAhead lists the items on n pages of a v7 plan from page
 // from: the same rows the next page loads will serve.
-func musicV7PagesAhead(p *musicscore.Plan, from, n int) []aheadItem {
-	ord, ok := p.Meta.(*musicV2Order)
+func musicPagesAhead(p *musicscore.Plan, from, n int) []aheadItem {
+	ord, ok := p.Meta.(*musicOrder)
 	if !ok || ord == nil || ord.v7 == nil {
 		return nil
 	}

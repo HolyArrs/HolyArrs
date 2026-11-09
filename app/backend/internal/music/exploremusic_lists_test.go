@@ -53,8 +53,7 @@ func fakeShelves(_ context.Context, region string) (metadata.MusicShelves, error
 }
 
 func listRig(t *testing.T, name string) *askRig {
-	r, _, _ := v7Rig(t, name)
-	r.api.s.MusicListsV1 = true
+	r, _, _ := planRig(t, name)
 	r.api.s.MusicShelves = fakeShelves
 	return r
 }
@@ -66,8 +65,8 @@ func TestExploreMusicListRows(t *testing.T) {
 		min  int
 	}{{"household_empty.json", 16}, {"household_indie.json", 16}, {"household_large.json", 28}} {
 		r := listRig(t, c.name)
-		pages, _ := v7Pages(t, r.owner, "US")
-		rows := v7Rows(pages)
+		pages, _ := planPages(t, r.owner, "US")
+		rows := planRowList(pages)
 		noAlbumTwice(t, rows)
 		lists := 0
 		for _, row := range rows {
@@ -117,9 +116,9 @@ func TestExploreMusicListRows(t *testing.T) {
 	}
 	// Same plan on reload the same day.
 	r := listRig(t, "household_indie.json")
-	a, _ := v7Pages(t, r.owner, "US")
-	b, _ := v7Pages(t, r.owner, "US")
-	if fmt.Sprint(rowIDs(v7Rows(a))) != fmt.Sprint(rowIDs(v7Rows(b))) {
+	a, _ := planPages(t, r.owner, "US")
+	b, _ := planPages(t, r.owner, "US")
+	if fmt.Sprint(rowIDs(planRowList(a))) != fmt.Sprint(rowIDs(planRowList(b))) {
 		t.Fatal("plan changed on reload")
 	}
 }
@@ -132,22 +131,11 @@ func rowIDs(rows []MusicRow) []string {
 	return out
 }
 
-// route: GET /api/v1/explore/music (music_lists_v1 off)
-func TestExploreMusicListRowsOffByDefault(t *testing.T) {
-	r, _, _ := v7Rig(t, "household_indie.json")
-	r.api.s.MusicShelves = fakeShelves
-	for _, row := range v7Rows(func() []v7Answer { p, _ := v7Pages(t, r.owner, "US"); return p }()) {
-		if strings.HasPrefix(row.ID, "lists_") || row.Shape == "grid" {
-			t.Fatalf("flag off shows %s", row.ID)
-		}
-	}
-}
-
 func TestNewMusicListRowsLeadWithCharts(t *testing.T) {
 	r := listRig(t, "household_indie.json")
 	req := httptest.NewRequest("GET", "/api/v1/explore/new/music?region=US", nil)
 	existing := []MusicRow{{ID: "old", Type: "old", Title: "Old", Reason: "r", Shape: "square", Items: []MusicCard{listCard(metadata.MusicShelfItem{Kind: "album", MBID: mid('7', 0), Title: "Album 0", Artist: "Artist 0"})}}}
-	hero, rows := r.api.musicNewListRows(context.Background(), req, musicNewInput{}, nil, existing, v7Fixed)
+	hero, rows := r.api.musicNewListRows(context.Background(), req, musicNewInput{}, nil, existing, planFixed)
 	// The hero is the recent charting albums, momentum first (every
 	// fixture album is 4 days old).
 	if len(hero) < 3 || hero[0].Kind != "album" || hero[0].Kicker != "New album" {
@@ -238,9 +226,9 @@ func TestListAheadCoversEveryListCard(t *testing.T) {
 	for _, it := range listAhead(&sh) {
 		ahead[it] = true
 	}
-	pages, _ := v7Pages(t, r.owner, "US")
+	pages, _ := planPages(t, r.owner, "US")
 	n := 0
-	for _, row := range v7Rows(pages) {
+	for _, row := range planRowList(pages) {
 		if !strings.HasPrefix(row.ID, "lists_") {
 			continue
 		}
@@ -263,8 +251,8 @@ func TestListAheadCoversEveryListCard(t *testing.T) {
 // moods and genres; the video row only with artists whose videos are known.
 func TestExploreMusicTileAndVideoRows(t *testing.T) {
 	r := listRig(t, "household_empty.json")
-	pages, _ := v7Pages(t, r.owner, "US")
-	rows := v7Rows(pages)
+	pages, _ := planPages(t, r.owner, "US")
+	rows := planRowList(pages)
 	noAlbumTwice(t, rows)
 	tiles := 0
 	for _, row := range rows {
@@ -316,7 +304,7 @@ func TestExploreMusicTileAndVideoRows(t *testing.T) {
 func TestNewMusicWeekRows(t *testing.T) {
 	r := listRig(t, "household_indie.json")
 	req := httptest.NewRequest("GET", "/api/v1/explore/new/music?region=US", nil)
-	_, rows := r.api.musicNewListRows(context.Background(), req, musicNewInput{}, nil, nil, v7Fixed)
+	_, rows := r.api.musicNewListRows(context.Background(), req, musicNewInput{}, nil, nil, planFixed)
 	week := 0
 	for _, row := range rows {
 		if strings.HasPrefix(row.ID, "lists_big_") {
@@ -358,8 +346,8 @@ func TestListShelvesChangeWhileDownDropsKeptPlans(t *testing.T) {
 	kept := func() bool {
 		_, ok, _ := metadata.LookupCache{Store: a.s.Store}.Get(ctx, snap, now)
 		clock := now
-		if a.musicv2.now != nil {
-			clock = a.musicv2.now()
+		if a.exploreCache.now != nil {
+			clock = a.exploreCache.now()
 		}
 		_, stale, _ := metadata.LookupCache{Store: a.s.Store}.Get(ctx, musicStalePrefix+"all", clock)
 		return ok && !stale
@@ -377,7 +365,7 @@ func TestListShelvesChangeWhileDownDropsKeptPlans(t *testing.T) {
 	_ = metadata.LookupCache{Store: a.s.Store}.Put(ctx, listSigPrefix+"shelves:us", []byte(sh.AsOf+"|"+fmt.Sprint(listCount(&sh))), now, now.Add(time.Hour))
 	put()
 	a.listSeen = nil
-	a.musicv2.cand = musicscore.Candidates{}
+	a.exploreCache.cand = musicscore.Candidates{}
 	if a.musicShelvesOf(ctx, "us", now) == nil {
 		t.Fatal("no shelves")
 	}
@@ -386,7 +374,7 @@ func TestListShelvesChangeWhileDownDropsKeptPlans(t *testing.T) {
 	// Shelves changed while down: the kept plan is no longer current.
 	_ = metadata.LookupCache{Store: a.s.Store}.Put(ctx, listSigPrefix+"shelves:us", []byte("2026-10-23|5"), now, now.Add(time.Hour))
 	a.listSeen = nil
-	a.musicv2.cand = musicscore.Candidates{}
+	a.exploreCache.cand = musicscore.Candidates{}
 	a.musicShelvesOf(ctx, "us", now)
 	wait(false)
 }
@@ -395,8 +383,8 @@ func TestListShelvesChangeWhileDownDropsKeptPlans(t *testing.T) {
 // that charts today and every odd one out 20 days ago.
 func oldShelves(ctx context.Context, region string) (metadata.MusicShelves, error) {
 	sh, _ := fakeShelves(ctx, region)
-	old := v7Fixed.AddDate(0, 0, -5000).Format("2006-01-02")
-	fresh := v7Fixed.AddDate(0, 0, -20).Format("2006-01-02")
+	old := planFixed.AddDate(0, 0, -5000).Format("2006-01-02")
+	fresh := planFixed.AddDate(0, 0, -20).Format("2006-01-02")
 	for b, l := range sh.Blocks {
 		for i := range l {
 			if i%2 == 0 {
@@ -411,7 +399,7 @@ func oldShelves(ctx context.Context, region string) (metadata.MusicShelves, erro
 }
 
 func TestListKickerSaysTheRealReason(t *testing.T) {
-	now := v7Fixed
+	now := planFixed
 	old := metadata.MusicShelfItem{Kind: "album", Rank: 12, Date: now.AddDate(0, 0, -5000).Format("2006-01-02")}
 	if k := listKicker("top_world", "worldwide", old, now); k != "#12 worldwide" {
 		t.Fatalf("old chart album: %q", k)
@@ -455,24 +443,24 @@ func TestNewMusicRecentFirstAndHonestLabels(t *testing.T) {
 			Items: []MusicCard{{Key: "album:" + mid('8', 1), Kind: "album", MBID: mid('8', 1), Name: "Old", Artist: "Z", Badge: "New album", Date: "2012-05-01"}}}}
 		var songs []MusicCard
 		for i := 0; i < 8; i++ {
-			d := v7Fixed.AddDate(0, 0, -10).Format("2006-01-02")
+			d := planFixed.AddDate(0, 0, -10).Format("2006-01-02")
 			if i%2 == 0 {
 				d = "2025-03-01"
 			}
 			songs = append(songs, MusicCard{Key: fmt.Sprintf("track:%d", i), Kind: "album", MBID: mid('9', i), Name: fmt.Sprint("Song ", i), Artist: fmt.Sprint("S", i), Date: d})
 		}
 		own = append(own, MusicRow{ID: "np_music_tracks", Type: "np_music_tracks", Title: "Best new songs", Reason: "r", Shape: "song", Items: songs})
-		hero, rows := r.api.musicNewListRows(context.Background(), req, musicNewInput{}, nil, own, v7Fixed)
+		hero, rows := r.api.musicNewListRows(context.Background(), req, musicNewInput{}, nil, own, planFixed)
 		if len(hero) < 3 {
 			t.Fatalf("%q: hero %d", region, len(hero))
 		}
 		for _, c := range hero {
-			if d, ok := listAge(c.Date, v7Fixed); !ok || d > listRecentDays {
+			if d, ok := listAge(c.Date, planFixed); !ok || d > listRecentDays {
 				t.Fatalf("%q: hero %s from %s", region, c.Name, c.Date)
 			}
 		}
 		check := func(where string, c MusicCard) {
-			d, ok := listAge(c.Date, v7Fixed)
+			d, ok := listAge(c.Date, planFixed)
 			if (strings.HasPrefix(c.Kicker, "New") || strings.HasPrefix(c.Badge, "New")) && (!ok || d > listRecentDays) {
 				t.Fatalf("%q: %s labelled New from %s (%s)", region, c.Name, c.Date, where)
 			}
@@ -491,7 +479,7 @@ func TestNewMusicRecentFirstAndHonestLabels(t *testing.T) {
 			for _, c := range row.Items {
 				check(row.ID, c)
 				if recentPart && c.Kind == "album" {
-					if d, ok := listAge(c.Date, v7Fixed); !ok || d > listRecentDays {
+					if d, ok := listAge(c.Date, planFixed); !ok || d > listRecentDays {
 						t.Fatalf("%q: %s from %s in recent row %s", region, c.Name, c.Date, row.ID)
 					}
 				}
@@ -500,7 +488,7 @@ func TestNewMusicRecentFirstAndHonestLabels(t *testing.T) {
 		for _, row := range rows {
 			if row.ID == "np_music_tracks" {
 				for _, c := range row.Items {
-					if !listRecent(c.Date, listRecentDays, v7Fixed) {
+					if !listRecent(c.Date, listRecentDays, planFixed) {
 						t.Fatalf("%q: old song %s (%s) in Best new songs", region, c.Name, c.Date)
 					}
 				}
