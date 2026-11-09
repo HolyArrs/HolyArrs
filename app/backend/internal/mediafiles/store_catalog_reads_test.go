@@ -3,6 +3,7 @@ package mediafiles
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"testing"
 	"time"
@@ -296,5 +297,45 @@ func TestMoveSlotNeedsDecisionEventOnce(t *testing.T) {
 	}
 	if n := len(needsDecisionEvents(t, s)); n != 1 {
 		t.Fatalf("events after a plain move: %d", n)
+	}
+}
+
+func TestSlotWriteHelpersKeepState(t *testing.T) {
+	s, _ := openTest(t, database.Options{})
+	ctx := context.Background()
+	sd := seedSlot(t, s, "movie", "Writes", "active", SlotWanted)
+	rel := seedRelease(t, s, "rel")
+	t0 := time.Date(2026, 1, 2, 3, 4, 5, 0, time.UTC)
+	err := s.Write(ctx, func(tx *sql.Tx) error {
+		if err := SetSlotReasonTx(tx, sd.Slot.ID, "x", database.Actor{Kind: "system"}); err != nil {
+			return err
+		}
+		if err := SetSlotChosenTx(tx, sd.Slot.ID, rel); err != nil {
+			return err
+		}
+		return TouchItemSearchedTx(tx, sd.Item.ID, t0)
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	st, err := SlotStateOf(ctx, s.Read(), sd.Slot.ID)
+	if err != nil || st != "wanted" {
+		t.Fatalf("state %q %v", st, err)
+	}
+	var reason, by string
+	var chosen int64
+	if err := s.Read().QueryRow("SELECT last_reason, chosen_release_id, updated_by FROM slots WHERE id = ?", sd.Slot.ID).Scan(&reason, &chosen, &by); err != nil {
+		t.Fatal(err)
+	}
+	var who database.Actor
+	if reason != "x" || chosen != rel || json.Unmarshal([]byte(by), &who) != nil || who.Kind != "system" {
+		t.Fatalf("reason %q chosen %d by %q", reason, chosen, by)
+	}
+	var searched string
+	if err := s.Read().QueryRow("SELECT last_searched_at FROM items WHERE id = ?", sd.Item.ID).Scan(&searched); err != nil {
+		t.Fatal(err)
+	}
+	if searched != database.FormatTime(t0) {
+		t.Fatalf("searched %q", searched)
 	}
 }
