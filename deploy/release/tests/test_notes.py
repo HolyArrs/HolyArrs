@@ -168,7 +168,7 @@ class Discord(unittest.TestCase):
         n = load()
         n["theme"] = "word " * 200
         dm = notes.render_discord(n)
-        self.assertIn("What changed: https://github.com/HolyArrs/HolyArrs/releases/tag/1.0.0", dm)
+        self.assertIn("What's in it: https://github.com/HolyArrs/HolyArrs/releases/tag/1.0.0", dm)
         self.assertTrue(notes.render_discord(n, bold=True).startswith("**HolyArrs 1.0.0 is ready**"))
 
     def test_announce_length_checked(self):

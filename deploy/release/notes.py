@@ -244,7 +244,9 @@ def render_discord(n, bold=False):
         if theme and not empty(n.get("theme")):
             out.append(n["theme"])
         out += ["- " + no_refs(h["line"]) for h in items(n.get("highlights"))]
-        out.append("What changed: " + release_link(n))
+        # The first release has nothing to compare with, so its posts say what it has.
+        label = "What's in it: " if n["version"] == "1.0.0" else "What changed: "
+        out.append(label + release_link(n))
         return "\n".join(out) + "\n"
     for theme in (True, False):
         text = build(theme)

@@ -3,4 +3,4 @@ One app for movies, shows and music, from asking to watching.
 - Move over from your old apps without starting over.
 - Browse and request like a streaming app.
 - Every download on one page, stuck ones swapped for you.
-What changed: https://github.com/HolyArrs/HolyArrs/releases/tag/1.0.0
+What's in it: https://github.com/HolyArrs/HolyArrs/releases/tag/1.0.0
