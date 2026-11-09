@@ -39,7 +39,7 @@ A new server with an empty Library still gets a full page: charts and popular ge
 | **Returning soon** | Library shows with a new episode in the next 2 months |
 | **Browse by genre** | Genre cards, your household's top genres first |
 
-Hidden gems, decade rows and rows about people in your favourite titles fill the rest. **Music** has its own rows, such as new albums from artists you have, trending artists and top albums.
+Hidden gems, decade rows and rows about people in your favourite titles fill the rest. **Music** has its own rows, such as new albums from artists you have, trending artists and top albums. Music rows are still being built.
 
 ### Cards
 
