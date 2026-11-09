@@ -48,6 +48,10 @@ docs/                                guides and these pages
 | An alert channel | `internal/alerts` |
 | Sign-in, users, API keys | `internal/accounts` |
 | The first-run wizard | `internal/setup`, `app/frontend/src/routes/welcome` |
+| Importing a finished file (unpack, tags, matching) | `internal/importer` |
+| Library folders, adopting and renaming | `internal/library` |
+| How rows and shelves are picked and ordered | `internal/suggest` |
+| Which parts of the app are on | `internal/core/parts` |
 | A page address | `app/frontend/src/routes/` |
 | A migration | `internal/core/database/migrations/` |
 | The Docker image | `deploy/Dockerfile` |
@@ -98,6 +102,8 @@ Core is plumbing. It holds no product rules and imports no module.
 | `core/jobs` | The job queue, schedules and the loops that restart after a crash |
 | `core/webserver` | Router plumbing, URL base, compression, live push |
 | `core/startup` | Run-as user, low-memory mode, held-back switches, memory limit, parts |
+| `core/parts` | The part switches every module asks before it serves or runs |
+| `core/model` | Shared types such as actors and subjects |
 
 When core must touch module data, the module registers a hook with core in `wiring.go`. Key rotation works this way.
 

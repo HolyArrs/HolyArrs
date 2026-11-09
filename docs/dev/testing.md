@@ -132,7 +132,7 @@ go test -count=1 -run '^TestDownloaderConformance$' ./app/backend/internal/downl
 | `HOLYARRS_FAULT_OUT` | File the fault runs write their table to |
 | `HOLYARRS_RESTART_TIMING`, `HOLYARRS_RESTART_TIMING_OUT` | Turn on the crash-to-sign-in timing and name its output file |
 | `HOLYARRS_MEMORY`, `HOLYARRS_MEMORY_OUT` | Turn on the memory runs and name their output file |
-| `HOLYARRS_CRASH_RUNS`, `HOLYARRS_CRASH_SEED` | Rounds and seed for the crash loop in `internal/store`, which skips under `-short` |
+| `HOLYARRS_CRASH_RUNS`, `HOLYARRS_CRASH_SEED` | Rounds and seed for the crash loop in `app/backend/internal/mediafiles/dbtests` (`crash_test.go`), which skips under `-short` |
 
 </details>
 

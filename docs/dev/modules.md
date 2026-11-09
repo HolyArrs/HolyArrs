@@ -1,6 +1,6 @@
 ---
 title: Modules
-description: What each of the 20 modules owns, the layer order between them and the structure checks that enforce it.
+description: What each of the 23 modules owns, the layer order between them and the structure checks that enforce it.
 level: Expert
 sidebar: { order: 4 }
 ---
@@ -24,7 +24,10 @@ Pick the module your change belongs in, and know which modules it may call.
 | `downloads` | Downloaders, the queue, seen files, path maps, tags, copy choices |
 | `subtitles` | Subtitle languages, sites, matching and saving |
 | `discover` | Explore, Popular, Search, People, Calendar, title pages |
-| `mediafiles` | Catalog records, pick rules, naming, data packs, media details, importing, unpacking |
+| `suggest` | Picking and ordering rows and shelves |
+| `mediafiles` | Catalog records, pick rules, naming, data packs, media details |
+| `importer` | File import: unpacking, tags, matching (backend only) |
+| `library` | Library folders, adopting and renaming (backend only) |
 | `metadata` | The outside data client, music lookups, rating ladders, trailers |
 | `mediaservers` | Telling Plex, Jellyfin and Emby to look again |
 | `accounts` | Users, sign-in, single sign-on, AI app sign-in, kid limits, viewing choices |
@@ -39,20 +42,23 @@ Pick the module your change belongs in, and know which modules it may call.
 
 ## Layer order
 
-A module imports only a lower layer. Nothing imports layer 9.
+A module imports only a lower layer. Nothing imports `discover`. `tools/structurecheck/allow.go` is the source of truth.
 
 | Layer | Modules |
 |---|---|
 | 0 | core |
-| 1 | `metadata` |
+| 1 | `metadata`, `suggest` |
 | 2 | `accounts` |
 | 3 | `mediafiles` |
-| 4 | `sources` |
-| 5 | `downloads` |
-| 6 | `subtitles`, `mediaservers`, `alerts` |
-| 7 | `movies`, `shows`, `music` |
-| 8 | `requests` |
-| 9 | `discover`, `arrapi`, `migrate`, `ai`, `backups`, `health`, `updates`, `setup` |
+| 4 | `importer` |
+| 5 | `library` |
+| 6 | `sources` |
+| 7 | `downloads` |
+| 8 | `subtitles`, `mediaservers`, `alerts` |
+| 9 | `movies`, `shows` |
+| 10 | `requests`, `health` |
+| 11 | `music`, `arrapi`, `migrate`, `ai`, `backups`, `updates`, `setup` |
+| 13 | `discover` |
 
 If your module needs something from a higher layer, do not import it. Have the higher module pass plain data down, or define a small interface in the lower one that `wiring.go` fills in.
 
@@ -64,7 +70,7 @@ Register it in the module's `routes.go` with its permission. `openapi.json` come
 
 ### New module
 
-Fit your change into the 20 first, and open an issue before you add one. A new module needs its 3 code folders, a place in the layer order in `tools/structurecheck`, and a line in `wiring.go`.
+Fit your change into the 23 first, and open an issue before you add one. A new module needs its 3 code folders, a place in the layer order in `tools/structurecheck`, and a line in `wiring.go`.
 
 ## If it does not work
 
@@ -84,8 +90,8 @@ Fit your change into the 20 first, and open an issue before you add one. A new m
 - Store functions take a `database.Querier`. Read another module's rows through its service by ID, and pass long ID lists as one JSON array with `json_each(?)`.
 - `settings`, `schedules`, `secrets`, `jobs` and `events` belong to core. Each settings group has one owner module. To change another module's group, call its owner.
 - Every outside call goes through `core/outbound`.
-- Core packages sit in rows, top to bottom: `webserver` and `startup`, `logs` and `jobs`, `outbound` and `secrets`, then `database`, `files` and `releasename`. A core package imports only its own row or lower.
-- Names: Go files are lowercase with underscores, Svelte parts are PascalCase, and TypeScript, docs, tests and deploy files are kebab-case. Folders in `app/` are lowercase, one word.
+- Core packages sit in rows, top to bottom: `parts`, `webserver` and `startup`, `logs`, `jobs` and `model`, `outbound` and `secrets`, then `database`, `files` and `releasename`. A core package imports only its own row or lower.
+- Names: Go files are lowercase with underscores, Svelte parts are PascalCase, and TypeScript, docs, tests and deploy files are kebab-case. Python files use underscores so they can be imported. Folders in `app/` are lowercase, one word.
 - Rename code freely, but anything stored or sent keeps its name: tables and columns, settings keys, JSON fields, job names and switch names.
 - Comments carry no roadmap numbers, dates, names or em dashes.
 

@@ -125,7 +125,7 @@ Then `seed -config ./config` adds the demo library and `seed -config ./config -r
 | `emby_signin` | Sign in with Emby |
 | `go_back` | Steps to go back to the previous version |
 
-To add one, register its name with `startup.RegisterFeature` and check `startup.FeatureOn` before you register its routes. The names live in `app/backend/internal/features`.
+To add one, register its name with `startup.RegisterFeature` and check `startup.FeatureOn` before you register its routes. The names live in `app/backend/internal/core/startup` (`feature.go`).
 
 </details>
 

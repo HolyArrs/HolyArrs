@@ -34,7 +34,7 @@ Every feature is a module, and a module has the same name everywhere:
 - `app/backend/internal/<module>/` holds the server code: `routes.go`, `service.go`, `store.go`, `types.go` and their tests.
 - `app/frontend/src/lib/<module>/` holds the page parts. `index.ts` is its front door.
 - `app/tests/<module>/` holds the browser tests.
-- `docs/user/<module>/` holds the user docs.
+- `docs/<section>/` holds the user docs (a Starlight site, flat by section).
 
 So if the Discord alert says the wrong thing, look in `alerts`.
 
