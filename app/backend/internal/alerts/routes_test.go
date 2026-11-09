@@ -1,6 +1,7 @@
 package alerts
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -107,5 +108,41 @@ func TestWebhookTestSendsTestMoment(t *testing.T) {
 	}
 	if p.Moment != MomentTest || !p.Test || g[0].header.Get(HeaderEvent) != MomentTest {
 		t.Fatalf("payload %+v header %v: not marked as a test", p, g[0].header)
+	}
+}
+
+// route: POST /api/v1/alerts/{id}/test
+func TestAlertTestUsesOwnEmail(t *testing.T) {
+	s, v := open(t)
+	port, mails := fakeSMTP(t)
+	a, err := Add(t.Context(), s, v, Input{Name: "Mail", Kind: "email", SMTPHost: "127.0.0.1", SMTPPort: port, SMTPSecurity: "none",
+		SMTPFrom: "holyarrs@example.test", Moments: []string{MomentReady}, AllowLocal: &yes}, domain.System)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, c := range []struct {
+		email string
+		fail  error
+		want  int
+	}{{"maya@example.test", nil, 200}, {"", context.Canceled, 400}} {
+		var gotID int64
+		mux := http.NewServeMux()
+		(&Handlers{Store: s, Secrets: v, Sender: &Sender{Store: s, Vault: v, Backoff: []time.Duration{}},
+			Caller: func(*http.Request) (int64, string) { return 7, "Maya" },
+			OwnEmail: func(_ context.Context, id int64) (string, error) { gotID = id; return c.email, c.fail },
+		}).Routes(mux)
+		before := len(mails())
+		rec := httptest.NewRecorder()
+		mux.ServeHTTP(rec, httptest.NewRequest("POST", "/api/v1/alerts/"+strconv.FormatInt(a.ID, 10)+"/test", nil))
+		if rec.Code != c.want || gotID != 7 {
+			t.Fatalf("own email %q: %d %s, user %d", c.email, rec.Code, rec.Body, gotID)
+		}
+		got := mails()[before:]
+		if c.want == 200 && (len(got) != 1 || len(got[0].to) != 1 || got[0].to[0] != c.email) {
+			t.Fatalf("mail went to %+v, want %s", got, c.email)
+		}
+		if c.want != 200 && len(got) != 0 {
+			t.Fatalf("mail sent without an address: %+v", got)
+		}
 	}
 }
