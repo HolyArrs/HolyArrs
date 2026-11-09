@@ -26,7 +26,7 @@ var (
 	// set, or TVDB refused it.
 	ErrNoTVDBKey = errors.New("TVDB needs a TVDB key, and none is set; use TMDB or TVMaze for this show")
 	// ErrUnknownSource names a details source HolyArrs does not have.
-	ErrUnknownSource = errors.New("show details source must be tmdb, tvmaze or tvdb")
+	ErrUnknownSource = errors.New("show details source must be tmdb or tvmaze")
 )
 
 // Show is one looked-up show. Episodes are empty in search answers.
@@ -88,7 +88,7 @@ type ShowProvider interface {
 type ShowSources map[string]ShowProvider
 
 // ValidShowSource reports whether name is a show details source.
-func ValidShowSource(name string) bool { return name == "tmdb" || name == "tvmaze" || name == "tvdb" }
+func ValidShowSource(name string) bool { return name == "tmdb" || name == "tvmaze" }
 
 // Get returns the named source.
 func (ss ShowSources) Get(name string) (ShowProvider, error) {

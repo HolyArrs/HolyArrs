@@ -132,7 +132,7 @@ func Source(lib *library.Service, name string) (metadata.ShowProvider, error) {
 	return lib.Shows.Get(name)
 }
 
-const addShowHelp = `send {"id": "tmdb:<number>"} (or tvdb:, tvmaze:, imdb:) with optional library_folder_id, pick_rules_id, keep_up_to_date, seasons (all, future, latest, none), new_seasons (all, none), episode_order (aired, daily, absolute), details_source (tmdb, tvmaze, tvdb), search_on_add, more_versions ([{"label": "4K", "pick_rules_id": <id>, "library_folder_id": <id>}])`
+const addShowHelp = `send {"id": "tmdb:<number>"} (or tvdb:, tvmaze:, imdb:, looked up through TMDB and TVMaze) with optional library_folder_id, pick_rules_id, keep_up_to_date, seasons (all, future, latest, none), new_seasons (all, none), episode_order (aired, daily, absolute), details_source (tmdb, tvmaze), search_on_add, more_versions ([{"label": "4K", "pick_rules_id": <id>, "library_folder_id": <id>}])`
 
 func (h *AddHandlers) addShow(w http.ResponseWriter, r *http.Request) {
 	var body struct {
