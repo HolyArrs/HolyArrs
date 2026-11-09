@@ -69,8 +69,8 @@ func (r *pinRig) exec(q string, args ...any) int64 {
 	return id
 }
 
-// show adds a kept (or not) show with one season of n episodes. air(k)
-// gives the air date of episode k ("" stores NULL).
+// show adds a show, kept or not, with one season of n episodes. air(k)
+// gives the air date of episode k, and "" stores NULL.
 func (r *pinRig) show(name, tmdb string, keep bool, n int, air func(k int) string) (title int64, items []int64) {
 	r.t.Helper()
 	k := 0
@@ -136,8 +136,9 @@ func decodePage(t *testing.T, b []byte) pinPage {
 	return p
 }
 
-// The missing list joins items, titles, versions and slots: aired episodes
-// with no file in the main Version, kept ones by default, over a big library.
+// The missing list joins items, titles, versions and slots over a big
+// library. It gives aired episodes with no file in the main Version, kept
+// ones by default.
 func TestPinWantedMissingOverALargeLibrary(t *testing.T) {
 	r := newPinRig(t)
 	// 120 kept shows, 3 episodes each, aired 1..3 days apart in the past.
@@ -146,8 +147,8 @@ func TestPinWantedMissingOverALargeLibrary(t *testing.T) {
 		_, items := r.show(fmt.Sprintf("Show %03d", i), fmt.Sprint(1000+i), true, 3, func(k int) string { return pinDay(-(i%30 + k)) })
 		firstItems = append(firstItems, items...)
 	}
-	// Not wanted by the list: an unmonitored show, a future episode, an
-	// episode with no air date (NULL), a dropped one, a removed slot, a file.
+	// The list must skip an unmonitored show, a future episode, an episode
+	// with a NULL air date, a dropped one, a removed slot and a file.
 	r.show("Unkept", "2001", false, 2, func(k int) string { return pinDay(-k) })
 	r.show("Future", "2002", true, 1, func(int) string { return pinDay(5) })
 	r.show("No Date", "2003", true, 1, func(int) string { return "" })
@@ -185,23 +186,23 @@ func TestPinWantedMissingOverALargeLibrary(t *testing.T) {
 	if st != 200 || p.Page != 2 || len(p.Records) != 100 || p.SortDirection != "ascending" {
 		t.Fatalf("asc page 2: %d %d %s", st, len(p.Records), p.SortDirection)
 	}
-	// A page past the end is empty and keeps the asked number.
+	// A page past the end is empty and keeps the asked page number.
 	st, b = r.get("wanted/missing?pageSize=100&page=9")
 	p = decodePage(t, b)
 	if st != 200 || p.Page != 9 || len(p.Records) != 0 || p.TotalRecords != 360 {
 		t.Fatalf("past end: %d %+v", st, p)
 	}
-	// Unmonitored: only the unkept show's two episodes.
+	// Unmonitored gives only the unkept show's two episodes.
 	st, b = r.get("wanted/missing?monitored=false")
 	p = decodePage(t, b)
 	if st != 200 || p.TotalRecords != 2 {
 		t.Fatalf("unmonitored: %d total %d", st, p.TotalRecords)
 	}
-	// Unknown sort key falls back to the air date.
+	// An unknown sort key falls back to the air date.
 	if _, b = r.get("wanted/missing?sortKey=nope"); decodePage(t, b).SortKey != "episodes.airDateUtc" {
 		t.Fatalf("unknown sort key: %s", b)
 	}
-	// Sorted by show title, ascending: the first record is Show 000's.
+	// Sorted by show title ascending, the first record is Show 000's.
 	_, b = r.get("wanted/missing?sortKey=series.sortTitle&sortDirection=ascending&pageSize=3&includeSeries=true")
 	var withSeries struct {
 		Records []struct {
@@ -213,7 +214,7 @@ func TestPinWantedMissingOverALargeLibrary(t *testing.T) {
 	}
 }
 
-// The calendar reads items by air time, then keeps the monitored ones.
+// The calendar reads items by air time and then keeps the monitored ones.
 func TestPinCalendarWindowAndMonitoring(t *testing.T) {
 	r := newPinRig(t)
 	for i := 0; i < 100; i++ { // a crowd far from the window
@@ -224,7 +225,7 @@ func TestPinCalendarWindowAndMonitoring(t *testing.T) {
 	_, o := r.show("Soon Dropped", "4003", true, 1, func(int) string { return pinDay(1) }) // dropped
 	r.exec("UPDATE items SET dropped_at = ? WHERE id = ?", pinStamp, o[0])
 	_, _ = u, a
-	// An episode with no air time (NULL air_date) is placed by its air day.
+	// An episode with a NULL air_date is placed by its air day.
 	_, nd := r.show("Day Only", "4004", true, 1, func(int) string { return "" })
 	r.exec("UPDATE items SET air_day = '2026-10-14' WHERE id = ?", nd[0])
 	type ep struct {
@@ -247,7 +248,8 @@ func TestPinCalendarWindowAndMonitoring(t *testing.T) {
 	if len(got) != 3 || got[0].AirDateUtc != "2026-10-13T12:00:00Z" || got[1].AirDateUtc != "" || got[2].AirDateUtc != "2026-10-14T12:00:00Z" {
 		t.Fatalf("default window: %d episodes %+v", len(got), got)
 	}
-	// With unmonitored, the unkept show appears too (the dropped one never).
+	// With unmonitored the unkept show appears too. The dropped one never
+	// does.
 	if got = read("unmonitored=true"); len(got) != 4 {
 		t.Fatalf("unmonitored: %d", len(got))
 	}
@@ -256,14 +258,15 @@ func TestPinCalendarWindowAndMonitoring(t *testing.T) {
 	if len(got) != 1 || got[0].Series == nil || got[0].Series.Title != "Soon A" {
 		t.Fatalf("one day: %+v", got)
 	}
-	// End before start: an empty list, not an error.
+	// An end before the start gives an empty list, not an error.
 	if got = read("start=2026-10-20&end=2026-10-14"); len(got) != 0 {
 		t.Fatalf("backwards: %+v", got)
 	}
 }
 
-// The queue joins downloads with releases, sources and downloaders (all
-// LEFT JOINs: a download with none of them still shows) and slots.
+// The queue joins downloads with releases, sources, downloaders and
+// slots. The first three are LEFT JOINs, so a download with none of them
+// still shows.
 func TestPinQueueDetailsWithMissingPartners(t *testing.T) {
 	r := newPinRig(t)
 	dl := r.exec(`INSERT INTO downloaders (created_at, created_by, updated_at, updated_by, name, adapter, protocol, url) VALUES (?, '{}', ?, '{}', 'qb', 'qbittorrent', 'torrent', 'http://x')`, pinStamp, pinStamp)
@@ -302,7 +305,7 @@ func TestPinQueueDetailsWithMissingPartners(t *testing.T) {
 	if st != 200 || json.Unmarshal(b, &rows) != nil {
 		t.Fatalf("%d %s", st, b)
 	}
-	// h1 (1 row), h2 (2 slots, one of them on a removed title: 1 row), h4 (1 row).
+	// h1 gives 1 row, h2 gives 1 row since one slot is on a removed title, h4 gives 1 row.
 	if len(rows) != 3 {
 		t.Fatalf("%d rows: %s", len(rows), b)
 	}
@@ -311,7 +314,7 @@ func TestPinQueueDetailsWithMissingPartners(t *testing.T) {
 			t.Fatalf("row without its episode: %+v", x)
 		}
 	}
-	// Narrowed to one show, and to nothing.
+	// Narrow to one show, then to nothing.
 	_, b = r.get(fmt.Sprintf("queue/details?seriesId=%d", rows[0].SeriesID))
 	var one []struct{ SeriesID int64 }
 	_ = json.Unmarshal(b, &one)
@@ -323,8 +326,8 @@ func TestPinQueueDetailsWithMissingPartners(t *testing.T) {
 	}
 }
 
-// Tags: one row per label, listed by id; a second add of the same label
-// returns the first; renaming a missing id is a 404.
+// Tags keep one row per label, listed by id. A second add of the same
+// label returns the first. Renaming a missing id is a 404.
 func TestPinTagsStore(t *testing.T) {
 	r := newPinRig(t)
 	var ids []int64

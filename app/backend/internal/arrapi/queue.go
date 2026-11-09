@@ -16,9 +16,9 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 )
 
-// queueRow is one row of the download list: one per episode on the Sonarr
-// side (a pack of three episodes is three rows with the same downloadId),
-// one per download on the Radarr side.
+// queueRow is one row of the download list. The Sonarr side has one row
+// per episode, so a pack of three episodes is three rows with the same
+// downloadId. The Radarr side has one row per download.
 type queueRow struct {
 	ID                      int64       `json:"id"`
 	SeriesID                int64       `json:"seriesId,omitempty"`
@@ -51,8 +51,8 @@ type statusMsg struct {
 	Messages []string `json:"messages"`
 }
 
-// timeSpan writes seconds as the old apps' time-span text: hh:mm:ss, with
-// the days and a dot in front from one day on.
+// timeSpan writes seconds as the old apps' time-span text, hh:mm:ss. From
+// one day on, the days and a dot go in front.
 func timeSpan(sec int64) string {
 	if sec < 0 {
 		sec = 0
@@ -66,11 +66,12 @@ func timeSpan(sec int64) string {
 }
 
 // outputPath is where a download's own files are, as HolyArrs sees them
-// (the Downloader's path mapped, as the import maps it): the save folder
-// plus the one top folder all its files share, or the single file. The
-// save folder alone is shared by every download of its category, and
-// Unpackerr unpacks whatever it finds under outputPath. With no file list
-// yet, or files that share no top folder, it is the save folder.
+// after the same path map the import uses. It is the save folder plus the
+// one top folder all files share, or the single file. The save folder
+// alone is shared by every download of its category, and Unpackerr
+// unpacks whatever is under outputPath, so the narrower path matters.
+// With no file list yet, or no shared top folder, it falls back to the
+// save folder.
 func outputPath(save string, maps []domain.PathMap, seen []domain.SeenFile) string {
 	if save == "" {
 		return ""
@@ -98,8 +99,8 @@ func outputPath(save string, maps []domain.PathMap, seen []domain.SeenFile) stri
 	return strings.TrimRight(root, `/\`) + sep + top
 }
 
-// mapPath turns a Downloader's path into HolyArrs' own through its path
-// map (the first entry whose Downloader side starts the path).
+// mapPath turns a Downloader's path into HolyArrs' own path. The first
+// map entry whose Downloader side starts the path wins.
 func mapPath(p string, maps []domain.PathMap) string {
 	out, _ := domain.MapPath(p, maps)
 	return out
@@ -115,13 +116,13 @@ type queueSlot struct {
 }
 
 // queueDefaultSize is the page size when the caller sends none. The old
-// apps use 10, but Seerr never asks for a second page, so here the first
-// page holds every row.
+// apps use 10, but Seerr never asks for a second page, so the first page
+// holds every row.
 const queueDefaultSize = 1000
 
-// queue lists what is downloading, and what finished but is not yet in
-// the Library. It only reads: the download states come from the
-// background download reader.
+// queue lists what is downloading and what finished but is not in the
+// Library yet. It only reads, because the background download reader
+// already keeps the states fresh.
 func (h *handler) queue(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	rows, err := h.queueRows(ctx, queryBool(r, "includeEpisode"))
@@ -165,7 +166,7 @@ func (h *handler) queue(w http.ResponseWriter, r *http.Request) {
 			c = -c
 		}
 		if c == 0 {
-			c = cmp.Compare(b.progress, a.progress) // ties: furthest along first
+			c = cmp.Compare(b.progress, a.progress) // on a tie, the furthest along goes first
 		}
 		if c == 0 {
 			c = cmp.Compare(a.ID, b.ID)
@@ -181,7 +182,7 @@ func (h *handler) queue(w http.ResponseWriter, r *http.Request) {
 	if n, err := strconv.Atoi(query(r, "page")); err == nil && n > 0 {
 		page = n
 	}
-	// A page past the end is the last page that has rows.
+	// A page past the end shows the last page that has rows.
 	if last := max(1, (len(rows)+size-1)/size); page > last {
 		page = last
 	}
@@ -191,7 +192,8 @@ func (h *handler) queue(w http.ResponseWriter, r *http.Request) {
 		"totalRecords": len(rows), "records": rows[from:to]})
 }
 
-// queueRows reads the rows of this side in a fixed number of queries.
+// queueRows reads this side's rows in a fixed number of queries, however
+// long the list is.
 func (h *handler) queueRows(ctx context.Context, withEpisode bool) ([]queueRow, error) {
 	db := h.Store.Read()
 	rows, err := downloads.QueueRows(ctx, db)

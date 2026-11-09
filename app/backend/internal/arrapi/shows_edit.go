@@ -13,8 +13,8 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/shows"
 )
 
-// seriesIn is what an app sends to add or change a show; other fields are
-// read from the Library or the details source, as the old apps do.
+// seriesIn is what an app sends to add or change a show. Other fields
+// come from the Library or the details source, as in the old apps.
 type seriesIn struct {
 	ID               int64  `json:"id"`
 	TvdbID           int64  `json:"tvdbId"`
@@ -33,9 +33,9 @@ type seriesIn struct {
 	} `json:"addOptions"`
 }
 
-// addSeries adds a show: the seasons sent as monitored are kept up to
-// date, and with searchForMissingEpisodes the show is searched once its
-// folder scan is done (so episodes already on disk are not grabbed again).
+// addSeries adds a show and keeps the seasons sent as monitored up to
+// date. With searchForMissingEpisodes the search waits for the folder
+// scan, so episodes already on disk are not grabbed again.
 func (h *handler) addSeries(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	var in seriesIn
@@ -58,7 +58,7 @@ func (h *handler) addSeries(w http.ResponseWriter, r *http.Request) {
 		refuse(w, failure{PropertyName: "RootFolderPath", ErrorMessage: "no TV show Library folder has this path", AttemptedValue: in.RootFolderPath})
 		return
 	}
-	// Left out, monitored counts as false, as in the old apps.
+	// A missing monitored counts as false, as in the old apps.
 	keep := in.Monitored != nil && *in.Monitored
 	opt := shows.ShowAddOptions{LibraryFolderID: folder, PickRulesID: in.QualityProfileID, KeepUpToDate: &keep,
 		NewSeasons: "all", EpisodeOrder: episodeOrder(in.SeriesType), SearchOnAdd: in.AddOptions.SearchForMissingEpisodes}
@@ -66,7 +66,7 @@ func (h *handler) addSeries(w http.ResponseWriter, r *http.Request) {
 		opt.NewSeasons = "none"
 	}
 	if len(in.Seasons) == 0 {
-		opt.Seasons = library.SeasonsAll // no list: every season but the specials
+		opt.Seasons = library.SeasonsAll // no list means every season but the specials
 	} else {
 		opt.SeasonNumbers = []int{}
 		for _, se := range in.Seasons {
@@ -104,8 +104,8 @@ func (h *handler) addSeries(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusCreated, s)
 }
 
-// addFailure turns the library's refusals of a folder or Pick rules into
-// a failed check.
+// addFailure turns a Library refusal of the folder or Pick rules into a
+// failed check the app can show.
 func addFailure(err error, profile int64, folder string) (failure, bool) {
 	var fe *library.FolderError
 	switch {
@@ -119,10 +119,10 @@ func addFailure(err error, profile int64, folder string) (failure, bool) {
 }
 
 // putSeries changes a show already in the Library. The id comes from the
-// path or, as Seerr sends it, from the body. Only the show and season
-// switches, the new-season choice and the quality profile are taken;
-// switching a season switches all its episodes, as in the old apps.
-// Everything else in the body (folder, show type, tags) is left as it is.
+// path, or from the body as Seerr sends it. Only the show and season
+// switches, the new-season choice and the quality profile are taken.
+// Switching a season switches all its episodes, as in the old apps. The
+// folder, show type and tags in the body are ignored.
 func (h *handler) putSeries(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	var in seriesIn
@@ -186,12 +186,12 @@ func (h *handler) putSeries(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusAccepted, s)
 }
 
-// deleteTitle takes a show or movie out of the Library (it stays in the
-// database as removed, so its id is never reused). deleteFiles takes its
-// files too, only when the setting allows it; they go to the holding
-// folder first, like every delete. An import exclusion puts the title on
-// the Never-add list. An id that is gone answers 404, which Seerr reads as
-// "already removed".
+// deleteTitle takes a show or movie out of the Library. The row stays as
+// removed, so its id is never reused. deleteFiles takes the files too,
+// but only when the setting allows it, and they go to the holding folder
+// first like every delete. An import exclusion puts the title on the
+// Never-add list. A gone id answers 404, which Seerr reads as already
+// removed.
 func (h *handler) deleteTitle(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	id, ok := pathID(w, r)
@@ -220,8 +220,8 @@ func (h *handler) deleteTitle(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// removeReason says in plain words why a delete was refused; anything
-// unknown stays a short generic line so no inner detail leaks out.
+// removeReason says in plain words why a delete was refused. Unknown
+// errors get a short generic line so no inner detail leaks out.
 func removeReason(err error) string {
 	switch {
 	case errors.Is(err, library.ErrProtectedCopy):

@@ -22,35 +22,35 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
 )
 
-// Prowlarr's app sync. Prowlarr writes one Newznab or Torznab indexer per
-// indexer of its own into each app, pointing at itself, and keeps them up
-// to date: it reads the templates (schema), tests, adds, reads back,
-// rewrites when a value it manages differs, and deletes. Each one it
-// writes becomes a Source of this side's kind.
+// Prowlarr's app sync. Prowlarr writes one Newznab or Torznab indexer into
+// each app for every indexer it has, all pointing at itself. It reads the
+// templates, tests, adds, reads back, rewrites when a value it manages
+// differs, and deletes. Each one it writes becomes a Source of this side's
+// kind.
 //
-// Such a Source may reach the local network (Prowlarr is usually on it),
-// and it arrives paused, as a new one does after any move of its address,
-// so a person turns it on. Only the Sources made here are listed, changed
-// or deleted here.
+// Such a Source may reach the local network, since Prowlarr usually lives
+// there. It arrives paused, as any Source does after its address moves,
+// so a person turns it on. Only Sources made here are listed, changed or
+// deleted here.
 
-// What a Source made here keeps in its extras: the side that made it,
-// what Prowlarr last wrote (its key left out), so the next read compares
-// equal and Prowlarr does not write it again and again, and the name
-// HolyArrs gave it then.
+// The extras a Source made here keeps: the side that made it, what
+// Prowlarr last wrote without its key, and the name HolyArrs gave it. The
+// kept copy makes the next read compare equal, so Prowlarr does not write
+// it again and again.
 const (
 	extraSide = "old_app"
 	extraBody = "old_app_indexer"
 	extraName = "old_app_name"
 )
 
-// maskedKey is how those apps show a key that is set; sent back, it keeps
-// the stored one.
+// maskedKey is how those apps show a key that is set. Sent back, it keeps
+// the stored key.
 const maskedKey = "********"
 
-// bodyKeep caps what is kept of one indexer.
+// bodyKeep caps what is kept of one indexer, so extras stay small.
 const bodyKeep = 64 << 10
 
-// sourceKind is this side's Source kind.
+// sourceKind returns this side's Source kind.
 func (h *handler) sourceKind() string {
 	if h.side == "sonarr" {
 		return "tv"
@@ -67,8 +67,8 @@ type schemaField struct {
 	Advanced bool   `json:"advanced"`
 }
 
-// schemaFields are the settings of one template: the ones Prowlarr fills,
-// and the ones it carries over from the template when it makes an entry.
+// schemaFields are the settings of one template: the ones Prowlarr fills
+// and the ones it copies from the template when it makes an entry.
 func (h *handler) schemaFields(torrent bool) []schemaField {
 	sonarr := h.side == "sonarr"
 	fs := []schemaField{
@@ -102,7 +102,7 @@ func (h *handler) schemaFields(torrent bool) []schemaField {
 	return fs
 }
 
-// implOf names a format the old apps' way: implementation, settings
+// implOf names a format the way the old apps do: implementation, settings
 // contract and protocol.
 func implOf(format string) (impl, contract, protocol string) {
 	if format == "torznab" {
@@ -111,7 +111,7 @@ func implOf(format string) (impl, contract, protocol string) {
 	return "Newznab", "NewznabSettings", "usenet"
 }
 
-// template is the blank entry of one format.
+// template builds the blank entry of one format.
 func (h *handler) template(format string) map[string]any {
 	impl, contract, proto := implOf(format)
 	m := map[string]any{"name": "", "implementation": impl, "implementationName": impl, "configContract": contract, "protocol": proto,
@@ -123,30 +123,29 @@ func (h *handler) template(format string) map[string]any {
 	return m
 }
 
-// indexerSchema answers the templates: only Newznab and Torznab, the two
-// a Source can be.
+// indexerSchema answers the templates. Only Newznab and Torznab are
+// offered, since those are the two a Source can be.
 func (h *handler) indexerSchema(w http.ResponseWriter, _ *http.Request) {
 	writeJSON(w, http.StatusOK, []map[string]any{h.template("newznab"), h.template("torznab")})
 }
 
 // push is one indexer as Prowlarr writes it, read into Source values.
 type push struct {
-	id       int64 // the id in the body, 0 for none
+	id       int64 // the id in the body, 0 when none
 	name     string
 	format   string
 	protocol string
-	url      string // the address with the feed path
+	url      string // the address with the feed path joined on
 	key      string
-	keepKey  bool // the key came back masked
+	keepKey  bool // the key came back masked, so the stored one stays
 	cats     []int
 	seeders  *int
 	priority int
 	use      domain.SourceUse
-	keep     string // what is kept of it, the key left out
+	keep     string // what is kept of it, without the key
 }
 
-// fieldRows reads the fields list of an entry; names are matched in any
-// case.
+// fieldRows reads the fields list of an entry. Names match in any case.
 func fieldRows(m map[string]any) []map[string]any {
 	l, _ := m["fields"].([]any)
 	var out []map[string]any
@@ -188,7 +187,8 @@ func valueOf(m map[string]any, key string) (any, bool) {
 	return nil, false
 }
 
-// toInt reads a whole number sent as a number or as text.
+// toInt reads a whole number sent as a number or as text, since clients
+// send both.
 func toInt(v any) (int, bool) {
 	switch x := v.(type) {
 	case float64:
@@ -229,7 +229,8 @@ func toBool(v any, def bool) bool {
 	return def
 }
 
-// sortedInts is a sorted copy without repeats.
+// sortedInts returns a sorted copy without repeats, so lists compare
+// equal.
 func sortedInts(ls ...[]int) []int {
 	out := []int{}
 	for _, l := range ls {
@@ -239,7 +240,7 @@ func sortedInts(ls ...[]int) []int {
 	return slices.Compact(out)
 }
 
-// joinFeed is the base address with the feed path after it.
+// joinFeed returns the base address with the feed path after it.
 func joinFeed(base, path string) string {
 	base = strings.TrimSpace(base)
 	path = strings.Trim(strings.TrimSpace(path), "/")
@@ -249,7 +250,7 @@ func joinFeed(base, path string) string {
 	return strings.TrimRight(base, "/") + "/" + path
 }
 
-// readPush reads an indexer body; false means a 400 was sent.
+// readPush reads an indexer body. It returns false after sending a 400.
 func (h *handler) readPush(w http.ResponseWriter, r *http.Request) (push, bool) {
 	var p push
 	b, err := io.ReadAll(http.MaxBytesReader(w, r.Body, bodyMax))
@@ -328,7 +329,7 @@ func (h *handler) readPush(w http.ResponseWriter, r *http.Request) (push, bool) 
 	}
 	use := func(k string) bool { v, _ := valueOf(m, k); return toBool(v, true) }
 	p.use = domain.SourceUse{Feed: use("enableRss"), AutoSearch: use("enableAutomaticSearch"), HandSearch: use("enableInteractiveSearch")}
-	// What is kept: the whole entry as sent, without its id and key.
+	// Keep the whole entry as sent, without its id and key.
 	for k, v := range m {
 		if strings.EqualFold(k, "id") {
 			n, _ := toInt(v)
@@ -350,9 +351,9 @@ func (h *handler) readPush(w http.ResponseWriter, r *http.Request) (push, bool) 
 	return p, true
 }
 
-// mayWriteSources says whether the caller may write Sources here: only
-// with this side's key, made by someone who may change Sources. false
-// means the answer was sent.
+// mayWriteSources reports whether the caller may write Sources here. Only
+// this side's key, made by someone who may change Sources, qualifies. It
+// returns false after sending the answer.
 func (h *handler) mayWriteSources(w http.ResponseWriter, r *http.Request) bool {
 	who, ok := webserver.From(r.Context())
 	if !ok || who.Via != "api_key" || !slices.Contains(who.Scopes, webserver.ScopeCompat) {
@@ -366,7 +367,8 @@ func (h *handler) mayWriteSources(w http.ResponseWriter, r *http.Request) bool {
 	return true
 }
 
-// ownSource reads a Source this side made; any other is database.ErrNotFound.
+// ownSource reads a Source this side made. Any other gives
+// database.ErrNotFound.
 func (h *handler) ownSource(ctx context.Context, id int64) (domain.Source, error) {
 	var src domain.Source
 	if err := database.Get(ctx, h.Store.Read(), "sources", id, &src); err != nil {
@@ -379,9 +381,9 @@ func (h *handler) ownSource(ctx context.Context, id int64) (domain.Source, error
 }
 
 // indexerOf answers a Source as an indexer: what Prowlarr last wrote,
-// with the values HolyArrs holds put back in. A value someone changed in
-// HolyArrs shows as changed, so Prowlarr writes its own again, as it
-// does with the old apps.
+// with the values HolyArrs holds put back in. A value changed in HolyArrs
+// shows as changed, so Prowlarr writes its own again, as with the old
+// apps.
 func (h *handler) indexerOf(src domain.Source) map[string]any {
 	var m map[string]any
 	if b := src.Extra[extraBody]; b != "" {
@@ -495,8 +497,8 @@ func (h *handler) getIndexer(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, h.indexerOf(src))
 }
 
-// cutName cuts a name to n bytes (a Source name is counted in bytes),
-// dropping whole characters.
+// cutName cuts a name to n bytes, since Source names are counted in
+// bytes. It drops whole characters only.
 func cutName(s string, n int) string {
 	for len(s) > n {
 		_, size := utf8.DecodeLastRuneInString(s)
@@ -505,9 +507,9 @@ func cutName(s string, n int) string {
 	return strings.TrimSpace(s)
 }
 
-// pickName is the Source name for an indexer: the name sent, or, when
-// another Source has it (the same Prowlarr indexer written to the other
-// side, or one made by hand), the name with this side's word after it.
+// pickName returns the Source name for an indexer. It is the name sent,
+// unless another Source has it, such as the same indexer on the other
+// side or one made by hand. Then this side's word goes after it.
 func (h *handler) pickName(ctx context.Context, want string, own int64) (string, bool) {
 	word := " (shows)"
 	if h.side == "radarr" {
@@ -521,7 +523,8 @@ func (h *handler) pickName(ctx context.Context, want string, own int64) (string,
 	return "", false
 }
 
-// hostOnly is scheme://host of an address, as the Sources compare them.
+// hostOnly returns scheme://host of an address, which is how Sources
+// compare them.
 func hostOnly(raw string) string {
 	u, err := url.Parse(raw)
 	if err != nil {
@@ -530,9 +533,9 @@ func hostOnly(raw string) string {
 	return u.Scheme + "://" + u.Host
 }
 
-// tryPush checks an indexer answers its caps, the way the old apps test
-// before they save. stored, when given, lends its key to a masked one, but
-// only on the same host: a stored key is never sent to a new host by itself.
+// tryPush checks that an indexer answers its caps, as the old apps test
+// before they save. When given, stored lends its key to a masked one, but
+// only on the same host. A stored key never goes to a new host on its own.
 func (h *handler) tryPush(w http.ResponseWriter, r *http.Request, p push, stored *domain.Source) bool {
 	key := p.key
 	if p.keepKey && stored != nil && stored.SecretRef != nil && h.Secrets != nil {
@@ -557,8 +560,8 @@ func (h *handler) tryPush(w http.ResponseWriter, r *http.Request, p push, stored
 	return true
 }
 
-// testIndexer tests an indexer that is not saved (Prowlarr's own test
-// sends one pointing at itself). It may reach the local network.
+// testIndexer tests an unsaved indexer. Prowlarr's own test sends one
+// pointing at itself, so it may reach the local network.
 func (h *handler) testIndexer(w http.ResponseWriter, r *http.Request) {
 	if !h.mayWriteSources(w, r) {
 		return
@@ -567,8 +570,8 @@ func (h *handler) testIndexer(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	// A saved one sent back with its key masked is tested with the key
-	// stored for it.
+	// A saved indexer sent back with a masked key is tested with its
+	// stored key.
 	var stored *domain.Source
 	if p.keepKey && p.id > 0 {
 		if src, err := h.ownSource(r.Context(), p.id); err == nil {
@@ -600,7 +603,7 @@ func sourceFailure(w http.ResponseWriter, err error) {
 	}
 }
 
-// extras are the Source extras that mark it as made here.
+// extras builds the Source extras that mark it as made here.
 func (h *handler) extras(old map[string]string, p push, name string) map[string]string {
 	out := map[string]string{}
 	for k, v := range old {
@@ -622,9 +625,9 @@ func (h *handler) saved(src domain.Source) {
 	}
 }
 
-// addIndexer makes a Source from an indexer. Without forceSave it is
-// tested first, and a failed test answers 400 (Prowlarr then sends it
-// again with forceSave). It arrives paused.
+// addIndexer makes a paused Source from an indexer. Without forceSave it
+// is tested first, and a failed test answers 400. Prowlarr then sends it
+// again with forceSave.
 func (h *handler) addIndexer(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	if !h.mayWriteSources(w, r) {
@@ -658,7 +661,7 @@ func (h *handler) addIndexer(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusCreated, h.indexerOf(src))
 }
 
-// keySame says whether a sent key leaves the stored one as it is.
+// keySame reports whether a sent key leaves the stored one as it is.
 func (h *handler) keySame(ctx context.Context, src domain.Source, p push) bool {
 	switch {
 	case p.keepKey:
@@ -672,9 +675,9 @@ func (h *handler) keySame(ctx context.Context, src domain.Source, p push) bool {
 	return err == nil && k == p.key
 }
 
-// putIndexer changes a Source made here. An indexer sent as it already is
-// writes nothing. A moved address may reach the local network again only
-// after a person resumes the Source, so it is paused again.
+// putIndexer changes a Source made here. An unchanged indexer writes
+// nothing. A moved address pauses the Source again, so it reaches the
+// local network only after a person resumes it.
 func (h *handler) putIndexer(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	if !h.mayWriteSources(w, r) {
@@ -713,8 +716,8 @@ func (h *handler) putIndexer(w http.ResponseWriter, r *http.Request) {
 	}
 	in := p.input(kind, name)
 	in.ClearKey = p.key == "" && !p.keepKey
-	// Local network turned back on after a person turned it off counts as
-	// a move too.
+	// Turning the local network back on after a person turned it off
+	// counts as a move too.
 	moved := p.url != src.URL || !src.AllowLocal
 	out, err := sources.Change(ctx, h.Store, h.Secrets, src.ID, in, actor(r), func(_ *sql.Tx, s *domain.Source) error {
 		s.Extra = h.extras(s.Extra, p, name)
@@ -731,7 +734,7 @@ func (h *handler) putIndexer(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusAccepted, h.indexerOf(out))
 }
 
-// deleteIndexer removes a Source made here; any other id answers 404.
+// deleteIndexer removes a Source made here. Any other id answers 404.
 func (h *handler) deleteIndexer(w http.ResponseWriter, r *http.Request) {
 	if !h.mayWriteSources(w, r) {
 		return

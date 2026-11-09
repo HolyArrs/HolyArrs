@@ -14,8 +14,8 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
 )
 
-// status answers the server test. Seerr reads urlBase (and uses it as the
-// base path from then on) and, on the Sonarr side, the version.
+// status answers the server test. Seerr reads urlBase and uses it as the
+// base path from then on. On the Sonarr side it also reads the version.
 func (h *handler) status(w http.ResponseWriter, r *http.Request) {
 	docker := startup.InContainer(func(p string) bool { _, err := os.Stat(p); return err == nil }, os.Getenv)
 	writeJSON(w, http.StatusOK, map[string]any{
@@ -26,9 +26,8 @@ func (h *handler) status(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// qualityProfiles lists the Pick rules for movies and shows (never the
-// music ones) as the old apps' quality profiles: the callers read only id
-// and name.
+// qualityProfiles lists the Pick rules for movies and shows as quality
+// profiles. Music rules are left out. Callers read only id and name.
 func (h *handler) qualityProfiles(w http.ResponseWriter, r *http.Request) {
 	ps, err := database.Select[mediafiles.PickRules](r.Context(), h.Store.Read(), "pick_rules", "1=1 ORDER BY id")
 	if err != nil {
@@ -45,7 +44,7 @@ func (h *handler) qualityProfiles(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, out)
 }
 
-// folderKind is the Library folder kind of this side.
+// folderKind returns the Library folder kind of this side.
 func (h *handler) folderKind() string {
 	if h.side == "sonarr" {
 		return "show"
@@ -71,8 +70,8 @@ func (h *handler) rootFolders(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, out)
 }
 
-// languageProfiles is the one fixed entry older clients need. Seerr skips
-// the call for version 4 and up; Overseerr always makes it.
+// languageProfiles answers the one fixed entry older clients need. Seerr
+// skips the call for version 4 and up. Overseerr always makes it.
 func (h *handler) languageProfiles(w http.ResponseWriter, _ *http.Request) {
 	english := map[string]any{"id": 1, "name": "English"}
 	writeJSON(w, http.StatusOK, []map[string]any{{"id": 1, "name": "English", "upgradeAllowed": false, "cutoff": english,
@@ -93,7 +92,8 @@ func (h *handler) listTags(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, out)
 }
 
-// addTag makes a tag, or hands back the one with the same label.
+// addTag makes a tag. A label already in use hands back that tag, so a
+// repeated add is safe.
 func (h *handler) addTag(w http.ResponseWriter, r *http.Request) {
 	var in tag
 	if !decode(w, r, &in) {
@@ -122,7 +122,8 @@ func (h *handler) addTag(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusCreated, in)
 }
 
-// putTag renames a tag; the id comes from the path or the body.
+// putTag renames a tag. The id comes from the path or the body, since
+// clients send it either way.
 func (h *handler) putTag(w http.ResponseWriter, r *http.Request) {
 	var in tag
 	if !decode(w, r, &in) {

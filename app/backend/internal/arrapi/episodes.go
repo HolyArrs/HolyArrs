@@ -27,18 +27,18 @@ type episode struct {
 	Monitored             bool   `json:"monitored"`
 	AbsoluteEpisodeNumber *int   `json:"absoluteEpisodeNumber,omitempty"`
 	UnverifiedScene       bool   `json:"unverifiedSceneNumbering"`
-	// Only when asked for (includeEpisodeFile, includeSeries).
+	// Set only when asked for with includeEpisodeFile or includeSeries.
 	EpisodeFile *mediaFile `json:"episodeFile,omitempty"`
 	Series      *series    `json:"series,omitempty"`
 }
 
-// episodesWhere reads the episodes of shows in the Library matching where,
-// each with the file of its main Version.
+// episodesWhere reads the episodes of Library shows that match where.
+// Each carries the file of its main Version.
 func (h *handler) episodesWhere(ctx context.Context, where string, args ...any) ([]episode, error) {
 	return h.episodesOf(ctx, library.EpisodeFilter{Where: where, Args: args})
 }
 
-// episodesOf is episodesWhere with the filter spelled out.
+// episodesOf runs episodesWhere with a typed filter.
 func (h *handler) episodesOf(ctx context.Context, f library.EpisodeFilter) ([]episode, error) {
 	its, err := library.EpisodeRows(ctx, h.Store.Read(), f)
 	if err != nil || len(its) == 0 {
@@ -77,7 +77,8 @@ func (h *handler) episodesOf(ctx context.Context, f library.EpisodeFilter) ([]ep
 	return out, nil
 }
 
-// idsParam reads a list of ids sent as one comma list or repeated.
+// idsParam reads ids sent as one comma list or as a repeated parameter,
+// since clients do both.
 func idsParam(r *http.Request, name string) []int64 {
 	var out []int64
 	for k, vs := range r.URL.Query() {
@@ -95,8 +96,8 @@ func idsParam(r *http.Request, name string) []int64 {
 	return out
 }
 
-// listEpisodes needs seriesId (with an optional seasonNumber) or
-// episodeIds; with neither it answers 400.
+// listEpisodes needs seriesId, with an optional seasonNumber, or
+// episodeIds. With neither it answers 400.
 func (h *handler) listEpisodes(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	if sid := query(r, "seriesId"); sid != "" {
@@ -141,8 +142,9 @@ func (h *handler) listEpisodes(w http.ResponseWriter, r *http.Request) {
 	message(w, http.StatusBadRequest, "send seriesId or episodeIds")
 }
 
-// monitorEpisodes switches episodes on or off. Every id must be an episode
-// of a show in the Library; otherwise nothing changes and it answers 404.
+// monitorEpisodes switches episodes on or off. Every id must be an
+// episode of a Library show. If one is not, nothing changes and it
+// answers 404.
 func (h *handler) monitorEpisodes(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	var in struct {

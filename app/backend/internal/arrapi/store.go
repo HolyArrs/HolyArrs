@@ -9,13 +9,13 @@ import (
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 )
 
-// switchValue reads one of the two switches; "" when it was never saved.
+// switchValue reads one of the two switches. It is "" when never saved.
 func switchValue(ctx context.Context, st *database.Store, key string) string {
 	v, _ := database.Setting(ctx, st.Read(), settingsGroup, key)
 	return v
 }
 
-// saveSwitches writes the switches that are not nil, in one transaction.
+// saveSwitches writes every switch that is not nil in one transaction.
 func saveSwitches(ctx context.Context, st *database.Store, who domain.Actor, values map[string]*bool) error {
 	now := time.Now()
 	return st.Write(ctx, func(tx *sql.Tx) error {
@@ -50,7 +50,8 @@ func listTags(ctx context.Context, q database.Lister) ([]tag, error) {
 	return out, nil
 }
 
-// tagByLabel returns sql.ErrNoRows when no tag has the label.
+// tagByLabel returns sql.ErrNoRows when no tag has the label, so a caller
+// can tell a new label from a failed read.
 func tagByLabel(tx *sql.Tx, label string) (tag, error) {
 	var t tag
 	err := tx.QueryRow("SELECT id, label FROM compat_tags WHERE label = ?", label).Scan(&t.ID, &t.Label)
@@ -65,7 +66,7 @@ func insertTag(tx *sql.Tx, label string, now time.Time) (int64, error) {
 	return res.LastInsertId()
 }
 
-// renameTag says how many tags it renamed.
+// renameTag returns how many tags it renamed. Zero means the id is gone.
 func renameTag(tx *sql.Tx, id int64, label string) (int64, error) {
 	res, err := tx.Exec("UPDATE compat_tags SET label = ? WHERE id = ?", label, id)
 	if err != nil {
