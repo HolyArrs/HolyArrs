@@ -37,7 +37,7 @@ docker build --platform linux/arm64 --file "$dockerfile" --tag "$image" "$artifa
 
 set +e
 docker run --rm --platform linux/arm64 \
-  --memory 1g --memory-swap 1g --cpus 4 --network none \
+  --memory 1g --memory-swap 1g --cpus 2 --network none \
   --env GOMEMLIMIT=384MiB \
   --env HOLYARRS_SCALE=combined \
   --env HOLYARRS_SCALE_IDLE=30m \
