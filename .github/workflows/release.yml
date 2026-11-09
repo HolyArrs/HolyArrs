@@ -17,7 +17,6 @@ concurrency:
 
 env:
   DOCKERHUB_IMAGE: holyarrs/holyarrs
-  GHCR_IMAGE: ghcr.io/holyarrs/holyarrs
   DOCKER_PLATFORMS: linux/amd64,linux/arm64,linux/arm/v7
 
 jobs:
@@ -26,7 +25,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: write
     steps:
       - name: Checkout
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
@@ -48,13 +46,6 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Login to GHCR
-        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Build and push
         uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
         with:
@@ -66,8 +57,6 @@ jobs:
           tags: |
             ${{ env.DOCKERHUB_IMAGE }}:${{ github.ref_name }}
             ${{ env.DOCKERHUB_IMAGE }}:latest
-            ${{ env.GHCR_IMAGE }}:${{ github.ref_name }}
-            ${{ env.GHCR_IMAGE }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
