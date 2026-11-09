@@ -6,9 +6,8 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 )
 
-// Deps is what the Requests routes need: services and core types, and funcs
-// for anything a higher module owns (t14 split design, section 4). Filled
-// as the routes move out of internal/api.
+// Deps is what the Requests routes need. Anything a higher module owns
+// comes in as a func, so this package never imports that module.
 type Deps struct {
 	Store *database.Store
 	// KidMax is the signed-in person's age-rating limit ("" for none).
@@ -21,5 +20,6 @@ type Handlers struct {
 	Deps
 }
 
-// Routes registers the Requests routes; empty until they move here.
+// Routes registers the Requests routes. It adds none yet, because the
+// routes are still served by the api package.
 func (h *Handlers) Routes(m *http.ServeMux) {}

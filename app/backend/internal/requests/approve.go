@@ -156,8 +156,8 @@ func (s *Service) decide(ctx context.Context, id int64, by Person, opt ApproveOp
 		}
 		return before, err
 	}
-	// The title is in the Library now: the rest of the bookkeeping must finish even if the
-	// approver's request goes away, or the ask stays approved with no title for good.
+	// The title is in the Library now. The rest must finish even if the
+	// approver's request ends, or the ask stays approved with no title.
 	ctx = context.WithoutCancel(ctx)
 	if len(opt.AudioLanguages) > 0 { // only for a title this approval added (see above)
 		if err := s.setAudio(ctx, tid, opt.AudioLanguages, by); err != nil {
@@ -288,7 +288,7 @@ func (s *Service) TurnDown(ctx context.Context, id int64, by Person, note string
 	now := s.now()
 	var a domain.Ask
 	err := s.Store.Write(ctx, func(tx *sql.Tx) error {
-		// An approved ask that never got its title (adding it failed) can still be declined.
+		// An approved ask whose title failed to add can still be turned down.
 		res, err := tx.Exec(turnDownSQL, id)
 		if err != nil {
 			return err
