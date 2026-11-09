@@ -13,13 +13,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
-// netflixService is Netflix's TMDB watch-provider id; its chip uses
-// Netflix's own weekly Top 10 instead of TMDB popularity.
-const netflixService = "8"
-
-// genreMoodMin is the fewest titles a genre page's mood row needs.
-const genreMoodMin = 8
-
 // liveSource is the Explore list source with outside calls allowed (lists
 // are cached by their own TTL).
 func (h *Handlers) LiveExplore(ctx context.Context) ExploreSource {

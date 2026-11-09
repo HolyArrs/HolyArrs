@@ -97,6 +97,9 @@ func newKidTMDB(t *testing.T) *kidTMDB {
 	f.srv = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		p := r.URL.Path
 		switch p {
+		case "/3/watch/providers/movie", "/3/watch/providers/tv":
+			_, _ = io.WriteString(w, `{"results":[{"provider_id":8,"provider_name":"Netflix","display_priorities":{"US":1}}]}`)
+			return
 		case "/3/genre/movie/list", "/3/genre/tv/list":
 			_, _ = io.WriteString(w, `{"genres":[{"id":18,"name":"Drama"}]}`)
 			return

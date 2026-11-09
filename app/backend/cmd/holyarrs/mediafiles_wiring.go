@@ -90,8 +90,6 @@ func (a *handlers) kidGate(m *http.ServeMux, next http.Handler) http.Handler {
 	return a.mf.KidGate(m, next)
 }
 
-func kidSQL(max string) (string, []any) { return mediafiles.KidSQL(max) }
-
 // kindShown says the Library summary and search show a title kind: its
 // part is on, or safe mode shows every part.
 func (a *handlers) kindShown(kind string) bool {
@@ -114,6 +112,4 @@ func (a *handlers) libraryPeople(r *http.Request, words []string, visible func(m
 	return a.mf.LibraryPeople(r, words, visible)
 }
 
-func fold(s string) string                    { return mediafiles.Fold(s) }
-func foldWords(s string) []string             { return mediafiles.FoldWords(s) }
-func foldMatch(s string, words []string) bool { return mediafiles.FoldMatch(s, words) }
+func fold(s string) string { return mediafiles.Fold(s) }
