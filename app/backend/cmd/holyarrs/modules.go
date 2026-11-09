@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
 	"strings"
 
@@ -100,12 +99,6 @@ func (o oldApps) On(ctx context.Context) bool { return o.a.arr().On(ctx) }
 
 func (o oldApps) SetOn(ctx context.Context, by domain.Actor, on bool) error {
 	return o.a.arr().SaveSwitches(ctx, by, &on, nil)
-}
-
-// actorJSONText is the actor as the JSON text stored in updated_by columns.
-func actorJSONText(a domain.Actor) string {
-	b, _ := json.Marshal(a)
-	return string(b)
 }
 
 // arr is the arr API: the Sonarr and Radarr prefixes and their settings.

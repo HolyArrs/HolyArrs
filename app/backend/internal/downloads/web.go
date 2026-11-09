@@ -37,7 +37,7 @@ type Web struct {
 	Metadata metadata.Provider
 	Search   *sources.Searcher
 
-	// Injected from api (later modules).
+	// Given by the program.
 	// ShowSource is the show metadata source by name.
 	ShowSource func(name string) (metadata.ShowProvider, error)
 	// AddMovieTitle and AddShowTitle add a matched title the normal way,
@@ -47,8 +47,6 @@ type Web struct {
 	// LibraryError writes a Library add error the way the title routes do.
 	LibraryError func(w http.ResponseWriter, err error)
 
-	// Speeds is the rolling total-speed history.
-	Speeds SpeedHistory
 	// Match links outside torrents to Library titles (tests swap its hooks).
 	Match ClientMatch
 	// ViewDB, when set, takes the Downloads view's reads (tests count them).

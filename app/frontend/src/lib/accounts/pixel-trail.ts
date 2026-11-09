@@ -24,11 +24,6 @@ export function siteCell(width: number): number {
 	return width / columnsForWidth(width);
 }
 
-// The site's symbol pixel: a tenth of a cell, 3 to 5 px.
-export function pixelFor(cell: number): number {
-	return Math.max(3, Math.min(5, Math.round(cell / 10)));
-}
-
 // A button-sized grid: cells just big enough for one 3 px symbol (24 px), stretched so whole columns fill the width.
 export function buttonGrid(width: number, height: number): Grid {
 	const cols = Math.max(1, Math.round(width / 26));
@@ -93,13 +88,6 @@ export function paint(ctx: CanvasRenderingContext2D, g: Grid, color: string, sca
 		}
 	}
 	ctx.globalAlpha = 1;
-}
-
-// The static focus look: a dim band of symbols across the middle row.
-export function focusPattern(g: Grid) {
-	g.energy.fill(0);
-	const mid = Math.floor((g.rows - 1) / 2);
-	for (let c = 0; c < g.cols; c++) g.energy[mid * g.cols + c] = c % 2 ? 0.18 : 0.28;
 }
 
 const calmQuery = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { claimPlayer, dwell, embedUrl, heroPictures, mayAutoplay, pickTrailer, placeCard, playerBusy, playingWord, type Video } from './trailer.ts';
+import { claimPlayer, dwell, embedUrl, heroPictures, mayAutoplay, pickTrailer, placeCard, playingWord, type Video } from './trailer.ts';
 
 const vs: Video[] = [
 	{ key: 'teaserEN01', type: 'Teaser', official: true, language: 'en' },
@@ -65,9 +65,7 @@ describe('claimPlayer', () => {
 		const releaseB = claimPlayer(() => {});
 		expect(a).toHaveBeenCalledOnce();
 		releaseA();
-		expect(playerBusy()).toBe(true);
 		releaseB();
-		expect(playerBusy()).toBe(false);
 	});
 });
 

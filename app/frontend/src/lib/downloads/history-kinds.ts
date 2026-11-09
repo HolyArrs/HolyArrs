@@ -94,17 +94,6 @@ export function verbOf(kind: string): Verb {
 	return { word: 'Other', icon: 'info', tone: 'idle' };
 }
 
-/** The verb of a History row; a folded download says how far it got. */
-export function headVerb(row: HistoryRow): Verb {
-	if (!row.steps.length) return verbOf(row.head.Kind);
-	const failed = row.steps.find((s) => s.state === 'failed');
-	if (failed) return { word: failed.key === 'imported' ? 'Import failed' : 'Download failed', icon: 'x', tone: 'fail' };
-	if (row.events.some((e) => e.Kind === UPGRADE)) return verbOf(UPGRADE);
-	const imported = row.steps.find((s) => s.key === 'imported');
-	if (imported?.state === 'done') return verbOf('import_done');
-	return verbOf(row.head.Kind);
-}
-
 /** How much a row matters; a folded download counts by its worst or best step. */
 export function rowTier(row: HistoryRow): Tier {
 	let best: Tier = 'routine';

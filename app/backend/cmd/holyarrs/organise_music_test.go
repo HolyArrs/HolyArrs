@@ -65,7 +65,6 @@ func musicOrganiseSetup(t *testing.T) (url string, s *database.Store, lib string
 // route: POST /api/v1/titles/{id}/delete
 // route: GET /api/v1/events
 // route: GET /api/v1/calendar
-// route: POST /api/v1/library/rescan
 //
 // 4.15: a music Library folder is scanned (artist, albums with the Pressing
 // the files fit, files to tracks) and adopted with no file moved; its
@@ -193,7 +192,7 @@ func TestMusicOrganiseAPI(t *testing.T) {
 
 	// A rescan marks a gone track file missing.
 	_ = os.Remove(filepath.Join(lib, "Lab Band", "First Light (2020)", "01 - Song 1.flac"))
-	_ = json.Unmarshal(do(t, "POST", u+"/library/rescan", "", 202), &q)
+	_ = json.Unmarshal(do(t, "POST", u+"/schedules/rescan_library/run", "", 202), &q)
 	if j := waitJob(t, url, q.JobID); j.State != "done" || j.Result["missing"] != float64(1) {
 		t.Fatalf("rescan %+v", j)
 	}

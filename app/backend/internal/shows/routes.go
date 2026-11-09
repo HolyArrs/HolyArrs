@@ -9,14 +9,27 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
+// TVDBKeyGroup and TVDBKeyName are where the person's own TVDB key is kept
+// in the vault. HolyArrs ships no TVDB key.
+const TVDBKeyGroup, TVDBKeyName = "links", "tvdb_key"
+
+// actor is the signed-in person, or the owner when no session is attached.
+func actor(r *http.Request) domain.Actor {
+	if _, ok := webserver.From(r.Context()); ok {
+		return webserver.Actor(r.Context())
+	}
+	return domain.Actor{Kind: "user", ID: 1}
+}
+
 // Deps is what the Shows routes need: services and core types, and funcs
-// for anything a higher module owns (t14 split design, section 4).
+// for anything a higher module owns.
 type Deps struct {
 	Store    *database.Store
 	Library  *library.Service

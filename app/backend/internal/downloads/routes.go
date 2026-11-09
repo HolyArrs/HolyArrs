@@ -12,19 +12,18 @@ import (
 )
 
 // Deps is what the Downloads routes need: services and core types, and funcs
-// for anything a higher module owns (t14 split design, section 4). Filled
-// as the routes move out of internal/api.
+// for anything a higher module owns.
 type Deps struct {
 	Store *database.Store
 	// KidMax is the signed-in person's age-rating limit ("" for none).
 	KidMax  func(*http.Request) string
 	Library *library.Service
 	Queue   *jobs.Queue
-	// TitleID reads the {id} title, answering itself when it fails (api).
+	// TitleID reads the {id} title, answering itself when it fails.
 	TitleID func(w http.ResponseWriter, r *http.Request) (mediafiles.Title, bool)
-	// PublishTitle sends the changed title to live pages (api).
+	// PublishTitle sends the changed title to live pages.
 	PublishTitle func(r *http.Request, id int64)
-	// VersionJSON is a Version as the API shows it (api).
+	// VersionJSON is a Version as the API shows it.
 	VersionJSON func(ctx context.Context, v mediafiles.Version) any
 	// LibraryError answers a Library refusal the way the title routes do.
 	LibraryError func(w http.ResponseWriter, err error)
@@ -49,12 +48,4 @@ func (h *Handlers) Routes(m *http.ServeMux) {
 	m.HandleFunc("POST /api/v1/own-traits", h.addOwnTrait)
 	m.HandleFunc("PUT /api/v1/own-traits/{id}", h.editOwnTrait)
 	m.HandleFunc("DELETE /api/v1/own-traits/{id}", h.deleteOwnTrait)
-}
-
-// read is the database the routes read from.
-func (h *Handlers) read() *sql.DB {
-	if h.ReadDB != nil {
-		return h.ReadDB
-	}
-	return h.Store.Read()
 }

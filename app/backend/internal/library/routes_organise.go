@@ -46,7 +46,6 @@ func (h *OrganiseHandlers) Routes(m *http.ServeMux) {
 	m.HandleFunc("POST /api/v1/holding/clean", h.cleanHolding)
 	m.HandleFunc("POST /api/v1/library-folders/{id}/scan", h.scanFolder)
 	m.HandleFunc("POST /api/v1/library-folders/{id}/adopt", h.adoptFolders)
-	m.HandleFunc("POST /api/v1/library/rescan", h.rescanLibrary)
 }
 
 // scanFolder queues the dry-run scan of a Library folder; GET
@@ -98,15 +97,6 @@ func (h *OrganiseHandlers) adoptFolders(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	webserver.WriteJSON(w, http.StatusAccepted, map[string]any{"job_id": jobID})
-}
-
-func (h *OrganiseHandlers) rescanLibrary(w http.ResponseWriter, r *http.Request) {
-	id, _, err := h.Queue.Enqueue(r.Context(), KindRescan, nil, nil, KindRescan, webserver.ActorOr(r, database.Actor{Kind: "user", ID: 1}))
-	if err != nil {
-		webserver.Internal(w, "api", err)
-		return
-	}
-	webserver.WriteJSON(w, http.StatusAccepted, map[string]any{"job_id": id})
 }
 
 // deleteTitle answers with the plan of a delete (apply false, the default)

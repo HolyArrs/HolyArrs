@@ -1,4 +1,4 @@
-import { protocolOf, size, sizePair } from './size.ts';
+import { protocolOf, size } from './size.ts';
 import { describe, expect, it } from 'vitest';
 
 describe('size', () => {
@@ -13,10 +13,6 @@ describe('size', () => {
 		expect(size(18_400_000_000)).toBe('18 GB');
 		expect(size(1_000_000_000_000)).toBe('1 TB');
 		expect(size(999_960_000)).toBe('1 GB');
-	});
-	it('writes a part of a whole', () => {
-		expect(sizePair(553e6, 3e9)).toBe('553 MB / 3 GB');
-		expect(sizePair(9e9, 9e9)).toBe('9 GB / 9 GB');
 	});
 	it('names the protocol', () => {
 		expect(protocolOf({ protocol: 'usenet' })).toBe('usenet');

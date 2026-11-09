@@ -190,7 +190,6 @@ func TestDlPinDownloadRouteAccess(t *testing.T) {
 	}
 	probes := []probe{
 		{"GET", "/api/v1/downloads/view", 200, 200},
-		{"GET", "/api/v1/downloads/speeds", 403, 200},
 		{"GET", "/api/v1/needs-decision", 403, 200},
 		{"POST", "/api/v1/needs-decision/1/decide", 403, 404},
 		{"POST", "/api/v1/downloads/1/remove", 403, 0}, // owner outcome depends on the client; checked below

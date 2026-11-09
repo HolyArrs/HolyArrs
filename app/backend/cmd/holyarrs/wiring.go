@@ -25,7 +25,7 @@ func registerHooks() {
 }
 
 // routes returns the handler that serves every route of the app. Each module
-// that leaves the api package adds one registration line here.
+// that is split out of this package adds one registration line here.
 func routes(a *handlers, c config) http.Handler {
 	rt := webserver.NewRouter()
 	a.Routes(rt)

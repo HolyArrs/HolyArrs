@@ -9,8 +9,7 @@ import (
 	"testing"
 )
 
-// API and New keep the moved api tests' spelling: a music Handlers over a
-// test Server.
+// API and New give the tests a music Handlers over a test Server.
 type API = testAPI
 
 func New(s Server) *API { return newTestAPI(s) }

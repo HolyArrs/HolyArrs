@@ -25,7 +25,7 @@ Each limit covers a rolling 7 days and counts one kind only. Approvers have no l
 
 ### One person's own limit
 
-Open **Settings > Users**, change the person and set their weekly asks. An empty box uses the default.
+Open **Settings > Users and roles**, change the person and set their weekly asks. An empty box uses the default.
 
 ### Where approved titles go
 
@@ -44,7 +44,7 @@ These apply when an approver leaves folder or quality on **Default**.
 **Cause:** the value is outside 0 to 1000.
 
 **Symptom:** someone still hits a limit after you raised it.
-**Cause:** they have their own limit. **Fix:** clear it in **Settings > Users**.
+**Cause:** they have their own limit. **Fix:** clear it in **Settings > Users and roles**.
 
 ## For experts
 

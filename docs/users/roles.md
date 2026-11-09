@@ -30,9 +30,9 @@ For a child with an age limit, see [Kid accounts](kids.md).
 
 | Permission | What it allows | New admin | New member |
 | --- | --- | --- | --- |
-| Ask for titles | Make requests | Yes | Yes |
-| Asks approved without waiting | Requests skip approval | Yes | No |
-| Approve or turn down asks | Decide other people's requests | Yes | No |
+| Request titles | Make requests | Yes | Yes |
+| Requests approved without waiting | Requests skip approval | Yes | No |
+| Approve or turn down requests | Decide other people's requests | Yes | No |
 | Run the Library | Search, organise and manage Library work | Yes | No |
 | Change settings | Open and change ordinary settings | No | No |
 
@@ -57,7 +57,7 @@ These changes need a password sign-in. If you came in through the local network 
 
 Each person does this for their own account.
 
-1. Open **My account** and select **Set up two-factor sign-in**.
+1. Open **My account**, find **Two-factor** and select **Set up**.
 2. Add the account to an authenticator app, with the link or the key shown.
 3. Enter the 6-digit code from the app.
 4. Save the 10 backup codes somewhere safe. You see them only now; each works once.

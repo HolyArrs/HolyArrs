@@ -1,4 +1,4 @@
-import { addDays, rangeChunks, titlesFromAddress, itemDot, oneMovieDate, movieFacts, followsOk, followerNames, withFollow, startFollows, readFollows, saveFollows, type MovieFacts, byDay, monthGrid, monthRange, shiftMonth, ymd, weekStart, shiftWeek, readView, saveView, startView, viewFromAddress, entryArt, entryIcon, bannerArt, type BannerEntry } from './calendar.ts';
+import { addDays, rangeChunks, titlesFromAddress, itemDot, oneMovieDate, movieFacts, followsOk, followerNames, withFollow, startFollows, readFollows, saveFollows, type MovieFacts, byDay, monthGrid, monthRange, shiftMonth, ymd, weekStart, readView, saveView, startView, viewFromAddress, entryArt, bannerArt, type BannerEntry } from './calendar.ts';
 import { describe, expect, it } from 'vitest';
 import type { CalendarEntry } from '../core/types.ts';
 
@@ -41,7 +41,6 @@ describe('calendar week', () => {
 	it('starts weeks on Monday', () => {
 		const s = weekStart(new Date(2026, 9, 18)); // A Sunday.
 		expect(ymd(s)).toBe('2026-10-12');
-		expect(ymd(shiftWeek(s, -1))).toBe('2026-10-05');
 	});
 
 	it('opens on Cards, the address first, then the session pick; old layout links still land', () => {
@@ -72,11 +71,6 @@ describe('calendar artwork', () => {
 		expect(entryArt({ ...e(1, 'episode', '2026-10-20'), backdrop: 'b.jpg', poster: 'p.jpg' })).toBe('b.jpg');
 		expect(entryArt({ ...e(1, 'digital', '2026-10-20'), still: '', poster: 'p.jpg' })).toBe('p.jpg');
 		expect(entryArt(e(1, 'digital', '2026-10-20'))).toBeNull();
-	});
-	it('picks the kind icon for entries without art', () => {
-		expect(entryIcon('episode')).toBe('tv');
-		expect(entryIcon('album')).toBe('music');
-		expect(entryIcon('cinema')).toBe('film');
 	});
 });
 

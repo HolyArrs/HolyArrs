@@ -11,7 +11,7 @@ import (
 )
 
 // Deps is what the setup and part gate routes need: services and core types, and funcs
-// for anything a higher module owns (t14 split design, section 4).
+// for anything a higher module owns.
 type Deps struct {
 	Store *database.Store
 	// Parts switches the parts (nil: every part on, no switches).

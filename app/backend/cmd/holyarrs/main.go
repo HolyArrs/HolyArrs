@@ -706,7 +706,6 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	dls.Match = a.DownloadsWeb().MatchLinkOnly
 	// Push updates of the snapshots to the Downloads page (only while on).
 	dls.Pub = &downloads.SnapshotPublisher{Store: dls.Store, Build: a.DownloadsWeb().PublishDL, Health: a.DownloadsWeb().PublishDLHealth}
-	a.StartSpeedHistory(ctx)
 	if !c.SafeMode {
 		a.StartExplore(ctx)
 	}

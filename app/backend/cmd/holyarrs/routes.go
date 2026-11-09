@@ -168,14 +168,6 @@ func buildHandlers(s services) *handlers {
 // In safe mode the Library still lists every title (parts.SafeLibrary).
 func (a *handlers) partIsOn(p parts.Part) bool { return parts.PartOn(a.s.Parts, p) }
 
-// viewer is the signed-in person's id (1, the owner, without sign-in).
-func viewer(ctx context.Context) int64 {
-	if who, ok := webserver.From(ctx); ok {
-		return who.UserID
-	}
-	return 1
-}
-
 // actor is the signed-in person; without sign-in (tests) it is the owner.
 func actor(r *http.Request) domain.Actor {
 	return webserver.ActorOr(r, domain.Actor{Kind: "user", ID: 1})

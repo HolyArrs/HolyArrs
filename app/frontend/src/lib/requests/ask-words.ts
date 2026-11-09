@@ -1,20 +1,13 @@
 // Words and small rules for Requests screens.
 
 import type { AskLimit, LimitKind } from './types.ts';
-import type { Ask, AskState } from '../core/types.ts';
-
-export type RequestsView = 'waiting' | 'all' | 'mine';
+import type { Ask } from '../core/types.ts';
 
 /** The Requests tabs. Failed is an approved ask that never reached the Library. */
 export type AskTab = 'waiting' | 'approved' | 'declined' | 'done' | 'failed';
 
 /** The approvers' tabs, simpler than the members' five: Pending waits for an answer, Processing is approved and not in the Library yet (failed ones too), Done is in the Library or declined. */
 export type ApproverTab = 'pending' | 'processing' | 'done';
-
-/** The chip colour for an ask state. */
-export function askTone(state: AskState): 'wait' | 'ok' | 'fail' | '' {
-	return ({ asked: 'wait', approved: '', turned_down: 'fail', available: 'ok' } as const)[state] ?? '';
-}
 
 /** Joins people: "ana", "ana and bo", "ana, bo and cy". */
 export function names(list: string[]): string {
@@ -105,17 +98,6 @@ export const askMoments = ['ask_waiting', 'ask_approved', 'ask_turned_down', 'as
 
 /** Go to the staff. */
 export const libraryMoments = ['grab', 'import', 'rename', 'add', 'delete', 'health', 'needs_decision'] as const;
-
-/** Counts the asks in each Requests view. */
-export function viewCounts(asks: Pick<Ask, 'state' | 'mine'>[]): Record<RequestsView, number> {
-	return { waiting: asks.filter((a) => a.state === 'asked').length, all: asks.length, mine: asks.filter((a) => a.mine).length };
-}
-
-/** The first view with items: Waiting, else Everyone's, else Mine. */
-export function firstView(asks: Pick<Ask, 'state' | 'mine'>[]): RequestsView {
-	const n = viewCounts(asks);
-	return n.waiting ? 'waiting' : n.all ? 'all' : 'mine';
-}
 
 export const askTabs: { tab: AskTab; label: string }[] = [
 	{ tab: 'waiting', label: 'Waiting' },

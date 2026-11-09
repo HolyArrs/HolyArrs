@@ -102,7 +102,6 @@ app/backend/internal/library/versions.go
 app/backend/internal/mediafiles/datapack/apply.go
 app/backend/internal/mediafiles/datapack/datapack.go
 app/backend/internal/mediafiles/kid.go
-app/backend/internal/mediafiles/routes_library_summary.go
 app/backend/internal/mediafiles/routes_owned.go
 app/backend/internal/mediafiles/store_title_facts.go
 app/backend/internal/mediafiles/titles_brief.go

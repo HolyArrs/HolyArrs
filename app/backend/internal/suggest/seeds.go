@@ -162,9 +162,6 @@ func NewProfile(seeds []Seed) Profile {
 	return p
 }
 
-// Empty reports whether the profile has no signal.
-func (p Profile) Empty() bool { return len(p.genres) == 0 && len(p.people) == 0 && p.year == 0 }
-
 // TopGenres returns up to n of the strongest genres whose share of the total
 // positive weight is at least minShare.
 func (p Profile) TopGenres(n int, minShare float64) []string {

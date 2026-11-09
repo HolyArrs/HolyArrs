@@ -1,4 +1,4 @@
-import { alsoDeclined, approverCounts, approverSort, approverTab, askTab, askTabs, askTone, askedBy, firstTab, firstView, tabCounts, limitLine, limitLines, names, viewCounts, waitWords } from './ask-words.ts';
+import { alsoDeclined, approverCounts, approverSort, approverTab, askTab, askTabs, askedBy, firstTab, tabCounts, limitLine, limitLines, names, waitWords } from './ask-words.ts';
 import type { AskKindLimit, AskLimit } from './types.ts';
 import { describe, expect, it } from 'vitest';
 import type { AskState } from '../core/types.ts';
@@ -14,12 +14,6 @@ describe('requests words', () => {
 	it('says who asked', () => {
 		const who = (id: number, name: string) => ({ id, name, asked_at: '' });
 		expect(askedBy({ asked_by: { id: 2, name: 'ana' }, people: [who(2, 'ana'), who(3, 'bo')] })).toBe('Asked by ana and bo');
-	});
-
-	it('colours states', () => {
-		expect(askTone('asked')).toBe('wait');
-		expect(askTone('available')).toBe('ok');
-		expect(askTone('turned_down')).toBe('fail');
 	});
 
 	it('says waits like the server', () => {
@@ -47,26 +41,6 @@ describe('requests words', () => {
 		expect(limitLine(l, 'music')).toBe('');
 		expect(limitLines(l, undefined, now).map((x) => x.kind)).toEqual(['movies', 'shows']);
 		expect(limitLines(l, ['music'], now)).toEqual([]);
-	});
-});
-
-describe('requests views', () => {
-	const ask = (state: string, mine: boolean) => ({ state, mine }) as Pick<import('../core/types.ts').Ask, 'state' | 'mine'>;
-
-	it('counts each view', () => {
-		expect(viewCounts([ask('asked', true), ask('approved', false), ask('asked', false)])).toEqual({ waiting: 2, all: 3, mine: 1 });
-	});
-
-	it('opens on Waiting when something waits', () => {
-		expect(firstView([ask('approved', true), ask('asked', false)])).toBe('waiting');
-	});
-
-	it("opens on Everyone's when nothing waits but there is history", () => {
-		expect(firstView([ask('approved', false), ask('available', true)])).toBe('all');
-	});
-
-	it('opens on Mine only when the list is empty', () => {
-		expect(firstView([])).toBe('mine');
 	});
 });
 

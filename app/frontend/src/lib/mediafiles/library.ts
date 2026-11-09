@@ -152,14 +152,6 @@ export function slotNotes(slots: { reason?: string | null }[]): string[] {
 	return [...new Set(slots.map((s) => s.reason ?? '').filter((r) => r && !r.startsWith('release gate:')))];
 }
 
-export function inLibraryWord(state: string | undefined, versions?: { label: string; state: string }[]): string {
-	if (versions && versions.length > 1) {
-		const have = versions.filter((v) => v.state === 'in_library').map((v) => v.label);
-		return have.length ? ` · in the Library: ${have.join(', ')}` : '';
-	}
-	return state === 'in_library' ? ' · in the Library' : '';
-}
-
 // Strips accents so a name starting with an accented letter files under its plain letter.
 export function letterOf(name: string): string {
 	const c = name.trim().normalize('NFD').replace(/[̀-ͯ]/g, '').charAt(0).toUpperCase();

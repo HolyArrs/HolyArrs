@@ -2,7 +2,7 @@ package main
 
 // Rigs for the request-side tests that span several modules (reports,
 // reviews, title defaults, the waiting download row). They run the real
-// New server, like the old tests in internal/api did.
+// New server.
 
 import (
 	"context"

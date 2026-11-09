@@ -10,8 +10,7 @@ import (
 )
 
 // Deps is what the Library files routes need: services and core types, and funcs
-// for anything a higher module owns (t14 split design, section 4). Filled
-// as the routes move out of internal/api.
+// for anything a higher module owns.
 type Deps struct {
 	Store *database.Store
 	Queue *jobs.Queue
@@ -52,7 +51,6 @@ type Handlers struct {
 // Routes registers the Library files routes.
 func (h *Handlers) Routes(m *http.ServeMux) {
 	m.HandleFunc("GET /api/v1/library/search", h.librarySearch)
-	m.HandleFunc("GET /api/v1/library-summary", h.librarySummary)
 	m.HandleFunc("GET /api/v1/library/copies", h.listLibraryCopies)
 	m.HandleFunc("POST /api/v1/library/copies/search/preview", h.previewLibraryCopySearch)
 	m.HandleFunc("POST /api/v1/library/copies/search", h.searchLibraryCopies)

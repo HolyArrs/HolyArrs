@@ -7,7 +7,6 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 )
 
@@ -60,13 +59,4 @@ func TestTitleDefaultsSaveAndValidate(t *testing.T) {
 	if err != nil || got != d || len(saved) != 8 || !saved["movie_search_on_add"] || !saved["show_pick_rules_id"] {
 		t.Fatalf("read back %+v saved %v err %v", got, saved, err)
 	}
-}
-
-func countJobs(t *testing.T, s *database.Store, kind string) int {
-	t.Helper()
-	var n int
-	if err := s.Read().QueryRow("SELECT count(*) FROM jobs WHERE kind = ?", kind).Scan(&n); err != nil {
-		t.Fatal(err)
-	}
-	return n
 }

@@ -89,7 +89,7 @@ home.example {
 | A saved path locked you out | The saved path is wrong | Start with `HOLYARRS_URL_BASE=/` to ignore it. |
 | Sign-in treats you as outside your network | The proxy is not trusted | Send `X-Real-IP` and `X-Forwarded-For`, and set `HOLYARRS_TRUSTED_PROXIES`. |
 
-More fixes: [Troubleshooting](../help/troubleshooting/).
+More fixes: [Troubleshooting](../../help/troubleshooting/).
 
 ## For experts
 
@@ -117,6 +117,6 @@ More fixes: [Troubleshooting](../help/troubleshooting/).
 
 ## Related
 
-- [Install](../start/install/)
-- [Sign-in](../users/sign-in/)
-- [Environment variables](../reference/env-vars/)
+- [Install](../../start/install/)
+- [Sign-in](../../users/sign-in/)
+- [Environment variables](../../reference/env-vars/)

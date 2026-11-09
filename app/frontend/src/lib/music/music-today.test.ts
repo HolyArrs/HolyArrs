@@ -1,20 +1,8 @@
-import { popularityStats, shortCount } from './music-pages.ts';
+import { shortCount } from './music-pages.ts';
 import { fetchRisingToday, withRising } from './music-trending.ts';
 import { describe, expect, it } from 'vitest';
 
 describe('artist popularity', () => {
-	it('shows listeners, rank and today for the most played artists', () => {
-		expect(popularityStats({ monthly_listeners: 81_500_000, world_rank: 7, listeners_change_today: -120_400 })).toEqual([
-			{ v: '81.5M', l: 'Monthly listeners' },
-			{ v: '#7', l: 'World rank' },
-			{ v: '−120K', l: 'Listeners today' }
-		]);
-	});
-	it('shows total plays for the others, nothing without a figure', () => {
-		expect(popularityStats({ total_plays: 1234 })).toEqual([{ v: '1.2K', l: 'Total plays' }]);
-		expect(popularityStats({ as_of: '2026-10-27' })).toEqual([]);
-		expect(popularityStats(undefined)).toEqual([]);
-	});
 	it('writes short counts', () => {
 		expect(shortCount(999)).toBe('999');
 		expect(shortCount(2_000_000)).toBe('2M');

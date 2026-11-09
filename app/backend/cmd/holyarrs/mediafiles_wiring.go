@@ -16,7 +16,7 @@ import (
 )
 
 // The Kid limit lives in internal/mediafiles; these wrappers keep the
-// callers still in api unchanged until they move.
+// callers in this package short.
 
 // aboveLimit is the answer to a TMDB title above the limit.
 const aboveLimit = metadata.AboveLimit
@@ -111,5 +111,3 @@ func (a *handlers) albumNames(list []mediafiles.AlbumName) {
 func (a *handlers) libraryPeople(r *http.Request, words []string, visible func(mediafiles.Title) bool) ([]mediafiles.LibraryPerson, error) {
 	return a.mf.LibraryPeople(r, words, visible)
 }
-
-func fold(s string) string { return mediafiles.Fold(s) }

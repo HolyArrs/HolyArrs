@@ -102,15 +102,6 @@ export function albumStateOf(a: Pick<AlbumSummary, 'state' | 'release_date'>, no
 	return albumState(a.state);
 }
 
-/** Counts an album's tracks: "8 of 12 tracks in the Library". */
-export function albumLine(a: Pick<AlbumSummary, 'tracks' | 'in_library' | 'missing' | 'included'>): string {
-	if (!a.included) return 'Left out by the album kinds';
-	if (!a.tracks) return 'Tracks come with the next refresh';
-	const parts = [`${a.in_library} of ${a.tracks} tracks in the Library`];
-	if (a.missing) parts.push(`${a.missing} missing`);
-	return parts.join(' · ');
-}
-
 /** Sums an artist up: "3 of 12 tracks in the Library · 9 missing". */
 export function artistProgress(a: ArtistInfo | undefined): string {
 	if (!a) return '';
@@ -119,16 +110,6 @@ export function artistProgress(a: ArtistInfo | undefined): string {
 	if (a.missing) parts.push(`${a.missing} missing`);
 	if (a.not_out_yet) parts.push(`${a.not_out_yet} not out yet`);
 	return parts.join(' · ');
-}
-
-/** One chip for an artist in the Library list. */
-export function artistState(a: ArtistInfo | undefined): { state: string; label: string } {
-	if (!a) return { state: '', label: '' };
-	if (a.missing) return { state: 'wanted', label: `${a.missing} missing` };
-	if (a.tracks && a.in_library === a.tracks) return { state: 'in_library', label: 'In library' };
-	if (a.not_out_yet) return { state: 'not_out_yet', label: 'Not out yet' };
-	if (a.in_library > 0) return { state: 'in_library', label: `${a.in_library} ${a.in_library === 1 ? 'track' : 'tracks'} in library` };
-	return { state: '', label: '' };
 }
 
 /** A track's length as m:ss. */
@@ -165,13 +146,6 @@ export function toggle(list: string[], v: string, on: boolean, all: readonly (re
 	return next.sort((a, b) => order.indexOf(a) - order.indexOf(b));
 }
 
-// What a Search now on a whole artist queued, and how many album searches it left for the next click (one click queues at most the artist search limit in Settings > Search).
-export function artistSearchToast(queued: number, leftOut = 0): string {
-	if (!queued) return 'No album is missing a track right now.';
-	const s = `Searching for ${queued} ${queued === 1 ? 'album' : 'albums'}, a little apart. Home shows what they find.`;
-	return leftOut > 0 ? `${s} ${leftOut} more ${leftOut === 1 ? 'is' : 'are'} left for the next Search now or the nightly search.` : s;
-}
-
 /** The discography rows of an artist page, in page order. */
 export const DISCOGRAPHY = [
 	['albums', 'Albums'],
@@ -195,12 +169,6 @@ export function discographyRow(a: Pick<AlbumSummary, 'type' | 'secondary_types'>
 export function discography<T extends Pick<AlbumSummary, 'type' | 'secondary_types' | 'release_date'>>(albums: T[]): { row: DiscographyRow; label: string; albums: T[] }[] {
 	const newest = (x: T, y: T) => (y.release_date ?? '').localeCompare(x.release_date ?? '');
 	return DISCOGRAPHY.map(([row, label]) => ({ row, label, albums: albums.filter((a) => discographyRow(a) === row).sort(newest) })).filter((g) => g.albums.length);
-}
-
-/** The newest album or EP that is out, never one still to come. */
-export function latestRelease<T extends Pick<AlbumSummary, 'type' | 'secondary_types' | 'release_date'>>(albums: T[], now = Date.now()): T | null {
-	const out = albums.filter((a) => a.release_date && Date.parse(a.release_date) <= now && (discographyRow(a) === 'albums' || discographyRow(a) === 'singles'));
-	return out.sort((x, y) => (y.release_date ?? '').localeCompare(x.release_date ?? ''))[0] ?? null;
 }
 
 /** The address of a Library album's cover, served from the artwork cache. */

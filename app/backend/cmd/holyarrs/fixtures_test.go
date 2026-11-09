@@ -1,6 +1,6 @@
 package main
 
-// Fixtures copied from internal/api's tests for the cross-module tests
+// Fixtures for the cross-module tests
 // that run here on the program's real routes.
 
 import (
@@ -32,7 +32,7 @@ type addedShow struct {
 	JobID int64 `json:"job_id"`
 }
 
-// The music fixtures the api tests that span music and other modules
+// The music fixtures the tests that span music and other modules
 // share (the music tests keep their own copy in internal/music).
 
 // fakeArtists is MusicBrainz over fixed answers.

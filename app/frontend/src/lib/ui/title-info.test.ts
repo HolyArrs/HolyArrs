@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { facts, firstSeason, readEpisodes, readInfo, seasonLabel } from './title-info.ts';
+import { facts, readInfo } from './title-info.ts';
 
 describe('the details answer', () => {
 	const raw = {
@@ -31,14 +31,5 @@ describe('the details answer', () => {
 		const d = readInfo('show', '1', { year: 2021, seasons: [{ number: 0, episode_count: 3 }, { number: 1, episode_count: 8 }, { number: 2, episode_count: 0 }, { number: 3, episode_count: 6 }] });
 		expect(d.seasons.map((s) => s.number)).toEqual([0, 1, 3]);
 		expect(facts(d)).toEqual(['Show', '2 seasons', '2021']);
-		expect(firstSeason(d.seasons)).toBe(1);
-		expect(firstSeason([{ number: 0, episodes: 1 }, { number: 4, episodes: 2 }])).toBe(4);
-		expect(firstSeason([])).toBeNull();
-		expect(seasonLabel(0)).toBe('Specials');
-	});
-	it('reads episodes', () => {
-		expect(readEpisodes({ episodes: [{ number: 1, name: 'Pilot', runtime: 50, air_day: '2021-01-01' }, { number: 0 }] })).toEqual([
-			{ number: 1, name: 'Pilot', overview: undefined, runtime: 50, still: undefined, airDay: '2021-01-01' }
-		]);
 	});
 });

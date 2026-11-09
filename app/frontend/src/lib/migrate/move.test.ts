@@ -1,40 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import {
-	appLabel,
-	appName,
-	asStep,
-	buckets,
-	chooseHint,
-	cleanRules,
-	countWord,
-	countWords,
-	extraProblems,
-	folderProblem,
-	moveCounts,
-	moveStateWord,
-	moveTotal,
-	needsGroups,
-	notMovedByGroup,
-	OTHER,
-	placeholderFor,
-	resultWords,
-	ruleProblem,
-	rulesFrom,
-	running,
-	setChoice,
-	stayTotal,
-	stepGate,
-	summary,
-	tone,
-	type Report
-} from './move.ts';
+import { appName, asStep, buckets, chooseHint, cleanRules, countWord, countWords, extraProblems, folderProblem, moveCounts, moveStateWord, moveTotal, needsGroups, OTHER, placeholderFor, resultWords, ruleProblem, rulesFrom, running, setChoice, stepGate, summary, tone, type Report } from './move.ts';
 
 describe('move helpers', () => {
 	it('names apps, with what they bring and their usual port', () => {
 		expect(appName('qbittorrent')).toBe('qBittorrent');
 		expect(appName('other')).toBe('other');
-		expect(appLabel('seerr')).toBe('Seerr · people and requests');
-		expect(appLabel('sabnzbd')).toBe('SABnzbd · Downloader');
 		expect(placeholderFor('radarr')).toMatch(/:7878$/);
 		expect(placeholderFor('sonarr')).toMatch(/:8989$/);
 		expect(placeholderFor('lidarr')).toMatch(/:8686$/);
@@ -95,7 +65,6 @@ describe('move helpers', () => {
 		expect(summary({ create: 2, already: 1, failed: 0 })).toBe('2 will be added · 1 already here');
 		expect(summary({ created: 840, not_found: 4, failed: 2 }, true)).toBe('840 added · 4 no folder here · 2 failed');
 		expect(moveTotal({ create: 3, adopt: 1, already: 5, skipped: 2 })).toBe(4);
-		expect(stayTotal({ create: 3, skipped: 2, not_found: 1, failed: 1 })).toBe(4);
 	});
 
 	it('sorts a report into buckets in one pass, with the people who need a choice', () => {
@@ -124,17 +93,6 @@ describe('move helpers', () => {
 		expect(chooseHint('numeric_id')).toMatch(/can't tell/);
 		expect(chooseHint('merge_gone')).toMatch(/no longer here/);
 		expect(chooseHint('same_name')).toMatch(/same name/);
-	});
-
-	it('groups the not-moved list by label', () => {
-		const g = notMovedByGroup(
-			[
-				{ group: 'titles', from: 'x', what: 'a', why: 'b' },
-				{ group: 'nope', from: 'y', what: 'c', why: 'd' }
-			],
-			{ titles: 'Titles' }
-		);
-		expect(g.map((x) => x.label)).toEqual(['Titles', 'Other settings']);
 	});
 
 	it('groups keys to type again by what comes before the first quote or colon', () => {

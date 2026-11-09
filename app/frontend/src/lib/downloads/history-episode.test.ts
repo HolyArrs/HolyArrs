@@ -1,4 +1,4 @@
-import { filterParams, historyQuery, readFilter } from './history.ts';
+import { historyQuery, readFilter } from './history.ts';
 import { describe, expect, it } from 'vitest';
 
 describe('history of one episode', () => {
@@ -7,7 +7,6 @@ describe('history of one episode', () => {
 		expect(f.episode).toBe(41);
 		expect(new URLSearchParams(historyQuery(f)).get('episode')).toBe('41');
 		expect(new URLSearchParams(historyQuery(f)).get('title')).toBeNull();
-		expect(filterParams(f)).toBe('?title=3&episode=41');
 		expect(readFilter(new URLSearchParams('episode=x')).episode).toBeUndefined();
 	});
 });

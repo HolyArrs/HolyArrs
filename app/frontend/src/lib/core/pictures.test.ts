@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { forgetPictures, pictureFor, pictureKey, pictureOf, ratioOf, registerPictures, versioned, withVersion } from './pictures.ts';
+import { forgetPictures, pictureFor, pictureKey, pictureOf, registerPictures, versioned, withVersion } from './pictures.ts';
 import { createClient } from './api.ts';
 import { heroPictures } from '../discover/hero-prefetch.ts';
 
@@ -18,7 +18,6 @@ describe('picture records', () => {
 		expect(pictureKey(`/holyarrs/api/v1/music-trending/art/album/${al}?size=500`)).toBe(`album:${al}`);
 		expect(pictureOf(`/api/v1/music-trending/art/album/${al}?size=500`)?.color).toBe('#a0b0c0');
 		expect(pictureFor('logo', ar)?.color).toBe('');
-		expect(ratioOf(pictureFor('logo', ar))).toBeCloseTo(800 / 310);
 		expect(pictureFor('artist', ar)).toBeUndefined();
 		expect(pictureOf('/api/v1/artwork/tmdb/w342/a.jpg')).toBeUndefined();
 	});

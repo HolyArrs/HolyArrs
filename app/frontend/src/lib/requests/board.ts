@@ -128,18 +128,6 @@ export function kindWord(kind: string): string {
 	return kind === 'show' ? 'TV show' : kind === 'artist' ? 'Music' : 'Movie';
 }
 
-/** Puts asks under the first person who asked, biggest group first, then by name. */
-export function personGroups<T extends Pick<Ask, 'asked_by' | 'people'>>(asks: T[]): { id: number; name: string; asks: T[] }[] {
-	const by = new Map<number, { id: number; name: string; asks: T[] }>();
-	for (const a of asks) {
-		const who = a.people[0] ?? a.asked_by;
-		const g = by.get(who.id) ?? { id: who.id, name: who.name, asks: [] };
-		g.asks.push(a);
-		by.set(who.id, g);
-	}
-	return [...by.values()].sort((x, y) => y.asks.length - x.asks.length || x.name.localeCompare(y.name));
-}
-
 /** Keeps a focus position inside a list of n after a move (wraps). */
 export function stepIndex(i: number, step: number, n: number): number {
 	if (n <= 0) return 0;
@@ -152,10 +140,3 @@ export function detailKey(a: Pick<Ask, 'kind' | 'tmdb_id'>): string {
 	return `${a.kind === 'show' ? 'show' : 'movie'}:${a.tmdb_id}`;
 }
 
-/** A runtime in words: "1 h 52 min", "48 min". */
-export function runtimeLine(min: number | undefined): string {
-	if (!min) return '';
-	const h = Math.floor(min / 60);
-	const m = min % 60;
-	return h ? (m ? `${h} h ${m} min` : `${h} h`) : `${m} min`;
-}

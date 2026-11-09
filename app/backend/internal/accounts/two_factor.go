@@ -87,12 +87,6 @@ func normBackup(c string) string {
 	return strings.ToLower(strings.NewReplacer("-", "", " ", "").Replace(strings.TrimSpace(c)))
 }
 
-// passed finishes a sign-in whose first step was right: straight to a
-// session, or a ticket when two-factor sign-in is on.
-func (a *Auth) passed(w http.ResponseWriter, r *http.Request, userID int64, name string) {
-	a.passedPlace(w, r, userID, name, AuthMethodLocalPassword, place{})
-}
-
 // passedAs finishes a sign-in while preserving how its first factor was
 // checked across an optional two-factor ticket.
 func (a *Auth) passedAs(w http.ResponseWriter, r *http.Request, userID int64, name, method string) {

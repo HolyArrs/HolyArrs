@@ -1,5 +1,5 @@
 import { genrePath, genresFor, parseGenre } from './genres.ts';
-import { serviceChips, serviceLabel, serviceTopPath, topChips, topPath, topSource, type ServiceTopRow } from './explore-services.ts';
+import { serviceChips, serviceLabel, serviceTopPath, topPath, type ServiceTopRow } from './explore-services.ts';
 import { describe, expect, it } from 'vitest';
 
 describe('Trending on streaming', () => {
@@ -7,15 +7,6 @@ describe('Trending on streaming', () => {
 		expect(topPath({ type: 'movies', chip: 'all', services: [8, 337], region: 'US' })).toBe('/explore/top?type=movies&chip=all&region=US&services=8%7C337');
 		expect(topPath({ type: 'shows', chip: 8, services: [8], region: 'GB', genre: 18 })).toBe('/explore/top?type=shows&chip=8&region=GB&services=8&genre=18');
 		expect(topPath({ type: 'all', chip: 8, services: [], region: 'US', genre: 27 })).toBe('/explore/top?type=all&chip=8&region=US');
-	});
-	it('offers All my services, then each picked service', () => {
-		const shown = [{ id: 8, name: 'Netflix', priority: 1 }, { id: 337, name: 'Disney Plus', priority: 2 }, { id: 9, name: 'Prime Video', priority: 3 }];
-		expect(topChips([337, 8, 4040], shown).map((c) => c.name)).toEqual(['All my services', 'Disney Plus', 'Netflix']);
-		expect(topChips([], shown).map((c) => c.id)).toEqual(['all']);
-	});
-	it('names the source honestly', () => {
-		expect(topSource({ source: 'popular', region: 'US' }, 'Disney+')).toBe('Popular on Disney+ · US');
-		expect(topSource({ source: 'popular', region: 'US' }, 'your services')).toBe('Popular on your services · US');
 	});
 });
 

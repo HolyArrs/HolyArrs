@@ -104,15 +104,3 @@ func TestDownloadsViewFailedReplaced(t *testing.T) {
 		t.Fatalf("just failed: %+v", r)
 	}
 }
-
-// route: GET /api/v1/downloads/speeds
-func TestDownloadsSpeedsRoute(t *testing.T) {
-	t.Parallel()
-	x := seed41(t, mediafiles.SlotDownloading, "downloading")
-	var out struct {
-		Samples []map[string]any `json:"samples"`
-	}
-	if err := json.Unmarshal(do(t, "GET", x.srv.URL+"/api/v1/downloads/speeds", "", 200), &out); err != nil {
-		t.Fatal(err)
-	}
-}

@@ -20,14 +20,6 @@ export interface InfoService {
 	name: string;
 	logo?: string;
 }
-export interface InfoEpisode {
-	number: number;
-	name?: string;
-	overview?: string;
-	runtime?: number;
-	still?: string;
-	airDay?: string;
-}
 export interface InfoDetails {
 	kind: InfoKind;
 	tmdb: string;
@@ -128,22 +120,6 @@ export function readInfo(kind: InfoKind, tmdb: string, raw: Raw): InfoDetails {
 			ask: (raw.ask as ProviderItem['ask']) ?? undefined
 		} as ProviderItem
 	};
-}
-
-// Prefers season 1, then the first real season, so specials do not open first.
-export function firstSeason(seasons: InfoSeason[]): number | null {
-	if (!seasons.length) return null;
-	return (seasons.find((s) => s.number === 1) ?? seasons.find((s) => s.number > 0) ?? seasons[0]).number;
-}
-
-export function seasonLabel(n: number): string {
-	return n === 0 ? 'Specials' : `Season ${n}`;
-}
-
-export function readEpisodes(raw: Raw): InfoEpisode[] {
-	return arr(raw.episodes)
-		.map((e) => ({ number: typeof e.number === 'number' ? e.number : 0, name: str(e.name), overview: str(e.overview), runtime: pos(e.runtime), still: str(e.still), airDay: str(e.air_day) }))
-		.filter((e) => e.number > 0);
 }
 
 // 135 -> "2h 15m".

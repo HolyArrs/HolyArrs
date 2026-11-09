@@ -8,8 +8,6 @@ import (
 	"sort"
 	"testing"
 	"time"
-
-	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 )
 
 // jobSnapshot indexes jobs by id, the shape Diff takes.
@@ -225,15 +223,4 @@ func TestCursors_SharedSessionAndParseErrorDropsCursor(t *testing.T) {
 	if c.Rid(1, 0) != 0 {
 		t.Fatal("cursor kept after a garbled answer")
 	}
-}
-
-// openDB opens a fresh test database.
-func openDB(t *testing.T) *database.Store {
-	t.Helper()
-	s, err := database.Open(t.TempDir(), database.Options{})
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { _ = s.Close() })
-	return s
 }

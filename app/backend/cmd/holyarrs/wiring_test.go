@@ -9,7 +9,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 )
 
-// The program serves the routes of modules that left the api package: a
+// The program serves the routes of the modules: a
 // registration missing from routes would turn these into the web app's page.
 func TestRoutesServeModuleRoutes(t *testing.T) {
 	s, err := database.Open(t.TempDir(), database.Options{})

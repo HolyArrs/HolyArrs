@@ -19,7 +19,3 @@ type Deps struct {
 type Handlers struct {
 	Deps
 }
-
-// Routes registers the Requests routes. It adds none yet, because the
-// routes are still served by the api package.
-func (h *Handlers) Routes(m *http.ServeMux) {}

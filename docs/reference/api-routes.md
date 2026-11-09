@@ -83,7 +83,7 @@ Routes live in each module's `routes.go`, registered with method, path and permi
 
 <!-- Copied from docs/dev/api-routes.md, which app/backend/tools/apidoc generates. Regenerate there, then copy. -->
 
-525 routes. Regenerate with `go run ./app/backend/tools/apidoc`.
+520 routes. Regenerate with `go run ./app/backend/tools/apidoc`.
 
 The Auth column is the permission a caller needs, as pinned in the snapshot. The Purpose column is filled only where the route registration has a comment.
 
@@ -333,7 +333,6 @@ The Auth column is the permission a caller needs, as pinned in the snapshot. The
 | POST | `/api/v1/downloads/matches/{id}/pick` | manage_library |  |
 | POST | `/api/v1/downloads/pause-all` | manage_library |  |
 | POST | `/api/v1/downloads/resume-all` | manage_library |  |
-| GET | `/api/v1/downloads/speeds` | manage_library |  |
 | GET | `/api/v1/downloads/view` | signed_in |  |
 | GET | `/api/v1/downloads/{id}/detail` | manage_library |  |
 | PUT | `/api/v1/downloads/{id}/edition` | manage_library |  |
@@ -452,7 +451,6 @@ The Auth column is the permission a caller needs, as pinned in the snapshot. The
 | GET | `/api/v1/library/copies` | manage_library |  |
 | POST | `/api/v1/library/copies/search` | manage_library |  |
 | POST | `/api/v1/library/copies/search/preview` | manage_library |  |
-| POST | `/api/v1/library/rescan` | manage_library |  |
 | GET | `/api/v1/library/search` | signed_in |  |
 
 ### library-folders
@@ -466,12 +464,6 @@ The Auth column is the permission a caller needs, as pinned in the snapshot. The
 | POST | `/api/v1/library-folders/{id}/adopt` | manage_library |  |
 | POST | `/api/v1/library-folders/{id}/check` | manage_library |  |
 | POST | `/api/v1/library-folders/{id}/scan` | manage_library |  |
-
-### library-summary
-
-| Method | Path | Auth | Purpose |
-|---|---|---|---|
-| GET | `/api/v1/library-summary` | signed_in |  |
 
 ### links
 
@@ -761,8 +753,6 @@ The Auth column is the permission a caller needs, as pinned in the snapshot. The
 | PUT | `/api/v1/settings/trakt-key` | settings |  |
 | GET | `/api/v1/settings/trakt-token` | owner |  |
 | PUT | `/api/v1/settings/trakt-token` | owner |  |
-| GET | `/api/v1/settings/tvdb-key` | settings |  |
-| PUT | `/api/v1/settings/tvdb-key` | settings |  |
 | GET | `/api/v1/settings/ui` | signed_in |  |
 | PUT | `/api/v1/settings/ui` | settings |  |
 | GET | `/api/v1/settings/url-base` | settings |  |

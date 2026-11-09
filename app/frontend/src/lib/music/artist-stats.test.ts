@@ -1,4 +1,4 @@
-import { catalogParts, changeWords, fullCount, listening, smallReleasesWord } from './music-pages.ts';
+import { changeWords, fullCount, listening } from './music-pages.ts';
 import { describe, expect, it } from 'vitest';
 
 describe('artist stats band helpers', () => {
@@ -19,13 +19,6 @@ describe('artist stats band helpers', () => {
 
 	it('writes full counts and the catalog in words', () => {
 		expect(fullCount(72_785_924)).toBe('72,785,924');
-		expect(catalogParts({ albums: 16, eps: 5, singles: 89, since: '2005', span: '2005–2026' })).toEqual(['16 albums', '5 EPs', '89 singles', 'since 2005']);
-		expect(catalogParts({ albums: 1, eps: 0, singles: 1, since: '', span: '' })).toEqual(['1 album', '1 single']);
 	});
 
-	it('names singles and EPs by what there is', () => {
-		expect(smallReleasesWord({ eps: 5, singles: 89 })).toBe('Singles & EPs');
-		expect(smallReleasesWord({ eps: 0, singles: 2 })).toBe('Singles');
-		expect(smallReleasesWord({ eps: 1, singles: 0 })).toBe('EP');
-	});
 });

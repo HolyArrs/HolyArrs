@@ -11,8 +11,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 )
 
-// The reads below serve the arr API's lists. Each keeps the statement the
-// caller used to run, so the answers do not change.
+// The reads below serve the arr API's lists.
 
 // idTuple writes ids as an SQL list: (1,2,3).
 func idTuple(ids []int64) string {

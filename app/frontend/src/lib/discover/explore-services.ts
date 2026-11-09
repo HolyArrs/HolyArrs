@@ -67,11 +67,6 @@ export function pickerServices(all: WatchService[], picked: number[], n = SERVIC
 	return [...top, ...extra];
 }
 
-/** Adds or removes one service id, keeping the order picked. */
-export function toggleService(picked: number[], id: number): number[] {
-	return picked.includes(id) ? picked.filter((x) => x !== id) : [...picked, id];
-}
-
 /** Saved choice as { region: [ids] }; null when never picked, so the first-time prompt shows. */
 export const SERVICES_KEY = 'holyarrs.explore.services';
 
@@ -84,35 +79,12 @@ export function readServices(region: string, raw: string | null): number[] | nul
 	}
 }
 
-export function writeServices(region: string, ids: number[], raw: string | null): string {
-	let all: Record<string, number[]> = {};
-	try {
-		const v = JSON.parse(raw ?? 'null');
-		if (v && typeof v === 'object' && !Array.isArray(v)) all = v;
-	} catch {
-		/* Start over. */
-	}
-	return JSON.stringify({ ...all, [region]: ids });
-}
-
 /** GET /explore/top for one chip. */
 export function topPath(q: TopQuery): string {
 	const p = new URLSearchParams({ type: q.type === 'music' ? 'all' : q.type, chip: String(q.chip), region: q.region });
 	if (q.services.length) p.set('services', q.services.join('|'));
 	if (q.genre && (q.type === 'movies' || q.type === 'shows')) p.set('genre', String(q.genre));
 	return `/explore/top?${p.toString()}`;
-}
-
-/** All my services, then each picked service in the picker's order. */
-export function topChips(picked: number[], shown: WatchService[]): { id: TopChip; name: string; logo?: string }[] {
-	const byId = new Map(shown.map((s) => [s.id, s]));
-	return [{ id: 'all' as TopChip, name: 'All my services' }, ...picked.filter((id) => byId.has(id)).map((id) => ({ id: id as TopChip, name: byId.get(id)!.name, logo: byId.get(id)!.logo }))];
-}
-
-/** The small line under the row title: where the list comes from, honestly named. */
-export function topSource(a: Pick<TopAnswer, 'source' | 'region'>, serviceName: string): string {
-	const where = a.region === 'global' ? 'worldwide' : a.region;
-	return `Popular on ${serviceName} · ${where}`;
 }
 
 /** GET /explore/service-top: every service at once. */

@@ -1,4 +1,4 @@
-import { dayChip, dayName, entryFacts, entryLine, entryTag, entryTitle, groupDates, groupFacts, groupTag, monthGroups, movieDates, thingCount } from './calendar-groups.ts';
+import { dayChip, dayName, entryTag, entryTitle, groupDates, groupTag, monthGroups, thingCount } from './calendar-groups.ts';
 import { describe, expect, it } from 'vitest';
 import type { CalendarEntry } from '../core/types.ts';
 
@@ -23,24 +23,11 @@ describe('card words', () => {
 		expect(entryTag(ep({ season: 1, episode: 1 }))).toBe('Show premiere');
 		expect(entryTag(movie('cinema', '2026-12-18'))).toBe('In cinemas');
 		expect(entryTag(movie('physical', '2026-12-18'))).toBe('New movie');
-		expect(entryFacts(movie('digital', '2026-12-18'))).toBe('Movie release');
 		expect(entryTag(album('2026-10-09', { album_type: 'EP' }))).toBe('New EP');
 		expect(entryTag(album('2026-10-09', { album_type: 'Single' }))).toBe('New single');
 	});
 	it('puts the code, time and network on one facts line, and skips generic episode names', () => {
-		expect(entryFacts(ep())).toBe('S23E03 · ABC');
-		expect(entryFacts(ep({ timed: true, date: new Date(2026, 9, 29, 20, 0).toISOString() }))).toBe('S23E03 · 20:00 · ABC');
-		expect(entryLine(ep({ episode_name: 'Episode 4' }))).toBe('');
-		expect(entryLine(ep())).toBe('Collide');
 		expect(entryTitle(album('2026-10-09'))).toBe('Mud');
-		expect(entryLine(album('2026-10-09'))).toBe('Remi Wolf');
-		expect(entryFacts(album('2026-10-09'))).toBe('Album · 12 tracks');
-	});
-	it('lists a movie’s other loaded dates', () => {
-		const all = [movie('cinema', '2026-12-18'), movie('digital', '2027-02-02'), movie('physical', '2027-03-09'), ep()];
-		const s = movieDates(all[0], all);
-		expect(s).toMatch(/^Digital .* · Disc /);
-		expect(movieDates(ep(), all)).toBe('');
 	});
 });
 
@@ -64,7 +51,6 @@ describe('busy days', () => {
 		const g = groupDates([a, ep(), b, c, d]);
 		expect(g.map((x) => x.entries.length)).toEqual([3, 1, 1]);
 		expect(groupTag(g[0])).toBe('3 episodes');
-		expect(groupFacts(g[0])).toMatch(/^S39E194–E196/);
 		expect(groupTag(g[1])).toBe('New episode');
 	});
 	it('folds a movie dates on one day, and names them', () => {

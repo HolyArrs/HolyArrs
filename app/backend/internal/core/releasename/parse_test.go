@@ -92,7 +92,7 @@ var MovieCases = []Case{
 	{ID: "T25", Name: "The.Lantern.Keepers.2021.720p.WEB-DL-QUILL", Title: "The Lantern Keepers", Year: 2021, Resolution: 720, Source: "web_dl", Group: "QUILL"},
 	{ID: "T26", Name: "Lantern Keepers, The (2021) 1080p WEB-DL", Title: "The Lantern Keepers", Year: 2021, Resolution: 1080, Source: "web_dl"},
 	{ID: "T28", Name: "www.somesite.example - The.Lantern.Keepers.2021.1080p.WEB-DL-QUILL", Title: "The Lantern Keepers", Year: 2021, Resolution: 1080, Source: "web_dl", Group: "QUILL", Flags: []string{"site_prefix"}},
-	// Review of 3.2: movie names that the show patterns used to take.
+	// Movie names the show patterns must not take.
 	{ID: "T31", Name: "Movie.Title.Part.2.1080p.BluRay.x264-GRP", Title: "Movie Title Part 2", YearConf: Unknown, Resolution: 1080, Source: "bluray", Codec: "h264", Group: "GRP"},
 	{ID: "T32", Name: "Some Movie - 2019 [1080p]", Title: "Some Movie", Year: 2019, Resolution: 1080},
 }

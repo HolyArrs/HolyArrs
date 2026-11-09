@@ -232,11 +232,6 @@ export function appName(kind: string): string {
 	return apps.find((a) => a.kind === kind)?.name ?? kind;
 }
 
-export function appLabel(kind: string): string {
-	const a = apps.find((x) => x.kind === kind);
-	return a ? `${a.name} · ${a.what}` : kind;
-}
-
 export function placeholderFor(kind: string): string {
 	return `http://192.168.1.10:${apps.find((a) => a.kind === kind)?.port ?? 8080}`;
 }
@@ -329,24 +324,6 @@ export function moveTotal(counts: Record<string, number>): number {
 	let n = 0;
 	for (const k of ['create', 'created', 'adopt', 'adopted', 'change', 'changed', 'matched']) n += counts[k] ?? 0;
 	return n;
-}
-
-export function stayTotal(counts: Record<string, number>): number {
-	return (counts.skipped ?? 0) + (counts.not_found ?? 0) + (counts.failed ?? 0);
-}
-
-export function notMovedByGroup(list: NotMoved[], labels: Record<string, string>): { label: string; items: NotMoved[] }[] {
-	const out: { label: string; items: NotMoved[] }[] = [];
-	for (const n of list) {
-		const label = labels[n.group] ?? 'Other settings';
-		let g = out.find((x) => x.label === label);
-		if (!g) {
-			g = { label, items: [] };
-			out.push(g);
-		}
-		g.items.push(n);
-	}
-	return out;
 }
 
 export function needsGroups(list: string[]): { label: string; items: string[] }[] {

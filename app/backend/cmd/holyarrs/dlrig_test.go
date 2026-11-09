@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"net/http"
 	"net/http/httptest"
 	"testing"
 
@@ -25,25 +24,4 @@ func dlServer(t *testing.T) (*httptest.Server, *database.Store) {
 	srv := httptest.NewServer(buildHandlers(services{Store: s, Metadata: metadata.Lab(), Version: "test", Secrets: v}).Handler())
 	t.Cleanup(srv.Close)
 	return srv, s
-}
-
-// fakeSAB answers the version, queue and categories calls with one key.
-func fakeSAB(t *testing.T, key string) *httptest.Server {
-	t.Helper()
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		q := r.URL.Query()
-		switch {
-		case q.Get("mode") == "version":
-			_, _ = w.Write([]byte(`{"version":"5.1.3"}`))
-		case q.Get("apikey") != key:
-			w.WriteHeader(http.StatusForbidden)
-			_, _ = w.Write([]byte("API Key Incorrect"))
-		case q.Get("mode") == "get_cats":
-			_, _ = w.Write([]byte(`{"categories":["*","movies"]}`))
-		default:
-			_, _ = w.Write([]byte(`{"queue":{"status":"Idle","slots":[]}}`))
-		}
-	}))
-	t.Cleanup(srv.Close)
-	return srv
 }

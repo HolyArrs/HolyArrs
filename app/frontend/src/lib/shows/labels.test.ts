@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { keepOffNote, newSeason, newestSeason, episodeCode, searchWord, seasonLooking, episodeLabel, episodeWhy, label, seasonChoices, seasonLine, seasonName, seasonWords, showProgress, showState } from './labels.ts';
+import { keepOffNote, newSeason, newestSeason, episodeCode, searchWord, seasonLooking, episodeLabel, episodeWhy, label, seasonChoices, seasonLine, seasonName, seasonWords, showProgress } from './labels.ts';
 import { counts, matches, ofKind } from '../mediafiles/library.ts';
 import type { EpisodeView, SeasonSummary, ShowInfo, TitleView } from '../core/types.ts';
 
@@ -45,9 +45,6 @@ describe('show words', () => {
 		expect(seasonLine(season(1, { in_library: 2, missing: 1 }))).toBe('2 of 3 aired in the Library · 1 missing');
 		const s = info([season(1, { in_library: 3 }), season(2, { aired: 1, episodes: 2, missing: 1, not_out_yet: 1 })]);
 		expect(showProgress(s)).toBe('3 of 4 aired episodes in the Library');
-		expect(showState(s)).toEqual({ state: 'wanted', label: '1 missing' });
-		expect(showState(info([season(1, { in_library: 3 })]))).toEqual({ state: 'in_library', label: 'In library' });
-		expect(showState(info([season(1, { aired: 0, not_out_yet: 3 })])).label).toBe('Not out yet');
 	});
 	it('says why an episode is or is not looked for', () => {
 		expect(episodeWhy(ep(), true, false)).toBe('Keep up to date is off for the show.');

@@ -15,9 +15,8 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
-// Pins today's music SQL in the api package (library snapshot, track
-// states, asks and follows reads, whole-artist search) before it moves
-// into music/store and the catalog store.
+// Pins the music SQL (library snapshot, track states, asks and follows
+// reads, whole-artist search).
 
 const t10Stamp = "2026-01-01T00:00:00Z"
 

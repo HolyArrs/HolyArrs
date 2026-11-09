@@ -43,7 +43,7 @@ type Services struct {
 	// SeasonLabel names a part's title and season ("S01").
 	SeasonLabel func(ctx context.Context, partID int64) (int64, string, string)
 
-	// Funcs owned by modules still in api, filled by the caller.
+	// Funcs owned by other modules, filled by the caller.
 
 	PartIsOn         func(p parts.Part) bool
 	KidMax           func(r *http.Request) string
@@ -89,7 +89,7 @@ type Handlers struct {
 	lookups  inFlight
 }
 
-// Routes registers the Music routes; empty until they move here.
+// Routes registers no routes: the program registers the Music routes.
 func (h *Handlers) Routes(m *http.ServeMux) {}
 
 func (h *Handlers) lib() *library.Service {

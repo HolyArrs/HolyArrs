@@ -8,7 +8,7 @@ import (
 	engine "github.com/HolyArrs/holyarrs/app/backend/internal/suggest"
 )
 
-// The exported Browse pieces the Explore strip (still in api) reads.
+// The exported Browse pieces the Explore strip reads.
 
 // BrowseShared is one tab's shared Browse sections for one rating limit.
 type BrowseShared = browseShared

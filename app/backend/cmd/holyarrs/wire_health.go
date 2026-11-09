@@ -109,13 +109,6 @@ func (a *handlers) searchMetadata(w http.ResponseWriter, r *http.Request) {
 	webserver.WriteJSON(w, http.StatusOK, map[string]any{"movies": ms, "attribution": metadata.Attribution})
 }
 
-// StartSpeedHistory starts the total-speed readings (downloads.SpeedHistory).
-func (a *handlers) StartSpeedHistory(ctx context.Context) {
-	if a.s.Store != nil {
-		a.dl.Speeds.Start(ctx, a.s.Store.Read())
-	}
-}
-
 // healthHandlers build the health module's routes; downloads, the parts
 // and the update check reach it as funcs.
 func (a *handlers) healthHandlers() *health.Handlers {

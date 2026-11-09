@@ -129,13 +129,6 @@ export function railLabel(day: string, today: Date): { big: string; small: strin
 	return { big, small: off === 0 || off === -1 || off === 1 ? `${weekday} ${small}` : small };
 }
 
-/** What a rail title shows on the right: the Follow bell, "Coming" (in the Library already), or nothing. */
-export function railBell(it: Pick<RailItem, 'upcoming' | 'in_library' | 'kind'>): 'bell' | 'coming' | null {
-	if (!it.upcoming) return null;
-	if (it.in_library) return 'coming';
-	return it.kind === 'movie' || it.kind === 'show' ? 'bell' : null;
-}
-
 /** A card's "kind:tmdb" key ("movie:123"). */
 function plainKey(c: Pick<ExploreCard, 'kind' | 'ref'>): string {
 	return c.ref?.startsWith('tmdb:') ? `${c.kind}:${c.ref.slice(5)}` : '';

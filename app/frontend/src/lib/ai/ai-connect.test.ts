@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { GROUPS, GUIDES_URL, ROWS, agentPrompt, aiURL, canSignIn, codeParts, deeplinkHref, isAIKey, onlyLocal, pickFor, rowFor, stepParts, testedLine, whereText } from './ai-connect.ts';
+import { GROUPS, GUIDES_URL, ROWS, agentPrompt, aiURL, canSignIn, codeParts, deeplinkHref, isAIKey, onlyLocal, pickFor, stepParts, testedLine, whereText } from './ai-connect.ts';
 import { APP_DATA } from './ai-apps.ts';
 
 const https = { url: 'https://m.example/api/v1/mcp', signIn: true };
@@ -45,21 +45,7 @@ describe('ai-connect', () => {
 			expect(m, r.guide).toBeTruthy();
 			if (m![1]) expect(PAGES, r.id).toContain(m![1]);
 		}
-		expect(rowFor('grok')!.guide).toBe(GUIDES_URL + '#apps');
-		expect(rowFor('cursor')!.guide).toBe(GUIDES_URL + 'cursor/');
 		expect(ROWS.at(-1)!.guide).toBe(GUIDES_URL + '#any-other-app');
-	});
-	it('picks a row from ?app=, old slugs included', () => {
-		expect(rowFor('cursor')!.id).toBe('cursor');
-		expect(rowFor('codex-ide')!.name).toBe('Codex');
-		expect(rowFor('chatgpt-desktop')!.name).toBe('Codex');
-		expect(rowFor('lm-studio')!.id).toBe('open-webui');
-		expect(rowFor('ollmcp')!.id).toBe('open-webui');
-		expect(rowFor('local-ai')!.id).toBe('open-webui');
-		expect(rowFor('any-app')!.name).toBe('Any other app');
-		expect(rowFor('nope')).toBeUndefined();
-		expect(rowFor('librechat')).toBeUndefined();
-		expect(rowFor(null)).toBeUndefined();
 	});
 	it("opens the linked app's own steps, under the row of its guide or on their own", () => {
 		const lm = pickFor('lm-studio')!;
@@ -78,19 +64,9 @@ describe('ai-connect', () => {
 		expect(pickFor('')).toBeUndefined();
 	});
 	it('fills the address into a row and marks its code', () => {
-		const gemini = whereText(rowFor('gemini-cli')!, home.url);
-		expect(gemini).toContain('holyarrs http://192.168.1.10:18730/api/v1/mcp');
-		expect(codeParts(gemini)).toEqual([{ text: gemini.replaceAll('`', ''), code: true }]);
 		expect(codeParts('Add to Cursor, or `~/.cursor/mcp.json`')).toEqual([{ text: 'Add to Cursor, or ' }, { text: '~/.cursor/mcp.json', code: true }]);
 	});
 	it('fits the "where" cell to the address: no one-click button or header-less command on a home address', () => {
-		const cursor = rowFor('cursor')!;
-		expect(cursor.deeplink).toBe('cursor');
-		expect(whereText(cursor, home.url, false)).toBe('`~/.cursor/mcp.json`');
-		expect(rowFor('vs-code-copilot')!.deeplink).toBe('vscode');
-		const g = whereText(rowFor('gemini-cli')!, home.url, false);
-		expect(g).toBe('`gemini mcp add --scope user --transport http --header "Authorization: Bearer <your AI key>" holyarrs http://192.168.1.10:18730/api/v1/mcp`');
-		expect(whereText(rowFor('gemini-cli')!, https.url, true)).not.toContain('Authorization');
 		for (const r of ROWS) expect(whereText(r, home.url, false), r.id).not.toMatch(/hak_|<address>/);
 	});
 	it('signs Claude Code in without a key on https, and fills the key on a home address', () => {

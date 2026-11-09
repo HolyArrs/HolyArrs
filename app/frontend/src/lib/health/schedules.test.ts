@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { busyNow, dot, every, groupSchedules, mayRun, scheduleGroup, stateTone, unit, until } from './schedules.ts';
+import { busyNow, dot, every, groupSchedules, mayRun, scheduleGroup, unit, until } from './schedules.ts';
 
 describe('schedules', () => {
 	it('says intervals in words', () => {
@@ -25,9 +25,6 @@ describe('schedules', () => {
 		expect(until('2026-10-16T12:00:00Z', now)).toBe('in 2 d');
 	});
 	it('colours states and offers Run now only when the part runs', () => {
-		expect(stateTone('running')).toBe('wait');
-		expect(stateTone('waiting')).toBe('ok');
-		expect(stateTone('part_off')).toBe('');
 		expect(mayRun({ state: 'waiting' })).toBe(true);
 		expect(mayRun({ state: 'off' })).toBe(true);
 		expect(mayRun({ state: 'part_off' })).toBe(false);

@@ -7,8 +7,6 @@ export const MIN_SHOW_MS = 100;
 export const FADE_MS = 200;
 export const ORBIT_AFTER_MS = 500;
 export const REASSURE_AFTER_MS = 10_000;
-export const BOOT_STATUS_MS = 3_000;
-export const BOOT_RELOAD_MS = 10_000;
 
 export function loadStage(elapsed: number): LoadStage {
 	if (elapsed >= REASSURE_AFTER_MS) return 'reassure';
@@ -41,9 +39,3 @@ export function buildingStatus(attempt: number, what = 'this page'): string {
 	return `Building ${what}… try ${attempt}`;
 }
 
-// Start-up wording escalates; after the long wait it offers a reload.
-export function bootLine(elapsed: number): { text: string; reload: boolean } {
-	if (elapsed >= BOOT_RELOAD_MS) return { text: 'This is taking longer than usual. The server may still be starting.', reload: true };
-	if (elapsed >= BOOT_STATUS_MS) return { text: 'Starting HolyArrs…', reload: false };
-	return { text: '', reload: false };
-}

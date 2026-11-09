@@ -1,4 +1,4 @@
-import { ALL, byDay, dayItems, dayLine, historyTabs, rowTab, rowWhy, showOf, showParam, tabKinds, tabOf } from './history-tabs.ts';
+import { ALL, byDay, dayItems, dayLine, historyTabs, rowTab, showOf, tabKinds, tabOf } from './history-tabs.ts';
 import { groupDownloads } from './history.ts';
 import { describe, expect, it } from 'vitest';
 import type { EventRecord } from '../core/types.ts';
@@ -27,8 +27,6 @@ describe('look tabs', () => {
 		expect(showOf('problems.zzz')).toEqual({ show: 'problems', sub: '' });
 		expect(showOf('zzz')).toEqual({ show: ALL, sub: '' });
 		expect(showOf(null)).toEqual({ show: ALL, sub: '' });
-		expect(showParam(ALL, '')).toBe('');
-		expect(showParam('came', 'imported')).toBe('came.imported');
 	});
 
 	it('files a kind under its tab, prefixes included', () => {
@@ -54,12 +52,6 @@ describe('rows', () => {
 		expect(rowTab(gone)).toBe('problems');
 	});
 
-	it('explains a row by its reason before its paths', () => {
-		const [r] = groupDownloads([ev('import_failed', '2026-10-27T10:00:00Z', { DownloadID: 4, Data: { path: '/x', reason: 'Not enough space' } })]);
-		expect(rowWhy(r)).toBe('Not enough space');
-		const [p] = groupDownloads([ev('renamed', '2026-10-27T10:00:00Z', { Data: { from: '/a', to: '/b' } })]);
-		expect(rowWhy(p)).toBe('/a');
-	});
 });
 
 describe('days', () => {

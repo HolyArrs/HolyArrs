@@ -132,12 +132,6 @@ export function shownHeight(video: HTMLVideoElement): number {
 	return Math.ceil(Math.max(h, (w * 9) / 16) * ratio);
 }
 
-// Quick-start level: the first at least 360 tall, else the shortest.
-export function lightLevel(heights: number[]): number {
-	const order = heights.map((h, i) => ({ h, i })).sort((a, b) => a.h - b.h);
-	return (order.find((l) => l.h >= 360) ?? order[0])?.i ?? 0;
-}
-
 // The shortest level that covers what is shown, else the tallest there is.
 export function capLevel(heights: number[], shown: number): number {
 	const order = heights.map((h, i) => ({ h, i })).sort((a, b) => a.h - b.h);

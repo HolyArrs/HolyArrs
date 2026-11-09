@@ -6,15 +6,9 @@ import (
 	"strings"
 	"testing"
 	"time"
-
-	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
 func tmbid(n int) string { return fmt.Sprintf("00000000-0000-0000-0000-%012d", n) }
-
-func rel(n int, kind, date string, artist int) metadata.NewRelease {
-	return metadata.NewRelease{MBID: tmbid(n), Name: fmt.Sprint("R", n), PrimaryType: kind, ReleaseDate: date, Artist: fmt.Sprint("A", artist), ArtistMBID: tmbid(9000 + artist)}
-}
 
 // route: GET /api/v1/explore/new/music
 // The Music tab answers building first, then its rows; a Kid gets none.

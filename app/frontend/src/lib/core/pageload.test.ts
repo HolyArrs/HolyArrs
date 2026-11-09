@@ -1,18 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { pageHoldFor, pageLine, pageStage, pageTimers } from './pageload.ts';
+import { pageHoldFor, pageLine, pageTimers } from './pageload.ts';
 
 describe('page loading timing', () => {
-	it('shows nothing for the first 300 ms', () => {
-		expect(pageStage(0)).toBe('hidden');
-		expect(pageStage(299)).toBe('hidden');
-		expect(pageStage(300)).toBe('orbit');
-	});
-	it('adds a status at 3 s and reassurance at 10 s', () => {
-		expect(pageStage(2_999)).toBe('orbit');
-		expect(pageStage(3_000)).toBe('status');
-		expect(pageStage(9_999)).toBe('status');
-		expect(pageStage(10_000)).toBe('reassure');
-	});
 	it('lets fast pages appear at once', () => {
 		expect(pageHoldFor(0)).toBe(0);
 		expect(pageHoldFor(299)).toBe(0);

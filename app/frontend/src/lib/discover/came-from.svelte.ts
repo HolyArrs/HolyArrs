@@ -56,16 +56,6 @@ export function cameFrom(): CameFrom | null {
 	return found && (isAuthPath(found.path) || found.label === 'Not found') ? null : found;
 }
 
-/** Picks the breadcrumb icon for a page path. */
-export function fromIcon(path: string): 'search' | 'compass' | 'people' | 'home' | null {
-	if (path.includes('/search')) return 'search';
-	if (path.includes('/explore')) return 'compass';
-	if (path.includes('/people')) return 'people';
-	const bare = path.split('?')[0];
-	if (bare === '/' || bare.endsWith('/home')) return 'home';
-	return null;
-}
-
 function read(): Record<string, CameFrom> {
 	try {
 		return JSON.parse(sessionStorage.getItem(KEY) ?? '{}');

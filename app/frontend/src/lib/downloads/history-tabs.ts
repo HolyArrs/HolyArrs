@@ -1,6 +1,6 @@
 // History tabs shared with the Downloads table. Five big tabs answer what a person opens History for: what came in, what went wrong, what changed, what ran in the background.
 import { details, groupDownloads, type HistoryRow } from './history.ts';
-import { clock, dayKey, dayLabel, rowTier, type Tier } from './history-kinds.ts';
+import { dayKey, rowTier, type Tier } from './history-kinds.ts';
 import type { EventRecord } from '../core/types.ts';
 
 export interface HistorySubTab {
@@ -109,12 +109,6 @@ export function showOf(v: string | null): { show: string; sub: string } {
 	return { show: t.key, sub: t.subs.some((s) => s.key === sub) ? sub : '' };
 }
 
-/** The &show= value for a tab and sub-tab ('' for All). */
-export function showParam(show: string, sub: string): string {
-	if (show === ALL || !historyTabs.some((t) => t.key === show)) return '';
-	return sub ? `${show}.${sub}` : show;
-}
-
 const matches = (kind: string, list: string[]) => list.some((k) => (k.endsWith('*') ? kind.startsWith(k.slice(0, -1)) : k === kind));
 
 /** The big tab an Event kind is counted under; '' when only All has it. */
@@ -187,20 +181,3 @@ export function dayItems(rows: HistoryRow[]): DayItem[] {
 
 const WHY = new Set(['Why', 'Error', 'Message']);
 
-/** The one line that explains a row: a reason or error first, then a path. */
-export function rowWhy(row: HistoryRow): string {
-	let first = '';
-	for (const e of row.events) {
-		for (const [k, v] of details(e)) {
-			if (WHY.has(k)) return v;
-			first ||= v;
-		}
-	}
-	return first;
-}
-
-/** A row's time: the clock today, the day and clock before. */
-export function whenShort(at: string, now = new Date()): string {
-	const k = dayKey(at);
-	return k === dayKey(now.toISOString()) ? clock(at) : `${dayLabel(k, now)}, ${clock(at)}`;
-}

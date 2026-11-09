@@ -4045,7 +4045,7 @@
             "type": "integer"
           },
           "in_use": {
-            "description": "How many things use these Pick rules (Versions, Library folders, Outside lists, Wishlist settings and Movies and TV defaults added up).",
+            "description": "How many things use these Pick rules (Versions, Library folders, Outside lists, Requests settings and Movies and TV defaults added up).",
             "type": "integer"
           },
           "kinds": {
@@ -6578,7 +6578,7 @@
             "type": "array"
           },
           "asks": {
-            "description": "Wishlist asks that led to it: who asked and who decided.",
+            "description": "Requests asks that led to it: who asked and who decided.",
             "items": {
               "$ref": "#/components/schemas/Ask"
             },
@@ -6969,7 +6969,7 @@
     }
   },
   "info": {
-    "description": "Every /api/v1 route: sign-in and accounts, people and invites, backups, the Library (movies, Versions, Library folders, Never-add, Release gate, Outside lists), the Wishlist (movies, shows and music) and Alerts (Discord, email, webhook), Sources, search, Downloaders and Downloads, music (artists, albums, Pressings and tracks from MusicBrainz), Organise for movies and shows (naming, rename, delete a title, a season or episodes, adopting a movie or show library, where files go), History (by title or episode), health checks, media servers, parts and the owner and admin controls (part switches, stages, linked apps, whole-app restart and shut down), and the calendar of movie dates and episodes with its iCal feed. Every route needs a signed-in session (cookie plus the X-CSRF-Token header for changes) or an API key in X-Api-Key, unless its security is empty; x-holyarrs-permission names what the route needs (self, signed_in, users and owner are roles; public needs no sign-in because the route checks a key of its own, as the iCal feed does; the rest are permissions). Secrets are never answered: they come back masked. This file is generated from the code: the operations are the registered routes, and x-holyarrs-permission, x-holyarrs-scope and x-holyarrs-part come from the route table. An API key holds one or more scopes (x-holyarrs-scopes lists them) and reaches only the routes whose x-holyarrs-scope it holds; a key cannot make a key with a scope it does not hold, and a key's scopes never change after it is made. How long a route stays after it is marked deprecated is written in design/system/api-promise.md (at least 12 months for routes outside apps use).",
+    "description": "Every /api/v1 route: sign-in and accounts, people and invites, backups, the Library (movies, Versions, Library folders, Never-add, Release gate, Outside lists), the Requests (movies, shows and music) and Alerts (Discord, email, webhook), Sources, search, Downloaders and Downloads, music (artists, albums, Pressings and tracks from MusicBrainz), Organise for movies and shows (naming, rename, delete a title, a season or episodes, adopting a movie or show library, where files go), History (by title or episode), health checks, media servers, parts and the owner and admin controls (part switches, stages, linked apps, whole-app restart and shut down), and the calendar of movie dates and episodes with its iCal feed. Every route needs a signed-in session (cookie plus the X-CSRF-Token header for changes) or an API key in X-Api-Key, unless its security is empty; x-holyarrs-permission names what the route needs (self, signed_in, users and owner are roles; public needs no sign-in because the route checks a key of its own, as the iCal feed does; the rest are permissions). Secrets are never answered: they come back masked. This file is generated from the code: the operations are the registered routes, and x-holyarrs-permission, x-holyarrs-scope and x-holyarrs-part come from the route table. An API key holds one or more scopes (x-holyarrs-scopes lists them) and reaches only the routes whose x-holyarrs-scope it holds; a key cannot make a key with a scope it does not hold, and a key's scopes never change after it is made. How long a route stays after it is marked deprecated is written in design/system/api-promise.md (at least 12 months for routes outside apps use).",
     "title": "HolyArrs API",
     "version": "5.15"
   },
@@ -8271,7 +8271,7 @@
         },
         "summary": "Weekly limits per person",
         "tags": [
-          "Wishlist"
+          "Requests"
         ],
         "x-holyarrs-part": "wishlist",
         "x-holyarrs-permission": "users",
@@ -8394,7 +8394,7 @@
         },
         "summary": "Set one person's weekly limit",
         "tags": [
-          "Wishlist"
+          "Requests"
         ],
         "x-holyarrs-part": "wishlist",
         "x-holyarrs-permission": "users",
@@ -8443,7 +8443,7 @@
         },
         "summary": "Who asked for titles",
         "tags": [
-          "Wishlist"
+          "Requests"
         ],
         "x-holyarrs-part": "wishlist",
         "x-holyarrs-permission": "signed_in",
@@ -8529,9 +8529,9 @@
             "description": "Unknown state."
           }
         },
-        "summary": "Asks on the Wishlist",
+        "summary": "Asks on the Requests",
         "tags": [
-          "Wishlist"
+          "Requests"
         ],
         "x-holyarrs-part": "wishlist",
         "x-holyarrs-permission": "signed_in",
@@ -8710,7 +8710,7 @@
         },
         "summary": "Ask for a movie, a show or music",
         "tags": [
-          "Wishlist"
+          "Requests"
         ],
         "x-holyarrs-part": "wishlist",
         "x-holyarrs-permission": "ask",
@@ -8735,7 +8735,7 @@
         },
         "summary": "My weekly limits",
         "tags": [
-          "Wishlist"
+          "Requests"
         ],
         "x-holyarrs-part": "wishlist",
         "x-holyarrs-permission": "ask",
@@ -8783,7 +8783,7 @@
         },
         "summary": "Take an ask back",
         "tags": [
-          "Wishlist"
+          "Requests"
         ],
         "x-holyarrs-part": "wishlist",
         "x-holyarrs-permission": "ask",
@@ -8826,7 +8826,7 @@
         },
         "summary": "One ask",
         "tags": [
-          "Wishlist"
+          "Requests"
         ],
         "x-holyarrs-part": "wishlist",
         "x-holyarrs-permission": "signed_in",
@@ -8961,7 +8961,7 @@
         },
         "summary": "Approve an ask",
         "tags": [
-          "Wishlist"
+          "Requests"
         ],
         "x-holyarrs-part": "wishlist",
         "x-holyarrs-permission": "approve",
@@ -9128,7 +9128,7 @@
         },
         "summary": "Turn down an ask",
         "tags": [
-          "Wishlist"
+          "Requests"
         ],
         "x-holyarrs-part": "wishlist",
         "x-holyarrs-permission": "approve",
@@ -13034,7 +13034,7 @@
     },
     "/api/v1/discover": {
       "get": {
-        "description": "Returns up to 20 movies or shows for one Explore row (row=trending, popular, upcoming, similar with id=<Library title id>, genre with g=<genre name>, or services with services=<streaming service ids joined by |> and region=<country code>, sorted by popularity, subscription only, or best: out in the last 24 months, rated 7.5+ by 300+ people, best rated first; kind=movie or show, both when absent). Each item carries tmdb_id, kind, name, year, poster, backdrop, overview, genres, in_library, title_id and the open ask (or null). Never-add items and kinds whose part is off are left out. Rows are cached (trending 6 h, popular and upcoming 12 h, similar and genre 24 h); the Library and ask joins are fresh. Each person may ask 30 times a minute. For a Kid (a member with an age-rating limit), only items their limit allows are listed: the rating comes from the Library, the 24 h details cache or one TMDB details lookup (at most 4 at a time), and an item whose rating cannot be found is left out; similar with a Library title above their limit answers 404.",
+        "description": "Returns up to 20 movies or shows for one Explore row (row=trending, popular, upcoming, similar with id=<Library title id>, genre with g=<genre name>, or services with services=<streaming service ids joined by |> and region=<country code>, sorted by popularity, subscription only, or best: out in the last 24 months, rated 7.5+ by 300+ people, best rated first; kind=movie or show, both when absent). Each item carries tmdb_id, kind, name, year, poster, backdrop, overview, genres, in_library, title_id and the open ask (or null). Never-add items and kinds whose part is off are left out. Rows are cached (trending 6 h, popular and upcoming 12 h, similar and genre 24 h); the Library and ask joins are fresh. Each person may ask 240 times a minute. For a Kid (a member with an age-rating limit), only items their limit allows are listed: the rating comes from the Library, the 24 h details cache or one TMDB details lookup (at most 4 at a time), and an item whose rating cannot be found is left out; similar with a Library title above their limit answers 404.",
         "operationId": "discoverRow",
         "responses": {
           "200": {
@@ -13050,7 +13050,7 @@
             "description": "No such Library title (similar)."
           },
           "429": {
-            "description": "Over 30 requests a minute; see Retry-After."
+            "description": "Over 240 requests a minute; see Retry-After."
           },
           "501": {
             "description": "TMDB is not set up."
@@ -15034,43 +15034,6 @@
         "x-holyarrs-scope": "write"
       }
     },
-    "/api/v1/downloads/speeds": {
-      "get": {
-        "operationId": "speedHistory",
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "properties": {
-                    "samples": {
-                      "items": {
-                        "properties": {
-                          "down": {
-                            "type": "integer"
-                          },
-                          "up": {
-                            "type": "integer"
-                          }
-                        },
-                        "type": "object"
-                      },
-                      "type": "array"
-                    }
-                  },
-                  "type": "object"
-                }
-              }
-            },
-            "description": "OK"
-          }
-        },
-        "summary": "Total download and upload speed since the app started",
-        "x-holyarrs-part": "core",
-        "x-holyarrs-permission": "manage_library",
-        "x-holyarrs-scope": "read"
-      }
-    },
     "/api/v1/downloads/view": {
       "get": {
         "description": "The newest Downloads (limit, default 100) with progress, speed, time left and their place in plain words: waiting, downloading, stalled, failed, vanished, waiting to import, importing, done. Updates arrive on the live stream (download and slot).",
@@ -16095,11 +16058,34 @@
     },
     "/api/v1/explore/music": {
       "get": {
-        "description": "Returns every row of Explore → Music for the signed-in person: hero (the newest studio album from an artist in the Library, else the top album chart's first), then rows just_arrived (albums with music added in 14 days), new_from (studio albums and EPs of Library artists out in the last 90 days, then upcoming), your_asks (this person's music asks with their state), top_albums and trending_artists (the music trending lists for region, with listen counts), because_have and fans_of (similar artists from the metadata server, not in the Library), missing (studio albums of Library artists with no music yet) and genre rows from the Library's top MusicBrainz genres; then fresh (new this week), rising, classic (all-time top albums not on disk), popular_country (region's top albums), anniversary, live_eps, debut, collabs (MusicBrainz artist relations), decade, mood (hour=0-23 picks the leading mood) and soundtracks (for Library movies and shows), with more because_have and fans_of rows as the Library grows. Cards may carry a note (their own reason line). For a Library under 10 artists every row needs at most 4 cards. Without music in the Library (cold) only the charts and popular_genre rows come. genre=<tag> keeps only cards with that genre. Each row has id, type, title, reason, shape (square albums, round artists) and items; rows below their minimum are left out. A Kid limit answers kid=true and no rows, since music has no ratings. Each person may ask 30 times a minute, shared with Explore rows. Not found while the Music part is off.",
+        "description": "Returns the Explore → Music page for the signed-in person, 6 rows a page. The first page (no cursor) carries the hero (the newest studio album from an artist in the Library, else the top album chart's first) with hero_alts (more picks for the Spotlight), then the day's rows: new_from (studio albums and EPs of Library artists out in the last 90 days, then upcoming), genres, your_asks (this person's music asks with their state), top_albums, mix, because (similar artists from the metadata server, not in the Library), near_taste, rising, together, since_have, genre_shelf and ready-made list rows. The rows are ordered once a day per person and region and kept, so later pages continue the same plan. Without music in the Library (cold) the charts and popular rows come first. Cards may carry a note (their own reason line). Each row has id, type, title, reason, shape (square albums, round artists) and items; rows below their minimum are left out. Paging: when more rows are left, next is a signed cursor; send it back as ?cursor= to get the next 6 rows. Later pages carry only v2, v7, rows, next and total; a cursor that is expired, was made for another person or region, or is not valid answers 400. A household with 12 rows or fewer gets them all in one page with no next. The region query (a two-letter country code, else worldwide) picks the charts; send it again with each cursor. A Kid limit answers kid=true and no rows, since music has no ratings. Each person may ask 240 times a minute, shared with Explore rows. Not found while the Music part is off.",
         "operationId": "exploreMusic",
+        "parameters": [
+          {
+            "description": "A two-letter country code for the charts. Anything else means worldwide.",
+            "in": "query",
+            "name": "region",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "The next value of the last page, to get the next 6 rows.",
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
-            "description": "kid, cold, genres, genre, region, hero and rows."
+            "description": "First page: v2, v7, kid (false), cold, partial (a source was missing, so the plan is rebuilt soon), genres and genre (kept for older clients, always [] and \"\"), region, regions (the regions that have charts), hero, hero_alts, rows, next and total (rows in the whole plan). Later pages: v2, v7, rows, next and total. A Kid gets kid true, no rows and no hero."
+          },
+          "400": {
+            "description": "The cursor is not valid or has expired; load Music again."
           },
           "401": {
             "description": "Sign-in is required."
@@ -16108,7 +16094,7 @@
             "description": "Music is off."
           },
           "429": {
-            "description": "Over 30 requests a minute; see Retry-After."
+            "description": "Over 240 requests a minute; see Retry-After."
           }
         },
         "summary": "The Explore music rows",
@@ -16119,16 +16105,16 @@
     },
     "/api/v1/explore/music/rising": {
       "get": {
-        "description": "The Rising today row for Explore and New & Popular: today's biggest gainers in monthly listeners, matched to MusicBrainz, biggest gain first (up to 20), from the metadata server's kept figures. Kept for an hour. Hidden when the server has no list.",
+        "description": "The Rising today row for Explore and New & Popular: today's biggest gainers in monthly listeners, matched to MusicBrainz, biggest gain first (up to 20), from the metadata server's kept figures. Kept for an hour. Not found when the server has no list, while Music is off, and for a Kid account.",
         "responses": {
           "200": {
-            "description": "as_of and items (artist cards with listeners and today's gain)."
+            "description": "One row: id, type, title, reason, shape (round) and items (artist cards with rank and a note with today's gain)."
           },
           "401": {
             "description": "Sign-in is required."
           },
           "404": {
-            "description": "Music is turned off, or the server has no Rising list today."
+            "description": "Music is turned off, the account is a Kid, or the server has no Rising list today."
           }
         },
         "summary": "Rising today: artists gaining the most listeners",
@@ -17571,27 +17557,6 @@
         "x-holyarrs-scope": "write"
       }
     },
-    "/api/v1/library-summary": {
-      "get": {
-        "description": "Returns the enabled Library title count and at most eight missing movie rows in Library order for Home. Removed titles are excluded. Safe mode includes every media kind. recent holds the 20 newest titles by date added, in the same view as GET /titles. For a Kid (a member with an age-rating limit), the count, missing and recent hold only the titles their limit allows.",
-        "operationId": "homeLibrarySummary",
-        "responses": {
-          "200": {
-            "description": "Visible title total, bounded missing movie rows with id, name, year and state_label, and recent titles."
-          },
-          "401": {
-            "description": "Sign-in is required."
-          },
-          "409": {
-            "description": "Movies, TV shows and Music are all off."
-          }
-        },
-        "summary": "Library count and missing movies for Home",
-        "x-holyarrs-part": "media",
-        "x-holyarrs-permission": "signed_in",
-        "x-holyarrs-scope": "read"
-      }
-    },
     "/api/v1/library/copies": {
       "get": {
         "description": "Lists movie Files with their detected video codec and audio-track count for choosing copies that need another search.",
@@ -17715,37 +17680,6 @@
         },
         "summary": "Review searches for movie copies",
         "x-holyarrs-part": "movies",
-        "x-holyarrs-permission": "manage_library",
-        "x-holyarrs-scope": "write"
-      }
-    },
-    "/api/v1/library/rescan": {
-      "post": {
-        "description": "Queues the daily rescan: missing and returned files, unknown videos in movie folders recorded as found; a Library folder that is gone or empty is a warning and marks nothing missing.",
-        "operationId": "rescanLibrary",
-        "responses": {
-          "202": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "properties": {
-                    "job_id": {
-                      "format": "int64",
-                      "type": "integer"
-                    }
-                  },
-                  "type": "object"
-                }
-              }
-            },
-            "description": "Queued."
-          }
-        },
-        "summary": "Rescan the movie Library folders now",
-        "tags": [
-          "Organise"
-        ],
-        "x-holyarrs-part": "media",
         "x-holyarrs-permission": "manage_library",
         "x-holyarrs-scope": "write"
       }
@@ -18573,7 +18507,7 @@
         },
         "summary": "My messages",
         "tags": [
-          "Wishlist"
+          "Requests"
         ],
         "x-holyarrs-part": "wishlist",
         "x-holyarrs-permission": "signed_in",
@@ -18591,7 +18525,7 @@
         },
         "summary": "Mark my messages read",
         "tags": [
-          "Wishlist"
+          "Requests"
         ],
         "x-holyarrs-part": "wishlist",
         "x-holyarrs-permission": "signed_in",
@@ -18764,7 +18698,7 @@
         },
         "summary": "Stop following a movie by its TMDB id",
         "tags": [
-          "Wishlist"
+          "Requests"
         ],
         "x-holyarrs-part": "wishlist",
         "x-holyarrs-permission": "signed_in",
@@ -18807,7 +18741,7 @@
         },
         "summary": "Whether I follow a movie by its TMDB id",
         "tags": [
-          "Wishlist"
+          "Requests"
         ],
         "x-holyarrs-part": "wishlist",
         "x-holyarrs-permission": "signed_in",
@@ -18856,7 +18790,7 @@
         },
         "summary": "Follow a movie by its TMDB id",
         "tags": [
-          "Wishlist"
+          "Requests"
         ],
         "x-holyarrs-part": "wishlist",
         "x-holyarrs-permission": "signed_in",
@@ -18909,7 +18843,7 @@
             "description": "Bad input."
           },
           "429": {
-            "description": "A Kid account over 30 searches, lookups and Explore requests a minute; see Retry-After."
+            "description": "A Kid account over 240 searches, lookups and Explore requests a minute; see Retry-After."
           },
           "503": {
             "content": {
@@ -18972,7 +18906,7 @@
         },
         "summary": "Stop following a show by its TMDB id",
         "tags": [
-          "Wishlist"
+          "Requests"
         ],
         "x-holyarrs-part": "wishlist",
         "x-holyarrs-permission": "signed_in",
@@ -19018,7 +18952,7 @@
         },
         "summary": "Whether I follow a show by its TMDB id",
         "tags": [
-          "Wishlist"
+          "Requests"
         ],
         "x-holyarrs-part": "wishlist",
         "x-holyarrs-permission": "signed_in",
@@ -19067,7 +19001,7 @@
         },
         "summary": "Follow a show by its TMDB id",
         "tags": [
-          "Wishlist"
+          "Requests"
         ],
         "x-holyarrs-part": "wishlist",
         "x-holyarrs-permission": "signed_in",
@@ -19123,7 +19057,7 @@
             "description": "The shows part is off."
           },
           "429": {
-            "description": "A Kid account over 30 searches, lookups and Explore requests a minute; see Retry-After."
+            "description": "A Kid account over 240 searches, lookups and Explore requests a minute; see Retry-After."
           },
           "501": {
             "description": "TMDB is not set up."
@@ -19199,7 +19133,7 @@
             "description": "The kind's part is off."
           },
           "429": {
-            "description": "A Kid account over 30 searches, lookups and Explore requests a minute; see Retry-After."
+            "description": "A Kid account over 240 searches, lookups and Explore requests a minute; see Retry-After."
           },
           "501": {
             "description": "TMDB is not set up."
@@ -19300,7 +19234,7 @@
             "description": "The kind's part is off."
           },
           "429": {
-            "description": "A Kid account over 30 searches, lookups and Explore requests a minute; see Retry-After."
+            "description": "A Kid account over 240 searches, lookups and Explore requests a minute; see Retry-After."
           },
           "501": {
             "description": "TMDB is not set up."
@@ -19400,7 +19334,7 @@
             "description": "The kind's part is off."
           },
           "429": {
-            "description": "A Kid account over 30 searches, lookups and Explore requests a minute; see Retry-After."
+            "description": "A Kid account over 240 searches, lookups and Explore requests a minute; see Retry-After."
           },
           "501": {
             "description": "TMDB is not set up."
@@ -19804,7 +19738,7 @@
     },
     "/api/v1/migrate/plan": {
       "post": {
-        "description": "Builds the plan from kept snapshots and the owner's choices: groups of what would be added (Library folders, Pick rules, titles, Never-add list, Sources, Downloaders, naming, subtitles, people, Wishlist asks, Alerts), every setting with no HolyArrs match under not_moved with its reason, and the keys to type again. It looks at this server only to suggest path rules.",
+        "description": "Builds the plan from kept snapshots and the owner's choices: groups of what would be added (Library folders, Pick rules, titles, Never-add list, Sources, Downloaders, naming, subtitles, people, Requests asks, Alerts), every setting with no HolyArrs match under not_moved with its reason, and the keys to type again. It looks at this server only to suggest path rules.",
         "operationId": "planMove",
         "requestBody": {
           "content": {
@@ -20362,7 +20296,7 @@
     },
     "/api/v1/music-trending": {
       "get": {
-        "description": "Returns the weekly music trending list as the HolyArrs metadata server keeps it: ListenBrainz's sitewide top for region=global, Deezer's charts for a two-letter country code the server lists. kind=artist or album. Answers kind, region, source, regions and up to 30 items, each rank, mbid (the artist, or the album's MusicBrainz release group), name and, for albums, artist_name and artist_mbid. Lists are cached an hour, misses five minutes. Each person may ask 30 times a minute, shared with Explore rows. Not found while the Music part is off.",
+        "description": "Returns the weekly music trending list as the HolyArrs metadata server keeps it: ListenBrainz's sitewide top for region=global, Deezer's charts for a two-letter country code the server lists. kind=artist or album. Answers kind, region, source, regions and up to 30 items, each rank, mbid (the artist, or the album's MusicBrainz release group), name and, for albums, artist_name and artist_mbid. Lists are cached an hour, misses five minutes. Each person may ask 240 times a minute, shared with Explore rows. Not found while the Music part is off.",
         "operationId": "musicTrending",
         "responses": {
           "200": {
@@ -20378,7 +20312,7 @@
             "description": "No list for that region, no metadata server, or Music is off."
           },
           "429": {
-            "description": "Over 30 requests a minute; see Retry-After."
+            "description": "Over 240 requests a minute; see Retry-After."
           },
           "502": {
             "description": "The metadata server did not answer."
@@ -20724,7 +20658,7 @@
         },
         "summary": "What I follow",
         "tags": [
-          "Wishlist"
+          "Requests"
         ],
         "x-holyarrs-part": "wishlist",
         "x-holyarrs-permission": "signed_in",
@@ -20749,7 +20683,7 @@
         },
         "summary": "My Plex watchlist",
         "tags": [
-          "Wishlist"
+          "Requests"
         ],
         "x-holyarrs-part": "wishlist",
         "x-holyarrs-permission": "signed_in",
@@ -20802,7 +20736,7 @@
         },
         "summary": "Turn my Plex watchlist on or off",
         "tags": [
-          "Wishlist"
+          "Requests"
         ],
         "x-holyarrs-part": "wishlist",
         "x-holyarrs-permission": "signed_in",
@@ -20842,7 +20776,7 @@
         },
         "summary": "Read my Plex watchlist now",
         "tags": [
-          "Wishlist"
+          "Requests"
         ],
         "x-holyarrs-part": "wishlist",
         "x-holyarrs-permission": "signed_in",
@@ -21717,7 +21651,7 @@
     },
     "/api/v1/parts": {
       "get": {
-        "description": "The five parts (Movies, TV shows, Music, Subtitles, the Wishlist): whether each is on and its state (off, starting while a restart waits for its Jobs, running, retrying or failed when one of its stages is), and the table of which web pages belong to which part, so the screens hide the pages of parts that are off, and stages: the stage names that can be paused, resumed and restarted one by one. A route of a part that is off answers 409 with error \"this part is off\" (PartOff).",
+        "description": "The five parts (Movies, TV shows, Music, Subtitles, the Requests): whether each is on and its state (off, starting while a restart waits for its Jobs, running, retrying or failed when one of its stages is), and the table of which web pages belong to which part, so the screens hide the pages of parts that are off, and stages: the stage names that can be paused, resumed and restarted one by one. A route of a part that is off answers 409 with error \"this part is off\" (PartOff).",
         "operationId": "listParts",
         "responses": {
           "200": {
@@ -21742,7 +21676,7 @@
     },
     "/api/v1/parts/{part}/off": {
       "post": {
-        "description": "Two steps (confirm). Turns the part off and saves it: its screens hide, its routes answer \"this part is off\", its stages stop, its scheduled work is not queued and its Jobs wait in the queue (Jobs already running finish; nothing is cut off). Its data is kept. Refused when Subtitles or the Wishlist still need it (turn those off first), and in safe mode. Needs the owner or an admin; an API key needs the control scope. Writes a control_used Event (who, what, when).",
+        "description": "Two steps (confirm). Turns the part off and saves it: its screens hide, its routes answer \"this part is off\", its stages stop, its scheduled work is not queued and its Jobs wait in the queue (Jobs already running finish; nothing is cut off). Its data is kept. Refused when Subtitles or the Requests still need it (turn those off first), and in safe mode. Needs the owner or an admin; an API key needs the control scope. Writes a control_used Event (who, what, when).",
         "operationId": "partOff",
         "parameters": [
           {
@@ -21824,7 +21758,7 @@
     },
     "/api/v1/parts/{part}/on": {
       "post": {
-        "description": "Turns the part on and saves it: its screens show, its stages start and its waiting Jobs run. Subtitles need Movies or TV shows on; the Wishlist needs one of Movies, TV shows or Music (refused with the reason otherwise). Refused in safe mode. Needs the owner or an admin; an API key needs the control scope. Writes a control_used Event (who, what, when).",
+        "description": "Turns the part on and saves it: its screens show, its stages start and its waiting Jobs run. Subtitles need Movies or TV shows on; the Requests needs one of Movies, TV shows or Music (refused with the reason otherwise). Refused in safe mode. Needs the owner or an admin; an API key needs the control scope. Writes a control_used Event (who, what, when).",
         "operationId": "partOn",
         "parameters": [
           {
@@ -22296,7 +22230,7 @@
     },
     "/api/v1/pick-rules/{id}": {
       "delete": {
-        "description": "Only rules nothing uses: no Version, Library folder, Outside list, Wishlist setting (ask_pick_rules_id, ask_show_pick_rules_id, ask_music_pick_rules_id) or Movies and TV default (movie_pick_rules_id, show_pick_rules_id). Ready-made rules cannot be removed.",
+        "description": "Only rules nothing uses: no Version, Library folder, Outside list, Requests setting (ask_pick_rules_id, ask_show_pick_rules_id, ask_music_pick_rules_id) or Movies and TV default (movie_pick_rules_id, show_pick_rules_id). Ready-made rules cannot be removed.",
         "operationId": "deletePickRules",
         "parameters": [
           {
@@ -22354,7 +22288,7 @@
         "x-holyarrs-scope": "write"
       },
       "get": {
-        "description": "The rules with their body and in_use: what uses them, by kind of use (wishlist counts the Wishlist settings, title_defaults the saved Movies and TV defaults).",
+        "description": "The rules with their body and in_use: what uses them, by kind of use (wishlist counts the Requests settings, title_defaults the saved Movies and TV defaults).",
         "operationId": "getPickRules",
         "parameters": [
           {
@@ -23663,9 +23597,9 @@
             "description": "Settings."
           }
         },
-        "summary": "Wishlist settings",
+        "summary": "Requests settings",
         "tags": [
-          "Wishlist"
+          "Requests"
         ],
         "x-holyarrs-part": "wishlist",
         "x-holyarrs-permission": "settings",
@@ -23716,9 +23650,9 @@
             "description": "No such Library folder or Pick rules."
           }
         },
-        "summary": "Change the Wishlist settings",
+        "summary": "Change the Requests settings",
         "tags": [
-          "Wishlist"
+          "Requests"
         ],
         "x-holyarrs-part": "wishlist",
         "x-holyarrs-permission": "settings",
@@ -24976,92 +24910,6 @@
         "x-holyarrs-scope": "admin"
       }
     },
-    "/api/v1/settings/tvdb-key": {
-      "get": {
-        "description": "Never sent in full. Empty when no key is set (TVDB is then not used).",
-        "operationId": "getTVDBKey",
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MaskedKey"
-                }
-              }
-            },
-            "description": "Masked key."
-          }
-        },
-        "summary": "Your TVDB key, masked",
-        "tags": [
-          "Settings"
-        ],
-        "x-holyarrs-part": "core",
-        "x-holyarrs-permission": "settings",
-        "x-holyarrs-scope": "admin"
-      },
-      "put": {
-        "description": "HolyArrs ships no TVDB key: TVDB is a show details source only with your own key, kept encrypted and sent only to TVDB's sign-in. An empty key stops using TVDB. Needs a password sign-in, not an API key.",
-        "operationId": "putTVDBKey",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "properties": {
-                  "key": {
-                    "type": "string"
-                  }
-                },
-                "required": [
-                  "key"
-                ],
-                "type": "object"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MaskedKey"
-                }
-              }
-            },
-            "description": "Saved (masked)."
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            },
-            "description": "No key field."
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            },
-            "description": "Sign in with a password first."
-          }
-        },
-        "summary": "Store your own TVDB key",
-        "tags": [
-          "Settings"
-        ],
-        "x-holyarrs-part": "core",
-        "x-holyarrs-permission": "settings",
-        "x-holyarrs-scope": "write"
-      }
-    },
     "/api/v1/settings/ui": {
       "get": {
         "description": "App-wide settings every browser reads, today whether trailers play by themselves.",
@@ -25383,7 +25231,7 @@
             "description": "No term, or an unknown source."
           },
           "429": {
-            "description": "A Kid account over 30 searches, lookups and Explore requests a minute; see Retry-After."
+            "description": "A Kid account over 240 searches, lookups and Explore requests a minute; see Retry-After."
           },
           "503": {
             "content": {
@@ -27110,7 +26958,7 @@
             "description": "No term given."
           },
           "429": {
-            "description": "A Kid account over 30 searches, lookups and Explore requests a minute; see Retry-After."
+            "description": "A Kid account over 240 searches, lookups and Explore requests a minute; see Retry-After."
           },
           "503": {
             "content": {
@@ -27915,7 +27763,7 @@
         },
         "summary": "Stop following a title",
         "tags": [
-          "Wishlist"
+          "Requests"
         ],
         "x-holyarrs-part": "wishlist",
         "x-holyarrs-permission": "signed_in",
@@ -27951,7 +27799,7 @@
         },
         "summary": "Whether I follow a title",
         "tags": [
-          "Wishlist"
+          "Requests"
         ],
         "x-holyarrs-part": "wishlist",
         "x-holyarrs-permission": "signed_in",
@@ -27993,7 +27841,7 @@
         },
         "summary": "Follow a show or an artist",
         "tags": [
-          "Wishlist"
+          "Requests"
         ],
         "x-holyarrs-part": "wishlist",
         "x-holyarrs-permission": "signed_in",

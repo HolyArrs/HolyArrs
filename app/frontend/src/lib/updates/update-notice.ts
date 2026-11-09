@@ -1,4 +1,3 @@
-import type { UpdateInfo } from '../core/types.ts';
 
 export type BackupRow = { name: string; kind: string; created_at: string; detail?: string; from_version?: string; to_version?: string };
 
@@ -6,15 +5,6 @@ export const PROJECT_REPO = 'HolyArrs/HolyArrs';
 export const RELEASE_PAGES = `https://github.com/${PROJECT_REPO}/releases/`;
 // The Docker Hub name users install from (release.yml pushes it).
 export const IMAGE = 'holyarrs/holyarrs';
-
-export function updateWords(u: UpdateInfo): string {
-	if (!u.on) return 'The update check is off: HolyArrs never asks for a newer version.';
-	if (u.newer) return `HolyArrs ${plainVersion(u.latest ?? '')} is out, newer than this one.`;
-	if (!u.checked_at) return 'Not checked yet; HolyArrs checks once a day.';
-	if (u.problem) return `The last check did not work: ${u.problem}.`;
-	if (u.no_release) return 'No HolyArrs release is published yet.';
-	return 'This is the newest version.';
-}
 
 // Returns '' when the link is not a plain project release page, so the version shows as text.
 export function releaseLink(link: string | undefined): string {

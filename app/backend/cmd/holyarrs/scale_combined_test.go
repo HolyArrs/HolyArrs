@@ -336,7 +336,7 @@ func (s *scaleLiveStreams) Close() {
 
 func runScaleRescanAPI(t *testing.T, app *faultApp, client *http.Client, csrf string, limit time.Duration) (library.RescanResult, error) {
 	t.Helper()
-	status, body, _ := app.call(client, csrf, http.MethodPost, "/api/v1/library/rescan", "")
+	status, body, _ := app.call(client, csrf, http.MethodPost, "/api/v1/schedules/rescan_library/run", "")
 	if status != http.StatusAccepted {
 		return library.RescanResult{}, fmt.Errorf("queue rescan: %d %s", status, body)
 	}

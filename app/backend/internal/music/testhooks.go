@@ -6,12 +6,12 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
-// TestHooks reach into the music state for the api tests that span music
+// TestHooks reach into the music state for the tests that span music
 // and other modules (search, extras, the trailer reader). The app never
 // calls them.
 type TestHooks struct{ h *Handlers }
 
-// TestHooks gives the api tests their hooks.
+// TestHooks gives tests their hooks.
 func (h *Handlers) TestHooks() TestHooks { return TestHooks{h} }
 
 // ForgetArtMisses drops every remembered picture miss, as if their wait had passed.

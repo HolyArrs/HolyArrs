@@ -1,5 +1,4 @@
 import { COLUMNS, IDS, defaults, dump, load, move, moveVisible, normalize, quality, ratioText, shortAge, swarmNum, toggle, visible } from './columns.ts';
-import { stepToward } from './sections.ts';
 import { describe, expect, it } from 'vitest';
 
 describe('columns', () => {
@@ -81,10 +80,6 @@ describe('columns', () => {
 		expect(quality('Show.S01E01.1080p.WEB-DL.DV.H.265')).toBe('1080p DV');
 		expect(quality('Show.S01E01.720p.HDTV')).toBe('720p');
 		expect(quality('Artist - Album (2020) FLAC')).toBe('');
-	});
-	it('stepToward eases to the newest reading', () => {
-		expect(stepToward(0, 1000000)).toBe(600000);
-		expect(stepToward(999500, 1000000)).toBe(1000000);
 	});
 });
 

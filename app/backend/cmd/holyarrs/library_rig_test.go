@@ -11,7 +11,6 @@ import (
 	"net/http/httptest"
 	"regexp"
 	"slices"
-	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -197,12 +196,6 @@ type lbCtlFix struct {
 	exitErr error
 }
 
-func (f *lbCtlFix) exited() []string {
-	f.mu.Lock()
-	defer f.mu.Unlock()
-	return append([]string(nil), f.exits...)
-}
-
 // newCtl serves the API with a parts Control (one Movies loop, gates, and
 // one core loop, backups) and records whole-app exits instead of exiting.
 // newCtl serves the API with a parts Control (one Movies loop, gates, and
@@ -255,15 +248,6 @@ func lbNewCtlMode(t *testing.T, withAuth, safe bool) *lbCtlFix {
 	f.srv = httptest.NewServer(f.api.Handler())
 	t.Cleanup(f.srv.Close)
 	return f
-}
-
-func (f *lbCtlFix) events(t *testing.T) []domain.Event {
-	t.Helper()
-	es, _, err := f.s.Events(context.Background(), database.EventFilter{Kinds: []string{domain.EventControl}, Limit: 100})
-	if err != nil {
-		t.Fatal(err)
-	}
-	return es
 }
 
 // confirmTwice runs a two-step control: the first call answers 202 with a
@@ -667,20 +651,6 @@ func (k *lbKidRig) add(t *testing.T, kind, name, tmdbID, rating string, id int64
 	}
 }
 
-// get answers one GET for p, whatever its status.
-// get answers one GET for p, whatever its status.
-func (s *lbSignedIn) get(path string) (int, string) {
-	s.t.Helper()
-	req, _ := http.NewRequest("GET", s.base+path, nil)
-	resp, err := s.c.Do(req)
-	if err != nil {
-		s.t.Fatal(err)
-	}
-	defer resp.Body.Close()
-	b, _ := io.ReadAll(resp.Body)
-	return resp.StatusCode, string(b)
-}
-
 var lbDigitsAround = regexp.MustCompile(`\d`)
 
 // mentionsBlocked names the first blocked title body mentions: a name, a
@@ -780,31 +750,6 @@ func lbRuleJSON(t *testing.T, name string, kinds []string, b mediafiles.PickRule
 		t.Fatal(err)
 	}
 	return string(raw)
-}
-
-// rdpSend sends the call as one person and returns status and sorted JSON names.
-// rdpSend sends the call as one person and returns status and sorted JSON names.
-func (r *lbAskRig) rdpSend(t *testing.T, who *lbSignedIn, req string) (int, string) {
-	t.Helper()
-	m, rest, _ := strings.Cut(req, " ")
-	path, body, _ := strings.Cut(rest, " ")
-	hr, _ := http.NewRequest(m, r.srv.URL+path, strings.NewReader(body))
-	hr.Header.Set("Content-Type", "application/json")
-	hr.Header.Set(accounts.CSRFHeader, who.csrf)
-	resp, err := who.c.Do(hr)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer resp.Body.Close()
-	b, _ := io.ReadAll(resp.Body)
-	var x map[string]any
-	_ = json.Unmarshal(b, &x)
-	var ks []string
-	for k := range x {
-		ks = append(ks, k)
-	}
-	sort.Strings(ks)
-	return resp.StatusCode, strings.Join(ks, " ")
 }
 
 func lbDecodeJSON(t *testing.T, b []byte, v any) {

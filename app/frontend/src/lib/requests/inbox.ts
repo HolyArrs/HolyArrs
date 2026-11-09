@@ -42,14 +42,6 @@ export function readInfo(raw: Record<string, unknown>): AskInfo {
 	};
 }
 
-/** A runtime the compact way: "2h 10m", "48m", "2h". */
-export function runtimeShort(min: number | undefined): string {
-	if (!min) return '';
-	const h = Math.floor(min / 60);
-	const m = min % 60;
-	return h ? (m ? `${h}h ${m}m` : `${h}h`) : `${m}m`;
-}
-
 const day = (iso: string) => iso.slice(0, 10);
 
 /** When something happened ("Mar 3") in the viewer's own time zone, never later than now. */
@@ -84,19 +76,6 @@ export function shortDate(iso: string, now = new Date()): string {
 	const opts: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric', timeZone: 'UTC' };
 	if (y !== now.getFullYear()) opts.year = 'numeric';
 	return t.toLocaleDateString('en-US', opts);
-}
-
-/** Whether a movie is out: out now, in cinemas only, or not out yet (with the cinema date). */
-export function movieRelease(info: Pick<AskInfo, 'dates' | 'status'> | null | undefined, now = new Date()): { words: string; notOut: string } {
-	if (!info) return { words: '', notOut: '' };
-	const today = now.toISOString().slice(0, 10);
-	const { theaters, digital, physical } = info.dates;
-	const home = [digital, physical].filter(Boolean).map((x) => day(x)).sort()[0];
-	if (home && home <= today) return { words: 'out now', notOut: '' };
-	if (theaters && day(theaters) <= today) return { words: 'in cinemas only', notOut: '' };
-	if (theaters) return { words: `in cinemas ${shortDate(theaters, now)}`, notOut: `Not out yet · in cinemas ${shortDate(theaters, now)}` };
-	if (info.status === 'Released') return { words: 'out now', notOut: '' };
-	return { words: '', notOut: '' };
 }
 
 /** The audio languages the approver can ask for, by base code. */

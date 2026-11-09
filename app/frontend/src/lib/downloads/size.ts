@@ -19,11 +19,6 @@ export function size(n: number | null | undefined): string {
 	return `${t} ${UNITS[i]}`;
 }
 
-/** A part of a whole: "553 MB / 3 GB". */
-export function sizePair(got: number, total: number): string {
-	return `${size(got)} / ${size(total)}`;
-}
-
 /** A Downloader's protocol from what the row carries. */
 export function protocolOf(r: { protocol?: string; downloader_kind?: string }): 'torrent' | 'usenet' | '' {
 	const p = (r.protocol || '').toLowerCase();

@@ -44,7 +44,7 @@ docs/                                guides and these pages
 | You want to change | Look in |
 |---|---|
 | How a Release is picked | `internal/mediafiles` |
-| A Downloader client | `internal/downloads`, contract tests in `internal/downloads/clienttest` |
+| A Downloader client | `internal/downloads`, contract tests in `internal/downloads/conformance_test.go` |
 | An alert channel | `internal/alerts` |
 | Sign-in, users, API keys | `internal/accounts` |
 | The first-run wizard | `internal/setup`, `app/frontend/src/routes/welcome` |
@@ -83,7 +83,7 @@ Every backend module uses the same file names.
 | `store.go`, `store_<topic>.go` | All SQL for the module's own tables |
 | `types.go` | The module's records |
 
-On the web side, `lib/<module>/` holds `api.ts`, `state.svelte.ts`, its Svelte parts and their tests.
+On the web side, `lib/<module>/` holds `index.ts` (what other modules may use), its Svelte parts and their tests, plus `api.ts` and `state.svelte.ts` only when it has its own calls or state.
 
 </details>
 

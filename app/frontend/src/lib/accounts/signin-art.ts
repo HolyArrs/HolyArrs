@@ -19,7 +19,6 @@ export type ArtPick = {
 };
 
 export type Way = 'password' | 'plex' | 'jellyfin' | 'emby' | 'oidc' | 'forward_auth';
-export type ProviderButton = { way: Way; label: string };
 
 /** One slide, ready to show: backdrop and logo of the same title, both loaded. */
 export type ReadySlide = { shot: ArtShot; pick: ArtPick; logo: string | null };
@@ -89,12 +88,6 @@ const LABELS: Record<Way, string> = {
 	forward_auth: 'Continue through the trusted proxy',
 	password: 'Use a HolyArrs account'
 };
-
-/** The buttons the card shows: only the ways the owner turned on, media servers first. */
-export function providerButtons(ways: readonly Way[]): ProviderButton[] {
-	const order: Way[] = ['plex', 'jellyfin', 'emby', 'oidc', 'forward_auth', 'password'];
-	return order.filter((w) => ways.includes(w)).map((way) => ({ way, label: LABELS[way] }));
-}
 
 /** Loads the backdrop and the logo of one title together and returns them as one unit, or null when the backdrop fails (the caller moves on). A missing or broken logo gives logo null: the slide shows no logo rather than another title's. */
 export async function prepareSlide(

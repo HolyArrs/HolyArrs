@@ -109,15 +109,6 @@ export function groupOf(id: GroupId | undefined): Group | undefined {
 	return groups.find((g) => g.id === id);
 }
 
-export function filterSections(all: Section[], query: string): Section[] {
-	const words = query.toLowerCase().split(/\s+/).filter(Boolean);
-	if (!words.length) return all;
-	return all.filter((s) => {
-		const hay = `${s.label} ${s.about} ${groups.find((g) => g.id === s.group)?.label ?? ''}`.toLowerCase();
-		return words.every((w) => hay.includes(w));
-	});
-}
-
 /** reachWords turns any "couldn't connect" answer into one plain line; other answers pass through. */
 export function reachWords(text: string): string {
 	return /connection (was )?refused|does not answer|refused to connect|no such host|timed? ?out|unreachable|dial tcp|no route|connection reset|could not (connect|reach)|couldn.t (connect|reach)|can.t connect|EOF/i.test(text)
