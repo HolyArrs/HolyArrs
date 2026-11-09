@@ -56,13 +56,3 @@ func (i *Interest) Serve(w http.ResponseWriter, r *http.Request, watched func())
 	}
 	WriteJSON(w, http.StatusOK, map[string]any{"ttl_seconds": 60})
 }
-
-// PathID reads the positive int64 path value name, answering 404 itself.
-func PathID(w http.ResponseWriter, r *http.Request, name string) (int64, bool) {
-	id, err := strconv.ParseInt(r.PathValue(name), 10, 64)
-	if err != nil || id <= 0 {
-		Fail(w, http.StatusNotFound, "not found")
-		return 0, false
-	}
-	return id, true
-}

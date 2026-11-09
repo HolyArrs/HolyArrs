@@ -47,9 +47,6 @@ func (h *AppHandlers) Routes(m *http.ServeMux) {
 	m.HandleFunc("GET /api/v1/support/bundle", h.supportBundle)
 }
 
-// AboutOf is the About block for the support bundle and the about route.
-func (h *AppHandlers) AboutOf(ctx context.Context) AboutView { return h.aboutView(ctx) }
-
 // PathInfo is one folder or file as HolyArrs sees it.
 type PathInfo struct {
 	Name  string `json:"name"`

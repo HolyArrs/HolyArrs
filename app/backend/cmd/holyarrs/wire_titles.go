@@ -51,10 +51,6 @@ func strOr(p *string) string {
 	return *p
 }
 
-func (a *handlers) showInfo(ctx context.Context, t mediafiles.Title) (*ShowInfo, error) {
-	return shows.InfoOf(ctx, a.s.Store.Read(), t)
-}
-
 // StateLabels are the words people see for Slot states.
 var StateLabels = mediafiles.StateLabels
 

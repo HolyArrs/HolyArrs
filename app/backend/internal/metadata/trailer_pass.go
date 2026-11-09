@@ -57,10 +57,6 @@ func TrailerPassTiming(first, every time.Duration) {
 	}
 }
 
-// TrailerPassTimes are when the pass first runs after start and how often
-// after that.
-func TrailerPassTimes() (first, every time.Duration) { return trailerPassFirst, trailerPassEvery }
-
 // SetTrailerPassGap sets the wait between two lookups of a pass (for
 // tests) and answers the one it replaced.
 func SetTrailerPassGap(d time.Duration) time.Duration {

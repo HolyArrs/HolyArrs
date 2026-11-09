@@ -179,8 +179,3 @@ func AutoplayOn(ctx context.Context, st *database.Store) bool {
 func SigninLibraryArtOn(ctx context.Context, st *database.Store) bool {
 	return UISettingsOf(ctx, st).SigninLibraryArt
 }
-
-// ArtworkCacheGBOf reads the picture cache size in GB.
-func ArtworkCacheGBOf(ctx context.Context, st *database.Store) int {
-	return UISettingsOf(ctx, st).ArtworkCacheGB
-}
