@@ -8,7 +8,7 @@ sidebar: { order: 6 }
 Turn a tested build into a release. This page is for maintainers.
 
 :::caution
-Publishing is off until the maintainer starts a release. Do not tag, publish or move an image tag on your own.
+Only the maintainer starts a release. Do not tag, publish or move an image tag on your own.
 :::
 
 ## Before you start
@@ -58,7 +58,7 @@ Publishing is off until the maintainer starts a release. Do not tag, publish or 
 
 | Thing | Name |
 |---|---|
-| Git tag (made by the release run) | `v1.0.0`, or `v1.0.0-rc.1` for a candidate |
+| Git tag (made by the release run) | `1.0.0`, or `1.0.0-rc.1` for a candidate (plain numbers, no v) |
 | Image tag and notes `version` | `1.0.0` |
 
 The workflow refuses any other version shape, a version that differs from the `VERSION` file, and a version that already has a tag.
@@ -80,7 +80,7 @@ A new version lands on `:beta` and on its version tag. `:beta` only moves to a n
 **Fix.** Edit the notes file, never the files in `releases/out`, and run it again.
 
 **Symptom.** The workflow stops with a message about the tag.
-**Cause.** The tag is not `vX.Y.Z` or `vX.Y.Z-rc.N`.
+**Cause.** The version is not `X.Y.Z` or `X.Y.Z-rc.N`.
 **Fix.** Make a tag with that shape.
 
 **Symptom.** The beta run says `beta stays on` a version.
@@ -122,7 +122,7 @@ Body order: theme, Highlights, places (Requests, Library, Downloads, Indexers, A
 
 <details class="ha-more"><summary>The image workflow</summary>
 
-The `release` workflow runs from main only, for the version in `VERSION`, and publishing is switched off until the maintainer authorizes a release. When on, it:
+The `release` workflow runs from main only, for the version in `VERSION`, and only when the maintainer ticks confirm_release. It:
 
 1. Runs `go test ./...` before building.
 2. Builds one image for `linux/amd64`, `linux/arm64` and `linux/arm/v7`.

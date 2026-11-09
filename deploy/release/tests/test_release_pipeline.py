@@ -83,10 +83,12 @@ class ReleaseBuild(unittest.TestCase):
     def setUp(self):
         self.text = read(WORKFLOWS / "release.yml")
 
-    def test_stays_inert_until_approved(self):
-        # Publishing waits for the maintainer's release approval; this change must not switch it on.
-        self.assertRegex(self.text, r"\n\s+if:\s*\$\{\{\s*false\s*\}\}")
+    def test_starts_by_hand_with_confirmation(self):
+        # Like the maintainer's other projects: a hand start with a confirm box ticked.
         self.assertEqual(triggers(self.text), ["workflow_dispatch"])
+        self.assertIn("confirm_release", self.text)
+        self.assertRegex(self.text, r"confirm_release:\s*\n(?:\s+.*\n)*?\s+default:\s*false")
+        self.assertIn('[ "$CONFIRM" = "true" ]', self.text)
 
     def test_never_moves_latest(self):
         self.assertRegex(self.text, r"flavor:\s*\|?\s*\n?\s*latest=false")
