@@ -18,7 +18,7 @@ Make the owner account and tell HolyArrs what you collect. Nobody can use the ap
 ## Answer the setup steps
 
 1. **Coming from other apps?** Pick **Start fresh** for a new setup. Pick **Bring my apps** to copy titles, folders and settings from Sonarr, Radarr, Lidarr, Overseerr and others. HolyArrs only reads them; your files and old apps stay as they are. See [Moving from other apps](../migrate/index.md).
-2. **Where's your media?** Tick what you collect: movies, TV shows, music. Type a folder for each, as HolyArrs sees it inside the container, such as `/movies`. Press **Continue**.
+2. **Where's your media?** Turn on what you collect: movies, TV shows, music. Type a folder for each, as HolyArrs sees it inside the container, such as `/movies`. Press **Continue**.
 
    Every part you leave ticked needs a folder. TV shows starts ticked; untick it if you only want movies.
 3. **Which app downloads?** Connect your downloader, or press **Skip for now**. [Connect](../connect/) walks through it.

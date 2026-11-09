@@ -60,7 +60,7 @@ The rename does exactly what the preview showed. If a pattern or file changed in
 | Choice | What happens |
 |---|---|
 | Default | Files stay on disk. A deleted artist leaves the Library. A deleted album or track stays on its page with **Keep up to date** off. Turn it back on to get it back. |
-| **Also delete their files** | Files HolyArrs imported or adopted move to the holding folder inside their Library folder. Files HolyArrs only found are never touched. |
+| **Also delete its files** (whole artist) or **Also delete their files** (an album or track) | Files HolyArrs imported or adopted move to the holding folder inside their Library folder. Files HolyArrs only found are never touched. |
 | **Add it to the Never-add list** | Shown when you delete a whole artist. Outside lists can never add it again. You still can. |
 
 :::caution
