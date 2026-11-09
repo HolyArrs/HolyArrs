@@ -8,7 +8,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 )
 
-// A refused delete names its reason; unknown errors stay generic.
+// A refused delete names its reason. Unknown errors stay generic.
 func TestRemoveReason(t *testing.T) {
 	cases := map[error]string{
 		fmt.Errorf("x: %w", library.ErrProtectedCopy):                   library.ErrProtectedCopy.Error(),

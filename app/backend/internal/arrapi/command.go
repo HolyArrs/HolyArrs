@@ -19,15 +19,14 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/shows"
 )
 
-// doneID is the command id of a command that had nothing to queue, above
-// all RefreshMonitoredDownloads: Seerr sends that one every minute, and
-// HolyArrs' background reader already keeps downloads fresh, so it is
-// answered at once without writing anything (no Job row, no disk write
-// while idle). Polling doneID always says completed. It sits far above
-// any Job id HolyArrs will reach.
+// doneID is the id of a command that had nothing to queue. The main case
+// is RefreshMonitoredDownloads. Seerr sends it every minute, and the
+// background reader already keeps downloads fresh, so it is answered at
+// once with no Job row and no disk write while idle. Polling doneID
+// always says completed. It sits far above any Job id HolyArrs will reach.
 const doneID = 2147483647
 
-// commandIn is a command: its name and its own fields at the top level.
+// commandIn is a command: its name, plus its own fields at the top level.
 type commandIn struct {
 	Name         string  `json:"name"`
 	SeriesID     int64   `json:"seriesId"`
@@ -37,8 +36,8 @@ type commandIn struct {
 	MovieID      int64   `json:"movieId"`
 }
 
-// commandNames are the commands each side answers, by lower-case name,
-// with their canonical spelling.
+// commandNames maps the lower-case names each side answers to their
+// canonical spelling.
 var commandNames = map[string]map[string]string{
 	"sonarr": {"seriessearch": "SeriesSearch", "seasonsearch": "SeasonSearch", "episodesearch": "EpisodeSearch",
 		"missingepisodesearch": "MissingEpisodeSearch", "refreshmonitoreddownloads": "RefreshMonitoredDownloads",
@@ -47,9 +46,10 @@ var commandNames = map[string]map[string]string{
 		"refreshmovie": "RefreshMovie", "rescanmovie": "RescanMovie"},
 }
 
-// command queues the Jobs a command stands for and answers with its record.
-// Searches are hand searches, as the old apps treat commands sent through
-// their API: they look even for titles switched off or not out yet.
+// command queues the Jobs a command stands for and answers with its
+// record. Searches run as hand searches, because the old apps treat API
+// commands that way. They look even for titles switched off or not out
+// yet.
 func (h *handler) command(w http.ResponseWriter, r *http.Request) {
 	raw, err := io.ReadAll(http.MaxBytesReader(w, r.Body, bodyMax))
 	var in commandIn
@@ -66,8 +66,8 @@ func (h *handler) command(w http.ResponseWriter, r *http.Request) {
 	}
 	name, ok := commandNames[h.side][strings.ToLower(strings.TrimSpace(strings.TrimSuffix(in.Name, "Command")))]
 	if !ok {
-		// The old apps fail on an unknown name rather than answer a clean
-		// 400; no client depends on it.
+		// The old apps fail on an unknown name instead of a clean 400. No
+		// client depends on that, so a 400 is safe.
 		message(w, http.StatusInternalServerError, "Unknown command: "+in.Name+". This server answers "+strings.Join(names(h.side), ", "))
 		return
 	}
@@ -96,7 +96,8 @@ func names(side string) []string {
 	return out
 }
 
-// runCommand queues the Jobs and returns their ids (none: nothing to do).
+// runCommand queues the Jobs and returns their ids. No ids means nothing
+// was left to do.
 func (h *handler) runCommand(ctx context.Context, name string, in commandIn, by domain.Actor) ([]int64, error) {
 	var ids []int64
 	enqueue := func(kind string, subject *domain.Subject, params map[string]any, key string) error {
@@ -106,7 +107,7 @@ func (h *handler) runCommand(ctx context.Context, name string, in commandIn, by 
 		}
 		return err
 	}
-	// searchSlots hand-searches each Slot of the items; one Job per Slot.
+	// searchSlots hand-searches each Slot of the items, one Job per Slot.
 	searchSlots := func(slots []mediafiles.Slot, err error) error {
 		if err != nil {
 			return err
@@ -130,14 +131,14 @@ func (h *handler) runCommand(ctx context.Context, name string, in commandIn, by 
 		return nil, nil
 	case "SeriesSearch", "MissingEpisodeSearch":
 		if in.SeriesID == 0 && name == "MissingEpisodeSearch" {
-			// The whole missing list, as the daily missing search runs it.
+			// The whole missing list, the same way the daily missing search
+			// runs.
 			return ids, enqueue(jobs.KindSearchMissing, nil, map[string]any{"which": "missing"}, "search_missing:missing")
 		}
 		if _, err := h.title(ctx, in.SeriesID, "show"); err != nil {
 			return nil, err
 		}
-		// Every season with an episode kept up to date that still looks
-		// for a copy.
+		// Every season with a kept episode that still needs a copy.
 		list, err := shows.ShowSeasonsToSearch(ctx, h.Store.Read(), in.SeriesID)
 		if err != nil {
 			return nil, err
@@ -228,7 +229,8 @@ type commandRecord struct {
 	UpdateScheduledTask bool           `json:"updateScheduledTask"`
 }
 
-// words splits a command name into words: SeriesSearch is "Series Search".
+// words splits a command name into words, so SeriesSearch becomes
+// "Series Search".
 func words(name string) string {
 	var b strings.Builder
 	for i, r := range name {
@@ -240,8 +242,8 @@ func words(name string) string {
 	return b.String()
 }
 
-// commandRecord answers for the first Job of a command (its state is the
-// command's), or doneID when nothing was queued.
+// commandRecord answers for the first Job of a command, whose state
+// stands for the whole command, or for doneID when nothing was queued.
 func (h *handler) commandRecord(ctx context.Context, ids []int64, name string, body map[string]any) commandRecord {
 	if body == nil {
 		body = map[string]any{}
@@ -262,8 +264,8 @@ func (h *handler) commandRecord(ctx context.Context, ids []int64, name string, b
 	return jobRecord(j, name, body)
 }
 
-// jobRecord turns a Job into a command record: queued, started, then
-// completed, failed or cancelled.
+// jobRecord turns a Job into a command record. The states run queued,
+// started, then completed, failed or cancelled.
 func jobRecord(j domain.Job, name string, body map[string]any) commandRecord {
 	rec := commandRecord{ID: j.ID, Name: name, CommandName: words(name), Body: body, Priority: "normal", Result: "unknown",
 		Queued: utc(j.CreatedAt), Trigger: "manual", Started: utcPtr(j.StartedAt), Ended: utcPtr(j.EndedAt)}
@@ -295,7 +297,7 @@ func jobRecord(j domain.Job, name string, body map[string]any) commandRecord {
 	return rec
 }
 
-// getCommand polls a command by id. doneID is always completed.
+// getCommand polls a command by id. doneID always reads completed.
 func (h *handler) getCommand(w http.ResponseWriter, r *http.Request) {
 	id, ok := pathID(w, r)
 	if !ok {
@@ -310,7 +312,8 @@ func (h *handler) getCommand(w http.ResponseWriter, r *http.Request) {
 		internalError(w, err)
 		return
 	}
-	// Only the Job kinds a command queues can be polled here.
+	// Only Job kinds a command queues can be polled, so other Jobs stay
+	// private.
 	name := jobCommandName(j.Kind, h.side)
 	if name == "" {
 		notFound(w)
@@ -319,8 +322,8 @@ func (h *handler) getCommand(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, jobRecord(j, name, map[string]any{"name": name}))
 }
 
-// jobCommandName names the command a Job kind stands for, for polling;
-// "" for a kind no command queues.
+// jobCommandName names the command a Job kind stands for when polled. It
+// is "" for a kind no command queues.
 func jobCommandName(kind, side string) string {
 	switch kind {
 	case jobs.KindSearchSlot, jobs.KindSearchSeason:

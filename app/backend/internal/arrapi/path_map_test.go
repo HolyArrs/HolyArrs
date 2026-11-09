@@ -6,8 +6,8 @@ import (
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 )
 
-// The queue's outputPath (read by Unpackerr) maps a Windows
-// Downloader's folder as the import does.
+// The queue's outputPath, which Unpackerr reads, maps a Windows
+// Downloader's folder the same way the import does.
 func TestOutputPath_MapsWindowsPaths(t *testing.T) {
 	maps := []domain.PathMap{{Theirs: `D:\Downloads`, Ours: "/downloads"}}
 	for p, want := range map[string]string{
@@ -21,7 +21,7 @@ func TestOutputPath_MapsWindowsPaths(t *testing.T) {
 	}
 }
 
-// A reported folder with a ".." part is not handed to Unpackerr.
+// A reported folder with a ".." part never reaches Unpackerr.
 func TestOutputPath_RefusesDotDot(t *testing.T) {
 	if got := outputPath("/data/downloads/../../etc", []domain.PathMap{{Theirs: "/data/downloads", Ours: "/downloads"}}, nil); got != "" {
 		t.Fatalf("got %q", got)

@@ -18,7 +18,8 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
-// golden compares got with testdata/name; HOLYARRS_WRITE_GOLDEN=1 writes it.
+// golden compares got with testdata/name. HOLYARRS_WRITE_GOLDEN=1 rewrites
+// the file.
 func golden(t *testing.T, name, got string) {
 	t.Helper()
 	path := filepath.Join("testdata", name)
@@ -39,8 +40,8 @@ func golden(t *testing.T, name, got string) {
 	}
 }
 
-// The templates Prowlarr reads before it writes: Newznab and Torznab with
-// the fields it fills and the ones it carries over, per side.
+// The templates Prowlarr reads before it writes are Newznab and Torznab,
+// with the fields it fills and the ones it copies, per side.
 func TestIndexerSchema_Templates(t *testing.T) {
 	for _, side := range []string{"sonarr", "radarr"} {
 		h := &handler{side: side}
@@ -55,8 +56,8 @@ func TestIndexerSchema_Templates(t *testing.T) {
 	}
 }
 
-// prowlarrBody fills a template the way Prowlarr does: the fields it
-// manages, with its own address and key.
+// prowlarrBody fills a template the way Prowlarr does, with its own
+// address and key in the fields it manages.
 func prowlarrBody(h *handler, format string, set map[string]any) map[string]any {
 	b, _ := json.Marshal(h.template(format))
 	var m map[string]any
@@ -85,7 +86,7 @@ func readBody(t *testing.T, h *handler, m map[string]any) push {
 	return p
 }
 
-// sourceOf is the Source a push becomes.
+// sourceOf returns the Source a push becomes.
 func sourceOf(h *handler, p push) domain.Source {
 	in := p.input(h.sourceKind(), p.name)
 	src := domain.Source{Name: in.Name, Format: in.Format, Protocol: in.Protocol, URL: in.URL, UseFor: *in.UseFor, Kinds: in.Kinds,
@@ -96,7 +97,7 @@ func sourceOf(h *handler, p push) domain.Source {
 	return src
 }
 
-// managed are the values Prowlarr compares before it writes again.
+// managed returns the values Prowlarr compares before it writes again.
 func managed(m map[string]any) map[string]any {
 	out := map[string]any{}
 	for _, k := range []string{"name", "implementation", "priority", "enableRss", "enableAutomaticSearch", "enableInteractiveSearch"} {
@@ -111,8 +112,8 @@ func managed(m map[string]any) map[string]any {
 	return v
 }
 
-// What Prowlarr wrote reads back the same, its key masked, so it does
-// not write again; a value changed in HolyArrs reads back changed.
+// What Prowlarr wrote reads back the same with its key masked, so it does
+// not write again. A value changed in HolyArrs reads back changed.
 func TestIndexerReadBack_EqualAfterWrite(t *testing.T) {
 	for _, c := range []struct{ side, format string }{{"sonarr", "torznab"}, {"sonarr", "newznab"}, {"radarr", "torznab"}, {"radarr", "newznab"}} {
 		h := &handler{side: c.side}
@@ -136,8 +137,8 @@ func TestIndexerReadBack_EqualAfterWrite(t *testing.T) {
 		if got["id"] != int64(9) || !slices.Equal(got["tags"].([]any), []any{4.0}) || got["downloadClientId"] != 2.0 {
 			t.Errorf("%s %s kept values: %v", c.side, c.format, got)
 		}
-		// Changed in HolyArrs: the address and the categories read back as
-		// HolyArrs has them; a name with the side's word after it reads
+		// After a change in HolyArrs, the address and categories read back
+		// as HolyArrs has them. A name with the side's word after it reads
 		// back as sent.
 		src.URL, src.Categories = "http://prowlarr:9696/4/api", map[string][]int{h.sourceKind(): {5000}}
 		src.Name, src.Extra[extraName] = "Lab Tracker (Prowlarr) (shows)", "Lab Tracker (Prowlarr) (shows)"
@@ -159,7 +160,8 @@ func mapsEqual(a, b map[string]any) bool {
 	return string(x) == string(y)
 }
 
-// Bodies HolyArrs cannot keep as a Source get a 400 with what is wrong.
+// A body HolyArrs cannot keep as a Source gets a 400 that says what is
+// wrong.
 func TestIndexerWrite_BadBodyRefused(t *testing.T) {
 	h := &handler{side: "sonarr"}
 	for name, change := range map[string]func(m map[string]any){
@@ -192,8 +194,8 @@ func TestIndexerWrite_BadBodyRefused(t *testing.T) {
 	}
 }
 
-// A write from Prowlarr tells the rest of the app: a saved Source reaches the
-// searcher, a removed one stops being searched.
+// A write from Prowlarr reaches the rest of the app. A saved Source goes
+// to the searcher and a removed one stops being searched.
 func TestIndexerWriteTellsTheApp(t *testing.T) {
 	st := settingsStore(t)
 	v, err := secrets.Open(context.Background(), st, make([]byte, secrets.KeySize))

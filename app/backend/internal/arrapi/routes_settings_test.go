@@ -78,8 +78,8 @@ func TestSaveSwitchesBothAndNil(t *testing.T) {
 	}
 }
 
-// Without sign-in no key can be made or deleted, and the settings still list
-// both sides with no key.
+// Without sign-in no key can be made or deleted. The settings still list
+// both sides, each with no key.
 func TestSettingsWithoutSignIn(t *testing.T) {
 	h := &Handlers{Deps: Deps{Store: settingsStore(t)}}
 	req := httptest.NewRequest("POST", "/api/v1/settings/old-app-api/keys/sonarr", nil)

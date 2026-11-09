@@ -26,7 +26,7 @@ func TestInternalErrorHidesDetail(t *testing.T) {
 	}
 }
 
-// The words and formats the old apps use in their answers.
+// The answers use the words and formats the old apps use.
 func TestFormats_ManualWords(t *testing.T) {
 	for sec, want := range map[int64]string{0: "00:00:00", 125: "00:02:05", 3600*23 + 59: "23:00:59", 86400 + 3723: "1.01:02:03", -5: "00:00:00"} {
 		if got := timeSpan(sec); got != want {
@@ -45,7 +45,8 @@ func TestFormats_ManualWords(t *testing.T) {
 	}
 }
 
-// Anime shows go by absolute numbers, daily ones by air date, and back.
+// Anime shows map to absolute numbers and daily shows to air dates, both
+// ways.
 func TestShowTypes_RoundTrip(t *testing.T) {
 	for typ, order := range map[string]string{"anime": library.OrderAbsolute, "Daily": library.OrderDaily, "standard": library.OrderAired, "": library.OrderAired} {
 		if got := episodeOrder(typ); got != order {

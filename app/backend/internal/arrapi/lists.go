@@ -14,13 +14,14 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 )
 
-// The read-only lists start pages (Homepage) and subtitle apps (Bazarr)
-// poll on the Sonarr side: episodes with their file or show, the missing
-// list, the calendar and the unpaged queue. None of them writes.
+// The read-only lists that start pages such as Homepage and subtitle apps
+// such as Bazarr poll on the Sonarr side: episodes with their file or
+// show, the missing list, the calendar and the unpaged queue. None of them
+// writes, so polling stays cheap.
 
-// include adds what the caller asked for to each episode: its file
-// (includeEpisodeFile, Bazarr's sync) and its show (includeSeries), each
-// in a fixed number of queries.
+// include adds what the caller asked for to each episode: its file with
+// includeEpisodeFile, which Bazarr's sync uses, and its show with
+// includeSeries. Each takes a fixed number of queries.
 func (h *handler) include(ctx context.Context, r *http.Request, eps []episode) error {
 	if queryBool(r, "includeEpisodeFile") {
 		if err := h.withFiles(ctx, eps); err != nil {
@@ -33,7 +34,7 @@ func (h *handler) include(ctx context.Context, r *http.Request, eps []episode) e
 	return nil
 }
 
-// withFiles puts each episode's main-Version file on it; an episode with
+// withFiles puts each episode's main-Version file on it. An episode with
 // none gets no file.
 func (h *handler) withFiles(ctx context.Context, eps []episode) error {
 	var ids []int64
@@ -114,7 +115,7 @@ func (h *handler) seriesByID(ctx context.Context, ids []int64) (map[int64]series
 	return out, err
 }
 
-// inOrder puts eps in the order of ids (the order a list was sorted in).
+// inOrder puts eps back in the order of ids, which is the sorted order.
 func inOrder(eps []episode, ids []int64) []episode {
 	at := map[int64]int{}
 	for i, id := range ids {
@@ -126,7 +127,7 @@ func inOrder(eps []episode, ids []int64) []episode {
 	return eps
 }
 
-// missingSorts are the missing list's sort keys, by lower-case name: the
+// missingSorts maps each lower-case sort key of the missing list to the
 // name answered and the column sorted on.
 var missingSorts = map[string][2]string{
 	"episodes.airdateutc":     {"episodes.airDateUtc", "i.air_date"},
@@ -137,12 +138,13 @@ var missingSorts = map[string][2]string{
 // missingDefaultSize is the missing list's page size when none is sent.
 const missingDefaultSize = 10
 
-// missingEpisodes pages the episodes that have aired and have no file in
-// the main Version. monitored (default true) keeps those kept up to date
-// with their season and show; false gives the others. Sorting follows the
-// old apps' paging rules: descending when no direction is sent, the
-// endpoint's own ascending only for "default", an unknown key falls back
-// to the air date, and a page past the end is empty with the asked number.
+// missingEpisodes pages the aired episodes with no file in the main
+// Version. monitored defaults to true and keeps the episodes kept up to
+// date with their season and show. false gives the others. Sorting
+// follows the old apps' paging rules. No direction means descending, and
+// only "default" uses the endpoint's own ascending order. An unknown key
+// falls back to the air date. A page past the end is empty and keeps the
+// asked number.
 func (h *handler) missingEpisodes(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	sort, ok := missingSorts[strings.ToLower(query(r, "sortKey"))]
@@ -190,8 +192,8 @@ func (h *handler) missingEpisodes(w http.ResponseWriter, r *http.Request) {
 		"totalRecords": total, "records": records})
 }
 
-// queryTime reads a start or end value: a date (3 November 2026) or a date and
-// time, with or without a zone (UTC when none).
+// queryTime reads a start or end value: a date, or a date and time with
+// or without a zone. No zone means UTC.
 func queryTime(r *http.Request, name string) (time.Time, bool) {
 	v := strings.TrimSpace(query(r, name))
 	if v == "" {
@@ -205,9 +207,9 @@ func queryTime(r *http.Request, name string) (time.Time, bool) {
 	return time.Time{}, false
 }
 
-// calendarEpisodes lists the episodes airing from start to end (by
-// default today to two days on), by air time. Without unmonitored=true
-// only episodes kept up to date, in shows kept up to date, are listed.
+// calendarEpisodes lists the episodes airing from start to end by air
+// time. The default window is today to two days on. Without
+// unmonitored=true only kept episodes of kept shows are listed.
 // includeSeries and includeEpisodeFile add the show and the file.
 func (h *handler) calendarEpisodes(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -253,9 +255,9 @@ func (h *handler) calendarEpisodes(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, out)
 }
 
-// queueDetails is the download list unpaged: every row, or those of one
-// show (seriesId) or of some episodes (episodeIds). includeEpisode and
-// includeSeries add the episode and the show.
+// queueDetails answers the download list unpaged. It gives every row, or
+// those of one show with seriesId, or of some episodes with episodeIds.
+// includeEpisode and includeSeries add the episode and the show.
 func (h *handler) queueDetails(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	rows, err := h.queueRows(ctx, queryBool(r, "includeEpisode"))
