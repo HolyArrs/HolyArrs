@@ -1,3 +1,5 @@
+<p align="center"><b>English</b> · <a href=".github/readme/README.zh-CN.md">简体中文</a> · <a href=".github/readme/README.hi.md">हिन्दी</a> · <a href=".github/readme/README.es.md">Español</a> · <a href=".github/readme/README.fr.md">Français</a> · <a href=".github/readme/README.ar.md">العربية</a> · <a href=".github/readme/README.pt-BR.md">Português</a> · <a href=".github/readme/README.ru.md">Русский</a> · <a href=".github/readme/README.ja.md">日本語</a> · <a href=".github/readme/README.de.md">Deutsch</a> · <a href=".github/readme/README.ko.md">한국어</a></p>
+
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/banner-light.gif">
@@ -14,58 +16,64 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/licence-AGPL--3.0-3b82f6?style=flat-square" alt="Licence: AGPL-3.0"></a>
 </p>
 
+<h3 align="center">Six apps to watch a show. Now it's one.</h3>
+
 <p align="center"><b>HolyArrs</b> is one self-hosted app for your shows, movies and music.<br>Browse like a streaming app, ask for what you want, and it handles the rest.</p>
 
-<p align="center"><b>About 15 MB download · about 140 MB of RAM idle with 10,000 titles · amd64, arm64, armv7</b><br><sub>The six apps it replaces download 718.2 MB together.</sub></p>
+<p align="center"><b>About 15 MB to download · about 140 MB of RAM idle with 10,000 titles · amd64, arm64, armv7</b><br><sub>The six apps it replaces download 718.2 MB together.</sub></p>
 
-<p align="center"><sub>From the maker of <a href="https://github.com/CoderLuii/HolyClaude">HolyClaude</a>, <a href="https://github.com/CoderLuii/HolyCode">HolyCode</a> and <a href="https://github.com/CoderLuii/ChannelWatch">ChannelWatch</a> · 350k+ Docker pulls</sub></p>
-
-<p align="center"><a href="#install">Install</a> · <a href="#coming-from-sonarr-radarr-and-the-rest">Coming from other apps</a> · <a href="#not-built-yet">Not built yet</a> · <a href="#faq">FAQ</a> · <a href="#help">Help</a></p>
-
-## Why I built it
-
-A normal media server runs six apps: Sonarr, Radarr, Lidarr, Bazarr, Prowlarr and Seerr. That's six logins, six ports, six update cycles and six API keys to copy between them. When a show doesn't land, you check six places to find out why.
-
-HolyArrs is the one app I wanted instead.
+<p align="center"><a href="#quick-start">Quick start</a> · <a href="#why">Why</a> · <a href="#what-it-does">What it does</a> · <a href="#moving">Moving from other apps</a> · <a href="#manual">The manual</a> · <a href="#help">Help</a></p>
 
 <p align="center">
   <picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/hero-dark.webp"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/hero-light.webp" width="100%" alt="HolyArrs Explore: hover a title and the trailer plays" /></picture>
 </p>
 
-## What it does
+<a id="quick-start"></a>
 
-Someone asks for a title. HolyArrs searches your Sources, picks the best release with your Pick rules, sends it to your downloader and files it in your library. Your media server hears about it when it lands.
+## 🚀 Running in two minutes
 
-<picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/tiles-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/tiles-light.png" width="100%" alt="Browse like a streaming app. Ask for anything. It finds it. Straight to your downloader. Subtitles kept. Into your library." /></picture>
+Save this as `docker-compose.yml` in a new folder on a local disk:
 
-- **Explore** like a streaming app. Hover a title and the trailer plays.
-- **Requests** for a whole show or one season. You approve, or let trusted people skip the queue.
-- **Pick rules** decide which release wins: size, quality, language.
-- **Subtitles** in the languages you pick, kept with the file. Finding them online comes after 1.0.
-- **Calendar** of what's airing for what you follow.
-- **Move your setup** from Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent and SABnzbd. Try it first, undo it later.
-- **Old-app API**, so Prowlarr can keep pushing Sources to HolyArrs once you turn it on.
-- **No API keys needed.** Titles, artwork and charts come from the HolyArrs metadata server.
-- **Stored keys encrypted** with a master key that lives in your config folder.
-- **Tiny.** An image of about 15 MB with nothing but HolyArrs inside, idling around 140 MB of RAM with 10,000 titles.
+```yaml
+name: HolyArrs
+services:
+  holyarrs:
+    image: holyarrs/holyarrs:latest
+    container_name: holyarrs
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/New_York
+    volumes:
+      - /your/local/path:/config
+      - /path/to/movies:/movies #optional
+      - /path/to/tv:/tv #optional
+      - /path/to/music:/music #optional
+      - /path/to/downloads:/downloads #optional
+    ports:
+      - 6262:6262
+    restart: unless-stopped
+```
 
-<details>
-<summary><b>Every page, in motion</b></summary>
+```sh
+docker compose up -d
+```
 
-<table>
-<tr>
-<td width="50%" valign="top"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/clip-home-dark.webp"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/clip-home-light.webp" width="100%" alt="Home" /></picture><br><b>Home</b> · <sub>Everything waiting on you, at a glance.</sub></td>
-<td width="50%" valign="top"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/clip-explore-dark.webp"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/clip-explore-light.webp" width="100%" alt="Title page" /></picture><br><b>Title page</b> · <sub>Trailer, cast and one button to ask.</sub></td>
-</tr>
-<tr>
-<td width="50%" valign="top"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/clip-requests-dark.webp"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/clip-requests-light.webp" width="100%" alt="Requests" /></picture><br><b>Requests</b> · <sub>Approve what friends and family ask for.</sub></td>
-<td width="50%" valign="top"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/clip-downloads-dark.webp"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/clip-downloads-light.webp" width="100%" alt="Downloads" /></picture><br><b>Downloads</b> · <sub>Every grab, live, in one table.</sub></td>
-</tr>
-</table>
+Open `http://your-server:6262` and make the owner account. A short setup walks you through folders, a downloader and a Source.
 
-</details>
+No API keys to hunt down. No second container. Every setting is explained in [the manual](#manual) further down.
 
-## One app instead of six
+<a id="why"></a>
+
+## 💡 Why I built it
+
+A normal media server runs six apps: Sonarr, Radarr, Lidarr, Bazarr, Prowlarr and Seerr.
+
+That's six logins, six ports, six update cycles and six API keys to copy between them. When a show doesn't land, you check six places to find out why.
+
+I wanted one app. One login, one port, one place to look.
+
+So I built it.
 
 | App | Download (amd64) | Idle RAM | Logins | Web ports |
 |---|---|---|---|---|
@@ -80,7 +88,44 @@ Someone asks for a title. HolyArrs searches your Sources, picks the best release
 
 <sub>About 48 times smaller. Compressed registry download, linuxserver.io images, amd64, measured 2026-11-08. Idle RAM measured with 10,000 titles and 55,000 movies and episodes.</sub>
 
-## Works with
+<a id="what-it-does"></a>
+
+## 🎬 Ask for a title, and it shows up in your library
+
+Someone asks for a title. HolyArrs searches your Sources, picks the best release with your Pick rules, sends it to your downloader and files it in your library. Your media server hears about it when it lands.
+
+<picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/tiles-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/tiles-light.png" width="100%" alt="Browse like a streaming app. Ask for anything. It finds it. Straight to your downloader. Subtitles kept. Into your library." /></picture>
+
+| | |
+|---|---|
+| 🍿 **Explore** | Browse like a streaming app. Hover a title and the trailer plays. |
+| 🙋 **Requests** | A whole show or one season. You approve, or let trusted people skip the queue. |
+| 🎯 **Pick rules** | You decide which release wins: size, quality, language. |
+| 💬 **Subtitles** | In the languages you pick, kept with the file. Finding them online comes after 1.0. |
+| 📅 **Calendar** | What's airing next for everything you follow. |
+| 🚚 **Move your setup** | From Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent and SABnzbd. Try it first, undo it later. |
+| 🔌 **Old-app API** | Prowlarr can keep pushing Sources to HolyArrs once you turn it on. |
+| 🗝️ **No API keys needed** | Titles, artwork and charts come from the HolyArrs metadata server. |
+| 🔒 **Encrypted keys** | Stored passwords and keys are locked with a master key that lives in your config folder. |
+| 🪶 **Tiny** | An image of about 15 MB with nothing but HolyArrs inside. |
+
+<details>
+<summary><b>See every page in motion</b></summary>
+
+<table>
+<tr>
+<td width="50%" valign="top"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/clip-home-dark.webp"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/clip-home-light.webp" width="100%" alt="Home" /></picture><br><b>Home</b> · <sub>Everything waiting on you, at a glance.</sub></td>
+<td width="50%" valign="top"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/clip-explore-dark.webp"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/clip-explore-light.webp" width="100%" alt="Title page" /></picture><br><b>Title page</b> · <sub>Trailer, cast and one button to ask.</sub></td>
+</tr>
+<tr>
+<td width="50%" valign="top"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/clip-requests-dark.webp"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/clip-requests-light.webp" width="100%" alt="Requests" /></picture><br><b>Requests</b> · <sub>Approve what friends and family ask for.</sub></td>
+<td width="50%" valign="top"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/clip-downloads-dark.webp"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/clip-downloads-light.webp" width="100%" alt="Downloads" /></picture><br><b>Downloads</b> · <sub>Every grab, live, in one table.</sub></td>
+</tr>
+</table>
+
+</details>
+
+## 🤝 It works with what you already run
 
 <picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="Downloaders: qBittorrent, Transmission, Deluge, SABnzbd, NZBGet. Media servers: Plex, Jellyfin, Emby." /></picture>
 
@@ -89,110 +134,9 @@ Someone asks for a title. HolyArrs searches your Sources, picks the best release
 - **Sources:** any Torznab or Newznab indexer, or Prowlarr or Jackett
 - **Moves your setup from:** Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent, SABnzbd
 
-## Install
+<a id="moving"></a>
 
-Create a `docker-compose.yml` in a new folder on a local disk (not a network share) and paste this:
-
-```yaml
-name: HolyArrs
-services:
-  holyarrs:
-    image: holyarrs/holyarrs:latest
-    container_name: holyarrs
-    ports:
-      - 6262:6262
-    volumes:
-      - /your/local/path:/config
-      - /path/to/movies:/movies
-      - /path/to/tv:/tv
-      - /path/to/music:/music
-      - /path/to/downloads:/downloads
-    environment:
-      PUID: 1000
-      PGID: 1000
-      TZ: "America/New_York"
-    restart: unless-stopped
-```
-
-Replace `/your/local/path` with the folder where HolyArrs should keep its config, and set `TZ` to your timezone (for example `America/Chicago` or `Europe/London`).
-
-```sh
-docker compose up -d
-```
-
-Open `http://your-server:6262` and make the owner account right away. There is no default password. Until you make it, whoever opens HolyArrs first becomes the owner.
-
-Container settings go in compose. Everything else is set in the app.
-
-<details>
-<summary>Or with <code>docker run</code></summary>
-
-```sh
-docker run -d \
-  --name=holyarrs \
-  -e PUID=1000 \
-  -e PGID=1000 \
-  -e TZ=America/New_York \
-  -p 6262:6262 \
-  -v /your/local/path:/config \
-  -v /path/to/movies:/movies \
-  -v /path/to/tv:/tv \
-  -v /path/to/music:/music \
-  -v /path/to/downloads:/downloads \
-  --restart unless-stopped \
-  holyarrs/holyarrs:latest
-```
-
-</details>
-
-<details>
-<summary>Environment and platforms</summary>
-
-| Variable | What it does |
-|---|---|
-| `PUID` / `PGID` | User and group that own your media folders. Run `id youruser` to find them. |
-| `TZ` | Your time zone, for the calendar and logs. |
-| `UMASK` | Optional. Permission bits new files leave out, for example `002`. |
-
-More (reverse proxy, URL base, save path): [Environment variables](https://docs.HolyArrs.com/start/install/#environment-variables).
-
-| Platform | Status |
-|---|---|
-| amd64 | Supported |
-| arm64 | Supported (Apple silicon, newer Pis, ARM VPS) |
-| armv7 | Supported |
-
-</details>
-
-<details>
-<summary>On a NAS?</summary>
-
-[Unraid, Synology and other NAS boxes](https://docs.HolyArrs.com/run/platforms/)
-
-</details>
-
-<details>
-<summary>Keep your master key safe</summary>
-
-`holyarrs.key` in your config folder unlocks your stored passwords and keys. Backups don't include it, so copy it somewhere safe. See [Backups](https://docs.HolyArrs.com/run/backups/).
-
-</details>
-
-### Tags
-
-Images live on Docker Hub as [`holyarrs/holyarrs`](https://hub.docker.com/r/holyarrs/holyarrs). Every tag has amd64, arm64 and armv7.
-
-| Tag | Use it for |
-|---|---|
-| `beta` | New versions land here first. |
-| `latest` | Moves once a version has been out for a while. |
-| `stable` | The slowest, safest channel. |
-| `1.0.0` | One exact version. It never moves. |
-
-
-Full guide: [Install HolyArrs with Docker](https://docs.HolyArrs.com/start/install/).
-
-## Coming from Sonarr, Radarr and the rest
+## 🚚 Bring your old setup with you
 
 Open **Settings > Move from other apps**, add each old app's address and API key (or a backup zip), pick what comes over, run **Try it**, then **Move**. You can undo a move later.
 
@@ -204,89 +148,239 @@ Open **Settings > Move from other apps**, add each old app's address and API key
 | Seerr, Overseerr | People and their waiting or approved requests |
 | qBittorrent, SABnzbd | Downloaders |
 
-Keys and passwords stay behind; you type them in again or import them from a file. Custom formats, tags and history don't come over. Media files never move.
+HolyArrs only reads your old apps and changes nothing in them, so you can run both side by side until you trust it.
 
-HolyArrs only reads your old apps and changes nothing in them, so you can run both side by side. Prowlarr can keep pushing Sources to HolyArrs through the old-app API once you turn it on. Step by step: [Move from other apps](https://docs.HolyArrs.com/migrate/).
+Keys and passwords stay behind; you type them in again or import them from a file. Custom formats, tags and history don't come over. Media files never move. Step by step: [Move from other apps](https://docs.HolyArrs.com/migrate/).
 
-## Not built yet
+## 🧭 What it doesn't do yet
 
 - **Downloading by itself.** HolyArrs connects to qBittorrent, SABnzbd and the others. It doesn't replace them.
 - **AI or MCP features.** Not in 1.0.
 - **Phone and TV apps.** Not built. The web app works on a phone.
 - **Music in Explore** is still being built.
 
-What's next is on the [roadmap](https://holyarrs.com/roadmap/). Vote there, or post ideas on [r/HolyArrs](https://reddit.com/r/HolyArrs).
+What's next is on the [roadmap](https://holyarrs.com/roadmap/). You vote, I build. Post ideas on [r/HolyArrs](https://reddit.com/r/HolyArrs).
 
-## FAQ
+## ❓ Questions people ask first
 
-**Do I keep qBittorrent or SABnzbd?**  
+**Do I keep qBittorrent or SABnzbd?**
 Yes, for now. HolyArrs connects to the downloader you already run. A built-in downloader is planned for a later release.
 
-**Can Sonarr and Radarr keep running while I try it?**  
+**Can Sonarr and Radarr keep running while I try it?**
 Yes. HolyArrs reads them once and never changes them.
 
-**Is it free?**  
+**Is it free?**
 Yes. It's free and open source.
+
+---
+
+<a id="manual"></a>
+
+# 📖 The manual
+
+Everything below is reference. The full guides live at [docs.HolyArrs.com](https://docs.HolyArrs.com).
+
+## Supported architectures
+
+Pulling `holyarrs/holyarrs:latest` gets the right image for your machine.
+
+| Architecture | Available | Runs on |
+| :----: | :----: | --- |
+| amd64 | ✅ | Most PCs, servers and NAS boxes |
+| arm64 | ✅ | Apple silicon, newer Raspberry Pis, ARM servers |
+| armv7 | ✅ | Older 32-bit ARM boards |
+
+On a NAS? See [Unraid, Synology and other NAS boxes](https://docs.HolyArrs.com/run/platforms/).
+
+## Version tags
+
+Images live on Docker Hub as [`holyarrs/holyarrs`](https://hub.docker.com/r/holyarrs/holyarrs).
+
+| Tag | Use it for |
+| :----: | --- |
+| `beta` | New versions land here first. |
+| `latest` | Moves once a version has been out for a while. |
+| `stable` | The slowest, safest channel. |
+| `1.0.0` | One exact version. It never moves. |
+
+## Usage
+
+### docker compose (recommended)
+
+```yaml
+name: HolyArrs
+services:
+  holyarrs:
+    image: holyarrs/holyarrs:latest
+    container_name: holyarrs
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/New_York
+    volumes:
+      - /your/local/path:/config
+      - /path/to/movies:/movies #optional
+      - /path/to/tv:/tv #optional
+      - /path/to/music:/music #optional
+      - /path/to/downloads:/downloads #optional
+    ports:
+      - 6262:6262
+    restart: unless-stopped
+```
+
+### docker cli
+
+```sh
+docker run -d \
+  --name=holyarrs \
+  -e PUID=1000 \
+  -e PGID=1000 \
+  -e TZ=America/New_York \
+  -p 6262:6262 \
+  -v /your/local/path:/config \
+  -v /path/to/movies:/movies `#optional` \
+  -v /path/to/tv:/tv `#optional` \
+  -v /path/to/music:/music `#optional` \
+  -v /path/to/downloads:/downloads `#optional` \
+  --restart unless-stopped \
+  holyarrs/holyarrs:latest
+```
+
+Container settings go in compose. Everything else is set in the app.
+
+## Parameters
+
+Each one is written `<outside>:<inside>`. Change the left side only.
+
+| Parameter | Function |
+| :----: | --- |
+| `-p 6262:6262` | The web app. |
+| `-e PUID=1000` | The user HolyArrs runs as. See [User and group](#user-and-group). |
+| `-e PGID=1000` | The group HolyArrs runs as. |
+| `-e TZ=America/New_York` | Your time zone, for the calendar, schedules and logs. `Etc/UTC` when left out. |
+| `-e UMASK=022` | Optional. Permission bits new files leave out. Use `002` when a group must write too. |
+| `-v /config` | Databases, settings, the master key, backups and logs. Local disk only, never a network share. |
+| `-v /movies` | Optional. A movie Library folder. |
+| `-v /tv` | Optional. A shows Library folder. |
+| `-v /music` | Optional. A music Library folder. |
+| `-v /downloads` | Optional. Your downloader's download folder. |
+| `--read-only=true` | Optional. Only `/config` and `/tmp` need to be writable. |
+| `--user=1000:1000` | Optional. Start as a fixed user. `PUID` and `PGID` are then ignored. |
+
+More variables (reverse proxy, URL base, save path): [Environment variables](https://docs.HolyArrs.com/reference/env-vars/).
+
+### Environment variables from files
+
+Put `FILE__` in front of any variable to read its value from a file, such as a Docker secret:
+
+```yaml
+environment:
+  - FILE__HOLYARRS_ALLOWED_HOSTS=/run/secrets/holyarrs_hosts
+```
+
+<a id="user-and-group"></a>
+
+## User and group
+
+`PUID` and `PGID` must match the user that owns your media folders. Find them with:
+
+```sh
+id youruser
+# uid=1000(youruser) gid=1000(youruser)
+```
+
+HolyArrs never changes the owner of your media or download folders. Give that user write access to them, because HolyArrs makes folders and moves files.
+
+## Application setup
+
+Open `http://your-server:6262` and make the owner account right away. There is no default password. Until you make it, whoever opens HolyArrs first becomes the owner.
+
+The setup that opens next asks for your folders, a downloader and a Source. Guide: [First run](https://docs.HolyArrs.com/start/first-run/).
+
+<a id="media-folders"></a>
+
+### Media folders
+
+The four optional mounts are the easy way to start. The cost: each mount is its own filesystem inside the container, so every import is a full copy.
+
+Want instant moves that take no extra space? Mount one parent folder with downloads and Library folders inside it, and give your downloader the same mount at the same path. Guide: [Folders](https://docs.HolyArrs.com/start/folders/).
+
+### Docker Desktop on Windows and Mac
+
+Use a named volume for `/config`. Media folders can stay host folders. Guide: [Install](https://docs.HolyArrs.com/start/install/).
+
+## Keep your master key safe
+
+`holyarrs.key` in your config folder unlocks your stored passwords and keys. Backups don't include it, so keep a copy somewhere else. As the owner, open **Settings > Backups** and choose **Download key kit**. See [Backups](https://docs.HolyArrs.com/run/backups/).
+
+## Updating
+
+```sh
+docker compose pull
+docker compose up -d
+```
+
+If the new version changes how data is stored, HolyArrs makes a backup first. To go back to it: `docker exec holyarrs /holyarrs restore --pre-update`, then `docker restart holyarrs`. Never remove `/config` during an update. See [Updates](https://docs.HolyArrs.com/run/updates/).
 
 ## Security
 
 - The owner account is made at first visit. There is no default password.
 - Stored passwords and keys are encrypted with `holyarrs.key`.
 - The image has no shell inside it.
-- The log masks secrets.
-- Moved Sources and Downloaders start paused and blocked from your home network.
+- Don't forward port 6262 on your router. Use a VPN such as Tailscale, or a reverse proxy with HTTPS.
 - Report security problems privately: [SECURITY](.github/SECURITY.md).
 
-## Help
+<a id="help"></a>
 
-- Follow the log: `docker logs -f holyarrs`
-- Check your setup: `docker exec holyarrs /holyarrs doctor`
-- Locked out of the owner account: `docker exec -i holyarrs /holyarrs reset-owner`
+## Support info
 
-<details>
-<summary>Permission denied on media folders</summary>
+The image has no shell, so `docker exec -it holyarrs /bin/bash` won't work. HolyArrs' own commands do:
 
-`PUID` and `PGID` don't match the owner of those folders. Run `id youruser` on the host, put those numbers in compose and recreate the container.
+- Follow the log:
 
-</details>
+    ```sh
+    docker logs -f holyarrs
+    ```
 
-<details>
-<summary>Errors with the config folder on a network share</summary>
+- Check your setup. Every line says `OK`, `WARN` or `FAIL`, and each `WARN` or `FAIL` says how to fix it:
 
-The database needs a local disk. Move `/config` to a local path. Media folders on a share are fine.
+    ```sh
+    docker exec holyarrs /holyarrs doctor
+    ```
 
-</details>
+- Locked out of the owner account:
 
-<details>
-<summary>Port 6262 is already in use</summary>
+    ```sh
+    docker exec -i holyarrs /holyarrs reset-owner
+    ```
 
-Change the left side only, for example `6263:6262`, and open `http://your-server:6263`.
+- Version number:
 
-</details>
+    ```sh
+    docker inspect --format '{{ index .Config.Labels "org.opencontainers.image.version" }}' holyarrs
+    ```
 
-<details>
-<summary>Locked out</summary>
+## Troubleshooting
 
-Run `docker exec -i holyarrs /holyarrs reset-owner` and follow the prompt.
+| You see | Do this |
+| --- | --- |
+| Permission denied on media folders | `PUID` and `PGID` don't match the owner of those folders. Run `id youruser`, put those numbers in compose and recreate the container. |
+| Errors with the config folder on a network share | The database needs a local disk. Move `/config` to a local path. Media folders on a share are fine. |
+| Port 6262 is already in use | Change the left side only, for example `6263:6262`, and open `http://your-server:6263`. |
+| HolyArrs can't reach qBittorrent or SABnzbd | Inside a container, `localhost` means the container itself. Use the downloader's container name on the same Docker network, or the host's IP address. |
+| Imports are copied | Mount one shared parent folder. See [Media folders](#media-folders). |
 
-</details>
+More: [Troubleshooting](https://docs.HolyArrs.com/help/troubleshooting/).
 
-<details>
-<summary>HolyArrs can't reach qBittorrent or SABnzbd</summary>
+## Where to ask
 
-Inside a container, `localhost` means the container itself. Use the downloader's container name (on the same Docker network) or the host's IP address.
-
-</details>
-
-**Where to ask**
-
-- Need help → [Discord](https://discord.com/invite/mthsvesKpC)
-- Idea or vote → [r/HolyArrs](https://reddit.com/r/HolyArrs) and the [roadmap](https://holyarrs.com/roadmap/)
-- Bug → [Issues](https://github.com/HolyArrs/HolyArrs/issues) (bugs and roadmap only)
-- Security → [SECURITY](.github/SECURITY.md)
-- Anything else → support@HolyArrs.com
-
-Every guide lives at [docs.HolyArrs.com](https://docs.HolyArrs.com).
+| You have | Go to |
+| --- | --- |
+| A question | [Discord](https://discord.com/invite/mthsvesKpC) |
+| An idea or a vote | [r/HolyArrs](https://reddit.com/r/HolyArrs) and the [roadmap](https://holyarrs.com/roadmap/) |
+| A bug | [Issues](https://github.com/HolyArrs/HolyArrs/issues) (bugs and roadmap only) |
+| A security problem | [SECURITY](.github/SECURITY.md) |
+| Anything else | support@HolyArrs.com |
 
 ## Contributing
 
