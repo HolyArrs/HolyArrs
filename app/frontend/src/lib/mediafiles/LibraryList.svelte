@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	import { onMount, tick, untrack } from 'svelte';
 	import { flip } from 'svelte/animate';
 	import { SvelteMap } from 'svelte/reactivity';
@@ -507,7 +508,7 @@
 													{:else}
 														<ul>
 															{#each eps as ep (ep.id)}
-																<li data-testid="missing-episode"><span class="ep-code">{episodeLabel(ep, t.show?.episode_order ?? '')}</span> <span class="ep-name">{ep.name || tr('shows.page.nameUnknown')}</span>{#if ep.air_date}<span class="ep-date"> · {date(ep.air_date)}</span>{/if}{#if ep.slots[0] && ep.slots[0].state !== 'wanted'}{' '}{@const es = audienceStatus(slotKind(ep.slots[0].state), who, { tracked: true })}<StatusPill kind={es.kind} label={who === 'staff' ? ep.slots[0].state_label : es.label} />{/if}</li>
+																<li data-testid="missing-episode"><span class="ep-code">{episodeLabel(ep, t.show?.episode_order ?? '')}</span> <span class="ep-name">{ep.name || tr('shows.page.nameUnknown')}</span>{#if ep.air_date}<span class="ep-date"> · {date(ep.air_date)}</span>{/if}{#if ep.slots[0] && ep.slots[0].state !== 'wanted'}{' '}{@const es = audienceStatus(slotKind(ep.slots[0].state), who, { tracked: true })}<StatusPill kind={es.kind} label={who === 'staff' ? serverWords(ep.slots[0].state_label) : es.label} />{/if}</li>
 															{/each}
 														</ul>
 													{/if}

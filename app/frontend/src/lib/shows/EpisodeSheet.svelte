@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	// Side sheet for one episode: status, file facts, subtitles and history.
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
@@ -176,13 +177,13 @@
 					<h3>{ep.name ?? t('shows.list.episodeFallback', { n: ep.episode })}</h3>
 					<p>{[date(ep.air_date), ep.runtime_minutes ? t('shows.sheet.minutes', { n: ep.runtime_minutes }) : ''].filter(Boolean).join(' · ')}</p>
 				</div>
-				{#if tone === 'have'}<span class="es-chip"><span class="es-dot" aria-hidden="true"></span>{slot?.state_label ?? t('shows.sheet.inLibrary')}</span>{/if}
+				{#if tone === 'have'}<span class="es-chip"><span class="es-dot" aria-hidden="true"></span>{serverWords(slot?.state_label) ?? t('shows.sheet.inLibrary')}</span>{/if}
 			</div>
 			{#if story}<p class="es-story">{story}</p>{/if}
 
 			{#if tone !== 'have'}
 				<section class="es-status {tone}">
-					<span class="es-st"><span class="es-dot" aria-hidden="true"></span>{slot?.state_label ?? t('shows.sheet.missing')}</span>
+					<span class="es-st"><span class="es-dot" aria-hidden="true"></span>{serverWords(slot?.state_label) ?? t('shows.sheet.missing')}</span>
 					{#if manage && slot && tone !== 'downloading'}<button type="button" class="es-btn primary" disabled={busy === 'look'} onclick={look}><Icon name="search" size={15} />{t('shows.sheet.lookForIt')}</button>{/if}
 				</section>
 			{/if}

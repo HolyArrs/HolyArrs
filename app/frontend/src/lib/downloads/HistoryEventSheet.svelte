@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import Button from '#lib/ui/Button.svelte';
@@ -48,7 +49,7 @@
 					{#each v.steps as st (st.key)}<li class={st.state}><span class="pip" aria-hidden="true"></span>{st.label}<span class="sr-only">: {st.state === 'done' ? t('downloads.hes.done') : st.state === 'failed' ? t('downloads.hes.failed') : st.state === 'needs' ? t('downloads.hes.waiting') : t('downloads.hes.notYet')}</span></li>{/each}
 				</ol>
 			{/if}
-			{#if v.line}<p class="sum" class:long={v.long}>{v.line}</p>{/if}
+			{#if v.line}<p class="sum" class:long={v.long}>{serverWords(v.line)}</p>{/if}
 			<dl class="pf">
 				{#each v.facts as f (f.label)}
 					<dt>{FACT_LABEL[f.label]}</dt>

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import Icon from '#lib/ui/Icon.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
@@ -307,7 +308,7 @@
 											<span class="al-tr-n">{tr.disc > 1 ? `${tr.disc}-` : ''}{tr.number}</span>
 											<span class="al-tr-name">{tr.name ?? t('music.track2', { n: tr.number })}</span>
 											<span class="al-tr-len">{len(tr.length_ms)}</span>
-											<span class="al-tr-st {tn}"><span class="dot {tn}" aria-hidden="true"></span>{st?.state_label ?? t('music.missing')}</span>
+											<span class="al-tr-st {tn}"><span class="dot {tn}" aria-hidden="true"></span>{serverWords(st?.state_label) ?? t('music.missing')}</span>
 											{#if manage && st}<button type="button" class="al-ico" title={t('music.lookForItNow')} aria-label={t('music.lookFor', { name: tr.name ?? '' })} disabled={tn === 'have' || tn === 'downloading' || busy === `t${tr.id}`} onclick={() => search({ slot_id: st.id }, `t${tr.id}`, tr.name ? t('music.searchingFor', { name: tr.name }) : t('music.searchingForTrack'))}><Icon name="search" size={14} /></button>{/if}
 										</li>
 									{:else}

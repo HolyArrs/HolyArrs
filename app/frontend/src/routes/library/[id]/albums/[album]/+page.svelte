@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	import '#lib/ui/title-page.css';
 	import PageLoader from '#lib/ui/PageLoader.svelte';
 	import Button from '#lib/ui/Button.svelte';
@@ -292,7 +293,7 @@
 							<span class="len">{trackLength(t.length_ms)}</span>
 							{#if staff}
 								{#each t.slots as sl (sl.id)}
-									<span class="chip {tone(sl.state)}" data-testid="track-state">{t.slots.length > 1 ? `${sl.version}: ` : ''}{sl.state_label}</span>
+									<span class="chip {tone(sl.state)}" data-testid="track-state">{t.slots.length > 1 ? `${sl.version}: ` : ''}{serverWords(sl.state_label)}</span>
 								{/each}
 								<IconButton icon="trash" size="sm" tipSide="below-end" label={tr('mediafiles.showDelete.deleteLabel', { what: trackLabel(t) })} onclick={() => deleter?.open({ trackIds: [t.id], label: trackLabel(t) })} data-testid="delete-track" />
 							{:else}

@@ -90,7 +90,7 @@
 		} catch (err) {
 			const a = asks.find((x) => x.id === id);
 			const name = a?.name ?? t('requests.page.theRequest');
-			if (err instanceof ApiError && err.status === 409 && /already decided/.test(err.message)) {
+			if (err instanceof ApiError && err.status === 409 && /already decided/.test(String(err.body.error ?? ''))) {
 				// Someone else answered it first (two approvers at once): show their answer, not "Try again". The one ask is read on its own, so a list load started meanwhile cannot drop it.
 				const now = await api.get<Ask>(`/asks/${id}`).catch(() => undefined);
 				if (now) {

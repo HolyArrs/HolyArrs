@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	import { t, appLocale } from '#lib/core/i18n/i18n.svelte.ts';
 	import Icon from '#lib/ui/Icon.svelte';
 	import Confirm from '#lib/ui/Confirm.svelte';
@@ -225,7 +226,7 @@
 				{#each logDays(log) as g (g.day)}
 					<h4 class="lgday">{g.day}</h4>
 					<ol class="lg">
-						{#each g.lines as l, i (i)}<li class:bad={badKind(l.kind)}><time>{new Date(l.at).toLocaleTimeString(appLocale(), { hour: '2-digit', minute: '2-digit' })}</time><span class="lgd" aria-hidden="true"></span><span class="lgt">{l.summary}</span></li>{/each}
+						{#each g.lines as l, i (i)}<li class:bad={badKind(l.kind)}><time>{new Date(l.at).toLocaleTimeString(appLocale(), { hour: '2-digit', minute: '2-digit' })}</time><span class="lgd" aria-hidden="true"></span><span class="lgt">{serverWords(l.summary)}</span></li>{/each}
 					</ol>
 				{/each}
 			</div>

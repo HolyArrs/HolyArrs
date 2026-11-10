@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import HomeOverview from './HomeOverview.svelte';
 	import { createHomeAttention } from './home-attention.svelte.ts';
@@ -136,7 +137,7 @@
 	function strip(c: HomeCard, type: string): Fresh | null {
 		const own = homeStrip(c);
 		if (own || !c.line || type === 'home_arrived') return own;
-		return { kind: type === 'home_soon' ? 'coming' : 'new_season', text: c.line };
+		return { kind: type === 'home_soon' ? 'coming' : 'new_season', text: serverWords(c.line) };
 	}
 
 	async function loadHome() {
@@ -279,7 +280,7 @@
 					<Shelf title={opts.title} subtitle={opts.subtitle} href={opts.href} item="var(--title-item)">
 						{#each cards as c (c.key)}
 							<!-- Every card is 16:9; an artist shows its wide picture with the new album's cover inset. -->
-							<WideCard cover title={c.name} kind={c.kind} typed row={type} href={to(c.href)} image={c.backdrop || c.poster || undefined} logo={c.kind === 'artist' || !(c.backdrop || c.poster) ? null : c.logo} inset={c.kind === 'artist' ? c.albums?.[0]?.cover : undefined} subtitle={c.line} fresh={strip(c, type)} />
+							<WideCard cover title={c.name} kind={c.kind} typed row={type} href={to(c.href)} image={c.backdrop || c.poster || undefined} logo={c.kind === 'artist' || !(c.backdrop || c.poster) ? null : c.logo} inset={c.kind === 'artist' ? c.albums?.[0]?.cover : undefined} subtitle={serverWords(c.line)} fresh={strip(c, type)} />
 						{/each}
 					</Shelf>
 				</div>
@@ -297,7 +298,7 @@
 				{:else}
 					<span class="nm" dir="auto">{p.c.name}</span>
 				{/if}
-				{#if p.c.line}<span class="sm">{p.c.line}</span>{/if}
+				{#if p.c.line}<span class="sm">{serverWords(p.c.line)}</span>{/if}
 			</a>
 		{/snippet}
 

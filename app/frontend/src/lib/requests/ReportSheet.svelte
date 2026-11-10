@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import Icon from '#lib/ui/Icon.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
@@ -118,7 +119,7 @@
 	{#if sent}
 		<div class="rs-done" data-testid="report-sent">
 			<span class="rs-ok" aria-hidden="true"><Icon name="check" size={26} /></span>
-			<p class="rs-what"><span class="rs-tag"><Icon name={kindIcon(sent.kind)} size={13} />{sent.kind_label}</span>{#if partWords(sent)}<span>{partWords(sent)}</span>{/if}</p>
+			<p class="rs-what"><span class="rs-tag"><Icon name={kindIcon(sent.kind)} size={13} />{serverWords(sent.kind_label)}</span>{#if partWords(sent)}<span>{partWords(sent)}</span>{/if}</p>
 			<p>{t('requests.reportSheet.thanks')}</p>
 		</div>
 	{:else}

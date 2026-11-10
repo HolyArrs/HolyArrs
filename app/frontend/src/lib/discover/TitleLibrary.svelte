@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	import { t, appLocale } from '#lib/core/i18n/i18n.svelte.ts';
 	import TitleSection from '#lib/ui/TitleSection.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
@@ -450,7 +451,7 @@
 												<b>{e.name ?? t('discover.titleLibrary.episodeN', { episode: e.episode })}{#if e.episode === (seasonEps[se.number]?.length ?? 0) && se.episodes > 1}<span class="lib-tag">{t('discover.titleLibrary.finale')}</span>{/if}</b>
 												<small>{[e.air_date ? dayWords(e.air_date) : '', e.runtime_minutes ? t('discover.titleLibrary.runtimeMin', { n: e.runtime_minutes }) : '', epFile(e)].filter(Boolean).join(' · ')}</small>
 											</button>
-											<span class="lib-ep-st {aired ? tone : 'future'}"><span class="own-dot {tone}" aria-hidden="true"></span>{aired ? epQuality(e) || st?.state_label || t('discover.titleLibrary.missing') : t('discover.titleLibrary.notOutYet')}</span>
+											<span class="lib-ep-st {aired ? tone : 'future'}"><span class="own-dot {tone}" aria-hidden="true"></span>{aired ? epQuality(e) || serverWords(st?.state_label) || t('discover.titleLibrary.missing') : t('discover.titleLibrary.notOutYet')}</span>
 											{#if manage && st}
 												<span class="lib-ep-acts">
 													<button type="button" class="lib-ico" title={t('discover.titleLibrary.lookForItNow')} aria-label={t('discover.titleLibrary.lookForEpisode', { episode: e.episode })} disabled={!aired || tone === 'downloading' || busyAction === `e${e.id}`} onclick={(ev) => { ev.stopPropagation(); void epSearch({ slot_id: st.id }, `e${e.id}`, t('discover.titleLibrary.searchingEpisode', { episode: e.episode })); }}><Icon name="search" size={14} /></button>

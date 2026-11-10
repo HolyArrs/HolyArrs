@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	// One group's parts as ruled rows, with the reason and Check / Fix under any row that is not working.
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import Button from '#lib/ui/Button.svelte';
@@ -32,7 +33,7 @@
 				<span class="chip {r.tone}">{r.word}</span>
 			</div>
 			{#if bad}
-				{#if r.reason}<p class="why">{r.reason}</p>{/if}
+				{#if r.reason}<p class="why">{serverWords(r.reason)}</p>{/if}
 				{#if canAct && (r.check || r.fix)}
 					<div class="acts">
 						{#if r.check}<Button variant="plain" size="sm" disabled={busy(r.key)} onclick={() => oncheck(r)}>{t('health.rows.check')}</Button>{/if}

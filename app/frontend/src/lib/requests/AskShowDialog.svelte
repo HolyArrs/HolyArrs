@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	// A member asks for a show: all seasons, the seasons they pick, or the future seasons only (what airs from now on).
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import Sheet from '#lib/ui/Sheet.svelte';
@@ -99,7 +100,7 @@
 	{#if picked}
 		<form id="ask-show-title" class="sheet-form" onsubmit={ask}>
 			{#if picked.ask}
-				<p class="small muted" style="margin-top: var(--s-2)">{t('requests.askShow.already', { what: seasonWords(picked.ask.seasons), state: picked.ask.state_label })}</p>
+				<p class="small muted" style="margin-top: var(--s-2)">{t('requests.askShow.already', { what: seasonWords(picked.ask.seasons), state: serverWords(picked.ask.state_label) })}</p>
 			{/if}
 			<fieldset class="pick">
 				<legend class="small">{t('requests.ask.what')}</legend>

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	// A member asks for an artist: the whole artist, or the albums they pick.
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import Sheet from '#lib/ui/Sheet.svelte';
@@ -77,7 +78,7 @@
 	{#if picked}
 		<form id="ask-artist-title" class="sheet-form" onsubmit={ask}>
 			{#if picked.ask}
-				<p class="small muted" style="margin-top: var(--s-2)">{t('requests.askArtist.already', { what: albumWords(picked.ask.albums), state: picked.ask.state_label })}</p>
+				<p class="small muted" style="margin-top: var(--s-2)">{t('requests.askArtist.already', { what: albumWords(picked.ask.albums), state: serverWords(picked.ask.state_label) })}</p>
 			{/if}
 			<fieldset class="pick">
 				<legend class="small">{t('requests.ask.what')}</legend>

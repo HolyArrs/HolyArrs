@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	import Button from '#lib/ui/Button.svelte';
 	import Menu from '#lib/ui/Menu.svelte';
 	import TitleSection from '#lib/ui/TitleSection.svelte';
@@ -112,7 +113,7 @@
 					{/if}
 				</div>
 				<div class="tp-row-end">
-					{#if s}<span class="chip {tone(s.state)}">{s.state_label}</span>{/if}
+					{#if s}<span class="chip {tone(s.state)}">{serverWords(s.state_label)}</span>{/if}
 					{#if !v.main}
 						<Menu label={t('movies.versions.actionsFor', { label: v.label })} items={[{ label: t('movies.versions.remove', { label: v.label }), icon: 'trash', destructive: true, onselect: () => remove(v) }]} width={220} />
 					{/if}

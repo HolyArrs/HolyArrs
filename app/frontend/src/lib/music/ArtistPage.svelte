@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import '#lib/ui/title-page.css';
 	import LoadError from '#lib/ui/LoadError.svelte';
@@ -127,7 +128,7 @@
 				{#if decided(a)}<dt>{t('music.decided')}</dt>
 					<dd>{decided(a)}{a.decided_at ? ` · ${date(a.decided_at)}` : ''}</dd>{/if}
 				<dt>{t('music.now2')}</dt>
-				<dd>{a.state_label}</dd>
+				<dd>{serverWords(a.state_label)}</dd>
 				{#if a.note}<dt>{t('music.note')}</dt>
 					<dd>{a.note}</dd>{/if}
 			</dl>

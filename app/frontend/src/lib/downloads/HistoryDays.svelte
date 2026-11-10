@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	// History grouped by day. Each day has a sticky header with a tally, rows sit on a rail with their clock time, and runs of routine work fold into one line that opens in place. On wide screens the picked row shows in a details panel (arrow keys or j and k move); narrower screens open it in a sheet.
 	import Poster from '#lib/ui/Poster.svelte';
@@ -255,7 +256,7 @@
 		<span class="what"><span class="nm" data-testid="history-title">{w.name}</span>{#each w.bits as b, i (i)}<span class="bit" data-testid={b.kind === 'episode' && i === 0 ? 'history-episode' : b.kind === 'version' ? 'history-version' : undefined}>{` · ${b.text}`}</span>{/each}</span>
 		<StateDot verb={w.tag} />
 	</span>
-	<span class="l2">{w.line}</span>
+	<span class="l2">{serverWords(w.line)}</span>
 {/snippet}
 
 {#snippet line(r: HistoryRow)}
@@ -357,7 +358,7 @@
 										{#each v.steps as st (st.key)}<li class={st.state} data-state={st.state}><span class="pip" aria-hidden="true"></span>{st.label}<span class="sr-only">: {st.state === 'done' ? 'done' : st.state === 'failed' ? 'failed' : st.state === 'needs' ? 'waiting' : 'not yet'}</span></li>{/each}
 									</ol>
 								{/if}
-								{#if v.line}<p class="psum" class:long={v.long}>{v.line}</p>{/if}
+								{#if v.line}<p class="psum" class:long={v.long}>{serverWords(v.line)}</p>{/if}
 								<dl class="pf">
 									{#each v.facts as f (f.label)}
 										<dt>{f.label}</dt>

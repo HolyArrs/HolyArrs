@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import Button from '#lib/ui/Button.svelte';
@@ -263,10 +264,10 @@
 					</div>
 					<div class="top">
 						<div class="ban-cap">
-							<span class="tag"><Icon name={kindIcon(r.kind)} size={13} /><span data-testid="report-kind">{r.kind_label}</span></span>
+							<span class="tag"><Icon name={kindIcon(r.kind)} size={13} /><span data-testid="report-kind">{serverWords(r.kind_label)}</span></span>
 							<h2 class="ban-t">{r.title_name}</h2>
 							<span class="ban-f">{factsLine(r)}</span>
-							<span class="vh" data-testid="report-state">{r.state_label}</span>
+							<span class="vh" data-testid="report-state">{serverWords(r.state_label)}</span>
 						</div>
 					</div>
 					<div class="sheet-b">
@@ -328,10 +329,10 @@
 			<div class="rw-art" class:noart={!wide && !win.poster}>
 				{#if wide}<img class="rw-img" src={wide} alt="" />{:else if win.poster}<span class="rw-img" class:soft={win.title_kind !== 'artist'} aria-hidden="true" style:background-image={`url("${poster(win)}")`}></span>{/if}
 				<a class="rw-go" href={to(reportHref(win))} aria-label={t('requests.reports.openName', { name: win.title_name })} title={t('requests.reports.openTitle')}><Icon name="arrowUpRight" size={16} /></a>
-				<span class="rw-state" class:ok={!open}><span class="dot"></span>{win.state_label}</span>
+				<span class="rw-state" class:ok={!open}><span class="dot"></span>{serverWords(win.state_label)}</span>
 				<div class="rw-kind">
 					<span class="rw-ic"><Icon name={kindIcon(win.kind)} size={20} /></span>
-					<span class="rw-kt"><b>{win.kind_label}</b>{#if kindHint(win.kind)}<small>{kindHint(win.kind)}</small>{/if}</span>
+					<span class="rw-kt"><b>{serverWords(win.kind_label)}</b>{#if kindHint(win.kind)}<small>{kindHint(win.kind)}</small>{/if}</span>
 				</div>
 			</div>
 

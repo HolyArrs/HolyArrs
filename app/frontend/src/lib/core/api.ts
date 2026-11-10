@@ -2,6 +2,7 @@
 import { to } from './paths.ts';
 import { registerPictures } from './pictures.ts';
 import { t } from '#lib/core/i18n/i18n.svelte.ts';
+import { serverWords } from '#lib/core/i18n/server-words.ts';
 
 export class ApiError extends Error {
 	status: number;
@@ -138,7 +139,8 @@ export function createClient(fetchFn: FetchFn = (i, o) => fetch(i, o), early: ()
 			}
 			if (res.status === 403 && data.code === 'reauth' && typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('holyarrs:reauth', { detail: { method, path } }));
 			const ra = Number(res.headers.get('Retry-After'));
-			const msg = typeof data.error === 'string' && data.error ? data.error : t('core.api.requestFailed', { status: res.status });
+			// message is shown in the picked language; body.error keeps the server's English for matching.
+			const msg = typeof data.error === 'string' && data.error ? serverWords(data.error) : t('core.api.requestFailed', { status: res.status });
 			throw new ApiError(msg, res.status, data, Number.isFinite(ra) && ra > 0 ? ra : null);
 		}
 		if (data && typeof data === 'object' && 'pictures' in data) registerPictures(data.pictures);

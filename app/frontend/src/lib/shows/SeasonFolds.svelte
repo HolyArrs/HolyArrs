@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	// Season pills with a shelf of episode cards for the chosen season.
 	import Skeleton from '#lib/ui/Skeleton.svelte';
 	import Shelf from '#lib/ui/Shelf.svelte';
@@ -94,7 +95,7 @@
 									{#if c.still && stillState[`${shown}:${c.key}`] !== 'bad'}<img src={sized(c.still, 'backdrop', 300)} alt="" loading="lazy" decoding="async" onload={() => (stillState[`${shown}:${c.key}`] = 'ok')} onerror={() => (stillState[`${shown}:${c.key}`] = 'bad')} />{/if}
 								</span>
 								<b class="ep-name">{c.name}</b>
-								<span class="xs muted">{c.line}</span>
+								<span class="xs muted">{serverWords(c.line)}</span>
 								{#if c.overview}<p class="ep-text">{c.overview}</p>{/if}
 							</article>
 						{:else}

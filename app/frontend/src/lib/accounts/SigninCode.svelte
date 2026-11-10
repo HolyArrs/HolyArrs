@@ -96,7 +96,7 @@
 		try {
 			await session.loginCode(ticket, otp.trim());
 		} catch (err) {
-			if (err instanceof ApiError && err.status === 401 && err.message.includes('ended')) {
+			if (err instanceof ApiError && err.status === 401 && String(err.body.error ?? '').includes('ended')) {
 				ticket = '';
 				pw = '';
 			}

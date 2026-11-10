@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	import { onMount, tick, untrack } from 'svelte';
 	import Icon from '#lib/ui/Icon.svelte';
 	import AlertSymbol from './AlertSymbol.svelte';
@@ -90,8 +91,8 @@
 				<li class="row pin">
 					<AlertSymbol tone={f.tone} size={24} />
 					<span class="tx">
-						<span class="t">{f.title}</span>
-						{#if f.body}<span class="b">{f.body}</span>{/if}
+						<span class="t">{serverWords(f.title)}</span>
+						{#if f.body}<span class="b">{serverWords(f.body)}</span>{/if}
 						<a class="act" href={to(f.href)} onclick={() => (alertsPanel.open = false)}>{f.label} ›</a>
 					</span>
 				</li>

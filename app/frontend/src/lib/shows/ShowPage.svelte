@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	// Show detail page: episodes by season, staff tools, requests and history.
 	import Button from '#lib/ui/Button.svelte';
 	import AskedByLine from '#lib/ui/AskedByLine.svelte';
@@ -501,7 +502,7 @@
 				<EpisodeList rows={rowsOf(s.number)} fallback={title.backdrop ?? rich?.backdrop}>
 					{#snippet status(i: number)}
 						{@const main = mainSlot(eps[i])}
-						{#if staff && main}<StatusPill kind={slotKind(main.state)} label={eps[i].slots.length > 1 ? eps[i].slots.map((x) => `${x.version}: ${x.state_label}`).join(' · ') : main.state_label} testid="episode-state" />{/if}
+						{#if staff && main}<StatusPill kind={slotKind(main.state)} label={eps[i].slots.length > 1 ? eps[i].slots.map((x) => `${x.version}: ${serverWords(x.state_label)}`).join(' · ') : serverWords(main.state_label)} testid="episode-state" />{/if}
 					{/snippet}
 					{#snippet action(i: number)}
 						{#if staff}<Menu label={t('shows.page.episodeActions', { name: episodeLabel(eps[i], order) })} items={episodeItems(eps[i])} width={250} />{/if}
@@ -553,7 +554,7 @@
 				{#if decided(a)}<dt>{t('shows.page.decided')}</dt>
 					<dd>{decided(a)}{a.decided_at ? ` · ${date(a.decided_at)}` : ''}</dd>{/if}
 				<dt>{t('shows.page.now')}</dt>
-				<dd>{a.state_label}</dd>
+				<dd>{serverWords(a.state_label)}</dd>
 				{#if a.note}<dt>{t('shows.page.note')}</dt>
 					<dd>{a.note}</dd>{/if}
 			</dl>

@@ -14,6 +14,7 @@
 </script>
 
 <script lang="ts">
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	// A member asks for a movie in one confirm step, so a card or result button never asks in a single click.
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import Sheet from '#lib/ui/Sheet.svelte';
@@ -70,11 +71,11 @@
 		<form id="ask-movie-title" class="sheet-form" onsubmit={ask}>
 			<p class="small muted">
 				{fourK && picked.ask4k
-					? t('requests.askMovie.already4k', { state: picked.ask4k.state_label })
+					? t('requests.askMovie.already4k', { state: serverWords(picked.ask4k.state_label) })
 					: fourK
 					? t('requests.askMovie.own4k')
 					: picked.ask
-					? t('requests.askMovie.already', { state: picked.ask.state_label })
+					? t('requests.askMovie.already', { state: serverWords(picked.ask.state_label) })
 					: t('requests.askMovie.hear')}
 			</p>
 			<label class="checkline" data-testid="follow-box">

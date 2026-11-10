@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	// The Status page body: four tabs of plates (Status, Jobs, Updates, About).
 	import '#lib/ui/plate.css';
 	import AdminLinkButton from '#lib/ui/AdminLinkButton.svelte';
@@ -195,7 +196,7 @@
 							<span class="hico {r.tone}" aria-hidden="true">!</span>
 							<span class="hmsg">
 								<b>{r.name}</b> <span class="hk">· {labelOf(r)}</span> <span class="chip {r.tone}">{r.word}</span>
-								{#if r.reason}<span class="hr">{r.reason}</span>{/if}
+								{#if r.reason}<span class="hr">{serverWords(r.reason)}</span>{/if}
 							</span>
 							{#if r.at}<time class="hat" datetime={r.at} title={dateTime(r.at)}>{when(r)}</time>{/if}
 							{#if canAct}
@@ -241,13 +242,13 @@
 								<i style:width="{p ?? 0}%"></i>
 							</div>
 							<div class="dfoot"><span class="mono" title={d.path}>{d.path}</span>{#if p !== null}<span>{t('health.sections.pctUsed', { pct: p })}</span>{/if}</div>
-							{#if w?.reason}<p class="dwhy">{w.reason}{#if canAct && w.fix} <Button variant="plain" size="sm" href={to(w.fix)}>{t('health.rows.fix')}</Button>{/if}</p>{/if}
+							{#if w?.reason}<p class="dwhy">{serverWords(w.reason)}{#if canAct && w.fix} <Button variant="plain" size="sm" href={to(w.fix)}>{t('health.rows.fix')}</Button>{/if}</p>{/if}
 						</li>
 					{/each}
 				</ul>
 			{/if}
 			{#if backups}
-				<p class="bk">{t('health.kind.backups')} <span class="chip {backups.tone}">{backups.word}</span>{#if backups.at} · {t('health.sections.lastChecked')} <time datetime={backups.at} title={dateTime(backups.at)}>{ago(backups.at, now)}</time>{/if}{#if backups.reason && backups.tone !== 'ok'} · {backups.reason}{/if}</p>
+				<p class="bk">{t('health.kind.backups')} <span class="chip {backups.tone}">{backups.word}</span>{#if backups.at} · {t('health.sections.lastChecked')} <time datetime={backups.at} title={dateTime(backups.at)}>{ago(backups.at, now)}</time>{/if}{#if backups.reason && backups.tone !== 'ok'} · {serverWords(backups.reason)}{/if}</p>
 			{/if}
 		</section>
 	{:else if tab === 'jobs'}
@@ -263,7 +264,7 @@
 				<tbody>
 					{#each jobs as r (r.key)}
 						<tr data-testid="status-row" data-tone={r.tone} data-key={r.key}>
-							<td class="jn">{r.name}{#if r.tone === 'fail' && r.reason}<span class="jr">{r.reason}</span>{/if}</td>
+							<td class="jn">{r.name}{#if r.tone === 'fail' && r.reason}<span class="jr">{serverWords(r.reason)}</span>{/if}</td>
 							<td class="js"><span class="chip {r.tone}">{r.word}</span></td>
 							<td class="jl"><span class="k">{t('health.sections.lastRun')}</span>{#if r.lastRun}<time datetime={r.lastRun} title={dateTime(r.lastRun)}>{ago(r.lastRun, now)}</time>{:else}{t('health.sections.notYet')}{/if}</td>
 							<td class="jx"><span class="k">{t('health.sections.nextRun')}</span>{nextWord(r)}</td>

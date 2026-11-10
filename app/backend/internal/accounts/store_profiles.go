@@ -29,3 +29,14 @@ func putLanguage(ctx context.Context, q conn, userID int64, l string) error {
 			ON CONFLICT (user_id) DO UPDATE SET language = excluded.language`, userID, l)
 	return err
 }
+
+// OwnerLanguage is the language the active owner picked, "" when none (or no
+// owner yet). Alerts use it for the words they send out.
+func OwnerLanguage(ctx context.Context, q conn) string {
+	id, _, err := ownerIdentity(ctx, q)
+	if err != nil {
+		return ""
+	}
+	l, _ := language(ctx, q, id)
+	return l
+}

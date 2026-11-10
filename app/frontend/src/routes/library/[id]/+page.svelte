@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	import type { StatusKind } from '#lib/ui/StatusPill.svelte';
 	import { downloadTone } from '#lib/downloads/index.ts';
 	import { createTitleEdit } from '#lib/mediafiles/index.ts';
@@ -374,7 +375,7 @@
 						{#if decided(a)}<dt>{tr('shows.page.decided')}</dt>
 							<dd>{decided(a)}{a.decided_at ? ` · ${date(a.decided_at)}` : ''}</dd>{/if}
 						<dt>{tr('shows.page.now')}</dt>
-						<dd>{a.state_label}</dd>
+						<dd>{serverWords(a.state_label)}</dd>
 						{#if a.note}<dt>{tr('shows.page.note')}</dt>
 							<dd>{a.note}</dd>{/if}
 					</dl>
@@ -420,7 +421,7 @@
 									{/if}
 								</div>
 								<div class="tp-row-end">
-									{#if s}<span class="chip {tone(s.state)}">{s.state_label}</span>{/if}
+									{#if s}<span class="chip {tone(s.state)}">{serverWords(s.state_label)}</span>{/if}
 									{#if !v.main}
 										<Menu label={tr('movies.versions.actionsFor', { label: v.label })} items={[{ label: tr('movies.versions.remove', { label: v.label }), icon: 'trash', destructive: true, onselect: () => versionsFlow.removeVersion(v) }]} width={220} />
 									{/if}

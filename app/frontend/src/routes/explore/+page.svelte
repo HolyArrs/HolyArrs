@@ -1,4 +1,5 @@
 <script lang="ts" module>
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	/** The rows already loaded when Explore was left, so Back shows them at once (no re-fetch flash). */
 	let kept: { key: string; at: number; rows: unknown } | null = null;
 </script>
@@ -496,7 +497,7 @@
 
 {#snippet newServicesRow(row: ExploreRow & { type: string }, cards: ExploreCard[])}
 	<div class="row-wrap wide-row" data-row={row.type} data-row-id={row.id}>
-		<Shelf title={row.title} href={to(newHref(type))} item="var(--title-item)" items={cards} key={(c) => c.key} placeholder="wide" lines={1}>
+		<Shelf title={serverWords(row.title)} href={to(newHref(type))} item="var(--title-item)" items={cards} key={(c) => c.key} placeholder="wide" lines={1}>
 			{#snippet card(raw: ExploreCard)}
 				{@const c = live(raw)}
 				{@const act = cardAction(c, { manage, ask: mayAsk })}
@@ -641,7 +642,7 @@
 					{#if newServices && newCards.length}{@render newServicesRow(newServices, newCards)}{/if}
 				{:else}
 				<div class="row-wrap" class:wide-row={row.wide || row.cards.some((c) => wideKind(c.kind))} data-row={row.type ?? row.id} data-row-id={row.id} data-title-layer={row.titleLayer}>
-				<Shelf title={row.title} subtitle={row.subtitle} href={typeHref(row.href, type)} item={row.cards.some((c) => wideKind(c.kind)) ? 'var(--title-item)' : 'var(--explore-item)'}
+				<Shelf title={serverWords(row.title)} subtitle={serverWords(row.subtitle)} href={typeHref(row.href, type)} item={row.cards.some((c) => wideKind(c.kind)) ? 'var(--title-item)' : 'var(--explore-item)'}
 					items={row.cards} key={(c) => c.key} defer={ri >= EAGER_ROWS && !back} placeholder={row.wide || row.cards.some((c) => wideKind(c.kind)) ? 'wide' : 'poster'} lines={row.cards.some((c) => c.subtitle) ? 2 : 1}>
 					{#snippet card(raw: ExploreCard)}
 						{@const c = live(raw)}
@@ -693,7 +694,7 @@
 					<div class="row-wrap wide-row" data-row="genre_browse" data-row-id="genre_browse">
 						<Shelf title={t('discover.explore.browseByGenre')} item="var(--title-item)" items={genreCards} key={(g) => `${g.kind}:${g.id}`} defer={!back} placeholder="wide" lines={1}>
 							{#snippet card(g: GenreRowCard)}
-								<WideCard cover title={g.name} href={to(genreCardHref(g))} image={g.backdrop} />
+								<WideCard cover title={serverWords(g.name)} href={to(genreCardHref(g))} image={g.backdrop} />
 							{/snippet}
 						</Shelf>
 					</div>
