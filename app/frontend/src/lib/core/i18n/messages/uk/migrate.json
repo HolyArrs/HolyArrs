@@ -291,5 +291,6 @@
 	"migrate.notMoved2": "Не імпортовано · {name}",
 	"migrate.holyarrsHandlesTheseIts": "HolyArrs обробляє це по-своєму. Робити нічого не треба.",
 	"migrate.allApps": "Усі застосунки",
-	"migrate.ifAnOldApp": "Якщо старий застосунок бачить теку за іншим шляхом, введи обидва."
+	"migrate.ifAnOldApp": "Якщо старий застосунок бачить теку за іншим шляхом, введи обидва.",
+	"migrate.doneOfTotal": "{done} із {total}"
 }

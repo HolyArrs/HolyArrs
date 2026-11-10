@@ -291,5 +291,6 @@
 	"migrate.notMoved2": "इंपोर्ट नहीं हुआ · {name}",
 	"migrate.holyarrsHandlesTheseIts": "HolyArrs इन्हें अपने तरीके से संभालता है। कुछ करना नहीं है।",
 	"migrate.allApps": "सभी ऐप",
-	"migrate.ifAnOldApp": "अगर कोई पुराना ऐप फ़ोल्डर को दूसरे पाथ पर देखता है, तो दोनों लिखें।"
+	"migrate.ifAnOldApp": "अगर कोई पुराना ऐप फ़ोल्डर को दूसरे पाथ पर देखता है, तो दोनों लिखें।",
+	"migrate.doneOfTotal": "{done} / {total}"
 }

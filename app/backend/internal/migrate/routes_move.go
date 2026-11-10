@@ -116,7 +116,7 @@ func (h *Handlers) moveDryRun(w http.ResponseWriter, r *http.Request) {
 // Library, which safe mode keeps still.
 func (h *Handlers) refuseSafe(w http.ResponseWriter) bool {
 	if h.safeMode() {
-		webserver.Fail(w, http.StatusConflict, "HolyArrs started in safe mode; restart it normally to move or undo")
+		webserver.Fail(w, http.StatusConflict, "HolyArrs started in safe mode; restart it normally to import or undo")
 		return true
 	}
 	return false
@@ -204,7 +204,7 @@ func (h *Handlers) moveReport(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if mv.Report == nil {
-		webserver.Fail(w, http.StatusConflict, "this move has no report yet")
+		webserver.Fail(w, http.StatusConflict, "this import has no report yet")
 		return
 	}
 	w.Header().Set("Content-Type", "text/markdown; charset=utf-8")

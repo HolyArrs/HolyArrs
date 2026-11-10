@@ -516,7 +516,7 @@ func TestArrReleaseWords(t *testing.T) {
 	if !ok || n.What != "release words: must contain x265, hevc / must not contain cam, ts (tags: kids)" || !strings.Contains(n.Why, "fixed list of traits, not free words") {
 		t.Fatalf("radarr rule line %+v", n)
 	}
-	if n, ok := notMoved(p, "radarr custom_formats[0]"); !ok || n.Why != "format scoring rules do not move; Pick rules score a fixed list of traits" {
+	if n, ok := notMoved(p, "radarr custom_formats[0]"); !ok || n.Why != "format scoring rules are not imported; Pick rules score a fixed list of traits" {
 		t.Fatalf("format line %+v", n)
 	}
 

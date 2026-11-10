@@ -1,0 +1,17 @@
+{
+	"setup.reconnect": "Riconnetti",
+	"setup.testNow": "Prova ora",
+	"setup.movies": "Film",
+	"setup.tvShows": "Serie",
+	"setup.music": "Musica",
+	"setup.subtitles": "Sottotitoli",
+	"setup.fullPath": "Usa il percorso completo della cartella, tipo {path}.",
+	"setup.folderUsed": "Questa cartella è già usata, oppure sta dentro una che lo è.",
+	"setup.folderMissing": "Quella cartella non esiste. Controlla il percorso.",
+	"setup.addFolderOrOff": "Aggiungi una cartella oppure disattiva questo.",
+	"setup.notAnswering": "HolyArrs non risponde. Riprova tra un attimo.",
+	"setup.addUserPasswordHint": "Aggiungi il nome utente e la password.",
+	"setup.folders": "Cartelle",
+	"setup.downloader": "Downloader",
+	"setup.source": "Fonte"
+}

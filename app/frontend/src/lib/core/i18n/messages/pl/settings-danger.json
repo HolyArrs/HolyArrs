@@ -1,0 +1,16 @@
+{
+	"settings.danger.stopping": "HolyArrs się zatrzymuje.",
+	"settings.danger.couldnt": "Nie udało się: {action}",
+	"settings.danger.title": "Strefa zagrożenia",
+	"settings.danger.ownerOnly": "Tylko właściciel i administratorzy",
+	"settings.danger.ask": "{label}?",
+	"settings.danger.yes": "Tak: {action}",
+	"settings.danger.cancel": "Anuluj",
+	"settings.danger.expires": "Wygasa za 60 s",
+	"settings.danger.wholeApp": "Cała aplikacja",
+	"settings.danger.intro": "Te akcje zatrzymują HolyArrs. Polityka restartu Dockera uruchomi go ponownie po kilku sekundach, chyba że ustawiono <code>no</code>; wtedy uruchom kontener sam. Każda akcja pyta o potwierdzenie.",
+	"settings.danger.restart": "Zrestartuj HolyArrs",
+	"settings.danger.safe": "Zrestartuj w trybie awaryjnym",
+	"settings.danger.shutdown": "Wyłącz",
+	"settings.danger.safeNote": "Uruchamia się raz tylko z logowaniem, Ustawieniami i Biblioteką. Użyj go, gdy jakiś Moduł blokuje start."
+}

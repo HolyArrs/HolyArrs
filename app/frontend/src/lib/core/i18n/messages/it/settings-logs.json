@@ -1,0 +1,18 @@
+{
+	"settings.logs.title": "Log",
+	"settings.logs.download": "Scarica",
+	"settings.logs.filter": "Filtra il log",
+	"settings.logs.level": "Livello",
+	"settings.logs.every": "Ogni riga",
+	"settings.logs.warnings": "Avvertenze ed errori",
+	"settings.logs.errors": "Solo errori",
+	"settings.logs.text": "Testo",
+	"settings.logs.example": "es. qBittorrent",
+	"settings.logs.from": "Da",
+	"settings.logs.to": "A",
+	"settings.logs.apply": "Applica",
+	"settings.logs.clear": "Azzera",
+	"settings.logs.lines": "Righe",
+	"settings.logs.newer": "Più recenti",
+	"settings.logs.older": "Più vecchie"
+}

@@ -112,9 +112,9 @@ func (m *Mover) partOn(p string) bool { return m.PartOn == nil || m.PartOn(p) }
 
 // Errors the move routes answer with; their text is safe to show.
 var (
-	ErrNoMove   = errors.New("no such move")
-	ErrMoveBusy = errors.New("this move is still running")
-	ErrUndone   = errors.New("this move was already undone")
+	ErrNoMove   = errors.New("no such import")
+	ErrMoveBusy = errors.New("this import is still running")
+	ErrUndone   = errors.New("this import was already undone")
 	// ErrNoSnapshotPicked asks for at least one snapshot.
 	ErrNoSnapshotPicked = errors.New("pick at least one read app")
 	ErrTooManySnaps     = errors.New("pick at most 12 read apps")
@@ -373,7 +373,7 @@ func next(rep *Report) []string {
 		}
 	}
 	if links {
-		out = append(out, "Moved Sources and Downloaders are always added paused and cannot reach your home network. Check each one under Settings > Sources and Settings > Downloaders, turn on \"May reach the local network\" only for one that lives on your network, then resume it.")
+		out = append(out, "Imported Sources and Downloaders are always added paused and cannot reach your home network. Check each one under Settings > Sources and Settings > Downloaders, turn on \"May reach the local network\" only for one that lives on your network, then resume it.")
 	}
 	if outside {
 		out = append(out, "Outside lists come over paused; turn each on under Settings > Outside lists after checking its folder and Pick rules.")

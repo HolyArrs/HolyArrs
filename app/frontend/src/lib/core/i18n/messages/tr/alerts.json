@@ -1,0 +1,17 @@
+{
+	"alerts.fallback.settings": "Ayarlar",
+	"alerts.panel.clearAll": "Tümünü temizle",
+	"alerts.panel.empty": "Henüz bir şey yok",
+	"alerts.panel.needsAttention": "İlgi bekliyor",
+	"alerts.panel.recent": "Son",
+	"alerts.panel.remove": "{text} öğesini kaldır",
+	"alerts.panel.title": "Son uyarılar",
+	"alerts.state.manyNeed": "{count} tanesi ilgi bekliyor",
+	"alerts.state.ok": "Her şey tamam",
+	"alerts.state.oneNeeds": "1 tanesi ilgi bekliyor",
+	"alerts.state.unset": "Kurulmadı",
+	"alerts.time.days": "{n}g",
+	"alerts.time.hours": "{n}sa",
+	"alerts.time.minutes": "{n}dk",
+	"alerts.time.now": "şimdi"
+}

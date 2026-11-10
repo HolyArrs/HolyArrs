@@ -1,0 +1,14 @@
+{
+	"settings.layout.settings": "Ayarlar",
+	"settings.layout.home": "Ana sayfa",
+	"settings.layout.sections": "Ayar bölümleri",
+	"settings.layout.needsAttention": "İlgi bekliyor",
+	"settings.layout.needsAttentionLower": "ilgi bekliyor",
+	"settings.layout.blocked": "Bunu değiştiremezsin",
+	"settings.layout.backToSettings": "Ayarlar'a dön",
+	"settings.layout.setPasswordFirst": "Önce bir parola belirle",
+	"settings.layout.setPasswordDesc": "Anahtarlar, parolalar, kişiler ve yedekler için bir HolyArrs parolası gerekir. Henüz yok.",
+	"settings.layout.setPasswordLabel": "Parola belirle",
+	"settings.layout.confirmPasswordLabel": "Parolanı doğrula",
+	"settings.layout.confirmPasswordDesc": "Anahtarlar, parolalar, kişiler ve yedekler için parolan gerekir. 10 dakika geçerli."
+}

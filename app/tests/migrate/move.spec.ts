@@ -614,7 +614,7 @@ test("no problems: Move tests quietly, confirms once and goes straight to the mo
 
 test("poll errors: one soft capsule, no toasts, then it recovers; nothing is asked after leaving", async ({ browser }) => {
   const { ctx, p } = await phone(browser, 360);
-  const running = (progress: number) => ({ status: 200, json: { move: { id: 7, created_at: "2026-11-03T14:20:00Z", snapshots: [901], state: "running" }, progress, progress_note: `${Math.round(progress * 10)} of 10 moved` } });
+  const running = (progress: number) => ({ status: 200, json: { move: { id: 7, created_at: "2026-11-03T14:20:00Z", snapshots: [901], state: "running" }, progress, progress_note: `${Math.round(progress * 10)} of 10 imported` } });
   const { done } = await fixture(p, {
     moveAnswers: (n) =>
       n === 0 ? running(0.2) : n <= 2 ? { status: 500, json: { error: "down" } } : n <= 4 ? running(0.6) : { status: 200, json: { move: done, progress: 1, progress_note: "" } },
@@ -647,7 +647,7 @@ test("?move=N: a running move shows Move and follows it; a done move shows Done"
   const { done } = await fixture(p, {
     moveAnswers: (n) =>
       n < 2
-        ? { status: 200, json: { move: { ...done, state: "running", report: undefined }, progress: 0.25 * (n + 1), progress_note: `${n + 1} of 4 moved` } }
+        ? { status: 200, json: { move: { ...done, state: "running", report: undefined }, progress: 0.25 * (n + 1), progress_note: `${n + 1} of 4 imported` } }
         : { status: 200, json: { move: done, progress: 1, progress_note: "" } },
   });
   await p.goto("/settings/move?move=7");

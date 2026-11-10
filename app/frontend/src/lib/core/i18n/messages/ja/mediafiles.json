@@ -16,7 +16,6 @@
 	"mediafiles.delete.never": "二度と追加しない",
 	"mediafiles.delete.neverHint": "リストはスキップします",
 	"mediafiles.delete.willHappen": "実行される内容",
-	"mediafiles.delete.type": "確認のため <b>{name}</b> と入力してください",
 	"mediafiles.delete.cancel": "キャンセル",
 	"mediafiles.delete.deleting": "削除中…",
 	"mediafiles.delete.kindAndFiles": "{kind}とファイルを削除",

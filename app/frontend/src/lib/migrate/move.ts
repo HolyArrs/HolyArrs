@@ -1,4 +1,5 @@
 import { t } from '#lib/core/i18n/i18n.svelte.ts';
+import { serverWords } from '#lib/core/i18n/server-words.ts';
 export type AppKind = (typeof apps)[number]['kind'];
 
 export interface Snapshot {
@@ -300,6 +301,20 @@ export function tone(result: string): 'ok' | 'warn' | 'bad' | 'quiet' {
 
 export function needsLook(result: string): boolean {
 	return result === 'failed' || result === 'not_found' || result === 'skipped' || result === 'kept';
+}
+
+/** The server's "3 of 10 imported" line as "3 of 10", in the picked language. */
+export function progressWords(note: string): string {
+	const m = /^(\d+) of (\d+)\s+(?:imported|undone)\.?$/.exec(note);
+	return m ? t('migrate.doneOfTotal', { done: m[1], total: m[2] }) : note;
+}
+
+/** A note from a read app ("sonarr: the app has no tag list; skipped") in the picked language. */
+export function noteWords(note: string): string {
+	const whole = serverWords(note);
+	if (whole !== note) return whole;
+	const m = /^([a-z]+): ([\s\S]+)$/.exec(note);
+	return m ? `${m[1]}: ${serverWords(m[2])}` : note;
 }
 
 export function summary(counts: Record<string, number>, after = false, undo = false): string {

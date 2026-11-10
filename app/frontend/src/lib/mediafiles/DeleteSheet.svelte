@@ -1,6 +1,5 @@
 <!-- Confirm sheet for deleting a title, with a dry-run preview of what will happen. -->
 <script lang="ts">
-	import Words from '#lib/ui/Words.svelte';
 	import { untrack } from 'svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import { deleteSummary, type RemovePlan } from './organise.ts';
@@ -12,7 +11,6 @@
 
 	let files = $state(false);
 	let never = $state(false);
-	let typed = $state('');
 	let plan = $state<RemovePlan | null>(null);
 	let error = $state('');
 	let busy = $state(false);
@@ -20,9 +18,6 @@
 	let ask = 0;
 
 	const kindWord = $derived(t(`mediafiles.kind.${kind}`));
-	// Typing the name is asked only when the files are deleted for good; held files come back with Undo.
-	const forGood = $derived(files && !!plan && plan.holding_days <= 0);
-	const sure = $derived(!forGood || typed.trim().toLowerCase() === name.trim().toLowerCase());
 
 	// Each time the sheet opens it starts clean; untrack so edits inside do not rerun this.
 	$effect(() => {
@@ -30,7 +25,6 @@
 		untrack(() => {
 			files = false;
 			never = false;
-			typed = '';
 			plan = null;
 			void planIt();
 		});
@@ -66,11 +60,10 @@
 			busy = false;
 		}
 	}
-	// Changing an option makes the typed confirmation and the preview stale.
+	// Changing an option makes the preview stale.
 	function flip(which: 'files' | 'never') {
 		if (which === 'files') files = !files;
 		else never = !never;
-		typed = '';
 		void planIt();
 	}
 </script>
@@ -97,17 +90,11 @@
 			{/if}
 		</section>
 
-		{#if forGood}
-			<label class="ds-type">
-				<span><Words key="mediafiles.delete.type" vars={{ name }} /></span>
-				<input bind:value={typed} autocomplete="off" spellcheck="false" placeholder={name} />
-			</label>
-		{/if}
 		{#if error}<p class="ds-err" role="alert">{error}</p>{/if}
 
 		<div class="ds-actions">
 			<button type="button" class="ds-btn" onclick={() => (open = false)}>{t('mediafiles.delete.cancel')}</button>
-			<button type="button" class="ds-btn danger" disabled={busy || !plan || !sure} onclick={run}>{busy ? t('mediafiles.delete.deleting') : files ? t('mediafiles.delete.kindAndFiles', { kind: kindWord }) : t('mediafiles.delete.kind', { kind: kindWord })}</button>
+			<button type="button" class="ds-btn danger" disabled={busy || !plan} onclick={run}>{busy ? t('mediafiles.delete.deleting') : files ? t('mediafiles.delete.kindAndFiles', { kind: kindWord }) : t('mediafiles.delete.kind', { kind: kindWord })}</button>
 		</div>
 	</div>
 </Sheet>
@@ -132,9 +119,6 @@
 	/* Placeholder while the preview loads. */
 	.ds-skel { height: 44px; border-radius: 8px; background: color-mix(in srgb, var(--text) 8%, transparent); animation: pulse 1.2s ease-in-out infinite alternate; }
 	@keyframes pulse { to { opacity: .5; } }
-	.ds-type { display: grid; gap: 8px; font: 500 14px/1.3 var(--font-ui); }
-	.ds-type input { height: 42px; padding: 0 14px; border: 1px solid color-mix(in srgb, var(--text) 18%, transparent); border-radius: 12px; background: var(--surface-2); color: var(--text); font: 500 15px/1 var(--font-ui); }
-	.ds-type input:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.ds-err { margin: 0; color: var(--fail-text); font: 500 14px/1.4 var(--font-ui); }
 	.ds-actions { display: flex; justify-content: flex-end; gap: 8px; }
 	.ds-btn { height: 40px; padding: 0 18px; border: 0; border-radius: 999px; background: color-mix(in srgb, var(--text) 8%, transparent); color: var(--text); font: 600 14px/1 var(--font-ui); cursor: pointer; white-space: nowrap; }
