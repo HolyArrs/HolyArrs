@@ -1,0 +1,16 @@
+{
+	"settings.danger.stopping": "HolyArrs si sta fermando.",
+	"settings.danger.couldnt": "Non sono riuscito a {action}",
+	"settings.danger.title": "Zona pericolosa",
+	"settings.danger.ownerOnly": "Solo proprietario e amministratori",
+	"settings.danger.ask": "{label}?",
+	"settings.danger.yes": "Sì, {action}",
+	"settings.danger.cancel": "Annulla",
+	"settings.danger.expires": "Scade tra 60 s",
+	"settings.danger.wholeApp": "Tutta l'app",
+	"settings.danger.intro": "Questi fermano HolyArrs. Il criterio di riavvio di Docker lo fa ripartire in pochi secondi, a meno che il criterio sia <code>no</code>; in quel caso avvia tu il container. Ognuno chiede prima conferma.",
+	"settings.danger.restart": "Riavvia HolyArrs",
+	"settings.danger.safe": "Riavvia in modalità sicura",
+	"settings.danger.shutdown": "Spegni",
+	"settings.danger.safeNote": "Parte una volta con solo accesso, Impostazioni e Libreria. Usalo quando una Parte blocca l'avvio."
+}

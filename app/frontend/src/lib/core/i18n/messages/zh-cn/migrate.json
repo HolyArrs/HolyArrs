@@ -291,5 +291,6 @@
 	"migrate.notMoved2": "未导入 · {name}",
 	"migrate.holyarrsHandlesTheseIts": "HolyArrs 用自己的方式处理这些，无需你操作。",
 	"migrate.allApps": "所有应用",
-	"migrate.ifAnOldApp": "如果旧应用看到的文件夹路径不同，请把两个路径都填上。"
+	"migrate.ifAnOldApp": "如果旧应用看到的文件夹路径不同，请把两个路径都填上。",
+	"migrate.doneOfTotal": "{done} / {total}"
 }

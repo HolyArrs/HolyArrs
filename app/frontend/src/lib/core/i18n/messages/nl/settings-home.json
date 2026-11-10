@@ -1,0 +1,10 @@
+{
+	"settings.home.advanced": "Geavanceerd",
+	"settings.home.page": "{group} · pagina",
+	"settings.home.title": "Instellingen",
+	"settings.home.search": "Instellingen zoeken",
+	"settings.home.matching": "Passende instellingen",
+	"settings.home.noMatch": "Geen passende instellingen",
+	"settings.home.noMatchText": "Probeer een ander woord, zoals map, sleutel of wachtwoord.",
+	"settings.home.clear": "Zoekopdracht wissen"
+}

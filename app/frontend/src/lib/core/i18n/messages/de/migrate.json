@@ -291,5 +291,6 @@
 	"migrate.notMoved2": "Nicht importiert · {name}",
 	"migrate.holyarrsHandlesTheseIts": "HolyArrs regelt das auf seine eigene Weise. Nichts zu tun.",
 	"migrate.allApps": "Alle Apps",
-	"migrate.ifAnOldApp": "Wenn eine alte App einen Ordner unter einem anderen Pfad sieht, gib beide an."
+	"migrate.ifAnOldApp": "Wenn eine alte App einen Ordner unter einem anderen Pfad sieht, gib beide an.",
+	"migrate.doneOfTotal": "{done} von {total}"
 }

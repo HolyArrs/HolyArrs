@@ -291,5 +291,6 @@
 	"migrate.notMoved2": "インポートされていません · {name}",
 	"migrate.holyarrsHandlesTheseIts": "これらは HolyArrs が独自の方法で扱います。対応は不要です。",
 	"migrate.allApps": "すべてのアプリ",
-	"migrate.ifAnOldApp": "以前のアプリがフォルダーを別のパスで見ている場合は、両方を入力してください。"
+	"migrate.ifAnOldApp": "以前のアプリがフォルダーを別のパスで見ている場合は、両方を入力してください。",
+	"migrate.doneOfTotal": "{done} / {total}"
 }

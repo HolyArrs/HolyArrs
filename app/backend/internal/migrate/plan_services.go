@@ -433,7 +433,7 @@ func (b *builder) subtitles(s *Snapshot) {
 	} else {
 		langFrom = b.from("subtitles.profiles", used)
 		if len(sub.Languages) > 0 {
-			b.not(GroupSubtitles, b.from("subtitles.languages", -1), strings.Join(sub.Languages, ", "), "the default profile's languages were moved; the other enabled languages are only choices in Bazarr")
+			b.not(GroupSubtitles, b.from("subtitles.languages", -1), strings.Join(sub.Languages, ", "), "the default profile's languages were imported; the other enabled languages are only choices in Bazarr")
 		}
 	}
 	if len(wants) > 0 {

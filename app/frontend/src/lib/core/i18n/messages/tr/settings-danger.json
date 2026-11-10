@@ -1,0 +1,16 @@
+{
+	"settings.danger.stopping": "HolyArrs duruyor.",
+	"settings.danger.couldnt": "Yapılamadı: {action}",
+	"settings.danger.title": "Tehlikeli bölge",
+	"settings.danger.ownerOnly": "Yalnızca sahip ve yöneticiler",
+	"settings.danger.ask": "{label}?",
+	"settings.danger.yes": "Evet, {action}",
+	"settings.danger.cancel": "Vazgeç",
+	"settings.danger.expires": "60 sn içinde sona erer",
+	"settings.danger.wholeApp": "Uygulamanın tamamı",
+	"settings.danger.intro": "Bunlar HolyArrs'ı durdurur. Docker'ın yeniden başlatma ilkesi birkaç saniye içinde tekrar başlatır; ilke <code>no</code> ise konteyneri kendin başlat. Her biri önce sorar.",
+	"settings.danger.restart": "HolyArrs'ı yeniden başlat",
+	"settings.danger.safe": "Güvenli modda yeniden başlat",
+	"settings.danger.shutdown": "Kapat",
+	"settings.danger.safeNote": "Bir kez, yalnızca giriş, Ayarlar ve Kütüphane ile açılır. Bir Modül açılışı engellediğinde kullan."
+}

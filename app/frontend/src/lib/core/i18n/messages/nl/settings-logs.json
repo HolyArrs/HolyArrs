@@ -1,0 +1,18 @@
+{
+	"settings.logs.title": "Logs",
+	"settings.logs.download": "Downloaden",
+	"settings.logs.filter": "De log filteren",
+	"settings.logs.level": "Niveau",
+	"settings.logs.every": "Elke regel",
+	"settings.logs.warnings": "Waarschuwingen en fouten",
+	"settings.logs.errors": "Alleen fouten",
+	"settings.logs.text": "Tekst",
+	"settings.logs.example": "bijv. qBittorrent",
+	"settings.logs.from": "Van",
+	"settings.logs.to": "Tot",
+	"settings.logs.apply": "Toepassen",
+	"settings.logs.clear": "Wissen",
+	"settings.logs.lines": "Regels",
+	"settings.logs.newer": "Nieuwer",
+	"settings.logs.older": "Ouder"
+}

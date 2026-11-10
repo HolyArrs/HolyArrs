@@ -291,5 +291,6 @@
 	"migrate.notMoved2": "لم يُستورد · {name}",
 	"migrate.holyarrsHandlesTheseIts": "يتعامل HolyArrs مع هذه بطريقته. لا شيء مطلوب.",
 	"migrate.allApps": "كل التطبيقات",
-	"migrate.ifAnOldApp": "إذا كان تطبيق قديم يرى مجلدًا تحت مسار مختلف، فأدخل المسارين."
+	"migrate.ifAnOldApp": "إذا كان تطبيق قديم يرى مجلدًا تحت مسار مختلف، فأدخل المسارين.",
+	"migrate.doneOfTotal": "{done} من {total}"
 }
