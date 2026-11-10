@@ -744,6 +744,7 @@ test("desktop 1280: the rail capsules are equal, open sheets fit, and accessibil
   await noSidewaysScroll(p);
   await p.getByRole("dialog", { name: "Titles" }).getByRole("button", { name: "Close", exact: true }).click();
   await p.goto("/settings/move");
+  await expect(p.getByTestId("earlier-move").first()).toBeVisible();
   await measuredSymmetry(p);
   // Earlier moves: the pills and the Open buttons line up.
   const xs = await p.getByTestId("earlier-move").evaluateAll((rows) =>
