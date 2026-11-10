@@ -1,0 +1,17 @@
+{
+	"alerts.fallback.settings": "الإعدادات",
+	"alerts.panel.clearAll": "مسح الكل",
+	"alerts.panel.empty": "لا شيء هنا بعد",
+	"alerts.panel.needsAttention": "بحاجة إلى انتباه",
+	"alerts.panel.recent": "الأحدث",
+	"alerts.panel.remove": "إزالة {text}",
+	"alerts.panel.title": "أحدث التنبيهات",
+	"alerts.state.manyNeed": "{count} بحاجة إلى انتباه",
+	"alerts.state.ok": "كل شيء جاهز",
+	"alerts.state.oneNeeds": "1 بحاجة إلى انتباه",
+	"alerts.state.unset": "غير مُعدّ",
+	"alerts.time.days": "{n} ي",
+	"alerts.time.hours": "{n} س",
+	"alerts.time.minutes": "{n} د",
+	"alerts.time.now": "الآن"
+}

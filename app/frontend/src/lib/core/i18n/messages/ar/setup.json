@@ -1,0 +1,17 @@
+{
+	"setup.reconnect": "إعادة الاتصال",
+	"setup.testNow": "اختبر الآن",
+	"setup.movies": "أفلام",
+	"setup.tvShows": "مسلسلات",
+	"setup.music": "موسيقى",
+	"setup.subtitles": "ترجمات",
+	"setup.fullPath": "اكتب مسار المجلد كاملًا، مثل {path}.",
+	"setup.folderUsed": "هذا المجلد مستخدم بالفعل، أو يقع داخل مجلد مستخدم.",
+	"setup.folderMissing": "هذا المجلد غير موجود. تحقق من المسار.",
+	"setup.addFolderOrOff": "أضف مجلدًا أو أوقف هذا الخيار.",
+	"setup.notAnswering": "HolyArrs لا يستجيب. حاول مرة أخرى بعد قليل.",
+	"setup.addUserPasswordHint": "أضف اسم المستخدم وكلمة المرور.",
+	"setup.folders": "المجلدات",
+	"setup.downloader": "برنامج التنزيل",
+	"setup.source": "المصدر"
+}

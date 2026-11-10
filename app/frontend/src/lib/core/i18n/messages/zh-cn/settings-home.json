@@ -1,0 +1,10 @@
+{
+	"settings.home.advanced": "高级",
+	"settings.home.page": "{group} · 页面",
+	"settings.home.title": "设置",
+	"settings.home.search": "搜索设置",
+	"settings.home.matching": "匹配的设置",
+	"settings.home.noMatch": "没有匹配的设置",
+	"settings.home.noMatchText": "换个词试试，比如文件夹、密钥或密码。",
+	"settings.home.clear": "清除搜索"
+}

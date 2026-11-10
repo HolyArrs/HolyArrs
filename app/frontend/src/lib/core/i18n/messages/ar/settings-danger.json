@@ -1,0 +1,16 @@
+{
+	"settings.danger.stopping": "HolyArrs يتوقف.",
+	"settings.danger.couldnt": "تعذّر تنفيذ: {action}",
+	"settings.danger.title": "منطقة الخطر",
+	"settings.danger.ownerOnly": "للمالك والمشرفين فقط",
+	"settings.danger.ask": "{label}؟",
+	"settings.danger.yes": "نعم، {action}",
+	"settings.danger.cancel": "إلغاء",
+	"settings.danger.expires": "ينتهي خلال 60 ث",
+	"settings.danger.wholeApp": "التطبيق كله",
+	"settings.danger.intro": "هذه الأوامر توقف HolyArrs. تعيد سياسة إعادة التشغيل في Docker تشغيله بعد ثوانٍ، إلا إذا كانت السياسة <code>no</code>؛ عندها شغّل الحاوية بنفسك. كل أمر يسألك أولًا.",
+	"settings.danger.restart": "إعادة تشغيل HolyArrs",
+	"settings.danger.safe": "إعادة التشغيل في الوضع الآمن",
+	"settings.danger.shutdown": "إيقاف التشغيل",
+	"settings.danger.safeNote": "يبدأ مرة واحدة بتسجيل الدخول والإعدادات والمكتبة فقط. استخدمه عندما يمنع قسم بدء التشغيل."
+}

@@ -1,0 +1,17 @@
+{
+	"alerts.fallback.settings": "सेटिंग",
+	"alerts.panel.clearAll": "सब हटाएं",
+	"alerts.panel.empty": "अभी यहां कुछ नहीं",
+	"alerts.panel.needsAttention": "ध्यान चाहिए",
+	"alerts.panel.recent": "हाल के",
+	"alerts.panel.remove": "{text} हटाएं",
+	"alerts.panel.title": "हाल के अलर्ट",
+	"alerts.state.manyNeed": "{count} पर ध्यान चाहिए",
+	"alerts.state.ok": "सब ठीक है",
+	"alerts.state.oneNeeds": "1 पर ध्यान चाहिए",
+	"alerts.state.unset": "सेट अप नहीं है",
+	"alerts.time.days": "{n} दिन",
+	"alerts.time.hours": "{n} घं",
+	"alerts.time.minutes": "{n} मि",
+	"alerts.time.now": "अभी"
+}

@@ -53,7 +53,7 @@ How to read it:
 | Move from other apps (docs menu) | Venir de otras apps | Vindo de outros apps | Venir d'autres applications | Umstieg von anderen Apps | Переход с других приложений | 从其他应用迁移 | ほかのアプリからの移行 | 다른 앱에서 옮겨 오기 | दूसरे ऐप से आना | الانتقال من تطبيقات أخرى |
 | Moving over (site roadmap group) | Traslado desde otras apps | Mudança de app | Changer d'application | Umstieg | Переезд | 迁移 | 移行 | 옮겨오기 | दूसरे ऐप से आना | الانتقال |
 | Follow ◆ | Seguir | Seguir | suivre | Folgen | подписаться | 关注 | フォロー | 팔로우 | फ़ॉलो करना | متابعة |
-| Ask for (verb, a title) | Pedir | Pedir | Demander | anfragen | Запрашивать | 请求 | リクエスト | リクエスト | 요청하기 | माँगना | اطلب |
+| Ask for (verb, a title) | Pedir | Pedir | Demander | anfragen | Запрашивать | 请求 | リクエストする | 요청하기 | रिक्वेस्ट करना | اطلب |
 | Request (noun) | solicitud | pedido | demande | Anfrage | запрос | 请求 | リクエスト | 요청 | रिक्वेस्ट | طلب |
 | Approve ◆ | aprobar | aprovar | approuver | genehmigen | одобрить | 批准 | 承認する | 승인하다 | मंज़ूर करना | موافقة |
 | Owner | Propietario | Dono | propriétaire | Besitzer | Владелец | 所有者 | オーナー | 소유자 | ओनर | المالك |

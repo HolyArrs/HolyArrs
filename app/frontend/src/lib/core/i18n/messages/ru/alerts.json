@@ -1,0 +1,17 @@
+{
+	"alerts.fallback.settings": "Настройки",
+	"alerts.panel.clearAll": "Очистить всё",
+	"alerts.panel.empty": "Пока пусто",
+	"alerts.panel.needsAttention": "Требует внимания",
+	"alerts.panel.recent": "Недавние",
+	"alerts.panel.remove": "Убрать: {text}",
+	"alerts.panel.title": "Недавние оповещения",
+	"alerts.state.manyNeed": "Требуют внимания: {count}",
+	"alerts.state.ok": "Всё в порядке",
+	"alerts.state.oneNeeds": "Требует внимания: 1",
+	"alerts.state.unset": "Не настроено",
+	"alerts.time.days": "{n} д",
+	"alerts.time.hours": "{n} ч",
+	"alerts.time.minutes": "{n} мин",
+	"alerts.time.now": "сейчас"
+}

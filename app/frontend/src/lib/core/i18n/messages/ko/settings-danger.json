@@ -1,0 +1,16 @@
+{
+	"settings.danger.stopping": "HolyArrs를 종료하는 중입니다.",
+	"settings.danger.couldnt": "{action}할 수 없습니다",
+	"settings.danger.title": "위험 구역",
+	"settings.danger.ownerOnly": "소유자와 관리자만",
+	"settings.danger.ask": "{label}할까요?",
+	"settings.danger.yes": "예, {action}",
+	"settings.danger.cancel": "취소",
+	"settings.danger.expires": "60초 후 만료",
+	"settings.danger.wholeApp": "앱 전체",
+	"settings.danger.intro": "이 작업은 HolyArrs를 멈춥니다. Docker의 재시작 정책이 있으면 몇 초 안에 다시 시작되며, 정책이 <code>no</code>이면 컨테이너를 직접 시작하세요. 실행 전에 항상 확인을 묻습니다.",
+	"settings.danger.restart": "HolyArrs 다시 시작",
+	"settings.danger.safe": "안전 모드로 다시 시작",
+	"settings.danger.shutdown": "종료",
+	"settings.danger.safeNote": "로그인, 설정, 라이브러리만 켜서 한 번 시작합니다. 파트 때문에 시작이 막힐 때 사용하세요."
+}

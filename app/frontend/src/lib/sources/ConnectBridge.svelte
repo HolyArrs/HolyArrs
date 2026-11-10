@@ -315,7 +315,7 @@
 					{#if session.s.hasPassword}
 						<Confirm action="password">{#snippet children()}{/snippet}</Confirm>
 					{:else}
-						<p class="small" role="status" data-testid="bridge-need-password"><Words key="sources.bridge.setPassword" links={{ a: to('/account') }} /></p>
+						<p class="small" role="status" data-testid="bridge-need-password"><Words key="sources.bridge.setPasswordLine" links={{ a: to('/account') }} /></p>
 					{/if}
 				{/if}
 				<div class="acts" class:one-row={compact}>

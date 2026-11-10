@@ -1,0 +1,18 @@
+{
+	"settings.logs.title": "Journaux",
+	"settings.logs.download": "Télécharger",
+	"settings.logs.filter": "Filtrer le journal",
+	"settings.logs.level": "Niveau",
+	"settings.logs.every": "Toutes les lignes",
+	"settings.logs.warnings": "Avertissements et erreurs",
+	"settings.logs.errors": "Erreurs seulement",
+	"settings.logs.text": "Texte",
+	"settings.logs.example": "ex. qBittorrent",
+	"settings.logs.from": "Du",
+	"settings.logs.to": "Au",
+	"settings.logs.apply": "Appliquer",
+	"settings.logs.clear": "Effacer",
+	"settings.logs.lines": "Lignes",
+	"settings.logs.newer": "Plus récents",
+	"settings.logs.older": "Plus anciens"
+}

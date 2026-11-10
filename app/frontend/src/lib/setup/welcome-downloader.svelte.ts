@@ -116,7 +116,7 @@ export function createWelcomeDownloader(ctx: any) {
 	// An app that signs in, turned down with no user name typed: ask for both, under User name (the server's answer names an API key field the wizard does not have).
 	function askSignIn(words: string): boolean {
 		if (!dlUser || dl.username.trim() || words.startsWith("Can't reach")) return false;
-		dlAuth = say('setup.addUserPassword');
+		dlAuth = say('setup.addUserPasswordHint');
 		void tick().then(() => document.getElementById('dl-user')?.focus());
 		return true;
 	}

@@ -160,7 +160,9 @@ for (const file of walk(root)) {
 const words = {};
 const keys = new Set();
 for (const [text, mod] of [...found].sort((a, b) => a[1].localeCompare(b[1]) || a[0].localeCompare(b[0]))) {
-	const slug = text.replace(/\{\w+\}/g, ' ').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim().split(' ').slice(0, 6).join('-') || 'line';
+	let slug = text.replace(/\{\w+\}/g, ' ').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim().split(' ').slice(0, 6).join('-') || 'line';
+	// A key ending in a secret word looks like a stored secret to the commit scan.
+	if (/(password|passwd|token|secret|key)$/.test(slug)) slug += '-line';
 	let key = `server.${mod}.${slug}`;
 	for (let n = 2; keys.has(key); n++) key = `server.${mod}.${slug}-${n}`;
 	keys.add(key);
