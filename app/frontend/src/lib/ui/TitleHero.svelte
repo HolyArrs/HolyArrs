@@ -1,6 +1,7 @@
 <script lang="ts" module>
 	// Title page hero: shared metadata helpers and the banner with art, badges and trailer button.
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	import type { Video } from '../core/trailer/trailer.ts';
 	import { shownScore } from '../core/rating.ts';
 
@@ -280,7 +281,7 @@
 			{#if ratings && scoreText}<span class="b score" title={t('ui.titleHero.scoreOutOf10')}><svg width="11" height="11" viewBox="0 0 12 12" aria-hidden="true"><path d="M6 .8l1.6 3.3 3.6.5-2.6 2.5.6 3.6L6 9l-3.2 1.7.6-3.6L.8 4.6l3.6-.5z" fill="currentColor" /></svg>{scoreText}</span>{/if}
 			{#if ratings}<RatingsStrip scores={shown.scores} />{/if}
 			{#each showFacts ? wiki.badges.slice(0, 2) : [] as b (b)}<span class="b award" title={awardsTip(wiki.awards)} data-testid="award-badge"><svg width="11" height="11" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1h6v2.4a3 3 0 0 1-6 0zM3 2H1.2v.8A2 2 0 0 0 3 4.8M9 2h1.8v.8A2 2 0 0 1 9 4.8M5.3 6.3h1.4v2.2H5.3zM3.6 8.5h4.8V11H3.6z" fill="currentColor" /></svg>{b}</span>{/each}
-			{#each badges as b (b)}<span class="b">{b}</span>{/each}
+			{#each badges as b (b)}<span class="b">{serverWords(b)}</span>{/each}
 			{#if status}<StatusPill kind={status} {percent} label={statusLabel} on="art" />{/if}
 		{/snippet}
 		{#snippet actions()}

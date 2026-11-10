@@ -1,6 +1,6 @@
 {
-	"settings.titleDefaults.saved": "Predefiniti film e serie salvati",
-	"settings.titleDefaults.title": "Predefiniti film e serie",
+	"settings.titleDefaults.saved": "Impostazioni predefinite di film e serie salvate",
+	"settings.titleDefaults.title": "Impostazioni predefinite per film e serie",
 	"settings.titleDefaults.titleReadOnly": "Predefiniti film e serie, sola lettura",
 	"settings.titleDefaults.readOnly": "Per cambiarli serve il permesso per le impostazioni.",
 	"settings.titleDefaults.movies": "Film",
@@ -18,7 +18,7 @@
 	"settings.titleDefaults.firstShow": "Prima cartella delle serie",
 	"settings.titleDefaults.searchHint": "Spento aspetta il prossimo controllo dei feed",
 	"settings.titleDefaults.seasons": "Stagioni da tenere aggiornate",
-	"settings.titleDefaults.newSeasons": "Stagioni nuove",
+	"settings.titleDefaults.newSeasons": "Nuove stagioni",
 	"settings.titleDefaults.newAll": "Tienile aggiornate",
 	"settings.titleDefaults.newNone": "Lasciale disattivate",
 	"settings.titleDefaults.order": "Ordine degli episodi",

@@ -53,7 +53,7 @@
 	"settings.downloaders.secretKept": "Tenuta cifrata e non più mostrata. Spostare l'indirizzo su un altro host la richiede di nuovo.",
 	"settings.downloaders.delugeNote": "La Web UI di Deluge deve essere collegata a un daemon con il plugin Label attivo",
 	"settings.downloaders.moreOptions": "Altre opzioni",
-	"settings.downloaders.local": "Raggiungi la rete locale",
+	"settings.downloaders.local": "Consenti l'accesso alla rete locale",
 	"settings.downloaders.localHint": "Attivo nella maggior parte dei casi",
 	"settings.downloaders.writable": "HolyArrs può modificare questo downloader",
 	"settings.downloaders.writableLocked": "Bloccato in sola lettura dalle impostazioni di questo server (HOLYARRS_READONLY_DOWNLOADERS).",
@@ -104,7 +104,7 @@
 	"settings.downloaders.failPrograms": "Fai fallire i download che contengono programmi o falsi",
 	"settings.downloaders.failProgramsHint": ".exe, .bat, .scr, .lnk (anche come movie.mkv.exe), note con password, collegamenti web, torrent con soli archivi",
 	"settings.downloaders.replace": "Sostituisci i download rimossi fuori da HolyArrs",
-	"settings.downloaders.replaceHint": "Spento: il titolo aspetta te",
+	"settings.downloaders.replaceHint": "Disattivato: il titolo aspetta una tua decisione",
 	"settings.downloaders.tryNextDl": "Prova il downloader successivo",
 	"settings.downloaders.tryNextDlHint": "Quando uno fallisce, usa il successivo dello stesso tipo",
 	"settings.downloaders.spacing": "Secondi tra un invio e l'altro a un downloader"

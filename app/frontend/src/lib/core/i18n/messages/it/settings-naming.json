@@ -6,7 +6,7 @@
 	"settings.naming.removingHeld": "Rimozione dei file in attesa",
 	"settings.naming.nothingRemoved": "Non è stato rimosso niente",
 	"settings.naming.olderThan": "Più vecchi di {n} giorni",
-	"settings.naming.keptUntil": "Tenuti finché non svuoti",
+	"settings.naming.keptUntil": "Conservati finché non li svuoti",
 	"settings.naming.cleanFailed": "Non sono riuscito a ripulire",
 	"settings.naming.title": "Nomi e file",
 	"settings.naming.where": "Dove vanno i file",

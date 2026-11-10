@@ -41,7 +41,7 @@
 	"settings.subtitles.perWindow": "Chiamate massime per finestra",
 	"settings.subtitles.window": "Finestra (secondi)",
 	"settings.subtitles.perDay": "Download al giorno (0 per nessun limite)",
-	"settings.subtitles.local": "Raggiungi la rete locale",
+	"settings.subtitles.local": "Consenti l'accesso alla rete locale",
 	"settings.subtitles.localHint": "Per un sito a casa",
 	"settings.subtitles.on": "Attivo",
 	"settings.subtitles.save": "Salva",
@@ -84,7 +84,7 @@
 	"settings.subtitles.syncFix": "Correzione della sincronia",
 	"settings.subtitles.syncFixDesc": "Valori di partenza per correggere i tempi",
 	"settings.subtitles.syncNote": "Un sottotitolo fuori tempo si corregge a mano nel suo film o episodio: sposta ogni riga, oppure cambia il frame rate. HolyArrs non ascolta l'audio per allineare i sottotitoli.",
-	"settings.subtitles.shift": "I pulsanti di spostamento muovono di (ms)",
+	"settings.subtitles.shift": "Passo dei pulsanti di spostamento (ms)",
 	"settings.subtitles.fpsFrom": "Frame rate da",
 	"settings.subtitles.fpsTo": "Frame rate a"
 }

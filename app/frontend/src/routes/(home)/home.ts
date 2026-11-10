@@ -6,6 +6,7 @@ import { stageOf } from '#lib/downloads/index.ts';
 import type { CalendarEntry, HealthCheck, TitleView } from '#lib/core/types.ts';
 import type { Fresh } from '#lib/ui/fresh.ts';
 import { t, appLocale } from '#lib/core/i18n/i18n.svelte.ts';
+import { serverWords } from '#lib/core/i18n/server-words.ts';
 
 /** downloadLine is the meta line under a download card: percent and time left. */
 export function downloadLine(d: Pick<DownloadRow, 'progress' | 'eta' | 'state' | 'label'>): string {
@@ -454,8 +455,8 @@ export function fallbackRows(owner: boolean): HomeRow[] {
 export function homeStrip(c: Pick<HomeCard, 'kind' | 'name' | 'line'>): Fresh | null {
 	// The server's plain "Show" and "Music" lines say nothing is new: no strip.
 	if (!c.line || c.line === 'Show' || c.line === 'Music') return null;
-	if (c.kind === 'show') return { kind: c.line.startsWith('Season') && !c.line.includes('·') ? 'new_season' : 'new_episode', text: c.line };
-	if (c.kind === 'artist') return { kind: 'recently_added', text: `${c.name} · ${c.line}` };
+	if (c.kind === 'show') return { kind: c.line.startsWith('Season') && !c.line.includes('·') ? 'new_season' : 'new_episode', text: serverWords(c.line) };
+	if (c.kind === 'artist') return { kind: 'recently_added', text: `${c.name} · ${serverWords(c.line)}` };
 	return null;
 }
 
