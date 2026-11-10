@@ -18,11 +18,15 @@ const (
 		WHERE f.tmdb_id = ? AND u.state != 'disabled' ORDER BY u.id`
 	landMovieFollowsSQL2 = "DELETE FROM tmdb_movie_follows WHERE user_id = ? AND tmdb_id = ?"
 	landMovieFollowsSQL3 = "INSERT INTO follows (user_id, title_id, created_at) VALUES (?, ?, ?) ON CONFLICT DO NOTHING"
-	tellMovieFollowsSQL  = `SELECT t.id, t.name, f.tmdb_id, u.id, u.name, coalesce(x.email, ''), coalesce(x.discord_id, '')
-		FROM tmdb_movie_follows f JOIN users u ON u.id = f.user_id LEFT JOIN user_ask_settings x ON x.user_id = u.id
-		JOIN titles t ON t.kind = 'movie' AND t.state != 'removed' AND json_extract(t.source_ids, '$.tmdb') = f.tmdb_id
-		JOIN follows fo ON fo.user_id = f.user_id AND fo.title_id = t.id
-		WHERE u.state != 'disabled' AND EXISTS (SELECT 1 FROM slots sl JOIN items i ON i.id = sl.item_id
+	// CROSS JOIN fixes the order the tables are read in: the follows first
+	// (few rows, often none), then each followed title and its slots. Left to
+	// choose, the database started from every movie and every slot, which
+	// took most of a minute on a Library of a few thousand movies.
+	tellMovieFollowsSQL = `SELECT t.id, t.name, f.tmdb_id, u.id, u.name, coalesce(x.email, ''), coalesce(x.discord_id, '')
+		FROM tmdb_movie_follows f CROSS JOIN users u ON u.id = f.user_id LEFT JOIN user_ask_settings x ON x.user_id = u.id
+		CROSS JOIN follows fo ON fo.user_id = f.user_id
+		CROSS JOIN titles t ON t.id = fo.title_id AND t.kind = 'movie' AND t.state != 'removed' AND json_extract(t.source_ids, '$.tmdb') = f.tmdb_id
+		WHERE u.state != 'disabled' AND EXISTS (SELECT 1 FROM items i CROSS JOIN slots sl ON sl.item_id = i.id
 			WHERE i.title_id = t.id AND sl.state IN ('in_library', 'better_wanted'))
 		ORDER BY t.id, u.id`
 	tellMovieFollowsSQL2 = "DELETE FROM tmdb_movie_follows WHERE user_id = ? AND tmdb_id = ?"
