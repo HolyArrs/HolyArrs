@@ -149,6 +149,9 @@ func (s *Service) load(ctx context.Context, fileID int64) (*fileCtx, error) {
 	if err := database.Get(ctx, db, "titles", fc.item.TitleID, &fc.title); err != nil {
 		return nil, err
 	}
+	if fc.title.State == "removed" {
+		return nil, ErrNotFound // a title that left the Library keeps its files, but wants nothing
+	}
 	if err := db.QueryRowContext(ctx, "SELECT path FROM library_folders WHERE id = ?", fc.version.LibraryFolderID).Scan(&fc.lib); err != nil {
 		return nil, err
 	}
@@ -433,8 +436,8 @@ func actorJSON(a domain.Actor) string {
 
 // FilesOf lists the present main Files of a title, or of one Item when itemID is set.
 func FilesOf(ctx context.Context, db *sql.DB, titleID, itemID int64) ([]int64, error) {
-	q := `SELECT DISTINCT f.id FROM files f JOIN slots s ON s.file_id = f.id JOIN items i ON i.id = s.item_id
-		WHERE i.title_id = ? AND f.role = 'main' AND f.state = 'present' AND i.kind IN ('movie', 'episode')`
+	q := `SELECT DISTINCT f.id FROM files f JOIN slots s ON s.file_id = f.id JOIN items i ON i.id = s.item_id JOIN titles t ON t.id = i.title_id
+		WHERE i.title_id = ? AND f.role = 'main' AND f.state = 'present' AND i.kind IN ('movie', 'episode') AND t.state != 'removed'`
 	args := []any{titleID}
 	if itemID != 0 {
 		q += " AND i.id = ?"

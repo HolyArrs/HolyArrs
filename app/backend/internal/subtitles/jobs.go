@@ -91,7 +91,9 @@ func (s *Service) dueFiles(ctx context.Context, batch int) ([]int64, error) {
 	var out []int64
 	seen := map[int64]bool{}
 	rows, err := db.QueryContext(ctx, `SELECT DISTINCT file_id FROM subtitles WHERE place = 'wish' AND state IN ('wanted', 'none_good_enough')
-		AND (next_try_at IS NULL OR next_try_at <= ?) ORDER BY next_try_at IS NOT NULL, next_try_at LIMIT ?`, database.FormatTime(now()), batch)
+		AND (next_try_at IS NULL OR next_try_at <= ?) AND NOT EXISTS (SELECT 1 FROM files f JOIN versions v ON v.id = f.version_id
+			JOIN titles t ON t.id = v.title_id WHERE f.id = subtitles.file_id AND t.state = 'removed')
+		ORDER BY next_try_at IS NOT NULL, next_try_at LIMIT ?`, database.FormatTime(now()), batch)
 	if err != nil {
 		return nil, err
 	}
@@ -116,8 +118,9 @@ func (s *Service) staleFiles(ctx context.Context, limit int, out []int64, seen m
 	// Files never looked at, or looked at under another wish.
 	rows, err := db.QueryContext(ctx, `SELECT DISTINCT f.id, i.title_id, f.version_id, i.id, l.wish FROM files f
 		JOIN slots s ON s.file_id = f.id JOIN items i ON i.id = s.item_id
-		LEFT JOIN subtitle_looks l ON l.file_id = f.id
-		WHERE f.role = 'main' AND f.state = 'present' AND i.kind IN ('movie', 'episode') ORDER BY l.looked_at IS NOT NULL, l.looked_at, f.id`)
+		JOIN titles t ON t.id = i.title_id LEFT JOIN subtitle_looks l ON l.file_id = f.id
+		WHERE f.role = 'main' AND f.state = 'present' AND i.kind IN ('movie', 'episode') AND t.state != 'removed'
+		ORDER BY l.looked_at IS NOT NULL, l.looked_at, f.id`)
 	if err != nil {
 		return nil, err
 	}
@@ -372,7 +375,8 @@ type MissingFilter struct {
 }
 
 const missingFrom = ` FROM subtitles s JOIN files f ON f.id = s.file_id JOIN slots sl ON sl.id = json_extract(f.slot_ids, '$[0]')
-		JOIN items i ON i.id = sl.item_id JOIN titles t ON t.id = i.title_id WHERE s.place = 'wish' AND s.state IN ('wanted', 'none_good_enough') AND f.state = 'present'`
+		JOIN items i ON i.id = sl.item_id JOIN titles t ON t.id = i.title_id WHERE s.place = 'wish' AND s.state IN ('wanted', 'none_good_enough') AND f.state = 'present'
+		AND t.state != 'removed'`
 
 // MissingTitle is a movie or show missing at least one subtitle.
 type MissingTitle struct {
