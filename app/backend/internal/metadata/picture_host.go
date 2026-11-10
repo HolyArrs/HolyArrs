@@ -22,7 +22,7 @@ func (p pictureHost) RoundTrip(req *http.Request) (*http.Response, error) {
 		next = http.DefaultTransport
 	}
 	resp, err := next.RoundTrip(req)
-	if err != nil || resp.Header.Get("Content-Encoding") != "" || !strings.Contains(resp.Header.Get("Content-Type"), "json") {
+	if err != nil || !strings.Contains(resp.Header.Get("Content-Type"), "json") {
 		return resp, err
 	}
 	// Answers are small; one too big to hold is passed on as it came.
