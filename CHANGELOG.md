@@ -2,6 +2,17 @@
 
 All notable changes to HolyArrs are listed here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## 1.0.3
+
+### Added
+
+- Docker images are signed, with a build record and a contents list you can check yourself. ([#166](https://github.com/HolyArrs/HolyArrs/issues/166))
+
+### Fixed
+
+- Requests ready check no longer keeps retrying and using a CPU core on a large library. ([#168](https://github.com/HolyArrs/HolyArrs/issues/168))
+- Security: updates the SSO sign-in library to fix a denial-of-service hole (CVE-2026-116587). ([#167](https://github.com/HolyArrs/HolyArrs/issues/167))
+
 ## 1.0.2
 
 ### Changed
