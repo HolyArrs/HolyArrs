@@ -1203,5 +1203,13 @@
 	"downloads.why.conflict": "L'import n'a pas pu se terminer seul.",
 	"downloads.why.notReplaced": "Son téléchargement a été retiré hors de HolyArrs et n'est pas remplacé automatiquement (paramètre).",
 	"downloads.why.notSent": "Aucun client de téléchargement n'a pu le prendre : vérifiez les étiquettes du titre et vos clients de téléchargement.",
-	"downloads.why.out": "HolyArrs n'a plus de releases qui passent les règles de sélection."
+	"downloads.why.out": "HolyArrs n'a plus de releases qui passent les règles de sélection.",
+	"downloads.ot.fromTrash": "De TRaSH Guides ({n})",
+	"downloads.ot.syncAgain": "Synchronisez à nouveau un jeu de règles de sélection pour les mettre à jour",
+	"downloads.ot.spec": "{name} ({kind})",
+	"downloads.ot.specNot": "pas {name} ({kind})",
+	"downloads.ot.kindName": "nom",
+	"downloads.ot.kindGroup": "groupe",
+	"downloads.ot.kindSource": "origine",
+	"downloads.ot.kindResolution": "résolution"
 }

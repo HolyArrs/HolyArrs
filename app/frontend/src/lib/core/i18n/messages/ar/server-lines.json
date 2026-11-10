@@ -740,5 +740,17 @@
 	"server.subtitles.paused-subtitle-site-until": "أُوقف موقع الترجمات {name} مؤقتًا حتى {rfc3339} ({kind})",
 	"server.subtitles.turned-down-from": "استُبعد {relativepath} من {sitename}",
 	"server.subtitles.unknown-language": "لغة غير معروفة",
-	"server.suggest.sci-fi": "خيال علمي"
+	"server.suggest.sci-fi": "خيال علمي",
+	"server.library.indexer-flag": "علامة المفهرس",
+	"server.library.it-tests-something-holyarrs-cannot-test": "يختبر شيئًا لا يستطيع HolyArrs اختباره بعد",
+	"server.library.language": "اللغة",
+	"server.library.listed-but-its-file-is-missing": "مدرج، لكن ملفه مفقود",
+	"server.library.pick-rules-hold-at-most-64": "تتسع قواعد الاختيار لـ 64 سمة على الأكثر",
+	"server.library.quality-modifier": "مُعدِّل الجودة",
+	"server.library.release-type": "نوع الإصدار",
+	"server.library.resolution": "الدقة",
+	"server.library.size": "الحجم",
+	"server.library.source": "المصدر",
+	"server.library.unreadable-pattern": "نمط غير مقروء",
+	"server.library.year": "السنة"
 }

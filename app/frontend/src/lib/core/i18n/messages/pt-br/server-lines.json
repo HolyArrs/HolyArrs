@@ -740,5 +740,17 @@
 	"server.subtitles.paused-subtitle-site-until": "Site de legendas {name} pausado até {rfc3339} ({kind})",
 	"server.subtitles.turned-down-from": "{relativepath} de {sitename} descartado",
 	"server.subtitles.unknown-language": "idioma desconhecido",
-	"server.suggest.sci-fi": "Ficção científica"
+	"server.suggest.sci-fi": "Ficção científica",
+	"server.library.indexer-flag": "marcação do indexador",
+	"server.library.it-tests-something-holyarrs-cannot-test": "testa algo que o HolyArrs ainda não consegue testar",
+	"server.library.language": "idioma",
+	"server.library.listed-but-its-file-is-missing": "listado, mas o arquivo está faltando",
+	"server.library.pick-rules-hold-at-most-64": "As Regras de escolha aceitam no máximo 64 características",
+	"server.library.quality-modifier": "modificador de qualidade",
+	"server.library.release-type": "tipo de lançamento",
+	"server.library.resolution": "resolução",
+	"server.library.size": "tamanho",
+	"server.library.source": "origem",
+	"server.library.unreadable-pattern": "padrão ilegível",
+	"server.library.year": "ano"
 }

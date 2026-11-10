@@ -740,5 +740,17 @@
 	"server.subtitles.paused-subtitle-site-until": "Сайт субтитров «{name}» приостановлен до {rfc3339} ({kind})",
 	"server.subtitles.turned-down-from": "{relativepath} с сайта {sitename} отброшен",
 	"server.subtitles.unknown-language": "неизвестный язык",
-	"server.suggest.sci-fi": "Фантастика"
+	"server.suggest.sci-fi": "Фантастика",
+	"server.library.indexer-flag": "флаг индексатора",
+	"server.library.it-tests-something-holyarrs-cannot-test": "проверяет то, что HolyArrs пока не умеет проверять",
+	"server.library.language": "язык",
+	"server.library.listed-but-its-file-is-missing": "есть в списке, но его файла нет",
+	"server.library.pick-rules-hold-at-most-64": "Правила отбора вмещают не больше 64 признаков",
+	"server.library.quality-modifier": "модификатор качества",
+	"server.library.release-type": "тип релиза",
+	"server.library.resolution": "разрешение",
+	"server.library.size": "размер",
+	"server.library.source": "источник",
+	"server.library.unreadable-pattern": "нечитаемый шаблон",
+	"server.library.year": "год"
 }

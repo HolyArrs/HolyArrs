@@ -740,5 +740,17 @@
 	"server.subtitles.paused-subtitle-site-until": "자막 사이트 {name}을(를) {rfc3339}까지 일시 중지했습니다 ({kind})",
 	"server.subtitles.turned-down-from": "{sitename}의 {relativepath}을(를) 거부했습니다",
 	"server.subtitles.unknown-language": "알 수 없는 언어",
-	"server.suggest.sci-fi": "SF"
+	"server.suggest.sci-fi": "SF",
+	"server.library.indexer-flag": "인덱서 플래그",
+	"server.library.it-tests-something-holyarrs-cannot-test": "HolyArrs가 아직 검사할 수 없는 항목을 검사합니다",
+	"server.library.language": "언어",
+	"server.library.listed-but-its-file-is-missing": "목록에 있지만 파일이 없습니다",
+	"server.library.pick-rules-hold-at-most-64": "선택 규칙에는 특성을 최대 64개까지 넣을 수 있습니다",
+	"server.library.quality-modifier": "화질 수식어",
+	"server.library.release-type": "릴리스 유형",
+	"server.library.resolution": "해상도",
+	"server.library.size": "크기",
+	"server.library.source": "소스",
+	"server.library.unreadable-pattern": "읽을 수 없는 패턴",
+	"server.library.year": "연도"
 }

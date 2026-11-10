@@ -1203,5 +1203,13 @@
 	"downloads.why.conflict": "インポートを自力で完了できませんでした。",
 	"downloads.why.notReplaced": "ダウンロードが HolyArrs の外で削除されましたが、自動では置き換えられません(設定)。",
 	"downloads.why.notSent": "受け付けられるダウンローダーがありません。作品のタグとダウンローダーを確認してください。",
-	"downloads.why.out": "選定ルールを満たすリリースが、なくなりました。"
+	"downloads.why.out": "選定ルールを満たすリリースが、なくなりました。",
+	"downloads.ot.fromTrash": "TRaSH Guides から（{n}）",
+	"downloads.ot.syncAgain": "更新するには、選定ルールのセットをもう一度同期します",
+	"downloads.ot.spec": "{name}（{kind}）",
+	"downloads.ot.specNot": "{name} 以外（{kind}）",
+	"downloads.ot.kindName": "名前",
+	"downloads.ot.kindGroup": "グループ",
+	"downloads.ot.kindSource": "ソース",
+	"downloads.ot.kindResolution": "解像度"
 }

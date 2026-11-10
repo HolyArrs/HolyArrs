@@ -740,5 +740,17 @@
 	"server.subtitles.paused-subtitle-site-until": "सबटाइटल साइट {name} {rfc3339} तक रोकी गई ({kind})",
 	"server.subtitles.turned-down-from": "{relativepath} को {sitename} से ठुकरा दिया गया",
 	"server.subtitles.unknown-language": "अनजान भाषा",
-	"server.suggest.sci-fi": "साइ-फ़ाई"
+	"server.suggest.sci-fi": "साइ-फ़ाई",
+	"server.library.indexer-flag": "इंडेक्सर फ़्लैग",
+	"server.library.it-tests-something-holyarrs-cannot-test": "यह कुछ ऐसा जाँचता है जो HolyArrs अभी नहीं जाँच सकता",
+	"server.library.language": "भाषा",
+	"server.library.listed-but-its-file-is-missing": "सूची में है, पर इसकी फ़ाइल नहीं है",
+	"server.library.pick-rules-hold-at-most-64": "चुनाव के नियमों में ज़्यादा से ज़्यादा 64 विशेषताएँ होती हैं",
+	"server.library.quality-modifier": "क्वालिटी मॉडिफ़ायर",
+	"server.library.release-type": "रिलीज़ का प्रकार",
+	"server.library.resolution": "रिज़ॉल्यूशन",
+	"server.library.size": "साइज़",
+	"server.library.source": "सोर्स",
+	"server.library.unreadable-pattern": "पढ़ने में न आने वाला पैटर्न",
+	"server.library.year": "साल"
 }

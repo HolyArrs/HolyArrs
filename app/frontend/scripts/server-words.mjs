@@ -148,6 +148,11 @@ for (const file of walk(root)) {
 	at(/\b\w*Label:\s*(?=")/g, (i) => add(file, template(expr(src, i))));
 	for (const m of src.matchAll(/var\s+\w*(?:Labels?|Words|Names)\s*=\s*map\[[^\]]+\]string\s*\{([\s\S]*?)\n\}/g))
 		for (const v of m[1].matchAll(/:\s*("(?:[^"\\]|\\.)*")/g)) add(file, str(v[1], 0).text);
+	// Why a synced trait was left out, and the test kinds named with it.
+	at(/\bReason:\s*(?=")/g, (i) => add(file, template(expr(src, i)), true));
+	for (const m of src.matchAll(/var\s+\w*Kinds\s*=\s*map\[[^\]]+\]string\s*\{([\s\S]*?)\n\}/g))
+		for (const v of m[1].matchAll(/:\s*("(?:[^"\\]|\\.)*")/g)) add(file, str(v[1], 0).text, true);
+	for (const v of src.matchAll(/\bbad\["([a-z][a-z ]+)"\]\s*=\s*true/g)) add(file, v[1], true);
 	// Health lines.
 	at(/\bStatusItem\{\s*[^,]+,\s*[^,]+,\s*/g, (i) => add(file, template(expr(src, i))));
 	if (display.test(file)) {

@@ -1203,5 +1203,13 @@
 	"downloads.why.conflict": "Імпорт не вдалося завершити самостійно.",
 	"downloads.why.notReplaced": "Його завантаження видалено поза HolyArrs і не замінюється саме (налаштування).",
 	"downloads.why.notSent": "Жоден завантажувач не зміг його прийняти: перевірте теги тайтла й твої завантажувачі.",
-	"downloads.why.out": "У HolyArrs закінчилися релізи, що відповідають правилам вибору."
+	"downloads.why.out": "У HolyArrs закінчилися релізи, що відповідають правилам вибору.",
+	"downloads.ot.fromTrash": "З TRaSH Guides ({n})",
+	"downloads.ot.syncAgain": "Щоб оновити їх, знову синхронізуйте набір Правил відбору",
+	"downloads.ot.spec": "{name} ({kind})",
+	"downloads.ot.specNot": "не {name} ({kind})",
+	"downloads.ot.kindName": "назва",
+	"downloads.ot.kindGroup": "група",
+	"downloads.ot.kindSource": "джерело",
+	"downloads.ot.kindResolution": "роздільність"
 }

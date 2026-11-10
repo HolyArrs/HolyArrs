@@ -740,5 +740,17 @@
 	"server.subtitles.paused-subtitle-site-until": "已暂停字幕站 {name}，直到 {rfc3339}（{kind}）",
 	"server.subtitles.turned-down-from": "已排除来自 {sitename} 的 {relativepath}",
 	"server.subtitles.unknown-language": "未知语言",
-	"server.suggest.sci-fi": "科幻"
+	"server.suggest.sci-fi": "科幻",
+	"server.library.indexer-flag": "索引器标记",
+	"server.library.it-tests-something-holyarrs-cannot-test": "它检测的内容 HolyArrs 还无法检测",
+	"server.library.language": "语言",
+	"server.library.listed-but-its-file-is-missing": "已列出，但缺少其文件",
+	"server.library.pick-rules-hold-at-most-64": "挑选规则最多包含 64 个特征",
+	"server.library.quality-modifier": "画质修饰",
+	"server.library.release-type": "发布类型",
+	"server.library.resolution": "分辨率",
+	"server.library.size": "大小",
+	"server.library.source": "来源",
+	"server.library.unreadable-pattern": "无法读取的模式",
+	"server.library.year": "年份"
 }

@@ -1203,5 +1203,13 @@
 	"downloads.why.conflict": "इंपोर्ट अपने आप पूरा नहीं हो सका।",
 	"downloads.why.notReplaced": "इसका डाउनलोड HolyArrs के बाहर हटाया गया और अपने आप बदला नहीं जाता (सेटिंग)।",
 	"downloads.why.notSent": "कोई डाउनलोडर इसे ले नहीं सका: टाइटल के टैग और अपने डाउनलोडर जांचें।",
-	"downloads.why.out": "चुनाव के नियमों पर खरी उतरने वाली रिलीज़ HolyArrs के पास खत्म हो गईं।"
+	"downloads.why.out": "चुनाव के नियमों पर खरी उतरने वाली रिलीज़ HolyArrs के पास खत्म हो गईं।",
+	"downloads.ot.fromTrash": "TRaSH Guides से ({n})",
+	"downloads.ot.syncAgain": "इन्हें अपडेट करने के लिए चुनाव के नियमों का एक सेट फिर से सिंक करें",
+	"downloads.ot.spec": "{name} ({kind})",
+	"downloads.ot.specNot": "{name} नहीं ({kind})",
+	"downloads.ot.kindName": "नाम",
+	"downloads.ot.kindGroup": "ग्रुप",
+	"downloads.ot.kindSource": "सोर्स",
+	"downloads.ot.kindResolution": "रिज़ॉल्यूशन"
 }

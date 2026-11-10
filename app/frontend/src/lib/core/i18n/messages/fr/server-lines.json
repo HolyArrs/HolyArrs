@@ -740,5 +740,17 @@
 	"server.subtitles.paused-subtitle-site-until": "Site de sous-titres {name} mis en pause jusqu'à {rfc3339} ({kind})",
 	"server.subtitles.turned-down-from": "{relativepath} de {sitename} écarté",
 	"server.subtitles.unknown-language": "langue inconnue",
-	"server.suggest.sci-fi": "Science-fiction"
+	"server.suggest.sci-fi": "Science-fiction",
+	"server.library.indexer-flag": "indicateur d'indexeur",
+	"server.library.it-tests-something-holyarrs-cannot-test": "il teste quelque chose que HolyArrs ne sait pas encore tester",
+	"server.library.language": "langue",
+	"server.library.listed-but-its-file-is-missing": "listé, mais son fichier manque",
+	"server.library.pick-rules-hold-at-most-64": "Les règles de sélection contiennent au plus 64 critères",
+	"server.library.quality-modifier": "modificateur de qualité",
+	"server.library.release-type": "type de sortie",
+	"server.library.resolution": "résolution",
+	"server.library.size": "taille",
+	"server.library.source": "origine",
+	"server.library.unreadable-pattern": "motif illisible",
+	"server.library.year": "année"
 }

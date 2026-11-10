@@ -740,5 +740,17 @@
 	"server.subtitles.paused-subtitle-site-until": "Untertitel-Seite {name} bis {rfc3339} pausiert ({kind})",
 	"server.subtitles.turned-down-from": "{relativepath} von {sitename} verworfen",
 	"server.subtitles.unknown-language": "unbekannte Sprache",
-	"server.suggest.sci-fi": "Sci-Fi"
+	"server.suggest.sci-fi": "Sci-Fi",
+	"server.library.indexer-flag": "Indexer-Markierung",
+	"server.library.it-tests-something-holyarrs-cannot-test": "es prüft etwas, das HolyArrs noch nicht prüfen kann",
+	"server.library.language": "Sprache",
+	"server.library.listed-but-its-file-is-missing": "gelistet, aber die Datei fehlt",
+	"server.library.pick-rules-hold-at-most-64": "Auswahlregeln fassen höchstens 64 Merkmale",
+	"server.library.quality-modifier": "Qualitätszusatz",
+	"server.library.release-type": "Release-Art",
+	"server.library.resolution": "Auflösung",
+	"server.library.size": "Größe",
+	"server.library.source": "Herkunft",
+	"server.library.unreadable-pattern": "unlesbares Muster",
+	"server.library.year": "Jahr"
 }

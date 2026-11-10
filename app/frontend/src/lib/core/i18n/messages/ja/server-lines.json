@@ -740,5 +740,17 @@
 	"server.subtitles.paused-subtitle-site-until": "字幕サイト {name} を {rfc3339} まで一時停止しました({kind})",
 	"server.subtitles.turned-down-from": "{sitename} の {relativepath} を不採用にしました",
 	"server.subtitles.unknown-language": "不明な言語",
-	"server.suggest.sci-fi": "SF"
+	"server.suggest.sci-fi": "SF",
+	"server.library.indexer-flag": "インデクサーのフラグ",
+	"server.library.it-tests-something-holyarrs-cannot-test": "HolyArrs がまだ判定できない内容を判定します",
+	"server.library.language": "言語",
+	"server.library.listed-but-its-file-is-missing": "一覧にありますが、ファイルがありません",
+	"server.library.pick-rules-hold-at-most-64": "選定ルールに入る特性は最大 64 個です",
+	"server.library.quality-modifier": "画質の修飾",
+	"server.library.release-type": "リリースの種類",
+	"server.library.resolution": "解像度",
+	"server.library.size": "サイズ",
+	"server.library.source": "ソース",
+	"server.library.unreadable-pattern": "読めないパターン",
+	"server.library.year": "年"
 }

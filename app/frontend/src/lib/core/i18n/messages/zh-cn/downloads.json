@@ -1203,5 +1203,13 @@
 	"downloads.why.conflict": "导入无法自行完成。",
 	"downloads.why.notReplaced": "它的下载在 HolyArrs 之外被移除，且不会自动替换（设置）。",
 	"downloads.why.notSent": "没有下载器能接收它：请检查该条目的标签和你的下载器。",
-	"downloads.why.out": "符合挑选规则的资源已经用完了。"
+	"downloads.why.out": "符合挑选规则的资源已经用完了。",
+	"downloads.ot.fromTrash": "来自 TRaSH Guides（{n}）",
+	"downloads.ot.syncAgain": "再次同步一组挑选规则即可更新这些特征",
+	"downloads.ot.spec": "{name}（{kind}）",
+	"downloads.ot.specNot": "非 {name}（{kind}）",
+	"downloads.ot.kindName": "名称",
+	"downloads.ot.kindGroup": "组",
+	"downloads.ot.kindSource": "来源",
+	"downloads.ot.kindResolution": "分辨率"
 }

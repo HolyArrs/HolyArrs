@@ -1203,5 +1203,13 @@
 	"downloads.why.conflict": "تعذّر إكمال الاستيراد بمفرده.",
 	"downloads.why.notReplaced": "أُزيل تنزيله خارج HolyArrs ولا يُستبدل تلقائيًا (إعداد).",
 	"downloads.why.notSent": "لم يستطع أي برنامج تنزيل قبوله: تحقق من وسوم العمل وبرامج التنزيل لديك.",
-	"downloads.why.out": "نفدت الإصدارات التي تجتاز قواعد الاختيار لدى HolyArrs."
+	"downloads.why.out": "نفدت الإصدارات التي تجتاز قواعد الاختيار لدى HolyArrs.",
+	"downloads.ot.fromTrash": "من TRaSH Guides ‏({n})",
+	"downloads.ot.syncAgain": "زامِن مجموعة من قواعد الاختيار مرة أخرى لتحديث هذه السمات",
+	"downloads.ot.spec": "{name} ‏({kind})",
+	"downloads.ot.specNot": "ليس {name} ‏({kind})",
+	"downloads.ot.kindName": "الاسم",
+	"downloads.ot.kindGroup": "المجموعة",
+	"downloads.ot.kindSource": "المصدر",
+	"downloads.ot.kindResolution": "الدقة"
 }

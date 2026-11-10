@@ -1203,5 +1203,13 @@
 	"downloads.why.conflict": "La importación no pudo terminar por sí sola.",
 	"downloads.why.notReplaced": "Su descarga se quitó fuera de HolyArrs y no se reemplaza sola (ajuste).",
 	"downloads.why.notSent": "Ningún gestor de descargas pudo aceptarla: revisa las etiquetas del título y tus gestores de descargas.",
-	"downloads.why.out": "A HolyArrs se le acabaron los lanzamientos que cumplen las Reglas de elección."
+	"downloads.why.out": "A HolyArrs se le acabaron los lanzamientos que cumplen las Reglas de elección.",
+	"downloads.ot.fromTrash": "De TRaSH Guides ({n})",
+	"downloads.ot.syncAgain": "Vuelve a sincronizar un conjunto de Reglas de elección para actualizarlos",
+	"downloads.ot.spec": "{name} ({kind})",
+	"downloads.ot.specNot": "no {name} ({kind})",
+	"downloads.ot.kindName": "nombre",
+	"downloads.ot.kindGroup": "grupo",
+	"downloads.ot.kindSource": "origen",
+	"downloads.ot.kindResolution": "resolución"
 }

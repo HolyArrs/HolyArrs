@@ -1203,5 +1203,13 @@
 	"downloads.why.conflict": "Импорт не удалось завершить самостоятельно.",
 	"downloads.why.notReplaced": "Её загрузка была удалена вне HolyArrs и не заменяется сама (настройка).",
 	"downloads.why.notSent": "Ни один загрузчик не смог её принять: проверьте теги тайтла и ваши загрузчики.",
-	"downloads.why.out": "У HolyArrs закончились релизы, проходящие по правилам отбора."
+	"downloads.why.out": "У HolyArrs закончились релизы, проходящие по правилам отбора.",
+	"downloads.ot.fromTrash": "Из TRaSH Guides ({n})",
+	"downloads.ot.syncAgain": "Чтобы обновить их, снова синхронизируйте набор Правил отбора",
+	"downloads.ot.spec": "{name} ({kind})",
+	"downloads.ot.specNot": "не {name} ({kind})",
+	"downloads.ot.kindName": "название",
+	"downloads.ot.kindGroup": "группа",
+	"downloads.ot.kindSource": "источник",
+	"downloads.ot.kindResolution": "разрешение"
 }

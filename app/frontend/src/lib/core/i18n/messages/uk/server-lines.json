@@ -740,5 +740,17 @@
 	"server.subtitles.paused-subtitle-site-until": "Сайт субтитрів {name} призупинено до {rfc3339} ({kind})",
 	"server.subtitles.turned-down-from": "Відкинуто {relativepath} з {sitename}",
 	"server.subtitles.unknown-language": "невідома мова",
-	"server.suggest.sci-fi": "Фантастика"
+	"server.suggest.sci-fi": "Фантастика",
+	"server.library.indexer-flag": "позначка індексатора",
+	"server.library.it-tests-something-holyarrs-cannot-test": "перевіряє те, що HolyArrs поки не вміє перевіряти",
+	"server.library.language": "мова",
+	"server.library.listed-but-its-file-is-missing": "є в списку, але його файлу немає",
+	"server.library.pick-rules-hold-at-most-64": "Правила відбору вміщують не більше 64 ознак",
+	"server.library.quality-modifier": "модифікатор якості",
+	"server.library.release-type": "тип релізу",
+	"server.library.resolution": "роздільність",
+	"server.library.size": "розмір",
+	"server.library.source": "джерело",
+	"server.library.unreadable-pattern": "нечитабельний шаблон",
+	"server.library.year": "рік"
 }

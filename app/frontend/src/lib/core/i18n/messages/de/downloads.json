@@ -1204,6 +1204,13 @@
 	"downloads.why.conflict": "Der Import konnte nicht allein abgeschlossen werden.",
 	"downloads.why.notReplaced": "Sein Download wurde außerhalb von HolyArrs entfernt und wird nicht von selbst ersetzt (Einstellung).",
 	"downloads.why.notSent": "Kein Downloader konnte es annehmen: Prüf die Tags am Titel und deine Downloader.",
-	"downloads.why.out": "HolyArrs hat keine Releases mehr, die die Auswahlregeln erfüllen."
-
+	"downloads.why.out": "HolyArrs hat keine Releases mehr, die die Auswahlregeln erfüllen.",
+	"downloads.ot.fromTrash": "Aus TRaSH Guides ({n})",
+	"downloads.ot.syncAgain": "Synchronisiere einen Satz Auswahlregeln erneut, um diese zu aktualisieren",
+	"downloads.ot.spec": "{name} ({kind})",
+	"downloads.ot.specNot": "nicht {name} ({kind})",
+	"downloads.ot.kindName": "Name",
+	"downloads.ot.kindGroup": "Gruppe",
+	"downloads.ot.kindSource": "Herkunft",
+	"downloads.ot.kindResolution": "Auflösung"
 }
