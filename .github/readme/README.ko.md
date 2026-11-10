@@ -12,6 +12,7 @@
 <p align="center">
   <a href="https://github.com/HolyArrs/HolyArrs/actions/workflows/build.yml"><img src="https://img.shields.io/github/actions/workflow/status/HolyArrs/HolyArrs/build.yml?branch=main&style=flat-square&logo=github&logoColor=white&label=build" alt="Build"></a>
   <a href="https://scorecard.dev/viewer/?uri=github.com/HolyArrs/HolyArrs"><img src="https://img.shields.io/ossf-scorecard/github.com/HolyArrs/HolyArrs?style=flat-square&label=scorecard" alt="OpenSSF Scorecard"></a>
+  <a href="https://www.bestpractices.dev/projects/16513"><img src="https://img.shields.io/cii/level/16513?style=flat-square&label=best%20practices" alt="OpenSSF Best Practices"></a>
   <a href="https://hub.docker.com/r/holyarrs/holyarrs/tags"><img src="https://img.shields.io/docker/v/holyarrs/holyarrs?sort=semver&style=flat-square&logo=docker&logoColor=white&label=version&color=3b82f6" alt="버전"></a>
   <a href="../../LICENSE"><img src="https://img.shields.io/badge/licence-AGPL--3.0-3b82f6?style=flat-square" alt="라이선스: AGPL-3.0"></a>
 </p>
@@ -199,7 +200,7 @@ NAS를 쓰세요? [Unraid, Synology 및 기타 NAS](https://docs.HolyArrs.com/ru
 | 태그 | 용도 |
 | :----: | --- |
 | `latest` | 최신 릴리스. |
-| `1.0.3` | 정확히 한 버전이에요. 절대 움직이지 않아요. |
+| `1.0.4` | 정확히 한 버전이에요. 절대 움직이지 않아요. |
 
 ## 사용법
 
