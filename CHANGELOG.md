@@ -2,6 +2,12 @@
 
 All notable changes to HolyArrs are listed here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## 1.0.4
+
+### Changed
+
+- Build tools updated to clear a reported advisory; nothing in the app itself changes. ([#169](https://github.com/HolyArrs/HolyArrs/issues/169))
+
 ## 1.0.3
 
 ### Added
