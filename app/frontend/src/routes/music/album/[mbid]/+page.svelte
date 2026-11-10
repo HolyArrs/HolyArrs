@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { t } from '#lib/core/i18n/i18n.svelte.ts';
+	import { t, appLocale } from '#lib/core/i18n/i18n.svelte.ts';
 	import { dragScroll } from '#lib/ui/drag-scroll.ts';
 	import PageLoader from '#lib/ui/PageLoader.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
@@ -169,7 +169,7 @@
 	const released = $derived.by(() => {
 		const d = data?.release_date;
 		if (!d || !/^\d{4}-\d{2}-\d{2}$/.test(d)) return d ?? '';
-		return new Date(`${d}T12:00:00`).toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' });
+		return new Date(`${d}T12:00:00`).toLocaleDateString(appLocale(), { day: 'numeric', month: 'long', year: 'numeric' });
 	});
 	let showEditions = $state(false);
 	// Follow the artist (in the Library): a round bell beside the main action, so both sides match.

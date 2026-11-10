@@ -1,5 +1,6 @@
 <!-- Confirm sheet for deleting a title, with a dry-run preview of what will happen. -->
 <script lang="ts">
+	import Words from '#lib/ui/Words.svelte';
 	import { untrack } from 'svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import { deleteSummary, type RemovePlan } from './organise.ts';
@@ -96,7 +97,7 @@
 
 		{#if files}
 			<label class="ds-type">
-				<span>{t('mediafiles.delete.type', { name })}</span>
+				<span><Words key="mediafiles.delete.type" vars={{ name }} /></span>
 				<input bind:value={typed} autocomplete="off" spellcheck="false" placeholder={name} />
 			</label>
 		{/if}

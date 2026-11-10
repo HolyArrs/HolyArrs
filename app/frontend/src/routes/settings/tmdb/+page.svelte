@@ -1,10 +1,11 @@
 <script lang="ts">
+	import Words from '#lib/ui/Words.svelte';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
-	import { checkMetadata, metadataHealth, METADATA_DOWN } from '#lib/metadata/index.ts';
+	import { checkMetadata, metadataHealth, metadataDownText } from '#lib/metadata/index.ts';
 	import { onMount } from 'svelte';
 	import { to } from '#lib/core/paths.ts';
 
@@ -32,7 +33,7 @@
 {:else}
 	<SettingsCard id="metadata-card" title={t('settings.tmdb.server')}>
 		<div class="srow">
-			<div class="txt"><span class="label">{metadataHealth.up ? t('settings.tmdb.connected') : t('settings.tmdb.notAnswering')}</span>{#if !metadataHealth.up}<span class="hint" role="status">{METADATA_DOWN}</span>{/if}</div>
+			<div class="txt"><span class="label">{metadataHealth.up ? t('settings.tmdb.connected') : t('settings.tmdb.notAnswering')}</span>{#if !metadataHealth.up}<span class="hint" role="status">{metadataDownText()}</span>{/if}</div>
 			<div class="ctl state">
 				<span class="st" class:fail={!metadataHealth.up}><i></i>{metadataHealth.up ? t('settings.tmdb.answering') : t('settings.tmdb.down')}</span>
 				<Button variant="secondary" size="sm" onclick={recheck} disabled={checking} aria-busy={checking}>{t('settings.tmdb.checkAgain')}</Button>
@@ -46,8 +47,8 @@
 			<li><b>{t('settings.tmdb.tokenLabel')}</b> {t('settings.tmdb.tokenText')}</li>
 			<li><b>{t('settings.tmdb.lookup')}</b> {t('settings.tmdb.lookupText')}</li>
 			<li><b>{t('settings.tmdb.display')}</b> {t('settings.tmdb.displayText')}</li>
-			<li><b>{t('settings.tmdb.headers')}</b> <code>Accept</code>, <code>Cache-Control</code>, <code>If-None-Match</code> {t('settings.tmdb.headersAnd')} <code>X-Fetch: ahead</code> {t('settings.tmdb.headersAhead')}</li>
-			<li><b>{t('settings.tmdb.country')}</b> {t('settings.tmdb.countryA')} <a href={to('/settings/this-app') + '#count-install'}>{t('settings.tmdb.countryLink')}</a> {t('settings.tmdb.countryB')} <code>X-Country-Count: off</code>.</li>
+			<li><b>{t('settings.tmdb.headers')}</b> <Words key="settings.tmdb.headersText" /></li>
+			<li><b>{t('settings.tmdb.country')}</b> <Words key="settings.tmdb.countryText" links={{ a: to('/settings/this-app') + '#count-install' }} /></li>
 		</ul>
 	</SettingsCard>
 
@@ -66,7 +67,7 @@
 	.sent > li { padding: 13px 0; color: var(--text-muted); font: var(--t-subhead); font-size: 14px; }
 	.sent > li + li { box-shadow: inset 0 1px 0 var(--line); }
 	.sent b { color: var(--text); font-weight: 600; }
-	.sent code { font-size: .9em; overflow-wrap: anywhere; }
+	.sent :global(code) { font-size: .9em; overflow-wrap: anywhere; }
 	.state { display: flex; align-items: center; gap: 14px; }
 	.st { display: inline-flex; align-items: center; gap: 6px; color: var(--text-muted); font: 500 13px/1 var(--font-ui); }
 	.st i { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 18%, transparent); }

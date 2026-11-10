@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { t } from '#lib/core/i18n/i18n.svelte.ts';
+	import { t, startLang } from '#lib/core/i18n/i18n.svelte.ts';
 	import { resolve } from '$app/paths';
 	import { personName } from '#lib/core/plain.ts';
 	import { setBase } from '#lib/core/paths.ts';
@@ -15,7 +15,7 @@
 	import Theater from './(frame)/Theater.svelte';
 	import { theater } from '#lib/core/trailer/theater.svelte.ts';
 	import { session } from '#lib/core/session.svelte.ts';
-	import { keepPersonPic, theme, setTheme, type ThemeChoice, backdrop } from '#lib/accounts/index.ts';
+	import { keepPersonPic, theme, setTheme, type ThemeChoice, backdrop, loadProfile, forgetProfile } from '#lib/accounts/index.ts';
 	import { live } from '#lib/core/live.svelte.ts';
 	import { dlPush, decisions, refreshDecisions, activeDownloads, refreshActiveDownloads, resetActiveDownloads, dlTop } from '#lib/downloads/index.ts';
 	import { alertsPanel, toasts } from '#lib/core/toasts.svelte.ts';
@@ -55,6 +55,9 @@
 	} from './(frame)/nav.ts';
 
 	let { children }: { children: Snippet } = $props();
+
+	// The saved or browser language, before the first page draws (English is already in the bundle).
+	void startLang();
 
 	function allowed(need: Need): boolean {
 		if (need === null) return true;
@@ -180,6 +183,11 @@
 	// Keep the sign-in page's copy of my picture current (only if this device remembers me).
 	$effect(() => {
 		if (session.s.state === 'signed_in') void keepPersonPic(session.s.name, session.s.avatar);
+	});
+	// After sign-in the account's own language (if one is saved) wins over this browser's.
+	$effect(() => {
+		if (session.s.state === 'signed_in' && session.s.id != null) void loadProfile();
+		else if (session.s.state === 'signed_out') forgetProfile();
 	});
 	onMount(installArtistVideoPrefetch);
 	onMount(() => installHeroPrefetch(preloadHero));

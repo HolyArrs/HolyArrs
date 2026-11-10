@@ -8,7 +8,7 @@ import { askArtist, askDetails } from './details.svelte.ts';
 import { profile } from '#lib/accounts/index.ts';
 import { seasonWords } from '#lib/shows/index.ts';
 import { albumWords } from '#lib/music/index.ts';
-import { decided as decidedRaw } from '#lib/core/plain.ts';
+import { decided as decidedRaw, decidedWho } from '#lib/core/plain.ts';
 import { to } from '#lib/core/paths.ts';
 import { ago } from '#lib/core/format.ts';
 import type { TitleLive } from './live.ts';
@@ -38,6 +38,8 @@ export function createAskCards(ctx: { approver: boolean; titleLive: Map<number, 
 	const plain = (text: string) => text.replace(/[\w.-]+/g, (w) => (/\d/.test(w) && /\p{L}/u.test(w) && looksLikeId(w) ? t('requests.cards.someone') : w));
 	const askedBy = (a: Ask) => plain(askedByRaw(a));
 	const decided = (a: Ask) => plain(decidedRaw(a, session.s.id != null ? { id: session.s.id, displayName: profile.displayName } : undefined) ?? '');
+	/** Just the name of who settled it (empty while open), for lines that word it themselves. */
+	const decidedBy = (a: Ask) => plain(decidedWho(a, session.s.id != null ? { id: session.s.id, displayName: profile.displayName } : undefined));
 	const alsoDeclined = (a: Ask) => plain(alsoDeclinedRaw(a, session.s.id != null ? { id: session.s.id, displayName: profile.displayName } : undefined));
 
 	function year(a: Ask) {
@@ -104,6 +106,7 @@ export function createAskCards(ctx: { approver: boolean; titleLive: Map<number, 
 
 	return {
 		decided,
+		decidedBy,
 		plain,
 		what,
 		year,

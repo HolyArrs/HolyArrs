@@ -1,5 +1,5 @@
 // Content of the History details panel, shared by the desktop pane and the phone sheet: the step mark, title, meta line, art, a download's steps, one line of new facts, the facts, and where to go.
-import { t as say, lang } from '#lib/core/i18n/i18n.svelte.ts';
+import { t as say, lang, appLocale } from '#lib/core/i18n/i18n.svelte.ts';
 import { artOf, byWhom, clock, dayKey, titleHref, type Verb } from './history-kinds.ts';
 import { cap, episodeBits, missingLine, folderGone, folderName, plainWhy, resolutionOf, rowText, type LineContext } from './history-lines.ts';
 import { canFind, filterVerb, rowLinks, type GoLink } from './history-search.ts';
@@ -53,7 +53,7 @@ type Label = Fact['label'];
 const str = (v: unknown) => (typeof v === 'string' ? v.trim() : '');
 const num = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : 0);
 const join = (...parts: (string | false | null | undefined)[]) => parts.filter(Boolean).join(' · ');
-const count = (n: number) => n.toLocaleString('en-US');
+const count = (n: number) => n.toLocaleString(appLocale('en-US'));
 const plural = (n: number, one: string) => say(`downloads.hl.pl.${one}.${n === 1 ? 'one' : 'other'}`, { count: count(n) });
 const problemWords: Record<string, string> = {
 	get picture() { return say('downloads.hl.problem.picture'); },
@@ -91,7 +91,7 @@ export function whenText(at: string, now = new Date()): { text: string; ago: str
 		return { text: say('downloads.hp.todayAt', { time: clock(at) }), ago };
 	}
 	if (k === dayKey(y.toISOString())) return { text: say('downloads.hp.yesterdayAt', { time: clock(at) }), ago: '' };
-	const day = t.toLocaleDateString(lang.value === 'en' ? 'en-US' : lang.value, { month: 'short', day: 'numeric', ...(t.getFullYear() !== now.getFullYear() ? { year: 'numeric' } : {}) });
+	const day = t.toLocaleDateString(appLocale('en-US'), { month: 'short', day: 'numeric', ...(t.getFullYear() !== now.getFullYear() ? { year: 'numeric' } : {}) });
 	return { text: say('downloads.hp.dayAt', { day, time: clock(at) }), ago: '' };
 }
 

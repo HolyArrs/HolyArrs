@@ -1,7 +1,7 @@
 import type { SourceHealth } from './types.ts';
 import type { Tone } from '../core/format.ts';
 import { healthWords, sourceTone } from './api.ts';
-import { t } from '#lib/core/i18n/i18n.svelte.ts';
+import { t, appLocale } from '#lib/core/i18n/i18n.svelte.ts';
 
 export const reasonWords: Record<NonNullable<SourceHealth['reason']>, string> = {
 	get slowed() { return t('sources.reason.slowed'); },
@@ -24,5 +24,5 @@ export function healthTone(h: Pick<SourceHealth, 'state' | 'reason'>): Tone {
 export function pausedUntil(h: Pick<SourceHealth, 'until'>): string {
 	if (!h.until) return '';
 	const when = new Date(h.until);
-	return Number.isNaN(when.getTime()) ? '' : t('sources.pausedUntil', { time: when.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) });
+	return Number.isNaN(when.getTime()) ? '' : t('sources.pausedUntil', { time: when.toLocaleTimeString(appLocale(), { hour: '2-digit', minute: '2-digit' }) });
 }

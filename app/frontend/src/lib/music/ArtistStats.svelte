@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Words from '#lib/ui/Words.svelte';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import Button from '#lib/ui/Button.svelte';
 	import { aboutSize, changeWords, shortCount, listening } from './music-pages.ts';
@@ -23,7 +24,7 @@
 		{#if listen}
 			<p class="st1">
 				<span><b>{shortCount(listen.n)}</b> {listen.unit}</span>
-				{#if listen.rank}<span><b>#{listen.rank}</b> {t('music.inTheWorld')}</span>{/if}
+				{#if listen.rank}<span><Words key="music.rankInWorld" vars={{ rank: listen.rank }} /></span>{/if}
 				{#if listen.today}<span class="chg" class:up class:down={!up}>{changeWords(listen.today)}</span>{/if}
 			</p>
 		{/if}
@@ -50,7 +51,7 @@
 	.stats p > span { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
 	.stats p > span + span::before { content: '·'; margin: 0 14px; color: var(--text-faint); }
 	.st1 { font: 500 20px/1.35 var(--font-ui); color: var(--text-muted); }
-	.st1 b { color: var(--text); font-weight: 700; }
+	.st1 :global(b) { color: var(--text); font-weight: 700; }
 	.chg.up { color: var(--ok-text); font-weight: 600; }
 	.chg.down { color: var(--fail-text); font-weight: 600; }
 	/* On the artist colour, use light tones that read on any deep page colour. */

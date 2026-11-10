@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Words from '#lib/ui/Words.svelte';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import Button from '#lib/ui/Button.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
@@ -293,7 +294,7 @@
 									{#if setup.qr?.length}
 										{t('accounts.security.scan')}
 										<QrCode rows={setup.qr} label={t('accounts.security.qr')} />
-										{t('accounts.security.orBefore')} <a class="ul" href={setup.uri}>{t('accounts.security.openApp')}</a>{t('accounts.security.orAfter')}
+										<Words key="accounts.security.orOpenApp" links={{ a: setup.uri }} linkClass="ul" />
 									{:else}
 										{t('accounts.security.addBefore')} (<a class="ul" href={setup.uri}>{t('accounts.security.openAppShort')}</a>){t('accounts.security.addAfter')}
 									{/if}

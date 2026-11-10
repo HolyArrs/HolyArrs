@@ -97,8 +97,9 @@
 					const i = asks.findIndex((x) => x.id === id);
 					if (i >= 0) asks[i] = now;
 				}
-				const m = /^(Declined|Approved) by (.+)$/.exec(now ? askCards.decided(now) : '');
-				toasts.push(m ? t(m[1] === 'Declined' ? 'requests.page.alreadyDeclined' : 'requests.page.alreadyApproved', { name }) : t('requests.page.alreadyAnswered', { name }), 'info', m ? { body: t('requests.board.by', { name: m[2] }) } : {});
+				const declined = now?.state === 'turned_down';
+				const by = now && (declined || !now.auto_approved) ? askCards.decidedBy(now) : '';
+				toasts.push(by ? t(declined ? 'requests.page.alreadyDeclined' : 'requests.page.alreadyApproved', { name }) : t('requests.page.alreadyAnswered', { name }), 'info', by ? { body: t('requests.board.by', { name: by }) } : {});
 				return;
 			}
 			toasts.push(t(p.mode === 'approve' ? 'requests.page.couldNotApprove' : 'requests.page.couldNotDecline', { name }), 'fail', { body: message(err), action: { label: t('requests.board.requests'), run: () => void goto(to(`/requests?ask=${id}`)) } });
@@ -397,6 +398,7 @@
 		year: askCards.year,
 		askedBy: askCards.askedBy,
 		decided: askCards.decided,
+		decidedBy: askCards.decidedBy,
 		alsoDeclined: askCards.alsoDeclined,
 		pill: askCards.askPill,
 		approvedLine: askCards.approvedLine,

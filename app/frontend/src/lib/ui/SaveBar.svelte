@@ -82,7 +82,7 @@
 	}
 	.words { display: inline-flex; align-items: center; gap: 8px; font: var(--t-callout); font-weight: 600; }
 	i { width: 8px; height: 8px; border-radius: 50%; background: var(--wait); }
-	.acts { display: flex; gap: 8px; margin-left: auto; }
+	.acts { display: flex; gap: 8px; margin-inline-start: auto; }
 	@keyframes rise { from { opacity: 0; transform: translateY(12px); } }
 	/* Sit above the mobile tab bar. */
 	@media (max-width: 767px) {

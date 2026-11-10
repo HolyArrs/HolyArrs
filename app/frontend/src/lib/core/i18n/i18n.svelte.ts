@@ -1,6 +1,6 @@
 // The app's words in the person's language. English ships in the bundle; other languages load when picked, and any missing line falls back to English.
 
-export type Locale = 'en' | 'es' | 'pt-br' | 'fr' | 'de' | 'ru' | 'zh-cn' | 'ja' | 'ko' | 'hi' | 'ar';
+export type Locale = 'en' | 'es' | 'pt-br' | 'fr' | 'de' | 'ru' | 'uk' | 'zh-cn' | 'ja' | 'ko' | 'hi' | 'ar';
 export type LocaleChoice = Locale | 'auto';
 
 /** Each language named in itself, in the same order as holyarrs.com. */
@@ -11,6 +11,7 @@ export const LOCALES: { code: Locale; name: string }[] = [
 	{ code: 'fr', name: 'Français' },
 	{ code: 'de', name: 'Deutsch' },
 	{ code: 'ru', name: 'Русский' },
+	{ code: 'uk', name: 'Українська' },
 	{ code: 'zh-cn', name: '简体中文' },
 	{ code: 'ja', name: '日本語' },
 	{ code: 'ko', name: '한국어' },
@@ -35,6 +36,19 @@ export const lang = $state<{ value: Locale; choice: LocaleChoice; words: Record<
 export function t(key: string, vars?: Record<string, string | number>): string {
 	const line = lang.words[key] ?? en[key] ?? key;
 	return vars ? line.replace(/\{(\w+)\}/g, (m, k) => (k in vars ? String(vars[k]) : m)) : line;
+}
+
+/** The BCP-47 tag for dates and numbers in the app's language. English keeps the browser's own English (en-GB stays en-GB), or `en` when given. */
+export function appLocale(en?: string): string | undefined {
+	if (lang.value === 'en') {
+		const b = typeof navigator === 'undefined' ? '' : navigator.language ?? '';
+		return en ?? (b.toLowerCase().startsWith('en') ? b : 'en');
+	}
+	return bcp47(lang.value);
+}
+
+function bcp47(l: Locale): string {
+	return l === 'pt-br' ? 'pt-BR' : l === 'zh-cn' ? 'zh-CN' : l;
 }
 
 /** Picks a language; 'auto' follows the browser. Saved in this browser so the first paint is right. */
@@ -85,7 +99,7 @@ async function use(l: Locale): Promise<void> {
 	lang.value = l;
 	lang.words = words;
 	if (typeof document !== 'undefined') {
-		document.documentElement.lang = l === 'pt-br' ? 'pt-BR' : l === 'zh-cn' ? 'zh-CN' : l;
+		document.documentElement.lang = bcp47(l);
 		document.documentElement.dir = RTL.has(l) ? 'rtl' : 'ltr';
 	}
 }

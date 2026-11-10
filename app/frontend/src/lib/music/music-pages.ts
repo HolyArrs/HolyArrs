@@ -1,7 +1,7 @@
 // The artist and album pages: types, links and the small rules they share.
 import { to } from '../core/paths.ts';
 import { appPicture, coverFor, coverSize } from '../core/pictures.ts';
-import { t, lang } from '#lib/core/i18n/i18n.svelte.ts';
+import { t, lang, appLocale } from '#lib/core/i18n/i18n.svelte.ts';
 
 export type PageAlbumState = 'complete' | 'partial' | 'missing' | 'downloading' | 'not_out_yet' | 'not_included' | '';
 export type Shelf = 'albums' | 'singles' | 'compilations' | 'live' | 'other';
@@ -233,7 +233,7 @@ export function changeWords(d: number | undefined | null, tail?: string): string
 
 /** Writes 72785924 as 72,785,924. */
 export function fullCount(n: number): string {
-	return Math.round(n).toLocaleString('en-US');
+	return Math.round(n).toLocaleString(appLocale('en-US'));
 }
 
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;

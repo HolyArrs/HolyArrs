@@ -31,6 +31,8 @@
 	.ui-progress { display: flex; align-items: center; gap: 8px; min-width: 0; }
 	.track { position: relative; flex: 1; height: 6px; border-radius: 3px; background: var(--surface-3); overflow: hidden; }
 	.sm .track { height: 4px; border-radius: 2px; }
+	/* Right-to-left: the fill grows from the right. */
+	:global([dir='rtl']) .track { transform: scaleX(-1); }
 	.art .track { background: rgb(255 255 255 / 28%); }
 	/* The fill slides in from the left instead of resizing, which is cheaper to animate. */
 	i { position: absolute; inset: 0; border-radius: inherit; background: var(--accent); transition: transform var(--dur-slow) var(--ease-out), background var(--dur) var(--ease-out); }
@@ -38,7 +40,7 @@
 	i.ok { background: var(--ok); }
 	.tick { width: 18px; height: 18px; display: grid; place-items: center; border-radius: 50%; background: var(--ok); color: var(--on-art); animation: pulse var(--dur-slow) var(--ease-out) 1; }
 	.sm .tick { width: 15px; height: 15px; }
-	.val { min-width: 3.2ch; text-align: right; color: var(--text-muted); font: var(--t-footnote); font-variant-numeric: tabular-nums; }
+	.val { min-width: 3.2ch; text-align: end; color: var(--text-muted); font: var(--t-footnote); font-variant-numeric: tabular-nums; }
 	.art .val { color: var(--on-art); }
 	@keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.15); } 100% { transform: scale(1); } }
 </style>

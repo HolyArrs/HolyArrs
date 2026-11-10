@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Words from '#lib/ui/Words.svelte';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
@@ -252,7 +253,7 @@
 	{#if loops.length}
 		<section class="sched-group" aria-labelledby="sg-loops" data-testid="loops">
 			<h2 id="sg-loops" class="group-head">{t('settings.schedules.stages')}</h2>
-			<p class="group-about">{t('settings.schedules.stagesNoteA')} <a href={to('/settings/parts')}>{t('settings.schedules.parts')}</a>{t('settings.schedules.stagesNoteB')}</p>
+			<p class="group-about"><Words key="settings.schedules.stagesNote" links={{ a: to('/settings/parts') }} /></p>
 			<div class="s-card sched-card">
 				<ul>
 					{#each loops as l (l.key)}
@@ -286,7 +287,7 @@
 	.sched-group + .sched-group, .groups + .sched-group { margin-top: 22px; }
 	.group-head { padding: 0 6px 6px; font: var(--t-footnote); font-weight: 600; letter-spacing: 0.01em; color: var(--text-muted); }
 	.group-about { margin: -2px 6px 8px; color: var(--text-muted); font: var(--t-footnote); font-weight: 400; }
-	.group-about a { color: var(--accent-text); font-weight: 600; }
+	.group-about :global(a) { color: var(--accent-text); font-weight: 600; }
 	.s-card { margin: 0; padding: 0; border-radius: var(--r-panel); background: var(--surface-1); box-shadow: 0 0 0 1px var(--line); }
 	.sched-card { container-type: inline-size; overflow: hidden; }
 	.sched-card ul { margin: 0; padding: 0; list-style: none; }

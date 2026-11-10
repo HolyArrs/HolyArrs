@@ -41,6 +41,7 @@ export const entryWords = (entry: SettingEntry): string => (entry.id ? said(`${e
 
 export const settingIndex: SettingEntry[] = [
 	e('/settings/appearance', 'theme', 'Theme', 'appearance light dark automatic mode colours colors night'),
+	e('/settings/appearance', 'language', 'Language', 'language translation locale english words'),
 	e('/settings/appearance', 'autoplay-trailers', 'Play trailers by themselves', 'autoplay trailers video explore muted'),
 	e('/settings/appearance', 'signin-art', 'Show Library art on the sign-in page', 'sign-in login page background posters art'),
 	e('/settings/appearance', 'row-titles-card', 'Explore row titles', 'explore rows titles names layers taste'),

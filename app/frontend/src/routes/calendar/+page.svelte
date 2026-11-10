@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { t } from '#lib/core/i18n/i18n.svelte.ts';
+	import { t, appLocale } from '#lib/core/i18n/i18n.svelte.ts';
 	import { createCalendarScroll, type CalendarAnswer } from '#lib/discover/index.ts';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
@@ -81,13 +81,13 @@
 	const agenda = $derived(byDay(shown));
 	const range = $derived({ from: ymd(addDays(start, -1)), to: ymd(addDays(end, 1)) });
 	const rangeName = $derived(
-		`${start.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })} – ${new Date(end.getFullYear(), end.getMonth(), end.getDate() - 1).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}`
+		`${start.toLocaleDateString(appLocale(), { day: 'numeric', month: 'short' })} – ${new Date(end.getFullYear(), end.getMonth(), end.getDate() - 1).toLocaleDateString(appLocale(), { day: 'numeric', month: 'short', year: 'numeric' })}`
 	);
 	// The heading names the week in view (the day at the top of the page), not every day loaded.
 	const viewWeek = $derived.by(() => {
 		const s = weekStart(active ? new Date(active + 'T00:00:00') : (askedMonth ?? now));
 		const e = addDays(s, 6);
-		const f = (d: Date, y: boolean) => d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', ...(y ? { year: 'numeric' } : {}) });
+		const f = (d: Date, y: boolean) => d.toLocaleDateString(appLocale(), { day: 'numeric', month: 'short', ...(y ? { year: 'numeric' } : {}) });
 		return { from: ymd(s), long: `${f(s, false)} – ${f(e, true)}`, short: `${f(s, false)} – ${f(e, false)}` };
 	});
 

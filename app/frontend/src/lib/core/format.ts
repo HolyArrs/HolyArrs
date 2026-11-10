@@ -1,6 +1,6 @@
 // Display helpers that turn raw numbers, dates and states into short text.
 
-import { t } from '#lib/core/i18n/i18n.svelte.ts';
+import { t, appLocale } from '#lib/core/i18n/i18n.svelte.ts';
 export type Tone = 'ok' | 'wait' | 'fail' | 'idle';
 
 // Which tone each backend state shows as; unlisted states read as idle.
@@ -43,14 +43,14 @@ export function date(s: string | null | undefined): string {
 	const d = new Date(s);
 	if (Number.isNaN(d.getTime())) return '';
 	const day = /^\d{4}-\d{2}-\d{2}(T00:00:00(\.0+)?Z)?$/.test(s);
-	return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric', ...(day ? { timeZone: 'UTC' } : {}) });
+	return d.toLocaleDateString(appLocale(), { day: 'numeric', month: 'short', year: 'numeric', ...(day ? { timeZone: 'UTC' } : {}) });
 }
 
 export function dateTime(s: string | null | undefined): string {
 	if (!s) return '';
 	const d = new Date(s);
 	if (Number.isNaN(d.getTime())) return '';
-	return d.toLocaleString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+	return d.toLocaleString(appLocale(), { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 }
 
 // Under 45 seconds reads as now so counts do not flicker.

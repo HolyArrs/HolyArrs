@@ -12,7 +12,7 @@
 	import { api, message } from '#lib/core/api.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { ago, bytes } from '#lib/core/format.ts';
-	import { t } from '#lib/core/i18n/i18n.svelte.ts';
+	import { t, appLocale } from '#lib/core/i18n/i18n.svelte.ts';
 	import type { EventRecord, TitleView } from '#lib/core/types.ts';
 
 	export type SheetEpisode = {
@@ -86,7 +86,7 @@
 			name: String(file.RelativePath ?? '').split(/[\\/]/).pop() ?? '',
 			added: file.AddedAt ? ago(file.AddedAt) : '',
 			res: q.resolution ? `${q.resolution}p` : '',
-			addedOn: ((iso?: string) => { if (!iso) return ''; const d = new Date(iso); return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', ...(d.getFullYear() !== new Date().getFullYear() ? { year: 'numeric' } : {}) }); })(file.AddedAt),
+			addedOn: ((iso?: string) => { if (!iso) return ''; const d = new Date(iso); return d.toLocaleDateString(appLocale(), { month: 'short', day: 'numeric', ...(d.getFullYear() !== new Date().getFullYear() ? { year: 'numeric' } : {}) }); })(file.AddedAt),
 			audio: langs(m.audio_languages),
 			subs: langs(m.subtitle_languages ?? m.subtitles)
 		};
@@ -163,7 +163,7 @@
 	// Eight tags is all the file card has room for.
 	const langs = (v: unknown) => (Array.isArray(v) ? v : []).map((s) => String(s).toUpperCase()).filter(Boolean).slice(0, 8);
 	// Air dates are plain days, so UTC keeps them from shifting a day.
-	const date = (iso?: string) => (iso ? new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }) : '');
+	const date = (iso?: string) => (iso ? new Date(iso).toLocaleDateString(appLocale(), { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }) : '');
 </script>
 
 <Sheet bind:open title={ep ? `${ep.season != null ? `${t('shows.season.named', { n: ep.season })} · ` : ''}${t('shows.list.episodeFallback', { n: ep.episode })}` : t('shows.sheet.episode')} size="md">

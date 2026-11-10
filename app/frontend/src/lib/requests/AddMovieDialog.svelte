@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Words from '#lib/ui/Words.svelte';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import Button from '#lib/ui/Button.svelte';
@@ -112,7 +113,7 @@
 		<form id="add-movie" class="sheet-form" onsubmit={add}>
 			{#if movieFolders.length === 0}
 				<p class="notice warn">
-					{t('requests.add.noFolder.movie')} <a href={to(`/settings/library-folders`)} class="ul">{t('requests.add.addOne')}</a> {t('requests.add.addOneAfter')}
+					<Words key="requests.add.noFolder.movie" links={{ a: to('/settings/library-folders') }} linkClass="ul" />
 				</p>
 			{:else}
 				<div class="field">
@@ -199,6 +200,6 @@
 	.notice.warn { color: var(--text); }
 	.form-error { margin: 8px 0 0; color: var(--fail); font: var(--t-callout); }
 	.more { margin: 12px 0 0; padding: 12px 0 0 16px; border: 0; border-left: 2px solid var(--line-strong); }
-	.ul { text-decoration: underline; color: var(--text); }
+	.notice :global(.ul) { text-decoration: underline; color: var(--text); }
 	.form-sk { display: flex; flex-direction: column; gap: 8px; }
 </style>

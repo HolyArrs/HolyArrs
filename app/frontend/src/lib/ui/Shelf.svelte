@@ -89,8 +89,8 @@
 	function measure() {
 		if (!scroller) return;
 		fit();
-		atStart = scroller.scrollLeft <= 2;
-		atEnd = !more && scroller.scrollLeft + scroller.clientWidth >= scroller.scrollWidth - 2;
+		atStart = Math.abs(scroller.scrollLeft) <= 2;
+		atEnd = !more && Math.abs(scroller.scrollLeft) + scroller.clientWidth >= scroller.scrollWidth - 2;
 		if (items) limit = nextLimit(limit, items.length, scroller);
 	}
 	// Mounts the row when it nears the screen, or when the browser is idle.
@@ -114,7 +114,7 @@
 	function page(dir: 1 | -1) {
 		if (!scroller) return;
 		const step = whole ? scroller.clientWidth + (parseFloat(getComputedStyle(scroller).columnGap) || 0) : scroller.clientWidth * 0.9;
-		scroller.scrollBy({ left: dir * step, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+		scroller.scrollBy({ left: dir * step * (getComputedStyle(scroller).direction === 'rtl' ? -1 : 1), behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
 	}
 </script>
 
@@ -175,8 +175,8 @@
 	.row > :global(*) { scroll-snap-align: start; }
 	.arrow { position: absolute; top: calc(50% - 26px); opacity: 0; transition: opacity var(--dur-fast) var(--ease-out); }
 	.arrow :global(.ui-ibtn) { width: 40px; height: 40px; box-shadow: var(--shadow-lift); background: var(--surface-1); color: var(--text); }
-	.left { left: -12px; }
-	.right { right: -12px; }
+	.left { inset-inline-start: -12px; }
+	.right { inset-inline-end: -12px; }
 	.wrap:hover .arrow:not(.hide) { opacity: 1; }
 	.hide { pointer-events: none; }
 	@media (hover: none) { .arrow { display: none; } }
@@ -187,7 +187,7 @@
 	.whole .row { margin-inline: 0; padding-inline: 0; scroll-padding-inline: 0; grid-auto-columns: calc((100% - (var(--per, 1) - 1) * var(--shelf-gap)) / var(--per, 1)); }
 	.whole .row > :global(*) { width: 100%; min-width: 0; }
 	.whole.few .row { justify-content: center; }
-	.whole .left { left: 4px; }
-	.whole .right { right: 4px; }
+	.whole .left { inset-inline-start: 4px; }
+	.whole .right { inset-inline-end: 4px; }
 	.row:global(.dragging) :global(*) { pointer-events: none; }
 </style>

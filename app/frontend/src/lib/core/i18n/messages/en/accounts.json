@@ -181,9 +181,7 @@
 	"accounts.security.makeCodes": "Make new codes",
 	"accounts.security.scan": "Scan this with your authenticator app:",
 	"accounts.security.qr": "QR code for your authenticator app",
-	"accounts.security.orBefore": "Or",
-	"accounts.security.openApp": "open it in the app",
-	"accounts.security.orAfter": ", or type:",
+	"accounts.security.orOpenApp": "Or <a>open it in the app</a>, or type:",
 	"accounts.security.addBefore": "Add an account in your authenticator app",
 	"accounts.security.openAppShort": "open in the app",
 	"accounts.security.addAfter": " or type:",
@@ -353,8 +351,7 @@
 	"accounts.invite.pwMin": "The password needs at least {n} characters.",
 	"accounts.invite.plexTimeout": "Plex timed out. Try again.",
 	"accounts.invite.join": "Join HolyArrs",
-	"accounts.invite.linked": "This account already has a HolyArrs account.",
-	"accounts.invite.signInInstead": "Sign in instead.",
+	"accounts.invite.linked": "This account already has a HolyArrs account. <a>Sign in instead.</a>",
 	"accounts.invite.gone": "This invite is used up or has ended. Ask for a new one.",
 	"accounts.invite.goSignIn": "Go to sign in",
 	"accounts.invite.signedInAs": "You're signed in as {name}. Sign out to join with this invite.",
@@ -366,5 +363,9 @@
 	"accounts.invite.joinWith": "Join with {way}",
 	"accounts.invite.otherWays": "Other ways to join",
 	"accounts.invite.confirm": "Confirm password",
-	"accounts.invite.joinSignIn": "Join and sign in"
+	"accounts.invite.joinSignIn": "Join and sign in",
+	"accounts.language.label": "Language",
+	"accounts.language.auto": "Automatic",
+	"accounts.language.hint": "Automatic follows your browser. Saved on your account.",
+	"accounts.language.saveFailed": "Couldn't save the language"
 }

@@ -1,6 +1,6 @@
 // New & Popular > Music: the answer and the notes over its hero and rows.
 import type { MusicCardData, MusicRowData } from './music-trending.ts';
-import { t } from '#lib/core/i18n/i18n.svelte.ts';
+import { t, appLocale } from '#lib/core/i18n/i18n.svelte.ts';
 
 /** explicit: explicit lyrics (the "E" mark). track: a Fresh tracks song, whose card asks for its album. */
 export type NewMusicCard = MusicCardData & { badge?: string; following?: boolean; explicit?: boolean; track?: string };
@@ -45,7 +45,7 @@ export function heroNote(c: NewMusicCard, now = new Date()): string {
 /** The small label above a hero card: "New album/EP" only within 60 days of release; otherwise the card's real reason (its chart place, Climbing, Popular now). */
 export function eyebrow(c: NewMusicCard, now = new Date()): string {
 	const d = c.date ? daysAgo(c.date, now) : null;
-	if (d !== null && d < 0 && d >= -6) return t('music.out2', { day: new Date(`${c.date}T00:00:00Z`).toLocaleDateString(undefined, { weekday: 'long', timeZone: 'UTC' }) });
+	if (d !== null && d < 0 && d >= -6) return t('music.out2', { day: new Date(`${c.date}T00:00:00Z`).toLocaleDateString(appLocale(), { weekday: 'long', timeZone: 'UTC' }) });
 	if (isNewRelease(c.date, now)) return c.badge?.startsWith('New') ? c.badge : t('music.newAlbum2');
 	if (c.kicker && !/^new\b/i.test(c.kicker)) return c.kicker;
 	return t('music.popularNow');
@@ -55,7 +55,7 @@ export function eyebrow(c: NewMusicCard, now = new Date()): string {
 export function rowNote(row: Pick<MusicRowData, 'type'>, c: NewMusicCard, now = new Date()): string {
 	if (row.type === 'np_music_coming' && c.date) {
 		const at = new Date(`${c.date}T00:00:00Z`);
-		return [c.artist, t('music.out', { date: at.toLocaleDateString(undefined, { month: 'short', day: 'numeric', timeZone: 'UTC' }) })].filter(Boolean).join(' · ');
+		return [c.artist, t('music.out', { date: at.toLocaleDateString(appLocale(), { month: 'short', day: 'numeric', timeZone: 'UTC' }) })].filter(Boolean).join(' · ');
 	}
 	const d = c.date ? daysAgo(c.date, now) : null;
 	const when = d === null || !c.date ? '' : d <= 0 ? t('music.today2') : d === 1 ? t('music.yesterday') : d <= NEW_DAYS ? t('music.daysAgo', { n: d }) : d <= 365 ? shortDate(c.date) : c.date.slice(0, 4);
@@ -69,7 +69,7 @@ function daysAgo(date: string, now: Date): number | null {
 }
 
 function shortDate(date: string): string {
-	return new Date(`${date}T00:00:00Z`).toLocaleDateString(undefined, { month: 'short', day: 'numeric', timeZone: 'UTC' });
+	return new Date(`${date}T00:00:00Z`).toLocaleDateString(appLocale(), { month: 'short', day: 'numeric', timeZone: 'UTC' });
 }
 
 /** "Released Mar 4" within a year, else "2013 album". */

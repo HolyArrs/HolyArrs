@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { t } from '#lib/core/i18n/i18n.svelte.ts';
+	import { t, appLocale } from '#lib/core/i18n/i18n.svelte.ts';
 	import '#lib/ui/title-page.css';
 	import PageLoader from '#lib/ui/PageLoader.svelte';
 	import TitleHero, { richMetadata, runtimeWords, type RichMeta } from '#lib/ui/TitleHero.svelte';
@@ -257,8 +257,8 @@
 	const picked = $derived(shownRatings(outside, rich?.score ?? scoreOf(details?.rating), ratingPicks.list, !ratingPicks.custom));
 	const hasScores = $derived(picked.scores.length > 0 || !!picked.tmdb);
 	// The second row of facts: dates, where the title stands, studio, money, awards, original title.
-	const fmtDay = (d?: string) => (d ? new Date(`${d}T00:00:00Z`).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' }) : '');
-	const money = (n?: number) => (n ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', notation: 'compact', maximumFractionDigits: 1 }).format(n) : '');
+	const fmtDay = (d?: string) => (d ? new Date(`${d}T00:00:00Z`).toLocaleDateString(appLocale(), { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' }) : '');
+	const money = (n?: number) => (n ? new Intl.NumberFormat(appLocale('en-US'), { style: 'currency', currency: 'USD', notation: 'compact', maximumFractionDigits: 1 }).format(n) : '');
 	const statusWord = (s?: string) => (!s || s === 'Released' ? '' : s.charAt(0) + s.slice(1).toLowerCase());
 	// Award badges ("3 Oscars"), in the hero or under it with the facts line.
 	let awards = $state<WikiAward[]>([]);
@@ -281,7 +281,7 @@
 		const out: { name: string; value: string; votes: string }[] = [];
 		// Every score on one scale (out of 10, one decimal) so rows line up and compare at a glance.
 		const ten = (v: number, max: number) => ((Math.round((v / max) * 100) / 10).toFixed(1));
-		for (const o of outside) out.push({ name: scoreName(o.source), value: ten(o.value, o.max), votes: o.votes ? o.votes.toLocaleString() : '' });
+		for (const o of outside) out.push({ name: scoreName(o.source), value: ten(o.value, o.max), votes: o.votes ? o.votes.toLocaleString(appLocale()) : '' });
 		const t = rich?.score ?? scoreOf(details?.rating);
 		if (t) out.push({ name: 'TMDB', value: ten(t, 10), votes: '' });
 		return out;

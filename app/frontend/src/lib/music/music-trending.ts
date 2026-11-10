@@ -2,7 +2,7 @@ import type { Fresh } from '#lib/ui/fresh.ts';
 import { versioned } from '../core/pictures.ts';
 import { api, type Client } from '../core/api.ts';
 import { to } from '../core/paths.ts';
-import { t } from '#lib/core/i18n/i18n.svelte.ts';
+import { t, appLocale } from '#lib/core/i18n/i18n.svelte.ts';
 
 // Music trending: the metadata server's weekly lists (ListenBrainz worldwide, Deezer's charts per country) as artist and album rows.
 
@@ -155,7 +155,7 @@ const askWords = (): Record<string, string> => ({ asked: t('music.asked'), appro
 
 function shortDay(d: string): string {
 	const day = new Date(`${d}T00:00:00Z`);
-	return Number.isNaN(day.getTime()) ? d : day.toLocaleDateString(undefined, { day: 'numeric', month: 'short', timeZone: 'UTC' });
+	return Number.isNaN(day.getTime()) ? d : day.toLocaleDateString(appLocale(), { day: 'numeric', month: 'short', timeZone: 'UTC' });
 }
 
 /** When an album comes or came out: "Out Sep 25" ahead, "Out now" within 14 days after, "Released Sep 25" after that. */

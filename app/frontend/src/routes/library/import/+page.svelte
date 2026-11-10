@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Words from '#lib/ui/Words.svelte';
 	import PageLoader from '#lib/ui/PageLoader.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
 	import Button from '#lib/ui/Button.svelte';
@@ -230,7 +231,7 @@
 			</div>
 		{/if}
 		{#if error}<p class="form-error" role="alert">{error}</p>{/if}
-		<p class="xs muted">{t('library.import.noMatchFiles')} <a href={to('/library/import-files')}>{t('library.byHand.title')}</a></p>
+		<p class="xs muted"><Words key="library.import.noMatchFiles" links={{ a: to('/library/import-files') }} /></p>
 	</section>
 
 	{#if results}

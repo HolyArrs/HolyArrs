@@ -7,7 +7,8 @@ const words: Record<string, string> = Object.assign({}, ...readdirSync(messages)
 const english = (page: string) =>
 	page
 		.replace(/=\{t\('([^']+)'(?:, \{[^}]*\})?\)\}/g, (_, k: string) => `="${words[k] ?? k}"`)
-		.replace(/\{t\('([^']+)'(?:, \{[^}]*\})?\)\}/g, (_, k: string) => words[k] ?? k);
+		.replace(/\{t\('([^']+)'(?:, \{[^}]*\})?\)\}/g, (_, k: string) => words[k] ?? k)
+		.replace(/<Words key="([^"]+)"[^>]*\/>/g, (_, k: string) => words[k] ?? k);
 
 // The Metadata page and the Metadata doc say the same thing about what the metadata server gets; the headers named here are the ones the backend privacy test allows.
 const page = english(readFileSync(new URL('../../routes/settings/tmdb/+page.svelte', import.meta.url), 'utf8'));

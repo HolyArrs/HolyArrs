@@ -161,6 +161,7 @@
 	"music.about": "About",
 	"music.aboutReadMore": "About {name}: read more",
 	"music.inTheWorld": "in the world",
+	"music.rankInWorld": "<b>#{rank}</b> in the world",
 	"music.moreAbout": "More about {name}",
 	"music.about2": "About {name}",
 	"music.previousPhoto": "Previous photo",

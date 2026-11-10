@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Words from '#lib/ui/Words.svelte';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
@@ -123,10 +124,10 @@
 
 	<SettingsCard id="pick-rules-where" title={t('settings.pickRules.where')}>
 		<ul class="where">
-			<li><a href={to('/settings/library-folders')}>{t('settings.pickRules.whereFolders')}</a>{t('settings.pickRules.whereFoldersText')}</li>
-			<li><a href={to('/settings/title-defaults')}>{t('settings.pickRules.whereDefaults')}</a>{t('settings.pickRules.whereDefaultsText')}</li>
-			<li><a href={to('/settings/requests#ask-rules')}>{t('settings.pickRules.whereRequests')}</a>{t('settings.pickRules.whereRequestsText')}</li>
-			<li><a href={to('/settings/outside-lists')}>{t('settings.pickRules.whereLists')}</a>{t('settings.pickRules.whereListsText')}</li>
+			<li><Words key="settings.pickRules.whereFolders" links={{ a: to('/settings/library-folders') }} /></li>
+			<li><Words key="settings.pickRules.whereDefaults" links={{ a: to('/settings/title-defaults') }} /></li>
+			<li><Words key="settings.pickRules.whereRequests" links={{ a: to('/settings/requests#ask-rules') }} /></li>
+			<li><Words key="settings.pickRules.whereLists" links={{ a: to('/settings/outside-lists') }} /></li>
 			<li>{t('settings.pickRules.whereTitle')}</li>
 		</ul>
 		{#if mayEdit}<p class="hint">{t('settings.pickRules.hint')}</p>
@@ -150,7 +151,7 @@
 
 <style>
 	.where { display: flex; flex-direction: column; gap: 8px; font: var(--t-callout); }
-	.where a { color: var(--accent-text); font-weight: 600; }
+	.where :global(a) { color: var(--accent-text); font-weight: 600; }
 	.meta { display: block; }
 	.acts { display: flex; align-items: center; gap: 4px; flex: none; }
 	@media (max-width: 520px) {

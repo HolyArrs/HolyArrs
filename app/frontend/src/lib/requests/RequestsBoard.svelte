@@ -80,8 +80,8 @@
 	};
 	/** Declined by whom, only when the page knows a display name (an account name alone is not said). */
 	const stDeclinedBy = (a: Ask) => {
-		if (!a.decided_by) return '';
-		const name = ctx.decided(a).replace(/^Declined by\s*/, '').trim();
+		if (!a.decided_by || a.state !== 'turned_down') return '';
+		const name = ctx.decidedBy(a);
 		return name && name !== a.decided_by.name ? name : '';
 	};
 	/** The detail after the word, from what the ask really carries. */

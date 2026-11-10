@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { t } from '#lib/core/i18n/i18n.svelte.ts';
+	import { t, appLocale } from '#lib/core/i18n/i18n.svelte.ts';
 	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
@@ -60,7 +60,7 @@
 		failures: days.reduce((n, d) => n + d.failures, 0),
 		grabs: days.reduce((n, d) => n + d.grabs, 0)
 	});
-	const dayLabel = (d: string) => new Date(d + 'T12:00:00Z').toLocaleDateString([], { month: 'short', day: 'numeric' });
+	const dayLabel = (d: string) => new Date(d + 'T12:00:00Z').toLocaleDateString(appLocale(), { month: 'short', day: 'numeric' });
 </script>
 
 <svelte:head><title>{t('settings.sourceDetail.pageTitle', { name: src?.name ?? t('settings.sourceDetail.source') })} · HolyArrs</title></svelte:head>

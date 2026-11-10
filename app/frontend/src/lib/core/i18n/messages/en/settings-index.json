@@ -1,6 +1,8 @@
 {
 	"settings.index.appearance.theme.theme.label": "Theme",
 	"settings.index.appearance.theme.theme.words": "appearance light dark automatic mode colours colors night",
+	"settings.index.appearance.language.language.label": "Language",
+	"settings.index.appearance.language.language.words": "language translation locale english words",
 	"settings.index.appearance.autoplay-trailers.play-trailers-by-themselves.label": "Play trailers by themselves",
 	"settings.index.appearance.autoplay-trailers.play-trailers-by-themselves.words": "autoplay trailers video explore muted",
 	"settings.index.appearance.signin-art.show-library-art-on-the-sign-in-page.label": "Show Library art on the sign-in page",

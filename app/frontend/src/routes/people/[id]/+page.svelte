@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { t } from '#lib/core/i18n/i18n.svelte.ts';
+	import { t, appLocale } from '#lib/core/i18n/i18n.svelte.ts';
 	import { createPersonArt } from '#lib/discover/index.ts';
 	import PageLoader from '#lib/ui/PageLoader.svelte';
 	import Poster from '#lib/ui/Poster.svelte';
@@ -135,8 +135,8 @@
 		const p = data?.person;
 		if (!p) return [];
 		const known = data?.known_for?.[0]?.name;
-		const born = p.birthday ? new Date(`${p.birthday}T00:00:00Z`).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' }) : '';
-		const died = wiki.died && wiki.died.length === 10 ? new Date(`${wiki.died}T00:00:00Z`).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' }) : wiki.died ?? '';
+		const born = p.birthday ? new Date(`${p.birthday}T00:00:00Z`).toLocaleDateString(appLocale(), { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' }) : '';
+		const died = wiki.died && wiki.died.length === 10 ? new Date(`${wiki.died}T00:00:00Z`).toLocaleDateString(appLocale(), { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' }) : wiki.died ?? '';
 		const from = p.birthplace || wiki.birth_place;
 		return [
 			{ text: known ? t('discover.people.knownForName', { name: known }) : (p.department ?? ''), known: !!known },
@@ -148,7 +148,7 @@
 	const facts = $derived(factsAll.map((f) => f.text));
 	// The About sheet has three layouts (switch inside the sheet).
 	let aboutView = $state<string>('profile');
-	const longDate = (d?: string) => (d && d.length === 10 ? new Date(`${d}T00:00:00Z`).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' }) : d ?? '');
+	const longDate = (d?: string) => (d && d.length === 10 ? new Date(`${d}T00:00:00Z`).toLocaleDateString(appLocale(), { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' }) : d ?? '');
 	const about = $derived.by(() => {
 		const p = data?.person;
 		if (!p) return null;

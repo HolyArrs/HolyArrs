@@ -106,7 +106,7 @@
 	.glass, .crumbs { border-radius: 999px; background: color-mix(in srgb, var(--surface-2) 70%, transparent); box-shadow: 0 8px 24px rgb(0 0 0 / 0.18), 0 0 0 0.5px color-mix(in srgb, var(--text) 14%, transparent); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); }
 	.nav { display: flex; align-items: center; height: 44px; padding: 0 2px; }
 	.nav :global(button) { width: 38px; height: 38px; border-radius: 999px; }
-	.crumbs { display: flex; align-items: center; min-width: 0; margin-left: 8px; height: 44px; padding: 0 18px; font: 500 13px/1 var(--font-ui); color: var(--text-muted); white-space: nowrap; }
+	.crumbs { display: flex; align-items: center; min-width: 0; margin-inline-start: 8px; height: 44px; padding: 0 18px; font: 500 13px/1 var(--font-ui); color: var(--text-muted); white-space: nowrap; }
 	.crumbs a { display: inline-flex; align-items: center; min-height: 24px; color: var(--text-muted); text-decoration: none; transition: color var(--dur-fast) var(--ease-out); }
 	.crumbs a:hover { color: var(--text); }
 	.crumbs .sep { margin: 0 6px; opacity: .5; }

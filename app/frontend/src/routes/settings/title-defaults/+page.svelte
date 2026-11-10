@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Words from '#lib/ui/Words.svelte';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import Field from '#lib/ui/Field.svelte';
@@ -186,8 +187,7 @@
 		</SettingsCard>
 
 		<p class="hint where">
-			{t('settings.titleDefaults.whereEach')} <a href={to('/settings/library-folders')}>{t('settings.titleDefaults.whereFolder')}</a> {t('settings.titleDefaults.whereHas')} <a href={to('/settings/requests')}>{t('settings.titleDefaults.whereRequests')}</a> {t('settings.titleDefaults.whereAnd')}
-			<a href={to('/settings/outside-lists')}>{t('settings.titleDefaults.whereLists')}</a> {t('settings.titleDefaults.whereKeep')}
+			<Words key="settings.titleDefaults.where" links={{ a: to('/settings/library-folders'), a2: to('/settings/requests'), a3: to('/settings/outside-lists') }} />
 		</p>
 	</fieldset>
 		{#if error}<p class="form-error" role="alert">{error}</p>{/if}
@@ -200,5 +200,5 @@
 	.all { display: contents; border: 0; padding: 0; margin: 0; }
 	.narrow { max-width: 160px; }
 	.where { margin-top: 4px; }
-	.where a { color: var(--accent-text); font-weight: 600; }
+	.where :global(a) { color: var(--accent-text); font-weight: 600; }
 </style>

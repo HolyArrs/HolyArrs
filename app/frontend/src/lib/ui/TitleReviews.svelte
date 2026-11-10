@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { t } from '#lib/core/i18n/i18n.svelte.ts';
+	import { t, appLocale } from '#lib/core/i18n/i18n.svelte.ts';
 	// Review shelf for a title: score summary, source pills, sort pills and review cards.
 	import Shelf from './Shelf.svelte';
 	import Sheet from './Sheet.svelte';
@@ -97,7 +97,7 @@
 					<p class="sum" data-testid="review-score">
 						{#if answer && shownScore(answer.score, answer.votes) !== undefined}
 							<span class="star" aria-hidden="true">★</span><b>{scoreText(answer.score)}</b><span class="of">/10</span>
-							<span class="muted">{votesText(answer.votes)}{typeof answer.watching === 'number' ? ` · ${t('ui.titleReviews.watchingNow', { count: answer.watching.toLocaleString() })}` : ''}</span>
+							<span class="muted">{votesText(answer.votes)}{typeof answer.watching === 'number' ? ` · ${t('ui.titleReviews.watchingNow', { count: answer.watching.toLocaleString(appLocale()) })}` : ''}</span>
 						{:else}
 							<span class="muted">{hasContent ? t('ui.titleReviews.noScoreYet') : t('ui.titleReviews.nothingHereYet')}</span>
 						{/if}
@@ -129,7 +129,7 @@
 							<p class="text">{r.text}</p>
 						{/if}
 						<div class="foot">
-							{#if r.likes}<span class="muted">{t('ui.titleReviews.likes', { v: r.likes.toLocaleString() })}</span>{/if}
+							{#if r.likes}<span class="muted">{t('ui.titleReviews.likes', { v: r.likes.toLocaleString(appLocale()) })}</span>{/if}
 							{#if r.spoiler || long(r)}<button type="button" class="more" aria-haspopup="dialog" onclick={() => read(r)}>{r.spoiler ? t('ui.titleReviews.showIt') : t('ui.titleReviews.more')}<span class="sr-only"> {t('ui.titleReviews.fromAuthor', { author: r.author || t('ui.titleReviews.someone') })}</span></button>{/if}
 						</div>
 					</article>

@@ -1,7 +1,7 @@
 // Home's setup steps and what needs attention.
 import { decisions } from '#lib/downloads/index.ts';
 import { attention, groupAttention, homeFailures, libraryCards, moreLink, n, partCount, shownState, type Attention, type AttentionGroup } from './home.ts';
-import { METADATA_DOWN, metadataOutage } from '#lib/metadata/index.ts';
+import { metadataDownText, metadataOutage } from '#lib/metadata/index.ts';
 import type { Tint } from '#lib/core/settings.ts';
 
 import type { HomeContext } from './home-context.ts';
@@ -53,7 +53,7 @@ export function createHomeAttention(ctx: Pick<HomeContext, 'checks' | 'health' |
 						failed: homeFailures(ctx.downloads),
 						decisions: ctx.manager ? decisions.items : [],
 						health: ctx.checks?.checks ?? [],
-						metadata: metadataOutage.s.down ? METADATA_DOWN : undefined,
+						metadata: metadataOutage.s.down ? metadataDownText() : undefined,
 						admin: ctx.admin
 					}),
 					...setupGaps

@@ -1,6 +1,6 @@
 <script lang="ts">
 	// What a music or TV ask is made of, folded under one line that opens: an artist ask's albums ("12 albums · 8 singles & EPs", one row per album with its other editions under a small "3 editions" note), or a show ask's seasons and episodes.
-	import { t } from '#lib/core/i18n/i18n.svelte.ts';
+	import { t, appLocale } from '#lib/core/i18n/i18n.svelte.ts';
 	import Icon from '#lib/ui/Icon.svelte';
 	import { albumCounts, albumGroups, songsHead, askAlbums, askSeasons, askedWords, picksChanged, picksHead, seasonPick, type PartsPick, type SeasonPick } from './ask-parts.ts';
 	import { albumSongs, artistIdOf, askArtist, musicKinds, songKey, storedParts, type AlbumSong } from './details.svelte.ts';
@@ -145,7 +145,7 @@
 		const next = p.ticked.includes(n) ? p.ticked.filter((x) => x !== n) : [...p.ticked, n].sort((x, y) => x - y);
 		ticks = { ...ticks, [p.number]: next };
 	}
-	const shortDay = (d?: string) => (d && /^\d{4}-\d{2}-\d{2}/.test(d) ? new Date(`${d.slice(0, 10)}T12:00:00`).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '');
+	const shortDay = (d?: string) => (d && /^\d{4}-\d{2}-\d{2}/.test(d) ? new Date(`${d.slice(0, 10)}T12:00:00`).toLocaleDateString(appLocale(), { month: 'short', day: 'numeric', year: 'numeric' }) : '');
 
 	let open = $state(false);
 	let openSeason = $state(0);

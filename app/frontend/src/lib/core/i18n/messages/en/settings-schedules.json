@@ -44,8 +44,6 @@
 	"settings.schedules.save": "Save",
 	"settings.schedules.cancel": "Cancel",
 	"settings.schedules.stages": "Stages",
-	"settings.schedules.stagesNoteA": "Pause or restart them in",
-	"settings.schedules.parts": "Parts",
-	"settings.schedules.stagesNoteB": ".",
+	"settings.schedules.stagesNote": "Pause or restart them in <a>Parts</a>.",
 	"settings.schedules.allTime": "All the time"
 }

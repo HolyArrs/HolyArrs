@@ -1,4 +1,4 @@
-import { t } from '#lib/core/i18n/i18n.svelte.ts';
+import { t, appLocale } from '#lib/core/i18n/i18n.svelte.ts';
 import { size as bytes } from './size.ts';
 import { STEP_WORD } from './usenet.ts';
 import { duration, percent } from '../core/format.ts';
@@ -73,7 +73,7 @@ export function logDays(log: LogLine[], now = new Date()): { day: string; lines:
 		const d = new Date(l.at);
 		if (Number.isNaN(d.getTime())) continue;
 		const k = key(d);
-		const day = k === today ? t('downloads.day.today') : k === yday ? t('downloads.day.yesterday') : d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: d.getFullYear() === now.getFullYear() ? undefined : 'numeric' });
+		const day = k === today ? t('downloads.day.today') : k === yday ? t('downloads.day.yesterday') : d.toLocaleDateString(appLocale(), { day: 'numeric', month: 'short', year: d.getFullYear() === now.getFullYear() ? undefined : 'numeric' });
 		const last = out[out.length - 1];
 		if (last && last.day === day) last.lines.push(l);
 		else out.push({ day, lines: [l] });

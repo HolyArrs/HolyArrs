@@ -23,11 +23,5 @@
 	"settings.titleDefaults.newNone": "Leave them off",
 	"settings.titleDefaults.order": "Episode order",
 	"settings.titleDefaults.details": "Details from",
-	"settings.titleDefaults.whereEach": "Each",
-	"settings.titleDefaults.whereFolder": "Library folder",
-	"settings.titleDefaults.whereHas": "has a quality set of its own.",
-	"settings.titleDefaults.whereRequests": "Request rules",
-	"settings.titleDefaults.whereAnd": "and",
-	"settings.titleDefaults.whereLists": "Outside lists",
-	"settings.titleDefaults.whereKeep": "keep their own choices."
+	"settings.titleDefaults.where": "Each <a>Library folder</a> has a quality set of its own. <a2>Request rules</a2> and <a3>Outside lists</a3> keep their own choices."
 }

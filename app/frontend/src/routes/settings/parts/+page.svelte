@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Words from '#lib/ui/Words.svelte';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
@@ -148,8 +149,7 @@
 	{#if error}<LoadError hasData message={error} onretry={load} />{/if}
 	{#if safeMode}
 		<p class="notice warn" data-testid="parts-safe-mode">
-			{t('settings.parts.safeA')}
-			<b>{t('settings.parts.safeRestart')}</b> {t('settings.parts.safeIn')} <a href={to('/settings/danger')}>{t('settings.parts.dangerZone')}</a> {t('settings.parts.safeB')}
+			<Words key="settings.parts.safeMode" links={{ a: to('/settings/danger') }} />
 		</p>
 	{/if}
 

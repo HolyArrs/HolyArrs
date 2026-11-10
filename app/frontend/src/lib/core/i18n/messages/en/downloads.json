@@ -1029,6 +1029,7 @@
 	"downloads.sel.clear": "Clear",
 	"downloads.sel.label": "Selected downloads",
 	"downloads.sel.selected": "selected",
+	"downloads.sel.selectedCount": "<b>{n}</b> selected",
 	"downloads.span.days": "{d} days",
 	"downloads.span.hours": "{h} h",
 	"downloads.span.min": "{m} min",

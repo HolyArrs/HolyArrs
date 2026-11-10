@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { t } from '#lib/core/i18n/i18n.svelte.ts';
+	import { t, appLocale } from '#lib/core/i18n/i18n.svelte.ts';
 	import TitleSection from '#lib/ui/TitleSection.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
 	import Menu, { type MenuItem } from '#lib/ui/Menu.svelte';
@@ -308,7 +308,7 @@
 		const m = (f?.MediaInfo ?? {}) as Record<string, any>;
 		const langs = (v: unknown) => (Array.isArray(v) ? v : typeof v === 'string' && v ? v.split(/[\/,]/) : []).map((s) => String(s).trim().toUpperCase()).filter(Boolean).slice(0, 6);
 		const name = String(f?.RelativePath ?? '').split(/[\\/]/).pop() ?? '';
-		const addedOn = (iso?: string) => { if (!iso) return ''; const d = new Date(iso); return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', ...(d.getFullYear() !== new Date().getFullYear() ? { year: 'numeric' } : {}) }); };
+		const addedOn = (iso?: string) => { if (!iso) return ''; const d = new Date(iso); return d.toLocaleDateString(appLocale(), { month: 'short', day: 'numeric', ...(d.getFullYear() !== new Date().getFullYear() ? { year: 'numeric' } : {}) }); };
 		return { res: String(m.resolution ?? (f?.Quality?.resolution ? `${f.Quality.resolution}p` : '')), addedOn: addedOn(f?.AddedAt), id: x.id, versionId: x.version_id, has: !!x.file, state: x.state_label, label: x.version && x.version !== 'Main' ? x.version : t('discover.titleLibrary.mainCopy'), badges: qualityBadges([f]), codec: [m.video_codec, m.audio_codec].filter(Boolean).map((c) => String(c).toUpperCase()).join(' · '), size: f?.Size ? bytes(f.Size) : '', name, added: f?.AddedAt ? ago(f.AddedAt) : '', audio: langs(m.audio_languages), subs: langs(m.subtitle_languages ?? m.subtitles) };
 	}));
 

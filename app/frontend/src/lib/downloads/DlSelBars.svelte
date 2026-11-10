@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Words from '#lib/ui/Words.svelte';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	// Selection bars for ticked downloads: a toolbar above the list on wide screens, a floating sheet on phones.
 	import Icon from '#lib/ui/Icon.svelte';
@@ -50,7 +51,7 @@
 </script>
 
 	<div class="selbar" role="toolbar" aria-label={t('downloads.sel.label')} data-testid="dl-selbar">
-		<span class="sn" aria-live="polite"><b>{pickedRows.length}</b> {t('downloads.sel.selected')}</span>
+		<span class="sn" aria-live="polite"><Words key="downloads.sel.selectedCount" vars={{ n: pickedRows.length }} /></span>
 		{#if bulkRows.length}{#each BULK as b (b.action)}<button type="button" class="xbn" disabled={batchBusy} onclick={() => onbulk?.(bulkRows, b.action)} data-testid="dl-bulk-{b.action}">{b.label}</button>{/each}{/if}
 		{#if pickedRows.some(steerable)}{#each steer as m (m.mode)}<button type="button" class="xbn" onclick={() => onsteer?.(pickedRows.filter(steerable), m.mode)} data-testid="dl-bulk-steer-{m.mode}">{m.short}</button>{/each}{/if}
 		{#if pickedRows.some((r) => retryable(r) && mayEdit(r))}<button type="button" class="xbn" disabled={batchBusy} onclick={() => onretry?.(pickedRows.filter((r) => retryable(r) && mayEdit(r)))} data-testid="dl-bulk-retry">{t('downloads.act.again')}</button>{/if}
@@ -58,7 +59,7 @@
 		<button type="button" class="xbn" onclick={onclear} data-testid="dl-bulk-clear">{t('downloads.sel.clear')}</button>
 	</div>
 		<div class="psel" role="toolbar" aria-label={t('downloads.sel.label')} data-testid="dl-psel">
-			<div class="pst"><span class="sn" aria-live="polite"><b>{pickedRows.length}</b> {t('downloads.sel.selected')}</span><button type="button" class="plk" onclick={onall} data-testid="dl-psel-all">{t('downloads.sel.all')}</button><button type="button" class="plk" onclick={onclear} data-testid="dl-psel-cancel">{t('downloads.sel.cancel')}</button></div>
+			<div class="pst"><span class="sn" aria-live="polite"><Words key="downloads.sel.selectedCount" vars={{ n: pickedRows.length }} /></span><button type="button" class="plk" onclick={onall} data-testid="dl-psel-all">{t('downloads.sel.all')}</button><button type="button" class="plk" onclick={onclear} data-testid="dl-psel-cancel">{t('downloads.sel.cancel')}</button></div>
 			<div class="psa">
 				{#each PHONE_BULK.filter((b) => b.action !== 'recheck' || bulkRows.length) as b (b.action)}<button type="button" class="pa" disabled={batchBusy || (b.action === 'start' ? !startT.rows.length : b.action === 'pause' ? !pauseT.rows.length : false)} onclick={() => (b.action === 'start' ? runOn(startT, 'resume', 'start') : b.action === 'pause' ? runOn(pauseT, 'pause', 'pause') : onbulk?.(bulkRows, b.action))} data-testid="dl-psel-{b.action}"><Icon name={b.icon} size={20} /><span>{b.label}</span></button>{/each}
 				<button type="button" class="pa bad" onclick={() => onremovemany?.(pickedRows)} data-testid="dl-psel-remove"><Icon name="trash" size={20} /><span>{t('downloads.act.remove')}</span></button>
@@ -68,7 +69,7 @@
 <style>
 	.selbar { position: sticky; top: 0; left: 0; z-index: 3; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 8px var(--gutter, 12px); background: var(--surface-1); border-bottom: 1px solid var(--line); }
 	.selbar .sn { font: var(--t-footnote); color: var(--text-muted); margin-right: 4px; }
-	.selbar .sn b { color: var(--text); }
+	.selbar .sn :global(b) { color: var(--text); }
 	.psel { display: none; }
 	@keyframes pselIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
 	@media (prefers-reduced-motion: reduce) {
@@ -83,7 +84,7 @@
 		.psel { position: fixed; left: 8px; right: 8px; bottom: calc(var(--tabbar, 56px) + env(safe-area-inset-bottom) + 8px); z-index: 45; display: grid; gap: 4px; padding: 6px 8px 8px; border: 1px solid var(--line-strong); border-radius: 18px; background: color-mix(in srgb, var(--surface-1) 97%, transparent); backdrop-filter: blur(20px) saturate(1.4); -webkit-backdrop-filter: blur(20px) saturate(1.4); box-shadow: var(--shadow-modal); animation: pselIn 220ms var(--ease-out); }
 		.pst { display: flex; align-items: center; gap: 4px; }
 		.pst .sn { flex: 1; padding-left: 8px; color: var(--text-muted); font: 400 13px/1 var(--font-ui); }
-		.pst .sn b { color: var(--text); font-weight: 600; }
+		.pst .sn :global(b) { color: var(--text); font-weight: 600; }
 		.plk { min-height: 44px; padding: 0 12px; border: 0; border-radius: 10px; background: none; color: var(--accent-text, var(--text)); font: 600 14px/1 var(--font-ui); cursor: pointer; }
 		.psa { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; }
 		.pa { display: grid; justify-items: center; align-content: center; gap: 4px; min-height: 52px; padding: 4px 2px; border: 0; border-radius: 12px; background: var(--surface-2); color: var(--text); font: 500 11px/1.1 var(--font-ui); cursor: pointer; -webkit-tap-highlight-color: transparent; }

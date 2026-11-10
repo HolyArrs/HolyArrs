@@ -5,7 +5,7 @@ import type { DownloadRow } from '#lib/core/types.ts';
 import { stageOf } from '#lib/downloads/index.ts';
 import type { CalendarEntry, HealthCheck, TitleView } from '#lib/core/types.ts';
 import type { Fresh } from '#lib/ui/fresh.ts';
-import { t } from '#lib/core/i18n/i18n.svelte.ts';
+import { t, appLocale } from '#lib/core/i18n/i18n.svelte.ts';
 
 /** downloadLine is the meta line under a download card: percent and time left. */
 export function downloadLine(d: Pick<DownloadRow, 'progress' | 'eta' | 'state' | 'label'>): string {
@@ -399,10 +399,9 @@ export interface LibraryCardView {
 	size: number;
 }
 
-const count = new Intl.NumberFormat('en');
 /** n formats a count with thousands separators. */
 export function n(v: number): string {
-	return count.format(v);
+	return v.toLocaleString(appLocale('en'));
 }
 
 function plural(v: number, one: string, many: string): string {

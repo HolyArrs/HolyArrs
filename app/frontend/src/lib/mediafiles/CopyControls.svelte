@@ -1,5 +1,6 @@
 <!-- Lists each Version's copy with protect, keep-and-add and adopt actions. -->
 <script lang="ts">
+	import Words from '#lib/ui/Words.svelte';
 	import { onMount } from 'svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import Button from '#lib/ui/Button.svelte';
@@ -219,7 +220,7 @@
 
 <Sheet bind:open={adoptOpen} title={t('mediafiles.copy.useFor', { label: adoptVersion?.label ?? t('mediafiles.copy.thisVersion') })}>
 	<form id="adopt-copy-form" class="sheet-form" onsubmit={adopt}>
-		<p class="small muted">{t('mediafiles.copy.adoptNote', { folder: shortFolder(adoptVersion?.folder_path) })}</p>
+		<p class="small muted"><Words key="mediafiles.copy.adoptNote" vars={{ folder: shortFolder(adoptVersion?.folder_path) }} /></p>
 		{#if session.can('manage_library')}<details class="small muted"><summary>{t('mediafiles.copy.details')}</summary><span class="mono path">{adoptVersion?.folder_path}</span></details>{/if}
 		<div class="field"><label for="adopt-path">{t('mediafiles.copy.relativePath')}</label><input id="adopt-path" class="input" bind:value={adoptPath} required /></div>
 

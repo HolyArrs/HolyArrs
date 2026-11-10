@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Words from '#lib/ui/Words.svelte';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
@@ -311,7 +312,7 @@
 							/>
 							<Button type="submit">{t('settings.ai.makeClientId')}</Button>
 						</div>
-						<p class="hint" id="ai-redirect-hint">{t('settings.ai.geminiA')} <b>{t('settings.ai.showMore')}</b> {t('settings.ai.geminiB')} <b>{t('settings.ai.advancedFeatures')}</b> {t('settings.ai.geminiC')}</p>
+						<p class="hint" id="ai-redirect-hint"><Words key="settings.ai.geminiHint" /></p>
 						{#if clientError}<p class="notice warn" role="alert">{clientError}</p>{/if}
 						{#if clientID}
 							<div class="xs muted">{t('settings.ai.clientId')}</div>
@@ -319,7 +320,7 @@
 								<pre>{clientID}</pre>
 								<Button icon="copy" size="sm" type="button" aria-label={t('settings.ai.copyClientId')} onclick={() => copy(clientID)}>{t('settings.ai.copy')}</Button>
 							</div>
-							<p class="small">{t('settings.ai.pasteGemini')} <b>{t('settings.ai.next')}</b></p>
+							<p class="small"><Words key="settings.ai.pasteGemini" /></p>
 						{/if}
 					</form>
 				{/if}
@@ -364,12 +365,12 @@
 			<Button icon="copy" size="sm" type="button" aria-label={t('settings.ai.copyAddress')} onclick={() => copy(url)}>{t('settings.ai.copy')}</Button>
 		</div>
 		<p class="xs muted">{t('settings.ai.errorExpected')}</p>
-		{#if !enabled}<p class="notice warn"><span>{t('settings.ai.turnOnA')} <b>{t('settings.ai.letConnect')}</b> {t('settings.ai.turnOnB')}</span></p>{/if}
+		{#if !enabled}<p class="notice warn"><span><Words key="settings.ai.turnOnFirst" /></span></p>{/if}
 		<p class="small muted mode" data-testid="ai-mode">
 			{#if signIn}
 				{t('settings.ai.modeSignIn')}
 			{:else}
-				{t('settings.ai.modeHttpA')} <b>{t('settings.ai.makeKey')}</b> {t('settings.ai.modeHttpB')}
+				<Words key="settings.ai.modeHttp" />
 			{/if}
 		</p>
 
@@ -382,9 +383,9 @@
 					<span class="num" aria-hidden="true">3</span>
 					<p class="st">
 						{#if signIn}
-							{t('settings.ai.step3A')} <b>{t('settings.ai.allow')}</b>{t('settings.ai.step3A2')}
+							<Words key="settings.ai.step3SignIn" />
 						{:else}
-							{t('settings.ai.step3B')} <b>{t('settings.ai.makeKey')}</b> {t('settings.ai.step3B2')}
+							<Words key="settings.ai.step3Key" />
 						{/if}
 					</p>
 				</li>
@@ -439,7 +440,7 @@
 			{#if promptKey}
 				<p class="xs muted">{t('settings.ai.containsKey')}</p>
 			{:else if !signIn}
-				<p class="xs muted">{t('settings.ai.pressA')} <b>{t('settings.ai.makeKey')}</b> {t('settings.ai.pressB')}</p>
+				<p class="xs muted"><Words key="settings.ai.pressFirst" /></p>
 			{/if}
 		</section>
 

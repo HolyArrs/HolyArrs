@@ -1,5 +1,5 @@
 // History (Downloads > History): how much an Event matters, its verb and icon, its day and clock, and the line a run of routine Events folds into, so the few Events that matter are not lost among thousands.
-import { t as say, lang } from '#lib/core/i18n/i18n.svelte.ts';
+import { t as say, lang, appLocale } from '#lib/core/i18n/i18n.svelte.ts';
 import type { IconName } from '#lib/ui/Icon.svelte';
 import { historyQuery, kindGroups, type HistoryFilter, type HistoryRow } from './history.ts';
 import type { EventRecord, TitleView } from '../core/types.ts';
@@ -138,12 +138,12 @@ export function dayLabel(key: string, now = new Date()): string {
 	if (key === dayKey(y.toISOString())) return say('downloads.day.yesterday');
 	const [yy, mm, dd] = key.split('-').map(Number);
 	const d = new Date(yy, mm - 1, dd);
-	return d.toLocaleDateString(lang.value === 'en' ? 'en-US' : lang.value, { weekday: 'short', month: 'short', day: 'numeric', ...(yy !== now.getFullYear() ? { year: 'numeric' } : {}) });
+	return d.toLocaleDateString(appLocale('en-US'), { weekday: 'short', month: 'short', day: 'numeric', ...(yy !== now.getFullYear() ? { year: 'numeric' } : {}) });
 }
 
 /** The local time of day ("4:27 AM"). */
 export function clock(at: string): string {
-	return new Date(at).toLocaleTimeString(lang.value === 'en' ? 'en-US' : lang.value, { hour: 'numeric', minute: '2-digit' });
+	return new Date(at).toLocaleTimeString(appLocale('en-US'), { hour: 'numeric', minute: '2-digit' });
 }
 
 const PL: Record<string, string> = { more: 'more', 'feed check': 'feedCheck', search: 'search', folder: 'folder', artist: 'artist', movie: 'movie', show: 'show', title: 'title', time: 'time' };

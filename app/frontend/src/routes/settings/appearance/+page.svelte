@@ -5,7 +5,7 @@
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import { DEFAULT_RATINGS, MAX_RATINGS, RATING_SOURCES, ratingPicks, resetRatingPicks, setRatingPick } from '#lib/ui/rating-picks.svelte.ts';
-	import { theme, setTheme, type ThemeChoice, backdrop, setBackdrop, type Backdrop, ABOUT_ITEMS, aboutIsDefault, aboutPicks, resetAboutPicks, setAboutPick, Table } from '#lib/accounts/index.ts';
+	import { theme, setTheme, type ThemeChoice, backdrop, setBackdrop, type Backdrop, ABOUT_ITEMS, aboutIsDefault, aboutPicks, resetAboutPicks, setAboutPick, Table, LanguagePicker } from '#lib/accounts/index.ts';
 	import { onMount } from 'svelte';
 	import { api } from '#lib/core/api.ts';
 	import { plainMessage as message } from '#lib/core/settings.ts';
@@ -97,6 +97,10 @@
 	<div id="theme" tabindex="-1">
 		<SegmentedControl label={t('settings.appearance.theme')} options={themes} bind:value={themeChoice} onchange={(v) => setTheme(v)} />
 	</div>
+</SettingsCard>
+
+<SettingsCard id="language-card" title={t('accounts.language.label')} description={t('accounts.language.hint')} icon="appearance">
+	<LanguagePicker id="language" />
 </SettingsCard>
 
 <SettingsCard id="backdrop-card" title={t('settings.appearance.background')} description={t('settings.appearance.backgroundDesc')} icon="appearance">

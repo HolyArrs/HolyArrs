@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Words from '#lib/ui/Words.svelte';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import Button from '#lib/ui/Button.svelte';
@@ -115,7 +116,7 @@
 					<div class="srow side" data-testid="seerr-side-{s.side}">
 						<div class="txt">
 							<span class="label">{t('arrapi.seerr.addAs', { what: sideWhat(s.side), app: sideWord[s.side].app })}</span>
-							<span class="hint">{t('arrapi.seerr.urlBase')} <code class="mono">{s.path}</code>{t('arrapi.seerr.urlBaseTail')}</span>
+							<span class="hint"><Words key="arrapi.seerr.urlBase" vars={{ path: s.path }} codeClass="mono" /></span>
 							{#if s.key}
 								<span class="hint" data-testid="seerr-key-{s.side}">{s.key.last_used_at
 									? t('arrapi.seerr.keyUsed', { hint: s.key.hint.replace(/^[.…]+/, ''), owner: s.key.owner, ago: ago(s.key.last_used_at) })

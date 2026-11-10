@@ -18,7 +18,7 @@
 	import { SkTrackRow } from '#lib/ui/sk/index.ts';
 	import { HistoryLine as CompactRow, isRoutine, groupDownloads } from '#lib/downloads/index.ts';
 	import { crumbFor, RenamePreview, ShowDeleteDialog, ShowReleases } from '#lib/mediafiles/index.ts';
-	import { albumCover, albumKind, albumStateOf, albumYear, pressingLabel, trackLength, NO_SONGS_LINE, TRACK_REASK_MS, sleep, trackListView } from '#lib/music/index.ts';
+	import { albumCover, albumKind, albumStateOf, albumYear, pressingLabel, trackLength, noSongsLine, TRACK_REASK_MS, sleep, trackListView } from '#lib/music/index.ts';
 	import type { PressingView, TrackView } from '#lib/music/index.ts';
 	import { ReportSheet, hasFile } from '#lib/requests/index.ts';
 	import { page } from '$app/state';
@@ -281,7 +281,7 @@
 			{#if !tracks?.length && album.included && trackListView(0, askingSongs || tracks === null) === 'skeleton'}
 				<ol class="tracks" aria-busy="true" aria-label={tr('library.album.loadingTracks')}>{#each Array.from({ length: 8 }, (_, i) => i) as i (i)}<li><SkTrackRow height={52} /></li>{/each}</ol>
 			{:else if !tracks?.length}
-				<p class="small muted">{album.included ? NO_SONGS_LINE : tr('library.album.leftOut')}</p>
+				<p class="small muted">{album.included ? noSongsLine() : tr('library.album.leftOut')}</p>
 			{:else}
 				<ol class="tracks">
 					{#each tracks as t (t.id)}

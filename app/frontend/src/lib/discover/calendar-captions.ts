@@ -1,7 +1,7 @@
 // The two caption lines under every calendar card and list row, and the choices for them (?movie=1-6, ?music=1-5, ?channels=all|known).
 import type { CalGroup } from './calendar-groups.ts';
 import type { CalendarEntry } from '../core/types.ts';
-import { t } from '#lib/core/i18n/i18n.svelte.ts';
+import { t, appLocale } from '#lib/core/i18n/i18n.svelte.ts';
 
 export type Channels = 'all' | 'known';
 
@@ -39,10 +39,10 @@ export function fakeEpisodeName(name?: string): boolean {
 export function clockTime(e: Pick<CalendarEntry, 'kind' | 'date' | 'timed'>, locale?: string): string {
 	if (e.kind !== 'episode' || !e.timed) return '';
 	const d = new Date(e.date);
-	const f = new Intl.DateTimeFormat(locale, { hour: 'numeric', minute: '2-digit' });
+	const f = new Intl.DateTimeFormat(locale ?? appLocale(), { hour: 'numeric', minute: '2-digit' });
 	const h12 = /h1[12]/.test(f.resolvedOptions().hourCycle ?? '');
 	// A 12-hour clock drops ":00" ("7 PM"); a 24-hour clock keeps it ("19:00").
-	if (h12 && d.getMinutes() === 0) return new Intl.DateTimeFormat(locale, { hour: 'numeric' }).format(d);
+	if (h12 && d.getMinutes() === 0) return new Intl.DateTimeFormat(locale ?? appLocale(), { hour: 'numeric' }).format(d);
 	return f.format(d);
 }
 
@@ -104,7 +104,7 @@ export function runLength(min?: number): string {
 	return h ? (m ? t('discover.calendarCaptions.hoursMinutes', { h, m }) : t('discover.calendarCaptions.hours', { h })) : t('discover.calendarCaptions.minutes', { m });
 }
 
-const shortDay = (iso?: string) => (iso ? new Date(iso.slice(0, 10) + 'T00:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '');
+const shortDay = (iso?: string) => (iso ? new Date(iso.slice(0, 10) + 'T00:00:00').toLocaleDateString(appLocale(), { month: 'short', day: 'numeric' }) : '');
 const day = (iso?: string) => (iso ? iso.slice(0, 10) : '');
 
 /** "In cinemas", "In cinemas · At home from Mar 3", "At home", "At home · In cinemas Jul 17". */

@@ -2,7 +2,7 @@
 
 import { type ExploreCard, type ExploreRow, ROW_MAX, titleCard, tmdbArtName, cardTmdb } from '#lib/ui/title-cards.ts';
 import type { Ask, CalendarEntry, TitleView } from '../core/types.ts';
-import { t } from '#lib/core/i18n/i18n.svelte.ts';
+import { t, appLocale } from '#lib/core/i18n/i18n.svelte.ts';
 
 /** What two titles can share: genres and people. */
 export interface Facets {
@@ -126,7 +126,7 @@ function shortDay(iso: string, now: Date): string {
 	const diff = day(d) - day(now);
 	if (diff === 0) return t('discover.exploreRows.today');
 	if (diff === 1) return t('discover.exploreRows.tomorrow');
-	return d.toLocaleDateString(undefined, diff < 7 && diff > 0 ? { weekday: 'long' } : { day: 'numeric', month: 'short' });
+	return d.toLocaleDateString(appLocale(), diff < 7 && diff > 0 ? { weekday: 'long' } : { day: 'numeric', month: 'short' });
 }
 
 /** Groups asks for the same thing (the same title, or the same add id). */

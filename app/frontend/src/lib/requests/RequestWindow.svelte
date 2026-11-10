@@ -121,7 +121,7 @@
 		}
 		if (life.stage === 'declined') {
 			// Same rule as the card: a display name only, never a bare account name, and the status word is not said twice.
-			const by = ctx.decided(picked).replace(/^Declined by\s*/, '').trim();
+			const by = picked.state === 'turned_down' ? ctx.decidedBy(picked) : '';
 			// Others who said no to the same title before, after this ask's own decider.
 			const also = ctx.alsoDeclined(picked);
 			const first = by && by !== picked.decided_by?.name ? t('requests.window.by', { name: by }) : picked.decided_at ? t('requests.window.on', { date: whenDate(picked.decided_at) }) : '';

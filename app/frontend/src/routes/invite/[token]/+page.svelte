@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Words from '#lib/ui/Words.svelte';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import Button from '#lib/ui/Button.svelte';
 	import IconButton from '#lib/ui/IconButton.svelte';
@@ -174,7 +175,7 @@
 
 {#snippet problem()}
 	{#if linked}
-		<p class="form-error" role="alert" data-testid="invite-linked">{t('accounts.invite.linked')} <a href={to('/login')}>{t('accounts.invite.signInInstead')}</a></p>
+		<p class="form-error" role="alert" data-testid="invite-linked"><Words key="accounts.invite.linked" links={{ a: to('/login') }} /></p>
 	{:else if error}
 		<p class="form-error" role="alert">{error}</p>
 	{/if}
@@ -339,7 +340,7 @@
 	.light .sk { background: rgb(0 0 0 / 0.05); }
 	.form-error { margin-top: 14px; padding: 10px 14px; border-radius: 12px; background: rgb(255 69 58 / 0.12); border: 1px solid rgb(255 69 58 / 0.26); color: #ffb3ad; font: 500 13px/1.45 var(--font-ui); text-align: center; }
 	.light .form-error { background: rgb(255 241 240 / 0.88); border-color: rgb(215 0 21 / 0.35); color: #9b0010; }
-	.form-error a { color: inherit; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+	.form-error :global(a) { color: inherit; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
 	.back { margin: 16px 0 0; text-align: center; font: var(--t-subhead); }
 	.back a { color: rgb(255 255 255 / 0.78); text-decoration: underline; text-underline-offset: 3px; }
 	/* Provider tiles, "or", the text link and the Plex wait share the sign-in page's looks (routes/login). */

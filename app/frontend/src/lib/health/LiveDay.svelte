@@ -2,7 +2,7 @@
 	// Day column: a 12 hour ruler with finished, running and planned runs as chips around a Now line.
 	import type { LiveJobs } from './live-jobs.svelte.ts';
 	import { t } from './live-jobs.svelte.ts';
-	import { t as say } from '#lib/core/i18n/i18n.svelte.ts';
+	import { t as say, appLocale } from '#lib/core/i18n/i18n.svelte.ts';
 	import type { StatusRow } from './rows.ts';
 
 	type Ev = { key: string; at: number; top: number; name: string; time: string; kind: 'past' | 'next' | 'run'; c: string; fill: number; label: string; lane: number; lanes: number };
@@ -105,8 +105,8 @@
 	}
 
 	// Local clock time helpers.
-	const hm = (ms: number) => new Date(ms).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
-	const hh = (ms: number) => new Date(ms).toLocaleTimeString([], { hour: '2-digit', hour12: false });
+	const hm = (ms: number) => new Date(ms).toLocaleTimeString(appLocale(), { hour: '2-digit', minute: '2-digit', hour12: false });
+	const hh = (ms: number) => new Date(ms).toLocaleTimeString(appLocale(), { hour: '2-digit', hour12: false });
 </script>
 
 <div class="day">

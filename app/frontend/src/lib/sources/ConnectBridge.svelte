@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Words from '#lib/ui/Words.svelte';
 	// Connect Jackett or Prowlarr: HolyArrs takes the address and key, tests them, and brings the sites in as Sources in one step. Jackett's sites stay in step on their own; Prowlarr writes its sites in through the arr API.
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import Field from '#lib/ui/Field.svelte';
@@ -314,7 +315,7 @@
 					{#if session.s.hasPassword}
 						<Confirm action="password">{#snippet children()}{/snippet}</Confirm>
 					{:else}
-						<p class="small" role="status" data-testid="bridge-need-password"><a href={to('/account')}>{t('sources.bridge.setPasswordLabel')}</a> {t('sources.bridge.setPasswordAfter')}</p>
+						<p class="small" role="status" data-testid="bridge-need-password"><Words key="sources.bridge.setPassword" links={{ a: to('/account') }} /></p>
 					{/if}
 				{/if}
 				<div class="acts" class:one-row={compact}>

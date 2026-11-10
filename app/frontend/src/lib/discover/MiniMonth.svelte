@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { t } from '#lib/core/i18n/i18n.svelte.ts';
+	import { t, appLocale } from '#lib/core/i18n/i18n.svelte.ts';
 	import IconButton from '#lib/ui/IconButton.svelte';
 	import { monthGrid } from './calendar.ts';
 	import { dayName, thingCount } from './calendar-groups.ts';
@@ -26,8 +26,8 @@
 	} = $props();
 
 	const weeks = $derived(monthGrid(year, month, entries, today));
-	const name = $derived(new Date(year, month, 1).toLocaleDateString(undefined, { month: 'long', year: 'numeric' }));
-	const heads = Array.from({ length: 7 }, (_, i) => new Date(2024, 0, 1 + i).toLocaleDateString(undefined, { weekday: 'narrow' }));
+	const name = $derived(new Date(year, month, 1).toLocaleDateString(appLocale(), { month: 'long', year: 'numeric' }));
+	const heads = $derived(Array.from({ length: 7 }, (_, i) => new Date(2024, 0, 1 + i).toLocaleDateString(appLocale(), { weekday: 'narrow' })));
 </script>
 
 <div class="mm" data-testid="cal-picker">

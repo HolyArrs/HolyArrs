@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Words from '#lib/ui/Words.svelte';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import Field from '#lib/ui/Field.svelte';
@@ -415,7 +416,7 @@
 					{#if w === 'plex'}
 						<div class="link-row">
 							{#if plexOwner.linked}
-								<p class="small">{t('settings.signIn.linkedTo')} <b>{plexOwner.name}</b>.</p>
+								<p class="small"><Words key="settings.signIn.linkedTo" vars={{ name: plexOwner.name }} /></p>
 								{#if isOwner}<Button variant="plain" type="button" onclick={unlinkPlex}>{t('settings.signIn.unlink')}</Button>{/if}
 							{:else}
 								<p class="small muted">{t('settings.signIn.linkNote')}</p>
@@ -516,7 +517,7 @@
 		{#if settingsOk}
 		<SettingsCard id="hosts-card" title={t('settings.signIn.hosts')}>
 			<p class="hint">
-				{t('settings.signIn.hostsA')} <code>HOLYARRS_ALLOWED_HOSTS</code> {t('settings.signIn.hostsB')}
+				<Words key="settings.signIn.hostsHint" />
 			</p>
 			<form class="nets" onsubmit={saveHosts}>
 				<Field id="allowed-hosts" label={t('settings.signIn.hostNames')}>
@@ -529,7 +530,7 @@
 
 		<SettingsCard id="proxy-card" title={t('settings.signIn.proxies')}>
 			<p class="small muted" style="margin-top: var(--s-2)">
-				{t('settings.signIn.proxiesA')} <code>HOLYARRS_TRUSTED_PROXIES</code> {t('settings.signIn.proxiesB')} <code>HOLYARRS_ALLOWED_HOSTS</code>{t('settings.signIn.proxiesC')}
+				<Words key="settings.signIn.proxiesHint" />
 			</p>
 		</SettingsCard>
 	</MoreOptions>
@@ -640,7 +641,7 @@
 		height: auto;
 		padding-top: 10px;
 	}
-	code {
+	p :global(code) {
 		font-family: var(--font-mono);
 		color: var(--text);
 	}

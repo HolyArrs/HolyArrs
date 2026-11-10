@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Words from '#lib/ui/Words.svelte';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import Button from '#lib/ui/Button.svelte';
@@ -98,7 +99,7 @@
 			{#if picked.disambiguation}<p class="small muted">{picked.disambiguation}</p>{/if}
 			{#if musicFolders.length === 0}
 				<p class="notice warn" >
-					{t('requests.add.noFolder.music')} <a href={to(`/settings/library-folders`)} class="ul">{t('requests.add.addOne')}</a> {t('requests.add.addOneAfter')}
+					<Words key="requests.add.noFolder.music" links={{ a: to('/settings/library-folders') }} linkClass="ul" />
 				</p>
 			{:else}
 				<div class="field">
@@ -178,7 +179,7 @@
 <style>
 	.sheet-form { display: flex; flex-direction: column; gap: 4px; }
 	.form-error { margin: 8px 0 0; color: var(--fail); font: var(--t-callout); }
-	.ul {
+	.notice :global(.ul) {
 		color: var(--text);
 		text-decoration: underline;
 	}

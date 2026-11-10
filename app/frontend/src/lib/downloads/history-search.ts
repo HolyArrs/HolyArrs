@@ -1,5 +1,5 @@
 // History: the address it reads, the "who did it" filter, a row's step and extra piece, and the actions a row's details offer.
-import { t as say, lang } from '#lib/core/i18n/i18n.svelte.ts';
+import { t as say, lang, appLocale } from '#lib/core/i18n/i18n.svelte.ts';
 import { readFilter, type HistoryRow } from './history.ts';
 import { fineCheck, historyTabs, tabKinds } from './history-tabs.ts';
 import { cap, episodeBits, missingLine, plainWhy, resolutionOf } from './history-lines.ts';
@@ -340,7 +340,7 @@ export function agoShort(at: string, now = new Date()): string {
 	y.setDate(y.getDate() - 1);
 	if (t.toDateString() === now.toDateString()) return say('alerts.time.hours', { n: Math.floor(s / 3600) });
 	if (t.toDateString() === y.toDateString()) return say('downloads.day.yesterday');
-	return t.toLocaleDateString(lang.value === 'en' ? 'en-US' : lang.value, { month: 'short', day: 'numeric', ...(t.getFullYear() !== now.getFullYear() ? { year: 'numeric' } : {}) });
+	return t.toLocaleDateString(appLocale('en-US'), { month: 'short', day: 'numeric', ...(t.getFullYear() !== now.getFullYear() ? { year: 'numeric' } : {}) });
 }
 
 const routineKinds = new Set(tabKinds('routine') ?? []);

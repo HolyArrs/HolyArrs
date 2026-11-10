@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Words from '#lib/ui/Words.svelte';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import Field from '#lib/ui/Field.svelte';
@@ -71,8 +72,8 @@
 <div class="sc-form">
 <SettingsCard id="api-start" title={t('settings.api.start')}>
 	<ol class="steps small">
-		<li>{t('settings.api.step1a')} <a href="#keys-card">{t('settings.api.step1link')}</a>{t('settings.api.step1b')}</li>
-		<li>{t('settings.api.step2a')} <code>X-Api-Key</code> {t('settings.api.step2b')}</li>
+		<li><Words key="settings.api.step1" links={{ a: '#keys-card' }} /></li>
+		<li><Words key="settings.api.step2" /></li>
 		<li>
 			{t('settings.api.base')}
 			<div class="cmd address">
@@ -100,7 +101,7 @@
 {/if}
 <div>
 <SettingsCard title={t('settings.api.examples')}>
-	<p class="small muted">{t('settings.api.setKeyA')} <code>HOLYARRS_KEY</code> {t('settings.api.setKeyB')}</p>
+	<p class="small muted"><Words key="settings.api.setKey" /></p>
 	<ul class="examples">
 		{#each examples as e (e.cmd)}
 			<li>

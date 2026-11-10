@@ -1,6 +1,6 @@
 // What an ask carries from the metadata answer (seasons, release dates, language), the audio languages an approver can ask for, and who asked.
 
-import { lang, t } from '#lib/core/i18n/i18n.svelte.ts';
+import { lang, t, appLocale } from '#lib/core/i18n/i18n.svelte.ts';
 import type { Ask } from '../core/types.ts';
 
 /** A season as the metadata answer lists it. */
@@ -46,7 +46,7 @@ export function readInfo(raw: Record<string, unknown>): AskInfo {
 const day = (iso: string) => iso.slice(0, 10);
 
 /** The language dates are written in: English keeps the US form. */
-const dateLocale = () => (lang.value === 'en' ? 'en-US' : lang.value);
+const dateLocale = () => appLocale('en-US');
 
 /** When something happened ("Mar 3") in the viewer's own time zone, never later than now. */
 export function whenDate(iso: string, now = new Date()): string {

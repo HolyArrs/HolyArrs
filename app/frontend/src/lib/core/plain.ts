@@ -64,11 +64,17 @@ export function plainReason(text: string): { text: string; detail?: string } {
 	return { text: /[.!?]$/.test(head) ? head : `${head}.`, detail: raw };
 }
 
-// Who settled a request, worded for the viewer; empty while still open.
-export function decided(a: Pick<Ask, 'state' | 'decided_by' | 'auto_approved'>, me?: { id: number; displayName: string }): string {
+// The name of who settled a request, for the viewer; empty while still open.
+export function decidedWho(a: Pick<Ask, 'state' | 'decided_by'>, me?: { id: number; displayName: string }): string {
 	if (!a.decided_by || a.state === 'asked') return '';
 	const mine = me && me.id === a.decided_by.id ? me.displayName.trim() : '';
-	const who = mine || a.decided_by.display_name?.trim() || a.decided_by.name || t('core.plain.anAdmin');
+	return mine || a.decided_by.display_name?.trim() || a.decided_by.name || t('core.plain.anAdmin');
+}
+
+// Who settled a request, worded for the viewer; empty while still open.
+export function decided(a: Pick<Ask, 'state' | 'decided_by' | 'auto_approved'>, me?: { id: number; displayName: string }): string {
+	const who = decidedWho(a, me);
+	if (!who) return '';
 	if (a.state === 'turned_down') return t('core.plain.declinedBy', { who });
 	if (a.auto_approved) return t('core.plain.autoApproved');
 	return t('core.plain.approvedBy', { who });

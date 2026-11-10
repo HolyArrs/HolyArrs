@@ -48,7 +48,7 @@
 	.ui-actmenu :global(.ui-pop > .trigger:active) { scale: .95; transition-duration: var(--dur-instant); }
 	.ui-actmenu :global(.ui-pop > .trigger:focus-visible) { outline: none; box-shadow: 0 0 0 2px #111, 0 0 0 4px #fff; }
 	.ui-actmenu :global(.panel) { color: var(--text); }
-	.chev { margin-left: -2px; opacity: .8; }
+	.chev { margin-inline-start: -2px; opacity: .8; }
 	.tip {
 		position: absolute; left: 50%; top: calc(100% + 8px); z-index: 5; translate: -50% -4px; padding: 5px 9px; border-radius: 7px;
 		background: rgb(20 20 22 / 92%); color: #fff; font: 600 12px/1.2 var(--font-ui); white-space: nowrap; pointer-events: none;

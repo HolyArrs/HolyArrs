@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Words from '#lib/ui/Words.svelte';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
@@ -79,7 +80,7 @@
 	<div data-testid="control-app">
 		<SettingsCard id="danger-card" tone="danger" icon="alert" title={t('settings.danger.wholeApp')}>
 			<p class="small muted">
-				{t('settings.danger.intro1')} <code>no</code>{t('settings.danger.intro2')}
+				<Words key="settings.danger.intro" />
 			</p>
 			<div class="row acts">
 				<Button type="button" onclick={() => app('restart', t('settings.danger.restart'))} disabled={!!busy}>{t('settings.danger.restart')}</Button>
@@ -103,7 +104,7 @@
 		margin-top: var(--s-3);
 		flex-wrap: wrap;
 	}
-	code {
+	p :global(code) {
 		font-family: var(--font-mono);
 	}
 </style>

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Words from '#lib/ui/Words.svelte';
 	// Retro about window: types its lines, slams tags in, and sends runners across the title bar.
 	import silkscreen from '@fontsource/silkscreen/files/silkscreen-latin-400-normal.woff2?url';
 	import { tick } from 'svelte';
@@ -243,7 +244,7 @@
 			<div class="story">
 				<section>
 					<span class="wtag stk">{t('health.why.then')}</span>
-					<p class="big typed">{t('health.why.years1')} <em>{t('health.why.years2')}</em> {t('health.why.years3')}</p>
+					<p class="big typed"><Words key="health.why.years" /></p>
 					<div class="wapps">
 						<span class="wchip stk" style="--c:#4f8cff"><i></i>{t('health.why.shows')}</span>
 						<span class="wchip stk" style="--c:#f2b33d"><i></i>{t('health.why.movies')}</span>
@@ -336,7 +337,7 @@
 	.heart { display: inline-grid; grid-template-columns: repeat(7, 3px); grid-auto-rows: 3px; margin-right: 2px; }
 	.heart b { background: var(--red); }
 	.big { margin: 0; font: 600 21px/1.3 var(--font-ui); letter-spacing: -.01em; color: var(--cream); text-wrap: balance; }
-	.big em { font-style: normal; color: var(--red-soft); }
+	.big :global(em) { font-style: normal; color: var(--red-soft); }
 	.say { margin: 8px 0 0; font-size: 15px; line-height: 1.6; color: color-mix(in srgb, var(--cream) 78%, transparent); }
 	.wapps { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
 	.wchip { display: inline-flex; align-items: center; gap: 7px; height: 32px; padding: 0 12px; border: 2px solid rgb(243 239 229 / 35%); background: var(--coal-2); font: 400 10.5px/1 var(--pixel); letter-spacing: .16em; text-transform: uppercase; color: var(--muted); transform: rotate(var(--r1, 0deg)); }

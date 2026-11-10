@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Words from '#lib/ui/Words.svelte';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import Button from '#lib/ui/Button.svelte';
 	import { IMAGE, goBackBackup, imageTag, type BackupRow } from './update-notice.ts';
@@ -36,12 +37,12 @@
 			<li>
 				{t('updates.goBack.step1a')}
 				<span class="cmd"><code data-testid="go-back-image">{IMAGE}:{tag}</code><Button variant="plain" size="sm" type="button" onclick={() => copy(`${IMAGE}:${tag}`)} aria-label={t('updates.goBack.copyImage')}>{t('updates.goBack.copy')}</Button></span>
-				{t('updates.goBack.step1b')} <code>{tag}</code>.
+				<Words key="updates.goBack.step1b" vars={{ tag }} />
 			</li>
-			<li>{t('updates.goBack.step2a')} <code>docker compose up -d</code>{t('updates.goBack.step2b')}</li>
-			<li>{t('updates.goBack.step3a', { version: goBack.from_version })} <code>docker logs &lt;container&gt;</code> {t('updates.goBack.step3b')} <b>{t('updates.goBack.step3c')}</b>{t('updates.goBack.step3d')}</li>
+			<li><Words key="updates.goBack.step2" /></li>
+			<li><Words key="updates.goBack.step3" vars={{ version: goBack.from_version }} /></li>
 		</ol>
-		<p class="fine">{t('updates.goBack.fine1')} {t('updates.goBack.fine2')} <code>docker exec &lt;container&gt; /holyarrs restore --pre-update</code>{t('updates.goBack.fine3')} <code>docker restart &lt;container&gt;</code>.</p>
+		<p class="fine"><Words key="updates.goBack.fine" /></p>
 	</section>
 {/if}
 

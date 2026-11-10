@@ -132,7 +132,7 @@
 	.act { flex: none; min-height: 32px; padding: 0 14px; border-radius: 999px; color: #f5f5f7; background: rgb(255 255 255 / 14%); font: var(--t-subhead); font-size: 13px; font-weight: 600; }
 	.act:hover { background: rgb(255 255 255 / 22%); }
 	/* × on the top-right corner: on hover or focus with a mouse, always on touch. */
-	.x { position: absolute; top: -6px; right: -6px; width: 22px; height: 22px; display: grid; place-items: center; border-radius: 50%; color: #f5f5f7; background: rgb(58 58 64 / 90%); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); box-shadow: 0 2px 8px rgb(0 0 0 / 40%), inset 0 0 0 0.5px rgb(255 255 255 / 14%); opacity: 0; transform: scale(0.85); transition: opacity var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out); }
+	.x { position: absolute; top: -6px; inset-inline-end: -6px; width: 22px; height: 22px; display: grid; place-items: center; border-radius: 50%; color: #f5f5f7; background: rgb(58 58 64 / 90%); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); box-shadow: 0 2px 8px rgb(0 0 0 / 40%), inset 0 0 0 0.5px rgb(255 255 255 / 14%); opacity: 0; transform: scale(0.85); transition: opacity var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out); }
 	.card:hover .x, .card:focus-within .x { opacity: 1; transform: none; }
 	.act:focus-visible, .x:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	@media (pointer: coarse) {

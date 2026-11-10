@@ -87,6 +87,7 @@
 
 <svg
 	class="icon"
+	class:flip={name === 'chevronLeft' || name === 'chevronRight' || name === 'arrow' || name === 'back'}
 	width={size}
 	height={size}
 	viewBox="0 0 24 24"
@@ -106,5 +107,9 @@
 	.icon {
 		flex: none;
 		display: block;
+	}
+	/* Direction arrows point the other way in right-to-left languages. */
+	:global([dir='rtl']) .flip {
+		transform: scaleX(-1);
 	}
 </style>

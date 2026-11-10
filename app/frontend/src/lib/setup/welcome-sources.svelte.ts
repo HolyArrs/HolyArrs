@@ -4,6 +4,7 @@ import { kindWords, type DownloaderView } from '#lib/downloads/index.ts';
 import { setContext } from 'svelte';
 import { api } from '#lib/core/api.ts';
 import type { LibraryFolder } from '#lib/core/types.ts';
+import { t } from '#lib/core/i18n/i18n.svelte.ts';
 
 export type Todo = { label: string; path: string };
 
@@ -63,7 +64,7 @@ export function createWelcomeSources(ctx: { busy: boolean; listDownloaders: () =
 			list<{ kind: string }>('/bridges', 'bridges'),
 			sourceCount()
 		]);
-		const kindName: Record<string, string> = { movie: 'Movies', show: 'TV shows', music: 'Music' };
+		const kindName: Record<string, string> = { movie: t('setup.movies'), show: t('setup.tvShows'), music: t('setup.music') };
 		const bridgeName: Record<string, string> = { prowlarr: 'Prowlarr', jackett: 'Jackett' };
 		// One line each: two downloaders of one kind would repeat a line, and the list is keyed by its text.
 		haveSet = [...new Set([
@@ -75,9 +76,9 @@ export function createWelcomeSources(ctx: { busy: boolean; listDownloaders: () =
 		const folders = fl ? fl.length : 1;
 		const dls = dl ? dl.length : 1;
 		todo = [
-			...(folders ? [] : [{ label: 'Folders', path: '/settings/library-folders' }]),
-			...(dls ? [] : [{ label: 'Downloader', path: '/settings/downloaders' }]),
-			...(srcs ? [] : [{ label: 'Source', path: '/settings/sources' }])
+			...(folders ? [] : [{ label: t('setup.folders'), path: '/settings/library-folders' }]),
+			...(dls ? [] : [{ label: t('setup.downloader'), path: '/settings/downloaders' }]),
+			...(srcs ? [] : [{ label: t('setup.source'), path: '/settings/sources' }])
 		];
 	}
 	// Invite family: turns on Requests (what the old "family" question did), then opens Users.

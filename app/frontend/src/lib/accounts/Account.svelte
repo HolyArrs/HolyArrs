@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { t } from '#lib/core/i18n/i18n.svelte.ts';
+	import { t, appLocale } from '#lib/core/i18n/i18n.svelte.ts';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Button from '#lib/ui/Button.svelte';
@@ -8,6 +8,7 @@
 	import SaveBar from '#lib/ui/SaveBar.svelte';
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
 	import Sessions from './Sessions.svelte';
+	import LanguagePicker from './LanguagePicker.svelte';
 	import AccountSecurity from './AccountSecurity.svelte';
 	import { strong } from './strong-error.ts';
 	import { profile, loadProfile, saveDisplayName } from './profile.svelte.ts';
@@ -361,6 +362,10 @@
 </SettingsCard>
 
 <SettingsCard id="preferences-me" title={t('accounts.account.preferences')} icon="appearance">
+	<div class="srow" id="language-row-me">
+		<div class="txt"><label class="label" for="language-me">{t('accounts.language.label')}</label><span class="hint">{t('accounts.language.hint')}</span></div>
+		<div class="ctl"><LanguagePicker id="language-me" /></div>
+	</div>
 	<div class="srow">
 		<div class="txt"><span class="label">{t('accounts.account.trailers')}</span><span class="hint" title={t('accounts.account.trailersHint')}>{t('accounts.account.trailersHint')}</span></div>
 		<div class="ctl"><SegmentedControl size="sm" label={t('accounts.account.playTrailers')} options={[{ value: 'auto', label: t('accounts.account.auto') }, { value: 'always', label: t('accounts.account.always') }, { value: 'never', label: t('accounts.account.never') }] as { value: AutoplayPref; label: string }[]} value={pref} onchange={(v) => { pref = v; setAutoplayPref(v); location.reload(); }} /></div>
@@ -437,7 +442,7 @@
 			<div class="srow">
 				<div class="txt">
 					<span class="label">{t('accounts.account.lastRead')}</span>
-					<span class="hint">{#if watch.checked_at}<time datetime={watch.checked_at}>{new Date(watch.checked_at).toLocaleString()}</time>{:else}{t('accounts.account.notYet')}{/if}{#if watch.plex_name}{' '}· {t('accounts.account.plexName', { name: watch.plex_name })}{/if}</span>
+					<span class="hint">{#if watch.checked_at}<time datetime={watch.checked_at}>{new Date(watch.checked_at).toLocaleString(appLocale())}</time>{:else}{t('accounts.account.notYet')}{/if}{#if watch.plex_name}{' '}· {t('accounts.account.plexName', { name: watch.plex_name })}{/if}</span>
 				</div>
 				<div class="ctl"><Button variant="secondary" disabled={watchBusy || !watch.can_read} onclick={checkWatch}>{t('accounts.account.readNow')}</Button></div>
 			</div>

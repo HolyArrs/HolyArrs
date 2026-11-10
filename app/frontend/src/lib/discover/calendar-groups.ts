@@ -1,7 +1,7 @@
 // The calendar's words and groupings: card badges, facts lines, day names, month dividers and the cards a busy day folds into.
 import { byDay, entryDay, kindWord } from './calendar.ts';
 import type { CalendarEntry } from '../core/types.ts';
-import { t } from '#lib/core/i18n/i18n.svelte.ts';
+import { t, appLocale } from '#lib/core/i18n/i18n.svelte.ts';
 
 /** One card's dates: one, or several of one show (or one movie) on the same day. */
 export interface CalGroup {
@@ -20,7 +20,7 @@ export function dayName(day: string, today: string): string {
 	if (n === 0) return t('discover.calendarGroups.today');
 	if (n === 1) return t('discover.calendarGroups.tomorrow');
 	if (n === -1) return t('discover.calendarGroups.yesterday');
-	return at(day).toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'short' });
+	return at(day).toLocaleDateString(appLocale(), { weekday: 'long', day: 'numeric', month: 'short' });
 }
 
 /** The short date on a card: Today, Tomorrow, else "Thu 29". */
@@ -29,7 +29,7 @@ export function dayChip(day: string, today: string): string {
 	if (n === 0) return t('discover.calendarGroups.today');
 	if (n === 1) return t('discover.calendarGroups.tomorrow');
 	const d = at(day);
-	return `${d.toLocaleDateString(undefined, { weekday: 'short' })} ${d.getDate()}`;
+	return `${d.toLocaleDateString(appLocale(), { weekday: 'short' })} ${d.getDate()}`;
 }
 
 
@@ -62,7 +62,7 @@ export function monthGroups(entries: CalendarEntry[]): { month: string; name: st
 		const m = d.day.slice(0, 7);
 		const g = out.at(-1);
 		if (g && g.month === m) g.days.push(d);
-		else out.push({ month: m, name: at(d.day).toLocaleDateString(undefined, { month: 'long', year: 'numeric' }), days: [d] });
+		else out.push({ month: m, name: at(d.day).toLocaleDateString(appLocale(), { month: 'long', year: 'numeric' }), days: [d] });
 	}
 	return out;
 }

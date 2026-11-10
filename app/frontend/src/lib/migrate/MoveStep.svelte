@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Words from '#lib/ui/Words.svelte';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import { getContext as moveContext } from 'svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
@@ -53,7 +54,7 @@
 		</div>
 	{:else}
 		{#if safeMode}
-			<p class="notice warn" role="alert">{t('migrate.holyarrsStartedInSafe2')} <a href={to('/settings/danger')}>{t('migrate.dangerZone')}</a></p>
+			<p class="notice warn" role="alert"><Words key="migrate.holyarrsStartedInSafe2" links={{ a: to('/settings/danger') }} /></p>
 		{/if}
 		{#if links}
 			<div class="srow">

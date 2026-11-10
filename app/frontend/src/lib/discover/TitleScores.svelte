@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { t } from '#lib/core/i18n/i18n.svelte.ts';
+	import { t, appLocale } from '#lib/core/i18n/i18n.svelte.ts';
 	import { scoreName, scoreText, type OutsideScore } from '#lib/ui/outside-ratings.ts';
 	// One icon file each: the package index holds every brand (12.9 MB in dev).
 	import rottentomatoes from 'simple-icons/icons/rottentomatoes.svg?raw';
@@ -40,7 +40,7 @@
 			<li title={t('discover.titleScores.tMDBOutOf10', { tmdbText })}>{@render mark('tmdb')}<span class="v">{tmdbText}</span><span class="n">{t('discover.titleScores.tMDB')}</span></li>
 		{/if}
 		{#each scores as s (s.source)}
-			<li title={s.votes ? t('discover.titleScores.withVotes', { name: scoreName(s.source), score: scoreText(s), votes: s.votes.toLocaleString() }) : t('discover.titleScores.noVotes', { name: scoreName(s.source), score: scoreText(s) })}>{@render mark(s.source)}<span class="v">{outOf10 ? ((Math.round((s.value / s.max) * 100) / 10).toFixed(1)) : scoreText(s)}</span><span class="n">{variant === 'list' ? scoreName(s.source) : short[s.source]}</span></li>
+			<li title={s.votes ? t('discover.titleScores.withVotes', { name: scoreName(s.source), score: scoreText(s), votes: s.votes.toLocaleString(appLocale()) }) : t('discover.titleScores.noVotes', { name: scoreName(s.source), score: scoreText(s) })}>{@render mark(s.source)}<span class="v">{outOf10 ? ((Math.round((s.value / s.max) * 100) / 10).toFixed(1)) : scoreText(s)}</span><span class="n">{variant === 'list' ? scoreName(s.source) : short[s.source]}</span></li>
 		{/each}
 		<!-- Every source the app reads, even when this title has no score there yet. -->
 		{#each showMissing ? ['imdb', 'rt_critics', 'rt_audience', 'metacritic', 'letterboxd', 'trakt'].filter((x) => !scores.some((s) => s.source === x)) : [] as source (source)}

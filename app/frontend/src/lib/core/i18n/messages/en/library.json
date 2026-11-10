@@ -144,7 +144,7 @@
 	"library.import.progress": "Progress",
 	"library.import.reading": "Reading the folder and looking each {word} up.",
 	"library.import.adopting": "Adopting.",
-	"library.import.noMatchFiles": "Files that don't match a title?",
+	"library.import.noMatchFiles": "Files that don't match a title? <a>Import files by hand</a>",
 	"library.import.done": "Done",
 	"library.import.nowOne": "1 {word} is now in the Library. Their files were not moved.",
 	"library.import.nowMany": "{n} {words} are now in the Library. Their files were not moved.",

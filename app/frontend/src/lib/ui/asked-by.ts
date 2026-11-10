@@ -1,7 +1,7 @@
 
 // Wording and helpers for the "who asked for this title" labels.
 
-import { t } from '#lib/core/i18n/i18n.svelte.ts';
+import { t, appLocale } from '#lib/core/i18n/i18n.svelte.ts';
 export type Asker = { id: number; name: string; asked_at: string; me: boolean };
 export type AskedByAnswer = { titles: Record<string, { askers: Asker[] }> };
 
@@ -31,7 +31,7 @@ export function firstName(name: string): string {
 export function shortDate(iso: string): string {
 	const d = new Date(iso);
 	if (Number.isNaN(d.getTime())) return '';
-	return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+	return d.toLocaleDateString(appLocale('en-GB'), { day: 'numeric', month: 'short' });
 }
 
 // Puts the viewer first and counts everyone else as "others".

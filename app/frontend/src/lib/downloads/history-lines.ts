@@ -1,5 +1,5 @@
 // The words for a History row. Line 1 says what it is (the title, the episode or the kind of title), a status tag says what kind of thing happened, and line 2 says what happened in plain words, never repeating the title.
-import { t as say, lang } from '#lib/core/i18n/i18n.svelte.ts';
+import { t as say, lang, appLocale } from '#lib/core/i18n/i18n.svelte.ts';
 import type { IconName } from '#lib/ui/Icon.svelte';
 import { dayKey } from './history-kinds.ts';
 import type { HistoryRow } from './history.ts';
@@ -110,7 +110,7 @@ export function dayWord(at: string, now = new Date()): string {
 	y.setDate(y.getDate() - 1);
 	if (k === dayKey(y.toISOString())) return say('downloads.hl.yesterday');
 	const d = new Date(at);
-	return say('downloads.hl.onDate', { date: d.toLocaleDateString(lang.value === 'en' ? 'en-US' : lang.value, { month: 'short', day: 'numeric', ...(d.getFullYear() !== now.getFullYear() ? { year: 'numeric' } : {}) }) });
+	return say('downloads.hl.onDate', { date: d.toLocaleDateString(appLocale('en-US'), { month: 'short', day: 'numeric', ...(d.getFullYear() !== now.getFullYear() ? { year: 'numeric' } : {}) }) });
 }
 
 /** The picture size a release name carries ("1080p", "4K"). */
@@ -130,7 +130,7 @@ export function plainWhy(reason: string): string {
 	return s;
 }
 
-const count = (n: number) => n.toLocaleString(lang.value === 'en' ? 'en-US' : lang.value);
+const count = (n: number) => n.toLocaleString(appLocale('en-US'));
 
 /** How much of a Library folder went out of reach: "All 1,347 files gone". */
 export function folderGone(e: EventRecord): string {

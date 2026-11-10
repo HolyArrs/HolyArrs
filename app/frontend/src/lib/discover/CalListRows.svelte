@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { t } from '#lib/core/i18n/i18n.svelte.ts';
+	import { t, appLocale } from '#lib/core/i18n/i18n.svelte.ts';
 	import Badge from '#lib/ui/Badge.svelte';
 	import IconButton from '#lib/ui/IconButton.svelte';
 	import { entryHref, itemDot, type Follows } from './calendar.ts';
@@ -62,9 +62,9 @@
 		<section class="day" class:today={d.day === today} data-day={d.day}>
 			<header class="dh">
 				<p class="sr-only">{date(d.day + 'T12:00:00')}{d.day === today ? `, ${t('discover.calListRows.today2')}` : ''}</p>
-				<span class="dow" aria-hidden="true">{when.toLocaleDateString(undefined, { weekday: 'short' })}</span>
+				<span class="dow" aria-hidden="true">{when.toLocaleDateString(appLocale(), { weekday: 'short' })}</span>
 				<b aria-hidden="true">{when.getDate()}</b>
-				<span class="mon" aria-hidden="true">{when.toLocaleDateString(undefined, { month: 'short' })}</span>
+				<span class="mon" aria-hidden="true">{when.toLocaleDateString(appLocale(), { month: 'short' })}</span>
 				{#if d.day === today}<span class="tag"><Badge label={t('discover.calListRows.today')} /></span>{/if}
 				<span class="n" aria-hidden="true">{d.groups.length}</span>
 			</header>

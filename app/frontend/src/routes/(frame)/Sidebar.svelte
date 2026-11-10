@@ -89,8 +89,8 @@
 <style>
 	.ui-sidebar {
 		--w: var(--sidebar-expanded);
-		position: fixed; z-index: 40; inset: 0 auto 0 0; width: var(--w); display: flex; flex-direction: column;
-		padding: 10px 10px 10px; background: var(--sidebar-bg); border-right: 1px solid var(--line);
+		position: fixed; z-index: 40; inset-block: 0; inset-inline: 0 auto; width: var(--w); display: flex; flex-direction: column;
+		padding: 10px 10px 10px; background: var(--sidebar-bg); border-inline-end: 1px solid var(--line);
 		backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px);
 		/* Expand: width grows first, labels fade in after. */
 		transition: width var(--dur) var(--ease-out) 0ms, box-shadow var(--dur) var(--ease-out);

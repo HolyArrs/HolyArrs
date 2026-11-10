@@ -4,7 +4,7 @@ import { serviceRegion } from '#lib/ui/region.ts';
 import { have } from './explore-rows.ts';
 import { type ProviderItem } from '#lib/ui/title-cards.ts';
 import { type ExploreType } from './explore-type.ts';
-import { t } from '#lib/core/i18n/i18n.svelte.ts';
+import { t, appLocale } from '#lib/core/i18n/i18n.svelte.ts';
 
 /** One streaming service from GET /watch-services. */
 export interface WatchService {
@@ -108,6 +108,6 @@ export function serviceLabel(r: Pick<ServiceTopRow, 'source' | 'name' | 'age_sec
 	if (r.source !== 'streaming-availability') return t('discover.exploreServices.popularOn', { name: r.name });
 	if (r.age_seconds < 24 * 3600) return t('discover.exploreServices.trendingNowOn', { name: r.name });
 	const d = new Date(r.fetched_at);
-	const when = Number.isNaN(d.getTime()) ? t('discover.exploreServices.recently') : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+	const when = Number.isNaN(d.getTime()) ? t('discover.exploreServices.recently') : d.toLocaleDateString(appLocale('en-US'), { month: 'short', day: 'numeric', timeZone: 'UTC' });
 	return t('discover.exploreServices.trendingOnAsOf', { name: r.name, when });
 }
