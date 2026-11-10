@@ -132,6 +132,28 @@ After the first good start the copy becomes `holyarrs-backup-pre-update-<time>.z
 
 </details>
 
+<details class="ha-more"><summary id="verify-the-image">Verify the image</summary>
+
+From 1.0.3 on, every image on Docker Hub is signed by the release run on GitHub. There is no key to download. Check an image with [cosign](https://docs.sigstore.dev/cosign/system_config/installation/):
+
+```bash
+cosign verify holyarrs/holyarrs:1.0.3 \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+  --certificate-identity-regexp '^https://github.com/HolyArrs/HolyArrs/\.github/workflows/sign\.yml@refs/(tags/[0-9.]+|heads/main)$'
+```
+
+You should see `The cosign claims were validated`. Anything else means the image did not come from the HolyArrs release run: don't run it.
+
+The image also carries a record of how it was built and a list of what is inside it (an SBOM). Check them with the GitHub CLI:
+
+```bash
+gh attestation verify oci://docker.io/holyarrs/holyarrs:1.0.3 --repo HolyArrs/HolyArrs
+```
+
+The same files are on each [GitHub release](https://github.com/HolyArrs/HolyArrs/releases): `.sigstore.json` (signature), `.intoto.jsonl` (build record) and `.sbom.spdx.json` (contents).
+
+</details>
+
 ## Related
 
 - [Backups](backups.md)
