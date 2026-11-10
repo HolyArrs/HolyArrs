@@ -289,5 +289,6 @@
 	"migrate.notMoved2": "Nieimportowane · {name}",
 	"migrate.holyarrsHandlesTheseIts": "HolyArrs obsługuje je po swojemu. Nic do zrobienia.",
 	"migrate.allApps": "Wszystkie aplikacje",
-	"migrate.ifAnOldApp": "Jeśli dotychczasowa aplikacja widzi folder pod inną ścieżką, wpisz obie."
+	"migrate.ifAnOldApp": "Jeśli dotychczasowa aplikacja widzi folder pod inną ścieżką, wpisz obie.",
+	"migrate.doneOfTotal": "{done} z {total}"
 }

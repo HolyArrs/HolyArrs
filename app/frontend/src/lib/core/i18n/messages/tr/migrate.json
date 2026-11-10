@@ -289,5 +289,6 @@
 	"migrate.notMoved2": "İçe aktarılmadı · {name}",
 	"migrate.holyarrsHandlesTheseIts": "HolyArrs bunları kendi yöntemiyle halleder. Yapılacak bir şey yok.",
 	"migrate.allApps": "Tüm uygulamalar",
-	"migrate.ifAnOldApp": "Eski bir uygulama bir klasörü farklı bir yolda görüyorsa ikisini de yaz."
+	"migrate.ifAnOldApp": "Eski bir uygulama bir klasörü farklı bir yolda görüyorsa ikisini de yaz.",
+	"migrate.doneOfTotal": "{done}/{total}"
 }

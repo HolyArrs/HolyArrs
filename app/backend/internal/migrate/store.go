@@ -17,7 +17,7 @@ var MaxSnapshot = 16 << 20
 const MaxSnapshots = 50
 
 // ErrSnapshotTooBig refuses a Snapshot over MaxSnapshot.
-var ErrSnapshotTooBig = errors.New("the snapshot is bigger than the move tool keeps")
+var ErrSnapshotTooBig = errors.New("the snapshot is bigger than the import tool keeps")
 
 // ErrNoSnapshot is a missing Snapshot.
 var ErrNoSnapshot = errors.New("no such snapshot")

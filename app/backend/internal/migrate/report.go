@@ -23,16 +23,16 @@ func md(s string) string {
 // screen offers it as a download).
 func (r *Report) Markdown() string {
 	var b strings.Builder
-	title := "Move report"
+	title := "Import report"
 	switch {
 	case r.Undo:
 		title = "Undo report"
 	case r.Dry:
-		title = "Move dry run"
+		title = "Import dry run"
 	}
 	fmt.Fprintf(&b, "# HolyArrs %s\n\n", strings.ToLower(title[:1])+title[1:])
 	if r.Move != 0 {
-		fmt.Fprintf(&b, "- Move: %d\n", r.Move)
+		fmt.Fprintf(&b, "- Import: %d\n", r.Move)
 	}
 	fmt.Fprintf(&b, "- When: %s\n", r.At.Format("2006-01-02 15:04 MST"))
 	if len(r.Apps) > 0 {
@@ -68,7 +68,7 @@ func (r *Report) Markdown() string {
 		groups[l.Group] = append(groups[l.Group], l)
 	}
 	if len(order) > 0 {
-		b.WriteString("\n## What moved\n")
+		b.WriteString("\n## What was imported\n")
 	}
 	for _, g := range order {
 		label := GroupLabels[g]
@@ -81,7 +81,7 @@ func (r *Report) Markdown() string {
 		}
 	}
 	if len(r.NotMoved) > 0 {
-		b.WriteString("\n## Not moved\n\nThese settings have no HolyArrs match. They stay in the old apps.\n\n| Setting | From | Why |\n| --- | --- | --- |\n")
+		b.WriteString("\n## Not imported\n\nThese settings have no HolyArrs match. They stay in the old apps.\n\n| Setting | From | Why |\n| --- | --- | --- |\n")
 		for _, n := range r.NotMoved {
 			fmt.Fprintf(&b, "| %s | %s | %s |\n", md(n.What), md(n.From), md(n.Why))
 		}
@@ -92,6 +92,6 @@ func (r *Report) Markdown() string {
 			fmt.Fprintf(&b, "- %s\n", md(n))
 		}
 	}
-	b.WriteString("\nThe move never changes, moves, renames or deletes a media file, and never writes to the old apps.\n")
+	b.WriteString("\nThe import never changes, moves, renames or deletes a media file, and never writes to the old apps.\n")
 	return b.String()
 }

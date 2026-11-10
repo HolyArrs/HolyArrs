@@ -289,5 +289,6 @@
 	"migrate.notMoved2": "Niet geïmporteerd · {name}",
 	"migrate.holyarrsHandlesTheseIts": "HolyArrs handelt deze op zijn eigen manier af. Er is niets te doen.",
 	"migrate.allApps": "Alle apps",
-	"migrate.ifAnOldApp": "Ziet een oude app een map onder een ander pad, voer dan beide in."
+	"migrate.ifAnOldApp": "Ziet een oude app een map onder een ander pad, voer dan beide in.",
+	"migrate.doneOfTotal": "{done} van {total}"
 }
