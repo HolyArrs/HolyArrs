@@ -600,7 +600,7 @@ test("no problems: Move tests quietly, confirms once and goes straight to the mo
   const tested = p.waitForRequest("**/api/v1/migrate/dry-run");
   await primary(p).click();
   await tested;
-  const confirm = p.getByRole("dialog", { name: /^Move \d+ items?\?$/ });
+  const confirm = p.getByRole("dialog", { name: /^Import \d+ items?\?$/ });
   await expect(confirm).toContainText("From Radarr and Seerr.");
   await expect(p.getByRole("dialog", { name: "Before you import" })).toHaveCount(0);
   const started = p.waitForRequest((r) => r.url().endsWith("/api/v1/migrate/moves") && r.method() === "POST");
@@ -620,7 +620,7 @@ test("poll errors: one soft capsule, no toasts, then it recovers; nothing is ask
       n === 0 ? running(0.2) : n <= 2 ? { status: 500, json: { error: "down" } } : n <= 4 ? running(0.6) : { status: 200, json: { move: done, progress: 1, progress_note: "" } },
   });
   await p.goto("/settings/move?move=7");
-  await expect(current(p)).toHaveAttribute("aria-label", /Step 3 of 4, Move/);
+  await expect(current(p)).toHaveAttribute("aria-label", /Step 3 of 4, Import/);
   await expect(p.getByTestId("move-progress")).toBeVisible();
   await expect(p.getByTestId("move-progress")).toContainText("Can't reach HolyArrs", { timeout: 10_000 });
   // A lost poll never toasts.
@@ -651,7 +651,7 @@ test("?move=N: a running move shows Move and follows it; a done move shows Done"
         : { status: 200, json: { move: done, progress: 1, progress_note: "" } },
   });
   await p.goto("/settings/move?move=7");
-  await expect(current(p)).toHaveAttribute("aria-label", /Step 3 of 4, Move/);
+  await expect(current(p)).toHaveAttribute("aria-label", /Step 3 of 4, Import/);
   await expect(p.getByTestId("done-result")).toContainText("Imported", { timeout: 15_000 });
   await p.goto("/settings/move?move=8");
   await expect(current(p)).toHaveAttribute("aria-label", /Step 4 of 4, Done/);
