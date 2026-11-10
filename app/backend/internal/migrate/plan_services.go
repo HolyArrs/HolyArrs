@@ -108,8 +108,17 @@ func (b *builder) indexers(s *Snapshot) {
 			b.not(GroupSources, from, ix.Name, "a link-local or cloud metadata address; HolyArrs never reaches those")
 			continue
 		}
-		if p := setStr(ix.Settings, "apiPath"); format != "rss" && p != "" && p != "/api" {
-			u = strings.TrimSuffix(u, "/") + "/" + strings.TrimPrefix(clip(p, 100), "/")
+		// The old apps call the address plus its feed path ("/api" unless
+		// set), as Prowlarr's per-site addresses (http://prowlarr:9696/5/)
+		// need. A path the address already ends in is not added twice.
+		if format != "rss" {
+			p := strings.Trim(clip(setStr(ix.Settings, "apiPath"), 100), "/")
+			if p == "" {
+				p = "api"
+			}
+			if base := strings.TrimSuffix(u, "/"); !strings.HasSuffix(base, "/"+p) {
+				u = base + "/" + p
+			}
 		}
 		protocol := "torrent"
 		if format == "newznab" || ix.Protocol == "usenet" {

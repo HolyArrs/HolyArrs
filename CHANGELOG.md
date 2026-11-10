@@ -2,6 +2,23 @@
 
 All notable changes to HolyArrs are listed here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## 1.0.9
+
+### Added
+
+- Library > Add > Import from a folder opens the page to match a title by hand. ([#183](https://github.com/HolyArrs/HolyArrs/issues/183))
+
+### Fixed
+
+- A Source that searches through Prowlarr or Jackett says when that app isn't answering. ([#179](https://github.com/HolyArrs/HolyArrs/issues/179))
+- Sources from Prowlarr and Jackett read the right feed address. ([#180](https://github.com/HolyArrs/HolyArrs/issues/180))
+- Settings > Subtitles no longer shows "404 page not found". ([#182](https://github.com/HolyArrs/HolyArrs/issues/182))
+- Files a scan saved before the episodes were known can now be imported by hand. ([#185](https://github.com/HolyArrs/HolyArrs/issues/185))
+- Home hides the Requests box while Requests is turned off. ([#186](https://github.com/HolyArrs/HolyArrs/issues/186))
+- Deleting a title asks you to type its name only when the files go for good. ([#187](https://github.com/HolyArrs/HolyArrs/issues/187))
+- Importing a large Lidarr library works. ([#188](https://github.com/HolyArrs/HolyArrs/issues/188))
+- Drop-down lists are readable in dark mode. ([#190](https://github.com/HolyArrs/HolyArrs/issues/190))
+
 ## 1.0.8
 
 ### Added

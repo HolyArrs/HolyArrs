@@ -208,6 +208,8 @@
 	"migrate.itemFailed": "{n} 项失败",
 	"migrate.itemsFailed": "{n} 项失败",
 	"migrate.reasonsAreInResults": "原因见“结果”。",
+	"migrate.reasonsMatchByHand": "原因见“结果”。未识别的剧集或电影可以手动匹配。",
+	"migrate.matchByHand": "手动匹配",
 	"migrate.results": "结果",
 	"migrate.show4": "显示{label}",
 	"migrate.notMoved": "未导入",

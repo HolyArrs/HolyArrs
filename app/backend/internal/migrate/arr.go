@@ -231,6 +231,10 @@ func (r arrReader) fromAPI(ctx context.Context, src Source) (*arrRows, error) {
 				break
 			}
 		}
+		// A large Lidarr answers its whole album list in one piece; read it artist by artist instead.
+		if s.name == "albums" && errors.Is(lastErr, ErrTooBig) {
+			got, lastErr = r.albumsByArtist(ctx, c, out.sets["titles"])
+		}
 		if lastErr != nil {
 			if s.needed || !errors.Is(lastErr, ErrBadAnswer) {
 				return nil, lastErr
@@ -429,4 +433,21 @@ func first(m map[string]any, keys ...string) any {
 		}
 	}
 	return nil
+}
+
+// albumsByArtist reads Lidarr's albums one artist at a time.
+func (r arrReader) albumsByArtist(ctx context.Context, c *apiClient, artists []map[string]any) (any, error) {
+	all := []any{}
+	for _, a := range artists {
+		var got []any
+		q := url.Values{"artistId": {strconv.FormatInt(num(a["id"]), 10)}}
+		if err := c.getJSON(ctx, r.apiBase()+"/album", q, &got); err != nil {
+			return nil, err
+		}
+		all = append(all, got...)
+		if len(all) > c.lim.MaxRows {
+			return nil, ErrTooBig
+		}
+	}
+	return all, nil
 }
