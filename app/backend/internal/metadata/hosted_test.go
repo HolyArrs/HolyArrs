@@ -12,7 +12,7 @@ import (
 
 func TestServiceURLDefaultAndOverride(t *testing.T) {
 	t.Setenv(EnvServiceURL, "")
-	if ServiceURL() != "https://holyarrs-api.coderluii.dev" {
+	if ServiceURL() != "https://api.holyarrs.com" {
 		t.Fatal(ServiceURL())
 	}
 	t.Setenv(EnvServiceURL, " https://meta.example.test/ ")

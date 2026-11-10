@@ -15,7 +15,11 @@ import (
 
 // DefaultServiceURL is the HolyArrs metadata server every install uses by
 // default. It is the one place the address lives; EnvServiceURL overrides it.
-const DefaultServiceURL = "https://holyarrs-api.coderluii.dev"
+const DefaultServiceURL = "https://api.holyarrs.com"
+
+// OldServiceURL is the server's first address. It answers until version 2,
+// and the server still writes picture addresses with it.
+const OldServiceURL = "https://holyarrs-api.coderluii.dev"
 
 // EnvServiceURL names the metadata server address override.
 const EnvServiceURL = "HOLYARRS_METADATA_URL"

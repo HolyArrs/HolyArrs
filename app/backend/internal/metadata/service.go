@@ -105,6 +105,9 @@ func NewService(o ServiceOptions) (*Service, error) {
 	cl := *o.HTTP
 	cl.Jar = nil
 	cl.Timeout = 18 * time.Second
+	if u.String() == DefaultServiceURL {
+		cl.Transport = pictureHost{next: cl.Transport, old: OldServiceURL + "/v1/img/", own: DefaultServiceURL + "/v1/img/"}
+	}
 	cl.CheckRedirect = func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }
 	u.Path = ""
 	return &Service{base: u.String(), access: o.Access, http: &cl}, nil
