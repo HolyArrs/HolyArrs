@@ -329,7 +329,10 @@ func (s *Service) get(ctx context.Context, path, provider, id string, q url.Valu
 			result = outbound.Success
 		case errors.Is(err, context.Canceled), errors.Is(err, context.DeadlineExceeded):
 			result = outbound.Canceled
-		case errors.Is(err, ErrServiceUnavailable), errors.Is(err, ErrServiceBusy):
+		case errors.Is(err, ErrServiceBusy):
+			// "Slow down" (from the server or our own pacing) says nothing about the server being down.
+			result = outbound.Canceled
+		case errors.Is(err, ErrServiceUnavailable):
 			result = outbound.TransientFailure
 		}
 		op.Finish(result)
