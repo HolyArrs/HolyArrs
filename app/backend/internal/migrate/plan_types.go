@@ -210,6 +210,9 @@ type TitlePlan struct {
 	// server's defaults).
 	ReleaseGate   string `json:"release_gate,omitempty"`
 	GateDelayDays *int   `json:"gate_delay_days,omitempty"`
+	// Qualities is the quality the old app recorded for each file, by the
+	// file's base name ("WEBDL-1080p").
+	Qualities map[string]string `json:"qualities,omitempty"`
 }
 
 // MusicPolicyPlan is the supported part of an artist's Lidarr monitoring

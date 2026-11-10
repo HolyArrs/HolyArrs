@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	import type { ShowList } from './ItemsSheet.svelte';
 	import { groupLabel, needsGroups, needsLook, resultWords, summary, tone, type Bucket, type Line, type Report } from './move.ts';
 
@@ -21,7 +22,7 @@
 		return {
 			key: l.key + ':' + i,
 			name: l.name,
-			hint: l.result === 'not_found' ? undefined : l.detail,
+			hint: l.result === 'not_found' ? undefined : serverWords(l.detail),
 			pill: { word: resultWords(l.result, after, undo), tone: tone(l.result) },
 			look: needsLook(l.result)
 		};

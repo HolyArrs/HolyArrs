@@ -265,6 +265,7 @@ func (r arrReader) fromAPI(ctx context.Context, src Source) (*arrRows, error) {
 		}
 		out.sets[s.name] = rows
 	}
+	r.fileQualitiesAPI(ctx, c, out)
 	return out, nil
 }
 
@@ -332,6 +333,7 @@ func (r arrReader) fromBackup(ctx context.Context, src Source) (*arrRows, error)
 	if err := r.joinTitles(ctx, t, out); err != nil {
 		return nil, err
 	}
+	r.fileQualitiesBackup(ctx, t, out)
 	// Radarr's availability delay is one key of the Config table (keys
 	// lower-cased); a backup without it leaves this server's default.
 	if r.kind == Radarr && t.exists(ctx, "Config") {

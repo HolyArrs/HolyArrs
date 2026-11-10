@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
@@ -44,7 +45,7 @@
 		)
 	);
 	function lineRow(l: Line, i: number) {
-		return { key: l.key + ':' + i, name: l.name, hint: l.result === 'not_found' ? undefined : l.detail, pill: { word: resultWords(l.result), tone: tone(l.result) }, look: needsLook(l.result) };
+		return { key: l.key + ':' + i, name: l.name, hint: l.result === 'not_found' ? undefined : serverWords(l.detail), pill: { word: resultWords(l.result), tone: tone(l.result) }, look: needsLook(l.result) };
 	}
 </script>
 

@@ -170,7 +170,7 @@
 	"migrate.samePerson": "Same person",
 	"migrate.leaveOut": "Leave out",
 	"migrate.beforeYouMove": "Before you move",
-	"migrate.willMoveTheseWon": "{total} will move. These won't:",
+	"migrate.willMoveTheseWon": "{total} will come over. Your files stay where they are. These won't come over:",
 	"migrate.show2": "Show",
 	"migrate.show3": "Show {label}, {result}",
 	"migrate.needsAChoice": "Needs a choice",
