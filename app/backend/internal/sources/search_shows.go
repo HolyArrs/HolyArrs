@@ -92,7 +92,7 @@ func currentOf(ctx context.Context, db *sql.DB, sl mediafiles.Slot, pr mediafile
 	if f.ReleaseName != nil && *f.ReleaseName != "" {
 		name = *f.ReleaseName
 	}
-	if cur := mediafiles.CurrentOf(name, f.AddedAt, pr.Body); cur.Step != "" {
+	if cur := mediafiles.CurrentOf(mediafiles.JudgeName(name, f.MediaInfo), f.AddedAt, pr.Body); cur.Step != "" {
 		return &cur
 	}
 	if mediafiles.IsMusicRules(pr.Body) {
