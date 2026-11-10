@@ -85,7 +85,7 @@
 					{@render card(`Choose for ${plural(openChoices, 'person', 'people')}`, 'They stay behind until you do.', 'Choose', onchoose)}
 				{/if}
 				{#if (counts.failed ?? 0) > 0}
-					{@render card(`${plural(counts.failed ?? 0, 'item')} failed`, 'Reasons are in Results.', '', () => {})}
+					{@render card(`${plural(counts.failed ?? 0, 'item')} failed`, 'Reasons are in Results. A show or movie that wasn't recognised can be matched by hand.', 'Match by hand', to('/library/import'))}
 				{/if}
 			</div>
 		{/if}

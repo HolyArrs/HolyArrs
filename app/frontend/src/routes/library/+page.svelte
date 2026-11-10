@@ -331,7 +331,7 @@
 		...(!partOff('movies') ? ([{ label: 'Movie', icon: 'film', href: to('/search') }] as MenuItem[]) : []),
 		...(!partOff('shows') ? ([{ label: 'TV show', icon: 'tv', href: to('/search?kind=show') }] as MenuItem[]) : []),
 		...(!partOff('music') ? ([{ label: 'Artist', icon: 'music', href: to('/search?kind=music') }] as MenuItem[]) : []),
-		...(canManage ? ([{ label: 'From a folder', icon: 'folder', href: to('/library/import') }] as MenuItem[]) : [])
+		...(canManage ? ([{ label: 'Import from a folder', icon: 'folder', href: to('/library/import') }] as MenuItem[]) : [])
 	]);
 	// Recently deleted lives in Sort & filter: its count is read when the panel opens (at most once a minute).
 	let deletedCount = $state<number | null>(null);
