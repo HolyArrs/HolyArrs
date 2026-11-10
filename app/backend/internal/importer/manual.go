@@ -123,7 +123,7 @@ func libraryFile(ctx context.Context, db *sql.DB, folders []mediafiles.LibraryFo
 		}
 		var n int
 		if db.QueryRowContext(ctx, `SELECT count(*) FROM files f JOIN versions v ON v.id = f.version_id
-			WHERE v.library_folder_id = ? AND f.relative_path = ? AND f.state = 'present'`, lf.ID, filepath.ToSlash(rel)).Scan(&n) == nil && n > 0 {
+			WHERE v.library_folder_id = ? AND f.relative_path = ? AND f.state = 'present' AND f.slot_ids != '[]'`, lf.ID, filepath.ToSlash(rel)).Scan(&n) == nil && n > 0 {
 			return true
 		}
 	}
@@ -549,6 +549,10 @@ func (im *Importer) recordByHand(ctx context.Context, r *ByHandResult, src, targ
 			Languages: InspectedLanguages(facts), MediaInfo: info, ReleaseName: &release, Origin: "imported", PlacedBy: r.PlacedBy, Role: "main", State: "present"}
 		if g := p.Group.Value; g != "" {
 			f.Group = &g
+		}
+		// A library scan may have noted this file before its episodes were known; that unlinked note gives way.
+		if _, err := tx.Exec(`DELETE FROM files WHERE version_id = ? AND relative_path = ? AND slot_ids = '[]'`, ver.ID, f.RelativePath); err != nil {
+			return err
 		}
 		id, err := database.Insert(tx, "files", f, by)
 		if err != nil {
