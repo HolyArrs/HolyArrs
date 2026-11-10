@@ -36,7 +36,7 @@
 Enregistrez ceci sous le nom `docker-compose.yml` dans un nouveau dossier sur un disque local :
 
 ```yaml
-name: HolyArrs
+name: holyarrs
 services:
   holyarrs:
     image: holyarrs/holyarrs:latest
@@ -207,7 +207,7 @@ Les images sont sur Docker Hub sous le nom [`holyarrs/holyarrs`](https://hub.doc
 ### docker compose (recommandé)
 
 ```yaml
-name: HolyArrs
+name: holyarrs
 services:
   holyarrs:
     image: holyarrs/holyarrs:latest

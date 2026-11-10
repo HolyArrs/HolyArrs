@@ -134,6 +134,24 @@
 		}
 	}
 
+	// Copying on purpose (downloads and media on separate disks): the folder then counts as fine.
+	const copiesOk = (f: LibraryFolder) => f.health === 'no_hardlink' && !!f.copies_expected;
+	const rowTone = (f: LibraryFolder) => (copiesOk(f) ? 'ok' : tone(f.health));
+	const rowHealth = (f: LibraryFolder) => (copiesOk(f) ? t('settings.libraryFolders.copiesExpectedState') : folderHealth(f.health));
+	async function setCopies(f: LibraryFolder, on: boolean) {
+		busyId = f.id;
+		try {
+			const n = await api.put<LibraryFolder>(`/library-folders/${f.id}`, { copies_expected: on });
+			folders = folders.map((x) => (x.id === f.id ? n : x));
+			// Run the checks again so the Settings badge follows at once.
+			void api.post('/health/checks/run').catch(() => {});
+		} catch (err) {
+			toasts.push(t('settings.libraryFolders.couldntSave'), 'fail', { body: message(err) });
+		} finally {
+			busyId = null;
+		}
+	}
+
 	async function remove(f: LibraryFolder) {
 		if (!confirm(t('settings.libraryFolders.confirmRemove', { path: f.path }))) return;
 		busyId = f.id;
@@ -205,12 +223,13 @@
 					<div class="top"><span class="name">{f.label || f.path}</span><span class="kind" data-testid="folder-kind">{f.kind === 'show' ? t('settings.libraryFolders.forShows') : f.kind === 'music' ? t('settings.libraryFolders.forMusic') : t('settings.libraryFolders.forMovies')}</span></div>
 				{/if}
 				<div class="where">{shortPath(f.path)}</div>
-				{#if f.health_reason && tone(f.health) !== 'ok'}<div class="why {tone(f.health)}">{f.health_reason}</div>{/if}
+				{#if f.health_reason && rowTone(f) !== 'ok'}<div class="why {rowTone(f)}">{f.health_reason}</div>{/if}
 			</div>
 			<div class="free"><b>{freeNum(f.free_space)[0]}</b><small>{t('settings.libraryFolders.free', { unit: freeNum(f.free_space)[1] ?? '' })}</small></div>
-			<span class="st {tone(f.health)}"><i></i><span>{folderHealth(f.health)}</span></span>
+			<span class="st {rowTone(f)}"><i></i><span>{rowHealth(f)}</span></span>
 			<div class="acts">
 				<IconButton icon="refresh" label={t('settings.libraryFolders.checkAgain', { path: f.path })} type="button" tooltip={false} disabled={busyId === f.id} onclick={() => recheck(f)} />
+				{#if f.health === 'no_hardlink'}<Button variant="plain" size="sm" type="button" disabled={busyId === f.id} onclick={() => setCopies(f, !f.copies_expected)}>{f.copies_expected ? t('settings.libraryFolders.warnAgain') : t('settings.libraryFolders.copiesExpected')}</Button>{/if}
 				<Button variant="plain" size="sm" type="button" onclick={() => ((editing = f.id), (editLabel = f.label))}>{t('settings.libraryFolders.rename')}</Button>
 				<IconButton icon="trash" label={t('settings.libraryFolders.removePath', { path: f.path })} type="button" tooltip={false} disabled={busyId === f.id} onclick={() => remove(f)} />
 			</div>

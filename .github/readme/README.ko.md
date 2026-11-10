@@ -36,7 +36,7 @@
 로컬 디스크의 새 폴더에 `docker-compose.yml`로 저장하세요.
 
 ```yaml
-name: HolyArrs
+name: holyarrs
 services:
   holyarrs:
     image: holyarrs/holyarrs:latest
@@ -207,7 +207,7 @@ NAS를 쓰세요? [Unraid, Synology 및 기타 NAS](https://docs.HolyArrs.com/ru
 ### docker compose (권장)
 
 ```yaml
-name: HolyArrs
+name: holyarrs
 services:
   holyarrs:
     image: holyarrs/holyarrs:latest

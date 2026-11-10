@@ -36,5 +36,8 @@
 	"settings.libraryFolders.extraDesc": "Import kan ook uit deze mappen lezen",
 	"settings.libraryFolders.folders": "Mappen",
 	"settings.libraryFolders.foldersHint": "Eén pad per regel, bijv. /data/imports. Maximaal 32.",
-	"settings.libraryFolders.ownerOnly": "Alleen eigenaar en beheerders"
+	"settings.libraryFolders.ownerOnly": "Alleen eigenaar en beheerders",
+	"settings.libraryFolders.copiesExpected": "Kopiëren is de bedoeling",
+	"settings.libraryFolders.copiesExpectedState": "Kopieert, zoals bedoeld",
+	"settings.libraryFolders.warnAgain": "Weer waarschuwen"
 }

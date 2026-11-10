@@ -36,5 +36,8 @@
 	"settings.libraryFolders.extraDesc": "L'importazione può leggere anche da queste",
 	"settings.libraryFolders.folders": "Cartelle",
 	"settings.libraryFolders.foldersHint": "Un percorso per riga, es. /data/imports. Fino a 32.",
-	"settings.libraryFolders.ownerOnly": "Solo proprietario e amministratori"
+	"settings.libraryFolders.ownerOnly": "Solo proprietario e amministratori",
+	"settings.libraryFolders.copiesExpected": "La copia è prevista",
+	"settings.libraryFolders.copiesExpectedState": "Copia, come previsto",
+	"settings.libraryFolders.warnAgain": "Avvisa di nuovo"
 }

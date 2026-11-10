@@ -36,5 +36,8 @@
 	"settings.libraryFolders.extraDesc": "导入时也会读取这些文件夹",
 	"settings.libraryFolders.folders": "文件夹",
 	"settings.libraryFolders.foldersHint": "每行一个路径，例如 /data/imports，最多 32 个。",
-	"settings.libraryFolders.ownerOnly": "仅限所有者和管理员"
+	"settings.libraryFolders.ownerOnly": "仅限所有者和管理员",
+	"settings.libraryFolders.copiesExpected": "复制是预期的",
+	"settings.libraryFolders.copiesExpectedState": "复制，符合预期",
+	"settings.libraryFolders.warnAgain": "重新提醒"
 }

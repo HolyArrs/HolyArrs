@@ -36,5 +36,8 @@
 	"settings.libraryFolders.extraDesc": "Импорт может читать и из них",
 	"settings.libraryFolders.folders": "Папки",
 	"settings.libraryFolders.foldersHint": "Один путь на строку, например /data/imports. До 32.",
-	"settings.libraryFolders.ownerOnly": "Только владелец и администраторы"
+	"settings.libraryFolders.ownerOnly": "Только владелец и администраторы",
+	"settings.libraryFolders.copiesExpected": "Копирование ожидаемо",
+	"settings.libraryFolders.copiesExpectedState": "Копирует, как задумано",
+	"settings.libraryFolders.warnAgain": "Снова предупреждать"
 }

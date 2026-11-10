@@ -36,5 +36,8 @@
 	"settings.libraryFolders.extraDesc": "Der Import kann auch aus diesen lesen",
 	"settings.libraryFolders.folders": "Ordner",
 	"settings.libraryFolders.foldersHint": "Ein Pfad pro Zeile, z. B. /data/imports. Bis zu 32.",
-	"settings.libraryFolders.ownerOnly": "Nur Besitzer und Admins"
+	"settings.libraryFolders.ownerOnly": "Nur Besitzer und Admins",
+	"settings.libraryFolders.copiesExpected": "Kopieren ist gewollt",
+	"settings.libraryFolders.copiesExpectedState": "Kopiert, wie gewollt",
+	"settings.libraryFolders.warnAgain": "Wieder warnen"
 }

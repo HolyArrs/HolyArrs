@@ -36,5 +36,8 @@
 	"settings.libraryFolders.extraDesc": "A importação também pode ler destas",
 	"settings.libraryFolders.folders": "Pastas",
 	"settings.libraryFolders.foldersHint": "Um caminho por linha, ex.: /data/imports. Até 32.",
-	"settings.libraryFolders.ownerOnly": "Só o dono e administradores"
+	"settings.libraryFolders.ownerOnly": "Só o dono e administradores",
+	"settings.libraryFolders.copiesExpected": "Copiar é o esperado",
+	"settings.libraryFolders.copiesExpectedState": "Copia, como esperado",
+	"settings.libraryFolders.warnAgain": "Avisar de novo"
 }

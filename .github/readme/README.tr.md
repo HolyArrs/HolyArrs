@@ -36,7 +36,7 @@
 Bunu yerel bir diskteki yeni bir klasöre `docker-compose.yml` olarak kaydet:
 
 ```yaml
-name: HolyArrs
+name: holyarrs
 services:
   holyarrs:
     image: holyarrs/holyarrs:latest
@@ -207,7 +207,7 @@ NAS mı kullanıyorsun? [Unraid, Synology ve diğer NAS cihazları](https://docs
 ### docker compose (önerilen)
 
 ```yaml
-name: HolyArrs
+name: holyarrs
 services:
   holyarrs:
     image: holyarrs/holyarrs:latest

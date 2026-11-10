@@ -36,5 +36,8 @@
 	"settings.libraryFolders.extraDesc": "Імпорт також може читати з цих",
 	"settings.libraryFolders.folders": "Теки",
 	"settings.libraryFolders.foldersHint": "Один шлях в рядок, напр. /data/imports. До 32.",
-	"settings.libraryFolders.ownerOnly": "Лише власник і адміни"
+	"settings.libraryFolders.ownerOnly": "Лише власник і адміни",
+	"settings.libraryFolders.copiesExpected": "Копіювання очікуване",
+	"settings.libraryFolders.copiesExpectedState": "Копіює, як задумано",
+	"settings.libraryFolders.warnAgain": "Знову попереджати"
 }
