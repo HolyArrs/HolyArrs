@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import Field from '#lib/ui/Field.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
@@ -88,7 +89,7 @@
 			for (const k of ['pass_mark_movie', 'pass_mark_episode', 'search_hours', 'better_hours', 'better_days', 'batch', 'sync_from_fps', 'sync_to_fps', 'sync_step_ms'] as const) body[k] = Number(body[k]);
 			settings = await api.put<SubtitleSettings>('/settings/subtitles', body);
 			saved = JSON.stringify(settings);
-			toasts.push('Subtitle settings saved', 'ok');
+			toasts.push(t('settings.subtitles.saved'), 'ok');
 		} catch (err) {
 			setError = message(err);
 		} finally {
@@ -122,7 +123,7 @@
 		e.preventDefault();
 		if (!form) return;
 		if (needs.length) {
-			formError = `This site needs your account: fill in ${needs.map((n) => accountWords[n].toLowerCase()).join(' and ')}.`;
+			formError = t('settings.subtitles.needsAccount', { fields: needs.map((n) => accountWords[n].toLowerCase()).join(t('settings.subtitles.and')) });
 			return;
 		}
 		busy = true;
@@ -130,7 +131,7 @@
 		try {
 			const body = siteBody(form);
 			const saved = isNew ? await api.post<SiteView>('/subtitle-sites', body) : await api.put<SiteView>(`/subtitle-sites/${editing!.ID}`, body);
-			toasts.push(`${saved.name} saved`, 'ok');
+			toasts.push(t('settings.subtitles.siteSaved', { name: saved.name }), 'ok');
 			editing = null;
 			form = null;
 			await loadSites();
@@ -160,27 +161,27 @@
 		try {
 			// A change without account details keeps the stored ones.
 			await api.put(`/subtitle-sites/${s.ID}`, { ...siteBody(siteForm(k, s)), enabled: !paused });
-			toasts.push(paused ? `${s.name} paused` : `${s.name} resumed`, 'ok', paused ? { body: 'Searches skip it' } : undefined);
+			toasts.push(paused ? t('settings.subtitles.paused', { name: s.name }) : t('settings.subtitles.resumed', { name: s.name }), 'ok', paused ? { body: t('settings.subtitles.skipIt') } : undefined);
 			await loadSites();
 		} catch (err) {
-			toasts.push(`Couldn't ${paused ? 'pause' : 'resume'} Subtitle site`, 'fail', { body: message(err) });
+			toasts.push(paused ? t('settings.subtitles.couldntPause') : t('settings.subtitles.couldntResume'), 'fail', { body: message(err) });
 		}
 	}
 
 	async function remove(s: SiteView) {
-		if (!confirm(`Remove ${s.name}? Saved subtitles stay.`)) return;
+		if (!confirm(t('settings.subtitles.confirmRemove', { name: s.name }))) return;
 		try {
 			await api.del(`/subtitle-sites/${s.ID}`);
 			await loadSites();
 		} catch (err) {
-			toasts.push("Couldn't remove Subtitle site", 'fail', { body: message(err) });
+			toasts.push(t('settings.subtitles.removeFailed'), 'fail', { body: message(err) });
 		}
 	}
 </script>
 
-<svelte:head><title>Subtitles · HolyArrs</title></svelte:head>
+<svelte:head><title>{t('settings.subtitles.title')} · HolyArrs</title></svelte:head>
 
-<PageHeader title="Subtitles" />
+<PageHeader title={t('settings.subtitles.title')} />
 
 {#if !loaded}
 	<SkSettings rows={2} />
@@ -188,34 +189,30 @@
 	<LoadError hasData={false} message={error} onretry={load} />
 {:else if settings}
 	{#if error}<LoadError hasData message={error} onretry={load} />{/if}
-	<form class="sc-form" id="subtitle-form" onsubmit={saveSettings} aria-label="Default languages">
-		<SettingsCard id="lang-card" title="Default languages" description="For titles without their own. Empty means no subtitles.">
+	<form class="sc-form" id="subtitle-form" onsubmit={saveSettings} aria-label={t('settings.subtitles.defaultLangs')}>
+		<SettingsCard id="lang-card" title={t('settings.subtitles.defaultLangs')} description={t('settings.subtitles.defaultLangsDesc')}>
 			<WishEditor bind:wants={settings.languages} {langs} id="def" />
 			{#if settings.languages.length}<p class="xs muted hint-block">
-				<b>Hearing-impaired:</b> Normal also counts a hearing-impaired subtitle as there; Hearing-impaired only waits for one with sound descriptions; Either takes any.
-				<b>Forced only</b> means only the lines for foreign speech or signs.
+				<b>{t('settings.subtitles.hiLabel')}</b> {t('settings.subtitles.hiText')}
+				<b>{t('settings.subtitles.forcedLabel')}</b> {t('settings.subtitles.forcedText')}
 			</p>{/if}
 	
 			{#snippet advanced()}
 				<div class="two">
-					<Field id="pm-ep" label="Pass mark for episodes" hint="Auto-saved at this score or higher">
+					<Field id="pm-ep" label={t('settings.subtitles.passEpisodes')} hint={t('settings.subtitles.passHint')}>
 						<input id="pm-ep" class="input narrow" type="number" min="0" max="100" bind:value={settings!.pass_mark_episode} />
 					</Field>
-					<Field id="pm-mov" label="Pass mark for movies" hint="Auto-saved at this score or higher">
+					<Field id="pm-mov" label={t('settings.subtitles.passMovies')} hint={t('settings.subtitles.passHint')}>
 						<input id="pm-mov" class="input narrow" type="number" min="0" max="100" bind:value={settings!.pass_mark_movie} />
 					</Field>
 				</div>
 				<details class="more" data-testid="pass-mark-help">
-					<summary>What the Pass mark means</summary>
+					<summary>{t('settings.subtitles.passMeans')}</summary>
 					<p class="small">
-						Every subtitle a site offers gets a match score from 0 to 100: points for the right name, year, season and episode, the same release group, source,
-						resolution and codec as your file, the hearing-impaired and forced choice you asked for, a trusted uploader and a matching frame rate. A subtitle for
-						another title, year or episode scores 0.
+						{t('settings.subtitles.pass1')}
 					</p>
 					<p class="small">
-						A search saves a subtitle on its own only when it scores the Pass mark or more. 90 for episodes means the show, year, season and episode must match; 70
-						for movies means the name, year and some of the release details must. Lower marks take looser matches (more often out of sync); higher marks wait for a
-						closer one. Choosing a subtitle by hand on a movie or show page may take any score.
+						{t('settings.subtitles.pass2')}
 					</p>
 				</details>
 	
@@ -227,23 +224,23 @@
 	<section class="sites-sec" id="sites-card" aria-labelledby="h-sites" tabindex="-1">
 		<div class="sites-head">
 			<div>
-				<h2 id="h-sites" class="h2">Subtitle sites</h2>
-				<p class="small muted">Lowest priority number first. Failing sites rest, then retry.</p>
+				<h2 id="h-sites" class="h2">{t('settings.subtitles.sites')}</h2>
+				<p class="small muted">{t('settings.subtitles.sitesNote')}</p>
 			</div>
-			{#if !editing && sites.length}<Button icon="plus" variant="primary" type="button" onclick={startAdd}>Add a Subtitle site</Button>{/if}
+			{#if !editing && sites.length}<Button icon="plus" variant="primary" type="button" onclick={startAdd}>{t('settings.subtitles.add')}</Button>{/if}
 		</div>
 
 		{#if editing && form}
 			<form class="card" onsubmit={save} aria-labelledby="h-site-form">
-				<h3 id="h-site-form" class="h3">{isNew ? 'Add a Subtitle site' : `Change ${editing.name}`}</h3>
+				<h3 id="h-site-form" class="h3">{isNew ? t('settings.subtitles.add') : t('settings.subtitles.change', { name: editing.name })}</h3>
 				{#if isNew}
 					<fieldset class="group">
-						<legend class="label">Which site</legend>
+						<legend class="label">{t('settings.subtitles.whichSite')}</legend>
 						{#each kinds.filter((x) => !x.later) as k (k.kind)}
 							<label class="checkline">
 								<input type="radio" name="site-kind" checked={form.kind === k.kind} disabled={k.later} onchange={() => pickKind(k)} />
 								<span>
-									<b>{k.name}</b> ({kindCovers(k)}){#if k.needs_account}{' '}<span class="chip fail">Needs your account</span>{/if}
+									<b>{k.name}</b> ({kindCovers(k)}){#if k.needs_account}{' '}<span class="chip fail">{t('settings.subtitles.needsYours')}</span>{/if}
 									{#if k.note}<br /><span class="hint">{k.note}</span>{/if}
 								</span>
 							</label>
@@ -251,22 +248,22 @@
 					</fieldset>
 				{/if}
 				<div class="two">
-					<Field id="st-name" label="Name">
+					<Field id="st-name" label={t('settings.subtitles.name')}>
 						<input id="st-name" class="input" bind:value={form.name} maxlength="100" required />
 					</Field>
-					<Field id="st-prio" label="Priority" hint="1–100, lowest first">
+					<Field id="st-prio" label={t('settings.subtitles.priority')} hint={t('settings.subtitles.priorityHint')}>
 						<input id="st-prio" class="input narrow" type="number" min="1" max="100" bind:value={form.priority} />
 					</Field>
 				</div>
-				<Field id="st-url" label="Address" style="margin-top: var(--s-4)">
+				<Field id="st-url" label={t('settings.subtitles.address')} style="margin-top: var(--s-4)">
 					<input id="st-url" class="input mono" bind:value={form.url} autocomplete="off" spellcheck="false" required />
 				</Field>
 				{#if formKind?.needs_account}
 					<fieldset class="group account" data-testid="site-account">
-						<legend class="label">Your account</legend>
+						<legend class="label">{t('settings.subtitles.yourAccount')}</legend>
 						<p class="small muted">
-							This site needs your own account with it. The details are kept encrypted and never shown again.{#if !isNew && editing.has_account}
-								Leave them empty to keep the stored ones.{/if}
+							{t('settings.subtitles.accountNote')}{#if !isNew && editing.has_account}
+								{t('settings.subtitles.accountKeep')}{/if}
 						</p>
 						{#each formKind.account ?? [] as a (a)}
 							<Field id="st-acct-{a}" label={accountWords[a]}>
@@ -282,40 +279,40 @@
 					</fieldset>
 				{/if}
 				<details class="more">
-					<summary>Limits</summary>
+					<summary>{t('settings.subtitles.limits')}</summary>
 					<div class="two">
-						<Field id="st-gap" label="Wait between calls (ms)">
+						<Field id="st-gap" label={t('settings.subtitles.gap')}>
 							<input id="st-gap" class="input narrow" type="number" min="0" max="60000" bind:value={form.limits.gap_ms} />
 						</Field>
-						<Field id="st-per" label="Calls per window, at most">
+						<Field id="st-per" label={t('settings.subtitles.perWindow')}>
 							<input id="st-per" class="input narrow" type="number" min="1" max="10000" bind:value={form.limits.per_window} />
 						</Field>
-						<Field id="st-win" label="Window (seconds)">
+						<Field id="st-win" label={t('settings.subtitles.window')}>
 							<input id="st-win" class="input narrow" type="number" min="60" max="86400" bind:value={form.limits.window_seconds} />
 						</Field>
-						<Field id="st-day" label="Downloads a day (0 for no limit)">
+						<Field id="st-day" label={t('settings.subtitles.perDay')}>
 							<input id="st-day" class="input narrow" type="number" min="0" max="100000" bind:value={form.limits.downloads_per_day} />
 						</Field>
 					</div>
 				</details>
 				<label class="checkline">
 					<input type="checkbox" bind:checked={form.allow_local_network} />
-					<span><b>Reach the local network</b><br /><span class="hint">For a site at home</span></span>
+					<span><b>{t('settings.subtitles.local')}</b><br /><span class="hint">{t('settings.subtitles.localHint')}</span></span>
 				</label>
 				<label class="checkline">
 					<input type="checkbox" bind:checked={form.enabled} />
-					<span><b>On</b></span>
+					<span><b>{t('settings.subtitles.on')}</b></span>
 				</label>
 				{#if formError}<p class="form-error" role="alert">{formError}</p>{/if}
 				<div class="row" style="margin-top: var(--s-5)">
-					<Button variant="primary" type="submit" disabled={busy || !form.name.trim() || !form.url.trim()} aria-busy={busy}>Save</Button>
-					<Button variant="plain" type="button" onclick={() => ((editing = null), (form = null))}>Cancel</Button>
+					<Button variant="primary" type="submit" disabled={busy || !form.name.trim() || !form.url.trim()} aria-busy={busy}>{t('settings.subtitles.save')}</Button>
+					<Button variant="plain" type="button" onclick={() => ((editing = null), (form = null))}>{t('settings.subtitles.cancel')}</Button>
 				</div>
 			</form>
 		{/if}
 
 		{#if sites.length === 0 && !editing}
-			<EmptyState compact icon="subtitle" title="No Subtitle sites" text="Add one to find missing subtitles." action={{ label: 'Add a Subtitle site', icon: 'plus', onclick: startAdd }} />
+			<EmptyState compact icon="subtitle" title={t('settings.subtitles.none')} text={t('settings.subtitles.noneText')} action={{ label: t('settings.subtitles.add'), icon: 'plus', onclick: startAdd }} />
 		{:else}
 			<ul class="list">
 				{#each sites as s (s.ID)}
@@ -332,23 +329,23 @@
 						</div>
 						<p class="small" data-testid="subtitle-site-text">{st.text}</p>
 						<p class="xs muted">
-							{k?.name ?? s.kind} · {k ? kindCovers(k) : ''} · priority {s.priority}
-							{#if k?.needs_account} · account {s.has_account ? 'saved' : 'not set'}{/if}
-							{#if s.allow_local_network} · may reach the local network{/if}
-							{#if s.limits.downloads_per_day} · {s.downloads_today} of {s.limits.downloads_per_day} downloads today{/if}
+							{k?.name ?? s.kind} · {k ? kindCovers(k) : ''} · {t('settings.subtitles.priorityN', { n: s.priority })}
+							{#if k?.needs_account} · {s.has_account ? t('settings.subtitles.accountSaved') : t('settings.subtitles.accountNotSet')}{/if}
+							{#if s.allow_local_network} · {t('settings.subtitles.mayReach')}{/if}
+							{#if s.limits.downloads_per_day} · {t('settings.subtitles.downloadsToday', { n: s.downloads_today, max: s.limits.downloads_per_day })}{/if}
 						</p>
 						{#if results[s.ID]}
 							<div class="testline" data-testid="subtitle-site-test"><TestTag ok={results[s.ID].ok} text={results[s.ID].text} app={k?.name} extra={results[s.ID].ok ? testCount(results[s.ID].text) : ''} />{#if !results[s.ID].ok}<span class="small bad-text">{results[s.ID].text}</span>{/if}</div>
 						{/if}
 						<div class="row actions">
-							<Button type="button" disabled={testing === s.ID} aria-busy={testing === s.ID} onclick={() => test(s)} aria-label="Test {s.name}">Test</Button>
+							<Button type="button" disabled={testing === s.ID} aria-busy={testing === s.ID} onclick={() => test(s)} aria-label={t('settings.subtitles.testName', { name: s.name })}>{t('settings.subtitles.test')}</Button>
 							{#if s.state === 'disabled'}
-								<Button variant="plain" type="button" onclick={() => setPaused(s, false)} aria-label="Turn {s.name} on">Turn on</Button>
+								<Button variant="plain" type="button" onclick={() => setPaused(s, false)} aria-label={t('settings.subtitles.turnOnName', { name: s.name })}>{t('settings.subtitles.turnOn')}</Button>
 							{:else}
-								<Button variant="plain" type="button" onclick={() => setPaused(s, true)} aria-label="Pause {s.name}">Pause</Button>
+								<Button variant="plain" type="button" onclick={() => setPaused(s, true)} aria-label={t('settings.subtitles.pauseName', { name: s.name })}>{t('settings.subtitles.pause')}</Button>
 							{/if}
-							<Button variant="plain" type="button" onclick={() => startChange(s)} aria-label="Change {s.name}">Change</Button>
-							<Button variant="plain" type="button" onclick={() => remove(s)} aria-label="Remove {s.name}">Remove</Button>
+							<Button variant="plain" type="button" onclick={() => startChange(s)} aria-label={t('settings.subtitles.changeName', { name: s.name })}>{t('settings.subtitles.changeButton')}</Button>
+							<Button variant="plain" type="button" onclick={() => remove(s)} aria-label={t('settings.subtitles.removeName', { name: s.name })}>{t('settings.subtitles.remove')}</Button>
 						</div>
 					</li>
 				{/each}
@@ -358,30 +355,30 @@
 	{/if}
 
 	<div class="sc-form sub-more">
-		<SettingsCard id="when-to-look" title="When to look" description="New files search at once, then on a timer">
+		<SettingsCard id="when-to-look" title={t('settings.subtitles.whenToLook')} description={t('settings.subtitles.whenToLookDesc')}>
 			<label class="checkline">
 				<input id="better-subs" form="subtitle-form" type="checkbox" bind:checked={settings.better} />
-				<span><b>Look for better subtitles</b><br /><span class="hint">Re-searches recent ones under 99</span></span>
+				<span><b>{t('settings.subtitles.better')}</b><br /><span class="hint">{t('settings.subtitles.betterHint')}</span></span>
 			</label>
 			{#snippet advanced()}
 			<div class="two">
-				<Field id="s-hours" label="Look for missing subtitles every (hours)">
+				<Field id="s-hours" label={t('settings.subtitles.searchHours')}>
 					<input id="s-hours" form="subtitle-form" class="input narrow" type="number" min="1" max="168" bind:value={settings!.search_hours} />
 				</Field>
-				<Field id="s-batch" label="Files per run, at most" hint="Protects site rate limits">
+				<Field id="s-batch" label={t('settings.subtitles.batch')} hint={t('settings.subtitles.batchHint')}>
 					<input id="s-batch" form="subtitle-form" class="input narrow" type="number" min="1" max="1000" bind:value={settings!.batch} />
 				</Field>
 			</div>
 				<label class="checkline">
 					<input id="slow-down" form="subtitle-form" type="checkbox" bind:checked={settings!.adaptive} />
-					<span><b>Slow down after three weeks</b><br /><span class="hint">Then weekly</span></span>
+					<span><b>{t('settings.subtitles.slowDown')}</b><br /><span class="hint">{t('settings.subtitles.slowDownHint')}</span></span>
 				</label>
 				{#if settings!.better}
 					<div class="two">
-						<Field id="b-hours" label="Every (hours)">
+						<Field id="b-hours" label={t('settings.subtitles.everyHours')}>
 							<input id="b-hours" form="subtitle-form" class="input narrow" type="number" min="6" max="168" bind:value={settings!.better_hours} />
 						</Field>
-						<Field id="b-days" label="For subtitles saved in the last (days)">
+						<Field id="b-days" label={t('settings.subtitles.lastDays')}>
 							<input id="b-days" form="subtitle-form" class="input narrow" type="number" min="0" max="30" bind:value={settings!.better_days} />
 						</Field>
 					</div>
@@ -391,17 +388,17 @@
 	</div>
 	<MoreOptions>
 		<div class="sc-form">
-			<SettingsCard id="inside-video" title="Inside the video">
+			<SettingsCard id="inside-video" title={t('settings.subtitles.inside')}>
 				<label class="checkline">
 					<input id="embedded" form="subtitle-form" type="checkbox" bind:checked={settings.use_built_in} />
-					<span><b>Count subtitles inside the video</b><br /><span class="hint">Skips languages already in the file</span></span>
+					<span><b>{t('settings.subtitles.countInside')}</b><br /><span class="hint">{t('settings.subtitles.countInsideHint')}</span></span>
 				</label>
 				{#snippet advanced()}
 					<label class="checkline">
 						<input id="no-picture" form="subtitle-form" type="checkbox" bind:checked={settings!.ignore_picture_tracks} disabled={!settings!.use_built_in} />
-						<span><b>Leave out picture subtitles</b><br /><span class="hint">Many players can't show disc subtitles</span></span>
+						<span><b>{t('settings.subtitles.noPicture')}</b><br /><span class="hint">{t('settings.subtitles.noPictureHint')}</span></span>
 					</label>
-					<Field id="hi-suffix" label="Hearing-impaired files are named" hint="File ending players read as SDH">
+					<Field id="hi-suffix" label={t('settings.subtitles.hiSuffix')} hint={t('settings.subtitles.hiSuffixHint')}>
 						<select id="hi-suffix" form="subtitle-form" class="input narrow" bind:value={settings!.hi_suffix}>
 							<option value="hi">.hi (Movie.en.hi.srt)</option>
 							<option value="cc">.cc (Movie.en.cc.srt)</option>
@@ -410,20 +407,19 @@
 					</Field>
 				{/snippet}
 			</SettingsCard>
-			<SettingsCard id="sync-fix" title="Sync fix" description="Starting values for fixing timing">
+			<SettingsCard id="sync-fix" title={t('settings.subtitles.syncFix')} description={t('settings.subtitles.syncFixDesc')}>
 				<p class="small muted">
-					A subtitle out of time is fixed by hand on its movie or episode: shift every line, or change the frame rate. HolyArrs does
-					not listen to the sound to line subtitles up.
+					{t('settings.subtitles.syncNote')}
 				</p>
 				{#snippet advanced()}
 					<div class="three">
-						<Field id="sy-step" label="Shift buttons move (ms)">
+						<Field id="sy-step" label={t('settings.subtitles.shift')}>
 							<input id="sy-step" form="subtitle-form" class="input narrow" type="number" min="10" max="60000" bind:value={settings!.sync_step_ms} />
 						</Field>
-						<Field id="sy-from" label="Frame rate from">
+						<Field id="sy-from" label={t('settings.subtitles.fpsFrom')}>
 							<input id="sy-from" form="subtitle-form" class="input narrow" type="number" min="1" max="120" step="0.001" bind:value={settings!.sync_from_fps} />
 						</Field>
-						<Field id="sy-to" label="Frame rate to">
+						<Field id="sy-to" label={t('settings.subtitles.fpsTo')}>
 							<input id="sy-to" form="subtitle-form" class="input narrow" type="number" min="1" max="120" step="0.001" bind:value={settings!.sync_to_fps} />
 						</Field>
 					</div>

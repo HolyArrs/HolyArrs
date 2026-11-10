@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import Icon from '#lib/ui/Icon.svelte';
 	import type { IconName } from '#lib/ui/Icon.svelte';
 	import { AlertSymbol } from '#lib/alerts/index.ts';
@@ -77,7 +78,7 @@
 {#snippet symbol(size: number)}<AlertSymbol {tone} {size} />{/snippet}
 
 {#if compact}
-	<button type="button" class="ui-toast pill {tone}" onclick={onexpand} aria-label={`${title ?? text}. Show details`}>
+	<button type="button" class="ui-toast pill {tone}" onclick={onexpand} aria-label={t('frame.toast.details', { title: title ?? text })}>
 		{@render symbol(20)}
 		<span class="pill-t">{title ?? text}</span>
 	</button>
@@ -104,7 +105,7 @@
 			{#if title}<span class="text">{text}</span>{/if}
 		</span>
 		{#if action}<button class="act" type="button" data-testid="toast-action" onclick={action.run}>{action.label}</button>{/if}
-		{#if ondismiss}<button class="x" type="button" aria-label="Dismiss alert" onclick={ondismiss}><Icon name="x" size={10} stroke={2.6} /></button>{/if}
+		{#if ondismiss}<button class="x" type="button" aria-label={t('frame.toast.dismiss')} onclick={ondismiss}><Icon name="x" size={10} stroke={2.6} /></button>{/if}
 	</div>
 {/if}
 

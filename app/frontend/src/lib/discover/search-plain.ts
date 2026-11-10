@@ -1,6 +1,7 @@
 // Search in plain words ("that space movie with the robot from 2014"). The server reads the words; this file decides when to ask it and says back what it understood.
 import type { ProviderItem } from '#lib/ui/title-cards.ts';
 import type { TitleView } from '../core/types.ts';
+import { t } from '#lib/core/i18n/i18n.svelte.ts';
 
 /** What the server understood the words as. */
 export interface PlainQuery {
@@ -41,9 +42,9 @@ export function plainPath(text: string): string {
 /** The short "Understood as" line, such as "Science Fiction movies · 2014 · about robot"; "" when nothing was read. */
 export function understood(q: PlainQuery | null | undefined): string {
 	if (!q || q.plain) return '';
-	const kind = q.kind === 'movie' ? 'movies' : q.kind === 'show' ? 'shows' : q.kind === 'music' ? 'music' : 'titles';
-	const head = [q.genres.join(' or '), kind].filter(Boolean).join(' ');
-	const parts = [q.name ? `“${q.name}”` : '', head, years(q), q.people.length ? `with ${q.people.join(', ')}` : '', q.words.length ? `about ${q.words.join(', ')}` : ''];
+	const kind = q.kind === 'movie' ? t('discover.searchPlain.movies') : q.kind === 'show' ? t('discover.searchPlain.shows') : q.kind === 'music' ? t('discover.searchPlain.music') : t('discover.searchPlain.titles');
+	const head = [q.genres.join(t('discover.searchPlain.or')), kind].filter(Boolean).join(' ');
+	const parts = [q.name ? `“${q.name}”` : '', head, years(q), q.people.length ? t('discover.searchPlain.with', { names: q.people.join(', ') }) : '', q.words.length ? t('discover.searchPlain.about', { words: q.words.join(', ') }) : ''];
 	return parts.filter(Boolean).join(' · ');
 }
 
@@ -56,9 +57,9 @@ function years(q: PlainQuery): string {
 	const from = q.year_from ?? 0;
 	const to = q.year_to ?? 0;
 	if (from && to && from === to) return String(from);
-	if (from && to && to - from === 9 && from % 10 === 0) return `the ${from}s`;
-	if (from && to) return `${from} to ${to}`;
-	if (from) return `${from} or later`;
-	if (to) return `${to} or earlier`;
+	if (from && to && to - from === 9 && from % 10 === 0) return t('discover.searchPlain.decade', { from });
+	if (from && to) return t('discover.searchPlain.fromTo', { from, to });
+	if (from) return t('discover.searchPlain.orLater', { from });
+	if (to) return t('discover.searchPlain.orEarlier', { to });
 	return '';
 }

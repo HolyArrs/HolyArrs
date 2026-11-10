@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import Icon, { type IconName } from '#lib/ui/Icon.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import TopMenu from './TopMenu.svelte';
@@ -53,7 +54,7 @@
 	let allBtn = $state<HTMLButtonElement>();
 
 	const KIND_ICON: Record<string, IconName> = { movie: 'film', show: 'tv', artist: 'music' };
-	const kinds = KIND_TABS.filter((t) => t.key).map((t) => ({ key: t.key as string, label: t.label, icon: KIND_ICON[t.key] }));
+	const kinds = $derived(KIND_TABS.filter((k) => k.key).map((k) => ({ key: k.key as string, label: k.label, icon: KIND_ICON[k.key] })));
 	const sources: { key: string; label: string; icon: IconName }[] = [
 		{ key: 'usenet', label: 'Usenet', icon: 'usenet' },
 		{ key: 'torrent', label: 'Torrent', icon: 'torrent' }
@@ -66,9 +67,9 @@
 	let trkBtn = $state<HTMLButtonElement>();
 	let trkMenu = $state<TopMenu>();
 	const trkItems = $derived([
-		{ label: 'All trackers', hint: String(trackAll), checked: !trackOn, tid: 'dl-tracker-opt', key: '', onselect: () => (trackOn = '') },
+		{ label: t('downloads.bar.allTrackers'), hint: String(trackAll), checked: !trackOn, tid: 'dl-tracker-opt', key: '', onselect: () => (trackOn = '') },
 		...trackHosts.map((o) => ({ label: o.label, hint: String(o.count), checked: trackOn === o.key, tid: 'dl-tracker-opt', key: o.key, onselect: () => (trackOn = o.key) })),
-		...(trackProblems ? [{ label: 'Trackers with problems', hint: String(trackProblems), checked: trackOn === 'p:any', bad: true, tid: 'dl-tracker-opt', key: 'p:any', onselect: () => (trackOn = 'p:any') }] : [])
+		...(trackProblems ? [{ label: t('downloads.bar.trackerProblems'), hint: String(trackProblems), checked: trackOn === 'p:any', bad: true, tid: 'dl-tracker-opt', key: 'p:any', onselect: () => (trackOn = 'p:any') }] : [])
 	]);
 
 	// Phones use one compact bar. Start, Pause and Remove act on a picked row, so they live in its details.
@@ -130,7 +131,7 @@
 				<button type="button" class="it act stk" disabled={a.disabled} aria-label={actionName(a)} onclick={() => a.run?.()} data-testid="tb-{a.key}-btn"><span class="ic"><Icon name={a.icon} size={20} /></span><span class="lb">{a.label}</span></button>
 			{/if}
 		</span>
-		{#if a.more}<TopMenu label="More {a.key} actions" items={a.more} />{/if}
+		{#if a.more}<TopMenu label={t('downloads.bar.moreActions', { key: a.key })} items={a.more} />{/if}
 	</span>
 {/snippet}
 
@@ -145,8 +146,8 @@
 			</button>
 			{#if f.key === 'torrent' && (trackHosts.length || trackProblems)}
 				<span class="trw">
-					<button type="button" class="trk" class:on={!!trackOn} bind:this={trkBtn} aria-haspopup="menu" aria-label="Filter by tracker" onclick={() => trkBtn && trkMenu?.show(trkBtn)} data-testid="dl-tracker-menu-btn"><Icon name="chevronDown" size={14} stroke={2.2} /></button>
-					<TopMenu bare bind:this={trkMenu} label="Trackers" items={trkItems} />
+					<button type="button" class="trk" class:on={!!trackOn} bind:this={trkBtn} aria-haspopup="menu" aria-label={t('downloads.bar.filterTracker')} onclick={() => trkBtn && trkMenu?.show(trkBtn)} data-testid="dl-tracker-menu-btn"><Icon name="chevronDown" size={14} stroke={2.2} /></button>
+					<TopMenu bare bind:this={trkMenu} label={t('downloads.bar.trackers')} items={trkItems} />
 				</span>
 			{/if}
 		{/each}
@@ -154,12 +155,12 @@
 {/snippet}
 
 {#snippet acts()}
-	{#if !watch}<div class="grp acts" role="toolbar" aria-label="Download actions" data-testid="dl-toolbar">{#each actions as a (a.key)}{@render act(a)}{/each}</div>{/if}
+	{#if !watch}<div class="grp acts" role="toolbar" aria-label={t('downloads.bar.actionsLabel')} data-testid="dl-toolbar">{#each actions as a (a.key)}{@render act(a)}{/each}</div>{/if}
 {/snippet}
-{#snippet library()}{@render seg('Library', kinds, kindOn, kindCount, pickKind, 'bar-kind', 'dl-type-filter')}{/snippet}
-{#snippet srcs()}{@render seg('Network', sources, srcOn, srcCount, pickSrc, 'bar-source', 'dl-source-filter')}{/snippet}
+{#snippet library()}{@render seg(t('downloads.bar.library'), kinds, kindOn, kindCount, pickKind, 'bar-kind', 'dl-type-filter')}{/snippet}
+{#snippet srcs()}{@render seg(t('downloads.bar.network'), sources, srcOn, srcCount, pickSrc, 'bar-source', 'dl-source-filter')}{/snippet}
 {#snippet sideBtn()}
-	<span class="tw2" use:tip={'Show sidebar'}><button type="button" class="it side" aria-label="Show sidebar" aria-expanded={false} aria-controls={sideControls} onclick={() => onside?.()} data-testid="dl-side-btn"><span class="ic"><Icon name="sidebar" size={20} /></span></button></span>
+	<span class="tw2" use:tip={t('downloads.bar.showSidebar')}><button type="button" class="it side" aria-label={t('downloads.bar.showSidebar')} aria-expanded={false} aria-controls={sideControls} onclick={() => onside?.()} data-testid="dl-side-btn"><span class="ic"><Icon name="sidebar" size={20} /></span></button></span>
 {/snippet}
 
 <div class="dlbar" data-testid="dl-bar">
@@ -169,12 +170,12 @@
 		<div class="cap">{@render library()}</div><div class="cap">{@render srcs()}</div>
 	</div>
 	<div class="pbar" data-testid="dl-phonebar">
-		<button type="button" class="pbn" class:has={fCount > 0} aria-haspopup="dialog" aria-label={fCount ? `Filters, ${fCount} on` : 'Filters'} onclick={() => (fOpen = true)} data-testid="dl-filters-btn">
+		<button type="button" class="pbn" class:has={fCount > 0} aria-haspopup="dialog" aria-label={fCount ? t('downloads.bar.filtersOn', { count: fCount }) : t('downloads.bar.filters')} onclick={() => (fOpen = true)} data-testid="dl-filters-btn">
 			<Icon name="sliders" size={18} stroke={2} />
-			<span>Filters</span>{#if fCount}<b class="fc" data-testid="dl-filters-count">{fCount}</b>{/if}
+			<span>{t('downloads.bar.filters')}</span>{#if fCount}<b class="fc" data-testid="dl-filters-count">{fCount}</b>{/if}
 		</button>
-		{#if addAct && !watch}<button type="button" class="pbn add" onclick={() => addAct.run?.()} aria-label={actionName(addAct)} data-testid="dl-phone-add"><Icon name="plus" size={18} /><span>Add</span></button>{/if}
-		{#if allItems.length}<button type="button" class="pbn ico" bind:this={allBtn} aria-haspopup="menu" aria-label="All downloads" onclick={() => allBtn && allMenu?.show(allBtn)} data-testid="dl-all-btn"><Icon name="more" size={18} /></button><TopMenu bare bind:this={allMenu} label="All downloads" items={allItems} />{/if}
+		{#if addAct && !watch}<button type="button" class="pbn add" onclick={() => addAct.run?.()} aria-label={actionName(addAct)} data-testid="dl-phone-add"><Icon name="plus" size={18} /><span>{t('downloads.bar.add')}</span></button>{/if}
+		{#if allItems.length}<button type="button" class="pbn ico" bind:this={allBtn} aria-haspopup="menu" aria-label={t('downloads.bar.allDownloads')} onclick={() => allBtn && allMenu?.show(allBtn)} data-testid="dl-all-btn"><Icon name="more" size={18} /></button><TopMenu bare bind:this={allMenu} label={t('downloads.bar.allDownloads')} items={allItems} />{/if}
 	</div>
 </div>
 
@@ -182,27 +183,27 @@
 	<button type="button" class="fo" class:on class:bad aria-pressed={on} onclick={pick} data-testid={tid} data-key={key}><span class="fl2">{label}</span>{#if n !== undefined}<b>{n}</b>{/if}<span class="ck" aria-hidden="true">{#if on}<Icon name="check" size={16} />{/if}</span></button>
 {/snippet}
 
-<Sheet bind:open={fOpen} title="Filters" size="sm" placement="bottom">
+<Sheet bind:open={fOpen} title={t('downloads.bar.filters')} size="sm" placement="bottom">
 	<div class="fs" data-testid="dl-filters-sheet">
-		<section aria-label="Library"><h3>Library</h3><div class="fg">
-			{@render opt(!kindOn, 'Everything', undefined, () => (kindOn = ''), 'dl-f-kind', '')}
+		<section aria-label={t('downloads.bar.library')}><h3>{t('downloads.bar.library')}</h3><div class="fg">
+			{@render opt(!kindOn, t('downloads.bar.everything'), undefined, () => (kindOn = ''), 'dl-f-kind', '')}
 			{#each kinds as k (k.key)}{@render opt(kindOn === k.key, k.label, kindCount(k.key), () => (kindOn = k.key), 'dl-f-kind', k.key)}{/each}
 		</div></section>
-		<section aria-label="Network"><h3>Network</h3><div class="fg">
-			{@render opt(!srcOn, 'Any network', undefined, () => (srcOn = ''), 'dl-f-src', '')}
+		<section aria-label={t('downloads.bar.network')}><h3>{t('downloads.bar.network')}</h3><div class="fg">
+			{@render opt(!srcOn, t('downloads.bar.anyNetwork'), undefined, () => (srcOn = ''), 'dl-f-src', '')}
 			{#each sources as s (s.key)}{@render opt(srcOn === s.key, s.label, srcCount(s.key), () => (srcOn = s.key), 'dl-f-src', s.key)}{/each}
 		</div></section>
 		{#if trackHosts.length || trackProblems}
-			<section aria-label="Trackers"><h3>Trackers</h3><div class="fg">
-				{@render opt(!trackOn, 'All trackers', trackAll, () => (trackOn = ''), 'dl-f-trk', '')}
+			<section aria-label={t('downloads.bar.trackers')}><h3>{t('downloads.bar.trackers')}</h3><div class="fg">
+				{@render opt(!trackOn, t('downloads.bar.allTrackers'), trackAll, () => (trackOn = ''), 'dl-f-trk', '')}
 				{#each trackHosts as o (o.key)}{@render opt(trackOn === o.key, o.label, o.count, () => (trackOn = o.key), 'dl-f-trk', o.key)}{/each}
-				{#if trackProblems}{@render opt(trackOn === 'p:any', 'Trackers with problems', trackProblems, () => (trackOn = 'p:any'), 'dl-f-trk', 'p:any', true)}{/if}
+				{#if trackProblems}{@render opt(trackOn === 'p:any', t('downloads.bar.trackerProblems'), trackProblems, () => (trackOn = 'p:any'), 'dl-f-trk', 'p:any', true)}{/if}
 			</div></section>
 		{/if}
 	</div>
 	{#snippet footer()}
-		<button type="button" class="fbtn" disabled={!fCount} onclick={clearAll} data-testid="dl-filters-clear">Clear filters</button>
-		<button type="button" class="fbtn pri" onclick={() => (fOpen = false)} data-testid="dl-filters-done">Show {shown}</button>
+		<button type="button" class="fbtn" disabled={!fCount} onclick={clearAll} data-testid="dl-filters-clear">{t('downloads.bar.clear')}</button>
+		<button type="button" class="fbtn pri" onclick={() => (fOpen = false)} data-testid="dl-filters-done">{t('downloads.bar.show', { count: shown })}</button>
 	{/snippet}
 </Sheet>
 

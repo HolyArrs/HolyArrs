@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import Icon, { type IconName } from '#lib/ui/Icon.svelte';
 	import { press } from '#lib/core/motion.ts';
 
@@ -51,7 +52,7 @@
 		clearTimeout(timer);
 		tip = null;
 	}
-	const name = $derived((badge > 0 ? `${label}, ${badgeLabel ?? badge}` : label) + (dot ? ', needs attention' : ''));
+	const name = $derived((badge > 0 ? `${label}, ${badgeLabel ?? badge}` : label) + (dot ? t('frame.sidebar.needsAttentionComma') : ''));
 </script>
 
 {#snippet body()}
@@ -61,7 +62,7 @@
 	</span>
 	<span class="label">{label}</span>
 	{#if kbd}<kbd class="label" aria-hidden="true">{kbd}</kbd>{/if}
-	{#if dot && !(badge > 0)}<span class="flag" title="Needs attention" aria-hidden="true" data-testid="nav-flag"></span>{/if}
+	{#if dot && !(badge > 0)}<span class="flag" title={t('frame.sidebar.needsAttention')} aria-hidden="true" data-testid="nav-flag"></span>{/if}
 	{#if badge > 0}<b class="count" aria-hidden="true" data-testid={badgeTestid}>{badge > 99 ? '99+' : badge}</b>{/if}
 {/snippet}
 {#if href}

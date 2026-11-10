@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	// Small floating preview card shown on hover, with an optional trailer.
 	import TrailerPlayer from './TrailerPlayer.svelte';
 	import { metaLine } from './fresh.ts';
@@ -100,7 +101,7 @@
 	use:portal
 	out:popOut
 	role="group"
-	aria-label="{title} preview"
+	aria-label={t('ui.hoverPreview.preview', { title })}
 	style:left="{pos.left}px"
 	style:top="{pos.top}px"
 	style:width="{W}px"

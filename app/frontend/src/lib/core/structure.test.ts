@@ -72,11 +72,12 @@ describe('where files live', () => {
 		expect(all.filter((f) => f.startsWith('lib/core/home'))).toEqual([]);
 	});
 
-	it(`keeps lib/core to ${MAX_CORE_FILES} code files, trailer playback the only subfolder`, () => {
+	it(`keeps lib/core to ${MAX_CORE_FILES} code files, trailer playback and the app's words the only subfolders`, () => {
 		const core = all.filter((f) => f.startsWith('lib/core/') && /\.(ts|svelte)$/.test(f) && !isTest(f));
 		expect(core.length).toBeLessThanOrEqual(MAX_CORE_FILES);
 		const folders = new Set(core.map((f) => f.split('/')).filter((p) => p.length > 3).map((p) => p[2]));
-		expect([...folders]).toEqual(folders.size ? ['trailer'] : []);
+		expect([...folders].sort()).toEqual(['i18n', 'trailer'].filter((f) => folders.has(f)));
+		expect([...folders].every((f) => f === 'i18n' || f === 'trailer')).toBe(true);
 	});
 
 	it('leaves in lib/ only what its page moves later', () => {

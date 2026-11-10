@@ -1,11 +1,12 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	// Error state: a compact banner when old data is still shown, otherwise a full block.
 	import Icon from './Icon.svelte';
 	import Button from './Button.svelte';
 
 	let {
 		hasData,
-		message = 'Could not load this.',
+		message = t('ui.loadError.couldNotLoad'),
 		onretry,
 		busy = false,
 		network = false
@@ -15,15 +16,15 @@
 {#if hasData}
 	<div class="ui-loaderr inline" role="status">
 		<Icon name="alert" size={17} />
-		<span class="grow">{message} Showing what was loaded before.</span>
-		{#if onretry}<Button size="sm" variant="plain" {busy} onclick={onretry}>Try again</Button>{/if}
+		<span class="grow">{t('ui.loadError.showingWhatWasLoaded', { message })}</span>
+		{#if onretry}<Button size="sm" variant="plain" {busy} onclick={onretry}>{t('ui.loadError.tryAgain')}</Button>{/if}
 	</div>
 {:else}
 	<div class="ui-loaderr full" role="alert">
 		<span class="ic"><Icon name="alert" size={26} /></span>
 		<h2>{message}</h2>
-		<p>{network ? 'Check the connection, then try again.' : 'Try again in a moment.'}</p>
-		{#if onretry}<Button variant="secondary" icon="refresh" {busy} onclick={onretry}>Try again</Button>{/if}
+		<p>{network ? t('ui.loadError.checkConnection') : t('ui.loadError.tryAgainSoon')}</p>
+		{#if onretry}<Button variant="secondary" icon="refresh" {busy} onclick={onretry}>{t('ui.loadError.tryAgain')}</Button>{/if}
 	</div>
 {/if}
 

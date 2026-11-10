@@ -1,5 +1,6 @@
 // Reads loosely typed TMDB detail payloads into safe typed shapes.
 import type { ProviderItem } from './title-cards.ts';
+import { t } from '#lib/core/i18n/i18n.svelte.ts';
 
 export type InfoKind = 'movie' | 'show';
 
@@ -91,7 +92,7 @@ export function readInfo(kind: InfoKind, tmdb: string, raw: Raw): InfoDetails {
 			.map((s) => ({ id: pos(s.id) ?? 0, name: str(s.name) ?? '', logo: str(s.logo) }))
 			.filter((s) => s.id && s.name),
 		similar: items(raw.similar),
-		collection: coll && parts.length > 1 ? { name: str(coll.name) ?? 'Collection', parts } : null,
+		collection: coll && parts.length > 1 ? { name: str(coll.name) ?? t('ui.titleInfo.collection'), parts } : null,
 		moods: words(raw.moods),
 		originalLanguage: str(raw.original_language),
 		originCountry: words(raw.origin_country),
@@ -137,11 +138,11 @@ export function facts(d: Pick<InfoDetails, 'kind' | 'year' | 'rating' | 'runtime
 		if (r) out.push(r);
 	} else {
 		const n = d.seasons.filter((s) => s.number > 0).length;
-		if (n) out.push(n === 1 ? '1 season' : `${n} seasons`);
+		if (n) out.push(n === 1 ? t('ui.titleInfo.seasonOne') : t('ui.titleInfo.seasonOther', { count: n }));
 	}
 	if (d.year) out.push(String(d.year));
 	if (d.rating) out.push(d.rating);
-	return out.length ? [d.kind === 'movie' ? 'Movie' : 'Show', ...out] : out;
+	return out.length ? [d.kind === 'movie' ? t('ui.titleInfo.movie') : t('ui.titleInfo.show'), ...out] : out;
 }
 
 // Small guards that turn unknown values into a clean value or undefined.

@@ -1,5 +1,6 @@
 // Timing rules for the page loading indicator.
 
+import { t } from '#lib/core/i18n/i18n.svelte.ts';
 export type PageStage = 'hidden' | 'orbit' | 'status' | 'reassure';
 
 // Fast loads never show the loader.
@@ -32,5 +33,5 @@ export function pageTimers(elapsed: number): { at: number; stage: PageStage }[] 
 export function pageLine(stage: PageStage, status = '', now = false): string {
 	if (stage === 'hidden') return '';
 	if (stage === 'orbit') return now ? status : '';
-	return status || 'Getting things ready…';
+	return status || t('core.pageload.gettingReady');
 }

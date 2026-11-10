@@ -15,3 +15,17 @@ func putDisplayName(ctx context.Context, q conn, userID int64, name string) erro
 			ON CONFLICT (user_id) DO UPDATE SET display_name = excluded.display_name`, userID, name)
 	return err
 }
+
+// language is the language a person picked, "" when they follow the browser.
+func language(ctx context.Context, q conn, userID int64) (string, error) {
+	var l string
+	err := q.QueryRowContext(ctx, "SELECT language FROM user_profiles WHERE user_id = ?", userID).Scan(&l)
+	return l, err
+}
+
+// putLanguage sets a person's language and keeps their display name.
+func putLanguage(ctx context.Context, q conn, userID int64, l string) error {
+	_, err := q.ExecContext(ctx, `INSERT INTO user_profiles (user_id, display_name, language) VALUES (?, '', ?)
+			ON CONFLICT (user_id) DO UPDATE SET language = excluded.language`, userID, l)
+	return err
+}

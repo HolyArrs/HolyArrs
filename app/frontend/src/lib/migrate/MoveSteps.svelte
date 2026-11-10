@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import StepCapsule from './StepCapsule.svelte';
 	import { steps, stepIndex, type Step } from './move.ts';
 
@@ -16,19 +17,20 @@
 		onpick: (s: Step) => void;
 	} = $props();
 	const now = $derived(stepIndex(step));
-	const cols = $derived(steps.map((_, i) => (i === now ? 'minmax(0, 1fr)' : '44px')).join(' '));
+	const list = $derived(steps());
+	const cols = $derived(list.map((_, i) => (i === now ? 'minmax(0, 1fr)' : '44px')).join(' '));
 </script>
 
-<nav class="rail-wrap" aria-label="Move steps">
-	<ol class="rail" aria-label="Steps" style:--phone-cols={cols} data-testid="move-steps">
-		{#each steps as s, i (s.id)}
+<nav class="rail-wrap" aria-label={t('migrate.moveSteps')}>
+	<ol class="rail" aria-label={t('migrate.steps')} style:--phone-cols={cols} data-testid="move-steps">
+		{#each list as s, i (s.id)}
 			<li class:now={i === now} class:done={i < now}>
 				<button
 					type="button"
 					class="cap-btn"
 					aria-current={i === now ? 'step' : undefined}
 					aria-disabled={i === now ? 'true' : undefined}
-					aria-label="Step {i + 1} of {steps.length}, {s.word}{i < now ? ', done' : ''}"
+					aria-label={i < now ? t('migrate.stepOfDone', { n: i + 1, total: list.length, word: s.word }) : t('migrate.stepOf', { n: i + 1, total: list.length, word: s.word })}
 					disabled={i > now || (locked && i !== now)}
 					onclick={() => i !== now && onpick(s.id)}
 				>
@@ -44,7 +46,7 @@
 			</li>
 		{/each}
 	</ol>
-	<p class="sr-only" aria-live="polite">Step {now + 1} of {steps.length}, {steps[now].word}</p>
+	<p class="sr-only" aria-live="polite">{t('migrate.stepOf', { n: now + 1, total: list.length, word: list[now].word })}</p>
 </nav>
 
 <style>

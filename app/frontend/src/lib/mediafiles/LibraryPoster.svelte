@@ -35,6 +35,7 @@
 	import type { LibState } from './library-state.ts';
 	import { reducedMotion, viewTransitionName } from '../core/motion.ts';
 	import { sized } from '../core/tmdb-image.ts';
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 
 	let {
 		title,
@@ -89,7 +90,7 @@
 	let raf = 0;
 	const pic = $derived(sized(image, 'poster', cw || 200));
 	const kindIcon = $derived<IconName>(kind === 'show' ? 'tv' : kind === 'artist' ? 'music' : 'film');
-	const words = $derived(ls?.label ?? (bar.tone === 'ok' ? 'In the Library' : ''));
+	const words = $derived(ls?.label ?? (bar.tone === 'ok' ? t('mediafiles.poster.inLibrary') : ''));
 	const name = $derived([title, year, words].filter(Boolean).join(', '));
 
 	$effect(() => {
@@ -138,15 +139,15 @@
 			<span class="line {bar.tone}" aria-hidden="true"><i style="transform: scaleX({bar.fill})"></i></span>
 		</a>
 		{#if !touch}
-		<div class="glass" aria-label="{title} details" role="group">
-			<p class="g-state {bar.tone}">{words || 'In the Library'}</p>
+		<div class="glass" aria-label={t('mediafiles.poster.details', { title })} role="group">
+			<p class="g-state {bar.tone}">{words || t('mediafiles.poster.inLibrary')}</p>
 			{#each facts.filter(Boolean) as f (f)}<p class="g-fact">{f}</p>{/each}
 			<div class="g-acts">
 				{#if canManage}
-					<button type="button" class="g-btn" onclick={() => onsearch?.()} aria-label="Search now for {title}" title="Search now"><Icon name="search" size={15} /></button>
-					<button type="button" class="g-btn" class:on={kept} aria-pressed={kept} onclick={() => onkeep?.(!kept)} aria-label="Keep {title} up to date" title={kept ? 'Kept up to date' : 'Not kept up to date'}><Icon name={kept ? 'bellOn' : 'bell'} size={15} /></button>
+					<button type="button" class="g-btn" onclick={() => onsearch?.()} aria-label={t('mediafiles.poster.searchFor', { title })} title={t('mediafiles.select.searchNow')}><Icon name="search" size={15} /></button>
+					<button type="button" class="g-btn" class:on={kept} aria-pressed={kept} onclick={() => onkeep?.(!kept)} aria-label={t('mediafiles.poster.keepFor', { title })} title={kept ? t('mediafiles.poster.kept') : t('mediafiles.poster.notKept')}><Icon name={kept ? 'bellOn' : 'bell'} size={15} /></button>
 				{/if}
-				<a class="g-open" {href} tabindex="-1">Open<Icon name="chevronRight" size={14} /></a>
+				<a class="g-open" {href} tabindex="-1">{t('mediafiles.poster.open')}<Icon name="chevronRight" size={14} /></a>
 			</div>
 		</div>
 		{/if}

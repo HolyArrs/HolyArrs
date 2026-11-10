@@ -3,17 +3,18 @@
 	import { RenamePreview, LibraryToolPage } from '#lib/mediafiles/index.ts';
 	import { to } from '#lib/core/paths.ts';
 	import { session } from '#lib/core/session.svelte.ts';
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 
 	let changeCount = $state(0);
 </script>
 
-<svelte:head><title>Rename files · HolyArrs</title></svelte:head>
+<svelte:head><title>{t('library.rename.title')} · HolyArrs</title></svelte:head>
 
-<LibraryToolPage title="Rename files" count={changeCount ? `${changeCount} ${changeCount === 1 ? 'file' : 'files'}` : ''}>
+<LibraryToolPage title={t('library.rename.title')} count={changeCount ? t('mediafiles.unit.file.' + (changeCount === 1 ? 'one' : 'other'), { n: changeCount }) : ''}>
 	{#snippet bar()}
 		{#if session.can('settings')}
 			<span class="tp-gap"></span>
-			<span class="tp-cap"><Button href={to('/settings/naming')}>Naming settings</Button></span>
+			<span class="tp-cap"><Button href={to('/settings/naming')}>{t('library.rename.naming')}</Button></span>
 		{/if}
 	{/snippet}
 

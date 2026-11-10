@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	// Plays one trailer over a card or hero, trying each source in turn until one works.
 	import { onDestroy, untrack } from 'svelte';
 	import IconButton from './IconButton.svelte';
@@ -484,7 +485,7 @@
 				preload="auto"
 				disablepictureinpicture
 				disableremoteplayback
-				aria-label="{title} trailer"
+				aria-label={t('ui.trailerPlayer.trailer', { title })}
 				onplaying={started}
 				onloadedmetadata={seed}
 				onerror={next}
@@ -500,7 +501,7 @@
 					preload="auto"
 					disablepictureinpicture
 					disableremoteplayback
-					aria-label="{title} trailer"
+					aria-label={t('ui.trailerPlayer.trailer', { title })}
 					onended={ended}
 				></video>
 			{/if}
@@ -514,7 +515,7 @@
 				preload="auto"
 				disablepictureinpicture
 				disableremoteplayback
-				aria-label="{title} trailer"
+				aria-label={t('ui.trailerPlayer.trailer', { title })}
 				onplaying={started}
 				onerror={next}
 				onended={ended}
@@ -523,7 +524,7 @@
 			<iframe
 				bind:this={frame}
 				src={embedUrl(src.key, origin, repeat)}
-				title="{title} trailer"
+				title={t('ui.trailerPlayer.trailer', { title })}
 				allow="autoplay; encrypted-media; picture-in-picture"
 				referrerpolicy="strict-origin-when-cross-origin"
 				sandbox="allow-scripts allow-same-origin allow-presentation"
@@ -534,23 +535,23 @@
 	{/key}
 </div>
 {#if onexpand && shown && !corner}
-	<button type="button" class="expand" aria-label="Play the {title} trailer full screen" bind:this={expandBtn} onclick={expand}></button>
+	<button type="button" class="expand" aria-label={t('ui.trailerPlayer.playTheTrailerFull', { title })} bind:this={expandBtn} onclick={expand}></button>
 {/if}
 {#if controls}
-	<div class="ctl" class:on={shown} class:top data-testid="trailer-sound" role="group" aria-label="Trailer controls" bind:this={ctlBox} onpointerdown={(e) => { ctlAt = Date.now(); e.stopPropagation(); }} onclickcapture={() => (ctlAt = Date.now())}>
+	<div class="ctl" class:on={shown} class:top data-testid="trailer-sound" role="group" aria-label={t('ui.trailerPlayer.trailerControls')} bind:this={ctlBox} onpointerdown={(e) => { ctlAt = Date.now(); e.stopPropagation(); }} onclickcapture={() => (ctlAt = Date.now())}>
 		{#if shown && pausable}
-			<IconButton icon={paused ? 'play' : 'pause'} label={paused ? 'Play the trailer' : 'Pause the trailer'} variant="glass" size="md" tipSide={top ? 'below' : 'above'} data-act="pause" />
+			<IconButton icon={paused ? 'play' : 'pause'} label={paused ? t('ui.trailerPlayer.play') : t('ui.trailerPlayer.pause')} variant="glass" size="md" tipSide={top ? 'below' : 'above'} data-act="pause" />
 		{/if}
 		{#if shown && hasAudio()}
-			<IconButton icon={heard ? 'sound' : 'soundOff'} label={heard ? 'Turn sound off' : 'Turn sound on'} variant="glass" size="md" tipSide={top ? 'below' : 'above'} data-act="sound" />
+			<IconButton icon={heard ? 'sound' : 'soundOff'} label={heard ? t('ui.trailerPlayer.soundOff') : t('ui.trailerPlayer.soundOn')} variant="glass" size="md" tipSide={top ? 'below' : 'above'} data-act="sound" />
 		{:else if done && sources.length > 0}
-			<IconButton icon="replay" label="Play the trailer again" variant="glass" size="md" tipSide={top ? 'below' : 'above'} data-act="replay" />
+			<IconButton icon="replay" label={t('ui.trailerPlayer.playTheTrailerAgain')} variant="glass" size="md" tipSide={top ? 'below' : 'above'} data-act="replay" />
 		{/if}
 		{#if onexpand && shown && !corner}
-			<IconButton icon="expand" label="Play trailer full screen" variant="glass" size="md" tipSide={top ? 'below' : 'above'} data-act="expand" data-testid="trailer-expand" />
+			<IconButton icon="expand" label={t('ui.trailerPlayer.playTrailerFullScreen')} variant="glass" size="md" tipSide={top ? 'below' : 'above'} data-act="expand" data-testid="trailer-expand" />
 		{/if}
 		{#if onexpand && shown && corner}
-			<IconButton icon="expand" label="Play trailer full screen" variant="glass" size="md" tipSide={top ? 'below' : 'above'} class="expand corner" bind:node={expandBtn} data-testid="trailer-expand" />
+			<IconButton icon="expand" label={t('ui.trailerPlayer.playTrailerFullScreen')} variant="glass" size="md" tipSide={top ? 'below' : 'above'} class="expand corner" bind:node={expandBtn} data-testid="trailer-expand" />
 		{/if}
 	</div>
 {/if}

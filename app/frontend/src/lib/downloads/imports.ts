@@ -1,4 +1,5 @@
 // What an import did, folded into its download's row on the Downloads table. There is no separate Imports list: the Importing chip shows imports in progress, Done the placed ones, Problems the failed ones.
+import { t } from '#lib/core/i18n/i18n.svelte.ts';
 import type { ImportRecord } from './types.ts';
 import { stageOf } from './status-tabs.ts';
 import type { DownloadRow } from '../core/types.ts';
@@ -22,7 +23,13 @@ export function byDownload(imports: ImportRecord[]): Map<number, ImportRecord> {
 	return out;
 }
 
-const methodWords: Record<string, string> = { hardlink: 'hardlink', move: 'moving', copy: 'copying', reflink: 'reflink', symlink: 'link' };
+const methodWords: Record<string, string> = {
+	get hardlink() { return t('downloads.import.hardlink'); },
+	get move() { return t('downloads.import.move'); },
+	get copy() { return t('downloads.import.copy'); },
+	get reflink() { return t('downloads.import.reflink'); },
+	get symlink() { return t('downloads.import.symlink'); }
+};
 
 /** The last folder of a path, never the whole path. */
 export function folder(path: string | undefined): string {
@@ -36,9 +43,9 @@ export function placed(im: ImportRecord | undefined): ImportFacts | null {
 	const ok = res.filter((r) => r.outcome === 'placed');
 	if (!ok.length) return null;
 	const ways = [...new Set(ok.map((r) => methodWords[r.placed_by ?? ''] ?? r.placed_by ?? ''))].filter(Boolean);
-	const by = ways.length ? ` by ${ways.join(' and ')}` : '';
+	const by = ways.length ? t('downloads.import.by', { ways: ways.join(t('downloads.import.and')) }) : '';
 	const wanted = res.filter((r) => r.outcome !== 'skipped').length;
-	const how = im?.State === 'partly_done' && wanted > ok.length ? `${ok.length} of ${wanted} files placed${by}` : `Placed${by}`;
+	const how = im?.State === 'partly_done' && wanted > ok.length ? t('downloads.import.partly', { ok: ok.length, wanted, by }) : t('downloads.import.placed', { by });
 	const first = im?.Plan?.find((p) => p.source_file === ok[0].source_file) ?? im?.Plan?.find((p) => p.target_path);
 	return { how, where: folder(first?.target_path) };
 }
@@ -48,7 +55,7 @@ export function failReason(im: ImportRecord | undefined): string | null {
 	if (!im || im.State !== 'failed') return null;
 	const err = im.Result?.find((r) => r.error)?.error?.trim();
 	if (err) return err.length > 80 ? `${err.slice(0, 77)}…` : err;
-	return 'no file could be placed';
+	return t('downloads.import.noFile');
 }
 
 /** The short line after a row's status word: what an import in progress is doing, why it failed, or a seeding torrent's ratio. Empty when the word says it all. */
@@ -56,17 +63,17 @@ export function statusDetail(r: Pick<DownloadRow, 'phase' | 'state' | 'progress'
 	const stage = stageOf(r);
 	if (stage === 'importing') {
 		// Bytes are in; the Downloader verifies, repairs and unpacks (Usenet).
-		if (r.phase === 'downloading') return 'unpacking';
-		if (r.phase === 'waiting_to_import') return 'up next';
-		return 'placing files';
+		if (r.phase === 'downloading') return t('downloads.detail.unpacking');
+		if (r.phase === 'waiting_to_import') return t('downloads.detail.upNext');
+		return t('downloads.detail.placing');
 	}
 	if (stage === 'failed' || stage === 'decide') {
 		const why = failReason(im);
-		if (why) return `import failed: ${why}`;
+		if (why) return t('downloads.detail.importFailed', { why });
 		// Failed also covers these two; the line says which.
-		if (r.phase === 'vanished') return 'removed outside HolyArrs';
-		if (r.phase === 'import_refused') return 'the files did not match';
+		if (r.phase === 'vanished') return t('downloads.detail.removed');
+		if (r.phase === 'import_refused') return t('downloads.detail.noMatch');
 	}
-	if (stage === 'seeding' && typeof r.ratio === 'number') return `ratio ${r.ratio.toFixed(2)}`;
+	if (stage === 'seeding' && typeof r.ratio === 'number') return t('downloads.detail.ratio', { ratio: r.ratio.toFixed(2) });
 	return '';
 }

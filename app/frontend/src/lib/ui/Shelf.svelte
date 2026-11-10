@@ -1,5 +1,6 @@
 <!-- Titled horizontal row of cards with paging arrows and lazy mounting. -->
 <script lang="ts" generics="T = unknown">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import { untrack, type Snippet } from 'svelte';
 	import Icon from './Icon.svelte';
 	import { dragScroll } from './drag-scroll.ts';
@@ -11,7 +12,7 @@
 	let {
 		title,
 		href,
-		seeAll = 'See all',
+		seeAll = t('ui.shelf.seeAll'),
 		subtitle,
 		item = '180px',
 		anchor,
@@ -135,8 +136,8 @@
 		<div class="row" use:dragScroll use:rove bind:this={scroller} onscroll={measure} role="group" aria-labelledby="{id}-t">
 			{#if items && card}{#each shown as it, i (keyOf(it, i))}{@render card(it, i)}{/each}{:else}{@render children?.()}{/if}
 		</div>
-		<span class="arrow left" class:hide={atStart}><IconButton icon="chevronLeft" label="Scroll {title} back" variant="tinted" tabindex={-1} tooltip={false} onclick={() => page(-1)} /></span>
-		<span class="arrow right" class:hide={atEnd}><IconButton icon="chevronRight" label="Scroll {title} forward" variant="tinted" tabindex={-1} tooltip={false} onclick={() => page(1)} /></span>
+		<span class="arrow left" class:hide={atStart}><IconButton icon="chevronLeft" label={t('ui.shelf.scrollBack', { title })} variant="tinted" tabindex={-1} tooltip={false} onclick={() => page(-1)} /></span>
+		<span class="arrow right" class:hide={atEnd}><IconButton icon="chevronRight" label={t('ui.shelf.scrollForward', { title })} variant="tinted" tabindex={-1} tooltip={false} onclick={() => page(1)} /></span>
 	</div>
 	{/if}
 </section>

@@ -1,3 +1,5 @@
+import { t } from '../core/i18n/i18n.svelte.ts';
+
 // Anime mapping types and helpers that turn them into labels.
 export type AnimeTitle = { anilist: number; romaji?: string; english?: string; native?: string };
 export type AnimeSeasonPart = { anilist?: number; offset: number; title?: AnimeTitle };
@@ -16,11 +18,11 @@ export type AnimeView = { anime: boolean; mapped: boolean; alt_names: string[]; 
 export const animePath = (kind: string, tmdb: string) => `/metadata/${kind}/${encodeURIComponent(tmdb)}/anime`;
 
 // Joins the distinct names of a title, skipping repeats that differ only by case.
-export function titleLine(t: AnimeTitle | undefined): string {
-	if (!t) return '';
+export function titleLine(title: AnimeTitle | undefined): string {
+	if (!title) return '';
 	const seen = new Set<string>();
 	const out: string[] = [];
-	for (const v of [t.romaji, t.english, t.native]) {
+	for (const v of [title.romaji, title.english, title.native]) {
 		const k = (v ?? '').trim();
 		if (k && !seen.has(k.toLowerCase())) {
 			seen.add(k.toLowerCase());
@@ -35,15 +37,15 @@ export function seasonAnimeLine(view: AnimeView | null | undefined, season: numb
 	const s = view?.seasons.find((x) => x.number === season);
 	if (!s) return '';
 	const bits: string[] = [];
-	const t = titleLine(s.title);
-	if (t) bits.push(t);
+	const name = titleLine(s.title);
+	if (name) bits.push(name);
 	if (s.absolute_from && episodes > 0) {
 		const end = s.absolute_from + episodes - 1;
-		bits.push(episodes === 1 ? `Absolute episode ${s.absolute_from}` : `Absolute episodes ${s.absolute_from}–${end}`);
+		bits.push(episodes === 1 ? t('shows.anime.absoluteOne', { n: s.absolute_from }) : t('shows.anime.absoluteMany', { from: s.absolute_from, to: end }));
 	}
 	const later = (s.parts ?? []).filter((p) => p.offset > 0);
 	for (const [i, p] of later.entries()) {
-		bits.push(`Part ${i + 2} from episode ${p.offset + 1}${p.title ? ` (${titleLine(p.title).split(' · ')[0]})` : ''}`);
+		bits.push(t('shows.anime.part', { part: i + 2, episode: p.offset + 1 }) + (p.title ? ` (${titleLine(p.title).split(' · ')[0]})` : ''));
 	}
 	return bits.join(' · ');
 }

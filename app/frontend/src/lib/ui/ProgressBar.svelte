@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	// Thin progress bar that turns into a check mark at 100.
 	import Icon from './Icon.svelte';
 
@@ -16,7 +17,7 @@
 </script>
 
 <div class="ui-progress {size} {on}" class:done>
-	<div class="track" role="progressbar" aria-label={label} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(pct)} aria-valuetext={done ? 'Finished' : `${Math.round(pct)}%`}>
+	<div class="track" role="progressbar" aria-label={label} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(pct)} aria-valuetext={done ? t('ui.progressBar.finished') : `${Math.round(pct)}%`}>
 		<i class={done ? 'ok' : tone} style="transform: translateX({pct - 100}%)"></i>
 	</div>
 	{#if done}

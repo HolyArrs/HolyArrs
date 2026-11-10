@@ -11,6 +11,7 @@ export type Place = { key: string; shape: string; pic?: { c: HomeCard; label: st
 export type UpLine = { key: string; c: HomeCard; sub: string; when: string; now: boolean };
 
 import type { HomeContext } from './home-context.ts';
+import { t } from '#lib/core/i18n/i18n.svelte.ts';
 
 export function createHomeOverview(ctx: Pick<HomeContext, 'manager' | 'kid' | 'home' | 'now' | 'rows' | 'owner' | 'canAsk' | 'libCards' | 'showDisk' | 'fetchingAll' | 'waiting'>) {
 	let board = $state<'home' | 'system'>('home');
@@ -21,11 +22,11 @@ export function createHomeOverview(ctx: Pick<HomeContext, 'manager' | 'kid' | 'h
 	const badLogo = new SvelteSet<number>();
 	const pics = $derived.by(() => {
 		const lists: [HomeCard[], (c: HomeCard) => string][] = [
-			[ctx.home?.new_seasons ?? [], () => 'New season'],
+			[ctx.home?.new_seasons ?? [], () => t('home.newSeason')],
 			// "Just arrived" only while it is: an older arrival says how old it is.
 			[ctx.home?.arrived ?? [], (c) => arrivedTitle(c.at ? Date.parse(c.at) : undefined, ctx.now.getTime())],
-			[ctx.home?.soon ?? [], () => 'Coming soon'],
-			[ctx.home?.following ?? [], () => 'Following']
+			[ctx.home?.soon ?? [], () => t('home.comingSoon2')],
+			[ctx.home?.following ?? [], () => t('home.following')]
 		];
 		const seen = new Set<number>();
 		const out: { c: HomeCard; label: string }[] = [];
@@ -51,7 +52,7 @@ export function createHomeOverview(ctx: Pick<HomeContext, 'manager' | 'kid' | 'h
 			ctx.libCards.length ? 'lib' : '',
 			ctx.showDisk ? 'disk' : '',
 			ctx.fetchingAll.length ? 'dl' : '',
-			ctx.owner && ctx.home?.soon?.length && !pics.some((p) => p.label === 'Coming soon') ? 'soon' : '',
+			ctx.owner && ctx.home?.soon?.length && !pics.some((p) => p.label === t('home.comingSoon2')) ? 'soon' : '',
 			recentNew ? 'new' : '',
 			'explore',
 			'popular',
@@ -103,7 +104,7 @@ export function createHomeOverview(ctx: Pick<HomeContext, 'manager' | 'kid' | 'h
 			const [sub, tail] = (c.line ?? '').split(' · ');
 			const outNow = /out now/i.test(tail ?? '');
 			const isToday = c.at?.slice(0, 10) === today;
-			out.push({ key: c.key, c, sub: sub ?? '', when: outNow ? 'Out now' : isToday ? 'Today' : (tail ?? ''), now: outNow || isToday });
+			out.push({ key: c.key, c, sub: sub ?? '', when: outNow ? t('home.outNow') : isToday ? t('home.today') : (tail ?? ''), now: outNow || isToday });
 		};
 		for (const c of (ctx.home?.new_seasons ?? []).filter((x) => /out now/i.test(x.line ?? ''))) add(c, 2);
 		for (const c of ctx.home?.soon ?? []) add(c, 6);

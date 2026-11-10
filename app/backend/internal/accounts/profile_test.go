@@ -52,3 +52,17 @@ func TestProfileIsOwnOnly(t *testing.T) {
 		t.Fatalf("profile edit changed name or role: %s", out)
 	}
 }
+
+func TestMyLanguage(t *testing.T) {
+	f := gated(t, Options{})
+	own := ownerOf(t, f)
+	if resp, out := own.do(t, f, "PUT", "/api/v1/my/language", `{"language":"de"}`); resp.StatusCode != 200 || !strings.Contains(out, `"language":"de"`) {
+		t.Fatalf("put: %d %s", resp.StatusCode, out)
+	}
+	if resp, _ := own.do(t, f, "PUT", "/api/v1/my/language", `{"language":"xx"}`); resp.StatusCode != 400 {
+		t.Fatalf("bad language took %d", resp.StatusCode)
+	}
+	if _, out := own.do(t, f, "PUT", "/api/v1/my/profile", `{"display_name":"Lu"}`); !strings.Contains(out, `"language":"de"`) {
+		t.Fatalf("name change lost language: %s", out)
+	}
+}

@@ -5,6 +5,7 @@ import type { LookupArtist, MusicSettings } from '#lib/music/index.ts';
 import { toasts } from '#lib/core/toasts.svelte.ts';
 import type { Ask, LibraryFolder, PickRulesView, TitleView } from '#lib/core/types.ts';
 import { refreshInbox } from '#lib/core/inbox.svelte.ts';
+import { t } from '#lib/core/i18n/i18n.svelte.ts';
 
 export function createSearchArtists(ctx: { groups: Record<Card['type'], Card[] | null>; artistCard: (a: LookupArtist) => Card }) {
 	let folders = $state<LibraryFolder[]>([]);
@@ -16,16 +17,16 @@ export function createSearchArtists(ctx: { groups: Record<Card['type'], Card[] |
 		const i = list.findIndex((c) => c.artist?.mbid === a.mbid);
 		if (i >= 0) list[i] = ctx.artistCard({ ...a, ...change });
 	}
-	function artistAdded(a: LookupArtist, t: TitleView) {
-		patchArtist(a, { title_id: t.id });
-		toasts.push(`${t.name} added`, 'ok', { body: 'Filling in albums and tracks' });
+	function artistAdded(a: LookupArtist, title: TitleView) {
+		patchArtist(a, { title_id: title.id });
+		toasts.push(t('discover.searchArtists.added', { name: title.name }), 'ok', { body: t('discover.searchArtists.addedBody') });
 	}
 	function artistAsked(a: LookupArtist, r: { ask: Ask; joined: boolean; already: boolean }) {
 		patchArtist(a, { ask: { id: r.ask.id, state: r.ask.state, state_label: r.ask.state_label, mine: true, people: r.ask.people.length, albums: r.ask.albums } });
 		const what = `${r.ask.name} (${albumWords(r.ask.albums)})`;
-		if (r.ask.state === 'approved') toasts.push(`${what} approved`, 'ok', { body: 'Kept up to date' });
-		else if (r.joined) toasts.push(`${what} already requested`, 'ok', { body: "You're on the request too" });
-		else toasts.push(`${what} requested`, 'ok', { body: 'Waiting for approval' });
+		if (r.ask.state === 'approved') toasts.push(t('discover.searchArtists.approved', { what }), 'ok', { body: t('discover.searchArtists.keptUpToDate') });
+		else if (r.joined) toasts.push(t('discover.searchArtists.alreadyRequested', { what }), 'ok', { body: t('discover.searchArtists.onRequestToo') });
+		else toasts.push(t('discover.searchArtists.requested', { what }), 'ok', { body: t('discover.searchArtists.waitingForApproval') });
 		void refreshInbox();
 	}
 	function artistRefused(a: LookupArtist, body: Record<string, unknown>) {

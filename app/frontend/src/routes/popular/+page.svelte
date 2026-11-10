@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import { cardAction, cardTmdb, followsByTmdb, discoverCard, liveCard, matchOwned, ownedIndex, ownedMark, ownedTitle, type ExploreCard, type ExploreRow } from '#lib/ui/title-cards.ts';
 	import { contextLine } from '#lib/ui/grow-lines.ts';
 	import { defaultRegion } from '#lib/ui/region.ts';
@@ -45,10 +46,10 @@
 	let type = $state<NewType>(parseNewType(page.url.searchParams.get('type') ?? page.url.searchParams.get('kind')));
 	const typeOptions = $derived(
 		([
-			{ value: 'all', label: 'All', icon: 'grid' },
-			{ value: 'shows', label: 'TV shows', icon: 'tv' },
-			{ value: 'movies', label: 'Movies', icon: 'film' },
-			{ value: 'music', label: 'Music', icon: 'music' }
+			{ value: 'all', label: t('discover.popular.all'), icon: 'grid' },
+			{ value: 'shows', label: t('discover.popular.tvShows'), icon: 'tv' },
+			{ value: 'movies', label: t('discover.popular.movies'), icon: 'film' },
+			{ value: 'music', label: t('discover.popular.music'), icon: 'music' }
 		] as { value: NewType; label: string; icon: IconName }[]).filter((o) => o.value !== 'music' || partOn('music'))
 	);
 	// Music turned off while picked falls back to All.
@@ -240,13 +241,13 @@
 	function heroWhy(h: ExploreCard): Why[] {
 		const out = whyShown({ kind: h.kind, tmdb: cardTmdb(h) ?? '', fresh: h.fresh });
 		const rank = h.streaming?.rank;
-		if (rank && rank <= 10 && h.streaming && !out.some((w) => w.kind === 'top10')) out.push({ kind: 'top10', text: `#${rank} on ${h.streaming.name}` });
-		if (!out.length && h.fresh && h.fresh.kind !== 'coming') out.unshift({ kind: 'new_season', text: 'New this week' });
+		if (rank && rank <= 10 && h.streaming && !out.some((w) => w.kind === 'top10')) out.push({ kind: 'top10', text: t('discover.popular.rankedOn', { rank, name: h.streaming.name }) });
+		if (!out.length && h.fresh && h.fresh.kind !== 'coming') out.unshift({ kind: 'new_season', text: t('discover.popular.newThisWeek') });
 		return out.slice(0, 2);
 	}
 </script>
 
-<svelte:head><title>New & Popular · HolyArrs</title></svelte:head>
+<svelte:head><title>{t('discover.popular.newPopularHolyArrs')}</title></svelte:head>
 
 {#snippet wideCard(raw: ExploreCard, rowType: string, rowTitle: string)}
 	{@const c = live(raw)}
@@ -261,48 +262,48 @@
 			{#snippet growAction()}{@render hoverAction(c, act, mark)}{/snippet}
 		</WideCard>
 		{#if (rowType === 'np_services' || rowType === 'np_rail') && c.streaming && logo(c.streaming.service)}
-			<img class="svc-logo" src={logo(c.streaming.service)} alt="On {c.streaming.name}" title={c.streaming.name} loading="lazy" />
+			<img class="svc-logo" src={logo(c.streaming.service)} alt={t('discover.popular.on', { name: c.streaming.name })} title={c.streaming.name} loading="lazy" />
 		{/if}
 	</div>
 {/snippet}
 
 {#snippet hoverAction(c: ExploreCard, act: 'add' | 'ask' | null, mark: ReturnType<typeof ownedMark>)}
 	{#if act && cardTmdb(c)}
-		<IconButton icon="plus" label={act === 'add' ? `Add ${c.name}` : `Ask for ${c.name}`} variant="glass" size="lg" aria-haspopup="dialog" aria-busy={flow?.busy(c) || undefined} onclick={() => void quick(c, act)} />
+		<IconButton icon="plus" label={act === 'add' ? t('discover.popular.add', { name: c.name }) : t('discover.popular.askFor', { name: c.name })} variant="glass" size="lg" aria-haspopup="dialog" aria-busy={flow?.busy(c) || undefined} onclick={() => void quick(c, act)} />
 	{/if}
 {/snippet}
 
 <div class="np">
-	<h1 class="sr-only">New & Popular</h1>
+	<h1 class="sr-only">{t('discover.popular.newPopular')}</h1>
 	<div class="types-mark" bind:this={typesMark} aria-hidden="true"></div>
 	<div class="types" class:stuck={typesStuck} data-pin-pills>
-		<SegmentedControl options={typeOptions} value={type} label="Show" testid="new-type" announce={(l) => `Showing ${l}`} onchange={setType} />
+		<SegmentedControl options={typeOptions} value={type} label={t('discover.popular.show')} testid="new-type" announce={(l) => t('discover.popular.showing', { label: l })} onchange={setType} />
 	</div>
 	<MetadataNotice />
 
 	{#if type === 'music'}
 		<MusicNewTab sheets={artistSheets} {manage} {mayAsk} folders={flow?.addChoices().folders ?? []} rules={flow?.addChoices().rules ?? []} />
 	{:else if failed && rows.length === 0}
-		<LoadError hasData={false} message="Could not load New & Popular." onretry={() => void loadFirst()} busy={false} />
+		<LoadError hasData={false} message={t('discover.popular.couldNotLoadNew')} onretry={() => void loadFirst()} busy={false} />
 	{:else}
 		<!-- Main data loading: the shared page Orbit. "Building" answers show the try count. -->
-		<PageLoader loading={!loaded || (building > 0 && rows.length === 0)} label="Loading New & Popular" status={building ? buildingStatus(building, 'New & Popular') : ''} immediate={building > 0} onretry={() => void loadFirst()}>
+		<PageLoader loading={!loaded || (building > 0 && rows.length === 0)} label={t('discover.popular.loadingNewPopular')} status={building ? buildingStatus(building, t('discover.popular.newPopularName')) : ''} immediate={building > 0} onretry={() => void loadFirst()}>
 		{#if rows.length === 0}
-		<EmptyState icon="compass" title="New & Popular is getting ready" text="Rows fill in within a few minutes." action={{ label: 'Explore', href: to('/explore'), icon: 'compass' }} />
+		<EmptyState icon="compass" title={t('discover.popular.newPopularIsGetting')} text={t('discover.popular.rowsFillInWithin')} action={{ label: t('discover.popular.explore'), href: to('/explore'), icon: 'compass' }} />
 		{:else}
 		{#if hero.length}
 			{@const h = live(hero[heroAt % hero.length])}
-			<ExploreHero kind={h.kind === 'show' ? 'show' : 'movie'} tmdb={cardTmdb(h)} title={h.name} href={cardHref(h)} backdrop={h.wide ?? h.image} vtName={h.vtName} subtitle={h.year ? `${h.year} · ${h.kind === 'show' ? 'Show' : 'Movie'}` : h.subtitle} settled={loaded}>
+			<ExploreHero kind={h.kind === 'show' ? 'show' : 'movie'} tmdb={cardTmdb(h)} title={h.name} href={cardHref(h)} backdrop={h.wide ?? h.image} vtName={h.vtName} subtitle={h.year ? (h.kind === 'show' ? t('discover.popular.yearShow', { year: h.year }) : t('discover.popular.yearMovie', { year: h.year })) : h.subtitle} settled={loaded}>
 				{#snippet action()}{@render hoverAction(h, cardAction(h, { manage, ask: mayAsk }), null)}{/snippet}
 				{#snippet badge()}
 					{@const why = heroWhy(h)}
-					{#if why.length}<ul class="why" aria-label="Why it is featured">{#each why as w (w.text)}<li class="why-{w.kind}">{w.text}</li>{/each}</ul>{/if}
+					{#if why.length}<ul class="why" aria-label={t('discover.popular.whyItIsFeatured')}>{#each why as w (w.text)}<li class="why-{w.kind}">{w.text}</li>{/each}</ul>{/if}
 				{/snippet}
 			</ExploreHero>
 		{/if}
 		{#if rail.length > 0}
 			<NewRail days={rail}>
-				{#snippet card(it: RailItem)}{@render wideCard(railCard(it), 'np_rail', 'This week')}{/snippet}
+				{#snippet card(it: RailItem)}{@render wideCard(railCard(it), 'np_rail', t('discover.popular.thisWeek'))}{/snippet}
 			</NewRail>
 		{/if}
 		{#each rows as row (row.id)}
@@ -311,8 +312,8 @@
 			{@const chips = hasServiceChips(row.type) ? cardServices(row.cards) : []}
 			<div class="row-wrap" class:wide-row={wide} data-row={row.type} data-row-id={row.id}>
 				{#snippet tools()}
-					<div class="chips" role="group" aria-label="Services">
-						<Chip label="All" selected={svcPick(row.id) === null} onclick={() => setPick(row, null)} />
+					<div class="chips" role="group" aria-label={t('discover.popular.services')}>
+						<Chip label={t('discover.popular.all')} selected={svcPick(row.id) === null} onclick={() => setPick(row, null)} />
 						{#each chips as s (s.service)}<Chip label={s.name} selected={svcPick(row.id) === s.service} onclick={() => setPick(row, s.service)} />{/each}
 					</div>
 				{/snippet}
@@ -334,14 +335,14 @@
 								<div class="pc"><PosterCard title={c.name} href={cardHref(c)} image={c.image} kind={c.kind} owned={mark} fresh={c.fresh} actionOnHover {preview} followTmdb={followsByTmdb(c)}>
 									{#snippet action()}{@render hoverAction(c, act, mark)}{/snippet}
 								</PosterCard></div>
-								<span class="sr-only">Number {rank}</span>
+								<span class="sr-only">{t('discover.popular.number', { rank })}</span>
 							</div>
 						{:else if wide}
 							{@render wideCard(raw, row.type, row.title)}
 						{:else}
 							<PosterCard title={c.name} href={cardHref(c)} image={c.image} kind={c.kind} subtitle={c.subtitle} badges={c.badges} typed row={row.type} owned={mark} fresh={c.fresh} actionOnHover vtName={c.vtName} {preview} followTmdb={followsByTmdb(c)}>
 								{#snippet action()}
-									{#if act && cardTmdb(c)}<IconButton icon="plus" label={act === 'add' ? `Add ${c.name}` : `Ask for ${c.name}`} variant="glass" size="lg" aria-haspopup="dialog" onclick={() => void quick(c, act)} />{/if}
+									{#if act && cardTmdb(c)}<IconButton icon="plus" label={act === 'add' ? t('discover.popular.add', { name: c.name }) : t('discover.popular.askFor', { name: c.name })} variant="glass" size="lg" aria-haspopup="dialog" onclick={() => void quick(c, act)} />{/if}
 								{/snippet}
 							</PosterCard>
 						{/if}

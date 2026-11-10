@@ -1,4 +1,5 @@
 <script lang="ts" module>
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import type { IconName } from '#lib/ui/Icon.svelte';
 	export type Tab = { label: string; icon: IconName; href?: string; current?: boolean; badge?: number; dot?: boolean; onclick?: () => void };
 </script>
@@ -8,18 +9,18 @@
 	import { press } from '#lib/core/motion.ts';
 
 	// Phone bottom tab bar: translucent and safe-area aware. Items are links, or buttons (with onclick) that open a sheet such as More.
-	let { items, label = 'Main' }: { items: Tab[]; label?: string } = $props();
+	let { items, label }: { items: Tab[]; label?: string } = $props();
 </script>
 
-<nav class="ui-tabbar tabbar" aria-label={label}>
-	{#each items as t (t.label)}
-		{#if t.href}
-			<a class="tab" class:active={t.current} href={t.href} aria-current={t.current ? 'page' : undefined} use:press={'round'}>
-				<span class="ic"><Icon name={t.icon} size={22} />{#if t.badge}<b class="count" aria-hidden="true">{t.badge}</b>{/if}</span><span>{t.label}</span>
+<nav class="ui-tabbar tabbar" aria-label={label ?? t('frame.tabs.main')}>
+	{#each items as tab (tab.label)}
+		{#if tab.href}
+			<a class="tab" class:active={tab.current} href={tab.href} aria-current={tab.current ? 'page' : undefined} use:press={'round'}>
+				<span class="ic"><Icon name={tab.icon} size={22} />{#if tab.badge}<b class="count" aria-hidden="true">{tab.badge}</b>{/if}</span><span>{tab.label}</span>
 			</a>
 		{:else}
-			<button class="tab" class:active={t.current} type="button" aria-haspopup="dialog" aria-current={t.current ? 'page' : undefined} onclick={t.onclick} use:press={'round'}>
-				<span class="ic"><Icon name={t.icon} size={22} />{#if t.dot}<i class="dot" aria-hidden="true"></i>{/if}</span><span>{t.label}</span>{#if t.dot}<span class="sr-only">, items need attention</span>{/if}
+			<button class="tab" class:active={tab.current} type="button" aria-haspopup="dialog" aria-current={tab.current ? 'page' : undefined} onclick={tab.onclick} use:press={'round'}>
+				<span class="ic"><Icon name={tab.icon} size={22} />{#if tab.dot}<i class="dot" aria-hidden="true"></i>{/if}</span><span>{tab.label}</span>{#if tab.dot}<span class="sr-only">{t('frame.tabs.attention')}</span>{/if}
 			</button>
 		{/if}
 	{/each}

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import { dragScroll } from '#lib/ui/drag-scroll.ts';
 	import { dayOffset, railLabel, type RailDay, type RailItem } from './popular.ts';
 	import type { Snippet } from 'svelte';
@@ -12,7 +13,7 @@
 
 {#if days.length > 0}
 	<section class="rail" aria-labelledby="rail-title" data-testid="new-rail">
-		<h2 id="rail-title" class="rail-title">This week</h2>
+		<h2 id="rail-title" class="rail-title">{t('discover.popularRail.thisWeek')}</h2>
 		<div class="track" use:dragScroll role="list">
 			{#each days as d (d.day)}
 				{@const label = railLabel(d.day, today)}
@@ -26,7 +27,7 @@
 						{#each d.items as it (keyOf(it))}
 							<li class="t">
 								{@render card(it)}
-								<span class="what">{it.what}{#if it.upcoming && it.in_library} · Coming{/if}</span>
+								<span class="what">{it.what}{#if it.upcoming && it.in_library} {t('discover.popularRail.coming')}{/if}</span>
 							</li>
 						{/each}
 					</ul>

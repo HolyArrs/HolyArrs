@@ -7,6 +7,7 @@ import type { DownloadRow } from '#lib/core/types.ts';
 import type { Ask } from '#lib/core/types.ts';
 
 import type { HomeContext } from './home-context.ts';
+import { t } from '#lib/core/i18n/i18n.svelte.ts';
 
 export function createHomeDownloads(ctx: Pick<HomeContext, 'waiting' | 'askPic' | 'fetchingAll' | 'manager' | 'downloads'>) {
 	const waitingPics = $derived(
@@ -31,15 +32,16 @@ export function createHomeDownloads(ctx: Pick<HomeContext, 'waiting' | 'askPic' 
 	}
 	const dlCount = $derived(countStages(ctx.fetchingAll, pausedCount));
 	const stageWords = (c: { waiting: number; down: number; imp: number; paused: number }) =>
-		[c.down ? `${n(c.down)} downloading` : '', c.imp ? `${n(c.imp)} importing` : '', c.waiting ? `${n(c.waiting)} waiting` : '', c.paused ? `${n(c.paused)} paused` : ''].filter(Boolean).join(' · ');
+		[c.down ? t('home.downloading3', { n: n(c.down) }) : '', c.imp ? t('home.importing', { n: n(c.imp) }) : '', c.waiting ? t('home.waiting2', { n: n(c.waiting) }) : '', c.paused ? t('home.paused', { n: n(c.paused) }) : ''].filter(Boolean).join(' · ');
 	/** One running download in a few words: its percent and speed, or the step it is in. */
 	function dlState(d: DownloadRow): string {
 		const st = stageOf(d);
-		if (st === 'queued') return 'Waiting';
-		if (st === 'importing') return 'Importing';
-		if (st === 'checking') return 'Checking';
-		if (st === 'stalled') return `Stalled at ${Math.round(percent(d.progress))}%`;
-		return `${Math.round(percent(d.progress))}%${d.speed ? ` · ${bytes(d.speed)}/s` : ''}`;
+		if (st === 'queued') return t('home.waiting3');
+		if (st === 'importing') return t('home.importing2');
+		if (st === 'checking') return t('home.checking');
+		const pct = Math.round(percent(d.progress));
+		if (st === 'stalled') return t('home.stalledAt', { pct: pct });
+		return d.speed ? t('home.s', { pct: pct, speed: bytes(d.speed) }) : t('home.text2', { pct: pct });
 	}
 	// The tile lists what is moving first: downloading, then stalled, checking, importing, and waiting last.
 	const STEP_ORDER: Record<string, number> = { downloading: 0, stalled: 1, checking: 2, importing: 3, queued: 4 };
@@ -53,13 +55,14 @@ export function createHomeDownloads(ctx: Pick<HomeContext, 'waiting' | 'askPic' 
 					.slice(0, 3)
 			: []
 	);
-	const pillIcon: Record<string, IconName> = { 'New season': 'sparkle', 'New today': 'sparkle', 'New this week': 'sparkle', 'Just arrived': 'check', 'Recently added': 'check', 'Coming soon': 'calendar', Following: 'bell' };
+	// Keyed by the words the pill shows, so it follows the language.
+	const pillIcon = (): Record<string, IconName> => ({ [t('home.newSeason')]: 'sparkle', [t('home.newToday')]: 'sparkle', [t('home.newThisWeek')]: 'sparkle', [t('home.justArrived')]: 'check', [t('home.recentlyAdded2')]: 'check', [t('home.comingSoon2')]: 'calendar', [t('home.following')]: 'bell' });
 
 	return {
 		get dlCount() { return dlCount; },
 		get speed() { return speed; },
 		stageWords,
-		get pillIcon() { return pillIcon; },
+		get pillIcon() { return pillIcon(); },
 		get waitingPics() { return waitingPics; },
 		countStages,
 		get dlList() { return dlList; },

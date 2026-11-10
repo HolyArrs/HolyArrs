@@ -1,0 +1,14 @@
+{
+	"settings.layout.settings": "Settings",
+	"settings.layout.home": "Home",
+	"settings.layout.sections": "Settings sections",
+	"settings.layout.needsAttention": "Needs attention",
+	"settings.layout.needsAttentionLower": "needs attention",
+	"settings.layout.blocked": "You can't change this",
+	"settings.layout.backToSettings": "Back to Settings",
+	"settings.layout.setPasswordFirst": "Set a password first",
+	"settings.layout.setPasswordDesc": "Keys, passwords, people and backups need a HolyArrs password. You don't have one yet.",
+	"settings.layout.setPasswordLabel": "Set a password",
+	"settings.layout.confirmPasswordLabel": "Confirm your password",
+	"settings.layout.confirmPasswordDesc": "Keys, passwords, people and backups need your password. Good for 10 minutes."
+}

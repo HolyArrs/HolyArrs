@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import { tmdbSized } from '#lib/ui/library-art.ts';
 	import { coverFor } from './music-pages.ts';
 	// A song line: 56 tall with 44 px art, title and artist, the explicit "E", and one action, Ask album (HolyArrs asks for albums; it does not play).
@@ -10,10 +11,10 @@
 		<span class="art">{#if image}<img src={tmdbSized(coverFor(image, 44).src, 'poster', 44)} alt="" loading="lazy" decoding="async" />{/if}</span>
 		<span class="words">
 			<span class="title">{title}</span>
-			<span class="by">{#if explicit}<span class="e" aria-label="Explicit">E</span>{/if}{artist}</span>
+			<span class="by">{#if explicit}<span class="e" aria-label={t('music.explicit')}>E</span>{/if}{artist}</span>
 		</span>
 	</a>
-	<a class="ask" href={askHref}>Ask album</a>
+	<a class="ask" href={askHref}>{t('music.askAlbum')}</a>
 </div>
 
 <style>

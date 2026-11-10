@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import { cardAction, cardTmdb, liveCard, type ExploreCard } from '#lib/ui/title-cards.ts';
 	import AddMovieDialog from './AddMovieDialog.svelte';
 	import AddShowDialog from './AddShowDialog.svelte';
@@ -19,7 +20,7 @@
 	import type { LookupShow } from '../core/types.ts';
 
 	// The round + on a movie or show card, shared by every page with title cards. It never adds or asks in one click but opens a confirm sheet (seasons for shows; Library folder and Pick rules for people who manage).
-	let { onadded }: { onadded?: (t: TitleView) => void } = $props();
+	let { onadded }: { onadded?: (title: TitleView) => void } = $props();
 
 	const manage = $derived(session.can('manage_library'));
 	const mayAsk = $derived(session.can('ask'));
@@ -66,13 +67,13 @@
 		asking = c.key;
 		try {
 			const d = await loadDetails(api.get, c.kind as 'movie' | 'show', tmdb);
-			if (!d) return void toasts.push(`Couldn't find ${c.name}`, 'fail', { body: 'Try Search' });
-			if (d.titleId) return void toasts.push(`${c.name} already in Library`, 'ok');
+			if (!d) return void toasts.push(t('requests.quick.notFound', { name: c.name }), 'fail', { body: t('requests.quick.trySearch') });
+			if (d.titleId) return void toasts.push(t('requests.quick.inLibrary', { name: c.name }), 'ok');
 			if (act === 'add' && d.movie) addMovie?.open(d.movie);
 			else if (act === 'add' && d.show) addShow?.open(d.show);
 			else if (d.show) askShow?.open(d.show);
 		} catch (e) {
-			toasts.push("Couldn't open title", 'fail', { body: message(e) });
+			toasts.push(t('requests.quick.openFailed'), 'fail', { body: message(e) });
 		} finally {
 			asking = '';
 		}
@@ -91,11 +92,11 @@
 			if (err instanceof ApiError && err.status === 409 && typeof err.body.title_id === 'number') {
 				refused(err.body);
 				const id = err.body.title_id;
-				toasts.push(`${c.name} is already in your Library`, 'info', { action: { label: 'Open', run: () => void goto(to(`/library/${id}`)) } });
+				toasts.push(t('requests.quick.inYourLibrary', { name: c.name }), 'info', { action: { label: t('requests.quick.open'), run: () => void goto(to(`/library/${id}`)) } });
 				return;
 			}
 			if (err instanceof ApiError && err.status === 409) refused(err.body);
-			toasts.push("Couldn't send request", 'fail', { body: message(err) });
+			toasts.push(t('requests.quick.sendFailed'), 'fail', { body: message(err) });
 		} finally {
 			asking = '';
 		}
@@ -103,9 +104,9 @@
 
 	function asked(r: { ask: Ask; joined: boolean }, what: string) {
 		if (current) askedHere = new Map([...askedHere, [current.key, { ask: r.ask.state }]]);
-		if (r.ask.state === 'approved') toasts.push(`${what} approved`, 'ok', { body: 'Searching for a Release' });
-		else if (r.joined) toasts.push(`${what} already requested`, 'ok', { body: "You're on the request too" });
-		else toasts.push(`${what} requested`, 'ok', { body: 'Waiting for approval' });
+		if (r.ask.state === 'approved') toasts.push(t('requests.quick.approved', { what }), 'ok', { body: t('requests.quick.searching') });
+		else if (r.joined) toasts.push(t('requests.quick.already', { what }), 'ok', { body: t('requests.quick.onIt') });
+		else toasts.push(t('requests.quick.requested', { what }), 'ok', { body: t('requests.quick.waiting') });
 		void refreshInbox();
 	}
 
@@ -114,10 +115,10 @@
 		if (current && typeof body.title_id === 'number') askedHere = new Map([...askedHere, [current.key, { titleId: body.title_id }]]);
 	}
 
-	function added(t: TitleView) {
-		if (current) askedHere = new Map([...askedHere, [current.key, { titleId: t.id }]]);
-		toasts.push(`${t.name} added`, 'ok');
-		onadded?.(t);
+	function added(title: TitleView) {
+		if (current) askedHere = new Map([...askedHere, [current.key, { titleId: title.id }]]);
+		toasts.push(t('requests.quick.added', { name: title.name }), 'ok');
+		onadded?.(title);
 	}
 
 	$effect(() => {
@@ -133,8 +134,8 @@
 </script>
 
 {#if manage}
-	<AddMovieDialog bind:this={addMovie} {folders} {rules} {gateDefault} onadded={(_m, t) => added(t)} />
-	<AddShowDialog bind:this={addShow} {folders} {rules} defaults={showDefaults} onadded={(_s, t) => added(t)} />
+	<AddMovieDialog bind:this={addMovie} {folders} {rules} {gateDefault} onadded={(_m, title) => added(title)} />
+	<AddShowDialog bind:this={addShow} {folders} {rules} defaults={showDefaults} onadded={(_s, title) => added(title)} />
 {:else if mayAsk}
 	<AskMovieDialog bind:this={askMovie} onasked={(_m, r) => asked(r, r.ask.name)} onrefused={(_m, body) => refused(body)} />
 	<AskShowDialog bind:this={askShow} onasked={(_s: LookupShow, r) => asked(r, `${r.ask.name} (${seasonWords(r.ask.seasons)})`)} onrefused={(_s: LookupShow, body: Record<string, unknown>) => refused(body)} />

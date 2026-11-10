@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import { createMovePassword } from '#lib/migrate/index.ts';
 	import { createMovePlan } from '#lib/migrate/index.ts';
 	import { createMoveRun } from '#lib/migrate/index.ts';
@@ -200,7 +201,7 @@
 		})
 	);
 	const fromApps = $derived(
-		[...new Set((dry?.apps ?? []).map(appName))].reduce((s, a, i, all) => (i === 0 ? a : i === all.length - 1 ? `${s} and ${a}` : `${s}, ${a}`), '')
+		[...new Set((dry?.apps ?? []).map(appName))].reduce((s, a, i, all) => (i === 0 ? a : i === all.length - 1 ? `${s} ${t('settings.move.and')} ${a}` : `${s}, ${a}`), '')
 	);
 
 	function quiet(err: unknown): boolean {
@@ -359,7 +360,7 @@
 		changed();
 		const what = countWords(kind, r.snapshot.counts, 1);
 		const keys = r.needs_reentry?.length ?? 0;
-		toasts.push(`${appName(kind)} read`, 'ok', { body: keys > 0 ? `${plural(keys, 'key', 'keys')} to type again` : what || undefined });
+		toasts.push(t('settings.move.read', { app: appName(kind) }), 'ok', { body: keys > 0 ? t(keys === 1 ? 'settings.move.keysOne' : 'settings.move.keysOther', { n: keys }) : what || undefined });
 	}
 	function addApp() {
 		readStart = 'radarr';
@@ -589,14 +590,14 @@
 
 	$effect(() => embedded?.onstep?.(step));
 
-	const railBusy = $derived(step === 'choose' && (checking || starting) ? 'Checking…' : step === 'choose' && planning ? 'Updating…' : '');
+	const railBusy = $derived(step === 'choose' && (checking || starting) ? t('settings.move.checking') : step === 'choose' && planning ? t('settings.move.updating') : '');
 	const railFill = $derived(step === 'move' && moveRunning ? progress : 0.5);
 </script>
 
-<svelte:head>{#if !embedded}<title>Move from other apps · HolyArrs</title>{/if}</svelte:head>
+<svelte:head>{#if !embedded}<title>{t('settings.move.title')} · HolyArrs</title>{/if}</svelte:head>
 
 {#if !embedded}
-	<PageHeader title="Move from other apps" subtitle="Your old apps stay untouched." />
+	<PageHeader title={t('settings.move.title')} subtitle={t('settings.move.subtitle')} />
 {/if}
 
 {#if !loaded}
@@ -607,15 +608,15 @@
 {:else}
 	{#if !embedded}<MoveSteps {step} busy={railBusy} fill={railFill} locked={moveRunning && step === 'move'} onpick={back} />{/if}
 	{#if passwordFlow.mustSetPw && !passwordFlow.pwSheet}
-		<SettingsCard id="move-password" title="Set a password first" icon="shield">
+		<SettingsCard id="move-password" title={t('settings.move.setPasswordFirst')} icon="shield">
 			<form class="setpw" onsubmit={passwordFlow.setFirstPw}>
-				<input class="input" type="password" bind:value={passwordFlow.pwA} placeholder="Password" aria-label="Password" autocomplete="new-password" />
-				<input class="input" type="password" bind:value={passwordFlow.pwB} placeholder="Confirm password" aria-label="Confirm password" autocomplete="new-password" />
-				<Button variant="primary" type="submit" busy={passwordFlow.pwBusy} disabled={passwordFlow.pwBusy}>Set password</Button>
+				<input class="input" type="password" bind:value={passwordFlow.pwA} placeholder={t('settings.move.passwordLabel')} aria-label={t('settings.move.passwordLabel')} autocomplete="new-password" />
+				<input class="input" type="password" bind:value={passwordFlow.pwB} placeholder={t('settings.move.confirmPasswordLabel')} aria-label={t('settings.move.confirmPasswordLabel')} autocomplete="new-password" />
+				<Button variant="primary" type="submit" busy={passwordFlow.pwBusy} disabled={passwordFlow.pwBusy}>{t('settings.move.setPasswordLabel')}</Button>
 			</form>
 			{#if passwordFlow.pwStale}
-				<p class="form-error" role="alert">Sign in again to continue. You'll return here.</p>
-				<div><Button onclick={passwordFlow.signInAgain}>Sign in again</Button></div>
+				<p class="form-error" role="alert">{t('settings.move.signInAgainNote')}</p>
+				<div><Button onclick={passwordFlow.signInAgain}>{t('settings.move.signInAgain')}</Button></div>
 			{:else if passwordFlow.pwErr}<p class="form-error" role="alert">{passwordFlow.pwErr}</p>{/if}
 		</SettingsCard>
 	{/if}
@@ -664,24 +665,24 @@
 
 	{#if gone}
 		<div class="notice warn gone" role="alert">
-			<span>A read you picked is gone. Pick again.</span>
-			<Button onclick={goBackToReads}>Back to Read your apps</Button>
+			<span>{t('settings.move.gone')}</span>
+			<Button onclick={goBackToReads}>{t('settings.move.backToRead')}</Button>
 		</div>
 	{/if}
 	{#if actionError}<p class="form-error" role="alert">{actionError}</p>{/if}
 
 	{#if step === 'read'}
 		{#if snapshots.length > 0 || reading}
-			<StepFoot label="Continue" onclick={() => enter('choose')} disabled={!gate.ok} reason={gate.reason} />
+			<StepFoot label={t('settings.move.continue')} onclick={() => enter('choose')} disabled={!gate.ok} reason={gate.reason} />
 		{/if}
 	{:else if step === 'choose'}
 		<StepFoot
 			back={() => back('read')}
-			label="Move"
+			label={t('settings.move.move')}
 			onclick={() => void runFlow.moveNow()}
 			disabled={!gate.ok || safeMode || moveRunning}
 			busy={checking || starting}
-			reason={safeMode ? 'HolyArrs started in safe mode.' : checking ? 'Checking…' : gate.reason}
+			reason={safeMode ? t('settings.move.safeMode') : checking ? t('settings.move.checking') : gate.reason}
 		/>
 	{:else if step === 'move'}
 		<StepFoot back={() => back('choose')} backDisabled={moveRunning || starting} />
@@ -692,15 +693,15 @@
 		{@const retry = !busyNow && m.undo_state === 'failed' && m.state !== 'undone'}
 		{@const restart = !!embedded?.ondone && (m.state === 'undone' || m.state === 'failed')}
 		<StepFoot
-			label={busyNow ? undefined : retry ? 'Try undo again' : restart ? 'Start over' : embedded?.ondone ? 'Continue' : 'Done'}
+			label={busyNow ? undefined : retry ? t('settings.move.tryUndo') : restart ? t('settings.move.startOver') : embedded?.ondone ? t('settings.move.continue') : t('settings.move.done')}
 			variant={retry ? 'destructive' : 'primary'}
 			onclick={retry ? () => (confirmUndo = true) : restart ? done : (embedded?.ondone ?? done)}
 			disabled={(safeMode || undoing) && retry}
 			busy={undoing && retry}
 		>
 			{#snippet more()}
-				{#if canUndo}<Button variant="destructive" onclick={() => (confirmUndo = true)} disabled={safeMode} busy={undoing}>Undo this move</Button>{/if}
-				{#if m.report && !busyNow}<AdminLinkButton icon="download" href={to(`/api/v1/migrate/moves/${m.id}/report`)} download>Download the report</AdminLinkButton>{/if}
+				{#if canUndo}<Button variant="destructive" onclick={() => (confirmUndo = true)} disabled={safeMode} busy={undoing}>{t('settings.move.undoThis')}</Button>{/if}
+				{#if m.report && !busyNow}<AdminLinkButton icon="download" href={to(`/api/v1/migrate/moves/${m.id}/report`)} download>{t('settings.move.downloadReport')}</AdminLinkButton>{/if}
 			{/snippet}
 		</StepFoot>
 	{/if}
@@ -710,26 +711,26 @@
 
 <ItemsSheet bind:open={listOpen} title={listTitle} items={listItems} row={listRow} />
 
-<Sheet bind:open={forgetOpen} title={forgetting ? `Forget this ${appName(forgetting.kind)} read?` : 'Forget this read?'} size="sm">
+<Sheet bind:open={forgetOpen} title={forgetting ? t('settings.move.forgetApp', { app: appName(forgetting.kind) }) : t('settings.move.forget')} size="sm">
 	<form id="move-forget-form" onsubmit={forget}>
-		<p class="small muted">Finished moves stay. You can read it again.</p>
+		<p class="small muted">{t('settings.move.forgetNote')}</p>
 		{#if forgetError}<p class="form-error" role="alert">{forgetError}</p>{/if}
 	</form>
 	{#snippet footer()}
-		<Button variant="plain" onclick={() => (forgetOpen = false)}>Cancel</Button>
-		<Button variant="destructive" type="submit" form="move-forget-form" busy={forgetBusy}>Remove</Button>
+		<Button variant="plain" onclick={() => (forgetOpen = false)}>{t('settings.move.cancel')}</Button>
+		<Button variant="destructive" type="submit" form="move-forget-form" busy={forgetBusy}>{t('settings.move.remove')}</Button>
 	{/snippet}
 </Sheet>
 
-<Sheet bind:open={passwordFlow.pwSheet} title="Set a password first" size="sm">
+<Sheet bind:open={passwordFlow.pwSheet} title={t('settings.move.setPasswordFirst')} size="sm">
 	<form class="setpw one-col" onsubmit={passwordFlow.setFirstPw}>
-		<input class="input" type="password" bind:value={passwordFlow.pwA} placeholder="Password" aria-label="Password" autocomplete="new-password" />
-		<input class="input" type="password" bind:value={passwordFlow.pwB} placeholder="Confirm password" aria-label="Confirm password" autocomplete="new-password" />
+		<input class="input" type="password" bind:value={passwordFlow.pwA} placeholder={t('settings.move.passwordLabel')} aria-label={t('settings.move.passwordLabel')} autocomplete="new-password" />
+		<input class="input" type="password" bind:value={passwordFlow.pwB} placeholder={t('settings.move.confirmPasswordLabel')} aria-label={t('settings.move.confirmPasswordLabel')} autocomplete="new-password" />
 		{#if passwordFlow.pwStale}
-			<p class="form-error" role="alert">Sign in again to continue. You'll return here.</p>
-			<Button onclick={passwordFlow.signInAgain}>Sign in again</Button>
+			<p class="form-error" role="alert">{t('settings.move.signInAgainNote')}</p>
+			<Button onclick={passwordFlow.signInAgain}>{t('settings.move.signInAgain')}</Button>
 		{:else if passwordFlow.pwErr}<p class="form-error" role="alert">{passwordFlow.pwErr}</p>{/if}
-		<Button variant="primary" type="submit" busy={passwordFlow.pwBusy} disabled={passwordFlow.pwBusy}>Set password and move</Button>
+		<Button variant="primary" type="submit" busy={passwordFlow.pwBusy} disabled={passwordFlow.pwBusy}>{t('settings.move.setPasswordMove')}</Button>
 	</form>
 </Sheet>
 
@@ -747,24 +748,24 @@
 	onshow={show}
 />
 
-<Sheet bind:open={confirmMove} title="Move {plural(total, 'item')}?" size="sm">
+<Sheet bind:open={confirmMove} title={t('settings.move.moveItems', { items: plural(total, 'item') })} size="sm">
 	<form id="move-confirm-form" onsubmit={runFlow.startMove}>
 		{#if tryNotice}<p class="notice warn" role="status">{tryNotice}</p>{/if}
-		<p class="small muted">{fromApps ? `From ${fromApps}. ` : ''}Paused items stay paused. You can undo this later from Earlier moves {embedded ? 'on the next screen, or after setup in Settings › Move from other apps' : 'on this page'}.</p>
+		<p class="small muted">{fromApps ? t('settings.move.from', { apps: fromApps }) + ' ' : ''}{embedded ? t('settings.move.undoLaterEmbedded') : t('settings.move.undoLaterPage')}</p>
 	</form>
 	{#snippet footer()}
-		<Button variant="plain" onclick={() => (confirmMove = false)}>Cancel</Button>
-		<Button variant="primary" type="submit" form="move-confirm-form">Move</Button>
+		<Button variant="plain" onclick={() => (confirmMove = false)}>{t('settings.move.cancel')}</Button>
+		<Button variant="primary" type="submit" form="move-confirm-form">{t('settings.move.move')}</Button>
 	{/snippet}
 </Sheet>
 
-<Sheet bind:open={confirmUndo} title={current ? `Undo move ${current.id}?` : 'Undo this move?'} size="sm">
+<Sheet bind:open={confirmUndo} title={current ? t('settings.move.undoId', { id: current.id }) : t('settings.move.undoQuestion')} size="sm">
 	<form id="move-undo-form" onsubmit={runFlow.undo}>
-		<p class="small muted">Removes what this move added; your later changes stay. Download the report first if you want it.</p>
+		<p class="small muted">{t('settings.move.undoNote')}</p>
 	</form>
 	{#snippet footer()}
-		<Button variant="plain" onclick={() => (confirmUndo = false)}>Cancel</Button>
-		<Button variant="destructive" type="submit" form="move-undo-form" disabled={undoing}>Undo move</Button>
+		<Button variant="plain" onclick={() => (confirmUndo = false)}>{t('settings.move.cancel')}</Button>
+		<Button variant="destructive" type="submit" form="move-undo-form" disabled={undoing}>{t('settings.move.undoMove')}</Button>
 	{/snippet}
 </Sheet>
 

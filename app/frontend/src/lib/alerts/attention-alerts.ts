@@ -1,3 +1,4 @@
+import { t } from '#lib/core/i18n/i18n.svelte.ts';
 import type { Attention } from './settings-status.ts';
 
 export interface PinnedAlert {
@@ -12,7 +13,7 @@ export interface PinnedAlert {
 // Server text looks like "Page: Title: next step". The page prefix is dropped because the button names it.
 export function pinned(items: Attention[], pages: { href: string; label: string }[]): PinnedAlert[] {
 	return items.map((i) => {
-		const label = pages.find((p) => p.href === i.href)?.label ?? 'Settings';
+		const label = pages.find((p) => p.href === i.href)?.label ?? t('alerts.fallback.settings');
 		let text = i.text.trim();
 		if (text.toLowerCase().startsWith(`${label.toLowerCase()}: `)) text = text.slice(label.length + 2);
 		const cut = text.indexOf(': ');

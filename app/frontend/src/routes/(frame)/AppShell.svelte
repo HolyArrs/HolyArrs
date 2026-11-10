@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import type { Snippet } from 'svelte';
 
 	// Page frame: sidebar (tablet and desktop), sticky top bar, content, and the phone tab bar. The content margin follows the sidebar width; on tablets an expanded sidebar floats over the content with a scrim.
@@ -25,7 +26,7 @@
 
 <div class="ui-shell" class:collapsed class:overlay>
 	{@render sidebar()}
-	{#if overlay}<button class="scrim" type="button" tabindex="-1" aria-label="Close sidebar" onclick={onscrim}></button>{/if}
+	{#if overlay}<button class="scrim" type="button" tabindex="-1" aria-label={t('frame.shell.closeSidebar')} onclick={onscrim}></button>{/if}
 	<!-- The phone tab bar comes before the content in tab order (it is fixed at the bottom on screen). -->
 	{#if tabbar}{@render tabbar()}{/if}
 	<div class="content">

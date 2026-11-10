@@ -1,6 +1,7 @@
 // Starting choices for a new title: built-in defaults, saved defaults and what is on offer.
 import type { LibraryFolder, PickRulesView } from '../core/types.ts';
 import type { TitleDefaults } from './types.ts';
+import { t } from '../core/i18n/i18n.svelte.ts';
 
 export type TitleKind = 'movie' | 'show';
 
@@ -24,10 +25,18 @@ export const builtInDefaults: Readonly<TitleDefaults> = Object.freeze({
 	show: Object.freeze({ library_folder_id: 0, pick_rules_id: 0, keep_up_to_date: true, search_on_add: false })
 });
 
+// Choices are [value, name, help text]. The name and help read their words when used, so they follow the language.
+function gate(value: string, name: string, help: string): [string, string, string] {
+	const row = [value, '', ''] as [string, string, string];
+	Object.defineProperty(row, 1, { get: () => t(name), enumerable: true });
+	Object.defineProperty(row, 2, { get: () => t(help), enumerable: true });
+	return row;
+}
+
 export const gateChoices: [string, string, string][] = [
-	['announced', 'As soon as it is announced', 'Look even before it is in cinemas.'],
-	['in_cinemas', 'Once it is in cinemas', 'Look from the cinema date.'],
-	['released', 'Once it is out on digital or disc', 'Look from the first digital or disc date.']
+	gate('announced', 'mediafiles.gate.announced', 'mediafiles.gate.announcedHelp'),
+	gate('in_cinemas', 'mediafiles.gate.inCinemas', 'mediafiles.gate.inCinemasHelp'),
+	gate('released', 'mediafiles.gate.released', 'mediafiles.gate.releasedHelp')
 ];
 
 const offered = (id: number | null | undefined, list: { id: number }[]) => !!id && list.some((x) => x.id === id);

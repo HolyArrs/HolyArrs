@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Button from '#lib/ui/Button.svelte';
@@ -22,40 +23,40 @@
 	}
 </script>
 
-<svelte:head><title>Metadata · HolyArrs</title></svelte:head>
+<svelte:head><title>{t('settings.tmdb.title')} · HolyArrs</title></svelte:head>
 
-<PageHeader title="Metadata" />
+<PageHeader title={t('settings.tmdb.title')} />
 
 {#if !loaded}
 	<SkSettings rows={2} />
 {:else}
-	<SettingsCard id="metadata-card" title="Metadata server">
+	<SettingsCard id="metadata-card" title={t('settings.tmdb.server')}>
 		<div class="srow">
-			<div class="txt"><span class="label">{metadataHealth.up ? 'Connected' : 'Not answering'}</span>{#if !metadataHealth.up}<span class="hint" role="status">{METADATA_DOWN}</span>{/if}</div>
+			<div class="txt"><span class="label">{metadataHealth.up ? t('settings.tmdb.connected') : t('settings.tmdb.notAnswering')}</span>{#if !metadataHealth.up}<span class="hint" role="status">{METADATA_DOWN}</span>{/if}</div>
 			<div class="ctl state">
-				<span class="st" class:fail={!metadataHealth.up}><i></i>{metadataHealth.up ? 'Answering' : 'Down'}</span>
-				<Button variant="secondary" size="sm" onclick={recheck} disabled={checking} aria-busy={checking}>Check again</Button>
+				<span class="st" class:fail={!metadataHealth.up}><i></i>{metadataHealth.up ? t('settings.tmdb.answering') : t('settings.tmdb.down')}</span>
+				<Button variant="secondary" size="sm" onclick={recheck} disabled={checking} aria-busy={checking}>{t('settings.tmdb.checkAgain')}</Button>
 			</div>
 		</div>
 	</SettingsCard>
 
 	<!-- Keep in step with the metadata privacy doc (tmdb-privacy.test.ts checks both). -->
-	<SettingsCard id="metadata-sent" title="What we send" description="Your public IP address goes too, like any web request">
+	<SettingsCard id="metadata-sent" title={t('settings.tmdb.sentTitle')} description={t('settings.tmdb.sentDesc')}>
 		<ul class="sent">
-			<li><b>An install token.</b> Identifies this install, not you.</li>
-			<li><b>What you look up.</b> Search words and IDs of what a page shows.</li>
-			<li><b>Display choices.</b> Language and region.</li>
-			<li><b>Small request headers.</b> <code>Accept</code>, <code>Cache-Control</code>, <code>If-None-Match</code> and <code>X-Fetch: ahead</code> when a page is loaded ahead of time.</li>
-			<li><b>Install count by country.</b> Installs are counted per country. Turn off <a href={to('/settings/this-app') + '#count-install'}>Count this install</a> and requests carry <code>X-Country-Count: off</code>.</li>
+			<li><b>{t('settings.tmdb.tokenLabel')}</b> {t('settings.tmdb.tokenText')}</li>
+			<li><b>{t('settings.tmdb.lookup')}</b> {t('settings.tmdb.lookupText')}</li>
+			<li><b>{t('settings.tmdb.display')}</b> {t('settings.tmdb.displayText')}</li>
+			<li><b>{t('settings.tmdb.headers')}</b> <code>Accept</code>, <code>Cache-Control</code>, <code>If-None-Match</code> {t('settings.tmdb.headersAnd')} <code>X-Fetch: ahead</code> {t('settings.tmdb.headersAhead')}</li>
+			<li><b>{t('settings.tmdb.country')}</b> {t('settings.tmdb.countryA')} <a href={to('/settings/this-app') + '#count-install'}>{t('settings.tmdb.countryLink')}</a> {t('settings.tmdb.countryB')} <code>X-Country-Count: off</code>.</li>
 		</ul>
 	</SettingsCard>
 
-	<SettingsCard id="metadata-never" title="Never sent">
+	<SettingsCard id="metadata-never" title={t('settings.tmdb.neverTitle')}>
 		<ul class="sent">
-			<li>Your files, folder paths or file names.</li>
-			<li>Your library: which titles you have, what is downloading, your history.</li>
-			<li>Accounts: user names, passwords, sign-in sessions, who requested what.</li>
-			<li>Keys and addresses of your Downloaders, Sources, media servers and lists.</li>
+			<li>{t('settings.tmdb.never1')}</li>
+			<li>{t('settings.tmdb.never2')}</li>
+			<li>{t('settings.tmdb.never3')}</li>
+			<li>{t('settings.tmdb.never4')}</li>
 		</ul>
 	</SettingsCard>
 {/if}

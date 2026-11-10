@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import Confirm from '#lib/ui/Confirm.svelte';
@@ -51,45 +52,46 @@
 	}
 </script>
 
-<svelte:head><title>Connect an AI app · HolyArrs</title></svelte:head>
+<svelte:head><title>{t('arrapi.ai.title')} · HolyArrs</title></svelte:head>
 
-<PageHeader title="Connect an AI app" />
+<PageHeader title={t('arrapi.ai.title')} />
 
 <div class="card" data-testid="ai-connect">
 	{#if error}
 		<p class="notice warn">{error}</p>
-		<p class="small muted">Start again from your AI app.</p>
+		<p class="small muted">{t('arrapi.ai.startAgain')}</p>
 	{:else if !info}
-		<p class="muted">Loading…</p>
+		<p class="muted">{t('arrapi.ai.loading')}</p>
 	{:else if done === 'allowed'}
-		<h2>{info.client_name} is connected</h2>
-		<p class="muted">Go back to {info.client_name}; you can close this tab. To disconnect it later, revoke its key under Settings, AI apps.</p>
+		<h2>{t('arrapi.ai.connected', { name: info.client_name })}</h2>
+		<p class="muted">{t('arrapi.ai.connectedBody', { name: info.client_name })}</p>
 	{:else if done === 'cancelled'}
-		<h2>Not connected</h2>
-		<p class="muted">{info.client_name} did not get access. You can close this tab.</p>
+		<h2>{t('arrapi.ai.notConnected')}</h2>
+		<p class="muted">{t('arrapi.ai.noAccess', { name: info.client_name })}</p>
 	{:else}
 		<!-- Any app can send any name, so the return address leads; the name is marked unless it comes back to this computer. -->
-		<h2 data-testid="ai-connect-host"><b>{info.returns_to}</b> wants to use HolyArrs as {session.s.name}</h2>
-		<p class="small muted" data-testid="ai-connect-name">Says it's {info.client_name}{#if !info.name_verified} · not verified{/if}</p>
+		{@const wants = t('arrapi.ai.wants', { host: '{host}', name: session.s.name }).split('{host}')}
+		<h2 data-testid="ai-connect-host">{wants[0]}<b>{info.returns_to}</b>{wants[1]}</h2>
+		<p class="small muted" data-testid="ai-connect-name">{t('arrapi.ai.says', { name: info.client_name })}{#if !info.name_verified} · {t('arrapi.ai.notVerified')}{/if}</p>
 		<ul class="can small">
-			<li>Look up your Library, calendar, downloads and your own requests.</li>
-			<li>Find titles, and ask for one after checking with you first.</li>
-			<li>It cannot approve requests, change settings or see other people's requests.</li>
+			<li>{t('arrapi.ai.can1')}</li>
+			<li>{t('arrapi.ai.can2')}</li>
+			<li>{t('arrapi.ai.can3')}</li>
 		</ul>
-		<p class="small muted">Every request it makes shows in History.</p>
-		{#if info.local}<p class="small muted">Allow only if you just started this from an AI app on your own device.</p>{/if}
+		<p class="small muted">{t('arrapi.ai.history')}</p>
+		{#if info.local}<p class="small muted">{t('arrapi.ai.localWarn')}</p>{/if}
 		{#if !canAllow}
-			<p class="notice warn">Only people who can change settings can connect AI apps. Ask the owner.</p>
+			<p class="notice warn">{t('arrapi.ai.cannot')}</p>
 		{:else if !enabled}
 			<p class="notice" class:warn={!isOwner}>
-				{isOwner ? 'AI apps are off. Allowing turns them on.' : 'AI apps are off. Ask the owner to turn them on, then try again.'}
+				{isOwner ? t('arrapi.ai.offOwner') : t('arrapi.ai.offOther')}
 			</p>
 		{/if}
 		<!-- Allowing makes the app a key, so it takes a fresh password, as making a key does. -->
 		<Confirm action="link" onCancel={cancel}>
 			<div class="row">
-				<Button variant="primary" type="button" onclick={allow} disabled={busy || !canAllow || (!enabled && !isOwner)} aria-busy={busy}>Allow</Button>
-				<Button variant="plain" type="button" onclick={cancel} disabled={busy}>Cancel</Button>
+				<Button variant="primary" type="button" onclick={allow} disabled={busy || !canAllow || (!enabled && !isOwner)} aria-busy={busy}>{t('arrapi.ai.allow')}</Button>
+				<Button variant="plain" type="button" onclick={cancel} disabled={busy}>{t('arrapi.ai.cancel')}</Button>
 			</div>
 		</Confirm>
 	{/if}

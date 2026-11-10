@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import IconButton from '#lib/ui/IconButton.svelte';
 	import { SearchField, topBar, cameFrom, pageLabel, type CameFrom } from '#lib/discover/index.ts';
 	import { afterNavigate } from '$app/navigation';
@@ -63,15 +64,15 @@
 	<div class="lead">
 		{#if showToggle || history}
 			<div class="glass nav">
-				{#if showToggle}<IconButton bind:node={toggle} icon="sidebar" label="Show sidebar" aria-expanded={false} aria-controls={controls} onclick={ontoggle} />{/if}
+				{#if showToggle}<IconButton bind:node={toggle} icon="sidebar" label={t('frame.sidebar.show')} aria-expanded={false} aria-controls={controls} onclick={ontoggle} />{/if}
 				{#if history}
-					<IconButton icon="chevronLeft" label="Back" onclick={() => window.history.back()} />
-					<IconButton icon="chevronRight" label="Forward" onclick={() => window.history.forward()} />
+					<IconButton icon="chevronLeft" label={t('frame.top.back')} onclick={() => window.history.back()} />
+					<IconButton icon="chevronRight" label={t('frame.top.forward')} onclick={() => window.history.forward()} />
 				{/if}
 			</div>
 		{/if}
 		{#if history && (first || here)}
-			<nav class="crumbs" aria-label="Breadcrumb" data-testid="top-crumbs">
+			<nav class="crumbs" aria-label={t('frame.top.breadcrumb')} data-testid="top-crumbs">
 				{#if first}<a href={first.href} onclick={stepBack}>{first.label}</a><span class="sep" aria-hidden="true">›</span>{/if}
 				{#if here}<span class="here" aria-current="page">{here}</span>{/if}
 			</nav>

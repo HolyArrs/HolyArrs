@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import Button from '#lib/ui/Button.svelte';
 	import { aboutSize, changeWords, shortCount, listening } from './music-pages.ts';
 
@@ -18,24 +19,24 @@
 
 {#if (listen || (missing?.count && mayAsk && !manage && !titleId && !allAsked))}
 	{@const up = (listen?.today ?? 0) > 0}
-	<section class="stats" data-testid="artist-stats" aria-label="Listening and releases">
+	<section class="stats" data-testid="artist-stats" aria-label={t('music.listeningAndReleases')}>
 		{#if listen}
 			<p class="st1">
 				<span><b>{shortCount(listen.n)}</b> {listen.unit}</span>
-				{#if listen.rank}<span><b>#{listen.rank}</b> in the world</span>{/if}
+				{#if listen.rank}<span><b>#{listen.rank}</b> {t('music.inTheWorld')}</span>{/if}
 				{#if listen.today}<span class="chg" class:up class:down={!up}>{changeWords(listen.today)}</span>{/if}
 			</p>
 		{/if}
 		{#if missing?.count && mayAsk && !manage && !titleId && !allAsked}
 			<div class="st-ask">
 				{#if confirmAll}
-					<span class="confirm" role="group" aria-label="Confirm asking for all missing">
-						<span>Ask for {missing.count} {missing.count === 1 ? 'release' : 'releases'}, {aboutSize(missing.size_bytes)}?</span>
-						<Button variant="primary" onclick={onask} disabled={askingAll}>Ask</Button>
-						<Button onclick={() => (confirmAll = false)}>Cancel</Button>
+					<span class="confirm" role="group" aria-label={t('music.confirmAskingForAll')}>
+						<span>{missing.count === 1 ? t('music.askForRelease', { n: missing.count, size: aboutSize(missing.size_bytes) }) : t('music.askForReleases', { n: missing.count, size: aboutSize(missing.size_bytes) })}</span>
+						<Button variant="primary" onclick={onask} disabled={askingAll}>{t('music.ask')}</Button>
+						<Button onclick={() => (confirmAll = false)}>{t('music.cancel')}</Button>
 					</span>
 				{:else}
-					<Button icon="plus" onclick={() => (confirmAll = true)} data-testid="ask-all-missing">Ask for all missing ({missing.count})</Button>
+					<Button icon="plus" onclick={() => (confirmAll = true)} data-testid="ask-all-missing">{t('music.askForAllMissing', { n: missing.count })}</Button>
 				{/if}
 			</div>
 		{/if}

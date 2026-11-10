@@ -3,10 +3,14 @@
 import { type ExploreRow, type ProviderItem, cardIdentity } from '#lib/ui/title-cards.ts';
 import { type ExploreType } from './explore-type.ts';
 import { type ServerRow } from './explore-server.ts';
+import { t } from '#lib/core/i18n/i18n.svelte.ts';
 
 export interface Genre {
 	id: number;
+	/** The name in the person's language. */
 	name: string;
+	/** The English name, which art lookups and colours key on. */
+	en?: string;
 }
 
 export interface GenreAnswer {
@@ -19,16 +23,23 @@ export interface GenreAnswer {
 }
 
 /** TMDB's genre lists per kind, with its own fixed ids. */
+const genre = (id: number, en: string, name: () => string): Genre => ({ id, en, get name() { return name(); } });
 export const GENRES: Record<'movie' | 'show', Genre[]> = {
 	movie: [
-		[28, 'Action'], [12, 'Adventure'], [16, 'Animation'], [35, 'Comedy'], [80, 'Crime'], [99, 'Documentary'], [18, 'Drama'], [10751, 'Family'],
-		[14, 'Fantasy'], [36, 'History'], [27, 'Horror'], [10402, 'Music'], [9648, 'Mystery'], [10749, 'Romance'], [878, 'Science Fiction'],
-		[53, 'Thriller'], [10752, 'War'], [37, 'Western']
-	].map(([id, name]) => ({ id: id as number, name: name as string })),
+		genre(28, 'Action', () => t('discover.genres.action')), genre(12, 'Adventure', () => t('discover.genres.adventure')), genre(16, 'Animation', () => t('discover.genres.animation')),
+		genre(35, 'Comedy', () => t('discover.genres.comedy')), genre(80, 'Crime', () => t('discover.genres.crime')), genre(99, 'Documentary', () => t('discover.genres.documentary')),
+		genre(18, 'Drama', () => t('discover.genres.drama')), genre(10751, 'Family', () => t('discover.genres.family')), genre(14, 'Fantasy', () => t('discover.genres.fantasy')),
+		genre(36, 'History', () => t('discover.genres.history')), genre(27, 'Horror', () => t('discover.genres.horror')), genre(10402, 'Music', () => t('discover.genres.music')),
+		genre(9648, 'Mystery', () => t('discover.genres.mystery')), genre(10749, 'Romance', () => t('discover.genres.romance')), genre(878, 'Science Fiction', () => t('discover.genres.scienceFiction')),
+		genre(53, 'Thriller', () => t('discover.genres.thriller')), genre(10752, 'War', () => t('discover.genres.war')), genre(37, 'Western', () => t('discover.genres.western'))
+	],
 	show: [
-		[10759, 'Action & Adventure'], [16, 'Animation'], [35, 'Comedy'], [80, 'Crime'], [99, 'Documentary'], [18, 'Drama'], [10751, 'Family'],
-		[10762, 'Kids'], [9648, 'Mystery'], [10764, 'Reality'], [10765, 'Sci-Fi & Fantasy'], [10768, 'War & Politics'], [37, 'Western']
-	].map(([id, name]) => ({ id: id as number, name: name as string }))
+		genre(10759, 'Action & Adventure', () => t('discover.genres.actionAdventure')), genre(16, 'Animation', () => t('discover.genres.animation')), genre(35, 'Comedy', () => t('discover.genres.comedy')),
+		genre(80, 'Crime', () => t('discover.genres.crime')), genre(99, 'Documentary', () => t('discover.genres.documentary')), genre(18, 'Drama', () => t('discover.genres.drama')),
+		genre(10751, 'Family', () => t('discover.genres.family')), genre(10762, 'Kids', () => t('discover.genres.kids')), genre(9648, 'Mystery', () => t('discover.genres.mystery')),
+		genre(10764, 'Reality', () => t('discover.genres.reality')), genre(10765, 'Sci-Fi & Fantasy', () => t('discover.genres.sciFiFantasy')), genre(10768, 'War & Politics', () => t('discover.genres.warPolitics')),
+		genre(37, 'Western', () => t('discover.genres.western'))
+	]
 };
 
 /** The picker's genres for a tab (none under All and Music). */

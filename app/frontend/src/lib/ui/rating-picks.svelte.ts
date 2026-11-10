@@ -1,17 +1,18 @@
 // Which outside rating sources the user picked to show, kept in local storage.
 
 import type { OutsideScore } from './outside-ratings.ts';
+import { t } from '#lib/core/i18n/i18n.svelte.ts';
 
 export type RatingSource = 'imdb' | 'rt_critics' | 'rt_audience' | 'metacritic' | 'letterboxd' | 'trakt' | 'tmdb';
 
 export const RATING_SOURCES: { id: RatingSource; name: string; about: string }[] = [
-	{ id: 'imdb', name: 'IMDb', about: 'Viewers’ average, out of 10' },
-	{ id: 'rt_critics', name: 'Rotten Tomatoes critics', about: 'Share of critics who liked it' },
-	{ id: 'rt_audience', name: 'Rotten Tomatoes audience', about: 'Share of viewers who liked it' },
-	{ id: 'metacritic', name: 'Metacritic', about: 'Critics’ weighted score, out of 100' },
-	{ id: 'letterboxd', name: 'Letterboxd', about: 'Film fans’ average, out of 5 (movies)' },
-	{ id: 'trakt', name: 'Trakt', about: 'Trakt members who liked it' },
-	{ id: 'tmdb', name: 'TMDB', about: 'TMDB members’ average, out of 10' }
+	{ id: 'imdb', name: 'IMDb', get about() { return t('ui.ratingPicks.imdb'); } },
+	{ id: 'rt_critics', get name() { return t('ui.outsideRatings.rtCritics'); }, get about() { return t('ui.ratingPicks.rtCritics'); } },
+	{ id: 'rt_audience', get name() { return t('ui.outsideRatings.rtAudience'); }, get about() { return t('ui.ratingPicks.rtAudience'); } },
+	{ id: 'metacritic', name: 'Metacritic', get about() { return t('ui.ratingPicks.metacritic'); } },
+	{ id: 'letterboxd', name: 'Letterboxd', get about() { return t('ui.ratingPicks.letterboxd'); } },
+	{ id: 'trakt', name: 'Trakt', get about() { return t('ui.ratingPicks.trakt'); } },
+	{ id: 'tmdb', name: 'TMDB', get about() { return t('ui.ratingPicks.tmdb'); } }
 ];
 
 export const DEFAULT_RATINGS: RatingSource[] = ['imdb', 'rt_critics', 'rt_audience'];

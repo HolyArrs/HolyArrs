@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	// Add sheet: magnet or .torrent links, or dropped .torrent files, sent straight to the chosen Downloader with its category, folder and paused choice.
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import Button from '#lib/ui/Button.svelte';
@@ -45,7 +46,7 @@
 	function addFiles(list: FileList | File[] | null | undefined) {
 		const got = [...(list ?? [])];
 		const ok = got.filter(isTorrentFile);
-		if (ok.length < got.length) error = `${got.length - ok.length === 1 ? 'One file is' : `${got.length - ok.length} files are`} not .torrent files and were left out.`;
+		if (ok.length < got.length) error = got.length - ok.length === 1 ? t('downloads.at.oneNot') : t('downloads.at.manyNot', { count: got.length - ok.length });
 		else error = '';
 		files = [...files, ...ok.filter((f) => !files.some((x) => x.name === f.name && x.size === f.size))];
 	}
@@ -57,7 +58,7 @@
 	async function submit(e: SubmitEvent) {
 		e.preventDefault();
 		if (parsed.bad.length) {
-			error = `Not a link: ${parsed.bad[0]}`;
+			error = t('downloads.at.notLink', { link: parsed.bad[0] });
 			return;
 		}
 		if (!count || !client) return;
@@ -85,46 +86,46 @@
 	}
 </script>
 
-<Sheet bind:open title="Add torrents" size="md">
+<Sheet bind:open title={t('downloads.at.title')} size="md">
 	<form id="add-form" class="af" onsubmit={submit} data-testid="dl-add-form">
 		<label class="fl">
-			<span class="lb">Links</span>
-			<textarea rows="4" bind:value={text} placeholder="magnet:?xt=… or https://…/file.torrent, one per line" spellcheck="false" data-testid="dl-add-links"></textarea>
+			<span class="lb">{t('downloads.at.links')}</span>
+			<textarea rows="4" bind:value={text} placeholder={t('downloads.at.linksPh')} spellcheck="false" data-testid="dl-add-links"></textarea>
 		</label>
 		<!-- svelte-ignore a11y_no_static_element_interactions -->
 		<div class="drop" class:over ondragover={(e) => { e.preventDefault(); over = true; }} ondragleave={() => (over = false)} ondrop={drop} data-testid="dl-add-drop">
-			<p>Drop .torrent files here, or <button type="button" class="lk" onclick={() => picker?.click()}>choose files</button></p>
+			<p>{t('downloads.at.drop1')} <button type="button" class="lk" onclick={() => picker?.click()}>{t('downloads.at.choose')}</button></p>
 			<input bind:this={picker} type="file" accept=".torrent,application/x-bittorrent" multiple hidden onchange={(e) => { addFiles(e.currentTarget.files); e.currentTarget.value = ''; }} data-testid="dl-add-file" />
 			{#if files.length}
 				<ul class="fs">
 					{#each files as f, i (f.name + f.size)}
-						<li><span class="fn" title={f.name}>{f.name}</span><button type="button" class="lk" aria-label="Remove {f.name}" onclick={() => (files = files.filter((_, j) => j !== i))}>Remove</button></li>
+						<li><span class="fn" title={f.name}>{f.name}</span><button type="button" class="lk" aria-label={t('downloads.at.removeFile', { name: f.name })} onclick={() => (files = files.filter((_, j) => j !== i))}>{t('downloads.at.remove')}</button></li>
 					{/each}
 				</ul>
 			{/if}
 		</div>
 		<div class="row2">
 			<label class="fl">
-				<span class="lb">Downloader</span>
+				<span class="lb">{t('downloads.at.downloader')}</span>
 				<select value={clientId} onchange={(e) => pickClient(Number(e.currentTarget.value))} data-testid="dl-add-client">
 					{#each clients as c (c.id)}<option value={c.id}>{c.name}</option>{/each}
 				</select>
 			</label>
 			<label class="fl">
-				<span class="lb">Category</span>
-				<input type="text" bind:value={category} placeholder="None" data-testid="dl-add-category" />
+				<span class="lb">{t('downloads.at.category')}</span>
+				<input type="text" bind:value={category} placeholder={t('downloads.at.none')} data-testid="dl-add-category" />
 			</label>
 		</div>
 		<label class="fl">
-			<span class="lb">Save in <span class="opt">optional</span></span>
-			<input type="text" bind:value={savePath} placeholder="A subfolder, like tv/new (full paths need settings access)" spellcheck="false" data-testid="dl-add-path" />
+			<span class="lb">{t('downloads.at.saveIn')} <span class="opt">{t('downloads.at.optional')}</span></span>
+			<input type="text" bind:value={savePath} placeholder={t('downloads.at.savePh')} spellcheck="false" data-testid="dl-add-path" />
 		</label>
-		<label class="ck"><input type="checkbox" bind:checked={paused} data-testid="dl-add-paused" /><span>Add paused</span></label>
+		<label class="ck"><input type="checkbox" bind:checked={paused} data-testid="dl-add-paused" /><span>{t('downloads.at.paused')}</span></label>
 		{#if error}<p class="err" role="alert">{error}</p>{/if}
 	</form>
 	{#snippet footer()}
-		<Button variant="plain" onclick={() => (open = false)}>Cancel</Button>
-		<Button variant="primary" type="submit" form="add-form" {busy} disabled={busy || !count || !client} data-testid="dl-add-submit">{count > 1 ? `Add ${count}` : 'Add'}</Button>
+		<Button variant="plain" onclick={() => (open = false)}>{t('downloads.sel.cancel')}</Button>
+		<Button variant="primary" type="submit" form="add-form" {busy} disabled={busy || !count || !client} data-testid="dl-add-submit">{count > 1 ? t('downloads.at.addN', { count }) : t('downloads.at.add')}</Button>
 	{/snippet}
 </Sheet>
 

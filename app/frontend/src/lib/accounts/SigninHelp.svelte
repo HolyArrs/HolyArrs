@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	let { calm }: { calm: boolean } = $props();
 
 	const RESET_CMD = 'docker exec -i holyarrs /holyarrs reset-owner';
@@ -18,7 +19,7 @@
 			r.selectNodeContents(cmdEl);
 			sel.removeAllRanges();
 			sel.addRange(r);
-			copyNote = 'Selected. Press Ctrl+C to copy.';
+			copyNote = t('accounts.signin.selected');
 			setTimeout(() => (copyNote = ''), 3000);
 		}
 	}
@@ -26,21 +27,21 @@
 
 <!-- Opening brings the answers into view (the frame would otherwise hide the last lines). -->
 <details class="help" ontoggle={(e) => { const d = e.currentTarget; if (d.open) d.scrollIntoView({ block: 'nearest', behavior: calm ? 'auto' : 'smooth' }); }}>
-	<summary>Can't sign in?</summary>
+	<summary>{t('accounts.signin.cant')}</summary>
 	<div class="ans">
-		<b>You use this server</b>
-		<p>Ask the owner. They can give you a new password in Settings › Users.</p>
+		<b>{t('accounts.signin.useServer')}</b>
+		<p>{t('accounts.signin.askOwner')}</p>
 	</div>
 	<div class="ans" data-testid="reset-owner-help">
-		<b>You run this server</b>
-		<p>Run this where HolyArrs runs:</p>
+		<b>{t('accounts.signin.runServer')}</b>
+		<p>{t('accounts.signin.runThis')}</p>
 		<div class="cmd">
 			<code bind:this={cmdEl}>{RESET_CMD}</code>
-			<span class="sr-only" role="status">{copied ? 'Copied' : copyNote}</span>
-			<button type="button" class="cp" onclick={copyCmd}>{copied ? 'Copied' : 'Copy'}</button>
+			<span class="sr-only" role="status">{copied ? t('accounts.signin.copied') : copyNote}</span>
+			<button type="button" class="cp" onclick={copyCmd}>{copied ? t('accounts.signin.copied') : t('accounts.signin.copy')}</button>
 		</div>
-		<p>Type your name, press Enter, type a new password, then press Ctrl+D.</p>
-		<p class="note">Everyone gets signed out and two-factor turns off.</p>
+		<p>{t('accounts.signin.typeName')}</p>
+		<p class="note">{t('accounts.signin.everyone')}</p>
 	</div>
 </details>
 

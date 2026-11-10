@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import Badge from '#lib/ui/Badge.svelte';
 	import type { Follows } from './calendar.ts';
 	import { groupDates, monthGroups, thingCount } from './calendar-groups.ts';
@@ -57,7 +58,7 @@
 								<span class="dow">{at(d.day).toLocaleDateString(undefined, { weekday: 'short' })}</span>
 								<span class="big">{at(d.day).getDate()}</span>
 								<span class="mon">{at(d.day).toLocaleDateString(undefined, { month: 'short' })}</span>
-								{#if d.day === today}<span class="today-tag"><Badge label="Today" /></span>{/if}
+								{#if d.day === today}<span class="today-tag"><Badge label={t('discover.comingSoon.today')} /></span>{/if}
 							</div>
 							<div class="day">
 								<h4 class="count">{thingCount(d.items.length)}</h4>

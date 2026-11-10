@@ -24,6 +24,7 @@
 </script>
 
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import type { Snippet } from 'svelte';
 	import Icon, { type IconName } from './Icon.svelte';
 	import { session } from '../core/session.svelte.ts';
@@ -76,7 +77,7 @@
 	{#if children}<div class="body">{@render children()}</div>{/if}
 	{#if advanced}
 		<details class="advanced" {open} ontoggle={toggled} data-testid="advanced">
-			<summary><Icon name="chevronRight" size={15} /><span>Advanced</span></summary>
+			<summary><Icon name="chevronRight" size={15} /><span>{t('ui.settingsCard.advanced')}</span></summary>
 			<div class="adv-body">{@render advanced()}</div>
 		</details>
 	{/if}

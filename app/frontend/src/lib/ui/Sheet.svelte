@@ -1,5 +1,6 @@
 <!-- Modal dialog that adapts to a centered box, bottom sheet, drawer or side panel. -->
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import type { Snippet } from 'svelte';
 	import IconButton from './IconButton.svelte';
 	import { reducedMotion } from '../core/motion.ts';
@@ -11,7 +12,7 @@
 		size = 'md',
 		placement = 'auto',
 		hideTitle = false,
-		closeLabel = 'Close',
+		closeLabel = t('ui.sheet.close'),
 		children,
 		footer,
 		onclose,

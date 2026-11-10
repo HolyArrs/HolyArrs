@@ -1,5 +1,6 @@
 
 import type { Fresh } from './fresh.ts';
+import { t } from '#lib/core/i18n/i18n.svelte.ts';
 
 // Text lines shown on the grown card: facts, tags, house state and why.
 
@@ -31,7 +32,7 @@ export interface WhyIn {
 
 // Streaming rank, then row reason, then freshness.
 export function whyShown(w: WhyIn): string {
-	if (w.streaming?.rank) return `#${w.streaming.rank} on ${w.streaming.name} today`;
+	if (w.streaming?.rank) return t('ui.growLines.rankedOn', { rank: w.streaming.rank, name: w.streaming.name });
 	if (w.rowType && SEEDED.has(w.rowType) && w.rowTitle) return w.rowTitle;
 	if (w.fresh?.text) return w.fresh.text;
 	return '';
@@ -57,13 +58,13 @@ export function shortRuntime(min?: number): string {
 	if (!min || min <= 0) return '';
 	const h = Math.floor(min / 60);
 	const m = Math.round(min % 60);
-	return h ? (m ? `${h}h ${m}m` : `${h}h`) : `${m}m`;
+	return h ? (m ? t('ui.growLines.hoursMinutes', { h, m }) : t('ui.growLines.hours', { h })) : t('ui.growLines.minutes', { m });
 }
 
 export function growFacts(f: FactsIn): Fact[] {
 	const out: Fact[] = [];
 	if (f.year) out.push({ text: String(f.year), part: 'year' });
-	const length = f.kind === 'show' ? (f.seasons ? `${f.seasons} season${f.seasons === 1 ? '' : 's'}` : '') : shortRuntime(f.runtime);
+	const length = f.kind === 'show' ? (f.seasons ? (f.seasons === 1 ? t('ui.growLines.seasonOne') : t('ui.growLines.seasonOther', { count: f.seasons })) : '') : shortRuntime(f.runtime);
 	if (length) out.push({ text: length, part: 'length' });
 	if (f.certification) out.push({ text: f.certification, part: 'rating' });
 	if (f.score) out.push({ text: `★ ${(Math.round(f.score * 10) / 10).toFixed(1)}`, part: 'stars' });
@@ -90,15 +91,15 @@ export function fitTags(moods: readonly string[] | undefined, genres: readonly s
 export function houseLine(h: HouseIn): string {
 	switch (h.state) {
 		case 'available':
-			return 'In your Library · up to date';
+			return t('ui.growLines.upToDate');
 		case 'partial':
-			return 'In your Library · some missing';
+			return t('ui.growLines.someMissing');
 		case 'downloading':
-			return h.label && /\d/.test(h.label) ? h.label : 'Downloading';
+			return h.label && /\d/.test(h.label) ? h.label : t('ui.growLines.downloading');
 		case 'requested':
-			if (h.mine) return 'You asked for it';
-			if (h.askers?.length) return `Asked by ${h.askers.length > 2 ? `${h.askers[0]} and ${h.askers.length - 1} others` : h.askers.join(' and ')}`;
-			return h.label || 'Asked for';
+			if (h.mine) return t('ui.growLines.youAsked');
+			if (h.askers?.length) return h.askers.length > 2 ? t('ui.growLines.askedByMany', { name: h.askers[0], count: h.askers.length - 1 }) : h.askers.length === 2 ? t('ui.growLines.askedByTwo', { a: h.askers[0], b: h.askers[1] }) : t('ui.growLines.askedByOne', { name: h.askers[0] });
+			return h.label || t('ui.growLines.askedFor');
 	}
 	if (h.fresh && (h.fresh.kind === 'coming' || h.fresh.kind === 'season_coming') && h.fresh.text) return h.fresh.text;
 	return '';

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import { decisionPins, feedPins, forgetFeeds } from './bell-feeds.svelte.ts';
 	import Toast from './Toast.svelte';
 	import { AlertsPanel } from '#lib/alerts/index.ts';
@@ -29,10 +30,10 @@
 	});
 	// The outage and the recovery are kept in Recent alerts too (the card itself is not a toast).
 	$effect(() => {
-		if (signedIn && downShown) untrack(() => toasts.record(METADATA_DOWN_TITLE, 'warn', { body: 'Library still works' }));
+		if (signedIn && downShown) untrack(() => toasts.record(METADATA_DOWN_TITLE, 'warn', { body: t('frame.toasts.libraryWorks') }));
 	});
 	$effect(() => {
-		if (signedIn && back) untrack(() => toasts.record(METADATA_BACK, 'ok', { body: 'Search and artwork restored' }));
+		if (signedIn && back) untrack(() => toasts.record(METADATA_BACK, 'ok', { body: t('frame.toasts.restored') }));
 	});
 
 	// Recovery: a short green note, gone after 3 s.
@@ -152,11 +153,11 @@
 <div class="toasts" class:in-win={inWin} role="status" aria-live="polite" popover="manual" bind:this={host}>
 	{#if signedIn && downShown}
 		<div class="slot" in:toastIn out:toastOut data-testid="metadata-down">
-			<Toast tone="warn" icon="cloudOff" title={METADATA_DOWN_TITLE} text="Library still works" time="now" {compact} onexpand={openCard} ondismiss={dismissMetadataDown} />
+			<Toast tone="warn" icon="cloudOff" title={METADATA_DOWN_TITLE} text={t('frame.toasts.libraryWorks')} time="now" {compact} onexpand={openCard} ondismiss={dismissMetadataDown} />
 		</div>
 	{:else if signedIn && back}
 		<div class="slot" in:toastIn out:toastOut data-testid="metadata-back">
-			<Toast tone="ok" icon="check" title={METADATA_BACK} text="Search and artwork restored" time="now" ondismiss={clearMetadataBack} />
+			<Toast tone="ok" icon="check" title={METADATA_BACK} text={t('frame.toasts.restored')} time="now" ondismiss={clearMetadataBack} />
 		</div>
 	{/if}
 	<!-- While Recent alerts is open the pills step aside: every alert is in the list. -->
@@ -166,7 +167,7 @@
 		</div>
 	{/each}
 	{#if toasts.counts.waiting > 0 && !alertsPanel.open}
-		<button type="button" class="more" data-alerts-open in:toastIn out:toastOut onclick={() => (alertsPanel.open = true)}>+{toasts.counts.waiting} more</button>
+		<button type="button" class="more" data-alerts-open in:toastIn out:toastOut onclick={() => (alertsPanel.open = true)}>{t('frame.toasts.more', { n: toasts.counts.waiting })}</button>
 	{/if}
 </div>
 {#if signedIn}<AlertsPanel before={feedPins.update ? [feedPins.update] : []} after={decisionPins()} />{/if}

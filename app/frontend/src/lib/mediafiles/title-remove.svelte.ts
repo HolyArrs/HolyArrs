@@ -5,6 +5,7 @@ import { goto } from '$app/navigation';
 import { to } from '#lib/core/paths.ts';
 import { api, message, ApiError } from '#lib/core/api.ts';
 import { toasts } from '#lib/core/toasts.svelte.ts';
+import { t } from '#lib/core/i18n/i18n.svelte.ts';
 
 export function createTitleRemove(ctx: any) {
 	let renameDialog: HTMLDialogElement | undefined = $state();
@@ -47,7 +48,7 @@ export function createTitleRemove(ctx: any) {
 		try {
 			const p = await api.post<RemovePlan>(`/titles/${ctx.id}/delete`, { delete_files: delFiles, never_add: delNever, apply: true });
 			deleteDialog?.close();
-			toasts.push(`${p.name} deleted`, 'ok', { body: p.held.length ? `Files kept${p.holding_days ? ` ${p.holding_days} days` : ' in the holding folder'}` : 'Files stay on disk' });
+			toasts.push(t('mediafiles.delete.deleted', { name: p.name }), 'ok', { body: p.held.length ? (p.holding_days ? t('mediafiles.delete.keptDays', { n: p.holding_days }) : t('mediafiles.delete.keptFolder')) : t('mediafiles.delete.stay') });
 			await goto(to(crumbFor(ctx.title?.kind ?? 'movie').path));
 		} catch (e) {
 			delError = message(e);

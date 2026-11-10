@@ -1,5 +1,6 @@
 <script lang="ts">
 	// Single sign-on (OpenID Connect) set up from Settings, for the owner. The server keeps the rules: the password goes with every save, a saved secret never follows a new issuer or client id, and moving to another provider removes the old links.
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import Field from '#lib/ui/Field.svelte';
 	import Button from '#lib/ui/Button.svelte';
@@ -93,8 +94,8 @@
 	async function save(e: SubmitEvent) {
 		e.preventDefault();
 		saveError = '';
-		if (mustRetype) return void (saveError = 'Type the client secret again, or tick "Public client": a saved secret never goes to a new issuer or client id.');
-		if (opening && !confirmEveryone) return void (saveError = 'Tick the box to confirm that everyone this provider signs in may join.');
+		if (mustRetype) return void (saveError = t('accounts.sso.retype'));
+		if (opening && !confirmEveryone) return void (saveError = t('accounts.sso.confirmBox'));
 		busy = true;
 		try {
 			const out = await api.put<{ sso: SsoView; links_removed: number; sessions_ended: number }>('/auth/sso', {
@@ -112,11 +113,11 @@
 			fill(out.sso); // Clears the typed secret too.
 			proof = code = '';
 			confirmEveryone = false;
-			const gone = [out.links_removed && `${out.links_removed} linked sign-in${out.links_removed === 1 ? '' : 's'} removed`, out.sessions_ended && `${out.sessions_ended} signed out`].filter(Boolean).join(', ');
-			toasts.push('Single sign-on saved', 'ok', gone ? { body: gone } : undefined);
+			const gone = [out.links_removed && t(out.links_removed === 1 ? 'accounts.sso.linkRemoved.one' : 'accounts.sso.linkRemoved.other', { n: out.links_removed }), out.sessions_ended && t('accounts.sso.signedOut', { n: out.sessions_ended })].filter(Boolean).join(', ');
+			toasts.push(t('accounts.sso.saved'), 'ok', gone ? { body: gone } : undefined);
 			await session.loadWays();
 		} catch (err) {
-			saveError = err instanceof ApiError && err.body.code === 'wrong_proof' ? 'The password or code is wrong.' : message(err);
+			saveError = err instanceof ApiError && err.body.code === 'wrong_proof' ? t('accounts.sso.wrongProof') : message(err);
 		} finally {
 			// A failed save keeps the typed secret, so fixing the password does not save without it.
 			busy = false;
@@ -126,34 +127,33 @@
 	async function copyCallback() {
 		try {
 			await navigator.clipboard.writeText(callback);
-			toasts.push('Callback address copied', 'ok');
+			toasts.push(t('accounts.sso.copied'), 'ok');
 		} catch {
-			toasts.push("Couldn't copy", 'fail', { body: 'Select it instead' });
+			toasts.push(t('accounts.sso.copyFailed'), 'fail', { body: t('accounts.sso.selectInstead') });
 		}
 	}
 </script>
 
-<SettingsCard {id} title="Single sign-on">
+<SettingsCard {id} title={t('accounts.sso.title')}>
 	<p class="small muted" style="margin: var(--s-2) 0 var(--s-4)">
-		A Sign in with single sign-on button for an OpenID Connect provider, such as Authentik, Authelia or Keycloak. Linked people sign in with
-		their provider account; the owner keeps a HolyArrs password.
+		{t('accounts.sso.intro')}
 	</p>
 	<Confirm action="link">
 		{#if loadError}
 			<p class="notice warn" role="alert">{loadError}</p>
-			<Button type="button" onclick={load}>Try again</Button>
+			<Button type="button" onclick={load}>{t('accounts.sso.tryAgain')}</Button>
 		{:else if !view}
-			<p class="small muted">Loading…</p>
+			<p class="small muted">{t('accounts.sso.loading')}</p>
 		{:else if env}
 			<div class="sso" data-testid="sso-env">
-				<p class="notice">Set in the environment (<code>HOLYARRS_OIDC_*</code>), so it is only shown here. Change it where HolyArrs starts.</p>
+				<p class="notice">{t('accounts.sso.envBefore')} (<code>HOLYARRS_OIDC_*</code>){t('accounts.sso.envAfter')}</p>
 				<dl class="facts">
-					<dt>Single sign-on</dt><dd>{view.on ? 'On' : 'Off'}</dd>
+					<dt>{t('accounts.sso.title')}</dt><dd>{view.on ? t('accounts.sso.on') : t('accounts.sso.off')}</dd>
 					{#if view.on}
-						<dt>Issuer</dt><dd class="mono">{view.issuer}</dd>
-						<dt>Client ID</dt><dd class="mono">{view.client_id}</dd>
-						<dt>Callback</dt><dd class="mono">{view.redirect_url}</dd>
-						<dt>New people</dt><dd>{view.allow_join ? 'May join' : 'Only people already linked'}</dd>
+						<dt>{t('accounts.sso.issuer')}</dt><dd class="mono">{view.issuer}</dd>
+						<dt>{t('accounts.sso.clientId')}</dt><dd class="mono">{view.client_id}</dd>
+						<dt>{t('accounts.sso.callback')}</dt><dd class="mono">{view.redirect_url}</dd>
+						<dt>{t('accounts.sso.newPeople')}</dt><dd>{view.allow_join ? t('accounts.sso.mayJoin') : t('accounts.sso.onlyLinked')}</dd>
 					{/if}
 				</dl>
 			</div>
@@ -163,67 +163,66 @@
 					<label class="switch">
 						<input type="checkbox" bind:checked={on} />
 						<span class="sw" aria-hidden="true"></span>
-						<span>Show the single sign-on button on the sign-in page</span>
+						<span>{t('accounts.sso.showButton')}</span>
 					</label>
-					<Field id="sso-issuer" label="Issuer" hint="The provider's issuer address, exactly as it publishes it (https://).">
+					<Field id="sso-issuer" label={t('accounts.sso.issuer')} hint={t('accounts.sso.issuerHint')}>
 						<div class="row">
 							<input id="sso-issuer" class="input mono grow" bind:value={issuer} oninput={() => (tested = null)} placeholder="https://auth.example.com/application/o/holyarrs/" maxlength="1000" spellcheck="false" autocomplete="off" />
-							<Button type="button" onclick={test} disabled={!issuer.trim() || testing} aria-busy={testing}>Test</Button>
+							<Button type="button" onclick={test} disabled={!issuer.trim() || testing} aria-busy={testing}>{t('accounts.sso.test')}</Button>
 						</div>
 					</Field>
 					{#if tested}<div class="testline" data-testid="sso-tested"><TestTag ok={tested.ok} text={tested.text} app="OpenID Connect" />{#if !tested.ok}<span class="small bad-text">{tested.text}</span>{/if}</div>{/if}
-					<Field id="sso-client" label="Client ID">
+					<Field id="sso-client" label={t('accounts.sso.clientId')}>
 						<input id="sso-client" class="input mono" bind:value={clientId} maxlength="1000" spellcheck="false" autocomplete="off" />
 					</Field>
 					<Field
 						id="sso-secret"
-						label="Client secret"
-						hint={view.secret_set && !moving ? 'A secret is saved; it is never shown. Leave this empty to keep it.' : 'Kept encrypted and never shown again.'}>
+						label={t('accounts.sso.secretLabel')}
+						hint={view.secret_set && !moving ? t('accounts.sso.secretSaved') : t('accounts.sso.secretNew')}>
 						<input id="sso-secret" class="input mono" type="password" bind:value={typedCred} disabled={publicClient} maxlength="4096" autocomplete="off" spellcheck="false" />
 					</Field>
 					<label class="check small">
 						<input type="checkbox" bind:checked={publicClient} />
-						Public client (no secret; the provider is set up for that)
+						{t('accounts.sso.publicClient')}
 					</label>
-					<Field id="sso-callback" label="Callback address" hint="Register this exact address at the provider." style="display: flex !important; flex-direction: column; align-items: stretch !important; gap: 6px">
+					<Field id="sso-callback" label={t('accounts.sso.callbackAddress')} hint={t('accounts.sso.callbackHint')} style="display: flex !important; flex-direction: column; align-items: stretch !important; gap: 6px">
 						<div class="row callback-row">
 							<input id="sso-callback" class="input mono grow" value={callback} readonly />
-							<Button icon="copy" type="button" onclick={copyCallback}>Copy</Button>
+							<Button icon="copy" type="button" onclick={copyCallback}>{t('accounts.sso.copy')}</Button>
 						</div>
 					</Field>
 					<label class="check small">
 						<input type="checkbox" bind:checked={allowJoin} />
-						New people the provider signs in may join, as Members who may ask for titles
+						{t('accounts.sso.allowJoin')}
 					</label>
 					{#if opening}
 						<label class="check small notice warn">
 							<input type="checkbox" bind:checked={confirmEveryone} data-testid="sso-confirm-everyone" />
-							Yes, let everyone this provider signs in make an account here
+							{t('accounts.sso.confirmEveryone')}
 						</label>
 					{/if}
 					{#if moving && view.links}
 						<p class="notice warn" data-testid="sso-moving">
-							Saving a new issuer or client id removes the {view.links} linked sign-in{view.links === 1 ? '' : 's'} made through the old one and signs out everyone who used single sign-on. They link again from My account.
+							{t(view.links === 1 ? 'accounts.sso.movingOne' : 'accounts.sso.movingMany', { n: view.links })}
 						</p>
 					{/if}
-					{#if plainHttp}<p class="small muted">Not on https://, so the secret is sent unencrypted. Use your https address.</p>{/if}
-					<Field id="sso-password" label="Your HolyArrs password" hint="Needed for every change here.">
+					{#if plainHttp}<p class="small muted">{t('accounts.sso.plainHttp')}</p>{/if}
+					<Field id="sso-password" label={t('accounts.sso.yourPasswordLabel')} hint={t('accounts.sso.yourPasswordHint')}>
 						<input id="sso-password" class="input" type="password" bind:value={proof} autocomplete="current-password" required />
 					</Field>
 					{#if session.s.twoFactor}
-						<Field id="sso-code" label="Two-factor code">
+						<Field id="sso-code" label={t('accounts.sso.twoFactor')}>
 							<input id="sso-code" class="input mono" bind:value={code} autocomplete="one-time-code" maxlength="11" required />
 						</Field>
 					{/if}
 					{#if saveError}<p class="form-error" role="alert">{saveError}</p>{/if}
-					<Button variant="primary" type="submit" disabled={busy || !proof} aria-busy={busy}>Save</Button>
+					<Button variant="primary" type="submit" disabled={busy || !proof} aria-busy={busy}>{t('accounts.sso.save')}</Button>
 				</fieldset>
 			</form>
 		{/if}
 		{#if view}
 			<p class="small muted forward" data-testid="sso-forward">
-				Trusted proxy sign-in: {view.forward.on ? `on, through ${view.forward.issuer}` : 'off'}. It is set only in the environment (<code>HOLYARRS_FORWARD_AUTH_*</code>), because the
-				addresses it trusts decide who may sign in as anyone.
+				{t('accounts.sso.proxyLead', { state: view.forward.on ? t('accounts.sso.proxyOn', { issuer: view.forward.issuer ?? '' }) : t('accounts.sso.off').toLowerCase() })} (<code>HOLYARRS_FORWARD_AUTH_*</code>){t('accounts.sso.proxyAfter')}
 			</p>
 		{/if}
 	</Confirm>

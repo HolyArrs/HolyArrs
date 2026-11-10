@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import IconButton from '#lib/ui/IconButton.svelte';
 	import { monthGrid } from './calendar.ts';
 	import { dayName, thingCount } from './calendar-groups.ts';
@@ -31,9 +32,9 @@
 
 <div class="mm" data-testid="cal-picker">
 	<div class="head">
-		<IconButton icon="chevronLeft" size="sm" label="Month before" onclick={() => onpage(-1)} />
+		<IconButton icon="chevronLeft" size="sm" label={t('discover.miniMonth.monthBefore')} onclick={() => onpage(-1)} />
 		<b aria-live="polite">{name}</b>
-		<IconButton icon="chevronRight" size="sm" label="Month after" onclick={() => onpage(1)} />
+		<IconButton icon="chevronRight" size="sm" label={t('discover.miniMonth.monthAfter')} onclick={() => onpage(1)} />
 	</div>
 	<div class="grid" role="group" aria-label={name}>
 		{#each heads as h, i (i)}<span class="wd" aria-hidden="true">{h}</span>{/each}
@@ -47,7 +48,7 @@
 					class:on={active === d.day}
 					data-pick={d.day}
 					aria-current={active === d.day ? 'date' : undefined}
-					aria-label="{dayName(d.day, today)}, {thingCount(d.items.length)}: go to this day"
+					aria-label={t('discover.miniMonth.goToThisDay', { v: dayName(d.day, today), v2: thingCount(d.items.length) })}
 					onclick={() => onpick(d.day)}
 				>
 					<span class="n">{d.date}</span><span class="dot" aria-hidden="true"></span>

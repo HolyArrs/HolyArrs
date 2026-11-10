@@ -7,6 +7,7 @@
 	import { animeEpisode, animePath, seasonAnimeLine, type AnimeView } from './anime.ts';
 	import { api } from '../core/api.ts';
 	import { date } from '../core/format.ts';
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 
 	type Ep = { number: number; name?: string; overview?: string; runtime?: number; still?: string; air_day?: string };
 
@@ -25,8 +26,8 @@
 		Array.isArray(list)
 			? list.map((e) => {
 				const abs = anime ? animeEpisode(anime, cur, e.number).absolute : undefined;
-				const when = e.air_day ? date(e.air_day) : 'No air date yet';
-				return { key: e.number, number: String(e.number), name: e.name || `Episode ${e.number}`, still: e.still, runtime: e.runtime, when: abs ? `${when} · Absolute ${abs}` : when, overview: e.overview };
+				const when = e.air_day ? date(e.air_day) : t('shows.why.noAirDateShort');
+				return { key: e.number, number: String(e.number), name: e.name || t('shows.list.episodeFallback', { n: e.number }), still: e.still, runtime: e.runtime, when: abs ? `${when} · ${t('shows.list.absolute', { n: abs })}` : when, overview: e.overview };
 			})
 			: []
 	);
@@ -61,16 +62,16 @@
 {#if seasons.length}
 	<section class="tp-section" aria-labelledby="h-seasons">
 		<div class="tp-head">
-			<h2 id="h-seasons" class="tp-h2">Episodes</h2>
+			<h2 id="h-seasons" class="tp-h2">{t('shows.list.episodes')}</h2>
 			<div class="tp-head-end">
 				<SeasonPicker seasons={seasons.map((s) => ({ number: s.number, name: seasonName(s.number) }))} value={cur} {fresh} onpick={(n) => (picked = n)} />
 			</div>
 		</div>
-		{#if curSeason}<p class="xs muted" data-testid="season-line">{curSeason.episodes} {curSeason.episodes === 1 ? 'episode' : 'episodes'}{curSeason.year ? ` · ${curSeason.year}` : ''}</p>{/if}
-		{#if anime?.alt_names.length}<p class="xs muted" data-testid="anime-names">Also known as {anime.alt_names.join(' · ')}</p>{/if}
+		{#if curSeason}<p class="xs muted" data-testid="season-line">{t(curSeason.episodes === 1 ? 'shows.list.countOne' : 'shows.list.countOther', { n: curSeason.episodes })}{curSeason.year ? ` · ${curSeason.year}` : ''}</p>{/if}
+		{#if anime?.alt_names.length}<p class="xs muted" data-testid="anime-names">{t('shows.list.alsoKnown', { names: anime.alt_names.join(' · ') })}</p>{/if}
 		{#if animeLine}<p class="xs muted" data-testid="anime-season">{animeLine}</p>{/if}
 		{#if list === 'error'}
-			<p class="small muted">The episodes of {seasonName(cur)} could not be read; try again shortly.</p>
+			<p class="small muted">{t('shows.list.readFailed', { season: seasonName(cur) })}</p>
 		{:else if list}
 			<EpisodeList {rows} {fallback} />
 		{:else}

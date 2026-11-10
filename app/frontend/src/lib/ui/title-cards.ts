@@ -5,6 +5,7 @@ import type { StatusKind } from './StatusPill.svelte';
 import { factsOf, titleStatus, type Audience } from './title-status.ts';
 import type { Component } from 'svelte';
 import type { Ask, AskBrief, AskState, TitleView } from '../core/types.ts';
+import { t } from '#lib/core/i18n/i18n.svelte.ts';
 
 export type CardKind = 'movie' | 'show' | 'artist';
 
@@ -95,18 +96,18 @@ export type QuickAskSheet = Component<
 // Most cards one row shows.
 export const ROW_MAX = 20;
 
-const kindWord: Record<CardKind, string> = { movie: 'Movie', show: 'Show', artist: 'Artist' };
+const kindWord = (k: CardKind): string => (k === 'movie' ? t('ui.titleCards.movie') : k === 'show' ? t('ui.titleCards.show') : t('ui.titleCards.artist'));
 
 // Slot states that count as having the file.
 const fullStates = new Set(['in_library', 'better_wanted', 'no_hardlink']);
 
-const ownedWords: Record<OwnedState, string> = {
-	available: 'In your library',
-	partial: 'Partly available',
-	downloading: 'Downloading',
-	requested: 'Requested',
-	declined: 'Declined'
-};
+const ownedWords = (): Record<OwnedState, string> => ({
+	available: t('ui.titleCards.available'),
+	partial: t('ui.titleCards.partial'),
+	downloading: t('ui.titleCards.downloading'),
+	requested: t('ui.titleCards.requested'),
+	declined: t('ui.titleCards.declined')
+});
 
 export function kindOf(k: string): CardKind {
 	return k === 'show' || k === 'artist' ? k : 'movie';
@@ -125,17 +126,17 @@ export function quality(t: Pick<TitleView, 'slots'>): string | undefined {
 	return best > 0 ? `${best}p` : undefined;
 }
 
-export function titleCard(t: TitleView, subtitle?: string, key = `t${t.id}`): ExploreCard {
-	const s = titleStatus(factsOf(t), 'staff');
-	const q = quality(t);
+export function titleCard(tv: TitleView, subtitle?: string, key = `t${tv.id}`): ExploreCard {
+	const s = titleStatus(factsOf(tv), 'staff');
+	const q = quality(tv);
 	return {
 		key,
-		kind: kindOf(t.kind),
-		name: t.name,
-		year: t.year,
-		image: t.artwork?.[0] ?? null,
-		subtitle: subtitle ?? (t.year ? String(t.year) : kindWord[kindOf(t.kind)]),
-		titleId: t.id,
+		kind: kindOf(tv.kind),
+		name: tv.name,
+		year: tv.year,
+		image: tv.artwork?.[0] ?? null,
+		subtitle: subtitle ?? (tv.year ? String(tv.year) : kindWord(kindOf(tv.kind))),
+		titleId: tv.id,
 		status: s.kind,
 		badges: q ? [q] : []
 	};
@@ -210,18 +211,18 @@ export function ownedTitle(c: Pick<ExploreCard, 'kind' | 'ref' | 'titleId'>, idx
 }
 
 // Picks the badge for a card; declined only shows to staff.
-export function ownedMark(c: ExploreCard, t: TitleView | undefined, who: Audience): OwnedMark | null {
-	const mark = (state: OwnedState, label = ownedWords[state]): OwnedMark => ({ state, label });
-	if (t) {
-		const f = factsOf(t);
-		if (f.downloading) return mark('downloading', f.percent !== undefined ? `Downloading ${f.percent}%` : undefined);
+export function ownedMark(c: ExploreCard, tv: TitleView | undefined, who: Audience): OwnedMark | null {
+	const mark = (state: OwnedState, label = ownedWords()[state]): OwnedMark => ({ state, label });
+	if (tv) {
+		const f = factsOf(tv);
+		if (f.downloading) return mark('downloading', f.percent !== undefined ? t('ui.titleCards.downloadingPercent', { percent: f.percent }) : undefined);
 		if (f.inLibrary) {
-			const slots = t.slots ?? [];
-			const part = (t.show?.missing ?? 0) > 0 || (t.artist?.missing ?? 0) > 0 || slots.some((s) => !fullStates.has(s.state) && !s.file && s.state !== 'not_out_yet');
+			const slots = tv.slots ?? [];
+			const part = (tv.show?.missing ?? 0) > 0 || (tv.artist?.missing ?? 0) > 0 || slots.some((s) => !fullStates.has(s.state) && !s.file && s.state !== 'not_out_yet');
 			return mark(part ? 'partial' : 'available');
 		}
 		if (f.ask === 'turned_down') return who === 'staff' ? mark('declined') : null;
-		return mark('requested', f.ask === 'approved' ? 'Approved, waiting for a copy' : f.ask ? 'Requested' : 'Waiting for a copy');
+		return mark('requested', f.ask === 'approved' ? t('ui.titleCards.approvedWaiting') : f.ask ? t('ui.titleCards.requested') : t('ui.titleCards.waitingForCopy'));
 	}
 	switch (c.status) {
 		case 'in_library':
@@ -229,11 +230,11 @@ export function ownedMark(c: ExploreCard, t: TitleView | undefined, who: Audienc
 		case 'downloading':
 			return mark('downloading');
 		case 'missing':
-			return c.titleId !== undefined ? mark('requested', 'Waiting for a copy') : null;
+			return c.titleId !== undefined ? mark('requested', t('ui.titleCards.waitingForCopy')) : null;
 		case 'requested':
 			return mark('requested');
 		case 'approved':
-			return mark('requested', 'Approved, waiting for a copy');
+			return mark('requested', t('ui.titleCards.approvedWaiting'));
 		case 'turned_down':
 			return who === 'staff' && c.ask?.state === 'turned_down' ? mark('declined') : null;
 	}

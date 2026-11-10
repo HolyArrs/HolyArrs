@@ -1,4 +1,5 @@
 // Plex watchlist sync: words for the account card and the small "from a Plex watchlist" line on asks.
+import { t } from '#lib/core/i18n/i18n.svelte.ts';
 
 export type WatchlistItem = {
 	name: string;
@@ -25,20 +26,11 @@ export type PlexWatchlist = {
 
 type Asker = { id: number; name: string; from_watchlist?: boolean };
 
-const stateWords: Record<string, string> = {
-	asked: 'Asked for',
-	joined: 'Joined an ask',
-	already: 'You asked before',
-	in_library: 'In the Library',
-	skipped: 'Skipped',
-	limit: 'Waits for your weekly limit',
-	failed: 'Tried again soon',
-	no_match: 'Not found'
-};
+const stateKeys = ['asked', 'joined', 'already', 'in_library', 'skipped', 'limit', 'failed', 'no_match'];
 
 /** What came of one watchlist entry, in plain words. */
 export function watchlistStateWord(state: string): string {
-	return stateWords[state] ?? state;
+	return stateKeys.includes(state) ? t(`accounts.watchlist.state.${state}`) : state;
 }
 
 /** The card shows once the owner allows it, a Plex account is linked and the person may ask. */
@@ -50,7 +42,7 @@ export function showWatchlistCard(v: PlexWatchlist | null): boolean {
 export function watchlistLine(people: Asker[] | undefined, me: number | undefined): string {
 	const from = (people ?? []).filter((p) => p.from_watchlist);
 	if (!from.length) return '';
-	if (me !== undefined && from.some((p) => p.id === me)) return 'From your Plex watchlist';
-	if (from.length > 1) return `From ${from.length} people’s Plex watchlists`;
-	return `From ${from[0].name}’s Plex watchlist`;
+	if (me !== undefined && from.some((p) => p.id === me)) return t('accounts.watchlist.yours');
+	if (from.length > 1) return t('accounts.watchlist.many', { n: from.length });
+	return t('accounts.watchlist.one', { name: from[0].name });
 }

@@ -1,4 +1,5 @@
 import { to } from '../core/paths.ts';
+import { t } from '#lib/core/i18n/i18n.svelte.ts';
 
 // Cleans outside scores and artwork from the extras endpoint and caches them.
 
@@ -7,7 +8,18 @@ export type Extras = { logo?: string; thumb?: string; backgrounds: string[]; sco
 
 // Display order of sources; anything else is dropped.
 const ORDER = ['imdb', 'rt_critics', 'rt_audience', 'metacritic', 'letterboxd', 'trakt'];
-const NAMES: Record<string, string> = { imdb: 'IMDb', rt_critics: 'Rotten Tomatoes critics', rt_audience: 'Rotten Tomatoes audience', metacritic: 'Metacritic', letterboxd: 'Letterboxd', trakt: 'Trakt' };
+const NAMES: Record<string, string> = {
+	imdb: 'IMDb',
+	get rt_critics() {
+		return t('ui.outsideRatings.rtCritics');
+	},
+	get rt_audience() {
+		return t('ui.outsideRatings.rtAudience');
+	},
+	metacritic: 'Metacritic',
+	letterboxd: 'Letterboxd',
+	trakt: 'Trakt'
+};
 const EMPTY: Extras = { backgrounds: [], scores: [] };
 const cache = new Map<string, Promise<Extras>>();
 

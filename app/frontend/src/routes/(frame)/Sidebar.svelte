@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import IconButton from '#lib/ui/IconButton.svelte';
 	import SidebarItem from './SidebarItem.svelte';
 	import type { NavItem, NavSection } from './nav.ts';
@@ -56,16 +57,16 @@
 	const key = (s: NavSection, i: NavItem) => `${s.id}:${i.href}:${i.label}`;
 </script>
 
-<aside {id} class="ui-sidebar" class:collapsed class:overlay aria-label="Sidebar">
+<aside {id} class="ui-sidebar" class:collapsed class:overlay aria-label={t('frame.sidebar.label')}>
 	<div class="top">
-		<a class="brand" href={brandHref} aria-label="HolyArrs home" onclick={onpick}>
+		<a class="brand" href={brandHref} aria-label={t('frame.sidebar.home')} onclick={onpick}>
 			<img src={markSrc} alt="" width="28" height="28" /><span class="word">HolyArrs</span>
 		</a>
 		<span class="tog">
-			<IconButton bind:node={toggle} icon="sidebar" label={collapsed ? 'Show sidebar' : 'Hide sidebar'} aria-expanded={!collapsed} aria-controls={id} tipSide={collapsed ? 'right' : 'below'} onclick={ontoggle} />
+			<IconButton bind:node={toggle} icon="sidebar" label={collapsed ? t('frame.sidebar.show') : t('frame.sidebar.hide')} aria-expanded={!collapsed} aria-controls={id} tipSide={collapsed ? 'right' : 'below'} onclick={ontoggle} />
 		</span>
 	</div>
-	<nav aria-label="Main" class="scroll">
+	<nav aria-label={t('frame.tabs.main')} class="scroll">
 		<div class="list" bind:this={list}>
 			<span class="pill" class:on={pill.on} class:still={pill.still} style="transform: translateY({pill.top}px); height: {pill.height}px" aria-hidden="true"></span>
 			{#each sections as s (s.id)}

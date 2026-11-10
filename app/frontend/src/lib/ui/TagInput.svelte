@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	// Chip list with a text box that turns typed words into tags.
 	import { onMount } from 'svelte';
 	import Chip from './Chip.svelte';
@@ -42,7 +43,7 @@
 <!-- datalist below offers tags already used elsewhere -->
 <div class="ti" data-testid={testid}>
 	{#if value.length}
-		<div class="chips" role="group" aria-label="Tags">
+		<div class="chips" role="group" aria-label={t('ui.tagInput.tags')}>
 			{#each value as t (t)}<Chip label={t} onremove={disabled ? undefined : () => (value = value.filter((x) => x !== t))} />{/each}
 		</div>
 	{/if}
@@ -61,7 +62,7 @@
 		autocomplete="off"
 		spellcheck="false"
 		maxlength="60"
-		placeholder={value.length ? 'Add another tag' : 'Type a tag, then Enter'}
+		placeholder={value.length ? t('ui.tagInput.addAnother') : t('ui.tagInput.typeATag')}
 		aria-describedby={describedby}
 		data-testid="{testid}-input"
 	/>

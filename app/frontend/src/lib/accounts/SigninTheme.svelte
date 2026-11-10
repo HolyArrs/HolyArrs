@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import IconButton from '#lib/ui/IconButton.svelte';
 	import { setTheme, theme } from './theme.svelte.ts';
 
@@ -11,7 +12,7 @@
 		icon={theme.value === 'light' ? 'moon' : 'sun'}
 		variant="glass"
 		tipSide="below-end"
-		label={theme.value === 'light' ? 'Dark appearance' : 'Light appearance'}
+		label={theme.value === 'light' ? t('accounts.signin.dark') : t('accounts.signin.light')}
 		onclick={() => {
 			// Switch in one frame: no 150 ms fades on rows and fields while the glass changes at once.
 			panelEl?.classList.add('swap');
