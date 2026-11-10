@@ -478,6 +478,13 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	if n, err := lib.HealServerPlaceholders(ctx); err != nil || n > 0 {
 		log.Printf("artwork: %d placeholder pictures removed, error %v", n, err)
 	}
+	// Once per install, in the background: files moved over from the old apps
+	// get their quality read again, so good copies stop asking for a better one.
+	go func() {
+		if _, err := lib.RejudgeAdopted(ctx); err != nil {
+			log.Printf("library: reading moved-over quality again: %v", err)
+		}
+	}()
 	// Artists still without a picture get one soon after start, apart from
 	// the slower MusicBrainz refresh.
 	if _, _, err := q.Enqueue(ctx, library.KindArtistPictures, nil, map[string]any{"startup": true}, library.KindArtistPictures, domain.System); err != nil {
