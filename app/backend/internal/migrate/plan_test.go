@@ -295,7 +295,7 @@ func TestPlanMapsEachGroup(t *testing.T) {
 	if src.Source.Format != "torznab" || !src.Source.NeedsKey || *src.Source.MinSeeders != 2 || src.Needs != "your key" || src.Source.Categories["movie"][0] != 2000 {
 		t.Fatalf("source %+v", src.Source)
 	}
-	if g := item(t, p, GroupSources, "source:nzbgeek").Source; g.Format != "newznab" || g.Protocol != "usenet" || g.URL != "https://api.nzbgeek.example" {
+	if g := item(t, p, GroupSources, "source:nzbgeek").Source; g.Format != "newznab" || g.Protocol != "usenet" || g.URL != "https://api.nzbgeek.example/api" {
 		t.Fatalf("newznab %+v", g)
 	}
 	if _, ok := notMoved(p, "radarr indexers[1]"); !ok {
