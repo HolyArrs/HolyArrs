@@ -413,6 +413,24 @@ func sameContent(a, b string, size int64) bool {
 	return x != nil && bytes.Equal(x, y)
 }
 
+// sameFullContent hashes both files in full and compares them.
+func sameFullContent(a, b string) bool {
+	sum := func(p string) []byte {
+		f, err := os.Open(p)
+		if err != nil {
+			return nil
+		}
+		defer f.Close()
+		h := sha256.New()
+		if _, err := io.Copy(h, f); err != nil {
+			return nil
+		}
+		return h.Sum(nil)
+	}
+	x, y := sum(a), sum(b)
+	return x != nil && bytes.Equal(x, y)
+}
+
 // Execute runs the steps with ops and returns one result per step.
 func Execute(steps []mediafiles.PlanStep, ops Ops) []mediafiles.PlaceResult {
 	return execute(steps, ops, nil)
@@ -460,6 +478,11 @@ func place(s mediafiles.PlanStep, ops Ops, resumeFrom time.Time) mediafiles.Plac
 			return r
 		}
 		if !resumeFrom.IsZero() && tfi.Mode().IsRegular() && !tfi.ModTime().Before(resumeFrom.Add(-2*time.Second)) && sameContent(s.SourceFile, s.TargetPath, sfi.Size()) {
+			r.Outcome, r.PlacedBy, r.FellBack = "placed", "copy", true
+			return r
+		}
+		// Another app may have placed the same file first; take it as ours.
+		if tfi.Mode().IsRegular() && tfi.Size() == sfi.Size() && sameFullContent(s.SourceFile, s.TargetPath) {
 			r.Outcome, r.PlacedBy, r.FellBack = "placed", "copy", true
 			return r
 		}

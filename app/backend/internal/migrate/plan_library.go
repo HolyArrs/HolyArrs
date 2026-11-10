@@ -582,10 +582,16 @@ func (b *builder) titleList(s *Snapshot) {
 			b.not(GroupTitles, from, name, "no "+map[string]string{"movie": "TMDB", "show": "TVDB or TMDB", "artist": "MusicBrainz"}[kind]+" id is known for it")
 			continue
 		}
+		// Sorted, so the same read always keeps the same ten ids.
+		idKeys := make([]string, 0, len(t.IDs))
+		for k := range t.IDs {
+			idKeys = append(idKeys, k)
+		}
+		sort.Strings(idKeys)
 		ids := map[string]string{}
-		for k, v := range t.IDs {
-			if k = clip(k, 20); k != "" && len(ids) < 10 {
-				ids[k] = clip(v, 60)
+		for _, k := range idKeys {
+			if c := clip(k, 20); c != "" && len(ids) < 10 {
+				ids[c] = clip(t.IDs[k], 60)
 			}
 		}
 		music, issues := musicPolicy(s, t)

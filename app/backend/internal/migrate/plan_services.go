@@ -180,12 +180,20 @@ func (b *builder) indexers(s *Snapshot) {
 }
 
 func anyKey(m map[string]any, key string) any {
-	for k, v := range m {
-		if strings.EqualFold(k, key) {
-			return v
+	if v, ok := m[key]; ok {
+		return v
+	}
+	// Keys that differ only in case: the smallest wins, every time.
+	best, found := "", false
+	for k := range m {
+		if strings.EqualFold(k, key) && (!found || k < best) {
+			best, found = k, true
 		}
 	}
-	return nil
+	if !found {
+		return nil
+	}
+	return m[best]
 }
 
 func hostURL(host string, port int, tls bool, base string) string {
