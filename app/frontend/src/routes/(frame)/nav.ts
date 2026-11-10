@@ -1,6 +1,7 @@
 // The app's places, grouped the way the sidebar shows them. Pure, so the permission rules are testable without a browser.
 
 import type { IconName } from '#lib/ui/Icon.svelte';
+import { t } from '#lib/core/i18n/i18n.svelte.ts';
 
 export type Need = 'manage_library' | 'settings' | 'wishlist' | 'approve' | 'staff' | 'manage' | null;
 
@@ -53,10 +54,10 @@ export type SidebarPref = 'expanded' | 'collapsed';
 
 export type ShellMode = 'phone' | 'tablet' | 'desktop';
 
-const kindItems: Record<'movie' | 'show' | 'artist', NavItem> = {
-	movie: { href: '/library?kind=movie', label: 'Movies', icon: 'film', need: null },
-	show: { href: '/library?kind=show', label: 'TV shows', icon: 'tv', need: null },
-	artist: { href: '/library?kind=artist', label: 'Music', icon: 'music', need: null }
+const kindItem = (k: 'movie' | 'show' | 'artist'): NavItem => {
+	if (k === 'movie') return { href: '/library?kind=movie', label: t('frame.nav.movies'), icon: 'film', need: null };
+	if (k === 'show') return { href: '/library?kind=show', label: t('frame.nav.shows'), icon: 'tv', need: null };
+	return { href: '/library?kind=artist', label: t('frame.nav.music'), icon: 'music', need: null };
 };
 
 /** The sections this person may see, empty ones left out. */
@@ -68,39 +69,39 @@ export function buildNav(input: NavInput): NavSection[] {
 			id: 'top',
 			label: null,
 			items: [
-				{ href: '/', label: 'Home', icon: 'home', need: null },
-				{ href: '/explore', label: 'Explore', icon: 'compass', need: null },
-				{ href: '/popular', label: 'New & Popular', icon: 'sparkle', need: null }
+				{ href: '/', label: t('frame.nav.home'), icon: 'home', need: null },
+				{ href: '/explore', label: t('frame.nav.explore'), icon: 'compass', need: null },
+				{ href: '/popular', label: t('frame.nav.newPopular'), icon: 'sparkle', need: null }
 			]
 		},
 		{
 			id: 'library',
-			label: 'Library',
+			label: t('frame.nav.library'),
 			items: [
 				// Movie series live in the Library's Filter menu and its Group by series choice.
-				...input.kinds.filter((k) => !(input.kid && k === 'artist')).map((k) => kindItems[k])
+				...input.kinds.filter((k) => !(input.kid && k === 'artist')).map((k) => kindItem(k))
 			]
 		},
 		{
 			id: 'yours',
-			label: 'Your stuff',
+			label: t('frame.nav.yours'),
 			items: [
 				// Everyone else watches the downloads for what they asked for.
-				...(!input.allowed('manage_library') ? [{ href: '/downloads', label: 'Downloads', icon: 'download', need: null } as NavItem] : []),
-				{ href: '/calendar', label: 'Calendar', icon: 'calendar', need: null },
+				...(!input.allowed('manage_library') ? [{ href: '/downloads', label: t('frame.nav.downloads'), icon: 'download', need: null } as NavItem] : []),
+				{ href: '/calendar', label: t('frame.nav.calendar'), icon: 'calendar', need: null },
 				// Everyone finds Requests here; people who approve see how many are waiting.
-				{ href: '/requests', label: 'Requests', icon: 'requests', need: 'wishlist', ...(approver ? { badge: input.waitingAsks, badgeLabel: `${input.waitingAsks} waiting` } : { badge: input.unread, badgeLabel: `${input.unread} new` }) }
+				{ href: '/requests', label: t('frame.nav.requests'), icon: 'requests', need: 'wishlist', ...(approver ? { badge: input.waitingAsks, badgeLabel: t('frame.nav.waiting', { n: input.waitingAsks }) } : { badge: input.unread, badgeLabel: t('frame.nav.new', { n: input.unread }) }) }
 			]
 		},
 		{
 			id: 'manage',
-			label: 'Manage',
+			label: t('frame.nav.manage'),
 			items: input.allowed('manage') || input.allowed('staff')
 				? [
-						{ href: '/downloads', label: 'Downloads', icon: 'download', need: 'manage_library', also: ['/downloads/decide'], ...downloadsBadge(input) },
-						{ href: '/downloads/history', label: 'History', icon: 'clock', need: 'manage_library' },
-						{ href: '/health', label: 'Status', icon: 'shield', need: 'manage_library' },
-						{ href: '/settings', label: 'Settings', icon: 'settings', need: 'staff', ...(input.settingsAttention && input.allowed('settings') ? { dot: true } : {}) }
+						{ href: '/downloads', label: t('frame.nav.downloads'), icon: 'download', need: 'manage_library', also: ['/downloads/decide'], ...downloadsBadge(input) },
+						{ href: '/downloads/history', label: t('frame.nav.history'), icon: 'clock', need: 'manage_library' },
+						{ href: '/health', label: t('frame.nav.status'), icon: 'shield', need: 'manage_library' },
+						{ href: '/settings', label: t('frame.nav.settings'), icon: 'settings', need: 'staff', ...(input.settingsAttention && input.allowed('settings') ? { dot: true } : {}) }
 					]
 				: []
 		}
@@ -139,7 +140,7 @@ export function destinations(sections: NavSection[], extra: Destination[] = []):
 			const key = i.href + i.label;
 			if (seen.has(key)) continue;
 			seen.add(key);
-			out.push({ href: i.href, label: i.label, icon: i.icon, section: s.label ?? 'Go to' });
+			out.push({ href: i.href, label: i.label, icon: i.icon, section: s.label ?? t('frame.nav.goTo') });
 		}
 	for (const d of extra) if (!seen.has(d.href + d.label)) out.push(d);
 	return out;
@@ -193,6 +194,6 @@ export function homeHref(): string {
 
 function downloadsBadge(input: NavInput): Pick<NavItem, 'badge' | 'badgeLabel' | 'ring'> {
 	const a = input.active;
-	if (a && a.count > 0) return { badge: a.count, badgeLabel: `${a.count} active, ${a.percent}%`, ring: a.percent };
-	return { badge: input.decisions, badgeLabel: `${input.decisions} need a decision` };
+	if (a && a.count > 0) return { badge: a.count, badgeLabel: t('frame.nav.active', { n: a.count, percent: a.percent }), ring: a.percent };
+	return { badge: input.decisions, badgeLabel: t('frame.nav.decide', { n: input.decisions }) };
 }

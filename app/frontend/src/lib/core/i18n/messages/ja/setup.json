@@ -1,0 +1,17 @@
+{
+"setup.reconnect": "再接続",
+"setup.testNow": "今すぐテスト",
+"setup.movies": "映画",
+"setup.tvShows": "TV 番組",
+"setup.music": "音楽",
+"setup.subtitles": "字幕",
+"setup.fullPath": "{path} のように、フォルダーのフルパスを入力してください。",
+"setup.folderUsed": "このフォルダーはすでに使われているか、使用中のフォルダーの中にあります。",
+"setup.folderMissing": "そのフォルダーが見つかりません。パスを確認してください。",
+"setup.addFolderOrOff": "フォルダーを追加するか、これをオフにしてください。",
+"setup.notAnswering": "HolyArrs が応答していません。しばらくしてからもう一度お試しください。",
+"setup.addUserPasswordHint": "ユーザー名とパスワードを入力してください。",
+"setup.folders": "フォルダー",
+"setup.downloader": "ダウンローダー",
+"setup.source": "ソース"
+}

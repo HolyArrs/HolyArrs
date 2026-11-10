@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	// Shows a skeleton while loading, then fades the content in once timing rules allow.
 	import type { Snippet } from 'svelte';
 	import Orbit from './Orbit.svelte';
@@ -9,7 +10,7 @@
 		skeleton,
 		children,
 		status = '',
-		label = 'Loading',
+		label = t('ui.skSilhouette.loading'),
 		cached = false,
 		onretry
 	}: { loading: boolean; skeleton: Snippet; children?: Snippet; status?: string; label?: string; cached?: boolean; onretry?: () => void } = $props();
@@ -61,8 +62,8 @@
 			<div class="status">
 				<Orbit status={status || label + '…'} />
 				{#if stage === 'reassure'}
-					<p>Still working. The server is slow to answer.</p>
-					<button type="button" class="retry" onclick={() => (onretry ? onretry() : location.reload())}>Try again</button>
+					<p>{t('ui.skSilhouette.stillWorkingTheServer')}</p>
+					<button type="button" class="retry" onclick={() => (onretry ? onretry() : location.reload())}>{t('ui.skSilhouette.tryAgain')}</button>
 				{/if}
 			</div>
 		{/if}

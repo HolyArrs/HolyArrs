@@ -6,6 +6,7 @@ import { peopleNames } from '../core/plain.ts';
 import { DUR, easeOut } from '../core/transitions.ts';
 import type { TitleView } from '../core/types.ts';
 import { quality } from '#lib/ui/title-cards.ts';
+import { t as tr } from '../core/i18n/i18n.svelte.ts';
 import { codecLabel, languageName } from './copies.ts';
 import { libraryState } from './library-state.ts';
 import { progressOf, releaseDate, type Column } from './table.ts';
@@ -57,16 +58,16 @@ export function tone(t: TitleView): 'full' | 'gap' | 'none' | 'later' {
 
 function movieOut(t: TitleView): string {
 	const now = Date.now();
-	if (t.digital_date) return Date.parse(t.digital_date) <= now ? `Out ${date(t.digital_date)}` : `Home release ${date(t.digital_date)}`;
-	if (t.cinema_date) return Date.parse(t.cinema_date) <= now ? `In cinemas ${date(t.cinema_date)}` : `Cinemas ${date(t.cinema_date)}`;
-	return date(releaseDate(t)) || 'Not known';
+	if (t.digital_date) return Date.parse(t.digital_date) <= now ? tr('mediafiles.view.out', { date: date(t.digital_date) }) : tr('mediafiles.view.homeRelease', { date: date(t.digital_date) });
+	if (t.cinema_date) return Date.parse(t.cinema_date) <= now ? tr('mediafiles.view.inCinemas', { date: date(t.cinema_date) }) : tr('mediafiles.view.cinemas', { date: date(t.cinema_date) });
+	return date(releaseDate(t)) || tr('mediafiles.view.notKnown');
 }
 
 export function cell(t: TitleView, c: Column, series: string): string {
 	switch (c.id) {
 		case 'network': return t.show?.network ?? '';
 		case 'rules': return t.pick_rules_name ?? '';
-		case 'next': return t.show?.next_air_date ? date(t.show.next_air_date) : t.show?.status === 'ended' ? 'Ended' : '';
+		case 'next': return t.show?.next_air_date ? date(t.show.next_air_date) : t.show?.status === 'ended' ? tr('mediafiles.view.ended') : '';
 		case 'last': return date(t.show?.last_air_date);
 		case 'seasons': return t.show?.season_count ? String(t.show.season_count) : '';
 		case 'added': return date(t.added_at);
@@ -78,7 +79,7 @@ export function cell(t: TitleView, c: Column, series: string): string {
 		case 'rating': return t.rating ?? '';
 		case 'path': return t.folder_path ?? '';
 		case 'release': return t.kind === 'movie' ? movieOut(t) : '';
-		case 'runtime': return t.runtime_minutes ? `${Math.floor(t.runtime_minutes / 60)}h ${t.runtime_minutes % 60}m` : '';
+		case 'runtime': return t.runtime_minutes ? tr('mediafiles.view.runtime', { h: Math.floor(t.runtime_minutes / 60), m: t.runtime_minutes % 60 }) : '';
 		case 'series': return series;
 		case 'albums': return t.artist ? `${t.artist.included}/${t.artist.albums}` : '';
 		case 'latest': return date(t.artist?.next_release);
@@ -89,8 +90,8 @@ export function cell(t: TitleView, c: Column, series: string): string {
 			const want = t.versions?.[0]?.label;
 			return have || want ? `${have ?? '—'} → ${want ?? '—'}` : '';
 		}
-		case 'kept': return t.keep_up_to_date ? 'Yes' : 'No';
-		case 'showstate': return t.show?.status === 'ended' ? 'Ended' : t.show?.status ? 'Continuing' : '';
+		case 'kept': return t.keep_up_to_date ? tr('mediafiles.view.yes') : tr('mediafiles.view.no');
+		case 'showstate': return t.show?.status === 'ended' ? tr('mediafiles.view.ended') : t.show?.status ? tr('mediafiles.view.continuing') : '';
 		case 'activity': return date(t.last_activity);
 		default: return '';
 	}
@@ -98,7 +99,7 @@ export function cell(t: TitleView, c: Column, series: string): string {
 
 /** The "Everything" line under a poster: next airing for shows, else rules and quality. */
 export function posterExtra(t: TitleView): string {
-	if (t.kind === 'show' && t.show?.next_air_date) return `Next ${date(t.show.next_air_date)}`;
+	if (t.kind === 'show' && t.show?.next_air_date) return tr('mediafiles.view.next', { date: date(t.show.next_air_date) });
 	return [t.pick_rules_name, quality(t)].filter(Boolean).join(' · ');
 }
 
@@ -107,9 +108,9 @@ export function posterFacts(t: TitleView): string[] {
 	const asked = requestedBy(t);
 	return [
 		[quality(t), t.pick_rules_name].filter(Boolean).join(' · '),
-		t.kind === 'show' && t.show?.next_air_date ? `Next ${date(t.show.next_air_date)}` : '',
-		t.added_at ? `Added ${date(t.added_at)}` : '',
-		asked ? `Asked by ${asked}` : ''
+		t.kind === 'show' && t.show?.next_air_date ? tr('mediafiles.view.next', { date: date(t.show.next_air_date) }) : '',
+		t.added_at ? tr('mediafiles.view.added', { date: date(t.added_at) }) : '',
+		asked ? tr('mediafiles.view.askedBy', { name: asked }) : ''
 	].filter(Boolean);
 }
 
@@ -129,7 +130,7 @@ export function buildEntries(shown: TitleView[], grouped: boolean, seriesOfTitle
 		for (const t of ts) out.push({ type: 'row', key: `r${t.id}`, t });
 	}
 	if (loose.length) {
-		out.push({ type: 'head', key: 'h0', id: 0, name: 'Not in a series', count: loose.length });
+		out.push({ type: 'head', key: 'h0', id: 0, name: tr('mediafiles.view.noCollection'), count: loose.length });
 		for (const t of loose) out.push({ type: 'row', key: `r${t.id}`, t });
 	}
 	return out;

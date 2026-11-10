@@ -2,6 +2,7 @@
 <script lang="ts" generics="T extends string">
 	import Icon, { type IconName } from '#lib/ui/Icon.svelte';
 	import Menu, { type MenuItem } from '#lib/ui/Menu.svelte';
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	let {
 		options,
 		value,
@@ -32,7 +33,7 @@
 	}
 </script>
 
-<div class="vs" class:compact role="radiogroup" aria-label="View" data-testid="library-view">
+<div class="vs" class:compact role="radiogroup" aria-label={t('mediafiles.view.label')} data-testid="library-view">
 	{#each options as o, i (o.value)}
 		{@const on = o.value === value}
 		<div class="seg" class:on>
@@ -40,7 +41,7 @@
 				<Icon name={o.icon} size={16} /><span class="lbl" aria-hidden="true">{o.label}</span>
 			</button>
 			{#if on && sizeItems?.length}
-				<span class="size"><Menu label="Art size: {sizeLabel}" variant="icon" icon="chevronDown" items={sizeItems} width={200} align="start" /></span>
+				<span class="size"><Menu label={t('mediafiles.view.artSize', { size: sizeLabel })} variant="icon" icon="chevronDown" items={sizeItems} width={200} align="start" /></span>
 			{/if}
 		</div>
 	{/each}

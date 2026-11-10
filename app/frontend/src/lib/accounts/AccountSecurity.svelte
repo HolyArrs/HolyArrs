@@ -1,4 +1,6 @@
 <script lang="ts">
+	import Words from '#lib/ui/Words.svelte';
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import Button from '#lib/ui/Button.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import Confirm from '#lib/ui/Confirm.svelte';
@@ -57,7 +59,7 @@
 			tfOpen = false;
 			code = '';
 			await session.load();
-			toasts.push('Two-factor on', 'ok');
+			toasts.push(t('accounts.security.tfOnToast'), 'ok');
 		} catch (err) {
 			tfError = strong(err);
 		} finally {
@@ -74,12 +76,12 @@
 			offCode = '';
 			if (r?.backup_codes) {
 				codes = r.backup_codes;
-				toasts.push('Backup codes renewed', 'ok', { body: 'Old ones stop working' });
+				toasts.push(t('accounts.security.renewed'), 'ok', { body: t('accounts.security.oldStop') });
 			} else {
 				codes = [];
 				tfOpen = false;
 				await session.load();
-				toasts.push('Two-factor off', 'ok');
+				toasts.push(t('accounts.security.tfOffToast'), 'ok');
 			}
 		} catch (err) {
 			tfError = strong(err);
@@ -99,9 +101,9 @@
 	async function copyCodes() {
 		try {
 			await navigator.clipboard.writeText(codes.join('\n'));
-			toasts.push('Codes copied', 'ok');
+			toasts.push(t('accounts.security.copied'), 'ok');
 		} catch {
-			toasts.push("Couldn't copy", 'fail', { body: 'Write the codes down' });
+			toasts.push(t('accounts.sso.copyFailed'), 'fail', { body: t('accounts.security.writeDown') });
 		}
 	}
 
@@ -110,7 +112,7 @@
 	let myLinks = $state<SsoLink[]>([]);
 	let unlinkKey = $state('');
 	const linkKey = (l: SsoLink) => `${l.kind}|${l.issuer}`;
-	const linkWord = (k: string) => (k === 'oidc' ? 'Single sign-on' : 'Trusted proxy');
+	const linkWord = (k: string) => (k === 'oidc' ? t('accounts.tiles.sso') : t('accounts.tiles.proxy'));
 	const hostOf = (u: string) => {
 		try {
 			return new URL(u).host;
@@ -130,7 +132,7 @@
 		linkBusy = true;
 		try {
 			await api.post('/auth/sso/unlink', { kind: l.kind, issuer: l.issuer });
-			toasts.push(`${linkWord(l.kind)} unlinked`, 'ok', { body: 'Its devices signed out' });
+			toasts.push(t('accounts.security.unlinked', { what: linkWord(l.kind) }), 'ok', { body: t('accounts.security.devicesOut') });
 			unlinkKey = '';
 			await loadLinks();
 		} catch (err) {
@@ -157,7 +159,7 @@
 		linkBusy = true;
 		try {
 			await session.oidcLinkFinish();
-			toasts.push('Single sign-on linked', 'ok');
+			toasts.push(t('accounts.security.ssoLinked'), 'ok');
 			await loadLinks();
 			await goto(to('/settings/account'), { replace: true });
 		} catch (err) {
@@ -172,7 +174,7 @@
 		linkBusy = true;
 		try {
 			await session.forwardLink();
-			toasts.push('Trusted proxy sign-in linked', 'ok');
+			toasts.push(t('accounts.security.proxyLinked'), 'ok');
 			await loadLinks();
 		} catch (err) {
 			linkError = message(err);
@@ -197,7 +199,7 @@
 		try {
 			const r = await api.post<{ id: number; auth_url: string }>('/auth/plex/my-link/start', {});
 			if (!win) {
-				linkError = 'Pop-up blocked. Allow pop-ups and try again.';
+				linkError = t('accounts.security.popup');
 				return;
 			}
 			win.location.href = r.auth_url;
@@ -214,10 +216,10 @@
 				if ('waiting' in done) continue;
 				plexMine = done;
 				linkOpen = false;
-				toasts.push(`Plex ${done.name} linked`, 'ok');
+				toasts.push(t('accounts.security.plexLinked', { name: done.name }), 'ok');
 				return;
 			}
-			linkError = 'Plex sign-in timed out. Try again.';
+			linkError = t('accounts.security.plexTimeout');
 		} catch (err) {
 			linkError = message(err);
 		} finally {
@@ -236,7 +238,7 @@
 			await api.del('/auth/plex/my-link');
 			plexMine = { linked: false, name: '', kept: false };
 			plexUnlinking = false;
-			toasts.push('Plex unlinked', 'ok', { body: 'Its devices signed out' });
+			toasts.push(t('accounts.security.plexUnlinked'), 'ok', { body: t('accounts.security.devicesOut') });
 		} catch (err) {
 			linkError = message(err);
 		} finally {
@@ -245,26 +247,26 @@
 	}
 </script>
 
-<SettingsCard id="security-me" title="Security" icon="shield">
+<SettingsCard id="security-me" title={t('accounts.security.title')} icon="shield">
 	<div class="srow" id="twofactor-me">
-		<div class="txt"><span class="label">Two-factor</span><span class="hint">A code from your phone at sign-in</span></div>
+		<div class="txt"><span class="label">{t('accounts.security.tf')}</span><span class="hint">{t('accounts.security.tfHint')}</span></div>
 		<div class="ctl">
-			<span class="chip" class:ok={session.s.twoFactor}>{session.s.twoFactor ? 'On' : 'Off'}</span>
+			<span class="chip" class:ok={session.s.twoFactor}>{session.s.twoFactor ? t('accounts.sso.on') : t('accounts.sso.off')}</span>
 			{#if !tfOpen && !setup}
-				<Button variant="secondary" type="button" onclick={openTwoFactor} busy={tfBusy} data-testid="two-factor-open">{session.s.twoFactor ? 'Manage' : 'Set up'}</Button>
+				<Button variant="secondary" type="button" onclick={openTwoFactor} busy={tfBusy} data-testid="two-factor-open">{session.s.twoFactor ? t('accounts.security.manage') : t('accounts.security.setUp')}</Button>
 			{/if}
 		</div>
 		{#if codes.length || tfOpen || setup || tfError}
 			<div class="tf below">
 				{#if codes.length}
 					<div class="fresh" role="status">
-						<p class="small"><b>Backup codes.</b> Each works once; save them now.</p>
+						<p class="small"><b>{t('accounts.security.backupHead')}</b> {t('accounts.security.backupText')}</p>
 						<ul class="codes mono">
 							{#each codes as c (c)}<li>{c}</li>{/each}
 						</ul>
 						<div class="row acts">
-							<Button icon="copy" type="button" onclick={copyCodes}>Copy</Button>
-							<Button variant="secondary" type="button" onclick={() => (codes = [])}>Close</Button>
+							<Button icon="copy" type="button" onclick={copyCodes}>{t('accounts.sso.copy')}</Button>
+							<Button variant="secondary" type="button" onclick={() => (codes = [])}>{t('accounts.security.close')}</Button>
 						</div>
 					</div>
 				{/if}
@@ -273,41 +275,41 @@
 						{#if session.s.twoFactor}
 							<form class="tf-form" onsubmit={(e) => withCode(offMode === 'off' ? '/auth/two-factor/disable' : '/auth/two-factor/backup-codes', e)}>
 								<fieldset class="modes">
-									<legend class="sr-only">Enter an app or backup code</legend>
-									<label class="checkline"><input type="radio" bind:group={offMode} value="codes" /> New backup codes</label>
-									<label class="checkline"><input type="radio" bind:group={offMode} value="off" /> Turn off</label>
+									<legend class="sr-only">{t('accounts.security.enterCode')}</legend>
+									<label class="checkline"><input type="radio" bind:group={offMode} value="codes" /> {t('accounts.security.newCodes')}</label>
+									<label class="checkline"><input type="radio" bind:group={offMode} value="off" /> {t('accounts.security.turnOff')}</label>
 								</fieldset>
 								<div class="row acts">
-									<label class="sr-only" for="off-code">Code</label>
-									<input id="off-code" class="input mono six" placeholder="Code" bind:value={offCode} autocomplete="one-time-code" inputmode="text" maxlength="11" />
+									<label class="sr-only" for="off-code">{t('accounts.security.code')}</label>
+									<input id="off-code" class="input mono six" placeholder={t('accounts.security.code')} bind:value={offCode} autocomplete="one-time-code" inputmode="text" maxlength="11" />
 									<Button variant={offMode === 'off' ? 'destructive' : 'secondary'} type="submit" disabled={tfBusy || !offCode.trim()} busy={tfBusy}>
-										{offMode === 'off' ? 'Turn off' : 'Make new codes'}
+										{offMode === 'off' ? t('accounts.security.turnOff') : t('accounts.security.makeCodes')}
 									</Button>
-									<Button variant="plain" type="button" onclick={() => (tfOpen = false)}>Cancel</Button>
+									<Button variant="plain" type="button" onclick={() => (tfOpen = false)}>{t('accounts.signin.cancel')}</Button>
 								</div>
 							</form>
 						{:else if setup}
 							<ol class="steps small">
 								<li>
 									{#if setup.qr?.length}
-										Scan this with your authenticator app:
-										<QrCode rows={setup.qr} label="QR code for your authenticator app" />
-										Or <a class="ul" href={setup.uri}>open it in the app</a>, or type:
+										{t('accounts.security.scan')}
+										<QrCode rows={setup.qr} label={t('accounts.security.qr')} />
+										<Words key="accounts.security.orOpenApp" links={{ a: setup.uri }} linkClass="ul" />
 									{:else}
-										Add an account in your authenticator app (<a class="ul" href={setup.uri}>open in the app</a>) or type:
+										{t('accounts.security.addBefore')} (<a class="ul" href={setup.uri}>{t('accounts.security.openAppShort')}</a>){t('accounts.security.addAfter')}
 									{/if}
 									<code class="key">{setup.secret.replace(/(.{4})/g, '$1 ').trim()}</code>
 								</li>
-								<li>Type the six-digit code it shows.</li>
+								<li>{t('accounts.security.typeSix')}</li>
 							</ol>
 							<form class="row acts" onsubmit={enable}>
-								<label class="sr-only" for="tf-code">Six-digit code</label>
+								<label class="sr-only" for="tf-code">{t('accounts.security.sixDigit')}</label>
 								<input id="tf-code" class="input mono six" bind:value={code} autocomplete="one-time-code" inputmode="numeric" maxlength="6" placeholder="123456" />
-								<Button variant="primary" type="submit" disabled={tfBusy || code.trim().length !== 6} busy={tfBusy}>Turn on</Button>
-								<Button variant="plain" type="button" onclick={() => { setup = null; tfOpen = false; }}>Cancel</Button>
+								<Button variant="primary" type="submit" disabled={tfBusy || code.trim().length !== 6} busy={tfBusy}>{t('accounts.security.turnOn')}</Button>
+								<Button variant="plain" type="button" onclick={() => { setup = null; tfOpen = false; }}>{t('accounts.signin.cancel')}</Button>
 							</form>
 						{:else}
-							<div class="row acts"><Button variant="primary" type="button" onclick={startTwoFactor} busy={tfBusy}>Continue</Button></div>
+							<div class="row acts"><Button variant="primary" type="button" onclick={startTwoFactor} busy={tfBusy}>{t('accounts.security.continue')}</Button></div>
 						{/if}
 					</Confirm>
 				{/if}
@@ -317,23 +319,23 @@
 	</div>
 	{#if hasLinkWay || myLinks.length || plexMine?.linked || (plexMine && session.s.hasPassword)}
 		<div class="srow" id="linked-me">
-			<div class="txt"><span class="label">Linked sign-ins</span><span class="hint" title="Matched by account ID, never by email">Matched by account ID, never by email</span></div>
-			<div class="ctl">{#if !linkOpen && (hasLinkWay || session.s.hasPassword)}<Button variant="secondary" type="button" onclick={() => (linkOpen = true)} data-testid="link-sign-in">Link</Button>{/if}</div>
+			<div class="txt"><span class="label">{t('accounts.security.linked')}</span><span class="hint" title={t('accounts.security.matched')}>{t('accounts.security.matched')}</span></div>
+			<div class="ctl">{#if !linkOpen && (hasLinkWay || session.s.hasPassword)}<Button variant="secondary" type="button" onclick={() => (linkOpen = true)} data-testid="link-sign-in">{t('accounts.security.link')}</Button>{/if}</div>
 			{#if plexMine?.linked}
 				<ul class="below my-links" data-testid="my-plex-link">
 					<li>
-						<span class="small">Plex{#if plexMine.name}, as {plexMine.name}{/if}</span>
+						<span class="small">{plexMine.name ? t('accounts.security.plexAs', { name: plexMine.name }) : 'Plex'}</span>
 						{#if !session.s.hasPassword}
-							<span class="xs muted" data-testid="plex-needs-password">Set a password above to unlink</span>
+							<span class="xs muted" data-testid="plex-needs-password">{t('accounts.security.needsPasswordLabel')}</span>
 						{:else if plexUnlinking}
 							<Confirm action="link" onCancel={() => (plexUnlinking = false)}>
 								<div class="row acts">
-									<Button variant="secondary" type="button" onclick={unlinkPlexMine} busy={linkBusy}>Unlink</Button>
-									<Button variant="plain" type="button" onclick={() => (plexUnlinking = false)}>Cancel</Button>
+									<Button variant="secondary" type="button" onclick={unlinkPlexMine} busy={linkBusy}>{t('accounts.security.unlink')}</Button>
+									<Button variant="plain" type="button" onclick={() => (plexUnlinking = false)}>{t('accounts.signin.cancel')}</Button>
 								</div>
 							</Confirm>
 						{:else}
-							<Button variant="plain" type="button" onclick={() => (plexUnlinking = true)} aria-label="Unlink Plex">Unlink</Button>
+							<Button variant="plain" type="button" onclick={() => (plexUnlinking = true)} aria-label={t('accounts.security.unlinkPlex')}>{t('accounts.security.unlink')}</Button>
 						{/if}
 					</li>
 				</ul>
@@ -342,16 +344,16 @@
 				<ul class="below my-links" data-testid="my-sso-links">
 					{#each myLinks as l (linkKey(l))}
 						<li>
-							<span class="small">{linkWord(l.kind)} at <span class="mono">{hostOf(l.issuer)}</span>{#if l.name}, as {l.name}{/if}</span>
+							<span class="small">{t('accounts.security.linkAt', { what: linkWord(l.kind) })} <span class="mono">{hostOf(l.issuer)}</span>{#if l.name}{t('accounts.security.linkAs', { name: l.name })}{/if}</span>
 							{#if unlinkKey === linkKey(l)}
 								<Confirm action="link" onCancel={() => (unlinkKey = '')}>
 									<div class="row acts">
-										<Button variant="secondary" type="button" onclick={() => unlink(l)} busy={linkBusy}>Unlink</Button>
-										<Button variant="plain" type="button" onclick={() => (unlinkKey = '')}>Cancel</Button>
+										<Button variant="secondary" type="button" onclick={() => unlink(l)} busy={linkBusy}>{t('accounts.security.unlink')}</Button>
+										<Button variant="plain" type="button" onclick={() => (unlinkKey = '')}>{t('accounts.signin.cancel')}</Button>
 									</div>
 								</Confirm>
 							{:else}
-								<Button variant="plain" type="button" onclick={() => (unlinkKey = linkKey(l))} aria-label={`Unlink ${linkWord(l.kind)} at ${hostOf(l.issuer)}`}>Unlink</Button>
+								<Button variant="plain" type="button" onclick={() => (unlinkKey = linkKey(l))} aria-label={t('accounts.security.unlinkAt', { what: linkWord(l.kind), host: hostOf(l.issuer) })}>{t('accounts.security.unlink')}</Button>
 							{/if}
 						</li>
 					{/each}
@@ -363,15 +365,15 @@
 						<Confirm action="link" onCancel={() => (linkOpen = false)}>
 							<div class="row acts">
 								{#if session.s.hasPassword}
-									<Button type="button" onclick={linkPlexMine} busy={linkBusy}>{plexMine?.linked ? 'Plex (another account)' : 'Plex'}</Button>
+									<Button type="button" onclick={linkPlexMine} busy={linkBusy}>{plexMine?.linked ? t('accounts.security.plexAnother') : 'Plex'}</Button>
 								{/if}
 								{#if session.s.ways.includes('oidc')}
-									<Button type="button" onclick={startOIDCLink} busy={linkBusy}>Single sign-on</Button>
+									<Button type="button" onclick={startOIDCLink} busy={linkBusy}>{t('accounts.tiles.sso')}</Button>
 								{/if}
 								{#if session.s.ways.includes('forward_auth')}
-									<Button type="button" onclick={linkForwardAuth} busy={linkBusy}>Trusted proxy</Button>
+									<Button type="button" onclick={linkForwardAuth} busy={linkBusy}>{t('accounts.tiles.proxy')}</Button>
 								{/if}
-								<Button variant="plain" type="button" onclick={() => (linkOpen = false)}>Cancel</Button>
+								<Button variant="plain" type="button" onclick={() => (linkOpen = false)}>{t('accounts.signin.cancel')}</Button>
 							</div>
 						</Confirm>
 					{/if}
@@ -382,7 +384,7 @@
 	{/if}
 	{#if session.s.role === 'owner'}
 		<div class="srow">
-			<div class="txt"><span class="label">Locked out?</span><span class="hint">Run this where HolyArrs runs.</span></div>
+			<div class="txt"><span class="label">{t('accounts.security.locked')}</span><span class="hint">{t('accounts.signin.runThis')}</span></div>
 			<div class="ctl"><code class="cmd">holyarrs reset-owner</code></div>
 		</div>
 	{/if}

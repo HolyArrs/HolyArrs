@@ -1,9 +1,10 @@
 <!-- Boxed list of links to related settings pages, with optional status chips. -->
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import Icon from './Icon.svelte';
 	import { to } from '../core/paths.ts';
 
-	let { links, label = 'Related pages' }: { links: { href: string; label: string; note?: string; tone?: string }[]; label?: string } = $props();
+	let { links, label = t('ui.settingsLinks.relatedPages') }: { links: { href: string; label: string; note?: string; tone?: string }[]; label?: string } = $props();
 </script>
 
 <ul class="settings-links" aria-label={label} data-testid="settings-links">
@@ -11,7 +12,7 @@
 		<li>
 			<a href={to(l.href)}>
 				<span class="copy"><b>{l.label}</b>{#if l.note}<span class="note">{l.note}</span>{/if}</span>
-				{#if l.tone}<span class="chip {l.tone}">{l.tone === 'ok' ? 'OK' : l.tone === 'wait' ? 'Check' : 'Problem'}</span>{/if}
+				{#if l.tone}<span class="chip {l.tone}">{l.tone === 'ok' ? t('ui.settingsLinks.ok') : l.tone === 'wait' ? t('ui.settingsLinks.check') : t('ui.settingsLinks.problem')}</span>{/if}
 				<Icon name="chevronRight" size={16} />
 			</a>
 		</li>

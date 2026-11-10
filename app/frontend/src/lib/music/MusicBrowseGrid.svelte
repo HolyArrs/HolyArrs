@@ -1,10 +1,11 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import Icon from '#lib/ui/Icon.svelte';
 	import MusicTileGrid from './MusicTileGrid.svelte';
 
 	// Explore > Music's Browse and New & Popular > Music's Explore more: a heading, two rows of the shared Music tile, and Browse all for the full list. A tile brings one album cover or a few to try.
 	type In = { key: string; name: string; href: string; hue?: number; cover?: string; covers?: string[] };
-	let { tiles, allHref, title = 'Browse', rows = 2 }: { tiles: In[]; allHref: string; title?: string; rows?: number } = $props();
+	let { tiles, allHref, title, rows = 2 }: { tiles: In[]; allHref: string; title?: string; rows?: number } = $props();
 
 	const uid = $props.id();
 	const grid = $derived(tiles.map((t) => ({ key: t.key, name: t.name, href: t.href, covers: t.covers ?? (t.cover ? [t.cover] : []) })));
@@ -12,8 +13,8 @@
 
 <section class="mbg" data-testid="music-browse-grid" aria-labelledby="{uid}-t">
 	<header>
-		<h2 id="{uid}-t">{title}</h2>
-		<a class="all" href={allHref}>Browse all<Icon name="chevronRight" size={15} /></a>
+		<h2 id="{uid}-t">{title ?? t('music.browse')}</h2>
+		<a class="all" href={allHref}>{t('music.browseAll')}<Icon name="chevronRight" size={15} /></a>
 	</header>
 	<MusicTileGrid tiles={grid} {rows} />
 </section>

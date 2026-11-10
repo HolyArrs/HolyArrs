@@ -2,6 +2,7 @@
 	// Day column: a 12 hour ruler with finished, running and planned runs as chips around a Now line.
 	import type { LiveJobs } from './live-jobs.svelte.ts';
 	import { t } from './live-jobs.svelte.ts';
+	import { t as say, appLocale } from '#lib/core/i18n/i18n.svelte.ts';
 	import type { StatusRow } from './rows.ts';
 
 	type Ev = { key: string; at: number; top: number; name: string; time: string; kind: 'past' | 'next' | 'run'; c: string; fill: number; label: string; lane: number; lanes: number };
@@ -39,20 +40,20 @@
 			const s = t(j.started_at ?? j.queued_at);
 			const p = Math.min(1, Math.max(0, j.progress));
 			const top = Math.min(yNow - 4, Math.max(yNow - CH + 4, Number.isFinite(s) ? y(s) : yNow));
-			evs.push({ key: `r${j.id}`, at: s, top, name: j.label, time: Number.isFinite(s) ? hm(s) : 'now', kind: 'run', c: 'var(--accent)', fill: p, label: `${j.label}, running${p > 0 ? `, ${Math.round(p * 100)}% done` : ''}`, lane: 0, lanes: 1 });
+			evs.push({ key: `r${j.id}`, at: s, top, name: j.label, time: Number.isFinite(s) ? hm(s) : say('health.until.now'), kind: 'run', c: 'var(--accent)', fill: p, label: p > 0 ? say('health.day.runningPct', { name: j.label, pct: Math.round(p * 100) }) : say('health.day.running', { name: j.label }), lane: 0, lanes: 1 });
 		}
 		for (const j of lj.finished) {
 			const s = Number.isFinite(t(j.StartedAt)) ? t(j.StartedAt) : t(j.EndedAt);
 			if (!Number.isFinite(s) || s < start || s > now) continue;
-			const word = j.State === 'done' ? 'finished' : j.State === 'failed' ? 'failed' : j.State === 'cancelled' ? 'was cancelled' : j.State;
+			const word = j.State === 'done' ? say('health.day.finished') : j.State === 'failed' ? say('health.day.failed') : j.State === 'cancelled' ? say('health.day.cancelled') : j.State;
 			const c = j.State === 'done' ? tone.ok : j.State === 'failed' ? tone.fail : tone.idle;
-			evs.push({ key: `h${j.ID}`, at: s, top: y(s), name: lj.nameOf(j.Kind), time: hm(s), kind: 'past', c, fill: 0, label: `${lj.nameOf(j.Kind)} ran at ${hm(s)} and ${word}`, lane: 0, lanes: 1 });
+			evs.push({ key: `h${j.ID}`, at: s, top: y(s), name: lj.nameOf(j.Kind), time: hm(s), kind: 'past', c, fill: 0, label: say('health.day.ran', { name: lj.nameOf(j.Kind), time: hm(s), word }), lane: 0, lanes: 1 });
 		}
 		for (const r of lj.coming(upcoming, 40)) {
 			const ms = t(r.nextRun);
 			if (!Number.isFinite(ms) || ms > end) continue;
 			const late = ms <= now;
-			evs.push({ key: `n${r.key}`, at: ms, top: y(Math.max(ms, now)), name: r.name, time: late ? 'due' : hm(ms), kind: 'next', c: tone[r.tone] ?? tone.info, fill: 0, label: late ? `${r.name} is due now` : `${r.name} runs at ${hm(ms)}`, lane: 0, lanes: 1 });
+			evs.push({ key: `n${r.key}`, at: ms, top: y(Math.max(ms, now)), name: r.name, time: late ? say('health.day.due') : hm(ms), kind: 'next', c: tone[r.tone] ?? tone.info, fill: 0, label: late ? say('health.day.dueNow', { name: r.name }) : say('health.day.runsAt', { name: r.name, time: hm(ms) }), lane: 0, lanes: 1 });
 		}
 
 		// Chips that touch form a group; each takes the first free lane and the group shares the width.
@@ -87,9 +88,9 @@
 
 	const dayWord = $derived.by(() => {
 		const today = new Date(now).toDateString();
-		if (new Date(start).toDateString() !== today) return 'Since yesterday';
-		if (new Date(end - 1).toDateString() !== today) return 'Today into tomorrow';
-		return 'Today';
+		if (new Date(start).toDateString() !== today) return say('health.day.sinceYesterday');
+		if (new Date(end - 1).toDateString() !== today) return say('health.day.intoTomorrow');
+		return say('health.day.today');
 	});
 	const busy = $derived(lj.running.length > 0);
 	const ahead = $derived(placed.shown.filter((e) => e.kind === 'next').length);
@@ -104,16 +105,16 @@
 	}
 
 	// Local clock time helpers.
-	const hm = (ms: number) => new Date(ms).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
-	const hh = (ms: number) => new Date(ms).toLocaleTimeString([], { hour: '2-digit', hour12: false });
+	const hm = (ms: number) => new Date(ms).toLocaleTimeString(appLocale(), { hour: '2-digit', minute: '2-digit', hour12: false });
+	const hh = (ms: number) => new Date(ms).toLocaleTimeString(appLocale(), { hour: '2-digit', hour12: false });
 </script>
 
 <div class="day">
 	<h3>
 		{dayWord}
 		<span class="rg">{hm(start)}–{hm(end)}</span>
-		{#if placed.hidden}<span class="rg">+{placed.hidden} not shown</span>{/if}
-		<span class="st" class:on={busy}>{busy ? `${lj.running.length} running` : ahead ? `${ahead} ahead` : 'Idle'}</span>
+		{#if placed.hidden}<span class="rg">{say('health.day.hidden', { count: placed.hidden })}</span>{/if}
+		<span class="st" class:on={busy}>{busy ? say('health.day.nRunning', { count: lj.running.length }) : ahead ? say('health.day.ahead', { count: ahead }) : say('health.day.idle')}</span>
 	</h3>
 
 	<div class="sc">
@@ -128,7 +129,7 @@
 
 			<div class="nw" style:top="{yNow}px" aria-hidden="true"><span class="nt">{hm(now)}</span><i class="nd"></i></div>
 
-			<div class="evs" role="list" aria-label="Runs from {hm(start)} to {hm(end)}">
+			<div class="evs" role="list" aria-label={say('health.day.runsFromTo', { from: hm(start), to: hm(end) })}>
 				{#each placed.shown as e (e.key)}
 					<div
 						class="ev {e.kind}"

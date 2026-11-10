@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import Icon from '#lib/ui/Icon.svelte';
 	import Shelf from '#lib/ui/Shelf.svelte';
 	import { genreTintToken } from './genre-tint.ts';
@@ -13,7 +14,7 @@
 		onopen,
 		onpick,
 		selected,
-		title = 'Genres',
+		title,
 		all: withAll = true
 	}: {
 		genres: Genre[];
@@ -130,7 +131,7 @@
 				<span class="q" style:--g={c.tone}>{#if c.src && !failedAll[c.key]}<img src={c.src} alt="" loading="lazy" decoding="async" draggable="false" onerror={() => (failedAll[c.key] = true)} />{/if}</span>
 			{/each}
 		</span>
-		<span class="txt"><small>Browse</small><strong>All genres<Icon name="chevronRight" size={compact ? 14 : 18} /></strong></span>
+		<span class="txt"><small>{t('music.browse')}</small><strong>{t('music.allGenres')}<Icon name="chevronRight" size={compact ? 14 : 18} /></strong></span>
 	</a>
 {/snippet}
 
@@ -138,7 +139,7 @@
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div class="mgt compact" data-testid="music-genre-tiles" onkeydown={gridKeys}>{@render tiles()}</div>
 {:else}
-	<div data-testid="music-genre-tiles"><Shelf {title} item="250px">{@render tiles()}</Shelf></div>
+	<div data-testid="music-genre-tiles"><Shelf title={title ?? t('music.genres')} item="250px">{@render tiles()}</Shelf></div>
 {/if}
 
 <style>

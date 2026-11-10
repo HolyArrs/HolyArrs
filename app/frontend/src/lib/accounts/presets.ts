@@ -1,4 +1,5 @@
 // Role presets: display-only shortcuts onto the existing permission checkboxes. Saving still sends the plain permission list.
+import { t } from '#lib/core/i18n/i18n.svelte.ts';
 import type { Perm } from '../core/session.svelte.ts';
 
 export type PresetId = 'admin' | 'manager' | 'member' | 'kid';
@@ -14,10 +15,10 @@ export interface Preset {
 }
 
 export const presets: Preset[] = [
-	{ id: 'admin', label: 'Admin', perms: ['ask', 'auto_approve', 'approve', 'manage_library', 'settings'] },
-	{ id: 'manager', label: 'Manager', perms: ['ask', 'auto_approve', 'approve', 'manage_library'] },
-	{ id: 'member', label: 'Member', perms: ['ask'] },
-	{ id: 'kid', label: 'Kid', perms: ['ask'], maxRating: 'PG' }
+	{ id: 'admin', get label() { return t('accounts.preset.admin'); }, perms: ['ask', 'auto_approve', 'approve', 'manage_library', 'settings'] },
+	{ id: 'manager', get label() { return t('accounts.preset.manager'); }, perms: ['ask', 'auto_approve', 'approve', 'manage_library'] },
+	{ id: 'member', get label() { return t('accounts.preset.member'); }, perms: ['ask'] },
+	{ id: 'kid', get label() { return t('accounts.preset.kid'); }, perms: ['ask'], maxRating: 'PG' }
 ];
 
 /** The presets this person may hand out: every permission must be grantable. */

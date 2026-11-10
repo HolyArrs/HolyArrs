@@ -1,0 +1,10 @@
+{
+	"settings.home.advanced": "متقدم",
+	"settings.home.page": "{group} · صفحة",
+	"settings.home.title": "الإعدادات",
+	"settings.home.search": "ابحث في الإعدادات",
+	"settings.home.matching": "الإعدادات المطابقة",
+	"settings.home.noMatch": "لا توجد إعدادات مطابقة",
+	"settings.home.noMatchText": "جرّب كلمة أخرى، مثل مجلد أو مفتاح أو كلمة المرور.",
+	"settings.home.clear": "امسح البحث"
+}

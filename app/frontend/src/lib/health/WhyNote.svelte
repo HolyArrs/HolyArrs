@@ -1,7 +1,9 @@
 <script lang="ts">
+	import Words from '#lib/ui/Words.svelte';
 	// Retro about window: types its lines, slams tags in, and sends runners across the title bar.
 	import silkscreen from '@fontsource/silkscreen/files/silkscreen-latin-400-normal.woff2?url';
 	import { tick } from 'svelte';
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import { to } from '../core/paths.ts';
 
 	// The pixel font ships with the app and loads once, so the window needs no network.
@@ -13,7 +15,6 @@
 
 	// The Support block stays hidden until this holds a real link.
 	const SUPPORT_URL = '';
-	const TITLE = 'Why HolyArrs';
 	// Run-cycle frames for the two runners.
 	const luisF = [0, 1, 2, 1].map((i) => to(`/why/coderluii-run-${i}.png`));
 	const dogF = [0, 1, 2, 3, 4, 5].map((i) => to(`/why/peanut-run-${i}.png`));
@@ -111,7 +112,7 @@
 	// Jumps to the finished page: all text shown, no animation.
 	function finish() {
 		if (!dlg) return;
-		title = TITLE;
+		title = t('health.why.title');
 		dlg.querySelectorAll('.typed').forEach((el) => { const o = originals.get(el); if (o !== undefined) el.innerHTML = o; });
 		dlg.querySelectorAll('.stk, .typed').forEach((el) => { el.classList.add('on'); (el as HTMLElement).style.animation = 'none'; });
 		playing = false;
@@ -126,7 +127,7 @@
 		if (reduce()) return finish();
 		playing = true;
 		title = '';
-		for (const c of TITLE) { await wait(80); if (id !== run) return; title += c; }
+		for (const c of t('health.why.title')) { await wait(80); if (id !== run) return; title += c; }
 		slam(dlg.querySelector('.photo'));
 		await wait(260);
 		for (const beat of dlg.querySelectorAll('.story > section')) {
@@ -228,51 +229,51 @@
 	<div class="win">
 		<div class="wbar">
 			<span class="wdots" aria-hidden="true"><i></i><i></i><i></i></span>
-			<h2 id="why-h"><span aria-hidden="true">{title}</span><span class="sr-only">{TITLE}</span><span class="caret" aria-hidden="true"></span></h2>
-			{#if playing}<button class="wskip" type="button" onclick={skip}>Skip <span aria-hidden="true">&gt;&gt;</span></button>{/if}
-			<button class="wx" type="button" aria-label="Close" onclick={close}>X</button>
+			<h2 id="why-h"><span aria-hidden="true">{title}</span><span class="sr-only">{t('health.why.title')}</span><span class="caret" aria-hidden="true"></span></h2>
+			{#if playing}<button class="wskip" type="button" onclick={skip}>{t('health.why.skip')} <span aria-hidden="true">&gt;&gt;</span></button>{/if}
+			<button class="wx" type="button" aria-label={t('health.why.close')} onclick={close}>X</button>
 			<div class="run" aria-hidden="true"><i class="portal"></i><img class="runner luis" alt="" src={luisF[0]} /><img class="runner dog" alt="" src={dogF[0]} /></div>
 		</div>
 		<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
 		<div class="screen" class:playing onclick={onScreenClick}>
 			<aside class="who">
-				<div class="photo stk" style="--r0:-14deg;--r1:-2deg"><img src={to('/why/luis.webp')} alt="Luis, drawn in pixels at a laptop" /><span class="scan" aria-hidden="true"></span></div>
-				<div class="name"><b>Luis</b><small>Made HolyArrs</small><a href="https://coderluii.dev" target="_blank" rel="noopener">coderluii.dev</a></div>
-				{#if SUPPORT_URL}<div class="support stk" style="--r0:6deg"><p>Saves you time? Help keep it going.</p><a href={SUPPORT_URL} target="_blank" rel="noopener" class="stk" style="--r0:-16deg"><span aria-hidden="true">♥</span> Support</a></div>{/if}
+				<div class="photo stk" style="--r0:-14deg;--r1:-2deg"><img src={to('/why/luis.webp')} alt={t('health.why.photoAlt')} /><span class="scan" aria-hidden="true"></span></div>
+				<div class="name"><b>Luis</b><small>{t('health.why.made')}</small><a href="https://coderluii.dev" target="_blank" rel="noopener">coderluii.dev</a></div>
+				{#if SUPPORT_URL}<div class="support stk" style="--r0:6deg"><p>{t('health.why.saves')}</p><a href={SUPPORT_URL} target="_blank" rel="noopener" class="stk" style="--r0:-16deg"><span aria-hidden="true">♥</span> {t('health.why.support')}</a></div>{/if}
 			</aside>
 			<div class="story">
 				<section>
-					<span class="wtag stk">Then</span>
-					<p class="big typed">For years, running my media server meant babysitting <em>six apps</em> next to my downloader.</p>
+					<span class="wtag stk">{t('health.why.then')}</span>
+					<p class="big typed"><Words key="health.why.years" /></p>
 					<div class="wapps">
-						<span class="wchip stk" style="--c:#4f8cff"><i></i>Shows</span>
-						<span class="wchip stk" style="--c:#f2b33d"><i></i>Movies</span>
-						<span class="wchip stk" style="--c:#2fbf71"><i></i>Music</span>
-						<span class="wchip stk" style="--c:#a78bfa"><i></i>Subtitles</span>
-						<span class="wchip stk" style="--c:#38bdf8"><i></i>Sources</span>
-						<span class="wchip stk" style="--c:#fb7185"><i></i>Requests</span>
+						<span class="wchip stk" style="--c:#4f8cff"><i></i>{t('health.why.shows')}</span>
+						<span class="wchip stk" style="--c:#f2b33d"><i></i>{t('health.why.movies')}</span>
+						<span class="wchip stk" style="--c:#2fbf71"><i></i>{t('health.why.music')}</span>
+						<span class="wchip stk" style="--c:#a78bfa"><i></i>{t('health.why.subtitles')}</span>
+						<span class="wchip stk" style="--c:#38bdf8"><i></i>{t('health.why.sources')}</span>
+						<span class="wchip stk" style="--c:#fb7185"><i></i>{t('health.why.requests')}</span>
 					</div>
-					<p class="say typed">I loved what they made possible. But six apps meant six settings pages, six logins, and six different ideas of what was going on.</p>
+					<p class="say typed">{t('health.why.loved')}</p>
 				</section>
 				<section>
-					<span class="wtag stk">Now</span>
-					<p class="big typed">So I built the one place I always wanted.</p>
-					<div class="onerow"><span class="wone stk">HolyArrs</span></div>
-					<p class="say typed">Someone asks for a title, and it shows up on your media server. One place for the whole trip. I sweated every screen.</p>
+					<span class="wtag stk">{t('health.why.now')}</span>
+					<p class="big typed">{t('health.why.built')}</p>
+					<div class="onerow"><span class="wone stk">{t('health.why.one')}</span></div>
+					<p class="say typed">{t('health.why.asks')}</p>
 				</section>
 				<section>
-					<span class="wtag stk">What I'm building</span>
+					<span class="wtag stk">{t('health.why.building')}</span>
 					<ul class="vision">
-						<li class="typed">Your family asks for a show, and it just shows up. Nobody has to know how.</li>
-						<li class="typed">A library that looks and feels as good as the streaming apps you pay for.</li>
-						<li class="typed">One setup, one sign-in, and the truth about what's happening.</li>
-						<li class="typed">Yours. It runs on your own server, and it's going open source.</li>
+						<li class="typed">{t('health.why.v1')}</li>
+						<li class="typed">{t('health.why.v2')}</li>
+						<li class="typed">{t('health.why.v3')}</li>
+						<li class="typed">{t('health.why.v4')}</li>
 					</ul>
 				</section>
 				<section class="thanks stk" style="--r0:-4deg">
-					<span class="wtag tag-heart stk"><span class="heart" aria-hidden="true">{#each '01101101111111011111000111000001000' as c, i (i)}{#if c === '1'}<b></b>{:else}<s></s>{/if}{/each}</span>Thank you</span>
-					<p class="big typed">For running it, breaking it, and trusting it with your library.</p>
-					<p class="say typed">Every bug you send and every idea you share makes it better for all of us.<span class="cur" aria-hidden="true"></span></p>
+					<span class="wtag tag-heart stk"><span class="heart" aria-hidden="true">{#each '01101101111111011111000111000001000' as c, i (i)}{#if c === '1'}<b></b>{:else}<s></s>{/if}{/each}</span>{t('health.why.thanks')}</span>
+					<p class="big typed">{t('health.why.thanksBig')}</p>
+					<p class="say typed">{t('health.why.thanksSay')}<span class="cur" aria-hidden="true"></span></p>
 				</section>
 			</div>
 		</div>
@@ -336,7 +337,7 @@
 	.heart { display: inline-grid; grid-template-columns: repeat(7, 3px); grid-auto-rows: 3px; margin-right: 2px; }
 	.heart b { background: var(--red); }
 	.big { margin: 0; font: 600 21px/1.3 var(--font-ui); letter-spacing: -.01em; color: var(--cream); text-wrap: balance; }
-	.big em { font-style: normal; color: var(--red-soft); }
+	.big :global(em) { font-style: normal; color: var(--red-soft); }
 	.say { margin: 8px 0 0; font-size: 15px; line-height: 1.6; color: color-mix(in srgb, var(--cream) 78%, transparent); }
 	.wapps { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
 	.wchip { display: inline-flex; align-items: center; gap: 7px; height: 32px; padding: 0 12px; border: 2px solid rgb(243 239 229 / 35%); background: var(--coal-2); font: 400 10.5px/1 var(--pixel); letter-spacing: .16em; text-transform: uppercase; color: var(--muted); transform: rotate(var(--r1, 0deg)); }

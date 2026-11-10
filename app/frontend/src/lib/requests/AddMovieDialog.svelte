@@ -1,4 +1,6 @@
 <script lang="ts">
+	import Words from '#lib/ui/Words.svelte';
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import { MetadataNotice } from '#lib/metadata/index.ts';
@@ -103,19 +105,19 @@
 	}
 </script>
 
-<Sheet bind:open={addOpen} title={picked ? `Add ${picked.name}` : 'Add a movie'}>
+<Sheet bind:open={addOpen} title={picked ? t('requests.add.title', { name: picked.name }) : t('requests.addMovie.titleBare')}>
 	<MetadataNotice />
 	{#if picked && !ready}
-		<div class="form-sk" aria-busy="true" aria-label="Loading the defaults">{#each [0, 1, 2] as i (i)}<span class="sk sk-line" style="width: 30%; height: 11px"></span><span class="sk" style="height: 44px; border-radius: var(--r-btn); margin-bottom: 8px"></span>{/each}</div>
+		<div class="form-sk" aria-busy="true" aria-label={t('requests.add.loadingDefaults')}>{#each [0, 1, 2] as i (i)}<span class="sk sk-line" style="width: 30%; height: 11px"></span><span class="sk" style="height: 44px; border-radius: var(--r-btn); margin-bottom: 8px"></span>{/each}</div>
 	{:else if picked}
 		<form id="add-movie" class="sheet-form" onsubmit={add}>
 			{#if movieFolders.length === 0}
 				<p class="notice warn">
-					There is no Library folder for movies yet. <a href={to(`/settings/library-folders`)} class="ul">Add one</a> first.
+					<Words key="requests.add.noFolder.movie" links={{ a: to('/settings/library-folders') }} linkClass="ul" />
 				</p>
 			{:else}
 				<div class="field">
-					<label for="folder">Library folder</label>
+					<label for="folder">{t('requests.add.folder')}</label>
 					<select id="folder" class="input" bind:value={folderId} onchange={() => chooseRulesFor(folderId)}>
 						{#each movieFolders as f (f.id)}
 							<option value={f.id}>{f.label || f.path} ({f.path})</option>
@@ -123,16 +125,16 @@
 					</select>
 				</div>
 				<div class="field">
-					<label for="rules">Pick rules</label>
+					<label for="rules">{t('requests.add.rules')}</label>
 					<select id="rules" class="input" bind:value={rulesId}>
 						{#each movieRules as r (r.id)}
 							<option value={r.id}>{r.name}</option>
 						{/each}
 					</select>
-					<span class="hint">Which Releases count, and which one is best.</span>
+					<span class="hint">{t('requests.add.rulesHint')}</span>
 				</div>
 				<div class="field">
-					<label for="gate">Release gate</label>
+					<label for="gate">{t('requests.addMovie.gate')}</label>
 					<select id="gate" class="input" bind:value={gate}>
 						{#each gates as [g, label] (g)}
 							<option value={g}>{label}</option>
@@ -142,25 +144,25 @@
 				</div>
 				<label class="checkline">
 					<input type="checkbox" bind:checked={keep} />
-					<span><b>Keep up to date</b><br /><span class="hint">HolyArrs looks for it and for a better copy later.</span></span>
+					<span><b>{t('requests.add.keep')}</b><br /><span class="hint">{t('requests.addMovie.keepHint')}</span></span>
 				</label>
 				<label class="checkline">
 					<input type="checkbox" bind:checked={searchOnAdd} />
-					<span><b>Search when added</b><br /><span class="hint">Start looking for a Release straight away.</span></span>
+					<span><b>{t('requests.add.search')}</b><br /><span class="hint">{t('requests.addMovie.searchHint')}</span></span>
 				</label>
 				<label class="checkline">
 					<input type="checkbox" bind:checked={more} />
-					<span><b>Also keep a second Version</b><br /><span class="hint">Like a 4K copy next to the HD one, with its own Pick rules and folder.</span></span>
+					<span><b>{t('requests.add.more')}</b><br /><span class="hint">{t('requests.addMovie.moreHint')}</span></span>
 				</label>
 				{#if more}
 					<fieldset class="more">
-						<legend class="sr-only">Second Version</legend>
+						<legend class="sr-only">{t('requests.add.moreLegend')}</legend>
 						<div class="field">
-							<label for="more-label">Version name</label>
+							<label for="more-label">{t('requests.add.moreName')}</label>
 							<input id="more-label" class="input" bind:value={moreLabel} maxlength="40" required />
 						</div>
 						<div class="field">
-							<label for="more-rules">Pick rules for this Version</label>
+							<label for="more-rules">{t('requests.add.moreRules')}</label>
 							<select id="more-rules" class="input" bind:value={moreRules}>
 								{#each movieRules as r (r.id)}
 									<option value={r.id}>{r.name}</option>
@@ -168,27 +170,27 @@
 							</select>
 						</div>
 						<div class="field">
-							<label for="more-folder">Library folder for this Version</label>
+							<label for="more-folder">{t('requests.add.moreFolder')}</label>
 							<select id="more-folder" class="input" bind:value={moreFolder}>
 								{#each movieFolders as f (f.id)}
 									<option value={f.id}>{f.label || f.path} ({f.path})</option>
 								{/each}
 							</select>
-							{#if moreFolder === folderId}<span class="hint">Same folder as the main copy: it gets its own folder named with “[{moreLabel.trim() || '4K'}]”.</span>{/if}
+							{#if moreFolder === folderId}<span class="hint">{t('requests.addMovie.sameFolder', { label: moreLabel.trim() || '4K' })}</span>{/if}
 						</div>
 					</fieldset>
 				{/if}
 			{/if}
 			<label class="checkline" data-testid="follow-box">
 				<input type="checkbox" bind:checked={follow} />
-				<span><b>Follow</b><br /><span class="hint">Show it on my calendar.</span></span>
+				<span><b>{t('requests.add.follow')}</b><br /><span class="hint">{t('requests.add.followHint')}</span></span>
 			</label>
 			{#if addError}<p class="form-error" role="alert">{plainReason(addError).text}</p>{/if}
 		</form>
 	{/if}
 	{#snippet footer()}
-		<Button variant="plain" onclick={() => (addOpen = false)}>Cancel</Button>
-		<Button variant="primary" type="submit" form="add-movie" disabled={movieFolders.length === 0 || !ready} busy={adding}>Add to Library</Button>
+		<Button variant="plain" onclick={() => (addOpen = false)}>{t('requests.add.cancel')}</Button>
+		<Button variant="primary" type="submit" form="add-movie" disabled={movieFolders.length === 0 || !ready} busy={adding}>{t('requests.add.submit')}</Button>
 	{/snippet}
 </Sheet>
 
@@ -198,6 +200,6 @@
 	.notice.warn { color: var(--text); }
 	.form-error { margin: 8px 0 0; color: var(--fail); font: var(--t-callout); }
 	.more { margin: 12px 0 0; padding: 12px 0 0 16px; border: 0; border-left: 2px solid var(--line-strong); }
-	.ul { text-decoration: underline; color: var(--text); }
+	.notice :global(.ul) { text-decoration: underline; color: var(--text); }
 	.form-sk { display: flex; flex-direction: column; gap: 8px; }
 </style>

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t, appLocale } from '#lib/core/i18n/i18n.svelte.ts';
 	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
@@ -59,19 +60,19 @@
 		failures: days.reduce((n, d) => n + d.failures, 0),
 		grabs: days.reduce((n, d) => n + d.grabs, 0)
 	});
-	const dayLabel = (d: string) => new Date(d + 'T12:00:00Z').toLocaleDateString([], { month: 'short', day: 'numeric' });
+	const dayLabel = (d: string) => new Date(d + 'T12:00:00Z').toLocaleDateString(appLocale(), { month: 'short', day: 'numeric' });
 </script>
 
-<svelte:head><title>{src?.name ?? 'Source'} health · HolyArrs</title></svelte:head>
+<svelte:head><title>{t('settings.sourceDetail.pageTitle', { name: src?.name ?? t('settings.sourceDetail.source') })} · HolyArrs</title></svelte:head>
 
 <PageHeader
-	back={{ href: to('/settings/sources'), label: 'Sources' }}
-	title={src?.name ?? 'Source'}
-	subtitle={src ? `${src.format === 'rss' ? 'RSS' : words(src.format)} · ${words(src.protocol)} · priority ${src.priority} · ${uses(src)}` : undefined}
+	back={{ href: to('/settings/sources'), label: t('settings.sourceDetail.sources') }}
+	title={src?.name ?? t('settings.sourceDetail.source')}
+	subtitle={src ? t('settings.sourceDetail.subtitle', { format: src.format === 'rss' ? 'RSS' : words(src.format), protocol: words(src.protocol), priority: src.priority, uses: uses(src) }) : undefined}
 >
 	{#snippet actions()}
 		{#if src}
-			{#if src.state === 'paused'}<Button type="button" disabled={trying} aria-busy={trying} onclick={tryNow} data-testid="source-try">Try now</Button>{/if}
+			{#if src.state === 'paused'}<Button type="button" disabled={trying} aria-busy={trying} onclick={tryNow} data-testid="source-try">{t('settings.sourceDetail.tryNow')}</Button>{/if}
 			<span class="chip {healthTone(src.health)}" data-testid="health-state">{healthWord(src.health)}</span>
 		{/if}
 	{/snippet}
@@ -84,50 +85,50 @@
 {:else}
 	{#if error}<LoadError hasData message={error} onretry={load} />{/if}
 
-	<section class="tiles" aria-label="At a glance">
+	<section class="tiles" aria-label={t('settings.sourceDetail.glance')}>
 		<div class="card tile">
-			<span class="label">State</span>
+			<span class="label">{t('settings.sourceDetail.state')}</span>
 			<span class="big">{healthWord(src.health)}</span>
 			<span class="xs muted">{src.health.text}{#if pausedUntil(src.health)} {pausedUntil(src.health)}.{/if}</span>
 			{#if tried}<span class="testline" data-testid="source-tried"><TestTag ok={tried.ok} text={tried.text} hover={tried.hover} extra={tried.extra} />{#if !tried.ok}<span class="xs bad-text">{tried.text}</span>{/if}</span>{/if}
 		</div>
 		<div class="card tile">
-			<span class="label">Last answer</span>
-			<span class="big" data-testid="last-success">{src.summary.last_success ? ago(src.summary.last_success) : 'Never'}</span>
-			<span class="xs muted">{src.summary.last_failure ? `Last failure ${ago(src.summary.last_failure)}` : 'No failures kept'}</span>
+			<span class="label">{t('settings.sourceDetail.lastAnswer')}</span>
+			<span class="big" data-testid="last-success">{src.summary.last_success ? ago(src.summary.last_success) : t('settings.sourceDetail.never')}</span>
+			<span class="xs muted">{src.summary.last_failure ? t('settings.sourceDetail.lastFailure', { ago: ago(src.summary.last_failure) }) : t('settings.sourceDetail.noFailures')}</span>
 		</div>
 		<div class="card tile">
-			<span class="label">Response time today</span>
+			<span class="label">{t('settings.sourceDetail.today')}</span>
 			<span class="big">{ms(src.summary.avg_ms_24h)}</span>
-			<span class="xs muted">on average, answered calls</span>
+			<span class="xs muted">{t('settings.sourceDetail.average')}</span>
 		</div>
 		<div class="card tile">
-			<span class="label">Last {span} days</span>
-			<span class="big">{totals.calls} calls</span>
-			<span class="xs muted">{totals.failures} failed · {totals.grabs} picked</span>
+			<span class="label">{t('settings.sourceDetail.lastDays', { n: span })}</span>
+			<span class="big">{t('settings.sourceDetail.calls', { n: totals.calls })}</span>
+			<span class="xs muted">{t('settings.sourceDetail.failedPicked', { failed: totals.failures, picked: totals.grabs })}</span>
 		</div>
 	</section>
 
 	<section class="card" aria-labelledby="h-days">
 		<div class="row between">
-			<h2 id="h-days" class="h2">Over time</h2>
+			<h2 id="h-days" class="h2">{t('settings.sourceDetail.overTime')}</h2>
 			<label class="xs">
-				<span class="sr-only">Days shown</span>
+				<span class="sr-only">{t('settings.sourceDetail.daysShown')}</span>
 				<select class="input" bind:value={span}>
-					<option value={7}>7 days</option>
-					<option value={14}>14 days</option>
-					<option value={30}>30 days</option>
-					<option value={90}>90 days</option>
+					<option value={7}>{t('settings.sourceDetail.days', { n: 7 })}</option>
+					<option value={14}>{t('settings.sourceDetail.days', { n: 14 })}</option>
+					<option value={30}>{t('settings.sourceDetail.days', { n: 30 })}</option>
+					<option value={90}>{t('settings.sourceDetail.days', { n: 90 })}</option>
 				</select>
 			</label>
 		</div>
 		{#if days.length === 0}
-			<p class="small muted empty-chart">No calls in this period</p>
+			<p class="small muted empty-chart">{t('settings.sourceDetail.noCalls')}</p>
 		{:else}
-		<p class="xs muted legend"><span class="key calls"></span> answered <span class="key fails"></span> failed <span class="key grabs"></span> picked · days in UTC</p>
-		<div class="bars" role="img" aria-label="Calls, failures and picks per day">
+		<p class="xs muted legend"><span class="key calls"></span> {t('settings.sourceDetail.answered')} <span class="key fails"></span> {t('settings.sourceDetail.failed')} <span class="key grabs"></span> {t('settings.sourceDetail.picked')} · {t('settings.sourceDetail.utc')}</p>
+		<div class="bars" role="img" aria-label={t('settings.sourceDetail.chartLabel')}>
 			{#each days as d (d.day)}
-				<div class="day" title="{dayLabel(d.day)}: {d.calls} calls, {d.failures} failed, {d.grabs} picked, {ms(d.avg_ms)} on average">
+				<div class="day" title={t('settings.sourceDetail.dayTitle', { day: dayLabel(d.day), calls: d.calls, failed: d.failures, picked: d.grabs, avg: ms(d.avg_ms) })}>
 					<div class="stack">
 						<span class="bar calls" style="height: {barHeight(d.calls - d.failures, most)}%"></span>
 						<span class="bar fails" style="height: {barHeight(d.failures, most)}%"></span>
@@ -136,30 +137,30 @@
 				</div>
 			{/each}
 		</div>
-		<h3 class="h3" style="margin-top: var(--s-5)">Response time</h3>
-		<div class="bars short" role="img" aria-label="Average response time per day">
+		<h3 class="h3" style="margin-top: var(--s-5)">{t('settings.sourceDetail.responseTime')}</h3>
+		<div class="bars short" role="img" aria-label={t('settings.sourceDetail.timeLabel')}>
 			{#each days as d (d.day)}
-				<div class="day" title="{dayLabel(d.day)}: {ms(d.avg_ms)}"><div class="stack"><span class="bar time" style="height: {barHeight(d.avg_ms, slowest)}%"></span></div></div>
+				<div class="day" title={t('settings.sourceDetail.timeTitle', { day: dayLabel(d.day), avg: ms(d.avg_ms) })}><div class="stack"><span class="bar time" style="height: {barHeight(d.avg_ms, slowest)}%"></span></div></div>
 			{/each}
 		</div>
 		<div class="ends xs muted"><span>{days.length ? dayLabel(days[0].day) : ''}</span><span>{days.length ? dayLabel(days[days.length - 1].day) : ''}</span></div>
 		{/if}
 	</section>
 
-	<SettingsCard title="Recent calls">
+	<SettingsCard title={t('settings.sourceDetail.recent')}>
 		{#if recent.length === 0}
-			<p class="small muted">No calls. Test it from Sources.</p>
+			<p class="small muted">{t('settings.sourceDetail.noRecent')}</p>
 		{:else}
 			<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-			<div class="table-scroll" tabindex="0" role="region" aria-label="Recent calls">
+			<div class="table-scroll" tabindex="0" role="region" aria-label={t('settings.sourceDetail.recent')}>
 				<table class="calls-table">
-					<thead><tr><th>When</th><th>What</th><th>Result</th><th>Time</th></tr></thead>
+					<thead><tr><th>{t('settings.sourceDetail.when')}</th><th>{t('settings.sourceDetail.what')}</th><th>{t('settings.sourceDetail.result')}</th><th>{t('settings.sourceDetail.time')}</th></tr></thead>
 					<tbody>
 						{#each recent as c, i (i)}
 							<tr data-testid="call">
 								<td>{ago(c.at)}</td>
 								<td>{opWords[c.op] ?? c.op}</td>
-								<td class:bad-text={!c.ok}>{c.ok ? 'Answered' : words(c.error_kind || 'failed')}</td>
+								<td class:bad-text={!c.ok}>{c.ok ? t('settings.sourceDetail.answeredCell') : words(c.error_kind || 'failed')}</td>
 								<td>{ms(c.ms)}</td>
 							</tr>
 						{/each}

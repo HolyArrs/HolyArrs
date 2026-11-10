@@ -1,4 +1,5 @@
 // History: the address it reads, the "who did it" filter, a row's step and extra piece, and the actions a row's details offer.
+import { t as say, lang, appLocale } from '#lib/core/i18n/i18n.svelte.ts';
 import { readFilter, type HistoryRow } from './history.ts';
 import { fineCheck, historyTabs, tabKinds } from './history-tabs.ts';
 import { cap, episodeBits, missingLine, plainWhy, resolutionOf } from './history-lines.ts';
@@ -6,9 +7,17 @@ import type { Verb } from './history-kinds.ts';
 import { bytes } from '../core/format.ts';
 import type { EventRecord } from '../core/types.ts';
 
+const W = (en: string) => say('downloads.hk.' + en.replace(/[^A-Za-z0-9 ]/g, ' ').trim().split(/\s+/).map((x, i) => (i ? x[0].toUpperCase() + x.slice(1) : x[0].toLowerCase() + x.slice(1))).join(''));
+
 /** Who made an Event happen, as the Filter offers it. */
 export type Who = '' | 'me' | 'people' | 'ai' | 'holyarrs';
-export const whoLabels: Record<Who, string> = { '': 'All', me: 'You', people: 'Members', ai: 'AI apps', holyarrs: 'HolyArrs' };
+export const whoLabels: Record<Who, string> = {
+	get [''](){ return say('downloads.hs.who.all'); },
+	get me() { return say('downloads.hs.who.me'); },
+	get people() { return say('downloads.hs.who.people'); },
+	get ai() { return say('downloads.hs.who.ai'); },
+	holyarrs: 'HolyArrs'
+};
 
 export function whoOf(v: string | null): Who {
 	return v === 'me' || v === 'people' || v === 'ai' || v === 'holyarrs' ? v : '';
@@ -77,21 +86,21 @@ export function partOf(row: HistoryRow): string {
 const decideKinds = ['needs_decision', 'stopped_looking'];
 /** The steps the Filter offers, one past-tense verb each: download steps first, in the order Sonarr and Radarr show them, then asks and the Library (stepBreak), System last. */
 export const searchSteps: { key: string; label: string; kinds: string[] }[] = [
-	{ key: 'sent', label: 'Sent', kinds: ['release_chosen', 'release_chosen_by_hand', 'download_sent', 'download_queued'] },
-	{ key: 'downloaded', label: 'Downloaded', kinds: ['download_finished', 'download_seeding'] },
-	{ key: 'imported', label: 'Imported', kinds: ['import_done', 'import_partly_done', 'adopted', 'media_server_told'] },
-	{ key: 'upgraded', label: 'Upgraded', kinds: ['file_replaced'] },
-	{ key: 'renamed', label: 'Renamed', kinds: ['renamed', 'rename_planned'] },
-	{ key: 'deleted', label: 'Deleted', kinds: ['title_removed', 'episodes_removed', 'file_held', 'holding_cleaned'] },
-	{ key: 'declined', label: 'Turned down', kinds: ['ask_turned_down', 'release_turned_down', 'ai_ask_turned_down'] },
-	{ key: 'failed', label: 'Failed', kinds: (tabKinds('problems') ?? []).filter((k) => !decideKinds.includes(k)) },
-	{ key: 'asked', label: 'Asked', kinds: ['ask_made', 'ai_ask_made'] },
-	{ key: 'approved', label: 'Approved', kinds: ['ask_approved', 'ai_ask_approved'] },
-	{ key: 'added', label: 'Added', kinds: ['title_added', 'list_synced', 'version_changed', 'gate_opened'] },
-	{ key: 'subtitles', label: 'Subtitled', kinds: ['subtitle_*'] },
-	{ key: 'reported', label: 'Reported', kinds: ['report_*'] },
-	{ key: 'decide', label: 'Needs you', kinds: decideKinds },
-	{ key: 'system', label: 'System', kinds: tabKinds('changes', 'system') ?? [] }
+	{ key: 'sent', get label() { return W('Sent'); }, kinds: ['release_chosen', 'release_chosen_by_hand', 'download_sent', 'download_queued'] },
+	{ key: 'downloaded', get label() { return W('Downloaded'); }, kinds: ['download_finished', 'download_seeding'] },
+	{ key: 'imported', get label() { return W('Imported'); }, kinds: ['import_done', 'import_partly_done', 'adopted', 'media_server_told'] },
+	{ key: 'upgraded', get label() { return W('Upgraded'); }, kinds: ['file_replaced'] },
+	{ key: 'renamed', get label() { return W('Renamed'); }, kinds: ['renamed', 'rename_planned'] },
+	{ key: 'deleted', get label() { return W('Deleted'); }, kinds: ['title_removed', 'episodes_removed', 'file_held', 'holding_cleaned'] },
+	{ key: 'declined', get label() { return W('Turned down'); }, kinds: ['ask_turned_down', 'release_turned_down', 'ai_ask_turned_down'] },
+	{ key: 'failed', get label() { return W('Failed'); }, kinds: (tabKinds('problems') ?? []).filter((k) => !decideKinds.includes(k)) },
+	{ key: 'asked', get label() { return W('Asked'); }, kinds: ['ask_made', 'ai_ask_made'] },
+	{ key: 'approved', get label() { return W('Approved'); }, kinds: ['ask_approved', 'ai_ask_approved'] },
+	{ key: 'added', get label() { return W('Added'); }, kinds: ['title_added', 'list_synced', 'version_changed', 'gate_opened'] },
+	{ key: 'subtitles', get label() { return W('Subtitled'); }, kinds: ['subtitle_*'] },
+	{ key: 'reported', get label() { return W('Reported'); }, kinds: ['report_*'] },
+	{ key: 'decide', get label() { return W('Needs you'); }, kinds: decideKinds },
+	{ key: 'system', get label() { return W('System'); }, kinds: tabKinds('changes', 'system') ?? [] }
 ];
 /** Where the second block of steps (asks and the Library) starts. */
 export const stepBreak = searchSteps.findIndex((s) => s.key === 'asked');
@@ -108,7 +117,11 @@ export function stepKinds(steps: string[]): string[] {
 }
 
 export type MediaType = '' | 'movies' | 'shows' | 'music';
-export const typeLabels: Record<Exclude<MediaType, ''>, string> = { movies: 'Movies', shows: 'Shows', music: 'Music' };
+export const typeLabels: Record<Exclude<MediaType, ''>, string> = {
+	get movies() { return say('downloads.kind.movies'); },
+	get shows() { return say('downloads.hs.shows'); },
+	get music() { return say('downloads.kind.music'); }
+};
 
 /** Keeps an Event about a title of the picked type (movie, show, artist or album). */
 export function typeMatches(kind: string | undefined, type: MediaType): boolean {
@@ -154,10 +167,10 @@ const day = (d: Date) => d.toISOString().slice(0, 10);
 
 /** A span back from now ('' is All time), or Custom (From and To). */
 export const whenSpans: { days: number; label: string }[] = [
-	{ days: 0, label: 'All time' },
-	{ days: 1, label: '24 hours' },
-	{ days: 7, label: '7 days' },
-	{ days: 30, label: '30 days' }
+	{ days: 0, get label() { return say('downloads.hs.allTime'); } },
+	{ days: 1, get label() { return say('downloads.hs.24h'); } },
+	{ days: 7, get label() { return say('downloads.hs.days', { n: 7 }); } },
+	{ days: 30, get label() { return say('downloads.hs.days', { n: 30 }); } }
 ];
 /** The From date for a span back from now. */
 export const whenFrom = (days: number, now = new Date()) => day(new Date(now.getTime() - days * 86400000));
@@ -172,12 +185,12 @@ export function whenOf(from?: string, to?: string, now = new Date()): number | '
 export function dateLabel(from?: string, to?: string, now = new Date()): string {
 	if (from && !to) {
 		for (const n of [1, 7, 30, 90]) {
-			if (from === day(new Date(now.getTime() - n * 86400000))) return n === 1 ? '24 hours' : `${n} days`;
+			if (from === day(new Date(now.getTime() - n * 86400000))) return n === 1 ? say('downloads.hs.24h') : say('downloads.hs.days', { n });
 		}
-		return `From ${from}`;
+		return say('downloads.hs.from', { date: from });
 	}
-	if (from && to) return `${from} to ${to}`;
-	return to ? `Until ${to}` : '';
+	if (from && to) return say('downloads.hs.fromTo', { from, to });
+	return to ? say('downloads.hs.until', { date: to }) : '';
 }
 
 /** One removable chip: its label and the address change that clears it. */
@@ -213,35 +226,35 @@ export function isProblem(kind: string): boolean {
 	return problemKinds.has(kind) || [...problemKinds].some((k) => k.endsWith('*') && kind.startsWith(k.slice(0, -1)));
 }
 const kindStep: [RegExp, Omit<RowStep, 'failed'>][] = [
-	[/^(ai_)?ask_made$/, { label: 'Asked', icon: 'wish' }],
-	[/^(ai_)?ask_approved$/, { label: 'Approved', icon: 'check' }],
-	[/^(ask|release|ai_ask)_turned_down$/, { label: 'Turned down', icon: 'declined' }],
-	[/^report_(made|reopened)$/, { label: 'Reported', icon: 'alert' }],
-	[/^(report_fixed|health_recovered|file_back)$/, { label: 'Fixed', icon: 'check' }],
-	[/^(title_added|list_synced|version_changed)$/, { label: 'Added', icon: 'plus' }],
-	[/^gate_opened$/, { label: 'Out now', icon: 'calendarDay' }],
-	[/^release_chosen(_by_hand)?$/, { label: 'Chosen', icon: 'upload' }],
-	[/^download_(sent|queued)$/, { label: 'Sent', icon: 'upload' }],
-	[/^download_(downloading|stalled|paused)$/, { label: 'Downloading', icon: 'download' }],
-	[/^download_(finished|seeding)$/, { label: 'Downloaded', icon: 'download' }],
-	[/^(import_done|import_partly_done|adopted)$/, { label: 'Imported', icon: 'folder' }],
-	[/^(renamed|rename_planned)$/, { label: 'Renamed', icon: 'copy' }],
-	[/^subtitle_/, { label: 'Subtitles', icon: 'subtitle' }],
-	[/^media_server_told$/, { label: 'In media server', icon: 'tv' }],
-	[/^file_replaced$/, { label: 'Upgraded', icon: 'sparkle' }],
-	[/^(title_removed|episodes_removed|file_held|holding_cleaned|download_removed)$/, { label: 'Deleted', icon: 'trash' }],
-	[/^(signed_in|sign_in_failed|signed_out|api_key_created|api_key_deleted|settings_changed|secrets_imported|account_changed|backup_used)$/, { label: 'System', icon: 'info' }]
+	[/^(ai_)?ask_made$/, { get label() { return W('Asked'); }, icon: 'wish' }],
+	[/^(ai_)?ask_approved$/, { get label() { return W('Approved'); }, icon: 'check' }],
+	[/^(ask|release|ai_ask)_turned_down$/, { get label() { return W('Turned down'); }, icon: 'declined' }],
+	[/^report_(made|reopened)$/, { get label() { return W('Reported'); }, icon: 'alert' }],
+	[/^(report_fixed|health_recovered|file_back)$/, { get label() { return W('Fixed'); }, icon: 'check' }],
+	[/^(title_added|list_synced|version_changed)$/, { get label() { return W('Added'); }, icon: 'plus' }],
+	[/^gate_opened$/, { get label() { return W('Out now'); }, icon: 'calendarDay' }],
+	[/^release_chosen(_by_hand)?$/, { get label() { return W('Chosen'); }, icon: 'upload' }],
+	[/^download_(sent|queued)$/, { get label() { return W('Sent'); }, icon: 'upload' }],
+	[/^download_(downloading|stalled|paused)$/, { get label() { return W('Downloading'); }, icon: 'download' }],
+	[/^download_(finished|seeding)$/, { get label() { return W('Downloaded'); }, icon: 'download' }],
+	[/^(import_done|import_partly_done|adopted)$/, { get label() { return W('Imported'); }, icon: 'folder' }],
+	[/^(renamed|rename_planned)$/, { get label() { return W('Renamed'); }, icon: 'copy' }],
+	[/^subtitle_/, { get label() { return W('Subtitles'); }, icon: 'subtitle' }],
+	[/^media_server_told$/, { get label() { return W('In media server'); }, icon: 'tv' }],
+	[/^file_replaced$/, { get label() { return W('Upgraded'); }, icon: 'sparkle' }],
+	[/^(title_removed|episodes_removed|file_held|holding_cleaned|download_removed)$/, { get label() { return W('Deleted'); }, icon: 'trash' }],
+	[/^(signed_in|sign_in_failed|signed_out|api_key_created|api_key_deleted|settings_changed|secrets_imported|account_changed|backup_used)$/, { get label() { return W('System'); }, icon: 'info' }]
 ];
 /** Names a row's newest step; a folded download reads its furthest step. */
 export function rowStep(row: HistoryRow, fallback = ''): RowStep {
 	const kinds = row.events.map((e) => e.Kind);
 	const bad = row.events.find((e) => isProblem(e.Kind) && !fineCheck(e))?.Kind;
 	// Low space and a check's warning stay under the Filter's Failed but never take the fail tone.
-	if (bad && row.steps.length === 0 && (bad === 'free_space_low' || (bad === 'health_broken' && row.head.Data?.state === 'warning'))) return { label: 'Failed', icon: 'alert', failed: false };
-	if (bad || row.steps.some((s) => s.state === 'failed')) return { label: bad === 'needs_decision' ? 'Needs you' : 'Failed', icon: bad === 'needs_decision' ? 'alert' : 'x', failed: true };
+	if (bad && row.steps.length === 0 && (bad === 'free_space_low' || (bad === 'health_broken' && row.head.Data?.state === 'warning'))) return { label: W('Failed'), icon: 'alert', failed: false };
+	if (bad || row.steps.some((s) => s.state === 'failed')) return { label: bad === 'needs_decision' ? W('Needs you') : W('Failed'), icon: bad === 'needs_decision' ? 'alert' : 'x', failed: true };
 	const pick = row.steps.length ? (kinds.includes('file_replaced') ? 'file_replaced' : kinds.find((k) => /^import_/.test(k)) ?? kinds.find((k) => /^download_(finished|seeding)$/.test(k)) ?? row.head.Kind) : row.head.Kind;
 	const hit = kindStep.find(([re]) => re.test(pick));
-	return hit ? { ...hit[1], failed: false } : { label: fallback || 'Changed', icon: 'info', failed: false };
+	return hit ? { ...hit[1], failed: false } : { label: fallback || W('Changed'), icon: 'info', failed: false };
 }
 /** The extra piece after a row's step: who for asks and adds, quality when chosen or sent, size when imported, old → new quality when upgraded, language for subtitles, otherwise the reason. */
 export function rowExtra(row: HistoryRow, step: RowStep, who: (e: EventRecord) => string = () => '', line = ''): string {
@@ -259,21 +272,24 @@ export function filterStep(kind: string): { key: string; label: string } | undef
 }
 
 /** Row words that only repeat the Filter's mark ("Subtitles" under Subtitled); a row never shows them twice. */
-export const sameWords = new Set(['Chosen', 'Subtitles', 'In media server', 'Reported problems']);
+export const sameWords = { has: (w: string) => ['Chosen', 'Subtitles', 'In media server', 'Reported problems'].some((x) => W(x) === w) };
 /** Row words the Filter calls by another name (merged steps). */
-const filterWord: Record<string, string> = { 'Out now': 'Added', Chosen: 'Sent', Subtitles: 'Subtitled', 'In media server': 'Imported', 'Reported problems': 'Reported' };
+const filterWordOf = (w: string): string | undefined => ({ 'Out now': 'Added', Chosen: 'Sent', Subtitles: 'Subtitled', 'In media server': 'Imported', 'Reported problems': 'Reported' } as Record<string, string>)[['Out now', 'Chosen', 'Subtitles', 'In media server', 'Reported problems'].find((x) => W(x) === w) ?? ''] ? W(({ 'Out now': 'Added', Chosen: 'Sent', Subtitles: 'Subtitled', 'In media server': 'Imported', 'Reported problems': 'Reported' } as Record<string, string>)[['Out now', 'Chosen', 'Subtitles', 'In media server', 'Reported problems'].find((x) => W(x) === w) ?? '']) : undefined;
 /** A row's step mark in the Filter's words: its furthest step, Failed when any step failed, renamed where the Filter merged it ("Out now" is Added). */
 export function filterVerb(row: HistoryRow, tag: Verb): Verb {
 	const v = stepVerb(row, tag);
 	if (v.tone === 'fail') return v;
-	const word = filterWord[v.word] ?? v.word;
+	const word = filterWordOf(v.word) ?? v.word;
 	if (searchSteps.some((st) => st.label === word)) return { ...v, word };
 	// A row word the Filter has no step for ("Fixed" on a report) takes the step its Event belongs to, unless it is a failure.
 	const st = filterStep(row.head.Kind);
 	return { ...v, word: st && st.key !== 'failed' ? st.label : word };
 }
 /** A failure's short words when it kept no reason. */
-const failedWords: Record<string, string> = { download_vanished: 'Download disappeared', file_hold_failed: 'Could not set a file aside' };
+const failedWords: Record<string, string> = {
+	get download_vanished() { return say('downloads.hs.disappeared'); },
+	get file_hold_failed() { return say('downloads.hl.holdFailed'); }
+};
 function extraOf(row: HistoryRow, step: RowStep, who: (e: EventRecord) => string): string {
 	if (step.failed) {
 		for (const e of row.events) {
@@ -285,32 +301,32 @@ function extraOf(row: HistoryRow, step: RowStep, who: (e: EventRecord) => string
 		}
 		const at = row.steps.find((x) => x.state === 'failed')?.key;
 		if (row.head.Kind === 'file_missing') return missingLine(row.head);
-		return failedWords[row.head.Kind] ?? (at === 'imported' || /^import_(failed|rejected)$/.test(row.head.Kind) ? 'Nothing could be placed' : at ? 'Download failed' : '');
+		return failedWords[row.head.Kind] ?? (at === 'imported' || /^import_(failed|rejected)$/.test(row.head.Kind) ? say('downloads.hl.nothingPlaced') : at ? say('downloads.hl.dlFailed') : '');
 	}
 	switch (step.label) {
-		case 'Asked': {
+		case W('Asked'): {
 			const d = row.head.Data ?? {};
 			return [who(row.head), cap(str(d.albums) || str(d.seasons))].filter(Boolean).join(' · ');
 		}
-		case 'Approved':
-		case 'Turned down':
-		case 'Added': return who(row.head);
-		case 'Chosen':
-		case 'Sent': return qualityOf(row);
-		case 'Upgraded': {
+		case W('Approved'):
+		case W('Turned down'):
+		case W('Added'): return who(row.head);
+		case W('Chosen'):
+		case W('Sent'): return qualityOf(row);
+		case W('Upgraded'): {
 			const was = first(row, (d) => str(d.old_quality));
 			const now = first(row, (d) => str(d.new_quality));
 			return was && now ? `${was} → ${now}` : qualityOf(row);
 		}
 		// Found on disk keeps no size; show what was found instead ("45 tracks · 4 albums").
-		case 'Imported': {
+		case W('Imported'): {
 			if (sizeText(row)) return sizeText(row);
 			const d = row.head.Data ?? {};
 			const files = num(d.files), albums = num(d.albums);
-			return row.head.Kind === 'adopted' && files ? [`${files} ${albums ? (files === 1 ? 'track' : 'tracks') : files === 1 ? 'file' : 'files'}`, albums && `${albums} ${albums === 1 ? 'album' : 'albums'}`].filter(Boolean).join(' · ') : '';
+			return row.head.Kind === 'adopted' && files ? [say(`downloads.hl.pl.${albums ? 'track' : 'file'}.${files === 1 ? 'one' : 'other'}`, { count: files }), albums && say(`downloads.hl.pl.album.${albums === 1 ? 'one' : 'other'}`, { count: albums })].filter(Boolean).join(' · ') : '';
 		}
-		case 'Subtitles': return first(row, (d) => str(d.language));
-		case 'Reported': return row.head.Kind === 'report_reopened' ? 'Opened again' : '';
+		case W('Subtitles'): return first(row, (d) => str(d.language));
+		case W('Reported'): return row.head.Kind === 'report_reopened' ? say('downloads.hp.openedAgain') : '';
 	}
 	return '';
 }
@@ -318,13 +334,13 @@ function extraOf(row: HistoryRow, step: RowStep, who: (e: EventRecord) => string
 export function agoShort(at: string, now = new Date()): string {
 	const t = new Date(at);
 	const s = Math.max(0, (now.getTime() - t.getTime()) / 1000);
-	if (s < 60) return 'now';
-	if (s < 3600) return `${Math.floor(s / 60)}m`;
+	if (s < 60) return say('alerts.time.now');
+	if (s < 3600) return say('alerts.time.minutes', { n: Math.floor(s / 60) });
 	const y = new Date(now);
 	y.setDate(y.getDate() - 1);
-	if (t.toDateString() === now.toDateString()) return `${Math.floor(s / 3600)}h`;
-	if (t.toDateString() === y.toDateString()) return 'Yesterday';
-	return t.toLocaleDateString('en-US', { month: 'short', day: 'numeric', ...(t.getFullYear() !== now.getFullYear() ? { year: 'numeric' } : {}) });
+	if (t.toDateString() === now.toDateString()) return say('alerts.time.hours', { n: Math.floor(s / 3600) });
+	if (t.toDateString() === y.toDateString()) return say('downloads.day.yesterday');
+	return t.toLocaleDateString(appLocale('en-US'), { month: 'short', day: 'numeric', ...(t.getFullYear() !== now.getFullYear() ? { year: 'numeric' } : {}) });
 }
 
 const routineKinds = new Set(tabKinds('routine') ?? []);
@@ -378,14 +394,14 @@ export function rowLinks(row: HistoryRow, titleHref?: string): GoLink[] {
 	if (decide) {
 		const slot = decide.SlotID ?? 0;
 		const id = decide.DownloadID ?? (typeof decide.Data?.download_id === 'number' ? decide.Data.download_id : 0);
-		out.push({ key: 'plan', label: 'Import plan', href: slot ? `/downloads?slot=${slot}` : id ? `/downloads?open=${id}` : '/downloads' });
+		out.push({ key: 'plan', get label() { return W('Import plan'); }, href: slot ? `/downloads?slot=${slot}` : id ? `/downloads?open=${id}` : '/downloads' });
 	}
-	if (titleHref) out.push({ key: 'title', label: 'Title page', href: titleHref });
+	if (titleHref) out.push({ key: 'title', get label() { return W('Title page'); }, href: titleHref });
 	const dl = row.events.map((e) => e.DownloadID ?? (typeof e.Data?.download_id === 'number' ? e.Data.download_id : null)).find((v) => v != null);
 	// Only rows about a release or a download lead to Downloads; a sign-in does not.
-	if (dl != null || row.events.some((e) => findKind.test(e.Kind))) out.push({ key: 'downloads', label: 'Downloads', href: dl ? `/downloads?open=${dl}` : '/downloads' });
+	if (dl != null || row.events.some((e) => findKind.test(e.Kind))) out.push({ key: 'downloads', get label() { return W('Downloads'); }, href: dl ? `/downloads?open=${dl}` : '/downloads' });
 	const ask = row.events.map((e) => (typeof e.Data?.ask_id === 'number' ? e.Data.ask_id : null)).find((v) => v != null);
-	if (row.events.some((e) => /^(ai_)?ask_/.test(e.Kind))) out.push({ key: 'requests', label: 'Requests', href: ask ? `/requests?ask=${ask}` : '/requests' });
-	if (row.events.some((e) => /^report_/.test(e.Kind))) out.push({ key: 'reports', label: 'Problems', href: '/requests/reports?show=all' });
+	if (row.events.some((e) => /^(ai_)?ask_/.test(e.Kind))) out.push({ key: 'requests', get label() { return W('Requests'); }, href: ask ? `/requests?ask=${ask}` : '/requests' });
+	if (row.events.some((e) => /^report_/.test(e.Kind))) out.push({ key: 'reports', get label() { return W('Problems'); }, href: '/requests/reports?show=all' });
 	return out;
 }

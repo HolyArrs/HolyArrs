@@ -1,0 +1,16 @@
+{
+	"settings.danger.stopping": "HolyArrs зупиняється.",
+	"settings.danger.couldnt": "Не вдалося виконати: {action}",
+	"settings.danger.title": "Небезпечна зона",
+	"settings.danger.ownerOnly": "Лише власник і адміни",
+	"settings.danger.ask": "{label}?",
+	"settings.danger.yes": "Так: {action}",
+	"settings.danger.cancel": "Скасувати",
+	"settings.danger.expires": "Діє 60 с",
+	"settings.danger.wholeApp": "Увесь застосунок",
+	"settings.danger.intro": "Це зупиняє HolyArrs. Політика перезапуску Docker запустить його знову за кілька секунд, якщо тільки політика не <code>no</code>; тоді запусти контейнер сам. Кожна дія спершу питає підтвердження.",
+	"settings.danger.restart": "Перезапустити HolyArrs",
+	"settings.danger.safe": "Перезапустити в безпечному режимі",
+	"settings.danger.shutdown": "Вимкнути",
+	"settings.danger.safeNote": "Запускається один раз лише з входом, налаштуваннями й бібліотекою. Використовуй, коли розділ блокує запуск."
+}

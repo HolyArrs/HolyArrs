@@ -1,4 +1,5 @@
 // The Confirm match list: torrents in a Downloader that HolyArrs did not send and could not match to a title for sure. Pure helpers.
+import { t } from '#lib/core/i18n/i18n.svelte.ts';
 
 export interface MatchCandidate {
 	id: string;
@@ -28,11 +29,11 @@ export interface Matches {
 /** The Downloads banner line; '' when nothing waits. */
 export function bannerWords(n: number): string {
 	if (n <= 0) return '';
-	return n === 1 ? '1 torrent needs a match' : `${n} torrents need a match`;
+	return n === 1 ? t('downloads.match.one') : t('downloads.match.many', { n });
 }
 
 /** A choice's small line: kind and year. */
 export function candidateLine(c: Pick<MatchCandidate, 'kind' | 'year'>): string {
-	const k = c.kind === 'show' ? 'TV show' : 'Movie';
+	const k = c.kind === 'show' ? t('downloads.kind.show') : t('downloads.kind.movie');
 	return c.year ? `${k} · ${c.year}` : k;
 }

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t, appLocale } from '#lib/core/i18n/i18n.svelte.ts';
 	// Review shelf for a title: score summary, source pills, sort pills and review cards.
 	import Shelf from './Shelf.svelte';
 	import Sheet from './Sheet.svelte';
@@ -82,34 +83,34 @@
 
 {#snippet who(r: Review)}
 	<div class="who">
-		<span class="av" style="--h: {hue(r.author || 'Someone')}" aria-hidden="true">{initial(r.author || 'Someone')}</span>
-		<span class="id"><b>{r.author || 'Someone'}</b>{#if r.date}<span class="muted">{date(r.date)}</span>{/if}</span>
-		{#if r.rating}<span class="their" title="Their score out of 10"><span aria-hidden="true">★</span> {r.rating}</span>{/if}
+		<span class="av" style="--h: {hue(r.author || t('ui.titleReviews.someone'))}" aria-hidden="true">{initial(r.author || t('ui.titleReviews.someone'))}</span>
+		<span class="id"><b>{r.author || t('ui.titleReviews.someone')}</b>{#if r.date}<span class="muted">{date(r.date)}</span>{/if}</span>
+		{#if r.rating}<span class="their" title={t('ui.titleReviews.theirScoreOutOf')}><span aria-hidden="true">★</span> {r.rating}</span>{/if}
 	</div>
 {/snippet}
 
 {#if answer && (hasContent || (seenContent && ps.pills.length > 1))}
 	<div class="rv" data-testid="title-reviews">
-		<Shelf title="Ratings & reviews" anchor="title-reviews" item="340px" whole>
+		<Shelf title={t('ui.titleReviews.ratingsReviews')} anchor="title-reviews" item="340px" whole>
 			{#snippet tools()}
 				<div class="rbar">
 					<p class="sum" data-testid="review-score">
 						{#if answer && shownScore(answer.score, answer.votes) !== undefined}
 							<span class="star" aria-hidden="true">★</span><b>{scoreText(answer.score)}</b><span class="of">/10</span>
-							<span class="muted">{votesText(answer.votes)}{typeof answer.watching === 'number' ? ` · ${answer.watching.toLocaleString()} watching now` : ''}</span>
+							<span class="muted">{votesText(answer.votes)}{typeof answer.watching === 'number' ? ` · ${t('ui.titleReviews.watchingNow', { count: answer.watching.toLocaleString(appLocale()) })}` : ''}</span>
 						{:else}
-							<span class="muted">{hasContent ? 'No score yet.' : 'Nothing here yet.'}</span>
+							<span class="muted">{hasContent ? t('ui.titleReviews.noScoreYet') : t('ui.titleReviews.nothingHereYet')}</span>
 						{/if}
 					</p>
 					{#if ps.pills.length > 1}
-						<div class="pills" role="group" aria-label="Review source">
+						<div class="pills" role="group" aria-label={t('ui.titleReviews.reviewSource')}>
 							{#each ps.pills as p (p.id)}
 								<button type="button" class="pill" aria-pressed={p.id === ps.active} onclick={() => choose(p.id)}>{p.name}</button>
 							{/each}
 						</div>
 					{/if}
 					{#if !answer?.reviews_hidden && orders.length > 1 && reviews.length}
-						<div class="pills" role="group" aria-label="Sort reviews">
+						<div class="pills" role="group" aria-label={t('ui.titleReviews.sortReviews')}>
 							{#each orders as o (o)}
 								<button type="button" class="pill" aria-pressed={o === order} onclick={() => (order = o)}>{orderWord(o)}</button>
 							{/each}
@@ -122,28 +123,28 @@
 					<article class="rcard review">
 						{@render who(r)}
 						{#if r.spoiler}
-							<p class="text spoiler" aria-label="Has spoilers">{r.text}</p>
-							<p class="muted warn">Has spoilers.</p>
+							<p class="text spoiler" aria-label={t('ui.titleReviews.hasSpoilers')}>{r.text}</p>
+							<p class="muted warn">{t('ui.titleReviews.hasSpoilers2')}</p>
 						{:else}
 							<p class="text">{r.text}</p>
 						{/if}
 						<div class="foot">
-							{#if r.likes}<span class="muted">{r.likes.toLocaleString()} likes</span>{/if}
-							{#if r.spoiler || long(r)}<button type="button" class="more" aria-haspopup="dialog" onclick={() => read(r)}>{r.spoiler ? 'Show it' : 'More'}<span class="sr-only"> from {r.author || 'Someone'}</span></button>{/if}
+							{#if r.likes}<span class="muted">{t('ui.titleReviews.likes', { v: r.likes.toLocaleString(appLocale()) })}</span>{/if}
+							{#if r.spoiler || long(r)}<button type="button" class="more" aria-haspopup="dialog" onclick={() => read(r)}>{r.spoiler ? t('ui.titleReviews.showIt') : t('ui.titleReviews.more')}<span class="sr-only"> {t('ui.titleReviews.fromAuthor', { author: r.author || t('ui.titleReviews.someone') })}</span></button>{/if}
 						</div>
 					</article>
 				{/each}
 				{#if moreToRead}
 					<button type="button" class="rcard next" disabled={loading} aria-busy={loading} onclick={() => answer && load(answer.page + 1)}>
-						<span class="plus" aria-hidden="true">+</span>More reviews
+						<span class="plus" aria-hidden="true">+</span>{t('ui.titleReviews.moreReviews')}
 					</button>
 				{/if}
 			{/if}
 		</Shelf>
-		{#if seenContent && !hasContent && !loading}<p class="muted">No written reviews here yet.</p>{/if}
-		{#if failed}<p class="muted">Reviews could not be loaded; try again shortly.</p>{/if}
+		{#if seenContent && !hasContent && !loading}<p class="muted">{t('ui.titleReviews.noWrittenReviewsHere')}</p>{/if}
+		{#if failed}<p class="muted">{t('ui.titleReviews.reviewsCouldNotBe')}</p>{/if}
 	</div>
-	<Sheet bind:open={sheet} title={reading ? `Review by ${reading.author || 'Someone'}` : 'Review'} size="md">
+	<Sheet bind:open={sheet} title={reading ? t('ui.titleReviews.reviewBy', { author: reading.author || t('ui.titleReviews.someone') }) : t('ui.titleReviews.review')} size="md">
 		{#if reading}
 			<div class="full">
 				{@render who(reading)}

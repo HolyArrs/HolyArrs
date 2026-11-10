@@ -1,4 +1,5 @@
 // Live job feed for the Jobs tab: active jobs, recent runs and a one second clock, shared by the views.
+import { t as say } from '#lib/core/i18n/i18n.svelte.ts';
 import { api } from '../core/api.ts';
 import { live } from '../core/live.svelte.ts';
 import type { ActiveJob } from './types.ts';
@@ -37,9 +38,9 @@ export function clock(ms: number): string {
 // Matches the wording used elsewhere on the page.
 export function wait(ms: number): string {
 	const m = Math.round(Math.max(0, ms) / 60000);
-	if (m < 1) return 'under 1 min';
-	if (m >= 60) return `${Math.floor(m / 60)} h${m % 60 ? ` ${m % 60} min` : ''}`;
-	return `${m} min`;
+	if (m < 1) return say('health.wait.under');
+	if (m >= 60) return m % 60 ? say('health.wait.hourMin', { h: Math.floor(m / 60), m: m % 60 }) : say('health.wait.hour', { h: Math.floor(m / 60) });
+	return say('health.wait.min', { m });
 }
 
 // Empty for rows that are not jobs.
@@ -84,12 +85,12 @@ export class LiveJobs {
 	// Newest first.
 	finished = $derived(this.history.filter((j) => j.EndedAt && j.State !== 'running' && j.State !== 'queued').sort((a, b) => t(b.EndedAt) - t(a.EndedAt)));
 	log = $derived.by((): LogEntry[] => {
-		const now: LogEntry[] = this.running.map((j) => ({ key: `r${j.id}`, at: t(j.started_at ?? j.queued_at), name: j.label, text: j.note || 'Working', tone: 'info' }));
+		const now: LogEntry[] = this.running.map((j) => ({ key: `r${j.id}`, at: t(j.started_at ?? j.queued_at), name: j.label, text: j.note || say('health.live.working'), tone: 'info' }));
 		const past: LogEntry[] = this.finished.slice(0, 12).map((j) => ({
 			key: `h${j.ID}`,
 			at: t(j.EndedAt),
 			name: this.nameOf(j.Kind),
-			text: j.State === 'done' ? 'OK' : j.State === 'failed' ? 'Failed' : j.State === 'cancelled' ? 'Cancelled' : j.State,
+			text: j.State === 'done' ? say('health.result.ok') : j.State === 'failed' ? say('health.result.failed') : j.State === 'cancelled' ? say('health.result.cancelled') : j.State,
 			tone: j.State === 'done' ? 'ok' : j.State === 'failed' ? 'fail' : 'idle'
 		}));
 		return [...now, ...past];

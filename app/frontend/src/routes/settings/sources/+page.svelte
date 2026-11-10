@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import Field from '#lib/ui/Field.svelte';
 	import TagInput from '#lib/ui/TagInput.svelte';
@@ -70,7 +71,7 @@
 		try {
 			const body = formBody(form);
 			const saved = isNew ? await api.post<SourceView>('/sources', body) : await api.put<SourceView>(`/sources/${editing!.id}`, body);
-			toasts.push(`${saved.name} saved`, 'ok');
+			toasts.push(t('settings.sources.saved', { name: saved.name }), 'ok');
 			forgetTags();
 			editing = null;
 			await load();
@@ -100,135 +101,135 @@
 			await api.post(`/sources/${s.id}/${paused ? 'pause' : 'resume'}`);
 			await load();
 		} catch (err) {
-			toasts.push(`Couldn't ${paused ? 'pause' : 'resume'} Source`, 'fail', { body: message(err) });
+			toasts.push(paused ? t('settings.sources.couldntPause') : t('settings.sources.couldntResume'), 'fail', { body: message(err) });
 		}
 	}
 
 	async function remove(s: SourceView) {
-		if (!confirm(`Remove ${s.name}? Its Releases and history go too.`)) return;
+		if (!confirm(t('settings.sources.confirmRemove', { name: s.name }))) return;
 		try {
 			await api.del(`/sources/${s.id}`);
 			await load();
 		} catch (err) {
-			toasts.push("Couldn't remove Source", 'fail', { body: message(err) });
+			toasts.push(t('settings.sources.removeFailed'), 'fail', { body: message(err) });
 		}
 	}
 
 	function until(h: SourceHealth): string {
-		const t = pausedUntil(h);
-		return t ? ` ${t}.` : '';
+		const when = pausedUntil(h);
+		return when ? ` ${when}.` : '';
 	}
 </script>
 
-<svelte:head><title>Sources · HolyArrs</title></svelte:head>
+<svelte:head><title>{t('settings.sources.title')} · HolyArrs</title></svelte:head>
 
-<PageHeader title="Sources">
+<PageHeader title={t('settings.sources.title')}>
 	{#snippet actions()}
-		{#if !editing && sources.length}<Button icon="plus" variant="primary" type="button" onclick={startAdd}>Add a Source</Button>{/if}
+		{#if !editing && sources.length}<Button icon="plus" variant="primary" type="button" onclick={startAdd}>{t('settings.sources.add')}</Button>{/if}
 	{/snippet}
 </PageHeader>
 
 <p class="small muted lead">
-	Priority 1 goes first. A Source that fails is skipped for up to six hours. For sites without a feed, add Jackett or Prowlarr as a Torznab feed.
+	{t('settings.sources.lead')}
 </p>
 
 {#if editing}
-	<form class="sc-form" onsubmit={save} aria-label={isNew ? 'Add a Source' : `Change ${editing.name}`}>
-		<SettingsCard title={isNew ? 'Add a Source' : `Change ${editing.name}`}>
-			<Field id="so-name" label="Name" style="margin-top: var(--s-4)">
+	<form class="sc-form" onsubmit={save} aria-label={isNew ? t('settings.sources.add') : t('settings.sources.change', { name: editing.name })}>
+		<SettingsCard title={isNew ? t('settings.sources.add') : t('settings.sources.change', { name: editing.name })}>
+			<Field id="so-name" label={t('settings.sources.name')} style="margin-top: var(--s-4)">
 				<input id="so-name" class="input" bind:value={form.name} maxlength="80" required />
 			</Field>
 			<div class="two">
-				<Field id="so-format" label="Kind of feed">
+				<Field id="so-format" label={t('settings.sources.feedKind')}>
 					<select id="so-format" class="input" bind:value={form.format}>
-						<option value="torznab">Torznab (torrents, Jackett, Prowlarr)</option>
-						<option value="newznab">Newznab (Usenet)</option>
-						<option value="rss">RSS (newest only)</option>
+						<option value="torznab">{t('settings.sources.torznab')}</option>
+						<option value="newznab">{t('settings.sources.newznab')}</option>
+						<option value="rss">{t('settings.sources.rss')}</option>
 					</select>
 				</Field>
-				<Field id="so-proto" label="Downloads">
+				<Field id="so-proto" label={t('settings.sources.downloads')}>
 					<select id="so-proto" class="input" bind:value={form.protocol}>
-						<option value="torrent">Torrents</option>
-						<option value="usenet">Usenet</option>
+						<option value="torrent">{t('settings.sources.torrents')}</option>
+						<option value="usenet">{t('settings.sources.usenet')}</option>
 					</select>
 				</Field>
 			</div>
-			<Field id="so-url" label="Address">
+			<Field id="so-url" label={t('settings.sources.address')}>
 				<input id="so-url" class="input mono" bind:value={form.url} autocomplete="off" spellcheck="false" required placeholder={form.format === 'rss' ? 'https://example.org/rss?passkey=…' : 'https://example.org/api'} />
 				<span class="hint">
-					{#if form.format === 'rss'}Anything after the ? (such as a passkey) is kept encrypted and shown masked.{:else}The feed address, with or without /api.{/if}
+					{#if form.format === 'rss'}{t('settings.sources.addressRss')}{:else}{t('settings.sources.addressFeed')}{/if}
 				</span>
 			</Field>
 			{#if form.format !== 'rss'}
-				<Field id="so-key" label="API key" hint="Retype it if the address moves host">
+				<Field id="so-key" label={t('settings.sources.apiKeyLabel')} hint={t('settings.sources.apiKeyHint')}>
 					<input id="so-key" class="input mono" type="password" bind:value={form.api_key} autocomplete="new-password" spellcheck="false" />
 				</Field>
 			{/if}
 			<fieldset class="group">
-				<legend class="label">Use it for</legend>
-				<label class="checkline"><input type="checkbox" bind:checked={form.feed} /><span><b>Newest list</b></span></label>
+				<legend class="label">{t('settings.sources.useFor')}</legend>
+				<label class="checkline"><input type="checkbox" bind:checked={form.feed} /><span><b>{t('settings.sources.newest')}</b></span></label>
 				{#if form.format !== 'rss'}
-					<label class="checkline"><input type="checkbox" bind:checked={form.auto_search} /><span><b>Automatic searches</b></span></label>
-					<label class="checkline"><input type="checkbox" bind:checked={form.hand_search} /><span><b>Choose a release</b></span></label>
+					<label class="checkline"><input type="checkbox" bind:checked={form.auto_search} /><span><b>{t('settings.sources.auto')}</b></span></label>
+					<label class="checkline"><input type="checkbox" bind:checked={form.hand_search} /><span><b>{t('settings.sources.hand')}</b></span></label>
 				{/if}
 			</fieldset>
 			<fieldset class="group">
-				<legend class="label">Media</legend>
-				{#each [['movie', 'Movies'], ['tv', 'TV shows'], ['music', 'Music']] as [k, label] (k)}
+				<legend class="label">{t('settings.sources.media')}</legend>
+				{#each [['movie', t('settings.sources.movies')], ['tv', t('settings.sources.tvShows')], ['music', t('settings.sources.music')]] as [k, label] (k)}
 					<label class="checkline"><input type="checkbox" checked={form.kinds.includes(k)} onchange={(e) => toggleKind(k, e.currentTarget.checked)} /><span>{label}</span></label>
 				{/each}
 			</fieldset>
 			<div class="two">
-				<Field id="so-prio" label="Priority" hint="1–50, lowest first and wins ties">
+				<Field id="so-prio" label={t('settings.sources.priority')} hint={t('settings.sources.priorityHint')}>
 					<input id="so-prio" class="input" type="number" min="1" max="50" bind:value={form.priority} />
 				</Field>
 				{#if form.protocol === 'torrent'}
-					<Field id="so-seed" label="Fewest seeders">
+					<Field id="so-seed" label={t('settings.sources.seeders')}>
 						<input id="so-seed" class="input" type="number" min="0" bind:value={form.min_seeders} />
 					</Field>
 				{/if}
 			</div>
-			<Field id="so-tags" label="Tags" hint="Only titles with a matching tag use it">
+			<Field id="so-tags" label={t('settings.sources.tags')} hint={t('settings.sources.tagsHint')}>
 				<TagInput id="so-tags" bind:value={form.tags} describedby="so-tags-hint" testid="so-tags" />
 			</Field>
 			<details class="more">
-				<summary>Limits</summary>
+				<summary>{t('settings.sources.limits')}</summary>
 				<div class="two">
-					<Field id="so-cap" label="Most searches per window" hint="0 for no limit">
+					<Field id="so-cap" label={t('settings.sources.cap')} hint={t('settings.sources.capHint')}>
 						<input id="so-cap" class="input" type="number" min="0" bind:value={form.searches_per_window} />
 					</Field>
-					<Field id="so-win" label="Window (hours)">
+					<Field id="so-win" label={t('settings.sources.window')}>
 						<input id="so-win" class="input" type="number" min="0" step="0.5" bind:value={form.window_hours} />
 					</Field>
-					<Field id="so-gap" label="Least time between calls (ms)">
+					<Field id="so-gap" label={t('settings.sources.gap')}>
 						<input id="so-gap" class="input" type="number" min="0" bind:value={form.gap_ms} />
 					</Field>
-					<Field id="so-timeout" label="Give up after (seconds)">
+					<Field id="so-timeout" label={t('settings.sources.timeout')}>
 						<input id="so-timeout" class="input" type="number" min="1" max="300" bind:value={form.timeout_s} />
 					</Field>
 				</div>
 			</details>
 			<details class="more" open={!!form.proxy}>
-				<summary>Proxy</summary>
-				<Field id="so-proxy" label="Proxy address">
-					<input id="so-proxy" class="input mono" bind:value={form.proxy} autocomplete="off" spellcheck="false" placeholder="socks5://name@host:1080 or http://host:3128" />
+				<summary>{t('settings.sources.proxy')}</summary>
+				<Field id="so-proxy" label={t('settings.sources.proxyAddress')}>
+					<input id="so-proxy" class="input mono" bind:value={form.proxy} autocomplete="off" spellcheck="false" placeholder={t('settings.sources.proxyExample')} />
 				</Field>
-				<Field id="so-proxy-pw" label="Proxy password">
+				<Field id="so-proxy-pw" label={t('settings.sources.proxyPass')}>
 					<input id="so-proxy-pw" class="input" type="password" bind:value={form.proxy_password} autocomplete="new-password" />
 				</Field>
 				<label class="checkline">
 					<input type="checkbox" bind:checked={form.proxy_allow_local_network} />
-					<span><b>Proxy may be on the local network</b></span>
+					<span><b>{t('settings.sources.proxyLocal')}</b></span>
 				</label>
 			</details>
 			<label class="checkline">
 				<input type="checkbox" bind:checked={form.allow_local_network} />
-				<span><b>Reach the local network</b><br /><span class="hint">For Jackett or Prowlarr at home</span></span>
+				<span><b>{t('settings.sources.local')}</b><br /><span class="hint">{t('settings.sources.localHint')}</span></span>
 			</label>
 			{#if formError}<p class="form-error" role="alert">{formError}</p>{/if}
 			<div class="row" style="margin-top: var(--s-5)">
-				<Button variant="primary" type="submit" disabled={busy || !form.name.trim() || !form.url.trim()} aria-busy={busy}>Save</Button>
-				<Button variant="plain" type="button" onclick={() => (editing = null)}>Cancel</Button>
+				<Button variant="primary" type="submit" disabled={busy || !form.name.trim() || !form.url.trim()} aria-busy={busy}>{t('settings.sources.save')}</Button>
+				<Button variant="plain" type="button" onclick={() => (editing = null)}>{t('settings.sources.cancel')}</Button>
 			</div>
 		</SettingsCard>
 	</form>
@@ -241,46 +242,46 @@
 {:else if sources.length === 0 && !editing}
 	<EmptyState
 		icon="source"
-		title="No Sources"
-		text="Add a Torznab or Newznab feed, or Jackett or Prowlarr."
-		action={{ label: 'Add a Source', onclick: startAdd, icon: 'plus' }}
+		title={t('settings.sources.none')}
+		text={t('settings.sources.noneText')}
+		action={{ label: t('settings.sources.add'), onclick: startAdd, icon: 'plus' }}
 	/>
 	<ConnectBridge onchange={load} />
 {:else}
 	{#if error}<LoadError hasData message={error} onretry={load} />{/if}
 	<ul class="fl">
 		{#each sources as s (s.id)}
-			<li class="dl" data-testid="source" title="{s.url} · priority {s.priority} · {uses(s)}">
+			<li class="dl" data-testid="source" title={t('settings.sources.rowTitle', { url: s.url, priority: s.priority, uses: uses(s) })}>
 				<div class="main">
 					<span class="ic"><Icon name="source" size={20} /></span>
 					<div class="grow">
 						<div class="top"><a class="name" href={to(`/settings/sources/${s.id}`)}>{s.name}</a></div>
 						<div class="sub">{s.format === 'rss' ? 'RSS' : words(s.format)} · {words(s.protocol)}</div>
 						<div class="sr-only">{s.url}{#if s.format === 'rss' && s.api_key}?{s.api_key}{/if} · 
-							Priority {s.priority} · {uses(s)}
-							{#if s.api_key && s.format !== 'rss'} · key {s.api_key}{/if}
-							{#if s.proxy} · through {s.proxy}{/if}
-							{#if s.allow_local_network} · may reach the local network{/if}
-							{#if s.tags?.length} · <span data-testid="source-tags">tags {s.tags.join(', ')}</span>{/if}
+							{t('settings.sources.priorityUses', { priority: s.priority, uses: uses(s) })}
+							{#if s.api_key && s.format !== 'rss'} · {t('settings.sources.keyIs', { key: s.api_key })}{/if}
+							{#if s.proxy} · {t('settings.sources.through', { proxy: s.proxy })}{/if}
+							{#if s.allow_local_network} · {t('settings.sources.mayReach')}{/if}
+							{#if s.tags?.length} · <span data-testid="source-tags">{t('settings.sources.tagsList', { tags: s.tags.join(', ') })}</span>{/if}
 						</div>
 					</div>
-					{#if s.summary.calls_24h > 0}<div class="num" title="Last answer {s.summary.last_success ? ago(s.summary.last_success) : 'never'} · {s.summary.failures_24h} of {s.summary.calls_24h} calls failed today"><b>{ms(s.summary.avg_ms_24h)}</b><small>avg</small></div>{/if}
+					{#if s.summary.calls_24h > 0}<div class="num" title={t('settings.sources.lastAnswer', { ago: s.summary.last_success ? ago(s.summary.last_success) : t('settings.sources.never'), failed: s.summary.failures_24h, calls: s.summary.calls_24h })}><b>{ms(s.summary.avg_ms_24h)}</b><small>{t('settings.sources.avg')}</small></div>{/if}
 					<span class="st {healthTone(s.health)}"><i></i><span data-testid="source-state">{healthWord(s.health)}</span></span>
 					<div class="acts">
-						<Button variant="plain" size="sm" type="button" disabled={testing === s.id} aria-busy={testing === s.id} onclick={() => test(s)}>Test</Button>
+						<Button variant="plain" size="sm" type="button" disabled={testing === s.id} aria-busy={testing === s.id} onclick={() => test(s)}>{t('settings.sources.test')}</Button>
 						{#if s.state === 'disabled'}
-							<Button variant="plain" size="sm" type="button" onclick={() => setPaused(s, false)}>Resume</Button>
+							<Button variant="plain" size="sm" type="button" onclick={() => setPaused(s, false)}>{t('settings.sources.resume')}</Button>
 						{:else}
-							<Button variant="plain" size="sm" type="button" onclick={() => setPaused(s, true)}>Pause</Button>
-							{#if s.state === 'paused'}<Button variant="plain" size="sm" type="button" disabled={testing === s.id} aria-busy={testing === s.id} onclick={() => test(s, 'try')} data-testid="source-try">Try now</Button>{/if}
+							<Button variant="plain" size="sm" type="button" onclick={() => setPaused(s, true)}>{t('settings.sources.pause')}</Button>
+							{#if s.state === 'paused'}<Button variant="plain" size="sm" type="button" disabled={testing === s.id} aria-busy={testing === s.id} onclick={() => test(s, 'try')} data-testid="source-try">{t('settings.sources.tryNow')}</Button>{/if}
 						{/if}
-						<Button variant="plain" size="sm" href={to(`/settings/sources/${s.id}`)}>Health</Button>
-						<Button variant="plain" size="sm" type="button" onclick={() => startChange(s)}>Change</Button>
-						<Button variant="plain" size="sm" type="button" onclick={() => remove(s)} aria-label="Remove {s.name}">Remove</Button>
+						<Button variant="plain" size="sm" href={to(`/settings/sources/${s.id}`)}>{t('settings.sources.health')}</Button>
+						<Button variant="plain" size="sm" type="button" onclick={() => startChange(s)}>{t('settings.sources.changeButton')}</Button>
+						<Button variant="plain" size="sm" type="button" onclick={() => remove(s)} aria-label={t('settings.sources.removeName', { name: s.name })}>{t('settings.sources.remove')}</Button>
 					</div>
 				</div>
 				<p class="note" class:bad-text={s.health.state !== 'working' && s.health.state !== 'disabled'} class:sr-only={s.health.state === 'working' || s.health.state === 'disabled' || s.state === 'paused'} data-testid="source-text">{s.health.text}{until(s.health)}</p>
-				{#if s.health.block === 'bot_check' || results[s.id]?.text.includes("site's bot check")}<p class="note"><a href="#connect-bridge" data-testid="source-bridge-link">Link Jackett or Prowlarr</a></p>{/if}
+				{#if s.health.block === 'bot_check' || results[s.id]?.text.includes("site's bot check")}<p class="note"><a href="#connect-bridge" data-testid="source-bridge-link">{t('settings.sources.bridge')}</a></p>{/if}
 				{#if results[s.id]}
 					<div class="testline note" data-testid="source-test"><TestTag ok={results[s.id].ok} text={results[s.id].text} hover={results[s.id].hover} extra={results[s.id].extra} />{#if !results[s.id].ok}<span class="small bad-text">{results[s.id].text}</span>{/if}</div>
 				{/if}

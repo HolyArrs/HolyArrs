@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import { dragScroll } from '#lib/ui/drag-scroll.ts';
 	import { Orbit, SkRail } from '#lib/ui/sk/index.ts';
 	import Shelf from '#lib/ui/Shelf.svelte';
@@ -75,13 +76,13 @@
 		try {
 			const r = await api.get<{ artists: LookupArtist[] }>(`/artists/lookup?term=${encodeURIComponent(`mbid:${c.artist_mbid}`)}`);
 			const a = r.artists?.find((x) => x.mbid === c.artist_mbid);
-			if (!a) return void toasts.push(`Couldn't find ${artist}`, 'fail', { body: 'Try Search' });
+			if (!a) return void toasts.push(t('music.couldnTFind', { name: artist }), 'fail', { body: t('music.trySearch') });
 			if (a.title_id && manage) addedHere = new Map([...addedHere, [a.mbid, a.title_id]]);
 			if (manage && !a.title_id) addArtist?.open(a);
-			else if (manage) toasts.push(`${a.name} already in Library`, 'ok', { body: 'Added on next refresh' });
+			else if (manage) toasts.push(t('music.alreadyInLibrary', { name: a.name }), 'ok', { body: t('music.addedOnNextRefresh') });
 			else askArtist?.open(a, c.mbid);
 		} catch (e) {
-			toasts.push("Couldn't add artist", 'fail', { body: message(e) });
+			toasts.push(t('music.couldnTAddArtist'), 'fail', { body: message(e) });
 		} finally {
 			busy = '';
 		}
@@ -96,18 +97,18 @@
 			else await api.del(path);
 		} catch (e) {
 			follows = new Map([...follows, [c.mbid, !on]]);
-			toasts.push("Couldn't update follow", 'fail', { body: message(e) });
+			toasts.push(t('music.couldnTUpdateFollow'), 'fail', { body: message(e) });
 		}
 	}
 
-	function added(_a: LookupArtist, t: TitleView) {
-		addedHere = new Map([...addedHere, [_a.mbid, t.id]]);
-		toasts.push(`${t.name} added`, 'ok', { body: 'Filling in albums and tracks' });
+	function added(_a: LookupArtist, title: TitleView) {
+		addedHere = new Map([...addedHere, [_a.mbid, title.id]]);
+		toasts.push(t('music.added', { what: title.name }), 'ok', { body: t('music.fillingInAlbumsAnd') });
 	}
 	function asked(_a: LookupArtist, r: { ask: Ask; joined: boolean }) {
-		if (r.ask.state === 'approved') toasts.push(`${r.ask.name} approved`, 'ok', { body: 'Kept up to date' });
-		else if (r.ask.state === 'asked' && r.joined) toasts.push(`${r.ask.name} already requested`, 'ok', { body: "You're on the request too" });
-		else toasts.push(`${r.ask.name} requested`, 'ok', { body: 'Waiting for approval' });
+		if (r.ask.state === 'approved') toasts.push(t('music.approved', { what: r.ask.name }), 'ok', { body: t('music.keptUpToDate') });
+		else if (r.ask.state === 'asked' && r.joined) toasts.push(t('music.alreadyRequested', { what: r.ask.name }), 'ok', { body: t('music.youReOnThe') });
+		else toasts.push(t('music.requested2', { what: r.ask.name }), 'ok', { body: t('music.waitingForApproval') });
 		void refreshInbox();
 	}
 
@@ -158,7 +159,7 @@
 			() => {}
 		);
 	});
-	const actLabel = (c: NewMusicCard) => (manage ? `Add ${c.artist || c.name}` : `Ask for ${c.name}`);
+	const actLabel = (c: NewMusicCard) => (manage ? t('music.add', { name: c.artist || c.name }) : t('music.askFor', { name: c.name }));
 </script>
 
 {#snippet albumCard(row: { type: string }, c: NewMusicCard)}
@@ -167,7 +168,7 @@
 		status={c.title_id && row.type === 'np_music_library' ? 'in_library' : undefined}>
 		{#snippet action()}
 			{#if c.upcoming}
-				<IconButton icon={c.following ? 'bellOn' : 'bell'} label={c.following ? `Following ${c.name}` : `Tell me when ${c.name} is out`} variant="glass" size="lg" aria-pressed={!!c.following} onclick={() => void follow(c)} />
+				<IconButton icon={c.following ? 'bellOn' : 'bell'} label={c.following ? t('music.following', { name: c.name }) : t('music.tellMeWhenIs', { name: c.name })} variant="glass" size="lg" aria-pressed={!!c.following} onclick={() => void follow(c)} />
 			{:else if canAct(c)}
 				<IconButton icon="plus" label={actLabel(c)} variant="glass" size="lg" aria-haspopup="dialog" aria-busy={busy === c.key || undefined} onclick={() => void quick(c)} />
 			{/if}
@@ -176,20 +177,20 @@
 {/snippet}
 
 {#if answer?.kid}
-	<EmptyState icon="music" title="Music is not shown on this account" text="Music has no age ratings, so it’s off for age-limited accounts." />
+	<EmptyState icon="music" title={t('music.musicIsNotShown')} text={t('music.musicHasNoAge')} />
 {:else if failed && !answer}
-	<EmptyState icon="music" title="Could not load new music" text="The music lists did not answer. Try again shortly." />
+	<EmptyState icon="music" title={t('music.couldNotLoadNew')} text={t('music.theMusicListsDid')} />
 {:else if !answer || (answer.building && !answer.rows.length)}
-	<div class="loading" aria-busy="true" aria-label="Loading new music">
+	<div class="loading" aria-busy="true" aria-label={t('music.loadingNewMusic')}>
 		<div class="hero-sk">{#each [0, 1, 2] as i (i)}<span class="sk"></span>{/each}</div>
-		{#if answer?.building}<Orbit status="New releases are being gathered. This takes a minute the first time." />{/if}
+		{#if answer?.building}<Orbit status={t('music.newReleasesAreBeing')} />{/if}
 		<SkRail kind="poster" count={9} titleWidth="160px" />
 	</div>
 {:else if !answer.rows.length && !answer.hero.length}
-	<EmptyState icon="music" title="No new music yet" text="New releases fill in within a few minutes." />
+	<EmptyState icon="music" title={t('music.noNewMusicYet')} text={t('music.newReleasesFillIn')} />
 {:else if all}
 	<section class="see-all" data-testid="new-music-all">
-		<button class="back" type="button" onclick={() => seeAll(null)}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 6 8.5 12l6 6" /></svg>New music</button>
+		<button class="back" type="button" onclick={() => seeAll(null)}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 6 8.5 12l6 6" /></svg>{t('music.newMusic')}</button>
 		<h2>{all.title}</h2>
 		<p class="sub">{all.reason}</p>
 		<ul class="grid">
@@ -202,13 +203,13 @@
 	<section class="music-new" data-testid="new-music">
 		{#if answer.hero.length}
 			<div class="hero-wrap">
-				<div class="hero" use:dragScroll bind:this={shelf} onscroll={edges} role="list" aria-label="This week's biggest new releases" data-testid="new-music-hero">
+				<div class="hero" use:dragScroll bind:this={shelf} onscroll={edges} role="list" aria-label={t('music.thisWeekSBiggest')} data-testid="new-music-hero">
 					{#each answer.hero as raw (raw.key)}
 						{@const c = live(raw)}
 						<article class="h-card" role="listitem">
 							<a class="h-link" href={musicCardHref(c)}>
 								<span class="eyebrow">{eyebrow(c)}</span>
-								<span class="h-title">{#if c.explicit}<span class="explicit" title="Explicit" aria-label="Explicit">E</span>{/if}{c.name}</span>
+								<span class="h-title">{#if c.explicit}<span class="explicit" title={t('music.explicit')} aria-label={t('music.explicit')}>E</span>{/if}{c.name}</span>
 								<span class="h-artist">{c.artist}</span>
 								<span class="art">
 									<img class="wide" src={musicImage({ image: c.artist_image || c.image })} alt="" loading="lazy" onerror={(e) => ((e.currentTarget as HTMLImageElement).style.visibility = 'hidden')} />
@@ -223,8 +224,8 @@
 						</article>
 					{/each}
 				</div>
-				<button class="paddle prev" class:show={!atStart} aria-label="Previous" tabindex={atStart ? -1 : 0} onclick={() => page(-1)}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 6 8.5 12l6 6" /></svg></button>
-				<button class="paddle next" class:show={!atEnd} aria-label="Next" tabindex={atEnd ? -1 : 0} onclick={() => page(1)}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 6l6 6-6 6" /></svg></button>
+				<button class="paddle prev" class:show={!atStart} aria-label={t('music.previous')} tabindex={atStart ? -1 : 0} onclick={() => page(-1)}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 6 8.5 12l6 6" /></svg></button>
+				<button class="paddle next" class:show={!atEnd} aria-label={t('music.next')} tabindex={atEnd ? -1 : 0} onclick={() => page(1)}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 6l6 6-6 6" /></svg></button>
 			</div>
 		{/if}
 
@@ -237,13 +238,13 @@
 							{@const c = live(raw)}
 							<li class="track">
 								<img src={musicImage(c)} alt="" loading="lazy" onerror={(e) => ((e.currentTarget as HTMLImageElement).style.visibility = 'hidden')} />
-								<a class="t-words" href={musicCardHref(c)}><span class="t-name">{#if c.explicit}<span class="explicit" title="Explicit" aria-label="Explicit">E</span>{/if}{c.name}</span><span class="t-artist">{rowNote(tracks, c)}</span></a>
-								{#if canAct(c)}<IconButton icon="more" label={manage ? `Add ${c.artist}` : `Ask for ${c.name}`} size="sm" aria-haspopup="dialog" aria-busy={busy === c.key || undefined} onclick={() => void quick(c)} />{/if}
+								<a class="t-words" href={musicCardHref(c)}><span class="t-name">{#if c.explicit}<span class="explicit" title={t('music.explicit')} aria-label={t('music.explicit')}>E</span>{/if}{c.name}</span><span class="t-artist">{rowNote(tracks, c)}</span></a>
+								{#if canAct(c)}<IconButton icon="more" label={manage ? t('music.add', { name: c.artist ?? '' }) : t('music.askFor', { name: c.name })} size="sm" aria-haspopup="dialog" aria-busy={busy === c.key || undefined} onclick={() => void quick(c)} />{/if}
 							</li>
 						{/each}
 					</ol>
-					<button class="paddle prev" class:show={!tStart} aria-label="Previous tracks" tabindex={tStart ? -1 : 0} onclick={() => page(-1, trackList)}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 6 8.5 12l6 6" /></svg></button>
-					<button class="paddle next" class:show={!tEnd} aria-label="More tracks" tabindex={tEnd ? -1 : 0} onclick={() => page(1, trackList)}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 6l6 6-6 6" /></svg></button>
+					<button class="paddle prev" class:show={!tStart} aria-label={t('music.previousTracks')} tabindex={tStart ? -1 : 0} onclick={() => page(-1, trackList)}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 6 8.5 12l6 6" /></svg></button>
+					<button class="paddle next" class:show={!tEnd} aria-label={t('music.moreTracks')} tabindex={tEnd ? -1 : 0} onclick={() => page(1, trackList)}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 6l6 6-6 6" /></svg></button>
 				</div>
 			</section>
 		{/if}
@@ -272,7 +273,7 @@
 			{/if}
 		{/each}
 
-		{#if more.length}<MusicBrowseGrid title="Explore more" tiles={more} allHref={to('/search?kind=music')} />{/if}
+		{#if more.length}<MusicBrowseGrid title={t('music.exploreMore')} tiles={more} allHref={to('/search?kind=music')} />{/if}
 	</section>
 {/if}
 

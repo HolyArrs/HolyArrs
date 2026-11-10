@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import HomeOverview from './HomeOverview.svelte';
 	import { createHomeAttention } from './home-attention.svelte.ts';
 	import { createHomeOverview } from './home-overview.svelte.ts';
@@ -81,7 +83,7 @@
 	// A turned-down ask is not open: it is counted apart.
 	const mineOpen = $derived(attentionView.mine.filter((a) => a.state !== 'turned_down').length);
 	const mineDeclined = $derived(attentionView.mine.length - mineOpen);
-	const asksLine = $derived([mineOpen ? `${n(mineOpen)} still open` : '', mineDeclined ? `${n(mineDeclined)} turned down` : ''].filter(Boolean).join(' · '));
+	const asksLine = $derived([mineOpen ? t('home.stillOpen', { n: n(mineOpen) }) : '', mineDeclined ? t('home.turnedDown', { n: n(mineDeclined) }) : ''].filter(Boolean).join(' · '));
 	const canAsk = $derived(session.can('ask') || approver);
 	const progress = $derived(home?.ask_progress ?? {});
 	// While one of this person's own asks is downloading, Home re-reads, so it sees the title arrive.
@@ -135,7 +137,7 @@
 	function strip(c: HomeCard, type: string): Fresh | null {
 		const own = homeStrip(c);
 		if (own || !c.line || type === 'home_arrived') return own;
-		return { kind: type === 'home_soon' ? 'coming' : 'new_season', text: c.line };
+		return { kind: type === 'home_soon' ? 'coming' : 'new_season', text: serverWords(c.line) };
 	}
 
 	async function loadHome() {
@@ -245,31 +247,31 @@
 	});
 </script>
 
-<svelte:head><title>Home · HolyArrs</title></svelte:head>
+<svelte:head><title>{t('home.home')} · HolyArrs</title></svelte:head>
 
 <div class="home">
 	<div class="top">
 		<p class="greet" data-testid="home-greeting">{greeting}</p>
 		<!-- The page's own heading, for screen readers and for the small title bar phones show once the greeting has scrolled away. -->
-		<PageHeader title="Home" />
+		<PageHeader title={t('home.home')} />
 		<div class="top-row">
 			{#if overview.showSystem && overview.showOverview && loaded && !(failed && !home)}
-				<SegmentedControl options={[{ value: 'home', label: 'Home', icon: 'home' }, { value: 'system', label: 'System', icon: 'gauge' }]} bind:value={overview.board} label="Show on Home" testid="home-switch" announce={(l) => `Showing ${l}`} />
+				<SegmentedControl options={[{ value: 'home', label: t('home.home'), icon: 'home' }, { value: 'system', label: t('home.system'), icon: 'gauge' }]} bind:value={overview.board} label={t('home.showOnHome')} testid="home-switch" announce={(l) => t('home.showing', { name: l })} />
 			{/if}
 			<p class="note" class:pending={!settled} class:hold={overview.showSystem && overview.showOverview}>
 				{#if failed && !home}{:else if overview.shown === 'system'}{#if disk.sysNote}<span class="dot {attentionView.worst}" aria-hidden="true"></span>{disk.sysNote}{/if}{:else}{news}{/if}
 			</p>
 			<div class="acts">
-				<span class="wide-only"><Button variant="secondary" icon="search" href={to('/search')}>Search</Button><Button variant="secondary" icon="compass" href={to('/explore')}>Explore</Button></span>
-				<span class="phone-only"><IconButton icon="search" label="Search" variant="tinted" size="lg" href={to('/search')} tooltip={false} /><IconButton icon="compass" label="Explore" variant="tinted" size="lg" href={to('/explore')} tooltip={false} /></span>
+				<span class="wide-only"><Button variant="secondary" icon="search" href={to('/search')}>{t('home.search')}</Button><Button variant="secondary" icon="compass" href={to('/explore')}>{t('home.explore')}</Button></span>
+				<span class="phone-only"><IconButton icon="search" label={t('home.search')} variant="tinted" size="lg" href={to('/search')} tooltip={false} /><IconButton icon="compass" label={t('home.explore')} variant="tinted" size="lg" href={to('/explore')} tooltip={false} /></span>
 			</div>
 		</div>
 	</div>
 
 	{#if failed && !home && loaded}
-		<LoadError hasData={false} message="Could not load Home." onretry={retry} busy={retrying} />
+		<LoadError hasData={false} message={t('home.couldNotLoadHome')} onretry={retry} busy={retrying} />
 	{:else}
-		{#if failed}<div class="banner"><LoadError hasData={true} message="Could not refresh Home." onretry={retry} busy={retrying} /></div>{/if}
+		{#if failed}<div class="banner"><LoadError hasData={true} message={t('home.couldNotRefreshHome')} onretry={retry} busy={retrying} /></div>{/if}
 		<MetadataNotice />
 
 		{#snippet wideRow(cards: HomeCard[], type: string, opts: { title: string; subtitle?: string; href?: string })}
@@ -278,7 +280,7 @@
 					<Shelf title={opts.title} subtitle={opts.subtitle} href={opts.href} item="var(--title-item)">
 						{#each cards as c (c.key)}
 							<!-- Every card is 16:9; an artist shows its wide picture with the new album's cover inset. -->
-							<WideCard cover title={c.name} kind={c.kind} typed row={type} href={to(c.href)} image={c.backdrop || c.poster || undefined} logo={c.kind === 'artist' || !(c.backdrop || c.poster) ? null : c.logo} inset={c.kind === 'artist' ? c.albums?.[0]?.cover : undefined} subtitle={c.line} fresh={strip(c, type)} />
+							<WideCard cover title={c.name} kind={c.kind} typed row={type} href={to(c.href)} image={c.backdrop || c.poster || undefined} logo={c.kind === 'artist' || !(c.backdrop || c.poster) ? null : c.logo} inset={c.kind === 'artist' ? c.albums?.[0]?.cover : undefined} subtitle={serverWords(c.line)} fresh={strip(c, type)} />
 						{/each}
 					</Shelf>
 				</div>
@@ -296,29 +298,29 @@
 				{:else}
 					<span class="nm" dir="auto">{p.c.name}</span>
 				{/if}
-				{#if p.c.line}<span class="sm">{p.c.line}</span>{/if}
+				{#if p.c.line}<span class="sm">{serverWords(p.c.line)}</span>{/if}
 			</a>
 		{/snippet}
 
-		<PageLoader loading={!loaded} label="Loading Home" onretry={retry}>
+		<PageLoader loading={!loaded} label={t('home.loadingHome')} onretry={retry}>
 		<HomeOverview {overview} {disk} {admin} {settled} {attentionView} {uncheckedParts} {retrying} {retry} {approver} {kid} {uncheckedAsks} {downloading} {mineOpen} {mineDeclined} {fetchingAll} {home} {uncheckedDl} {now} {uncheckedHealth} {health} {picTile} />
 		{#each rows as row (row)}
 			{#if row === 'welcome'}
 				{#if owner}
 					<section class="setup" aria-labelledby="h-setup" data-testid="home-welcome">
 						<div class="setup-main">
-							<p class="kicker">{#if settled}{attentionView.doneCount} of {attentionView.steps.length} done{:else}&nbsp;{/if}</p>
-							<h2 id="h-setup">Welcome to HolyArrs</h2>
+							<p class="kicker">{#if settled}{t('home.ofDone', { done: attentionView.doneCount, total: attentionView.steps.length })}{:else}&nbsp;{/if}</p>
+							<h2 id="h-setup">{t('home.welcomeToHolyarrs')}</h2>
 							<div class="segs" aria-hidden="true">{#each attentionView.steps as s, i (i)}<i class:on={settled && s.done}></i>{/each}</div>
 							{#if settled}
 								<h3>{attentionView.nextStep.text}</h3>
 								<p>{attentionView.nextStep.detail}</p>
 							{:else}
-								<span class="sk setup-wait" aria-hidden="true"><i></i><i></i></span><span class="sr-only">Loading</span>
+								<span class="sk setup-wait" aria-hidden="true"><i></i><i></i></span><span class="sr-only">{t('home.loading')}</span>
 							{/if}
 							<div class="welcome-acts" class:hide={!settled}>
 								<Button variant="primary" size="lg" href={to(attentionView.nextStep.href)} iconAfter="chevronRight">{attentionView.nextStep.cta}</Button>
-								<Button variant="secondary" size="lg" href={to('/library/import')}>Import what you have</Button>
+								<Button variant="secondary" size="lg" href={to('/library/import')}>{t('home.importWhatYouHave')}</Button>
 							</div>
 						</div>
 						<ol class="steps">
@@ -327,7 +329,7 @@
 									<a href={to(s.href)}>
 										<span class="dot">{#if settled && s.done}<Icon name="check" size={14} />{:else}{i + 1}{/if}</span>
 										<span class="grow">{s.text}</span>
-										<span class="sr-only">{!settled ? '' : s.done ? '(done)' : '(to do)'}</span>
+										<span class="sr-only">{!settled ? '' : s.done ? t('home.done') : t('home.toDo')}</span>
 										<Icon name="chevronRight" size={15} />
 									</a>
 								</li>
@@ -337,10 +339,10 @@
 				{:else}
 					<section class="prompt" aria-labelledby="h-welcome" data-testid="home-welcome">
 						<div>
-							<h2 id="h-welcome">Welcome to HolyArrs</h2>
-							<p>Nothing here yet. Ask for something you love and it shows up here.</p>
+							<h2 id="h-welcome">{t('home.welcomeToHolyarrs')}</h2>
+							<p>{t('home.nothingHereYetAsk')}</p>
 						</div>
-						<Button variant="primary" size="lg" icon="compass" href={to('/explore')}>Start asking</Button>
+						<Button variant="primary" size="lg" icon="compass" href={to('/explore')}>{t('home.startAsking')}</Button>
 					</section>
 				{/if}
 			{:else if row === 'arrived'}
@@ -348,8 +350,8 @@
 			{:else if row === overview.upAt && overview.comingUp.length}
 				<section class="up" aria-labelledby="h-up" data-testid="home_coming_up">
 					<header class="up-head">
-						<h2 id="h-up">Coming up</h2>
-						{#if owner}<a class="up-more" href={to('/calendar')}>Calendar<Icon name="chevronRight" size={14} /></a>{/if}
+						<h2 id="h-up">{t('home.comingUp')}</h2>
+						{#if owner}<a class="up-more" href={to('/calendar')}>{t('home.calendar')}<Icon name="chevronRight" size={14} /></a>{/if}
 					</header>
 					<ul class="up-list">
 						{#each overview.comingUp as u (u.key)}

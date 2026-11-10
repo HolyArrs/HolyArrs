@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t, startLang } from '#lib/core/i18n/i18n.svelte.ts';
 	import { resolve } from '$app/paths';
 	import { personName } from '#lib/core/plain.ts';
 	import { setBase } from '#lib/core/paths.ts';
@@ -10,11 +11,12 @@
 	import { afterNavigate, beforeNavigate, goto, onNavigate, preloadCode } from '$app/navigation';
 	import { hideReconnecting, loaderReady, navEnded, navStarted, showReconnecting } from '#lib/core/loader.ts';
 	import Icon from '#lib/ui/Icon.svelte';
+	import Words from '#lib/ui/Words.svelte';
 	import ToastList from './(frame)/ToastList.svelte';
 	import Theater from './(frame)/Theater.svelte';
 	import { theater } from '#lib/core/trailer/theater.svelte.ts';
 	import { session } from '#lib/core/session.svelte.ts';
-	import { keepPersonPic, theme, setTheme, type ThemeChoice, backdrop } from '#lib/accounts/index.ts';
+	import { keepPersonPic, theme, setTheme, type ThemeChoice, backdrop, loadProfile, forgetProfile } from '#lib/accounts/index.ts';
 	import { live } from '#lib/core/live.svelte.ts';
 	import { dlPush, decisions, refreshDecisions, activeDownloads, refreshActiveDownloads, resetActiveDownloads, dlTop } from '#lib/downloads/index.ts';
 	import { alertsPanel, toasts } from '#lib/core/toasts.svelte.ts';
@@ -54,6 +56,9 @@
 	} from './(frame)/nav.ts';
 
 	let { children }: { children: Snippet } = $props();
+
+	// The saved or browser language, before the first page draws (English is already in the bundle).
+	void startLang();
 
 	function allowed(need: Need): boolean {
 		if (need === null) return true;
@@ -180,6 +185,11 @@
 	$effect(() => {
 		if (session.s.state === 'signed_in') void keepPersonPic(session.s.name, session.s.avatar);
 	});
+	// After sign-in the account's own language (if one is saved) wins over this browser's.
+	$effect(() => {
+		if (session.s.state === 'signed_in' && session.s.id != null) void loadProfile();
+		else if (session.s.state === 'signed_out') forgetProfile();
+	});
 	onMount(installArtistVideoPrefetch);
 	onMount(() => installHeroPrefetch(preloadHero));
 	// Music heroes on hover and focus, title heroes on focus, and the next card in a row.
@@ -266,24 +276,24 @@
 	let moreOpen = $state(false);
 	const manager = $derived(allowed('manage'));
 	const tabs = $derived.by<Tab[]>(() => {
-		const t: Tab[] = [];
-		const add = (href: string, label: string, icon: Tab['icon']) => t.push({ href: to(href), label, icon, current: href === '/' ? path === '/' : path === href || path.startsWith(href + '/') });
-		add('/', 'Home', 'home');
-		add('/explore', 'Explore', 'compass');
-		add('/library', 'Library', 'library');
-		add('/search', 'Search', 'search');
+		const list: Tab[] = [];
+		const add = (href: string, label: string, icon: Tab['icon']) => list.push({ href: to(href), label, icon, current: href === '/' ? path === '/' : path === href || path.startsWith(href + '/') });
+		add('/', t('frame.nav.home'), 'home');
+		add('/explore', t('frame.nav.explore'), 'compass');
+		add('/library', t('frame.nav.library'), 'library');
+		add('/search', t('frame.layout.search'), 'search');
 		if (!manager && allowed('wishlist') && !offPartName(partsNow.answer, '/requests')) {
-			t.push({ href: to('/requests'), label: 'Requests', icon: 'requests', current: path.startsWith('/requests'), badge: inbox.unread || undefined });
+			list.push({ href: to('/requests'), label: t('frame.nav.requests'), icon: 'requests', current: path.startsWith('/requests'), badge: inbox.unread || undefined });
 		}
 		const tabbed = ['/', '/explore', '/library', '/search', '/requests'];
 		const elsewhere = !tabbed.some((h) => (h === '/' ? path === '/' : path === h || path.startsWith(h + '/')));
-		t.push({ label: manager ? 'Manage' : 'More', icon: manager ? 'inbox' : 'more', current: elsewhere, dot: ((inbox.waiting + decisions.count > 0 || settingsAttention) && manager) || toasts.unseen() > 0, onclick: () => (moreOpen = true) });
-		return t;
+		list.push({ label: manager ? t('frame.nav.manage') : t('frame.layout.more'), icon: manager ? 'inbox' : 'more', current: elsewhere, dot: ((inbox.waiting + decisions.count > 0 || settingsAttention) && manager) || toasts.unseen() > 0, onclick: () => (moreOpen = true) });
+		return list;
 	});
 
-	const roleWord = $derived({ owner: 'Owner', admin: 'Admin', member: 'Member' }[session.s.role] ?? 'Member');
+	const roleWord = $derived(({ owner: t('frame.layout.owner'), admin: t('frame.layout.admin'), member: t('frame.layout.member') } as Record<string, string>)[session.s.role] ?? t('frame.layout.member'));
 	// An id-like account name (preview-..., e2e-...) reads as "You".
-	const shownName = $derived(personName(session.s.name, 'You'));
+	const shownName = $derived(personName(session.s.name, t('frame.layout.you')));
 	// The bell counts new alerts plus Settings warnings still open (those stay until fixed).
 	const openFixes = $derived((settingsAttention ? (settingsNow.answer?.items.length ?? 0) : 0) + (allowed('manage_library') ? decisionPins().length : 0) + (feedPins.update ? 1 : 0));
 	// Request updates, failed downloads and a new version reach the bell from any page.
@@ -294,21 +304,21 @@
 	const unseenAlerts = $derived(toasts.unseen() + openFixes);
 	const hasFailAlert = $derived(openFixes > 0 || toasts.past.some((p) => p.fresh && p.tone === 'fail'));
 	const accountItems = $derived<MenuItem[]>([
-		{ label: 'Account', icon: 'user', href: to('/account') },
+		{ label: t('frame.layout.account'), icon: 'user', href: to('/account') },
 		{ kind: 'separator' },
-		{ kind: 'heading', label: 'Appearance' },
-		{ label: 'Light', checked: theme.choice === 'light', onselect: () => setTheme('light') },
-		{ label: 'Dark', checked: theme.choice === 'dark', onselect: () => setTheme('dark') },
-		{ label: 'System', checked: theme.choice === 'system', onselect: () => setTheme('system') },
+		{ kind: 'heading', label: t('frame.layout.appearance') },
+		{ label: t('frame.layout.light'), checked: theme.choice === 'light', onselect: () => setTheme('light') },
+		{ label: t('frame.layout.dark'), checked: theme.choice === 'dark', onselect: () => setTheme('dark') },
+		{ label: t('frame.layout.system'), checked: theme.choice === 'system', onselect: () => setTheme('system') },
 		{ kind: 'separator' },
-		{ label: 'Switch account', icon: 'user', onselect: () => void switchAccount() },
-		{ label: 'Sign out', icon: 'signout', onselect: () => void signOut() }
+		{ label: t('frame.layout.switch'), icon: 'user', onselect: () => void switchAccount() },
+		{ label: t('frame.layout.signOut'), icon: 'signout', onselect: () => void signOut() }
 	]);
-	const themeOptions: { value: ThemeChoice; label: string }[] = [
-		{ value: 'light', label: 'Light' },
-		{ value: 'dark', label: 'Dark' },
-		{ value: 'system', label: 'System' }
-	];
+	const themeOptions = $derived<{ value: ThemeChoice; label: string }[]>([
+		{ value: 'light', label: t('frame.layout.light') },
+		{ value: 'dark', label: t('frame.layout.dark') },
+		{ value: 'system', label: t('frame.layout.system') }
+	]);
 	let themeChoice = $state<ThemeChoice>(theme.choice);
 	$effect(() => {
 		themeChoice = theme.choice;
@@ -429,7 +439,7 @@
 		try {
 			await session.logout();
 		} catch {
-			toasts.push("Couldn't confirm sign-out", 'fail');
+			toasts.push(t('frame.layout.signOutFail'), 'fail');
 		}
 		void goto(to('/login'));
 	}
@@ -437,9 +447,9 @@
 	async function signOut() {
 		try {
 			await session.logout();
-			toasts.push('Signed out', 'ok');
+			toasts.push(t('frame.layout.signedOut'), 'ok');
 		} catch {
-			toasts.push("Couldn't confirm sign-out", 'fail');
+			toasts.push(t('frame.layout.signOutFail'), 'fail');
 		}
 	}
 
@@ -449,7 +459,7 @@
 <svelte:window onkeydown={keys} />
 
 {#snippet account()}
-	<Menu label="{shownName}, {roleWord}: account and appearance" items={accountItems} variant="row" align="start" placement="above" width={240}>
+	<Menu label={t('frame.layout.accountMenu', { name: shownName, role: roleWord })} items={accountItems} variant="row" align="start" placement="above" width={240}>
 		{#snippet trigger()}
 			<span class="who" class:only={collapsed}>
 				<Avatar name={shownName} src={session.s.avatar} size={36} />
@@ -461,7 +471,7 @@
 		{/snippet}
 	</Menu>
 	<!-- Recent alerts: a bell beside your name, with how many arrived since you last looked. -->
-	<button type="button" class="alerts-bell" class:only={collapsed} data-alerts-open aria-label={unseenAlerts ? `Recent alerts, ${unseenAlerts} new` : 'Recent alerts'} aria-expanded={alertsPanel.open} onclick={() => (alertsPanel.open = !alertsPanel.open)}>
+	<button type="button" class="alerts-bell" class:only={collapsed} data-alerts-open aria-label={unseenAlerts ? t('frame.layout.alertsNew', { n: unseenAlerts }) : t('frame.layout.alerts')} aria-expanded={alertsPanel.open} onclick={() => (alertsPanel.open = !alertsPanel.open)}>
 		<Icon name="bell" size={18} />
 		{#if unseenAlerts}<span class="alerts-count" class:bad={hasFailAlert}>{unseenAlerts > 9 ? '9+' : unseenAlerts}</span>{/if}
 	</button>
@@ -469,24 +479,22 @@
 
 {#if session.s.safeMode}
 	<div class="safe-banner" role="status" data-testid="safe-mode">
-		<b>Safe mode.</b> Only the core runs: sign-in, the Library, settings, backups and health. Searches, downloads, imports, subtitles
-		and schedules are off until HolyArrs starts again without safe mode.
+		<b>{t('frame.layout.safeTitle')}</b> {t('frame.layout.safeBody')}
 	</div>
 {/if}
 {#if session.s.hostRefused}
 	<div class="safe-banner" role="status" data-testid="host-refused">
-		<b>Changes can't be saved on {session.s.hostRefused}.</b> HolyArrs only saves on names you allow. Open it once by its IP address,
-		then add {session.s.hostRefused} under Settings › Sign-in › Allowed host names. No restart needed.
+		<Words key="frame.layout.hostRefused" vars={{ host: session.s.hostRefused }} />
 	</div>
 {/if}
 {#if bare}
 	{@render children()}
 {:else if !ready}
-	<div class="boot" aria-busy="true" aria-label="Loading HolyArrs"><img src={to(mark)} alt="" width="40" height="40" /></div>
+	<div class="boot" aria-busy="true" aria-label={t('frame.layout.loading')}><img src={to(mark)} alt="" width="40" height="40" /></div>
 {:else if firstRunWelcome}
 	<main id="main">{@render children()}</main>
 {:else}
-	<a class="skip" href="#main">Skip to content</a>
+	<a class="skip" href="#main">{t('frame.layout.skip')}</a>
 	<!-- Background behind every page: plain by default, or this Library's posters (Settings > Appearance). Settings home draws its own. -->
 	{#if backdrop.value === 'posters' && path !== '/settings'}<PosterWall />{/if}
 	<AppShell {collapsed} {overlay} onscrim={() => closeOverlay()}>
@@ -519,15 +527,15 @@
 		{#snippet tabbar()}<TabBar items={tabs} />{/snippet}
 		<main id="main" tabindex="-1" class:bleed={path === '/downloads' || (path.startsWith('/downloads/') && path !== '/downloads/history')}>
 			{#if offHere}
-				<section class="part-off" role="status" data-testid="part-off"><h1>This part is off</h1><p>{offHere} {offHere.includes(' and ') ? 'are' : 'is'} turned off, so this page is hidden. Nothing is deleted: everything comes back when it is turned on again.</p><p class="muted">The owner or an admin can turn it on again.</p></section>
+				<section class="part-off" role="status" data-testid="part-off"><h1>{t('frame.layout.partOff')}</h1><p>{t(offHere.includes(' and ') ? 'frame.layout.partsAreOff' : 'frame.layout.partIsOff', { parts: offHere })}</p><p class="muted">{t('frame.layout.partOffHint')}</p></section>
 			{:else}{@render children()}{/if}
 		</main>
 	</AppShell>
 
-	<Sheet bind:open={moreOpen} title={manager ? 'Manage' : 'More'} size="sm">
+	<Sheet bind:open={moreOpen} title={manager ? t('frame.nav.manage') : t('frame.layout.more')} size="sm">
 		<!-- Only while open, so a closed sheet adds no second copy of every place to the page. -->
 		{#if moreOpen}
-		<nav class="more" aria-label="All places">
+		<nav class="more" aria-label={t('frame.layout.allPlaces')}>
 			{#each sections as s (s.id)}
 				<div class="more-sec">
 					{#if s.label}<h3>{s.label}</h3>{/if}
@@ -539,14 +547,14 @@
 				</div>
 			{/each}
 			<div class="more-sec">
-				<ul><li><SidebarItem href="#alerts" label="Recent alerts" icon="bell" current={false} badge={unseenAlerts} badgeLabel="new" onclick={(e) => { e.preventDefault(); moreOpen = false; alertsPanel.open = true; }} /></li></ul>
+				<ul><li><SidebarItem href="#alerts" label={t('frame.layout.alerts')} icon="bell" current={false} badge={unseenAlerts} badgeLabel={t('frame.layout.newWord')} onclick={(e) => { e.preventDefault(); moreOpen = false; alertsPanel.open = true; }} /></li></ul>
 			</div>
 			<div class="more-sec">
-				<h3>You</h3>
-				<ul><li><SidebarItem href={to('/account')} label="Account · {session.s.name}" icon="user" current={path === '/account'} onclick={() => (moreOpen = false)} /></li></ul>
-				<div class="more-theme"><SegmentedControl label="Appearance" options={themeOptions} bind:value={themeChoice} onchange={(v) => setTheme(v)} /></div>
-				<Button icon="user" full onclick={() => { moreOpen = false; void switchAccount(); }}>Switch account</Button>
-				<Button variant="destructive" icon="signout" full onclick={() => { moreOpen = false; void signOut(); }}>Sign out</Button>
+				<h3>{t('frame.layout.you')}</h3>
+				<ul><li><SidebarItem href={to('/account')} label={t('frame.layout.accountName', { name: session.s.name })} icon="user" current={path === '/account'} onclick={() => (moreOpen = false)} /></li></ul>
+				<div class="more-theme"><SegmentedControl label={t('frame.layout.appearance')} options={themeOptions} bind:value={themeChoice} onchange={(v) => setTheme(v)} /></div>
+				<Button icon="user" full onclick={() => { moreOpen = false; void switchAccount(); }}>{t('frame.layout.switch')}</Button>
+				<Button variant="destructive" icon="signout" full onclick={() => { moreOpen = false; void signOut(); }}>{t('frame.layout.signOut')}</Button>
 			</div>
 		</nav>
 		{/if}

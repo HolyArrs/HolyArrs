@@ -1,6 +1,6 @@
 ---
 title: Sonarr and Radarr
-description: What comes over from Sonarr and Radarr, how folders are matched, and what to check after the move.
+description: What comes over from Sonarr and Radarr, how folders are matched, and what to check after the import.
 level: Setup
 sidebar: { order: 2 }
 ---
@@ -12,13 +12,13 @@ Move your shows from Sonarr and movies from Radarr, with their folders, files an
 - Have each app's address and API key (in that app's settings), or its backup zip.
 - Map your media folders into HolyArrs. The old app's folder names can differ; you match them in **Choose**.
 
-## Move Sonarr and Radarr
+## Import Sonarr and Radarr
 
-1. Open **Settings > Move from other apps** and click **Add an app**.
+1. Open **Settings > Import from other apps** and click **Add an app**.
 2. Pick **Radarr** or **Sonarr**, type its address and API key, and click **Check connection**. You should see the app's name and version.
 3. Start the read. Repeat for the other app.
 4. In **Choose**, match each old folder to a Library folder here. You should see **Suggested** next to folders HolyArrs filled in.
-5. Click **Try it**, check the counts, then **Move**.
+5. Click **Try it**, check the counts, then **Import**.
 
 :::tip
 Old apps often run in other containers and see folders under other names. A rule like `/data/media/movies` to `/movies` fixes every title in that folder at once.
@@ -49,7 +49,7 @@ An indexer is a site that lists releases; in HolyArrs it is a **Source**.
 
 In **Choose**, each old folder that is not a Library folder here gets a row. Pick the matching Library folder, or **Other path…** and type one. When the old folder is missing here but a Library folder with the same last name exists, HolyArrs fills it in as **Suggested**.
 
-Under **Advanced**, add path rules. The longest matching rule wins. Titles whose folder is still not found are listed with the reason; fix the rule and move again. Nothing is added twice.
+Under **Advanced**, add path rules. The longest matching rule wins. Titles whose folder is still not found are listed with the reason; fix the rule and import again. Nothing is added twice.
 
 ### Waits
 
@@ -64,7 +64,7 @@ Custom formats, tag-scoped wait rules (listed with their waits, so you can set t
 | Symptom | Cause | Fix |
 | --- | --- | --- |
 | **Check connection** fails | The address works from your computer but not from the HolyArrs server. | Use the address the server can reach. For a home-network app, turn on the local network switch. |
-| Titles show as not found | No path rule matches their folder. | Add a rule under **Advanced** in **Choose**, then move again. |
+| Titles show as not found | No path rule matches their folder. | Add a rule under **Advanced** in **Choose**, then import again. |
 | A path pair says "not visible here yet (check your mounts)" | HolyArrs cannot see that folder. | Add the mount to the container. The pair is already saved. |
 
 ## For experts
@@ -77,6 +77,6 @@ A Downloader that was already here is left alone; its pairs are listed for you t
 
 ## Related
 
-- [Move from other apps](index.md)
+- [Import from other apps](index.md)
 - [Read your old apps](what-is-read.md)
 - [Lidarr, Bazarr and Prowlarr](lidarr-bazarr-prowlarr.md)

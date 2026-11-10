@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
+	import { t, appLocale } from '#lib/core/i18n/i18n.svelte.ts';
 	import TitleSection from '#lib/ui/TitleSection.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
 	import Menu, { type MenuItem } from '#lib/ui/Menu.svelte';
@@ -77,7 +79,7 @@
 			await own.loadOwned(id);
 			if (seasonEps[n]) await loadSeason(id, n);
 		} catch (e) {
-			toasts.push(`Couldn't update season`, 'fail', { body: message(e) });
+			toasts.push(t('discover.titleLibrary.couldntUpdateSeason'), 'fail', { body: message(e) });
 		} finally {
 			own.busyAction = '';
 		}
@@ -89,7 +91,7 @@
 			await api.put(`/episodes/${e.id}`, { keep_up_to_date: keep });
 			seasonEps = { ...seasonEps, [n]: (seasonEps[n] ?? []).map((x) => (x.id === e.id ? { ...x, keep_up_to_date: keep } : x)) };
 		} catch (err) {
-			toasts.push(`Couldn't update episode`, 'fail', { body: message(err) });
+			toasts.push(t('discover.titleLibrary.couldntUpdateEpisode'), 'fail', { body: message(err) });
 		}
 	}
 
@@ -118,7 +120,7 @@
 			await api.post(`/titles/${o.id}/search`, body);
 			toasts.push(done, 'info');
 		} catch (e) {
-			toasts.push(`Couldn't start search`, 'fail', { body: message(e) });
+			toasts.push(t('discover.titleLibrary.couldntStartSearch'), 'fail', { body: message(e) });
 		} finally {
 			own.busyAction = '';
 		}
@@ -127,7 +129,7 @@
 	// Ready-made quality sets sit in the control (4K stays for second versions); every other set is in the Custom menu.
 	const qOrder = ['Lite', 'Standard', 'Best'];
 
-	const qHints: Record<string, string> = { 'Lite': '720p to 1080p, small files', 'Standard': 'Up to 1080p, best value', Best: '4K and HDR when out', '4K': '4K first' };
+	const qHints = (): Record<string, string> => ({ Lite: t('discover.titleLibrary.hintLite'), Standard: t('discover.titleLibrary.hintStandard'), Best: t('discover.titleLibrary.hintBest'), '4K': t('discover.titleLibrary.hint4k') });
 
 	const qKind = $derived(rules.filter((r) => r.kinds.includes(owned?.kind ?? '')));
 
@@ -137,13 +139,13 @@
 
 	const qCustom = $derived(qOthers.find((r) => r.id === owned?.pick_rules_id));
 
-	const qHint = $derived(qHints[owned?.pick_rules_name ?? ''] ?? (qCustom ? (qCustom.preset ? '' : 'Your set') : ''));
+	const qHint = $derived(qHints()[owned?.pick_rules_name ?? ''] ?? (qCustom ? (qCustom.preset ? '' : t('discover.titleLibrary.yourSet')) : ''));
 
 	const qMenu = $derived<MenuItem[]>([
-		...(qOthers.length ? [{ kind: 'heading' as const, label: 'More sets' }, ...qOthers.map((r) => ({ label: r.name, checked: r.id === owned?.pick_rules_id, onselect: () => void setRules(r.id) }))] : []),
+		...(qOthers.length ? [{ kind: 'heading' as const, label: t('discover.titleLibrary.moreSets') }, ...qOthers.map((r) => ({ label: r.name, checked: r.id === owned?.pick_rules_id, onselect: () => void setRules(r.id) }))] : []),
 		...(qOthers.length ? [{ kind: 'separator' as const }] : []),
-		{ label: 'New set', icon: 'plus', href: to('/settings/pick-rules/new') },
-		{ label: 'Edit sets', icon: 'tools', href: to(qCustom && !qCustom.preset ? `/settings/pick-rules/${qCustom.id}` : '/settings/pick-rules') }
+		{ label: t('discover.titleLibrary.newSet'), icon: 'plus', href: to('/settings/pick-rules/new') },
+		{ label: t('discover.titleLibrary.editSets'), icon: 'tools', href: to(qCustom && !qCustom.preset ? `/settings/pick-rules/${qCustom.id}` : '/settings/pick-rules') }
 	]);
 
 	async function setRules(id: number) {
@@ -154,7 +156,7 @@
 			const r = await api.put<{ title: TitleView }>(`/titles/${o.id}`, { pick_rules_id: id });
 			own.owned = r.title;
 		} catch (e) {
-			toasts.push(`Couldn't change Pick rules`, 'fail', { body: message(e) });
+			toasts.push(t('discover.titleLibrary.couldntChangePickRules'), 'fail', { body: message(e) });
 		} finally {
 			own.busyAction = '';
 		}
@@ -170,7 +172,7 @@
 			own.owned = r.title;
 			if (done) toasts.push(done, 'ok');
 		} catch (e) {
-			toasts.push(`Couldn't save`, 'fail', { body: message(e) });
+			toasts.push(t('discover.titleLibrary.couldntSave'), 'fail', { body: message(e) });
 		} finally {
 			own.busyAction = '';
 		}
@@ -188,11 +190,11 @@
 		own.busyAction = 'move';
 		try {
 			await api.post(`/titles/${o.id}/move`, { library_folder_id: f.id, apply: true });
-			toasts.push(`Moving files to ${f.label}`, 'info');
+			toasts.push(t('discover.titleLibrary.movingFilesTo', { label: f.label }), 'info');
 			moveTo = null;
 			void own.loadOwned(o.id);
 		} catch (e) {
-			toasts.push(`Couldn't move files`, 'fail', { body: message(e) });
+			toasts.push(t('discover.titleLibrary.couldntMoveFiles'), 'fail', { body: message(e) });
 		} finally {
 			own.busyAction = '';
 		}
@@ -220,7 +222,7 @@
 		return 'custom';
 	});
 
-	const seasonPickWords: Record<SeasonPick | 'custom', string> = { all: 'All', latest: 'Latest', none: 'None', custom: 'Custom' };
+	const seasonPickWords = $derived<Record<SeasonPick | 'custom', string>>({ all: t('discover.titleLibrary.pickAll'), latest: t('discover.titleLibrary.pickLatest'), none: t('discover.titleLibrary.pickNone'), custom: t('discover.titleLibrary.pickCustom') });
 
 	async function setSeasons(pick: SeasonPick) {
 		const o = owned;
@@ -237,15 +239,15 @@
 			openSeasons.clear();
 			await own.loadOwned(o.id);
 		} catch (e) {
-			toasts.push(`Couldn't save seasons`, 'fail', { body: message(e) });
+			toasts.push(t('discover.titleLibrary.couldntSaveSeasons'), 'fail', { body: message(e) });
 		} finally {
 			own.busyAction = '';
 		}
 	}
 
-	const seasonMenu = $derived<MenuItem[]>(([['all', 'All seasons'], ['latest', 'Latest season'], ['none', 'None']] as [SeasonPick, string][]).map(([v, l]) => ({ label: l, checked: seasonPick === v, onselect: () => void setSeasons(v) })));
+	const seasonMenu = $derived<MenuItem[]>(([['all', t('discover.titleLibrary.allSeasons')], ['latest', t('discover.titleLibrary.latestSeason')], ['none', t('discover.titleLibrary.pickNone')]] as [SeasonPick, string][]).map(([v, l]) => ({ label: l, checked: seasonPick === v, onselect: () => void setSeasons(v) })));
 
-	const orders: [string, string][] = [['aired', 'As aired'], ['daily', 'By date'], ['absolute', 'Absolute']];
+	const orders = $derived<[string, string][]>([['aired', t('discover.titleLibrary.orderAired')], ['daily', t('discover.titleLibrary.orderDaily')], ['absolute', t('discover.titleLibrary.orderAbsolute')]]);
 
 	const orderMenu = $derived<MenuItem[]>(orders.map(([v, l]) => ({ label: l, checked: owned?.show?.episode_order === v, onselect: () => void putTitle({ episode_order: v }, 'order') })));
 
@@ -253,14 +255,14 @@
 	let failing = $state(0);
 
 	async function markFailed(downloadID: number) {
-		if (!confirm('Mark this download failed? Its Release is turned down, it is removed from the Downloader and HolyArrs looks for the next Release.')) return;
+		if (!confirm(t('discover.titleLibrary.confirmMarkFailed'))) return;
 		failing = downloadID;
 		try {
 			await api.post(`/downloads/${downloadID}/mark-failed`);
-			toasts.push('Marked failed', 'ok', { body: 'Searching for the next Release' });
+			toasts.push(t('discover.titleLibrary.markedFailed'), 'ok', { body: t('discover.titleLibrary.searchingNextRelease') });
 			if (owned) await own.loadOwned(owned.id);
 		} catch (e) {
-			toasts.push(`Couldn't mark failed`, 'fail', { body: message(e) });
+			toasts.push(t('discover.titleLibrary.couldntMarkFailed'), 'fail', { body: message(e) });
 		} finally {
 			failing = 0;
 		}
@@ -276,13 +278,13 @@
 		const pct = !o.show && ownDownload?.download ? Math.round(Math.min(Math.max(ownDownload.download.progress, 0), 1) * 100) : null;
 		const main = ownFiles[0]?.file;
 		const sub =
-			k === 'have' && o.show ? [`${o.show.seasons.filter((x) => x.number > 0 && x.episodes && x.in_library >= x.episodes).length} full seasons`, o.size_bytes ? bytes(o.size_bytes) : ''].filter(Boolean).join(' · ')
-			: k === 'have' ? [ownBadges.join(' · '), main?.Size ? bytes(main.Size) : '', o.added_at ? `added ${ago(o.added_at)}` : ''].filter(Boolean).join(' · ')
-			: k === 'downloading' ? 'On its way to your library'
-			: k === 'failed' ? 'The last try did not work. It will try another release.'
-			: o.keep_up_to_date ? 'Downloads when a good copy shows up.' : 'Not kept up to date, so nothing downloads.';
-		const action = !manage ? null : k === 'failed' ? { label: 'Try again', icon: 'refresh' as const } : k === 'missing' ? { label: 'Search now', icon: 'search' as const } : null;
-		return { kind: k, title: k === 'have' ? (o.show ? ownState.label : 'In your library') : ownState.label, sub, pct, action };
+			k === 'have' && o.show ? [t('discover.titleLibrary.fullSeasons', { n: o.show.seasons.filter((x) => x.number > 0 && x.episodes && x.in_library >= x.episodes).length }), o.size_bytes ? bytes(o.size_bytes) : ''].filter(Boolean).join(' · ')
+			: k === 'have' ? [ownBadges.join(' · '), main?.Size ? bytes(main.Size) : '', o.added_at ? t('discover.titleLibrary.addedAgo', { when: ago(o.added_at) }) : ''].filter(Boolean).join(' · ')
+			: k === 'downloading' ? t('discover.titleLibrary.onItsWay')
+			: k === 'failed' ? t('discover.titleLibrary.lastTryFailed')
+			: o.keep_up_to_date ? t('discover.titleLibrary.downloadsWhenGood') : t('discover.titleLibrary.notKeptNothing');
+		const action = !manage ? null : k === 'failed' ? { label: t('discover.titleLibrary.tryAgain'), icon: 'refresh' as const } : k === 'missing' ? { label: t('discover.titleLibrary.searchNow'), icon: 'search' as const } : null;
+		return { kind: k, title: k === 'have' ? (o.show ? ownState.label : t('discover.titleLibrary.inYourLibrary')) : ownState.label, sub, pct, action };
 	});
 
 	// Folder, size, quality, keep, status, network and language.
@@ -295,7 +297,7 @@
 		if (folderName) out.push({ k: 'folder', icon: 'folder', v: folderName, title: o.folder_path ?? '' });
 		if (o.size_bytes) out.push({ k: 'size', icon: 'archive', v: bytes(o.size_bytes) });
 		if (o.pick_rules_name) out.push({ k: 'rules', icon: 'star', v: o.pick_rules_name });
-		out.push({ k: 'keep', icon: o.keep_up_to_date ? 'check' : 'x', v: o.keep_up_to_date ? 'Kept up to date' : 'Not kept up to date' });
+		out.push({ k: 'keep', icon: o.keep_up_to_date ? 'check' : 'x', v: o.keep_up_to_date ? t('discover.titleLibrary.keptUpToDate') : t('discover.titleLibrary.notKeptUpToDate') });
 		if (o.show?.status) out.push({ k: 'status', icon: 'play', v: o.show.status.replace(/^./, (c) => c.toUpperCase()) });
 		if (o.show?.network) out.push({ k: 'net', icon: 'tv', v: o.show.network });
 		if (lang) out.push({ k: 'lang', icon: 'sound', v: lang });
@@ -307,8 +309,8 @@
 		const m = (f?.MediaInfo ?? {}) as Record<string, any>;
 		const langs = (v: unknown) => (Array.isArray(v) ? v : typeof v === 'string' && v ? v.split(/[\/,]/) : []).map((s) => String(s).trim().toUpperCase()).filter(Boolean).slice(0, 6);
 		const name = String(f?.RelativePath ?? '').split(/[\\/]/).pop() ?? '';
-		const addedOn = (iso?: string) => { if (!iso) return ''; const d = new Date(iso); return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', ...(d.getFullYear() !== new Date().getFullYear() ? { year: 'numeric' } : {}) }); };
-		return { res: String(m.resolution ?? (f?.Quality?.resolution ? `${f.Quality.resolution}p` : '')), addedOn: addedOn(f?.AddedAt), id: x.id, versionId: x.version_id, has: !!x.file, state: x.state_label, label: x.version && x.version !== 'Main' ? x.version : 'Main copy', badges: qualityBadges([f]), codec: [m.video_codec, m.audio_codec].filter(Boolean).map((c) => String(c).toUpperCase()).join(' · '), size: f?.Size ? bytes(f.Size) : '', name, added: f?.AddedAt ? ago(f.AddedAt) : '', audio: langs(m.audio_languages), subs: langs(m.subtitle_languages ?? m.subtitles) };
+		const addedOn = (iso?: string) => { if (!iso) return ''; const d = new Date(iso); return d.toLocaleDateString(appLocale(), { month: 'short', day: 'numeric', ...(d.getFullYear() !== new Date().getFullYear() ? { year: 'numeric' } : {}) }); };
+		return { res: String(m.resolution ?? (f?.Quality?.resolution ? `${f.Quality.resolution}p` : '')), addedOn: addedOn(f?.AddedAt), id: x.id, versionId: x.version_id, has: !!x.file, state: x.state_label, label: x.version && x.version !== 'Main' ? x.version : t('discover.titleLibrary.mainCopy'), badges: qualityBadges([f]), codec: [m.video_codec, m.audio_codec].filter(Boolean).map((c) => String(c).toUpperCase()).join(' · '), size: f?.Size ? bytes(f.Size) : '', name, added: f?.AddedAt ? ago(f.AddedAt) : '', audio: langs(m.audio_languages), subs: langs(m.subtitle_languages ?? m.subtitles) };
 	}));
 
 	let libAll = $state(false);
@@ -338,10 +340,10 @@
 	const subsCodes = (ws: { language: string }[]) => [...new Set(ws.map((w) => w.language.toUpperCase()))].join(', ');
 
 	const subsHint = $derived.by(() => {
-		if (subsMode === 'off') return 'No subtitles';
+		if (subsMode === 'off') return t('discover.titleLibrary.noSubtitles');
 		if (subsMode === 'custom') return subsCodes(subsOwn?.languages ?? []);
 		const d = subsData?.files[0]?.wish?.languages ?? [];
-		return d.length ? `Default · ${subsCodes(d)}` : 'Default · none set';
+		return d.length ? t('discover.titleLibrary.defaultCodes', { codes: subsCodes(d) }) : t('discover.titleLibrary.defaultNone');
 	});
 
 	async function setSubs(mode: 'default' | 'off') {
@@ -352,7 +354,7 @@
 			await api.put(`/titles/${o.id}/subtitle-wish`, mode === 'default' ? { inherit: true } : { languages: [] });
 			await loadSubs(o.id);
 		} catch (e) {
-			toasts.push(`Couldn't save subtitles`, 'fail', { body: message(e) });
+			toasts.push(t('discover.titleLibrary.couldntSaveSubtitles'), 'fail', { body: message(e) });
 		} finally {
 			own.busyAction = '';
 		}
@@ -363,16 +365,16 @@
 		if (!o) return;
 		try {
 			const r = await api.post<{ queued: number }>('/subtitles/search', { title_id: o.id });
-			toasts.push(r.queued ? 'Searching for subtitles' : 'No file to search yet', r.queued ? 'info' : 'ok');
+			toasts.push(r.queued ? t('discover.titleLibrary.searchingSubtitles') : t('discover.titleLibrary.noFileToSearch'), r.queued ? 'info' : 'ok');
 		} catch (e) {
-			toasts.push(`Couldn't search subtitles`, 'fail', { body: message(e) });
+			toasts.push(t('discover.titleLibrary.couldntSearchSubtitles'), 'fail', { body: message(e) });
 		}
 	}
 
 	const subsMenu = $derived<MenuItem[]>([
-		{ label: 'Choose languages…', icon: 'tools', onselect: () => (subsOpen = true) },
-		{ label: 'Look for subtitles', icon: 'search', onselect: () => void searchSubs() },
-		...(owned?.kind !== 'show' ? [{ label: 'Subtitle files…', icon: 'copy' as const, onselect: () => (subsOpen = true) }] : [])
+		{ label: t('discover.titleLibrary.chooseLanguages'), icon: 'tools', onselect: () => (subsOpen = true) },
+		{ label: t('discover.titleLibrary.lookForSubtitles'), icon: 'search', onselect: () => void searchSubs() },
+		...(owned?.kind !== 'show' ? [{ label: t('discover.titleLibrary.subtitleFiles'), icon: 'copy' as const, onselect: () => (subsOpen = true) }] : [])
 	]);
 
 	// The Rename row says up front how many files would get a new name, from the same read the preview uses.
@@ -397,18 +399,18 @@
 					<p class="lib-st-title"><span class="own-dot {libHead.kind}" aria-hidden="true"></span>{libHead.title}</p>
 					{#if libHead.sub}<p class="lib-st-sub">{libHead.sub}</p>{/if}
 						<p class="lib-facts">{#each libFacts as f (f.k)}<span class="lib-fact" title={f.title ?? f.v}><Icon name={f.icon} size={13} />{f.v}</span>{/each}</p>
-					{#if libHead.pct != null}<div class="lib-bar" role="progressbar" aria-label="Download progress" aria-valuenow={libHead.pct} aria-valuemin="0" aria-valuemax="100"><span style:transform="translateX({libHead.pct - 100}%)"></span></div>{/if}
+					{#if libHead.pct != null}<div class="lib-bar" role="progressbar" aria-label={t('discover.titleLibrary.downloadProgress')} aria-valuenow={libHead.pct} aria-valuemin="0" aria-valuemax="100"><span style:transform="translateX({libHead.pct - 100}%)"></span></div>{/if}
 				</div>
 				{#if libHead.action}<button type="button" class="lib-btn primary" disabled={busyAction === 'search'} onclick={() => own.ownRun('search')}><Icon name={libHead.action.icon} size={16} />{libHead.action.label}</button>{/if}
-				{#if manage}<button type="button" class="lib-btn" onclick={() => own.openPick(null)}><Icon name="grid" size={16} />Choose a release</button>{/if}
+				{#if manage}<button type="button" class="lib-btn" onclick={() => own.openPick(null)}><Icon name="grid" size={16} />{t('discover.titleLibrary.chooseARelease')}</button>{/if}
 			</section>
 
 			{#if o.show}
 				<div class="lib-eps-head">
-					<h3 class="lib-h">Seasons</h3>
+					<h3 class="lib-h">{t('discover.titleLibrary.seasons')}</h3>
 					<span class="lib-head-acts">
-						{#if manage && o.show.in_library < o.show.episodes - (o.show.not_out_yet ?? 0)}<button type="button" class="lib-btn sm" disabled={busyAction === 'all'} onclick={() => epSearch({}, 'all', 'Searching for missing episodes')}><Icon name="search" size={15} />Get all missing</button>{/if}
-						<button type="button" class="lib-btn sm" onclick={() => toggleAll(o)}>{openSeasons.size ? 'Collapse all' : 'Expand all'}</button>
+						{#if manage && o.show.in_library < o.show.episodes - (o.show.not_out_yet ?? 0)}<button type="button" class="lib-btn sm" disabled={busyAction === 'all'} onclick={() => epSearch({}, 'all', t('discover.titleLibrary.searchingMissing'))}><Icon name="search" size={15} />{t('discover.titleLibrary.getAllMissing')}</button>{/if}
+						<button type="button" class="lib-btn sm" onclick={() => toggleAll(o)}>{openSeasons.size ? t('discover.titleLibrary.collapseAll') : t('discover.titleLibrary.expandAll')}</button>
 					</span>
 				</div>
 				<div class="lib-sl">
@@ -417,43 +419,43 @@
 						{@const full = se.episodes > 0 && se.in_library >= se.episodes}
 						<section class="lib-sr" class:open={isOpen}>
 							<div class="lib-sr-head">
-								{#if manage}<button type="button" class="lib-keep" class:on={se.keep_up_to_date} aria-pressed={se.keep_up_to_date} title={se.keep_up_to_date ? 'Kept up to date' : 'Not kept up to date'} aria-label="Keep season {se.number} up to date" disabled={busyAction === `k${se.number}`} onclick={() => keepSeason(o.id, se.number, !se.keep_up_to_date)}><Icon name="check" size={13} /></button>{/if}
+								{#if manage}<button type="button" class="lib-keep" class:on={se.keep_up_to_date} aria-pressed={se.keep_up_to_date} title={se.keep_up_to_date ? t('discover.titleLibrary.keptUpToDate') : t('discover.titleLibrary.notKeptUpToDate')} aria-label={t('discover.titleLibrary.keepSeasonUpTo', { number: se.number })} disabled={busyAction === `k${se.number}`} onclick={() => keepSeason(o.id, se.number, !se.keep_up_to_date)}><Icon name="check" size={13} /></button>{/if}
 								<button type="button" class="lib-sr-main" aria-expanded={isOpen} onclick={() => toggleSeason(o.id, se.number)}>
-									<b>{se.number === 0 ? 'Specials' : `Season ${se.number}`}</b>
+									<b>{se.number === 0 ? t('discover.titleLibrary.specials') : t('discover.titleLibrary.seasonN', { n: se.number })}</b>
 									<span class="lib-count" class:full class:part={!full && se.in_library > 0} class:none={!se.in_library && se.missing > 0}>{se.in_library} / {se.episodes}</span>
-									{#if se.downloading}<span class="lib-sr-note dl">{se.downloading} downloading</span>{/if}
-									{#if se.failed}<span class="lib-sr-note fail">{se.failed} failed</span>{/if}
-									{#if se.next_air_date}<span class="lib-sr-note">Next {dayWords(se.next_air_date)}</span>{/if}
+									{#if se.downloading}<span class="lib-sr-note dl">{t('discover.titleLibrary.downloading', { downloading: se.downloading })}</span>{/if}
+									{#if se.failed}<span class="lib-sr-note fail">{t('discover.titleLibrary.failed', { failed: se.failed })}</span>{/if}
+									{#if se.next_air_date}<span class="lib-sr-note">{t('discover.titleLibrary.next', { v: dayWords(se.next_air_date) })}</span>{/if}
 									<span class="lib-chev" aria-hidden="true"><Icon name="chevronDown" size={16} /></span>
 								</button>
 								{#if manage}
 									<span class="lib-sr-acts">
-										<button type="button" class="lib-ico" title="Get the missing episodes" aria-label="Get the missing episodes of season {se.number}" disabled={!se.missing || busyAction === `s${se.number}`} onclick={() => epSearch({ season: se.number }, `s${se.number}`, `Searching for season ${se.number}`)}><Icon name="search" size={15} /></button>
-										<button type="button" class="lib-ico" title="Choose a release for this season" aria-label="Choose a release for season {se.number}" onclick={() => own.openPick({ label: se.number === 0 ? 'Specials' : `Season ${se.number}`, query: `season=${se.number}`, body: { season: se.number } })}><Icon name="grid" size={15} /></button>
-										<button type="button" class="lib-ico" title="Season tools" aria-label="Season {se.number} tools" onclick={() => openTools(o.id, se.number)}><Icon name="more" size={15} /></button>
+										<button type="button" class="lib-ico" title={t('discover.titleLibrary.getTheMissingEpisodes')} aria-label={t('discover.titleLibrary.getTheMissingEpisodes2', { number: se.number })} disabled={!se.missing || busyAction === `s${se.number}`} onclick={() => epSearch({ season: se.number }, `s${se.number}`, t('discover.titleLibrary.searchingSeason', { n: se.number }))}><Icon name="search" size={15} /></button>
+										<button type="button" class="lib-ico" title={t('discover.titleLibrary.chooseAReleaseFor')} aria-label={t('discover.titleLibrary.chooseAReleaseFor2', { number: se.number })} onclick={() => own.openPick({ label: se.number === 0 ? t('discover.titleLibrary.specials') : t('discover.titleLibrary.seasonN', { n: se.number }), query: `season=${se.number}`, body: { season: se.number } })}><Icon name="grid" size={15} /></button>
+										<button type="button" class="lib-ico" title={t('discover.titleLibrary.seasonTools')} aria-label={t('discover.titleLibrary.seasonTools2', { number: se.number })} onclick={() => openTools(o.id, se.number)}><Icon name="more" size={15} /></button>
 									</span>
 								{/if}
 							</div>
 							{#if isOpen}
 								<div class="lib-eps">
-									{#if seasonFailed.has(se.number) && !seasonEps[se.number]}<p class="form-error" role="alert">Couldn't load this season. <button type="button" class="lib-link" onclick={() => loadSeason(o.id, se.number)}>Retry</button></p>{/if}
+									{#if seasonFailed.has(se.number) && !seasonEps[se.number]}<p class="form-error" role="alert">{t('discover.titleLibrary.couldnTLoadThis')} <button type="button" class="lib-link" onclick={() => loadSeason(o.id, se.number)}>{t('discover.titleLibrary.retry')}</button></p>{/if}
 									{#each seasonEps[se.number] ?? [] as e (e.id)}
 										{@const st = e.slots[0]}
 										{@const tone = epTone(st?.state ?? '')}
 										{@const aired = !e.air_date || Date.parse(e.air_date) <= Date.now()}
 										<!-- The row is not a button itself, since it holds buttons: the title button opens the episode and stretches over the row. -->
 										<div class="lib-ep {tone}" class:future={!aired}>
-											{#if manage}<button type="button" class="lib-keep sm" class:on={e.keep_up_to_date !== false} aria-pressed={e.keep_up_to_date !== false} title={e.keep_up_to_date !== false ? 'Kept up to date' : 'Not kept up to date'} aria-label="Keep episode {e.episode} up to date" onclick={(ev) => { ev.stopPropagation(); void keepEpisode(e, se.number); }}><Icon name="check" size={11} /></button>{/if}
+											{#if manage}<button type="button" class="lib-keep sm" class:on={e.keep_up_to_date !== false} aria-pressed={e.keep_up_to_date !== false} title={e.keep_up_to_date !== false ? t('discover.titleLibrary.keptUpToDate') : t('discover.titleLibrary.notKeptUpToDate')} aria-label={t('discover.titleLibrary.keepEpisodeUpTo', { episode: e.episode })} onclick={(ev) => { ev.stopPropagation(); void keepEpisode(e, se.number); }}><Icon name="check" size={11} /></button>{/if}
 											<span class="lib-ep-still">{#if e.still}<img src={e.still.replace('/w780/', '/w300/')} alt="" loading="lazy" decoding="async" />{/if}<span class="lib-ep-n">{e.episode}</span></span>
-											<button type="button" class="lib-ep-text" aria-label="Episode {e.episode}: {e.name ?? ''}" onclick={() => { epPicked = e; epOpen = true; }}>
-												<b>{e.name ?? `Episode ${e.episode}`}{#if e.episode === (seasonEps[se.number]?.length ?? 0) && se.episodes > 1}<span class="lib-tag">Finale</span>{/if}</b>
-												<small>{[e.air_date ? dayWords(e.air_date) : '', e.runtime_minutes ? `${e.runtime_minutes}\u00a0min` : '', epFile(e)].filter(Boolean).join(' · ')}</small>
+											<button type="button" class="lib-ep-text" aria-label={t('discover.titleLibrary.episodeNamed', { episode: e.episode, name: e.name ?? '' })} onclick={() => { epPicked = e; epOpen = true; }}>
+												<b>{e.name ?? t('discover.titleLibrary.episodeN', { episode: e.episode })}{#if e.episode === (seasonEps[se.number]?.length ?? 0) && se.episodes > 1}<span class="lib-tag">{t('discover.titleLibrary.finale')}</span>{/if}</b>
+												<small>{[e.air_date ? dayWords(e.air_date) : '', e.runtime_minutes ? t('discover.titleLibrary.runtimeMin', { n: e.runtime_minutes }) : '', epFile(e)].filter(Boolean).join(' · ')}</small>
 											</button>
-											<span class="lib-ep-st {aired ? tone : 'future'}"><span class="own-dot {tone}" aria-hidden="true"></span>{aired ? epQuality(e) || st?.state_label || 'Missing' : 'Not out yet'}</span>
+											<span class="lib-ep-st {aired ? tone : 'future'}"><span class="own-dot {tone}" aria-hidden="true"></span>{aired ? epQuality(e) || serverWords(st?.state_label) || t('discover.titleLibrary.missing') : t('discover.titleLibrary.notOutYet')}</span>
 											{#if manage && st}
 												<span class="lib-ep-acts">
-													<button type="button" class="lib-ico" title="Look for it now" aria-label="Look for episode {e.episode}" disabled={!aired || tone === 'downloading' || busyAction === `e${e.id}`} onclick={(ev) => { ev.stopPropagation(); void epSearch({ slot_id: st.id }, `e${e.id}`, `Searching for episode ${e.episode}`); }}><Icon name="search" size={14} /></button>
-													<button type="button" class="lib-ico" title="Choose a release for this episode" aria-label="Choose a release for episode {e.episode}" disabled={!aired} onclick={(ev) => { ev.stopPropagation(); own.openPick({ label: `S${se.number} E${e.episode}`, query: `item_id=${e.id}`, body: { slot_id: st.id } }); }}><Icon name="grid" size={14} /></button>
+													<button type="button" class="lib-ico" title={t('discover.titleLibrary.lookForItNow')} aria-label={t('discover.titleLibrary.lookForEpisode', { episode: e.episode })} disabled={!aired || tone === 'downloading' || busyAction === `e${e.id}`} onclick={(ev) => { ev.stopPropagation(); void epSearch({ slot_id: st.id }, `e${e.id}`, t('discover.titleLibrary.searchingEpisode', { episode: e.episode })); }}><Icon name="search" size={14} /></button>
+													<button type="button" class="lib-ico" title={t('discover.titleLibrary.chooseAReleaseFor3')} aria-label={t('discover.titleLibrary.chooseAReleaseFor4', { episode: e.episode })} disabled={!aired} onclick={(ev) => { ev.stopPropagation(); own.openPick({ label: `S${se.number} E${e.episode}`, query: `item_id=${e.id}`, body: { slot_id: st.id } }); }}><Icon name="grid" size={14} /></button>
 												</span>
 											{/if}
 										</div>
@@ -467,96 +469,96 @@
 				</div>
 			{:else}
 				<div class="lib-eps-head">
-					<h3 class="lib-h">{libFiles.length > 1 ? 'Versions' : 'File'}</h3>
-					{#if manage}<span class="lib-head-acts"><button type="button" class="lib-btn sm" onclick={() => void own.addVersion()}><Icon name="plus" size={15} />Add a version</button></span>{/if}
+					<h3 class="lib-h">{libFiles.length > 1 ? t('discover.titleLibrary.versions') : t('discover.titleLibrary.file')}</h3>
+					{#if manage}<span class="lib-head-acts"><button type="button" class="lib-btn sm" onclick={() => void own.addVersion()}><Icon name="plus" size={15} />{t('discover.titleLibrary.addAVersion')}</button></span>{/if}
 				</div>
 				<div class="lib-files">
 					{#each libFiles as f (f.id)}
 							{@const v = o.versions.find((x) => x.id === f.versionId)}
 						<article class="lib-file" data-testid="version-card">
-							<p class="lib-file-top"><b>{f.label}</b>{#each f.badges as b (b)}<span class="lib-badge">{b}</span>{/each}{#if manage && v && !v.main && o.kind !== 'show'}<span class="lib-file-menu"><Menu label="Version actions for {v.label}" items={[{ label: `Remove ${v.label}`, icon: 'trash', destructive: true, onselect: () => void own.movieVersions?.remove(v) }]} width={220} /></span>{/if}</p>
+							<p class="lib-file-top"><b>{f.label}</b>{#each f.badges as b (b)}<span class="lib-badge">{b}</span>{/each}{#if manage && v && !v.main && o.kind !== 'show'}<span class="lib-file-menu"><Menu label={t('discover.titleLibrary.versionActionsFor', { label: v.label })} items={[{ label: t('discover.titleLibrary.removeLabel', { label: v.label }), icon: 'trash', destructive: true, onselect: () => void own.movieVersions?.remove(v) }]} width={220} /></span>{/if}</p>
 							{#if f.has}
-								<div class="lib-tiles"><div><span>Quality</span><b>{f.res || '—'}</b></div><div><span>Size</span><b>{f.size || '—'}</b></div><div><span>Added</span><b>{f.addedOn || '—'}</b></div></div>
-							{:else}<p class="lib-file-meta">{f.state} · no file yet</p>{/if}
+								<div class="lib-tiles"><div><span>{t('discover.titleLibrary.quality')}</span><b>{f.res || '—'}</b></div><div><span>{t('discover.titleLibrary.size')}</span><b>{f.size || '—'}</b></div><div><span>{t('discover.titleLibrary.added')}</span><b>{f.addedOn || '—'}</b></div></div>
+							{:else}<p class="lib-file-meta">{t('discover.titleLibrary.noFileYet', { state: f.state })}</p>{/if}
 							{#if f.audio.length || f.subs.length}
-								<p class="lib-langs">{#if f.audio.length}<span class="muted">Audio</span>{#each f.audio as l (l)}<span class="lib-lang">{l}</span>{/each}{/if}{#if f.subs.length}<span class="muted">Subtitles</span>{#each f.subs as l (l)}<span class="lib-lang">{l}</span>{/each}{/if}</p>
+								<p class="lib-langs">{#if f.audio.length}<span class="muted">{t('discover.titleLibrary.audio')}</span>{#each f.audio as l (l)}<span class="lib-lang">{l}</span>{/each}{/if}{#if f.subs.length}<span class="muted">{t('discover.titleLibrary.subtitles')}</span>{#each f.subs as l (l)}<span class="lib-lang">{l}</span>{/each}{/if}</p>
 							{/if}
 							{#if f.name}<p class="lib-file-name" title={f.name}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/></svg><span>{f.name}</span></p>{/if}
 						</article>
 					{:else}
-						<p class="muted">No file yet.</p>
+						<p class="muted">{t('discover.titleLibrary.noFileYet2')}</p>
 					{/each}
 				</div>
 			{/if}
 			</div>
 			<aside class="lib-side">
-			<h3 class="lib-h">History</h3>
+			<h3 class="lib-h">{t('discover.titleLibrary.history')}</h3>
 			<div class="lib-hist">
 				{#each libAll ? ownedRows : ownedRows.slice(0, 5) as r (r.key)}
 					<CompactRow row={r} ctx={{ titles: ownedTitles }} titleById={ownedTitles} onclick={() => goto(to(`/downloads/history?title=${o.id}`))} />
-				{:else}<p class="muted">Nothing has happened yet.</p>{/each}
+				{:else}<p class="muted">{t('discover.titleLibrary.nothingHasHappenedYet')}</p>{/each}
 			</div>
-			{#if ownedRows.length > 5}<button type="button" class="lib-link" onclick={() => (libAll = !libAll)}>{libAll ? 'Show less' : `Show all ${ownedRows.length}`}</button>{/if}
+			{#if ownedRows.length > 5}<button type="button" class="lib-link" onclick={() => (libAll = !libAll)}>{libAll ? t('discover.titleLibrary.showLess') : t('discover.titleLibrary.showAll', { n: ownedRows.length })}</button>{/if}
 
 			{#if manage}
-				<h3 class="lib-h">Settings</h3>
+				<h3 class="lib-h">{t('discover.titleLibrary.settings')}</h3>
 				<div class="lib-rows">
 					<button type="button" class="lib-row" role="switch" aria-checked={o.keep_up_to_date} disabled={busyAction === 'keep'} onclick={() => own.ownRun('keep')}>
-						<span><b>Keep up to date</b><small>New and better copies</small></span>
+						<span><b>{t('discover.titleLibrary.keepUpToDate')}</b><small>{t('discover.titleLibrary.newAndBetterCopies')}</small></span>
 						<span class="lib-switch" class:on={o.keep_up_to_date} aria-hidden="true"></span>
 					</button>
 					{#if (!o.gate_open || !o.keep_up_to_date) && o.gate_reason}
 						<div class="lib-row static">
-							<span><b>Not looking yet</b><small class="wrap" data-testid="gate-reason">{o.gate_reason}</small></span>
+							<span><b>{t('discover.titleLibrary.notLookingYet')}</b><small class="wrap" data-testid="gate-reason">{o.gate_reason}</small></span>
 							{#if o.gate_opens_at && !o.gate_open}<span class="lib-val">{date(o.gate_opens_at)}</span>{/if}
 						</div>
 					{/if}
 					<div class="lib-row static q-row" data-testid="quality-row">
-						<span><b>Quality</b>{#if qHint}<small>{qHint}</small>{/if}</span>
-						<div class="q-seg" role="radiogroup" aria-label="Quality">
+						<span><b>{t('discover.titleLibrary.quality')}</b>{#if qHint}<small>{qHint}</small>{/if}</span>
+						<div class="q-seg" role="radiogroup" aria-label={t('discover.titleLibrary.quality')}>
 							{#each qPresets as r (r.id)}
 								<button type="button" role="radio" aria-checked={r.id === o.pick_rules_id} class:on={r.id === o.pick_rules_id} disabled={busyAction === 'rules'} onclick={() => setRules(r.id)}>{r.name}</button>
 							{/each}
 							<div class="q-more" class:on={!!qCustom}>
-								<Menu label={qCustom ? `Quality: ${qCustom.name}. Other sets` : 'Custom quality sets'} variant="button" width={230} items={qMenu}>
-									{#snippet trigger()}<i>{qCustom?.name ?? 'Custom'}</i><Icon name="chevronDown" size={13} />{/snippet}
+								<Menu label={qCustom ? t('discover.titleLibrary.qualityOtherSets', { name: qCustom.name }) : t('discover.titleLibrary.customQualitySets')} variant="button" width={230} items={qMenu}>
+									{#snippet trigger()}<i>{qCustom?.name ?? t('discover.titleLibrary.pickCustom')}</i><Icon name="chevronDown" size={13} />{/snippet}
 								</Menu>
 							</div>
 						</div>
 					</div>
 					{#if o.show}
 						<div class="lib-row static" data-testid="seasons-row">
-							<span><b>Seasons</b></span>
-							<div class="lib-pick"><Menu label="Seasons" variant="button" items={seasonMenu} width={200}>{#snippet trigger()}<span>{busyAction === 'seasons' ? 'Saving…' : seasonPickWords[seasonPick]}</span><Icon name="chevronDown" size={14} />{/snippet}</Menu></div>
+							<span><b>{t('discover.titleLibrary.seasons')}</b></span>
+							<div class="lib-pick"><Menu label={t('discover.titleLibrary.seasons')} variant="button" items={seasonMenu} width={200}>{#snippet trigger()}<span>{busyAction === 'seasons' ? t('discover.titleLibrary.saving') : seasonPickWords[seasonPick]}</span><Icon name="chevronDown" size={14} />{/snippet}</Menu></div>
 						</div>
 						<div class="lib-row static">
-							<span><b>Episode order</b></span>
-							<div class="lib-pick"><Menu label="Episode order" variant="button" items={orderMenu} width={200}>{#snippet trigger()}<span>{orders.find(([v]) => v === o.show?.episode_order)?.[1] ?? 'As aired'}</span><Icon name="chevronDown" size={14} />{/snippet}</Menu></div>
+							<span><b>{t('discover.titleLibrary.episodeOrder')}</b></span>
+							<div class="lib-pick"><Menu label={t('discover.titleLibrary.episodeOrder')} variant="button" items={orderMenu} width={200}>{#snippet trigger()}<span>{orders.find(([v]) => v === o.show?.episode_order)?.[1] ?? t('discover.titleLibrary.orderAired')}</span><Icon name="chevronDown" size={14} />{/snippet}</Menu></div>
 						</div>
 					{/if}
 					<!-- Only when there is another folder of this kind to move to. -->
 					{#if kindFolders.length > 1}
 						<div class="lib-row static" data-testid="folder-row" title={o.folder_path ?? ''}>
-							<span><b>Folder</b></span>
-							<div class="lib-pick"><Menu label="Folder" variant="button" items={folderMenu} width={340}>{#snippet trigger()}<span>{curFolder ? folderName(curFolder) : 'Folder'}</span><Icon name="chevronDown" size={14} />{/snippet}</Menu></div>
+							<span><b>{t('discover.titleLibrary.folder')}</b></span>
+							<div class="lib-pick"><Menu label={t('discover.titleLibrary.folder')} variant="button" items={folderMenu} width={340}>{#snippet trigger()}<span>{curFolder ? folderName(curFolder) : t('discover.titleLibrary.folderWord')}</span><Icon name="chevronDown" size={14} />{/snippet}</Menu></div>
 						</div>
 					{/if}
 					<div class="lib-row static q-row" data-testid="subtitles-row">
-						<span><b>Subtitles</b><small>{subsData ? subsHint : ' '}</small></span>
-						<div class="q-seg" role="radiogroup" aria-label="Subtitles">
-							<button type="button" role="radio" aria-checked={subsMode === 'default'} class:on={subsMode === 'default'} disabled={busyAction === 'subs'} onclick={() => setSubs('default')}>Default</button>
-							<button type="button" role="radio" aria-checked={subsMode === 'off'} class:on={subsMode === 'off'} disabled={busyAction === 'subs'} onclick={() => setSubs('off')}>Off</button>
+						<span><b>{t('discover.titleLibrary.subtitles')}</b><small>{subsData ? subsHint : ' '}</small></span>
+						<div class="q-seg" role="radiogroup" aria-label={t('discover.titleLibrary.subtitles')}>
+							<button type="button" role="radio" aria-checked={subsMode === 'default'} class:on={subsMode === 'default'} disabled={busyAction === 'subs'} onclick={() => setSubs('default')}>{t('discover.titleLibrary.default')}</button>
+							<button type="button" role="radio" aria-checked={subsMode === 'off'} class:on={subsMode === 'off'} disabled={busyAction === 'subs'} onclick={() => setSubs('off')}>{t('discover.titleLibrary.off')}</button>
 							<div class="q-more" class:on={subsMode === 'custom'}>
-								<Menu label="Subtitle options" variant="button" width={230} items={subsMenu}>{#snippet trigger()}<i>{subsMode === 'custom' ? subsCodes(subsOwn?.languages ?? []) : 'Custom'}</i><Icon name="chevronDown" size={13} />{/snippet}</Menu>
+								<Menu label={t('discover.titleLibrary.subtitleOptions')} variant="button" width={230} items={subsMenu}>{#snippet trigger()}<i>{subsMode === 'custom' ? subsCodes(subsOwn?.languages ?? []) : t('discover.titleLibrary.pickCustom')}</i><Icon name="chevronDown" size={13} />{/snippet}</Menu>
 							</div>
 						</div>
 					</div>
 					{#if renameCount}
-						<button type="button" class="lib-row" data-testid="rename-row" onclick={() => (own.renameOpen = true)}><span><b>Rename files</b><small>{renameCount === 1 ? '1 file gets a new name' : `${renameCount} files get a new name`}</small></span><Icon name="chevronRight" size={16} /></button>
+						<button type="button" class="lib-row" data-testid="rename-row" onclick={() => (own.renameOpen = true)}><span><b>{t('discover.titleLibrary.renameFiles')}</b><small>{renameCount === 1 ? t('discover.titleLibrary.renameOne') : t('discover.titleLibrary.renameOther', { n: renameCount })}</small></span><Icon name="chevronRight" size={16} /></button>
 					{/if}
 				</div>
 				<div class="lib-rows danger">
-					<button type="button" class="lib-row" onclick={() => (own.deleteOpen = true)}><span><b>{o.kind === 'show' ? 'Delete show' : 'Delete movie'}</b></span><Icon name="trash" size={16} /></button>
+					<button type="button" class="lib-row" onclick={() => (own.deleteOpen = true)}><span><b>{o.kind === 'show' ? t('discover.titleLibrary.deleteShow') : t('discover.titleLibrary.deleteMovie')}</b></span><Icon name="trash" size={16} /></button>
 				</div>
 			{/if}
 			</aside>
@@ -565,13 +567,13 @@
 			<!-- Active downloads and Versions (subtitles open from Settings). -->
 			<div class="lib-more" data-testid="lib-tools">
 				{#if activeDownloads.length}
-					<TitleSection id="h-downloads" title="Downloading">
+					<TitleSection id="h-downloads" title={t('discover.titleLibrary.downloading2')}>
 						<ul class="tp-list">
 							{#each activeDownloads as x (x.id)}
 								{@const dl = x.download!}
 								<li class="tp-row" data-testid="download">
 									<div class="tp-row-main"><b>{x.version && o.slots.length > 1 ? `${x.version}: ` : ''}{dl.label}</b><span class="xs muted">{dl.text}</span></div>
-									<div class="tp-row-end"><span class="chip {downloadTone(dl.state)}">{Math.floor(Math.min(Math.max(dl.progress, 0), 1) * 100)}%</span><button type="button" class="lib-btn sm" disabled={failing === dl.id} onclick={() => markFailed(dl.id)}>Mark failed</button></div>
+									<div class="tp-row-end"><span class="chip {downloadTone(dl.state)}">{Math.floor(Math.min(Math.max(dl.progress, 0), 1) * 100)}%</span><button type="button" class="lib-btn sm" disabled={failing === dl.id} onclick={() => markFailed(dl.id)}>{t('discover.titleLibrary.markFailed')}</button></div>
 								</li>
 							{/each}
 						</ul>
@@ -587,17 +589,17 @@
 
 {#if owned && manage}
 	{@const o = owned}
-		<Sheet bind:open={subsOpen} title="Subtitles" description={o.name} size="lg">
+		<Sheet bind:open={subsOpen} title={t('discover.titleLibrary.subtitles')} description={o.name} size="lg">
 			{#if subsOpen}<SubtitlePanel titleId={o.id} movie={o.kind !== 'show'} files={o.kind !== 'show'} bare />{/if}
 		</Sheet>
-		<Sheet open={!!moveTo} onclose={() => (moveTo = null)} title={`Move to ${moveTo ? folderName(moveTo) : ''}?`} description="Its files move to the new folder." size="sm">
+		<Sheet open={!!moveTo} onclose={() => (moveTo = null)} title={t('discover.titleLibrary.moveTo', { folder: moveTo ? folderName(moveTo) : '' })} description={t('discover.titleLibrary.itsFilesMoveTo')} size="sm">
 			<p class="lib-move-path">{moveTo?.path}</p>
 			<div class="lib-move-actions">
-				<button type="button" class="lib-btn" onclick={() => (moveTo = null)}>Cancel</button>
-				<button type="button" class="lib-btn primary" disabled={busyAction === 'move'} onclick={moveFolder}>Move files</button>
+				<button type="button" class="lib-btn" onclick={() => (moveTo = null)}>{t('discover.titleLibrary.cancel')}</button>
+				<button type="button" class="lib-btn primary" disabled={busyAction === 'move'} onclick={moveFolder}>{t('discover.titleLibrary.moveFiles')}</button>
 			</div>
 		</Sheet>
-		{#if o.show}<SeasonToolsSheet bind:open={toolsOpen} bind:mode={toolsMode} titleId={o.id} season={toolsSeason} episodes={seasonEps[toolsSeason] ?? []} onchange={() => loadSeason(o.id, toolsSeason)} ondelete={() => { toolsOpen = false; showDeleter?.open({ season: toolsSeason, label: toolsSeason === 0 ? 'Specials' : `Season ${toolsSeason}` }); }} />{/if}
+		{#if o.show}<SeasonToolsSheet bind:open={toolsOpen} bind:mode={toolsMode} titleId={o.id} season={toolsSeason} episodes={seasonEps[toolsSeason] ?? []} onchange={() => loadSeason(o.id, toolsSeason)} ondelete={() => { toolsOpen = false; showDeleter?.open({ season: toolsSeason, label: toolsSeason === 0 ? t('discover.titleLibrary.specials') : t('discover.titleLibrary.seasonN', { n: toolsSeason }) }); }} />{/if}
 		{#if o.show}<EpisodeSheet bind:open={epOpen} ep={epPicked} titleId={o.id} tmdb={o.ids?.tmdb} {manage} show={o} ondelete={() => { const e = epPicked; if (!e) return; epOpen = false; showDeleter?.open({ episodeIds: [e.id], label: `S${String(e.season ?? 0).padStart(2, '0')}E${String(e.episode).padStart(2, '0')}` }); }} />{/if}
 		<!-- One season or one episode (and its files) goes through the show's delete dialog. -->
 		{#if o.show}<ShowDeleteDialog bind:this={showDeleter} titleId={o.id} name={o.name} ondone={() => { seasonEps = {}; openSeasons.clear(); void own.loadOwned(o.id); }} />{/if}

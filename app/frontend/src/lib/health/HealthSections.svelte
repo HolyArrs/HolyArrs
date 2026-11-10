@@ -1,9 +1,11 @@
 <script lang="ts">
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	// The Status page body: four tabs of plates (Status, Jobs, Updates, About).
 	import '#lib/ui/plate.css';
 	import AdminLinkButton from '#lib/ui/AdminLinkButton.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import Skeleton from '#lib/ui/Skeleton.svelte';
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import PartsRail from './PartsRail.svelte';
 	import RunsTimeline from './RunsTimeline.svelte';
 	import WhyNote from './WhyNote.svelte';
@@ -23,13 +25,13 @@
 	type About = { version: string; go: string; os: string; docker: boolean; sqlite: string; migration: number; config_dir: string; start_dir: string; uptime_s: number; started_at: string };
 
 	// Library kind to the plural shown beside each disk.
-	const kindWord: Record<string, string> = { movie: 'Movies', show: 'Shows', music: 'Music' };
-	const tabs = [
-		{ id: 'parts', label: 'Status' },
-		{ id: 'jobs', label: 'Jobs' },
-		{ id: 'updates', label: 'Updates' },
-		{ id: 'about', label: 'About' }
-	];
+	const kindWord = (k: string): string => (k === 'movie' ? t('health.sections.movies') : k === 'show' ? t('health.sections.shows') : k === 'music' ? t('health.sections.music') : '');
+	const tabs = $derived([
+		{ id: 'parts', label: t('health.sections.tabStatus') },
+		{ id: 'jobs', label: t('health.sections.tabJobs') },
+		{ id: 'updates', label: t('health.sections.tabUpdates') },
+		{ id: 'about', label: t('health.sections.tabAbout') }
+	]);
 	// Names of reads an account may not do, mapped to the kind they remove.
 	const hiddenKind: Record<string, string> = { 'outside lists': 'lists', alerts: 'alerts' };
 
@@ -112,7 +114,7 @@
 	});
 
 	function tabKey(e: KeyboardEvent) {
-		const i = tabs.findIndex((t) => t.id === tab);
+		const i = tabs.findIndex((tb) => tb.id === tab);
 		const n = e.key === 'ArrowRight' ? i + 1 : e.key === 'ArrowLeft' ? i - 1 : e.key === 'Home' ? 0 : e.key === 'End' ? tabs.length - 1 : -1;
 		if (n < 0 || n >= tabs.length || n === i) return;
 		e.preventDefault();
@@ -161,24 +163,24 @@
 		const two = (n: number) => String(n).padStart(2, '0');
 		return `${Math.floor(t / 86400)}d ${two(Math.floor(t / 3600) % 24)}:${two(Math.floor(t / 60) % 60)}:${two(t % 60)}`;
 	}
-	const folderRows = (d: Disk) => libRows.filter((r) => r.name === `Folder ${d.path}` || r.name === `Free space ${d.path}`);
+	const folderRows = (d: Disk) => libRows.filter((r) => r.name === `${t('health.check.folder')} ${d.path}` || r.name === `${t('health.check.freeSpace')} ${d.path}`);
 	const worst = (rs: StatusRow[]) => rs.find((r) => r.tone === 'fail') ?? rs.find((r) => r.tone === 'wait');
 	// Null when the disk size is unknown.
 	const usedPct = (d: Disk) => (d.total_bytes > 0 && d.free_bytes >= 0 ? Math.round(((d.total_bytes - d.free_bytes) / d.total_bytes) * 100) : null);
 	// A run that should have started already says how late it is.
 	function nextWord(j: StatusRow): string {
-		if (!j.nextRun || stopped(j) || Number.isNaN(Date.parse(j.nextRun))) return 'Not planned';
-		return j.word === 'Running' ? until(j.nextRun, now) : nextRun(j.nextRun, now);
+		if (!j.nextRun || stopped(j) || Number.isNaN(Date.parse(j.nextRun))) return t('health.sections.notPlanned');
+		return j.word === t('health.job.running') ? until(j.nextRun, now) : nextRun(j.nextRun, now);
 	}
 	// The verb keeps "3 d ago" from reading as "not checked for 3 days".
-	const when = (r: StatusRow) => (atVerb[r.group] ? `${atVerb[r.group]} ${ago(r.at, now)}` : ago(r.at, now));
+	const when = (r: StatusRow) => (atVerb[r.group] ? t('health.rows.since', { verb: atVerb[r.group] ?? '', when: ago(r.at, now) }) : ago(r.at, now));
 </script>
 
 <div class="secs" data-testid="status-sections">
-	<div class="seg" role="tablist" aria-label="Status view" tabindex="-1" bind:this={tablist} onkeydown={tabKey}>
-		{#each tabs as t (t.id)}
-			<button type="button" role="tab" id="st-tab-{t.id}" aria-selected={tab === t.id} aria-controls={tab === t.id ? `st-panel-${t.id}` : undefined} tabindex={tab === t.id ? 0 : -1} onclick={() => ontab(t.id)}>
-				{t.label}{#if t.id === 'jobs' && jobsTone}<i class="badge {jobsTone}" aria-hidden="true"></i><span class="sr">{jobsTone === 'fail' ? ', has failures' : ', needs attention'}</span>{:else if t.id === 'updates' && upd?.newer}<i class="badge wait" aria-hidden="true"></i><span class="sr">, update available</span>{/if}
+	<div class="seg" role="tablist" aria-label={t('health.sections.view')} tabindex="-1" bind:this={tablist} onkeydown={tabKey}>
+		{#each tabs as tb (tb.id)}
+			<button type="button" role="tab" id="st-tab-{tb.id}" aria-selected={tab === tb.id} aria-controls={tab === tb.id ? `st-panel-${tb.id}` : undefined} tabindex={tab === tb.id ? 0 : -1} onclick={() => ontab(tb.id)}>
+				{tb.label}{#if tb.id === 'jobs' && jobsTone}<i class="badge {jobsTone}" aria-hidden="true"></i><span class="sr">{jobsTone === 'fail' ? t('health.sections.hasFailures') : t('health.sections.needsAttention')}</span>{:else if tb.id === 'updates' && upd?.newer}<i class="badge wait" aria-hidden="true"></i><span class="sr">{t('health.sections.updateAvailable')}</span>{/if}
 			</button>
 		{/each}
 	</div>
@@ -186,7 +188,7 @@
 	<div class="panel" class:tight={tab === 'jobs'} role="tabpanel" id="st-panel-{tab}" aria-labelledby="st-tab-{tab}">
 	{#if tab === 'parts'}
 		<section class="st-plate" aria-labelledby="s-health">
-			<h2 id="s-health">Health</h2>
+			<h2 id="s-health">{t('health.sections.health')}</h2>
 			{#if problems.length}
 				<ul class="health" data-testid="status-attention">
 					{#each problems as r (r.key)}
@@ -194,35 +196,35 @@
 							<span class="hico {r.tone}" aria-hidden="true">!</span>
 							<span class="hmsg">
 								<b>{r.name}</b> <span class="hk">· {labelOf(r)}</span> <span class="chip {r.tone}">{r.word}</span>
-								{#if r.reason}<span class="hr">{r.reason}</span>{/if}
+								{#if r.reason}<span class="hr">{serverWords(r.reason)}</span>{/if}
 							</span>
 							{#if r.at}<time class="hat" datetime={r.at} title={dateTime(r.at)}>{when(r)}</time>{/if}
 							{#if canAct}
 								<span class="hacts">
-									{#if r.check}<Button variant="plain" size="sm" disabled={busy(r.key)} onclick={() => oncheck(r)}>{r.group === 'jobs' ? 'Run now' : 'Check'}</Button>{/if}
-									{#if r.fix}<Button variant="plain" size="sm" href={to(r.fix)}>Fix</Button>{/if}
+									{#if r.check}<Button variant="plain" size="sm" disabled={busy(r.key)} onclick={() => oncheck(r)}>{r.group === 'jobs' ? t('health.sections.runNow') : t('health.rows.check')}</Button>{/if}
+									{#if r.fix}<Button variant="plain" size="sm" href={to(r.fix)}>{t('health.rows.fix')}</Button>{/if}
 								</span>
 							{/if}
 						</li>
 					{/each}
 				</ul>
 			{:else if empty}
-				<p class="ok-line"><i class="st-dot idle" aria-hidden="true"></i>Nothing to check yet: no source or downloader is added.{#if canAct} <Button variant="plain" size="sm" href={to('/settings/sources')}>Add a source</Button>{/if}</p>
+				<p class="ok-line"><i class="st-dot idle" aria-hidden="true"></i>{t('health.sections.nothingToCheck')}{#if canAct} <Button variant="plain" size="sm" href={to('/settings/sources')}>{t('health.sections.addSource')}</Button>{/if}</p>
 			{:else if failed.includes('parts')}
-				<p class="ok-line"><i class="st-dot idle" aria-hidden="true"></i>No problems found.</p>
+				<p class="ok-line"><i class="st-dot idle" aria-hidden="true"></i>{t('health.headline.none')}.</p>
 			{:else}
-				<p class="ok-line"><i class="st-dot ok" aria-hidden="true"></i>No problems. Everything is working.</p>
+				<p class="ok-line"><i class="st-dot ok" aria-hidden="true"></i>{t('health.sections.allGood')}</p>
 			{/if}
 		</section>
 
 		<PartsRail {kinds} {canAct} {busy} {oncheck} />
 
 		<section class="st-plate" aria-labelledby="s-disk">
-			<h2 id="s-disk">Storage</h2>
+			<h2 id="s-disk">{t('health.groups.library')}</h2>
 			{#if disks === null}
-				<div class="dload" role="status"><span class="sr">Loading storage</span><Skeleton lines={2} /></div>
+				<div class="dload" role="status"><span class="sr">{t('health.sections.loadingStorage')}</span><Skeleton lines={2} /></div>
 			{:else if !disks.length}
-				<p class="none">No library folders yet.</p>
+				<p class="none">{t('health.sections.noFolders')}</p>
 			{:else}
 				<ul class="disks">
 					{#each disks as d (d.path)}
@@ -230,43 +232,43 @@
 						{@const w = worst(folderRows(d))}
 						<li class="disk {w?.tone ?? ''}" class:bad={!!w}>
 							<div class="dtop">
-								<span class="dname">{d.label || kindWord[d.kind] || 'Library'}</span>
-								{#if w}<span class="chip {w.tone}">{w.word}</span>{:else}<span class="chip ok">Working</span>{/if}
+								<span class="dname">{d.label || kindWord(d.kind) || t('health.sections.library')}</span>
+								{#if w}<span class="chip {w.tone}">{w.word}</span>{:else}<span class="chip ok">{t('health.word.working')}</span>{/if}
 								<span class="dnum">
-									{#if d.free_bytes >= 0}<b>{bytes(d.free_bytes)}</b> free{/if}{#if d.total_bytes > 0}&nbsp;of {bytes(d.total_bytes)}{/if}
+									{#if d.free_bytes >= 0}<b>{bytes(d.free_bytes)}</b> {t('health.sections.free')}{/if}{#if d.total_bytes > 0}&nbsp;{t('health.sections.of')} {bytes(d.total_bytes)}{/if}
 								</span>
 							</div>
-							<div class="dbar" class:warn={p !== null && p >= 85} class:full={p !== null && p >= 95} role="meter" aria-valuemin={0} aria-valuemax={100} aria-valuenow={p ?? undefined} aria-label="{d.label || d.path} used">
+							<div class="dbar" class:warn={p !== null && p >= 85} class:full={p !== null && p >= 95} role="meter" aria-valuemin={0} aria-valuemax={100} aria-valuenow={p ?? undefined} aria-label={t('health.sections.used', { name: d.label || d.path })}>
 								<i style:width="{p ?? 0}%"></i>
 							</div>
-							<div class="dfoot"><span class="mono" title={d.path}>{d.path}</span>{#if p !== null}<span>{p}% used</span>{/if}</div>
-							{#if w?.reason}<p class="dwhy">{w.reason}{#if canAct && w.fix} <Button variant="plain" size="sm" href={to(w.fix)}>Fix</Button>{/if}</p>{/if}
+							<div class="dfoot"><span class="mono" title={d.path}>{d.path}</span>{#if p !== null}<span>{t('health.sections.pctUsed', { pct: p })}</span>{/if}</div>
+							{#if w?.reason}<p class="dwhy">{serverWords(w.reason)}{#if canAct && w.fix} <Button variant="plain" size="sm" href={to(w.fix)}>{t('health.rows.fix')}</Button>{/if}</p>{/if}
 						</li>
 					{/each}
 				</ul>
 			{/if}
 			{#if backups}
-				<p class="bk">Backups <span class="chip {backups.tone}">{backups.word}</span>{#if backups.at} · last checked <time datetime={backups.at} title={dateTime(backups.at)}>{ago(backups.at, now)}</time>{/if}{#if backups.reason && backups.tone !== 'ok'} · {backups.reason}{/if}</p>
+				<p class="bk">{t('health.kind.backups')} <span class="chip {backups.tone}">{backups.word}</span>{#if backups.at} · {t('health.sections.lastChecked')} <time datetime={backups.at} title={dateTime(backups.at)}>{ago(backups.at, now)}</time>{/if}{#if backups.reason && backups.tone !== 'ok'} · {serverWords(backups.reason)}{/if}</p>
 			{/if}
 		</section>
 	{:else if tab === 'jobs'}
 		<RunsTimeline {upcoming} {recent} {now} />
 
 		<section class="st-plate" aria-labelledby="s-jobs">
-			<h2 id="s-jobs">All jobs</h2>
+			<h2 id="s-jobs">{t('health.sections.allJobs')}</h2>
 			{#if !jobs.length}
-				<p class="none">{failed.includes('jobs') ? 'Jobs could not be loaded.' : 'No jobs to show.'}</p>
+				<p class="none">{failed.includes('jobs') ? t('health.sections.jobsFailed') : t('health.sections.noJobs')}</p>
 			{:else}
 			<table class="tbl jobs">
-				<thead><tr><th>Name</th><th>State</th><th>Last run</th><th>Next run</th>{#if canAct}<th><span class="sr">Actions</span></th>{/if}</tr></thead>
+				<thead><tr><th>{t('health.sections.name')}</th><th>{t('health.sections.state')}</th><th>{t('health.sections.lastRun')}</th><th>{t('health.sections.nextRun')}</th>{#if canAct}<th><span class="sr">{t('health.sections.actions')}</span></th>{/if}</tr></thead>
 				<tbody>
 					{#each jobs as r (r.key)}
 						<tr data-testid="status-row" data-tone={r.tone} data-key={r.key}>
-							<td class="jn">{r.name}{#if r.tone === 'fail' && r.reason}<span class="jr">{r.reason}</span>{/if}</td>
+							<td class="jn">{r.name}{#if r.tone === 'fail' && r.reason}<span class="jr">{serverWords(r.reason)}</span>{/if}</td>
 							<td class="js"><span class="chip {r.tone}">{r.word}</span></td>
-							<td class="jl"><span class="k">Last run</span>{#if r.lastRun}<time datetime={r.lastRun} title={dateTime(r.lastRun)}>{ago(r.lastRun, now)}</time>{:else}Not yet{/if}</td>
-							<td class="jx"><span class="k">Next run</span>{nextWord(r)}</td>
-							{#if canAct}<td class="num"><Button variant="plain" size="sm" disabled={busy(r.key)} onclick={() => oncheck(r)}>Run now</Button></td>{/if}
+							<td class="jl"><span class="k">{t('health.sections.lastRun')}</span>{#if r.lastRun}<time datetime={r.lastRun} title={dateTime(r.lastRun)}>{ago(r.lastRun, now)}</time>{:else}{t('health.sections.notYet')}{/if}</td>
+							<td class="jx"><span class="k">{t('health.sections.nextRun')}</span>{nextWord(r)}</td>
+							{#if canAct}<td class="num"><Button variant="plain" size="sm" disabled={busy(r.key)} onclick={() => oncheck(r)}>{t('health.sections.runNow')}</Button></td>{/if}
 						</tr>
 					{/each}
 				</tbody>
@@ -276,53 +278,53 @@
 	{:else if tab === 'updates'}
 		{#if updFailed && !upd}
 			<section class="st-plate" aria-labelledby="s-upd">
-				<h2 id="s-upd">Updates</h2>
-				<p class="none fail-line">Could not check for updates. <Button variant="plain" size="sm" onclick={loadUpdate}>Try again</Button></p>
+				<h2 id="s-upd">{t('health.groups.app')}</h2>
+				<p class="none fail-line">{t('health.sections.updFailed')} <Button variant="plain" size="sm" onclick={loadUpdate}>{t('health.sections.tryAgain')}</Button></p>
 			</section>
 		{:else}
 			{@render updates({ upd, docker: about ? about.docker : null, reader, checksKnown: !failed.includes('health checks'), canAct, onupd: (u) => (upd = u) })}
 		{/if}
 	{:else}
 		<section class="st-plate" aria-labelledby="s-about">
-			<h2 id="s-about">About</h2>
+			<h2 id="s-about">{t('health.sections.tabAbout')}</h2>
 			{#if aboutFailed && !about}
-				<p class="none fail-line">Could not load these details. <Button variant="plain" size="sm" onclick={loadAbout}>Try again</Button></p>
+				<p class="none fail-line">{t('health.sections.aboutFailed')} <Button variant="plain" size="sm" onclick={loadAbout}>{t('health.sections.tryAgain')}</Button></p>
 			{/if}
 			<dl class="kv">
-				<dt>Version</dt>
+				<dt>{t('health.sections.version')}</dt>
 				<dd>
 					<code>{about?.version ?? upd?.version ?? (aboutFailed || aboutDenied ? '-' : '…')}</code>
-					{#if upd?.newer}<span class="chip wait">Update available</span><Button variant="plain" size="sm" onclick={() => ontab('updates')}>See update</Button>{:else if upd?.on && upd.latest}<span class="chip ok">Up to date</span>{/if}
+					{#if upd?.newer}<span class="chip wait">{t('health.sections.updAvailableChip')}</span><Button variant="plain" size="sm" onclick={() => ontab('updates')}>{t('health.sections.seeUpdate')}</Button>{:else if upd?.on && upd.latest}<span class="chip ok">{t('updates.band.upToDate')}</span>{/if}
 				</dd>
 				{#if about}
 					<dt>Go</dt><dd>{about.go.replace(/^go/, '')}</dd>
-					<dt>System</dt><dd>{about.os}</dd>
-					<dt>Container</dt><dd>{about.docker ? 'Yes' : 'No'}</dd>
-					<dt>Database</dt><dd>SQLite {about.sqlite}</dd>
-					<dt>Database migration</dt><dd>{about.migration}</dd>
-					<dt>Config folder</dt><dd><code>{about.config_dir}</code></dd>
-					<dt>Start folder</dt><dd><code>{about.start_dir}</code></dd>
-					<dt>Uptime</dt><dd><time class="clock" datetime={about.started_at} title="Started {dateTime(about.started_at)}">{uptime(about.uptime_s + Math.max(0, now - aboutAt) / 1000)}</time></dd>
+					<dt>{t('health.sections.system')}</dt><dd>{about.os}</dd>
+					<dt>{t('health.sections.container')}</dt><dd>{about.docker ? t('health.sections.yes') : t('health.sections.no')}</dd>
+					<dt>{t('health.sections.database')}</dt><dd>SQLite {about.sqlite}</dd>
+					<dt>{t('health.sections.migration')}</dt><dd>{about.migration}</dd>
+					<dt>{t('health.sections.configFolder')}</dt><dd><code>{about.config_dir}</code></dd>
+					<dt>{t('health.sections.startFolder')}</dt><dd><code>{about.start_dir}</code></dd>
+					<dt>{t('health.sections.uptime')}</dt><dd><time class="clock" datetime={about.started_at} title={t('health.sections.started', { when: dateTime(about.started_at) })}>{uptime(about.uptime_s + Math.max(0, now - aboutAt) / 1000)}</time></dd>
 				{/if}
 				{#if srv}
-					<dt>Database writes</dt><dd>{srv.writes} (95% wait under {srv.write_wait_p95_ms} ms)</dd>
-					<dt>URL base</dt><dd data-testid="url-base">{srv.url_base || 'None (served at /)'}</dd>
-					<dt>Live update tabs</dt><dd>{srv.live_clients}</dd>
+					<dt>{t('health.sections.writes')}</dt><dd>{t('health.sections.writesValue', { count: srv.writes, ms: srv.write_wait_p95_ms })}</dd>
+					<dt>{t('health.sections.urlBase')}</dt><dd data-testid="url-base">{srv.url_base || t('health.sections.urlNone')}</dd>
+					<dt>{t('health.sections.liveTabs')}</dt><dd>{srv.live_clients}</dd>
 				{/if}
 			</dl>
 		</section>
 
 		{#if session.can('users')}
 			<section class="st-plate" aria-labelledby="s-help">
-				<h2 id="s-help">Asking for help</h2>
-				<p class="help-text">A zip with the log (passwords and keys removed), the version and a folder and permission check. Attach it when you ask for help.</p>
-				<AdminLinkButton href={to('/api/v1/support/bundle')} download data-testid="status-support-bundle">Download support bundle</AdminLinkButton>
+				<h2 id="s-help">{t('health.sections.help')}</h2>
+				<p class="help-text">{t('health.sections.helpText')}</p>
+				<AdminLinkButton href={to('/api/v1/support/bundle')} download data-testid="status-support-bundle">{t('health.sections.bundle')}</AdminLinkButton>
 			</section>
 		{/if}
 
 		<section class="why-row" aria-labelledby="s-story">
-			<div><h2 id="s-story">Why HolyArrs</h2><small>A note from the one who made it</small></div>
-			<button class="why-btn" type="button" aria-haspopup="dialog" onclick={() => why?.open()} data-testid="why-open"><span class="px" aria-hidden="true">&gt;_</span>Read the note</button>
+			<div><h2 id="s-story">{t('health.why.title')}</h2><small>{t('health.sections.note')}</small></div>
+			<button class="why-btn" type="button" aria-haspopup="dialog" onclick={() => why?.open()} data-testid="why-open"><span class="px" aria-hidden="true">&gt;_</span>{t('health.sections.readNote')}</button>
 		</section>
 		<WhyNote bind:this={why} />
 	{/if}
@@ -333,7 +335,7 @@
 	.secs, .panel { display: flex; flex-direction: column; gap: var(--s-4); }
 	ul { list-style: none; margin: 0; padding: 0; }
 	/* Same pill track as the Downloads page. */
-	.seg { display: inline-flex; align-self: flex-start; gap: 2px; padding: 2px; border-radius: var(--r-pill); background: var(--surface-2); }
+	.seg { display: inline-flex; align-self: flex-start; max-width: 100%; overflow-x: auto; scrollbar-width: none; gap: 2px; padding: 2px; border-radius: var(--r-pill); background: var(--surface-2); }
 	.seg:focus { outline: none; }
 	.seg button { position: relative; display: inline-flex; align-items: center; justify-content: center; height: 32px; padding: 0 16px; border: 0; border-radius: var(--r-pill); background: none; color: color-mix(in srgb, var(--text) 76%, var(--bg)); font: var(--t-subhead); white-space: nowrap; cursor: pointer; }
 	.seg button:hover { color: var(--text); }
@@ -412,7 +414,7 @@
 	@media (max-width: 900px) { .disks { grid-template-columns: minmax(0, 1fr); } }
 	@media (max-width: 767px) {
 		.seg { align-self: stretch; }
-		.seg button { flex: 1; padding: 0 10px; }
+		.seg button { flex: 1 0 auto; padding: 0 10px; }
 		.hrow { grid-template-columns: 22px minmax(0, 1fr); }
 		.hat { grid-column: 2; }
 		.hacts { grid-column: 2; margin-left: -12px; }

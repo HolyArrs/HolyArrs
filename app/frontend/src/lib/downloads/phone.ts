@@ -1,4 +1,5 @@
 // Phone helpers for the Downloads list: the second line under a row's title and the long press that starts picking rows.
+import { t } from '#lib/core/i18n/i18n.svelte.ts';
 import type { DownloadRow, EpisodeLine } from '../core/types.ts';
 
 type SubRow = Pick<DownloadRow, 'kind' | 'year' | 'covers' | 'album' | 'title' | 'name'> & { episodes?: Pick<EpisodeLine, 'season' | 'episode' | 'label' | 'name'>[] };
@@ -16,8 +17,8 @@ export function subLine(r: SubRow): string {
 		}
 		if (eps.length > 1) {
 			const seasons = [...new Set(eps.map((e) => e.season))].sort((a, b) => a - b);
-			if (seasons.length === 1) return `Season ${seasons[0]}`;
-			return `Seasons ${seasons[0]}–${seasons[seasons.length - 1]}`;
+			if (seasons.length === 1) return t('downloads.phone.season', { n: seasons[0] });
+			return t('downloads.phone.seasons', { from: seasons[0], to: seasons[seasons.length - 1] });
 		}
 		return r.covers || '';
 	}

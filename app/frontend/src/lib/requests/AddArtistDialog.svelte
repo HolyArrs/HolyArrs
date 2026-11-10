@@ -1,4 +1,6 @@
 <script lang="ts">
+	import Words from '#lib/ui/Words.svelte';
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import { MetadataNotice } from '#lib/metadata/index.ts';
@@ -90,18 +92,18 @@
 	}
 </script>
 
-<Sheet bind:open={sheetOpen} title={picked ? `Add ${picked.name}` : 'Add'}>
+<Sheet bind:open={sheetOpen} title={picked ? t('requests.add.title', { name: picked.name }) : t('requests.add.titleBare')}>
 	<MetadataNotice />
 	{#if picked}
 		<form id="add-artist-title" class="sheet-form" onsubmit={add}>
 			{#if picked.disambiguation}<p class="small muted">{picked.disambiguation}</p>{/if}
 			{#if musicFolders.length === 0}
 				<p class="notice warn" >
-					There is no Library folder for music yet. <a href={to(`/settings/library-folders`)} class="ul">Add one</a> first.
+					<Words key="requests.add.noFolder.music" links={{ a: to('/settings/library-folders') }} linkClass="ul" />
 				</p>
 			{:else}
 				<div class="field">
-					<label for="artist-folder">Library folder</label>
+					<label for="artist-folder">{t('requests.add.folder')}</label>
 					<select id="artist-folder" class="input" bind:value={folderId} onchange={() => chooseRules(folderId)}>
 						{#each musicFolders as f (f.id)}
 							<option value={f.id}>{f.label || f.path} ({f.path})</option>
@@ -109,30 +111,30 @@
 					</select>
 				</div>
 				<div class="field">
-					<label for="artist-rules">Pick rules</label>
+					<label for="artist-rules">{t('requests.add.rules')}</label>
 					<select id="artist-rules" class="input" bind:value={rulesId}>
 						{#each musicRules as r (r.id)}
 							<option value={r.id}>{r.name}</option>
 						{/each}
 					</select>
-					<span class="hint">Which Releases count, and which one is best.</span>
+					<span class="hint">{t('requests.add.rulesHint')}</span>
 				</div>
 				<div class="field">
-					<label for="artist-albums">Albums to keep up to date</label>
+					<label for="artist-albums">{t('requests.addArtist.albums')}</label>
 					<select id="artist-albums" class="input" bind:value={albums}>
 						{#each albumChoices as [v, l] (v)}<option value={v}>{l}</option>{/each}
 					</select>
 					<span class="hint">{albumChoices.find(([v]) => v === albums)?.[2]}</span>
 				</div>
 				<div class="field">
-					<label for="artist-new">New albums</label>
+					<label for="artist-new">{t('requests.addArtist.newAlbums')}</label>
 					<select id="artist-new" class="input" bind:value={newAlbums}>
 						{#each newAlbumChoices as [v, l] (v)}<option value={v}>{l}</option>{/each}
 					</select>
-					<span class="hint">What happens to an album that comes out later.</span>
+					<span class="hint">{t('requests.addArtist.newAlbumsHint')}</span>
 				</div>
 				<fieldset class="kinds">
-					<legend class="small"><b>Album kinds</b> <span class="hint">Albums of other kinds are listed but left out.</span></legend>
+					<legend class="small"><b>{t('requests.addArtist.kinds')}</b> <span class="hint">{t('requests.addArtist.kindsHint')}</span></legend>
 					<div class="boxes">
 						{#each mainKinds as [v, l] (v)}
 							<label class="box"><input type="checkbox" checked={types.includes(v)} onchange={(e) => (types = toggle(types, v, e.currentTarget.checked, mainKinds))} /> {l}</label>
@@ -140,7 +142,7 @@
 					</div>
 				</fieldset>
 				<fieldset class="kinds">
-					<legend class="small"><b>Extra kinds</b> <span class="hint">An album with an extra kind, such as Live, needs it ticked.</span></legend>
+					<legend class="small"><b>{t('requests.addArtist.extra')}</b> <span class="hint">{t('requests.addArtist.extraHint')}</span></legend>
 					<div class="boxes">
 						{#each extraKinds as [v, l] (v)}
 							<label class="box"><input type="checkbox" checked={extras.includes(v)} onchange={(e) => (extras = toggle(extras, v, e.currentTarget.checked, extraKinds))} /> {l}</label>
@@ -148,7 +150,7 @@
 					</div>
 				</fieldset>
 				<fieldset class="kinds">
-					<legend class="small"><b>Pressings that count</b></legend>
+					<legend class="small"><b>{t('requests.addArtist.pressings')}</b></legend>
 					<div class="boxes">
 						{#each pressingStatuses as [v, l] (v)}
 							<label class="box"><input type="checkbox" checked={statuses.includes(v)} onchange={(e) => (statuses = toggle(statuses, v, e.currentTarget.checked, pressingStatuses))} /> {l}</label>
@@ -157,27 +159,27 @@
 				</fieldset>
 				<label class="checkline">
 					<input type="checkbox" bind:checked={keep} />
-					<span><b>Keep up to date</b><br /><span class="hint">HolyArrs looks after the albums picked above.</span></span>
+					<span><b>{t('requests.add.keep')}</b><br /><span class="hint">{t('requests.addArtist.keepHint')}</span></span>
 				</label>
-				<p class="hint note" data-testid="music-search-note">Albums you keep up to date are searched once their tracks are in.</p>
+				<p class="hint note" data-testid="music-search-note">{t('requests.addArtist.note')}</p>
 			{/if}
 			<label class="checkline" data-testid="follow-box">
 				<input type="checkbox" bind:checked={follow} />
-				<span><b>Follow</b><br /><span class="hint">Show it on my calendar.</span></span>
+				<span><b>{t('requests.add.follow')}</b><br /><span class="hint">{t('requests.add.followHint')}</span></span>
 			</label>
 			{#if error}<p class="form-error" role="alert">{error}</p>{/if}
 		</form>
 	{/if}
 	{#snippet footer()}
-				<Button variant="plain" onclick={() => (sheetOpen = false)}>Cancel</Button>
-				<Button variant="primary" type="submit" form="add-artist-title" disabled={musicFolders.length === 0 || !types.length || !extras.length || !statuses.length} busy={adding}>Add to Library</Button>
+				<Button variant="plain" onclick={() => (sheetOpen = false)}>{t('requests.add.cancel')}</Button>
+				<Button variant="primary" type="submit" form="add-artist-title" disabled={musicFolders.length === 0 || !types.length || !extras.length || !statuses.length} busy={adding}>{t('requests.add.submit')}</Button>
 	{/snippet}
 </Sheet>
 
 <style>
 	.sheet-form { display: flex; flex-direction: column; gap: 4px; }
 	.form-error { margin: 8px 0 0; color: var(--fail); font: var(--t-callout); }
-	.ul {
+	.notice :global(.ul) {
 		color: var(--text);
 		text-decoration: underline;
 	}

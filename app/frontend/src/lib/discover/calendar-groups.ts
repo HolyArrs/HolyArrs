@@ -1,6 +1,7 @@
 // The calendar's words and groupings: card badges, facts lines, day names, month dividers and the cards a busy day folds into.
 import { byDay, entryDay, kindWord } from './calendar.ts';
 import type { CalendarEntry } from '../core/types.ts';
+import { t, appLocale } from '#lib/core/i18n/i18n.svelte.ts';
 
 /** One card's dates: one, or several of one show (or one movie) on the same day. */
 export interface CalGroup {
@@ -16,35 +17,34 @@ const daysBetween = (a: string, b: string) => Math.round((at(b).getTime() - at(a
 /** A day heading: Today, Tomorrow, Yesterday, else "Thursday 29 Oct". */
 export function dayName(day: string, today: string): string {
 	const n = daysBetween(today, day);
-	if (n === 0) return 'Today';
-	if (n === 1) return 'Tomorrow';
-	if (n === -1) return 'Yesterday';
-	return at(day).toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'short' });
+	if (n === 0) return t('discover.calendarGroups.today');
+	if (n === 1) return t('discover.calendarGroups.tomorrow');
+	if (n === -1) return t('discover.calendarGroups.yesterday');
+	return at(day).toLocaleDateString(appLocale(), { weekday: 'long', day: 'numeric', month: 'short' });
 }
 
 /** The short date on a card: Today, Tomorrow, else "Thu 29". */
 export function dayChip(day: string, today: string): string {
 	const n = daysBetween(today, day);
-	if (n === 0) return 'Today';
-	if (n === 1) return 'Tomorrow';
+	if (n === 0) return t('discover.calendarGroups.today');
+	if (n === 1) return t('discover.calendarGroups.tomorrow');
 	const d = at(day);
-	return `${d.toLocaleDateString(undefined, { weekday: 'short' })} ${d.getDate()}`;
+	return `${d.toLocaleDateString(appLocale(), { weekday: 'short' })} ${d.getDate()}`;
 }
 
-const albumWord = (t?: string) => {
-	const k = (t ?? '').toLowerCase();
-	return k === 'single' ? 'single' : k === 'ep' ? 'EP' : 'album';
-};
 
 /** The badge on a card: New episode, Season premiere, In cinemas, New album. */
 export function entryTag(e: CalendarEntry): string {
 	if (e.kind === 'episode') {
-		if (e.episode === 1) return e.season === 1 ? 'Show premiere' : 'Season premiere';
-		return 'New episode';
+		if (e.episode === 1) return e.season === 1 ? t('discover.calendarGroups.showPremiere') : t('discover.calendarGroups.seasonPremiere');
+		return t('discover.calendarGroups.newEpisode');
 	}
-	if (e.kind === 'album') return `New ${albumWord(e.album_type)}`;
+	if (e.kind === 'album') {
+		const k = (e.album_type ?? '').toLowerCase();
+		return k === 'single' ? t('discover.calendarGroups.newSingle') : k === 'ep' ? t('discover.calendarGroups.newEp') : t('discover.calendarGroups.newAlbum');
+	}
 	// A movie shows one date: the day it is out to watch, or its cinema date as a small tag.
-	return e.kind === 'cinema' ? kindWord.cinema : 'New movie';
+	return e.kind === 'cinema' ? kindWord.cinema : t('discover.calendarGroups.newMovie');
 }
 
 /** The big name on a card: the show, movie or album. */
@@ -53,7 +53,7 @@ export function entryTitle(e: CalendarEntry): string {
 }
 
 const movieKinds = new Set<CalendarEntry['kind']>(['cinema', 'digital', 'physical']);
-const shortKind: Record<string, string> = { cinema: 'Cinemas', digital: 'Digital', physical: 'Disc' };
+const shortKind = (): Record<string, string> => ({ cinema: t('discover.calendarGroups.cinemas'), digital: t('discover.calendarGroups.digital'), physical: t('discover.calendarGroups.disc') });
 
 /** Splits day groups by month for dividers ("November 2026"). */
 export function monthGroups(entries: CalendarEntry[]): { month: string; name: string; days: { day: string; items: CalendarEntry[] }[] }[] {
@@ -62,14 +62,14 @@ export function monthGroups(entries: CalendarEntry[]): { month: string; name: st
 		const m = d.day.slice(0, 7);
 		const g = out.at(-1);
 		if (g && g.month === m) g.days.push(d);
-		else out.push({ month: m, name: at(d.day).toLocaleDateString(undefined, { month: 'long', year: 'numeric' }), days: [d] });
+		else out.push({ month: m, name: at(d.day).toLocaleDateString(appLocale(), { month: 'long', year: 'numeric' }), days: [d] });
 	}
 	return out;
 }
 
 /** A day's count: "1 coming out", "10 coming out". */
 export function thingCount(n: number): string {
-	return `${n} coming out`;
+	return t('discover.calendarGroups.comingOut', { n });
 }
 
 /** Folds dates into cards. A show's episodes on one day become one card ("3 episodes"), as do one movie's dates on one day (digital and disc); albums stay one card each. Order follows each card's first date. */
@@ -92,9 +92,10 @@ const p2 = (n = 0) => String(n).padStart(2, '0');
 export function groupTag(g: CalGroup): string {
 	const n = g.entries.length;
 	if (n === 1) return entryTag(g.lead);
-	if (g.lead.kind === 'episode') return `${n} episodes`;
-	if (g.lead.kind === 'album') return `${n} albums`;
-	const words = [...new Set(g.entries.map((e) => shortKind[e.kind]))].map((w, i) => (i ? w.toLowerCase() : w));
-	return words.length > 1 ? `${words.slice(0, -1).join(', ')} and ${words.at(-1)}` : words[0];
+	if (g.lead.kind === 'episode') return t('discover.calendarGroups.episodes', { n });
+	if (g.lead.kind === 'album') return t('discover.calendarGroups.albums', { n });
+	const kinds = shortKind();
+	const words = [...new Set(g.entries.map((e) => kinds[e.kind]))].map((w, i) => (i ? w.toLowerCase() : w));
+	return words.length > 1 ? t('discover.calendarGroups.list', { first: words.slice(0, -1).join(', '), last: words.at(-1) ?? '' }) : words[0];
 }
 

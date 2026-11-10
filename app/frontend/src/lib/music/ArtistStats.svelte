@@ -1,4 +1,6 @@
 <script lang="ts">
+	import Words from '#lib/ui/Words.svelte';
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import Button from '#lib/ui/Button.svelte';
 	import { aboutSize, changeWords, shortCount, listening } from './music-pages.ts';
 
@@ -18,24 +20,24 @@
 
 {#if (listen || (missing?.count && mayAsk && !manage && !titleId && !allAsked))}
 	{@const up = (listen?.today ?? 0) > 0}
-	<section class="stats" data-testid="artist-stats" aria-label="Listening and releases">
+	<section class="stats" data-testid="artist-stats" aria-label={t('music.listeningAndReleases')}>
 		{#if listen}
 			<p class="st1">
 				<span><b>{shortCount(listen.n)}</b> {listen.unit}</span>
-				{#if listen.rank}<span><b>#{listen.rank}</b> in the world</span>{/if}
+				{#if listen.rank}<span><Words key="music.rankInWorld" vars={{ rank: listen.rank }} /></span>{/if}
 				{#if listen.today}<span class="chg" class:up class:down={!up}>{changeWords(listen.today)}</span>{/if}
 			</p>
 		{/if}
 		{#if missing?.count && mayAsk && !manage && !titleId && !allAsked}
 			<div class="st-ask">
 				{#if confirmAll}
-					<span class="confirm" role="group" aria-label="Confirm asking for all missing">
-						<span>Ask for {missing.count} {missing.count === 1 ? 'release' : 'releases'}, {aboutSize(missing.size_bytes)}?</span>
-						<Button variant="primary" onclick={onask} disabled={askingAll}>Ask</Button>
-						<Button onclick={() => (confirmAll = false)}>Cancel</Button>
+					<span class="confirm" role="group" aria-label={t('music.confirmAskingForAll')}>
+						<span>{missing.count === 1 ? t('music.askForRelease', { n: missing.count, size: aboutSize(missing.size_bytes) }) : t('music.askForReleases', { n: missing.count, size: aboutSize(missing.size_bytes) })}</span>
+						<Button variant="primary" onclick={onask} disabled={askingAll}>{t('music.ask')}</Button>
+						<Button onclick={() => (confirmAll = false)}>{t('music.cancel')}</Button>
 					</span>
 				{:else}
-					<Button icon="plus" onclick={() => (confirmAll = true)} data-testid="ask-all-missing">Ask for all missing ({missing.count})</Button>
+					<Button icon="plus" onclick={() => (confirmAll = true)} data-testid="ask-all-missing">{t('music.askForAllMissing', { n: missing.count })}</Button>
 				{/if}
 			</div>
 		{/if}
@@ -49,7 +51,7 @@
 	.stats p > span { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
 	.stats p > span + span::before { content: '·'; margin: 0 14px; color: var(--text-faint); }
 	.st1 { font: 500 20px/1.35 var(--font-ui); color: var(--text-muted); }
-	.st1 b { color: var(--text); font-weight: 700; }
+	.st1 :global(b) { color: var(--text); font-weight: 700; }
 	.chg.up { color: var(--ok-text); font-weight: 600; }
 	.chg.down { color: var(--fail-text); font-weight: 600; }
 	/* On the artist colour, use light tones that read on any deep page colour. */

@@ -1,4 +1,6 @@
 <script lang="ts">
+	import Words from '#lib/ui/Words.svelte';
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import Field from '#lib/ui/Field.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
@@ -26,18 +28,18 @@
 	const shown = $derived(groups(filterOps(ops, q)));
 	const base = $derived(typeof location === 'undefined' ? to('/api/v1') : `${location.origin}${to('/api/v1')}`);
 	const examples = $derived([
-		{ what: 'Is HolyArrs up, and which version', cmd: curl(base, 'GET', '/health') },
-		{ what: 'Every movie, show and artist in the Library', cmd: curl(base, 'GET', '/titles') },
-		{ what: 'What is downloading now', cmd: curl(base, 'GET', '/downloads/view') },
-		{ what: 'Run the feed check now', cmd: curl(base, 'POST', '/schedules/feed_check/run') }
+		{ what: t('settings.api.exHealth'), cmd: curl(base, 'GET', '/health') },
+		{ what: t('settings.api.exTitles'), cmd: curl(base, 'GET', '/titles') },
+		{ what: t('settings.api.exDownloads'), cmd: curl(base, 'GET', '/downloads/view') },
+		{ what: t('settings.api.exFeed'), cmd: curl(base, 'POST', '/schedules/feed_check/run') }
 	]);
 
 	async function copy(text: string) {
 		try {
 			await navigator.clipboard.writeText(text);
-			toasts.push('Command copied', 'ok');
+			toasts.push(t('settings.api.copied'), 'ok');
 		} catch {
-			toasts.push("Couldn't copy", 'fail', { body: 'Select it instead' });
+			toasts.push(t('settings.api.copyFailed'), 'fail', { body: t('settings.api.copyFailedBody') });
 		}
 	}
 
@@ -57,26 +59,26 @@
 	onMount(load);
 </script>
 
-<svelte:head><title>API · HolyArrs</title></svelte:head>
+<svelte:head><title>{t('settings.api.title')} · HolyArrs</title></svelte:head>
 
-<PageHeader title="API">
+<PageHeader title={t('settings.api.title')}>
 	{#snippet actions()}
-		<AdminLinkButton href={to(`/api/v1/openapi.json`)} target="_blank" rel="noopener">The OpenAPI file</AdminLinkButton>
+		<AdminLinkButton href={to(`/api/v1/openapi.json`)} target="_blank" rel="noopener">{t('settings.api.openapi')}</AdminLinkButton>
 	{/snippet}
 </PageHeader>
 
 {#if session.can('settings')}<ApiKeysCard />{/if}
 
 <div class="sc-form">
-<SettingsCard id="api-start" title="Start here">
+<SettingsCard id="api-start" title={t('settings.api.start')}>
 	<ol class="steps small">
-		<li>Make a key under <a href="#keys-card">API keys</a>. It is shown once; copy it then.</li>
-		<li>Send it in the <code>X-Api-Key</code> header with every call, never in the address.</li>
+		<li><Words key="settings.api.step1" links={{ a: '#keys-card' }} /></li>
+		<li><Words key="settings.api.step2" /></li>
 		<li>
-			The base address is
+			{t('settings.api.base')}
 			<div class="cmd address">
 				<code data-testid="api-base">{base}</code>
-				<Button variant="plain" type="button" onclick={() => copy(base)} aria-label="Copy the base address"><Icon name="copy" size={16} /></Button>
+				<Button variant="plain" type="button" onclick={() => copy(base)} aria-label={t('settings.api.copyBase')}><Icon name="copy" size={16} /></Button>
 			</div>
 		</li>
 	</ol>
@@ -86,9 +88,9 @@
 
 </div>
 
-<MoreOptions label="Reference">
+<MoreOptions label={t('settings.api.reference')}>
 {#if spec?.['x-holyarrs-scopes']}
-		<SettingsCard title="Scopes">
+		<SettingsCard title={t('settings.api.scopes')}>
 			<dl class="facts" data-testid="api-scopes">
 				{#each Object.entries(spec['x-holyarrs-scopes']) as [name, note] (name)}
 					<dt><code>{name}</code></dt>
@@ -98,15 +100,15 @@
 		</SettingsCard>
 {/if}
 <div>
-<SettingsCard title="Example calls">
-	<p class="small muted">Set <code>HOLYARRS_KEY</code> to your key in your shell first.</p>
+<SettingsCard title={t('settings.api.examples')}>
+	<p class="small muted"><Words key="settings.api.setKey" /></p>
 	<ul class="examples">
 		{#each examples as e (e.cmd)}
 			<li>
 				<span class="small">{e.what}</span>
 				<div class="cmd">
 					<code class="mono xs">{e.cmd}</code>
-					<Button variant="plain" type="button" onclick={() => copy(e.cmd)} aria-label="Copy: {e.what}"><Icon name="copy" size={16} /></Button>
+					<Button variant="plain" type="button" onclick={() => copy(e.cmd)} aria-label={t('settings.api.copyWhat', { what: e.what })}><Icon name="copy" size={16} /></Button>
 				</div>
 			</li>
 		{/each}
@@ -115,16 +117,16 @@
 </div>
 
 <div data-testid="api-routes">
-	<SettingsCard id="api-routes" title="Every route">
+	<SettingsCard id="api-routes" title={t('settings.api.routes')}>
 		{#if error}
 			<LoadError hasData={false} message={error} onretry={load} busy={loading} />
 		{:else if !spec}
 			<SkSettings rows={2} />
 		{:else}
-			<Field id="api-q" label="Find a route">
-				<input id="api-q" class="input" type="search" bind:value={q} placeholder="e.g. downloads" autocomplete="off" />
+			<Field id="api-q" label={t('settings.api.find')}>
+				<input id="api-q" class="input" type="search" bind:value={q} placeholder={t('settings.api.findExample')} autocomplete="off" />
 			</Field>
-			<p class="xs muted" role="status">{filterOps(ops, q).length} of {ops.length} routes</p>
+			<p class="xs muted" role="status">{t('settings.api.count', { shown: filterOps(ops, q).length, total: ops.length })}</p>
 			{#each shown as g (g.tag)}
 				<h3 class="tag">{g.tag}</h3>
 				<ul class="ops">
@@ -139,7 +141,7 @@
 							{#if open === id}
 								<div class="more small">
 									<p>{o.description}</p>
-									<p class="xs muted">Scope <code>{o.scope}</code> · needs <code>{o.permission}</code></p>
+									<p class="xs muted">{t('settings.api.scope')} <code>{o.scope}</code> · {t('settings.api.needs')} <code>{o.permission}</code></p>
 								</div>
 							{/if}
 						</li>

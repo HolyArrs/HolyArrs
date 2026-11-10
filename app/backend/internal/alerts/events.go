@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strconv"
 	"strings"
 	"time"
 
@@ -36,10 +37,7 @@ func MomentOf(e domain.Event) string {
 	return ""
 }
 
-var momentWords = map[string]string{
-	MomentGrab: "Sent to download", MomentImport: "In the Library", MomentRename: "Renamed", MomentAdd: "Added",
-	MomentDelete: "Deleted", MomentDecision: "Needs a decision", MomentSubtitle: "Subtitle",
-}
+var momentWords = words["en"]
 
 // MessageFor builds the message for a Library Event (ok false when Alerts
 // do not speak for it).
@@ -48,7 +46,7 @@ func (s *Sender) MessageFor(ctx context.Context, e domain.Event) (Message, bool)
 	if moment == "" {
 		return Message{}, false
 	}
-	m := Message{Moment: moment, Event: &e, Text: e.Summary}
+	m := Message{Moment: moment, Event: &e, Text: e.Summary, lang: s.lang(ctx)}
 	db := s.Store.Read()
 	if e.TitleID != nil {
 		var mv Movie
@@ -93,7 +91,7 @@ func (s *Sender) MessageFor(ctx context.Context, e domain.Event) (Message, bool)
 	case m.Artist != nil:
 		// An artist is named with its album: "Lab Lanterns – Small Hours (2025)".
 		name = m.Artist.Name
-		if w := trackWords(m.Tracks); w != "" {
+		if w := trackWordsIn(m.lang, m.Tracks); w != "" {
 			name += " – " + w
 		} else if album, _ := e.Data["album"].(string); album != "" {
 			name += " – " + album
@@ -103,20 +101,20 @@ func (s *Sender) MessageFor(ctx context.Context, e domain.Event) (Message, bool)
 		}
 	case m.Show != nil:
 		// A show is named with its episodes: "Copper Valley S01E02".
-		name = strings.TrimSpace(m.Show.Name + " " + episodeWords(m.Episodes))
+		name = strings.TrimSpace(m.Show.Name + " " + episodeWordsIn(m.lang, m.Episodes))
 		if len(m.Episodes) > 1 || len(m.Episodes) == 1 && m.Episodes[0].Name != "" {
 			m.Text += "\n" + episodeLines(m.Episodes)
 		}
 	}
 	switch {
 	case moment == MomentHealth && e.Kind == domain.EventHealthRecovered:
-		m.Subject = "Health: fixed"
+		m.Subject = say(m.lang, "health_fixed")
 	case moment == MomentHealth:
-		m.Subject = "Health: something needs a look"
+		m.Subject = say(m.lang, "health_look")
 	case name != "":
-		m.Subject = momentWords[moment] + ": " + name
+		m.Subject = say(m.lang, moment) + ": " + name
 	default:
-		m.Subject = momentWords[moment]
+		m.Subject = say(m.lang, moment)
 	}
 	var extra []string
 	for _, k := range []string{"reason", "release", "downloader", "save_path", "from", "message"} {
@@ -182,15 +180,15 @@ func (s *Sender) MessagesFor(ctx context.Context, e domain.Event) []Message {
 	for _, ep := range eps {
 		one := m
 		one.Episodes = []Episode{ep}
-		one.Subject = momentWords[m.Moment] + ": " + m.Show.Name + " " + ep.Label()
-		one.Text = strings.TrimSpace(ep.Label()+" "+ep.Name) + " is in the Library"
+		one.Subject = say(m.lang, m.Moment) + ": " + m.Show.Name + " " + ep.Label()
+		one.Text = say(m.lang, "in_library", "name", strings.TrimSpace(ep.Label()+" "+ep.Name))
 		out = append(out, one)
 	}
 	if len(rest) > 0 {
 		sum := m
 		sum.Episodes = rest
-		sum.Subject = momentWords[m.Moment] + ": " + m.Show.Name + " " + episodeWords(rest)
-		sum.Text = fmt.Sprintf("%d more episodes of this pack are in the Library:\n%s", len(rest), episodeLines(rest))
+		sum.Subject = say(m.lang, m.Moment) + ": " + m.Show.Name + " " + episodeWordsIn(m.lang, rest)
+		sum.Text = say(m.lang, "more_episodes", "n", strconv.Itoa(len(rest))) + "\n" + episodeLines(rest)
 		out = append(out, sum)
 	}
 	return out
@@ -211,15 +209,15 @@ func (s *Sender) trackMessages(ctx context.Context, m Message) []Message {
 	for _, t := range ts {
 		one := m
 		one.Tracks = []Track{t}
-		one.Subject = momentWords[m.Moment] + ": " + m.Artist.Name + " – " + trackWords(one.Tracks)
-		one.Text = strings.TrimSpace(t.albumName()+" "+t.Label()+" "+t.Name) + " is in the Library"
+		one.Subject = say(m.lang, m.Moment) + ": " + m.Artist.Name + " – " + trackWordsIn(m.lang, one.Tracks)
+		one.Text = say(m.lang, "in_library", "name", strings.TrimSpace(t.albumName()+" "+t.Label()+" "+t.Name))
 		out = append(out, one)
 	}
 	if len(rest) > 0 {
 		sum := m
 		sum.Tracks = rest
-		sum.Subject = momentWords[m.Moment] + ": " + m.Artist.Name + " – " + trackWords(rest)
-		sum.Text = fmt.Sprintf("%d more tracks of this album download are in the Library:\n%s", len(rest), trackLines(rest))
+		sum.Subject = say(m.lang, m.Moment) + ": " + m.Artist.Name + " – " + trackWordsIn(m.lang, rest)
+		sum.Text = say(m.lang, "more_tracks", "n", strconv.Itoa(len(rest))) + "\n" + trackLines(rest)
 		out = append(out, sum)
 	}
 	return out

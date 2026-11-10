@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	import { onMount, tick, untrack } from 'svelte';
 	import { flip } from 'svelte/animate';
 	import { SvelteMap } from 'svelte/reactivity';
@@ -34,6 +35,7 @@
 	import { columnSort, progressOf, sortName, sortsFor, tableMinWidth, type Column, type FilterState, type LibKind, type SortDir, type SortKey } from './table.ts';
 	import { artName, slotKind } from './title-page.ts';
 	import { colPx } from './library-view.ts';
+	import { t as tr } from '#lib/core/i18n/i18n.svelte.ts';
 
 	type Props = {
 		titles: TitleView[];
@@ -78,7 +80,7 @@
 	};
 	let { titles, shown, loaded, error, view, kind, libKind, filter, sort, grouped, kindTitle, q, filtersOn, who, canManage, selecting, picked, lastOpenedId, chosenCols, density, posterSize, posterDetail, seriesOfTitle, seriesName, phone, listWidth = $bindable(), gridEl = $bindable(), listEl = $bindable(), progressText, artistHref, episodeLabel, retryLoad, clearFilters, togglePick, startSelecting, setSort, searchTitles, setKeep, refreshTitle }: Props = $props();
 
-	const kindLabel: Record<string, string> = { movie: 'Movie', show: 'Show', artist: 'Artist' };
+	const kindLabel = (k: string) => tr(`mediafiles.kindCap.${k}`);
 
 	// The banner sits inset in the sheet (8px from its edge, 6px above and below).
 	const ART_INSET = 8;
@@ -298,29 +300,29 @@
 <!-- The rail column is kept while loading too, so the cards do not narrow when it appears. -->
 <div class:has-rail={railOn || (!loaded && sort.key === 'name' && !grouped)} class="with-rail">
 	<div class="content">
-		<PageLoader loading={!loaded} label="Loading the Library" onretry={retryLoad}>
+		<PageLoader loading={!loaded} label={tr('mediafiles.list.loading')} onretry={retryLoad}>
 		{#if error}
 			<LoadError hasData={false} message={plainReason(error).text} onretry={retryLoad} />
 		{:else if titles.length === 0}
-			<EmptyState icon="library" title="Nothing here yet" action={{ label: 'Add a movie', href: to('/search'), icon: 'search' }} />
+			<EmptyState icon="library" title={tr('mediafiles.list.nothingYet')} action={{ label: tr('mediafiles.list.addMovie'), href: to('/search'), icon: 'search' }} />
 			<div class="empty-more">
-				{#if !partOff('shows')}<Button href={to('/search?kind=show')}>Add a show</Button>{/if}
-				{#if !partOff('music')}<Button href={to('/search?kind=music')}>Add an artist</Button>{/if}
-				{#if session.can('settings')}<Button href={to('/settings/library-folders')}>Folders</Button>{/if}
+				{#if !partOff('shows')}<Button href={to('/search?kind=show')}>{tr('mediafiles.list.addShow')}</Button>{/if}
+				{#if !partOff('music')}<Button href={to('/search?kind=music')}>{tr('mediafiles.list.addArtist')}</Button>{/if}
+				{#if session.can('settings')}<Button href={to('/settings/library-folders')}>{tr('mediafiles.list.folders')}</Button>{/if}
 			</div>
 		{:else if shown.length === 0}
-			<EmptyState compact icon="search" title={q && !filtersOn ? `Nothing for “${q}”` : 'Nothing matches'} action={filtersOn || q ? { label: 'Clear filters', onclick: clearFilters } : undefined} />
+			<EmptyState compact icon="search" title={q && !filtersOn ? tr('mediafiles.list.nothingFor', { q }) : tr('mediafiles.list.nothingMatches')} action={filtersOn || q ? { label: tr('mediafiles.saved.clear'), onclick: clearFilters } : undefined} />
 		{:else if view === 'posters'}
-			<ul class="grid" class:selecting style="--poster-min: {gridMin}px" style:--poster-min-phone={kind === 'artist' ? `${squarePhoneMin[posterSize]}px` : undefined} aria-label="{kindTitle} titles" bind:this={gridEl}>
+			<ul class="grid" class:selecting style="--poster-min: {gridMin}px" style:--poster-min-phone={kind === 'artist' ? `${squarePhoneMin[posterSize]}px` : undefined} aria-label={tr('mediafiles.list.titlesOf', { kind: kindTitle })} bind:this={gridEl}>
 				{#each shown as t (t.id)}
 					{@const p = progressOf(t)}
 					{@const ls = who === 'staff' ? libraryState(t) : null}
 					<li class="item" style:--poster-ratio={posterRatio(t.kind)} animate:flip={{ duration: moveMs, easing: easeOut }} data-testid="library-card" data-title-id={t.id} data-letter={letterOf(sortName(t.name))} class:selected={picked.has(t.id)} class:last-opened={lastOpenedId === t.id}>
 						<LibraryPoster title={t.name} year={t.year} href={openLink(t)} image={posterSrc(t.artwork[0], gridMin)} kind={t.kind === 'artist' ? 'artist' : t.kind === 'show' ? 'show' : 'movie'} vtName={artName(t.id)} status={ls} attention={needsAttention(ls)} bar={barOf(ls, p.have, p.total)} detail={posterDetail} extra={posterExtra(t)} facts={posterFacts(t)} kept={t.keep_up_to_date} {canManage} {selecting} selected={picked.has(t.id)} onsearch={() => searchTitles([t.id])} onkeep={(k) => setKeep([t.id], k)} />
 						{#if selecting}
-							<button type="button" class="pick" aria-pressed={picked.has(t.id)} aria-label="Select {t.name}" onclick={() => togglePick(t.id)} data-testid="library-pick"><span class="pick-dot" aria-hidden="true">{#if picked.has(t.id)}<Icon name="check" size={14} stroke={3} />{/if}</span></button>
+							<button type="button" class="pick" aria-pressed={picked.has(t.id)} aria-label={tr('mediafiles.list.select', { name: t.name })} onclick={() => togglePick(t.id)} data-testid="library-pick"><span class="pick-dot" aria-hidden="true">{#if picked.has(t.id)}<Icon name="check" size={14} stroke={3} />{/if}</span></button>
 						{/if}
-						{#if lastOpenedId === t.id}<span class="sr-only" data-testid="last-opened">Last opened</span>{/if}
+						{#if lastOpenedId === t.id}<span class="sr-only" data-testid="last-opened">{tr('mediafiles.list.lastOpened')}</span>{/if}
 					</li>
 				{/each}
 			</ul>
@@ -330,12 +332,12 @@
 					<div class="lh" role="presentation" style="--facts: {factsTpl}">
 						{#if selecting}<span></span>{/if}
 						<span></span>
-						<button type="button" class="h sort" aria-label={sort.key === 'name' ? `Title, sorted ${sort.dir === 'asc' ? 'low to high' : 'high to low'}` : 'Title'} aria-pressed={sort.key === 'name'} onclick={() => setSort('name')}>Title{#if sort.key === 'name'}<span class="dir">{sort.dir === 'asc' ? '↑' : '↓'}</span>{/if}</button>
-						<span class="h">Status</span>
+						<button type="button" class="h sort" aria-label={sort.key === 'name' ? tr('mediafiles.list.sorted', { what: tr('mediafiles.list.title'), dir: tr(sort.dir === 'asc' ? 'mediafiles.list.lowHigh' : 'mediafiles.list.highLow') }) : tr('mediafiles.list.title')} aria-pressed={sort.key === 'name'} onclick={() => setSort('name')}>{tr('mediafiles.list.title')}{#if sort.key === 'name'}<span class="dir">{sort.dir === 'asc' ? '↑' : '↓'}</span>{/if}</button>
+						<span class="h">{tr('mediafiles.col.status')}</span>
 						{#each rowCols as c (c.id)}
 							{@const sk = columnSort[c.id]}
 							{#if sk && sortsFor(kind === 'all' ? 'all' : libKind).includes(sk)}
-								<button type="button" class="h sort" aria-label={sort.key === sk ? `${c.label}, sorted ${sort.dir === 'asc' ? 'low to high' : 'high to low'}` : c.label} aria-pressed={sort.key === sk} onclick={() => setSort(sk)}>{c.label}{#if sort.key === sk}<span class="dir">{sort.dir === 'asc' ? '↑' : '↓'}</span>{/if}</button>
+								<button type="button" class="h sort" aria-label={sort.key === sk ? tr('mediafiles.list.sorted', { what: c.label, dir: tr(sort.dir === 'asc' ? 'mediafiles.list.lowHigh' : 'mediafiles.list.highLow') }) : c.label} aria-pressed={sort.key === sk} onclick={() => setSort(sk)}>{c.label}{#if sort.key === sk}<span class="dir">{sort.dir === 'asc' ? '↑' : '↓'}</span>{/if}</button>
 							{:else}
 								<span class="h">{c.label}</span>
 							{/if}
@@ -345,30 +347,30 @@
 				{/if}
 				{#if view === 'table' && !phone}
 					<div class="row head" role="presentation">
-						<span class="h banner-h">Banner</span>
+						<span class="h banner-h">{tr('mediafiles.list.banner')}</span>
 						<span></span>
-						<button type="button" class="h sort" aria-label={sort.key === 'name' ? `Title, sorted ${sort.dir === 'asc' ? 'low to high' : 'high to low'}` : 'Title'} aria-pressed={sort.key === 'name'} onclick={() => setSort('name')}>Title{#if sort.key === 'name'}<span class="dir">{sort.dir === 'asc' ? '↑' : '↓'}</span>{/if}</button>
+						<button type="button" class="h sort" aria-label={sort.key === 'name' ? tr('mediafiles.list.sorted', { what: tr('mediafiles.list.title'), dir: tr(sort.dir === 'asc' ? 'mediafiles.list.lowHigh' : 'mediafiles.list.highLow') }) : tr('mediafiles.list.title')} aria-pressed={sort.key === 'name'} onclick={() => setSort('name')}>{tr('mediafiles.list.title')}{#if sort.key === 'name'}<span class="dir">{sort.dir === 'asc' ? '↑' : '↓'}</span>{/if}</button>
 						{#if kind !== 'all'}
 							{#each shownCols as c (c.id)}
 								{@const sk = columnSort[c.id]}
 								{#if sk && sortsFor(libKind).includes(sk)}
-									<button type="button" class="h sort" class:num={c.numeric} aria-label={sort.key === sk ? `${c.label}, sorted ${sort.dir === 'asc' ? 'low to high' : 'high to low'}` : c.label} aria-pressed={sort.key === sk} onclick={() => setSort(sk)}>{c.label}{#if sort.key === sk}<span class="dir">{sort.dir === 'asc' ? '↑' : '↓'}</span>{/if}</button>
+									<button type="button" class="h sort" class:num={c.numeric} aria-label={sort.key === sk ? tr('mediafiles.list.sorted', { what: c.label, dir: tr(sort.dir === 'asc' ? 'mediafiles.list.lowHigh' : 'mediafiles.list.highLow') }) : c.label} aria-pressed={sort.key === sk} onclick={() => setSort(sk)}>{c.label}{#if sort.key === sk}<span class="dir">{sort.dir === 'asc' ? '↑' : '↓'}</span>{/if}</button>
 								{:else}
 									<span class="h" class:num={c.numeric}>{c.label}</span>
 								{/if}
 							{/each}
 						{/if}
-						{#if hiddenCols > 0}<span class="h more" title="{hiddenCols} more {hiddenCols === 1 ? 'column shows' : 'columns show'} when there is room">+{hiddenCols}</span>{/if}
+						{#if hiddenCols > 0}<span class="h more" title={tr(hiddenCols === 1 ? 'mediafiles.list.moreColOne' : 'mediafiles.list.moreColMany', { n: hiddenCols })}>+{hiddenCols}</span>{/if}
 					</div>
 				{/if}
 				<div class="body" style:height={virtual ? `${offsets[entries.length]}px` : undefined}>
-					<div style:padding-top={virtual ? `${offsets[range.start]}px` : undefined} role="list" aria-label="{kindTitle} titles">
+					<div style:padding-top={virtual ? `${offsets[range.start]}px` : undefined} role="list" aria-label={tr('mediafiles.list.titlesOf', { kind: kindTitle })}>
 						{#each slice as e (e.key)}
 							{#if e.type === 'head'}
 								<div class="series-head" use:measure={e.key} data-key={e.key}>
 									<h2>{e.name}</h2>
-									<span>{e.count} in the Library</span>
-									{#if e.id}<a href={to(`/library/collections/${e.id}`)}>Open series</a>{/if}
+									<span>{tr('mediafiles.list.inLibraryCount', { n: e.count })}</span>
+									{#if e.id}<a href={to(`/library/collections/${e.id}`)}>{tr('mediafiles.list.openCollection')}</a>{/if}
 								</div>
 							{:else}
 								{@const t = e.t}
@@ -383,7 +385,7 @@
 									class="entry"
 									role="listitem"
 									tabindex={ri === active ? 0 : -1}
-									aria-label="{t.name}{t.year ? `, ${t.year}` : ''}{picked.has(t.id) ? ', selected' : ''}"
+									aria-label="{t.name}{t.year ? `, ${t.year}` : ''}{picked.has(t.id) ? `, ${tr('mediafiles.list.selectedWord')}` : ''}"
 									data-key={e.key}
 									data-testid="library-row"
 									data-title-id={t.id}
@@ -398,7 +400,7 @@
 								>
 									{#if view === 'rows'}
 										<div class="lr" class:ph={phone} style="--facts: {factsTpl}; --row-h: {phone ? 60 : 54}px">
-											{#if selecting}<span class="lsel"><input type="checkbox" class="pick-box lpick" checked={picked.has(t.id)} aria-label="Select {t.name}" tabindex="-1" onchange={() => togglePick(t.id)} data-testid="library-pick" /></span>{/if}
+											{#if selecting}<span class="lsel"><input type="checkbox" class="pick-box lpick" checked={picked.has(t.id)} aria-label={tr('mediafiles.list.select', { name: t.name })} tabindex="-1" onchange={() => togglePick(t.id)} data-testid="library-pick" /></span>{/if}
 											<span class="lp" style:--poster-ratio={posterRatio(t.kind)} class:round={t.kind === 'artist'}>
 												<Poster src={t.artwork[0]} name={t.name} />
 											</span>
@@ -412,9 +414,9 @@
 												{#each rowCols as c (c.id)}<span class="lc" title={c.id === 'path' ? cell(t, c, seriesOf(t)) : undefined}>{rowCell(t, c, p, seriesOf(t)) || '—'}</span>{/each}
 												<span class="acts">
 													{#if canManage && !selecting}
-														<IconButton icon="search" size="sm" tipSide="below-end" label="Search now for {t.name}" tabindex={ri === active ? 0 : -1} onclick={() => searchTitles([t.id])} />
-														<IconButton icon="refresh" size="sm" tipSide="below-end" label="Refresh {t.name}" tabindex={ri === active ? 0 : -1} onclick={() => refreshTitle(t)} />
-														<IconButton icon="tools" size="sm" tipSide="below-end" label="Edit {t.name}" tabindex={ri === active ? 0 : -1} href={titleLink(t.id)} />
+														<IconButton icon="search" size="sm" tipSide="below-end" label={tr('mediafiles.poster.searchFor', { title: t.name })} tabindex={ri === active ? 0 : -1} onclick={() => searchTitles([t.id])} />
+														<IconButton icon="refresh" size="sm" tipSide="below-end" label={tr('mediafiles.list.refresh', { name: t.name })} tabindex={ri === active ? 0 : -1} onclick={() => refreshTitle(t)} />
+														<IconButton icon="tools" size="sm" tipSide="below-end" label={tr('mediafiles.list.edit', { name: t.name })} tabindex={ri === active ? 0 : -1} href={titleLink(t.id)} />
 													{/if}
 												</span>
 											{:else}
@@ -425,14 +427,14 @@
 									{:else if view === 'table'}
 										<div class="row" style:--row-h="{rowH(t.kind)}px">
 											<span class="art"><BannerArt title={t} width={phone ? listWidth : bannerW} /></span>
-											<span class="state" title={t.keep_up_to_date ? 'Kept up to date' : 'Not kept up to date'}>
-												{#if selecting}<input type="checkbox" class="pick-box" checked={picked.has(t.id)} aria-label="Select {t.name}" tabindex="-1" onchange={() => togglePick(t.id)} data-testid="library-pick" />
-												{:else}<span class="keep" class:on={t.keep_up_to_date} aria-label={t.keep_up_to_date ? 'Kept up to date' : 'Not kept up to date'} role="img"><Icon name={t.keep_up_to_date ? 'bellOn' : 'bell'} size={16} /></span>{/if}
+											<span class="state" title={tr(t.keep_up_to_date ? 'mediafiles.poster.kept' : 'mediafiles.poster.notKept')}>
+												{#if selecting}<input type="checkbox" class="pick-box" checked={picked.has(t.id)} aria-label={tr('mediafiles.list.select', { name: t.name })} tabindex="-1" onchange={() => togglePick(t.id)} data-testid="library-pick" />
+												{:else}<span class="keep" class:on={t.keep_up_to_date} aria-label={tr(t.keep_up_to_date ? 'mediafiles.poster.kept' : 'mediafiles.poster.notKept')} role="img"><Icon name={t.keep_up_to_date ? 'bellOn' : 'bell'} size={16} /></span>{/if}
 											</span>
 											<span class="name">
 												<a href={openLink(t)} tabindex="-1" title={t.name}>{t.name}</a>
 												<span class="sub">
-													{#if kind === 'all'}{kindLabel[t.kind]}{#if t.year} · {t.year}{/if}{/if}
+													{#if kind === 'all'}{kindLabel(t.kind)}{#if t.year} · {t.year}{/if}{/if}
 													{#if ls && (kind === 'all' || phone || !shownCols.some((c) => c.id === 'status'))}<span class="ls {ls.tone}" data-testid="library-status" data-state={ls.key}><i class="dot" aria-hidden="true"></i>{ls.label}</span>{/if}
 												</span>
 												{#if phone}<span class="facts">{factCols.slice(0, 3).map((c) => (isProgressCol(c) ? `${p.have}/${p.total}` : cell(t, c, seriesOf(t)))).filter(Boolean).join(' · ')}</span>{/if}
@@ -447,7 +449,7 @@
 															{:else}—{/if}
 														</span>
 													{:else if c.id === 'kept'}
-														<span class="c keep-c" title={t.keep_up_to_date ? 'Kept up to date' : 'Not kept up to date'}><span class="keep" class:on={t.keep_up_to_date} role="img" aria-label={t.keep_up_to_date ? 'Kept up to date' : 'Not kept up to date'}><Icon name={t.keep_up_to_date ? 'bellOn' : 'bell'} size={16} /></span></span>
+														<span class="c keep-c" title={tr(t.keep_up_to_date ? 'mediafiles.poster.kept' : 'mediafiles.poster.notKept')}><span class="keep" class:on={t.keep_up_to_date} role="img" aria-label={tr(t.keep_up_to_date ? 'mediafiles.poster.kept' : 'mediafiles.poster.notKept')}><Icon name={t.keep_up_to_date ? 'bellOn' : 'bell'} size={16} /></span></span>
 													{:else if isProgressCol(c)}
 														<span class="c prog">
 															<span class="meter {tone(t)}"><i style="width: {p.total ? (p.have / p.total) * 100 : 0}%"></i></span>
@@ -461,9 +463,9 @@
 											{/if}
 											<span class="acts">
 												{#if canManage && !selecting}
-													<IconButton icon="search" size="sm" tipSide="below-end" label="Search now for {t.name}" tabindex={ri === active ? 0 : -1} onclick={() => searchTitles([t.id])} />
-													<IconButton icon="refresh" size="sm" tipSide="below-end" label="Refresh {t.name}" tabindex={ri === active ? 0 : -1} onclick={() => refreshTitle(t)} />
-													<IconButton icon="tools" size="sm" tipSide="below-end" label="Edit {t.name}" tabindex={ri === active ? 0 : -1} href={titleLink(t.id)} />
+													<IconButton icon="search" size="sm" tipSide="below-end" label={tr('mediafiles.poster.searchFor', { title: t.name })} tabindex={ri === active ? 0 : -1} onclick={() => searchTitles([t.id])} />
+													<IconButton icon="refresh" size="sm" tipSide="below-end" label={tr('mediafiles.list.refresh', { name: t.name })} tabindex={ri === active ? 0 : -1} onclick={() => refreshTitle(t)} />
+													<IconButton icon="tools" size="sm" tipSide="below-end" label={tr('mediafiles.list.edit', { name: t.name })} tabindex={ri === active ? 0 : -1} href={titleLink(t.id)} />
 												{/if}
 											</span>
 											{#if kind === 'all' || phone}<span class="sr-only">{progressText(t)}</span>{/if}
@@ -472,11 +474,11 @@
 										<div class="ov" class:music={t.kind === 'artist'}>
 											<a class="ov-poster" style:--poster-ratio={posterRatio(t.kind)} href={openLink(t)} tabindex="-1" aria-hidden="true"><Poster src={t.artwork[0]} name={t.name} /></a>
 											<div class="ov-main">
-												<h2><a href={openLink(t)} tabindex="-1" title={t.name}>{t.name}</a>{#if t.year}<span class="yr">{t.year}</span>{/if}<span class="keep ov-keep" class:on={t.keep_up_to_date} role="img" aria-label={t.keep_up_to_date ? 'Kept up to date' : 'Not kept up to date'} title={t.keep_up_to_date ? 'Kept up to date' : 'Not kept up to date'}><Icon name={t.keep_up_to_date ? 'bellOn' : 'bell'} size={15} /></span></h2>
+												<h2><a href={openLink(t)} tabindex="-1" title={t.name}>{t.name}</a>{#if t.year}<span class="yr">{t.year}</span>{/if}<span class="keep ov-keep" class:on={t.keep_up_to_date} role="img" aria-label={tr(t.keep_up_to_date ? 'mediafiles.poster.kept' : 'mediafiles.poster.notKept')} title={tr(t.keep_up_to_date ? 'mediafiles.poster.kept' : 'mediafiles.poster.notKept')}><Icon name={t.keep_up_to_date ? 'bellOn' : 'bell'} size={15} /></span></h2>
 												{#if t.kind === 'artist'}
 													{#if t.artist?.bio}<p class="ov-text ov-bio">{t.artist.bio}</p>{/if}
 												{:else}
-													<p class="ov-text">{t.overview || 'No description yet.'}</p>
+													<p class="ov-text">{t.overview || tr('mediafiles.list.noDescription')}</p>
 												{/if}
 												{#if t.kind !== 'movie'}
 													<span class="ov-prog">
@@ -488,25 +490,25 @@
 											</div>
 											<!-- The status leads on its own line (never cut short); under it only facts that say something. -->
 											<dl class="ov-facts">
-												{#if ls}<dt class="sr-only">Status</dt><dd class="ov-state"><span class="ls {ls.tone}"><i class="dot" aria-hidden="true"></i>{ls.label}</span></dd>{/if}
+												{#if ls}<dt class="sr-only">{tr('mediafiles.col.status')}</dt><dd class="ov-state"><span class="ls {ls.tone}"><i class="dot" aria-hidden="true"></i>{ls.label}</span></dd>{/if}
 												{#each chosenCols.filter((c) => !isProgressCol(c) && c.id !== 'status' && c.id !== 'kept').slice(0, 4) as c (c.id)}{#if cell(t, c, seriesOf(t))}<dt>{c.label}</dt><dd title={cell(t, c, seriesOf(t))}>{cell(t, c, seriesOf(t))}</dd>{/if}{/each}
 											</dl>
-											{#if selecting}<input type="checkbox" class="pick-box ov-pick" checked={picked.has(t.id)} aria-label="Select {t.name}" tabindex="-1" onchange={() => togglePick(t.id)} data-testid="library-pick" />{/if}
+											{#if selecting}<input type="checkbox" class="pick-box ov-pick" checked={picked.has(t.id)} aria-label={tr('mediafiles.list.select', { name: t.name })} tabindex="-1" onchange={() => togglePick(t.id)} data-testid="library-pick" />{/if}
 										</div>
 									{/if}
 									{#if fold}
 										{@const eps = missingOf[t.id]}
 										<div class="fold">
-											<Button variant="plain" size="sm" icon="chevronRight" class="fold-btn" aria-expanded={foldOpen === t.id} aria-controls="missing-{t.id}" onclick={() => toggleMissing(t)} data-testid="missing-fold">{t.show?.missing} {t.show?.missing === 1 ? 'episode' : 'episodes'} missing</Button>
+											<Button variant="plain" size="sm" icon="chevronRight" class="fold-btn" aria-expanded={foldOpen === t.id} aria-controls="missing-{t.id}" onclick={() => toggleMissing(t)} data-testid="missing-fold">{tr(t.show?.missing === 1 ? 'mediafiles.list.missingEpOne' : 'mediafiles.list.missingEpMany', { n: t.show?.missing ?? 0 })}</Button>
 											{#if foldOpen === t.id}
 												<div id="missing-{t.id}" class="fold-body" data-testid="missing-episodes" in:grow out:shrink>
 													{#if eps === 'loading' || eps === undefined}<Skeleton lines={2} />
-													{:else if eps === 'error'}<p class="fold-note">Episodes didn’t load. <a href={titleLink(t.id)}>Open {t.name}</a></p>
-													{:else if eps.length === 0}<p class="fold-note">Nothing missing.</p>
+													{:else if eps === 'error'}<p class="fold-note">{tr('mediafiles.list.episodesFailed')} <a href={titleLink(t.id)}>{tr('mediafiles.list.openName', { name: t.name })}</a></p>
+													{:else if eps.length === 0}<p class="fold-note">{tr('mediafiles.list.nothingMissing')}</p>
 													{:else}
 														<ul>
 															{#each eps as ep (ep.id)}
-																<li data-testid="missing-episode"><span class="ep-code">{episodeLabel(ep, t.show?.episode_order ?? '')}</span> <span class="ep-name">{ep.name || 'Name not known yet'}</span>{#if ep.air_date}<span class="ep-date"> · {date(ep.air_date)}</span>{/if}{#if ep.slots[0] && ep.slots[0].state !== 'wanted'}{' '}{@const es = audienceStatus(slotKind(ep.slots[0].state), who, { tracked: true })}<StatusPill kind={es.kind} label={who === 'staff' ? ep.slots[0].state_label : es.label} />{/if}</li>
+																<li data-testid="missing-episode"><span class="ep-code">{episodeLabel(ep, t.show?.episode_order ?? '')}</span> <span class="ep-name">{ep.name || tr('shows.page.nameUnknown')}</span>{#if ep.air_date}<span class="ep-date"> · {date(ep.air_date)}</span>{/if}{#if ep.slots[0] && ep.slots[0].state !== 'wanted'}{' '}{@const es = audienceStatus(slotKind(ep.slots[0].state), who, { tracked: true })}<StatusPill kind={es.kind} label={who === 'staff' ? serverWords(ep.slots[0].state_label) : es.label} />{/if}</li>
 															{/each}
 														</ul>
 													{/if}
@@ -514,10 +516,10 @@
 											{/if}
 										</div>
 									{/if}
-									{#if lastOpenedId === t.id}<span class="sr-only" data-testid="last-opened">Last opened</span>{/if}
+									{#if lastOpenedId === t.id}<span class="sr-only" data-testid="last-opened">{tr('mediafiles.list.lastOpened')}</span>{/if}
 									{#if requester && view !== 'rows'}
 										<p class="row-notes">
-											<span class="requester" data-testid="requested-by">Asked by {requester}</span>
+											<span class="requester" data-testid="requested-by">{tr('mediafiles.view.askedBy', { name: requester })}</span>
 										</p>
 									{/if}
 								</div>

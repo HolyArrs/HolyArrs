@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import ArtPill from '#lib/ui/ArtPill.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
 	import type { Snippet } from 'svelte';
@@ -41,7 +42,7 @@
 		<ArtPill text={eyebrow} icon="sparkle" />
 		<h2 class="name"><a {href} class="stretch">{name}</a></h2>
 		<p class="line">{line}</p>
-		<a class="open" {href} tabindex="-1" aria-hidden="true">See the whole genre<Icon name="chevronRight" size={16} /></a>
+		<a class="open" {href} tabindex="-1" aria-hidden="true">{t('discover.genreBanner.seeTheWholeGenre')}<Icon name="chevronRight" size={16} /></a>
 	</div>
 	<div class="picks">{@render picks()}</div>
 </section>

@@ -1,6 +1,7 @@
 
 // Freshness tags on cards and which rows already say the same thing.
 
+import { t } from '#lib/core/i18n/i18n.svelte.ts';
 export type FreshKind = 'new_episode' | 'new_season' | 'recently_added' | 'coming' | 'season_coming' | 'new_release';
 
 export interface Fresh {
@@ -10,8 +11,6 @@ export interface Fresh {
 }
 
 export type OwnState = 'available' | 'partial' | 'downloading' | 'requested' | 'declined';
-
-const TYPE_WORD = { movie: 'Movie', show: 'Show' } as const;
 
 // Most urgent first; pickFresh keeps the earliest.
 export const FRESH_ORDER: readonly FreshKind[] = ['new_episode', 'new_season', 'recently_added', 'coming', 'season_coming', 'new_release'];
@@ -42,7 +41,7 @@ export function shownFresh(f: Fresh | null | undefined, where: { music?: boolean
 }
 
 export function typeWord(kind: string | undefined): string {
-	return kind === 'movie' || kind === 'show' ? TYPE_WORD[kind] : '';
+	return kind === 'movie' ? t('ui.fresh.movie') : kind === 'show' ? t('ui.fresh.show') : '';
 }
 
 // Joins type and details, skipping blanks and repeats.

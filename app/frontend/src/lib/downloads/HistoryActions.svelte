@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	// Detail actions for a history row: "Find another" for rows about a release (blocks it, then searches its Slot again), then links to the Import plan and the title.
 	import Button from '#lib/ui/Button.svelte';
 	import { titleHref } from './history-kinds.ts';
@@ -13,7 +14,7 @@
 	let { row, titleById }: { row: HistoryRow; titleById: Map<number, TitleView> } = $props();
 	const find = $derived(canFind(row));
 	// On a failed download this finds another; on one that came in it replaces it.
-	const findWord = $derived(rowStep(row).failed ? 'Find another' : 'Replace');
+	const findWord = $derived(rowStep(row).failed ? t('downloads.ha.findAnother') : t('downloads.ha.replace'));
 	const links = $derived(rowLinks(row, titleHref(row.head.TitleID, titleById)));
 
 	let asking = $state(false);
@@ -30,20 +31,20 @@
 		box?.querySelector<HTMLButtonElement>('[data-testid="history-find-confirm"]')?.focus();
 	}
 	async function confirm() {
-		const t = findTarget(row);
-		if (!t) {
-			toasts.push('Release not found', 'fail');
+		const target = findTarget(row);
+		if (!target) {
+			toasts.push(t('downloads.ha.notFound'), 'fail');
 			return;
 		}
 		busy = true;
 		try {
-			const slot = t.slotId > 0 ? { slot_id: t.slotId } : undefined;
-			await api.post(`/releases/${t.releaseId}/turn-down`, slot);
-			await api.post(`/titles/${t.titleId}/search`, slot);
-			toasts.push('Release turned down', 'ok', { body: 'Searching again' });
+			const slot = target.slotId > 0 ? { slot_id: target.slotId } : undefined;
+			await api.post(`/releases/${target.releaseId}/turn-down`, slot);
+			await api.post(`/titles/${target.titleId}/search`, slot);
+			toasts.push(t('downloads.ha.turnedDown'), 'ok', { body: t('downloads.ha.searchingAgain') });
 			await stop();
 		} catch (e) {
-			toasts.push("Couldn't turn down Release", 'fail', { body: message(e) });
+			toasts.push(t('downloads.ha.turnDownFailed'), 'fail', { body: message(e) });
 		} finally {
 			busy = false;
 		}
@@ -59,11 +60,11 @@
 <div class="da" data-testid="history-acts" bind:this={opener}>
 	{#if find && asking}
 		<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-		<div class="ask" role="group" aria-label="Find another release" bind:this={box} onkeydown={(ev) => ev.key === 'Escape' && (ev.stopPropagation(), stop())}>
-			<p>Block this release and search again for {qualityOf(row) || 'the same quality'}?</p>
+		<div class="ask" role="group" aria-label={t('downloads.ha.findAnotherLabel')} bind:this={box} onkeydown={(ev) => ev.key === 'Escape' && (ev.stopPropagation(), stop())}>
+			<p>{t('downloads.ha.ask', { quality: qualityOf(row) || t('downloads.ha.sameQuality') })}</p>
 			<div class="btns">
-				<Button variant="primary" size="sm" data-testid="history-find-confirm" disabled={busy} busy={busy} onclick={confirm}>Block and search</Button>
-				<Button variant="plain" size="sm" data-testid="history-find-cancel" onclick={() => stop()}>Cancel</Button>
+				<Button variant="primary" size="sm" data-testid="history-find-confirm" disabled={busy} busy={busy} onclick={confirm}>{t('downloads.ha.blockSearch')}</Button>
+				<Button variant="plain" size="sm" data-testid="history-find-cancel" onclick={() => stop()}>{t('downloads.sel.cancel')}</Button>
 			</div>
 		</div>
 	{:else if find}

@@ -1,4 +1,5 @@
 // Signed-in devices: the session list the account and Users pages show.
+import { t } from '#lib/core/i18n/i18n.svelte.ts';
 
 export interface SessionRow {
 	id: string;
@@ -24,6 +25,6 @@ export function others(rows: SessionRow[]): number {
 
 /** How many sessions a sign-out ended. */
 export function endedWords(n: number): string {
-	if (n === 0) return 'No other devices were signed in.';
-	return n === 1 ? 'Signed out 1 device.' : `Signed out ${n} devices.`;
+	if (n === 0) return t('accounts.sessions.none');
+	return n === 1 ? t('accounts.sessions.one') : t('accounts.sessions.many', { n });
 }

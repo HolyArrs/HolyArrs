@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t, appLocale } from '#lib/core/i18n/i18n.svelte.ts';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Button from '#lib/ui/Button.svelte';
@@ -7,6 +8,7 @@
 	import SaveBar from '#lib/ui/SaveBar.svelte';
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
 	import Sessions from './Sessions.svelte';
+	import LanguagePicker from './LanguagePicker.svelte';
 	import AccountSecurity from './AccountSecurity.svelte';
 	import { strong } from './strong-error.ts';
 	import { profile, loadProfile, saveDisplayName } from './profile.svelte.ts';
@@ -42,7 +44,7 @@
 		try {
 			await saveDisplayName(nameDraft);
 			nameEditing = false;
-			toasts.push('Name saved', 'ok');
+			toasts.push(t('accounts.account.nameSaved'), 'ok');
 		} catch (err) {
 			nameError = message(err);
 		} finally {
@@ -59,7 +61,7 @@
 	let unfollowing = $state('');
 	const followKey = (f: Followed) => f.unfollow;
 	const followHref = (f: Followed) => (f.title_id ? `/library/${f.title_id}` : f.mbid ? `/music/album/${encodeURIComponent(f.mbid)}` : f.tmdb_id ? detailPath(f.kind === 'movie' ? 'movie' : 'show', f.tmdb_id) : '');
-	const followKind = (f: Followed) => ({ artist: 'Artist', album: 'Album', movie: 'Movie' })[f.kind] ?? 'Show';
+	const followKind = (f: Followed) => t(`accounts.account.kind.${['artist', 'album', 'movie'].includes(f.kind) ? f.kind : 'show'}`);
 	function nameFollows(list: Followed[]) {
 		for (const f of list) {
 			if (f.name || !f.tmdb_id) continue;
@@ -76,9 +78,9 @@
 		try {
 			await api.del(f.unfollow);
 			follows = follows.filter((x) => x.unfollow !== f.unfollow);
-			toasts.push(`Unfollowed ${f.name || followKind(f).toLowerCase()}`, 'ok');
+			toasts.push(t('accounts.account.unfollowed', { what: f.name || followKind(f).toLowerCase() }), 'ok');
 		} catch (err) {
-			toasts.push("Couldn't unfollow", 'fail', { body: message(err) });
+			toasts.push(t('accounts.account.unfollowFailed'), 'fail', { body: message(err) });
 		} finally {
 			unfollowing = '';
 		}
@@ -89,9 +91,9 @@
 		resetBusy = true;
 		try {
 			await api.del('/explore/strip/counts');
-			toasts.push('Recommendations reset', 'ok');
+			toasts.push(t('accounts.account.recoReset'), 'ok');
 		} catch (err) {
-			toasts.push("Couldn't reset", 'fail', { body: message(err) });
+			toasts.push(t('accounts.account.resetFailed'), 'fail', { body: message(err) });
 		} finally {
 			resetBusy = false;
 		}
@@ -104,9 +106,9 @@
 		watchBusy = true;
 		try {
 			watch = await api.put<PlexWatchlist>('/my/plex-watchlist', { movies: watch.movies, shows: watch.shows, [kind]: on });
-			toasts.push(on ? 'Plex watchlist on' : 'Settings saved', 'ok', on ? { body: 'Read every few minutes' } : undefined);
+			toasts.push(on ? t('accounts.account.watchOn') : t('accounts.account.settingsSaved'), 'ok', on ? { body: t('accounts.account.everyFew') } : undefined);
 		} catch (err) {
-			toasts.push("Couldn't save", 'fail', { body: message(err) });
+			toasts.push(t('accounts.account.saveFailed'), 'fail', { body: message(err) });
 			watch = await api.get<PlexWatchlist>('/my/plex-watchlist').catch(() => watch);
 		} finally {
 			watchBusy = false;
@@ -116,10 +118,10 @@
 		watchBusy = true;
 		try {
 			await api.post('/my/plex-watchlist/check', {});
-			toasts.push('Reading Plex watchlist', 'info');
+			toasts.push(t('accounts.account.reading'), 'info');
 			setTimeout(() => void api.get<PlexWatchlist>('/my/plex-watchlist').then((r) => (watch = r)).catch(() => {}), 4000);
 		} catch (err) {
-			toasts.push("Couldn't read watchlist", 'fail', { body: message(err) });
+			toasts.push(t('accounts.account.readFailed'), 'fail', { body: message(err) });
 		} finally {
 			watchBusy = false;
 		}
@@ -159,7 +161,7 @@
 		try {
 			targets = await api.put('/my/alerts', targets);
 			savedTargets = JSON.stringify(targets);
-			toasts.push('Alert settings saved', 'ok');
+			toasts.push(t('accounts.account.alertsSaved'), 'ok');
 		} catch (err) {
 			tgError = message(err);
 		} finally {
@@ -168,20 +170,16 @@
 	}
 
 	const MIN_LENGTH = $derived(session.s.minPassword);
-	const via: Record<string, string> = {
-		session: 'with your password or a linked account',
-		api_key: 'with an API key',
-		local_network: 'from your local network, without a password'
-	};
+	const via = (k: string): string => (['session', 'api_key', 'local_network'].includes(k) ? t(`accounts.account.via.${k}`) : k);
 	function authMethodWord(method: string): string {
-		if (method === 'local_password' || method === 'local_setup') return 'HolyArrs password';
-		if (method === 'oidc' || method.startsWith('oidc:')) return 'single sign-on';
-		if (method === 'forward_auth' || method.startsWith('forward_auth:')) return 'trusted proxy';
-		if (method === 'legacy') return 'an older session';
+		if (method === 'local_password' || method === 'local_setup') return t('accounts.account.method.passwordLabel');
+		if (method === 'oidc' || method.startsWith('oidc:')) return t('accounts.account.method.sso');
+		if (method === 'forward_auth' || method.startsWith('forward_auth:')) return t('accounts.account.method.proxy');
+		if (method === 'legacy') return t('accounts.account.method.legacy');
 		const server: Record<string, string> = { plex: 'Plex', jellyfin: 'Jellyfin', emby: 'Emby' };
 		return server[method] ?? method;
 	}
-	const viaShort: Record<string, string> = { session: 'Password or linked account', api_key: 'API key', local_network: 'Local network' };
+	const viaShort = (k: string): string => (['session', 'api_key', 'local_network'].includes(k) ? t(`accounts.account.viaShort.${k}`) : k);
 
 	let current = $state('');
 	let next = $state('');
@@ -199,8 +197,8 @@
 	async function changePassword(e: SubmitEvent) {
 		e.preventDefault();
 		pwError = '';
-		if (next.length < MIN_LENGTH) return void (pwError = `Use at least ${MIN_LENGTH} characters`);
-		if (next !== again) return void (pwError = 'Passwords don’t match');
+		if (next.length < MIN_LENGTH) return void (pwError = t('accounts.account.useAtLeast', { n: MIN_LENGTH }));
+		if (next !== again) return void (pwError = t('accounts.account.noMatch'));
 		pwBusy = true;
 		const first = !session.s.hasPassword;
 		try {
@@ -208,7 +206,7 @@
 			current = next = again = '';
 			pwOpen = false;
 			if (first) session.s.hasPassword = true;
-			toasts.push(first ? 'Password set' : 'Password changed', 'ok', { body: first ? `Sign in as ${session.s.name} with it` : 'Other devices signed out' });
+			toasts.push(first ? t('accounts.account.pwSet') : t('accounts.account.pwChanged'), 'ok', { body: first ? t('accounts.account.signInAs', { name: session.s.name }) : t('accounts.account.othersOut') });
 		} catch (err) {
 			pwError = strong(err);
 		} finally {
@@ -235,11 +233,11 @@
 		if (!f) return;
 		clearPick();
 		if (!/^image\/(jpeg|png|webp)$/.test(f.type)) {
-			toasts.push('Picture not supported', 'fail', { body: 'Use JPEG, PNG or WebP' });
+			toasts.push(t('accounts.account.picNotSupported'), 'fail', { body: t('accounts.account.picUse') });
 			return;
 		}
 		if (f.size > AVATAR_MAX) {
-			toasts.push('Picture is too big', 'fail', { body: 'Max 5 MB' });
+			toasts.push(t('accounts.account.picBig'), 'fail', { body: t('accounts.account.picMax') });
 			return;
 		}
 		picked = f;
@@ -252,9 +250,9 @@
 			const r = await api.request<{ avatar: string | null }>('/account/avatar', { method: 'PUT', raw: picked });
 			session.setAvatar(r.avatar);
 			clearPick();
-			toasts.push('Profile picture saved', 'ok');
+			toasts.push(t('accounts.account.picSaved'), 'ok');
 		} catch (err) {
-			toasts.push("Couldn't save picture", 'fail', { body: message(err) });
+			toasts.push(t('accounts.account.picSaveFailed'), 'fail', { body: message(err) });
 		} finally {
 			avatarBusy = false;
 		}
@@ -265,147 +263,151 @@
 			await api.del('/account/avatar');
 			session.setAvatar(null);
 			clearPick();
-			toasts.push('Profile picture removed', 'ok');
+			toasts.push(t('accounts.account.picRemoved'), 'ok');
 		} catch (err) {
-			toasts.push("Couldn't remove picture", 'fail', { body: message(err) });
+			toasts.push(t('accounts.account.picRemoveFailed'), 'fail', { body: message(err) });
 		} finally {
 			avatarBusy = false;
 		}
 	}
 </script>
 
-<PageHeader title="My account" />
+<PageHeader title={t('accounts.account.title')} />
 <div class="acct">
 
 {#if session.s.mustTwoFactor}
-	<p class="notice warn" role="alert">Admins need two-factor sign-in. Turn it on under Security to continue.</p>
+	<p class="notice warn" role="alert">{t('accounts.account.mustTf')}</p>
 {/if}
 
-<SettingsCard id="profile-me" title="Profile" icon="user">
+<SettingsCard id="profile-me" title={t('accounts.account.profile')} icon="user">
 	<div class="pfp">
-		<Avatar name={shownName(profile.displayName, personName(session.s.name, 'You'))} src={preview || session.s.avatar} size={44} label="Your profile picture" />
-		<input class="sr-only" type="file" accept="image/jpeg,image/png,image/webp" bind:this={avatarInput} onchange={pickAvatar} disabled={avatarBusy} aria-label="Choose a profile picture" />
+		<Avatar name={shownName(profile.displayName, personName(session.s.name, t('accounts.account.you')))} src={preview || session.s.avatar} size={44} label={t('accounts.account.yourPicture')} />
+		<input class="sr-only" type="file" accept="image/jpeg,image/png,image/webp" bind:this={avatarInput} onchange={pickAvatar} disabled={avatarBusy} aria-label={t('accounts.account.choosePicture')} />
 		{#if picked}
-			<Button variant="primary" type="button" onclick={saveAvatar} busy={avatarBusy}>Save</Button>
-			<Button variant="plain" type="button" onclick={clearPick} disabled={avatarBusy}>Cancel</Button>
+			<Button variant="primary" type="button" onclick={saveAvatar} busy={avatarBusy}>{t('accounts.sso.save')}</Button>
+			<Button variant="plain" type="button" onclick={clearPick} disabled={avatarBusy}>{t('accounts.signin.cancel')}</Button>
 		{:else}
-			<Button type="button" onclick={() => avatarInput?.click()} disabled={avatarBusy}>{session.s.avatar ? 'Change picture' : 'Add picture'}</Button>
-			{#if session.s.avatar}<Button variant="plain" type="button" onclick={removeAvatar} disabled={avatarBusy}>Remove</Button>{/if}
+			<Button type="button" onclick={() => avatarInput?.click()} disabled={avatarBusy}>{session.s.avatar ? t('accounts.account.changePicture') : t('accounts.account.addPicture')}</Button>
+			{#if session.s.avatar}<Button variant="plain" type="button" onclick={removeAvatar} disabled={avatarBusy}>{t('accounts.account.remove')}</Button>{/if}
 		{/if}
-		<span class="hint" title="JPEG, PNG or WebP, up to 5 MB">Up to 5 MB.</span>
+		<span class="hint" title={t('accounts.account.picTip')}>{t('accounts.account.picUpTo')}</span>
 	</div>
 	<div class="boxes" data-testid="profile-boxes">
 		<div class="box wide" data-testid="box-display-name">
-			<span class="label" id="dn-label">Display name</span>
+			<span class="label" id="dn-label">{t('accounts.account.displayName')}</span>
 			{#if nameEditing}
 				<form class="dn" onsubmit={saveName} novalidate>
 					<input class="input" aria-labelledby="dn-label" bind:value={nameDraft} maxlength="64" autocomplete="nickname" placeholder={session.s.name} />
-					<Button variant="primary" type="submit" busy={nameBusy} disabled={nameBusy || nameDraft.trim() === profile.displayName || !!nameProblem}>Save</Button>
-					<Button variant="plain" type="button" onclick={() => (nameEditing = false)} disabled={nameBusy}>Cancel</Button>
+					<Button variant="primary" type="submit" busy={nameBusy} disabled={nameBusy || nameDraft.trim() === profile.displayName || !!nameProblem}>{t('accounts.sso.save')}</Button>
+					<Button variant="plain" type="button" onclick={() => (nameEditing = false)} disabled={nameBusy}>{t('accounts.signin.cancel')}</Button>
 				</form>
 				{#if nameError || nameProblem}<p class="form-error" role="alert">{nameError || nameProblem}</p>{/if}
 			{:else}
 				<div class="line">
 					<span class="value">{profile.displayName || session.s.name}</span>
-					<Button variant="plain" type="button" onclick={startName} data-testid="edit-display-name">Change</Button>
+					<Button variant="plain" type="button" onclick={startName} data-testid="edit-display-name">{t('accounts.account.change')}</Button>
 				</div>
 			{/if}
 		</div>
 		<div class="box" data-testid="box-username">
-			<span class="label">Username</span>
+			<span class="label">{t('accounts.account.username')}</span>
 			<div class="line">
 				<span class="value">{session.s.name}</span>
-				<span class="lock" title="Used to sign in; can't change" role="img" aria-label="Locked: you sign in with this name"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></span>
+				<span class="lock" title={t('accounts.account.usernameTip')} role="img" aria-label={t('accounts.account.usernameLocked')}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></span>
 			</div>
 		</div>
 		<div class="box" data-testid="box-role">
-			<span class="label">Role</span>
+			<span class="label">{t('accounts.account.role')}</span>
 			<div class="line">
 				<span class="value">{roleWord(session.s.role)}</span>
-				<span class="lock" title="Only the owner can change this" role="img" aria-label="Locked: only the owner can change your role"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></span>
+				<span class="lock" title={t('accounts.account.roleTip')} role="img" aria-label={t('accounts.account.roleLocked')}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></span>
 			</div>
 		</div>
 		<div class="box" data-testid="box-sign-in">
-			<span class="label">Sign-in method</span>
-			<div class="line"><span class="value" title={via[session.s.via] ?? session.s.via}>{session.s.authMethod ? authMethodWord(session.s.authMethod) : (viaShort[session.s.via] ?? session.s.via)}</span></div>
+			<span class="label">{t('accounts.account.signInMethod')}</span>
+			<div class="line"><span class="value" title={via(session.s.via)}>{session.s.authMethod ? authMethodWord(session.s.authMethod) : viaShort(session.s.via)}</span></div>
 		</div>
 		<div class="box" class:wide={pwOpen} data-testid="box-password">
-			<span class="label">Password</span>
+			<span class="label">{t('accounts.signin.passwordLabel')}</span>
 			{#if !session.s.hasPassword && !session.s.outsideRecent}
-				<span class="hint">None yet. To set one, sign out and sign in again with {authMethodWord(session.s.authMethod)}, then come back here within 10 minutes.</span>
+				<span class="hint">{t('accounts.account.noneYet', { method: authMethodWord(session.s.authMethod) })}</span>
 			{:else if !session.s.hasPassword && !pwOpen}
-				<div class="line"><Button type="button" onclick={() => (pwOpen = true)} data-testid="change-password">Set a password</Button></div>
-				<span class="hint">So you can still sign in when {authMethodWord(session.s.authMethod)} is down.</span>
+				<div class="line"><Button type="button" onclick={() => (pwOpen = true)} data-testid="change-password">{t('accounts.account.setAPasswordLabel')}</Button></div>
+				<span class="hint">{t('accounts.account.soStill', { method: authMethodWord(session.s.authMethod) })}</span>
 			{:else if pwOpen}
 				<Confirm action="password" onCancel={() => (pwOpen = false)}>
 					<form class="pw" onsubmit={changePassword} novalidate>
 						<input type="text" name="username" autocomplete="username" value={session.s.name} hidden readonly />
 						{#if session.s.hasPassword}
-							<label class="sr-only" for="pw-current">Current password</label>
-							<input id="pw-current" class="input" type="password" placeholder="Current password" bind:value={current} autocomplete="current-password" />
+							<label class="sr-only" for="pw-current">{t('accounts.account.currentPasswordLabel')}</label>
+							<input id="pw-current" class="input" type="password" placeholder={t('accounts.account.currentPasswordLabel')} bind:value={current} autocomplete="current-password" />
 						{/if}
-						<label class="sr-only" for="pw-new">New password</label>
-						<input id="pw-new" class="input" type="password" placeholder="At least {MIN_LENGTH} characters" bind:value={next} autocomplete="new-password" />
-						<label class="sr-only" for="pw-again">Confirm new password</label>
-						<input id="pw-again" class="input" type="password" placeholder="Confirm new password" bind:value={again} autocomplete="new-password" />
+						<label class="sr-only" for="pw-new">{t('accounts.account.newPasswordLabel')}</label>
+						<input id="pw-new" class="input" type="password" placeholder={t('accounts.signin.atLeast', { n: MIN_LENGTH })} bind:value={next} autocomplete="new-password" />
+						<label class="sr-only" for="pw-again">{t('accounts.account.confirmPasswordLabel')}</label>
+						<input id="pw-again" class="input" type="password" placeholder={t('accounts.account.confirmPasswordLabel')} bind:value={again} autocomplete="new-password" />
 						{#if pwError}<p class="form-error" role="alert">{pwError}</p>{/if}
 						<div class="row acts">
-							<Button variant="primary" type="submit" disabled={pwBusy || !next} busy={pwBusy}>{session.s.hasPassword ? 'Change password' : 'Set password'}</Button>
-							<Button variant="plain" type="button" onclick={() => (pwOpen = false)}>Cancel</Button>
+							<Button variant="primary" type="submit" disabled={pwBusy || !next} busy={pwBusy}>{session.s.hasPassword ? t('accounts.account.changePasswordLabel') : t('accounts.account.setPasswordLabel')}</Button>
+							<Button variant="plain" type="button" onclick={() => (pwOpen = false)}>{t('accounts.signin.cancel')}</Button>
 						</div>
-						<span class="hint">{session.s.hasPassword ? 'Signs out your other devices.' : `Your ${authMethodWord(session.s.authMethod)} sign-in keeps working.`}</span>
+						<span class="hint">{session.s.hasPassword ? t('accounts.account.signsOut') : t('accounts.account.keepsWorking', { method: authMethodWord(session.s.authMethod) })}</span>
 					</form>
 				</Confirm>
 			{:else}
-				<div class="line"><Button type="button" onclick={() => (pwOpen = true)} data-testid="change-password">Change password</Button></div>
+				<div class="line"><Button type="button" onclick={() => (pwOpen = true)} data-testid="change-password">{t('accounts.account.changePasswordLabel')}</Button></div>
 			{/if}
 		</div>
 	</div>
 </SettingsCard>
 
-<SettingsCard id="preferences-me" title="Preferences" icon="appearance">
+<SettingsCard id="preferences-me" title={t('accounts.account.preferences')} icon="appearance">
+	<div class="srow" id="language-row-me">
+		<div class="txt"><label class="label" for="language-me">{t('accounts.language.label')}</label><span class="hint">{t('accounts.language.hint')}</span></div>
+		<div class="ctl"><LanguagePicker id="language-me" /></div>
+	</div>
 	<div class="srow">
-		<div class="txt"><span class="label">Trailers</span><span class="hint" title="Auto respects Reduce motion and data saver">Auto respects Reduce motion and data saver</span></div>
-		<div class="ctl"><SegmentedControl size="sm" label="Play trailers" options={[{ value: 'auto', label: 'Auto' }, { value: 'always', label: 'Always' }, { value: 'never', label: 'Never' }] as { value: AutoplayPref; label: string }[]} value={pref} onchange={(v) => { pref = v; setAutoplayPref(v); location.reload(); }} /></div>
+		<div class="txt"><span class="label">{t('accounts.account.trailers')}</span><span class="hint" title={t('accounts.account.trailersHint')}>{t('accounts.account.trailersHint')}</span></div>
+		<div class="ctl"><SegmentedControl size="sm" label={t('accounts.account.playTrailers')} options={[{ value: 'auto', label: t('accounts.account.auto') }, { value: 'always', label: t('accounts.account.always') }, { value: 'never', label: t('accounts.account.never') }] as { value: AutoplayPref; label: string }[]} value={pref} onchange={(v) => { pref = v; setAutoplayPref(v); location.reload(); }} /></div>
 	</div>
 	<div class="srow" id="recommendations-me">
-		<div class="txt"><span class="label">Recommendations</span><span class="hint" title="Explore learns from what you open. Stays on this server.">Explore learns from what you open.</span></div>
-		<div class="ctl"><Button variant="secondary" onclick={resetRecommendations} busy={resetBusy} data-testid="reset-recommendations">Reset</Button></div>
+		<div class="txt"><span class="label">{t('accounts.account.reco')}</span><span class="hint" title={t('accounts.account.recoTip')}>{t('accounts.account.recoHint')}</span></div>
+		<div class="ctl"><Button variant="secondary" onclick={resetRecommendations} busy={resetBusy} data-testid="reset-recommendations">{t('accounts.account.reset')}</Button></div>
 	</div>
 </SettingsCard>
 <AccountSecurity />
 
-<SettingsCard id="alerts-me" title="Alerts" description="Requests always show on Requests. Add email or Discord too." icon="bell">
+<SettingsCard id="alerts-me" title={t('accounts.account.alerts')} description={t('accounts.account.alertsDesc')} icon="bell">
 	<form id="alerts-form" class="rows" onsubmit={saveTargets} novalidate>
 		<div class="srow">
-			<div class="txt"><label for="tg-email">Email</label><span class="hint">{emailReady ? 'Needs email set up by the owner' : 'Email Alerts aren’t set up'}</span></div>
-			<div class="ctl"><input id="tg-email" class="input" type="email" bind:value={targets.email} autocomplete="email" placeholder="you@example.com" disabled={!emailReady && !targets.email} /></div>
+			<div class="txt"><label for="tg-email">{t('accounts.account.email')}</label><span class="hint">{emailReady ? t('accounts.account.emailNeeds') : t('accounts.account.emailNot')}</span></div>
+			<div class="ctl"><input id="tg-email" class="input" type="email" bind:value={targets.email} autocomplete="email" placeholder={t('accounts.account.emailPlaceholder')} disabled={!emailReady && !targets.email} /></div>
 		</div>
 		<div class="srow">
-			<div class="txt"><label for="tg-discord">Discord user ID</label><span class="hint" title="In Discord: Developer Mode, right-click your name, Copy User ID">Developer Mode, then Copy User ID.</span></div>
-			<div class="ctl"><input id="tg-discord" class="input mono" inputmode="numeric" bind:value={targets.discord_id} autocomplete="off" placeholder="e.g. 123456789012345678" /></div>
+			<div class="txt"><label for="tg-discord">{t('accounts.account.discord')}</label><span class="hint" title={t('accounts.account.discordTip')}>{t('accounts.account.discordHint')}</span></div>
+			<div class="ctl"><input id="tg-discord" class="input mono" inputmode="numeric" bind:value={targets.discord_id} autocomplete="off" placeholder={t('accounts.account.discordPlaceholder')} /></div>
 		</div>
 		<div class="srow">
-			<div class="txt"><span class="label">New episodes</span><span class="hint">Shows you requested, at most hourly</span></div>
+			<div class="txt"><span class="label">{t('accounts.account.newEpisodes')}</span><span class="hint">{t('accounts.account.newEpisodesHint')}</span></div>
 			<div class="ctl">
 				<label class="switch">
 					<input type="checkbox" bind:checked={targets.new_episodes} data-testid="new-episodes" />
-					<span class="sw" aria-hidden="true"></span><span class="sr-only">New episodes of shows I requested</span>
+					<span class="sw" aria-hidden="true"></span><span class="sr-only">{t('accounts.account.newEpisodesSr')}</span>
 				</label>
 			</div>
 		</div>
 		{#if tgError}<p class="form-error" role="alert">{tgError}</p>{/if}
 	</form>
 	<div class="srow" id="follows-me">
-		<div class="txt"><span class="label">Following</span><span class="hint">Follow from a title page.</span></div>
-		<div class="ctl"><span class="chip">{follows.length ? follows.length : 'None'}</span></div>
+		<div class="txt"><span class="label">{t('accounts.account.following')}</span><span class="hint">{t('accounts.account.followingHint')}</span></div>
+		<div class="ctl"><span class="chip">{follows.length ? follows.length : t('accounts.account.none')}</span></div>
 		{#if follows.length}
 			<ul class="follows below" data-testid="follows">
 				{#each follows as f (followKey(f))}
 					<li>
-						<a href={to(followHref(f))}>{f.name || 'Loading…'}{#if f.year}&nbsp;({f.year}){/if}{#if f.artist}<span class="muted">{` · ${f.artist}`}</span>{/if}</a>
+						<a href={to(followHref(f))}>{f.name || t('accounts.account.loading')}{#if f.year}&nbsp;({f.year}){/if}{#if f.artist}<span class="muted">{` · ${f.artist}`}</span>{/if}</a>
 						<span class="xs muted">{followKind(f)}</span>
-						<Button variant="secondary" disabled={!!unfollowing} busy={unfollowing === f.unfollow} onclick={() => unfollow(f)}>Unfollow</Button>
+						<Button variant="secondary" disabled={!!unfollowing} busy={unfollowing === f.unfollow} onclick={() => unfollow(f)}>{t('accounts.account.unfollow')}</Button>
 					</li>
 				{/each}
 			</ul>
@@ -414,44 +416,44 @@
 </SettingsCard>
 
 {#if showWatchlistCard(watch) && watch && !session.held('plex_watchlists')}
-	<SettingsCard id="watchlist-me" title="Plex watchlist" description="Titles on your Plex watchlist become your requests" icon="requests">
+	<SettingsCard id="watchlist-me" title={t('accounts.account.watchlist')} description={t('accounts.account.watchlistDesc')} icon="requests">
 		{#if !watch.can_read}
-			<p class="hint" data-testid="watchlist-cannot-read">Link Plex under Security to read your watchlist</p>
+			<p class="hint" data-testid="watchlist-cannot-read">{t('accounts.account.linkPlex')}</p>
 		{/if}
 		<div class="srow">
-			<div class="txt"><span class="label">Movies</span><span class="hint">Your weekly Limit applies</span></div>
+			<div class="txt"><span class="label">{t('accounts.account.movies')}</span><span class="hint">{t('accounts.account.limitApplies')}</span></div>
 			<div class="ctl">
 				<label class="switch">
 					<input type="checkbox" checked={watch.movies} disabled={watchBusy || (!watch.can_read && !watch.movies)} onchange={(e) => setWatch('movies', e.currentTarget.checked)} data-testid="watchlist-movies" />
-					<span class="sw" aria-hidden="true"></span><span class="sr-only">Request movies on my Plex watchlist</span>
+					<span class="sw" aria-hidden="true"></span><span class="sr-only">{t('accounts.account.reqMovies')}</span>
 				</label>
 			</div>
 		</div>
 		<div class="srow">
-			<div class="txt"><span class="label">Shows</span><span class="hint">Requests the whole show</span></div>
+			<div class="txt"><span class="label">{t('accounts.account.shows')}</span><span class="hint">{t('accounts.account.wholeShow')}</span></div>
 			<div class="ctl">
 				<label class="switch">
 					<input type="checkbox" checked={watch.shows} disabled={watchBusy || (!watch.can_read && !watch.shows)} onchange={(e) => setWatch('shows', e.currentTarget.checked)} data-testid="watchlist-shows" />
-					<span class="sw" aria-hidden="true"></span><span class="sr-only">Request shows on my Plex watchlist</span>
+					<span class="sw" aria-hidden="true"></span><span class="sr-only">{t('accounts.account.reqShows')}</span>
 				</label>
 			</div>
 		</div>
 		{#if watch.movies || watch.shows}
 			<div class="srow">
 				<div class="txt">
-					<span class="label">Last read</span>
-					<span class="hint">{#if watch.checked_at}<time datetime={watch.checked_at}>{new Date(watch.checked_at).toLocaleString()}</time>{:else}Not yet{/if}{#if watch.plex_name}{' '}· Plex: {watch.plex_name}{/if}</span>
+					<span class="label">{t('accounts.account.lastRead')}</span>
+					<span class="hint">{#if watch.checked_at}<time datetime={watch.checked_at}>{new Date(watch.checked_at).toLocaleString(appLocale())}</time>{:else}{t('accounts.account.notYet')}{/if}{#if watch.plex_name}{' '}· {t('accounts.account.plexName', { name: watch.plex_name })}{/if}</span>
 				</div>
-				<div class="ctl"><Button variant="secondary" disabled={watchBusy || !watch.can_read} onclick={checkWatch}>Read now</Button></div>
+				<div class="ctl"><Button variant="secondary" disabled={watchBusy || !watch.can_read} onclick={checkWatch}>{t('accounts.account.readNow')}</Button></div>
 			</div>
 			{#if watch.error}<p class="form-error" role="alert" data-testid="watchlist-error">{watch.error}</p>{/if}
 		{/if}
 		{#if watch.items.length}
-			<ul class="follows" data-testid="watchlist-items" aria-label="Newest on your Plex watchlist">
+			<ul class="follows" data-testid="watchlist-items" aria-label={t('accounts.account.newest')}>
 				{#each watch.items as it, i (i)}
 					<li title={it.note || undefined}>
 						<span class="wl-name">{it.name}{#if it.year}&nbsp;({it.year}){/if}</span>
-						<span class="xs muted">{it.kind === 'show' ? 'Show' : 'Movie'} · {watchlistStateWord(it.state)}</span>
+						<span class="xs muted">{it.kind === 'show' ? t('accounts.account.kind.show') : t('accounts.account.kind.movie')} · {watchlistStateWord(it.state)}</span>
 					</li>
 				{/each}
 			</ul>
@@ -459,7 +461,7 @@
 	</SettingsCard>
 {/if}
 
-<SettingsCard id="sessions-me" title="Devices" description="Sign out any you don't recognise" icon="tv">
+<SettingsCard id="sessions-me" title={t('accounts.account.devices')} description={t('accounts.account.devicesDesc')} icon="tv">
 	<Sessions path="/auth/sessions" first={5} />
 </SettingsCard>
 </div>

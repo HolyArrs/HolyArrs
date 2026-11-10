@@ -1,4 +1,6 @@
 <script lang="ts">
+	import Words from '#lib/ui/Words.svelte';
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Button from '#lib/ui/Button.svelte';
@@ -36,10 +38,10 @@
 	};
 	// What the Next column says when the schedule is not waiting for its time.
 	const nextWords = (s: ScheduleRow) => {
-		if (!s.enabled) return 'Turned off';
+		if (!s.enabled) return t('settings.schedules.turnedOff');
 		if (s.state === 'part_off' || s.state === 'safe_mode') return stateWords[s.state];
-		if (s.state === 'running') return 'Running';
-		if (s.state === 'queued') return 'Waiting its turn';
+		if (s.state === 'running') return t('settings.schedules.running');
+		if (s.state === 'queued') return t('settings.schedules.waiting');
 		return until(s.next_run, now);
 	};
 
@@ -60,10 +62,10 @@
 		busy = s.kind;
 		try {
 			const r = await api.post<{ job_id: number; already: boolean }>(`/schedules/${s.kind}/run`);
-			toasts.push(r.already ? `${s.label} already queued` : `${s.label} started`, 'ok');
+			toasts.push(r.already ? t('settings.schedules.alreadyQueued', { label: s.label }) : t('settings.schedules.started', { label: s.label }), 'ok');
 			await load();
 		} catch (e) {
-			toasts.push(`Couldn't start ${s.label}`, 'fail', { body: message(e) });
+			toasts.push(t('settings.schedules.couldntStart', { label: s.label }), 'fail', { body: message(e) });
 		} finally {
 			busy = null;
 		}
@@ -73,10 +75,10 @@
 		busy = s.kind;
 		try {
 			await api.put(`/schedules/${s.kind}`, { enabled });
-			toasts.push(enabled ? `${s.label} auto-runs on` : `${s.label} auto-runs off`, 'ok');
+			toasts.push(enabled ? t('settings.schedules.autoOn', { label: s.label }) : t('settings.schedules.autoOff', { label: s.label }), 'ok');
 			await load();
 		} catch (e) {
-			toasts.push("Couldn't save", 'fail', { body: message(e) });
+			toasts.push(t('settings.schedules.couldntSave'), 'fail', { body: message(e) });
 		} finally {
 			busy = null;
 		}
@@ -102,7 +104,7 @@
 		const secs = Math.round(Number(amount) * unit(s.step_s).size);
 		try {
 			await api.put(`/schedules/${s.kind}`, { every_s: secs });
-			toasts.push(`${s.label} schedule saved`, 'ok', { body: `Runs ${every(secs)}` });
+			toasts.push(t('settings.schedules.saved', { label: s.label }), 'ok', { body: t('settings.schedules.runs', { every: every(secs) }) });
 			editing = null;
 			await load();
 		} catch (err) {
@@ -114,20 +116,20 @@
 
 	onMount(() => {
 		void load();
-		const t = setInterval(load, 30000);
+		const timer = setInterval(load, 30000);
 		const offs = [live.on('job', load), live.on('resync', load)];
 		return () => {
-			clearInterval(t);
+			clearInterval(timer);
 			offs.forEach((off) => off());
 		};
 	});
 </script>
 
-<svelte:head><title>Schedules · HolyArrs</title></svelte:head>
+<svelte:head><title>{t('settings.schedules.title')} · HolyArrs</title></svelte:head>
 
-<PageHeader title="Schedules" />
+<PageHeader title={t('settings.schedules.title')} />
 
-{#if safeMode}<p class="notice warn">Safe mode is on. Most schedules wait for a normal start.</p>{/if}
+{#if safeMode}<p class="notice warn">{t('settings.schedules.safeMode')}</p>{/if}
 
 {#if !rows}
 	{#if error}
@@ -139,13 +141,13 @@
 	{#if error}<LoadError hasData={true} message={error} onretry={load} />{/if}
 	{#if running.length}
 		<section class="now" aria-labelledby="h-now" data-testid="running-now">
-			<h2 id="h-now" class="group-head">Running now</h2>
+			<h2 id="h-now" class="group-head">{t('settings.schedules.runningNow')}</h2>
 			<ul class="s-card now-card">
 				{#each running as s (s.kind)}
 					<li>
 						<span class="dot busy" aria-hidden="true"></span>
 						<b>{s.label}</b>
-						<span class="now-state">{s.state === 'running' ? 'Running' : 'Waiting its turn'}</span>
+						<span class="now-state">{s.state === 'running' ? t('settings.schedules.running') : t('settings.schedules.waiting')}</span>
 					</li>
 				{/each}
 			</ul>
@@ -158,7 +160,7 @@
 				<h2 id="sg-{g.id}" class="group-head">{g.label}</h2>
 				<div class="s-card sched-card">
 					<div class="cols" aria-hidden="true">
-						<span>Name</span><span>How often</span><span>Last run</span><span>Next run</span><span></span>
+						<span>{t('settings.schedules.name')}</span><span>{t('settings.schedules.howOften')}</span><span>{t('settings.schedules.lastRun')}</span><span>{t('settings.schedules.nextRun')}</span><span></span>
 					</div>
 					<ul>
 						{#each g.rows as s (s.kind)}
@@ -173,70 +175,70 @@
 										</span>
 									</div>
 									<div class="meta">
-									<div class="cell"><span class="k">How often</span><span>{often(s.every_s)}</span></div>
-									<div class="cell"><span class="k">Last run</span>
-										{#if s.last_run}<time datetime={s.last_run} title={dateTime(s.last_run)}>{ago(s.last_run, now)}</time>{:else}<span class="faint">Not yet</span>{/if}
+									<div class="cell"><span class="k">{t('settings.schedules.howOften')}</span><span>{often(s.every_s)}</span></div>
+									<div class="cell"><span class="k">{t('settings.schedules.lastRun')}</span>
+										{#if s.last_run}<time datetime={s.last_run} title={dateTime(s.last_run)}>{ago(s.last_run, now)}</time>{:else}<span class="faint">{t('settings.schedules.notYet')}</span>{/if}
 									</div>
-									<div class="cell" data-testid="next"><span class="k">Next run</span>
+									<div class="cell" data-testid="next"><span class="k">{t('settings.schedules.nextRun')}</span>
 										{#if s.enabled && s.next_run && s.state === 'waiting'}<time datetime={s.next_run} title={dateTime(s.next_run)}>{nextWords(s)}</time>{:else}<span class:faint={!s.enabled || s.state === 'part_off' || s.state === 'safe_mode'}>{nextWords(s)}</span>{/if}
 									</div>
 									</div>
 									<div class="acts">
 										{#if canRun && mayRun(s)}
-											<Button type="button" busy={busy === s.kind && editing !== s.kind} disabled={busy === s.kind} onclick={() => runNow(s)} aria-label="Run {s.label} now">Run now</Button>
+											<Button type="button" busy={busy === s.kind && editing !== s.kind} disabled={busy === s.kind} onclick={() => runNow(s)} aria-label={t('settings.schedules.runLabel', { label: s.label })}>{t('settings.schedules.runNow')}</Button>
 										{/if}
 										{#if canChange && editing !== s.kind}
-											<Button variant="plain" type="button" id="change-{s.kind}" onclick={() => edit(s)} aria-label="Change how often {s.label} runs" aria-expanded="false" aria-controls="ed-{s.kind}">Change</Button>
+											<Button variant="plain" type="button" id="change-{s.kind}" onclick={() => edit(s)} aria-label={t('settings.schedules.changeLabel', { label: s.label })} aria-expanded="false" aria-controls="ed-{s.kind}">{t('settings.schedules.change')}</Button>
 										{/if}
 									</div>
 								</div>
 
 								{#if s.last_job === 'failed'}
-									<p class="failed" title={s.last_job_ended ? `Ended ${dateTime(s.last_job_ended)}` : undefined}>
-										<Icon name="alert" size={13} />Last run failed{s.last_job_error ? `: ${s.last_job_error}` : ''}
+									<p class="failed" title={s.last_job_ended ? t('settings.schedules.ended', { when: dateTime(s.last_job_ended) }) : undefined}>
+										<Icon name="alert" size={13} />{s.last_job_error ? t('settings.schedules.failedWith', { error: s.last_job_error }) : t('settings.schedules.failed')}
 									</p>
 								{/if}
 								{#if s.kind === 'refresh_titles' && !s.enabled}
 									<p class="stale-note" data-testid="movie-refresh-off-note">
-										Automatic movie detail updates are off, so names, dates and artwork can become stale. A request already in flight may finish. Manual Library refresh remains available.
+										{t('settings.schedules.refreshOffNote')}
 									</p>
 								{/if}
 								{#if s.kind === 'rescan_library' && !s.enabled}
-									<p class="stale-note" data-testid="rescan-off-note">Files changed by hand show up only after Run now</p>
+									<p class="stale-note" data-testid="rescan-off-note">{t('settings.schedules.rescanOffNote')}</p>
 								{/if}
 
 								{#if editing === s.kind}
-									<form class="editor" id="ed-{s.kind}" aria-label="How often {s.label} runs" onsubmit={(e) => save(e, s)}>
+									<form class="editor" id="ed-{s.kind}" aria-label={t('settings.schedules.howOftenRuns', { label: s.label })} onsubmit={(e) => save(e, s)}>
 										<div class="ed-row">
 											<div class="ed-copy">
 												<span class="ed-about">{s.about}</span>
-												<label for="ev-{s.kind}">Every ({u.word})</label>
-												<span class="hint">{s.min_s / u.size} to {s.max_s / u.size} {u.word}. The next run moves to now plus the new time.</span>
+												<label for="ev-{s.kind}">{t('settings.schedules.every', { unit: u.word })}</label>
+												<span class="hint">{t('settings.schedules.range', { min: s.min_s / u.size, max: s.max_s / u.size, unit: u.word })}</span>
 											</div>
 											<input id="ev-{s.kind}" class="input" type="number" min={s.min_s / u.size} max={s.max_s / u.size} step={s.step_s / u.size} bind:value={amount} onkeydown={(e) => e.key === 'Escape' && closeEditor(s)} />
 										</div>
 										{#if s.kind === 'refresh_titles'}
 											<div class="ed-row">
 												<div class="ed-copy">
-													<b>Automatic refresh</b>
-													<span class="hint">{s.enabled ? 'On. Movie details are read again on this timer.' : 'Off. Movie details stay as they are until you refresh by hand.'}</span>
+													<b>{t('settings.schedules.autoRefresh')}</b>
+													<span class="hint">{s.enabled ? t('settings.schedules.refreshOn') : t('settings.schedules.refreshOff')}</span>
 												</div>
-												<Button variant={s.enabled ? 'destructive' : 'secondary'} type="button" disabled={busy === s.kind} onclick={() => setEnabled(s, !s.enabled)}>{s.enabled ? 'Turn off automatic refresh' : 'Turn on automatic refresh'}</Button>
+												<Button variant={s.enabled ? 'destructive' : 'secondary'} type="button" disabled={busy === s.kind} onclick={() => setEnabled(s, !s.enabled)}>{s.enabled ? t('settings.schedules.refreshTurnOff') : t('settings.schedules.refreshTurnOn')}</Button>
 											</div>
 										{:else if s.kind === 'rescan_library'}
 											<div class="ed-row">
 												<div class="ed-copy">
-													<b>Automatic rescan</b>
-													<span class="hint">{s.enabled ? 'On. Library folders are listed again on this timer.' : 'Off. Changes made by hand are found only with Run now.'}</span>
+													<b>{t('settings.schedules.autoRescan')}</b>
+													<span class="hint">{s.enabled ? t('settings.schedules.rescanOn') : t('settings.schedules.rescanOff')}</span>
 												</div>
-												<Button variant={s.enabled ? 'destructive' : 'secondary'} type="button" disabled={busy === s.kind} onclick={() => setEnabled(s, !s.enabled)}>{s.enabled ? 'Turn off automatic rescan' : 'Turn on automatic rescan'}</Button>
+												<Button variant={s.enabled ? 'destructive' : 'secondary'} type="button" disabled={busy === s.kind} onclick={() => setEnabled(s, !s.enabled)}>{s.enabled ? t('settings.schedules.rescanTurnOff') : t('settings.schedules.rescanTurnOn')}</Button>
 											</div>
 										{/if}
 										{#if editError}<p class="form-error" role="alert">{editError}</p>{/if}
 										<div class="ed-acts">
-											{#if s.settings}<a class="its" href={to(s.settings)}>Settings<Icon name="chevronRight" size={14} /></a>{/if}
-											<Button variant="primary" type="submit" busy={busy === s.kind} disabled={busy === s.kind}>Save</Button>
-											<Button variant="plain" type="button" onclick={() => closeEditor(s)}>Cancel</Button>
+											{#if s.settings}<a class="its" href={to(s.settings)}>{t('settings.schedules.settings')}<Icon name="chevronRight" size={14} /></a>{/if}
+											<Button variant="primary" type="submit" busy={busy === s.kind} disabled={busy === s.kind}>{t('settings.schedules.save')}</Button>
+											<Button variant="plain" type="button" onclick={() => closeEditor(s)}>{t('settings.schedules.cancel')}</Button>
 										</div>
 									</form>
 								{/if}
@@ -250,8 +252,8 @@
 
 	{#if loops.length}
 		<section class="sched-group" aria-labelledby="sg-loops" data-testid="loops">
-			<h2 id="sg-loops" class="group-head">Stages</h2>
-			<p class="group-about">Pause or restart them in <a href={to('/settings/parts')}>Parts</a>.</p>
+			<h2 id="sg-loops" class="group-head">{t('settings.schedules.stages')}</h2>
+			<p class="group-about"><Words key="settings.schedules.stagesNote" links={{ a: to('/settings/parts') }} /></p>
 			<div class="s-card sched-card">
 				<ul>
 					{#each loops as l (l.key)}
@@ -265,9 +267,9 @@
 									</span>
 								</div>
 								<div class="meta">
-								<div class="cell"><span class="k">How often</span><span>{l.every_s ? often(l.every_s) : 'All the time'}</span></div>
-								<div class="cell" class:empty={!l.last_pass}><span class="k">Last run</span>{#if l.last_pass}<time datetime={l.last_pass} title={dateTime(l.last_pass)}>{ago(l.last_pass, now)}</time>{:else}<span class="faint">Not yet</span>{/if}</div>
-								<div class="cell" class:empty={!l.next_pass}><span class="k">Next run</span>{#if l.next_pass}<time datetime={l.next_pass} title={dateTime(l.next_pass)}>{until(l.next_pass, now)}</time>{:else}<span class="faint">Not yet</span>{/if}</div>
+								<div class="cell"><span class="k">{t('settings.schedules.howOften')}</span><span>{l.every_s ? often(l.every_s) : t('settings.schedules.allTime')}</span></div>
+								<div class="cell" class:empty={!l.last_pass}><span class="k">{t('settings.schedules.lastRun')}</span>{#if l.last_pass}<time datetime={l.last_pass} title={dateTime(l.last_pass)}>{ago(l.last_pass, now)}</time>{:else}<span class="faint">{t('settings.schedules.notYet')}</span>{/if}</div>
+								<div class="cell" class:empty={!l.next_pass}><span class="k">{t('settings.schedules.nextRun')}</span>{#if l.next_pass}<time datetime={l.next_pass} title={dateTime(l.next_pass)}>{until(l.next_pass, now)}</time>{:else}<span class="faint">{t('settings.schedules.notYet')}</span>{/if}</div>
 								</div>
 								<div class="acts"><span class="chip {runTone(l.state)}">{runWord(l)}</span></div>
 							</div>
@@ -285,7 +287,7 @@
 	.sched-group + .sched-group, .groups + .sched-group { margin-top: 22px; }
 	.group-head { padding: 0 6px 6px; font: var(--t-footnote); font-weight: 600; letter-spacing: 0.01em; color: var(--text-muted); }
 	.group-about { margin: -2px 6px 8px; color: var(--text-muted); font: var(--t-footnote); font-weight: 400; }
-	.group-about a { color: var(--accent-text); font-weight: 600; }
+	.group-about :global(a) { color: var(--accent-text); font-weight: 600; }
 	.s-card { margin: 0; padding: 0; border-radius: var(--r-panel); background: var(--surface-1); box-shadow: 0 0 0 1px var(--line); }
 	.sched-card { container-type: inline-size; overflow: hidden; }
 	.sched-card ul { margin: 0; padding: 0; list-style: none; }

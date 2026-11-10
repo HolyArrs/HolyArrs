@@ -12,6 +12,7 @@
 			'M12 9a3 3 0 1 1 0 6 3 3 0 0 1 0-6zM19.4 13.5a7.6 7.6 0 0 0 0-3l2-1.6-2-3.4-2.4 1a7.5 7.5 0 0 0-2.6-1.5L14 2.5h-4l-.4 2.5A7.5 7.5 0 0 0 7 6.5l-2.4-1-2 3.4 2 1.6a7.6 7.6 0 0 0 0 3l-2 1.6 2 3.4 2.4-1a7.5 7.5 0 0 0 2.6 1.5l.4 2.5h4l.4-2.5a7.5 7.5 0 0 0 2.6-1.5l2.4 1 2-3.4z',
 		sun: 'M12 8a4 4 0 1 1 0 8 4 4 0 0 1 0-8zM12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4',
 		moon: 'M19.5 14.5A8 8 0 0 1 9.5 4.5a8 8 0 1 0 10 10z',
+		globe: 'M12 3a9 9 0 1 1 0 18 9 9 0 0 1 0-18zM3 12h18M12 3c2.5 2.5 3.8 5.5 3.8 9s-1.3 6.5-3.8 9M12 3C9.5 5.5 8.2 8.5 8.2 12s1.3 6.5 3.8 9',
 		signout: 'M14 4.5H6a1 1 0 0 0-1 1v13a1 1 0 0 0 1 1h8M16 8l4 4-4 4M20 12H10',
 		plus: 'M12 5v14M5 12h14',
 		trash: 'M5 7h14M10 7V4.5h4V7M7 7l1 13h8l1-13M10.5 11v5.5M13.5 11v5.5',
@@ -87,6 +88,7 @@
 
 <svg
 	class="icon"
+	class:flip={name === 'chevronLeft' || name === 'chevronRight' || name === 'arrow' || name === 'back'}
 	width={size}
 	height={size}
 	viewBox="0 0 24 24"
@@ -106,5 +108,9 @@
 	.icon {
 		flex: none;
 		display: block;
+	}
+	/* Direction arrows point the other way in right-to-left languages. */
+	:global([dir='rtl']) .flip {
+		transform: scaleX(-1);
 	}
 </style>

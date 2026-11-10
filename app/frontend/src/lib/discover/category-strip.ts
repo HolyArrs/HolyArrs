@@ -1,6 +1,7 @@
 // The category strip under the Explore hero: the household's Browse categories, one from each section in turn (genre, mood, story, world, era, around the world, collection, then again), from the Browse answers the page already has.
 import type { ExploreType } from './explore-type.ts';
 import { type BrowseTile } from './search-browse.ts';
+import { t } from '#lib/core/i18n/i18n.svelte.ts';
 
 /** GET /explore/strip: the member's strip, picked and ordered on the server. */
 export interface StripAnswer {
@@ -12,7 +13,13 @@ export interface StripAnswer {
 
 /** The small label above a tile's name, per section. */
 export const SECTION_LABEL: Readonly<Record<string, string>> = {
-	genres: 'Genre', moods: 'Mood', stories: 'Story', worlds: 'World', eras: 'Era', world: 'Around the world', collections: 'Collection'
+	get genres() { return t('discover.categoryStrip.genre'); },
+	get moods() { return t('discover.categoryStrip.mood'); },
+	get stories() { return t('discover.categoryStrip.story'); },
+	get worlds() { return t('discover.categoryStrip.world'); },
+	get eras() { return t('discover.categoryStrip.era'); },
+	get world() { return t('discover.categoryStrip.aroundTheWorld'); },
+	get collections() { return t('discover.categoryStrip.collection'); }
 };
 
 /** Groups near-duplicates; two of a group never sit side by side. */

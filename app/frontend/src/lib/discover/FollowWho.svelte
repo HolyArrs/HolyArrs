@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import Avatar from '#lib/ui/Avatar.svelte';
 	import { followerNames } from './calendar.ts';
 	import type { CalendarEntry } from '#lib/core/types.ts';
@@ -16,7 +17,7 @@
 				{#each faces as p (p.id + p.name)}<span class="face"><Avatar name={p.name} src={p.avatar} {size} /></span>{/each}
 			</span>
 		{/if}
-		<span class="names"><span class="sr-only">Followed by </span>{words}</span>
+		<span class="names"><span class="sr-only">{t('discover.followWho.followedBy')} </span>{words}</span>
 	</span>
 {/if}
 

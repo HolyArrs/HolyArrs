@@ -5,6 +5,7 @@ import { api, ApiError } from '#lib/core/api.ts';
 import { plainMessage as message } from '#lib/core/settings.ts';
 import { toasts } from '#lib/core/toasts.svelte.ts';
 import { to } from '#lib/core/paths.ts';
+import { t } from '#lib/core/i18n/i18n.svelte.ts';
 
 export function createMovePassword(ctx: any) {
 	let mustSetPw = $state(false);
@@ -17,8 +18,8 @@ export function createMovePassword(ctx: any) {
 		e.preventDefault();
 		pwErr = '';
 		const min = session.s.minPassword;
-		if (pwA.length < min) return void (pwErr = `Use at least ${min} characters.`);
-		if (pwA !== pwB) return void (pwErr = "Passwords don't match.");
+		if (pwA.length < min) return void (pwErr = t('migrate.useAtLeastCharacters', { n: min }));
+		if (pwA !== pwB) return void (pwErr = t('migrate.passwordsDonTMatch'));
 		pwBusy = true;
 		try {
 			await api.post('/auth/password', { new: pwA });
@@ -30,7 +31,7 @@ export function createMovePassword(ctx: any) {
 			if (resumeMove) {
 				resumeMove = false;
 				await ctx.runFlow.start();
-			} else toasts.push('Password set', 'ok');
+			} else toasts.push(t('migrate.passwordSet'), 'ok');
 		} catch (err) {
 			// A first password needs a fresh sign-in with the media server (the server's rule).
 			if (err instanceof ApiError && err.body?.code === 'reauth') pwStale = true;

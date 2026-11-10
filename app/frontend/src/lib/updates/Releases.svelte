@@ -1,5 +1,6 @@
 <script lang="ts">
 	import '#lib/ui/plate.css';
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import Button from '#lib/ui/Button.svelte';
 	import { page } from '$app/state';
 	import { ago } from '../core/format.ts';
@@ -37,15 +38,15 @@
 {#snippet head(r: ReleaseNote, i: number, notes: boolean)}
 	<span class="chev" aria-hidden="true">{#if notes}<svg viewBox="0 0 20 20"><path d="M7 5l5 5-5 5" /></svg>{/if}</span>
 	<span class="rv">{plainVersion(r.version)}</span>
-	{#if i === 0 && known}<span class="chip ok">Newest</span>{/if}
-	{#if r.version === current}<span class="chip red">Yours</span>{/if}
+	{#if i === 0 && known}<span class="chip ok">{t('updates.releases.newest')}</span>{/if}
+	{#if r.version === current}<span class="chip red">{t('updates.releases.yours')}</span>{/if}
 	{#if r.date}<span class="rd">{ago(r.date)}</span>{/if}
 {/snippet}
 
 <section class="st-plate" aria-labelledby="s-rel" data-testid="whats-new">
-	<h2 id="s-rel">What's new{#if list.length > 1}<span class="cnt">{list.length}</span>{/if}</h2>
+	<h2 id="s-rel">{t('updates.releases.title')}{#if list.length > 1}<span class="cnt">{list.length}</span>{/if}</h2>
 
-	{#if !list.length}<p class="none">Loading releases…</p>{/if}
+	{#if !list.length}<p class="none">{t('updates.releases.loading')}</p>{/if}
 	<ol class="rels">
 		{#each list.slice(0, shown) as r, i (r.version)}
 			{@const o = r.lines.length > 0 && isOpen(r, i)}
@@ -58,16 +59,16 @@
 				{#if o}
 					<div class="body">
 						<ul class="notes">{#each r.lines as line}<li>{line}</li>{/each}</ul>
-						{#if r.link}<a class="xbtn" href={r.link} target="_blank" rel="noopener noreferrer">Release page</a>{/if}
+						{#if r.link}<a class="xbtn" href={r.link} target="_blank" rel="noopener noreferrer">{t('updates.releases.page')}</a>{/if}
 					</div>
 				{/if}
 			</li>
 		{/each}
 	</ol>
 	{#if list.length > shown}
-		<div class="more"><Button variant="secondary" full onclick={() => (shown += STEP)}>Show {Math.min(STEP, list.length - shown)} more · {list.length - shown} older</Button></div>
+		<div class="more"><Button variant="secondary" full onclick={() => (shown += STEP)}>{t('updates.releases.more', { n: Math.min(STEP, list.length - shown), older: list.length - shown })}</Button></div>
 	{:else if shown > STEP}
-		<div class="more"><Button variant="secondary" full onclick={() => (shown = STEP)}>Show fewer</Button></div>
+		<div class="more"><Button variant="secondary" full onclick={() => (shown = STEP)}>{t('updates.releases.fewer')}</Button></div>
 	{/if}
 </section>
 

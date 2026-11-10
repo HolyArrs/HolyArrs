@@ -1,0 +1,10 @@
+{
+	"settings.home.advanced": "एडवांस्ड",
+	"settings.home.page": "{group} · पेज",
+	"settings.home.title": "सेटिंग",
+	"settings.home.search": "सेटिंग खोजें",
+	"settings.home.matching": "मेल खाती सेटिंग",
+	"settings.home.noMatch": "कोई सेटिंग नहीं मिली",
+	"settings.home.noMatchText": "कोई और शब्द आज़माएं, जैसे फ़ोल्डर, कुंजी या पासवर्ड।",
+	"settings.home.clear": "खोज साफ़ करें"
+}

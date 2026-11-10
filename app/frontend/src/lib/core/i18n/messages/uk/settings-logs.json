@@ -1,0 +1,18 @@
+{
+	"settings.logs.title": "Логи",
+	"settings.logs.download": "Завантажити",
+	"settings.logs.filter": "Фільтр логу",
+	"settings.logs.level": "Рівень",
+	"settings.logs.every": "Кожен рядок",
+	"settings.logs.warnings": "Попередження й помилки",
+	"settings.logs.errors": "Лише помилки",
+	"settings.logs.text": "Текст",
+	"settings.logs.example": "напр., qBittorrent",
+	"settings.logs.from": "Від",
+	"settings.logs.to": "До",
+	"settings.logs.apply": "Застосувати",
+	"settings.logs.clear": "Очистити",
+	"settings.logs.lines": "Рядки",
+	"settings.logs.newer": "Новіші",
+	"settings.logs.older": "Старіші"
+}

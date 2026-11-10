@@ -1,3 +1,4 @@
+import { t } from '#lib/core/i18n/i18n.svelte.ts';
 import { controllable, pausable, retryable } from './usenet.ts';
 import { protocolOf } from './size.ts';
 
@@ -26,10 +27,10 @@ export type PaneExtra = 'recheck' | 'reannounce' | 'force' | 'steer' | 'fail';
 
 /** The Usenet priorities the server takes, in menu order. */
 export const PRIORITIES = [
-	{ key: 'low', label: 'Low' },
-	{ key: 'normal', label: 'Normal' },
-	{ key: 'high', label: 'High' },
-	{ key: 'force', label: 'Force' }
+	{ key: 'low', get label() { return t('downloads.priority.low'); } },
+	{ key: 'normal', get label() { return t('downloads.priority.normal'); } },
+	{ key: 'high', get label() { return t('downloads.priority.high'); } },
+	{ key: 'force', get label() { return t('downloads.priority.force'); } }
 ] as const;
 
 // A Usenet job still in a SABnzbd or NZBGet queue takes order and priority.

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	// Small spinning ring with an optional status line, for a region that is slow to load.
 	let { status = '', size = 24 }: { status?: string; size?: number } = $props();
 </script>
@@ -8,7 +9,7 @@
 		<circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-opacity=".18" stroke-width="2" />
 		<circle class="ring" cx="12" cy="12" r="10" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-dasharray="16 47" />
 	</svg>
-	{#if status}<span class="t">{status}</span>{:else}<span class="sr-only">Loading</span>{/if}
+	{#if status}<span class="t">{status}</span>{:else}<span class="sr-only">{t('ui.skOrbit.loading')}</span>{/if}
 </span>
 
 <style>

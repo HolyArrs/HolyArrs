@@ -1,4 +1,5 @@
 // The words and filters for the Event list (Downloads > History, the movie page and Home).
+import { t as say } from '#lib/core/i18n/i18n.svelte.ts';
 import type { EventRecord } from '../core/types.ts';
 
 export interface KindGroup {
@@ -31,25 +32,25 @@ export interface HistoryRow {
 
 /** The kinds a person can filter by, in the order of the loop. */
 export const kindGroups: KindGroup[] = [
-	{ key: 'add', label: 'Added', kinds: ['title_added', 'adopted', 'list_synced', 'version_changed'] },
-	{ key: 'search', label: 'Searched', kinds: ['search_done', 'search_failed', 'feed_checked'] },
-	{ key: 'hold', label: 'Held', kinds: ['release_held', 'held_removed'] },
-	{ key: 'choose', label: 'Chosen', kinds: ['release_chosen', 'release_chosen_by_hand', 'release_turned_down', 'turned_down_removed'] },
-	{ key: 'grab', label: 'Sent to download', kinds: ['download_sent'] },
-	{ key: 'download', label: 'Downloading', kinds: ['download_downloading', 'download_queued', 'download_stalled', 'download_paused', 'download_finished', 'download_seeding', 'download_changed'] },
-	{ key: 'fail', label: 'Failed', kinds: ['download_failed', 'download_vanished', 'import_failed', 'import_rejected', 'file_hold_failed'] },
-	{ key: 'import', label: 'Imported', kinds: ['import_done', 'import_partly_done', 'file_replaced', 'free_space_low'] },
-	{ key: 'rename', label: 'Renamed', kinds: ['renamed', 'rename_planned'] },
-	{ key: 'delete', label: 'Deleted', kinds: ['title_removed', 'episodes_removed', 'file_held', 'holding_cleaned', 'download_removed', 'download_not_removed'] },
-	{ key: 'subtitles', label: 'Subtitles', kinds: ['subtitle_*'] },
-	{ key: 'scan', label: 'Scans', kinds: ['library_scanned', 'library_rescanned', 'folder_scanned', 'file_missing', 'file_back', 'library_folder_*', 'title_refreshed', 'episodes_changed', 'details_source_changed'] },
-	{ key: 'decide', label: 'Needs a decision', kinds: ['needs_decision', 'stopped_looking'] },
-	{ key: 'health', label: 'Health', kinds: ['health_*'] },
-	{ key: 'wishlist', label: 'Requests', kinds: ['ask_*'] },
-	{ key: 'reports', label: 'Reported problems', kinds: ['report_*'] },
-	{ key: 'links', label: 'Alerts and media servers', kinds: ['alert_failed', 'media_server_*'] },
-	{ key: 'ai', label: 'AI', kinds: ['ai_*'] },
-	{ key: 'system', label: 'System', kinds: ['sign*', 'api_key_*', 'settings_changed'] }
+	{ key: 'add', get label() { return say('downloads.hg.add'); }, kinds: ['title_added', 'adopted', 'list_synced', 'version_changed'] },
+	{ key: 'search', get label() { return say('downloads.hg.search'); }, kinds: ['search_done', 'search_failed', 'feed_checked'] },
+	{ key: 'hold', get label() { return say('downloads.hg.hold'); }, kinds: ['release_held', 'held_removed'] },
+	{ key: 'choose', get label() { return say('downloads.hg.choose'); }, kinds: ['release_chosen', 'release_chosen_by_hand', 'release_turned_down', 'turned_down_removed'] },
+	{ key: 'grab', get label() { return say('downloads.hg.grab'); }, kinds: ['download_sent'] },
+	{ key: 'download', get label() { return say('downloads.hg.download'); }, kinds: ['download_downloading', 'download_queued', 'download_stalled', 'download_paused', 'download_finished', 'download_seeding', 'download_changed'] },
+	{ key: 'fail', get label() { return say('downloads.hg.fail'); }, kinds: ['download_failed', 'download_vanished', 'import_failed', 'import_rejected', 'file_hold_failed'] },
+	{ key: 'import', get label() { return say('downloads.hg.import'); }, kinds: ['import_done', 'import_partly_done', 'file_replaced', 'free_space_low'] },
+	{ key: 'rename', get label() { return say('downloads.hg.rename'); }, kinds: ['renamed', 'rename_planned'] },
+	{ key: 'delete', get label() { return say('downloads.hg.delete'); }, kinds: ['title_removed', 'episodes_removed', 'file_held', 'holding_cleaned', 'download_removed', 'download_not_removed'] },
+	{ key: 'subtitles', get label() { return say('downloads.hg.subtitles'); }, kinds: ['subtitle_*'] },
+	{ key: 'scan', get label() { return say('downloads.hg.scan'); }, kinds: ['library_scanned', 'library_rescanned', 'folder_scanned', 'file_missing', 'file_back', 'library_folder_*', 'title_refreshed', 'episodes_changed', 'details_source_changed'] },
+	{ key: 'decide', get label() { return say('downloads.hg.decide'); }, kinds: ['needs_decision', 'stopped_looking'] },
+	{ key: 'health', get label() { return say('downloads.hg.health'); }, kinds: ['health_*'] },
+	{ key: 'wishlist', get label() { return say('downloads.hg.wishlist'); }, kinds: ['ask_*'] },
+	{ key: 'reports', get label() { return say('downloads.hg.reports'); }, kinds: ['report_*'] },
+	{ key: 'links', get label() { return say('downloads.hg.links'); }, kinds: ['alert_failed', 'media_server_*'] },
+	{ key: 'ai', get label() { return say('downloads.hg.ai'); }, kinds: ['ai_*'] },
+	{ key: 'system', get label() { return say('downloads.hg.system'); }, kinds: ['sign*', 'api_key_*', 'settings_changed'] }
 ];
 
 const exact: Record<string, string> = {};
@@ -66,7 +67,7 @@ for (const g of kindGroups) {
 export function groupLabel(kind: string): string {
 	if (exact[kind]) return exact[kind];
 	for (const [p, label] of prefixes) if (kind.startsWith(p)) return label;
-	return 'Other';
+	return say('downloads.hg.other');
 }
 
 /** Colours a row by what happened. */
@@ -105,7 +106,7 @@ export function createLatestOnly(): () => () => boolean {
 
 /** Explains an invalid inclusive date range. */
 export function dateRangeProblem(f: Pick<HistoryFilter, 'from' | 'to'>): string {
-	return f.from && f.to && f.from > f.to ? 'From date must be on or before To date.' : '';
+	return f.from && f.to && f.from > f.to ? say('downloads.hd.dateOrder') : '';
 }
 
 /** Turns the filters into the /events query string. */
@@ -160,19 +161,21 @@ const detailWords: [string, string][] = [
 	['error', 'Error']
 ];
 
+const detailLabel = (l: string) => say(`downloads.hd.${l.toLowerCase()}`);
+
 /** Lists the reasons and paths an Event carries, as label and text. */
 export function details(e: Pick<EventRecord, 'Data'>): [string, string][] {
 	const d = e.Data ?? {};
 	const out: [string, string][] = [];
 	for (const [k, label] of detailWords) {
 		const v = d[k];
-		if (typeof v === 'string' && v) out.push([label, v]);
+		if (typeof v === 'string' && v) out.push([detailLabel(label), v]);
 	}
 	const paths = d.paths;
 	if (Array.isArray(paths)) {
 		for (const p of paths) {
-			if (p && typeof p === 'object' && typeof (p as { to?: unknown }).to === 'string') out.push(['File', (p as { to: string }).to]);
-			else if (typeof p === 'string') out.push(['Folder', p]);
+			if (p && typeof p === 'object' && typeof (p as { to?: unknown }).to === 'string') out.push([detailLabel('File'), (p as { to: string }).to]);
+			else if (typeof p === 'string') out.push([detailLabel('Folder'), p]);
 		}
 	}
 	return out;
@@ -180,8 +183,8 @@ export function details(e: Pick<EventRecord, 'Data'>): [string, string][] {
 
 /** Which rows of how many are shown. */
 export function pageLine(total: number, offset: number, shown: number): string {
-	if (total === 0) return 'No Events';
-	return `${offset + 1} to ${offset + shown} of ${total}`;
+	if (total === 0) return say('downloads.hd.noEvents');
+	return say('downloads.hd.range', { from: offset + 1, to: offset + shown, total });
 }
 
 const downloadGroups = new Set(['grab', 'download', 'fail', 'import']);
@@ -203,9 +206,9 @@ export function downloadSteps(events: Pick<EventRecord, 'Kind'>[]): Step[] {
 	const sent = downloaded || downloadFailed || events.some((e) => groupOfKind(e.Kind) === 'grab' || groupOfKind(e.Kind) === 'download');
 	const state = (done: boolean, failed: boolean): StepState => (failed ? 'failed' : done ? 'done' : 'waiting');
 	return [
-		{ key: 'sent', label: 'Sent', state: state(sent, false) },
-		{ key: 'downloaded', label: 'Downloaded', state: state(downloaded, downloadFailed && !downloaded) },
-		{ key: 'imported', label: 'Imported', state: state(imported, importFailed && !imported) }
+		{ key: 'sent', label: say('downloads.hk.sent'), state: state(sent, false) },
+		{ key: 'downloaded', label: say('downloads.hk.downloaded'), state: state(downloaded, downloadFailed && !downloaded) },
+		{ key: 'imported', label: say('downloads.hk.imported'), state: state(imported, importFailed && !imported) }
 	];
 }
 

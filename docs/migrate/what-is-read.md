@@ -5,13 +5,13 @@ level: Expert
 sidebar: { order: 5 }
 ---
 
-Read an old app's setup, through the app or from its backup, as step 1 of a move. Reading changes nothing in HolyArrs or in the old app.
+Read an old app's setup, through the app or from its backup, as step 1 of an import. Reading changes nothing in HolyArrs or in the old app.
 
-A **read** is HolyArrs's copy of one app's setup. It is kept until you move it or remove it.
+A **read** is HolyArrs's copy of one app's setup. It is kept until you import it or remove it.
 
 ## Read an app
 
-1. Open **Settings > Move from other apps** and click **Add an app**.
+1. Open **Settings > Import from other apps** and click **Add an app**.
 2. Pick the app, then **Through the app** or **From a backup**.
 3. Click **Check connection**. You should see the app and version within a few seconds.
 4. Start the read. A big library takes a few minutes. **Stop reading** stops it; closing the sheet does not.
@@ -47,7 +47,7 @@ Reads from a backup save no key.
 | qBittorrent, SABnzbd | Address, port, user name, download folders, categories and (SABnzbd) usenet servers. |
 | Seerr, Overseerr | People (name, email, role, permissions, request limits), default limits, and every waiting or approved request: who asked, when, for what. Finished and turned-down requests are only counted. Avatars are not read. |
 
-Reading more than moves is on purpose: everything read but not moved shows on the **not moved** list with its reason.
+Reading more than is imported is on purpose: everything read but not imported shows on the **not imported** list with its reason.
 
 ## Keys and passwords
 
@@ -62,7 +62,7 @@ When the owner reads an app with a typed key, HolyArrs keeps that address and ke
 | The saved key is deleted when |
 | --- |
 | you remove the read for that app |
-| a move finishes with nothing failed (a failed item keeps the keys, so you can move again) |
+| an import finishes with nothing failed (a failed item keeps the keys, so you can import again) |
 | you run `holyarrs import-secrets -forget-move-credentials` |
 
 ## Who may read
@@ -113,5 +113,5 @@ The probe and read body names the app: `radarr`, `sonarr`, `lidarr`, `prowlarr`,
 
 ## Related
 
-- [Move from other apps](index.md)
+- [Import from other apps](index.md)
 - [Import keys from a file](import-secrets.md)

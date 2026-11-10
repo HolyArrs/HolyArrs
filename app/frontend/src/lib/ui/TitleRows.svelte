@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	// Shelves under a title: where to stream, reviews, collection, similar and more-from rows.
 	import type { Snippet } from 'svelte';
 	import IconButton from './IconButton.svelte';
@@ -112,7 +113,7 @@
 	{@const act = flow?.action(c) ?? null}
 	<WideCard cover title={c.name} href={hrefOf(item)} image={c.wide} poster={c.image} art={c.art} kind={c.kind} subtitle={c.subtitle} owned={ownedMark(c, undefined, who)} typed preview={{ kind: item.kind, tmdb: item.tmdb_id, year: item.year, titleId: c.titleId }} followTmdb={followsByTmdb(c)}>
 		{#snippet growAction()}
-			{#if act}<IconButton icon="plus" label={act === 'add' ? `Add ${c.name}` : `Ask for ${c.name}`} variant="glass" size="lg" aria-haspopup="dialog" aria-busy={flow?.busy(c) || undefined} onclick={() => void flow?.open(c, act)} />{/if}
+			{#if act}<IconButton icon="plus" label={act === 'add' ? t('ui.titleRows.add', { name: c.name }) : t('ui.titleRows.askFor', { name: c.name })} variant="glass" size="lg" aria-haspopup="dialog" aria-busy={flow?.busy(c) || undefined} onclick={() => void flow?.open(c, act)} />{/if}
 		{/snippet}
 	</WideCard>
 {/snippet}
@@ -120,7 +121,7 @@
 {#if band && info?.streaming.length}
 	<section class="tp-band" aria-labelledby="title-where-h" id="title-where">
 		<div class="band-col">
-			<h2 class="tp-h3" id="title-where-h">Where to stream</h2>
+			<h2 class="tp-h3" id="title-where-h">{t('ui.titleRows.whereToStream')}</h2>
 			<ul class="stream">
 				{#each info.streaming as sv (sv.id)}
 					<li title={sv.name}>{#if sv.logo}<img src={sv.logo} alt="" width="32" height="32" loading="lazy" />{/if}<span>{sv.name}</span></li>
@@ -141,10 +142,10 @@
 {/if}
 
 {#if similar.length}
-	<Shelf title="More like this" item="var(--title-item)" anchor="title-similar" placeholder="wide" lines={1} whole onseeall={similar.length > 6 ? () => (allSimilar = true) : undefined}>
+	<Shelf title={t('ui.titleRows.moreLikeThis')} item="var(--title-item)" anchor="title-similar" placeholder="wide" lines={1} whole onseeall={similar.length > 6 ? () => (allSimilar = true) : undefined}>
 		{#each similar.slice(0, 18) as p (p.c.key)}{@render card(p)}{/each}
 	</Shelf>
-	<Sheet bind:open={allSimilar} title="More like this" size="lg">
+	<Sheet bind:open={allSimilar} title={t('ui.titleRows.moreLikeThis')} size="lg">
 		<ul class="all-wide">
 			{#each similar as p (p.c.key)}<li>{@render card(p)}</li>{/each}
 		</ul>
@@ -152,13 +153,13 @@
 {/if}
 
 {#if more.length >= 4}
-	<Shelf title={moreFrom?.person ? `More from ${moreFrom.person}` : kind === 'show' ? 'More from the creator' : 'More from the director'} subtitle={moreFrom?.person ? (kind === 'show' ? 'Creator' : 'Director') : undefined} item="var(--title-item)" anchor="title-more-from" placeholder="wide" lines={1} whole>
+	<Shelf title={moreFrom?.person ? t('ui.titleRows.moreFrom', { name: moreFrom.person }) : kind === 'show' ? t('ui.titleRows.moreFromCreator') : t('ui.titleRows.moreFromDirector')} subtitle={moreFrom?.person ? (kind === 'show' ? t('ui.titleRows.creator') : t('ui.titleRows.director')) : undefined} item="var(--title-item)" anchor="title-more-from" placeholder="wide" lines={1} whole>
 		{#each more.slice(0, 18) as p (p.c.key)}{@render card(p)}{/each}
 	</Shelf>
 {/if}
 
 {#if lead && withLeadCards.length >= 4}
-	<Shelf title="More with {lead.name}" subtitle={lead.character ? `Lead actor · plays ${lead.character}` : 'Lead actor'} item="var(--title-item)" anchor="title-more-with" placeholder="wide" lines={1} whole>
+	<Shelf title={t('ui.titleRows.moreWith', { name: lead.name })} subtitle={lead.character ? t('ui.titleRows.leadActorPlays', { character: lead.character }) : t('ui.titleRows.leadActor')} item="var(--title-item)" anchor="title-more-with" placeholder="wide" lines={1} whole>
 		{#each withLeadCards.slice(0, 18) as p (p.c.key)}{@render card(p)}{/each}
 	</Shelf>
 {/if}

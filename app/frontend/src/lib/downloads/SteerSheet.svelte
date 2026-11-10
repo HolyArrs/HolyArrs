@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	// One sheet for steering one or many torrents by hand: seeding rules, a new folder or speed caps. One call per Downloader.
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import Button from '#lib/ui/Button.svelte';
@@ -25,11 +26,11 @@
 	// In KB/s; 0 is no cap.
 	let down = $state(0);
 	let up = $state(0);
-	const TITLE: Record<SteerMode, string> = { seed: 'Seeding rules', location: 'Set location', speed: 'Speed limits' };
+	const TITLE = $derived<Record<SteerMode, string>>({ seed: t('downloads.steer.seed'), location: t('downloads.steer.location'), speed: t('downloads.steer.speed') });
 
 	const groups = $derived(byClient(rows));
 	const count = $derived([...groups.values()].reduce((k, g) => k + g.length, 0));
-	const noun = $derived(count === 1 ? 'this torrent' : `${count} torrents`);
+	const noun = $derived(count === 1 ? t('downloads.ss.thisTorrent') : t('downloads.ss.nTorrents', { count }));
 
 	// Each opening starts from the first torrent's own rules.
 	let wasOpen = false;
@@ -54,8 +55,8 @@
 
 	async function submit(e: SubmitEvent) {
 		e.preventDefault();
-		if (mode === 'location') return send('location', { category: category.trim(), folder: folder.trim() }, `Moving ${noun}`, !folder.trim() ? 'Type a folder.' : '');
-		if (mode === 'speed') return send('speed-limits', { down: bytesOf(down), up: bytesOf(up) }, `Speed limits set for ${noun}`, '');
+		if (mode === 'location') return send('location', { category: category.trim(), folder: folder.trim() }, t('downloads.ss.moving', { noun }), !folder.trim() ? t('downloads.ss.typeFolder') : '');
+		if (mode === 'speed') return send('speed-limits', { down: bytesOf(down), up: bytesOf(up) }, t('downloads.ss.speedSet', { noun }), '');
 		const l: ShareLimits = { ratio: valueOf(ratioMode, Number(ratio)), seeding_minutes: valueOf(seedMode, Number(seedMin)), inactive_minutes: valueOf(idleMode, Number(idleMin)), action };
 		error = checkLimits(l);
 		if (error || !count) return;
@@ -73,7 +74,7 @@
 			error = bad.join(' · ');
 			return;
 		}
-		toasts.push(`Seeding rules set for ${noun}`, 'ok');
+		toasts.push(t('downloads.ss.seedSet', { noun }), 'ok');
 		open = false;
 		ondone?.();
 	}
@@ -98,7 +99,7 @@
 		open = false;
 		ondone?.();
 	}
-	const MODES: { v: LimitMode; label: string }[] = [{ v: 'global', label: "Downloader's rule" }, { v: 'none', label: 'No limit' }, { v: 'set', label: 'Set' }];
+	const MODES = $derived<{ v: LimitMode; label: string }[]>([{ v: 'global', label: t('downloads.ss.dlRule') }, { v: 'none', label: t('downloads.ss.noLimit') }, { v: 'set', label: t('downloads.ss.set') }]);
 </script>
 
 {#snippet limit(label: string, unit: string, testid: string, getMode: () => LimitMode, setMode: (m: LimitMode) => void, getV: () => number, setV: (v: number) => void, step: string)}
@@ -108,7 +109,7 @@
 			{#each MODES as m (m.v)}<button type="button" role="radio" aria-checked={getMode() === m.v} class:on={getMode() === m.v} onclick={() => setMode(m.v)} data-testid="steer-{testid}-{m.v}">{m.label}</button>{/each}
 		</div>
 		{#if getMode() === 'set'}
-			<label class="val"><input type="number" min="0" {step} value={getV()} oninput={(e) => setV(Number(e.currentTarget.value))} aria-label="{label} value" data-testid="steer-{testid}-value" /><span>{unit}</span></label>
+			<label class="val"><input type="number" min="0" {step} value={getV()} oninput={(e) => setV(Number(e.currentTarget.value))} aria-label={t('downloads.ss.valueOf', { label })} data-testid="steer-{testid}-value" /><span>{unit}</span></label>
 		{/if}
 	</fieldset>
 {/snippet}
@@ -116,42 +117,42 @@
 <Sheet bind:open title={TITLE[mode]} size="sm">
 	<form id="steer-form" class="sf" onsubmit={submit} data-testid="steer-form" data-mode={mode}>
 	{#if mode === 'location'}
-		<p class="lead">Moves the files of {noun} on disk. The Downloader makes the folder if it is missing.</p>
+		<p class="lead">{t('downloads.ss.leadMove', { noun })}</p>
 		<label class="fl">
-			<span class="lb">Category folder <span class="opt">optional</span></span>
-			<input type="text" bind:value={category} placeholder="None: the Downloader's own folder" spellcheck="false" data-testid="steer-category" />
+			<span class="lb">{t('downloads.ss.catFolder')} <span class="opt">{t('downloads.at.optional')}</span></span>
+			<input type="text" bind:value={category} placeholder={t('downloads.ss.catPh')} spellcheck="false" data-testid="steer-category" />
 		</label>
 		<label class="fl">
-			<span class="lb">Folder</span>
-			<input type="text" bind:value={folder} placeholder="A subfolder, like tv/old (full paths need settings access)" spellcheck="false" data-testid="steer-folder" />
+			<span class="lb">{t('downloads.pf.folder')}</span>
+			<input type="text" bind:value={folder} placeholder={t('downloads.ss.folderPh')} spellcheck="false" data-testid="steer-folder" />
 		</label>
 	{:else if mode === 'speed'}
-		<p class="lead">Caps {noun} on its own, under the Downloader's overall limits. 0 means no limit.</p>
+		<p class="lead">{t('downloads.ss.leadSpeed', { noun })}</p>
 		<div class="two">
-			<label class="fl"><span class="lb">Download</span><span class="val"><input type="number" min="0" step="1" bind:value={down} data-testid="steer-down" /><span>KB/s</span></span></label>
-			<label class="fl"><span class="lb">Upload</span><span class="val"><input type="number" min="0" step="1" bind:value={up} data-testid="steer-up" /><span>KB/s</span></span></label>
+			<label class="fl"><span class="lb">{t('downloads.ss.download')}</span><span class="val"><input type="number" min="0" step="1" bind:value={down} data-testid="steer-down" /><span>KB/s</span></span></label>
+			<label class="fl"><span class="lb">{t('downloads.ss.upload')}</span><span class="val"><input type="number" min="0" step="1" bind:value={up} data-testid="steer-up" /><span>KB/s</span></span></label>
 		</div>
 	{:else}
-		<p class="lead">For {noun}. When any limit is reached, the Downloader acts.</p>
-		{@render limit('Share ratio', '× uploaded', 'ratio', () => ratioMode, (m) => (ratioMode = m), () => ratio, (v) => (ratio = v), '0.1')}
-		{@render limit('Seeding time', 'minutes', 'seed', () => seedMode, (m) => (seedMode = m), () => seedMin, (v) => (seedMin = v), '1')}
-		{@render limit('Idle time', 'minutes with no upload', 'idle', () => idleMode, (m) => (idleMode = m), () => idleMin, (v) => (idleMin = v), '1')}
+		<p class="lead">{t('downloads.ss.leadSeed', { noun })}</p>
+		{@render limit(t('downloads.pf.shareRatio'), t('downloads.ss.xUploaded'), 'ratio', () => ratioMode, (m) => (ratioMode = m), () => ratio, (v) => (ratio = v), '0.1')}
+		{@render limit(t('downloads.pf.seedingTime'), t('downloads.ss.minutes'), 'seed', () => seedMode, (m) => (seedMode = m), () => seedMin, (v) => (seedMin = v), '1')}
+		{@render limit(t('downloads.ss.idleTime'), t('downloads.ss.minutesIdle'), 'idle', () => idleMode, (m) => (idleMode = m), () => idleMin, (v) => (idleMin = v), '1')}
 		<label class="fl">
-			<span class="lb">Then</span>
+			<span class="lb">{t('downloads.ss.then')}</span>
 			<select bind:value={action} data-testid="steer-action">
-				<option value="">Downloader's default</option>
-				<option value="stop">Stop</option>
-				<option value="remove">Remove (keep files)</option>
-				{#if action === 'remove_files'}<option value="remove_files">Remove with files</option>{/if}
-				{#if action === 'super_seed'}<option value="super_seed">Super seed</option>{/if}
+				<option value="">{t('downloads.ss.default')}</option>
+				<option value="stop">{t('downloads.ss.stop')}</option>
+				<option value="remove">{t('downloads.ss.removeKeep')}</option>
+				{#if action === 'remove_files'}<option value="remove_files">{t('downloads.ss.removeFiles')}</option>{/if}
+				{#if action === 'super_seed'}<option value="super_seed">{t('downloads.ss.superSeed')}</option>{/if}
 			</select>
 		</label>
 	{/if}
 		{#if error}<p class="err" role="alert">{error}</p>{/if}
 	</form>
 	{#snippet footer()}
-		<Button variant="plain" onclick={() => (open = false)}>Cancel</Button>
-		<Button variant="primary" type="submit" form="steer-form" {busy} disabled={busy || !count} data-testid="steer-submit">{mode === 'location' ? 'Move' : 'Save'}</Button>
+		<Button variant="plain" onclick={() => (open = false)}>{t('downloads.sel.cancel')}</Button>
+		<Button variant="primary" type="submit" form="steer-form" {busy} disabled={busy || !count} data-testid="steer-submit">{mode === 'location' ? t('downloads.ss.move') : t('downloads.tv.save')}</Button>
 	{/snippet}
 </Sheet>
 

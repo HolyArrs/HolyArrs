@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	// Side sheet for one episode: status, file facts, subtitles and history.
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
@@ -12,6 +13,7 @@
 	import { api, message } from '#lib/core/api.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { ago, bytes } from '#lib/core/format.ts';
+	import { t, appLocale } from '#lib/core/i18n/i18n.svelte.ts';
 	import type { EventRecord, TitleView } from '#lib/core/types.ts';
 
 	export type SheetEpisode = {
@@ -53,18 +55,18 @@
 	const subsMode = $derived<'default' | 'off' | 'custom'>(!subsOwn ? 'default' : subsOwn.languages.length ? 'custom' : 'off');
 	const subsFile = $derived(subs?.files.find((f) => f.item_id === ep?.id));
 	const subsHint = $derived.by(() => {
-		if (subsMode === 'off') return 'No subtitles';
+		if (subsMode === 'off') return t('shows.sheet.noSubs');
 		const wanted = subsFile?.wish?.languages ?? subsOwn?.languages ?? [];
 		const have = new Set((subsFile?.subtitles ?? []).filter((r) => r.state === 'present').map((r) => r.language));
 		const miss = wanted.filter((w) => !have.has(w.language));
-		const head = subsMode === 'custom' ? codes(subsOwn?.languages ?? []) : 'Default';
-		if (!wanted.length) return `${head} · none set`;
-		return miss.length ? `${head} · ${codes(miss)} missing` : `${head} · all here`;
+		const head = subsMode === 'custom' ? codes(subsOwn?.languages ?? []) : t('shows.sheet.default');
+		if (!wanted.length) return t('shows.sheet.noneSet', { head });
+		return miss.length ? t('shows.sheet.missingLangs', { head, langs: codes(miss) }) : t('shows.sheet.allHere', { head });
 	});
 	const subsMenu = $derived<MenuItem[]>([
-		{ label: 'Choose languages…', icon: 'tools', onselect: () => (subsMore = true) },
-		{ label: 'Look for subtitles', icon: 'search', onselect: () => void findSubs() },
-		{ label: 'Choose a subtitle…', icon: 'copy', onselect: () => (subsMore = true) }
+		{ label: t('shows.sheet.chooseLanguages'), icon: 'tools', onselect: () => (subsMore = true) },
+		{ label: t('shows.sheet.lookSubs'), icon: 'search', onselect: () => void findSubs() },
+		{ label: t('shows.sheet.chooseSub'), icon: 'copy', onselect: () => (subsMore = true) }
 	]);
 	const slot = $derived(ep?.slots[0]);
 	const file = $derived(slot?.file ?? null);
@@ -85,7 +87,7 @@
 			name: String(file.RelativePath ?? '').split(/[\\/]/).pop() ?? '',
 			added: file.AddedAt ? ago(file.AddedAt) : '',
 			res: q.resolution ? `${q.resolution}p` : '',
-			addedOn: ((iso?: string) => { if (!iso) return ''; const d = new Date(iso); return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', ...(d.getFullYear() !== new Date().getFullYear() ? { year: 'numeric' } : {}) }); })(file.AddedAt),
+			addedOn: ((iso?: string) => { if (!iso) return ''; const d = new Date(iso); return d.toLocaleDateString(appLocale(), { month: 'short', day: 'numeric', ...(d.getFullYear() !== new Date().getFullYear() ? { year: 'numeric' } : {}) }); })(file.AddedAt),
 			audio: langs(m.audio_languages),
 			subs: langs(m.subtitle_languages ?? m.subtitles)
 		};
@@ -117,7 +119,7 @@
 			await api.put(`/titles/${titleId}/subtitle-wish`, mode === 'default' ? { inherit: true, item_id: ep.id } : { languages: [], item_id: ep.id });
 			await loadSubs();
 		} catch (e) {
-			toasts.push(`Couldn't save subtitles`, 'fail', { body: message(e) });
+			toasts.push(t('shows.sheet.saveSubsFailed'), 'fail', { body: message(e) });
 		} finally {
 			busy = '';
 		}
@@ -126,9 +128,9 @@
 		if (!ep) return;
 		try {
 			const r = await api.post<{ queued: number }>('/subtitles/search', { title_id: titleId, item_id: ep.id });
-			toasts.push(r.queued ? 'Searching for subtitles' : 'No file to search yet', r.queued ? 'info' : 'ok');
+			toasts.push(r.queued ? t('shows.sheet.searchingSubs') : t('shows.sheet.noFileToSearch'), r.queued ? 'info' : 'ok');
 		} catch (e) {
-			toasts.push(`Couldn't search subtitles`, 'fail', { body: message(e) });
+			toasts.push(t('shows.sheet.searchSubsFailed'), 'fail', { body: message(e) });
 		}
 	}
 	async function look() {
@@ -136,9 +138,9 @@
 		busy = 'look';
 		try {
 			await api.post(`/titles/${titleId}/search`, { slot_id: slot.id });
-			toasts.push(`Searching for episode ${ep?.episode}`, 'info');
+			toasts.push(t('shows.sheet.searchingEpisode', { n: ep?.episode ?? '' }), 'info');
 		} catch (e) {
-			toasts.push(`Couldn't start search`, 'fail', { body: message(e) });
+			toasts.push(t('shows.sheet.startSearchFailed'), 'fail', { body: message(e) });
 		} finally {
 			busy = '';
 		}
@@ -152,7 +154,7 @@
 			keep = next;
 			onchange?.();
 		} catch (e) {
-			toasts.push(`Couldn't update episode`, 'fail', { body: message(e) });
+			toasts.push(t('shows.sheet.updateFailed'), 'fail', { body: message(e) });
 		} finally {
 			busy = '';
 		}
@@ -162,36 +164,36 @@
 	// Eight tags is all the file card has room for.
 	const langs = (v: unknown) => (Array.isArray(v) ? v : []).map((s) => String(s).toUpperCase()).filter(Boolean).slice(0, 8);
 	// Air dates are plain days, so UTC keeps them from shifting a day.
-	const date = (iso?: string) => (iso ? new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }) : '');
+	const date = (iso?: string) => (iso ? new Date(iso).toLocaleDateString(appLocale(), { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }) : '');
 </script>
 
-<Sheet bind:open title={ep ? `${ep.season != null ? `Season ${ep.season} · ` : ''}Episode ${ep.episode}` : 'Episode'} size="md">
+<Sheet bind:open title={ep ? `${ep.season != null ? `${t('shows.season.named', { n: ep.season })} · ` : ''}${t('shows.list.episodeFallback', { n: ep.episode })}` : t('shows.sheet.episode')} size="md">
 	{#if ep}
 		<div class="es" data-testid="episode-sheet">
 			<div class="es-still">
 				{#if ep.still}<img src={ep.still} alt="" decoding="async" />{/if}
 				<span class="es-shade" aria-hidden="true"></span>
 				<div class="es-cap">
-					<h3>{ep.name ?? `Episode ${ep.episode}`}</h3>
-					<p>{[date(ep.air_date), ep.runtime_minutes ? `${ep.runtime_minutes} min` : ''].filter(Boolean).join(' · ')}</p>
+					<h3>{ep.name ?? t('shows.list.episodeFallback', { n: ep.episode })}</h3>
+					<p>{[date(ep.air_date), ep.runtime_minutes ? t('shows.sheet.minutes', { n: ep.runtime_minutes }) : ''].filter(Boolean).join(' · ')}</p>
 				</div>
-				{#if tone === 'have'}<span class="es-chip"><span class="es-dot" aria-hidden="true"></span>{slot?.state_label ?? 'In library'}</span>{/if}
+				{#if tone === 'have'}<span class="es-chip"><span class="es-dot" aria-hidden="true"></span>{serverWords(slot?.state_label) ?? t('shows.sheet.inLibrary')}</span>{/if}
 			</div>
 			{#if story}<p class="es-story">{story}</p>{/if}
 
 			{#if tone !== 'have'}
 				<section class="es-status {tone}">
-					<span class="es-st"><span class="es-dot" aria-hidden="true"></span>{slot?.state_label ?? 'Missing'}</span>
-					{#if manage && slot && tone !== 'downloading'}<button type="button" class="es-btn primary" disabled={busy === 'look'} onclick={look}><Icon name="search" size={15} />Look for it</button>{/if}
+					<span class="es-st"><span class="es-dot" aria-hidden="true"></span>{serverWords(slot?.state_label) ?? t('shows.sheet.missing')}</span>
+					{#if manage && slot && tone !== 'downloading'}<button type="button" class="es-btn primary" disabled={busy === 'look'} onclick={look}><Icon name="search" size={15} />{t('shows.sheet.lookForIt')}</button>{/if}
 				</section>
 			{/if}
 
 			{#if fileFacts}
 				<article class="es-file">
-					<p class="es-badges"><b>File</b>{#each fileFacts.badges as b (b)}<span class="es-badge">{b}</span>{/each}</p>
-					<div class="es-tiles"><div><span>Quality</span><b>{fileFacts.res || '—'}</b></div><div><span>Size</span><b>{fileFacts.size || '—'}</b></div><div><span>Added</span><b>{fileFacts.addedOn || '—'}</b></div></div>
+					<p class="es-badges"><b>{t('shows.sheet.file')}</b>{#each fileFacts.badges as b (b)}<span class="es-badge">{b}</span>{/each}</p>
+					<div class="es-tiles"><div><span>{t('shows.sheet.quality')}</span><b>{fileFacts.res || '—'}</b></div><div><span>{t('shows.sheet.size')}</span><b>{fileFacts.size || '—'}</b></div><div><span>{t('shows.sheet.added')}</span><b>{fileFacts.addedOn || '—'}</b></div></div>
 					{#if fileFacts.audio.length || fileFacts.subs.length}
-						<p class="es-langs">{#if fileFacts.audio.length}<span class="muted">Audio</span>{#each fileFacts.audio as l (l)}<span class="es-lang">{l}</span>{/each}{/if}{#if fileFacts.subs.length}<span class="muted">Subtitles</span>{#each fileFacts.subs as l (l)}<span class="es-lang">{l}</span>{/each}{/if}</p>
+						<p class="es-langs">{#if fileFacts.audio.length}<span class="muted">{t('shows.sheet.audio')}</span>{#each fileFacts.audio as l (l)}<span class="es-lang">{l}</span>{/each}{/if}{#if fileFacts.subs.length}<span class="muted">{t('shows.sheet.subtitles')}</span>{#each fileFacts.subs as l (l)}<span class="es-lang">{l}</span>{/each}{/if}</p>
 					{/if}
 					<p class="es-name" title={fileFacts.name}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/></svg><span>{fileFacts.name}</span></p>
 				</article>
@@ -200,30 +202,30 @@
 			{#if manage}
 				<div class="es-rows">
 					<button type="button" class="es-row" role="switch" aria-checked={keep} disabled={busy === 'keep'} onclick={flipKeep}>
-						<span><b>Keep up to date</b><small>Better copies</small></span>
+						<span><b>{t('shows.sheet.keep')}</b><small>{t('shows.sheet.keepHint')}</small></span>
 						<span class="es-switch" class:on={keep} aria-hidden="true"></span>
 					</button>
 					{#if ep.season != null}
 						<div class="es-row static es-subq" data-testid="episode-subtitles-row">
-							<span><b>Subtitles</b><small>{subs ? subsHint : ' '}</small></span>
-							<div class="q-seg" role="radiogroup" aria-label="Subtitles">
-								<button type="button" role="radio" aria-checked={subsMode === 'default'} class:on={subsMode === 'default'} disabled={busy === 'subs'} onclick={() => setSubs('default')}>Default</button>
-								<button type="button" role="radio" aria-checked={subsMode === 'off'} class:on={subsMode === 'off'} disabled={busy === 'subs'} onclick={() => setSubs('off')}>Off</button>
-								<div class="q-more" class:on={subsMode === 'custom'}><Menu label="Subtitle options" variant="button" width={220} items={subsMenu}>{#snippet trigger()}<i>{subsMode === 'custom' ? codes(subsOwn?.languages ?? []) : 'Custom'}</i><Icon name="chevronDown" size={13} />{/snippet}</Menu></div>
+							<span><b>{t('shows.sheet.subtitles')}</b><small>{subs ? subsHint : ' '}</small></span>
+							<div class="q-seg" role="radiogroup" aria-label={t('shows.sheet.subtitles')}>
+								<button type="button" role="radio" aria-checked={subsMode === 'default'} class:on={subsMode === 'default'} disabled={busy === 'subs'} onclick={() => setSubs('default')}>{t('shows.sheet.default')}</button>
+								<button type="button" role="radio" aria-checked={subsMode === 'off'} class:on={subsMode === 'off'} disabled={busy === 'subs'} onclick={() => setSubs('off')}>{t('shows.sheet.off')}</button>
+								<div class="q-more" class:on={subsMode === 'custom'}><Menu label={t('shows.sheet.subtitleOptions')} variant="button" width={220} items={subsMenu}>{#snippet trigger()}<i>{subsMode === 'custom' ? codes(subsOwn?.languages ?? []) : t('shows.sheet.custom')}</i><Icon name="chevronDown" size={13} />{/snippet}</Menu></div>
 							</div>
 						</div>
 					{/if}
-					{#if ondelete}<button type="button" class="es-row danger" onclick={ondelete}><span><b>Delete episode</b></span><Icon name="trash" size={16} /></button>{/if}
+					{#if ondelete}<button type="button" class="es-row danger" onclick={ondelete}><span><b>{t('shows.sheet.delete')}</b></span><Icon name="trash" size={16} /></button>{/if}
 				</div>
 				{#if subsMore && ep.season != null}
 					<div class="es-subs" data-testid="episode-subtitles">{#key ep.id}<SubtitlePanel {titleId} movie={false} itemId={ep.id} bare label={`S${String(ep.season).padStart(2, '0')}E${String(ep.episode).padStart(2, '0')}`} />{/key}</div>
 				{/if}
 			{/if}
 
-			<h4 class="es-h">History</h4>
+			<h4 class="es-h">{t('shows.tools.history')}</h4>
 			<ol class="es-tl">
 				{#each rows as r (r.key)}<li><CompactRow row={r} ctx={{ titles }} titleById={titles} onclick={() => goto(to(`/downloads/history?title=${titleId}`))} /><span class="sr-only">{r.events.map((x) => x.Summary).join(' · ')}</span></li>
-				{:else}<li class="muted">Nothing yet.</li>{/each}
+				{:else}<li class="muted">{t('shows.sheet.nothingYet')}</li>{/each}
 			</ol>
 		</div>
 	{/if}

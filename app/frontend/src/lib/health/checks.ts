@@ -1,29 +1,31 @@
 // Plain words for health check kinds, results and stage states.
+import { t } from '#lib/core/i18n/i18n.svelte.ts';
 import type { HealthCheck } from '../core/types.ts';
 import type { StageState } from './types.ts';
 
 // Server kind to the label users see.
+// Getters, so each word follows the language picked when it is read.
 const kinds: Record<string, string> = {
-	library_folder: 'Library folder',
-	disk_space: 'Free space',
-	source: 'Source',
-	downloader: 'Downloader',
-	backups: 'Backups',
-	update: 'Update',
-	config_disk: 'Config folder space',
-	config_folder: 'Config folder',
-	waiting_downloads: 'Downloads waiting for files',
-	trailers: 'Trailer reader'
+	get library_folder() { return t('health.kind.libraryFolder'); },
+	get disk_space() { return t('health.kind.diskSpace'); },
+	get source() { return t('health.kind.source'); },
+	get downloader() { return t('health.kind.downloader'); },
+	get backups() { return t('health.kind.backups'); },
+	get update() { return t('health.kind.update'); },
+	get config_disk() { return t('health.kind.configDisk'); },
+	get config_folder() { return t('health.kind.configFolder'); },
+	get waiting_downloads() { return t('health.kind.waitingDownloads'); },
+	get trailers() { return t('health.kind.trailers'); }
 };
 
 // Stage or linked app kind to its label.
 const linkKinds: Record<StageState['kind'], string> = {
-	stage: 'Stage',
-	part: 'Part',
-	source: 'Source',
-	downloader: 'Downloader',
-	subtitle_site: 'Subtitle site',
-	media_server: 'Media server'
+	get stage() { return t('health.link.stage'); },
+	get part() { return t('health.link.part'); },
+	get source() { return t('health.link.source'); },
+	get downloader() { return t('health.link.downloader'); },
+	get subtitle_site() { return t('health.link.subtitleSite'); },
+	get media_server() { return t('health.link.mediaServer'); }
 };
 
 export function checkLabel(kind: string): string {
@@ -40,7 +42,7 @@ export function checkName(kind: string, subject: string): { label: string; subje
 }
 
 export function stateWord(state: string): string {
-	return state === 'ok' ? 'Fine' : state === 'warning' ? 'Warning' : state === 'error' ? 'Broken' : state;
+	return state === 'ok' ? t('health.state.fine') : state === 'warning' ? t('health.state.warning') : state === 'error' ? t('health.state.broken') : state;
 }
 
 // The server already sends the worst checks first, so order is kept.
@@ -54,8 +56,9 @@ export function linkLabel(kind: string): string {
 
 // A stuck stage reads Stuck whatever its state says.
 export function runWord(s: Pick<StageState, 'state' | 'stuck'>): string {
-	if (s.stuck) return 'Stuck';
-	return { off: 'Off', starting: 'Starting', running: 'Running', retrying: 'Retrying', failed: 'Failed' }[s.state] ?? s.state;
+	if (s.stuck) return t('health.run.stuck');
+	const words: Record<string, string> = { off: t('health.run.off'), starting: t('health.run.starting'), running: t('health.run.running'), retrying: t('health.run.retrying'), failed: t('health.run.failed') };
+	return words[s.state] ?? s.state;
 }
 
 export function runTone(state: StageState['state']): string {

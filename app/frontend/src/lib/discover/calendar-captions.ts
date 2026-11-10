@@ -1,6 +1,7 @@
 // The two caption lines under every calendar card and list row, and the choices for them (?movie=1-6, ?music=1-5, ?channels=all|known).
 import type { CalGroup } from './calendar-groups.ts';
 import type { CalendarEntry } from '../core/types.ts';
+import { t, appLocale } from '#lib/core/i18n/i18n.svelte.ts';
 
 export type Channels = 'all' | 'known';
 
@@ -38,10 +39,10 @@ export function fakeEpisodeName(name?: string): boolean {
 export function clockTime(e: Pick<CalendarEntry, 'kind' | 'date' | 'timed'>, locale?: string): string {
 	if (e.kind !== 'episode' || !e.timed) return '';
 	const d = new Date(e.date);
-	const f = new Intl.DateTimeFormat(locale, { hour: 'numeric', minute: '2-digit' });
+	const f = new Intl.DateTimeFormat(locale ?? appLocale(), { hour: 'numeric', minute: '2-digit' });
 	const h12 = /h1[12]/.test(f.resolvedOptions().hourCycle ?? '');
 	// A 12-hour clock drops ":00" ("7 PM"); a 24-hour clock keeps it ("19:00").
-	if (h12 && d.getMinutes() === 0) return new Intl.DateTimeFormat(locale, { hour: 'numeric' }).format(d);
+	if (h12 && d.getMinutes() === 0) return new Intl.DateTimeFormat(locale ?? appLocale(), { hour: 'numeric' }).format(d);
 	return f.format(d);
 }
 
@@ -50,9 +51,9 @@ export function episodeWords(eps: Pick<CalendarEntry, 'season' | 'episode'>[]): 
 	const s = [...eps].sort((a, b) => (a.season ?? 0) - (b.season ?? 0) || (a.episode ?? 0) - (b.episode ?? 0));
 	const first = s[0];
 	const last = s.at(-1)!;
-	if (s.length === 1) return `Season ${first.season ?? 0}, Episode ${first.episode ?? 0}`;
-	if (first.season === last.season) return `Season ${first.season ?? 0}, Episodes ${first.episode ?? 0}–${last.episode ?? 0}`;
-	return `Season ${first.season ?? 0}, Episode ${first.episode ?? 0} – Season ${last.season ?? 0}, Episode ${last.episode ?? 0}`;
+	if (s.length === 1) return t('discover.calendarCaptions.seasonEpisode', { season: first.season ?? 0, episode: first.episode ?? 0 });
+	if (first.season === last.season) return t('discover.calendarCaptions.seasonEpisodes', { season: first.season ?? 0, from: first.episode ?? 0, to: last.episode ?? 0 });
+	return t('discover.calendarCaptions.seasonSpan', { season: first.season ?? 0, episode: first.episode ?? 0, season2: last.season ?? 0, episode2: last.episode ?? 0 });
 }
 
 const STREAMING = [
@@ -100,16 +101,16 @@ export function runLength(min?: number): string {
 	if (!min || min <= 0) return '';
 	const h = Math.floor(min / 60);
 	const m = min % 60;
-	return h ? (m ? `${h}h ${m}m` : `${h}h`) : `${m}m`;
+	return h ? (m ? t('discover.calendarCaptions.hoursMinutes', { h, m }) : t('discover.calendarCaptions.hours', { h })) : t('discover.calendarCaptions.minutes', { m });
 }
 
-const shortDay = (iso?: string) => (iso ? new Date(iso.slice(0, 10) + 'T00:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '');
+const shortDay = (iso?: string) => (iso ? new Date(iso.slice(0, 10) + 'T00:00:00').toLocaleDateString(appLocale(), { month: 'short', day: 'numeric' }) : '');
 const day = (iso?: string) => (iso ? iso.slice(0, 10) : '');
 
 /** "In cinemas", "In cinemas · At home from Mar 3", "At home", "At home · In cinemas Jul 17". */
 export function whereOut(e: CalendarEntry): string {
-	if (e.kind === 'cinema') return day(e.home_date) > day(e.date) ? `In cinemas · At home from ${shortDay(e.home_date)}` : 'In cinemas';
-	return e.cinema_date && day(e.cinema_date) < day(e.date) ? `At home · In cinemas ${shortDay(e.cinema_date)}` : 'At home';
+	if (e.kind === 'cinema') return day(e.home_date) > day(e.date) ? t('discover.calendarCaptions.cinemaThenHome', { date: shortDay(e.home_date) }) : t('discover.calendarCaptions.inCinemas');
+	return e.cinema_date && day(e.cinema_date) < day(e.date) ? t('discover.calendarCaptions.homeAfterCinema', { date: shortDay(e.cinema_date) }) : t('discover.calendarCaptions.atHome');
 }
 
 const NUMBERS: Record<string, number> = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10, i: 1, ii: 2, iii: 3, iv: 4, v: 5, vi: 6, vii: 7, viii: 8, ix: 9, x: 10 };
@@ -117,9 +118,10 @@ const asNumber = (w: string) => (/^\d+$/.test(w) ? Number(w) : (NUMBERS[w.toLowe
 
 /** 1st, 2nd, 3rd, 4th, 11th. */
 export function ordinal(n: number): string {
-	const t = n % 100;
-	if (t >= 11 && t <= 13) return `${n}th`;
-	return `${n}${{ 1: 'st', 2: 'nd', 3: 'rd' }[n % 10] ?? 'th'}`;
+	const h = n % 100;
+	if (h >= 11 && h <= 13) return t('discover.calendarCaptions.ordinalTh', { n });
+	const last = n % 10;
+	return last === 1 ? t('discover.calendarCaptions.ordinalSt', { n }) : last === 2 ? t('discover.calendarCaptions.ordinalNd', { n }) : last === 3 ? t('discover.calendarCaptions.ordinalRd', { n }) : t('discover.calendarCaptions.ordinalTh', { n });
 }
 
 /** The series a movie belongs to, with its place when the name says it: "Dune · Part 3", "Toy Story · 4th film"; else "Avengers series"; '' outside a series. */
@@ -129,8 +131,8 @@ export function seriesLine(e: Pick<CalendarEntry, 'name' | 'collection'>): strin
 	const part = /\b(part|chapter|volume)\s+([a-z]+|\d+)\b/i.exec(e.name);
 	if (part && asNumber(part[2])) return `${series} · ${cap(part[1].toLowerCase())} ${asNumber(part[2])}`;
 	const tail = /\s(\d{1,2}|ii|iii|iv|v|vi|vii|viii|ix)(\s*[:\-–].*)?$/i.exec(e.name);
-	if (tail && asNumber(tail[1]) > 1) return `${series} · ${ordinal(asNumber(tail[1]))} film`;
-	return `${series} series`;
+	if (tail && asNumber(tail[1]) > 1) return t('discover.calendarCaptions.nthFilm', { series, nth: ordinal(asNumber(tail[1])) });
+	return t('discover.calendarCaptions.series', { series });
 }
 
 const people = (xs?: string[]) => (xs ?? []).slice(0, 2).join(' & ');
@@ -152,24 +154,26 @@ export function movieCaption(e: CalendarEntry, look: number): string {
 	return pick[look] || genreLen || director;
 }
 
-const kindOf = (t?: string) => {
-	const k = (t ?? '').toLowerCase();
+const kindOf = (type?: string) => {
+	const k = (type ?? '').toLowerCase();
 	return k === 'single' ? 'single' : k === 'ep' ? 'EP' : 'album';
 };
 
+const kindName = (k: string) => (k === 'single' ? t('discover.calendarCaptions.single') : k === 'EP' ? t('discover.calendarCaptions.ep') : t('discover.calendarCaptions.album'));
 const cap = (s: string) => (s === 'EP' ? s : s.charAt(0).toUpperCase() + s.slice(1));
-const songs = (n?: number) => (n ? `${n} ${n === 1 ? 'song' : 'songs'}` : '');
+const songs = (n?: number) => (n ? (n === 1 ? t('discover.calendarCaptions.songOne') : t('discover.calendarCaptions.songOther', { n })) : '');
 
 /** "44 min", "1 hr 12 min". */
 export function albumLength(min?: number): string {
 	if (!min || min <= 0) return '';
-	return min < 60 ? `${min} min` : `${Math.floor(min / 60)} hr${min % 60 ? ` ${min % 60} min` : ''}`;
+	if (min < 60) return t('discover.calendarCaptions.albumMinutes', { m: min });
+	return min % 60 ? t('discover.calendarCaptions.albumHoursMinutes', { h: Math.floor(min / 60), m: min % 60 }) : t('discover.calendarCaptions.albumHours', { h: Math.floor(min / 60) });
 }
 
 /** An album's caption line for the choice picked (1-5). The label is not known yet, so 3 shows the songs. */
 export function musicCaption(e: CalendarEntry, look: number): string {
 	const kind = kindOf(e.album_type);
-	const Kind = cap(kind);
+	const Kind = cap(kindName(kind));
 	const n = songs(e.tracks);
 	const kindSongs = [Kind, n].filter(Boolean).join(' · ');
 	switch (look) {
@@ -177,11 +181,11 @@ export function musicCaption(e: CalendarEntry, look: number): string {
 			return [Kind, albumLength(e.length_min) || n].filter(Boolean).join(' · ');
 		case 4: {
 			const g = e.genres?.[0];
-			return g ? [`${cap(g.toLowerCase())} ${kind === 'EP' ? 'EP' : kind}`, n].filter(Boolean).join(' · ') : kindSongs;
+			return g ? [t('discover.calendarCaptions.genreKind', { genre: cap(g.toLowerCase()), kind: kindName(kind) }), n].filter(Boolean).join(' · ') : kindSongs;
 		}
 		case 5: {
-			if (kind === 'single') return 'New single';
-			const which = !e.nth ? `New ${kind}` : e.nth === 1 ? `Debut ${kind}` : `${ordinal(e.nth)} ${kind}`;
+			if (kind === 'single') return t('discover.calendarCaptions.newSingle');
+			const which = !e.nth ? t('discover.calendarCaptions.newKind', { kind: kindName(kind) }) : e.nth === 1 ? t('discover.calendarCaptions.debutKind', { kind: kindName(kind) }) : t('discover.calendarCaptions.nthKind', { nth: ordinal(e.nth), kind: kindName(kind) });
 			return [which, n].filter(Boolean).join(' · ');
 		}
 		default:
@@ -196,16 +200,16 @@ export function rowWords(g: CalGroup, look: CaptionLook, today: string): RowWord
 		const name = g.entries.length === 1 && !fakeEpisodeName(e.episode_name) ? (e.episode_name ?? '') : '';
 		const chan = channelShown(e.network, look) ? (e.network ?? '') : '';
 		const at = clockTime(e);
-		return { title: e.name, lines: [name, episodeWords(g.entries), chan].filter(Boolean), when: at || 'All day', quiet: !at };
+		return { title: e.name, lines: [name, episodeWords(g.entries), chan].filter(Boolean), when: at || t('discover.calendarCaptions.allDay'), quiet: !at };
 	}
 	if (e.kind === 'album') {
-		const pick = g.entries.length > 1 ? `${g.entries.length} releases` : musicCaption(e, look.music);
-		return { title: e.name, lines: [e.album ?? '', pick].filter(Boolean), when: cap(kindOf(e.album_type)), quiet: false };
+		const pick = g.entries.length > 1 ? t('discover.calendarCaptions.releases', { n: g.entries.length }) : musicCaption(e, look.music);
+		return { title: e.name, lines: [e.album ?? '', pick].filter(Boolean), when: cap(kindName(kindOf(e.album_type))), quiet: false };
 	}
 	const pick = movieCaption(e, look.movie);
 	const genre = e.genres?.[0] ?? '';
 	const lines = [pick, pick.includes(genre) ? '' : genre, e.studio ?? ''].filter(Boolean);
-	return { title: e.name, lines, when: e.kind === 'cinema' ? 'In theaters' : 'Streaming', quiet: false };
+	return { title: e.name, lines, when: e.kind === 'cinema' ? t('discover.calendarCaptions.inTheaters') : t('discover.calendarCaptions.streaming'), quiet: false };
 }
 
 /** The captions under a card in the same order: the time or short word first, then the lines. The art carries the name, so an album's card names the artist in place of its own name. */

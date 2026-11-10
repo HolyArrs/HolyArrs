@@ -1,5 +1,6 @@
 <script lang="ts">
 	// Last runs above a Now line and coming runs below it, beside the live board.
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import LiveViews from './LiveViews.svelte';
 	import { pastResult, type StatusRow } from './rows.ts';
 	import { nextRun } from './schedules.ts';
@@ -17,7 +18,7 @@
 </script>
 
 <section class="st-plate" aria-labelledby="s-tl" data-testid="status-timeline">
-	<h2 id="s-tl">Timeline<span class="cnt">{recent.length} ran · {upcoming.length} coming</span></h2>
+	<h2 id="s-tl">{t('health.timeline.title')}<span class="cnt">{t('health.timeline.counts', { ran: recent.length, coming: upcoming.length })}</span></h2>
 	<div class="halves">
 		<ol class="tl">
 			{#each past as r (r.key)}
@@ -29,13 +30,13 @@
 					<span class="chip {res.tone}">{res.word}</span>
 				</li>
 			{/each}
-			<li class="nowline" aria-label="Now"><span class="tm">Now</span><i class="nowd pulse" aria-hidden="true"></i><span class="hr"></span></li>
+			<li class="nowline" aria-label={t('health.timeline.now')}><span class="tm">{t('health.timeline.now')}</span><i class="nowd pulse" aria-hidden="true"></i><span class="hr"></span></li>
 			{#each up as r (r.key)}
 				<li>
-					<span class="tm">{r.word === 'Running' ? 'now' : nextRun(r.nextRun, now)}</span><i class="st-dot {r.tone}" aria-hidden="true"></i><span class="nm">{r.name}</span>
+					<span class="tm">{r.word === t('health.job.running') ? t('health.until.now') : nextRun(r.nextRun, now)}</span><i class="st-dot {r.tone}" aria-hidden="true"></i><span class="nm">{r.name}</span>
 					{#if r.tone === 'fail' || r.tone === 'wait'}<span class="chip {r.tone}">{r.word}</span>{/if}
 				</li>
-			{:else}<li class="none">No runs planned.</li>{/each}
+			{:else}<li class="none">{t('health.timeline.none')}</li>{/each}
 		</ol>
 
 		<div class="day"><LiveViews {upcoming} {recent} /></div>

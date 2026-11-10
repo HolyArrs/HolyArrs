@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import Field from '#lib/ui/Field.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
@@ -43,11 +44,11 @@
 	const showRules = $derived(rules.filter((r) => !r.kinds.length || r.kinds.includes('show')));
 	const musicFolders = $derived(folders.filter((f) => f.kind === 'music'));
 	const musicRules = $derived(rules.filter((r) => !r.kinds.length || r.kinds.includes('music')));
-	const kinds = [
-		{ key: 'movies_per_week', id: 'per-week-movies', label: 'Movie requests', hint: '' },
-		{ key: 'shows_per_week', id: 'per-week-shows', label: 'Show requests', hint: 'Any number of seasons counts as one' },
-		{ key: 'music_per_week', id: 'per-week-music', label: 'Music requests', hint: 'An artist or album counts as one' }
-	] as const;
+	const kinds = $derived([
+		{ key: 'movies_per_week', id: 'per-week-movies', label: t('settings.requests.movieReq'), hint: '' },
+		{ key: 'shows_per_week', id: 'per-week-shows', label: t('settings.requests.showReq'), hint: t('settings.requests.showReqHint') },
+		{ key: 'music_per_week', id: 'per-week-music', label: t('settings.requests.musicReq'), hint: t('settings.requests.musicReqHint') }
+	] as const);
 
 	async function load() {
 		loading = true;
@@ -87,7 +88,7 @@
 				music_per_week: Number(settings.music_per_week)
 			});
 			saved = JSON.stringify(settings);
-			toasts.push('Request settings saved', 'ok');
+			toasts.push(t('settings.requests.saved'), 'ok');
 		} catch (err) {
 			error = message(err);
 		} finally {
@@ -96,17 +97,17 @@
 	}
 </script>
 
-<svelte:head><title>Request rules · HolyArrs</title></svelte:head>
+<svelte:head><title>{t('settings.requests.title')} · HolyArrs</title></svelte:head>
 
-<PageHeader title="Request rules" />
+<PageHeader title={t('settings.requests.title')} />
 
 {#if !loaded}
 	<SkSettings rows={3} />
 {:else if !saved}
 	<LoadError hasData={false} message={loadError} onretry={load} busy={loading} />
 {:else}
-	<form class="sc-form" id="wishlist-form" onsubmit={save} aria-label="Request rules">
-		<SettingsCard id="weekly-limits" title="Weekly limits" description="Per person, per 7 days">
+	<form class="sc-form" id="wishlist-form" onsubmit={save} aria-label={t('settings.requests.title')}>
+		<SettingsCard id="weekly-limits" title={t('settings.requests.weekly')} description={t('settings.requests.weeklyDesc')}>
 			<fieldset class="kinds">
 				<div class="kind-row">
 					{#each kinds as k (k.key)}
@@ -118,31 +119,31 @@
 					{/each}
 				</div>
 				<span class="hint">
-					Defaults for everyone; set one person's own limits on the
-					{#if session.can('users')}<a href={to(`/settings/users`)}>Users and roles</a>{:else}Users and roles{/if} page. 0 means no limit. Approvers have none. Taken-back and turned-down requests don't count, nor does joining someone else's.
+					{t('settings.requests.defaultsA')}
+					{#if session.can('users')}<a href={to(`/settings/users`)}>{t('settings.requests.usersAndRoles')}</a>{:else}{t('settings.requests.usersAndRoles')}{/if} {t('settings.requests.defaultsB')}
 				</span>
 			</fieldset>
 		</SettingsCard>
-		<SettingsCard id="approved-asks" title="Approved requests">
-			<Field id="ask-folder" label="Movie folder">
+		<SettingsCard id="approved-asks" title={t('settings.requests.approved')}>
+			<Field id="ask-folder" label={t('settings.requests.movieFolder')}>
 				<select id="ask-folder" class="input" bind:value={settings.library_folder_id}>
-					<option value={0}>First movie folder</option>
+					<option value={0}>{t('settings.requests.firstMovie')}</option>
 					{#each movieFolders as f (f.id)}
 						<option value={f.id}>{f.label || f.path} ({f.path})</option>
 					{/each}
 				</select>
 			</Field>
-			<Field id="ask-show-folder" label="Show folder">
+			<Field id="ask-show-folder" label={t('settings.requests.showFolder')}>
 				<select id="ask-show-folder" class="input" bind:value={settings.show_library_folder_id}>
-					<option value={0}>First show folder</option>
+					<option value={0}>{t('settings.requests.firstShow')}</option>
 					{#each showFolders as f (f.id)}
 						<option value={f.id}>{f.label || f.path} ({f.path})</option>
 					{/each}
 				</select>
 			</Field>
-			<Field id="ask-music-folder" label="Music folder" hint="Only requested albums are kept up to date">
+			<Field id="ask-music-folder" label={t('settings.requests.musicFolder')} hint={t('settings.requests.musicFolderHint')}>
 				<select id="ask-music-folder" class="input" bind:value={settings.music_library_folder_id}>
-					<option value={0}>First music folder</option>
+					<option value={0}>{t('settings.requests.firstMusic')}</option>
 					{#each musicFolders as f (f.id)}
 						<option value={f.id}>{f.label || f.path} ({f.path})</option>
 					{/each}
@@ -150,28 +151,28 @@
 			</Field>
 			<label class="checkline">
 				<input id="search-approved" type="checkbox" bind:checked={settings.search_on_approve} />
-				<span><b>Search when approved</b><br /><span class="hint">Movies search at once; shows at the next feed check</span></span>
+				<span><b>{t('settings.requests.search')}</b><br /><span class="hint">{t('settings.requests.searchHint')}</span></span>
 			</label>
 			{#snippet advanced()}
-				<Field id="ask-rules" label="Movie quality" hint="Approvers can override per request">
+				<Field id="ask-rules" label={t('settings.requests.movieQuality')} hint={t('settings.requests.movieQualityHint')}>
 					<select id="ask-rules" class="input" bind:value={settings.pick_rules_id}>
-						<option value={0}>The folder's own quality</option>
+						<option value={0}>{t('settings.requests.folderQuality')}</option>
 						{#each movieRules as r (r.id)}
 							<option value={r.id}>{r.name}</option>
 						{/each}
 					</select>
 				</Field>
-				<Field id="ask-show-rules" label="Show quality">
+				<Field id="ask-show-rules" label={t('settings.requests.showQuality')}>
 					<select id="ask-show-rules" class="input" bind:value={settings.show_pick_rules_id}>
-						<option value={0}>The folder's own quality</option>
+						<option value={0}>{t('settings.requests.folderQuality')}</option>
 						{#each showRules as r (r.id)}
 							<option value={r.id}>{r.name}</option>
 						{/each}
 					</select>
 				</Field>
-				<Field id="ask-music-rules" label="Music quality">
+				<Field id="ask-music-rules" label={t('settings.requests.musicQuality')}>
 					<select id="ask-music-rules" class="input" bind:value={settings.music_pick_rules_id}>
-						<option value={0}>The folder's own quality</option>
+						<option value={0}>{t('settings.requests.folderQuality')}</option>
 						{#each musicRules as r (r.id)}
 							<option value={r.id}>{r.name}</option>
 						{/each}
@@ -179,10 +180,10 @@
 				</Field>
 			{/snippet}
 		</SettingsCard>
-		{#if !session.held('plex_watchlists')}<SettingsCard id="plex-watchlists" title="Plex watchlists" description="Titles on your Plex watchlist become requests">
+		{#if !session.held('plex_watchlists')}<SettingsCard id="plex-watchlists" title={t('settings.requests.plex')} description={t('settings.requests.plexDesc')}>
 			<label class="checkline">
 				<input id="plex-watchlists-on" type="checkbox" bind:checked={settings.plex_watchlists} />
-				<span><b>Request from Plex watchlists</b><br /><span class="hint">Each person turns it on in My account. Their Limits apply.</span></span>
+				<span><b>{t('settings.requests.plexOn')}</b><br /><span class="hint">{t('settings.requests.plexOnHint')}</span></span>
 			</label>
 		</SettingsCard>{/if}
 		{#if error}<p class="form-error" role="alert">{error}</p>{/if}

@@ -1,4 +1,5 @@
 import { episodeCode } from '../core/episodes.ts';
+import { t } from '#lib/core/i18n/i18n.svelte.ts';
 
 export type HI = 'normal' | 'hi' | 'either';
 
@@ -191,41 +192,42 @@ export interface SiteForm {
 	api_key: string;
 }
 
+// These word lists use getters, so each line follows the language picked when it is read.
 export const hiWords: Record<HI, string> = {
-	normal: 'Normal (a hearing-impaired one counts too)',
-	hi: 'Hearing-impaired only',
-	either: 'Either'
+	get normal() { return t('subtitles.hi.normal'); },
+	get hi() { return t('subtitles.hi.only'); },
+	get either() { return t('subtitles.hi.either'); }
 };
 
 export const pauseWords: Record<string, string> = {
-	down: 'it did not answer',
-	rate_limited: 'it asked HolyArrs to slow down',
-	download_limit: 'its download limit for today is reached',
-	login_refused: 'it refused the account details',
-	blocked: 'its address is on the local network, which it may not reach',
-	unreadable: 'its answer could not be read'
+	get down() { return t('subtitles.pause.down'); },
+	get rate_limited() { return t('subtitles.pause.rateLimited'); },
+	get download_limit() { return t('subtitles.pause.downloadLimit'); },
+	get login_refused() { return t('subtitles.pause.loginRefused'); },
+	get blocked() { return t('subtitles.pause.blocked'); },
+	get unreadable() { return t('subtitles.pause.unreadable'); }
 };
 
-export const accountWords: Record<string, string> = Object.fromEntries([
-	['username', 'User name'],
-	['password', 'Password'],
-	['api_key', 'API key']
-]);
+export const accountWords: Record<string, string> = {
+	get username() { return t('subtitles.account.username'); },
+	get password() { return t('subtitles.account.passwordLabel'); },
+	get api_key() { return t('subtitles.account.apiKeyLabel'); }
+};
 
 export const partWords: Record<string, string> = {
-	name: 'name',
-	year: 'year',
-	season: 'season',
-	episode: 'episode',
-	group: 'release group',
-	source: 'source (Blu-ray, WEB…)',
-	resolution: 'resolution',
-	codec: 'video codec',
-	audio: 'audio',
-	edition: 'edition',
-	as_wished: 'hearing-impaired and forced as wished',
-	trusted: 'trusted uploader',
-	sync: 'frame rate hint'
+	get name() { return t('subtitles.part.name'); },
+	get year() { return t('subtitles.part.year'); },
+	get season() { return t('subtitles.part.season'); },
+	get episode() { return t('subtitles.part.episode'); },
+	get group() { return t('subtitles.part.group'); },
+	get source() { return t('subtitles.part.source'); },
+	get resolution() { return t('subtitles.part.resolution'); },
+	get codec() { return t('subtitles.part.codec'); },
+	get audio() { return t('subtitles.part.audio'); },
+	get edition() { return t('subtitles.part.edition'); },
+	get as_wished() { return t('subtitles.part.asWished'); },
+	get trusted() { return t('subtitles.part.trusted'); },
+	get sync() { return t('subtitles.part.sync'); }
 };
 
 export function langName(code: string, langs: Language[]): string {
@@ -234,52 +236,52 @@ export function langName(code: string, langs: Language[]): string {
 
 export function wantLabel(w: Want, langs: Language[]): string {
 	const parts = [langName(w.language, langs)];
-	if (w.hearing_impaired === 'hi') parts.push('hearing-impaired only');
-	if (w.hearing_impaired === 'either') parts.push('normal or hearing-impaired');
-	if (w.forced) parts.push('forced only');
+	if (w.hearing_impaired === 'hi') parts.push(t('subtitles.want.hiOnly'));
+	if (w.hearing_impaired === 'either') parts.push(t('subtitles.want.either'));
+	if (w.forced) parts.push(t('subtitles.want.forcedOnly'));
 	return parts.join(', ');
 }
 
 export function wishLine(ws: Want[], langs: Language[]): string {
-	return ws.length ? ws.map((w) => wantLabel(w, langs)).join(' · ') : 'None';
+	return ws.length ? ws.map((w) => wantLabel(w, langs)).join(' · ') : t('subtitles.want.none');
 }
 
 export function fromWords(from: string, movie: boolean): string {
 	switch (from) {
 		case 'episode':
-			return 'set for this episode';
+			return t('subtitles.from.episode');
 		case 'version':
-			return 'set for this Version';
+			return t('subtitles.from.version');
 		case 'title':
-			return movie ? 'set for this movie' : 'set for this show';
+			return movie ? t('subtitles.from.movie') : t('subtitles.from.show');
 		default:
-			return 'the default languages';
+			return t('subtitles.from.default');
 	}
 }
 
 export function wishProblem(ws: Want[]): string {
-	if (ws.length > 10) return 'At most 10 languages.';
+	if (ws.length > 10) return t('subtitles.problem.tooMany');
 	const seen = new Set<string>();
 	for (const w of ws) {
-		if (!w.language) return 'Pick a language on every row.';
+		if (!w.language) return t('subtitles.problem.pick');
 		const k = `${w.language}|${w.forced}`;
-		if (seen.has(k)) return 'A language can be there twice only once full and once forced.';
+		if (seen.has(k)) return t('subtitles.problem.twice');
 		seen.add(k);
 	}
 	return '';
 }
 
 export function kindLabel(s: Pick<SubtitleRow, 'hearing_impaired' | 'forced'>): string {
-	if (s.forced) return 'Forced';
-	if (s.hearing_impaired) return 'Hearing-impaired';
-	return 'Normal';
+	if (s.forced) return t('subtitles.kind.forced');
+	if (s.hearing_impaired) return t('subtitles.kind.hi');
+	return t('subtitles.kind.normal');
 }
 
 export function sourceLabel(s: Pick<SubtitleRow, 'place' | 'origin' | 'site' | 'codec'>): string {
-	if (s.place === 'built_in') return s.codec ? `Inside the video (${s.codec})` : 'Inside the video';
-	if (s.origin === 'found') return 'Found beside the video';
-	if (s.origin === 'by_hand') return s.site ? `Chosen by hand from ${s.site}` : 'Chosen by hand';
-	return s.site ? `From ${s.site}` : 'Saved by HolyArrs';
+	if (s.place === 'built_in') return s.codec ? t('subtitles.source.insideCodec', { codec: s.codec }) : t('subtitles.source.inside');
+	if (s.origin === 'found') return t('subtitles.source.found');
+	if (s.origin === 'by_hand') return s.site ? t('subtitles.source.handFrom', { site: s.site }) : t('subtitles.source.hand');
+	return s.site ? t('subtitles.source.from', { site: s.site }) : t('subtitles.source.saved');
 }
 
 export function ours(s: Pick<SubtitleRow, 'place' | 'origin' | 'state'>): boolean {
@@ -297,10 +299,10 @@ export function missing(rows: SubtitleRow[]): SubtitleRow[] {
 
 export function missingWords(r: Pick<SubtitleRow, 'state' | 'tries'> & { next_try_at?: string }, when: (s: string) => string): string {
 	if (r.state === 'none_good_enough') {
-		const next = r.next_try_at ? `; next try ${when(r.next_try_at)}` : '';
-		return `None over the Pass mark yet (${r.tries} ${r.tries === 1 ? 'try' : 'tries'})${next}`;
+		const next = r.next_try_at ? t('subtitles.missing.next', { when: when(r.next_try_at) }) : '';
+		return t(r.tries === 1 ? 'subtitles.missing.noneGood.one' : 'subtitles.missing.noneGood.other', { count: r.tries }) + next;
 	}
-	return r.tries ? `Not found yet (${r.tries} ${r.tries === 1 ? 'try' : 'tries'})` : 'Not looked for yet';
+	return r.tries ? t(r.tries === 1 ? 'subtitles.missing.notFound.one' : 'subtitles.missing.notFound.other', { count: r.tries }) : t('subtitles.missing.notLooked');
 }
 
 export function fileName(p: string | undefined): string {
@@ -325,19 +327,18 @@ export function missingQuery(f: { language?: string; kind?: string; title?: numb
 }
 
 export function siteState(s: Pick<SiteView, 'state' | 'pause_reason' | 'paused_until' | 'has_account'>, k: SiteKind | undefined, when: (s: string) => string): { label: string; text: string; tone: 'ok' | 'wait' | 'fail' | 'idle' } {
-	if (k?.needs_account && !s.has_account) return { label: 'Needs your account', text: 'Fill in its account details; until then it is never asked.', tone: 'fail' };
-	if (s.state === 'disabled') return { label: 'Paused', text: 'Paused by you: searches skip it.', tone: 'idle' };
+	if (k?.needs_account && !s.has_account) return { label: t('subtitles.site.needsAccount'), text: t('subtitles.site.needsAccountText'), tone: 'fail' };
+	if (s.state === 'disabled') return { label: t('subtitles.site.paused'), text: t('subtitles.site.pausedText'), tone: 'idle' };
 	if (s.state === 'paused') {
-		const why = (s.pause_reason && pauseWords[s.pause_reason]) || 'it failed';
-		const until = s.paused_until ? ` until ${when(s.paused_until)}` : '';
-		return { label: 'Resting', text: `Resting${until}: ${why}. HolyArrs tries it again after that.`, tone: 'wait' };
+		const why = (s.pause_reason && pauseWords[s.pause_reason]) || t('subtitles.pause.failed');
+		return { label: t('subtitles.site.resting'), text: s.paused_until ? t('subtitles.site.restingUntil', { when: when(s.paused_until), why }) : t('subtitles.site.restingText', { why }), tone: 'wait' };
 	}
-	return { label: 'On', text: 'Asked on every subtitle search.', tone: 'ok' };
+	return { label: t('subtitles.site.on'), text: t('subtitles.site.onText'), tone: 'ok' };
 }
 
 export function kindCovers(k: Pick<SiteKind, 'movies' | 'shows'>): string {
-	if (k.movies && k.shows) return 'movies and shows';
-	return k.movies ? 'movies only' : 'shows only';
+	if (k.movies && k.shows) return t('subtitles.covers.both');
+	return k.movies ? t('subtitles.covers.movies') : t('subtitles.covers.shows');
 }
 
 export function siteForm(k: SiteKind, s?: SiteView): SiteForm {
@@ -383,7 +384,7 @@ export function accountMissing(k: SiteKind, f: SiteForm, hasAccount: boolean): s
 
 export function scoreLines(parts: ScorePart[]): { text: string; matched: boolean }[] {
 	const out = parts.map((p) => ({
-		text: p.matched ? `+${p.points} ${partWords[p.name] ?? p.name} matches` : `${partWords[p.name] ?? p.name} does not match`,
+		text: p.matched ? t('subtitles.score.matches', { points: p.points, part: partWords[p.name] ?? p.name }) : t('subtitles.score.noMatch', { part: partWords[p.name] ?? p.name }),
 		matched: p.matched
 	}));
 	return out.sort((a, b) => Number(b.matched) - Number(a.matched));
@@ -404,9 +405,9 @@ export function syncBody(offsetMs: number, fps: { on: boolean; from: number; to:
 }
 
 export function offsetWords(ms: number): string {
-	if (!ms) return 'No shift';
+	if (!ms) return t('subtitles.offset.none');
 	const s = Math.abs(ms) / 1000;
-	return `${s} ${s === 1 ? 'second' : 'seconds'} ${ms > 0 ? 'later' : 'earlier'}`;
+	return t(`subtitles.offset.${ms > 0 ? 'later' : 'earlier'}.${s === 1 ? 'one' : 'other'}`, { s });
 }
 
 export function jobsDone(ids: number[], states: Record<number, string>): number {

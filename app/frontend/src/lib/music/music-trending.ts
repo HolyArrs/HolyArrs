@@ -2,6 +2,7 @@ import type { Fresh } from '#lib/ui/fresh.ts';
 import { versioned } from '../core/pictures.ts';
 import { api, type Client } from '../core/api.ts';
 import { to } from '../core/paths.ts';
+import { t, appLocale } from '#lib/core/i18n/i18n.svelte.ts';
 
 // Music trending: the metadata server's weekly lists (ListenBrainz worldwide, Deezer's charts per country) as artist and album rows.
 
@@ -29,7 +30,7 @@ export interface MusicTrendAnswer {
 export function listeners(n: number | undefined): string {
 	if (!n || n <= 0) return '';
 	const short = n >= 1e6 ? `${(n / 1e6).toFixed(n >= 1e7 ? 0 : 1)}M` : n >= 1e3 ? `${(n / 1e3).toFixed(n >= 1e4 ? 0 : 1)}K` : String(n);
-	return `${short.replace('.0', '')} ${n === 1 ? 'listen' : 'listens'} this week`;
+	return n === 1 ? t('music.listenThisWeek', { n: short.replace('.0', '') }) : t('music.listensThisWeek', { n: short.replace('.0', '') });
 }
 
 export interface MusicCardData {
@@ -150,22 +151,22 @@ export async function fetchMusicExploreMore(cursor: string, region: string, clie
 	return client.get<MusicExploreAnswer>(`/explore/music?${new URLSearchParams({ region, cursor })}`, signal);
 }
 
-const askWords: Record<string, string> = { asked: 'Asked', approved: 'Approved, on the way', turned_down: 'Turned down', available: 'Arrived' };
+const askWords = (): Record<string, string> => ({ asked: t('music.asked'), approved: t('music.approvedOnTheWay'), turned_down: t('music.turnedDown'), available: t('music.arrived') });
 
 function shortDay(d: string): string {
-	const t = new Date(`${d}T00:00:00Z`);
-	return Number.isNaN(t.getTime()) ? d : t.toLocaleDateString(undefined, { day: 'numeric', month: 'short', timeZone: 'UTC' });
+	const day = new Date(`${d}T00:00:00Z`);
+	return Number.isNaN(day.getTime()) ? d : day.toLocaleDateString(appLocale(), { day: 'numeric', month: 'short', timeZone: 'UTC' });
 }
 
 /** When an album comes or came out: "Out Sep 25" ahead, "Out now" within 14 days after, "Released Sep 25" after that. */
 export function releaseWords(date: string, now = new Date()): string {
-	const t = new Date(`${date}T00:00:00Z`);
-	if (Number.isNaN(t.getTime())) return '';
+	const at = new Date(`${date}T00:00:00Z`);
+	if (Number.isNaN(at.getTime())) return '';
 	const today = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
-	const days = Math.round((today - t.getTime()) / 86400000);
-	if (days < 0) return `Out ${shortDay(date)}`;
-	if (days <= 14) return 'Out now';
-	return `Released ${shortDay(date)}`;
+	const days = Math.round((today - at.getTime()) / 86400000);
+	if (days < 0) return t('music.out', { date: shortDay(date) });
+	if (days <= 14) return t('music.outNow');
+	return t('music.released', { date: shortDay(date) });
 }
 
 /** A card's one-line reason, by the row it is in. */
@@ -181,11 +182,11 @@ export function musicCardNote(row: Pick<MusicRowData, 'type'>, c: MusicCardData)
 		case 'decade':
 			return [by, c.date ? c.date.slice(0, 4) : ''].filter(Boolean).join(' · ');
 		case 'just_arrived':
-			return [by, c.date ? `Arrived ${shortDay(c.date)}` : ''].filter(Boolean).join(' · ');
+			return [by, c.date ? t('music.arrived2', { date: shortDay(c.date) }) : ''].filter(Boolean).join(' · ');
 		case 'new_from':
 			return [by, c.date ? releaseWords(c.date) : ''].filter(Boolean).join(' · ');
 		case 'your_asks':
-			return askWords[c.state ?? ''] ?? '';
+			return askWords()[c.state ?? ''] ?? '';
 		case 'top_albums':
 		case 'trending_artists':
 		case 'popular_genre':
