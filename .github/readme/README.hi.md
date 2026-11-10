@@ -36,7 +36,7 @@
 इसे किसी लोकल डिस्क पर बने नए फ़ोल्डर में `docker-compose.yml` नाम से सेव कीजिए:
 
 ```yaml
-name: HolyArrs
+name: holyarrs
 services:
   holyarrs:
     image: holyarrs/holyarrs:latest
@@ -207,7 +207,7 @@ NAS पर चला रहे हैं? देखिए [Unraid, Synology औ�
 ### docker compose (सुझाया गया)
 
 ```yaml
-name: HolyArrs
+name: holyarrs
 services:
   holyarrs:
     image: holyarrs/holyarrs:latest

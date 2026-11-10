@@ -38,7 +38,7 @@
 احفظ هذا باسم `docker-compose.yml` في مجلد جديد على قرص محلي:
 
 ```yaml
-name: HolyArrs
+name: holyarrs
 services:
   holyarrs:
     image: holyarrs/holyarrs:latest
@@ -209,7 +209,7 @@ docker compose up -d
 ### docker compose (موصى به)
 
 ```yaml
-name: HolyArrs
+name: holyarrs
 services:
   holyarrs:
     image: holyarrs/holyarrs:latest
