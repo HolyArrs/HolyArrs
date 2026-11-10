@@ -222,6 +222,7 @@
 	"library.page.addMovie": "फ़िल्म",
 	"library.page.addShow": "टीवी शो",
 	"library.page.addArtist": "कलाकार",
+	"library.page.importFromFolder": "फ़ोल्डर से इंपोर्ट करें",
 	"library.page.oneTitle": "1 टाइटल",
 	"library.page.nTitles": "{n} टाइटल",
 	"library.report.failedBody": "{n} बदले नहीं जा सके",

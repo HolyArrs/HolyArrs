@@ -208,6 +208,8 @@
 	"migrate.itemFailed": "{n} आइटम नाकाम रहा",
 	"migrate.itemsFailed": "{n} आइटम नाकाम रहे",
 	"migrate.reasonsAreInResults": "वजहें नतीजों में हैं।",
+	"migrate.reasonsMatchByHand": "वजहें नतीजों में हैं। जो शो या फ़िल्म पहचानी नहीं गई, उसे हाथ से मिलाया जा सकता है।",
+	"migrate.matchByHand": "हाथ से मिलाएं",
 	"migrate.results": "नतीजे",
 	"migrate.show4": "{label} दिखाएं",
 	"migrate.notMoved": "इंपोर्ट नहीं हुआ",

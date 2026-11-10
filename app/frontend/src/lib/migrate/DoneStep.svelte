@@ -86,7 +86,7 @@
 					{@render card(openChoices === 1 ? t('migrate.chooseForPerson', { n: openChoices }) : t('migrate.chooseForPeople', { n: openChoices }), t('migrate.theyStayBehindUntil'), t('migrate.choose'), onchoose)}
 				{/if}
 				{#if (counts.failed ?? 0) > 0}
-					{@render card((counts.failed ?? 0) === 1 ? t('migrate.itemFailed', { n: counts.failed ?? 0 }) : t('migrate.itemsFailed', { n: counts.failed ?? 0 }), t('migrate.reasonsAreInResults'), '', () => {})}
+					{@render card((counts.failed ?? 0) === 1 ? t('migrate.itemFailed', { n: counts.failed ?? 0 }) : t('migrate.itemsFailed', { n: counts.failed ?? 0 }), t('migrate.reasonsMatchByHand'), t('migrate.matchByHand'), to('/library/import'))}
 				{/if}
 			</div>
 		{/if}

@@ -208,6 +208,8 @@
 	"migrate.itemFailed": "{n} item falhou",
 	"migrate.itemsFailed": "{n} itens falharam",
 	"migrate.reasonsAreInResults": "Os motivos estão em Resultados.",
+	"migrate.reasonsMatchByHand": "Os motivos estão em Resultados. Uma série ou filme que não foi reconhecido pode ser associado à mão.",
+	"migrate.matchByHand": "Associar à mão",
 	"migrate.results": "Resultados",
 	"migrate.show4": "Mostrar {label}",
 	"migrate.notMoved": "Não importado",

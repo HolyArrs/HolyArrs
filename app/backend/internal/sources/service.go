@@ -326,6 +326,36 @@ func Explain(err error) string {
 	return "HolyArrs could not reach the Source (" + se.Msg + ")."
 }
 
+// ExplainVia is Explain for one Source: when it searches through Prowlarr or
+// Jackett and cannot be reached, it names that app and what to do.
+func ExplainVia(sourceURL string, err error) string {
+	text := Explain(err)
+	if !strings.HasPrefix(text, "HolyArrs could not reach the Source") && !strings.HasPrefix(text, "The Source took too long") {
+		return text
+	}
+	via := bridgeOf(sourceURL)
+	if via == "" {
+		return text
+	}
+	return via + " isn't answering. Sources brought in from " + via + " search through it, so keep " + via + " running, or change the address."
+}
+
+// bridgeOf names the app a Source's address goes through ("" for a site of its own).
+func bridgeOf(sourceURL string) string {
+	u, err := url.Parse(sourceURL)
+	if err != nil {
+		return ""
+	}
+	p := strings.TrimSuffix(u.Path, "/")
+	switch {
+	case strings.Contains(p, "/api/v2.0/indexers/"):
+		return "Jackett"
+	case prowlarrSitePath.MatchString(strings.TrimSuffix(p, "/api")):
+		return "Prowlarr"
+	}
+	return ""
+}
+
 // splitRSS takes the query out of an rss address, because feeds keep their passkey there.
 // The query is stored as the Source's key.
 func splitRSS(raw string) (base, query string) {

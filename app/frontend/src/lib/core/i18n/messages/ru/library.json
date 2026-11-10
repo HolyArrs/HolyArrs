@@ -222,6 +222,7 @@
 	"library.page.addMovie": "Фильм",
 	"library.page.addShow": "Сериал",
 	"library.page.addArtist": "Исполнитель",
+	"library.page.importFromFolder": "Импорт из папки",
 	"library.page.oneTitle": "1 тайтл",
 	"library.page.nTitles": "Тайтлов: {n}",
 	"library.report.failedBody": "Не удалось изменить: {n}",

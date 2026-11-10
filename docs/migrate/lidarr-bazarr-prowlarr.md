@@ -44,6 +44,8 @@ Stays behind: other subtitle sites and their accounts. HolyArrs reaches Addic7ed
 
 Stays behind: app links, sync profiles, indexer proxies and notification kinds HolyArrs does not have.
 
+Sources brought in from Prowlarr still search through Prowlarr, so keep it running. If it stops, those Sources say Prowlarr isn't answering.
+
 :::tip
 To keep Prowlarr running and let it push Sources into HolyArrs instead, see [Old-app API](../reference/old-app-api.md).
 :::
