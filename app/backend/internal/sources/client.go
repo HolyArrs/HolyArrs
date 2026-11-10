@@ -199,7 +199,7 @@ func (c *Client) getWithObserver(ctx context.Context, op string, q url.Values, o
 	if err := c.wait(ctx); err != nil {
 		return nil, err
 	}
-	raw := strings.TrimRight(c.cfg.URL, "/")
+	raw := feedAddress(c.cfg.URL)
 	if c.cfg.Format == "rss" {
 		raw = c.cfg.URL
 		if c.cfg.APIKey != "" {
@@ -668,4 +668,14 @@ func parseItems(body []byte, protocol string) ([]Item, error) {
 		out = append(out, i)
 	}
 	return out, nil
+}
+
+// feedAddress is a Newznab or Torznab address ready to call: an address
+// with no path (https://indexer.example) means its /api.
+func feedAddress(raw string) string {
+	raw = strings.TrimRight(raw, "/")
+	if u, err := url.Parse(raw); err == nil && u.Host != "" && u.Path == "" && u.RawQuery == "" {
+		return raw + "/api"
+	}
+	return raw
 }

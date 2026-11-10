@@ -223,9 +223,54 @@ const caseTempSuffix = ".holyarrs-case"
 type preparedFileProof struct {
 	value string
 	info  os.FileInfo
+	link  bool
+}
+
+// linkTarget returns where name points when name is a symlink, as an
+// absolute path.
+func linkTarget(name string) (string, os.FileInfo, bool) {
+	fi, err := os.Lstat(name)
+	if err != nil || fi.Mode()&os.ModeSymlink == 0 {
+		return "", nil, false
+	}
+	target, err := os.Readlink(name)
+	if err != nil {
+		return "", nil, false
+	}
+	if !filepath.IsAbs(target) {
+		target = filepath.Join(filepath.Dir(name), target)
+	}
+	return target, fi, true
+}
+
+// moveLink moves a symlink by making it again at to and removing from. The
+// file it points to is never opened: on a streaming mount that would read
+// the whole file. It never replaces anything at to.
+func moveLink(from, to, target string, src os.FileInfo) error {
+	if dst, err := os.Lstat(to); err == nil {
+		if os.SameFile(src, dst) {
+			// One entry under two spellings (a case-only rename).
+			return os.Rename(from, to)
+		}
+		if have, _, ok := linkTarget(to); ok && have == target {
+			return os.Remove(from)
+		}
+		return fmt.Errorf("%s already exists and is a different file; HolyArrs never replaces it", to)
+	}
+	if err := os.MkdirAll(filepath.Dir(to), 0o777); err != nil {
+		return err
+	}
+	if err := os.Symlink(target, to); err != nil {
+		return err
+	}
+	return os.Remove(from)
 }
 
 func prepareFileProof(name string) (preparedFileProof, error) {
+	// A link's proof is where it points; its file is not read.
+	if target, fi, ok := linkTarget(name); ok {
+		return preparedFileProof{value: "link:" + target, info: fi, link: true}, nil
+	}
 	f, err := os.Open(name)
 	if err != nil {
 		return preparedFileProof{}, err
@@ -259,6 +304,10 @@ func fileProof(name string) (string, error) {
 
 func proofSourceUnchanged(name string, p preparedFileProof) bool {
 	st, err := os.Stat(name)
+	if p.link {
+		target, fi, ok := linkTarget(name)
+		return ok && os.SameFile(p.info, fi) && p.value == "link:"+target
+	}
 	return err == nil && os.SameFile(p.info, st) && p.info.Size() == st.Size() && p.info.ModTime().Equal(st.ModTime())
 }
 
@@ -281,6 +330,9 @@ func moveRecordedFile(from, to, proof string) error {
 func moveFileWithProof(from, to, proof string) error {
 	if from == to {
 		return nil
+	}
+	if target, fi, ok := linkTarget(from); ok {
+		return moveLink(from, to, target, fi)
 	}
 	if strings.EqualFold(from, to) {
 		return caseRename(from, to, proof)

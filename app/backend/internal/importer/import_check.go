@@ -31,7 +31,7 @@ func guardPlanWith(plan []mediafiles.PlanStep, lib string, cands []Candidate, ru
 				plan[i].Why = append([]string{why}, plan[i].Why...)
 			}
 		}
-		if plan[i].Method == "hardlink" && !rules.SkipFreeSpaceCheck {
+		if _, isLink := LinkedFile(plan[i].SourceFile); plan[i].Method == "hardlink" && !rules.SkipFreeSpaceCheck && !isLink {
 			dir := existingDir(filepath.Dir(plan[i].TargetPath))
 			key := diskID(dir)
 			if key == "" {

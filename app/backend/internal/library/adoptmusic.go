@@ -149,10 +149,14 @@ func listAudio(lib, folder string, limit int) []AdoptVideo {
 			}
 			return nil
 		}
-		if e.Type()&fs.ModeSymlink != 0 || !e.Type().IsRegular() || !importer.IsAudio(filepath.Ext(p)) || len(out) >= limit {
+		linked, isLink := importer.LinkedFile(p)
+		if (e.Type()&fs.ModeSymlink != 0 && !isLink) || (!isLink && !e.Type().IsRegular()) || !importer.IsAudio(filepath.Ext(p)) || len(out) >= limit {
 			return nil
 		}
 		fi, err := e.Info()
+		if isLink {
+			fi, err = linked, nil
+		}
 		if err != nil {
 			return nil
 		}

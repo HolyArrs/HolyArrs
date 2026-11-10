@@ -2,6 +2,17 @@
 
 All notable changes to HolyArrs are listed here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## 1.0.1
+
+### Added
+
+- Libraries and downloads made of symlinks work when you set `HOLYARRS_FOLLOW_LINKS=1`. Linked files are never read in full or copied. ([#158](https://github.com/HolyArrs/HolyArrs/issues/158))
+
+### Fixed
+
+- Setup no longer ends on an error page after moving over two downloaders of the same kind. ([#160](https://github.com/HolyArrs/HolyArrs/issues/160))
+- A Newznab or Torznab Source works with just the site address, and its key field says **API key**. ([#159](https://github.com/HolyArrs/HolyArrs/issues/159))
+
 ## 1.0.0
 
 First release. HolyArrs runs movies, shows and music requests, downloads and your library in one app.

@@ -65,11 +65,12 @@ export function createWelcomeSources(ctx: { busy: boolean; listDownloaders: () =
 		]);
 		const kindName: Record<string, string> = { movie: 'Movies', show: 'TV shows', music: 'Music' };
 		const bridgeName: Record<string, string> = { prowlarr: 'Prowlarr', jackett: 'Jackett' };
-		haveSet = [
+		// One line each: two downloaders of one kind would repeat a line, and the list is keyed by its text.
+		haveSet = [...new Set([
 			...(fl ?? []).map((f) => `${kindName[f.kind] ?? f.label} · ${f.path}`),
 			...(dl ?? []).map((d) => kindWords[d.kind] ?? d.name),
 			...(br ?? []).map((b) => bridgeName[b.kind] ?? b.kind)
-		];
+		])];
 		// Unknown (the list failed to load) counts as set, so nothing is asked twice.
 		const folders = fl ? fl.length : 1;
 		const dls = dl ? dl.length : 1;

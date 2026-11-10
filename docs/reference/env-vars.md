@@ -37,6 +37,7 @@ HolyArrs drops one newline at the end of the file. If the file is missing, HolyA
 | --- | --- | --- | --- |
 | `HOLYARRS_SAFE_MODE` | Start only the core: sign-in, Library, settings, backups and health. Remove it after the fix. | off | `1` |
 | `HOLYARRS_LOW_MEMORY` | `1` forces low-memory mode on, `0` forces it off. Unset, it turns on at about 2.5 GiB of RAM or less. | by machine size | `1` |
+| `HOLYARRS_FOLLOW_LINKS` | `1` lets the Library scan and imports use video and music files that are symlinks (libraries built from links into a mounted drive). A linked download is placed in the Library as a link. | off | `1` |
 | `GOMEMLIMIT` | Override the memory target HolyArrs sets for itself. | set by HolyArrs | `1GiB` |
 | `HOLYARRS_SKIP_SPACE_CHECK` | Skip the free-space check before a database update. | off | `yes` |
 | `HOLYARRS_CONFIG_IN_MEMORY` | Allow `/config` on a memory-backed folder. For test boxes; data is lost on restart. | off | `yes` |

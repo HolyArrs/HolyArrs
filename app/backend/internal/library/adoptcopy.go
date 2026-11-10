@@ -47,7 +47,7 @@ func (s *Service) AdoptMovieCopy(ctx context.Context, titleID, versionID int64, 
 	root := filepath.Join(lf.Path, v.FolderName)
 	abs := filepath.Join(lf.Path, rel)
 	within, err := filepath.Rel(root, abs)
-	if !filepath.IsLocal(rel) || err != nil || !filepath.IsLocal(within) || !importer.InsideReal(root, abs) || !importer.InsideReal(lf.Path, abs) {
+	if !filepath.IsLocal(rel) || err != nil || !filepath.IsLocal(within) || !importer.InsideRealFile(root, abs) || !importer.InsideRealFile(lf.Path, abs) {
 		return f, fmt.Errorf("%w: choose a file inside this Version's folder", ErrCopyChoice)
 	}
 	fi, err := os.Stat(abs)

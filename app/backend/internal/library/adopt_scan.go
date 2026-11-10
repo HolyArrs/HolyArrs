@@ -263,7 +263,10 @@ func InspectLibraryVideo(root, relative string, old map[string]any, backfill boo
 	}
 	full := filepath.Join(root, rel)
 	fi, err := os.Lstat(full)
-	if err != nil || !fi.Mode().IsRegular() || !importer.InsideReal(root, full) {
+	if linked, ok := importer.LinkedFile(full); ok {
+		fi = linked
+	}
+	if err != nil || !fi.Mode().IsRegular() || !importer.InsideRealFile(root, full) {
 		return nil, false
 	}
 	size, ok := inspectionSize(old["inspection_size"])

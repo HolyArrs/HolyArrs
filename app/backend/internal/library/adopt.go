@@ -14,6 +14,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
@@ -108,7 +109,7 @@ const (
 )
 
 // listVideos finds the video files in one movie folder, samples left out,
-// biggest first. Symlinks are never followed.
+// biggest first. Symlinks are followed only to plain files, and only when importer.FollowLinks is on.
 // NasSystemDir reports whether name is a folder a NAS or OS keeps for
 // itself (thumbnails, recycle bins, snapshots). Folder walks skip them:
 // they hold no media of the person's, and reading them wakes disks.
@@ -138,7 +139,8 @@ func ListVideosN(lib, folder string, limit int) []AdoptVideo {
 			}
 			return nil
 		}
-		if e.Type()&fs.ModeSymlink != 0 || !e.Type().IsRegular() || !videoExt[strings.ToLower(filepath.Ext(p))] || len(out) >= limit {
+		linked, isLink := importer.LinkedFile(p)
+		if (e.Type()&fs.ModeSymlink != 0 && !isLink) || (!isLink && !e.Type().IsRegular()) || !videoExt[strings.ToLower(filepath.Ext(p))] || len(out) >= limit {
 			return nil
 		}
 		base := strings.ToLower(strings.TrimSuffix(e.Name(), filepath.Ext(e.Name())))
@@ -148,6 +150,9 @@ func ListVideosN(lib, folder string, limit int) []AdoptVideo {
 			}
 		}
 		fi, err := e.Info()
+		if isLink {
+			fi, err = linked, nil
+		}
 		if err != nil {
 			return nil
 		}
