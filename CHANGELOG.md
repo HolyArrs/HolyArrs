@@ -2,6 +2,15 @@
 
 All notable changes to HolyArrs are listed here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## 1.0.5
+
+### Fixed
+
+- Movies moved over from Radarr keep their real quality: `WEBDL-1080p` and `Bluray-720p` names are read right. ([#171](https://github.com/HolyArrs/HolyArrs/issues/171))
+- Words in titles, like "Charlotte's Web" or "Cam", are no longer read as quality. ([#171](https://github.com/HolyArrs/HolyArrs/issues/171))
+- Episodes moved over from Sonarr with no quality in their names are judged by the file's own resolution, so they stop asking for a better copy. ([#171](https://github.com/HolyArrs/HolyArrs/issues/171))
+- Libraries moved over before this version are checked again once after the update. ([#171](https://github.com/HolyArrs/HolyArrs/issues/171))
+
 ## 1.0.4
 
 ### Changed
