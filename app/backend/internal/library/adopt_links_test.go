@@ -8,7 +8,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
 )
 
-// #158: a movie file that is a link to a mounted file is found only when
+// A movie file that is a link to a mounted file is found only when
 // links are followed.
 func TestListVideosFollowsFileLinks(t *testing.T) {
 	mount, lib := t.TempDir(), t.TempDir()

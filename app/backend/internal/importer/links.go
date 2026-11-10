@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 )
 
-// FollowLinks makes a symlink to a plain file count as that file (#158):
+// FollowLinks makes a symlink to a plain file count as that file:
 // setups that stream media through a mounted filesystem keep their Library
 // and downloads as links. Off by default; HOLYARRS_FOLLOW_LINKS=1 turns it on.
 var FollowLinks = os.Getenv("HOLYARRS_FOLLOW_LINKS") == "1"

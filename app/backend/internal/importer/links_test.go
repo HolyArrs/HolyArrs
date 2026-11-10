@@ -11,7 +11,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 )
 
-// #158: a downloaded file that is a link is placed as a link when links are
+// A downloaded file that is a link is placed as a link when links are
 // followed, and refused otherwise.
 func TestPlaceFollowedLink(t *testing.T) {
 	mount, dl, lib := t.TempDir(), t.TempDir(), t.TempDir()

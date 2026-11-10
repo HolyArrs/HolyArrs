@@ -2,7 +2,7 @@ package sources
 
 import "testing"
 
-// #159: an address with no path calls /api; anything else is left alone.
+// An address with no path calls /api; anything else is left alone.
 func TestFeedAddress(t *testing.T) {
 	for in, want := range map[string]string{
 		"https://indexer.example":          "https://indexer.example/api",

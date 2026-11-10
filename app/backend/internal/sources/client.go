@@ -671,7 +671,7 @@ func parseItems(body []byte, protocol string) ([]Item, error) {
 }
 
 // feedAddress is a Newznab or Torznab address ready to call: an address
-// with no path (https://indexer.example) means its /api (#159).
+// with no path (https://indexer.example) means its /api.
 func feedAddress(raw string) string {
 	raw = strings.TrimRight(raw, "/")
 	if u, err := url.Parse(raw); err == nil && u.Host != "" && u.Path == "" && u.RawQuery == "" {

@@ -65,7 +65,7 @@ export function createWelcomeSources(ctx: { busy: boolean; listDownloaders: () =
 		]);
 		const kindName: Record<string, string> = { movie: 'Movies', show: 'TV shows', music: 'Music' };
 		const bridgeName: Record<string, string> = { prowlarr: 'Prowlarr', jackett: 'Jackett' };
-		// One line each: two downloaders of one kind would repeat a line, and the list is keyed by its text (#160).
+		// One line each: two downloaders of one kind would repeat a line, and the list is keyed by its text.
 		haveSet = [...new Set([
 			...(fl ?? []).map((f) => `${kindName[f.kind] ?? f.label} · ${f.path}`),
 			...(dl ?? []).map((d) => kindWords[d.kind] ?? d.name),

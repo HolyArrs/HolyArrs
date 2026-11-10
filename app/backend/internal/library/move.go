@@ -245,7 +245,7 @@ func linkTarget(name string) (string, os.FileInfo, bool) {
 
 // moveLink moves a symlink by making it again at to and removing from. The
 // file it points to is never opened: on a streaming mount that would read
-// the whole file (#158). It never replaces anything at to.
+// the whole file. It never replaces anything at to.
 func moveLink(from, to, target string, src os.FileInfo) error {
 	if dst, err := os.Lstat(to); err == nil {
 		if os.SameFile(src, dst) {

@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-// #158: moving a linked file re-points the link and never reads its target.
+// Moving a linked file re-points the link and never reads its target.
 func TestMoveFileKeepsLinkAndNeverReadsTarget(t *testing.T) {
 	mount, lib := t.TempDir(), t.TempDir()
 	target := filepath.Join(mount, "real.mkv")
