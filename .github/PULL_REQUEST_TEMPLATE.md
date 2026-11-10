@@ -15,4 +15,4 @@ Closes #
 - [ ] There is an issue for this and we agreed on it first
 - [ ] Tests added or updated
 - [ ] Docs updated if users see the change
-- [ ] I signed the CLA (the bot asks on your first PR, it's one click)
+- [ ] I agreed to the CLA (HolyArrs Bot asks on your first PR; you reply with one line)
