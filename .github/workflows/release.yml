@@ -79,13 +79,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
+      # Docker Hub drops <picture> and stacks images; hub_readme.py makes a copy that reads well there.
+      - name: Make the Docker Hub copy of the README
+        run: python3 deploy/release/hub_readme.py README.md > "$RUNNER_TEMP/hub-readme.md"
+
       - name: Update Docker Hub description
         uses: peter-evans/dockerhub-description@1b9a80c056b620d92cedb9d9b5a223409c68ddfa # v5.0.0
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
           repository: ${{ env.DOCKERHUB_IMAGE }}
-          readme-filepath: README.md
+          readme-filepath: ${{ runner.temp }}/hub-readme.md
 
   publish-github-release:
     name: Publish GitHub Release
