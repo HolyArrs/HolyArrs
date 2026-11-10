@@ -396,7 +396,8 @@ func SortName(n string) string {
 func adoptFile(ctx context.Context, tx *sql.Tx, a Adoption, slotID, versionID, pickRulesID int64, keep bool, now time.Time, by domain.Actor) error {
 	ext := path.Ext(a.File)
 	release := strings.TrimSuffix(path.Base(a.File), ext)
-	p := releasename.Parse(release, releasename.Hints{Size: a.Size})
+	judge := mediafiles.JudgeName(release, a.MediaInfo)
+	p := releasename.Parse(judge, releasename.Hints{Size: a.Size})
 	f := &mediafiles.File{SlotIDs: []int64{slotID}, VersionID: versionID, RelativePath: a.File, Size: a.Size, AddedAt: now,
 		Quality:   mediafiles.Quality{Resolution: p.Resolution.Value, Source: p.Source.Value, Codec: p.Codec.Value, HDR: p.HDR.Value},
 		Languages: InspectedLanguages(a.MediaInfo), MediaInfo: map[string]any{"step": mediafiles.StepFor(p)}, ReleaseName: &release, Origin: "adopted",
@@ -418,7 +419,7 @@ func adoptFile(ctx context.Context, tx *sql.Tx, a Adoption, slotID, versionID, p
 	if err := database.Get(ctx, tx, "pick_rules", pickRulesID, &pr); err != nil {
 		return err
 	}
-	ge := mediafiles.ReachesGoodEnough(release, pr.Body)
+	ge := mediafiles.OwnedReachesGoodEnough(release, a.MediaInfo, pr.Body)
 	if _, err := tx.Exec("UPDATE slots SET file_id = ?, good_enough = ? WHERE id = ?", fileID, ge, slotID); err != nil {
 		return err
 	}

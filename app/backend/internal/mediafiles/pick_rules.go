@@ -63,6 +63,17 @@ type PickRulesBody struct {
 	Order            string               `json:"order"` // quality_then_points, points_then_quality
 	UpgradeMinPoints int                  `json:"upgrade_min_points"`
 	ProperPolicy     ProperPolicy         `json:"proper_policy"`
+	// Synced names the TRaSH Guides profile last applied, for re-syncing.
+	Synced *SyncedProfile `json:"synced,omitempty"`
+}
+
+// SyncedProfile is a TRaSH Guides profile applied to Pick rules.
+type SyncedProfile struct {
+	From      string `json:"from"` // trash
+	App       string `json:"app"`  // sonarr or radarr
+	ProfileID string `json:"profile_id"`
+	Name      string `json:"name"`
+	At        string `json:"at"`
 }
 
 // GoodEverydayName is the default preset's name.

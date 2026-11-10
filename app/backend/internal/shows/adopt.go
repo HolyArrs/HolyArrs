@@ -321,6 +321,11 @@ func adoptEpisodesTx(ctx context.Context, tx *sql.Tx, titleID, versionID, pickRu
 		if inspected, ok := library.InspectLibraryVideo(a.LibraryPath, af.Path, info, false); ok {
 			info = inspected
 		}
+		judge := mediafiles.JudgeName(release, info)
+		if judge != release {
+			p = releasename.Parse(judge, releasename.Hints{Size: af.Size, Show: true})
+			info["step"] = mediafiles.StepFor(p)
+		}
 		f := &mediafiles.File{SlotIDs: slotIDs, VersionID: versionID, RelativePath: af.Path, Size: af.Size, AddedAt: now,
 			Quality:   mediafiles.Quality{Resolution: p.Resolution.Value, Source: p.Source.Value, Codec: p.Codec.Value, HDR: p.HDR.Value},
 			Languages: library.InspectedLanguages(info), MediaInfo: info, ReleaseName: &release, Origin: "adopted",
@@ -335,7 +340,7 @@ func adoptEpisodesTx(ctx context.Context, tx *sql.Tx, titleID, versionID, pickRu
 		if err != nil {
 			return err
 		}
-		ge := mediafiles.ReachesGoodEnough(release, pr.Body)
+		ge := mediafiles.OwnedReachesGoodEnough(release, info, pr.Body)
 		state, why := mediafiles.SlotInLibrary, "adopted from "+a.FolderName
 		if !ge && keep {
 			state, why = mediafiles.SlotBetterWanted, "adopted below good enough, so a better copy is sought"

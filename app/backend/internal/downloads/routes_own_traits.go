@@ -19,6 +19,10 @@ type OwnTraitView struct {
 	Name  string   `json:"name"`
 	Match string   `json:"match"`
 	Terms []string `json:"terms"`
+	// Source is "trash" for a trait synced from TRaSH Guides, which tests
+	// Specs and cannot be edited by hand.
+	Source string               `json:"source,omitempty"`
+	Specs  []mediafiles.OwnSpec `json:"specs,omitempty"`
 }
 
 func viewOfOwnTrait(t mediafiles.OwnTrait) OwnTraitView {
@@ -26,7 +30,7 @@ func viewOfOwnTrait(t mediafiles.OwnTrait) OwnTraitView {
 	if terms == nil {
 		terms = []string{}
 	}
-	return OwnTraitView{ID: t.ID, Key: mediafiles.OwnTraitKey(t.ID), Name: t.Name, Match: t.Match, Terms: terms}
+	return OwnTraitView{ID: t.ID, Key: mediafiles.OwnTraitKey(t.ID), Name: t.Name, Match: t.Match, Terms: terms, Source: t.Source, Specs: t.Specs}
 }
 
 const ownTraitHelp = `send {"name": "...", "match": "name" or "group", "terms": ["word", "/pattern/"]}`

@@ -39,6 +39,11 @@
 		{ value: 'name', label: t('downloads.ot.words') },
 		{ value: 'group', label: t('downloads.ot.group') }
 	]);
+	// Traits synced from TRaSH Guides sit apart: there can be dozens, and only a sync changes them.
+	const handMade = $derived((list ?? []).filter((o) => !o.source));
+	const synced = $derived((list ?? []).filter((o) => o.source === 'trash'));
+	const specWord = (k: string) => ({ name: t('downloads.ot.kindName'), group: t('downloads.ot.kindGroup'), source: t('downloads.ot.kindSource'), resolution: t('downloads.ot.kindResolution') })[k] ?? k;
+	const specSummary = (o: OwnTrait) => (o.specs ?? []).map((s) => t(s.negate ? 'downloads.ot.specNot' : 'downloads.ot.spec', { name: s.name, kind: specWord(s.kind) })).join(', ');
 	const summary = (o: OwnTrait) => t(o.match === 'group' ? 'downloads.ot.sumGroup' : 'downloads.ot.sumName', { terms: o.terms.join(', ') });
 
 	// The sheet that makes or changes one trait.
@@ -122,11 +127,11 @@
 		<LoadError hasData={false} message={error} onretry={load} busy={loading} />
 	{:else if list}
 		{#if error}<LoadError hasData message={error} onretry={load} busy={loading} />{/if}
-		{#if list.length === 0}
+		{#if handMade.length === 0}
 			<EmptyState compact icon="star" title={t('downloads.ot.none')} text={t('downloads.ot.noneText')} action={mayEdit ? { label: t('downloads.ot.make'), icon: 'plus', onclick: () => openSheet(null) } : undefined} />
 		{:else}
 			<ul class="rows" data-testid="own-traits">
-				{#each list as o (o.id)}
+				{#each handMade as o (o.id)}
 					<li data-testid="own-trait">
 						<span class="grow">
 							<b>{o.name}</b>
@@ -140,6 +145,25 @@
 				{/each}
 			</ul>
 			{#if mayEdit}<div><Button icon="plus" onclick={() => openSheet(null)} data-testid="own-trait-add">{t('downloads.ot.make')}</Button></div>{/if}
+		{/if}
+		{#if synced.length}
+			<details class="synced" data-testid="synced-traits">
+				<summary>{t('downloads.ot.fromTrash', { n: synced.length })}</summary>
+				<p class="xs muted">{t('downloads.ot.syncAgain')}</p>
+				<ul class="rows">
+					{#each synced as o (o.id)}
+						<li data-testid="synced-trait">
+							<span class="grow">
+								<b>{o.name}</b>
+								<span class="xs muted meta">{specSummary(o)}</span>
+							</span>
+							{#if mayEdit}<span class="acts">
+									<Menu label={t('downloads.ot.moreFor', { name: o.name })} items={[{ label: t('downloads.act.remove'), icon: 'trash', destructive: true, onselect: () => ((removing = o), (removeError = ''), (removeOpen = true)) }]} />
+								</span>{/if}
+						</li>
+					{/each}
+				</ul>
+			</details>
 		{/if}
 	{/if}
 </SettingsCard>
@@ -178,6 +202,8 @@
 
 <style>
 	.form { display: flex; flex-direction: column; gap: 16px; }
+	.synced > summary { cursor: pointer; font-weight: 600; padding: 4px 0; }
+	.synced > p { margin: 4px 0 8px; }
 	.meta { display: block; overflow-wrap: anywhere; }
 	.acts { display: flex; align-items: center; gap: 4px; flex: none; }
 	@media (max-width: 520px) {

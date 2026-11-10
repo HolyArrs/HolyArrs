@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { t } from '#lib/core/i18n/i18n.svelte.ts';
+	import { t, appLocale } from '#lib/core/i18n/i18n.svelte.ts';
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	import PageLoader from '#lib/ui/PageLoader.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
@@ -12,7 +13,7 @@
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import { applySize, blankBody, checkBody, copyName, fieldKey, isMusic, isOwnTrait, kindChoices, languages, neverChoices, orderChoices, preferChoices, properChoices, sizeFields, stepLabel, tidyBody, toggleKind, traitLabel, traitsFor, usedWords, type RulesKind, type SizeFields } from '#lib/downloads/index.ts';
-	import type { OwnTrait, PickRulesBody, PickRulesDetail, PickRulesUse } from '#lib/downloads/index.ts';
+	import type { OwnTrait, PickRulesBody, PickRulesDetail, PickRulesUse, TrashProfile, TrashResult } from '#lib/downloads/index.ts';
 	import { tick, untrack } from 'svelte';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
@@ -146,6 +147,54 @@
 	async function traitChanged(i: number) {
 		await tick();
 		document.getElementById(`trait-${i}`)?.focus();
+	}
+
+	// TRaSH Guides: pick a profile, apply it; its scores become synced traits with points here.
+	let trashApp = $state<'sonarr' | 'radarr'>('sonarr');
+	let trashProfiles = $state<TrashProfile[] | null>(null);
+	let trashPick = $state('');
+	let trashBusy = $state(false);
+	let trashLoading = $state(false);
+	let trashError = $state('');
+	let trashResult = $state<TrashResult | null>(null);
+	const trashChoice = $derived(trashProfiles?.find((p) => p.id === trashPick));
+	const trashApps = $derived([
+		{ value: 'sonarr' as const, label: t('settings.pickRuleEdit.trashShows') },
+		{ value: 'radarr' as const, label: t('settings.pickRuleEdit.trashMovies') }
+	]);
+
+	async function loadTrash() {
+		trashLoading = true;
+		trashError = '';
+		try {
+			const app = trashApp;
+			const list = (await api.get<{ profiles: TrashProfile[] }>(`/trash/profiles?app=${app}`)).profiles;
+			if (app !== trashApp) return;
+			trashProfiles = list;
+			const synced = form.body.synced;
+			trashPick = synced && synced.app === app && list.some((p) => p.id === synced.profile_id) ? synced.profile_id : (list[0]?.id ?? '');
+		} catch (e) {
+			trashError = message(e);
+		} finally {
+			trashLoading = false;
+		}
+	}
+
+	async function applyTrash(app: 'sonarr' | 'radarr', profileId: string) {
+		if (id === null) return;
+		trashBusy = true;
+		trashError = '';
+		try {
+			const r = await api.post<TrashResult>(`/pick-rules/${id}/trash`, { app, profile_id: profileId });
+			mine = (await api.get<{ own_traits: OwnTrait[] }>('/own-traits')).own_traits;
+			show(r.pick_rules);
+			trashResult = r;
+			toasts.push(t('settings.pickRuleEdit.trashApplied', { name: r.pick_rules.body.synced?.name ?? t('settings.pickRuleEdit.trashProfile') }), 'ok', { body: t('settings.pickRuleEdit.trashScored', { n: r.scored.length }) });
+		} catch (e) {
+			trashError = message(e);
+		} finally {
+			trashBusy = false;
+		}
 	}
 
 	function addTo(list: 'must_have' | 'never', trait: string) {
@@ -353,6 +402,56 @@
 			{/snippet}
 		</SettingsCard>
 
+		{#if !music && id !== null}
+			<SettingsCard id="rules-trash" title={t('settings.pickRuleEdit.trashTitle')} description={t('settings.pickRuleEdit.trashDesc')}>
+				{#if form.body.synced}
+					<div class="synced-row" data-testid="trash-synced">
+						<span class="grow">
+							<b>{form.body.synced.name}</b>
+							<span class="xs muted">{t('settings.pickRuleEdit.trashSynced', { app: form.body.synced.app === 'radarr' ? t('settings.pickRuleEdit.trashMovies') : t('settings.pickRuleEdit.trashShows'), when: new Date(form.body.synced.at).toLocaleString(appLocale()) })}</span>
+						</span>
+						{#if mayEdit}<Button icon="refresh" busy={trashBusy} disabled={dirty} onclick={() => form.body.synced && applyTrash(form.body.synced.app, form.body.synced.profile_id)} data-testid="trash-resync">{t('settings.pickRuleEdit.trashSyncAgain')}</Button>{/if}
+					</div>
+				{/if}
+				{#if mayEdit}
+					<div class="field">
+						<span class="label" id="trash-app-label">{t('settings.pickRuleEdit.trashFor')}</span>
+						<SegmentedControl options={trashApps} bind:value={trashApp} label={t('settings.pickRuleEdit.trashFor')} testid="trash-app" onchange={() => ((trashProfiles = null), void loadTrash())} />
+					</div>
+					{#if trashProfiles === null}
+						<div><Button busy={trashLoading} onclick={loadTrash} data-testid="trash-load">{t('settings.pickRuleEdit.trashShow')}</Button></div>
+					{:else if trashProfiles.length === 0}
+						<p class="hint">{t('settings.pickRuleEdit.trashNone')}</p>
+					{:else}
+						<Field id="trash-profile" label={t('settings.pickRuleEdit.trashProfile')} hint={trashChoice?.description}>
+							<select id="trash-profile" class="input" bind:value={trashPick} data-testid="trash-profile">
+								{#each trashProfiles as p (p.id)}<option value={p.id}>{p.name}</option>{/each}
+							</select>
+						</Field>
+						<p class="hint">{t('settings.pickRuleEdit.trashReplaces')}</p>
+						<div><Button variant="primary" busy={trashBusy} disabled={dirty || !trashPick} onclick={() => applyTrash(trashApp, trashPick)} data-testid="trash-apply">{t('settings.pickRuleEdit.trashApply')}</Button></div>
+						{#if dirty}<p class="hint">{t('settings.pickRuleEdit.trashSaveFirst')}</p>{/if}
+					{/if}
+				{/if}
+				{#if trashError}<p class="form-error" role="alert">{trashError}</p>{/if}
+				{#if trashResult}
+					<div class="trash-result" data-testid="trash-result">
+						<p class="small">{t('settings.pickRuleEdit.trashResult', { n: trashResult.scored.length, added: trashResult.added, updated: trashResult.updated })}</p>
+						{#if trashResult.skipped.length}
+							<details>
+								<summary class="small">{t('settings.pickRuleEdit.trashLeftOut', { n: trashResult.skipped.length })}</summary>
+								<ul class="skipped" data-testid="trash-skipped">
+									{#each trashResult.skipped as s (s.name)}
+										<li class="xs"><b>{s.name}</b> <span class="muted">{s.kinds?.length ? t('settings.pickRuleEdit.trashTests', { kinds: s.kinds.map((k) => serverWords(k)).join(', ') }) : serverWords(s.reason)}</span></li>
+									{/each}
+								</ul>
+							</details>
+						{/if}
+					</div>
+				{/if}
+			</SettingsCard>
+		{/if}
+
 		<SettingsCard id="rules-must-never" title={t('settings.pickRuleEdit.mustNever')}>
 			<div class="field">
 				<span class="label" id="must-label">{t('settings.pickRuleEdit.mustHave')}</span>
@@ -436,6 +535,9 @@
 <style>
 	/* The fieldset only turns the form read only; it adds no box of its own. */
 	.all { display: contents; border: 0; padding: 0; margin: 0; }
+	.synced-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+	.synced-row .grow { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+	.skipped { margin: 8px 0 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
 	.loading { display: flex; flex-direction: column; gap: 16px; }
 	.ro { font: var(--t-body); }
 	.hint a { color: var(--accent-text); font-weight: 600; }
