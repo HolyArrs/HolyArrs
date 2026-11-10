@@ -134,8 +134,10 @@ func (r arrReader) build(in *arrRows) *Snapshot {
 	if r.kind == Prowlarr {
 		return s
 	}
+	files := filesByTitle(in.sets["filequalities"])
 	for _, m := range in.sets["titles"] {
 		t := r.title(m, profileName, labels)
+		t.Files = files[num(m["id"])]
 		if t.Folder == "" {
 			t.Folder = folderOf(t.Path, s.Folders)
 		}

@@ -2,6 +2,17 @@
 
 All notable changes to HolyArrs are listed here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## 1.0.6
+
+### Added
+
+- Moving over brings the quality Sonarr and Radarr recorded for each file. Already moved? Read the old app again and move again. ([#174](https://github.com/HolyArrs/HolyArrs/issues/174))
+
+### Fixed
+
+- The last step before a move now says your files stay where they are. ([#176](https://github.com/HolyArrs/HolyArrs/issues/176))
+- A refused or unreachable metadata server is logged once every few minutes, not once per row. ([#175](https://github.com/HolyArrs/HolyArrs/issues/175))
+
 ## 1.0.5
 
 ### Fixed

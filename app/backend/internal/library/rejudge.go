@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"log"
+	"path"
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
@@ -91,4 +92,50 @@ func rejudgeVersionTx(ctx context.Context, tx *sql.Tx, versionID int64, by domai
 	}
 	ch, err := goodEnoughTx(ctx, tx, v, t.KeepUpToDate && v.KeepUpToDate, by)
 	return len(ch), err
+}
+
+// SetRecordedQualities stores the quality the old app recorded for each of
+// a title's present files (by file base name), reads each file's quality
+// again and lets the title's Slots swap to match. It returns how many
+// files it updated. A move calls it for titles it adopts and for titles
+// already here, so moving again after reading the old app updates them.
+func (s *Service) SetRecordedQualities(ctx context.Context, titleID int64, qualities map[string]string, by domain.Actor) (int, error) {
+	if len(qualities) == 0 {
+		return 0, nil
+	}
+	updated := 0
+	err := s.Store.Write(ctx, func(tx *sql.Tx) error {
+		versions, err := database.Select[mediafiles.Version](ctx, tx, "versions", "title_id = ?", titleID)
+		if err != nil {
+			return err
+		}
+		for _, v := range versions {
+			files, err := database.Select[mediafiles.File](ctx, tx, "files", "version_id = ?", v.ID)
+			if err != nil {
+				return err
+			}
+			for _, f := range files {
+				q := qualities[path.Base(f.RelativePath)]
+				if f.State != "present" || q == "" {
+					continue
+				}
+				if old, _ := f.MediaInfo[mediafiles.RecordedQualityKey].(string); old == q {
+					continue
+				}
+				if f.MediaInfo == nil {
+					f.MediaInfo = map[string]any{}
+				}
+				f.MediaInfo[mediafiles.RecordedQualityKey] = q
+				if err := database.Update(tx, "files", &f, by); err != nil {
+					return err
+				}
+				updated++
+			}
+			if _, err := rejudgeVersionTx(ctx, tx, v.ID, by); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	return updated, err
 }

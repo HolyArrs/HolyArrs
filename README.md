@@ -1,4 +1,4 @@
-<p align="center"><b>English</b> · <a href=".github/readme/README.zh-CN.md">简体中文</a> · <a href=".github/readme/README.hi.md">हिन्दी</a> · <a href=".github/readme/README.es.md">Español</a> · <a href=".github/readme/README.fr.md">Français</a> · <a href=".github/readme/README.ar.md">العربية</a> · <a href=".github/readme/README.pt-BR.md">Português</a> · <a href=".github/readme/README.ru.md">Русский</a> · <a href=".github/readme/README.ja.md">日本語</a> · <a href=".github/readme/README.de.md">Deutsch</a> · <a href=".github/readme/README.ko.md">한국어</a></p>
+<p align="center"><b>English</b> · <a href=".github/readme/README.zh-CN.md">简体中文</a> · <a href=".github/readme/README.hi.md">हिन्दी</a> · <a href=".github/readme/README.es.md">Español</a> · <a href=".github/readme/README.fr.md">Français</a> · <a href=".github/readme/README.ar.md">العربية</a> · <a href=".github/readme/README.pt-BR.md">Português</a> · <a href=".github/readme/README.ru.md">Русский</a> · <a href=".github/readme/README.ja.md">日本語</a> · <a href=".github/readme/README.de.md">Deutsch</a> · <a href=".github/readme/README.ko.md">한국어</a> · <a href=".github/readme/README.it.md">Italiano</a> · <a href=".github/readme/README.pl.md">Polski</a> · <a href=".github/readme/README.nl.md">Nederlands</a> · <a href=".github/readme/README.tr.md">Türkçe</a> · <a href=".github/readme/README.uk.md">Українська</a></p>
 
 <p align="center">
   <picture>
@@ -200,7 +200,7 @@ Images live on Docker Hub as [`holyarrs/holyarrs`](https://hub.docker.com/r/holy
 | Tag | Use it for |
 | :----: | --- |
 | `latest` | The newest release. |
-| `1.0.5` | One exact version. It never moves. |
+| `1.0.6` | One exact version. It never moves. |
 
 ## Usage
 

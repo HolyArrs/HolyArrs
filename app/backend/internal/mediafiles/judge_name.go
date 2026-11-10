@@ -10,17 +10,27 @@ import (
 var inspectedRes = regexp.MustCompile(`^\d{3,4}p$`)
 
 // JudgeName is the name a File's quality is judged by: its release name,
-// plus the resolution the file inspection read when the name gives none.
-// Files moved over from the old apps are often named without quality
+// plus the quality the old app recorded for it when the name gives no
+// source, plus the resolution the file inspection read when there is still
+// none. Files moved over from the old apps are often named without quality
 // ("Show - S01E02 - Title"); without this they always looked below good
 // enough and a better copy was sought for each.
 func JudgeName(name string, mediaInfo map[string]any) string {
+	p := releasename.Parse(name, releasename.Hints{})
+	if rec, _ := mediaInfo[RecordedQualityKey].(string); rec != "" && p.Source.Value == "" {
+		name += " " + rec
+		p = releasename.Parse(name, releasename.Hints{})
+	}
 	r, _ := mediaInfo["resolution"].(string)
-	if !inspectedRes.MatchString(r) || releasename.Parse(name, releasename.Hints{}).Resolution.Value > 0 {
+	if !inspectedRes.MatchString(r) || p.Resolution.Value > 0 {
 		return name
 	}
 	return name + " " + r
 }
+
+// RecordedQualityKey is the media info key of the quality the old app
+// recorded for a moved-over file ("WEBDL-1080p").
+const RecordedQualityKey = "recorded_quality"
 
 // OwnedReachesGoodEnough is ReachesGoodEnough for a file already in the
 // Library. It reads the name with the inspected resolution (JudgeName). A
