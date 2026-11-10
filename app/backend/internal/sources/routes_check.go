@@ -112,7 +112,7 @@ func checkOne(ctx context.Context, h *Handlers, sec SecretReader, src domain.Sou
 	Record(context.WithoutCancel(ctx), h.Store, src.ID, "test", took, err)
 	c.MS = took.Milliseconds()
 	if err != nil {
-		c.Error = Explain(err)
+		c.Error = ExplainVia(src.URL, err)
 		return
 	}
 	c.Answered = true
