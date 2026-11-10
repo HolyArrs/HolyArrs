@@ -9,6 +9,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -670,12 +671,20 @@ func parseItems(body []byte, protocol string) ([]Item, error) {
 	return out, nil
 }
 
-// feedAddress is a Newznab or Torznab address ready to call: an address
-// with no path (https://indexer.example) means its /api.
+// feedAddress is a Newznab or Torznab address ready to call. An address
+// with no path (https://indexer.example) means its /api, and so do a
+// Prowlarr site address (http://prowlarr:9696/5) and a Jackett one
+// (.../results/torznab) saved without it by earlier versions.
 func feedAddress(raw string) string {
 	raw = strings.TrimRight(raw, "/")
-	if u, err := url.Parse(raw); err == nil && u.Host != "" && u.Path == "" && u.RawQuery == "" {
+	u, err := url.Parse(raw)
+	if err != nil || u.Host == "" || u.RawQuery != "" {
+		return raw
+	}
+	if u.Path == "" || prowlarrSitePath.MatchString(u.Path) || strings.HasSuffix(u.Path, "/results/torznab") {
 		return raw + "/api"
 	}
 	return raw
 }
+
+var prowlarrSitePath = regexp.MustCompile(`^/[0-9]+$`)

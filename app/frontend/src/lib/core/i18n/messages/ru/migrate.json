@@ -208,6 +208,8 @@
 	"migrate.itemFailed": "{n} элемент не удался",
 	"migrate.itemsFailed": "Элементов не удалось: {n}",
 	"migrate.reasonsAreInResults": "Причины в разделе «Результаты».",
+	"migrate.reasonsMatchByHand": "Причины в разделе «Результаты». Нераспознанный сериал или фильм можно сопоставить вручную.",
+	"migrate.matchByHand": "Сопоставить вручную",
 	"migrate.results": "Результаты",
 	"migrate.show4": "Показать {label}",
 	"migrate.notMoved": "Не импортировано",

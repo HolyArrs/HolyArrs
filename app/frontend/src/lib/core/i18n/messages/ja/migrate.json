@@ -208,6 +208,8 @@
 	"migrate.itemFailed": "{n} 件が失敗",
 	"migrate.itemsFailed": "{n} 件が失敗",
 	"migrate.reasonsAreInResults": "理由は結果に表示されます。",
+	"migrate.reasonsMatchByHand": "理由は結果に表示されます。認識されなかった番組や映画は手動で照合できます。",
+	"migrate.matchByHand": "手動で照合",
 	"migrate.results": "結果",
 	"migrate.show4": "{label} を表示",
 	"migrate.notMoved": "インポートされていません",

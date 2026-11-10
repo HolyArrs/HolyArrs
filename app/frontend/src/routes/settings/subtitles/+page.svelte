@@ -60,8 +60,9 @@
 				saved = JSON.stringify(s);
 			}),
 			api.get<{ languages: Language[] }>('/subtitles/languages').then((r) => (langs = r.languages)),
-			api.get<{ kinds: SiteKind[] }>('/subtitle-sites/kinds').then((r) => (kinds = r.kinds)),
-			loadSites()
+			...(session.held('subtitle_sites')
+				? []
+				: [api.get<{ kinds: SiteKind[] }>('/subtitle-sites/kinds').then((r) => (kinds = r.kinds)), loadSites()])
 		])
 			.catch((e) => (error = message(e)))
 			.finally(() => (loaded = true));
@@ -71,9 +72,11 @@
 		void load();
 		const offs = [
 			live.on('event', (d) => {
-				if (String((d as { Kind?: string })?.Kind) === 'subtitle_site_paused') void loadSites();
+				if (String((d as { Kind?: string })?.Kind) === 'subtitle_site_paused' && !session.held('subtitle_sites')) void loadSites();
 			}),
-			live.on('resync', () => void loadSites())
+			live.on('resync', () => {
+				if (!session.held('subtitle_sites')) void loadSites();
+			})
 		];
 		return () => offs.forEach((off) => off());
 	});

@@ -222,6 +222,7 @@
 	"library.page.addMovie": "فيلم",
 	"library.page.addShow": "مسلسل",
 	"library.page.addArtist": "فنان",
+	"library.page.importFromFolder": "استيراد من مجلد",
 	"library.page.oneTitle": "عمل واحد",
 	"library.page.nTitles": "{n} أعمال",
 	"library.report.failedBody": "تعذّر تغيير {n}",

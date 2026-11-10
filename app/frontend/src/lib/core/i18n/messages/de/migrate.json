@@ -208,6 +208,8 @@
 	"migrate.itemFailed": "{n} Eintrag fehlgeschlagen",
 	"migrate.itemsFailed": "{n} Einträge fehlgeschlagen",
 	"migrate.reasonsAreInResults": "Die Gründe stehen unter Ergebnisse.",
+	"migrate.reasonsMatchByHand": "Die Gründe stehen unter Ergebnisse. Eine nicht erkannte Serie oder einen nicht erkannten Film kannst du von Hand zuordnen.",
+	"migrate.matchByHand": "Von Hand zuordnen",
 	"migrate.results": "Ergebnisse",
 	"migrate.show4": "{label} anzeigen",
 	"migrate.notMoved": "Nicht importiert",

@@ -67,6 +67,12 @@ textarea {
 	font: inherit;
 	color: inherit;
 }
+/* Some browsers draw a drop-down's list with system colours; give its rows the page's own. */
+select option,
+select optgroup {
+	background-color: var(--surface-2);
+	color: var(--text);
+}
 button {
 	background: none;
 	border: 0;

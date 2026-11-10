@@ -208,6 +208,8 @@
 	"migrate.itemFailed": "فشل {n} عنصر",
 	"migrate.itemsFailed": "فشل {n} عناصر",
 	"migrate.reasonsAreInResults": "الأسباب في النتائج.",
+	"migrate.reasonsMatchByHand": "الأسباب في النتائج. يمكن مطابقة مسلسل أو فيلم لم يُتعرَّف عليه يدويًا.",
+	"migrate.matchByHand": "مطابقة يدوية",
 	"migrate.results": "النتائج",
 	"migrate.show4": "اعرض {label}",
 	"migrate.notMoved": "لم يُستورد",

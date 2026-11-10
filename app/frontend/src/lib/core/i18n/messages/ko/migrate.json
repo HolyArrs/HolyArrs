@@ -208,6 +208,8 @@
 	"migrate.itemFailed": "항목 {n}개 실패",
 	"migrate.itemsFailed": "항목 {n}개 실패",
 	"migrate.reasonsAreInResults": "이유는 결과에 있습니다.",
+	"migrate.reasonsMatchByHand": "이유는 결과에 있습니다. 인식되지 않은 쇼나 영화는 직접 맞출 수 있습니다.",
+	"migrate.matchByHand": "직접 맞추기",
 	"migrate.results": "결과",
 	"migrate.show4": "{label} 보기",
 	"migrate.notMoved": "가져오지 않음",

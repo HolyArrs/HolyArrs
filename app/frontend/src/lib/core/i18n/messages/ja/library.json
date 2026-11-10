@@ -222,6 +222,7 @@
 	"library.page.addMovie": "映画",
 	"library.page.addShow": "TV 番組",
 	"library.page.addArtist": "アーティスト",
+	"library.page.importFromFolder": "フォルダーから取り込む",
 	"library.page.oneTitle": "1 作品",
 	"library.page.nTitles": "{n} 作品",
 	"library.report.failedBody": "{n} 件を変更できませんでした",

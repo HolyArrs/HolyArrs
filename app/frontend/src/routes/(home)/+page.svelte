@@ -24,6 +24,7 @@
 	import type { Health, HealthChecks } from '#lib/health/index.ts';
 	import { onMount } from 'svelte';
 	import { to } from '#lib/core/paths.ts';
+	import { partOff } from '#lib/mediafiles/index.ts';
 	import { api } from '#lib/core/api.ts';
 	import { afterHandoff } from '#lib/core/loader.ts';
 	import { live } from '#lib/core/live.svelte.ts';
@@ -84,7 +85,7 @@
 	const mineOpen = $derived(attentionView.mine.filter((a) => a.state !== 'turned_down').length);
 	const mineDeclined = $derived(attentionView.mine.length - mineOpen);
 	const asksLine = $derived([mineOpen ? t('home.stillOpen', { n: n(mineOpen) }) : '', mineDeclined ? t('home.turnedDown', { n: n(mineDeclined) }) : ''].filter(Boolean).join(' · '));
-	const canAsk = $derived(session.can('ask') || approver);
+	const canAsk = $derived((session.can('ask') || approver) && !partOff('wishlist'));
 	const progress = $derived(home?.ask_progress ?? {});
 	// While one of this person's own asks is downloading, Home re-reads, so it sees the title arrive.
 	const busy = $derived(attentionView.mineShown.some((a) => !!a.title_id && !!progress[a.title_id]));
@@ -163,7 +164,7 @@
 			manager ? api.get<Health>('/health') : Promise.resolve(null),
 			// The checks need manage_library only; people without Settings get Status links instead of Fix.
 			manager ? api.get<HealthChecks>('/health/checks') : Promise.resolve(null),
-			session.can('ask') || approver ? api.get<{ asks: Ask[] }>('/asks') : Promise.resolve(null)
+			canAsk ? api.get<{ asks: Ask[] }>('/asks') : Promise.resolve(null)
 		]);
 		if (fo.status === 'fulfilled' && fo.value) folders = fo.value.library_folders;
 		if (dl.status === 'fulfilled' && dl.value) downloads = dl.value.downloads ?? [];

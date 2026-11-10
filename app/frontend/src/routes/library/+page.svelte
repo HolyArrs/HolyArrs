@@ -330,7 +330,8 @@
 	const addItems = $derived<MenuItem[]>([
 		...(!partOff('movies') ? ([{ label: tr('library.page.addMovie'), icon: 'film', href: to('/search') }] as MenuItem[]) : []),
 		...(!partOff('shows') ? ([{ label: tr('library.page.addShow'), icon: 'tv', href: to('/search?kind=show') }] as MenuItem[]) : []),
-		...(!partOff('music') ? ([{ label: tr('library.page.addArtist'), icon: 'music', href: to('/search?kind=music') }] as MenuItem[]) : [])
+		...(!partOff('music') ? ([{ label: tr('library.page.addArtist'), icon: 'music', href: to('/search?kind=music') }] as MenuItem[]) : []),
+		...(canManage ? ([{ label: tr('library.page.importFromFolder'), icon: 'folder', href: to('/library/import') }] as MenuItem[]) : [])
 	]);
 	// Recently deleted lives in Sort & filter: its count is read when the panel opens (at most once a minute).
 	let deletedCount = $state<number | null>(null);

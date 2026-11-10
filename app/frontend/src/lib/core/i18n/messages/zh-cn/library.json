@@ -222,6 +222,7 @@
 	"library.page.addMovie": "电影",
 	"library.page.addShow": "剧集",
 	"library.page.addArtist": "艺人",
+	"library.page.importFromFolder": "从文件夹导入",
 	"library.page.oneTitle": "1 个条目",
 	"library.page.nTitles": "{n} 个条目",
 	"library.report.failedBody": "{n} 项无法更改",

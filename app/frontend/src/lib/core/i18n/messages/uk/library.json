@@ -222,6 +222,7 @@
 	"library.page.addMovie": "Фільм",
 	"library.page.addShow": "Серіал",
 	"library.page.addArtist": "Виконавець",
+	"library.page.importFromFolder": "Імпорт із теки",
 	"library.page.oneTitle": "1 тайтл",
 	"library.page.nTitles": "Тайтлів: {n}",
 	"library.report.failedBody": "Не вдалося змінити: {n}",

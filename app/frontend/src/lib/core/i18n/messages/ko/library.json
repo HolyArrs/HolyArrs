@@ -222,6 +222,7 @@
 	"library.page.addMovie": "영화",
 	"library.page.addShow": "TV 시리즈",
 	"library.page.addArtist": "아티스트",
+	"library.page.importFromFolder": "폴더에서 가져오기",
 	"library.page.oneTitle": "작품 1개",
 	"library.page.nTitles": "작품 {n}개",
 	"library.report.failedBody": "{n}개를 변경하지 못했습니다",
