@@ -142,7 +142,10 @@ func (d *Deluge) Add(ctx context.Context, r AddRequest) (string, error) {
 		expected = magnetHash
 		add = func() error { return d.write(ctx, "core.add_torrent_magnet", []any{r.URL, delugeOptions(r)}, &id) }
 	} else {
-		payload, fetchErr := fetchRelease(ctx, r.URL, r.AllowLocal, 8<<20)
+		payload, fetchErr := r.File, error(nil)
+		if len(payload) == 0 {
+			payload, fetchErr = fetchRelease(ctx, r.URL, r.AllowLocal, torrentFetchMax)
+		}
 		if fetchErr != nil {
 			return "", fetchErr
 		}

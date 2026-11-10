@@ -28,6 +28,7 @@ type fakeTransmission struct {
 	malformedAdd     bool
 	omitAddMutation  bool
 	addLabel         string
+	lastAdd          map[string]any
 }
 
 func (f *fakeTransmission) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -108,6 +109,7 @@ func (f *fakeTransmission) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		answer(map[string]any{"torrents": out})
 	case "torrent_add":
 		f.adds++
+		f.lastAdd = a
 		kind := key("torrent_added", "torrent-added")
 		if f.items[hash] != nil {
 			kind = key("torrent_duplicate", "torrent-duplicate")

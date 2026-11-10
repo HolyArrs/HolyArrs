@@ -7,9 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"net"
 	"net/http"
-	"net/url"
 	"slices"
 	"strings"
 	"time"
@@ -511,19 +509,20 @@ func (m *Manager) send(ctx context.Context, d domain.Downloader, rel domain.Rele
 			limit = sabMaxNZB
 		}
 		var magnet string
-		localHost := "" // a home Source may be local itself (its host and port), nothing else may
-		if su, err := url.Parse(src.URL); allowLocal && err == nil && su.Hostname() != "" {
-			port := su.Port()
-			if port == "" {
-				port = map[string]string{"http": "80", "https": "443"}[strings.ToLower(su.Scheme)]
-			}
-			localHost = net.JoinHostPort(strings.TrimSuffix(strings.ToLower(su.Hostname()), "."), port)
-		}
-		if file, magnet, err = fetchGrabLink(ctx, link, limit, rt, localHost); err == nil && magnet != "" {
+		if file, magnet, err = fetchGrabLink(ctx, link, limit, rt, sourceLocalHost(src.URL, allowLocal)); err == nil && magnet != "" {
 			link, _, err = safeMagnet(magnet, allowLocal)
 		}
 		if err != nil {
 			return "", err
+		}
+	}
+	// Transmission and Deluge cannot follow a link that redirects to a magnet, as
+	// Prowlarr and Jackett give for magnet-only sites. HolyArrs reads the link first
+	// and sends the magnet or the file; if that fails the link is sent as before.
+	if (d.Adapter == "transmission" || d.Adapter == "deluge") && !strings.HasPrefix(link, "magnet:") {
+		link, file = prefetchTorrent(ctx, link, allowLocal, sourceLocalHost(src.URL, allowLocal))
+		if hash == "" {
+			hash = linkHash(link)
 		}
 	}
 	if d.Adapter == "qbittorrent" && file != nil {
