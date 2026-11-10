@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import IconButton from '#lib/ui/IconButton.svelte';
 	import { SigninBrand, SigninTheme, liftAboveKeyboard, SigninCode, SigninHelp, SigninLoginForm, SigninPerson, SigninRecent, SigninServerForm, SigninTiles, SigninWait, plexSignIn, safeNext, SigninBackdrop, SigninPortals, SIGNIN_GL_EVENT, providerTiles, type Way, forgetPerson, keepPersonPic, recentPeople, rememberPerson, type RecentPerson, type RecentWay, pixelIn, blockDissolve, siteCell, theme } from '#lib/accounts/index.ts';
 	import { onMount, tick, untrack } from 'svelte';
@@ -18,7 +19,7 @@
 	let acct = $state<'auto' | 'list' | 'new' | number>('auto');
 	let editing = $state(false);
 	// The way's name for people: Password, Plex, Jellyfin, Emby, Single sign-on.
-	const wayName = (w: RecentWay) => (w === 'oidc' ? 'Single sign-on' : w.slice(0, 1).toUpperCase() + w.slice(1));
+	const wayName = (w: RecentWay) => (w === 'oidc' ? t('accounts.tiles.sso') : w === 'password' ? t('accounts.signin.passwordLabel') : w.slice(0, 1).toUpperCase() + w.slice(1));
 	// After a view change the pressed button is gone, so focus would drop to the page: move it to the new step's first control. Touch screens are left alone (focusing a field there pops the keyboard).
 	function focusStep() {
 		if (!matchMedia('(pointer: fine)').matches && document.documentElement.dataset.input !== 'keyboard') return;
@@ -78,7 +79,7 @@
 	// First run: which way makes the owner. 'choose' shows them all; Plex signs in from its tile, the others open their form.
 	type SetupWay = 'password' | 'plex' | 'jellyfin' | 'emby';
 	let setupWay = $state<'choose' | 'password' | 'jellyfin' | 'emby'>('choose');
-	const setupName = (w: SetupWay) => w.charAt(0).toUpperCase() + w.slice(1);
+	const setupName = (w: SetupWay) => (w === 'password' ? t('accounts.signin.passwordLabel') : w.charAt(0).toUpperCase() + w.slice(1));
 	const setupTiles = $derived((['password', 'plex', 'jellyfin', 'emby'] as const).filter((w) => session.s.setupWays.includes(w)));
 	const setupServer = $derived(setupWay === 'jellyfin' || setupWay === 'emby' ? setupWay : null);
 	// The Jellyfin or Emby server's address, and the servers that answered on the network.
@@ -115,11 +116,11 @@
 	});
 	// The round back button in the panel's corner, when there is somewhere to go back to.
 	const backTo = $derived.by(() => {
-		if (mode === 'code') return { label: 'Back to sign in', go: restart };
-		if (mode === 'setup') return setupWay !== 'choose' ? { label: 'Other ways', go: () => setupPick('choose') } : null;
+		if (mode === 'code') return { label: t('accounts.login.backToSignIn'), go: restart };
+		if (mode === 'setup') return setupWay !== 'choose' ? { label: t('accounts.login.otherWays'), go: () => setupPick('choose') } : null;
 		if (mode !== 'login' || !shown.length) return null;
-		if (acctView === 'list' && shown.length === 1) return { label: `Back to ${shown[0].name}`, go: () => openPerson(0) };
-		if ((acctView === 'person' && shown.length > 1) || acct === 'new') return { label: 'All accounts', go: showList };
+		if (acctView === 'list' && shown.length === 1) return { label: t('accounts.login.backTo', { name: shown[0].name }), go: () => openPerson(0) };
+		if ((acctView === 'person' && shown.length > 1) || acct === 'new') return { label: t('accounts.login.allAccounts'), go: showList };
 		return null;
 	});
 	// One key per step: the panel's content rises in when it changes.
@@ -172,10 +173,10 @@
 	onMount(() => {
 		// An invite join that needs a two-factor code hands its ticket over here (never in the address).
 		try {
-			const t = sessionStorage.getItem('holyarrs-2fa-ticket');
-			if (t) {
+			const saved = sessionStorage.getItem('holyarrs-2fa-ticket');
+			if (saved) {
 				sessionStorage.removeItem('holyarrs-2fa-ticket');
-				ticket = t;
+				ticket = saved;
 			}
 		} catch {
 			// No storage: they sign in again.
@@ -186,16 +187,16 @@
 		if (calm || document.documentElement.dataset.signinGl) go();
 		window.addEventListener(SIGNIN_GL_EVENT, go, { once: true });
 		const cap = setTimeout(go, GL_WAIT_CAP_MS);
-		const t = setInterval(() => (now = Date.now()), 1000);
+		const clock = setInterval(() => (now = Date.now()), 1000);
 		if (page.url.searchParams.get('sso') === 'finish') void finishOIDC();
 		else if (page.url.searchParams.get('sso') === 'failed') {
 			lastWay = 'oidc';
-			error = "Single sign-on didn't finish. Try again, or sign in another way.";
+			error = t('accounts.login.ssoFailed');
 		}
 		const unlift = liftAboveKeyboard(() => panelEl);
 		return () => {
 			unlift();
-			clearInterval(t);
+			clearInterval(clock);
 			clearTimeout(cap);
 			window.removeEventListener(SIGNIN_GL_EVENT, go);
 			plexRun?.stop();
@@ -267,7 +268,7 @@
 		if (err instanceof ApiError && err.status === 429) {
 			waitUntil = Date.now() + (err.retryAfter ?? 30) * 1000;
 			now = Date.now();
-			error = 'Too many failed sign-ins. Wait a little and try again.';
+			error = t('accounts.login.tooMany');
 		} else {
 			const m = message(err);
 			error = m.slice(0, 1).toUpperCase() + m.slice(1);
@@ -280,11 +281,11 @@
 		error = '';
 		if (mode === 'setup') {
 			if (pw.length < MIN_LENGTH) {
-				error = `Use at least ${MIN_LENGTH} characters.`;
+				error = t('accounts.login.useAtLeast', { n: MIN_LENGTH });
 				return;
 			}
 			if (pw !== pwAgain) {
-				error = "Passwords don't match.";
+				error = t('accounts.login.noMatch');
 				return;
 			}
 		}
@@ -298,7 +299,7 @@
 			else if (via !== 'choose') took(await session.mediaServer(via, name.trim(), pw));
 		} catch (err) {
 			if (err instanceof ApiError && err.status === 409 && mode === 'setup') {
-				error = 'An owner already exists. Sign in instead.';
+				error = t('accounts.login.ownerExists');
 				await session.load();
 			} else {
 				failed(err);
@@ -359,11 +360,11 @@
 		const kind = setupServer;
 		if (!kind) return;
 		if (!address.trim()) {
-			error = `Enter the ${wayWord[kind]} address.`;
+			error = t('accounts.login.enterAddress', { way: wayWord[kind] });
 			return;
 		}
 		if (!name.trim()) {
-			error = `Enter your ${wayWord[kind]} name.`;
+			error = t('accounts.login.enterName', { way: wayWord[kind] });
 			return;
 		}
 		busy = true;
@@ -374,7 +375,7 @@
 		} catch (err) {
 			firstRunWay = '';
 			if (err instanceof ApiError && err.status === 409) {
-				error = 'An owner already exists. Sign in instead.';
+				error = t('accounts.login.ownerExists');
 				await session.load();
 			} else {
 				failed(err);
@@ -405,7 +406,7 @@
 		// First run: the Plex account becomes the owner.
 		const setup = mode === 'setup';
 		if (setup) firstRun = true;
-		plexRun = plexSignIn({ setup, waiting: (on) => (plexWaiting = on), done: took, failed, timedOut: () => (error = 'Plex sign-in timed out. Try again.') });
+		plexRun = plexSignIn({ setup, waiting: (on) => (plexWaiting = on), done: took, failed, timedOut: () => (error = t('accounts.security.plexTimeout')) });
 	}
 
 	async function oidc() {
@@ -435,7 +436,7 @@
 </script>
 
 <svelte:head>
-	<title>{mode === 'setup' ? 'Set up HolyArrs' : 'Sign in'} · HolyArrs</title>
+	<title>{t('accounts.login.pageTitle', { what: mode === 'setup' ? t('accounts.login.setUp') : t('accounts.signin.signIn') })}</title>
 </svelte:head>
 
 <main class="wrap" class:leaving data-theme="dark">
@@ -450,7 +451,7 @@
 		{#if session.s.state === 'unknown' || ssoFinishing}
 			<!-- As tall as the usual sign-in form, so the card does not jump when the session answers. -->
 			<div class="sk" class:tall={recent.length > 1} style="border-radius: var(--r-card)"></div>
-			{#if ssoFinishing}<p class="small muted" role="status">Finishing your sign-in…</p>{/if}
+			{#if ssoFinishing}<p class="small muted" role="status">{t('accounts.login.finishing')}</p>{/if}
 		{:else}
 			{#key step}
 				<div class="step" in:pixelIn={rise}>
@@ -458,28 +459,28 @@
 						<SigninWait {cancelPlex} />
 					{:else if acctView !== 'none'}
 						<!-- One person: their face and name lead; the heading stays for screen readers. -->
-						<h1 class="title" class:sr-only={acctView === 'person'}>{acctView === 'list' ? "Who's signing in?" : 'Sign in'}</h1>
+						<h1 class="title" class:sr-only={acctView === 'person'}>{acctView === 'list' ? t('accounts.login.who') : t('accounts.signin.signIn')}</h1>
 						{#if acctView === 'list'}
 							<SigninRecent {shown} {editing} {wayName} {dropPerson} {openPerson} {another} />
-							<button class="link" type="button" aria-pressed={editing} onclick={() => (editing = !editing)}>{editing ? 'Done' : 'Edit list'}</button>
+							<button class="link" type="button" aria-pressed={editing} onclick={() => (editing = !editing)}>{editing ? t('accounts.login.done') : t('accounts.login.editList')}</button>
 						{:else if person}
 							<SigninPerson {person} {name} bind:pw bind:showPw {error} {waiting} {busy} {lastWay} {tileWay} {failN} {wayName} {press} {submit} />
-							{#if shown.length === 1}<button class="link" type="button" onclick={showList}>Switch account</button>{/if}
+							{#if shown.length === 1}<button class="link" type="button" onclick={showList}>{t('accounts.login.switch')}</button>{/if}
 						{/if}
 						{#if formOn}<SigninHelp {calm} />{/if}
 					{:else}
-						<h1 class="title">{mode === 'setup' ? 'Set up HolyArrs' : mode === 'code' ? 'Two-step check' : via === 'jellyfin' || via === 'emby' ? `Sign in with ${wayWord[via]}` : 'Sign in'}</h1>
+						<h1 class="title">{mode === 'setup' ? t('accounts.login.setUp') : mode === 'code' ? t('accounts.login.twoStep') : via === 'jellyfin' || via === 'emby' ? t('accounts.signin.signInWith', { way: wayWord[via] }) : t('accounts.signin.signIn')}</h1>
 						{#if mode === 'setup'}
-							<p class="lead">{setupServer ? `Use an admin account on your ${wayWord[setupServer]} server.` : 'Create the owner account.'}</p>
+							<p class="lead">{setupServer ? t('accounts.login.useAdmin', { way: wayWord[setupServer] }) : t('accounts.login.createOwner')}</p>
 							{#if session.s.configUnmapped}
-								<p class="form-error" role="status">/config isn't mapped. This setup is lost when the container is recreated. See "Forgot to map /config?" in the install guide.</p>
+								<p class="form-error" role="status">{t('accounts.login.unmapped')}</p>
 							{/if}
 						{:else if mode === 'code'}
-							<p class="lead">{useBackup ? 'Enter one of your saved backup codes.' : 'Enter the 6-digit code from your authenticator app.'}</p>
+							<p class="lead">{useBackup ? t('accounts.login.enterBackup') : t('accounts.login.enterSix')}</p>
 						{:else if via === 'jellyfin' || via === 'emby'}
-							<p class="lead">Use your {wayWord[via]} name and password.</p>
+							<p class="lead">{t('accounts.login.useYour', { way: wayWord[via] })}</p>
 						{:else if via === 'choose'}
-							<p class="lead">Choose how to sign in.</p>
+							<p class="lead">{t('accounts.login.choose')}</p>
 						{/if}
 
 						{#if mode === 'setup' && setupWay === 'choose'}
@@ -494,7 +495,7 @@
 						{:else}
 							{#if mode === 'login' && (via === 'password' || via === 'choose') && tiles.length}
 								<SigninTiles {tiles} {lastWay} {failN} {busy} onpress={press} />
-								{#if via === 'password'}<div class="or">or</div>{/if}
+								{#if via === 'password'}<div class="or">{t('accounts.login.or')}</div>{/if}
 							{/if}
 
 							{#if via !== 'choose' || mode === 'setup'}

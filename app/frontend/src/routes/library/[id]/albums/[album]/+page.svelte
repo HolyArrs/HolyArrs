@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	import '#lib/ui/title-page.css';
 	import PageLoader from '#lib/ui/PageLoader.svelte';
 	import Button from '#lib/ui/Button.svelte';
@@ -18,7 +19,7 @@
 	import { SkTrackRow } from '#lib/ui/sk/index.ts';
 	import { HistoryLine as CompactRow, isRoutine, groupDownloads } from '#lib/downloads/index.ts';
 	import { crumbFor, RenamePreview, ShowDeleteDialog, ShowReleases } from '#lib/mediafiles/index.ts';
-	import { albumCover, albumKind, albumStateOf, albumYear, pressingLabel, trackLength, NO_SONGS_LINE, TRACK_REASK_MS, sleep, trackListView } from '#lib/music/index.ts';
+	import { albumCover, albumKind, albumStateOf, albumYear, pressingLabel, trackLength, noSongsLine, TRACK_REASK_MS, sleep, trackListView } from '#lib/music/index.ts';
 	import type { PressingView, TrackView } from '#lib/music/index.ts';
 	import { ReportSheet, hasFile } from '#lib/requests/index.ts';
 	import { page } from '$app/state';
@@ -30,6 +31,7 @@
 	import { session } from '#lib/core/session.svelte.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import type { AlbumSummary, EventPage, EventRecord, TitleView } from '#lib/core/types.ts';
+	import { t as tr } from '#lib/core/i18n/i18n.svelte.ts';
 
 	// One album: its tracks with their state, every Pressing MusicBrainz lists, its History, and for the staff Keep up to date, which Pressing is used, Rename files for the album and Delete for the album or a track.
 
@@ -70,7 +72,7 @@
 	}
 	function trackLabel(t: TrackView): string {
 		const n = String(t.number).padStart(2, '0');
-		return `${discs > 1 ? `disc ${t.disc} track ${n}` : `track ${n}`}${t.name ? ` ${t.name}` : ''}`;
+		return `${discs > 1 ? tr('library.album.discTrack', { disc: t.disc, n }) : tr('library.album.track', { n })}${t.name ? ` ${t.name}` : ''}`;
 	}
 	async function afterDelete() {
 		await load();
@@ -158,22 +160,22 @@
 		const ms = (tracks ?? []).reduce((n, t) => n + (t.length_ms ?? 0), 0);
 		if (!ms) return '';
 		const m = Math.round(ms / 60000);
-		return m >= 60 ? `${Math.floor(m / 60)} hr ${m % 60} min` : `${m} min`;
+		return m >= 60 ? tr('library.album.hrMin', { h: Math.floor(m / 60), m: m % 60 }) : tr('shows.sheet.minutes', { n: m });
 	});
 	const audience = $derived(audienceStatus(album && album.in_library > 0 && !album.missing ? 'in_library' : 'missing', staff ? 'staff' : 'member', { tracked: true, titleKind: 'artist' }));
 	const heroItems = $derived<MenuItem[]>([
-		{ label: album?.state === 'better_wanted' ? 'Find a better copy' : 'Search now', icon: 'search', onselect: () => search(true), disabled: busy === 'search' },
-		{ label: 'Choose a release', icon: 'grid', onselect: () => search(false), disabled: busy === 'list' },
-		{ label: 'Keep up to date', checked: !!album?.keep_up_to_date, disabled: busy === 'keep' || !album?.included, onselect: () => album && setKeep(!album.keep_up_to_date) },
+		{ label: album?.state === 'better_wanted' ? tr('shows.search.better') : tr('mediafiles.select.searchNow'), icon: 'search', onselect: () => search(true), disabled: busy === 'search' },
+		{ label: tr('mediafiles.releaseSheet.choose'), icon: 'grid', onselect: () => search(false), disabled: busy === 'list' },
+		{ label: tr('mediafiles.select.keep'), checked: !!album?.keep_up_to_date, disabled: busy === 'keep' || !album?.included, onselect: () => album && setKeep(!album.keep_up_to_date) },
 		{ kind: 'separator' },
-		{ label: 'Rename files', icon: 'copy', onselect: openRename },
+		{ label: tr('shows.page.renameFiles'), icon: 'copy', onselect: openRename },
 		{ kind: 'separator' },
-		{ label: 'Delete album', icon: 'trash', destructive: true, onselect: () => deleter?.open({ albumId, label: album?.name ?? 'Album' }) }
+		{ label: tr('library.album.deleteAlbum'), icon: 'trash', destructive: true, onselect: () => deleter?.open({ albumId, label: album?.name ?? tr('library.album.album') }) }
 	]);
 	// Report a problem: anyone, once a track of the album has a file; members get it as their only More item.
 	let reportOpen = $state(false);
 	const mayReport = $derived(!!artist && (tracks ?? []).some(hasFile));
-	const moreItems = $derived<MenuItem[]>([...(staff ? heroItems : []), ...(mayReport ? [...(staff ? [{ kind: 'separator' as const }] : []), { label: 'Report a problem', icon: 'alert' as const, onselect: () => (reportOpen = true) }] : [])]);
+	const moreItems = $derived<MenuItem[]>([...(staff ? heroItems : []), ...(mayReport ? [...(staff ? [{ kind: 'separator' as const }] : []), { label: tr('library.title.report'), icon: 'alert' as const, onselect: () => (reportOpen = true) }] : [])]);
 	function toLibrary() {
 		scrollToStart(document.getElementById('album-library'));
 	}
@@ -181,19 +183,19 @@
 	// Search now lets HolyArrs pick; Choose a release lists every Release.
 	let listing = $state(false);
 	let listJobs = $state<number[]>([]);
-	const scope = $derived({ label: `${artist?.name ?? 'Artist'} – ${album?.name ?? 'Album'}`, query: `album_id=${albumId}` });
+	const scope = $derived({ label: `${artist?.name ?? tr('mediafiles.kindCap.artist')} – ${album?.name ?? tr('library.album.album')}`, query: `album_id=${albumId}` });
 
 	async function search(choose: boolean) {
 		busy = choose ? 'search' : 'list';
 		try {
 			const r = await api.post<{ job_ids: number[] }>(`/titles/${titleId}/search`, choose ? { album_id: albumId } : { album_id: albumId, choose: false });
-			if (choose) toasts.push(`Searching for ${album?.name}`, 'info');
+			if (choose) toasts.push(tr('mediafiles.showReleases.searchingFor', { name: album?.name ?? '' }), 'info');
 			else {
 				listJobs = r.job_ids;
 				listing = true;
 			}
 		} catch (e) {
-			toasts.push(`Couldn't start search`, 'fail', { body: message(e) });
+			toasts.push(tr('mediafiles.title.startFailed'), 'fail', { body: message(e) });
 		} finally {
 			busy = '';
 		}
@@ -203,10 +205,10 @@
 		busy = 'keep';
 		try {
 			album = await api.put<AlbumSummary>(`/albums/${albumId}`, { keep_up_to_date: keep });
-			toasts.push(keep ? 'Album kept up to date' : 'Album not kept up to date', 'ok');
+			toasts.push(tr(keep ? 'library.album.kept' : 'library.album.notKept'), 'ok');
 			await load();
 		} catch (e) {
-			toasts.push(`Couldn't update album`, 'fail', { body: message(e) });
+			toasts.push(tr('library.album.updateFailed'), 'fail', { body: message(e) });
 		} finally {
 			busy = '';
 		}
@@ -223,28 +225,28 @@
 		busy = 'pressing';
 		try {
 			album = await api.put<AlbumSummary>(`/albums/${albumId}`, { pressing_id: chosen });
-			toasts.push('Pressing changed', 'ok', { body: pressings.find((p) => p.id === chosen)?.name ?? 'Tracks follow it' });
+			toasts.push(tr('library.album.pressingChanged'), 'ok', { body: pressings.find((p) => p.id === chosen)?.name ?? tr('library.album.tracksFollow') });
 			await load();
 		} catch (err) {
-			toasts.push(`Couldn't change Pressing`, 'fail', { body: message(err) });
+			toasts.push(tr('library.album.pressingFailed'), 'fail', { body: message(err) });
 		} finally {
 			busy = '';
 		}
 	}
 </script>
 
-<svelte:head><title>{album?.name ?? 'Album'} · HolyArrs</title></svelte:head>
+<svelte:head><title>{album?.name ?? tr('library.album.album')} · HolyArrs</title></svelte:head>
 
 {#if notFound}
-	<h1 class="sr-only">Album</h1>
-	<EmptyState icon="music" title="This album is not in your Library">
-		<p>It may no longer be listed.</p>
-		{#snippet actions()}<Button href={to(`/library/${titleId}`)}>Back to the artist</Button>{/snippet}
+	<h1 class="sr-only">{tr('library.album.album')}</h1>
+	<EmptyState icon="music" title={tr('library.album.notInLibrary')}>
+		<p>{tr('library.album.noLonger')}</p>
+		{#snippet actions()}<Button href={to(`/library/${titleId}`)}>{tr('library.album.backArtist')}</Button>{/snippet}
 	</EmptyState>
 {:else if error}
 	<p class="notice bad" role="alert">{error}</p>
 {:else}
-<PageLoader loading={!album} label="Loading the album">
+<PageLoader loading={!album} label={tr('library.album.loading')}>
 {#if album}
 	{@const st = albumStateOf(album)}
 	<div class="tp">
@@ -254,48 +256,48 @@
 			poster={coverOk ? null : artist?.artwork[0]}
 			square
 			crumbIcon="music"
-			breadcrumb={[{ href: to(crumbFor('artist').path), label: crumbFor('artist').label }, { href: to(`/library/${titleId}`), label: artist?.name ?? 'Artist' }, { href: to(`/library/${titleId}/albums/${albumId}`), label: album.name }]}
-			meta={[albumYear(album.release_date), albumKind(album), tracks?.length ? `${tracks.length} ${tracks.length === 1 ? 'track' : 'tracks'}` : '', totalLength].filter(Boolean)}
+			breadcrumb={[{ href: to(crumbFor('artist').path), label: crumbFor('artist').label }, { href: to(`/library/${titleId}`), label: artist?.name ?? tr('mediafiles.kindCap.artist') }, { href: to(`/library/${titleId}/albums/${albumId}`), label: album.name }]}
+			meta={[albumYear(album.release_date), albumKind(album), tracks?.length ? tr('mediafiles.unit.track.' + (tracks.length === 1 ? 'one' : 'other'), { n: tracks.length }) : '', totalLength].filter(Boolean)}
 			status={audience.kind}
 			statusLabel={staff ? st.label : audience.label}
 			description={album.disambiguation}
 		>
 			{#snippet byline()}
 				{#if artist}<a class="artist-link" href={to(`/library/${titleId}`)}>{artist.name}</a>{/if}
-				{#if album!.dropped}<span>No longer listed</span>{/if}
+				{#if album!.dropped}<span>{tr('library.album.noLongerListed')}</span>{/if}
 			{/snippet}
 			{#snippet actions()}
 				{#if staff}
-					<ActionButton icon="library" label="In Library: go to the Library section" caption="In Library" primary onclick={toLibrary} data-testid="hero-library" />
-					<ActionMenu label="More actions" caption="More" icon="more" items={moreItems} />
+					<ActionButton icon="library" label={tr('shows.page.goLibrary')} caption={tr('shows.page.inLibraryCaption')} primary onclick={toLibrary} data-testid="hero-library" />
+					<ActionMenu label={tr('shows.page.moreActions')} caption={tr('shows.page.more')} icon="more" items={moreItems} />
 				{:else if mayReport}
-					<ActionMenu label="More actions" caption="More" icon="more" items={moreItems} />
+					<ActionMenu label={tr('shows.page.moreActions')} caption={tr('shows.page.more')} icon="more" items={moreItems} />
 				{/if}
 			{/snippet}
 		</TitleHero>
 
 		<div class="alb" class:staff>
 		<div class="alb-main">
-		<TitleSection id="h-tracks" title="Tracks" primary>
+		<TitleSection id="h-tracks" title={tr('library.album.tracks')} primary>
 			{#if !tracks?.length && album.included && trackListView(0, askingSongs || tracks === null) === 'skeleton'}
-				<ol class="tracks" aria-busy="true" aria-label="Loading the tracks">{#each Array.from({ length: 8 }, (_, i) => i) as i (i)}<li><SkTrackRow height={52} /></li>{/each}</ol>
+				<ol class="tracks" aria-busy="true" aria-label={tr('library.album.loadingTracks')}>{#each Array.from({ length: 8 }, (_, i) => i) as i (i)}<li><SkTrackRow height={52} /></li>{/each}</ol>
 			{:else if !tracks?.length}
-				<p class="small muted">{album.included ? NO_SONGS_LINE : 'Left out by album kinds, so no tracks are listed.'}</p>
+				<p class="small muted">{album.included ? noSongsLine() : tr('library.album.leftOut')}</p>
 			{:else}
 				<ol class="tracks">
 					{#each tracks as t (t.id)}
 						{@const here = t.slots.some((sl) => tone(sl.state) === 'ok')}
 						<li class="track" data-testid="track">
 							<span class="no" aria-hidden="true">{discs > 1 ? `${t.disc}-` : ''}{t.number}</span>
-							<span class="grow">{t.name || 'Name not known yet'}</span>
+							<span class="grow">{t.name || tr('shows.page.nameUnknown')}</span>
 							<span class="len">{trackLength(t.length_ms)}</span>
 							{#if staff}
 								{#each t.slots as sl (sl.id)}
-									<span class="chip {tone(sl.state)}" data-testid="track-state">{t.slots.length > 1 ? `${sl.version}: ` : ''}{sl.state_label}</span>
+									<span class="chip {tone(sl.state)}" data-testid="track-state">{t.slots.length > 1 ? `${sl.version}: ` : ''}{serverWords(sl.state_label)}</span>
 								{/each}
-								<IconButton icon="trash" size="sm" tipSide="below-end" label="Delete {trackLabel(t)}" onclick={() => deleter?.open({ trackIds: [t.id], label: trackLabel(t) })} data-testid="delete-track" />
+								<IconButton icon="trash" size="sm" tipSide="below-end" label={tr('mediafiles.showDelete.deleteLabel', { what: trackLabel(t) })} onclick={() => deleter?.open({ trackIds: [t.id], label: trackLabel(t) })} data-testid="delete-track" />
 							{:else}
-								<span class="mark" class:here data-testid="track-state">{here ? 'In your Library' : 'Not here yet'}</span>
+								<span class="mark" class:here data-testid="track-state">{here ? tr('shows.list.inLibrary') : tr('library.album.notHere')}</span>
 							{/if}
 						</li>
 					{/each}
@@ -307,30 +309,30 @@
 			<aside class="alb-side" id="album-library">
 				<section class="alb-card">
 					<p class="alb-state"><span class="dot {st.tone}" aria-hidden="true"></span><span data-testid="album-state">{st.label}</span></p>
-					<p class="alb-sub">{album.in_library} of {album.tracks} tracks</p>
+					<p class="alb-sub">{tr('library.album.haveOf', { have: album.in_library, total: album.tracks })}</p>
 					<div class="alb-acts">
-						<button type="button" class="alb-btn primary" disabled={busy === 'search'} onclick={() => search(true)} data-testid="album-search-now"><Icon name="search" size={15} />{album.state === 'better_wanted' ? 'Find a better copy' : 'Search now'}</button>
-						<button type="button" class="alb-btn" disabled={busy === 'list'} onclick={() => search(false)} data-testid="album-choose"><Icon name="grid" size={15} />Choose a release</button>
+						<button type="button" class="alb-btn primary" disabled={busy === 'search'} onclick={() => search(true)} data-testid="album-search-now"><Icon name="search" size={15} />{album.state === 'better_wanted' ? tr('shows.search.better') : tr('mediafiles.select.searchNow')}</button>
+						<button type="button" class="alb-btn" disabled={busy === 'list'} onclick={() => search(false)} data-testid="album-choose"><Icon name="grid" size={15} />{tr('mediafiles.releaseSheet.choose')}</button>
 					</div>
 				</section>
 
-				<h3 class="alb-h">History</h3>
+				<h3 class="alb-h">{tr('shows.tools.history')}</h3>
 				<div class="alb-hist" data-testid="album-history">
 					{#each histRows as r (r.key)}
 						<div data-testid="album-event"><CompactRow row={r} ctx={{ titles: histTitles }} titleById={histTitles} onclick={() => goto(to(`/downloads/history?title=${titleId}`))} /><span class="sr-only">{r.events?.[0]?.Summary ?? ''}</span></div>
-					{:else}<p class="small muted">Nothing has happened yet.</p>{/each}
+					{:else}<p class="small muted">{tr('library.album.nothingYet')}</p>{/each}
 				</div>
 
-				<h3 class="alb-h">Settings</h3>
+				<h3 class="alb-h">{tr('library.album.settings')}</h3>
 				<div class="alb-rows">
 					<button type="button" class="alb-row" role="switch" aria-checked={album.keep_up_to_date} disabled={busy === 'keep' || !album.included} onclick={() => setKeep(!album!.keep_up_to_date)}>
-						<span><b>Keep up to date</b><small>{album.included ? 'Gets missing tracks and better copies' : 'Left out by the artist’s Releases'}</small></span>
+						<span><b>{tr('shows.sheet.keep')}</b><small>{album.included ? tr('library.album.keepHint') : tr('library.album.keepOut')}</small></span>
 						<span class="alb-switch" class:on={album.keep_up_to_date} aria-hidden="true"></span>
 					</button>
 					{#if pressings.length > 1 && current}
 						<div class="alb-row static" data-testid="chosen-pressing">
-							<span><b>Edition</b><small>{current.chosen_by === 'person' ? 'By hand' : 'By the rule'}</small></span>
-							<div class="alb-pick"><Menu label="Edition" variant="button" width={340} items={editionMenu}>{#snippet trigger()}<i>{pressingLabel(current!).replace(album!.name + ' · ', '')}</i><Icon name="chevronDown" size={14} />{/snippet}</Menu></div>
+							<span><b>{tr('library.album.edition')}</b><small>{current.chosen_by === 'person' ? tr('library.album.byHand') : tr('library.album.byRule')}</small></span>
+							<div class="alb-pick"><Menu label={tr('library.album.edition')} variant="button" width={340} items={editionMenu}>{#snippet trigger()}<i>{pressingLabel(current!).replace(album!.name + ' · ', '')}</i><Icon name="chevronDown" size={14} />{/snippet}</Menu></div>
 						</div>
 					{/if}
 				</div>
@@ -339,28 +341,28 @@
 		</div>
 
 		{#if more.length}
-			<Shelf title="More by {artist?.name ?? 'the artist'}" item="var(--title-item)" anchor="title-similar" placeholder="wide" lines={1}>
+			<Shelf title={tr('library.album.moreBy', { name: artist?.name ?? tr('library.album.theArtist') })} item="var(--title-item)" anchor="title-similar" placeholder="wide" lines={1}>
 				{#each more as a (a.id)}
-					<WideCard title={a.name} href={to(`/library/${titleId}/albums/${a.id}`)} image={albumCover(a.id)} needsArt kind="artist" subtitle={[albumYear(a.release_date), albumKind(a)].filter(Boolean).join(' · ')} owned={a.in_library > 0 ? { state: a.missing ? 'partial' : 'available', label: a.missing ? `${a.in_library} of ${a.tracks} tracks here` : 'In your Library' } : null} />
+					<WideCard title={a.name} href={to(`/library/${titleId}/albums/${a.id}`)} image={albumCover(a.id)} needsArt kind="artist" subtitle={[albumYear(a.release_date), albumKind(a)].filter(Boolean).join(' · ')} owned={a.in_library > 0 ? { state: a.missing ? 'partial' : 'available', label: a.missing ? tr('library.album.tracksHere', { have: a.in_library, total: a.tracks }) : tr('shows.list.inLibrary') } : null} />
 				{/each}
 			</Shelf>
 		{/if}
 
 		{#if staff}
-			<Sheet bind:open={listing} title="Choose a release" description={scope.label} size="lg">
+			<Sheet bind:open={listing} title={tr('mediafiles.releaseSheet.choose')} description={scope.label} size="lg">
 				{#if listing}<ShowReleases titleId={artist?.id ?? titleId} {scope} jobs={listJobs} music bare onclose={() => (listing = false)} onchange={load} />{/if}
 			</Sheet>
-			<Sheet bind:open={editionOpen} title="Follow this edition?" description={pressings.find((p) => p.id === chosen) ? pressingLabel(pressings.find((p) => p.id === chosen)!) : ''} size="sm">
-				<p class="small muted">Tracks it doesn’t have go unless a file holds them.</p>
+			<Sheet bind:open={editionOpen} title={tr('library.album.followEdition')} description={pressings.find((p) => p.id === chosen) ? pressingLabel(pressings.find((p) => p.id === chosen)!) : ''} size="sm">
+				<p class="small muted">{tr('library.album.followNote')}</p>
 				<div class="row modal-actions">
-					<Button variant="plain" onclick={() => (editionOpen = false)}>Cancel</Button>
-					<Button variant="primary" disabled={busy === 'pressing'} busy={busy === 'pressing'} onclick={() => usePressing()}>Use this edition</Button>
+					<Button variant="plain" onclick={() => (editionOpen = false)}>{tr('mediafiles.dialogs.cancel')}</Button>
+					<Button variant="primary" disabled={busy === 'pressing'} busy={busy === 'pressing'} onclick={() => usePressing()}>{tr('library.album.useEdition')}</Button>
 				</div>
 			</Sheet>
 
-			<ShowDeleteDialog bind:this={deleter} titleId={titleId} name={artist?.name ?? 'Artist'} kind="artist" ondone={afterDelete} />
+			<ShowDeleteDialog bind:this={deleter} titleId={titleId} name={artist?.name ?? tr('mediafiles.kindCap.artist')} kind="artist" ondone={afterDelete} />
 
-			<Sheet bind:open={renameOpen} title="Rename files" description={album.name} size="md">
+			<Sheet bind:open={renameOpen} title={tr('shows.page.renameFiles')} description={album.name} size="md">
 				{#if renameOpen}<RenamePreview {titleId} {albumId} onDone={() => { renameOpen = false; void afterDelete(); }} />{/if}
 			</Sheet>
 		{/if}

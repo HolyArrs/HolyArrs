@@ -1,8 +1,9 @@
+import { t } from '#lib/core/i18n/i18n.svelte.ts';
 import { mergeDetail } from './detail-merge.ts';
 import { protocolOf } from './size.ts';
 import { rowPath } from './downloaders.ts';
 import { splitTrackers } from './manage.ts';
-import { CALM_ERR, type Det, type Detail, type Peer, type TFile, type Tracker } from './pane-facts.ts';
+import { calmErr, type Det, type Detail, type Peer, type TFile, type Tracker } from './pane-facts.ts';
 import type { UsenetView } from './usenet.ts';
 import { untrack } from 'svelte';
 import { api, message, ApiError } from '../core/api.ts';
@@ -124,7 +125,7 @@ export class PaneDetail {
 					next.filesErr = undefined;
 				} catch {
 					// A failed refresh keeps the last list; the calm note shows only when there is none.
-					next.filesErr = CALM_ERR;
+					next.filesErr = calmErr();
 				}
 			}
 			if (tab === 'Peers' || tab === 'Trackers') {
@@ -134,7 +135,7 @@ export class PaneDetail {
 					next.peers = [...(sw.peers ?? [])].sort((a, b) => a.address.localeCompare(b.address));
 					next.swarmErr = undefined;
 				} catch {
-					next.swarmErr = CALM_ERR;
+					next.swarmErr = calmErr();
 				}
 			}
 		}
@@ -143,7 +144,7 @@ export class PaneDetail {
 				next.usenet = await api.get<UsenetView>(`${path}/usenet`);
 				next.usenetErr = undefined;
 			} catch {
-				next.usenetErr = CALM_ERR;
+				next.usenetErr = calmErr();
 			}
 		}
 		if (this.#ctx.openId() !== id) return;
@@ -166,7 +167,7 @@ export class PaneDetail {
 			await this.readDetail(r, 'Trackers');
 			return true;
 		} catch (e) {
-			toasts.push("Couldn't update trackers", 'fail', { body: message(e) });
+			toasts.push(t('downloads.pd.cantUpdate'), 'fail', { body: message(e) });
 			return false;
 		} finally {
 			this.trBusy = false;
@@ -175,20 +176,20 @@ export class PaneDetail {
 
 	async addTrackers(r: DownloadRow) {
 		const { urls, bad } = splitTrackers(this.trAdd);
-		if (bad.length) return toasts.push('Not a tracker address', 'fail', { body: bad[0] });
+		if (bad.length) return toasts.push(t('downloads.pd.notAddress'), 'fail', { body: bad[0] });
 		if (!urls.length) return;
-		if (await this.trackerCall(r, () => api.post(trPath(r), { urls }), urls.length === 1 ? 'Tracker added' : `${urls.length} trackers added`)) this.trAdd = '';
+		if (await this.trackerCall(r, () => api.post(trPath(r), { urls }), urls.length === 1 ? t('downloads.pd.added.one') : t('downloads.pd.added.other', { count: urls.length }))) this.trAdd = '';
 	}
 
 	saveTracker(r: DownloadRow, x: Tracker) {
 		const url = this.trUrl.trim();
 		const tier = Number(this.trTier);
-		if (url && splitTrackers(url).bad.length) return toasts.push('Not a tracker address', 'fail');
-		void this.trackerCall(r, () => api.put(trPath(r), { ref: x.ref, url, ...(tier !== x.tier ? { tier } : {}) }), 'Tracker saved');
+		if (url && splitTrackers(url).bad.length) return toasts.push(t('downloads.pd.notAddress'), 'fail');
+		void this.trackerCall(r, () => api.put(trPath(r), { ref: x.ref, url, ...(tier !== x.tier ? { tier } : {}) }), t('downloads.pd.saved'));
 	}
 
 	removeTracker(r: DownloadRow, x: Tracker) {
-		void this.trackerCall(r, () => api.post(`${trPath(r)}/remove`, { refs: [x.ref] }), 'Tracker removed');
+		void this.trackerCall(r, () => api.post(`${trPath(r)}/remove`, { refs: [x.ref] }), t('downloads.pd.removed'));
 	}
 
 	async setPrio(r: DownloadRow, indexes: number[], priority: number) {
@@ -204,7 +205,7 @@ export class PaneDetail {
 				void this.readDetail(r, 'Files');
 				return;
 			}
-			toasts.push("Couldn't set file priority", 'fail', { body: message(e) });
+			toasts.push(t('downloads.pd.cantPrio'), 'fail', { body: message(e) });
 		} finally {
 			this.filesBusy = false;
 		}

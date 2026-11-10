@@ -55,7 +55,7 @@
 
 <style>
 	.ui-seg { position: relative; flex: none; display: inline-grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); padding: 2px; border-radius: 10px; background: var(--surface-2); isolation: isolate; max-width: 100%; }
-	.thumb { position: absolute; z-index: -1; top: 2px; bottom: 2px; left: 2px; width: calc((100% - 4px) / var(--n)); border-radius: 8px; background: var(--seg-thumb); box-shadow: 0 1px 2px rgb(0 0 0 / 12%), 0 0 0 .5px rgb(0 0 0 / 4%); transform: translateX(calc(100% * var(--i))); transition: transform var(--dur) var(--ease-spring); }
+	.thumb { position: absolute; z-index: -1; top: 2px; bottom: 2px; inset-inline-start: 2px; width: calc((100% - 4px) / var(--n)); border-radius: 8px; background: var(--seg-thumb); box-shadow: 0 1px 2px rgb(0 0 0 / 12%), 0 0 0 .5px rgb(0 0 0 / 4%); transform: translateX(calc(100% * var(--i) * var(--dir, 1))); transition: transform var(--dur) var(--ease-spring); }
 	button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 32px; padding: 0 14px; border-radius: 8px; color: var(--text-muted); font: var(--t-subhead); font-size: 14px; white-space: nowrap; transition: color var(--dur-fast) var(--ease-out); }
 	button { min-width: 0; }
 	.none .thumb { opacity: 0; }

@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import Field from '#lib/ui/Field.svelte';
 	import TagInput from '#lib/ui/TagInput.svelte';
@@ -152,11 +154,11 @@
 	}
 
 	function categoryHint(kind: DownloaderForm['kind']): string {
-		if (kind === 'sabnzbd') return 'Must already exist in SABnzbd.';
-		if (kind === 'transmission') return 'Stored as a Transmission label; Transmission 4 or newer is required.';
-		if (kind === 'deluge') return 'Stored as a Deluge label; the connected daemon needs the Label plugin.';
-		if (kind === 'nzbget') return 'Sent as the NZBGet category.';
-		return 'Made in qBittorrent if missing.';
+		if (kind === 'sabnzbd') return t('settings.downloaders.catSab');
+		if (kind === 'transmission') return t('settings.downloaders.catTransmission');
+		if (kind === 'deluge') return t('settings.downloaders.catDeluge');
+		if (kind === 'nzbget') return t('settings.downloaders.catNzbget');
+		return t('settings.downloaders.catQbit');
 	}
 
 	async function save(e: SubmitEvent) {
@@ -166,7 +168,7 @@
 		try {
 			const body = formBody(form);
 			const saved = isNew ? await api.post<DownloaderView>('/downloaders', body) : await api.put<DownloaderView>(`/downloaders/${editing!.id}`, body);
-			toasts.push(`${saved.name} saved`, 'ok');
+			toasts.push(t('settings.downloaders.saved', { name: saved.name }), 'ok');
 			forgetTags();
 			editing = null;
 			await load();
@@ -196,34 +198,34 @@
 			await api.post(`/downloaders/${d.id}/${paused ? 'pause' : 'resume'}`);
 			await load();
 		} catch (err) {
-			toasts.push(`Couldn't ${paused ? 'pause' : 'resume'} Downloader`, 'fail', { body: message(err) });
+			toasts.push(paused ? t('settings.downloaders.couldntPause') : t('settings.downloaders.couldntResume'), 'fail', { body: message(err) });
 		}
 	}
 
 	async function remove(d: DownloaderView) {
-		if (!confirm(`Remove ${d.name}? Its downloads stay; HolyArrs stops watching them.`)) return;
+		if (!confirm(t('settings.downloaders.confirmRemove', { name: d.name }))) return;
 		try {
 			await api.del(`/downloaders/${d.id}`);
 			await load();
 		} catch (err) {
-			toasts.push("Couldn't remove Downloader", 'fail', { body: message(err) });
+			toasts.push(t('settings.downloaders.removeFailed'), 'fail', { body: message(err) });
 		}
 	}
 
 	async function abandonAttempt(d: DownloaderView, attempt: DownloaderAttempt) {
 		if (
 			!confirm(
-				`Stop HolyArrs from sending Release ${attempt.release_id} to Slot ${attempt.slot_id} and its covered Slots through ${d.name}? This does not cancel anything in ${kindWords[d.kind]}. Inspect that app before choosing a different Release.`
+				t('settings.downloaders.confirmAbandon', { release: attempt.release_id, slot: attempt.slot_id, name: d.name, app: kindWords[d.kind] })
 			)
 		)
 			return;
 		abandoning = attempt.id;
 		try {
 			await api.post(`/downloaders/${d.id}/attempts/${attempt.id}/abandon`);
-			toasts.push('Send abandoned', 'ok', { body: 'Check the Downloader first' });
+			toasts.push(t('settings.downloaders.abandoned'), 'ok', { body: t('settings.downloaders.checkFirst') });
 			await loadAttempts(d);
 		} catch (err) {
-			toasts.push("Couldn't abandon send", 'fail', { body: message(err) });
+			toasts.push(t('settings.downloaders.abandonFailed'), 'fail', { body: message(err) });
 		} finally {
 			abandoning = 0;
 		}
@@ -239,14 +241,14 @@
 			grab_spacing_seconds: Number(settings.grab_spacing_seconds)
 		};
 		if (body.stalled_act_hours < body.stalled_after_hours) {
-			setError = 'Act on a stalled download no sooner than it counts as stalled.';
+			setError = t('settings.downloaders.actSooner');
 			return;
 		}
 		setBusy = true;
 		try {
 			settings = await api.put<DownloaderSettings>('/settings/downloaders', body);
 			saved = JSON.stringify(settings);
-			toasts.push('Downloader settings saved', 'ok');
+			toasts.push(t('settings.downloaders.settingsSaved'), 'ok');
 		} catch (err) {
 			setError = message(err);
 		} finally {
@@ -263,117 +265,117 @@
 	}
 </script>
 
-<svelte:head><title>Downloaders · HolyArrs</title></svelte:head>
+<svelte:head><title>{t('settings.downloaders.title')} · HolyArrs</title></svelte:head>
 
-<PageHeader title="Downloaders">
+<PageHeader title={t('settings.downloaders.title')}>
 	{#snippet actions()}
-		{#if !editing && list.length}<Button icon="plus" variant="primary" type="button" onclick={startAdd}>Add a Downloader</Button>{/if}
+		{#if !editing && list.length}<Button icon="plus" variant="primary" type="button" onclick={startAdd}>{t('settings.downloaders.add')}</Button>{/if}
 	{/snippet}
 </PageHeader>
 
 <p class="small muted lead" id="downloaders-card" tabindex="-1">
-	Priority 1 goes first; equal priorities take turns. One that stops answering is skipped for up to 30 minutes.
+	{t('settings.downloaders.lead')}
 </p>
 
 {#snippet moreFields()}
 <div class="two">
-	<Field id="dl-cat" label="Category">
+	<Field id="dl-cat" label={t('settings.downloaders.category')}>
 		<input id="dl-cat" class="input" bind:value={form.category} maxlength="64" required />
-		<span class="hint">{categoryHint(form.kind)} HolyArrs only follows downloads in it.</span>
+		<span class="hint">{categoryHint(form.kind)} {t('settings.downloaders.onlyFollows')}</span>
 	</Field>
-	<Field id="dl-prio" label="Priority" hint="1–50, lowest first">
+	<Field id="dl-prio" label={t('settings.downloaders.priority')} hint={t('settings.downloaders.priorityHint')}>
 		<input id="dl-prio" class="input" type="number" min="1" max="50" bind:value={form.priority} />
 	</Field>
 </div>
-<Field id="dl-tags" label="Tags" hint="Only titles with this tag use it.">
+<Field id="dl-tags" label={t('settings.downloaders.tags')} hint={t('settings.downloaders.tagsHint')}>
 	<TagInput id="dl-tags" bind:value={form.tags} describedby="dl-tags-hint" testid="dl-tags" />
 </Field>
 <details class="more" open={form.path_map.length > 0}>
-	<summary>Different folder names</summary>
-	<p class="hint">When the Downloader sees the folder under another path</p>
+	<summary>{t('settings.downloaders.folderNames')}</summary>
+	<p class="hint">{t('settings.downloaders.folderNamesHint')}</p>
 	{#each form.path_map as p, i (i)}
 		<div class="two">
-			<Field id="pm-theirs-{i}" label="Downloader's path">
+			<Field id="pm-theirs-{i}" label={t('settings.downloaders.theirPath')}>
 				<input id="pm-theirs-{i}" class="input mono" bind:value={p.theirs} placeholder="/data/downloads" />
 			</Field>
-			<Field id="pm-ours-{i}" label="HolyArrs' path">
+			<Field id="pm-ours-{i}" label={t('settings.downloaders.ourPath')}>
 				<input id="pm-ours-{i}" class="input mono" bind:value={p.ours} placeholder="/downloads" />
 			</Field>
 		</div>
 	{/each}
-	<Button variant="plain" type="button" style="margin-top: var(--s-3)" onclick={() => form.path_map.push({ theirs: '', ours: '' })}>Add a path pair</Button>
+	<Button variant="plain" type="button" style="margin-top: var(--s-3)" onclick={() => form.path_map.push({ theirs: '', ours: '' })}>{t('settings.downloaders.addPair')}</Button>
 </details>
 {/snippet}
 
 {#if editing}
-	<form class="sc-form" onsubmit={save} aria-label={isNew ? 'Add a Downloader' : `Change ${editing.name}`}>
-		<SettingsCard title={isNew ? 'Add a Downloader' : `Change ${editing.name}`}>
+	<form class="sc-form" onsubmit={save} aria-label={isNew ? t('settings.downloaders.add') : t('settings.downloaders.change', { name: editing.name })}>
+		<SettingsCard title={isNew ? t('settings.downloaders.add') : t('settings.downloaders.change', { name: editing.name })}>
 			{#if isNew}
 				<fieldset class="group">
-					<legend class="label">Which app</legend>
+					<legend class="label">{t('settings.downloaders.whichApp')}</legend>
 					<div class="row kinds">
-						<label class="checkline"><input type="radio" name="kind" checked={form.kind === 'qbittorrent'} onchange={() => pickKind('qbittorrent')} /><span><b>qBittorrent</b> (torrents)</span></label>
-						<label class="checkline"><input type="radio" name="kind" checked={form.kind === 'transmission'} onchange={() => pickKind('transmission')} /><span><b>Transmission</b> (torrents)</span></label>
-						<label class="checkline"><input type="radio" name="kind" checked={form.kind === 'deluge'} onchange={() => pickKind('deluge')} /><span><b>Deluge</b> (torrents)</span></label>
-						<label class="checkline"><input type="radio" name="kind" checked={form.kind === 'sabnzbd'} onchange={() => pickKind('sabnzbd')} /><span><b>SABnzbd</b> (Usenet)</span></label>
-						<label class="checkline"><input type="radio" name="kind" checked={form.kind === 'nzbget'} onchange={() => pickKind('nzbget')} /><span><b>NZBGet</b> (Usenet)</span></label>
+						<label class="checkline"><input type="radio" name="kind" checked={form.kind === 'qbittorrent'} onchange={() => pickKind('qbittorrent')} /><span><b>qBittorrent</b> {t('settings.downloaders.torrents')}</span></label>
+						<label class="checkline"><input type="radio" name="kind" checked={form.kind === 'transmission'} onchange={() => pickKind('transmission')} /><span><b>Transmission</b> {t('settings.downloaders.torrents')}</span></label>
+						<label class="checkline"><input type="radio" name="kind" checked={form.kind === 'deluge'} onchange={() => pickKind('deluge')} /><span><b>Deluge</b> {t('settings.downloaders.torrents')}</span></label>
+						<label class="checkline"><input type="radio" name="kind" checked={form.kind === 'sabnzbd'} onchange={() => pickKind('sabnzbd')} /><span><b>SABnzbd</b> {t('settings.downloaders.usenet')}</span></label>
+						<label class="checkline"><input type="radio" name="kind" checked={form.kind === 'nzbget'} onchange={() => pickKind('nzbget')} /><span><b>NZBGet</b> {t('settings.downloaders.usenet')}</span></label>
 					</div>
 				</fieldset>
 			{/if}
-			<Field id="dl-name" label="Name" style="margin-top: var(--s-4)">
+			<Field id="dl-name" label={t('settings.downloaders.name')} style="margin-top: var(--s-4)">
 				<input id="dl-name" class="input" bind:value={form.name} maxlength="80" required />
 			</Field>
-			<Field id="dl-url" label="Address" hint="Its web page. For SABnzbd, use the IP or allow HolyArrs' host name.">
+			<Field id="dl-url" label={t('settings.downloaders.address')} hint={t('settings.downloaders.addressHint')}>
 				<input id="dl-url" class="input mono" bind:value={form.url} autocomplete="off" spellcheck="false" required placeholder={addressPlaceholder(form.kind)} />
 			</Field>
 			{#if form.kind === 'qbittorrent'}
 				<fieldset class="group" data-testid="dl-qbit-way">
-					<legend class="label">Sign in with</legend>
+					<legend class="label">{t('settings.downloaders.signInWith')}</legend>
 					<div class="row kinds">
-						<label class="checkline"><input type="radio" name="qbit-way" checked={qbitWay === 'key'} onchange={() => pickWay('key')} /><span>API key</span></label>
-						<label class="checkline"><input type="radio" name="qbit-way" checked={qbitWay === 'login'} onchange={() => pickWay('login')} /><span>Username and password</span></label>
+						<label class="checkline"><input type="radio" name="qbit-way" checked={qbitWay === 'key'} onchange={() => pickWay('key')} /><span>{t('settings.downloaders.apiKeyLabel')}</span></label>
+						<label class="checkline"><input type="radio" name="qbit-way" checked={qbitWay === 'login'} onchange={() => pickWay('login')} /><span>{t('settings.downloaders.userPass')}</span></label>
 					</div>
 				</fieldset>
 			{/if}
 			{#if hasUsername(form.kind)}
 				{@const qbit = form.kind === 'qbittorrent'}
 				<div class="two">
-					<Field id="dl-user" label="Username">
+					<Field id="dl-user" label={t('settings.downloaders.username')}>
 						<input id="dl-user" class="input" bind:value={form.username} autocomplete="off" required={qbit} data-testid="dl-user" />
-						<span class="hint">{qbit ? 'The qBittorrent Web UI username.' : `Leave empty when ${kindWords[form.kind]} does not require it from this network.`}</span>
+						<span class="hint">{qbit ? t('settings.downloaders.qbitUser') : t('settings.downloaders.leaveEmpty', { app: kindWords[form.kind] })}</span>
 					</Field>
-					<Field id="dl-secret" label="Password">
+					<Field id="dl-secret" label={t('settings.downloaders.passwordLabel')}>
 						<input id="dl-secret" class="input" type="password" bind:value={form.secret} autocomplete="new-password" required={qbit && isNew} data-testid="dl-secret" />
 					</Field>
 				</div>
 			{:else}
 				{@const key = form.kind === 'sabnzbd' || form.kind === 'qbittorrent'}
-				<Field id="dl-secret" label={key ? 'API key' : 'Password'}>
+				<Field id="dl-secret" label={key ? t('settings.downloaders.apiKeyLabel') : t('settings.downloaders.passwordLabel')}>
 					<input id="dl-secret" class="input" class:mono={key} type="password" bind:value={form.secret} autocomplete="new-password" spellcheck="false" required={isNew} data-testid="dl-secret" />
-					<span class="hint">{form.kind === 'sabnzbd' ? 'In SABnzbd under Config, General.' : form.kind === 'qbittorrent' ? 'qBittorrent 5.2 or newer: Options, Web UI, API key.' : 'The Deluge Web UI password.'} Kept encrypted, never shown again. Moving the address to another host needs it again.</span>
+					<span class="hint">{form.kind === 'sabnzbd' ? t('settings.downloaders.secretSab') : form.kind === 'qbittorrent' ? t('settings.downloaders.secretQbit') : t('settings.downloaders.secretDeluge')} {t('settings.downloaders.secretKept')}</span>
 				</Field>
 			{/if}
 			{#if form.kind === 'deluge'}
-				<p class="notice">Deluge Web UI must be connected to a daemon with the Label plugin on</p>
+				<p class="notice">{t('settings.downloaders.delugeNote')}</p>
 			{/if}
 			{#if form.kind === 'qbittorrent'}
-				<details class="more"><summary>More options</summary>{@render moreFields()}</details>
+				<details class="more"><summary>{t('settings.downloaders.moreOptions')}</summary>{@render moreFields()}</details>
 			{:else}
 				{@render moreFields()}
 			{/if}
 			<label class="checkline">
 				<input type="checkbox" bind:checked={form.allow_local_network} />
-				<span><b>Reach the local network</b><br /><span class="hint">On for most setups</span></span>
+				<span><b>{t('settings.downloaders.local')}</b><br /><span class="hint">{t('settings.downloaders.localHint')}</span></span>
 			</label>
 			<label class="checkline" class:off={writableLocked}>
 				<input type="checkbox" bind:checked={form.writable} disabled={writableLocked} data-testid="dl-form-writable" />
-				<span><b>HolyArrs can change this Downloader</b><br /><span class="hint">{writableLocked ? 'Locked to read only by this server’s settings (HOLYARRS_READONLY_DOWNLOADERS).' : 'Off: new downloads still go to it, but nothing in it is changed or removed.'}</span></span>
+				<span><b>{t('settings.downloaders.writable')}</b><br /><span class="hint">{writableLocked ? t('settings.downloaders.writableLocked') : t('settings.downloaders.writableOff')}</span></span>
 			</label>
 			{#if formError}<p class="form-error" role="alert">{formError}</p>{/if}
 			<div class="row" style="margin-top: var(--s-5)">
-				<Button variant="primary" type="submit" disabled={busy || !form.name.trim() || !form.url.trim()} aria-busy={busy}>Save</Button>
-				<Button variant="plain" type="button" onclick={() => (editing = null)}>Cancel</Button>
-				{#if !isNew && editing}{@const cur = editing}<Button variant="plain" type="button" disabled={testing === cur.id} aria-busy={testing === cur.id} onclick={() => test(cur)} data-testid="dl-form-test">Test</Button>{/if}
+				<Button variant="primary" type="submit" disabled={busy || !form.name.trim() || !form.url.trim()} aria-busy={busy}>{t('settings.downloaders.save')}</Button>
+				<Button variant="plain" type="button" onclick={() => (editing = null)}>{t('settings.downloaders.cancel')}</Button>
+				{#if !isNew && editing}{@const cur = editing}<Button variant="plain" type="button" disabled={testing === cur.id} aria-busy={testing === cur.id} onclick={() => test(cur)} data-testid="dl-form-test">{t('settings.downloaders.test')}</Button>{/if}
 				{#if !isNew && editing && results[editing.id]}{@const r = results[editing.id]}<TestTag ok={r.ok} text={r.text} app={kindWords[editing.kind]} />{#if !r.ok}<span class="small bad-text">{r.text}</span>{/if}{/if}
 			</div>
 		</SettingsCard>
@@ -385,58 +387,58 @@
 {:else if error && !listOk}
 	<LoadError hasData={false} message={error} onretry={load} />
 {:else if list.length === 0 && !editing}
-	<EmptyState icon="downloader" title="No Downloaders" text="Add a torrent or Usenet app." action={{ label: 'Add a Downloader', onclick: startAdd, icon: 'plus' }} />
+	<EmptyState icon="downloader" title={t('settings.downloaders.none')} text={t('settings.downloaders.noneText')} action={{ label: t('settings.downloaders.add'), onclick: startAdd, icon: 'plus' }} />
 {:else}
 	{#if error}<LoadError hasData={true} message={error} onretry={load} />{/if}
 	<ul class="fl">
 		{#each list as d (d.id)}
 			<li class="dl" data-testid="downloader">
-				<div class="main" title="{hostOf(d.url)} · priority {d.priority} · {d.category}">
+				<div class="main" title={t('settings.downloaders.rowTitle', { host: hostOf(d.url), priority: d.priority, category: d.category })}>
 					<span class="ic"><Icon name={d.protocol === 'usenet' ? 'usenet' : 'torrent'} size={20} /></span>
 					<div class="grow">
 						<div class="top">
 							<span class="name">{d.name}</span>
 							{#if results[d.id]}<TestTag ok={results[d.id].ok} text={results[d.id].text} app={kindWords[d.kind]} testid="downloader-version" />{/if}
 						</div>
-						<div class="sub">{kindWords[d.kind]} · {d.protocol === 'usenet' ? 'Usenet' : 'Torrents'}</div>
+						<div class="sub">{kindWords[d.kind]} · {d.protocol === 'usenet' ? t('settings.downloaders.usenetWord') : t('settings.downloaders.torrentsWord')}</div>
 						<div class="sr-only">{hostOf(d.url)} · 
-							Priority {d.priority} · {d.category}
-							{#if d.tags?.length} · <span data-testid="downloader-tags">tags {d.tags.join(', ')}</span>{/if}
-							{#if d.allow_local_network} · may reach the local network{/if}
-							· {d.writable && !d.writable_locked ? 'HolyArrs can change it' : d.writable_locked ? 'read only' : 'hands off'}
+							{t('settings.downloaders.priorityCategory', { priority: d.priority, category: d.category })}
+							{#if d.tags?.length} · <span data-testid="downloader-tags">{t('settings.downloaders.tagsList', { tags: d.tags.join(', ') })}</span>{/if}
+							{#if d.allow_local_network} · {t('settings.downloaders.mayReach')}{/if}
+							· {d.writable && !d.writable_locked ? t('settings.downloaders.canChange') : d.writable_locked ? t('settings.downloaders.readOnly') : t('settings.downloaders.handsOff')}
 						</div>
 					</div>
-					<div class="num" title={d.checked_at ? `checked ${ago(d.checked_at)}` : undefined}><b>{d.active_downloads}</b><small>active</small></div>
+					<div class="num" title={d.checked_at ? t('settings.downloaders.checked', { ago: ago(d.checked_at) }) : undefined}><b>{d.active_downloads}</b><small>{t('settings.downloaders.active')}</small></div>
 					<span class="st {healthTone(d.health.state)}"><i></i><span data-testid="downloader-state">{d.health.label}</span></span>
 					<div class="acts">
-						<Button variant="plain" size="sm" type="button" disabled={testing === d.id} aria-busy={testing === d.id} onclick={() => test(d)}>Test</Button>
+						<Button variant="plain" size="sm" type="button" disabled={testing === d.id} aria-busy={testing === d.id} onclick={() => test(d)}>{t('settings.downloaders.test')}</Button>
 						{#if d.health.state === 'paused'}
-							<Button variant="plain" size="sm" type="button" onclick={() => setPaused(d, false)}>Resume</Button>
+							<Button variant="plain" size="sm" type="button" onclick={() => setPaused(d, false)}>{t('settings.downloaders.resume')}</Button>
 						{:else}
-							<Button variant="plain" size="sm" type="button" onclick={() => setPaused(d, true)}>Pause</Button>
+							<Button variant="plain" size="sm" type="button" onclick={() => setPaused(d, true)}>{t('settings.downloaders.pause')}</Button>
 						{/if}
-						<Button variant="plain" size="sm" type="button" onclick={() => startChange(d)}>Change</Button>
-						<Button variant="plain" size="sm" type="button" onclick={() => remove(d)} aria-label="Remove {d.name}">Remove</Button>
+						<Button variant="plain" size="sm" type="button" onclick={() => startChange(d)}>{t('settings.downloaders.changeButton')}</Button>
+						<Button variant="plain" size="sm" type="button" onclick={() => remove(d)} aria-label={t('settings.downloaders.removeName', { name: d.name })}>{t('settings.downloaders.remove')}</Button>
 					</div>
 				</div>
-				{#if d.health.text}<p class="note" class:bad-text={d.health.state !== 'working' && d.health.state !== 'paused'} data-testid="downloader-text">{d.health.text}</p>{/if}
+				{#if d.health.text}<p class="note" class:bad-text={d.health.state !== 'working' && d.health.state !== 'paused'} data-testid="downloader-text">{serverWords(d.health.text)}</p>{/if}
 				{#if results[d.id] && !results[d.id].ok}
 					<p class="note bad-text" role="status" data-testid="downloader-test">{results[d.id].text}</p>
 				{/if}
 				{#if pendingAttempts(attempts[d.id]).length > 0}
-					<section class="notice bad attempt-review" aria-label="Needs a decision" data-testid="downloader-attempts">
-						<h3 class="h3">Check whether this download arrived</h3>
-						<p class="small">HolyArrs could not confirm whether {kindWords[d.kind]} accepted it. Inspect {kindWords[d.kind]} before choosing a different Release.</p>
+					<section class="notice bad attempt-review" aria-label={t('settings.downloaders.needsDecision')} data-testid="downloader-attempts">
+						<h3 class="h3">{t('settings.downloaders.checkArrived')}</h3>
+						<p class="small">{t('settings.downloaders.couldNotConfirm', { app: kindWords[d.kind] })}</p>
 						{#each pendingAttempts(attempts[d.id]) as attempt (attempt.id)}
 							<div class="attempt-row">
-								<p class="small">Release {attempt.release_id} · Slot {attempt.slot_id} · started {ago(attempt.created_at)}</p>
-								<Button variant="plain" type="button" disabled={abandoning === attempt.id} aria-busy={abandoning === attempt.id} onclick={() => abandonAttempt(d, attempt)}>Give up on it</Button>
+								<p class="small">{t('settings.downloaders.attemptLine', { release: attempt.release_id, slot: attempt.slot_id, ago: ago(attempt.created_at) })}</p>
+								<Button variant="plain" type="button" disabled={abandoning === attempt.id} aria-busy={abandoning === attempt.id} onclick={() => abandonAttempt(d, attempt)}>{t('settings.downloaders.giveUp')}</Button>
 							</div>
 						{/each}
-						<p class="xs muted">HolyArrs won't retry this Release. The download in {kindWords[d.kind]} stays.</p>
+						<p class="xs muted">{t('settings.downloaders.wontRetry', { app: kindWords[d.kind] })}</p>
 					</section>
 				{:else if attemptErrors[d.id]}
-					<p class="note bad-text" role="status">Could not check uncertain sends: {attemptErrors[d.id]}</p>
+					<p class="note bad-text" role="status">{t('settings.downloaders.couldNotCheck', { error: attemptErrors[d.id] })}</p>
 				{/if}
 			</li>
 		{/each}
@@ -451,57 +453,57 @@
 	{/if}
 {:else}
 <form class="sc-form settings" id="wrong-form" onsubmit={saveSettings} aria-labelledby="h-wrong">
-	<SettingsCard id="wrong-card" title="When downloads go wrong">
-		<span id="h-wrong" class="sr-only">When downloads go wrong</span>
+	<SettingsCard id="wrong-card" title={t('settings.downloaders.wrong')}>
+		<span id="h-wrong" class="sr-only">{t('settings.downloaders.wrong')}</span>
 		<label class="checkline">
 			<input id="remove-failed" type="checkbox" bind:checked={settings.remove_failed} />
-			<span><b>Remove failed downloads from the Downloader</b><br /><span class="hint">Deletes their files too</span></span>
+			<span><b>{t('settings.downloaders.removeFailedDl')}</b><br /><span class="hint">{t('settings.downloaders.removeFailedHint')}</span></span>
 		</label>
 		<label class="checkline">
 			<input id="auto-add" type="checkbox" bind:checked={settings.downloads_auto_add} />
-			<span><b>Add matched titles to your Library</b><br /><span class="hint">Sure matches already in a Downloader are added without searching</span></span>
+			<span><b>{t('settings.downloaders.autoAdd')}</b><br /><span class="hint">{t('settings.downloaders.autoAddHint')}</span></span>
 		</label>
 		<fieldset class="defaults" id="remove-defaults" tabindex="-1">
-			<legend>When you remove a download</legend>
+			<legend>{t('settings.downloaders.whenRemove')}</legend>
 		<label class="checkline">
 			<input type="checkbox" bind:checked={settings.remove_delete_files} />
-			<span><b>Delete its files</b></span>
+			<span><b>{t('settings.downloaders.deleteFiles')}</b></span>
 		</label>
 		<label class="checkline">
 			<input type="checkbox" bind:checked={settings.remove_turn_down} />
-			<span><b>Turn down its Release</b><br /><span class="hint">Never picked again for that title</span></span>
+			<span><b>{t('settings.downloaders.turnDown')}</b><br /><span class="hint">{t('settings.downloaders.turnDownHint')}</span></span>
 		</label>
 		<label class="checkline">
 			<input type="checkbox" bind:checked={settings.remove_search_again} />
-			<span><b>Search again</b><br /><span class="hint">Needs Turn down. Looks for the next Release at once.</span></span>
+			<span><b>{t('settings.downloaders.searchAgain')}</b><br /><span class="hint">{t('settings.downloaders.searchAgainHint')}</span></span>
 		</label>
 		</fieldset>
 		{#snippet advanced()}
 			<div class="two">
-				<Field id="st-stall" label="Stalled after (hours)" hint="Queued or paused time doesn't count">
+				<Field id="st-stall" label={t('settings.downloaders.stalledAfter')} hint={t('settings.downloaders.stalledAfterHint')}>
 					<input id="st-stall" class="input" type="number" min="1" max="168" step="0.5" bind:value={settings.stalled_after_hours} />
 				</Field>
-				<Field id="st-act" label="Try the next Release after (hours)" hint="Counted from the last progress.">
+				<Field id="st-act" label={t('settings.downloaders.tryNext')} hint={t('settings.downloaders.tryNextHint')}>
 					<input id="st-act" class="input" type="number" min="1" max="720" step="0.5" bind:value={settings.stalled_act_hours} />
 				</Field>
 			</div>
 			<label class="checkline">
 				<input id="fail-programs" type="checkbox" bind:checked={settings.fail_dangerous} />
 				<span
-					><b>Fail downloads that hold programs or fakes</b><br /><span class="hint"
-						>.exe, .bat, .scr, .lnk (even as movie.mkv.exe), password notes, web shortcuts, archive-only torrents</span
+					><b>{t('settings.downloaders.failPrograms')}</b><br /><span class="hint"
+						>{t('settings.downloaders.failProgramsHint')}</span
 					></span
 				>
 			</label>
 			<label class="checkline">
 				<input id="replace-removed" type="checkbox" bind:checked={settings.replace_vanished} />
-				<span><b>Replace downloads removed outside HolyArrs</b><br /><span class="hint">Off: the title waits for you</span></span>
+				<span><b>{t('settings.downloaders.replace')}</b><br /><span class="hint">{t('settings.downloaders.replaceHint')}</span></span>
 			</label>
 			<label class="checkline">
 				<input id="try-next-dl" type="checkbox" bind:checked={settings.try_next_downloader} />
-				<span><b>Try the next Downloader</b><br /><span class="hint">When one fails, use the next of the same kind</span></span>
+				<span><b>{t('settings.downloaders.tryNextDl')}</b><br /><span class="hint">{t('settings.downloaders.tryNextDlHint')}</span></span>
 			</label>
-			<Field id="st-gap" label="Seconds between sends to one Downloader">
+			<Field id="st-gap" label={t('settings.downloaders.spacing')}>
 				<input id="st-gap" class="input narrow" type="number" min="0" max="60" step="0.5" bind:value={settings.grab_spacing_seconds} />
 			</Field>
 		{/snippet}

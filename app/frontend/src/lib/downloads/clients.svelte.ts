@@ -1,3 +1,4 @@
+import { t } from '#lib/core/i18n/i18n.svelte.ts';
 import { api, message } from '../core/api.ts';
 import { toasts } from '../core/toasts.svelte.ts';
 
@@ -15,7 +16,7 @@ export class Downloaders {
 
 	reporting = $derived(this.clients.filter((c) => c.status && !c.error));
 	freeAll = $derived(this.reporting.map((c) => c.status?.free_space ?? 0).filter((n) => n > 0));
-	health = $derived(!this.loaded ? 'Not reported' : !this.clients.length ? 'Not connected' : this.reporting.length === this.clients.length ? 'Connected' : this.reporting.length ? `${this.reporting.length} of ${this.clients.length} connected` : 'Not connected');
+	health = $derived(!this.loaded ? t('downloads.clients.notReported') : !this.clients.length ? t('downloads.clients.notConnected') : this.reporting.length === this.clients.length ? t('downloads.clients.connected') : this.reporting.length ? t('downloads.clients.someConnected', { n: this.reporting.length, total: this.clients.length }) : t('downloads.clients.notConnected'));
 
 	constructor(watch: () => boolean) {
 		$effect(() => {
@@ -52,7 +53,7 @@ export class Downloaders {
 			await api.post(`/downloaders/${c.id}/slow-mode`, { on });
 			await this.read();
 		} catch (e) {
-			toasts.push("Couldn't change slow mode", 'fail', { body: message(e) });
+			toasts.push(t('downloads.clients.slowFailed'), 'fail', { body: message(e) });
 		} finally {
 			this.slowBusy = 0;
 		}

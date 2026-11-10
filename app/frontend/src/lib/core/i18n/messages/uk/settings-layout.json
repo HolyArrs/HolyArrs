@@ -1,0 +1,14 @@
+{
+	"settings.layout.settings": "Налаштування",
+	"settings.layout.home": "Головна",
+	"settings.layout.sections": "Розділи налаштувань",
+	"settings.layout.needsAttention": "Потребує уваги",
+	"settings.layout.needsAttentionLower": "потребує уваги",
+	"settings.layout.blocked": "Ти не можеш це змінювати",
+	"settings.layout.backToSettings": "Назад до налаштувань",
+	"settings.layout.setPasswordFirst": "Спершу задай пароль",
+	"settings.layout.setPasswordDesc": "Ключам, паролям, людям і бекапам потрібен пароль HolyArrs. У тебе його ще немає.",
+	"settings.layout.setPasswordLabel": "Задати пароль",
+	"settings.layout.confirmPasswordLabel": "Підтверди свій пароль",
+	"settings.layout.confirmPasswordDesc": "Ключам, паролям, людям і бекапам потрібен твій пароль. Діє 10 хвилин."
+}

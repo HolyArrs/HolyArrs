@@ -1,10 +1,12 @@
 <!-- Confirm sheet for deleting a title, with a dry-run preview of what will happen. -->
 <script lang="ts">
+	import Words from '#lib/ui/Words.svelte';
 	import { untrack } from 'svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import { deleteSummary, type RemovePlan } from './organise.ts';
 	import { api, message, ApiError } from '#lib/core/api.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 
 	let { open = $bindable(false), titleId, name, kind, ondone }: { open?: boolean; titleId: number; name: string; kind: 'movie' | 'show' | 'artist'; ondone?: (p: RemovePlan) => void } = $props();
 
@@ -17,6 +19,7 @@
 	// Counts previews so a slow older answer cannot overwrite a newer one.
 	let ask = 0;
 
+	const kindWord = $derived(t(`mediafiles.kind.${kind}`));
 	const sure = $derived(!files || typed.trim().toLowerCase() === name.trim().toLowerCase());
 
 	// Each time the sheet opens it starts clean; untrack so edits inside do not rerun this.
@@ -49,9 +52,9 @@
 		try {
 			const p = await api.post<RemovePlan>(`/titles/${titleId}/delete`, { delete_files: files, never_add: never, apply: true });
 			const held = p.held.map((h) => h.file_id);
-			const kept = p.held.length ? `Files kept${p.holding_days ? ` ${p.holding_days} days` : ' in the holding folder'}` : 'Files stay on disk';
-			toasts.push(`${name} deleted`, 'ok',
-				held.length ? { body: kept, ms: 10000, action: { label: 'Undo', run: () => void api.post<{ results: { result: string }[] }>('/holding/restore', { ids: held }).then((r) => { const bad = r.results.find((x) => x.result !== 'restored'); if (bad) toasts.push(`Couldn't restore`, 'fail', { body: bad.result }); else toasts.push(`${name} restored`, 'ok'); }, (e) => toasts.push(`Couldn't restore`, 'fail', { body: message(e) })) } } : { body: kept });
+			const kept = p.held.length ? (p.holding_days ? t('mediafiles.delete.keptDays', { n: p.holding_days }) : t('mediafiles.delete.keptFolder')) : t('mediafiles.delete.stay');
+			toasts.push(t('mediafiles.delete.deleted', { name }), 'ok',
+				held.length ? { body: kept, ms: 10000, action: { label: t('mediafiles.delete.undo'), run: () => void api.post<{ results: { result: string }[] }>('/holding/restore', { ids: held }).then((r) => { const bad = r.results.find((x) => x.result !== 'restored'); if (bad) toasts.push(t('mediafiles.delete.restoreFailed'), 'fail', { body: bad.result }); else toasts.push(t('mediafiles.delete.restored', { name }), 'ok'); }, (e) => toasts.push(t('mediafiles.delete.restoreFailed'), 'fail', { body: message(e) })) } } : { body: kept });
 			open = false;
 			ondone?.(p);
 		} catch (e) {
@@ -70,21 +73,21 @@
 	}
 </script>
 
-<Sheet bind:open title={`Delete ${name}?`} size="sm">
+<Sheet bind:open title={t('mediafiles.delete.title', { name })} size="sm">
 	<div class="ds" data-testid="delete-sheet">
 		<div class="ds-rows">
 			<button type="button" class="ds-row" role="switch" aria-checked={files} onclick={() => flip('files')}>
-				<span><b>Also delete the files</b><small>Kept in the holding folder for a while</small></span>
+				<span><b>{t('mediafiles.delete.alsoFiles')}</b><small>{t('mediafiles.delete.alsoFilesHint')}</small></span>
 				<span class="ds-switch" class:on={files} aria-hidden="true"></span>
 			</button>
 			<button type="button" class="ds-row" role="switch" aria-checked={never} onclick={() => flip('never')}>
-				<span><b>Never add again</b><small>Lists skip it</small></span>
+				<span><b>{t('mediafiles.delete.never')}</b><small>{t('mediafiles.delete.neverHint')}</small></span>
 				<span class="ds-switch" class:on={never} aria-hidden="true"></span>
 			</button>
 		</div>
 
 		<section class="ds-plan" aria-live="polite" data-testid="delete-plan">
-			<p class="ds-h">What will happen</p>
+			<p class="ds-h">{t('mediafiles.delete.willHappen')}</p>
 			{#if !plan}
 				<div class="ds-skel"></div>
 			{:else}
@@ -94,15 +97,15 @@
 
 		{#if files}
 			<label class="ds-type">
-				<span>Type <b>{name}</b> to confirm</span>
+				<span><Words key="mediafiles.delete.type" vars={{ name }} /></span>
 				<input bind:value={typed} autocomplete="off" spellcheck="false" placeholder={name} />
 			</label>
 		{/if}
 		{#if error}<p class="ds-err" role="alert">{error}</p>{/if}
 
 		<div class="ds-actions">
-			<button type="button" class="ds-btn" onclick={() => (open = false)}>Cancel</button>
-			<button type="button" class="ds-btn danger" disabled={busy || !plan || !sure} onclick={run}>{busy ? 'Deleting…' : files ? `Delete ${kind} and files` : `Delete ${kind}`}</button>
+			<button type="button" class="ds-btn" onclick={() => (open = false)}>{t('mediafiles.delete.cancel')}</button>
+			<button type="button" class="ds-btn danger" disabled={busy || !plan || !sure} onclick={run}>{busy ? t('mediafiles.delete.deleting') : files ? t('mediafiles.delete.kindAndFiles', { kind: kindWord }) : t('mediafiles.delete.kind', { kind: kindWord })}</button>
 		</div>
 	</div>
 </Sheet>

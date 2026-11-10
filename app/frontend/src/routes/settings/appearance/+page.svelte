@@ -1,10 +1,11 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import { DEFAULT_RATINGS, MAX_RATINGS, RATING_SOURCES, ratingPicks, resetRatingPicks, setRatingPick } from '#lib/ui/rating-picks.svelte.ts';
-	import { theme, setTheme, type ThemeChoice, backdrop, setBackdrop, type Backdrop, ABOUT_ITEMS, aboutIsDefault, aboutPicks, resetAboutPicks, setAboutPick, Table } from '#lib/accounts/index.ts';
+	import { theme, setTheme, type ThemeChoice, backdrop, setBackdrop, type Backdrop, ABOUT_ITEMS, aboutIsDefault, aboutPicks, resetAboutPicks, setAboutPick, Table, LanguagePicker } from '#lib/accounts/index.ts';
 	import { onMount } from 'svelte';
 	import { api } from '#lib/core/api.ts';
 	import { plainMessage as message } from '#lib/core/settings.ts';
@@ -16,15 +17,15 @@
 
 	let themeChoice = $state<ThemeChoice>(theme.choice);
 	let backdropChoice = $state<Backdrop>(backdrop.value);
-	const backdrops: { value: Backdrop; label: string }[] = [
-		{ value: 'plain', label: 'Plain' },
-		{ value: 'posters', label: 'Poster wall' }
-	];
-	const themes: { value: ThemeChoice; label: string; icon: 'sun' | 'moon' | 'settings' }[] = [
-		{ value: 'light', label: 'Light', icon: 'sun' },
-		{ value: 'dark', label: 'Dark', icon: 'moon' },
-		{ value: 'system', label: 'Automatic', icon: 'settings' }
-	];
+	const backdrops = $derived<{ value: Backdrop; label: string }[]>([
+		{ value: 'plain', label: t('settings.appearance.plain') },
+		{ value: 'posters', label: t('settings.appearance.posterWall') }
+	]);
+	const themes = $derived<{ value: ThemeChoice; label: string; icon: 'sun' | 'moon' | 'settings' }[]>([
+		{ value: 'light', label: t('settings.appearance.light'), icon: 'sun' },
+		{ value: 'dark', label: t('settings.appearance.dark'), icon: 'moon' },
+		{ value: 'system', label: t('settings.appearance.automatic'), icon: 'settings' }
+	]);
 
 	// App-wide looks (settings people only): trailers that play by themselves and the sign-in page art.
 	let autoplay = $state<boolean | null>(null);
@@ -48,16 +49,16 @@
 			if (field === 'autoplay_trailers') {
 				autoplay = s.autoplay_trailers ?? on;
 				setAutoplaySetting(autoplay);
-				toasts.push(autoplay ? 'Trailer autoplay on' : 'Trailer autoplay off', 'ok');
+				toasts.push(autoplay ? t('settings.appearance.autoplayOn') : t('settings.appearance.autoplayOff'), 'ok');
 			} else {
 				signinArt = s.signin_library_art ?? on;
-				toasts.push(signinArt ? 'Sign-in art: Library' : 'Sign-in art: trending', 'ok');
+				toasts.push(signinArt ? t('settings.appearance.artLibrary') : t('settings.appearance.artTrending'), 'ok');
 			}
 		} catch (e) {
 			// Put the box back and say why next to it, so a failed save is never silent.
 			box.checked = !on;
-			appError = `Not saved. ${message(e)}`;
-			toasts.push("Couldn't save", 'fail', { body: message(e) });
+			appError = t('settings.appearance.notSaved', { reason: message(e) });
+			toasts.push(t('settings.appearance.couldntSave'), 'fail', { body: message(e) });
 		} finally {
 			busy = false;
 		}
@@ -66,7 +67,14 @@
 	// Explore row titles: smart titles against plain ones, counted on this server only (owner).
 	type TitleStat = { layer: string; shown: number; opens: number; asks: number; rate: string };
 	let titleStats = $state<TitleStat[] | null>(null);
-	const layerWords: Record<string, string> = { occasion: 'Occasion', time: 'Time of day', genre: 'Genre mix', taste: 'Your taste', reason: 'Row reason', plain: 'Plain title' };
+	const layerWords = $derived<Record<string, string>>({
+		occasion: t('settings.appearance.layerOccasion'),
+		time: t('settings.appearance.layerTime'),
+		genre: t('settings.appearance.layerGenre'),
+		taste: t('settings.appearance.layerTaste'),
+		reason: t('settings.appearance.layerReason'),
+		plain: t('settings.appearance.layerPlain')
+	});
 	async function loadTitleStats() {
 		try {
 			const a = await api.get<{ layers: Omit<TitleStat, 'rate'>[] }>('/explore/title-stats');
@@ -81,23 +89,27 @@
 	});
 </script>
 
-<svelte:head><title>Appearance · HolyArrs</title></svelte:head>
+<svelte:head><title>{t('settings.appearance.title')} · HolyArrs</title></svelte:head>
 
-<PageHeader title="Appearance" />
+<PageHeader title={t('settings.appearance.title')} />
 
-<SettingsCard id="theme-card" title="Theme" description="Saved in this browser" icon="appearance">
+<SettingsCard id="theme-card" title={t('settings.appearance.theme')} description={t('settings.appearance.savedHere')} icon="appearance">
 	<div id="theme" tabindex="-1">
-		<SegmentedControl label="Theme" options={themes} bind:value={themeChoice} onchange={(v) => setTheme(v)} />
+		<SegmentedControl label={t('settings.appearance.theme')} options={themes} bind:value={themeChoice} onchange={(v) => setTheme(v)} />
 	</div>
 </SettingsCard>
 
-<SettingsCard id="backdrop-card" title="Background" description="Behind every page. Saved in this browser" icon="appearance">
+<SettingsCard id="language-card" title={t('accounts.language.label')} description={t('accounts.language.hint')} icon="appearance">
+	<LanguagePicker id="language" />
+</SettingsCard>
+
+<SettingsCard id="backdrop-card" title={t('settings.appearance.background')} description={t('settings.appearance.backgroundDesc')} icon="appearance">
 	<div id="backdrop" tabindex="-1">
-		<SegmentedControl label="Background" options={backdrops} bind:value={backdropChoice} onchange={(v) => setBackdrop(v)} />
+		<SegmentedControl label={t('settings.appearance.background')} options={backdrops} bind:value={backdropChoice} onchange={(v) => setBackdrop(v)} />
 	</div>
 </SettingsCard>
 
-<SettingsCard id="ratings-card" title="Ratings" description="Up to three, beside the year on title pages" icon="star">
+<SettingsCard id="ratings-card" title={t('settings.appearance.ratings')} description={t('settings.appearance.ratingsDesc')} icon="star">
 	<ul class="picks" id="ratings" tabindex="-1">
 		{#each RATING_SOURCES as r (r.id)}
 			<li>
@@ -109,12 +121,12 @@
 			</li>
 		{/each}
 	</ul>
-	{#if !isDefault}<Button variant="plain" size="sm" onclick={resetRatingPicks}>Reset</Button>{/if}
+	{#if !isDefault}<Button variant="plain" size="sm" onclick={resetRatingPicks}>{t('settings.appearance.reset')}</Button>{/if}
 </SettingsCard>
 
-<SettingsCard id="about-card" title="About on title pages" description="Lines in the About section of title pages" icon="info">
+<SettingsCard id="about-card" title={t('settings.appearance.about')} description={t('settings.appearance.aboutDesc')} icon="info">
 	{#each aboutGroups as g (g)}
-		<h3 class="grp">{g}</h3>
+		<h3 class="grp">{t('settings.appearance.group.' + g.toLowerCase())}</h3>
 		<ul class="picks">
 			{#each ABOUT_ITEMS.filter((i) => i.group === g) as it (it.id)}
 				<li>
@@ -127,19 +139,19 @@
 			{/each}
 		</ul>
 	{/each}
-	{#if !aboutIsDefault()}<Button variant="plain" size="sm" onclick={resetAboutPicks}>Reset</Button>{/if}
+	{#if !aboutIsDefault()}<Button variant="plain" size="sm" onclick={resetAboutPicks}>{t('settings.appearance.reset')}</Button>{/if}
 </SettingsCard>
 
 {#if autoplay !== null}
-	<SettingsCard id="autoplay-card" title="For everyone" description="Applies to every person on this server" icon="tv">
+	<SettingsCard id="autoplay-card" title={t('settings.appearance.everyone')} description={t('settings.appearance.everyoneDesc')} icon="tv">
 		<div data-testid="autoplay-setting">
 			<label class="checkline">
 				<input id="autoplay-trailers" type="checkbox" checked={autoplay} disabled={busy} onchange={(e) => saveApp('autoplay_trailers', e.currentTarget.checked, e.currentTarget)} />
-				<span><b>Play trailers by themselves</b><br /><span class="hint">Muted, on Explore. Never for Kids, Reduce motion or slow connections.</span></span>
+				<span><b>{t('settings.appearance.autoplay')}</b><br /><span class="hint">{t('settings.appearance.autoplayHint')}</span></span>
 			</label>
 			<label class="checkline" data-testid="signin-art-setting">
 				<input id="signin-art" type="checkbox" checked={signinArt} disabled={busy} onchange={(e) => saveApp('signin_library_art', e.currentTarget.checked, e.currentTarget)} />
-				<span><b>Show Library art on the sign-in page</b><br /><span class="hint">Anyone can see them, with no rating filter</span></span>
+				<span><b>{t('settings.appearance.signinArt')}</b><br /><span class="hint">{t('settings.appearance.signinArtHint')}</span></span>
 			</label>
 			{#if appError}<p class="app-error" role="alert" data-testid="autoplay-error">{appError}</p>{/if}
 		</div>
@@ -147,19 +159,19 @@
 {/if}
 
 {#if session.s.role === 'owner' && titleStats}
-	<SettingsCard id="row-titles-card" title="Explore row titles" description="Last 30 days">
+	<SettingsCard id="row-titles-card" title={t('settings.appearance.rowTitles')} description={t('settings.appearance.last30')}>
 		<Table
-			caption="Explore row titles"
-			columns={[{ key: 'layer', label: 'Title from' }, { key: 'shown', label: 'Shown', align: 'end' }, { key: 'opens', label: 'Opens', align: 'end' }, { key: 'asks', label: 'Requests', align: 'end' }, { key: 'rate', label: 'Per row', align: 'end' }]}
+			caption={t('settings.appearance.rowTitles')}
+			columns={[{ key: 'layer', label: t('settings.appearance.colFrom') }, { key: 'shown', label: t('settings.appearance.colShown'), align: 'end' }, { key: 'opens', label: t('settings.appearance.colOpens'), align: 'end' }, { key: 'asks', label: t('settings.appearance.colRequests'), align: 'end' }, { key: 'rate', label: t('settings.appearance.colRate'), align: 'end' }]}
 			rows={titleStats}
 			rowKey={(r) => r.layer}
-			empty="No Explore rows counted yet."
+			empty={t('settings.appearance.noRows')}
 		/>
 	</SettingsCard>
 {/if}
 
-<SettingsCard id="motion-card" title="Motion">
-	<p class="motion-line">Follows your device's Reduce motion setting</p>
+<SettingsCard id="motion-card" title={t('settings.appearance.motion')}>
+	<p class="motion-line">{t('settings.appearance.motionNote')}</p>
 </SettingsCard>
 
 <style>

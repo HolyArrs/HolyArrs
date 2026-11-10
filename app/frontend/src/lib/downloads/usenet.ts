@@ -1,4 +1,5 @@
 // Usenet parts of the Downloads page: which rows can be retried, the words for a job's steps after its bytes are in, and the Servers and Repair tabs.
+import { t } from '#lib/core/i18n/i18n.svelte.ts';
 import type { DownloadRow } from '../core/types.ts';
 
 /** One step of a finished job, as /usenet answers it. */
@@ -28,10 +29,16 @@ export function controllable(kind?: string): boolean {
 }
 
 /** The words for a Usenet job's step after the download, from client_hint. */
-export const STEP_WORD: Record<string, string> = { verifying: 'Verifying', repairing: 'Repairing', unpacking: 'Unpacking', finishing: 'Moving files', script: 'Running script' };
+export const STEP_WORD: Record<string, string> = {
+	get verifying() { return t('downloads.step.verifying'); },
+	get repairing() { return t('downloads.step.repairing'); },
+	get unpacking() { return t('downloads.step.unpacking'); },
+	get finishing() { return t('downloads.step.moving'); },
+	get script() { return t('downloads.step.script'); }
+};
 
 // The Repair tab's stages in order, with our headings.
-const REPAIR: [string, string][] = [['download', 'Download'], ['repair', 'Verify and repair'], ['join', 'Join'], ['unpack', 'Unpack'], ['rename', 'Rename'], ['move', 'Move'], ['script', 'Script']];
+const REPAIR: [string, string][] = [['download', 'download'], ['repair', 'repair'], ['join', 'join'], ['unpack', 'unpack'], ['rename', 'rename'], ['move', 'move'], ['script', 'script']];
 
 /** The post-download stages that have lines. */
 export function repairSteps(v: UsenetView | undefined): { title: string; lines: string[] }[] {
@@ -39,7 +46,7 @@ export function repairSteps(v: UsenetView | undefined): { title: string; lines: 
 	const out: { title: string; lines: string[] }[] = [];
 	for (const [key, title] of REPAIR) {
 		const lines = v.stages.filter((s) => s.stage === key).flatMap((s) => s.lines);
-		if (lines.length) out.push({ title, lines });
+		if (lines.length) out.push({ title: t(`downloads.repair.${title}`), lines });
 	}
 	return out;
 }

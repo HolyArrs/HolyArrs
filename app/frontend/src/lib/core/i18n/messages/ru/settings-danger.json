@@ -1,0 +1,16 @@
+{
+	"settings.danger.stopping": "HolyArrs останавливается.",
+	"settings.danger.couldnt": "Не получилось: {action}",
+	"settings.danger.title": "Опасная зона",
+	"settings.danger.ownerOnly": "Только владелец и администраторы",
+	"settings.danger.ask": "{label}?",
+	"settings.danger.yes": "Да: {action}",
+	"settings.danger.cancel": "Отмена",
+	"settings.danger.expires": "Истекает через 60 с",
+	"settings.danger.wholeApp": "Всё приложение",
+	"settings.danger.intro": "Эти действия останавливают HolyArrs. Политика перезапуска Docker запустит его снова через несколько секунд, если только она не <code>no</code>; тогда запустите контейнер сами. Каждое действие спрашивает подтверждение.",
+	"settings.danger.restart": "Перезапустить HolyArrs",
+	"settings.danger.safe": "Перезапустить в безопасном режиме",
+	"settings.danger.shutdown": "Выключить",
+	"settings.danger.safeNote": "Запускается один раз только со входом, настройками и Медиатекой. Используйте, если Часть мешает запуску."
+}

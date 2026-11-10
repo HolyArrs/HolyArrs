@@ -1,6 +1,7 @@
 // The movie page's edit dialog: the quality rules, the release gate and keeping it up to date.
 import { api, message } from '#lib/core/api.ts';
 import { toasts } from '#lib/core/toasts.svelte.ts';
+import { t } from '#lib/core/i18n/i18n.svelte.ts';
 import type { PickRulesView, TitleView } from '#lib/core/types.ts';
 
 export function createTitleEdit(ctx: any) {
@@ -39,7 +40,7 @@ export function createTitleEdit(ctx: any) {
 			const r = await api.put<{ title: TitleView }>(`/titles/${ctx.id}`, body);
 			ctx.title = r.title;
 			editDialog?.close();
-			toasts.push(`${ctx.title?.name ?? 'Title'} saved`, 'ok');
+			toasts.push(t('mediafiles.title.saved', { name: ctx.title?.name ?? t('mediafiles.title.titleWord') }), 'ok');
 		} catch (err) {
 			editError = message(err);
 		} finally {

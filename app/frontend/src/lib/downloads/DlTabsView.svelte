@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
+	import { t, appLocale } from '#lib/core/i18n/i18n.svelte.ts';
 	import Icon from '#lib/ui/Icon.svelte';
 	import Confirm from '#lib/ui/Confirm.svelte';
 	import GhostEmpty from './GhostEmpty.svelte';
@@ -10,7 +12,7 @@
 	import { stageOf } from './status-tabs.ts';
 	import { repairSteps, serverRows } from './usenet.ts';
 	import { live, type PaneDetail } from './pane-detail.svelte.ts';
-	import { CALM_ERR, PRIOS, TRACKER_WORD, fileIndexes, flagsOf, infoGroups, mmss, usenetGroups, type PaneTab } from './pane-facts.ts';
+	import { calmErr, PRIOS, TRACKER_WORD, fileIndexes, flagsOf, infoGroups, mmss, usenetGroups, type PaneTab } from './pane-facts.ts';
 	import type { ImportRecord } from './types.ts';
 	import { to } from '../core/paths.ts';
 	import type { DownloadRow } from '../core/types.ts';
@@ -19,7 +21,7 @@
 
 	const tor = $derived(protocolOf(r) === 'torrent');
 	const d = $derived(pane.det.id === r.id ? pane.det.detail : undefined);
-	const t = $derived(d?.torrent);
+	const tt = $derived(d?.torrent);
 
 	function trNav(e: KeyboardEvent) {
 		if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
@@ -35,17 +37,17 @@
 
 {#snippet calm(r: DownloadRow, tab: string, err: string | undefined)}
 	{#if err}
-		<p class="calm" role="status" data-testid="dl-panel-error"><span>{err}</span><button type="button" class="xbn" onclick={() => void pane.readDetail(r, tab)} data-testid="dl-panel-retry">Try again</button></p>
+		<p class="calm" role="status" data-testid="dl-panel-error"><span>{err}</span><button type="button" class="xbn" onclick={() => void pane.readDetail(r, tab)} data-testid="dl-panel-retry">{t('health.sections.tryAgain')}</button></p>
 	{:else}
-		<p class="calm wait" aria-live="polite" data-testid="dl-panel-wait">Reading from the Downloader…</p>
+		<p class="calm wait" aria-live="polite" data-testid="dl-panel-wait">{t('downloads.tv.reading')}</p>
 	{/if}
 {/snippet}
 
 	{#if tab === 'Info'}
 		{@const shown = tor ? infoGroups(r, d) : usenetGroups(r, d, importOf.get(r.id))}
 		<div class="facts" data-testid="dl-info">
-			{#if stageOf(r) === 'failed' || problem(r)?.tone === 'fail'}<a class="hlink" href={to('/downloads/history?step=failed')} data-testid="dl-see-history">See in History</a>{/if}
-			{#if tor && d?.torrent_error}<p class="calm slim" role="status" data-testid="dl-panel-error"><span>{CALM_ERR}</span><button type="button" class="xbn" onclick={() => void pane.readDetail(r, 'Info')} data-testid="dl-panel-retry">Try again</button></p>{/if}
+			{#if stageOf(r) === 'failed' || problem(r)?.tone === 'fail'}<a class="hlink" href={to('/downloads/history?step=failed')} data-testid="dl-see-history">{t('downloads.tv.seeHistory')}</a>{/if}
+			{#if tor && d?.torrent_error}<p class="calm slim" role="status" data-testid="dl-panel-error"><span>{calmErr()}</span><button type="button" class="xbn" onclick={() => void pane.readDetail(r, 'Info')} data-testid="dl-panel-retry">{t('health.sections.tryAgain')}</button></p>{/if}
 			{#if shown.length}
 				<div class="fcols" style="--fn: {shown.length}">
 					{#each shown as g (g.cap)}
@@ -58,7 +60,7 @@
 					{/each}
 				</div>
 			{:else}
-				<p class="fnone">Nothing reported yet.</p>
+				<p class="fnone">{t('downloads.tv.nothing')}</p>
 			{/if}
 		</div>
 	{:else if tab === 'Files'}
@@ -66,7 +68,7 @@
 		{#if !tor || !files}
 			{@render calm(r, 'Files', tor && pane.det.id === r.id ? pane.det.filesErr : undefined)}
 		{:else if !files.length}
-			<GhostEmpty compact testid="dl-files-none" title="No files yet" text="The file list appears once the download has its details." />
+			<GhostEmpty compact testid="dl-files-none" title={t('downloads.tv.noFiles')} text={t('downloads.tv.noFilesText')} />
 		{:else}
 			{@const shownF = filterFiles(files, pane.fq)}
 			{@const rowsT = fileTree(shownF.map((f) => ({ name: f.name, size: f.size, done: f.size * f.progress })), (k) => !!pane.closed[`${r.id}|${k}`])}
@@ -74,37 +76,37 @@
 			{#if pane.prioWait && pane.prioWait.r.id === r.id && !watch}
 				{@const w = pane.prioWait}
 				<div class="calm prf" data-testid="dl-files-proof">
-					<p class="xt">Confirm your password to change file priority.</p>
+					<p class="xt">{t('downloads.tv.confirmPw')}</p>
 					<Confirm action="password" onCancel={() => (pane.prioWait = null)}>
-						<button type="button" class="xbn" disabled={pane.filesBusy} onclick={() => pane.setPrio(w.r, w.indexes, w.priority)} data-testid="dl-files-proof-go">Change priority</button>
+						<button type="button" class="xbn" disabled={pane.filesBusy} onclick={() => pane.setPrio(w.r, w.indexes, w.priority)} data-testid="dl-files-proof-go">{t('downloads.tv.changePrio')}</button>
 					</Confirm>
 				</div>
 			{/if}
 			<div class="fbar" hidden={files.length === 1}>
-				<input type="search" class="tfld" bind:this={pane.fqEl} bind:value={pane.fq} placeholder="Filter files" aria-label="Filter files" onkeydown={(e) => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); pane.fq = ''; } }} data-testid="dl-files-filter" />
+				<input type="search" class="tfld" bind:this={pane.fqEl} bind:value={pane.fq} placeholder={t('downloads.tv.filter')} aria-label={t('downloads.tv.filter')} onkeydown={(e) => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); pane.fq = ''; } }} data-testid="dl-files-filter" />
 				{#if pane.fsel.size && !watch && mayEdit(r)}
-					<span class="k" aria-live="polite" data-testid="dl-files-picked">{pane.fsel.size} selected</span>
+					<span class="k" aria-live="polite" data-testid="dl-files-picked">{pane.fsel.size} {t('downloads.sel.selected')}</span>
 					{#each PRIOS as o (o.v)}<button type="button" class="xbn" disabled={pane.filesBusy} onclick={() => pane.setPrio(r, indexesUnder(files, pane.fsel), o.v)} data-testid="dl-files-prio-{o.v}">{o.label}</button>{/each}
-					<button type="button" class="xbn" onclick={() => (pane.fsel = new Set())} data-testid="dl-files-clear">Clear</button>
+					<button type="button" class="xbn" onclick={() => (pane.fsel = new Set())} data-testid="dl-files-clear">{t('downloads.sel.clear')}</button>
 				{/if}
 			</div>
 			{#if files.length === 1}
 				{@const f = files[0]}
 				{@const pc = Math.floor(f.progress * 100)}
 				<div class="tblw" data-testid="dl-filetable"><table class="t2">
-					<thead><tr><th class="c-name">Name</th><th class="c-num c-size">Size</th><th class="c-prog">Progress</th><th class="c-prio">Priority</th></tr></thead>
+					<thead><tr><th class="c-name">{t('downloads.fact.name')}</th><th class="c-num c-size">{t('downloads.pf.size')}</th><th class="c-prog">{t('downloads.col.progress')}</th><th class="c-prio">{t('downloads.act.priority')}</th></tr></thead>
 					<tbody><tr class:off={f.priority === 0} data-testid="dl-filerow" data-single="true">
 						<td class="c-name"><span class="fn" title={f.name}>{f.name.split('/').pop()}</span></td>
 						<td class="c-num c-size">{bytes(f.size)}</td>
 						<td class="c-prog"><span class="pbar"><i style="width: {pc}%"></i></span><span class="pv">{pc}%</span></td>
-						<td class="c-prio"><select class="pick" aria-label="Priority of {f.name}" value={PRIOS.some((o) => o.v === f.priority) ? f.priority : 1} disabled={watch || pane.filesBusy || !mayEdit(r)} onchange={(e) => pane.setPrio(r, [f.index], Number(e.currentTarget.value))}>{#each PRIOS as o (o.v)}<option value={o.v}>{o.label}</option>{/each}</select></td>
+						<td class="c-prio"><select class="pick" aria-label={t('downloads.tv.prioOf', { name: f.name })} value={PRIOS.some((o) => o.v === f.priority) ? f.priority : 1} disabled={watch || pane.filesBusy || !mayEdit(r)} onchange={(e) => pane.setPrio(r, [f.index], Number(e.currentTarget.value))}>{#each PRIOS as o (o.v)}<option value={o.v}>{o.label}</option>{/each}</select></td>
 					</tr></tbody>
 				</table></div>
 			{:else if !shownF.length}
-				<GhostEmpty compact testid="dl-files-nomatch" title="No files match" text="Try fewer words, or clear the filter." />
+				<GhostEmpty compact testid="dl-files-nomatch" title={t('downloads.tv.noMatch')} text={t('downloads.tv.noMatchText')} />
 			{:else}
 			<div class="tblw" data-testid="dl-filetable"><table class="t2">
-				<thead><tr><th class="c-chk"><span class="sr">Download</span></th><th class="c-name">Name</th><th class="c-num c-size">Size</th><th class="c-prog">Progress</th><th class="c-prio">Priority</th><th class="c-num c-rem">Remaining</th></tr></thead>
+				<thead><tr><th class="c-chk"><span class="sr">{t('downloads.tv.download')}</span></th><th class="c-name">{t('downloads.fact.name')}</th><th class="c-num c-size">{t('downloads.pf.size')}</th><th class="c-prog">{t('downloads.col.progress')}</th><th class="c-prio">{t('downloads.act.priority')}</th><th class="c-num c-rem">{t('downloads.tv.remaining')}</th></tr></thead>
 				<tbody>
 					{#each rowsT as x, ri (x.key)}
 						{@const pc = x.size ? Math.floor((x.done / x.size) * 100) : 0}
@@ -113,11 +115,11 @@
 						{@const skipped = f ? f.priority === 0 : kids.length > 0 && kids.every((y) => y.priority === 0)}
 						<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 						<tr class:sel={pane.sel[`${r.id}:f`] === x.key || pane.fsel.has(x.key)} class:off={skipped} tabindex={ri === 0 ? 0 : -1} aria-selected={pane.fsel.has(x.key)} onclick={(e) => pane.fileClick(e, r, keys, x.key)} onkeydown={(e) => { trNav(e); if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pane.fileClick(e, r, keys, x.key); } }} data-testid="dl-filerow">
-							<td class="c-chk"><input type="checkbox" checked={!skipped} disabled={watch || pane.filesBusy || !mayEdit(r)} aria-label="Download {x.name}" onclick={(e) => e.stopPropagation()} onchange={(e) => pane.setPrio(r, fileIndexes(files, x.key), e.currentTarget.checked ? 1 : 0)} /></td>
-							<td class="c-name"><span class="fnm" style="padding-left: {x.depth * 14}px">{#if x.dir}<button type="button" class="fold" class:shut={pane.closed[`${r.id}|${x.key}`]} aria-label="{pane.closed[`${r.id}|${x.key}`] ? 'Expand' : 'Collapse'} {x.name}" aria-expanded={!pane.closed[`${r.id}|${x.key}`]} onclick={(e) => { e.stopPropagation(); pane.closed[`${r.id}|${x.key}`] = !pane.closed[`${r.id}|${x.key}`]; }}><Icon name="chevronDown" size={14} stroke={2.2} /></button>{:else}<span class="fold sp0"></span>{/if}<span class="fn" title={x.key}>{x.name}</span></span></td>
+							<td class="c-chk"><input type="checkbox" checked={!skipped} disabled={watch || pane.filesBusy || !mayEdit(r)} aria-label={t('downloads.tv.downloadFile', { name: x.name })} onclick={(e) => e.stopPropagation()} onchange={(e) => pane.setPrio(r, fileIndexes(files, x.key), e.currentTarget.checked ? 1 : 0)} /></td>
+							<td class="c-name"><span class="fnm" style="padding-left: {x.depth * 14}px">{#if x.dir}<button type="button" class="fold" class:shut={pane.closed[`${r.id}|${x.key}`]} aria-label={t(pane.closed[`${r.id}|${x.key}`] ? 'downloads.tv.expandName' : 'downloads.tv.collapseName', { name: x.name })} aria-expanded={!pane.closed[`${r.id}|${x.key}`]} onclick={(e) => { e.stopPropagation(); pane.closed[`${r.id}|${x.key}`] = !pane.closed[`${r.id}|${x.key}`]; }}><Icon name="chevronDown" size={14} stroke={2.2} /></button>{:else}<span class="fold sp0"></span>{/if}<span class="fn" title={x.key}>{x.name}</span></span></td>
 							<td class="c-num c-size">{bytes(x.size)}</td>
 							<td class="c-prog"><span class="pbar"><i style="width: {pc}%"></i></span><span class="pv">{pc}%</span></td>
-							<td class="c-prio">{#if f}<select class="pick" aria-label="Priority of {x.name}" value={PRIOS.some((o) => o.v === f.priority) ? f.priority : 1} disabled={watch || pane.filesBusy || !mayEdit(r)} onclick={(e) => e.stopPropagation()} onchange={(e) => pane.setPrio(r, [f.index], Number(e.currentTarget.value))}>{#each PRIOS as o (o.v)}<option value={o.v}>{o.label}</option>{/each}</select>{/if}</td>
+							<td class="c-prio">{#if f}<select class="pick" aria-label={t('downloads.tv.prioOf', { name: x.name })} value={PRIOS.some((o) => o.v === f.priority) ? f.priority : 1} disabled={watch || pane.filesBusy || !mayEdit(r)} onclick={(e) => e.stopPropagation()} onchange={(e) => pane.setPrio(r, [f.index], Number(e.currentTarget.value))}>{#each PRIOS as o (o.v)}<option value={o.v}>{o.label}</option>{/each}</select>{/if}</td>
 							<td class="c-num c-rem">{bytes(Math.max(0, x.size - x.done))}</td>
 						</tr>
 					{/each}
@@ -130,10 +132,10 @@
 		{#if !peers}
 			{@render calm(r, 'Peers', pane.det.id === r.id ? pane.det.swarmErr : undefined)}
 		{:else if !peers.length && r.progress >= 1}
-			<p class="quiet0" role="status" data-testid="dl-peers-quiet">{quietPeers(t?.last_activity)}</p>
+			<p class="quiet0" role="status" data-testid="dl-peers-quiet">{quietPeers(tt?.last_activity)}</p>
 		{:else}
 			<div class="tblw" data-testid="dl-peertable"><table class="t2">
-				<thead><tr><th class="c-name">Address</th><th class="c-cl">Client</th><th class="c-prog">Progress</th><th class="c-num">↓</th><th class="c-num">↑</th><th class="c-fl">Flags</th></tr></thead>
+				<thead><tr><th class="c-name">{t('downloads.tv.address')}</th><th class="c-cl">{t('downloads.tv.client')}</th><th class="c-prog">{t('downloads.col.progress')}</th><th class="c-num">↓</th><th class="c-num">↑</th><th class="c-fl">{t('downloads.tv.flags')}</th></tr></thead>
 				<tbody>
 					{#each peers as p, ri (p.address)}
 						<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
@@ -146,7 +148,7 @@
 							<td class="c-fl">{flagsOf(p)}</td>
 						</tr>
 					{/each}
-					{#if !peers.length}<tr><td colspan="6"><GhostEmpty compact testid="dl-peers-none" title="No peers connected" text={r.progress >= 1 ? 'Nobody is downloading from this torrent right now.' : 'Peers show up here while the torrent is active.'} /></td></tr>{/if}
+					{#if !peers.length}<tr><td colspan="6"><GhostEmpty compact testid="dl-peers-none" title={t('downloads.tv.noPeers')} text={r.progress >= 1 ? t('downloads.tv.nobody') : t('downloads.tv.peersShow')} /></td></tr>{/if}
 				</tbody>
 			</table></div>
 		{/if}
@@ -156,7 +158,7 @@
 			{@render calm(r, 'Trackers', pane.det.id === r.id ? pane.det.swarmErr : undefined)}
 		{:else}
 			<div class="tblw" data-testid="dl-trackertable"><table class="t2">
-				<thead><tr><th class="c-name">Tracker</th><th class="c-num c-tier">Tier</th><th>Status</th><th class="c-num">Peers</th><th class="c-num">Seeds</th><th class="c-msg">Message</th><th class="c-num">Next check</th></tr></thead>
+				<thead><tr><th class="c-name">{t('downloads.col.tracker')}</th><th class="c-num c-tier">{t('downloads.tv.tier')}</th><th>{t('downloads.col.status')}</th><th class="c-num">{t('downloads.facet.peers')}</th><th class="c-num">{t('downloads.facet.seeds')}</th><th class="c-msg">{t('downloads.hd.message')}</th><th class="c-num">{t('downloads.tv.nextCheck')}</th></tr></thead>
 				<tbody>
 					{#each trs as x, ri (x.url + x.tier)}
 						<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
@@ -170,24 +172,24 @@
 							<td class="c-num">{x.next_check ? mmss(x.next_check) : x.fixed ? '' : '–'}</td>
 						</tr>
 					{/each}
-					{#if !trs.length}<tr><td colspan="7"><GhostEmpty compact testid="dl-trackers-none" title="No trackers" text="This torrent doesn't list any trackers." /></td></tr>{/if}
+					{#if !trs.length}<tr><td colspan="7"><GhostEmpty compact testid="dl-trackers-none" title={t('downloads.tv.noTrackers')} text={t('downloads.tv.noTrackersText')} /></td></tr>{/if}
 				</tbody>
 			</table></div>
 			{#if !watch && mayEdit(r) && r.downloader_id && r.hash}
 				{@const chosen = trs.find((x) => x.ref && pane.sel[`${r.id}:t`] === x.ref)}
 				<div class="tred" data-testid="dl-tracker-edit">
 					{#if chosen}
-						<p class="tl"><b>{chosen.url}</b> <span class="k">The full address stays hidden</span></p>
+						<p class="tl"><b>{chosen.url}</b> <span class="k">{t('downloads.tv.hidden')}</span></p>
 						<div class="trow">
-							<input type="text" class="tfld" placeholder="New address (leave empty to keep it)" bind:value={pane.trUrl} spellcheck="false" aria-label="New tracker address" data-testid="dl-tracker-url" />
-							<input type="number" class="tfld tier" min="0" max="255" bind:value={pane.trTier} aria-label="Tier" data-testid="dl-tracker-tier" />
-							<button type="button" class="xbn" disabled={pane.trBusy} onclick={() => pane.saveTracker(r, chosen)} data-testid="dl-tracker-save">Save</button>
-							<button type="button" class="xbn" disabled={pane.trBusy} onclick={() => pane.removeTracker(r, chosen)} data-testid="dl-tracker-remove">Remove</button>
+							<input type="text" class="tfld" placeholder={t('downloads.tv.newAddress')} bind:value={pane.trUrl} spellcheck="false" aria-label={t('downloads.tv.newTracker')} data-testid="dl-tracker-url" />
+							<input type="number" class="tfld tier" min="0" max="255" bind:value={pane.trTier} aria-label={t('downloads.tv.tier')} data-testid="dl-tracker-tier" />
+							<button type="button" class="xbn" disabled={pane.trBusy} onclick={() => pane.saveTracker(r, chosen)} data-testid="dl-tracker-save">{t('downloads.tv.save')}</button>
+							<button type="button" class="xbn" disabled={pane.trBusy} onclick={() => pane.removeTracker(r, chosen)} data-testid="dl-tracker-remove">{t('downloads.act.remove')}</button>
 						</div>
 					{/if}
 					<div class="trow">
-						<textarea class="tfld" rows="1" placeholder="Add trackers: udp://… or https://…, one per line" bind:value={pane.trAdd} spellcheck="false" aria-label="Add trackers" data-testid="dl-tracker-add-input"></textarea>
-						<button type="button" class="xbn" disabled={pane.trBusy || !pane.trAdd.trim()} onclick={() => pane.addTrackers(r)} data-testid="dl-tracker-add">Add</button>
+						<textarea class="tfld" rows="1" placeholder={t('downloads.tv.addTrackers')} bind:value={pane.trAdd} spellcheck="false" aria-label={t('downloads.tv.addTrackersLabel')} data-testid="dl-tracker-add-input"></textarea>
+						<button type="button" class="xbn" disabled={pane.trBusy || !pane.trAdd.trim()} onclick={() => pane.addTrackers(r)} data-testid="dl-tracker-add">{t('downloads.at.add')}</button>
 					</div>
 				</div>
 			{/if}
@@ -199,7 +201,7 @@
 			{@render calm(r, 'Servers', pane.det.id === r.id ? pane.det.usenetErr : undefined)}
 		{:else if srv.length}
 			<div class="tblw" data-testid="dl-servertable"><table class="t2">
-				<thead><tr><th class="c-name">Server</th><th class="c-num">This download</th><th class="c-num">Found</th></tr></thead>
+				<thead><tr><th class="c-name">{t('downloads.tv.server')}</th><th class="c-num">{t('downloads.tv.thisDownload')}</th><th class="c-num">{t('downloads.tv.found')}</th></tr></thead>
 				<tbody>
 					{#each srv as s (s.name)}
 						<tr data-testid="dl-serverrow"><td class="c-name"><span class="fn">{s.name}</span></td><td class="c-num">{s.job || '–'}</td><td class="c-num">{s.found || '–'}</td></tr>
@@ -207,7 +209,7 @@
 				</tbody>
 			</table></div>
 		{:else}
-			<GhostEmpty compact testid="dl-servers-none" title="No server details yet" text="Which servers supplied this download shows up here." />
+			<GhostEmpty compact testid="dl-servers-none" title={t('downloads.tv.noServers')} text={t('downloads.tv.noServersText')} />
 		{/if}
 	{:else}
 		{@const log = d?.log ?? []}
@@ -224,14 +226,14 @@
 				{#each logDays(log) as g (g.day)}
 					<h4 class="lgday">{g.day}</h4>
 					<ol class="lg">
-						{#each g.lines as l, i (i)}<li class:bad={badKind(l.kind)}><time>{new Date(l.at).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}</time><span class="lgd" aria-hidden="true"></span><span class="lgt">{l.summary}</span></li>{/each}
+						{#each g.lines as l, i (i)}<li class:bad={badKind(l.kind)}><time>{new Date(l.at).toLocaleTimeString(appLocale(), { hour: '2-digit', minute: '2-digit' })}</time><span class="lgd" aria-hidden="true"></span><span class="lgt">{serverWords(l.summary)}</span></li>{/each}
 					</ol>
 				{/each}
 			</div>
 		{:else if !d}
 			{@render calm(r, 'Log', undefined)}
 		{:else}
-			<GhostEmpty compact testid="dl-log-none" title="Nothing logged yet" text="What happens to this download shows up here." />
+			<GhostEmpty compact testid="dl-log-none" title={t('downloads.tv.nothingLogged')} text={t('downloads.tv.nothingLoggedText')} />
 		{/if}
 	{/if}
 

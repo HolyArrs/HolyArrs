@@ -1,4 +1,6 @@
 <script lang="ts">
+	import Words from '#lib/ui/Words.svelte';
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
@@ -23,7 +25,7 @@
 	let rules = $state<PickRulesView[] | null>(null);
 	let error = $state('');
 	let loading = $state(false);
-	const kinds = (r: PickRulesView) => (r.kinds.length ? r.kinds.map((k) => kindChoices.find(([c]) => c === k)?.[1] ?? k).join(', ') : 'Every kind');
+	const kinds = (r: PickRulesView) => (r.kinds.length ? r.kinds.map((k) => kindChoices.find(([c]) => c === k)?.[1] ?? k).join(', ') : t('settings.pickRules.everyKind'));
 
 	// Remove asks first; the server refuses rules that something still uses.
 	let removing = $state<PickRulesView | null>(null);
@@ -63,7 +65,7 @@
 			await api.del(`/pick-rules/${r.id}`);
 			rules = (rules ?? []).filter((x) => x.id !== r.id);
 			removeOpen = false;
-			toasts.push(`${r.name} removed`, 'ok');
+			toasts.push(t('settings.pickRules.removed', { name: r.name }), 'ok');
 		} catch (err) {
 			removeError = message(err);
 			if (err instanceof ApiError && err.status === 409) {
@@ -76,11 +78,11 @@
 	}
 </script>
 
-<svelte:head><title>Quality · HolyArrs</title></svelte:head>
+<svelte:head><title>{t('settings.pickRules.title')} · HolyArrs</title></svelte:head>
 
-<PageHeader title="Quality">
+<PageHeader title={t('settings.pickRules.title')}>
 	{#snippet actions()}
-		{#if mayEdit}<Button variant="primary" icon="plus" href={to('/settings/pick-rules/new')}>Add a quality set</Button>{/if}
+		{#if mayEdit}<Button variant="primary" icon="plus" href={to('/settings/pick-rules/new')}>{t('settings.pickRules.add')}</Button>{/if}
 	{/snippet}
 </PageHeader>
 
@@ -90,9 +92,9 @@
 	<SkSettings rows={3} />
 {:else}
 	{#if error}<LoadError hasData message={error} onretry={load} busy={loading} />{/if}
-	<SettingsCard id="pick-rules-card" title="Your quality sets" description="Each Library folder has its own; a title can override">
+	<SettingsCard id="pick-rules-card" title={t('settings.pickRules.yours')} description={t('settings.pickRules.yoursDesc')}>
 		{#if rules.length === 0}
-			<EmptyState compact icon="star" title="No quality sets" text="HolyArrs makes its ready-made quality sets when it starts." action={mayEdit ? { label: 'Add a quality set', href: to('/settings/pick-rules/new'), icon: 'plus' } : undefined} />
+			<EmptyState compact icon="star" title={t('settings.pickRules.none')} text={t('settings.pickRules.noneText')} action={mayEdit ? { label: t('settings.pickRules.add'), href: to('/settings/pick-rules/new'), icon: 'plus' } : undefined} />
 		{:else}
 			<ul class="rows" data-testid="pick-rules">
 				{#each rules as r (r.id)}
@@ -101,14 +103,14 @@
 							<b>{r.name}</b>
 							<span class="xs muted meta">{[kinds(r), usedWords(r.in_use)].filter(Boolean).join(' · ')}</span>
 						</span>
-						{#if r.preset}<span class="chip">Ready-made</span>{/if}
+						{#if r.preset}<span class="chip">{t('settings.pickRules.readyMade')}</span>{/if}
 						<span class="acts">
-							<Button variant="plain" href={to(`/settings/pick-rules/${r.id}`)}>{mayEdit ? 'Change' : 'Open'}</Button>
+							<Button variant="plain" href={to(`/settings/pick-rules/${r.id}`)}>{mayEdit ? t('settings.pickRules.change') : t('settings.pickRules.open')}</Button>
 							{#if mayEdit}<Menu
-								label="More for {r.name}"
+								label={t('settings.pickRules.moreFor', { name: r.name })}
 								items={[
-									{ label: 'Make a copy', icon: 'copy', href: to(`/settings/pick-rules/new?from=${r.id}`) },
-									...(r.preset ? [] : [{ label: 'Remove', icon: 'trash' as const, destructive: true, onselect: () => askRemove(r) }])
+									{ label: t('settings.pickRules.copy'), icon: 'copy', href: to(`/settings/pick-rules/new?from=${r.id}`) },
+									...(r.preset ? [] : [{ label: t('settings.pickRules.remove'), icon: 'trash' as const, destructive: true, onselect: () => askRemove(r) }])
 								]}
 							/>{/if}
 						</span>
@@ -120,36 +122,36 @@
 
 	<OwnTraits {mayEdit} />
 
-	<SettingsCard id="pick-rules-where" title="Where quality is chosen">
+	<SettingsCard id="pick-rules-where" title={t('settings.pickRules.where')}>
 		<ul class="where">
-			<li><a href={to('/settings/library-folders')}>Library folders</a>: each folder has its own quality set, which every new title there gets.</li>
-			<li><a href={to('/settings/title-defaults')}>Movies and TV defaults</a>: the rules a new movie or show gets.</li>
-			<li><a href={to('/settings/requests#ask-rules')}>Request rules</a>: the rules approved requests get.</li>
-			<li><a href={to('/settings/outside-lists')}>Outside lists</a>: the rules titles from a list get.</li>
-			<li>A title's page, for that title only</li>
+			<li><Words key="settings.pickRules.whereFolders" links={{ a: to('/settings/library-folders') }} /></li>
+			<li><Words key="settings.pickRules.whereDefaults" links={{ a: to('/settings/title-defaults') }} /></li>
+			<li><Words key="settings.pickRules.whereRequests" links={{ a: to('/settings/requests#ask-rules') }} /></li>
+			<li><Words key="settings.pickRules.whereLists" links={{ a: to('/settings/outside-lists') }} /></li>
+			<li>{t('settings.pickRules.whereTitle')}</li>
 		</ul>
-		{#if mayEdit}<p class="hint">Copy a ready-made set to start your own</p>
-		{:else}<p class="hint" data-testid="read-only">View only. Changing needs the Settings permission.</p>{/if}
+		{#if mayEdit}<p class="hint">{t('settings.pickRules.hint')}</p>
+		{:else}<p class="hint" data-testid="read-only">{t('settings.pickRules.readOnly')}</p>{/if}
 	</SettingsCard>
 {/if}
 
-<Sheet bind:open={removeOpen} title="Remove this quality set?" description={removing?.name} size="sm">
+<Sheet bind:open={removeOpen} title={t('settings.pickRules.removeTitle')} description={removing?.name} size="sm">
 	<form id="remove-rules" onsubmit={remove}>
-		<p class="small">Can't be undone. Files stay.</p>
-		{#if removing?.in_use}<p class="small muted">{usedWords(removing.in_use)}. Pick other rules there first.</p>{/if}
+		<p class="small">{t('settings.pickRules.removeNote')}</p>
+		{#if removing?.in_use}<p class="small muted">{t('settings.pickRules.removeUsed', { used: usedWords(removing.in_use) })}</p>{/if}
 		{#if removeError}
-			<p class="form-error" role="alert" data-testid="remove-error">{removeError}{#if removeUse}<br /><span class="muted">{removeUse}.</span>{/if}</p>
+			<p class="form-error" role="alert" data-testid="remove-error">{removeError}{#if removeUse}<br /><span class="muted">{t('settings.pickRules.sentence', { text: removeUse })}</span>{/if}</p>
 		{/if}
 	</form>
 	{#snippet footer()}
-		<Button variant="plain" onclick={() => (removeOpen = false)}>Cancel</Button>
-		<Button variant="destructive" type="submit" form="remove-rules" busy={removeBusy}>Remove</Button>
+		<Button variant="plain" onclick={() => (removeOpen = false)}>{t('settings.pickRules.cancel')}</Button>
+		<Button variant="destructive" type="submit" form="remove-rules" busy={removeBusy}>{t('settings.pickRules.remove')}</Button>
 	{/snippet}
 </Sheet>
 
 <style>
 	.where { display: flex; flex-direction: column; gap: 8px; font: var(--t-callout); }
-	.where a { color: var(--accent-text); font-weight: 600; }
+	.where :global(a) { color: var(--accent-text); font-weight: 600; }
 	.meta { display: block; }
 	.acts { display: flex; align-items: center; gap: 4px; flex: none; }
 	@media (max-width: 520px) {

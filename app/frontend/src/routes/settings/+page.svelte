@@ -1,10 +1,11 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	// Settings home: five group cards in a Bento grid over the blurred wall of this Library's posters. Each card shows what lives inside it and opens on its first page (a zoom on wider screens, a push on phones). My account is in the account menu.
 	import Icon from '#lib/ui/Icon.svelte';
 	import SettingsTile from '#lib/ui/SettingsTile.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
-	import { searchSettings, settingIndex, type SettingEntry } from './(home)/settings-search.ts';
+	import { entryLabel, searchSettings, settingIndex, type SettingEntry } from './(home)/settings-search.ts';
 	import GroupArt from './(home)/GroupArt.svelte';
 	import { homeArt } from './(home)/art.svelte.ts';
 	import { cancelOpen, push, settingsNav, zoomBack, zoomOpen, clearFlight } from './(home)/zoom.ts';
@@ -93,30 +94,30 @@
 	});
 </script>
 
-<svelte:head><title>Settings · HolyArrs</title></svelte:head>
+<svelte:head><title>{t('settings.home.title')} · HolyArrs</title></svelte:head>
 <svelte:window onkeydown={key} />
 
 <div class="sx-home" bind:this={home}>
 	<div class="sx-head">
-		<h1 class="sr-only">Settings</h1>
+		<h1 class="sr-only">{t('settings.home.title')}</h1>
 		<div class="find">
 			<Icon name="search" size={17} />
-			<label class="sr-only" for="settings-find">Search settings</label>
-			<input id="settings-find" class="input" type="search" placeholder="Search settings" autocomplete="off" enterkeyhint="search" bind:value={settingsFind.term} aria-controls={query.trim() ? 'settings-results' : undefined} />
+			<label class="sr-only" for="settings-find">{t('settings.home.search')}</label>
+			<input id="settings-find" class="input" type="search" placeholder={t('settings.home.search')} autocomplete="off" enterkeyhint="search" bind:value={settingsFind.term} aria-controls={query.trim() ? 'settings-results' : undefined} />
 		</div>
 	</div>
 
 	{#if query.trim()}
 		{#if results.length}
-			<ul class="results" id="settings-results" aria-label="Matching settings" data-testid="setting-results">
+			<ul class="results" id="settings-results" aria-label={t('settings.home.matching')} data-testid="setting-results">
 				{#each results as r (r.href + '#' + r.anchor)}
 					{@const s = sectionOf(r.href)}
 					<li>
 						<a class="row-link" href={link(r)} data-testid="setting-result" onclick={() => (settingsFind.term = '')}>
 							<SettingsTile icon={s?.icon ?? 'settings'} tint={s?.tint ?? 'gray'} />
 							<span class="setting-copy">
-								<strong>{r.label}</strong>
-								<span>{r.anchor ? `${groupLabel(r.href)} › ${s?.label ?? ''}${r.advanced ? ' › Advanced' : ''}` : `${groupLabel(r.href)} · page`}</span>
+								<strong>{entryLabel(r)}</strong>
+								<span>{r.anchor ? `${groupLabel(r.href)} › ${s?.label ?? ''}${r.advanced ? ' › ' + t('settings.home.advanced') : ''}` : t('settings.home.page', { group: groupLabel(r.href) })}</span>
 							</span>
 							<Icon name="chevronRight" size={16} />
 						</a>
@@ -124,7 +125,7 @@
 				{/each}
 			</ul>
 		{:else}
-			<EmptyState compact icon="search" title="No matching settings" text="Try another word, like folder, key or password." action={{ label: 'Clear the search', onclick: () => (settingsFind.term = '') }} />
+			<EmptyState compact icon="search" title={t('settings.home.noMatch')} text={t('settings.home.noMatchText')} action={{ label: t('settings.home.clear'), onclick: () => (settingsFind.term = '') }} />
 		{/if}
 	{:else}
 		<!-- Problems show in the alerts panel and as the group's chip on its card, not as a banner here. -->

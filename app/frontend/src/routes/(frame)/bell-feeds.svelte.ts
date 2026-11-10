@@ -9,6 +9,7 @@ import { to } from '#lib/core/paths.ts';
 import { inbox } from '#lib/core/inbox.svelte.ts';
 import { toasts } from '#lib/core/toasts.svelte.ts';
 import type { UpdateInfo } from '#lib/core/types.ts';
+import { t } from '#lib/core/i18n/i18n.svelte.ts';
 
 /** Pinned rows from these feeds (Settings warnings are added by the panel). */
 export const feedPins = $state<{ update: PinnedAlert | null }>({ update: null });
@@ -17,11 +18,11 @@ export const feedPins = $state<{ update: PinnedAlert | null }>({ update: null })
 export function decisionPins(): PinnedAlert[] {
 	return decisions.items.map((d) => ({
 		key: `decision|${d.slot_id}`,
-		title: `${d.title}${d.year ? ` (${d.year})` : ''} needs a decision`,
+		title: t('frame.feeds.decision', { title: `${d.title}${d.year ? ` (${d.year})` : ''}` }),
 		body: d.reason ? cut(d.reason) : undefined,
 		tone: 'warn',
 		href: '/downloads',
-		label: 'Downloads'
+		label: t('frame.feeds.downloads')
 	}));
 }
 
@@ -45,7 +46,7 @@ export function startBellFeeds(canManage: boolean): () => void {
 				if (told.has(m.id)) toasts.record(w.title, w.tone, { body: w.body });
 				else {
 					// Ready: open the title. Anything else: the request itself on Requests.
-					const open = m.kind === 'ready' && m.title_id ? { label: 'Open', path: `/library/${m.title_id}` } : { label: 'Requests', path: m.ask_id ? `/requests?ask=${m.ask_id}` : '/requests' };
+					const open = m.kind === 'ready' && m.title_id ? { label: t('frame.feeds.open'), path: `/library/${m.title_id}` } : { label: t('frame.feeds.requests'), path: m.ask_id ? `/requests?ask=${m.ask_id}` : '/requests' };
 					toasts.push(w.title, w.tone, { body: w.body, action: { label: open.label, run: () => void goto(to(open.path)) } });
 				}
 				told.add(m.id);
@@ -64,7 +65,7 @@ export function startBellFeeds(canManage: boolean): () => void {
 				const why = d.StateReason ?? d.state_reason ?? '';
 				// Someone marked it failed by hand: they already know.
 				if (/^marked failed/i.test(why)) return;
-				toasts.push('Download failed', 'fail', { body: why ? cut(why) : 'Searching for the next Release', action: { label: 'Downloads', run: () => void goto(to('/downloads')) } });
+				toasts.push(t('frame.feeds.failed'), 'fail', { body: why ? cut(why) : t('frame.feeds.nextRelease'), action: { label: t('frame.feeds.downloads'), run: () => void goto(to('/downloads')) } });
 			})
 		);
 
@@ -73,12 +74,12 @@ export function startBellFeeds(canManage: boolean): () => void {
 			api
 				.get<UpdateInfo>('/app/update')
 				.then((u) => {
-					feedPins.update = u.on && u.newer && u.latest ? { key: 'update', title: 'Update available', body: `Version ${u.latest} is ready`, tone: 'info', href: '/health?tab=updates', label: 'Update' } : null;
+					feedPins.update = u.on && u.newer && u.latest ? { key: 'update', title: t('frame.feeds.update'), body: t('frame.feeds.updateReady', { version: u.latest }), tone: 'info', href: '/health?tab=updates', label: t('frame.feeds.updateLabel') } : null;
 				})
 				.catch(() => {});
 		void check();
-		const t = setInterval(check, 6 * 3600_000);
-		stops.push(() => clearInterval(t));
+		const timer = setInterval(check, 6 * 3600_000);
+		stops.push(() => clearInterval(timer));
 	}
 
 	return () => {

@@ -1,5 +1,6 @@
 import { api as defaultClient, type Client } from '../core/api.ts';
 import { switchPlan, type PartName, type PartsAnswer } from '../mediafiles/index.ts';
+import { t } from '../core/i18n/i18n.svelte.ts';
 
 // The server answers a risky control with a confirm id first.
 export interface Confirm {
@@ -10,10 +11,10 @@ export interface Confirm {
 
 // Linked app kinds that can be reconnected, with their button word.
 export const linkAction: Record<string, string> = {
-	downloader: 'Reconnect',
-	source: 'Test now',
-	media_server: 'Test now',
-	subtitle_site: 'Test now'
+	get downloader() { return t('setup.reconnect'); },
+	get source() { return t('setup.testNow'); },
+	get media_server() { return t('setup.testNow'); },
+	get subtitle_site() { return t('setup.testNow'); }
 };
 
 export function isConfirm(r: unknown): r is Confirm {

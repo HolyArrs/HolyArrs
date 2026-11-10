@@ -166,7 +166,7 @@ func (s *services) fill() {
 		s.Lists = &requests.OutsideLists{Store: s.Store, Queue: s.Queue, Library: s.Library, Metadata: s.Metadata}
 	}
 	if s.Alerts == nil && s.Secrets != nil {
-		s.Alerts = &alerts.Sender{Store: s.Store, Vault: s.Secrets}
+		s.Alerts = &alerts.Sender{Store: s.Store, Vault: s.Secrets, Lang: func(ctx context.Context) string { return accounts.OwnerLanguage(ctx, s.Store.Read()) }}
 	}
 	if s.Asks == nil {
 		s.Asks = &requests.Service{Store: s.Store, Library: s.Library, Metadata: s.Metadata, Live: s.Live}

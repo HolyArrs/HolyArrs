@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	// History grouped by day. Each day has a sticky header with a tally, rows sit on a rail with their clock time, and runs of routine work fold into one line that opens in place. On wide screens the picked row shows in a details panel (arrow keys or j and k move); narrower screens open it in a sheet.
 	import Poster from '#lib/ui/Poster.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
@@ -13,7 +15,7 @@
 	import { artOf, burstLine, byWhom, clock, dayLabel, rowTier } from './history-kinds.ts';
 	import { byDay, dayItems, dayLine, type ArtSize } from './history-tabs.ts';
 	import { dropAiTwins, filterVerb } from './history-search.ts';
-	import { glue, panelView, pathBits } from './history-panel.ts';
+	import { FACT_LABEL, glue, panelView, pathBits } from './history-panel.ts';
 	import { rowText, type LineContext, type RowText } from './history-lines.ts';
 	import { onMount, tick, untrack, type Snippet } from 'svelte';
 	import { slide, fade, type TransitionConfig } from 'svelte/transition';
@@ -176,9 +178,9 @@
 		return { total, steps: [...n.values()].sort((a, b) => b.count - a.count) };
 	}
 	function headLine(rows: HistoryRow[]): string {
-		const t = tallyOf(rows);
-		const bad = t.steps.filter((x) => x.verb.word === 'Needs you' || x.verb.word === 'Failed').map((x) => `${x.verb.word} ${x.count}`);
-		return [`${t.total} ${t.total === 1 ? 'Event' : 'Events'}`, ...bad].join(' · ');
+		const tl = tallyOf(rows);
+		const bad = tl.steps.filter((x) => x.verb.word === t('downloads.hk.needsYou') || x.verb.word === t('downloads.hk.failed')).map((x) => `${x.verb.word} ${x.count}`);
+		return [t(tl.total === 1 ? 'downloads.hdays.event' : 'downloads.hdays.events', { count: tl.total }), ...bad].join(' · ');
 	}
 	const today = $derived.by(() => {
 		const d = days.find((x) => x.rows.some((r) => r.key === picked?.key));
@@ -232,9 +234,9 @@
 	async function copy(path: string) {
 		try {
 			await navigator.clipboard.writeText(path);
-			toasts.push('Path copied', 'ok');
+			toasts.push(t('downloads.hes.copied'), 'ok');
 		} catch {
-			toasts.push("Couldn't copy path", 'fail', { body: 'Select it instead' });
+			toasts.push(t('downloads.hes.copyFailed'), 'fail', { body: t('updates.goBack.copyFailedBody') });
 		}
 	}
 
@@ -254,7 +256,7 @@
 		<span class="what"><span class="nm" data-testid="history-title">{w.name}</span>{#each w.bits as b, i (i)}<span class="bit" data-testid={b.kind === 'episode' && i === 0 ? 'history-episode' : b.kind === 'version' ? 'history-version' : undefined}>{` · ${b.text}`}</span>{/each}</span>
 		<StateDot verb={w.tag} />
 	</span>
-	<span class="l2">{w.line}</span>
+	<span class="l2">{serverWords(w.line)}</span>
 {/snippet}
 
 {#snippet line(r: HistoryRow)}
@@ -303,14 +305,14 @@
 								{@const on = !!open[it.key]}
 								<li class="item fold">
 									{#if compact}
-									<DenseRow row={it.rows[0]} {ctx} {titleById} {who} count={it.rows.length} expanded={on} label="Routine work" keyed={false} note={burstLine(it.rows.flatMap((r) => r.events), titleById)} onclick={() => (open = { ...open, [it.key]: !on })} />
+									<DenseRow row={it.rows[0]} {ctx} {titleById} {who} count={it.rows.length} expanded={on} label={t('downloads.hdays.routine')} keyed={false} note={burstLine(it.rows.flatMap((r) => r.events), titleById)} onclick={() => (open = { ...open, [it.key]: !on })} />
 									{:else}
 									<button type="button" class="hit q" aria-expanded={on} onclick={() => (open = { ...open, [it.key]: !on })}>
 										<time class="clk" datetime={it.rows[0].head.At}>{clock(it.rows[0].head.At)}</time>
 										<span class="node" aria-hidden="true"><i></i></span>
 										<span class="qn">{it.rows.length}</span>
 										<span class="tx">
-											<span class="l1"><span class="what"><span class="nm">Routine work</span><span class="bit">{` · ${it.rows.length} updates`}</span></span></span>
+											<span class="l1"><span class="what"><span class="nm">{t('downloads.hdays.routine')}</span><span class="bit">{` · ${t('downloads.hdays.updates', { count: it.rows.length })}`}</span></span></span>
 											<span class="l2">{burstLine(it.rows.flatMap((r) => r.events), titleById)}</span>
 										</span>
 										<span class="chev" class:on aria-hidden="true"><Icon name="chevronDown" size={16} /></span>
@@ -329,15 +331,15 @@
 			{:else}
 				<div class="none" data-testid="history-no-match">
 					<span class="eic"><Icon name="search" size={22} stroke={2} /></span>
-					<p class="et">Nothing matches.</p>
-					{#if feed.events.length < feed.total}<p class="es">Show more to look further back.</p>{/if}
-					{#if onall}<button type="button" class="elink" onclick={onall}>Clear filters</button>{/if}
+					<p class="et">{t('downloads.hdays.nothingMatches')}</p>
+					{#if feed.events.length < feed.total}<p class="es">{t('downloads.hdays.showMore')}</p>{/if}
+					{#if onall}<button type="button" class="elink" onclick={onall}>{t('downloads.bar.clear')}</button>{/if}
 				</div>
 			{/each}
 		</div>
 
 		{#if wide}
-			<aside class="pane" id={panelId} aria-label="Details" data-testid="look-pane" hidden={!panel ? true : undefined} inert={!panel}>
+			<aside class="pane" id={panelId} aria-label={t('downloads.hdays.details')} data-testid="look-pane" hidden={!panel ? true : undefined} inert={!panel}>
 					{#if picked && view}
 						{@const v = view}
 						<div class="card">
@@ -352,17 +354,17 @@
 									</div>
 								</div>
 								{#if v.steps.length}
-									<ol class="steps" aria-label="Steps of this download" data-testid="history-steps">
+									<ol class="steps" aria-label={t('downloads.hes.steps')} data-testid="history-steps">
 										{#each v.steps as st (st.key)}<li class={st.state} data-state={st.state}><span class="pip" aria-hidden="true"></span>{st.label}<span class="sr-only">: {st.state === 'done' ? 'done' : st.state === 'failed' ? 'failed' : st.state === 'needs' ? 'waiting' : 'not yet'}</span></li>{/each}
 									</ol>
 								{/if}
-								{#if v.line}<p class="psum" class:long={v.long}>{v.line}</p>{/if}
+								{#if v.line}<p class="psum" class:long={v.long}>{serverWords(v.line)}</p>{/if}
 								<dl class="pf">
 									{#each v.facts as f (f.label)}
 										<dt>{f.label}</dt>
 										<dd class:mono={f.mono} class:one={f.label === 'Release'} title={f.label === 'Release' ? f.value : undefined}>
 											{#if f.at}<time datetime={f.at}>{f.value}</time>{#if f.ago}<span class="ago">{` · ${f.ago}`}</span>{/if}
-											{:else if f.full}<span class="path"><span class="pv" title={f.full}>{#each pathBits(f.value) as b, i (i)}{glue(b)}<wbr>{/each}</span><button type="button" class="cp" aria-label="Copy the full path" title="Copy the full path" onclick={() => copy(f.full ?? '')}><Icon name="copy" size={14} /></button></span>
+											{:else if f.full}<span class="path"><span class="pv" title={f.full}>{#each pathBits(f.value) as b, i (i)}{glue(b)}<wbr>{/each}</span><button type="button" class="cp" aria-label={t('downloads.hes.copyPath')} title={t('downloads.hes.copyPath')} onclick={() => copy(f.full ?? '')}><Icon name="copy" size={14} /></button></span>
 											{:else}{f.value}{/if}
 										</dd>
 									{/each}
@@ -377,8 +379,8 @@
 						{/key}
 						</div>
 					{#if compact && today}
-						<section class="card day-card" aria-label="This day" data-testid="history-this-day">
-							<div class="dch"><h3 class="h">This day</h3>{#if today.steps.length > 1}<span class="dcn">{today.total}{today.more ? '+' : ''} {today.total === 1 && !today.more ? 'Event' : 'Events'}</span>{/if}</div>
+						<section class="card day-card" aria-label={t('downloads.hdays.thisDay')} data-testid="history-this-day">
+							<div class="dch"><h3 class="h">{t('downloads.hdays.thisDay')}</h3>{#if today.steps.length > 1}<span class="dcn">{today.total}{today.more ? '+' : ''} {today.total === 1 && !today.more ? t('downloads.hdays.eventWord') : t('downloads.hdays.eventsWord')}</span>{/if}</div>
 							<ul class="tally">
 								{#each today.steps as x (x.verb.word)}<li class="tp {x.verb.tone}"><span class="td" aria-hidden="true"></span>{x.verb.word}<b>{x.count}</b></li>{/each}
 							</ul>

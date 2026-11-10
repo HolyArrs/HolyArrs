@@ -1,6 +1,7 @@
 // Settings page map, who may open each section, and small text helpers.
 import { message } from './api.ts';
 import type { IconName } from '#lib/ui/Icon.svelte';
+import { t } from '#lib/core/i18n/i18n.svelte.ts';
 
 export type GroupId = 'library' | 'downloads' | 'users' | 'connections' | 'system' | 'account';
 
@@ -32,48 +33,48 @@ let heldNow: (feature: string) => boolean = () => false;
 
 // Order here is the order shown on the settings page.
 export const groups: Group[] = [
-	{ id: 'library', label: 'Library', icon: 'library', line: 'Where titles live', about: 'Folders, parts, defaults, subtitles, file names and moving in.' },
-	{ id: 'downloads', label: 'Downloads', icon: 'download', line: 'How titles arrive', about: 'Downloaders, Sources, quality, search and schedules.' },
-	{ id: 'users', label: 'People', icon: 'people', line: 'Who comes in', about: 'Users, sign-in, request rules and appearance.' },
-	{ id: 'connections', label: 'Linked apps', icon: 'tv', line: 'What it connects', about: 'Media servers, alerts, the API and metadata.' },
-	{ id: 'system', label: 'Server', icon: 'tools', line: 'Keeps it healthy', about: 'Health, backups, this app, logs and the danger zone.' },
-	{ id: 'account', label: 'My account', icon: 'user', line: 'Just you', about: 'Password, two-factor, devices.' }
+	{ id: 'library', get label() { return t('core.settings.groupLibrary.label'); }, icon: 'library', get line() { return t('core.settings.groupLibrary.line'); }, get about() { return t('core.settings.groupLibrary.about'); } },
+	{ id: 'downloads', get label() { return t('core.settings.groupDownloads.label'); }, icon: 'download', get line() { return t('core.settings.groupDownloads.line'); }, get about() { return t('core.settings.groupDownloads.about'); } },
+	{ id: 'users', get label() { return t('core.settings.groupUsers.label'); }, icon: 'people', get line() { return t('core.settings.groupUsers.line'); }, get about() { return t('core.settings.groupUsers.about'); } },
+	{ id: 'connections', get label() { return t('core.settings.groupLinkedApps.label'); }, icon: 'tv', get line() { return t('core.settings.groupLinkedApps.line'); }, get about() { return t('core.settings.groupLinkedApps.about'); } },
+	{ id: 'system', get label() { return t('core.settings.groupSystem.label'); }, icon: 'tools', get line() { return t('core.settings.groupSystem.line'); }, get about() { return t('core.settings.groupSystem.about'); } },
+	{ id: 'account', get label() { return t('core.settings.groupAccount.label'); }, icon: 'user', get line() { return t('core.settings.groupAccount.line'); }, get about() { return t('core.settings.groupAccount.about'); } }
 ];
 
 export const sections: Section[] = [
-	{ href: '/settings/library-folders', group: 'library', tint: 'blue', label: 'Library folders', icon: 'folder', about: 'Where your titles live' },
-	{ href: '/settings/title-defaults', group: 'library', tint: 'orange', label: 'Movies and TV defaults', icon: 'tv', about: 'What new movies and shows get', need: 'library' },
-	{ href: '/settings/music', group: 'library', tint: 'pink', label: 'Music defaults', icon: 'music', about: 'What new artists get' },
-	{ href: '/settings/subtitles', group: 'library', tint: 'amber', label: 'Subtitles', icon: 'subtitle', about: 'Languages and Subtitle sites' },
-	{ href: '/settings/naming', group: 'library', tint: 'teal', label: 'Naming and files', icon: 'film', about: 'File names and free space' },
-	{ href: '/settings/parts', group: 'library', tint: 'graphite', label: 'Parts', icon: 'grid', about: 'Turn parts on or off', need: 'users' },
-	{ href: '/settings/outside-lists', group: 'library', tint: 'teal', label: 'Outside lists', icon: 'inbox', about: 'Lists that add titles for you' },
-	{ href: '/settings/move', group: 'library', tint: 'teal', label: 'Move from other apps', icon: 'upload', about: 'Bring over Sonarr, Radarr and more', need: 'users' },
+	{ href: '/settings/library-folders', group: 'library', tint: 'blue', get label() { return t('core.settings.libraryFolders.label'); }, icon: 'folder', get about() { return t('core.settings.libraryFolders.about'); } },
+	{ href: '/settings/title-defaults', group: 'library', tint: 'orange', get label() { return t('core.settings.titleDefaults.label'); }, icon: 'tv', get about() { return t('core.settings.titleDefaults.about'); }, need: 'library' },
+	{ href: '/settings/music', group: 'library', tint: 'pink', get label() { return t('core.settings.music.label'); }, icon: 'music', get about() { return t('core.settings.music.about'); } },
+	{ href: '/settings/subtitles', group: 'library', tint: 'amber', get label() { return t('core.settings.subtitles.label'); }, icon: 'subtitle', get about() { return t('core.settings.subtitles.about'); } },
+	{ href: '/settings/naming', group: 'library', tint: 'teal', get label() { return t('core.settings.naming.label'); }, icon: 'film', get about() { return t('core.settings.naming.about'); } },
+	{ href: '/settings/parts', group: 'library', tint: 'graphite', get label() { return t('core.settings.parts.label'); }, icon: 'grid', get about() { return t('core.settings.parts.about'); }, need: 'users' },
+	{ href: '/settings/outside-lists', group: 'library', tint: 'teal', get label() { return t('core.settings.outsideLists.label'); }, icon: 'inbox', get about() { return t('core.settings.outsideLists.about'); } },
+	{ href: '/settings/move', group: 'library', tint: 'teal', get label() { return t('core.settings.move.label'); }, icon: 'upload', get about() { return t('core.settings.move.about'); }, need: 'users' },
 
-	{ href: '/settings/downloaders', group: 'downloads', tint: 'green', label: 'Downloaders', icon: 'downloader', about: 'Your torrent and Usenet apps' },
-	{ href: '/settings/sources', group: 'downloads', tint: 'blue', label: 'Sources', icon: 'source', about: 'Where HolyArrs looks for Releases' },
-	{ href: '/settings/pick-rules', group: 'downloads', tint: 'amber', label: 'Quality', icon: 'star', about: 'Which Release to take', need: 'library' },
-	{ href: '/settings/search', group: 'downloads', tint: 'indigo', label: 'Search', icon: 'search', about: 'When and how HolyArrs searches' },
-	{ href: '/settings/schedules', group: 'downloads', tint: 'orange', label: 'Schedules', icon: 'clock', about: 'Timed jobs and Run now' },
+	{ href: '/settings/downloaders', group: 'downloads', tint: 'green', get label() { return t('core.settings.downloaders.label'); }, icon: 'downloader', get about() { return t('core.settings.downloaders.about'); } },
+	{ href: '/settings/sources', group: 'downloads', tint: 'blue', get label() { return t('core.settings.sources.label'); }, icon: 'source', get about() { return t('core.settings.sources.about'); } },
+	{ href: '/settings/pick-rules', group: 'downloads', tint: 'amber', get label() { return t('core.settings.pickRules.label'); }, icon: 'star', get about() { return t('core.settings.pickRules.about'); }, need: 'library' },
+	{ href: '/settings/search', group: 'downloads', tint: 'indigo', get label() { return t('core.settings.search.label'); }, icon: 'search', get about() { return t('core.settings.search.about'); } },
+	{ href: '/settings/schedules', group: 'downloads', tint: 'orange', get label() { return t('core.settings.schedules.label'); }, icon: 'clock', get about() { return t('core.settings.schedules.about'); } },
 
-	{ href: '/settings/users', group: 'users', tint: 'blue', label: 'Users and roles', icon: 'people', about: 'Invite people, set roles', need: 'users' },
-	{ href: '/settings/requests', group: 'users', tint: 'pink', label: 'Request rules', icon: 'wish', about: 'Limits and what requests get' },
-	{ href: '/settings/sign-in', group: 'users', tint: 'graphite', label: 'Sign-in and security', icon: 'shield', about: 'Passwords, two-factor, local network' },
-	{ href: '/settings/appearance', group: 'users', tint: 'indigo', label: 'Appearance', icon: 'appearance', about: 'Theme and title pages', need: 'self' },
+	{ href: '/settings/users', group: 'users', tint: 'blue', get label() { return t('core.settings.users.label'); }, icon: 'people', get about() { return t('core.settings.users.about'); }, need: 'users' },
+	{ href: '/settings/requests', group: 'users', tint: 'pink', get label() { return t('core.settings.requests.label'); }, icon: 'wish', get about() { return t('core.settings.requests.about'); } },
+	{ href: '/settings/sign-in', group: 'users', tint: 'graphite', get label() { return t('core.settings.signIn.label'); }, icon: 'shield', get about() { return t('core.settings.signIn.about'); } },
+	{ href: '/settings/appearance', group: 'users', tint: 'indigo', get label() { return t('core.settings.appearance.label'); }, icon: 'appearance', get about() { return t('core.settings.appearance.about'); }, need: 'self' },
 
-	{ href: '/settings/media-servers', group: 'connections', tint: 'purple', label: 'Media servers', icon: 'tv', about: 'Plex, Jellyfin and Emby' },
-	{ href: '/settings/alerts', group: 'connections', tint: 'red', label: 'Alerts', icon: 'bell', about: 'Discord, Telegram, email and more' },
-	{ href: '/settings/ai', group: 'connections', tint: 'indigo', label: 'AI apps', icon: 'sparkle', about: 'Let AI assistants use HolyArrs', feature: 'ai_apps' },
-	{ href: '/settings/api', group: 'connections', tint: 'gray', label: 'API', icon: 'key', about: 'Keys and routes for other apps' },
-	{ href: '/settings/tmdb', group: 'connections', tint: 'purple', label: 'Metadata', icon: 'sparkle', about: 'Where posters and names come from' },
+	{ href: '/settings/media-servers', group: 'connections', tint: 'purple', get label() { return t('core.settings.mediaServers.label'); }, icon: 'tv', get about() { return t('core.settings.mediaServers.about'); } },
+	{ href: '/settings/alerts', group: 'connections', tint: 'red', get label() { return t('core.settings.alerts.label'); }, icon: 'bell', get about() { return t('core.settings.alerts.about'); } },
+	{ href: '/settings/ai', group: 'connections', tint: 'indigo', get label() { return t('core.settings.ai.label'); }, icon: 'sparkle', get about() { return t('core.settings.ai.about'); }, feature: 'ai_apps' },
+	{ href: '/settings/api', group: 'connections', tint: 'gray', get label() { return t('core.settings.api.label'); }, icon: 'key', get about() { return t('core.settings.api.about'); } },
+	{ href: '/settings/tmdb', group: 'connections', tint: 'purple', get label() { return t('core.settings.tmdb.label'); }, icon: 'sparkle', get about() { return t('core.settings.tmdb.about'); } },
 
-	{ href: '/settings/health', group: 'system', tint: 'green', label: 'Health checks', icon: 'check', about: "What's working and what isn't" },
-	{ href: '/settings/backups', group: 'system', tint: 'blue', label: 'Backups', icon: 'archive', about: 'Save and restore HolyArrs' },
-	{ href: '/settings/logs', group: 'system', tint: 'gray', label: 'Logs', icon: 'copy', about: 'Read and download the app log', need: 'users' },
-	{ href: '/settings/this-app', group: 'system', tint: 'gray', label: 'This app', icon: 'info', about: 'Version, updates and storage' },
-	{ href: '/settings/danger', group: 'system', tint: 'red', label: 'Danger zone', icon: 'alert', about: 'Restart or shut down', need: 'users' },
+	{ href: '/settings/health', group: 'system', tint: 'green', get label() { return t('core.settings.health.label'); }, icon: 'check', get about() { return t('core.settings.health.about'); } },
+	{ href: '/settings/backups', group: 'system', tint: 'blue', get label() { return t('core.settings.backups.label'); }, icon: 'archive', get about() { return t('core.settings.backups.about'); } },
+	{ href: '/settings/logs', group: 'system', tint: 'gray', get label() { return t('core.settings.logs.label'); }, icon: 'copy', get about() { return t('core.settings.logs.about'); }, need: 'users' },
+	{ href: '/settings/this-app', group: 'system', tint: 'gray', get label() { return t('core.settings.thisApp.label'); }, icon: 'info', get about() { return t('core.settings.thisApp.about'); } },
+	{ href: '/settings/danger', group: 'system', tint: 'red', get label() { return t('core.settings.danger.label'); }, icon: 'alert', get about() { return t('core.settings.danger.about'); }, need: 'users' },
 
-	{ href: '/settings/account', group: 'account', tint: 'gray', label: 'My account', icon: 'user', about: 'Password, two-factor, devices', need: 'self' }
+	{ href: '/settings/account', group: 'account', tint: 'gray', get label() { return t('core.settings.account.label'); }, icon: 'user', get about() { return t('core.settings.account.about'); }, need: 'self' }
 ];
 
 // Each section may be hidden by a held feature; this is how the session says which.
@@ -112,14 +113,14 @@ export function groupOf(id: GroupId | undefined): Group | undefined {
 /** reachWords turns any "couldn't connect" answer into one plain line; other answers pass through. */
 export function reachWords(text: string): string {
 	return /connection (was )?refused|does not answer|refused to connect|no such host|timed? ?out|unreachable|dial tcp|no route|connection reset|could not (connect|reach)|couldn.t (connect|reach)|can.t connect|EOF/i.test(text)
-		? "Can't reach that address. Check it and that the app is running."
+		? t('core.settings.cantReach')
 		: text;
 }
 
 // Turns any error into a short sentence with a capital and an end mark.
 export function plainMessage(e: unknown): string {
-	const t = message(e).trim();
-	if (!t) return 'Something went wrong.';
-	const s = t.charAt(0).toUpperCase() + t.slice(1);
+	const text = message(e).trim();
+	if (!text) return t('core.api.wentWrong');
+	const s = text.charAt(0).toUpperCase() + text.slice(1);
 	return /[.!?)]$/.test(s) ? s : s + '.';
 }

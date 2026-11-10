@@ -4,6 +4,7 @@
 	import { createAskLive } from '#lib/requests/index.ts';
 	import { createTakeBack } from '#lib/requests/index.ts';
 	import { createAskCards } from '#lib/requests/index.ts';
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import PageLoader from '#lib/ui/PageLoader.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
@@ -88,19 +89,20 @@
 			void refreshInbox();
 		} catch (err) {
 			const a = asks.find((x) => x.id === id);
-			const name = a?.name ?? 'the request';
-			if (err instanceof ApiError && err.status === 409 && /already decided/.test(err.message)) {
+			const name = a?.name ?? t('requests.page.theRequest');
+			if (err instanceof ApiError && err.status === 409 && /already decided/.test(String(err.body.error ?? ''))) {
 				// Someone else answered it first (two approvers at once): show their answer, not "Try again". The one ask is read on its own, so a list load started meanwhile cannot drop it.
 				const now = await api.get<Ask>(`/asks/${id}`).catch(() => undefined);
 				if (now) {
 					const i = asks.findIndex((x) => x.id === id);
 					if (i >= 0) asks[i] = now;
 				}
-				const m = /^(Declined|Approved) by (.+)$/.exec(now ? askCards.decided(now) : '');
-				toasts.push(m ? `${name} already ${m[1].toLowerCase()}` : `${name} already answered`, 'info', m ? { body: `By ${m[2]}` } : {});
+				const declined = now?.state === 'turned_down';
+				const by = now && (declined || !now.auto_approved) ? askCards.decidedBy(now) : '';
+				toasts.push(by ? t(declined ? 'requests.page.alreadyDeclined' : 'requests.page.alreadyApproved', { name }) : t('requests.page.alreadyAnswered', { name }), 'info', by ? { body: t('requests.board.by', { name: by }) } : {});
 				return;
 			}
-			toasts.push(`Couldn't ${p.mode === 'approve' ? 'approve' : 'decline'} ${name}`, 'fail', { body: message(err), action: { label: 'Requests', run: () => void goto(to(`/requests?ask=${id}`)) } });
+			toasts.push(t(p.mode === 'approve' ? 'requests.page.couldNotApprove' : 'requests.page.couldNotDecline', { name }), 'fail', { body: message(err), action: { label: t('requests.board.requests'), run: () => void goto(to(`/requests?ask=${id}`)) } });
 		} finally {
 			delete pending[id];
 		}
@@ -112,18 +114,17 @@
 		const open = (a: Ask) => a.state === 'asked' || (mode === 'turn_down' && a.state === 'approved' && !a.title_id);
 		const ids = list.filter((a) => open(a) && !pending[a.id]).map((a) => a.id);
 		if (!ids.length) {
-			if (list.length && !list.some((a) => pending[a.id])) toasts.push(`Couldn't ${mode === 'approve' ? 'approve' : 'decline'} ${list.length === 1 ? list[0].name : `${list.length} requests`}`, 'fail', { body: 'Already answered' });
+			if (list.length && !list.some((a) => pending[a.id])) toasts.push(t(mode === 'approve' ? 'requests.page.couldNotApprove' : 'requests.page.couldNotDecline', { name: list.length === 1 ? list[0].name : t('requests.page.nRequests', { n: list.length }) }), 'fail', { body: t('requests.page.answeredAlready') });
 			return;
 		}
 		for (const id of ids) pending[id] = { mode, note: why, rulesId: opt?.rulesId ?? 0, langs: opt?.langs ?? [], seasons: opt?.seasons, episodes: opt?.episodes, albums: opt?.albums, songs: opt?.songs, timer: setTimeout(() => void commit(id), UNDO_MS) };
 		chosen = new Set();
 		// Words follow the asks actually decided (some in the list may be answered already).
-		const one = ids.length === 1 ? (list.find((a) => a.id === ids[0])?.name ?? 'the request') : `${ids.length} requests`;
-		const verb = mode === 'approve' ? 'approved' : 'declined';
-		const toastId = toasts.push(`${one} ${verb}`, 'ok', {
+		const one = ids.length === 1 ? (list.find((a) => a.id === ids[0])?.name ?? t('requests.page.theRequest')) : t('requests.page.nRequests', { n: ids.length });
+		const toastId = toasts.push(t(mode === 'approve' ? 'requests.page.approvedToast' : 'requests.page.declinedToast', { one }), 'ok', {
 			ms: UNDO_MS,
 			action: {
-				label: 'Undo',
+				label: t('requests.page.undo'),
 				run: () => {
 					for (const id of ids) {
 						const p = pending[id];
@@ -184,7 +185,7 @@
 		} catch (e) {
 			// A background refresh that fails keeps the list on screen and says so once; a poll says nothing and tries again on its next turn.
 			if (quiet && asks.length) return;
-			if (asks.length) toasts.push("Couldn't refresh requests", 'fail', { body: message(e) });
+			if (asks.length) toasts.push(t('requests.page.refreshFailed'), 'fail', { body: message(e) });
 			error = message(e);
 		} finally {
 			loaded = true;
@@ -287,7 +288,7 @@
 			const i = asks.findIndex((x) => x.id === r.ask.id);
 			if (i >= 0) asks[i] = r.ask;
 			// Short, like the card: what happens next is on the Processing tab.
-			toasts.push(mode === 'approve' ? `${r.ask.name} approved` : `${r.ask.name} declined`, 'ok');
+			toasts.push(t(mode === 'approve' ? 'requests.page.approvedToast' : 'requests.page.declinedToast', { one: r.ask.name }), 'ok');
 			void refreshInbox();
 			return '';
 		} catch (err) {
@@ -397,6 +398,7 @@
 		year: askCards.year,
 		askedBy: askCards.askedBy,
 		decided: askCards.decided,
+		decidedBy: askCards.decidedBy,
 		alsoDeclined: askCards.alsoDeclined,
 		pill: askCards.askPill,
 		approvedLine: askCards.approvedLine,
@@ -417,22 +419,22 @@
 	};
 </script>
 
-<svelte:head><title>Requests · HolyArrs</title></svelte:head>
+<svelte:head><title>{t('requests.page.title')}</title></svelte:head>
 
 <div class="ap-top" class:mem={!approver}>
-<h1 class="sr-only">Requests</h1>
+<h1 class="sr-only">{t('requests.board.requests')}</h1>
 <!-- Reports: approvers get it in the cards' toolbar; this link covers no toolbar (no asks yet, or no approving). -->
-{#if session.can('manage_library') && (!approver || (loaded && asks.length === 0))}<a class="rp-link" href={to('/requests/reports')} data-testid="reports-link">Reports{#if inbox.reports}{' '}({inbox.reports}){/if}<span class="sr-only"> of problems with titles</span></a>{/if}
+{#if session.can('manage_library') && (!approver || (loaded && asks.length === 0))}<a class="rp-link" href={to('/requests/reports')} data-testid="reports-link">{t('requests.reports.title')}{#if inbox.reports}{' '}({inbox.reports}){/if}<span class="sr-only"> {t('requests.page.ofProblems')}</span></a>{/if}
 {#if (session.can('ask') && !approver) || myReports > 0}
 	<div class="ask-actions">
 		{#if session.can('ask') && !approver}
 			<!-- Wide screens: one button per kind. Phones: one button to Search, where the kinds are a tap away. -->
-			<a class="tb ink ask-k" href={to(`/search`)}><Icon name="film" size={16} />Ask for a movie</a>
-			<a class="tb ask-k" href={to(`/search?kind=show`)}><Icon name="tv" size={16} />Ask for a show</a>
-			<a class="tb ask-k" href={to(`/search?kind=music`)}><Icon name="music" size={16} />Ask for music</a>
-			<a class="tb ink ask-one" href={to(`/search`)}><Icon name="plus" size={16} />Ask for something</a>
+			<a class="tb ink ask-k" href={to(`/search`)}><Icon name="film" size={16} />{t('requests.page.askMovie')}</a>
+			<a class="tb ask-k" href={to(`/search?kind=show`)}><Icon name="tv" size={16} />{t('requests.page.askShow')}</a>
+			<a class="tb ask-k" href={to(`/search?kind=music`)}><Icon name="music" size={16} />{t('requests.page.askMusic')}</a>
+			<a class="tb ink ask-one" href={to(`/search`)}><Icon name="plus" size={16} />{t('requests.page.askSomething')}</a>
 		{/if}
-		{#if myReports > 0}<a class="tb ask-rp" href={to('/requests/reports')} data-testid="my-reports-link"><Icon name="alert" size={16} />Your reports</a>{/if}
+		{#if myReports > 0}<a class="tb ask-rp" href={to('/requests/reports')} data-testid="my-reports-link"><Icon name="alert" size={16} />{t('requests.reports.titleMine')}</a>{/if}
 		</div>
 {/if}
 
@@ -445,17 +447,17 @@
 {#if (bothKinds || asks.length) && !approver}
 	<div class="toolbar">
 		{#if asks.length}
-			<div class="tabs" role="group" aria-label="Show" data-testid="ask-tabs">
-				{#each tabs as t (t.tab)}
-					{@const n = counts[t.tab] ?? 0}
-					<div class="pw" class:on={tab === t.tab} role="presentation">
-						<button type="button" class="tab" class:zero={!n} aria-pressed={tab === t.tab} onclick={() => ((tab = t.tab), (chosen = new Set()))}>{t.label}{#if n}<span class="n" class:wait={t.tab === 'waiting'}>{n}</span>{/if}</button>
+			<div class="tabs" role="group" aria-label={t('requests.reports.show')} data-testid="ask-tabs">
+				{#each tabs as tb (tb.tab)}
+					{@const n = counts[tb.tab] ?? 0}
+					<div class="pw" class:on={tab === tb.tab} role="presentation">
+						<button type="button" class="tab" class:zero={!n} aria-pressed={tab === tb.tab} onclick={() => ((tab = tb.tab), (chosen = new Set()))}>{tb.label}{#if n}<span class="n" class:wait={tb.tab === 'waiting'}>{n}</span>{/if}</button>
 					</div>
 				{/each}
 			</div>
 		{/if}
 		{#if bothKinds}
-			<div class="tabs kinds" role="group" aria-label="Kind">
+			<div class="tabs kinds" role="group" aria-label={t('requests.page.kind')}>
 				{#each askCards.kinds as k (k.k)}
 					<div class="pw" class:on={kind === k.k} role="presentation"><button type="button" class="tab" aria-pressed={kind === k.k} onclick={() => (kind = k.k)}>{k.label}</button></div>
 				{/each}
@@ -475,11 +477,11 @@
 							indeterminate={chosenAsks.length > 0 && chosenAsks.length < shown.length}
 							onchange={(e) => (chosen = e.currentTarget.checked ? new Set(shown.map((a) => a.id)) : new Set())}
 						/>
-						{chosenAsks.length ? `${chosenAsks.length} chosen` : 'Choose all'}
+						{chosenAsks.length ? t('requests.page.chosen', { n: chosenAsks.length }) : t('requests.page.chooseAll')}
 					</label>
 					{#if chosenAsks.length}
-						<Button size="sm" variant="primary" icon="check" type="button" onclick={() => act(chosenAsks, 'approve')}>Approve {chosenAsks.length}</Button>
-						<Button size="sm" icon="x" type="button" onclick={() => declineFlow.askDecline(chosenAsks)}>Decline {chosenAsks.length}</Button>
+						<Button size="sm" variant="primary" icon="check" type="button" onclick={() => act(chosenAsks, 'approve')}>{t('requests.page.approveN', { n: chosenAsks.length })}</Button>
+						<Button size="sm" icon="x" type="button" onclick={() => declineFlow.askDecline(chosenAsks)}>{t('requests.page.declineN', { n: chosenAsks.length })}</Button>
 					{/if}
 				</div>
 			{/if}
@@ -488,27 +490,27 @@
 {#if !approver}
 <div class="member">
 	{#if error && !asks.length}
-		<LoadError hasData={false} message="Couldn’t load your requests. {error}" onretry={load} />
+		<LoadError hasData={false} message={t('requests.page.loadFailed', { error })} onretry={load} />
 	{:else}
-	<PageLoader loading={!loaded} label="Loading your requests…">
+	<PageLoader loading={!loaded} label={t('requests.page.loading')}>
 	{#if asks.length === 0}
 		<EmptyState
 			icon="wish"
-			title="Nothing on the Requests page yet"
+			title={t('requests.page.emptyTitle')}
 			text={session.can('ask')
-				? "Find something in Search and press Ask. It shows up here, and you'll hear when it's approved and when it's ready."
-				: "Your account can't ask for titles yet. Check with the owner."}
-			action={{ label: 'Search', href: to('/search') }}
+				? t('requests.page.emptyAsk')
+				: t('requests.page.emptyNoAsk')}
+			action={{ label: t('requests.page.search'), href: to('/search') }}
 		/>
 	{:else if shown.length === 0}
 		<EmptyState
 			compact
 			icon="check"
-			title={tab === 'waiting' ? 'You’re all caught up.' : tab === 'failed' ? 'Nothing failed.' : `Nothing ${askTabs.find((t) => t.tab === tab)?.label.toLowerCase()} yet.`}
+			title={tab === 'waiting' ? t('requests.board.calm.pending.title') : tab === 'failed' ? t('requests.page.nothingFailed') : t('requests.page.nothingTab', { tab: (askTabs.find((x) => x.tab === tab)?.label ?? '').toLowerCase() })}
 		/>
 	{:else}
 		{@render bulkBar()}
-		<ul class="cards" aria-label="Requests">
+		<ul class="cards" aria-label={t('requests.board.requests')}>
 			{#each shown as a, i (a.id)}
 				{@const wide = proxied(askCards.wideOf(a)) || null}
 				{@const photo = a.kind === 'artist' ? proxied(artistPhoto(a)) || null : null}
@@ -518,27 +520,27 @@
 					</div>
 					<div class="top">
 						<div class="ban-cap">
-							{#if fresh.has(a.id)}<span class="new-mark" data-testid="ask-new">New</span>{/if}
+							{#if fresh.has(a.id)}<span class="new-mark" data-testid="ask-new">{t('requests.board.new')}</span>{/if}
 							<h2 class="ban-t"><a href={to(askHref(a))}>{a.name}</a></h2>
-							<span class="ban-f">{#if a.kind === 'show'}<span data-testid="ask-kind">TV show</span>{:else if a.kind === 'artist'}<span data-testid="ask-kind">Music</span>{:else}Movie{/if}{#if a.year}{' · '}{a.year}{/if}</span>
+							<span class="ban-f">{#if a.kind === 'show'}<span data-testid="ask-kind">{t('requests.kind.show')}</span>{:else if a.kind === 'artist'}<span data-testid="ask-kind">{t('requests.kind.artist')}</span>{:else}{t('requests.kind.movie')}{/if}{#if a.year}{' · '}{a.year}{/if}</span>
 						</div>
 					</div>
 					<div class="sheet-b">
 						<div class="st-row">
 							<span class="st-chip st-{askCards.cardTone(a)}"><span class="st-sq"><Icon name={askCards.cardIcon(a)} size={15} /></span><b data-testid="ask-state">{askCards.askPill(a).label}</b></span>
-							{#if pending[a.id]}<span class="muted pending">Sending…</span>{/if}
+							{#if pending[a.id]}<span class="muted pending">{t('requests.window.sending')}</span>{/if}
 							{#if a.mine && a.state === 'asked'}
 								<span class="row-menu" data-testid="ask-menu">
 									<Menu
-										label="More for {a.name}"
+										label={t('requests.page.moreFor', { name: a.name })}
 										width={220}
-										items={[{ label: 'Take back', icon: 'trash', destructive: true, disabled: takingBack.has(a.id), onselect: () => takeBackFlow.askTakeBack(a) }]}
+										items={[{ label: t('requests.page.takeBack'), icon: 'trash', destructive: true, disabled: takingBack.has(a.id), onselect: () => takeBackFlow.askTakeBack(a) }]}
 									/>
 								</span>
 							{/if}
 						</div>
 						<div class="lines">
-							{#if askCards.what(a)}<p class="line what" data-testid={a.kind === 'artist' ? 'ask-albums' : 'ask-seasons'}>Asked for {askCards.what(a)}</p>{/if}
+							{#if askCards.what(a)}<p class="line what" data-testid={a.kind === 'artist' ? 'ask-albums' : 'ask-seasons'}>{t('requests.page.askedFor', { what: askCards.what(a) })}</p>{/if}
 							<p class="line muted" data-testid="asked-by">
 								{askCards.askedBy(a)} · <time datetime={a.asked_at} title={dateTime(a.asked_at)}>{ago(a.asked_at)}</time>
 							</p>
@@ -568,17 +570,17 @@
 {:else}
 	<div class="variant">
 		{#if error && !asks.length}
-			<LoadError hasData={false} message="Couldn’t load your requests. {error}" onretry={load} />
+			<LoadError hasData={false} message={t('requests.page.loadFailed', { error })} onretry={load} />
 		{:else}
-			<PageLoader loading={!loaded} label="Loading your requests…">
+			<PageLoader loading={!loaded} label={t('requests.page.loading')}>
 				{#if asks.length === 0}
 					<EmptyState
 						icon="wish"
-						title="Nothing on the Requests page yet"
+						title={t('requests.page.emptyTitle')}
 						text={session.can('ask')
-							? "Find something in Search and press Ask. It shows up here, and you'll hear when it's approved and when it's ready."
-							: "Your account can't ask for titles yet. Check with the owner."}
-						action={{ label: 'Search', href: to('/search') }}
+							? t('requests.page.emptyAsk')
+							: t('requests.page.emptyNoAsk')}
+						action={{ label: t('requests.page.search'), href: to('/search') }}
 					/>
 				{:else}
 					<!-- Approvers: Cards (every width). -->
@@ -591,25 +593,25 @@
 
 <Sheet
 	bind:open={decideOpen}
-	title={picked ? `${mode === 'approve' ? 'Approve' : 'Decline'} ${picked.name}${askCards.year(picked)}` : 'Approve or decline'}
-	description={picked ? `${askCards.askedBy(picked)}${askCards.what(picked) ? `, for ${askCards.what(picked)}` : ''}.` : undefined}
+	title={picked ? t(mode === 'approve' ? 'requests.page.approveTitle' : 'requests.page.declineTitle', { name: `${picked.name}${askCards.year(picked)}` }) : t('requests.page.approveOrDecline')}
+	description={picked ? (askCards.what(picked) ? t('requests.page.descFor', { by: askCards.askedBy(picked), what: askCards.what(picked) }) : t('requests.page.desc', { by: askCards.askedBy(picked) })) : undefined}
 >
 	{#if picked}
 		<form class="decide" onsubmit={decide}>
 			{#if mode === 'approve' && kindFolders.length > 0}
 				<div class="field">
-					<label for="ap-folder">Library folder</label>
+					<label for="ap-folder">{t('requests.add.folder')}</label>
 					<select id="ap-folder" class="input" bind:value={folderId}>
-						<option value={0}>Default</option>
+						<option value={0}>{t('requests.window.default')}</option>
 						{#each kindFolders as f (f.id)}
 							<option value={f.id}>{f.label || f.path} ({f.path})</option>
 						{/each}
 					</select>
 				</div>
 				<div class="field">
-					<label for="ap-rules">Quality</label>
+					<label for="ap-rules">{t('requests.window.quality')}</label>
 					<select id="ap-rules" class="input" bind:value={rulesId}>
-						<option value={0}>Default</option>
+						<option value={0}>{t('requests.window.default')}</option>
 						{#each kindRules as r (r.id)}
 							<option value={r.id}>{r.name}</option>
 						{/each}
@@ -617,23 +619,23 @@
 				</div>
 			{/if}
 			<div class="field">
-				<label for="ap-note">{mode === 'approve' ? 'Note (optional)' : 'Reason (the person who asked sees it)'}</label>
+				<label for="ap-note">{mode === 'approve' ? t('requests.page.noteOptional') : t('requests.page.reasonSeen')}</label>
 				<textarea id="ap-note" class="input" rows="3" maxlength="500" bind:value={note}></textarea>
 			</div>
 			{#if mode === 'approve'}
 				<p class="hint">
 					{picked.kind === 'show'
-						? `Approving adds the show to the Library, keeps ${askCards.what(picked)} up to date and starts looking for the episodes.`
+						? t('requests.page.hintShow', { what: askCards.what(picked) })
 						: picked.kind === 'artist'
-							? `Approving adds the artist to the Library, keeps ${askCards.what(picked)} up to date and starts looking for the albums.`
-							: 'Approving adds the movie to the Library and starts looking for it.'}
+							? t('requests.page.hintArtist', { what: askCards.what(picked) })
+							: t('requests.page.hintMovie')}
 				</p>
 			{/if}
 			{#if dialogError}<p class="form-error" role="alert">{dialogError}</p>{/if}
 			<div class="decide-actions">
-				<Button variant="plain" type="button" onclick={() => (decideOpen = false)}>Cancel</Button>
+				<Button variant="plain" type="button" onclick={() => (decideOpen = false)}>{t('requests.add.cancel')}</Button>
 				<Button variant={mode === 'approve' ? 'primary' : 'destructive'} type="submit" {busy}>
-					{mode === 'approve' ? 'Approve' : 'Decline'}
+					{mode === 'approve' ? t('requests.window.approve') : t('requests.window.decline')}
 				</Button>
 			</div>
 		</form>
@@ -643,32 +645,32 @@
 <Sheet
 	bind:open={declineFlow.declineOpen}
 	size="sm"
-	title={declineFlow.declineList.length === 1 ? `Decline ${declineFlow.declineList[0].name}${askCards.year(declineFlow.declineList[0])}?` : `Decline ${declineFlow.declineList.length} asks?`}
-	description="You can undo this for a few seconds."
+	title={declineFlow.declineList.length === 1 ? t('requests.page.declineOne', { name: `${declineFlow.declineList[0].name}${askCards.year(declineFlow.declineList[0])}` }) : t('requests.page.declineMany', { n: declineFlow.declineList.length })}
+	description={t('requests.page.undoFew')}
 >
 	<form class="decide" onsubmit={declineFlow.confirmDecline}>
 		<div class="field">
-			<label for="dc-why">Reason (optional, shown to {declineFlow.declineList.length === 1 ? ctx.who(declineFlow.declineList[0]).name : 'the people who asked'})</label>
-			<textarea id="dc-why" class="input" rows="3" maxlength="500" placeholder="For example: we already have it" bind:this={declineFlow.whyBox} bind:value={declineFlow.declineWhy} data-testid="decline-why"></textarea>
-			<div class="why-chips" role="group" aria-label="Quick reasons">
+			<label for="dc-why">{t('requests.page.reasonOptional', { who: declineFlow.declineList.length === 1 ? ctx.who(declineFlow.declineList[0]).name : t('requests.page.thePeople') })}</label>
+			<textarea id="dc-why" class="input" rows="3" maxlength="500" placeholder={t('requests.page.reasonPlaceholder')} bind:this={declineFlow.whyBox} bind:value={declineFlow.declineWhy} data-testid="decline-why"></textarea>
+			<div class="why-chips" role="group" aria-label={t('requests.page.quickReasons')}>
 				{#each declineFlow.reasons as why (why)}
 					<button type="button" class="why-chip" aria-pressed={declineFlow.hasWhy(why)} onclick={() => declineFlow.tapWhy(why)}>{why}</button>
 				{/each}
 			</div>
 		</div>
 		<div class="decide-actions">
-			<Button variant="plain" type="button" onclick={() => (declineFlow.declineOpen = false)}>Cancel</Button>
-			<Button variant="destructive" type="submit">Decline</Button>
+			<Button variant="plain" type="button" onclick={() => (declineFlow.declineOpen = false)}>{t('requests.add.cancel')}</Button>
+			<Button variant="destructive" type="submit">{t('requests.window.decline')}</Button>
 		</div>
 	</form>
 </Sheet>
 
-<Sheet bind:open={takeBackFlow.takeBackOpen} onclose={takeBackFlow.takeBackClosed} size="sm" title={takeBackFlow.takeBackAsk ? `Take back ${takeBackFlow.takeBackAsk.name}${askCards.year(takeBackFlow.takeBackAsk)}?` : 'Take back'} description="It leaves Requests. You can ask again later.">
+<Sheet bind:open={takeBackFlow.takeBackOpen} onclose={takeBackFlow.takeBackClosed} size="sm" title={takeBackFlow.takeBackAsk ? t('requests.page.takeBackTitle', { name: `${takeBackFlow.takeBackAsk.name}${askCards.year(takeBackFlow.takeBackAsk)}` }) : t('requests.page.takeBack')} description={t('requests.page.takeBackDesc')}>
 	{#if takeBackFlow.takeBackAsk}
 		{#if takeBackFlow.takeBackError}<p class="form-error" role="alert" data-testid="take-back-error">{takeBackFlow.takeBackError}</p>{/if}
 		<div class="decide-actions">
-			<Button variant="plain" type="button" onclick={() => (takeBackFlow.takeBackOpen = false)}>Keep it</Button>
-			<Button variant="destructive" type="button" busy={takingBack.has(takeBackFlow.takeBackAsk.id)} onclick={() => takeBackFlow.takeBackAsk && void takeBackFlow.takeBack(takeBackFlow.takeBackAsk)}>Take back</Button>
+			<Button variant="plain" type="button" onclick={() => (takeBackFlow.takeBackOpen = false)}>{t('requests.page.keepIt')}</Button>
+			<Button variant="destructive" type="button" busy={takingBack.has(takeBackFlow.takeBackAsk.id)} onclick={() => takeBackFlow.takeBackAsk && void takeBackFlow.takeBack(takeBackFlow.takeBackAsk)}>{t('requests.page.takeBack')}</Button>
 		</div>
 	{/if}
 </Sheet>

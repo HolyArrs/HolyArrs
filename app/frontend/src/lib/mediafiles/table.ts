@@ -2,6 +2,7 @@
 import type { TitleView } from '../core/types.ts';
 import { matches, type Filter } from './library.ts';
 import { libraryState } from './library-state.ts';
+import { t as tr } from '../core/i18n/i18n.svelte.ts';
 
 export type LibKind = 'movie' | 'show' | 'artist';
 
@@ -61,10 +62,11 @@ export interface SavedFilter {
 	filter: FilterState;
 }
 
-export const sortLabels: Record<SortKey, string> = {
-	status: 'Status', name: 'Name', year: 'Year', added: 'Added', size: 'Size', next: 'Next episode', last: 'Last aired',
-	progress: 'Progress', release: 'Out', runtime: 'Runtime', network: 'Network', rules: 'Quality'
-};
+// Each label reads its words when used, so it follows the language.
+export const sortLabels = {} as Record<SortKey, string>;
+for (const k of ['status', 'name', 'year', 'added', 'size', 'next', 'last', 'progress', 'release', 'runtime', 'network', 'rules'] as SortKey[]) {
+	Object.defineProperty(sortLabels, k, { get: () => tr(`mediafiles.sort.${k}`), enumerable: true });
+}
 
 // Which sort a column header click uses; columns missing here are not sortable.
 export const columnSort: Partial<Record<ColumnId, SortKey>> = {
@@ -75,64 +77,65 @@ export const columnSort: Partial<Record<ColumnId, SortKey>> = {
 
 export const noFilter: FilterState = { status: 'all', kept: 'any', asker: 'anyone', series: 0, codec: '', subs: false };
 
-const col = (id: ColumnId, label: string, width: string, on: boolean, numeric = false): Column => ({ id, label, width, on, numeric });
+// The label is the column's words in the current language at the time the columns are built.
+const col = (id: ColumnId, width: string, on: boolean, numeric = false): Column => ({ id, label: tr(`mediafiles.col.${id}`), width, on, numeric });
 
 const time = (s?: string) => (s ? Date.parse(s) || 0 : 0);
 
 export function columnsFor(kind: LibKind): Column[] {
 	if (kind === 'show')
 		return [
-			col('status', 'Status', '200px', true),
-			col('episodes', 'Episodes', '150px', true),
-			col('next', 'Next episode', '118px', true, true),
-			col('rules', 'Quality', '120px', true),
-			col('size', 'Size', '84px', true, true),
-			col('added', 'Added', '104px', true, true),
-			col('network', 'Network', '120px', false),
-			col('seasons', 'Seasons', '76px', false, true),
-			col('last', 'Last aired', '110px', false, true),
-			col('year', 'Year', '64px', false, true),
-			col('genres', 'Genres', '160px', false),
-			col('rating', 'Age rating', '88px', false),
-			col('requested', 'Requested by', '130px', false),
-			col('quality', 'File quality', '130px', false),
-			col('kept', 'Kept up to date', '72px', false),
-			col('showstate', 'Show state', '100px', false),
-			col('activity', 'Last activity', '110px', false, true),
-			col('path', 'Folder', 'minmax(160px, 1fr)', false)
+			col('status', '200px', true),
+			col('episodes', '150px', true),
+			col('next', '118px', true, true),
+			col('rules', '120px', true),
+			col('size', '84px', true, true),
+			col('added', '104px', true, true),
+			col('network', '120px', false),
+			col('seasons', '76px', false, true),
+			col('last', '110px', false, true),
+			col('year', '64px', false, true),
+			col('genres', '160px', false),
+			col('rating', '88px', false),
+			col('requested', '130px', false),
+			col('quality', '130px', false),
+			col('kept', '72px', false),
+			col('showstate', '100px', false),
+			col('activity', '110px', false, true),
+			col('path', 'minmax(160px, 1fr)', false)
 		];
 	if (kind === 'artist')
 		return [
-			col('status', 'Status', '200px', true),
-			col('tracks', 'Tracks', '150px', true),
-			col('latest', 'Next release', '118px', true, true),
-			col('size', 'Size', '84px', true, true),
-			col('added', 'Added', '104px', true, true),
-			col('rules', 'Quality', '120px', true),
-			col('albums', 'Albums', '84px', false, true),
-			col('requested', 'Requested by', '130px', false),
-			col('kept', 'Kept up to date', '72px', false),
-			col('activity', 'Last activity', '110px', false, true),
-			col('path', 'Folder', 'minmax(160px, 1fr)', false)
+			col('status', '200px', true),
+			col('tracks', '150px', true),
+			col('latest', '118px', true, true),
+			col('size', '84px', true, true),
+			col('added', '104px', true, true),
+			col('rules', '120px', true),
+			col('albums', '84px', false, true),
+			col('requested', '130px', false),
+			col('kept', '72px', false),
+			col('activity', '110px', false, true),
+			col('path', 'minmax(160px, 1fr)', false)
 		];
 	return [
-		col('status', 'Status', '200px', true),
-		col('release', 'Out', '176px', true),
-		col('rules', 'Quality', '120px', true),
-		col('size', 'Size', '84px', true, true),
-		col('added', 'Added', '104px', true, true),
-		col('year', 'Year', '64px', true, true),
-		col('runtime', 'Runtime', '84px', false, true),
-		col('rating', 'Age rating', '88px', false),
-		col('series', 'Collection', '160px', false),
-		col('genres', 'Genres', '160px', false),
-		col('requested', 'Requested by', '130px', false),
-		col('quality', 'File quality', '130px', false),
-		col('codec', 'Codec', '84px', false),
-		col('audio', 'Audio', '150px', false),
-		col('kept', 'Kept up to date', '72px', false),
-		col('activity', 'Last activity', '110px', false, true),
-		col('path', 'Folder', 'minmax(160px, 1fr)', false)
+		col('status', '200px', true),
+		col('release', '176px', true),
+		col('rules', '120px', true),
+		col('size', '84px', true, true),
+		col('added', '104px', true, true),
+		col('year', '64px', true, true),
+		col('runtime', '84px', false, true),
+		col('rating', '88px', false),
+		col('series', '160px', false),
+		col('genres', '160px', false),
+		col('requested', '130px', false),
+		col('quality', '130px', false),
+		col('codec', '84px', false),
+		col('audio', '150px', false),
+		col('kept', '72px', false),
+		col('activity', '110px', false, true),
+		col('path', 'minmax(160px, 1fr)', false)
 	];
 }
 
@@ -184,7 +187,7 @@ export function moveColumn(cols: Column[], from: number, to: number): Column[] {
 
 // The artist "next" sort is about releases, not episodes.
 export function sortLabel(k: SortKey, kind: LibKind | 'all'): string {
-	return k === 'next' && kind === 'artist' ? 'Next release' : sortLabels[k];
+	return k === 'next' && kind === 'artist' ? tr('mediafiles.sort.nextRelease') : sortLabels[k];
 }
 
 export function sortsFor(kind: LibKind | 'all'): SortKey[] {

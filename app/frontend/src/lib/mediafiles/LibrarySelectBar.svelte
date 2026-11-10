@@ -4,6 +4,7 @@
 	import Menu, { type MenuItem } from '#lib/ui/Menu.svelte';
 	import { dropIn, dropOut } from '../core/transitions.ts';
 	import type { Kind } from './library.ts';
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 
 	type Props = {
 		selecting: boolean;
@@ -29,22 +30,22 @@
 </script>
 
 {#if selecting}
-	<div class="select-bar" role="toolbar" aria-label="Selected titles" data-testid="select-bar" in:dropIn out:dropOut>
-		<span class="count" aria-live="polite">{pickedCount} selected</span>
-		{#if !phone}<Button variant="plain" size="md" onclick={pickAll}>{allPicked ? 'Select none' : `Select all ${shownCount}`}</Button>{/if}
+	<div class="select-bar" role="toolbar" aria-label={t('mediafiles.select.selected')} data-testid="select-bar" in:dropIn out:dropOut>
+		<span class="count" aria-live="polite">{t('mediafiles.select.count', { n: pickedCount })}</span>
+		{#if !phone}<Button variant="plain" size="md" onclick={pickAll}>{allPicked ? t('mediafiles.select.none') : t('mediafiles.select.all', { n: shownCount })}</Button>{/if}
 		<span class="bar-gap"></span>
 		{#if phone}
-			<Menu label="Actions for the selected titles" icon="more" items={phoneActs} width={240} placement="above" align="end" />
+			<Menu label={t('mediafiles.select.actions')} icon="more" items={phoneActs} width={240} placement="above" align="end" />
 		{:else}
-			<Button size="md" icon="bellOn" disabled={busy || !pickedCount} onclick={() => setKeep(pickedIds, true)}>Keep up to date</Button>
-			<Button size="md" icon="bell" disabled={busy || !pickedCount} onclick={() => setKeep(pickedIds, false)}>Stop keeping</Button>
-			{#if moveItems.length > 1}<Menu label="Move the selected titles to another folder" variant="button" text="Move" icon="folder" items={moveItems} width={260} placement="above" />{/if}
-			{#if rulesItems.length}<Menu label="Quality for the selected titles" variant="button" text="Quality" icon="star" items={rulesItems} width={220} placement="above" />{/if}
-			<Button size="md" icon="search" disabled={busy || !pickedCount} onclick={() => searchTitles(pickedIds)}>Search now</Button>
-			{#if kind === 'movie'}<Button size="md" icon="copy" disabled={busy || !copyPicksCount} onclick={reviewCopies} data-testid="select-find-copy">Find another copy</Button>{/if}
+			<Button size="md" icon="bellOn" disabled={busy || !pickedCount} onclick={() => setKeep(pickedIds, true)}>{t('mediafiles.select.keep')}</Button>
+			<Button size="md" icon="bell" disabled={busy || !pickedCount} onclick={() => setKeep(pickedIds, false)}>{t('mediafiles.select.stopKeeping')}</Button>
+			{#if moveItems.length > 1}<Menu label={t('mediafiles.select.moveLabel')} variant="button" text={t('mediafiles.select.move')} icon="folder" items={moveItems} width={260} placement="above" />{/if}
+			{#if rulesItems.length}<Menu label={t('mediafiles.select.qualityLabel')} variant="button" text={t('mediafiles.select.quality')} icon="star" items={rulesItems} width={220} placement="above" />{/if}
+			<Button size="md" icon="search" disabled={busy || !pickedCount} onclick={() => searchTitles(pickedIds)}>{t('mediafiles.select.searchNow')}</Button>
+			{#if kind === 'movie'}<Button size="md" icon="copy" disabled={busy || !copyPicksCount} onclick={reviewCopies} data-testid="select-find-copy">{t('mediafiles.select.findCopy')}</Button>{/if}
 		{/if}
-		<Button variant="destructive" size="md" icon="trash" disabled={busy || !pickedCount} onclick={() => askDelete(pickedIds)} data-testid="select-delete">Remove {pickedCount || ''}</Button>
-		<IconButton icon="x" label="Stop selecting" onclick={stopSelecting} />
+		<Button variant="destructive" size="md" icon="trash" disabled={busy || !pickedCount} onclick={() => askDelete(pickedIds)} data-testid="select-delete">{t('mediafiles.select.remove')} {pickedCount || ''}</Button>
+		<IconButton icon="x" label={t('mediafiles.select.stop')} onclick={stopSelecting} />
 	</div>
 {/if}
 

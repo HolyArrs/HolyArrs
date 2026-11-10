@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	// Choices for a download that needs a decision: one reason, one primary fix, the rest under More, and the plan behind Why. A season pack or album gets the same shape for the whole pack.
 	import Button from '#lib/ui/Button.svelte';
 	import Menu, { type MenuItem } from '#lib/ui/Menu.svelte';
@@ -23,28 +24,28 @@
 	async function act(d: Decision, action: Action, pack = false, key = `slot-${d.slot_id}`) {
 		const name = decisionName(d);
 		const w = manyWords(d.kind);
-		const whole = d.kind === 'artist' ? 'artist' : 'show';
-		const episodes = pack ? `these ${w?.many}` : w ? name : d.title;
+		const whole = d.kind === 'artist' ? t('downloads.dp.artist') : t('downloads.noun.show');
+		const episodes = pack ? t('downloads.dp.these', { many: w?.many ?? '' }) : w ? name : d.title;
 		const ask = {
 			search: '',
 			turn_down: pack
-				? `Add ${d.release_name ?? `the ${w?.pack}`} to Turned down for every ${w?.one} it holds and search again for these ${w?.many}?`
+				? t('downloads.dp.askPack', { release: d.release_name ?? t('downloads.dp.thePack', { pack: w?.pack ?? '' }), one: w?.one ?? '', many: w?.many ?? '' })
 				: w
-					? `Add ${d.release_name ?? 'its last Release'} to Turned down for ${name} and search again? The Release stays usable for other ${w.many}.`
-					: `Add ${d.release_name ?? 'its last Release'} to Turned down and search again?`,
+					? t('downloads.dp.askOne', { release: d.release_name ?? t('downloads.dp.lastRelease'), name, many: w.many })
+					: t('downloads.dp.askPlain', { release: d.release_name ?? t('downloads.dp.lastRelease') }),
 			stop: w
-				? `Stop looking for ${episodes}? Keep up to date is turned off for ${pack ? 'each of them' : `this ${w.one}`}; the rest of the ${whole} goes on, and files on disk are not touched.`
-				: `Stop looking for ${name} (${d.version})? Keep up to date is turned off for this Version; files on disk are not touched.`
+				? t('downloads.dp.stopMany', { episodes, each: pack ? t('downloads.dp.eachOfThem') : t('downloads.dp.thisOne', { one: w.one }), whole })
+				: t('downloads.dp.stopPlain', { name, version: d.version })
 		}[action];
 		if (ask && !confirm(ask)) return;
 		busy = key;
 		try {
 			await api.post(`/needs-decision/${d.slot_id}/decide`, pack ? { action, pack: true } : { action });
-			toasts.push({ search: `Searching again for ${episodes}`, turn_down: `Searching again for ${episodes}`, stop: `Stopped looking for ${episodes}` }[action], 'ok', action === 'turn_down' ? { body: 'Release turned down' } : {});
+			toasts.push({ search: t('downloads.dp.searchingAgain', { episodes }), turn_down: t('downloads.dp.searchingAgain', { episodes }), stop: t('downloads.dp.stopped', { episodes }) }[action], 'ok', action === 'turn_down' ? { body: t('downloads.dp.turnedDown') } : {});
 			await refreshDecisions();
 			ondone?.();
 		} catch (e) {
-			toasts.push("Couldn't save decision", 'fail', { body: message(e) });
+			toasts.push(t('downloads.dp.saveFailed'), 'fail', { body: message(e) });
 		} finally {
 			busy = '';
 		}
@@ -58,27 +59,27 @@
 		return 'search';
 	}
 	function reasonLine(d: Decision): string {
-		if (isEdition(d)) return "Edition unknown, so the file couldn't be placed.";
+		if (isEdition(d)) return t('downloads.dp.editionUnknown');
 		const r = d.reason ? plainReason(d.reason).text : '';
 		return r || whyWords(d);
 	}
 	function more(d: Decision, key: string, fix: Fix): MenuItem[] {
 		const out: MenuItem[] = [];
-		if (fix !== 'search') out.push({ label: 'Search again', onselect: () => act(d, 'search', false, key) });
-		if (fix !== 'hand') out.push({ label: 'Choose a release by hand', href: to(`/library/${d.title_id}?tab=library&pick=1#h-rel`) });
-		if (!manyWords(d.kind)) out.push({ label: d.versions > 1 ? 'Try another Version' : 'Add another Version', href: to(`/library/${d.title_id}?tab=library#h-versions`) });
-		if (d.release_id) out.push({ label: 'Add to Turned down', onselect: () => act(d, 'turn_down', false, key) });
-		out.push({ label: 'Stop looking', destructive: true, onselect: () => act(d, 'stop', false, key) });
-		out.push({ kind: 'separator' }, { label: 'Open title', href: to(`/library/${d.title_id}`) });
+		if (fix !== 'search') out.push({ label: t('downloads.dp.searchAgain'), onselect: () => act(d, 'search', false, key) });
+		if (fix !== 'hand') out.push({ label: t('downloads.dp.byHand'), href: to(`/library/${d.title_id}?tab=library&pick=1#h-rel`) });
+		if (!manyWords(d.kind)) out.push({ label: d.versions > 1 ? t('downloads.dp.anotherVersion') : t('downloads.dp.addVersion'), href: to(`/library/${d.title_id}?tab=library#h-versions`) });
+		if (d.release_id) out.push({ label: t('downloads.dp.addTurnedDown'), onselect: () => act(d, 'turn_down', false, key) });
+		out.push({ label: t('downloads.dp.stopLooking'), destructive: true, onselect: () => act(d, 'stop', false, key) });
+		out.push({ kind: 'separator' }, { label: t('downloads.dp.openTitle'), href: to(`/library/${d.title_id}`) });
 		return out;
 	}
 	function packMore(d: Decision, key: string): MenuItem[] {
 		const w = manyWords(d.kind);
 		return [
-			...(d.release_id ? [{ label: `Add the ${w?.pack === 'album' ? 'album' : 'pack'} to Turned down`, onselect: () => act(d, 'turn_down', true, key) }] : []),
-			{ label: `Stop looking for these ${w?.many}`, destructive: true, onselect: () => act(d, 'stop', true, key) },
+			...(d.release_id ? [{ label: t('downloads.dp.addPackTurnedDown', { kind: w?.pack === w?.pack && d.kind === 'artist' ? t('downloads.dp.albumWord') : t('downloads.dp.pack') }), onselect: () => act(d, 'turn_down', true, key) }] : []),
+			{ label: t('downloads.dp.stopThese', { many: w?.many ?? '' }), destructive: true, onselect: () => act(d, 'stop', true, key) },
 			{ kind: 'separator' },
-			{ label: 'Open title', href: to(`/library/${d.title_id}`) }
+			{ label: t('downloads.dp.openTitle'), href: to(`/library/${d.title_id}`) }
 		];
 	}
 
@@ -96,7 +97,7 @@
 		edError[key] = '';
 		try {
 			await api.put(`/downloads/${d.download_id}/edition`, editionDecisionBody(v));
-			done[key] = 'Edition set · trying again';
+			done[key] = t('downloads.dp.editionSet');
 			await refreshDecisions();
 			ondone?.();
 		} catch (err) {
@@ -109,12 +110,12 @@
 	function packLine(g: DecisionGroup): string {
 		const all = g.lead.pack ?? [];
 		const w = manyWords(g.lead.kind);
-		return `${g.items.length} of the ${all.length} ${w ? w.many : 'episodes'} in this download need a decision`;
+		return t('downloads.dp.packLine', { n: g.items.length, total: all.length, many: w ? w.many : t('downloads.many.episodes') });
 	}
 </script>
 
 {#snippet whyBtn(key: string)}
-	<button class="whyb" type="button" aria-expanded={!!whyOpen[key]} aria-controls="why-{key}" onclick={() => (whyOpen[key] = !whyOpen[key])} data-testid="decision-why">Why?</button>
+	<button class="whyb" type="button" aria-expanded={!!whyOpen[key]} aria-controls="why-{key}" onclick={() => (whyOpen[key] = !whyOpen[key])} data-testid="decision-why">{t('downloads.dp.why')}</button>
 {/snippet}
 
 {#snippet why(d: Decision, key: string)}
@@ -122,8 +123,8 @@
 	<div class="raw" id="why-{key}" hidden={!whyOpen[key]} data-testid="decision-why-box">
 		<p>{whyWords(d)}</p>
 		{#if r && r.text !== reasonLine(d)}<p>{r.text}</p>{/if}
-		{#if d.has_copy}<p>A copy is already in the Library.</p>{/if}
-		{#if admin && d.release_name}<p class="mono">Release: {d.release_name}</p>{/if}
+		{#if d.has_copy}<p>{t('downloads.dp.hasCopy')}</p>{/if}
+		{#if admin && d.release_name}<p class="mono">{t('downloads.dp.releaseColon', { name: d.release_name })}</p>{/if}
 		{#if admin && r?.detail}<p class="mono">{r.detail}</p>{/if}
 	</div>
 {/snippet}
@@ -141,20 +142,20 @@
 		{:else}
 			<div class="acts">
 				{#if fix === 'edition'}
-					<Button size="sm" variant="primary" aria-expanded={!!editOpen[key]} aria-controls="ed-form-{key}" onclick={() => (editOpen[key] = !editOpen[key])} data-testid="decision-fix">Set edition</Button>
+					<Button size="sm" variant="primary" aria-expanded={!!editOpen[key]} aria-controls="ed-form-{key}" onclick={() => (editOpen[key] = !editOpen[key])} data-testid="decision-fix">{t('downloads.dp.setEdition')}</Button>
 				{:else if fix === 'hand'}
-					<Button size="sm" variant="primary" href={to(`/library/${d.title_id}?tab=library&pick=1#h-rel`)} data-testid="decision-fix">Choose a release by hand</Button>
+					<Button size="sm" variant="primary" href={to(`/library/${d.title_id}?tab=library&pick=1#h-rel`)} data-testid="decision-fix">{t('downloads.dp.byHand')}</Button>
 				{:else}
-					<Button size="sm" variant="primary" onclick={() => act(d, 'search', false, key)} disabled={busy === key} busy={busy === key} data-testid="decision-fix">Search again</Button>
+					<Button size="sm" variant="primary" onclick={() => act(d, 'search', false, key)} disabled={busy === key} busy={busy === key} data-testid="decision-fix">{t('downloads.dp.searchAgain')}</Button>
 				{/if}
-				<Menu label="More choices" variant="button" text="More" icon="chevronDown" items={more(d, key, fix)} width={240} align="start" />
+				<Menu label={t('downloads.dp.moreChoices')} variant="button" text={t('downloads.dp.more')} icon="chevronDown" items={more(d, key, fix)} width={240} align="start" />
 				{@render whyBtn(key)}
 			</div>
 			{#if fix === 'edition' && editOpen[key]}
 				<form class="ed" id="ed-form-{key}" onsubmit={(e) => saveEdition(e, d, key)} data-testid="edition-decision">
-					<label class="sr-only" for="ed-{key}">Edition</label>
-					<input id="ed-{key}" class="input" bind:value={edition[key]} maxlength="80" required placeholder="Edition, e.g. Theatrical" />
-					<Button size="sm" variant="primary" type="submit" disabled={!edition[key]?.trim() || busy === key} busy={busy === key}>Save and try again</Button>
+					<label class="sr-only" for="ed-{key}">{t('downloads.dp.edition')}</label>
+					<input id="ed-{key}" class="input" bind:value={edition[key]} maxlength="80" required placeholder={t('downloads.dp.editionPh')} />
+					<Button size="sm" variant="primary" type="submit" disabled={!edition[key]?.trim() || busy === key} busy={busy === key}>{t('downloads.dp.saveTry')}</Button>
 				</form>
 				{#if edError[key]}<p class="err" role="alert">{edError[key]}</p>{/if}
 			{/if}
@@ -163,16 +164,16 @@
 	</div>
 {/snippet}
 
-<section class="decide" class:compact aria-label="Review" data-testid="decision-panel">
+<section class="decide" class:compact aria-label={t('downloads.status.review')} data-testid="decision-panel">
 	{#each groups as g (g.key)}
 		{@const d = g.lead}
 		{#if g.pack}
 			{@const w = manyWords(d.kind)}
 			<div class="dec" data-testid="decision-pack">
-				<p class="line"><span class="why">{packLine(g)}.</span> <span class="sub">· {d.kind === 'artist' ? 'Album' : 'Season pack'} · {ago(d.since)}</span></p>
+				<p class="line"><span class="why">{packLine(g)}.</span> <span class="sub">· {d.kind === 'artist' ? t('downloads.hp.album') : t('downloads.dp.seasonPack')} · {ago(d.since)}</span></p>
 				<div class="acts">
-					<Button size="sm" variant="primary" onclick={() => act(d, 'search', true, g.key)} disabled={busy === g.key} busy={busy === g.key}>Search again for these {w?.many}</Button>
-					<Menu label="More choices" variant="button" text="More" icon="chevronDown" items={packMore(d, g.key)} width={260} align="start" />
+					<Button size="sm" variant="primary" onclick={() => act(d, 'search', true, g.key)} disabled={busy === g.key} busy={busy === g.key}>{t('downloads.dp.searchThese', { many: w?.many ?? '' })}</Button>
+					<Menu label={t('downloads.dp.moreChoices')} variant="button" text={t('downloads.dp.more')} icon="chevronDown" items={packMore(d, g.key)} width={260} align="start" />
 					{@render whyBtn(g.key)}
 				</div>
 				{@render why(d, g.key)}

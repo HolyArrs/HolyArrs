@@ -1,6 +1,7 @@
 // Calendar: the month grid and list for movie dates and episodes.
 import type { CalendarEntry, TitleView } from '../core/types.ts';
 import { episodeCode as code } from '../core/episodes.ts';
+import { t } from '#lib/core/i18n/i18n.svelte.ts';
 
 /** Which titles the calendar shows. */
 export type TitlesShown = 'all' | 'movies' | 'shows' | 'music';
@@ -34,11 +35,21 @@ export type Follows = 'mine' | 'everyone' | 'library';
 export type BannerEntry = CalendarEntry & { banner?: string; logo?: string };
 
 export const kindWord: Record<CalendarEntry['kind'], string> = {
-	cinema: 'In cinemas',
-	digital: 'Movie release',
-	physical: 'Movie release',
-	episode: 'Episode',
-	album: 'Album release'
+	get cinema() {
+		return t('discover.calendar.cinema');
+	},
+	get digital() {
+		return t('discover.calendar.movieRelease');
+	},
+	get physical() {
+		return t('discover.calendar.movieRelease');
+	},
+	get episode() {
+		return t('discover.calendar.episode');
+	},
+	get album() {
+		return t('discover.calendar.albumRelease');
+	}
 };
 
 /** Whether an entry shows for the movies, shows or music choice. */
@@ -249,11 +260,11 @@ export function followsOk(e: Pick<CalendarEntry, 'following' | 'followers' | 'fo
 
 /** Who follows an entry's title: "You, Ana and 2 others". */
 export function followerNames(e: Pick<CalendarEntry, 'followers' | 'followers_hidden'>): string {
-	const names = (e.followers ?? []).map((p) => (p.me ? 'You' : p.name));
+	const names = (e.followers ?? []).map((p) => (p.me ? t('discover.calendar.you') : p.name));
 	const hidden = e.followers_hidden ?? 0;
-	if (hidden > 0) names.push(hidden === 1 ? (names.length ? '1 other' : '1 person') : `${hidden} ${names.length ? 'others' : 'people'}`);
+	if (hidden > 0) names.push(hidden === 1 ? (names.length ? t('discover.calendar.oneOther') : t('discover.calendar.onePerson')) : names.length ? t('discover.calendar.others', { n: hidden }) : t('discover.calendar.people', { n: hidden }));
 	if (names.length <= 1) return names[0] ?? '';
-	return `${names.slice(0, -1).join(', ')} and ${names.at(-1)}`;
+	return t('discover.calendar.nameList', { first: names.slice(0, -1).join(', '), last: names.at(-1) ?? '' });
 }
 
 /** An entry after the reader follows (on) or stops following its title. */

@@ -5,9 +5,11 @@
 	import type { ReleaseScope as Scope } from './releases.ts';
 	import { api, ApiError, message } from '../core/api.ts';
 	import { bytes } from '../core/format.ts';
+	import { unit } from './organise.ts';
 	import { live } from '../core/live.svelte.ts';
 	import { toasts } from '../core/toasts.svelte.ts';
 	import type { Choice, ReleasePage, ReleaseView } from '../core/types.ts';
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 
 	let {
 		titleId,
@@ -35,7 +37,7 @@
 	let choosing = $state(false);
 	let turnReason = $state('');
 
-	const noun = $derived(music ? 'tracks' : 'episodes');
+	const noun = $derived(music ? t('mediafiles.showReleases.tracks') : t('mediafiles.showReleases.episodes'));
 	const pages = $derived(pager(total, limit, offset));
 
 	// Picking from a season or album view fills several slots at once.
@@ -75,7 +77,7 @@
 			const still = p.running_job_ids ?? [];
 			running = running.filter((j) => still.includes(j));
 		} catch (e) {
-			toasts.push(`Couldn't load Releases`, 'fail', { body: message(e) });
+			toasts.push(t('mediafiles.releaseSheet.loadFailed'), 'fail', { body: message(e) });
 		} finally {
 			loaded = true;
 		}
@@ -105,13 +107,13 @@
 			const ch = await api.post<Choice>(`/releases/${target.id}/choose`, body);
 			chooseDialog?.close();
 			const n = ch.slot_ids?.length ?? 1;
-			toasts.push('Sent to Downloader', 'ok', ch.warnings.length ? { body: ch.warnings.length === 1 ? ch.warnings[0] : `${ch.warnings.length} warnings` } : n > 1 ? { body: `For ${n} ${noun}` } : undefined);
+			toasts.push(t('mediafiles.title.sent'), 'ok', ch.warnings.length ? { body: ch.warnings.length === 1 ? ch.warnings[0] : t('mediafiles.title.warnings', { n: ch.warnings.length }) } : n > 1 ? { body: t('mediafiles.showReleases.forMany', { n, noun }) } : undefined);
 			onchange();
 			await load();
 		} catch (e) {
 			// The server asks for a forced pick when the release did not pass.
 			if (e instanceof ApiError && e.status === 409 && e.body.needs_force) {
-				forceReasons = (e.body.reasons as string[] | undefined) ?? ['it did not pass'];
+				forceReasons = (e.body.reasons as string[] | undefined) ?? [t('mediafiles.title.didNotPass')];
 			} else {
 				chooseError = message(e);
 			}
@@ -137,7 +139,7 @@
 			if (scope.slotId) body.slot_id = scope.slotId;
 			await api.post(`/releases/${target.id}/turn-down`, body);
 			turnDialog?.close();
-			toasts.push('Release turned down', 'ok', { body: `Never picked for ${scope.slotId || music ? scope.label : 'these episodes'}` });
+			toasts.push(t('mediafiles.title.turnedDown'), 'ok', { body: t('mediafiles.showReleases.neverFor', { what: scope.slotId || music ? scope.label : t('mediafiles.showDelete.theseEpisodes') }) });
 			await load();
 		} catch (err) {
 			chooseError = message(err);
@@ -149,15 +151,15 @@
 
 <section class="card rel-card" class:bare aria-labelledby="h-show-rel" data-testid="show-releases">
 	<div class="card-head" class:sr-only={bare}>
-		<h2 id="h-show-rel" class="h2">Choose a release: {scope.label}</h2>
-		{#if !bare}<Button variant="plain" onclick={onclose}>Close</Button>{/if}
+		<h2 id="h-show-rel" class="h2">{t('mediafiles.showReleases.chooseFor', { label: scope.label })}</h2>
+		{#if !bare}<Button variant="plain" onclick={onclose}>{t('shows.page.close')}</Button>{/if}
 	</div>
-	{#if total}<p class="xs muted">{total} found in the last search</p>{/if}
+	{#if total}<p class="xs muted">{t('mediafiles.showReleases.found', { n: total })}</p>{/if}
 	<p class="small muted" aria-live="polite" data-testid="search-running">
-		{running.length ? 'Searching your Sources. The list fills in once they answer.' : ''}
+		{running.length ? t('mediafiles.showReleases.searching') : ''}
 	</p>
 	{#if loaded && releases.length === 0 && !running.length}
-		<p class="small muted">Nothing found yet.</p>
+		<p class="small muted">{t('mediafiles.showReleases.nothing')}</p>
 	{:else if releases.length}
 		<ul class="rels">
 			{#each releases as r (r.id)}
@@ -167,7 +169,7 @@
 						<span class="rel-name mono">{r.name}</span>
 						<span class="chip {verdictTone(r)}" data-testid="verdict">{verdict(r)}</span>
 					</div>
-					<div class="xs muted">{facts(r, bytes)}{r.episode ? ` · ${r.episode}` : ''}{music && r.slot_ids?.length ? ` · ${r.slot_ids.length} tracks` : ''}{r.version && r.version !== 'Main' ? ` · ${r.version}` : ''}</div>
+					<div class="xs muted">{facts(r, bytes)}{r.episode ? ` · ${r.episode}` : ''}{music && r.slot_ids?.length ? ` · ${unit('track', r.slot_ids.length)}` : ''}{r.version && r.version !== 'Main' ? ` · ${r.version}` : ''}</div>
 					{#if key.length}
 						<ul class="reasons">
 							{#each key as x, i (i)}<li class={x.effect}>{x.text}</li>{/each}
@@ -175,7 +177,7 @@
 					{/if}
 					{#if r.reasons.length}
 						<details>
-							<summary class="xs muted">All {r.reasons.length} reasons</summary>
+							<summary class="xs muted">{t('mediafiles.showReleases.allReasons', { n: r.reasons.length })}</summary>
 							<ul class="reasons">
 								{#each r.reasons as x, i (i)}<li class={x.effect}>{x.text}</li>{/each}
 							</ul>
@@ -183,9 +185,9 @@
 					{/if}
 					{#if r.state !== 'chosen'}
 						<div class="row rel-actions">
-							<Button onclick={() => askChoose(r)} aria-label="Choose {r.name}">Choose</Button>
+							<Button onclick={() => askChoose(r)} aria-label={t('mediafiles.showReleases.chooseOf', { name: r.name })}>{t('mediafiles.showReleases.choose')}</Button>
 							{#if r.state !== 'turned_down'}
-								<Button variant="plain" onclick={() => askTurnDown(r)} aria-label="Turn down {r.name}">Turn down</Button>
+								<Button variant="plain" onclick={() => askTurnDown(r)} aria-label={t('mediafiles.showReleases.turnDownOf', { name: r.name })}>{t('mediafiles.showReleases.turnDown')}</Button>
 							{/if}
 						</div>
 					{/if}
@@ -193,10 +195,10 @@
 			{/each}
 		</ul>
 		{#if pages.prev !== null || pages.next !== null}
-			<nav class="row pager" aria-label="Release pages">
-				<Button variant="plain" disabled={pages.prev === null} onclick={() => go(pages.prev)}>Back</Button>
-				<span class="xs muted">{pages.from} to {pages.to} of {total}</span>
-				<Button variant="plain" disabled={pages.next === null} onclick={() => go(pages.next)}>More</Button>
+			<nav class="row pager" aria-label={t('mediafiles.showReleases.pages')}>
+				<Button variant="plain" disabled={pages.prev === null} onclick={() => go(pages.prev)}>{t('mediafiles.releaseList.back')}</Button>
+				<span class="xs muted">{t('mediafiles.releaseList.range', { from: pages.from, to: pages.to, total })}</span>
+				<Button variant="plain" disabled={pages.next === null} onclick={() => go(pages.next)}>{t('mediafiles.releaseList.more')}</Button>
 			</nav>
 		{/if}
 	{/if}
@@ -204,20 +206,20 @@
 
 <dialog bind:this={chooseDialog} aria-labelledby="show-choose-title" class="modal">
 	{#if target}
-		<h2 id="show-choose-title" class="h2">{needsForce ? 'Choose it anyway?' : 'Choose this Release?'}</h2>
+		<h2 id="show-choose-title" class="h2">{needsForce ? t('mediafiles.showReleases.chooseAnywayQ') : t('mediafiles.showReleases.chooseQ')}</h2>
 		<p class="mono small path" style="margin-top: var(--s-3)">{target.name}</p>
 		<p class="small muted">{facts(target, bytes)}</p>
-		<p class="small">{music ? `For ${scope.label}.` : fillsMany ? `For ${target.episode}.` : `For ${scope.slotId ? scope.label : (target.episode ?? scope.label)}.`}</p>
+		<p class="small">{t('mediafiles.showReleases.for', { what: music ? scope.label : fillsMany ? (target.episode ?? '') : scope.slotId ? scope.label : (target.episode ?? scope.label) })}</p>
 		{#if warnings.length || forceReasons.length}
 			<ul class="warns" data-testid="choose-warnings">
 				{#each warnings as w (w)}<li>{w}</li>{/each}
-				{#each forceReasons as w (w)}<li>It did not pass: {w}.</li>{/each}
+				{#each forceReasons as w (w)}<li>{t('mediafiles.showReleases.didNotPass', { why: w })}</li>{/each}
 			</ul>
 		{/if}
 		{#if chooseError}<p class="form-error" role="alert">{chooseError}</p>{/if}
 		<div class="row modal-actions">
-			<Button variant="plain" onclick={() => chooseDialog?.close()}>Cancel</Button>
-			<Button variant="primary" onclick={choose} disabled={choosing} busy={choosing}>{needsForce ? 'Choose anyway' : 'Choose'}</Button>
+			<Button variant="plain" onclick={() => chooseDialog?.close()}>{t('mediafiles.dialogs.cancel')}</Button>
+			<Button variant="primary" onclick={choose} disabled={choosing} busy={choosing}>{needsForce ? t('mediafiles.showReleases.chooseAnyway') : t('mediafiles.showReleases.choose')}</Button>
 		</div>
 	{/if}
 </dialog>
@@ -225,21 +227,21 @@
 <dialog bind:this={turnDialog} aria-labelledby="show-turn-title" class="modal">
 	{#if target}
 		<form onsubmit={turnDown}>
-			<h2 id="show-turn-title" class="h2">Turn down this Release?</h2>
+			<h2 id="show-turn-title" class="h2">{t('mediafiles.showReleases.turnDownQ')}</h2>
 			<p class="mono small path" style="margin-top: var(--s-3)">{target.name}</p>
 			<p class="small muted">
 				{scope.slotId
-					? `HolyArrs never picks it again for ${scope.label}; for other episodes it is still judged.`
-					: `HolyArrs never picks it again for these ${noun}.`} You can take it off the Turned down list later.
+					? t('mediafiles.showReleases.turnNoteSlot', { label: scope.label })
+					: t('mediafiles.showReleases.turnNoteMany', { noun })}
 			</p>
 			<div class="field" style="margin-top: var(--s-4)">
-				<label for="show-turn-reason">Why (optional)</label>
+				<label for="show-turn-reason">{t('mediafiles.showReleases.why')}</label>
 				<input id="show-turn-reason" class="input" bind:value={turnReason} maxlength="500" />
 			</div>
 			{#if chooseError}<p class="form-error" role="alert">{chooseError}</p>{/if}
 			<div class="row modal-actions">
-				<Button variant="plain" onclick={() => turnDialog?.close()}>Cancel</Button>
-				<Button variant="primary" type="submit" disabled={choosing} busy={choosing}>Turn down</Button>
+				<Button variant="plain" onclick={() => turnDialog?.close()}>{t('mediafiles.dialogs.cancel')}</Button>
+				<Button variant="primary" type="submit" disabled={choosing} busy={choosing}>{t('mediafiles.showReleases.turnDown')}</Button>
 			</div>
 		</form>
 	{/if}

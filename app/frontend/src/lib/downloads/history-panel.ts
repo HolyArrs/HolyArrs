@@ -1,4 +1,5 @@
 // Content of the History details panel, shared by the desktop pane and the phone sheet: the step mark, title, meta line, art, a download's steps, one line of new facts, the facts, and where to go.
+import { t as say, lang, appLocale } from '#lib/core/i18n/i18n.svelte.ts';
 import { artOf, byWhom, clock, dayKey, titleHref, type Verb } from './history-kinds.ts';
 import { cap, episodeBits, missingLine, folderGone, folderName, plainWhy, resolutionOf, rowText, type LineContext } from './history-lines.ts';
 import { canFind, filterVerb, rowLinks, type GoLink } from './history-search.ts';
@@ -52,9 +53,30 @@ type Label = Fact['label'];
 const str = (v: unknown) => (typeof v === 'string' ? v.trim() : '');
 const num = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : 0);
 const join = (...parts: (string | false | null | undefined)[]) => parts.filter(Boolean).join(' · ');
-const count = (n: number) => n.toLocaleString('en-US');
-const plural = (n: number, one: string, many = one + 's') => `${count(n)} ${n === 1 ? one : many}`;
-const problemWords: Record<string, string> = { picture: 'Picture', sound: 'Sound', subtitles: 'Subtitles', wont_play: "Won't play", other: 'Other' };
+const count = (n: number) => n.toLocaleString(appLocale('en-US'));
+const plural = (n: number, one: string) => say(`downloads.hl.pl.${one}.${n === 1 ? 'one' : 'other'}`, { count: count(n) });
+const problemWords: Record<string, string> = {
+	get picture() { return say('downloads.hl.problem.picture'); },
+	get sound() { return say('downloads.hl.problem.sound'); },
+	get subtitles() { return say('downloads.hl.problem.subtitles'); },
+	get wont_play() { return say('downloads.hl.problem.wontPlay'); },
+	get other() { return say('downloads.hl.problem.other'); }
+};
+
+/** The words for a fact's label; the labels themselves stay as ids. */
+export const FACT_LABEL: Record<Fact['label'], string> = {
+	get When() { return say('downloads.hp.when'); },
+	get By() { return say('downloads.hp.by'); },
+	get Quality() { return say('downloads.col.quality'); },
+	get Size() { return say('downloads.pf.size'); },
+	get Source() { return say('downloads.col.source'); },
+	get Downloader() { return say('downloads.col.proto'); },
+	get Release() { return say('downloads.pf.release'); },
+	get File() { return say('downloads.hp.file'); },
+	get From() { return say('downloads.hp.from'); },
+	get Folder() { return say('downloads.pf.folder'); },
+	get Why() { return say('downloads.hp.why'); }
+};
 
 /** A fact's time: "Today, 10:00 PM" with "36 min ago", "Yesterday, 4:50 PM", "Oct 21, 3:05 PM". */
 export function whenText(at: string, now = new Date()): { text: string; ago: string } {
@@ -65,12 +87,12 @@ export function whenText(at: string, now = new Date()): { text: string; ago: str
 	y.setDate(y.getDate() - 1);
 	if (k === dayKey(now.toISOString())) {
 		const s = Math.max(0, (now.getTime() - t.getTime()) / 1000);
-		const ago = s < 60 ? 'just now' : s < 3600 ? `${Math.floor(s / 60)} min ago` : `${Math.floor(s / 3600)} h ago`;
-		return { text: `Today, ${clock(at)}`, ago };
+		const ago = s < 60 ? say('downloads.quiet.justNow') : s < 3600 ? say('downloads.hp.minAgo', { n: Math.floor(s / 60) }) : say('downloads.hp.hAgo', { n: Math.floor(s / 3600) });
+		return { text: say('downloads.hp.todayAt', { time: clock(at) }), ago };
 	}
-	if (k === dayKey(y.toISOString())) return { text: `Yesterday, ${clock(at)}`, ago: '' };
-	const day = t.toLocaleDateString('en-US', { month: 'short', day: 'numeric', ...(t.getFullYear() !== now.getFullYear() ? { year: 'numeric' } : {}) });
-	return { text: `${day}, ${clock(at)}`, ago: '' };
+	if (k === dayKey(y.toISOString())) return { text: say('downloads.hp.yesterdayAt', { time: clock(at) }), ago: '' };
+	const day = t.toLocaleDateString(appLocale('en-US'), { month: 'short', day: 'numeric', ...(t.getFullYear() !== now.getFullYear() ? { year: 'numeric' } : {}) });
+	return { text: say('downloads.hp.dayAt', { day, time: clock(at) }), ago: '' };
 }
 
 const segs = (p: string) => p.split(/[\\/]+/).filter(Boolean);
@@ -110,7 +132,13 @@ export const glue = (bit: string) => bit.replace(/ /g, ' ').replace(/-/g, '‑'
 
 const pathsOf = (d: Record<string, unknown>) => (Array.isArray(d.paths) ? (d.paths as unknown[]).filter((p): p is Record<string, unknown> => !!p && typeof p === 'object') : []);
 
-const SYSTEM_LINE: Record<string, string> = { signed_in: 'Signed in', signed_out: 'Signed out', sign_in_failed: 'Sign-in failed', api_key_created: 'Key made', api_key_deleted: 'Key deleted' };
+const SYSTEM_LINE: Record<string, string> = {
+	get signed_in() { return say('downloads.hp.signedIn'); },
+	get signed_out() { return say('downloads.hp.signedOut'); },
+	get sign_in_failed() { return say('downloads.hp.signInFailed'); },
+	get api_key_created() { return say('downloads.hp.keyMade'); },
+	get api_key_deleted() { return say('downloads.hp.keyDeleted'); }
+};
 const DOWNLOAD: Label[] = ['Quality', 'Size', 'Source', 'Downloader', 'Release'];
 
 /** Names a health or alert row like title rows: what it is about, then what happened ("Discord" · "401 Unauthorized"). */
@@ -141,19 +169,19 @@ export function panelView(row: HistoryRow, ctx: PanelContext): PanelView {
 	const eps = episodeBits(e.episode);
 	const season = /^Season (\d+):/.exec(e.Summary)?.[1];
 	const album = str(d.album) && !/^\d+$/.test(str(d.album)) ? str(d.album) : '';
-	const sort = kind === 'artist' || str(d.artist) ? 'Artist' : kind === 'album' ? 'Album' : '';
+	const sort = kind === 'artist' || str(d.artist) ? say('downloads.hl.kind.artist') : kind === 'album' ? say('downloads.hp.album') : '';
 	// The default Version ("Main") adds nothing, like "Movie" or "Show".
 	const version = e.version && !/^main$/i.test(e.version.trim()) ? e.version : '';
-	const meta = own ? join(eps.length ? eps.join(' · ') : season ? `Season ${season}` : album || sort, version) : '';
+	const meta = own ? join(eps.length ? eps.join(' · ') : season ? say('downloads.hl.season', { n: season }) : album || sort, version) : '';
 
 	const src = e.TitleID && e.title_name ? artOf(e, ctx.titles) : undefined;
 	const art = src && e.title_name ? { src, name: e.title_name, square: kind === 'artist' || kind === 'album' } : null;
 
 	// A download's three steps; a decision waiting on an import shows where it stopped.
 	const waits = row.events.some((x) => x.Kind === 'needs_decision');
-	let steps: PanelStep[] = row.steps.map((s) => (waits && s.state === 'failed' ? { key: s.key, label: 'Needs you', state: 'needs' } : { key: s.key, label: s.label, state: s.state }));
+	let steps: PanelStep[] = row.steps.map((s) => (waits && s.state === 'failed' ? { key: s.key, label: say('downloads.hl.tag.needs'), state: 'needs' } : { key: s.key, label: s.label, state: s.state }));
 	if (!steps.length && e.Kind === 'needs_decision' && /plac|import/i.test(str(d.reason)))
-		steps = [{ key: 'sent', label: 'Sent', state: 'done' }, { key: 'downloaded', label: 'Downloaded', state: 'done' }, { key: 'imported', label: 'Needs you', state: 'needs' }];
+		steps = [{ key: 'sent', label: say('downloads.hk.sent'), state: 'done' }, { key: 'downloaded', label: say('downloads.hk.downloaded'), state: 'done' }, { key: 'imported', label: say('downloads.hl.tag.needs'), state: 'needs' }];
 	const failedAt = row.steps.find((s) => s.state === 'failed')?.key ?? '';
 
 	const { line, long } = lineOf(row, ctx, failedAt, own ? w.line : '');
@@ -215,7 +243,7 @@ function subject(e: EventRecord): string {
 	const d = e.Data ?? {};
 	const k = e.Kind;
 	if (/^sign/.test(k)) return str(d.name) || e.actor_name || '';
-	if (k.startsWith('library_folder_')) return folderName(e) || (shortPath(str(d.path)) ? `${shortPath(str(d.path))} folder` : '');
+	if (k.startsWith('library_folder_')) return folderName(e) || (shortPath(str(d.path)) ? say('downloads.hp.folderOf', { name: shortPath(str(d.path)) }) : '');
 	if (k === 'health_broken') {
 		// What the check is about, with the word before it when the message has one ("Downloader NZBGet").
 		const msg = str(d.message) || e.Summary, sub = str(d.subject);
@@ -226,8 +254,8 @@ function subject(e: EventRecord): string {
 	}
 	if (k === 'health_recovered') return str(d.subject).split(', ')[0];
 	if (k === 'alert_failed') return str(d.alert);
-	if (k === 'free_space_low') return 'Low space';
-	if (k === 'holding_cleaned') return 'Set-aside files';
+	if (k === 'free_space_low') return say('downloads.hl.lowSpace');
+	if (k === 'holding_cleaned') return say('downloads.hp.setAside');
 	if (k === 'settings_changed') return str(d.name);
 	if (k.startsWith('download_') && !e.title_name) return str(d.release) || str(d.downloader);
 	return '';
@@ -261,15 +289,15 @@ function lineOf(row: HistoryRow, ctx: PanelContext, failedAt: StepKey | '', fall
 	const reason = (x: unknown) => cap(plainWhy(str(x)));
 	if (failedAt) {
 		const bad = row.events.find((x) => /failed|vanished|rejected/.test(x.Kind));
-		return { line: reason(bad?.Data?.reason) || (failedAt === 'imported' ? 'Nothing could be placed' : ''), long: false };
+		return { line: reason(bad?.Data?.reason) || (failedAt === 'imported' ? say('downloads.hl.nothingPlaced') : ''), long: false };
 	}
 	if (row.steps.length) return { line: '', long: false };
 	if (k in SYSTEM_LINE) return { line: SYSTEM_LINE[k], long: false };
 	switch (k) {
-		case 'gate_opened': return { line: e.episode ? 'Aired' : 'Released', long: false };
+		case 'gate_opened': return { line: e.episode ? say('downloads.hl.tag.aired') : say('downloads.hp.released'), long: false };
 		case 'title_added': {
 			const why = str(d.why_added);
-			return { line: why === 'import' ? 'From a Library import' : why === 'ask' ? 'From a request' : why === 'list' ? 'From a list' : '', long: false };
+			return { line: why === 'import' ? say('downloads.hp.fromImport') : why === 'ask' ? say('downloads.hp.fromRequest') : why === 'list' ? say('downloads.hp.fromList') : '', long: false };
 		}
 		case 'library_folder_unreachable': return { line: folderGone(e), long: false };
 		case 'health_broken': {
@@ -282,29 +310,29 @@ function lineOf(row: HistoryRow, ctx: PanelContext, failedAt: StepKey | '', fall
 			const inner = /\(([^)]+)\)$/.exec(rest)?.[1];
 			return { line: cap(inner || rest || msg), long: false };
 		}
-		case 'health_recovered': return { line: 'Working again', long: false };
+		case 'health_recovered': return { line: say('downloads.hl.workingAgain'), long: false };
 		case 'alert_failed':
 		case 'free_space_low': {
 			const sub = subject(e);
 			const w = rowText(row, ctx).line;
 			return { line: sub && w.startsWith(sub + ' · ') ? w.slice(sub.length + 3) : w, long: false };
 		}
-		case 'file_held': return { line: 'File set aside', long: false };
+		case 'file_held': return { line: say('downloads.hp.fileAside'), long: false };
 		case 'holding_cleaned': return { line: '', long: false };
 		case 'import_failed':
-		case 'import_rejected': return { line: reason(d.reason) || 'Nothing could be placed', long: false };
+		case 'import_rejected': return { line: reason(d.reason) || say('downloads.hl.nothingPlaced'), long: false };
 		case 'needs_decision':
 		case 'stopped_looking': return { line: reason(d.reason), long: false };
 		case 'file_replaced': {
 			const was = str(d.old_quality), now = str(d.new_quality);
 			return { line: was && now ? `${was} → ${now}` : '', long: false };
 		}
-		case 'title_removed': return { line: d.delete_files === true ? 'Files deleted' : 'Files kept', long: false };
-		case 'download_removed': return { line: join('Removed from downloader', d.delete_files === true && 'files deleted'), long: false };
+		case 'title_removed': return { line: d.delete_files === true ? say('downloads.hp.filesDeleted') : say('downloads.hp.filesKept'), long: false };
+		case 'download_removed': return { line: join(say('downloads.hl.removedDl'), d.delete_files === true && say('downloads.hp.filesDeletedLow')), long: false };
 		case 'ask_made':
 		case 'ai_ask_made': return { line: cap(str(d.albums) || str(d.seasons)), long: false };
 		case 'ask_approved':
-		case 'ai_ask_approved': return { line: join(d.auto === true && 'Automatic', str(d.note)), long: false };
+		case 'ai_ask_approved': return { line: join(d.auto === true && say('downloads.hl.automatic'), str(d.note)), long: false };
 		case 'ask_turned_down':
 		case 'ai_ask_turned_down': return { line: cap(str(d.note)), long: false };
 		case 'report_made': {
@@ -312,14 +340,14 @@ function lineOf(row: HistoryRow, ctx: PanelContext, failedAt: StepKey | '', fall
 			return { line: join(problemWords[str(d.kind)] ?? cap(str(d.kind)), note && `“${note}”`), long: true };
 		}
 		// The mark says Reported, so the outcome comes first.
-		case 'report_fixed': return { line: join('Fixed', problemWords[str(d.kind)] ?? cap(str(d.kind)), str(d.reply) && `“${str(d.reply)}”`), long: true };
-		case 'report_reopened': return { line: join('Opened again', problemWords[str(d.kind)] ?? cap(str(d.kind)), str(d.note) && `“${str(d.note)}”`), long: true };
+		case 'report_fixed': return { line: join(say('downloads.hl.tag.fixed'), problemWords[str(d.kind)] ?? cap(str(d.kind)), str(d.reply) && `“${str(d.reply)}”`), long: true };
+		case 'report_reopened': return { line: join(say('downloads.hp.openedAgain'), problemWords[str(d.kind)] ?? cap(str(d.kind)), str(d.note) && `“${str(d.note)}”`), long: true };
 		case 'adopted': {
 			const files = num(d.files), albums = num(d.albums);
 			return { line: albums ? join(plural(files, 'track'), plural(albums, 'album')) : '', long: false };
 		}
 		case 'file_missing': return { line: missingLine(e), long: false };
-		case 'file_back': return { line: 'File back', long: false };
+		case 'file_back': return { line: say('downloads.hk.fileBack'), long: false };
 		case 'renamed':
 		case 'release_chosen':
 		case 'release_chosen_by_hand':

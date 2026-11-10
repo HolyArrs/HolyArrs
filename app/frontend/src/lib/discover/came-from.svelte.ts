@@ -1,5 +1,6 @@
 // Where the person came from, per history entry, so a title page's first breadcrumb can say "Search" or "Explore" and step back there (with its scroll and state) instead of always pointing at the Library. Kept per tab in sessionStorage.
 
+import { t } from '#lib/core/i18n/i18n.svelte.ts';
 export type CameFrom = { path: string; label: string; y?: number };
 
 const KEY = 'holyarrs:came-from';
@@ -53,7 +54,7 @@ export function cameFrom(): CameFrom | null {
 	const i = historyIndex();
 	const found = i === null ? null : (read()[i] ?? null);
 	// A sign-in page or a not-found page (such as an old /title/tv/ link that moved on) is no place to step back to.
-	return found && (isAuthPath(found.path) || found.label === 'Not found') ? null : found;
+	return found && (isAuthPath(found.path) || found.label === 'Not found' || found.label === t('discover.titlePage.notFound')) ? null : found;
 }
 
 function read(): Record<string, CameFrom> {

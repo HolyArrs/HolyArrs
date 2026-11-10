@@ -1,3 +1,4 @@
+import { t } from '#lib/core/i18n/i18n.svelte.ts';
 export type SearchScope = 'all' | 'show' | 'movie' | 'music' | 'people';
 
 /** The slice of a Library title the "In your Library" row reads. */
@@ -65,18 +66,17 @@ export function rankTop<T extends { name: string }>(groups: T[][], term: string,
 	return [...first, ...rest].slice(0, max);
 }
 
-const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
-
 /** A Library card's state line in Search: "Downloading", "Missing 2 episodes", or what is kept ("4 seasons · up to date"). */
-export function libraryNote(t: LibraryHit, fallback = ''): string {
-	if ((t.slots ?? []).some((s) => s.download?.active || s.state === 'downloading' || s.state === 'importing')) return 'Downloading';
-	if (t.kind === 'show' && t.show) {
-		if (t.show.missing > 0) return `Missing ${plural(t.show.missing, 'episode')}`;
-		return `${plural(t.show.seasons.filter((s) => s.number > 0).length, 'season')} · up to date`;
+export function libraryNote(hit: LibraryHit, fallback = ''): string {
+	if ((hit.slots ?? []).some((s) => s.download?.active || s.state === 'downloading' || s.state === 'importing')) return t('discover.searchAddress.downloading');
+	if (hit.kind === 'show' && hit.show) {
+		if (hit.show.missing > 0) return hit.show.missing === 1 ? t('discover.searchAddress.missingEpisodeOne') : t('discover.searchAddress.missingEpisodeOther', { n: hit.show.missing });
+		const seasons = hit.show.seasons.filter((s) => s.number > 0).length;
+		return seasons === 1 ? t('discover.searchAddress.seasonOneUpToDate') : t('discover.searchAddress.seasonOtherUpToDate', { n: seasons });
 	}
-	if (t.kind === 'artist' && t.artist) {
-		if (t.artist.missing > 0) return `Missing ${plural(t.artist.missing, 'track')}`;
-		return `${plural(t.artist.albums, 'album')} · up to date`;
+	if (hit.kind === 'artist' && hit.artist) {
+		if (hit.artist.missing > 0) return hit.artist.missing === 1 ? t('discover.searchAddress.missingTrackOne') : t('discover.searchAddress.missingTrackOther', { n: hit.artist.missing });
+		return hit.artist.albums === 1 ? t('discover.searchAddress.albumOneUpToDate') : t('discover.searchAddress.albumOtherUpToDate', { n: hit.artist.albums });
 	}
 	return fallback;
 }

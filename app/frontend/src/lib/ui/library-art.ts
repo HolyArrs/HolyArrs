@@ -1,4 +1,5 @@
 import { proxied } from '../core/tmdb-image.ts';
+import { t } from '#lib/core/i18n/i18n.svelte.ts';
 
 // Library art sizing, saved view choices, and TMDB image size picking.
 
@@ -18,8 +19,28 @@ const bands: Record<Density, { share: number; min: number; max: number }> = {
 	compact: { share: 0.18, min: 200, max: 300 }
 };
 
-export const densityLabels: Record<Density, string> = { large: 'Large', comfortable: 'Comfortable', compact: 'Compact' };
-export const posterLabels: Record<PosterSize, string> = { s: 'Small', m: 'Medium', l: 'Large' };
+export const densityLabels: Record<Density, string> = {
+	get large() {
+		return t('ui.libraryArt.large');
+	},
+	get comfortable() {
+		return t('ui.libraryArt.comfortable');
+	},
+	get compact() {
+		return t('ui.libraryArt.compact');
+	}
+};
+export const posterLabels: Record<PosterSize, string> = {
+	get s() {
+		return t('ui.libraryArt.small');
+	},
+	get m() {
+		return t('ui.libraryArt.medium');
+	},
+	get l() {
+		return t('ui.libraryArt.large');
+	}
+};
 export const posterMin: Record<PosterSize, number> = { s: 132, m: 172, l: 232 };
 export const squareMin: Record<PosterSize, number> = { s: 124, m: 160, l: 212 };
 export const squarePhoneMin: Record<PosterSize, number> = { s: 100, m: 136, l: 156 };

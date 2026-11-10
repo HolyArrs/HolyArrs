@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	// Live status at the right of the status tabs: a Speed track (Down, Up, optional limit) and a Storage track (free space, today, time left).
 	import Icon from '#lib/ui/Icon.svelte';
 	import { reviewWord, timeWords } from './status-views.ts';
@@ -21,29 +22,29 @@
 	let { down, up, eta, free, today, session = '', review, onreview, more, limit = '', onlimit }: Props = $props();
 
 	const time = $derived(timeWords(eta));
-	const timeTip = $derived(eta ? `${eta} left until everything finishes` : 'Nothing is downloading');
+	const timeTip = $derived(eta ? t('downloads.status.untilDone', { eta }) : t('downloads.status.nothingDownloading'));
 </script>
 
 {#snippet num(text: string)}{#key text}<b class="tk">{text}</b>{/key}{/snippet}
 
 <div class="st" data-testid="dl-stat">
 	{#snippet speeds()}
-		<span class="sg sp dn" data-testid="sb-down"><span class="sl">Down</span><span class="n" data-testid="dl-speed">{@render num(`↓ ${down}`)}</span></span>
-		{#if up}<span class="sg sp x" data-testid="sb-up"><span class="sl">Up</span><span class="n" data-testid="dl-up">{@render num(`↑ ${up}`)}</span></span>{/if}
-		{#if limit}<span class="sg x cap" data-testid="sb-limit"><Icon name="gauge" size={13} /><span class="sr-only">Speed limit </span><span class="n">{limit}</span></span>{/if}
+		<span class="sg sp dn" data-testid="sb-down"><span class="sl">{t('downloads.pf.down')}</span><span class="n" data-testid="dl-speed">{@render num(`↓ ${down}`)}</span></span>
+		{#if up}<span class="sg sp x" data-testid="sb-up"><span class="sl">{t('downloads.pf.up')}</span><span class="n" data-testid="dl-up">{@render num(`↑ ${up}`)}</span></span>{/if}
+		{#if limit}<span class="sg x cap" data-testid="sb-limit"><Icon name="gauge" size={13} /><span class="sr-only">{t('downloads.list.limitSr')} </span><span class="n">{limit}</span></span>{/if}
 	{/snippet}
 	{#if onlimit}
-		<button type="button" class="t tb" onclick={onlimit} title={limit ? `Speed limit: ${limit}. Change it` : 'Set a speed limit'} data-testid="dl-speed-limit"><span class="sr-only">Speed: </span>{@render speeds()}{#if !limit}<span class="sr-only">. Set a speed limit</span>{/if}</button>
+		<button type="button" class="t tb" onclick={onlimit} title={limit ? t('downloads.list.limitChange', { speed: limit }) : t('downloads.list.setLimit')} data-testid="dl-speed-limit"><span class="sr-only">{t('downloads.list.speedSr')} </span>{@render speeds()}{#if !limit}<span class="sr-only">. {t('downloads.list.setLimit')}</span>{/if}</button>
 	{:else}
-		<span class="t" role="group" aria-label="Speed">{@render speeds()}</span>
+		<span class="t" role="group" aria-label={t('downloads.status.speed')}>{@render speeds()}</span>
 	{/if}
-	<span class="t" role="group" aria-label="Storage">
-		{#if free}<span class="sg mp" data-testid="sb-free"><span class="ml"><span class="n">{@render num(free)}</span> <span class="sl">free</span></span></span>{/if}
-		{#if today}<span class="sg x k1" data-testid="sb-today"><span class="sl">Today</span><span class="n">{@render num(today)}</span></span>
-		{:else if session}<span class="sg x k1" data-testid="sb-today"><span class="sl">Session</span><span class="n">{@render num(session)}</span></span>{/if}
-		{#if eta}<span class="sg x k2" title={timeTip} data-testid="sb-time"><span class="sr-only">Time left: </span><span class="n tm">{@render num(time)}</span></span>{/if}
+	<span class="t" role="group" aria-label={t('downloads.status.storage')}>
+		{#if free}<span class="sg mp" data-testid="sb-free"><span class="ml"><span class="n">{@render num(free)}</span> <span class="sl">{t('downloads.status.free')}</span></span></span>{/if}
+		{#if today}<span class="sg x k1" data-testid="sb-today"><span class="sl">{t('downloads.day.today')}</span><span class="n">{@render num(today)}</span></span>
+		{:else if session}<span class="sg x k1" data-testid="sb-today"><span class="sl">{t('downloads.more.session')}</span><span class="n">{@render num(session)}</span></span>{/if}
+		{#if eta}<span class="sg x k2" title={timeTip} data-testid="sb-time"><span class="sr-only">{t('downloads.status.timeLeftSr')} </span><span class="n tm">{@render num(time)}</span></span>{/if}
 	</span>
-	{#if review}<button type="button" class="rv x" onclick={onreview} data-testid="dl-need" title="Open Problems › Review"><i aria-hidden="true"></i>{reviewWord(review)}</button>{/if}
+	{#if review}<button type="button" class="rv x" onclick={onreview} data-testid="dl-need" title={t('downloads.status.openReview')}><i aria-hidden="true"></i>{reviewWord(review)}</button>{/if}
 	<span class="mr x" data-testid="sb-more">{@render more()}</span>
 </div>
 

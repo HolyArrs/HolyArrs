@@ -17,6 +17,7 @@
 	import Icon from '#lib/ui/Icon.svelte';
 	import { runtimeWords } from '#lib/ui/TitleHero.svelte';
 	import { sized } from '../core/tmdb-image.ts';
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 
 	let {
 		rows,
@@ -43,11 +44,11 @@
 			<span class="num" aria-hidden="true">{r.number}</span>
 			<div class="still">
 				{#if src && !failed[r.key]}<img src={sized(src, 'backdrop', 240)} alt="" loading="lazy" decoding="async" onerror={() => (failed[r.key] = true)} />{:else}<span class="ph"><Icon name="tv" size={20} /></span>{/if}
-				{#if r.here}<span class="here" title="In your Library"><Icon name="check" size={14} /><span class="sr-only">In your Library</span></span>{/if}
+				{#if r.here}<span class="here" title={t('shows.list.inLibrary')}><Icon name="check" size={14} /><span class="sr-only">{t('shows.list.inLibrary')}</span></span>{/if}
 			</div>
 			<div class="body">
 				<div class="top">
-					<h3 class="name"><span class="sr-only">Episode {r.number}: </span>{r.name}</h3>
+					<h3 class="name"><span class="sr-only">{t('shows.list.episodeNumber', { number: r.number })} </span>{r.name}</h3>
 					{#if action}<span class="end">{@render action(i)}</span>{/if}
 				</div>
 				<p class="meta">{[runtimeWords(r.runtime), r.when].filter(Boolean).join(' · ')}{#if status}{' '}{@render status(i)}{/if}</p>
@@ -56,7 +57,7 @@
 			</div>
 		</li>
 	{:else}
-		<li class="small muted">No episodes listed yet.</li>
+		<li class="small muted">{t('shows.list.none')}</li>
 	{/each}
 </ol>
 

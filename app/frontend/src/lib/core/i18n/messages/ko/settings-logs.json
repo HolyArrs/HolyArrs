@@ -1,0 +1,18 @@
+{
+	"settings.logs.title": "로그",
+	"settings.logs.download": "다운로드",
+	"settings.logs.filter": "로그 필터",
+	"settings.logs.level": "수준",
+	"settings.logs.every": "모든 줄",
+	"settings.logs.warnings": "경고 및 오류",
+	"settings.logs.errors": "오류만",
+	"settings.logs.text": "텍스트",
+	"settings.logs.example": "예: qBittorrent",
+	"settings.logs.from": "시작",
+	"settings.logs.to": "종료",
+	"settings.logs.apply": "적용",
+	"settings.logs.clear": "지우기",
+	"settings.logs.lines": "줄 수",
+	"settings.logs.newer": "최신",
+	"settings.logs.older": "이전"
+}

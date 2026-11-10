@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import IconButton from '#lib/ui/IconButton.svelte';
@@ -6,7 +8,7 @@
 	import Poster from '#lib/ui/Poster.svelte';
 	import VerbMark from './HistoryVerb.svelte';
 	import type { HistoryRow } from './history.ts';
-	import { glue, panelView, pathBits } from './history-panel.ts';
+	import { FACT_LABEL, glue, panelView, pathBits } from './history-panel.ts';
 	import type { Snippet } from 'svelte';
 	import { to } from '#lib/core/paths.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
@@ -23,14 +25,14 @@
 	async function copy(path: string) {
 		try {
 			await navigator.clipboard.writeText(path);
-			toasts.push('Path copied', 'ok');
+			toasts.push(t('downloads.hes.copied'), 'ok');
 		} catch {
-			toasts.push("Couldn't copy path", 'fail', { body: 'Select it instead' });
+			toasts.push(t('downloads.hes.copyFailed'), 'fail', { body: t('updates.goBack.copyFailedBody') });
 		}
 	}
 </script>
 
-<Sheet bind:open title={v?.title ?? 'Event'} placement="auto" size="md" hideTitle onclose={() => (row = null)}>
+<Sheet bind:open title={v?.title ?? t('downloads.hes.event')} placement="auto" size="md" hideTitle onclose={() => (row = null)}>
 	{#if row && v}
 		<div class="es" data-testid="hv-sheet">
 			<div class="head">
@@ -40,20 +42,20 @@
 					<p class="ttl">{v.title}</p>
 					{#if v.meta}<p class="sub">{v.meta}</p>{/if}
 				</div>
-				<IconButton icon="x" label="Close" variant="tinted" size="sm" tooltip={false} onclick={() => (open = false)} />
+				<IconButton icon="x" label={t('health.why.close')} variant="tinted" size="sm" tooltip={false} onclick={() => (open = false)} />
 			</div>
 			{#if v.steps.length}
-				<ol class="steps" aria-label="Steps of this download">
-					{#each v.steps as st (st.key)}<li class={st.state}><span class="pip" aria-hidden="true"></span>{st.label}<span class="sr-only">: {st.state === 'done' ? 'done' : st.state === 'failed' ? 'failed' : st.state === 'needs' ? 'waiting' : 'not yet'}</span></li>{/each}
+				<ol class="steps" aria-label={t('downloads.hes.steps')}>
+					{#each v.steps as st (st.key)}<li class={st.state}><span class="pip" aria-hidden="true"></span>{st.label}<span class="sr-only">: {st.state === 'done' ? t('downloads.hes.done') : st.state === 'failed' ? t('downloads.hes.failed') : st.state === 'needs' ? t('downloads.hes.waiting') : t('downloads.hes.notYet')}</span></li>{/each}
 				</ol>
 			{/if}
-			{#if v.line}<p class="sum" class:long={v.long}>{v.line}</p>{/if}
+			{#if v.line}<p class="sum" class:long={v.long}>{serverWords(v.line)}</p>{/if}
 			<dl class="pf">
 				{#each v.facts as f (f.label)}
-					<dt>{f.label}</dt>
+					<dt>{FACT_LABEL[f.label]}</dt>
 					<dd class:mono={f.mono} class:one={f.label === 'Release'} title={f.label === 'Release' ? f.value : undefined}>
 						{#if f.at}<time datetime={f.at}>{f.value}</time>{#if f.ago}<span class="ago">{` · ${f.ago}`}</span>{/if}
-						{:else if f.full}<span class="path"><span class="pv" title={f.full}>{#each pathBits(f.value) as b, i (i)}{glue(b)}<wbr>{/each}</span><button type="button" class="cp" aria-label="Copy the full path" onclick={() => copy(f.full ?? '')}><Icon name="copy" size={14} /></button></span>
+						{:else if f.full}<span class="path"><span class="pv" title={f.full}>{#each pathBits(f.value) as b, i (i)}{glue(b)}<wbr>{/each}</span><button type="button" class="cp" aria-label={t('downloads.hes.copyPath')} onclick={() => copy(f.full ?? '')}><Icon name="copy" size={14} /></button></span>
 						{:else}{f.value}{/if}
 					</dd>
 				{/each}

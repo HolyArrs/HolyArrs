@@ -1,4 +1,5 @@
 // The Downloads page in two sections, Queue and History, with the header strip's totals, the speed graph and the facts of a row's details panel. Pure, so it can be tested.
+import { t } from '#lib/core/i18n/i18n.svelte.ts';
 import type { ImportRecord } from './types.ts';
 import { stageOf, statusWord } from './status-tabs.ts';
 import { failReason, statusDetail } from './imports.ts';
@@ -91,14 +92,14 @@ export function historyStatus(r: DownloadRow, im: ImportRecord | undefined): { t
 	// A client item has no import, so its word is the client's own state.
 	if (r.client_item) {
 		const why = s === 'failed' ? r.text?.trim() : '';
-		return { text: why ? `${statusWord(r)}: ${why}` : statusWord(r), bad: s === 'failed' };
+		return { text: why ? t('downloads.fact.colon', { word: statusWord(r), why }) : statusWord(r), bad: s === 'failed' };
 	}
 	if (s === 'failed') {
 		const why = failReason(im) ?? statusDetail(r, im);
-		return { text: why ? `Failed: ${why}` : 'Failed', bad: true };
+		return { text: why ? t('downloads.fact.failedWhy', { why }) : t('downloads.fact.failed'), bad: true };
 	}
-	if (r.phase === 'removed') return { text: 'Removed', bad: false };
-	return { text: s === 'seeding' ? 'Done · seeding' : 'Done', bad: false };
+	if (r.phase === 'removed') return { text: t('downloads.fact.removed'), bad: false };
+	return { text: s === 'seeding' ? t('downloads.fact.doneSeeding') : t('downloads.fact.done'), bad: false };
 }
 
 /** The details panel as label and value pairs, only those with a value. */
@@ -107,15 +108,15 @@ export function facts(r: DownloadRow, im: ImportRecord | undefined): Fact[] {
 	const target = im?.Plan?.find((p) => p.target_path)?.target_path;
 	const source = im?.Plan?.[0]?.source_file;
 	const out: [string, string | undefined][] = [
-		['Name', r.name],
-		['Status', more ? `${statusWord(r)} · ${more}` : statusWord(r)],
-		['Size', r.size ? size(r.size) : ''],
-		['Downloader', r.downloader],
-		['Path', target],
-		['Source', source],
-		['Added', dateTime(r.started_at)],
-		['Completed', dateTime(r.finished_at)],
-		['Version', r.version && r.version !== 'Main' ? r.version : '']
+		[t('downloads.fact.name'), r.name],
+		[t('downloads.fact.status'), more ? `${statusWord(r)} · ${more}` : statusWord(r)],
+		[t('downloads.fact.size'), r.size ? size(r.size) : ''],
+		[t('downloads.fact.downloader'), r.downloader],
+		[t('downloads.fact.path'), target],
+		[t('downloads.fact.source'), source],
+		[t('downloads.fact.added'), dateTime(r.started_at)],
+		[t('downloads.fact.completed'), dateTime(r.finished_at)],
+		[t('downloads.fact.version'), r.version && r.version !== 'Main' ? r.version : '']
 	];
 	return out.filter((x): x is [string, string] => !!x[1]).map(([label, value]) => ({ label, value }));
 }

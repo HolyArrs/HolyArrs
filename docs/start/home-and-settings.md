@@ -40,7 +40,7 @@ Open **Settings** from the menu. You see only the screens your account may use, 
 | Account | Sees |
 |---|---|
 | Owner | Every screen |
-| Admin | Usual screens, plus **Move from other apps**, **Parts**, **Users and roles** and **Logs** |
+| Admin | Usual screens, plus **Import from other apps**, **Parts**, **Users and roles** and **Logs** |
 | Member with **Change settings** | Usual screens |
 | Everyone | **My account** |
 

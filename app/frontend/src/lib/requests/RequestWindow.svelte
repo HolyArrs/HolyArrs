@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import Billboard from '#lib/ui/Billboard.svelte';
 	import TrailerPlayer from '#lib/ui/TrailerPlayer.svelte';
 	import Poster from '#lib/ui/Poster.svelte';
@@ -77,10 +78,10 @@
 		const ctl = new AbortController();
 		const load =
 			a.kind === 'show'
-				? api.get<TitleView>(`/titles/${id}`, ctl.signal).then((t) =>
+				? api.get<TitleView>(`/titles/${id}`, ctl.signal).then((tv) =>
 						partialFacts(
 							'seasons',
-							(t.show?.seasons ?? []).filter((s) => s.number > 0 && !s.dropped).map((s) => ({ key: s.number, complete: s.aired > 0 && s.in_library >= s.aired, real: s.aired > 0, size: s.aired, have: s.in_library })),
+							(tv.show?.seasons ?? []).filter((s) => s.number > 0 && !s.dropped).map((s) => ({ key: s.number, complete: s.aired > 0 && s.in_library >= s.aired, real: s.aired > 0, size: s.aired, have: s.in_library })),
 							a.seasons ?? [],
 							(a.episodes ?? []).filter((e) => e.episodes?.length).map((e) => ({ key: e.season, count: new Set(e.episodes).size }))
 						)
@@ -110,40 +111,41 @@
 	// An approved ask with a download in play links to its row on Downloads.
 	const dlId = $derived(status && picked.state === 'approved' && picked.title_id && session.can('manage_library') ? ctx.live(picked).downloadId : undefined);
 	// A declined ask had nothing approved, so its list is what was asked for.
-	const listName = $derived(picked.state === 'turned_down' ? 'What was asked' : 'What was approved');
+	const listName = $derived(picked.state === 'turned_down' ? t('requests.window.listAsked') : t('requests.window.listApproved'));
 	const sentence = $derived.by(() => {
 		const who = ctx.who(picked).name;
 		if (life.stage === 'ready') {
 			const at = picked.available_at ?? picked.decided_at;
-			return `In the Library${at ? ` since ${whenDate(at)}` : ''}${life.more ? '' : '.'}`;
+			const line = at ? t('requests.window.inLibrarySince', { date: whenDate(at) }) : t('requests.window.inLibrary');
+			return life.more ? line.replace(/[.。]$/, '') : line;
 		}
 		if (life.stage === 'declined') {
 			// Same rule as the card: a display name only, never a bare account name, and the status word is not said twice.
-			const by = ctx.decided(picked).replace(/^Declined by\s*/, '').trim();
+			const by = picked.state === 'turned_down' ? ctx.decidedBy(picked) : '';
 			// Others who said no to the same title before, after this ask's own decider.
 			const also = ctx.alsoDeclined(picked);
-			const first = by && by !== picked.decided_by?.name ? `By ${by}.` : picked.decided_at ? `On ${whenDate(picked.decided_at)}.` : '';
+			const first = by && by !== picked.decided_by?.name ? t('requests.window.by', { name: by }) : picked.decided_at ? t('requests.window.on', { date: whenDate(picked.decided_at) }) : '';
 			return [first, also].filter(Boolean).join(' ');
 		}
 		if (life.stage === 'failed') {
 			const why = life.reason ? ` ${life.reason.charAt(0).toUpperCase()}${life.reason.slice(1)}${/[.!?]$/.test(life.reason) ? '' : '.'}` : '';
-			return (picked.title_id ? 'Couldn’t download it.' : 'Couldn’t add it to the Library.') + why;
+			return (picked.title_id ? t('requests.window.couldNotDownload') : t('requests.cards.couldNotAdd')) + why;
 		}
 		// Nothing in flight and nothing found yet: say why and when it last looked.
-		if (life.label === 'Looking for a release') {
+		if (life.status === 'looking for a release') {
 			// Never looked for: when the search for missing comes round to it.
-			if (!life.searchedAt) return life.nextSearch ? `Not looked for yet. The search for missing runs next ${nextWhen(life.nextSearch)}.` : 'Not looked for yet.';
-			const why = life.reason ? `${life.reason.charAt(0).toUpperCase()}${life.reason.slice(1)}${/[.!?]$/.test(life.reason) ? '' : '.'}` : 'Nothing found yet.';
-			return `${why} Last looked ${whenDate(life.searchedAt)}.`;
+			if (!life.searchedAt) return life.nextSearch ? t('requests.window.notLookedNext', { when: nextWhen(life.nextSearch) }) : t('requests.window.notLooked');
+			const why = life.reason ? `${life.reason.charAt(0).toUpperCase()}${life.reason.slice(1)}${/[.!?]$/.test(life.reason) ? '' : '.'}` : t('requests.window.nothingYet');
+			return t('requests.window.lastLooked', { why, date: whenDate(life.searchedAt) });
 		}
-		return life.stage === 'upcoming' ? `Getting it for ${who}. It isn’t out yet.` : `Getting it for ${who}.`;
+		return life.stage === 'upcoming' ? t('requests.window.gettingNotOut', { who }) : t('requests.window.getting', { who });
 	});
 	const year = $derived(d?.year ?? picked.year ?? null);
 	/** What Approve would get, only where it narrows the choice: seasons for a show, albums for music. */
 	const count = (a: Ask) => askedFor(a, { seasons: ctx.info(a)?.seasons.length });
 	const pageHref = $derived(askHref(picked));
-	const pageLabel = $derived(picked.kind === 'show' ? 'TV show page' : picked.kind === 'artist' ? 'Artist page' : 'Movie page');
-	const kindOf = (a: Ask) => (a.kind === 'show' ? 'TV show' : a.kind === 'artist' ? 'Music' : 'Movie');
+	const pageLabel = $derived(t(picked.kind === 'show' ? 'requests.window.pageShow' : picked.kind === 'artist' ? 'requests.window.pageArtist' : 'requests.window.pageMovie'));
+	const kindOf = (a: Ask) => t(a.kind === 'show' ? 'requests.kind.show' : a.kind === 'artist' ? 'requests.kind.artist' : 'requests.kind.movie');
 
 	// Choose what to get: the title lifts into the corner, the sheet rises inside the frame.
 	let choosing = $state(false);
@@ -210,11 +212,11 @@
 			return;
 		}
 		// Cleared when the window steps on first, so the sheet never opens on the next ask unasked.
-		const t = setTimeout(() => {
+		const timer = setTimeout(() => {
 			autoFor = a.id;
 			void choose();
 		}, 120);
-		return () => clearTimeout(t);
+		return () => clearTimeout(timer);
 	});
 	const changed = $derived(!!(pick.seasons || pick.episodes || pick.albums || pick.songs));
 	function approveChosen() {
@@ -248,7 +250,7 @@
 </script>
 
 {#snippet line(a: Ask, life: Life)}
-	<span class="life edge tone-{life.tone}" role="progressbar" aria-label="{a.name}: {life.label}" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(life.pct)}><span class="fill" style:width="{life.pct}%"></span></span>
+	<span class="life edge tone-{life.tone}" role="progressbar" aria-label={t('requests.window.progress', { name: a.name, label: life.label })} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(life.pct)}><span class="fill" style:width="{life.pct}%"></span></span>
 {/snippet}
 
 {#snippet artistArt()}
@@ -261,7 +263,7 @@
 			{#key picked.id}
 			<div class="swap" in:fade={{ duration: status && startChoosing ? 0 : ms(520) }} out:fade={{ duration: ms(360) }}>
 				<Billboard
-					label="{picked.name}, asked by {ctx.who(picked).name}"
+					label={t('requests.window.bannerLabel', { name: picked.name, who: ctx.who(picked).name })}
 					testid="ask-banner"
 					kind={picked.kind === 'movie' || picked.kind === 'show' ? picked.kind : undefined}
 					tmdb={picked.kind === 'artist' ? null : picked.tmdb_id}
@@ -272,9 +274,9 @@
 				>
 					{#snippet heading()}<h2 class="bb-name" id="stage-title-{picked.id}">{picked.name}</h2>{/snippet}
 					{#snippet meta()}
-						<p class="facts"><span>{kindOf(picked)}</span>{#if picked.four_k}<span>4K copy</span>{/if}{#if year}<span>{year}</span>{/if}{#if count(picked)}<span>{count(picked)}</span>{/if}</p>
+						<p class="facts"><span>{kindOf(picked)}</span>{#if picked.four_k}<span>{t('requests.askMovie.fourK')}</span>{/if}{#if year}<span>{year}</span>{/if}{#if count(picked)}<span>{count(picked)}</span>{/if}</p>
 						{#each [ctx.who(picked)] as w (w.id)}
-							<p class="asker"><Avatar name={w.name} src={w.avatar} size={22} /><span><b>{w.name}</b> asked <time datetime={picked.asked_at} title={dateTime(picked.asked_at)}>{agoLong(picked.asked_at)}</time>{#if watchlistLine(picked.people, undefined)}{' '}from a Plex watchlist{/if}</span>{#if w.kid}<KidMark label="Kid" size="sm" />{/if}</p>
+							<p class="asker"><Avatar name={w.name} src={w.avatar} size={22} /><span><b>{w.name}</b> {t('requests.window.asked')} <time datetime={picked.asked_at} title={dateTime(picked.asked_at)}>{agoLong(picked.asked_at)}</time>{#if watchlistLine(picked.people, undefined)}{' '}{t('requests.window.fromPlex')}{/if}</span>{#if w.kid}<KidMark label={t('requests.window.kid')} size="sm" />{/if}</p>
 						{/each}
 						{#if picked.note}<p class="said">&ldquo;{picked.note}&rdquo;</p>{/if}
 					{/snippet}
@@ -284,15 +286,15 @@
 							<span></span>
 						{:else if waiting(picked)}
 							<div class="acts" class:gone={choosing} inert={choosing}>
-								<button type="button" class="act glass st-half" aria-label="Decline {picked.name}" data-testid="ask-decline" onclick={() => ctx.turnDown([picked])}><Icon name="x" size={20} />Decline</button>
-								<button type="button" class="act primary st-half" aria-label="Approve {picked.name}" data-testid="ask-approve" data-opens-sheet onclick={() => void choose()}><Icon name="check" size={20} />Approve</button>
+								<button type="button" class="act glass st-half" aria-label={t('requests.window.declineName', { name: picked.name })} data-testid="ask-decline" onclick={() => ctx.turnDown([picked])}><Icon name="x" size={20} />{t('requests.window.decline')}</button>
+								<button type="button" class="act primary st-half" aria-label={t('requests.window.approveName', { name: picked.name })} data-testid="ask-approve" data-opens-sheet onclick={() => void choose()}><Icon name="check" size={20} />{t('requests.window.approve')}</button>
 							</div>
 						{:else}
 							<div role="status" aria-live="polite">
 								{#if ctx.isPending(picked.id)}
-									<p class="state">Sending…</p>
+									<p class="state">{t('requests.window.sending')}</p>
 								{:else}
-									<p class="state">{ctx.decided(picked) || lifecycle(picked).label}{#if lifecycle(picked).stage === 'getting'}<span class="sep">·</span>getting it now{/if}</p>
+									<p class="state">{ctx.decided(picked) || lifecycle(picked).label}{#if lifecycle(picked).stage === 'getting'}<span class="sep">·</span>{t('requests.window.gettingNow')}{/if}</p>
 								{/if}
 							</div>
 						{/if}
@@ -303,18 +305,18 @@
 			{/key}
 			{#if pageHref && !choosing}<a class="tl-link tl-float" class:tl-wait={!status && waiting(picked)} href={to(pageHref)} data-testid="ask-title-page">{pageLabel}<Icon name="chevronRight" size={16} /></a>{/if}
 			{#if status}
-				<section class="big" data-testid="ask-status" aria-label="Status">
-					<span class="life inline tone-{life.tone}" role="progressbar" aria-label="{picked.name}: {life.label}" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(life.pct)}><span class="fill" style:width="{life.pct}%"></span></span>
+				<section class="big" data-testid="ask-status" aria-label={t('requests.window.status')}>
+					<span class="life inline tone-{life.tone}" role="progressbar" aria-label={t('requests.window.progress', { name: picked.name, label: life.label })} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(life.pct)}><span class="fill" style:width="{life.pct}%"></span></span>
 					<div class="says">
 						<p class="huge tone-{life.tone}">{life.label}</p>
 						<p class="sent">{sentence}{#if life.more}<span class="more">{` · ${life.more}`}</span>{/if}</p>
-						{#if dlId}<a class="tl-link" href={to(`/downloads?open=${dlId}`)} data-testid="ask-download">See download<Icon name="chevronRight" size={16} /></a>{/if}
+						{#if dlId}<a class="tl-link" href={to(`/downloads?open=${dlId}`)} data-testid="ask-download">{t('requests.window.seeDownload')}<Icon name="chevronRight" size={16} /></a>{/if}
 					</div>
 					{#if picked.kind !== 'movie' && !choosing}
 						<button type="button" class="act glass peek" data-opens-sheet onclick={() => void choose()}><Icon name="chevronUp" size={18} />{listName}</button>
 					{/if}
 					{#if failed}
-						<div class="acts"><button type="button" class="act glass" aria-label="Decline {picked.name}" data-testid="ask-decline" onclick={() => ctx.turnDown([picked])}><Icon name="x" size={20} /><span class="bl">Decline</span></button></div>
+						<div class="acts"><button type="button" class="act glass" aria-label={t('requests.window.declineName', { name: picked.name })} data-testid="ask-decline" onclick={() => ctx.turnDown([picked])}><Icon name="x" size={20} /><span class="bl">{t('requests.window.decline')}</span></button></div>
 					{/if}
 				</section>
 			{:else}
@@ -324,13 +326,13 @@
 			{#if choosing}
 				<section class="sheet" tabindex="-1" aria-labelledby="sheet-h" transition:fly={{ y: 40, duration: instant ? 0 : ms(420), easing: cubicOut, opacity: 0 }}>
 					<header class="sh-h">
-						<h3 id="sheet-h">{#if status}<span class="sh-title">{picked.name}</span><span class="sh-kind">{listName}</span>{:else}What to add{/if}</h3>
+						<h3 id="sheet-h">{#if status}<span class="sh-title">{picked.name}</span><span class="sh-kind">{listName}</span>{:else}{t('requests.window.whatToAdd')}{/if}</h3>
 						{#if pageHref}<a class="tl-link tl-sheet" href={to(pageHref)} data-testid="ask-title-page-sheet">{pageLabel}<Icon name="chevronRight" size={16} /></a>{/if}
-						<button type="button" class="st-hide" aria-label="Hide {status ? listName : 'What to add'}" title="Hide" onclick={closeSheet}><span>Hide</span><Icon name="chevronDown" size={18} /></button>
+						<button type="button" class="st-hide" aria-label={t('requests.window.hide', { what: status ? listName : t('requests.window.whatToAdd') })} title={t('requests.window.hideShort')} onclick={closeSheet}><span>{t('requests.window.hideShort')}</span><Icon name="chevronDown" size={18} /></button>
 					</header>
 					<div class="sh-body">
 						{#if picked.kind === 'movie'}
-							<div class="one"><span class="one-pic"><Poster src={picked.poster} name={picked.name} /></span><div><strong>{picked.name}</strong><span>The movie{year ? ` · ${year}` : ''}{d?.runtime ? ` · ${Math.floor(d.runtime / 60) ? `${Math.floor(d.runtime / 60)}h ` : ''}${d.runtime % 60}m` : ''}</span></div><Icon name="check" size={18} /></div>
+							<div class="one"><span class="one-pic"><Poster src={picked.poster} name={picked.name} /></span><div><strong>{picked.name}</strong><span>{t('requests.window.theMovie')}{year ? ` · ${year}` : ''}{d?.runtime ? ` · ${Math.floor(d.runtime / 60) ? `${t('requests.window.hoursShort', { n: Math.floor(d.runtime / 60) })} ` : ''}${t('requests.window.minutesShort', { n: d.runtime % 60 })}` : ''}</span></div><Icon name="check" size={18} /></div>
 						{:else}
 							{#if status}
 								<AskParts {ctx} a={picked} unfolded layout="split" />
@@ -339,9 +341,9 @@
 							{/if}
 						{/if}
 						{#if rules.length && !status}
-							<div class="rules" role="group" aria-label="Quality">
-								<span class="rl">Quality</span>
-								<button type="button" class="rule" aria-pressed={rulesId === 0} onclick={() => (rulesId = 0)}>{#if ctx.defaultRule(picked)}{ctx.defaultRule(picked)}<span class="dim">(default)</span>{:else}Default{/if}</button>
+							<div class="rules" role="group" aria-label={t('requests.window.quality')}>
+								<span class="rl">{t('requests.window.quality')}</span>
+								<button type="button" class="rule" aria-pressed={rulesId === 0} onclick={() => (rulesId = 0)}>{#if ctx.defaultRule(picked)}{ctx.defaultRule(picked)}<span class="dim">{t('requests.window.defaultParen')}</span>{:else}{t('requests.window.default')}{/if}</button>
 								{#each rules as r (r.id)}
 									<button type="button" class="rule" aria-pressed={rulesId === r.id} onclick={() => (rulesId = r.id)}>{r.name}</button>
 								{/each}
@@ -350,9 +352,9 @@
 					</div>
 					{#if !status}
 					<footer class="sh-f">
-						<span class="sum">{pick.empty ? 'Tick at least one to approve' : changed ? 'Approving adds only what you ticked' : picked.kind === 'movie' ? `Approving adds the movie` : `Approving adds ${(count(picked) || 'everything they asked for').toLowerCase()}`}</span>
-						<button type="button" class="act ghost" onclick={closeSheet}>Back</button>
-						<button type="button" class="act primary" disabled={pick.empty} onclick={approveChosen}><Icon name="check" size={18} />Approve</button>
+						<span class="sum">{pick.empty ? t('requests.window.tickOne') : changed ? t('requests.window.addsTicked') : picked.kind === 'movie' ? t('requests.window.addsMovie') : t('requests.window.addsWhat', { what: (count(picked) || t('requests.window.everything')).toLowerCase() })}</span>
+						<button type="button" class="act ghost" onclick={closeSheet}>{t('requests.window.back')}</button>
+						<button type="button" class="act primary" disabled={pick.empty} onclick={approveChosen}><Icon name="check" size={18} />{t('requests.window.approve')}</button>
 					</footer>
 					{/if}
 				</section>

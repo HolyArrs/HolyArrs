@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import { richMetadata, type RichMeta } from '#lib/ui/TitleHero.svelte';
 	import Billboard from '#lib/ui/Billboard.svelte';
 	import { shortSynopsis } from './synopsis.ts';
@@ -49,7 +50,7 @@
 	const line = $derived([rich?.year, ...(rich?.genres ?? []).slice(0, 3)].filter(Boolean).join(' · ') || subtitle || '');
 </script>
 
-<Billboard label="Featured: {title}" testid="explore-hero" {kind} {tmdb} {title} videos={rich?.videos} {pictures} {vtName} {settled}>
+<Billboard label={t('discover.exploreHero.featured', { title })} testid="explore-hero" {kind} {tmdb} {title} videos={rich?.videos} {pictures} {vtName} {settled}>
 	{#snippet heading()}
 		{#if rich?.logo}
 			<h2 class="bb-logo"><img src={proxied(rich.logo)} alt={title} /></h2>
@@ -68,7 +69,7 @@
 		</div>
 	{/snippet}
 	{#snippet actions()}
-		{#if href}<a class="info" {href} onfocus={(e) => e.currentTarget.scrollIntoView({ block: 'nearest', behavior: 'instant' })}>More info</a>{/if}
+		{#if href}<a class="info" {href} onfocus={(e) => e.currentTarget.scrollIntoView({ block: 'nearest', behavior: 'instant' })}>{t('discover.exploreHero.moreInfo')}</a>{/if}
 		{#if action}{@render action()}{/if}
 	{/snippet}
 </Billboard>

@@ -1,4 +1,5 @@
 // Types and formatting helpers for review sources, scores and rating spreads.
+import { t } from '#lib/core/i18n/i18n.svelte.ts';
 export type ReviewSource = { id: string; name: string; orders: string[] };
 export type Review = { author: string; date?: string; rating?: number; text: string; likes?: number; spoiler?: boolean };
 export type ReviewsAnswer = {
@@ -29,7 +30,7 @@ export function ordersOf(sources: ReviewSource[] | undefined, id: string): strin
 	return sources?.find((s) => s.id === id)?.orders ?? ['newest'];
 }
 
-export const orderWord = (o: string) => (o === 'helpful' ? 'Most liked' : 'Newest');
+export const orderWord = (o: string) => (o === 'helpful' ? t('ui.titleReviews.mostLiked') : t('ui.titleReviews.newest'));
 
 export function reviewsPath(kind: string, tmdb: string, source: string, page = 1, order = 'newest'): string {
 	const q = new URLSearchParams({ source });

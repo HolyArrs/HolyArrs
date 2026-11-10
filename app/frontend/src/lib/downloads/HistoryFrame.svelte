@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import Icon from '#lib/ui/Icon.svelte';
 	import Skeleton from '#lib/ui/Skeleton.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
@@ -35,24 +36,24 @@
 {#if feed.error && !feed.events.length}
 	<div class="empty" role="alert" data-testid="look-error">
 		<span class="eic fail"><Icon name="alert" size={22} stroke={2} /></span>
-		<p class="et">Could not load History.</p>
-		<Button variant="secondary" size="sm" icon="refresh" busy={feed.busy} onclick={onretry}>Try again</Button>
+		<p class="et">{t('downloads.hf.couldNot')}</p>
+		<Button variant="secondary" size="sm" icon="refresh" busy={feed.busy} onclick={onretry}>{t('health.sections.tryAgain')}</Button>
 	</div>
 {:else if !feed.loaded}
-	<div class="sk" aria-busy="true" aria-label="Loading history">{#each Array(8) as _, i (i)}<Skeleton height="44px" />{/each}</div>
+	<div class="sk" aria-busy="true" aria-label={t('downloads.hf.loading')}>{#each Array(8) as _, i (i)}<Skeleton height="44px" />{/each}</div>
 {:else if !feed.events.length}
 	<div class="empty" data-testid="look-empty">
 		<span class="eic"><Icon name="clock" size={22} stroke={2} /></span>
 		<p class="et">{empty.title}</p>
 		{#if empty.text}<p class="es">{empty.text}</p>{/if}
-		{#if onall}<button type="button" class="elink" onclick={onall} data-testid="history-clear-empty">Clear filters</button>{/if}
+		{#if onall}<button type="button" class="elink" onclick={onall} data-testid="history-clear-empty">{t('downloads.bar.clear')}</button>{/if}
 	</div>
 {:else}
-	{#if feed.error}<LoadError hasData message="Could not load History." onretry={onretry} />{/if}
-	<p class="count" class:gone={!count} aria-live="polite" data-testid="history-count">{pageLine(feed.total, 0, feed.events.length)} Events</p>
+	{#if feed.error}<LoadError hasData message={t('downloads.hf.couldNot')} onretry={onretry} />{/if}
+	<p class="count" class:gone={!count} aria-live="polite" data-testid="history-count">{t('downloads.hf.events', { range: pageLine(feed.total, 0, feed.events.length) })}</p>
 	{@render children()}
 	{#if held || feed.events.length < feed.total}
-		<div class="more"><Button variant="secondary" busy={feed.busy} disabled={feed.busy} onclick={onmore}>Show more</Button></div>
+		<div class="more"><Button variant="secondary" busy={feed.busy} disabled={feed.busy} onclick={onmore}>{t('downloads.hf.showMore')}</Button></div>
 	{/if}
 {/if}
 

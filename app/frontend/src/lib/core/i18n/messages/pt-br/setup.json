@@ -1,0 +1,17 @@
+{
+	"setup.reconnect": "Reconectar",
+	"setup.testNow": "Testar agora",
+	"setup.movies": "Filmes",
+	"setup.tvShows": "Séries",
+	"setup.music": "Música",
+	"setup.subtitles": "Legendas",
+	"setup.fullPath": "Use o caminho completo da pasta, como {path}.",
+	"setup.folderUsed": "Esta pasta já está em uso, ou fica dentro de uma que está.",
+	"setup.folderMissing": "Essa pasta não existe. Confira o caminho.",
+	"setup.addFolderOrOff": "Adicione uma pasta ou desative isto.",
+	"setup.notAnswering": "O HolyArrs não está respondendo. Tente de novo em instantes.",
+	"setup.addUserPasswordHint": "Informe o nome de usuário e a senha.",
+	"setup.folders": "Pastas",
+	"setup.downloader": "Gerenciador de downloads",
+	"setup.source": "Fonte"
+}

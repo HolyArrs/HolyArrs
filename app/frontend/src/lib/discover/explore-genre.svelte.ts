@@ -11,6 +11,7 @@ import { page } from '$app/state';
 import { goto } from '$app/navigation';
 import { api } from '#lib/core/api.ts';
 import { fitTile } from '#lib/core/tmdb-image.ts';
+import { t } from '#lib/core/i18n/i18n.svelte.ts';
 
 export function createExploreGenre(ctx: any) {
 	const genre = $derived(parseGenre((page.shallow?.url ?? page.url).searchParams.get('genre'), ctx.type));
@@ -29,7 +30,7 @@ export function createExploreGenre(ctx: any) {
 			if (n !== genreAsk) return;
 			const got = a.rows.map(serverRow);
 			// Top on your services, in the genre, is the second row.
-			const marker = { id: 'top_services', type: 'top_services', title: 'Trending on streaming', cards: [], keep: true, wide: false };
+			const marker = { id: 'top_services', type: 'top_services', title: t('discover.exploreGenre.trendingOnStreaming'), cards: [], keep: true, wide: false };
 			genreRows = [...got.slice(0, 1), marker, ...got.slice(1)];
 			genreHero = (a.hero ?? []).map((d) => ({ ...discoverCard(d, 'hero'), wide: d.backdrop ?? null }));
 			if (!again) ctx.heroAt = 0;
@@ -133,7 +134,7 @@ export function createExploreGenre(ctx: any) {
 		for (const k of [`id:${id}`, `name:${n}`, ...(genreArtAlias[n] ?? []).map((a) => `name:${a}`)]) if (art[k]) return art[k];
 		return '';
 	}
-	const genreTiles = $derived(genres.map((g) => ({ key: String(g.id), name: g.name, href: '', art: genreArt(browseArt[ctx.type], g.id, g.name), hue: 0, tint: tileHue(g.name) })));
+	const genreTiles = $derived(genres.map((g) => ({ key: String(g.id), name: g.name, href: '', art: genreArt(browseArt[ctx.type], g.id, g.en ?? g.name), hue: 0, tint: tileHue(g.en ?? g.name) })));
 
 	return {
 		get genreOn() {

@@ -34,7 +34,7 @@ func (r *run) neverAdd(it Item) (string, string) {
 	if r.dry {
 		return ResCreate, "added to the Never-add list"
 	}
-	row := mediafiles.NeverAdd{Kind: n.Kind, SourceIDs: n.IDs, Name: it.Name, Reason: "moved from the old app's exclusions"}
+	row := mediafiles.NeverAdd{Kind: n.Kind, SourceIDs: n.IDs, Name: it.Name, Reason: "imported from the old app's exclusions"}
 	var id int64
 	err := r.m.Store.Write(r.ctx, func(tx *sql.Tx) error {
 		var err error
@@ -89,14 +89,14 @@ func (r *run) downloader(it Item) (string, string) {
 	}
 	name := it.Name
 	if r.id("SELECT id FROM downloaders WHERE name = ?", name) != 0 {
-		name = clip(name+" (moved)", 80)
+		name = clip(name+" (imported)", 80)
 	}
 	what := d.Adapter + " at " + d.URL + ", paused until you check and resume it; it downloads into its own holyarrs category"
 	if len(maps) > 0 {
 		what += "; folder maps: " + mapList(maps)
 	}
 	if len(dropped) > 0 {
-		what += "; not moved (they lead into the HolyArrs config folder): " + clip(strings.Join(dropped, ", "), 500)
+		what += "; not imported (they lead into the HolyArrs config folder): " + clip(strings.Join(dropped, ", "), 500)
 	}
 	what += unseen
 	if r.dry {
@@ -183,7 +183,7 @@ func (r *run) subtitles(it Item) (string, string) {
 		}
 		name := it.Name
 		if r.id("SELECT id FROM subtitle_sites WHERE name = ?", name) != 0 {
-			name = clip(name+" (moved)", 100)
+			name = clip(name+" (imported)", 100)
 		}
 		on := !sp.NeedsAccount
 		_, err := subtitles.AddSite(r.ctx, r.m.Store, nil, subtitles.SiteInput{Name: name, Kind: sp.SiteKind, Enabled: &on}, r.by, r.markWith(it.Key, "subtitle_site"))
@@ -258,7 +258,7 @@ func (r *run) person(it Item) (string, string) {
 	email := pp.Email
 	if email != "" && !alerts.CheckAddress(email) {
 		r.rep.NotMoved = append(r.rep.NotMoved, NotMoved{Group: GroupPeople, From: it.From, What: it.Name + ": email",
-			Why: "not one plain email address, so the email is not moved"})
+			Why: "not one plain email address, so the email is not imported"})
 		email = ""
 	}
 	if r.dry {
@@ -348,7 +348,7 @@ func (r *run) ask(it Item) (string, string) {
 	}
 	by := r.personID(a.By)
 	if by == -2 {
-		return ResSkipped, "HolyArrs can't tell who asked for this. Choose Same person or Leave out for that person, then move again."
+		return ResSkipped, "HolyArrs can't tell who asked for this. Choose Same person or Leave out for that person, then import again."
 	}
 	note := a.Note
 	if by == 0 {
@@ -395,11 +395,11 @@ func (r *run) ask(it Item) (string, string) {
 			return ResCreate, "adds this person's request to the existing request"
 		}
 		if by <= 0 {
-			return ResFailed, "its asker was not moved"
+			return ResFailed, "its asker was not imported"
 		}
 		asked, timeErr := r.sourceOrMoveTime(a.AskedAt)
 		if timeErr != nil {
-			return ResFailed, "the move's stable request time was not found: " + timeErr.Error()
+			return ResFailed, "the import's stable request time was not found: " + timeErr.Error()
 		}
 		err := r.m.Store.Write(r.ctx, func(tx *sql.Tx) error {
 			askFP, err := askIdentity(r.ctx, tx, existing)
@@ -433,7 +433,7 @@ func (r *run) ask(it Item) (string, string) {
 		return ResCreate, what
 	}
 	if by <= 0 {
-		return ResFailed, "its asker was not moved"
+		return ResFailed, "its asker was not imported"
 	}
 	expectedAskerFP, identityErr := r.expectedUserIdentity(a.By, by)
 	if identityErr != nil || expectedAskerFP == "" {
@@ -441,7 +441,7 @@ func (r *run) ask(it Item) (string, string) {
 	}
 	asked, timeErr := r.sourceOrMoveTime(a.AskedAt)
 	if timeErr != nil {
-		return ResFailed, "the move's stable request time was not found: " + timeErr.Error()
+		return ResFailed, "the import's stable request time was not found: " + timeErr.Error()
 	}
 	row := domain.Ask{Kind: a.Kind, TMDBID: tmdb, Name: it.Name, State: state, AskedBy: by, AskedAt: asked, Note: clip(note, 300),
 		Ref: a.Ref, SourceIDs: a.IDs, Seasons: append([]int{}, a.Seasons...), Albums: []domain.AskAlbum{}}
@@ -465,7 +465,7 @@ func (r *run) ask(it Item) (string, string) {
 		}
 		decided, timeErr := r.sourceOrMoveTime(a.DecidedAt)
 		if timeErr != nil {
-			return ResFailed, "the move's stable decision time was not found: " + timeErr.Error()
+			return ResFailed, "the import's stable decision time was not found: " + timeErr.Error()
 		}
 		row.DecidedBy, row.DecidedAt = &decidedBy, &decided
 	}

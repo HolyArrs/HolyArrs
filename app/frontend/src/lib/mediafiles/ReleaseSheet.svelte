@@ -7,6 +7,7 @@
 	import { api, message, ApiError } from '#lib/core/api.ts';
 	import { bytes } from '#lib/core/format.ts';
 	import type { Choice, ReleasePage, ReleaseView } from '#lib/core/types.ts';
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 
 	let { open = $bindable(false), titleId, name, scope = null, onchosen }: { open?: boolean; titleId: number; name: string; scope?: { label: string; query: string; body: Record<string, unknown> } | null; onchosen?: () => void } = $props();
 
@@ -49,7 +50,7 @@
 			const mine = Date.now() - startedAt < 60_000 && !p.releases.length ? running : [];
 			running = [...new Set([...(p.running_job_ids ?? []), ...mine])];
 		} catch (e) {
-			toasts.push(`Couldn't load Releases`, 'fail', { body: message(e) });
+			toasts.push(t('mediafiles.releaseSheet.loadFailed'), 'fail', { body: message(e) });
 		} finally {
 			loading = false;
 		}
@@ -60,7 +61,7 @@
 			const r = await api.post<{ job_ids: number[] }>(`/titles/${titleId}/search`, { ...(scope?.body ?? {}), choose: false });
 			running = [...new Set([...running, ...r.job_ids])];
 		} catch (e) {
-			toasts.push(`Couldn't start search`, 'fail', { body: message(e) });
+			toasts.push(t('mediafiles.title.startFailed'), 'fail', { body: message(e) });
 		}
 	}
 	async function choose(r: ReleaseView) {
@@ -69,7 +70,7 @@
 		busyId = r.id;
 		try {
 			const ch = await api.post<Choice>(`/releases/${r.id}/choose`, { force: r.needs_force });
-			toasts.push('Sent to Downloader', 'ok', ch.warnings.length ? { body: ch.warnings.length === 1 ? ch.warnings[0] : `${ch.warnings.length} warnings` } : undefined);
+			toasts.push(t('mediafiles.title.sent'), 'ok', ch.warnings.length ? { body: ch.warnings.length === 1 ? ch.warnings[0] : t('mediafiles.title.warnings', { n: ch.warnings.length }) } : undefined);
 			open = false;
 			onchosen?.();
 		} catch (e) {
@@ -77,7 +78,7 @@
 			if (e instanceof ApiError && e.status === 409 && e.body.needs_force) {
 				r.needs_force = true;
 				confirmId = r.id;
-			} else toasts.push(`Couldn't send to Downloader`, 'fail', { body: message(e) });
+			} else toasts.push(t('mediafiles.releaseSheet.sendFailed'), 'fail', { body: message(e) });
 		} finally {
 			busyId = 0;
 		}
@@ -86,10 +87,10 @@
 		busyId = r.id;
 		try {
 			await api.post(`/releases/${r.id}/turn-down`);
-			toasts.push('Release turned down', 'ok', { body: 'Never picked for this title' });
+			toasts.push(t('mediafiles.title.turnedDown'), 'ok', { body: t('mediafiles.releaseSheet.neverPickedTitle') });
 			await load();
 		} catch (e) {
-			toasts.push("Couldn't turn down Release", 'fail', { body: message(e) });
+			toasts.push(t('mediafiles.releaseSheet.turnDownFailed'), 'fail', { body: message(e) });
 		} finally {
 			busyId = 0;
 		}
@@ -117,7 +118,7 @@
 	// Rough age words for a release row.
 	function age(iso: string): string {
 		const d = Math.max(0, (Date.now() - Date.parse(iso)) / 864e5);
-		return d < 1 ? 'today' : d < 60 ? `${Math.round(d)} days` : d < 365 ? `${Math.round(d / 30)} months` : `${Math.round(d / 365)} yrs`;
+		return d < 1 ? t('mediafiles.releaseSheet.today') : d < 60 ? t('mediafiles.releaseSheet.days', { n: Math.round(d) }) : d < 365 ? t('mediafiles.releaseSheet.months', { n: Math.round(d / 30) }) : t('mediafiles.releaseSheet.years', { n: Math.round(d / 365) });
 	}
 
 	// Pull the quality tags out of a release name.
@@ -141,25 +142,25 @@
 	const deciding = (r: ReleaseView) => keyReasons(r.reasons).sort((x, y) => (weight[x.effect] ?? 9) - (weight[y.effect] ?? 9)).slice(0, 2);
 </script>
 
-<Sheet bind:open title="Choose a release" description={scope ? `${name} · ${scope.label}` : name} size="lg">
+<Sheet bind:open title={t('mediafiles.releaseSheet.choose')} description={scope ? `${name} · ${scope.label}` : name} size="lg">
 	<div class="rs" data-testid="release-sheet">
 		<div class="rs-bar">
 			<div class="rs-seg" role="tablist">
-				<button type="button" role="tab" class:on={filter === 'good'} aria-selected={filter === 'good'} onclick={() => (filter = 'good')}>Good matches</button>
-				<button type="button" role="tab" class:on={filter === 'all'} aria-selected={filter === 'all'} onclick={() => (filter = 'all')}>All {total || ''}</button>
+				<button type="button" role="tab" class:on={filter === 'good'} aria-selected={filter === 'good'} onclick={() => (filter = 'good')}>{t('mediafiles.releaseSheet.good')}</button>
+				<button type="button" role="tab" class:on={filter === 'all'} aria-selected={filter === 'all'} onclick={() => (filter = 'all')}>{t('mediafiles.releaseSheet.all')} {total || ''}</button>
 			</div>
-			<button type="button" class="rs-search" disabled={running.length > 0} onclick={search}><Icon name="search" size={15} />{running.length ? 'Searching…' : 'Search again'}</button>
+			<button type="button" class="rs-search" disabled={running.length > 0} onclick={search}><Icon name="search" size={15} />{running.length ? t('mediafiles.releaseSheet.searchingDots') : t('mediafiles.releaseSheet.searchAgain')}</button>
 		</div>
-		{#if running.length}<div class="rs-run" aria-live="polite"><span class="rs-spin" aria-hidden="true"></span>Asking your sources. The list fills in as they answer.</div>{/if}
+		{#if running.length}<div class="rs-run" aria-live="polite"><span class="rs-spin" aria-hidden="true"></span>{t('mediafiles.releaseSheet.asking')}</div>{/if}
 
 		{#if loading && !releases.length}
 			<ul class="rs-list">{#each [0, 1, 2, 3] as i (i)}<li class="rs-row skel"></li>{/each}</ul>
 		{:else if !releases.length && !running.length}
 			<div class="rs-empty">
 				<Icon name="grid" size={28} />
-				<p><b>No search yet</b></p>
-				<p class="muted">Search to see every release and why it would be picked or not.</p>
-				<button type="button" class="rs-primary" onclick={search}><Icon name="search" size={16} />Search now</button>
+				<p><b>{t('mediafiles.releaseSheet.noSearch')}</b></p>
+				<p class="muted">{t('mediafiles.releaseSheet.noSearchHint')}</p>
+				<button type="button" class="rs-primary" onclick={search}><Icon name="search" size={16} />{t('mediafiles.select.searchNow')}</button>
 			</div>
 		{:else}
 			<ul class="rs-list">
@@ -169,14 +170,14 @@
 					<li class="rs-row" class:best class:off={!r.passed || r.state === 'turned_down'} data-testid="release">
 						<div class="rs-main">
 							<p class="rs-tags">
-								{#if best}<span class="rs-rec">Recommended</span>{/if}
+								{#if best}<span class="rs-rec">{t('mediafiles.releaseSheet.recommended')}</span>{/if}
 								{#each tags(r.name) as t (t)}<span class="rs-tag">{t}</span>{/each}
 								{#if !best && !(r.passed && r.outcome === 'passed_over' && r.state !== 'turned_down')}<span class="rs-verdict {verdictTone(r)}">{verdict(r)}</span>{/if}
 							</p>
 							<p class="rs-name" title={r.name}>{r.name}</p>
 							<p class="rs-facts">
 								<span>{bytes(r.size)}</span>
-								{#if r.seeders != null}<span class:low={r.seeders < 5}>{r.seeders} seeders</span>{/if}
+								{#if r.seeders != null}<span class:low={r.seeders < 5}>{t('mediafiles.release.seeders', { n: r.seeders })}</span>{/if}
 								<span>{r.source_name}</span>
 								{#if r.published_at}<span>{age(r.published_at)}</span>{/if}
 							</p>
@@ -184,15 +185,15 @@
 						</div>
 						<div class="rs-act">
 							{#if r.state === 'chosen'}
-								<span class="rs-sent"><Icon name="check" size={15} />Sent</span>
+								<span class="rs-sent"><Icon name="check" size={15} />{t('mediafiles.releaseSheet.sent')}</span>
 							{:else}
-								<button type="button" class="rs-choose" class:quiet={!best} class:warn={confirmId === r.id} disabled={busyId === r.id} onclick={() => choose(r)}>{confirmId === r.id ? 'Pick anyway' : 'Pick'}</button>
-								{#if r.state !== 'turned_down'}<button type="button" class="rs-x" aria-label="Never pick {r.name}" title="Never pick this one" disabled={busyId === r.id} onclick={() => turnDown(r)}><Icon name="x" size={14} /></button>{/if}
+								<button type="button" class="rs-choose" class:quiet={!best} class:warn={confirmId === r.id} disabled={busyId === r.id} onclick={() => choose(r)}>{confirmId === r.id ? t('mediafiles.releaseSheet.pickAnyway') : t('mediafiles.releaseSheet.pick')}</button>
+								{#if r.state !== 'turned_down'}<button type="button" class="rs-x" aria-label={t('mediafiles.releaseSheet.neverPick', { name: r.name })} title={t('mediafiles.releaseSheet.neverPickThis')} disabled={busyId === r.id} onclick={() => turnDown(r)}><Icon name="x" size={14} /></button>{/if}
 							{/if}
 						</div>
 					</li>
 				{:else}
-					<li class="rs-none muted">No good matches.{#if hidden} <button type="button" class="rs-link" onclick={() => (filter = 'all')}>Show the {hidden} that did not pass</button>{/if}</li>
+					<li class="rs-none muted">{t('mediafiles.releaseSheet.noMatches')}{#if hidden} <button type="button" class="rs-link" onclick={() => (filter = 'all')}>{t('mediafiles.releaseSheet.showHidden', { n: hidden })}</button>{/if}</li>
 				{/each}
 			</ul>
 		{/if}

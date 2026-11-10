@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import { COL } from './columns.ts';
 	import type { Columns } from './columns-grid.svelte.ts';
 
@@ -9,19 +10,19 @@
 
 {#if cols.pop}
 	<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-	<div class="picker" role="dialog" aria-label="Columns" tabindex="-1" bind:this={cols.pickEl} style="left: {cols.pop.x}px; top: {cols.pop.y}px" data-testid="dl-picker" onkeydown={cols.pickerKey}>
-		<p class="ph-t">Columns</p>
+	<div class="picker" role="dialog" aria-label={t('downloads.col.columns')} tabindex="-1" bind:this={cols.pickEl} style="left: {cols.pop.x}px; top: {cols.pop.y}px" data-testid="dl-picker" onkeydown={cols.pickerKey}>
+		<p class="ph-t">{t('downloads.col.columns')}</p>
 		<ul class="pl">
 			{#each cols.layout.order as id (id)}
 				{@const c = COL[id]}
 				<li data-id={id} class:held={cols.held === id} class:off={c.missing}>
-					<button type="button" class="hd" data-handle={id} aria-label="Move {c.label}" aria-pressed={cols.held === id} aria-describedby="dl-pick-help" disabled={c.missing} onkeydown={(e) => cols.handleKey(e, id)} onpointerdown={(e) => cols.handleDown(e, id)}><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><g fill="currentColor"><circle cx="5" cy="3" r="1.2"/><circle cx="9" cy="3" r="1.2"/><circle cx="5" cy="7" r="1.2"/><circle cx="9" cy="7" r="1.2"/><circle cx="5" cy="11" r="1.2"/><circle cx="9" cy="11" r="1.2"/></g></svg></button>
-					<label class="pkl"><input type="checkbox" checked={!c.missing && !cols.layout.hidden.includes(id)} disabled={c.missing} onchange={() => cols.flip(id)} data-testid="dl-pick-{id}" /><span>{c.label}</span>{#if c.missing}<span class="nr">Not reported yet</span>{/if}</label>
+					<button type="button" class="hd" data-handle={id} aria-label={t('downloads.col.move', { label: c.label })} aria-pressed={cols.held === id} aria-describedby="dl-pick-help" disabled={c.missing} onkeydown={(e) => cols.handleKey(e, id)} onpointerdown={(e) => cols.handleDown(e, id)}><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><g fill="currentColor"><circle cx="5" cy="3" r="1.2"/><circle cx="9" cy="3" r="1.2"/><circle cx="5" cy="7" r="1.2"/><circle cx="9" cy="7" r="1.2"/><circle cx="5" cy="11" r="1.2"/><circle cx="9" cy="11" r="1.2"/></g></svg></button>
+					<label class="pkl"><input type="checkbox" checked={!c.missing && !cols.layout.hidden.includes(id)} disabled={c.missing} onchange={() => cols.flip(id)} data-testid="dl-pick-{id}" /><span>{c.label}</span>{#if c.missing}<span class="nr">{t('downloads.col.notReported')}</span>{/if}</label>
 				</li>
 			{/each}
 		</ul>
-		<p id="dl-pick-help" class="help">Drag a handle, or press Space on it, then ↑/↓ and Enter.</p>
-		<div class="pf"><button type="button" class="lk" onclick={cols.resetAll} data-testid="dl-pick-reset">Reset to default</button></div>
+		<p id="dl-pick-help" class="help">{t('downloads.col.help')}</p>
+		<div class="pf"><button type="button" class="lk" onclick={cols.resetAll} data-testid="dl-pick-reset">{t('downloads.col.reset')}</button></div>
 		<span class="sr" aria-live="polite">{cols.said}</span>
 	</div>
 {/if}

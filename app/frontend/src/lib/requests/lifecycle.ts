@@ -1,4 +1,5 @@
 // An ask's life cycle as one slim line: how far it has come from asked to in the Library. Each stage owns a weight; while an ask is being got, real download progress (0 to 1) fills the span between getting and getting_end.
+import { t } from '#lib/core/i18n/i18n.svelte.ts';
 import type { AskInfo } from './inbox.ts';
 import type { Ask } from '../core/types.ts';
 
@@ -11,6 +12,8 @@ export interface Life {
 	/** wait (amber), soon (muted), go (accent), ok (green), off (dim), bad (red). */
 	tone: 'wait' | 'soon' | 'go' | 'ok' | 'off' | 'bad';
 	label: string;
+	/** The status word in plain English lower case, a stable key for icons (the label is in the person's language). */
+	status: string;
 	/** Ready with more of the title not asked for: "2 more seasons available". */
 	more?: string;
 	/** Why it failed, when known (said in the window, not in the label). */
@@ -49,27 +52,27 @@ export const STAGE_WEIGHT = { asked: 8, approved: 30, getting: 45, getting_end: 
 
 /** Places an ask on its line; `facts` adds what is known beyond its state. */
 export function lifecycle(a: Pick<Ask, 'state' | 'title_id'>, facts: LifeFacts = {}): Life {
-	if (a.state === 'asked') return { stage: 'asked', pct: STAGE_WEIGHT.asked, tone: 'wait', label: 'Waiting' };
-	if (a.state === 'turned_down') return { stage: 'declined', pct: 100, tone: 'off', label: 'Declined' };
+	if (a.state === 'asked') return { stage: 'asked', pct: STAGE_WEIGHT.asked, tone: 'wait', status: 'waiting', label: t('requests.life.waiting') };
+	if (a.state === 'turned_down') return { stage: 'declined', pct: 100, tone: 'off', status: 'declined', label: t('requests.life.declined') };
 	if (a.state === 'available') return ready(facts);
 	if (!a.title_id) return failedLife(facts);
 	const lo = STAGE_WEIGHT.getting;
 	const hi = STAGE_WEIGHT.getting_end;
 	const part = facts.partial;
 	if (facts.phase === 'failed') return failedLife(facts);
-	if (facts.phase === 'searching') return { stage: 'searching', pct: lo + (hi - lo) * 0.1, tone: 'go', label: 'Searching' };
+	if (facts.phase === 'searching') return { stage: 'searching', pct: lo + (hi - lo) * 0.1, tone: 'go', status: 'searching', label: t('requests.life.searching') };
 	// Downloaded, but the import waits on a person: say so instead of a plain Processing.
-	if (facts.phase === 'stuck') return { stage: 'getting', pct: hi - 3, tone: 'wait', label: 'Needs a decision' };
-	if (facts.phase === 'importing') return { stage: 'importing', pct: hi - 3, tone: 'go', label: 'Importing' };
+	if (facts.phase === 'stuck') return { stage: 'getting', pct: hi - 3, tone: 'wait', status: 'needs a decision', label: t('requests.life.needsDecision') };
+	if (facts.phase === 'importing') return { stage: 'importing', pct: hi - 3, tone: 'go', status: 'importing', label: t('requests.life.importing') };
 	if (facts.phase === 'downloading') {
 		// The server's step knows a download runs, not how far, so no made-up 0%.
-		if (facts.progress === undefined || !Number.isFinite(facts.progress)) return { stage: 'downloading', pct: lo + (hi - lo) * 0.15, tone: 'go', label: 'Downloading' };
+		if (facts.progress === undefined || !Number.isFinite(facts.progress)) return { stage: 'downloading', pct: lo + (hi - lo) * 0.15, tone: 'go', status: 'downloading', label: t('requests.life.downloading') };
 		const d = Math.min(Math.max(facts.progress, 0), 1);
-		return { stage: 'downloading', pct: lo + (hi - lo) * (0.15 + 0.75 * d), tone: 'go', label: `Downloading · ${Math.round(d * 100)}%` };
+		return { stage: 'downloading', pct: lo + (hi - lo) * (0.15 + 0.75 * d), tone: 'go', status: 'downloading', label: t('requests.life.downloadingPct', { pct: Math.round(d * 100) }) };
 	}
 	// Nothing in flight and nothing found yet: say so, with why and when it last looked.
 	if (facts.phase === 'waiting') {
-		const life: Life = { stage: 'getting', pct: lo, tone: 'wait', label: 'Looking for a release' };
+		const life: Life = { stage: 'getting', pct: lo, tone: 'wait', status: 'looking for a release', label: t('requests.life.looking') };
 		if (facts.reason) life.reason = facts.reason;
 		if (facts.searchedAt) life.searchedAt = facts.searchedAt;
 		if (facts.nextSearch) life.nextSearch = facts.nextSearch;
@@ -79,17 +82,17 @@ export function lifecycle(a: Pick<Ask, 'state' | 'title_id'>, facts: LifeFacts =
 	if (part && part.total > 0 && part.have >= part.total) return ready(facts);
 	if (part && part.total > 0 && part.have > 0) {
 		const left = part.total - part.have;
-		const unit = part.unit ? ` ${left === 1 ? part.unit.slice(0, -1) : part.unit}` : '';
-		return { stage: 'getting', pct: lo + (hi - lo) * (part.have / part.total), tone: 'go', label: `Processing · ${left}${unit} left` };
+		const label = part.unit ? t(`requests.life.left.${part.unit}.${left === 1 ? 'one' : 'other'}`, { n: left }) : t('requests.life.leftPlain', { n: left });
+		return { stage: 'getting', pct: lo + (hi - lo) * (part.have / part.total), tone: 'go', status: 'processing', label };
 	}
-	if (facts.upcoming !== undefined) return { stage: 'upcoming', pct: STAGE_WEIGHT.approved, tone: 'soon', label: facts.upcoming ? `Upcoming · ${facts.upcoming}` : 'Upcoming' };
+	if (facts.upcoming !== undefined) return { stage: 'upcoming', pct: STAGE_WEIGHT.approved, tone: 'soon', status: 'upcoming', label: facts.upcoming ? t('requests.life.upcomingOn', { date: facts.upcoming }) : t('requests.life.upcoming') };
 	// No live phase: the line still fills, but the words stay plain.
 	const progress = facts.progress;
 	const p = progress === undefined || !Number.isFinite(progress) ? 0 : Math.min(Math.max(progress, 0), 1);
-	return { stage: 'getting', pct: lo + (hi - lo) * p, tone: 'go', label: 'Processing' };
+	return { stage: 'getting', pct: lo + (hi - lo) * p, tone: 'go', status: 'processing', label: t('requests.life.processing') };
 }
 
-const word = (n: number, unit: string) => `${n} ${n === 1 ? unit.slice(0, -1) : unit}`;
+const word = (n: number, unit: 'seasons' | 'albums' | 'episodes' | 'songs') => t(`requests.parts.${unit}.${n === 1 ? 'one' : 'other'}`, { n });
 
 const day = (iso: string) => iso.slice(0, 10);
 
@@ -117,7 +120,7 @@ export function upcoming(
 }
 
 function failedLife(f: LifeFacts): Life {
-	const life: Life = { stage: 'failed', pct: STAGE_WEIGHT.approved, tone: 'bad', label: 'Failed' };
+	const life: Life = { stage: 'failed', pct: STAGE_WEIGHT.approved, tone: 'bad', status: 'failed', label: t('requests.life.failed') };
 	if (f.reason) life.reason = f.reason;
 	return life;
 }
@@ -125,13 +128,12 @@ function failedLife(f: LifeFacts): Life {
 /** Ready names what came in ("Ready · 2 albums") and what is left to request. */
 function ready(f: LifeFacts): Life {
 	const part = f.partial;
-	const life: Life = { stage: 'ready', pct: 100, tone: 'ok', label: part?.unit && part.total > 0 ? `Ready · ${word(part.total, part.unit)}` : 'Ready' };
+	const life: Life = { stage: 'ready', pct: 100, tone: 'ok', status: 'ready', label: part?.unit && part.total > 0 ? t('requests.life.readyWith', { what: word(part.total, part.unit) }) : t('requests.life.ready') };
 	// Whole seasons or albums not asked for come first; otherwise unticked episodes or songs. The unit stays when known: "2 more seasons available", "3 more episodes available".
-	const one = (n: number, unit: string) => (n === 1 ? unit.slice(0, -1) : unit);
 	// "More" counts whole seasons or albums, also when only episodes or songs were asked.
 	const whole = part?.unit === 'episodes' ? 'seasons' : part?.unit === 'songs' ? 'albums' : part?.unit;
 	const inside = whole === 'seasons' ? 'episodes' : 'songs';
-	if (f.more && f.more > 0) life.more = whole ? `${f.more} more ${one(f.more, whole)} available` : `${f.more} more available`;
-	else if (f.skipped && f.skipped > 0 && whole) life.more = `${f.skipped} more ${one(f.skipped, inside)} available`;
+	if (f.more && f.more > 0) life.more = whole ? t(`requests.life.more.${whole}.${f.more === 1 ? 'one' : 'other'}`, { n: f.more }) : t('requests.life.morePlain', { n: f.more });
+	else if (f.skipped && f.skipped > 0 && whole) life.more = t(`requests.life.more.${inside}.${f.skipped === 1 ? 'one' : 'other'}`, { n: f.skipped });
 	return life;
 }

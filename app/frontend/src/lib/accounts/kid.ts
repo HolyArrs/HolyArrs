@@ -1,5 +1,7 @@
 // Kid accounts: an age-rating limit on what a person sees and may ask for. One movie rating is chosen; the server maps it onto the show ladder.
 
+import { t } from '#lib/core/i18n/i18n.svelte.ts';
+
 export interface RatingChoice {
 	value: string;
 	show: string;
@@ -16,12 +18,14 @@ const pairs: [string, string][] = [
 export const ratingChoices: RatingChoice[] = pairs.map(([value, show]) => ({
 	value,
 	show,
-	hint: `Movies up to ${value} and shows up to ${show}. Titles without a rating and music stay hidden.`
+	get hint() {
+		return t('accounts.kid.hint', { value, show });
+	}
 }));
 
 /** Names a limit for lists: "Kid · up to PG", or '' for none. */
 export function kidLabel(max: string | undefined): string {
-	return max ? `Kid · up to ${max}` : '';
+	return max ? t('accounts.kid.label', { max }) : '';
 }
 
 /** Whether this person has an age-rating limit. */

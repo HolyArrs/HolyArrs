@@ -3,6 +3,7 @@ import { type IconName } from '#lib/ui/Icon.svelte';
 import { partsNow, refreshParts, needsProblem, type PartName } from '#lib/mediafiles/index.ts';
 import { applyParts } from './controls.ts';
 import { message } from '#lib/core/api.ts';
+import { t } from '#lib/core/i18n/i18n.svelte.ts';
 
 export function createWelcomeParts(ctx: any) {
 	function partsOn(): Record<PartName, boolean> {
@@ -14,10 +15,10 @@ export function createWelcomeParts(ctx: any) {
 	let want = $state<Record<'movies' | 'shows' | 'music' | 'subtitles', boolean>>({ movies: true, shows: true, music: false, subtitles: true });
 	let family = $state<'yes' | 'no'>('no');
 	const choices: { part: 'movies' | 'shows' | 'music' | 'subtitles'; label: string; icon: IconName }[] = [
-		{ part: 'movies', label: 'Movies', icon: 'film' },
-		{ part: 'shows', label: 'TV shows', icon: 'tv' },
-		{ part: 'music', label: 'Music', icon: 'music' },
-		{ part: 'subtitles', label: 'Subtitles', icon: 'subtitle' }
+		{ part: 'movies', get label() { return t('setup.movies'); }, icon: 'film' },
+		{ part: 'shows', get label() { return t('setup.tvShows'); }, icon: 'tv' },
+		{ part: 'music', get label() { return t('setup.music'); }, icon: 'music' },
+		{ part: 'subtitles', get label() { return t('setup.subtitles'); }, icon: 'subtitle' }
 	];
 	const full = $derived<Record<PartName, boolean>>({ ...want, wishlist: family === 'yes' });
 	const problem = $derived(needsProblem(full));

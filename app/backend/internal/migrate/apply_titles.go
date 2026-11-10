@@ -88,7 +88,7 @@ func (r *run) title(it Item) (string, string) {
 	}
 	lfID := r.id("SELECT id FROM library_folders WHERE path = ?", filepath.Clean(lib))
 	if lfID == 0 {
-		return ResNotFound, "its Library folder " + t.Library + " is not here (not moved, or left out)"
+		return ResNotFound, "its Library folder " + t.Library + " is not here (not imported, or left out)"
 	}
 	c := library.AdoptChoice{Folder: t.Folder, ID: t.ID}
 	if t.Kind == "movie" {

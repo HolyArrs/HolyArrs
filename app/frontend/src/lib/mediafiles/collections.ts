@@ -1,4 +1,5 @@
 // Types and request helpers for reviewing and removing a movie collection.
+import { t } from '../core/i18n/i18n.svelte.ts';
 
 export interface MovieCollection {
 	id: number;
@@ -70,7 +71,7 @@ export function collectionBody(titleIds: number[], choice: CollectionChoice, rev
 
 // One plain sentence per title for the result list.
 export function collectionResultLine(r: CollectionRemoveResult): string {
-	if (r.status === 'removed') return `${r.name} was removed from the Library.`;
-	if (r.status === 'skipped') return `${r.name} stayed in the Library: ${r.error ?? 'it was skipped'}.`;
-	return `${r.name} could not be removed: ${r.error ?? 'try it again'}.`;
+	if (r.status === 'removed') return t('mediafiles.collections.removed', { name: r.name });
+	if (r.status === 'skipped') return t('mediafiles.collections.skipped', { name: r.name, why: r.error ?? t('mediafiles.collections.wasSkipped') });
+	return t('mediafiles.collections.failed', { name: r.name, why: r.error ?? t('mediafiles.collections.tryAgain') });
 }

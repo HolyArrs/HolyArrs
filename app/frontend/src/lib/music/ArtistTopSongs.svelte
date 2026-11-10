@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import ArtPlaceholder from '#lib/ui/ArtPlaceholder.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
 	import Menu from '#lib/ui/Menu.svelte';
@@ -10,23 +11,23 @@
 </script>
 
 	<section class="block top" data-testid="top-songs">
-		<h2>Top songs</h2>
+		<h2>{t('music.topSongs')}</h2>
 		<ol class="songs">
 			{#each songs as s, i (s.title + i)}
 				{@const yr = year(s)}
 				<li class="song">
 					{#if s.album_mbid}
-						<a class="num" href={albumHref(s.album_mbid, mbid)} aria-label="Open {s.album}"><span class="n">{i + 1}</span><span class="go" aria-hidden="true"><Icon name="arrow" size={16} /></span></a>
+						<a class="num" href={albumHref(s.album_mbid, mbid)} aria-label={t('music.open', { name: s.album })}><span class="n">{i + 1}</span><span class="go" aria-hidden="true"><Icon name="arrow" size={16} /></span></a>
 					{:else}
 						<span class="num"><span class="n">{i + 1}</span></span>
 					{/if}
 					<span class="cov">{#if s.image && !badArt.has('top:' + s.title)}<img src={coverFor(appPicture(s.image), 48).src} alt="" width="48" height="48" loading={i < 5 ? 'eager' : 'lazy'} decoding="async" onerror={() => (badArt = new Set([...badArt, 'top:' + s.title]))} />{:else}<ArtPlaceholder name={s.title} shape="square" />{/if}</span>
 					<span class="s-words">
-						<span class="s-name">{#if s.explicit}<span class="e" aria-label="Explicit">E</span>{/if}{s.title}</span>
+						<span class="s-name">{#if s.explicit}<span class="e" aria-label={t('music.explicit')}>E</span>{/if}{s.title}</span>
 						<span class="s-album">{[s.album, yr].filter(Boolean).join(' · ')}</span>
 					</span>
 					<span class="s-len">{length(s.length_ms)}</span>
-					{#if s.album_mbid}<span class="s-more"><Menu label="More for {s.title}" items={items(s)} width={240} /></span>{:else}<span></span>{/if}
+					{#if s.album_mbid}<span class="s-more"><Menu label={t('music.moreFor', { title: s.title })} items={items(s)} width={240} /></span>{:else}<span></span>{/if}
 				</li>
 			{/each}
 		</ol>

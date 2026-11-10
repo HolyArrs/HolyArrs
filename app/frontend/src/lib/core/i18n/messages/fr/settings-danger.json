@@ -1,0 +1,16 @@
+{
+	"settings.danger.stopping": "HolyArrs s'arrête.",
+	"settings.danger.couldnt": "Impossible : {action}",
+	"settings.danger.title": "Zone dangereuse",
+	"settings.danger.ownerOnly": "Propriétaire et administrateurs seulement",
+	"settings.danger.ask": "{label} ?",
+	"settings.danger.yes": "Oui, {action}",
+	"settings.danger.cancel": "Annuler",
+	"settings.danger.expires": "Expire dans 60 s",
+	"settings.danger.wholeApp": "Toute l'application",
+	"settings.danger.intro": "Ces actions arrêtent HolyArrs. La politique de redémarrage de Docker le relance en quelques secondes, sauf si elle vaut <code>no</code> ; dans ce cas, relancez le conteneur vous-même. Chacune demande d'abord confirmation.",
+	"settings.danger.restart": "Redémarrer HolyArrs",
+	"settings.danger.safe": "Redémarrer en mode sans échec",
+	"settings.danger.shutdown": "Éteindre",
+	"settings.danger.safeNote": "Démarre une fois avec seulement la connexion, les Paramètres et la Bibliothèque. Utilisez-le quand un module bloque le démarrage."
+}

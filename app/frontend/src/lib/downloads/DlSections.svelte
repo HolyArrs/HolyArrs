@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	// Downloads page body: a header strip with speed and time left, status tabs with sub-options, the list, the detail pane and the selection bars.
 	import Poster from '#lib/ui/Poster.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
@@ -44,7 +45,6 @@
 	import { DUR, easeIn, easeOut } from '../core/transitions.ts';
 	import { type Decision, type DownloadRow } from '../core/types.ts';
 	import type { TitleView } from '../core/types.ts';
-
 	type ClientAction = 'pause' | 'resume' | 'top' | 'recheck' | 'reannounce' | 'retry';
 	let {
 		rows: everyRow,
@@ -105,7 +105,6 @@
 		/** Upload speed summed by the server over every sending row; falls back to the rows on hand. */
 		upTotal?: number;
 	} = $props();
-
 	let kindOn = $state<KindKey>('');
 	const typed = $derived(kindOn ? everyRow.filter((r) => kindOf(r) === kindOn) : everyRow);
 	// The Downloads search narrows every tab, so the tab counts follow it.
@@ -121,9 +120,7 @@
 	const rows = $derived(trackKey ? bySource.filter((r) => byTracker(r, trackKey)) : bySource);
 	const kindCount = (k: string) => everyRow.filter((r) => kindOf(r) === k).length;
 	const srcCount = (k: string) => everyRow.filter((r) => protocolOf(r) === k).length;
-
 	// The picked tab and sub-tab live in the address as show=tab or tab.sub.
-
 	const dls = new Downloaders(() => watch);
 	const tabNow = (r: DownloadRow): PaneTab => {
 		const t = tabOf(r.id);
@@ -161,7 +158,6 @@
 		sub = sub === k ? '' : k;
 		remember();
 	}
-
 	const allQueue = $derived(typed.filter((r) => !inHistory(r)));
 	const isDone = $derived(on === 'done');
 	const newest = (a: DownloadRow, b: DownloadRow) => (b.finished_at || b.updated_at).localeCompare(a.finished_at || a.updated_at);
@@ -213,7 +209,6 @@
 		remember();
 	}
 	const done = $derived(historyTotals(typed.filter(inHistory)));
-
 	function toggle(id: number) {
 		openId = id;
 		paneOpen = true;
@@ -247,11 +242,27 @@
 		picked = new Set();
 		selecting = false;
 	};
-	// Torrents a torrent Downloader can steer by hash.
-	const ROW_WORD: Record<RowItem, string> = { pause: 'Pause', resume: 'Start', retry: 'Download again', up: 'Move up', down: 'Move down', top: 'Move to top', bottom: 'Move to bottom', priority: 'Priority', library: 'Open in Library', remove: 'Remove' };
+	// Torrents a torrent Downloader can steer by hash. Getters, so each word follows the language picked when it is read.
+	const ROW_WORD: Record<RowItem, string> = {
+		get pause() { return t('downloads.act.pause'); },
+		get resume() { return t('downloads.act.start'); },
+		get retry() { return t('downloads.act.again'); },
+		get up() { return t('downloads.act.up'); },
+		get down() { return t('downloads.act.down'); },
+		get top() { return t('downloads.act.top'); },
+		get bottom() { return t('downloads.act.bottom'); },
+		get priority() { return t('downloads.act.priority'); },
+		get library() { return t('downloads.act.library'); },
+		get remove() { return t('downloads.act.remove'); }
+	};
 	// Usenet jobs move and take a priority one at a time; there is no bulk call.
 	const usenetItem = (r: DownloadRow) => `/downloaders/${r.downloader_id}/items/${encodeURIComponent(r.hash ?? '')}`;
-	const MOVED: Record<string, string> = { up: 'Moved up', down: 'Moved down', top: 'Moved to top', bottom: 'Moved to bottom' };
+	const MOVED: Record<string, string> = {
+		get up() { return t('downloads.act.movedUp'); },
+		get down() { return t('downloads.act.movedDown'); },
+		get top() { return t('downloads.act.movedTop'); },
+		get bottom() { return t('downloads.act.movedBottom'); }
+	};
 	let queueBusy = $state(0);
 	async function usenetCall(r: DownloadRow, run: () => Promise<unknown>, done: string) {
 		queueBusy = r.id;
@@ -259,13 +270,13 @@
 			await run();
 			toasts.push(done, 'ok');
 		} catch (e) {
-			toasts.push("Couldn't update download", 'fail', { body: message(e) });
+			toasts.push(t('downloads.act.updateFailed'), 'fail', { body: message(e) });
 		} finally {
 			if (queueBusy === r.id) queueBusy = 0;
 		}
 	}
-	const usenetMove = (r: DownloadRow, k: string) => usenetCall(r, () => api.post(`${usenetItem(r)}/${k}`), MOVED[k] ?? 'Moved');
-	const usenetPriority = (r: DownloadRow, p: Priority, label: string) => usenetCall(r, () => api.post(`${usenetItem(r)}/priority`, { priority: p }), `Priority set to ${label}`);
+	const usenetMove = (r: DownloadRow, k: string) => usenetCall(r, () => api.post(`${usenetItem(r)}/${k}`), MOVED[k] ?? t('downloads.act.moved'));
+	const usenetPriority = (r: DownloadRow, p: Priority, label: string) => usenetCall(r, () => api.post(`${usenetItem(r)}/priority`, { priority: p }), t('downloads.act.prioritySet', { label }));
 	// Shared by the row menu and the pane menu.
 	function menuItems(r: DownloadRow, keys: RowItem[]): MenuItem[] {
 		const off = busy === r.id || queueBusy === r.id;
@@ -282,7 +293,7 @@
 	}
 	function rowMenu(r: DownloadRow): MenuItem[] {
 		const items = menuItems(r, rowItems(r).filter((k) => k !== 'retry' || mayEdit(r)));
-		if (!r.can_act) items.unshift({ kind: 'heading', label: 'HolyArrs cannot change this one' });
+		if (!r.can_act) items.unshift({ kind: 'heading', label: t('downloads.act.cannotChange') });
 		return items;
 	}
 	// The pane menu is the row's list minus what the pane shows as buttons, plus a torrent's checks, force start, sheets and Mark failed.
@@ -292,15 +303,15 @@
 		const off = busy === r.id || queueBusy === r.id;
 		const items = menuItems(r, rowItems(r).filter((k) => !PANE_BUTTONS.has(k)));
 		const extra = new Set(paneExtras(r, { steer: !!onsteer && mayEdit(r), fail: !watch && !inHistory(r) && !r.client_item }));
-		if (extra.has('recheck')) items.push({ label: 'Check again', disabled: off, onselect: () => onact?.(r, 'recheck') }, { label: 'Ask trackers again', disabled: off, onselect: () => onact?.(r, 'reannounce') });
-		if (extra.has('force')) items.push({ label: 'Force start', disabled: off, onselect: () => onbulk?.([r], 'force') });
+		if (extra.has('recheck')) items.push({ label: t('downloads.act.checkAgain'), disabled: off, onselect: () => onact?.(r, 'recheck') }, { label: t('downloads.act.askTrackers'), disabled: off, onselect: () => onact?.(r, 'reannounce') });
+		if (extra.has('force')) items.push({ label: t('downloads.act.forceStart'), disabled: off, onselect: () => onbulk?.([r], 'force') });
 		if (extra.has('steer')) {
 			items.push({ kind: 'separator' });
 			for (const m of STEER) items.push({ label: m.label, disabled: off, onselect: () => onsteer?.([r], m.mode) });
 		}
 		if (extra.has('fail')) {
 			if (items.length) items.push({ kind: 'separator' });
-			items.push({ label: 'Mark failed', destructive: true, disabled: off, onselect: () => onfail(r) });
+			items.push({ label: t('downloads.act.markFailed'), destructive: true, disabled: off, onselect: () => onfail(r) });
 		}
 		return items;
 	}
@@ -312,11 +323,11 @@
 	const actable = (rows: DownloadRow[]) => rows.filter(clientOk);
 	const bulkRows = $derived(actable(pickedRows).filter((r) => protocolOf(r) === 'torrent' && controllable(r.downloader_kind) && !!r.downloader_id && !!r.hash));
 	const STEER: { mode: SteerMode; label: string; short: string }[] = [
-		{ mode: 'location', label: 'Set location…', short: 'Set location' },
-		{ mode: 'speed', label: 'Speed limits…', short: 'Speed limits' },
-		{ mode: 'seed', label: 'Seeding rules…', short: 'Seeding rules' }
+		{ mode: 'location', get label() { return t('downloads.steer.locationMenu'); }, get short() { return t('downloads.steer.location'); } },
+		{ mode: 'speed', get label() { return t('downloads.steer.speedMenu'); }, get short() { return t('downloads.steer.speed'); } },
+		{ mode: 'seed', get label() { return t('downloads.steer.seedMenu'); }, get short() { return t('downloads.steer.seed'); } }
 	];
-	const allItems = $derived(watch ? [] : [{ label: 'Select', onselect: () => (selecting = true) }, { label: 'Start all', onselect: () => onall?.(false) }, { label: 'Pause all', onselect: () => onall?.(true) }, { label: 'Speed limit…', onselect: () => onlimit?.() }, { label: 'Held files', onselect: () => void goto(to('/library/held')) }]);
+	const allItems = $derived(watch ? [] : [{ label: t('downloads.all.select'), onselect: () => (selecting = true) }, { label: t('downloads.all.startAll'), onselect: () => onall?.(false) }, { label: t('downloads.all.pauseAll'), onselect: () => onall?.(true) }, { label: t('downloads.all.speedLimit'), onselect: () => onlimit?.() }, { label: t('downloads.all.held'), onselect: () => void goto(to('/library/held')) }]);
 	let paneOpen = $state(true);
 	const openTab = $derived(openRow ? tabNow(openRow) : '');
 	const pane = new PaneDetail({ openId: () => openId, openTab: () => openTab, paneOpen: () => paneOpen, rows: () => everyRow, watch: () => watch });
@@ -331,10 +342,10 @@
 		for (const r of t.rows) if (tor.length < 2 || !tor.includes(r)) onact?.(r, one);
 	};
 	const barActs = $derived([
-		...(onadd ? [{ key: 'add', icon: 'plus' as const, label: 'Add', hint: 'Add torrents by link or file', disabled: false, run: () => onadd?.() }] : []),
-		{ key: 'start', icon: 'play' as const, label: countLabel('Start', startT.rows.length), hint: startT.why ? `Start (${startT.why})` : countLabel('Start', startT.rows.length), disabled: !startT.rows.length, run: () => runOn(startT, 'resume', 'start'), more: [{ label: 'Start all', onselect: () => onall?.(false) }] },
-		{ key: 'pause', icon: 'pause' as const, label: countLabel('Pause', pauseT.rows.length), hint: pauseT.why ? `Pause (${pauseT.why})` : countLabel('Pause', pauseT.rows.length), disabled: !pauseT.rows.length, run: () => runOn(pauseT, 'pause', 'pause'), more: [{ label: 'Pause all', onselect: () => onall?.(true) }] },
-		{ key: 'remove', icon: 'trash' as const, label: countLabel('Remove', removeT.rows.length), hint: removeT.why ? `Remove (${removeT.why})` : countLabel('Remove', removeT.rows.length), disabled: !removeT.rows.length, run: () => (removeT.rows.length === 1 ? onremove(removeT.rows[0]) : onremovemany?.(removeT.rows)) },
+		...(onadd ? [{ key: 'add', icon: 'plus' as const, label: t('downloads.bar.add'), hint: t('downloads.act.addHint'), disabled: false, run: () => onadd?.() }] : []),
+		{ key: 'start', icon: 'play' as const, label: countLabel(t('downloads.act.start'), startT.rows.length), hint: startT.why ? t('downloads.act.withWhy', { label: t('downloads.act.start'), why: startT.why }) : countLabel(t('downloads.act.start'), startT.rows.length), disabled: !startT.rows.length, run: () => runOn(startT, 'resume', 'start'), more: [{ label: t('downloads.all.startAll'), onselect: () => onall?.(false) }] },
+		{ key: 'pause', icon: 'pause' as const, label: countLabel(t('downloads.act.pause'), pauseT.rows.length), hint: pauseT.why ? t('downloads.act.withWhy', { label: t('downloads.act.pause'), why: pauseT.why }) : countLabel(t('downloads.act.pause'), pauseT.rows.length), disabled: !pauseT.rows.length, run: () => runOn(pauseT, 'pause', 'pause'), more: [{ label: t('downloads.all.pauseAll'), onselect: () => onall?.(true) }] },
+		{ key: 'remove', icon: 'trash' as const, label: countLabel(t('downloads.act.remove'), removeT.rows.length), hint: removeT.why ? t('downloads.act.withWhy', { label: t('downloads.act.remove'), why: removeT.why }) : countLabel(t('downloads.act.remove'), removeT.rows.length), disabled: !removeT.rows.length, run: () => (removeT.rows.length === 1 ? onremove(removeT.rows[0]) : onremovemany?.(removeT.rows)) },
 	]);
 	const focusedRow = () => {
 		const el = (document.activeElement as HTMLElement | null)?.closest<HTMLElement>('[data-dl-id]');
@@ -396,8 +407,8 @@
 			return;
 		}
 		if (!watch && (e.ctrlKey || e.metaKey) && (e.key === 'a' || e.key === 'A')) {
-			const t = e.target as HTMLElement | null;
-			if (t?.closest('[data-dl-id], .dlrows, [data-testid="dl-listbox"]') && !t.closest('input, textarea, select, [contenteditable="true"]')) {
+			const el = e.target as HTMLElement | null;
+			if (el?.closest('[data-dl-id], .dlrows, [data-testid="dl-listbox"]') && !el.closest('input, textarea, select, [contenteditable="true"]')) {
 				e.preventDefault();
 				picked = new Set(list.map((r) => r.id));
 			}
@@ -409,12 +420,12 @@
 			return;
 		}
 		if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp' && e.key !== 'Escape' && e.key !== 'Delete') return;
-		const t = e.target as HTMLElement | null;
-		if (!t || t.closest('input, select, textarea, [contenteditable="true"], [role="tab"], [role="separator"], dialog, [role="dialog"], [role="menu"], [popover]')) return;
+		const el = e.target as HTMLElement | null;
+		if (!el || el.closest('input, select, textarea, [contenteditable="true"], [role="tab"], [role="separator"], dialog, [role="dialog"], [role="menu"], [popover]')) return;
 		if (e.key === 'Escape') {
 			if (listEsc(picked.size, !!openId) === 'close') {
 				// Focus goes back to the pane's row, never to nowhere.
-				const line = t.closest('.dpane') ? cols.listEl?.querySelector<HTMLElement>(`[data-dl-id="${openId}"] .dline`) : null;
+				const line = el.closest('.dpane') ? cols.listEl?.querySelector<HTMLElement>(`[data-dl-id="${openId}"] .dline`) : null;
 				openId = 0;
 				e.preventDefault();
 				line?.focus();
@@ -422,7 +433,7 @@
 			return;
 		}
 		if (e.key === 'Delete') {
-			if (t.closest('button, a')) return;
+			if (el.closest('button, a')) return;
 			if (pickedRows.length && onremovemany) {
 				e.preventDefault();
 				onremovemany(pickedRows, e.shiftKey);
@@ -432,7 +443,7 @@
 			if (!target) return;
 			e.preventDefault();
 			if (target.can_act) onremove(target, e.shiftKey);
-			else toasts.push("Can't remove this download", 'info', { body: 'Not from here' });
+			else toasts.push(t('downloads.list.cantRemove'), 'info', { body: t('downloads.list.notFromHere') });
 			return;
 		}
 		if (!list.length) return;
@@ -511,24 +522,22 @@
 		tick().then(() => document.querySelector<HTMLElement>('.dpane [role="tab"][aria-selected="true"]')?.focus());
 	}
 </script>
-
 {#snippet header()}
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div class="dline chead" data-testid="dl-colhead" oncontextmenu={cols.headMenu}>
-		<span class="hk">{#if !watch}<input type="checkbox" class="hpk" checked={list.length > 0 && picked.size === list.length} indeterminate={picked.size > 0 && picked.size < list.length} aria-label="Select all downloads" title="Select all" onchange={() => (picked.size === list.length ? clearPicked() : (picked = new Set(list.map((r) => r.id))))} data-testid="dl-head-pick" />{/if}</span>
+		<span class="hk">{#if !watch}<input type="checkbox" class="hpk" checked={list.length > 0 && picked.size === list.length} indeterminate={picked.size > 0 && picked.size < list.length} aria-label={t('downloads.list.selectAll')} title={t('downloads.list.selectAllTitle')} onchange={() => (picked.size === list.length ? clearPicked() : (picked = new Set(list.map((r) => r.id))))} data-testid="dl-head-pick" />{/if}</span>
 		{#each cols.vis as id (id)}
 			{@const c = COL[id]}
 			<!-- svelte-ignore a11y_no_static_element_interactions -->
 			{@const so = cols.layout.sort?.id === id ? cols.layout.sort : undefined}
 			<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-			<span class="ch" class:end={c.num} class:fixed={!!c.fixed} class:moving={cols.ghost?.id === id} class:sorted={!!so} data-col={id} data-testid="dl-head" role={id === 'swarm' ? 'group' : 'button'} aria-label={cols.headName(id, so)} tabindex={id === cols.vis[0] ? 0 : -1} onpointerdown={(e) => cols.headDown(e, id)} onclick={(e) => { if (e.detail === 0) cols.sortBy(id); }} onkeydown={(e) => cols.headKey(e, id)} title="Click to sort · drag to move · right-click for columns">{#if id === 'proto' && !cols.srcName}<span class="lbl"><span class="sr">Downloader</span><Icon name="plug" size={15} /></span>{:else if id === 'poster'}<span class="lbl"><span class="sr">Poster</span><Icon name="image" size={15} /></span>{:else if id === 'kind' && !cols.kindWide}<span class="lbl"><span class="sr">Type</span><Icon name="grid" size={15} /></span>{:else if id !== 'swarm'}<span class="lbl">{c.label}</span>{/if}{#if id === 'swarm'}<span class="facets" role="group" aria-label="Swarm: sort by">{#each cols.FACETS as f (f.id)}<button type="button" class="fc" class:on={so?.facet === f.id} aria-pressed={so?.facet === f.id} tabindex="-1" onpointerdown={(e) => e.stopPropagation()} onclick={(e) => { e.stopPropagation(); cols.sortBy('swarm', f.id); }} data-testid="dl-facet-{f.id}">{f.label}{#if so?.facet === f.id}<span class="sbar" class:desc={so.desc} aria-hidden="true" data-testid="dl-sort"></span>{/if}</button>{/each}</span>{:else if so}<span class="sbar" class:desc={so.desc} aria-hidden="true" data-testid="dl-sort"></span>{/if}{#if !c.fixed}<!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions --><span class="grip" role="separator" aria-orientation="vertical" aria-label="Resize {c.label}" aria-valuenow={cols.wOf(id)} aria-valuemin={cols.heads[id] ?? MIN_W} aria-valuemax={MAX_W} tabindex="0" title="Drag to cols.resize, double-click to fit" data-testid="dl-grip" data-grip={id} onpointerdown={(e) => cols.grab(e, id)} ondblclick={() => cols.fitOne(id)} onkeydown={(e) => cols.nudge(e, id)}></span>{/if}</span>
+			<span class="ch" class:end={c.num} class:fixed={!!c.fixed} class:moving={cols.ghost?.id === id} class:sorted={!!so} data-col={id} data-testid="dl-head" role={id === 'swarm' ? 'group' : 'button'} aria-label={cols.headName(id, so)} tabindex={id === cols.vis[0] ? 0 : -1} onpointerdown={(e) => cols.headDown(e, id)} onclick={(e) => { if (e.detail === 0) cols.sortBy(id); }} onkeydown={(e) => cols.headKey(e, id)} title={t('downloads.list.headTitle')}>{#if id === 'proto' && !cols.srcName}<span class="lbl"><span class="sr">{t('downloads.col.proto')}</span><Icon name="plug" size={15} /></span>{:else if id === 'poster'}<span class="lbl"><span class="sr">{t('downloads.col.poster')}</span><Icon name="image" size={15} /></span>{:else if id === 'kind' && !cols.kindWide}<span class="lbl"><span class="sr">{t('downloads.col.kind')}</span><Icon name="grid" size={15} /></span>{:else if id !== 'swarm'}<span class="lbl">{c.label}</span>{/if}{#if id === 'swarm'}<span class="facets" role="group" aria-label={t('downloads.list.swarmSort')}>{#each cols.FACETS as f (f.id)}<button type="button" class="fc" class:on={so?.facet === f.id} aria-pressed={so?.facet === f.id} tabindex="-1" onpointerdown={(e) => e.stopPropagation()} onclick={(e) => { e.stopPropagation(); cols.sortBy('swarm', f.id); }} data-testid="dl-facet-{f.id}">{f.label}{#if so?.facet === f.id}<span class="sbar" class:desc={so.desc} aria-hidden="true" data-testid="dl-sort"></span>{/if}</button>{/each}</span>{:else if so}<span class="sbar" class:desc={so.desc} aria-hidden="true" data-testid="dl-sort"></span>{/if}{#if !c.fixed}<!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions --><span class="grip" role="separator" aria-orientation="vertical" aria-label={t('downloads.list.resize', { label: c.label })} aria-valuenow={cols.wOf(id)} aria-valuemin={cols.heads[id] ?? MIN_W} aria-valuemax={MAX_W} tabindex="0" title={t('downloads.list.gripTitle')} data-testid="dl-grip" data-grip={id} onpointerdown={(e) => cols.grab(e, id)} ondblclick={() => cols.fitOne(id)} onkeydown={(e) => cols.nudge(e, id)}></span>{/if}</span>
 		{/each}
 		<span></span>
-		<span class="cm"><Menu label="Columns" icon="more" width={180} items={[{ label: 'Columns…', icon: 'more', onselect: cols.fromMenu }, { label: 'Reset columns', icon: 'refresh', onselect: cols.resetAll }]} /></span>
+		<span class="cm"><Menu label={t('downloads.col.columns')} icon="more" width={180} items={[{ label: t('downloads.list.columnsMenu'), icon: 'more', onselect: cols.fromMenu }, { label: t('downloads.list.resetColumns'), icon: 'refresh', onselect: cols.resetAll }]} /></span>
 		{#if cols.lineX !== null}<span class="ins" style="left: {cols.lineX}px" data-testid="dl-insert" aria-hidden="true"></span>{/if}
 	</div>
 {/snippet}
-
 {#snippet pills()}
 	{#each tally as c (c.key)}
 		{@const t = tabs.find((x) => x.key === c.key)}
@@ -548,17 +557,15 @@
 		</div>
 	{/each}
 {/snippet}
-
 <svelte:window onpointerdown={cols.outside} onkeydown={listKey} />
-
 <div class="dlgrid" bind:this={cols.grid} style="--tpl: {cols.tpl}; --c-in: {cols.inner}px; --pi: {cols.posterW - 6}px; --lg: {cols.srcBig ? 24 : 18}px">
 <div class="app" data-testid="dl-app" bind:this={cols.appEl} style="--app-h: {cols.appH}px">
 <div class="strip hdr" data-testid="dl-strip">
 	<div class="psearch" class:open={psOpen || !!dlScope.term} data-testid="dl-psearch">
-		<button type="button" class="psb" aria-label="Search downloads" aria-expanded={psOpen || !!dlScope.term} onclick={() => { psOpen = true; tick().then(() => psEl?.focus()); }} data-testid="dl-psearch-btn"><Icon name="search" size={16} /></button>
+		<button type="button" class="psb" aria-label={t('downloads.list.search')} aria-expanded={psOpen || !!dlScope.term} onclick={() => { psOpen = true; tick().then(() => psEl?.focus()); }} data-testid="dl-psearch-btn"><Icon name="search" size={16} /></button>
 		{#if psOpen || dlScope.term}
-			<input type="search" bind:this={psEl} bind:value={dlScope.term} placeholder="Search downloads" aria-label="Search downloads" onblur={() => { if (!dlScope.term) psOpen = false; }} onkeydown={(e) => { if (e.key === 'Escape') { e.preventDefault(); dlScope.term = ''; psOpen = false; } }} data-testid="dl-psearch-input" />
-			{#if dlScope.term}<button type="button" class="psx" aria-label="Clear search" onclick={() => { dlScope.term = ''; psEl?.focus(); }}><Icon name="x" size={14} /></button>{/if}
+			<input type="search" bind:this={psEl} bind:value={dlScope.term} placeholder={t('downloads.list.search')} aria-label={t('downloads.list.search')} onblur={() => { if (!dlScope.term) psOpen = false; }} onkeydown={(e) => { if (e.key === 'Escape') { e.preventDefault(); dlScope.term = ''; psOpen = false; } }} data-testid="dl-psearch-input" />
+			{#if dlScope.term}<button type="button" class="psx" aria-label={t('downloads.list.clearSearch')} onclick={() => { dlScope.term = ''; psEl?.focus(); }}><Icon name="x" size={14} /></button>{/if}
 		{/if}
 	</div>
 	<DlBar bind:kindOn bind:srcOn bind:trackOn trackAll={bySource.length} trackHosts={trackHosts} {trackProblems} {kindCount} {srcCount} actions={barActs} {watch} bind:term={dlScope.term} shown={searched.length} total={typed.length} side={dlTop.collapsed} onside={() => dlTop.toggle()} searchKey={dlTop.searchKey} {allItems} />
@@ -566,8 +573,8 @@
 <div class="body">
 <div class="col" bind:this={colEl}>
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-<div class="tabrow" data-testid="dl-tabrow" onkeydown={navKey}><div class="tabs" role="tablist" aria-label="Status">{@render pills()}</div>{#if problemWords(trackProblems)}<button type="button" class="trchip" class:on={trackKey === 'p:any'} aria-pressed={trackKey === 'p:any'} onclick={() => (trackOn = trackKey === 'p:any' ? '' : 'p:any')} data-testid="dl-tracker-issues">{problemWords(trackProblems)}</button>{/if}<DlStatus down="{bytes(sum.speed)}/s" up={noUp ? '' : `${bytes(upSum)}/s`} eta={etaWords} free={dls.freeAll.length ? bytes(Math.min(...dls.freeAll)) : ''} today={dls.sumOf('day_down') ? bytes(dls.sumOf('day_down')) : ''} session={dls.sumOf('session_down') ? bytes(dls.sumOf('session_down')) : ''} review={reviewShown(watch, toReview)} onreview={openReview} more={morePop} limit={Number.isFinite(capNow) ? `${bytes(capNow)}/s` : ''} onlimit={watch ? undefined : onlimit} /></div>
-<p class="qline" data-testid="dl-qline">{#if onlimit && !watch}<button type="button" class="qd qbtn" onclick={() => onlimit?.()} title={Number.isFinite(capNow) ? `Speed limit: ${bytes(capNow)}/s. Change it` : 'Set a speed limit'} data-testid="dl-q-down"><span class="sr">Speed: </span>↓ {bytes(sum.speed)}/s{#if Number.isFinite(capNow)}<span class="qcap"><Icon name="gauge" size={12} /><span class="sr">Speed limit </span>{bytes(capNow)}/s</span>{:else}<span class="sr">. Set a speed limit</span>{/if}</button>{:else}<span class="qd" data-testid="dl-q-down">↓ {bytes(sum.speed)}/s</span>{/if}{#if dls.freeAll.length}<span class="qs" aria-hidden="true">·</span><span data-testid="dl-q-free">{bytes(Math.min(...dls.freeAll))} free</span>{/if}{#if etaWords}<span class="qs" aria-hidden="true">·</span><span>{etaWords} left</span>{/if}{#if reviewShown(watch, toReview)}<button type="button" class="qrv" onclick={openReview} data-testid="dl-q-review">{reviewWord(toReview)}</button>{/if}</p>
+<div class="tabrow" data-testid="dl-tabrow" onkeydown={navKey}><div class="tabs" role="tablist" aria-label={t('downloads.list.status')}>{@render pills()}</div>{#if problemWords(trackProblems)}<button type="button" class="trchip" class:on={trackKey === 'p:any'} aria-pressed={trackKey === 'p:any'} onclick={() => (trackOn = trackKey === 'p:any' ? '' : 'p:any')} data-testid="dl-tracker-issues">{problemWords(trackProblems)}</button>{/if}<DlStatus down="{bytes(sum.speed)}/s" up={noUp ? '' : `${bytes(upSum)}/s`} eta={etaWords} free={dls.freeAll.length ? bytes(Math.min(...dls.freeAll)) : ''} today={dls.sumOf('day_down') ? bytes(dls.sumOf('day_down')) : ''} session={dls.sumOf('session_down') ? bytes(dls.sumOf('session_down')) : ''} review={reviewShown(watch, toReview)} onreview={openReview} more={morePop} limit={Number.isFinite(capNow) ? `${bytes(capNow)}/s` : ''} onlimit={watch ? undefined : onlimit} /></div>
+<p class="qline" data-testid="dl-qline">{#if onlimit && !watch}<button type="button" class="qd qbtn" onclick={() => onlimit?.()} title={Number.isFinite(capNow) ? t('downloads.list.limitChange', { speed: `${bytes(capNow)}/s` }) : t('downloads.list.setLimit')} data-testid="dl-q-down"><span class="sr">{t('downloads.list.speedSr')} </span>↓ {bytes(sum.speed)}/s{#if Number.isFinite(capNow)}<span class="qcap"><Icon name="gauge" size={12} /><span class="sr">{t('downloads.list.limitSr')} </span>{bytes(capNow)}/s</span>{:else}<span class="sr">. {t('downloads.list.setLimit')}</span>{/if}</button>{:else}<span class="qd" data-testid="dl-q-down">↓ {bytes(sum.speed)}/s</span>{/if}{#if dls.freeAll.length}<span class="qs" aria-hidden="true">·</span><span data-testid="dl-q-free">{t('downloads.list.free', { size: bytes(Math.min(...dls.freeAll)) })}</span>{/if}{#if etaWords}<span class="qs" aria-hidden="true">·</span><span>{t('downloads.list.left', { time: etaWords })}</span>{/if}{#if reviewShown(watch, toReview)}<button type="button" class="qrv" onclick={openReview} data-testid="dl-q-review">{reviewWord(toReview)}</button>{/if}</p>
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 <div class="listbox" bind:this={cols.listEl} data-testid="dl-listbox" use:overlayScroll={{ header: ".chead" }}>
 {#if (pickedRows.length || selecting) && !watch}
@@ -601,11 +608,8 @@
 {#snippet morePop()}<DlMorePop {notes} {dls} {watch} />{/snippet}
 <div class="vh"><span data-testid="sb-health">{dls.health}</span></div>
 </div>
-
 <DlColumnPicker {cols} />
-
 </div>
-
 <style>
 	.ch[data-col='proto']:has(:global(svg)) { justify-content: center; }
 	.ch[data-col='kind']:has(:global(svg)) { justify-content: center; }

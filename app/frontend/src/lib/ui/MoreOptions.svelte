@@ -1,9 +1,10 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	// Collapsible section that hides rarely used settings.
 	import type { Snippet } from 'svelte';
 	import Icon from './Icon.svelte';
 
-	let { children, label = 'More options', id }: { children: Snippet; label?: string; id?: string } = $props();
+	let { children, label = t('ui.moreOptions.label'), id }: { children: Snippet; label?: string; id?: string } = $props();
 </script>
 
 <details class="more-options" {id} data-testid="more-options">

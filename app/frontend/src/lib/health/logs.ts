@@ -1,5 +1,7 @@
 // Log viewer helpers: turn filters into a query and levels into words.
 
+import { t } from '#lib/core/i18n/i18n.svelte.ts';
+
 export type LogLevel = 'info' | 'warning' | 'error';
 
 export interface LogLine {
@@ -24,7 +26,11 @@ export interface LogFilter {
 	limit: number;
 }
 
-export const levelWord: Record<LogLevel, string> = { info: 'Info', warning: 'Warning', error: 'Error' };
+export const levelWord: Record<LogLevel, string> = {
+	get info() { return t('health.log.info'); },
+	get warning() { return t('health.log.warning'); },
+	get error() { return t('health.log.error'); }
+};
 
 export const emptyFilter = (limit = 100): LogFilter => ({ level: '', q: '', from: '', to: '', offset: 0, limit });
 
@@ -46,6 +52,6 @@ export function levelTone(l: LogLevel): string {
 
 // Offset is zero based, so the first shown line is offset + 1.
 export function pageWords(p: Pick<LogPage, 'total' | 'offset'>, shown: number): string {
-	if (p.total === 0) return 'No lines match.';
-	return `Lines ${p.offset + 1} to ${p.offset + shown} of ${p.total}, newest first.`;
+	if (p.total === 0) return t('health.log.noMatch');
+	return t('health.log.lines', { from: p.offset + 1, to: p.offset + shown, total: p.total });
 }

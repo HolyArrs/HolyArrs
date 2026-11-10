@@ -1,11 +1,12 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import { getContext as moveContext } from 'svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import StepCapsule from './StepCapsule.svelte';
 	import ResultGroups from './ResultGroups.svelte';
 	import type { ShowList } from './ItemsSheet.svelte';
-	import { moveCounts, plural, running as isRunning, type Bucket, type Move } from './move.ts';
+	import { moveCounts, running as isRunning, type Bucket, type Move } from './move.ts';
 	import { to } from '../core/paths.ts';
 	import { dateTime } from '../core/format.ts';
 
@@ -41,31 +42,31 @@
 	const plainNext = $derived(!rep || !!rep.undo || rep.lines.length === 0);
 </script>
 
-<SettingsCard id="move-step" title={countSteps ? 'Step 4 of 4 · Done' : 'Done'}>
+<SettingsCard id="move-step" title={countSteps ? t('migrate.step4Of4') : t('migrate.done')}>
 	<div class="srow">
 		<div class="cap" data-testid="done-result">
 			{#if busy && lost}
-				<StepCapsule tone="soft" fill={progress} status="pending" word="Can't reach HolyArrs" detail="trying again" />
-				<p class="sr-only" role="status">Can't reach HolyArrs. Trying again.</p>
+				<StepCapsule tone="soft" fill={progress} status="pending" word={t('migrate.canTReachHolyarrs2')} detail={t('migrate.tryingAgain')} />
+				<p class="sr-only" role="status">{t('migrate.canTReachHolyarrs')}</p>
 			{:else if busy}
-				<StepCapsule tone="go" live progress fill={progress} status="processing" word={move.undo_state ? 'Undoing' : 'Moving'} detail={detail || undefined} label={move.undo_state ? 'Undo progress' : 'Move progress'} testid="move-progress" />
+				<StepCapsule tone="go" live progress fill={progress} status="processing" word={move.undo_state ? t('migrate.undoing') : t('migrate.moving')} detail={detail || undefined} label={move.undo_state ? t('migrate.undoProgress') : t('migrate.moveProgress')} testid="move-progress" />
 			{:else if undoFailed}
-				<StepCapsule tone="bad" fill={1} status="failed" word="Undo failed" detail={plural(counts.failed ?? 0, 'item')} />
+				<StepCapsule tone="bad" fill={1} status="failed" word={t('migrate.undoFailed')} detail={(counts.failed ?? 0) === 1 ? t('migrate.item', { n: counts.failed ?? 0 }) : t('migrate.items', { n: counts.failed ?? 0 })} />
 			{:else if undone}
-				<StepCapsule tone="ok" fill={1} status="ready" word="Undone" detail={moveCounts(move) || undefined} />
+				<StepCapsule tone="ok" fill={1} status="ready" word={t('migrate.undone')} detail={moveCounts(move) || undefined} />
 			{:else if move.state === 'failed'}
-				<StepCapsule tone="bad" fill={1} status="failed" word="Stopped with errors" detail={moveCounts(move) || undefined} />
+				<StepCapsule tone="bad" fill={1} status="failed" word={t('migrate.stoppedWithErrors')} detail={moveCounts(move) || undefined} />
 			{:else}
-				<StepCapsule tone={(counts.failed ?? 0) > 0 ? 'bad' : 'ok'} fill={1} status={(counts.failed ?? 0) > 0 ? 'failed' : 'ready'} word="Moved" detail={moveCounts(move) || undefined} />
+				<StepCapsule tone={(counts.failed ?? 0) > 0 ? 'bad' : 'ok'} fill={1} status={(counts.failed ?? 0) > 0 ? 'failed' : 'ready'} word={t('migrate.moved')} detail={moveCounts(move) || undefined} />
 			{/if}
 		</div>
-		<span class="hint when">Move {move.id} · {dateTime(move.created_at)}</span>
+		<span class="hint when">{t('migrate.move2', { id: move.id, date: dateTime(move.created_at) })}</span>
 	</div>
 </SettingsCard>
 
 {#if rep && !busy}
 	{#if plainNext || (counts.not_found ?? 0) > 0 || openChoices > 0 || (counts.failed ?? 0) > 0}
-	<SettingsCard id="move-todo" title="Needs you">
+	<SettingsCard id="move-todo" title={t('migrate.needsYou')}>
 		{#if plainNext}
 			{#each rep.next as n (n)}
 				<div class="srow"><p class="txt">{n}</p></div>
@@ -79,20 +80,20 @@
 					</div>
 				{/snippet}
 				{#if (counts.not_found ?? 0) > 0}
-					{@render card(`${plural(counts.not_found ?? 0, 'title')} have no folder here`, 'Add their folder, then move again.', 'Folders', to('/settings/library-folders'))}
+					{@render card((counts.not_found ?? 0) === 1 ? t('migrate.titleHaveNoFolder', { n: counts.not_found ?? 0 }) : t('migrate.titlesHaveNoFolder', { n: counts.not_found ?? 0 }), t('migrate.addTheirFolderThen'), t('migrate.folders'), to('/settings/library-folders'))}
 				{/if}
 				{#if openChoices > 0}
-					{@render card(`Choose for ${plural(openChoices, 'person', 'people')}`, 'They stay behind until you do.', 'Choose', onchoose)}
+					{@render card(openChoices === 1 ? t('migrate.chooseForPerson', { n: openChoices }) : t('migrate.chooseForPeople', { n: openChoices }), t('migrate.theyStayBehindUntil'), t('migrate.choose'), onchoose)}
 				{/if}
 				{#if (counts.failed ?? 0) > 0}
-					{@render card(`${plural(counts.failed ?? 0, 'item')} failed`, 'Reasons are in Results.', '', () => {})}
+					{@render card((counts.failed ?? 0) === 1 ? t('migrate.itemFailed', { n: counts.failed ?? 0 }) : t('migrate.itemsFailed', { n: counts.failed ?? 0 }), t('migrate.reasonsAreInResults'), '', () => {})}
 				{/if}
 			</div>
 		{/if}
 	</SettingsCard>
 	{/if}
 	{#if groups.length > 0}
-		<SettingsCard id="move-results" title="Results">
+		<SettingsCard id="move-results" title={t('migrate.results')}>
 			<ResultGroups report={rep} {groups} after {onshow} />
 		</SettingsCard>
 	{/if}

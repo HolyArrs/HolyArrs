@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import Button from '#lib/ui/Button.svelte';
 	import IconButton from '#lib/ui/IconButton.svelte';
 	import { pixelTrail } from './pixel-trail.ts';
@@ -25,10 +26,10 @@
 
 <form onsubmit={submitServer} novalidate>
 	<div class="field">
-		<label for="addr">Address</label>
+		<label for="addr">{t('accounts.signin.address')}</label>
 		<input id="addr" class="input mono" bind:value={address} placeholder="http://192.168.1.10:8096" inputmode="url" autocomplete="url" autocapitalize="none" spellcheck="false" maxlength="500" required />
 		{#if foundHere.length}
-			<div class="accts found" role="group" aria-label="Found on your network" data-testid="setup-found">
+			<div class="accts found" role="group" aria-label={t('accounts.signin.found')} data-testid="setup-found">
 				{#each foundHere as f (f.address)}
 					<div class="acct">
 						<button type="button" class="acct-pick" aria-pressed={address === f.address} onclick={() => { address = f.address; focusStep(); }}>
@@ -39,25 +40,25 @@
 				{/each}
 			</div>
 		{:else if looking}
-			<p class="note looking" role="status">Looking on your network…</p>
+			<p class="note looking" role="status">{t('accounts.signin.looking')}</p>
 		{/if}
 	</div>
 	<div class="field">
-		<label for="name">Name</label>
+		<label for="name">{t('accounts.signin.name')}</label>
 		<input id="name" class="input" bind:value={name} autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="128" required />
 	</div>
 	<div class="field">
-		<label for="password">Password</label>
+		<label for="password">{t('accounts.signin.passwordLabel')}</label>
 		<div class="pw">
 			<input id="password" class="input" type={showPw ? 'text' : 'password'} bind:value={pw} autocomplete="current-password" />
-			<IconButton icon={showPw ? 'eyeOff' : 'eye'} label="Show password" aria-pressed={showPw} onclick={() => (showPw = !showPw)} />
+			<IconButton icon={showPw ? 'eyeOff' : 'eye'} label={t('accounts.signin.showPasswordLabel')} aria-pressed={showPw} onclick={() => (showPw = !showPw)} />
 		</div>
 	</div>
 	{#if error}
 		<p class="form-error" role="alert">{error}{#if waiting > 0}<span class="mono" aria-hidden="true"> ({waiting}s)</span>{/if}</p>
 	{/if}
 	<div class="submit" use:pixelTrail={{ selector: '.ui-btn', busy, fail: failN }}>
-		<Button variant="primary" size="lg" full type="submit" disabled={waiting > 0} {busy}>Sign in with {wayWord[kind]}</Button>
+		<Button variant="primary" size="lg" full type="submit" disabled={waiting > 0} {busy}>{t('accounts.signin.signInWith', { way: wayWord[kind] })}</Button>
 	</div>
 </form>
 

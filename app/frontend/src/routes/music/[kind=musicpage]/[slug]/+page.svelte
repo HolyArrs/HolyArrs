@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import { ownedIndex } from '#lib/ui/title-cards.ts';
 	import { artistSheets } from '#lib/requests/index.ts';
 	import { MusicTrendingRows } from '#lib/music/index.ts';
@@ -26,7 +27,7 @@
 	});
 </script>
 
-<svelte:head><title>Music · HolyArrs</title></svelte:head>
+<svelte:head><title>{t('music.music')} · HolyArrs</title></svelte:head>
 
 <div class="genre" data-testid="music-browse-page">
 	{#key `${kind}/${slug}`}

@@ -1,4 +1,6 @@
 <script lang="ts">
+	import Words from '#lib/ui/Words.svelte';
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Button from '#lib/ui/Button.svelte';
@@ -15,7 +17,7 @@
 	// The whole app stopped; nothing more can be done from this page.
 	let gone = $state('');
 
-	const stopped = (r: unknown) => (gone = (r as { text?: string })?.text ?? 'HolyArrs is stopping.');
+	const stopped = (r: unknown) => (gone = (r as { text?: string })?.text ?? t('settings.danger.stopping'));
 
 	/** Sends a whole-app control; the server always asks first, and the second step waits on this page. */
 	async function app(how: 'restart' | 'safe-mode' | 'shutdown', label: string) {
@@ -26,7 +28,7 @@
 			if (isConfirm(r)) asking = { key, label, path: `/app/${how}`, confirm: r };
 			else stopped(r);
 		} catch (err) {
-			toasts.push(`Couldn't ${label.charAt(0).toLowerCase()}${label.slice(1)}`, 'fail', { body: message(err) });
+			toasts.push(t('settings.danger.couldnt', { action: label.charAt(0).toLowerCase() + label.slice(1) }), 'fail', { body: message(err) });
 		} finally {
 			busy = '';
 		}
@@ -42,7 +44,7 @@
 			stopped(r);
 		} catch (err) {
 			asking = null;
-			toasts.push(`Couldn't ${a.label.charAt(0).toLowerCase()}${a.label.slice(1)}`, 'fail', { body: message(err) });
+			toasts.push(t('settings.danger.couldnt', { action: a.label.charAt(0).toLowerCase() + a.label.slice(1) }), 'fail', { body: message(err) });
 		} finally {
 			busy = '';
 		}
@@ -54,39 +56,38 @@
 	});
 </script>
 
-<svelte:head><title>Danger zone · HolyArrs</title></svelte:head>
+<svelte:head><title>{t('settings.danger.title')} · HolyArrs</title></svelte:head>
 
-<PageHeader title="Danger zone" />
+<PageHeader title={t('settings.danger.title')} />
 
 {#if !allowed}
-	<p class="notice warn">Owner and admins only</p>
+	<p class="notice warn">{t('settings.danger.ownerOnly')}</p>
 {:else if gone}
 	<p class="notice warn" role="status" data-testid="app-gone">{gone}</p>
 {:else}
 	{#if asking}
 		<div class="card confirm" role="alertdialog" aria-labelledby="h-confirm" aria-describedby="confirm-text" data-testid="confirm">
-			<h2 id="h-confirm" class="h2">{asking.label}?</h2>
+			<h2 id="h-confirm" class="h2">{t('settings.danger.ask', { label: asking.label })}</h2>
 			<p id="confirm-text" class="small">{asking.confirm.text.replace(/, send the same request again.*$/, '.')}</p>
 			<div class="row">
-				<Button variant="destructive" id="confirm-yes" type="button" onclick={confirmNow} disabled={busy === asking.key} aria-busy={busy === asking.key}>Yes, {asking.label.toLowerCase()}</Button>
-				<Button variant="plain" type="button" onclick={() => (asking = null)}>Cancel</Button>
+				<Button variant="destructive" id="confirm-yes" type="button" onclick={confirmNow} disabled={busy === asking.key} aria-busy={busy === asking.key}>{t('settings.danger.yes', { action: asking.label.toLowerCase() })}</Button>
+				<Button variant="plain" type="button" onclick={() => (asking = null)}>{t('settings.danger.cancel')}</Button>
 			</div>
-			<p class="xs muted">Expires in 60 s</p>
+			<p class="xs muted">{t('settings.danger.expires')}</p>
 		</div>
 	{/if}
 
 	<div data-testid="control-app">
-		<SettingsCard id="danger-card" tone="danger" icon="alert" title="The whole app">
+		<SettingsCard id="danger-card" tone="danger" icon="alert" title={t('settings.danger.wholeApp')}>
 			<p class="small muted">
-				These stop HolyArrs. Docker's restart policy starts it again in a few seconds, unless the policy is <code>no</code>; then start the
-				container yourself. Each one asks first.
+				<Words key="settings.danger.intro" />
 			</p>
 			<div class="row acts">
-				<Button type="button" onclick={() => app('restart', 'Restart HolyArrs')} disabled={!!busy}>Restart HolyArrs</Button>
-				<Button type="button" onclick={() => app('safe-mode', 'Restart in safe mode')} disabled={!!busy}>Restart in safe mode</Button>
-				<Button variant="destructive" type="button" onclick={() => app('shutdown', 'Shut down')} disabled={!!busy}>Shut down</Button>
+				<Button type="button" onclick={() => app('restart', t('settings.danger.restart'))} disabled={!!busy}>{t('settings.danger.restart')}</Button>
+				<Button type="button" onclick={() => app('safe-mode', t('settings.danger.safe'))} disabled={!!busy}>{t('settings.danger.safe')}</Button>
+				<Button variant="destructive" type="button" onclick={() => app('shutdown', t('settings.danger.shutdown'))} disabled={!!busy}>{t('settings.danger.shutdown')}</Button>
 			</div>
-			<p class="xs muted">Starts once with only sign-in, Settings and Library. Use it when a Part blocks startup.</p>
+			<p class="xs muted">{t('settings.danger.safeNote')}</p>
 		</SettingsCard>
 	</div>
 {/if}
@@ -103,7 +104,7 @@
 		margin-top: var(--s-3);
 		flex-wrap: wrap;
 	}
-	code {
+	p :global(code) {
 		font-family: var(--font-mono);
 	}
 </style>

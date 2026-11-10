@@ -1,4 +1,5 @@
 // The status tabs on the Downloads table: All, Waiting, In progress, Problems, Done, with sub-statuses under Waiting, In progress and Problems (All and Done have none). Pure, so it can be tested.
+import { t } from '#lib/core/i18n/i18n.svelte.ts';
 import type { DownloadRow } from '../core/types.ts';
 
 export type Stage = 'checking' | 'queued' | 'paused' | 'downloading' | 'stalled' | 'importing' | 'done' | 'seeding' | 'failed' | 'decide';
@@ -82,33 +83,33 @@ export const ALL = 'active';
 export const ALL_HINT = 'Everything: waiting, on its way, needing you, or finished.';
 
 const SUBS: Record<string, Sub> = {
-	queued: { key: 'queued', label: 'Queued', stages: ['queued'], hint: 'Starts when the downloader has room.', empty: 'Nothing is queued.' },
-	paused: { key: 'paused', label: 'Paused', stages: ['paused'], hint: 'Paused in the Downloader.', empty: 'Nothing is paused.' },
-	downloading: { key: 'downloading', label: 'Downloading', stages: ['downloading', 'stalled'], hint: 'Taking in data, or stalled while it keeps trying.', empty: 'Nothing is downloading.' },
-	checking: { key: 'checking', label: 'Checking', stages: ['checking'], hint: 'Checking its data on disk, or moving to a new folder.', empty: 'Nothing is being checked or moved.' },
-	importing: { key: 'importing', label: 'Importing', stages: ['importing'], hint: 'Finished downloading; being checked and moved into your Library.', empty: 'Nothing is importing.' },
-	failed: { key: 'failed', label: 'Failed', stages: ['failed'], hint: 'Failed, removed outside HolyArrs, or the files did not match.', empty: 'Nothing failed.' },
-	decide: { key: 'decide', label: 'Review', stages: ['decide'], hint: 'HolyArrs could not finish it on its own and needs you to choose.', empty: 'Nothing to review.' }
+	queued: { key: 'queued', get label() { return t('downloads.tabs.sub.queued.label'); }, stages: ['queued'], get hint() { return t('downloads.tabs.sub.queued.hint'); }, get empty() { return t('downloads.tabs.sub.queued.empty'); } },
+	paused: { key: 'paused', get label() { return t('downloads.tabs.sub.paused.label'); }, stages: ['paused'], get hint() { return t('downloads.tabs.sub.paused.hint'); }, get empty() { return t('downloads.tabs.sub.paused.empty'); } },
+	downloading: { key: 'downloading', get label() { return t('downloads.tabs.sub.downloading.label'); }, stages: ['downloading', 'stalled'], get hint() { return t('downloads.tabs.sub.downloading.hint'); }, get empty() { return t('downloads.tabs.sub.downloading.empty'); } },
+	checking: { key: 'checking', get label() { return t('downloads.tabs.sub.checking.label'); }, stages: ['checking'], get hint() { return t('downloads.tabs.sub.checking.hint'); }, get empty() { return t('downloads.tabs.sub.checking.empty'); } },
+	importing: { key: 'importing', get label() { return t('downloads.tabs.sub.importing.label'); }, stages: ['importing'], get hint() { return t('downloads.tabs.sub.importing.hint'); }, get empty() { return t('downloads.tabs.sub.importing.empty'); } },
+	failed: { key: 'failed', get label() { return t('downloads.tabs.sub.failed.label'); }, stages: ['failed'], get hint() { return t('downloads.tabs.sub.failed.hint'); }, get empty() { return t('downloads.tabs.sub.failed.empty'); } },
+	decide: { key: 'decide', get label() { return t('downloads.tabs.sub.decide.label'); }, stages: ['decide'], get hint() { return t('downloads.tabs.sub.decide.hint'); }, get empty() { return t('downloads.tabs.sub.decide.empty'); } }
 };
 
 export const TABS: Tab[] = [
-	{ key: 'active', label: 'All', stages: ['queued', 'paused', 'downloading', 'stalled', 'checking', 'importing', 'failed', 'decide', 'done', 'seeding'], hint: ALL_HINT, empty: 'No downloads yet', subs: [] },
-	{ key: 'waiting', label: 'Waiting', stages: ['queued', 'paused'], hint: "In your Downloader's line, or paused by you.", empty: 'Nothing waiting', subs: [SUBS.queued, SUBS.paused] },
+	{ key: 'active', get label() { return t('downloads.tabs.tab.active.label'); }, stages: ['queued', 'paused', 'downloading', 'stalled', 'checking', 'importing', 'failed', 'decide', 'done', 'seeding'], get hint() { return t('downloads.tabs.all.hint'); }, get empty() { return t('downloads.tabs.tab.active.empty'); }, subs: [] },
+	{ key: 'waiting', get label() { return t('downloads.tabs.tab.waiting.label'); }, stages: ['queued', 'paused'], get hint() { return t('downloads.tabs.tab.waiting.hint'); }, get empty() { return t('downloads.tabs.tab.waiting.empty'); }, subs: [SUBS.queued, SUBS.paused] },
 	{
 		key: 'progress',
-		label: 'In progress',
+		get label() { return t('downloads.tabs.tab.progress.label'); },
 		stages: ['downloading', 'stalled', 'checking', 'importing'],
-		hint: 'On its way: downloading now, or being checked and filed into your Library.',
-		empty: 'Nothing downloading',
+		get hint() { return t('downloads.tabs.tab.progress.hint'); },
+		get empty() { return t('downloads.tabs.tab.progress.empty'); },
 		subs: [SUBS.downloading, SUBS.checking, SUBS.importing]
 	},
-	{ key: 'problems', label: 'Problems', stages: ['failed', 'decide'], hint: 'Stuck, failed, or waiting for you to decide.', empty: 'All clear', subs: [SUBS.failed, SUBS.decide] },
+	{ key: 'problems', get label() { return t('downloads.tabs.tab.problems.label'); }, stages: ['failed', 'decide'], get hint() { return t('downloads.tabs.tab.problems.hint'); }, get empty() { return t('downloads.tabs.tab.problems.empty'); }, subs: [SUBS.failed, SUBS.decide] },
 	{
 		key: 'done',
-		label: 'Done',
+		get label() { return t('downloads.tabs.tab.done.label'); },
 		stages: ['done', 'seeding'],
-		hint: 'Finished: in your Library, or still being shared.',
-		empty: 'Nothing finished yet',
+		get hint() { return t('downloads.tabs.tab.done.hint'); },
+		get empty() { return t('downloads.tabs.tab.done.empty'); },
 		subs: []
 	}
 ];
@@ -147,62 +148,62 @@ export function subCounts(rows: RowBits[], tab: Tab | undefined): Counted[] {
 
 /** The row's word in the status column; it follows the sub-tab words. A download removed outside HolyArrs, a failed copy already replaced, or a torrent the Downloader marks errored or missing its files reads accordingly. */
 export function statusWord(r: RowBits): string {
-	if (r.phase === 'failed' || r.phase === 'vanished') return 'Failed';
+	if (r.phase === 'failed' || r.phase === 'vanished') return t('downloads.status.failed');
 	switch (stageOf(r)) {
 		case 'checking':
-			return r.client_hint === 'moving' ? 'Moving' : 'Checking';
+			return r.client_hint === 'moving' ? t('downloads.status.moving') : t('downloads.status.checking');
 		case 'queued':
-			return 'Queued';
+			return t('downloads.status.queued');
 		case 'paused':
-			return 'Paused';
+			return t('downloads.status.paused');
 		case 'downloading':
-			return 'Downloading';
+			return t('downloads.status.downloading');
 		case 'stalled':
-			return 'Stalled';
+			return t('downloads.status.stalled');
 		case 'importing':
-			return 'Importing';
+			return t('downloads.status.importing');
 		case 'seeding':
-			return 'Seeding';
+			return t('downloads.status.seeding');
 		case 'decide':
-			return 'Review';
+			return t('downloads.status.review');
 		case 'failed':
-			return 'Failed';
+			return t('downloads.status.failed');
 	}
-	return 'Done';
+	return t('downloads.status.done');
 }
 
 /** A quiet sentence for the tooltip after the status word, or ''. */
 export function statusHint(r: RowBits): string {
 	switch (r.client_hint) {
 		case 'idle_seed':
-			return 'Nobody is asking for it right now';
+			return t('downloads.status.idleSeed');
 		case 'moving':
-			return 'To a new folder';
+			return t('downloads.status.toFolder');
 	}
-	return r.phase === 'stalled' ? 'No data coming in; still trying' : '';
+	return r.phase === 'stalled' ? t('downloads.status.noData') : '';
 }
 
 /** The short second line under the status word when nothing is wrong and the row is not in a queue: the step an import is at, why a download failed, or a seeding torrent's ratio. Two words at most. */
 export function stepLine(r: Pick<RowBits, 'client_hint'>, detail: string): string {
 	switch (r.client_hint) {
 		case 'verifying':
-			return 'Verifying';
+			return t('downloads.step.verifying');
 		case 'repairing':
-			return 'Repairing';
+			return t('downloads.step.repairing');
 		case 'unpacking':
-			return 'Unpacking';
+			return t('downloads.step.unpacking');
 		case 'finishing':
-			return 'Finishing';
+			return t('downloads.step.finishing');
 		case 'script':
-			return 'Running script';
+			return t('downloads.step.script');
 		case 'missing':
-			return 'Files missing';
+			return t('downloads.step.missing');
 		case 'errored':
-			return 'Downloader error';
+			return t('downloads.step.errored');
 	}
-	if (detail.startsWith('import failed')) return 'Import failed';
-	if (detail === 'removed outside HolyArrs') return 'Removed outside';
-	if (detail === 'the files did not match') return 'Files did not match';
+	if (detail.startsWith(t('downloads.detail.importFailed', { why: '' }).trimEnd())) return t('downloads.step.importFailed');
+	if (detail === t('downloads.detail.removed')) return t('downloads.step.removedOutside');
+	if (detail === t('downloads.detail.noMatch')) return t('downloads.step.noMatch');
 	return detail ? detail.charAt(0).toUpperCase() + detail.slice(1) : '';
 }
 
@@ -238,28 +239,34 @@ export function showOf(v: string | null | undefined, tabs: Tab[] = TABS): { show
 }
 
 const EMPTY: Record<string, Omit<Empty, 'title'>> = {
-	active: { text: 'Anything HolyArrs or your Downloader is fetching shows up here.', glyph: 'down' },
-	waiting: { text: 'Downloads queued or paused show up here.', glyph: 'clock' },
-	progress: { text: 'Downloads in progress show up here with their speed.', glyph: 'down' },
-	problems: { text: 'Failed downloads and ones that need a decision show up here.', glyph: 'check' },
-	done: { text: 'Finished and seeding downloads show up here.', glyph: 'done' }
+	active: { get text() { return t('downloads.empty.active'); }, glyph: 'down' },
+	waiting: { get text() { return t('downloads.empty.waiting'); }, glyph: 'clock' },
+	progress: { get text() { return t('downloads.empty.progress'); }, glyph: 'down' },
+	problems: { get text() { return t('downloads.empty.problems'); }, glyph: 'check' },
+	done: { get text() { return t('downloads.empty.done'); }, glyph: 'done' }
 };
 
-const KIND_NOUN: Record<string, string> = { movie: 'movie', show: 'TV show', artist: 'music', usenet: 'Usenet', torrent: 'torrent' };
+const KIND_NOUN: Record<string, string> = {
+	get movie() { return t('downloads.noun.movie'); },
+	get show() { return t('downloads.noun.show'); },
+	get artist() { return t('downloads.noun.music'); },
+	usenet: 'Usenet',
+	torrent: 'torrent'
+};
 
 /** The empty-state card for the list as filtered: a search with no hits, a kind filter with no rows, or the tab (or sub-tab) itself. */
 export function emptyOf(tab: string, sub = '', term = '', kind = '', tabs: Tab[] = TABS, source = ''): Empty {
 	const q = term.trim();
-	if (q) return { title: `No matches for “${q}”`, text: '', glyph: 'search', action: { label: 'Clear search', act: 'clear' } };
+	if (q) return { title: t('downloads.empty.noMatches', { q }), text: '', glyph: 'search', action: { label: t('downloads.list.clearSearch'), act: 'clear' } };
 	if (kind && KIND_NOUN[kind]) {
-		return { title: `No ${KIND_NOUN[kind]} downloads`, text: '', glyph: 'filter', action: { label: 'Show all', act: 'all' } };
+		return { title: t('downloads.empty.noKind', { kind: KIND_NOUN[kind] }), text: '', glyph: 'filter', action: { label: t('downloads.empty.showAll'), act: 'all' } };
 	}
 	if (source && KIND_NOUN[source]) {
-		return { title: `No ${KIND_NOUN[source]} downloads`, text: '', glyph: 'filter', action: { label: 'Show all', act: 'all' } };
+		return { title: t('downloads.empty.noKind', { kind: KIND_NOUN[source] }), text: '', glyph: 'filter', action: { label: t('downloads.empty.showAll'), act: 'all' } };
 	}
-	const t = tabs.find((x) => x.key === tab) ?? tabs[0];
-	const s = t.subs.find((x) => x.key === sub);
-	const base = EMPTY[t.key] ?? EMPTY.active;
-	if (s) return { title: s.empty.replace(/\.$/, ''), text: s.hint, glyph: t.key === 'problems' ? 'check' : base.glyph };
-	return { title: t.empty, ...base };
+	const tb = tabs.find((x) => x.key === tab) ?? tabs[0];
+	const s = tb.subs.find((x) => x.key === sub);
+	const base = EMPTY[tb.key] ?? EMPTY.active;
+	if (s) return { title: s.empty.replace(/\.$/, ''), text: s.hint, glyph: tb.key === 'problems' ? 'check' : base.glyph };
+	return { title: tb.empty, ...base };
 }

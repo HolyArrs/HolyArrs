@@ -1,5 +1,6 @@
 <script lang="ts">
 	// What a music or TV ask is made of, folded under one line that opens: an artist ask's albums ("12 albums · 8 singles & EPs", one row per album with its other editions under a small "3 editions" note), or a show ask's seasons and episodes.
+	import { t, appLocale } from '#lib/core/i18n/i18n.svelte.ts';
 	import Icon from '#lib/ui/Icon.svelte';
 	import { albumCounts, albumGroups, songsHead, askAlbums, askSeasons, askedWords, picksChanged, picksHead, seasonPick, type PartsPick, type SeasonPick } from './ask-parts.ts';
 	import { albumSongs, artistIdOf, askArtist, musicKinds, songKey, storedParts, type AlbumSong } from './details.svelte.ts';
@@ -144,7 +145,7 @@
 		const next = p.ticked.includes(n) ? p.ticked.filter((x) => x !== n) : [...p.ticked, n].sort((x, y) => x - y);
 		ticks = { ...ticks, [p.number]: next };
 	}
-	const shortDay = (d?: string) => (d && /^\d{4}-\d{2}-\d{2}/.test(d) ? new Date(`${d.slice(0, 10)}T12:00:00`).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '');
+	const shortDay = (d?: string) => (d && /^\d{4}-\d{2}-\d{2}/.test(d) ? new Date(`${d.slice(0, 10)}T12:00:00`).toLocaleDateString(appLocale(), { month: 'short', day: 'numeric', year: 'numeric' }) : '');
 
 	let open = $state(false);
 	let openSeason = $state(0);
@@ -166,8 +167,8 @@
 		return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 	})();
 	// A declined ask had nothing approved, so its marks say what was asked for.
-	const markOn = $derived(a.state === 'turned_down' ? 'Asked for' : 'Approved');
-	const markOff = $derived(a.state === 'turned_down' ? 'Not asked for' : 'Left out');
+	const markOn = $derived(a.state === 'turned_down' ? t('requests.parts.askedFor') : t('requests.parts.approved'));
+	const markOff = $derived(a.state === 'turned_down' ? t('requests.parts.notAskedFor') : t('requests.parts.leftOut'));
 	// Phones show the albums as a sideways strip: keep the open one in view.
 	let strip = $state<HTMLElement>();
 	$effect(() => {
@@ -178,8 +179,8 @@
 	const keptRows = $derived(rows.filter((r) => !left.has(r.key)));
 	const head = $derived.by(() => {
 		if (music) {
-			if (albumsLoading) return 'Loading albums…';
-			if (!rows.length) return a.album_words ? a.album_words[0].toUpperCase() + a.album_words.slice(1) : 'All albums';
+			if (albumsLoading) return t('requests.parts.loadingAlbums');
+			if (!rows.length) return a.album_words ? a.album_words[0].toUpperCase() + a.album_words.slice(1) : t('requests.askedFor.allAlbums');
 			const kept = albumPicks.filter((p) => p.tick !== 'none');
 			return songsHead(albumCounts(left.size ? kept.map((p) => p.row) : rows), albumPicks.map((p) => ({ all: p.list?.length ?? null, ticked: p.ticked.length })));
 		}
@@ -188,24 +189,25 @@
 	const listId = $derived(`parts-${a.id}`);
 
 	// Album kinds, as the left pane's small headings.
-	const kindLabel: Record<string, string> = { albums: 'Albums', singles: 'Singles and EPs', live: 'Live', compilations: 'Compilations', other: 'Other' };
+	const kindLabel = (k: string) => (['albums', 'singles', 'live', 'compilations', 'other'].includes(k) ? t(`requests.parts.kindHead.${k}`) : k);
+	const seasonTitle = (n: number) => (n === 0 ? t('requests.parts.specials') : t('requests.parts.season', { n }));
 	const shown = $derived(music ? rows.length > 0 || albumsLoading : seasons.length > 0);
 </script>
 
 {#if shown && layout === 'split'}
 	<div class="split" data-testid="ask-parts">
 		<!-- A plain list: each row's tick sits beside a real button that opens that season or album. -->
-		<ul class="sp-left" aria-label={music ? 'Albums' : 'Seasons'} bind:this={strip}>
+		<ul class="sp-left" aria-label={music ? t('requests.parts.albumsLabel') : t('requests.parts.seasonsLabel')} bind:this={strip}>
 			{#if music}
 				{#each albumPicks as p (p.row.key)}
 					{@const r = p.row}
 					{@const first = albumPicks.find((x) => x.row.kind === r.kind) === p}
-					{#if first}<li class="sp-kind" aria-hidden="true">{kindLabel[r.kind] ?? r.kind}</li>{/if}
+					{#if first}<li class="sp-kind" aria-hidden="true">{kindLabel(r.kind)}</li>{/if}
 					<li class="sp-row" class:on={openAlbum === r.key} class:off={p.tick === 'none'} data-testid="ask-album" data-tick={p.tick}>
-						{#if editable}<label class="sp-tk"><input class="tick" type="checkbox" checked={p.tick === 'all'} indeterminate={p.tick === 'some'} aria-label="Tick {r.main.name}" onchange={() => tickAlbum(p)} /></label>{/if}
+						{#if editable}<label class="sp-tk"><input class="tick" type="checkbox" checked={p.tick === 'all'} indeterminate={p.tick === 'some'} aria-label={t('requests.parts.tick', { name: r.main.name })} onchange={() => tickAlbum(p)} /></label>{/if}
 						<button type="button" class="sp-open" aria-pressed={openAlbum === r.key} onclick={() => (openAlbum = r.key)}>
 							<span class="sp-cov">{#if r.main.image}<img src={coverFor(r.main.image, 64).src} alt="" loading="lazy" decoding="async" onerror={(e) => ((e.currentTarget as HTMLImageElement).style.visibility = 'hidden')} />{/if}</span>
-							<span class="sp-t"><span class="sp-n">{r.main.name}</span><span class="sp-s">{r.main.year ?? ''}{p.list?.length ? ` · ${p.tick === 'all' ? p.list.length : p.ticked.length} of ${p.list.length} songs` : ''}</span></span>
+							<span class="sp-t"><span class="sp-n">{r.main.name}</span><span class="sp-s">{r.main.year ?? ''}{p.list?.length ? ` · ${t('requests.parts.someSongs', { kept: p.tick === 'all' ? p.list.length : p.ticked.length, all: p.list.length })}` : ''}</span></span>
 							<Icon name="chevronRight" size={14} />
 						</button>
 					</li>
@@ -214,10 +216,10 @@
 				{#each picks as p, i (p.number)}
 					{@const s = seasons[i]}
 					<li class="sp-row" class:on={openSeason === s.number} class:off={p.tick === 'none'} data-testid="ask-season" data-tick={p.tick}>
-						{#if editable}<label class="sp-tk"><input class="tick" type="checkbox" checked={p.tick === 'all'} indeterminate={p.tick === 'some'} aria-label={s.number === 0 ? 'Tick every episode in specials' : `Tick every episode in season ${s.number}`} onchange={() => tickSeason(p)} /></label>{/if}
+						{#if editable}<label class="sp-tk"><input class="tick" type="checkbox" checked={p.tick === 'all'} indeterminate={p.tick === 'some'} aria-label={s.number === 0 ? t('requests.parts.tickSpecials') : t('requests.parts.tickSeason', { n: s.number })} onchange={() => tickSeason(p)} /></label>{/if}
 						<button type="button" class="sp-open" aria-pressed={openSeason === s.number} onclick={() => (openSeason = s.number)}>
-							<span class="sp-num">{s.number === 0 ? 'SP' : s.number}</span>
-							<span class="sp-t"><span class="sp-n">{s.number === 0 ? 'Specials' : `Season ${s.number}`}</span><span class="sp-s">{p.tick === 'none' ? 'Left out' : !(s.episodes || p.all.length) ? 'Not out yet' : `${p.ticked.length || s.episodes} of ${s.episodes || p.all.length} episodes`}</span></span>
+							<span class="sp-num">{s.number === 0 ? t('requests.parts.sp') : s.number}</span>
+							<span class="sp-t"><span class="sp-n">{seasonTitle(s.number)}</span><span class="sp-s">{p.tick === 'none' ? t('requests.parts.leftOut') : !(s.episodes || p.all.length) ? t('requests.parts.notOut') : t('requests.parts.someEpisodes', { kept: p.ticked.length || s.episodes, n: s.episodes || p.all.length })}</span></span>
 							<Icon name="chevronRight" size={14} />
 						</button>
 					</li>
@@ -231,22 +233,22 @@
 					<header class="sp-h">
 						<span class="sp-ht">{p.row.main.name}</span>
 						{#if editable && p.list?.length}
-							<button type="button" class="sp-a" aria-label="Tick every song on {p.row.main.name}" onclick={() => setAlbum(p, true)}>All</button>
-							<button type="button" class="sp-a" aria-label="Untick every song on {p.row.main.name}" onclick={() => setAlbum(p, false)}>None</button>
+							<button type="button" class="sp-a" aria-label={t('requests.parts.tickSongs', { name: p.row.main.name })} onclick={() => setAlbum(p, true)}>{t('requests.parts.all')}</button>
+							<button type="button" class="sp-a" aria-label={t('requests.parts.untickSongs', { name: p.row.main.name })} onclick={() => setAlbum(p, false)}>{t('requests.parts.none')}</button>
 						{/if}
 					</header>
-					{#if p.list === null}<p class="hint">Loading songs…</p>
-					{:else if !p.list.length}<p class="hint">No song list for this album yet.</p>
+					{#if p.list === null}<p class="hint">{t('requests.parts.loadingSongs')}</p>
+					{:else if !p.list.length}<p class="hint">{t('requests.parts.noSongs')}</p>
 					{:else}
-						<ol class="sp-list" aria-label="Songs of {p.row.main.name}">
-							{#each p.list as t (songKey(t))}
-								{@const on = p.ticked.includes(songKey(t))}
+						<ol class="sp-list" aria-label={t('requests.parts.songsOf', { name: p.row.main.name })}>
+							{#each p.list as sg (songKey(sg))}
+								{@const on = p.ticked.includes(songKey(sg))}
 								<li class:off={!on} data-testid="ask-song">
 									<label class="sp-item">
-										{#if editable}<input class="tick" type="checkbox" checked={on} aria-label="Song {t.number}: {t.name || `Song ${t.number}`}" onchange={() => tickSong(p, songKey(t))} />{:else}<span class="mk" class:no={!on} role="img" aria-label={on ? markOn : markOff}><Icon name={on ? 'check' : 'dash'} size={14} /></span>{/if}
-										<span class="n">{t.disc > 1 ? `${t.disc}-` : ''}{t.number}</span>
-										<span class="t">{t.name || `Song ${t.number}`}</span>
-										<span class="y">{songLen(t.length_ms)}</span>
+										{#if editable}<input class="tick" type="checkbox" checked={on} aria-label={t('requests.parts.songTick', { n: sg.number, name: sg.name || t('requests.parts.songN', { n: sg.number }) })} onchange={() => tickSong(p, songKey(sg))} />{:else}<span class="mk" class:no={!on} role="img" aria-label={on ? markOn : markOff}><Icon name={on ? 'check' : 'dash'} size={14} /></span>{/if}
+										<span class="n">{sg.disc > 1 ? `${sg.disc}-` : ''}{sg.number}</span>
+										<span class="t">{sg.name || t('requests.parts.songN', { n: sg.number })}</span>
+										<span class="y">{songLen(sg.length_ms)}</span>
 									</label>
 								</li>
 							{/each}
@@ -260,26 +262,26 @@
 				{#if s && p}
 					{@const list = listOf(s)}
 					<header class="sp-h">
-						<span class="sp-ht">{s.number === 0 ? 'Specials' : `Season ${s.number}`}</span>
+						<span class="sp-ht">{seasonTitle(s.number)}</span>
 						{#if editable && p.all.length}
-							<button type="button" class="sp-a" aria-label="Tick every episode in {s.number === 0 ? 'Specials' : `Season ${s.number}`}" onclick={() => (ticks = { ...ticks, [p.number]: [...p.all] })}>All</button>
-							<button type="button" class="sp-a" aria-label="Untick every episode in {s.number === 0 ? 'Specials' : `Season ${s.number}`}" onclick={() => (ticks = { ...ticks, [p.number]: [] })}>None</button>
+							<button type="button" class="sp-a" aria-label={t('requests.parts.tickAllIn', { where: seasonTitle(s.number) })} onclick={() => (ticks = { ...ticks, [p.number]: [...p.all] })}>{t('requests.parts.all')}</button>
+							<button type="button" class="sp-a" aria-label={t('requests.parts.untickAllIn', { where: seasonTitle(s.number) })} onclick={() => (ticks = { ...ticks, [p.number]: [] })}>{t('requests.parts.none')}</button>
 						{/if}
 					</header>
-					{#if list === null}<p class="hint">Loading season {s.number}…</p>
-					{:else if !list.length}<p class="hint">No episode list for season {s.number} yet.</p>
+					{#if list === null}<p class="hint">{t('requests.parts.loadingSeason', { n: s.number })}</p>
+					{:else if !list.length}<p class="hint">{t('requests.parts.noEpisodes', { n: s.number })}</p>
 					{:else}
-						<ol class="sp-list" aria-label="Season {s.number} episodes">
+						<ol class="sp-list" aria-label={t('requests.parts.seasonEpisodes', { n: s.number })}>
 							{#each list as e (e.number)}
 								{@const on = p.ticked.includes(e.number)}
 								{@const later = !!e.air_day && e.air_day.slice(0, 10) > today}
 								<li class:off={!on} class:later data-testid="ask-episode">
 									<label class="sp-item">
-										{#if editable}<input class="tick" type="checkbox" checked={on} aria-label="Episode {e.number}: {e.name || `Episode ${e.number}`}" onchange={() => tickEpisode(p, e.number)} />{:else}<span class="mk" class:no={!on} role="img" aria-label={on ? markOn : markOff}><Icon name={on ? 'check' : 'dash'} size={14} /></span>{/if}
+										{#if editable}<input class="tick" type="checkbox" checked={on} aria-label={t('requests.parts.episodeTick', { n: e.number, name: e.name || t('requests.parts.episodeN', { n: e.number }) })} onchange={() => tickEpisode(p, e.number)} />{:else}<span class="mk" class:no={!on} role="img" aria-label={on ? markOn : markOff}><Icon name={on ? 'check' : 'dash'} size={14} /></span>{/if}
 										<span class="n">E{e.number}</span>
-										<span class="t">{e.name || `Episode ${e.number}`}</span>
-										{#if !p.asked.includes(e.number)}<span class="tag">Not asked for</span>{/if}
-										<span class="y">{later ? 'airs ' : ''}{shortDay(e.air_day)}</span>
+										<span class="t">{e.name || t('requests.parts.episodeN', { n: e.number })}</span>
+										{#if !p.asked.includes(e.number)}<span class="tag">{t('requests.parts.notAskedFor')}</span>{/if}
+										<span class="y">{later ? t('requests.parts.airs', { date: shortDay(e.air_day) }) : shortDay(e.air_day)}</span>
 									</label>
 								</li>
 							{/each}
@@ -306,31 +308,31 @@
 								<!-- The whole row opens and closes the song list; the tick and the buttons keep their own job. -->
 								<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
 								<div class="line rowtap" onclick={(e) => { if (!(e.target as HTMLElement).closest('input, button')) openAlbum = openAlbum === r.key ? '' : r.key; }}>
-									{#if editable}<input class="tick" type="checkbox" checked={p.tick === 'all'} indeterminate={p.tick === 'some'} aria-label="Tick {r.main.name}" onchange={() => tickAlbum(p)} />{/if}
+									{#if editable}<input class="tick" type="checkbox" checked={p.tick === 'all'} indeterminate={p.tick === 'some'} aria-label={t('requests.parts.tick', { name: r.main.name })} onchange={() => tickAlbum(p)} />{/if}
 									<span class="cover">{#if r.main.image}<img src={coverFor(r.main.image, 32).src} alt="" loading="lazy" decoding="async" onerror={(e) => ((e.currentTarget as HTMLImageElement).style.display = 'none')} />{/if}</span>
 									<span class="t">{r.main.name}</span>
 									{#if r.editions.length}
-										<button type="button" class="more" aria-expanded={openEditions === r.key} onclick={() => (openEditions = openEditions === r.key ? '' : r.key)}>{r.editions.length + 1} editions</button>
+										<button type="button" class="more" aria-expanded={openEditions === r.key} onclick={() => (openEditions = openEditions === r.key ? '' : r.key)}>{t('requests.parts.editions', { n: r.editions.length + 1 })}</button>
 									{/if}
-									<span class="y">{p.list?.length ? (p.tick === 'all' ? `${p.list.length} songs` : `${p.ticked.length} of ${p.list.length}`) + (r.main.year ? ` · ${r.main.year}` : '') : (r.main.year ?? '')}</span>
-									<button type="button" class="open" aria-expanded={openAlbum === r.key} aria-label="Songs of {r.main.name}" onclick={() => (openAlbum = openAlbum === r.key ? '' : r.key)}><span class="chev" class:up={openAlbum === r.key}><Icon name="chevronDown" size={14} /></span></button>
+									<span class="y">{p.list?.length ? (p.tick === 'all' ? t(`requests.parts.songs.${p.list.length === 1 ? 'one' : 'other'}`, { n: p.list.length }) : t('requests.parts.ofCount', { kept: p.ticked.length, all: p.list.length })) + (r.main.year ? ` · ${r.main.year}` : '') : (r.main.year ?? '')}</span>
+									<button type="button" class="open" aria-expanded={openAlbum === r.key} aria-label={t('requests.parts.songsOf', { name: r.main.name })} onclick={() => (openAlbum = openAlbum === r.key ? '' : r.key)}><span class="chev" class:up={openAlbum === r.key}><Icon name="chevronDown" size={14} /></span></button>
 								</div>
 								{#if openAlbum === r.key}
 									<div transition:slide={slideIn()}>
 										{#if p.list === null}
-											<p class="hint">Loading songs…</p>
+											<p class="hint">{t('requests.parts.loadingSongs')}</p>
 										{:else if !p.list.length}
-											<p class="hint" data-testid="songs-none">No song list for this album yet.</p>
+											<p class="hint" data-testid="songs-none">{t('requests.parts.noSongs')}</p>
 										{:else}
-											<ol class="eps" aria-label="Songs of {r.main.name}">
-												{#each p.list as t (songKey(t))}
-													{@const on = p.ticked.includes(songKey(t))}
+											<ol class="eps" aria-label={t('requests.parts.songsOf', { name: r.main.name })}>
+												{#each p.list as sg (songKey(sg))}
+													{@const on = p.ticked.includes(songKey(sg))}
 													<li class:off={!on} data-testid="ask-song">
 														<label class="ep">
-															{#if editable}<input class="tick" type="checkbox" checked={on} aria-label="Song {t.number}" onchange={() => tickSong(p, songKey(t))} />{/if}
-															<span class="n">{t.disc > 1 ? `${t.disc}-` : ''}{t.number}</span>
-															<span class="t">{t.name || `Song ${t.number}`}</span>
-															<span class="y">{songLen(t.length_ms)}</span>
+															{#if editable}<input class="tick" type="checkbox" checked={on} aria-label={t('requests.parts.songN', { n: sg.number })} onchange={() => tickSong(p, songKey(sg))} />{/if}
+															<span class="n">{sg.disc > 1 ? `${sg.disc}-` : ''}{sg.number}</span>
+															<span class="t">{sg.name || t('requests.parts.songN', { n: sg.number })}</span>
+															<span class="y">{songLen(sg.length_ms)}</span>
 														</label>
 													</li>
 												{/each}
@@ -339,7 +341,7 @@
 									</div>
 								{/if}
 								{#if openEditions === r.key}
-									<ul class="eds" transition:slide={slideIn()} aria-label="Editions of {r.main.name}">
+									<ul class="eds" transition:slide={slideIn()} aria-label={t('requests.parts.editionsOf', { name: r.main.name })}>
 										{#each r.editions as e (e.mbid)}<li><span class="t">{e.name}</span><span class="y">{e.year ?? ''}</span></li>{/each}
 									</ul>
 								{/if}
@@ -353,32 +355,32 @@
 							<li class:off={p.tick === 'none'} data-testid="ask-season" data-tick={p.tick}>
 								<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
 								<div class="line rowtap" onclick={(e) => { if (!(e.target as HTMLElement).closest('input, button')) openSeason = openSeason === s.number ? 0 : s.number; }}>
-									{#if editable}<input class="tick" type="checkbox" checked={p.tick === 'all'} indeterminate={p.tick === 'some'} aria-label={s.number === 0 ? 'Tick every episode in specials' : `Tick every episode in season ${s.number}`} onchange={() => tickSeason(p)} />{/if}
+									{#if editable}<input class="tick" type="checkbox" checked={p.tick === 'all'} indeterminate={p.tick === 'some'} aria-label={s.number === 0 ? t('requests.parts.tickSpecials') : t('requests.parts.tickSeason', { n: s.number })} onchange={() => tickSeason(p)} />{/if}
 									<button type="button" class="season" aria-expanded={openSeason === s.number} onclick={() => (openSeason = openSeason === s.number ? 0 : s.number)}>
-										<span class="t">Season {s.number}{#if words}<span class="sub"> · {words}</span>{/if}</span>
-										<span class="y">{p.tick === 'none' ? 'Left out' : p.ticked.length !== p.asked.length || p.tick === 'some' ? `${p.ticked.length} ticked` : ''}</span>
+										<span class="t">{t('requests.parts.season', { n: s.number })}{#if words}<span class="sub"> · {words}</span>{/if}</span>
+										<span class="y">{p.tick === 'none' ? t('requests.parts.leftOut') : p.ticked.length !== p.asked.length || p.tick === 'some' ? t('requests.parts.ticked', { n: p.ticked.length }) : ''}</span>
 										<span class="chev" class:up={openSeason === s.number}><Icon name="chevronDown" size={14} /></span>
 									</button>
 								</div>
 								{#if openSeason === s.number}
 									<div transition:slide={slideIn()}>
 										{#if list === null}
-											<p class="hint">Loading season {s.number}…</p>
+											<p class="hint">{t('requests.parts.loadingSeason', { n: s.number })}</p>
 										{:else if !list.length}
-											<p class="hint">No episode list for season {s.number} yet.</p>
+											<p class="hint">{t('requests.parts.noEpisodes', { n: s.number })}</p>
 										{:else}
-											<ol class="eps" aria-label="Season {s.number} episodes">
+											<ol class="eps" aria-label={t('requests.parts.seasonEpisodes', { n: s.number })}>
 												{#each list as e (e.number)}
 													{@const on = p.ticked.includes(e.number)}
 													{@const notAsked = !p.asked.includes(e.number)}
 													{@const later = !!e.air_day && e.air_day.slice(0, 10) > today}
 													<li class:later class:off={!on} data-testid="ask-episode">
 														<label class="ep">
-															{#if editable}<input class="tick" type="checkbox" checked={on} aria-label="Episode {e.number}" onchange={() => tickEpisode(p, e.number)} />{/if}
+															{#if editable}<input class="tick" type="checkbox" checked={on} aria-label={t('requests.parts.episodeN', { n: e.number })} onchange={() => tickEpisode(p, e.number)} />{/if}
 															<span class="n">E{e.number}</span>
-															<span class="t">{e.name || `Episode ${e.number}`}</span>
-															{#if notAsked}<span class="tag" data-testid="not-asked">Not asked for</span>{/if}
-															<span class="y">{later ? 'airs ' : ''}{shortDay(e.air_day)}</span>
+															<span class="t">{e.name || t('requests.parts.episodeN', { n: e.number })}</span>
+															{#if notAsked}<span class="tag" data-testid="not-asked">{t('requests.parts.notAskedFor')}</span>{/if}
+															<span class="y">{later ? t('requests.parts.airs', { date: shortDay(e.air_day) }) : shortDay(e.air_day)}</span>
 														</label>
 													</li>
 												{/each}

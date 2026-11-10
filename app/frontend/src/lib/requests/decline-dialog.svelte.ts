@@ -1,5 +1,6 @@
 // The decline dialog: the reason chips, the note and the confirm.
 import { tick } from 'svelte';
+import { t } from '#lib/core/i18n/i18n.svelte.ts';
 import type { Ask } from '#lib/core/types.ts';
 
 export function createDeclineDialog(ctx: any) {
@@ -8,7 +9,7 @@ export function createDeclineDialog(ctx: any) {
 	let declineWhy = $state('');
 	let whyBox = $state<HTMLTextAreaElement>();
 	// One-tap reasons for the people who asked; the box stays free to type.
-	const reasons = ['Already have it', 'Not for kids', 'Asked before', 'Not enough space right now'];
+	const reasonKeys = ['alreadyHave', 'notForKids', 'askedBefore', 'noSpace'];
 	function askDecline(list: Ask[]) {
 		declineList = list;
 		declineWhy = '';
@@ -58,7 +59,7 @@ export function createDeclineDialog(ctx: any) {
 		set whyBox(v) { whyBox = v; },
 		get declineWhy() { return declineWhy; },
 		set declineWhy(v) { declineWhy = v; },
-		get reasons() { return reasons; },
+		get reasons() { return reasonKeys.map((k) => t(`requests.decline.reason.${k}`)); },
 		hasWhy,
 		tapWhy,
 	};

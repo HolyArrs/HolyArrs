@@ -1,0 +1,16 @@
+{
+	"settings.danger.stopping": "HolyArrs を停止しています。",
+	"settings.danger.couldnt": "{action}できませんでした",
+	"settings.danger.title": "危険な操作",
+	"settings.danger.ownerOnly": "オーナーと管理者のみ",
+	"settings.danger.ask": "{label}しますか?",
+	"settings.danger.yes": "はい、{action}",
+	"settings.danger.cancel": "キャンセル",
+	"settings.danger.expires": "60 秒で無効になります",
+	"settings.danger.wholeApp": "アプリ全体",
+	"settings.danger.intro": "これらの操作は HolyArrs を停止します。Docker の再起動ポリシーが <code>no</code> でなければ、数秒後に自動で再開します。ポリシーが no の場合は、コンテナーを自分で起動してください。どの操作も、実行前に確認します。",
+	"settings.danger.restart": "HolyArrs を再起動",
+	"settings.danger.safe": "セーフモードで再起動",
+	"settings.danger.shutdown": "シャットダウン",
+	"settings.danger.safeNote": "サインイン、設定、ライブラリだけで一度起動します。パートが原因で起動できないときに使います。"
+}

@@ -1,5 +1,7 @@
 // Sign-in art: which picture, at which size, for this screen. The server answers same-origin picture addresses (its artwork cache, since TMDB sends no CORS header and the reveal draws on a canvas) with each picture's native size; this file picks the served size for the screen it is shown on.
 
+import { t } from '#lib/core/i18n/i18n.svelte.ts';
+
 export type ArtImage = { url: string; w: number; h: number };
 export type ArtShot = { backdrop: ArtImage; poster?: ArtImage; logo: string };
 export type Screen = { vw: number; vh: number; dpr: number };
@@ -100,19 +102,13 @@ export async function prepareSlide(
 	return { shot: entry.shot, pick: entry.pick, logo: logo ? logoUrl : null };
 }
 
-const NAMES: Record<Exclude<Way, 'password'>, string> = {
-	plex: 'Plex',
-	jellyfin: 'Jellyfin',
-	emby: 'Emby',
-	oidc: 'Single sign-on',
-	forward_auth: 'Trusted proxy'
-};
+const nameOf = (way: Exclude<Way, 'password'>): string => (way === 'oidc' ? t('accounts.tiles.sso') : way === 'forward_auth' ? t('accounts.tiles.proxy') : way === 'plex' ? 'Plex' : way === 'jellyfin' ? 'Jellyfin' : 'Emby');
 
 /** The tile row: only the outside ways the owner turned on, in a fixed order. */
 export function providerTiles(ways: readonly Way[]): ProviderTile[] {
 	const order = ['plex', 'jellyfin', 'emby', 'oidc', 'forward_auth'] as const;
 	const on = order.filter((w) => ways.includes(w));
-	return on.map((way) => ({ way, name: NAMES[way], label: on.length > 1 ? NAMES[way] : `Continue with ${NAMES[way]}` }));
+	return on.map((way) => ({ way, name: nameOf(way), label: on.length > 1 ? nameOf(way) : t('accounts.tiles.continueWith', { name: nameOf(way) }) }));
 }
 
 /** The invite page's tiles: the media-server ways only (single sign-on and the proxy make no new people from an invite). */

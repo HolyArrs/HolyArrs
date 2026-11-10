@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -84,13 +85,16 @@ func tracksOf(ctx context.Context, db database.Querier, slotIDs []int64) []Track
 
 // trackWords names tracks for a subject: "Album (Year)" when they are of
 // one album (with the track when it is one), else how many.
-func trackWords(ts []Track) string {
+func trackWords(ts []Track) string { return trackWordsIn("", ts) }
+
+// trackWordsIn is trackWords in an app language.
+func trackWordsIn(lang string, ts []Track) string {
 	if len(ts) == 0 {
 		return ""
 	}
 	for _, t := range ts[1:] {
 		if t.Album != ts[0].Album {
-			return fmt.Sprintf("%d tracks", len(ts))
+			return say(lang, "tracks", "n", strconv.Itoa(len(ts)))
 		}
 	}
 	if len(ts) == 1 {

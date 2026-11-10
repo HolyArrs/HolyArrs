@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	// History page: a search bar, a live dot and one Filter (steps, type, who, dates, Source). Active filters show as removable chips. Routine work is left out. Every filter lives in the address, so Back and links show the same list. Old ?look= and ?acts= links are ignored.
 	import Icon from '#lib/ui/Icon.svelte';
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
@@ -27,18 +28,18 @@
 	// Owners and admins can narrow to one Source's grabs and pauses; feed checks stay hidden.
 	const srcId = $derived(Number(page.url.searchParams.get('source')) || undefined);
 	let sources = $state<{ id: number; name: string }[]>([]);
-	const srcName = $derived(sources.find((x) => x.id === srcId)?.name ?? 'One Source');
+	const srcName = $derived(sources.find((x) => x.id === srcId)?.name ?? t('downloads.hpage.oneSource'));
 	// Links from a title or episode page keep the list to that title (?title=, ?episode=).
 	const link = $derived(readFilter(page.url.searchParams));
 	let episodeName = $state('');
 	const chips = $derived([
-		...(link.title ? [{ key: 'title', label: titleById.get(link.title)?.name ?? 'One title', change: { title: undefined, episode: undefined } }] : []),
-		...(link.episode ? [{ key: 'episode', label: episodeName || 'One episode', change: { episode: undefined } }] : []),
+		...(link.title ? [{ key: 'title', label: titleById.get(link.title)?.name ?? t('downloads.hpage.oneTitle'), change: { title: undefined, episode: undefined } }] : []),
+		...(link.episode ? [{ key: 'episode', label: episodeName || t('downloads.hpage.oneEpisode'), change: { episode: undefined } }] : []),
 		...searchChips(st),
 		...(srcId ? [{ key: 'source', label: srcName, change: { source: undefined } }] : [])
 	]);
 	const kinds = $derived(stepKinds(st.steps));
-	const typeOptions: { value: MediaType; label: string }[] = [{ value: '', label: 'All' }, ...(Object.entries(typeLabels) as [MediaType, string][]).map(([value, label]) => ({ value, label }))];
+	const typeOptions = $derived<{ value: MediaType; label: string }[]>([{ value: '', label: t('downloads.hpage.all') }, ...(Object.entries(typeLabels) as [MediaType, string][]).map(([value, label]) => ({ value, label }))]);
 	const when = $derived(whenOf(st.from, st.to));
 	let customOpen = $state(false);
 	const showDates = $derived(customOpen || when === 'custom');
@@ -61,14 +62,14 @@
 		if (!q.trim() && !type && !who && !fails) return undefined;
 		return (e: EventRecord) => !(fails && fineCheck(e)) && (exact && !link.title ? true : textMatches(e, q, people)) && typeMatches(e.TitleID ? titleById.get(e.TitleID)?.kind : undefined, type) && whoMatches(e, who, me);
 	});
-	const problem = $derived(dateRangeProblem(st) ? 'Start date is after end date.' : '');
+	const problem = $derived(dateRangeProblem(st) ? t('downloads.hpage.dateProblem') : '');
 	const filtered = $derived(chips.length > 0 || !!st.q.trim());
 	const empty = $derived(
 		problem
 			? { title: problem, text: '' }
 			: filtered
-				? { title: 'Nothing matches.', text: '' }
-				: { title: 'No Events yet.', text: '' }
+				? { title: t('downloads.hpage.nothingMatches'), text: '' }
+				: { title: t('downloads.hpage.noEvents'), text: '' }
 	);
 	const clearAll = () => {
 		text = '';
@@ -189,7 +190,7 @@
 </script>
 
 {#snippet fields()}
-	<div class="fl"><span class="fh" id="hf-step">Step</span>
+	<div class="fl"><span class="fh" id="hf-step">{t('downloads.hpage.step')}</span>
 		<div class="steps" role="group" aria-labelledby="hf-step">
 			{#each searchSteps as s, i (s.key)}
 				{#if i === stepBreak}<span class="brk" aria-hidden="true"></span>{/if}
@@ -197,57 +198,57 @@
 			{/each}
 		</div>
 	</div>
-	<div class="fl"><span class="fh">Type</span>
-		<SegmentedControl size="sm" label="Type" options={typeOptions} value={st.type} onchange={(v) => set({ type: v })} testid="history-type" />
+	<div class="fl"><span class="fh">{t('downloads.hpage.type')}</span>
+		<SegmentedControl size="sm" label={t('downloads.hpage.type')} options={typeOptions} value={st.type} onchange={(v) => set({ type: v })} testid="history-type" />
 	</div>
-	<div class="fl"><span class="fh" id="hf-who">Who</span>
+	<div class="fl"><span class="fh" id="hf-who">{t('downloads.hpage.who')}</span>
 		<div class="steps" role="group" aria-labelledby="hf-who">
 			{#each Object.entries(whoLabels) as [k, v] (k)}<button type="button" class="step" aria-pressed={st.who === k} onclick={() => set({ who: k })}>{v}</button>{/each}
 		</div>
 	</div>
-	<div class="fl"><span class="fh" id="hf-when">When</span>
+	<div class="fl"><span class="fh" id="hf-when">{t('downloads.hpage.when')}</span>
 		<div class="steps" role="group" aria-labelledby="hf-when">
 			{#each whenSpans as w (w.days)}<button type="button" class="step" aria-pressed={!showDates && when === w.days} onclick={() => pickWhen(w.days)}>{w.label}</button>{/each}
-			<button type="button" class="step" aria-pressed={showDates} onclick={() => (customOpen = true)}>Custom</button>
+			<button type="button" class="step" aria-pressed={showDates} onclick={() => (customOpen = true)}>{t('downloads.hpage.custom')}</button>
 		</div>
 		{#if showDates}
 			<div class="two">
-				<label class="fl"><span class="sr-only">From</span><input class="fc" type="date" aria-label="From" value={st.from ?? ''} max={st.to} onchange={(e) => set({ from: e.currentTarget.value })} /></label>
-				<label class="fl"><span class="sr-only">To</span><input class="fc" type="date" aria-label="To" value={st.to ?? ''} min={st.from} onchange={(e) => set({ to: e.currentTarget.value })} /></label>
+				<label class="fl"><span class="sr-only">{t('downloads.hpage.from')}</span><input class="fc" type="date" aria-label={t('downloads.hpage.from')} value={st.from ?? ''} max={st.to} onchange={(e) => set({ from: e.currentTarget.value })} /></label>
+				<label class="fl"><span class="sr-only">{t('downloads.hpage.to')}</span><input class="fc" type="date" aria-label={t('downloads.hpage.to')} value={st.to ?? ''} min={st.from} onchange={(e) => set({ to: e.currentTarget.value })} /></label>
 			</div>
 		{/if}
 	</div>
 	{#if sources.length}
-		<label class="fl"><span class="fh">Source</span>
+		<label class="fl"><span class="fh">{t('downloads.hpage.source')}</span>
 			<select class="fc" value={srcId ?? ''} onchange={(e) => set({ source: e.currentTarget.value || undefined })}>
-				<option value="">All</option>
+				<option value="">{t('downloads.hpage.all')}</option>
 				{#each sources as x (x.id)}<option value={x.id}>{x.name}</option>{/each}
 			</select>
 		</label>
 	{/if}
 	{#if problem}<p class="bad" role="alert">{problem}</p>{/if}
-	{#if chips.length}<button type="button" class="clear" onclick={() => clearAll()}>Clear</button>{/if}
+	{#if chips.length}<button type="button" class="clear" onclick={() => clearAll()}>{t('downloads.hpage.clear')}</button>{/if}
 {/snippet}
 
-<h1 class="sr-only">History</h1>
+<h1 class="sr-only">{t('downloads.hpage.history')}</h1>
 <div class="toolbar" class:stuck data-testid="history-search-bar">
-	{#if dlTop.collapsed && !phone}<span class="cap"><IconButton icon="sidebar" label="Show sidebar" onclick={() => dlTop.toggle()} data-testid="history-side-btn" /></span>{/if}
+	{#if dlTop.collapsed && !phone}<span class="cap"><IconButton icon="sidebar" label={t('downloads.bar.showSidebar')} onclick={() => dlTop.toggle()} data-testid="history-side-btn" /></span>{/if}
 	<label class="search">
 		<span class="mag" aria-hidden="true"><Icon name="search" size={16} /></span>
-		<span class="sr-only">Search</span>
-		<input bind:this={findEl} type="search" placeholder="Search titles, people, Sources…" value={text} oninput={(e) => typed(e.currentTarget.value)} />
-		<span class="live" class:off={live.status.state !== 'live'} title={live.status.state === 'live' ? 'Updates as they happen' : 'Reconnecting'}><span class="dot" aria-hidden="true"></span>Live</span>
+		<span class="sr-only">{t('downloads.hpage.search')}</span>
+		<input bind:this={findEl} type="search" placeholder={t('downloads.hpage.searchPh')} value={text} oninput={(e) => typed(e.currentTarget.value)} />
+		<span class="live" class:off={live.status.state !== 'live'} title={live.status.state === 'live' ? t('downloads.hpage.updates') : t('downloads.hpage.reconnecting')}><span class="dot" aria-hidden="true"></span>{t('downloads.hpage.live')}</span>
 		{#if !phone}<kbd class="kb" aria-hidden="true">{dlTop.searchKey}</kbd>{/if}
 	</label>
 	<div class="right">
 		<div class="anchor">
-			<button type="button" class="sf-btn" bind:this={btn} aria-haspopup="dialog" aria-expanded={open} aria-label="Filter{chips.length ? `, ${chips.length} on` : ''}" onclick={toggle}>
+			<button type="button" class="sf-btn" bind:this={btn} aria-haspopup="dialog" aria-expanded={open} aria-label={chips.length ? t('downloads.hpage.filterOn', { count: chips.length }) : t('downloads.hpage.filter')} onclick={toggle}>
 				<svg class="funnel" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M2.5 3.5h11l-4.2 5v4l-2.6 1.2V8.5z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" /></svg>
-				<span>Filter</span>
+				<span>{t('downloads.hpage.filter')}</span>
 				{#if chips.length}<span class="badge" aria-hidden="true">{chips.length}</span>{/if}
 			</button>
 			{#if open && !phone}
-				<div class="menu" role="dialog" aria-label="Filter" tabindex="-1" bind:this={pop} onkeydown={keys} in:fly={{ y: -8, duration: ms(280), easing: cubicOut }} out:fade={{ duration: ms(180) }}>
+				<div class="menu" role="dialog" aria-label={t('downloads.hpage.filter')} tabindex="-1" bind:this={pop} onkeydown={keys} in:fly={{ y: -8, duration: ms(280), easing: cubicOut }} out:fade={{ duration: ms(180) }}>
 					{@render fields()}
 				</div>
 			{/if}
@@ -257,16 +258,16 @@
 {#if chips.length}
 	<div class="chips" data-testid="history-chips">
 		{#each chips as c (c.key)}
-			<button type="button" class="chip" aria-label="Remove {c.label}" onclick={() => set(c.change)}>{c.label}<Icon name="x" size={12} /></button>
+			<button type="button" class="chip" aria-label={t('alerts.panel.remove', { text: c.label })} onclick={() => set(c.change)}>{c.label}<Icon name="x" size={12} /></button>
 		{/each}
-		<button type="button" class="all" onclick={clearAll}>Clear filters</button>
+		<button type="button" class="all" onclick={clearAll}>{t('downloads.bar.clear')}</button>
 	</div>
 {/if}
 {#if open && phone}
 	<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
 	<div class="scrim" aria-hidden="true" in:fade={{ duration: ms(300) }} out:fade={{ duration: ms(200) }} onclick={() => close()}></div>
-	<div class="sheet" role="dialog" aria-modal="true" aria-label="Filter" tabindex="-1" bind:this={pop} onkeydown={keys} in:fly={{ y: 80, duration: ms(420), easing: cubicOut }} out:fly={{ y: 80, duration: ms(200), easing: cubicIn }}>
-		<div class="sh"><span class="sht">Filter</span><button type="button" class="done" onclick={() => close()}><Icon name="check" size={16} />Done</button></div>
+	<div class="sheet" role="dialog" aria-modal="true" aria-label={t('downloads.hpage.filter')} tabindex="-1" bind:this={pop} onkeydown={keys} in:fly={{ y: 80, duration: ms(420), easing: cubicOut }} out:fly={{ y: 80, duration: ms(200), easing: cubicIn }}>
+		<div class="sh"><span class="sht">{t('downloads.hpage.filter')}</span><button type="button" class="done" onclick={() => close()}><Icon name="check" size={16} />{t('downloads.hpage.done')}</button></div>
 		{@render fields()}
 	</div>
 {/if}

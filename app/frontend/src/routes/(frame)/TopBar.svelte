@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import IconButton from '#lib/ui/IconButton.svelte';
 	import { SearchField, topBar, cameFrom, pageLabel, type CameFrom } from '#lib/discover/index.ts';
 	import { afterNavigate } from '$app/navigation';
@@ -63,17 +64,17 @@
 	<div class="lead">
 		{#if showToggle || history}
 			<div class="glass nav">
-				{#if showToggle}<IconButton bind:node={toggle} icon="sidebar" label="Show sidebar" aria-expanded={false} aria-controls={controls} onclick={ontoggle} />{/if}
+				{#if showToggle}<IconButton bind:node={toggle} icon="sidebar" label={t('frame.sidebar.show')} aria-expanded={false} aria-controls={controls} onclick={ontoggle} />{/if}
 				{#if history}
-					<IconButton icon="chevronLeft" label="Back" onclick={() => window.history.back()} />
-					<IconButton icon="chevronRight" label="Forward" onclick={() => window.history.forward()} />
+					<IconButton icon="chevronLeft" label={t('frame.top.back')} onclick={() => window.history.back()} />
+					<IconButton icon="chevronRight" label={t('frame.top.forward')} onclick={() => window.history.forward()} />
 				{/if}
 			</div>
 		{/if}
 		{#if history && (first || here)}
-			<nav class="crumbs" aria-label="Breadcrumb" data-testid="top-crumbs">
+			<nav class="crumbs" aria-label={t('frame.top.breadcrumb')} data-testid="top-crumbs">
 				{#if first}<a href={first.href} onclick={stepBack}>{first.label}</a><span class="sep" aria-hidden="true">›</span>{/if}
-				{#if here}<span class="here" aria-current="page">{here}</span>{/if}
+				{#if here}<span class="here" aria-current="page" title={here}>{here}</span>{/if}
 			</nav>
 		{/if}
 	</div>
@@ -105,11 +106,12 @@
 	.glass, .crumbs { border-radius: 999px; background: color-mix(in srgb, var(--surface-2) 70%, transparent); box-shadow: 0 8px 24px rgb(0 0 0 / 0.18), 0 0 0 0.5px color-mix(in srgb, var(--text) 14%, transparent); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); }
 	.nav { display: flex; align-items: center; height: 44px; padding: 0 2px; }
 	.nav :global(button) { width: 38px; height: 38px; border-radius: 999px; }
-	.crumbs { display: flex; align-items: center; min-width: 0; margin-left: 8px; height: 44px; padding: 0 18px; font: 500 13px/1 var(--font-ui); color: var(--text-muted); white-space: nowrap; }
+	.crumbs { display: flex; align-items: center; min-width: 0; margin-inline-start: 8px; height: 44px; padding: 0 18px; font: 500 13px/1 var(--font-ui); color: var(--text-muted); white-space: nowrap; }
 	.crumbs a { display: inline-flex; align-items: center; min-height: 24px; color: var(--text-muted); text-decoration: none; transition: color var(--dur-fast) var(--ease-out); }
 	.crumbs a:hover { color: var(--text); }
 	.crumbs .sep { margin: 0 6px; opacity: .5; }
-	.crumbs .here { overflow: hidden; text-overflow: ellipsis; max-width: 28vw; color: var(--text); font-weight: 600; }
+	/* Long page names (other languages) wrap to a second line instead of cutting off; the search stays centred. */
+	.crumbs .here { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; white-space: normal; overflow-wrap: break-word; min-width: 0; line-height: 1.15; max-width: 28vw; color: var(--text); font-weight: 600; }
 	@media (max-width: 1099px) { .crumbs { display: none; } }
 	@media (max-width: 767px) { .ui-topbar { display: none; } }
 </style>

@@ -1,5 +1,6 @@
 // What a music or TV ask is made of, for the Requests panel's lists: an artist ask's albums (one row per album, its other editions folded under it, singles and EPs, live albums and compilations counted apart), and a show ask's seasons.
 
+import { t } from '#lib/core/i18n/i18n.svelte.ts';
 import type { SeasonInfo } from './inbox.ts';
 import type { Ask } from '../core/types.ts';
 
@@ -76,14 +77,6 @@ export interface PartsPick {
 }
 
 export const musicDefaults: MusicKinds = { album_types: ['album', 'ep'], secondary_types: ['studio'] };
-
-const kindWords: Record<AlbumKind, [string, string]> = {
-	albums: ['album', 'albums'],
-	singles: ['single or EP', 'singles & EPs'],
-	live: ['live album', 'live albums'],
-	compilations: ['compilation', 'compilations'],
-	other: ['soundtrack or remix', 'soundtracks & remixes']
-};
 
 const kindOrder: AlbumKind[] = ['albums', 'singles', 'live', 'compilations', 'other'];
 
@@ -163,7 +156,7 @@ export function albumCounts(groups: Pick<AlbumGroup, 'kind'>[]): string {
 	for (const g of groups) n.set(g.kind, (n.get(g.kind) ?? 0) + 1);
 	return kindOrder
 		.filter((k) => n.get(k))
-		.map((k) => `${n.get(k)} ${kindWords[k][n.get(k) === 1 ? 0 : 1]}`)
+		.map((k) => t(`requests.albumKind.${k}.${n.get(k) === 1 ? 'one' : 'other'}`, { n: n.get(k) ?? 0 }))
 		.join(' · ');
 }
 
@@ -205,12 +198,15 @@ export function seasonPick(row: SeasonRow, list: { number: number }[] | null, ti
 	return { number: row.number, all, asked, ticked: t, tick };
 }
 
+const episodes = (n: number) => t(`requests.parts.episodes.${n === 1 ? 'one' : 'other'}`, { n });
+const seasons = (n: number) => t(`requests.parts.seasons.${n === 1 ? 'one' : 'other'}`, { n });
+
 /** What the person asked of a season: "all 8 episodes", "5 of 8 episodes". */
 export function askedWords(p: Pick<SeasonPick, 'all' | 'asked'>): string {
 	const n = p.all.length;
-	if (!n) return p.asked.length ? `${p.asked.length} episode${p.asked.length === 1 ? '' : 's'}` : 'episodes not listed yet';
-	if (p.asked.length >= n) return n === 1 ? '1 episode' : `all ${n} episodes`;
-	return `${p.asked.length} of ${n} episodes`;
+	if (!n) return p.asked.length ? episodes(p.asked.length) : t('requests.parts.notListed');
+	if (p.asked.length >= n) return n === 1 ? episodes(1) : t('requests.parts.allEpisodes', { n });
+	return t('requests.parts.someEpisodes', { kept: p.asked.length, n });
 }
 
 /** Sums the ticks: "All 3 seasons · 16 episodes", "2 of 3 seasons · 18 episodes", "2 seasons + 5 episodes · 21 episodes". */
@@ -218,20 +214,19 @@ export function picksHead(picks: SeasonPick[]): string {
 	const whole = picks.filter((p) => p.tick === 'all');
 	const some = picks.filter((p) => p.tick === 'some');
 	const eps = picks.reduce((n, p) => n + p.ticked.length, 0);
-	const total = eps ? `${eps} episode${eps === 1 ? '' : 's'}` : '';
+	const total = eps ? episodes(eps) : '';
 	if (!some.length) return keptWords(whole.length, picks.length, 'season', total);
 	const single = some.reduce((n, p) => n + p.ticked.length, 0);
-	const head = [whole.length ? `${whole.length} season${whole.length === 1 ? '' : 's'}` : '', `${single} episode${single === 1 ? '' : 's'}`].filter(Boolean).join(' + ');
-	return whole.length ? `${head} · ${total}` : `${head} from ${some.length === 1 ? `season ${some[0].number}` : `${some.length} seasons`}`;
+	const head = [whole.length ? seasons(whole.length) : '', episodes(single)].filter(Boolean).join(' + ');
+	return whole.length ? `${head} · ${total}` : some.length === 1 ? t('requests.parts.fromSeason', { head, n: some[0].number }) : t('requests.parts.fromSeasons', { head, n: some.length });
 }
 
 /** Whether the ticks differ from what was asked. */
 export const picksChanged = (picks: SeasonPick[]) => picks.some((p) => p.ticked.length !== p.asked.length || p.ticked.some((n) => !p.asked.includes(n)));
 
 /** "3 of 4 seasons · 30 episodes" or "11 of 12 albums" after the approver left some out. */
-export function keptWords(kept: number, all: number, noun: string, extra = ''): string {
-	const many = all === 1 ? noun : `${noun}s`;
-	const head = kept === all ? (all === 1 ? `1 ${noun}` : `All ${all} ${many}`) : `${kept} of ${all} ${many}`;
+export function keptWords(kept: number, all: number, noun: 'season' | 'album', extra = ''): string {
+	const head = kept === all ? (all === 1 ? t(`requests.kept.${noun}.one`) : t(`requests.kept.${noun}.all`, { n: all })) : t(`requests.kept.${noun}.${all === 1 ? 'someOne' : 'some'}`, { kept, all });
 	return extra ? `${head} · ${extra}` : head;
 }
 
@@ -241,6 +236,6 @@ export function songsHead(albums: string, rows: { all: number | null; ticked: nu
 	if (!known.length) return albums;
 	const all = known.reduce((n, r) => n + (r.all ?? 0), 0);
 	const kept = known.reduce((n, r) => n + r.ticked, 0);
-	const words = kept === all ? `${all} song${all === 1 ? '' : 's'}` : `${kept} of ${all} songs`;
+	const words = kept === all ? t(`requests.parts.songs.${all === 1 ? 'one' : 'other'}`, { n: all }) : t('requests.parts.someSongs', { kept, all });
 	return albums ? `${albums} · ${words}` : words;
 }

@@ -5,6 +5,7 @@ import type { StatusKind } from '#lib/ui/StatusPill.svelte';
 import type { IconName } from '#lib/ui/Icon.svelte';
 import { quality } from '#lib/ui/title-cards.ts';
 import { date } from '../core/format.ts';
+import { t as tr } from '../core/i18n/i18n.svelte.ts';
 
 export type LibStateKey =
 	| 'failed' | 'needs_decision' | 'stalled' | 'missing_file' | 'missing' | 'better_wanted' | 'paused' | 'downloading' | 'queued'
@@ -80,9 +81,9 @@ function askOf(t: TitleView): 'asked' | 'approved' | 'turned_down' | null {
 
 // Maps a request answer to a state when nothing is owned yet.
 function askState(ask: ReturnType<typeof askOf>): LibState | null {
-	if (ask === 'approved') return make('approved', 'Searching');
-	if (ask === 'asked') return make('waiting_approval', 'Waiting');
-	if (ask === 'turned_down') return make('declined', 'Declined');
+	if (ask === 'approved') return make('approved', tr('mediafiles.state.searching'));
+	if (ask === 'asked') return make('waiting_approval', tr('mediafiles.state.waiting'));
+	if (ask === 'turned_down') return make('declined', tr('mediafiles.state.declined'));
 	return null;
 }
 
@@ -90,31 +91,31 @@ function askState(ask: ReturnType<typeof askOf>): LibState | null {
 function movieState(t: TitleView, now: number): LibState {
 	const slots = t.slots ?? [];
 	const st = (s: string) => slots.some((x) => x.state === s);
-	if (st('failed')) return make('failed', 'Failed');
-	if (st('needs_a_decision')) return make('needs_decision', 'To review');
+	if (st('failed')) return make('failed', tr('mediafiles.state.failed'));
+	if (st('needs_a_decision')) return make('needs_decision', tr('mediafiles.state.toReview'));
 	const dl = slots.find((s) => s.download?.active || ['chosen', 'downloading', 'stalled', 'importing'].includes(s.state));
 	if (dl) {
 		const d = dl.download;
 		const p = pct(d?.progress);
-		if (dl.state === 'stalled' || d?.state === 'stalled') return make('stalled', `Stalled · ${p}%`, p);
-		if (d?.state === 'paused') return make('paused', `Paused · ${p}%`, p);
-		if (d?.state === 'queued' || d?.state === 'sent' || dl.state === 'chosen') return make('queued', 'Queued');
-		if (dl.state === 'importing') return make('downloading', 'Importing', 100);
-		return make('downloading', `Downloading · ${p}%`, p);
+		if (dl.state === 'stalled' || d?.state === 'stalled') return make('stalled', tr('mediafiles.state.stalled', { p }), p);
+		if (d?.state === 'paused') return make('paused', tr('mediafiles.state.paused', { p }), p);
+		if (d?.state === 'queued' || d?.state === 'sent' || dl.state === 'chosen') return make('queued', tr('mediafiles.state.queued'));
+		if (dl.state === 'importing') return make('downloading', tr('mediafiles.state.importing'), 100);
+		return make('downloading', tr('mediafiles.state.downloadingPct', { p }), p);
 	}
-	if (slots.some((s) => s.file?.State === 'missing')) return make('missing_file', 'Missing file');
+	if (slots.some((s) => s.file?.State === 'missing')) return make('missing_file', tr('mediafiles.state.missingFile'));
 	const q = quality(t);
-	if (st('better_wanted')) return make('better_wanted', q ? `Better copy · ${q}` : 'Better copy');
+	if (st('better_wanted')) return make('better_wanted', q ? tr('mediafiles.state.betterCopyQ', { q }) : tr('mediafiles.state.betterCopy'));
 	const has = slots.some((s) => s.state === 'in_library' || s.state === 'no_hardlink' || !!s.file);
-	if (!t.keep_up_to_date) return make('not_kept', has && q ? `Not kept · ${q}` : 'Not kept');
-	if (has) return make('in_library', q ? `In library · ${q}` : 'In library');
+	if (!t.keep_up_to_date) return make('not_kept', has && q ? tr('mediafiles.state.notKeptQ', { q }) : tr('mediafiles.state.notKept'));
+	if (has) return make('in_library', q ? tr('mediafiles.state.inLibraryQ', { q }) : tr('mediafiles.state.inLibrary'));
 	const ask = askState(askOf(t));
 	if (ask) return ask;
 	if (st('not_out_yet') || st('waiting')) {
 		const d = t.digital_date ?? t.physical_date ?? t.cinema_date;
-		return make('not_out_yet', d && Date.parse(d) > now ? `Upcoming · ${date(d)}` : 'Upcoming');
+		return make('not_out_yet', d && Date.parse(d) > now ? tr('mediafiles.state.upcomingOn', { date: date(d) }) : tr('mediafiles.state.upcoming'));
 	}
-	return make('missing', 'Missing');
+	return make('missing', tr('mediafiles.state.missing'));
 }
 
 // Same idea as movieState, using the show or artist counts.
@@ -124,27 +125,27 @@ function groupState(t: TitleView, now: number): LibState | null {
 	if (!s) return askState(askOf(t));
 	const dl = s.downloading ?? 0;
 	const failed = s.failed ?? 0;
-	if (failed > 0) return make('failed', `Failed · ${failed}`);
-	if (dl > 0) return make('downloading', `Downloading · ${dl}`);
-	if (!s.in_library && !s.missing && !s.not_out_yet && !s.better_wanted && !askOf(t)) return t.keep_up_to_date ? null : make('not_kept', 'Not kept');
+	if (failed > 0) return make('failed', tr('mediafiles.state.failedN', { n: failed }));
+	if (dl > 0) return make('downloading', tr('mediafiles.state.downloadingN', { n: dl }));
+	if (!s.in_library && !s.missing && !s.not_out_yet && !s.better_wanted && !askOf(t)) return t.keep_up_to_date ? null : make('not_kept', tr('mediafiles.state.notKept'));
 	if (s.in_library === 0 && s.missing === 0) {
 		const ask = askState(askOf(t));
 		if (ask) return ask;
 	}
-	if (!t.keep_up_to_date && s.missing === 0) return make('not_kept', 'Not kept');
+	if (!t.keep_up_to_date && s.missing === 0) return make('not_kept', tr('mediafiles.state.notKept'));
 	if (show && t.show) {
 		const kept = t.show.seasons.filter((x) => x.keep_up_to_date && !x.dropped);
-		if (kept.length > 0 && kept.every((x) => x.number === 0)) return make('specials_only', `Specials only · ${t.show.in_library}`);
+		if (kept.length > 0 && kept.every((x) => x.number === 0)) return make('specials_only', tr('mediafiles.state.specialsOnly', { n: t.show.in_library }));
 	}
-	if (s.missing > 0) return make('missing', `Missing · ${s.missing}`);
-	if (s.better_wanted > 0) return make('better_wanted', `Better copy · ${s.better_wanted}`);
+	if (s.missing > 0) return make('missing', tr('mediafiles.state.missingN', { n: s.missing }));
+	if (s.better_wanted > 0) return make('better_wanted', tr('mediafiles.state.betterCopyN', { n: s.better_wanted }));
 	if (s.in_library === 0) {
 		const next = show ? t.show?.next_air_date : t.artist?.next_release;
-		if (s.not_out_yet > 0 || next) return make('not_out_yet', next && Date.parse(next) > now ? `Upcoming · ${date(next)}` : 'Upcoming');
+		if (s.not_out_yet > 0 || next) return make('not_out_yet', next && Date.parse(next) > now ? tr('mediafiles.state.upcomingOn', { date: date(next) }) : tr('mediafiles.state.upcoming'));
 		const ask = askState(askOf(t));
 		if (ask) return ask;
-		return make('missing', 'Missing');
+		return make('missing', tr('mediafiles.state.missing'));
 	}
-	if (show && t.show?.status === 'ended') return make('ended', 'Complete · ended');
-	return make('up_to_date', 'Complete');
+	if (show && t.show?.status === 'ended') return make('ended', tr('mediafiles.state.completeEnded'));
+	return make('up_to_date', tr('mediafiles.state.complete'));
 }

@@ -2,6 +2,7 @@
 import { secondVersion } from './library.ts';
 import { api, message } from '#lib/core/api.ts';
 import { toasts } from '#lib/core/toasts.svelte.ts';
+import { t } from '#lib/core/i18n/i18n.svelte.ts';
 import type { LibraryFolder, PickRulesView, TitleView, VersionView } from '#lib/core/types.ts';
 
 export function createTitleVersions(ctx: { title: TitleView | null; rules: PickRulesView[]; id: number; allVersions: boolean; load: (which?: 'all' | 'title' | 'releases') => Promise<void> }) {
@@ -60,12 +61,12 @@ export function createTitleVersions(ctx: { title: TitleView | null; rules: PickR
 	}
 
 	async function removeVersion(v: VersionView) {
-		if (!confirm(`Stop keeping the ${v.label} Version of this movie? Files on disk are not touched.`)) return;
+		if (!confirm(t('movies.versions.stopConfirm', { label: v.label }))) return;
 		try {
 			await api.del(`/titles/${ctx.id}/versions/${v.id}`);
 			await ctx.load('title');
 		} catch (e) {
-			toasts.push(`Couldn't remove Version`, 'fail', { body: message(e) });
+			toasts.push(t('movies.versions.removeFailed'), 'fail', { body: message(e) });
 		}
 	}
 

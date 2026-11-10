@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	// Needs a decision now lives on the Downloads rows (Problems > Needs a decision; a row's sheet holds the choices). Old links land there.
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
@@ -9,4 +10,4 @@
 	});
 </script>
 
-<svelte:head><title>Downloads · HolyArrs</title></svelte:head>
+<svelte:head><title>{t('downloads.page.title')}</title></svelte:head>

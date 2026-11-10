@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import Badge from '#lib/ui/Badge.svelte';
 	import ArtPlaceholder from '#lib/ui/ArtPlaceholder.svelte';
 	import IconButton from '#lib/ui/IconButton.svelte';
@@ -40,7 +41,7 @@
 	// A click anywhere on the card opens a window with the details and a way to the page.
 	const isEp = $derived(e.kind === 'episode');
 	const code = $derived(isEp ? epCode(g.entries) : '');
-	const epLines = $derived(isEp ? [[lines[0], code].filter(Boolean).join(' · '), n > 1 ? `${n} episodes` : e.episode_name || lines[1] || ''] : lines);
+	const epLines = $derived(isEp ? [[lines[0], code].filter(Boolean).join(' · '), n > 1 ? t('discover.calTile.episodes', { n }) : e.episode_name || lines[1] || ''] : lines);
 	const words = $derived(rowWords(g, look, today));
 	const page = $derived(to(entryHref(e)));
 	function show(ev: MouseEvent) {
@@ -70,12 +71,12 @@
 		</a>
 		{#if onfollow}
 			<span class="bell" class:on={e.following}>
-				<IconButton icon={e.following ? 'bellOn' : 'bell'} size="sm" variant="glass" label="{e.following ? 'Unfollow' : 'Follow'} {entryTitle(e)}" aria-pressed={!!e.following} onclick={() => onfollow(e, !e.following)} data-testid="cal-follow" />
+				<IconButton icon={e.following ? 'bellOn' : 'bell'} size="sm" variant="glass" label={e.following ? t('discover.calTile.unfollow', { name: entryTitle(e) }) : t('discover.calTile.follow', { name: entryTitle(e) })} aria-pressed={!!e.following} onclick={() => onfollow(e, !e.following)} data-testid="cal-follow" />
 			</span>
 		{/if}
 	</div>
 	{#snippet capLines()}
-		{#each lines as l, i (i)}<p class="cap" class:when={i === 0} data-testid="cal-cap">{l}{#if have && i === lines.length - 1}<span class="have"> · In the Library</span>{/if}</p>{/each}
+		{#each lines as l, i (i)}<p class="cap" class:when={i === 0} data-testid="cal-cap">{l}{#if have && i === lines.length - 1}<span class="have"> {t('discover.calTile.inTheLibrary')}</span>{/if}</p>{/each}
 	{/snippet}
 	<button type="button" class="caps tap" onclick={() => (open = true)} aria-haspopup="dialog" data-testid="cal-open">{@render capLines()}</button>
 	<CalWindow bind:open {g} {today} {look} />

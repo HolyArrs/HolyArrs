@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	// Season pills with a shelf of episode cards for the chosen season.
 	import Skeleton from '#lib/ui/Skeleton.svelte';
 	import Shelf from '#lib/ui/Shelf.svelte';
@@ -9,6 +10,7 @@
 	import { api } from '../core/api.ts';
 	import { date } from '../core/format.ts';
 	import { sized } from '../core/tmdb-image.ts';
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 
 	type Ep = { number: number; name?: string; overview?: string; runtime?: number; still?: string; air_day?: string };
 
@@ -65,27 +67,27 @@
 		if (!Array.isArray(list)) return [];
 		return list.map((e) => {
 			const abs = anime ? animeEpisode(anime, n, e.number).absolute : undefined;
-			const when = e.air_day ? date(e.air_day) : 'No air date yet';
-			return { key: e.number, name: `${e.number}. ${e.name || `Episode ${e.number}`}`, still: e.still || fallback, line: [e.runtime ? runtimeWords(e.runtime) : '', abs ? `${when} · Absolute ${abs}` : when].filter(Boolean).join(' · '), overview: e.overview };
+			const when = e.air_day ? date(e.air_day) : t('shows.why.noAirDateShort');
+			return { key: e.number, name: `${e.number}. ${e.name || t('shows.list.episodeFallback', { n: e.number })}`, still: e.still || fallback, line: [e.runtime ? runtimeWords(e.runtime) : '', abs ? `${when} · ${t('shows.list.absolute', { n: abs })}` : when].filter(Boolean).join(' · '), overview: e.overview };
 		});
 	}
 </script>
 
 {#if seasons.length}
 	<section class="tp-section seasons" aria-labelledby="h-seasons" data-testid="season-row">
-		<h2 id="h-seasons" class="tp-h2">Seasons</h2>
-		<div class="pills" role="group" aria-label="Season">
+		<h2 id="h-seasons" class="tp-h2">{t('shows.folds.seasons')}</h2>
+		<div class="pills" role="group" aria-label={t('shows.picker.season')}>
 			{#each ordered as s (s.number)}
-				<button type="button" class="pill" aria-pressed={shown === s.number} onclick={() => (picked = s.number)}>{seasonName(s.number)}{#if fresh === s.number}<span class="dot" aria-label="New"></span>{/if}</button>
+				<button type="button" class="pill" aria-pressed={shown === s.number} onclick={() => (picked = s.number)}>{seasonName(s.number)}{#if fresh === s.number}<span class="dot" aria-label={t('shows.picker.new')}></span>{/if}</button>
 			{/each}
 		</div>
-		{#if cur}<p class="xs muted line">{cur.episodes} {cur.episodes === 1 ? 'episode' : 'episodes'}{cur.year ? ` · ${cur.year}` : ''}</p>{/if}
+		{#if cur}<p class="xs muted line">{t(cur.episodes === 1 ? 'shows.list.countOne' : 'shows.list.countOther', { n: cur.episodes })}{cur.year ? ` · ${cur.year}` : ''}</p>{/if}
 		{#if shown !== null}
 			{#if eps[shown] === 'error'}
-				<p class="small muted">The episodes of {seasonName(shown)} could not be read; try again shortly.</p>
+				<p class="small muted">{t('shows.list.readFailed', { season: seasonName(shown) })}</p>
 			{:else if Array.isArray(eps[shown])}
 				{#key shown}
-					<Shelf title="{seasonName(shown)} episodes" item="260px" placeholder="wide" whole>
+					<Shelf title={t('shows.folds.seasonEpisodes', { season: seasonName(shown) })} item="260px" placeholder="wide" whole>
 						{#each cards(shown) as c (c.key)}
 							<article class="ep">
 								<span class="still">
@@ -93,11 +95,11 @@
 									{#if c.still && stillState[`${shown}:${c.key}`] !== 'bad'}<img src={sized(c.still, 'backdrop', 300)} alt="" loading="lazy" decoding="async" onload={() => (stillState[`${shown}:${c.key}`] = 'ok')} onerror={() => (stillState[`${shown}:${c.key}`] = 'bad')} />{/if}
 								</span>
 								<b class="ep-name">{c.name}</b>
-								<span class="xs muted">{c.line}</span>
+								<span class="xs muted">{serverWords(c.line)}</span>
 								{#if c.overview}<p class="ep-text">{c.overview}</p>{/if}
 							</article>
 						{:else}
-							<p class="small muted">No episodes listed yet.</p>
+							<p class="small muted">{t('shows.list.none')}</p>
 						{/each}
 					</Shelf>
 				{/key}

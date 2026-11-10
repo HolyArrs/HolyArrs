@@ -1,4 +1,6 @@
 <script lang="ts">
+	import Words from '#lib/ui/Words.svelte';
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
@@ -91,7 +93,7 @@
 	}
 
 	function keyNote(e: unknown): string {
-		return e instanceof ApiError && e.status === 403 ? 'Sign in with your password to manage AI keys.' : message(e);
+		return e instanceof ApiError && e.status === 403 ? t('settings.ai.signInKeys') : message(e);
 	}
 
 	async function load() {
@@ -125,10 +127,10 @@
 		saving = true;
 		try {
 			enabled = (await api.put<{ enabled: boolean }>('/settings/ai', { enabled: v })).enabled;
-			toasts.push(enabled ? 'AI apps on' : 'AI apps off', 'ok');
+			toasts.push(enabled ? t('settings.ai.on') : t('settings.ai.off'), 'ok');
 		} catch (e) {
 			enabled = before;
-			toasts.push("Couldn't save", 'fail', { body: message(e) });
+			toasts.push(t('settings.ai.couldntSave'), 'fail', { body: message(e) });
 		} finally {
 			saving = false;
 		}
@@ -147,7 +149,7 @@
 			fresh = { id: r.id, key: r.key, label: r.label, app: forApp };
 			keys = (await api.get<{ keys: ApiKey[] }>('/auth/keys')).keys;
 		} catch (err) {
-			toasts.push("Couldn't make key", 'fail', { body: keyNote(err) });
+			toasts.push(t('settings.ai.makeFailed'), 'fail', { body: keyNote(err) });
 		} finally {
 			making = false;
 		}
@@ -180,9 +182,9 @@
 			keys = keys.filter((x) => x.id !== k.id);
 			// A revoked key leaves the steps and the prompt, and Make a key comes back.
 			if (fresh?.id === k.id) fresh = null;
-			toasts.push(`${k.label} revoked`, 'ok');
+			toasts.push(t('settings.ai.revoked', { name: k.label }), 'ok');
 		} catch (e) {
-			toasts.push("Couldn't revoke key", 'fail', { body: keyNote(e) });
+			toasts.push(t('settings.ai.revokeFailed'), 'fail', { body: keyNote(e) });
 		} finally {
 			revokeBusy = false;
 		}
@@ -197,7 +199,7 @@
 		clientError = '';
 		clientID = '';
 		if (!redirectURI.trim()) {
-			clientError = "Paste Gemini's redirect URI first.";
+			clientError = t('settings.ai.pasteRedirect');
 			return;
 		}
 		try {
@@ -207,26 +209,26 @@
 				body: JSON.stringify({ client_name: app?.name ?? 'Gemini app', redirect_uris: [redirectURI.trim()] })
 			});
 			if (r.status === 400) {
-				clientError = "HolyArrs didn't accept that address. Copy the redirect URI from Gemini again, starting with https://.";
+				clientError = t('settings.ai.notAccepted');
 				return;
 			}
 			if (!r.ok) throw new Error(String(r.status));
 			clientID = (await r.json()).client_id;
 		} catch {
-			clientError = "HolyArrs didn't answer. Try again.";
+			clientError = t('settings.ai.noAnswer');
 		}
 	}
 
 	async function copy(text: string) {
 		try {
 			await navigator.clipboard.writeText(text);
-			toasts.push('Text copied', 'ok');
+			toasts.push(t('settings.ai.textCopied'), 'ok');
 		} catch {
-			toasts.push("Couldn't copy", 'fail', { body: 'Select it instead' });
+			toasts.push(t('settings.ai.copyFailed'), 'fail', { body: t('settings.ai.selectInstead') });
 		}
 	}
 
-	const copyName = (code: string) => (code.includes('\n') ? 'Copy config' : code === url ? 'Copy AI address' : code.startsWith('Authorization:') ? 'Copy header' : 'Copy command');
+	const copyName = (code: string) => (code.includes('\n') ? t('settings.ai.copyConfig') : code === url ? t('settings.ai.copyAddress') : code.startsWith('Authorization:') ? t('settings.ai.copyHeader') : t('settings.ai.copyCommand'));
 </script>
 
 {#snippet text(parts: Part[])}{#each parts as p, i (i)}{#if p.code}<code>{p.text}</code>{:else if p.b}<b>{p.text}</b>{:else}{p.text}{/if}{/each}{/snippet}
@@ -234,12 +236,12 @@
 {#snippet freshBox()}
 	{#if fresh}
 		<div class="fresh" role="status" bind:this={freshEl}>
-			<p class="small"><b>Copy this key now</b></p>
-			<p class="small">{fresh.label}: it's shown only once. If you lose it, make a new one.</p>
+			<p class="small"><b>{t('settings.ai.copyKeyNow')}</b></p>
+			<p class="small">{t('settings.ai.shownOnce', { name: fresh.label })}</p>
 			<div class="fresh-row">
 				<code class="key grow">{fresh.key}</code>
-				<Button icon="copy" type="button" onclick={() => fresh && copy(fresh.key)}>Copy</Button>
-				<Button variant="plain" type="button" onclick={doneWithKey}>Close</Button>
+				<Button icon="copy" type="button" onclick={() => fresh && copy(fresh.key)}>{t('settings.ai.copy')}</Button>
+				<Button variant="plain" type="button" onclick={doneWithKey}>{t('settings.ai.close')}</Button>
 			</div>
 		</div>
 	{/if}
@@ -250,23 +252,23 @@
 		<div class="panel" id="ai-app-panel" data-testid="ai-guide" bind:this={panelEl}>
 			<h4 class="h3" tabindex="-1" bind:this={panelHead}>{app.name}</h4>
 			{#if picked.row && appsFor(picked.row).length > 1}
-				<div class="which" role="group" aria-label="Which app">
+				<div class="which" role="group" aria-label={t('settings.ai.whichApp')}>
 					{#each appsFor(picked.row) as a (a.id)}
 						<Chip label={a.name} selected={a.id === app.id} onclick={() => pickApp(a)} />
 					{/each}
 				</div>
 			{/if}
 			{#if unreachable}
-				<p class="notice" data-testid="ai-unreachable">Needs a public https address.</p>
-				<a class="small guide-link" href="{GUIDES_URL}#home-network" target="_blank" rel="noopener noreferrer">Only on your home network?</a>
+				<p class="notice" data-testid="ai-unreachable">{t('settings.ai.needsPublic')}</p>
+				<a class="small guide-link" href="{GUIDES_URL}#home-network" target="_blank" rel="noopener noreferrer">{t('settings.ai.homeNetwork')}</a>
 			{:else}
 				{#if app.needs}<p class="small muted">{app.needs}</p>{/if}
 				{#if needsKey && fresh?.app !== app.id}
 					<div class="keyrow">
-						<Button icon="key" variant="primary" type="button" onclick={() => newKey(app.name, app.id)} disabled={making || !!keysNote} aria-busy={making} aria-label="Make a key for {app.name}">
-							{making ? 'Making a key…' : 'Make a key'}
+						<Button icon="key" variant="primary" type="button" onclick={() => newKey(app.name, app.id)} disabled={making || !!keysNote} aria-busy={making} aria-label={t('settings.ai.makeKeyFor', { name: app.name })}>
+							{making ? t('settings.ai.makingKey') : t('settings.ai.makeKey')}
 						</Button>
-						<span class="xs muted">{keysNote || "It's filled into the steps and the agent prompt, and shown only now."}</span>
+						<span class="xs muted">{keysNote || t('settings.ai.filledIn')}</span>
 					</div>
 				{:else if fresh && fresh.app === app.id}
 					{@render freshBox()}
@@ -284,7 +286,7 @@
 								{#if s.code}
 									<div class="codebox">
 										<pre>{s.code}</pre>
-										<Button icon="copy" size="sm" type="button" aria-label={copyName(s.code)} onclick={() => copy(s.code ?? '')}>Copy</Button>
+										<Button icon="copy" size="sm" type="button" aria-label={copyName(s.code)} onclick={() => copy(s.code ?? '')}>{t('settings.ai.copy')}</Button>
 									</div>
 								{/if}
 							</div>
@@ -293,8 +295,8 @@
 				</ol>
 				{#if app.clientIdHelper}
 					<form class="client-id" onsubmit={makeClientID} data-testid="ai-client-id" novalidate>
-						<p class="small">Gemini needs a client ID</p>
-						<label class="label" for="ai-redirect">Gemini's redirect URI</label>
+						<p class="small">{t('settings.ai.needsClientId')}</p>
+						<label class="label" for="ai-redirect">{t('settings.ai.redirectUri')}</label>
 						<div class="keyrow">
 							<input
 								id="ai-redirect"
@@ -308,96 +310,95 @@
 								autocomplete="off"
 								aria-describedby="ai-redirect-hint"
 							/>
-							<Button type="submit">Make client ID</Button>
+							<Button type="submit">{t('settings.ai.makeClientId')}</Button>
 						</div>
-						<p class="hint" id="ai-redirect-hint">In Gemini, open <b>Show more</b> next to <b>Advanced features</b> and copy the redirect URI.</p>
+						<p class="hint" id="ai-redirect-hint"><Words key="settings.ai.geminiHint" /></p>
 						{#if clientError}<p class="notice warn" role="alert">{clientError}</p>{/if}
 						{#if clientID}
-							<div class="xs muted">Client ID</div>
+							<div class="xs muted">{t('settings.ai.clientId')}</div>
 							<div class="codebox">
 								<pre>{clientID}</pre>
-								<Button icon="copy" size="sm" type="button" aria-label="Copy client ID" onclick={() => copy(clientID)}>Copy</Button>
+								<Button icon="copy" size="sm" type="button" aria-label={t('settings.ai.copyClientId')} onclick={() => copy(clientID)}>{t('settings.ai.copy')}</Button>
 							</div>
-							<p class="small">Paste into Gemini, leave the secret empty, press <b>Next</b></p>
+							<p class="small"><Words key="settings.ai.pasteGemini" /></p>
 						{/if}
 					</form>
 				{/if}
 				{#if testedLine(app)}<p class="xs muted" data-testid="ai-tested">{testedLine(app)}</p>{/if}
-				{#if app.check}<p class="xs muted"><b>Check:</b> {app.check}</p>{/if}
+				{#if app.check}<p class="xs muted"><b>{t('settings.ai.check')}</b> {app.check}</p>{/if}
 				{#if app.note}<p class="xs muted">{app.note}</p>{/if}
 			{/if}
 		</div>
 	{/if}
 {/snippet}
 
-<svelte:head><title>AI apps · HolyArrs</title></svelte:head>
+<svelte:head><title>{t('settings.ai.title')} · HolyArrs</title></svelte:head>
 
-<PageHeader title="AI apps" />
+<PageHeader title={t('settings.ai.title')} />
 
 {#if !loaded}
 	<SkSettings rows={3} />
 {:else if error}
 	<LoadError hasData={false} message={error} onretry={load} busy={false} />
 {:else}
-	<SettingsCard id="ai-switch" title="AI apps">
+	<SettingsCard id="ai-switch" title={t('settings.ai.title')}>
 		<p class="small muted" style="margin: var(--s-2) 0 var(--s-3)">
-			AI apps like Claude, ChatGPT or Cursor can check your library, calendar and downloads, and request titles for you. They can only do what you allow,
-			and every request they make shows in History.
+			{t('settings.ai.intro')}
 		</p>
 		<label class="switch">
 			<input type="checkbox" checked={enabled} disabled={!isOwner || saving} aria-busy={saving} onchange={(e) => setEnabled(e.currentTarget.checked)} />
 			<span class="sw" aria-hidden="true"></span>
-			<span>Let AI apps connect</span>
+			<span>{t('settings.ai.letConnect')}</span>
 		</label>
-		{#if !isOwner}<p class="hint">Only the owner can turn this on or off.</p>{/if}
+		{#if !isOwner}<p class="hint">{t('settings.ai.ownerOnly')}</p>{/if}
 		<ul class="facts small muted">
-			<li>AI apps act as you, with your permissions and Limits</li>
-			<li>AI apps check with you before requesting. Only people approve.</li>
-			<li>At most 60 calls a minute and 5 requests an hour per app.</li>
+			<li>{t('settings.ai.fact1')}</li>
+			<li>{t('settings.ai.fact2')}</li>
+			<li>{t('settings.ai.fact3')}</li>
 		</ul>
 	</SettingsCard>
 
-	<SettingsCard id="ai-connect" title="Connect an AI app">
-		<div class="small addr-label">AI address</div>
+	<SettingsCard id="ai-connect" title={t('settings.ai.connect')}>
+		<div class="small addr-label">{t('settings.ai.address')}</div>
 		<div class="addr-row">
 			<code class="addr grow" data-testid="ai-address">{url}</code>
-			<Button icon="copy" size="sm" type="button" aria-label="Copy AI address" onclick={() => copy(url)}>Copy</Button>
+			<Button icon="copy" size="sm" type="button" aria-label={t('settings.ai.copyAddress')} onclick={() => copy(url)}>{t('settings.ai.copy')}</Button>
 		</div>
-		<p class="xs muted">Shows an error in a browser; that's expected</p>
-		{#if !enabled}<p class="notice warn"><span>Turn on <b>Let AI apps connect</b> above first. Until then, AI apps get "not found".</span></p>{/if}
+		<p class="xs muted">{t('settings.ai.errorExpected')}</p>
+		{#if !enabled}<p class="notice warn"><span><Words key="settings.ai.turnOnFirst" /></span></p>{/if}
 		<p class="small muted mode" data-testid="ai-mode">
 			{#if signIn}
-				Apps sign in through your browser. You press Allow once.
+				{t('settings.ai.modeSignIn')}
 			{:else}
-				This is a plain-http address, so most apps won't sign in through the browser. Use an AI key: press <b>Make a key</b> next to your app below.
+				<Words key="settings.ai.modeHttp" />
 			{/if}
 		</p>
 
 		<section class="part" aria-labelledby="ai-steps-h">
-			<h3 class="h3" id="ai-steps-h">Connect in 3 steps</h3>
+			<h3 class="h3" id="ai-steps-h">{t('settings.ai.threeSteps')}</h3>
 			<ol class="steps" data-testid="ai-steps">
-				<li><span class="num" aria-hidden="true">1</span><p class="st">In your AI app, add a custom connector or MCP server.</p></li>
-				<li><span class="num" aria-hidden="true">2</span><p class="st">Paste your AI address.</p></li>
+				<li><span class="num" aria-hidden="true">1</span><p class="st">{t('settings.ai.step1')}</p></li>
+				<li><span class="num" aria-hidden="true">2</span><p class="st">{t('settings.ai.step2')}</p></li>
 				<li>
 					<span class="num" aria-hidden="true">3</span>
 					<p class="st">
 						{#if signIn}
-							HolyArrs opens in your browser. Sign in if it asks, then press <b>Allow</b>.
+							<Words key="settings.ai.step3SignIn" />
 						{:else}
-							Paste the AI key from <b>Make a key</b> where your app asks for a header or key.
+							<Words key="settings.ai.step3Key" />
 						{/if}
 					</p>
 				</li>
 			</ol>
-			<p class="small muted">Cloud AI apps (Claude, ChatGPT, Gemini, Grok, Perplexity) need a public https address</p>
-			<a class="small guide-link" href="{GUIDES_URL}#home-network" target="_blank" rel="noopener noreferrer">Only on your home network?</a>
+			<p class="small muted">{t('settings.ai.cloudNeeds')}</p>
+			<a class="small guide-link" href="{GUIDES_URL}#home-network" target="_blank" rel="noopener noreferrer">{t('settings.ai.homeNetwork')}</a>
 		</section>
 
 		<section class="part" aria-labelledby="ai-apps-h">
-			<h3 class="h3" id="ai-apps-h">Where to add HolyArrs</h3>
+			<h3 class="h3" id="ai-apps-h">{t('settings.ai.whereAdd')}</h3>
 			<table class="apps" data-testid="ai-table" aria-labelledby="ai-apps-h">
 				<thead>
-					<tr><th scope="col">App</th><th scope="col">Where to add it</th><th scope="col" class="guide-h"><span class="sr-only">Guide</span></th></tr>
+					<tr><th scope="col">{t('settings.ai.colApp')}</th><th scope="col">{t('settings.ai.colWhere')}</th><th scope="col" class="guide-h"><span class="sr-only">{t('settings.ai.guide')}</span></th></tr>
 				</thead>
 				{#each GROUPS as [g, title] (g)}
 					<tbody>
@@ -411,12 +412,12 @@
 								</th>
 								<td class="where">
 									{#if off}
-										Needs a public https address.
+										{t('settings.ai.needsPublic')}
 									{:else}
-										{@render text(codeParts(whereText(r, url, signIn)))}{#if r.deeplink && signIn}, or <Button size="sm" href={deeplinkHref(r.deeplink, url)}>{DEEPLINK_LABEL[r.deeplink]}</Button>{/if}
+										{@render text(codeParts(whereText(r, url, signIn)))}{#if r.deeplink && signIn}, {t('settings.ai.or')} <Button size="sm" href={deeplinkHref(r.deeplink, url)}>{DEEPLINK_LABEL[r.deeplink]}</Button>{/if}
 									{/if}
 								</td>
-								<td class="guide"><a class="guide-link" href={r.guide} target="_blank" rel="noopener noreferrer" aria-label="Guide for {r.name}">Guide</a></td>
+								<td class="guide"><a class="guide-link" href={r.guide} target="_blank" rel="noopener noreferrer" aria-label={t('settings.ai.guideFor', { name: r.name })}>{t('settings.ai.guide')}</a></td>
 							</tr>
 							{#if narrow && on}
 								<tr class="panel-row"><td colspan="3">{@render panel()}</td></tr>
@@ -426,71 +427,71 @@
 				{/each}
 			</table>
 			{#if !narrow || !picked?.row}{@render panel()}{/if}
-			<a class="small guide-link" href={GUIDES_URL} target="_blank" rel="noopener noreferrer">All AI guides</a>
+			<a class="small guide-link" href={GUIDES_URL} target="_blank" rel="noopener noreferrer">{t('settings.ai.allGuides')}</a>
 		</section>
 
 		<section class="part" aria-labelledby="ai-agent-h">
-			<h3 class="h3" id="ai-agent-h">Or let your agent do it</h3>
-			<p class="small">Paste this into Claude Code, Codex, Cursor or another agent</p>
+			<h3 class="h3" id="ai-agent-h">{t('settings.ai.agent')}</h3>
+			<p class="small">{t('settings.ai.agentPaste')}</p>
 			<div class="codebox">
 				<pre data-testid="ai-prompt">{prompt}</pre>
-				<Button icon="copy" size="sm" type="button" onclick={() => copy(prompt)}>Copy prompt</Button>
+				<Button icon="copy" size="sm" type="button" onclick={() => copy(prompt)}>{t('settings.ai.copyPrompt')}</Button>
 			</div>
 			{#if promptKey}
-				<p class="xs muted">Contains your key. Paste only into your own agent.</p>
+				<p class="xs muted">{t('settings.ai.containsKey')}</p>
 			{:else if !signIn}
-				<p class="xs muted">Press <b>Make a key</b> first to put your key in the prompt.</p>
+				<p class="xs muted"><Words key="settings.ai.pressFirst" /></p>
 			{/if}
 		</section>
 
 		<section class="part" aria-labelledby="ai-check-h" data-testid="ai-check">
-			<h3 class="h3" id="ai-check-h">Check it works</h3>
-			<p class="small">Ask your AI:</p>
+			<h3 class="h3" id="ai-check-h">{t('settings.ai.checkWorks')}</h3>
+			<p class="small">{t('settings.ai.askAi')}</p>
 			<div class="codebox">
 				<pre>{CHECK_QUESTION}</pre>
-				<Button icon="copy" size="sm" type="button" onclick={() => copy(CHECK_QUESTION)}>Copy question</Button>
+				<Button icon="copy" size="sm" type="button" onclick={() => copy(CHECK_QUESTION)}>{t('settings.ai.copyQuestion')}</Button>
 			</div>
-			<p class="xs muted">Any answer about downloads means it works</p>
+			<p class="xs muted">{t('settings.ai.anyAnswer')}</p>
 		</section>
 	</SettingsCard>
 
-	<SettingsCard id="ai-keys" title="Linked AI apps">
-		<p class="small muted" style="margin: var(--s-2) 0 var(--s-4)">Apps that sign in or use a key show here.</p>
+	<SettingsCard id="ai-keys" title={t('settings.ai.linked')}>
+		<p class="small muted" style="margin: var(--s-2) 0 var(--s-4)">{t('settings.ai.linkedNote')}</p>
 		{#if keysNote}
 			<p class="notice warn">{keysNote}</p>
 		{:else}
 			<!-- A key made for the open app shows in its steps instead. -->
 			{#if fresh && !(app && fresh.app === app.id)}{@render freshBox()}{/if}
 			{#if aiKeys.length === 0}
-				<p class="small muted">No AI apps linked</p>
+				<p class="small muted">{t('settings.ai.noneLinked')}</p>
 			{:else}
 				<ul class="rows">
 					{#each aiKeys as k (k.id)}
 						<li>
 							<div class="grow">
 								<div class="name">{k.label} <span class="mono xs muted">{k.hint}</span></div>
-								<div class="xs muted">Made {date(k.created_at)} · {k.last_used_at ? `last used ${ago(k.last_used_at)}` : 'never used'}</div>
+								<div class="xs muted">{t('settings.ai.made', { date: date(k.created_at) })} · {k.last_used_at ? t('settings.ai.lastUsed', { ago: ago(k.last_used_at) }) : t('settings.ai.neverUsed')}</div>
 							</div>
-							<Button variant="destructive" type="button" onclick={() => askRevoke(k)}>Revoke</Button>
+							<Button variant="destructive" type="button" onclick={() => askRevoke(k)}>{t('settings.ai.revoke')}</Button>
 						</li>
 					{/each}
 				</ul>
 			{/if}
 			<details class="more" style="margin-top: var(--s-4)">
-				<summary bind:this={byHand}>Make a key by hand</summary>
+				<summary bind:this={byHand}>{t('settings.ai.byHand')}</summary>
 				<form class="row" onsubmit={makeKey}>
-					<label class="sr-only" for="ai-key-label">Key name</label>
-					<input id="ai-key-label" class="input grow" style="max-width: 320px" bind:value={label} placeholder="For example, Claude Desktop" maxlength="64" />
-					<Button icon="key" type="submit" disabled={making || !label.trim()} aria-busy={making}>Make an AI key</Button>
+					<label class="sr-only" for="ai-key-label">{t('settings.ai.keyName')}</label>
+					<input id="ai-key-label" class="input grow" style="max-width: 320px" bind:value={label} placeholder={t('settings.ai.keyExample')} maxlength="64" />
+					<Button icon="key" type="submit" disabled={making || !label.trim()} aria-busy={making}>{t('settings.ai.makeAiKey')}</Button>
 				</form>
 			</details>
 		{/if}
 	</SettingsCard>
 
-	<Sheet bind:open={revokeOpen} size="sm" title={revoking ? `Revoke ${revoking.label}?` : 'Revoke'} description="The app loses access until you link it again">
+	<Sheet bind:open={revokeOpen} size="sm" title={revoking ? t('settings.ai.revokeName', { name: revoking.label }) : t('settings.ai.revoke')} description={t('settings.ai.revokeDesc')}>
 		<div class="confirm-actions">
-			<Button variant="plain" type="button" onclick={() => (revokeOpen = false)}>Keep it</Button>
-			<Button variant="destructive" type="button" disabled={revokeBusy} onclick={() => revoking && void revoke(revoking)}>Revoke</Button>
+			<Button variant="plain" type="button" onclick={() => (revokeOpen = false)}>{t('settings.ai.keepIt')}</Button>
+			<Button variant="destructive" type="button" disabled={revokeBusy} onclick={() => revoking && void revoke(revoking)}>{t('settings.ai.revoke')}</Button>
 		</div>
 	</Sheet>
 {/if}

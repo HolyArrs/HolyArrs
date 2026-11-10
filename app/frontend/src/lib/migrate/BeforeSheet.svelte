@@ -1,9 +1,11 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
 	import type { ShowList } from './ItemsSheet.svelte';
-	import { chooseHint, needsLook, plural, resultWords, tone, type Bucket, type Line, type PersonChoice } from './move.ts';
+	import { chooseHint, needsLook, resultWords, tone, type Bucket, type Line, type PersonChoice } from './move.ts';
 
 	let {
 		open = $bindable(false),
@@ -31,10 +33,10 @@
 		onshow: ShowList;
 	} = $props();
 
-	const options: { value: string; label: string }[] = [
-		{ value: 'merge', label: 'Same person' },
-		{ value: 'skip', label: 'Leave out' }
-	];
+	const options = $derived<{ value: string; label: string }[]>([
+		{ value: 'merge', label: t('migrate.samePerson') },
+		{ value: 'skip', label: t('migrate.leaveOut') }
+	]);
 	const problems = $derived(
 		groups.flatMap((g) =>
 			(['not_found', 'failed'] as const)
@@ -43,11 +45,11 @@
 		)
 	);
 	function lineRow(l: Line, i: number) {
-		return { key: l.key + ':' + i, name: l.name, hint: l.result === 'not_found' ? undefined : l.detail, pill: { word: resultWords(l.result), tone: tone(l.result) }, look: needsLook(l.result) };
+		return { key: l.key + ':' + i, name: l.name, hint: l.result === 'not_found' ? undefined : serverWords(l.detail), pill: { word: resultWords(l.result), tone: tone(l.result) }, look: needsLook(l.result) };
 	}
 </script>
 
-<Sheet bind:open title="Before you move" description="{total} will come over. Your files stay where they are. These won't come over:" size="md" placement="auto">
+<Sheet bind:open title={t('migrate.beforeYouMove')} description={t('migrate.willMoveTheseWon', { total })} size="md" placement="auto">
 	<div data-testid="before-sheet">
 		{#if notice}<p class="notice warn" role="status">{notice}</p>{/if}
 		{#if problems.length > 0}
@@ -55,27 +57,27 @@
 				{#each problems as p (p.key)}
 					<li class="rg-row" data-testid="problem-row">
 						<span class="rg-txt"><b>{p.lines.length} {p.label.toLowerCase()}</b> · {resultWords(p.result).toLowerCase()}</span>
-						<button type="button" class="rg-show" onclick={() => onshow(p.label, p.lines, lineRow)} aria-label="Show {p.label}, {resultWords(p.result).toLowerCase()}">Show</button>
+						<button type="button" class="rg-show" onclick={() => onshow(p.label, p.lines, lineRow)} aria-label={t('migrate.show3', { label: p.label, result: resultWords(p.result).toLowerCase() })}>{t('migrate.show2')}</button>
 					</li>
 				{/each}
 			</ul>
 		{/if}
 		{#if choose.length > 0}
-			<section class="choices" aria-label="Needs a choice">
-				<h3>Needs a choice</h3>
-				<p class="hint">Until you choose, they stay behind.</p>
+			<section class="choices" aria-label={t('migrate.needsAChoice')}>
+				<h3>{t('migrate.needsAChoice')}</h3>
+				<p class="hint">{t('migrate.untilYouChooseThey')}</p>
 				{#each choose as l, n (l.key)}
 					<div class="crow" data-testid="choice-row">
 						<div class="txt"><span class="label">{l.name}</span><span class="hint">{chooseHint(l.choose)}</span></div>
-						<SegmentedControl label="Choice for {l.name}" testid="move-choice-{n}" {options} value={people[l.key] ?? ''} onchange={(v) => onchoose(l.key, v as PersonChoice)} />
+						<SegmentedControl label={t('migrate.choiceFor', { name: l.name })} testid="move-choice-{n}" {options} value={people[l.key] ?? ''} onchange={(v) => onchoose(l.key, v as PersonChoice)} />
 					</div>
 				{/each}
 			</section>
 		{/if}
 	</div>
 	{#snippet footer()}
-		<Button variant="plain" onclick={() => (open = false)}>Go back</Button>
-		<Button variant="primary" onclick={onmove} disabled={!ready || trying} busy={trying}>Move anyway</Button>
+		<Button variant="plain" onclick={() => (open = false)}>{t('migrate.goBack')}</Button>
+		<Button variant="primary" onclick={onmove} disabled={!ready || trying} busy={trying}>{t('migrate.moveAnyway')}</Button>
 	{/snippet}
 </Sheet>
 

@@ -1,11 +1,13 @@
 <script lang="ts">
 	// Side sheet for one season: files on disk, rename preview and history.
+	import { seasonName } from './labels.ts';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
 	import { RenamePreview } from '#lib/mediafiles/index.ts';
 	import type { SheetEpisode } from './EpisodeSheet.svelte';
 	import { api } from '#lib/core/api.ts';
 	import { ago, bytes } from '#lib/core/format.ts';
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 
 	let {
 		open = $bindable(false),
@@ -42,7 +44,7 @@
 			})
 	);
 	const total = $derived(episodes.reduce((n, e) => n + Number(e.slots[0]?.file?.Size ?? 0), 0));
-	const label = $derived(season === 0 ? 'Specials' : `Season ${season}`);
+	const label = $derived(seasonName(season));
 
 	// History loads only when its tab is open.
 	$effect(() => {
@@ -61,13 +63,13 @@
 <Sheet bind:open title={label} placement="right" size="md">
 	<div class="st" data-testid="season-tools">
 		<div class="st-seg" role="tablist">
-			<button type="button" role="tab" class:on={mode === 'files'} aria-selected={mode === 'files'} onclick={() => (mode = 'files')}>Files</button>
-			<button type="button" role="tab" class:on={mode === 'rename'} aria-selected={mode === 'rename'} onclick={() => (mode = 'rename')}>Rename</button>
-			<button type="button" role="tab" class:on={mode === 'history'} aria-selected={mode === 'history'} onclick={() => (mode = 'history')}>History</button>
+			<button type="button" role="tab" class:on={mode === 'files'} aria-selected={mode === 'files'} onclick={() => (mode = 'files')}>{t('shows.tools.files')}</button>
+			<button type="button" role="tab" class:on={mode === 'rename'} aria-selected={mode === 'rename'} onclick={() => (mode = 'rename')}>{t('shows.tools.rename')}</button>
+			<button type="button" role="tab" class:on={mode === 'history'} aria-selected={mode === 'history'} onclick={() => (mode = 'history')}>{t('shows.tools.history')}</button>
 		</div>
 
 		{#if mode === 'files'}
-			<p class="st-sum">{rows.length} of {episodes.length} episodes on disk{total ? ` · ${bytes(total)}` : ''}</p>
+			<p class="st-sum">{t('shows.tools.onDisk', { have: rows.length, all: episodes.length })}{total ? ` · ${bytes(total)}` : ''}</p>
 			<ul class="st-files">
 				{#each rows as r (r.id)}
 					<li>
@@ -75,17 +77,17 @@
 						<span class="st-main"><b title={r.name}>{r.name}</b><small>{[r.quality, r.size, r.group].filter(Boolean).join(' · ')}</small></span>
 						{#if r.langs.length}<span class="st-langs">{#each r.langs as l (l)}<span>{l}</span>{/each}</span>{/if}
 					</li>
-				{:else}<li class="muted">No files for this season yet.</li>{/each}
+				{:else}<li class="muted">{t('shows.tools.noFiles')}</li>{/each}
 			</ul>
 		{:else if mode === 'rename'}
 			{#key season}<RenamePreview {titleId} {season} onDone={() => onchange?.()} />{/key}
 		{:else}
 			<ol class="st-tl">
 				{#each events as e (e.ID)}<li><span>{(e.Summary ?? e.Kind ?? '').replace(/^./, (c) => c.toUpperCase())}</span><span class="muted">{e.At ? ago(e.At) : ''}</span></li>
-				{:else}<li class="muted">{loadingEvents ? 'Loading…' : 'Nothing has happened in this season yet.'}</li>{/each}
+				{:else}<li class="muted">{loadingEvents ? t('shows.tools.loading') : t('shows.tools.nothingYet')}</li>{/each}
 			</ol>
 		{/if}
-		{#if ondelete}<button type="button" class="st-del" onclick={ondelete}><Icon name="trash" size={16} />Delete {season === 0 ? 'Specials' : `Season ${season}`}</button>{/if}
+		{#if ondelete}<button type="button" class="st-del" onclick={ondelete}><Icon name="trash" size={16} />{t('shows.tools.delete', { season: seasonName(season) })}</button>{/if}
 	</div>
 </Sheet>
 

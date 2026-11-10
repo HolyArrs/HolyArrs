@@ -3,6 +3,7 @@
 	import Popover from '#lib/ui/Popover.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
 	import { moveColumn, type Column } from './table.ts';
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 
 	let { columns, onchange, onreset }: { columns: Column[]; onchange: (c: Column[]) => void; onreset: () => void } = $props();
 
@@ -24,15 +25,15 @@
 		if (to < 0 || to >= columns.length) return;
 		e.preventDefault();
 		onchange(moveColumn(columns, i, to));
-		said = `${columns[i].label} moved to place ${to + 1} of ${columns.length}`;
+		said = t('mediafiles.columns.moved', { label: columns[i].label, place: to + 1, total: columns.length });
 		requestAnimationFrame(() => list?.querySelectorAll<HTMLElement>('.grip')[to]?.focus());
 	}
 </script>
 
-<Popover label="Columns" icon="eye" text="Columns" variant="button" width={260} align="end">
+<Popover label={t('mediafiles.columns.title')} icon="eye" text={t('mediafiles.columns.title')} variant="button" width={260} align="end">
 	{#snippet children()}
 		<div class="chooser">
-			<p class="head">Columns</p>
+			<p class="head">{t('mediafiles.columns.title')}</p>
 			<ul bind:this={list}>
 				{#each columns as c, i (c.id)}
 					<li
@@ -46,11 +47,11 @@
 						ondragend={() => (dragFrom = dragOver = null)}
 					>
 						<label><input type="checkbox" checked={c.on} onchange={() => toggle(i)} /> <span>{c.label}</span></label>
-						<button type="button" class="grip" aria-label="Move {c.label}: up and down arrows" onkeydown={(e) => handleKey(e, i)}><Icon name="menu" size={15} /></button>
+						<button type="button" class="grip" aria-label={t('mediafiles.columns.move', { label: c.label })} onkeydown={(e) => handleKey(e, i)}><Icon name="menu" size={15} /></button>
 					</li>
 				{/each}
 			</ul>
-			<button type="button" class="reset" onclick={onreset}>Reset</button>
+			<button type="button" class="reset" onclick={onreset}>{t('mediafiles.columns.reset')}</button>
 			<span class="sr-only" aria-live="polite">{said}</span>
 		</div>
 	{/snippet}

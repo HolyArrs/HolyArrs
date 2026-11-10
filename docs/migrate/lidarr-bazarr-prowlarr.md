@@ -1,17 +1,17 @@
 ---
 title: Lidarr, Bazarr and Prowlarr
-description: What comes over from Lidarr, Bazarr, Prowlarr, qBittorrent and SABnzbd when you move to HolyArrs.
+description: What comes over from Lidarr, Bazarr, Prowlarr, qBittorrent and SABnzbd when you import into HolyArrs.
 level: Setup
 sidebar: { order: 3 }
 ---
 
-Move your music, subtitle languages, Sources and Downloaders. The steps match [Move from other apps](index.md); this page lists what each app brings.
+Import your music, subtitle languages, Sources and Downloaders. The steps match [Import from other apps](index.md); this page lists what each app brings.
 
-## Move them
+## Import them
 
-1. Open **Settings > Move from other apps** and click **Add an app** for each app.
+1. Open **Settings > Import from other apps** and click **Add an app** for each app.
 2. Type the address and API key, or the backup path, and click **Check connection**. For qBittorrent, type the user name and password, or its API key on version 5.2 and later.
-3. Read each app, then go through **Choose**, **Try it** and **Move**. You should see each app's groups in **Choose**.
+3. Read each app, then go through **Choose**, **Try it** and **Import**. You should see each app's groups in **Choose**.
 
 ## Lidarr
 
@@ -58,7 +58,7 @@ Stays behind: download categories and SABnzbd's usenet servers.
 
 ## Before you turn things on
 
-Type each key again and resume each item. See [After the move](index.md#after-the-move).
+Type each key again and resume each item. See [After the import](index.md#after-the-import).
 
 ## If it does not work
 
@@ -66,10 +66,10 @@ Type each key again and resume each item. See [After the move](index.md#after-th
 | --- | --- | --- |
 | qBittorrent read fails | Wrong user name or password, or the key on a version before 5.2. | Use the user name and password from qBittorrent's Web UI settings. |
 | A Downloader at home does not answer | **May reach the local network** is off. | Turn it on for that Downloader. |
-| A subtitle site is off | It needs an account, which a move cannot bring. | Type the account under **Settings > Subtitles**, then turn it on. |
+| A subtitle site is off | It needs an account, which an import cannot bring. | Type the account under **Settings > Subtitles**, then turn it on. |
 
 ## Related
 
-- [Move from other apps](index.md)
+- [Import from other apps](index.md)
 - [Read your old apps](what-is-read.md)
 - [Request apps](requests-apps.md)

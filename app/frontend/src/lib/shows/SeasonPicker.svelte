@@ -2,6 +2,7 @@
 	// Season dropdown, or a plain label when there is one season.
 	import Menu, { type MenuItem } from '#lib/ui/Menu.svelte';
 	import { seasonName } from './labels.ts';
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 
 	let {
 		seasons,
@@ -18,16 +19,16 @@
 	// Provider names can be missing, so fall back to a generated label.
 	const nameOf = (s: { number: number; name?: string }) => s.name || seasonName(s.number);
 	const cur = $derived(seasons.find((s) => s.number === value));
-	const items = $derived<MenuItem[]>(seasons.map((s) => ({ label: nameOf(s), checked: s.number === value, hint: s.number === fresh ? 'New' : undefined, onselect: () => onpick(s.number) })));
+	const items = $derived<MenuItem[]>(seasons.map((s) => ({ label: nameOf(s), checked: s.number === value, hint: s.number === fresh ? t('shows.picker.new') : undefined, onselect: () => onpick(s.number) })));
 </script>
 
 <span class="picker" data-testid="season-picker">
 	{#if seasons.length > 1}
-		<Menu label="Pick a season" variant="button" icon="tv" text={cur ? nameOf(cur) : 'Season'} align="end" {items} />
+		<Menu label={t('shows.picker.pick')} variant="button" icon="tv" text={cur ? nameOf(cur) : t('shows.picker.season')} align="end" {items} />
 	{:else if cur}
 		<span class="one">{nameOf(cur)}</span>
 	{/if}
-	{#if fresh !== undefined && fresh === value}<span class="new" data-testid="season-new">New</span>{/if}
+	{#if fresh !== undefined && fresh === value}<span class="new" data-testid="season-new">{t('shows.picker.new')}</span>{/if}
 </span>
 
 <style>

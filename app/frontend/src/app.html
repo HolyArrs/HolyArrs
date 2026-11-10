@@ -112,6 +112,14 @@
 				if (t !== 'dark' && t !== 'light') t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 				document.documentElement.dataset.theme = t;
 			} catch (e) {}
+			// The saved language (lib/core/i18n setLang), or the browser's, so text direction is right on the first frame.
+			try {
+				var lg = localStorage.getItem('holyarrs-lang') || (navigator.language || '').toLowerCase().split('-')[0];
+				if (/^[a-z]{2}(-[a-z]{2})?$/.test(lg)) {
+					document.documentElement.lang = lg === 'pt-br' ? 'pt-BR' : lg === 'zh-cn' ? 'zh-CN' : lg;
+					document.documentElement.dir = lg === 'ar' ? 'rtl' : 'ltr';
+				}
+			} catch (e) {}
 			// The sign-in page paints its panel on the first frame: no boot Orbit,
 			// and the last wallpaper starts loading before any app script.
 			if (/\/login\/?$/.test(location.pathname)) {

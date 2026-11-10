@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
@@ -18,11 +19,11 @@
 	import { session } from '#lib/core/session.svelte.ts';
 
 	type Preset = 'balanced' | 'light' | 'careful';
-	const presets: { key: Preset; name: string; about: string }[] = [
-		{ key: 'balanced', name: 'Balanced', about: 'Every day. Keeps the last 7 days and 4 weekly copies.' },
-		{ key: 'light', name: 'Light', about: 'Once a week. Keeps 4 weeks. Uses the least space.' },
-		{ key: 'careful', name: 'Careful', about: 'Every day. Keeps every copy for 30 days.' }
-	];
+	const presets = $derived<{ key: Preset; name: string; about: string }[]>([
+		{ key: 'balanced', name: t('settings.backups.balanced'), about: t('settings.backups.balancedAbout') },
+		{ key: 'light', name: t('settings.backups.light'), about: t('settings.backups.lightAbout') },
+		{ key: 'careful', name: t('settings.backups.careful'), about: t('settings.backups.carefulAbout') }
+	]);
 
 	let backups = $state<BackupInfo[]>([]);
 	let preset = $state<Preset>('balanced');
@@ -81,7 +82,7 @@
 			if (!res.ok) {
 				const data = await res.json().catch(() => ({}));
 				if (res.status === 403 && data.code === 'reauth') window.dispatchEvent(new CustomEvent('holyarrs:reauth', { detail: { method: 'POST' } }));
-				throw new Error(data.error || `Request failed (${res.status})`);
+				throw new Error(data.error || t('settings.backups.requestFailed', { status: res.status }));
 			}
 			const name = /filename="([^"]+)"/.exec(res.headers.get('Content-Disposition') ?? '')?.[1] ?? 'holyarrs-key-kit.key';
 			const a = document.createElement('a');
@@ -90,9 +91,9 @@
 			a.click();
 			setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 			if (keyKit) keyKit = { ...keyKit, needed: false };
-			toasts.push('Key kit downloaded', 'ok', { body: 'Keep it apart from backups' });
+			toasts.push(t('settings.backups.kitDownloaded'), 'ok', { body: t('settings.backups.kitApart') });
 		} catch (e) {
-			toasts.push("Couldn't download key kit", 'fail', { body: message(e) });
+			toasts.push(t('settings.backups.kitFailed'), 'fail', { body: message(e) });
 		} finally {
 			gettingKit = false;
 		}
@@ -105,10 +106,10 @@
 		savingPreset = true;
 		try {
 			await api.put('/backups/settings', { preset: p });
-			toasts.push('Backup plan saved', 'ok', { body: presets.find((x) => x.key === p)?.name });
+			toasts.push(t('settings.backups.planSaved'), 'ok', { body: presets.find((x) => x.key === p)?.name });
 		} catch (e) {
 			preset = before;
-			toasts.push("Couldn't save", 'fail', { body: message(e) });
+			toasts.push(t('settings.backups.couldntSave'), 'fail', { body: message(e) });
 		} finally {
 			savingPreset = false;
 		}
@@ -119,29 +120,29 @@
 		try {
 			const b = await api.post<BackupInfo>('/backups');
 			backups = [b, ...backups.filter((x) => x.name !== b.name)];
-			toasts.push('Backup made', 'ok');
+			toasts.push(t('settings.backups.made'), 'ok');
 		} catch (e) {
-			toasts.push("Couldn't make backup", 'fail', { body: message(e) });
+			toasts.push(t('settings.backups.makeFailed'), 'fail', { body: message(e) });
 		} finally {
 			making = false;
 		}
 	}
 
 	async function remove(b: BackupInfo) {
-		if (!confirm(`Remove ${b.name}? This can't be undone.`)) return;
+		if (!confirm(t('settings.backups.confirmRemove', { name: b.name }))) return;
 		try {
 			await api.del(`/backups/${encodeURIComponent(b.name)}`);
 			backups = backups.filter((x) => x.name !== b.name);
-			toasts.push('Backup deleted', 'ok');
+			toasts.push(t('settings.backups.deleted'), 'ok');
 		} catch (e) {
-			toasts.push("Couldn't delete backup", 'fail', { body: message(e) });
+			toasts.push(t('settings.backups.deleteFailed'), 'fail', { body: message(e) });
 		}
 	}
 
 	async function restore(e: Event) {
 		const file = (e.currentTarget as HTMLInputElement).files?.[0];
 		if (!file) return;
-		if (!confirm(`Restore ${file.name}? HolyArrs restarts. Changes since then are lost.`)) {
+		if (!confirm(t('settings.backups.confirmRestore', { name: file.name }))) {
 			(e.currentTarget as HTMLInputElement).value = '';
 			return;
 		}
@@ -151,7 +152,7 @@
 			toasts.push(r.note, 'ok');
 			waiting = true;
 		} catch (err) {
-			toasts.push("Couldn't restore backup", 'fail', { body: message(err) });
+			toasts.push(t('settings.backups.restoreFailed'), 'fail', { body: message(err) });
 		} finally {
 			restoring = false;
 			if (fileInput) fileInput.value = '';
@@ -159,12 +160,12 @@
 	}
 </script>
 
-<svelte:head><title>Backups · HolyArrs</title></svelte:head>
+<svelte:head><title>{t('settings.backups.title')} · HolyArrs</title></svelte:head>
 
-<PageHeader title="Backups">
+<PageHeader title={t('settings.backups.title')}>
 	{#snippet actions()}
 		{#if loaded && !missing}
-		<Button icon="archive" variant="primary" type="button" onclick={makeNow} disabled={making} aria-busy={making}>Back up now</Button>
+		<Button icon="archive" variant="primary" type="button" onclick={makeNow} disabled={making} aria-busy={making}>{t('settings.backups.backUpNow')}</Button>
 		{/if}
 	{/snippet}
 </PageHeader>
@@ -172,27 +173,27 @@
 {#if !loaded}
 	<SkSettings rows={2} />
 {:else if missing}
-	<EmptyState icon="archive" title="Backups are off in this build" text="This HolyArrs runs without its backup manager." />
+	<EmptyState icon="archive" title={t('settings.backups.off')} text={t('settings.backups.offText')} />
 {:else if !hasData}
 	<LoadError hasData={false} message={error} onretry={load} />
 {:else}
 	{#if error}<LoadError hasData={true} message={error} onretry={load} />{/if}
 	{#if waiting}
 		<p class="notice warn" role="status" style="margin-bottom: var(--s-4)">
-			<Icon name="info" size={18} /><span>Restore ready. It applies on the next start.</span>
+			<Icon name="info" size={18} /><span>{t('settings.backups.restoreReady')}</span>
 		</p>
 	{/if}
 
 	<section class="card" id="backup-list" tabindex="-1" aria-labelledby="h-list">
 		<div class="card-head">
-			<h2 id="h-list" class="h2">Saved backups</h2>
+			<h2 id="h-list" class="h2">{t('settings.backups.saved')}</h2>
 			<label class="restore" aria-busy={restoring}>
-				<Icon name="upload" size={18} /> Restore from a file
+				<Icon name="upload" size={18} /> {t('settings.backups.restoreFile')}
 				<input class="sr-only" type="file" accept=".zip,application/zip" bind:this={fileInput} onchange={restore} disabled={restoring} />
 			</label>
 		</div>
 		{#if backups.length === 0}
-			<p class="small muted">No backups</p>
+			<p class="small muted">{t('settings.backups.none')}</p>
 		{:else}
 			<ul class="rows">
 				{#each backups as b (b.name)}
@@ -201,8 +202,8 @@
 							<div class="mono small ellipsis">{b.name}</div>
 							<div class="xs muted">{dateTime(b.created_at)} · {bytes(b.size)} · {b.detail || words(b.kind)}</div>
 						</div>
-						<AdminLinkButton variant="plain" href={to(`/api/v1/backups/${encodeURIComponent(b.name)}`)} download onclick={download}>Download</AdminLinkButton>
-						<IconButton icon="trash" label="Delete {b.name}" tipSide="below-end" type="button" onclick={() => remove(b)} />
+						<AdminLinkButton variant="plain" href={to(`/api/v1/backups/${encodeURIComponent(b.name)}`)} download onclick={download}>{t('settings.backups.download')}</AdminLinkButton>
+						<IconButton icon="trash" label={t('settings.backups.delete', { name: b.name })} tipSide="below-end" type="button" onclick={() => remove(b)} />
 					</li>
 				{/each}
 			</ul>
@@ -210,8 +211,8 @@
 		{#if keyNote}<p class="xs muted keynote">{keyNote}</p>{/if}
 	</section>
 
-	<SettingsCard id="backup-often" title="How often">
-		<div class="presets" role="radiogroup" aria-label="How often" aria-busy={savingPreset}>
+	<SettingsCard id="backup-often" title={t('settings.backups.often')}>
+		<div class="presets" role="radiogroup" aria-label={t('settings.backups.often')} aria-busy={savingPreset}>
 			{#each presets as p (p.key)}
 				<label class="preset" class:on={preset === p.key}>
 					<input type="radio" name="preset" value={p.key} checked={preset === p.key} disabled={savingPreset} onchange={() => choose(p.key)} />
@@ -223,23 +224,23 @@
 	</SettingsCard>
 
 	{#if keyKit?.fingerprint}
-		<SettingsCard id="backup-key" title="Master key" description="Backups don't include this key. Keep a copy somewhere safe.">
+		<SettingsCard id="backup-key" title={t('settings.backups.key')} description={t('settings.backups.keyDesc')}>
 			{#if keyKit.needed}
 				<p class="notice warn" role="status">
 					<Icon name="info" size={18} /><span
-						>No key kit saved for this key yet. Without it, a backup's saved passwords cannot be opened on a new machine.{#if session.s.role !== 'owner'}
-							Only the owner can download it; ask them to.{/if}</span
+						>{t('settings.backups.noKit')}{#if session.s.role !== 'owner'}
+							{t('settings.backups.ownerOnlyKit')}{/if}</span
 					>
 				</p>
 			{/if}
 			<div class="keyrow">
-				<span class="xs muted">Key fingerprint <span class="mono">{keyKit.fingerprint}</span></span>
+				<span class="xs muted">{t('settings.backups.fingerprint')} <span class="mono">{keyKit.fingerprint}</span></span>
 				{#if session.s.role === 'owner'}
-					<Button icon="key" type="button" onclick={downloadKeyKit} disabled={gettingKit} aria-busy={gettingKit}>Download key kit</Button>
+					<Button icon="key" type="button" onclick={downloadKeyKit} disabled={gettingKit} aria-busy={gettingKit}>{t('settings.backups.downloadKit')}</Button>
 				{/if}
 			</div>
 			{#if session.s.role === 'owner'}
-				<p class="xs muted keynote">To restore: rename to holyarrs.key, put in the config folder</p>
+				<p class="xs muted keynote">{t('settings.backups.restoreKey')}</p>
 			{/if}
 		</SettingsCard>
 	{/if}

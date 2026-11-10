@@ -1,0 +1,18 @@
+{
+	"settings.logs.title": "लॉग",
+	"settings.logs.download": "डाउनलोड",
+	"settings.logs.filter": "लॉग फ़िल्टर करें",
+	"settings.logs.level": "स्तर",
+	"settings.logs.every": "हर लाइन",
+	"settings.logs.warnings": "चेतावनी और एरर",
+	"settings.logs.errors": "सिर्फ़ एरर",
+	"settings.logs.text": "टेक्स्ट",
+	"settings.logs.example": "जैसे qBittorrent",
+	"settings.logs.from": "से",
+	"settings.logs.to": "तक",
+	"settings.logs.apply": "लागू करें",
+	"settings.logs.clear": "साफ़ करें",
+	"settings.logs.lines": "लाइनें",
+	"settings.logs.newer": "नए",
+	"settings.logs.older": "पुराने"
+}

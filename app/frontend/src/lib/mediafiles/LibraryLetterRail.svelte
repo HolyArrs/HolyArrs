@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { letters } from './library.ts';
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 
 	let { jumps, focus = $bindable(), onjump }: { jumps: Map<string, number>; focus: string; onjump: (letter: string) => void } = $props();
 
@@ -20,10 +21,10 @@
 </script>
 
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-<nav class="rail" aria-label="Jump to a letter" data-testid="letter-rail" bind:this={rail} onkeydown={railKey}>
+<nav class="rail" aria-label={t('mediafiles.rail.jump')} data-testid="letter-rail" bind:this={rail} onkeydown={railKey}>
 	{#each letters as l (l)}
 		{@const on = jumps.has(l)}
-		<button type="button" class="rail-l" data-letter={l === '#' ? 'num' : l} disabled={!on} tabindex={on && l === focus ? 0 : -1} aria-label={l === '#' ? '# Jump to titles that start with a number or sign' : `${l}, jump to titles under ${l}`} title={l === '#' ? 'Numbers and signs' : l} onclick={() => onjump(l)}>{l}</button>
+		<button type="button" class="rail-l" data-letter={l === '#' ? 'num' : l} disabled={!on} tabindex={on && l === focus ? 0 : -1} aria-label={l === '#' ? t('mediafiles.rail.numbers') : t('mediafiles.rail.letter', { l })} title={l === '#' ? t('mediafiles.rail.numbersTitle') : l} onclick={() => onjump(l)}>{l}</button>
 	{/each}
 </nav>
 

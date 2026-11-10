@@ -164,7 +164,7 @@
 	.icon:hover, .icon[aria-expanded='true'] { background: var(--surface-3); color: var(--text); }
 	.button { flex: none; white-space: nowrap; min-height: 36px; padding: 0 12px 0 14px; border-radius: var(--r-btn); background: var(--surface-2); font: var(--t-headline); font-size: 15px; }
 	.button:hover { background: var(--surface-3); }
-	.row { width: 100%; min-height: 44px; padding: 6px 8px; border-radius: var(--r-btn); text-align: left; }
+	.row { width: 100%; min-height: 44px; padding: 6px 8px; border-radius: var(--r-btn); text-align: start; }
 	.row:hover, .row[aria-expanded='true'] { background: var(--surface-3); }
 	/* Fixed so scroll containers cannot clip it. */
 	.panel {

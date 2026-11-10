@@ -1,9 +1,11 @@
 import { api } from '#lib/core/api.ts';
+import { t } from '../core/i18n/i18n.svelte.ts';
 import { nextCheckIn, outageDismiss, outageShown, outageStart, outageStep, type OutageState } from './outage.ts';
 
-export const METADATA_DOWN_TITLE = 'Metadata offline';
-export const METADATA_DOWN = "Search and new artwork pause until it's back. Your Library still works.";
-export const METADATA_BACK = 'Metadata back online';
+// The same lines in the person's language; call these at render so they follow a language change.
+export const metadataDownTitle = () => t('metadata.health.downTitle');
+export const metadataDownText = () => t('metadata.health.down');
+export const metadataBackTitle = () => t('metadata.health.back');
 
 const TTL = 60_000;
 // Dev only: set this localStorage key to "1" to make checks fail.

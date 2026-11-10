@@ -10,6 +10,7 @@
 	import { bytes } from '#lib/core/format.ts';
 	import { session } from '#lib/core/session.svelte.ts';
 	import type { EpisodeView, TitleView } from '#lib/core/types.ts';
+	import { t as tr } from '#lib/core/i18n/i18n.svelte.ts';
 
 	let path = $state('');
 	let scanning = $state(false);
@@ -83,7 +84,7 @@
 		try {
 			const r = await api.get<{ titles: TitleView[] }>(`/library/search?q=${encodeURIComponent(term.trim())}&kind=all`);
 			found = r.titles.filter((t) => t.kind === 'movie' || t.kind === 'show');
-			if (!found.length) lookError = 'Nothing in the Library by that name. Add the movie or show first.';
+			if (!found.length) lookError = tr('library.byHand.nothingByName');
 		} catch (err) {
 			lookError = message(err);
 		} finally {
@@ -149,7 +150,7 @@
 			}
 			results = next;
 			const n = r.placed;
-			toasts.push(n === 1 ? '1 file imported' : `${n} files imported`, n ? 'ok' : 'info');
+			toasts.push(tr(n === 1 ? 'library.byHand.importedOne' : 'library.byHand.importedMany', { n }), n ? 'ok' : 'info');
 		} catch (err) {
 			error = message(err);
 		} finally {
@@ -158,36 +159,36 @@
 	}
 </script>
 
-<svelte:head><title>Import files by hand · HolyArrs</title></svelte:head>
+<svelte:head><title>{tr('library.byHand.title')} · HolyArrs</title></svelte:head>
 
-<LibraryToolPage title="Import files by hand">
+<LibraryToolPage title={tr('library.byHand.title')}>
 {#if !session.can('settings')}
-	<EmptyState icon="shield" title="Owner only." />
+	<EmptyState icon="shield" title={tr('library.byHand.owner')} />
 {:else}
 
 	<section class="tp-sheet tp-pad" aria-labelledby="h-path">
-		<h2 id="h-path" class="h2">1. Pick a folder</h2>
+		<h2 id="h-path" class="h2">{tr('library.byHand.step1')}</h2>
 		<form class="row pick" onsubmit={doScan}>
 			<div class="field grow">
-				<label for="mi-path">Folder or file on the server</label>
+				<label for="mi-path">{tr('library.byHand.folderOrFile')}</label>
 				<input id="mi-path" class="input mono" bind:value={path} placeholder="/downloads/complete/Some.Show.S01" autocomplete="off" spellcheck="false" aria-describedby="mi-where" />
 			</div>
-			<Button type="submit" variant="primary" icon="search" busy={scanning} disabled={importing || !path.trim()}>Scan</Button>
+			<Button type="submit" variant="primary" icon="search" busy={scanning} disabled={importing || !path.trim()}>{tr('library.byHand.scan')}</Button>
 		</form>
-		<p class="xs muted where" id="mi-where">A Library, Downloader or <a href={to('/settings/library-folders#import-folders')}>extra import</a> folder.</p>
+		<p class="xs muted where" id="mi-where">{tr('library.byHand.where')} <a href={to('/settings/library-folders#import-folders')}>{tr('library.byHand.whereLink')}</a> {tr('library.byHand.whereEnd')}</p>
 		{#if error}<p class="form-error" role="alert">{error}</p>{/if}
 	</section>
 
 	{#if scan}
 		<section class="tp-sheet tp-pad" aria-labelledby="h-files" data-testid="import-files">
-			<h2 id="h-files" class="h2">2. Check and import</h2>
+			<h2 id="h-files" class="h2">{tr('library.byHand.step2')}</h2>
 			{#if !files.length}
-				<EmptyState compact icon="folder" title="No video or music files here" text="Pick the folder that holds the files, or one file." />
+				<EmptyState compact icon="folder" title={tr('library.byHand.noFiles')} text={tr('library.byHand.noFilesHint')} />
 			{:else}
 				<p class="small muted">
-					{files.length} file{files.length === 1 ? '' : 's'} in <span class="mono path">{scan.path}</span>. Sure matches are ticked. Fix the rest with Change.
+					{tr(files.length === 1 ? 'library.byHand.filesInOne' : 'library.byHand.filesInMany', { n: files.length, path: scan.path })}
 				</p>
-				{#if scan.more}<p class="notice">Only the first {files.length} files are listed. Pick a smaller folder for the rest.</p>{/if}
+				{#if scan.more}<p class="notice">{tr('library.byHand.onlyFirst', { n: files.length })}</p>{/if}
 				<ul class="list">
 					{#each files as f (f.path)}
 						{@const p = picks[f.path] ?? null}
@@ -196,7 +197,7 @@
 						<li data-testid="import-file">
 							<div class="top">
 								<label class="tick">
-									<input type="checkbox" bind:checked={ticked[f.path]} disabled={!!why || importing} aria-label="Import {f.name}" />
+									<input type="checkbox" bind:checked={ticked[f.path]} disabled={!!why || importing} aria-label={tr('library.byHand.importName', { name: f.name })} />
 									<span class="mono small path">{f.name}</span>
 								</label>
 								<span class="meta xs muted">{bytes(f.size)}{#if f.quality}{' · '}{f.quality}{/if}</span>
@@ -204,31 +205,31 @@
 							{#if f.kind === 'video'}
 								<div class="match">
 									<b class="small">{pickLine(p)}</b>
-									{#if p && f.guess.title_id === p.title_id && f.guess.confidence > 0 && f.guess.confidence < 1}<Badge label={f.guess.confidence >= 0.7 ? 'Likely' : 'A guess'} />{/if}
-									{#if !f.in_library && editFor !== f.path}<Button variant="plain" size="sm" onclick={() => openEditor(f)} disabled={importing}>Change</Button>{/if}
+									{#if p && f.guess.title_id === p.title_id && f.guess.confidence > 0 && f.guess.confidence < 1}<Badge label={f.guess.confidence >= 0.7 ? tr('library.byHand.likely') : tr('library.byHand.guess')} />{/if}
+									{#if !f.in_library && editFor !== f.path}<Button variant="plain" size="sm" onclick={() => openEditor(f)} disabled={importing}>{tr('shows.versions.change')}</Button>{/if}
 								</div>
 							{/if}
 							{#if why}<p class="xs muted">{why}</p>{:else if f.note}<p class="xs muted">{f.note}</p>{/if}
 							{#if done}
 								<p class="xs" class:ok-text={done.outcome === 'placed'} class:bad-text={done.outcome !== 'placed'} role="status">
-									{resultLine(done)}{#if done.title_id && done.outcome === 'placed'}{' · '}<a href={to(`/library/${done.title_id}`)}>Open</a>{/if}
+									{resultLine(done)}{#if done.title_id && done.outcome === 'placed'}{' · '}<a href={to(`/library/${done.title_id}`)}>{tr('mediafiles.poster.open')}</a>{/if}
 								</p>
 							{/if}
 							{#if editFor === f.path}
 								<div class="editor">
 									<form class="look" onsubmit={lookup}>
-										<label class="sr-only" for="look-{f.path}">Look in the Library for {f.name}</label>
-										<input id="look-{f.path}" class="input" bind:value={term} placeholder="Movie or show in the Library" autocomplete="off" />
-										<Button type="submit" busy={looking}>Look up</Button>
-										<Button variant="plain" onclick={() => (editFor = null)}>Close</Button>
+										<label class="sr-only" for="look-{f.path}">{tr('library.byHand.lookFor', { name: f.name })}</label>
+										<input id="look-{f.path}" class="input" bind:value={term} placeholder={tr('library.byHand.placeholder')} autocomplete="off" />
+										<Button type="submit" busy={looking}>{tr('library.byHand.lookUp')}</Button>
+										<Button variant="plain" onclick={() => (editFor = null)}>{tr('shows.page.close')}</Button>
 									</form>
 									{#if lookError}<p class="form-error" role="alert">{lookError}</p>{/if}
 									{#if found.length}
 										<ul class="found">
 											{#each found as t (t.id)}
 												<li>
-													<span class="small">{t.name}{t.year ? ` (${t.year})` : ''} <span class="muted xs">{t.kind === 'show' ? 'Show' : 'Movie'}</span></span>
-													<Button variant="plain" size="sm" onclick={() => choose(t.id)}>{chosen?.id === t.id ? 'Picked' : 'Pick'}</Button>
+													<span class="small">{t.name}{t.year ? ` (${t.year})` : ''} <span class="muted xs">{tr(t.kind === 'show' ? 'mediafiles.kindCap.show' : 'mediafiles.kindCap.movie')}</span></span>
+													<Button variant="plain" size="sm" onclick={() => choose(t.id)}>{chosen?.id === t.id ? tr('library.byHand.picked') : tr('mediafiles.releaseSheet.pick')}</Button>
 												</li>
 											{/each}
 										</ul>
@@ -237,7 +238,7 @@
 										<div class="row picks">
 											{#if chosen.versions.length > 1}
 												<div class="field">
-													<label class="xs" for="ver-{f.path}">Version</label>
+													<label class="xs" for="ver-{f.path}">{tr('library.byHand.version')}</label>
 													<select id="ver-{f.path}" class="input" bind:value={versionId}>
 														{#each chosen.versions as v (v.id)}<option value={v.id}>{v.label}</option>{/each}
 													</select>
@@ -245,15 +246,15 @@
 											{/if}
 											{#if chosen.kind === 'show'}
 												<div class="field">
-													<label class="xs" for="sea-{f.path}">Season</label>
+													<label class="xs" for="sea-{f.path}">{tr('shows.picker.season')}</label>
 													<select id="sea-{f.path}" class="input" bind:value={season} onchange={() => (episode = undefined)}>
-														{#each seasons as s (s)}<option value={s}>{s === 0 ? 'Specials' : `Season ${s}`}</option>{/each}
+														{#each seasons as s (s)}<option value={s}>{s === 0 ? tr('shows.season.specials') : tr('shows.season.named', { n: s })}</option>{/each}
 													</select>
 												</div>
 												<div class="field">
-													<label class="xs" for="ep-{f.path}">Episode</label>
+													<label class="xs" for="ep-{f.path}">{tr('library.byHand.episode')}</label>
 													<select id="ep-{f.path}" class="input" bind:value={episode}>
-														<option value={undefined}>Pick one</option>
+														<option value={undefined}>{tr('library.byHand.pickOne')}</option>
 														{#each seasonEps as e (e.id)}<option value={e.episode}>{episodeCode(e.season, e.episode)}{e.name ? ` · ${e.name}` : ''}</option>{/each}
 													</select>
 												</div>
@@ -261,7 +262,7 @@
 										</div>
 										<div class="row end tight">
 											<span class="small muted">{chosen.name}{chosen.kind === 'show' && episode !== undefined ? ` · ${episodeCode(season, episode)}` : ''}</span>
-											<Button variant="primary" size="sm" onclick={useMatch} disabled={chosen.kind === 'show' && (season === undefined || episode === undefined)}>Use this</Button>
+											<Button variant="primary" size="sm" onclick={useMatch} disabled={chosen.kind === 'show' && (season === undefined || episode === undefined)}>{tr('library.byHand.useThis')}</Button>
 										</div>
 									{/if}
 								</div>
@@ -271,19 +272,19 @@
 				</ul>
 				<div class="row end">
 					<fieldset class="modes">
-						<legend class="xs muted">How</legend>
-						<label class="checkline"><input type="radio" bind:group={mode} value="copy" /> <span><b>Copy</b><br /><span class="hint">Original kept. Same disk, no extra space.</span></span></label>
-						<label class="checkline"><input type="radio" bind:group={mode} value="move" /> <span><b>Move</b><br /><span class="hint">Original gone.</span></span></label>
+						<legend class="xs muted">{tr('library.byHand.how')}</legend>
+						<label class="checkline"><input type="radio" bind:group={mode} value="copy" /> <span><b>{tr('library.byHand.copy')}</b><br /><span class="hint">{tr('library.byHand.copyHint')}</span></span></label>
+						<label class="checkline"><input type="radio" bind:group={mode} value="move" /> <span><b>{tr('library.byHand.move')}</b><br /><span class="hint">{tr('library.byHand.moveHint')}</span></span></label>
 					</fieldset>
-					<span class="small muted">{items.length} ticked</span>
+					<span class="small muted">{tr('library.byHand.ticked', { n: items.length })}</span>
 					<Button variant="primary" icon="download" onclick={doImport} disabled={!items.length} busy={importing}>
-						{items.length === 1 ? 'Import 1 file' : `Import ${items.length} files`}
+						{tr(items.length === 1 ? 'library.byHand.importOne' : 'library.byHand.importMany', { n: items.length })}
 					</Button>
 				</div>
 			{/if}
 		</section>
 	{:else if !scanning}
-		<p class="tp-msg good"><Icon name="shield" size={18} /><span>Nothing moves until you press Import.</span></p>
+		<p class="tp-msg good"><Icon name="shield" size={18} /><span>{tr('library.byHand.nothingMoves')}</span></p>
 	{/if}
 {/if}
 </LibraryToolPage>

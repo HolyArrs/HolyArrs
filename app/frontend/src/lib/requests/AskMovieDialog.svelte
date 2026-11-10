@@ -14,7 +14,9 @@
 </script>
 
 <script lang="ts">
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	// A member asks for a movie in one confirm step, so a card or result button never asks in a single click.
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import { api, message, ApiError } from '../core/api.ts';
@@ -64,34 +66,34 @@
 	}
 </script>
 
-<Sheet bind:open={sheetOpen} size="sm" title={picked ? `Ask for ${picked.name}${picked.year ? ` (${picked.year})` : ''}` : 'Ask for a movie'}>
+<Sheet bind:open={sheetOpen} size="sm" title={picked ? t('requests.ask.title', { name: `${picked.name}${picked.year ? ` (${picked.year})` : ''}` }) : t('requests.askMovie.titleBare')}>
 	{#if picked}
 		<form id="ask-movie-title" class="sheet-form" onsubmit={ask}>
 			<p class="small muted">
 				{fourK && picked.ask4k
-					? `Someone asked for a 4K copy already (${picked.ask4k.state_label}). Asking joins their ask, and you hear when it is ready.`
+					? t('requests.askMovie.already4k', { state: serverWords(picked.ask4k.state_label) })
 					: fourK
-					? 'A 4K copy is its own ask: it goes on the Requests page and is approved apart from the regular copy.'
+					? t('requests.askMovie.own4k')
 					: picked.ask
-					? `Someone asked for it already (${picked.ask.state_label}). Asking joins their ask, and you hear when it is ready.`
-					: 'You’ll hear when it’s approved and when it’s ready.'}
+					? t('requests.askMovie.already', { state: serverWords(picked.ask.state_label) })
+					: t('requests.askMovie.hear')}
 			</p>
 			<label class="checkline" data-testid="follow-box">
 				<input type="checkbox" bind:checked={follow} />
-				<span><b>Follow</b><br /><span class="hint">Show it on my calendar.</span></span>
+				<span><b>{t('requests.add.follow')}</b><br /><span class="hint">{t('requests.add.followHint')}</span></span>
 			</label>
 			{#if !picked.fourKOnly}
 				<label class="checkline" data-testid="four-k-box">
 					<input type="checkbox" bind:checked={fourK} />
-					<span><b>4K copy</b><br /><span class="hint">Ask for the 4K version.</span></span>
+					<span><b>{t('requests.askMovie.fourK')}</b><br /><span class="hint">{t('requests.askMovie.fourKHint')}</span></span>
 				</label>
 			{/if}
 			{#if error}<p class="form-error" role="alert">{error}</p>{/if}
 		</form>
 	{/if}
 	{#snippet footer()}
-		<Button variant="plain" onclick={() => (sheetOpen = false)}>Cancel</Button>
-		<Button variant="primary" type="submit" form="ask-movie-title" {busy}>{picked ? `Ask for ${picked.name}${fourK ? ' in 4K' : ''}` : 'Ask'}</Button>
+		<Button variant="plain" onclick={() => (sheetOpen = false)}>{t('requests.add.cancel')}</Button>
+		<Button variant="primary" type="submit" form="ask-movie-title" {busy}>{picked ? t(fourK ? 'requests.askMovie.submit4k' : 'requests.ask.title', { name: picked.name }) : t('requests.ask.bare')}</Button>
 	{/snippet}
 </Sheet>
 

@@ -1,0 +1,17 @@
+{
+	"alerts.fallback.settings": "Ajustes",
+	"alerts.panel.clearAll": "Borrar todo",
+	"alerts.panel.empty": "Aún no hay nada",
+	"alerts.panel.needsAttention": "Requiere atención",
+	"alerts.panel.recent": "Recientes",
+	"alerts.panel.remove": "Quitar {text}",
+	"alerts.panel.title": "Avisos recientes",
+	"alerts.state.manyNeed": "{count} requieren atención",
+	"alerts.state.ok": "Todo en orden",
+	"alerts.state.oneNeeds": "1 requiere atención",
+	"alerts.state.unset": "Sin configurar",
+	"alerts.time.days": "{n} d",
+	"alerts.time.hours": "{n} h",
+	"alerts.time.minutes": "{n} min",
+	"alerts.time.now": "ahora"
+}

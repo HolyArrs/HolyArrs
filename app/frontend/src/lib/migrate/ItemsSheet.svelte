@@ -1,4 +1,5 @@
 <script lang="ts" module>
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	export interface SheetRow {
 		key: string;
 		name: string;
@@ -20,7 +21,7 @@
 		title,
 		items,
 		row,
-		empty = 'Nothing here.'
+		empty
 	}: {
 		open?: boolean;
 		title: string;
@@ -61,23 +62,23 @@
 
 <Sheet bind:open {title} size="lg" placement="auto">
 	<div class="tools">
-		<label class="sr-only" for="{uid}-q">Search this list</label>
-		<input id="{uid}-q" class="input" type="search" placeholder="Search" bind:value={q} oninput={() => (shown = PAGE)} autocomplete="off" />
+		<label class="sr-only" for="{uid}-q">{t('migrate.searchThisList')}</label>
+		<input id="{uid}-q" class="input" type="search" placeholder={t('migrate.search')} bind:value={q} oninput={() => (shown = PAGE)} autocomplete="off" />
 		{#if rows.mixed}
 			<SegmentedControl
-				label="Which lines"
+				label={t('migrate.whichLines')}
 				options={[
-					{ value: 'look', label: 'Needs a look' },
-					{ value: 'all', label: 'All' }
+					{ value: 'look', label: t('migrate.needsALook') },
+					{ value: 'all', label: t('migrate.all') }
 				]}
 				bind:value={which}
 				onchange={() => (shown = PAGE)}
 			/>
 		{/if}
 	</div>
-	<p class="hint count" aria-live="polite" data-testid="items-count">Showing {page.length} of {list.length}</p>
+	<p class="hint count" aria-live="polite" data-testid="items-count">{t('migrate.showingOf', { shown: page.length, total: list.length })}</p>
 	{#if list.length === 0}
-		<p class="hint">{q.trim() ? 'Nothing matches.' : empty}</p>
+		<p class="hint">{q.trim() ? t('migrate.nothingMatches') : (empty ?? t('migrate.nothingHere'))}</p>
 	{:else}
 		<div class="rows" data-testid="items-list">
 			{#each page as r (r.key)}
@@ -93,7 +94,7 @@
 			{/each}
 		</div>
 		{#if list.length > shown}
-			<div class="more"><Button onclick={() => (shown += PAGE)}>Show 100 more</Button></div>
+			<div class="more"><Button onclick={() => (shown += PAGE)}>{t('migrate.show100More')}</Button></div>
 		{/if}
 	{/if}
 </Sheet>

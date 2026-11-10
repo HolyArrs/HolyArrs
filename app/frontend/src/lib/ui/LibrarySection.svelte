@@ -1,9 +1,10 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	// Collapsible Library section on a title page.
 	import type { Snippet } from 'svelte';
 	import Icon from './Icon.svelte';
 
-	let { note = 'Versions, files, releases, subtitles and history', children }: { note?: string; children: Snippet } = $props();
+	let { note = t('ui.librarySection.note'), children }: { note?: string; children: Snippet } = $props();
 	let open = $state(true);
 </script>
 
@@ -11,7 +12,7 @@
 	<details bind:open>
 		<summary>
 			<span class="t">
-				<h2 id="h-library" class="tp-h2">Library</h2>
+				<h2 id="h-library" class="tp-h2">{t('ui.librarySection.library')}</h2>
 				<span class="note">{note}</span>
 			</span>
 			<span class="chev" aria-hidden="true"><Icon name="chevronDown" size={20} /></span>

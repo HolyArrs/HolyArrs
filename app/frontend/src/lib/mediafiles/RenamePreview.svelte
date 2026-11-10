@@ -10,6 +10,7 @@
 	import { api, message } from '../core/api.ts';
 	import { live } from '../core/live.svelte.ts';
 	import { toasts } from '../core/toasts.svelte.ts';
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 
 	let { titleId, albumId, season, onDone, page = false, changeCount = $bindable(0) }: { titleId?: number; albumId?: number; season?: number; onDone?: () => void; page?: boolean; changeCount?: number } = $props();
 
@@ -68,12 +69,12 @@
 			);
 			if (end.State === 'done') {
 				const n = Number(end.Result?.renamed ?? 0);
-				toasts.push(n === 1 ? '1 file renamed' : `${n} files renamed`, 'ok');
+				toasts.push(t(n === 1 ? 'mediafiles.rename.renamedOne' : 'mediafiles.rename.renamedMany', { n }), 'ok');
 				onDone?.();
 			} else if (end.Error?.code === 'plan_changed') {
-				error = 'Files changed, so nothing was renamed. Check the new preview and try again.';
+				error = t('mediafiles.rename.changed');
 			} else {
-				error = end.Error?.message || 'The rename did not finish. Nothing was half-done; try again.';
+				error = end.Error?.message || t('mediafiles.rename.unfinished');
 			}
 			await load();
 		} catch (e) {
@@ -89,19 +90,19 @@
 	{#if !loaded}
 		<div class="tp-sheet tp-pad"><Skeleton lines={4} /></div>
 	{:else}
-		{#if parts.change.length}<p class="tp-note">Nothing changes until you press Rename.</p>{/if}
+		{#if parts.change.length}<p class="tp-note">{t('shows.page.renameNote')}</p>{/if}
 		{#if error}<p class="tp-msg bad" role="alert">{error}</p>{/if}
 		{#if job && !['done', 'failed', 'cancelled'].includes(job.State)}
 			<div class="tp-sheet tp-pad" aria-live="polite">
-				<ProgressBar value={job.Progress * 100} label="Rename progress" />
-				<p class="tp-note">{job.ProgressNote || (job.State === 'queued' ? 'Waiting to start.' : 'Renaming.')}</p>
+				<ProgressBar value={job.Progress * 100} label={t('mediafiles.rename.progress')} />
+				<p class="tp-note">{job.ProgressNote || (job.State === 'queued' ? t('mediafiles.rename.waiting') : t('mediafiles.rename.renaming'))}</p>
 			</div>
 		{/if}
 		<div class="tp-sheet">
 			{#if parts.change.length === 0}
-				<p class="tp-pad none" data-testid="rename-none">Nothing to rename.</p>
+				<p class="tp-pad none" data-testid="rename-none">{t('mediafiles.rename.nothing')}</p>
 			{:else}
-				<h2 class="sr-only">{parts.change.length === 1 ? '1 file gets a new name' : `${parts.change.length} files get a new name`}</h2>
+				<h2 class="sr-only">{t(parts.change.length === 1 ? 'mediafiles.rename.getsOne' : 'mediafiles.rename.getsMany', { n: parts.change.length })}</h2>
 				<ul class="tp-rows steps">
 					{#each parts.change as s (s.file_id)}
 						<li data-testid="rename-step" class:with-art={page}>
@@ -109,12 +110,12 @@
 							<div class="body">
 							{#if many}<b class="name">{s.title_name}</b>{/if}
 							<div class="pair">
-								<span class="lab">Now</span><span class="mono path old">{renamePair(s)[0]}</span>
-								<span class="lab">New</span><span class="mono path new">{renamePair(s)[1]}</span>
+								<span class="lab">{t('mediafiles.rename.now')}</span><span class="mono path old">{renamePair(s)[0]}</span>
+								<span class="lab">{t('mediafiles.rename.new')}</span><span class="mono path new">{renamePair(s)[1]}</span>
 							</div>
 							{#each s.subtitles ?? [] as sub (sub.from)}
 								<p class="tp-sub" data-testid="rename-subtitle">
-									Subtitle {fileName(sub.from)}: {sub.to ? '→ ' + fileName(sub.to) : 'stays, ' + sub.skip}
+									{sub.to ? t('mediafiles.rename.subMoves', { from: fileName(sub.from), to: fileName(sub.to) }) : t('mediafiles.rename.subStays', { from: fileName(sub.from), why: sub.skip ?? '' })}
 								</p>
 							{/each}
 							</div>
@@ -124,7 +125,7 @@
 			{/if}
 			{#if parts.skipped.length}
 				<details class="skipped-d" open={parts.change.length === 0}>
-					<summary>{parts.skipped.length} skipped</summary>
+					<summary>{t('mediafiles.rename.skipped', { n: parts.skipped.length })}</summary>
 					<ul class="tp-rows steps">
 						{#each parts.skipped as s (s.file_id)}
 							<li data-testid="rename-skip">
@@ -137,12 +138,12 @@
 				</details>
 			{/if}
 		</div>
-		{#if parts.same}<p class="tp-note">{parts.same} already right.</p>{/if}
+		{#if parts.same}<p class="tp-note">{t('mediafiles.rename.alreadyRight', { n: parts.same })}</p>{/if}
 		{#if parts.change.length}
 			<div class="tp-foot go-foot">
 				<span></span>
 				<Button variant="primary" onclick={apply} busy={applying}>
-					{parts.change.length === 1 ? 'Rename 1 file' : `Rename ${parts.change.length} files`}
+					{t(parts.change.length === 1 ? 'mediafiles.rename.buttonOne' : 'mediafiles.rename.buttonMany', { n: parts.change.length })}
 				</Button>
 			</div>
 		{/if}
@@ -155,21 +156,21 @@
 	{:else}
 		{#if parts.change.length === 0}
 			<p class="notice" data-testid="rename-none">
-				Every name matches.
+				{t('mediafiles.rename.everyMatches')}
 			</p>
 		{:else}
-			<h3 class="h3">{parts.change.length === 1 ? '1 file gets a new name' : `${parts.change.length} files get a new name`}</h3>
+			<h3 class="h3">{t(parts.change.length === 1 ? 'mediafiles.rename.getsOne' : 'mediafiles.rename.getsMany', { n: parts.change.length })}</h3>
 			<ul class="steps">
 				{#each parts.change as s (s.file_id)}
 					<li data-testid="rename-step">
 						{#if many}<b class="small">{s.title_name}</b>{/if}
 						<div class="pair">
-							<span class="xs muted lab">Now</span><span class="mono small path old">{renamePair(s)[0]}</span>
-							<span class="xs muted lab">New</span><span class="mono small path new">{renamePair(s)[1]}</span>
+							<span class="xs muted lab">{t('mediafiles.rename.now')}</span><span class="mono small path old">{renamePair(s)[0]}</span>
+							<span class="xs muted lab">{t('mediafiles.rename.new')}</span><span class="mono small path new">{renamePair(s)[1]}</span>
 						</div>
 						{#each s.subtitles ?? [] as sub (sub.from)}
 							<p class="xs muted" data-testid="rename-subtitle">
-								Subtitle {fileName(sub.from)}: {sub.to ? 'follows as ' + fileName(sub.to) : 'stays, ' + sub.skip}
+								{sub.to ? t('mediafiles.rename.subFollows', { from: fileName(sub.from), to: fileName(sub.to) }) : t('mediafiles.rename.subStays', { from: fileName(sub.from), why: sub.skip ?? '' })}
 							</p>
 						{/each}
 					</li>
@@ -178,30 +179,30 @@
 		{/if}
 		{#if parts.skipped.length}
 			<details class="skipped" open={parts.change.length === 0}>
-				<summary class="small">{parts.skipped.length} skipped</summary>
+				<summary class="small">{t('mediafiles.rename.skipped', { n: parts.skipped.length })}</summary>
 				<ul class="steps">
 					{#each parts.skipped as s (s.file_id)}
 						<li data-testid="rename-skip">
 							{#if many}<b class="small">{s.title_name}</b>{/if}
 							<span class="mono small path">{fileName(s.from)}</span>
-							<span class="small muted">Skipped: {s.skip}</span>
+							<span class="small muted">{t('mediafiles.rename.skippedWhy', { why: s.skip ?? '' })}</span>
 						</li>
 					{/each}
 				</ul>
 			</details>
 		{/if}
-		{#if parts.same}<p class="xs muted">{parts.same} already named right.</p>{/if}
+		{#if parts.same}<p class="xs muted">{t('mediafiles.rename.alreadyNamed', { n: parts.same })}</p>{/if}
 		{#if job && !['done', 'failed', 'cancelled'].includes(job.State)}
 			<div aria-live="polite">
-				<ProgressBar value={job.Progress * 100} label="Rename progress" />
-				<p class="xs muted">{job.ProgressNote || (job.State === 'queued' ? 'Waiting to start.' : 'Renaming.')}</p>
+				<ProgressBar value={job.Progress * 100} label={t('mediafiles.rename.progress')} />
+				<p class="xs muted">{job.ProgressNote || (job.State === 'queued' ? t('mediafiles.rename.waiting') : t('mediafiles.rename.renaming'))}</p>
 			</div>
 		{/if}
 		{#if error}<p class="form-error" role="alert">{error}</p>{/if}
 		{#if parts.change.length}
 			<div class="row go">
 				<Button variant="primary" onclick={apply} busy={applying}>
-					{parts.change.length === 1 ? 'Rename 1 file' : `Rename ${parts.change.length} files`}
+					{t(parts.change.length === 1 ? 'mediafiles.rename.buttonOne' : 'mediafiles.rename.buttonMany', { n: parts.change.length })}
 				</Button>
 			</div>
 		{/if}

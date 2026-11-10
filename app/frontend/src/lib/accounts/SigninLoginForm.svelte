@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import Button from '#lib/ui/Button.svelte';
 	import IconButton from '#lib/ui/IconButton.svelte';
 	import { pixelTrail } from './pixel-trail.ts';
@@ -25,24 +26,24 @@
 
 <form onsubmit={submit} novalidate>
 	<div class="field">
-		<label for="name">Name</label>
+		<label for="name">{t('accounts.signin.name')}</label>
 		<input id="name" class="input" bind:value={name} autocomplete="username" autocapitalize="none" spellcheck="false" maxlength={via === 'password' ? 64 : 128} required />
 	</div>
 	<div class="field">
-		<label for="password">Password</label>
+		<label for="password">{t('accounts.signin.passwordLabel')}</label>
 		<div class="pw">
 			{#if mode === 'setup'}
 				<input id="password" class="input" type={showPw ? 'text' : 'password'} bind:value={pw} autocomplete="new-password" required />
 			{:else}
 				<input id="password" class="input" type={showPw ? 'text' : 'password'} bind:value={pw} autocomplete="current-password" required />
 			{/if}
-			<IconButton icon={showPw ? 'eyeOff' : 'eye'} label="Show password" aria-pressed={showPw} onclick={() => (showPw = !showPw)} />
+			<IconButton icon={showPw ? 'eyeOff' : 'eye'} label={t('accounts.signin.showPasswordLabel')} aria-pressed={showPw} onclick={() => (showPw = !showPw)} />
 		</div>
-		{#if mode === 'setup'}<span class="hint">At least {minLength} characters.</span>{/if}
+		{#if mode === 'setup'}<span class="hint">{t('accounts.signin.atLeast', { n: minLength })}</span>{/if}
 	</div>
 	{#if mode === 'setup'}
 		<div class="field">
-			<label for="pwAgain">Password again</label>
+			<label for="pwAgain">{t('accounts.signin.again')}</label>
 			<input id="pwAgain" class="input" type={showPw ? 'text' : 'password'} bind:value={pwAgain} autocomplete="new-password" required />
 		</div>
 	{/if}
@@ -51,11 +52,11 @@
 	{/if}
 	<div class="submit" use:pixelTrail={{ selector: '.ui-btn', busy: busy && !tileWay, fail: tileWay ? 0 : failN }}>
 		<Button variant="primary" size="lg" full type="submit" disabled={waiting > 0} {busy}>
-			{mode === 'setup' ? 'Create account' : via === 'jellyfin' || via === 'emby' ? `Sign in with ${wayWord[via]}` : 'Sign in'}
+			{mode === 'setup' ? t('accounts.signin.create') : via === 'jellyfin' || via === 'emby' ? t('accounts.signin.signInWith', { way: wayWord[via] }) : t('accounts.signin.signIn')}
 		</Button>
 	</div>
 	{#if mode === 'login' && (via === 'jellyfin' || via === 'emby')}
-		<button class="link" type="button" onclick={() => pick('choose')}>Other ways to sign in</button>
+		<button class="link" type="button" onclick={() => pick('choose')}>{t('accounts.signin.other')}</button>
 	{/if}
 </form>
 

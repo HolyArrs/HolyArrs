@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import type { Snippet } from 'svelte';
 	import { to } from '#lib/core/paths.ts';
 	import { bytes, percent, agoLong, duration } from '#lib/core/format.ts';
@@ -53,19 +54,19 @@
 		{/snippet}
 		<!-- A tile whose numbers have not arrived yet. -->
 		{#snippet wait(lines = 2)}
-			<span class="sk" aria-hidden="true">{#each Array(lines) as _, i (i)}<i></i>{/each}</span><span class="sr-only">Loading</span>
+			<span class="sk" aria-hidden="true">{#each Array(lines) as _, i (i)}<i></i>{/each}</span><span class="sr-only">{t('home.loading')}</span>
 		{/snippet}
 		<!-- Disk: what the Library takes, how much room is left, and one thin line along the foot for how full it is (only when the free room is known). -->
 		{#snippet diskTile(cls: string)}
 			<a class="tile stat {cls}" class:lined={!!disk.free} href={to(admin ? '/settings/library-folders' : '/health')}>
-				{@render head('archive', disk.diskTint, 'On disk')}
+				{@render head('archive', disk.diskTint, t('home.onDisk2'))}
 				{#if !settled}
 					{@render wait()}
 				{:else}
 					<span class="num">{bytes(attentionView.diskTotal).split(' ')[0]}<small>{bytes(attentionView.diskTotal).split(' ')[1]}</small></span>
 					<span class="sm" class:fail={disk.diskState === 'error'} class:warn={disk.diskState === 'warning'}>{disk.diskLine}</span>
 					{#if disk.free}
-						<span class="life" role="img" aria-label="Your Library takes {bytes(attentionView.diskTotal)}; {bytes(disk.free.free)} free">
+						<span class="life" role="img" aria-label={t('home.yourLibraryTakesFree', { size: bytes(attentionView.diskTotal), free: bytes(disk.free.free) })}>
 							<i class="used {disk.diskState}" style="width: {disk.diskUsed}%"></i>
 						</span>
 					{/if}
@@ -79,13 +80,13 @@
 				{#if !settled}
 					{@render wait()}
 				{:else if uncheckedParts}
-					<span class="word">Could not read</span>
-					<span class="sm">Home could not read this right now.</span>
+					<span class="word">{t('home.couldNotRead')}</span>
+					<span class="sm">{t('home.homeCouldNotRead')}</span>
 				{:else if !p.total}
-					<span class="word">None added</span>
+					<span class="word">{t('home.noneAdded')}</span>
 					<span class="sm">{empty}</span>
 				{:else}
-					<span class="num" class:warn={p.on > 0 && !p.working}>{n(p.working)}<small>of {n(p.total)} working</small></span>
+					<span class="num" class:warn={p.on > 0 && !p.working}>{n(p.working)}<small>{t('home.ofWorking', { n: n(p.total) })}</small></span>
 					<span class="sm" class:warn={!!trouble}>{attentionView.partLine(p, trouble)}</span>
 					<span class="life pips" aria-hidden="true">
 						{#if p.total <= 12}
@@ -101,102 +102,102 @@
 		{#snippet stat(key: string, cls: string)}
 			{#if key === 'att' && settled && attentionView.unchecked && !attentionView.fixes.length}
 				<button type="button" class="tile stat {cls}" class:busy={retrying} disabled={retrying} onclick={retry} aria-busy={retrying || undefined} data-testid="home-attention">
-					{@render head('refresh', 'amber', 'Needs attention', false)}
-					<span class="word">Could not check</span>
-					<span class="sm">Tap to try again</span>
+					{@render head('refresh', 'amber', t('home.needsAttention'), false)}
+					<span class="word">{t('home.couldNotCheck')}</span>
+					<span class="sm">{t('home.tapToTryAgain')}</span>
 				</button>
 			{:else if key === 'att'}
 				<a class="tile stat {cls}" href={to(attentionView.fixHref)} data-testid="home-attention">
-					{@render head(attentionView.worst === 'ok' ? 'check' : 'alert', attentionView.attTint, 'Needs attention')}
+					{@render head(attentionView.worst === 'ok' ? 'check' : 'alert', attentionView.attTint, t('home.needsAttention'))}
 					{#if !settled}
 						{@render wait()}
 					{:else if attentionView.fixes.length}
 						<span class="num" class:fail={attentionView.worst === 'fail'} class:warn={attentionView.worst === 'wait'}>{n(attentionView.fixes.length)}</span>
 						{#if attentionView.fixMore}
-							<span class="sm two"><span>{attentionView.fixLine}</span><span>and {n(attentionView.fixMore)} more</span></span>
+							<span class="sm two"><span>{attentionView.fixLine}</span><span>{t('home.andMore', { n: n(attentionView.fixMore) })}</span></span>
 						{:else}
 							<span class="sm">{attentionView.fixLine}</span>
 						{/if}
 					{:else}
-						<span class="word">All good</span>
-						<span class="sm">Downloads, imports and checks</span>
+						<span class="word">{t('home.allGood')}</span>
+						<span class="sm">{t('home.downloadsImportsAndChecks')}</span>
 					{/if}
 				</a>
 			{:else if key === 'ask'}
 				{@const approving = approver && !kid && attentionView.waiting.length > 0}
 				<a class="tile stat {cls}" href={to('/requests')}>
-					{@render head('requests', 'orange', approving ? 'To approve' : attentionView.mine.length ? 'Your asks' : 'Requests')}
+					{@render head('requests', 'orange', approving ? t('home.toApprove') : attentionView.mine.length ? t('home.yourAsks') : t('home.requests'))}
 					{#if !settled}
 						{@render wait()}
 					{:else if uncheckedAsks}
-						<span class="word">Could not read</span>
-						<span class="sm">Home could not read asks right now.</span>
+						<span class="word">{t('home.couldNotRead')}</span>
+						<span class="sm">{t('home.homeCouldNotRead2')}</span>
 					{:else if approving && downloading.waitingPics.length}
 						<span class="ask-stack" aria-hidden="true">{#each downloading.waitingPics as w (w.a.id + w.pic)}<img src={sized(w.pic, 'poster', 80)} alt="" decoding="async" use:artGone={() => overview.artFailed(w.a, w.pic)} />{/each}{#if attentionView.waiting.length > downloading.waitingPics.length}<b>+{n(attentionView.waiting.length - downloading.waitingPics.length)}</b>{/if}</span>
-						<span class="sm">{n(attentionView.waiting.length)} {attentionView.waiting.length === 1 ? 'ask' : 'asks'} to look at</span>
+						<span class="sm">{t(attentionView.waiting.length === 1 ? 'home.askToLookAt' : 'home.asksToLookAt', { n: n(attentionView.waiting.length) })}</span>
 					{:else if approving}
 						<span class="num">{n(attentionView.waiting.length)}</span>
-						<span class="sm">{attentionView.waiting.length === 1 ? 'ask' : 'asks'} to look at</span>
+						<span class="sm">{t(attentionView.waiting.length === 1 ? 'home.askToLookAt2' : 'home.asksToLookAt2')}</span>
 					{:else if mineOpen}
 						<span class="num">{n(mineOpen)}</span>
-						<span class="sm">still open{mineDeclined ? ` · ${n(mineDeclined)} turned down` : ''}</span>
+						<span class="sm">{t('home.stillOpen2')}{mineDeclined ? ` · ${t('home.turnedDown', { n: n(mineDeclined) })}` : ''}</span>
 					{:else if mineDeclined}
 						<span class="num">{n(mineDeclined)}</span>
-						<span class="sm">turned down</span>
+						<span class="sm">{t('home.turnedDown2')}</span>
 					{:else}
-						<span class="word">Nothing waiting</span>
-						<span class="sm">{approver && !kid ? 'No asks to approve' : 'Ask for something on Explore'}</span>
+						<span class="word">{t('home.nothingWaiting')}</span>
+						<span class="sm">{approver && !kid ? t('home.noAsksToApprove') : t('home.askForSomethingOn')}</span>
 					{/if}
 				</a>
 			{:else if key === 'lib'}
 				<a class="tile stat {cls}" href={to(overview.libHref)} data-testid="home-library">
-					{@render head('library', 'indigo', 'Library')}
+					{@render head('library', 'indigo', t('home.library'))}
 					<span class="num">{n(overview.libTotal)}</span>
-					<span class="sm">{attentionView.libCards.length === 1 ? attentionView.libCards[0].detail || `${attentionView.libCards[0].unit} in your Library` : attentionView.libCards.map((c) => `${n(c.big)}\u00a0${c.unit}`).join(' · ')}</span>
+					<span class="sm">{attentionView.libCards.length === 1 ? attentionView.libCards[0].detail || t('home.inYourLibrary', { unit: attentionView.libCards[0].unit }) : attentionView.libCards.map((c) => `${n(c.big)}\u00a0${c.unit}`).join(' · ')}</span>
 				</a>
 			{:else if key === 'disk'}
 				{@render diskTile(cls)}
 			{:else if key === 'dl'}
 				<a class="tile stat {cls}" href={to('/downloads')}>
-					{@render head('download', 'blue', 'Downloads')}
+					{@render head('download', 'blue', t('home.downloads'))}
 					<span class="num">{n(fetchingAll.length)}</span>
 					<span class="sm">{downloading.stageWords(downloading.countStages(fetchingAll))}</span>
 				</a>
 			{:else if key === 'soon'}
 				<a class="tile stat {cls}" href={to('/calendar')}>
-					{@render head('calendar', 'purple', 'Coming soon')}
+					{@render head('calendar', 'purple', t('home.comingSoon2'))}
 					<span class="num">{n(home?.soon?.length ?? 0)}{(home?.soon?.length ?? 0) >= 20 ? '+' : ''}</span>
-					<span class="sm">in the next 30 days</span>
+					<span class="sm">{t('home.inTheNext30')}</span>
 				</a>
 			{:else if key === 'new'}
 				<a class="tile stat {cls}" href={to(overview.kindHref(overview.recentArrived[0] ?? home?.new_seasons?.[0]))}>
-					{@render head('sparkle', 'pink', 'New for you')}
+					{@render head('sparkle', 'pink', t('home.newForYou'))}
 					<span class="num">{n(overview.recentNew)}</span>
-					<span class="sm">{overview.recentArrived.length && home?.new_seasons?.length ? 'arrivals and new seasons' : overview.recentArrived.length ? 'arrived in the last two weeks' : home?.new_seasons?.length === 1 ? 'new season of a show you have' : 'new seasons of shows you have'}</span>
+					<span class="sm">{overview.recentArrived.length && home?.new_seasons?.length ? t('home.arrivalsAndNewSeasons') : overview.recentArrived.length ? t('home.arrivedInTheLast') : home?.new_seasons?.length === 1 ? t('home.newSeasonOfA') : t('home.newSeasonsOfShows')}</span>
 				</a>
 			{:else if key === 'explore'}
 				<a class="tile stat {cls}" href={to('/explore')}>
-					{@render head('compass', 'green', 'Explore')}
-					<span class="word">Find something new</span>
-					<span class="sm">Pick what to ask for next</span>
+					{@render head('compass', 'green', t('home.explore'))}
+					<span class="word">{t('home.findSomethingNew')}</span>
+					<span class="sm">{t('home.pickWhatToAsk')}</span>
 				</a>
 			{:else if key === 'popular'}
 				<a class="tile stat {cls}" href={to('/popular')}>
-					{@render head('star', 'pink', 'New & Popular')}
-					<span class="word">What's trending</span>
-					<span class="sm">Top 10s and coming soon</span>
+					{@render head('star', 'pink', t('home.newPopular'))}
+					<span class="word">{t('home.whatSTrending')}</span>
+					<span class="sm">{t('home.top10sAndComing')}</span>
 				</a>
 			{:else if key === 'calendar'}
 				<a class="tile stat {cls}" href={to('/calendar')}>
-					{@render head('calendarDay', 'purple', 'Calendar')}
-					<span class="word">What's next</span>
-					<span class="sm">Air dates and releases</span>
+					{@render head('calendarDay', 'purple', t('home.calendar'))}
+					<span class="word">{t('home.whatSNext')}</span>
+					<span class="sm">{t('home.airDatesAndReleases')}</span>
 				</a>
 			{:else}
 				<a class="tile stat {cls}" href={to('/search')}>
-					{@render head('search', 'graphite', 'Search')}
-					<span class="word">Look anything up</span>
-					<span class="sm">By name</span>
+					{@render head('search', 'graphite', t('home.search'))}
+					<span class="word">{t('home.lookAnythingUp')}</span>
+					<span class="sm">{t('home.byName')}</span>
 				</a>
 			{/if}
 		{/snippet}
@@ -209,23 +210,23 @@
 		{#if overview.showSystem}
 			<div class="bento" class:gone={overview.shown !== 'system'} inert={overview.shown !== 'system'} data-testid="home-system">
 				<a class="tile stat big dl" href={to('/downloads')}>
-					{@render head('download', 'blue', 'Downloading')}
+					{@render head('download', 'blue', t('home.downloading4'))}
 					{#if !settled}
 						{@render wait(3)}
 					{:else if uncheckedDl}
-						<span class="word">Could not read</span>
-						<span class="sm">Home could not read downloads right now.</span>
+						<span class="word">{t('home.couldNotRead')}</span>
+						<span class="sm">{t('home.homeCouldNotRead3')}</span>
 					{:else}
 						{#if downloading.speed}
 							<span class="num">{bytes(downloading.speed).split(' ')[0]}<small>{bytes(downloading.speed).split(' ')[1]}/s</small></span>
 						{:else}
-							<span class="num">{n(downloading.dlCount.down)}<small>downloading</small></span>
+							<span class="num">{n(downloading.dlCount.down)}<small>{t('home.downloading')}</small></span>
 						{/if}
 						<!-- The three steps a download goes through, in order. -->
-						<ol class="flow" aria-label="Downloads by step">
-							<li><b>{n(downloading.dlCount.waiting)}</b><span>Waiting</span></li>
-							<li><b>{n(downloading.dlCount.down)}</b><span>Downloading</span></li>
-							<li><b>{n(downloading.dlCount.imp)}</b><span>Importing</span></li>
+						<ol class="flow" aria-label={t('home.downloadsByStep')}>
+							<li><b>{n(downloading.dlCount.waiting)}</b><span>{t('home.waiting3')}</span></li>
+							<li><b>{n(downloading.dlCount.down)}</b><span>{t('home.downloading4')}</span></li>
+							<li><b>{n(downloading.dlCount.imp)}</b><span>{t('home.importing2')}</span></li>
 						</ol>
 						{#if fetchingAll.length}
 							<ul class="dl-list">
@@ -237,18 +238,18 @@
 						{:else if downloading.recentDone.length}
 							<ul class="dl-list done">
 								{#each downloading.recentDone as d (d.id)}
-									<li><b dir="auto">{d.title || d.name}</b><span>Finished {agoLong(d.finished_at, now.getTime())}</span></li>
+									<li><b dir="auto">{d.title || d.name}</b><span>{t('home.finished', { when: agoLong(d.finished_at, now.getTime()) })}</span></li>
 								{/each}
 							</ul>
 						{:else}
-							<span class="quiet">Nothing is downloading right now.{downloading.pausedCount ? ` ${n(downloading.pausedCount)} paused.` : ''}</span>
+							<span class="quiet">{t('home.nothingIsDownloadingRight')}{downloading.pausedCount ? ' ' + t('home.paused2', { n: n(downloading.pausedCount) }) : ''}</span>
 						{/if}
 					{/if}
 				</a>
 				<section class="tile stat big att" aria-labelledby="h-fix" data-testid="home-problems">
 					<header class="head">
 						<SettingsTile icon={attentionView.worst === 'ok' ? 'check' : 'alert'} tint={attentionView.attTint} />
-						<h2 class="lab" id="h-fix">Needs attention</h2>
+						<h2 class="lab" id="h-fix">{t('home.needsAttention')}</h2>
 						{#if attentionView.fixes.length}<b class="count {attentionView.worst}">{n(attentionView.fixes.length)}</b>{/if}
 					</header>
 					{#if !settled}
@@ -268,14 +269,14 @@
 						{#if attentionView.fixHidden}
 							<a class="more" href={to(attentionView.fixHidden.href)}>{attentionView.fixHidden.text}<Icon name="chevronRight" size={13} /></a>
 						{:else if attentionView.unchecked}
-							<span class="rest-ok">Some checks could not be read right now.</span>
+							<span class="rest-ok">{t('home.someChecksCouldNot')}</span>
 						{:else if attentionView.fixShown.length <= 2 && attentionView.passedCount}
-							<span class="rest-ok"><i class="tone ok" aria-hidden="true"></i>{n(attentionView.passedCount)} other {attentionView.passedCount === 1 ? 'check' : 'checks'} passed.</span>
+							<span class="rest-ok"><i class="tone ok" aria-hidden="true"></i>{t(attentionView.passedCount === 1 ? 'home.otherCheckPassed' : 'home.otherChecksPassed', { n: n(attentionView.passedCount) })}</span>
 						{/if}
 					{:else if attentionView.unchecked}
-						<span class="word">Could not check</span>
+						<span class="word">{t('home.couldNotCheck')}</span>
 						<span class="sm">{uncheckedLine(uncheckedDl, uncheckedHealth || uncheckedParts)}</span>
-						<span class="again"><Button size="sm" variant="secondary" busy={retrying} onclick={retry}>Try again</Button></span>
+						<span class="again"><Button size="sm" variant="secondary" busy={retrying} onclick={retry}>{t('home.tryAgain')}</Button></span>
 					{:else}
 						<!-- All good: what was checked, each with its tick. -->
 						{#if attentionView.passed.length}
@@ -283,21 +284,21 @@
 								{#each attentionView.passed.slice(0, 8) as w (w)}<li><Icon name="check" size={14} />{w}</li>{/each}
 							</ul>
 						{/if}
-						<span class="word">All good</span>
-						<span class="sm">Downloads, imports and checks are running fine.</span>
+						<span class="word">{t('home.allGood')}</span>
+						<span class="sm">{t('home.downloadsImportsAndChecks2')}</span>
 					{/if}
 				</section>
 				{@render diskTile('')}
-				{@render partTile('Sources', 'source', 'purple', attentionView.srcs, attentionView.troubled('source', health?.sources), '/settings/sources', 'Add a Source to find releases')}
-				{@render partTile('Downloaders', 'downloader', 'indigo', attentionView.dls, attentionView.troubled('downloader', health?.downloaders), '/settings/downloaders', 'Add a Downloader to fetch them')}
+				{@render partTile(t('home.sources'), 'source', 'purple', attentionView.srcs, attentionView.troubled('source', health?.sources), '/settings/sources', t('home.addASourceTo'))}
+				{@render partTile(t('home.downloaders'), 'downloader', 'indigo', attentionView.dls, attentionView.troubled('downloader', health?.downloaders), '/settings/downloaders', t('home.addADownloaderTo'))}
 				<a class="tile stat" href={to('/health')}>
-					{@render head('clock', 'graphite', 'Running for')}
+					{@render head('clock', 'graphite', t('home.runningFor'))}
 					{#if !settled}
 						{@render wait()}
 					{:else}
-						{#if health && !uncheckedParts}<span class="num">{duration(health.uptime_s)}</span>{:else}<span class="word">Could not read</span>{/if}
-						{#if health && !uncheckedParts}<span class="sm">Version {health.version}</span>{/if}
-						<span class="sm meta"><i class="tone" class:ok={!metadataOutage.s.down} class:wait={metadataOutage.s.down} aria-hidden="true"></i>Metadata server {metadataOutage.s.down ? 'down' : 'online'}</span>
+						{#if health && !uncheckedParts}<span class="num">{duration(health.uptime_s)}</span>{:else}<span class="word">{t('home.couldNotRead')}</span>{/if}
+						{#if health && !uncheckedParts}<span class="sm">{t('home.version', { version: health.version })}</span>{/if}
+						<span class="sm meta"><i class="tone" class:ok={!metadataOutage.s.down} class:wait={metadataOutage.s.down} aria-hidden="true"></i>{metadataOutage.s.down ? t('home.metadataServerDown') : t('home.metadataServerOnline')}</span>
 					{/if}
 				</a>
 			</div>

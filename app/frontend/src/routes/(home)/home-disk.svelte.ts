@@ -4,6 +4,7 @@ import { bytes } from '#lib/core/format.ts';
 import type { Tint } from '#lib/core/settings.ts';
 
 import type { HomeContext } from './home-context.ts';
+import { t } from '#lib/core/i18n/i18n.svelte.ts';
 
 export function createHomeDisk(ctx: Pick<HomeContext, 'checks' | 'folders' | 'uncheckedFolders' | 'diskTotal' | 'settled' | 'worst' | 'fixes' | 'unchecked' | 'uncheckedDl' | 'dlCount' | 'speed' | 'stageWords'>) {
 	const diskState = $derived.by(() => {
@@ -14,15 +15,21 @@ export function createHomeDisk(ctx: Pick<HomeContext, 'checks' | 'folders' | 'un
 	const diskLine = $derived(
 		!free
 			? ctx.uncheckedFolders
-				? 'Could not read the free room'
+				? t('home.couldNotReadThe')
 				: diskState === 'ok'
-				? 'Across your Library folders'
-				: 'A disk is running out of room'
+				? t('home.acrossYourLibraryFolders')
+				: t('home.aDiskIsRunning')
 			: free.free <= 0
 				? free.many
-					? 'A disk is full'
-					: 'The disk is full'
-				: `${diskState === 'ok' ? '' : 'Only '}${bytes(free.free)} free${free.many ? ' on the fullest disk' : ''}`
+					? t('home.aDiskIsFull')
+					: t('home.theDiskIsFull')
+				: free.many
+					? diskState === 'ok'
+						? t('home.freeOnTheFullest', { size: bytes(free.free) })
+						: t('home.onlyFreeOnThe', { size: bytes(free.free) })
+					: diskState === 'ok'
+						? t('home.free', { size: bytes(free.free) })
+						: t('home.onlyFree', { size: bytes(free.free) })
 	);
 	const diskTint = $derived<Tint>(diskState === 'error' ? 'red' : diskState === 'warning' ? 'amber' : 'teal');
 	const diskUsed = $derived(!free ? 0 : free.free <= 0 ? 100 : Math.min(100, Math.max(2, (ctx.diskTotal / Math.max(1, ctx.diskTotal + free.free)) * 100)));
@@ -30,8 +37,8 @@ export function createHomeDisk(ctx: Pick<HomeContext, 'checks' | 'folders' | 'un
 	const sysNote = $derived(
 		!ctx.settled
 			? ''
-			: (ctx.fixes.length ? `${n(ctx.fixes.length)} ${ctx.fixes.length === 1 ? 'thing needs' : 'things need'} a look` : ctx.unchecked ? 'Could not check everything' : 'All good') +
-					(ctx.uncheckedDl ? '' : ctx.dlCount.down ? ` · ${n(ctx.dlCount.down)} downloading${ctx.speed ? ` at ${bytes(ctx.speed)}/s` : ''}` : ctx.dlCount.imp || ctx.dlCount.waiting || ctx.dlCount.paused ? ` · ${ctx.stageWords(ctx.dlCount)}` : '')
+			: (ctx.fixes.length ? t(ctx.fixes.length === 1 ? 'home.thingNeedsALook' : 'home.thingsNeedALook', { n: n(ctx.fixes.length) }) : ctx.unchecked ? t('home.couldNotCheckEverything') : t('home.allGood')) +
+					(ctx.uncheckedDl ? '' : ctx.dlCount.down ? ` · ${ctx.speed ? t('home.downloadingAtS', { n: n(ctx.dlCount.down), speed: bytes(ctx.speed) }) : t('home.downloading3', { n: n(ctx.dlCount.down) })}` : ctx.dlCount.imp || ctx.dlCount.waiting || ctx.dlCount.paused ? ` · ${ctx.stageWords(ctx.dlCount)}` : '')
 	);
 
 	/** A server-filled row's strip: what is new on the card, in the row's own kind. */

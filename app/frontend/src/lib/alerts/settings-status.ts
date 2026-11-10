@@ -1,3 +1,5 @@
+import { t } from '#lib/core/i18n/i18n.svelte.ts';
+
 export type Severity = 'info' | 'warning' | 'error';
 
 export interface ServerStatus {
@@ -52,9 +54,9 @@ export function pageState(a: StatusAnswer, href: string): { state: GroupState; c
 }
 
 export function stateWords(s: { state: GroupState; count: number }): string {
-	if (s.state === 'attention') return s.count === 1 ? '1 needs attention' : `${s.count} need attention`;
-	if (s.state === 'unset') return 'Not set up';
-	if (s.state === 'ok') return 'All set';
+	if (s.state === 'attention') return s.count === 1 ? t('alerts.state.oneNeeds') : t('alerts.state.manyNeed', { count: s.count });
+	if (s.state === 'unset') return t('alerts.state.unset');
+	if (s.state === 'ok') return t('alerts.state.ok');
 	return '';
 }
 

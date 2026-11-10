@@ -1,5 +1,6 @@
 import type { SourceHealth, SourceView } from './types.ts';
 import type { Tone } from '../core/format.ts';
+import { t } from '#lib/core/i18n/i18n.svelte.ts';
 
 export interface SourceForm {
 	name: string;
@@ -24,14 +25,20 @@ export interface SourceForm {
 	tags: string[];
 }
 
+// Getters, so each line follows the language picked when it is read.
 export const healthWords: Record<SourceHealth['state'], string> = {
-	working: 'Working',
-	unreachable: 'Unreachable',
-	auth_failed: 'Key turned down',
-	disabled: 'Paused'
+	get working() { return t('sources.health.working'); },
+	get unreachable() { return t('sources.health.unreachable'); },
+	get auth_failed() { return t('sources.health.authFailed'); },
+	get disabled() { return t('sources.health.disabled'); }
 };
 
-export const opWords: Record<string, string> = { caps: 'Read what it can do', search: 'Search', feed: 'Newest list', test: 'Test' };
+export const opWords: Record<string, string> = {
+	get caps() { return t('sources.op.caps'); },
+	get search() { return t('sources.op.search'); },
+	get feed() { return t('sources.op.feed'); },
+	get test() { return t('sources.op.test'); }
+};
 
 export function sourceTone(state: string): Tone {
 	if (state === 'working') return 'ok';
@@ -47,10 +54,10 @@ export function ms(n: number | null | undefined): string {
 
 export function uses(s: Pick<SourceView, 'use_for'>): string {
 	const out: string[] = [];
-	if (s.use_for?.feed) out.push('newest list');
-	if (s.use_for?.auto_search) out.push('searches on its own');
-	if (s.use_for?.hand_search) out.push('search by hand');
-	return out.length ? out.join(' · ') : 'not used';
+	if (s.use_for?.feed) out.push(t('sources.uses.feed'));
+	if (s.use_for?.auto_search) out.push(t('sources.uses.auto'));
+	if (s.use_for?.hand_search) out.push(t('sources.uses.hand'));
+	return out.length ? out.join(' · ') : t('sources.uses.none');
 }
 
 export function emptyForm(): SourceForm {

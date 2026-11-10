@@ -2,9 +2,10 @@
 	// Sheet that shows what deleting a show or artist (or part of it) will do, then applies it.
 	import Button from '#lib/ui/Button.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
-	import { deleteBody, deleteSummary, wholeScope, type DeleteScope, type RemovePlan } from './organise.ts';
+	import { deleteBody, deleteSummary, unit, wholeScope, type DeleteScope, type RemovePlan } from './organise.ts';
 	import { api, ApiError, message } from '../core/api.ts';
 	import { toasts } from '../core/toasts.svelte.ts';
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 
 	let {
 		titleId,
@@ -26,7 +27,7 @@
 	// Whole means no season or album is picked, so the switches cover the entire title.
 	const whole = $derived(wholeScope(scope));
 	const what = $derived(whole ? name : kind === 'artist' ? `${name} – ${scope.label ?? ''}` : `${name} ${scope.label ?? ''}`.trim());
-	const parts = $derived(kind === 'artist' ? 'a track you keep' : 'an episode you keep');
+	const kindWord = $derived(t(`mediafiles.kind.${kind}`));
 
 	function flip(which: 'files' | 'never') {
 		if (which === 'files') files = !files;
@@ -62,8 +63,8 @@
 		try {
 			const p = await api.post<RemovePlan>(`/titles/${titleId}/delete`, body(true));
 			isOpen = false;
-			const kept = p.held.length ? `Files kept${p.holding_days ? ` ${p.holding_days} days` : ' in the holding folder'}` : 'Files stay on disk';
-			toasts.push(`${what} deleted`, 'ok', { body: kept });
+			const kept = p.held.length ? (p.holding_days ? t('mediafiles.delete.keptDays', { n: p.holding_days }) : t('mediafiles.delete.keptFolder')) : t('mediafiles.delete.stay');
+			toasts.push(t('mediafiles.delete.deleted', { name: what }), 'ok', { body: kept });
 			ondone(p);
 		} catch (e) {
 			error = message(e);
@@ -79,33 +80,33 @@
 	}
 </script>
 
-<Sheet bind:open={isOpen} title={`Delete ${what}?`} size="md">
+<Sheet bind:open={isOpen} title={t('mediafiles.delete.title', { name: what })} size="md">
 	<div class="sd" data-testid="show-delete">
 		<div class="sd-rows">
 			<button type="button" class="sd-row" role="switch" aria-checked={files} onclick={() => flip('files')}>
-				<span><b>Also delete {whole ? 'its' : 'their'} files</b><small>Kept in the holding folder for a while</small></span>
+				<span><b>{t(whole ? 'mediafiles.showDelete.alsoIts' : 'mediafiles.showDelete.alsoTheir')}</b><small>{t('mediafiles.delete.alsoFilesHint')}</small></span>
 				<span class="sd-switch" class:on={files} aria-hidden="true"></span>
 			</button>
 			{#if whole}
 				<button type="button" class="sd-row" role="switch" aria-checked={never} onclick={() => flip('never')}>
-					<span><b>Never add again</b><small>Lists skip it</small></span>
+					<span><b>{t('mediafiles.delete.never')}</b><small>{t('mediafiles.delete.neverHint')}</small></span>
 					<span class="sd-switch" class:on={never} aria-hidden="true"></span>
 				</button>
 			{/if}
 		</div>
 		<section class="sd-plan" aria-live="polite" data-testid="delete-plan">
-			<p class="sd-h">What will happen</p>
+			<p class="sd-h">{t('mediafiles.delete.willHappen')}</p>
 			{#if !plan}
 				{#if !error}<div class="sd-skel"></div>{/if}
 			{:else}
 				<ul>{#each deleteSummary(plan, kind) as line (line)}<li>{line}</li>{/each}</ul>
 				{#if plan.held.length}
-					<details class="sd-files"><summary>{plan.held.length === 1 ? '1 file to the holding folder' : `${plan.held.length} files to the holding folder`}</summary>
+					<details class="sd-files"><summary>{t('mediafiles.delete.held', { files: unit('file', plan.held.length) })}</summary>
 						<ul>{#each plan.held as f (f.file_id)}<li class="mono">{f.path}</li>{/each}</ul>
 					</details>
 				{/if}
 				{#if plan.kept.length}
-					<details class="sd-files"><summary>{plan.kept.length === 1 ? '1 file stays' : `${plan.kept.length} files stay`}</summary>
+					<details class="sd-files"><summary>{t(plan.kept.length === 1 ? 'mediafiles.showDelete.staysOne' : 'mediafiles.showDelete.staysMany', { n: plan.kept.length })}</summary>
 						<ul>{#each plan.kept as f (f.file_id)}<li class="mono">{f.path} <span class="muted">({f.why})</span></li>{/each}</ul>
 					</details>
 				{/if}
@@ -113,9 +114,9 @@
 		</section>
 		{#if error}<p class="form-error" role="alert">{error}</p>{/if}
 		<div class="sd-actions">
-			<Button variant="plain" onclick={() => (isOpen = false)}>Cancel</Button>
+			<Button variant="plain" onclick={() => (isOpen = false)}>{t('mediafiles.delete.cancel')}</Button>
 			<Button variant="destructive" onclick={go} disabled={busy || !plan} busy={busy}>
-				{whole ? `Delete ${kind}` : 'Delete ' + (scope.label || (kind === 'artist' ? 'these tracks' : 'these episodes'))}
+				{whole ? t('mediafiles.delete.kind', { kind: kindWord }) : t('mediafiles.delete.kind', { kind: scope.label || t(kind === 'artist' ? 'mediafiles.showDelete.theseTracks' : 'mediafiles.showDelete.theseEpisodes') })}
 			</Button>
 		</div>
 	</div>

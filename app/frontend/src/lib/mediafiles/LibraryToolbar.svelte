@@ -11,6 +11,7 @@
 	import type { Kind } from './library.ts';
 	import { columnsFor, type Column, type LibKind } from './table.ts';
 	import type { View } from './library-view.ts';
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 
 	type Props = {
 		phone: boolean;
@@ -59,10 +60,10 @@
 
 <svelte:window onscroll={checkStuck} onresize={checkStuck} />
 
-<div class="toolbar" class:stuck class:topbar={!phone} role="toolbar" aria-label="Library view" bind:this={toolbarEl}>
+<div class="toolbar" class:stuck class:topbar={!phone} role="toolbar" aria-label={t('mediafiles.toolbar.label')} bind:this={toolbarEl}>
 	{#if phone}
 		{#if shelfItems.length > 1}
-			<span class="count shelf"><Menu label="Show Movies, TV shows or Music. Now: {kindTitle}" variant="button" icon={kind === 'show' ? 'tv' : kind === 'artist' ? 'music' : 'film'} text={loaded && !error ? countText : kindTitle} items={shelfItems} width={200} align="start" /></span>
+			<span class="count shelf"><Menu label={t('mediafiles.toolbar.shelf', { now: kindTitle })} variant="button" icon={kind === 'show' ? 'tv' : kind === 'artist' ? 'music' : 'film'} text={loaded && !error ? countText : kindTitle} items={shelfItems} width={200} align="start" /></span>
 		{:else}
 			<p class="count" aria-live="polite">{#if loaded && !error}{countText}{/if}</p>
 		{/if}
@@ -70,12 +71,12 @@
 		{#if sidebarCollapsed}<span class="cap">{@render sidebarButton()}</span>{/if}
 		{@render find()}
 	{/if}
-	<span class="t-view cap"><LibraryViewSwitch value={view} options={[{ value: 'rows', label: 'Rows', icon: 'menu' }, { value: 'table', label: 'Banners', icon: 'image' }, { value: 'posters', label: 'Posters', icon: 'grid' }, { value: 'overview', label: 'Overview', icon: 'info' }]} onchange={(v) => setView(v)} sizeItems={!phone && (view === 'table' || view === 'posters') ? sizeItems : null} sizeLabel={view === 'posters' ? posterLabels[posterSize] : densityLabels[density]} compact={phone || listWidth < 1100} /></span>
+	<span class="t-view cap"><LibraryViewSwitch value={view} options={[{ value: 'rows', label: t('mediafiles.toolbar.rows'), icon: 'menu' }, { value: 'table', label: t('mediafiles.toolbar.banners'), icon: 'image' }, { value: 'posters', label: t('mediafiles.toolbar.posters'), icon: 'grid' }, { value: 'overview', label: t('mediafiles.toolbar.overview'), icon: 'info' }]} onchange={(v) => setView(v)} sizeItems={!phone && (view === 'table' || view === 'posters') ? sizeItems : null} sizeLabel={view === 'posters' ? posterLabels[posterSize] : densityLabels[density]} compact={phone || listWidth < 1100} /></span>
 	<span class="filter-btn cap" class:on={filtersOn > 0}>
 		{#if phone}
-			<Button size="md" icon="sliders" aria-haspopup="dialog" onclick={() => (sortOpen = true)} data-testid="library-sort-filter">{filtersOn ? `Sort & filter · ${filtersOn}` : 'Sort & filter'}</Button>
+			<Button size="md" icon="sliders" aria-haspopup="dialog" onclick={() => (sortOpen = true)} data-testid="library-sort-filter">{filtersOn ? t('mediafiles.toolbar.sortFilterN', { n: filtersOn }) : t('mediafiles.toolbar.sortFilter')}</Button>
 		{:else}
-			<Popover label="Sort and filter" variant="button" icon="sliders" text={filtersOn ? `Sort & filter · ${filtersOn}` : 'Sort & filter'} width={620} bind:open={sortOpen}>
+			<Popover label={t('mediafiles.toolbar.sortAndFilter')} variant="button" icon="sliders" text={filtersOn ? t('mediafiles.toolbar.sortFilterN', { n: filtersOn }) : t('mediafiles.toolbar.sortFilter')} width={620} bind:open={sortOpen}>
 				{#snippet children()}{@render sortFilter()}{/snippet}
 			</Popover>
 		{/if}
@@ -86,9 +87,9 @@
 	<span class="tool-gap"></span>
 	<span class="t-tools cap">
 	{#if view !== 'posters' && kind !== 'all' && !phone}<span class="t-cols"><ColumnChooser {columns} onchange={setColumns} onreset={() => setColumns(columnsFor(libKind))} /></span>{/if}
-	{#if canManage && shownCount}<span class="t-sel">{#if phone}<IconButton icon="check" variant={selecting ? 'filled' : 'tinted'} label={selecting ? 'Done' : 'Select'} onclick={() => (selecting ? stopSelecting() : startSelecting())} data-testid="library-select" />{:else}<Button variant={selecting ? 'primary' : 'secondary'} size="md" icon="check" onclick={() => (selecting ? stopSelecting() : startSelecting())} data-testid="library-select">{selecting ? 'Done' : 'Select'}</Button>{/if}</span>{/if}
+	{#if canManage && shownCount}<span class="t-sel">{#if phone}<IconButton icon="check" variant={selecting ? 'filled' : 'tinted'} label={selecting ? t('mediafiles.toolbar.done') : t('mediafiles.toolbar.select')} onclick={() => (selecting ? stopSelecting() : startSelecting())} data-testid="library-select" />{:else}<Button variant={selecting ? 'primary' : 'secondary'} size="md" icon="check" onclick={() => (selecting ? stopSelecting() : startSelecting())} data-testid="library-select">{selecting ? t('mediafiles.toolbar.done') : t('mediafiles.toolbar.select')}</Button>{/if}</span>{/if}
 	{#if canManage}
-		<span class="t-add"><Menu label="Add to the Library" variant={phone ? 'icon' : 'button'} text={phone ? undefined : 'Add'} icon="plus" items={addItems} width={190} align="end" /></span>
+		<span class="t-add"><Menu label={t('mediafiles.toolbar.addTo')} variant={phone ? 'icon' : 'button'} text={phone ? undefined : t('mediafiles.toolbar.add')} icon="plus" items={addItems} width={190} align="end" /></span>
 	{/if}
 	</span>
 	{#if phone && (findOpen || q)}

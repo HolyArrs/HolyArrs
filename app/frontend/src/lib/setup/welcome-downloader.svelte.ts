@@ -2,6 +2,7 @@
 import { emptyForm, formBody, formFrom, reachWords, type DownloaderForm, type DownloaderView } from '#lib/downloads/index.ts';
 import { tick } from 'svelte';
 import { api, message, ApiError } from '#lib/core/api.ts';
+import { t as say } from '#lib/core/i18n/i18n.svelte.ts';
 
 export function createWelcomeDownloader(ctx: any) {
 	const dlKinds: DownloaderForm['kind'][] = ['qbittorrent', 'sabnzbd', 'transmission', 'nzbget', 'deluge'];
@@ -104,7 +105,7 @@ export function createWelcomeDownloader(ctx: any) {
 			dl = emptyForm();
 		} catch (err) {
 			// HolyArrs itself did not answer: the Source step's wording.
-			if (err instanceof ApiError && (err.status === 0 || err.status >= 500)) ctx.error = 'HolyArrs isn’t answering. Try again in a moment.';
+			if (err instanceof ApiError && (err.status === 0 || err.status >= 500)) ctx.error = say('setup.notAnswering');
 			else if (!askSignIn(reachWords(message(err)))) ctx.error = message(err);
 		} finally {
 			ctx.busy = false;
@@ -115,7 +116,7 @@ export function createWelcomeDownloader(ctx: any) {
 	// An app that signs in, turned down with no user name typed: ask for both, under User name (the server's answer names an API key field the wizard does not have).
 	function askSignIn(words: string): boolean {
 		if (!dlUser || dl.username.trim() || words.startsWith("Can't reach")) return false;
-		dlAuth = 'Add the user name and password.';
+		dlAuth = say('setup.addUserPasswordHint');
 		void tick().then(() => document.getElementById('dl-user')?.focus());
 		return true;
 	}

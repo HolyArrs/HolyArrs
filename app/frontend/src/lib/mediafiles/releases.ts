@@ -1,5 +1,6 @@
 // Plain-words labels, warnings and paging for the Releases list and search status lines.
 import type { Reason, ReleaseView } from '../core/types.ts';
+import { t } from '../core/i18n/i18n.svelte.ts';
 
 export interface Pager {
 	from: number;
@@ -18,22 +19,17 @@ export interface ReleaseScope {
 	slotState?: string;
 }
 
-const outcomeWords: Record<string, string> = {
-	chosen: 'Chosen',
-	held: 'Held',
-	passed_over: 'Passed over',
-	refused: 'Turned away by the rules',
-	turned_down: 'Turned down'
-};
+const outcomeKeys = ['chosen', 'held', 'passed_over', 'refused', 'turned_down'];
+const outcomeWord = (k: string): string | undefined => (outcomeKeys.includes(k) ? t(`mediafiles.release.${k}`) : undefined);
 
 // A real state beats the judged outcome; an outcome alone is only what "would" happen.
 export function verdict(r: Pick<ReleaseView, 'state' | 'outcome'>): string {
-	if (r.state === 'turned_down') return outcomeWords.turned_down;
-	if (r.state === 'chosen') return outcomeWords.chosen;
-	if (r.state === 'held') return outcomeWords.held;
-	if (r.outcome === 'chosen') return 'Would be chosen';
-	if (r.outcome === 'held') return 'Would be held';
-	return outcomeWords[r.outcome] ?? outcomeWords[r.state] ?? 'Judged';
+	if (r.state === 'turned_down') return t('mediafiles.release.turned_down');
+	if (r.state === 'chosen') return t('mediafiles.release.chosen');
+	if (r.state === 'held') return t('mediafiles.release.held');
+	if (r.outcome === 'chosen') return t('mediafiles.release.wouldChoose');
+	if (r.outcome === 'held') return t('mediafiles.release.wouldHold');
+	return outcomeWord(r.outcome) ?? outcomeWord(r.state) ?? t('mediafiles.release.judged');
 }
 
 export function verdictTone(r: Pick<ReleaseView, 'state' | 'outcome'>): 'red' | 'ok' | 'wait' | 'fail' | 'idle' {
@@ -53,10 +49,10 @@ export function facts(r: ReleaseView, size: (n: number) => string): string {
 	return [
 		r.source_name,
 		size(r.size),
-		r.seeders != null ? `${r.seeders} seeders` : '',
+		r.seeders != null ? t('mediafiles.release.seeders', { n: r.seeders }) : '',
 		r.protocol,
-		r.passed ? `${r.points} points` : '',
-		r.passed && r.rank ? `ranked ${r.rank}` : ''
+		r.passed ? t('mediafiles.release.points', { n: r.points }) : '',
+		r.passed && r.rank ? t('mediafiles.release.ranked', { n: r.rank }) : ''
 	]
 		.filter(Boolean)
 		.join(' · ');
@@ -67,22 +63,22 @@ export function chooseWarnings(r: ReleaseView, slotState?: string, show = false,
 	const out: string[] = [];
 	if (r.needs_force) {
 		const fails = r.reasons.filter((x) => x.effect === 'fail').map((x) => x.text);
-		out.push(`It did not pass: ${fails.length ? fails.join('; ') : 'it was refused'}. Choosing it overrides that.`);
+		out.push(t('mediafiles.release.didNotPass', { why: fails.length ? fails.join('; ') : t('mediafiles.release.wasRefused') }));
 	}
 	if (music) {
-		if (r.gate_skipped || slotState === 'not_out_yet') out.push('This album is not out yet; choosing it skips that check.');
+		if (r.gate_skipped || slotState === 'not_out_yet') out.push(t('mediafiles.release.albumNotOut'));
 		const n = r.slot_ids?.length ?? 0;
-		if (n > 1) out.push(`One download fills ${n} tracks${r.album ? ` of ${r.album}` : ''}.`);
+		if (n > 1) out.push(r.album ? t('mediafiles.release.fillsTracksOf', { n, album: r.album }) : t('mediafiles.release.fillsTracks', { n }));
 		return out;
 	}
 	if (show) {
-		if (r.gate_skipped || slotState === 'not_out_yet') out.push('This episode has not aired yet; choosing it skips that check.');
-		if (slotState === 'in_library') out.push('This episode already has a good enough copy; the new one will replace it.');
-		if ((r.slot_ids?.length ?? 0) > 1 && r.episode) out.push(`One download fills ${r.episode}.`);
+		if (r.gate_skipped || slotState === 'not_out_yet') out.push(t('mediafiles.release.episodeNotAired'));
+		if (slotState === 'in_library') out.push(t('mediafiles.release.episodeHasCopy'));
+		if ((r.slot_ids?.length ?? 0) > 1 && r.episode) out.push(t('mediafiles.release.fillsEpisode', { episode: r.episode }));
 		return out;
 	}
-	if (r.gate_skipped || slotState === 'not_out_yet') out.push('The Release gate is skipped: this movie does not count as out yet.');
-	if (slotState === 'in_library') out.push('This Version already has a good enough copy; the new one will replace it.');
+	if (r.gate_skipped || slotState === 'not_out_yet') out.push(t('mediafiles.release.gateSkipped'));
+	if (slotState === 'in_library') out.push(t('mediafiles.release.versionHasCopy'));
 	return out;
 }
 

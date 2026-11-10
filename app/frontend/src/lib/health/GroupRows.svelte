@@ -1,5 +1,7 @@
 <script lang="ts">
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	// One group's parts as ruled rows, with the reason and Check / Fix under any row that is not working.
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import Button from '#lib/ui/Button.svelte';
 	import { atVerb, type StatusRow } from './rows.ts';
 	import { ago, dateTime } from '../core/format.ts';
@@ -18,7 +20,7 @@
 	// Problems float to the top.
 	const rank = (r: StatusRow) => (r.tone === 'fail' ? 0 : r.tone === 'wait' ? 1 : 2);
 	// The verb keeps "3 d ago" from reading as "not checked for 3 days".
-	const when = (r: StatusRow) => (atVerb[r.group] ? `${atVerb[r.group]} ${ago(r.at)}` : ago(r.at));
+	const when = (r: StatusRow) => (atVerb[r.group] ? t('health.rows.since', { verb: atVerb[r.group] ?? '', when: ago(r.at) }) : ago(r.at));
 </script>
 
 <ul class="prl" class:flat class:compact>
@@ -31,11 +33,11 @@
 				<span class="chip {r.tone}">{r.word}</span>
 			</div>
 			{#if bad}
-				{#if r.reason}<p class="why">{r.reason}</p>{/if}
+				{#if r.reason}<p class="why">{serverWords(r.reason)}</p>{/if}
 				{#if canAct && (r.check || r.fix)}
 					<div class="acts">
-						{#if r.check}<Button variant="plain" size="sm" disabled={busy(r.key)} onclick={() => oncheck(r)}>Check</Button>{/if}
-						{#if r.fix}<Button variant="plain" size="sm" href={to(r.fix)}>Fix</Button>{/if}
+						{#if r.check}<Button variant="plain" size="sm" disabled={busy(r.key)} onclick={() => oncheck(r)}>{t('health.rows.check')}</Button>{/if}
+						{#if r.fix}<Button variant="plain" size="sm" href={to(r.fix)}>{t('health.rows.fix')}</Button>{/if}
 					</div>
 				{/if}
 			{/if}
@@ -43,7 +45,7 @@
 	{/each}
 </ul>
 {#if ordered.length > MAX}
-	<div class="all"><Button variant="secondary" aria-expanded={all} onclick={() => (all = !all)}>{all ? 'Show fewer' : `Show all ${ordered.length}`}</Button></div>
+	<div class="all"><Button variant="secondary" aria-expanded={all} onclick={() => (all = !all)}>{all ? t('health.rows.fewer') : t('health.rows.all', { count: ordered.length })}</Button></div>
 {/if}
 
 <style>

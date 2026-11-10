@@ -1,0 +1,10 @@
+{
+	"settings.home.advanced": "Avanzado",
+	"settings.home.page": "{group} · página",
+	"settings.home.title": "Ajustes",
+	"settings.home.search": "Buscar ajustes",
+	"settings.home.matching": "Ajustes que coinciden",
+	"settings.home.noMatch": "Ningún ajuste coincide",
+	"settings.home.noMatchText": "Prueba con otra palabra, como carpeta, clave o contraseña.",
+	"settings.home.clear": "Borrar la búsqueda"
+}
