@@ -110,7 +110,8 @@
 	.crumbs a { display: inline-flex; align-items: center; min-height: 24px; color: var(--text-muted); text-decoration: none; transition: color var(--dur-fast) var(--ease-out); }
 	.crumbs a:hover { color: var(--text); }
 	.crumbs .sep { margin: 0 6px; opacity: .5; }
-	.crumbs .here { overflow: hidden; text-overflow: ellipsis; max-width: 28vw; color: var(--text); font-weight: 600; }
+	/* Long page names (other languages) wrap to a second line instead of cutting off; the search stays centred. */
+	.crumbs .here { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; white-space: normal; overflow-wrap: break-word; min-width: 0; line-height: 1.15; max-width: 28vw; color: var(--text); font-weight: 600; }
 	@media (max-width: 1099px) { .crumbs { display: none; } }
 	@media (max-width: 767px) { .ui-topbar { display: none; } }
 </style>
