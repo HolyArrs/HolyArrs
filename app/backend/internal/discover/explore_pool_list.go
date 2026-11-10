@@ -8,6 +8,7 @@ import (
 	"log"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	engine "github.com/HolyArrs/holyarrs/app/backend/internal/suggest"
@@ -69,7 +70,7 @@ func (s ExploreSource) List(ctx context.Context, q engine.Request) ([]engine.Ite
 	s.Calls.Add(q)
 	f.items, f.err = p.List(ctx, q)
 	if f.err != nil {
-		if ctx.Err() == nil && s.noteListDown(key, true) {
+		if ctx.Err() == nil && s.noteListDown(key, true) && (!errors.Is(f.err, metadata.ErrNoAccess) || listLogDue(f.err, time.Now())) {
 			log.Printf("explore: list %s failed: %v", q.List, f.err)
 		}
 		if ok {
@@ -396,3 +397,29 @@ func (e *Explore) BuildPool(ctx context.Context, member int64, sw string) error 
 	e.QueueCardArt(ctx, &pool)
 	return nil
 }
+
+// listLogDue says whether a refused list should be logged: the same error
+// is logged at most once every five minutes, whichever list hit it. A
+// refused install fails every list at once, and each one used to log the
+// same line. Other failures still log once per list per outage.
+func listLogDue(err error, now time.Time) bool {
+	msg := err.Error()
+	if len(msg) > 120 {
+		msg = msg[:120]
+	}
+	listLogMu.Lock()
+	defer listLogMu.Unlock()
+	if at, ok := listLogAt[msg]; ok && now.Sub(at) < 5*time.Minute {
+		return false
+	}
+	if len(listLogAt) > 64 {
+		clear(listLogAt)
+	}
+	listLogAt[msg] = now
+	return true
+}
+
+var (
+	listLogMu sync.Mutex
+	listLogAt = map[string]time.Time{}
+)

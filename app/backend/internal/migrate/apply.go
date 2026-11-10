@@ -6,6 +6,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -580,6 +581,13 @@ func (r *run) one(group string, it Item) (string, string) {
 		(it.Person == nil || it.Person.StableIdentity && it.Person.Choice != PersonSkip && it.Person.Choice != PersonMerge && it.Person.Role != "owner") {
 		if it.Person != nil {
 			r.people[it.Key] = id
+		}
+		// A title moved before still takes the quality the old app recorded
+		// for each file, so moving again after reading the old app updates it.
+		if it.Title != nil && it.Title.Music == nil && len(it.Title.Qualities) > 0 && !r.dry {
+			if n, err := r.m.Library.SetRecordedQualities(r.ctx, id, it.Title.Qualities, r.by); err == nil && n > 0 {
+				return ResAlready, "moved before; the quality of " + strconv.Itoa(n) + " files was updated"
+			}
 		}
 		return ResAlready, "moved before"
 	}

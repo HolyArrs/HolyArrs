@@ -39,7 +39,13 @@
         ],
         "extra": {
           "s": "x"
-        }
+        },
+        "files": [
+          {
+            "name": "s",
+            "quality": "s"
+          }
+        ]
       }
     ],
     "tags": [

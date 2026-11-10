@@ -74,7 +74,10 @@
               ]
             },
             "release_gate": "s",
-            "gate_delay_days": 7
+            "gate_delay_days": 7,
+            "qualities": {
+              "s": "s"
+            }
           },
           "never_add": {
             "kind": "s",

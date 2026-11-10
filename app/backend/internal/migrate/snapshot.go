@@ -100,6 +100,8 @@ type Title struct {
 	// Extra holds app-specific plain settings (minimum availability,
 	// show type, new-item rule, metadata profile).
 	Extra map[string]any `json:"extra,omitempty"`
+	// Files are the title's files with the quality the old app recorded.
+	Files []TitleFile `json:"files,omitempty"`
 }
 
 // MusicAlbum is one Lidarr album belonging to an artist.

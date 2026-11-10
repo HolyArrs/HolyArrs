@@ -1,4 +1,4 @@
-<p align="center"><a href="../../README.md">English</a> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.hi.md">हिन्दी</a> · <a href="README.es.md">Español</a> · <a href="README.fr.md">Français</a> · <a href="README.ar.md">العربية</a> · <a href="README.pt-BR.md">Português</a> · <a href="README.ru.md">Русский</a> · <a href="README.ja.md">日本語</a> · <a href="README.de.md">Deutsch</a> · <b>한국어</b></p>
+<p align="center"><a href="../../README.md">English</a> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.hi.md">हिन्दी</a> · <a href="README.es.md">Español</a> · <a href="README.fr.md">Français</a> · <a href="README.ar.md">العربية</a> · <a href="README.pt-BR.md">Português</a> · <a href="README.ru.md">Русский</a> · <a href="README.ja.md">日本語</a> · <a href="README.de.md">Deutsch</a> · <b>한국어</b> · <a href="README.it.md">Italiano</a> · <a href="README.pl.md">Polski</a> · <a href="README.nl.md">Nederlands</a> · <a href="README.tr.md">Türkçe</a> · <a href="README.uk.md">Українська</a></p>
 
 <p align="center">
   <picture>
@@ -200,7 +200,7 @@ NAS를 쓰세요? [Unraid, Synology 및 기타 NAS](https://docs.HolyArrs.com/ru
 | 태그 | 용도 |
 | :----: | --- |
 | `latest` | 최신 릴리스. |
-| `1.0.5` | 정확히 한 버전이에요. 절대 움직이지 않아요. |
+| `1.0.6` | 정확히 한 버전이에요. 절대 움직이지 않아요. |
 
 ## 사용법
 
