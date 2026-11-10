@@ -241,6 +241,9 @@ func (c *Client) fetch(ctx context.Context, raw string) ([]byte, error) {
 		outcome = outbound.TerminalFailure
 		return nil, &Error{Kind: KindBroken, Msg: "bad Source address"}
 	}
+	if req.Header.Get("User-Agent") == "" {
+		req.Header.Set("User-Agent", UserAgent)
+	}
 	resp, err := c.http.Do(req)
 	if err != nil {
 		outcome = outbound.HTTPOutcome(0, err, ctx)

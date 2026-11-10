@@ -24,7 +24,22 @@ func Transport(cfg Config) http.RoundTripper {
 			cfg.AllowAddr = outbound.NotMetadata
 		}
 	}
-	return transport(cfg)
+	return agentTransport{transport(cfg)}
+}
+
+// UserAgent is sent on every Source request that has none; main sets the version.
+var UserAgent = "HolyArrs/dev"
+
+// agentTransport adds the HolyArrs User-Agent, since sites behind Cloudflare
+// often block Go's default one.
+type agentTransport struct{ next http.RoundTripper }
+
+func (t agentTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	if req.Header.Get("User-Agent") == "" {
+		req = req.Clone(req.Context())
+		req.Header.Set("User-Agent", UserAgent)
+	}
+	return t.next.RoundTrip(req)
 }
 
 // transport dials through the network policy. With a proxy, the policy checks
