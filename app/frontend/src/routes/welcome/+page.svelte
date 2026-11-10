@@ -248,7 +248,7 @@
 		media: { h: 'Where’s your media?', p: 'Turn on what you collect and add its folder.' },
 		downloader: { h: 'Which app downloads?', p: 'Connect the one you use.' },
 		source: { h: 'Where should we search?', p: 'Link Prowlarr or Jackett and your sites come with it.' },
-		import: { h: 'Bring your apps', p: 'We only read them. Nothing moves until you say so.' },
+		import: { h: 'Bring your apps', p: 'We only read them. Your media files are never moved.' },
 		done: { h: 'You’re set', p: 'Find something on Home and we’ll get it.' }
 	};
 	const head = $derived(
@@ -265,7 +265,8 @@
 <svelte:head><title>{head.h} · HolyArrs</title></svelte:head>
 
 {#if firstRun}<SigninBackdrop /><div class="dim" aria-hidden="true"></div>{/if}
-<div class="welcome" class:over-art={firstRun}>
+<!-- First run sits on a dark picture with white text, so its cards and sheets use the dark colours in any theme. -->
+<div class="welcome" class:over-art={firstRun} data-theme={firstRun ? 'dark' : undefined}>
 	<!-- First run keeps the sign-in look: the same moving backdrop behind one glass panel. -->
 	<div class="sheet" class:glass={firstRun} class:light={theme.value === 'light'} data-signin-panel={firstRun ? '' : undefined}>
 	<div class="brand"><img src={to(mark)} alt={firstRun ? 'HolyArrs' : ''} width={firstRun ? 28 : 32} height={firstRun ? 28 : 32} />{#if !firstRun}<span>HolyArrs</span>{/if}</div>

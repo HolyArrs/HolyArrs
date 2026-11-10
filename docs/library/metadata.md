@@ -53,7 +53,7 @@ Never sent: your files, folder paths or file names; your library, downloads or h
 
 | Variable | Does | Default |
 |---|---|---|
-| `HOLYARRS_METADATA_URL` | Points HolyArrs at another metadata server. Restart after changing | `https://holyarrs-api.coderluii.dev` |
+| `HOLYARRS_METADATA_URL` | Points HolyArrs at another metadata server. Restart after changing | `https://api.holyarrs.com` |
 | `HOLYARRS_TMDB_KEY` | Your own TMDB read token. Movie and show lookups go to TMDB directly | Empty |
 | `HOLYARRS_DEEZER_URL=off` | Turns off artist top songs | On |
 

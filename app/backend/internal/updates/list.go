@@ -15,7 +15,7 @@ import (
 // Where the update list is read.
 const (
 	// DefaultURL is the metadata server's copy.
-	DefaultURL = "https://holyarrs-api.coderluii.dev/v1/manifest.json"
+	DefaultURL = "https://api.holyarrs.com/v1/manifest.json"
 	// PagesURL is the GitHub Pages copy, tried when the server fails.
 	// Empty until the Pages copy is published.
 	PagesURL = ""

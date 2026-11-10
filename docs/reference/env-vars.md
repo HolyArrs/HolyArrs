@@ -74,7 +74,7 @@ A bad setup stops HolyArrs from starting. Steps are in [Sign-in and passwords](.
 
 | Variable | What it does | Default |
 | --- | --- | --- |
-| `HOLYARRS_METADATA_URL` | The metadata server address. | `https://holyarrs-api.coderluii.dev` |
+| `HOLYARRS_METADATA_URL` | The metadata server address. | `https://api.holyarrs.com` |
 | `HOLYARRS_TMDB_KEY` | Your own TMDB read access token. Set, TMDB reads go straight to TMDB instead of the metadata server. | none |
 | `HOLYARRS_METADATA_SERVICE_TOKEN_FILE` | File holding this install's metadata server credential, read on each call. Unset, the credential lives in the vault. | none |
 

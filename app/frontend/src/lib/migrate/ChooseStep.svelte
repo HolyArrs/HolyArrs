@@ -258,6 +258,7 @@
 					{#if tiles.length === 0}<div class="tile"><span class="sub">Nothing switched on</span></div>{/if}
 				</div>
 				{#if restLine}<p class="sub also">{restLine}</p>{/if}
+				<p class="sub also" data-testid="move-files-stay">Titles and settings only. Your files stay where they are.</p>
 			{/if}
 
 			{#if needFolders.length}

@@ -455,7 +455,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	library.UseSubtitleNames(subtitles.Names{})
 	lib := &library.Service{Store: s, Queue: q, Metadata: md, Live: hub, SavePath: c.SavePath, ArtistImages: pictures,
 		ImageServer: hosted.Service.Base() + "/v1/img",
-		Artwork: &library.ArtworkCache{Dir: filepath.Join(c.ConfigDir, "artwork"), Allowed: []string{metadata.ImageBase + "/", hosted.Service.Base() + "/v1/img/"},
+		Artwork: &library.ArtworkCache{Dir: filepath.Join(c.ConfigDir, "artwork"), Allowed: []string{metadata.ImageBase + "/", hosted.Service.Base() + "/v1/img/", metadata.OldPictures(hosted.Service.Base())},
 			HTTP: artworkHTTP, Fallback: library.TMDBPassThrough(hosted.Service.Base())}}
 	// TMDB copies are kept at most six months (TMDB's rule).
 	go lib.Artwork.KeepTMDBFresh(ctx)

@@ -2,6 +2,18 @@
 
 All notable changes to HolyArrs are listed here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## 1.0.2
+
+### Changed
+
+- The metadata server's address is now `api.holyarrs.com`. The old one keeps working. ([#164](https://github.com/HolyArrs/HolyArrs/issues/164))
+
+### Fixed
+
+- First-run setup can be read in light mode. ([#161](https://github.com/HolyArrs/HolyArrs/issues/161))
+- An install the metadata server no longer knows gets a new key by itself. ([#162](https://github.com/HolyArrs/HolyArrs/issues/162))
+- Moving over: the screens now say your media files are never moved. ([#163](https://github.com/HolyArrs/HolyArrs/issues/163))
+
 ## 1.0.1
 
 ### Added
