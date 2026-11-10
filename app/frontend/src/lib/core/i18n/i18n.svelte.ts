@@ -1,6 +1,6 @@
 // The app's words in the person's language. English ships in the bundle; other languages load when picked, and any missing line falls back to English.
 
-export type Locale = 'en' | 'es' | 'pt-br' | 'fr' | 'de' | 'ru' | 'uk' | 'zh-cn' | 'ja' | 'ko' | 'hi' | 'ar';
+export type Locale = 'en' | 'es' | 'pt-br' | 'fr' | 'de' | 'ru' | 'uk' | 'zh-cn' | 'ja' | 'ko' | 'hi' | 'ar' | 'it' | 'nl' | 'pl' | 'tr';
 export type LocaleChoice = Locale | 'auto';
 
 /** Each language named in itself, in the same order as holyarrs.com. */
@@ -10,12 +10,16 @@ export const LOCALES: { code: Locale; name: string }[] = [
 	{ code: 'pt-br', name: 'Português (Brasil)' },
 	{ code: 'fr', name: 'Français' },
 	{ code: 'de', name: 'Deutsch' },
+	{ code: 'it', name: 'Italiano' },
+	{ code: 'nl', name: 'Nederlands' },
 	{ code: 'ru', name: 'Русский' },
 	{ code: 'uk', name: 'Українська' },
+	{ code: 'pl', name: 'Polski' },
 	{ code: 'zh-cn', name: '简体中文' },
 	{ code: 'ja', name: '日本語' },
 	{ code: 'ko', name: '한국어' },
 	{ code: 'hi', name: 'हिन्दी' },
+	{ code: 'tr', name: 'Türkçe' },
 	{ code: 'ar', name: 'العربية' }
 ];
 

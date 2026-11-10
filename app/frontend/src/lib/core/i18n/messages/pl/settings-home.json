@@ -1,0 +1,10 @@
+{
+	"settings.home.advanced": "Zaawansowane",
+	"settings.home.page": "{group} · strona",
+	"settings.home.title": "Ustawienia",
+	"settings.home.search": "Szukaj w ustawieniach",
+	"settings.home.matching": "Pasujące ustawienia",
+	"settings.home.noMatch": "Brak pasujących ustawień",
+	"settings.home.noMatchText": "Spróbuj innego słowa, na przykład folder, klucz lub hasło.",
+	"settings.home.clear": "Wyczyść wyszukiwanie"
+}
