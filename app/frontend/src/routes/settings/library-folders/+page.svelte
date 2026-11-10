@@ -307,4 +307,6 @@
 	.fl .folder { grid-template-columns: 24px minmax(0, 1fr) auto auto auto; }
 	.ic, .k-show .ic, .k-music .ic { width: 24px; height: 24px; background: none; box-shadow: none; border-radius: 0; color: color-mix(in srgb, var(--text) 55%, transparent); }
 	@media (max-width: 760px) { .fl .folder { grid-template-columns: 24px minmax(0, 1fr) auto; } }
+	/* Phones: the buttons take their own line, so a long Rename label cannot squeeze the name. */
+	@media (max-width: 480px) { .folder { grid-template-areas: 'ic grow st' 'ic free free' 'ic acts acts'; } .folder .acts { justify-self: start; margin-inline-start: -8px; } }
 </style>

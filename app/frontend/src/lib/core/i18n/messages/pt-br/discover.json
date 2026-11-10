@@ -140,6 +140,8 @@
 	"discover.search.close": "Fechar",
 	"discover.search.lookIn": "Buscar em",
 	"discover.search.showResultsFrom": "Mostrar resultados de",
+	"discover.search.resultCount.one": "{n} resultado",
+	"discover.search.resultCount.other": "{n} resultados",
 	"discover.search.searchingFor": "Buscando “{v}”…",
 	"discover.search.matchesForYourDescription": "Correspondências para a sua descrição",
 	"discover.search.understoodAs": "Entendido como {v}",

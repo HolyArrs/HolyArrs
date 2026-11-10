@@ -140,6 +140,8 @@
 	"discover.search.close": "إغلاق",
 	"discover.search.lookIn": "ابحث في",
 	"discover.search.showResultsFrom": "اعرض نتائج من",
+	"discover.search.resultCount.one": "النتائج: {n}",
+	"discover.search.resultCount.other": "النتائج: {n}",
 	"discover.search.searchingFor": "جارٍ البحث عن “{v}”…",
 	"discover.search.matchesForYourDescription": "نتائج تطابق وصفك",
 	"discover.search.understoodAs": "فُهم على أنه {v}",

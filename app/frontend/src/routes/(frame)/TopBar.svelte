@@ -74,7 +74,7 @@
 		{#if history && (first || here)}
 			<nav class="crumbs" aria-label={t('frame.top.breadcrumb')} data-testid="top-crumbs">
 				{#if first}<a href={first.href} onclick={stepBack}>{first.label}</a><span class="sep" aria-hidden="true">›</span>{/if}
-				{#if here}<span class="here" aria-current="page">{here}</span>{/if}
+				{#if here}<span class="here" aria-current="page" title={here}>{here}</span>{/if}
 			</nav>
 		{/if}
 	</div>

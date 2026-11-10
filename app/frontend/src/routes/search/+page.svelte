@@ -482,7 +482,7 @@
 
 	{#if searchField.term.trim()}
 		<div class="results-head" data-testid="search-results-head">
-			<p class="muted count" style:visibility={waiting || !searched ? 'hidden' : null}>{total} {total === 1 ? 'result' : 'results'}</p>
+			<p class="muted count" style:visibility={waiting || !searched ? 'hidden' : null}>{t(total === 1 ? 'discover.search.resultCount.one' : 'discover.search.resultCount.other', { n: total })}</p>
 			<SegmentedControl size="sm" options={whereOptions} value={onlyLib ? 'library' : 'everywhere'} label={t('discover.search.showResultsFrom')} testid="search-only-library" onchange={(v) => setOnlyLib(v === 'library')} />
 		</div>
 	{/if}
@@ -750,7 +750,7 @@
 	.types :global(.ui-seg button) { min-height: 44px; padding: 0 20px; border-radius: 999px; }
 	@media (max-width: 767px) { .types :global(.ui-seg) { display: grid; width: 100%; } .types :global(.ui-seg button) { padding: 0 6px; } }
 	@media (max-width: 419px) { .types :global(.ui-seg button span) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; } }
-	.results-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-width: 0; margin-bottom: -12px; }
+	.results-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; min-width: 0; margin-bottom: -12px; }
 	.results-head .count { margin: 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.results-head :global(.ui-seg) { flex: none; }
 	.results { display: flex; flex-direction: column; gap: 32px; min-width: 0; transition: opacity var(--dur-fast) var(--ease-out); }

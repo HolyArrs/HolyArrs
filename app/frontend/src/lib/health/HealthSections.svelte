@@ -335,7 +335,7 @@
 	.secs, .panel { display: flex; flex-direction: column; gap: var(--s-4); }
 	ul { list-style: none; margin: 0; padding: 0; }
 	/* Same pill track as the Downloads page. */
-	.seg { display: inline-flex; align-self: flex-start; gap: 2px; padding: 2px; border-radius: var(--r-pill); background: var(--surface-2); }
+	.seg { display: inline-flex; align-self: flex-start; max-width: 100%; overflow-x: auto; scrollbar-width: none; gap: 2px; padding: 2px; border-radius: var(--r-pill); background: var(--surface-2); }
 	.seg:focus { outline: none; }
 	.seg button { position: relative; display: inline-flex; align-items: center; justify-content: center; height: 32px; padding: 0 16px; border: 0; border-radius: var(--r-pill); background: none; color: color-mix(in srgb, var(--text) 76%, var(--bg)); font: var(--t-subhead); white-space: nowrap; cursor: pointer; }
 	.seg button:hover { color: var(--text); }
@@ -414,7 +414,7 @@
 	@media (max-width: 900px) { .disks { grid-template-columns: minmax(0, 1fr); } }
 	@media (max-width: 767px) {
 		.seg { align-self: stretch; }
-		.seg button { flex: 1; padding: 0 10px; }
+		.seg button { flex: 1 0 auto; padding: 0 10px; }
 		.hrow { grid-template-columns: 22px minmax(0, 1fr); }
 		.hat { grid-column: 2; }
 		.hacts { grid-column: 2; margin-left: -12px; }

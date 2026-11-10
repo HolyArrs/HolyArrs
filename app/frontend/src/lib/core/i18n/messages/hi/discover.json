@@ -140,6 +140,8 @@
 	"discover.search.close": "बंद करें",
 	"discover.search.lookIn": "इसमें खोजें",
 	"discover.search.showResultsFrom": "नतीजे दिखाएं",
+	"discover.search.resultCount.one": "{n} परिणाम",
+	"discover.search.resultCount.other": "{n} परिणाम",
 	"discover.search.searchingFor": "“{v}” खोज रहे हैं…",
 	"discover.search.matchesForYourDescription": "आपके बताए विवरण से मिलते नतीजे",
 	"discover.search.understoodAs": "इसे ऐसे समझा गया: {v}",

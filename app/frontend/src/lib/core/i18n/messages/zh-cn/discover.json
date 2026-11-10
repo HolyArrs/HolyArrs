@@ -140,6 +140,8 @@
 	"discover.search.close": "关闭",
 	"discover.search.lookIn": "查找范围",
 	"discover.search.showResultsFrom": "显示结果来自",
+	"discover.search.resultCount.one": "{n} 个结果",
+	"discover.search.resultCount.other": "{n} 个结果",
 	"discover.search.searchingFor": "正在搜索“{v}”…",
 	"discover.search.matchesForYourDescription": "与你的描述匹配的结果",
 	"discover.search.understoodAs": "理解为 {v}",

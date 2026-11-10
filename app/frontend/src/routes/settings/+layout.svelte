@@ -236,7 +236,7 @@
 	.caps { display: flex; gap: 8px; overflow-x: auto; margin: 0 -4px 22px; padding: 4px; scrollbar-width: none; overscroll-behavior-x: contain; }
 	.caps::-webkit-scrollbar { display: none; }
 	.cap {
-		flex: none; display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 14px; border-radius: var(--r-pill);
+		position: relative; flex: none; display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 14px; border-radius: var(--r-pill);
 		background: color-mix(in srgb, var(--surface-2) 72%, transparent); box-shadow: inset 0 0 0 1px var(--line); color: var(--text-muted);
 		font: 500 14px/1 var(--font-ui); white-space: nowrap; text-decoration: none;
 		transition: background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);

@@ -140,6 +140,8 @@
 	"discover.search.close": "Закрыть",
 	"discover.search.lookIn": "Искать в",
 	"discover.search.showResultsFrom": "Показать результаты из",
+	"discover.search.resultCount.one": "Результатов: {n}",
+	"discover.search.resultCount.other": "Результатов: {n}",
 	"discover.search.searchingFor": "Ищем «{v}»…",
 	"discover.search.matchesForYourDescription": "Совпадения с вашим описанием",
 	"discover.search.understoodAs": "Понято как {v}",

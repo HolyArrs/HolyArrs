@@ -140,6 +140,8 @@
 	"discover.search.close": "閉じる",
 	"discover.search.lookIn": "検索範囲",
 	"discover.search.showResultsFrom": "結果の表示元",
+	"discover.search.resultCount.one": "{n} 件の結果",
+	"discover.search.resultCount.other": "{n} 件の結果",
 	"discover.search.searchingFor": "「{v}」を検索中…",
 	"discover.search.matchesForYourDescription": "あなたの説明に合うもの",
 	"discover.search.understoodAs": "{v} として解釈しました",

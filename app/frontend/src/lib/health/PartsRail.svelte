@@ -112,7 +112,7 @@
 	.kinds button:hover { color: var(--text); }
 	.kinds button[aria-selected='true'] { background: var(--seg-thumb); color: var(--text); box-shadow: 0 0 0 1px var(--line-strong); }
 	.kinds button:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.kl { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.kl { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; line-height: 1.25; }
 	.kc { font-size: 12px; font-variant-numeric: tabular-nums; }
 	.pane h3 { display: flex; align-items: center; gap: 10px; margin: 0 0 12px; min-height: 34px; font: 600 15px/1.2 var(--font-ui); color: var(--text); }
 	.pane .pl { font-size: 13px; font-weight: 400; color: var(--text-muted); }
@@ -123,6 +123,7 @@
 		.kinds { flex-direction: row; overflow-x: auto; padding: 0 0 10px; border-right: 0; border-bottom: 1px solid var(--line); scrollbar-width: none; }
 		.kinds button { flex: none; min-height: 40px; }
 		.kinds .kc { display: none; }
+		.kl { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 	}
 	@media (max-width: 767px) and (pointer: coarse) {
 		.kinds button { min-height: 44px; }
