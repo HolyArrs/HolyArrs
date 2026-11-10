@@ -1,4 +1,4 @@
-<p align="center"><b>English</b> · <a href=".github/readme/README.zh-CN.md">简体中文</a> · <a href=".github/readme/README.hi.md">हिन्दी</a> · <a href=".github/readme/README.es.md">Español</a> · <a href=".github/readme/README.fr.md">Français</a> · <a href=".github/readme/README.ar.md">العربية</a> · <a href=".github/readme/README.pt-BR.md">Português</a> · <a href=".github/readme/README.ru.md">Русский</a> · <a href=".github/readme/README.ja.md">日本語</a> · <a href=".github/readme/README.de.md">Deutsch</a> · <a href=".github/readme/README.ko.md">한국어</a></p>
+<p align="center"><b>English</b> · <a href="https://github.com/HolyArrs/HolyArrs/blob/master/.github/readme/README.zh-CN.md">简体中文</a> · <a href="https://github.com/HolyArrs/HolyArrs/blob/master/.github/readme/README.hi.md">हिन्दी</a> · <a href="https://github.com/HolyArrs/HolyArrs/blob/master/.github/readme/README.es.md">Español</a> · <a href="https://github.com/HolyArrs/HolyArrs/blob/master/.github/readme/README.fr.md">Français</a> · <a href="https://github.com/HolyArrs/HolyArrs/blob/master/.github/readme/README.ar.md">العربية</a> · <a href="https://github.com/HolyArrs/HolyArrs/blob/master/.github/readme/README.pt-BR.md">Português</a> · <a href="https://github.com/HolyArrs/HolyArrs/blob/master/.github/readme/README.ru.md">Русский</a> · <a href="https://github.com/HolyArrs/HolyArrs/blob/master/.github/readme/README.ja.md">日本語</a> · <a href="https://github.com/HolyArrs/HolyArrs/blob/master/.github/readme/README.de.md">Deutsch</a> · <a href="https://github.com/HolyArrs/HolyArrs/blob/master/.github/readme/README.ko.md">한국어</a></p>
 
 <p align="center">
   <picture>
@@ -328,7 +328,7 @@ If the new version changes how data is stored, HolyArrs makes a backup first. To
 - Stored passwords and keys are encrypted with `holyarrs.key`.
 - The image has no shell inside it.
 - Don't forward port 6262 on your router. Use a VPN such as Tailscale, or a reverse proxy with HTTPS.
-- Report security problems privately: [SECURITY](.github/SECURITY.md).
+- Report security problems privately: [SECURITY](https://github.com/HolyArrs/HolyArrs/blob/master/.github/SECURITY.md).
 
 <a id="help"></a>
 
@@ -379,18 +379,18 @@ More: [Troubleshooting](https://docs.HolyArrs.com/help/troubleshooting/).
 | A question | [Discord](https://discord.com/invite/mthsvesKpC) |
 | An idea or a vote | [r/HolyArrs](https://reddit.com/r/HolyArrs) and the [roadmap](https://holyarrs.com/roadmap/) |
 | A bug | [Issues](https://github.com/HolyArrs/HolyArrs/issues) (bugs and roadmap only) |
-| A security problem | [SECURITY](.github/SECURITY.md) |
+| A security problem | [SECURITY](https://github.com/HolyArrs/HolyArrs/blob/master/.github/SECURITY.md) |
 | Anything else | support@HolyArrs.com |
 
 ## Contributing
 
-Read [CONTRIBUTING](.github/CONTRIBUTING.md), then [Architecture](docs/dev/architecture.md) and [Setup](docs/dev/setup.md). Open an issue before a big change.
+Read [CONTRIBUTING](https://github.com/HolyArrs/HolyArrs/blob/master/.github/CONTRIBUTING.md), then [Architecture](https://github.com/HolyArrs/HolyArrs/blob/master/docs/dev/architecture.md) and [Setup](https://github.com/HolyArrs/HolyArrs/blob/master/docs/dev/setup.md). Open an issue before a big change.
 
-On your first pull request a bot asks you to accept a short licence agreement ([CLA.md](.github/CLA.md)). One click, once.
+On your first pull request a bot asks you to accept a short licence agreement ([CLA.md](https://github.com/HolyArrs/HolyArrs/blob/master/.github/CLA.md)). One click, once.
 
 ## Licence
 
-HolyArrs is free and open source under the [GNU AGPL-3.0](LICENSE).
+HolyArrs is free and open source under the [GNU AGPL-3.0](https://github.com/HolyArrs/HolyArrs/blob/master/LICENSE).
 
 Want to build it into a closed product? Email support@HolyArrs.com for a commercial licence.
 
