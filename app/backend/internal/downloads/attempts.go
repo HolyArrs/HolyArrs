@@ -219,7 +219,7 @@ func (m *Manager) claimAttempt(ctx context.Context, d domain.Downloader, release
 		}
 		sameSecret := d.SecretRef == nil && current.SecretRef == nil || d.SecretRef != nil && current.SecretRef != nil && *d.SecretRef == *current.SecretRef
 		if current.Removed || current.Adapter != d.Adapter || current.URL != d.URL || current.Username != d.Username ||
-			current.Category != d.Category || current.AllowLocal != d.AllowLocal || !sameSecret {
+			!slices.Contains(current.Categories(), d.Category) || current.AllowLocal != d.AllowLocal || !sameSecret {
 			return errors.New("the Downloader changed before sending; try again")
 		}
 		var nonce [24]byte

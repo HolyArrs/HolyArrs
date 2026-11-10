@@ -3,6 +3,7 @@
 package model
 
 import (
+	"slices"
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
@@ -142,18 +143,22 @@ type SeedGoal struct {
 // Downloader is an app that downloads for HolyArrs.
 type Downloader struct {
 	Meta
-	Name        string    `db:"name"`
-	Adapter     string    `db:"adapter"` // qbittorrent, sabnzbd
-	Protocol    string    `db:"protocol"`
-	URL         string    `db:"url"`
-	SecretRef   *int64    `db:"secret_ref"`
-	Category    string    `db:"category"`
-	Priority    int       `db:"priority"`
-	PathMap     []PathMap `db:"path_map,json"`
-	AfterImport string    `db:"after_import"` // leave, remove, recategorize
-	SeedGoal    SeedGoal  `db:"seed_goal,json"`
-	State       string    `db:"state"`    // ok, unreachable, auth_failed, disabled (paused by a person)
-	Username    string    `db:"username"` // qBittorrent sign-in name; the password is the secret
+	Name      string `db:"name"`
+	Adapter   string `db:"adapter"` // qbittorrent, sabnzbd
+	Protocol  string `db:"protocol"`
+	URL       string `db:"url"`
+	SecretRef *int64 `db:"secret_ref"`
+	Category  string `db:"category"`
+	// Category for one kind of title; empty uses Category.
+	CategoryMovies string    `db:"category_movies"`
+	CategoryShows  string    `db:"category_shows"`
+	CategoryMusic  string    `db:"category_music"`
+	Priority       int       `db:"priority"`
+	PathMap        []PathMap `db:"path_map,json"`
+	AfterImport    string    `db:"after_import"` // leave, remove, recategorize
+	SeedGoal       SeedGoal  `db:"seed_goal,json"`
+	State          string    `db:"state"`    // ok, unreachable, auth_failed, disabled (paused by a person)
+	Username       string    `db:"username"` // qBittorrent sign-in name; the password is the secret
 	// AllowLocal lets HolyArrs reach this Downloader on this machine or the
 	// local network.
 	AllowLocal   bool       `db:"allow_local_network"`
@@ -169,6 +174,34 @@ type Downloader struct {
 	ClearFinished bool `db:"clear_finished"`
 	// Tags: titles with one of these go only to Downloaders that have it.
 	Tags []string `db:"tags,json"`
+}
+
+// CategoryFor returns the category for a title kind (movie, show, artist).
+func (d Downloader) CategoryFor(kind string) string {
+	c := ""
+	switch kind {
+	case "movie":
+		c = d.CategoryMovies
+	case "show":
+		c = d.CategoryShows
+	case "artist":
+		c = d.CategoryMusic
+	}
+	if c == "" {
+		return d.Category
+	}
+	return c
+}
+
+// Categories returns the main category and every set kind category, once each.
+func (d Downloader) Categories() []string {
+	out := []string{d.Category}
+	for _, c := range []string{d.CategoryMovies, d.CategoryShows, d.CategoryMusic} {
+		if c != "" && !slices.Contains(out, c) {
+			out = append(out, c)
+		}
+	}
+	return out
 }
 
 // SeenFile is one file a Download reports.

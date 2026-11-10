@@ -15,6 +15,9 @@
   "URL": "http://q:8080",
   "SecretRef": 9,
   "Category": "holyarrs",
+  "CategoryMovies": "",
+  "CategoryShows": "",
+  "CategoryMusic": "",
   "Priority": 1,
   "PathMap": [
     {

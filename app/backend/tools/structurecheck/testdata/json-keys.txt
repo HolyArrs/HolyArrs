@@ -267,6 +267,9 @@ cast
 cat
 categories
 category
+category_movies
+category_music
+category_shows
 certification
 change
 changed
