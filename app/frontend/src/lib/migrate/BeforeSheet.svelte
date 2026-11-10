@@ -47,7 +47,7 @@
 	}
 </script>
 
-<Sheet bind:open title="Before you move" description="{total} will move. These won't:" size="md" placement="auto">
+<Sheet bind:open title="Before you move" description="{total} will come over. Your files stay where they are. These won't come over:" size="md" placement="auto">
 	<div data-testid="before-sheet">
 		{#if notice}<p class="notice warn" role="status">{notice}</p>{/if}
 		{#if problems.length > 0}
