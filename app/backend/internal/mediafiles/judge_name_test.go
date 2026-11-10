@@ -35,3 +35,21 @@ func TestOwnedFileWithoutSourceGetsTheBenefitOfTheDoubt(t *testing.T) {
 		t.Fatal("a named web 1080p file reaches good enough")
 	}
 }
+
+func TestJudgeNameUsesTheRecordedQuality(t *testing.T) {
+	info := map[string]any{"resolution": "1080p", RecordedQualityKey: "WEBDL-1080p"}
+	if got := JudgeName("The Rookie - S01E01 - Pilot", info); got != "The Rookie - S01E01 - Pilot WEBDL-1080p" {
+		t.Fatalf("got %q", got)
+	}
+	rules := GoodEveryday()
+	if !OwnedReachesGoodEnough("The Rookie - S01E01 - Pilot", info, rules) {
+		t.Fatal("a recorded web 1080p episode reaches good enough")
+	}
+	tv := map[string]any{"resolution": "1080p", RecordedQualityKey: "HDTV-1080p"}
+	if OwnedReachesGoodEnough("The Rookie - S01E01 - Pilot", tv, rules) {
+		t.Fatal("a recorded TV 1080p episode is below a web 1080p good-enough step")
+	}
+	if got := JudgeName("The Matrix (1999) Bluray-1080p", info); got != "The Matrix (1999) Bluray-1080p" {
+		t.Fatalf("a name with its own source keeps it: %q", got)
+	}
+}
