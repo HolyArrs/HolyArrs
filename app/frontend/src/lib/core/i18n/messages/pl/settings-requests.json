@@ -29,5 +29,7 @@
 	"settings.requests.plex": "Listy obserwowanych w Plex",
 	"settings.requests.plexDesc": "Tytuły z twojej listy obserwowanych w Plex stają się prośbami",
 	"settings.requests.plexOn": "Proś z list obserwowanych w Plex",
-	"settings.requests.plexOnHint": "Każdy włącza to w Moim koncie. Obowiązują jego Limity."
+	"settings.requests.plexOnHint": "Każdy włącza to w Moim koncie. Obowiązują jego Limity.",
+	"settings.requests.plexEveryone": "Włącz dla wszystkich, którzy logują się przez Plex",
+	"settings.requests.plexEveryoneHint": "Każdy może to wyłączyć dla siebie w Moje konto."
 }

@@ -367,5 +367,6 @@
 	"accounts.language.label": "Język",
 	"accounts.language.auto": "Automatyczny",
 	"accounts.language.hint": "Automatyczny podąża za przeglądarką. Zapisywany na twoim koncie.",
-	"accounts.language.saveFailed": "Nie udało się zapisać języka"
+	"accounts.language.saveFailed": "Nie udało się zapisać języka",
+	"accounts.account.watchEveryone": "Właściciel włączył to dla wszystkich. Wyłącz oba, aby to zatrzymać."
 }

@@ -367,5 +367,6 @@
 	"accounts.language.label": "Dil",
 	"accounts.language.auto": "Otomatik",
 	"accounts.language.hint": "Otomatik, tarayıcını izler. Hesabında kaydedilir.",
-	"accounts.language.saveFailed": "Dil kaydedilemedi"
+	"accounts.language.saveFailed": "Dil kaydedilemedi",
+	"accounts.account.watchEveryone": "Sahip bunu herkes için açtı. Durdurmak için ikisini de kapat."
 }

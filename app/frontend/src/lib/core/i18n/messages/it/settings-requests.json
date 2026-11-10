@@ -29,5 +29,7 @@
 	"settings.requests.plex": "Watchlist di Plex",
 	"settings.requests.plexDesc": "I titoli nella tua watchlist di Plex diventano richieste",
 	"settings.requests.plexOn": "Richiedi dalle watchlist di Plex",
-	"settings.requests.plexOnHint": "Ognuno la attiva in Il mio account. Valgono i suoi limiti."
+	"settings.requests.plexOnHint": "Ognuno la attiva in Il mio account. Valgono i suoi limiti.",
+	"settings.requests.plexEveryone": "Attiva per tutti quelli che accedono con Plex",
+	"settings.requests.plexEveryoneHint": "Chiunque può disattivarlo per sé in Il mio account."
 }
