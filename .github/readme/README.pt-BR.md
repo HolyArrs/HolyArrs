@@ -198,10 +198,8 @@ As imagens ficam no Docker Hub como [`holyarrs/holyarrs`](https://hub.docker.com
 
 | Tag | Use para |
 | :----: | --- |
-| `beta` | As versões novas chegam aqui primeiro. |
-| `latest` | Muda depois que uma versão já está no ar há um tempo. |
-| `stable` | O canal mais lento e mais seguro. |
-| `1.0.0` | Uma versão exata. Nunca muda. |
+| `latest` | A versão mais recente. |
+| `1.0.3` | Uma versão exata. Nunca muda. |
 
 ## Uso
 

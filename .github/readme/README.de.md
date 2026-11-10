@@ -198,10 +198,8 @@ Die Images liegen auf Docker Hub als [`holyarrs/holyarrs`](https://hub.docker.co
 
 | Tag | Dafür nutzen |
 | :----: | --- |
-| `beta` | Neue Versionen landen zuerst hier. |
-| `latest` | Wechselt, sobald eine Version eine Weile draußen ist. |
-| `stable` | Der langsamste, sicherste Kanal. |
-| `1.0.0` | Eine genaue Version. Sie ändert sich nie. |
+| `latest` | Die neueste Version. |
+| `1.0.3` | Eine genaue Version. Sie ändert sich nie. |
 
 ## Verwendung
 

@@ -198,10 +198,8 @@ Images live on Docker Hub as [`holyarrs/holyarrs`](https://hub.docker.com/r/holy
 
 | Tag | Use it for |
 | :----: | --- |
-| `beta` | New versions land here first. |
-| `latest` | Moves once a version has been out for a while. |
-| `stable` | The slowest, safest channel. |
-| `1.0.0` | One exact version. It never moves. |
+| `latest` | The newest release. |
+| `1.0.3` | One exact version. It never moves. |
 
 ## Usage
 

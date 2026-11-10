@@ -43,6 +43,8 @@ def convert(text: str) -> str:
 
     text = re.sub(r'<p align="center">(?:(?!</p>).)*</p>', row, text, flags=re.S)
     text = re.sub(r"<picture>.*?</picture>", one_picture, text, flags=re.S)
+    # Docker Hub keeps a centred paragraph centred, but not a centred heading.
+    text = re.sub(r'<h[1-6] align="center">(.*?)</h[1-6]>', r'<p align="center"><b>\1</b></p>', text, flags=re.S)
     text = re.sub(r'href="(?!https?:|#|mailto:)([^"]+)"', lambda m: f'href="{REPO}{m.group(1)}"', text)
     text = re.sub(r"\]\((?!https?:|#|mailto:)([^)\s]+)\)", lambda m: f"]({REPO}{m.group(1)})", text)
     return re.sub(r"\n{3,}", "\n\n", text)
