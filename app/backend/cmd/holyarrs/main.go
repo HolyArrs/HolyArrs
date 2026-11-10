@@ -492,7 +492,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	}
 	// Moves from the old apps: each part that is off is left out, and safe
 	// mode refuses moves at the API.
-	mover := &migrate.Mover{Store: s, Library: lib, Queue: q, PartOn: func(p string) bool { return !c.SafeMode && pc.On(parts.Part(p)) }}
+	mover := &migrate.Mover{Store: s, Library: lib, Queue: q, Secrets: vault, PartOn: func(p string) bool { return !c.SafeMode && pc.On(parts.Part(p)) }}
 	mover.Register(q)
 	// A move or undo whose Job a crash left behind is failed, so it never
 	// blocks the next one; one whose Job is still there resumes.

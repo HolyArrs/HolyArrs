@@ -2,6 +2,7 @@ package migrate
 
 import (
 	"fmt"
+	"net/url"
 	"sort"
 	"strconv"
 	"strings"
@@ -152,6 +153,12 @@ func (b *builder) indexers(s *Snapshot) {
 		if sp.NeedsKey {
 			it.Needs = "your key"
 			it.Detail = format + " at " + u + "; added paused until you type its key and resume it"
+		}
+		// A backup holds no Prowlarr key: a Source through Prowlarr needs it typed.
+		if s.Via == ViaBackup && throughProwlarr(u) {
+			sp.NeedsKey = true
+			it.Needs = "Prowlarr's API key"
+			it.Detail = format + " at " + u + "; goes through Prowlarr, so it needs Prowlarr's API key: added paused until you type it and resume it"
 		}
 		// Prowlarr's indexer tags only pick apps and proxies: a proxy
 		// sharing one of them was used for this indexer.
@@ -533,4 +540,19 @@ func sourceTime(v string) (time.Time, bool) {
 		}
 	}
 	return time.Time{}, false
+}
+
+// throughProwlarr says whether addr is a Prowlarr per-site feed
+// (http://prowlarr:9696/5/api).
+func throughProwlarr(addr string) bool {
+	u, err := url.Parse(addr)
+	if err != nil {
+		return false
+	}
+	parts := strings.Split(strings.Trim(u.Path, "/"), "/")
+	if len(parts) != 2 || parts[1] != "api" {
+		return false
+	}
+	_, err = strconv.Atoi(parts[0])
+	return err == nil
 }

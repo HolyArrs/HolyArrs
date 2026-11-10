@@ -14,7 +14,9 @@ import (
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/migrate/secretsfile"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/requests"
 )
 
@@ -93,6 +95,9 @@ type Mover struct {
 	// nil counts every part on.
 	PartOn func(part string) bool
 	Now    func() time.Time
+	// Secrets lets a moved Source going through Prowlarr get the Prowlarr
+	// key kept from its read; nil leaves those Sources without a key.
+	Secrets *secrets.Vault
 }
 
 // Register handles the move and undo Jobs.
@@ -254,6 +259,8 @@ type run struct {
 	owner        int64
 	// choose is set by one() for the item it just ran (Line.Choose).
 	choose string
+	// prowlarr is the kept Prowlarr address and key, read once.
+	prowlarr *secretsfile.MoveCredential
 }
 
 // referenceTime returns the persisted start of this move. Source timestamps
