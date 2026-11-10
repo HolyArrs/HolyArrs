@@ -8,6 +8,7 @@
 	import { secondVersion } from '../mediafiles/index.ts';
 	import { api, message } from '../core/api.ts';
 	import { toasts } from '../core/toasts.svelte.ts';
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import type { LibraryFolder, PickRulesView, TitleView, VersionView } from '../core/types.ts';
 
 	let { title, staff, onchange }: { title: TitleView; staff: boolean; onchange: () => void | Promise<void> } = $props();
@@ -73,7 +74,7 @@
 		try {
 			if (editing) {
 				await api.put(`/titles/${title.id}/versions/${editing.id}`, { label, pick_rules_id: vRules, keep_up_to_date: vKeep, audio_languages: vAudio.split(/[,\s]+/).filter(Boolean) });
-				toasts.push(`${label} saved`, 'ok');
+				toasts.push(t('shows.versions.saved', { label }), 'ok');
 			} else {
 				await api.post(`/titles/${title.id}/versions`, { label, pick_rules_id: vRules, library_folder_id: vFolder, keep_up_to_date: vKeep, audio_languages: vAudio.split(/[,\s]+/).filter(Boolean) });
 				all = true;
@@ -88,12 +89,12 @@
 	}
 
 	async function remove(v: VersionView) {
-		if (!confirm(`Stop keeping the ${v.label} Version of this show? Files on disk are not touched.`)) return;
+		if (!confirm(t('shows.versions.stopConfirm', { label: v.label }))) return;
 		try {
 			await api.del(`/titles/${title.id}/versions/${v.id}`);
 			await onchange();
 		} catch (e) {
-			toasts.push(`Couldn't remove Version`, 'fail', { body: message(e) });
+			toasts.push(t('shows.versions.removeFailed'), 'fail', { body: message(e) });
 		}
 	}
 
@@ -108,30 +109,30 @@
 
 <!-- Hidden with one Version, since the card would only repeat Settings. -->
 {#if title.versions.length > 1}
-<TitleSection id="h-show-versions" title="Versions" testid="show-versions" primary>
+<TitleSection id="h-show-versions" title={t('shows.versions.title')} testid="show-versions" primary>
 	{#snippet head()}
 		<div class="tp-head-end">
 			{#if title.versions.length > 1}
-				<Button variant="plain" aria-expanded={all} aria-controls="show-versions-list" onclick={() => (all = !all)}>{all ? 'Show less' : `See all ${title.versions.length}`}</Button>
+				<Button variant="plain" aria-expanded={all} aria-controls="show-versions-list" onclick={() => (all = !all)}>{all ? t('shows.versions.showLess') : t('shows.versions.seeAll', { count: title.versions.length })}</Button>
 			{/if}
 			{#if staff}
-				<Button icon="plus" onclick={openAdd}>Add a Version</Button>
+				<Button icon="plus" onclick={openAdd}>{t('shows.versions.add')}</Button>
 			{/if}
 		</div>
 	{/snippet}
-	<ul class="versions tp-vrow" id="show-versions-list" aria-label="Versions">
+	<ul class="versions tp-vrow" id="show-versions-list" aria-label={t('shows.versions.title')}>
 		{#each title.versions as v (v.id)}
 			<li class="version" data-testid="version" hidden={!all && v.id !== lead}>
-				<b>{v.label}{v.main ? ' (main)' : ''}</b>
-				<div class="xs muted">Audio required: {v.audio_languages?.join(', ') || 'Any'}</div>
-				<div class="xs muted">Pick rules: {v.pick_rules_name}{v.keep_up_to_date ? '' : ' · not kept up to date'}</div>
+				<b>{v.label}{v.main ? ` (${t('shows.versions.mainShort')})` : ''}</b>
+				<div class="xs muted">{t('shows.versions.audioRequired', { languages: v.audio_languages?.join(', ') || t('shows.versions.any') })}</div>
+				<div class="xs muted">{t('shows.versions.pickRules', { name: v.pick_rules_name })}{v.keep_up_to_date ? '' : ` · ${t('shows.versions.notKeptUp')}`}</div>
 				{#if staff}
-					<div class="xs muted path">In {shortFolder(v.folder_path)}</div>
-					<details class="xs muted"><summary>Details</summary><span class="mono path">{v.folder_path}</span></details>
+					<div class="xs muted path">{t('shows.versions.inFolder', { path: shortFolder(v.folder_path) })}</div>
+					<details class="xs muted"><summary>{t('shows.versions.details')}</summary><span class="mono path">{v.folder_path}</span></details>
 					<div class="row">
-						<Button variant="plain" onclick={() => openEdit(v)} aria-label="Change the {v.label} Version">Change</Button>
+						<Button variant="plain" onclick={() => openEdit(v)} aria-label={t('shows.versions.changeThe', { label: v.label })}>{t('shows.versions.change')}</Button>
 						{#if !v.main}
-							<Menu label="Version actions for {v.label}" items={[{ label: `Remove ${v.label}`, icon: 'trash', destructive: true, onselect: () => remove(v) }]} width={220} align="start" />
+							<Menu label={t('shows.versions.actionsFor', { label: v.label })} items={[{ label: t('shows.versions.remove', { label: v.label }), icon: 'trash', destructive: true, onselect: () => remove(v) }]} width={220} align="start" />
 						{/if}
 					</div>
 				{/if}
@@ -139,47 +140,47 @@
 		{/each}
 	</ul>
 	{#if title.versions.length > 1}
-		<p class="xs muted">Edit and Move change the main Version only.</p>
+		<p class="xs muted">{t('shows.versions.mainOnly')}</p>
 	{/if}
 </TitleSection>
 {/if}
 
 <dialog bind:this={dialog} aria-labelledby="show-version-title" class="modal">
 	<form onsubmit={save}>
-		<h2 id="show-version-title" class="h2">{editing ? `Change the ${editing.label} Version` : `Add a Version of ${title.name}`}</h2>
-		{#if !editing}<p class="small muted">Another copy of every episode, like 4K, with its own Pick rules and folder.</p>{/if}
+		<h2 id="show-version-title" class="h2">{editing ? t('shows.versions.changeTitle', { label: editing.label }) : t('shows.versions.addOf', { name: title.name })}</h2>
+		{#if !editing}<p class="small muted">{t('shows.versions.addIntro')}</p>{/if}
 		<div class="field" style="margin-top: var(--s-5)">
-			<label for="sv-label">Version name</label>
+			<label for="sv-label">{t('shows.versions.name')}</label>
 			<input id="sv-label" class="input" bind:value={vLabel} maxlength="40" required />
 		</div>
 		<div class="field">
-            <label for="sv-audio">Required audio languages</label>
-            <input id="sv-audio" class="input" bind:value={vAudio} placeholder="For example, en, ja" />
-            <span class="hint">Audio must have every language. Subtitles don’t count.</span>
+            <label for="sv-audio">{t('shows.versions.audioLabel')}</label>
+            <input id="sv-audio" class="input" bind:value={vAudio} placeholder={t('shows.versions.audioExample')} />
+            <span class="hint">{t('shows.versions.audioHint')}</span>
         </div>
         <div class="field">
-            <label for="sv-rules">Pick rules for this Version</label>
+            <label for="sv-rules">{t('shows.versions.rulesLabel')}</label>
 			<select id="sv-rules" class="input" bind:value={vRules}>
 				{#each rules as r (r.id)}<option value={r.id}>{r.name}</option>{/each}
 			</select>
 		</div>
 		{#if !editing}
 			<div class="field">
-				<label for="sv-folder">Library folder for this Version</label>
+				<label for="sv-folder">{t('shows.versions.folderLabel')}</label>
 				<select id="sv-folder" class="input" bind:value={vFolder}>
 					{#each showFolders as f (f.id)}<option value={f.id}>{f.label || f.path} ({f.path})</option>{/each}
 				</select>
-				<span class="hint">In the main Version's folder, the show folder gets the Version name in brackets.</span>
+				<span class="hint">{t('shows.versions.folderHint')}</span>
 			</div>
 		{/if}
 		<label class="checkline">
 			<input type="checkbox" bind:checked={vKeep} />
-			<span><b>Keep up to date</b><br /><span class="hint">HolyArrs looks for this Version's episodes and for better copies.</span></span>
+			<span><b>{t('shows.versions.keep')}</b><br /><span class="hint">{t('shows.versions.keepHint')}</span></span>
 		</label>
 		{#if vError}<p class="form-error" role="alert">{vError}</p>{/if}
 		<div class="row modal-actions">
-			<Button variant="plain" onclick={() => dialog?.close()}>Cancel</Button>
-			<Button variant="primary" type="submit" disabled={vBusy || !vLabel.trim()} busy={vBusy}>{editing ? 'Save' : 'Add Version'}</Button>
+			<Button variant="plain" onclick={() => dialog?.close()}>{t('shows.versions.cancel')}</Button>
+			<Button variant="primary" type="submit" disabled={vBusy || !vLabel.trim()} busy={vBusy}>{editing ? t('shows.versions.save') : t('shows.versions.addButton')}</Button>
 		</div>
 	</form>
 </dialog>

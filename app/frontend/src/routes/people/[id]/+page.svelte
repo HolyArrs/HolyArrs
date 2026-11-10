@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t, appLocale } from '#lib/core/i18n/i18n.svelte.ts';
 	import { createPersonArt } from '#lib/discover/index.ts';
 	import PageLoader from '#lib/ui/PageLoader.svelte';
 	import Poster from '#lib/ui/Poster.svelte';
@@ -104,16 +105,16 @@
 		if (action === 'ask') void api.get<AskLimit>('/asks/limit').then((x) => (limit = x)).catch(() => {});
 	}
 
-	const inLibrary: CardOwned = { state: 'available', label: 'In your Library' };
+	const inLibrary: CardOwned = { state: 'available', get label() { return t('discover.people.inYourLibrary'); } };
 	function owned(m: PersonMovie): CardOwned | null {
 		if (m.title_id) return inLibrary;
-		if (done[m.ids.tmdb] === 'Asked' || done[m.ids.tmdb] === 'Added') return { state: 'requested', label: 'Requested' };
+		if (done[m.ids.tmdb] === 'Asked' || done[m.ids.tmdb] === 'Added') return { state: 'requested', label: t('discover.people.requested') };
 		if (!m.ask || m.ask.state === 'turned_down') return null;
-		return { state: 'requested', label: m.ask.state === 'approved' ? 'Approved, waiting for a copy' : 'Requested' };
+		return { state: 'requested', label: m.ask.state === 'approved' ? t('discover.people.approvedWaiting') : t('discover.people.requested') };
 	}
 	const href = (m: PersonMovie) => to(m.title_id ? `/library/${m.title_id}` : detailPath('movie', m.ids.tmdb));
 	const roleLine = (m: PersonMovie) => {
-		const who = m.characters?.length ? m.characters.join(' / ') : m.roles?.includes('Director') ? 'Director' : '';
+		const who = m.characters?.length ? m.characters.join(' / ') : m.roles?.includes('Director') ? t('discover.people.director') : '';
 		return [who, m.year ? String(m.year) : ''].filter(Boolean).join(' · ');
 	};
 	const personArt = createPersonArt();
@@ -130,17 +131,24 @@
 		heroIn = false;
 	});
 	const chips = $derived(personChips(stats, personArt.withArt(data?.library).length, personArt.withArt(data?.asked).length));
-	const facts = $derived.by(() => {
+	const factsAll = $derived.by((): { text: string; known: boolean }[] => {
 		const p = data?.person;
 		if (!p) return [];
 		const known = data?.known_for?.[0]?.name;
-		const born = p.birthday ? new Date(`${p.birthday}T00:00:00Z`).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' }) : '';
-		const died = wiki.died && wiki.died.length === 10 ? new Date(`${wiki.died}T00:00:00Z`).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' }) : wiki.died ?? '';
-		return [known ? `Known for ${known}` : p.department, born ? `Born ${born}` : '', p.birthplace ? `From ${p.birthplace}` : wiki.birth_place ? `From ${wiki.birth_place}` : '', died ? `Died ${died}` : ''].filter(Boolean) as string[];
+		const born = p.birthday ? new Date(`${p.birthday}T00:00:00Z`).toLocaleDateString(appLocale(), { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' }) : '';
+		const died = wiki.died && wiki.died.length === 10 ? new Date(`${wiki.died}T00:00:00Z`).toLocaleDateString(appLocale(), { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' }) : wiki.died ?? '';
+		const from = p.birthplace || wiki.birth_place;
+		return [
+			{ text: known ? t('discover.people.knownForName', { name: known }) : (p.department ?? ''), known: !!known },
+			{ text: born ? t('discover.people.bornOn', { date: born }) : '', known: false },
+			{ text: from ? t('discover.people.fromPlace', { place: from }) : '', known: false },
+			{ text: died ? t('discover.people.diedOn', { date: died }) : '', known: false }
+		].filter((f) => f.text);
 	});
+	const facts = $derived(factsAll.map((f) => f.text));
 	// The About sheet has three layouts (switch inside the sheet).
 	let aboutView = $state<string>('profile');
-	const longDate = (d?: string) => (d && d.length === 10 ? new Date(`${d}T00:00:00Z`).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' }) : d ?? '');
+	const longDate = (d?: string) => (d && d.length === 10 ? new Date(`${d}T00:00:00Z`).toLocaleDateString(appLocale(), { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' }) : d ?? '');
 	const about = $derived.by(() => {
 		const p = data?.person;
 		if (!p) return null;
@@ -150,11 +158,11 @@
 		const b = born.length === 10 ? new Date(`${born}T00:00:00Z`) : null;
 		const age = b ? end.getUTCFullYear() - b.getUTCFullYear() - (end < new Date(Date.UTC(end.getUTCFullYear(), b.getUTCMonth(), b.getUTCDate())) ? 1 : 0) : 0;
 		const rows = [
-			{ k: 'Born', v: longDate(born), sub: age && !died ? `${age} years old` : '' },
-			{ k: 'From', v: p.birthplace || wiki.birth_place || '', sub: '' },
-			{ k: 'Died', v: longDate(died), sub: age && died ? `aged ${age}` : '' },
-			{ k: 'Known for', v: data?.known_for?.[0]?.name ?? '', sub: data?.known_for?.[0]?.year ? String(data.known_for[0].year) : '' },
-			{ k: 'Work', v: p.department ?? '', sub: yearsLine }
+			{ k: t('discover.people.born'), v: longDate(born), sub: age && !died ? t('discover.people.yearsOld', { age }) : '' },
+			{ k: t('discover.people.from'), v: p.birthplace || wiki.birth_place || '', sub: '' },
+			{ k: t('discover.people.died'), v: longDate(died), sub: age && died ? t('discover.people.aged', { age }) : '' },
+			{ k: t('discover.people.knownFor'), v: data?.known_for?.[0]?.name ?? '', sub: data?.known_for?.[0]?.year ? String(data.known_for[0].year) : '' },
+			{ k: t('discover.people.work'), v: p.department ?? '', sub: yearsLine }
 		].filter((x) => x.v);
 		const wins = wiki.awards.filter((a) => a.won);
 		const noms = wiki.awards.length - wins.length;
@@ -174,7 +182,8 @@
 	const decades = $derived.by(() => {
 		const g = byDecade(shownMovies);
 		if (sort !== 'popular') return g;
-		return g.sort((a, b) => (a.label === 'Coming soon' ? 1 : b.label === 'Coming soon' ? -1 : b.label.localeCompare(a.label)));
+		const soon = t('discover.people.comingSoon');
+		return g.sort((a, b) => (a.label === soon ? 1 : b.label === soon ? -1 : b.label.localeCompare(a.label)));
 	});
 
 	// No TMDB photo: ask again with the name, so the server can look for a backup photo by name too.
@@ -199,9 +208,9 @@
 	const photo = $derived(data?.person.profile || wiki.image || '');
 	const yearsLine = $derived.by(() => {
 		const st = data?.stats;
-		return st?.first_year ? `${st.first_year}–${st.active ? 'now' : st.last_year}` : '';
+		return st?.first_year ? `${st.first_year}–${st.active ? t('discover.people.now') : st.last_year}` : '';
 	});
-	const lead = $derived([data?.person.department, ...facts.filter((f) => !f.startsWith('Known for'))].filter(Boolean).join(' · '));
+	const lead = $derived([data?.person.department, ...factsAll.filter((f) => !f.known).map((f) => f.text)].filter(Boolean).join(' · '));
 	const top = $derived(personArt.withArt(data?.known_for).slice(0, 10));
 	// Under the name: only what they do and since when; the rest lives in About.
 	const roleWords = $derived.by(() => {
@@ -209,10 +218,10 @@
 		const acts = all.includes('Actor'), directs = all.includes('Director');
 		const dept = data?.person.department;
 		const order = dept === 'Directing' ? ['Director', 'Actor'] : ['Actor', 'Director'];
-		const got = order.filter((w) => (w === 'Actor' ? acts : directs));
-		return got.length ? got.join(' · ') : dept === 'Acting' ? 'Actor' : dept ?? '';
+		const got = order.filter((w) => (w === 'Actor' ? acts : directs)).map((w) => (w === 'Actor' ? t('discover.people.actor') : t('discover.people.director')));
+		return got.length ? got.join(' · ') : dept === 'Acting' ? t('discover.people.actor') : dept ?? '';
 	});
-	const quiet = $derived([roleWords, data?.stats?.first_year ? `Since ${data.stats.first_year}` : ''].filter(Boolean).join(' · '));
+	const quiet = $derived([roleWords, data?.stats?.first_year ? t('discover.people.since', { year: data.stats.first_year }) : ''].filter(Boolean).join(' · '));
 	const reel = $derived(personArt.withArt(data?.known_for).map((m) => m.backdrop).filter((b): b is string => !!b).slice(0, 6));
 	// About starts half way through the stills (more of them when there are), so it never shows the banner's picture.
 	const aboutStills = $derived.by(() => {
@@ -312,14 +321,14 @@
 	setTopCrumbs(null);
 </script>
 
-<svelte:head><title>{data?.person.name ?? 'Person'} · HolyArrs</title>{#if hero}<link rel="preload" as="image" href={hero} />{/if}</svelte:head>
+<svelte:head><title>{data?.person.name ?? t('discover.people.person')} · HolyArrs</title>{#if hero}<link rel="preload" as="image" href={hero} />{/if}</svelte:head>
 
 {#snippet filmCard(m: PersonMovie)}
 	<WideCard cover title={m.name} href={href(m)} image={m.backdrop || m.poster} kind="movie" subtitle={roleLine(m) || undefined} owned={owned(m)} preview={{ kind: 'movie', tmdb: m.ids.tmdb, year: m.year || undefined, titleId: m.title_id }}
 		followTmdb={!m.title_id && (coming.has(m.ids.tmdb) || followsByTmdb({ kind: 'movie', titleId: m.title_id, year: m.year }))}>
 		{#snippet growAction()}
 			{#if action && !m.title_id && !m.ask && !m.never_add && !done[m.ids.tmdb]}
-				<IconButton icon="plus" label={action === 'add' ? `Add ${m.name}` : `Ask for ${m.name}`} variant="glass" size="lg" aria-busy={asking === m.ids.tmdb || undefined} onclick={() => quick(m)} />
+				<IconButton icon="plus" label={action === 'add' ? t('discover.people.add', { name: m.name }) : t('discover.people.askFor', { name: m.name })} variant="glass" size="lg" aria-busy={asking === m.ids.tmdb || undefined} onclick={() => quick(m)} />
 			{/if}
 		{/snippet}
 	</WideCard>
@@ -337,10 +346,10 @@
 {#if error && !data}<LoadError hasData={false} message={plainReason(error).text} onretry={load} {busy} />
 {:else if error}<p class="notice bad" role="alert"><Icon name="alert" size={17} /><span>{plainReason(error).text}</span></p>{/if}
 {#snippet mainAct()}
-	<ActionButton icon="film" label="Go to the filmography" caption="Filmography" primary onclick={() => document.getElementById('films-title')?.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' })} />
+	<ActionButton icon="film" label={t('discover.people.goToTheFilmography')} caption={t('discover.people.filmography')} primary onclick={() => document.getElementById('films-title')?.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' })} />
 {/snippet}
 
-<PageLoader loading={(!data || !(wikiDone || wikiWaited)) && !error} label="Loading this person" onretry={load}>
+<PageLoader loading={(!data || !(wikiDone || wikiWaited)) && !error} label={t('discover.people.loadingThisPerson')} onretry={load}>
 {#if data && (wikiDone || wikiWaited) && view}
 	<div class="ap" class:tinted={!!tint} style={tint ? `--ap-bg:${tint.bg};--ap-soft:${tint.soft}` : undefined}>
 	<header class="banner" bind:this={heroBox} style:--gone={gone.toFixed(3)} class:playing={clipOn} class:held={clipHeld} data-hero data-testid="person-banner">
@@ -367,7 +376,7 @@
 			<h1 bind:this={nameEl}>{data.person.name}</h1>
 			{#if quiet}<p class="c-line">{quiet}</p>{/if}
 		</div>
-		<div class="acts">{@render mainAct()}<ActionButton icon="info" label="About {data.person.name}" caption="About" onclick={() => (aboutOpen = true)} /></div>
+		<div class="acts">{@render mainAct()}<ActionButton icon="info" label={t('discover.people.about', { name: data.person.name })} caption={t('discover.people.about2')} onclick={() => (aboutOpen = true)} /></div>
 	</div>
 
 	<div class="slimwrap">
@@ -379,12 +388,12 @@
 	</div>
 
 	{#if limit && action === 'ask' && !limit.no_limit && !limit.movies.no_limit}
-		<p class="note">Movie asks this rolling week: {limit.movies.used} used, {limit.movies.left} left.</p>
+		<p class="note">{t('discover.people.movieAsksThisRolling', { used: limit.movies.used, left: limit.movies.left })}</p>
 	{/if}
 
 	{#if top.length}
 		<section class="block kf kf-eps" data-testid="person-top">
-			<h2>Known for</h2>
+			<h2>{t('discover.people.knownFor')}</h2>
 			<ol class="kf-list">
 				{#each top as m, i (m.ids.tmdb)}
 					<li class="kf-item" style:--i={i}>
@@ -396,19 +405,19 @@
 		</section>
 	{/if}
 
-	{@render row('Coming soon', data.coming_soon, 'person-soon')}
-	{@render row('In your Library', data.library, 'person-library')}
-	{@render row('You asked for', data.asked, 'person-asked')}
+	{@render row(t('discover.people.comingSoon'), data.coming_soon, 'person-soon')}
+	{@render row(t('discover.people.inYourLibrary'), data.library, 'person-library')}
+	{@render row(t('discover.people.youAskedFor'), data.asked, 'person-asked')}
 
 	<section class="block" aria-labelledby="films-title">
 		<div class="toolbar">
-			<h2 id="films-title">Filmography</h2>
+			<h2 id="films-title">{t('discover.people.filmography')}</h2>
 			<div class="controls">
-				<SegmentedControl label="Credit role" value={role} options={[{ value: 'all', label: 'All' }, { value: 'actor', label: 'Actor' }, { value: 'director', label: 'Director' }]} onchange={(v) => changeRole(v as PersonRole)} />
-				<SegmentedControl label="Sort" value={sort} options={[{ value: 'oldest', label: 'Oldest first' }, { value: 'newest', label: 'Newest first' }, { value: 'popular', label: 'Popular' }]} onchange={(v) => changeSort(v as FilmSort)} />
+				<SegmentedControl label={t('discover.people.creditRole')} value={role} options={[{ value: 'all', label: t('discover.people.all') }, { value: 'actor', label: t('discover.people.actor') }, { value: 'director', label: t('discover.people.director') }]} onchange={(v) => changeRole(v as PersonRole)} />
+				<SegmentedControl label={t('discover.people.sort')} value={sort} options={[{ value: 'oldest', label: t('discover.people.oldestFirst') }, { value: 'newest', label: t('discover.people.newestFirst') }, { value: 'popular', label: t('discover.people.popular') }]} onchange={(v) => changeSort(v as FilmSort)} />
 			</div>
 		</div>
-		{#if !shownMovies.length && !busy}<EmptyState compact icon="film" title="No movies match this role." />{/if}
+		{#if !shownMovies.length && !busy}<EmptyState compact icon="film" title={t('discover.people.noMoviesMatchThis')} />{/if}
 	</section>
 	{#each decades as g (g.label)}
 		<Shelf title={g.label} item="var(--title-item)" items={g.movies.slice(0, 12)} key={(m) => m.ids.tmdb} placeholder="wide" lines={1} onseeall={g.movies.length > 12 ? () => (allDecade = g) : undefined}>
@@ -418,19 +427,19 @@
 
 	{#if bio || facts.length}
 		<section class="block">
-			<h2>About</h2>
-			<button type="button" class="acard" aria-haspopup="dialog" aria-label="About {data.person.name}: read more" onclick={() => (aboutOpen = true)} onpointermove={(e) => { const b = e.currentTarget.getBoundingClientRect(); e.currentTarget.style.setProperty('--mx', `${((e.clientX - b.left) / b.width) * 100}%`); e.currentTarget.style.setProperty('--my', `${((e.clientY - b.top) / b.height) * 100}%`); }} data-testid="person-about">
+			<h2>{t('discover.people.about2')}</h2>
+			<button type="button" class="acard" aria-haspopup="dialog" aria-label={t('discover.people.aboutReadMore', { name: data.person.name })} onclick={() => (aboutOpen = true)} onpointermove={(e) => { const b = e.currentTarget.getBoundingClientRect(); e.currentTarget.style.setProperty('--mx', `${((e.clientX - b.left) / b.width) * 100}%`); e.currentTarget.style.setProperty('--my', `${((e.clientY - b.top) / b.height) * 100}%`); }} data-testid="person-about">
 				{#each about?.stills ?? [] as src, i (src)}<img class="ab-frame" class:on={i === still % (about?.stills.length || 1)} {src} alt="" loading="lazy" decoding="async" />{/each}
 				<span class="a-glow" aria-hidden="true"></span>
 				{#if wiki.badges[0]}<span class="disc" aria-hidden="true"><b>{wiki.badges[0].split(' ')[0]}</b><small>{wiki.badges[0].split(' ').slice(1).join(' ')}</small></span>{/if}
 				<span class="a-foot">
-					<span class="a-lis">{[stats?.films ? `${stats.films} films` : '', yearsLine].filter(Boolean).join(' · ')}</span>
+					<span class="a-lis">{[stats?.films ? t('discover.people.filmsCount', { n: stats.films }) : '', yearsLine].filter(Boolean).join(' · ')}</span>
 					<span class="a-bio">{bio || data.person.name}</span>
-					<span class="a-more">More about {data.person.name.split(' ')[0]}</span>
+					<span class="a-more">{t('discover.people.moreAbout', { name: data.person.name.split(' ')[0] })}</span>
 				</span>
 			</button>
 		</section>
-		<Sheet bind:open={aboutOpen} title="About {data.person.name}" size="lg">
+		<Sheet bind:open={aboutOpen} title={t('discover.people.about', { name: data.person.name })} size="lg">
 			{#if about}
 			<div class="ab ab-{aboutView}" data-testid="person-about-sheet">
 				{#if aboutView !== 'dossier' && about.stills.length}
@@ -445,13 +454,13 @@
 
 				{#if aboutView === 'career'}
 					<div class="ab-figs">
-						{#if stats?.films}<p><b>{stats.films}</b><span>films</span></p>{/if}
-						{#if data.stats?.shows}<p><b>{data.stats.shows}</b><span>shows</span></p>{/if}
-						{#if yearsLine}<p><b>{yearsLine}</b><span>on screen</span></p>{/if}
-						{#if about.wins || about.noms}<p><b>{about.wins}</b><span>{about.wins === 1 ? 'win' : 'wins'} · {about.noms} more nominations</span></p>{/if}
+						{#if stats?.films}<p><b>{stats.films}</b><span>{t('discover.people.films')}</span></p>{/if}
+						{#if data.stats?.shows}<p><b>{data.stats.shows}</b><span>{t('discover.people.shows')}</span></p>{/if}
+						{#if yearsLine}<p><b>{yearsLine}</b><span>{t('discover.people.onScreen')}</span></p>{/if}
+						{#if about.wins || about.noms}<p><b>{about.wins}</b><span>{about.wins === 1 ? t('discover.people.winNoms', { n: about.noms }) : t('discover.people.winsNoms', { n: about.noms })}</span></p>{/if}
 					</div>
 					{#if about.span.length > 1}
-						<section class="ab-sec"><h3>By decade</h3>
+						<section class="ab-sec"><h3>{t('discover.people.byDecade')}</h3>
 							<ol class="ab-bars">{#each [...about.span].reverse() as d (d.label)}<li><span class="bar" style:--h={d.n / about.most}><i></i></span><b>{d.n}</b><small>{d.label}</small></li>{/each}</ol>
 						</section>
 					{/if}
@@ -469,19 +478,19 @@
 					{/if}
 					<div class="ab-main">
 						{#if about.paras.length}
-							<section class="ab-sec"><h3>Story</h3>
+							<section class="ab-sec"><h3>{t('discover.people.story')}</h3>
 								<div class="ab-bio">{#each about.paras as t, i (i)}<p class:lead={i === 0}>{t}</p>{/each}</div>
 							</section>
 						{/if}
 						{#if about.awards.length}
-							<section class="ab-sec"><h3>Awards</h3>
-								<ul class="ab-awards">{#each about.awards as a, i (i)}<li class:won={a.won}><span class="ab-yr">{a.year || ''}</span><span class="ab-aw"><b>{a.name}</b>{#if a.for_work}<small>{a.for_work}</small>{/if}</span><span class="ab-tag">{a.won ? 'Won' : 'Nominated'}</span></li>{/each}</ul>
+							<section class="ab-sec"><h3>{t('discover.people.awards')}</h3>
+								<ul class="ab-awards">{#each about.awards as a, i (i)}<li class:won={a.won}><span class="ab-yr">{a.year || ''}</span><span class="ab-aw"><b>{a.name}</b>{#if a.for_work}<small>{a.for_work}</small>{/if}</span><span class="ab-tag">{a.won ? t('discover.people.won') : t('discover.people.nominated')}</span></li>{/each}</ul>
 							</section>
 						{/if}
 						{#if aboutView === 'career' && about.rows.length}
-							<section class="ab-sec"><h3>Details</h3><dl class="ab-dl">{#each about.rows as x (x.k)}<div><dt>{x.k}</dt><dd>{x.v}{#if x.sub}<small>{x.sub}</small>{/if}</dd></div>{/each}</dl></section>
+							<section class="ab-sec"><h3>{t('discover.people.details')}</h3><dl class="ab-dl">{#each about.rows as x (x.k)}<div><dt>{x.k}</dt><dd>{x.v}{#if x.sub}<small>{x.sub}</small>{/if}</dd></div>{/each}</dl></section>
 						{/if}
-						{#if about.wikiUrl}<a class="ab-src" href={about.wikiUrl} target="_blank" rel="noopener noreferrer">Read more on Wikipedia</a>{/if}
+						{#if about.wikiUrl}<a class="ab-src" href={about.wikiUrl} target="_blank" rel="noopener noreferrer">{t('discover.people.readMoreOnWikipedia')}</a>{/if}
 					</div>
 				</div>
 			</div>
@@ -491,7 +500,7 @@
 
 	{#if data.often_with?.length}
 		<section class="block">
-			<h2>Often works with</h2>
+			<h2>{t('discover.people.oftenWorksWith')}</h2>
 			<ul class="circles">{#each data.often_with as p (p.id)}<li><a class="mate" href={to(`/people/${p.id.replace(/^tmdb:/, '')}`)}><span class="mate-pic">{#if p.profile}<img src={p.profile} alt="" loading="lazy" decoding="async" />{:else}<span class="initials">{p.name.split(' ').map((w) => w[0]).slice(0, 2).join('')}</span>{/if}</span><span class="mate-name">{p.name}</span></a></li>{/each}</ul>
 		</section>
 	{/if}
@@ -511,27 +520,27 @@
 			<div class="who">
 				<h1>{data.person.name}</h1>
 				{#if facts.length}<p class="facts">{facts.join(' · ')}</p>{/if}
-				{#if chips.length || wiki.badges.length}<ul class="chips" aria-label="At a glance">{#each wiki.badges.slice(0, 3) as c (c)}<li class="award" data-testid="award-badge">{c}</li>{/each}{#each chips as c (c)}<li>{c}</li>{/each}</ul>{/if}
+				{#if chips.length || wiki.badges.length}<ul class="chips" aria-label={t('discover.people.atAGlance')}>{#each wiki.badges.slice(0, 3) as c (c)}<li class="award" data-testid="award-badge">{c}</li>{/each}{#each chips as c (c)}<li>{c}</li>{/each}</ul>{/if}
 				{#if bio}
 					<p class="bio" class:open={bioOpen}>{bio}</p>
-					<button class="more" type="button" onclick={() => (bioOpen = !bioOpen)}>{bioOpen ? 'Less' : 'More'}</button>
+					<button class="more" type="button" onclick={() => (bioOpen = !bioOpen)}>{bioOpen ? t('discover.people.less') : t('discover.people.more')}</button>
 				{/if}
 			</div>
 		</div>
 	</header>
 
 	{#if limit && action === 'ask' && !limit.no_limit && !limit.movies.no_limit}
-		<p class="note">Movie asks this rolling week: {limit.movies.used} used, {limit.movies.left} left.</p>
+		<p class="note">{t('discover.people.movieAsksThisRolling', { used: limit.movies.used, left: limit.movies.left })}</p>
 	{/if}
 
-	{@render row('Coming soon', data.coming_soon, 'person-soon')}
-	{@render row('Known for', data.known_for, 'person-known')}
-	{@render row('In your Library', data.library, 'person-library')}
-	{@render row('You asked for', data.asked, 'person-asked')}
+	{@render row(t('discover.people.comingSoon'), data.coming_soon, 'person-soon')}
+	{@render row(t('discover.people.knownFor'), data.known_for, 'person-known')}
+	{@render row(t('discover.people.inYourLibrary'), data.library, 'person-library')}
+	{@render row(t('discover.people.youAskedFor'), data.asked, 'person-asked')}
 
 	{#if data.often_with?.length}
 		<section class="block" aria-labelledby="with-title">
-			<h2 id="with-title">Often works with</h2>
+			<h2 id="with-title">{t('discover.people.oftenWorksWith')}</h2>
 			<ul class="tiles">
 				{#each data.often_with as p (p.id)}
 					<li><BrowseTile name={p.name} href={to(`/people/${p.id.replace(/^tmdb:/, '')}`)} image={p.profile ?? ''} hue="#555b66" plain /></li>
@@ -542,10 +551,10 @@
 
 	<section class="block" aria-labelledby="films-title">
 		<div class="toolbar">
-			<h2 id="films-title">Filmography</h2>
+			<h2 id="films-title">{t('discover.people.filmography')}</h2>
 			<div class="controls">
-				<SegmentedControl label="Credit role" value={role} options={[{ value: 'all', label: 'All' }, { value: 'actor', label: 'Actor' }, { value: 'director', label: 'Director' }]} onchange={(v) => changeRole(v as PersonRole)} />
-				<SegmentedControl label="Sort" value={sort} options={[{ value: 'oldest', label: 'Oldest first' }, { value: 'newest', label: 'Newest first' }, { value: 'popular', label: 'Popular' }]} onchange={(v) => changeSort(v as FilmSort)} />
+				<SegmentedControl label={t('discover.people.creditRole')} value={role} options={[{ value: 'all', label: t('discover.people.all') }, { value: 'actor', label: t('discover.people.actor') }, { value: 'director', label: t('discover.people.director') }]} onchange={(v) => changeRole(v as PersonRole)} />
+				<SegmentedControl label={t('discover.people.sort')} value={sort} options={[{ value: 'oldest', label: t('discover.people.oldestFirst') }, { value: 'newest', label: t('discover.people.newestFirst') }, { value: 'popular', label: t('discover.people.popular') }]} onchange={(v) => changeSort(v as FilmSort)} />
 			</div>
 		</div>
 		{#each decades as g (g.label)}
@@ -554,7 +563,7 @@
 				{#each g.movies as m (m.ids.tmdb)}<li>{@render filmCard(m)}</li>{/each}
 			</ul>
 		{/each}
-		{#if !shownMovies.length && !busy}<EmptyState compact icon="film" title="No movies match this role." />{/if}
+		{#if !shownMovies.length && !busy}<EmptyState compact icon="film" title={t('discover.people.noMoviesMatchThis')} />{/if}
 	</section>
 
 {/if}

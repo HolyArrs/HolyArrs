@@ -3,18 +3,19 @@ import type { TitleView } from '#lib/core/types.ts';
 import { api, message } from '#lib/core/api.ts';
 import { toasts } from '#lib/core/toasts.svelte.ts';
 import { scrollToStart } from '#lib/core/motion.ts';
+import { t } from '#lib/core/i18n/i18n.svelte.ts';
 
 export function createTitleSearch(ctx: { id: number; title: TitleView | null; slotPick: number; searching: boolean; running: number[]; relOffset: number; refreshing: boolean; load: (which?: 'all' | 'title' | 'releases') => Promise<void> }) {
 	let failing = $state(0);
 	async function markFailed(downloadID: number) {
-		if (!confirm('Mark this download failed? Its Release is turned down, it is removed from the Downloader and HolyArrs looks for the next Release.')) return;
+		if (!confirm(t('mediafiles.title.markConfirm'))) return;
 		failing = downloadID;
 		try {
 			await api.post(`/downloads/${downloadID}/mark-failed`);
-			toasts.push('Marked failed', 'ok', { body: 'Searching for the next Release' });
+			toasts.push(t('mediafiles.title.markedFailed'), 'ok', { body: t('mediafiles.title.searchingNext') });
 			await ctx.load('title');
 		} catch (e) {
-			toasts.push(`Couldn't mark failed`, 'fail', { body: message(e) });
+			toasts.push(t('mediafiles.title.markFailed'), 'fail', { body: message(e) });
 		} finally {
 			failing = 0;
 		}
@@ -29,9 +30,9 @@ export function createTitleSearch(ctx: { id: number; title: TitleView | null; sl
 			const r = await api.post<{ job_ids: number[] }>(`/titles/${ctx.id}/search`, body);
 			ctx.running = [...new Set([...ctx.running, ...r.job_ids])];
 			ctx.relOffset = 0;
-			toasts.push('Searching for a Release', 'info', pick ? undefined : { body: 'Pick one from the list' });
+			toasts.push(t('mediafiles.title.searching'), 'info', pick ? undefined : { body: t('mediafiles.title.pickFromList') });
 		} catch (e) {
-			toasts.push(`Couldn't start search`, 'fail', { body: message(e) });
+			toasts.push(t('mediafiles.title.startFailed'), 'fail', { body: message(e) });
 		} finally {
 			setTimeout(() => (ctx.searching = false), 1500);
 		}
@@ -49,9 +50,9 @@ export function createTitleSearch(ctx: { id: number; title: TitleView | null; sl
 		ctx.refreshing = true;
 		try {
 			await api.post(`/titles/${ctx.id}/refresh`);
-			toasts.push(`Refreshing ${ctx.title?.name ?? 'title'}`, 'info', { body: 'Names, dates and posters' });
+			toasts.push(t('mediafiles.title.refreshing', { name: ctx.title?.name ?? t('mediafiles.title.titleLower') }), 'info', { body: t('mediafiles.title.refreshingBody') });
 		} catch (e) {
-			toasts.push(`Couldn't refresh`, 'fail', { body: message(e) });
+			toasts.push(t('mediafiles.title.refreshFailed'), 'fail', { body: message(e) });
 		} finally {
 			setTimeout(() => (ctx.refreshing = false), 1500);
 		}

@@ -16,6 +16,7 @@
 	import { live } from '#lib/core/live.svelte.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { plainReason } from '#lib/core/plain.ts';
+	import { t as tr } from '#lib/core/i18n/i18n.svelte.ts';
 
 	// Missing subtitles: every movie and episode missing a wished subtitle.
 
@@ -122,9 +123,9 @@
 			const r = await api.post<{ queued: number; job_ids: number[] }>('/subtitles/missing/search', body);
 			jobIds = r.job_ids ?? [];
 			jobStates = {};
-			toasts.push('Searching for subtitles', 'info', { body: r.queued === 1 ? '1 file' : `${r.queued} files` });
+			toasts.push(tr('shows.sheet.searchingSubs'), 'info', { body: tr('mediafiles.unit.file.' + (r.queued === 1 ? 'one' : 'other'), { n: r.queued }) });
 		} catch (e) {
-			toasts.push(`Couldn't start search`, 'fail', { body: message(e) });
+			toasts.push(tr('mediafiles.title.startFailed'), 'fail', { body: message(e) });
 		} finally {
 			searchAllPending = false;
 		}
@@ -134,10 +135,10 @@
 		searchingRow = r.file_id;
 		try {
 			const q = await api.post<{ job_ids: number[] }>('/subtitles/search', { file_id: r.file_id });
-			toasts.push('Searching for subtitles', 'info', { body: missingName(r) });
+			toasts.push(tr('shows.sheet.searchingSubs'), 'info', { body: missingName(r) });
 			for (const id of q.job_ids ?? []) if (!jobIds.includes(id)) jobIds.push(id);
 		} catch (e) {
-			toasts.push(`Couldn't start search`, 'fail', { body: message(e) });
+			toasts.push(tr('mediafiles.title.startFailed'), 'fail', { body: message(e) });
 		} finally {
 			searchingRow = 0;
 		}
@@ -150,53 +151,53 @@
 	}
 </script>
 
-<svelte:head><title>Missing subtitles · HolyArrs</title></svelte:head>
+<svelte:head><title>{tr('library.missingSubs.title')} · HolyArrs</title></svelte:head>
 
-<LibraryToolPage title="Missing subtitles" count={loaded && !error ? `${total} missing` : ''}>
+<LibraryToolPage title={tr('library.missingSubs.title')} count={loaded && !error ? tr('library.missingSubs.count', { n: total }) : ''}>
 	{#snippet bar()}
 		<span class="tp-cap">
-			<select aria-label="Language" bind:value={language} onchange={filter}>
-				<option value="">Every language</option>
+			<select aria-label={tr('library.missingSubs.language')} bind:value={language} onchange={filter}>
+				<option value="">{tr('library.missingSubs.every')}</option>
 				{#each langs as l (l.code)}<option value={l.code}>{l.name}</option>{/each}
 			</select>
 		</span>
 		<span class="tp-cap">
-			<select aria-label="Kind" bind:value={kind} onchange={filter}>
-				<option value="">Movies and episodes</option>
-				<option value="movie">Movies</option>
-				<option value="episode">Episodes</option>
+			<select aria-label={tr('library.missingSubs.kind')} bind:value={kind} onchange={filter}>
+				<option value="">{tr('library.missingSubs.both')}</option>
+				<option value="movie">{tr('mediafiles.kinds.movie')}</option>
+				<option value="episode">{tr('shows.list.episodes')}</option>
 			</select>
 		</span>
 		<span class="tp-cap">
-			<select aria-label="Movie or show" bind:value={title} onchange={filter}>
-				<option value={0}>All of them</option>
+			<select aria-label={tr('library.missingSubs.movieOrShow')} bind:value={title} onchange={filter}>
+				<option value={0}>{tr('library.missingSubs.all')}</option>
 				{#each titles as t (t.id)}<option value={t.id}>{t.name} ({t.count})</option>{/each}
 			</select>
 		</span>
 		<span class="tp-gap"></span>
 		<span class="tp-cap">
-			<Button variant="primary" icon="search" onclick={searchAll} disabled={total === 0} busy={searchAllBusy} data-testid="search-all-subtitles">Search all</Button>
+			<Button variant="primary" icon="search" onclick={searchAll} disabled={total === 0} busy={searchAllBusy} data-testid="search-all-subtitles">{tr('library.missingSubs.searchAll')}</Button>
 		</span>
 	{/snippet}
 
 	{#if jobIds.length}
 		<div class="tp-sheet tp-pad progress" aria-live="polite" data-testid="search-all-progress">
-			<ProgressBar value={(done / jobIds.length) * 100} label="Subtitle searches done" />
-			<p class="tp-note">{running ? `Searched ${done} of ${jobIds.length} files.` : `Done: searched ${jobIds.length} ${jobIds.length === 1 ? 'file' : 'files'}.`}</p>
+			<ProgressBar value={(done / jobIds.length) * 100} label={tr('library.missingSubs.done')} />
+			<p class="tp-note">{running ? tr('library.missingSubs.searched', { done, total: jobIds.length }) : tr(jobIds.length === 1 ? 'library.missingSubs.doneOne' : 'library.missingSubs.doneMany', { n: jobIds.length })}</p>
 		</div>
 	{/if}
 
 	{#if error}
 		<LoadError hasData={false} message={plainReason(error).text} onretry={load} />
 	{:else}
-	<PageLoader loading={!loaded} label="Loading missing subtitles">
+	<PageLoader loading={!loaded} label={tr('library.missingSubs.loading')}>
 	{#if total === 0}
-		<EmptyState compact icon="subtitle" title={language || kind || title ? 'Nothing matches.' : 'Nothing missing.'} />
+		<EmptyState compact icon="subtitle" title={language || kind || title ? tr('library.copies.nothingMatches') : tr('mediafiles.list.nothingMissing')} />
 	{:else}
 		<div class="tp-sheet table-wrap">
 			<table class="tp-table missing">
-				<caption class="sr-only">Movies and episodes missing subtitles</caption>
-				<thead><tr><th scope="col">Title</th><th scope="col">Language</th><th scope="col">Status</th><th scope="col"><span class="sr-only">Search</span></th></tr></thead>
+				<caption class="sr-only">{tr('library.missingSubs.caption')}</caption>
+				<thead><tr><th scope="col">{tr('mediafiles.list.title')}</th><th scope="col">{tr('library.missingSubs.language')}</th><th scope="col">{tr('mediafiles.col.status')}</th><th scope="col"><span class="sr-only">{tr('mediafiles.dialogs.search')}</span></th></tr></thead>
 				<tbody>
 					{#each rows as r (r.file_id + r.language + String(r.forced))}
 						<tr data-testid="missing-subtitle">
@@ -208,8 +209,8 @@
 									icon="search"
 									onclick={() => searchOne(r)}
 									disabled={searchingRow === r.file_id}
-									aria-label="Search {langName(r.language, langs)} subtitles for {missingName(r)}"
-									data-testid="missing-search">Search</Button
+									aria-label={tr('library.missingSubs.searchFor', { language: langName(r.language, langs), name: missingName(r) })}
+									data-testid="missing-search">{tr('mediafiles.dialogs.search')}</Button
 								>
 							</td>
 						</tr>
@@ -218,10 +219,10 @@
 			</table>
 		</div>
 		{#if pages.prev !== null || pages.next !== null}
-			<nav class="tp-foot" aria-label="Pages">
-				<Button icon="chevronLeft" disabled={pages.prev === null} onclick={() => go(pages.prev)}>Back</Button>
-				<span class="tp-note">{pages.from}–{pages.to} of {total}</span>
-				<Button iconAfter="chevronRight" disabled={pages.next === null} onclick={() => go(pages.next)}>More</Button>
+			<nav class="tp-foot" aria-label={tr('mediafiles.releaseList.pages')}>
+				<Button icon="chevronLeft" disabled={pages.prev === null} onclick={() => go(pages.prev)}>{tr('mediafiles.releaseList.back')}</Button>
+				<span class="tp-note">{tr('library.copies.range', { from: pages.from, to: pages.to, total })}</span>
+				<Button iconAfter="chevronRight" disabled={pages.next === null} onclick={() => go(pages.next)}>{tr('mediafiles.releaseList.more')}</Button>
 			</nav>
 		{/if}
 	{/if}

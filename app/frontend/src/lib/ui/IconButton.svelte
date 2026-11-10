@@ -58,6 +58,7 @@
 	}
 	.tip-above[data-tip]::after { top: auto; bottom: calc(100% + 6px); }
 	.tip-below-end[data-tip]::after { left: auto; right: 0; translate: 0 -2px; }
+	:global([dir='rtl']) .tip-below-end[data-tip]::after { right: auto; left: 0; }
 	.tip-below-end[data-tip]:hover::after, .tip-below-end[data-tip]:focus-visible::after { translate: 0 0; }
 	.tip-right[data-tip]::after { left: calc(100% + 8px); top: 50%; translate: -2px -50%; }
 	[data-tip]:hover::after, [data-tip]:focus-visible::after { opacity: 1; translate: -50% 0; transition-delay: 500ms; }

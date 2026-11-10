@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	import { onMount, tick, untrack } from 'svelte';
 	import Icon from '#lib/ui/Icon.svelte';
 	import AlertSymbol from './AlertSymbol.svelte';
@@ -9,6 +10,7 @@
 	import { settingsNow } from './settings-status.svelte.ts';
 	import { session } from '../core/session.svelte.ts';
 	import { to } from '../core/paths.ts';
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 
 	let { before = [], after = [] }: { before?: PinnedAlert[]; after?: PinnedAlert[] } = $props();
 
@@ -71,10 +73,10 @@
 	}
 	function when(at: number) {
 		const s = Math.max(0, Math.round((now - at) / 1000));
-		if (s < 45) return 'now';
-		if (s < 3600) return `${Math.round(s / 60)}m`;
-		if (s < 86400) return `${Math.round(s / 3600)}h`;
-		return `${Math.round(s / 86400)}d`;
+		if (s < 45) return t('alerts.time.now');
+		if (s < 3600) return t('alerts.time.minutes', { n: Math.round(s / 60) });
+		if (s < 86400) return t('alerts.time.hours', { n: Math.round(s / 3600) });
+		return t('alerts.time.days', { n: Math.round(s / 86400) });
 	}
 	const live = (p: { action?: unknown; until?: number }) => !!p.action && (!p.until || now <= p.until);
 </script>
@@ -83,20 +85,20 @@
 
 {#snippet rows()}
 	{#if fixes.length}
-		<h3 class="sub">Needs attention</h3>
+		<h3 class="sub">{t('alerts.panel.needsAttention')}</h3>
 		<ul class="rows pins">
 			{#each fixes as f (f.key)}
 				<li class="row pin">
 					<AlertSymbol tone={f.tone} size={24} />
 					<span class="tx">
-						<span class="t">{f.title}</span>
-						{#if f.body}<span class="b">{f.body}</span>{/if}
+						<span class="t">{serverWords(f.title)}</span>
+						{#if f.body}<span class="b">{serverWords(f.body)}</span>{/if}
 						<a class="act" href={to(f.href)} onclick={() => (alertsPanel.open = false)}>{f.label} ›</a>
 					</span>
 				</li>
 			{/each}
 		</ul>
-		{#if toasts.past.length}<h3 class="sub">Recent</h3>{/if}
+		{#if toasts.past.length}<h3 class="sub">{t('alerts.panel.recent')}</h3>{/if}
 	{/if}
 	{#if toasts.past.length}
 		<ul class="rows">
@@ -111,29 +113,29 @@
 					</span>
 					<span class="side">
 						<time datetime={new Date(p.at).toISOString()}>{when(p.at)}</time>
-						<button type="button" class="x" aria-label="Remove {p.text}" onclick={() => toasts.forget(p.id)}><Icon name="x" size={11} stroke={2.4} /></button>
+						<button type="button" class="x" aria-label={t('alerts.panel.remove', { text: p.text })} onclick={() => toasts.forget(p.id)}><Icon name="x" size={11} stroke={2.4} /></button>
 					</span>
 				</li>
 			{/each}
 		</ul>
 	{:else if !fixes.length}
-		<p class="empty">Nothing here yet</p>
+		<p class="empty">{t('alerts.panel.empty')}</p>
 	{/if}
 {/snippet}
 
 {#if phone}
-	<Sheet bind:open={alertsPanel.open} title="Recent alerts" size="sm">
+	<Sheet bind:open={alertsPanel.open} title={t('alerts.panel.title')} size="sm">
 		<div class="sheet-body">
-			{#if alertsPanel.open && toasts.past.length}<div class="tools"><button type="button" class="clear" onclick={() => toasts.forgetAll()}>Clear all</button></div>{/if}
+			{#if alertsPanel.open && toasts.past.length}<div class="tools"><button type="button" class="clear" onclick={() => toasts.forgetAll()}>{t('alerts.panel.clearAll')}</button></div>{/if}
 			<!-- Rows only while open, so a closed sheet adds no second copy of each alert's text. -->
 			{#if alertsPanel.open}{@render rows()}{/if}
 		</div>
 	</Sheet>
 {:else if alertsPanel.open}
-	<div class="panel" role="dialog" aria-label="Recent alerts" tabindex="-1" style:left="{left}px" bind:this={box}>
+	<div class="panel" role="dialog" aria-label={t('alerts.panel.title')} tabindex="-1" style:left="{left}px" bind:this={box}>
 		<div class="head">
-			<strong>Recent alerts</strong>
-			{#if toasts.past.length}<button type="button" class="clear" onclick={() => toasts.forgetAll()}>Clear all</button>{/if}
+			<strong>{t('alerts.panel.title')}</strong>
+			{#if toasts.past.length}<button type="button" class="clear" onclick={() => toasts.forgetAll()}>{t('alerts.panel.clearAll')}</button>{/if}
 		</div>
 		{@render rows()}
 	</div>

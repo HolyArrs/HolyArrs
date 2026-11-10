@@ -1,5 +1,6 @@
 // Full-page loader, sign-in handoff and reconnect veil driven from one DOM node.
 
+import { t } from '#lib/core/i18n/i18n.svelte.ts';
 export interface Rect { left: number; top: number; width: number; height: number }
 
 // How long the full loader stays up, and the wait before the thin nav bar shows.
@@ -96,7 +97,7 @@ export function playHandoff(from: Rect | null, name: string): void {
 	full = true;
 	hold = SIGNIN_HOLD_MS;
 	shownAt = performance.now() + VEIL_MS;
-	say(isUserSwitch(last, name) ? `Welcome, ${name}` : '');
+	say(isUserSwitch(last, name) ? t('core.loader.welcome', { name }) : '');
 	if (!ring || !from) return;
 	const f = handoffFrom(from, innerWidth, innerHeight);
 	ring.style.transition = 'none';
@@ -113,7 +114,7 @@ export function playHandoff(from: Rect | null, name: string): void {
 
 export function playSignIn(name: string, holdMs = HOLD_MS): void {
 	const last = rememberUser(name);
-	playLoader(isUserSwitch(last, name) ? `Welcome, ${name}` : '', holdMs);
+	playLoader(isUserSwitch(last, name) ? t('core.loader.welcome', { name }) : '', holdMs);
 }
 
 export function showReconnecting(): void {
@@ -126,7 +127,7 @@ export function showReconnecting(): void {
 	node.hidden = false;
 	full = true;
 	hold = 0;
-	say('Reconnecting…');
+	say(t('core.loader.reconnecting'));
 }
 
 export function hideReconnecting(): void {

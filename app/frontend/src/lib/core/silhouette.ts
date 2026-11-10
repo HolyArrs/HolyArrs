@@ -1,4 +1,5 @@
 // Timing rules that decide when a loading page shows skeleton, orbit and reassurance.
+import { t } from '#lib/core/i18n/i18n.svelte.ts';
 export type LoadStage = 'quiet' | 'skeleton' | 'orbit' | 'reassure';
 
 // Wait a beat before showing anything, so quick loads never flash.
@@ -34,8 +35,8 @@ export function stageTimers(elapsed: number): { at: number; stage: LoadStage }[]
 		.map((t) => ({ at: t.at - elapsed, stage: t.stage }));
 }
 
-export function buildingStatus(attempt: number, what = 'this page'): string {
-	if (attempt <= 1) return `Building ${what}…`;
-	return `Building ${what}… try ${attempt}`;
+export function buildingStatus(attempt: number, what = t('core.silhouette.thisPage')): string {
+	if (attempt <= 1) return t('core.silhouette.building', { what });
+	return t('core.silhouette.buildingTry', { what, attempt });
 }
 

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import Icon from '#lib/ui/Icon.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import IconButton from '#lib/ui/IconButton.svelte';
@@ -17,30 +18,30 @@
 	{#each wants as w, i (i)}
 		<li class="want" data-testid="wish-row">
 			<div class="field">
-				<label for="{id}-lang-{i}">Language</label>
+				<label for="{id}-lang-{i}">{t('subtitles.wants.language')}</label>
 				<select id="{id}-lang-{i}" class="input" bind:value={w.language}>
-					<option value="" disabled>Pick a language</option>
+					<option value="" disabled>{t('subtitles.wants.pick')}</option>
 					{#each langs as l (l.code)}<option value={l.code}>{l.name}</option>{/each}
 				</select>
 			</div>
 			<div class="field">
-				<label for="{id}-hi-{i}">Hearing-impaired</label>
+				<label for="{id}-hi-{i}">{t('subtitles.wants.hi')}</label>
 				<select id="{id}-hi-{i}" class="input" bind:value={w.hearing_impaired}>
 					{#each Object.entries(hiWords) as [k, v] (k)}<option value={k as HI}>{v}</option>{/each}
 				</select>
 			</div>
 			<label class="checkline forced">
 				<input type="checkbox" bind:checked={w.forced} />
-				<span>Forced only</span>
+				<span>{t('subtitles.wants.forced')}</span>
 			</label>
-			<IconButton icon="x" variant="tinted" tooltip={false} onclick={() => wants.splice(i, 1)} label="Take {langName(w.language, langs) || 'this language'} off" />
+			<IconButton icon="x" variant="tinted" tooltip={false} onclick={() => wants.splice(i, 1)}  label={t('subtitles.wants.takeOff', { name: langName(w.language, langs) || t('subtitles.wants.thisLanguage') })} />
 		</li>
 	{:else}
-		<li class="small muted">No languages: no subtitles are looked for.</li>
+		<li class="small muted">{t('subtitles.wants.empty')}</li>
 	{/each}
 </ul>
 {#if wants.length < 10}
-	<div class="add"><Button icon="plus" onclick={add}>Add a language</Button></div>
+	<div class="add"><Button icon="plus" onclick={add}>{t('subtitles.wants.add')}</Button></div>
 {/if}
 
 <style>

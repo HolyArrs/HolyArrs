@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t, appLocale } from '#lib/core/i18n/i18n.svelte.ts';
 	import { scoreName, scoreText, type OutsideScore } from '#lib/ui/outside-ratings.ts';
 	// One icon file each: the package index holds every brand (12.9 MB in dev).
 	import rottentomatoes from 'simple-icons/icons/rottentomatoes.svg?raw';
@@ -15,15 +16,15 @@
 	// A title's scores on the page, not over art: TMDB's star score first, then the outside ratings. Variants: chips (one line of marks and numbers), tiles (big numbers with a short name), list (name left, score right), mono (chips without brand colours, joining the facts row).
 	let { scores = [], tmdb, variant = 'chips', outOf10 = false, showMissing = false }: { scores?: OutsideScore[]; tmdb?: number | null; variant?: 'chips' | 'tiles' | 'list' | 'mono'; outOf10?: boolean; showMissing?: boolean } = $props();
 	const marks: Record<string, string> = { imdb: 'IMDb', metacritic: 'MC', letterboxd: 'LB', trakt: 'Trakt' };
-	const short: Record<string, string> = { imdb: 'IMDb', rt_critics: 'Critics', rt_audience: 'Audience', metacritic: 'Metacritic', letterboxd: 'Letterboxd', trakt: 'Trakt' };
+	const short = $derived<Record<string, string>>({ imdb: 'IMDb', rt_critics: t('discover.titleScores.critics'), rt_audience: t('discover.titleScores.audience'), metacritic: 'Metacritic', letterboxd: 'Letterboxd', trakt: 'Trakt' });
 	const tmdbText = $derived(tmdb ? (Math.round(tmdb * 10) / 10).toFixed(1) : '');
 	const count = $derived(scores.length + (tmdbText ? 1 : 0));
 </script>
 
 {#snippet mark(source: string)}
 	<span class="mark {source}" class:logo={!!LOGOS[source]} aria-hidden="true">
-		{#if source === 'imdb'}<span class="badge imdb-badge">IMDb</span>
-		{:else if source === 'tmdb'}<span class="badge tmdb-badge">TMDB</span>
+		{#if source === 'imdb'}<span class="badge imdb-badge">{t('discover.titleScores.iMDb')}</span>
+		{:else if source === 'tmdb'}<span class="badge tmdb-badge">{t('discover.titleScores.tMDB')}</span>
 		{:else if source === 'letterboxd'}<svg width="20" height="16" viewBox="0 0 30 12"><circle cx="6" cy="6" r="5" fill="#FF8000" /><circle cx="15" cy="6" r="5" fill="#00E054" /><circle cx="24" cy="6" r="5" fill="#40BCF4" /></svg>
 		{:else if LOGOS[source]}<svg width="16" height="16" viewBox="0 0 24 24"><path d={LOGOS[source].path} fill={LOGOS[source].color} /></svg>
 		{:else if source === 'rt_critics'}<svg width="14" height="14" viewBox="0 0 12 12"><circle cx="6" cy="6.6" r="4.8" fill="#fa320a" /><path d="M5 1.4c.6.6 1 .9 1.8.7" stroke="#00912d" stroke-width="1.4" fill="none" stroke-linecap="round" /></svg>
@@ -34,16 +35,16 @@
 {/snippet}
 
 {#if count}
-	<ul class="scores {variant}" aria-label="Ratings" data-testid="title-scores">
+	<ul class="scores {variant}" aria-label={t('discover.titleScores.ratings')} data-testid="title-scores">
 		{#if tmdbText}
-			<li title="TMDB: {tmdbText} out of 10">{@render mark('tmdb')}<span class="v">{tmdbText}</span><span class="n">TMDB</span></li>
+			<li title={t('discover.titleScores.tMDBOutOf10', { tmdbText })}>{@render mark('tmdb')}<span class="v">{tmdbText}</span><span class="n">{t('discover.titleScores.tMDB')}</span></li>
 		{/if}
 		{#each scores as s (s.source)}
-			<li title={`${scoreName(s.source)}: ${scoreText(s)}${s.votes ? ` (${s.votes.toLocaleString()} votes)` : ''}`}>{@render mark(s.source)}<span class="v">{outOf10 ? ((Math.round((s.value / s.max) * 100) / 10).toFixed(1)) : scoreText(s)}</span><span class="n">{variant === 'list' ? scoreName(s.source) : short[s.source]}</span></li>
+			<li title={s.votes ? t('discover.titleScores.withVotes', { name: scoreName(s.source), score: scoreText(s), votes: s.votes.toLocaleString(appLocale()) }) : t('discover.titleScores.noVotes', { name: scoreName(s.source), score: scoreText(s) })}>{@render mark(s.source)}<span class="v">{outOf10 ? ((Math.round((s.value / s.max) * 100) / 10).toFixed(1)) : scoreText(s)}</span><span class="n">{variant === 'list' ? scoreName(s.source) : short[s.source]}</span></li>
 		{/each}
 		<!-- Every source the app reads, even when this title has no score there yet. -->
 		{#each showMissing ? ['imdb', 'rt_critics', 'rt_audience', 'metacritic', 'letterboxd', 'trakt'].filter((x) => !scores.some((s) => s.source === x)) : [] as source (source)}
-			<li class="missing" title="{scoreName(source)}: no score yet">{@render mark(source)}<span class="v">-</span><span class="n">{scoreName(source)}</span></li>
+			<li class="missing" title={t('discover.titleScores.noScoreYet', { v: scoreName(source) })}>{@render mark(source)}<span class="v">-</span><span class="n">{scoreName(source)}</span></li>
 		{/each}
 	</ul>
 {/if}

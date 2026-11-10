@@ -1,0 +1,17 @@
+{
+	"alerts.fallback.settings": "設定",
+	"alerts.panel.clearAll": "すべてクリア",
+	"alerts.panel.empty": "まだ何もありません",
+	"alerts.panel.needsAttention": "要確認",
+	"alerts.panel.recent": "最近",
+	"alerts.panel.remove": "{text} を削除",
+	"alerts.panel.title": "最近の通知",
+	"alerts.state.manyNeed": "{count} 件が要確認",
+	"alerts.state.ok": "問題なし",
+	"alerts.state.oneNeeds": "1 件が要確認",
+	"alerts.state.unset": "未設定",
+	"alerts.time.days": "{n}日",
+	"alerts.time.hours": "{n}時間",
+	"alerts.time.minutes": "{n}分",
+	"alerts.time.now": "たった今"
+}

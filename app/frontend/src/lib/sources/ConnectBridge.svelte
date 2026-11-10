@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Words from '#lib/ui/Words.svelte';
 	// Connect Jackett or Prowlarr: HolyArrs takes the address and key, tests them, and brings the sites in as Sources in one step. Jackett's sites stay in step on their own; Prowlarr writes its sites in through the arr API.
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import Field from '#lib/ui/Field.svelte';
@@ -10,6 +11,7 @@
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import Confirm from '#lib/ui/Confirm.svelte';
 	import { onMount, tick, untrack } from 'svelte';
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import { api, ApiError } from '#lib/core/api.ts';
 	import { plainMessage as message, reachWords } from '#lib/core/settings.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
@@ -153,7 +155,7 @@
 			const r = await api.post<{ text: string; sites?: string[]; keys?: Record<string, string> }>('/bridges/test', body());
 			let text = r.text;
 			if (r.sites?.length) text += ` ${r.sites.slice(0, 8).join(', ')}${r.sites.length > 8 ? '…' : ''}.`;
-			const extra = r.sites?.length ? `${r.sites.length} ${r.sites.length === 1 ? 'indexer' : 'indexers'}` : '';
+			const extra = r.sites?.length ? t(r.sites.length === 1 ? 'sources.bridge.indexers.one' : 'sources.bridge.indexers.other', { count: r.sites.length }) : '';
 			const have = Object.entries(r.keys ?? {}).filter(([, v]) => v === 'have').map(([k]) => k);
 			keysNeeded = have;
 			result = { ok: true, text, tested: true, extra };
@@ -175,7 +177,7 @@
 			// Edited to a new address: the old connection goes, its Sources with it.
 			if (editingId != null && b.id !== editingId) await api.del(`/bridges/${editingId}`).catch(() => {});
 			editingId = null;
-			toasts.push(b.kind === 'jackett' ? 'Jackett connected' : 'Prowlarr connected', 'ok', { body: b.kind === 'jackett' ? `${b.sources} ${b.sources === 1 ? 'Source' : 'Sources'} added` : 'Sources arrive in a minute' });
+			toasts.push(t('sources.bridge.connected', { name: names[b.kind] }), 'ok', { body: b.kind === 'jackett' ? t(b.sources === 1 ? 'sources.bridge.added.one' : 'sources.bridge.added.other', { count: b.sources }) : t('sources.bridge.arrive') });
 			open = false;
 			key = '';
 			typedKeys = { sonarr: '', radarr: '' };
@@ -200,10 +202,10 @@
 		try {
 			const r = await api.post<{ bridge: Bridge; result?: { added: number; removed: number; updated: number } }>(`/bridges/${b.id}/check`, {});
 			const res = r.result;
-			toasts.push(res ? (res.added + res.removed + res.updated ? 'Sources synced' : 'Already up to date') : 'Prowlarr syncing again', 'ok', res && res.added + res.removed + res.updated ? { body: `${res.added} added, ${res.removed} removed, ${res.updated} changed` } : undefined);
+			toasts.push(res ? (res.added + res.removed + res.updated ? t('sources.bridge.synced') : t('sources.bridge.upToDate')) : t('sources.bridge.syncingAgain'), 'ok', res && res.added + res.removed + res.updated ? { body: t('sources.bridge.syncBody', { added: res.added, removed: res.removed, changed: res.updated }) } : undefined);
 			onchange?.();
 		} catch (e) {
-			toasts.push("Couldn't sync", 'fail', { body: message(e) });
+			toasts.push(t('sources.bridge.syncFailed'), 'fail', { body: message(e) });
 		} finally {
 			checking = null;
 			await load();
@@ -224,7 +226,7 @@
 		removeError = '';
 		try {
 			await api.del(`/bridges/${removing.id}${keepSources ? '?keep_sources=true' : ''}`);
-			toasts.push(`${names[removing.kind]} disconnected`, 'ok');
+			toasts.push(t('sources.bridge.disconnected', { name: names[removing.kind] }), 'ok');
 			removeOpen = false;
 			await load();
 			onchange?.();
@@ -236,13 +238,13 @@
 	}
 
 	const countTag = (b: Bridge) =>
-		b.kind === 'jackett' ? `${b.sites} ${b.sites === 1 ? 'indexer' : 'indexers'}` : `${b.sources} ${b.sources === 1 ? 'Source' : 'Sources'}`;
+		b.kind === 'jackett' ? t(b.sites === 1 ? 'sources.bridge.indexers.one' : 'sources.bridge.indexers.other', { count: b.sites }) : t(b.sources === 1 ? 'sources.bridge.sources.one' : 'sources.bridge.sources.other', { count: b.sources });
 </script>
 
 <SettingsCard
 	id="connect-bridge"
-	title="Prowlarr or Jackett"
-	description={bridges?.length ? undefined : 'Use the indexers you already set up there.'}
+	title={t('sources.bridge.title')}
+	description={bridges?.length ? undefined : t('sources.bridge.description')}
 >
 	{#if loadError && !bridges}
 		<LoadError hasData={false} message={loadError} onretry={load} />
@@ -254,16 +256,16 @@
 						<div class="brow">
 							<div class="grow">
 								<b>{names[b.kind]}</b>
-								<span class="mono xs muted addr" title={b.last_check ? `Checked ${ago(b.last_check)}` : undefined}>{b.url}</span>
+								<span class="mono xs muted addr" title={b.last_check ? t('sources.bridge.checked', { when: ago(b.last_check) }) : undefined}>{b.url}</span>
 							</div>
-							<span class="ctag" class:bad={!!b.last_error} aria-hidden={b.last_error ? 'true' : undefined}>{b.last_error ? 'Not connected' : countTag(b)}</span>
+							<span class="ctag" class:bad={!!b.last_error} aria-hidden={b.last_error ? 'true' : undefined}>{b.last_error ? t('sources.bridge.notConnected') : countTag(b)}</span>
 						</div>
 						{#if b.last_error}<div class="small bad-text" data-testid="bridge-error">{b.last_error}</div>{/if}
 						{#if mayEdit}
 							<div class="row-acts">
-								{#if !compact}<button type="button" class="quiet" disabled={checking === b.id} onclick={() => check(b)} data-testid="bridge-check">Sync</button>{/if}
-								<button type="button" class="quiet" onclick={() => editBridge(b)} data-testid="bridge-edit">Change</button>
-								<button type="button" class="quiet danger" onclick={() => askRemove(b)} data-testid="bridge-remove">{compact ? 'Remove' : 'Unlink'}</button>
+								{#if !compact}<button type="button" class="quiet" disabled={checking === b.id} onclick={() => check(b)} data-testid="bridge-check">{t('sources.bridge.sync')}</button>{/if}
+								<button type="button" class="quiet" onclick={() => editBridge(b)} data-testid="bridge-edit">{t('sources.bridge.change')}</button>
+								<button type="button" class="quiet danger" onclick={() => askRemove(b)} data-testid="bridge-remove">{compact ? t('sources.bridge.remove') : t('sources.bridge.unlink')}</button>
 							</div>
 						{/if}
 					</li>
@@ -272,35 +274,35 @@
 		{/if}
 		{#if mayEdit && !open}
 			{#if bridges.length}
-				<button type="button" class="add-row" onclick={startConnect} data-testid="bridge-start"><Icon name="plus" size={16} />Add another</button>
+				<button type="button" class="add-row" onclick={startConnect} data-testid="bridge-start"><Icon name="plus" size={16} />{t('sources.bridge.addAnother')}</button>
 			{:else}
-				<div><Button type="button" icon="plus" onclick={startConnect} data-testid="bridge-start">Link</Button></div>
+				<div><Button type="button" icon="plus" onclick={startConnect} data-testid="bridge-start">{t('sources.bridge.link')}</Button></div>
 			{/if}
 		{/if}
 		{#if open}
 			<div class="form" data-testid="bridge-form">
-				<SegmentedControl options={kindChoices} bind:value={kind} label="App" testid="br-kind" />
-				<Field id="br-url" label="Address" hint={kind === 'jackett' ? 'Include the base path, if any.' : undefined} error={errors.url}>
+				<SegmentedControl options={kindChoices} bind:value={kind} label={t('sources.bridge.app')} testid="br-kind" />
+				<Field id="br-url" label={t('sources.bridge.address')} hint={kind === 'jackett' ? t('sources.bridge.basePath') : undefined} error={errors.url}>
 					<input id="br-url" class="input" class:mono={!compact} type={compact ? 'text' : 'url'} inputmode="url" autocomplete="off" spellcheck="false" placeholder={(compact ? '' : 'http://') + (kind === 'jackett' ? '192.168.1.10:9117' : '192.168.1.10:9696')} bind:value={address} aria-invalid={errors.url ? 'true' : undefined} aria-describedby={errors.url ? 'br-url-error' : kind === 'jackett' ? 'br-url-hint' : undefined} />
 				</Field>
-				<Field id="br-key" label="API key" hint={editingId != null ? 'Enter it again to save.' : kind === 'jackett' ? 'On Jackett’s main page' : 'Prowlarr › Settings › General'} error={errors.key}>
+				<Field id="br-key" label={t('sources.bridge.apiKeyLabel')} hint={editingId != null ? t('sources.bridge.keyAgain') : kind === 'jackett' ? t('sources.bridge.keyJackett') : t('sources.bridge.keyProwlarr')} error={errors.key}>
 					<input id="br-key" class="input" class:mono={!compact} type="password" autocomplete="new-password" spellcheck="false" bind:value={key} aria-invalid={errors.key ? 'true' : undefined} aria-describedby={errors.key ? 'br-key-error' : 'br-key-hint'} />
 				</Field>
 				{#if kind === 'prowlarr'}
 					{#if callback && !callbackOpen && !errors.callback_url}
-						<p class="small muted callback-line">Prowlarr reaches HolyArrs at <span class="cb-addr" class:mono={!compact}>{compact ? callback.replace(/^https?:\/\//, '') : callback}</span> <button type="button" class="link" onclick={() => (callbackOpen = true)}>Change</button></p>
+						<p class="small muted callback-line">{t('sources.bridge.reaches')} <span class="cb-addr" class:mono={!compact}>{compact ? callback.replace(/^https?:\/\//, '') : callback}</span> <button type="button" class="link" onclick={() => (callbackOpen = true)}>{t('sources.bridge.change')}</button></p>
 					{:else}
-						<Field id="br-callback" label="HolyArrs address" hint="Prowlarr must be able to reach it." error={errors.callback_url}>
+						<Field id="br-callback"  label={t('sources.bridge.callback')} hint={t('sources.bridge.callbackHint')} error={errors.callback_url}>
 							<input id="br-callback" class="input" class:mono={!compact} type={compact ? 'text' : 'url'} inputmode="url" autocomplete="off" spellcheck="false" bind:value={callback} aria-invalid={errors.callback_url ? 'true' : undefined} aria-describedby={errors.callback_url ? 'br-callback-error' : 'br-callback-hint'} />
 						</Field>
 					{/if}
 					{#if keysNeeded.length}
 						<div class="keys" data-testid="bridge-keys">
-							<label class="check"><input type="checkbox" bind:checked={newKeys} data-testid="bridge-new-keys" /> <span>Replace keys. Update apps that use them, like Seerr.</span></label>
+							<label class="check"><input type="checkbox" bind:checked={newKeys} data-testid="bridge-new-keys" /> <span>{t('sources.bridge.replaceKeys')}</span></label>
 							{#if !newKeys}
-								<p class="hint">Or enter your current {keysNeeded.length === 1 ? 'key' : 'keys'}:</p>
+								<p class="hint">{keysNeeded.length === 1 ? t('sources.bridge.currentKey') : t('sources.bridge.currentKeys')}</p>
 								{#each keysNeeded as side (side)}
-									<Field id="br-key-{side}" label={side === 'sonarr' ? 'TV shows key (Sonarr side)' : 'Movies key (Radarr side)'}>
+									<Field id="br-key-{side}" label={side === 'sonarr' ? t('sources.bridge.tvKey') : t('sources.bridge.movieKey')}>
 										<input id="br-key-{side}" class="input mono" type="password" autocomplete="new-password" spellcheck="false" bind:value={typedKeys[side]} />
 									</Field>
 								{/each}
@@ -313,34 +315,34 @@
 					{#if session.s.hasPassword}
 						<Confirm action="password">{#snippet children()}{/snippet}</Confirm>
 					{:else}
-						<p class="small" role="status" data-testid="bridge-need-password"><a href={to('/account')}>Set a HolyArrs password</a> to connect Prowlarr.</p>
+						<p class="small" role="status" data-testid="bridge-need-password"><Words key="sources.bridge.setPasswordLine" links={{ a: to('/account') }} /></p>
 					{/if}
 				{/if}
 				<div class="acts" class:one-row={compact}>
 					{#if result?.tested}<span class="tag"><TestTag ok={result.ok} text={result.text} app={names[kind]} extra={result.extra} testid={result.ok ? 'bridge-result' : undefined} /></span>{/if}
-					{#if !compact}<Button type="button" variant="plain" onclick={() => { open = false; reauthFor = null; editingId = null; key = ''; }}>Cancel</Button>{/if}
-					{#if !compact}<Button type="button" busy={testing} disabled={!address.trim() || !key.trim()} onclick={test} data-testid="bridge-test">Test</Button>{/if}
-					<Button type="button" size={compact ? 'lg' : 'md'} variant="primary" busy={connecting} disabled={!address.trim() || !key.trim()} onclick={connect} data-testid="bridge-connect">{editingId != null ? 'Save' : compact ? `Link ${names[kind]}` : 'Link'}</Button>
+					{#if !compact}<Button type="button" variant="plain" onclick={() => { open = false; reauthFor = null; editingId = null; key = ''; }}>{t('sources.bridge.cancel')}</Button>{/if}
+					{#if !compact}<Button type="button" busy={testing} disabled={!address.trim() || !key.trim()} onclick={test} data-testid="bridge-test">{t('sources.bridge.test')}</Button>{/if}
+					<Button type="button" size={compact ? 'lg' : 'md'} variant="primary" busy={connecting} disabled={!address.trim() || !key.trim()} onclick={connect} data-testid="bridge-connect">{editingId != null ? t('sources.bridge.save') : compact ? t('sources.bridge.linkName', { name: names[kind] }) : t('sources.bridge.link')}</Button>
 				</div>
 			</div>
 		{/if}
 	{/if}
 </SettingsCard>
 
-<Sheet bind:open={removeOpen} title="Unlink {removing ? names[removing.kind] : ''}?" description={removing?.url} size="sm">
+<Sheet bind:open={removeOpen}  title={t('sources.bridge.unlinkTitle', { name: removing ? names[removing.kind] : '' })} description={removing?.url} size="sm">
 	<form id="remove-bridge" class="form" onsubmit={remove}>
 		{#if removing?.kind === 'jackett'}
-			<label class="check"><input type="radio" name="keep" checked={!keepSources} onchange={() => (keepSources = false)} /> <span>Remove its {removing.sources} {removing.sources === 1 ? 'Source' : 'Sources'}</span></label>
-			<label class="check"><input type="radio" name="keep" checked={keepSources} onchange={() => (keepSources = true)} /> <span>Keep Sources, stop syncing</span></label>
+			<label class="check"><input type="radio" name="keep" checked={!keepSources} onchange={() => (keepSources = false)} /> <span>{t(removing.sources === 1 ? 'sources.bridge.removeIts.one' : 'sources.bridge.removeIts.other', { count: removing.sources })}</span></label>
+			<label class="check"><input type="radio" name="keep" checked={keepSources} onchange={() => (keepSources = true)} /> <span>{t('sources.bridge.keepStop')}</span></label>
 		{:else if removing}
-			<p class="small">Removes HolyArrs from Prowlarr and deletes the {removing.sources} {removing.sources === 1 ? 'Source' : 'Sources'} it added.</p>
-			<label class="check"><input type="checkbox" bind:checked={keepSources} /> <span>Unlink here only. Sources stay.</span></label>
+			<p class="small">{t(removing.sources === 1 ? 'sources.bridge.removesProwlarr.one' : 'sources.bridge.removesProwlarr.other', { count: removing.sources })}</p>
+			<label class="check"><input type="checkbox" bind:checked={keepSources} /> <span>{t('sources.bridge.unlinkHere')}</span></label>
 		{/if}
 		{#if removeError}<p class="form-error" role="alert">{removeError}</p>{/if}
 	</form>
 	{#snippet footer()}
-		<Button variant="plain" onclick={() => (removeOpen = false)}>Cancel</Button>
-		<Button variant="destructive" type="submit" form="remove-bridge" busy={removeBusy}>Unlink</Button>
+		<Button variant="plain" onclick={() => (removeOpen = false)}>{t('sources.bridge.cancel')}</Button>
+		<Button variant="destructive" type="submit" form="remove-bridge" busy={removeBusy}>{t('sources.bridge.unlink')}</Button>
 	{/snippet}
 </Sheet>
 

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	let { cancelPlex }: { cancelPlex: () => void } = $props();
 </script>
 
@@ -7,9 +8,9 @@
 			<span class="orbit"></span>
 			<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="6" fill="#1f1f1f" /><path d="M8 5h4.6l5 7-5 7H8l5-7z" fill="#E5A00D" /></svg>
 		</div>
-		<h1 class="title">Waiting for Plex</h1>
-		<p class="lead">Finish in the Plex window.</p>
-		<button class="link" type="button" onclick={cancelPlex}>Cancel</button>
+		<h1 class="title">{t('accounts.signin.waitTitle')}</h1>
+		<p class="lead">{t('accounts.signin.waitLead')}</p>
+		<button class="link" type="button" onclick={cancelPlex}>{t('accounts.signin.cancel')}</button>
 	</div>
 
 <style>

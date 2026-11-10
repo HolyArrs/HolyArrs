@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import type { RecentPerson, RecentWay } from './recent-people.ts';
 	import SigninFace from './SigninFace.svelte';
 
@@ -13,13 +14,13 @@
 	let { shown, editing, wayName, dropPerson, openPerson, another }: Props = $props();
 </script>
 
-<div class="accts" class:editing role="list" aria-label="People who signed in on this device" data-testid="recent-people">
+<div class="accts" class:editing role="list" aria-label={t('accounts.signin.recent')} data-testid="recent-people">
 	{#each shown as p, i (p.name)}
 		<div class="acct" role="listitem">
-			<button type="button" class="acct-pick" aria-label={editing ? `Forget ${p.name} on this device` : undefined} onclick={() => (editing ? dropPerson(p.name) : openPerson(i))}>
+			<button type="button" class="acct-pick" aria-label={editing ? t('accounts.signin.forgetName', { name: p.name }) : undefined} onclick={() => (editing ? dropPerson(p.name) : openPerson(i))}>
 				<SigninFace {p} size={36} />
 				<span class="acct-name"><span class="acct-n">{p.name}</span><span class="acct-way">{wayName(p.way)}</span></span>
-				<span class="acct-end" aria-hidden="true">{editing ? 'Forget' : '›'}</span>
+				<span class="acct-end" aria-hidden="true">{editing ? t('accounts.signin.forget') : '›'}</span>
 			</button>
 		</div>
 	{/each}
@@ -28,7 +29,7 @@
 		<div class="acct" role="listitem">
 			<button type="button" class="acct-pick" onclick={another}>
 				<SigninFace plus />
-				<span class="acct-name"><span class="acct-n">Use another account</span></span>
+				<span class="acct-name"><span class="acct-n">{t('accounts.signin.another')}</span></span>
 				<span class="acct-end" aria-hidden="true">›</span>
 			</button>
 		</div>

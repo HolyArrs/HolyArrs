@@ -1,4 +1,6 @@
 <script lang="ts">
+	import Words from '#lib/ui/Words.svelte';
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import Field from '#lib/ui/Field.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
@@ -35,7 +37,7 @@
 	let savingRequire = $state(false);
 
 	function strongNote(e: unknown): string {
-		return e instanceof ApiError && e.status === 403 ? 'Sign in with your password to change this.' : message(e);
+		return e instanceof ApiError && e.status === 403 ? t('settings.signIn.signInToChange') : message(e);
 	}
 
 	interface Way {
@@ -79,14 +81,14 @@
 	type LinkDone = { name: string; servers: { id: string; name: string }[] };
 	async function linkPlex() {
 		linking = true;
-		linkNote = 'Confirm on the Plex page that opened. This waits up to 10 minutes.';
+		linkNote = t('settings.signIn.confirmPlex');
 		const win = window.open('about:blank', 'plex-link', 'width=600,height=720');
 		// The Plex page must not reach back into this tab.
 		if (win) win.opener = null;
 		try {
 			const r = await api.post<{ id: number; auth_url: string }>('/auth/plex/link/start', {});
 			if (win) win.location.href = r.auth_url;
-			else linkNote = 'Plex window blocked. Allow pop-ups and try again.';
+			else linkNote = t('settings.signIn.blocked');
 			const until = Date.now() + 10 * 60 * 1000;
 			while (Date.now() < until) {
 				await new Promise((ok) => setTimeout(ok, 2000));
@@ -102,11 +104,11 @@
 				plexOwner = { linked: true, name: done.name, can_import: true };
 				if (!ways.plex.server_id && done.servers.length === 1) ways.plex.server_id = done.servers[0].id;
 				// Plex's page cuts this tab's hold on its window, so it may stay open.
-				linkNote = done.servers.length ? 'Linked. Close the Plex window, pick the server people must share, then Save.' : 'Linked. Close the Plex window; Plex lists no server you own.';
-				toasts.push(`Plex ${done.name} linked`, 'ok');
+				linkNote = done.servers.length ? t('settings.signIn.linkedPick') : t('settings.signIn.linkedNone');
+				toasts.push(t('settings.signIn.plexLinked', { name: done.name }), 'ok');
 				return;
 			}
-			linkNote = 'The Plex sign-in timed out. Start again.';
+			linkNote = t('settings.signIn.timedOut');
 		} catch (err) {
 			linkNote = strongNote(err);
 		} finally {
@@ -119,13 +121,13 @@
 		}
 	}
 	async function unlinkPlex() {
-		if (!confirm('Unlink Plex? People import stops working.')) return;
+		if (!confirm(t('settings.signIn.confirmUnlink'))) return;
 		try {
 			plexOwner = await api.del<{ linked: boolean; name: string; can_import: boolean }>('/auth/plex/link');
 			plexServers = [];
-			toasts.push('Plex unlinked', 'ok');
+			toasts.push(t('settings.signIn.plexUnlinked'), 'ok');
 		} catch (err) {
-			toasts.push("Couldn't unlink Plex", 'fail', { body: strongNote(err) });
+			toasts.push(t('settings.signIn.unlinkFailed'), 'fail', { body: strongNote(err) });
 		}
 	}
 
@@ -138,7 +140,7 @@
 			const r = await api.post<{ ok: boolean; name?: string; version?: string; product?: string; message?: string }>(`/auth/media-server/${w}/test`, { url: ways[w].url });
 			// The version leads the tooltip, so a server name with numbers in it is never read as one.
 			const app = r.product || wayWord[w];
-			tested[w] = r.ok ? { ok: true, app, text: `${app}${r.version ? ` ${r.version}` : ''}${r.name ? ` (${r.name})` : ''}` } : { ok: false, text: r.message || 'No answer.' };
+			tested[w] = r.ok ? { ok: true, app, text: `${app}${r.version ? ` ${r.version}` : ''}${r.name ? ` (${r.name})` : ''}` } : { ok: false, text: r.message || t('settings.signIn.noAnswer') };
 		} catch (err) {
 			tested[w] = { ok: false, text: strongNote(err) };
 		} finally {
@@ -199,7 +201,7 @@
 		importBusy = true;
 		try {
 			const r = await api.post<{ made: string[]; skipped: number }>(`/auth/import/${importFor}`, { people });
-			toasts.push(r.made.length ? `${r.made.length} ${r.made.length === 1 ? 'person' : 'people'} made` : 'Nobody new to make', 'ok', r.made.length ? { body: r.made.join(', ') } : undefined);
+			toasts.push(r.made.length ? t(r.made.length === 1 ? 'settings.signIn.madeOne' : 'settings.signIn.madeOther', { n: r.made.length }) : t('settings.signIn.nobodyNew'), 'ok', r.made.length ? { body: r.made.join(', ') } : undefined);
 			importOpen = false;
 		} catch (err) {
 			importNote = strongNote(err);
@@ -213,8 +215,9 @@
 	let everyoneOpen = $state(false);
 	function everyoneText(w: WayName): string {
 		const n = lastCount[w];
-		const who = w === 'plex' ? (ways.plex.server_id ? 'everyone your Plex server is shared with' : 'every Plex account') : `everyone with an account on your ${wayWord[w]} server`;
-		return `This lets ${who} make a HolyArrs account the first time they sign in${n !== undefined ? ` (the last import list showed ${n} ${n === 1 ? 'person' : 'people'})` : ''}. They join as Members who may request titles.`;
+		const who = w === 'plex' ? (ways.plex.server_id ? t('settings.signIn.whoShared') : t('settings.signIn.whoEvery')) : t('settings.signIn.whoServer', { app: wayWord[w] });
+		const count = n !== undefined ? ' ' + t('settings.signIn.lastList', { people: t(n === 1 ? 'settings.signIn.personOne' : 'settings.signIn.peopleOther', { n }) }) : '';
+		return t('settings.signIn.everyoneText', { who, count });
 	}
 
 	function took(r: SignInSettings) {
@@ -246,13 +249,13 @@
 			if (w !== 'plex' && ways[w].url && !tested[w]?.ok) {
 				await testUrl(w);
 				if (!tested[w]?.ok) {
-					toasts.push(`${wayWord[w]} address unreachable`, 'fail', { body: "Saved, sign-in won't work yet", ms: 10000 });
+					toasts.push(t('settings.signIn.unreachable', { app: wayWord[w] }), 'fail', { body: t('settings.signIn.savedNotWorking'), ms: 10000 });
 					return;
 				}
 			}
-			toasts.push(`${wayWord[w]} sign-in saved`, 'ok');
+			toasts.push(t('settings.signIn.waySaved', { app: wayWord[w] }), 'ok');
 		} catch (err) {
-			toasts.push("Couldn't save", 'fail', { body: strongNote(err) });
+			toasts.push(t('settings.signIn.couldntSave'), 'fail', { body: strongNote(err) });
 		} finally {
 			savingWay = '';
 		}
@@ -265,10 +268,10 @@
 		savingRequire = true;
 		try {
 			took(await api.put<SignInSettings>('/auth/settings', { require_two_factor_admins: v }));
-			toasts.push(v ? 'Two-factor required for admins' : 'Two-factor optional for admins', 'ok');
+			toasts.push(v ? t('settings.signIn.tfRequired') : t('settings.signIn.tfOptional'), 'ok');
 		} catch (err) {
 			requireAdmins = before;
-			toasts.push("Couldn't save", 'fail', { body: strongNote(err) });
+			toasts.push(t('settings.signIn.couldntSave'), 'fail', { body: strongNote(err) });
 		} finally {
 			savingRequire = false;
 		}
@@ -280,9 +283,9 @@
 		try {
 			took(await api.put<SignInSettings>('/auth/settings', { min_password_length: Number(minLength) }));
 			session.s.minPassword = minLength;
-			toasts.push('Minimum length saved', 'ok', { body: `${minLength} characters` });
+			toasts.push(t('settings.signIn.minSaved'), 'ok', { body: t('settings.signIn.characters', { n: minLength }) });
 		} catch (err) {
-			toasts.push("Couldn't save", 'fail', { body: strongNote(err) });
+			toasts.push(t('settings.signIn.couldntSave'), 'fail', { body: strongNote(err) });
 		} finally {
 			savingMinLength = false;
 		}
@@ -314,10 +317,10 @@
 		try {
 			// Turning it on saves the networks typed below with it.
 			took(await api.put<SignInSettings>('/auth/settings', v ? { skip_login_local_network: v, local_networks: netList() } : { skip_login_local_network: v }));
-			toasts.push(skipLocal ? 'Local network skips sign-in' : 'Sign-in needed everywhere', 'ok');
+			toasts.push(skipLocal ? t('settings.signIn.skips') : t('settings.signIn.neededEverywhere'), 'ok');
 		} catch (e) {
 			skipLocal = before;
-			toasts.push("Couldn't save", 'fail', { body: strongNote(e) });
+			toasts.push(t('settings.signIn.couldntSave'), 'fail', { body: strongNote(e) });
 		} finally {
 			savingSkip = false;
 		}
@@ -328,9 +331,9 @@
 		savingNets = true;
 		try {
 			took(await api.put<SignInSettings>('/auth/settings', { local_networks: netList() }));
-			toasts.push('Local networks saved', 'ok');
+			toasts.push(t('settings.signIn.netsSaved'), 'ok');
 		} catch (err) {
-			toasts.push("Couldn't save", 'fail', { body: strongNote(err) });
+			toasts.push(t('settings.signIn.couldntSave'), 'fail', { body: strongNote(err) });
 		} finally {
 			savingNets = false;
 		}
@@ -342,9 +345,9 @@
 		try {
 			const allowed_hosts = hostNames.split(/[\s,]+/).filter(Boolean);
 			took(await api.put<SignInSettings>('/auth/settings', { allowed_hosts }));
-			toasts.push('Host names saved', 'ok');
+			toasts.push(t('settings.signIn.hostsSaved'), 'ok');
 		} catch (err) {
-			toasts.push("Couldn't save", 'fail', { body: message(err) });
+			toasts.push(t('settings.signIn.couldntSave'), 'fail', { body: message(err) });
 		} finally {
 			savingHosts = false;
 		}
@@ -352,9 +355,9 @@
 
 </script>
 
-<svelte:head><title>Sign-in and security · HolyArrs</title></svelte:head>
+<svelte:head><title>{t('settings.signIn.title')} · HolyArrs</title></svelte:head>
 
-<PageHeader title="Sign-in and security" />
+<PageHeader title={t('settings.signIn.title')} />
 
 {#if !loaded}
 	<SkSettings rows={3} />
@@ -362,46 +365,45 @@
 	{#if !settingsOk}
 		<LoadError hasData={false} message={error} onretry={loadSettings} busy={settingsLoading} />
 	{:else}
-	<SettingsCard id="passwords-card" title="Passwords">
+	<SettingsCard id="passwords-card" title={t('settings.signIn.passwords')}>
 		<form class="passwords" onsubmit={saveMin}>
 			<fieldset disabled={!isOwner}>
 				<div class="srow">
-					<div class="txt"><label class="label" for="min-pw">Shortest password allowed</label><span id="min-pw-hint" class="hint">4 to 64 characters, for new passwords only</span></div>
+					<div class="txt"><label class="label" for="min-pw">{t('settings.signIn.shortest')}</label><span id="min-pw-hint" class="hint">{t('settings.signIn.shortestHint')}</span></div>
 					<div class="ctl pw-ctl"><input id="min-pw" class="input" type="number" min="4" max="64" step="1" required bind:value={minLength} aria-describedby={Number(minLength) < 8 ? 'min-pw-hint min-pw-warn' : 'min-pw-hint'} /></div>
 				</div>
 				{#if Number(minLength) < 8}
 					<p id="min-pw-warn" class="notice warn">
-						Short passwords are easy to guess. HolyArrs slows down repeated wrong sign-ins, which helps, but it does not make a short
-						password safe. If HolyArrs can be reached from outside your home, use 8 or more.
+						{t('settings.signIn.shortWarn')}
 					</p>
 				{/if}
 				{#if isOwner}
-					<div class="pw-save"><Button variant="primary" size="sm" type="submit" disabled={savingMinLength} aria-busy={savingMinLength}>Save</Button></div>
+					<div class="pw-save"><Button variant="primary" size="sm" type="submit" disabled={savingMinLength} aria-busy={savingMinLength}>{t('settings.signIn.save')}</Button></div>
 				{:else}
-					<p class="hint">Owner only</p>
+					<p class="hint">{t('settings.signIn.ownerOnly')}</p>
 				{/if}
 			</fieldset>
 		</form>
 	</SettingsCard>
 
-	<SettingsCard id="twofactor-card" title="Two-factor sign-in">
+	<SettingsCard id="twofactor-card" title={t('settings.signIn.twoFactor')}>
 		<label class="switch" style="margin-top: var(--s-3)">
 			<input type="checkbox" checked={requireAdmins} disabled={!isOwner || savingRequire} aria-busy={savingRequire} onchange={(e) => setRequire(e.currentTarget.checked)} />
 			<span class="sw" aria-hidden="true"></span>
-			<span>Admins must use two-factor sign-in</span>
+			<span>{t('settings.signIn.adminsMust')}</span>
 		</label>
 		<p class="hint">
-			An admin without it can open only My account until they turn it on. Anyone can turn it on for themselves in My account.{#if !isOwner}{' '}Only the owner can change this.{/if}
+			{t('settings.signIn.adminsNote')}{#if !isOwner}{' '}{t('settings.signIn.onlyOwnerChange')}{/if}
 		</p>
 	</SettingsCard>
 
 	{#each (['plex', 'jellyfin', 'emby'] as const).filter((x) => x !== 'emby' || !session.held('emby_signin')) as w (w)}
-		<SettingsCard id="{w}-card" title={`Sign in with ${wayWord[w]}`}>
+		<SettingsCard id="{w}-card" title={t('settings.signIn.signInWith', { app: wayWord[w] })}>
 			<p class="small muted" style="margin: var(--s-2) 0 var(--s-4)">
 				{#if w === 'plex'}
-					People sign in with their Plex account on Plex's own page; HolyArrs never sees their Plex password.
+					{t('settings.signIn.plexIntro')}
 				{:else}
-					People sign in with the name and password they use on your {wayWord[w]} server; HolyArrs checks them with the server and keeps neither.
+					{t('settings.signIn.otherIntro', { app: wayWord[w] })}
 				{/if}
 			</p>
 			<form class="way" onsubmit={(e) => saveWay(w, e)}>
@@ -409,65 +411,65 @@
 					<label class="switch">
 						<input type="checkbox" bind:checked={ways[w].on} />
 						<span class="sw" aria-hidden="true"></span>
-						<span>Show the {wayWord[w]} button on the sign-in page</span>
+						<span>{t('settings.signIn.showButton', { app: wayWord[w] })}</span>
 					</label>
 					{#if w === 'plex'}
 						<div class="link-row">
 							{#if plexOwner.linked}
-								<p class="small">Linked to the Plex account <b>{plexOwner.name}</b>.</p>
-								{#if isOwner}<Button variant="plain" type="button" onclick={unlinkPlex}>Unlink</Button>{/if}
+								<p class="small"><Words key="settings.signIn.linkedTo" vars={{ name: plexOwner.name }} /></p>
+								{#if isOwner}<Button variant="plain" type="button" onclick={unlinkPlex}>{t('settings.signIn.unlink')}</Button>{/if}
 							{:else}
-								<p class="small muted">Link Plex to pick your server and import its people</p>
+								<p class="small muted">{t('settings.signIn.linkNote')}</p>
 							{/if}
 							{#if isOwner}
-								<Button type="button" onclick={linkPlex} disabled={linking} aria-busy={linking}>{plexOwner.linked ? 'Link again' : 'Link my Plex account'}</Button>
+								<Button type="button" onclick={linkPlex} disabled={linking} aria-busy={linking}>{plexOwner.linked ? t('settings.signIn.linkAgain') : t('settings.signIn.linkMine')}</Button>
 							{/if}
 						</div>
 						{#if linkNote}<p class="hint" role="status">{linkNote}</p>{/if}
 						{#if plexServers.length}
-							<Field id="{w}-pick" label="Server people must share">
+							<Field id="{w}-pick" label={t('settings.signIn.serverShare')}>
 								<select id="{w}-pick" class="input" bind:value={ways[w].server_id}>
-									<option value="">Any server</option>
+									<option value="">{t('settings.signIn.anyServer')}</option>
 									{#each plexServers as sv (sv.id)}<option value={sv.id}>{sv.name}</option>{/each}
 								</select>
 							</Field>
 						{/if}
 						<details class="adv">
-							<summary class="small">Type the server ID</summary>
-							<Field id="{w}-server" label="Server id people must share (optional)" hint="Only people it's shared with can join">
+							<summary class="small">{t('settings.signIn.typeId')}</summary>
+							<Field id="{w}-server" label={t('settings.signIn.serverId')} hint={t('settings.signIn.serverIdHint')}>
 								<input id="{w}-server" class="input mono" bind:value={ways[w].server_id} maxlength="200" spellcheck="false" />
 							</Field>
 						</details>
 					{:else}
-						<Field id="{w}-url" label="{wayWord[w]} server address">
+						<Field id="{w}-url" label={t('settings.signIn.serverAddress', { app: wayWord[w] })}>
 							<div class="row">
 								<input id="{w}-url" class="input mono grow" bind:value={ways[w].url} oninput={() => (tested[w] = undefined)} placeholder="http://10.0.0.5:8096" maxlength="500" spellcheck="false" />
-								<Button type="button" onclick={() => testUrl(w)} disabled={!ways[w].url || testing === w} aria-busy={testing === w}>Test</Button>
+								<Button type="button" onclick={() => testUrl(w)} disabled={!ways[w].url || testing === w} aria-busy={testing === w}>{t('settings.signIn.test')}</Button>
 							</div>
 						</Field>
-						{#if tested[w]}{@const t = tested[w]}<div class="testline" data-testid="{w}-tested"><TestTag ok={t.ok} text={t.text} app={t.app} />{#if !t.ok}<span class="small bad-text">{t.text}</span>{/if}</div>
-						{:else if ways[w].url}<p class="notice warn" data-testid="{w}-untested">Not tested. Saving tests it.</p>{/if}
+						{#if tested[w]}{@const res = tested[w]}<div class="testline" data-testid="{w}-tested"><TestTag ok={res.ok} text={res.text} app={res.app} />{#if !res.ok}<span class="small bad-text">{res.text}</span>{/if}</div>
+						{:else if ways[w].url}<p class="notice warn" data-testid="{w}-untested">{t('settings.signIn.notTested')}</p>{/if}
 					{/if}
-					<Field id="{w}-join" label="Who may join the first time" hint={w === 'plex' ? 'New people join as Members. Plex managed users join as Kid (up to PG).' : 'New people join as Members.'}>
+					<Field id="{w}-join" label={t('settings.signIn.whoJoin')} hint={w === 'plex' ? t('settings.signIn.joinHintPlex') : t('settings.signIn.joinHint')}>
 						<select id="{w}-join" class="input" bind:value={ways[w].join}>
-							<option value="nobody">Only people already linked</option>
-							<option value="list">Only the names or emails below</option>
-							<option value="everyone">Everyone {w === 'plex' ? 'with a Plex account (who shares the server, when set)' : `with an account on the ${wayWord[w]} server`}</option>
+							<option value="nobody">{t('settings.signIn.joinNobody')}</option>
+							<option value="list">{t('settings.signIn.joinList')}</option>
+							<option value="everyone">{w === 'plex' ? t('settings.signIn.joinEveryonePlex') : t('settings.signIn.joinEveryone', { app: wayWord[w] })}</option>
 						</select>
 					</Field>
 					{#if ways[w].join === 'list'}
-						<Field id="{w}-allow" label="Names or emails, one per line">
+						<Field id="{w}-allow" label={t('settings.signIn.names')}>
 							<textarea id="{w}-allow" class="input" rows="3" bind:value={ways[w].allow} maxlength="4000"></textarea>
 						</Field>
 					{/if}
 					{#if isOwner}
 						<div class="row">
-							<Button variant="primary" type="submit" disabled={savingWay === w} aria-busy={savingWay === w}>Save</Button>
+							<Button variant="primary" type="submit" disabled={savingWay === w} aria-busy={savingWay === w}>{t('settings.signIn.save')}</Button>
 							<Button
 								type="button"
 								onclick={() => openImport(w)}
 								disabled={w === 'plex' ? !plexOwner.can_import : !ways[w].url}
-								title={w === 'plex' && !plexOwner.can_import ? 'Link your Plex account first' : undefined}>Import members</Button
+								title={w === 'plex' && !plexOwner.can_import ? t('settings.signIn.linkFirst') : undefined}>{t('settings.signIn.importMembers')}</Button
 							>
 						</div>
 					{/if}
@@ -476,34 +478,32 @@
 		</SettingsCard>
 	{/each}
 	{#if isOwner}<SsoCard id="sso-card" />{/if}
-	<SettingsCard id="local-card" title="Local network">
+	<SettingsCard id="local-card" title={t('settings.signIn.local')}>
 			<label class="switch" style="margin-top: var(--s-3)">
 				<input type="checkbox" checked={skipLocal} disabled={savingSkip} aria-busy={savingSkip} onchange={(e) => setSkip(e.currentTarget.checked)} />
 				<span class="sw" aria-hidden="true"></span>
-				<span>Skip sign-in on my local network</span>
+				<span>{t('settings.signIn.skipLocal')}</span>
 			</label>
 			<p class="hint">
-				Devices on the networks below open HolyArrs as the owner, without a password. With family or friends on the same
-				network, leave this off: they would get the owner's rights too.
+				{t('settings.signIn.skipNote')}
 			</p>
-			<p class="hint">Works only for direct visits. Using a proxy? Add it to trusted proxies.</p>
-			<p class="hint">Keys and passwords still need a sign-in</p>
+			<p class="hint">{t('settings.signIn.directOnly')}</p>
+			<p class="hint">{t('settings.signIn.keysNeed')}</p>
 			<form class="nets" onsubmit={saveNets}>
-				<Field id="local-nets" label="Local networks, one per line" hint="e.g. 192.168.1.0/24 or 192.168.1.20. Up to 32.">
+				<Field id="local-nets" label={t('settings.signIn.nets')} hint={t('settings.signIn.netsHint')}>
 					<textarea id="local-nets" class="input" rows="3" bind:value={nets} spellcheck="false" autocapitalize="off" autocomplete="off"></textarea>
 				</Field>
-				<Button type="submit" disabled={savingNets} aria-busy={savingNets}>Save</Button>
+				<Button type="submit" disabled={savingNets} aria-busy={savingNets}>{t('settings.signIn.save')}</Button>
 			</form>
-			{#if seenAddress}<p class="hint" data-testid="seen-address">HolyArrs sees this browser as <span class="mono">{seenAddress}</span>.</p>{/if}
+			{#if seenAddress}<p class="hint" data-testid="seen-address">{t('settings.signIn.seesAs')} <span class="mono">{seenAddress}</span>.</p>{/if}
 			{#if proxyUntrusted}<p class="hint" data-testid="proxy-untrusted">
-					A proxy in front of HolyArrs is not trusted, so sign-in is never skipped through it. Add the proxy's address to
-					<span class="mono">HOLYARRS_TRUSTED_PROXIES</span> in the container settings.
+					{t('settings.signIn.proxyA')}
+					<span class="mono">HOLYARRS_TRUSTED_PROXIES</span> {t('settings.signIn.proxyB')}
 				</p>{/if}
 			{#if gatewayNets.length}
 				<p class="notice warn" role="status" data-testid="gateway-warn">
 					<Icon name="info" size={18} /><span
-						>{gatewayNets.join(', ')} {gatewayNets.length === 1 ? 'looks' : 'look'} like a Docker or Podman gateway address. If every device shows up as that address, anyone who can reach
-						HolyArrs opens it as the owner. Check the address above from another device; if it is the same, turn off Skip sign-in, then remove this entry.</span
+						>{t(gatewayNets.length === 1 ? 'settings.signIn.gatewayOne' : 'settings.signIn.gatewayMany', { nets: gatewayNets.join(', ') })}</span
 					>
 				</p>
 			{/if}
@@ -511,47 +511,45 @@
 
 	{/if}
 
-	<SettingsLinks label="API keys" links={[{ href: '/settings/api#keys-card', label: 'API keys', note: 'Make and revoke them on the API page' }]} />
+	<SettingsLinks label={t('settings.signIn.apiKeys')} links={[{ href: '/settings/api#keys-card', label: t('settings.signIn.apiKeys'), note: t('settings.signIn.apiKeysNote') }]} />
 
 	<MoreOptions>
 		{#if settingsOk}
-		<SettingsCard id="hosts-card" title="Allowed host names">
+		<SettingsCard id="hosts-card" title={t('settings.signIn.hosts')}>
 			<p class="hint">
-				Names you open HolyArrs by besides its IP address, like tower.local or media.example.com. The name you used at first-run
-				setup is already here. Names in <code>HOLYARRS_ALLOWED_HOSTS</code> always work and are not listed.
+				<Words key="settings.signIn.hostsHint" />
 			</p>
 			<form class="nets" onsubmit={saveHosts}>
-				<Field id="allowed-hosts" label="Host names, one per line">
+				<Field id="allowed-hosts" label={t('settings.signIn.hostNames')}>
 					<textarea id="allowed-hosts" class="input" rows="3" bind:value={hostNames} spellcheck="false" autocapitalize="off" autocomplete="off"></textarea>
 				</Field>
-				<Button type="submit" disabled={savingHosts} aria-busy={savingHosts}>Save</Button>
+				<Button type="submit" disabled={savingHosts} aria-busy={savingHosts}>{t('settings.signIn.save')}</Button>
 			</form>
 		</SettingsCard>
 		{/if}
 
-		<SettingsCard id="proxy-card" title="Trusted proxies">
+		<SettingsCard id="proxy-card" title={t('settings.signIn.proxies')}>
 			<p class="small muted" style="margin-top: var(--s-2)">
-				Set when HolyArrs starts, not here: list your reverse proxy addresses in <code>HOLYARRS_TRUSTED_PROXIES</code> and extra host
-				names in <code>HOLYARRS_ALLOWED_HOSTS</code>. Without a proxy, nothing is needed.
+				<Words key="settings.signIn.proxiesHint" />
 			</p>
 		</SettingsCard>
 	</MoreOptions>
 {/if}
 
-<Sheet bind:open={importOpen} title={importFor ? `Import members from ${wayWord[importFor]}` : 'Import members'} size="md">
+<Sheet bind:open={importOpen} title={importFor ? t('settings.signIn.importFrom', { app: wayWord[importFor] }) : t('settings.signIn.importMembers')} size="md">
 	{#if importFor && importFor !== 'plex' && !candidates}
 		<form class="imp" onsubmit={preview}>
-			<p class="small muted">Sign in once as an admin of your {wayWord[importFor]} server to list its people. HolyArrs ends that session right after and keeps neither the name nor the password.</p>
-			<Field id="imp-name" label="Admin name"><input id="imp-name" class="input" bind:value={importName} autocomplete="off" required maxlength="128" /></Field>
-			<Field id="imp-pass" label="Admin password"><input id="imp-pass" class="input" type="password" bind:value={importPass} autocomplete="off" maxlength="256" /></Field>
-			<Button variant="primary" type="submit" disabled={importBusy || !importName} aria-busy={importBusy}>Show people</Button>
+			<p class="small muted">{t('settings.signIn.importIntro', { app: wayWord[importFor] })}</p>
+			<Field id="imp-name" label={t('settings.signIn.adminName')}><input id="imp-name" class="input" bind:value={importName} autocomplete="off" required maxlength="128" /></Field>
+			<Field id="imp-pass" label={t('settings.signIn.adminPass')}><input id="imp-pass" class="input" type="password" bind:value={importPass} autocomplete="off" maxlength="256" /></Field>
+			<Button variant="primary" type="submit" disabled={importBusy || !importName} aria-busy={importBusy}>{t('settings.signIn.showPeople')}</Button>
 		</form>
 	{:else if !candidates}
 		{#if !importNote}<SkSettings rows={3} />{/if}
 	{:else if candidates.length === 0}
-		<p class="small muted">No one to import</p>
+		<p class="small muted">{t('settings.signIn.noOne')}</p>
 	{:else}
-		<p class="small muted">People join as Members. Kid is PG or lower. Server admins stay Members.</p>
+		<p class="small muted">{t('settings.signIn.importNote')}</p>
 		<ul class="rows imp-list">
 			{#each candidates as p (p.id)}
 				<li>
@@ -560,29 +558,29 @@
 						<span>
 							<span class="name">{p.name}</span>
 							{#if p.email}<span class="xs muted"> {p.email}</span>{/if}
-							{#if p.linked_to}<span class="xs muted"> · already {p.linked_to}</span>{/if}
-							{#if p.server_admin}<span class="chip">server admin</span>{/if}
+							{#if p.linked_to}<span class="xs muted"> · {t('settings.signIn.already', { to: p.linked_to })}</span>{/if}
+							{#if p.server_admin}<span class="chip">{t('settings.signIn.serverAdmin')}</span>{/if}
 						</span>
 					</label>
-					<label class="checkline xs"><input type="checkbox" bind:checked={picked[p.id].kid} disabled={!!p.linked_to || !picked[p.id].on} /> Kid</label>
+					<label class="checkline xs"><input type="checkbox" bind:checked={picked[p.id].kid} disabled={!!p.linked_to || !picked[p.id].on} /> {t('settings.signIn.kid')}</label>
 				</li>
 			{/each}
 		</ul>
 	{/if}
 	{#if importNote}<p class="notice warn" role="alert">{importNote}</p>{/if}
 	{#snippet footer()}
-		<Button variant="plain" type="button" onclick={() => (importOpen = false)}>Cancel</Button>
+		<Button variant="plain" type="button" onclick={() => (importOpen = false)}>{t('settings.signIn.cancel')}</Button>
 		{#if candidates && candidates.length}
-			<Button variant="primary" type="button" onclick={runImport} disabled={importBusy || pickedCount === 0} aria-busy={importBusy}>Import {pickedCount}</Button>
+			<Button variant="primary" type="button" onclick={runImport} disabled={importBusy || pickedCount === 0} aria-busy={importBusy}>{t('settings.signIn.importN', { n: pickedCount })}</Button>
 		{/if}
 	{/snippet}
 </Sheet>
 
-<Sheet bind:open={everyoneOpen} title="Let everyone join?" size="sm">
+<Sheet bind:open={everyoneOpen} title={t('settings.signIn.letEveryone')} size="sm">
 	{#if everyoneFor}<p class="small">{everyoneText(everyoneFor)}</p>{/if}
 	{#snippet footer()}
-		<Button variant="plain" type="button" onclick={() => (everyoneOpen = false)}>Cancel</Button>
-		<Button variant="primary" type="button" onclick={() => everyoneFor && saveWay(everyoneFor, undefined, true)}>Let everyone join</Button>
+		<Button variant="plain" type="button" onclick={() => (everyoneOpen = false)}>{t('settings.signIn.cancel')}</Button>
+		<Button variant="primary" type="button" onclick={() => everyoneFor && saveWay(everyoneFor, undefined, true)}>{t('settings.signIn.letEveryoneButton')}</Button>
 	{/snippet}
 </Sheet>
 
@@ -643,7 +641,7 @@
 		height: auto;
 		padding-top: 10px;
 	}
-	code {
+	p :global(code) {
 		font-family: var(--font-mono);
 		color: var(--text);
 	}

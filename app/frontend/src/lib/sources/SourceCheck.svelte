@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import Field from '#lib/ui/Field.svelte';
 	import Button from '#lib/ui/Button.svelte';
@@ -36,20 +37,20 @@
 </script>
 
 {#if session.can('settings')}
-	<SettingsCard id="source-check" title="Test search" icon="search" description="Test every Source with one title.">
+	<SettingsCard id="source-check" title={t('sources.test.title')} icon="search" description={t('sources.test.description')}>
 		<form class="ask" onsubmit={run}>
-			<Field id="sc-kind" label="Kind">
+			<Field id="sc-kind" label={t('sources.test.kind')}>
 				<select id="sc-kind" class="input" value={kind} onchange={(e) => pickKind((e.currentTarget as HTMLSelectElement).value as CheckKind)}>
-					<option value="movie">Movie</option>
-					<option value="show">Show</option>
-					<option value="music">Music</option>
+					<option value="movie">{t('sources.test.movie')}</option>
+					<option value="show">{t('sources.test.show')}</option>
+					<option value="music">{t('sources.test.music')}</option>
 				</select>
 			</Field>
-			<Field id="sc-query" label="Title">
+			<Field id="sc-query" label={t('sources.test.titleField')}>
 				<input id="sc-query" class="input" bind:value={query} maxlength="200" />
 			</Field>
 			<div class="go">
-				<Button variant="primary" type="submit" disabled={busy} aria-busy={busy}>{busy ? 'Asking…' : 'Run'}</Button>
+				<Button variant="primary" type="submit" disabled={busy} aria-busy={busy}>{busy ? t('sources.test.asking') : t('sources.test.run')}</Button>
 			</div>
 		</form>
 		{#if error}<p class="note fail" role="alert">{error}</p>{/if}
@@ -61,7 +62,7 @@
 						<span class="name">
 							{#if !c.answered}<a href={to(`/settings/sources/${c.id}`)}>{c.name}</a>{:else}{c.name}{/if}
 						</span>
-						{#if c.paused}<span class="chip {checkTone(c)}">{checkWord(c)}</span>{:else}<TestTag ok={c.answered} text={c.answered ? '' : (c.error ?? '')} hover={c.answered ? `${checkCount(c)} in ${ms(c.ms)}` : ''} extra={checkCount(c)} />{/if}
+						{#if c.paused}<span class="chip {checkTone(c)}">{checkWord(c)}</span>{:else}<TestTag ok={c.answered} text={c.answered ? '' : (c.error ?? '')} hover={c.answered ? t('sources.test.countIn', { count: checkCount(c), time: ms(c.ms) }) : ''} extra={checkCount(c)} />{/if}
 						<span class="meta" class:bad-text={!c.answered && !c.paused}>
 							{#if c.answered}{ms(c.ms)}{:else if c.paused}{c.health.text}{:else}{c.error}{#if c.ms} · {ms(c.ms)}{/if}{/if}
 						</span>

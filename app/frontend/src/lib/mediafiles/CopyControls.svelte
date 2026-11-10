@@ -1,5 +1,6 @@
 <!-- Lists each Version's copy with protect, keep-and-add and adopt actions. -->
 <script lang="ts">
+	import Words from '#lib/ui/Words.svelte';
 	import { onMount } from 'svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import Button from '#lib/ui/Button.svelte';
@@ -12,6 +13,7 @@
 	import { session } from '../core/session.svelte.ts';
 	import { toasts } from '../core/toasts.svelte.ts';
 	import { plainReason } from '../core/plain.ts';
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import type { CopyFile, LibraryFolder, PickRulesView, TitleView, VersionView } from '../core/types.ts';
 
 	let { title, onchange = () => {} }: { title: TitleView; onchange?: () => void | Promise<void> } = $props();
@@ -73,9 +75,9 @@
 				protected: protectedValue,
 				acknowledge_protection: !protectedValue && acknowledge[file.ID] === true
 			});
-			await changed(protectedValue ? 'Copy protected' : 'Protection removed');
+			await changed(protectedValue ? t('mediafiles.copy.protected') : t('mediafiles.copy.protectionRemoved'));
 		} catch (e) {
-			toasts.push("Couldn't change protection", 'fail', { body: message(e) });
+			toasts.push(t('mediafiles.copy.protectFailed'), 'fail', { body: message(e) });
 		} finally {
 			busy = '';
 		}
@@ -100,7 +102,7 @@
 			addFolder = folders[0]?.id ?? 0;
 			addOpen = true;
 		} catch (e) {
-			toasts.push("Couldn't open Version form", 'fail', { body: message(e) });
+			toasts.push(t('mediafiles.copy.formFailed'), 'fail', { body: message(e) });
 		}
 	}
 
@@ -118,7 +120,7 @@
 				audio_languages: languageList(addAudio)
 			});
 			addOpen = false;
-			await changed(`${addLabel.trim()} Version added`);
+			await changed(t('mediafiles.copy.versionAdded', { label: addLabel.trim() }));
 		} catch (e) {
 			formError = message(e);
 		} finally {
@@ -142,7 +144,7 @@
 				relative_path: adoptPath.trim()
 			});
 			adoptOpen = false;
-			await changed(`File moved to ${adoptVersion.label} Version`);
+			await changed(t('mediafiles.copy.fileMoved', { label: adoptVersion.label }));
 		} catch (e) {
 			formError = message(e);
 		} finally {
@@ -153,7 +155,7 @@
 </script>
 
 <section class="cc" aria-labelledby="copy-controls-title" data-testid="copy-controls">
-	<h2 id="copy-controls-title" class="cc-h">Copies</h2>
+	<h2 id="copy-controls-title" class="cc-h">{t('mediafiles.copy.title')}</h2>
 	{#if !loaded}
 		<Skeleton lines={3} />
 	{:else if error}
@@ -166,31 +168,31 @@
 				{@const audio = file ? inspectedAudio(file) : []}
 				<li class="cc-group" data-testid="copy-version">
 					<div class="cc-row info">
-						<span><b>{version.label}{#if file?.Protected}<Badge label="Protected" />{/if}</b><small>{criteria.join(' · ')}</small></span>
+						<span><b>{version.label}{#if file?.Protected}<Badge label={t('mediafiles.copy.protectedBadge')} />{/if}</b><small>{criteria.join(' · ')}</small></span>
 					</div>
 					{#if file}
 						<div class="cc-row info">
-							<span><small class="mono" title={file.RelativePath}>{file.RelativePath}</small><small>Audio {audio.join(', ') || 'unknown'}{copyEdition(file) ? ` · ${copyEdition(file)}` : ''}{file.State === 'missing' ? ' · Missing' : ''}</small></span>
+							<span><small class="mono" title={file.RelativePath}>{file.RelativePath}</small><small>{t('mediafiles.copy.audio', { languages: audio.join(', ') || t('mediafiles.copy.unknown') })}{copyEdition(file) ? ` · ${copyEdition(file)}` : ''}{file.State === 'missing' ? ` · ${t('mediafiles.copy.missing')}` : ''}</small></span>
 						</div>
 						{#if staff}
 							{#if file.Protected}
 								<div class="cc-row">
-									<label class="cc-check"><input type="checkbox" bind:checked={acknowledge[file.ID]} /><span>I understand this removes the copy's protection</span></label>
-									<button type="button" class="cc-btn" onclick={() => setProtection(file, false)} disabled={!acknowledge[file.ID] || busy !== ''}>Remove protection</button>
+									<label class="cc-check"><input type="checkbox" bind:checked={acknowledge[file.ID]} /><span>{t('mediafiles.copy.understand')}</span></label>
+									<button type="button" class="cc-btn" onclick={() => setProtection(file, false)} disabled={!acknowledge[file.ID] || busy !== ''}>{t('mediafiles.copy.removeProtection')}</button>
 								</div>
 							{:else}
 								<button type="button" class="cc-row act" onclick={() => setProtection(file, true)} disabled={busy !== ''}>
-									<span><b>Protect this copy</b><small>Better copies never replace it</small></span><Icon name="shield" size={16} />
+									<span><b>{t('mediafiles.copy.protect')}</b><small>{t('mediafiles.copy.protectHint')}</small></span><Icon name="shield" size={16} />
 								</button>
 							{/if}
 							<button type="button" class="cc-row act" onclick={() => openAdd(file)} disabled={busy !== ''}>
-								<span><b>Keep this copy and add another Version</b><small>Like a 4K beside this one</small></span><Icon name="plus" size={16} />
+								<span><b>{t('mediafiles.copy.keepAdd')}</b><small>{t('mediafiles.copy.keepAddHint')}</small></span><Icon name="plus" size={16} />
 							</button>
 						{/if}
 					{:else}
-						<div class="cc-row info"><span><small>No copy yet.</small></span></div>
+						<div class="cc-row info"><span><small>{t('mediafiles.copy.noCopy')}</small></span></div>
 						{#if staff && kind === 'movie'}
-							<button type="button" class="cc-row act" onclick={() => openAdopt(version)}><span><b>Use an existing video</b><small>Already in this Version's folder</small></span><Icon name="chevronRight" size={16} /></button>
+							<button type="button" class="cc-row act" onclick={() => openAdopt(version)}><span><b>{t('mediafiles.copy.useExisting')}</b><small>{t('mediafiles.copy.useExistingHint')}</small></span><Icon name="chevronRight" size={16} /></button>
 						{/if}
 					{/if}
 				</li>
@@ -199,34 +201,34 @@
 	{/if}
 </section>
 
-<Sheet bind:open={addOpen} title="Keep this copy and add another Version">
+<Sheet bind:open={addOpen} title={t('mediafiles.copy.keepAdd')}>
 	<form id="keep-add-form" class="sheet-form" onsubmit={keepAndAdd}>
 
-		<div class="field"><label for="copy-new-label">Version name</label><input id="copy-new-label" class="input" bind:value={addLabel} maxlength="40" required /></div>
-		<div class="field"><label for="copy-new-rules">Pick rules</label><select id="copy-new-rules" class="input" bind:value={addRules}>{#each rules as rule (rule.id)}<option value={rule.id}>{rule.name}</option>{/each}</select></div>
-		<div class="field"><label for="copy-new-folder">Library folder</label><select id="copy-new-folder" class="input" bind:value={addFolder}>{#each folders as folder (folder.id)}<option value={folder.id}>{folder.label || folder.path} ({folder.path})</option>{/each}</select></div>
-		<div class="field"><label for="copy-new-edition">Edition wanted <span class="muted">(optional)</span></label><input id="copy-new-edition" class="input" bind:value={addEdition} maxlength="80" placeholder="Theatrical" /></div>
-		<div class="field"><label for="copy-new-audio">Audio wanted <span class="muted">(optional, like en, fr)</span></label><input id="copy-new-audio" class="input" bind:value={addAudio} placeholder="en, fr" /></div>
-		<label class="checkline"><input type="checkbox" bind:checked={addKeep} /> <span><b>Look for it and better copies</b></span></label>
+		<div class="field"><label for="copy-new-label">{t('mediafiles.copy.versionName')}</label><input id="copy-new-label" class="input" bind:value={addLabel} maxlength="40" required /></div>
+		<div class="field"><label for="copy-new-rules">{t('mediafiles.copy.pickRules')}</label><select id="copy-new-rules" class="input" bind:value={addRules}>{#each rules as rule (rule.id)}<option value={rule.id}>{rule.name}</option>{/each}</select></div>
+		<div class="field"><label for="copy-new-folder">{t('mediafiles.copy.libraryFolder')}</label><select id="copy-new-folder" class="input" bind:value={addFolder}>{#each folders as folder (folder.id)}<option value={folder.id}>{folder.label || folder.path} ({folder.path})</option>{/each}</select></div>
+		<div class="field"><label for="copy-new-edition">{t('mediafiles.copy.editionWish')} <span class="muted">{t('mediafiles.copy.optional')}</span></label><input id="copy-new-edition" class="input" bind:value={addEdition} maxlength="80" placeholder={t('mediafiles.copy.editionExample')} /></div>
+		<div class="field"><label for="copy-new-audio">{t('mediafiles.copy.audioWish')} <span class="muted">{t('mediafiles.copy.optionalAudio')}</span></label><input id="copy-new-audio" class="input" bind:value={addAudio} placeholder={t('mediafiles.copy.audioExample')} /></div>
+		<label class="checkline"><input type="checkbox" bind:checked={addKeep} /> <span><b>{t('mediafiles.copy.lookFor')}</b></span></label>
 		{#if formError}<p class="form-error" role="alert">{formError}</p>{/if}
 	</form>
 	{#snippet footer()}
-		<Button variant="plain" onclick={() => (addOpen = false)}>Cancel</Button>
-		<Button variant="primary" type="submit" form="keep-add-form" disabled={busy !== '' || !addLabel.trim() || !addRules || !addFolder}>Protect and add Version</Button>
+		<Button variant="plain" onclick={() => (addOpen = false)}>{t('mediafiles.dialogs.cancel')}</Button>
+		<Button variant="primary" type="submit" form="keep-add-form" disabled={busy !== '' || !addLabel.trim() || !addRules || !addFolder}>{t('mediafiles.copy.protectAdd')}</Button>
 	{/snippet}
 </Sheet>
 
-<Sheet bind:open={adoptOpen} title="Use an existing video for {adoptVersion?.label ?? 'this Version'}">
+<Sheet bind:open={adoptOpen} title={t('mediafiles.copy.useFor', { label: adoptVersion?.label ?? t('mediafiles.copy.thisVersion') })}>
 	<form id="adopt-copy-form" class="sheet-form" onsubmit={adopt}>
-		<p class="small muted">The file must already be inside the <span class="mono">{shortFolder(adoptVersion?.folder_path)}</span> folder of the Version. HolyArrs checks its actual audio and edition, then records it without moving or rewriting it.</p>
-		{#if session.can('manage_library')}<details class="small muted"><summary>Details</summary><span class="mono path">{adoptVersion?.folder_path}</span></details>{/if}
-		<div class="field"><label for="adopt-path">Path relative to the Library folder</label><input id="adopt-path" class="input" bind:value={adoptPath} required /></div>
+		<p class="small muted"><Words key="mediafiles.copy.adoptNote" vars={{ folder: shortFolder(adoptVersion?.folder_path) }} /></p>
+		{#if session.can('manage_library')}<details class="small muted"><summary>{t('mediafiles.copy.details')}</summary><span class="mono path">{adoptVersion?.folder_path}</span></details>{/if}
+		<div class="field"><label for="adopt-path">{t('mediafiles.copy.relativePath')}</label><input id="adopt-path" class="input" bind:value={adoptPath} required /></div>
 
 		{#if formError}<p class="form-error" role="alert">{formError}</p>{/if}
 	</form>
 	{#snippet footer()}
-		<Button variant="plain" onclick={() => (adoptOpen = false)}>Cancel</Button>
-		<Button variant="primary" type="submit" form="adopt-copy-form" disabled={busy !== '' || !adoptPath.trim()}>Check and use file</Button>
+		<Button variant="plain" onclick={() => (adoptOpen = false)}>{t('mediafiles.dialogs.cancel')}</Button>
+		<Button variant="primary" type="submit" form="adopt-copy-form" disabled={busy !== '' || !adoptPath.trim()}>{t('mediafiles.copy.checkUse')}</Button>
 	{/snippet}
 </Sheet>
 

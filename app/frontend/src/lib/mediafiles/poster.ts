@@ -1,5 +1,6 @@
 // Poster card helpers: attention state, progress bar, tilt, detail level and move animation.
 import type { LibState, LibStateKey } from './library-state.ts';
+import { t } from '../core/i18n/i18n.svelte.ts';
 
 export type BarTone = 'ok' | 'busy' | 'gap' | 'fail' | 'idle';
 export type PosterDetail = 'title' | 'status' | 'full';
@@ -11,7 +12,18 @@ export const attentionKeys: readonly LibStateKey[] = [
 	'paused', 'downloading', 'queued', 'waiting_approval', 'not_out_yet'
 ];
 
-export const detailLabels: Record<PosterDetail, string> = { title: 'Title only', status: 'Title and problems', full: 'Everything' };
+// The labels read their words when used, so they follow the language.
+export const detailLabels: Record<PosterDetail, string> = {
+	get title() {
+		return t('mediafiles.poster.titleOnly');
+	},
+	get status() {
+		return t('mediafiles.poster.titleProblems');
+	},
+	get full() {
+		return t('mediafiles.poster.everything');
+	}
+};
 
 const clamp01 = (n: number) => (Number.isFinite(n) ? Math.min(Math.max(n, 0), 1) : 0);
 const detailKey = (member: number | undefined) => `holyarrs.poster-detail.${member ?? 'guest'}`;

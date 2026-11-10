@@ -1,0 +1,17 @@
+{
+	"setup.reconnect": "Подключить снова",
+	"setup.testNow": "Проверить",
+	"setup.movies": "Фильмы",
+	"setup.tvShows": "Сериалы",
+	"setup.music": "Музыка",
+	"setup.subtitles": "Субтитры",
+	"setup.fullPath": "Укажите полный путь к папке, например {path}.",
+	"setup.folderUsed": "Эта папка уже занята или находится внутри занятой.",
+	"setup.folderMissing": "Такой папки нет. Проверьте путь.",
+	"setup.addFolderOrOff": "Добавьте папку или отключите это.",
+	"setup.notAnswering": "HolyArrs не отвечает. Попробуйте ещё раз через минуту.",
+	"setup.addUserPasswordHint": "Введите имя пользователя и пароль.",
+	"setup.folders": "Папки",
+	"setup.downloader": "Загрузчик",
+	"setup.source": "Источник"
+}

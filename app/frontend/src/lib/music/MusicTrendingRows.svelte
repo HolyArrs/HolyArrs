@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 		import type { OwnedIndex } from '#lib/ui/title-cards.ts';
 	import { defaultRegion } from '#lib/ui/region.ts';
 	import ArtPlaceholder from '#lib/ui/ArtPlaceholder.svelte';
@@ -69,7 +70,7 @@
 
 	const names = typeof Intl !== 'undefined' && 'DisplayNames' in Intl ? new Intl.DisplayNames(undefined, { type: 'region' }) : null;
 	function regionName(r: string): string {
-		if (r === 'global') return 'Worldwide';
+		if (r === 'global') return t('music.worldwide');
 		try {
 			return names?.of(r) ?? r;
 		} catch {
@@ -200,30 +201,30 @@
 			// A name never searched before answers "pending" while the search runs: ask again quietly.
 			const r = await reaskWhileFilling(await ask(), ask, () => {});
 			const a = r.artists?.find((x) => x.mbid === c.artist_mbid);
-			if (!a) return void toasts.push(`Couldn't find ${artist}`, 'fail', { body: 'Try Search' });
+			if (!a) return void toasts.push(t('music.couldnTFind', { name: artist }), 'fail', { body: t('music.trySearch') });
 			if (a.title_id) {
 				addedHere = new Map([...addedHere, [a.mbid, a.title_id]]);
-				return void toasts.push(`${a.name} already in Library`, 'ok');
+				return void toasts.push(t('music.alreadyInLibrary', { name: a.name }), 'ok');
 			}
 			if (manage) addArtist?.open(a);
 			else askArtist?.open(a);
 		} catch (e) {
-			toasts.push("Couldn't add artist", 'fail', { body: message(e) });
+			toasts.push(t('music.couldnTAddArtist'), 'fail', { body: message(e) });
 		} finally {
 			busy = '';
 		}
 	}
 
-	function added(a: LookupArtist, t: TitleView) {
-		addedHere = new Map([...addedHere, [a.mbid, t.id]]);
-		toasts.push(`${t.name} added`, 'ok', { body: 'Filling in albums and tracks' });
-		onadded?.(t);
+	function added(a: LookupArtist, title: TitleView) {
+		addedHere = new Map([...addedHere, [a.mbid, title.id]]);
+		toasts.push(t('music.added', { what: title.name }), 'ok', { body: t('music.fillingInAlbumsAnd') });
+		onadded?.(title);
 	}
 
 	function asked(_a: LookupArtist, r: { ask: Ask; joined: boolean }) {
-		if (r.ask.state === 'approved') toasts.push(`${r.ask.name} approved`, 'ok', { body: 'Kept up to date' });
-		else if (r.ask.state === 'asked' && r.joined) toasts.push(`${r.ask.name} already requested`, 'ok', { body: "You're on the request too" });
-		else toasts.push(`${r.ask.name} requested`, 'ok', { body: 'Waiting for approval' });
+		if (r.ask.state === 'approved') toasts.push(t('music.approved', { what: r.ask.name }), 'ok', { body: t('music.keptUpToDate') });
+		else if (r.ask.state === 'asked' && r.joined) toasts.push(t('music.alreadyRequested', { what: r.ask.name }), 'ok', { body: t('music.youReOnThe') });
+		else toasts.push(t('music.requested2', { what: r.ask.name }), 'ok', { body: t('music.waitingForApproval') });
 		void refreshInbox();
 		void load();
 	}
@@ -238,7 +239,7 @@
 			.map((c) => coverFor(musicImage(c), 250).src as string)
 	);
 	const bandHue = $derived(((((answer?.tile?.hue ?? 0) % 24) + 24) % 24) * 15);
-	const bandKind = $derived(({ genre: 'Genre', mood: 'Mood', season: 'Season', decade: 'Decade', activity: 'Made for' } as Record<string, string>)[(answer?.tile?.key ?? 'genre').split(':')[0]] ?? 'Genre');
+	const bandKind = $derived(({ genre: t('music.genre'), mood: t('music.mood'), season: t('music.season'), decade: t('music.decade'), activity: t('music.madeFor') } as Record<string, string>)[(answer?.tile?.key ?? 'genre').split(':')[0]] ?? t('music.genre'));
 	/** Spotlight covers that failed to load: the card falls back to its artist's picture. */
 	let noCover = $state<Record<string, boolean>>({});
 	/** Spotlight artist photos that loaded at a usable size (400 px wide or more). */
@@ -246,11 +247,11 @@
 	function kicker(c: MusicCardData): string {
 		// "New album" only within 60 days of release; otherwise the real reason.
 		if (c.kicker && (!/^new\b/i.test(c.kicker) || isNewRelease(c.date))) return c.kicker;
-		return isNewRelease(c.date) ? 'New album' : c.rank ? 'Top album' : 'Popular now';
+		return isNewRelease(c.date) ? t('music.newAlbum2') : c.rank ? t('music.topAlbum') : t('music.popularNow');
 	}
 	function caption(c: MusicCardData): string {
-		if (!c.title_id) return c.rank ? `Number ${c.rank} on this week's album chart` : '';
-		return ['From an artist you have', c.date ? releaseWords(c.date) : ''].filter(Boolean).join(' · ');
+		if (!c.title_id) return c.rank ? t('music.numberOnThisWeek', { rank: c.rank }) : '';
+		return [t('music.fromAnArtistYou'), c.date ? releaseWords(c.date) : ''].filter(Boolean).join(' · ');
 	}
 	const regions = $derived(answer?.regions ?? []);
 	// The band's covers: 1 loaded (fades in), 2 failed (keeps its slot, hidden).
@@ -260,7 +261,7 @@
 </script>
 
 {#if answer?.kid}
-	<EmptyState icon="music" title="Music is not shown on this account" text="Music has no age ratings, so it’s off for age-limited accounts." />
+	<EmptyState icon="music" title={t('music.musicIsNotShown')} text={t('music.musicHasNoAge')} />
 {:else if answer || !failed}
 	<section class="music" data-testid="music-trending" aria-busy={!answer || undefined}>
 		{#if slug}
@@ -274,7 +275,7 @@
 					<h1>{answer?.tile?.name ?? ''}</h1>
 					{#if answer?.rows.length}
 						<p class="bline">{heroLine(answer?.tile?.key ?? '', answer?.tile?.name ?? '', heroArtists(heroes, answer.rows))}</p>
-						<p class="bstat">{answer.rows.length} rows · updated today{#if heroes[0]} · Top pick: {heroes[0].name}{/if}</p>
+						<p class="bstat">{t('music.rowsUpdatedToday', { n: answer.rows.length })}{#if heroes[0]}{t('music.topPick', { name: heroes[0].name })}{/if}</p>
 					{/if}
 				</div>
 			</div>
@@ -290,7 +291,7 @@
 
 		{#if answer && heroes.length}
 			<div class="spot" data-testid="music-hero">
-				<Shelf title="Spotlight" item="var(--spot-item)">
+				<Shelf title={t('music.spotlight')} item="var(--spot-item)">
 					{#each heroes as c, hi (c.key)}
 						{@const cv = coverFor(musicImage(c), 430)}
 						{@const art = c.artist_image ? musicImage({ image: c.artist_image }) : null}
@@ -339,12 +340,12 @@
 			<div class="row">
 			{#if row.id === pickRow}
 				<div class="pick">
-					<select aria-label="Chart region" bind:value={region} onchange={pick}>
+					<select aria-label={t('music.chartRegion')} bind:value={region} onchange={pick}>
 						{#each regions as r (r)}<option value={r}>{regionName(r)}</option>{/each}
 					</select>
 				</div>
 			{/if}
-			<Shelf title={row.type === 'popular_country' ? `Popular in ${regionName(row.id.split(':')[1] ?? '')}` : row.title} subtitle={row.type === 'popular_country' ? `This week's top albums in ${regionName(row.id.split(':')[1] ?? '')}` : row.reason} item={row.shape === 'round' ? 'var(--music-circle, var(--explore-item))' : 'var(--explore-item)'}
+			<Shelf title={row.type === 'popular_country' ? t('music.popularIn', { region: regionName(row.id.split(':')[1] ?? '') }) : row.title} subtitle={row.type === 'popular_country' ? t('music.thisWeekSTop', { region: regionName(row.id.split(':')[1] ?? '') }) : row.reason} item={row.shape === 'round' ? 'var(--music-circle, var(--explore-item))' : 'var(--explore-item)'}
 				items={row.items} key={(c) => c.key} defer={false} placeholder={row.shape === 'square' ? 'square' : 'round'} lines={row.items.some((c) => musicCardNote(row, c)) ? 2 : 1}>
 				{#snippet card(raw: MusicCardData)}
 					{@const c = live(raw)}
@@ -368,7 +369,7 @@
 					>
 						{#snippet action()}
 							{#if !c.title_id && c.artist_mbid && row.type !== 'your_asks' && (manage || mayAsk)}
-								<IconButton icon="plus" label={manage ? `Add ${c.artist || c.name}` : `Ask for ${c.artist || c.name}`} variant="glass" size="lg" aria-haspopup="dialog" aria-busy={busy === c.key || undefined} onclick={() => void quick(c)} />
+								<IconButton icon="plus" label={manage ? t('music.add', { name: c.artist || c.name }) : t('music.askFor', { name: c.artist || c.name })} variant="glass" size="lg" aria-haspopup="dialog" aria-busy={busy === c.key || undefined} onclick={() => void quick(c)} />
 							{/if}
 						{/snippet}
 					</PosterCard>
@@ -392,20 +393,20 @@
 		{#if answer?.thin}
 			<!-- Too little music for this page yet; never a near-empty page. -->
 			<div class="thin" data-testid="music-thin">
-				<p class="thin-title">Not enough music here yet</p>
+				<p class="thin-title">{t('music.notEnoughMusicHere')}</p>
 				{#if answer.similar?.length}
-					<p class="thin-text">Try one of these instead:</p>
+					<p class="thin-text">{t('music.tryOneOfThese')}</p>
 					<ul>
 						{#each answer.similar as s (s.key)}<li><a href={to(s.href)}>{s.name}</a></li>{/each}
 					</ul>
 				{/if}
 			</div>
 		{:else if answer && answer.rows.length === 0 && !heroes.length}
-			<EmptyState icon="music" title={slug ? `Nothing charting in ${answer.tile?.name ?? 'this genre'} yet` : 'Music rows are getting ready'} text="Charts and suggestions fill in within a few minutes." />
+			<EmptyState icon="music" title={slug ? (answer.tile?.name ? t('music.nothingChartingInYet', { name: answer.tile.name }) : t('music.nothingChartingInThis')) : t('music.musicRowsAreGetting')} text={t('music.chartsAndSuggestionsFill')} />
 		{/if}
 	</section>
 {:else if failed}
-	<EmptyState icon="music" title="Could not load Music" text="The music rows did not answer. Try again shortly." />
+	<EmptyState icon="music" title={t('music.couldNotLoadMusic')} text={t('music.theMusicRowsDid')} />
 {/if}
 
 {#if manage}

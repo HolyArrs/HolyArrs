@@ -1,4 +1,5 @@
 // Helpers for steering a torrent Downloader by hand from the Downloads page: the Add sheet, the selection, the seeding rules and the row actions. Pure, so they can be tested.
+import { t } from '#lib/core/i18n/i18n.svelte.ts';
 
 /** One add's answer from the server. */
 export interface AddOutcome {
@@ -51,18 +52,17 @@ export function splitLinks(text: string): { links: string[]; bad: string[] } {
 	return { links, bad };
 }
 
-const n = (k: number, one: string, many = `${one}s`) => `${k} ${k === 1 ? one : many}`;
 
 /** How an add went (the main result, then the rest as a body) and whether it is good news. */
 export function addWords(o: AddOutcome): { text: string; body?: string; tone: 'ok' | 'info' | 'fail' } {
 	const parts: string[] = [];
-	if (o.added) parts.push(`${n(o.added, 'torrent')} added`);
-	if (o.pending) parts.push(`${o.pending} still being fetched`);
-	if (o.duplicates) parts.push(`${o.duplicates} already there`);
-	if (o.failed) parts.push(`${o.failed} failed`);
-	if (o.bad?.length) parts.push(`could not add: ${o.bad.join(', ')}`);
-	if (o.dropped) parts.push(`${n(o.dropped, 'local address', 'local addresses')} left out of the magnet links`);
-	const text = parts.length ? upper(parts[0]) : 'Nothing added';
+	if (o.added) parts.push(t(o.added === 1 ? 'downloads.add.addedOne' : 'downloads.add.added', { count: o.added }));
+	if (o.pending) parts.push(t('downloads.add.pending', { count: o.pending }));
+	if (o.duplicates) parts.push(t('downloads.add.duplicates', { count: o.duplicates }));
+	if (o.failed) parts.push(t('downloads.add.failed', { count: o.failed }));
+	if (o.bad?.length) parts.push(t('downloads.add.bad', { list: o.bad.join(', ') }));
+	if (o.dropped) parts.push(t(o.dropped === 1 ? 'downloads.add.dropped.one' : 'downloads.add.dropped.other', { count: o.dropped }));
+	const text = parts.length ? upper(parts[0]) : t('downloads.add.nothing');
 	const tone = o.failed || o.bad?.length ? (o.added || o.pending ? 'info' : 'fail') : o.added || o.pending ? 'ok' : 'info';
 	return parts.length > 1 ? { text, body: parts.slice(1).join(' · '), tone } : { text, tone };
 }
@@ -93,35 +93,44 @@ export function byClient<T extends Addressed>(rows: T[]): Map<number, T[]> {
 
 /** The toast after a selection action: "3 downloads paused". */
 export const BULK_DONE: Record<BulkAction, string> = {
-	start: 'started', pause: 'paused', recheck: 'being checked', reannounce: 'announced again', top: 'moved to the top', bottom: 'moved to the bottom',
-	up: 'moved up', down: 'moved down', force: 'force started', unforce: 'back in the queue'
+	get start() { return t('downloads.bulk.start'); }, get pause() { return t('downloads.bulk.pause'); }, get recheck() { return t('downloads.bulk.recheck'); }, get reannounce() { return t('downloads.bulk.reannounce'); }, get top() { return t('downloads.bulk.top'); }, get bottom() { return t('downloads.bulk.bottom'); },
+	get up() { return t('downloads.bulk.up'); }, get down() { return t('downloads.bulk.down'); }, get force() { return t('downloads.bulk.force'); }, get unforce() { return t('downloads.bulk.unforce'); }
 };
 
 export const modeOf = (v: number): LimitMode => (v === -2 ? 'global' : v < 0 ? 'none' : 'set');
 export const valueOf = (mode: LimitMode, v: number) => (mode === 'global' ? -2 : mode === 'none' ? -1 : v);
 
-const minutesWords = (m: number) => (m % 1440 === 0 ? n(m / 1440, 'day') : m % 60 === 0 ? n(m / 60, 'hour') : n(m, 'minute'));
-const ACTION_WORD: Record<ShareLimits['action'], string> = { '': '', stop: 'then stop', remove: 'then remove', remove_files: 'then remove with files', super_seed: 'then super seed' };
+const minutesWords = (m: number) => {
+	const [k, unit] = m % 1440 === 0 ? [m / 1440, 'day'] : m % 60 === 0 ? [m / 60, 'hour'] : [m, 'minute'];
+	return t(`downloads.limits.${unit}.${k === 1 ? 'one' : 'other'}`, { count: k });
+};
+const ACTION_WORD: Record<ShareLimits['action'], string> = {
+	'': '',
+	get stop() { return t('downloads.limits.thenStop'); },
+	get remove() { return t('downloads.limits.thenRemove'); },
+	get remove_files() { return t('downloads.limits.thenRemoveFiles'); },
+	get super_seed() { return t('downloads.limits.thenSuper'); }
+};
 
 /** A torrent's seeding rules in one line, for Info. */
 export function limitsWords(l: ShareLimits | undefined): string {
 	if (!l) return '–';
 	const one = (v: number, set: (v: number) => string) => (v === -2 ? '' : v < 0 ? 'none' : set(v));
 	const parts = [
-		[one(l.ratio, (v) => `ratio ${v}`), 'ratio'],
+		[one(l.ratio, (v) => t('downloads.limits.ratio', { v })), 'ratio'],
 		[one(l.seeding_minutes, minutesWords), 'seeding'],
-		[one(l.inactive_minutes, (v) => `${minutesWords(v)} idle`), 'idle']
+		[one(l.inactive_minutes, (v) => t('downloads.limits.idle', { time: minutesWords(v) })), 'idle']
 	]
 		.filter(([w]) => w)
-		.map(([w, k]) => (w === 'none' ? `no ${k} limit` : w));
-	const base = parts.length ? upper(parts.join(' · ')) : "Downloader's rules";
-	return ACTION_WORD[l.action] ? `${base}, ${ACTION_WORD[l.action]}` : base;
+		.map(([w, k]) => (w === 'none' ? t(k === 'ratio' ? 'downloads.limits.noRatio' : k === 'seeding' ? 'downloads.limits.noSeeding' : 'downloads.limits.noIdle') : w));
+	const base = parts.length ? upper(parts.join(' · ')) : t('downloads.limits.rules');
+	return ACTION_WORD[l.action] ? t('downloads.limits.baseThen', { base, action: ACTION_WORD[l.action] }) : base;
 }
 
 /** What is wrong with typed values, or ''. */
 export function checkLimits(l: ShareLimits): string {
-	if (l.ratio >= 0 && !(l.ratio <= 9998)) return 'Ratio is 0 to 9998.';
-	for (const m of [l.seeding_minutes, l.inactive_minutes]) if (m >= 0 && !(Number.isInteger(m) && m <= 525600)) return 'Minutes are whole numbers up to 525600 (a year).';
+	if (l.ratio >= 0 && !(l.ratio <= 9998)) return t('downloads.limits.ratioRange');
+	for (const m of [l.seeding_minutes, l.inactive_minutes]) if (m >= 0 && !(Number.isInteger(m) && m <= 525600)) return t('downloads.limits.minutesWhole');
 	return '';
 }
 
@@ -134,7 +143,11 @@ export const bytesOf = (kb: number | string) => {
 	return Number.isFinite(v) && v > 0 ? Math.round(v * 1000) : 0;
 };
 
-const PROBLEM_WORD: Record<TrackerProblem, string> = { error: 'Tracker error', warning: 'Tracker warning', announce: 'No tracker reply' };
+const PROBLEM_WORD: Record<TrackerProblem, string> = {
+	get error() { return t('downloads.tracker.error'); },
+	get warning() { return t('downloads.tracker.warning'); },
+	get announce() { return t('downloads.tracker.announce'); }
+};
 
 /** The tracker hosts and problems in these rows, with counts. */
 export function trackerOptions(rows: Tracked[]): { key: string; label: string; count: number }[] {
@@ -190,17 +203,17 @@ export function indexesUnder(files: { name: string; index: number }[], keys: Ite
 
 /** The chip beside the status pills; '' when no tracker has a problem. */
 export function problemWords(n: number): string {
-	return n > 0 ? `${n} tracker ${n === 1 ? 'issue' : 'issues'}` : '';
+	return n > 0 ? t(n === 1 ? 'downloads.tracker.issue.one' : 'downloads.tracker.issue.other', { count: n }) : '';
 }
 
 /** Picks the rows a toolbar button means and says why it is off: nothing picked, every pick read-only, or none in the right state. `want` is 'paused' for Start, 'running' for Pause, 'any' for Remove. */
 export function toolbarTargets<T extends ToolTarget>(picked: T[], open: T | undefined, want: 'paused' | 'running' | 'any', able: (r: T) => boolean = () => true): { rows: T[]; why: string } {
 	const pool = picked.length ? picked : open ? [open] : [];
-	if (!pool.length) return { rows: [], why: 'select a download' };
+	if (!pool.length) return { rows: [], why: t('downloads.target.select') };
 	const live = pool.filter((r) => r.can_act && able(r));
-	if (!live.length) return { rows: [], why: pool.every((r) => !r.can_act || r.client_locked) ? 'this Downloader is read-only' : 'not for this Downloader' };
+	if (!live.length) return { rows: [], why: pool.every((r) => !r.can_act || r.client_locked) ? t('downloads.target.readOnly') : t('downloads.target.notFor') };
 	const rows = want === 'any' ? live : live.filter((r) => (r.state === 'paused') === (want === 'paused'));
-	if (!rows.length) return { rows: [], why: want === 'paused' ? 'select a paused download' : 'select a running download' };
+	if (!rows.length) return { rows: [], why: want === 'paused' ? t('downloads.target.paused') : t('downloads.target.running') };
 	return { rows, why: '' };
 }
 

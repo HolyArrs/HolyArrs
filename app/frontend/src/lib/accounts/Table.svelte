@@ -1,4 +1,5 @@
 <script lang="ts" generics="Row extends Record<string, unknown>">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import type { Snippet } from 'svelte';
 
 	// Dense data table with a sticky header. Pass `cell` to render a column yourself; otherwise the row value is shown as text.
@@ -10,7 +11,7 @@
 		captionVisible = false,
 		rowKey,
 		cell,
-		empty = 'Nothing here yet.'
+		empty
 	}: {
 		columns: Column[];
 		rows: Row[];
@@ -20,6 +21,7 @@
 		cell?: Snippet<[Row, Column]>;
 		empty?: string;
 	} = $props();
+	const emptyText = $derived(empty ?? t('accounts.table.empty'));
 </script>
 
 <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
@@ -37,7 +39,7 @@
 					{/each}
 				</tr>
 			{:else}
-				<tr><td class="empty" colspan={columns.length}>{empty}</td></tr>
+				<tr><td class="empty" colspan={columns.length}>{emptyText}</td></tr>
 			{/each}
 		</tbody>
 	</table>

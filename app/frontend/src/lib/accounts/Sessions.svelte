@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import Button from '#lib/ui/Button.svelte';
 	import StatusPill from '#lib/ui/StatusPill.svelte';
 	import { endedWords, order, others, type SessionRow } from './session-list.ts';
@@ -32,10 +33,10 @@
 		busy = true;
 		try {
 			await api.del(`${path}/${encodeURIComponent(s.id)}`);
-			toasts.push(`${s.device} signed out`, 'ok');
+			toasts.push(t('accounts.sessions.deviceOut', { device: s.device }), 'ok');
 			await load();
 		} catch (e) {
-			toasts.push("Couldn't sign out", 'fail', { body: message(e) });
+			toasts.push(t('accounts.sessions.signOutFailed'), 'fail', { body: message(e) });
 		} finally {
 			busy = false;
 		}
@@ -48,7 +49,7 @@
 			toasts.push(endedWords(r.ended), 'ok');
 			await load();
 		} catch (e) {
-			toasts.push("Couldn't sign out", 'fail', { body: message(e) });
+			toasts.push(t('accounts.sessions.signOutFailed'), 'fail', { body: message(e) });
 		} finally {
 			busy = false;
 		}
@@ -64,8 +65,8 @@
 		<div class="sk" style="height: 64px"></div>
 	{:else if rows.length === 0}
 		<div class="empty-state">
-			<p>No signed-in devices</p>
-			<span class="small muted">{mine ? 'There are no active sessions to manage.' : `${name || 'This person'} is not signed in anywhere.`}</span>
+			<p>{t('accounts.sessions.empty')}</p>
+			<span class="small muted">{mine ? t('accounts.sessions.emptyMine') : t('accounts.sessions.emptyOther', { name: name || t('accounts.sessions.thisPerson') })}</span>
 		</div>
 	{:else}
 		<ul class="rows">
@@ -73,25 +74,25 @@
 				<li data-testid="session" data-current={s.current}>
 					<span class="grow small">
 						<b>{s.device}</b>
-						{#if s.current}<StatusPill kind="in_library" label="This device" />{/if}
+						{#if s.current}<StatusPill kind="in_library" label={t('accounts.sessions.thisDevice')} />{/if}
 						<br /><span class="xs muted"
-							>Signed in {dateTime(s.created_at)} · last used <time datetime={s.last_used_at}>{ago(s.last_used_at)}</time></span
+							>{t('accounts.sessions.signedIn', { when: dateTime(s.created_at) })} · {t('accounts.sessions.lastUsed')} <time datetime={s.last_used_at}>{ago(s.last_used_at)}</time></span
 						>
 					</span>
 					{#if !s.current}
-						<Button variant="secondary" type="button" disabled={busy} onclick={() => endOne(s)} aria-label="Sign out {s.device}, last used {ago(s.last_used_at)}"
-							>Sign out</Button>
+						<Button variant="secondary" type="button" disabled={busy} onclick={() => endOne(s)} aria-label={t('accounts.sessions.signOutLabel', { device: s.device, ago: ago(s.last_used_at) })}
+							>{t('accounts.sessions.signOut')}</Button>
 					{/if}
 				</li>
 			{/each}
 		</ul>
 		{#if rows.length > shown.length}
-			<button type="button" class="more" onclick={() => (all = true)} data-testid="sessions-all">Show all {rows.length} devices</button>
+			<button type="button" class="more" onclick={() => (all = true)} data-testid="sessions-all">{t('accounts.sessions.showAll', { n: rows.length })}</button>
 		{/if}
 		{#if mine ? others(rows) > 0 : rows.length > 0}
 			<div class="all-row">
 				<Button variant="secondary" type="button" disabled={busy} aria-busy={busy} onclick={endOthers}
-					>{mine ? 'Sign out all other devices' : `Sign ${name || 'them'} out everywhere`}</Button>
+					>{mine ? t('accounts.sessions.outOthers') : t('accounts.sessions.outEverywhere', { name: name || t('accounts.sessions.them') })}</Button>
 			</div>
 		{/if}
 	{/if}

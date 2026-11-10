@@ -2,6 +2,16 @@
 
 All notable changes to HolyArrs are listed here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## 1.0.8
+
+### Added
+
+- HolyArrs now speaks 12 languages; pick yours in Settings or on the sign-in screen. ([#106](https://github.com/HolyArrs/HolyArrs/issues/106))
+
+### Changed
+
+- "Move from other apps" is now "Import from other apps". Your files stay where they are.
+
 ## 1.0.7
 
 ### Added

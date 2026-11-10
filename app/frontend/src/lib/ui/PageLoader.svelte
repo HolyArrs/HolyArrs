@@ -11,6 +11,7 @@
 </script>
 
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	// Shows a calm loader after a short delay and fades the page in when data arrives.
 	import { untrack, type Snippet } from 'svelte';
 	import { pageHoldFor, pageLine, pageTimers, PAGE_FADE_MS, type PageStage } from '../core/pageload.ts';
@@ -19,7 +20,7 @@
 		loading,
 		children,
 		status = '',
-		label = 'Loading',
+		label = t('ui.pageLoader.loading'),
 		immediate = false,
 		cached = false,
 		onretry
@@ -85,8 +86,8 @@
 		{/if}
 		<p class="line" role="status" aria-live="polite">{line}</p>
 		{#if stage === 'reassure'}
-			<p class="more">Still working. The server is slow to answer.</p>
-			<button type="button" class="retry" onclick={() => (onretry ? onretry() : location.reload())}>Try again</button>
+			<p class="more">{t('ui.pageLoader.stillWorkingTheServer')}</p>
+			<button type="button" class="retry" onclick={() => (onretry ? onretry() : location.reload())}>{t('ui.pageLoader.tryAgain')}</button>
 		{/if}
 	</div>
 {:else}

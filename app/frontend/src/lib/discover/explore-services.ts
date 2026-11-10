@@ -4,6 +4,7 @@ import { serviceRegion } from '#lib/ui/region.ts';
 import { have } from './explore-rows.ts';
 import { type ProviderItem } from '#lib/ui/title-cards.ts';
 import { type ExploreType } from './explore-type.ts';
+import { t, appLocale } from '#lib/core/i18n/i18n.svelte.ts';
 
 /** One streaming service from GET /watch-services. */
 export interface WatchService {
@@ -104,9 +105,9 @@ export function serviceChips(rows: ServiceTopRow[], mine: number[]): ServiceTopR
 
 /** The line under the row title for one service's list. */
 export function serviceLabel(r: Pick<ServiceTopRow, 'source' | 'name' | 'age_seconds' | 'fetched_at'>): string {
-	if (r.source !== 'streaming-availability') return `Popular on ${r.name}`;
-	if (r.age_seconds < 24 * 3600) return `Trending now on ${r.name}`;
+	if (r.source !== 'streaming-availability') return t('discover.exploreServices.popularOn', { name: r.name });
+	if (r.age_seconds < 24 * 3600) return t('discover.exploreServices.trendingNowOn', { name: r.name });
 	const d = new Date(r.fetched_at);
-	const when = Number.isNaN(d.getTime()) ? 'recently' : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
-	return `Trending on ${r.name} as of ${when}`;
+	const when = Number.isNaN(d.getTime()) ? t('discover.exploreServices.recently') : d.toLocaleDateString(appLocale('en-US'), { month: 'short', day: 'numeric', timeZone: 'UTC' });
+	return t('discover.exploreServices.trendingOnAsOf', { name: r.name, when });
 }

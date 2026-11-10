@@ -1,6 +1,7 @@
 // The artist and album pages: types, links and the small rules they share.
 import { to } from '../core/paths.ts';
 import { appPicture, coverFor, coverSize } from '../core/pictures.ts';
+import { t, lang, appLocale } from '#lib/core/i18n/i18n.svelte.ts';
 
 export type PageAlbumState = 'complete' | 'partial' | 'missing' | 'downloading' | 'not_out_yet' | 'not_included' | '';
 export type Shelf = 'albums' | 'singles' | 'compilations' | 'live' | 'other';
@@ -80,7 +81,8 @@ export interface StoreAlbum {
 /** The one headline figure an artist has: monthly listeners (with rank and today's change) for the most played, else total plays; null when none is known. */
 export interface Listening {
 	n: number;
-	unit: 'monthly listeners' | 'total plays';
+	/** Already in the person's language. */
+	unit: string;
 	rank?: number;
 	today?: number;
 }
@@ -214,24 +216,24 @@ export function shortCount(n: number): string {
 export function listening(p: ArtistPopularity | undefined | null): Listening | null {
 	if (!p) return null;
 	if (p.monthly_listeners && p.monthly_listeners > 0) {
-		const out: Listening = { n: p.monthly_listeners, unit: 'monthly listeners' };
+		const out: Listening = { n: p.monthly_listeners, unit: t('music.monthlyListeners') };
 		if (p.world_rank && p.world_rank > 0) out.rank = p.world_rank;
 		if (p.listeners_change_today) out.today = p.listeners_change_today;
 		return out;
 	}
-	if (p.total_plays && p.total_plays > 0) return { n: p.total_plays, unit: 'total plays' };
+	if (p.total_plays && p.total_plays > 0) return { n: p.total_plays, unit: t('music.totalPlays') };
 	return null;
 }
 
 /** Today's listener change as "▲ 387K today" or "▼ 12K today"; empty when there is none. */
-export function changeWords(d: number | undefined | null, tail = ' today'): string {
+export function changeWords(d: number | undefined | null, tail?: string): string {
 	if (!d) return '';
-	return `${d > 0 ? '▲' : '▼'} ${shortCount(d)}${tail}`;
+	return `${d > 0 ? '▲' : '▼'} ${shortCount(d)}${tail ?? ' ' + t('music.today')}`;
 }
 
 /** Writes 72785924 as 72,785,924. */
 export function fullCount(n: number): string {
-	return Math.round(n).toLocaleString('en-US');
+	return Math.round(n).toLocaleString(appLocale('en-US'));
 }
 
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
@@ -239,11 +241,11 @@ const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one :
 /** Turns a failed music page load into calm words. `network` is true only when HolyArrs itself could not be reached, the one case where "check the connection" is true. */
 export function musicLoadError(e: unknown, thing: 'album' | 'artist'): { text: string; network: boolean } {
 	const status = typeof e === 'object' && e && 'status' in e ? Number((e as { status: unknown }).status) : -1;
-	if (status === 0) return { text: 'HolyArrs is not answering.', network: true };
-	if (status === 404) return { text: `We could not find this ${thing}.`, network: false };
-	if (status === 400) return { text: `That ${thing} link is not valid.`, network: false };
-	if (status === 401 || status === 403) return { text: `You cannot open this ${thing}.`, network: false };
-	return { text: `This ${thing} is taking longer than usual to load.`, network: false };
+	if (status === 0) return { text: t('music.holyarrsIsNotAnswering'), network: true };
+	if (status === 404) return { text: thing === 'album' ? t('music.weCouldNotFind') : t('music.weCouldNotFind2'), network: false };
+	if (status === 400) return { text: thing === 'album' ? t('music.thatAlbumLinkIs') : t('music.thatArtistLinkIs'), network: false };
+	if (status === 401 || status === 403) return { text: thing === 'album' ? t('music.youCannotOpenThis') : t('music.youCannotOpenThis2'), network: false };
+	return { text: thing === 'album' ? t('music.thisAlbumIsTaking') : t('music.thisArtistIsTaking'), network: false };
 }
 
 /** The artist to put in the address when the album named a different one than the link did, else ''. */
@@ -265,26 +267,26 @@ export const withCover = <T extends { image?: string | null }>(list: readonly T[
 export function owned(a: Pick<PageAlbum, 'state'>, asked = false): { state: 'available' | 'partial' | 'downloading' | 'requested'; label: string } | null {
 	switch (a.state) {
 		case 'complete':
-			return { state: 'available', label: 'In your Library' };
+			return { state: 'available', label: t('music.inYourLibrary') };
 		case 'partial':
-			return { state: 'partial', label: 'Some tracks in your Library' };
+			return { state: 'partial', label: t('music.someTracksInYour') };
 		case 'downloading':
-			return { state: 'downloading', label: 'Downloading' };
+			return { state: 'downloading', label: t('music.downloading') };
 		case 'missing':
-			return { state: 'requested', label: 'Missing: wanted, no copy yet' };
+			return { state: 'requested', label: t('music.missingNoCopy') };
 	}
-	return asked ? { state: 'requested', label: 'Requested' } : null;
+	return asked ? { state: 'requested', label: t('music.requested') } : null;
 }
 
 /** Whether the Library keeps the album (any state but left out). */
 export const kept = (a: Pick<PageAlbum, 'state'>) => !!a.state && a.state !== 'not_included';
 
 export const SHELVES: { shelf: Shelf; title: string }[] = [
-	{ shelf: 'albums', title: 'Albums' },
-	{ shelf: 'singles', title: 'EPs and singles' },
-	{ shelf: 'compilations', title: 'Compilations' },
-	{ shelf: 'live', title: 'Live' },
-	{ shelf: 'other', title: 'Soundtracks, remixes and more' }
+	{ shelf: 'albums', get title() { return t('music.albums'); } },
+	{ shelf: 'singles', get title() { return t('music.epsAndSingles'); } },
+	{ shelf: 'compilations', get title() { return t('music.compilations'); } },
+	{ shelf: 'live', get title() { return t('music.live'); } },
+	{ shelf: 'other', get title() { return t('music.soundtracksRemixesAndMore'); } }
 ];
 
 /** Splits the out-already albums by shelf (newest first, as served). */
@@ -298,7 +300,7 @@ export function length(ms: number | undefined, long = false): string {
 	const s = Math.round(ms / 1000);
 	if (long) {
 		const m = Math.round(s / 60);
-		return m >= 60 ? `${Math.floor(m / 60)} hr ${m % 60} min` : `${m} min`;
+		return m >= 60 ? t('music.hrMin', { h: Math.floor(m / 60), m: m % 60 }) : t('music.min', { m });
 	}
 	return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 }
@@ -307,29 +309,29 @@ export function length(ms: number | undefined, long = false): string {
 export function kindWord(a: Pick<PageAlbum, 'type' | 'secondary_types'>): string {
 	const sec = a.secondary_types?.[0];
 	if (sec) return sec.charAt(0).toUpperCase() + sec.slice(1);
-	if (a.type === 'ep') return 'EP';
-	return a.type ? a.type.charAt(0).toUpperCase() + a.type.slice(1) : 'Album';
+	if (a.type === 'ep') return t('music.ep');
+	return a.type ? a.type.charAt(0).toUpperCase() + a.type.slice(1) : t('music.album');
 }
 
 /** A byte count as "about 1.2 GB" for the confirm line. */
 export function aboutSize(bytes: number): string {
-	if (bytes >= 1 << 30) return `about ${(bytes / (1 << 30)).toFixed(1)} GB`;
-	return `about ${Math.max(1, Math.round(bytes / (1 << 20)))} MB`;
+	if (bytes >= 1 << 30) return t('music.aboutGb', { n: (bytes / (1 << 30)).toFixed(1) });
+	return t('music.aboutMb', { n: Math.max(1, Math.round(bytes / (1 << 20))) });
 }
 
 /** What kind of act an artist is, in our words: a person is a solo artist; a group, orchestra or choir is a group. */
 export function artistKind(type?: string): string {
 	switch ((type ?? '').toLowerCase()) {
 		case 'person':
-			return 'Solo artist';
+			return t('music.soloArtist');
 		case 'group':
 		case 'orchestra':
 		case 'choir':
-			return 'Group';
+			return t('music.group');
 		case '':
 			return '';
 		default:
-			return 'Artist';
+			return t('music.artist');
 	}
 }
 
@@ -338,7 +340,7 @@ export function countryName(code?: string): string {
 	const c = (code ?? '').trim();
 	if (!/^[A-Za-z]{2}$/.test(c)) return c;
 	try {
-		return new Intl.DisplayNames(['en'], { type: 'region' }).of(c.toUpperCase()) ?? c;
+		return new Intl.DisplayNames([lang.value === 'pt-br' ? 'pt-BR' : lang.value === 'zh-cn' ? 'zh-CN' : lang.value], { type: 'region' }).of(c.toUpperCase()) ?? c;
 	} catch {
 		return c;
 	}

@@ -11,6 +11,7 @@
 	import { bytes, date } from '#lib/core/format.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { plainReason } from '#lib/core/plain.ts';
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 
 	// Recently deleted: files waiting in the holding folder. Pick some and Restore puts them back where they were; a deleted title comes back too.
 
@@ -53,26 +54,26 @@
 			const r = await api.post<{ results: RestoreResult[] }>('/holding/restore', { ids: [...picked] });
 			const ok = r.results.filter((x) => x.result === 'restored').length;
 			const bad = r.results.find((x) => x.result !== 'restored');
-			if (ok) toasts.push(ok === 1 ? '1 file restored' : `${ok} files restored`, 'ok');
-			if (bad) toasts.push(`Couldn't restore ${fileName(bad.path ?? '') || 'a file'}`, 'fail', { body: bad.result });
+			if (ok) toasts.push(t(ok === 1 ? 'library.deleted.restoredOne' : 'library.deleted.restoredMany', { n: ok }), 'ok');
+			if (bad) toasts.push(t('library.deleted.restoreNamedFailed', { name: fileName(bad.path ?? '') || t('library.deleted.aFile') }), 'fail', { body: bad.result });
 			picked = new Set();
 			await load();
 		} catch (e) {
-			toasts.push(`Couldn't restore`, 'fail', { body: message(e) });
+			toasts.push(t('mediafiles.delete.restoreFailed'), 'fail', { body: message(e) });
 		} finally {
 			busy = false;
 		}
 	}
 </script>
 
-<svelte:head><title>Recently deleted · HolyArrs</title></svelte:head>
+<svelte:head><title>{t('library.deleted.title')} · HolyArrs</title></svelte:head>
 
-<LibraryToolPage title="Recently deleted" count={loaded && !error && files.length ? `${files.length} ${files.length === 1 ? 'file' : 'files'}` : ''}>
+<LibraryToolPage title={t('library.deleted.title')} count={loaded && !error && files.length ? t('mediafiles.unit.file.' + (files.length === 1 ? 'one' : 'other'), { n: files.length }) : ''}>
 	{#snippet bar()}
 		<span class="tp-gap"></span>
 		<span class="tp-cap">
 			<Button variant="primary" icon="refresh" onclick={restore} disabled={!picked.size} {busy} data-testid="restore-deleted">
-				Restore{picked.size ? ` ${picked.size}` : ''}
+				{t('library.deleted.restore')}{picked.size ? ` ${picked.size}` : ''}
 			</Button>
 		</span>
 	{/snippet}
@@ -80,20 +81,20 @@
 {#if error}
 	<LoadError hasData={false} message={plainReason(error).text} onretry={load} />
 {:else}
-<PageLoader loading={!loaded} label="Loading deleted files">
+<PageLoader loading={!loaded} label={t('library.deleted.loading')}>
 {#if files.length === 0}
-	<EmptyState icon="trash" title="Nothing deleted." />
+	<EmptyState icon="trash" title={t('library.deleted.nothing')} />
 {:else}
 	<div class="tp-sheet">
 		<label class="all">
 			<input type="checkbox" checked={all} onchange={() => (picked = all ? new Set() : new Set(files.map((f) => f.id)))} data-testid="deleted-pick-all" />
-			Select all
+			{t('library.deleted.selectAll')}
 		</label>
 		<ul class="tp-rows">
 			{#each files as f (f.id)}
 				{@const left = daysLeft(f.expires_at)}
 				<li class="row-item" class:picked={picked.has(f.id)} data-testid="deleted-file">
-					<label class="pick"><input type="checkbox" checked={picked.has(f.id)} onchange={() => toggle(f.id)} aria-label="Select {fileName(f.path)}" /></label>
+					<label class="pick"><input type="checkbox" checked={picked.has(f.id)} onchange={() => toggle(f.id)} aria-label={t('mediafiles.list.select', { name: fileName(f.path) })} /></label>
 					<span class="tp-art" style="--poster-ratio: 2 / 3"><Poster src={art.get(f.title_id)} name={f.title} /></span>
 					<div class="grow">
 						{#if f.title_deleted}
@@ -102,7 +103,7 @@
 							<a class="name" href={to(`/library/${f.title_id}`)}>{f.title}</a>
 						{/if}
 						<span class="tp-sub path" title={f.path}>{fileName(f.path)}</span>
-						<span class="tp-sub">{bytes(f.size)} · deleted {date(f.deleted_at)}{f.title_deleted ? ' with the title' : ''}</span>
+						<span class="tp-sub">{bytes(f.size)} · {t('library.deleted.deletedOn', { date: date(f.deleted_at) })}{f.title_deleted ? ` ${t('library.deleted.withTitle')}` : ''}</span>
 					</div>
 					<span class="left" class:soon={left !== null && left <= 1} data-testid="deleted-days-left">{daysLeftWords(f.expires_at)}</span>
 				</li>

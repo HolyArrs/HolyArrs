@@ -10,6 +10,7 @@
 </script>
 
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import { createSearchEntry } from '#lib/discover/index.ts';
 	import { artistCard, inLibrary, movieCard, personCard, showCard, type Card, type LibraryAnswer } from '#lib/discover/index.ts';
 	import { createSearchArtists } from '#lib/discover/index.ts';
@@ -95,14 +96,14 @@
 
 	const scopeOptions = $derived(
 		([
-			{ value: 'all', label: 'All', icon: 'grid' },
-			{ value: 'people', label: 'People', icon: 'people' },
-			{ value: 'movie', label: 'Movies', icon: 'film' },
-			{ value: 'show', label: 'TV shows', icon: 'tv' },
-			{ value: 'music', label: 'Music', icon: 'music' }
+			{ value: 'all', label: t('discover.search.all'), icon: 'grid' },
+			{ value: 'people', label: t('discover.search.people'), icon: 'people' },
+			{ value: 'movie', label: t('discover.search.movies'), icon: 'film' },
+			{ value: 'show', label: t('discover.search.tvShows'), icon: 'tv' },
+			{ value: 'music', label: t('discover.search.music'), icon: 'music' }
 		] as { value: SearchScope; label: string; icon: IconName }[]).filter((o) => (o.value === 'show' ? partOn('shows') : o.value === 'movie' ? partOn('movies') : o.value === 'music' ? partOn('music') : true))
 	);
-	const labels: Record<Card['type'], string> = { show: 'TV shows', movie: 'Movies', music: 'Music', people: 'People' };
+	const labels = $derived<Record<Card['type'], string>>({ show: t('discover.search.tvShows'), movie: t('discover.search.movies'), music: t('discover.search.music'), people: t('discover.search.people') });
 	const order = $derived(scopeOptions.map((o) => o.value).filter((v): v is Card['type'] => v !== 'all'));
 
 
@@ -121,7 +122,7 @@
 			/* A private window: the choice just is not remembered. */
 		}
 	}
-	const whereOptions: { value: 'everywhere' | 'library'; label: string }[] = [{ value: 'everywhere', label: 'Everywhere' }, { value: 'library', label: 'In your Library' }];
+	const whereOptions = $derived<{ value: 'everywhere' | 'library'; label: string }[]>([{ value: 'everywhere', label: t('discover.search.everywhere') }, { value: 'library', label: t('discover.search.inYourLibrary') }]);
 	const markOf = (t: TitleView) => ownedMark({ key: String(t.id), kind: t.kind === 'show' ? 'show' : t.kind === 'artist' ? 'artist' : 'movie', name: t.name, titleId: t.id } as ExploreCard, t, who);
 	// While a search runs and nothing has come back yet, the page keeps what it showed before.
 	const freshTotal = $derived(order.reduce((n, t) => n + (groups[t]?.length ?? 0), 0) + (lib ? lib.titles.length + lib.albums.length + lib.people.length : 0));
@@ -412,10 +413,10 @@
 
 </script>
 
-<svelte:head><title>{searched ? `${searched} · Search` : 'Search'} · HolyArrs</title></svelte:head>
+<svelte:head><title>{searched ? t('discover.search.searchTitle', { searched }) : t('discover.search.search')} · HolyArrs</title></svelte:head>
 
 {#snippet plus(c: ExploreCard, act: 'add' | 'ask')}
-	<IconButton icon="plus" label={act === 'add' ? `Add ${c.name}` : `Ask for ${c.name}`} variant="glass" size="lg" aria-haspopup="dialog" aria-busy={flow?.busy(c) || undefined} onclick={() => void flow?.open(c, act)} />
+	<IconButton icon="plus" label={act === 'add' ? t('discover.search.addName', { name: c.name }) : t('discover.search.askFor', { name: c.name })} variant="glass" size="lg" aria-haspopup="dialog" aria-busy={flow?.busy(c) || undefined} onclick={() => void flow?.open(c, act)} />
 {/snippet}
 
 {#snippet discover(item: ProviderItem, raw: ExploreCard)}
@@ -431,8 +432,8 @@
 	{#if a && !a.title_id && !a.never_add && (manage || (session.can('ask') && !a.ask?.mine))}
 		<WideCard cover title={c.name} image={c.image} kind="artist" subtitle={c.subtitle} owned={c.owned} typed={scope === 'all'}>
 			{#snippet action()}
-				{#if manage}<Button variant="primary" icon="plus" onclick={() => addArtist?.open(a)}>Add</Button>
-				{:else}<Button variant="primary" icon="wish" onclick={() => askArtist?.open(a)}>{a.ask ? 'Ask too' : 'Ask'}</Button>{/if}
+				{#if manage}<Button variant="primary" icon="plus" onclick={() => addArtist?.open(a)}>{t('discover.search.add')}</Button>
+				{:else}<Button variant="primary" icon="wish" onclick={() => askArtist?.open(a)}>{a.ask ? t('discover.search.askToo') : t('discover.search.ask')}</Button>{/if}
 			{/snippet}
 		</WideCard>
 	{:else}
@@ -446,7 +447,7 @@
 
 {#snippet resultsSkeleton()}
 	<!-- Results-shaped placeholder while a search runs: rows of wide cards where the results will land. -->
-	<div class="results-sk" aria-busy="true" aria-label="Searching" data-testid="search-skeleton">
+	<div class="results-sk" aria-busy="true" aria-label={t('discover.search.searching')} data-testid="search-skeleton">
 		{#if scope === 'all'}
 			<SkRail kind="wide" item="var(--title-item)" count={6} titleWidth="140px" />
 			<SkRail kind="wide" item="var(--title-item)" count={6} titleWidth="90px" />
@@ -460,7 +461,7 @@
 {#snippet libraryRow()}
 	{#if libCards.length}
 		<div data-testid="search-library-row">
-			<Shelf title="In your Library" item="var(--title-item)" placeholder="wide" lines={1}>
+			<Shelf title={t('discover.search.inYourLibrary')} item="var(--title-item)" placeholder="wide" lines={1}>
 				{#each libCards as c (c.key)}<WideCard cover title={c.name} href={c.href} image={c.image} kind={c.type === 'music' ? 'artist' : c.type === 'people' ? undefined : c.type} subtitle={c.subtitle} owned={c.owned} typed={scope === 'all'} preview={c.preview} />{/each}
 			</Shelf>
 		</div>
@@ -468,39 +469,39 @@
 {/snippet}
 
 <section class="search" class:calm data-testid="search-page">
-	<h1 class="sr-only">Search</h1>
-	<div class="close-row"><Button variant="plain" icon="x" onclick={entry.exit} data-testid="search-page-close">Close</Button></div>
+	<h1 class="sr-only">{t('discover.search.search')}</h1>
+	<div class="close-row"><Button variant="plain" icon="x" onclick={entry.exit} data-testid="search-page-close">{t('discover.search.close')}</Button></div>
 	<div class="phone-field"><SearchField searchKey="" testid="search-box-phone" id="q-phone" closable={false} /></div>
 	<MetadataNotice />
 
 	{#if scopeOptions.length > 2}
 		<div class="types" data-pin-pills>
-			<SegmentedControl options={scopeOptions} value={scope} label="Look in" testid="search-scope" onchange={setScope} />
+			<SegmentedControl options={scopeOptions} value={scope} label={t('discover.search.lookIn')} testid="search-scope" onchange={setScope} />
 		</div>
 	{/if}
 
 	{#if searchField.term.trim()}
 		<div class="results-head" data-testid="search-results-head">
-			<p class="muted count" style:visibility={waiting || !searched ? 'hidden' : null}>{total} {total === 1 ? 'result' : 'results'}</p>
-			<SegmentedControl size="sm" options={whereOptions} value={onlyLib ? 'library' : 'everywhere'} label="Show results from" testid="search-only-library" onchange={(v) => setOnlyLib(v === 'library')} />
+			<p class="muted count" style:visibility={waiting || !searched ? 'hidden' : null}>{t(total === 1 ? 'discover.search.resultCount.one' : 'discover.search.resultCount.other', { n: total })}</p>
+			<SegmentedControl size="sm" options={whereOptions} value={onlyLib ? 'library' : 'everywhere'} label={t('discover.search.showResultsFrom')} testid="search-only-library" onchange={(v) => setOnlyLib(v === 'library')} />
 		</div>
 	{/if}
 
 	<div class="results" class:holding aria-live="polite" aria-busy={busy}>
-		{#if waiting}<p class="sr-only">Searching for “{searchField.term.trim()}”…</p>{/if}
+		{#if waiting}<p class="sr-only">{t('discover.search.searchingFor', { v: searchField.term.trim() })}</p>{/if}
 		{#if plainShown && plainAns}
 			<section class="plain" aria-labelledby="plain-h" data-testid="search-plain">
-				<h2 id="plain-h" class="h2">Matches for your description</h2>
-				<p class="muted understood">Understood as {understood(plainAns.query)}</p>
+				<h2 id="plain-h" class="h2">{t('discover.search.matchesForYourDescription')}</h2>
+				<p class="muted understood">{t('discover.search.understoodAs', { v: understood(plainAns.query) })}</p>
 				{#if plainAns.titles.length}
-					<Shelf title="In your Library" item="var(--title-item)" placeholder="wide" lines={1}>
+					<Shelf title={t('discover.search.inYourLibrary')} item="var(--title-item)" placeholder="wide" lines={1}>
 						{#each plainAns.titles as t (t.id)}
 							<WideCard cover title={t.name} href={to(`/library/${t.id}`)} image={t.backdrop ?? t.artwork[0]} kind={t.kind === 'artist' ? 'artist' : t.kind === 'show' ? 'show' : 'movie'} subtitle={t.year ? String(t.year) : undefined} owned={inLibrary} />
 						{/each}
 					</Shelf>
 				{/if}
 				{#if plainCards.length}
-					<Shelf title="More like that" item="var(--title-item)" placeholder="wide" lines={1}>
+					<Shelf title={t('discover.search.moreLikeThat')} item="var(--title-item)" placeholder="wide" lines={1}>
 						{#each plainCards as { item, c } (c.key)}{@render discover(item, c)}{/each}
 					</Shelf>
 				{/if}
@@ -509,14 +510,14 @@
 		{#if !searchField.term.trim() && browse.mgenre}
 			<section class="mood" aria-labelledby="mgenre-h" data-testid="search-music-genre">
 				<div class="mood-head">
-					<Button variant="plain" icon="chevronLeft" href={to('/search?kind=music')}>Browse</Button>
+					<Button variant="plain" icon="chevronLeft" href={to('/search?kind=music')}>{t('discover.search.browse')}</Button>
 					<h2 id="mgenre-h" class="h1">{browse.mgenre.replace(/\b\w/g, (m) => m.toUpperCase())}</h2>
-					<p class="muted">Music</p>
+					<p class="muted">{t('discover.search.music')}</p>
 				</div>
 				{#if browse.mgenreCards === null}
-					<div class="grid-sk" aria-busy="true" aria-label="Loading titles"><SkGrid kind="wide" min="var(--title-item)" count={12} /></div>
+					<div class="grid-sk" aria-busy="true" aria-label={t('discover.search.loadingTitles')}><SkGrid kind="wide" min="var(--title-item)" count={12} /></div>
 				{:else if browse.mgenreCards.length === 0}
-					<div class="empty"><h2 class="h2">Nothing here yet</h2><p class="muted">No {browse.mgenre} music to show right now.</p></div>
+					<div class="empty"><h2 class="h2">{t('discover.search.nothingHereYet')}</h2><p class="muted">{t('discover.search.noMusicToShow', { mgenre: browse.mgenre })}</p></div>
 				{:else}
 					<ul class="grid">
 						{#each browse.mgenreCards as c (c.key)}
@@ -528,14 +529,14 @@
 		{:else if !searchField.term.trim() && browse.cat}
 			<section class="mood" aria-labelledby="cat-h" data-testid="search-category">
 				<div class="mood-head">
-					<Button variant="plain" icon="chevronLeft" href={to(`/search${browse.cat.type === 'movies' ? '?kind=movie' : browse.cat.type === 'shows' ? '?kind=show' : ''}`)}>Browse</Button>
-					<h2 id="cat-h" class="h1">{browse.catName || 'Browse'}</h2>
-					<p class="muted">{browse.cat.type === 'shows' ? 'TV shows' : browse.cat.type === 'all' ? 'Movies and TV shows' : 'Movies'}</p>
+					<Button variant="plain" icon="chevronLeft" href={to(`/search${browse.cat.type === 'movies' ? '?kind=movie' : browse.cat.type === 'shows' ? '?kind=show' : ''}`)}>{t('discover.search.browse')}</Button>
+					<h2 id="cat-h" class="h1">{browse.catName || t('discover.search.browse2')}</h2>
+					<p class="muted">{browse.cat.type === 'shows' ? t('discover.search.tvShows') : browse.cat.type === 'all' ? t('discover.search.moviesAndTvShows') : t('discover.search.movies')}</p>
 				</div>
 				{#if browse.catItems === null}
-					<div class="grid-sk" aria-busy="true" aria-label="Loading titles"><SkGrid kind="wide" min="var(--title-item)" count={12} /></div>
+					<div class="grid-sk" aria-busy="true" aria-label={t('discover.search.loadingTitles')}><SkGrid kind="wide" min="var(--title-item)" count={12} /></div>
 				{:else if browse.catCards.length === 0}
-					<div class="empty"><h2 class="h2">Nothing here yet</h2><p class="muted">No titles fit this right now.</p></div>
+					<div class="empty"><h2 class="h2">{t('discover.search.nothingHereYet')}</h2><p class="muted">{t('discover.search.noTitlesFitThis')}</p></div>
 				{:else}
 					<ul class="grid">
 						{#each browse.catCards as { item, c } (c.key)}
@@ -547,14 +548,14 @@
 		{:else if !searchField.term.trim() && browse.mood}
 			<section class="mood" aria-labelledby="mood-h" data-testid="search-mood">
 				<div class="mood-head">
-					<Button variant="plain" icon="chevronLeft" href={to(`/search${scope === 'all' ? '' : `?kind=${scope}`}`)}>Browse</Button>
+					<Button variant="plain" icon="chevronLeft" href={to(`/search${scope === 'all' ? '' : `?kind=${scope}`}`)}>{t('discover.search.browse')}</Button>
 					<h2 id="mood-h" class="h1">{browse.mood.mood}</h2>
-					<p class="muted">{browse.moodGenre ? `${browse.moodGenre} · ` : ''}{browse.mood.type === 'shows' ? 'TV shows' : browse.mood.type === 'all' ? 'Movies and TV shows' : 'Movies'}</p>
+					<p class="muted">{browse.moodGenre ? `${browse.moodGenre} · ` : ''}{browse.mood.type === 'shows' ? t('discover.search.tvShows') : browse.mood.type === 'all' ? t('discover.search.moviesAndTvShows') : t('discover.search.movies')}</p>
 				</div>
 				{#if browse.moodItems === null}
-					<div class="grid-sk" aria-busy="true" aria-label="Loading titles"><SkGrid kind="wide" min="var(--title-item)" count={12} /></div>
+					<div class="grid-sk" aria-busy="true" aria-label={t('discover.search.loadingTitles')}><SkGrid kind="wide" min="var(--title-item)" count={12} /></div>
 				{:else if browse.moodCards.length === 0}
-					<div class="empty"><h2 class="h2">Nothing here yet</h2><p class="muted">No {browse.mood.type === 'shows' ? 'shows' : browse.mood.type === 'all' ? 'titles' : 'movies'} fit this mood right now. Try the genre page instead.</p><Button variant="secondary" href={to(browse.mood.type === 'all' ? `/explore?genre=${browse.mood.genre}` : `/explore?type=${browse.mood.type}&genre=${browse.mood.genre}`)}>Open {browse.moodGenre || 'the genre'}</Button></div>
+					<div class="empty"><h2 class="h2">{t('discover.search.nothingHereYet')}</h2><p class="muted">{browse.mood.type === 'shows' ? t('discover.search.noShowsMood') : browse.mood.type === 'all' ? t('discover.search.noTitlesMood') : t('discover.search.noMoviesMood')}</p><Button variant="secondary" href={to(browse.mood.type === 'all' ? `/explore?genre=${browse.mood.genre}` : `/explore?type=${browse.mood.type}&genre=${browse.mood.genre}`)}>{browse.moodGenre ? t('discover.search.openGenre', { genre: browse.moodGenre }) : t('discover.search.openTheGenre')}</Button></div>
 				{:else}
 					<ul class="grid">
 						{#each browse.moodCards as { item, c } (c.key)}
@@ -569,8 +570,8 @@
 			{#if recents.recent.length}
 				<section class="recent" aria-labelledby="recent-h">
 					<div class="recent-head">
-						<h2 id="recent-h" class="sec">Recent searches</h2>
-						<button type="button" class="clear-all" onclick={recents.clearRecent}>Clear<span class="sr-only"> recent searches</span></button>
+						<h2 id="recent-h" class="sec">{t('discover.search.recentSearches')}</h2>
+						<button type="button" class="clear-all" onclick={recents.clearRecent}>{t('discover.search.clear')}<span class="sr-only"> {t('discover.search.recentSearches2')}</span></button>
 					</div>
 					<div class="chips">
 						{#each recents.recent as q (q)}<Chip label={q} icon="clock" onclick={() => recents.pickRecent(q)} />{/each}
@@ -579,9 +580,9 @@
 			{/if}
 			<section class="browse" aria-labelledby="browse-h" data-testid="search-browse">
 				<!-- On the sectioned tabs the section names head the page; "Browse" stays for screen readers only. -->
-				<h2 id="browse-h" class={scope === 'music' ? 'h1' : 'sr-only'}>{scope === 'people' ? 'People' : 'Browse'}</h2>
+				<h2 id="browse-h" class={scope === 'music' ? 'h1' : 'sr-only'}>{scope === 'people' ? t('discover.search.people') : t('discover.search.browse2')}</h2>
 				{#if scope === 'people'}
-					<div class="chips people-chips" role="group" aria-label="Filter people">
+					<div class="chips people-chips" role="group" aria-label={t('discover.search.filterPeople')}>
 						{#each browse.peopleChips as c (c.value)}<Chip label={c.label} selected={browse.peopleFilter === c.value} onclick={() => { browse.peopleFilter = c.value; void browse.morePeople(); }} />{/each}
 					</div>
 				{/if}
@@ -612,7 +613,7 @@
 						{/each}
 						{#if browse.shelvesDone && (!browse.peopleEnd || browse.peopleShown.length >= SHELF_MIN)}
 							<section class="browse-section" aria-labelledby="people-popular-h" data-testid="search-people-popular">
-								<h3 id="people-popular-h" class="h1">Popular</h3>
+								<h3 id="people-popular-h" class="h1">{t('discover.search.popular')}</h3>
 								{#if browse.peopleTiles && browse.peopleTiles.length >= SHELF_MIN}
 									<ul class="tiles">
 										{#each browse.peopleTiles as t, i (t.key)}
@@ -623,7 +624,7 @@
 								<div bind:this={browse.peopleSentinel} class="more" aria-busy={browse.peopleBusy}>{#if browse.peopleBusy}<Orbit />{/if}</div>
 							</section>
 						{:else if browse.shelvesDone && !browse.shownShelves.some((x) => (x.people?.length ?? 0) >= SHELF_MIN)}
-							<p class="muted">Search for an actor, director or artist</p>
+							<p class="muted">{t('discover.search.searchForAnActor')}</p>
 						{/if}
 					{/if}
 				{:else if scope === 'music'}
@@ -636,7 +637,7 @@
 					{:else if browse.plainTiles.length}
 						<MusicTileGrid tiles={browse.plainTiles.map((t) => ({ key: t.key, name: t.name, href: t.href, covers: [t.image] }))} />
 					{:else}
-						<p class="muted">Music genres show up here once Explore has something to show.</p>
+						<p class="muted">{t('discover.search.musicGenresShowUp')}</p>
 					{/if}
 				{:else if browse.tiles === null}
 					<ul class="tiles" aria-hidden="true">
@@ -660,7 +661,7 @@
 						{#if st === null}
 							<div class="more" use:browse.near={s.id} aria-live="polite">
 								{#if s.id !== 'genres'}
-									<section class="browse-section" aria-label={`Loading ${s.title.toLowerCase()}`}>
+									<section class="browse-section" aria-label={t('discover.search.loadingSection', { title: s.title.toLowerCase() })}>
 										<h3 class="h1">{s.title}</h3>
 										<ul class="tiles" aria-hidden="true">{#each Array(cols * BROWSE_ROWS) as _, i (i)}<li class="ghost sk"></li>{/each}</ul>
 									</section>
@@ -676,31 +677,31 @@
 						</ul>
 					{/if}
 				{:else}
-					<p class="muted">Genres show up here once Explore has titles to show.</p>
+					<p class="muted">{t('discover.search.genresShowUpHere')}</p>
 				{/if}
 			</section>
 		{:else if noTMDB && total === 0}
-			<div class="empty"><h2 class="h2">The metadata server is down</h2><p class="muted">Searches and new artwork come back when it is. Try again in a minute.</p></div>
+			<div class="empty"><h2 class="h2">{t('discover.search.theMetadataServerIs')}</h2><p class="muted">{t('discover.search.searchesAndNewArtwork')}</p></div>
 		{:else if error && total === 0}
 			<p class="notice bad" role="alert">{plainReason(error).text}</p>
 		{:else if total === 0 && (pending || busy)}
 			{@render resultsSkeleton()}
 		{:else if total === 0 && searched && !plainShown}
 			<div class="empty" data-testid="search-empty">
-				<h2 class="h2">Nothing found for “{searched}”</h2>
+				<h2 class="h2">{t('discover.search.nothingFoundFor', { searched })}</h2>
 				<ul class="tips">
-					<li>Check the spelling, or use fewer words.</li>
-					<li>Add the year, such as “Dune 2021”.</li>
-					<li>Paste an id, such as tmdb:693134 or tvmaze:82.</li>
-					<li>Or describe it, such as “space movie with a robot from 2014”.</li>
+					<li>{t('discover.search.checkTheSpellingOr')}</li>
+					<li>{t('discover.search.addTheYearSuch')}</li>
+					<li>{t('discover.search.pasteAnIdSuch')}</li>
+					<li>{t('discover.search.orDescribeItSuch')}</li>
 				</ul>
-				{#if scope !== 'all'}<Button variant="secondary" onclick={() => setScope('all')}>Look everywhere</Button>{/if}
-				{#if manage}<Button variant="primary" icon="search" href={to('/settings/sources')}>Search indexers for “{searched}”</Button>{/if}
+				{#if scope !== 'all'}<Button variant="secondary" onclick={() => setScope('all')}>{t('discover.search.lookEverywhere')}</Button>{/if}
+				{#if manage}<Button variant="primary" icon="search" href={to('/settings/sources')}>{t('discover.search.searchIndexersFor', { searched })}</Button>{/if}
 			</div>
 		{:else if scope === 'all'}
 			{@render libraryRow()}
 			{#if top.length}
-				<Shelf title="Top matches" item="var(--title-item)" placeholder="wide" lines={1}>
+				<Shelf title={t('discover.search.topMatches')} item="var(--title-item)" placeholder="wide" lines={1}>
 					{#each top as c (c.key)}{@render card(c)}{/each}
 				</Shelf>
 			{/if}
@@ -749,7 +750,7 @@
 	.types :global(.ui-seg button) { min-height: 44px; padding: 0 20px; border-radius: 999px; }
 	@media (max-width: 767px) { .types :global(.ui-seg) { display: grid; width: 100%; } .types :global(.ui-seg button) { padding: 0 6px; } }
 	@media (max-width: 419px) { .types :global(.ui-seg button span) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; } }
-	.results-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-width: 0; margin-bottom: -12px; }
+	.results-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; min-width: 0; margin-bottom: -12px; }
 	.results-head .count { margin: 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.results-head :global(.ui-seg) { flex: none; }
 	.results { display: flex; flex-direction: column; gap: 32px; min-width: 0; transition: opacity var(--dur-fast) var(--ease-out); }

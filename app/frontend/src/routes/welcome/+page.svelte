@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import { STEPS, type Step } from '#lib/setup/index.ts';
 	import { createWelcomeParts } from '#lib/setup/index.ts';
 	import { createWelcomeMedia } from '#lib/setup/index.ts';
@@ -69,7 +70,7 @@
 	let announce = $state('');
 	function focusStep() {
 		document.getElementById('welcome-title')?.focus();
-		announce = `Step ${stepNo} of ${order.length}: ${head.h}`;
+		announce = t('welcome.stepOf', { n: stepNo, total: order.length, title: head.h });
 	}
 	// Back or Forward in the browser: show the step the address names. Set once the wizard is finished in this tab: a later Back, Forward or reload onto a step goes to Home instead (the step history may predate a reload).
 	const DONE_KEY = 'holyarrs.welcome.done';
@@ -134,7 +135,7 @@
 			session.s.setupOpen = false;
 		} catch {
 			leaving = false;
-			error = "Couldn't finish setup. Try again.";
+			error = t('welcome.couldnTFinishSetup');
 			loaderReady();
 			return;
 		}
@@ -243,21 +244,21 @@
 		if (importCheck && session.s.localRecent) importCheck = false;
 	});
 
-	const titles: Record<Step, { h: string; p: string }> = {
-		start: { h: 'Coming from other apps?', p: 'We can bring over your shows, movies, folders and settings. Media files stay where they are.' },
-		media: { h: 'Where’s your media?', p: 'Turn on what you collect and add its folder.' },
-		downloader: { h: 'Which app downloads?', p: 'Connect the one you use.' },
-		source: { h: 'Where should we search?', p: 'Link Prowlarr or Jackett and your sites come with it.' },
-		import: { h: 'Bring your apps', p: 'We only read them. Your media files are never moved.' },
-		done: { h: 'You’re set', p: 'Find something on Home and we’ll get it.' }
-	};
+	const titles = $derived<Record<Step, { h: string; p: string }>>({
+		start: { h: t('welcome.comingFromOtherApps'), p: t('welcome.weCanBringOver') },
+		media: { h: t('welcome.whereSYourMedia'), p: t('welcome.turnOnWhatYou') },
+		downloader: { h: t('welcome.whichAppDownloads'), p: t('welcome.connectTheOneYou') },
+		source: { h: t('welcome.whereShouldWeSearch'), p: t('welcome.linkProwlarrOrJackett') },
+		import: { h: t('welcome.bringYourApps'), p: t('welcome.weOnlyReadThem') },
+		done: { h: t('welcome.youReSet'), p: t('welcome.findSomethingOnHome') }
+	});
 	const head = $derived(
 		!firstRun
-			? { h: 'What do you use?', p: 'You can change this later.' }
+			? { h: t('welcome.whatDoYouUse'), p: t('welcome.youCanChangeThis') }
 			: step === 'done' && sourcesStep.todo.length
-				? { h: 'HolyArrs is ready', p: 'A few things are left. Finish them anytime in Settings.' }
+				? { h: t('welcome.holyarrsIsReady'), p: t('welcome.aFewThingsAre') }
 				: step === 'done' && fromApps
-					? { h: 'Welcome home', p: 'Your library is here. Your old apps keep running.' }
+					? { h: t('welcome.welcomeHome'), p: t('welcome.yourLibraryIsHere') }
 					: titles[step]
 	);
 </script>
@@ -271,10 +272,10 @@
 	<div class="sheet" class:glass={firstRun} class:light={theme.value === 'light'} data-signin-panel={firstRun ? '' : undefined}>
 	<div class="brand"><img src={to(mark)} alt={firstRun ? 'HolyArrs' : ''} width={firstRun ? 28 : 32} height={firstRun ? 28 : 32} />{#if !firstRun}<span>HolyArrs</span>{/if}</div>
 	{#if firstRun && prev && session.can('users') && (step !== 'import' || sourcesStep.moveStep === 'read')}
-		<span class="corner"><IconButton icon="chevronLeft" variant="tinted" label="Back" onclick={back} disabled={busy} /></span>
+		<span class="corner"><IconButton icon="chevronLeft" variant="tinted" label={t('welcome.back')} onclick={back} disabled={busy} /></span>
 	{/if}
 	{#if firstRun}
-		<ol class="dots" aria-label="Step {stepNo} of {order.length}">
+		<ol class="dots" aria-label={t('welcome.stepOf2', { n: stepNo, total: order.length })}>
 			{#each order as s, i (s)}<li class:done={i + 1 < stepNo} class:now={i + 1 === stepNo}></li>{/each}
 		</ol>
 	{/if}
@@ -285,11 +286,11 @@
 	{#if firstRun}<p class="sr-only" aria-live="polite">{announce}</p>{/if}
 
 	{#if !session.can('users') || (firstRun && step !== 'start' && !session.can('settings'))}
-		<p class="notice warn">Only the owner or an admin with Settings access can finish setup.</p>
+		<p class="notice warn">{t('welcome.onlyTheOwnerOr')}</p>
 	{:else if !firstRun}
 		<form class="card" onsubmit={partsStep.submitParts} data-testid="welcome">
 			<!-- Big tiles, each a real checkbox (it covers the tile, so a tap anywhere toggles it). -->
-			<div class="tiles" role="group" aria-label="Parts">
+			<div class="tiles" role="group" aria-label={t('welcome.parts')}>
 				{#each partsStep.choices as c (c.part)}
 					<label class="tile" class:on={partsStep.want[c.part]}>
 						<input type="checkbox" bind:checked={partsStep.want[c.part]} aria-label={c.label} />
@@ -301,35 +302,35 @@
 			</div>
 
 			<fieldset class="family">
-				<legend>Will family or friends ask for titles?</legend>
+				<legend>{t('welcome.willFamilyOrFriends')}</legend>
 				<div class="seg">
-					<label class:on={partsStep.family === 'no'}><input type="radio" name="family" value="no" bind:group={partsStep.family} />No, just me</label>
-					<label class:on={partsStep.family === 'yes'}><input type="radio" name="family" value="yes" bind:group={partsStep.family} />Yes</label>
+					<label class:on={partsStep.family === 'no'}><input type="radio" name="family" value="no" bind:group={partsStep.family} />{t('welcome.noJustMe')}</label>
+					<label class:on={partsStep.family === 'yes'}><input type="radio" name="family" value="yes" bind:group={partsStep.family} />{t('welcome.yes')}</label>
 				</div>
-				<p class="hint">Yes adds a Requests page.</p>
+				<p class="hint">{t('welcome.yesAddsARequests')}</p>
 			</fieldset>
 
 			{#if error || partsStep.problem}<p class="form-error" role="alert">{error || partsStep.problem}</p>{/if}
-			<Button variant="primary" size="lg" full type="submit" disabled={busy || !!partsStep.problem} {busy}>Continue</Button>
+			<Button variant="primary" size="lg" full type="submit" disabled={busy || !!partsStep.problem} {busy}>{t('welcome.continue')}</Button>
 		</form>
 	{:else if step === 'start'}
 		<div class="card" data-testid="welcome-start">
 			<div class="tiles two-up">
 				<button class="tile big" type="button" onclick={() => pickPath(true)}>
 					<Icon name="download" size={26} />
-					<span class="tile-label">Bring my apps</span>
-					<span class="tile-sub">Sonarr, Radarr, Lidarr, Overseerr…</span>
+					<span class="tile-label">{t('welcome.bringMyApps')}</span>
+					<span class="tile-sub">{t('welcome.sonarrRadarrLidarrOverseerr')}</span>
 				</button>
 				<button class="tile big" type="button" onclick={() => pickPath(false)}>
 					<Icon name="plus" size={26} />
-					<span class="tile-label">Start fresh</span>
-					<span class="tile-sub">Pick folders and a downloader.</span>
+					<span class="tile-label">{t('welcome.startFresh')}</span>
+					<span class="tile-sub">{t('welcome.pickFoldersAndA')}</span>
 				</button>
 			</div>
 		</div>
 	{:else if step === 'media'}
 		<form class="card" onsubmit={(e) => { e.preventDefault(); void mediaStep.saveMedia(false); }} data-testid="welcome-media">
-			<PageLoader loading={!mediaStep.rows.length} label="Loading folders">
+			<PageLoader loading={!mediaStep.rows.length} label={t('welcome.loadingFolders')}>
 			<ul class="rows media-list">
 				{#each mediaStep.rows as r (r.kind)}
 					<li class="frow" class:off={!mediaStep.media[r.part]}>
@@ -342,11 +343,11 @@
 							</label>
 							{#if mediaStep.media[r.part]}
 								{#if r.saved && !r.editing}
-									<div class="fsaved"><span class="path">{r.saved}</span><button type="button" class="quiet" disabled={busy} onclick={async () => { r.path = r.saved; r.editing = true; await tick(); document.getElementById(`folder-${r.kind}`)?.focus(); }} aria-label="Change {r.label} folder">Change</button></div>
+									<div class="fsaved"><span class="path">{r.saved}</span><button type="button" class="quiet" disabled={busy} onclick={async () => { r.path = r.saved; r.editing = true; await tick(); document.getElementById(`folder-${r.kind}`)?.focus(); }} aria-label={t('welcome.changeFolder', { name: r.label })}>{t('welcome.change')}</button></div>
 								{:else}
-									<input id="folder-{r.kind}" class="input" bind:value={r.path} oninput={() => (r.error = '')} aria-label="{r.label} folder" placeholder={r.hint} autocomplete="off" spellcheck="false" aria-invalid={r.error ? 'true' : undefined} aria-describedby={r.error ? `folder-${r.kind}-error` : undefined} />
+									<input id="folder-{r.kind}" class="input" bind:value={r.path} oninput={() => (r.error = '')} aria-label={t('welcome.folder', { name: r.label })} placeholder={r.hint} autocomplete="off" spellcheck="false" aria-invalid={r.error ? 'true' : undefined} aria-describedby={r.error ? `folder-${r.kind}-error` : undefined} />
 									{#if r.error}<p class="form-error" id="folder-{r.kind}-error" role="alert">{r.error}</p>{/if}
-									{#if r.editing && r.saved}<button type="button" class="quiet keep" disabled={busy} onclick={() => { r.path = r.saved; r.editing = false; r.error = ''; }}>Keep {r.saved}</button>{/if}
+									{#if r.editing && r.saved}<button type="button" class="quiet keep" disabled={busy} onclick={() => { r.path = r.saved; r.editing = false; r.error = ''; }}>{t('welcome.keep', { path: r.saved })}</button>{/if}
 								{/if}
 							{/if}
 						</div>
@@ -354,17 +355,17 @@
 				{/each}
 			</ul>
 			</PageLoader>
-			<p class="hint">On Docker, use the path inside the container.</p>
-			{#if error || mediaStep.mediaOff}<p class="form-error" role="alert">{error || 'Turn on at least one.'}</p>{/if}
-			<Button variant="primary" size="lg" full type="submit" disabled={busy || mediaStep.mediaOff} {busy}>Continue</Button>
-			<button class="alt" type="button" disabled={busy || mediaStep.mediaOff} onclick={() => mediaStep.saveMedia(true)}>Skip for now</button>
+			<p class="hint">{t('welcome.onDockerUseThe')}</p>
+			{#if error || mediaStep.mediaOff}<p class="form-error" role="alert">{error || t('welcome.turnOnAtLeast')}</p>{/if}
+			<Button variant="primary" size="lg" full type="submit" disabled={busy || mediaStep.mediaOff} {busy}>{t('welcome.continue')}</Button>
+			<button class="alt" type="button" disabled={busy || mediaStep.mediaOff} onclick={() => mediaStep.saveMedia(true)}>{t('welcome.skipForNow')}</button>
 		</form>
 	{:else if step === 'downloader'}
 		<form class="card" onsubmit={downloaderStep.saveDownloader} data-testid="welcome-downloader">
 			{#if downloaderStep.dlLoadError}
 				<LoadError hasData={false} message={downloaderStep.dlLoadError} onretry={downloaderStep.loadDownloader} />
 			{:else if downloaderStep.dlList.length}
-				<ul class="conn" aria-label="Connected downloaders">
+				<ul class="conn" aria-label={t('welcome.connectedDownloaders')}>
 					{#each downloaderStep.dlList as d (d.id)}
 						{@const test = downloaderStep.dlTests[d.id]}
 						<li>
@@ -375,19 +376,19 @@
 							{#if test && !test.ok}<p class="form-error" role="alert">{test.text}</p>{/if}
 							{#if !downloaderStep.dlForm}
 								<div class="row-acts">
-									<button type="button" class="quiet" disabled={busy} onclick={() => downloaderStep.editDl(d)} aria-label="Edit {d.name}">Edit</button>
-									<button type="button" class="quiet danger" disabled={busy} onclick={() => downloaderStep.removeDl(d)} aria-label="Remove {d.name}">Remove</button>
+									<button type="button" class="quiet" disabled={busy} onclick={() => downloaderStep.editDl(d)} aria-label={t('welcome.edit', { name: d.name })}>{t('welcome.edit2')}</button>
+									<button type="button" class="quiet danger" disabled={busy} onclick={() => downloaderStep.removeDl(d)} aria-label={t('welcome.remove', { name: d.name })}>{t('welcome.remove2')}</button>
 								</div>
 							{/if}
 						</li>
 					{/each}
 				</ul>
 				{#if !downloaderStep.dlForm}
-					<button class="add-row" type="button" disabled={busy} onclick={() => { error = ''; downloaderStep.dlAdding = true; }}><Icon name="plus" size={16} />Add another</button>
+					<button class="add-row" type="button" disabled={busy} onclick={() => { error = ''; downloaderStep.dlAdding = true; }}><Icon name="plus" size={16} />{t('welcome.addAnother')}</button>
 				{/if}
 			{/if}
 			{#if downloaderStep.dlForm}
-				<div class="tiles five" role="radiogroup" aria-label="Downloader app">
+				<div class="tiles five" role="radiogroup" aria-label={t('welcome.downloaderApp')}>
 					{#each downloaderStep.dlKinds as k (k)}
 						<label class="tile small" class:on={downloaderStep.dl.kind === k}>
 							<input type="radio" name="dlkind" value={k} checked={downloaderStep.dl.kind === k} onchange={() => downloaderStep.pickDl(k)} aria-label={kindWords[k]} />
@@ -396,30 +397,30 @@
 					{/each}
 				</div>
 				<div class="field">
-					<label for="dl-url">Address</label>
+					<label for="dl-url">{t('welcome.address')}</label>
 					<input id="dl-url" class="input" type="text" inputmode="url" bind:value={downloaderStep.dl.url} oninput={() => (downloaderStep.dlError = '')} placeholder="192.168.1.10:{downloaderStep.dlPorts[downloaderStep.dl.kind]}" autocomplete="off" spellcheck="false" aria-invalid={downloaderStep.dlError ? 'true' : undefined} aria-describedby={downloaderStep.dlError ? 'dl-url-error' : undefined} />
 					{#if downloaderStep.dlError}<p class="form-error" id="dl-url-error" role="alert">{downloaderStep.dlError}</p>{/if}
 				</div>
 				<div class="two">
 					{#if downloaderStep.dlUser}
 						<div class="field">
-							<label for="dl-user">User name</label>
+							<label for="dl-user">{t('welcome.userName')}</label>
 							<input id="dl-user" class="input" bind:value={downloaderStep.dl.username} oninput={() => (downloaderStep.dlAuth = '')} autocomplete="off" autocapitalize="none" spellcheck="false" aria-invalid={downloaderStep.dlAuth ? 'true' : undefined} aria-describedby={downloaderStep.dlAuth ? 'dl-user-error' : undefined} />
 								{#if downloaderStep.dlAuth}<p class="form-error" id="dl-user-error" role="alert">{downloaderStep.dlAuth}</p>{/if}
 						</div>
 					{/if}
 					<div class="field">
-						<label for="dl-secret">{downloaderStep.dl.kind === 'sabnzbd' ? 'API key' : 'Password'}</label>
+						<label for="dl-secret">{downloaderStep.dl.kind === 'sabnzbd' ? t('welcome.apiKeyLabel') : t('welcome.passwordLabel')}</label>
 						<input id="dl-secret" class="input" type="password" bind:value={downloaderStep.dl.secret} autocomplete="new-password" />
 					</div>
 				</div>
 			{/if}
 			{#if error}<p class="form-error" role="alert">{error}</p>{/if}
-			<Button variant="primary" size="lg" full type="submit" disabled={busy} {busy}>{downloaderStep.dlEditing != null ? 'Save' : downloaderStep.dlForm ? `Connect ${kindWords[downloaderStep.dl.kind]}` : 'Continue'}</Button>
+			<Button variant="primary" size="lg" full type="submit" disabled={busy} {busy}>{downloaderStep.dlEditing != null ? t('welcome.save') : downloaderStep.dlForm ? t('welcome.connect', { name: kindWords[downloaderStep.dl.kind] }) : t('welcome.continue')}</Button>
 			{#if downloaderStep.dlForm && downloaderStep.dlList.length}
-				<button class="alt" type="button" disabled={busy} onclick={() => { error = ''; downloaderStep.dlError = ''; downloaderStep.dlAdding = false; downloaderStep.dlEditing = null; downloaderStep.dl = emptyForm(); }}>Cancel</button>
+				<button class="alt" type="button" disabled={busy} onclick={() => { error = ''; downloaderStep.dlError = ''; downloaderStep.dlAdding = false; downloaderStep.dlEditing = null; downloaderStep.dl = emptyForm(); }}>{t('welcome.cancel')}</button>
 			{:else}
-				<button class="alt" type="button" disabled={busy} onclick={downloaderStep.afterDownloader}>Skip for now</button>
+				<button class="alt" type="button" disabled={busy} onclick={downloaderStep.afterDownloader}>{t('welcome.skipForNow')}</button>
 			{/if}
 		</form>
 	{:else if step === 'source'}
@@ -427,9 +428,9 @@
 			<ConnectBridge onchange={sourcesStep.loadSources} compact />
 			<div class="foot">
 				{#if sourcesStep.sources > 0}
-					<Button variant="primary" size="lg" full type="button" disabled={busy} onclick={() => go('done')}>Continue</Button>
+					<Button variant="primary" size="lg" full type="button" disabled={busy} onclick={() => go('done')}>{t('welcome.continue')}</Button>
 				{:else}
-					<button class="alt" type="button" disabled={busy} onclick={() => go('done')}>Skip for now</button>
+					<button class="alt" type="button" disabled={busy} onclick={() => go('done')}>{t('welcome.skipForNow')}</button>
 				{/if}
 			</div>
 		</div>
@@ -440,28 +441,28 @@
 			{/if}
 			<MoveFlow embedded={{ query: sourcesStep.IMPORT_QUERY, ondone: sourcesStep.afterImport, onstep: (s) => (sourcesStep.moveStep = s) }} />
 			{#if sourcesStep.moveStep === 'read'}
-				<button class="alt" type="button" disabled={busy} onclick={() => pickPath(false)}>Start fresh instead</button>
+				<button class="alt" type="button" disabled={busy} onclick={() => pickPath(false)}>{t('welcome.startFreshInstead')}</button>
 			{/if}
 		</div>
 	{:else}
 		<div class="card" data-testid="welcome-done">
 			{#if sourcesStep.haveSet.length}
-				<ul class="todo" aria-label="Set up">
+				<ul class="todo" aria-label={t('welcome.setUp')}>
 					{#each sourcesStep.haveSet as h (h)}
 						<li><span class="todo-row"><span class="set-name"><span class="set-tick" aria-hidden="true"><Icon name="check" size={14} stroke={2.5} /></span><span>{h}</span></span></span></li>
 					{/each}
 				</ul>
 			{/if}
 			{#if sourcesStep.todo.length}
-				<ul class="todo" aria-label="Still to do">
-					{#each sourcesStep.todo as t (t.label)}
-						<li><a href={to(t.path)} onclick={(e) => { e.preventDefault(); void home(t.path); }}><span>{t.label}</span><span class="todo-end"><span class="todo-state">Not set</span><Icon name="chevronRight" size={16} /></span></a></li>
+				<ul class="todo" aria-label={t('welcome.stillToDo')}>
+					{#each sourcesStep.todo as item (item.label)}
+						<li><a href={to(item.path)} onclick={(e) => { e.preventDefault(); void home(item.path); }}><span>{item.label}</span><span class="todo-end"><span class="todo-state">{t('welcome.notSet')}</span><Icon name="chevronRight" size={16} /></span></a></li>
 					{/each}
 				</ul>
 			{/if}
 			{#if error}<p class="form-error" role="alert">{error}</p>{/if}
-			<Button variant="primary" size="lg" full type="button" disabled={busy} {busy} onclick={() => home()}>Open Home</Button>
-			<button class="alt" type="button" disabled={busy} onclick={invite}>Invite family</button>
+			<Button variant="primary" size="lg" full type="button" disabled={busy} {busy} onclick={() => home()}>{t('welcome.openHome')}</Button>
+			<button class="alt" type="button" disabled={busy} onclick={invite}>{t('welcome.inviteFamily')}</button>
 		</div>
 	{/if}
 	</div>

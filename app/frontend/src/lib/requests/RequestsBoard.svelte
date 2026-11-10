@@ -1,5 +1,6 @@
 <script lang="ts">
 	// The Requests page for approvers. One toolbar like Downloads: the status tabs as a pill group on the left, the Filter button (status and type) on the right. Each card is a small window: a dark card with the title's wide art and a frosted sheet holding who asked and the answers.
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import Icon, { type IconName } from '#lib/ui/Icon.svelte';
 	import Avatar from '#lib/ui/Avatar.svelte';
 	import StatusIcon, { statusKey, type StatusKey } from '#lib/ui/StatusIcon.svelte';
@@ -39,18 +40,15 @@
 	});
 
 	const types: { k: 'all' | 'movie' | 'show' | 'artist'; label: string; icon: IconName }[] = [
-		{ k: 'all', label: 'All', icon: 'library' },
-		{ k: 'movie', label: 'Movies', icon: 'film' },
-		{ k: 'show', label: 'TV shows', icon: 'tv' },
-		{ k: 'artist', label: 'Music', icon: 'music' }
+		{ k: 'all', get label() { return t('requests.board.kindAll'); }, icon: 'library' },
+		{ k: 'movie', get label() { return t('requests.cards.kind.movie'); }, icon: 'film' },
+		{ k: 'show', get label() { return t('requests.cards.kind.show'); }, icon: 'tv' },
+		{ k: 'artist', get label() { return t('requests.cards.kind.artist'); }, icon: 'music' }
 	];
 
 	// What an empty tab says.
-	const calm: Record<string, { title: string; text: string }> = {
-		pending: { title: 'You’re all caught up.', text: 'New requests show up here.' },
-		processing: { title: 'Nothing in progress.', text: 'Approved requests stay here until they’re ready.' },
-		done: { title: 'Nothing done yet.', text: 'Ready and declined requests end up here.' }
-	};
+	const calm = (tab: string): { title: string; text: string } | undefined =>
+		['pending', 'processing', 'done'].includes(tab) ? { title: t(`requests.board.calm.${tab}.title`), text: t(`requests.board.calm.${tab}.text`) } : undefined;
 
 	// The status line with what the page knows: not out yet (from the release and air dates). Partly in the Library ("1 of 2 ready") needs which asked seasons and albums are in the Library, which the asks list does not carry yet.
 	const firstAir = (a: Ask) => (season: number) => {
@@ -82,8 +80,8 @@
 	};
 	/** Declined by whom, only when the page knows a display name (an account name alone is not said). */
 	const stDeclinedBy = (a: Ask) => {
-		if (!a.decided_by) return '';
-		const name = ctx.decided(a).replace(/^Declined by\s*/, '').trim();
+		if (!a.decided_by || a.state !== 'turned_down') return '';
+		const name = ctx.decidedBy(a);
 		return name && name !== a.decided_by.name ? name : '';
 	};
 	/** The detail after the word, from what the ask really carries. */
@@ -91,7 +89,7 @@
 		if (l.stage === 'ready' && a.available_at) return whenDate(a.available_at);
 		if (l.stage === 'declined') {
 			const by = stDeclinedBy(a);
-			return by ? `By ${by}` : a.decided_at ? whenDate(a.decided_at) : '';
+			return by ? t('requests.board.by', { name: by }) : a.decided_at ? whenDate(a.decided_at) : '';
 		}
 		// The server's reason, as a short tail on the capsule (the window says it in full).
 		if (l.stage === 'failed') return (l.reason ?? '').replace(/\.$/, '');
@@ -106,17 +104,18 @@
 	// The picked status belongs to one tab: it clears when the tab changes by any path, and when it no longer exists in that tab.
 	let statusPick = $state<{ tab: ApproverTab | ''; word: string }>({ tab: '', word: '' });
 	/** The statuses in one tab, in the page's order (Processing: failed first). */
-	const FLOW = ['Waiting', 'Upcoming', 'Searching', 'Downloading', 'Importing', 'Processing', 'Ready'];
+	const flow = () => ['waiting', 'upcoming', 'searching', 'downloading', 'importing', 'processing', 'ready'].map((k) => t(`requests.life.${k}`));
 	const statusesIn = (t: ApproverTab) => {
-		const n = new Map<string, { count: number; tone: Life['tone'] }>();
+		const n = new Map<string, { count: number; tone: Life['tone']; key: string }>();
 		for (const a of ctx.viewed) {
 			if (tabOfAsk(a) !== t) continue;
 			const w = statusOf(a);
 			const x = n.get(w);
-			n.set(w, { count: (x?.count ?? 0) + 1, tone: x?.tone ?? lifeOf(a).tone });
+			n.set(w, { count: (x?.count ?? 0) + 1, tone: x?.tone ?? lifeOf(a).tone, key: x?.key ?? lifeOf(a).status });
 		}
 		// Failed first (it needs you), then the order an ask moves through, Declined last.
-		const rank = (x: { word: string; tone: Life['tone'] }) => (x.tone === 'bad' ? 0 : x.tone === 'off' ? 100 : FLOW.indexOf(x.word) + 1 || 50);
+		const order = flow();
+		const rank = (x: { word: string; tone: Life['tone'] }) => (x.tone === 'bad' ? 0 : x.tone === 'off' ? 100 : order.indexOf(x.word) + 1 || 50);
 		return [...n].map(([word, x]) => ({ word, ...x })).sort((x, y) => rank(x) - rank(y));
 	};
 	// Kept even when a Type pick leaves no match: the empty state says so and offers Show all, so the user's filter never changes by itself.
@@ -160,7 +159,7 @@
 	};
 
 	// What the ask is for, in words that fit a card.
-	const kindOf = (a: Ask) => (a.kind === 'show' ? 'TV show' : a.kind === 'artist' ? 'Music' : 'Movie');
+	const kindOf = (a: Ask) => t(a.kind === 'show' ? 'requests.kind.show' : a.kind === 'artist' ? 'requests.kind.artist' : 'requests.kind.movie');
 	const wants = (a: Ask) => askedFor(a, { seasons: ctx.info(a)?.seasons.length });
 
 	// Approving shows its answer on the card for a beat, then the card leaves (Undo stays in the toast).
@@ -298,7 +297,7 @@
 		if (!next) return;
 		openId = next.id;
 		// Read back from the window's own position, so the words match what it shows.
-		void tick().then(() => (said = `${at + 1} of ${cardsShown.length}: ${next.name}`));
+		void tick().then(() => (said = t('requests.board.said', { pos: at + 1, total: cardsShown.length, name: next.name })));
 	}
 	function winKeys(e: KeyboardEvent) {
 		if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
@@ -318,29 +317,29 @@
 <div class="desktop" data-testid="requests-desktop">
 	<div class="toolbar">
 		<div class="tcap">
-		<div class="tabs" role="group" aria-label="Status">
-			{#each approverTabs as t (t.tab)}
-				{@const n = ctx.approverCounts[t.tab] ?? 0}
-				{@const bad = t.tab === 'processing' ? failedCount : 0}
-				{@const here = ctx.approverTab === t.tab}
+		<div class="tabs" role="group" aria-label={t('requests.board.status')}>
+			{#each approverTabs as tb (tb.tab)}
+				{@const n = ctx.approverCounts[tb.tab] ?? 0}
+				{@const bad = tb.tab === 'processing' ? failedCount : 0}
+				{@const here = ctx.approverTab === tb.tab}
 				<div class="pw" class:on={here} role="presentation">
-					<button type="button" class="tab" class:zero={!n} aria-pressed={here} aria-label="{t.label} {n}{bad ? `, ${bad} failed` : ''}{here && status ? `, showing ${status}` : ''}" onclick={() => pickTab(t.tab)}>{t.label}<span class="n" class:wait={t.tab === 'pending' && n}>{n}</span>{#if bad}<span class="fail-dot" aria-hidden="true"></span>{/if}</button>
+					<button type="button" class="tab" class:zero={!n} aria-pressed={here} aria-label={t('requests.board.tabLabel', { label: tb.label, n }) + (bad ? t('requests.board.tabFailed', { n: bad }) : '') + (here && status ? t('requests.board.tabShowing', { status }) : '')} onclick={() => pickTab(tb.tab)}>{tb.label}<span class="n" class:wait={tb.tab === 'pending' && n}>{n}</span>{#if bad}<span class="fail-dot" aria-hidden="true"></span>{/if}</button>
 				</div>
 			{/each}
 		</div>
 		</div>
 		<div class="right">
 			{#if ctx.reports >= 0}
-				<a class="rp-btn" href={to('/requests/reports')} data-testid="reports-link" aria-label="Reports{ctx.reports ? `, ${ctx.reports} open` : ''}"><Icon name="alert" size={16} /><span class="rp-v">Reports</span>{#if ctx.reports}<span class="rp-n" aria-hidden="true">{ctx.reports}</span>{/if}</a>
+				<a class="rp-btn" href={to('/requests/reports')} data-testid="reports-link" aria-label={ctx.reports ? t('requests.board.reportsOpen', { n: ctx.reports }) : t('requests.reports.title')}><Icon name="alert" size={16} /><span class="rp-v">{t('requests.reports.title')}</span>{#if ctx.reports}<span class="rp-n" aria-hidden="true">{ctx.reports}</span>{/if}</a>
 			{/if}
 			{#if ctx.approverTab === 'pending' && toApprove.length > 1}
-				<button type="button" class="approve-all" in:fade={{ duration: ms(200) }} onclick={() => ctx.approve(toApprove)}><Icon name="check" size={16} />Approve all<span class="aa-n">{toApprove.length}</span></button>
+				<button type="button" class="approve-all" in:fade={{ duration: ms(200) }} onclick={() => ctx.approve(toApprove)}><Icon name="check" size={16} />{t('requests.board.approveAll')}<span class="aa-n">{toApprove.length}</span></button>
 			{/if}
 			<RequestsFilter {ctx} {types} {subs} {hasSubs} {subsTotal} {filterCount} {status} {toneOf} {setStatus} {ms} bind:open={sfMenu} bind:btn={sfBtn} />
 		</div>
 	</div>
 		{#snippet stDecline(a: Ask)}
-			<button type="button" class="b no" aria-label="Decline {a.name}" data-testid="ask-decline" onclick={() => ctx.turnDown([a])}><Icon name="x" size={15} /><span class="bl">Decline</span></button>
+			<button type="button" class="b no" aria-label={t('requests.window.declineName', { name: a.name })} data-testid="ask-decline" onclick={() => ctx.turnDown([a])}><Icon name="x" size={15} /><span class="bl">{t('requests.window.decline')}</span></button>
 		{/snippet}
 		{#snippet stIc(l: Life, size: number)}
 			<span class="st-i" aria-hidden="true"><StatusIcon status={stKey(l)} {size} /></span>
@@ -361,7 +360,7 @@
 				{#if can}{@render stDecline(a)}{/if}
 			{/if}
 		{/snippet}
-		<ul class="cards" aria-label="Requests" in:fade={{ duration: ms(260) }}>
+		<ul class="cards" aria-label={t('requests.board.requests')} in:fade={{ duration: ms(260) }}>
 			{#each cardsShown as a, i (a.id)}
 				{@const w = ctx.who(a)}
 				{@const isKid = !!w.kid || /\(kid\)\s*$/i.test(w.name)}
@@ -370,28 +369,28 @@
 				{@const wide = proxied(banner(a)) || null}
 				<li class="bc" data-ask={a.id} class:music={a.kind === 'artist'} class:answered={!waiting(a)} class:st-row={!waiting(a) && !ctx.isPending(a.id)} animate:flip={{ duration: ms(340), easing: cubicOut }} in:fly={{ y: 14, duration: ms(420), delay: ms(Math.min(i, 8) * 45), easing: cubicOut }} out:fade={{ duration: ms(220) }}>
 					<!-- The whole card opens the window; the answers sit above this layer. -->
-					<button type="button" class="open" aria-label="Open {a.name}, asked by {w.name}" aria-haspopup="dialog" onclick={(e) => void show(a, e.currentTarget)}></button>
-					{#if askHref(a)}<a class="cl-go" href={to(askHref(a))} aria-label="{a.kind === 'artist' ? 'Artist' : a.kind === 'show' ? 'TV show' : 'Movie'} page for {a.name}" title="{a.kind === 'artist' ? 'Artist' : a.kind === 'show' ? 'TV show' : 'Movie'} page"><Icon name="arrowUpRight" size={16} /></a>{/if}
+					<button type="button" class="open" aria-label={t('requests.board.open', { name: a.name, who: w.name })} aria-haspopup="dialog" onclick={(e) => void show(a, e.currentTarget)}></button>
+					{#if askHref(a)}<a class="cl-go" href={to(askHref(a))} aria-label={t(a.kind === 'artist' ? 'requests.board.pageForArtist' : a.kind === 'show' ? 'requests.board.pageForShow' : 'requests.board.pageForMovie', { name: a.name })} title={t(a.kind === 'artist' ? 'requests.window.pageArtist' : a.kind === 'show' ? 'requests.window.pageShow' : 'requests.window.pageMovie')}><Icon name="arrowUpRight" size={16} /></a>{/if}
 					<div class="ban" class:noart={!wide && !photo && !a.poster}>
 						{#if wide}<img class="ban-img" src={wide} alt="" loading="lazy" decoding="async" />{:else if photo}<span class="ban-img" aria-hidden="true" style:background-image={`url("${photo}")`}></span>{:else if a.poster}<span class="ban-img soft" aria-hidden="true" style:background-image={`url("${proxied(a.poster)}")`}></span>{/if}
 					</div>
 					<div class="top">
-						<div class="ban-cap">{#if ctx.isNew(a.id)}<span class="new-mark" data-testid="ask-new">New</span>{/if}<h2 class="ban-t">{a.name}</h2><span class="ban-f">{#if a.four_k}<span class="ap4k-tag" title="Asked for a 4K copy, approved on its own">4K</span>{/if}{[kindOf(a), a.year, wants(a)].filter(Boolean).join(' · ')}</span></div>
+						<div class="ban-cap">{#if ctx.isNew(a.id)}<span class="new-mark" data-testid="ask-new">{t('requests.board.new')}</span>{/if}<h2 class="ban-t">{a.name}</h2><span class="ban-f">{#if a.four_k}<span class="ap4k-tag" title={t('requests.board.fourKTitle')}>4K</span>{/if}{[kindOf(a), a.year, wants(a)].filter(Boolean).join(' · ')}</span></div>
 					</div>
 					<div class="sheet-b">
 					<div class="body">
-						<span class="who"><Avatar name={w.name} src={w.avatar} size={26} /><span class="gl-id"><span class="gl-n"><b>{w.name.replace(/\s*\(kid\)\s*$/i, '')}</b>{#if isKid}<KidMark label="Kid" size="sm" />{/if}</span><span class="gl-when">Asked <time datetime={a.asked_at} title={dateTime(a.asked_at)}>{agoLong(a.asked_at)}</time>{#if watchlistLine(a.people, undefined)}<span data-testid="ask-from-watchlist"> · from Plex watchlist</span>{/if}</span></span></span>
+						<span class="who"><Avatar name={w.name} src={w.avatar} size={26} /><span class="gl-id"><span class="gl-n"><b>{w.name.replace(/\s*\(kid\)\s*$/i, '')}</b>{#if isKid}<KidMark label={t('requests.window.kid')} size="sm" />{/if}</span><span class="gl-when">{t('requests.board.asked')} <time datetime={a.asked_at} title={dateTime(a.asked_at)}>{agoLong(a.asked_at)}</time>{#if watchlistLine(a.people, undefined)}<span data-testid="ask-from-watchlist">{` · ${t('requests.board.fromPlex')}`}</span>{/if}</span></span></span>
 					</div>
 					<div class="foot" inert={approving.has(a.id)}>
 						{#if waiting(a)}
-							<button type="button" class="b no" aria-label="Decline {a.name}" data-testid="ask-decline" onclick={() => ctx.turnDown([a])}><Icon name="x" size={15} /><span class="bl">Decline</span></button>
-							<button type="button" class="b yes" aria-label="Approve {a.name}" data-testid="ask-approve" onclick={() => approveOne(a)}><Icon name="check" size={15} /><span class="bl">Approve</span></button>
+							<button type="button" class="b no" aria-label={t('requests.window.declineName', { name: a.name })} data-testid="ask-decline" onclick={() => ctx.turnDown([a])}><Icon name="x" size={15} /><span class="bl">{t('requests.window.decline')}</span></button>
+							<button type="button" class="b yes" aria-label={t('requests.window.approveName', { name: a.name })} data-testid="ask-approve" onclick={() => approveOne(a)}><Icon name="check" size={15} /><span class="bl">{t('requests.window.approve')}</span></button>
 						{:else if !ctx.isPending(a.id)}
 							{@render stRow(a, life)}
 						{:else}
 							<span class="said">
 								{#if ctx.isPending(a.id)}
-									<span class="state">Sending…</span>
+									<span class="state">{t('requests.window.sending')}</span>
 								{:else}
 									<!-- The status word only; the window says who declined. -->
 									<span class="state tone-{life.tone}"><span class="dot"></span>{life.label}</span>
@@ -402,19 +401,19 @@
 					</div>
 					<span class="life tone-{approving.has(a.id) ? 'ok' : life.tone}" aria-hidden="true"><span class="fill" style:transform="scaleX({(approving.has(a.id) ? 100 : life.pct) / 100})"></span></span>
 					{#if approving.has(a.id)}
-						<span class="done" in:fade={{ duration: ms(180) }}><span class="done-ic" in:fly={{ y: 6, duration: ms(320), easing: cubicOut }}><Icon name="check" size={22} /></span>Approved</span>
+						<span class="done" in:fade={{ duration: ms(180) }}><span class="done-ic" in:fly={{ y: 6, duration: ms(320), easing: cubicOut }}><Icon name="check" size={22} /></span>{t('requests.parts.approved')}</span>
 					{/if}
 				</li>
 			{:else}
 					<li class="calm">
 						<span class="calm-ic"><Icon name="check" size={24} /></span>
 						{#if filterCount}
-							<h2>{status ? `Nothing ${status.toLowerCase()} here.` : `No ${(types.find((t) => t.k === ctx.kind)?.label ?? '').toLowerCase()} requests here.`}</h2>
-							<p>Other requests are hidden by the filter.</p>
-							<button type="button" class="calm-all" onclick={showAll}>Show all</button>
+							<h2>{status ? t('requests.board.nothingStatus', { status: status.toLowerCase() }) : t('requests.board.noKind', { kind: (types.find((ty) => ty.k === ctx.kind)?.label ?? '').toLowerCase() })}</h2>
+							<p>{t('requests.board.hidden')}</p>
+							<button type="button" class="calm-all" onclick={showAll}>{t('requests.board.showAll')}</button>
 						{:else}
-							<h2>{calm[ctx.approverTab]?.title ?? 'Nothing here right now.'}</h2>
-							<p>{calm[ctx.approverTab]?.text ?? ''}</p>
+							<h2>{calm(ctx.approverTab)?.title ?? t('requests.board.nothingNow')}</h2>
+							<p>{calm(ctx.approverTab)?.text ?? ''}</p>
 						{/if}
 					</li>
 			{/each}
@@ -424,12 +423,12 @@
 <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_noninteractive_element_interactions -->
 <dialog class="win" tabindex="-1" onkeydown={winKeys} bind:this={win} aria-labelledby="stage-title-{openId}" oncancel={cancel} onclose={closed} onclick={(e) => e.target === win && hide()}>
 	{#if openAsk}
-		<button type="button" class="close" aria-label="Close" onclick={hide}><Icon name="x" size={18} /></button>
+		<button type="button" class="close" aria-label={t('requests.board.close')} onclick={hide}><Icon name="x" size={18} /></button>
 		{#if cardsShown.length > 1 && at >= 0}
 			<div class="steps-nav">
-				<button type="button" class="nav" aria-label="Previous request" disabled={at <= 0} onclick={() => step(-1)}><Icon name="chevronLeft" size={18} /></button>
-				<span class="pos">{at + 1} of {cardsShown.length}</span>
-				<button type="button" class="nav" aria-label="Next request" disabled={at >= cardsShown.length - 1} onclick={() => step(1)}><Icon name="chevronRight" size={18} /></button>
+				<button type="button" class="nav" aria-label={t('requests.board.previous')} disabled={at <= 0} onclick={() => step(-1)}><Icon name="chevronLeft" size={18} /></button>
+				<span class="pos">{t('requests.board.pos', { pos: at + 1, total: cardsShown.length })}</span>
+				<button type="button" class="nav" aria-label={t('requests.board.next')} disabled={at >= cardsShown.length - 1} onclick={() => step(1)}><Icon name="chevronRight" size={18} /></button>
 			</div>
 		{/if}
 		<div class="win-in"><RequestWindow {ctx} single={openAsk} choose /></div>

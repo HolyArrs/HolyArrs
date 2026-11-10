@@ -1,6 +1,8 @@
 // Fetch client with request sharing, early boot asks, csrf and sign-out handling.
 import { to } from './paths.ts';
 import { registerPictures } from './pictures.ts';
+import { t } from '#lib/core/i18n/i18n.svelte.ts';
+import { serverWords } from '#lib/core/i18n/server-words.ts';
 
 export class ApiError extends Error {
 	status: number;
@@ -116,7 +118,7 @@ export function createClient(fetchFn: FetchFn = (i, o) => fetch(i, o), early: ()
 			res = ahead ? await ahead.catch(ask) : await ask();
 		} catch (e) {
 			if (e instanceof DOMException && e.name === 'AbortError') throw e;
-			throw new ApiError('HolyArrs is not answering. Check that it is running.', 0);
+			throw new ApiError(t('core.api.notAnswering'), 0);
 		}
 		seen?.(res);
 		if (res.status === 204) return undefined as T;
@@ -137,7 +139,8 @@ export function createClient(fetchFn: FetchFn = (i, o) => fetch(i, o), early: ()
 			}
 			if (res.status === 403 && data.code === 'reauth' && typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('holyarrs:reauth', { detail: { method, path } }));
 			const ra = Number(res.headers.get('Retry-After'));
-			const msg = typeof data.error === 'string' && data.error ? data.error : `Request failed (${res.status})`;
+			// message is shown in the picked language; body.error keeps the server's English for matching.
+			const msg = typeof data.error === 'string' && data.error ? serverWords(data.error) : t('core.api.requestFailed', { status: res.status });
 			throw new ApiError(msg, res.status, data, Number.isFinite(ra) && ra > 0 ? ra : null);
 		}
 		if (data && typeof data === 'object' && 'pictures' in data) registerPictures(data.pictures);
@@ -218,7 +221,7 @@ export const api = createClient();
 export function message(e: unknown): string {
 	if (e instanceof ApiError) return e.message;
 	if (e instanceof Error) return e.message;
-	return 'Something went wrong.';
+	return t('core.api.wentWrong');
 }
 
 // Each caller gets its own copy so one cannot change what another reads, and its own abort.

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	// Follow toggle for a title or artist, synced with the server.
 	import ActionButton from './ActionButton.svelte';
 	import { followHint, followLabel, followPath, setFollow, type FollowTarget } from './follow.ts';
@@ -25,7 +26,7 @@
 		try {
 			if (target) on = await setFollow(api, target, !on);
 		} catch (err) {
-			toasts.push(`Couldn't update follow`, 'fail', { body: message(err) });
+			toasts.push(t('ui.followButton.couldntUpdate'), 'fail', { body: message(err) });
 		} finally {
 			busy = false;
 		}

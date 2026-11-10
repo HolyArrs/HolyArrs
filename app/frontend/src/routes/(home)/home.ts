@@ -5,13 +5,14 @@ import type { DownloadRow } from '#lib/core/types.ts';
 import { stageOf } from '#lib/downloads/index.ts';
 import type { CalendarEntry, HealthCheck, TitleView } from '#lib/core/types.ts';
 import type { Fresh } from '#lib/ui/fresh.ts';
+import { t, appLocale } from '#lib/core/i18n/i18n.svelte.ts';
 
 /** downloadLine is the meta line under a download card: percent and time left. */
 export function downloadLine(d: Pick<DownloadRow, 'progress' | 'eta' | 'state' | 'label'>): string {
-	if (d.state === 'queued') return 'Waiting to start';
-	if (d.state === 'stalled') return 'Stalled';
+	if (d.state === 'queued') return t('home.waitingToStart');
+	if (d.state === 'stalled') return t('home.stalled');
 	const pct = Math.round(Math.max(0, Math.min(1, d.progress)) * 100);
-	return d.eta ? `${pct}% · ${duration(d.eta)} left` : `${pct}%`;
+	return d.eta ? t('home.left', { pct: pct, time: duration(d.eta) }) : `${pct}%`;
 }
 
 /** downloadSubtitle names what a download covers: an episode range, an album or the version. */
@@ -96,20 +97,21 @@ export function healthFix(kind: HealthCheck['kind']): string {
 
 // A health problem in a few words: what it is about (one, many) and why (one, many), by state.
 // Trailers comes from the server but is not in the HealthCheck type yet, so it is named here too.
-const healthWords: Record<HealthCheck['kind'] | 'trailers' | 'key_kit', { one: string; many: string; error: [string, string]; warning: [string, string] }> = {
-	library_folder: { one: 'Library folder', many: 'Library folders', error: ["can't be reached", "can't be reached"], warning: ['needs a look', 'need a look'] },
-	disk_space: { one: 'Library folder', many: 'Library folders', error: ['out of space', 'out of space'], warning: ['running low on space', 'running low on space'] },
-	source: { one: 'Source', many: 'Sources', error: ['not answering', 'not answering'], warning: ['has a problem', 'have a problem'] },
-	downloader: { one: 'Downloader', many: 'Downloaders', error: ['not answering', 'not answering'], warning: ['has a problem', 'have a problem'] },
-	backups: { one: 'Backups', many: 'Backups', error: ['not being made', 'not being made'], warning: ['getting old', 'getting old'] },
-	update: { one: 'HolyArrs update', many: 'HolyArrs updates', error: ['check failed', 'check failed'], warning: ['waiting', 'waiting'] },
-	config_disk: { one: 'Config folder', many: 'Config folder', error: ['almost out of space', 'almost out of space'], warning: ['running low on space', 'running low on space'] },
-	config_folder: { one: 'Config folder', many: 'Config folder', error: ['lost if the container is recreated', 'lost if the container is recreated'], warning: ['needs a look', 'needs a look'] },
-	waiting_downloads: { one: 'Downloads', many: 'Downloads', error: ['waiting for their files', 'waiting for their files'], warning: ['waiting for their files', 'waiting for their files'] },
+type HealthKind = HealthCheck['kind'] | 'trailers' | 'key_kit';
+const healthWords = (): Record<HealthKind, { one: string; many: string; error: [string, string]; warning: [string, string] }> => ({
+	library_folder: { one: t('home.libraryFolder'), many: t('home.libraryFolders'), error: [t('home.canTBeReached'), t('home.canTBeReached')], warning: [t('home.needsALook'), t('home.needALook')] },
+	disk_space: { one: t('home.libraryFolder'), many: t('home.libraryFolders'), error: [t('home.outOfSpace'), t('home.outOfSpace')], warning: [t('home.runningLowOnSpace'), t('home.runningLowOnSpace')] },
+	source: { one: t('home.source'), many: t('home.sources'), error: [t('home.notAnswering'), t('home.notAnswering')], warning: [t('home.hasAProblem'), t('home.haveAProblem')] },
+	downloader: { one: t('home.downloader'), many: t('home.downloaders'), error: [t('home.notAnswering'), t('home.notAnswering')], warning: [t('home.hasAProblem'), t('home.haveAProblem')] },
+	backups: { one: t('home.backups'), many: t('home.backups'), error: [t('home.notBeingMade'), t('home.notBeingMade')], warning: [t('home.gettingOld'), t('home.gettingOld')] },
+	update: { one: t('home.holyarrsUpdate'), many: t('home.holyarrsUpdates'), error: [t('home.checkFailed'), t('home.checkFailed')], warning: [t('home.waiting'), t('home.waiting')] },
+	config_disk: { one: t('home.configFolder'), many: t('home.configFolder'), error: [t('home.almostOutOfSpace'), t('home.almostOutOfSpace')], warning: [t('home.runningLowOnSpace'), t('home.runningLowOnSpace')] },
+	config_folder: { one: t('home.configFolder'), many: t('home.configFolder'), error: [t('home.lostIfTheContainer'), t('home.lostIfTheContainer')], warning: [t('home.needsALook'), t('home.needsALook')] },
+	waiting_downloads: { one: t('home.downloads'), many: t('home.downloads'), error: [t('home.waitingForTheirFiles'), t('home.waitingForTheirFiles')], warning: [t('home.waitingForTheirFiles'), t('home.waitingForTheirFiles')] },
 	// The backups:key check: no key kit saved for the current master key.
-	key_kit: { one: 'Master key', many: 'Master key', error: ['no key kit saved', 'no key kit saved'], warning: ['no key kit saved', 'no key kit saved'] },
-	trailers: { one: 'Trailers', many: 'Trailers', error: ['not loading', 'not loading'], warning: ['lookups failing', 'lookups failing'] }
-};
+	key_kit: { one: t('home.masterKey'), many: t('home.masterKey'), error: [t('home.noKeyKitSaved'), t('home.noKeyKitSaved')], warning: [t('home.noKeyKitSaved'), t('home.noKeyKitSaved')] },
+	trailers: { one: t('home.trailers'), many: t('home.trailers'), error: [t('home.notLoading'), t('home.notLoading')], warning: [t('home.lookupsFailing'), t('home.lookupsFailing')] }
+});
 
 /**
  * shownState is the state Home shows for a check: the one the flap guard
@@ -127,7 +129,7 @@ const PLACED = new Set<string>(['library_folder', 'disk_space']);
 
 function healthItem(c: HealthCheck, tone: 'fail' | 'wait', word: string, action: string, admin: boolean): Attention {
 	const kind = c.key === 'backups:key' ? 'key_kit' : c.kind;
-	const w = healthWords[kind];
+	const w = healthWords()[kind];
 	const level = tone === 'fail' ? 'error' : 'warning';
 	const href = admin ? healthFix(c.kind) : '/health';
 	return {
@@ -138,13 +140,13 @@ function healthItem(c: HealthCheck, tone: 'fail' | 'wait', word: string, action:
 		text: healthSentence({ ...c, state: level }),
 		title: w?.one ?? 'HolyArrs',
 		// A Source, Downloader or folder row says which one it is.
-		reason: w ? (c.subject && NAMED.has(c.kind) ? `${c.subject} ${w[level][0]}` : c.subject && PLACED.has(c.kind) ? `${w[level][0]}: ${c.subject}` : w[level][0]) : level === 'error' ? 'not working' : 'needs a look',
+		reason: w ? (c.subject && NAMED.has(c.kind) ? `${c.subject} ${w[level][0]}` : c.subject && PLACED.has(c.kind) ? `${w[level][0]}: ${c.subject}` : w[level][0]) : level === 'error' ? t('home.notWorking') : t('home.needsALook'),
 		cause: `health:${kind}:${level}`,
 		detail: [c.subject, c.message].filter(Boolean).join(': ') || undefined,
 		subject: NAMED.has(c.kind) ? c.subject || undefined : undefined,
 		// Settings is only for people who may change it; everyone else sees the check on Status.
 		href,
-		action: href === '/health' ? 'Look' : href.startsWith('/downloads') ? 'Downloads' : action
+		action: href === '/health' ? t('home.look') : href.startsWith('/downloads') ? t('home.downloads') : action
 	};
 }
 
@@ -162,31 +164,31 @@ export function attention(input: {
 }): Attention[] {
 	const out: Attention[] = [];
 	const admin = input.admin ?? true;
-	for (const c of input.health.filter((h) => shownState(h) === 'error')) out.push(healthItem(c, 'fail', 'Problem', 'Fix', admin));
+	for (const c of input.health.filter((h) => shownState(h) === 'error')) out.push(healthItem(c, 'fail', t('home.problem'), t('home.fix'), admin));
 	for (const raw of input.failed) {
 		// A download with no matched title (an outside torrent, one that vanished) goes by its own name.
-		const d = { ...raw, title: raw.title || raw.name || 'A download' };
+		const d = { ...raw, title: raw.title || raw.name || t('home.aDownload') };
 		const refused = d.phase === 'import_refused';
-		const r = plainReason(d.text || (refused ? 'The import was refused.' : 'The download failed.'));
+		const r = plainReason(d.text || (refused ? t('home.theImportWasRefused') : t('home.theDownloadFailed')));
 		// An outside torrent has no HolyArrs id (0): it is keyed by its Downloader and hash, and opens the Failed list.
 		const own = !d.client_item && d.id > 0;
-		out.push({ key: own ? `f${d.id}` : `fc${d.downloader_id ?? 0}:${d.hash || d.name || out.length}`, tone: 'fail', word: 'Failed', text: `${d.title}: ${r.text}`, title: d.title, reason: refused ? 'import refused' : 'download failed', cause: 'download_failed', note: d.text ? r.text : undefined, detail: r.detail, href: own ? `/downloads?show=problems.failed&open=${d.id}` : '/downloads?show=problems.failed', action: 'Downloads' });
+		out.push({ key: own ? `f${d.id}` : `fc${d.downloader_id ?? 0}:${d.hash || d.name || out.length}`, tone: 'fail', word: t('home.failed'), text: `${d.title}: ${r.text}`, title: d.title, reason: refused ? t('home.importRefused') : t('home.downloadFailed'), cause: 'download_failed', note: d.text ? r.text : undefined, detail: r.detail, href: own ? `/downloads?show=problems.failed&open=${d.id}` : '/downloads?show=problems.failed', action: t('home.downloads') });
 	}
 	// The metadata outage stays while it lasts and goes away on the next check that passes.
-	if (input.metadata) out.push({ key: 'metadata', tone: 'wait', word: 'Warning', text: `HolyArrs metadata can't be reached. ${input.metadata}`, title: 'HolyArrs metadata', reason: "can't be reached", cause: 'metadata', note: input.metadata, href: admin ? '/settings/tmdb' : '/health', action: 'Look' });
+	if (input.metadata) out.push({ key: 'metadata', tone: 'wait', word: t('home.warning'), text: t('home.holyarrsMetadataCanT', { note: input.metadata }), title: t('home.holyarrsMetadata'), reason: t('home.canTBeReached'), cause: 'metadata', note: input.metadata, href: admin ? '/settings/tmdb' : '/health', action: t('home.look') });
 	for (const d of input.decisions) {
-		const r = plainReason(d.reason || 'HolyArrs needs you to choose.');
+		const r = plainReason(d.reason || t('home.holyarrsNeedsYouTo'));
 		const title = `${d.title}${d.episode ? ` ${d.episode.label}` : ''}`;
-		out.push({ key: `d${d.slot_id}`, tone: 'wait', word: 'Your call', text: `${title}: ${r.text}`, title, reason: 'needs a decision', cause: 'decision', note: d.reason ? r.text : undefined, detail: r.detail, href: `/downloads?show=problems.decide&slot=${d.slot_id}`, action: 'Decide' });
+		out.push({ key: `d${d.slot_id}`, tone: 'wait', word: t('home.yourCall'), text: `${title}: ${r.text}`, title, reason: t('home.needsADecision'), cause: 'decision', note: d.reason ? r.text : undefined, detail: r.detail, href: `/downloads?show=problems.decide&slot=${d.slot_id}`, action: t('home.decide') });
 	}
-	for (const c of input.health.filter((h) => shownState(h) === 'warning')) out.push(healthItem(c, 'wait', 'Warning', 'Look', admin));
+	for (const c of input.health.filter((h) => shownState(h) === 'warning')) out.push(healthItem(c, 'wait', t('home.warning'), t('home.look'), admin));
 	return out;
 }
 
 /** uncheckedLine says what Home could not check when a read failed. */
 export function uncheckedLine(downloads: boolean, health: boolean): string {
-	const what = downloads && health ? 'downloads or health' : downloads ? 'downloads' : 'health';
-	return `Home could not check ${what} right now.`;
+	const what = downloads && health ? t('home.downloadsOrHealth') : downloads ? t('home.downloads2') : t('home.health');
+	return t('home.homeCouldNotCheck', { what: what });
 }
 
 /** One row of Needs attention: a single item, or several that share a cause. */
@@ -222,13 +224,13 @@ export function groupAttention(items: Attention[]): AttentionGroup[] {
 			out.push({ ...base, key: first.key, title: first.title, reason: first.reason });
 			continue;
 		}
-		const kind = cause.startsWith('health:') ? (cause.split(':')[1] as keyof typeof healthWords) : undefined;
-		const w = kind ? healthWords[kind] : undefined;
+		const kind = cause.startsWith('health:') ? (cause.split(':')[1] as HealthKind) : undefined;
+		const w = kind ? healthWords()[kind] : undefined;
 		const level = cause.endsWith(':error') ? 'error' : 'warning';
 		const names = list.map((i) => i.subject).filter(Boolean);
 		if (w) out.push({ ...base, key: `g${cause}`, title: `${n} ${w.many}`, reason: names.length === n ? `${names.join(', ')} ${w[level][1]}` : w[level][1] });
-		else if (cause === 'decision') out.push({ ...base, key: `g${cause}`, title: `${n} need a decision`, reason: list.map((i) => i.title).join(', ') });
-		else out.push({ ...base, key: `g${cause}`, title: `${n} downloads failed`, reason: list.map((i) => i.title).join(', ') });
+		else if (cause === 'decision') out.push({ ...base, key: `g${cause}`, title: t('home.needADecision', { n: n }), reason: list.map((i) => i.title).join(', ') });
+		else out.push({ ...base, key: `g${cause}`, title: t('home.downloadsFailed', { n: n }), reason: list.map((i) => i.title).join(', ') });
 	}
 	return out;
 }
@@ -240,8 +242,8 @@ export function groupAttention(items: Attention[]): AttentionGroup[] {
 export function moreLink(hidden: Pick<AttentionGroup, 'items'>[], admin = true): { href: string; text: string } | null {
 	if (!hidden.length) return null;
 	const health = hidden.filter((g) => /^(health:|setup:|metadata$)/.test(g.items[0]?.cause ?? '')).length;
-	if (health * 2 > hidden.length) return admin ? { href: '/settings/health', text: `${hidden.length} more on Health` } : { href: '/health', text: `${hidden.length} more on Status` };
-	return { href: '/downloads', text: `${hidden.length} more in Downloads` };
+	if (health * 2 > hidden.length) return admin ? { href: '/settings/health', text: t('home.moreOnHealth', { n: hidden.length }) } : { href: '/health', text: t('home.moreOnStatus', { n: hidden.length }) };
+	return { href: '/downloads', text: t('home.moreInDownloads', { n: hidden.length }) };
 }
 
 // ---- Home rows: the same wide card system as Explore, from Library data ----
@@ -271,18 +273,18 @@ export function splitArrivals<T extends Pick<TitleView, 'id' | 'slots'>>(titles:
 }
 
 /** homeFresh is the one freshness strip for a Home card, from facts only: a new episode file this week, a new title, or a date coming up. */
-export function homeFresh(t: Pick<TitleView, 'id' | 'kind' | 'slots'> | undefined, dates: Pick<CalendarEntry, 'title_id' | 'date' | 'kind' | 'episode' | 'season'>[], now = Date.now()): Fresh | null {
-	if (!t) return null;
-	const at = arrivedAt(t);
+export function homeFresh(title: Pick<TitleView, 'id' | 'kind' | 'slots'> | undefined, dates: Pick<CalendarEntry, 'title_id' | 'date' | 'kind' | 'episode' | 'season'>[], now = Date.now()): Fresh | null {
+	if (!title) return null;
+	const at = arrivedAt(title);
 	if (at !== undefined && now - at <= 7 * DAY) {
-		const files = (t.slots ?? []).filter((s) => s.file).length;
-		if (t.kind === 'show' && files > 1) return { kind: 'new_episode', text: 'New Episode' };
-		return { kind: 'recently_added', text: 'Recently Added' };
+		const files = (title.slots ?? []).filter((s) => s.file).length;
+		if (title.kind === 'show' && files > 1) return { kind: 'new_episode', text: t('home.newEpisode') };
+		return { kind: 'recently_added', text: t('home.recentlyAdded') };
 	}
-	const next = dates.filter((d) => d.title_id === t.id && Date.parse(d.date) >= now - DAY).sort((a, b) => a.date.localeCompare(b.date))[0];
+	const next = dates.filter((d) => d.title_id === title.id && Date.parse(d.date) >= now - DAY).sort((a, b) => a.date.localeCompare(b.date))[0];
 	if (next) {
-		if (next.kind === 'episode' && next.episode === 1 && next.season) return { kind: 'season_coming', text: `Season ${next.season} Coming` };
-		return { kind: 'coming', text: next.kind === 'episode' ? 'New Episode Soon' : 'Coming Soon' };
+		if (next.kind === 'episode' && next.episode === 1 && next.season) return { kind: 'season_coming', text: t('home.seasonComing', { n: next.season }) };
+		return { kind: 'coming', text: next.kind === 'episode' ? t('home.newEpisodeSoon') : t('home.comingSoon') };
 	}
 	return null;
 }
@@ -290,32 +292,32 @@ export function homeFresh(t: Pick<TitleView, 'id' | 'kind' | 'slots'> | undefine
 /** mixLine is a factual row subtitle: "2 movies and 3 shows". */
 export function mixLine(cards: { kind: string }[]): string {
 	const n = (k: string) => cards.filter((c) => c.kind === k).length;
-	const word = (c: number, one: string, many: string) => (c ? `${c} ${c === 1 ? one : many}` : '');
-	const parts = [word(n('movie'), 'movie', 'movies'), word(n('show'), 'show', 'shows'), word(n('artist'), 'artist', 'artists')].filter(Boolean);
-	return parts.length > 1 ? `${parts.slice(0, -1).join(', ')} and ${parts.at(-1)}` : (parts[0] ?? '');
+	const word = (c: number, one: string, many: string) => (c ? t(c === 1 ? one : many, { n: c }) : '');
+	const parts = [word(n('movie'), 'home.movie', 'home.movies'), word(n('show'), 'home.show', 'home.shows'), word(n('artist'), 'home.artist', 'home.artists')].filter(Boolean);
+	return parts.length > 1 ? t('home.and', { list: parts.slice(0, -1).join(', '), last: parts.at(-1) ?? '' }) : (parts[0] ?? '');
 }
 
 /** arrivedTitle is Just arrived's smart title: today, this week, the last two weeks, or Recently added, true to the newest card. */
 export function arrivedTitle(newest: number | undefined, now = Date.now()): string {
-	if (newest === undefined) return 'Just arrived';
+	if (newest === undefined) return t('home.justArrived');
 	const age = now - newest;
-	if (age < DAY) return 'New today';
-	if (age < 7 * DAY) return 'New this week';
-	if (age < 14 * DAY) return 'Just arrived';
-	return 'Recently added';
+	if (age < DAY) return t('home.newToday');
+	if (age < 7 * DAY) return t('home.newThisWeek');
+	if (age < 14 * DAY) return t('home.justArrived');
+	return t('home.recentlyAdded2');
 }
 
 /** arrivedHead is Just arrived's title and subtitle from its newest card; the two-week line only while it holds. */
 export function arrivedHead(cards: Pick<HomeCard, 'at'>[], now = Date.now()): { title: string; subtitle?: string } {
 	const newest = Math.max(...cards.map((c) => (c.at ? Date.parse(c.at) : NaN)).filter((t) => !Number.isNaN(t)));
-	if (!Number.isFinite(newest)) return { title: 'Just arrived' };
-	return { title: arrivedTitle(newest, now), subtitle: now - newest < 14 * DAY ? 'New in the last two weeks' : undefined };
+	if (!Number.isFinite(newest)) return { title: t('home.justArrived') };
+	return { title: arrivedTitle(newest, now), subtitle: now - newest < 14 * DAY ? t('home.newInTheLast') : undefined };
 }
 
 /** soonTitle is Coming soon's subtitle: what is next and when. */
 export function soonLine(first: { name: string; subtitle?: string } | undefined): string {
-	if (!first) return 'The next 30 days';
-	return first.subtitle ? `Next up: ${first.name}, ${first.subtitle}` : `Next up: ${first.name}`;
+	if (!first) return t('home.theNext30Days');
+	return first.subtitle ? t('home.nextUp', { name: first.name, subtitle: first.subtitle }) : t('home.nextUp2', { name: first.name });
 }
 
 // ---- GET /home: the server's row order and the rows it fills ----
@@ -397,14 +399,13 @@ export interface LibraryCardView {
 	size: number;
 }
 
-const count = new Intl.NumberFormat('en');
 /** n formats a count with thousands separators. */
 export function n(v: number): string {
-	return count.format(v);
+	return v.toLocaleString(appLocale('en'));
 }
 
 function plural(v: number, one: string, many: string): string {
-	return `${n(v)} ${v === 1 ? one : many}`;
+	return t(v === 1 ? one : many, { n: n(v) });
 }
 
 /**
@@ -417,9 +418,9 @@ function plural(v: number, one: string, many: string): string {
 export function libraryCards(lib: HomeAnswer['library'], downloadsHref?: string): LibraryCardView[] {
 	if (!lib) return [];
 	const meta: [LibraryKind, string, LibraryCardView['icon'], string, string][] = [
-		['movie', 'Movies', 'film', 'movie', 'movies'],
-		['show', 'TV shows', 'tv', 'show', 'shows'],
-		['artist', 'Music', 'music', 'artist', 'artists']
+		['movie', t('home.movies2'), 'film', t('home.movie2'), t('home.movies3')],
+		['show', t('home.tvShows'), 'tv', t('home.show2'), t('home.shows2')],
+		['artist', t('home.music'), 'music', t('home.artist2'), t('home.artists2')]
 	];
 	const out: LibraryCardView[] = [];
 	for (const [kind, label, icon, one, many] of meta) {
@@ -428,7 +429,7 @@ export function libraryCards(lib: HomeAnswer['library'], downloadsHref?: string)
 		const base = `/library?kind=${kind}`;
 		const all = Math.max(c.items, c.on_disk + c.downloading + c.missing, 1);
 		const seg = (key: LibrarySegment['key'], text: string, v: number, href?: string): LibrarySegment => ({ key, label: text, count: v, share: v / all, href });
-		const detail = kind === 'show' ? `${plural(c.parts, 'season', 'seasons')} · ${plural(c.items, 'episode', 'episodes')}` : kind === 'artist' ? `${plural(c.parts, 'album', 'albums')} · ${plural(c.items, 'track', 'tracks')}` : '';
+		const detail = kind === 'show' ? `${plural(c.parts, 'home.season', 'home.seasons')} · ${plural(c.items, 'home.episode', 'home.episodes')}` : kind === 'artist' ? `${plural(c.parts, 'home.album', 'home.albums')} · ${plural(c.items, 'home.track', 'home.tracks')}` : '';
 		out.push({
 			kind,
 			label,
@@ -437,7 +438,7 @@ export function libraryCards(lib: HomeAnswer['library'], downloadsHref?: string)
 			big: c.titles,
 			unit: c.titles === 1 ? one : many,
 			detail,
-			segments: [seg('on_disk', 'on disk', c.on_disk, `${base}&show=have`), seg('downloading', 'downloading', c.downloading, downloadsHref), seg('missing', 'missing', c.missing, `${base}&show=missing`)],
+			segments: [seg('on_disk', t('home.onDisk'), c.on_disk, `${base}&show=have`), seg('downloading', t('home.downloading'), c.downloading, downloadsHref), seg('missing', t('home.missing'), c.missing, `${base}&show=missing`)],
 			size: c.size
 		});
 	}
@@ -461,11 +462,11 @@ export function homeStrip(c: Pick<HomeCard, 'kind' | 'name' | 'line'>): Fresh | 
 /** askProgressLine is the live line under an ask that is downloading. */
 export function askProgressLine(p: AskProgress | undefined): string {
 	if (!p) return '';
-	if (p.state === 'queued') return 'Waiting to start';
+	if (p.state === 'queued') return t('home.waitingToStart');
 	const pct = Math.round(Math.max(0, Math.min(1, p.progress)) * 100);
-	if (p.state === 'stalled') return `Stalled at ${pct}%`;
-	if (p.state === 'paused') return `Paused at ${pct}%`;
-	return p.eta ? `Downloading ${pct}% · ${duration(p.eta)} left` : `Downloading ${pct}%`;
+	if (p.state === 'stalled') return t('home.stalledAt', { pct: pct });
+	if (p.state === 'paused') return t('home.pausedAt', { pct: pct });
+	return p.eta ? t('home.downloadingLeft', { pct: pct, time: duration(p.eta) }) : t('home.downloading2', { pct: pct });
 }
 
 /**

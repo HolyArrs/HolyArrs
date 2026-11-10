@@ -16,6 +16,7 @@
 	import { bytes, date, dateTime } from '#lib/core/format.ts';
 	import { plainReason } from '#lib/core/plain.ts';
 	import type { ReleasePage, ReleaseView } from '#lib/core/types.ts';
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 
 	let { list, from = 'library' }: { list: 'held' | 'turned-down'; from?: 'library' | 'downloads' } = $props();
 	let rows = $state<ReleaseView[]>([]);
@@ -29,7 +30,7 @@
 
 	const held = $derived(list === 'held');
 	const dl = $derived(from === 'downloads');
-	const undoWord = $derived(held ? 'Stop holding' : dl ? 'Undo' : 'Take off');
+	const undoWord = $derived(held ? t('mediafiles.releaseList.stopHolding') : dl ? t('mediafiles.delete.undo') : t('mediafiles.releaseList.takeOff'));
 	const pages = $derived(pager(total, limit, offset));
 
 	// Reload when the server says releases changed or after a reconnect.
@@ -64,7 +65,7 @@
 			await api.del(`/${list}/${r.id}`);
 			await load();
 		} catch (e) {
-			toasts.push(`Couldn't take off list`, 'fail', { body: message(e) });
+			toasts.push(t('mediafiles.releaseList.takeOffFailed'), 'fail', { body: message(e) });
 		} finally {
 			busy = false;
 		}
@@ -73,8 +74,8 @@
 	// Asks first because this affects every row, not only this page.
 	async function clearAll() {
 		const ask = held
-			? `Stop holding all ${total} Releases? Their movies and episodes go back to looking.`
-			: `Take all ${total} Releases off the Turned down list? HolyArrs may pick them again.`;
+			? t('mediafiles.releaseList.stopAll', { n: total })
+			: t('mediafiles.releaseList.takeAll', { n: total });
 		if (!confirm(ask)) return;
 		busy = true;
 		try {
@@ -82,7 +83,7 @@
 			offset = 0;
 			await load();
 		} catch (e) {
-			toasts.push(`Couldn't take off list`, 'fail', { body: message(e) });
+			toasts.push(t('mediafiles.releaseList.takeOffFailed'), 'fail', { body: message(e) });
 		} finally {
 			busy = false;
 		}
@@ -95,17 +96,17 @@
 	}
 </script>
 
-<LibraryToolPage title={held ? 'Held' : 'Turned down'} count={loaded && !error && total ? `${total} ${total === 1 ? 'Release' : 'Releases'}` : ''}>
+<LibraryToolPage title={held ? t('mediafiles.release.held') : t('mediafiles.release.turned_down')} count={loaded && !error && total ? t(total === 1 ? 'mediafiles.releaseList.countOne' : 'mediafiles.releaseList.countOther', { n: total }) : ''}>
 	{#snippet bar()}
 		{#if !dl}
-			<nav class="tp-cap switch-list" aria-label="Release lists">
-				<a href={to(`/library/held`)} aria-current={held ? 'page' : undefined}>Held</a>
-				<a href={to(`/library/turned-down`)} aria-current={held ? undefined : 'page'}>Turned down</a>
+			<nav class="tp-cap switch-list" aria-label={t('mediafiles.releaseList.lists')}>
+				<a href={to(`/library/held`)} aria-current={held ? 'page' : undefined}>{t('mediafiles.release.held')}</a>
+				<a href={to(`/library/turned-down`)} aria-current={held ? undefined : 'page'}>{t('mediafiles.release.turned_down')}</a>
 			</nav>
 		{/if}
 		{#if loaded && !error && total > 0}
 			<span class="tp-gap"></span>
-			<span class="tp-cap"><Button variant="secondary" onclick={clearAll} disabled={busy}>Clear all</Button></span>
+			<span class="tp-cap"><Button variant="secondary" onclick={clearAll} disabled={busy}>{t('mediafiles.releaseList.clearAll')}</Button></span>
 		{/if}
 	{/snippet}
 
@@ -116,10 +117,10 @@
 {:else if total === 0}
 	<EmptyState
 		icon={held ? 'clock' : 'shield'}
-		title={held ? 'Nothing held.' : 'Nothing turned down.'}
+		title={held ? t('mediafiles.releaseList.nothingHeld') : t('mediafiles.releaseList.nothingTurned')}
 		text={held
-			? 'Waiting out a Pick rule delay.'
-			: 'Releases you turn down and wrong downloads land here.'}
+			? t('mediafiles.releaseList.heldHint')
+			: t('mediafiles.releaseList.turnedHint')}
 	/>
 {:else}
 	<ul class="tp-sheet tp-rows">
@@ -134,14 +135,14 @@
 						{/if}
 						<div class="rel-name">{r.name}</div>
 					</div>
-					<Button variant="secondary" icon="x" onclick={() => removeOne(r)} disabled={busy} aria-label="{undoWord} {r.name}" data-testid="listed-undo">
+					<Button variant="secondary" icon="x" onclick={() => removeOne(r)} disabled={busy} aria-label={t('mediafiles.releaseList.undoOf', { word: undoWord, name: r.name })} data-testid="listed-undo">
 						{undoWord}
 					</Button>
 				</div>
 				<div class="facts">
 					{facts(r, bytes)}
-					{#if held && r.hold_until} · sent {dateTime(r.hold_until)}{/if}
-					{#if !held} · since {date(r.created_at)}{/if}
+					{#if held && r.hold_until} · {t('mediafiles.releaseList.sent', { date: dateTime(r.hold_until) })}{/if}
+					{#if !held} · {t('mediafiles.releaseList.since', { date: date(r.created_at) })}{/if}
 				</div>
 				{#if key.length}
 					<ul class="reasons">
@@ -152,10 +153,10 @@
 		{/each}
 	</ul>
 	{#if pages.prev !== null || pages.next !== null}
-		<nav class="tp-foot" aria-label="Pages">
-			<Button variant="secondary" icon="chevronLeft" disabled={pages.prev === null} onclick={() => go(pages.prev)}>Back</Button>
-			<span class="tp-note">{pages.from} to {pages.to} of {total}</span>
-			<Button variant="secondary" iconAfter="chevronRight" disabled={pages.next === null} onclick={() => go(pages.next)}>More</Button>
+		<nav class="tp-foot" aria-label={t('mediafiles.releaseList.pages')}>
+			<Button variant="secondary" icon="chevronLeft" disabled={pages.prev === null} onclick={() => go(pages.prev)}>{t('mediafiles.releaseList.back')}</Button>
+			<span class="tp-note">{t('mediafiles.releaseList.range', { from: pages.from, to: pages.to, total })}</span>
+			<Button variant="secondary" iconAfter="chevronRight" disabled={pages.next === null} onclick={() => go(pages.next)}>{t('mediafiles.releaseList.more')}</Button>
 		</nav>
 	{/if}
 {/if}

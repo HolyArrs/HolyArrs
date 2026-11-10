@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import PageLoader from '#lib/ui/PageLoader.svelte';
 	import { libraryBrief } from '#lib/mediafiles/index.ts';
 	import { decisionName, manyWords, removeBody, removeFilesWords, removeStart, rowName, rowPath, type DownloaderSettings, type DownloaderView, type RemoveChoice, applyPatch, fromAnswer, isDl, mergeClient, wentStale, type Sync, dlPush, decisions, refreshDecisions, DlSections, ConfirmMatch, byDownload, AddTorrents, SteerSheet, BULK_DONE, byClient, type BulkAction } from '#lib/downloads/index.ts';
@@ -47,10 +48,10 @@
 			.filter((c) => c.health !== 'ok')
 			.map((c) =>
 				c.health === 'waiting'
-					? `${c.name} has not answered yet; its torrents show once it does.`
+					? t('downloads.page.waiting', { name: c.name })
 					: c.stale
-						? `${c.name} is not answering right now; showing its last list.`
-						: `${c.name} is not answering right now.`
+						? t('downloads.page.stale', { name: c.name })
+						: t('downloads.page.notAnswering', { name: c.name })
 			)
 	);
 	const notes = $derived([...Object.values(sideNotes), ...clientNotes]);
@@ -85,7 +86,7 @@
 			id: -d.slot_id,
 			phase: 'needs_a_decision',
 			state: '',
-			label: 'Review',
+			label: t('downloads.status.review'),
 			text: '',
 			progress: 0,
 			speed: 0,
@@ -106,7 +107,7 @@
 		};
 	}
 	const allRows = $derived([
-		...rows.map((r) => (decisionsByDownload.has(r.id) && !r.active && r.phase !== 'needs_a_decision' ? { ...r, phase: 'needs_a_decision', label: 'Review' } : r)),
+		...rows.map((r) => (decisionsByDownload.has(r.id) && !r.active && r.phase !== 'needs_a_decision' ? { ...r, phase: 'needs_a_decision', label: t('downloads.status.review') } : r)),
 		...decisions.items.filter((d) => !(d.download_id && rowIds.has(d.download_id))).map(decisionRow)
 	]);
 	function decisionsOf(r: DownloadRow): Decision[] {
@@ -243,13 +244,13 @@
 				titles = r;
 				clearNote('titles');
 			})
-			.catch(() => note('titles', 'Posters could not be loaded; the downloads are all here.'))
+			.catch(() => note('titles', t('downloads.page.noPosters')))
 			.finally(() => (titlesReady = true));
 		// The remove defaults are a settings read; without that permission the server's own defaults stand (no 403 in the console).
 		if (session.can('settings')) api
 				.get<DownloaderSettings>('/settings/downloaders')
 				.then((s) => (settings = s))
-				.catch(() => note('settings', 'Remove defaults didn’t load. Remove asks each time.'));
+				.catch(() => note('settings', t('downloads.page.noDefaults')));
 		if (session.can('manage_library'))
 			api
 				.get<{ downloaders: DownloaderView[] }>('/downloaders')
@@ -258,7 +259,7 @@
 					torrentClients = r.downloaders.filter((d) => d.protocol === 'torrent' && d.kind === 'qbittorrent' && d.writable).map((d) => ({ id: d.id, name: d.name, category: d.category }));
 					torrent = torrentClients.length > 0;
 				})
-				.catch(() => note('downloaders', 'Downloaders didn’t load. Adding torrents is off for now.'));
+				.catch(() => note('downloaders', t('downloads.page.noDownloaders')));
 		if (!watch) void refreshDecisions();
 		// Library and download news on /live is for managers; a watcher receives only dl patches (push mode).
 		const offs = watch ? [] : ['download', 'slot', 'import', 'resync'].map((t) => live.on(t, soon));
@@ -298,14 +299,14 @@
 
 	let busy = $state(0);
 	async function markFailed(r: DownloadRow) {
-		if (!confirm(`Mark ${who(r)} failed? Its Release is turned down, it is removed from the Downloader and HolyArrs looks for the next Release.`)) return;
+		if (!confirm(t('downloads.page.markFailedAsk', { name: who(r) }))) return;
 		busy = r.id;
 		try {
 			await api.post(`/downloads/${r.id}/mark-failed`);
-			toasts.push('Marked failed', 'ok', { body: 'Searching for the next Release' });
+			toasts.push(t('downloads.page.markedFailed'), 'ok', { body: t('downloads.page.nextRelease') });
 			await load();
 		} catch (e) {
-			toasts.push("Couldn't mark failed", 'fail', { body: message(e) });
+			toasts.push(t('downloads.page.markFailedFailed'), 'fail', { body: message(e) });
 		} finally {
 			busy = 0;
 		}
@@ -326,7 +327,7 @@
 	function askRemoveMany(rows: DownloadRow[], withFiles = false) {
 		const ok = rows.filter((r) => r.can_act);
 		if (!ok.length) {
-			toasts.push("Can't remove these", 'info', { body: 'Not from here' });
+			toasts.push(t('downloads.page.cantRemove'), 'info', { body: t('downloads.list.notFromHere') });
 			return;
 		}
 		targets = ok;
@@ -380,7 +381,7 @@
 				removeOpen = false;
 				const one = list.length === 1 && !list[0].client_item;
 				const searching = one && choice.turn_down && choice.search_again;
-				toasts.push(list.length > 1 ? `${list.length} downloads removed` : 'Download removed', 'ok', searching ? { body: 'Searching for the next Release' } : {});
+				toasts.push(list.length > 1 ? t('downloads.page.nRemoved', { count: list.length }) : t('downloads.page.removed'), 'ok', searching ? { body: t('downloads.page.nextRelease') } : {});
 			}
 			await load();
 		} finally {
@@ -389,7 +390,14 @@
 		}
 	}
 	// Client actions: the Downloader does the work; the row's new state is read back from it.
-	const DONE: Record<string, string> = { pause: 'Download paused', resume: 'Download started', top: 'Moved to top', recheck: 'Checking again', reannounce: 'Trackers asked again', retry: 'Sent back to queue' };
+	const DONE: Record<string, string> = {
+		get pause() { return t('downloads.page.done.pause'); },
+		get resume() { return t('downloads.page.done.resume'); },
+		get top() { return t('downloads.act.movedTop'); },
+		get recheck() { return t('downloads.page.done.recheck'); },
+		get reannounce() { return t('downloads.page.done.reannounce'); },
+		get retry() { return t('downloads.page.done.retry'); }
+	};
 	async function act(r: DownloadRow, action: 'pause' | 'resume' | 'top' | 'recheck' | 'reannounce' | 'retry') {
 		busy = r.id;
 		try {
@@ -397,7 +405,7 @@
 			toasts.push(DONE[action], 'ok');
 			await load();
 		} catch (e) {
-			toasts.push("Couldn't update download", 'fail', { body: message(e) });
+			toasts.push(t('downloads.act.updateFailed'), 'fail', { body: message(e) });
 		} finally {
 			busy = 0;
 		}
@@ -419,11 +427,11 @@
 			try {
 				await api.post(`${rowPath(r)}/retry`);
 			} catch (e) {
-				bad.push(`${r.name || 'Download'}: ${message(e)}`);
+				bad.push(`${r.name || t('downloads.page.download')}: ${message(e)}`);
 			}
 		}
-		if (bad.length) toasts.push("Couldn't send back", 'fail', { body: bad.join(' · ') });
-		else toasts.push(list.length === 1 ? 'Sent back to queue' : `${list.length} downloads sent back`, 'ok');
+		if (bad.length) toasts.push(t('downloads.page.cantSendBack'), 'fail', { body: bad.join(' · ') });
+		else toasts.push(list.length === 1 ? t('downloads.page.done.retry') : t('downloads.page.nSentBack', { count: list.length }), 'ok');
 		await load();
 	}
 	// The steering sheet: seeding rules and more for one or many torrents.
@@ -440,7 +448,7 @@
 		const groups = byClient(list);
 		const left = list.length - [...groups.values()].reduce((n, g) => n + g.length, 0);
 		if (!groups.size) {
-			toasts.push("Can't do that here", 'info', { body: 'Not for these downloads' });
+			toasts.push(t('downloads.page.cantHere'), 'info', { body: t('downloads.page.notForThese') });
 			return;
 		}
 		const bad: string[] = [];
@@ -448,12 +456,12 @@
 			try {
 				await api.post(`/downloaders/${id}/bulk`, { action, hashes: rows.map((r) => r.hash) });
 			} catch (e) {
-				bad.push(`${rows[0].downloader || 'Downloader'}: ${message(e)}`);
+				bad.push(`${rows[0].downloader || t('downloads.page.downloader')}: ${message(e)}`);
 			}
 		}
 		const n = list.length - left;
-		if (bad.length) toasts.push("Couldn't update downloads", 'fail', { body: bad.join(' · ') });
-		else toasts.push(`${n} ${n === 1 ? 'download' : 'downloads'} ${BULK_DONE[action]}`, 'ok', left ? { body: `${left} skipped` } : {});
+		if (bad.length) toasts.push(t('downloads.page.cantUpdateMany'), 'fail', { body: bad.join(' · ') });
+		else toasts.push(t(n === 1 ? 'downloads.page.bulkDone.one' : 'downloads.page.bulkDone.other', { n, what: BULK_DONE[action] }), 'ok', left ? { body: t('downloads.page.skipped', { left }) } : {});
 		await load();
 	}
 	type ClientStatus = { paused: boolean; speed_limit: number; up_limit: number };
@@ -462,11 +470,11 @@
 		try {
 			const r = await api.post<{ clients: ClientView[] }>(pause ? '/downloads/pause-all' : '/downloads/resume-all');
 			const bad = r.clients.filter((c) => c.controls && c.error);
-			if (bad.length) toasts.push(`Couldn't ${pause ? 'pause' : 'start'} ${bad.length === 1 ? bad[0].name : `${bad.length} Downloaders`}`, 'fail', { body: bad[0].error });
-			else toasts.push(pause ? 'Everything paused' : 'Everything started', 'ok');
+			if (bad.length) toasts.push(bad.length === 1 ? t(pause ? 'downloads.page.cantPauseOne' : 'downloads.page.cantStartOne', { name: bad[0].name }) : t(pause ? 'downloads.page.cantPauseMany' : 'downloads.page.cantStartMany', { count: bad.length }), 'fail', { body: bad[0].error });
+			else toasts.push(pause ? t('downloads.page.allPaused') : t('downloads.page.allStarted'), 'ok');
 			await load();
 		} catch (e) {
-			toasts.push(`Couldn't ${pause ? 'pause' : 'start'} everything`, 'fail', { body: message(e) });
+			toasts.push(t(pause ? 'downloads.page.cantPauseAll' : 'downloads.page.cantStartAll'), 'fail', { body: message(e) });
 		}
 	}
 
@@ -506,7 +514,7 @@
 			}
 			failing = '';
 			limitOpen = false;
-			toasts.push('Speed limit saved', 'ok');
+			toasts.push(t('downloads.page.limitSaved'), 'ok');
 		} catch (err) {
 			limitError = failing ? `${failing}: ${message(err)}` : message(err);
 		} finally {
@@ -527,88 +535,88 @@
 	});
 </script>
 
-<svelte:head><title>Downloads · HolyArrs</title></svelte:head>
+<svelte:head><title>{t('downloads.page.title')}</title></svelte:head>
 
-<PageLoader loading={!loaded} label="Loading Downloads">
+<PageLoader loading={!loaded} label={t('downloads.page.loading')}>
 <!-- One heading in every state (loading, error, empty, list), for screen readers and the menu check. -->
-<h1 class="sr">Downloads</h1>
+<h1 class="sr">{t('downloads.page.heading')}</h1>
 {#if error && allRows.length === 0}
-	<div class="pad"><LoadError hasData={false} message="Downloads could not be loaded." onretry={load} /></div>
+	<div class="pad"><LoadError hasData={false} message={t('downloads.page.couldNotLoad')} onretry={load} /></div>
 {:else if allRows.length === 0}
 	<div class="pad">
 	{#if watch}
-	<EmptyState icon="download" title="Nothing on its way" text="When something you asked for starts downloading, you can watch it here." />
+	<EmptyState icon="download" title={t('downloads.page.nothingOnWay')} text={t('downloads.page.watchText')} />
 	{:else}
-	<EmptyState icon="download" title="No downloads yet" text="Downloads show up here, live." action={{ label: 'Add media', href: to('/search'), icon: 'search' }} />
+	<EmptyState icon="download" title={t('downloads.page.noDownloads')} text={t('downloads.page.liveText')} action={{ label: t('downloads.page.addMedia'), href: to('/search'), icon: 'search' }} />
 	{/if}
-	{#if !watch}<p class="aside-link"><a href={to('/settings/downloaders')}>Downloaders</a>{#if torrentClients.length}<button type="button" class="addlk" onclick={() => (addOpen = true)} data-testid="dl-add-empty">Add a torrent</button>{/if}</p>{/if}
+	{#if !watch}<p class="aside-link"><a href={to('/settings/downloaders')}>{t('downloads.page.downloaders')}</a>{#if torrentClients.length}<button type="button" class="addlk" onclick={() => (addOpen = true)} data-testid="dl-add-empty">{t('downloads.page.addTorrent')}</button>{/if}</p>{/if}
 	</div>
 {:else}
-	{#if error}<div class="pad"><LoadError hasData message="Downloads could not be loaded." onretry={load} /></div>{/if}
+	{#if error}<div class="pad"><LoadError hasData message={t('downloads.page.couldNotLoad')} onretry={load} /></div>{/if}
 	{#if notes.length}<ul class="notes" role="status" data-testid="dl-notes">{#each notes as n (n)}<li>{n}</li>{/each}</ul>{/if}
 	{#if !watch}<div class="matchpad"><ConfirmMatch refresh={reads} onchange={() => void load()} /></div>{/if}
 	<DlSections changeOutside={session.can('settings')} rows={allRows} {importOf} titles={titleById} {titlesReady} {busy} {torrent} {decisionsOf} bind:openId onfail={markFailed} onremove={askRemove} ondone={() => void load()} onact={act} onall={(p) => batch(() => all(p))} onlimit={openLimit} onadd={torrentClients.length ? () => (addOpen = true) : undefined} onbulk={(l, a) => batch(() => bulk(l, a))} onsteer={steer} onremovemany={askRemoveMany} onretry={(l) => batch(() => retryMany(l))} {batchBusy} {watch} {upTotal} {notes} />
-	{#if moreOutside && outsideLimit < outsideMax}<p class="more"><Button size="sm" variant="plain" onclick={() => { outsideLimit = Math.min(outsideLimit + 200, outsideMax); void load(); }} data-testid="dl-outside-more">Show more torrents</Button></p>
-	{:else if moreOutside}<p class="more small muted" data-testid="dl-outside-capped">Showing the first {outsideMax.toLocaleString()} of {outsideTotal.toLocaleString()} torrents HolyArrs did not add.</p>{/if}
+	{#if moreOutside && outsideLimit < outsideMax}<p class="more"><Button size="sm" variant="plain" onclick={() => { outsideLimit = Math.min(outsideLimit + 200, outsideMax); void load(); }} data-testid="dl-outside-more">{t('downloads.page.showMore')}</Button></p>
+	{:else if moreOutside}<p class="more small muted" data-testid="dl-outside-capped">{t('downloads.page.capped', { max: outsideMax.toLocaleString(), total: outsideTotal.toLocaleString() })}</p>{/if}
 {/if}
 </PageLoader>
 
 <SteerSheet bind:open={steerOpen} mode={steerMode} rows={steerRows} ondone={() => void load()} />
 <AddTorrents bind:open={addOpen} clients={torrentClients} ondone={() => void load()} />
 
-<Sheet bind:open={removeOpen} title={targets.length > 1 ? `Remove ${targets.length} downloads?` : 'Remove this download?'} size="sm">
+<Sheet bind:open={removeOpen} title={targets.length > 1 ? t('downloads.page.removeN', { count: targets.length }) : t('downloads.page.removeOne')} size="sm">
 	{#if targets.length}
 		<form id="remove-form" onsubmit={remove} data-testid="dl-remove-form">
 			{#if target}
 				<p class="who">{who(target)}</p>
-				<details class="raw"><summary>Details</summary><p>{target.name}</p></details>
+				<details class="raw"><summary>{t('downloads.page.details')}</summary><p>{target.name}</p></details>
 			{:else}
-				<ul class="many" data-testid="dl-remove-list">{#each targets.slice(0, 6) as r (r.id)}<li>{who(r)}</li>{/each}{#if targets.length > 6}<li class="hint">and {targets.length - 6} more</li>{/if}</ul>
+				<ul class="many" data-testid="dl-remove-list">{#each targets.slice(0, 6) as r (r.id)}<li>{who(r)}</li>{/each}{#if targets.length > 6}<li class="hint">{t('downloads.page.andMore', { count: targets.length - 6 })}</li>{/if}</ul>
 			{/if}
 			<label class="checkline">
 				<input type="checkbox" bind:checked={choice.delete_files} data-testid="dl-remove-files" />
-				<span><b>Also delete files</b><br /><span class="hint" data-testid="dl-remove-files-hint">{choice.delete_files ? removeFilesWords(targets) : `Off: ${target?.downloader || 'the Downloader'} keeps what it fetched.`}</span></span>
+				<span><b>{t('downloads.page.alsoDelete')}</b><br /><span class="hint" data-testid="dl-remove-files-hint">{choice.delete_files ? removeFilesWords(targets)   : t('downloads.page.offKeeps', { name: target?.downloader || t('downloads.rm.theDownloader') })}</span></span>
 			</label>
 			{#if target && !target.client_item}
 			<label class="checkline">
 				<input type="checkbox" bind:checked={choice.turn_down} />
-				<span><b>Add its Release to Turned down</b><br /><span class="hint">HolyArrs never picks it again for {manyWords(target.kind) ? `these ${manyWords(target.kind)?.many}` : 'this movie'}.</span></span>
+				<span><b>{t('downloads.page.addTurnedDown')}</b><br /><span class="hint">{t('downloads.page.neverPicks', { what: manyWords(target.kind) ? t('downloads.dp.these', { many: manyWords(target.kind)?.many ?? '' }) : t('downloads.page.thisMovie') })}</span></span>
 			</label>
 			<label class="checkline" class:off={!choice.turn_down}>
 				<input type="checkbox" bind:checked={choice.search_again} disabled={!choice.turn_down} />
-				<span><b>Search again</b><br /><span class="hint">Look for the next Release straight away. Without it the {manyWords(target.kind) ? `${manyWords(target.kind)?.many} wait` : 'movie waits'} for the next feed check.</span></span>
+				<span><b>{t('downloads.page.searchAgain')}</b><br /><span class="hint">{t('downloads.page.lookNext', { what: manyWords(target.kind) ? t('downloads.page.moviesWait', { many: manyWords(target.kind)?.many ?? '' }) : t('downloads.page.movieWaits') })}</span></span>
 			</label>
 			{/if}
-			{#if blocked.length}<p class="hint" data-testid="dl-remove-blocked">{blocked.length === targets.length ? 'Removing' : `${blocked.length} of these are not from HolyArrs. Removing`} torrents HolyArrs did not send needs settings access{blocked.length === targets.length ? '.' : ', so they stay.'}</p>{/if}
+			{#if blocked.length}<p class="hint" data-testid="dl-remove-blocked">{blocked.length === targets.length ? t('downloads.page.blockedAll') : t('downloads.page.blockedSome', { count: blocked.length })}</p>{/if}
 			{#if removeError}<p class="form-error" role="alert">{removeError}</p>{/if}
 		</form>
 	{/if}
 	{#snippet footer()}
 		{@const n = targets.length - blocked.length}
-		<Button variant="plain" onclick={() => (removeOpen = false)}>Cancel</Button>
-		<Button variant="destructive" type="submit" form="remove-form" busy={removeBusy} disabled={removeBusy || n === 0} data-testid="dl-remove-confirm">{n > 1 ? `Remove ${n}` : 'Remove'}{choice.delete_files ? ' and delete files' : ''}</Button>
+		<Button variant="plain" onclick={() => (removeOpen = false)}>{t('downloads.sel.cancel')}</Button>
+		<Button variant="destructive" type="submit" form="remove-form" busy={removeBusy} disabled={removeBusy || n === 0} data-testid="dl-remove-confirm">{n > 1 ? t('downloads.page.removeCount', { count: n }) : t('downloads.act.remove')}{choice.delete_files ? t('downloads.page.andDeleteFiles') : ''}</Button>
 	{/snippet}
 </Sheet>
 
-<Sheet bind:open={limitOpen} title="Speed limit" size="sm">
+<Sheet bind:open={limitOpen} title={t('downloads.page.speedLimit')} size="sm">
 	<form id="limit-form" onsubmit={saveLimit}>
-		<p class="hint">In MB/s for each Downloader. 0 means no limit.</p>
+		<p class="hint">{t('downloads.page.mbHint')}</p>
 		{#each clients as c (c.id)}
 			{#if limits[c.id]}
 				<fieldset class="lim" data-testid="dl-limit-{c.id}">
 					<legend>{c.name}</legend>
-					<label>Download<input type="number" min="0" step="0.1" inputmode="decimal" bind:value={limits[c.id].down} /></label>
-					{#if c.protocol === 'torrent'}<label>Upload<input type="number" min="0" step="0.1" inputmode="decimal" bind:value={limits[c.id].up} /></label>{/if}
+					<label>{t('downloads.ss.download')}<input type="number" min="0" step="0.1" inputmode="decimal" bind:value={limits[c.id].down} /></label>
+					{#if c.protocol === 'torrent'}<label>{t('downloads.ss.upload')}<input type="number" min="0" step="0.1" inputmode="decimal" bind:value={limits[c.id].up} /></label>{/if}
 				</fieldset>
 			{/if}
 		{:else}
-			{#if !limitError}<p class="hint">Reading the Downloaders…</p>{/if}
+			{#if !limitError}<p class="hint">{t('downloads.page.reading')}</p>{/if}
 		{/each}
 		{#if limitError}<p class="form-error" role="alert">{limitError}</p>{/if}
 	</form>
 	{#snippet footer()}
-		<Button variant="plain" onclick={() => (limitOpen = false)}>Cancel</Button>
-		<Button type="submit" form="limit-form" busy={limitBusy} disabled={limitBusy || clients.length === 0}>Save</Button>
+		<Button variant="plain" onclick={() => (limitOpen = false)}>{t('downloads.sel.cancel')}</Button>
+		<Button type="submit" form="limit-form" busy={limitBusy} disabled={limitBusy || clients.length === 0}>{t('downloads.tv.save')}</Button>
 	{/snippet}
 </Sheet>
 

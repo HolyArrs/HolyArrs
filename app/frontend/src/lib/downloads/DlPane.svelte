@@ -1,11 +1,12 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import Poster from '#lib/ui/Poster.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
 	import Menu from '#lib/ui/Menu.svelte';
 	import type { MenuItem } from '#lib/ui/Menu.svelte';
 	import DecisionPanel from './DecisionPanel.svelte';
 	import DlTabsView from './DlTabsView.svelte';
-	import { tabsOf } from './pane-facts.ts';
+	import { TAB_WORD, tabsOf } from './pane-facts.ts';
 	import { healthLine } from './panel-words.ts';
 	import { size as bytes, protocolOf } from './size.ts';
 	import { statusWord } from './status-tabs.ts';
@@ -127,19 +128,19 @@
 	{@const more = watch ? [] : paneMenu(r)}
 	<div class="xbt" data-testid="dl-actions">
 		{#if !watch}
-			{#if retryable(r) && mayEdit(r)}<button type="button" class="xbn" disabled={!r.can_act || busy === r.id} onclick={() => (onretry ? onretry([r]) : onact?.(r, 'retry'))} data-testid="dl-panel-retry-job">Download again</button>
-			{:else if pausable(r) && !r.client_locked}<button type="button" class="xbn" disabled={!r.can_act || busy === r.id} onclick={() => onact?.(r, isPaused(r) ? 'resume' : 'pause')} data-testid="dl-panel-pause">{isPaused(r) ? 'Start' : 'Pause'}</button>{/if}
-			<button type="button" class="xbn" disabled={!r.can_act || busy === r.id} title={r.can_act ? 'Remove' : 'HolyArrs cannot remove this one'} onclick={() => onremove(r)} data-testid="dl-panel-remove">Remove</button>
+			{#if retryable(r) && mayEdit(r)}<button type="button" class="xbn" disabled={!r.can_act || busy === r.id} onclick={() => (onretry ? onretry([r]) : onact?.(r, 'retry'))} data-testid="dl-panel-retry-job">{t('downloads.act.again')}</button>
+			{:else if pausable(r) && !r.client_locked}<button type="button" class="xbn" disabled={!r.can_act || busy === r.id} onclick={() => onact?.(r, isPaused(r) ? 'resume' : 'pause')} data-testid="dl-panel-pause">{isPaused(r) ? t('downloads.act.start') : t('downloads.act.pause')}</button>{/if}
+			<button type="button" class="xbn" disabled={!r.can_act || busy === r.id} title={r.can_act ? t('downloads.act.remove') : t('downloads.pane.cannotRemove')} onclick={() => onremove(r)} data-testid="dl-panel-remove">{t('downloads.act.remove')}</button>
 		{/if}
-		{#if r.title_id && (r.linked || !r.outside)}<a class="xbn" href={to(`/library/${r.title_id}`)} data-testid="dl-open-title">Open in Library</a>{/if}
-		{#if more.length}<span class="more" data-testid="dl-more"><Menu label="More actions" items={more} width={220} /></span>{/if}
+		{#if r.title_id && (r.linked || !r.outside)}<a class="xbn" href={to(`/library/${r.title_id}`)} data-testid="dl-open-title">{t('downloads.act.library')}</a>{/if}
+		{#if more.length}<span class="more" data-testid="dl-more"><Menu label={t('downloads.pane.moreActions')} items={more} width={220} /></span>{/if}
 	</div>
 {/snippet}
 
 {#snippet tabStrip(r: DownloadRow)}
-	<div class="xtabs" role="tablist" aria-label="Details" use:ink={`${r.id}:${tab}:${paneOpen}`}>
-		{#each tabsOf(r) as t (t)}
-			<button type="button" role="tab" class="xtab" class:on={tab === t} aria-selected={tab === t} aria-controls="dlv-{r.id}" id="dlt-{r.id}-{t}" tabindex={tab === t ? 0 : -1} onclick={() => { ontab(r.id, t); paneOpen = true; }} onkeydown={(e) => paneTabKey(e, r)} data-testid="dl-tab-{t.toLowerCase().replaceAll(' ', '-')}">{t}</button>
+	<div class="xtabs" role="tablist" aria-label={t('downloads.pane.details')} use:ink={`${r.id}:${tab}:${paneOpen}`}>
+		{#each tabsOf(r) as tb (tb)}
+			<button type="button" role="tab" class="xtab" class:on={tab === tb} aria-selected={tab === tb} aria-controls="dlv-{r.id}" id="dlt-{r.id}-{tb}" tabindex={tab === tb ? 0 : -1} onclick={() => { ontab(r.id, tb); paneOpen = true; }} onkeydown={(e) => paneTabKey(e, r)} data-testid="dl-tab-{tb.toLowerCase().replaceAll(' ', '-')}">{TAB_WORD[tb]}</button>
 		{/each}
 		<i class="ink" class:gone={!paneOpen} aria-hidden="true"></i>
 	</div>
@@ -147,19 +148,19 @@
 
 {#snippet panel(r: DownloadRow)}
 	{@const ds = decisionsOf(r)}
-	{@const sizeWord = r.size ? bytes(r.size) : 'Not reported yet'}
-	<section class="dpane" class:shut={!paneOpen} style={paneOpen ? (paneFit ? `max-height: ${maxPane()}px; --ph: ${maxPane()}px` : `height: ${paneH}px; --ph: ${paneH}px`) : ''} id="dlx-{r.id}" data-testid="dl-pane" aria-label="Details of {who(r)}">
+	{@const sizeWord = r.size ? bytes(r.size) : t('downloads.col.notReported')}
+	<section class="dpane" class:shut={!paneOpen} style={paneOpen ? (paneFit ? `max-height: ${maxPane()}px; --ph: ${maxPane()}px` : `height: ${paneH}px; --ph: ${paneH}px`) : ''} id="dlx-{r.id}" data-testid="dl-pane" aria-label={t('downloads.pane.detailsOf', { name: who(r) })}>
 		<div class="phd">
-			<button type="button" class="grab" aria-label="Close details" onpointerdown={(e) => (grabY = e.clientY)} onpointerup={(e) => { if (grabY != null && e.clientY - grabY > 40) openId = 0; grabY = null; }} onclick={() => (openId = 0)} data-testid="dl-pane-grab"><i></i></button>
-			<p class="xt pt"><b>{who(r)}</b><span class="hs"><i class="hdot {barTone(r)}" class:bad={problem(r)?.tone === 'fail' || r.phase === 'failed'} aria-hidden="true"></i><span data-testid="dl-health">{protocolOf(r) === 'torrent' ? healthLine({ ...r, done_at: pane.det.id === r.id ? pane.det.detail?.torrent?.done_at ?? r.finished_at : r.finished_at, seeding_time: pane.det.id === r.id ? pane.det.detail?.torrent?.seeding_time : undefined, ratio: pane.det.id === r.id ? pane.det.detail?.torrent?.ratio ?? r.ratio : r.ratio }) : `${statusWord(r)} · ${Math.floor(percent(r.progress))}% · ${sizeWord}`}</span></span></p>
+			<button type="button" class="grab" aria-label={t('downloads.pane.close')} onpointerdown={(e) => (grabY = e.clientY)} onpointerup={(e) => { if (grabY != null && e.clientY - grabY > 40) openId = 0; grabY = null; }} onclick={() => (openId = 0)} data-testid="dl-pane-grab"><i></i></button>
+			<p class="xt pt"><b>{who(r)}</b><span class="hs"><i class="hdot {barTone(r)}" class:bad={problem(r)?.tone === 'fail' || r.phase === 'failed'} aria-hidden="true"></i><span data-testid="dl-health">{protocolOf(r) === 'torrent' ? healthLine({ ...r, done_at: pane.det.id === r.id ? pane.det.detail?.torrent?.done_at ?? r.finished_at : r.finished_at, seeding_time: pane.det.id === r.id ? pane.det.detail?.torrent?.seeding_time : undefined, ratio: pane.det.id === r.id ? pane.det.detail?.torrent?.ratio ?? r.ratio : r.ratio }) : t('downloads.pane.line', { status: statusWord(r), pct: Math.floor(percent(r.progress)), size: sizeWord })}</span></span></p>
 			{@render tabStrip(r)}
 			{#if paneOpen}
 			<div class="pact" data-testid="dl-pane-actions">
-				{#if r.replaced}<a class="tdl" href={to('/library/turned-down')} data-testid="dl-turned-down-link">Turned down copies</a>{/if}
+				{#if r.replaced}<a class="tdl" href={to('/library/turned-down')} data-testid="dl-turned-down-link">{t('downloads.pane.turnedDown')}</a>{/if}
 				{@render btns(r)}
 			</div>
 			{/if}
-			<button type="button" class="pcl" aria-expanded={paneOpen} aria-label={paneOpen ? 'Collapse details' : 'Expand details'} onclick={() => (paneOpen = !paneOpen)} data-testid="dl-pane-toggle"><Icon name="chevronDown" size={14} stroke={2.2} /></button>
+			<button type="button" class="pcl" aria-expanded={paneOpen} aria-label={paneOpen ? t('downloads.pane.collapse') : t('downloads.pane.expand')} onclick={() => (paneOpen = !paneOpen)} data-testid="dl-pane-toggle"><Icon name="chevronDown" size={14} stroke={2.2} /></button>
 		</div>
 		{#if paneOpen}
 		<div class="pb" data-testid="dl-panel" data-card="d">
@@ -175,7 +176,7 @@
 
 	<div class="sheet" in:sheetIn|global out:sheetOut|global data-testid="dl-sheet">
 	<!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions -->
-	<div class="dv" role="separator" aria-orientation="horizontal" aria-label="Resize details" aria-valuemin={0} aria-valuemax={900} aria-valuenow={paneOpen ? (paneFit ? 0 : paneH) : 0} tabindex="0" class:fixed={!paneOpen} title="Drag to cols.resize · double-click to fit the content" onpointerdown={dragDown} ondblclick={() => (paneFit = true)} onkeydown={dividerKey} data-testid="dl-divider"><i aria-hidden="true"></i></div>
+	<div class="dv" role="separator" aria-orientation="horizontal" aria-label={t('downloads.pane.resize')} aria-valuemin={0} aria-valuemax={900} aria-valuenow={paneOpen ? (paneFit ? 0 : paneH) : 0} tabindex="0" class:fixed={!paneOpen} title={t('downloads.pane.dividerTitle')} onpointerdown={dragDown} ondblclick={() => (paneFit = true)} onkeydown={dividerKey} data-testid="dl-divider"><i aria-hidden="true"></i></div>
 	{@render panel(r)}
 	</div>
 

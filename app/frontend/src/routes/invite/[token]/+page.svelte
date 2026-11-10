@@ -1,4 +1,6 @@
 <script lang="ts">
+	import Words from '#lib/ui/Words.svelte';
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import Button from '#lib/ui/Button.svelte';
 	import IconButton from '#lib/ui/IconButton.svelte';
 	import { theme, alreadyLinked, inviteTiles, type Way, SigninBackdrop, SigninPortals } from '#lib/accounts/index.ts';
@@ -48,12 +50,12 @@
 			invite = await api.get<{ role: string; max_rating?: string }>(`/auth/invites/${encodeURIComponent(linkPart)}`);
 		} catch (e) {
 			// A gone link (404 or 410) asks for a new one; anything else is worth a retry.
-			gone = e instanceof ApiError && (e.status === 404 || e.status === 410) ? 'gone' : message(e) || "Couldn't open this invite. Try again.";
+			gone = e instanceof ApiError && (e.status === 404 || e.status === 410) ? 'gone' : message(e) || t('accounts.invite.openFailed');
 		}
 	});
 	onDestroy(() => clearInterval(plexTimer));
 
-	const roleWord = $derived(invite?.role === 'admin' ? 'an Admin' : invite?.max_rating ? `a Kid · up to ${invite.max_rating}` : 'a Member');
+	const invitedAs = $derived(invite?.role === 'admin' ? t('accounts.invite.asAdmin') : invite?.max_rating ? t('accounts.invite.asKid', { max: invite.max_rating }) : t('accounts.invite.asMember'));
 
 	// A failed join: an account that is already linked gets its own line with a sign-in link.
 	function failed(err: unknown) {
@@ -77,9 +79,9 @@
 		error = '';
 		linked = false;
 		if (via !== 'password') return joinServer(via);
-		if (!name.trim()) return void (error = 'Pick a name.');
-		if (pw.length < MIN_LENGTH) return void (error = `The password needs at least ${MIN_LENGTH} characters.`);
-		if (pw !== pwAgain) return void (error = "Passwords don't match.");
+		if (!name.trim()) return void (error = t('accounts.invite.pickName'));
+		if (pw.length < MIN_LENGTH) return void (error = t('accounts.invite.pwMin', { n: MIN_LENGTH }));
+		if (pw !== pwAgain) return void (error = t('accounts.login.noMatch'));
 		busy = true;
 		try {
 			await session.acceptInvite(linkPart, name.trim(), pw);
@@ -92,7 +94,7 @@
 	}
 
 	async function joinServer(kind: 'jellyfin' | 'emby') {
-		if (!name.trim()) return void (error = `Enter your ${wayWord[kind]} name.`);
+		if (!name.trim()) return void (error = t('accounts.login.enterName', { way: wayWord[kind] }));
 		busy = true;
 		try {
 			await done(await session.inviteMediaServer(linkPart, kind, name.trim(), pw));
@@ -146,7 +148,7 @@
 			plexTimer = setInterval(async () => {
 				if (Date.now() - started > 9 * 60 * 1000) {
 					cancelPlex();
-					error = 'Plex timed out. Try again.';
+					error = t('accounts.invite.plexTimeout');
 					return;
 				}
 				try {
@@ -169,11 +171,11 @@
 	let showPw = $state(false);
 </script>
 
-<svelte:head><title>Join HolyArrs</title></svelte:head>
+<svelte:head><title>{t('accounts.invite.join')}</title></svelte:head>
 
 {#snippet problem()}
 	{#if linked}
-		<p class="form-error" role="alert" data-testid="invite-linked">This account already has a HolyArrs account. <a href={to('/login')}>Sign in instead.</a></p>
+		<p class="form-error" role="alert" data-testid="invite-linked"><Words key="accounts.invite.linked" links={{ a: to('/login') }} /></p>
 	{:else if error}
 		<p class="form-error" role="alert">{error}</p>
 	{/if}
@@ -195,78 +197,78 @@
 					<span class="orbit"></span>
 					<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="6" fill="#1f1f1f" /><path d="M8 5h4.6l5 7-5 7H8l5-7z" fill="#E5A00D" /></svg>
 				</div>
-				<h1 class="title">Waiting for Plex</h1>
-				<p class="lead">Finish in the Plex window.</p>
-				<button class="link" type="button" onclick={cancelPlex}>Cancel</button>
+				<h1 class="title">{t('accounts.signin.waitTitle')}</h1>
+				<p class="lead">{t('accounts.signin.waitLead')}</p>
+				<button class="link" type="button" onclick={cancelPlex}>{t('accounts.signin.cancel')}</button>
 			</div>
 		{:else}
-			<h1 class="title">Join HolyArrs</h1>
+			<h1 class="title">{t('accounts.invite.join')}</h1>
 			{#if gone}
-				<p class="form-error" role="alert">{gone === 'gone' ? 'This invite is used up or has ended. Ask for a new one.' : gone}</p>
-				<p class="back"><a href={to(`/login`)}>Go to sign in</a></p>
+				<p class="form-error" role="alert">{gone === 'gone' ? t('accounts.invite.gone') : gone}</p>
+				<p class="back"><a href={to(`/login`)}>{t('accounts.invite.goSignIn')}</a></p>
 			{:else if signedInAs}
-				<p class="lead" data-testid="invite-signed-in">You're signed in as {signedInAs}. Sign out to join with this invite.</p>
+				<p class="lead" data-testid="invite-signed-in">{t('accounts.invite.signedInAs', { name: signedInAs })}</p>
 				{#if error}<p class="form-error" role="alert">{error}</p>{/if}
-				<Button variant="primary" size="lg" full href={to('/')}>Go home</Button>
-				<button class="link" type="button" onclick={signOutAndJoin}>Sign out and join</button>
+				<Button variant="primary" size="lg" full href={to('/')}>{t('accounts.invite.goHome')}</Button>
+				<button class="link" type="button" onclick={signOutAndJoin}>{t('accounts.invite.signOutJoin')}</button>
 			{:else if !invite}
 				<div class="sk"></div>
 			{:else if via !== 'password'}
-				<p class="lead">Your {wayWord[via]} name and password.</p>
+				<p class="lead">{t('accounts.invite.yourNamePw', { way: wayWord[via] })}</p>
 				<form onsubmit={submit} novalidate>
 					<div class="field">
-						<label for="name">{wayWord[via]} name</label>
+						<label for="name">{t('accounts.invite.wayName', { way: wayWord[via] })}</label>
 						<input id="name" class="input" bind:value={name} autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="128" required />
 					</div>
 					<div class="field">
-						<label for="password">Password</label>
+						<label for="password">{t('accounts.signin.passwordLabel')}</label>
 						<div class="pw">
 							<input id="password" class="input" type={showPw ? 'text' : 'password'} bind:value={pw} autocomplete="current-password" />
-							<IconButton icon={showPw ? 'eyeOff' : 'eye'} label={showPw ? 'Hide password' : 'Show password'} aria-pressed={showPw} onclick={() => (showPw = !showPw)} />
+							<IconButton icon={showPw ? 'eyeOff' : 'eye'} label={showPw ? t('accounts.invite.hidePasswordLabel') : t('accounts.signin.showPasswordLabel')} aria-pressed={showPw} onclick={() => (showPw = !showPw)} />
 						</div>
 					</div>
 					{@render problem()}
-					<div class="submit"><Button variant="primary" size="lg" full type="submit" {busy}>Join with {wayWord[via]}</Button></div>
+					<div class="submit"><Button variant="primary" size="lg" full type="submit" {busy}>{t('accounts.invite.joinWith', { way: wayWord[via] })}</Button></div>
 				</form>
-				<button class="link" type="button" onclick={back}>Other ways to join</button>
+				<button class="link" type="button" onclick={back}>{t('accounts.invite.otherWays')}</button>
 			{:else}
-				<p class="lead">Invited as {roleWord}</p>
+				<p class="lead">{invitedAs}</p>
 				{#if tiles.length}
 					<div class="provs" data-n={tiles.length} data-testid="invite-ways">
-						{#each tiles as t (t.way)}
-							<button class="prov" type="button" data-way={t.way} disabled={busy} onclick={() => press(t.way)}>
-								{#if t.way === 'plex'}
+						{#each tiles as tl (tl.way)}
+							<button class="prov" type="button" data-way={tl.way} disabled={busy} onclick={() => press(tl.way)}>
+								{#if tl.way === 'plex'}
 									<svg viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="6" fill="#1f1f1f" /><path d="M8 5h4.6l5 7-5 7H8l5-7z" fill="#E5A00D" /></svg>
-								{:else if t.way === 'jellyfin'}
+								{:else if tl.way === 'jellyfin'}
 									<svg viewBox="0 0 24 24" aria-hidden="true"><defs><linearGradient id="jg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#AA5CC3" /><stop offset="1" stop-color="#00A4DC" /></linearGradient></defs><path d="M12 3c-2 0-9 12.4-8 14.4S20 19.4 21 17.4 14 3 12 3zm0 6c1 0 4.4 6 4 7s-7.6 1-8 0S11 9 12 9z" fill="url(#jg)" /></svg>
 								{:else}
 									<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l9 5v10l-9 5-9-5V7z" fill="#52B54B" /><path d="M10 8.5v7l6-3.5z" fill="#fff" /></svg>
 								{/if}
-								<span>{t.label}</span>
+								<span>{tl.label}</span>
 							</button>
 						{/each}
 					</div>
-					<div class="or">or</div>
+					<div class="or">{t('accounts.login.or')}</div>
 				{/if}
 				<form onsubmit={submit} novalidate>
 					<div class="field">
-						<label for="name">Name</label>
+						<label for="name">{t('accounts.signin.name')}</label>
 						<input id="name" class="input" bind:value={name} autocomplete="username" maxlength="64" required />
 					</div>
 					<div class="field">
-						<label for="password">Password</label>
+						<label for="password">{t('accounts.signin.passwordLabel')}</label>
 						<div class="pw">
-							<input id="password" class="input" type={showPw ? 'text' : 'password'} bind:value={pw} autocomplete="new-password" placeholder="At least {MIN_LENGTH} characters" aria-describedby="pw-min" required />
-							<IconButton icon={showPw ? 'eyeOff' : 'eye'} label={showPw ? 'Hide password' : 'Show password'} aria-pressed={showPw} onclick={() => (showPw = !showPw)} />
+							<input id="password" class="input" type={showPw ? 'text' : 'password'} bind:value={pw} autocomplete="new-password" placeholder={t('accounts.signin.atLeast', { n: MIN_LENGTH })} aria-describedby="pw-min" required />
+							<IconButton icon={showPw ? 'eyeOff' : 'eye'} label={showPw ? t('accounts.invite.hidePasswordLabel') : t('accounts.signin.showPasswordLabel')} aria-pressed={showPw} onclick={() => (showPw = !showPw)} />
 						</div>
-						<span id="pw-min" class="sr-only">At least {MIN_LENGTH} characters.</span>
+						<span id="pw-min" class="sr-only">{t('accounts.signin.atLeast', { n: MIN_LENGTH })}</span>
 					</div>
 					<div class="field">
-						<label for="pwAgain">Confirm password</label>
+						<label for="pwAgain">{t('accounts.invite.confirm')}</label>
 						<input id="pwAgain" class="input" type={showPw ? 'text' : 'password'} bind:value={pwAgain} autocomplete="new-password" required />
 					</div>
 					{@render problem()}
-					<div class="submit"><Button variant="primary" size="lg" full type="submit" {busy}>Join and sign in</Button></div>
+					<div class="submit"><Button variant="primary" size="lg" full type="submit" {busy}>{t('accounts.invite.joinSignIn')}</Button></div>
 				</form>
 			{/if}
 		{/if}
@@ -338,7 +340,7 @@
 	.light .sk { background: rgb(0 0 0 / 0.05); }
 	.form-error { margin-top: 14px; padding: 10px 14px; border-radius: 12px; background: rgb(255 69 58 / 0.12); border: 1px solid rgb(255 69 58 / 0.26); color: #ffb3ad; font: 500 13px/1.45 var(--font-ui); text-align: center; }
 	.light .form-error { background: rgb(255 241 240 / 0.88); border-color: rgb(215 0 21 / 0.35); color: #9b0010; }
-	.form-error a { color: inherit; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+	.form-error :global(a) { color: inherit; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
 	.back { margin: 16px 0 0; text-align: center; font: var(--t-subhead); }
 	.back a { color: rgb(255 255 255 / 0.78); text-decoration: underline; text-underline-offset: 3px; }
 	/* Provider tiles, "or", the text link and the Plex wait share the sign-in page's looks (routes/login). */

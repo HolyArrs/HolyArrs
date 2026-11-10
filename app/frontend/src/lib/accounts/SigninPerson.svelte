@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import Button from '#lib/ui/Button.svelte';
 	import IconButton from '#lib/ui/IconButton.svelte';
 	import SigninFace from './SigninFace.svelte';
@@ -34,19 +35,19 @@
 	{@const w = person.way}
 	<div class="submit" use:pixelTrail={{ selector: '.ui-btn', busy: busy && lastWay === w, fail: lastWay === w ? failN : 0 }}>
 		<Button variant="primary" size="lg" full type="button" {busy} onclick={() => press(w)}>
-			{w === 'plex' ? 'Continue with Plex' : 'Continue with single sign-on'}
+			{w === 'plex' ? t('accounts.tiles.continueWith', { name: 'Plex' }) : t('accounts.tiles.continueWith', { name: t('accounts.tiles.sso').toLowerCase() })}
 		</Button>
 	</div>
-	<p class="note">{w === 'plex' ? 'Opens Plex to confirm it is you.' : 'Opens your sign-in page.'}</p>
+	<p class="note">{w === 'plex' ? t('accounts.signin.opensPlex') : t('accounts.signin.opensPage')}</p>
 	{#if error}<p class="form-error" role="alert">{error}{#if waiting > 0}<span class="mono" aria-hidden="true"> ({waiting}s)</span>{/if}</p>{/if}
 {:else}
 	<form onsubmit={submit} novalidate>
 		<input type="text" name="username" autocomplete="username" value={name} hidden readonly />
 		<div class="field">
-			<label for="password">{person.way === 'password' ? 'Password' : `${wayName(person.way)} password`}</label>
+			<label for="password">{person.way === 'password' ? t('accounts.signin.passwordLabel') : t('accounts.signin.wayPasswordLabel', { way: wayName(person.way) })}</label>
 			<div class="pw">
 				<input id="password" class="input" type={showPw ? 'text' : 'password'} bind:value={pw} autocomplete="current-password" required />
-				<IconButton icon={showPw ? 'eyeOff' : 'eye'} label="Show password" aria-pressed={showPw} onclick={() => (showPw = !showPw)} />
+				<IconButton icon={showPw ? 'eyeOff' : 'eye'} label={t('accounts.signin.showPasswordLabel')} aria-pressed={showPw} onclick={() => (showPw = !showPw)} />
 			</div>
 		</div>
 		{#if error}
@@ -54,7 +55,7 @@
 		{/if}
 		<div class="submit" use:pixelTrail={{ selector: '.ui-btn', busy: busy && !tileWay, fail: tileWay ? 0 : failN }}>
 			<Button variant="primary" size="lg" full type="submit" disabled={waiting > 0} {busy}>
-				{person.way === 'password' ? 'Sign in' : `Sign in with ${wayName(person.way)}`}
+				{person.way === 'password' ? t('accounts.signin.signIn') : t('accounts.signin.signInWith', { way: wayName(person.way) })}
 			</Button>
 		</div>
 	</form>

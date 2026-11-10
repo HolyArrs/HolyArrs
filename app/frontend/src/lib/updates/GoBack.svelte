@@ -1,4 +1,6 @@
 <script lang="ts">
+	import Words from '#lib/ui/Words.svelte';
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import Button from '#lib/ui/Button.svelte';
 	import { IMAGE, goBackBackup, imageTag, type BackupRow } from './update-notice.ts';
 	import { api } from '../core/api.ts';
@@ -19,9 +21,9 @@
 	async function copy(text: string) {
 		try {
 			await navigator.clipboard.writeText(text);
-			toasts.push('Text copied', 'ok');
+			toasts.push(t('updates.goBack.copied'), 'ok');
 		} catch {
-			toasts.push("Couldn't copy", 'fail', { body: 'Select it instead' });
+			toasts.push(t('updates.goBack.copyFailed'), 'fail', { body: t('updates.goBack.copyFailedBody') });
 		}
 	}
 </script>
@@ -29,18 +31,18 @@
 {#if goBack?.from_version}
 	{@const tag = imageTag(goBack.from_version)}
 	<section class="st-plate go-back" aria-labelledby="s-goback" data-testid="go-back">
-		<h2 id="s-goback">Go back to {goBack.from_version}</h2>
-		<p>HolyArrs kept a copy of its data from just before the update to {goBack.to_version} ({dateTime(goBack.created_at)}). To go back:</p>
+		<h2 id="s-goback">{t('updates.goBack.title', { version: goBack.from_version })}</h2>
+		<p>{t('updates.goBack.intro', { version: goBack.to_version ?? '', when: dateTime(goBack.created_at) })}</p>
 		<ol>
 			<li>
-				Change the image back to
-				<span class="cmd"><code data-testid="go-back-image">{IMAGE}:{tag}</code><Button variant="plain" size="sm" type="button" onclick={() => copy(`${IMAGE}:${tag}`)} aria-label="Copy the image name">Copy</Button></span>
-				If you pull from another registry, keep its name and change only the tag to <code>{tag}</code>.
+				{t('updates.goBack.step1a')}
+				<span class="cmd"><code data-testid="go-back-image">{IMAGE}:{tag}</code><Button variant="plain" size="sm" type="button" onclick={() => copy(`${IMAGE}:${tag}`)} aria-label={t('updates.goBack.copyImage')}>{t('updates.goBack.copy')}</Button></span>
+				<Words key="updates.goBack.step1b" vars={{ tag }} />
 			</li>
-			<li>Start the container again with that image (with Compose: <code>docker compose up -d</code>).</li>
-			<li>{goBack.from_version} sees that its data is newer and shows a page instead. There, type the one-time code from <code>docker logs &lt;container&gt;</code> and press <b>Put back the data from before the update</b>. HolyArrs then starts on that data.</li>
+			<li><Words key="updates.goBack.step2" /></li>
+			<li><Words key="updates.goBack.step3" vars={{ version: goBack.from_version }} /></li>
 		</ol>
-		<p class="fine">Later changes move to backups/before-restore-&lt;time&gt;. From the command line: <code>docker exec &lt;container&gt; /holyarrs restore --pre-update</code>, then <code>docker restart &lt;container&gt;</code>.</p>
+		<p class="fine"><Words key="updates.goBack.fine" /></p>
 	</section>
 {/if}
 

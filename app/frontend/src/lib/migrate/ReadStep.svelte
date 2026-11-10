@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import { getContext as moveContext } from 'svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import Button from '#lib/ui/Button.svelte';
@@ -54,27 +55,27 @@
 
 	function hint(s: Snapshot): string {
 		const used = usedBy.get(s.id);
-		return [used ? `Moved in Move ${used}` : '', bestStats(s.kind, s.counts) || countWords(s.kind, s.counts)].filter(Boolean).join(' · ');
+		return [used ? t('migrate.movedInMove', { n: used }) : '', bestStats(s.kind, s.counts) || countWords(s.kind, s.counts)].filter(Boolean).join(' · ');
 	}
 </script>
 
 {#snippet reads()}
 	{#if snapshots.length === 0 && !reading && !countSteps}
-		<button type="button" class="add-row first" onclick={onadd}><Icon name="plus" size={16} />Add an app</button>
+		<button type="button" class="add-row first" onclick={onadd}><Icon name="plus" size={16} />{t('migrate.addAnApp')}</button>
 	{:else if snapshots.length === 0 && !reading}
 		<EmptyState
 			icon="upload"
-			title="Bring your old apps over"
-			text="Read Sonarr, Radarr and the others. Your media files are never moved."
-			action={{ label: 'Add an app', icon: 'plus', onclick: onadd }}
+			title={t('migrate.bringYourOldApps')}
+			text={t('migrate.readSonarrRadarrAnd')}
+			action={{ label: t('migrate.addAnApp'), icon: 'plus', onclick: onadd }}
 		/>
 	{:else}
 		<ul class="reads">
 			{#if reading}
 				<li class="read" data-testid="read-pending">
 					<div class="top">
-						<div class="what"><b>{appName(reading)}</b><span class="sub">Reading now. You can keep going.</span></div>
-						<span class="cap"><StepCapsule tone="go" live fill={0.4} word="Reading…" /></span>
+						<div class="what"><b>{appName(reading)}</b><span class="sub">{t('migrate.readingNowYouCan')}</span></div>
+						<span class="cap"><StepCapsule tone="go" live fill={0.4} word={t('migrate.reading')} /></span>
 					</div>
 				</li>
 			{/if}
@@ -82,46 +83,46 @@
 				{@const h = hint(s)}
 				<li class="read" data-testid="read-row">
 					<div class="top">
-						<div class="what" title="Read {dateTime(s.created_at)}"><b>{appName(s.kind)}</b><span class="sub one">{h || 'Nothing found'}</span></div>
-						<span class="ok-tag" title="Read {dateTime(s.created_at)}"><Icon name="check" size={12} stroke={2.5} />{s.app_version ? `v${s.app_version.split('.').slice(0, 3).join('.')}` : 'Read'}</span>
+						<div class="what" title={t('migrate.read2', { date: dateTime(s.created_at) })}><b>{appName(s.kind)}</b><span class="sub one">{h || t('migrate.nothingFound')}</span></div>
+						<span class="ok-tag" title={t('migrate.read2', { date: dateTime(s.created_at) })}><Icon name="check" size={12} stroke={2.5} />{s.app_version ? `v${s.app_version.split('.').slice(0, 3).join('.')}` : t('migrate.read')}</span>
 					</div>
 					<div class="acts">
-						<button type="button" class="quiet" disabled={!!reading} onclick={() => onagain(s.kind as AppKind)} aria-label="Edit {appName(s.kind)}">Edit</button>
-						<button type="button" class="quiet danger" onclick={() => onforget(s)} aria-label="Forget the {appName(s.kind)} read from {dateTime(s.created_at)}">Remove</button>
+						<button type="button" class="quiet" disabled={!!reading} onclick={() => onagain(s.kind as AppKind)} aria-label={t('migrate.edit', { name: appName(s.kind) })}>{t('migrate.edit2')}</button>
+						<button type="button" class="quiet danger" onclick={() => onforget(s)} aria-label={t('migrate.forgetTheReadFrom', { name: appName(s.kind), date: dateTime(s.created_at) })}>{t('migrate.remove')}</button>
 					</div>
 				</li>
 			{/each}
 		</ul>
-		<button type="button" class="add-row" onclick={onadd} disabled={!!reading}><Icon name="plus" size={16} />Add an app</button>
+		<button type="button" class="add-row" onclick={onadd} disabled={!!reading}><Icon name="plus" size={16} />{t('migrate.addAnApp')}</button>
 	{/if}
 {/snippet}
 
 {#if countSteps}
-	<SettingsCard id="move-step" title="Step 1 of 4 · Read your apps">{@render reads()}</SettingsCard>
+	<SettingsCard id="move-step" title={t('migrate.step1Of4')}>{@render reads()}</SettingsCard>
 {:else}
-	<div id="move-step" tabindex="-1" aria-label="Your apps">{@render reads()}</div>
+	<div id="move-step" tabindex="-1" aria-label={t('migrate.yourApps')}>{@render reads()}</div>
 {/if}
 
 {#if moves.length > 0 || movesError}
-	<SettingsCard id="move-earlier" title="Earlier moves">
+	<SettingsCard id="move-earlier" title={t('migrate.earlierMoves')}>
 		{#if movesError}<LoadError hasData message={movesError} onretry={onretrymoves} />{/if}
 		{#each shownMoves as m (m.id)}
 			{@const st = moveStateWord(m)}
 			<div class="srow earlier" data-testid="earlier-move">
 				<div class="txt">
-					<span class="label">Move {m.id} · {dateTime(m.created_at)}</span>
-					<span class="hint one">{moveCounts(m) || 'Nothing counted yet'}</span>
+					<span class="label">{t('migrate.move2', { id: m.id, date: dateTime(m.created_at) })}</span>
+					<span class="hint one">{moveCounts(m) || t('migrate.nothingCountedYet')}</span>
 				</div>
 				<div class="ctl">
 					<span class="pill"><StatusPill kind={pills[st.tone]} label={st.word} /></span>
-					<Button onclick={() => onopen(m)} aria-label="Open move {m.id}">Open</Button>
+					<Button onclick={() => onopen(m)} aria-label={t('migrate.openMove', { id: m.id })}>{t('migrate.open')}</Button>
 				</div>
 			</div>
 		{/each}
 		{#if moves.length > 5 && !allMoves}
 			<div class="srow">
 				<div class="txt"></div>
-				<div class="ctl"><Button onclick={() => (allMoves = true)}>Show all {moves.length}</Button></div>
+				<div class="ctl"><Button onclick={() => (allMoves = true)}>{t('migrate.showAll', { n: moves.length })}</Button></div>
 			</div>
 		{/if}
 	</SettingsCard>

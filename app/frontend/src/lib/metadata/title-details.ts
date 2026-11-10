@@ -1,6 +1,7 @@
 import { ApiError } from '../core/api.ts';
 import { detailPath } from '../core/paths.ts';
 import { shownScore } from '../core/rating.ts';
+import { t } from '../core/i18n/i18n.svelte.ts';
 import type { AskBrief, LookupMovie, LookupShow } from '../core/types.ts';
 
 export type DetailKind = 'movie' | 'show';
@@ -144,8 +145,8 @@ export function fourKOffer(d: Pick<TitleDetails, 'kind' | 'titleId' | 'neverAdd'
 export function metaLine(d: Pick<TitleDetails, 'kind' | 'year' | 'runtime' | 'genres' | 'network'>): string[] {
 	const out: string[] = [];
 	if (d.year) out.push(String(d.year));
-	if (d.kind === 'show') out.push('TV show');
-	else out.push('Movie');
+	if (d.kind === 'show') out.push(t('metadata.details.tvShow'));
+	else out.push(t('metadata.details.movie'));
 	if (d.runtime) out.push(d.runtime >= 60 ? `${Math.floor(d.runtime / 60)}h ${d.runtime % 60 ? `${d.runtime % 60}m` : ''}`.trim() : `${d.runtime}m`);
 	if (d.network) out.push(d.network);
 	return [...out, ...d.genres.slice(0, 3)];

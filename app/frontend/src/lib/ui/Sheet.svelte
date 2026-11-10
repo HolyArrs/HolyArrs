@@ -1,5 +1,6 @@
 <!-- Modal dialog that adapts to a centered box, bottom sheet, drawer or side panel. -->
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import type { Snippet } from 'svelte';
 	import IconButton from './IconButton.svelte';
 	import { reducedMotion } from '../core/motion.ts';
@@ -11,7 +12,7 @@
 		size = 'md',
 		placement = 'auto',
 		hideTitle = false,
-		closeLabel = 'Close',
+		closeLabel = t('ui.sheet.close'),
 		children,
 		footer,
 		onclose,
@@ -151,17 +152,19 @@
 		.at-full .inner { height: 100%; }
 		.at-full .body { flex: 1; display: flex; flex-direction: column; }
 	}
-	.at-side { margin: 0 auto 0 0; height: 100dvh; max-height: 100dvh; width: min(300px, 86vw); border-radius: 0 var(--r-panel) var(--r-panel) 0; }
+	.at-side { margin-block: 0; margin-inline: 0 auto; height: 100dvh; max-height: 100dvh; width: min(300px, 86vw); border-radius: 0 var(--r-panel) var(--r-panel) 0; }
 	.at-side[open] { animation: slide-in var(--dur) var(--ease-out) both; }
 	.at-side.closing { animation: slide-out var(--dur-fast) var(--ease-in) both; }
-	@keyframes slide-in { from { transform: translateX(-100%); } }
-	@keyframes slide-out { to { transform: translateX(-100%); } }
-	.at-right { margin: 0 0 0 auto; height: 100dvh; max-height: 100dvh; width: min(var(--w), 100vw); border-radius: var(--r-panel) 0 0 var(--r-panel); }
+	@keyframes slide-in { from { transform: translateX(calc(-100% * var(--dir, 1))); } }
+	@keyframes slide-out { to { transform: translateX(calc(-100% * var(--dir, 1))); } }
+	.at-right { margin-block: 0; margin-inline: auto 0; height: 100dvh; max-height: 100dvh; width: min(var(--w), 100vw); border-radius: var(--r-panel) 0 0 var(--r-panel); }
 	.at-right .inner { height: 100%; }
 	.at-right[open] { animation: slide-from-right var(--dur) var(--ease-out) both; }
 	.at-right.closing { animation: slide-to-right var(--dur-fast) var(--ease-in) both; }
-	@keyframes slide-from-right { from { transform: translateX(100%); } }
-	@keyframes slide-to-right { to { transform: translateX(100%); } }
+	:global([dir='rtl']) .at-side { border-radius: var(--r-panel) 0 0 var(--r-panel); }
+	@media (min-width: 768px) { :global([dir='rtl']) .at-right { border-radius: 0 var(--r-panel) var(--r-panel) 0; } }
+	@keyframes slide-from-right { from { transform: translateX(calc(100% * var(--dir, 1))); } }
+	@keyframes slide-to-right { to { transform: translateX(calc(100% * var(--dir, 1))); } }
 	@media (max-width: 767px) {
 		.at-right { width: 100vw; height: auto; max-height: 92dvh; margin: auto 0 0; border-radius: var(--r-modal) var(--r-modal) 0 0; }
 		.at-right[open] { animation: rise-in var(--dur) var(--ease-out) both; }

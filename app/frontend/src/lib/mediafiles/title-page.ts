@@ -1,6 +1,7 @@
 // Title page helpers: breadcrumb, quality badges, similar titles and slot status.
 import type { StatusKind } from '#lib/ui/StatusPill.svelte';
 import type { SlotView, TitleView } from '../core/types.ts';
+import { t } from '../core/i18n/i18n.svelte.ts';
 
 type FileLike = { Quality?: Record<string, unknown> | null; MediaInfo?: Record<string, unknown> | null } | null | undefined;
 type Similar = Pick<TitleView, 'id' | 'kind' | 'name' | 'year' | 'original_language'> & { genres?: string[]; people?: string[] };
@@ -10,9 +11,9 @@ const text = (v: unknown) => (typeof v === 'string' ? v.toLowerCase() : '');
 export const artName = (id: number) => `title-art-${id}`;
 
 export function crumbFor(kind: string): { label: string; path: string } {
-	if (kind === 'show') return { label: 'TV shows', path: '/library?kind=show' };
-	if (kind === 'artist') return { label: 'Music', path: '/library?kind=artist' };
-	return { label: 'Movies', path: '/library?kind=movie' };
+	if (kind === 'show') return { label: t('mediafiles.kinds.show'), path: '/library?kind=show' };
+	if (kind === 'artist') return { label: t('mediafiles.kinds.artist'), path: '/library?kind=artist' };
+	return { label: t('mediafiles.kinds.movie'), path: '/library?kind=movie' };
 }
 
 // Badges come from file quality and media info; 4K hides HD, and Dolby Vision is not also counted as HDR.

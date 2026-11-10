@@ -1,5 +1,6 @@
 <!-- Row of outside rating scores, each with a short source mark. -->
 <script lang="ts">
+	import { t, appLocale } from '#lib/core/i18n/i18n.svelte.ts';
 	import { scoreName, scoreText, type OutsideScore } from './outside-ratings.ts';
 
 	let { scores = [] }: { scores?: OutsideScore[] } = $props();
@@ -8,9 +9,9 @@
 </script>
 
 {#if scores.length}
-	<ul class="ratings" aria-label="Ratings" data-testid="ratings-strip">
+	<ul class="ratings" aria-label={t('ui.ratingsStrip.ratings')} data-testid="ratings-strip">
 		{#each scores as s (s.source)}
-			<li title={`${scoreName(s.source)}: ${scoreText(s)}${s.votes ? ` (${s.votes.toLocaleString()} votes)` : ''}`}>
+			<li title={s.votes ? t('ui.ratingsStrip.withVotes', { name: scoreName(s.source), score: scoreText(s), votes: s.votes.toLocaleString(appLocale()) }) : t('ui.ratingsStrip.noVotes', { name: scoreName(s.source), score: scoreText(s) })}>
 				<span class="mark {s.source}" aria-hidden="true">
 					{#if s.source === 'rt_critics'}<svg width="11" height="11" viewBox="0 0 12 12"><circle cx="6" cy="6.6" r="4.8" fill="#fa320a" /><path d="M5 1.4c.6.6 1 .9 1.8.7" stroke="#00912d" stroke-width="1.4" fill="none" stroke-linecap="round" /></svg>
 					{:else if s.source === 'rt_audience'}<svg width="11" height="11" viewBox="0 0 12 12"><path d="M2.2 4.6h7.6l-1 6.4H3.2z" fill="#fa320a" /><circle cx="4" cy="3.6" r="1.6" fill="#fff" /><circle cx="6" cy="3" r="1.6" fill="#fff" /><circle cx="8" cy="3.6" r="1.6" fill="#fff" /></svg>

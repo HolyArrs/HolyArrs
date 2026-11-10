@@ -1,5 +1,6 @@
 // Cleans and caches Wikipedia facts for titles and people.
 import { to } from '../core/paths.ts';
+import { t } from '#lib/core/i18n/i18n.svelte.ts';
 
 export type WikiAward = { name: string; family: string; won: boolean; year: number; for_work: string };
 export type WikiBio = { title: string; extract: string; url: string; license: string; license_url: string; attribution: string };
@@ -41,11 +42,14 @@ export function cleanWikiFacts(raw: unknown): WikiFacts {
 
 // Prefers major award families; max caps the lines before an "and N more".
 export function awardsTip(awards: WikiAward[], max = 6): string {
-	const line = (a: WikiAward) => `${a.won ? 'Won' : 'Nominated'}: ${a.name}${a.year ? ` (${a.year})` : ''}`;
+	const line = (a: WikiAward) => {
+		const name = a.year ? `${a.name} (${a.year})` : a.name;
+		return a.won ? t('ui.wikiFacts.won', { name }) : t('ui.wikiFacts.nominated', { name });
+	};
 	const major = awards.filter((a) => a.family);
 	const list = (major.length ? major : awards).slice(0, max).map(line);
 	const more = (major.length ? major : awards).length - list.length;
-	return more > 0 ? [...list, `and ${more} more`].join('\n') : list.join('\n');
+	return more > 0 ? [...list, t('ui.wikiFacts.andMore', { count: more })].join('\n') : list.join('\n');
 }
 
 // Caches per request so repeated opens do not refetch; ids must be positive numbers.

@@ -1,4 +1,5 @@
 // Words and checks for the Pick rules editor, kept apart from the pages so they can be tested. The checks mirror the server's so a mistake shows at once; the server still has the last word.
+import { t as say } from '#lib/core/i18n/i18n.svelte.ts';
 import type { OwnTrait, PickRulesBody, PickRulesSize, PickRulesUse } from './types.ts';
 
 export type RulesKind = 'movie' | 'show' | 'music';
@@ -27,99 +28,58 @@ export const safetyTraits = ['sample', 'executable', 'password_protected', 'disc
 
 /** Languages HolyArrs can tell apart in a Release name. */
 export const languages: [string, string][] = [
-	['en', 'English'],
-	['fr', 'French'],
-	['de', 'German'],
-	['it', 'Italian'],
-	['es', 'Spanish'],
-	['ru', 'Russian'],
-	['ja', 'Japanese'],
-	['ko', 'Korean']
+	tup<[string, string]>('en', () => say('downloads.pr.lang.en')),
+	tup<[string, string]>('fr', () => say('downloads.pr.lang.fr')),
+	tup<[string, string]>('de', () => say('downloads.pr.lang.de')),
+	tup<[string, string]>('it', () => say('downloads.pr.lang.it')),
+	tup<[string, string]>('es', () => say('downloads.pr.lang.es')),
+	tup<[string, string]>('ru', () => say('downloads.pr.lang.ru')),
+	tup<[string, string]>('ja', () => say('downloads.pr.lang.ja')),
+	tup<[string, string]>('ko', () => say('downloads.pr.lang.ko'))
 ];
 
 export const kindChoices: [RulesKind, string][] = [
-	['movie', 'Movies'],
-	['show', 'TV shows'],
-	['music', 'Music']
+	tup<[RulesKind, string]>('movie', () => say('downloads.kind.movies')),
+	tup<[RulesKind, string]>('show', () => say('downloads.kind.shows')),
+	tup<[RulesKind, string]>('music', () => say('downloads.kind.music'))
 ];
 
 export const preferChoices: { value: PickRulesBody['protocol']['prefer']; label: string }[] = [
-	{ value: 'either', label: 'Either' },
+	{ value: 'either', get label() { return say('downloads.pr.either'); } },
 	{ value: 'torrent', label: 'Torrent' },
 	{ value: 'usenet', label: 'Usenet' }
 ];
 
 export const orderChoices: [PickRulesBody['order'], string, string][] = [
-	['quality_then_points', 'The best step first, then points', 'A higher step always wins; points decide between Releases on the same step.'],
-	['points_then_quality', 'Most points first, then the step', 'Points always win; the step decides when the points are equal.']
+	tup<[PickRulesBody['order'], string, string]>('quality_then_points', () => say('downloads.pr.order.quality_then_points.label'), () => say('downloads.pr.order.quality_then_points.desc')),
+	tup<[PickRulesBody['order'], string, string]>('points_then_quality', () => say('downloads.pr.order.points_then_quality.label'), () => say('downloads.pr.order.points_then_quality.desc'))
 ];
 
 export const properChoices: [PickRulesBody['proper_policy']['mode'], string, string][] = [
-	['take_any', 'Replace with any fixed copy', 'A fixed re-release of the same step replaces the file, even once it is good enough.'],
-	['same_group_only', 'Only a fix from the same group', 'Only a fixed copy from the group that made the current file replaces it.'],
-	['prefer_only', 'Prefer fixed copies, never replace for one', 'A fixed copy wins when choosing, but never replaces a file you have.'],
-	['ignore', 'Ignore fixed copies', 'A fixed copy counts like any other Release.']
+	tup<[PickRulesBody['proper_policy']['mode'], string, string]>('take_any', () => say('downloads.pr.proper.take_any.label'), () => say('downloads.pr.proper.take_any.desc')),
+	tup<[PickRulesBody['proper_policy']['mode'], string, string]>('same_group_only', () => say('downloads.pr.proper.same_group_only.label'), () => say('downloads.pr.proper.same_group_only.desc')),
+	tup<[PickRulesBody['proper_policy']['mode'], string, string]>('prefer_only', () => say('downloads.pr.proper.prefer_only.label'), () => say('downloads.pr.proper.prefer_only.desc')),
+	tup<[PickRulesBody['proper_policy']['mode'], string, string]>('ignore', () => say('downloads.pr.proper.ignore.label'), () => say('downloads.pr.proper.ignore.desc'))
 ];
 
-const steps: Record<string, string> = {
-	cam: 'Filmed in a cinema',
-	telesync: 'Cinema copy with clean sound',
-	sd_tv: 'SD from TV',
-	sd_dvd: 'DVD',
-	'720p_tv': '720p TV',
-	'720p_web': '720p web',
-	'720p_bluray': '720p Blu-ray',
-	'1080p_tv': '1080p TV',
-	'1080p_web': '1080p web',
-	'1080p_bluray': '1080p Blu-ray',
-	'1080p_remux': '1080p remux',
-	'2160p_web': '4K web',
-	'2160p_bluray': '4K Blu-ray',
-	'2160p_remux': '4K remux',
-	lossy_low: 'Lossy, under 192 kbps',
-	lossy_mid: 'Lossy, 192 to 256 kbps',
-	lossy_high: 'Lossy at its best (MP3 320 or V0)',
-	lossless: 'Lossless (CD quality)',
-	lossless_hires: 'Lossless hi-res'
-};
 
-const traits: Record<string, string> = {
-	hevc: 'HEVC (smaller files)',
-	ddp_audio: 'Dolby Digital Plus sound',
-	web_dl: 'Straight from a streaming service',
-	upscaled: 'Upscaled from a lower step',
-	dubbed_only: 'Dubbed, without the original sound',
-	hardcoded_subs: 'Subtitles burned into the picture',
-	'3d': '3D',
-	cam: 'Filmed in a cinema',
-	telesync: 'Cinema copy with clean sound',
-	remux: 'Remux (the disc, untouched)',
-	av1: 'AV1',
-	dv: 'Dolby Vision',
-	hdr10: 'HDR10',
-	hdr10plus: 'HDR10+',
-	atmos: 'Dolby Atmos',
-	cd_source: 'Ripped from a CD',
-	web_source: 'Bought from a web store',
-	vinyl_source: 'Recorded from vinyl',
-	log_cue: 'With a rip log and cue sheet',
-	hires: 'Hi-res',
-	mp3: 'MP3',
-	aac: 'AAC',
-	opus: 'Opus',
-	vorbis: 'Ogg Vorbis',
-	flac: 'FLAC',
-	alac: 'ALAC (Apple lossless)',
-	single_image: 'One file for the whole album',
-	lossy_transcode: 'Lossy sound passed off as lossless',
-	deluxe: 'Deluxe edition',
-	sample: 'Only a short sample',
-	executable: 'Holds a program',
-	password_protected: 'Locked with a password',
-	disc_image: 'A whole disc image'
-};
 
 const plain = (v: string) => v.replaceAll('_', ' ');
+
+/** A line by key, or `fallback` when the key has no line. */
+const word = (key: string, fallback: string) => {
+	const v = say(key);
+	return v === key ? fallback : v;
+};
+
+/** A tuple whose parts that are functions are read each time, so they follow the language picked. */
+function tup<T extends unknown[]>(...parts: unknown[]): T {
+	const a = parts.map((x) => (typeof x === 'function' ? '' : x));
+	parts.forEach((x, i) => {
+		if (typeof x === 'function') Object.defineProperty(a, i, { get: x as () => string, enumerable: true });
+	});
+	return a as T;
+}
 
 /** Whether the kinds are music (music stands alone). */
 export function isMusic(kinds: string[]): boolean {
@@ -133,7 +93,7 @@ export function ladderFor(kinds: string[]): string[] {
 
 /** A quality step in plain words. */
 export function stepLabel(q: string): string {
-	return steps[q] ?? plain(q);
+	return word(`downloads.pr.steps.${q}`, plain(q));
 }
 
 /** Whether a trait key names one of your own traits (own:<id>). */
@@ -143,8 +103,8 @@ export function isOwnTrait(t: string): boolean {
 
 /** A trait in plain words; `mine` names your own traits. */
 export function traitLabel(t: string, mine: OwnTrait[] = []): string {
-	if (isOwnTrait(t)) return mine.find((o) => o.key === t)?.name ?? 'A trait of yours that was removed';
-	return traits[t] ?? plain(t);
+	if (isOwnTrait(t)) return mine.find((o) => o.key === t)?.name ?? say('downloads.pr.removedTrait');
+	return word(`downloads.pr.traits.${t}`, plain(t));
 }
 
 /** Traits that can earn points or be a must-have for the kinds, your own last. */
@@ -166,11 +126,11 @@ export function ownTerms(text: string): string[] {
 export function checkOwnTrait(name: string, terms: string[]): Record<string, string> {
 	const err: Record<string, string> = {};
 	const n = name.trim();
-	if (!n) err.name = 'Give the trait a name.';
-	else if ([...n].length > 60) err.name = 'A name can be at most 60 characters.';
-	if (terms.length === 0) err.terms = 'List at least one word or pattern.';
-	else if (terms.length > 50) err.terms = 'List at most 50 terms.';
-	else if (terms.some((t) => [...t].length > 200)) err.terms = 'Each term holds at most 200 characters.';
+	if (!n) err.name = say('downloads.pr.err.traitName');
+	else if ([...n].length > 60) err.name = say('downloads.pr.err.name60');
+	if (terms.length === 0) err.terms = say('downloads.pr.err.termsMin');
+	else if (terms.length > 50) err.terms = say('downloads.pr.err.terms50');
+	else if (terms.some((t) => [...t].length > 200)) err.terms = say('downloads.pr.err.term200');
 	// Patterns are left to the server because its patterns differ from the browser's.
 	return err;
 }
@@ -207,82 +167,76 @@ export function blankBody(kind: RulesKind): PickRulesBody {
 	};
 }
 
-const useWords: [keyof PickRulesUse, string, string][] = [
-	['versions', 'Version', 'Versions'],
-	['library_folders', 'Library folder', 'Library folders'],
-	['outside_lists', 'Outside list', 'Outside lists'],
-	['wishlist', 'Request rule', 'Request rules'],
-	['title_defaults', 'Movies and TV default', 'Movies and TV defaults']
-];
+const useKeys: (keyof PickRulesUse)[] = ['versions', 'library_folders', 'outside_lists', 'wishlist', 'title_defaults'];
 
 /** Where Pick rules are used: the full counts from one rule, or the total from the list. */
 export function usedWords(use: PickRulesUse | number | undefined): string {
 	if (use === undefined) return '';
-	if (typeof use === 'number') return use === 0 ? 'Not used yet' : `Used in ${use} ${use === 1 ? 'place' : 'places'}`;
-	const parts = useWords.filter(([k]) => use[k] > 0).map(([k, one, many]) => `${use[k]} ${use[k] === 1 ? one : many}`);
-	return parts.length ? `Used by ${joinWords(parts)}` : 'Not used yet';
+	if (typeof use === 'number') return use === 0 ? say('downloads.pr.notUsed') : say(use === 1 ? 'downloads.pr.usedIn.one' : 'downloads.pr.usedIn.other', { count: use });
+	const parts = useKeys.filter((k) => use[k] > 0).map((k) => say(`downloads.pr.use.${k}.${use[k] === 1 ? 'one' : 'other'}`, { count: use[k] }));
+	return parts.length ? say('downloads.pr.usedBy', { list: joinWords(parts) }) : say('downloads.pr.notUsed');
 }
 
 const inPoints = (n: number) => Number.isInteger(n) && n >= -10000 && n <= 10000;
-const pointsText = 'Points go from -10000 to 10000.';
-const waitText = 'A wait can be 0 to 10080 minutes (7 days).';
+const pointsText = () => say('downloads.pr.err.points');
+const waitText = () => say('downloads.pr.err.wait');
 
 /** Finds what the server would refuse, as field to words. Empty means it looks fine. */
 export function checkBody(name: string, kinds: string[], body: PickRulesBody, mine: OwnTrait[] = []): Record<string, string> {
 	const err: Record<string, string> = {};
 	const n = name.trim();
-	if (!n) err.name = 'Give these Pick rules a name.';
-	else if ([...n].length > 200) err.name = 'A name can be at most 200 characters.';
+	if (!n) err.name = say('downloads.pr.err.rulesName');
+	else if ([...n].length > 200) err.name = say('downloads.pr.err.name200');
 
-	if (kinds.length === 0 || kinds.length > 3) err.kinds = 'Pick movies, shows or music.';
-	else if (new Set(kinds).size !== kinds.length) err.kinds = 'Each kind can be picked once.';
-	else if (kinds.some((k) => !kindChoices.some(([c]) => c === k))) err.kinds = 'Pick movies, shows or music.';
-	else if (isMusic(kinds) && kinds.length > 1) err.kinds = 'Music Pick rules are for music alone.';
+	if (kinds.length === 0 || kinds.length > 3) err.kinds = say('downloads.pr.err.kinds');
+	else if (new Set(kinds).size !== kinds.length) err.kinds = say('downloads.pr.err.kindOnce');
+	else if (kinds.some((k) => !kindChoices.some(([c]) => c === k))) err.kinds = say('downloads.pr.err.kinds');
+	else if (isMusic(kinds) && kinds.length > 1) err.kinds = say('downloads.pr.err.musicAlone');
 
 	const ladder = ladderFor(kinds);
 	const qualities = body.steps.map((s) => s.quality);
-	if (qualities.some((q) => !ladder.includes(q))) err.steps = 'These steps are for another kind.';
-	else if (new Set(qualities).size !== qualities.length) err.steps = 'Each step can be listed once.';
-	else if (!body.steps.some((s) => s.allowed)) err.steps = 'Turn on at least one step.';
-	if (!err.steps && !body.steps.some((s) => s.allowed && s.quality === body.good_enough_at)) err.good_enough_at = 'Good enough must be a step that is on.';
+	if (qualities.some((q) => !ladder.includes(q))) err.steps = say('downloads.pr.err.stepsOther');
+	else if (new Set(qualities).size !== qualities.length) err.steps = say('downloads.pr.err.stepOnce');
+	else if (!body.steps.some((s) => s.allowed)) err.steps = say('downloads.pr.err.stepOn');
+	if (!err.steps && !body.steps.some((s) => s.allowed && s.quality === body.good_enough_at)) err.good_enough_at = say('downloads.pr.err.goodEnough');
 
 	const own = traitsFor(kinds, mine);
 	const names = body.traits.map((t) => t.trait);
-	if (new Set(names).size !== names.length) err.traits = 'Each trait can be listed once.';
+	if (new Set(names).size !== names.length) err.traits = say('downloads.pr.err.traitOnce');
 	else if (names.some((t) => !own.includes(t))) {
 		const bad = names.find((t) => !own.includes(t)) ?? '';
-		err.traits = isOwnTrait(bad) ? 'A trait of yours that was removed is still listed; take it out.' : `${bad} is not a trait for these kinds.`;
+		err.traits = isOwnTrait(bad) ? say('downloads.pr.err.ownRemoved') : say('downloads.pr.err.notTrait', { bad });
 	}
-	else if (body.traits.some((t) => !inPoints(t.points))) err.traits = pointsText;
+	else if (body.traits.some((t) => !inPoints(t.points))) err.traits = pointsText();
 
-	const must = listProblem(body.must_have, own, 'a must-have');
+	const must = listProblem(body.must_have, own, say('downloads.pr.err.aMust'));
 	if (must) err.must_have = must;
-	const never = listProblem(body.never, neverChoices(kinds, mine), 'in Never');
+	const never = listProblem(body.never, neverChoices(kinds, mine), say('downloads.pr.err.inNever'));
 	if (never) err.never = never;
 
-	if (!inPoints(body.min_points)) err.min_points = pointsText;
-	if (!inPoints(body.upgrade_min_points)) err.upgrade_min_points = pointsText;
-	if (body.good_enough_points !== undefined && !inPoints(body.good_enough_points)) err.good_enough_points = pointsText;
+	if (!inPoints(body.min_points)) err.min_points = pointsText();
+	if (!inPoints(body.upgrade_min_points)) err.upgrade_min_points = pointsText();
+	if (body.good_enough_points !== undefined && !inPoints(body.good_enough_points)) err.good_enough_points = pointsText();
 
 	for (const [step, l] of Object.entries(body.size_limits)) {
-		if (step !== '*' && !qualities.includes(step)) err.size_limits = 'A size is set for a step these rules do not have.';
-		else if (l.min < 0 || l.max < 0) err.size_limits = 'Sizes cannot be below 0.';
-		else if (l.max < l.min) err.size_limits = 'The smallest size cannot be more than the largest.';
-		else if (l.max > 2 ** 50) err.size_limits = 'The largest size is too big.';
+		if (step !== '*' && !qualities.includes(step)) err.size_limits = say('downloads.pr.err.sizeStep');
+		else if (l.min < 0 || l.max < 0) err.size_limits = say('downloads.pr.err.sizeNeg');
+		else if (l.max < l.min) err.size_limits = say('downloads.pr.err.sizeOrder');
+		else if (l.max > 2 ** 50) err.size_limits = say('downloads.pr.err.sizeBig');
 		if (err.size_limits) break;
 	}
 
 	const wait = (m: number) => Number.isInteger(m) && m >= 0 && m <= 10080;
-	if (!wait(body.protocol.wait_minutes_torrent)) err.wait_minutes_torrent = waitText;
-	if (!wait(body.protocol.wait_minutes_usenet)) err.wait_minutes_usenet = waitText;
+	if (!wait(body.protocol.wait_minutes_torrent)) err.wait_minutes_torrent = waitText();
+	if (!wait(body.protocol.wait_minutes_usenet)) err.wait_minutes_usenet = waitText();
 
 	const known = languages.map(([c]) => c);
 	const lang = body.language.wanted.find((l) => !known.includes(l));
-	if (lang !== undefined) err.language = `${lang} is not a language HolyArrs knows.`;
-	else if (new Set(body.language.wanted).size !== body.language.wanted.length) err.language = 'Each language can be picked once.';
+	if (lang !== undefined) err.language = say('downloads.pr.err.langUnknown', { lang });
+	else if (new Set(body.language.wanted).size !== body.language.wanted.length) err.language = say('downloads.pr.err.langOnce');
 
 	const age = body.proper_policy.max_age_days ?? 0;
-	if (!Number.isInteger(age) || age < 0 || age > 36500) err.max_age_days = 'Days go from 0 to 36500.';
+	if (!Number.isInteger(age) || age < 0 || age > 36500) err.max_age_days = say('downloads.pr.err.days');
 	return err;
 }
 
@@ -361,13 +315,13 @@ export function copyName(name: string): string {
 }
 
 function joinWords(parts: string[]): string {
-	return parts.length < 2 ? parts.join('') : `${parts.slice(0, -1).join(', ')} and ${parts.at(-1)}`;
+	return parts.length < 2 ? parts.join('') : say('downloads.pr.andJoin', { first: parts.slice(0, -1).join(', '), last: parts.at(-1) ?? '' });
 }
 
 function listProblem(values: string[], allowed: string[], what: string): string | undefined {
-	if (new Set(values).size !== values.length) return 'Each trait can be listed once.';
+	if (new Set(values).size !== values.length) return say('downloads.pr.err.traitOnce');
 	const bad = values.find((v) => !allowed.includes(v));
 	if (bad === undefined) return undefined;
-	if (safetyTraits.includes(bad)) return `${traitLabel(bad)} cannot be ${what}.`;
-	return isOwnTrait(bad) ? 'A trait of yours that was removed is still listed; take it out.' : `${bad} is not a trait for these kinds.`;
+	if (safetyTraits.includes(bad)) return say('downloads.pr.err.cannotBe', { trait: traitLabel(bad), what });
+	return isOwnTrait(bad) ? say('downloads.pr.err.ownRemoved') : say('downloads.pr.err.notTrait', { bad });
 }

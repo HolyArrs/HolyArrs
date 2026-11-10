@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import '#lib/ui/title-page.css';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import TitleSection from '#lib/ui/TitleSection.svelte';
@@ -52,7 +54,7 @@
 		titleId: title.id,
 		staff,
 		progress: staff ? artistProgress(artist) : '',
-		status: staff && artist?.missing ? `${artist.missing} missing` : heroWords.label,
+		status: staff && artist?.missing ? t('music.missing2', { n: artist.missing }) : heroWords.label,
 		note: visibleDisambiguation,
 		nextRelease: artist?.next_release ? date(artist.next_release) : undefined,
 		stamp,
@@ -103,9 +105,9 @@
 
 	function asked(_a: LookupArtist, r: { ask: Ask; joined: boolean }) {
 		const what = `${title.name} (${albumWords(r.ask.albums)})`;
-		if (r.ask.state === 'approved') toasts.push(`${what} approved`, 'ok', { body: 'Kept up to date' });
-		else if (r.joined) toasts.push(`${what} already requested`, 'ok', { body: "You're on the request too" });
-		else toasts.push(`${what} requested`, 'ok', { body: 'Waiting for approval' });
+		if (r.ask.state === 'approved') toasts.push(t('music.approved', { what }), 'ok', { body: t('music.keptUpToDate') });
+		else if (r.joined) toasts.push(t('music.alreadyRequested', { what }), 'ok', { body: t('music.youReOnThe') });
+		else toasts.push(t('music.requested2', { what }), 'ok', { body: t('music.waitingForApproval') });
 		void reload();
 	}
 </script>
@@ -116,18 +118,18 @@
 {#if loadErr || error}<LoadError hasData message={loadErr || error} onretry={() => void retry()} busy={retrying} />{/if}
 
 {#if title.asks?.length}
-	<TitleSection id="h-artist-asks" title="Requests" testid="title-asks">
+	<TitleSection id="h-artist-asks" title={t('music.requests')} testid="title-asks">
 		{#each title.asks as a (a.id)}
 			<dl class="facts">
-				<dt>Asked by</dt>
+				<dt>{t('music.askedBy')}</dt>
 				<dd>{peopleNames(a.people.map((p) => p.name))} · {date(a.asked_at)}</dd>
-				<dt>For</dt>
+				<dt>{t('music.for')}</dt>
 				<dd>{a.album_words ?? albumWords(a.albums)}</dd>
-				{#if decided(a)}<dt>Decided</dt>
+				{#if decided(a)}<dt>{t('music.decided')}</dt>
 					<dd>{decided(a)}{a.decided_at ? ` · ${date(a.decided_at)}` : ''}</dd>{/if}
-				<dt>Now</dt>
-				<dd>{a.state_label}</dd>
-				{#if a.note}<dt>Note</dt>
+				<dt>{t('music.now2')}</dt>
+				<dd>{serverWords(a.state_label)}</dd>
+				{#if a.note}<dt>{t('music.note')}</dt>
 					<dd>{a.note}</dd>{/if}
 			</dl>
 		{/each}

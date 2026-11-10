@@ -1,0 +1,16 @@
+{
+	"settings.danger.stopping": "HolyArrs बंद हो रहा है।",
+	"settings.danger.couldnt": "{action} नहीं हो सका",
+	"settings.danger.title": "डेंजर ज़ोन",
+	"settings.danger.ownerOnly": "सिर्फ़ ओनर और एडमिन",
+	"settings.danger.ask": "{label}?",
+	"settings.danger.yes": "हां, {action}",
+	"settings.danger.cancel": "रद्द करें",
+	"settings.danger.expires": "60 सेकंड में खत्म",
+	"settings.danger.wholeApp": "पूरा ऐप",
+	"settings.danger.intro": "ये HolyArrs को बंद कर देते हैं। Docker की रीस्टार्ट पॉलिसी उसे कुछ सेकंड में फिर शुरू कर देती है, जब तक पॉलिसी <code>no</code> न हो; तब कंटेनर ख़ुद शुरू करें। हर एक पहले पूछता है।",
+	"settings.danger.restart": "HolyArrs रीस्टार्ट करें",
+	"settings.danger.safe": "सेफ़ मोड में रीस्टार्ट करें",
+	"settings.danger.shutdown": "बंद करें",
+	"settings.danger.safeNote": "एक बार सिर्फ़ साइन-इन, सेटिंग और लाइब्रेरी के साथ शुरू होता है। जब कोई हिस्सा शुरुआत रोक रहा हो तब इस्तेमाल करें।"
+}

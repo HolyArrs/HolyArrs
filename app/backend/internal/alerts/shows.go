@@ -180,14 +180,17 @@ func episodesFromLabels(e domain.Event) []Episode {
 
 // episodeWords names episodes for a subject: S01E02, or S01E01 to S01E03
 // (3 episodes).
-func episodeWords(eps []Episode) string {
+func episodeWords(eps []Episode) string { return episodeWordsIn("", eps) }
+
+// episodeWordsIn is episodeWords in an app language.
+func episodeWordsIn(lang string, eps []Episode) string {
 	switch len(eps) {
 	case 0:
 		return ""
 	case 1:
 		return eps[0].Label()
 	}
-	return fmt.Sprintf("%s to %s (%d episodes)", eps[0].Label(), eps[len(eps)-1].Label(), len(eps))
+	return say(lang, "episode_range", "from", eps[0].Label(), "to", eps[len(eps)-1].Label(), "n", strconv.Itoa(len(eps)))
 }
 
 // episodeLines lists episodes with their names, one per line.

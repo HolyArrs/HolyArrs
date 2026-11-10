@@ -2,6 +2,7 @@
 	import Button from '#lib/ui/Button.svelte';
 	import Chip from '#lib/ui/Chip.svelte';
 	import type { FilterState, SavedFilter } from './table.ts';
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 
 	type Props = {
 		sheet?: boolean;
@@ -27,9 +28,9 @@
 {#snippet body()}
 <div class="sf-saved">
 	{#each saved as sv (sv.name)}<Chip label={sv.name} icon="star" selected={sameFilter(sv.filter, filter)} onclick={() => setFilter(sv.filter)} onremove={() => forget(sv.name)} />{/each}
-	<Button variant="plain" size="sm" icon="plus" disabled={!filtersOn} onclick={openSave}>Save this filter</Button>
+	<Button variant="plain" size="sm" icon="plus" disabled={!filtersOn} onclick={openSave}>{t('mediafiles.dialogs.saveFilter')}</Button>
 </div>
-<Button variant="plain" size="sm" disabled={!filtersOn} onclick={clearFilters}>Clear filters</Button>
+<Button variant="plain" size="sm" disabled={!filtersOn} onclick={clearFilters}>{t('mediafiles.saved.clear')}</Button>
 {/snippet}
 
 <style>

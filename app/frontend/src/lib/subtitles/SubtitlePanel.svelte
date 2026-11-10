@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import Button from '#lib/ui/Button.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
 	import WishEditor from './LanguageWants.svelte';
@@ -139,7 +140,7 @@
 			const body: Record<string, unknown> = own ? { languages: draft } : { inherit: true };
 			if (itemId) body.item_id = itemId;
 			await api.put(`/titles/${titleId}/subtitle-wish`, body);
-			toasts.push(own ? 'Subtitle languages saved' : 'Using default languages', 'ok');
+			toasts.push(own ? t('subtitles.panel.saved') : t('subtitles.panel.usingDefault'), 'ok');
 			editing = false;
 			await load();
 		} catch (err) {
@@ -155,9 +156,9 @@
 			const body: Record<string, number> = { title_id: titleId };
 			if (itemId) body.item_id = itemId;
 			const r = await api.post<{ queued: number }>('/subtitles/search', body);
-			toasts.push(r.queued ? 'Searching for subtitles' : 'No file to search yet', r.queued ? 'info' : 'ok');
+			toasts.push(r.queued ? t('subtitles.panel.searching') : t('subtitles.panel.noFile'), r.queued ? 'info' : 'ok');
 		} catch (e) {
-			toasts.push(`Couldn't search subtitles`, 'fail', { body: message(e) });
+			toasts.push(t('subtitles.panel.searchFailed'), 'fail', { body: message(e) });
 		} finally {
 			searching = false;
 		}
@@ -185,7 +186,7 @@
 		choosingKey = key;
 		try {
 			const r = await api.post<{ path: string }>(`/files/${fileId}/subtitles/choose`, { site, key });
-			toasts.push('Subtitle saved', 'ok', { body: fileName(r.path) });
+			toasts.push(t('subtitles.panel.chosen'), 'ok', { body: fileName(r.path) });
 			choosing = 0;
 			await load();
 		} catch (e) {
@@ -207,13 +208,13 @@
 		e.preventDefault();
 		const body = syncBody(Number(offset), fps);
 		if (!body.offset_ms && !body.from_fps) {
-			syncError = 'Shift the timing or change the frame rate first.';
+			syncError = t('subtitles.panel.shiftFirst');
 			return;
 		}
 		busy = true;
 		try {
 			await api.post(`/subtitles/${syncing}/sync`, body);
-			toasts.push('Timing fixed', 'ok', { body: 'Old file in the holding folder' });
+			toasts.push(t('subtitles.panel.timingFixed'), 'ok', { body: t('subtitles.panel.oldInHolding') });
 			syncing = 0;
 			await load();
 		} catch (err) {
@@ -235,7 +236,7 @@
 		busy = true;
 		try {
 			await api.post(`/subtitles/${turning}/turn-down`, { reason: reason.trim() });
-			toasts.push('Subtitle turned down', 'ok', { body: 'Searching for the next Release' });
+			toasts.push(t('subtitles.panel.turnedDown'), 'ok', { body: t('subtitles.panel.nextRelease') });
 			turning = 0;
 			await load();
 		} catch (err) {
@@ -248,9 +249,9 @@
 
 <section class="card subs" aria-labelledby="{idp}-h" data-testid="subtitles">
 	<div class="card-head" class:bare>
-		<h2 id="{idp}-h" class="h2" class:sr-only={bare}>{label ? `Subtitles of ${label}` : 'Subtitles'}</h2>
+		<h2 id="{idp}-h" class="h2" class:sr-only={bare}>{label ? t('subtitles.panel.titleOf', { label }) : t('subtitles.panel.title')}</h2>
 		{#if !session.held('subtitle_sites')}<Button size="sm" icon="search" onclick={search} disabled={searching} busy={searching} data-testid="subtitle-search">
-			Look for subtitles
+			{t('subtitles.panel.look')}
 		</Button>{/if}
 	</div>
 	{#if error}
@@ -261,29 +262,29 @@
 		{#if !editing}
 			<div class="wish">
 				<p class="small" data-testid="subtitle-wish">
-					<b>Languages</b>
+					<b>{t('subtitles.panel.languages')}</b>
 					<span class="wish-v">{shown ? wishLine(shown.languages, langs) : '…'}{#if shown}{' · '}<span class="muted">{fromWords(shown.from, movie)}</span>{/if}</span>
 				</p>
-				<Button variant="plain" size="sm" onclick={startWish} aria-label="Change the subtitle languages" data-testid="subtitle-wish-change">Change</Button>
+				<Button variant="plain" size="sm" onclick={startWish} aria-label={t('subtitles.panel.changeLanguages')} data-testid="subtitle-wish-change">{t('subtitles.panel.change')}</Button>
 			</div>
 		{:else}
-			<form class="wish-form" onsubmit={saveWish} aria-label="Subtitle languages">
+			<form class="wish-form" onsubmit={saveWish} aria-label={t('subtitles.panel.languagesForm')}>
 				<fieldset class="group">
-					<legend class="label">Which languages</legend>
+					<legend class="label">{t('subtitles.panel.which')}</legend>
 					<label class="checkline">
 						<input type="radio" name="{idp}-own" checked={!own} onchange={() => (own = false)} />
-						<span>{itemId ? 'The same as the show' : 'The default languages'}<br /><span class="hint">Follows {itemId ? 'the show' : 'Settings > Subtitles'} when that changes.</span></span>
+						<span>{itemId ? t('subtitles.panel.sameAsShow') : t('subtitles.panel.defaultLanguages')}<br /><span class="hint">{itemId ? t('subtitles.panel.followsShow') : t('subtitles.panel.followsSettings')}</span></span>
 					</label>
 					<label class="checkline">
 						<input type="radio" name="{idp}-own" checked={own} onchange={() => (own = true)} />
-						<span>Its own languages<br /><span class="hint">An empty list means no subtitles {itemId ? 'for this episode' : movie ? 'for this movie' : 'for this show'}.</span></span>
+						<span>{t('subtitles.panel.own')}<br /><span class="hint">{itemId ? t('subtitles.panel.emptyEpisode') : movie ? t('subtitles.panel.emptyMovie') : t('subtitles.panel.emptyShow')}</span></span>
 					</label>
 				</fieldset>
 				{#if own}<WishEditor bind:wants={draft} {langs} id="{idp}-w" />{/if}
 				{#if wishError}<p class="form-error" role="alert">{wishError}</p>{/if}
 				<div class="row actions">
-					<Button variant="plain" onclick={() => (editing = false)}>Cancel</Button>
-					<Button variant="primary" type="submit" disabled={wishBusy} busy={wishBusy}>Save languages</Button>
+					<Button variant="plain" onclick={() => (editing = false)}>{t('subtitles.panel.cancel')}</Button>
+					<Button variant="primary" type="submit" disabled={wishBusy} busy={wishBusy}>{t('subtitles.panel.saveLanguages')}</Button>
 				</div>
 			</form>
 		{/if}
@@ -291,10 +292,10 @@
 		{#if !showFiles}
 			<p class="small missing-line">
 				{#if missingCount}
-					<a href={to(`/library/missing-subtitles?title=${titleId}`)} data-testid="subtitle-missing-link">{missingCount} {missingCount === 1 ? 'subtitle' : 'subtitles'} missing</a>
-					<span class="muted">across its episodes.</span>
+					<a href={to(`/library/missing-subtitles?title=${titleId}`)} data-testid="subtitle-missing-link">{t(missingCount === 1 ? 'subtitles.panel.missing.one' : 'subtitles.panel.missing.other', { count: missingCount })}</a>
+					<span class="muted">{t('subtitles.panel.acrossEpisodes')}</span>
 				{:else}
-					<span class="muted">None missing. Each episode has its own Subtitles.</span>
+					<span class="muted">{t('subtitles.panel.noneMissing')}</span>
 				{/if}
 			</p>
 		{:else}
@@ -304,7 +305,7 @@
 				<div class="file" data-testid="subtitle-file">
 					<p class="mono xs muted path">{fileName(f.relative_path)}</p>
 					{#if have.length === 0}
-						<p class="small muted">No subtitles yet.</p>
+						<p class="small muted">{t('subtitles.panel.noneYet')}</p>
 					{:else}
 						<ul class="have">
 							{#each have as s (s.ID)}
@@ -313,64 +314,64 @@
 										<span class="grow">
 											<b class="small">{langName(s.language, langs)}</b>
 											<span class="chip">{kindLabel(s)}</span>
-											{#if s.score !== undefined && s.score !== null}<span class="chip {passes(s.score, passMark) ? 'ok' : 'wait'}" title="Match score out of 100">{s.score}/100</span>{/if}
+											{#if s.score !== undefined && s.score !== null}<span class="chip {passes(s.score, passMark) ? 'ok' : 'wait'}" title={t('subtitles.panel.scoreTitle')}>{s.score}/100</span>{/if}
 										</span>
 										{#if ours(s)}
 											<span class="row sub-actions">
-												{#if !session.held('subtitle_sites')}<Button variant="plain" size="sm" onclick={() => openSync(s)} aria-label="Sync fix for {langName(s.language, langs)}" data-testid="subtitle-sync">Sync fix</Button>{/if}
-												{#if !session.held('subtitle_sites')}<Button variant="plain" size="sm" onclick={() => openTurn(s)} aria-label="Turn down {langName(s.language, langs)}" data-testid="subtitle-turn-down">Turn down</Button>{/if}
+												{#if !session.held('subtitle_sites')}<Button variant="plain" size="sm" onclick={() => openSync(s)} aria-label={t('subtitles.panel.syncFor', { name: langName(s.language, langs) })} data-testid="subtitle-sync">{t('subtitles.panel.syncFix')}</Button>{/if}
+												{#if !session.held('subtitle_sites')}<Button variant="plain" size="sm" onclick={() => openTurn(s)} aria-label={t('subtitles.panel.turnDownFor', { name: langName(s.language, langs) })} data-testid="subtitle-turn-down">{t('subtitles.panel.turnDown')}</Button>{/if}
 											</span>
 										{/if}
 									</div>
 									<p class="xs muted">
-										{sourceLabel(s)}{#if s.saved_at} · saved {dateTime(s.saved_at)}{/if}{#if s.relative_path} · <span class="mono">{fileName(s.relative_path)}</span>{/if}
+										{sourceLabel(s)}{#if s.saved_at} · {t('subtitles.panel.savedAt', { when: dateTime(s.saved_at) })}{/if}{#if s.relative_path} · <span class="mono">{fileName(s.relative_path)}</span>{/if}
 									</p>
 									{#if syncing === s.ID}
-										<form class="inline" onsubmit={sync} aria-label="Sync fix">
-											<p class="small">Shift every line, change the frame rate, or both. The old file goes to the holding folder.</p>
+										<form class="inline" onsubmit={sync} aria-label={t('subtitles.panel.syncFix')}>
+											<p class="small">{t('subtitles.panel.syncIntro')}</p>
 											<div class="field">
-												<label for="{idp}-off-{s.ID}">Shift (milliseconds; below zero is earlier)</label>
+												<label for="{idp}-off-{s.ID}">{t('subtitles.panel.shift')}</label>
 												<div class="row">
-													<Button variant="plain" size="sm" onclick={() => (offset = Number(offset) - step)}>{step} ms earlier</Button>
+													<Button variant="plain" size="sm" onclick={() => (offset = Number(offset) - step)}>{t('subtitles.panel.msEarlier', { ms: step })}</Button>
 													<input id="{idp}-off-{s.ID}" class="input narrow" type="number" min="-600000" max="600000" step="10" bind:value={offset} />
-													<Button variant="plain" size="sm" onclick={() => (offset = Number(offset) + step)}>{step} ms later</Button>
+													<Button variant="plain" size="sm" onclick={() => (offset = Number(offset) + step)}>{t('subtitles.panel.msLater', { ms: step })}</Button>
 												</div>
-												<span class="hint" aria-live="polite">{offsetWords(Number(offset))}. At most 10 minutes either way.</span>
+												<span class="hint" aria-live="polite">{t('subtitles.panel.offsetLine', { words: offsetWords(Number(offset)) })}</span>
 											</div>
 											<label class="checkline">
 												<input type="checkbox" bind:checked={fps.on} />
-												<span>Change the frame rate</span>
+												<span>{t('subtitles.panel.changeFps')}</span>
 											</label>
 											{#if fps.on}
 												<div class="row fps">
 													<div class="field">
-														<label for="{idp}-from-{s.ID}">From (frames a second)</label>
+														<label for="{idp}-from-{s.ID}">{t('subtitles.panel.fpsFrom')}</label>
 														<input id="{idp}-from-{s.ID}" class="input narrow" type="number" min="1" max="120" step="0.001" bind:value={fps.from} />
 													</div>
 													<div class="field">
-														<label for="{idp}-to-{s.ID}">To</label>
+														<label for="{idp}-to-{s.ID}">{t('subtitles.panel.fpsTo')}</label>
 														<input id="{idp}-to-{s.ID}" class="input narrow" type="number" min="1" max="120" step="0.001" bind:value={fps.to} />
 													</div>
 												</div>
 											{/if}
 											{#if syncError}<p class="form-error" role="alert">{syncError}</p>{/if}
 											<div class="row actions">
-												<Button variant="plain" onclick={() => (syncing = 0)}>Cancel</Button>
-												<Button variant="primary" type="submit" disabled={busy} busy={busy}>Fix the timing</Button>
+												<Button variant="plain" onclick={() => (syncing = 0)}>{t('subtitles.panel.cancel')}</Button>
+												<Button variant="primary" type="submit" disabled={busy} busy={busy}>{t('subtitles.panel.fixTiming')}</Button>
 											</div>
 										</form>
 									{/if}
 									{#if turning === s.ID}
-										<form class="inline" onsubmit={turnDown} aria-label="Turn down">
-											<p class="small">It won’t be picked again for this file. Another one is searched for.</p>
+										<form class="inline" onsubmit={turnDown} aria-label={t('subtitles.panel.turnDown')}>
+											<p class="small">{t('subtitles.panel.turnIntro')}</p>
 											<div class="field">
-												<label for="{idp}-why-{s.ID}">Why (optional)</label>
-												<input id="{idp}-why-{s.ID}" class="input" maxlength="200" bind:value={reason} placeholder="Wrong film, out of sync…" />
+												<label for="{idp}-why-{s.ID}">{t('subtitles.panel.why')}</label>
+												<input id="{idp}-why-{s.ID}" class="input" maxlength="200" bind:value={reason} placeholder={t('subtitles.panel.whyPlaceholder')} />
 											</div>
 											{#if turnError}<p class="form-error" role="alert">{turnError}</p>{/if}
 											<div class="row actions">
-												<Button variant="plain" onclick={() => (turning = 0)}>Cancel</Button>
-												<Button variant="primary" type="submit" disabled={busy} busy={busy} data-testid="subtitle-turn-down-yes">Turn it down</Button>
+												<Button variant="plain" onclick={() => (turning = 0)}>{t('subtitles.panel.cancel')}</Button>
+												<Button variant="primary" type="submit" disabled={busy} busy={busy} data-testid="subtitle-turn-down-yes">{t('subtitles.panel.turnItDown')}</Button>
 											</div>
 										</form>
 									{/if}
@@ -387,7 +388,7 @@
 					{/if}
 					<div class="row file-actions">
 						{#if !session.held('subtitle_sites')}<Button size="sm" onclick={() => (choosing === f.file_id ? (choosing = 0) : openChoose(f.file_id))} aria-expanded={choosing === f.file_id} data-testid="subtitle-choose">
-							Choose a subtitle
+							{t('subtitles.panel.chooseOne')}
 						</Button>{/if}
 					</div>
 					{#if choosing === f.file_id}
@@ -395,19 +396,19 @@
 							{#if choicesError}
 								<p class="form-error" role="alert">{choicesError}</p>
 							{:else if !choices}
-								<p class="small muted">Asking the Subtitle sites…</p>
+								<p class="small muted">{t('subtitles.panel.asking')}</p>
 								<div class="sk" style="height: 60px"></div>
 							{:else if choices.outcomes.length === 0}
-								<p class="small muted">No languages are wished for this file. Set some above first.</p>
+								<p class="small muted">{t('subtitles.panel.noWished')}</p>
 							{:else}
 								<p class="xs muted">
-									Asked {choices.sites_asked.length ? choices.sites_asked.join(', ') : 'no Subtitle site (add one in Settings > Subtitles)'}.
-									{#if passMark}A search on its own takes only scores of {passMark} or more; by hand you may take any.{/if}
+									{t('subtitles.panel.asked', { sites: choices.sites_asked.length ? choices.sites_asked.join(', ') : t('subtitles.panel.noSite') })}
+									{#if passMark}{t('subtitles.panel.passMark', { mark: passMark })}{/if}
 								</p>
 								{#each choices.outcomes as o, oi (oi)}
 									<h3 class="h3 lang">{wantLabel(o.want, langs)}</h3>
 									{#if !o.choices?.length}
-										<p class="small muted">{o.reason || 'Nothing found for this language.'}</p>
+										<p class="small muted">{o.reason || t('subtitles.panel.nothingFound')}</p>
 									{:else}
 										<ul class="cands" data-lang={o.want.language}>
 											{#each o.choices as c (c.site + c.key)}
@@ -415,13 +416,13 @@
 													<div class="sub-top">
 														<span class="grow">
 															<span class="mono small rel">{c.release_names?.[0] ?? c.title ?? c.key}</span>
-															<span class="xs muted">{c.site}{#if c.hearing_impaired} · hearing-impaired{/if}{#if c.forced} · forced{/if}{#if c.trusted} · trusted uploader{/if}{#if c.downloads} · {c.downloads} downloads{/if}</span>
+															<span class="xs muted">{c.site}{#if c.hearing_impaired} · {t('subtitles.panel.cHi')}{/if}{#if c.forced} · {t('subtitles.panel.cForced')}{/if}{#if c.trusted} · {t('subtitles.panel.cTrusted')}{/if}{#if c.downloads} · {t('subtitles.panel.cDownloads', { count: c.downloads })}{/if}</span>
 														</span>
 														<span class="chip {c.score.refused ? 'fail' : passes(c.score.total, passMark) ? 'ok' : 'wait'}" data-testid="subtitle-choice-score">{c.score.total}/100</span>
-														<Button variant="plain" size="sm" disabled={!!choosingKey} busy={choosingKey === c.key} onclick={() => choose(f.file_id, c.site, c.key)} aria-label="Choose {c.release_names?.[0] ?? c.key} from {c.site}">Choose</Button>
+														<Button variant="plain" size="sm" disabled={!!choosingKey} busy={choosingKey === c.key} onclick={() => choose(f.file_id, c.site, c.key)} aria-label={t('subtitles.panel.chooseFrom', { name: c.release_names?.[0] ?? c.key, site: c.site })}>{t('subtitles.panel.choose')}</Button>
 													</div>
 													<ul class="reasons">
-														{#if c.score.refused}<li class="fail">Scores 0: {c.score.refused}</li>{/if}
+														{#if c.score.refused}<li class="fail">{t('subtitles.panel.scoresZero', { why: c.score.refused })}</li>{/if}
 														{#each scoreLines(c.score.parts) as r, ri (ri)}<li class={r.matched ? 'ok' : ''}>{r.text}</li>{/each}
 													</ul>
 												</li>
@@ -434,7 +435,7 @@
 					{/if}
 				</div>
 			{:else}
-				<p class="small muted">No file yet: subtitles are looked for once there is one.</p>
+				<p class="small muted">{t('subtitles.panel.noFileYet')}</p>
 			{/each}
 		{/if}
 	{/if}

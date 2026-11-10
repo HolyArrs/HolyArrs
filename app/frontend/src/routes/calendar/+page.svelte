@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t, appLocale } from '#lib/core/i18n/i18n.svelte.ts';
 	import { createCalendarScroll, type CalendarAnswer } from '#lib/discover/index.ts';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
@@ -80,13 +81,13 @@
 	const agenda = $derived(byDay(shown));
 	const range = $derived({ from: ymd(addDays(start, -1)), to: ymd(addDays(end, 1)) });
 	const rangeName = $derived(
-		`${start.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })} – ${new Date(end.getFullYear(), end.getMonth(), end.getDate() - 1).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}`
+		`${start.toLocaleDateString(appLocale(), { day: 'numeric', month: 'short' })} – ${new Date(end.getFullYear(), end.getMonth(), end.getDate() - 1).toLocaleDateString(appLocale(), { day: 'numeric', month: 'short', year: 'numeric' })}`
 	);
 	// The heading names the week in view (the day at the top of the page), not every day loaded.
 	const viewWeek = $derived.by(() => {
 		const s = weekStart(active ? new Date(active + 'T00:00:00') : (askedMonth ?? now));
 		const e = addDays(s, 6);
-		const f = (d: Date, y: boolean) => d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', ...(y ? { year: 'numeric' } : {}) });
+		const f = (d: Date, y: boolean) => d.toLocaleDateString(appLocale(), { day: 'numeric', month: 'short', ...(y ? { year: 'numeric' } : {}) });
 		return { from: ymd(s), long: `${f(s, false)} – ${f(e, true)}`, short: `${f(s, false)} – ${f(e, false)}` };
 	});
 
@@ -97,11 +98,11 @@
 	let sheetOpen = $state(false);
 	let filtersOpen = $state(false);
 
-	const followsWords: Record<Follows, { label: string; text: string }> = {
-		mine: { label: 'My follows', text: 'What you follow, including everything you asked for.' },
-		everyone: { label: "Everyone's follows", text: 'What anyone on this server follows. Each row shows who.' },
-		library: { label: 'Whole Library', text: 'Every date in the Library, followed or not.' }
-	};
+	const followsWords = $derived<Record<Follows, { label: string; text: string }>>({
+		mine: { label: t('discover.calendar.myFollows'), text: t('discover.calendar.myFollowsText') },
+		everyone: { label: t('discover.calendar.everyoneFollows'), text: t('discover.calendar.everyoneFollowsText') },
+		library: { label: t('discover.calendar.wholeLibrary'), text: t('discover.calendar.wholeLibraryText') }
+	});
 	// Everyone's follows only means something with more than one person on the server.
 	const followsChoices = $derived<Follows[]>(people > 1 ? ['mine', 'everyone', 'library'] : ['mine', 'library']);
 	// How many dates each choice shows in the days loaded (for the type picked).
@@ -297,15 +298,15 @@
 			entries = entries.map(upd);
 			scroller.monthDates = scroller.monthDates.map(upd);
 			if (now !== was) myFollows = Math.max(0, myFollows + (now ? 1 : -1));
-			toasts.push(now ? `${e.name} followed` : `${e.name} unfollowed`, 'ok', now ? { body: 'Dates added to your calendar' } : {});
+			toasts.push(now ? t('discover.calendar.followed', { name: e.name }) : t('discover.calendar.unfollowed', { name: e.name }), 'ok', now ? { body: t('discover.calendar.datesAdded') } : {});
 		} catch (err) {
-			toasts.push("Couldn't update follow", 'fail', { body: message(err) });
+			toasts.push(t('discover.calendar.couldntUpdateFollow'), 'fail', { body: message(err) });
 		} finally {
 			flipping = null;
 		}
 	}
 
-	const dotWord = { have: 'In the Library', missing: 'Missing', upcoming: 'Coming up' } as const;
+	const dotWord = $derived({ have: t('discover.calendar.inTheLibrary'), missing: t('discover.calendar.missing'), upcoming: t('discover.calendar.comingUp') });
 
 	onMount(() => {
 		const mq = matchMedia('(max-width: 1023px)');
@@ -359,7 +360,7 @@
 		</div>
 		<!-- The bell follows or stops following the title; lit when you follow it. -->
 		<span class="row-bell" class:on={e.following}>
-			<IconButton icon={e.following ? 'bellOn' : 'bell'} size="sm" tipSide="below-end" label="{e.following ? 'Unfollow' : 'Follow'} {e.name}" aria-pressed={!!e.following} disabled={flipping === e.title_id} onclick={() => flipFollow(e, !e.following)} data-testid="cal-follow" />
+			<IconButton icon={e.following ? 'bellOn' : 'bell'} size="sm" tipSide="below-end" label={e.following ? t('discover.calendar.unfollow', { name: e.name }) : t('discover.calendar.follow', { name: e.name })} aria-pressed={!!e.following} disabled={flipping === e.title_id} onclick={() => flipFollow(e, !e.following)} data-testid="cal-follow" />
 		</span>
 		<!-- The wide banner (title art with its logo) fills the row's right side, edge to edge. -->
 		<span class="bwrap"><CalBanner {e} /></span>
@@ -368,7 +369,7 @@
 
 {#snippet monthBtn(primary: boolean)}
 	<!-- Hides or shows the small month; the days then take the full width. -->
-	<button type="button" class="month-btn" class:sm={!primary} aria-pressed={!monthHidden} aria-label={monthHidden ? 'Show month' : 'Hide month'} title={monthHidden ? 'Show month' : 'Hide month'} onclick={flipMonth} data-testid={primary ? 'cal-month-toggle' : undefined}>
+	<button type="button" class="month-btn" class:sm={!primary} aria-pressed={!monthHidden} aria-label={monthHidden ? t('discover.calendar.showMonth') : t('discover.calendar.hideMonth')} title={monthHidden ? t('discover.calendar.showMonth') : t('discover.calendar.hideMonth')} onclick={flipMonth} data-testid={primary ? 'cal-month-toggle' : undefined}>
 		<Icon name="calendar" size={16} /><span class="chev" class:off={monthHidden}><Icon name="chevronRight" size={14} /></span>
 	</button>
 {/snippet}
@@ -379,16 +380,16 @@
 
 {#snippet rangeNav(primary: boolean, short: boolean)}
 	<div class="range-nav">
-		<IconButton icon="chevronLeft" label="Week before" variant="tinted" onclick={() => scroller.go(-1)} />
+		<IconButton icon="chevronLeft" label={t('discover.calendar.weekBefore')} variant="tinted" onclick={() => scroller.go(-1)} />
 		{#if primary}
 			<h2 class="range" aria-live="polite" data-testid="cal-month" data-week={viewWeek.from}>{viewWeek.long}</h2>
 		{:else if short && narrow}
 			<!-- In the slim bar the dates also open the small month (on phones, where it is not beside the days). -->
-			<button type="button" class="range range-btn" aria-label="Pick a day, {viewWeek.long}" aria-haspopup="dialog" onclick={() => (sheetOpen = true)}>{viewWeek.short}</button>
+			<button type="button" class="range range-btn" aria-label={t('discover.calendar.pickADay', { long: viewWeek.long })} aria-haspopup="dialog" onclick={() => (sheetOpen = true)}>{viewWeek.short}</button>
 		{:else}
 			<span class="range">{short ? viewWeek.short : viewWeek.long}</span>
 		{/if}
-		<IconButton icon="chevronRight" label="Week after" variant="tinted" onclick={() => scroller.go(1)} />
+		<IconButton icon="chevronRight" label={t('discover.calendar.weekAfter')} variant="tinted" onclick={() => scroller.go(1)} />
 	</div>
 {/snippet}
 
@@ -396,28 +397,28 @@
 	<!-- Hidden while today is on screen; once it is not, it pops in red to bring you back. -->
 	{#if away}
 		<span class="today-btn" in:popIn out:popOut data-testid="cal-today">
-			<Button variant="primary" {size} icon="calendar" onclick={scroller.toToday} aria-label="Back to today">Today</Button>
+			<Button variant="primary" {size} icon="calendar" onclick={scroller.toToday} aria-label={t('discover.calendar.backToToday')}>{t('discover.calendar.today')}</Button>
 		</span>
 	{/if}
 {/snippet}
 
 {#snippet typeSeg(primary: boolean)}
 	<SegmentedControl
-		label="Movies, shows or music"
+		label={t('discover.calendar.moviesShowsOrMusic')}
 		testid={primary ? 'cal-titles' : undefined}
 		value={which}
 		onchange={(v) => (keepDay(), (which = v as TitlesShown))}
 		options={[
-			{ value: 'all', label: 'All' },
-			{ value: 'movies', label: 'Movies' },
-			{ value: 'shows', label: 'TV shows' },
-			...(partOn('music') ? [{ value: 'music', label: 'Music' }] : [])
+			{ value: 'all', label: t('discover.calendar.all') },
+			{ value: 'movies', label: t('discover.calendar.movies') },
+			{ value: 'shows', label: t('discover.calendar.tvShows') },
+			...(partOn('music') ? [{ value: 'music', label: t('discover.calendar.music') }] : [])
 		]}
 	/>
 {/snippet}
 
 {#snippet followsList()}
-	<div class="showing" role="radiogroup" aria-label="Which dates">
+	<div class="showing" role="radiogroup" aria-label={t('discover.calendar.whichDates')}>
 		{#each followsChoices as k (k)}
 			<button type="button" role="radio" aria-checked={follows === k} class:on={follows === k} onclick={() => pickFollows(k)} data-testid="cal-follows-{k}">
 				<span class="tick" aria-hidden="true">{#if follows === k}<Icon name="check" size={16} />{/if}</span>
@@ -429,39 +430,39 @@
 {/snippet}
 
 {#snippet followsMenu()}
-	<Popover label="Which dates: {followsWords[follows].label}" variant="button" icon={follows === 'library' ? 'bell' : 'bellOn'} text={followsWords[follows].label} width={320} align="end">
+	<Popover label={t('discover.calendar.whichDates2', { label: followsWords[follows].label })} variant="button" icon={follows === 'library' ? 'bell' : 'bellOn'} text={followsWords[follows].label} width={320} align="end">
 		{#snippet children()}<div class="pop-chips">{@render followsList()}</div>{/snippet}
 	</Popover>
 {/snippet}
 
 {#snippet followsPhone()}
-	<Button variant="secondary" size="sm" icon={follows === 'library' ? 'bell' : 'bellOn'} iconAfter="chevronDown" aria-haspopup="dialog" aria-label="Which dates: {followsWords[follows].label}" onclick={() => (filtersOpen = true)} data-testid="cal-follows-phone">{followsWords[follows].label}</Button>
+	<Button variant="secondary" size="sm" icon={follows === 'library' ? 'bell' : 'bellOn'} iconAfter="chevronDown" aria-haspopup="dialog" aria-label={t('discover.calendar.whichDates2', { label: followsWords[follows].label })} onclick={() => (filtersOpen = true)} data-testid="cal-follows-phone">{followsWords[follows].label}</Button>
 {/snippet}
 
 {#snippet viewSeg(primary: boolean)}
 	<SegmentedControl
-		label="Cards or list"
+		label={t('discover.calendar.cardsOrList')}
 		testid={primary ? 'cal-view' : undefined}
 		value={view}
 		onchange={(v) => scroller.pickView(v as CalendarView)}
 		options={[
-			{ value: 'cards', label: 'Cards' },
-			{ value: 'list', label: 'List' }
+			{ value: 'cards', label: t('discover.calendar.cards') },
+			{ value: 'list', label: t('discover.calendar.list') }
 		]}
 	/>
 {/snippet}
 
-<svelte:head><title>Calendar · HolyArrs</title></svelte:head>
+<svelte:head><title>{t('discover.calendar.calendarHolyArrs')}</title></svelte:head>
 
-<PageHeader title="Calendar">
+<PageHeader title={t('discover.calendar.calendar')}>
 	{#snippet actions()}
 		{@render viewSeg(true)}
 		<span class="wide-only">{@render todayBtn('md')}</span>
-		<span class="phone-only"><IconButton icon="calendarDay" label="Pick a day" variant="tinted" aria-haspopup="dialog" onclick={() => (sheetOpen = true)} /></span>
+		<span class="phone-only"><IconButton icon="calendarDay" label={t('discover.calendar.pickADay2')} variant="tinted" aria-haspopup="dialog" onclick={() => (sheetOpen = true)} /></span>
 	{/snippet}
 </PageHeader>
 
-<section class="tools" aria-label="Calendar controls">
+<section class="tools" aria-label={t('discover.calendar.calendarControls')}>
 		<div class="month-nav">{@render rangeNav(true, false)}</div>
 		<div class="segs">{@render typeSeg(true)}</div>
 		<span class="wide-only" data-testid="cal-follows">{@render followsMenu()}</span>
@@ -472,11 +473,11 @@
 
 <!-- The slim bar sits under the app's top bar once the controls above have scrolled away and stays there; Today shows in it only once today has left the screen. -->
 <div class="slim-wrap" class:on={barOn} inert={!barOn} data-testid="cal-slim">
-	<div class="slim" role="toolbar" aria-label="Calendar controls">
+	<div class="slim" role="toolbar" aria-label={t('discover.calendar.calendarControls')}>
 		{@render rangeNav(false, true)}
 		<!-- Cards or List stays at hand in the bar once the header has scrolled away. -->
 		<span class="wide-only slim-view">{@render viewSeg(false)}</span>
-		<span class="phone-only"><IconButton icon={view === 'cards' ? 'menu' : 'grid'} label={view === 'cards' ? 'Show as a list' : 'Show as cards'} variant="tinted" onclick={() => scroller.pickView(view === 'cards' ? 'list' : 'cards')} data-testid="cal-view-slim" /></span>
+		<span class="phone-only"><IconButton icon={view === 'cards' ? 'menu' : 'grid'} label={view === 'cards' ? t('discover.calendar.showAsList') : t('discover.calendar.showAsCards')} variant="tinted" onclick={() => scroller.pickView(view === 'cards' ? 'list' : 'cards')} data-testid="cal-view-slim" /></span>
 		<span class="wide-only slim-seg">{@render typeSeg(false)}</span>
 		<span class="wide-only">{@render followsMenu()}</span>
 		<span class="wide-only">{@render monthBtn(false)}</span>
@@ -487,17 +488,17 @@
 
 {#if !loaded}
 	<!-- Placeholder: a few day rows at the real rows' size. -->
-	<div class="days-sk" aria-busy="true" aria-label="Loading the calendar" data-testid="calendar-skeleton">
+	<div class="days-sk" aria-busy="true" aria-label={t('discover.calendar.loadingTheCalendar')} data-testid="calendar-skeleton">
 		{#each [0, 1, 2] as d (d)}
 			<div class="day-sk"><span class="sk" style="width: 56px; height: 64px; border-radius: 10px"></span><span class="sk" style="flex: 1; aspect-ratio: 16 / 7; border-radius: var(--r-panel)"></span></div>
 		{/each}
 	</div>
 {:else if error && entries.length === 0}
-	<LoadError hasData={false} message="Calendar could not be loaded." onretry={load} />
+	<LoadError hasData={false} message={t('discover.calendar.calendarCouldNotBe')} onretry={load} />
 {:else if libraryEmpty}
-	<EmptyState icon="calendar" title="Nothing coming up" text="Dates for your movies, shows and artists show up here." action={{ label: 'Add media', href: to('/search'), icon: 'search' }} />
+	<EmptyState icon="calendar" title={t('discover.calendar.nothingComingUp')} text={t('discover.calendar.datesForYourMovies')} action={{ label: t('discover.calendar.addMedia'), href: to('/search'), icon: 'search' }} />
 {:else}
-	{#if error}<LoadError hasData message="Calendar could not be loaded." onretry={load} />{/if}
+	{#if error}<LoadError hasData message={t('discover.calendar.calendarCouldNotBe')} onretry={load} />{/if}
 	<div class="cal-body" class:barred={barOn} class:month-off={monthHidden}>
 		<div class="cal-main">
 			{#key view}
@@ -505,12 +506,12 @@
 					{#if filteredOut}
 						<!-- The filters hide every date in these weeks: say so, and offer them all. -->
 						<div class="filtered-out" data-testid="cal-filtered-out">
-							<EmptyState compact icon="calendar" title={follows === 'mine' ? 'Nothing you follow here' : 'Nothing anyone follows here'} text={end < latest || fetching ? 'Looking further ahead…' : `${soonCount === 1 ? 'One date' : `${soonCount || 'No'} dates`} in the Library ${soonCount === 1 ? 'is' : 'are'} coming up this year.`} action={{ label: 'Show the Whole Library', onclick: clearFilters }} />
+							<EmptyState compact icon="calendar" title={follows === 'mine' ? t('discover.calendar.nothingYouFollow') : t('discover.calendar.nothingAnyoneFollows')} text={end < latest || fetching ? t('discover.calendar.lookingFurther') : soonCount === 1 ? t('discover.calendar.soonOne') : soonCount ? t('discover.calendar.soonOther', { n: soonCount }) : t('discover.calendar.soonNone')} action={{ label: t('discover.calendar.showWholeLibrary'), onclick: clearFilters }} />
 						</div>
 										{:else if view === 'cards'}
 						<ComingSoon entries={shown} today={todayKey} onlater={scroller.more} mode={follows} {look} onfollow={flipFollow} />
 					{:else if agenda.length === 0}
-						<EmptyState compact icon="calendar" title="No dates from {rangeName}" />
+						<EmptyState compact icon="calendar" title={t('discover.calendar.noDatesFrom', { rangeName })} />
 					{:else}
 						<CalListRows days={agenda} layout={1} today={todayKey} {look} {follows} {flipping} onfollow={flipFollow} />
 					{/if}
@@ -518,21 +519,21 @@
 			{/key}
 			<!-- Reaching the end loads the next weeks, up to a year. -->
 			<div class="endless" use:scroller.endless={fetching} aria-hidden="true"></div>
-			{#if fetching}<p class="more-note" role="status">Loading the next weeks…</p>{/if}
+			{#if fetching}<p class="more-note" role="status">{t('discover.calendar.loadingTheNextWeeks')}</p>{/if}
 		</div>
-		<aside class="side" aria-label="Pick a day" inert={monthHidden} aria-hidden={monthHidden}>{@render mini()}</aside>
+		<aside class="side" aria-label={t('discover.calendar.pickADay2')} inert={monthHidden} aria-hidden={monthHidden}>{@render mini()}</aside>
 	</div>
 {/if}
 
-<Sheet bind:open={sheetOpen} title="Pick a day" placement="bottom">
+<Sheet bind:open={sheetOpen} title={t('discover.calendar.pickADay2')} placement="bottom">
 	<div class="sheet-mini">
 		{@render rangeNav(false, false)}
 		{@render mini()}
-		<Button variant="secondary" full icon="calendar" onclick={() => { sheetOpen = false; scroller.toToday(); }}>Today</Button>
+		<Button variant="secondary" full icon="calendar" onclick={() => { sheetOpen = false; scroller.toToday(); }}>{t('discover.calendar.today')}</Button>
 	</div>
 </Sheet>
 
-<Sheet bind:open={filtersOpen} title="Which dates" placement="bottom">
+<Sheet bind:open={filtersOpen} title={t('discover.calendar.whichDates')} placement="bottom">
 	<div class="sheet-filters">
 		{@render typeSeg(false)}
 		{@render followsList()}

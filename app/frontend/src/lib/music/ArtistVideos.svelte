@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import Icon from '#lib/ui/Icon.svelte';
 	import Shelf from '#lib/ui/Shelf.svelte';
 	import { api } from '../core/api.ts';
@@ -26,7 +27,7 @@
 	let noCover = $state<Record<string, boolean>>({});
 	const coverOf = (v: Item) => (noCover[v.id] ? (picture ?? '') : `https://i.ytimg.com/vi/${v.id}/mqdefault.jpg`);
 	// The artist's name is usually in the title ("Radiohead - Creep"); the card says it once, above.
-	const named = (v: Item) => (v.title ?? '').replace(new RegExp(`^${artist.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*[-–—:|]\\s*`, 'i'), '').trim() || `${artist} music video`;
+	const named = (v: Item) => (v.title ?? '').replace(new RegExp(`^${artist.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*[-–—:|]\\s*`, 'i'), '').trim() || t('music.musicVideo', { artist });
 	const length = (s?: number) => (s ? `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}` : '');
 
 	// Pointing at a card or focusing it reads the stream the server keeps (no lookup); only a click asks the server to look that one video up (play=1). A miss is asked again next time, and so is a relayed stream past its end.
@@ -65,16 +66,16 @@
 
 {#if list.length}
 	<div class="videos" data-testid="artist-videos">
-		<Shelf title="Music videos" anchor="artist-videos" item="260px" placeholder="wide" whole>
+		<Shelf title={t('music.musicVideos')} anchor="artist-videos" item="260px" placeholder="wide" whole>
 			{#each list as v (v.id)}
-				<button type="button" class="vcard" onclick={(e) => play(v, e)} onpointerenter={() => void stream(v.id)} onfocus={() => void stream(v.id)} aria-busy={busy === v.id || undefined} aria-label="Play {named(v)}">
+				<button type="button" class="vcard" onclick={(e) => play(v, e)} onpointerenter={() => void stream(v.id)} onfocus={() => void stream(v.id)} aria-busy={busy === v.id || undefined} aria-label={t('music.play', { name: named(v) })}>
 					<span class="pic">
 						{#if coverOf(v)}<img src={coverOf(v)} alt="" loading="lazy" decoding="async" onerror={() => (noCover[v.id] = true)} />{/if}
 						<span class="glyph" aria-hidden="true"><Icon name="play" size={14} /></span>
 						{#if v.duration}<span class="len">{length(v.duration)}</span>{/if}
 					</span>
 					<span class="vname">{named(v)}</span>
-					<span class="xs muted">Music video</span>
+					<span class="xs muted">{t('music.musicVideo2')}</span>
 				</button>
 			{/each}
 		</Shelf>

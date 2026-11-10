@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import Avatar from '#lib/ui/Avatar.svelte';
@@ -90,14 +92,14 @@
 		}
 		if (ended.length === 1) {
 			const [e] = ended;
-			if (e.kind === 'none') toasts.push(`No better copy of ${e.name}`, 'info', { body: 'Nothing found yet' });
-			else if (e.kind === 'failed') toasts.push(`Couldn't search ${e.name}`, 'fail', e.error ? { body: e.error } : {});
-			else toasts.push(`Another copy of ${e.name} found`, 'ok');
+			if (e.kind === 'none') toasts.push(t('requests.reports.noBetter', { name: e.name }), 'info', { body: t('requests.reports.nothingYet') });
+			else if (e.kind === 'failed') toasts.push(t('requests.reports.searchFailed', { name: e.name }), 'fail', e.error ? { body: e.error } : {});
+			else toasts.push(t('requests.reports.anotherFound', { name: e.name }), 'ok');
 		} else if (ended.length > 1) {
 			const found = ended.filter((e) => e.kind === 'found').length;
 			const failed = ended.filter((e) => e.kind === 'failed').length;
-			const body = [found && `${found} found`, failed && `${failed} failed`, ended.length - found - failed && `${ended.length - found - failed} nothing new`].filter(Boolean).join(', ');
-			toasts.push(`${ended.length} searches finished`, failed === ended.length ? 'fail' : found ? 'ok' : 'info', { body });
+			const body = [found && t('requests.reports.nFound', { n: found }), failed && t('requests.reports.nFailed', { n: failed }), ended.length - found - failed && t('requests.reports.nNothingNew', { n: ended.length - found - failed })].filter(Boolean).join(', ');
+			toasts.push(t('requests.reports.nFinished', { n: ended.length }), failed === ended.length ? 'fail' : found ? 'ok' : 'info', { body });
 		}
 		if (searching.size) searchTimer = setTimeout(() => void readSearches(), 2500);
 	}
@@ -120,8 +122,8 @@
 			asked.add(r.title_id);
 			void api
 				.get<{ backdrop?: string }>(`/titles/${r.title_id}`)
-				.then((t) => {
-					const b = (t.backdrop ?? '').replace('/t/p/w1280/', '/t/p/w780/').replace('/t/p/original/', '/t/p/w780/');
+				.then((full) => {
+					const b = (full.backdrop ?? '').replace('/t/p/w1280/', '/t/p/w780/').replace('/t/p/original/', '/t/p/w780/');
 					if (!b) return;
 					const p = proxied(b);
 					wides[r.title_id] = p !== b ? p : to(b);
@@ -143,9 +145,9 @@
 		void refreshInbox();
 	}
 
-	const who = (r: ReportView) => (r.mine ? 'You' : whoName(r.made_by) || 'Someone');
-	const face = (r: ReportView) => whoName(r.made_by) || session.s.name || 'You';
-	const fixedBy = (r: ReportView) => (r.closed_by ? (r.closed_by.id === session.s.id ? 'by you' : `by ${whoName(r.closed_by)}`) : '');
+	const who = (r: ReportView) => (r.mine ? t('requests.reports.you') : whoName(r.made_by) || t('requests.reports.someone'));
+	const face = (r: ReportView) => whoName(r.made_by) || session.s.name || t('requests.reports.you');
+	const fixedBy = (r: ReportView) => (r.closed_by ? (r.closed_by.id === session.s.id ? t('requests.reports.byYou') : t('requests.reports.byName', { name: whoName(r.closed_by) })) : '');
 	const poster = (r: ReportView) => (r.poster ? to(r.poster) : '');
 
 	// The window: one report, read as a short conversation, and answered there.
@@ -179,7 +181,7 @@
 			beat = new Set(beat).add(r.id);
 			put(done);
 			winOpen = false;
-			toasts.push('Marked fixed', 'ok', r.made_by && !r.mine ? { body: `${whoName(r.made_by)} gets a message` } : {});
+			toasts.push(t('requests.reports.markedFixed'), 'ok', r.made_by && !r.mine ? { body: t('requests.reports.getsMessage', { name: whoName(r.made_by) }) } : {});
 			setTimeout(() => {
 				const next = new Set(beat);
 				next.delete(r.id);
@@ -197,7 +199,7 @@
 		try {
 			put(await reopenReport(r.id));
 		} catch (e) {
-			toasts.push("Couldn't reopen report", 'fail', { body: message(e) });
+			toasts.push(t('requests.reports.reopenFailed'), 'fail', { body: message(e) });
 		} finally {
 			busy = 0;
 		}
@@ -213,7 +215,7 @@
 			clearTimeout(searchTimer);
 			searchTimer = setTimeout(() => void readSearches(), 1500);
 		} catch (e) {
-			toasts.push("Couldn't start search", 'fail', { body: message(e) });
+			toasts.push(t('requests.reports.startFailed'), 'fail', { body: message(e) });
 		} finally {
 			busy = 0;
 		}
@@ -221,18 +223,18 @@
 
 	const calm = $derived(
 		filter === 'fixed'
-			? { title: 'Nothing fixed yet', text: 'Reports you mark fixed are kept here.' }
+			? { title: t('requests.reports.calm.fixedTitle'), text: t('requests.reports.calm.fixedText') }
 			: manage
-				? { title: filter === 'open' ? 'No open reports' : 'No reports yet', text: 'When someone reports a problem with a movie, show or album, it shows up here.' }
-				: { title: 'No reports yet', text: 'To report a title, open it and choose More › Report a problem.' }
+				? { title: filter === 'open' ? t('requests.reports.calm.noOpen') : t('requests.reports.calm.none'), text: t('requests.reports.calm.managerText') }
+				: { title: t('requests.reports.calm.none'), text: t('requests.reports.calm.memberText') }
 	);
 </script>
 
 <div class="rp" data-testid="reports">
 	<div class="toolbar">
 		<div class="lead">
-			<h1 class="rp-h">{manage ? 'Reports' : 'Your reports'}</h1>
-			<div class="tabs" role="group" aria-label="Show">
+			<h1 class="rp-h">{manage ? t('requests.reports.title') : t('requests.reports.titleMine')}</h1>
+			<div class="tabs" role="group" aria-label={t('requests.reports.show')}>
 				{#each reportFilters as f (f.filter)}
 					{@const n = counts[f.filter]}
 					<div class="pw" class:on={filter === f.filter} role="presentation">
@@ -241,7 +243,7 @@
 				{/each}
 			</div>
 		</div>
-		{#if manage}<a class="back" href={to('/requests')}><Icon name="chevronLeft" size={16} /><span>Requests</span></a>{/if}
+		{#if manage}<a class="back" href={to('/requests')}><Icon name="chevronLeft" size={16} /><span>{t('requests.reports.requests')}</span></a>{/if}
 	</div>
 
 	{#if error}
@@ -249,50 +251,50 @@
 	{:else if !loaded}
 		<ul class="cards" aria-hidden="true">{#each Array(3) as _, i (i)}<li class="bc ghost" style:--i={i}></li>{/each}</ul>
 	{:else}
-		<ul class="cards" aria-label="Reports" in:fade={{ duration: ms(260) }}>
+		<ul class="cards" aria-label={t('requests.reports.title')} in:fade={{ duration: ms(260) }}>
 			{#each shown as r, i (r.id)}
 				{@const wide = wides[r.title_id]}
 				{@const open = r.state === 'open'}
 				<li class="bc" class:answered={!open} data-testid="report" animate:flip={{ duration: ms(340), easing: cubicOut }} in:fly={{ y: 14, duration: ms(420), delay: ms(Math.min(i, 8) * 45), easing: cubicOut }} out:fade={{ duration: ms(220) }}>
 					<!-- The whole card opens the report; the answers sit above this layer. -->
-					<button type="button" class="open" aria-label="Open the report on {titleLine(r)}" aria-haspopup="dialog" onclick={() => show(r)}></button>
-					<a class="cl-go" href={to(reportHref(r))} aria-label="Page for {r.title_name}" title="Open the title"><Icon name="arrowUpRight" size={16} /></a>
+					<button type="button" class="open" aria-label={t('requests.reports.openReport', { title: titleLine(r) })} aria-haspopup="dialog" onclick={() => show(r)}></button>
+					<a class="cl-go" href={to(reportHref(r))} aria-label={t('requests.reports.pageFor', { name: r.title_name })} title={t('requests.reports.openTitle')}><Icon name="arrowUpRight" size={16} /></a>
 					<div class="ban" class:noart={!wide && !r.poster}>
 						{#if wide}<img class="ban-img" src={wide} alt="" loading="lazy" decoding="async" />{:else if r.poster}<span class="ban-img" class:soft={r.title_kind !== 'artist'} aria-hidden="true" style:background-image={`url("${poster(r)}")`}></span>{/if}
 					</div>
 					<div class="top">
 						<div class="ban-cap">
-							<span class="tag"><Icon name={kindIcon(r.kind)} size={13} /><span data-testid="report-kind">{r.kind_label}</span></span>
+							<span class="tag"><Icon name={kindIcon(r.kind)} size={13} /><span data-testid="report-kind">{serverWords(r.kind_label)}</span></span>
 							<h2 class="ban-t">{r.title_name}</h2>
 							<span class="ban-f">{factsLine(r)}</span>
-							<span class="vh" data-testid="report-state">{r.state_label}</span>
+							<span class="vh" data-testid="report-state">{serverWords(r.state_label)}</span>
 						</div>
 					</div>
 					<div class="sheet-b">
 						<div class="body">
-							<span class="who"><Avatar name={face(r)} size={26} /><span class="gl-id"><span class="gl-n"><b>{who(r)}</b></span><span class="gl-when"><span class="wide">Reported{' '}</span><time datetime={r.created_at} title={dateTime(r.created_at)}>{ago(r.created_at)}</time></span></span></span>
-							<p class="note" class:none={!r.note}>{r.note || 'No note.'}</p>
+							<span class="who"><Avatar name={face(r)} size={26} /><span class="gl-id"><span class="gl-n"><b>{who(r)}</b></span><span class="gl-when"><span class="wide">{t('requests.reports.reported')}{' '}</span><time datetime={r.created_at} title={dateTime(r.created_at)}>{ago(r.created_at)}</time></span></span></span>
+							<p class="note" class:none={!r.note}>{r.note || t('requests.reports.noNote')}</p>
 							{#if !open && r.reply}<p class="re"><Icon name="check" size={13} /><span data-testid="report-reply">{r.reply}</span></p>{/if}
 						</div>
 						<div class="foot" class:one={!manage || !open} class:re-row={manage && !open}>
 							{#if manage && open}
 								{#if searching.has(r.title_id)}
-									<span class="st-cap st-go" role="status" data-testid="report-searching" in:fade={{ duration: ms(200) }}><Icon name="search" size={15} /><span class="bl">Searching</span><span class="vh">for a better copy of {r.title_name}</span></span>
+									<span class="st-cap st-go" role="status" data-testid="report-searching" in:fade={{ duration: ms(200) }}><Icon name="search" size={15} /><span class="bl">{t('requests.reports.searching')}</span><span class="vh">{t('requests.reports.forBetter', { name: r.title_name })}</span></span>
 								{:else}
-									<button type="button" class="b no" aria-label="Find a better copy of {r.title_name}" disabled={busy === r.id} onclick={() => void findBetter(r)}><Icon name="search" size={15} /><span class="bl">Better copy</span></button>
+									<button type="button" class="b no" aria-label={t('requests.reports.findBetter', { name: r.title_name })} disabled={busy === r.id} onclick={() => void findBetter(r)}><Icon name="search" size={15} /><span class="bl">{t('requests.reports.betterCopy')}</span></button>
 								{/if}
-								<button type="button" class="b yes" aria-label="Mark fixed: {r.title_name}" onclick={() => show(r, true)}><Icon name="check" size={15} /><span class="bl">Mark fixed</span></button>
+								<button type="button" class="b yes" aria-label={t('requests.reports.markFixedName', { name: r.title_name })} onclick={() => show(r, true)}><Icon name="check" size={15} /><span class="bl">{t('requests.reports.markFixed')}</span></button>
 							{:else}
 								<span class="st-chip st-{open ? 'wait' : 'ok'}">
 									<span class="st-sq"><Icon name={open ? 'clock' : 'check'} size={15} /></span>
-									<span class="st-id"><b>{open ? 'Open' : 'Fixed'}</b><span class="st-d">{#if open}Waiting to be looked at{:else}{#if fixedBy(r)}<span class="wide">{fixedBy(r)}{r.closed_at ? ' · ' : ''}</span>{/if}{#if r.closed_at}<time datetime={r.closed_at} title={dateTime(r.closed_at)}>{ago(r.closed_at)}</time>{/if}{/if}</span></span>
+									<span class="st-id"><b>{open ? t('requests.reports.open') : t('requests.reports.fixed')}</b><span class="st-d">{#if open}{t('requests.reports.waiting')}{:else}{#if fixedBy(r)}<span class="wide">{fixedBy(r)}{r.closed_at ? ' · ' : ''}</span>{/if}{#if r.closed_at}<time datetime={r.closed_at} title={dateTime(r.closed_at)}>{ago(r.closed_at)}</time>{/if}{/if}</span></span>
 								</span>
-								{#if manage}<button type="button" class="b no re-b" aria-label="Reopen the report on {r.title_name}" disabled={busy === r.id} onclick={() => void reopen(r)}><Icon name="refresh" size={15} /></button>{/if}
+								{#if manage}<button type="button" class="b no re-b" aria-label={t('requests.reports.reopenName', { name: r.title_name })} disabled={busy === r.id} onclick={() => void reopen(r)}><Icon name="refresh" size={15} /></button>{/if}
 							{/if}
 						</div>
 					</div>
 					{#if beat.has(r.id)}
-						<span class="done" in:fade={{ duration: ms(180) }}><span class="done-ic" in:fly={{ y: 6, duration: ms(320), easing: cubicOut }}><Icon name="check" size={22} /></span>Fixed</span>
+						<span class="done" in:fade={{ duration: ms(180) }}><span class="done-ic" in:fly={{ y: 6, duration: ms(320), easing: cubicOut }}><Icon name="check" size={22} /></span>{t('requests.reports.fixed')}</span>
 					{/if}
 				</li>
 			{:else}
@@ -310,27 +312,27 @@
 	{#if win}
 		<div class="rw-acts">
 			{#if win.state === 'open'}
-				<Button icon="search" busy={searching.has(win.title_id)} disabled={busy === win.id} onclick={() => win && void findBetter(win)}>{searching.has(win.title_id) ? 'Searching' : 'Better copy'}</Button>
-				<Button variant="primary" icon="check" busy={busy === win.id} onclick={() => void fix()}>Mark fixed</Button>
+				<Button icon="search" busy={searching.has(win.title_id)} disabled={busy === win.id} onclick={() => win && void findBetter(win)}>{searching.has(win.title_id) ? t('requests.reports.searching') : t('requests.reports.betterCopy')}</Button>
+				<Button variant="primary" icon="check" busy={busy === win.id} onclick={() => void fix()}>{t('requests.reports.markFixed')}</Button>
 			{:else}
-				<Button icon="refresh" busy={busy === win.id} onclick={() => win && void reopen(win)}>Reopen</Button>
+				<Button icon="refresh" busy={busy === win.id} onclick={() => win && void reopen(win)}>{t('requests.reports.reopen')}</Button>
 			{/if}
 		</div>
 	{/if}
 {/snippet}
 
-<Sheet bind:open={winOpen} title={win ? titleLine(win) : 'Report'} description={win ? factsLine(win) : undefined} size="md" placement="auto" footer={manage ? answers : undefined}>
+<Sheet bind:open={winOpen} title={win ? titleLine(win) : t('requests.reports.report')} description={win ? factsLine(win) : undefined} size="md" placement="auto" footer={manage ? answers : undefined}>
 	{#if win}
 		{@const open = win.state === 'open'}
 		{@const wide = wides[win.title_id]}
 		<div class="rw" data-testid="report-window">
 			<div class="rw-art" class:noart={!wide && !win.poster}>
 				{#if wide}<img class="rw-img" src={wide} alt="" />{:else if win.poster}<span class="rw-img" class:soft={win.title_kind !== 'artist'} aria-hidden="true" style:background-image={`url("${poster(win)}")`}></span>{/if}
-				<a class="rw-go" href={to(reportHref(win))} aria-label="Open {win.title_name}" title="Open the title"><Icon name="arrowUpRight" size={16} /></a>
-				<span class="rw-state" class:ok={!open}><span class="dot"></span>{win.state_label}</span>
+				<a class="rw-go" href={to(reportHref(win))} aria-label={t('requests.reports.openName', { name: win.title_name })} title={t('requests.reports.openTitle')}><Icon name="arrowUpRight" size={16} /></a>
+				<span class="rw-state" class:ok={!open}><span class="dot"></span>{serverWords(win.state_label)}</span>
 				<div class="rw-kind">
 					<span class="rw-ic"><Icon name={kindIcon(win.kind)} size={20} /></span>
-					<span class="rw-kt"><b>{win.kind_label}</b>{#if kindHint(win.kind)}<small>{kindHint(win.kind)}</small>{/if}</span>
+					<span class="rw-kt"><b>{serverWords(win.kind_label)}</b>{#if kindHint(win.kind)}<small>{kindHint(win.kind)}</small>{/if}</span>
 				</div>
 			</div>
 
@@ -338,14 +340,14 @@
 				<Avatar name={face(win)} size={30} />
 				<div class="rw-bub">
 					<p class="rw-by"><b>{who(win)}</b><time datetime={win.created_at} title={dateTime(win.created_at)}>{ago(win.created_at)}</time></p>
-					<p class="rw-text" class:none={!win.note}>{win.note || 'No note.'}</p>
+					<p class="rw-text" class:none={!win.note}>{win.note || t('requests.reports.noNote')}</p>
 				</div>
 			</div>
 
 			{#if !open}
 				<div class="rw-msg back-msg" in:fly={{ y: 8, duration: ms(320), easing: cubicOut }}>
 					<div class="rw-bub ok">
-						<p class="rw-by"><b>Fixed {fixedBy(win)}</b>{#if win.closed_at}<time datetime={win.closed_at} title={dateTime(win.closed_at)}>{ago(win.closed_at)}</time>{/if}</p>
+						<p class="rw-by"><b>{t('requests.reports.fixedBy', { by: fixedBy(win) })}</b>{#if win.closed_at}<time datetime={win.closed_at} title={dateTime(win.closed_at)}>{ago(win.closed_at)}</time>{/if}</p>
 						{#if win.reply}<p class="rw-text">{win.reply}</p>{/if}
 					</div>
 					<span class="rw-okic"><Icon name="check" size={16} /></span>
@@ -353,15 +355,15 @@
 			{:else if manage}
 				<form class="rw-form" onsubmit={(e) => { e.preventDefault(); void fix(); }}>
 					<label class="rw-field">
-						<span>Reply to {win.made_by && !win.mine ? whoName(win.made_by) : 'the person who reported it'} <small>(optional)</small></span>
-						<textarea bind:this={replyBox} bind:value={reply} rows="2" maxlength={noteMax} placeholder="For example: swapped it for a better copy, try again tonight"></textarea>
+						<span>{t('requests.reports.replyTo', { name: win.made_by && !win.mine ? whoName(win.made_by) : t('requests.reports.thePerson') })} <small>{t('requests.reportSheet.optional')}</small></span>
+						<textarea bind:this={replyBox} bind:value={reply} rows="2" maxlength={noteMax} placeholder={t('requests.reports.replyPlaceholder')}></textarea>
 					</label>
-					<div class="rw-quick" role="group" aria-label="Quick replies">
+					<div class="rw-quick" role="group" aria-label={t('requests.reports.quickReplies')}>
 						{#each quickReplies(win.kind) as q (q)}
 							<button type="button" class="rw-q" class:on={reply.includes(q)} aria-pressed={reply.includes(q)} onclick={() => quick(q)}>{q}</button>
 						{/each}
 					</div>
-					<p class="rw-hint">They get a message that it is fixed{reply.trim() ? ', with your reply' : ''}.</p>
+					<p class="rw-hint">{reply.trim() ? t('requests.reports.hintReply') : t('requests.reports.hint')}</p>
 					{#if fixError}<p class="rw-err" role="alert">{fixError}</p>{/if}
 				</form>
 			{/if}

@@ -1,20 +1,25 @@
 
 // Wording and helpers for the "who asked for this title" labels.
 
+import { t, appLocale } from '#lib/core/i18n/i18n.svelte.ts';
 export type Asker = { id: number; name: string; asked_at: string; me: boolean };
 export type AskedByAnswer = { titles: Record<string, { askers: Asker[] }> };
 
 // All label text lives here so wording changes in one place.
 export const WORDS = {
-	you: 'You asked',
-	one: (a: string) => `Asked by ${a}`,
-	two: (a: string, b: string) => `Asked by ${a} and ${b}`,
-	many: (a: string, others: number) => `Asked by ${a} and ${others} ${others === 1 ? 'other' : 'others'}`,
-	youAnd: (others: number) => `You and ${others} ${others === 1 ? 'other' : 'others'} asked`,
-	tip: (who: string, date: string) => `${who} asked for this on ${date}.`,
-	youTip: (date: string) => `You asked for this on ${date}.`,
+	get you() {
+		return t('ui.askedBy.you');
+	},
+	one: (a: string) => t('ui.askedBy.one', { name: a }),
+	two: (a: string, b: string) => t('ui.askedBy.two', { a, b }),
+	many: (a: string, others: number) => (others === 1 ? t('ui.askedBy.manyOne', { name: a }) : t('ui.askedBy.manyOther', { name: a, count: others })),
+	youAnd: (others: number) => (others === 1 ? t('ui.askedBy.youAndOne') : t('ui.askedBy.youAndOther', { count: others })),
+	tip: (who: string, date: string) => t('ui.askedBy.tip', { who, date }),
+	youTip: (date: string) => t('ui.askedBy.youTip', { date }),
 	dateSep: ' · ',
-	listTitle: 'Who asked'
+	get listTitle() {
+		return t('ui.askedBy.listTitle');
+	}
 } as const;
 
 // Falls back to the full name when it is blank so a label never shows empty.
@@ -26,7 +31,7 @@ export function firstName(name: string): string {
 export function shortDate(iso: string): string {
 	const d = new Date(iso);
 	if (Number.isNaN(d.getTime())) return '';
-	return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+	return d.toLocaleDateString(appLocale('en-GB'), { day: 'numeric', month: 'short' });
 }
 
 // Puts the viewer first and counts everyone else as "others".

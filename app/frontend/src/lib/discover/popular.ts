@@ -1,6 +1,7 @@
 // New & Popular: paths and the small pure rules the page and Explore share.
 import { cardIdentity, type ExploreCard, type ProviderItem } from '#lib/ui/title-cards.ts';
 import { type ServerRow } from './explore-server.ts';
+import { t, appLocale } from '#lib/core/i18n/i18n.svelte.ts';
 
 export type NewType = 'all' | 'movies' | 'shows' | 'music';
 
@@ -123,9 +124,9 @@ export function railLabel(day: string, today: Date): { big: string; small: strin
 	const [y, m, d] = day.split('-').map(Number);
 	const date = new Date(Date.UTC(y, m - 1, d));
 	const off = dayOffset(day, today);
-	const weekday = date.toLocaleDateString('en-US', { weekday: 'short', timeZone: 'UTC' });
-	const small = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
-	const big = off === 0 ? 'Today' : off === -1 ? 'Yesterday' : off === 1 ? 'Tomorrow' : weekday;
+	const weekday = date.toLocaleDateString(appLocale('en-US'), { weekday: 'short', timeZone: 'UTC' });
+	const small = date.toLocaleDateString(appLocale('en-US'), { month: 'short', day: 'numeric', timeZone: 'UTC' });
+	const big = off === 0 ? t('discover.popular.today') : off === -1 ? t('discover.popular.yesterday') : off === 1 ? t('discover.popular.tomorrow') : weekday;
 	return { big, small: off === 0 || off === -1 || off === 1 ? `${weekday} ${small}` : small };
 }
 

@@ -1,0 +1,10 @@
+{
+	"settings.home.advanced": "고급",
+	"settings.home.page": "{group} · 페이지",
+	"settings.home.title": "설정",
+	"settings.home.search": "설정 검색",
+	"settings.home.matching": "일치하는 설정",
+	"settings.home.noMatch": "일치하는 설정이 없습니다",
+	"settings.home.noMatchText": "폴더, 키, 비밀번호 같은 다른 단어로 검색해 보세요.",
+	"settings.home.clear": "검색 지우기"
+}

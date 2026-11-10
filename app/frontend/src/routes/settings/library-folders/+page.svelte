@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import Field from '#lib/ui/Field.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
@@ -17,7 +18,7 @@
 	import type { LibraryFolder } from '#lib/core/types.ts';
 
 	// Grouped list with a plain line icon per folder.
-	const kindWord = (k: string) => (k === 'show' ? 'Shows' : k === 'music' ? 'Music' : 'Movies');
+	const kindWord = (k: string) => (k === 'show' ? t('settings.libraryFolders.shows') : k === 'music' ? t('settings.libraryFolders.music') : t('settings.libraryFolders.movies'));
 	const kindIcon = (k: string) => (k === 'show' ? 'tv' : k === 'music' ? 'music' : 'film') as 'tv' | 'music' | 'film';
 	// The last two parts of a path: enough to tell folders apart; the full path is in the tooltip.
 	const shortPath = (p: string) => { const parts = p.split(/[\\/]/).filter(Boolean); return parts.length > 2 ? '…/' + parts.slice(-2).join('/') : p; };
@@ -76,7 +77,7 @@
 		try {
 			const lines = extraText.split('\n').map((l) => l.trim()).filter(Boolean);
 			extraText = (await api.put<{ extra_folders: string[] }>('/settings/import-folders', { extra_folders: lines })).extra_folders.join('\n');
-			toasts.push('Import folders saved', 'ok');
+			toasts.push(t('settings.libraryFolders.importSaved'), 'ok');
 		} catch (err) {
 			extraError = message(err);
 		} finally {
@@ -88,7 +89,7 @@
 		e.preventDefault();
 		formError = '';
 		if (!path.trim()) {
-			formError = 'The path inside the container, if you use Docker.';
+			formError = t('settings.libraryFolders.pathNeeded');
 			return;
 		}
 		saving = true;
@@ -99,7 +100,7 @@
 			label = '';
 			kind = 'movie';
 			adding = false;
-			toasts.push('Library folder added', f.health === 'ok' ? 'ok' : 'info', { body: f.health === 'ok' ? undefined : folderHealth(f.health) });
+			toasts.push(t('settings.libraryFolders.added'), f.health === 'ok' ? 'ok' : 'info', { body: f.health === 'ok' ? undefined : folderHealth(f.health) });
 		} catch (err) {
 			formError = message(err);
 		} finally {
@@ -112,9 +113,9 @@
 		try {
 			const n = await api.post<LibraryFolder>(`/library-folders/${f.id}/check`);
 			folders = folders.map((x) => (x.id === f.id ? n : x));
-			toasts.push('Folder checked', n.health === 'ok' ? 'ok' : 'info', { body: folderHealth(n.health) });
+			toasts.push(t('settings.libraryFolders.checked'), n.health === 'ok' ? 'ok' : 'info', { body: folderHealth(n.health) });
 		} catch (err) {
-			toasts.push("Couldn't check folder", 'fail', { body: message(err) });
+			toasts.push(t('settings.libraryFolders.checkFailed'), 'fail', { body: message(err) });
 		} finally {
 			busyId = null;
 		}
@@ -127,56 +128,56 @@
 			folders = folders.map((x) => (x.id === f.id ? n : x));
 			editing = null;
 		} catch (err) {
-			toasts.push("Couldn't save", 'fail', { body: message(err) });
+			toasts.push(t('settings.libraryFolders.couldntSave'), 'fail', { body: message(err) });
 		} finally {
 			busyId = null;
 		}
 	}
 
 	async function remove(f: LibraryFolder) {
-		if (!confirm(`Remove ${f.path}? Files stay on disk.`)) return;
+		if (!confirm(t('settings.libraryFolders.confirmRemove', { path: f.path }))) return;
 		busyId = f.id;
 		try {
 			await api.del(`/library-folders/${f.id}`);
 			folders = folders.filter((x) => x.id !== f.id);
-			toasts.push('Library folder removed', 'ok');
+			toasts.push(t('settings.libraryFolders.removed'), 'ok');
 		} catch (err) {
-			toasts.push("Couldn't remove folder", 'fail', { body: message(err) });
+			toasts.push(t('settings.libraryFolders.removeFailed'), 'fail', { body: message(err) });
 		} finally {
 			busyId = null;
 		}
 	}
 </script>
 
-<svelte:head><title>Library folders · HolyArrs</title></svelte:head>
+<svelte:head><title>{t('settings.libraryFolders.title')} · HolyArrs</title></svelte:head>
 
-<PageHeader title="Library folders">
+<PageHeader title={t('settings.libraryFolders.title')}>
 	{#snippet actions()}
-		{#if !adding && folders.length}<Button icon="plus" variant="primary" type="button" onclick={() => (adding = true)}>Add a folder</Button>{/if}
+		{#if !adding && folders.length}<Button icon="plus" variant="primary" type="button" onclick={() => (adding = true)}>{t('settings.libraryFolders.add')}</Button>{/if}
 	{/snippet}
 </PageHeader>
 
 {#if adding}
-	<form class="sc-form" onsubmit={add} aria-label="Add a Library folder">
-		<SettingsCard title="Add a Library folder">
-			<Field id="lf-kind" label="Holds" hint="Each kind needs its own folder">
+	<form class="sc-form" onsubmit={add} aria-label={t('settings.libraryFolders.addFolder')}>
+		<SettingsCard title={t('settings.libraryFolders.addFolder')}>
+			<Field id="lf-kind" label={t('settings.libraryFolders.holds')} hint={t('settings.libraryFolders.holdsHint')}>
 				<select id="lf-kind" class="input" bind:value={kind}>
-					<option value="movie">Movies</option>
-					<option value="show">Shows</option>
-					<option value="music">Music</option>
+					<option value="movie">{t('settings.libraryFolders.movies')}</option>
+					<option value="show">{t('settings.libraryFolders.shows')}</option>
+					<option value="music">{t('settings.libraryFolders.music')}</option>
 				</select>
 			</Field>
-			<Field id="lf-path" label="Folder path">
+			<Field id="lf-path" label={t('settings.libraryFolders.path')}>
 				<input id="lf-path" class="input mono" bind:value={path} placeholder={kind === 'show' ? '/shows' : kind === 'music' ? '/music' : '/movies'} autocomplete="off" spellcheck="false" />
 			</Field>
 			<div class="field">
-				<label for="lf-label">Name <span class="muted">(optional)</span></label>
-				<input id="lf-label" class="input" bind:value={label} placeholder={kind === 'show' ? 'Shows' : kind === 'music' ? 'Music' : 'Movies'} maxlength="64" />
+				<label for="lf-label">{t('settings.libraryFolders.name')} <span class="muted">{t('settings.libraryFolders.optional')}</span></label>
+				<input id="lf-label" class="input" bind:value={label} placeholder={kindWord(kind)} maxlength="64" />
 			</div>
 			{#if formError}<p class="form-error" role="alert">{formError}</p>{/if}
 			<div class="row" style="margin-top: var(--s-5)">
-				<Button variant="primary" type="submit" disabled={saving} aria-busy={saving}>Add</Button>
-				<Button variant="plain" type="button" onclick={() => ((adding = false), (formError = ''))}>Cancel</Button>
+				<Button variant="primary" type="submit" disabled={saving} aria-busy={saving}>{t('settings.libraryFolders.addButton')}</Button>
+				<Button variant="plain" type="button" onclick={() => ((adding = false), (formError = ''))}>{t('settings.libraryFolders.cancel')}</Button>
 			</div>
 		</SettingsCard>
 	</form>
@@ -187,31 +188,31 @@
 {:else if error}
 	<LoadError hasData={false} message={error} onretry={load} />
 {:else if folders.length === 0 && !adding}
-	<EmptyState icon="folder" title="No Library folders" text="Add a folder for movies (like /movies) and one for shows." action={{ label: 'Add a folder', icon: 'plus', onclick: () => (adding = true) }} />
+	<EmptyState icon="folder" title={t('settings.libraryFolders.none')} text={t('settings.libraryFolders.noneText')} action={{ label: t('settings.libraryFolders.add'), icon: 'plus', onclick: () => (adding = true) }} />
 {:else if folders.length}
 	{#snippet row(f: LibraryFolder)}
-		<li class="folder k-{f.kind || 'movie'}" title="{f.path}{f.health_checked_at ? ` · checked ${dateTime(f.health_checked_at)}` : ''}">
+		<li class="folder k-{f.kind || 'movie'}" title="{f.path}{f.health_checked_at ? ` · ${t('settings.libraryFolders.checkedAt', { when: dateTime(f.health_checked_at) })}` : ''}">
 			<span class="ic"><Icon name="folder" size={20} /></span>
 			<div class="grow">
 				{#if editing === f.id}
 					<form class="ed" onsubmit={(e) => (e.preventDefault(), saveLabel(f))}>
-						<label class="sr-only" for="ed-{f.id}">Name</label>
+						<label class="sr-only" for="ed-{f.id}">{t('settings.libraryFolders.name')}</label>
 						<input id="ed-{f.id}" class="input" bind:value={editLabel} maxlength="64" />
-						<Button type="submit" size="sm" disabled={busyId === f.id}>Save</Button>
-						<Button variant="plain" size="sm" type="button" onclick={() => (editing = null)}>Cancel</Button>
+						<Button type="submit" size="sm" disabled={busyId === f.id}>{t('settings.libraryFolders.save')}</Button>
+						<Button variant="plain" size="sm" type="button" onclick={() => (editing = null)}>{t('settings.libraryFolders.cancel')}</Button>
 					</form>
 				{:else}
-					<div class="top"><span class="name">{f.label || f.path}</span><span class="kind" data-testid="folder-kind">{f.kind === 'show' ? 'For shows' : f.kind === 'music' ? 'For music' : 'For movies'}</span></div>
+					<div class="top"><span class="name">{f.label || f.path}</span><span class="kind" data-testid="folder-kind">{f.kind === 'show' ? t('settings.libraryFolders.forShows') : f.kind === 'music' ? t('settings.libraryFolders.forMusic') : t('settings.libraryFolders.forMovies')}</span></div>
 				{/if}
 				<div class="where">{shortPath(f.path)}</div>
 				{#if f.health_reason && tone(f.health) !== 'ok'}<div class="why {tone(f.health)}">{f.health_reason}</div>{/if}
 			</div>
-			<div class="free"><b>{freeNum(f.free_space)[0]}</b><small>{freeNum(f.free_space)[1] ?? ''} free</small></div>
+			<div class="free"><b>{freeNum(f.free_space)[0]}</b><small>{t('settings.libraryFolders.free', { unit: freeNum(f.free_space)[1] ?? '' })}</small></div>
 			<span class="st {tone(f.health)}"><i></i><span>{folderHealth(f.health)}</span></span>
 			<div class="acts">
-				<IconButton icon="refresh" label="Check {f.path} again" type="button" tooltip={false} disabled={busyId === f.id} onclick={() => recheck(f)} />
-				<Button variant="plain" size="sm" type="button" onclick={() => ((editing = f.id), (editLabel = f.label))}>Rename</Button>
-				<IconButton icon="trash" label="Remove {f.path}" type="button" tooltip={false} disabled={busyId === f.id} onclick={() => remove(f)} />
+				<IconButton icon="refresh" label={t('settings.libraryFolders.checkAgain', { path: f.path })} type="button" tooltip={false} disabled={busyId === f.id} onclick={() => recheck(f)} />
+				<Button variant="plain" size="sm" type="button" onclick={() => ((editing = f.id), (editLabel = f.label))}>{t('settings.libraryFolders.rename')}</Button>
+				<IconButton icon="trash" label={t('settings.libraryFolders.removePath', { path: f.path })} type="button" tooltip={false} disabled={busyId === f.id} onclick={() => remove(f)} />
 			</div>
 		</li>
 	{/snippet}
@@ -226,17 +227,17 @@
 {/if}
 
 {#if extraLoaded}
-	<form class="sc-form extra" onsubmit={saveExtra} aria-label="Extra import folders">
-		<SettingsCard id="import-folders" title="Extra import folders" description="Import can also read from these">
-			<Field id="if-paths" label="Folders" hint="One path per line, e.g. /data/imports. Up to 32." error={extraError}>
+	<form class="sc-form extra" onsubmit={saveExtra} aria-label={t('settings.libraryFolders.extra')}>
+		<SettingsCard id="import-folders" title={t('settings.libraryFolders.extra')} description={t('settings.libraryFolders.extraDesc')}>
+			<Field id="if-paths" label={t('settings.libraryFolders.folders')} hint={t('settings.libraryFolders.foldersHint')} error={extraError}>
 				<textarea id="if-paths" class="input mono" rows="3" bind:value={extraText} placeholder="/data/imports" autocomplete="off" spellcheck="false" readonly={!canSaveExtra}></textarea>
 			</Field>
 			{#if canSaveExtra}
 				<div class="row" style="margin-top: var(--s-5)">
-					<Button variant="primary" type="submit" disabled={extraSaving} aria-busy={extraSaving}>Save</Button>
+					<Button variant="primary" type="submit" disabled={extraSaving} aria-busy={extraSaving}>{t('settings.libraryFolders.save')}</Button>
 				</div>
 			{:else}
-				<p class="hint">Owner and admins only</p>
+				<p class="hint">{t('settings.libraryFolders.ownerOnly')}</p>
 			{/if}
 		</SettingsCard>
 	</form>
@@ -306,4 +307,6 @@
 	.fl .folder { grid-template-columns: 24px minmax(0, 1fr) auto auto auto; }
 	.ic, .k-show .ic, .k-music .ic { width: 24px; height: 24px; background: none; box-shadow: none; border-radius: 0; color: color-mix(in srgb, var(--text) 55%, transparent); }
 	@media (max-width: 760px) { .fl .folder { grid-template-columns: 24px minmax(0, 1fr) auto; } }
+	/* Phones: the buttons take their own line, so a long Rename label cannot squeeze the name. */
+	@media (max-width: 480px) { .folder { grid-template-areas: 'ic grow st' 'ic free free' 'ic acts acts'; } .folder .acts { justify-self: start; margin-inline-start: -8px; } }
 </style>

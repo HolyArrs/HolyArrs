@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import IconButton from '#lib/ui/IconButton.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
 	import { api } from '#lib/core/api.ts';
@@ -240,11 +241,11 @@
 	<div class="dim" aria-hidden="true"></div>
 	{#if heroVideo && videoIn}
 		<div class="vctl" data-testid="artist-hero-video-controls">
-			<IconButton icon={videoPaused ? 'play' : 'pause'} label={videoPaused ? 'Play the video' : 'Pause the video'} variant="glass" size="md" tipSide="below" onclick={togglePause} />
-			<IconButton icon={videoMuted ? 'soundOff' : 'sound'} label={videoMuted ? 'Turn sound on' : 'Turn sound off'} variant="glass" size="md" tipSide="below" onclick={toggleMute} />
-			{#if !heroFull}<IconButton icon="expand" label="Play full screen" variant="glass" size="md" tipSide="below" onclick={fullScreen} />{/if}
+			<IconButton icon={videoPaused ? 'play' : 'pause'} label={videoPaused ? t('music.playTheVideo') : t('music.pauseTheVideo')} variant="glass" size="md" tipSide="below" onclick={togglePause} />
+			<IconButton icon={videoMuted ? 'soundOff' : 'sound'} label={videoMuted ? t('music.turnSoundOn') : t('music.turnSoundOff')} variant="glass" size="md" tipSide="below" onclick={toggleMute} />
+			{#if !heroFull}<IconButton icon="expand" label={t('music.playFullScreen')} variant="glass" size="md" tipSide="below" onclick={fullScreen} />{/if}
 		</div>
-		{#if heroFull}<button type="button" class="vexit" onclick={fullScreen} aria-label="Exit full screen" data-testid="artist-hero-video-exit" {@attach (n) => n.focus()}><Icon name="x" size={20} /></button>{/if}
+		{#if heroFull}<button type="button" class="vexit" onclick={fullScreen} aria-label={t('music.exitFullScreen')} data-testid="artist-hero-video-exit" {@attach (n) => n.focus()}><Icon name="x" size={20} /></button>{/if}
 	{/if}
 </header>
 

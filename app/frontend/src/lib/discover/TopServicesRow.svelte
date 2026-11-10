@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import Shelf from '#lib/ui/Shelf.svelte';
 	import PosterCard from '#lib/ui/PosterCard.svelte';
 	import Chip from '#lib/ui/Chip.svelte';
@@ -53,8 +54,8 @@
 	$effect(() => {
 		shown = firstItems.map((d) => cardIdentity(discoverCard(d, 'top_services')));
 	});
-	const source = $derived(!row ? '' : genre ? `Popular in ${genre.name.toLowerCase()} on ${row.name}` : serviceLabel(row));
-	const title = $derived(genre ? `Trending ${genre.name.toLowerCase()} on streaming` : type === 'movies' || type === 'shows' ? `Trending ${type} on streaming` : 'Trending on streaming');
+	const source = $derived(!row ? '' : genre ? t('discover.topServicesRow.popularInGenre', { genre: genre.name.toLowerCase(), name: row.name }) : serviceLabel(row));
+	const title = $derived(genre ? t('discover.topServicesRow.trendingGenre', { genre: genre.name.toLowerCase() }) : type === 'movies' ? t('discover.topServicesRow.trendingMovies') : type === 'shows' ? t('discover.topServicesRow.trendingShows') : t('discover.topServicesRow.trending'));
 
 	let gone: AbortController | undefined;
 	async function load() {
@@ -115,7 +116,7 @@
 
 {#snippet tools()}
 	<div class="top-tools">
-		<div class="chips" role="group" aria-label="Services">
+		<div class="chips" role="group" aria-label={t('discover.topServicesRow.services')}>
 			{#each chips as c (c.service)}
 				<Chip label={c.name} selected={row?.service === c.service} onclick={() => (picked = c.service)} />
 			{/each}
@@ -139,7 +140,7 @@
 						<div class="ranked">
 							<span class="rank" class:two={c.rank > 9} aria-hidden="true">{c.rank}</span>
 							<div class="pc"><PosterCard title={c.name} href={href(c)} image={c.image ?? c.art?.art ?? null} kind={c.kind} owned={mark} fresh={c.fresh} {preview} action={ask ? cardAsk : undefined} actionOnHover followTmdb={followsByTmdb(c)} /></div>
-							<span class="sr">Number {c.rank}</span>
+							<span class="sr">{t('discover.topServicesRow.number', { rank: c.rank })}</span>
 						</div>
 					{:else}
 						<PosterCard title={c.name} href={href(c)} image={c.image ?? c.art?.art ?? null} kind={c.kind} owned={mark} fresh={c.fresh} {preview} action={ask ? cardAsk : undefined} actionOnHover followTmdb={followsByTmdb(c)} />

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t, appLocale } from '#lib/core/i18n/i18n.svelte.ts';
 	import Badge from '#lib/ui/Badge.svelte';
 	import type { Follows } from './calendar.ts';
 	import { groupDates, monthGroups, thingCount } from './calendar-groups.ts';
@@ -54,10 +55,10 @@
 						{@const gs = groupDates(d.items)}
 						<li class="row" use:near data-day={d.day} class:today={d.day === today} class:past={d.day < today}>
 							<div class="stamp">
-								<span class="dow">{at(d.day).toLocaleDateString(undefined, { weekday: 'short' })}</span>
+								<span class="dow">{at(d.day).toLocaleDateString(appLocale(), { weekday: 'short' })}</span>
 								<span class="big">{at(d.day).getDate()}</span>
-								<span class="mon">{at(d.day).toLocaleDateString(undefined, { month: 'short' })}</span>
-								{#if d.day === today}<span class="today-tag"><Badge label="Today" /></span>{/if}
+								<span class="mon">{at(d.day).toLocaleDateString(appLocale(), { month: 'short' })}</span>
+								{#if d.day === today}<span class="today-tag"><Badge label={t('discover.comingSoon.today')} /></span>{/if}
 							</div>
 							<div class="day">
 								<h4 class="count">{thingCount(d.items.length)}</h4>

@@ -1,6 +1,7 @@
 
 // Follow labels, hints and the request that toggles a follow.
 
+import { t } from '#lib/core/i18n/i18n.svelte.ts';
 type Client = {
 	put: <T>(p: string, body?: unknown) => Promise<T>;
 	del: <T>(p: string) => Promise<T>;
@@ -9,17 +10,18 @@ type Client = {
 export type FollowTarget = { titleId: number } | { tmdb: string; kind?: 'show' | 'movie' };
 
 export function followLabel(on: boolean): string {
-	return on ? 'Following' : 'Follow';
+	return on ? t('ui.follow.following') : t('ui.follow.follow');
 }
 
 // Wording differs by kind, and by whether a movie is still waiting for the Library.
 export function followHint(kind: string, on: boolean, waiting = false): string {
 	if (kind === 'movie') {
-		const what = waiting ? 'when it is in the Library' : 'its dates';
-		return on ? `On your calendar; you hear ${waiting ? what : 'about it'}. Tap to stop.` : `Follow to see ${waiting ? 'it' : what} on your calendar${waiting ? ` and hear ${what}` : ''}. Nothing is asked for.`;
+		if (waiting) return on ? t('ui.follow.movieWaitingOn') : t('ui.follow.movieWaitingOff');
+		return on ? t('ui.follow.movieOn') : t('ui.follow.movieOff');
 	}
-	const what = kind === 'artist' ? 'new albums' : waiting ? 'it when it lands and about new seasons' : 'new episodes and seasons';
-	return on ? `On your calendar; you hear about ${what}. Tap to stop.` : `Follow to see it on your calendar and hear about ${what}. Nothing is asked for.`;
+	if (kind === 'artist') return on ? t('ui.follow.artistOn') : t('ui.follow.artistOff');
+	if (waiting) return on ? t('ui.follow.showWaitingOn') : t('ui.follow.showWaitingOff');
+	return on ? t('ui.follow.showOn') : t('ui.follow.showOff');
 }
 
 // A known title uses its id; an unknown one is followed by its TMDB id.
@@ -28,7 +30,7 @@ export function followPath(t: FollowTarget): string {
 }
 
 export function movieFollowHint(name: string, on: boolean): string {
-	return on ? `You hear when ${name} is in the Library. Tap to stop.` : `Follow ${name} to hear when it is out and in the Library. Nothing is asked for.`;
+	return on ? t('ui.follow.movieNamedOn', { name }) : t('ui.follow.movieNamedOff', { name });
 }
 
 // Returns the server's answer so the button shows the real state.

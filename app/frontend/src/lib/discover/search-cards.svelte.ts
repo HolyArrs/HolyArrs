@@ -9,15 +9,16 @@ import type { LookupArtist } from '#lib/music/index.ts';
 import { to } from '#lib/core/paths.ts';
 import type { LookupMovie, TitleView } from '#lib/core/types.ts';
 import type { LookupShow } from '#lib/core/types.ts';
+import { t } from '#lib/core/i18n/i18n.svelte.ts';
 
 export type Card = { key: string; type: Exclude<SearchScope, 'all'>; titleId?: number; name: string; year?: number; image?: string | null; href: string; owned: CardOwned | null; preview?: { kind: 'movie' | 'show'; tmdb: string; year?: number; titleId?: number }; artist?: LookupArtist; subtitle?: string; /** A movie or show as an Explore card, for its Add or Ask. */ ec?: ExploreCard };
 
 export type LibraryAnswer = { titles: TitleView[]; albums: { id: number; title_id: number; name: string; artist: string; year?: number; image?: string }[]; people: { name: string; titles: { id: number; name: string; kind: string }[] }[] };
 
-export const inLibrary: CardOwned = { state: 'available', label: 'In your Library' };
+export const inLibrary: CardOwned = { state: 'available', get label() { return t('discover.searchCards.inYourLibrary'); } };
 function askMark(ask: { state: string; mine: boolean } | undefined | null): CardOwned | null {
 	if (!ask || ask.state === 'turned_down') return null;
-	return { state: 'requested', label: ask.state === 'approved' ? 'Approved, waiting for a copy' : 'Requested' };
+	return { state: 'requested', label: ask.state === 'approved' ? t('discover.searchCards.approvedWaiting') : t('discover.searchCards.requested') };
 }
 /** A search result as an Explore card, so its + adds or asks the same way. */
 const asCard = (key: string, kind: 'movie' | 'show', name: string, year: number | undefined, tmdb: string, titleId: number | undefined, ask: LookupMovie['ask']): ExploreCard =>

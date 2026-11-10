@@ -61,7 +61,7 @@ The file holds every secret in plain text until you delete it. Delete it on the 
 | `nzbget`, `transmission`, `deluge` | Skipped. The import cannot set these up yet; add them in **Settings > Downloaders**. |
 | `jellyfin`, `emby`, `plex` | A media server, **off** until you test it. |
 | `smtp`, `discord`, `webhook` | The Alerts "Email", "Discord" and "Webhook", **off** until you test them. |
-| `radarr`, `sonarr`, `lidarr`, `prowlarr`, `bazarr`, `seerr` | A key saved for **Move from other apps**. |
+| `radarr`, `sonarr`, `lidarr`, `prowlarr`, `bazarr`, `seerr` | A key saved for **Import from other apps**. |
 | `holyarrs` | Only used to reach HolyArrs while it runs. Never saved. |
 
 Every key goes into the encrypted vault, the same as one typed in Settings.
@@ -175,7 +175,7 @@ An unknown key or a file over 256 KB stops the whole import before anything is s
 | `smtp.host` | Server name only, no scheme or port. |
 | `smtp.port` | 1 to 65535. Default `587`. |
 | `smtp.from` | One plain email address. |
-| Old-app blocks | Used in **Move from other apps** with **Use the saved key**. Never shown, owner only, deleted after one successful read. |
+| Old-app blocks | Used in **Import from other apps** with **Use the saved key**. Never shown, owner only, deleted after one successful read. |
 
 </details>
 

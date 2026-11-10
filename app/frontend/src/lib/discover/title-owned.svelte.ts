@@ -12,6 +12,7 @@ import { toasts } from '#lib/core/toasts.svelte.ts';
 import type { EventRecord, TitleView } from '#lib/core/types.ts';
 import { live } from '#lib/core/live.svelte.ts';
 import { date } from '#lib/core/format.ts';
+import { t } from '#lib/core/i18n/i18n.svelte.ts';
 
 export type OwnedTitle = ReturnType<typeof createOwnedTitle>;
 
@@ -51,8 +52,8 @@ export function createOwnedTitle() {
 		const ownTabs = $derived.by(() => {
 			const o = owned;
 			if (!o) return [];
-			const out: { v: typeof ownTab; label: string; count?: string; alert?: boolean }[] = [{ v: 'overview', label: 'Overview' }];
-			out.push({ v: 'library', label: 'Library', alert: ownState.kind === 'failed' || (o.show?.failed ?? 0) > 0 });
+			const out: { v: typeof ownTab; label: string; count?: string; alert?: boolean }[] = [{ v: 'overview', label: t('discover.titleOwned.overview') }];
+			out.push({ v: 'library', label: t('discover.titleOwned.library'), alert: ownState.kind === 'failed' || (o.show?.failed ?? 0) > 0 });
 			return out;
 		});
 		// Pick a release for the whole title, one season or one episode.
@@ -72,15 +73,15 @@ export function createOwnedTitle() {
 			if (!o) return { kind: 'missing', label: '' };
 			if (o.show) {
 				const sh = o.show;
-				if ((sh.downloading ?? 0) > 0) return { kind: 'downloading', label: `Downloading ${sh.downloading} ${sh.downloading === 1 ? 'episode' : 'episodes'}` };
-				if ((sh.failed ?? 0) > 0) return { kind: 'failed', label: `${sh.failed} failed` };
-				if (sh.episodes && sh.in_library >= sh.episodes - (sh.not_out_yet ?? 0)) return { kind: 'have', label: 'In library' };
-				return { kind: sh.in_library ? 'have' : 'missing', label: `${sh.in_library} of ${sh.episodes} episodes` };
+				if ((sh.downloading ?? 0) > 0) return { kind: 'downloading', label: sh.downloading === 1 ? t('discover.titleOwned.downloadingEpisodeOne') : t('discover.titleOwned.downloadingEpisodeOther', { n: sh.downloading ?? 0 }) };
+				if ((sh.failed ?? 0) > 0) return { kind: 'failed', label: t('discover.titleOwned.failedCount', { n: sh.failed ?? 0 }) };
+				if (sh.episodes && sh.in_library >= sh.episodes - (sh.not_out_yet ?? 0)) return { kind: 'have', label: t('discover.titleOwned.inLibrary') };
+				return { kind: sh.in_library ? 'have' : 'missing', label: t('discover.titleOwned.episodesOf', { have: sh.in_library, total: sh.episodes }) };
 			}
-			if (ownDownload) return { kind: 'downloading', label: ownDownload.download ? `Downloading ${Math.floor(Math.min(Math.max(ownDownload.download.progress, 0), 1) * 100)}%` : 'Downloading' };
-			if (ownFiles.length) return { kind: 'have', label: 'In library' };
-			if (ownFailed) return { kind: 'failed', label: 'Download failed' };
-			return { kind: 'missing', label: 'Not downloaded yet' };
+			if (ownDownload) return { kind: 'downloading', label: ownDownload.download ? t('discover.titleOwned.downloadingPercent', { percent: Math.floor(Math.min(Math.max(ownDownload.download.progress, 0), 1) * 100) }) : t('discover.titleOwned.downloading') };
+			if (ownFiles.length) return { kind: 'have', label: t('discover.titleOwned.inLibrary') };
+			if (ownFailed) return { kind: 'failed', label: t('discover.titleOwned.downloadFailed') };
+			return { kind: 'missing', label: t('discover.titleOwned.notDownloaded') };
 		});
 		async function ownRun(what: 'search' | 'refresh' | 'keep') {
 			const o = owned;
@@ -89,16 +90,16 @@ export function createOwnedTitle() {
 			try {
 				if (what === 'search') {
 					await api.post(`/titles/${o.id}/search`, {});
-					toasts.push(`Searching for ${o.name}`, 'info');
+					toasts.push(t('discover.titleOwned.searchingFor', { name: o.name }), 'info');
 				} else if (what === 'refresh') {
 					await api.post(`/titles/${o.id}/refresh`);
-					toasts.push(`Refreshing ${o.name}`, 'info', { body: 'Names, dates and posters' });
+					toasts.push(t('discover.titleOwned.refreshing', { name: o.name }), 'info', { body: t('discover.titleOwned.refreshingBody') });
 				} else {
 					const r = await api.put<{ title: TitleView }>(`/titles/${o.id}`, { keep_up_to_date: !o.keep_up_to_date });
 					owned = r.title;
 				}
 			} catch (e) {
-				toasts.push(what === 'search' ? `Couldn't start search` : what === 'refresh' ? `Couldn't refresh` : `Couldn't save`, 'fail', { body: message(e) });
+				toasts.push(what === 'search' ? t('discover.titleOwned.couldntSearch') : what === 'refresh' ? t('discover.titleOwned.couldntRefresh') : t('discover.titleOwned.couldntSave'), 'fail', { body: message(e) });
 			} finally {
 				busyAction = '';
 			}
@@ -109,20 +110,20 @@ export function createOwnedTitle() {
 			const o = owned;
 			if (!o) return [];
 			return [
-				{ group: 'Find', items: [
-					{ label: 'Search now', icon: 'search', run: () => ownRun('search'), busy: busyAction === 'search' },
-					{ label: 'Choose a release', icon: 'grid', run: () => (pickOpen = true) }
+				{ group: t('discover.titleOwned.groupFind'), items: [
+					{ label: t('discover.titleOwned.searchNow'), icon: 'search', run: () => ownRun('search'), busy: busyAction === 'search' },
+					{ label: t('discover.titleOwned.chooseRelease'), icon: 'grid', run: () => (pickOpen = true) }
 				] },
-				{ group: 'Files', items: [
-					{ label: 'Rename files', icon: 'copy', run: () => (renameOpen = true) },
-					{ label: 'Add a Version', icon: 'plus', run: () => void addVersion() },
-					{ label: 'Settings', icon: 'tools', run: () => setTab('library') }
+				{ group: t('discover.titleOwned.groupFiles'), items: [
+					{ label: t('discover.titleOwned.renameFiles'), icon: 'copy', run: () => (renameOpen = true) },
+					{ label: t('discover.titleOwned.addVersion'), icon: 'plus', run: () => void addVersion() },
+					{ label: t('discover.titleOwned.settings'), icon: 'tools', run: () => setTab('library') }
 				] },
-				{ group: 'Keep', items: [
-					{ label: o.keep_up_to_date ? 'Stop keeping up to date' : 'Keep up to date', icon: 'check', run: () => ownRun('keep'), busy: busyAction === 'keep' },
-					{ label: 'Refresh details', icon: 'refresh', run: () => ownRun('refresh'), busy: busyAction === 'refresh' },
-					{ label: 'All history', icon: 'clock', href: to(`/downloads/history?title=${o.id}`) },
-					{ label: o.kind === 'show' ? 'Delete show' : 'Delete movie', icon: 'trash', run: () => (deleteOpen = true), danger: true }
+				{ group: t('discover.titleOwned.groupKeep'), items: [
+					{ label: o.keep_up_to_date ? t('discover.titleOwned.stopKeeping') : t('discover.titleOwned.keepUpToDate'), icon: 'check', run: () => ownRun('keep'), busy: busyAction === 'keep' },
+					{ label: t('discover.titleOwned.refreshDetails'), icon: 'refresh', run: () => ownRun('refresh'), busy: busyAction === 'refresh' },
+					{ label: t('discover.titleOwned.allHistory'), icon: 'clock', href: to(`/downloads/history?title=${o.id}`) },
+					{ label: o.kind === 'show' ? t('discover.titleOwned.deleteShow') : t('discover.titleOwned.deleteMovie'), icon: 'trash', run: () => (deleteOpen = true), danger: true }
 				] }
 			];
 		});
@@ -166,7 +167,7 @@ export function createOwnedTitle() {
 		// Report a problem: anyone, on a title with files in the Library; members get it as their only More item.
 		let reportOpen = $state(false);
 		const mayReport = $derived(!!owned && (ownFiles.length > 0 || (owned.show?.in_library ?? 0) > 0));
-		const moreMenu = $derived<MenuItem[]>([...(manage ? ownMenu : []), ...(mayReport ? [...(manage ? [{ kind: 'separator' as const }] : []), { label: 'Report a problem', icon: 'alert' as const, onselect: () => (reportOpen = true) }] : [])]);
+		const moreMenu = $derived<MenuItem[]>([...(manage ? ownMenu : []), ...(mayReport ? [...(manage ? [{ kind: 'separator' as const }] : []), { label: t('discover.titleOwned.reportProblem'), icon: 'alert' as const, onselect: () => (reportOpen = true) }] : [])]);
 		let renameOpen = $state(false);
 		let deleteOpen = $state(false);
 		let pickOpen = $state(typeof location !== 'undefined' && new URLSearchParams(location.search).has('pick'));

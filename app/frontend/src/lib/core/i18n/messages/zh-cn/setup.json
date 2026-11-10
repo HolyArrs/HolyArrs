@@ -1,0 +1,17 @@
+{
+	"setup.reconnect": "重新连接",
+	"setup.testNow": "立即测试",
+	"setup.movies": "电影",
+	"setup.tvShows": "剧集",
+	"setup.music": "音乐",
+	"setup.subtitles": "字幕",
+	"setup.fullPath": "请使用完整的文件夹路径，例如 {path}。",
+	"setup.folderUsed": "这个文件夹已被使用，或位于已被使用的文件夹内。",
+	"setup.folderMissing": "该文件夹不存在，请检查路径。",
+	"setup.addFolderOrOff": "请添加文件夹，或关闭此项。",
+	"setup.notAnswering": "HolyArrs 没有响应，请稍后再试。",
+	"setup.addUserPasswordHint": "请填写用户名和密码。",
+	"setup.folders": "文件夹",
+	"setup.downloader": "下载器",
+	"setup.source": "来源"
+}

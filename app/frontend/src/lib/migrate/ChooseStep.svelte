@@ -1,4 +1,5 @@
 <script lang="ts" module>
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	let keepOpen = false;
 </script>
 
@@ -11,7 +12,7 @@
 	import Icon from '#lib/ui/Icon.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import type { ShowList } from './ItemsSheet.svelte';
-	import { appName, folderProblem, groupLabels, OTHER, plural, type PathRule, type PersonChoice, type Plan, type PlanGroup, type PlanItem } from './move.ts';
+	import { appName, folderProblem, OTHER, type PathRule, type PersonChoice, type Plan, type PlanGroup, type PlanItem } from './move.ts';
 
 	const countSteps = moveContext<boolean | undefined>('move-hide-count') !== true;
 
@@ -64,8 +65,10 @@
 	let keysOf = $state<'sources' | 'downloaders'>('sources');
 
 	const big = ['titles', 'wishlist', 'people'];
-	const counted: Record<string, [string, string]> = { titles: ['title', 'titles'], wishlist: ['request', 'requests'], people: ['person', 'people'] };
-	const named: Record<string, string> = { folders: 'folders', pick_rules: 'pick rules', never_add: 'never-add list', outside_lists: 'outside lists', naming: 'naming', subtitles: 'subtitles', sources: 'sources', downloaders: 'downloaders', alerts: 'alerts', other: 'other settings' };
+	// The word beside a count (the number is its own element), one and many.
+	const counted = (): Record<string, [string, string]> => ({ titles: [t('migrate.title2'), t('migrate.titles3')], wishlist: [t('migrate.request2'), t('migrate.requests3')], people: [t('migrate.person2'), t('migrate.people3')] });
+	// Read in "Also: folders, naming and alerts".
+	const named = (): Record<string, string> => ({ folders: t('migrate.folders2'), pick_rules: t('migrate.pickRules2'), never_add: t('migrate.neverAddList2'), outside_lists: t('migrate.outsideLists3'), naming: t('migrate.naming2'), subtitles: t('migrate.subtitles2'), sources: t('migrate.sources3'), downloaders: t('migrate.downloaders3'), alerts: t('migrate.alerts3'), other: t('migrate.otherSettings2') });
 	const clean = (n: string) => n.replace(/\s*\((Prowlarr|Jackett)\)$/i, '');
 
 	const kindOf = $derived(new Map((plan?.groups.find((g) => g.name === 'folders')?.items ?? []).map((it) => [it.folder?.old_path ?? '', it.folder?.kind ?? ''])));
@@ -83,10 +86,10 @@
 		if (b.length > 0 || on.length === 0) return b;
 		return [on.reduce((a, g) => (g.items.length > a.items.length ? g : a))];
 	});
-	const tiles = $derived(lead.map((g) => { const w = counted[g.name]; return { n: g.items.length, w: w ? (g.items.length === 1 ? w[0] : w[1]) : g.label }; }));
+	const tiles = $derived(lead.map((g) => { const w = counted()[g.name]; return { n: g.items.length, w: w ? (g.items.length === 1 ? w[0] : w[1]) : g.label }; }));
 	const restLine = $derived.by(() => {
-		const rest = on.filter((g) => !lead.includes(g)).map((g) => named[g.name] ?? g.label);
-		return rest.length ? `Also: ${andList(rest)}` : '';
+		const rest = on.filter((g) => !lead.includes(g)).map((g) => named()[g.name] ?? g.label);
+		return rest.length ? t('migrate.also', { list: andList(rest) }) : '';
 	});
 	const nmApps = $derived.by(() => {
 		const m = new Map<string, number>();
@@ -116,12 +119,12 @@
 		const dls = on.find((g) => g.name === 'downloaders')?.items.filter((it) => it.needs) ?? [];
 		const usenet = src.filter((it) => /newznab|usenet/i.test(it.detail ?? ''));
 		const torrent = src.filter((it) => !usenet.includes(it));
-		const need = (it: PlanItem) => (/password/i.test(it.needs ?? '') ? 'Password' : 'Key');
+		const need = (it: PlanItem) => (/password/i.test(it.needs ?? '') ? t('migrate.passwordLabel') : t('migrate.key'));
 		return [
-			{ label: 'Usenet', items: usenet.map((it) => ({ key: it.key, name: clean(it.name), need: '' })) },
-			{ label: 'Torrent', items: torrent.map((it) => ({ key: it.key, name: clean(it.name), need: '' })) },
-			{ label: 'Downloaders', items: dls.map((it) => ({ key: it.key, name: clean(it.name), need: need(it) })) }
-		].filter((g) => g.items.length > 0 && (keysOf === 'downloaders' ? g.label === 'Downloaders' : g.label !== 'Downloaders'));
+			{ id: 'usenet', label: t('migrate.usenet'), items: usenet.map((it) => ({ key: it.key, name: clean(it.name), need: '' })) },
+			{ id: 'torrent', label: t('migrate.torrent'), items: torrent.map((it) => ({ key: it.key, name: clean(it.name), need: '' })) },
+			{ id: 'downloaders', label: t('migrate.downloaders'), items: dls.map((it) => ({ key: it.key, name: clean(it.name), need: need(it) })) }
+		].filter((g) => g.items.length > 0 && (keysOf === 'downloaders' ? g.id === 'downloaders' : g.id !== 'downloaders'));
 	});
 
 	$effect(() => {
@@ -150,11 +153,11 @@
 		keepOpen = open;
 	}
 	function andList(xs: string[]): string {
-		return xs.length < 2 ? (xs[0] ?? '') : `${xs.slice(0, -1).join(', ')} and ${xs[xs.length - 1]}`;
+		return xs.length < 2 ? (xs[0] ?? '') : t('migrate.and', { list: xs.slice(0, -1).join(', '), last: xs[xs.length - 1] });
 	}
 	function countOf(g: PlanGroup): string {
-		const w = counted[g.name];
-		return w ? plural(g.items.length, w[0], w[1]) : `${g.label}: ${g.items.length}`;
+		const w = counted()[g.name];
+		return w ? `${g.items.length} ${g.items.length === 1 ? w[0] : w[1]}` : `${g.label}: ${g.items.length}`;
 	}
 	function choicesFor(p: string): { value: string; label: string }[] {
 		const k = kindOf.get(p);
@@ -164,16 +167,16 @@
 		return out;
 	}
 	function groupNote(g: PlanGroup): { text: string; warn: boolean } {
-		if (skip.includes(g.name)) return { text: 'Left out', warn: false };
+		if (skip.includes(g.name)) return { text: t('migrate.leftOut'), warn: false };
 		const n = g.items.length;
 		const needs = g.items.filter((it) => it.needs);
-		if (needs.length > 0 && g.name === 'people') return { text: 'Invite after the move', warn: true };
-		if (needs.length > 0) return { text: needs.every((it) => /key/i.test(it.needs ?? '')) ? 'Keys after the move' : 'Keys or passwords after the move', warn: true };
+		if (needs.length > 0 && g.name === 'people') return { text: t('migrate.inviteAfterTheMove'), warn: true };
+		if (needs.length > 0) return { text: needs.every((it) => /key/i.test(it.needs ?? '')) ? t('migrate.keysAfterTheMove') : t('migrate.keysOrPasswordsAfter'), warn: true };
 		void n;
 		return { text: '', warn: false };
 	}
 	function itemRow(it: PlanItem) {
-		const hint = [it.why || it.detail, it.needs ? `Needs ${it.needs}` : ''].filter(Boolean).join(' · ');
+		const hint = [it.why || it.detail, it.needs ? t('migrate.needs', { what: it.needs }) : ''].filter(Boolean).join(' · ');
 		return { key: it.key, name: it.name, hint };
 	}
 	function openKeys(k: 'sources' | 'downloaders') {
@@ -182,12 +185,12 @@
 	}
 	function personRow(it: PlanItem) {
 		const me = people[it.key] === 'owner';
-		return { key: it.key, name: it.name, pill: me ? { word: 'You', tone: 'ok' as const } : { word: 'Invite', tone: 'quiet' as const } };
+		return { key: it.key, name: it.name, pill: me ? { word: t('migrate.you'), tone: 'ok' as const } : { word: t('migrate.invite'), tone: 'quiet' as const } };
 	}
 	function personHint(it: PlanItem): string {
 		const app = appName(it.person?.app ?? it.from.split(' ')[0] ?? '');
-		if (it.person?.was_owner) return `Owner in ${app}. Their requests become yours.`;
-		return `Admin in ${app}. Turn off to bring them in as a member.`;
+		if (it.person?.was_owner) return t('migrate.ownerInTheirRequests', { app });
+		return t('migrate.adminInTurnOff', { app });
 	}
 	function keyDone(e: KeyboardEvent) {
 		if (e.key === 'Enter') {
@@ -208,18 +211,18 @@
 	<li class="mrow wrap" data-testid={testid}>
 		<div class="txt">
 			<label for={id} class="mono path one" title={p}><span aria-hidden="true">{clipMiddle(p)}</span><span class="sr-only">{p}</span></label>
-			{#if note && pick && pick === suggested[p]}<span class="sub">Suggested</span>{/if}
+			{#if note && pick && pick === suggested[p]}<span class="sub">{t('migrate.suggested')}</span>{/if}
 		</div>
 		<span class="arrow" aria-hidden="true">→</span>
 		<select {id} class="input pick" value={pick} aria-invalid={err ? 'true' : undefined} aria-describedby={err ? `${id}-err` : undefined} onchange={(e) => onfolder(p, e.currentTarget.value)}>
-			<option value="">Don't bring them</option>
+			<option value="">{t('migrate.donTBringThem')}</option>
 			{#each choicesFor(p) as o (o.value)}<option value={o.value}>{o.label}</option>{/each}
-			<option value={OTHER}>Other path…</option>
+			<option value={OTHER}>{t('migrate.otherPath')}</option>
 		</select>
 		{#if pick === OTHER || err}
 			<div class="below">
 				{#if pick === OTHER}
-					<label class="sr-only" for="{id}-other">Path here for {p}</label>
+					<label class="sr-only" for="{id}-other">{t('migrate.pathHereFor', { path: p })}</label>
 					<input id="{id}-other" class="input mono wide" value={others[p] ?? ''} placeholder="/data/movies" aria-invalid={err ? 'true' : undefined} aria-describedby={err ? `${id}-err` : undefined} oninput={(e) => onother(p, e.currentTarget.value)} onblur={oncommit} onkeydown={keyDone} />
 				{/if}
 				{#if err}<p class="form-error" id="{id}-err">{err}</p>{/if}
@@ -232,38 +235,38 @@
 	{#each extra as r, i (i)}
 		{@const err = extraErrors[i] ?? ''}
 		<li class="mrow wrap rule">
-			<span class="sr-only">Path rule {i + 1}</span>
-			<label class="sr-only" for="move-rule-from-{i}">Old app's path</label>
+			<span class="sr-only">{t('migrate.pathRule', { n: i + 1 })}</span>
+			<label class="sr-only" for="move-rule-from-{i}">{t('migrate.oldAppSPath')}</label>
 			<input id="move-rule-from-{i}" class="input mono half" value={r.from} placeholder="/movies" aria-invalid={err ? 'true' : undefined} aria-describedby={err ? `move-rule-${i}-err` : undefined} oninput={(e) => onextra(extra.map((x, j) => (j === i ? { ...x, from: e.currentTarget.value } : x)))} onblur={oncommit} onkeydown={keyDone} />
 			<span class="arrow" aria-hidden="true">→</span>
-			<label class="sr-only" for="move-rule-to-{i}">Path here</label>
+			<label class="sr-only" for="move-rule-to-{i}">{t('migrate.pathHere')}</label>
 			<input id="move-rule-to-{i}" class="input mono half" value={r.to} placeholder="/data/movies" aria-invalid={err ? 'true' : undefined} aria-describedby={err ? `move-rule-${i}-err` : undefined} oninput={(e) => onextra(extra.map((x, j) => (j === i ? { ...x, to: e.currentTarget.value } : x)))} onblur={oncommit} onkeydown={keyDone} />
-			<IconButton icon="x" label="Remove path rule {i + 1}" onclick={() => (onextra(extra.filter((_, j) => j !== i)), oncommit())} />
+			<IconButton icon="x" label={t('migrate.removePathRule', { n: i + 1 })} onclick={() => (onextra(extra.filter((_, j) => j !== i)), oncommit())} />
 			{#if err}<div class="below"><p class="form-error" id="move-rule-{i}-err">{err}</p></div>{/if}
 		</li>
 	{/each}
-	<li class="mrow"><Button icon="plus" variant="plain" onclick={() => onextra([...extra, { from: '', to: '' }])}>Add a path rule</Button></li>
+	<li class="mrow"><Button icon="plus" variant="plain" onclick={() => onextra([...extra, { from: '', to: '' }])}>{t('migrate.addAPathRule')}</Button></li>
 {/snippet}
 
 <div class="choose" class:dim={planning && !!plan} aria-busy={planning}>
-	<SettingsCard id="move-step" title={countSteps ? 'Step 2 of 4 · What to move' : 'What to move'}>
+	<SettingsCard id="move-step" title={countSteps ? t('migrate.step2Of4') : t('migrate.whatToMove')}>
 		{#if !plan}
-			<p class="hint">Updating…</p>
+			<p class="hint">{t('migrate.updating')}</p>
 		{:else}
 			{#if shown.length === 0}
-				<EmptyState compact icon="check" title="Nothing new to move" text="Everything in these reads is already here or has no match." />
+				<EmptyState compact icon="check" title={t('migrate.nothingNewToMove2')} text={t('migrate.everythingInTheseReads')} />
 			{:else}
 				<div class="tiles" data-testid="move-summary">
 					{#each tiles as tl (tl.w)}<div class="tile"><b class="num">{tl.n}</b><span class="sub">{tl.w}</span></div>{/each}
-					{#if tiles.length === 0}<div class="tile"><span class="sub">Nothing switched on</span></div>{/if}
+					{#if tiles.length === 0}<div class="tile"><span class="sub">{t('migrate.nothingSwitchedOn')}</span></div>{/if}
 				</div>
 				{#if restLine}<p class="sub also">{restLine}</p>{/if}
-				<p class="sub also" data-testid="move-files-stay">Titles and settings only. Your files stay where they are.</p>
+				<p class="sub also" data-testid="move-files-stay">{t('migrate.titlesAndSettingsOnly')}</p>
 			{/if}
 
 			{#if needFolders.length}
-				<h3 class="head">Folders</h3>
-				<p class="sub">Pick where these titles go, or they stay behind.</p>
+				<h3 class="head">{t('migrate.folders')}</h3>
+				<p class="sub">{t('migrate.pickWhereTheseTitles')}</p>
 				<ul class="box list" data-testid="needs-you">
 					{#each needFolders as p, n (p)}
 						{@render folderRow(p, n, `move-need-folder-${n}`, 'need-folder-row', false)}
@@ -272,51 +275,51 @@
 			{/if}
 
 			{#if peopleOn && asked.length}
-				<h3 class="head">Your account</h3>
+				<h3 class="head">{t('migrate.yourAccount')}</h3>
 				<ul class="box list">
 					{#if asked.length <= 3 || peopleOpen}
 						{#each asked as it, n (it.key)}
 						{@const owner = !!it.person?.was_owner}
 						<li class="mrow" data-testid="person-row">
 							<div class="txt"><span class="name one">{it.name}</span><span class="sub one" title={personHint(it)}>{personHint(it)}</span></div>
-							<span class="sw-word" aria-hidden="true">{owner ? 'This is me' : 'Keep as admin'}</span>
+							<span class="sw-word" aria-hidden="true">{owner ? t('migrate.thisIsMe') : t('migrate.keepAsAdmin')}</span>
 							<label class="switch">
 								<input
 									id="move-person-{n}"
 									type="checkbox"
 									checked={people[it.key] === (owner ? 'owner' : 'admin')}
 									onchange={(e) => onperson(it.key, e.currentTarget.checked ? (owner ? 'owner' : 'admin') : null)}
-									aria-label="{owner ? 'This is me' : 'Keep as admin'}: {it.name}"
+									aria-label={owner ? t('migrate.thisIsMe2', { name: it.name }) : t('migrate.keepAsAdmin2', { name: it.name })}
 								/>
 								<span class="sw" aria-hidden="true"></span>
 							</label>
 						</li>
 						{/each}
 					{:else}
-						<li class="mrow"><span class="txt">{asked.length} owners and admins</span><button type="button" class="quiet" aria-expanded={peopleOpen} onclick={() => (peopleOpen = true)}>Review</button></li>
+						<li class="mrow"><span class="txt">{t('migrate.ownersAndAdmins', { n: asked.length })}</span><button type="button" class="quiet" aria-expanded={peopleOpen} onclick={() => (peopleOpen = true)}>{t('migrate.review')}</button></li>
 					{/if}
 				</ul>
 			{/if}
 
 			{#if keyCount.sources || keyCount.downloaders || peopleOn}
-				<h3 class="head">After the move</h3>
+				<h3 class="head">{t('migrate.afterTheMove')}</h3>
 				<div class="cards">
 					{#if keyCount.sources}
 						<div class="box card1">
-							<span class="txt"><b>Reconnect {plural(keyCount.sources, 'Source', 'Sources')}</b><span class="sub">They arrive paused. Add their keys in Settings.</span></span>
-							<button type="button" class="quiet" onclick={() => openKeys('sources')}>Show</button>
+							<span class="txt"><b>{keyCount.sources === 1 ? t('migrate.reconnectSource', { n: keyCount.sources }) : t('migrate.reconnectSources', { n: keyCount.sources })}</b><span class="sub">{t('migrate.theyArrivePausedAdd')}</span></span>
+							<button type="button" class="quiet" onclick={() => openKeys('sources')}>{t('migrate.show2')}</button>
 						</div>
 					{/if}
 					{#if keyCount.downloaders}
 						<div class="box card1">
-							<span class="txt"><b>Reconnect {plural(keyCount.downloaders, 'Downloader', 'Downloaders')}</b><span class="sub">They arrive paused. Add their passwords or keys in Settings.</span></span>
-							<button type="button" class="quiet" onclick={() => openKeys('downloaders')}>Show</button>
+							<span class="txt"><b>{keyCount.downloaders === 1 ? t('migrate.reconnectDownloader', { n: keyCount.downloaders }) : t('migrate.reconnectDownloaders', { n: keyCount.downloaders })}</b><span class="sub">{t('migrate.theyArrivePausedAdd2')}</span></span>
+							<button type="button" class="quiet" onclick={() => openKeys('downloaders')}>{t('migrate.show2')}</button>
 						</div>
 					{/if}
 					{#if peopleOn}
 						<div class="box card1">
-							<span class="txt"><b>Invite {peopleItems.length === 1 ? '1 user' : `${peopleItems.length} users`}</b><span class="sub">Their accounts come over. Send each one an invite.</span></span>
-							<button type="button" class="quiet" onclick={() => onshow('People', peopleItems, personRow)}>Show</button>
+							<span class="txt"><b>{peopleItems.length === 1 ? t('migrate.invite1User') : t('migrate.inviteUsers', { n: peopleItems.length })}</b><span class="sub">{t('migrate.theirAccountsComeOver')}</span></span>
+							<button type="button" class="quiet" onclick={() => onshow(t('migrate.people'), peopleItems, personRow)}>{t('migrate.show2')}</button>
 						</div>
 					{/if}
 				</div>
@@ -324,7 +327,7 @@
 
 			{#if shown.length > 0 || oldRows.length > 0 || pathRules}
 				<button type="button" class="quiet more" aria-expanded={open} aria-controls="move-all" onclick={toggle}>
-					<Icon name={open ? 'chevronDown' : 'chevronRight'} size={15} /><span>Change what moves</span>
+					<Icon name={open ? 'chevronDown' : 'chevronRight'} size={15} /><span>{t('migrate.changeWhatMoves')}</span>
 				</button>
 			{/if}
 			{#if open}
@@ -338,9 +341,9 @@
 										<label class="name" for="move-group-{g.name}">{g.label}</label>
 										<span class="count">{g.items.length}</span>{#if note.text}<span class="gnote" class:warn={note.warn}>{note.text}</span>{/if}
 									</span>
-									<button type="button" class="quiet" onclick={() => onshow(g.label, g.items, itemRow)} disabled={g.items.length === 0} aria-label="Show {g.label}">Show</button>
+									<button type="button" class="quiet" onclick={() => onshow(g.label, g.items, itemRow)} disabled={g.items.length === 0} aria-label={t('migrate.show4', { label: g.label })}>{t('migrate.show2')}</button>
 									<label class="switch">
-										<input id="move-group-{g.name}" type="checkbox" checked={!skip.includes(g.name)} onchange={(e) => ongroup(g.name, e.currentTarget.checked)} aria-label="Move {g.label}" />
+										<input id="move-group-{g.name}" type="checkbox" checked={!skip.includes(g.name)} onchange={(e) => ongroup(g.name, e.currentTarget.checked)} aria-label={t('migrate.move3', { label: g.label })} />
 										<span class="sw" aria-hidden="true"></span>
 									</label>
 								</li>
@@ -349,33 +352,33 @@
 					{/if}
 
 					{#if oldRows.length > 0}
-						<h3 class="head" id="move-folders">Folders</h3>
+						<h3 class="head" id="move-folders">{t('migrate.folders')}</h3>
 						<ul class="box list">
 							{#each oldRows.filter((x) => !needFolders.includes(x)) as p, n (p)}
 								{@render folderRow(p, n, `move-folder-${n}`, 'folder-row', true)}
 							{/each}
 						</ul>
 						<details class="adv" bind:open={advOpen}>
-							<summary><Icon name="chevronRight" size={15} /><span>Advanced</span></summary>
-							<p class="sub">If an old app sees a folder at a different path, enter both.</p>
+							<summary><Icon name="chevronRight" size={15} /><span>{t('migrate.advanced')}</span></summary>
+							<p class="sub">{t('migrate.ifAnOldApp')}</p>
 							<ul class="box list">{@render ruleRows()}</ul>
 						</details>
 					{:else if pathRules}
-						<h3 class="head" id="move-folders">Path rules</h3>
-						<p class="sub">If an old app sees a folder at a different path, enter both.</p>
+						<h3 class="head" id="move-folders">{t('migrate.pathRules')}</h3>
+						<p class="sub">{t('migrate.ifAnOldApp')}</p>
 						<ul class="box list">{@render ruleRows()}</ul>
 					{/if}
 
 					{#if plan.not_moved.length > 0}
 						<ul class="box list tail">
 							<li class="mrow" data-testid="not-moved-row">
-								<span class="txt one"><span class="name">Not moved</span> <span class="sub">{plural(plan.not_moved.length, 'setting')} with no match here</span></span>
-								<button type="button" class="quiet" onclick={() => { nmApp = null; nmOpen = true; }}>Show</button>
+								<span class="txt one"><span class="name">{t('migrate.notMoved')}</span> <span class="sub">{plan.not_moved.length === 1 ? t('migrate.settingWithNoMatch', { n: plan.not_moved.length }) : t('migrate.settingsWithNoMatch', { n: plan.not_moved.length })}</span></span>
+								<button type="button" class="quiet" onclick={() => { nmApp = null; nmOpen = true; }}>{t('migrate.show2')}</button>
 							</li>
 						</ul>
 					{/if}
 					{#if emptyGroups.length > 0}
-						<p class="sub none">Nothing to move for: {emptyGroups.map((g) => g.label).join(', ')}</p>
+						<p class="sub none">{t('migrate.nothingToMoveFor', { list: emptyGroups.map((g) => g.label).join(', ') })}</p>
 					{/if}
 				</div>
 			{/if}
@@ -383,7 +386,7 @@
 	</SettingsCard>
 </div>
 
-<Sheet bind:open={keysOpen} title={keysOf === 'downloaders' ? 'Downloaders to reconnect' : 'Sources to reconnect'} size="md">
+<Sheet bind:open={keysOpen} title={keysOf === 'downloaders' ? t('migrate.downloadersToReconnect') : t('migrate.sourcesToReconnect')} size="md">
 	<div class="kgroups" data-testid="keys-sheet">
 		{#each keyGroups as g (g.label)}
 			<p class="khead">{g.label} · {g.items.length}</p>
@@ -394,16 +397,16 @@
 	</div>
 </Sheet>
 
-<Sheet bind:open={nmOpen} title={nmApp ? `Not moved · ${appName(nmApp)}` : 'Not moved'} size="md">
+<Sheet bind:open={nmOpen} title={nmApp ? t('migrate.notMoved2', { name: appName(nmApp) }) : t('migrate.notMoved')} size="md">
 	{#if !nmApp}
-		<p class="sub nm-lead">HolyArrs handles these its own way. Nothing to do.</p>
+		<p class="sub nm-lead">{t('migrate.holyarrsHandlesTheseIts')}</p>
 		<ul class="box list" data-testid="not-moved-apps">
 			{#each nmApps as [k, n] (k)}
-				<li><button type="button" class="nm-row" onclick={() => (nmApp = k)}><b>{appName(k) || 'Other'}</b><span class="count">{n}</span><Icon name="chevronRight" size={15} /></button></li>
+				<li><button type="button" class="nm-row" onclick={() => (nmApp = k)}><b>{appName(k) || t('migrate.other')}</b><span class="count">{n}</span><Icon name="chevronRight" size={15} /></button></li>
 			{/each}
 		</ul>
 	{:else}
-		<button type="button" class="quiet nm-back" onclick={() => (nmApp = null)}><Icon name="chevronLeft" size={15} />All apps</button>
+		<button type="button" class="quiet nm-back" onclick={() => (nmApp = null)}><Icon name="chevronLeft" size={15} />{t('migrate.allApps')}</button>
 		<ul class="box list">
 			{#each nmReasons as r (r.what + r.why)}
 				<li class="mrow"><span class="txt"><span class="name one">{r.what}</span><span class="sub">{r.why}</span></span>{#if r.n > 1}<span class="count">×{r.n}</span>{/if}</li>

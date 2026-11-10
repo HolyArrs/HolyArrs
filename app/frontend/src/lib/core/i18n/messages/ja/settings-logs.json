@@ -1,0 +1,18 @@
+{
+"settings.logs.title": "ログ",
+"settings.logs.download": "ダウンロード",
+"settings.logs.filter": "ログを絞り込み",
+"settings.logs.level": "レベル",
+"settings.logs.every": "すべての行",
+"settings.logs.warnings": "警告とエラー",
+"settings.logs.errors": "エラーのみ",
+"settings.logs.text": "テキスト",
+"settings.logs.example": "例: qBittorrent",
+"settings.logs.from": "開始",
+"settings.logs.to": "終了",
+"settings.logs.apply": "適用",
+"settings.logs.clear": "クリア",
+"settings.logs.lines": "行数",
+"settings.logs.newer": "新しい",
+"settings.logs.older": "古い"
+}

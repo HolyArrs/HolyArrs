@@ -1,0 +1,10 @@
+{
+	"settings.home.advanced": "Avancé",
+	"settings.home.page": "{group} · page",
+	"settings.home.title": "Paramètres",
+	"settings.home.search": "Rechercher dans les paramètres",
+	"settings.home.matching": "Paramètres correspondants",
+	"settings.home.noMatch": "Aucun paramètre correspondant",
+	"settings.home.noMatchText": "Essayez un autre mot, comme dossier, clé ou mot de passe.",
+	"settings.home.clear": "Effacer la recherche"
+}

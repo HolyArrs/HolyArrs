@@ -1,3 +1,4 @@
+import { t } from '#lib/core/i18n/i18n.svelte.ts';
 export type AppKind = (typeof apps)[number]['kind'];
 
 export interface Snapshot {
@@ -140,57 +141,62 @@ export const apps = [
 	{ kind: 'sabnzbd', name: 'SABnzbd', what: 'Downloader', port: 8080 }
 ] as const;
 
-export const groupLabels: Record<string, string> = {
-	folders: 'Library folders',
-	pick_rules: 'Pick rules',
-	titles: 'Titles',
-	never_add: 'Never-add list',
-	outside_lists: 'Outside lists',
-	sources: 'Sources',
-	downloaders: 'Downloaders',
-	naming: 'Naming',
-	subtitles: 'Subtitles',
-	people: 'People',
-	wishlist: 'Requests',
-	alerts: 'Alerts',
-	other: 'Other settings'
-};
+/** The name of a group of settings, in the person's language; undefined for a group HolyArrs has no name for. */
+export function groupLabel(group: string): string | undefined {
+	const labels: Record<string, string> = {
+		folders: t('migrate.libraryFolders'),
+		pick_rules: t('migrate.pickRules'),
+		titles: t('migrate.titles'),
+		never_add: t('migrate.neverAddList'),
+		outside_lists: t('migrate.outsideLists'),
+		sources: t('migrate.sources'),
+		downloaders: t('migrate.downloaders'),
+		naming: t('migrate.naming'),
+		subtitles: t('migrate.subtitles'),
+		people: t('migrate.people'),
+		wishlist: t('migrate.requests'),
+		alerts: t('migrate.alerts'),
+		other: t('migrate.otherSettings')
+	};
+	return labels[group];
+}
 
 export const groupOrder = ['folders', 'pick_rules', 'titles', 'never_add', 'outside_lists', 'sources', 'downloaders', 'naming', 'subtitles', 'people', 'wishlist', 'alerts'];
 
-const words: Record<string, [string, string]> = {
-	create: ['Will be added', 'Added'],
-	adopt: ['Will use the one here', 'Using the one here'],
-	change: ['Will be updated', 'Updated'],
-	matched: ['Matches one here', 'Matched'],
-	already: ['Already here', 'Already here'],
-	skipped: ['Left out', 'Left out'],
-	not_found: ['No folder here', 'No folder here'],
-	failed: ["Won't work", 'Failed']
-};
+const words = (): Record<string, [string, string]> => ({
+	create: [t('migrate.willBeAdded'), t('migrate.added')],
+	adopt: [t('migrate.willUseTheOne'), t('migrate.usingTheOneHere')],
+	change: [t('migrate.willBeUpdated'), t('migrate.updated')],
+	matched: [t('migrate.matchesOneHere'), t('migrate.matched')],
+	already: [t('migrate.alreadyHere'), t('migrate.alreadyHere')],
+	skipped: [t('migrate.leftOut'), t('migrate.leftOut')],
+	not_found: [t('migrate.noFolderHere'), t('migrate.noFolderHere')],
+	failed: [t('migrate.wonTWork'), t('migrate.failed')]
+});
 
 const pastToBase: Record<string, string> = { created: 'create', adopted: 'adopt', changed: 'change' };
 
 const resultOrder = ['create', 'created', 'adopt', 'adopted', 'change', 'changed', 'matched', 'already', 'removed', 'kept', 'skipped', 'not_found', 'failed'];
 
+// Each entry is the message keys of the one form and the many form; both carry {n}.
 const countNames: Record<string, [string, string]> = {
-	titles: ['title', 'titles'],
-	folders: ['Library folder', 'Library folders'],
-	quality_profiles: ['set of Pick rules', 'sets of Pick rules'],
-	custom_formats: ['trait', 'traits'],
-	delay_profiles: ['wait rule', 'wait rules'],
-	indexers: ['Source', 'Sources'],
-	download_clients: ['Downloader', 'Downloaders'],
-	import_lists: ['Outside list', 'Outside lists'],
-	notifications: ['Alert', 'Alerts'],
-	app_links: ['linked app', 'linked apps'],
-	users: ['person', 'people'],
-	requests: ['request', 'requests'],
-	tags: ['tag', 'tags'],
-	subtitle_languages: ['subtitle language', 'subtitle languages'],
-	subtitle_profiles: ['subtitle language set', 'subtitle language sets'],
-	subtitle_sites: ['Subtitle site', 'Subtitle sites'],
-	needs_reentry: ['key to type again', 'keys to type again']
+	titles: ['migrate.title', 'migrate.titles2'],
+	folders: ['migrate.libraryFolder', 'migrate.libraryFolders2'],
+	quality_profiles: ['migrate.setOfPickRules', 'migrate.setsOfPickRules'],
+	custom_formats: ['migrate.trait', 'migrate.traits'],
+	delay_profiles: ['migrate.waitRule', 'migrate.waitRules'],
+	indexers: ['migrate.source', 'migrate.sources2'],
+	download_clients: ['migrate.downloader', 'migrate.downloaders2'],
+	import_lists: ['migrate.outsideList', 'migrate.outsideLists2'],
+	notifications: ['migrate.alert', 'migrate.alerts2'],
+	app_links: ['migrate.linkedApp', 'migrate.linkedApps'],
+	users: ['migrate.person', 'migrate.people2'],
+	requests: ['migrate.request', 'migrate.requests2'],
+	tags: ['migrate.tag', 'migrate.tags'],
+	subtitle_languages: ['migrate.subtitleLanguage', 'migrate.subtitleLanguages'],
+	subtitle_profiles: ['migrate.subtitleLanguageSet', 'migrate.subtitleLanguageSets'],
+	subtitle_sites: ['migrate.subtitleSite', 'migrate.subtitleSites'],
+	needs_reentry: ['migrate.keyToTypeAgain', 'migrate.keysToTypeAgain']
 };
 
 const mainCount: Record<string, string> = {
@@ -217,15 +223,17 @@ const bestKeys: Record<string, string[]> = {
 	sabnzbd: ['download_clients']
 };
 
-const titleWord: Record<string, [string, string]> = { radarr: ['movie', 'movies'], sonarr: ['show', 'shows'], lidarr: ['artist', 'artists'] };
+const titleWord: Record<string, [string, string]> = { radarr: ['migrate.movie', 'migrate.movies'], sonarr: ['migrate.show', 'migrate.shows'], lidarr: ['migrate.artist', 'migrate.artists'] };
 
 export const OTHER = '\u0000other';
 
-export const steps: { id: Step; word: string; title: string }[] = [
-	{ id: 'read', word: 'Read', title: 'Read your apps' },
-	{ id: 'choose', word: 'Choose', title: 'What to move' },
-	{ id: 'move', word: 'Move', title: 'Move' },
-	{ id: 'done', word: 'Done', title: 'Done' }
+const stepIds: Step[] = ['read', 'choose', 'move', 'done'];
+
+export const steps = (): { id: Step; word: string; title: string }[] => [
+	{ id: 'read', word: t('migrate.read'), title: t('migrate.readYourApps') },
+	{ id: 'choose', word: t('migrate.choose'), title: t('migrate.whatToMove') },
+	{ id: 'move', word: t('migrate.move'), title: t('migrate.move') },
+	{ id: 'done', word: t('migrate.done'), title: t('migrate.done') }
 ];
 
 export function appName(kind: string): string {
@@ -243,11 +251,11 @@ export function running(m: Move): boolean {
 export function chooseHint(why: ChooseWhy | string | undefined): string {
 	switch (why) {
 		case 'numeric_id':
-			return "HolyArrs can't tell if this is the same person.";
+			return t('migrate.holyarrsCanTTell');
 		case 'merge_gone':
-			return 'The person you picked is no longer here.';
+			return t('migrate.thePersonYouPicked');
 	}
-	return 'Someone here has the same name. Until you choose, they stay behind and their requests become yours.';
+	return t('migrate.someoneHereHasThe');
 }
 
 export function setChoice(people: Record<string, PersonChoice>, key: string, c: PersonChoice | null): Record<string, PersonChoice> {
@@ -259,13 +267,13 @@ export function setChoice(people: Record<string, PersonChoice>, key: string, c: 
 
 export function resultWords(result: string, after = false, undo = false): string {
 	if (undo) {
-		if (result === 'removed') return 'Removed';
-		if (result === 'kept') return 'Kept';
-		if (result === 'failed') return 'Not removed';
+		if (result === 'removed') return t('migrate.removed');
+		if (result === 'kept') return t('migrate.kept');
+		if (result === 'failed') return t('migrate.notRemoved');
 	}
-	if (result === 'removed') return 'Removed';
-	if (result === 'kept') return 'Kept';
-	const w = words[pastToBase[result] ?? result];
+	if (result === 'removed') return t('migrate.removed');
+	if (result === 'kept') return t('migrate.kept');
+	const w = words()[pastToBase[result] ?? result];
 	if (!w) return result.replaceAll('_', ' ');
 	return pastToBase[result] ? w[1] : w[after ? 1 : 0];
 }
@@ -309,7 +317,7 @@ export function buckets(r: Pick<Report, 'lines'> | null | undefined): { groups: 
 	for (const l of r?.lines ?? []) {
 		let g = by.get(l.group);
 		if (!g) {
-			g = { group: l.group, label: groupLabels[l.group] ?? l.group, lines: [], counts: {} };
+			g = { group: l.group, label: groupLabel(l.group) ?? l.group, lines: [], counts: {} };
 			by.set(l.group, g);
 		}
 		g.lines.push(l);
@@ -332,7 +340,7 @@ export function needsGroups(list: string[]): { label: string; items: string[] }[
 		const cut = [line.indexOf('"'), line.indexOf(':')].filter((i) => i > 0);
 		const at = cut.length ? Math.min(...cut) : -1;
 		const head = at > 0 ? line.slice(0, at).trim() : '';
-		const label = head ? (apps.some((a) => a.kind === head) ? appName(head) : head) : 'Other';
+		const label = head ? (apps.some((a) => a.kind === head) ? appName(head) : head) : t('migrate.other');
 		const rest = at > 0 ? line.slice(at).replace(/^:\s*/, '').trim() : line;
 		let g = out.find((x) => x.label === label);
 		if (!g) {
@@ -347,7 +355,7 @@ export function needsGroups(list: string[]): { label: string; items: string[] }[
 export function countWord(key: string, n: number): string {
 	const w = countNames[key];
 	if (!w || !(n > 0)) return '';
-	return `${n} ${n === 1 ? w[0] : w[1]}`;
+	return t(n === 1 ? w[0] : w[1], { n });
 }
 
 export function bestStats(kind: string, counts: Record<string, number>): string {
@@ -356,7 +364,7 @@ export function bestStats(kind: string, counts: Record<string, number>): string 
 			const n = counts[k] ?? 0;
 			if (!(n > 0)) return '';
 			const w = k === 'titles' && titleWord[kind] ? titleWord[kind] : countNames[k];
-			return w ? `${n} ${n === 1 ? w[0] : w[1]}` : '';
+			return w ? t(n === 1 ? w[0] : w[1], { n }) : '';
 		})
 		.filter(Boolean)
 		.join(' · ');
@@ -368,26 +376,26 @@ export function countWords(kind: string, counts: Record<string, number>, max = 3
 	known.sort(([a, x], [b, y]) => (a === main ? -1 : b === main ? 1 : y - x || a.localeCompare(b)));
 	const shown = known.slice(0, max).map(([k, n]) => countWord(k, n));
 	const rest = known.slice(max).reduce((s, [, n]) => s + n, 0);
-	if (rest > 0) return `${shown.join(', ')} and ${rest} more`;
+	if (rest > 0) return t('migrate.andMore', { list: shown.join(', '), n: rest });
 	return shown.join(', ');
 }
 
 export function moveStateWord(m: Pick<Move, 'state' | 'undo_state'>): { word: string; tone: 'ok' | 'info' | 'wait' | 'fail' | 'idle' } {
-	if (m.undo_state === 'queued' || m.undo_state === 'running') return { word: 'Undoing', tone: 'info' };
-	if (m.undo_state === 'failed' && m.state !== 'undone') return { word: 'Undo failed', tone: 'fail' };
+	if (m.undo_state === 'queued' || m.undo_state === 'running') return { word: t('migrate.undoing'), tone: 'info' };
+	if (m.undo_state === 'failed' && m.state !== 'undone') return { word: t('migrate.undoFailed'), tone: 'fail' };
 	switch (m.state) {
 		case 'queued':
-			return { word: 'Waiting', tone: 'wait' };
+			return { word: t('migrate.waiting'), tone: 'wait' };
 		case 'running':
-			return { word: 'Moving', tone: 'info' };
+			return { word: t('migrate.moving'), tone: 'info' };
 		case 'done':
-			return { word: 'Moved', tone: 'ok' };
+			return { word: t('migrate.moved'), tone: 'ok' };
 		case 'failed':
-			return { word: 'Stopped with errors', tone: 'fail' };
+			return { word: t('migrate.stoppedWithErrors'), tone: 'fail' };
 		case 'undone':
-			return { word: 'Undone', tone: 'idle' };
+			return { word: t('migrate.undone'), tone: 'idle' };
 	}
-	return { word: 'Waiting', tone: 'wait' };
+	return { word: t('migrate.waiting'), tone: 'wait' };
 }
 
 export function moveCounts(m: Pick<Move, 'state' | 'report'>): string {
@@ -401,9 +409,9 @@ export function cleanRules(rules: PathRule[]): PathRule[] {
 
 export function ruleProblem(r: PathRule): string {
 	const full = (p: string) => p.startsWith('/') || /^[A-Za-z]:[\\/]/.test(p);
-	if (!r.from || !r.to) return 'Fill in both paths.';
-	if (!full(r.from) || !full(r.to)) return 'Both must be full paths, such as /movies.';
-	if (/(^|[\\/])\.\.([\\/]|$)/.test(r.from + '/' + r.to)) return `Paths can't contain "..".`;
+	if (!r.from || !r.to) return t('migrate.fillInBothPaths');
+	if (!full(r.from) || !full(r.to)) return t('migrate.bothMustBeFull');
+	if (/(^|[\\/])\.\.([\\/]|$)/.test(r.from + '/' + r.to)) return t('migrate.pathsCanTContain');
 	return '';
 }
 
@@ -414,7 +422,7 @@ export function folderTo(pick: string | undefined, other: string | undefined): s
 
 export function folderProblem(from: string, pick: string | undefined, other: string | undefined): string {
 	if (!pick) return '';
-	if (pick === OTHER && !(other ?? '').trim()) return 'Type the path here, or pick a Library folder.';
+	if (pick === OTHER && !(other ?? '').trim()) return t('migrate.typeThePathHere');
 	return ruleProblem({ from, to: folderTo(pick, other) });
 }
 
@@ -436,34 +444,34 @@ export function rulesFrom(picks: Record<string, string>, others: Record<string, 
 }
 
 export function stepIndex(s: Step): number {
-	return steps.findIndex((x) => x.id === s);
+	return stepIds.indexOf(s);
 }
 
 export function asStep(v: string | null): Step | null {
 	if (v === 'try') return 'choose';
-	return steps.some((s) => s.id === v) ? (v as Step) : null;
+	return stepIds.includes(v as Step) ? (v as Step) : null;
 }
 
 export function stepGate(s: GateState): { ok: boolean; reason: string } {
 	switch (s.step) {
 		case 'read':
-			return s.picked > 0 ? { ok: true, reason: '' } : { ok: false, reason: 'Turn on at least one read.' };
+			return s.picked > 0 ? { ok: true, reason: '' } : { ok: false, reason: t('migrate.turnOnAtLeast') };
 		case 'choose':
-			if (s.picked === 0) return { ok: false, reason: 'Turn on at least one read.' };
-			if (s.planning || !s.planned) return { ok: false, reason: 'Updating…' };
-			if ((s.folderErrors ?? 0) > 0) return { ok: false, reason: 'Fix the folder marked above.' };
-			if ((s.ruleErrors ?? 0) > 0) return { ok: false, reason: 'Fix the path rule marked above.' };
-			if ((s.groupsWithItems ?? 0) === 0) return { ok: false, reason: 'Nothing new to move.' };
-			if ((s.groupsOn ?? 0) === 0) return { ok: false, reason: 'Turn on at least one group.' };
+			if (s.picked === 0) return { ok: false, reason: t('migrate.turnOnAtLeast') };
+			if (s.planning || !s.planned) return { ok: false, reason: t('migrate.updating') };
+			if ((s.folderErrors ?? 0) > 0) return { ok: false, reason: t('migrate.fixTheFolderMarked') };
+			if ((s.ruleErrors ?? 0) > 0) return { ok: false, reason: t('migrate.fixThePathRule') };
+			if ((s.groupsWithItems ?? 0) === 0) return { ok: false, reason: t('migrate.nothingNewToMove') };
+			if ((s.groupsOn ?? 0) === 0) return { ok: false, reason: t('migrate.turnOnAtLeast2') };
 			return { ok: true, reason: '' };
 		case 'move': {
 			if (s.moving) return { ok: false, reason: '' };
-			if (s.trying) return { ok: false, reason: s.tried ? 'Updating…' : 'Trying the move…' };
-			if (s.failed) return { ok: false, reason: 'The test run failed.' };
-			if (s.stale || !s.tried) return { ok: false, reason: 'Changed since the test.' };
-			if (s.step === 'move' && s.safeMode) return { ok: false, reason: 'HolyArrs started in safe mode.' };
+			if (s.trying) return { ok: false, reason: s.tried ? t('migrate.updating') : t('migrate.tryingTheMove') };
+			if (s.failed) return { ok: false, reason: t('migrate.theTestRunFailed') };
+			if (s.stale || !s.tried) return { ok: false, reason: t('migrate.changedSinceTheTest') };
+			if (s.step === 'move' && s.safeMode) return { ok: false, reason: t('migrate.holyarrsStartedInSafe') };
 			const open = s.openChoices ?? 0;
-			if (open > 0) return { ok: true, reason: open === 1 ? '1 still needs a choice. It stays behind if you move now.' : `${open} still need a choice. They stay behind if you move now.` };
+			if (open > 0) return { ok: true, reason: open === 1 ? t('migrate.n1StillNeedsA') : t('migrate.stillNeedAChoice', { n: open }) };
 			return { ok: true, reason: '' };
 		}
 	}

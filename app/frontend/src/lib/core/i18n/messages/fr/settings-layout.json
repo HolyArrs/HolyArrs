@@ -1,0 +1,14 @@
+{
+	"settings.layout.settings": "Paramètres",
+	"settings.layout.home": "Accueil",
+	"settings.layout.sections": "Sections des paramètres",
+	"settings.layout.needsAttention": "À traiter",
+	"settings.layout.needsAttentionLower": "à traiter",
+	"settings.layout.blocked": "Vous ne pouvez pas modifier ceci",
+	"settings.layout.backToSettings": "Retour aux Paramètres",
+	"settings.layout.setPasswordFirst": "Définissez d'abord un mot de passe",
+	"settings.layout.setPasswordDesc": "Les clés, mots de passe, personnes et sauvegardes demandent un mot de passe HolyArrs. Vous n'en avez pas encore.",
+	"settings.layout.setPasswordLabel": "Définir un mot de passe",
+	"settings.layout.confirmPasswordLabel": "Confirmez votre mot de passe",
+	"settings.layout.confirmPasswordDesc": "Les clés, mots de passe, personnes et sauvegardes demandent votre mot de passe. Valable 10 minutes."
+}

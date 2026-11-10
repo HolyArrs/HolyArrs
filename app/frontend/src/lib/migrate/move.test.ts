@@ -120,8 +120,8 @@ describe('move helpers', () => {
 	it('says move states in plain words', () => {
 		const m = { state: 'done' as const };
 		expect(moveStateWord({ state: 'queued' })).toEqual({ word: 'Waiting', tone: 'wait' });
-		expect(moveStateWord({ state: 'running' })).toEqual({ word: 'Moving', tone: 'info' });
-		expect(moveStateWord(m).word).toBe('Moved');
+		expect(moveStateWord({ state: 'running' })).toEqual({ word: 'Importing', tone: 'info' });
+		expect(moveStateWord(m).word).toBe('Imported');
 		expect(moveStateWord({ state: 'failed' }).word).toBe('Stopped with errors');
 		expect(moveStateWord({ state: 'undone' }).word).toBe('Undone');
 		expect(moveStateWord({ state: 'done', undo_state: 'running' }).word).toBe('Undoing');
@@ -144,8 +144,8 @@ describe('move helpers', () => {
 		expect(stepGate({ step: 'move', picked: 1, tried: true, stale: true }).ok).toBe(false);
 		expect(stepGate({ step: 'move', picked: 1, tried: false }).ok).toBe(false);
 		expect(stepGate({ step: 'move', picked: 1, tried: true, trying: true }).reason).toBe('Updating…');
-		expect(stepGate({ step: 'move', picked: 1, tried: true, openChoices: 3 })).toEqual({ ok: true, reason: '3 still need a choice. They stay behind if you move now.' });
-		expect(stepGate({ step: 'move', picked: 1, tried: true, openChoices: 1 }).reason).toBe('1 still needs a choice. It stays behind if you move now.');
+		expect(stepGate({ step: 'move', picked: 1, tried: true, openChoices: 3 })).toEqual({ ok: true, reason: '3 still need a choice. They stay behind if you import now.' });
+		expect(stepGate({ step: 'move', picked: 1, tried: true, openChoices: 1 }).reason).toBe('1 still needs a choice. It stays behind if you import now.');
 		expect(stepGate({ step: 'move', picked: 1, tried: false, failed: true })).toEqual({ ok: false, reason: 'The test run failed.' });
 		expect(stepGate({ step: 'move', picked: 1, tried: true, failed: true }).ok).toBe(false);
 		expect(stepGate({ step: 'move', picked: 1, tried: true, safeMode: true }).ok).toBe(false);

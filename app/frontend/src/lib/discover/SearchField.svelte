@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import Icon from '#lib/ui/Icon.svelte';
 	import { createSuggest, live, step, suggestHref, SUGGEST_MIN, type SuggestAnswer } from './live-search.ts';
 	import GlassDropdown from './GlassDropdown.svelte';
@@ -154,20 +155,20 @@
 <form class="ui-search" role="search" onsubmit={submitted}>
 	<span class="glow" aria-hidden="true"></span>
 	<span class="ic" aria-hidden="true"><Icon name="search" size={18} /></span>
-	<label class="sr-only" for={id}>{settings ? 'Search settings' : 'Search for a title, an artist or a person'}</label>
+	<label class="sr-only" for={id}>{settings ? t('discover.searchField.searchSettings') : t('discover.searchField.searchForATitle')}</label>
 	{#if settings}
-	<input {id} bind:this={el} type="search" value={shown} oninput={(e) => settingsTyped(e.currentTarget.value)} onkeydown={settingsKey} placeholder="Search settings" autocomplete="off" spellcheck="false" enterkeyhint="search" data-testid={testid} />
-	{#if shown}<button type="button" class="clear" tabindex="-1" aria-label="Clear the search" onclick={() => { settingsFind.term = ''; el?.focus(); }}><Icon name="x" size={14} /></button>{:else}<kbd class="hint" aria-hidden="true">{searchKey}</kbd>{/if}
+	<input {id} bind:this={el} type="search" value={shown} oninput={(e) => settingsTyped(e.currentTarget.value)} onkeydown={settingsKey} placeholder={t('discover.searchField.searchSettings')} autocomplete="off" spellcheck="false" enterkeyhint="search" data-testid={testid} />
+	{#if shown}<button type="button" class="clear" tabindex="-1" aria-label={t('discover.searchField.clearTheSearch')} onclick={() => { settingsFind.term = ''; el?.focus(); }}><Icon name="x" size={14} /></button>{:else}<kbd class="hint" aria-hidden="true">{searchKey}</kbd>{/if}
 	{:else}
-	<input {id} class:scoped bind:this={el} type="search" value={shown} oninput={(e) => { if (scoped) dlScope.term = e.currentTarget.value; else { searchField.term = e.currentTarget.value; typed(); } }} onfocus={focused} onclick={focused} onblur={() => { close(); searchHooks.blur?.(); }} role="combobox" aria-expanded={!!answer} aria-controls={answer ? listId : undefined} aria-autocomplete="list" aria-activedescendant={answer && active >= 0 ? `${listId}-${active}` : undefined} onkeydown={keyed} placeholder={scoped ? 'Search downloads' : 'Shows, movies and people'} autocomplete="off" spellcheck="false" enterkeyhint="search" data-testid={testid} />
-	{#if scoped}<span class="scope" data-testid="dl-scope-chip">Downloads<button type="button" aria-label="Search all of HolyArrs instead" title="Search all of HolyArrs" onclick={leaveScope} data-testid="dl-scope-chip-x"><Icon name="x" size={11} /></button></span>{/if}
+	<input {id} class:scoped bind:this={el} type="search" value={shown} oninput={(e) => { if (scoped) dlScope.term = e.currentTarget.value; else { searchField.term = e.currentTarget.value; typed(); } }} onfocus={focused} onclick={focused} onblur={() => { close(); searchHooks.blur?.(); }} role="combobox" aria-expanded={!!answer} aria-controls={answer ? listId : undefined} aria-autocomplete="list" aria-activedescendant={answer && active >= 0 ? `${listId}-${active}` : undefined} onkeydown={keyed} placeholder={scoped ? t('discover.searchField.searchDownloads') : t('discover.searchField.showsMoviesPeople')} autocomplete="off" spellcheck="false" enterkeyhint="search" data-testid={testid} />
+	{#if scoped}<span class="scope" data-testid="dl-scope-chip">{t('discover.searchField.downloads')}<button type="button" aria-label={t('discover.searchField.searchAllOfHolyArrs')} title={t('discover.searchField.searchAllOfHolyArrs2')} onclick={leaveScope} data-testid="dl-scope-chip-x"><Icon name="x" size={11} /></button></span>{/if}
 	{#if shown && !one}
-		<button type="button" class="clear" aria-label="Clear the search" onclick={() => { if (scoped) dlScope.term = ''; else searchField.term = ''; close(); el?.focus(); }}><Icon name="x" size={14} /></button>
+		<button type="button" class="clear" aria-label={t('discover.searchField.clearTheSearch')} onclick={() => { if (scoped) dlScope.term = ''; else searchField.term = ''; close(); el?.focus(); }}><Icon name="x" size={14} /></button>
 	{:else if !here}
 		<kbd class="hint" aria-hidden="true">{searchKey}</kbd>
 	{/if}
 	{/if}
-	{#if one && !settings}<button type="button" class="close" aria-label={searchField.term ? 'Clear the search' : 'Close Search'} title={searchField.term ? 'Clear the search' : 'Close Search'} data-testid="search-close" onclick={clearOrClose}><Icon name="x" size={16} /></button>{/if}
+	{#if one && !settings}<button type="button" class="close" aria-label={searchField.term ? t('discover.searchField.clear') : t('discover.searchField.close')} title={searchField.term ? t('discover.searchField.clear') : t('discover.searchField.close')} data-testid="search-close" onclick={clearOrClose}><Icon name="x" size={16} /></button>{/if}
 	{#if answer || waiting}<GlassDropdown {answer} {active} id={listId} onpick={pick} onword={word} />{/if}
 </form>
 

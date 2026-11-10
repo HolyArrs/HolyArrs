@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	// Poster tile with art, badges, status and an optional hover preview card.
 	import type { Snippet } from 'svelte';
 	import Badge from './Badge.svelte';
@@ -188,7 +189,7 @@
 				</span>
 			{/if}
 			<CardBadges fresh={strip} {owned} size={shape === 'poster' ? 'md' : 'sm'} />
-			{#if progress !== undefined}<span class="prog"><ProgressBar value={progress} label="{title} progress" size="sm" on="art" /></span>{/if}
+			{#if progress !== undefined}<span class="prog"><ProgressBar value={progress} label={t('ui.posterCard.progress', { title })} size="sm" on="art" /></span>{/if}
 		</span>
 		<span class="t" id="{uid}-t" title={title}>{title}</span>
 		{#if href && more}<span class="sr-only" id="{uid}-d">{more}</span>{/if}

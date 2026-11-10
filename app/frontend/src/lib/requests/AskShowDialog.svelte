@@ -1,5 +1,7 @@
 <script lang="ts">
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	// A member asks for a show: all seasons, the seasons they pick, or the future seasons only (what airs from now on).
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import { seasonName, seasonWords } from '../shows/index.ts';
@@ -74,7 +76,7 @@
 			.catch(() => (eps[n] = 'error'));
 	}
 
-	const summary = $derived([chosen.length ? seasonWords(chosen) : '', epCount ? `${epCount} ${epCount === 1 ? 'episode' : 'episodes'}` : ''].filter(Boolean).join(' + '));
+	const summary = $derived([chosen.length ? seasonWords(chosen) : '', epCount ? t(epCount === 1 ? 'requests.parts.episodes.one' : 'requests.parts.episodes.other', { n: epCount }) : ''].filter(Boolean).join(' + '));
 
 	async function ask(e: SubmitEvent) {
 		e.preventDefault();
@@ -94,30 +96,30 @@
 	}
 </script>
 
-<Sheet bind:open={sheetOpen} title={picked ? `Ask for ${picked.name}` : 'Ask for'}>
+<Sheet bind:open={sheetOpen} title={picked ? t('requests.ask.title', { name: picked.name }) : t('requests.ask.titleBare')}>
 	{#if picked}
 		<form id="ask-show-title" class="sheet-form" onsubmit={ask}>
 			{#if picked.ask}
-				<p class="small muted" style="margin-top: var(--s-2)">Someone asked for {seasonWords(picked.ask.seasons)} already ({picked.ask.state_label}). Asking for the same joins their ask.</p>
+				<p class="small muted" style="margin-top: var(--s-2)">{t('requests.askShow.already', { what: seasonWords(picked.ask.seasons), state: serverWords(picked.ask.state_label) })}</p>
 			{/if}
 			<fieldset class="pick">
-				<legend class="small">What would you like?</legend>
+				<legend class="small">{t('requests.ask.what')}</legend>
 				<label class="checkline">
 					<input type="radio" name="what" checked={mode === 'all'} onchange={() => (mode = 'all')} />
-					<span><b>All seasons</b><br /><span class="hint">Every season, and seasons that come later.</span></span>
+					<span><b>{t('requests.askShow.all')}</b><br /><span class="hint">{t('requests.askShow.allHint')}</span></span>
 				</label>
 				<label class="checkline">
 					<input type="radio" name="what" checked={mode === 'choose'} onchange={() => (mode = 'choose')} disabled={seasons.length === 0} />
-					<span><b>Choose seasons or episodes</b><br /><span class="hint">Tick whole seasons, or open one for single episodes.</span></span>
+					<span><b>{t('requests.askShow.choose')}</b><br /><span class="hint">{t('requests.askShow.chooseHint')}</span></span>
 				</label>
 				<label class="checkline">
 					<input type="radio" name="what" checked={mode === 'future'} onchange={() => (mode = 'future')} />
-					<span><b>Future seasons only</b><br /><span class="hint">Nothing that is out already; new episodes and seasons from today on.</span></span>
+					<span><b>{t('requests.askShow.future')}</b><br /><span class="hint">{t('requests.askShow.futureHint')}</span></span>
 				</label>
 			</fieldset>
 			{#if mode === 'choose'}
 				<fieldset class="seasons" data-testid="ask-seasons">
-					<legend class="sr-only">Seasons and episodes</legend>
+					<legend class="sr-only">{t('requests.askShow.legend')}</legend>
 					{#each seasons as n (n)}
 						{@const whole = chosen.includes(n)}
 						{@const list = eps[n]}
@@ -125,23 +127,23 @@
 							<label class="pickrow">
 								<input type="checkbox" checked={whole} onchange={(e) => toggle(n, e.currentTarget.checked)} />
 								<span class="nm">{seasonName(n)}</span>
-								{#if epPicks[n]?.length}<span class="xs muted">{epPicks[n].length} picked</span>{/if}
+								{#if epPicks[n]?.length}<span class="xs muted">{t('requests.askShow.picked', { n: epPicks[n].length })}</span>{/if}
 							</label>
-							<button type="button" class="more" aria-expanded={openSeason === n} aria-label={`Episodes of ${seasonName(n)}`} disabled={whole} onclick={() => expand(n)}>{openSeason === n ? 'Hide' : 'Episodes'}</button>
+							<button type="button" class="more" aria-expanded={openSeason === n} aria-label={t('requests.askShow.episodesOf', { season: seasonName(n) })} disabled={whole} onclick={() => expand(n)}>{openSeason === n ? t('requests.askShow.hide') : t('requests.askShow.episodes')}</button>
 						</div>
 						{#if openSeason === n && !whole}
 							{#if list === 'error'}
-								<p class="small muted sub">Could not read the episodes. Try again.</p>
+								<p class="small muted sub">{t('requests.askShow.readError')}</p>
 							{:else if !list}
-								<p class="small muted sub">Reading episodes...</p>
+								<p class="small muted sub">{t('requests.askShow.reading')}</p>
 							{:else if list.length === 0}
-								<p class="small muted sub">No episodes listed yet.</p>
+								<p class="small muted sub">{t('requests.askShow.none')}</p>
 							{:else}
 								{#each list as ep (ep.number)}
 									<div class="row sub" class:on={epPicks[n]?.includes(ep.number)}>
 										<label class="pickrow">
 											<input type="checkbox" checked={epPicks[n]?.includes(ep.number) ?? false} onchange={(e) => toggleEp(n, ep.number, e.currentTarget.checked)} />
-											<span class="nm">{ep.number}. {ep.name || `Episode ${ep.number}`}</span>
+											<span class="nm">{ep.number}. {ep.name || t('requests.askShow.episodeN', { n: ep.number })}</span>
 										</label>
 									</div>
 								{/each}
@@ -152,15 +154,15 @@
 			{/if}
 			<label class="checkline" data-testid="follow-box">
 				<input type="checkbox" bind:checked={follow} />
-				<span><b>Follow</b><br /><span class="hint">Show it on my calendar.</span></span>
+				<span><b>{t('requests.add.follow')}</b><br /><span class="hint">{t('requests.add.followHint')}</span></span>
 			</label>
 			{#if error}<p class="form-error" role="alert">{error}</p>{/if}
 		</form>
 	{/if}
 	{#snippet footer()}
-				<Button variant="plain" onclick={() => (sheetOpen = false)}>Cancel</Button>
+				<Button variant="plain" onclick={() => (sheetOpen = false)}>{t('requests.add.cancel')}</Button>
 				<Button variant="primary" type="submit" form="ask-show-title" disabled={mode === 'choose' && chosen.length === 0 && epCount === 0} busy={busy}>
-					{mode === 'all' ? 'Ask for all seasons' : mode === 'future' ? 'Ask for future seasons' : summary ? `Ask for ${summary}` : 'Pick a season or episode'}
+					{mode === 'all' ? t('requests.askShow.submitAll') : mode === 'future' ? t('requests.askShow.submitFuture') : summary ? t('requests.ask.title', { name: summary }) : t('requests.askShow.pick')}
 				</Button>
 	{/snippet}
 </Sheet>

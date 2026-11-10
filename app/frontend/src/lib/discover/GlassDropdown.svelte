@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import ArtPlaceholder from '#lib/ui/ArtPlaceholder.svelte';
 	import { SkTrackRow } from '#lib/ui/sk/index.ts';
 	import { roundArt, stateWord, subline, suggestHref, type SuggestAnswer } from './live-search.ts';
@@ -13,7 +14,7 @@
 	const items = $derived(answer?.items ?? []);
 </script>
 
-<div class="glass" {id} role="listbox" aria-label="Suggestions" aria-busy={!answer || undefined} data-testid="search-suggest">
+<div class="glass" {id} role="listbox" aria-label={t('discover.glassDropdown.suggestions')} aria-busy={!answer || undefined} data-testid="search-suggest">
 	{#if !answer}<div class="wait" data-testid="suggest-loading">{#each [0, 1, 2, 3] as i (i)}<SkTrackRow height={56} />{/each}</div>{/if}
 	{#each words as w, i (w)}
 		<div id="{id}-{i}" role="option" tabindex="-1" aria-selected={active === i} class="word" class:on={active === i} data-testid="suggest-word" onpointerdown={(e) => e.preventDefault()} onclick={() => onword(w)} onkeydown={(e) => e.key === 'Enter' && onword(w)}>{w}</div>

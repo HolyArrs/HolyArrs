@@ -1,8 +1,9 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import { decisionPins, feedPins, forgetFeeds } from './bell-feeds.svelte.ts';
 	import Toast from './Toast.svelte';
 	import { AlertsPanel } from '#lib/alerts/index.ts';
-	import { METADATA_BACK, METADATA_DOWN_TITLE, clearMetadataBack, dismissMetadataDown, metadataDownShown, metadataOutage, watchMetadata } from '#lib/metadata/index.ts';
+	import { metadataBackTitle, metadataDownTitle, clearMetadataBack, dismissMetadataDown, metadataDownShown, metadataOutage, watchMetadata } from '#lib/metadata/index.ts';
 	import { onMount, untrack } from 'svelte';
 	import { notifyIn, notifyOut } from '#lib/core/transitions.ts';
 	import { alertsPanel, toasts } from '#lib/core/toasts.svelte.ts';
@@ -29,10 +30,10 @@
 	});
 	// The outage and the recovery are kept in Recent alerts too (the card itself is not a toast).
 	$effect(() => {
-		if (signedIn && downShown) untrack(() => toasts.record(METADATA_DOWN_TITLE, 'warn', { body: 'Library still works' }));
+		if (signedIn && downShown) untrack(() => toasts.record(metadataDownTitle(), 'warn', { body: t('frame.toasts.libraryWorks') }));
 	});
 	$effect(() => {
-		if (signedIn && back) untrack(() => toasts.record(METADATA_BACK, 'ok', { body: 'Search and artwork restored' }));
+		if (signedIn && back) untrack(() => toasts.record(metadataBackTitle(), 'ok', { body: t('frame.toasts.restored') }));
 	});
 
 	// Recovery: a short green note, gone after 3 s.
@@ -152,11 +153,11 @@
 <div class="toasts" class:in-win={inWin} role="status" aria-live="polite" popover="manual" bind:this={host}>
 	{#if signedIn && downShown}
 		<div class="slot" in:toastIn out:toastOut data-testid="metadata-down">
-			<Toast tone="warn" icon="cloudOff" title={METADATA_DOWN_TITLE} text="Library still works" time="now" {compact} onexpand={openCard} ondismiss={dismissMetadataDown} />
+			<Toast tone="warn" icon="cloudOff" title={metadataDownTitle()} text={t('frame.toasts.libraryWorks')} time="now" {compact} onexpand={openCard} ondismiss={dismissMetadataDown} />
 		</div>
 	{:else if signedIn && back}
 		<div class="slot" in:toastIn out:toastOut data-testid="metadata-back">
-			<Toast tone="ok" icon="check" title={METADATA_BACK} text="Search and artwork restored" time="now" ondismiss={clearMetadataBack} />
+			<Toast tone="ok" icon="check" title={metadataBackTitle()} text={t('frame.toasts.restored')} time="now" ondismiss={clearMetadataBack} />
 		</div>
 	{/if}
 	<!-- While Recent alerts is open the pills step aside: every alert is in the list. -->
@@ -166,13 +167,13 @@
 		</div>
 	{/each}
 	{#if toasts.counts.waiting > 0 && !alertsPanel.open}
-		<button type="button" class="more" data-alerts-open in:toastIn out:toastOut onclick={() => (alertsPanel.open = true)}>+{toasts.counts.waiting} more</button>
+		<button type="button" class="more" data-alerts-open in:toastIn out:toastOut onclick={() => (alertsPanel.open = true)}>{t('frame.toasts.more', { n: toasts.counts.waiting })}</button>
 	{/if}
 </div>
 {#if signedIn}<AlertsPanel before={feedPins.update ? [feedPins.update] : []} after={decisionPins()} />{/if}
 
 <style>
-	.alerts-demo { position: fixed; z-index: 89; right: 20px; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); padding: 8px 14px; border-radius: 999px; font: var(--t-subhead); font-weight: 600; color: #f5f5f7; background: rgb(30 30 34 / 80%); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); box-shadow: 0 6px 20px rgb(0 0 0 / 35%), inset 0 0 0 0.5px rgb(255 255 255 / 12%); }
+	.alerts-demo { position: fixed; z-index: 89; inset-inline-end: 20px; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); padding: 8px 14px; border-radius: 999px; font: var(--t-subhead); font-weight: 600; color: #f5f5f7; background: rgb(30 30 34 / 80%); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); box-shadow: 0 6px 20px rgb(0 0 0 / 35%), inset 0 0 0 0.5px rgb(255 255 255 / 12%); }
 	@media (max-width: 767px) { .alerts-demo { bottom: calc(var(--tabbar, 60px) + 12px + env(safe-area-inset-bottom, 0px)); } }
 	.toasts {
 		/* Undo the popover defaults: top right, just under the top bar. */
@@ -186,7 +187,7 @@
 		position: fixed;
 		z-index: 90;
 		top: calc(var(--topbar, 56px) + 10px + env(safe-area-inset-top, 0px));
-		right: max(20px, env(safe-area-inset-right, 0px));
+		inset-inline-end: max(20px, env(safe-area-inset-right, 0px));
 		display: flex;
 		flex-direction: column;
 		gap: 10px;

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Words from '#lib/ui/Words.svelte';
 	import PageLoader from '#lib/ui/PageLoader.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
 	import Button from '#lib/ui/Button.svelte';
@@ -17,7 +18,9 @@
 	import { bytes } from '#lib/core/format.ts';
 	import { session } from '#lib/core/session.svelte.ts';
 	import type { LibraryFolder, LookupMovie } from '#lib/core/types.ts';
+	import { unit } from '#lib/mediafiles/index.ts';
 	import type { LookupShow } from '#lib/core/types.ts';
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 
 	let folders = $state<LibraryFolder[]>([]);
 	let loaded = $state(false);
@@ -48,6 +51,8 @@
 	/** The kind of the picked Library folder: movies, shows or music. */
 	const kind = $derived<'movie' | 'show' | 'music'>(plan?.kind ?? folderKind(folders.find((f) => f.id === folderId)?.kind));
 	const word = $derived(kind === 'show' ? 'show' : kind === 'music' ? 'artist' : 'movie');
+	const w = $derived(t(`library.import.word.${word}`));
+	const ws = $derived(t(`library.import.words.${word}`));
 	const groups = $derived(plan ? groupPlan(plan.folders, word) : []);
 	const picks = $derived(choices(Object.fromEntries(Object.entries(ticked).filter(([, on]) => on).map(([f]) => [f, sel[f] ?? ''])), kind));
 	const running = $derived(!!job && !['done', 'failed', 'cancelled'].includes(job.State));
@@ -99,7 +104,7 @@
 			const end = await follow(r.job_id);
 			// A stopped music scan keeps the artist folders it finished.
 			const kept = end.State === 'cancelled' ? (end.Result?.plan as AdoptPlan | undefined) : undefined;
-			if (end.State !== 'done' && !kept?.partial) throw new Error(end.Error?.message || 'The scan did not finish.');
+			if (end.State !== 'done' && !kept?.partial) throw new Error(end.Error?.message || t('library.import.scanUnfinished'));
 			const p = (kept ?? end.Result?.plan) as AdoptPlan;
 			plan = p;
 			const start = startPicks(p.folders);
@@ -134,17 +139,17 @@
 				// A name never searched before answers "pending" while the search runs: ask again quietly.
 				const artists = (await reaskWhileFilling(await ask(), ask, () => {})).artists;
 				found = artists.map((a) => ({ key: `mbid:${a.mbid}`, name: a.disambiguation ? `${a.name} (${a.disambiguation})` : a.name, title_id: a.title_id }));
-				if (!found.length) lookError = 'Nothing found. Try fewer words, or mbid:<id>.';
+				if (!found.length) lookError = t('library.import.nothingFound', { id: 'mbid:<id>' });
 			} else if (kind === 'show') {
 				const shows = (await api.get<{ shows: LookupShow[] }>(`/shows/lookup?term=${encodeURIComponent(term.trim())}`)).shows;
 				found = shows.map((s) => ({ key: showIdOf(s), name: s.name, year: s.year, title_id: s.title_id })).filter((s) => s.key);
-				if (!found.length) lookError = 'Nothing found. Try fewer words, or tvdb:<id>.';
+				if (!found.length) lookError = t('library.import.nothingFound', { id: 'tvdb:<id>' });
 			} else {
 				const m = term.trim().match(/^(.*?)\s+\(?((?:19|20)\d\d)\)?$/);
 				const q = m ? `term=${encodeURIComponent(m[1])}&year=${m[2]}` : `term=${encodeURIComponent(term.trim())}`;
 				const movies = (await api.get<{ movies: LookupMovie[] }>(`/titles/lookup?${q}`)).movies;
 				found = movies.map((x) => ({ key: x.ids.tmdb ?? '', name: x.name, year: x.year, title_id: x.title_id })).filter((x) => x.key);
-				if (!found.length) lookError = 'Nothing found. Try fewer words, or tmdb:<id>.';
+				if (!found.length) lookError = t('library.import.nothingFound', { id: 'tmdb:<id>' });
 			}
 		} catch (err) {
 			lookError = message(err);
@@ -164,10 +169,10 @@
 
 	function movieLabel(f: AdoptCandidate): string {
 		const id = sel[f.folder];
-		if (!id) return `No ${word} picked yet`;
+		if (!id) return t('library.import.nonePicked', { word: w });
 		if (named[id]) return named[id];
 		const m = [f.match, ...f.others].find((x) => x && matchKey(x) === id);
-		return m ? `${m.name}${m.year ? ` (${m.year})` : ''}` : kind === 'movie' ? `Movie ${id}` : id;
+		return m ? `${m.name}${m.year ? ` (${m.year})` : ''}` : kind === 'movie' ? t('library.import.movieId', { id }) : id;
 	}
 
 	async function adopt() {
@@ -177,10 +182,10 @@
 		try {
 			const r = await api.post<{ job_id: number }>(`/library-folders/${plan.library_folder_id}/adopt`, { folders: picks, follow: followAll });
 			const end = await follow(r.job_id);
-			if (end.State !== 'done') throw new Error(end.Error?.message || 'Adopting did not finish.');
+			if (end.State !== 'done') throw new Error(end.Error?.message || t('library.import.adoptUnfinished'));
 			results = (end.Result?.results as AdoptResult[]) ?? [];
 			const n = results.filter((x) => x.title_id).length;
-			toasts.push(n === 1 ? `1 ${word} adopted` : `${n} ${word}s adopted`, n ? 'ok' : 'info', { body: 'No file was moved' });
+			toasts.push(t(n === 1 ? 'library.import.adoptedOne' : 'library.import.adoptedMany', { n, word: w, words: ws }), n ? 'ok' : 'info', { body: t('library.import.noFileMoved') });
 			restFrom = plan?.more ? (plan.next ?? '') : '';
 			plan = null;
 		} catch (e) {
@@ -192,83 +197,82 @@
 	}
 </script>
 
-<svelte:head><title>Import a library · HolyArrs</title></svelte:head>
+<svelte:head><title>{t('library.import.title')} · HolyArrs</title></svelte:head>
 
-<LibraryToolPage title="Import a library">
+<LibraryToolPage title={t('library.import.title')}>
 
 <p class="tp-msg good" data-testid="nothing-moved">
-	<Icon name="shield" size={18} /><span>Files stay where they are.</span>
+	<Icon name="shield" size={18} /><span>{t('library.import.stay')}</span>
 </p>
 
-<PageLoader loading={!loaded} label="Loading folders">
+<PageLoader loading={!loaded} label={t('library.import.loadingFolders')}>
 {#if foldersFailed}
-	<LoadError hasData={false} message="Could not load your Library folders." onretry={loadFolders} />
+	<LoadError hasData={false} message={t('library.import.foldersFailed')} onretry={loadFolders} />
 {:else if !folders.length}
-	<EmptyState icon="folder" title="No Library folder yet" text="Add the folder that holds your movies, shows or music first." action={session.can('settings') ? { label: 'Library folders', href: to('/settings/library-folders') } : undefined} />
+	<EmptyState icon="folder" title={t('library.import.noFolder')} text={t('library.import.noFolderHint')} action={session.can('settings') ? { label: t('library.import.libraryFolders'), href: to('/settings/library-folders') } : undefined} />
 {:else}
 	<section class="tp-sheet tp-pad" aria-labelledby="h-pick">
-		<h2 id="h-pick" class="h2">1. Pick a folder</h2>
+		<h2 id="h-pick" class="h2">{t('library.byHand.step1')}</h2>
 		<div class="row pick">
 			<div class="field grow">
-				<label for="lf">Library folder</label>
+				<label for="lf">{t('library.import.libraryFolder')}</label>
 				<select id="lf" class="input" bind:value={folderId} disabled={scanning || adopting}>
 					{#each folders as f (f.id)}<option value={f.id}
-							>{f.kind === 'show' ? 'Shows: ' : f.kind === 'music' ? 'Music: ' : ''}{f.label ? `${f.label} (${f.path})` : f.path}</option
+							>{f.kind === 'show' ? t('library.import.showsPrefix') : f.kind === 'music' ? t('library.import.musicPrefix') : ''}{f.label ? `${f.label} (${f.path})` : f.path}</option
 						>{/each}
 				</select>
 			</div>
-			<Button variant="primary" icon="search" onclick={() => scan()} disabled={adopting || !folderId} busy={scanning}>Scan</Button>
+			<Button variant="primary" icon="search" onclick={() => scan()} disabled={adopting || !folderId} busy={scanning}>{t('library.byHand.scan')}</Button>
 		</div>
 		{#if running}
 			<div aria-live="polite">
-				<div class="bar"><ProgressBar value={(job?.Progress ?? 0) * 100} label="Progress" /></div>
-				<p class="xs muted">{job?.ProgressNote || (scanning ? `Reading the folder and looking each ${word} up.` : 'Adopting.')}</p>
+				<div class="bar"><ProgressBar value={(job?.Progress ?? 0) * 100} label={t('library.import.progress')} /></div>
+				<p class="xs muted">{job?.ProgressNote || (scanning ? t('library.import.reading', { word: w }) : t('library.import.adopting'))}</p>
 			</div>
 		{/if}
 		{#if error}<p class="form-error" role="alert">{error}</p>{/if}
-		<p class="xs muted">Files that don't match a title? <a href={to('/library/import-files')}>Import files by hand</a></p>
+		<p class="xs muted"><Words key="library.import.noMatchFiles" links={{ a: to('/library/import-files') }} /></p>
 	</section>
 
 	{#if results}
 		<section class="tp-sheet tp-pad" aria-labelledby="h-done" data-testid="adopt-results">
-			<h2 id="h-done" class="h2">Done</h2>
-			<p class="small">{okCount === 1 ? `1 ${word} is now in the Library.` : `${okCount} ${word}s are now in the Library.`} Their files were not moved.</p>
+			<h2 id="h-done" class="h2">{t('library.import.done')}</h2>
+			<p class="small">{t(okCount === 1 ? 'library.import.nowOne' : 'library.import.nowMany', { n: okCount, word: w, words: ws })}</p>
 			<ul class="list">
 				{#each results as r (r.folder)}
 					<li>
 						<span class="mono small path">{r.folder}</span>
 						{#if r.title_id}
-							<a class="small" href={to(`/library/${r.title_id}`)}>Open the {word}</a>
+							<a class="small" href={to(`/library/${r.title_id}`)}>{t('library.import.openThe', { word: w })}</a>
 							{#if r.episodes !== undefined || r.unknown?.length}
 								<span class="xs muted"
-									>{r.episodes ?? 0} {kind === 'music' ? 'track' : 'episode'}{r.episodes === 1 ? '' : 's'}{r.unknown?.length
-										? `, ${r.unknown.length} file${r.unknown.length === 1 ? '' : 's'} left alone`
+									>{unit(kind === 'music' ? 'track' : 'episode', r.episodes ?? 0)}{r.unknown?.length
+										? `, ${t('mediafiles.organise.filesLeftAlone', { files: unit('file', r.unknown.length) })}`
 										: ''}</span
 								>
 							{/if}
 						{:else}
-							<span class="small bad-text">Not adopted: {r.error}</span>
+							<span class="small bad-text">{t('library.import.notAdopted', { why: r.error ?? '' })}</span>
 						{/if}
 					</li>
 				{/each}
 			</ul>
-			<div class="row end">{#if restFrom}<Button onclick={() => scan(restFrom)} disabled={scanning || adopting}>Scan the rest</Button>{/if}<Button href={to('/library')}>Go to the Library</Button></div>
+			<div class="row end">{#if restFrom}<Button onclick={() => scan(restFrom)} disabled={scanning || adopting}>{t('library.import.scanRest')}</Button>{/if}<Button href={to('/library')}>{t('library.import.goLibrary')}</Button></div>
 		</section>
 	{/if}
 
 	{#if plan}
 		<section class="tp-sheet tp-pad" aria-labelledby="h-check" data-testid="adopt-plan">
-			<h2 id="h-check" class="h2">2. Check and approve</h2>
+			<h2 id="h-check" class="h2">{t('library.import.step2')}</h2>
 			<p class="small muted">
-				{plan.folders.length} folder{plan.folders.length === 1 ? '' : 's'} in <span class="mono path">{plan.path}</span>. Tick the {word}s to adopt. Matched ones are
-				ticked for you.
+				{t(plan.folders.length === 1 ? 'library.import.foldersInOne' : 'library.import.foldersInMany', { n: plan.folders.length, path: plan.path, words: ws })}
 			</p>
 			{#if plan.warning}<p class="notice bad" role="alert" data-testid="scan-warning">{plan.warning}</p>{/if}
-			{#if !plan.folders.length}<p class="notice">No {word} folders here.</p>{/if}
+			{#if !plan.folders.length}<p class="notice">{t('library.import.noFolders', { word: w })}</p>{/if}
 			{#if plan.more}
 				<div class="notice" data-testid="scan-more">
-					{#if plan.partial}<p class="small">Stopped after <span class="mono">{plan.next}</span>.</p>{:else}<p class="small">First {plan.limit} folders, up to <span class="mono">{plan.next}</span>.</p>{/if}
-					<Button onclick={() => scan(plan?.next ?? '')} disabled={scanning || adopting}>Scan the rest</Button>
+					{#if plan.partial}<p class="small">{t('library.import.stopped', { next: plan.next ?? '' })}</p>{:else}<p class="small">{t('library.import.first', { limit: plan.limit, next: plan.next ?? '' })}</p>{/if}
+					<Button onclick={() => scan(plan?.next ?? '')} disabled={scanning || adopting}>{t('library.import.scanRest')}</Button>
 				</div>
 			{/if}
 			{#each groups as g (g.status)}
@@ -281,7 +285,7 @@
 								<div class="top">
 									{#if canAdopt(f)}
 										<label class="tick">
-											<input type="checkbox" bind:checked={ticked[f.folder]} disabled={!sel[f.folder]} aria-label="Adopt {f.folder}" />
+											<input type="checkbox" bind:checked={ticked[f.folder]} disabled={!sel[f.folder]} aria-label={t('library.import.adoptFolder', { folder: f.folder })} />
 											<span class="mono small path">{f.folder}</span>
 										</label>
 									{:else}
@@ -293,7 +297,7 @@
 									<p class="small"><b>{movieLabel(f)}</b></p>
 									{#if f.others.length && f.status !== 'matched'}
 										<div class="field other">
-											<label class="xs" for="o-{f.folder}">Or one of these</label>
+											<label class="xs" for="o-{f.folder}">{t('library.import.orOne')}</label>
 											<select id="o-{f.folder}" class="input" bind:value={sel[f.folder]}>
 												{#each [f.match, ...f.others].filter((x) => !!x) as m (matchKey(m))}
 													<option value={matchKey(m)}>{m.name}{m.year ? ` (${m.year})` : ''} · {score(m.score)}</option>
@@ -302,7 +306,7 @@
 										</div>
 									{/if}
 								{/if}
-								<p class="xs muted">{f.why}{#if f.main}{' · '}File: <span class="mono path">{fileName(f.main)}</span>{#if f.videos[0]}{' '}({bytes(f.videos[0].size)}){/if}{/if}</p>
+								<p class="xs muted">{f.why}{#if f.main}{' · '}{t('mediafiles.sheet.file')}: <span class="mono path">{fileName(f.main)}</span>{#if f.videos[0]}{' '}({bytes(f.videos[0].size)}){/if}{/if}</p>
 								{#if f.albums?.length}
 									<details class="eps" data-testid="music-albums">
 										<summary class="xs">{musicFolderLine(f)}</summary>
@@ -328,7 +332,7 @@
 													<span class="muted">{episodeFileLine(ef)}</span>
 												</li>
 											{/each}
-											{#if f.cut}<li class="xs muted">and more loose files, not listed</li>{/if}
+											{#if f.cut}<li class="xs muted">{t('library.import.moreLoose')}</li>{/if}
 										</ul>
 									</details>
 								{:else if f.files?.length}
@@ -344,20 +348,20 @@
 										</ul>
 									</details>
 								{/if}
-								{#if f.status === 'in_library' && f.title_id}<a class="xs" href={to(`/library/${f.title_id}`)}>Open the {word}</a>{/if}
+								{#if f.status === 'in_library' && f.title_id}<a class="xs" href={to(`/library/${f.title_id}`)}>{t('library.import.openThe', { word: w })}</a>{/if}
 								{#if canAdopt(f)}
 									{#if lookFor === f.folder}
 										<form class="look" onsubmit={lookup}>
-											<label class="sr-only" for="look-{f.folder}">Look up a {word} for {f.folder}</label>
+											<label class="sr-only" for="look-{f.folder}">{t('library.import.lookUpFor', { word: w, folder: f.folder })}</label>
 											<input
 												id="look-{f.folder}"
 												class="input"
 												bind:value={term}
-												placeholder={kind === 'show' ? 'Name, or tvdb:123' : kind === 'music' ? 'Artist name, or mbid:<id>' : 'Name and year, or tmdb:123'}
+												placeholder={kind === 'show' ? t('library.import.phShow') : kind === 'music' ? t('library.import.phMusic') : t('library.import.phMovie')}
 												autocomplete="off"
 											/>
-											<Button type="submit" busy={looking}>Look up</Button>
-											<Button variant="plain" onclick={() => (lookFor = null)}>Close</Button>
+											<Button type="submit" busy={looking}>{t('library.byHand.lookUp')}</Button>
+											<Button variant="plain" onclick={() => (lookFor = null)}>{t('shows.page.close')}</Button>
 										</form>
 										{#if lookError}<p class="form-error" role="alert">{lookError}</p>{/if}
 										{#if found.length}
@@ -366,16 +370,16 @@
 													<li>
 														<span class="small">{m.name}{m.year ? ` (${m.year})` : ''}</span>
 														{#if m.title_id}
-															<span class="xs muted">Already in the Library</span>
+															<span class="xs muted">{t('mediafiles.adopt.inLibrary')}</span>
 														{:else}
-															<Button variant="plain" onclick={() => use(f.folder, m)}>Use this</Button>
+															<Button variant="plain" onclick={() => use(f.folder, m)}>{t('library.byHand.useThis')}</Button>
 														{/if}
 													</li>
 												{/each}
 											</ul>
 										{/if}
 									{:else}
-										<div><Button variant="plain" icon="search" onclick={() => openLookup(f)}>{f.status === 'matched' ? 'Not this one? Look up' : 'Look up'}</Button></div>
+										<div><Button variant="plain" icon="search" onclick={() => openLookup(f)}>{f.status === 'matched' ? t('library.import.notThis') : t('library.byHand.lookUp')}</Button></div>
 									{/if}
 								{/if}
 							</li>
@@ -386,11 +390,11 @@
 			<div class="row end">
 				<label class="checkline follow-all" data-testid="follow-box">
 					<input type="checkbox" bind:checked={followAll} />
-					<span><b>Follow</b><br /><span class="hint">Show them on my calendar.</span></span>
+					<span><b>{t('library.import.follow')}</b><br /><span class="hint">{t('library.import.followHint')}</span></span>
 				</label>
-				<span class="small muted">{picks.length} ticked</span>
+				<span class="small muted">{t('library.byHand.ticked', { n: picks.length })}</span>
 				<Button variant="primary" onclick={adopt} disabled={!picks.length} busy={adopting}>
-					{picks.length === 1 ? `Adopt 1 ${word}` : `Adopt ${picks.length} ${word}s`}
+					{t(picks.length === 1 ? 'library.import.adoptOne' : 'library.import.adoptMany', { n: picks.length, word: w, words: ws })}
 				</Button>
 			</div>
 		</section>

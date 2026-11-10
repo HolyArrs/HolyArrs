@@ -1,0 +1,18 @@
+{
+	"settings.logs.title": "Журнал",
+	"settings.logs.download": "Скачать",
+	"settings.logs.filter": "Фильтр журнала",
+	"settings.logs.level": "Уровень",
+	"settings.logs.every": "Все строки",
+	"settings.logs.warnings": "Предупреждения и ошибки",
+	"settings.logs.errors": "Только ошибки",
+	"settings.logs.text": "Текст",
+	"settings.logs.example": "например, qBittorrent",
+	"settings.logs.from": "С",
+	"settings.logs.to": "По",
+	"settings.logs.apply": "Применить",
+	"settings.logs.clear": "Сбросить",
+	"settings.logs.lines": "Строк",
+	"settings.logs.newer": "Новее",
+	"settings.logs.older": "Старее"
+}

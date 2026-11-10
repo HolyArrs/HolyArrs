@@ -1,0 +1,17 @@
+{
+	"alerts.fallback.settings": "Налаштування",
+	"alerts.panel.clearAll": "Очистити все",
+	"alerts.panel.empty": "Поки що порожньо",
+	"alerts.panel.needsAttention": "Потребує уваги",
+	"alerts.panel.recent": "Нещодавні",
+	"alerts.panel.remove": "Прибрати {text}",
+	"alerts.panel.title": "Останні сповіщення",
+	"alerts.state.manyNeed": "{count} потребують уваги",
+	"alerts.state.ok": "Усе гаразд",
+	"alerts.state.oneNeeds": "1 потребує уваги",
+	"alerts.state.unset": "Не налаштовано",
+	"alerts.time.days": "{n} д",
+	"alerts.time.hours": "{n} г",
+	"alerts.time.minutes": "{n} хв",
+	"alerts.time.now": "зараз"
+}

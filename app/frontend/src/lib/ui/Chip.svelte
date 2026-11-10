@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	// Pill toggle with optional count, note and remove button.
 	import Icon, { type IconName } from './Icon.svelte';
 	import { press } from '../core/motion.ts';
@@ -28,7 +29,7 @@
 	<button class="main" type="button" aria-pressed={selected === undefined ? undefined : selected} aria-describedby={describedby} {onclick} use:press={'button'}>
 		{#if icon}<Icon name={icon} size={15} />{/if}{label}{#if count !== undefined}<span class="n"><span class="sr-only">, </span>{count}</span>{/if}{#if note}<span class="n"><span class="sr-only">, </span>· {note}</span>{/if}
 	</button>
-	{#if onremove}<button class="rm" type="button" aria-label="Remove {label}" onclick={onremove}><Icon name="x" size={14} /></button>{/if}
+	{#if onremove}<button class="rm" type="button" aria-label={t('ui.chip.remove', { label })} onclick={onremove}><Icon name="x" size={14} /></button>{/if}
 </span>
 
 <style>

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import Poster from '#lib/ui/Poster.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
 	import Menu from '#lib/ui/Menu.svelte';
@@ -52,14 +53,14 @@
 </script>
 
 {#snippet lead(r: DownloadRow)}
-	<span class="tg">{#if !watch}<input type="checkbox" class="pk" class:any={choosing} tabindex="-1" checked={picked.has(r.id)} aria-label="Select {who(r)}" onkeydown={(e) => { if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); onpickone(r.id); } else if (e.key === ' ') e.stopPropagation(); }} onclick={(e) => { e.stopPropagation(); if (e.shiftKey) { e.preventDefault(); onpickto(r.id); } else onpickone(r.id, e.currentTarget.checked); }} data-testid="dl-pick" />{/if}</span>
+	<span class="tg">{#if !watch}<input type="checkbox" class="pk" class:any={choosing} tabindex="-1" checked={picked.has(r.id)} aria-label={t('downloads.row.select', { name: who(r) })} onkeydown={(e) => { if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); onpickone(r.id); } else if (e.key === ' ') e.stopPropagation(); }} onclick={(e) => { e.stopPropagation(); if (e.shiftKey) { e.preventDefault(); onpickto(r.id); } else onpickone(r.id, e.currentTarget.checked); }} data-testid="dl-pick" />{/if}</span>
 {/snippet}
 
 {#snippet cell(r: DownloadRow, id: ColId, ph: boolean, hist: boolean)}
 	{#if id === 'poster'}
 		<span class="post" class:square={r.kind === 'artist'} class:ph data-col="poster"><Poster src={poster(r, titles)} name={titlesReady ? r.title || r.name.replace(/[._]+/g, ' ') : ''} /></span>
 	{:else if id === 'kind'}
-		{@const kw = kindOf(r) ? KIND_WORD[kindOf(r) as 'movie'] : categoryWords(r.category)}{@const ki = cols.kindIcon(kw)}<span class="kcell" class:ph data-col="kind"><span class="kt" class:none={!ki} class:wide={cols.kindWide} data-testid="dl-kind" role="img" aria-label={kw || 'No type yet'} use:tip={kw ? (kindOf(r) ? kw : `${kw} (from the client's category)`) : 'No type yet'}>{#if cols.kindWide && kw}<span class="kp" data-k={ki ?? 'other'}>{kw}</span>{:else if ki}<Icon name={ki} size={16} />{:else}{dash}{/if}</span></span>
+		{@const kw = kindOf(r) ? KIND_WORD[kindOf(r) as 'movie'] : categoryWords(r.category)}{@const ki = cols.kindIcon(kw)}<span class="kcell" class:ph data-col="kind"><span class="kt" class:none={!ki} class:wide={cols.kindWide} data-testid="dl-kind" role="img" aria-label={kw || t('downloads.row.noType')} use:tip={kw ? (kindOf(r) ? kw : t('downloads.row.fromCategory', { kw })) : t('downloads.row.noType')}>{#if cols.kindWide && kw}<span class="kp" data-k={ki ?? 'other'}>{kw}</span>{:else if ki}<Icon name={ki} size={16} />{:else}{dash}{/if}</span></span>
 	{:else if id === 'proto'}
 		{@const p = protocolOf(r)}
 		<span class="pcell" class:ph class:named={cols.srcName} data-col="proto">{#if p}{@const cm = clientMark(r.downloader_kind)}{@const pw = p === 'torrent' ? 'Torrent' : 'Usenet'}{@const logo = CLIENT_ICONS.has(r.downloader_kind ?? '')}<span class="pm" class:logo class:cmk={!logo && !!cm.mark} data-tone={logo ? undefined : cm.tone || undefined} data-testid="dl-protocol" data-protocol={p} data-kind={r.downloader_kind} use:tip={`${dlName(r)} · ${pw}`} role="img" aria-label="{dlName(r)} · {pw}">{#if logo}<img class="cico" src={to(`/clients/${r.downloader_kind}.svg`)} alt="" width="24" height="24" decoding="async" />{:else if cm.mark}{cm.mark}{:else}<Icon name={p === 'torrent' ? 'torrent' : 'usenet'} size={14} />{/if}</span>{#if cols.srcName}<span class="pnm" title={dlName(r)}>{dlKind(r) || dlName(r)}</span>{/if}{/if}</span>
@@ -78,7 +79,7 @@
 			{@const dn = (r.speed ?? 0) >= 1024}
 			{@const upOn = (r.up_speed ?? 0) >= 1024}
 			{@const eta = r.active && r.eta ? duration(r.eta) : ''}
-			<span class="pgw" class:ph data-col="progress"><span class="prg {tone}" role="progressbar" aria-label="Progress of {who(r)}" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.floor(pct)} data-testid="dl-bar"><i style="transform: translateX({pct - 100}%)"></i><span class="bl">{Math.floor(pct)}%</span></span>{#if moving(r) && (dn || upOn || eta)}<span class="spd" data-testid="dl-row-speed">{[dn ? `↓ ${bytes(r.speed)}/s` : '', upOn ? `↑ ${bytes(r.up_speed)}/s` : '', eta ? `${eta} left` : ''].filter(Boolean).join(' · ')}</span>{/if}</span>
+			<span class="pgw" class:ph data-col="progress"><span class="prg {tone}" role="progressbar" aria-label={t('downloads.row.progressOf', { name: who(r) })} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.floor(pct)} data-testid="dl-bar"><i style="transform: translateX({pct - 100}%)"></i><span class="bl">{Math.floor(pct)}%</span></span>{#if moving(r) && (dn || upOn || eta)}<span class="spd" data-testid="dl-row-speed">{[dn ? `↓ ${bytes(r.speed)}/s` : '', upOn ? `↑ ${bytes(r.up_speed)}/s` : '', eta ? t('downloads.list.left', { time: eta }) : ''].filter(Boolean).join(' · ')}</span>{/if}</span>
 	{:else if id === 'status'}
 		{#if hist}
 			{@const s = historyStatus(r, importOf.get(r.id))}
@@ -86,14 +87,14 @@
 			{@const reason = cut > 0 ? shortReason(s.text.slice(cut + 2)) : ''}
 			<span class="st" class:ph class:bad={s.bad} class:two={!!reason} data-col="status" title={s.text}><span class="dot" aria-hidden="true"></span><span class="tx"><span class="sw">{cut > 0 ? s.text.slice(0, cut) : s.text}</span>{#if reason}<span class="why" data-testid="dl-why">{reason}</span>{/if}</span></span>
 		{:else}
-			{@const t = barTone(r)}
+			{@const tn = barTone(r)}
 			{@const detail = statusDetail(r, importOf.get(r.id))}
 			{@const more = detail || statusHint(r)}
 			{@const why = problem(r)}
 			<!-- The line shows the problem, else the queue place, else the current step. -->
-			{@const line = why ? '' : stageOf(r) === 'queued' && r.queue_pos ? (r.queue_pos === 1 ? 'Next in line' : `${cols.ordinal(r.queue_pos)} in line`) : stepLine(r, detail)}
+			{@const line = why ? '' : stageOf(r) === 'queued' && r.queue_pos ? (r.queue_pos === 1 ? t('downloads.row.nextInLine') : t('downloads.row.inLine', { ordinal: cols.ordinal(r.queue_pos) })) : stepLine(r, detail)}
 			{@const under = why?.text || line}
-			<span class="st {t}" class:ph class:two={!!under} data-col="status" title={[statusWord(r), under, more.toLowerCase() === under.toLowerCase() ? '' : more].filter(Boolean).join(' · ')}><span class="dot" aria-hidden="true"></span><span class="tx"><span class="sw">{statusWord(r)}</span>{#if why}<span class="why" data-testid="dl-why">{why.text.charAt(0).toUpperCase() + why.text.slice(1)}</span>{:else if line}<span class="why" data-testid={stageOf(r) === 'queued' ? 'dl-in-line' : 'dl-step'}>{line}</span>{/if}</span></span>
+			<span class="st {tn}" class:ph class:two={!!under} data-col="status" title={[statusWord(r), under, more.toLowerCase() === under.toLowerCase() ? '' : more].filter(Boolean).join(' · ')}><span class="dot" aria-hidden="true"></span><span class="tx"><span class="sw">{statusWord(r)}</span>{#if why}<span class="why" data-testid="dl-why">{why.text.charAt(0).toUpperCase() + why.text.slice(1)}</span>{:else if line}<span class="why" data-testid={stageOf(r) === 'queued' ? 'dl-in-line' : 'dl-step'}>{line}</span>{/if}</span></span>
 		{/if}
 	{:else if id === 'size'}
 		<span class="num" class:ph data-col="size">{r.size ? bytes(r.size) : dash}</span>
@@ -106,16 +107,16 @@
 		{:else}
 			{@const st = swarmTotal(r.seeds, r.seeds_total)}
 			{@const pt = swarmTotal(r.peers, r.peers_total)}
-			{@const tip = [st ? `${st} seeds in the swarm` : '', pt ? `${pt} peers in the swarm` : ''].filter(Boolean).join(' · ') || 'Connected seeds and peers'}
+			{@const tipText = [st ? t('downloads.row.seedsSwarm', { n: st }) : '', pt ? t('downloads.row.peersSwarm', { n: pt }) : ''].filter(Boolean).join(' · ') || t('downloads.row.connected')}
 			<!-- Seeds, peers and ratio on one line; the ratio turns green from 1.0. -->
-			<span class="sw1" class:ph data-col="swarm" title="{tip} · ratio {r.ratio != null ? r.ratio.toFixed(2) : '–'}"><span class="n"><i class="dot s" aria-hidden="true"></i>{swarmNum(r.seeds)}</span><span class="n"><i class="dot p" aria-hidden="true"></i>{swarmNum(r.peers)}</span>{#if r.ratio != null}<b class="rp" class:good={r.ratio >= 1}>{ratioText(r.ratio)}</b>{/if}</span>
+			<span class="sw1" class:ph data-col="swarm" title={t('downloads.row.ratio', { tip: tipText, ratio: r.ratio != null ? r.ratio.toFixed(2) : '–' })}><span class="n"><i class="dot s" aria-hidden="true"></i>{swarmNum(r.seeds)}</span><span class="n"><i class="dot p" aria-hidden="true"></i>{swarmNum(r.peers)}</span>{#if r.ratio != null}<b class="rp" class:good={r.ratio >= 1}>{ratioText(r.ratio)}</b>{/if}</span>
 		{/if}
 	{:else if id === 'tracker'}
 		<span class="txt" class:ph data-col="tracker" title={r.tracker ?? ''}>{r.tracker || dash}</span>
 	{:else if id === 'requested'}
 		<!-- A person, HolyArrs itself (a title it grabbed on its own), or Outside (added in the client). -->
 		{@const person = !r.outside && r.requested_by ? r.requested_by : ''}
-		{@const who = r.outside ? 'Outside' : person || (session.can('manage_library') ? 'HolyArrs' : '')}
+		{@const who = r.outside ? t('downloads.row.outside') : person || (session.can('manage_library') ? 'HolyArrs' : '')}
 		<span class="txt rq" class:ph class:soft={!person} data-col="requested" title={who}>{#if person}<i class="av" aria-hidden="true">{person.slice(0, 1).toUpperCase()}</i>{/if}{who || dash}</span>
 	{:else if id === 'source'}
 		<span class="txt" class:ph data-col="source" title={r.source_name ?? ''}>{#if r.source_name && r.source_id && session.can('settings')}<a href="/settings/sources/{r.source_id}" onclick={(e) => e.stopPropagation()}>{r.source_name}</a>{:else}{r.source_name || dash}{/if}</span>
@@ -128,15 +129,15 @@
 
 {#snippet bin(r: DownloadRow)}
 	<span class="del" data-col="bin">
-		{#if watch}{:else if rowItems(r).length}<span class="rm" data-testid="dl-row-menu"><Menu label="Actions for {who(r)}" icon="more" width={210} items={rowMenu(r)} tabindex={tabRow === r.id ? 0 : -1} /></span>
-		{:else}<button class="bin" type="button" disabled title="HolyArrs cannot change this one" aria-label="HolyArrs cannot change this one" tabindex={tabRow === r.id ? 0 : -1}><Icon name="more" size={19} /></button>{/if}
+		{#if watch}{:else if rowItems(r).length}<span class="rm" data-testid="dl-row-menu"><Menu label={t('downloads.row.actionsFor', { name: who(r) })} icon="more" width={210} items={rowMenu(r)} tabindex={tabRow === r.id ? 0 : -1} /></span>
+		{:else}<button class="bin" type="button" disabled title={t('downloads.row.cannotChange')} aria-label={t('downloads.row.cannotChange')} tabindex={tabRow === r.id ? 0 : -1}><Icon name="more" size={19} /></button>{/if}
 	</span>
 {/snippet}
 
 {#snippet row(r: DownloadRow, hist: boolean)}
 	<li class="drow" class:sel={openId === r.id} class:picked={picked.has(r.id)} data-testid="dl-table-row" data-dl-id={r.id} data-phase={r.phase}>
 		<!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions, a11y_no_static_element_interactions -->
-		<div class="dline" class:hist tabindex={tabRow === r.id ? 0 : -1} onfocus={() => onrowfocus(r.id)} aria-current={openId === r.id} aria-label="{who(r)}: show details" data-testid="dl-line" use:longPress={() => { if (!watch) onpickone(r.id, true); }} onclick={(e) => onrowclick(e, r.id)} onkeydown={(e) => onrowkey(e, r.id)}>
+		<div class="dline" class:hist tabindex={tabRow === r.id ? 0 : -1} onfocus={() => onrowfocus(r.id)} aria-current={openId === r.id} aria-label={t('downloads.row.showDetails', { name: who(r) })} data-testid="dl-line" use:longPress={() => { if (!watch) onpickone(r.id, true); }} onclick={(e) => onrowclick(e, r.id)} onkeydown={(e) => onrowkey(e, r.id)}>
 			{@render lead(r)}
 			{#each cols.cells as c (c.id)}{@render cell(r, c.id, c.ph, hist)}{/each}
 			<span class="spare"></span>

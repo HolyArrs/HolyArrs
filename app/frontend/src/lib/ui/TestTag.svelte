@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	// Pill showing whether a connection test passed.
 	import Icon from '#lib/ui/Icon.svelte';
 	import { testLabel } from '#lib/core/test-tag.ts';
@@ -17,7 +18,7 @@
 {#if ok}
 	<span class="testtag ok" title={hover || text || undefined} data-testid={testid}><Icon name="check" size={12} stroke={2.5} />{testLabel(text, app, extra)}</span>
 {:else}
-	<span class="testtag bad" title={hover || text || undefined} data-testid={testid}>Not connected</span>
+	<span class="testtag bad" title={hover || text || undefined} data-testid={testid}>{t('ui.testTag.notConnected')}</span>
 {/if}
 
 <style>

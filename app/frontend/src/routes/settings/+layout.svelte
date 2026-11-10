@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import '../(frame)/settings-content.css';
 	import Icon from '#lib/ui/Icon.svelte';
 	import StatusPill from '#lib/ui/StatusPill.svelte';
@@ -79,8 +80,8 @@
 	// Escape on a page (nothing open, not typing) goes back to the Settings home.
 	function escape(e: KeyboardEvent) {
 		if (e.key !== 'Escape' || e.defaultPrevented || home) return;
-		const t = e.target as HTMLElement | null;
-		if (t?.closest('input, textarea, select, [contenteditable="true"], dialog, [role="menu"], [role="listbox"], [role="dialog"]')) return;
+		const target = e.target as HTMLElement | null;
+		if (target?.closest('input, textarea, select, [contenteditable="true"], dialog, [role="menu"], [role="listbox"], [role="dialog"]')) return;
 		if (document.querySelector('dialog[open], [role="dialog"], [role="menu"]')) return;
 		e.preventDefault();
 		void goto(to('/settings'));
@@ -169,17 +170,17 @@
 	{#if !home}
 		<div class="group-top">
 			<!-- Settings home is for staff; a member on their own pages goes back Home instead of being bounced. -->
-			{#if session.can('settings') || session.can('users')}<a class="back-home" href={to('/settings')} data-testid="settings-back"><Icon name="chevronLeft" size={17} />Settings</a>{:else}<a class="back-home" href={to('/')} data-testid="settings-back"><Icon name="chevronLeft" size={17} />Home</a>{/if}
+			{#if session.can('settings') || session.can('users')}<a class="back-home" href={to('/settings')} data-testid="settings-back"><Icon name="chevronLeft" size={17} />{t('settings.layout.settings')}</a>{:else}<a class="back-home" href={to('/')} data-testid="settings-back"><Icon name="chevronLeft" size={17} />{t('settings.layout.home')}</a>{/if}
 			{@render pill()}
 		</div>
 		{#if currentGroup}
 			<p class="group-name" data-testid="settings-group-name">{currentGroup.group.label}</p>
 			{#if currentGroup.items.length > 1}
-				<nav class="caps" aria-label="Settings sections" data-testid="settings-nav" bind:this={capsRow}>
+				<nav class="caps" aria-label={t('settings.layout.sections')} data-testid="settings-nav" bind:this={capsRow}>
 					{#each currentGroup.items as section (section.href)}
 						<a class="cap" href={to(section.href)} aria-current={currentSection?.href === section.href ? 'page' : undefined}>
 							{section.label}
-							{#if flagged(section.href)}<span class="flag" title="Needs attention"><span class="sr-only">, needs attention</span></span>{/if}
+							{#if flagged(section.href)}<span class="flag" title={t('settings.layout.needsAttention')}><span class="sr-only">, {t('settings.layout.needsAttentionLower')}</span></span>{/if}
 						</a>
 					{/each}
 				</nav>
@@ -189,15 +190,15 @@
 	<div class="settings-workspace" bind:this={workspace}>
 		<div class="settings-content">
 			{#if blocked}
-				<SettingsCard id="settings-blocked" title="You can't change this" icon="shield">
-					<div><Button href={to('/settings')}>Back to Settings</Button></div>
+				<SettingsCard id="settings-blocked" title={t('settings.layout.blocked')} icon="shield">
+					<div><Button href={to('/settings')}>{t('settings.layout.backToSettings')}</Button></div>
 				</SettingsCard>
 			{:else if reauth && !session.s.hasPassword}
-				<SettingsCard id="settings-reauth" title="Set a password first" description="Keys, passwords, people and backups need a HolyArrs password. You don't have one yet." icon="shield">
-					<div><Button variant="primary" href={to('/account')}>Set a password</Button></div>
+				<SettingsCard id="settings-reauth" title={t('settings.layout.setPasswordFirst')} description={t('settings.layout.setPasswordDesc')} icon="shield">
+					<div><Button variant="primary" href={to('/account')}>{t('settings.layout.setPasswordLabel')}</Button></div>
 				</SettingsCard>
 			{:else if reauth}
-				<SettingsCard id="settings-reauth" title="Confirm your password" description="Keys, passwords, people and backups need your password. Good for 10 minutes." icon="shield">
+				<SettingsCard id="settings-reauth" title={t('settings.layout.confirmPasswordLabel')} description={t('settings.layout.confirmPasswordDesc')} icon="shield">
 					<Confirm action="password">{#snippet children()}{/snippet}</Confirm>
 				</SettingsCard>
 			{/if}
@@ -235,7 +236,7 @@
 	.caps { display: flex; gap: 8px; overflow-x: auto; margin: 0 -4px 22px; padding: 4px; scrollbar-width: none; overscroll-behavior-x: contain; }
 	.caps::-webkit-scrollbar { display: none; }
 	.cap {
-		flex: none; display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 14px; border-radius: var(--r-pill);
+		position: relative; flex: none; display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 14px; border-radius: var(--r-pill);
 		background: color-mix(in srgb, var(--surface-2) 72%, transparent); box-shadow: inset 0 0 0 1px var(--line); color: var(--text-muted);
 		font: 500 14px/1 var(--font-ui); white-space: nowrap; text-decoration: none;
 		transition: background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);

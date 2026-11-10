@@ -29,7 +29,7 @@ Writing code for HolyArrs? Go to [For developers](#for-developers).
 | Metadata | [Metadata and privacy](library/metadata.md), [trailers](library/trailers.md), [data packs](library/data-packs.md), [TRaSH Guides scores](library/trash-guides.md) |
 | Accounts | [Sign-in and passwords](users/sign-in.md), [users and roles](users/roles.md), [kid accounts](users/kids.md), [signed-in devices](users/sessions.md) |
 | Alerts | [Alerts](users/alerts.md) |
-| Moving from other apps | [Move from other apps](migrate/index.md), [how HolyArrs reads them](migrate/what-is-read.md) |
+| Importing from other apps | [Import from other apps](migrate/index.md), [how HolyArrs reads them](migrate/what-is-read.md) |
 | Older apps' API | [Connect Seerr, Overseerr, Bazarr and others](reference/old-app-api.md) |
 | AI apps (held back) | [Connect AI apps](reference/ai.md) |
 | Backups | [Backups](run/backups.md) |
@@ -81,7 +81,7 @@ A changing number or token is in square brackets.
 | AI apps | `/settings/ai` | [Connect AI apps](reference/ai.md) (held back) |
 | Alerts | `/settings/alerts` | [Alerts](users/alerts.md) |
 | Backups | `/settings/backups` | [Backups](run/backups.md) |
-| Move from other apps | `/settings/move` | [Move from other apps](migrate/index.md) |
+| Import from other apps | `/settings/move` | [Import from other apps](migrate/index.md) |
 | Downloaders | `/settings/downloaders` | [Downloaders](downloads/downloaders.md) |
 | Library folders | `/settings/library-folders` | [Library folders](library/folders.md) |
 | Media servers | `/settings/media-servers` | [Media servers](library/media-servers.md) |

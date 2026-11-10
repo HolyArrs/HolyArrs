@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t, appLocale } from '#lib/core/i18n/i18n.svelte.ts';
 	import { dragScroll } from '#lib/ui/drag-scroll.ts';
 	import PageLoader from '#lib/ui/PageLoader.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
@@ -13,7 +14,7 @@
 	import { followHint, followLabel, followPath, setFollow } from '#lib/ui/follow.ts';
 	import Menu, { type MenuItem } from '#lib/ui/Menu.svelte';
 	import { AskArtistDialog, AddArtistDialog } from '#lib/requests/index.ts';
-	import { albumYear, GapNotice, gapWaits, keepShown, NO_SONGS_LINE, reaskWhileIncomplete, sameLists, sameTracks, TRACK_REASK_MS, trackListView, albumArtistFix, albumHref, appPicture, artistHref, musicLoadError, askAgainOnce, coreIfSlow, coverFor, withCover, kindWord, length, owned, type AlbumCoreData, type AlbumPageData, type PageAlbum, type PageArtist, type PageCredit, type PageTrack, paintWindow, sampleCover, tintOf, unpaintWindow } from '#lib/music/index.ts';
+	import { albumYear, GapNotice, gapWaits, keepShown, noSongsLine, reaskWhileIncomplete, sameLists, sameTracks, TRACK_REASK_MS, trackListView, albumArtistFix, albumHref, appPicture, artistHref, musicLoadError, askAgainOnce, coreIfSlow, coverFor, withCover, kindWord, length, owned, type AlbumCoreData, type AlbumPageData, type PageAlbum, type PageArtist, type PageCredit, type PageTrack, paintWindow, sampleCover, tintOf, unpaintWindow } from '#lib/music/index.ts';
 	import type { LookupArtist, MusicSettings } from '#lib/music/index.ts';
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
@@ -163,12 +164,12 @@
 		const n = list.length;
 		const ms = picked?.list?.length ? list.reduce((s, t) => s + (t.length_ms ?? 0), 0) : (data?.length_ms ?? 0);
 		const min = Math.round(ms / 60000);
-		return [n ? `${n} ${n === 1 ? 'song' : 'songs'}` : '', min ? `${min} ${min === 1 ? 'minute' : 'minutes'}` : ''].filter(Boolean).join(', ');
+		return [n ? (n === 1 ? t('music.song', { n }) : t('music.songs', { n })) : '', min ? (min === 1 ? t('music.minute', { n: min }) : t('music.minutes', { n: min })) : ''].filter(Boolean).join(', ');
 	});
 	const released = $derived.by(() => {
 		const d = data?.release_date;
 		if (!d || !/^\d{4}-\d{2}-\d{2}$/.test(d)) return d ?? '';
-		return new Date(`${d}T12:00:00`).toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' });
+		return new Date(`${d}T12:00:00`).toLocaleDateString(appLocale(), { day: 'numeric', month: 'long', year: 'numeric' });
 	});
 	let showEditions = $state(false);
 	// Follow the artist (in the Library): a round bell beside the main action, so both sides match.
@@ -185,21 +186,21 @@
 		try {
 			following = await setFollow(api, { titleId }, !following);
 		} catch (e) {
-			toasts.push("Couldn't update follow", 'fail', { body: message(e) });
+			toasts.push(t('music.couldnTUpdateFollow'), 'fail', { body: message(e) });
 		} finally {
 			followBusy = false;
 		}
 	}
-	function copy(text: string, what: string) {
-		void navigator.clipboard?.writeText(text).then(() => toasts.push(`${what} copied`, 'ok'), () => toasts.push(`Couldn't copy ${what.toLowerCase()}`, 'fail', { body: 'Select it instead' }));
+	function copy(text: string, done: string, failed: string) {
+		void navigator.clipboard?.writeText(text).then(() => toasts.push(done, 'ok'), () => toasts.push(failed, 'fail', { body: t('music.selectItInstead') }));
 	}
 	const albumLink = $derived(typeof location === 'undefined' ? '' : location.href);
-	function trackItems(t: PageTrack): MenuItem[] {
+	function trackItems(tr: PageTrack): MenuItem[] {
 		const items: MenuItem[] = [
-			{ label: 'Copy song name', icon: 'copy', onselect: () => copy(`${t.name} · ${hero?.artist.name ?? ''}`, 'Song name') },
-			{ label: 'Copy album link', icon: 'copy', onselect: () => copy(albumLink, 'Album link') }
+			{ label: t('music.copySongName'), icon: 'copy', onselect: () => copy(`${tr.name} · ${hero?.artist.name ?? ''}`, t('music.songNameCopied'), t('music.couldnTCopySong')) },
+			{ label: t('music.copyAlbumLink'), icon: 'copy', onselect: () => copy(albumLink, t('music.albumLinkCopied'), t('music.couldnTCopyAlbum')) }
 		];
-		if (titleId) items.push({ label: 'Open in Library', icon: 'library', onselect: () => void goto(to(data?.part_id ? `/library/${titleId}/albums/${data.part_id}` : `/library/${titleId}`)) });
+		if (titleId) items.push({ label: t('music.openInLibrary'), icon: 'library', onselect: () => void goto(to(data?.part_id ? `/library/${titleId}/albums/${data.part_id}` : `/library/${titleId}`)) });
 		return items;
 	}
 	$effect(() => {
@@ -231,12 +232,12 @@
 	const meta = $derived.by(() => {
 		if (!data) return [];
 		const n = data.tracks.length;
-		return [kindWord(data), albumYear(data.release_date), data.label, n ? `${n} ${n === 1 ? 'track' : 'tracks'}` : '', length(data.length_ms, true)].filter(Boolean) as string[];
+		return [kindWord(data), albumYear(data.release_date), data.label, n ? (n === 1 ? t('music.track', { n }) : t('music.tracks', { n })) : '', length(data.length_ms, true)].filter(Boolean) as string[];
 	});
 
 	function act() {
 		if (titleId) return void goto(to(data?.part_id ? `/library/${titleId}/albums/${data.part_id}` : `/library/${titleId}`));
-		if (!lookup) return void toasts.push('Still reading artist', 'fail', { body: 'Try again in a moment' });
+		if (!lookup) return void toasts.push(t('music.stillReadingArtist'), 'fail', { body: t('music.tryAgainInA') });
 		if (manage) addDialog?.open(lookup);
 		else if (edition) void askEdition();
 		else askDialog?.open(lookup, mbid);
@@ -250,7 +251,7 @@
 			const r = await api.post<{ ask: Ask; joined: boolean }>('/asks', { kind: 'artist', id: `mbid:${artist}`, albums: [mbid], editions: { [mbid]: edition } });
 			onAsked(lookup, r);
 		} catch (e) {
-			toasts.push("Couldn't send request", 'fail', { body: message(e) });
+			toasts.push(t('music.couldnTSendRequest'), 'fail', { body: message(e) });
 		} finally {
 			asking = false;
 		}
@@ -258,15 +259,15 @@
 
 	function onAsked(_a: LookupArtist, r: { ask: { name: string }; joined: boolean }) {
 		askedHere = true;
-		toasts.push(r.joined ? `${hero?.name} already requested` : `${hero?.name} requested`, 'ok', { body: r.joined ? "You're on the request too" : 'Waiting for approval' });
+		toasts.push(r.joined ? t('music.alreadyRequested', { what: hero?.name ?? '' }) : t('music.requested2', { what: hero?.name ?? '' }), 'ok', { body: r.joined ? t('music.youReOnThe') : t('music.waitingForApproval') });
 		void refreshInbox();
 	}
 
-	const cta = $derived(titleId ? (data?.state && data.state !== 'not_included' ? 'Open in Library' : 'Manage in Library') : asked ? 'Asked' : manage ? 'Add artist' : 'Ask for this album');
+	const cta = $derived(titleId ? (data?.state && data.state !== 'not_included' ? t('music.openInLibrary') : t('music.manageInLibrary')) : asked ? t('music.asked') : manage ? t('music.addArtist') : t('music.askForThisAlbum'));
 
 </script>
 
-<svelte:head><title>{hero?.name ?? 'Album'} · HolyArrs</title>{#if heroCover}<link rel="preload" as="image" href={heroCover} />{/if}</svelte:head>
+<svelte:head><title>{hero?.name ?? t('music.album')} · HolyArrs</title>{#if heroCover}<link rel="preload" as="image" href={heroCover} />{/if}</svelte:head>
 
 {#snippet albumCard(a: PageAlbum)}
 	{@const c = coverFor(appPicture(a.image), 200)}
@@ -276,55 +277,55 @@
 
 <div class="album" class:tinted={!!tint} style={tintStyle} data-tint={tint?.bg ?? ''}>
 	{#if error && !data}<LoadError hasData={false} message={error} network={errorNet} onretry={load} {busy} />{/if}
-	<PageLoader loading={!hero && !error} cached={fromCache} label="Loading this album" onretry={load}>
+	<PageLoader loading={!hero && !error} cached={fromCache} label={t('music.loadingThisAlbum')} onretry={load}>
 		{#if hero && !(error && !data)}
 			<header class="hero" data-hero>
 				<div class="cover" class:in={coverIn} style:background-color={coverTint}>
-					{#if cover && !coverFailed}<img src={heroCover} alt={`${hero.name} cover`} width="320" height="320" decoding="async" fetchpriority="high" onload={coverLoaded} onerror={() => { coverIn = false; coverFailed = true; }} />{:else}<ArtPlaceholder name={hero.name} shape="square" color={coverTint} />{/if}
+					{#if cover && !coverFailed}<img src={heroCover} alt={t('music.cover', { name: hero.name })} width="320" height="320" decoding="async" fetchpriority="high" onload={coverLoaded} onerror={() => { coverIn = false; coverFailed = true; }} />{:else}<ArtPlaceholder name={hero.name} shape="square" color={coverTint} />{/if}
 				</div>
 				<div class="words">
-					<h1>{hero.name}{#if data?.explicit}<span class="e big" aria-label="Explicit">E</span>{/if}</h1>
+					<h1>{hero.name}{#if data?.explicit}<span class="e big" aria-label={t('music.explicit')}>E</span>{/if}</h1>
 					<a class="by" href={artistHref(hero.artist.mbid)}>{hero.artist.name}</a>
 					<p class="meta">{[kindWord(hero), albumYear(hero.release_date)].filter(Boolean).join(' · ')}</p>
 					{#if hero.disambiguation}<p class="blurb">{hero.disambiguation}</p>{/if}
 					<div class="actions">
-						<ActionButton icon="user" label={`Go to ${hero.artist.name}`} caption="Artist" href={artistHref(hero.artist.mbid)} />
+						<ActionButton icon="user" label={t('music.goTo', { name: hero.artist.name })} caption={t('music.artist')} href={artistHref(hero.artist.mbid)} />
 						{#if titleId || manage || mayAsk}
 							<ActionButton primary icon={titleId ? 'library' : asked ? 'check' : 'plus'} label={cta} disabled={!titleId && (asked || !lookup || asking)} busy={asking} onclick={act} data-testid="album-ask" />
 						{:else}
-							<ActionButton primary icon="user" label="Open artist" href={artistHref(hero.artist.mbid)} />
+							<ActionButton primary icon="user" label={t('music.openArtist')} href={artistHref(hero.artist.mbid)} />
 						{/if}
 						{#if titleId}<ActionButton icon="bell" label={followLabel(following)} title={followHint('artist', following, false)} pressed={following} busy={followBusy} onclick={flipFollow} data-testid="follow" />{/if}
 					</div>
-					{#if status && data}<span class="pill {status.state}" data-testid="album-state">{status.label}{#if data.part_id && data.tracks.length} · {haveCount} of {data.tracks.length} tracks{/if}</span>{/if}
+					{#if status && data}<span class="pill {status.state}" data-testid="album-state">{status.label}{#if data.part_id && data.tracks.length}{t('music.ofTracks2', { have: haveCount, total: data.tracks.length })}{/if}</span>{/if}
 				</div>
 			</header>
 
 			{#if !data}
-				<section class="block" aria-busy="true" aria-label="Loading the tracks">
+				<section class="block" aria-busy="true" aria-label={t('music.loadingTheTracks')}>
 					<div class="tracks">{#each Array.from({ length: 10 }, (_, i) => i) as i (i)}<SkTrackRow height={48} />{/each}</div>
 				</section>
 			{:else}
-				<section class="block" aria-label="Tracks">
+				<section class="block" aria-label={t('music.tracks2')}>
 					{#if !data.tracks.length && data.gap}<GapNotice gap={data.gap} />
-					{:else if trackListView(data.tracks.length, reasking) === 'skeleton'}<div class="tracks" aria-busy="true" aria-label="Loading the tracks">{#each Array.from({ length: 10 }, (_, i) => i) as i (i)}<SkTrackRow height={48} />{/each}</div>
-					{:else if trackListView(data.tracks.length, reasking) === 'gave-up'}<p class="note">{NO_SONGS_LINE}</p>{/if}
-					{#if data.part_id && list.length}<p class="count" data-testid="album-have">{haveCount} have · {missingCount} missing</p>{/if}
+					{:else if trackListView(data.tracks.length, reasking) === 'skeleton'}<div class="tracks" aria-busy="true" aria-label={t('music.loadingTheTracks')}>{#each Array.from({ length: 10 }, (_, i) => i) as i (i)}<SkTrackRow height={48} />{/each}</div>
+					{:else if trackListView(data.tracks.length, reasking) === 'gave-up'}<p class="note">{noSongsLine()}</p>{/if}
+					{#if data.part_id && list.length}<p class="count" data-testid="album-have">{t('music.haveMissing', { have: haveCount, missing: missingCount })}</p>{/if}
 					{#each discs as [disc, tracks] (disc)}
-						{#if discs.length > 1}<h3 class="disc">Disc {disc}</h3>{/if}
+						{#if discs.length > 1}<h3 class="disc">{t('music.disc', { n: disc })}</h3>{/if}
 						<ol class="tracks">
-							{#each tracks as t (t.disc * 1000 + t.number)}
-								<li class:have={t.have === 'in_library'}>
-									<span class="n">{t.number}</span>
-									<span class="t-name"><span class="t-title">{t.name}</span>{#if t.explicit}<span class="e" aria-label="Explicit">E</span>{/if}</span>
-									{#if t.have}
-										<span class="t-have {t.have}" title={t.have === 'in_library' ? 'In your Library' : t.have === 'downloading' ? 'Downloading' : 'Missing'}>
-											<Icon name={t.have === 'in_library' ? 'check' : t.have === 'downloading' ? 'download' : 'dash'} size={14} />
-											<span class="sr-only">{t.have === 'in_library' ? 'In your Library' : t.have === 'downloading' ? 'Downloading' : 'Missing'}</span>
+							{#each tracks as tr (tr.disc * 1000 + tr.number)}
+								<li class:have={tr.have === 'in_library'}>
+									<span class="n">{tr.number}</span>
+									<span class="t-name"><span class="t-title">{tr.name}</span>{#if tr.explicit}<span class="e" aria-label={t('music.explicit')}>E</span>{/if}</span>
+									{#if tr.have}
+										<span class="t-have {tr.have}" title={tr.have === 'in_library' ? t('music.inYourLibrary') : tr.have === 'downloading' ? t('music.downloading') : t('music.missing')}>
+											<Icon name={tr.have === 'in_library' ? 'check' : tr.have === 'downloading' ? 'download' : 'dash'} size={14} />
+											<span class="sr-only">{tr.have === 'in_library' ? t('music.inYourLibrary') : tr.have === 'downloading' ? t('music.downloading') : t('music.missing')}</span>
 										</span>
 									{:else}<span></span>{/if}
-									<span class="t-len">{length(t.length_ms)}</span>
-									<span class="t-more"><Menu label={`More for ${t.name}`} items={trackItems(t)} width={220} /></span>
+									<span class="t-len">{length(tr.length_ms)}</span>
+									<span class="t-more"><Menu label={t('music.moreFor2', { name: tr.name })} items={trackItems(tr)} width={220} /></span>
 								</li>
 							{/each}
 						</ol>
@@ -336,13 +337,13 @@
 					{#if songs}<p>{songs}</p>{/if}
 					{#if data.label}<p>℗ {albumYear(data.release_date) ? `${albumYear(data.release_date)} ` : ''}{data.label}</p>{/if}
 					{#if data.editions.length > 1}
-						<button type="button" class="ed-link" aria-expanded={showEditions} onclick={() => (showEditions = !showEditions)} data-testid="album-editions-link">{data.editions.length} editions{edition ? ` · ${picked?.label ?? ''}` : ''}</button>
+						<button type="button" class="ed-link" aria-expanded={showEditions} onclick={() => (showEditions = !showEditions)} data-testid="album-editions-link">{t('music.editions', { n: data.editions.length })}{edition ? ` · ${picked?.label ?? ''}` : ''}</button>
 						{#if showEditions}
-							<div class="chips" role="toolbar" aria-label="Editions" data-testid="album-editions">
-								<Chip label="Usual" selected={!edition} onclick={() => (edition = '')} />
+							<div class="chips" role="toolbar" aria-label={t('music.editions2')} data-testid="album-editions">
+								<Chip label={t('music.usual')} selected={!edition} onclick={() => (edition = '')} />
 								{#each data.editions as ed (ed.mbid)}<Chip label={`${ed.label} · ${ed.tracks}`} selected={edition === ed.mbid} onclick={() => (edition = ed.mbid)} />{/each}
 							</div>
-							{#if edition && !titleId && mayAsk && !manage}<p>Asking now asks for this edition.</p>{/if}
+							{#if edition && !titleId && mayAsk && !manage}<p>{t('music.askingNowAsksFor')}</p>{/if}
 						{/if}
 					{/if}
 				</footer>
@@ -352,13 +353,13 @@
 				{#if !data}
 					<div class="sq-rail"><SkRail item="var(--music-item)" titleWidth="200px" /></div>
 				{:else if moreBy.length}
-					<Shelf title={`More by ${data.artist.name}`} href={artistHref(data.artist.mbid)} item="var(--music-item)" items={moreBy} key={(a) => a.mbid} placeholder="square" lines={1}>
+					<Shelf title={t('music.moreBy', { name: data.artist.name })} href={artistHref(data.artist.mbid)} item="var(--music-item)" items={moreBy} key={(a) => a.mbid} placeholder="square" lines={1}>
 						{#snippet card(a: PageAlbum)}{@render albumCard(a)}{/snippet}
 					</Shelf>
 				{/if}
 
 				{#if near?.length}
-					<Shelf title="Fans also like" item="var(--music-item)" items={near} key={(a) => a.mbid} placeholder="square" lines={2}>
+					<Shelf title={t('music.fansAlsoLike')} item="var(--music-item)" items={near} key={(a) => a.mbid} placeholder="square" lines={2}>
 						{#snippet card(a: PageCredit)}
 							{@const c = coverFor(appPicture(a.image), 200)}
 							<PosterCard title={a.name} href={albumHref(a.mbid, a.artist_mbid)} image={c.src} kind="artist" shape="square" music needsArt subtitle={a.artist_name} badges={a.explicit ? ['E'] : undefined} />
@@ -370,7 +371,7 @@
 					<SkRail kind="person" item="168px" titleWidth="200px" />
 				{:else if similar.length}
 					<section class="block">
-						<h2>If you like {hero.artist.name}</h2>
+						<h2>{t('music.ifYouLike', { name: hero.artist.name })}</h2>
 						<ul class="circles" use:dragScroll>{#each similar as p (p.mbid)}<li><PersonCircle name={p.name} image={appPicture(p.image)} href={artistHref(p.mbid)} size={152} needsArt /></li>{/each}</ul>
 					</section>
 				{/if}
@@ -380,7 +381,7 @@
 </div>
 
 {#if manage}
-	<AddArtistDialog bind:this={addDialog} {folders} {rules} {defaults} onadded={(_a, t) => { toasts.push(`${t.name} added`, 'ok', { body: 'Filling in albums and tracks' }); void load(); }} />
+	<AddArtistDialog bind:this={addDialog} {folders} {rules} {defaults} onadded={(_a, added) => { toasts.push(t('music.added', { what: added.name }), 'ok', { body: t('music.fillingInAlbumsAnd') }); void load(); }} />
 {:else if mayAsk}
 	<AskArtistDialog bind:this={askDialog} onasked={onAsked} />
 {/if}

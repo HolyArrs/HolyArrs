@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import Icon from '#lib/ui/Icon.svelte';
 	import Shelf from '#lib/ui/Shelf.svelte';
 	import ArtPlaceholder from '#lib/ui/ArtPlaceholder.svelte';
@@ -32,7 +33,7 @@
 	// A cover's state per video: loaded, or failed even after the fallback picture.
 	let coverState = $state<Record<string, 'ok' | 'bad'>>({});
 	const coverOf = (v: Video, i: number) => (noCover[v.key] ? (pics.length ? sized(pics[i % pics.length], 'backdrop', 300) : '') : `https://i.ytimg.com/vi/${v.key}/mqdefault.jpg`);
-	const kindWord = (v: Video) => (v.type === 'Teaser' ? 'Teaser' : 'Trailer');
+	const kindWord = (v: Video) => (v.type === 'Teaser' ? t('discover.titleTrailers.teaser') : t('discover.titleTrailers.trailer'));
 	const langWord = (v: Video) => {
 		if (!v.language || v.language === 'en') return '';
 		try {
@@ -69,7 +70,7 @@
 </script>
 
 {#snippet card(v: Video, i: number)}
-	<button type="button" class="tcard" onclick={(e) => play(v, e)} aria-busy={busy === v.key || undefined} aria-label="Play {named(v)}">
+	<button type="button" class="tcard" onclick={(e) => play(v, e)} aria-busy={busy === v.key || undefined} aria-label={t('discover.titleTrailers.play', { v: named(v) })}>
 		<span class="pic">
 			{#if !coverOf(v, i) || coverState[v.key] !== 'ok'}<ArtPlaceholder name={!coverOf(v, i) || coverState[v.key] === 'bad' ? named(v) : ''} shape="wide" loading={!!coverOf(v, i) && !coverState[v.key]} />{/if}
 			{#if coverOf(v, i) && coverState[v.key] !== 'bad'}<img src={coverOf(v, i)} alt="" loading="lazy" decoding="async" onload={() => (coverState[v.key] = 'ok')} onerror={() => (noCover[v.key] ? (coverState[v.key] = 'bad') : (noCover[v.key] = true))} />{/if}
@@ -82,7 +83,7 @@
 
 {#if list.length}
 	<div class="trailers" data-testid="title-trailers">
-		<Shelf title="Trailers" anchor="title-trailers" {item} placeholder="wide" whole>
+		<Shelf title={t('discover.titleTrailers.trailers')} anchor="title-trailers" {item} placeholder="wide" whole>
 			{#each list as v, i (v.key)}{@render card(v, i)}{/each}
 		</Shelf>
 	</div>

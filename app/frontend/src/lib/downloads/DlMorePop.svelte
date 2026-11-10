@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import Popover from '#lib/ui/Popover.svelte';
 	import { size as bytes } from './size.ts';
 	import { CONN_HINT, CONN_WORD } from './pane-facts.ts';
@@ -7,7 +8,7 @@
 	let { notes, dls, watch }: { notes: string[]; dls: Downloaders; watch: boolean } = $props();
 </script>
 
-<span class="mop" class:warn={notes.length > 0 || dls.clients.some((c) => c.error)}><Popover label="More status" icon="more" placement="below" align="end" width={320}>{#snippet children()}
+<span class="mop" class:warn={notes.length > 0 || dls.clients.some((c) => c.error)}><Popover label={t('downloads.more.label')} icon="more" placement="below" align="end" width={320}>{#snippet children()}
 	<div class="mo" data-testid="sb-status">
 		{#each notes.filter((n) => !dls.clients.some((c) => n.startsWith(c.name))) as n (n)}<p class="mnote" data-testid="dl-note">{n}</p>{/each}
 		{#if !dls.clients.length}<p class="mnote">{dls.health}</p>{/if}
@@ -16,31 +17,31 @@
 			{@const usenet = c.protocol === 'usenet'}
 			{@const tone = c.error ? 'warn' : s?.connection === 'disconnected' ? 'bad' : s?.connection === 'firewalled' ? 'warn' : s?.paused ? 'held' : 'ok'}
 			<!-- The dot carries the state; a word shows only when something is off. -->
-			{@const word = c.error ? '' : s?.connection && s.connection !== 'connected' ? CONN_WORD[s.connection] : s?.paused ? 'Paused' : ''}
-			{@const hint = c.error ? 'Not answering' : s?.connection ? CONN_HINT[s.connection] : s?.paused ? 'Paused' : 'Answering'}
+			{@const word = c.error ? '' : s?.connection && s.connection !== 'connected' ? CONN_WORD[s.connection] : s?.paused ? t('downloads.status.paused') : ''}
+			{@const hint = c.error ? t('downloads.more.notAnswering') : s?.connection ? CONN_HINT[s.connection] : s?.paused ? t('downloads.status.paused') : t('downloads.more.answering')}
 			<div class="mc" class:warn={!!c.error} data-testid="sb-client">
 				<div class="mch">
 					<i class="dot {tone}" role="img" aria-label={hint} title={hint}></i>
 					<b class="cname">{c.name}</b>
 					<span class="kind">{usenet ? 'Usenet' : 'Torrent'}</span>
 					{#if word}<span class="cn" data-testid="sb-connection">{word}</span>{/if}
-					{#if c.error}<button type="button" class="xbn quiet retry" onclick={() => void dls.read()} data-testid="sb-retry">Try again</button>{/if}
+					{#if c.error}<button type="button" class="xbn quiet retry" onclick={() => void dls.read()} data-testid="sb-retry">{t('health.sections.tryAgain')}</button>{/if}
 				</div>
 				{#if c.error}<p class="mnote">{c.error}</p>
 				{:else if s}
 					<div class="mcg">
-						<span><small>Down</small>{bytes(s.speed)}/s</span>
-						{#if usenet}<span><small>Free</small>{s.free_space ? bytes(s.free_space) : '–'}</span><span><small>Today</small>{s.day_down ? bytes(s.day_down) : '–'}</span>
-						{:else}<span><small>Up</small>{bytes(s.up_speed)}/s</span><span data-testid="sb-session"><small>Session</small>↑ {bytes(s.session_up)}</span>{/if}
+						<span><small>{t('downloads.pf.down')}</small>{bytes(s.speed)}/s</span>
+						{#if usenet}<span><small>{t('downloads.more.free')}</small>{s.free_space ? bytes(s.free_space) : '–'}</span><span><small>{t('downloads.day.today')}</small>{s.day_down ? bytes(s.day_down) : '–'}</span>
+						{:else}<span><small>{t('downloads.pf.up')}</small>{bytes(s.up_speed)}/s</span><span data-testid="sb-session"><small>{t('downloads.more.session')}</small>↑ {bytes(s.session_up)}</span>{/if}
 					</div>
-					{#if s.slow_mode != null}<label class="slow"><span>Slow mode</span><input type="checkbox" role="switch" checked={s.slow_mode} disabled={watch || dls.slowBusy === c.id} onchange={(e) => dls.setSlow(c, e.currentTarget.checked)} data-testid="sb-slow" /></label>{/if}
+					{#if s.slow_mode != null}<label class="slow"><span>{t('downloads.more.slow')}</span><input type="checkbox" role="switch" checked={s.slow_mode} disabled={watch || dls.slowBusy === c.id} onchange={(e) => dls.setSlow(c, e.currentTarget.checked)} data-testid="sb-slow" /></label>{/if}
 				{/if}
 			</div>
 		{/each}
 		<div class="mt" data-testid="sb-totals">
-			<span><small>Today</small><b>{dls.sumOf('day_down') ? bytes(dls.sumOf('day_down')) : '–'}</b></span>
-			<span><small>This month</small><b>{dls.sumOf('month_down') ? bytes(dls.sumOf('month_down')) : '–'}</b></span>
-			<span><small>All time</small><b>{dls.sumOf('all_time_down') ? bytes(dls.sumOf('all_time_down')) : '–'}</b></span>
+			<span><small>{t('downloads.day.today')}</small><b>{dls.sumOf('day_down') ? bytes(dls.sumOf('day_down')) : '–'}</b></span>
+			<span><small>{t('downloads.more.month')}</small><b>{dls.sumOf('month_down') ? bytes(dls.sumOf('month_down')) : '–'}</b></span>
+			<span><small>{t('downloads.more.allTime')}</small><b>{dls.sumOf('all_time_down') ? bytes(dls.sumOf('all_time_down')) : '–'}</b></span>
 		</div>
 	</div>
 {/snippet}</Popover></span>
