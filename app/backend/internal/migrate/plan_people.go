@@ -207,9 +207,11 @@ func (b *builder) asks(s *Snapshot) {
 		}
 		name := b.titles[kind+":"+ref]
 		if name == "" {
-			for _, v := range ids {
-				if n := b.titles[kind+":ids:"+v]; n != "" {
+			// In a fixed order, so the same read always gives the same name.
+			for _, src := range []string{"tmdb", "tvdb", "imdb"} {
+				if n := b.titles[kind+":ids:"+ids[src]]; ids[src] != "" && n != "" {
 					name = n
+					break
 				}
 			}
 		}
@@ -522,10 +524,30 @@ func metadataHost(raw string) bool {
 	return h == "metadata" || strings.HasPrefix(h, "metadata.") || strings.HasPrefix(h, "instance-data")
 }
 
-// PlanHash names a Plan exactly: a move starts only from the plan its dry
-// run showed, and another one is refused (ErrPlanChanged).
+// PlanHash names what a move would do: a move starts only from the plan
+// its dry run showed, and another one is refused (ErrPlanChanged). It
+// covers the read apps, the groups left out and each item's key and what
+// it creates or changes; wording, source positions and the not-moved
+// list are left out, so a harmless difference there does not refuse it.
 func PlanHash(p *Plan) string {
-	b, _ := json.Marshal(p)
+	type group struct {
+		Name    string `json:"name"`
+		Skipped bool   `json:"skipped"`
+		Items   []Item `json:"items"`
+	}
+	approved := struct {
+		Snapshots []int64 `json:"snapshots"`
+		Groups    []group `json:"groups"`
+	}{Snapshots: p.Snapshots}
+	for _, g := range p.Groups {
+		items := make([]Item, 0, len(g.Items))
+		for _, it := range g.Items {
+			it.Name, it.From, it.Detail, it.Why = "", "", "", ""
+			items = append(items, it)
+		}
+		approved.Groups = append(approved.Groups, group{Name: g.Name, Skipped: g.Skipped, Items: items})
+	}
+	b, _ := json.Marshal(approved)
 	h := sha256.Sum256(b)
 	return hex.EncodeToString(h[:])
 }
