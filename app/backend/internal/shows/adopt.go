@@ -340,7 +340,7 @@ func adoptEpisodesTx(ctx context.Context, tx *sql.Tx, titleID, versionID, pickRu
 		if err != nil {
 			return err
 		}
-		ge := mediafiles.ReachesGoodEnough(judge, pr.Body)
+		ge := mediafiles.OwnedReachesGoodEnough(release, info, pr.Body)
 		state, why := mediafiles.SlotInLibrary, "adopted from "+a.FolderName
 		if !ge && keep {
 			state, why = mediafiles.SlotBetterWanted, "adopted below good enough, so a better copy is sought"

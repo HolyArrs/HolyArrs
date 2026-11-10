@@ -419,7 +419,7 @@ func adoptFile(ctx context.Context, tx *sql.Tx, a Adoption, slotID, versionID, p
 	if err := database.Get(ctx, tx, "pick_rules", pickRulesID, &pr); err != nil {
 		return err
 	}
-	ge := mediafiles.ReachesGoodEnough(judge, pr.Body)
+	ge := mediafiles.OwnedReachesGoodEnough(release, a.MediaInfo, pr.Body)
 	if _, err := tx.Exec("UPDATE slots SET file_id = ?, good_enough = ? WHERE id = ?", fileID, ge, slotID); err != nil {
 		return err
 	}
