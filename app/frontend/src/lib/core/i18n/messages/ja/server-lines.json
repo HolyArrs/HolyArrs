@@ -752,5 +752,9 @@
 	"server.library.size": "サイズ",
 	"server.library.source": "ソース",
 	"server.library.unreadable-pattern": "読めないパターン",
-	"server.library.year": "年"
+	"server.library.year": "年",
+	"server.migrate.already-in-the-library": "すでにライブラリにあります",
+	"server.migrate.already-in-the-library-quality": "すでにライブラリにあります。{n} 個のファイルの品質を更新しました",
+	"server.migrate.moved-before": "以前にインポート済み",
+	"server.migrate.moved-before-quality": "以前にインポート済み。{n} 個のファイルの品質を更新しました"
 }

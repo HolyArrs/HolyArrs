@@ -752,5 +752,9 @@
 	"server.library.size": "साइज़",
 	"server.library.source": "सोर्स",
 	"server.library.unreadable-pattern": "पढ़ने में न आने वाला पैटर्न",
-	"server.library.year": "साल"
+	"server.library.year": "साल",
+	"server.migrate.already-in-the-library": "पहले से लाइब्रेरी में है",
+	"server.migrate.already-in-the-library-quality": "पहले से लाइब्रेरी में है; {n} फ़ाइलों की क्वालिटी अपडेट हुई",
+	"server.migrate.moved-before": "पहले इंपोर्ट हो चुका",
+	"server.migrate.moved-before-quality": "पहले इंपोर्ट हो चुका; {n} फ़ाइलों की क्वालिटी अपडेट हुई"
 }

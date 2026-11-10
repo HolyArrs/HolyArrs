@@ -50,7 +50,7 @@ How to read it:
 | Media server | servidor multimedia | servidor de mídia | serveur multimédia | Medienserver | медиасервер | 媒体服务器 | メディアサーバー | 미디어 서버 | मीडिया सर्वर | خادم الوسائط |
 | Media servers (plural) | servidores multimedia* | servidores de mídia* | serveurs multimédias* | Medienserver* | медиасерверы* | 媒体服务器 | メディアサーバー | 미디어 서버 | मीडिया सर्वर | خوادم الوسائط* |
 | Linked apps ◆ | Apps vinculadas | Apps vinculados | applications liées | Verknüpfte Apps | связанные приложения | 关联应用 | 連携アプリ | 연동된 앱 | लिंक किए गए ऐप | التطبيقات المرتبطة |
-| Move from other apps (docs menu) | Venir de otras apps | Vindo de outros apps | Venir d'autres applications | Umstieg von anderen Apps | Переход с других приложений | 从其他应用迁移 | ほかのアプリからの移行 | 다른 앱에서 옮겨 오기 | दूसरे ऐप से आना | الانتقال من تطبيقات أخرى |
+| Import from other apps (page, docs menu; was Move) | Importar de otras apps | Importar de outros apps | Importer depuis d'autres applications | Import aus anderen Apps | Импорт из других приложений | 从其他应用导入 | ほかのアプリからのインポート | 다른 앱에서 가져오기 | दूसरे ऐप से इंपोर्ट | الاستيراد من تطبيقات أخرى |
 | Moving over (site roadmap group) | Traslado desde otras apps | Mudança de app | Changer d'application | Umstieg | Переезд | 迁移 | 移行 | 옮겨오기 | दूसरे ऐप से आना | الانتقال |
 | Follow ◆ | Seguir | Seguir | suivre | Folgen | подписаться | 关注 | フォロー | 팔로우 | फ़ॉलो करना | متابعة |
 | Ask for (verb, a title) | Pedir | Pedir | Demander | anfragen | Запрашивать | 请求 | リクエストする | 요청하기 | रिक्वेस्ट करना | اطلب |

@@ -275,7 +275,7 @@ func (r *run) protocol(it Item) (string, string) {
 			return err
 		}
 		if rev != cur.Revision+1 {
-			return errors.New("these Pick rules changed during the move; move again")
+			return errors.New("these Pick rules changed during the import; import again")
 		}
 		return r.markTx(tx, it.Key, "pick_rules_protocol", id, string(before), string(after))
 	})
@@ -298,7 +298,7 @@ func (r *run) outsideList(it Item) (string, string) {
 	}
 	lfID := r.id("SELECT id FROM library_folders WHERE path = ? AND kind = 'movie'", lib)
 	if lfID == 0 {
-		return ResNotFound, "its Library folder " + o.Library + " is not here (not moved, or left out)"
+		return ResNotFound, "its Library folder " + o.Library + " is not here (not imported, or left out)"
 	}
 	name := freeListName(it.Name, func(n string) bool {
 		return r.id("SELECT id FROM outside_lists WHERE name = ? COLLATE NOCASE", n) != 0

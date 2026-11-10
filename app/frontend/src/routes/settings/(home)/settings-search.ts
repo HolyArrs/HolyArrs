@@ -194,7 +194,7 @@ export const settingIndex: SettingEntry[] = [
 	e('/settings/api', 'api-start', 'API base address', 'api address url base openapi'),
 	e('/settings/api', 'api-routes', 'Every API route', 'api routes endpoints openapi'),
 	e('/settings/api', 'seerr-card', 'Requests from Seerr and Overseerr', 'seerr overseerr jellyseerr sonarr radarr requests connect'),
-	e('/settings/move', '', 'Move from other apps', 'import migrate radarr sonarr lidarr prowlarr bazarr seerr overseerr'),
+	e('/settings/move', '', 'Import from other apps', 'import move migrate radarr sonarr lidarr prowlarr bazarr seerr overseerr'),
 
 	e('/settings/backups', 'backup-key', 'Master key', 'master key kit encryption secrets restore another server'),
 	e('/settings/backups', 'backup-often', 'How often backups are made', 'backup schedule'),

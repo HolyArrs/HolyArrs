@@ -755,6 +755,6 @@
 	"server.library.year": "year",
 	"server.migrate.already-in-the-library": "already in the Library",
 	"server.migrate.already-in-the-library-quality": "already in the Library; the quality of {n} files was updated",
-	"server.migrate.moved-before": "moved before",
-	"server.migrate.moved-before-quality": "moved before; the quality of {n} files was updated"
+	"server.migrate.moved-before": "imported before",
+	"server.migrate.moved-before-quality": "imported before; the quality of {n} files was updated"
 }

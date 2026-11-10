@@ -752,5 +752,9 @@
 	"server.library.size": "الحجم",
 	"server.library.source": "المصدر",
 	"server.library.unreadable-pattern": "نمط غير مقروء",
-	"server.library.year": "السنة"
+	"server.library.year": "السنة",
+	"server.migrate.already-in-the-library": "موجود بالفعل في المكتبة",
+	"server.migrate.already-in-the-library-quality": "موجود بالفعل في المكتبة؛ تم تحديث جودة {n} ملفات",
+	"server.migrate.moved-before": "استُورد من قبل",
+	"server.migrate.moved-before-quality": "استُورد من قبل؛ تم تحديث جودة {n} ملفات"
 }

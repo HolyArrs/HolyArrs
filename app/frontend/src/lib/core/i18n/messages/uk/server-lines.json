@@ -752,5 +752,9 @@
 	"server.library.size": "розмір",
 	"server.library.source": "джерело",
 	"server.library.unreadable-pattern": "нечитабельний шаблон",
-	"server.library.year": "рік"
+	"server.library.year": "рік",
+	"server.migrate.already-in-the-library": "уже в Медіатеці",
+	"server.migrate.already-in-the-library-quality": "уже в Медіатеці; якість {n} файлів оновлено",
+	"server.migrate.moved-before": "уже імпортовано раніше",
+	"server.migrate.moved-before-quality": "уже імпортовано раніше; якість {n} файлів оновлено"
 }

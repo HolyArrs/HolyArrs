@@ -752,5 +752,9 @@
 	"server.library.size": "taille",
 	"server.library.source": "origine",
 	"server.library.unreadable-pattern": "motif illisible",
-	"server.library.year": "année"
+	"server.library.year": "année",
+	"server.migrate.already-in-the-library": "déjà dans la Bibliothèque",
+	"server.migrate.already-in-the-library-quality": "déjà dans la Bibliothèque ; la qualité de {n} fichiers a été mise à jour",
+	"server.migrate.moved-before": "déjà importé",
+	"server.migrate.moved-before-quality": "déjà importé ; la qualité de {n} fichiers a été mise à jour"
 }

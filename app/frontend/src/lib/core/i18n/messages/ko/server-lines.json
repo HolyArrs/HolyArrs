@@ -752,5 +752,9 @@
 	"server.library.size": "크기",
 	"server.library.source": "소스",
 	"server.library.unreadable-pattern": "읽을 수 없는 패턴",
-	"server.library.year": "연도"
+	"server.library.year": "연도",
+	"server.migrate.already-in-the-library": "이미 라이브러리에 있음",
+	"server.migrate.already-in-the-library-quality": "이미 라이브러리에 있음. 파일 {n}개의 품질을 업데이트했습니다",
+	"server.migrate.moved-before": "이전에 가져옴",
+	"server.migrate.moved-before-quality": "이전에 가져옴. 파일 {n}개의 품질을 업데이트했습니다"
 }
