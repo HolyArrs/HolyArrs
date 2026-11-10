@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 
@@ -61,7 +62,7 @@ func NewHosted(v *secrets.Vault) (*Hosted, error) {
 	// One pooled HTTP/2 transport for every call to the server: text
 	// answers here, and the server's pictures through the artwork client.
 	tr := &Gate{Next: NewServerTransport(d.DialContext)}
-	cl := &http.Client{Transport: tr, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
+	cl := &http.Client{Transport: keyCheck{next: tr, refused: dropUnknownKey(v)}, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
 	h := &Hosted{HTTP: cl, Transport: tr, Gate: tr}
 	access := installationAccess(v, func(ctx context.Context) (string, error) { return h.Service.Register(ctx) })
 	service, err := NewService(ServiceOptions{URL: ServiceURL(), HTTP: cl, Access: access, AllowLocal: local})
@@ -106,8 +107,8 @@ func (h *Hosted) TMDB() *TMDB {
 // installationAccess reads the install's credential: from the file named by
 // HOLYARRS_METADATA_SERVICE_TOKEN_FILE (read on each call), else from the
 // vault. A fresh install has none yet: it registers once with the server and
-// keeps the answer. A refused credential is never replaced by registering
-// again, so a revocation sticks.
+// keeps the answer. A credential the server no longer knows is dropped by
+// dropUnknownKey, and the next call registers again.
 func installationAccess(v *secrets.Vault, register func(context.Context) (string, error)) func(context.Context) (string, error) {
 	if path := os.Getenv("HOLYARRS_METADATA_SERVICE_TOKEN_FILE"); path != "" {
 		return func(context.Context) (string, error) {
@@ -145,5 +146,56 @@ func installationAccess(v *secrets.Vault, register func(context.Context) (string
 		}
 		log.Printf("metadata: this install registered with the metadata server")
 		return tok, nil
+	}
+}
+
+// keyCheck watches the server's answers: a 401 to a call that carried the
+// install's credential means the server does not know it (any more).
+type keyCheck struct {
+	next    http.RoundTripper
+	refused func(tok string)
+}
+
+func (k keyCheck) RoundTrip(req *http.Request) (*http.Response, error) {
+	resp, err := k.next.RoundTrip(req)
+	if err == nil && resp.StatusCode == http.StatusUnauthorized && k.refused != nil {
+		if tok, ok := strings.CutPrefix(req.Header.Get("Authorization"), "Bearer "); ok && tok != "" {
+			k.refused(tok)
+		}
+	}
+	return resp, err
+}
+
+// unknownKeyWait is the least time between two dropped credentials. The
+// server gives an address only a few registrations an hour.
+const unknownKeyWait = 30 * time.Minute
+
+// dropUnknownKey forgets the stored credential when the server refused
+// exactly that one, so the next call registers a new one. The server drops
+// credentials on its own (idle ones, or to make room); without this the
+// install would stay refused for good. A credential from the token file is
+// the owner's to change and is left alone.
+func dropUnknownKey(v *secrets.Vault) func(string) {
+	if v == nil || os.Getenv("HOLYARRS_METADATA_SERVICE_TOKEN_FILE") != "" {
+		return nil
+	}
+	var mu sync.Mutex
+	var last time.Time
+	return func(tok string) {
+		mu.Lock()
+		defer mu.Unlock()
+		if !last.IsZero() && time.Since(last) < unknownKeyWait {
+			return
+		}
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if cur, err := v.Setting(ctx, installationGroup, installationKey); err != nil || cur != tok {
+			return
+		}
+		if err := v.SetSetting(ctx, installationGroup, installationKey, "", database.System); err != nil {
+			return
+		}
+		last = time.Now()
+		log.Printf("metadata: the server no longer knows this install; registering again")
 	}
 }
