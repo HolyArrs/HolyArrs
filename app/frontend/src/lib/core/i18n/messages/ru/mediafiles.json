@@ -16,7 +16,6 @@
 	"mediafiles.delete.never": "Больше не добавлять",
 	"mediafiles.delete.neverHint": "Списки его пропускают",
 	"mediafiles.delete.willHappen": "Что произойдёт",
-	"mediafiles.delete.type": "Введите <b>{name}</b> для подтверждения",
 	"mediafiles.delete.cancel": "Отмена",
 	"mediafiles.delete.deleting": "Удаление…",
 	"mediafiles.delete.kindAndFiles": "Удалить ({kind}) и файлы",

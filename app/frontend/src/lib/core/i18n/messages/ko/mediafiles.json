@@ -16,7 +16,6 @@
 	"mediafiles.delete.never": "다시 추가하지 않기",
 	"mediafiles.delete.neverHint": "목록에서 건너뜁니다",
 	"mediafiles.delete.willHappen": "진행 내용",
-	"mediafiles.delete.type": "확인하려면 <b>{name}</b>을(를) 입력하세요",
 	"mediafiles.delete.cancel": "취소",
 	"mediafiles.delete.deleting": "삭제 중…",
 	"mediafiles.delete.kindAndFiles": "{kind}과(와) 파일 삭제",

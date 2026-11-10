@@ -1,0 +1,10 @@
+{
+	"settings.home.advanced": "Gelişmiş",
+	"settings.home.page": "{group} · sayfa",
+	"settings.home.title": "Ayarlar",
+	"settings.home.search": "Ayarlarda ara",
+	"settings.home.matching": "Eşleşen ayarlar",
+	"settings.home.noMatch": "Eşleşen ayar yok",
+	"settings.home.noMatchText": "Klasör, anahtar ya da parola gibi başka bir kelime dene.",
+	"settings.home.clear": "Aramayı temizle"
+}

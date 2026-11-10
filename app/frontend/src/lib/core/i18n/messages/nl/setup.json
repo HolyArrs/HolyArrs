@@ -1,0 +1,17 @@
+{
+	"setup.reconnect": "Opnieuw verbinden",
+	"setup.testNow": "Nu testen",
+	"setup.movies": "Films",
+	"setup.tvShows": "Series",
+	"setup.music": "Muziek",
+	"setup.subtitles": "Ondertitels",
+	"setup.fullPath": "Gebruik het volledige pad van de map, zoals {path}.",
+	"setup.folderUsed": "Deze map wordt al gebruikt, of ligt in een map die al wordt gebruikt.",
+	"setup.folderMissing": "Die map bestaat niet. Controleer het pad.",
+	"setup.addFolderOrOff": "Voeg een map toe of zet dit uit.",
+	"setup.notAnswering": "HolyArrs antwoordt niet. Probeer het zo opnieuw.",
+	"setup.addUserPasswordHint": "Vul de gebruikersnaam en het wachtwoord in.",
+	"setup.folders": "Mappen",
+	"setup.downloader": "Downloader",
+	"setup.source": "Bron"
+}

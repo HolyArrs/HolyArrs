@@ -1,0 +1,14 @@
+{
+	"settings.layout.settings": "Instellingen",
+	"settings.layout.home": "Start",
+	"settings.layout.sections": "Onderdelen van Instellingen",
+	"settings.layout.needsAttention": "Heeft aandacht nodig",
+	"settings.layout.needsAttentionLower": "heeft aandacht nodig",
+	"settings.layout.blocked": "Dit kun je niet wijzigen",
+	"settings.layout.backToSettings": "Terug naar Instellingen",
+	"settings.layout.setPasswordFirst": "Stel eerst een wachtwoord in",
+	"settings.layout.setPasswordDesc": "Voor sleutels, wachtwoorden, mensen en backups heb je een HolyArrs-wachtwoord nodig. Je hebt er nog geen.",
+	"settings.layout.setPasswordLabel": "Een wachtwoord instellen",
+	"settings.layout.confirmPasswordLabel": "Bevestig je wachtwoord",
+	"settings.layout.confirmPasswordDesc": "Voor sleutels, wachtwoorden, mensen en backups is je wachtwoord nodig. Geldt 10 minuten."
+}

@@ -2,7 +2,7 @@
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	import type { ShowList } from './ItemsSheet.svelte';
-	import { groupLabel, needsGroups, needsLook, resultWords, summary, tone, type Bucket, type Line, type Report } from './move.ts';
+	import { groupLabel, needsGroups, needsLook, noteWords, resultWords, summary, tone, type Bucket, type Line, type Report } from './move.ts';
 
 	let {
 		report,
@@ -21,7 +21,7 @@
 	function lineRow(l: Line, i: number) {
 		return {
 			key: l.key + ':' + i,
-			name: l.name,
+			name: serverWords(l.name),
 			hint: l.result === 'not_found' ? undefined : serverWords(l.detail),
 			pill: { word: resultWords(l.result, after, undo), tone: tone(l.result) },
 			look: needsLook(l.result)
@@ -39,7 +39,7 @@
 	{#if report.not_moved.length > 0}
 		<li class="rg-row">
 			<span class="rg-txt"><b>{t('migrate.notMoved')}</b><span class="rg-sub">{report.not_moved.length === 1 ? t('migrate.setting', { n: report.not_moved.length }) : t('migrate.settings', { n: report.not_moved.length })}</span></span>
-			<button type="button" class="rg-show" onclick={() => onshow(t('migrate.notMoved'), report.not_moved, (n, i) => ({ key: n.from + i, name: n.what, hint: `${groupLabel(n.group) ?? t('migrate.otherSettings')} · ${n.why}` }))} aria-label={t('migrate.showNotMoved')}>{t('migrate.show2')}</button>
+			<button type="button" class="rg-show" onclick={() => onshow(t('migrate.notMoved'), report.not_moved, (n, i) => ({ key: n.from + i, name: serverWords(n.what), hint: `${groupLabel(n.group) ?? t('migrate.otherSettings')} · ${serverWords(n.why)}` }))} aria-label={t('migrate.showNotMoved')}>{t('migrate.show2')}</button>
 		</li>
 	{/if}
 	{#if needs.length > 0}
@@ -51,7 +51,7 @@
 	{#if (report.notes?.length ?? 0) > 0}
 		<li class="rg-row">
 			<span class="rg-txt"><b>{t('migrate.notesFromTheApps')}</b><span class="rg-sub">{report.notes?.length}</span></span>
-			<button type="button" class="rg-show" onclick={() => onshow(t('migrate.notesFromTheApps'), report.notes ?? [], (n, i) => ({ key: String(i), name: n }))} aria-label={t('migrate.showNotesFromThe')}>{t('migrate.show2')}</button>
+			<button type="button" class="rg-show" onclick={() => onshow(t('migrate.notesFromTheApps'), report.notes ?? [], (n, i) => ({ key: String(i), name: noteWords(n) }))} aria-label={t('migrate.showNotesFromThe')}>{t('migrate.show2')}</button>
 		</li>
 	{/if}
 </ul>

@@ -210,10 +210,10 @@ func (b *builder) add(group string, it Item) {
 	}
 	switch {
 	case b.keys[it.Key]:
-		b.not(group, it.From, it.Name, "the same thing came from another app or twice from this one; it is moved once")
+		b.not(group, it.From, it.Name, "the same thing came from another app or twice from this one; it is imported once")
 		return
 	case len(g.Items) >= limit:
-		b.not(group, it.From, it.Name, fmt.Sprintf("more than %d in one move; move again after this one", limit))
+		b.not(group, it.From, it.Name, fmt.Sprintf("more than %d in one import; import again after this one", limit))
 		return
 	}
 	b.keys[it.Key] = true

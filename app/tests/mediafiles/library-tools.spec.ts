@@ -103,15 +103,14 @@ function videosUnder(dir: string): string[] {
 	return readdirSync(dir, { recursive: true, encoding: 'utf8' }).filter((p) => p.endsWith('.mkv') && !p.includes('.holyarrs-'));
 }
 
-/** deleteWithFiles deletes a movie from its page, files too, typing the name to confirm. */
+/** deleteWithFiles deletes a movie from its page, files too (held files come back with Undo, so no name is typed). */
 async function deleteWithFiles(page: Page, name: string) {
 	await titleAction(page, 'More actions', 'Delete movie');
 	const sheet = page.getByRole('dialog', { name: `Delete ${name}?` });
 	await sheet.getByRole('switch', { name: /Also delete the files/ }).click();
 	await expect(sheet.getByTestId('delete-plan')).toContainText('holding folder');
 	const del = sheet.getByRole('button', { name: 'Delete movie and files' });
-	await expect(del).toBeDisabled();
-	await sheet.getByPlaceholder(name).fill(name);
+	await expect(del).toBeEnabled();
 	await del.click();
 	await expect(sheet).toBeHidden();
 }
@@ -203,6 +202,35 @@ test('Undo in the delete message puts the movie and its file back', async ({ pag
 	expect(existsSync(target)).toBe(true);
 	const { titles } = (await (await call('GET', '/titles')).json()) as { titles: { name: string; kind: string }[] };
 	expect(titles.filter((t) => t.kind === 'movie' && t.name === 'Ember Road')).toHaveLength(1);
+});
+
+// Holding set to 0 keeps deleted files until the holding folder is emptied, so no name is typed there either.
+test('Delete with files and holding kept until emptied: no name to type, Delete is ready', async ({ page }) => {
+	await signIn(page, owner());
+	const call = await api(page);
+	const id = await freshMovie(call, 900009, 'Velvet Tide');
+	const target = await giveFile(call, id, looseFile('Velvet Tide', 2016, 'velvet-tide-off'));
+	const rules = (await (await call('GET', '/settings/files')).json()) as Record<string, unknown>;
+
+	await page.goto(`/library/${id}`);
+	await titleAction(page, 'More actions', 'Delete movie');
+	const sheet = page.getByRole('dialog', { name: 'Delete Velvet Tide?' });
+	// Holding is set to 0 only until the plan has loaded, so other projects' deletes are not affected for long.
+	const off = await call('PUT', '/settings/files', { ...rules, holding_days: 0 });
+	expect(off.ok(), await off.text()).toBe(true);
+	try {
+		await sheet.getByRole('switch', { name: /Also delete the files/ }).click();
+		await expect(sheet.getByTestId('delete-plan')).toContainText('1 file to the holding folder');
+	} finally {
+		const back = await call('PUT', '/settings/files', rules);
+		expect(back.ok(), await back.text()).toBe(true);
+	}
+	await expect(sheet.getByPlaceholder('Velvet Tide')).toHaveCount(0);
+	await expect(sheet.getByRole('button', { name: 'Delete movie and files' })).toBeEnabled();
+	// Nothing was deleted: cancel leaves the movie and its file in place.
+	await sheet.getByRole('button', { name: 'Cancel' }).click();
+	await expect(sheet).toBeHidden();
+	expect(existsSync(target)).toBe(true);
 });
 
 // Move ticked titles to another folder.

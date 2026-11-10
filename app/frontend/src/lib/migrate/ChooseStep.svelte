@@ -1,5 +1,6 @@
 <script lang="ts" module>
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	let keepOpen = false;
 </script>
 
@@ -176,8 +177,8 @@
 		return { text: '', warn: false };
 	}
 	function itemRow(it: PlanItem) {
-		const hint = [it.why || it.detail, it.needs ? t('migrate.needs', { what: it.needs }) : ''].filter(Boolean).join(' · ');
-		return { key: it.key, name: it.name, hint };
+		const hint = [serverWords(it.why || it.detail), it.needs ? t('migrate.needs', { what: serverWords(it.needs) }) : ''].filter(Boolean).join(' · ');
+		return { key: it.key, name: serverWords(it.name), hint };
 	}
 	function openKeys(k: 'sources' | 'downloaders') {
 		keysOf = k;
@@ -409,7 +410,7 @@
 		<button type="button" class="quiet nm-back" onclick={() => (nmApp = null)}><Icon name="chevronLeft" size={15} />{t('migrate.allApps')}</button>
 		<ul class="box list">
 			{#each nmReasons as r (r.what + r.why)}
-				<li class="mrow"><span class="txt"><span class="name one">{r.what}</span><span class="sub">{r.why}</span></span>{#if r.n > 1}<span class="count">×{r.n}</span>{/if}</li>
+				<li class="mrow"><span class="txt"><span class="name one">{serverWords(r.what)}</span><span class="sub">{serverWords(r.why)}</span></span>{#if r.n > 1}<span class="count">×{r.n}</span>{/if}</li>
 			{/each}
 		</ul>
 	{/if}
