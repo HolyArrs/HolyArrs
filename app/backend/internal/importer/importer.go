@@ -104,10 +104,14 @@ func Scan(root string) ([]Candidate, error) {
 		if err != nil {
 			return err
 		}
-		if d.Type()&fs.ModeSymlink != 0 || d.IsDir() {
+		linked, isLink := LinkedFile(p)
+		if (d.Type()&fs.ModeSymlink != 0 && !isLink) || d.IsDir() {
 			return nil
 		}
 		fi, err := d.Info()
+		if isLink {
+			fi, err = linked, nil
+		}
 		if err != nil {
 			return err
 		}
@@ -445,7 +449,8 @@ func place(s mediafiles.PlanStep, ops Ops, resumeFrom time.Time) mediafiles.Plac
 		r.Outcome, r.Error = "failed", err.Error()
 		return r
 	}
-	if !sfi.Mode().IsRegular() {
+	_, isLink := LinkedFile(s.SourceFile)
+	if !sfi.Mode().IsRegular() && !isLink {
 		r.Outcome, r.Error = "refused", "the source is not a plain file (a symlink or something else)"
 		return r
 	}
@@ -459,6 +464,15 @@ func place(s mediafiles.PlanStep, ops Ops, resumeFrom time.Time) mediafiles.Plac
 			return r
 		}
 		r.Outcome, r.Error = "refused", "a file HolyArrs did not place is already at the target"
+		return r
+	}
+	if isLink {
+		// A followed link is placed as a link: its target is never copied.
+		if err := placeLink(s.SourceFile, s.TargetPath); err != nil {
+			r.Outcome, r.Error = "failed", err.Error()
+			return r
+		}
+		r.Outcome, r.PlacedBy = "placed", "copy" // placed_by has no link kind; a link is a copy of the entry
 		return r
 	}
 	if err := os.MkdirAll(filepath.Dir(s.TargetPath), 0o777); err != nil {
@@ -526,7 +540,11 @@ func candidates(root string, files []domain.SeenFile) ([]Candidate, []mediafiles
 			ok = under(root, cand)
 		}
 		if ok && rootErr == nil {
-			if real, err := filepath.EvalSymlinks(cand); err == nil && !under(realRoot, real) {
+			if _, isLink := LinkedFile(cand); isLink {
+				if real, err := filepath.EvalSymlinks(filepath.Dir(cand)); err == nil && real != realRoot && !under(realRoot, real) {
+					ok = false
+				}
+			} else if real, err := filepath.EvalSymlinks(cand); err == nil && !under(realRoot, real) {
 				ok = false
 			}
 		}
