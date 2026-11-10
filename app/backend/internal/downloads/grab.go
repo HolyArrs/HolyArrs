@@ -516,10 +516,12 @@ func (m *Manager) send(ctx context.Context, d domain.Downloader, rel domain.Rele
 			return "", err
 		}
 	}
-	// Transmission and Deluge cannot follow a link that redirects to a magnet, as
-	// Prowlarr and Jackett give for magnet-only sites. HolyArrs reads the link first
-	// and sends the magnet or the file; if that fails the link is sent as before.
-	if (d.Adapter == "transmission" || d.Adapter == "deluge") && !strings.HasPrefix(link, "magnet:") {
+	// Prowlarr and Jackett answer magnet-only sites with a redirect to a magnet,
+	// which Transmission, Deluge and some qBittorrent stand-ins cannot follow. A
+	// torrent link not read above (a home Source whose Release has a hash) is read
+	// here and the magnet or file is sent; if that fails the link is sent as before.
+	torrentAdapter := d.Adapter == "transmission" || d.Adapter == "deluge" || d.Adapter == "qbittorrent" && src.ProxyURL == ""
+	if torrentAdapter && file == nil && !strings.HasPrefix(link, "magnet:") {
 		link, file = prefetchTorrent(ctx, link, allowLocal, sourceLocalHost(src.URL, allowLocal))
 		if hash == "" {
 			hash = linkHash(link)
