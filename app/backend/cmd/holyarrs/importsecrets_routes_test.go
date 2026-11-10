@@ -93,9 +93,9 @@ func TestImportSecretsRoutes(t *testing.T) {
 	// An admin is not the owner.
 	r.owner.call("PUT", "/api/v1/users/"+arrItoa(r.bo.id), `{"role":"admin"}`, 200)
 	r.bo.call("POST", "/api/v1/migrate/probe", `{"kind":"radarr","use_saved_key":true}`, 403)
-	// The key only goes to its saved address, with only its saved leave.
+	// The key only goes to its saved address: another address has no saved key.
 	b = r.owner.call("POST", "/api/v1/migrate/probe", `{"kind":"radarr","use_saved_key":true,"url":"http://127.0.0.1:1"}`, 400)
-	if !strings.Contains(string(b), "only sent to its saved address") {
+	if !strings.Contains(string(b), "no saved key for this app at this address") {
 		t.Fatalf("other url %s", b)
 	}
 	r.owner.call("POST", "/api/v1/migrate/probe", `{"kind":"radarr","use_saved_key":true,"url":"not a url"}`, 400)
