@@ -90,5 +90,6 @@
 	"frame.layout.partOffHint": "Der Besitzer oder ein Admin kann ihn wieder einschalten.",
 	"frame.layout.allPlaces": "Alle Orte",
 	"frame.layout.newWord": "neu",
-	"frame.layout.accountName": "Konto · {name}"
+	"frame.layout.accountName": "Konto · {name}",
+	"frame.layout.hostRefused": "<b>Auf {host} können Änderungen nicht gespeichert werden.</b> HolyArrs speichert nur unter Namen, die du erlaubst. Öffne es einmal über seine IP-Adresse und füge dann {host} unter Einstellungen › Anmeldung und Sicherheit › Erlaubte Hostnamen hinzu. Kein Neustart nötig."
 }

@@ -90,5 +90,6 @@
 	"frame.layout.partOffHint": "ओनर या एडमिन इसे फिर चालू कर सकता है।",
 	"frame.layout.allPlaces": "सभी जगहें",
 	"frame.layout.newWord": "नया",
-	"frame.layout.accountName": "अकाउंट · {name}"
+	"frame.layout.accountName": "अकाउंट · {name}",
+	"frame.layout.hostRefused": "<b>{host} पर बदलाव सेव नहीं हो सकते।</b> HolyArrs सिर्फ़ उन्हीं नामों पर सेव करता है जिन्हें आप अनुमति देते हैं। इसे एक बार IP पते से खोलें, फिर सेटिंग › साइन इन और सुरक्षा › मान्य होस्ट नाम में {host} जोड़ें। दोबारा चालू करने की ज़रूरत नहीं।"
 }

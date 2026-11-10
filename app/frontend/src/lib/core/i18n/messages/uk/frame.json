@@ -90,5 +90,6 @@
 	"frame.layout.partOffHint": "Власник або адмін може знову її ввімкнути.",
 	"frame.layout.allPlaces": "Усі місця",
 	"frame.layout.newWord": "нове",
-	"frame.layout.accountName": "Обліковий запис · {name}"
+	"frame.layout.accountName": "Обліковий запис · {name}",
+	"frame.layout.hostRefused": "<b>На {host} зміни не зберігаються.</b> HolyArrs зберігає лише на дозволених іменах. Відкрий його один раз за IP-адресою, а тоді додай {host} у Налаштування › Вхід і безпека › Дозволені імена хостів. Перезапуск не потрібен."
 }

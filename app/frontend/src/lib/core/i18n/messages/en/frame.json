@@ -90,5 +90,6 @@
 	"frame.layout.partOffHint": "The owner or an admin can turn it on again.",
 	"frame.layout.allPlaces": "All places",
 	"frame.layout.newWord": "new",
-	"frame.layout.accountName": "Account · {name}"
+	"frame.layout.accountName": "Account · {name}",
+	"frame.layout.hostRefused": "<b>Changes can't be saved on {host}.</b> HolyArrs only saves on names you allow. Open it once by its IP address, then add {host} under Settings › Sign-in › Allowed host names. No restart needed."
 }

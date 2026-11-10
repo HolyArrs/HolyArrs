@@ -90,5 +90,6 @@
 	"frame.layout.partOffHint": "オーナーか管理者がオンに戻せます。",
 	"frame.layout.allPlaces": "すべての場所",
 	"frame.layout.newWord": "新着",
-	"frame.layout.accountName": "アカウント · {name}"
+	"frame.layout.accountName": "アカウント · {name}",
+	"frame.layout.hostRefused": "<b>{host} では変更を保存できません。</b>HolyArrs は許可した名前でのみ保存します。一度 IP アドレスで開き、設定 › サインインとセキュリティ › 許可するホスト名 に {host} を追加してください。再起動は不要です。"
 }

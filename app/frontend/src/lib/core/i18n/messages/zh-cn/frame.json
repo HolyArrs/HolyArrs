@@ -90,5 +90,6 @@
 	"frame.layout.partOffHint": "所有者或管理员可以重新开启它。",
 	"frame.layout.allPlaces": "所有位置",
 	"frame.layout.newWord": "新",
-	"frame.layout.accountName": "账户 · {name}"
+	"frame.layout.accountName": "账户 · {name}",
+	"frame.layout.hostRefused": "<b>无法在 {host} 上保存更改。</b>HolyArrs 只在你允许的名称上保存。请先用 IP 地址打开一次，然后在 设置 › 登录与安全 › 允许的主机名 中添加 {host}。无需重启。"
 }

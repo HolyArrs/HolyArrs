@@ -90,5 +90,6 @@
 	"frame.layout.partOffHint": "O dono ou um administrador pode ativá-la de novo.",
 	"frame.layout.allPlaces": "Todos os lugares",
 	"frame.layout.newWord": "novo",
-	"frame.layout.accountName": "Conta · {name}"
+	"frame.layout.accountName": "Conta · {name}",
+	"frame.layout.hostRefused": "<b>Não dá para salvar mudanças em {host}.</b> O HolyArrs só salva nos nomes que você permite. Abra-o uma vez pelo endereço IP e adicione {host} em Configurações › Login e segurança › Nomes de host permitidos. Não precisa reiniciar."
 }

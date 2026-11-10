@@ -90,5 +90,6 @@
 	"frame.layout.partOffHint": "يستطيع المالك أو أحد المشرفين تشغيله من جديد.",
 	"frame.layout.allPlaces": "كل الأماكن",
 	"frame.layout.newWord": "جديد",
-	"frame.layout.accountName": "الحساب · {name}"
+	"frame.layout.accountName": "الحساب · {name}",
+	"frame.layout.hostRefused": "<b>لا يمكن حفظ التغييرات على {host}.</b> يحفظ HolyArrs فقط على الأسماء التي تسمح بها. افتحه مرة واحدة بعنوان IP، ثم أضف {host} في الإعدادات › تسجيل الدخول والأمان › أسماء المضيفين المسموحة. لا حاجة لإعادة التشغيل."
 }

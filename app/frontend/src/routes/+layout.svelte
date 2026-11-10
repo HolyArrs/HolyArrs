@@ -11,6 +11,7 @@
 	import { afterNavigate, beforeNavigate, goto, onNavigate, preloadCode } from '$app/navigation';
 	import { hideReconnecting, loaderReady, navEnded, navStarted, showReconnecting } from '#lib/core/loader.ts';
 	import Icon from '#lib/ui/Icon.svelte';
+	import Words from '#lib/ui/Words.svelte';
 	import ToastList from './(frame)/ToastList.svelte';
 	import Theater from './(frame)/Theater.svelte';
 	import { theater } from '#lib/core/trailer/theater.svelte.ts';
@@ -483,8 +484,7 @@
 {/if}
 {#if session.s.hostRefused}
 	<div class="safe-banner" role="status" data-testid="host-refused">
-		<b>Changes can't be saved on {session.s.hostRefused}.</b> HolyArrs only saves on names you allow. Open it once by its IP address,
-		then add {session.s.hostRefused} under Settings › Sign-in › Allowed host names. No restart needed.
+		<Words key="frame.layout.hostRefused" vars={{ host: session.s.hostRefused }} />
 	</div>
 {/if}
 {#if bare}
