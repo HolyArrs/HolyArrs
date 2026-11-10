@@ -10,7 +10,7 @@
 	import Button from '#lib/ui/Button.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import AdminLinkButton from '#lib/ui/AdminLinkButton.svelte';
-	import { MoveSteps, StepFoot, ReadSheet, type ReadAnswer, type SavedKey, ItemsSheet, type SheetRow, type ShowList, ReadStep, ChooseStep, BeforeSheet, MoveStep, DoneStep, createFollower, appName, asStep, buckets, countWords, extraProblems, folderProblem, moveTotal, plural, rulesFrom, running, stepGate, type AppKind, type Line, type Move, type PathRule, type PersonChoice, type Plan, type Report, type Snapshot, type Step } from '#lib/migrate/index.ts';
+	import { MoveSteps, StepFoot, ReadSheet, type ReadAnswer, type SavedKey, ItemsSheet, type SheetRow, type ShowList, ReadStep, ChooseStep, BeforeSheet, MoveStep, DoneStep, createFollower, appName, asStep, latestPerInstance, buckets, countWords, extraProblems, folderProblem, moveTotal, plural, rulesFrom, running, stepGate, type AppKind, type Line, type Move, type PathRule, type PersonChoice, type Plan, type Report, type Snapshot, type Step } from '#lib/migrate/index.ts';
 	import { onDestroy, onMount, tick, untrack } from 'svelte';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
@@ -72,6 +72,7 @@
 	let readOpen = $state(false);
 	let readStart = $state<AppKind>('radarr');
 	let readAgain = $state(false);
+	let readAddress = $state('');
 	let reading = $state('');
 	let forgetting = $state<Snapshot | null>(null);
 	let forgetOpen = $state(false);
@@ -254,16 +255,11 @@
 	}
 	onMount(() => void load());
 
-	/** Switches on the newest read of each app, unless a move already used it. */
+	/** Switches on the newest read of each copy of an app, unless a move already used it. */
 	function defaultPicks(): number[] {
-		const out: number[] = [];
-		const kinds = new Set<string>();
-		for (const s of snapshots) {
-			if (kinds.has(s.kind)) continue;
-			kinds.add(s.kind);
-			if (!usedBy.has(s.id)) out.push(s.id);
-		}
-		return out;
+		return latestPerInstance(snapshots)
+			.filter((s) => !usedBy.has(s.id))
+			.map((s) => s.id);
 	}
 
 	// The address: one entry per step, so the browser's Back works.
@@ -365,10 +361,12 @@
 	function addApp() {
 		readStart = 'radarr';
 		readAgain = false;
+		readAddress = '';
 		readOpen = true;
 	}
-	function readAgainFor(kind: AppKind) {
-		readStart = kind;
+	function readAgainFor(s: Snapshot) {
+		readStart = s.kind as AppKind;
+		readAddress = s.address ?? '';
 		readAgain = true;
 		readOpen = true;
 	}
@@ -707,7 +705,7 @@
 	{/if}
 {/if}
 
-<ReadSheet bind:open={readOpen} bind:reading start={readStart} again={readAgain} saved={savedKeys} {onread} />
+<ReadSheet bind:open={readOpen} bind:reading start={readStart} startAddress={readAddress} again={readAgain} saved={savedKeys} known={snapshots.map((s) => s.address ?? '')} {onread} />
 
 <ItemsSheet bind:open={listOpen} title={listTitle} items={listItems} row={listRow} />
 

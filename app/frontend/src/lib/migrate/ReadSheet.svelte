@@ -27,15 +27,21 @@
 	let {
 		open = $bindable(false),
 		start = 'radarr',
+		startAddress = '',
 		again = false,
 		saved = [],
+		known = [],
 		reading = $bindable(''),
 		onread
 	}: {
 		open?: boolean;
 		start?: AppKind;
+		/** Edit: the address of the copy being read again ('' for a backup or an older read). */
+		startAddress?: string;
 		again?: boolean;
 		saved?: SavedKey[];
+		/** Addresses already read; a saved key for one of them is not offered when adding another app. */
+		known?: string[];
 		reading?: string;
 		onread: (r: ReadAnswer, kind: AppKind, usedSaved: boolean) => void;
 	} = $props();
@@ -56,14 +62,20 @@
 
 	const hidden = getContext<AppKind[] | undefined>('move-hide-apps') ?? [];
 	const shown = apps.filter((a) => !hidden.includes(a.kind));
-	const lastRead: Partial<Record<AppKind, { address: string; key: string; username: string; signWord: string }>> = {};
+	// The last typed sign-in per copy of an app (kind and address).
+	const lastRead: Record<string, { address: string; key: string; username: string; signWord: string }> = {};
 	let ctrl: AbortController | null = null;
 	let wasOpen = false;
 	let startedAt = 0;
 	let stopped = false;
 
 	const qbit = $derived(kind === 'qbittorrent');
-	const savedKey = $derived(saved.find((x) => x.kind === kind));
+	// Edit uses the key kept for that copy; adding offers a kept key only for a copy not read yet.
+	const savedKey = $derived(
+		again
+			? saved.find((x) => x.kind === kind && (startAddress ? x.address === startAddress : true))
+			: saved.find((x) => x.kind === kind && !known.includes(x.address))
+	);
 	const withSaved = $derived(way === 'api' && !!savedKey && useSaved);
 	const keptAgain = $derived(again && !!savedKey);
 	const busy = $derived(reading !== '');
@@ -75,8 +87,8 @@
 				kind = start;
 				way = 'api';
 				useSaved = true;
-				const last = again ? lastRead[start] : undefined;
-				address = again ? (saved.find((x) => x.kind === start)?.address ?? last?.address ?? '') : '';
+				const last = again ? lastRead[`${start} ${startAddress}`] : undefined;
+				address = again ? startAddress || (saved.find((x) => x.kind === start)?.address ?? last?.address ?? '') : '';
 				key = last?.key ?? '';
 				username = last?.username ?? '';
 				signWord = last?.signWord ?? '';
@@ -102,6 +114,7 @@
 		}
 		if (withSaved) {
 			b.use_saved_key = true;
+			if (savedKey) b.url = savedKey.address;
 			return b;
 		}
 		const a = address.trim();
@@ -160,7 +173,7 @@
 		changed();
 		try {
 			const r = await api.request<ReadAnswer>('/migrate/read', { method: 'POST', body: b, signal: ctrl.signal });
-			if (!usedSaved) lastRead[k] = { address, key, username, signWord };
+			if (!usedSaved) lastRead[`${k} ${r.snapshot.address ?? ''}`] = { address, key, username, signWord };
 			key = '';
 			signWord = '';
 			open = false;

@@ -77,9 +77,9 @@ func (b *builder) profiles(s *Snapshot) {
 	b.cover("quality_profiles", "custom_formats", "release_profiles", "delay_profiles", "language_profiles", "metadata_profiles")
 	for i, p := range s.QualityProfiles {
 		preset, why := matchPreset(s.Kind, p)
-		b.presets[string(s.Kind)+":"+strconv.FormatInt(p.ID, 10)] = preset
-		b.add(GroupRules, Item{Key: fmt.Sprintf("pick_rules:%d:%s:%d", b.snapID, s.Kind, p.ID), Name: p.Name, From: b.from("quality_profiles", i),
-			Detail: "becomes " + preset, Why: why, Rules: &RulesPlan{App: string(s.Kind), Profile: clip(p.Name, maxName), Preset: preset}})
+		b.presets[b.presetKey(s.Kind, p.ID)] = preset
+		b.add(GroupRules, Item{Key: fmt.Sprintf("pick_rules:%d:%s:%d", b.snapID, s.Kind, p.ID), Name: b.named(p.Name), From: b.from("quality_profiles", i),
+			Detail: "becomes " + preset, Why: why, Rules: &RulesPlan{App: string(s.Kind), Profile: clip(b.named(p.Name), maxName), Preset: preset}})
 	}
 	for i, f := range s.CustomFormats {
 		b.not(GroupRules, b.from("custom_formats", i), f.Name, "format scoring rules are not imported; Pick rules score a fixed list of traits")
@@ -173,7 +173,7 @@ func (b *builder) waitRules(s *Snapshot) {
 	}
 	var presets []string
 	for _, p := range s.QualityProfiles {
-		if pr := b.presets[string(s.Kind)+":"+strconv.FormatInt(p.ID, 10)]; pr != "" && !slices.Contains(presets, pr) {
+		if pr := b.presets[b.presetKey(s.Kind, p.ID)]; pr != "" && !slices.Contains(presets, pr) {
 			presets = append(presets, pr)
 		}
 	}
@@ -599,7 +599,7 @@ func (b *builder) titleList(s *Snapshot) {
 			b.not(GroupTitles, from+"."+issue.field, issue.what, issue.why)
 		}
 		tp := &TitlePlan{Kind: kind, ID: id, IDs: ids, Year: t.Year, KeepUpToDate: t.Monitored,
-			Preset: b.presets[string(s.Kind)+":"+strconv.FormatInt(t.ProfileID, 10)], Music: music}
+			Preset: b.presets[b.presetKey(s.Kind, t.ProfileID)], Music: music}
 		if tp.Preset == "" && kind != "artist" {
 			tp.Preset = "Standard"
 		}

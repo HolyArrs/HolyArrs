@@ -37,8 +37,8 @@ type MigrateSourceInput struct {
 	Path       string `json:"path"`
 	AllowLocal bool   `json:"allow_local_network"`
 	// UseSavedKey reads with the key the secrets file saved for this app
-	// or a past read kept for this app (owner only); the address is the
-	// saved one unless url is given. The saved key stays after the read.
+	// or a past read kept for this app (owner only): the one kept for url,
+	// or the newest when url is empty. The saved key stays after the read.
 	UseSavedKey bool `json:"use_saved_key"`
 }
 
@@ -60,19 +60,19 @@ func (h *Handlers) source(w http.ResponseWriter, r *http.Request) (src Source, s
 			webserver.Fail(w, http.StatusForbidden, "only the owner may use a saved key")
 			return Source{}, secretsfile.MoveCredentialVersion{}, false
 		}
-		c, id, has, err := secretsfile.ReadMoveCredentialVersion(r.Context(), h.Store, h.Secrets, string(in.Kind))
+		// The key goes only to the address it was saved with, with only
+		// the local-network leave it was saved with.
+		if in.URL != "" && sameAddress(in.URL) == "" {
+			webserver.Fail(w, http.StatusBadRequest, "a saved key is only sent to its saved address")
+			return Source{}, secretsfile.MoveCredentialVersion{}, false
+		}
+		c, id, has, err := secretsfile.ReadMoveCredentialAt(r.Context(), h.Store, h.Secrets, string(in.Kind), in.URL)
 		if err != nil {
 			webserver.Internal(w, "migrate", err)
 			return Source{}, secretsfile.MoveCredentialVersion{}, false
 		}
 		if !has || in.Path != "" {
-			webserver.Fail(w, http.StatusBadRequest, "there is no saved key for this app; type its key")
-			return Source{}, secretsfile.MoveCredentialVersion{}, false
-		}
-		// The key goes only to the address it was saved with, with only
-		// the local-network leave it was saved with.
-		if want := sameAddress(in.URL); in.URL != "" && (want == "" || want != sameAddress(c.Address)) {
-			webserver.Fail(w, http.StatusBadRequest, "a saved key is only sent to its saved address")
+			webserver.Fail(w, http.StatusBadRequest, "there is no saved key for this app at this address; type its key")
 			return Source{}, secretsfile.MoveCredentialVersion{}, false
 		}
 		in.URL, in.Key, in.Username, in.Password, in.AllowLocal, savedID = c.Address, c.APIKey, c.Username, c.Password, c.AllowLocalNetwork, id
@@ -149,6 +149,9 @@ func (h *Handlers) read(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		fail(w, err)
 		return
+	}
+	if src.Path == "" {
+		snap.Address = InstanceAddress(src.URL)
 	}
 	var saved Saved
 	err = h.Store.Write(r.Context(), func(tx *sql.Tx) error {
@@ -245,7 +248,7 @@ func (h *Handlers) deleteSnapshot(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	kind, _ := SnapshotKind(r.Context(), h.Store.Read(), id)
+	kind, address, _ := SnapshotKind(r.Context(), h.Store.Read(), id)
 	if err := Delete(r.Context(), h.Store, id); err != nil {
 		if errors.Is(err, ErrNoSnapshot) {
 			webserver.Fail(w, http.StatusNotFound, err.Error())
@@ -254,9 +257,16 @@ func (h *Handlers) deleteSnapshot(w http.ResponseWriter, r *http.Request) {
 		webserver.Internal(w, "migrate", err)
 		return
 	}
-	// Forgetting a read also forgets the key kept for that app.
+	// Forgetting a read also forgets the key kept for that app (a read
+	// kept before addresses were forgets every key of its kind).
 	if kind != "" {
-		if _, err := secretsfile.ForgetMoveCredential(r.Context(), h.Store, kind); err != nil {
+		var err error
+		if address != "" {
+			_, err = secretsfile.ForgetMoveCredentialAt(r.Context(), h.Store, h.Secrets, kind, address)
+		} else {
+			_, err = secretsfile.ForgetMoveCredential(r.Context(), h.Store, kind)
+		}
+		if err != nil {
 			webserver.Internal(w, "migrate", err)
 			return
 		}
@@ -272,4 +282,17 @@ func sameAddress(raw string) string {
 		return ""
 	}
 	return strings.ToLower(u.Scheme) + "://" + strings.ToLower(u.Host) + strings.TrimRight(u.EscapedPath(), "/") + "?" + u.RawQuery
+}
+
+// InstanceAddress is the plain base address a read came from: scheme and
+// host in lower case, no user, query, fragment or trailing slash; it
+// names one copy of an old app.
+func InstanceAddress(raw string) string {
+	u, err := url.Parse(strings.TrimSpace(raw))
+	if err != nil || u.Host == "" {
+		return ""
+	}
+	u.Scheme, u.Host = strings.ToLower(u.Scheme), strings.ToLower(u.Host)
+	u.User, u.RawQuery, u.ForceQuery, u.Fragment = nil, "", false, ""
+	return strings.TrimRight(u.String(), "/")
 }
