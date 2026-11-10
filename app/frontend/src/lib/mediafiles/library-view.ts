@@ -130,7 +130,7 @@ export function buildEntries(shown: TitleView[], grouped: boolean, seriesOfTitle
 		for (const t of ts) out.push({ type: 'row', key: `r${t.id}`, t });
 	}
 	if (loose.length) {
-		out.push({ type: 'head', key: 'h0', id: 0, name: tr('mediafiles.view.noSeries'), count: loose.length });
+		out.push({ type: 'head', key: 'h0', id: 0, name: tr('mediafiles.view.noCollection'), count: loose.length });
 		for (const t of loose) out.push({ type: 'row', key: `r${t.id}`, t });
 	}
 	return out;

@@ -207,8 +207,8 @@
 		<div class="field"><label for="copy-new-label">{t('mediafiles.copy.versionName')}</label><input id="copy-new-label" class="input" bind:value={addLabel} maxlength="40" required /></div>
 		<div class="field"><label for="copy-new-rules">{t('mediafiles.copy.pickRules')}</label><select id="copy-new-rules" class="input" bind:value={addRules}>{#each rules as rule (rule.id)}<option value={rule.id}>{rule.name}</option>{/each}</select></div>
 		<div class="field"><label for="copy-new-folder">{t('mediafiles.copy.libraryFolder')}</label><select id="copy-new-folder" class="input" bind:value={addFolder}>{#each folders as folder (folder.id)}<option value={folder.id}>{folder.label || folder.path} ({folder.path})</option>{/each}</select></div>
-		<div class="field"><label for="copy-new-edition">{t('mediafiles.copy.editionWanted')} <span class="muted">{t('mediafiles.copy.optional')}</span></label><input id="copy-new-edition" class="input" bind:value={addEdition} maxlength="80" placeholder={t('mediafiles.copy.editionExample')} /></div>
-		<div class="field"><label for="copy-new-audio">{t('mediafiles.copy.audioWanted')} <span class="muted">{t('mediafiles.copy.optionalAudio')}</span></label><input id="copy-new-audio" class="input" bind:value={addAudio} placeholder={t('mediafiles.copy.audioExample')} /></div>
+		<div class="field"><label for="copy-new-edition">{t('mediafiles.copy.editionWish')} <span class="muted">{t('mediafiles.copy.optional')}</span></label><input id="copy-new-edition" class="input" bind:value={addEdition} maxlength="80" placeholder={t('mediafiles.copy.editionExample')} /></div>
+		<div class="field"><label for="copy-new-audio">{t('mediafiles.copy.audioWish')} <span class="muted">{t('mediafiles.copy.optionalAudio')}</span></label><input id="copy-new-audio" class="input" bind:value={addAudio} placeholder={t('mediafiles.copy.audioExample')} /></div>
 		<label class="checkline"><input type="checkbox" bind:checked={addKeep} /> <span><b>{t('mediafiles.copy.lookFor')}</b></span></label>
 		{#if formError}<p class="form-error" role="alert">{formError}</p>{/if}
 	</form>

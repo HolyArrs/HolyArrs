@@ -369,7 +369,7 @@
 								<div class="series-head" use:measure={e.key} data-key={e.key}>
 									<h2>{e.name}</h2>
 									<span>{tr('mediafiles.list.inLibraryCount', { n: e.count })}</span>
-									{#if e.id}<a href={to(`/library/collections/${e.id}`)}>{tr('mediafiles.list.openSeries')}</a>{/if}
+									{#if e.id}<a href={to(`/library/collections/${e.id}`)}>{tr('mediafiles.list.openCollection')}</a>{/if}
 								</div>
 							{:else}
 								{@const t = e.t}
