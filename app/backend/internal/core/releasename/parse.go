@@ -39,6 +39,7 @@ var (
 	reLeadBrack  = regexp.MustCompile(`^\[([^\[\]]+)\]\s*`) // a group name may hold spaces: [Lab Fansub]
 	reResWord    = regexp.MustCompile(`^(480|576|720|1080|2160)[pi]$`)
 	reYear       = regexp.MustCompile(`^(19|20)\d\d$`)
+	reParenYear  = regexp.MustCompile(`\s\((19|20)\d\d\)(\s|$)`)
 	reChannels   = regexp.MustCompile(`(?:^|[^0-9])([1-9]) ([01])(?:$|[^0-9])`)
 	reH26x       = regexp.MustCompile(`\b[hx] ?26([45])\b`)
 	reFix        = regexp.MustCompile(`^(proper|repack|rerip)(\d)?$`)
@@ -247,7 +248,9 @@ func Parse(name string, h Hints) Result {
 		for _, t := range after[1:] {
 			allTags = allTags && isTag(t)
 		}
-		if !compound && allTags && after[0] != "" {
+		// "WEBDL-1080p", the old apps' quality word at the end of a Library
+		// file name: the part after the hyphen is a tag, not a group.
+		if !compound && allTags && after[0] != "" && !isTag(after[0]) {
 			r.Group = sure(after[0])
 			trailing = after[1:]
 			s = s[:i]
@@ -288,12 +291,20 @@ func Parse(name string, h Hints) Result {
 
 	toks := reSeparators.Split(strings.TrimSpace(s), -1)
 	toks = slices.DeleteFunc(toks, func(t string) bool { return t == "" })
-	toks = append(toks, trailing...)
+	toks = append(splitTagPairs(toks), trailing...)
 
-	// Anchor: the first tag, and the last year before it.
+	// Anchor: the first tag, and the last year before it. A year in
+	// brackets, as the old apps name Library folders and files
+	// ("Charlotte's Web (1973) Bluray-1080p"), ends the title, so title
+	// words before it are never read as tags.
+	titleUpTo := 0
+	if m := reParenYear.FindStringIndex(s); m != nil {
+		pre := reSeparators.Split(strings.TrimSpace(s[:m[0]]), -1)
+		titleUpTo = len(slices.DeleteFunc(pre, func(t string) bool { return t == "" }))
+	}
 	first := len(toks)
 	for i, t := range toks {
-		if i > 0 && isTag(t) {
+		if i > titleUpTo && isTag(t) {
 			first = i
 			break
 		}
@@ -375,6 +386,29 @@ func setOf(words ...string) map[string]bool {
 		m[w] = true
 	}
 	return m
+}
+
+// splitTagPairs splits a word like "WEBDL-1080p" or "Bluray-720p" (the
+// old apps' quality word) into its two tags; other words stay as they are.
+func splitTagPairs(toks []string) []string {
+	out := make([]string, 0, len(toks))
+	for _, t := range toks {
+		if a, b, ok := strings.Cut(t, "-"); ok && a != "" && b != "" && !tagWords[strings.ToLower(t)] && (isTag(a) || isOldAppSource(a)) && isTag(b) {
+			out = append(out, a, b)
+			continue
+		}
+		out = append(out, t)
+	}
+	return out
+}
+
+// isOldAppSource is a source word only the old apps' quality names use.
+func isOldAppSource(tok string) bool {
+	switch strings.ToLower(tok) {
+	case "webdl", "bluray", "remux", "hdtv", "sdtv", "webrip":
+		return true
+	}
+	return false
 }
 
 func isTag(tok string) bool {

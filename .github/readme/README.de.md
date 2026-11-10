@@ -200,7 +200,7 @@ Die Images liegen auf Docker Hub als [`holyarrs/holyarrs`](https://hub.docker.co
 | Tag | Dafür nutzen |
 | :----: | --- |
 | `latest` | Die neueste Version. |
-| `1.0.4` | Eine genaue Version. Sie ändert sich nie. |
+| `1.0.5` | Eine genaue Version. Sie ändert sich nie. |
 
 ## Verwendung
 

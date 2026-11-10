@@ -239,7 +239,7 @@ func goodEnoughTx(ctx context.Context, tx *sql.Tx, v mediafiles.Version, keep bo
 		if f.ReleaseName != nil && *f.ReleaseName != "" {
 			name = *f.ReleaseName
 		}
-		ge := mediafiles.ReachesGoodEnough(name, pr.Body) && fileMeetsVersionChoices(v, f)
+		ge := mediafiles.OwnedReachesGoodEnough(name, f.MediaInfo, pr.Body) && fileMeetsVersionChoices(v, f)
 		to := sl.State
 		switch {
 		case sl.State == mediafiles.SlotInLibrary && !ge && keep && v.KeepUpToDate:
