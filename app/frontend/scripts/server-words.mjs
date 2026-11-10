@@ -14,7 +14,7 @@ const out = new URL('../src/lib/core/i18n/messages/en/server-lines.json', import
 const banned = ['Monitored', 'Activity', 'Wanted', 'Cutoff', 'Quality Profile', 'Root Folder', 'Download Client',
 	'Interactive Search', 'Manual Import', 'Grabbed', 'Connections', 'Discover', 'Series'];
 // Files whose fmt.Sprintf lines are display text (card lines, labels).
-const display = /(discover[\\/](home|explore_np|title_view)|shows[\\/]episode_labels|requests[\\/](episodes|follows\w*|reports)|health[\\/](health|routes_settings_status)|migrate[\\/]plan_\w+|metadata[\\/]moods)\.go$/;
+const display = /(accounts[\\/]events|discover[\\/](home|explore_np|title_view)|shows[\\/]episode_labels|requests[\\/](episodes|follows\w*|reports)|health[\\/](health|routes_settings_status)|migrate[\\/]plan_\w+|metadata[\\/]moods)\.go$/;
 
 function walk(dir, files = []) {
 	for (const name of readdirSync(dir)) {
@@ -73,6 +73,7 @@ function parts(e) {
 }
 
 function slotName(e) {
+	if (/\b(?:byName|userName)\(/.test(e)) return 'name';
 	const inner = e.match(/\(([^()]*)\)\s*$/);
 	const ids = (inner && inner[1].trim() ? inner[1] : e).match(/[A-Za-z_]\w*/g) ?? ['x'];
 	return ids[ids.length - 1].toLowerCase();
@@ -232,6 +233,11 @@ for (const file of walk(root)) {
 	// Event summaries (the bell and history).
 	at(/\bSummary:\s*/g, (i) => add(file, template(expr(src, i))));
 	at(/\bsummary\s*:?=\s*/g, (i) => add(file, template(expr(src, i))));
+	// The line of an Event written through a helper: a.event(r, by, kind, line), accountEvent(...), h.Event(...), m.event(...).
+	at(/\b(?:a\.event|accountEvent|h\.Event|m\.event)\(/g, (i) => {
+		const a = args(src, i);
+		if (a.length >= 4) add(file, template(a[3]));
+	});
 	// Labels.
 	at(/\b\w*Label:\s*(?=")/g, (i) => add(file, template(expr(src, i))));
 	for (const m of src.matchAll(/var\s+\w*(?:Labels?|Words|Names)\s*=\s*map\[[^\]]+\]string\s*\{([\s\S]*?)\n\}/g))
