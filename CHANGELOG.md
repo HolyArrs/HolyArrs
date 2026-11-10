@@ -2,6 +2,14 @@
 
 All notable changes to HolyArrs are listed here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## 1.0.13
+
+### Fixed
+
+- The Settings search box reads as an action in every language, for example "Cerca nelle impostazioni" in Italian.
+- Card labels such as New movie, New show, New season and New episodes are translated in all 16 languages.
+- Italian reads more naturally: word order and many literal translations fixed.
+
 ## 1.0.12
 
 ### Fixed
