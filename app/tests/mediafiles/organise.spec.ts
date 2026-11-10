@@ -136,11 +136,11 @@ test('delete: the plan shows first, changes with each choice, and files go to th
 	await expect(plan).toContainText('1 file to the holding folder for 7 days');
 	await dialog.getByRole('switch', { name: /^Never add again/ }).click();
 	await expect(plan).toContainText('Lists never add it again');
-	// Still nothing has happened; deleting files too wants the name typed first.
+	// Still nothing has happened; held files come back with Undo, so no name is asked for.
 	expect(readdirSync(join(oldLib, 'Willow Signal {tmdb-900013}'))).toEqual(['willow signal.mkv']);
 	const go = dialog.getByRole('button', { name: 'Delete movie and files' });
-	await expect(go).toBeDisabled();
-	await dialog.getByRole('textbox', { name: /Type Willow Signal to confirm/ }).fill('Willow Signal');
+	await expect(go).toBeEnabled();
+	await expect(dialog.getByRole('textbox')).toHaveCount(0);
 	await go.click();
 	await expect(page.getByText("Willow Signal deleted")).toBeVisible();
 	await expect(page.getByText("Files kept 7 days")).toBeVisible();

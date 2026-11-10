@@ -291,5 +291,6 @@
 	"migrate.notMoved2": "Не импортировано · {name}",
 	"migrate.holyarrsHandlesTheseIts": "HolyArrs обрабатывает это по-своему. Делать ничего не нужно.",
 	"migrate.allApps": "Все приложения",
-	"migrate.ifAnOldApp": "Если старое приложение видит папку по другому пути, укажите оба."
+	"migrate.ifAnOldApp": "Если старое приложение видит папку по другому пути, укажите оба.",
+	"migrate.doneOfTotal": "{done} из {total}"
 }

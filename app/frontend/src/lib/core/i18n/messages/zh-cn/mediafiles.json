@@ -16,7 +16,6 @@
 	"mediafiles.delete.never": "永不再添加",
 	"mediafiles.delete.neverHint": "列表会跳过它",
 	"mediafiles.delete.willHappen": "将会发生的事",
-	"mediafiles.delete.type": "输入 <b>{name}</b> 以确认",
 	"mediafiles.delete.cancel": "取消",
 	"mediafiles.delete.deleting": "删除中…",
 	"mediafiles.delete.kindAndFiles": "删除{kind}及文件",

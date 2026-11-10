@@ -1,0 +1,14 @@
+{
+	"settings.layout.settings": "Impostazioni",
+	"settings.layout.home": "Home",
+	"settings.layout.sections": "Sezioni delle impostazioni",
+	"settings.layout.needsAttention": "Richiede attenzione",
+	"settings.layout.needsAttentionLower": "richiede attenzione",
+	"settings.layout.blocked": "Non puoi cambiare questo",
+	"settings.layout.backToSettings": "Torna a Impostazioni",
+	"settings.layout.setPasswordFirst": "Prima imposta una password",
+	"settings.layout.setPasswordDesc": "Chiavi, password, persone e backup richiedono una password di HolyArrs. Non ne hai ancora una.",
+	"settings.layout.setPasswordLabel": "Imposta una password",
+	"settings.layout.confirmPasswordLabel": "Conferma la tua password",
+	"settings.layout.confirmPasswordDesc": "Chiavi, password, persone e backup richiedono la tua password. Vale per 10 minuti."
+}

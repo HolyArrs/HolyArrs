@@ -1,0 +1,10 @@
+{
+	"settings.home.advanced": "Avanzate",
+	"settings.home.page": "{group} · pagina",
+	"settings.home.title": "Impostazioni",
+	"settings.home.search": "Cerca nelle impostazioni",
+	"settings.home.matching": "Impostazioni corrispondenti",
+	"settings.home.noMatch": "Nessuna impostazione corrispondente",
+	"settings.home.noMatchText": "Prova un'altra parola, tipo cartella, chiave o password.",
+	"settings.home.clear": "Cancella la ricerca"
+}

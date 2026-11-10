@@ -1,0 +1,18 @@
+{
+	"settings.logs.title": "Günlükler",
+	"settings.logs.download": "İndir",
+	"settings.logs.filter": "Günlüğü filtrele",
+	"settings.logs.level": "Düzey",
+	"settings.logs.every": "Her satır",
+	"settings.logs.warnings": "Uyarılar ve hatalar",
+	"settings.logs.errors": "Yalnızca hatalar",
+	"settings.logs.text": "Metin",
+	"settings.logs.example": "örn. qBittorrent",
+	"settings.logs.from": "Başlangıç",
+	"settings.logs.to": "Bitiş",
+	"settings.logs.apply": "Uygula",
+	"settings.logs.clear": "Temizle",
+	"settings.logs.lines": "Satır",
+	"settings.logs.newer": "Daha yeni",
+	"settings.logs.older": "Daha eski"
+}

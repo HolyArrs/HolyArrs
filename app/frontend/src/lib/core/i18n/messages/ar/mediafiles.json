@@ -16,7 +16,6 @@
 	"mediafiles.delete.never": "لا تضفه مرة أخرى",
 	"mediafiles.delete.neverHint": "تتخطاه القوائم",
 	"mediafiles.delete.willHappen": "ما الذي سيحدث",
-	"mediafiles.delete.type": "اكتب <b>{name}</b> للتأكيد",
 	"mediafiles.delete.cancel": "إلغاء",
 	"mediafiles.delete.deleting": "جارٍ الحذف…",
 	"mediafiles.delete.kindAndFiles": "احذف {kind} والملفات",

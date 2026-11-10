@@ -1,12 +1,13 @@
 <script lang="ts">
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	import { getContext as moveContext } from 'svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import StepCapsule from './StepCapsule.svelte';
 	import ResultGroups from './ResultGroups.svelte';
 	import type { ShowList } from './ItemsSheet.svelte';
-	import { moveCounts, running as isRunning, type Bucket, type Move } from './move.ts';
+	import { moveCounts, progressWords, running as isRunning, type Bucket, type Move } from './move.ts';
 	import { to } from '../core/paths.ts';
 	import { dateTime } from '../core/format.ts';
 
@@ -38,7 +39,7 @@
 	const undone = $derived(move.state === 'undone');
 	const undoFailed = $derived(move.undo_state === 'failed' && !undone);
 	const lines = $derived(rep?.lines ?? []);
-	const detail = $derived(note.replace(/\s+(moved|undone)\.?$/, ''));
+	const detail = $derived(progressWords(note));
 	const plainNext = $derived(!rep || !!rep.undo || rep.lines.length === 0);
 </script>
 
@@ -69,7 +70,7 @@
 	<SettingsCard id="move-todo" title={t('migrate.needsYou')}>
 		{#if plainNext}
 			{#each rep.next as n (n)}
-				<div class="srow"><p class="txt">{n}</p></div>
+				<div class="srow"><p class="txt">{serverWords(n)}</p></div>
 			{/each}
 		{:else}
 			<div class="cards">

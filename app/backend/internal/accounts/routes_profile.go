@@ -19,7 +19,7 @@ type myProfile struct {
 }
 
 // languages the app has words for; "" follows the browser.
-var languages = map[string]bool{"": true, "en": true, "es": true, "pt-br": true, "fr": true, "de": true, "ru": true, "uk": true, "zh-cn": true, "ja": true, "ko": true, "hi": true, "ar": true}
+var languages = map[string]bool{"": true, "en": true, "es": true, "pt-br": true, "fr": true, "de": true, "ru": true, "uk": true, "zh-cn": true, "ja": true, "ko": true, "hi": true, "ar": true, "it": true, "nl": true, "pl": true, "tr": true}
 
 // My profile: the display name each person sets for themselves. The sign-in
 // name (username) and the role are not editable here; an owner changes a

@@ -134,9 +134,9 @@ func (b *builder) pathMaps() {
 		case placed[r.from]:
 			b.p.Mapped = append(b.p.Mapped, r.from)
 		case clash[key(r)]:
-			b.not(GroupDownloaders, r.from, r.theirs+" -> "+r.ours, "another app sends this client folder somewhere else; neither is moved, add the right one yourself")
+			b.not(GroupDownloaders, r.from, r.theirs+" -> "+r.ours, "another app sends this client folder somewhere else; neither is imported, add the right one yourself")
 		default:
-			b.not(GroupDownloaders, r.from, r.theirs+" -> "+r.ours, "no Downloader at "+r.host+" is moved")
+			b.not(GroupDownloaders, r.from, r.theirs+" -> "+r.ours, "no Downloader at "+r.host+" is imported")
 		}
 	}
 }

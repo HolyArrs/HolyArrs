@@ -291,5 +291,6 @@
 	"migrate.notMoved2": "가져오지 않음 · {name}",
 	"migrate.holyarrsHandlesTheseIts": "HolyArrs가 자체 방식으로 처리합니다. 할 일은 없습니다.",
 	"migrate.allApps": "모든 앱",
-	"migrate.ifAnOldApp": "기존 앱이 폴더를 다른 경로로 보면 두 경로를 모두 입력하세요."
+	"migrate.ifAnOldApp": "기존 앱이 폴더를 다른 경로로 보면 두 경로를 모두 입력하세요.",
+	"migrate.doneOfTotal": "{total}개 중 {done}개"
 }

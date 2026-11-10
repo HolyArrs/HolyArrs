@@ -56,6 +56,10 @@ describe('browserLocale', () => {
 		expect(browserLocale(['zh-TW'])).toBe('zh-cn');
 		expect(browserLocale(['ar-EG'])).toBe('ar');
 		expect(browserLocale(['uk-UA'])).toBe('uk');
+		expect(browserLocale(['it-IT'])).toBe('it');
+		expect(browserLocale(['nl-BE'])).toBe('nl');
+		expect(browserLocale(['pl-PL'])).toBe('pl');
+		expect(browserLocale(['tr-TR'])).toBe('tr');
 		expect(browserLocale(['xx'])).toBe('en');
 		expect(browserLocale(['xx', 'de-AT'])).toBe('de');
 	});
