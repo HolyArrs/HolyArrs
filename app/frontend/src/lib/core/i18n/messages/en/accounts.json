@@ -367,5 +367,6 @@
 	"accounts.language.label": "Language",
 	"accounts.language.auto": "Automatic",
 	"accounts.language.hint": "Automatic follows your browser. Saved on your account.",
-	"accounts.language.saveFailed": "Couldn't save the language"
+	"accounts.language.saveFailed": "Couldn't save the language",
+	"accounts.account.watchEveryone": "The owner turned this on for everyone. Turn both off to stop it."
 }

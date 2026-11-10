@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net"
 	"strconv"
+	"strings"
 
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 
@@ -105,7 +106,7 @@ func protectEngine(e Engine, d domain.Downloader, instance string) Engine {
 	if d.SecretRef != nil {
 		secret = strconv.FormatInt(*d.SecretRef, 10)
 	}
-	return &guardedEngine{Engine: e, target: outbound.Target{Kind: "downloader", Identity: []string{instance, strconv.FormatInt(d.ID, 10), d.Adapter, d.URL, d.Username, secret, d.Category, strconv.FormatBool(d.AllowLocal)}}, begin: outbound.Begin}
+	return &guardedEngine{Engine: e, target: outbound.Target{Kind: "downloader", Identity: []string{instance, strconv.FormatInt(d.ID, 10), d.Adapter, d.URL, d.Username, secret, d.Category, strings.Join(otherCategories(d), "/"), strconv.FormatBool(d.AllowLocal)}}, begin: outbound.Begin}
 }
 
 func (g *guardedEngine) run(ctx context.Context, call func() error) error {

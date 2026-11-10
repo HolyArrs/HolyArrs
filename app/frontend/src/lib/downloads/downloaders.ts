@@ -23,6 +23,10 @@ export interface DownloaderView {
 	username: string;
 	secret: string;
 	category: string;
+	/** Category for one kind of title; empty uses category. */
+	category_movies?: string;
+	category_shows?: string;
+	category_music?: string;
 	priority: number;
 	path_map: PathMap[];
 	allow_local_network: boolean;
@@ -70,6 +74,9 @@ export interface DownloaderForm {
 	username: string;
 	secret: string;
 	category: string;
+	category_movies: string;
+	category_shows: string;
+	category_music: string;
 	priority: number;
 	path_map: PathMap[];
 	allow_local_network: boolean;
@@ -147,6 +154,9 @@ export function emptyForm(kind: DownloaderView['kind'] = 'qbittorrent'): Downloa
 		username: '',
 		secret: '',
 		category: kind === 'sabnzbd' ? 'movies' : 'holyarrs',
+		category_movies: '',
+		category_shows: '',
+		category_music: '',
 		priority: 1,
 		path_map: [],
 		allow_local_network: true,
@@ -164,6 +174,9 @@ export function formFrom(d: DownloaderView): DownloaderForm {
 		username: d.username,
 		secret: d.secret,
 		category: d.category,
+		category_movies: d.category_movies ?? '',
+		category_shows: d.category_shows ?? '',
+		category_music: d.category_music ?? '',
 		priority: d.priority,
 		path_map: d.path_map.map((p) => ({ ...p })),
 		allow_local_network: d.allow_local_network,
@@ -181,6 +194,9 @@ export function formBody(f: DownloaderForm): Record<string, unknown> {
 		username: f.kind === 'qbittorrent' || f.kind === 'transmission' || f.kind === 'nzbget' ? f.username.trim() : '',
 		secret: f.secret,
 		category: f.category.trim(),
+		category_movies: f.category_movies.trim(),
+		category_shows: f.category_shows.trim(),
+		category_music: f.category_music.trim(),
 		priority: Number(f.priority) || 1,
 		path_map: f.path_map.map((p) => ({ theirs: p.theirs.trim(), ours: p.ours.trim() })).filter((p) => p.theirs || p.ours),
 		allow_local_network: f.allow_local_network,

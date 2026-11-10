@@ -94,9 +94,15 @@ func (m *Manager) Check(ctx context.Context, d domain.Downloader) (Health, error
 			raw = guarded.Engine
 		}
 		raw = unwrapReadOnly(raw)
-		if s, ok := raw.(*Sabnzbd); ok && d.Category != "" && d.Category != "*" {
-			if has, cerr := s.HasCategory(ctx, d.Category); cerr == nil && !has {
-				err = fmt.Errorf("%w (%s)", ErrNoCategory, d.Category)
+		if s, ok := raw.(*Sabnzbd); ok {
+			for _, c := range d.Categories() {
+				if c == "" || c == "*" {
+					continue
+				}
+				if has, cerr := s.HasCategory(ctx, c); cerr == nil && !has {
+					err = fmt.Errorf("%w (%s)", ErrNoCategory, c)
+					break
+				}
 			}
 		}
 	}

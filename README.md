@@ -200,7 +200,7 @@ Images live on Docker Hub as [`holyarrs/holyarrs`](https://hub.docker.com/r/holy
 | Tag | Use it for |
 | :----: | --- |
 | `latest` | The newest release. |
-| `1.0.9` | One exact version. It never moves. |
+| `1.0.10` | One exact version. It never moves. |
 
 ## Usage
 

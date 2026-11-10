@@ -287,6 +287,17 @@
 		<input id="dl-prio" class="input" type="number" min="1" max="50" bind:value={form.priority} />
 	</Field>
 </div>
+<div class="two three">
+	<Field id="dl-cat-movies" label={t('settings.downloaders.categoryMovies')} hint={t('settings.downloaders.categoryKindHint')}>
+		<input id="dl-cat-movies" class="input" bind:value={form.category_movies} maxlength="64" aria-describedby="dl-cat-movies-hint" />
+	</Field>
+	<Field id="dl-cat-shows" label={t('settings.downloaders.categoryShows')} hint={t('settings.downloaders.categoryKindHint')}>
+		<input id="dl-cat-shows" class="input" bind:value={form.category_shows} maxlength="64" aria-describedby="dl-cat-shows-hint" />
+	</Field>
+	<Field id="dl-cat-music" label={t('settings.downloaders.categoryMusic')} hint={t('settings.downloaders.categoryKindHint')}>
+		<input id="dl-cat-music" class="input" bind:value={form.category_music} maxlength="64" aria-describedby="dl-cat-music-hint" />
+	</Field>
+</div>
 <Field id="dl-tags" label={t('settings.downloaders.tags')} hint={t('settings.downloaders.tagsHint')}>
 	<TagInput id="dl-tags" bind:value={form.tags} describedby="dl-tags-hint" testid="dl-tags" />
 </Field>
@@ -587,6 +598,9 @@
 	}
 	.two :global(.field + .field) {
 		margin-top: 0;
+	}
+	.three {
+		grid-template-columns: 1fr 1fr 1fr;
 	}
 	.group {
 		border: 0;

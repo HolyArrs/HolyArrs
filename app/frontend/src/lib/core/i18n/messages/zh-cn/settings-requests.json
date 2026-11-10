@@ -29,5 +29,7 @@
 	"settings.requests.plex": "Plex 想看清单",
 	"settings.requests.plexDesc": "Plex 想看清单中的条目会变成请求",
 	"settings.requests.plexOn": "从 Plex 想看清单发起请求",
-	"settings.requests.plexOnHint": "每个人在“我的账户”中自行开启，并受其限额约束。"
+	"settings.requests.plexOnHint": "每个人在“我的账户”中自行开启，并受其限额约束。",
+	"settings.requests.plexEveryone": "为所有使用 Plex 登录的人开启",
+	"settings.requests.plexEveryoneHint": "每个人都可以在“我的账户”中为自己关闭。"
 }

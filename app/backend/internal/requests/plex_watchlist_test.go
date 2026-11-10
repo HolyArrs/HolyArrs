@@ -420,3 +420,71 @@ func TestWatchlistLookupErrorIsRetriedNoIDStays(t *testing.T) {
 		t.Fatalf("k-down %q after %d tries", got, tries)
 	}
 }
+
+func TestWatchlistPeopleEveryoneSwitch(t *testing.T) {
+	r, f, w := watchRig(t)
+	ctx := context.Background()
+	tokens := map[int64]string{r.ana.UserID: "tok-ana", r.bo.UserID: "tok-bo"}
+	w.Token = func(_ context.Context, id int64) (string, error) { return tokens[id], nil }
+	has := func(ids []int64, id int64) bool {
+		for _, x := range ids {
+			if x == id {
+				return true
+			}
+		}
+		return false
+	}
+	// ana turns it on, bo turns it off, luis chooses nothing.
+	if err := SaveWatchlistSwitches(ctx, r.st, r.ana.UserID, WatchlistSwitches{Movies: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := SaveWatchlistSwitches(ctx, r.st, r.bo.UserID, WatchlistSwitches{}); err != nil {
+		t.Fatal(err)
+	}
+	// Switch off: only those who turned it on.
+	ids, err := w.people(ctx)
+	if err != nil || len(ids) != 1 || ids[0] != r.ana.UserID {
+		t.Fatalf("switch off: %v %v", ids, err)
+	}
+	set, _ := ReadSettings(ctx, r.st.Read())
+	set.PlexWatchlistsEveryone = true
+	if err := SaveSettings(ctx, r.st, set, domain.System); err != nil {
+		t.Fatal(err)
+	}
+	if set, _ := ReadSettings(ctx, r.st.Read()); !set.PlexWatchlistsEveryone {
+		t.Fatal("everyone switch not kept")
+	}
+	// Switch on: luis has no token and is left out; bo turned it off.
+	ids, err = w.people(ctx)
+	if err != nil || !has(ids, r.ana.UserID) || has(ids, r.bo.UserID) || has(ids, r.luis.UserID) {
+		t.Fatalf("switch on, no token: %v %v", ids, err)
+	}
+	// A pass for someone without a token says nothing and calls nobody.
+	calls := f.count()
+	if _, err := w.Pass(ctx, r.luis.UserID); err != nil || f.count() != calls {
+		t.Fatalf("quiet pass: %v", err)
+	}
+	if st, _ := ReadWatchlist(ctx, r.st.Read(), r.luis.UserID); st.Error != "" || st.CheckedAt != nil {
+		t.Fatalf("quiet pass wrote %+v", st)
+	}
+	// With a token luis is read for movies and shows, and stays in after a pass.
+	tokens[r.luis.UserID] = "tok-luis"
+	f.set("tok-luis", plexMovie("k-l1", "Quiet Orchard", 2022, "tmdb://900003"))
+	ids, _ = w.people(ctx)
+	if !has(ids, r.luis.UserID) || has(ids, r.bo.UserID) {
+		t.Fatalf("switch on, token: %v", ids)
+	}
+	if _, err := w.Pass(ctx, r.luis.UserID); err != nil {
+		t.Fatal(err)
+	}
+	if ids, _ = w.people(ctx); !has(ids, r.luis.UserID) {
+		t.Fatalf("luis dropped after a pass: %v", ids)
+	}
+	// luis turns it off himself: left out from then on.
+	if err := SaveWatchlistSwitches(ctx, r.st, r.luis.UserID, WatchlistSwitches{}); err != nil {
+		t.Fatal(err)
+	}
+	if ids, _ = w.people(ctx); has(ids, r.luis.UserID) {
+		t.Fatalf("luis still read after turning off: %v", ids)
+	}
+}

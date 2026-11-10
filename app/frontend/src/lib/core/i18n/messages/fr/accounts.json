@@ -367,5 +367,6 @@
 	"accounts.language.label": "Langue",
 	"accounts.language.auto": "Automatique",
 	"accounts.language.hint": "Automatique suit votre navigateur. Enregistré sur votre compte.",
-	"accounts.language.saveFailed": "Impossible d'enregistrer la langue"
+	"accounts.language.saveFailed": "Impossible d'enregistrer la langue",
+	"accounts.account.watchEveryone": "Le propriétaire l’a activé pour tout le monde. Désactivez les deux pour l’arrêter."
 }

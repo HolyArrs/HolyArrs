@@ -367,5 +367,6 @@
 	"accounts.language.label": "언어",
 	"accounts.language.auto": "자동",
 	"accounts.language.hint": "자동은 브라우저 설정을 따릅니다. 내 계정에 저장됩니다.",
-	"accounts.language.saveFailed": "언어를 저장하지 못했습니다"
+	"accounts.language.saveFailed": "언어를 저장하지 못했습니다",
+	"accounts.account.watchEveryone": "소유자가 모두에게 켰습니다. 멈추려면 둘 다 끄세요."
 }

@@ -26,7 +26,8 @@
 		show_pick_rules_id: 0,
 		music_library_folder_id: 0,
 		music_pick_rules_id: 0,
-		plex_watchlists: false
+		plex_watchlists: false,
+		plex_watchlists_everyone: false
 	});
 	let folders = $state<LibraryFolder[]>([]);
 	let rules = $state<PickRulesView[]>([]);
@@ -180,12 +181,16 @@
 				</Field>
 			{/snippet}
 		</SettingsCard>
-		{#if !session.held('plex_watchlists')}<SettingsCard id="plex-watchlists" title={t('settings.requests.plex')} description={t('settings.requests.plexDesc')}>
+		<SettingsCard id="plex-watchlists" title={t('settings.requests.plex')} description={t('settings.requests.plexDesc')}>
 			<label class="checkline">
 				<input id="plex-watchlists-on" type="checkbox" bind:checked={settings.plex_watchlists} />
 				<span><b>{t('settings.requests.plexOn')}</b><br /><span class="hint">{t('settings.requests.plexOnHint')}</span></span>
 			</label>
-		</SettingsCard>{/if}
+			<label class="checkline">
+				<input id="plex-watchlists-everyone" type="checkbox" bind:checked={settings.plex_watchlists_everyone} disabled={!settings.plex_watchlists} />
+				<span><b>{t('settings.requests.plexEveryone')}</b><br /><span class="hint">{t('settings.requests.plexEveryoneHint')}</span></span>
+			</label>
+		</SettingsCard>
 		{#if error}<p class="form-error" role="alert">{error}</p>{/if}
 	</form>
 	<SaveBar {dirty} form="wishlist-form" saving={busy} ondiscard={() => (settings = JSON.parse(saved))} />
