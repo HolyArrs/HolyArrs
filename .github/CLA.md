@@ -41,8 +41,8 @@ You accept and agree to the following terms and conditions for Your present and 
 
 ## How to agree
 
-On your first pull request, a bot posts a comment. Reply with exactly:
+On your first pull request, HolyArrs Bot posts a comment. Add a comment (a normal comment, not a review) with this line:
 
     I have read the CLA and I agree to it.
 
-The bot records your GitHub name, the date and the pull request. You only do this once. If you contribute for a company, ask us first; your employer may need to agree too (Section 5).
+HolyArrs Bot records your GitHub name and account number, the pull request, a link to your comment and its words, the date, and which version of this agreement you agreed to. They are kept on the `cla-signatures` branch of this repository. You only do this once. To have your entry changed, write to support@HolyArrs.com. If you contribute for a company, ask us first; your employer may need to agree too (Section 5).
