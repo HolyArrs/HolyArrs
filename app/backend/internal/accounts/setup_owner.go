@@ -36,6 +36,11 @@ func (a *Auth) state(w http.ResponseWriter, r *http.Request) {
 	if a.configUnmapped {
 		out["config_unmapped"] = true
 	}
+	// Opened by a name saves are refused on: say so on arrival, not on the
+	// first save.
+	if !a.hostAllowed(r) {
+		out["host_refused"] = echoHost(r.Host)
+	}
 	if !ok {
 		out["setup_ways"] = setupWays
 	}

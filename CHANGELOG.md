@@ -2,6 +2,16 @@
 
 All notable changes to HolyArrs are listed here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## 1.0.7
+
+### Added
+
+- Pick rules can take their release scores from TRaSH Guides, and sync them again later without duplicates. ([#172](https://github.com/HolyArrs/HolyArrs/issues/172))
+
+### Fixed
+
+- Opening HolyArrs by a name it won't save on now shows how to allow that name, on every page, before you try to save. ([#178](https://github.com/HolyArrs/HolyArrs/issues/178))
+
 ## 1.0.6
 
 ### Added
