@@ -1,0 +1,10 @@
+# Advisories the scanners report that do not reach HolyArrs, each with the reason.
+# Remove an entry as soon as a fixed version can be used.
+
+[[IgnoredVulns]]
+id = "GO-2026-5932"
+reason = "About golang.org/x/crypto/openpgp, which HolyArrs does not import (only argon2 and blake2b). No tagged x/crypto release carries the change yet."
+
+[[IgnoredVulns]]
+id = "GHSA-gcqx-w48m-w2h4"
+reason = "deepmerge is used only by the web build tool (vite-plugin-svelte) on the build machine. It is not in the shipped app, and no fixed version exists yet."
