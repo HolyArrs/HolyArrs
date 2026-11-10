@@ -5,7 +5,7 @@ go 1.27.3
 require (
 	github.com/bodgit/sevenzip v1.6.5
 	github.com/coreos/go-oidc/v3 v3.21.0
-	github.com/go-jose/go-jose/v4 v4.1.5
+	github.com/go-jose/go-jose/v4 v4.1.6
 	github.com/nwaples/rardecode/v2 v2.4.5
 	github.com/stangelandcl/ppmd v0.1.1
 	github.com/therootcompany/xz v1.0.1
