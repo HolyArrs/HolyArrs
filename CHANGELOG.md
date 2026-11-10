@@ -10,6 +10,7 @@ All notable changes to HolyArrs are listed here. The format follows [Keep a Chan
 
 ### Fixed
 
+- Requests ready check no longer keeps retrying and using a CPU core on a large library. ([#168](https://github.com/HolyArrs/HolyArrs/issues/168))
 - Security: updates the SSO sign-in library to fix a denial-of-service hole (CVE-2026-116587). ([#167](https://github.com/HolyArrs/HolyArrs/issues/167))
 
 ## 1.0.2
