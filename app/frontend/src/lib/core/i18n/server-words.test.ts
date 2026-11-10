@@ -15,6 +15,12 @@ function speak(words: Record<string, string>) {
 }
 
 describe('serverWords', () => {
+	it('knows every card line and badge the server sends', async () => {
+		const it_ = Object.assign({}, ...Object.values(import.meta.glob<{ default: Record<string, string> }>('./messages/it/*.json', { eager: true })).map((f) => f.default));
+		speak(it_);
+		for (const [line, want] of [['New movie', 'Nuovo film'], ['New show', 'Nuova serie'], ['New episode Mon', 'Nuovo episodio · lun'], ['Coming Friday', 'Arriva venerdì'], ['New season', 'Nuova stagione']]) expect(serverWords(line)).toBe(want);
+	});
+
 	it('shows a known line in the picked language', () => {
 		speak({ 'server.requests.waiting-for-approval': 'En attente de validation' });
 		expect(serverWords('Waiting for approval')).toBe('En attente de validation');

@@ -248,7 +248,7 @@
 	"migrate.ownerInTheirRequests": "Proprietario in {app}. Le loro richieste diventano tue.",
 	"migrate.adminInTurnOff": "Amministratore in {app}. Disattiva per farlo entrare come membro.",
 	"migrate.suggested": "Consigliato",
-	"migrate.donTBringThem": "Non portarli",
+	"migrate.donTBringThem": "Non importarli",
 	"migrate.otherPath": "Altro percorso…",
 	"migrate.pathHereFor": "Percorso qui per {path}",
 	"migrate.pathRule": "Regola di percorso {n}",

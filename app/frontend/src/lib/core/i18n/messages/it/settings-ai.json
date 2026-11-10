@@ -1,7 +1,7 @@
 {
 	"settings.ai.signInKeys": "Accedi con la tua password per gestire le chiavi IA.",
 	"settings.ai.on": "App di IA attive",
-	"settings.ai.off": "App di IA spente",
+	"settings.ai.off": "App di IA disattivate",
 	"settings.ai.couldntSave": "Non sono riuscito a salvare",
 	"settings.ai.makeFailed": "Non sono riuscito a creare la chiave",
 	"settings.ai.revoked": "{name} revocata",

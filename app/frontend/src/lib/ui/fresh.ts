@@ -2,6 +2,7 @@
 // Freshness tags on cards and which rows already say the same thing.
 
 import { t } from '#lib/core/i18n/i18n.svelte.ts';
+import { serverWords } from '#lib/core/i18n/server-words.ts';
 export type FreshKind = 'new_episode' | 'new_season' | 'recently_added' | 'coming' | 'season_coming' | 'new_release';
 
 export interface Fresh {
@@ -50,7 +51,7 @@ export function metaLine(kind: string | undefined, rest: readonly (string | numb
 }
 
 export function freshLabel(f: Fresh): string {
-	return f.text;
+	return serverWords(f.text);
 }
 
 export function pickFresh(list: readonly (Fresh | null | undefined)[]): Fresh | null {

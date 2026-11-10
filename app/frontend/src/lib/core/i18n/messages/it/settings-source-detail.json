@@ -1,5 +1,5 @@
 {
-	"settings.sourceDetail.pageTitle": "Salute di {name}",
+	"settings.sourceDetail.pageTitle": "Stato di {name}",
 	"settings.sourceDetail.source": "Fonte",
 	"settings.sourceDetail.sources": "Fonti",
 	"settings.sourceDetail.subtitle": "{format} · {protocol} · priorità {priority} · {uses}",

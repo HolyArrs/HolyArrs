@@ -1,7 +1,7 @@
 {
 	"settings.health.couldntRun": "Non sono riuscito a eseguire il controllo",
-	"settings.health.saved": "Impostazioni dei controlli di salute salvate",
-	"settings.health.title": "Controlli di salute",
+	"settings.health.saved": "Impostazioni dei controlli di stato salvate",
+	"settings.health.title": "Controlli di stato",
 	"settings.health.checkAgain": "Controlla di nuovo",
 	"settings.health.results": "Risultati",
 	"settings.health.resultsSub": "Gli avvisi di salute inviano ogni guasto e ogni correzione",
@@ -13,7 +13,7 @@
 	"settings.health.lastRead": "Ultima lettura",
 	"settings.health.none": "Nessun risultato. Controlla di nuovo per eseguirli.",
 	"settings.health.since": "Da",
-	"settings.health.settings": "Impostazioni dei controlli di salute",
+	"settings.health.settings": "Impostazioni dei controlli di stato salvate",
 	"settings.health.updateCheck": "Cerca un HolyArrs più recente",
 	"settings.health.onlyChecks": "Solo controlla. Non installa mai.",
 	"settings.health.every": "Cerca aggiornamenti ogni",
