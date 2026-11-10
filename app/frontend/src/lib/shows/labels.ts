@@ -1,6 +1,7 @@
 // Labels, choices and status text for shows, seasons and episodes.
 import type { EpisodeView, SeasonSummary, ShowInfo } from '../core/types.ts';
 import { date } from '../core/format.ts';
+import { t } from '../core/i18n/i18n.svelte.ts';
 import { episodeCode } from '../core/episodes.ts';
 
 export { episodeCode };
@@ -10,18 +11,25 @@ type SeasonLike = { number: number; aired?: number; episodes?: number; not_out_y
 // Slot states where a manual search makes sense.
 const searchStates = ['wanted', 'better_wanted', 'failed', 'rejected', 'stalled', 'not_out_yet', 'held', 'needs_a_decision'];
 
-// Choices are [value, name, help text].
+// Choices are [value, name, help text]. The name and help read their words when used, so they follow the language.
+function choice(value: string, name: string, help: string): [string, string, string] {
+	const row = [value, '', ''] as [string, string, string];
+	Object.defineProperty(row, 1, { get: () => t(name), enumerable: true });
+	Object.defineProperty(row, 2, { get: () => t(help), enumerable: true });
+	return row;
+}
+
 export const seasonChoices: [string, string, string][] = [
-	['all', 'All seasons', 'Every episode of every season (specials stay off).'],
-	['future', 'Future seasons only', 'Nothing that is out already: only episodes airing from today on, and every season to come.'],
-	['latest', 'The latest season', 'Only the highest-numbered season.'],
-	['none', 'None for now', 'Add the show without keeping any season up to date; turn seasons on later.']
+	choice('all', 'shows.seasonChoice.all', 'shows.seasonChoice.allHelp'),
+	choice('future', 'shows.seasonChoice.future', 'shows.seasonChoice.futureHelp'),
+	choice('latest', 'shows.seasonChoice.latest', 'shows.seasonChoice.latestHelp'),
+	choice('none', 'shows.seasonChoice.none', 'shows.seasonChoice.noneHelp')
 ];
 
 export const episodeOrders: [string, string, string][] = [
-	['aired', 'Season and episode', 'S01E02, as the show aired. Right for most shows.'],
-	['daily', 'By air day', 'For talk shows and news: the date names the episode.'],
-	['absolute', 'One running number', 'For anime: episode 27, counted from the first.']
+	choice('aired', 'shows.episodeOrder.aired', 'shows.episodeOrder.airedHelp'),
+	choice('daily', 'shows.episodeOrder.daily', 'shows.episodeOrder.dailyHelp'),
+	choice('absolute', 'shows.episodeOrder.absolute', 'shows.episodeOrder.absoluteHelp')
 ];
 
 export const detailsSources: [string, string][] = [
@@ -36,13 +44,13 @@ export function label(list: [string, string, ...string[]][], v: string | undefin
 // Matches the wording the server uses for the same list.
 export function seasonWords(seasons: number[] | undefined): string {
 	const s = seasons ?? [];
-	if (s.length === 0) return 'the whole show';
-	if (s.length === 1) return `season ${s[0]}`;
-	return `seasons ${s.slice(0, -1).join(', ')} and ${s[s.length - 1]}`;
+	if (s.length === 0) return t('shows.seasonWords.whole');
+	if (s.length === 1) return t('shows.seasonWords.one', { n: s[0] });
+	return t('shows.seasonWords.many', { list: s.slice(0, -1).join(', '), last: s[s.length - 1] });
 }
 
 export function seasonName(n: number): string {
-	return n === 0 ? 'Specials' : `Season ${n}`;
+	return n === 0 ? t('shows.season.specials') : t('shows.season.named', { n });
 }
 
 export function episodeLabel(e: Pick<EpisodeView, 'season' | 'episode' | 'absolute' | 'air_day'>, order: string): string {
@@ -52,16 +60,16 @@ export function episodeLabel(e: Pick<EpisodeView, 'season' | 'episode' | 'absolu
 }
 
 export function seasonLine(s: SeasonSummary): string {
-	const parts = [`${s.in_library} of ${s.aired} aired in the Library`];
-	if (s.missing) parts.push(`${s.missing} missing`);
-	if (s.not_out_yet) parts.push(`${s.not_out_yet} not out yet`);
-	if (s.next_air_date) parts.push(`next ${date(s.next_air_date)}`);
+	const parts = [t('shows.season.inLibrary', { in: s.in_library, aired: s.aired })];
+	if (s.missing) parts.push(t('shows.season.missing', { n: s.missing }));
+	if (s.not_out_yet) parts.push(t('shows.season.notOutYet', { n: s.not_out_yet }));
+	if (s.next_air_date) parts.push(t('shows.season.next', { date: date(s.next_air_date) }));
 	return parts.join(' · ');
 }
 
 export function showProgress(s: ShowInfo | undefined): string {
 	if (!s) return '';
-	return `${s.in_library} of ${airedOf(s)} aired episodes in the Library`;
+	return t('shows.progress', { in: s.in_library, aired: airedOf(s) });
 }
 
 export function mainSlot(e: EpisodeView) {
@@ -72,10 +80,10 @@ export function mainSlot(e: EpisodeView) {
 export function episodeWhy(e: EpisodeView, seasonKept: boolean, showKept: boolean): string {
 	const s = mainSlot(e);
 	if (s && (s.state === 'in_library' || s.state === 'better_wanted')) return s.reason ?? '';
-	if (!showKept) return 'Keep up to date is off for the show.';
-	if (!seasonKept) return 'Keep up to date is off for this season.';
-	if (!e.keep_up_to_date) return 'Keep up to date is off for this episode.';
-	if (s?.state === 'not_out_yet') return e.air_date ? `Counts as missing once it airs (${date(e.air_date)}).` : 'No air date yet.';
+	if (!showKept) return t('shows.keepOff.show');
+	if (!seasonKept) return t('shows.keepOff.season');
+	if (!e.keep_up_to_date) return t('shows.keepOff.episode');
+	if (s?.state === 'not_out_yet') return e.air_date ? t('shows.why.missingOnAir', { date: date(e.air_date) }) : t('shows.why.noAirDate');
 	// Notes like "aired ..." repeat the date already shown beside the episode.
 	if (s?.reason && !/^airs? |^aired /.test(s.reason)) return s.reason;
 	return '';
@@ -83,7 +91,7 @@ export function episodeWhy(e: EpisodeView, seasonKept: boolean, showKept: boolea
 
 export function searchWord(state: string | undefined): string {
 	if (!state || !searchStates.includes(state)) return '';
-	return state === 'better_wanted' ? 'Find a better copy' : 'Search now';
+	return state === 'better_wanted' ? t('shows.search.better') : t('shows.search.now');
 }
 
 export function seasonLooking(eps: EpisodeView[]): number {
@@ -108,8 +116,8 @@ export function newSeason(seasons: SeasonLike[], now = new Date()): number | und
 }
 
 export function keepOffNote(seasonKept: boolean, showKept: boolean): string {
-	if (!showKept) return 'Keep up to date is off for the show.';
-	if (!seasonKept) return 'Keep up to date is off for this season.';
+	if (!showKept) return t('shows.keepOff.show');
+	if (!seasonKept) return t('shows.keepOff.season');
 	return '';
 }
 

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import IconButton from '#lib/ui/IconButton.svelte';
 	import { onDestroy } from 'svelte';
 	import { closeTheater, holdScroll, runExit, theater, waitForResume } from '#lib/core/trailer/theater.svelte.ts';
@@ -288,7 +289,7 @@
 	class="ui-theater"
 	class:idle
 	class:chrome
-	aria-label={now ? `${now.title} ${word}` : 'Trailer'}
+	aria-label={now ? t('frame.theater.label', { title: now.title, word }) : t('frame.theater.trailer')}
 	data-testid="theater"
 	oncancel={(e) => {
 		e.preventDefault();
@@ -330,7 +331,7 @@
 				<iframe
 					bind:this={frame}
 					src={embedUrl(src.key, origin, false)}
-					title="{now.title} {word}"
+					title={t('frame.theater.label', { title: now.title, word })}
 					allow="autoplay; encrypted-media; fullscreen"
 					referrerpolicy="strict-origin-when-cross-origin"
 					sandbox="allow-scripts allow-same-origin allow-presentation"
@@ -343,24 +344,24 @@
 			{/if}
 			</div>
 			{#if src.kind === 'embed'}
-				<button type="button" class="catch" aria-label="Show the controls" onclick={wake} tabindex="-1"></button>
+				<button type="button" class="catch" aria-label={t('frame.theater.controls')} onclick={wake} tabindex="-1"></button>
 			{/if}
 			{#if unavailable}
 				<div class="gone" role="status">
 					<p>{missLine(why, word)}</p>
-					<button type="button" class="gone-close" onclick={() => void close()}>Close</button>
+					<button type="button" class="gone-close" onclick={() => void close()}>{t('frame.theater.close')}</button>
 				</div>
 			{/if}
 			<div class="top">
 				<p class="name">{now.title}</p>
-				<IconButton icon="x" label="Close the {word}" variant="glass" size="lg" tipSide="below-end" onclick={() => void close()} />
+				<IconButton icon="x" label={t('frame.theater.closeWord', { word })} variant="glass" size="lg" tipSide="below-end" onclick={() => void close()} />
 			</div>
 			<div class="bar">
-				<IconButton icon={paused ? 'play' : 'pause'} label={paused ? 'Play' : 'Pause'} variant="glass" size="lg" tipSide="above" onclick={togglePlay} />
+				<IconButton icon={paused ? 'play' : 'pause'} label={paused ? t('frame.theater.play') : t('frame.theater.pause')} variant="glass" size="lg" tipSide="above" onclick={togglePlay} />
 				<span class="t">{clock(time)}</span>
-				<input class="seek" type="range" min="0" max={Math.max(duration, 1)} step="0.1" value={time} aria-label="Seek" aria-valuetext="{clock(time)} of {clock(duration)}" oninput={seek} style:--p="{duration ? (time / duration) * 100 : 0}%" />
+				<input class="seek" type="range" min="0" max={Math.max(duration, 1)} step="0.1" value={time} aria-label={t('frame.theater.seek')} aria-valuetext={t('frame.theater.of', { time: clock(time), total: clock(duration) })} oninput={seek} style:--p="{duration ? (time / duration) * 100 : 0}%" />
 				<span class="t">{clock(duration)}</span>
-				<IconButton icon={muted ? 'soundOff' : 'sound'} label={muted ? 'Turn sound on' : 'Turn sound off'} variant="glass" size="lg" tipSide="above" onclick={toggleSound} />
+				<IconButton icon={muted ? 'soundOff' : 'sound'} label={muted ? t('frame.theater.soundOn') : t('frame.theater.soundOff')} variant="glass" size="lg" tipSide="above" onclick={toggleSound} />
 			</div>
 		</div>
 	{/if}

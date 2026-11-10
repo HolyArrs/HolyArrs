@@ -1,0 +1,10 @@
+{
+	"settings.home.advanced": "Додатково",
+	"settings.home.page": "{group} · сторінка",
+	"settings.home.title": "Налаштування",
+	"settings.home.search": "Шукати в налаштуваннях",
+	"settings.home.matching": "Відповідні налаштування",
+	"settings.home.noMatch": "Відповідних налаштувань немає",
+	"settings.home.noMatchText": "Спробуй інше слово, наприклад тека, ключ чи пароль.",
+	"settings.home.clear": "Очистити пошук"
+}

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	// Wide poster card with cover art, hover grow preview and badges.
 	import type { Snippet } from 'svelte';
 	import ArtPlaceholder from './ArtPlaceholder.svelte';
@@ -198,7 +199,7 @@
 			{#if inset}<img class="inset" src={inset} alt="" loading="lazy" decoding="async" />{/if}
 			{#if marked}<CardBadges fresh={strip} owned={owned ?? null} />{/if}
 			{#if pct !== undefined}
-				<span class="line" role="progressbar" aria-label="{title} progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(pct)} class:done={pct >= 100}><i style="transform: translateX({pct - 100}%)"></i></span>
+				<span class="line" role="progressbar" aria-label={t('ui.wideCard.progress', { title })} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(pct)} class:done={pct >= 100}><i style="transform: translateX({pct - 100}%)"></i></span>
 			{/if}
 		</span>
 		{#if !cover}

@@ -1,10 +1,11 @@
 // Home's setup steps and what needs attention.
 import { decisions } from '#lib/downloads/index.ts';
 import { attention, groupAttention, homeFailures, libraryCards, moreLink, n, partCount, shownState, type Attention, type AttentionGroup } from './home.ts';
-import { METADATA_DOWN, metadataOutage } from '#lib/metadata/index.ts';
+import { metadataDownText, metadataOutage } from '#lib/metadata/index.ts';
 import type { Tint } from '#lib/core/settings.ts';
 
 import type { HomeContext } from './home-context.ts';
+import { t } from '#lib/core/i18n/i18n.svelte.ts';
 
 export function createHomeAttention(ctx: Pick<HomeContext, 'checks' | 'health' | 'settled' | 'uncheckedParts' | 'folders' | 'owner' | 'rows' | 'admin' | 'downloads' | 'manager' | 'uncheckedDl' | 'uncheckedHealth' | 'home' | 'asks'>) {
 	const failingChecks = (kind: string) => (ctx.checks?.checks ?? []).filter((c) => c.kind === kind && shownState(c) !== 'ok');
@@ -12,10 +13,10 @@ export function createHomeAttention(ctx: Pick<HomeContext, 'checks' | 'health' |
 	const dls = $derived(partCount(ctx.health?.downloaders, failingChecks('downloader').map((c) => c.subject)));
 	const partsRead = $derived(ctx.settled && !!ctx.health && !ctx.uncheckedParts);
 	const steps = $derived([
-		{ done: ctx.folders.length > 0, text: 'Choose a Library folder', detail: 'Tell HolyArrs where finished media should live.', href: '/settings/library-folders', cta: 'Choose a folder' },
-		{ done: srcs.total > 0, text: 'Add a Source', detail: 'Connect a place where HolyArrs can find Releases.', href: '/settings/sources', cta: 'Add a Source' },
-		{ done: dls.total > 0, text: 'Add a Downloader', detail: 'Connect the app that fetches chosen Releases.', href: '/settings/downloaders', cta: 'Add a Downloader' },
-		{ done: false, text: 'Add your first title', detail: 'Search for something new, or import folders you already have.', href: '/search', cta: 'Find a title' }
+		{ done: ctx.folders.length > 0, text: t('home.chooseALibraryFolder'), detail: t('home.tellHolyarrsWhereFinished'), href: '/settings/library-folders', cta: t('home.chooseAFolder') },
+		{ done: srcs.total > 0, text: t('home.addASource'), detail: t('home.connectAPlaceWhere'), href: '/settings/sources', cta: t('home.addASource') },
+		{ done: dls.total > 0, text: t('home.addADownloader'), detail: t('home.connectTheAppThat'), href: '/settings/downloaders', cta: t('home.addADownloader') },
+		{ done: false, text: t('home.addYourFirstTitle'), detail: t('home.searchForSomethingNew'), href: '/search', cta: t('home.findATitle') }
 	]);
 	const doneCount = $derived(steps.filter((s) => s.done).length);
 	const nextStep = $derived(steps.find((s) => !s.done) ?? steps[3]);
@@ -27,21 +28,21 @@ export function createHomeAttention(ctx: Pick<HomeContext, 'checks' | 'health' |
 		for (const c of failingChecks(kind)) if (c.subject) names.add(c.subject);
 		const list = [...names];
 		if (!list.length) return '';
-		return list.length === 1 ? `${list[0]} has a problem` : `${n(list.length)} have a problem`;
+		return list.length === 1 ? t('home.hasAProblem2', { name: list[0] }) : t('home.haveAProblem2', { n: n(list.length) });
 	}
-	const partLine = (p: { total: number; off: number }, trouble: string) => trouble || (p.off ? `${n(p.off)} turned off` : 'All working');
+	const partLine = (p: { total: number; off: number }, trouble: string) => trouble || (p.off ? t('home.turnedOff', { n: n(p.off) }) : t('home.allWorking'));
 	// Nothing can be found or fetched without a Source and a Downloader that are on. The health checks only cover the ones that exist, so Home adds these itself once setup is over (the Welcome card covers it before that).
 	const setupGaps = $derived.by((): Attention[] => {
 		if (!ctx.owner || !partsRead || ctx.rows.includes('welcome')) return [];
-		const gap = (key: string, title: string, reason: string, path: string, action: string): Attention => ({ key, tone: 'wait', word: 'Warning', text: `${title}: ${reason}.`, title, reason, cause: `setup:${key}`, href: ctx.admin ? path : '/health', action: ctx.admin ? action : 'Look' });
+		const gap = (key: string, title: string, reason: string, path: string, action: string): Attention => ({ key, tone: 'wait', word: t('home.warning'), text: t('home.text', { title: title, reason: reason }), title, reason, cause: `setup:${key}`, href: ctx.admin ? path : '/health', action: ctx.admin ? action : t('home.look') });
 		const out: Attention[] = [];
-		if (!srcs.total) out.push(gap('no-sources', 'Sources', 'none added yet', '/settings/sources', 'Add'));
-		else if (!srcs.on) out.push(gap('sources-off', 'Sources', 'all turned off', '/settings/sources', 'Fix'));
-		if (!dls.total) out.push(gap('no-downloaders', 'Downloaders', 'none added yet', '/settings/downloaders', 'Add'));
-		else if (!dls.on) out.push(gap('downloaders-off', 'Downloaders', 'all turned off', '/settings/downloaders', 'Fix'));
+		if (!srcs.total) out.push(gap('no-sources', t('home.sources'), t('home.noneAddedYet'), '/settings/sources', t('home.add')));
+		else if (!srcs.on) out.push(gap('sources-off', t('home.sources'), t('home.allTurnedOff'), '/settings/sources', t('home.fix')));
+		if (!dls.total) out.push(gap('no-downloaders', t('home.downloaders'), t('home.noneAddedYet'), '/settings/downloaders', t('home.add')));
+		else if (!dls.on) out.push(gap('downloaders-off', t('home.downloaders'), t('home.allTurnedOff'), '/settings/downloaders', t('home.fix')));
 		// The health checks run every few minutes; /health is read now. A part it already reports as failing gets its row at once.
-		if (srcs.failing && !failingChecks('source').length) out.push(gap('sources-trouble', srcs.failing === 1 ? 'Source' : `${n(srcs.failing)} Sources`, srcs.failing === 1 ? 'has a problem' : 'have a problem', '/settings/sources', 'Fix'));
-		if (dls.failing && !failingChecks('downloader').length) out.push(gap('downloaders-trouble', dls.failing === 1 ? 'Downloader' : `${n(dls.failing)} Downloaders`, dls.failing === 1 ? 'has a problem' : 'have a problem', '/settings/downloaders', 'Fix'));
+		if (srcs.failing && !failingChecks('source').length) out.push(gap('sources-trouble', srcs.failing === 1 ? t('home.source') : t('home.sources2', { n: n(srcs.failing) }), srcs.failing === 1 ? t('home.hasAProblem') : t('home.haveAProblem'), '/settings/sources', t('home.fix')));
+		if (dls.failing && !failingChecks('downloader').length) out.push(gap('downloaders-trouble', dls.failing === 1 ? t('home.downloader') : t('home.downloaders2', { n: n(dls.failing) }), dls.failing === 1 ? t('home.hasAProblem') : t('home.haveAProblem'), '/settings/downloaders', t('home.fix')));
 		return out;
 	});
 	// Needs attention is what needs you: failed downloads or imports (the same rule as Downloads), decisions, health problems and a metadata outage while it lasts. Decisions come from the list the layout keeps fresh.
@@ -52,7 +53,7 @@ export function createHomeAttention(ctx: Pick<HomeContext, 'checks' | 'health' |
 						failed: homeFailures(ctx.downloads),
 						decisions: ctx.manager ? decisions.items : [],
 						health: ctx.checks?.checks ?? [],
-						metadata: metadataOutage.s.down ? METADATA_DOWN : undefined,
+						metadata: metadataOutage.s.down ? metadataDownText() : undefined,
 						admin: ctx.admin
 					}),
 					...setupGaps
@@ -86,11 +87,12 @@ export function createHomeAttention(ctx: Pick<HomeContext, 'checks' | 'health' |
 	const fixShown = $derived(fixRows.slice(0, 4));
 	const fixHidden = $derived(moreLink(fixRows.slice(4), ctx.admin));
 	// What passed, for the all-good state: each kind of check that has no problem, once.
-	const CHECK_WORDS: Record<string, string> = { library_folder: 'Library folders', disk_space: 'Disk space', source: 'Sources', downloader: 'Downloaders', backups: 'Backups', update: 'Updates', config_disk: 'Config folder', config_folder: 'Config folder', waiting_downloads: 'Downloads', trailers: 'Trailers' };
+	const checkWords = (): Record<string, string> => ({ library_folder: t('home.libraryFolders'), disk_space: t('home.diskSpace'), source: t('home.sources'), downloader: t('home.downloaders'), backups: t('home.backups'), update: t('home.updates'), config_disk: t('home.configFolder'), config_folder: t('home.configFolder'), waiting_downloads: t('home.downloads'), trailers: t('home.trailers') });
 	const passedCount = $derived((ctx.checks?.checks ?? []).filter((c) => shownState(c) === 'ok').length);
 	const passed = $derived.by(() => {
-		const bad = new Set((ctx.checks?.checks ?? []).filter((c) => shownState(c) !== 'ok').map((c) => CHECK_WORDS[c.kind]));
-		return [...new Set((ctx.checks?.checks ?? []).map((c) => CHECK_WORDS[c.kind]).filter((w) => w && !bad.has(w)))];
+		const words = checkWords();
+		const bad = new Set((ctx.checks?.checks ?? []).filter((c) => shownState(c) !== 'ok').map((c) => words[c.kind]));
+		return [...new Set((ctx.checks?.checks ?? []).map((c) => words[c.kind]).filter((w) => w && !bad.has(w)))];
 	});
 	// Your Library: one card per kind that is on, and for owners what it all takes on disk.
 	const libCards = $derived(libraryCards(ctx.home?.library, ctx.manager ? '/downloads' : undefined));

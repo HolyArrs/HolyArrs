@@ -1,5 +1,6 @@
 // Reported problems: anyone signed in reports a problem with a title in the Library; the owner and admins see every report on /requests/reports and mark it fixed (with an optional reply) or open it again. Members see their own.
 
+import { t } from '#lib/core/i18n/i18n.svelte.ts';
 import { api } from '../core/api.ts';
 
 export type ReportKind = 'picture' | 'sound' | 'subtitles' | 'wont_play' | 'other';
@@ -56,17 +57,17 @@ export interface ReportInput {
 
 /** The problem kinds, in the order the sheet shows them. */
 export const reportKinds: { kind: ReportKind; label: string; hint: string }[] = [
-	{ kind: 'picture', label: 'Picture', hint: 'Blurry, blocky, the wrong shape or no picture' },
-	{ kind: 'sound', label: 'Sound', hint: 'No sound, out of sync or the wrong language' },
-	{ kind: 'subtitles', label: 'Subtitles', hint: 'Missing, out of sync or the wrong language' },
-	{ kind: 'wont_play', label: "Won't play", hint: 'It does not start, stops or keeps stuttering' },
-	{ kind: 'other', label: 'Other', hint: 'Something else is wrong' }
+	{ kind: 'picture', get label() { return t('requests.report.kind.picture'); }, get hint() { return t('requests.report.hint.picture'); } },
+	{ kind: 'sound', get label() { return t('requests.report.kind.sound'); }, get hint() { return t('requests.report.hint.sound'); } },
+	{ kind: 'subtitles', get label() { return t('requests.report.kind.subtitles'); }, get hint() { return t('requests.report.hint.subtitles'); } },
+	{ kind: 'wont_play', get label() { return t('requests.report.kind.wontPlay'); }, get hint() { return t('requests.report.hint.wontPlay'); } },
+	{ kind: 'other', get label() { return t('requests.report.kind.other'); }, get hint() { return t('requests.report.hint.other'); } }
 ];
 
 export const reportFilters: { filter: ReportFilter; label: string }[] = [
-	{ filter: 'open', label: 'Open' },
-	{ filter: 'fixed', label: 'Fixed' },
-	{ filter: 'all', label: 'All' }
+	{ filter: 'open', get label() { return t('requests.report.filter.open'); } },
+	{ filter: 'fixed', get label() { return t('requests.report.filter.fixed'); } },
+	{ filter: 'all', get label() { return t('requests.report.filter.all'); } }
 ];
 
 /** The longest note or reply the server takes. */
@@ -110,19 +111,19 @@ export function kindHint(kind: string): string {
 export function partWords(r: Pick<ReportView, 'where' | 'item_name' | 'album_name' | 'track'>): string {
 	const part = partLine(r);
 	const m = /^\((.+)\)$/.exec(part);
-	return m ? `${m[1]} version` : part;
+	return m ? t('requests.report.version', { name: m[1] }) : part;
 }
 
 /** The line under a report's title: what it is, its year and the part: "TV show · 2008 · Season 2". */
 export function factsLine(r: Pick<ReportView, 'title_kind' | 'year' | 'where' | 'item_name' | 'album_name' | 'track'>): string {
-	const what = r.title_kind === 'artist' ? 'Music' : r.title_kind === 'show' ? 'TV show' : 'Movie';
+	const what = t(r.title_kind === 'artist' ? 'requests.kind.artist' : r.title_kind === 'show' ? 'requests.kind.show' : 'requests.kind.movie');
 	return [what, r.year, partWords(r)].filter(Boolean).join(' · ');
 }
 
 /** One-tap replies for Mark fixed, the kind's own first. */
 export function quickReplies(kind: string): string[] {
-	const own = kind === 'subtitles' ? ['Added new subtitles'] : kind === 'sound' ? ['Got a copy with better sound'] : kind === 'picture' ? ['Got a sharper copy'] : [];
-	return [...own, 'Swapped in a better copy', 'Try again now', "Couldn't find anything wrong"];
+	const own = kind === 'subtitles' ? [t('requests.report.reply.subtitles')] : kind === 'sound' ? [t('requests.report.reply.sound')] : kind === 'picture' ? [t('requests.report.reply.picture')] : [];
+	return [...own, t('requests.report.reply.swapped'), t('requests.report.reply.tryAgain'), t('requests.report.reply.nothingWrong')];
 }
 
 /** What the server is sent: the note trimmed, parts that were not picked left out. */

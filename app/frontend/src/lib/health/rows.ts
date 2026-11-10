@@ -1,4 +1,5 @@
 // Status page rows: linked apps, checks and jobs as one kind of row, grouped in a fixed order.
+import { t } from '#lib/core/i18n/i18n.svelte.ts';
 import type { AlertView, HealthCheck } from '../core/types.ts';
 import type { OutsideList } from '../requests/index.ts';
 import type { StageState } from './types.ts';
@@ -45,18 +46,19 @@ export interface StatusInput {
 	now?: number;
 }
 
+// Labels are getters, so they follow the language picked when they are read.
 export const groupOrder: { id: GroupId; label: string }[] = [
-	{ id: 'sources', label: 'Sources' },
-	{ id: 'downloaders', label: 'Downloaders' },
+	{ id: 'sources', get label() { return t('health.groups.sources'); } },
+	{ id: 'downloaders', get label() { return t('health.groups.downloaders'); } },
 	// Folder, free space and backup checks all sit under Storage.
-	{ id: 'library', label: 'Storage' },
-	{ id: 'media', label: 'Media servers' },
-	{ id: 'subtitles', label: 'Subtitle sites' },
-	{ id: 'lists', label: 'Outside lists' },
-	{ id: 'alerts', label: 'Alerts' },
-	{ id: 'metadata', label: 'Metadata server' },
-	{ id: 'app', label: 'Updates' },
-	{ id: 'jobs', label: 'Jobs' }
+	{ id: 'library', get label() { return t('health.groups.library'); } },
+	{ id: 'media', get label() { return t('health.groups.media'); } },
+	{ id: 'subtitles', get label() { return t('health.groups.subtitles'); } },
+	{ id: 'lists', get label() { return t('health.groups.lists'); } },
+	{ id: 'alerts', get label() { return t('health.groups.alerts'); } },
+	{ id: 'metadata', get label() { return t('health.groups.metadata'); } },
+	{ id: 'app', get label() { return t('health.groups.app'); } },
+	{ id: 'jobs', get label() { return t('health.groups.jobs'); } }
 ];
 
 // Where each kind of linked app lands and where its settings live.
@@ -78,49 +80,66 @@ const checkFix: Record<string, string> = {
 	config_folder: '/settings/backups',
 	waiting_downloads: '/downloads?show=waiting.paused'
 };
-const checkName: Record<string, string> = { library_folder: 'Folder', disk_space: 'Free space', backups: 'Backups', update: 'Update', config_disk: 'Config folder space', config_folder: 'Config folder mapping', waiting_downloads: 'Downloads waiting for files' };
+const checkName: Record<string, string> = {
+	get library_folder() { return t('health.check.folder'); },
+	get disk_space() { return t('health.check.freeSpace'); },
+	get backups() { return t('health.check.backups'); },
+	get update() { return t('health.check.update'); },
+	get config_disk() { return t('health.check.configDisk'); },
+	get config_folder() { return t('health.check.configFolder'); },
+	get waiting_downloads() { return t('health.check.waiting'); }
+};
 
 // The server's own steps need a shell, so say what a container screen can do.
-const configSteps = 'Make a backup first and download it. Then map /config to a folder in your container settings, start HolyArrs and restore the backup.';
-
 // A waiting job counts as late after ten minutes past its time.
 const LATE_MS = 10 * 60_000;
 
 // Library lives in Storage and Jobs has its own tab, so neither is listed.
 export const partKinds: { id: GroupId; label: string; add: string; one: string }[] = [
-	{ id: 'sources', label: 'Sources', add: '/settings/sources', one: 'source' },
-	{ id: 'downloaders', label: 'Downloaders', add: '/settings/downloaders', one: 'downloader' },
-	{ id: 'media', label: 'Media servers', add: '/settings/media-servers', one: 'media server' },
-	{ id: 'subtitles', label: 'Subtitle sites', add: '/settings/subtitles', one: 'subtitle site' },
-	{ id: 'lists', label: 'Outside lists', add: '/settings/outside-lists', one: 'outside list' },
-	{ id: 'alerts', label: 'Alerts', add: '/settings/alerts', one: 'alert' },
-	{ id: 'metadata', label: 'Metadata server', add: '/settings/this-app', one: 'metadata server' }
+	{ id: 'sources', get label() { return t('health.groups.sources'); }, add: '/settings/sources', get one() { return t('health.one.source'); } },
+	{ id: 'downloaders', get label() { return t('health.groups.downloaders'); }, add: '/settings/downloaders', get one() { return t('health.one.downloader'); } },
+	{ id: 'media', get label() { return t('health.groups.media'); }, add: '/settings/media-servers', get one() { return t('health.one.media'); } },
+	{ id: 'subtitles', get label() { return t('health.groups.subtitles'); }, add: '/settings/subtitles', get one() { return t('health.one.subtitles'); } },
+	{ id: 'lists', get label() { return t('health.groups.lists'); }, add: '/settings/outside-lists', get one() { return t('health.one.lists'); } },
+	{ id: 'alerts', get label() { return t('health.groups.alerts'); }, add: '/settings/alerts', get one() { return t('health.one.alert'); } },
+	{ id: 'metadata', get label() { return t('health.groups.metadata'); }, add: '/settings/this-app', get one() { return t('health.one.metadata'); } }
 ];
 
 // Gives the row time a verb so "3 d ago" is not read as "not checked for 3 days".
-export const atVerb: Partial<Record<GroupId, string>> = { sources: 'Since', downloaders: 'Since', media: 'Since', subtitles: 'Since', library: 'Checked', app: 'Checked', lists: 'Synced', alerts: 'Sent', metadata: 'Checked', jobs: 'Ran' };
+export const atVerb: Partial<Record<GroupId, string>> = {
+	get sources() { return t('health.at.since'); },
+	get downloaders() { return t('health.at.since'); },
+	get media() { return t('health.at.since'); },
+	get subtitles() { return t('health.at.since'); },
+	get library() { return t('health.at.checked'); },
+	get app() { return t('health.at.checked'); },
+	get lists() { return t('health.at.synced'); },
+	get alerts() { return t('health.at.sent'); },
+	get metadata() { return t('health.at.checked'); },
+	get jobs() { return t('health.at.ran'); }
+};
 
 // Wording for how a job's last run ended.
 const ended: Record<string, { tone: Tone; word: string }> = {
-	done: { tone: 'ok', word: 'OK' },
-	failed: { tone: 'fail', word: 'Failed' },
-	cancelled: { tone: 'idle', word: 'Cancelled' }
+	done: { tone: 'ok', get word() { return t('health.result.ok'); } },
+	failed: { tone: 'fail', get word() { return t('health.result.failed'); } },
+	cancelled: { tone: 'idle', get word() { return t('health.result.cancelled'); } }
 };
 
 // Starting is normal after every restart, so it is idle, not a problem.
 export function linkTone(s: Pick<StageState, 'state' | 'stuck'>): { tone: Tone; word: string } {
-	if (s.stuck) return { tone: 'fail', word: 'Stuck' };
+	if (s.stuck) return { tone: 'fail', word: t('health.run.stuck') };
 	switch (s.state) {
 		case 'running':
-			return { tone: 'ok', word: 'Working' };
+			return { tone: 'ok', word: t('health.word.working') };
 		case 'starting':
-			return { tone: 'idle', word: 'Starting' };
+			return { tone: 'idle', word: t('health.run.starting') };
 		case 'retrying':
-			return { tone: 'wait', word: 'Retrying' };
+			return { tone: 'wait', word: t('health.run.retrying') };
 		case 'failed':
-			return { tone: 'fail', word: 'Broken' };
+			return { tone: 'fail', word: t('health.word.broken') };
 		default:
-			return { tone: 'idle', word: 'Off' };
+			return { tone: 'idle', word: t('health.run.off') };
 	}
 }
 
@@ -140,16 +159,16 @@ export function realTime(s: string | null | undefined): string | undefined {
 // Same words as the Schedules settings page.
 
 export function jobTone(s: ScheduleRow, now = Date.now()): { tone: Tone; word: string; reason: string } {
-	if (!s.enabled) return { tone: 'idle', word: 'Turned off', reason: 'Automatic runs are turned off.' };
-	if (s.state === 'part_off') return { tone: 'idle', word: 'Part is off', reason: 'The part it belongs to is turned off.' };
-	if (s.state === 'safe_mode') return { tone: 'idle', word: 'Safe mode', reason: 'HolyArrs is in safe mode.' };
-	if (s.state === 'running') return { tone: 'ok', word: 'Running', reason: '' };
-	if (s.last_job === 'failed') return { tone: 'fail', word: 'Failed', reason: s.last_job_error || 'The last run failed.' };
+	if (!s.enabled) return { tone: 'idle', word: t('health.job.turnedOff'), reason: t('health.job.turnedOffWhy') };
+	if (s.state === 'part_off') return { tone: 'idle', word: t('health.job.partOff'), reason: t('health.job.partOffWhy') };
+	if (s.state === 'safe_mode') return { tone: 'idle', word: t('health.job.safeMode'), reason: t('health.job.safeModeWhy') };
+	if (s.state === 'running') return { tone: 'ok', word: t('health.job.running'), reason: '' };
+	if (s.last_job === 'failed') return { tone: 'fail', word: t('health.result.failed'), reason: s.last_job_error || t('health.job.failedWhy') };
 	const next = s.next_run ? new Date(s.next_run).getTime() : NaN;
-	if (s.state === 'waiting' && !Number.isNaN(next) && now - next > LATE_MS) return { tone: 'wait', word: 'Late', reason: 'It should have run by now.' };
-	if (!s.last_run) return { tone: 'idle', word: 'Not run yet', reason: '' };
-	if (s.last_job === 'cancelled') return { tone: 'idle', word: 'Cancelled', reason: 'The last run was stopped.' };
-	return { tone: 'ok', word: 'OK', reason: '' };
+	if (s.state === 'waiting' && !Number.isNaN(next) && now - next > LATE_MS) return { tone: 'wait', word: t('health.job.late'), reason: t('health.job.lateWhy') };
+	if (!s.last_run) return { tone: 'idle', word: t('health.job.notRun'), reason: '' };
+	if (s.last_job === 'cancelled') return { tone: 'idle', word: t('health.result.cancelled'), reason: t('health.job.cancelledWhy') };
+	return { tone: 'ok', word: t('health.result.ok'), reason: '' };
 }
 
 // One pass per kind of input, so group order is set later by groupRows.
@@ -171,8 +190,8 @@ export function buildRows(i: StatusInput): StatusRow[] {
 			key: c.key,
 			name: checkTitle(c),
 			tone,
-			word: tone === 'ok' ? 'Working' : tone === 'wait' ? 'Warning' : 'Broken',
-			reason: c.kind === 'config_folder' && c.state !== 'ok' ? configSteps : c.message,
+			word: tone === 'ok' ? t('health.word.working') : tone === 'wait' ? t('health.state.warning') : t('health.word.broken'),
+			reason: c.kind === 'config_folder' && c.state !== 'ok' ? t('health.check.configSteps') : c.message,
 			at: c.checked_at || c.since,
 			fix: checkFix[c.kind] || undefined,
 			check: { kind: 'checks' }
@@ -180,23 +199,23 @@ export function buildRows(i: StatusInput): StatusRow[] {
 	}
 	for (const l of i.lists ?? []) {
 		const base = { group: 'lists' as const, key: `list:${l.id}`, name: l.name, at: l.last_synced_at, fix: '/settings/outside-lists' };
-		if (!l.enabled) rows.push({ ...base, tone: 'idle', word: 'Off', reason: '' });
-		else if (l.last_error) rows.push({ ...base, tone: 'fail', word: 'Broken', reason: l.last_error });
-		else if (!l.last_synced_at) rows.push({ ...base, tone: 'idle', word: 'Not synced yet', reason: '' });
-		else rows.push({ ...base, tone: 'ok', word: 'Working', reason: l.last_result });
+		if (!l.enabled) rows.push({ ...base, tone: 'idle', word: t('health.run.off'), reason: '' });
+		else if (l.last_error) rows.push({ ...base, tone: 'fail', word: t('health.word.broken'), reason: l.last_error });
+		else if (!l.last_synced_at) rows.push({ ...base, tone: 'idle', word: t('health.word.notSynced'), reason: '' });
+		else rows.push({ ...base, tone: 'ok', word: t('health.word.working'), reason: l.last_result });
 	}
 	for (const a of i.alerts ?? []) {
 		const base = { group: 'alerts' as const, key: `alert:${a.id}`, name: a.name, at: a.last_sent_at, fix: '/settings/alerts' };
-		if (!a.enabled) rows.push({ ...base, tone: 'idle', word: 'Off', reason: '' });
-		else if (a.last_error) rows.push({ ...base, tone: 'fail', word: 'Broken', reason: a.last_error });
-		else if (!a.last_sent_at) rows.push({ ...base, tone: 'idle', word: 'Not sent yet', reason: '' });
-		else rows.push({ ...base, tone: 'ok', word: 'Working', reason: '' });
+		if (!a.enabled) rows.push({ ...base, tone: 'idle', word: t('health.run.off'), reason: '' });
+		else if (a.last_error) rows.push({ ...base, tone: 'fail', word: t('health.word.broken'), reason: a.last_error });
+		else if (!a.last_sent_at) rows.push({ ...base, tone: 'idle', word: t('health.word.notSent'), reason: '' });
+		else rows.push({ ...base, tone: 'ok', word: t('health.word.working'), reason: '' });
 	}
 	if (i.metadataUp != null) {
-		const t = i.metadataUp
-			? { tone: 'ok' as const, word: 'Working', reason: '' }
-			: { tone: 'fail' as const, word: 'Broken', reason: 'Search and new artwork wait until it answers again.' };
-		rows.push({ group: 'metadata', key: 'metadata', name: 'HolyArrs metadata', at: i.metadataAt, ...t });
+		const m = i.metadataUp
+			? { tone: 'ok' as const, word: t('health.word.working'), reason: '' }
+			: { tone: 'fail' as const, word: t('health.word.broken'), reason: t('health.metadata.down') };
+		rows.push({ group: 'metadata', key: 'metadata', name: t('health.metadata.name'), at: i.metadataAt, ...m });
 	}
 	for (const s of i.schedules ?? []) {
 		rows.push({
@@ -233,12 +252,12 @@ export function nothingLinked(rows: StatusRow[]): boolean {
 
 export function headline(rows: StatusRow[], linkedKnown = true): string {
 	const bad = needsAttention(rows);
-	if (!bad.length) return !linkedKnown ? 'No problems found' : nothingLinked(rows) ? 'No sources or downloaders added yet' : 'Everything is working';
+	if (!bad.length) return !linkedKnown ? t('health.headline.none') : nothingLinked(rows) ? t('health.headline.nothingLinked') : t('health.headline.fine');
 	const checks = bad.filter((r) => r.group !== 'jobs').length;
 	const jobs = bad.length - checks;
 	const out: string[] = [];
-	if (checks) out.push(`${checks} check${checks === 1 ? ' needs' : 's need'} attention`);
-	if (jobs) out.push(`${jobs} job${jobs === 1 ? ' needs' : 's need'} attention`);
+	if (checks) out.push(t(checks === 1 ? 'health.headline.checks.one' : 'health.headline.checks.other', { count: checks }));
+	if (jobs) out.push(t(jobs === 1 ? 'health.headline.jobs.one' : 'health.headline.jobs.other', { count: jobs }));
 	return out.join(', ');
 }
 
@@ -257,7 +276,7 @@ export function pastResult(r: Pick<StatusRow, 'tone' | 'word' | 'lastResult'>): 
 // These jobs never run on their own, so they have no next run.
 
 export function stopped(r: Pick<StatusRow, 'word'>): boolean {
-	return r.word === 'Turned off' || r.word === 'Part is off' || r.word === 'Safe mode';
+	return r.word === t('health.job.turnedOff') || r.word === t('health.job.partOff') || r.word === t('health.job.safeMode');
 }
 
 // Avoids saying the same word twice, like "Backups Backups".

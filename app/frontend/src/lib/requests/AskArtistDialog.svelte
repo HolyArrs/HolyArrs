@@ -1,5 +1,7 @@
 <script lang="ts">
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	// A member asks for an artist: the whole artist, or the albums they pick.
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import { albumKind, albumWords, albumYear } from '../music/index.ts';
@@ -72,32 +74,32 @@
 	}
 </script>
 
-<Sheet bind:open={sheetOpen} title={picked ? `Ask for ${picked.name}` : 'Ask for'}>
+<Sheet bind:open={sheetOpen} title={picked ? t('requests.ask.title', { name: picked.name }) : t('requests.ask.titleBare')}>
 	{#if picked}
 		<form id="ask-artist-title" class="sheet-form" onsubmit={ask}>
 			{#if picked.ask}
-				<p class="small muted" style="margin-top: var(--s-2)">Someone asked for {albumWords(picked.ask.albums)} already ({picked.ask.state_label}). Asking for the same joins their ask.</p>
+				<p class="small muted" style="margin-top: var(--s-2)">{t('requests.askArtist.already', { what: albumWords(picked.ask.albums), state: serverWords(picked.ask.state_label) })}</p>
 			{/if}
 			<fieldset class="pick">
-				<legend class="small">What would you like?</legend>
+				<legend class="small">{t('requests.ask.what')}</legend>
 				<label class="checkline">
 					<input type="radio" name="what" checked={whole} onchange={() => (whole = true)} />
-					<span><b>Every album</b><br /><span class="hint">Every album of the usual kinds, and albums that come out later.</span></span>
+					<span><b>{t('requests.askArtist.every')}</b><br /><span class="hint">{t('requests.askArtist.everyHint')}</span></span>
 				</label>
 				<label class="checkline">
 					<input type="radio" name="what" checked={!whole} onchange={() => (whole = false)} disabled={!albums?.length} />
-					<span><b>Only some albums</b><br /><span class="hint">Pick them below.</span></span>
+					<span><b>{t('requests.askArtist.some')}</b><br /><span class="hint">{t('requests.askArtist.someHint')}</span></span>
 				</label>
 			</fieldset>
 			{#if !whole}
 				<fieldset class="albums">
-					<legend class="sr-only">Albums</legend>
+					<legend class="sr-only">{t('requests.askArtist.albums')}</legend>
 					{#each albums ?? [] as al (al.mbid)}
 						<label class="album" class:off={al.kept || al.left_out} data-testid="ask-album">
 							<input type="checkbox" checked={chosen.includes(al.mbid)} disabled={al.kept || al.left_out} onchange={(e) => pick(al.mbid, e.currentTarget.checked)} />
 							<span class="grow">
 								<b>{al.name}</b>
-								<span class="xs muted block">{[albumYear(al.release_date), albumKind(al)].filter(Boolean).join(' · ')}{al.kept ? ' · In the Library' : al.left_out ? ' · Not included; ask the owner' : ''}</span>
+								<span class="xs muted block">{[albumYear(al.release_date), albumKind(al)].filter(Boolean).join(' · ')}{al.kept ? ` · ${t('requests.askArtist.inLibrary')}` : al.left_out ? ` · ${t('requests.askArtist.notIncluded')}` : ''}</span>
 							</span>
 						</label>
 					{/each}
@@ -107,15 +109,15 @@
 			{/if}
 			<label class="checkline" data-testid="follow-box">
 				<input type="checkbox" bind:checked={follow} />
-				<span><b>Follow</b><br /><span class="hint">Show it on my calendar.</span></span>
+				<span><b>{t('requests.add.follow')}</b><br /><span class="hint">{t('requests.add.followHint')}</span></span>
 			</label>
 			{#if error}<p class="form-error" role="alert">{error}</p>{/if}
 		</form>
 	{/if}
 	{#snippet footer()}
-				<Button variant="plain" onclick={() => (sheetOpen = false)}>Cancel</Button>
+				<Button variant="plain" onclick={() => (sheetOpen = false)}>{t('requests.add.cancel')}</Button>
 				<Button variant="primary" type="submit" form="ask-artist-title" disabled={(!whole && chosen.length === 0)} busy={busy}>
-					{whole ? 'Ask for every album' : chosen.length ? `Ask for ${albumWords(chosenNames)}` : 'Pick an album'}
+					{whole ? t('requests.askArtist.submitAll') : chosen.length ? t('requests.ask.title', { name: albumWords(chosenNames) }) : t('requests.askArtist.pick')}
 				</Button>
 	{/snippet}
 </Sheet>

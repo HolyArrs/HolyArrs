@@ -1,0 +1,17 @@
+{
+	"setup.reconnect": "다시 연결",
+	"setup.testNow": "지금 테스트",
+	"setup.movies": "영화",
+	"setup.tvShows": "TV 시리즈",
+	"setup.music": "음악",
+	"setup.subtitles": "자막",
+	"setup.fullPath": "{path}처럼 전체 폴더 경로를 입력하세요.",
+	"setup.folderUsed": "이미 사용 중인 폴더이거나, 사용 중인 폴더 안에 있습니다.",
+	"setup.folderMissing": "폴더가 없습니다. 경로를 확인하세요.",
+	"setup.addFolderOrOff": "폴더를 추가하거나 끄세요.",
+	"setup.notAnswering": "HolyArrs가 응답하지 않습니다. 잠시 후 다시 시도하세요.",
+	"setup.addUserPasswordHint": "사용자 이름과 비밀번호를 입력하세요.",
+	"setup.folders": "폴더",
+	"setup.downloader": "다운로더",
+	"setup.source": "소스"
+}

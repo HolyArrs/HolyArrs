@@ -1,5 +1,7 @@
+import { t } from '#lib/core/i18n/i18n.svelte.ts';
 import { COL, COLUMNS, IDS, KEY, MAX_W, MIN_W, OLD_KEY, defaults, dump, load, move, moveVisible, nextSort, toggle as toggleCol, visible, type ColId, type Layout, type SwarmFacet } from './columns.ts';
 import { tick } from 'svelte';
+import { KIND_WORD } from './size.ts';
 import type { DownloadRow } from '../core/types.ts';
 
 /** What the column grid needs from the page that owns it. */
@@ -129,7 +131,7 @@ export function createColumns(ctx: ColumnsContext) {
 	// The Source column hugs the client logo; its header is an icon.
 	const SRC_W = 24;
 	/** Turns a type word into its icon; anything else has none. */
-	const kindIcon = (w: string) => (w === 'Movie' ? 'film' : w === 'TV show' ? 'tv' : /music|audio|lidarr/i.test(w) ? 'music' : null);
+	const kindIcon = (w: string) => (w === KIND_WORD.movie ? 'film' : w === KIND_WORD.show ? 'tv' : w === KIND_WORD.artist || /music|audio|lidarr/i.test(w) ? 'music' : null);
 	// Three poster sizes; dragging the Poster edge snaps between them.
 	const POSTER_W = [32, 46, 62];
 	// Type is an icon, or a coloured word when dragged wider.
@@ -144,12 +146,12 @@ export function createColumns(ctx: ColumnsContext) {
 	const posterW = $derived(POSTER_W.includes(layout.widths.poster) ? layout.widths.poster : POSTER_W[0]);
 	const near = (set: number[], w: number) => set.reduce((a, b) => (Math.abs(b - w) < Math.abs(a - w) ? b : a));
 	const vis = $derived(visAll);
-	const FACETS: { id: SwarmFacet; label: string }[] = [{ id: 'seeds', label: 'Seeds' }, { id: 'peers', label: 'Peers' }, { id: 'ratio', label: 'Ratio' }];
-	const ordinal = (n: number) => { const r = n % 100; return `${n}${r >= 11 && r <= 13 ? 'th' : (['th', 'st', 'nd', 'rd'][n % 10] ?? 'th')}`; };
+	const FACETS: { id: SwarmFacet; label: string }[] = [{ id: 'seeds', get label() { return t('downloads.facet.seeds'); } }, { id: 'peers', get label() { return t('downloads.facet.peers'); } }, { id: 'ratio', get label() { return t('downloads.facet.ratio'); } }];
+	const ordinal = (n: number) => { const r = n % 100; return t(`downloads.ordinal.${r >= 11 && r <= 13 ? 'th' : (['th', 'st', 'nd', 'rd'][n % 10] ?? 'th')}`, { n }); };
 	// A heading's accessible name: its column and the sort on it.
 	function headName(id: ColId, so: { desc: boolean } | undefined): string {
-		const label = id === 'proto' ? 'Downloader' : id === 'poster' ? 'Poster' : id === 'kind' ? 'Type' : id === 'swarm' ? 'Seeds, peers and ratio' : COL[id].label;
-		return so ? `${label}, sorted ${so.desc ? 'high to low' : 'low to high'}` : label;
+		const label = id === 'swarm' ? t('downloads.col.swarmFull') : COL[id].label;
+		return so ? t(so.desc ? 'downloads.col.sortedDesc' : 'downloads.col.sortedAsc', { label }) : label;
 	}
 	// Headings take one Tab stop. Left and Right move between them; Enter or Space sorts. A screen reader click (detail 0) sorts too.
 	function headKey(e: KeyboardEvent, id: ColId) {
@@ -417,26 +419,26 @@ export function createColumns(ctx: ColumnsContext) {
 			e.preventDefault();
 			if (held === id) {
 				held = null;
-				said = `${COL[id].label} dropped at position ${i + 1}.`;
+				said = t('downloads.col.dropped', { label: COL[id].label, pos: i + 1 });
 				save();
 			} else if (e.key === ' ') {
 				heldFrom = [...layout.order];
 				held = id;
-				said = `${COL[id].label} picked up. Use the arrow keys to move it, Enter to drop.`;
+				said = t('downloads.col.pickedUp', { label: COL[id].label });
 			}
 		} else if (held === id && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
 			e.preventDefault();
 			const to = i + (e.key === 'ArrowUp' ? -1 : 1);
 			if (to < 0 || to >= layout.order.length) return;
 			layout.order = move(layout.order, id, to);
-			said = `${COL[id].label}: position ${to + 1} of ${layout.order.length}.`;
+			said = t('downloads.col.position', { label: COL[id].label, pos: to + 1, total: layout.order.length });
 			refocus(id);
 		} else if (e.key === 'Escape' && held) {
 			e.preventDefault();
 			e.stopPropagation();
 			layout.order = heldFrom;
 			held = null;
-			said = 'Move cancelled.';
+			said = t('downloads.col.cancelled');
 			refocus(id);
 		}
 	}

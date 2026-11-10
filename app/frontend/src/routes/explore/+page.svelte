@@ -1,9 +1,11 @@
 <script lang="ts" module>
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	/** The rows already loaded when Explore was left, so Back shows them at once (no re-fetch flash). */
 	let kept: { key: string; at: number; rows: unknown } | null = null;
 </script>
 
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import { createExploreGenre } from '#lib/discover/index.ts';
 	import { createExploreStrip } from '#lib/discover/index.ts';
 	import { createExploreBanner } from '#lib/discover/index.ts';
@@ -78,10 +80,10 @@
 	let type = $state<ExploreType>(parseType(page.url.searchParams.get('type')));
 	const typeOptions = $derived(
 		([
-			{ value: 'all', label: 'All', icon: 'grid' },
-			{ value: 'movies', label: 'Movies', icon: 'film' },
-			{ value: 'shows', label: 'TV shows', icon: 'tv' },
-			{ value: 'music', label: 'Music', icon: 'music' }
+			{ value: 'all', label: t('discover.explore.all'), icon: 'grid' },
+			{ value: 'movies', label: t('discover.explore.movies'), icon: 'film' },
+			{ value: 'shows', label: t('discover.explore.tvShows'), icon: 'tv' },
+			{ value: 'music', label: t('discover.explore.music'), icon: 'music' }
 		] as { value: ExploreType; label: string; icon: IconName }[]).filter((o) => o.value !== 'music' || musicOn)
 	);
 	// Music turned off while picked falls back to All.
@@ -491,11 +493,11 @@
 	});
 </script>
 
-<svelte:head><title>Explore · HolyArrs</title></svelte:head>
+<svelte:head><title>{t('discover.explore.exploreHolyArrs')}</title></svelte:head>
 
 {#snippet newServicesRow(row: ExploreRow & { type: string }, cards: ExploreCard[])}
 	<div class="row-wrap wide-row" data-row={row.type} data-row-id={row.id}>
-		<Shelf title={row.title} href={to(newHref(type))} item="var(--title-item)" items={cards} key={(c) => c.key} placeholder="wide" lines={1}>
+		<Shelf title={serverWords(row.title)} href={to(newHref(type))} item="var(--title-item)" items={cards} key={(c) => c.key} placeholder="wide" lines={1}>
 			{#snippet card(raw: ExploreCard)}
 				{@const c = live(raw)}
 				{@const act = cardAction(c, { manage, ask: mayAsk })}
@@ -506,7 +508,7 @@
 					followTmdb={!c.titleId && c.kind === 'show'}>
 					{#snippet growAction()}
 						{#if act && cardTmdb(c)}
-							<IconButton icon="plus" label={act === 'add' ? `Add ${c.name}` : `Ask for ${c.name}`} variant="glass" size="lg" aria-haspopup="dialog" aria-busy={flow?.busy(c) || undefined} onclick={() => void quick(c, act)} />
+							<IconButton icon="plus" label={act === 'add' ? t('discover.explore.add', { name: c.name }) : t('discover.explore.askFor', { name: c.name })} variant="glass" size="lg" aria-haspopup="dialog" aria-busy={flow?.busy(c) || undefined} onclick={() => void quick(c, act)} />
 						{/if}
 					{/snippet}
 				</WideCard>
@@ -521,7 +523,7 @@
 {#snippet heroAction(c: ExploreCard)}
 	{@const act = cardAction(c, { manage, ask: mayAsk })}
 	{#if act && cardTmdb(c)}
-		<IconButton icon="plus" label={act === 'add' ? `Add ${c.name}` : `Ask for ${c.name}`} variant="glass" size="lg" aria-haspopup="dialog" aria-busy={flow?.busy(c) || undefined} onclick={() => void quick(c, act)} />
+		<IconButton icon="plus" label={act === 'add' ? t('discover.explore.add', { name: c.name }) : t('discover.explore.askFor', { name: c.name })} variant="glass" size="lg" aria-haspopup="dialog" aria-busy={flow?.busy(c) || undefined} onclick={() => void quick(c, act)} />
 	{/if}
 {/snippet}
 
@@ -529,16 +531,16 @@
 <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
 <div class="explore" onclick={opened}>
 	<!-- The sidebar and the pills say where you are; the page opens straight on its pills and hero. -->
-	<h1 class="sr-only">Explore</h1>
+	<h1 class="sr-only">{t('discover.explore.explore')}</h1>
 	<div class="types-mark" bind:this={typesMark} aria-hidden="true"></div>
 	<div class="types" class:stuck={typesStuck} data-pin-pills bind:this={typesBox} onpointerdowncapture={measurePick} onkeydowncapture={measurePick}>
-		<SegmentedControl options={typeOptions} value={type} label="Show" testid="explore-type" announce={(l) => `Showing ${l}`} onchange={setType} />
+		<SegmentedControl options={typeOptions} value={type} label={t('discover.explore.show')} testid="explore-type" announce={(l) => t('discover.explore.showing', { label: l })} onchange={setType} />
 		{#if type === 'music' && genreView.musicGenres.length}
 			<!-- Music: the same Genres button; a genre opens its page. -->
 			<div class="genre-pick" data-testid="genre-picker">
-				<Popover label="Genres" text="Genres" variant="button" align="end" width={pickW}>
+				<Popover label={t('discover.explore.genres')} text={t('discover.explore.genres')} variant="button" align="end" width={pickW}>
 					{#snippet children(close)}
-						<div class="genre-tiles" role="group" aria-label="Genres">
+						<div class="genre-tiles" role="group" aria-label={t('discover.explore.genres')}>
 							<MusicGenreTiles genres={genreView.musicGenres} allHref={to('/search?kind=music')} compact all={false} onopen={close} />
 						</div>
 					{/snippet}
@@ -546,9 +548,9 @@
 			</div>
 		{:else if genreView.genres.length}
 			<div class="genre-pick" data-testid="genre-picker">
-				<Popover label="Genres" text={genreView.genre ? genreView.genre.name : 'Genres'} variant="button" align="end" width={pickW} onopen={() => void genreView.loadBrowseArt(type)}>
+				<Popover label={t('discover.explore.genres')} text={genreView.genre ? genreView.genre.name : t('discover.explore.genresWord')} variant="button" align="end" width={pickW} onopen={() => void genreView.loadBrowseArt(type)}>
 					{#snippet children(close)}
-						<div class="genre-tiles" role="group" aria-label="Genres">
+						<div class="genre-tiles" role="group" aria-label={t('discover.explore.genres')}>
 							<MusicGenreTiles genres={genreView.genreTiles} allHref="" compact all={false} selected={genreView.genre ? String(genreView.genre.id) : ''} onpick={(k) => genreView.pickGenre(k === null ? null : Number(k), close)} />
 						</div>
 					{/snippet}
@@ -559,7 +561,7 @@
 	<MetadataNotice />
 	{#if bannerView.musicBannerHold}
 		<div class="music-banner hold" aria-hidden="true" data-testid="music-banner-hold">
-			<GenreBanner layout={2} name={`Your ${bannerView.musicBannerName || 'Music'}`} eyebrow="Picked from your library" line="Albums and artists from it you could ask for." href={to('/explore?type=music')} art={[]} square>
+			<GenreBanner layout={2} name={t('discover.explore.yourName', { name: bannerView.musicBannerName || t('discover.explore.music') })} eyebrow={t('discover.explore.pickedFromYourLibrary')} line={t('discover.explore.albumsAndArtistsFrom')} href={to('/explore?type=music')} art={[]} square>
 				{#snippet picks()}
 					{#each Array.from({ length: 7 }, (_, i) => i) as i (i)}<div class="pick-sk"><SkCard /></div>{/each}
 				{/snippet}
@@ -567,7 +569,7 @@
 		</div>
 	{:else if bannerView.musicBannerShown && bannerView.musicFav}
 		<div class="music-banner">
-			<GenreBanner layout={2} name={`Your ${bannerView.musicFav.name}`} eyebrow="Picked from your library" line="Albums and artists from it you could ask for." href={to(bannerView.musicFav.href)} art={[bannerView.musicPicks[0]?.image ?? bannerView.musicFav.art].filter(Boolean)} square>
+			<GenreBanner layout={2} name={t('discover.explore.yourName', { name: bannerView.musicFav.name })} eyebrow={t('discover.explore.pickedFromYourLibrary')} line={t('discover.explore.albumsAndArtistsFrom')} href={to(bannerView.musicFav.href)} art={[bannerView.musicPicks[0]?.image ?? bannerView.musicFav.art].filter(Boolean)} square>
 				{#snippet picks()}
 					{#if bannerView.musicPicksPending && bannerView.musicPicks.length === 0}
 						{#each Array.from({ length: 7 }, (_, i) => i) as i (i)}<div class="pick-sk"><SkCard /></div>{/each}
@@ -584,38 +586,38 @@
 	{#if type === 'music'}
 		<!-- Music: the music rows above only. -->
 	{:else if failed && !okOnce}
-		<LoadError hasData={false} message="Could not load Explore." onretry={load} {busy} />
+		<LoadError hasData={false} message={t('discover.explore.couldNotLoadExplore')} onretry={load} {busy} />
 	{:else}
-		{#if failed}<LoadError hasData={true} message="Could not refresh Explore." onretry={load} {busy} />{/if}
-		<PageLoader loading={!headLoaded} label="Loading Explore" onretry={load}>
+		{#if failed}<LoadError hasData={true} message={t('discover.explore.couldNotRefreshExplore')} onretry={load} {busy} />{/if}
+		<PageLoader loading={!headLoaded} label={t('discover.explore.loadingExplore')} onretry={load}>
 		{#if genreView.genreOn && genreView.genreFailed}
-			<LoadError hasData={false} message="Could not load this genre." onretry={() => genreView.genre && void genreView.loadGenre(genreView.genre.id)} {busy} />
+			<LoadError hasData={false} message={t('discover.explore.couldNotLoadThis')} onretry={() => genreView.genre && void genreView.loadGenre(genreView.genre.id)} {busy} />
 		{:else if genreView.genreOn && rows.length === 0}
-			<div class="loading" aria-busy="true" aria-label="Loading Explore" data-testid="explore-skeleton">
+			<div class="loading" aria-busy="true" aria-label={t('discover.explore.loadingExplore')} data-testid="explore-skeleton">
 				<SkRail kind="wide" item="var(--title-item)" count={6} titleWidth="200px" />
 				<SkRail kind="wide" item="var(--title-item)" count={6} titleWidth="160px" />
 				<SkRail kind="wide" item="var(--title-item)" count={6} titleWidth="180px" />
 			</div>
 		{:else if rows.length === 0}
 			<TopServicesRow {type} region={servicesView.region} {owned} {who} used={servicesView.usedServices} ask={rowAsk} />
-			<EmptyState icon="compass" title="Explore is getting ready" text="Rows fill in within a few minutes." action={{ label: 'Search', href: to('/search'), icon: 'search' }} />
+			<EmptyState icon="compass" title={t('discover.explore.exploreIsGettingReady')} text={t('discover.explore.rowsFillInWithin')} action={{ label: t('discover.explore.search'), href: to('/search'), icon: 'search' }} />
 		{:else}
 			{#if heroCards.length}
 				{@const h = live(heroCards[heroAt % heroCards.length])}
-				<ExploreHero kind={h.kind === 'show' ? 'show' : 'movie'} tmdb={cardTmdb(h)} title={h.name} href={cardHref(h)} backdrop={h.wide ?? h.image} vtName={h.vtName} subtitle={h.year ? `${h.year} · ${h.kind === 'show' ? 'Show' : 'Movie'}` : h.subtitle} settled={headLoaded && !busy}>
+				<ExploreHero kind={h.kind === 'show' ? 'show' : 'movie'} tmdb={cardTmdb(h)} title={h.name} href={cardHref(h)} backdrop={h.wide ?? h.image} vtName={h.vtName} subtitle={h.year ? (h.kind === 'show' ? t('discover.explore.yearShow', { year: h.year }) : t('discover.explore.yearMovie', { year: h.year })) : h.subtitle} settled={headLoaded && !busy}>
 					{#snippet action()}{@render heroAction(h)}{/snippet}
 					{#snippet badge()}
 						{@const why = whyShown({ kind: h.kind, tmdb: cardTmdb(h) ?? '', genres: heroGenres[`${h.kind}:${cardTmdb(h)}`], fresh: h.fresh }, { taste })}
-						{#if why.length}<ul class="why" aria-label="Why it is featured">{#each why as w (w.kind)}<li class="why-{w.kind}">{w.text}</li>{/each}</ul>{/if}
+						{#if why.length}<ul class="why" aria-label={t('discover.explore.whyItIsFeatured')}>{#each why as w (w.kind)}<li class="why-{w.kind}">{w.text}</li>{/each}</ul>{/if}
 					{/snippet}
 				</ExploreHero>
 			{/if}
 			{#if bannerView.bannerOn && bannerView.favourite}
 				<GenreBanner
 					layout={bannerView.bannerLayout === 2 ? 2 : 1}
-					name={`Your ${bannerView.favourite.name}`}
-					eyebrow="Picked from your library"
-					line={`${bannerView.favourite.count} in your library so far. ${bannerView.bannerPicks.length} more you could ask for.`}
+					name={t('discover.explore.yourName', { name: bannerView.favourite.name })}
+					eyebrow={t('discover.explore.pickedFromYourLibrary')}
+					line={t('discover.explore.librarySoFar', { have: bannerView.favourite.count, more: bannerView.bannerPicks.length })}
 					count={bannerView.favourite.count}
 					href={to(`/explore?type=${bannerView.favourite.kind}&genre=${bannerView.favourite.id}`)}
 					art={bannerView.bannerPicks.map((c) => c.wide ?? c.image ?? '').filter(Boolean)}
@@ -626,7 +628,7 @@
 							<PosterCard title={c.name} href={cardHref(c)} image={c.image} kind={c.kind} subtitle={c.subtitle} badges={c.badges} typed row="banner" fresh={c.fresh} actionOnHover vtName={undefined}
 								preview={cardTmdb(c) ? { kind: c.kind as 'movie' | 'show', tmdb: cardTmdb(c), year: c.year, titleId: c.titleId } : undefined} followTmdb={followsByTmdb(c)}>
 								{#snippet action()}
-									{#if act && cardTmdb(c)}<IconButton icon="plus" label={act === 'add' ? `Add ${c.name}` : `Ask for ${c.name}`} variant="glass" size="lg" aria-haspopup="dialog" aria-busy={flow?.busy(c) || undefined} onclick={() => void quick(c, act)} />{/if}
+									{#if act && cardTmdb(c)}<IconButton icon="plus" label={act === 'add' ? t('discover.explore.add', { name: c.name }) : t('discover.explore.askFor', { name: c.name })} variant="glass" size="lg" aria-haspopup="dialog" aria-busy={flow?.busy(c) || undefined} onclick={() => void quick(c, act)} />{/if}
 								{/snippet}
 							</PosterCard>
 						{/each}
@@ -640,7 +642,7 @@
 					{#if newServices && newCards.length}{@render newServicesRow(newServices, newCards)}{/if}
 				{:else}
 				<div class="row-wrap" class:wide-row={row.wide || row.cards.some((c) => wideKind(c.kind))} data-row={row.type ?? row.id} data-row-id={row.id} data-title-layer={row.titleLayer}>
-				<Shelf title={row.title} subtitle={row.subtitle} href={typeHref(row.href, type)} item={row.cards.some((c) => wideKind(c.kind)) ? 'var(--title-item)' : 'var(--explore-item)'}
+				<Shelf title={serverWords(row.title)} subtitle={serverWords(row.subtitle)} href={typeHref(row.href, type)} item={row.cards.some((c) => wideKind(c.kind)) ? 'var(--title-item)' : 'var(--explore-item)'}
 					items={row.cards} key={(c) => c.key} defer={ri >= EAGER_ROWS && !back} placeholder={row.wide || row.cards.some((c) => wideKind(c.kind)) ? 'wide' : 'poster'} lines={row.cards.some((c) => c.subtitle) ? 2 : 1}>
 					{#snippet card(raw: ExploreCard)}
 						{@const c = live(raw)}
@@ -653,7 +655,7 @@
 									followTmdb={followsByTmdb(c)}>
 								{#snippet growAction()}
 									{#if act && cardTmdb(c)}
-										<IconButton icon="plus" label={act === 'add' ? `Add ${c.name}` : `Ask for ${c.name}`} variant="glass" size="lg" aria-haspopup="dialog" aria-busy={flow?.busy(c) || undefined} onclick={() => { count(row.type ?? row.id, 'ask', row.titleLayer); void quick(c, act); }} />
+										<IconButton icon="plus" label={act === 'add' ? t('discover.explore.add', { name: c.name }) : t('discover.explore.askFor', { name: c.name })} variant="glass" size="lg" aria-haspopup="dialog" aria-busy={flow?.busy(c) || undefined} onclick={() => { count(row.type ?? row.id, 'ask', row.titleLayer); void quick(c, act); }} />
 									{/if}
 								{/snippet}
 							</WideCard>
@@ -677,9 +679,9 @@
 						>
 							{#snippet action()}
 								{#if act && cardTmdb(c)}
-									<IconButton icon="plus" label={act === 'add' ? `Add ${c.name}` : `Ask for ${c.name}`} variant="glass" size="lg" aria-haspopup="dialog" aria-busy={flow?.busy(c) || undefined} onclick={() => { count(row.type ?? row.id, 'ask', row.titleLayer); void quick(c, act); }} />
+									<IconButton icon="plus" label={act === 'add' ? t('discover.explore.add', { name: c.name }) : t('discover.explore.askFor', { name: c.name })} variant="glass" size="lg" aria-haspopup="dialog" aria-busy={flow?.busy(c) || undefined} onclick={() => { count(row.type ?? row.id, 'ask', row.titleLayer); void quick(c, act); }} />
 								{:else if act}
-									<IconButton icon="plus" label={act === 'add' ? `Add ${c.name}` : `Ask for ${c.name}`} variant="glass" size="lg" href={searchHref(c)} />
+									<IconButton icon="plus" label={act === 'add' ? t('discover.explore.add', { name: c.name }) : t('discover.explore.askFor', { name: c.name })} variant="glass" size="lg" href={searchHref(c)} />
 								{/if}
 							{/snippet}
 						</PosterCard>
@@ -690,9 +692,9 @@
 				{/if}
 				{#if ri === genreAt && genreCards.length >= ROW_MIN}
 					<div class="row-wrap wide-row" data-row="genre_browse" data-row-id="genre_browse">
-						<Shelf title="Browse by genre" item="var(--title-item)" items={genreCards} key={(g) => `${g.kind}:${g.id}`} defer={!back} placeholder="wide" lines={1}>
+						<Shelf title={t('discover.explore.browseByGenre')} item="var(--title-item)" items={genreCards} key={(g) => `${g.kind}:${g.id}`} defer={!back} placeholder="wide" lines={1}>
 							{#snippet card(g: GenreRowCard)}
-								<WideCard cover title={g.name} href={to(genreCardHref(g))} image={g.backdrop} />
+								<WideCard cover title={serverWords(g.name)} href={to(genreCardHref(g))} image={g.backdrop} />
 							{/snippet}
 						</Shelf>
 					</div>

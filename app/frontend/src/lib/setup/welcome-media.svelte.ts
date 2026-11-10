@@ -5,6 +5,7 @@ import { applyParts } from './controls.ts';
 import { tick } from 'svelte';
 import { api, message, ApiError } from '#lib/core/api.ts';
 import type { LibraryFolder } from '#lib/core/types.ts';
+import { t } from '#lib/core/i18n/i18n.svelte.ts';
 
 export type MediaPart = 'movies' | 'shows' | 'music';
 
@@ -18,9 +19,9 @@ export function createWelcomeMedia(ctx: any) {
 	// saved/id: the folder already made; editing reopens it to type a new path.
 	
 	const kindRows: Pick<Row, 'part' | 'kind' | 'label' | 'icon' | 'hint'>[] = [
-		{ part: 'movies', kind: 'movie', label: 'Movies', icon: 'film', hint: '/movies' },
-		{ part: 'shows', kind: 'show', label: 'TV shows', icon: 'tv', hint: '/tv' },
-		{ part: 'music', kind: 'music', label: 'Music', icon: 'music', hint: '/music' }
+		{ part: 'movies', kind: 'movie', get label() { return t('setup.movies'); }, icon: 'film', hint: '/movies' },
+		{ part: 'shows', kind: 'show', get label() { return t('setup.tvShows'); }, icon: 'tv', hint: '/tv' },
+		{ part: 'music', kind: 'music', get label() { return t('setup.music'); }, icon: 'music', hint: '/music' }
 	];
 	let rows = $state<Row[]>([]);
 	let media = $state<Record<MediaPart, boolean>>({ movies: true, shows: true, music: false });
@@ -45,9 +46,9 @@ export function createWelcomeMedia(ctx: any) {
 	}
 	// The server's folder answers, in plain words.
 	function folderWords(text: string, kind: Kind = 'movie'): string {
-		if (/absolute/i.test(text)) return `Use the full folder path, like ${kind === 'show' ? '/data/tv' : kind === 'music' ? '/data/music' : '/data/movies'}.`;
-		if (/already a library folder/i.test(text)) return 'This folder is already used, or sits inside one that is.';
-		if (/does not exist|not a folder|no such file/i.test(text)) return "That folder doesn't exist. Check the path.";
+		if (/absolute/i.test(text)) return t('setup.fullPath', { path: kind === 'show' ? '/data/tv' : kind === 'music' ? '/data/music' : '/data/movies' });
+		if (/already a library folder/i.test(text)) return t('setup.folderUsed');
+		if (/does not exist|not a folder|no such file/i.test(text)) return t('setup.folderMissing');
 		return text ? text[0].toUpperCase() + text.slice(1) : text;
 	}
 	// skip: keep the parts, add no folders now (Settings has them later).
@@ -57,7 +58,7 @@ export function createWelcomeMedia(ctx: any) {
 		// Continue needs a folder for every part that is on (Skip adds none).
 		if (!skip) {
 			const empty = rows.filter((r) => media[r.part] && !(r.saved && !r.editing) && !r.path.trim());
-			for (const r of empty) r.error = 'Add a folder or turn this off.';
+			for (const r of empty) r.error = t('setup.addFolderOrOff');
 			if (empty.length) return void tick().then(() => document.getElementById(`folder-${empty[0].kind}`)?.focus());
 		}
 		ctx.busy = true;

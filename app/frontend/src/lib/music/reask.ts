@@ -1,5 +1,6 @@
 // A slow source makes the server answer an artist or album page after about 3 s with what it has and incomplete:true; it keeps looking. The page then asks again quietly (2.5 s, then a little longer each time, up to 4 times) and merges what comes in.
 import { isFilling, isIncomplete } from '../core/api.ts';
+import { t } from '#lib/core/i18n/i18n.svelte.ts';
 
 /** The pauses before each quiet re-ask. */
 export const REASK_MS = [2500, 3500, 5000, 7000];
@@ -92,6 +93,9 @@ export function trackListView(count: number, pending: boolean): 'rows' | 'skelet
 
 /** The neutral line shown after the list stayed empty for about a minute. */
 export const NO_SONGS_LINE = 'Songs are not available right now.';
+
+/** The same line in the person's language. */
+export const noSongsLine = () => t('music.songsAreNotAvailable');
 
 /** An answer that still holds no songs is never "stuck"; asking goes on until the pauses run out. */
 export function sameTracks<T extends { tracks: unknown[] }>(a: T, b: T): boolean {

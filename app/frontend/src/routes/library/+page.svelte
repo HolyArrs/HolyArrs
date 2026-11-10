@@ -26,6 +26,7 @@
 	import { session } from '#lib/core/session.svelte.ts';
 	import type { TitleView } from '#lib/core/types.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
+	import { t as tr } from '#lib/core/i18n/i18n.svelte.ts';
 	let titles = $state<TitleView[]>([]);
 	let loaded = $state(false);
 	let error = $state('');
@@ -106,7 +107,7 @@
 	const canManage = $derived(session.can('manage_library') && !session.kid);
 	const moviesOn = $derived(partsNow.answer?.parts.find((part) => part.part === 'movies')?.on !== false);
 	const kindLabel: Record<string, string> = { movie: 'Movie', show: 'Show', artist: 'Artist' };
-	const kindTitle = $derived(kind === 'movie' ? 'Movies' : kind === 'show' ? 'TV shows' : kind === 'artist' ? 'Music' : 'Library');
+	const kindTitle = $derived(kind === 'movie' ? tr('mediafiles.kinds.movie') : kind === 'show' ? tr('mediafiles.kinds.show') : kind === 'artist' ? tr('mediafiles.kinds.artist') : tr('library.page.library'));
 
 	function readView(k: Kind, fromUrl = false): View {
 		const asked = fromUrl ? page.url.searchParams.get('layout') : null;
@@ -192,10 +193,10 @@
 	const sizeItems = $derived<MenuItem[]>(
 		view === 'posters'
 			? [
-					{ kind: 'heading', label: 'Poster size' }, ...(['s', 'm', 'l'] as const).map((z) => ({ label: posterLabels[z], checked: posterSize === z, onselect: () => setPosterSize(z) })),
-					{ kind: 'separator' }, { kind: 'heading', label: 'Poster details' }, ...(['title', 'status', 'full'] as const).map((d) => ({ label: detailLabels[d], checked: posterDetail === d, onselect: () => setPosterDetail(d) }))
+					{ kind: 'heading', label: tr('library.page.posterSize') }, ...(['s', 'm', 'l'] as const).map((z) => ({ label: posterLabels[z], checked: posterSize === z, onselect: () => setPosterSize(z) })),
+					{ kind: 'separator' }, { kind: 'heading', label: tr('library.page.posterDetails') }, ...(['title', 'status', 'full'] as const).map((d) => ({ label: detailLabels[d], checked: posterDetail === d, onselect: () => setPosterDetail(d) }))
 				] as MenuItem[]
-			: [{ kind: 'heading', label: 'Banner size' }, ...(['large', 'comfortable', 'compact'] as const).map((d) => ({ label: densityLabels[d], checked: density === d, onselect: () => setDensity(d) }))]
+			: [{ kind: 'heading', label: tr('library.page.bannerSize') }, ...(['large', 'comfortable', 'compact'] as const).map((d) => ({ label: densityLabels[d], checked: density === d, onselect: () => setDensity(d) }))]
 	);
 	function setColumns(c: Column[]) {
 		columns = c;
@@ -224,7 +225,7 @@
 	$effect(() => {
 		if (mounted && (kind === 'movie' || kind === 'all')) void loadSets();
 	});
-	const seriesName = (id: number) => series.find((s) => s.id === id)?.name ?? 'Collection';
+	const seriesName = (id: number) => series.find((s) => s.id === id)?.name ?? tr('library.page.collection');
 
 	// Titles with subtitles still wanted (movies and TV shows), from the same list the subtitles search uses.
 	let subsTitles = $state<Set<number> | null>(null);
@@ -235,15 +236,14 @@
 	const askers = $derived([...new Map(ofThisKind.flatMap((t) => linkedPeople(t)).map((p) => [p.id, p])).values()].sort((a, b) => a.name.localeCompare(b.name)));
 	const filtersOn = $derived(activeCount(filter));
 
-	const nouns: Record<string, [string, string]> = { movie: ['movie', 'movies'], show: ['TV show', 'TV shows'], artist: ['artist', 'artists'], all: ['title', 'titles'] };
 	const kindTotal = $derived(titles.filter((t) => ofKind(t, kind)).length);
 	const countText = $derived.by(() => {
-		const [one, many] = nouns[kind] ?? nouns.all;
-		if (filtersOn || q) return `${shown.length} of ${kindTotal} ${kindTotal === 1 ? one : many}`;
-		return `${shown.length} ${shown.length === 1 ? one : many}`;
+		const k = ['movie', 'show', 'artist'].includes(kind) ? kind : 'all';
+		if (filtersOn || q) return tr(`library.count.${k}.${kindTotal === 1 ? 'ofOne' : 'ofOther'}`, { n: shown.length, total: kindTotal });
+		return tr(`library.count.${k}.${shown.length === 1 ? 'one' : 'other'}`, { n: shown.length });
 	});
 	// The Library has no top bar: its own row carries the search (as on Downloads). Ctrl K and "/" focus it.
-	const findWords = $derived(kind === 'movie' ? 'Search movies' : kind === 'show' ? 'Search TV shows' : kind === 'artist' ? 'Search music' : 'Search library');
+	const findWords = $derived(kind === 'movie' ? tr('library.page.findMovies') : kind === 'show' ? tr('library.page.findShows') : kind === 'artist' ? tr('library.page.findMusic') : tr('library.page.findLibrary'));
 	function setQ(v: string) {
 		q = v.slice(0, 256);
 		syncUrl();
@@ -281,7 +281,7 @@
 			] as const
 		)
 			.filter(([k, , , part]) => partsNow.answer?.parts.find((p) => p.part === part)?.on !== false && !(k === 'artist' && session.kid))
-			.map(([k, label]): MenuItem => ({ label, checked: kind === k, onselect: () => void goto(to(`/library?kind=${k}`)) }))
+			.map(([k]): MenuItem => ({ label: tr(`mediafiles.kinds.${k}`), checked: kind === k, onselect: () => void goto(to(`/library?kind=${k}`)) }))
 	);
 	let findOpen = $state(false);
 	let sortOpen = $state(false);
@@ -316,7 +316,7 @@
 		saved = [...saved.filter((s) => s.name !== name), { name, filter: { ...filter } }];
 		saveSaved(myId, kind, saved);
 		saveDialog?.close();
-		toasts.push(`${name} saved`, 'ok');
+		toasts.push(tr('mediafiles.title.saved', { name }), 'ok');
 	}
 	function forget(name: string) {
 		saved = saved.filter((s) => s.name !== name);
@@ -328,9 +328,9 @@
 	const countHint = (n: number) => (loaded ? String(n) : undefined);
 	// Add only adds. Everything that looks after the Library is in Tools (people are found by the search, movie series by Group by series, and held files are on Downloads).
 	const addItems = $derived<MenuItem[]>([
-		...(!partOff('movies') ? ([{ label: 'Movie', icon: 'film', href: to('/search') }] as MenuItem[]) : []),
-		...(!partOff('shows') ? ([{ label: 'TV show', icon: 'tv', href: to('/search?kind=show') }] as MenuItem[]) : []),
-		...(!partOff('music') ? ([{ label: 'Artist', icon: 'music', href: to('/search?kind=music') }] as MenuItem[]) : [])
+		...(!partOff('movies') ? ([{ label: tr('library.page.addMovie'), icon: 'film', href: to('/search') }] as MenuItem[]) : []),
+		...(!partOff('shows') ? ([{ label: tr('library.page.addShow'), icon: 'tv', href: to('/search?kind=show') }] as MenuItem[]) : []),
+		...(!partOff('music') ? ([{ label: tr('library.page.addArtist'), icon: 'music', href: to('/search?kind=music') }] as MenuItem[]) : [])
 	]);
 	// Recently deleted lives in Sort & filter: its count is read when the panel opens (at most once a minute).
 	let deletedCount = $state<number | null>(null);
@@ -350,7 +350,7 @@
 	let folders = $state<{ id: number; path: string; kind: string; label: string }[]>([]);
 	const pickedShown = $derived(shown.filter((t) => picked.has(t.id)));
 	const allPicked = $derived(shown.length > 0 && pickedShown.length === shown.length);
-	const deleteWord = $derived(deleteIds.length === 1 ? (titles.find((t) => t.id === deleteIds[0])?.name ?? '1 title') : `${deleteIds.length} titles`);
+	const deleteWord = $derived(deleteIds.length === 1 ? (titles.find((t) => t.id === deleteIds[0])?.name ?? tr('library.page.oneTitle')) : tr('library.page.nTitles', { n: deleteIds.length }));
 	function togglePick(id: number) {
 		const next = new Set(picked);
 		if (next.has(id)) next.delete(id);
@@ -381,29 +381,30 @@
 		}
 		return failed;
 	}
-	function report(done: string, failed: number, total: number, note?: string) {
-		if (failed) toasts.push(`${total - failed} of ${total} ${total === 1 ? 'title' : 'titles'} ${done}`, 'info', { body: `${failed} couldn't be changed` });
-		else toasts.push(`${total} ${total === 1 ? 'title' : 'titles'} ${done}`, 'ok', note ? { body: note } : undefined);
+	function report(action: string, failed: number, total: number, note?: string, vars: Record<string, string> = {}) {
+		const base = `library.report.${action}`;
+		if (failed) toasts.push(tr(`${base}.${total === 1 ? 'partOne' : 'partMany'}`, { ok: total - failed, total, ...vars }), 'info', { body: tr('library.report.failedBody', { n: failed }) });
+		else toasts.push(tr(`${base}.${total === 1 ? 'one' : 'many'}`, { n: total, ...vars }), 'ok', note ? { body: note } : undefined);
 	}
 	async function setKeep(ids: number[], keep: boolean) {
 		busy = true;
 		const failed = await eachTitle(ids, (id) => api.put(`/titles/${id}`, { keep_up_to_date: keep }));
 		busy = false;
-		report(keep ? 'kept up to date' : 'not kept up to date', failed, ids.length);
+		report(keep ? 'keep' : 'unkeep', failed, ids.length);
 		await load();
 	}
 	async function setRules(ids: number[], rule: { id: number; name: string }) {
 		busy = true;
 		const failed = await eachTitle(ids, (id) => api.put(`/titles/${id}`, { pick_rules_id: rule.id }));
 		busy = false;
-		report(`set to ${rule.name}`, failed, ids.length);
+		report('setTo', failed, ids.length, undefined, { rule: rule.name });
 		await load();
 	}
 	async function searchTitles(ids: number[]) {
 		busy = true;
 		const failed = await eachTitle(ids, (id) => api.post(`/titles/${id}/search`, {}));
 		busy = false;
-		report('being searched for', failed, ids.length);
+		report('searching', failed, ids.length);
 	}
 	// Find another copy (movies): the selected movies' main files, searched again at their Quality after a review. Protected files are left out.
 	const copyPicks = $derived(pickedShown.flatMap((t) => (t.copy && !t.copy.protected ? [{ file_id: t.copy.file_id, version_id: t.copy.version_id }] : [])));
@@ -415,7 +416,7 @@
 			copyPreview = await api.post<CopySearchPreview>('/library/copies/search/preview', { selections: copyPicks });
 			copyDialog?.showModal();
 		} catch (e) {
-			toasts.push(`Couldn't check copies`, 'fail', { body: plainReason(message(e)).text });
+			toasts.push(tr('library.page.checkFailed'), 'fail', { body: plainReason(message(e)).text });
 		} finally {
 			busy = false;
 		}
@@ -425,10 +426,10 @@
 		busy = true;
 		try {
 			const r = await api.post<CopySearchResult>('/library/copies/search', { selections: copyPicks, review_token: copyPreview.review_token });
-			toasts.push(r.job_ids.length === 1 ? 'Searching for 1 copy' : `Searching for ${r.job_ids.length} copies`, 'info');
+			toasts.push(tr(r.job_ids.length === 1 ? 'library.page.searchingCopyOne' : 'library.page.searchingCopyMany', { n: r.job_ids.length }), 'info');
 			copyDialog?.close();
 		} catch (e) {
-			toasts.push(`Couldn't start search`, 'fail', { body: plainReason(message(e)).text });
+			toasts.push(tr('mediafiles.title.startFailed'), 'fail', { body: plainReason(message(e)).text });
 		} finally {
 			busy = false;
 		}
@@ -446,9 +447,9 @@
 		subsSearching = true;
 		try {
 			const r = await api.post<{ queued: number }>('/subtitles/missing/search', { kind: kind === 'movie' ? 'movie' : 'episode' });
-			toasts.push('Searching for subtitles', 'info', { body: r.queued === 1 ? '1 file' : `${r.queued} files` });
+			toasts.push(tr('shows.sheet.searchingSubs'), 'info', { body: tr('mediafiles.unit.file.' + (r.queued === 1 ? 'one' : 'other'), { n: r.queued }) });
 		} catch (e) {
-			toasts.push(`Couldn't start search`, 'fail', { body: plainReason(message(e)).text });
+			toasts.push(tr('mediafiles.title.startFailed'), 'fail', { body: plainReason(message(e)).text });
 		} finally {
 			subsSearching = false;
 		}
@@ -456,24 +457,24 @@
 	async function refreshTitle(t: TitleView) {
 		try {
 			await api.post(`/titles/${t.id}/refresh`, {});
-			toasts.push(`Refreshing ${t.name}`, 'info');
+			toasts.push(tr('library.page.refreshing', { name: t.name }), 'info');
 		} catch (e) {
-			toasts.push(`Couldn't refresh`, 'fail', { body: plainReason(message(e)).text });
+			toasts.push(tr('library.page.refreshFailed'), 'fail', { body: plainReason(message(e)).text });
 		}
 	}
 	// Missing list: one search for every missing title of this kind, after a confirm.
 	let missingDialog = $state<HTMLDialogElement | null>(null);
 	let searchingAll = $state(false);
 	const missingCount = $derived(titles.filter((t) => ofKind(t, kind) && passes(t, { ...noFilter, status: 'missing' }, ctx)).length);
-	const missingWhat = $derived(kind === 'movie' ? ' movies' : kind === 'show' ? ' shows' : kind === 'artist' ? ' music' : '');
+	const missingWhat = $derived(tr(`library.page.searchAllMissing.${kind}`));
 	async function searchAllMissing() {
 		searchingAll = true;
 		try {
 			await api.post('/search/missing', kind === 'all' ? undefined : { kind });
-			toasts.push(`Searching for ${missingCount} missing ${missingCount === 1 ? 'title' : 'titles'}`, 'info');
+			toasts.push(tr(missingCount === 1 ? 'library.page.searchingMissingOne' : 'library.page.searchingMissingMany', { n: missingCount }), 'info');
 			missingDialog?.close();
 		} catch (e) {
-			toasts.push(`Couldn't start search`, 'fail', { body: plainReason(message(e)).text });
+			toasts.push(tr('mediafiles.title.startFailed'), 'fail', { body: plainReason(message(e)).text });
 		} finally {
 			searchingAll = false;
 		}
@@ -490,7 +491,7 @@
 		const failed = await eachTitle(ids, (id) => api.post(`/titles/${id}/delete`, deleteBody({}, false, false, true)));
 		busy = false;
 		deleteDialog?.close();
-		report('removed', failed, ids.length, 'Files stay on disk');
+		report('removed', failed, ids.length, tr('mediafiles.delete.stay'));
 		stopSelecting();
 		await load();
 	}
@@ -499,7 +500,7 @@
 		busy = true;
 		const failed = await eachTitle(ids, (id) => api.post(`/titles/${id}/move`, { library_folder_id: folder.id, apply: true }));
 		busy = false;
-		report('being moved', failed, ids.length, folder.label || folder.path);
+		report('moving', failed, ids.length, folder.label || folder.path);
 		stopSelecting();
 		await load();
 	}
@@ -517,14 +518,14 @@
 	});
 	// Phones get the bar's actions as one menu (Downloads does the same).
 	const phoneActs = $derived<MenuItem[]>([
-		{ label: allPicked ? 'Select none' : `Select all ${shown.length}`, icon: 'check', onselect: pickAll },
+		{ label: allPicked ? tr('mediafiles.select.none') : tr('mediafiles.select.all', { n: shown.length }), icon: 'check', onselect: pickAll },
 		{ kind: 'separator' },
-		{ label: 'Keep up to date', icon: 'bellOn', disabled: busy || !pickedShown.length, onselect: () => setKeep(pickedShown.map((t) => t.id), true) },
-		{ label: 'Stop keeping', icon: 'bell', disabled: busy || !pickedShown.length, onselect: () => setKeep(pickedShown.map((t) => t.id), false) },
-		{ label: 'Search now', icon: 'search', disabled: busy || !pickedShown.length, onselect: () => searchTitles(pickedShown.map((t) => t.id)) },
-		...(kind === 'movie' ? ([{ label: 'Find another copy', icon: 'copy', disabled: busy || !copyPicks.length, onselect: reviewCopies }] as MenuItem[]) : []),
-		...(rulesItems.length ? ([{ kind: 'separator' }, { kind: 'heading', label: 'Quality' }, ...rulesItems] as MenuItem[]) : []),
-		...(moveItems.length > 1 ? ([{ kind: 'separator' }, { kind: 'heading', label: 'Move to' }, ...moveItems] as MenuItem[]) : [])
+		{ label: tr('mediafiles.select.keep'), icon: 'bellOn', disabled: busy || !pickedShown.length, onselect: () => setKeep(pickedShown.map((t) => t.id), true) },
+		{ label: tr('mediafiles.select.stopKeeping'), icon: 'bell', disabled: busy || !pickedShown.length, onselect: () => setKeep(pickedShown.map((t) => t.id), false) },
+		{ label: tr('mediafiles.select.searchNow'), icon: 'search', disabled: busy || !pickedShown.length, onselect: () => searchTitles(pickedShown.map((t) => t.id)) },
+		...(kind === 'movie' ? ([{ label: tr('mediafiles.select.findCopy'), icon: 'copy', disabled: busy || !copyPicks.length, onselect: reviewCopies }] as MenuItem[]) : []),
+		...(rulesItems.length ? ([{ kind: 'separator' }, { kind: 'heading', label: tr('mediafiles.select.quality') }, ...rulesItems] as MenuItem[]) : []),
+		...(moveItems.length > 1 ? ([{ kind: 'separator' }, { kind: 'heading', label: tr('library.page.moveTo') }, ...moveItems] as MenuItem[]) : [])
 	]);
 	function selectKey(e: KeyboardEvent) {
 		if (selecting && e.key === 'Escape' && !deleteDialog?.open) stopSelecting();
@@ -621,26 +622,26 @@
 <div class="library" class:selecting>
 	<h1 class="sr-only">{kindTitle}</h1>
 	<LibraryToolbar {phone} {kind} {kindTitle} {loaded} {error} {countText} {shelfItems} sidebarCollapsed={dlTop.collapsed} {sortFilter} {view} {setView} {sizeItems} {posterSize} {density} {listWidth} {filtersOn} bind:sortOpen bind:findOpen {findWords} bind:q {syncUrl} {columns} {libKind} {setColumns} {canManage} shownCount={shown.length} {selecting} {startSelecting} {stopSelecting} {addItems}>
-		{#snippet sidebarButton()}<IconButton icon="sidebar" label="Show sidebar" onclick={() => dlTop.toggle()} data-testid="library-side-btn" />{/snippet}
+		{#snippet sidebarButton()}<IconButton icon="sidebar" label={tr('library.page.showSidebar')} onclick={() => dlTop.toggle()} data-testid="library-side-btn" />{/snippet}
 		{#snippet find()}<DlFind bind:term={() => q, setQ} shown={shown.length} total={kindTotal} searchKey={dlTop.searchKey} placeholder={findWords} note={loaded && !error ? countText : ''} testid="library-find" />{/snippet}
 	</LibraryToolbar>
 	{#if phone}
-		<Sheet bind:open={sortOpen} title="Sort and filter" placement="bottom">{@render sortFilter()}{#snippet footer()}{@render savedFilters(true)}{/snippet}</Sheet>
+		<Sheet bind:open={sortOpen} title={tr('library.page.sortAndFilter')} placement="bottom">{@render sortFilter()}{#snippet footer()}{@render savedFilters(true)}{/snippet}</Sheet>
 	{/if}
 
 	{#if filtersOn || q || grouped}
-		<div class="chips" role="group" aria-label="Active filters" in:grow out:shrink>
+		<div class="chips" role="group" aria-label={tr('library.page.activeFilters')} in:grow out:shrink>
 			{#if filter.status !== 'all'}<Chip label={filters.find(([f]) => f === filter.status)?.[1] ?? ''} selected onclick={() => setFilter({ status: 'all' })} onremove={() => setFilter({ status: 'all' })} />{/if}
-			{#if filter.kept !== 'any'}<Chip label={filter.kept === 'on' ? 'Kept' : 'Not kept'} selected onclick={() => setFilter({ kept: 'any' })} onremove={() => setFilter({ kept: 'any' })} />{/if}
-			{#if filter.asker !== 'anyone'}<Chip label="Asked by {filter.asker === 'me' ? 'me' : (askers.find((p) => String(p.id) === filter.asker)?.name ?? 'someone')}" selected onclick={() => setFilter({ asker: 'anyone' })} onremove={() => setFilter({ asker: 'anyone' })} />{/if}
-			{#if filter.series}<Chip label="Collection: {seriesName(filter.series)}" selected onclick={() => setFilter({ series: 0 })} onremove={() => setFilter({ series: 0 })} />{/if}
+			{#if filter.kept !== 'any'}<Chip label={filter.kept === 'on' ? tr('mediafiles.sortFilter.kept') : tr('mediafiles.state.notKept')} selected onclick={() => setFilter({ kept: 'any' })} onremove={() => setFilter({ kept: 'any' })} />{/if}
+			{#if filter.asker !== 'anyone'}<Chip label={filter.asker === 'me' ? tr('library.page.askedByMe') : tr('library.page.askedBy', { name: askers.find((p) => String(p.id) === filter.asker)?.name ?? tr('library.page.someone') })} selected onclick={() => setFilter({ asker: 'anyone' })} onremove={() => setFilter({ asker: 'anyone' })} />{/if}
+			{#if filter.series}<Chip label={tr('library.page.collectionChip', { name: seriesName(filter.series) })} selected onclick={() => setFilter({ series: 0 })} onremove={() => setFilter({ series: 0 })} />{/if}
 			{#if filter.codec}<Chip label={codecLabel(filter.codec)} selected onclick={() => setFilter({ codec: '' })} onremove={() => setFilter({ codec: '' })} />{/if}
-			{#if filter.subs}<Chip label="Missing subtitles" selected onclick={() => setFilter({ subs: false })} onremove={() => setFilter({ subs: false })} />{/if}
-			{#if q}<Chip label="Search: {q}" selected onclick={clearSearch} onremove={clearSearch} />{/if}
-			{#if grouped}<Chip label="Grouped by collection" selected onclick={() => { groupSets = false; syncUrl(); }} onremove={() => { groupSets = false; syncUrl(); }} />{/if}
-			<Button variant="plain" size="md" onclick={clearFilters}>Clear</Button>
-			{#if canManage && filter.subs && shown.length}<span class="t-miss"><Button size="md" icon="search" busy={subsSearching} onclick={searchMissingSubs} data-testid="search-missing-subtitles">Search subtitles</Button></span>{/if}
-			{#if canManage && filter.status === 'missing' && missingCount}<span class="t-miss"><Button size="md" icon="search" disabled={searchingAll} onclick={() => missingDialog?.showModal()} data-testid="search-all-missing">Search all missing{missingWhat}</Button></span>{/if}
+			{#if filter.subs}<Chip label={tr('library.page.missingSubs')} selected onclick={() => setFilter({ subs: false })} onremove={() => setFilter({ subs: false })} />{/if}
+			{#if q}<Chip label={tr('library.page.searchChip', { q })} selected onclick={clearSearch} onremove={clearSearch} />{/if}
+			{#if grouped}<Chip label={tr('library.page.grouped')} selected onclick={() => { groupSets = false; syncUrl(); }} onremove={() => { groupSets = false; syncUrl(); }} />{/if}
+			<Button variant="plain" size="md" onclick={clearFilters}>{tr('library.page.clear')}</Button>
+			{#if canManage && filter.subs && shown.length}<span class="t-miss"><Button size="md" icon="search" busy={subsSearching} onclick={searchMissingSubs} data-testid="search-missing-subtitles">{tr('library.page.searchSubs')}</Button></span>{/if}
+			{#if canManage && filter.status === 'missing' && missingCount}<span class="t-miss"><Button size="md" icon="search" disabled={searchingAll} onclick={() => missingDialog?.showModal()} data-testid="search-all-missing">{missingWhat}</Button></span>{/if}
 		</div>
 	{/if}
 	{#if searchError && !error}<p class="search-error" role="alert"><Icon name="alert" size={16} />{plainReason(searchError).text}</p>{/if}

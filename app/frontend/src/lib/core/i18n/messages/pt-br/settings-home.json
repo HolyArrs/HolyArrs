@@ -1,0 +1,10 @@
+{
+	"settings.home.advanced": "Avançado",
+	"settings.home.page": "{group} · página",
+	"settings.home.title": "Configurações",
+	"settings.home.search": "Buscar configurações",
+	"settings.home.matching": "Configurações encontradas",
+	"settings.home.noMatch": "Nenhuma configuração encontrada",
+	"settings.home.noMatchText": "Tente outra palavra, como pasta, chave ou senha.",
+	"settings.home.clear": "Limpar a busca"
+}

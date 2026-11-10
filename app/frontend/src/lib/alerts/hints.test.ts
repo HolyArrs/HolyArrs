@@ -1,7 +1,15 @@
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
-const src = readFileSync(new URL('../../routes/settings/alerts/+page.svelte', import.meta.url), 'utf8');
+// The page's words live in messages/en; put them back so the checks read the page as a person sees it.
+const messages = new URL('../core/i18n/messages/en/', import.meta.url);
+const words: Record<string, string> = Object.assign({}, ...readdirSync(messages).filter((f) => f.startsWith('settings-')).map((f) => JSON.parse(readFileSync(new URL(f, messages), 'utf8'))));
+const english = (page: string) =>
+	page
+		.replace(/=\{t\('([^']+)'(?:, \{[^}]*\})?\)\}/g, (_, k: string) => `="${words[k] ?? k}"`)
+		.replace(/\{t\('([^']+)'(?:, \{[^}]*\})?\)\}/g, (_, k: string) => words[k] ?? k);
+
+const src = english(readFileSync(new URL('../../routes/settings/alerts/+page.svelte', import.meta.url), 'utf8'));
 
 describe('alerts hints', () => {
 	it('says what the local-network box turns on', () => {

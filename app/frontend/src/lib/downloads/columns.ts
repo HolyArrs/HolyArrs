@@ -1,4 +1,5 @@
 // The Downloads column system: which columns exist, their default order, visibility and width, and how a person's layout is kept in this browser. Versioned so an older saved shape still loads. Pure, so it can be tested.
+import { t } from '#lib/core/i18n/i18n.svelte.ts';
 
 export type ColId =
 	| 'poster'
@@ -55,23 +56,23 @@ export interface Sort {
 // Each default width is the widest usual content plus 14px, measured in the app font (12px cells, 11px second lines and headers), so a fresh table reads as auto-fitted. Poster, Type and Downloader snap to their own sizes.
 export const COLUMNS: ColDef[] = [
 	// Seven columns are on by default, each filled on nearly every row. Time left sits under the Progress bar and the finished date lives in the pane's Dates.
-	{ id: 'poster', label: 'Poster', on: true, width: 32 },
+	{ id: 'poster', get label() { return t('downloads.col.poster'); }, on: true, width: 32 },
 	// Off by default: the poster and the title's second line already say movie, show or music.
-	{ id: 'kind', label: 'Type', on: false, width: 24 },
-	{ id: 'title', label: 'Title', on: true, width: 310 },
-	{ id: 'proto', label: 'Downloader', on: true, width: 24 },
-	{ id: 'progress', label: 'Progress', on: true, width: 130 },
-	{ id: 'status', label: 'Status', on: true, width: 120 },
-	{ id: 'size', label: 'Size', on: true, width: 60, num: true },
-	{ id: 'requested', label: 'Requested by', on: true, width: 112 },
-	{ id: 'quality', label: 'Quality', on: false, width: 80 },
-	{ id: 'added', label: 'Added', on: false, width: 76, num: true },
+	{ id: 'kind', get label() { return t('downloads.col.kind'); }, on: false, width: 24 },
+	{ id: 'title', get label() { return t('downloads.col.title'); }, on: true, width: 310 },
+	{ id: 'proto', get label() { return t('downloads.col.proto'); }, on: true, width: 24 },
+	{ id: 'progress', get label() { return t('downloads.col.progress'); }, on: true, width: 130 },
+	{ id: 'status', get label() { return t('downloads.col.status'); }, on: true, width: 120 },
+	{ id: 'size', get label() { return t('downloads.col.size'); }, on: true, width: 60, num: true },
+	{ id: 'requested', get label() { return t('downloads.col.requested'); }, on: true, width: 112 },
+	{ id: 'quality', get label() { return t('downloads.col.quality'); }, on: false, width: 80 },
+	{ id: 'added', get label() { return t('downloads.col.added'); }, on: false, width: 76, num: true },
 	// Seeds, peers and ratio on one line; the header sorts by any of the three.
-	{ id: 'swarm', label: 'Swarm', on: false, width: 132, torrent: true, fixed: true },
-	{ id: 'tracker', label: 'Tracker', on: false, width: 150, torrent: true },
+	{ id: 'swarm', get label() { return t('downloads.col.swarm'); }, on: false, width: 132, torrent: true, fixed: true },
+	{ id: 'tracker', get label() { return t('downloads.col.tracker'); }, on: false, width: 150, torrent: true },
 	// The indexer it was found on, the same word as Settings > Sources.
-	{ id: 'source', label: 'Source', on: false, width: 96 },
-	{ id: 'category', label: 'Category', on: false, width: 96 }
+	{ id: 'source', get label() { return t('downloads.col.source'); }, on: false, width: 96 },
+	{ id: 'category', get label() { return t('downloads.col.category'); }, on: false, width: 96 }
 ];
 
 export const COL: Record<ColId, ColDef> = Object.fromEntries(COLUMNS.map((c) => [c.id, c])) as Record<ColId, ColDef>;
@@ -232,11 +233,11 @@ export function ratioText(r: number): string {
 
 /** How old a post is: "5 h", "3 d", "2 y", or '' when unknown. */
 export function shortAge(iso: string | undefined, now = Date.now()): string {
-	const t = iso ? Date.parse(iso) : NaN;
-	if (!Number.isFinite(t)) return '';
-	const h = Math.max(0, (now - t) / 3600e3);
-	if (h < 1) return `${Math.max(1, Math.round(h * 60))} m`;
-	if (h < 24) return `${Math.floor(h)} h`;
+	const at = iso ? Date.parse(iso) : NaN;
+	if (!Number.isFinite(at)) return '';
+	const h = Math.max(0, (now - at) / 3600e3);
+	if (h < 1) return t('downloads.age.m', { n: Math.max(1, Math.round(h * 60)) });
+	if (h < 24) return t('downloads.age.h', { n: Math.floor(h) });
 	const d = h / 24;
-	return d < 365 ? `${Math.floor(d)} d` : `${Math.floor(d / 365)} y`;
+	return d < 365 ? t('downloads.age.d', { n: Math.floor(d) }) : t('downloads.age.y', { n: Math.floor(d / 365) });
 }

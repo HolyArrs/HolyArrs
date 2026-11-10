@@ -12,6 +12,7 @@
 	import { to } from '#lib/core/paths.ts';
 	import { session } from '#lib/core/session.svelte.ts';
 	import { plainReason } from '#lib/core/plain.ts';
+	import { t as tr } from '#lib/core/i18n/i18n.svelte.ts';
 
 	const id = Number(page.params.id);
 	let detail = $state<CollectionDetail | null>(null);
@@ -58,24 +59,24 @@
 	}
 </script>
 
-<svelte:head><title>{detail?.name ?? 'Movie collection'} · HolyArrs</title></svelte:head>
+<svelte:head><title>{detail?.name ?? tr('library.collection.movieCollection')} · HolyArrs</title></svelte:head>
 <div class="page">
-<PageHeader title={detail?.name ?? 'Collection'} subtitle={detail ? 'Also removes it from other collections.' : undefined} back={{ href: to('/library/collections'), label: 'Collection' }} />
+<PageHeader title={detail?.name ?? tr('library.collection.collection')} subtitle={detail ? tr('library.collection.alsoRemoves') : undefined} back={{ href: to('/library/collections'), label: tr('library.collection.collection') }} />
 
 {#if error && !detail}
 	<LoadError hasData={false} message={plainReason(error).text} onretry={retry} {busy} />
 {:else if error}
 	<p class="alert" role="alert"><Icon name="alert" size={17} /><span>{plainReason(error).text}</span></p>
 {/if}
-<PageLoader loading={!detail && !error} label="Loading the collection">
+<PageLoader loading={!detail && !error} label={tr('library.collection.loading')}>
 {#if detail}
 	<ul class="card titles">
 		{#each detail.titles as title (title.id)}
 			<li>
 				<label class="title">
 					<input type="checkbox" checked={selected.includes(title.id)} onchange={() => toggle(title.id)} disabled={!!review?.applied} />
-					<span class="grow"><span class="name">{title.name}</span>{#if title.year}<span class="muted">{` ${title.year}`}</span>{/if}<small>{title.version_ids.length} Version{title.version_ids.length === 1 ? '' : 's'} · {title.files.length} File{title.files.length === 1 ? '' : 's'}</small></span>
-					{#if title.protected}<StatusPill kind="missing" label="Protected copy" />{/if}
+					<span class="grow"><span class="name">{title.name}</span>{#if title.year}<span class="muted">{` ${title.year}`}</span>{/if}<small>{tr('library.collection.counts', { versions: tr(title.version_ids.length === 1 ? 'library.collection.versionOne' : 'library.collection.versionMany', { n: title.version_ids.length }), files: tr(title.files.length === 1 ? 'library.collection.fileOne' : 'library.collection.fileMany', { n: title.files.length }) })}</small></span>
+					{#if title.protected}<StatusPill kind="missing" label={tr('library.collection.protectedCopy')} />{/if}
 				</label>
 			</li>
 		{/each}
@@ -83,34 +84,34 @@
 
 	{#if session.can('manage_library') && !review?.applied}
 		<section class="card choices" aria-labelledby="remove-heading">
-			<h2 id="remove-heading">Review removal</h2>
-			<label><input type="checkbox" bind:checked={choice.delete_files} onchange={fileChoiceChanged} /> Move HolyArrs-managed files to the holding folder</label>
-			<label><input type="checkbox" bind:checked={choice.never_add} onchange={() => review = null} /> Put removed movies on Never-add</label>
+			<h2 id="remove-heading">{tr('library.collection.review')}</h2>
+			<label><input type="checkbox" bind:checked={choice.delete_files} onchange={fileChoiceChanged} /> {tr('library.collection.moveFiles')}</label>
+			<label><input type="checkbox" bind:checked={choice.never_add} onchange={() => review = null} /> {tr('library.collection.neverAdd')}</label>
 			{#if choice.delete_files && detail.titles.some((t) => selected.includes(t.id) && t.protected)}
-				<label class="danger"><input type="checkbox" bind:checked={choice.acknowledge_protection} onchange={() => review = null} /> I understand protected copies in the selected titles will also be removed</label>
+				<label class="danger"><input type="checkbox" bind:checked={choice.acknowledge_protection} onchange={() => review = null} /> {tr('library.collection.understand')}</label>
 			{/if}
-			{#if !choice.never_add}<p class="note">An outside list may add these movies again later.</p>{/if}
-			{#if !review}<div><Button variant="primary" onclick={preview} disabled={selected.length === 0} {busy}>Review {selected.length} selected</Button></div>{/if}
+			{#if !choice.never_add}<p class="note">{tr('library.collection.outsideList')}</p>{/if}
+			{#if !review}<div><Button variant="primary" onclick={preview} disabled={selected.length === 0} {busy}>{tr('library.collection.reviewN', { n: selected.length })}</Button></div>{/if}
 		</section>
 	{/if}
 
 	{#if review && !review.applied}
 		<section class="card choices" aria-labelledby="confirm-heading">
-			<h2 id="confirm-heading">Confirm this exact selection</h2>
+			<h2 id="confirm-heading">{tr('library.collection.confirm')}</h2>
 			{#each review.titles.filter((t) => t.selected) as title (title.id)}
 				<div class="confirm-row">
 					<span class="name">{title.name}</span>
-					<span class="muted"> · {title.version_ids.length} Version{title.version_ids.length === 1 ? '' : 's'} · {title.files.length} File{title.files.length === 1 ? '' : 's'}</span>
+					<span class="muted"> · {tr('library.collection.counts', { versions: tr(title.version_ids.length === 1 ? 'library.collection.versionOne' : 'library.collection.versionMany', { n: title.version_ids.length }), files: tr(title.files.length === 1 ? 'library.collection.fileOne' : 'library.collection.fileMany', { n: title.files.length }) })}</span>
 					{#if title.skip}<p class="warn-text">{title.skip}</p>{/if}
-					{#if session.can('settings')}<details class="details"><summary>Details</summary>Versions {title.version_ids.join(', ') || 'none'} · Files {title.files.map((f) => f.id).join(', ') || 'none'}</details>{/if}
+					{#if session.can('settings')}<details class="details"><summary>{tr('library.collection.details')}</summary>{tr('library.collection.ids', { versions: title.version_ids.join(', ') || tr('library.collection.none'), files: title.files.map((f) => f.id).join(', ') || tr('library.collection.none') })}</details>{/if}
 				</div>
 			{/each}
-			<div class="actions"><Button variant="destructive" onclick={apply} {busy}>Remove reviewed movies</Button><Button variant="plain" onclick={() => review = null} disabled={busy}>Cancel</Button></div>
+			<div class="actions"><Button variant="destructive" onclick={apply} {busy}>{tr('library.collection.removeReviewed')}</Button><Button variant="plain" onclick={() => review = null} disabled={busy}>{tr('mediafiles.dialogs.cancel')}</Button></div>
 		</section>
 	{/if}
 
 	{#if review?.applied}
-		<section class="card choices" aria-live="polite"><h2>Collection removed</h2>{#each review.results ?? [] as result}<p class:bad-text={result.status === 'failed'}>{collectionResultLine(result)}</p>{/each}<div class="actions"><Button onclick={retry}>Review remaining movies</Button><Button variant="plain" href={to('/library/collections')}>Back to movie series</Button></div></section>
+		<section class="card choices" aria-live="polite"><h2>{tr('library.collection.removed')}</h2>{#each review.results ?? [] as result}<p class:bad-text={result.status === 'failed'}>{collectionResultLine(result)}</p>{/each}<div class="actions"><Button onclick={retry}>{tr('library.collection.reviewRemaining')}</Button><Button variant="plain" href={to('/library/collections')}>{tr('library.collection.back')}</Button></div></section>
 	{/if}
 {/if}
 </PageLoader>

@@ -16,8 +16,8 @@ describe('Explore Music banner place', () => {
 		expect(hold).toBeGreaterThan(0);
 		expect(real).toBeGreaterThan(hold);
 		// The held banner is the same component with the same words, so the exact height.
-		expect(page.slice(hold, real)).toMatch(/name=\{`Your \$\{bannerView\.musicBannerName \|\| 'Music'\}`\}/);
-		expect(page.slice(hold, real)).toMatch(/<GenreBanner layout=\{2\}[^>]*eyebrow="Picked from your library" line="Albums and artists from it you could ask for\."/);
+		expect(page.slice(hold, real)).toMatch(/name=\{t\('discover\.explore\.yourName', \{ name: bannerView\.musicBannerName \|\| t\('discover\.explore\.music'\) \}\)\}/);
+		expect(page.slice(hold, real)).toMatch(/<GenreBanner layout=\{2\}[^>]*eyebrow=\{t\('discover\.explore\.pickedFromYourLibrary'\)\} line=\{t\('discover\.explore\.albumsAndArtistsFrom'\)\}/);
 	});
 
 	it('placeholder picks are as tall as the captionless covers', () => {

@@ -1,0 +1,17 @@
+{
+	"alerts.fallback.settings": "설정",
+	"alerts.panel.clearAll": "모두 지우기",
+	"alerts.panel.empty": "아직 없습니다",
+	"alerts.panel.needsAttention": "확인 필요",
+	"alerts.panel.recent": "최근",
+	"alerts.panel.remove": "{text} 삭제",
+	"alerts.panel.title": "최근 알림",
+	"alerts.state.manyNeed": "{count}개 확인 필요",
+	"alerts.state.ok": "모두 정상",
+	"alerts.state.oneNeeds": "1개 확인 필요",
+	"alerts.state.unset": "설정 안 됨",
+	"alerts.time.days": "{n}일",
+	"alerts.time.hours": "{n}시간",
+	"alerts.time.minutes": "{n}분",
+	"alerts.time.now": "방금"
+}

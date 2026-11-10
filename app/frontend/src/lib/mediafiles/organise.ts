@@ -1,4 +1,17 @@
 // Types and helpers for naming, adopting and removing files in the Library.
+import { t } from '../core/i18n/i18n.svelte.ts';
+
+/** A counted noun in the person's language, like "3 files". */
+export function unit(name: 'track' | 'album' | 'file' | 'episode' | 'download' | 'day', n: number): string {
+	return t(`mediafiles.unit.${name}.${n === 1 ? 'one' : 'other'}`, { n });
+}
+
+// A [value, label] choice whose label reads its words when used, so it follows the language.
+function pair(value: string, key: string): [string, string] {
+	const row = [value, ''] as [string, string];
+	Object.defineProperty(row, 1, { get: () => t(key), enumerable: true });
+	return row;
+}
 
 export interface RenameStep {
 	file_id: number;
@@ -201,48 +214,48 @@ export const musicWords = ['artist', 'artist_sort', 'album', 'album_type', 'disc
 export const showWords = ['season', 'season_padded', 'episode', 'episode_title', 'air_date', 'absolute'];
 
 export const colonChoices: [string, string][] = [
-	['smart', 'Smart: a colon and space become " - ", any other colon "-"'],
-	['dash', 'A dash: "-"'],
-	['space_dash', 'A space and a dash: " -"'],
-	['space_dash_space', 'A dash with spaces: " - "'],
-	['remove', 'Drop the colon']
+	pair('smart', 'mediafiles.naming.colonSmart'),
+	pair('dash', 'mediafiles.naming.colonDash'),
+	pair('space_dash', 'mediafiles.naming.colonSpaceDash'),
+	pair('space_dash_space', 'mediafiles.naming.colonDashSpaces'),
+	pair('remove', 'mediafiles.naming.colonRemove')
 ];
 
 export const multiEpisodeChoices: [string, string][] = [
-	['range', 'First and last: S01E02-E04'],
-	['short_range', 'First and last, short: S01E02-04'],
-	['each', 'Every episode: S01E02E03E04'],
-	['each_dash', 'Every episode with dashes: S01E02-E03-E04']
+	pair('range', 'mediafiles.naming.multiRange'),
+	pair('short_range', 'mediafiles.naming.multiShort'),
+	pair('each', 'mediafiles.naming.multiEach'),
+	pair('each_dash', 'mediafiles.naming.multiEachDash')
 ];
 
 export const airDateChoices: [string, string][] = [
-	['dash', 'Dashes: 2026-03-14'],
-	['dot', 'Dots: 2026.03.14'],
-	['space', 'Spaces: 2026 03 14']
+	pair('dash', 'mediafiles.naming.dateDash'),
+	pair('dot', 'mediafiles.naming.dateDot'),
+	pair('space', 'mediafiles.naming.dateSpace')
 ];
 
 export const illegalChoices: [string, string][] = [
-	['replace', 'Swap them for safe ones ( / \\ * become -, " becomes \' )'],
-	['remove', 'Drop them']
+	pair('replace', 'mediafiles.naming.illegalReplace'),
+	pair('remove', 'mediafiles.naming.illegalRemove')
 ];
 
-// Display order of adopt groups, with a line explaining each.
-export const groupOrder: [AdoptStatus, string, string][] = [
-	['matched', 'Matched', 'HolyArrs is sure which movie these are.'],
-	['unsure', 'Unsure', 'A likely movie, but check it. Pick the right one or look it up.'],
-	['unmatched', 'Not matched', 'No movie found from the folder name. Look each one up to add it.'],
-	['in_library', 'Already in the Library', 'Left as they are.'],
-	['never_add', 'On the Never-add list', 'Left as they are.'],
-	['no_video', 'No video file', 'Nothing to adopt in these folders.']
+// Display order of adopt groups: the status, its label and a line explaining it ({word} is the shelf kind).
+const groupOrder: [AdoptStatus, string, string][] = [
+	['matched', 'mediafiles.adopt.matched', 'mediafiles.adopt.matchedAbout'],
+	['unsure', 'mediafiles.adopt.unsure', 'mediafiles.adopt.unsureAbout'],
+	['unmatched', 'mediafiles.adopt.unmatched', 'mediafiles.adopt.unmatchedAbout'],
+	['in_library', 'mediafiles.adopt.inLibrary', 'mediafiles.adopt.leftAsTheyAre'],
+	['never_add', 'mediafiles.adopt.neverAdd', 'mediafiles.adopt.leftAsTheyAre'],
+	['no_video', 'mediafiles.adopt.noVideo', 'mediafiles.adopt.noVideoAbout']
 ];
 
 // Skips examples the server did not send.
 export function musicExampleRows(ex: MusicExamples | undefined): [string, string][] {
 	if (!ex) return [];
 	const order: [keyof MusicExamples, string][] = [
-		['track', 'A track'],
-		['multi_disc', 'A track of a two-disc album'],
-		['various', 'A track of a various-artists album']
+		['track', t('mediafiles.examples.track')],
+		['multi_disc', t('mediafiles.examples.multiDisc')],
+		['various', t('mediafiles.examples.various')]
 	];
 	return order.filter(([k]) => !!ex[k]).map(([k, label]) => [label, ex[k] as string]);
 }
@@ -252,41 +265,41 @@ export function albumSteps(steps: RenameStep[], albumId: number | undefined): Re
 }
 
 export function musicFolderLine(c: Pick<AdoptCandidate, 'tracks' | 'unknown' | 'albums'>): string {
-	const t = c.tracks ?? 0;
+	const tracks = c.tracks ?? 0;
 	const a = (c.albums ?? []).filter((x) => !!x.match).length;
 	const left = c.unknown ?? 0;
-	const parts = [`${t} track${t === 1 ? '' : 's'} in ${a} album${a === 1 ? '' : 's'}`];
-	if (left) parts.push(`${left} file${left === 1 ? '' : 's'} left alone`);
+	const parts = [t('mediafiles.organise.tracksInAlbums', { tracks: unit('track', tracks), albums: unit('album', a) })];
+	if (left) parts.push(t('mediafiles.organise.filesLeftAlone', { files: unit('file', left) }));
 	return parts.join('; ');
 }
 
 // Says how well the album matches and how many files hold its tracks.
 export function albumFolderLine(a: AdoptAlbum): string {
 	const n = a.cut ? a.matched + a.unknown : a.files.length;
-	if (!a.match) return `No album fits; ${n} file${n === 1 ? '' : 's'} left alone`;
+	if (!a.match) return t('mediafiles.organise.noAlbumFits', { files: unit('file', n) });
 	const name = `${a.match.name}${a.match.year ? ` (${a.match.year})` : ''} · ${score(a.match.score)}`;
 	if (!a.pressing) return `${name} · ${a.why}`;
-	return `${name} · ${a.matched} of ${n} file${n === 1 ? '' : 's'} hold a track of ${a.pressing}`;
+	return `${name} · ${t('mediafiles.organise.holdTrack', { matched: a.matched, files: unit('file', n), pressing: a.pressing })}`;
 }
 
 // The server lists only some files; this says how many are hidden.
 export function cutFilesLine(a: AdoptAlbum): string {
 	const more = a.matched + a.unknown - a.files.length;
-	return a.cut && more > 0 ? `and ${more} more file${more === 1 ? '' : 's'}, not listed` : '';
+	return a.cut && more > 0 ? t(more === 1 ? 'mediafiles.organise.moreFilesOne' : 'mediafiles.organise.moreFilesOther', { n: more }) : '';
 }
 
 export function trackFileLine(f: AdoptTrackFile): string {
-	return f.track ? f.track : `Left alone: ${f.why ?? 'no track'}`;
+	return f.track ? f.track : t('mediafiles.organise.leftAlone', { why: f.why ?? t('mediafiles.organise.noTrack') });
 }
 
 export function episodeExampleRows(ex: EpisodeExamples | undefined): [string, string][] {
 	if (!ex) return [];
 	const order: [keyof EpisodeExamples, string][] = [
-		['episode', 'One episode'],
-		['multi', 'A file holding two episodes'],
-		['special', 'A special (season 0)'],
-		['daily', 'A show ordered by air day'],
-		['anime', 'A show ordered by running number']
+		['episode', t('mediafiles.examples.episode')],
+		['multi', t('mediafiles.examples.multi')],
+		['special', t('mediafiles.examples.special')],
+		['daily', t('mediafiles.examples.daily')],
+		['anime', t('mediafiles.examples.anime')]
 	];
 	return order.filter(([k]) => !!ex[k]).map(([k, label]) => [label, ex[k] as string]);
 }
@@ -321,11 +334,13 @@ export function groupPlan(
 	folders: AdoptCandidate[],
 	word = 'movie'
 ): { status: AdoptStatus; label: string; about: string; folders: AdoptCandidate[] }[] {
+	const kindKey = `mediafiles.kind.${word}`;
+	const named = t(kindKey) === kindKey ? word : t(kindKey);
 	return groupOrder
 		.map(([status, label, about]) => ({
 			status,
-			label: status === 'no_video' && word === 'artist' ? 'No audio file' : label,
-			about: about.replace('movie', word),
+			label: status === 'no_video' && word === 'artist' ? t('mediafiles.adopt.noAudio') : t(label),
+			about: t(about, { word: named }),
 			folders: folders.filter((f) => f.status === status)
 		}))
 		.filter((g) => g.folders.length > 0);
@@ -362,15 +377,15 @@ export function showIdOf(s: { source: string; ids: Record<string, string> }): st
 }
 
 export function episodeFileLine(f: AdoptEpisodeFile): string {
-	return f.episodes.length ? f.episodes.join(', ') : `Left alone: ${f.why ?? 'no episode'}`;
+	return f.episodes.length ? f.episodes.join(', ') : t('mediafiles.organise.leftAlone', { why: f.why ?? t('mediafiles.organise.noEpisode') });
 }
 
 export function showFolderLine(c: Pick<AdoptCandidate, 'episodes' | 'unknown' | 'files'>): string {
 	const eps = c.episodes ?? 0;
 	const files = c.files?.length ?? 0;
 	const left = c.unknown ?? 0;
-	const parts = [`${eps} episode${eps === 1 ? '' : 's'} in ${files - left} file${files - left === 1 ? '' : 's'}`];
-	if (left) parts.push(`${left} file${left === 1 ? '' : 's'} with no episode, left alone`);
+	const parts = [t('mediafiles.organise.episodesInFiles', { episodes: unit('episode', eps), files: unit('file', files - left) })];
+	if (left) parts.push(t('mediafiles.organise.noEpisodeLeftAlone', { files: unit('file', left) }));
 	return parts.join('; ');
 }
 
@@ -382,24 +397,23 @@ export function score(s: number): string {
 // Lists, in plain words, what a delete will do.
 export function deleteSummary(p: RemovePlan, kind: 'movie' | 'show' | 'artist' = 'movie'): string[] {
 	const out: string[] = [];
-	const s = (n: number) => (n === 1 ? '' : 's');
 	if (p.scope === 'album' || p.scope === 'tracks') {
 		const n = p.tracks?.length ?? 0;
-		out.push(p.scope === 'album' ? `${p.album}: ${n} track${s(n)} stop being kept up to date` : `${(p.tracks ?? []).join(', ')}: no longer kept up to date`);
+		out.push(p.scope === 'album' ? t('mediafiles.delete.albumStop', { album: p.album ?? '', tracks: unit('track', n) }) : t('mediafiles.delete.noLonger', { list: (p.tracks ?? []).join(', ') }));
 	} else if (p.scope === 'season' || p.scope === 'episodes') {
 		const n = p.episodes?.length ?? 0;
-		out.push(p.scope === 'season' ? `Season ${p.season}: ${n} episode${s(n)} stop being kept up to date` : `${(p.episodes ?? []).join(', ')}: no longer kept up to date`);
+		out.push(p.scope === 'season' ? t('mediafiles.delete.seasonStop', { season: p.season ?? '', episodes: unit('episode', n) }) : t('mediafiles.delete.noLonger', { list: (p.episodes ?? []).join(', ') }));
 	} else {
-		out.push(`Leaves your Library. History stays.`);
+		out.push(t('mediafiles.delete.leaves'));
 	}
 	if (p.held.length) {
 		const n = p.held.length;
-		out.push(p.holding_days > 0 ? `${n} file${s(n)} to the holding folder for ${p.holding_days} day${s(p.holding_days)}` : `${n} file${s(n)} to the holding folder`);
+		out.push(p.holding_days > 0 ? t('mediafiles.delete.heldDays', { files: unit('file', n), days: unit('day', p.holding_days) }) : t('mediafiles.delete.held', { files: unit('file', n) }));
 	}
-	if (p.kept.length) out.push(`${p.kept.length} file${s(p.kept.length)} stay${p.kept.length === 1 ? 's' : ''} on disk`);
-	if (!p.held.length && !p.kept.length) out.push('No files on disk');
-	if (p.choice.never_add) out.push('Lists never add it again');
-	if (p.active_downloads) out.push(`${p.active_downloads} download${s(p.active_downloads)} keep running`);
+	if (p.kept.length) out.push(t(p.kept.length === 1 ? 'mediafiles.delete.keptOne' : 'mediafiles.delete.keptOther', { n: p.kept.length }));
+	if (!p.held.length && !p.kept.length) out.push(t('mediafiles.delete.noFiles'));
+	if (p.choice.never_add) out.push(t('mediafiles.delete.neverAgain'));
+	if (p.active_downloads) out.push(t('mediafiles.delete.downloadsRun', { downloads: unit('download', p.active_downloads) }));
 	return out;
 }
 
@@ -422,11 +436,11 @@ export async function followJob(
 			const j = await get(id);
 			tick(j);
 			if (finished(j)) return j;
-			if (Date.now() > until) throw new Error('This is taking a long time. It keeps running; check back later.');
+			if (Date.now() > until) throw new Error(t('mediafiles.organise.slow'));
 			await new Promise<void>((res) => {
-				const t = setTimeout(res, every);
+				const timer = setTimeout(res, every);
 				wake = () => {
-					clearTimeout(t);
+					clearTimeout(timer);
 					res();
 				};
 			});

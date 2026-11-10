@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import { entryArt, entryHref, itemDot } from './calendar.ts';
@@ -35,12 +36,12 @@
 			<p class="ep-when" class:tag={e.kind === 'album'}>{lines[0]}{#if isEp && groupTag(g)}{' · '}{groupTag(g)}{/if}</p>
 			{#if isEp}
 				{#each g.entries as x (x.item_id ?? x.episode)}
-					{@const t = epText(x.tmdb, x.season, x.episode)}
+					{@const text = epText(x.tmdb, x.season, x.episode)}
 					{@const named = !!x.episode_name && !/^Episode \d+$/.test(x.episode_name)}
 					<div class="ep-one">
-						<p class="ep-num">Season {x.season}, Episode {x.episode}</p>
+						<p class="ep-num">{t('discover.calWindow.seasonEpisode', { season: x.season ?? 0, episode: x.episode ?? 0 })}</p>
 						{#if named}<h3 class="ep-name">{x.episode_name}</h3>{/if}
-						{#if t}<p class="ep-text">{t}</p>{:else}<p class="ep-text none">No description yet.</p>{/if}
+						{#if text}<p class="ep-text">{text}</p>{:else}<p class="ep-text none">{t('discover.calWindow.noDescriptionYet')}</p>{/if}
 					</div>
 				{/each}
 			{:else}
@@ -48,11 +49,11 @@
 				{#if e.kind !== 'album' && open}{@const story = movieText(e.tmdb)}{#if story}<p class="ep-text story">{story}</p>{/if}{/if}
 				{#if extra.length}<p class="ep-text">{extra.join(' · ')}</p>{/if}
 			{/if}
-			{#if have}<p class="ep-text have">In the Library</p>{/if}
+			{#if have}<p class="ep-text have">{t('discover.calWindow.inTheLibrary')}</p>{/if}
 		</div>
 		{#snippet footer()}
 			<Button variant="primary" href={page}>Go to {e.kind === 'album' ? 'album' : e.kind === 'episode' ? 'show' : 'movie'}</Button>
-			<Button onclick={() => (open = false)}>Close</Button>
+			<Button onclick={() => (open = false)}>{t('discover.calWindow.close')}</Button>
 		{/snippet}
 </Sheet>
 

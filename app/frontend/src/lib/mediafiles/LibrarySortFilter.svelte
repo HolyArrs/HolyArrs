@@ -9,6 +9,7 @@
 	import type { MovieCollection } from './collections.ts';
 	import { filters, type Kind } from './library.ts';
 	import { filterCounts, sortLabel, sortsFor, startDir, type FilterState, type SortDir, type SortKey } from './table.ts';
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 
 	type Props = {
 		kind: Kind;
@@ -46,51 +47,51 @@
 {/snippet}
 
 <div class="sf">
-	<section class="sf-col sf-sort" aria-label="Sort">
-		<h3 class="sf-h">Sort by</h3>
+	<section class="sf-col sf-sort" aria-label={t('mediafiles.sortFilter.sort')}>
+		<h3 class="sf-h">{t('mediafiles.sortFilter.sortBy')}</h3>
 		{#each sortsFor(kind === 'all' ? 'all' : kind) as k (k)}
 			{@render sfRow(sortLabel(k, kind === 'all' ? 'all' : kind), sort.key === k, () => setSort(k, sort.key === k ? (sort.dir === 'asc' ? 'desc' : 'asc') : startDir(k)), '', sort.key === k ? (sort.dir === 'asc' ? '↑' : '↓') : '')}
 		{/each}
-		<div class="sf-dir"><SegmentedControl label="Order" size="sm" value={sort.dir} options={[{ value: 'asc', label: 'Ascending' }, { value: 'desc', label: 'Descending' }]} onchange={(d) => setSort(sort.key, d)} /></div>
+		<div class="sf-dir"><SegmentedControl label={t('mediafiles.sortFilter.order')} size="sm" value={sort.dir} options={[{ value: 'asc', label: t('mediafiles.sortFilter.asc') }, { value: 'desc', label: t('mediafiles.sortFilter.desc') }]} onchange={(d) => setSort(sort.key, d)} /></div>
 		{#if kind === 'movie'}
 			<span class="sf-sep" aria-hidden="true"></span>
-			{@render sfRow('Group by collection', groupSets, () => { groupSets = !groupSets; syncUrl(); })}
+			{@render sfRow(t('mediafiles.sortFilter.group'), groupSets, () => { groupSets = !groupSets; syncUrl(); })}
 		{/if}
 	</section>
-	<section class="sf-col sf-filter" aria-label="Filter">
-		<h3 class="sf-h">Status</h3>
+	<section class="sf-col sf-filter" aria-label={t('mediafiles.sortFilter.filter')}>
+		<h3 class="sf-h">{t('mediafiles.col.status')}</h3>
 		<div class="sf-chips">
 			{#each filters as [f, label] (f)}<span class="sf-chip t-{f}"><Chip {label} count={loaded ? counts.status[f] : undefined} selected={filter.status === f} onclick={() => setFilter({ status: f })} /></span>{/each}
 		</div>
-		<h3 class="sf-h">Keep up to date</h3>
+		<h3 class="sf-h">{t('mediafiles.select.keep')}</h3>
 		<div class="sf-chips">
-			<Chip label="Kept" icon="bellOn" count={loaded ? counts.kept.on : undefined} selected={filter.kept === 'on'} onclick={() => setFilter({ kept: filter.kept === 'on' ? 'any' : 'on' })} />
-			<Chip label="Not kept" icon="bell" count={loaded ? counts.kept.off : undefined} selected={filter.kept === 'off'} onclick={() => setFilter({ kept: filter.kept === 'off' ? 'any' : 'off' })} />
+			<Chip label={t('mediafiles.sortFilter.kept')} icon="bellOn" count={loaded ? counts.kept.on : undefined} selected={filter.kept === 'on'} onclick={() => setFilter({ kept: filter.kept === 'on' ? 'any' : 'on' })} />
+			<Chip label={t('mediafiles.state.notKept')} icon="bell" count={loaded ? counts.kept.off : undefined} selected={filter.kept === 'off'} onclick={() => setFilter({ kept: filter.kept === 'off' ? 'any' : 'off' })} />
 		</div>
 		{#if askers.length || myId}
-			<h3 class="sf-h">Asked by</h3>
+			<h3 class="sf-h">{t('mediafiles.sortFilter.askedBy')}</h3>
 			<div class="sf-chips">
-				<Chip label="Anyone" selected={filter.asker === 'anyone'} onclick={() => setFilter({ asker: 'anyone' })} />
-				{#if myId}<Chip label="Me" count={loaded ? (counts.askers.get(myId) ?? 0) : undefined} selected={filter.asker === 'me'} onclick={() => setFilter({ asker: 'me' })} />{/if}
+				<Chip label={t('mediafiles.sortFilter.anyone')} selected={filter.asker === 'anyone'} onclick={() => setFilter({ asker: 'anyone' })} />
+				{#if myId}<Chip label={t('mediafiles.sortFilter.me')} count={loaded ? (counts.askers.get(myId) ?? 0) : undefined} selected={filter.asker === 'me'} onclick={() => setFilter({ asker: 'me' })} />{/if}
 				{#each askers.filter((p) => p.id !== myId) as p (p.id)}<Chip label={p.name} count={loaded ? (counts.askers.get(p.id) ?? 0) : undefined} selected={filter.asker === String(p.id)} onclick={() => setFilter({ asker: String(p.id) })} />{/each}
 			</div>
 		{/if}
 		{#if kind === 'movie' && counts.codecs.size}
-			<h3 class="sf-h">Codec</h3>
+			<h3 class="sf-h">{t('mediafiles.col.codec')}</h3>
 			<div class="sf-chips">
 				{#each [...counts.codecs].toSorted((a, b) => b[1] - a[1]) as [c, n] (c)}<Chip label={codecLabel(c)} count={n} selected={filter.codec === c} onclick={() => setFilter({ codec: filter.codec === c ? '' : c })} />{/each}
 			</div>
 		{/if}
 		{#if (kind === 'movie' || kind === 'show') && subsTitles && (counts.subs || filter.subs)}
-			<h3 class="sf-h">Subtitles</h3>
+			<h3 class="sf-h">{t('mediafiles.sheet.subtitles')}</h3>
 			<div class="sf-chips">
-				<Chip label="Missing" icon="subtitle" count={counts.subs} selected={!!filter.subs} onclick={() => setFilter({ subs: !filter.subs })} />
+				<Chip label={t('mediafiles.filter.missing')} icon="subtitle" count={counts.subs} selected={!!filter.subs} onclick={() => setFilter({ subs: !filter.subs })} />
 			</div>
 		{/if}
 		{#if (kind === 'movie' || kind === 'all') && series.length}
-			<h3 class="sf-h">Collection</h3>
+			<h3 class="sf-h">{t('mediafiles.col.series')}</h3>
 			<div class="sf-well">
-				{@render sfRow('Every movie', !filter.series, () => setFilter({ series: 0 }))}
+				{@render sfRow(t('mediafiles.sortFilter.everyMovie'), !filter.series, () => setFilter({ series: 0 }))}
 				{#each series.toSorted((x, y) => x.name.localeCompare(y.name)) as sr (sr.id)}
 					{@render sfRow(sr.name, filter.series === sr.id, () => setFilter({ series: sr.id }), countHint(counts.series.get(sr.id) ?? 0))}
 				{/each}
@@ -98,11 +99,11 @@
 		{/if}
 		{#if canManage && anyPart}
 			<span class="sf-sep" aria-hidden="true"></span>
-			<a class="sf-o sf-link" href={to('/library/deleted')} onclick={onclose} data-testid="library-deleted"><span class="sf-tick" aria-hidden="true"><Icon name="trash" size={14} /></span><span class="sf-l">Recently deleted</span>{#if deletedCount}<span class="sf-n">{deletedCount}</span>{/if}</a>
+			<a class="sf-o sf-link" href={to('/library/deleted')} onclick={onclose} data-testid="library-deleted"><span class="sf-tick" aria-hidden="true"><Icon name="trash" size={14} /></span><span class="sf-l">{t('mediafiles.sortFilter.recentlyDeleted')}</span>{#if deletedCount}<span class="sf-n">{deletedCount}</span>{/if}</a>
 		{/if}
 	</section>
 	{#if phone && view === 'posters'}
-		<section class="sf-col sf-size" aria-label="Posters">
+		<section class="sf-col sf-size" aria-label={t('mediafiles.toolbar.posters')}>
 			{#each sizeItems as it, i (i)}
 				{#if it.kind === 'heading'}<h3 class="sf-h">{it.label}</h3>
 				{:else if it.kind !== 'separator'}{@render sfRow(it.label, !!it.checked, () => it.onselect?.())}{/if}

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import Icon, { type IconName } from '#lib/ui/Icon.svelte';
 	import StatusIcon, { statusKey } from '#lib/ui/StatusIcon.svelte';
 	import type { Life } from './lifecycle.ts';
@@ -11,7 +12,7 @@
 	let { ctx, types, subs, hasSubs, subsTotal, filterCount, status, toneOf, setStatus, ms, open = $bindable(false), btn = $bindable() }: {
 		ctx: BoardCtx;
 		types: { k: 'all' | 'movie' | 'show' | 'artist'; label: string; icon: IconName }[];
-		subs: { word: string; count: number; tone: Life['tone'] }[];
+		subs: { word: string; key: string; count: number; tone: Life['tone'] }[];
 		hasSubs: boolean;
 		subsTotal: number;
 		filterCount: number;
@@ -61,9 +62,9 @@
 	$effect(() => {
 		if (!open) return;
 		const out = (e: PointerEvent) => {
-			const t = e.target as Node;
+			const node = e.target as Node;
 			// The phone sheet closes on its scrim's own click instead, so the tap cannot land on a card below.
-			if (!phone && !sfPop?.contains(t) && !btn?.contains(t)) sfClose(false);
+			if (!phone && !sfPop?.contains(node) && !btn?.contains(node)) sfClose(false);
 		};
 		document.addEventListener('pointerdown', out, true);
 		return () => document.removeEventListener('pointerdown', out, true);
@@ -71,34 +72,34 @@
 </script>
 
 {#snippet statusItems(close: boolean)}
-	<button type="button" role="menuitemradio" aria-checked={!status} class="sf-mi" onclick={() => { setStatus(''); if (close) sfClose(); }}><span class="sf-tick" aria-hidden="true"><Icon name="check" size={14} /></span><span class="sf-d" aria-hidden="true"><Icon name="requests" size={14} /></span><span class="sf-w">All statuses</span><span class="sf-c">{subsTotal}</span></button>
+	<button type="button" role="menuitemradio" aria-checked={!status} class="sf-mi" onclick={() => { setStatus(''); if (close) sfClose(); }}><span class="sf-tick" aria-hidden="true"><Icon name="check" size={14} /></span><span class="sf-d" aria-hidden="true"><Icon name="requests" size={14} /></span><span class="sf-w">{t('requests.filter.allStatuses')}</span><span class="sf-c">{subsTotal}</span></button>
 	{#each subs as x (x.word)}
-		<button type="button" role="menuitemradio" aria-checked={status === x.word} class="sf-mi sf-t-{toneOf(x.tone)}" onclick={() => { setStatus(x.word); if (close) sfClose(); }}><span class="sf-tick" aria-hidden="true"><Icon name="check" size={14} /></span><span class="sf-d" aria-hidden="true"><StatusIcon status={statusKey(x.word)} size={14} motion={false} /></span><span class="sf-w">{x.word}</span><span class="sf-c">{x.count}</span></button>
+		<button type="button" role="menuitemradio" aria-checked={status === x.word} class="sf-mi sf-t-{toneOf(x.tone)}" onclick={() => { setStatus(x.word); if (close) sfClose(); }}><span class="sf-tick" aria-hidden="true"><Icon name="check" size={14} /></span><span class="sf-d" aria-hidden="true"><StatusIcon status={statusKey(x.key)} size={14} motion={false} /></span><span class="sf-w">{x.word}</span><span class="sf-c">{x.count}</span></button>
 	{/each}
 {/snippet}
 {#snippet filterItems()}
 	{#if hasSubs}
 			<div role="group" aria-labelledby="sf-mh-status">
-			<div class="sf-mh" id="sf-mh-status">Status</div>
+			<div class="sf-mh" id="sf-mh-status">{t('requests.filter.status')}</div>
 			{@render statusItems(false)}
 			</div>
 			<div class="sf-sep" role="separator"></div>
 		{/if}
 		<div role="group" aria-labelledby="sf-mh-type">
-		<div class="sf-mh" id="sf-mh-type">Type</div>
-		{#each types as t (t.k)}
-			<button type="button" role="menuitemradio" aria-checked={ctx.kind === t.k} class="sf-mi" onclick={() => ctx.setKind(t.k)}><span class="sf-tick" aria-hidden="true"><Icon name="check" size={14} /></span><span class="sf-ti" aria-hidden="true"><Icon name={t.icon} size={14} /></span><span class="sf-w">{t.label}</span></button>
+		<div class="sf-mh" id="sf-mh-type">{t('requests.filter.type')}</div>
+		{#each types as ty (ty.k)}
+			<button type="button" role="menuitemradio" aria-checked={ctx.kind === ty.k} class="sf-mi" onclick={() => ctx.setKind(ty.k)}><span class="sf-tick" aria-hidden="true"><Icon name="check" size={14} /></span><span class="sf-ti" aria-hidden="true"><Icon name={ty.icon} size={14} /></span><span class="sf-w">{ty.label}</span></button>
 		{/each}
 		</div>
 {/snippet}
 <div class="sf-anchor">
-		<button type="button" class="sf-btn" bind:this={btn} aria-haspopup={phone ? 'dialog' : 'menu'} aria-expanded={open} aria-label="Filter{filterCount ? `, ${filterCount} on` : ''}" onclick={sfToggle}>
+		<button type="button" class="sf-btn" bind:this={btn} aria-haspopup={phone ? 'dialog' : 'menu'} aria-expanded={open} aria-label={filterCount ? t('requests.filter.labelOn', { n: filterCount }) : t('requests.filter.label')} onclick={sfToggle}>
 			<svg class="sf-funnel" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M2.5 3.5h11l-4.2 5v4l-2.6 1.2V8.5z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" /></svg>
-			<span class="sf-v">Filter</span>
+			<span class="sf-v">{t('requests.filter.label')}</span>
 			{#if filterCount}<span class="sf-badge" aria-hidden="true">{filterCount}</span>{/if}
 		</button>
 		{#if open && !phone}
-			<div class="sf-menu" in:fly={{ y: -8, duration: ms(280), easing: cubicOut }} out:fade={{ duration: ms(180) }} role="menu" aria-label="Filter" tabindex="-1" bind:this={sfPop} onkeydown={sfKeys}>
+			<div class="sf-menu" in:fly={{ y: -8, duration: ms(280), easing: cubicOut }} out:fade={{ duration: ms(180) }} role="menu" aria-label={t('requests.filter.label')} tabindex="-1" bind:this={sfPop} onkeydown={sfKeys}>
 				{@render filterItems()}
 			</div>
 		{/if}
@@ -106,9 +107,9 @@
 {#if open && phone}
 	<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
 	<div class="sf-scrim" aria-hidden="true" in:fade={{ duration: ms(300) }} out:fade={{ duration: ms(200) }} onclick={(e) => { e.preventDefault(); sfClose(true); }}></div>
-	<div class="sf-sheet" role="dialog" aria-modal="true" aria-label="Filter" tabindex="-1" bind:this={sfPop} onkeydown={sfKeys} in:fly={{ y: 80, duration: ms(420), easing: cubicOut }} out:fly={{ y: 80, duration: ms(200), easing: cubicIn }}>
-		<div class="sf-head"><span class="sf-ht">Filter</span><button type="button" class="sf-done" onclick={() => sfClose(true)}>Done</button></div>
-		<div role="menu" aria-label="Filter options">{@render filterItems()}</div>
+	<div class="sf-sheet" role="dialog" aria-modal="true" aria-label={t('requests.filter.label')} tabindex="-1" bind:this={sfPop} onkeydown={sfKeys} in:fly={{ y: 80, duration: ms(420), easing: cubicOut }} out:fly={{ y: 80, duration: ms(200), easing: cubicIn }}>
+		<div class="sf-head"><span class="sf-ht">{t('requests.filter.label')}</span><button type="button" class="sf-done" onclick={() => sfClose(true)}>{t('requests.filter.done')}</button></div>
+		<div role="menu" aria-label={t('requests.filter.options')}>{@render filterItems()}</div>
 	</div>
 {/if}
 

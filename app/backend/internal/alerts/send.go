@@ -71,6 +71,8 @@ type Person struct {
 
 // Message is one moment to tell.
 type Message struct {
+	// lang is the app language of the fixed words ("" is English).
+	lang    string
 	Moment  string
 	Subject string
 	Text    string
@@ -190,6 +192,9 @@ type Sender struct {
 	// Backoff is the wait before each new try of a failed send; nil means
 	// DefaultBackoff, an empty list never tries again.
 	Backoff []time.Duration
+	// Lang is the owner's app language for the fixed words of a message
+	// (nil or "" means English).
+	Lang func(context.Context) string
 
 	wg sync.WaitGroup
 }
@@ -633,4 +638,11 @@ func (s *Sender) email(ctx context.Context, a domain.Alert, m Message) error {
 		return fail("mail server did not say goodbye", err)
 	}
 	return nil
+}
+
+func (s *Sender) lang(ctx context.Context) string {
+	if s.Lang == nil {
+		return ""
+	}
+	return s.Lang(ctx)
 }

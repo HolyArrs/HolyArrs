@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import Field from '#lib/ui/Field.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
@@ -57,36 +58,36 @@
 	onMount(load);
 </script>
 
-<svelte:head><title>Logs · HolyArrs</title></svelte:head>
+<svelte:head><title>{t('settings.logs.title')} · HolyArrs</title></svelte:head>
 
-<PageHeader title="Logs">
+<PageHeader title={t('settings.logs.title')}>
 	{#snippet actions()}
-		<AdminLinkButton href={to(`/api/v1/logs/download`)} download>Download</AdminLinkButton>
+		<AdminLinkButton href={to(`/api/v1/logs/download`)} download>{t('settings.logs.download')}</AdminLinkButton>
 	{/snippet}
 </PageHeader>
 
-<form class="card filters" aria-label="Filter the log" onsubmit={apply}>
+<form class="card filters" aria-label={t('settings.logs.filter')} onsubmit={apply}>
 	<div class="row-fields">
-		<Field id="lg-level" label="Level">
+		<Field id="lg-level" label={t('settings.logs.level')}>
 			<select id="lg-level" class="input" bind:value={filter.level} onchange={() => apply()}>
-				<option value="">Every line</option>
-				<option value="warning">Warnings and errors</option>
-				<option value="error">Errors only</option>
+				<option value="">{t('settings.logs.every')}</option>
+				<option value="warning">{t('settings.logs.warnings')}</option>
+				<option value="error">{t('settings.logs.errors')}</option>
 			</select>
 		</Field>
 		<div class="field grow">
-			<label for="lg-q">Text</label>
-			<input id="lg-q" class="input" type="search" bind:value={filter.q} placeholder="e.g. qBittorrent" autocomplete="off" />
+			<label for="lg-q">{t('settings.logs.text')}</label>
+			<input id="lg-q" class="input" type="search" bind:value={filter.q} placeholder={t('settings.logs.example')} autocomplete="off" />
 		</div>
-		<Field id="lg-from" label="From">
+		<Field id="lg-from" label={t('settings.logs.from')}>
 			<input id="lg-from" class="input" type="date" bind:value={filter.from} onchange={() => apply()} />
 		</Field>
-		<Field id="lg-to" label="To">
+		<Field id="lg-to" label={t('settings.logs.to')}>
 			<input id="lg-to" class="input" type="date" bind:value={filter.to} onchange={() => apply()} />
 		</Field>
 		<div class="go">
-			<Button variant="primary" size="sm" type="submit" disabled={busy} aria-busy={busy}>Apply</Button>
-			<Button variant="plain" size="sm" type="button" onclick={clear}>Clear</Button>
+			<Button variant="primary" size="sm" type="submit" disabled={busy} aria-busy={busy}>{t('settings.logs.apply')}</Button>
+			<Button variant="plain" size="sm" type="button" onclick={clear}>{t('settings.logs.clear')}</Button>
 		</div>
 	</div>
 </form>
@@ -100,7 +101,7 @@
 {:else}
 	{#if error}<LoadError hasData={true} message={error} onretry={load} {busy} />{/if}
 	<div data-testid="log-lines" aria-busy={busy} data-query={shown}>
-		<SettingsCard title="Lines">
+		<SettingsCard title={t('settings.logs.lines')}>
 			<p class="small muted" role="status">{pageWords(result, result.lines.length)}</p>
 			{#if result.lines.length}
 				<ol class="lines">
@@ -113,9 +114,9 @@
 					{/each}
 				</ol>
 				<div class="row" style="margin-top: var(--s-3)">
-					<Button variant="plain" type="button" disabled={filter.offset === 0 || busy} onclick={() => move(-filter.limit)}>Newer</Button>
+					<Button variant="plain" type="button" disabled={filter.offset === 0 || busy} onclick={() => move(-filter.limit)}>{t('settings.logs.newer')}</Button>
 					<Button variant="plain" type="button" disabled={filter.offset + result.lines.length >= result.total || busy} onclick={() => move(filter.limit)}
-						>Older</Button>
+						>{t('settings.logs.older')}</Button>
 				</div>
 			{/if}
 		</SettingsCard>

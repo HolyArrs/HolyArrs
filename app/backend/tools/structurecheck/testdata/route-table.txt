@@ -475,6 +475,7 @@ PUT /api/v1/metadata/album/{mbid}/follow auth=signed_in scope=write assurance=fa
 PUT /api/v1/metadata/movie/{tmdb_id}/follow auth=signed_in scope=write assurance=false part=wishlist
 PUT /api/v1/metadata/show/{tmdb_id}/follow auth=signed_in scope=write assurance=false part=wishlist
 PUT /api/v1/my/alerts auth=signed_in scope=write assurance=false part=core
+PUT /api/v1/my/language auth=signed_in scope=write assurance=false part=core
 PUT /api/v1/my/plex-watchlist auth=signed_in scope=write assurance=false part=wishlist
 PUT /api/v1/my/profile auth=signed_in scope=write assurance=false part=core
 PUT /api/v1/outside-lists/{id} auth=settings scope=write assurance=false part=media

@@ -1,10 +1,12 @@
 <script lang="ts">
+	import Words from '#lib/ui/Words.svelte';
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import { getContext as moveContext } from 'svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import StepCapsule from './StepCapsule.svelte';
 	import type { ShowList } from './ItemsSheet.svelte';
-	import { needsGroups, plural, type Report } from './move.ts';
+	import { needsGroups, type Report } from './move.ts';
 	import { to } from '../core/paths.ts';
 
 	const countSteps = moveContext<boolean | undefined>('move-hide-count') !== true;
@@ -35,43 +37,43 @@
 	const detail = $derived(note.replace(/\s+(moved|undone)\.?$/, ''));
 </script>
 
-<SettingsCard id="move-step" title={countSteps ? 'Step 3 of 4 · Move' : 'Move'} description={running ? undefined : 'Before you move'}>
+<SettingsCard id="move-step" title={countSteps ? t('migrate.step3Of4') : t('migrate.move')} description={running ? undefined : t('migrate.beforeYouMove')}>
 	{#if running}
 		<div class="srow">
 			<div class="cap">
 				{#if lost}
-					<StepCapsule tone="soft" fill={progress} status="pending" word="Can't reach HolyArrs" detail="trying again" testid="move-progress" />
-					<p class="sr-only" role="status">Can't reach HolyArrs. Trying again.</p>
+					<StepCapsule tone="soft" fill={progress} status="pending" word={t('migrate.canTReachHolyarrs2')} detail={t('migrate.tryingAgain')} testid="move-progress" />
+					<p class="sr-only" role="status">{t('migrate.canTReachHolyarrs')}</p>
 				{:else}
-					<StepCapsule tone="go" live progress fill={progress} status="processing" word="Moving" detail={detail || undefined} label="Move progress" testid="move-progress" />
+					<StepCapsule tone="go" live progress fill={progress} status="processing" word={t('migrate.moving')} detail={detail || undefined} label={t('migrate.moveProgress')} testid="move-progress" />
 				{/if}
 			</div>
 		</div>
 		<div class="srow">
-			<p class="txt hint">You can leave this page. The move keeps going.</p>
+			<p class="txt hint">{t('migrate.youCanLeaveThis')}</p>
 		</div>
 	{:else}
 		{#if safeMode}
-			<p class="notice warn" role="alert">HolyArrs started in safe mode. Restart it normally to move or undo. <a href={to('/settings/danger')}>Danger zone</a></p>
+			<p class="notice warn" role="alert"><Words key="migrate.holyarrsStartedInSafe2" links={{ a: to('/settings/danger') }} /></p>
 		{/if}
 		{#if links}
 			<div class="srow">
-				<p class="txt">Sources and Downloaders arrive paused. They can't reach your home network until you turn on May reach the local network.</p>
+				<p class="txt">{t('migrate.sourcesAndDownloadersArrive')}</p>
 			</div>
 		{/if}
 		{#if needs.length > 0}
 			<div class="srow">
-				<div class="txt"><span class="label">{plural(needs.length, 'key or password', 'keys and passwords')} to type again afterwards</span></div>
-				<div class="ctl"><Button onclick={() => onshow('Keys to add again', needs, (n) => n)} aria-label="Show Keys to add again">Show</Button></div>
+				<div class="txt"><span class="label">{needs.length === 1 ? t('migrate.keyOrPasswordTo', { n: needs.length }) : t('migrate.keysAndPasswordsTo', { n: needs.length })}</span></div>
+				<div class="ctl"><Button onclick={() => onshow(t('migrate.keysToAddAgain'), needs, (n) => n)} aria-label={t('migrate.showKeysToAdd')}>{t('migrate.show2')}</Button></div>
 			</div>
 		{/if}
 		{#if newPeople > 0}
 			<div class="srow">
-				<p class="txt">{plural(newPeople, 'person arrives', 'people arrive')} turned off until you invite them.</p>
+				<p class="txt">{newPeople === 1 ? t('migrate.personArrivesTurnedOff', { n: newPeople }) : t('migrate.peopleArriveTurnedOff', { n: newPeople })}</p>
 			</div>
 		{/if}
 		<div class="srow">
-			<p class="txt hint">Your old apps aren't changed. You can undo this move.</p>
+			<p class="txt hint">{t('migrate.yourOldAppsAren')}</p>
 		</div>
 	{/if}
 </SettingsCard>

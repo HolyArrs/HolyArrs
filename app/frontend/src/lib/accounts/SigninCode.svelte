@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import { tick } from 'svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import { ApiError } from '../core/api.ts';
@@ -65,10 +66,10 @@
 		}
 	}
 	function pasteDigits(i: number, e: ClipboardEvent) {
-		const t = (e.clipboardData?.getData('text') ?? '').replace(/\D/g, '');
-		if (!t) return;
+		const text = (e.clipboardData?.getData('text') ?? '').replace(/\D/g, '');
+		if (!text) return;
 		e.preventDefault();
-		fillDigits(t.length >= 6 ? 0 : i, t);
+		fillDigits(text.length >= 6 ? 0 : i, text);
 	}
 	function toggleBackup() {
 		useBackup = !useBackup;
@@ -82,12 +83,12 @@
 		error = '';
 		// The button stays on; a short code gets a plain note instead of a dead button.
 		if (!useBackup && otp.length < 6) {
-			error = 'Enter all 6 digits.';
+			error = t('accounts.signin.allDigits');
 			digitInputs()[Math.max(0, digits.findIndex((d) => !d))]?.focus();
 			return;
 		}
 		if (useBackup && !otp.trim()) {
-			error = 'Enter a backup code.';
+			error = t('accounts.signin.enterBackup');
 			document.querySelector<HTMLInputElement>('#otp')?.focus();
 			return;
 		}
@@ -95,7 +96,7 @@
 		try {
 			await session.loginCode(ticket, otp.trim());
 		} catch (err) {
-			if (err instanceof ApiError && err.status === 401 && err.message.includes('ended')) {
+			if (err instanceof ApiError && err.status === 401 && String(err.body.error ?? '').includes('ended')) {
 				ticket = '';
 				pw = '';
 			}
@@ -110,11 +111,11 @@
 <form onsubmit={submitCode} novalidate>
 	{#if useBackup}
 		<div class="field">
-			<label for="otp">Backup code</label>
+			<label for="otp">{t('accounts.signin.backupCode')}</label>
 			<input id="otp" class="input mono otp" inputmode="text" bind:value={otp} autocomplete="off" spellcheck="false" maxlength="11" required />
 		</div>
 	{:else}
-		<div class="digits" role="group" aria-label="6-digit code" bind:this={digitsEl}>
+		<div class="digits" role="group" aria-label={t('accounts.signin.sixDigit')} bind:this={digitsEl}>
 			{#each digits as d, i (i)}
 				{#if i === 3}<span class="dash" aria-hidden="true">–</span>{/if}
 				<input
@@ -122,7 +123,7 @@
 					value={d}
 					inputmode="numeric"
 					autocomplete={i === 0 ? 'one-time-code' : 'off'}
-					aria-label="Digit {i + 1}"
+					aria-label={t('accounts.signin.digit', { n: i + 1 })}
 					onfocus={(e) => e.currentTarget.select()}
 					oninput={(e) => typeDigit(i, e)}
 					onkeydown={(e) => digitKey(i, e)}
@@ -134,8 +135,8 @@
 	{#if error}
 		<p class="form-error" role="alert">{error}{#if waiting > 0}<span class="mono" aria-hidden="true"> ({waiting}s)</span>{/if}</p>
 	{/if}
-	<div class="submit" use:pixelTrail={{ selector: '.ui-btn', busy: busy && !tileWay, fail: tileWay ? 0 : failN }}><Button variant="primary" size="lg" full type="submit" disabled={waiting > 0} {busy}>Sign in</Button></div>
-	<button class="link" type="button" onclick={toggleBackup}>{useBackup ? 'Use the 6-digit code' : 'Use a backup code'}</button>
+	<div class="submit" use:pixelTrail={{ selector: '.ui-btn', busy: busy && !tileWay, fail: tileWay ? 0 : failN }}><Button variant="primary" size="lg" full type="submit" disabled={waiting > 0} {busy}>{t('accounts.signin.signIn')}</Button></div>
+	<button class="link" type="button" onclick={toggleBackup}>{useBackup ? t('accounts.signin.useSix') : t('accounts.signin.useBackup')}</button>
 </form>
 
 <style>

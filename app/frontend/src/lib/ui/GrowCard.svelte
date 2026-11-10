@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	// Hover card that grows out of a poster or tile and plays a trailer after a pause.
 	import IconButton from './IconButton.svelte';
 	import Icon, { type IconName } from './Icon.svelte';
@@ -143,13 +144,13 @@
 	});
 
 	async function flipFollow() {
-		const t = followTarget;
-		if (!t) return;
+		const target = followTarget;
+		if (!target) return;
 		followBusy = true;
 		try {
-			following = await setFollow(api, t, !following);
+			following = await setFollow(api, target, !following);
 		} catch (err) {
-			toasts.push(`Couldn't update follow`, 'fail', { body: message(err) });
+			toasts.push(t('ui.growCard.couldntUpdateFollow'), 'fail', { body: message(err) });
 		} finally {
 			followBusy = false;
 		}
@@ -267,7 +268,7 @@
 	bind:this={card}
 	use:portal
 	role="group"
-	aria-label="{title} preview"
+	aria-label={t('ui.growCard.preview', { title })}
 	data-testid="grow-card"
 	style:left="{g?.left ?? -9999}px"
 	style:top="{g?.top ?? -9999}px"
@@ -278,7 +279,7 @@
 	onfocusout={focusout}
 	onkeydown={keydown}
 >
-	<a class="media" href={href} aria-label={href ? `Open ${title}` : undefined}>
+	<a class="media" href={href} aria-label={href ? t('ui.growCard.open', { title }) : undefined}>
 		{#if pic}<img src={pic} alt="" decoding="async" />{/if}
 		{#if big}<img src={big} alt="" decoding="async" class="big" class:in={bigIn} onload={() => (bigIn = true)} />{/if}
 		{#if trailerOk && sources.length}
@@ -293,15 +294,15 @@
 		<div class="buttons">
 			{#if action}{@render action()}{/if}
 			{#if href && stateIcon && owned}<IconButton class="state" icon={stateIcon} label={owned.label} variant="glass" size="lg" {href} />
-			{:else if href && !followTarget}<IconButton class="state" icon="arrow" label="Go to {title}" variant="glass" size="lg" {href} />{/if}
+			{:else if href && !followTarget}<IconButton class="state" icon="arrow" label={t('ui.growCard.goTo', { title })} variant="glass" size="lg" {href} />{/if}
 			{#if followTarget}<button type="button" class="more bell" class:on={following} aria-pressed={following} aria-label="{followLabel(following)} {title}" title={bellHint} disabled={followBusy} onclick={flipFollow} data-testid="grow-follow"><Icon name={following ? 'bellOn' : 'bell'} size={18} /></button>{/if}
-			{#if onmore}<button type="button" class="more info" aria-label="More info about {title}" title="More info" aria-haspopup="dialog" onclick={() => card && onmore(card.getBoundingClientRect())}><Icon name="chevronDown" size={20} /></button>
-			{:else if href}<a class="more info" {href} aria-label="More about {title}" title="More info"><Icon name="chevronDown" size={20} /></a>{/if}
+			{#if onmore}<button type="button" class="more info" aria-label={t('ui.growCard.moreInfoAbout', { title })} title={t('ui.growCard.moreInfo')} aria-haspopup="dialog" onclick={() => card && onmore(card.getBoundingClientRect())}><Icon name="chevronDown" size={20} /></button>
+			{:else if href}<a class="more info" {href} aria-label={t('ui.growCard.moreAbout', { title })} title={t('ui.growCard.moreInfo')}><Icon name="chevronDown" size={20} /></a>{/if}
 		</div>
 		<p class="title" title={title}>{title}</p>
 		<p class="facts" data-testid="grow-facts">
 			{#each facts as f, i (f.part)}{#if i}<i aria-hidden="true">·</i>{/if}<span class:rating={f.part === 'rating'} class:stars={f.part === 'stars'}>{f.text}</span>{/each}
-			{#if service}<span class="svc" title="On {service.name}">{#if service.logo}<img src={proxied(service.logo)} alt="" />{/if}<span class={service.logo ? 'sr' : 'svc-word'}>On {service.name}</span></span>{/if}
+			{#if service}<span class="svc" title={t('ui.growCard.on', { name: service.name })}>{#if service.logo}<img src={proxied(service.logo)} alt="" />{/if}<span class={service.logo ? 'sr' : 'svc-word'}>{t('ui.growCard.on', { name: service.name })}</span></span>{/if}
 		</p>
 		{#if context}<p class="ctx" class:why={context.kind === 'why'} data-testid="grow-context">{context.text}</p>
 		{:else}<p class="tags">{#each tags as t, i (t)}{#if i}<i aria-hidden="true">·</i>{/if}<span>{t}</span>{/each}</p>{/if}

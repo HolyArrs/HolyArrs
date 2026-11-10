@@ -10,6 +10,7 @@
 	import { Updates } from '#lib/updates/index.ts';
 	import { HealthSections as Sections, buildRows, groupOrder, groupRows, headline, type StatusInput, type StatusRow } from '#lib/health/index.ts';
 	import { onMount } from 'svelte';
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import { SvelteSet } from 'svelte/reactivity';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
@@ -40,7 +41,8 @@
 	const groups = $derived(groupRows(rows));
 	const top = $derived(headline(rows, !failed.includes('parts')));
 	const labelOf = (r: StatusRow) => groupOrder.find((g) => g.id === r.group)?.label ?? '';
-	const failedText = $derived(failed.length ? `Could not load ${failed.join(', ')}.` : '');
+	const failedWord: Record<string, string> = { parts: 'parts', 'health checks': 'healthChecks', jobs: 'jobs', 'outside lists': 'lists', alerts: 'alerts' };
+	const failedText = $derived(failed.length ? t('health.page.couldNotLoad', { what: failed.map((f) => t(`health.page.what.${failedWord[f] ?? 'parts'}`)).join(', ') }) : '');
 
 	// Only the newest read may write the page; an older reply that lands late is dropped. load() is true when its answer was the one kept; `latest` is the newest read.
 	let seq = 0;
@@ -123,8 +125,8 @@
 	// After a health check run, say what the row shows now.
 	function afterChecks(r: StatusRow) {
 		const now = rows.find((x) => x.key === r.key);
-		if (!now) toasts.push('Checks ran', 'ok');
-		else toasts.push(now.tone === 'ok' ? `${now.name} working` : `${now.name} ${now.word}`, now.tone === 'ok' ? 'ok' : 'fail');
+		if (!now) toasts.push(t('health.page.checksRan'), 'ok');
+		else toasts.push(now.tone === 'ok' ? t('health.page.working', { name: now.name }) : t('health.page.nameWord', { name: now.name, word: now.word }), now.tone === 'ok' ? 'ok' : 'fail');
 	}
 
 	async function check(r: StatusRow) {
@@ -134,7 +136,7 @@
 		try {
 			if (c.kind === 'job') {
 				const res = await api.post<{ already: boolean }>(`/schedules/${c.job}/run`);
-				toasts.push(res.already ? `${r.name} already in progress` : `${r.name} started`, 'ok');
+				toasts.push(res.already ? t('health.page.already', { name: r.name }) : t('health.page.started', { name: r.name }), 'ok');
 				await load(true);
 			} else if (c.kind === 'checks') {
 				await api.post('/health/checks/run');
@@ -143,11 +145,11 @@
 				afterChecks(r);
 			} else {
 				const res = await api.post<{ ok: boolean; text: string }>(`/${c.kind}s/${c.id}/test`);
-				toasts.push(res.ok ? `${r.name} connected` : `Couldn't connect ${r.name}`, res.ok ? 'ok' : 'fail', { body: res.ok ? testLabel(res.text) : res.text.trim() || undefined });
+				toasts.push(res.ok ? t('health.page.connected', { name: r.name }) : t('health.page.cantConnect', { name: r.name }), res.ok ? 'ok' : 'fail', { body: res.ok ? testLabel(res.text) : res.text.trim() || undefined });
 				await load(true);
 			}
 		} catch (e) {
-			toasts.push(`Couldn't check ${r.name}`, 'fail', { body: message(e) });
+			toasts.push(t('health.page.cantCheck', { name: r.name }), 'fail', { body: message(e) });
 		} finally {
 			running.delete(r.key);
 		}
@@ -160,9 +162,9 @@
 			await api.post('/health/checks/run');
 			await load(true);
 			checkRuns++;
-			toasts.push('Checks ran', 'ok');
+			toasts.push(t('health.page.checksRan'), 'ok');
 		} catch (e) {
-			toasts.push("Couldn't run checks", 'fail', { body: message(e) });
+			toasts.push(t('health.page.cantRun'), 'fail', { body: message(e) });
 		} finally {
 			running.delete('all');
 		}
@@ -192,13 +194,13 @@
 	});
 </script>
 
-<svelte:head><title>Status · HolyArrs</title></svelte:head>
+<svelte:head><title>{t('health.page.title')}</title></svelte:head>
 
 <div class="status" class:jobs={tab === 'jobs'} data-testid="status-page">
-	<PageHeader title="Status" subtitle={input ? top : undefined}>
+	<PageHeader title={t('health.page.header')} subtitle={input ? top : undefined}>
 		{#snippet actions()}
 			{#if canAct}
-				<Button onclick={checkAll} busy={running.has('all')} disabled={running.has('all')} data-testid="status-check-all">Check again</Button>
+				<Button onclick={checkAll} busy={running.has('all')} disabled={running.has('all')} data-testid="status-check-all">{t('health.page.checkAgain')}</Button>
 			{/if}
 		{/snippet}
 	</PageHeader>
@@ -206,7 +208,7 @@
 	{#if !input && error}
 		<LoadError hasData={false} message={error} onretry={retry} />
 	{:else}
-		<PageLoader loading={!input} label="Loading Status" onretry={retry}>
+		<PageLoader loading={!input} label={t('health.page.loading')} onretry={retry}>
 			{#if input}
 				<div class="body">
 					{#if error}<LoadError hasData message={error} onretry={retry} />

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import Icon from '#lib/ui/Icon.svelte';
 	import ArtPlaceholder from '#lib/ui/ArtPlaceholder.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
@@ -35,40 +36,40 @@
 </script>
 
 <section class="block about">
-	<h2>About</h2>
-	<button type="button" class="acard" aria-haspopup="dialog" aria-label="About {hero.name}: read more" onclick={() => (open = true)} onpointermove={(e) => { const b = e.currentTarget.getBoundingClientRect(); e.currentTarget.style.setProperty('--mx', `${((e.clientX - b.left) / b.width) * 100}%`); e.currentTarget.style.setProperty('--my', `${((e.clientY - b.top) / b.height) * 100}%`); }} data-testid="artist-about">
+	<h2>{t('music.about')}</h2>
+	<button type="button" class="acard" aria-haspopup="dialog" aria-label={t('music.aboutReadMore', { name: hero.name })} onclick={() => (open = true)} onpointermove={(e) => { const b = e.currentTarget.getBoundingClientRect(); e.currentTarget.style.setProperty('--mx', `${((e.clientX - b.left) / b.width) * 100}%`); e.currentTarget.style.setProperty('--my', `${((e.clientY - b.top) / b.height) * 100}%`); }} data-testid="artist-about">
 		{#if aboutStills.length}{#each aboutStills as src, i (src)}<img class="ab-frame" class:on={i === still % aboutStills.length} {src} alt="" loading="lazy" decoding="async" />{/each}<span class="a-glow" aria-hidden="true"></span>{:else if cardImg}<img class="ab-frame on" src={cardImg} alt="" loading="lazy" decoding="async" />{:else}<span class="a-none" aria-hidden="true"><ArtPlaceholder name={hero.name ?? ''} shape="wide" /></span>{/if}
-		{#if listen?.rank}<span class="disc" aria-hidden="true"><b>#{listen.rank}</b><small>in the world</small></span>{/if}
+		{#if listen?.rank}<span class="disc" aria-hidden="true"><b>#{listen.rank}</b><small>{t('music.inTheWorld')}</small></span>{/if}
 		<span class="a-foot">
 			{#if listenWords || catalog?.span || genres}<span class="a-lis">{[listenWords, catalog?.span, genres.split(', ').slice(0, 2).join(', ')].filter(Boolean).join(' · ')}</span>{/if}
 			{#if bioLine}<span class="a-bio">{bioLine}</span>{:else}<span class="a-bio">{hero.name}</span>{/if}
-			<span class="a-more">More about {hero.name}</span>
+			<span class="a-more">{t('music.moreAbout', { name: hero.name })}</span>
 		</span>
 	</button>
 </section>
 
-<Sheet bind:open title="About {hero.name}" size="lg">
+<Sheet bind:open title={t('music.about2', { name: hero.name })} size="lg">
 	<div class="sheet" data-testid="artist-about-sheet">
 			{#if shots.length}
 				<figure class="col-photo">
 					{#each shots as src, i (src)}<img class:on={i === still % shots.length} {src} alt="" decoding="async" />{/each}
 					{#if shots.length > 1}
-						<button type="button" class="col-nav prev" aria-label="Previous photo" onclick={() => (still = (still - 1 + shots.length) % shots.length)}><Icon name="chevronLeft" size={20} /></button>
-						<button type="button" class="col-nav next" aria-label="Next photo" onclick={() => (still = (still + 1) % shots.length)}><Icon name="chevronRight" size={20} /></button>
+						<button type="button" class="col-nav prev" aria-label={t('music.previousPhoto')} onclick={() => (still = (still - 1 + shots.length) % shots.length)}><Icon name="chevronLeft" size={20} /></button>
+						<button type="button" class="col-nav next" aria-label={t('music.nextPhoto')} onclick={() => (still = (still + 1) % shots.length)}><Icon name="chevronRight" size={20} /></button>
 					{/if}
 				</figure>
 			{/if}
 			<div class="col">
 				<aside class="col-side">
-					{#if listen?.rank}<span class="col-disc"><b>#{listen.rank}</b><small>in the world</small></span>{/if}
+					{#if listen?.rank}<span class="col-disc"><b>#{listen.rank}</b><small>{t('music.inTheWorld')}</small></span>{/if}
 					{#if listen}<p class="col-big"><b>{fullCount(listen.n)}</b><span>{listen.unit}</span></p>{/if}
-					{#if listen?.today}<p class="col-big"><b class="chg" class:up={listen.today > 0} class:down={listen.today < 0}>{changeWords(listen.today, '')}</b><span>today</span></p>{/if}
+					{#if listen?.today}<p class="col-big"><b class="chg" class:up={listen.today > 0} class:down={listen.today < 0}>{changeWords(listen.today, '')}</b><span>{t('music.today')}</span></p>{/if}
 					<dl class="col-list">
-						{#if catalog?.albums}<div><dt>{catalog.albums === 1 ? 'Album' : 'Albums'}</dt><dd>{catalog.albums}</dd></div>{/if}
-						{#if smallCount}<div><dt>Singles & EPs</dt><dd>{smallCount}</dd></div>{/if}
-						{#if hero.country}<div><dt>From</dt><dd>{countryName(hero.country)}</dd></div>{/if}
-						{#if catalog?.since}<div><dt>Active</dt><dd>{catalog.since} – {hero.status === 'ended' ? (catalog.span?.split('–')[1] ?? '') : 'now'}</dd></div>{/if}
-						{#if hero.type}<div><dt>Kind</dt><dd>{artistKind(hero.type)}</dd></div>{/if}
+						{#if catalog?.albums}<div><dt>{catalog.albums === 1 ? t('music.album') : t('music.albums')}</dt><dd>{catalog.albums}</dd></div>{/if}
+						{#if smallCount}<div><dt>{t('music.singlesEps')}</dt><dd>{smallCount}</dd></div>{/if}
+						{#if hero.country}<div><dt>{t('music.from')}</dt><dd>{countryName(hero.country)}</dd></div>{/if}
+						{#if catalog?.since}<div><dt>{t('music.active')}</dt><dd>{catalog.since} – {hero.status === 'ended' ? (catalog.span?.split('–')[1] ?? '') : t('music.now')}</dd></div>{/if}
+						{#if hero.type}<div><dt>{t('music.kind')}</dt><dd>{artistKind(hero.type)}</dd></div>{/if}
 					</dl>
 				</aside>
 				<div class="col-main">

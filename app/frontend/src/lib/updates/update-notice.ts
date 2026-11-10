@@ -1,4 +1,6 @@
 
+import { t } from '#lib/core/i18n/i18n.svelte.ts';
+
 export type BackupRow = { name: string; kind: string; created_at: string; detail?: string; from_version?: string; to_version?: string };
 
 export const PROJECT_REPO = 'HolyArrs/HolyArrs';
@@ -19,7 +21,7 @@ export function releaseLink(link: string | undefined): string {
 }
 
 export function updatePrivacy(version: string): string {
-	return `On each check HolyArrs asks api.github.com for the newest release, sending only the header User-Agent: HolyArrs/${version}. No account, no list of your media, no other data.`;
+	return t('updates.privacy', { version });
 }
 
 // The list is newest first, so the first match is the latest one.

@@ -35,20 +35,20 @@
 </div>
 {:else}
 <div class="provs" data-n={tiles.length} data-testid="signin-ways">
-	{#each tiles as t (t.way)}
-		<button class="prov" type="button" use:pixelTrail={{ busy: busy && lastWay === t.way, fail: lastWay === t.way ? failN : 0 }} data-way={t.way} disabled={busy} onclick={() => onpress?.(t.way)}>
-			{#if t.way === 'plex'}
+	{#each tiles as tl (tl.way)}
+		<button class="prov" type="button" use:pixelTrail={{ busy: busy && lastWay === tl.way, fail: lastWay === tl.way ? failN : 0 }} data-way={tl.way} disabled={busy} onclick={() => onpress?.(tl.way)}>
+			{#if tl.way === 'plex'}
 				<svg viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="6" fill="#1f1f1f" /><path d="M8 5h4.6l5 7-5 7H8l5-7z" fill="#E5A00D" /></svg>
-			{:else if t.way === 'jellyfin'}
+			{:else if tl.way === 'jellyfin'}
 				<svg viewBox="0 0 24 24" aria-hidden="true"><defs><linearGradient id="jg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#AA5CC3" /><stop offset="1" stop-color="#00A4DC" /></linearGradient></defs><path d="M12 3c-2 0-9 12.4-8 14.4S20 19.4 21 17.4 14 3 12 3zm0 6c1 0 4.4 6 4 7s-7.6 1-8 0S11 9 12 9z" fill="url(#jg)" /></svg>
-			{:else if t.way === 'emby'}
+			{:else if tl.way === 'emby'}
 				<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l9 5v10l-9 5-9-5V7z" fill="#52B54B" /><path d="M10 8.5v7l6-3.5z" fill="#fff" /></svg>
-			{:else if t.way === 'oidc'}
+			{:else if tl.way === 'oidc'}
 				<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="#f5f5f7" stroke-width="1.8" stroke-linecap="round"><circle cx="8" cy="12" r="4" /><path d="M12 12h9M18 12v3M21 12v2" /></svg>
 			{:else}
 				<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="#f5f5f7" stroke-width="1.8" stroke-linejoin="round"><path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z" /></svg>
 			{/if}
-			<span>{t.label}</span>
+			<span>{tl.label}</span>
 		</button>
 	{/each}
 </div>

@@ -1,4 +1,6 @@
 // Which app parts are on, and which screen belongs to which part.
+import { t } from '../core/i18n/i18n.svelte.ts';
+
 
 export type PartName = 'movies' | 'shows' | 'music' | 'subtitles' | 'wishlist';
 
@@ -23,20 +25,35 @@ export interface PartsAnswer {
 // Switch order: parts that need others come later.
 export const partOrder: PartName[] = ['movies', 'shows', 'music', 'subtitles', 'wishlist'];
 
+// The lines read their words when used, so they follow the language.
 export const partStops: Record<PartName, string> = {
-	movies: 'Movie pages, movie searches and movie downloads stop. Movie files stay where they are.',
-	shows: 'Show pages, episode searches and show downloads stop. Episode files stay where they are.',
-	music: 'Artist and album pages, music searches and music downloads stop. Music files stay where they are.',
-	subtitles: 'Subtitles are no longer looked for or fetched. Subtitle files already saved stay.',
-	wishlist: 'Family and friends can no longer request titles. Requests already made are kept.'
+	get movies() {
+		return t('mediafiles.parts.stopsMovies');
+	},
+	get shows() {
+		return t('mediafiles.parts.stopsShows');
+	},
+	get music() {
+		return t('mediafiles.parts.stopsMusic');
+	},
+	get subtitles() {
+		return t('mediafiles.parts.stopsSubtitles');
+	},
+	get wishlist() {
+		return t('mediafiles.parts.stopsWishlist');
+	}
 };
 
 export const partNeeds: Record<PartName, string> = {
 	movies: '',
 	shows: '',
 	music: '',
-	subtitles: 'Needs Movies or TV shows.',
-	wishlist: 'Needs Movies, TV shows or Music.'
+	get subtitles() {
+		return t('mediafiles.parts.needsSubtitles');
+	},
+	get wishlist() {
+		return t('mediafiles.parts.needsWishlist');
+	}
 };
 
 export function screenOwner(screens: Record<string, string>, path: string): string | null {
@@ -51,14 +68,14 @@ export function offPartName(a: PartsAnswer | null, path: string): string | null 
 	const owner = screenOwner(a.screens, path);
 	if (!owner || owner === 'core' || owner === 'title') return null;
 	const on = (p: string) => a.parts.find((x) => x.part === p)?.on ?? true;
-	if (owner === 'media') return on('movies') || on('shows') || on('music') ? null : 'Movies, TV shows and Music';
+	if (owner === 'media') return on('movies') || on('shows') || on('music') ? null : t('mediafiles.parts.allMedia');
 	if (on(owner)) return null;
 	return a.parts.find((x) => x.part === owner)?.name ?? owner;
 }
 
 export function needsProblem(want: Record<PartName, boolean>): string {
-	if (!want.movies && !want.shows && !want.music) return 'Pick at least one of Movies, TV shows and Music.';
-	if (want.subtitles && !want.movies && !want.shows) return 'Subtitles need Movies or TV shows.';
+	if (!want.movies && !want.shows && !want.music) return t('mediafiles.parts.pickOne');
+	if (want.subtitles && !want.movies && !want.shows) return t('mediafiles.parts.subtitlesNeed');
 	return '';
 }
 

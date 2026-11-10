@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import Icon, { type IconName } from '#lib/ui/Icon.svelte';
 	import { press } from '#lib/core/motion.ts';
 
@@ -51,7 +52,7 @@
 		clearTimeout(timer);
 		tip = null;
 	}
-	const name = $derived((badge > 0 ? `${label}, ${badgeLabel ?? badge}` : label) + (dot ? ', needs attention' : ''));
+	const name = $derived((badge > 0 ? `${label}, ${badgeLabel ?? badge}` : label) + (dot ? t('frame.sidebar.needsAttentionComma') : ''));
 </script>
 
 {#snippet body()}
@@ -61,7 +62,7 @@
 	</span>
 	<span class="label">{label}</span>
 	{#if kbd}<kbd class="label" aria-hidden="true">{kbd}</kbd>{/if}
-	{#if dot && !(badge > 0)}<span class="flag" title="Needs attention" aria-hidden="true" data-testid="nav-flag"></span>{/if}
+	{#if dot && !(badge > 0)}<span class="flag" title={t('frame.sidebar.needsAttention')} aria-hidden="true" data-testid="nav-flag"></span>{/if}
 	{#if badge > 0}<b class="count" aria-hidden="true" data-testid={badgeTestid}>{badge > 99 ? '99+' : badge}</b>{/if}
 {/snippet}
 {#if href}
@@ -74,7 +75,7 @@
 <style>
 	.ui-sbi {
 		position: relative; z-index: 1; display: flex; align-items: center; gap: 10px; width: 100%; min-height: 36px;
-		padding: 0 10px 0 12px; border-radius: 9px; color: var(--text); font: var(--t-callout); font-size: 15px; font-weight: 450; text-align: left;
+		padding: 0 10px 0 12px; border-radius: 9px; color: var(--text); font: var(--t-callout); font-size: 15px; font-weight: 450; text-align: start;
 		white-space: nowrap; overflow: hidden;
 	}
 	.ui-sbi:hover:not(.current) { background: color-mix(in srgb, var(--surface-3) 70%, transparent); }
@@ -90,10 +91,10 @@
 	kbd.label { flex: none; color: var(--text-muted); font: var(--t-footnote); }
 	.count { min-width: 22px; height: 20px; padding: 0 7px; display: grid; place-items: center; flex: none; border-radius: 999px; background: var(--surface-3); color: var(--text); font: 600 12px/1 var(--font-ui); font-variant-numeric: tabular-nums; transition: opacity var(--dur-fast) var(--ease-out); }
 	.flag { flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--fail); }
-	:global(.ui-sidebar.collapsed) .ui-sbi .flag { position: absolute; top: 6px; right: 8px; }
+	:global(.ui-sidebar.collapsed) .ui-sbi .flag { position: absolute; top: 6px; inset-inline-end: 8px; }
 	.current .count { background: var(--surface-1); }
 	:global(.ui-sidebar.collapsed) .ui-sbi .label { opacity: 0; }
-	:global(.ui-sidebar.collapsed) .ui-sbi .count { position: absolute; top: 1px; right: 1px; left: auto; min-width: 16px; height: 16px; padding: 0 4px; font-size: 10px; background: var(--accent-fill); color: var(--text-on-red); }
+	:global(.ui-sidebar.collapsed) .ui-sbi .count { position: absolute; top: 1px; inset-inline: auto 1px; min-width: 16px; height: 16px; padding: 0 4px; font-size: 10px; background: var(--accent-fill); color: var(--text-on-red); }
 	.tip { position: fixed; z-index: 80; translate: 0 -50%; padding: 5px 9px; border-radius: 7px; background: var(--text); color: var(--bg); font: var(--t-footnote); white-space: nowrap; pointer-events: none; box-shadow: var(--shadow-lift); }
 	@media (pointer: coarse) { .ui-sbi { min-height: 44px; } }
 </style>

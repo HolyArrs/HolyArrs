@@ -1,0 +1,10 @@
+{
+	"settings.home.advanced": "Erweitert",
+	"settings.home.page": "{group} · Seite",
+	"settings.home.title": "Einstellungen",
+	"settings.home.search": "Einstellungen durchsuchen",
+	"settings.home.matching": "Passende Einstellungen",
+	"settings.home.noMatch": "Keine passenden Einstellungen",
+	"settings.home.noMatchText": "Versuch ein anderes Wort, etwa Ordner, Schlüssel oder Passwort.",
+	"settings.home.clear": "Suche löschen"
+}

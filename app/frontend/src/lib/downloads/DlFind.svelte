@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import Icon from '#lib/ui/Icon.svelte';
 	import { escStep } from './keys.ts';
 
@@ -8,11 +9,12 @@
 		shown,
 		total,
 		searchKey = 'Ctrl K',
-		placeholder = 'Search downloads',
+		placeholder = undefined,
 		note = '',
 		testid = 'dl-find'
 	}: { term?: string; shown: number; total: number; searchKey?: string; /** The field's words (the Library uses its own). */ placeholder?: string; /** A quiet line at the right, e.g. "36 TV shows". */ note?: string; testid?: string } = $props();
 
+	const ph = $derived(placeholder ?? t('downloads.list.search'));
 	let el = $state<HTMLInputElement>();
 	const has = $derived(!!term.trim());
 
@@ -27,10 +29,10 @@
 <div class="dlfind" class:has data-testid={testid}>
 	<span class="well">
 		<span class="mag" aria-hidden="true"><Icon name="search" size={16} /></span>
-		<input bind:this={el} bind:value={term} type="text" inputmode="search" {placeholder} aria-label={placeholder} autocomplete="off" spellcheck="false" onkeydown={key} data-dl-search data-testid="{testid}-input" />
+		<input bind:this={el} bind:value={term} type="text" inputmode="search" placeholder={ph} aria-label={ph} autocomplete="off" spellcheck="false" onkeydown={key} data-dl-search data-testid="{testid}-input" />
 		{#if note}<span class="note" aria-live="polite">{note}</span>{/if}
 		{#if has}
-			<button type="button" class="clr" aria-label="Clear search" onclick={() => { term = ''; el?.focus(); }} data-testid="{testid}-clear"><Icon name="x" size={14} /></button>
+			<button type="button" class="clr" aria-label={t('downloads.list.clearSearch')} onclick={() => { term = ''; el?.focus(); }} data-testid="{testid}-clear"><Icon name="x" size={14} /></button>
 		{:else if searchKey}
 			<kbd class="kb" aria-hidden="true">{searchKey}</kbd>
 		{/if}

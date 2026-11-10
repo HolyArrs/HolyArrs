@@ -1,3 +1,4 @@
+import { t } from '#lib/core/i18n/i18n.svelte.ts';
 export type PeopleFilter = 'popular' | 'actors' | 'directors' | 'composers';
 
 export type ShelfMeta = { id: string; title: string; count: number; departments: Record<string, number> };
@@ -10,10 +11,10 @@ export const SHELF_MIN = 8;
 export const PEOPLE_ROWS = 2;
 
 export const PEOPLE_CHIPS: { value: PeopleFilter; label: string; dept: string }[] = [
-	{ value: 'popular', label: 'Popular', dept: '' },
-	{ value: 'actors', label: 'Actors', dept: 'Acting' },
-	{ value: 'directors', label: 'Directors', dept: 'Directing' },
-	{ value: 'composers', label: 'Composers', dept: 'Sound' }
+	{ value: 'popular', get label() { return t('discover.peopleShelves.popular'); }, dept: '' },
+	{ value: 'actors', get label() { return t('discover.peopleShelves.actors'); }, dept: 'Acting' },
+	{ value: 'directors', get label() { return t('discover.peopleShelves.directors'); }, dept: 'Directing' },
+	{ value: 'composers', get label() { return t('discover.peopleShelves.composers'); }, dept: 'Sound' }
 ];
 
 export const chipDept = (f: PeopleFilter) => PEOPLE_CHIPS.find((c) => c.value === f)?.dept ?? '';

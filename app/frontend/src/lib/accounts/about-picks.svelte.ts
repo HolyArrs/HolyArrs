@@ -1,29 +1,30 @@
+import { t } from '#lib/core/i18n/i18n.svelte.ts';
 // Which lines a title page's About section shows, picked per browser in Settings > Appearance. The defaults stay short: what helps decide on a request and is not already in the hero (year, length, age rating, genres).
 
 export type AboutItem = { id: string; group: 'Information' | 'Production' | 'Links' | 'Ratings' | 'Feel'; name: string; on: boolean };
 
 export const ABOUT_ITEMS: AboutItem[] = [
-	{ id: 'released', group: 'Information', name: 'Released or premiered', on: false },
-	{ id: 'length', group: 'Information', name: 'Run time or seasons', on: false },
-	{ id: 'episodes', group: 'Information', name: 'Episodes, length and total hours', on: true },
-	{ id: 'type', group: 'Information', name: 'Type of show', on: false },
-	{ id: 'rated', group: 'Information', name: 'Age rating', on: false },
-	{ id: 'status', group: 'Information', name: 'Status (and when an ended show stopped)', on: true },
-	{ id: 'next', group: 'Information', name: 'Next episode', on: true },
-	{ id: 'theaters', group: 'Information', name: 'In theaters', on: false },
-	{ id: 'digital', group: 'Information', name: 'Digital release', on: true },
-	{ id: 'disc', group: 'Information', name: 'On disc', on: false },
-	{ id: 'region', group: 'Information', name: 'Region of origin', on: false },
-	{ id: 'language', group: 'Information', name: 'Language', on: true },
-	{ id: 'origTitle', group: 'Information', name: 'Original title', on: true },
-	{ id: 'studios', group: 'Production', name: 'Studios (shows; a movie’s studio is beside the story)', on: true },
-	{ id: 'budget', group: 'Production', name: 'Budget', on: true },
-	{ id: 'boxOffice', group: 'Production', name: 'Box office', on: true },
-	{ id: 'links', group: 'Links', name: 'Links to IMDb, TMDB, Trakt and Letterboxd', on: true },
-	{ id: 'scores', group: 'Ratings', name: 'Every score', on: false },
-	{ id: 'awards', group: 'Ratings', name: 'Awards', on: false },
-	{ id: 'genres', group: 'Feel', name: 'Genres', on: false },
-	{ id: 'themes', group: 'Feel', name: 'Themes', on: false }
+	{ id: 'released', group: 'Information', get name() { return t('accounts.about.released'); }, on: false },
+	{ id: 'length', group: 'Information', get name() { return t('accounts.about.length'); }, on: false },
+	{ id: 'episodes', group: 'Information', get name() { return t('accounts.about.episodes'); }, on: true },
+	{ id: 'type', group: 'Information', get name() { return t('accounts.about.type'); }, on: false },
+	{ id: 'rated', group: 'Information', get name() { return t('accounts.about.rated'); }, on: false },
+	{ id: 'status', group: 'Information', get name() { return t('accounts.about.status'); }, on: true },
+	{ id: 'next', group: 'Information', get name() { return t('accounts.about.next'); }, on: true },
+	{ id: 'theaters', group: 'Information', get name() { return t('accounts.about.theaters'); }, on: false },
+	{ id: 'digital', group: 'Information', get name() { return t('accounts.about.digital'); }, on: true },
+	{ id: 'disc', group: 'Information', get name() { return t('accounts.about.disc'); }, on: false },
+	{ id: 'region', group: 'Information', get name() { return t('accounts.about.region'); }, on: false },
+	{ id: 'language', group: 'Information', get name() { return t('accounts.about.language'); }, on: true },
+	{ id: 'origTitle', group: 'Information', get name() { return t('accounts.about.origTitle'); }, on: true },
+	{ id: 'studios', group: 'Production', get name() { return t('accounts.about.studios'); }, on: true },
+	{ id: 'budget', group: 'Production', get name() { return t('accounts.about.budget'); }, on: true },
+	{ id: 'boxOffice', group: 'Production', get name() { return t('accounts.about.boxOffice'); }, on: true },
+	{ id: 'links', group: 'Links', get name() { return t('accounts.about.links'); }, on: true },
+	{ id: 'scores', group: 'Ratings', get name() { return t('accounts.about.scores'); }, on: false },
+	{ id: 'awards', group: 'Ratings', get name() { return t('accounts.about.awards'); }, on: false },
+	{ id: 'genres', group: 'Feel', get name() { return t('accounts.about.genres'); }, on: false },
+	{ id: 'themes', group: 'Feel', get name() { return t('accounts.about.themes'); }, on: false }
 ];
 
 const DEFAULTS = ABOUT_ITEMS.filter((i) => i.on).map((i) => i.id);

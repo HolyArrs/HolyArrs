@@ -234,6 +234,7 @@ var routeOwners = map[string]Owner{
 	"PUT /api/v1/my/alerts":                Core,
 	"GET /api/v1/my/profile":               Core,
 	"PUT /api/v1/my/profile":               Core,
+	"PUT /api/v1/my/language":              Core,
 	"GET /api/v1/media-servers":            Core,
 	"POST /api/v1/media-servers":           Core,
 	"PUT /api/v1/media-servers/{id}":       Core,

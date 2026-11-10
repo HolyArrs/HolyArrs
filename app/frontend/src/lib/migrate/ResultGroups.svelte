@@ -1,6 +1,8 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	import type { ShowList } from './ItemsSheet.svelte';
-	import { groupLabels, needsGroups, needsLook, plural, resultWords, summary, tone, type Bucket, type Line, type Report } from './move.ts';
+	import { groupLabel, needsGroups, needsLook, resultWords, summary, tone, type Bucket, type Line, type Report } from './move.ts';
 
 	let {
 		report,
@@ -20,7 +22,7 @@
 		return {
 			key: l.key + ':' + i,
 			name: l.name,
-			hint: l.result === 'not_found' ? undefined : l.detail,
+			hint: l.result === 'not_found' ? undefined : serverWords(l.detail),
 			pill: { word: resultWords(l.result, after, undo), tone: tone(l.result) },
 			look: needsLook(l.result)
 		};
@@ -31,25 +33,25 @@
 	{#each groups as g (g.group)}
 		<li class="rg-row" data-testid="result-group">
 			<span class="rg-txt"><b>{g.label}</b><span class="rg-sub">{summary(g.counts, after, undo)}</span></span>
-			<button type="button" class="rg-show" onclick={() => onshow(g.label, g.lines, lineRow)} aria-label="Show {g.label}">Show</button>
+			<button type="button" class="rg-show" onclick={() => onshow(g.label, g.lines, lineRow)} aria-label={t('migrate.show4', { label: g.label })}>{t('migrate.show2')}</button>
 		</li>
 	{/each}
 	{#if report.not_moved.length > 0}
 		<li class="rg-row">
-			<span class="rg-txt"><b>Not moved</b><span class="rg-sub">{plural(report.not_moved.length, 'setting')}</span></span>
-			<button type="button" class="rg-show" onclick={() => onshow('Not moved', report.not_moved, (n, i) => ({ key: n.from + i, name: n.what, hint: `${groupLabels[n.group] ?? 'Other settings'} · ${n.why}` }))} aria-label="Show Not moved">Show</button>
+			<span class="rg-txt"><b>{t('migrate.notMoved')}</b><span class="rg-sub">{report.not_moved.length === 1 ? t('migrate.setting', { n: report.not_moved.length }) : t('migrate.settings', { n: report.not_moved.length })}</span></span>
+			<button type="button" class="rg-show" onclick={() => onshow(t('migrate.notMoved'), report.not_moved, (n, i) => ({ key: n.from + i, name: n.what, hint: `${groupLabel(n.group) ?? t('migrate.otherSettings')} · ${n.why}` }))} aria-label={t('migrate.showNotMoved')}>{t('migrate.show2')}</button>
 		</li>
 	{/if}
 	{#if needs.length > 0}
 		<li class="rg-row">
-			<span class="rg-txt"><b>Keys to add again</b><span class="rg-sub">{needs.length}</span></span>
-			<button type="button" class="rg-show" onclick={() => onshow('Keys to add again', needs, (n) => n)} aria-label="Show Keys to add again">Show</button>
+			<span class="rg-txt"><b>{t('migrate.keysToAddAgain')}</b><span class="rg-sub">{needs.length}</span></span>
+			<button type="button" class="rg-show" onclick={() => onshow(t('migrate.keysToAddAgain'), needs, (n) => n)} aria-label={t('migrate.showKeysToAdd')}>{t('migrate.show2')}</button>
 		</li>
 	{/if}
 	{#if (report.notes?.length ?? 0) > 0}
 		<li class="rg-row">
-			<span class="rg-txt"><b>Notes from the apps</b><span class="rg-sub">{report.notes?.length}</span></span>
-			<button type="button" class="rg-show" onclick={() => onshow('Notes from the apps', report.notes ?? [], (n, i) => ({ key: String(i), name: n }))} aria-label="Show Notes from the apps">Show</button>
+			<span class="rg-txt"><b>{t('migrate.notesFromTheApps')}</b><span class="rg-sub">{report.notes?.length}</span></span>
+			<button type="button" class="rg-show" onclick={() => onshow(t('migrate.notesFromTheApps'), report.notes ?? [], (n, i) => ({ key: String(i), name: n }))} aria-label={t('migrate.showNotesFromThe')}>{t('migrate.show2')}</button>
 		</li>
 	{/if}
 </ul>

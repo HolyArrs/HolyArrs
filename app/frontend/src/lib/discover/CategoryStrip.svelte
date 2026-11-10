@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import '@fontsource/anton/latin-400.css';
 	import Shelf from '#lib/ui/Shelf.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
@@ -17,8 +18,8 @@
 	const tint = (hue: number) => `hsl(${(((hue % 24) + 24) % 24) * 15} 52% 36%)`;
 	let failed = $state<Record<string, boolean>>({});
 	const entries = $derived<Entry[]>(genres ? [
-		...genres.map((g) => ({ key: g.key, name: g.name, label: 'Genre', href: g.href, art: g.art, tint: tint(g.hue) })),
-		{ key: 'all', name: 'All genres', label: 'Browse', href: to('/search?kind=music'), art: '', all: true }
+		...genres.map((g) => ({ key: g.key, name: g.name, label: t('discover.categoryStrip.genre'), href: g.href, art: g.art, tint: tint(g.hue) })),
+		{ key: 'all', name: t('discover.categoryStrip.allGenres'), label: t('discover.categoryStrip.browse'), href: to('/search?kind=music'), art: '', all: true }
 	] : [
 		...tiles.map((t) => ({
 			key: t.category ?? `${t.kind}:${t.genre}:${t.mood ?? ''}`,
@@ -30,12 +31,12 @@
 			tile: t
 		})),
 		// All categories: four stills from tiles spread across the row (never the tile right beside it), so it reads as every category at once.
-		{ key: 'all', name: 'All categories', label: 'Browse', href: to(type === 'movies' ? '/search?kind=movie' : type === 'shows' ? '/search?kind=show' : '/search'), art: '', arts: spread(tiles.slice(0, -1).filter((t) => t.backdrop).map((t) => sized(t.backdrop!, 'backdrop', 240)), 4), all: true }
+		{ key: 'all', name: t('discover.categoryStrip.allCategories'), label: t('discover.categoryStrip.browse'), href: to(type === 'movies' ? '/search?kind=movie' : type === 'shows' ? '/search?kind=show' : '/search'), art: '', arts: spread(tiles.slice(0, -1).filter((t) => t.backdrop).map((t) => sized(t.backdrop!, 'backdrop', 240)), 4), all: true }
 	]);
 </script>
 
 <div class="cat-strip" data-row-id="category_strip">
-	<Shelf title="Categories" item="clamp(184px, 15vw, 236px)" items={entries} key={(e) => e.key} lines={1}>
+	<Shelf title={t('discover.categoryStrip.categories')} item="clamp(184px, 15vw, 236px)" items={entries} key={(e) => e.key} lines={1}>
 		{#snippet card(e: Entry)}
 			<a class="cat" class:all={e.all} class:tinted={e.tint && (!e.art || failed[e.key])} href={e.href} style="--chars: {Math.max(e.name.length, 6)}" style:--tint={e.tint} onclick={() => e.tile && onopen?.(e.tile)}>
 				{#if e.art && !failed[e.key]}<img class="art" src={e.art} alt="" loading="lazy" decoding="async" onerror={() => (failed[e.key] = true)} />{/if}

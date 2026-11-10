@@ -16,7 +16,7 @@ import { moviesDir, noSidewaysScroll, owner, signIn } from "../helpers/helpers.t
 
 // Move from other apps (6.2.2), in four steps: read a fake old Radarr and
 // Seerr, choose what to move, move (a quiet test run first; problems open
-// "Before you move"), done, undo. Then the variants (qBittorrent sign-in,
+// "Before you import"), done, undo. Then the variants (qBittorrent sign-in,
 // backup file, saved key, Forget, Stop reading), the choices the server asks
 // for, the straight-through move, poll errors, stale tests, ?move=N, old
 // ?step=try addresses, no confirm() anywhere, sideways scroll, measured
@@ -58,9 +58,9 @@ const primary = (p: Page) => p.locator("#move-primary");
 const reason = (p: Page) => p.locator("#move-reason");
 const current = (p: Page) =>
   p.getByTestId("move-steps").locator('[aria-current="step"]');
-/** Opens "Change what moves" on Choose (the full list), if it is closed. */
+/** Opens "Change what's imported" on Choose (the full list), if it is closed. */
 async function openAll(p: Page) {
-  const b = p.getByRole("button", { name: "Change what moves" });
+  const b = p.getByRole("button", { name: "Change what's imported" });
   await expect(b).toBeVisible();
   if ((await b.getAttribute("aria-expanded")) !== "true") await b.click();
   await expect(b).toHaveAttribute("aria-expanded", "true");
@@ -123,7 +123,7 @@ async function measuredSymmetry(p: Page) {
 test("full flow: read, choose, move (with Before you move), done and undo", async () => {
   await page.goto("/settings/move");
   await expect(
-    page.getByRole("heading", { name: "Move from other apps", level: 1 }),
+    page.getByRole("heading", { name: "Import from other apps", level: 1 }),
   ).toBeVisible();
   await expect(current(page)).toHaveAttribute("aria-label", /Step 1 of 4, Read/);
   // Empty: one primary, no footer.
@@ -180,7 +180,7 @@ test("full flow: read, choose, move (with Before you move), done and undo", asyn
   await openAll(page);
 
   // A group switched off stays in place, marked Left out.
-  const alerts = page.getByRole("checkbox", { name: "Move Alerts" });
+  const alerts = page.getByRole("checkbox", { name: "Import Alerts" });
   await alerts.uncheck();
   await expect(groups.filter({ hasText: "Alerts" })).toContainText("Left out");
   await alerts.check();
@@ -213,15 +213,15 @@ test("full flow: read, choose, move (with Before you move), done and undo", asyn
 
   // Move: a quiet test run first (the button is busy, no step of its own).
   await expect(primary(page)).toBeEnabled();
-  await expect(primary(page)).toHaveText("Move");
+  await expect(primary(page)).toHaveText("Import");
   const tested = page.waitForRequest("**/api/v1/migrate/dry-run");
   await primary(page).click();
   await tested;
-  // Same name as the owner here: a choice, so "Before you move" opens.
-  const before = page.getByRole("dialog", { name: "Before you move" });
+  // Same name as the owner here: a choice, so "Before you import" opens.
+  const before = page.getByRole("dialog", { name: "Before you import" });
   await expect(before).toBeVisible({ timeout: 20_000 });
   await expect(current(page)).toHaveAttribute("aria-label", /Step 2 of 4, Choose/);
-  await expect(before.getByRole("button", { name: "Move anyway" })).toBeVisible();
+  await expect(before.getByRole("button", { name: "Import anyway" })).toBeVisible();
   // Go back closes it and stays on Choose.
   await before.getByRole("button", { name: "Go back" }).click();
   await expect(before).toBeHidden();
@@ -238,16 +238,16 @@ test("full flow: read, choose, move (with Before you move), done and undo", asyn
   await choice.getByRole("radio", { name: "Same person" }).click();
   await expect(before.getByRole("region", { name: "Needs a choice" }).getByTestId("choice-row").first().getByRole("radio", { name: "Same person" })).toHaveAttribute("aria-checked", "true");
   await noSidewaysScroll(page);
-  await expect(before.getByRole("button", { name: "Move anyway" })).toBeEnabled({ timeout: 20_000 });
+  await expect(before.getByRole("button", { name: "Import anyway" })).toBeEnabled({ timeout: 20_000 });
 
   // Move anyway starts it; follow the progress.
-  await before.getByRole("button", { name: "Move anyway" }).click();
+  await before.getByRole("button", { name: "Import anyway" }).click();
   const seen: number[] = [];
-  const progress = page.getByRole("progressbar", { name: "Move progress" });
+  const progress = page.getByRole("progressbar", { name: "Import progress" });
   await expect(async () => {
     if (await progress.isVisible())
       seen.push(Number(await progress.getAttribute("aria-valuenow")));
-    await expect(page.getByTestId("done-result")).toContainText("Moved");
+    await expect(page.getByTestId("done-result")).toContainText("Imported");
   }).toPass({ timeout: 20_000 });
   for (let i = 1; i < seen.length; i++)
     expect(seen[i]).toBeGreaterThanOrEqual(seen[i - 1]);
@@ -270,10 +270,10 @@ test("full flow: read, choose, move (with Before you move), done and undo", asyn
   expect(titles.titles.some((t) => t.name === "Lodestone Ferry")).toBe(true);
 
   // Undo, after a confirm.
-  await page.getByRole("button", { name: "Undo this move" }).click();
-  const undo = page.getByRole("dialog", { name: /^Undo move \d+\?$/ });
+  await page.getByRole("button", { name: "Undo this import" }).click();
+  const undo = page.getByRole("dialog", { name: /^Undo import \d+\?$/ });
   await expect(undo).toContainText("Download the report first");
-  await undo.getByRole("button", { name: "Undo move" }).click();
+  await undo.getByRole("button", { name: "Undo import" }).click();
   await expect(page.getByTestId("done-result")).toContainText("Undone", { timeout: 20_000 });
   const after = (await (await page.request.get("/api/v1/titles")).json()) as { titles: { name: string }[] };
   expect(after.titles.some((t) => t.name === "Lodestone Ferry")).toBe(false);
@@ -305,7 +305,7 @@ test("old addresses land on Choose; a change while testing runs it again; a chan
     await route.continue().catch(() => {});
   });
   await openAll(page);
-  await page.getByRole("checkbox", { name: "Move Alerts" }).uncheck();
+  await page.getByRole("checkbox", { name: "Import Alerts" }).uncheck();
   await expect(primary(page)).toBeEnabled();
   const asked = page.waitForRequest("**/api/v1/migrate/dry-run");
   await primary(page).click();
@@ -314,7 +314,7 @@ test("old addresses land on Choose; a change while testing runs it again; a chan
   await expect(page.getByRole("dialog")).toHaveCount(0);
   release();
   await page.unroute("**/api/v1/migrate/dry-run");
-  const sheet = page.getByRole("dialog", { name: /^(Before you move|Move \d+ items?\?)$/ });
+  const sheet = page.getByRole("dialog", { name: /^(Before you import|Import \d+ items?\?)$/ });
   await expect(sheet).toBeVisible({ timeout: 20_000 });
   await expect(current(page)).toHaveAttribute("aria-label", /Step 2 of 4, Choose/);
 
@@ -325,7 +325,7 @@ test("old addresses land on Choose; a change while testing runs it again; a chan
       : route.continue(),
   );
   const again = page.waitForRequest("**/api/v1/migrate/dry-run");
-  await sheet.getByRole("button", { name: /^(Move anyway|Move)$/ }).click();
+  await sheet.getByRole("button", { name: /^(Import anyway|Import)$/ }).click();
   await again;
   await expect(page.getByRole("dialog").getByText("Something changed, so HolyArrs checked again.")).toBeVisible({ timeout: 20_000 });
   await expect(current(page)).toHaveAttribute("aria-label", /Step 2 of 4, Choose/);
@@ -368,7 +368,7 @@ test("variants: qBittorrent sign-in, backup file, Stop reading and Forget", asyn
   // Forget asks in a Sheet first.
   await page.getByRole("button", { name: /^Forget the .+ read from/ }).last().click();
   const forget = page.getByRole("dialog", { name: /^Forget this .+ read\?$/ });
-  await expect(forget).toContainText("Finished moves stay.");
+  await expect(forget).toContainText("Finished imports stay.");
   await forget.getByRole("button", { name: "Cancel" }).click();
   await expect(page.getByTestId("read-row")).toHaveCount(before);
   // Let the sheet finish closing before it opens again.
@@ -508,7 +508,7 @@ async function fixture(p: Page, f: Fixture = {}) {
     counts: f.clean ? { adopt: items.length } : { adopt: items.length, skipped: 1, ...(f.missing ? { not_found: f.missing } : {}) },
     not_moved: [],
     needs_input: [],
-    next: ["Some people need a choice: pick Same person or Leave out for each, then try and move again.", "Keep the old apps until HolyArrs runs the way you want; this move changed nothing in them."],
+    next: ["Some people need a choice: pick Same person or Leave out for each, then try and import again.", "Keep the old apps until HolyArrs runs the way you want; this import changed nothing in them."],
   };
   const done = { id: 7, created_at: "2026-11-03T14:20:00Z", snapshots: [901], state: "done", report: { ...dry, dry: false, lines: dry.lines.map((l) => ({ ...l, result: l.result === "adopt" ? "adopted" : l.result })), counts: { adopted: items.length, skipped: 1 } } };
   let n = 0;
@@ -553,7 +553,7 @@ test("a person the server cannot match by number gets Same person or Leave out i
   await expect(current(p)).toHaveAttribute("aria-label", /Step 2 of 4, Choose/);
   await expect(primary(p)).toBeEnabled();
   await primary(p).click();
-  const before = p.getByRole("dialog", { name: "Before you move" });
+  const before = p.getByRole("dialog", { name: "Before you import" });
   await expect(before).toBeVisible();
   // Only problems are listed: no group lines here, just the choice.
   await expect(before.getByTestId("problem-row")).toHaveCount(0);
@@ -561,7 +561,7 @@ test("a person the server cannot match by number gets Same person or Leave out i
   await expect(row).toContainText("HolyArrs can't tell if this is the same person.");
   await expect(row.getByRole("radio", { name: "Same person" })).toBeVisible();
   await expect(row.getByRole("radio", { name: "Leave out" })).toBeVisible();
-  await expect(before.getByRole("button", { name: "Move anyway" })).toBeEnabled();
+  await expect(before.getByRole("button", { name: "Import anyway" })).toBeEnabled();
   await noSidewaysScroll(p);
   await before.getByRole("button", { name: "Go back" }).click();
   await expect(before).toBeHidden();
@@ -575,7 +575,7 @@ test("Before you move lists only the problem groups, one line each, with Show", 
   await p.goto("/settings/move?step=choose&read=901,902");
   await expect(primary(p)).toBeEnabled();
   await primary(p).click();
-  const before = p.getByRole("dialog", { name: "Before you move" });
+  const before = p.getByRole("dialog", { name: "Before you import" });
   await expect(before).toBeVisible();
   const rows = before.getByTestId("problem-row");
   await expect(rows).toHaveCount(1);
@@ -585,7 +585,7 @@ test("Before you move lists only the problem groups, one line each, with Show", 
   await expect(list).toContainText("Missing 0");
   await expect(list).not.toContainText("Title 0");
   await list.getByRole("button", { name: "Close", exact: true }).click();
-  await expect(before.getByRole("button", { name: "Move anyway" })).toBeVisible();
+  await expect(before.getByRole("button", { name: "Import anyway" })).toBeVisible();
   await expect(before.getByRole("button", { name: "Go back" })).toBeVisible();
   await noSidewaysScroll(p);
   await ctx.close();
@@ -595,18 +595,18 @@ test("no problems: Move tests quietly, confirms once and goes straight to the mo
   const { ctx, p } = await phone(browser, 390);
   await fixture(p, { clean: true });
   await p.goto("/settings/move?step=choose&read=901,902");
-  await expect(primary(p)).toHaveText("Move");
+  await expect(primary(p)).toHaveText("Import");
   await expect(primary(p)).toBeEnabled();
   const tested = p.waitForRequest("**/api/v1/migrate/dry-run");
   await primary(p).click();
   await tested;
-  const confirm = p.getByRole("dialog", { name: /^Move \d+ items?\?$/ });
+  const confirm = p.getByRole("dialog", { name: /^Import \d+ items?\?$/ });
   await expect(confirm).toContainText("From Radarr and Seerr.");
-  await expect(p.getByRole("dialog", { name: "Before you move" })).toHaveCount(0);
+  await expect(p.getByRole("dialog", { name: "Before you import" })).toHaveCount(0);
   const started = p.waitForRequest((r) => r.url().endsWith("/api/v1/migrate/moves") && r.method() === "POST");
-  await confirm.getByRole("button", { name: "Move", exact: true }).click();
+  await confirm.getByRole("button", { name: "Import", exact: true }).click();
   expect((await started).postDataJSON()).toMatchObject({ plan_hash: "h" });
-  await expect(p.getByTestId("done-result")).toContainText("Moved", { timeout: 15_000 });
+  await expect(p.getByTestId("done-result")).toContainText("Imported", { timeout: 15_000 });
   await expect(current(p)).toHaveAttribute("aria-label", /Step 4 of 4, Done/);
   await expect(p).toHaveURL(/move=7/);
   await ctx.close();
@@ -620,20 +620,20 @@ test("poll errors: one soft capsule, no toasts, then it recovers; nothing is ask
       n === 0 ? running(0.2) : n <= 2 ? { status: 500, json: { error: "down" } } : n <= 4 ? running(0.6) : { status: 200, json: { move: done, progress: 1, progress_note: "" } },
   });
   await p.goto("/settings/move?move=7");
-  await expect(current(p)).toHaveAttribute("aria-label", /Step 3 of 4, Move/);
+  await expect(current(p)).toHaveAttribute("aria-label", /Step 3 of 4, Import/);
   await expect(p.getByTestId("move-progress")).toBeVisible();
   await expect(p.getByTestId("move-progress")).toContainText("Can't reach HolyArrs", { timeout: 10_000 });
   // A lost poll never toasts.
   await expect(p.locator(".ui-toast")).toHaveCount(0);
-  await expect(p.getByRole("progressbar", { name: "Move progress" })).toBeVisible({ timeout: 15_000 });
-  await expect(p.getByTestId("done-result")).toContainText("Moved", { timeout: 15_000 });
+  await expect(p.getByRole("progressbar", { name: "Import progress" })).toBeVisible({ timeout: 15_000 });
+  await expect(p.getByTestId("done-result")).toContainText("Imported", { timeout: 15_000 });
   await expect(current(p)).toHaveAttribute("aria-label", /Step 4 of 4, Done/);
 
   // Leave mid-poll: nothing is asked after the page is gone.
   await p.unroute(/\/api\/v1\/(migrate|library-folders)/);
   await fixture(p, { moveAnswers: () => running(0.5) });
   await p.goto("/settings/move?move=7");
-  await expect(p.getByRole("progressbar", { name: "Move progress" })).toBeVisible();
+  await expect(p.getByRole("progressbar", { name: "Import progress" })).toBeVisible();
   await p.goto("/settings");
   const asked: string[] = [];
   p.on("request", (r) => r.url().includes("/migrate/moves/7") && asked.push(r.url()));
@@ -651,14 +651,14 @@ test("?move=N: a running move shows Move and follows it; a done move shows Done"
         : { status: 200, json: { move: done, progress: 1, progress_note: "" } },
   });
   await p.goto("/settings/move?move=7");
-  await expect(current(p)).toHaveAttribute("aria-label", /Step 3 of 4, Move/);
-  await expect(p.getByTestId("done-result")).toContainText("Moved", { timeout: 15_000 });
+  await expect(current(p)).toHaveAttribute("aria-label", /Step 3 of 4, Import/);
+  await expect(p.getByTestId("done-result")).toContainText("Imported", { timeout: 15_000 });
   await p.goto("/settings/move?move=8");
   await expect(current(p)).toHaveAttribute("aria-label", /Step 4 of 4, Done/);
-  await expect(p.getByText("Move 8 ·")).toBeVisible();
+  await expect(p.getByText("Import 8 ·")).toBeVisible();
   await p.goBack();
   await expect(current(p)).toHaveAttribute("aria-label", /Step 4 of 4, Done/);
-  await expect(p.getByText("Move 7 ·")).toBeVisible();
+  await expect(p.getByText("Import 7 ·")).toBeVisible();
   await ctx.close();
 });
 
@@ -744,6 +744,7 @@ test("desktop 1280: the rail capsules are equal, open sheets fit, and accessibil
   await noSidewaysScroll(p);
   await p.getByRole("dialog", { name: "Titles" }).getByRole("button", { name: "Close", exact: true }).click();
   await p.goto("/settings/move");
+  await expect(p.getByTestId("earlier-move").first()).toBeVisible();
   await measuredSymmetry(p);
   // Earlier moves: the pills and the Open buttons line up.
   const xs = await p.getByTestId("earlier-move").evaluateAll((rows) =>

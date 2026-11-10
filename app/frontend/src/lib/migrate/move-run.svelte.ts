@@ -3,6 +3,7 @@ import { type Move } from './move.ts';
 import { api, ApiError } from '#lib/core/api.ts';
 import { plainMessage as message } from '#lib/core/settings.ts';
 import { toasts } from '#lib/core/toasts.svelte.ts';
+import { t } from '#lib/core/i18n/i18n.svelte.ts';
 
 export function createMoveRun(ctx: { moves: Move[]; picked: number[]; [key: string]: any }) {
 	async function moveNow() {
@@ -59,7 +60,7 @@ export function createMoveRun(ctx: { moves: Move[]; picked: number[]; [key: stri
 			else if (err instanceof ApiError && err.status === 409 && /changed/i.test(text)) {
 				// The plan moved on since the test: check again and ask again.
 				ctx.dryAt = -1;
-				ctx.tryNotice = 'Something changed, so HolyArrs checked again.';
+				ctx.tryNotice = t('migrate.somethingChangedSoHolyarrs');
 				// After finally: moveNow skips while starting is still true.
 				recheck = true;
 			} else if (err instanceof ApiError && err.status === 404) ctx.gone = true;
@@ -73,10 +74,10 @@ export function createMoveRun(ctx: { moves: Move[]; picked: number[]; [key: stri
 	/** Hears a move or an undo end. */
 	function finished(m: Move) {
 		ctx.moves = [m, ...ctx.moves.filter((x) => x.id !== m.id)];
-		if (m.state === 'undone') toasts.push(`Move ${m.id} undone`, 'ok');
-		else if (m.undo_state === 'failed') toasts.push("Couldn't undo move", 'fail', { body: 'Try again' });
-		else if (m.state === 'done') toasts.push(`Move ${m.id} finished`, 'ok');
-		else toasts.push(`Move ${m.id} failed`, 'fail', { body: 'See the report' });
+		if (m.state === 'undone') toasts.push(t('migrate.moveUndone', { id: m.id }), 'ok');
+		else if (m.undo_state === 'failed') toasts.push(t('migrate.couldnTUndoMove'), 'fail', { body: t('migrate.tryAgain') });
+		else if (m.state === 'done') toasts.push(t('migrate.moveFinished', { id: m.id }), 'ok');
+		else toasts.push(t('migrate.moveFailed', { id: m.id }), 'fail', { body: t('migrate.seeTheReport') });
 		// A finished move forgets the kept keys.
 		if (m.state === 'done') void ctx.loadSaved();
 		if (m.state !== 'undone' && !m.undo_state) {

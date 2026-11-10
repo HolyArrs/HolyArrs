@@ -1,6 +1,7 @@
 // Builds the short result line shown after a connection test, like "Sonarr v4.0.1".
 
 // Known apps by the lowercase word that appears in their test reply.
+import { t } from '#lib/core/i18n/i18n.svelte.ts';
 const apps: Record<string, string> = {
 	qbittorrent: 'qBittorrent',
 	sabnzbd: 'SABnzbd',
@@ -34,7 +35,7 @@ export function testApp(text: string): string {
 }
 
 export function testLabel(text: string, app = '', extra = ''): string {
-	const head = [app || testApp(text), testVersion(text)].filter(Boolean).join(' ') || 'Connected';
+	const head = [app || testApp(text), testVersion(text)].filter(Boolean).join(' ') || t('core.testTag.connected');
 	return [head, extra].filter(Boolean).join(' · ');
 }
 

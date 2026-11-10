@@ -1,5 +1,6 @@
 // Person page types and helpers for stats chips, decade groups and bulk add or ask.
 
+import { t } from '#lib/core/i18n/i18n.svelte.ts';
 export type PersonRole = 'all' | 'actor' | 'director';
 
 export type PersonSummary = {
@@ -61,14 +62,14 @@ export type ReviewedResult = { tmdb_id: string; ok: boolean; error?: string };
 export function personChips(s: PersonStats | undefined, library: number, asked: number): string[] {
 	if (!s) return [];
 	const out: string[] = [];
-	if (s.first_year) out.push(`${s.first_year}–${s.active ? 'now' : s.last_year}`);
-	const films = s.films ? `${s.films} film${s.films === 1 ? '' : 's'}` : '';
+	if (s.first_year) out.push(`${s.first_year}–${s.active ? t('ui.people.now') : s.last_year}`);
+	const films = s.films ? (s.films === 1 ? t('ui.people.filmOne') : t('ui.people.filmOther', { count: s.films })) : '';
 	if (s.shows) {
 		const titles = s.titles || s.films + s.shows;
-		out.push([`${titles} title${titles === 1 ? '' : 's'}`, films, `${s.shows} show${s.shows === 1 ? '' : 's'}`].filter(Boolean).join(' · '));
+		out.push([titles === 1 ? t('ui.people.titleOne') : t('ui.people.titleOther', { count: titles }), films, s.shows === 1 ? t('ui.people.showOne') : t('ui.people.showOther', { count: s.shows })].filter(Boolean).join(' · '));
 	} else if (films) out.push(films);
-	if (s.rating && s.rated) out.push(`★ ${s.rating.toFixed(1)} avg`);
-	const home = [library ? `${library} in your Library` : '', asked ? `${asked} asked` : ''].filter(Boolean).join(' · ');
+	if (s.rating && s.rated) out.push(t('ui.people.average', { rating: s.rating.toFixed(1) }));
+	const home = [library ? t('ui.people.inLibrary', { count: library }) : '', asked ? t('ui.people.asked', { count: asked }) : ''].filter(Boolean).join(' · ');
 	if (home) out.push(home);
 	return out;
 }
@@ -78,7 +79,7 @@ export function byDecade(movies: PersonMovie[]): { label: string; movies: Person
 	const groups: { label: string; movies: PersonMovie[] }[] = [];
 	const at = new Map<string, number>();
 	for (const m of movies) {
-		const label = m.year ? `${Math.floor(m.year / 10) * 10}s` : 'Coming soon';
+		const label = m.year ? `${Math.floor(m.year / 10) * 10}s` : t('ui.people.comingSoon');
 		let i = at.get(label);
 		if (i === undefined) {
 			i = groups.push({ label, movies: [] }) - 1;
@@ -123,5 +124,5 @@ export async function runReviewed(
 // Fallback text so the user never sees an empty error.
 function errorText(err: unknown): string {
 	if (err instanceof Error && err.message.trim()) return err.message;
-	return 'This movie could not be submitted.';
+	return t('ui.people.couldNotSubmit');
 }

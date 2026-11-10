@@ -9,6 +9,7 @@ import { api } from '#lib/core/api.ts';
 import { toasts } from '#lib/core/toasts.svelte.ts';
 import { glideScroll } from '#lib/core/transitions.ts';
 import type { CalendarEntry } from '#lib/core/types.ts';
+import { t } from '#lib/core/i18n/i18n.svelte.ts';
 
 export type CalendarAnswer = { dates: CalendarEntry[] | null; my_follows?: number; people?: number };
 
@@ -84,7 +85,7 @@ export function createCalendarScroll(ctx: any) {
 				if (w < lo) lo = w;
 			}
 		}
-		const edge = () => toasts.push(n > 0 ? 'No later dates' : 'No earlier dates', 'ok');
+		const edge = () => toasts.push(n > 0 ? t('discover.calendarScroll.noLater') : t('discover.calendarScroll.noEarlier'), 'ok');
 		if (target >= ctx.latest || addDays(target, 7) <= lo) return edge();
 		const tw = ymd(target);
 		const rows = [...document.querySelectorAll<HTMLElement>('.cal-main [data-day]')];

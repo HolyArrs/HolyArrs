@@ -2,6 +2,7 @@
 
 import { type ExploreCard, type ExploreRow, ROW_MAX, titleCard, tmdbArtName, cardTmdb } from '#lib/ui/title-cards.ts';
 import type { Ask, CalendarEntry, TitleView } from '../core/types.ts';
+import { t, appLocale } from '#lib/core/i18n/i18n.svelte.ts';
 
 /** What two titles can share: genres and people. */
 export interface Facets {
@@ -14,19 +15,19 @@ export function recentlyAdded(titles: TitleView[], n = ROW_MAX): TitleView[] {
 	return [...titles].sort((a, b) => b.id - a.id).slice(0, n);
 }
 
-const releaseWord: Record<CalendarEntry['kind'], string> = { cinema: 'In cinemas', digital: 'On digital', physical: 'On disc', episode: '', album: 'New album' };
+const releaseWord = (): Record<CalendarEntry['kind'], string> => ({ cinema: t('discover.exploreRows.inCinemas'), digital: t('discover.exploreRows.onDigital'), physical: t('discover.exploreRows.onDisc'), episode: '', album: t('discover.exploreRows.newAlbum') });
 
 /** A wide card's second line: S1 · E3 · Name, On digital, or the album. */
 export function releaseLine(e: CalendarEntry): string {
 	if (e.kind === 'episode') return [`S${e.season ?? 0}`, `E${e.episode ?? 0}`, e.episode_name].filter(Boolean).join(' · ');
-	if (e.kind === 'album') return e.album ?? releaseWord.album;
-	return releaseWord[e.kind];
+	if (e.kind === 'album') return e.album ?? releaseWord().album;
+	return releaseWord()[e.kind];
 }
 
 /** The day, plus Premiere for S1E1 and New for any other episode 1. */
 export function releaseBadges(e: CalendarEntry, now: Date): string[] {
 	const when = shortDay(e.kind === 'episode' && !e.timed && e.air_day ? e.air_day : e.date, now);
-	const extra = e.kind === 'episode' && e.episode === 1 ? (e.season === 1 ? 'Premiere' : 'New') : '';
+	const extra = e.kind === 'episode' && e.episode === 1 ? (e.season === 1 ? t('discover.exploreRows.premiere') : t('discover.exploreRows.new')) : '';
 	return [when, extra].filter(Boolean);
 }
 
@@ -63,9 +64,9 @@ export function missingEpisodes(titles: TitleView[], n = ROW_MAX): ExploreCard[]
 		.filter((t) => (t.show?.missing ?? 0) > 0)
 		.sort((a, b) => (b.show!.missing - a.show!.missing) || a.name.localeCompare(b.name))
 		.slice(0, n)
-		.map((t) => {
-			const m = t.show!.missing;
-			const c = titleCard(t, `${m} ${m === 1 ? 'episode' : 'episodes'} missing`, `m${t.id}`);
+		.map((tv) => {
+			const m = tv.show!.missing;
+			const c = titleCard(tv, m === 1 ? t('discover.exploreRows.missingOne') : t('discover.exploreRows.missingOther', { n: m }), `m${tv.id}`);
 			if (c.status === 'in_library') c.status = 'missing';
 			return c;
 		});
@@ -95,7 +96,7 @@ export function genreRows(titles: TitleView[], facets: Map<number, Facets>, maxR
 		.filter(([, ts]) => ts.length >= min)
 		.sort(([ga, a], [gb, b]) => b.length - a.length || ga.localeCompare(gb))
 		.slice(0, maxRows)
-		.map(([g, ts]) => ({ id: `genre-${g.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`, title: `${g} in your library`, cards: ts.slice(0, n).map((t) => titleCard(t, undefined, `g${t.id}`)) }));
+		.map(([g, ts]) => ({ id: `genre-${g.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`, title: t('discover.exploreRows.genreInLibrary', { genre: g }), cards: ts.slice(0, n).map((t) => titleCard(t, undefined, `g${t.id}`)) }));
 }
 
 /** Gives each title's first card on the page a view-transition name so its art grows into the title page's hero: title-art-<id> for a Library title, tmdb-art-<kind>-<tmdb> for a movie or show not added yet. */
@@ -123,9 +124,9 @@ function shortDay(iso: string, now: Date): string {
 	if (Number.isNaN(d.getTime())) return '';
 	const day = (x: Date) => Math.floor(Date.UTC(x.getFullYear(), x.getMonth(), x.getDate()) / 86400000);
 	const diff = day(d) - day(now);
-	if (diff === 0) return 'Today';
-	if (diff === 1) return 'Tomorrow';
-	return d.toLocaleDateString(undefined, diff < 7 && diff > 0 ? { weekday: 'long' } : { day: 'numeric', month: 'short' });
+	if (diff === 0) return t('discover.exploreRows.today');
+	if (diff === 1) return t('discover.exploreRows.tomorrow');
+	return d.toLocaleDateString(appLocale(), diff < 7 && diff > 0 ? { weekday: 'long' } : { day: 'numeric', month: 'short' });
 }
 
 /** Groups asks for the same thing (the same title, or the same add id). */

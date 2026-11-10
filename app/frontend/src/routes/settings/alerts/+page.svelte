@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import Field from '#lib/ui/Field.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
@@ -20,11 +21,11 @@
 
 	type Kind = 'discord' | 'email' | 'webhook' | 'telegram' | 'ntfy' | 'gotify' | 'pushover';
 	const allMoments: Moment[] = [...askMoments, ...libraryMoments];
-	const momentGroups: { label: string; hint: string; moments: readonly Moment[] }[] = [
-		{ label: 'Requests', hint: 'New requests and decisions', moments: askMoments },
-		{ label: 'Library', hint: 'Downloads, imports and problems. Email goes to staff.', moments: libraryMoments }
-	];
-	const kindWord: Record<Kind, string> = { discord: 'Discord', email: 'Email', webhook: 'Webhook', telegram: 'Telegram', ntfy: 'ntfy', gotify: 'Gotify', pushover: 'Pushover' };
+	const momentGroups = $derived<{ id: string; label: string; hint: string; moments: readonly Moment[] }[]>([
+		{ id: 'requests', label: t('settings.alerts.groupRequests'), hint: t('settings.alerts.groupRequestsHint'), moments: askMoments },
+		{ id: 'library', label: t('settings.alerts.groupLibrary'), hint: t('settings.alerts.groupLibraryHint'), moments: libraryMoments }
+	]);
+	const kindWord = $derived<Record<Kind, string>>({ discord: 'Discord', email: t('settings.alerts.email'), webhook: 'Webhook', telegram: 'Telegram', ntfy: 'ntfy', gotify: 'Gotify', pushover: 'Pushover' });
 	let alerts = $state<AlertView[]>([]);
 	let loaded = $state(false);
 	let hasData = $state(false);
@@ -84,9 +85,9 @@
 		packBusy = true;
 		try {
 			pack = (await api.put<{ pack_alerts: 'one' | 'each' }>('/settings/alerts', { pack_alerts: v })).pack_alerts;
-			toasts.push('Pack Alerts saved', 'ok', { body: v === 'one' ? 'One Alert per pack' : 'One Alert per episode' });
+			toasts.push(t('settings.alerts.packSaved'), 'ok', { body: v === 'one' ? t('settings.alerts.perPack') : t('settings.alerts.perEpisode') });
 		} catch (e) {
-			toasts.push("Couldn't save", 'fail', { body: message(e) });
+			toasts.push(t('settings.alerts.couldntSave'), 'fail', { body: message(e) });
 		} finally {
 			packBusy = false;
 		}
@@ -161,7 +162,7 @@
 			const body = { ...form, smtp_port: Number(form.smtp_port) };
 			if (isNew) await api.post('/alerts', body);
 			else await api.put(`/alerts/${editing!.id}`, body);
-			toasts.push(`${form.name} saved`, 'ok');
+			toasts.push(t('settings.alerts.saved', { name: form.name }), 'ok');
 			editing = null;
 			await load();
 		} catch (err) {
@@ -175,7 +176,7 @@
 		testing = a.id;
 		try {
 			await api.post(`/alerts/${a.id}/test`);
-			results = { ...results, [a.id]: { ok: true, text: `Test sent to ${a.name}` } };
+			results = { ...results, [a.id]: { ok: true, text: t('settings.alerts.testSent', { name: a.name }) } };
 		} catch (err) {
 			results = { ...results, [a.id]: { ok: false, text: message(err) } };
 		} finally {
@@ -185,137 +186,137 @@
 	}
 
 	async function remove(a: AlertView) {
-		if (!confirm(`Remove ${a.name}?`)) return;
+		if (!confirm(t('settings.alerts.confirmRemove', { name: a.name }))) return;
 		try {
 			await api.del(`/alerts/${a.id}`);
 			await load();
 		} catch (err) {
-			toasts.push("Couldn't remove Alert", 'fail', { body: message(err) });
+			toasts.push(t('settings.alerts.removeFailed'), 'fail', { body: message(err) });
 		}
 	}
 </script>
 
-<svelte:head><title>Alerts · HolyArrs</title></svelte:head>
+<svelte:head><title>{t('settings.alerts.title')} · HolyArrs</title></svelte:head>
 
-<PageHeader title="Alerts">
+<PageHeader title={t('settings.alerts.title')}>
 	{#snippet actions()}
-		{#if !editing && alerts.length}<Button icon="plus" variant="primary" type="button" onclick={startAdd}>Add an Alert</Button>{/if}
+		{#if !editing && alerts.length}<Button icon="plus" variant="primary" type="button" onclick={startAdd}>{t('settings.alerts.add')}</Button>{/if}
 	{/snippet}
 </PageHeader>
 
 <p class="small muted lead">
-	Everyone also gets these messages inside HolyArrs, on their Requests page. For email and Discord, each person adds their address or Discord user ID in My account.
+	{t('settings.alerts.lead')}
 </p>
 
 {#if editing}
-	<form class="sc-form" onsubmit={save} aria-label={isNew ? 'Add an Alert' : `Change ${editing.name}`}>
-		<SettingsCard title={isNew ? 'Add an Alert' : `Change ${editing.name}`}>
-			<Field id="al-name" label="Name" style="margin-top: var(--s-4)">
+	<form class="sc-form" onsubmit={save} aria-label={isNew ? t('settings.alerts.add') : t('settings.alerts.change', { name: editing.name })}>
+		<SettingsCard title={isNew ? t('settings.alerts.add') : t('settings.alerts.change', { name: editing.name })}>
+			<Field id="al-name" label={t('settings.alerts.name')} style="margin-top: var(--s-4)">
 				<input id="al-name" class="input" bind:value={form.name} maxlength="80" required />
 			</Field>
 			{#if isNew}
-				<Field id="al-kind" label="Kind">
+				<Field id="al-kind" label={t('settings.alerts.kind')}>
 					<select id="al-kind" class="input" bind:value={() => form.kind, (k) => (form = switchKind(form, k))}>
 						<option value="discord">Discord</option>
 						{#if !session.held('alert_channels_more')}<option value="telegram">Telegram</option>{/if}
 						{#if !session.held('alert_channels_more')}<option value="ntfy">ntfy</option>{/if}
 						{#if !session.held('alert_channels_more')}<option value="gotify">Gotify</option>{/if}
 						{#if !session.held('alert_channels_more')}<option value="pushover">Pushover</option>{/if}
-						<option value="email">Email</option>
-						{#if !session.held('alert_channels_more')}<option value="webhook">Webhook (JSON)</option>{/if}
+						<option value="email">{t('settings.alerts.email')}</option>
+						{#if !session.held('alert_channels_more')}<option value="webhook">{t('settings.alerts.webhookJson')}</option>{/if}
 					</select>
 				</Field>
 			{/if}
 			{#if form.kind === 'webhook'}
-				<Field id="al-hook" label="Webhook link" hint="Gets a JSON post for each Alert">
+				<Field id="al-hook" label={t('settings.alerts.hookLink')} hint={t('settings.alerts.hookLinkHint')}>
 					<input id="al-hook" class="input mono" bind:value={form.url} autocomplete="off" spellcheck="false" placeholder="https://example.com/holyarrs" />
 				</Field>
-				<Field id="al-secret" label="Secret" hint="Optional. Retype it if the link moves to another server.">
+				<Field id="al-secret" label={t('settings.alerts.secretLabel')} hint={t('settings.alerts.secretHint')}>
 					<input id="al-secret" class="input mono" type="password" bind:value={form.secret} autocomplete="new-password" />
 				</Field>
-				<Field id="al-auth" label="What the secret does">
+				<Field id="al-auth" label={t('settings.alerts.secretDoes')}>
 					<select id="al-auth" class="input" bind:value={form.webhook_auth}>
-						<option value="sign">Signs each message (X-HolyArrs-Signature, HMAC-SHA256)</option>
-						<option value="bearer">Is sent as a bearer token (Authorization header)</option>
-						<option value="none">Nothing (no secret is sent)</option>
+						<option value="sign">{t('settings.alerts.authSign')}</option>
+						<option value="bearer">{t('settings.alerts.authBearer')}</option>
+						<option value="none">{t('settings.alerts.authNone')}</option>
 					</select>
 				</Field>
 			{:else if form.kind === 'telegram'}
-				<Field id="al-tg-token" label="Bot token" hint={isNew ? 'In Telegram, talk to @BotFather and send /newbot; it gives you the token. Kept encrypted and never shown again.' : 'Kept encrypted and never shown again. Leave empty to keep the stored one.'}>
-					<input id="al-tg-token" class="input mono" type="password" bind:value={form.bot_token} autocomplete="new-password" spellcheck="false" placeholder={isNew ? '123456789:AAH…' : 'Stored'} />
+				<Field id="al-tg-token" label={t('settings.alerts.botTokenLabel')} hint={isNew ? t('settings.alerts.botTokenNew') : t('settings.alerts.keptKeep')}>
+					<input id="al-tg-token" class="input mono" type="password" bind:value={form.bot_token} autocomplete="new-password" spellcheck="false" placeholder={isNew ? '123456789:AAH…' : t('settings.alerts.stored')} />
 				</Field>
-				<Field id="al-tg-chat" label="Chat ID" hint="A user, group or channel ID, or @channel. Message the bot or add it first.">
-					<input id="al-tg-chat" class="input mono" bind:value={form.chat_id} autocomplete="off" spellcheck="false" placeholder="-1001234567890 or @mychannel" />
+				<Field id="al-tg-chat" label={t('settings.alerts.chatId')} hint={t('settings.alerts.chatIdHint')}>
+					<input id="al-tg-chat" class="input mono" bind:value={form.chat_id} autocomplete="off" spellcheck="false" placeholder={t('settings.alerts.chatIdExample')} />
 				</Field>
 			{:else if form.kind === 'ntfy'}
-				<Field id="al-ntfy-server" label="Server address" hint="Empty uses ntfy.sh. A home server needs “Reach the local network”.">
+				<Field id="al-ntfy-server" label={t('settings.alerts.serverAddress')} hint={t('settings.alerts.ntfyServerHint')}>
 					<input id="al-ntfy-server" class="input mono" bind:value={form.server_url} autocomplete="off" spellcheck="false" placeholder="https://ntfy.sh" />
 				</Field>
-				<Field id="al-ntfy-topic" label="Topic" hint="Letters, digits, - and _. Anyone with this name can read it.">
+				<Field id="al-ntfy-topic" label={t('settings.alerts.topic')} hint={t('settings.alerts.topicHint')}>
 					<input id="al-ntfy-topic" class="input mono" bind:value={form.topic} maxlength="64" autocomplete="off" spellcheck="false" placeholder="holyarrs-alerts" />
 				</Field>
-				<Field id="al-ntfy-token" label="Access token" hint={isNew || !editing?.app_token ? 'Optional, only for a topic that needs a sign-in. In ntfy: Account, Access tokens. Kept encrypted and never shown again.' : 'Kept encrypted and never shown again. Leave empty to keep the stored one; another server needs it typed again.'}>
-					<input id="al-ntfy-token" class="input mono" type="password" bind:value={form.app_token} disabled={form.clear_app_token} autocomplete="new-password" spellcheck="false" placeholder={isNew || !editing?.app_token ? 'tk_…' : 'Stored'} />
+				<Field id="al-ntfy-token" label={t('settings.alerts.accessTokenLabel')} hint={isNew || !editing?.app_token ? t('settings.alerts.accessTokenNew') : t('settings.alerts.keptKeepServer')}>
+					<input id="al-ntfy-token" class="input mono" type="password" bind:value={form.app_token} disabled={form.clear_app_token} autocomplete="new-password" spellcheck="false" placeholder={isNew || !editing?.app_token ? 'tk_…' : t('settings.alerts.stored')} />
 				</Field>
 				{#if !isNew && editing?.app_token}
 					<label class="checkline">
 						<input id="al-ntfy-clear" type="checkbox" bind:checked={form.clear_app_token} onchange={() => (form.app_token = '')} />
-						<span><b>Remove the token</b><br /><span class="hint">When the topic no longer needs one</span></span>
+						<span><b>{t('settings.alerts.removeTokenLabel')}</b><br /><span class="hint">{t('settings.alerts.removeTokenHint')}</span></span>
 					</label>
 				{/if}
 			{:else if form.kind === 'gotify'}
-				<Field id="al-gotify-server" label="Server address" hint="A home server needs “Reach the local network”">
+				<Field id="al-gotify-server" label={t('settings.alerts.serverAddress')} hint={t('settings.alerts.gotifyServerHint')}>
 					<input id="al-gotify-server" class="input mono" bind:value={form.server_url} autocomplete="off" spellcheck="false" placeholder="https://gotify.example.com" />
 				</Field>
-				<Field id="al-gotify-token" label="App token" hint={isNew ? 'In Gotify: Apps, Create application, then copy its token. Kept encrypted and never shown again.' : 'Kept encrypted and never shown again. Leave empty to keep the stored one; another server needs it typed again.'}>
-					<input id="al-gotify-token" class="input mono" type="password" bind:value={form.app_token} autocomplete="new-password" spellcheck="false" placeholder={isNew ? '' : 'Stored'} />
+				<Field id="al-gotify-token" label={t('settings.alerts.appTokenLabel')} hint={isNew ? t('settings.alerts.gotifyTokenNew') : t('settings.alerts.keptKeepServer')}>
+					<input id="al-gotify-token" class="input mono" type="password" bind:value={form.app_token} autocomplete="new-password" spellcheck="false" placeholder={isNew ? '' : t('settings.alerts.stored')} />
 				</Field>
 			{:else if form.kind === 'pushover'}
-				<Field id="al-push-user" label="User key" hint="Top of your pushover.net page. Group keys work too.">
+				<Field id="al-push-user" label={t('settings.alerts.userKey')} hint={t('settings.alerts.userKeyHint')}>
 					<input id="al-push-user" class="input mono" bind:value={form.user_key} autocomplete="off" spellcheck="false" />
 				</Field>
-				<Field id="al-push-token" label="App token" hint={isNew ? 'On pushover.net: Create an Application, then copy its API token. Kept encrypted and never shown again.' : 'Kept encrypted and never shown again. Leave empty to keep the stored one.'}>
-					<input id="al-push-token" class="input mono" type="password" bind:value={form.app_token} autocomplete="new-password" spellcheck="false" placeholder={isNew ? '' : 'Stored'} />
+				<Field id="al-push-token" label={t('settings.alerts.appTokenLabel')} hint={isNew ? t('settings.alerts.pushoverTokenNew') : t('settings.alerts.keptKeep')}>
+					<input id="al-push-token" class="input mono" type="password" bind:value={form.app_token} autocomplete="new-password" spellcheck="false" placeholder={isNew ? '' : t('settings.alerts.stored')} />
 				</Field>
 			{:else if form.kind === 'discord'}
-				<Field id="al-url" label="Discord link" hint="Channel settings › Integrations › Webhooks › Copy link">
+				<Field id="al-url" label={t('settings.alerts.discordLink')} hint={t('settings.alerts.discordLinkHint')}>
 					<input id="al-url" class="input mono" bind:value={form.url} autocomplete="off" spellcheck="false" placeholder="https://discord.com/api/webhooks/…" />
 				</Field>
 			{:else}
-				<Field id="al-host" label="Mail server">
+				<Field id="al-host" label={t('settings.alerts.mailServer')}>
 					<input id="al-host" class="input" bind:value={form.smtp_host} placeholder="smtp.example.com" autocomplete="off" />
 				</Field>
 				<div class="two">
-					<Field id="al-port" label="Port">
+					<Field id="al-port" label={t('settings.alerts.port')}>
 						<input id="al-port" class="input" type="number" min="1" max="65535" bind:value={form.smtp_port} />
 					</Field>
-					<Field id="al-sec" label="Security">
+					<Field id="al-sec" label={t('settings.alerts.security')}>
 						<select id="al-sec" class="input" bind:value={form.smtp_security}>
 							<option value="starttls">STARTTLS (port 587)</option>
 							<option value="tls">TLS (port 465)</option>
-							<option value="none">None (local mail server only)</option>
+							<option value="none">{t('settings.alerts.secNone')}</option>
 						</select>
 					</Field>
 				</div>
-				<Field id="al-from" label="From address">
+				<Field id="al-from" label={t('settings.alerts.fromAddress')}>
 					<input id="al-from" class="input" type="email" bind:value={form.smtp_from} autocomplete="off" />
 				</Field>
-				<Field id="al-user" label="Mail username">
+				<Field id="al-user" label={t('settings.alerts.mailUser')}>
 					<input id="al-user" class="input" bind:value={form.smtp_user} autocomplete="off" />
 				</Field>
-				<Field id="al-pw" label="Mail password">
+				<Field id="al-pw" label={t('settings.alerts.mailPass')}>
 					<input id="al-pw" class="input" type="password" bind:value={form.smtp_pass} autocomplete="new-password" />
 				</Field>
-				<Field id="al-staff" label="Staff addresses" hint="Hear about new requests. Requesters get their own email.">
+				<Field id="al-staff" label={t('settings.alerts.staff')} hint={t('settings.alerts.staffHint')}>
 					<input id="al-staff" class="input" bind:value={form.staff_to} placeholder="you@example.com, other@example.com" autocomplete="off" />
 				</Field>
 			{/if}
-			{#each momentGroups as g (g.label)}
+			{#each momentGroups as g (g.id)}
 				{@const all = g.moments.every((m) => form.moments.includes(m))}
-				<fieldset class="moments" data-testid="moments-{g.label.toLowerCase()}">
-					<legend class="label">When to send: {g.label}</legend>
+				<fieldset class="moments" data-testid="moments-{g.id}">
+					<legend class="label">{t('settings.alerts.whenToSend', { group: g.label })}</legend>
 					<p class="hint">{g.hint}</p>
-					<Button variant="plain" type="button" onclick={() => toggleGroup(g.moments, !all)}>{all ? 'None of these' : 'All of these'}</Button>
+					<Button variant="plain" type="button" onclick={() => toggleGroup(g.moments, !all)}>{all ? t('settings.alerts.none') : t('settings.alerts.all')}</Button>
 					{#each g.moments as m (m)}
 						<label class="checkline">
 							<input type="checkbox" checked={form.moments.includes(m)} onchange={(e) => toggle(m, e.currentTarget.checked)} />
@@ -326,16 +327,16 @@
 			{/each}
 			<label class="checkline">
 				<input type="checkbox" bind:checked={form.allow_local_network} />
-				<span><b>Reach the local network</b><br /><span class="hint">For a server on this machine or your home network</span></span>
+				<span><b>{t('settings.alerts.local')}</b><br /><span class="hint">{t('settings.alerts.localHint')}</span></span>
 			</label>
 			<label class="checkline">
 				<input type="checkbox" bind:checked={form.enabled} />
-				<span><b>Send messages</b></span>
+				<span><b>{t('settings.alerts.send')}</b></span>
 			</label>
 			{#if formError}<p class="form-error" role="alert">{formError}</p>{/if}
 			<div class="row" style="margin-top: var(--s-5)">
-				<Button variant="primary" type="submit" disabled={busy || !form.name.trim()} aria-busy={busy}>Save</Button>
-				<Button variant="plain" type="button" onclick={() => (editing = null)}>Cancel</Button>
+				<Button variant="primary" type="submit" disabled={busy || !form.name.trim()} aria-busy={busy}>{t('settings.alerts.save')}</Button>
+				<Button variant="plain" type="button" onclick={() => (editing = null)}>{t('settings.alerts.cancel')}</Button>
 			</div>
 		</SettingsCard>
 	</form>
@@ -347,7 +348,7 @@
 	<LoadError hasData={false} message={error} onretry={load} />
 {:else if alerts.length === 0 && !editing}
 	{#if error}<LoadError hasData={true} message={error} onretry={load} />{/if}
-	<EmptyState icon="bell" title="No Alerts" text="Send messages to Discord, Telegram, email and more." action={{ label: 'Add an Alert', onclick: startAdd, icon: 'plus' }} />
+	<EmptyState icon="bell" title={t('settings.alerts.none2')} text={t('settings.alerts.noneText')} action={{ label: t('settings.alerts.add'), onclick: startAdd, icon: 'plus' }} />
 {:else}
 	{#if error}<LoadError hasData={true} message={error} onretry={load} />{/if}
 	<ul class="list">
@@ -356,21 +357,21 @@
 				<div class="head">
 					<h2 class="h3">{a.name}</h2>
 					<span class="chip">{kindWord[a.kind] ?? a.kind}</span>
-					{#if !a.enabled}<span class="chip">Off</span>{/if}
+					{#if !a.enabled}<span class="chip">{t('settings.alerts.off')}</span>{/if}
 					{#if results[a.id]}<TestTag ok={results[a.id].ok} text={results[a.id].text} app={kindWord[a.kind] ?? a.kind} testid="alert-test" />{/if}
 				</div>
-				<p class="small muted">{a.moments.length ? a.moments.map((m) => momentWords[m]?.[0] ?? m).join(' · ') : 'No moments chosen'}</p>
+				<p class="small muted">{a.moments.length ? a.moments.map((m) => momentWords[m]?.[0] ?? m).join(' · ') : t('settings.alerts.noMoments')}</p>
 				{#if results[a.id] && !results[a.id].ok}
 					<p class="small bad-text" data-testid="alert-result">{results[a.id].text}</p>
 				{:else if a.last_error}
-					<p class="small bad-text" data-testid="alert-result">Last try failed: {a.last_error}</p>
+					<p class="small bad-text" data-testid="alert-result">{t('settings.alerts.lastFailed', { error: a.last_error })}</p>
 				{:else if a.last_sent_at}
-					<p class="small muted" data-testid="alert-result">Last sent {ago(a.last_sent_at)}</p>
+					<p class="small muted" data-testid="alert-result">{t('settings.alerts.lastSent', { ago: ago(a.last_sent_at) })}</p>
 				{/if}
 				<div class="row actions">
-					<Button type="button" disabled={testing === a.id} aria-busy={testing === a.id} onclick={() => test(a)}>Send a test</Button>
-					<Button variant="plain" type="button" onclick={() => startChange(a)}>Change</Button>
-					<Button variant="plain" type="button" onclick={() => remove(a)} aria-label="Remove {a.name}">Remove</Button>
+					<Button type="button" disabled={testing === a.id} aria-busy={testing === a.id} onclick={() => test(a)}>{t('settings.alerts.sendTest')}</Button>
+					<Button variant="plain" type="button" onclick={() => startChange(a)}>{t('settings.alerts.changeButton')}</Button>
+					<Button variant="plain" type="button" onclick={() => remove(a)} aria-label={t('settings.alerts.removeName', { name: a.name })}>{t('settings.alerts.remove')}</Button>
 				</div>
 			</li>
 		{/each}
@@ -378,8 +379,8 @@
 {/if}
 
 <section class="card packs" id="pack-alerts" tabindex="-1" aria-labelledby="h-packs" data-testid="pack-alerts">
-	<h2 id="h-packs" class="h2">Season packs</h2>
-	<p class="small muted">When one download brings several episodes</p>
+	<h2 id="h-packs" class="h2">{t('settings.alerts.packs')}</h2>
+	<p class="small muted">{t('settings.alerts.packsNote')}</p>
 	{#if pack === null}
 		{#if packError}
 			<LoadError hasData={false} message={packError} onretry={loadPack} busy={packBusy} />
@@ -388,14 +389,14 @@
 		{/if}
 	{:else}
 	<fieldset class="pack-choice" disabled={packBusy}>
-		<legend class="sr-only">Alerts for a pack</legend>
+		<legend class="sr-only">{t('settings.alerts.packLegend')}</legend>
 		<label class="checkline">
 			<input type="radio" name="pack" value="one" checked={pack === 'one'} onchange={() => savePack('one')} />
-			<span><b>One Alert for the pack</b><br /><span class="hint">Lists every episode it brought, one per line.</span></span>
+			<span><b>{t('settings.alerts.onePack')}</b><br /><span class="hint">{t('settings.alerts.onePackHint')}</span></span>
 		</label>
 		<label class="checkline">
 			<input type="radio" name="pack" value="each" checked={pack === 'each'} onchange={() => savePack('each')} />
-			<span><b>One Alert per episode</b></span>
+			<span><b>{t('settings.alerts.perEpisode')}</b></span>
 		</label>
 	</fieldset>
 	{/if}

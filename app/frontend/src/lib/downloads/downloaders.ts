@@ -1,4 +1,5 @@
 // Downloader helpers, kept apart from the pages so they can be tested.
+import { t } from '#lib/core/i18n/i18n.svelte.ts';
 import type { DownloadRow, Decision } from '../core/types.ts';
 import type { Tone } from '../core/format.ts';
 
@@ -130,11 +131,11 @@ export function percent(p: number): string {
 /** Seconds left, in words. */
 export function timeLeft(s?: number): string {
 	if (!s || s <= 0) return '';
-	if (s < 60) return 'under a minute left';
-	if (s < 3600) return `${Math.round(s / 60)} min left`;
+	if (s < 60) return t('downloads.left.under');
+	if (s < 3600) return t('downloads.left.min', { m: Math.round(s / 60) });
 	const h = Math.floor(s / 3600);
 	const m = Math.round((s % 3600) / 60);
-	return m ? `${h} h ${m} min left` : `${h} h left`;
+	return m ? t('downloads.left.hm', { h, m }) : t('downloads.left.h', { h });
 }
 
 /** Starts a new Downloader. Downloaders usually run at home, so the local-network switch starts on. */
@@ -200,8 +201,8 @@ export function kindOf(r: Pick<DownloadRow, 'kind' | 'client_item'>): 'movie' | 
 
 /** Whether a download fills many Slots of one Title (a show's episodes or an album's tracks), and plain words for them. */
 export function manyWords(kind: string | undefined): { one: string; many: string; pack: string } | null {
-	if (kind === 'show') return { one: 'episode', many: 'episodes', pack: 'season pack' };
-	if (kind === 'artist') return { one: 'track', many: 'tracks', pack: 'album' };
+	if (kind === 'show') return { get one() { return t('downloads.many.episode'); }, get many() { return t('downloads.many.episodes'); }, get pack() { return t('downloads.many.seasonPack'); } };
+	if (kind === 'artist') return { get one() { return t('downloads.many.track'); }, get many() { return t('downloads.many.tracks'); }, get pack() { return t('downloads.many.album'); } };
 	return null;
 }
 
@@ -285,13 +286,13 @@ export function groupDecisions(items: Decision[]): DecisionGroup[] {
 export function whyWords(d: Pick<Decision, 'why' | 'has_copy'>): string {
 	switch (d.why) {
 		case 'conflict':
-			return 'The import could not finish on its own.';
+			return t('downloads.why.conflict');
 		case 'not_replaced':
-			return 'Its download was removed outside HolyArrs and is not replaced by itself (setting).';
+			return t('downloads.why.notReplaced');
 		case 'not_sent':
-			return 'No Downloader could take it: check the tags on the title and your Downloaders.';
+			return t('downloads.why.notSent');
 	}
-	return 'HolyArrs ran out of Releases that pass the Pick rules.';
+	return t('downloads.why.out');
 }
 
 /** removeFilesWords says what "Also delete files" deletes: the folder of
@@ -300,13 +301,13 @@ export function removeFilesWords(rows: Pick<DownloadRow, 'path' | 'downloader'>[
 	if (!rows.length) return '';
 	if (rows.length === 1) {
 		const r = rows[0];
-		const client = r.downloader || 'the Downloader';
-		return r.path ? `Deletes ${r.path} in ${client}.` : `Deletes its files in ${client}.`;
+		const client = r.downloader || t('downloads.rm.theDownloader');
+		return r.path ? t('downloads.rm.pathIn', { path: r.path, client }) : t('downloads.rm.oneFiles', { client });
 	}
 	const paths = rows.map((r) => r.path).filter((p): p is string => !!p);
-	const clients = [...new Set(rows.map((r) => r.downloader || 'the Downloader'))].join(', ');
-	if (!paths.length) return `Deletes their files in ${clients}.`;
+	const clients = [...new Set(rows.map((r) => r.downloader || t('downloads.rm.theDownloader')))].join(', ');
+	if (!paths.length) return t('downloads.rm.theirFiles', { clients });
 	const shown = paths.slice(0, 3).join(', ');
 	const rest = rows.length - Math.min(paths.length, 3);
-	return `Deletes ${shown}${rest ? ` and the files of ${rest} more` : ''} in ${clients}.`;
+	return rest ? t('downloads.rm.shownMore', { shown, rest, clients }) : t('downloads.rm.shown', { shown, clients });
 }

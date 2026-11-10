@@ -21,7 +21,7 @@
 .st-dot.fail { background: var(--fail); box-shadow: 0 0 0 3px color-mix(in srgb, var(--fail) 22%, transparent); }
 .st-dot.idle { background: var(--text-faint); }
 .st-dot.none { background: none; box-shadow: inset 0 0 0 1.5px var(--text-faint); }
-.st-plate > h2 .cnt { margin-left: auto; padding: 2px 9px; border-radius: var(--r-pill); background: var(--surface-2, var(--surface-1)); font-size: 12px; font-weight: 600; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+.st-plate > h2 .cnt { margin-inline-start: auto; padding: 2px 9px; border-radius: var(--r-pill); background: var(--surface-2, var(--surface-1)); font-size: 12px; font-weight: 600; color: var(--text-muted); font-variant-numeric: tabular-nums; }
 @media (max-width: 767px) {
 	.st-plate { padding: 14px 14px 16px; border-radius: 16px; }
 	.st-plate > h2 { margin: 0 -14px 12px; padding: 0 14px 12px; }

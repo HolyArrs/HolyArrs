@@ -1,5 +1,6 @@
 // Display helpers that turn raw numbers, dates and states into short text.
 
+import { t, appLocale } from '#lib/core/i18n/i18n.svelte.ts';
 export type Tone = 'ok' | 'wait' | 'fail' | 'idle';
 
 // Which tone each backend state shows as; unlisted states read as idle.
@@ -42,31 +43,39 @@ export function date(s: string | null | undefined): string {
 	const d = new Date(s);
 	if (Number.isNaN(d.getTime())) return '';
 	const day = /^\d{4}-\d{2}-\d{2}(T00:00:00(\.0+)?Z)?$/.test(s);
-	return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric', ...(day ? { timeZone: 'UTC' } : {}) });
+	return d.toLocaleDateString(appLocale(), { day: 'numeric', month: 'short', year: 'numeric', ...(day ? { timeZone: 'UTC' } : {}) });
 }
 
 export function dateTime(s: string | null | undefined): string {
 	if (!s) return '';
 	const d = new Date(s);
 	if (Number.isNaN(d.getTime())) return '';
-	return d.toLocaleString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+	return d.toLocaleString(appLocale(), { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 }
 
 // Under 45 seconds reads as now so counts do not flicker.
 export function ago(s: string | null | undefined, now = Date.now()): string {
 	if (!s) return '';
-	const t = new Date(s).getTime();
-	if (Number.isNaN(t)) return '';
-	const sec = Math.max(0, Math.round((now - t) / 1000));
-	if (sec < 45) return 'just now';
-	if (sec < 3600) return `${Math.round(sec / 60)} min ago`;
-	if (sec < 86400) return `${Math.round(sec / 3600)} h ago`;
-	return `${Math.round(sec / 86400)} d ago`;
+	const at = new Date(s).getTime();
+	if (Number.isNaN(at)) return '';
+	const sec = Math.max(0, Math.round((now - at) / 1000));
+	if (sec < 45) return t('core.format.justNow');
+	if (sec < 3600) return t('core.format.minAgo', { n: Math.round(sec / 60) });
+	if (sec < 86400) return t('core.format.hAgo', { n: Math.round(sec / 3600) });
+	return t('core.format.dAgo', { n: Math.round(sec / 86400) });
 }
 
 // Spelled out for screen readers and wide layouts.
 export function agoLong(s: string | null | undefined, now = Date.now()): string {
-	return ago(s, now).replace(/^(\d+) (d|h|min) ago$/, (_, n: string, u: string) => `${n} ${{ d: 'day', h: 'hour', min: 'minute' }[u]}${n === '1' ? '' : 's'} ago`);
+	if (!s) return '';
+	const at = new Date(s).getTime();
+	if (Number.isNaN(at)) return '';
+	const sec = Math.max(0, Math.round((now - at) / 1000));
+	if (sec < 45) return t('core.format.justNow');
+	const [n, unit] = sec < 3600 ? [Math.round(sec / 60), 'minute'] : sec < 86400 ? [Math.round(sec / 3600), 'hour'] : [Math.round(sec / 86400), 'day'];
+	if (unit === 'minute') return n === 1 ? t('core.format.minuteAgoOne') : t('core.format.minuteAgoOther', { n });
+	if (unit === 'hour') return n === 1 ? t('core.format.hourAgoOne') : t('core.format.hourAgoOther', { n });
+	return n === 1 ? t('core.format.dayAgoOne') : t('core.format.dayAgoOther', { n });
 }
 
 // Maps a state to ok, wait, fail or idle for colour.
@@ -85,23 +94,23 @@ export function words(state: string | null | undefined): string {
 }
 
 export function greeting(h = new Date().getHours()): string {
-	if (h < 5) return 'Good night';
-	if (h < 12) return 'Good morning';
-	if (h < 18) return 'Good afternoon';
-	return 'Good evening';
+	if (h < 5) return t('core.format.goodNight');
+	if (h < 12) return t('core.format.goodMorning');
+	if (h < 18) return t('core.format.goodAfternoon');
+	return t('core.format.goodEvening');
 }
 
 export function folderHealth(health: string): string {
 	switch (health) {
 		case 'ok':
-			return 'Healthy';
+			return t('core.format.healthy');
 		case 'missing':
-			return 'Folder not found';
+			return t('core.format.folderNotFound');
 		case 'read_only':
-			return 'Cannot write here';
+			return t('core.format.cannotWrite');
 		case 'no_hardlink':
-			return 'Works, but files are copied (no hardlinks)';
+			return t('core.format.copiedNoHardlinks');
 		default:
-			return 'Not checked yet';
+			return t('core.format.notChecked');
 	}
 }

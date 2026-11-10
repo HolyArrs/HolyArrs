@@ -5,6 +5,7 @@
 import { looksLikeId } from '#lib/core/plain.ts';
 import type { HomeAnswer } from './home.ts';
 import type { Ask } from '#lib/core/types.ts';
+import { t } from '#lib/core/i18n/i18n.svelte.ts';
 
 export type TimeBucket = 'early' | 'morning' | 'afternoon' | 'evening' | 'late';
 
@@ -112,30 +113,32 @@ export function homeFacts(i: {
 // ---- The lines ----
 // {,name} becomes ", Maya" or nothing. {n} is a number, {title} a title.
 
+// Each entry is a message key; the text is in the language files.
 const TIME: Record<TimeBucket, string[]> = {
-	early: ["Good morning{,name}. You're up early.", "Early start{,name}. Here's what's new."],
-	morning: ['Good morning{,name}.', "Morning{,name}. Here's what's new in the Library."],
-	afternoon: ['Good afternoon{,name}.', 'Afternoon{,name}. Hope the day is going well.'],
-	evening: ['Good evening{,name}.', 'Evening{,name}. Hope the day went well.'],
-	late: ["It's late{,name}. Here's what's new.", "Quiet night{,name}. Here's what's new."]
+	early: ['home.goodMorningYouRe', 'home.earlyStartHereS'],
+	morning: ['home.goodMorning', 'home.morningHereSWhat'],
+	afternoon: ['home.goodAfternoon', 'home.afternoonHopeTheDay'],
+	evening: ['home.goodEvening', 'home.eveningHopeTheDay'],
+	late: ['home.itSLateHere', 'home.quietNightHereS']
 };
 
 /** A Kid's late night is one gentle line. */
-const KID_LATE = ["Hi{,name}. It's getting late."];
+const KID_LATE = ['home.hiItSGetting'];
 
 /** Lines for days of the week (0 is Sunday). Tuesday to Thursday have none. */
 const DAYS: Record<number, string[]> = {
-	1: ["A new week{,name}. Here's what's new."],
-	5: ['Happy Friday{,name}.', "It's Friday{,name}. The weekend is nearly here."],
-	6: ['Happy Saturday{,name}. No rush today.'],
-	0: ['Happy Sunday{,name}. Take it easy.']
+	1: ['home.aNewWeekHere'],
+	5: ['home.happyFriday', 'home.itSFridayThe'],
+	6: ['home.happySaturdayNoRush'],
+	0: ['home.happySundayTakeIt']
 };
 
-const ASKED_ARRIVED = { any: 'Something you asked for has arrived{,name}.', one: '{title} is in the Library now{,name}.', many: '{n} of your asks are in the Library now{,name}.' };
-const WAITING = ['{n} {asks} waiting for you{,name}.', 'Your Requests page has {n} {asks} to look at{,name}.'];
+const ASKED_ARRIVED = { any: 'home.somethingYouAskedFor', one: 'home.isInTheLibrary', many: 'home.ofYourAsksAre' };
+// Each waiting line has a form for one ask and a form for several.
+const WAITING: [string, string][] = [['home.askWaitingForYou', 'home.asksWaitingForYou'], ['home.yourRequestsPageHas', 'home.yourRequestsPageHas2']];
 // New today also counts air and release dates, so these lines never say it arrived.
-const NEW_TODAY = { any: 'Something new is out today{,name}.', one: 'New today{,name}: {title}.', many: 'New today{,name}: {n} titles.' };
-const FINISHING = { mine: 'Something you asked for is almost here{,name}.', one: 'A download is almost done{,name}.', many: '{n} downloads are almost done{,name}.' };
+const NEW_TODAY = { any: 'home.somethingNewIsOut', one: 'home.newToday2', many: 'home.newTodayTitles' };
+const FINISHING = { mine: 'home.somethingYouAskedFor2', one: 'home.aDownloadIsAlmost', many: 'home.downloadsAreAlmostDone' };
 
 /** Every line the picker can write, for tests and review. */
 export const homeLineTemplates: string[] = [
@@ -143,10 +146,10 @@ export const homeLineTemplates: string[] = [
 	...KID_LATE,
 	...Object.values(DAYS).flat(),
 	...Object.values(ASKED_ARRIVED),
-	...WAITING,
+	...WAITING.map(([, many]) => many),
 	...Object.values(NEW_TODAY),
 	...Object.values(FINISHING)
-];
+].map((key) => t(key));
 
 /** hash is a small stable string hash (FNV-1a), so a pick never changes between loads. */
 export function hash(s: string): number {
@@ -158,8 +161,8 @@ export function hash(s: string): number {
 	return h >>> 0;
 }
 
-function fill(template: string, name: string, vars: Record<string, string | number> = {}): string {
-	let out = template.replace('{,name}', name ? `, ${name}` : '');
+function fill(key: string, name: string, vars: Record<string, string | number> = {}): string {
+	let out = t(key).replace('{,name}', name ? t('home.line.comma', { name }) : '');
 	for (const [k, v] of Object.entries(vars)) out = out.replaceAll(`{${k}}`, String(v));
 	return out;
 }
@@ -195,7 +198,7 @@ export function homeLine(i: HomeLineInput): string {
 		const line = pickOf(one ? [ASKED_ARRIVED.any, ASKED_ARRIVED.one] : [ASKED_ARRIVED.any, ASKED_ARRIVED.many], 'asked');
 		return fill(line, name, { title: f.askedArrived[0], n: f.askedArrived.length });
 	}
-	if (f.waiting > 0 && !kid) return fill(pickOf(WAITING, 'waiting'), name, { n: f.waiting, asks: f.waiting === 1 ? 'ask' : 'asks' });
+	if (f.waiting > 0 && !kid) return fill(pickOf(WAITING, 'waiting')[f.waiting === 1 ? 0 : 1], name, { n: f.waiting });
 	if (f.newToday.count > 0) {
 		const one = f.newToday.count === 1 && f.newToday.title;
 		const line = pickOf(one ? [NEW_TODAY.any, NEW_TODAY.one] : [NEW_TODAY.any, NEW_TODAY.many], 'new');
@@ -216,8 +219,8 @@ export function homeLine(i: HomeLineInput): string {
 export function homeGreeting(i: { name?: string | null; displayName?: string | null; now: Date }): string {
 	const name = greetingName(i.displayName, i.name);
 	const bucket = timeBucket(i.now.getHours());
-	const word = bucket === 'early' || bucket === 'morning' ? 'Good morning' : bucket === 'afternoon' ? 'Good afternoon' : 'Good evening';
-	return name ? `${word}, ${name}` : word;
+	const word = bucket === 'early' || bucket === 'morning' ? t('home.goodMorning2') : bucket === 'afternoon' ? t('home.goodAfternoon2') : t('home.goodEvening2');
+	return name ? t('home.text3', { greeting: word, name: name }) : word;
 }
 
 /**

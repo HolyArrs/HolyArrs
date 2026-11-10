@@ -1,5 +1,6 @@
 // Trailer autoplay rules: which video, whether it may play here, and the delays.
 
+import { t } from '#lib/core/i18n/i18n.svelte.ts';
 export interface Video {
 	key: string;
 	name?: string;
@@ -60,8 +61,8 @@ export function embedUrl(key: string, origin?: string, repeat = false): string {
 }
 
 export function playingWord(kind: 'movie' | 'show' | 'artist', what?: string): string {
-	if (kind === 'artist') return 'music video';
-	return what || 'trailer';
+	if (kind === 'artist') return t('core.trailer.musicVideo');
+	return what || t('core.trailer.trailer');
 }
 
 // Main backdrop first, then more, no repeats.

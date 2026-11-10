@@ -5,13 +5,14 @@
 	import Badge from '#lib/ui/Badge.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
-	import { LibraryToolPage, titleArt, codecLabel, copiesQuery, copyCodecs, copyKey, copySorts, toggleCopy, type CopyCodec, type LibraryCopy, type CopySearchPreview, type CopySearchResult, type CopySelection, type CopySort, type LibraryCopyPage } from '#lib/mediafiles/index.ts';
+	import { LibraryToolPage, languageName, titleArt, codecLabel, copiesQuery, copyCodecs, copyKey, copySorts, toggleCopy, type CopyCodec, type LibraryCopy, type CopySearchPreview, type CopySearchResult, type CopySelection, type CopySort, type LibraryCopyPage } from '#lib/mediafiles/index.ts';
 	import { DlFind } from '#lib/downloads/index.ts';
 	import { onMount } from 'svelte';
 	import { api, message } from '#lib/core/api.ts';
 	import { session } from '#lib/core/session.svelte.ts';
 	import { to } from '#lib/core/paths.ts';
 	import { plainReason } from '#lib/core/plain.ts';
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 
 	const pageSize = 50;
 	let page = $state<LibraryCopyPage>({ copies: [], total: 0, limit: pageSize, offset: 0, codecs: {} });
@@ -53,12 +54,10 @@
 		clearTimeout(typing);
 		typing = setTimeout(applyFilters, 250);
 	}
-	const sortWords: Record<string, string> = { title: 'Title', codec: 'Codec', added: 'Added' };
+	const sortWord = (v: string) => t(`library.copies.sort.${v}`);
 	// The second lines say only what is worth a word: the container by its usual name, and a read that is not complete.
 	const containerWords: Record<string, string> = { matroska: 'MKV', 'matroska,webm': 'MKV', mp4: 'MP4', 'mov,mp4,m4a,3gp,3g2,mj2': 'MP4', avi: 'AVI', mpegts: 'TS' };
-	const names = typeof Intl !== 'undefined' && 'DisplayNames' in Intl ? new Intl.DisplayNames(['en'], { type: 'language' }) : null;
-	const langName = (code: string) => { try { return names?.of(code) ?? code; } catch { return code; } };
-	const codecLine = (c: LibraryCopy) => [containerWords[c.container] ?? (c.container ? c.container.toUpperCase() : ''), c.inspection_status && c.inspection_status !== 'complete' ? c.inspection_status : ''].filter(Boolean).join(' · ') || 'Not read yet';
+	const codecLine = (c: LibraryCopy) => [containerWords[c.container] ?? (c.container ? c.container.toUpperCase() : ''), c.inspection_status && c.inspection_status !== 'complete' ? c.inspection_status : ''].filter(Boolean).join(' · ') || t('library.copies.notRead');
 
 	function toggle(copy: CopySelection) {
 		selected = toggleCopy(selected, copy);
@@ -105,61 +104,61 @@
 	onMount(() => { load(); void titleArt().then((m) => (art = m)); return () => clearTimeout(typing); });
 </script>
 
-<svelte:head><title>Video codecs · HolyArrs</title></svelte:head>
+<svelte:head><title>{t('library.copies.title')} · HolyArrs</title></svelte:head>
 
-<LibraryToolPage title="Video codecs" count={loaded && !error ? `${page.total} ${page.total === 1 ? 'file' : 'files'}` : ''}>
+<LibraryToolPage title={t('library.copies.title')} count={loaded && !error ? t('mediafiles.unit.file.' + (page.total === 1 ? 'one' : 'other'), { n: page.total }) : ''}>
 	{#snippet bar()}
 		{#if session.can('manage_library')}
-			<DlFind bind:term={() => q, setQ} shown={page.copies.length} total={page.total} searchKey="" placeholder="Search movies" testid="copies-find" />
+			<DlFind bind:term={() => q, setQ} shown={page.copies.length} total={page.total} searchKey="" placeholder={t('library.copies.search')} testid="copies-find" />
 			<span class="tp-cap">
-				<select aria-label="Codec" bind:value={codec} onchange={applyFilters}>
-					{#each copyCodecs as value}<option {value}>{value === 'all' ? 'All codecs' : `${codecLabel(value)} (${page.codecs[value] ?? 0})`}</option>{/each}
+				<select aria-label={t('mediafiles.col.codec')} bind:value={codec} onchange={applyFilters}>
+					{#each copyCodecs as value}<option {value}>{value === 'all' ? t('library.copies.allCodecs') : `${codecLabel(value)} (${page.codecs[value] ?? 0})`}</option>{/each}
 				</select>
 			</span>
 			<span class="tp-cap">
-				<span class="tp-lab">Sort</span>
-				<select aria-label="Sort" bind:value={sort} onchange={applyFilters}>
-					{#each copySorts as value}<option {value}>{sortWords[value] ?? 'Added'}</option>{/each}
+				<span class="tp-lab">{t('library.copies.sort.label')}</span>
+				<select aria-label={t('library.copies.sort.label')} bind:value={sort} onchange={applyFilters}>
+					{#each copySorts as value}<option {value}>{sortWord(value)}</option>{/each}
 				</select>
 			</span>
 			<span class="tp-gap"></span>
 			<span class="tp-cap">
-				<span class="tp-val" aria-live="polite">{selected.length} selected</span>
-				<Button variant="primary" disabled={selected.length === 0 || busy} onclick={review}>Review</Button>
+				<span class="tp-val" aria-live="polite">{t('mediafiles.select.count', { n: selected.length })}</span>
+				<Button variant="primary" disabled={selected.length === 0 || busy} onclick={review}>{t('library.copies.review')}</Button>
 			</span>
 		{/if}
 	{/snippet}
 
 {#if !session.can('manage_library')}
-	<EmptyState icon="shield" title="You do not have permission to manage the Library." />
+	<EmptyState icon="shield" title={t('library.copies.noPermission')} />
 {:else}
 	{#if error}<p class="tp-msg bad" role="alert"><Icon name="alert" size={17} /><span>{plainReason(error).text}</span></p>{/if}
-	{#if result}<p class="tp-msg good" role="status"><Icon name="check" size={17} />Started {result.job_ids.length} search{result.job_ids.length === 1 ? '' : 'es'}.</p>{/if}
+	{#if result}<p class="tp-msg good" role="status"><Icon name="check" size={17} />{t(result.job_ids.length === 1 ? 'library.copies.startedOne' : 'library.copies.startedMany', { n: result.job_ids.length })}</p>{/if}
 
 	{#if preview}
 		<section class="tp-sheet tp-pad review" aria-labelledby="review-title">
-			<h2 id="review-title">Search {preview.copies.length} {preview.copies.length === 1 ? 'copy' : 'copies'} again</h2>
-			<p class="tp-note">{preview.slot_count} search{preview.slot_count === 1 ? '' : 'es'} with your Pick rules. Nothing downloads on its own.</p>
+			<h2 id="review-title">{t(preview.copies.length === 1 ? 'library.copies.searchAgainOne' : 'library.copies.searchAgainMany', { n: preview.copies.length })}</h2>
+			<p class="tp-note">{t(preview.slot_count === 1 ? 'library.copies.withRulesOne' : 'library.copies.withRulesMany', { n: preview.slot_count })}</p>
 			<ul>{#each preview.copies as copy (copyKey(copy))}<li><b>{copy.title}</b><span>{copy.version} · {codecLabel(copy.codec)}</span></li>{/each}</ul>
-			<div class="actions"><Button variant="plain" onclick={() => preview = null}>Cancel</Button><Button variant="primary" disabled={busy} onclick={search}>Start</Button></div>
+			<div class="actions"><Button variant="plain" onclick={() => preview = null}>{t('mediafiles.dialogs.cancel')}</Button><Button variant="primary" disabled={busy} onclick={search}>{t('library.copies.start')}</Button></div>
 		</section>
 	{/if}
 
-	<PageLoader loading={!loaded} label="Loading copies">
+	<PageLoader loading={!loaded} label={t('library.copies.loading')}>
 	{#if page.copies.length === 0}
-		<EmptyState compact icon="film" title="Nothing matches." />
+		<EmptyState compact icon="film" title={t('library.copies.nothingMatches')} />
 	{:else}
 		<div class="tp-sheet table-wrap">
 			<table class="tp-table copies">
-				<caption class="sr-only">Movie files and their video codecs</caption>
-				<thead><tr><th scope="col"><span class="sr-only">Select</span></th><th scope="col">Movie</th><th scope="col">Codec</th><th scope="col">Audio</th><th scope="col">File</th></tr></thead>
+				<caption class="sr-only">{t('library.copies.caption')}</caption>
+				<thead><tr><th scope="col"><span class="sr-only">{t('mediafiles.toolbar.select')}</span></th><th scope="col">{t('mediafiles.kindCap.movie')}</th><th scope="col">{t('mediafiles.col.codec')}</th><th scope="col">{t('mediafiles.col.audio')}</th><th scope="col">{t('mediafiles.sheet.file')}</th></tr></thead>
 				<tbody>
 					{#each page.copies as copy (copyKey(copy))}
 						<tr class:picked={selectedKeys.has(copyKey(copy))}>
-							<td class="pick"><label><input type="checkbox" aria-label={`Select ${copy.title}, ${copy.version}`} checked={selectedKeys.has(copyKey(copy))} disabled={copy.protected} onchange={() => toggle(copy)} /></label></td>
-							<td><span class="tp-who"><span class="tp-art" style="--poster-ratio: 2 / 3"><Poster src={art.get(copy.title_id)} name={copy.title} /></span><span class="tp-tx"><a href={to(`/library/${copy.title_id}`)}>{copy.title}{#if copy.year} <span class="yr">{copy.year}</span>{/if}</a><span class="tp-sub">{copy.version}{copy.edition ? ` · ${copy.edition}` : ''}</span>{#if copy.protected}<Badge label="Protected" />{/if}</span></span></td>
+							<td class="pick"><label><input type="checkbox" aria-label={t('library.copies.selectCopy', { title: copy.title, version: copy.version })} checked={selectedKeys.has(copyKey(copy))} disabled={copy.protected} onchange={() => toggle(copy)} /></label></td>
+							<td><span class="tp-who"><span class="tp-art" style="--poster-ratio: 2 / 3"><Poster src={art.get(copy.title_id)} name={copy.title} /></span><span class="tp-tx"><a href={to(`/library/${copy.title_id}`)}>{copy.title}{#if copy.year} <span class="yr">{copy.year}</span>{/if}</a><span class="tp-sub">{copy.version}{copy.edition ? ` · ${copy.edition}` : ''}</span>{#if copy.protected}<Badge label={t('mediafiles.copy.protectedBadge')} />{/if}</span></span></td>
 							<td><span class="codec">{codecLabel(copy.codec)}</span><span class="tp-sub">{codecLine(copy)}</span></td>
-							<td>{copy.audio_languages.length ? copy.audio_languages.map(langName).join(', ') : '—'}<span class="tp-sub">{copy.audio_tracks} track{copy.audio_tracks === 1 ? '' : 's'}{copy.audio_unknown ? ' · some unknown' : ''}</span></td>
+							<td>{copy.audio_languages.length ? copy.audio_languages.map(languageName).join(', ') : '—'}<span class="tp-sub">{t('mediafiles.unit.track.' + (copy.audio_tracks === 1 ? 'one' : 'other'), { n: copy.audio_tracks })}{copy.audio_unknown ? ` · ${t('library.copies.someUnknown')}` : ''}</span></td>
 							<td class="path" title={copy.relative_path}>{copy.relative_path.split('/').pop()}</td>
 						</tr>
 					{/each}
@@ -167,10 +166,10 @@
 			</table>
 		</div>
 		{#if page.total > page.copies.length}
-			<nav class="tp-foot" aria-label="Codec pages">
-				<Button icon="chevronLeft" disabled={page.offset === 0 || busy} onclick={() => move(-pageSize)}>Previous</Button>
-				<span class="tp-note">{page.offset + 1}–{last} of {page.total}</span>
-				<Button iconAfter="chevronRight" disabled={last >= page.total || busy} onclick={() => move(pageSize)}>Next</Button>
+			<nav class="tp-foot" aria-label={t('library.copies.pages')}>
+				<Button icon="chevronLeft" disabled={page.offset === 0 || busy} onclick={() => move(-pageSize)}>{t('library.copies.previous')}</Button>
+				<span class="tp-note">{t('library.copies.range', { from: page.offset + 1, to: last, total: page.total })}</span>
+				<Button iconAfter="chevronRight" disabled={last >= page.total || busy} onclick={() => move(pageSize)}>{t('library.copies.next')}</Button>
 			</nav>
 		{/if}
 	{/if}

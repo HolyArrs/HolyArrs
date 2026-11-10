@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import Button from '#lib/ui/Button.svelte';
 	import Releases from './Releases.svelte';
 	import GoBack from './GoBack.svelte';
@@ -43,7 +44,7 @@
 		try {
 			onupd(await api.post<Update>('/app/update/check'));
 		} catch (e) {
-			toasts.push("Couldn't check for updates", 'fail', { body: message(e) });
+			toasts.push(t('updates.check.failed'), 'fail', { body: message(e) });
 		} finally {
 			busy = false;
 		}
@@ -53,48 +54,48 @@
 	const standing = $derived<Standing>(
 		!upd ? 'loading' : !upd.on ? 'off' : upd.newer ? 'behind' : upd.problem ? 'problem' : upd.no_release ? 'none' : upd.checked_at ? 'current' : 'unchecked'
 	);
-	const said: Record<Standing, string> = {
+	const said = $derived<Record<Standing, string>>({
 		loading: '…',
-		off: 'Update check is off.',
-		behind: 'A newer release is out. Updating keeps your data and settings: they live in the config folder, not in the program.',
-		problem: 'The last check did not work.',
-		none: 'No HolyArrs release is published yet.',
-		current: 'This is the newest release.',
-		unchecked: 'Not checked yet.'
-	};
+		off: t('updates.said.off'),
+		behind: t('updates.said.behind'),
+		problem: t('updates.said.problem'),
+		none: t('updates.said.none'),
+		current: t('updates.said.current'),
+		unchecked: t('updates.said.unchecked')
+	});
 	const notes = $derived((upd?.newer && upd.notes ? upd.notes : '').split('\n').filter(Boolean));
 	const link = $derived(releaseLink(upd?.link));
 
 	// The subject starts with "Trailer reader"; keep only what follows it.
 	const readerSays = $derived.by(() => {
 		const rest = (reader?.subject ?? '').replace(/^Trailer reader,?\s*/, '');
-		return rest ? rest[0].toUpperCase() + rest.slice(1) : 'No good lookup yet';
+		return rest ? rest[0].toUpperCase() + rest.slice(1) : t('updates.reader.none');
 	});
 	const readerTone = $derived(!reader ? 'none' : reader.state === 'ok' ? (reader.message ? 'wait' : 'ok') : reader.state === 'warning' ? 'wait' : 'fail');
 </script>
 
-<section class="st-plate band" data-standing={standing} aria-label="Your version" data-testid="status-updates">
+<section class="st-plate band" data-standing={standing} aria-label={t('updates.band.label')} data-testid="status-updates">
 	<div class="vers">
-		<span class="v"><small>This HolyArrs</small><b>{upd?.version ? plainVersion(upd.version) : '…'}</b></span>
+		<span class="v"><small>{t('updates.band.this')}</small><b>{upd?.version ? plainVersion(upd.version) : '…'}</b></span>
 		{#if standing === 'behind' && upd?.latest}
 			<span class="arrow" aria-hidden="true"><svg viewBox="0 0 20 20"><path d="M4 10h12m-5-5 5 5-5 5" /></svg></span>
-			<span class="v new"><small>Newest</small><b>{plainVersion(upd.latest)}</b></span>
+			<span class="v new"><small>{t('updates.releases.newest')}</small><b>{plainVersion(upd.latest)}</b></span>
 		{:else if standing === 'current'}
-			<span class="chip ok">Up to date</span>
+			<span class="chip ok">{t('updates.band.upToDate')}</span>
 		{/if}
 	</div>
 	<p class="say">{said[standing]}{#if standing === 'problem' && upd?.problem} <span class="why">{upd.problem}</span>{/if}</p>
 	<div class="acts">
-		{#if upd?.checked_at}<span class="when">Checked <time datetime={upd.checked_at} title={dateTime(upd.checked_at)}>{ago(upd.checked_at)}</time></span>{/if}
-		{#if link}<a class="xbtn" href={link} target="_blank" rel="noopener noreferrer">What changed</a>{/if}
-		{#if canAct && upd?.on}<Button {busy} onclick={check}>{upd.checked_at ? 'Check again' : 'Check now'}</Button>{/if}
-		{#if canAct && upd && !upd.on}<Button href={to('/settings/health')}>Turn the check on</Button>{/if}
+		{#if upd?.checked_at}<span class="when">{t('updates.band.checked')} <time datetime={upd.checked_at} title={dateTime(upd.checked_at)}>{ago(upd.checked_at)}</time></span>{/if}
+		{#if link}<a class="xbtn" href={link} target="_blank" rel="noopener noreferrer">{t('updates.band.whatChanged')}</a>{/if}
+		{#if canAct && upd?.on}<Button {busy} onclick={check}>{upd.checked_at ? t('updates.band.checkAgain') : t('updates.band.checkNow')}</Button>{/if}
+		{#if canAct && upd && !upd.on}<Button href={to('/settings/health')}>{t('updates.band.turnOn')}</Button>{/if}
 	</div>
 </section>
 
 {#if notes.length}
 	<section class="st-plate" aria-labelledby="s-new">
-		<h2 id="s-new">New since yours</h2>
+		<h2 id="s-new">{t('updates.newSince')}</h2>
 		<ul class="notes">{#each notes as line (line)}<li>{line}</li>{/each}</ul>
 	</section>
 {/if}

@@ -8,6 +8,7 @@ import type { TitleDetails } from '../metadata/index.ts';
 import type { Ask } from '../core/types.ts';
 import type { LibraryFolder, PickRulesView } from '../core/types.ts';
 import { detailPath } from '../metadata/index.ts';
+import { t } from '#lib/core/i18n/i18n.svelte.ts';
 
 /** The approver's choices for one ask: Pick rules (0 is the default), audio languages (empty is any), a note, and the seasons or albums kept (absent means all of the ask). */
 export interface DecideOptions {
@@ -89,6 +90,8 @@ export interface BoardCtx {
 	year(a: Ask): string;
 	askedBy(a: Ask): string;
 	decided(a: Ask): string;
+	/** Just the name of who settled the ask; empty while open. */
+	decidedBy(a: Ask): string;
 	/** Others who declined the same title before, display names only: "bo declined it before." */
 	alsoDeclined(a: Ask): string;
 	pill(a: Ask): { kind: StatusKind; label: string };
@@ -125,7 +128,7 @@ export function askHref(a: Pick<Ask, 'kind' | 'tmdb_id' | 'ref' | 'title_id'>): 
 
 /** An ask's kind for a small tag. */
 export function kindWord(kind: string): string {
-	return kind === 'show' ? 'TV show' : kind === 'artist' ? 'Music' : 'Movie';
+	return t(kind === 'show' ? 'requests.kind.show' : kind === 'artist' ? 'requests.kind.artist' : 'requests.kind.movie');
 }
 
 /** Keeps a focus position inside a list of n after a move (wraps). */

@@ -1,0 +1,16 @@
+{
+	"settings.danger.stopping": "HolyArrs 正在停止。",
+	"settings.danger.couldnt": "无法{action}",
+	"settings.danger.title": "危险操作",
+	"settings.danger.ownerOnly": "仅限所有者和管理员",
+	"settings.danger.ask": "确定要{label}吗？",
+	"settings.danger.yes": "是，{action}",
+	"settings.danger.cancel": "取消",
+	"settings.danger.expires": "60 秒后失效",
+	"settings.danger.wholeApp": "整个应用",
+	"settings.danger.intro": "这些操作会停止 HolyArrs。Docker 的重启策略会在几秒后将它重新启动，除非策略是 <code>no</code>，那就需要你自己启动容器。每项操作都会先确认。",
+	"settings.danger.restart": "重启 HolyArrs",
+	"settings.danger.safe": "以安全模式重启",
+	"settings.danger.shutdown": "关闭",
+	"settings.danger.safeNote": "只启动一次，且只有登录、设置和媒体库。当某个功能模块导致无法启动时使用。"
+}

@@ -1,9 +1,10 @@
 <script lang="ts">
+	import { t, appLocale } from '#lib/core/i18n/i18n.svelte.ts';
 	import Badge from '#lib/ui/Badge.svelte';
 	import IconButton from '#lib/ui/IconButton.svelte';
 	import { entryHref, itemDot, type Follows } from './calendar.ts';
 	import { groupDates, type CalGroup } from './calendar-groups.ts';
-	import { rowWords, channelShown, type CaptionLook } from './calendar-captions.ts';
+	import { rowWords, episodeWords, channelShown, type CaptionLook } from './calendar-captions.ts';
 	import FollowWho from './FollowWho.svelte';
 	import CalThumb from './CalThumb.svelte';
 	import CalWindow from './CalWindow.svelte';
@@ -30,7 +31,7 @@
 		onfollow: (e: CalendarEntry, on: boolean) => void;
 	} = $props();
 
-	const dotWord = { have: 'In the Library', missing: 'Missing', upcoming: 'Coming up' } as const;
+	const dotWord = $derived({ have: t('discover.calListRows.inTheLibrary'), missing: t('discover.calListRows.missing'), upcoming: t('discover.calListRows.comingUp') });
 	const rows = $derived(days.map((d) => ({ day: d.day, groups: groupDates(d.items) })));
 	let sel = $state<CalGroup | null>(null);
 	let open = $state(false);
@@ -45,7 +46,8 @@
 		const w = rowWords(g, look, today);
 		const e = g.lead;
 		const ep = e.kind === 'episode';
-		const parts = ep ? [w.lines.find((l) => l.startsWith('Season')) ?? '', w.lines.find((l) => l !== e.network && !l.startsWith('Season')) ?? ''] : w.lines.slice(0, 2);
+		const epw = ep ? episodeWords(g.entries) : '';
+		const parts = ep ? [w.lines.find((l) => l === epw) ?? '', w.lines.find((l) => l !== e.network && l !== epw) ?? ''] : w.lines.slice(0, 2);
 		const [a, b] = parts.filter(Boolean).concat(['', '']);
 		const sub = [a, b].filter(Boolean).join(' · ');
 		const chip = ep ? (channelShown(e.network, look) ? (e.network ?? '') : '') : e.kind === 'album' ? '' : (e.genres?.[0] ?? '');
@@ -56,14 +58,14 @@
 
 <div class="lr lay{layout}" data-testid="cal-list" data-layout={layout}>
 	{#each rows as d (d.day)}
-		{@const t = at(d.day)}
+		{@const when = at(d.day)}
 		<section class="day" class:today={d.day === today} data-day={d.day}>
 			<header class="dh">
-				<p class="sr-only">{date(d.day + 'T12:00:00')}{d.day === today ? ', today' : ''}</p>
-				<span class="dow" aria-hidden="true">{t.toLocaleDateString(undefined, { weekday: 'short' })}</span>
-				<b aria-hidden="true">{t.getDate()}</b>
-				<span class="mon" aria-hidden="true">{t.toLocaleDateString(undefined, { month: 'short' })}</span>
-				{#if d.day === today}<span class="tag"><Badge label="Today" /></span>{/if}
+				<p class="sr-only">{date(d.day + 'T12:00:00')}{d.day === today ? `, ${t('discover.calListRows.today2')}` : ''}</p>
+				<span class="dow" aria-hidden="true">{when.toLocaleDateString(appLocale(), { weekday: 'short' })}</span>
+				<b aria-hidden="true">{when.getDate()}</b>
+				<span class="mon" aria-hidden="true">{when.toLocaleDateString(appLocale(), { month: 'short' })}</span>
+				{#if d.day === today}<span class="tag"><Badge label={t('discover.calListRows.today')} /></span>{/if}
 				<span class="n" aria-hidden="true">{d.groups.length}</span>
 			</header>
 			<ul class="rws">
@@ -80,7 +82,7 @@
 						</span>
 						<span class="net">{#if c.chip}<span>{c.chip}</span>{/if}</span>
 						<span class="bell" class:on={e.following}>
-							<IconButton icon={e.following ? 'bellOn' : 'bell'} size="sm" tipSide="below-end" label="{e.following ? 'Unfollow' : 'Follow'} {e.name}" aria-pressed={!!e.following} disabled={flipping === e.title_id} onclick={() => onfollow(e, !e.following)} data-testid="cal-follow" />
+							<IconButton icon={e.following ? 'bellOn' : 'bell'} size="sm" tipSide="below-end" label={e.following ? t('discover.calListRows.unfollow', { name: e.name }) : t('discover.calListRows.follow', { name: e.name })} aria-pressed={!!e.following} disabled={flipping === e.title_id} onclick={() => onfollow(e, !e.following)} data-testid="cal-follow" />
 						</span>
 					</li>
 				{/each}

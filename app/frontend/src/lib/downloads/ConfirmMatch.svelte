@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	// Sheet for torrents added outside HolyArrs that could not be matched to one title for sure. Picking a choice adds the title if missing and links the torrent. Reads only from HolyArrs, no outside lookups.
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import Button from '#lib/ui/Button.svelte';
@@ -40,7 +41,7 @@
 			onchange?.();
 			if (!list.length) open = false;
 		} catch (e) {
-			toasts.push("Couldn't confirm match", 'fail', { body: message(e) });
+			toasts.push(t('downloads.cm.confirmFailed'), 'fail', { body: message(e) });
 		} finally {
 			busy = 0;
 		}
@@ -49,11 +50,11 @@
 		running = true;
 		try {
 			await api.post('/downloads/matches/run');
-			toasts.push('Matching torrents', 'info', { body: 'Sure matches link on their own' });
+			toasts.push(t('downloads.cm.matching'), 'info', { body: t('downloads.cm.sure') });
 			clearTimeout(later);
 			later = setTimeout(() => void read(), 4000);
 		} catch (e) {
-			toasts.push("Couldn't start matching", 'fail', { body: message(e) });
+			toasts.push(t('downloads.cm.startFailed'), 'fail', { body: message(e) });
 		} finally {
 			running = false;
 		}
@@ -63,11 +64,11 @@
 {#if words}
 	<div class="mb" data-testid="dl-match-banner">
 		<span class="mt">{words}</span>
-		<button type="button" class="mo" onclick={() => (open = true)} data-testid="dl-match-open">Match</button>
+		<button type="button" class="mo" onclick={() => (open = true)} data-testid="dl-match-open">{t('downloads.cm.match')}</button>
 	</div>
 {/if}
 
-<Sheet bind:open title="Confirm match" description="Pick the title each torrent holds. It’s added to your Library without a search." size="md">
+<Sheet bind:open title={t('downloads.cm.title')} description={t('downloads.cm.desc')} size="md">
 	<ul class="ml" data-testid="dl-match-list">
 		{#each list as m (m.id)}
 			<li class="mi">
@@ -83,20 +84,20 @@
 						{/each}
 					</div>
 				{:else}
-					<p class="none">No title found for this name.</p>
+					<p class="none">{t('downloads.cm.none')}</p>
 				{/if}
 				<div class="ma">
-					<button type="button" class="lk" disabled={busy === m.id} onclick={() => pick(m, { not_media: true })}>Not media</button>
-					<button type="button" class="lk" disabled={busy === m.id} onclick={() => pick(m, { skip: true })}>Skip</button>
+					<button type="button" class="lk" disabled={busy === m.id} onclick={() => pick(m, { not_media: true })}>{t('downloads.cm.notMedia')}</button>
+					<button type="button" class="lk" disabled={busy === m.id} onclick={() => pick(m, { skip: true })}>{t('downloads.cm.skip')}</button>
 				</div>
 			</li>
 		{:else}
-			<li class="none">Every torrent is matched.</li>
+			<li class="none">{t('downloads.cm.every')}</li>
 		{/each}
 	</ul>
 	{#snippet footer()}
-		<Button variant="plain" onclick={matchNow} busy={running} disabled={running}>Match now</Button>
-		<Button onclick={() => (open = false)}>Done</Button>
+		<Button variant="plain" onclick={matchNow} busy={running} disabled={running}>{t('downloads.cm.matchNow')}</Button>
+		<Button onclick={() => (open = false)}>{t('downloads.cm.done')}</Button>
 	{/snippet}
 </Sheet>
 

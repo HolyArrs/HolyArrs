@@ -1,4 +1,5 @@
 // History tabs shared with the Downloads table. Five big tabs answer what a person opens History for: what came in, what went wrong, what changed, what ran in the background.
+import { t as say } from '#lib/core/i18n/i18n.svelte.ts';
 import { details, groupDownloads, type HistoryRow } from './history.ts';
 import { dayKey, rowTier, type Tier } from './history-kinds.ts';
 import type { EventRecord } from '../core/types.ts';
@@ -39,56 +40,56 @@ export const ALL = 'all';
 const download = ['release_chosen', 'release_chosen_by_hand', 'release_turned_down', 'turned_down_removed', 'release_held', 'held_removed', 'download_sent', 'download_queued', 'download_downloading', 'download_stalled', 'download_paused', 'download_finished', 'download_seeding', 'download_removed', 'download_changed'];
 
 export const historyTabs: HistoryTab[] = [
-	{ key: ALL, label: 'All', hint: 'Every Event, newest first.', empty: 'No history yet.', subs: [] },
+	{ key: ALL, get label() { return say('downloads.ht.all.label'); }, get hint() { return say('downloads.ht.all.hint'); }, get empty() { return say('downloads.ht.all.empty'); }, subs: [] },
 	{
 		key: 'came',
-		label: 'Came in',
-		hint: 'Files that reached the Library: imported, upgraded or found on disk.',
-		empty: 'Nothing came in.',
+		get label() { return say('downloads.ht.came.label'); },
+		get hint() { return say('downloads.ht.came.hint'); },
+		get empty() { return say('downloads.ht.came.empty'); },
 		subs: [
-			{ key: 'imported', label: 'Imported', hint: 'Downloads moved into the Library.', kinds: ['import_done', 'import_partly_done'] },
-			{ key: 'upgraded', label: 'Upgraded', hint: 'A better file replaced the one you had.', kinds: ['file_replaced'] },
-			{ key: 'found', label: 'Found on disk', hint: 'Files already in a Library folder that HolyArrs took on.', kinds: ['adopted'] }
+			{ key: 'imported', get label() { return say('downloads.ht.came.imported.label'); }, get hint() { return say('downloads.ht.came.imported.hint'); }, kinds: ['import_done', 'import_partly_done'] },
+			{ key: 'upgraded', get label() { return say('downloads.ht.came.upgraded.label'); }, get hint() { return say('downloads.ht.came.upgraded.hint'); }, kinds: ['file_replaced'] },
+			{ key: 'found', get label() { return say('downloads.ht.came.found.label'); }, get hint() { return say('downloads.ht.came.found.hint'); }, kinds: ['adopted'] }
 		]
 	},
 	{
 		key: 'problems',
-		label: 'Problems',
-		hint: 'Failed downloads and imports, decisions waiting for you, and health.',
-		empty: 'Nothing went wrong.',
+		get label() { return say('downloads.ht.problems.label'); },
+		get hint() { return say('downloads.ht.problems.hint'); },
+		get empty() { return say('downloads.ht.problems.empty'); },
 		subs: [
-			{ key: 'downloads', label: 'Downloads', hint: 'Downloads that failed or went missing from the Downloader.', kinds: ['download_failed', 'download_vanished', 'download_not_removed'] },
-			{ key: 'imports', label: 'Imports', hint: 'Finished downloads HolyArrs could not move into the Library.', kinds: ['import_failed', 'import_rejected', 'file_hold_failed', 'free_space_low'] },
-			{ key: 'decide', label: 'Needs a decision', hint: 'HolyArrs stopped and waits for you to pick.', kinds: ['needs_decision', 'stopped_looking'] },
-			{ key: 'health', label: 'Health', hint: 'Checks that broke, folders out of reach, missing files, alerts that failed.', kinds: ['health_broken', 'library_folder_*', 'file_missing', 'search_failed', 'alert_failed', 'media_server_failed'] },
-			{ key: 'ai', label: 'AI apps', hint: 'Things an AI app asked for that HolyArrs did not do.', kinds: ['ai_action_failed'] }
+			{ key: 'downloads', get label() { return say('downloads.ht.problems.downloads.label'); }, get hint() { return say('downloads.ht.problems.downloads.hint'); }, kinds: ['download_failed', 'download_vanished', 'download_not_removed'] },
+			{ key: 'imports', get label() { return say('downloads.ht.problems.imports.label'); }, get hint() { return say('downloads.ht.problems.imports.hint'); }, kinds: ['import_failed', 'import_rejected', 'file_hold_failed', 'free_space_low'] },
+			{ key: 'decide', get label() { return say('downloads.ht.problems.decide.label'); }, get hint() { return say('downloads.ht.problems.decide.hint'); }, kinds: ['needs_decision', 'stopped_looking'] },
+			{ key: 'health', get label() { return say('downloads.ht.problems.health.label'); }, get hint() { return say('downloads.ht.problems.health.hint'); }, kinds: ['health_broken', 'library_folder_*', 'file_missing', 'search_failed', 'alert_failed', 'media_server_failed'] },
+			{ key: 'ai', get label() { return say('downloads.ht.problems.ai.label'); }, get hint() { return say('downloads.ht.problems.ai.hint'); }, kinds: ['ai_action_failed'] }
 		]
 	},
 	{
 		key: 'changes',
-		label: 'Changes',
-		hint: 'What was added, sent to download, renamed or deleted, subtitles and asks.',
-		empty: 'Nothing changed.',
+		get label() { return say('downloads.ht.changes.label'); },
+		get hint() { return say('downloads.ht.changes.hint'); },
+		get empty() { return say('downloads.ht.changes.empty'); },
 		subs: [
-			{ key: 'added', label: 'Added', hint: 'Movies, shows and artists added, by hand, from a list or as they came out.', kinds: ['title_added', 'list_synced', 'version_changed', 'gate_opened'] },
-			{ key: 'downloads', label: 'Downloads', hint: 'Releases chosen, held or turned down, and their downloads.', kinds: download },
-			{ key: 'renamed', label: 'Renamed', hint: 'Files and folders renamed.', kinds: ['renamed', 'rename_planned'] },
-			{ key: 'deleted', label: 'Deleted', hint: 'Titles, episodes and files deleted or held.', kinds: ['title_removed', 'episodes_removed', 'file_held', 'holding_cleaned'] },
-			{ key: 'subtitles', label: 'Subtitles', hint: 'Subtitles saved, upgraded, synced or not found.', kinds: ['subtitle_*'] },
-			{ key: 'asks', label: 'Asks', hint: 'Asks made, approved or turned down, by people or AI apps.', kinds: ['ask_*', 'ai_ask_*'] },
-			{ key: 'reports', label: 'Reports', hint: 'Problems people reported with titles, fixed or opened again.', kinds: ['report_*'] },
-			{ key: 'system', label: 'System', hint: 'Sign-ins, API keys, account and settings changes.', kinds: ['sign*', 'api_key_*', 'settings_changed', 'secrets_imported', 'account_changed', 'backup_used', 'health_recovered'] }
+			{ key: 'added', get label() { return say('downloads.ht.changes.added.label'); }, get hint() { return say('downloads.ht.changes.added.hint'); }, kinds: ['title_added', 'list_synced', 'version_changed', 'gate_opened'] },
+			{ key: 'downloads', get label() { return say('downloads.ht.changes.downloads.label'); }, get hint() { return say('downloads.ht.changes.downloads.hint'); }, kinds: download },
+			{ key: 'renamed', get label() { return say('downloads.ht.changes.renamed.label'); }, get hint() { return say('downloads.ht.changes.renamed.hint'); }, kinds: ['renamed', 'rename_planned'] },
+			{ key: 'deleted', get label() { return say('downloads.ht.changes.deleted.label'); }, get hint() { return say('downloads.ht.changes.deleted.hint'); }, kinds: ['title_removed', 'episodes_removed', 'file_held', 'holding_cleaned'] },
+			{ key: 'subtitles', get label() { return say('downloads.ht.changes.subtitles.label'); }, get hint() { return say('downloads.ht.changes.subtitles.hint'); }, kinds: ['subtitle_*'] },
+			{ key: 'asks', get label() { return say('downloads.ht.changes.asks.label'); }, get hint() { return say('downloads.ht.changes.asks.hint'); }, kinds: ['ask_*', 'ai_ask_*'] },
+			{ key: 'reports', get label() { return say('downloads.ht.changes.reports.label'); }, get hint() { return say('downloads.ht.changes.reports.hint'); }, kinds: ['report_*'] },
+			{ key: 'system', get label() { return say('downloads.ht.changes.system.label'); }, get hint() { return say('downloads.ht.changes.system.hint'); }, kinds: ['sign*', 'api_key_*', 'settings_changed', 'secrets_imported', 'account_changed', 'backup_used', 'health_recovered'] }
 		]
 	},
 	{
 		key: 'routine',
-		label: 'Routine',
-		hint: 'Searches, refreshed details and folder scans HolyArrs runs on its own.',
-		empty: 'No routine work yet.',
+		get label() { return say('downloads.ht.routine.label'); },
+		get hint() { return say('downloads.ht.routine.hint'); },
+		get empty() { return say('downloads.ht.routine.empty'); },
 		subs: [
-			{ key: 'searches', label: 'Searches', hint: 'Searches for Releases and feed checks.', kinds: ['search_done', 'feed_checked'] },
-			{ key: 'refreshes', label: 'Refreshed', hint: 'Details, albums and episodes read again from their source.', kinds: ['title_refreshed', 'albums_changed', 'album_changed', 'episodes_changed', 'details_source_changed', 'season_changed', 'title_edited'] },
-			{ key: 'scans', label: 'Scans', hint: 'Library folders looked at again.', kinds: ['library_scanned', 'library_rescanned', 'folder_scanned', 'file_back', 'media_server_told'] }
+			{ key: 'searches', get label() { return say('downloads.ht.routine.searches.label'); }, get hint() { return say('downloads.ht.routine.searches.hint'); }, kinds: ['search_done', 'feed_checked'] },
+			{ key: 'refreshes', get label() { return say('downloads.ht.routine.refreshes.label'); }, get hint() { return say('downloads.ht.routine.refreshes.hint'); }, kinds: ['title_refreshed', 'albums_changed', 'album_changed', 'episodes_changed', 'details_source_changed', 'season_changed', 'title_edited'] },
+			{ key: 'scans', get label() { return say('downloads.ht.routine.scans.label'); }, get hint() { return say('downloads.ht.routine.scans.hint'); }, kinds: ['library_scanned', 'library_rescanned', 'folder_scanned', 'file_back', 'media_server_told'] }
 		]
 	}
 ];
@@ -150,10 +151,10 @@ export function rowTab(row: HistoryRow): string {
 export function dayLine(tally: Record<string, number>): string {
 	const parts: string[] = [];
 	const n = (k: string) => tally[k] ?? 0;
-	if (n('came')) parts.push(`${n('came')} came in`);
-	if (n('problems')) parts.push(`${n('problems')} ${n('problems') === 1 ? 'problem' : 'problems'}`);
-	if (n('changes')) parts.push(`${n('changes')} ${n('changes') === 1 ? 'change' : 'changes'}`);
-	if (n('routine')) parts.push(`${n('routine')} routine`);
+	if (n('came')) parts.push(say('downloads.ht.dayCame', { n: n('came') }));
+	if (n('problems')) parts.push(say(n('problems') === 1 ? 'downloads.ht.dayProblem.one' : 'downloads.ht.dayProblem.other', { n: n('problems') }));
+	if (n('changes')) parts.push(say(n('changes') === 1 ? 'downloads.ht.dayChange.one' : 'downloads.ht.dayChange.other', { n: n('changes') }));
+	if (n('routine')) parts.push(say('downloads.ht.dayRoutine', { n: n('routine') }));
 	return parts.join(' · ');
 }
 

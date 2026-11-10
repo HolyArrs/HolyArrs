@@ -1,5 +1,6 @@
 <!-- Sticky bar shown when a form has unsaved changes, with a guard before leaving. -->
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import { beforeNavigate, goto } from '$app/navigation';
 	import Button from './Button.svelte';
 	import Sheet from './Sheet.svelte';
@@ -10,7 +11,7 @@
 		saving = false,
 		disabled = false,
 		ondiscard,
-		label = 'Save'
+		label = t('ui.saveBar.save')
 	}: { dirty: boolean; form: string; saving?: boolean; disabled?: boolean; ondiscard: () => void; label?: string } = $props();
 
 	let asking = $state(false);
@@ -45,20 +46,20 @@
 </script>
 
 {#if dirty}
-	<div class="savebar" role="region" aria-label="Unsaved changes" data-testid="savebar">
-		<span class="words"><i aria-hidden="true"></i>Unsaved changes</span>
+	<div class="savebar" role="region" aria-label={t('ui.saveBar.unsavedChanges')} data-testid="savebar">
+		<span class="words"><i aria-hidden="true"></i>{t('ui.saveBar.unsavedChanges')}</span>
 		<div class="acts">
-			<Button variant="plain" type="button" onclick={ondiscard} disabled={saving}>Discard</Button>
+			<Button variant="plain" type="button" onclick={ondiscard} disabled={saving}>{t('ui.saveBar.discard')}</Button>
 			<Button variant="primary" type="submit" {form} disabled={disabled || saving} busy={saving}>{label}</Button>
 		</div>
 	</div>
 {/if}
 
-<Sheet bind:open={asking} title="Leave without saving?" description="Your changes on this page are not saved yet." size="sm">
-	<p class="small muted">Stay to save them, or leave and lose them.</p>
+<Sheet bind:open={asking} title={t('ui.saveBar.leaveWithoutSaving')} description={t('ui.saveBar.yourChangesOnThis')} size="sm">
+	<p class="small muted">{t('ui.saveBar.stayToSaveThem')}</p>
 	{#snippet footer()}
-		<Button variant="plain" type="button" onclick={() => (asking = false)}>Stay</Button>
-		<Button variant="destructive" type="button" onclick={leave}>Leave without saving</Button>
+		<Button variant="plain" type="button" onclick={() => (asking = false)}>{t('ui.saveBar.stay')}</Button>
+		<Button variant="destructive" type="button" onclick={leave}>{t('ui.saveBar.leaveWithoutSaving2')}</Button>
 	{/snippet}
 </Sheet>
 
@@ -81,7 +82,7 @@
 	}
 	.words { display: inline-flex; align-items: center; gap: 8px; font: var(--t-callout); font-weight: 600; }
 	i { width: 8px; height: 8px; border-radius: 50%; background: var(--wait); }
-	.acts { display: flex; gap: 8px; margin-left: auto; }
+	.acts { display: flex; gap: 8px; margin-inline-start: auto; }
 	@keyframes rise { from { opacity: 0; transform: translateY(12px); } }
 	/* Sit above the mobile tab bar. */
 	@media (max-width: 767px) {

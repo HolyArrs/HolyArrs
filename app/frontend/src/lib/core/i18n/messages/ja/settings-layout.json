@@ -1,0 +1,14 @@
+{
+"settings.layout.settings": "設定",
+"settings.layout.home": "ホーム",
+"settings.layout.sections": "設定のセクション",
+"settings.layout.needsAttention": "要確認",
+"settings.layout.needsAttentionLower": "要確認",
+"settings.layout.blocked": "これは変更できません",
+"settings.layout.backToSettings": "設定に戻る",
+"settings.layout.setPasswordFirst": "先にパスワードを設定してください",
+"settings.layout.setPasswordDesc": "キー、パスワード、ユーザー、バックアップの操作には HolyArrs のパスワードが必要です。まだ設定されていません。",
+"settings.layout.setPasswordLabel": "パスワードを設定",
+"settings.layout.confirmPasswordLabel": "パスワードを確認",
+"settings.layout.confirmPasswordDesc": "キー、パスワード、ユーザー、バックアップの操作にはパスワードが必要です。10 分間有効です。"
+}

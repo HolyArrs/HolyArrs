@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	// Show detail page: episodes by season, staff tools, requests and history.
 	import Button from '#lib/ui/Button.svelte';
 	import AskedByLine from '#lib/ui/AskedByLine.svelte';
@@ -54,6 +55,7 @@
 	import { ago, date, dateTime, tone } from '../core/format.ts';
 	import { session } from '../core/session.svelte.ts';
 	import { toasts } from '../core/toasts.svelte.ts';
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import type { Ask, EpisodeView, EventPage, EventRecord, PickRulesView, TitleView } from '../core/types.ts';
 	import type { LookupShow } from '../core/types.ts';
 
@@ -110,23 +112,23 @@
 	const cur = $derived((picked !== null && show?.seasons.some((x) => x.number === picked) ? picked : null) ?? newestSeason(show?.seasons ?? []) ?? 0);
 	const freshSeason = $derived(newSeason(show?.seasons ?? []));
 	const curSeason = $derived(show?.seasons.find((x) => x.number === cur));
-	const statusWord: Record<string, string> = { running: 'Still running', ended: 'Ended', announced: 'Announced' };
-	const heroMeta = $derived([title.year ? String(title.year) : '', show?.seasons.length ? `${show.seasons.length} ${show.seasons.length === 1 ? 'season' : 'seasons'}` : '', show?.network ?? '', show ? (statusWord[show.status] ?? show.status) : '', ...(title.genres?.length ? title.genres : (rich?.genres ?? [])).slice(0, 2)].filter(Boolean));
+	const statusWord = (s: string): string => ({ running: t('shows.page.running'), ended: t('shows.page.ended'), announced: t('shows.page.announced') })[s] ?? s;
+	const heroMeta = $derived([title.year ? String(title.year) : '', show?.seasons.length ? t(show.seasons.length === 1 ? 'shows.page.seasonCountOne' : 'shows.page.seasonCountOther', { n: show.seasons.length }) : '', show?.network ?? '', show ? statusWord(show.status) : '', ...(title.genres?.length ? title.genres : (rich?.genres ?? [])).slice(0, 2)].filter(Boolean));
 	const heroBadges = $derived(qualityBadges(title.slots.map((s) => s.file)));
 	const nextWords = $derived(show?.next_air_date ? date(show.next_air_date) : '');
 	const heroKind = $derived(show?.missing ? 'missing' : show?.in_library ? 'in_library' : show?.not_out_yet ? 'coming_soon' : 'missing');
 	// Staff also see how many episodes are missing.
 	const heroWords = $derived(audienceStatus(!staff && show?.in_library ? 'in_library' : heroKind, staff ? 'staff' : 'member', { tracked: true, titleKind: 'show' }));
 	const heroItems = $derived<MenuItem[]>([
-		{ label: 'Search now', icon: 'search', onselect: searchShow, disabled: searching === 'show' },
-		{ label: 'Keep up to date', checked: title.keep_up_to_date, disabled: busy === 'show', onselect: () => setKeep(!title.keep_up_to_date) },
+		{ label: t('shows.search.now'), icon: 'search', onselect: searchShow, disabled: searching === 'show' },
+		{ label: t('shows.sheet.keep'), checked: title.keep_up_to_date, disabled: busy === 'show', onselect: () => setKeep(!title.keep_up_to_date) },
 		{ kind: 'separator' },
-		{ label: 'Edit', icon: 'tools', onselect: openEdit },
-		{ label: 'Rename files', icon: 'copy', onselect: openRename },
-		{ label: 'Refresh seasons and episodes', icon: 'refresh', onselect: refresh, disabled: refreshing },
-		{ label: 'All history', icon: 'clock', href: to(`/downloads/history?title=${title.id}`) },
+		{ label: t('shows.page.edit'), icon: 'tools', onselect: openEdit },
+		{ label: t('shows.page.renameFiles'), icon: 'copy', onselect: openRename },
+		{ label: t('shows.page.refreshMenu'), icon: 'refresh', onselect: refresh, disabled: refreshing },
+		{ label: t('shows.page.allHistory'), icon: 'clock', href: to(`/downloads/history?title=${title.id}`) },
 		{ kind: 'separator' },
-		{ label: 'Delete show', icon: 'trash', destructive: true, onselect: () => deleter?.open() }
+		{ label: t('shows.page.deleteShow'), icon: 'trash', destructive: true, onselect: () => deleter?.open() }
 	]);
 
 	$effect(() => {
@@ -201,9 +203,9 @@
 		asker?.open(s);
 	}
 	function asked(_s: LookupShow, r: { ask: Ask; joined: boolean }) {
-		if (r.ask.state === 'approved') toasts.push(`${title.name} approved`, 'ok', { body: 'Searching for a Release' });
-		else if (r.joined) toasts.push(`${title.name} already requested`, 'ok', { body: "You're on the request too" });
-		else toasts.push(`${title.name} requested`, 'ok', { body: 'Waiting for approval' });
+		if (r.ask.state === 'approved') toasts.push(t('shows.page.approved', { name: title.name }), 'ok', { body: t('shows.page.searchingRelease') });
+		else if (r.joined) toasts.push(t('shows.page.alreadyRequested', { name: title.name }), 'ok', { body: t('shows.page.onRequestToo') });
+		else toasts.push(t('shows.page.requested', { name: title.name }), 'ok', { body: t('shows.page.waitingApproval') });
 	}
 
 	function openSubtitles(ep: EpisodeView) {
@@ -238,9 +240,9 @@
 				await tick();
 				scrollToStart(document.querySelector('[data-testid="show-releases"]'));
 			}
-			toasts.push(r.job_ids.length ? done : 'Nothing to search for', r.job_ids.length ? 'info' : 'ok');
+			toasts.push(r.job_ids.length ? done : t('shows.page.nothingToSearch'), r.job_ids.length ? 'info' : 'ok');
 		} catch (e) {
-			toasts.push(`Couldn't start search`, 'fail', { body: message(e) });
+			toasts.push(t('shows.sheet.startSearchFailed'), 'fail', { body: message(e) });
 		} finally {
 			// Keeps the busy state visible long enough to read.
 			setTimeout(() => (searching = ''), 1200);
@@ -248,7 +250,7 @@
 	}
 
 	function searchShow() {
-		void startSearch('show', {}, 'Searching every season');
+		void startSearch('show', {}, t('shows.page.searchingAll'));
 	}
 
 	function searchSeason(n: number, list = false) {
@@ -256,7 +258,7 @@
 		void startSearch(
 			`s${n}${list ? 'l' : ''}`,
 			{ season: n },
-			`Searching ${name}`,
+			t('shows.page.searchingNamed', { name }),
 			list ? { label: name, query: `season=${n}` } : undefined
 		);
 	}
@@ -269,7 +271,7 @@
 			`e${ep.id}${list ? 'l' : ''}`,
 			// A release list is only for the main Version.
 			!list && ep.slots.length > 1 ? { item_id: ep.id } : { slot_id: sl.id },
-			`Searching ${code}`,
+			t('shows.page.searchingNamed', { name: code }),
 			list ? { label: code, query: `item_id=${ep.id}`, slotId: sl.id, slotState: sl.state } : undefined
 		);
 	}
@@ -314,11 +316,11 @@
 		const word = searchWord(mainSlot(ep)?.state);
 		const items: MenuItem[] = [];
 		if (word) items.push({ label: word, icon: 'search', onselect: () => searchEpisode(ep), disabled: searching === `e${ep.id}` });
-		if (mainSlot(ep)) items.push({ label: 'Choose a release', icon: 'grid', onselect: () => searchEpisode(ep, true), disabled: searching === `e${ep.id}l` });
-		if (ep.slots.some((x) => x.file_id)) items.push({ label: 'Subtitles', icon: 'subtitle', onselect: () => openSubtitles(ep) });
-		items.push({ label: 'History', icon: 'clock', href: to(`/downloads/history?title=${title.id}&episode=${ep.id}`) });
-		items.push({ label: `Keep ${code} up to date`, checked: ep.keep_up_to_date, disabled: busy === `e${ep.id}`, onselect: () => setEpisode(ep, !ep.keep_up_to_date) });
-		items.push({ kind: 'separator' }, { label: `Delete ${code}`, icon: 'trash', destructive: true, onselect: () => deleter?.open({ episodeIds: [ep.id], label: code }) });
+		if (mainSlot(ep)) items.push({ label: t('shows.page.chooseRelease'), icon: 'grid', onselect: () => searchEpisode(ep, true), disabled: searching === `e${ep.id}l` });
+		if (ep.slots.some((x) => x.file_id)) items.push({ label: t('shows.sheet.subtitles'), icon: 'subtitle', onselect: () => openSubtitles(ep) });
+		items.push({ label: t('shows.tools.history'), icon: 'clock', href: to(`/downloads/history?title=${title.id}&episode=${ep.id}`) });
+		items.push({ label: t('shows.page.keepNamed', { name: code }), checked: ep.keep_up_to_date, disabled: busy === `e${ep.id}`, onselect: () => setEpisode(ep, !ep.keep_up_to_date) });
+		items.push({ kind: 'separator' }, { label: t('shows.tools.delete', { season: code }), icon: 'trash', destructive: true, onselect: () => deleter?.open({ episodeIds: [ep.id], label: code }) });
 		return items;
 	}
 
@@ -331,10 +333,10 @@
 		busy = `s${n}`;
 		try {
 			await api.put(`/titles/${title.id}/seasons/${n}`, { keep_up_to_date: keep });
-			toasts.push(keep ? `${seasonName(n)} kept up to date` : `${seasonName(n)} not kept up to date`, 'ok');
+			toasts.push(t(keep ? 'shows.page.seasonKept' : 'shows.page.seasonNotKept', { name: seasonName(n) }), 'ok');
 			await reload();
 		} catch (e) {
-			toasts.push(`Couldn't update season`, 'fail', { body: message(e) });
+			toasts.push(t('shows.page.updateSeasonFailed'), 'fail', { body: message(e) });
 		} finally {
 			busy = '';
 		}
@@ -348,7 +350,7 @@
 			const i = list?.findIndex((x) => x.id === ep.id) ?? -1;
 			if (list && i >= 0) list[i] = { ...list[i], keep_up_to_date: r.keep_up_to_date };
 		} catch (e) {
-			toasts.push(`Couldn't update episode`, 'fail', { body: message(e) });
+			toasts.push(t('shows.sheet.updateFailed'), 'fail', { body: message(e) });
 		} finally {
 			busy = '';
 		}
@@ -358,9 +360,9 @@
 		busy = 'show';
 		try {
 			onchange((await api.put<{ title: TitleView }>(`/titles/${title.id}`, { keep_up_to_date: v })).title);
-			toasts.push(v ? 'Show kept up to date' : 'Show not kept up to date', 'ok');
+			toasts.push(t(v ? 'shows.page.showKept' : 'shows.page.showNotKept'), 'ok');
 		} catch (e) {
-			toasts.push(`Couldn't update show`, 'fail', { body: message(e) });
+			toasts.push(t('shows.page.updateShowFailed'), 'fail', { body: message(e) });
 		} finally {
 			busy = '';
 		}
@@ -370,9 +372,9 @@
 		refreshing = true;
 		try {
 			await api.post(`/titles/${title.id}/refresh`);
-			toasts.push(`Refreshing ${title.name}`, 'info', { body: 'Seasons, episodes and air dates' });
+			toasts.push(t('shows.page.refreshing', { name: title.name }), 'info', { body: t('shows.page.refreshingBody') });
 		} catch (e) {
-			toasts.push(`Couldn't refresh`, 'fail', { body: message(e) });
+			toasts.push(t('shows.page.refreshFailed'), 'fail', { body: message(e) });
 		} finally {
 			// Keeps the menu item disabled while the refresh job starts.
 			setTimeout(() => (refreshing = false), 1500);
@@ -407,7 +409,7 @@
 			editDialog?.close();
 			episodes = {};
 			for (const n of Object.keys(open).map(Number)) if (open[n]) void loadSeason(n);
-			toasts.push('Show saved', 'ok');
+			toasts.push(t('shows.page.saved'), 'ok');
 		} catch (err) {
 			editError = message(err);
 		} finally {
@@ -421,19 +423,19 @@
 		(episodes[n] ?? []).map((ep) => ({
 			key: ep.id,
 			number: order === 'aired' ? String(ep.episode) : episodeLabel(ep, order),
-			name: ep.name || 'Name not known yet',
+			name: ep.name || t('shows.page.nameUnknown'),
 			still: still(ep),
 			runtime: ep.runtime_minutes ?? ep.runtime,
-			when: ep.air_date ? date(ep.air_date) : 'No air date yet',
+			when: ep.air_date ? date(ep.air_date) : t('shows.why.noAirDateShort'),
 			overview: synopses[n]?.[ep.episode],
 			here: !staff && ep.slots.some((x) => x.file_id)
 		}));
 	const seasonMenu = (n: number, keep: boolean): MenuItem[] => [
-		{ label: 'Search season', icon: 'search', onselect: () => searchSeason(n), disabled: searching === `s${n}` },
-		{ label: 'Choose a release', icon: 'grid', onselect: () => searchSeason(n, true), disabled: searching === `s${n}l` },
-		{ label: `Keep ${seasonName(n)} up to date`, checked: keep, disabled: busy === `s${n}`, onselect: () => setSeason(n, !keep) },
+		{ label: t('shows.page.searchSeason'), icon: 'search', onselect: () => searchSeason(n), disabled: searching === `s${n}` },
+		{ label: t('shows.page.chooseRelease'), icon: 'grid', onselect: () => searchSeason(n, true), disabled: searching === `s${n}l` },
+		{ label: t('shows.page.keepNamed', { name: seasonName(n) }), checked: keep, disabled: busy === `s${n}`, onselect: () => setSeason(n, !keep) },
 		{ kind: 'separator' },
-		{ label: `Delete ${seasonName(n)}`, icon: 'trash', destructive: true, onselect: () => deleter?.open({ season: n, label: seasonName(n) }) }
+		{ label: t('shows.tools.delete', { season: seasonName(n) }), icon: 'trash', destructive: true, onselect: () => deleter?.open({ season: n, label: seasonName(n) }) }
 	];
 </script>
 
@@ -459,15 +461,15 @@
 >
 	{#snippet byline()}
 		<AskedByLine {askers} />
-		{#if show?.next_air_date}<span data-testid="next-episode"><b>Next episode:</b> {nextWords}</span>{/if}
+		{#if show?.next_air_date}<span data-testid="next-episode"><b>{t('shows.page.nextEpisode')}</b> {nextWords}</span>{/if}
 		{#if staff}<span class="tp-progress" data-testid="show-progress">{showProgress(show)}</span>{/if}
 	{/snippet}
 	{#snippet actions()}
 		{#if staff}
-			<ActionButton icon="library" label="In Library: go to the Library section" caption="In Library" primary onclick={toLibrary} data-testid="hero-library" />
-			<ActionMenu label="More actions" caption="More" icon="more" items={heroItems} />
+			<ActionButton icon="library" label={t('shows.page.goLibrary')} caption={t('shows.page.inLibraryCaption')} primary onclick={toLibrary} data-testid="hero-library" />
+			<ActionMenu label={t('shows.page.moreActions')} caption={t('shows.page.more')} icon="more" items={heroItems} />
 		{:else if session.can('ask')}
-			<ActionButton icon="wish" label="Ask for seasons" primary onclick={askMore} data-testid="ask-seasons-more" />
+			<ActionButton icon="wish" label={t('shows.page.askSeasons')} primary onclick={askMore} data-testid="ask-seasons-more" />
 		{/if}
 		<FollowButton titleId={title.id} kind="show" />
 	{/snippet}
@@ -478,32 +480,32 @@
 
 <section class="tp-section" aria-labelledby="h-seasons">
 	<div class="tp-head">
-		<h2 id="h-seasons" class="tp-h2">Episodes</h2>
+		<h2 id="h-seasons" class="tp-h2">{t('shows.list.episodes')}</h2>
 		{#if show?.seasons.length}
 			<div class="tp-head-end">
 				<SeasonPicker seasons={show.seasons} value={cur} fresh={freshSeason} onpick={pickSeason} />
 				{#if staff && curSeason}
-					<span data-testid="season-menu"><Menu label="Season actions for {seasonName(curSeason.number)}" icon="more" items={seasonMenu(curSeason.number, curSeason.keep_up_to_date)} width={260} align="end" /></span>
+					<span data-testid="season-menu"><Menu label={t('shows.page.seasonActions', { name: seasonName(curSeason.number) })} icon="more" items={seasonMenu(curSeason.number, curSeason.keep_up_to_date)} width={260} align="end" /></span>
 				{/if}
 			</div>
 		{/if}
 	</div>
 	{#if !show?.seasons.length}
-		<p class="small muted">No seasons yet. A refresh adds them once the details source lists them.</p>
+		<p class="small muted">{t('shows.page.noSeasons')}</p>
 	{:else if curSeason}
 		{@const s = curSeason}
 		{@const off = staff ? keepOffNote(s.keep_up_to_date, title.keep_up_to_date) : ''}
 		<div class="season" data-testid="season">
-			<p class="xs muted" data-testid="season-line">{seasonLine(s)}{s.dropped ? ' · no longer listed' : ''}{#if staff && episodes[s.number] && seasonLooking(episodes[s.number])}{` · ${seasonLooking(episodes[s.number])} looking for a copy`}{/if}{#if off}{` · ${off}`}{/if}</p>
+			<p class="xs muted" data-testid="season-line">{seasonLine(s)}{s.dropped ? ` · ${t('shows.page.noLongerListed')}` : ''}{#if staff && episodes[s.number] && seasonLooking(episodes[s.number])}{` · ${t('shows.page.looking', { n: seasonLooking(episodes[s.number]) })}`}{/if}{#if off}{` · ${off}`}{/if}</p>
 			{#if episodes[s.number]}
 				{@const eps = episodes[s.number]}
 				<EpisodeList rows={rowsOf(s.number)} fallback={title.backdrop ?? rich?.backdrop}>
 					{#snippet status(i: number)}
 						{@const main = mainSlot(eps[i])}
-						{#if staff && main}<StatusPill kind={slotKind(main.state)} label={eps[i].slots.length > 1 ? eps[i].slots.map((x) => `${x.version}: ${x.state_label}`).join(' · ') : main.state_label} testid="episode-state" />{/if}
+						{#if staff && main}<StatusPill kind={slotKind(main.state)} label={eps[i].slots.length > 1 ? eps[i].slots.map((x) => `${x.version}: ${serverWords(x.state_label)}`).join(' · ') : serverWords(main.state_label)} testid="episode-state" />{/if}
 					{/snippet}
 					{#snippet action(i: number)}
-						{#if staff}<Menu label="Episode actions for {episodeLabel(eps[i], order)}" items={episodeItems(eps[i])} width={250} />{/if}
+						{#if staff}<Menu label={t('shows.page.episodeActions', { name: episodeLabel(eps[i], order) })} items={episodeItems(eps[i])} width={250} />{/if}
 					{/snippet}
 					{#snippet after(i: number)}
 						{@const ep = eps[i]}
@@ -527,33 +529,33 @@
 	{#snippet middle()}{#key title.id}<TitleCast titleId={title.id} />{/key}{/snippet}
 </TitleRows>
 
-<TitleSection id="h-about" title="About">
+<TitleSection id="h-about" title={t('shows.page.about')}>
 	<dl class="tp-about">
-		<dt>Episodes</dt>
-		<dd>{show?.episodes ?? 0} in {show?.seasons.length ?? 0} seasons</dd>
-		{#if title.year}<dt>First aired</dt><dd>{title.year}</dd>{/if}
-		{#if show?.next_air_date}<dt>Next episode</dt><dd>{date(show.next_air_date)}</dd>{/if}
-		{#if show?.air_time}<dt>Airs at</dt><dd>{show.air_time}{show.time_zone ? ` (${show.time_zone})` : ''}</dd>{/if}
-		{#if show?.network}<dt>Network</dt><dd>{show.network}</dd>{/if}
-		{#if show?.status}<dt>Status</dt><dd>{statusWord[show.status] ?? show.status}</dd>{/if}
-		{#if title.rating ?? rich?.certification}<dt>Rated</dt><dd>{title.rating ?? rich?.certification}</dd>{/if}
-		{#if title.genres?.length}<dt>Genres</dt><dd>{title.genres.join(', ')}</dd>{/if}
+		<dt>{t('shows.list.episodes')}</dt>
+		<dd>{t('shows.page.episodesIn', { episodes: show?.episodes ?? 0, seasons: show?.seasons.length ?? 0 })}</dd>
+		{#if title.year}<dt>{t('shows.page.firstAired')}</dt><dd>{title.year}</dd>{/if}
+		{#if show?.next_air_date}<dt>{t('shows.page.nextEpisodeRow')}</dt><dd>{date(show.next_air_date)}</dd>{/if}
+		{#if show?.air_time}<dt>{t('shows.page.airsAt')}</dt><dd>{show.air_time}{show.time_zone ? ` (${show.time_zone})` : ''}</dd>{/if}
+		{#if show?.network}<dt>{t('shows.page.network')}</dt><dd>{show.network}</dd>{/if}
+		{#if show?.status}<dt>{t('shows.page.status')}</dt><dd>{statusWord(show.status)}</dd>{/if}
+		{#if title.rating ?? rich?.certification}<dt>{t('shows.page.rated')}</dt><dd>{title.rating ?? rich?.certification}</dd>{/if}
+		{#if title.genres?.length}<dt>{t('shows.page.genres')}</dt><dd>{title.genres.join(', ')}</dd>{/if}
 	</dl>
 </TitleSection>
 
 {#if title.asks?.length}
-	<TitleSection id="h-show-asks" title="Requests" testid="title-asks">
+	<TitleSection id="h-show-asks" title={t('shows.page.requests')} testid="title-asks">
 		{#each title.asks as a (a.id)}
 			<dl class="facts">
-				<dt>Asked by</dt>
+				<dt>{t('shows.page.askedBy')}</dt>
 				<dd>{peopleNames(a.people.map((p) => p.name))} · {date(a.asked_at)}</dd>
-				<dt>For</dt>
+				<dt>{t('shows.page.for')}</dt>
 				<dd>{a.season_words ?? seasonWords(a.seasons)}</dd>
-				{#if decided(a)}<dt>Decided</dt>
+				{#if decided(a)}<dt>{t('shows.page.decided')}</dt>
 					<dd>{decided(a)}{a.decided_at ? ` · ${date(a.decided_at)}` : ''}</dd>{/if}
-				<dt>Now</dt>
-				<dd>{a.state_label}</dd>
-				{#if a.note}<dt>Note</dt>
+				<dt>{t('shows.page.now')}</dt>
+				<dd>{serverWords(a.state_label)}</dd>
+				{#if a.note}<dt>{t('shows.page.note')}</dt>
 					<dd>{a.note}</dd>{/if}
 			</dl>
 		{/each}
@@ -561,39 +563,39 @@
 {/if}
 
 {#if staff}
-	<LibrarySection note="Releases, Versions and files, subtitles, settings and history">
+	<LibrarySection note={t('shows.page.librarySectionNote')}>
 		{#if scope}
 			<ShowReleases titleId={title.id} {scope} jobs={scopeJobs} onclose={() => (scope = null)} onchange={() => void reload()} />
 		{/if}
 		<ShowVersions {title} {staff} onchange={reload} />
 		<CopyControls {title} onchange={reload} />
 		<div id="title-subtitles">{#key title.id}<SubtitlePanel titleId={title.id} movie={false} files={false} />{/key}</div>
-		<TitleSection id="h-show-facts" title="How HolyArrs keeps it">
+		<TitleSection id="h-show-facts" title={t('shows.page.keeps')}>
 			<dl class="tp-about">
-				<dt>Keep up to date</dt>
-				<dd>{title.keep_up_to_date ? 'On' : 'Off'}</dd>
-				<dt>Episode order</dt>
+				<dt>{t('shows.sheet.keep')}</dt>
+				<dd>{title.keep_up_to_date ? t('shows.page.on') : t('shows.sheet.off')}</dd>
+				<dt>{t('shows.page.episodeOrder')}</dt>
 				<dd>{label(episodeOrders, show?.episode_order)}</dd>
-				<dt>Details from</dt>
+				<dt>{t('shows.page.detailsFrom')}</dt>
 				<dd>{label(detailsSources, show?.details_source)}</dd>
-				{#if show?.season_choice}<dt>Picked when added</dt>
+				{#if show?.season_choice}<dt>{t('shows.page.pickedWhenAdded')}</dt>
 					<dd>{label(seasonChoices, show.season_choice)}</dd>{/if}
-				<dt>New seasons</dt>
-				<dd>{show?.new_seasons === 'none' ? 'Left off' : 'Kept up to date'}</dd>
-				{#if title.pick_rules_name}<dt>Pick rules</dt>
+				<dt>{t('shows.page.newSeasons')}</dt>
+				<dd>{show?.new_seasons === 'none' ? t('shows.page.leftOff') : t('shows.page.keptUp')}</dd>
+				{#if title.pick_rules_name}<dt>{t('shows.page.pickRules')}</dt>
 					<dd>{title.pick_rules_name}</dd>{/if}
-				{#if title.refreshed_at}<dt>Refreshed</dt>
+				{#if title.refreshed_at}<dt>{t('shows.page.refreshed')}</dt>
 					<dd>{date(title.refreshed_at)}</dd>{/if}
 			</dl>
 			<p class="tp-why" data-testid="gate-reason">{title.gate_reason}</p>
-			{#if title.folder_path}<details class="tp-details"><summary>Details</summary><ul><li>Folder: {shortFolder(title.folder_path)}</li></ul></details>{/if}
+			{#if title.folder_path}<details class="tp-details"><summary>{t('shows.versions.details')}</summary><ul><li>{t('shows.page.folder', { path: shortFolder(title.folder_path) })}</li></ul></details>{/if}
 		</TitleSection>
-		<TitleSection id="h-show-history" title="History" testid="title-history">
+		<TitleSection id="h-show-history" title={t('shows.tools.history')} testid="title-history">
 			{#snippet head()}
-				{#if historyTotal > 0}<Button variant="plain" href={to(`/downloads/history?title=${title.id}`)}>All {historyTotal} rows</Button>{/if}
+				{#if historyTotal > 0}<Button variant="plain" href={to(`/downloads/history?title=${title.id}`)}>{t('shows.page.allRows', { n: historyTotal })}</Button>{/if}
 			{/snippet}
 			{#if historyRows.length === 0}
-				<p class="small muted">Nothing yet.</p>
+				<p class="small muted">{t('shows.sheet.nothingYet')}</p>
 			{:else}
 				<div class="hist">
 					{#each historyRows as r (r.key)}
@@ -610,60 +612,60 @@
 	<ShowDeleteDialog bind:this={deleter} titleId={title.id} name={title.name} ondone={deleted} />
 {/if}
 
-<dialog bind:this={subDialog} class="modal wide" aria-label="Subtitles of an episode" onclose={() => (subEpisode = null)} data-testid="episode-subtitles-dialog">
+<dialog bind:this={subDialog} class="modal wide" aria-label={t('shows.page.episodeSubsLabel')} onclose={() => (subEpisode = null)} data-testid="episode-subtitles-dialog">
 	{#if subEpisode}
 		<SubtitlePanel titleId={title.id} movie={false} itemId={subEpisode.id} label={episodeLabel(subEpisode, order)} />
 		<div class="row modal-actions">
-			<Button variant="plain" onclick={() => subDialog?.close()}>Close</Button>
+			<Button variant="plain" onclick={() => subDialog?.close()}>{t('shows.page.close')}</Button>
 		</div>
 	{/if}
 </dialog>
 
 <dialog bind:this={renameDialog} aria-labelledby="rename-show-title" class="modal wide" onclose={() => (renameOpen = false)}>
 	{#if renameOpen}
-		<h2 id="rename-show-title" class="h2">Rename the files of {title.name}</h2>
-		<p class="small muted">Nothing changes until you press Rename.</p>
+		<h2 id="rename-show-title" class="h2">{t('shows.page.renameTitle', { name: title.name })}</h2>
+		<p class="small muted">{t('shows.page.renameNote')}</p>
 		<RenamePreview titleId={title.id} onDone={() => void reload()} />
 		<div class="row modal-actions">
-			<Button variant="plain" onclick={() => renameDialog?.close()}>Close</Button>
+			<Button variant="plain" onclick={() => renameDialog?.close()}>{t('shows.page.close')}</Button>
 		</div>
 	{/if}
 </dialog>
 
 <dialog bind:this={editDialog} aria-labelledby="edit-show-title" class="modal">
 	<form onsubmit={saveEdit}>
-		<h2 id="edit-show-title" class="h2">Edit {title.name}</h2>
+		<h2 id="edit-show-title" class="h2">{t('shows.page.editTitle', { name: title.name })}</h2>
 		<div class="field" style="margin-top: var(--s-5)">
-			<label for="e-rules">Pick rules{title.versions.length > 1 ? ' (main Version)' : ''}</label>
+			<label for="e-rules">{t('shows.page.pickRules')}{title.versions.length > 1 ? ` ${t('shows.page.mainVersionParen')}` : ''}</label>
 			<select id="e-rules" class="input" bind:value={eRules}>
 				{#each rules as r (r.id)}<option value={r.id}>{r.name}</option>{/each}
 			</select>
 		</div>
 		<div class="field">
-			<label for="e-order">Episode order</label>
+			<label for="e-order">{t('shows.page.episodeOrder')}</label>
 			<select id="e-order" class="input" bind:value={eOrder}>
 				{#each episodeOrders as [v, l] (v)}<option value={v}>{l}</option>{/each}
 			</select>
 			<span class="hint">{episodeOrders.find(([v]) => v === eOrder)?.[2]}</span>
 		</div>
 		<div class="field">
-			<label for="e-new">New seasons</label>
+			<label for="e-new">{t('shows.page.newSeasons')}</label>
 			<select id="e-new" class="input" bind:value={eNew}>
-				<option value="all">Keep them up to date</option>
-				<option value="none">Leave them off</option>
+				<option value="all">{t('shows.page.keepThem')}</option>
+				<option value="none">{t('shows.page.leaveThem')}</option>
 			</select>
 		</div>
 		<div class="field">
-			<label for="e-source">Details from</label>
+			<label for="e-source">{t('shows.page.detailsFrom')}</label>
 			<select id="e-source" class="input" bind:value={eSource}>
 				{#each detailsSources as [v, l] (v)}<option value={v}>{l}</option>{/each}
 			</select>
-			<span class="hint">Episodes and files stay.</span>
+			<span class="hint">{t('shows.page.filesStay')}</span>
 		</div>
 		{#if editError}<p class="form-error" role="alert">{editError}</p>{/if}
 		<div class="row modal-actions">
-			<Button variant="plain" onclick={() => editDialog?.close()}>Cancel</Button>
-			<Button variant="primary" type="submit" disabled={saving} busy={saving}>Save</Button>
+			<Button variant="plain" onclick={() => editDialog?.close()}>{t('shows.versions.cancel')}</Button>
+			<Button variant="primary" type="submit" disabled={saving} busy={saving}>{t('shows.versions.save')}</Button>
 		</div>
 	</form>
 </dialog>

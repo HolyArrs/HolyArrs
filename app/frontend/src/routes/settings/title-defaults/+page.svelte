@@ -1,4 +1,6 @@
 <script lang="ts">
+	import Words from '#lib/ui/Words.svelte';
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import Field from '#lib/ui/Field.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
@@ -83,7 +85,7 @@
 				saved = JSON.stringify(done);
 			}
 			savedDefaults.forget();
-			toasts.push('Movies and TV defaults saved', 'ok');
+			toasts.push(t('settings.titleDefaults.saved'), 'ok');
 		} catch (err) {
 			error = message(err);
 		} finally {
@@ -92,91 +94,91 @@
 	}
 </script>
 
-<svelte:head><title>Movies and TV defaults · HolyArrs</title></svelte:head>
+<svelte:head><title>{t('settings.titleDefaults.title')} · HolyArrs</title></svelte:head>
 
-<PageHeader title="Movies and TV defaults" />
+<PageHeader title={t('settings.titleDefaults.title')} />
 
 {#if loading && !form}
 	<SkSettings rows={4} />
 {:else if !form}
 	<LoadError hasData={false} message={loadError} onretry={load} busy={loading} />
 {:else}
-	{#if !mayEdit}<p class="hint" data-testid="read-only">Changing these needs the settings permission.</p>{/if}
-	<form class="sc-form" id="title-defaults-form" onsubmit={save} aria-label="Movies and TV defaults">
+	{#if !mayEdit}<p class="hint" data-testid="read-only">{t('settings.titleDefaults.readOnly')}</p>{/if}
+	<form class="sc-form" id="title-defaults-form" onsubmit={save} aria-label={t('settings.titleDefaults.title')}>
 	<fieldset class="all" disabled={!mayEdit}>
-	<legend class="sr-only">{mayEdit ? 'Movies and TV defaults' : 'Movies and TV defaults, read only'}</legend>
-		<SettingsCard id="movie-defaults" icon="film" title="Movies">
-			<Field id="td-movie-folder" label="Library folder">
+	<legend class="sr-only">{mayEdit ? t('settings.titleDefaults.title') : t('settings.titleDefaults.titleReadOnly')}</legend>
+		<SettingsCard id="movie-defaults" icon="film" title={t('settings.titleDefaults.movies')}>
+			<Field id="td-movie-folder" label={t('settings.titleDefaults.folder')}>
 				<select id="td-movie-folder" class="input" bind:value={form.defaults.movie.library_folder_id}>
-					<option value={0}>First movie folder</option>
+					<option value={0}>{t('settings.titleDefaults.firstMovie')}</option>
 					{#each movieFolders as f (f.id)}<option value={f.id}>{f.label || f.path} ({f.path})</option>{/each}
 				</select>
 			</Field>
-			<Field id="td-movie-rules" label="Quality">
+			<Field id="td-movie-rules" label={t('settings.titleDefaults.quality')}>
 				<select id="td-movie-rules" class="input" bind:value={form.defaults.movie.pick_rules_id}>
-					<option value={0}>The folder's own quality</option>
+					<option value={0}>{t('settings.titleDefaults.folderQuality')}</option>
 					{#each movieRules as r (r.id)}<option value={r.id}>{r.name}</option>{/each}
 				</select>
 			</Field>
 			<label class="checkline">
 				<input id="td-movie-keep" type="checkbox" bind:checked={form.defaults.movie.keep_up_to_date} />
-				<span><b>Keep up to date</b><br /><span class="hint">Searches now and for better copies later</span></span>
+				<span><b>{t('settings.titleDefaults.keep')}</b><br /><span class="hint">{t('settings.titleDefaults.keepHint')}</span></span>
 			</label>
 			<label class="checkline">
 				<input id="td-movie-search" type="checkbox" bind:checked={form.defaults.movie.search_on_add} />
-				<span><b>Search when added</b></span>
+				<span><b>{t('settings.titleDefaults.search')}</b></span>
 			</label>
 			{#snippet advanced()}
-				<Field id="td-gate" label="Release gate" hint={gateChoices.find(([g]) => g === form?.gate.release_gate)?.[2]}>
+				<Field id="td-gate" label={t('settings.titleDefaults.gate')} hint={gateChoices.find(([g]) => g === form?.gate.release_gate)?.[2]}>
 					<select id="td-gate" class="input" bind:value={form!.gate.release_gate}>
 						{#each gateChoices as [g, l] (g)}<option value={g}>{l}</option>{/each}
 					</select>
 				</Field>
-				<Field id="td-gate-days" label="Extra days to wait" hint="After the Release gate opens">
+				<Field id="td-gate-days" label={t('settings.titleDefaults.gateDays')} hint={t('settings.titleDefaults.gateDaysHint')}>
 					<input id="td-gate-days" class="input narrow" type="number" min="0" max="365" step="1" bind:value={form!.gate.gate_delay_days} />
 				</Field>
 			{/snippet}
 		</SettingsCard>
 
-		<SettingsCard id="show-defaults" icon="tv" title="Shows">
-			<Field id="td-show-folder" label="Library folder">
+		<SettingsCard id="show-defaults" icon="tv" title={t('settings.titleDefaults.shows')}>
+			<Field id="td-show-folder" label={t('settings.titleDefaults.folder')}>
 				<select id="td-show-folder" class="input" bind:value={form.defaults.show.library_folder_id}>
-					<option value={0}>First show folder</option>
+					<option value={0}>{t('settings.titleDefaults.firstShow')}</option>
 					{#each showFolders as f (f.id)}<option value={f.id}>{f.label || f.path} ({f.path})</option>{/each}
 				</select>
 			</Field>
-			<Field id="td-show-rules" label="Quality">
+			<Field id="td-show-rules" label={t('settings.titleDefaults.quality')}>
 				<select id="td-show-rules" class="input" bind:value={form.defaults.show.pick_rules_id}>
-					<option value={0}>The folder's own quality</option>
+					<option value={0}>{t('settings.titleDefaults.folderQuality')}</option>
 					{#each showRules as r (r.id)}<option value={r.id}>{r.name}</option>{/each}
 				</select>
 			</Field>
 			<label class="checkline">
 				<input id="td-show-keep" type="checkbox" bind:checked={form.defaults.show.keep_up_to_date} />
-				<span><b>Keep up to date</b></span>
+				<span><b>{t('settings.titleDefaults.keep')}</b></span>
 			</label>
 			<label class="checkline">
 				<input id="td-show-search" type="checkbox" bind:checked={form.defaults.show.search_on_add} />
-				<span><b>Search when added</b><br /><span class="hint">Off waits for the next feed check</span></span>
+				<span><b>{t('settings.titleDefaults.search')}</b><br /><span class="hint">{t('settings.titleDefaults.searchHint')}</span></span>
 			</label>
 			{#snippet advanced()}
-				<Field id="td-seasons" label="Seasons to keep up to date" hint={seasonChoices.find(([v]) => v === form?.shows.season_choice)?.[2]}>
+				<Field id="td-seasons" label={t('settings.titleDefaults.seasons')} hint={seasonChoices.find(([v]) => v === form?.shows.season_choice)?.[2]}>
 					<select id="td-seasons" class="input" bind:value={form!.shows.season_choice}>
 						{#each seasonChoices as [v, l] (v)}<option value={v}>{l}</option>{/each}
 					</select>
 				</Field>
-				<Field id="td-new-seasons" label="New seasons">
+				<Field id="td-new-seasons" label={t('settings.titleDefaults.newSeasons')}>
 					<select id="td-new-seasons" class="input" bind:value={form!.shows.new_seasons}>
-						<option value="all">Keep them up to date</option>
-						<option value="none">Leave them off</option>
+						<option value="all">{t('settings.titleDefaults.newAll')}</option>
+						<option value="none">{t('settings.titleDefaults.newNone')}</option>
 					</select>
 				</Field>
-				<Field id="td-order" label="Episode order" hint={episodeOrders.find(([v]) => v === form?.shows.episode_order)?.[2]}>
+				<Field id="td-order" label={t('settings.titleDefaults.order')} hint={episodeOrders.find(([v]) => v === form?.shows.episode_order)?.[2]}>
 					<select id="td-order" class="input" bind:value={form!.shows.episode_order}>
 						{#each episodeOrders as [v, l] (v)}<option value={v}>{l}</option>{/each}
 					</select>
 				</Field>
-				<Field id="td-source" label="Details from">
+				<Field id="td-source" label={t('settings.titleDefaults.details')}>
 					<select id="td-source" class="input" bind:value={form!.shows.details_source}>
 						{#each detailsSources as [v, l] (v)}<option value={v}>{l}</option>{/each}
 					</select>
@@ -185,8 +187,7 @@
 		</SettingsCard>
 
 		<p class="hint where">
-			Each <a href={to('/settings/library-folders')}>Library folder</a> has a quality set of its own. <a href={to('/settings/requests')}>Request rules</a> and
-			<a href={to('/settings/outside-lists')}>Outside lists</a> keep their own choices.
+			<Words key="settings.titleDefaults.where" links={{ a: to('/settings/library-folders'), a2: to('/settings/requests'), a3: to('/settings/outside-lists') }} />
 		</p>
 	</fieldset>
 		{#if error}<p class="form-error" role="alert">{error}</p>{/if}
@@ -199,5 +200,5 @@
 	.all { display: contents; border: 0; padding: 0; margin: 0; }
 	.narrow { max-width: 160px; }
 	.where { margin-top: 4px; }
-	.where a { color: var(--accent-text); font-weight: 600; }
+	.where :global(a) { color: var(--accent-text); font-weight: 600; }
 </style>

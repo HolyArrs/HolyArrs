@@ -1,5 +1,6 @@
 <script lang="ts">
 	// Linked apps: a tab per kind with its count and worst colour, and the picked kind's rows beside it.
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import Button from '#lib/ui/Button.svelte';
 	import GroupRows from './GroupRows.svelte';
 	import { partKinds, type StatusGroup, type StatusRow, type Tone } from './rows.ts';
@@ -43,28 +44,28 @@
 	const meta = (g: StatusGroup) => partKinds.find((k) => k.id === g.id)!;
 	const okOf = (g: StatusGroup) => g.rows.filter((r) => r.tone === 'ok').length;
 	// Rows turned off on purpose are not missing, so they stay out of the count.
-	const isOff = (r: StatusRow) => r.word === 'Off';
+	const isOff = (r: StatusRow) => r.word === t('health.run.off');
 	const onOf = (g: StatusGroup) => g.rows.filter((r) => !isOff(r)).length;
-	const count = (g: StatusGroup) => (!g.rows.length ? '–' : onOf(g) ? `${okOf(g)}/${onOf(g)}` : 'Off');
+	const count = (g: StatusGroup) => (!g.rows.length ? '–' : onOf(g) ? `${okOf(g)}/${onOf(g)}` : t('health.run.off'));
 	// A failing part wins, then a waiting one, then working; none when empty.
 	const worst = (g: StatusGroup): Tone | 'none' =>
 		g.rows.some((r) => r.tone === 'fail') ? 'fail' : g.rows.some((r) => r.tone === 'wait') ? 'wait' : g.rows.length ? (g.rows.every((r) => r.tone === 'idle') ? 'idle' : 'ok') : 'none';
 	// A kind in a few words, like "3 working" or "Nothing added yet".
 	function line(g: StatusGroup): string {
-		if (!g.rows.length) return 'Nothing added yet';
+		if (!g.rows.length) return t('health.parts.nothing');
 		const bad = g.rows.filter((r) => r.tone === 'fail' || r.tone === 'wait').length;
-		if (bad) return `${bad} need${bad === 1 ? 's' : ''} attention`;
+		if (bad) return t(bad === 1 ? 'health.parts.needsOne' : 'health.parts.needsMany', { count: bad });
 		if (g.rows.length === 1) return g.rows[0].word;
-		if (g.rows.every(isOff)) return `${g.rows.length} off`;
+		if (g.rows.every(isOff)) return t('health.parts.off', { count: g.rows.length });
 		const ok = okOf(g);
-		return ok ? `${ok} working` : `${onOf(g)} waiting`;
+		return ok ? t('health.parts.working', { count: ok }) : t('health.parts.waiting', { count: onOf(g) });
 	}
 </script>
 
 <section class="st-plate" aria-labelledby="p-rail" data-testid="status-parts">
-	<h2 id="p-rail">Linked apps<span class="cnt">{allOk}/{all}</span></h2>
+	<h2 id="p-rail">{t('health.parts.title')}<span class="cnt">{allOk}/{all}</span></h2>
 	<div class="rl">
-		<div class="kinds" role="tablist" aria-label="Kinds of linked app" tabindex="-1" bind:this={list} onkeydown={kindKey}>
+		<div class="kinds" role="tablist" aria-label={t('health.parts.kinds')} tabindex="-1" bind:this={list} onkeydown={kindKey}>
 			{#each kinds as g (g.id)}
 				<button type="button" role="tab" id="pk-tab-{g.id}" aria-selected={current.id === g.id} aria-controls="pk-panel" tabindex={current.id === g.id ? 0 : -1} data-kind={g.id} onclick={() => (picked = g.id)}>
 					<span class="gi" aria-hidden="true"><svg viewBox="0 0 20 20"><path d={icon[g.id]} /></svg></span>
@@ -81,14 +82,14 @@
 		<div class="pane" role="tabpanel" id="pk-panel" aria-labelledby="pk-tab-{current.id}">
 			<h3>
 				{current.label}<span class="pl">{line(current)}</span>
-				{#if canAct && current.rows.length}<span class="end"><Button variant="plain" size="sm" href={to(meta(current).add)}>Manage</Button></span>{/if}
+				{#if canAct && current.rows.length}<span class="end"><Button variant="plain" size="sm" href={to(meta(current).add)}>{t('health.parts.manage')}</Button></span>{/if}
 			</h3>
 			{#if current.rows.length}
 				{#key current.id}<GroupRows rows={current.rows} {canAct} {busy} {oncheck} />{/key}
 			{:else}
 				<p class="emp">
-					<i class="st-dot none" aria-hidden="true"></i>No {meta(current).one} added yet.
-					{#if canAct}<Button variant="plain" size="sm" href={to(meta(current).add)}>Add</Button>{/if}
+					<i class="st-dot none" aria-hidden="true"></i>{t('health.parts.noneAdded', { kind: meta(current).one })}
+					{#if canAct}<Button variant="plain" size="sm" href={to(meta(current).add)}>{t('health.parts.add')}</Button>{/if}
 				</p>
 			{/if}
 		</div>
@@ -111,7 +112,7 @@
 	.kinds button:hover { color: var(--text); }
 	.kinds button[aria-selected='true'] { background: var(--seg-thumb); color: var(--text); box-shadow: 0 0 0 1px var(--line-strong); }
 	.kinds button:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.kl { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.kl { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; line-height: 1.25; }
 	.kc { font-size: 12px; font-variant-numeric: tabular-nums; }
 	.pane h3 { display: flex; align-items: center; gap: 10px; margin: 0 0 12px; min-height: 34px; font: 600 15px/1.2 var(--font-ui); color: var(--text); }
 	.pane .pl { font-size: 13px; font-weight: 400; color: var(--text-muted); }
@@ -122,6 +123,7 @@
 		.kinds { flex-direction: row; overflow-x: auto; padding: 0 0 10px; border-right: 0; border-bottom: 1px solid var(--line); scrollbar-width: none; }
 		.kinds button { flex: none; min-height: 40px; }
 		.kinds .kc { display: none; }
+		.kl { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 	}
 	@media (max-width: 767px) and (pointer: coarse) {
 		.kinds button { min-height: 44px; }

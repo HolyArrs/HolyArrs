@@ -1,5 +1,6 @@
 // Types and rules for importing files by hand into the Library.
 import { episodeCode as code } from '../core/episodes.ts';
+import { t } from '../core/i18n/i18n.svelte.ts';
 
 export interface ByHandGuess {
 	title_id?: number;
@@ -78,19 +79,19 @@ export function episodeCode(season?: number, episode?: number): string {
 }
 
 export function pickLine(p: Pick | null): string {
-	if (!p) return 'No match yet';
+	if (!p) return t('mediafiles.byHand.noMatch');
 	const name = `${p.title_name}${p.year ? ` (${p.year})` : ''}`;
 	if (p.title_kind !== 'show') return name;
-	return `${name} · ${episodeCode(p.season, p.episode) || 'pick the episode'}`;
+	return `${name} · ${episodeCode(p.season, p.episode) || t('mediafiles.byHand.pickEpisode')}`;
 }
 
 // Returns why a file cannot be imported, or empty when it can.
 export function blocker(f: ByHandFile, p: Pick | null): string {
-	if (f.kind !== 'video') return f.note || 'Music is not imported by hand yet.';
-	if (f.in_library) return 'Already a file in the Library.';
-	if (!p) return 'Pick the movie or show it is.';
-	if (p.title_kind === 'show' && (p.season === undefined || p.episode === undefined)) return 'Pick the season and episode.';
-	if (p.has_file) return 'This already has a file. Delete it first or pick another Version.';
+	if (f.kind !== 'video') return f.note || t('mediafiles.byHand.noMusic');
+	if (f.in_library) return t('mediafiles.byHand.already');
+	if (!p) return t('mediafiles.byHand.pickTitle');
+	if (p.title_kind === 'show' && (p.season === undefined || p.episode === undefined)) return t('mediafiles.byHand.pickSeasonEpisode');
+	if (p.has_file) return t('mediafiles.byHand.hasFile');
 	return '';
 }
 
@@ -119,8 +120,8 @@ export function itemsFor(files: ByHandFile[], picks: Record<string, Pick | null>
 // Plain words for what happened to one file.
 export function resultLine(r: ByHandResult): string {
 	if (r.outcome === 'placed') {
-		const how = r.placed_by === 'move' ? 'Moved' : r.placed_by === 'copy' ? 'Copied' : r.placed_by === 'hardlink' ? 'Linked (no extra space)' : 'Recorded';
+		const how = r.placed_by === 'move' ? t('mediafiles.byHand.moved') : r.placed_by === 'copy' ? t('mediafiles.byHand.copied') : r.placed_by === 'hardlink' ? t('mediafiles.byHand.linked') : t('mediafiles.byHand.recorded');
 		return r.error ? `${how}. ${r.error}` : how;
 	}
-	return `${r.outcome === 'failed' ? 'Failed' : 'Not imported'}: ${r.error || 'no reason given'}`;
+	return t('mediafiles.byHand.outcome', { outcome: r.outcome === 'failed' ? t('mediafiles.byHand.failed') : t('mediafiles.byHand.notImported'), why: r.error || t('mediafiles.byHand.noReason') });
 }

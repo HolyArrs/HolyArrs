@@ -1,0 +1,18 @@
+{
+	"settings.logs.title": "日志",
+	"settings.logs.download": "下载",
+	"settings.logs.filter": "筛选日志",
+	"settings.logs.level": "级别",
+	"settings.logs.every": "所有行",
+	"settings.logs.warnings": "警告和错误",
+	"settings.logs.errors": "仅错误",
+	"settings.logs.text": "文本",
+	"settings.logs.example": "例如 qBittorrent",
+	"settings.logs.from": "从",
+	"settings.logs.to": "到",
+	"settings.logs.apply": "应用",
+	"settings.logs.clear": "清除",
+	"settings.logs.lines": "行数",
+	"settings.logs.newer": "较新",
+	"settings.logs.older": "较早"
+}

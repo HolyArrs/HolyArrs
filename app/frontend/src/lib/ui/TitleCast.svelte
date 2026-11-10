@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	// Cast and crew shelf for a title page, with a full list sheet.
 	import Shelf from './Shelf.svelte';
 	import PersonCircle from './PersonCircle.svelte';
@@ -34,17 +35,17 @@
 </script>
 
 {#if phase === 'loading'}
-	<section class="tp-section" id="title-cast" aria-label="Cast and crew loading" aria-busy="true">
-		<h2 class="tp-h2">Cast and crew</h2>
+	<section class="tp-section" id="title-cast" aria-label={t('ui.titleCast.castAndCrewLoading')} aria-busy="true">
+		<h2 class="tp-h2">{t('ui.titleCast.castAndCrew')}</h2>
 		<div class="sk-row">{#each [0, 1, 2, 3, 4] as i (i)}<Skeleton shape="circle" width="96px" height="96px" />{/each}</div>
 	</section>
 {:else if phase === 'ok' && people.length}
-	<Shelf title="Cast and crew" item="112px" anchor="title-cast" whole onseeall={() => (all = true)}>
+	<Shelf title={t('ui.titleCast.castAndCrew')} item="112px" anchor="title-cast" whole onseeall={() => (all = true)}>
 		{#each people.slice(0, ROW) as c (c.person.id)}
 			<PersonCircle name={c.person.name} role={role(c)} image={c.person.profile} href={to(`/people/${encodeURIComponent(c.person.id)}`)} />
 		{/each}
 	</Shelf>
-	<Sheet bind:open={all} title="Cast and crew" size="lg">
+	<Sheet bind:open={all} title={t('ui.titleCast.castAndCrew')} size="lg">
 		<ul class="all-grid">
 			{#each people as c (c.person.id)}
 				<li><PersonCircle name={c.person.name} role={role(c)} image={c.person.profile} href={to(`/people/${encodeURIComponent(c.person.id)}`)} /></li>
@@ -53,8 +54,8 @@
 	</Sheet>
 {:else if phase === 'ok'}
 	<section class="tp-section" id="title-cast" aria-labelledby="h-cast">
-		<h2 id="h-cast" class="tp-h2">Cast and crew</h2>
-		<p class="small muted">No cast or crew credits were found.</p>
+		<h2 id="h-cast" class="tp-h2">{t('ui.titleCast.castAndCrew')}</h2>
+		<p class="small muted">{t('ui.titleCast.noCastOrCrew')}</p>
 	</section>
 {/if}
 

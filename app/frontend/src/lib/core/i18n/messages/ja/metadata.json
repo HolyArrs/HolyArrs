@@ -1,0 +1,7 @@
+{
+	"metadata.details.tvShow": "TV 番組",
+	"metadata.details.movie": "映画",
+	"metadata.health.downTitle": "メタデータがオフラインです",
+	"metadata.health.down": "復旧するまで、検索と新しいアートワークの取得は止まります。ライブラリは通常どおり使えます。",
+	"metadata.health.back": "メタデータがオンラインに戻りました"
+}

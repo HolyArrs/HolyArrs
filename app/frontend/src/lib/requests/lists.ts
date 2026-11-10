@@ -1,22 +1,30 @@
 // Outside list helpers, kept apart from the page so they can be tested.
+import { t } from '#lib/core/i18n/i18n.svelte.ts';
 import { seasonChoices } from '../shows/index.ts';
+
+/** A tuple whose words are looked up each time they are read, so they follow the language picked. */
+function words<T extends string[]>(...parts: (string | (() => string))[]): T {
+	const out: string[] = [];
+	parts.forEach((p, i) => Object.defineProperty(out, i, { enumerable: true, get: typeof p === 'function' ? p : () => p }));
+	return out as T;
+}
 
 /** What a list adds. */
 export const titleKinds: [string, string][] = [
-	['movie', 'Movies'],
-	['show', 'Shows']
+	words<[string, string]>('movie', () => t('requests.lists.movies')),
+	words<[string, string]>('show', () => t('requests.lists.shows'))
 ];
 
 /** The season choices for a show list: the ones a show is added with by hand, plus the first season only. */
 export const listSeasons: [string, string, string][] = [
 	...seasonChoices.filter(([v]) => v !== 'none'),
-	['first', 'The first season', 'Only season 1 (or the earliest season when a show has no season 1), to try a show out.'],
+	words<[string, string, string]>('first', () => t('requests.lists.firstSeason'), () => t('requests.lists.firstSeasonHint')),
 	...seasonChoices.filter(([v]) => v === 'none')
 ];
 
 export const listKinds: [string, string, string][] = [
-	['tmdb_list', 'TMDB list', 'The list number or its link, for example themoviedb.org/list/12345.'],
-	['trakt_list', 'Trakt list', 'user/list, user/watchlist or the link, for example trakt.tv/users/ana/lists/favourites.']
+	words<[string, string, string]>('tmdb_list', () => t('requests.lists.tmdb'), () => t('requests.lists.tmdbHint')),
+	words<[string, string, string]>('trakt_list', () => t('requests.lists.trakt'), () => t('requests.lists.traktHint'))
 ];
 
 /** Where a list can be seen on its own site. */
@@ -30,6 +38,6 @@ export function listLink(kind: string, ref: string): string {
 
 /** How often a list is read, in words. */
 export function every(hours: number): string {
-	if (hours % 24 === 0) return hours === 24 ? 'every day' : `every ${hours / 24} days`;
-	return `every ${hours} hours`;
+	if (hours % 24 === 0) return hours === 24 ? t('requests.lists.everyDay') : t('requests.lists.everyDays', { n: hours / 24 });
+	return t('requests.lists.everyHours', { n: hours });
 }

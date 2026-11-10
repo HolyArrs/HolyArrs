@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import Shelf from '#lib/ui/Shelf.svelte';
 	import { musicCardHref, musicImage, type MusicCardData } from './music-trending.ts';
 	import { onMount } from 'svelte';
@@ -90,7 +91,7 @@
 					{#if playing === id && ready[id]}
 						<video bind:this={videoEl} class:in={shown === id} muted loop playsinline disablepictureinpicture preload="auto" onplaying={() => (shown = id)}></video>
 					{/if}
-					{#if ready[id]}<span class="badge" aria-hidden="true">Video</span>{/if}
+					{#if ready[id]}<span class="badge" aria-hidden="true">{t('music.video')}</span>{/if}
 				</span>
 				<span class="name">{c.name}</span>
 			</a>

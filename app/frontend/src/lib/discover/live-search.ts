@@ -2,6 +2,7 @@
 import { detailPath } from '../metadata/index.ts';
 import { albumHref, artistHref } from '../music/index.ts';
 import { to } from '../core/paths.ts';
+import { t } from '#lib/core/i18n/i18n.svelte.ts';
 
 export type SuggestKind = 'movie' | 'show' | 'person' | 'artist' | 'album' | 'song';
 
@@ -29,7 +30,12 @@ export const SUGGEST_WAIT = 150;
 export const live: { on: boolean | null } = { on: null };
 
 /** A row's chip text. */
-export const stateWord: Record<NonNullable<SuggestRow['state']>, string> = { have: 'Have', missing: 'Missing', asked: 'Asked', following: 'Following' };
+export const stateWord: Record<NonNullable<SuggestRow['state']>, string> = {
+	get have() { return t('discover.liveSearch.have'); },
+	get missing() { return t('discover.liveSearch.missing'); },
+	get asked() { return t('discover.liveSearch.asked'); },
+	get following() { return t('discover.liveSearch.following'); }
+};
 
 /** People and artists get round art; the rest square. */
 export const roundArt = (k: SuggestKind) => k === 'artist' || k === 'person';
@@ -58,13 +64,22 @@ export function suggestHref(r: SuggestRow): string {
 }
 
 /** The type label at the start of a row's subline. */
-export const kindWord: Record<SuggestKind, string> = { movie: 'Movie', show: 'Show', person: 'Person', artist: 'Artist', album: 'Album', song: 'Song' };
+export const kindWord: Record<SuggestKind, string> = {
+	get movie() { return t('discover.liveSearch.movie'); },
+	get show() { return t('discover.liveSearch.show'); },
+	get person() { return t('discover.liveSearch.person'); },
+	get artist() { return t('discover.liveSearch.artist'); },
+	get album() { return t('discover.liveSearch.album'); },
+	get song() { return t('discover.liveSearch.song'); }
+};
+// The server writes the type in English at the start of its sublines.
+const ENGLISH_KIND: Record<SuggestKind, string> = { movie: 'Movie', show: 'Show', person: 'Person', artist: 'Artist', album: 'Album', song: 'Song' };
 
 /** "Album · Artist" or "Show · 2019"; the server's movie, show and person sublines already start with the type. */
 export function subline(r: SuggestRow): string {
 	const s = r.sub?.trim() ?? '';
 	if (!s) return kindWord[r.kind];
-	return s.startsWith(kindWord[r.kind]) ? s : `${kindWord[r.kind]} · ${s}`;
+	return s.startsWith(ENGLISH_KIND[r.kind]) ? kindWord[r.kind] + s.slice(ENGLISH_KIND[r.kind].length) : `${kindWord[r.kind]} · ${s}`;
 }
 
 /** Moves the highlight through n entries (-1 is none): down from none goes to the first, up from the first back to none. */

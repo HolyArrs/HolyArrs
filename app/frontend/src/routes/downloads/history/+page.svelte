@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	// History: every step from the ask to the media server, newest first, with a search bar and one Filter. Routine work is left out.
 	import { libraryBrief } from '#lib/mediafiles/index.ts';
 	import { HistoryPage as SearchLook } from '#lib/downloads/index.ts';
@@ -24,7 +25,7 @@
 	});
 </script>
 
-<svelte:head><title>History · HolyArrs</title></svelte:head>
+<svelte:head><title>{t('downloads.page.historyTitle')}</title></svelte:head>
 
 <div class="hist"><SearchLook {titleById} {people} {me} /></div>
 

@@ -1,0 +1,18 @@
+{
+	"settings.logs.title": "السجلات",
+	"settings.logs.download": "تنزيل",
+	"settings.logs.filter": "تصفية السجل",
+	"settings.logs.level": "المستوى",
+	"settings.logs.every": "كل سطر",
+	"settings.logs.warnings": "التحذيرات والأخطاء",
+	"settings.logs.errors": "الأخطاء فقط",
+	"settings.logs.text": "النص",
+	"settings.logs.example": "مثال: qBittorrent",
+	"settings.logs.from": "من",
+	"settings.logs.to": "إلى",
+	"settings.logs.apply": "تطبيق",
+	"settings.logs.clear": "مسح",
+	"settings.logs.lines": "الأسطر",
+	"settings.logs.newer": "الأحدث",
+	"settings.logs.older": "الأقدم"
+}

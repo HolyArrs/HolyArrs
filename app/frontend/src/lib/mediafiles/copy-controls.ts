@@ -1,6 +1,7 @@
 // Helpers for reading copy details and building edition and audio criteria text.
 
 import type { CopyFile, VersionView } from '../core/types.ts';
+import { t } from '../core/i18n/i18n.svelte.ts';
 
 export type CopyControlFile = Pick<CopyFile, 'ID' | 'VersionID' | 'RelativePath' | 'Protected' | 'MediaInfo' | 'State'>;
 export type CopyControlVersion = Pick<VersionView, 'edition' | 'audio_languages'>;
@@ -28,7 +29,7 @@ export function languageList(value: string): string[] {
 export function versionCriteria(version: CopyControlVersion): [string, string] {
 	const edition = version.edition?.trim();
 	const audio = version.audio_languages?.filter(Boolean) ?? [];
-	return [edition ? `Edition: ${edition}` : 'Any edition', audio.length ? `Required audio: ${audio.join(', ')}` : 'Any audio language'];
+	return [edition ? t('mediafiles.criteria.edition', { edition }) : t('mediafiles.criteria.anyEdition'), audio.length ? t('mediafiles.criteria.audio', { languages: audio.join(', ') }) : t('mediafiles.criteria.anyAudio')];
 }
 
 // Confirm and retry tell the server to apply the edition and search again.

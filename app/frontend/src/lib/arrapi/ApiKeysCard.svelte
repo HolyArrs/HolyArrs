@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import { onMount } from 'svelte';
@@ -14,9 +15,10 @@
 	let label = $state('');
 	let making = $state(false);
 	let fresh = $state<{ key: string; label: string } | null>(null);
+	const headerLine = $derived(t('arrapi.keys.header', { code: '{code}' }).split('{code}'));
 
 	function strongNote(e: unknown): string {
-		return e instanceof ApiError && e.status === 403 ? 'Sign in with your password to manage API keys.' : message(e);
+		return e instanceof ApiError && e.status === 403 ? t('arrapi.keys.signIn') : message(e);
 	}
 
 	onMount(async () => {
@@ -37,20 +39,20 @@
 			label = '';
 			keys = (await api.get<{ keys: ApiKey[] }>('/auth/keys')).keys;
 		} catch (err) {
-			toasts.push("Couldn't make key", 'fail', { body: strongNote(err) });
+			toasts.push(t('arrapi.keys.makeFail'), 'fail', { body: strongNote(err) });
 		} finally {
 			making = false;
 		}
 	}
 
 	async function revoke(k: ApiKey) {
-		if (!confirm(`Revoke the API key "${k.label}"? Anything using it stops working.`)) return;
+		if (!confirm(t('arrapi.keys.revokeConfirm', { label: k.label }))) return;
 		try {
 			await api.del(`/auth/keys/${k.id}`);
 			keys = keys.filter((x) => x.id !== k.id);
-			toasts.push('API key revoked', 'ok');
+			toasts.push(t('arrapi.keys.revoked'), 'ok');
 		} catch (e) {
-			toasts.push("Couldn't revoke key", 'fail', { body: strongNote(e) });
+			toasts.push(t('arrapi.keys.revokeFail'), 'fail', { body: strongNote(e) });
 		}
 	}
 
@@ -58,47 +60,47 @@
 		if (!fresh) return;
 		try {
 			await navigator.clipboard.writeText(fresh.key);
-			toasts.push('API key copied', 'ok');
+			toasts.push(t('arrapi.keys.copied'), 'ok');
 		} catch {
-			toasts.push("Couldn't copy", 'fail', { body: 'Select it instead' });
+			toasts.push(t('arrapi.keys.copyFail'), 'fail', { body: t('arrapi.keys.copyFailBody') });
 		}
 	}
 </script>
 
-<SettingsCard id="keys-card" title="API keys">
-	<p class="small muted" style="margin: var(--s-2) 0 var(--s-4)">Send in the <code>X-Api-Key</code> header, never in an address</p>
+<SettingsCard id="keys-card" title={t('arrapi.keys.title')}>
+	<p class="small muted" style="margin: var(--s-2) 0 var(--s-4)">{headerLine[0]}<code>X-Api-Key</code>{headerLine[1]}</p>
 
 	{#if keysNote}
 		<p class="notice warn">{keysNote}</p>
 	{:else}
 		{#if fresh}
 			<div class="fresh" role="status">
-				<p class="small"><b>{fresh.label}</b>: copy this key now. It is shown only once.</p>
+				<p class="small"><b>{fresh.label}</b>{t('arrapi.keys.freshBody')}</p>
 				<div class="row">
 					<code class="key grow">{fresh.key}</code>
-					<Button icon="copy" type="button" onclick={copy}>Copy</Button>
-					<Button variant="plain" type="button" onclick={() => (fresh = null)}>Close</Button>
+					<Button icon="copy" type="button" onclick={copy}>{t('arrapi.keys.copy')}</Button>
+					<Button variant="plain" type="button" onclick={() => (fresh = null)}>{t('arrapi.keys.close')}</Button>
 				</div>
 			</div>
 		{/if}
 
 		<form class="row" onsubmit={makeKey}>
-			<label class="sr-only" for="key-label">Key name</label>
-			<input id="key-label" class="input grow" style="max-width: 320px" bind:value={label} placeholder="e.g. Home Assistant" maxlength="64" />
-			<Button icon="key" variant="primary" type="submit" disabled={making || !label.trim()} aria-busy={making}>Make a key</Button>
+			<label class="sr-only" for="key-label">{t('arrapi.keys.name')}</label>
+			<input id="key-label" class="input grow" style="max-width: 320px" bind:value={label} placeholder={t('arrapi.keys.placeholder')} maxlength="64" />
+			<Button icon="key" variant="primary" type="submit" disabled={making || !label.trim()} aria-busy={making}>{t('arrapi.keys.make')}</Button>
 		</form>
 
 		{#if keys.length === 0}
-			<p class="small muted" style="margin-top: var(--s-4)">No API keys</p>
+			<p class="small muted" style="margin-top: var(--s-4)">{t('arrapi.keys.none')}</p>
 		{:else}
 			<ul class="rows" style="margin-top: var(--s-3)">
 				{#each keys as k (k.id)}
 					<li>
 						<div class="grow">
 							<div class="name">{k.label} <span class="mono xs muted">{k.hint}</span></div>
-							<div class="xs muted">Made {date(k.created_at)} · {k.last_used_at ? `last used ${ago(k.last_used_at)}` : 'never used'}</div>
+							<div class="xs muted">{k.last_used_at ? t('arrapi.keys.madeUsed', { made: date(k.created_at), ago: ago(k.last_used_at) }) : t('arrapi.keys.madeNever', { made: date(k.created_at) })}</div>
 						</div>
-						<Button variant="destructive" type="button" onclick={() => revoke(k)}>Revoke</Button>
+						<Button variant="destructive" type="button" onclick={() => revoke(k)}>{t('arrapi.keys.revoke')}</Button>
 					</li>
 				{/each}
 			</ul>

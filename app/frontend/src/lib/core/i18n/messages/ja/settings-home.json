@@ -1,0 +1,10 @@
+{
+"settings.home.advanced": "詳細設定",
+"settings.home.page": "{group} · ページ",
+"settings.home.title": "設定",
+"settings.home.search": "設定を検索",
+"settings.home.matching": "一致する設定",
+"settings.home.noMatch": "一致する設定がありません",
+"settings.home.noMatchText": "フォルダー、キー、パスワードなど、別の言葉でお試しください。",
+"settings.home.clear": "検索をクリア"
+}

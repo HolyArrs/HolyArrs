@@ -1,0 +1,16 @@
+{
+	"settings.danger.stopping": "HolyArrs wird beendet.",
+	"settings.danger.couldnt": "Fehlgeschlagen: {action}",
+	"settings.danger.title": "Gefahrenbereich",
+	"settings.danger.ownerOnly": "Nur Besitzer und Admins",
+	"settings.danger.ask": "{label}?",
+	"settings.danger.yes": "Ja, {action}",
+	"settings.danger.cancel": "Abbrechen",
+	"settings.danger.expires": "Läuft in 60 s ab",
+	"settings.danger.wholeApp": "Die ganze App",
+	"settings.danger.intro": "Diese Aktionen beenden HolyArrs. Die Neustart-Richtlinie von Docker startet es nach ein paar Sekunden wieder, außer sie steht auf <code>no</code>; dann starte den Container selbst. Jede Aktion fragt vorher nach.",
+	"settings.danger.restart": "HolyArrs neu starten",
+	"settings.danger.safe": "Im abgesicherten Modus neu starten",
+	"settings.danger.shutdown": "Herunterfahren",
+	"settings.danger.safeNote": "Startet einmalig nur mit Anmeldung, Einstellungen und Bibliothek. Nutze das, wenn ein Bereich den Start blockiert."
+}

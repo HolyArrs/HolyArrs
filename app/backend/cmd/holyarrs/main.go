@@ -653,7 +653,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		}()
 		return nil
 	}
-	sender := &alerts.Sender{Store: s, Vault: vault}
+	sender := &alerts.Sender{Store: s, Vault: vault, Lang: func(ctx context.Context) string { return accounts.OwnerLanguage(ctx, s.Read()) }}
 	sender.Watch(ctx)
 	media := &mediaservers.Linker{Store: s, Vault: vault}
 	reg.AlsoWait(func() { media.Stop(); media.Wait() })

@@ -1,0 +1,17 @@
+{
+	"alerts.fallback.settings": "设置",
+	"alerts.panel.clearAll": "全部清除",
+	"alerts.panel.empty": "暂时没有内容",
+	"alerts.panel.needsAttention": "需要处理",
+	"alerts.panel.recent": "最近",
+	"alerts.panel.remove": "移除 {text}",
+	"alerts.panel.title": "最近的通知",
+	"alerts.state.manyNeed": "{count} 项需要处理",
+	"alerts.state.ok": "一切正常",
+	"alerts.state.oneNeeds": "1 项需要处理",
+	"alerts.state.unset": "尚未设置",
+	"alerts.time.days": "{n}天",
+	"alerts.time.hours": "{n}小时",
+	"alerts.time.minutes": "{n}分",
+	"alerts.time.now": "刚刚"
+}

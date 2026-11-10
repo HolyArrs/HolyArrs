@@ -1,10 +1,11 @@
 <script lang="ts">
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import type { Snippet } from 'svelte';
 	import Button from '#lib/ui/Button.svelte';
 
 	let {
 		back,
-		backLabel = 'Back',
+		backLabel,
 		backDisabled = false,
 		label,
 		onclick,
@@ -28,7 +29,7 @@
 </script>
 
 <div class="step-foot" data-testid="step-foot">
-	{#if back}<Button variant="plain" icon="chevronLeft" onclick={back} disabled={backDisabled}>{backLabel}</Button>{/if}
+	{#if back}<Button variant="plain" icon="chevronLeft" onclick={back} disabled={backDisabled}>{backLabel ?? t('migrate.back')}</Button>{/if}
 	{#if more}<div class="more">{@render more()}</div>{/if}
 	<div class="go">
 		<p class="reason hint" id="move-reason" aria-live="polite">{reason}</p>

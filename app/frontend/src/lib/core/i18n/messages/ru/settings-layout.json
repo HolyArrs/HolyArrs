@@ -1,0 +1,14 @@
+{
+	"settings.layout.settings": "Настройки",
+	"settings.layout.home": "Главная",
+	"settings.layout.sections": "Разделы настроек",
+	"settings.layout.needsAttention": "Требует внимания",
+	"settings.layout.needsAttentionLower": "требует внимания",
+	"settings.layout.blocked": "Вы не можете это менять",
+	"settings.layout.backToSettings": "Назад в настройки",
+	"settings.layout.setPasswordFirst": "Сначала задайте пароль",
+	"settings.layout.setPasswordDesc": "Для ключей, паролей, людей и резервных копий нужен пароль HolyArrs. У вас его пока нет.",
+	"settings.layout.setPasswordLabel": "Задайте пароль",
+	"settings.layout.confirmPasswordLabel": "Подтвердите пароль",
+	"settings.layout.confirmPasswordDesc": "Для ключей, паролей, людей и резервных копий нужен ваш пароль. Действует 10 минут."
+}

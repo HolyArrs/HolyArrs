@@ -4,6 +4,8 @@
 @import './lib/core/tokens.css';
 
 :root {
+	/* 1 left-to-right, -1 right-to-left: multiplies sideways slides and offsets. */
+	--dir: 1;
 	--tabbar: 60px;
 }
 
@@ -322,7 +324,7 @@ select.input {
 	content: '';
 	position: absolute;
 	top: 3px;
-	left: 3px;
+	inset-inline-start: 3px;
 	width: 18px;
 	height: 18px;
 	border-radius: 50%;
@@ -333,7 +335,7 @@ select.input {
 	background: var(--ha-red-press);
 }
 .switch input:checked + .sw::after {
-	transform: translateX(16px);
+	transform: translateX(calc(16px * var(--dir)));
 }
 .switch input:focus-visible + .sw {
 	box-shadow: var(--focus-ring);
@@ -451,6 +453,7 @@ input[type='checkbox'], input[type='radio'], progress { accent-color: var(--acce
 /* Scope pills pin under the top bar, and slide into its space when it hides on scroll (lib/scroll-bar). */
 /* One glide for the bar and the pills: transform only (compositor), a long soft ease-out, the frosted glass always on so nothing re-blurs mid-move. */
 :root { --bar-glide: var(--dur-glide) var(--ease-glide); }
+[dir='rtl'] { --dir: -1; }
 [data-pin-pills] { position: sticky; top: calc(var(--topbar) + 10px); z-index: 20; transition: transform var(--bar-glide); will-change: transform; }
 [data-pin-pills] .ui-seg { transform-origin: top center; transition: transform var(--bar-glide), box-shadow var(--bar-glide); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); }
 html.bar-hidden [data-pin-pills] { transform: translateY(calc(-1 * var(--topbar))); }

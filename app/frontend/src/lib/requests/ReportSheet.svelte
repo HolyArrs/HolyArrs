@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
+	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import Icon from '#lib/ui/Icon.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import Button from '#lib/ui/Button.svelte';
@@ -44,7 +46,7 @@
 	const seasons = $derived((title.show?.seasons ?? []).filter((s) => s.in_library > 0).sort((a, b) => (a.number || 1e6) - (b.number || 1e6)));
 	const versions = $derived(title.versions ?? []);
 	const tracks = $derived((album?.tracks ?? []).filter(hasFile));
-	const discs = $derived(new Set(tracks.map((t) => t.disc ?? 1)).size);
+	const discs = $derived(new Set(tracks.map((tr) => tr.disc ?? 1)).size);
 	const what = $derived(album ? album.name : title.name);
 
 	// Each opening starts fresh, on the season or episode it was opened from.
@@ -82,14 +84,14 @@
 		episodes = [];
 		if (pickSeason) void loadEpisodes(Number(pickSeason));
 	}
-	function trackWord(t: Part): string {
-		const n = String(t.number ?? 0).padStart(2, '0');
-		return `${discs > 1 ? `${t.disc ?? 1}-` : ''}${n}${t.name ? ` · ${t.name}` : ''}`;
+	function trackWord(tr: Part): string {
+		const n = String(tr.number ?? 0).padStart(2, '0');
+		return `${discs > 1 ? `${tr.disc ?? 1}-` : ''}${n}${tr.name ? ` · ${tr.name}` : ''}`;
 	}
 
 	async function send() {
 		if (!kind) {
-			error = 'Pick what is wrong first.';
+			error = t('requests.reportSheet.pickFirst');
 			return;
 		}
 		busy = true;
@@ -113,17 +115,17 @@
 	}
 </script>
 
-<Sheet bind:open title={sent ? 'Report sent' : 'Report a problem'} description={sent ? undefined : what} size="sm" placement="auto">
+<Sheet bind:open title={sent ? t('requests.reportSheet.sentTitle') : t('requests.reportSheet.title')} description={sent ? undefined : what} size="sm" placement="auto">
 	{#if sent}
 		<div class="rs-done" data-testid="report-sent">
 			<span class="rs-ok" aria-hidden="true"><Icon name="check" size={26} /></span>
-			<p class="rs-what"><span class="rs-tag"><Icon name={kindIcon(sent.kind)} size={13} />{sent.kind_label}</span>{#if partWords(sent)}<span>{partWords(sent)}</span>{/if}</p>
-			<p>Thanks. You’ll hear when it’s fixed.</p>
+			<p class="rs-what"><span class="rs-tag"><Icon name={kindIcon(sent.kind)} size={13} />{serverWords(sent.kind_label)}</span>{#if partWords(sent)}<span>{partWords(sent)}</span>{/if}</p>
+			<p>{t('requests.reportSheet.thanks')}</p>
 		</div>
 	{:else}
 		<form class="rs" data-testid="report-sheet" onsubmit={(e) => { e.preventDefault(); void send(); }}>
 			<fieldset class="rs-kinds">
-				<legend>What is wrong?</legend>
+				<legend>{t('requests.reportSheet.what')}</legend>
 				<div class="rs-tiles">
 					{#each reportKinds as k (k.kind)}
 						<label class="rs-tile" class:on={kind === k.kind} title={k.hint}>
@@ -133,23 +135,23 @@
 						</label>
 					{/each}
 				</div>
-				<p class="rs-hint" aria-live="polite">{#key kind}<span in:fade={{ duration: 180 }}>{kind ? kindHint(kind) : 'Pick the closest one.'}</span>{/key}</p>
+				<p class="rs-hint" aria-live="polite">{#key kind}<span in:fade={{ duration: 180 }}>{kind ? kindHint(kind) : t('requests.reportSheet.closest')}</span>{/key}</p>
 			</fieldset>
 
 			{#if title.show && seasons.length}
 				<div class="rs-row">
 					<label class="rs-field">
-						<span>Season</span>
+						<span>{t('requests.reportSheet.season')}</span>
 						<select bind:value={pickSeason} onchange={seasonPicked}>
-							<option value="">The whole show</option>
+							<option value="">{t('requests.reportSheet.wholeShow')}</option>
 							{#each seasons as s (s.number)}<option value={String(s.number)}>{s.name || seasonName(s.number)}</option>{/each}
 						</select>
 					</label>
 					{#if pickSeason !== ''}
 						<label class="rs-field">
-							<span>Episode</span>
+							<span>{t('requests.reportSheet.episode')}</span>
 							<select bind:value={pickItem} disabled={loadingEps} aria-busy={loadingEps}>
-								<option value="">{loadingEps ? 'Loading…' : 'The whole season'}</option>
+								<option value="">{loadingEps ? t('requests.reportSheet.loading') : t('requests.reportSheet.wholeSeason')}</option>
 								{#each episodes as e (e.id)}<option value={String(e.id)}>{episodeWord({ episode: e.episode ?? 0, name: e.name })}</option>{/each}
 							</select>
 						</label>
@@ -159,28 +161,28 @@
 
 			{#if album && tracks.length}
 				<label class="rs-field">
-					<span>Track</span>
+					<span>{t('requests.reportSheet.track')}</span>
 					<select bind:value={pickItem}>
-						<option value="">The whole album</option>
-						{#each tracks as t (t.id)}<option value={String(t.id)}>{trackWord(t)}</option>{/each}
+						<option value="">{t('requests.reportSheet.wholeAlbum')}</option>
+						{#each tracks as tr (tr.id)}<option value={String(tr.id)}>{trackWord(tr)}</option>{/each}
 					</select>
 				</label>
 			{/if}
 
 			{#if versions.length > 1}
 				<label class="rs-field">
-					<span>Version</span>
+					<span>{t('requests.reportSheet.version')}</span>
 					<select bind:value={pickVersion}>
-						<option value="">Not sure</option>
+						<option value="">{t('requests.reportSheet.notSure')}</option>
 						{#each versions as v (v.id)}<option value={String(v.id)}>{v.label}</option>{/each}
 					</select>
 				</label>
 			{/if}
 
 			<label class="rs-field">
-				<span>Anything else? <small>(optional)</small></span>
-				<textarea bind:value={note} rows="3" maxlength={noteMax} placeholder="For example: the sound drifts after about 20 minutes"></textarea>
-				{#if note.length > noteMax - 60}<small class="rs-count">{noteMax - note.length} left</small>{/if}
+				<span>{t('requests.reportSheet.else')} <small>{t('requests.reportSheet.optional')}</small></span>
+				<textarea bind:value={note} rows="3" maxlength={noteMax} placeholder={t('requests.reportSheet.placeholder')}></textarea>
+				{#if note.length > noteMax - 60}<small class="rs-count">{t('requests.reportSheet.left', { n: noteMax - note.length })}</small>{/if}
 			</label>
 
 			{#if error}<p class="rs-err" role="alert">{error}</p>{/if}
@@ -188,11 +190,11 @@
 	{/if}
 	{#snippet footer()}
 		{#if sent}
-			<Button variant="plain" href={to('/requests/reports')}>See your reports</Button>
-			<Button variant="primary" onclick={() => (open = false)}>Done</Button>
+			<Button variant="plain" href={to('/requests/reports')}>{t('requests.reportSheet.seeReports')}</Button>
+			<Button variant="primary" onclick={() => (open = false)}>{t('requests.reportSheet.done')}</Button>
 		{:else}
-			<Button variant="plain" onclick={() => (open = false)}>Cancel</Button>
-			<Button variant="primary" {busy} disabled={!kind} onclick={() => void send()}>Send report</Button>
+			<Button variant="plain" onclick={() => (open = false)}>{t('requests.add.cancel')}</Button>
+			<Button variant="primary" {busy} disabled={!kind} onclick={() => void send()}>{t('requests.reportSheet.send')}</Button>
 		{/if}
 	{/snippet}
 </Sheet>

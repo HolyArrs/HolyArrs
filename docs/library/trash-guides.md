@@ -1,7 +1,7 @@
 ---
 title: TRaSH Guides scores
 description: Apply a TRaSH Guides profile to Pick rules so its release scores become points, and sync again when the guides change.
-level: Advanced
+level: Expert
 ---
 
 Use the scores from a [TRaSH Guides](https://trash-guides.info) profile as points in your Pick rules. Each Release gets the sum of the scores that fit its name, and the higher total wins.
