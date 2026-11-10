@@ -29,5 +29,7 @@
 	"settings.requests.plex": "Plex 워치리스트",
 	"settings.requests.plexDesc": "Plex 워치리스트의 작품이 요청이 됩니다",
 	"settings.requests.plexOn": "Plex 워치리스트에서 요청",
-	"settings.requests.plexOnHint": "각자 내 계정에서 켭니다. 각자의 한도가 적용됩니다."
+	"settings.requests.plexOnHint": "각자 내 계정에서 켭니다. 각자의 한도가 적용됩니다.",
+	"settings.requests.plexEveryone": "Plex로 로그인하는 모든 사람에게 켜기",
+	"settings.requests.plexEveryoneHint": "누구나 내 계정에서 자신의 설정을 끌 수 있습니다."
 }

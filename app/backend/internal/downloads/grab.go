@@ -161,7 +161,7 @@ func (m *Manager) Grab(ctx context.Context, slotID, releaseID int64, by domain.A
 			// Tags apply on a fresh pick only, since a send already on record keeps its
 			// Downloader: use the Downloaders sharing a tag with the title, else the
 			// untagged ones.
-			titleTags, err := slotTitleTags(ctx, db, sl.ItemID)
+			titleTags, kind, err := slotTitleTags(ctx, db, sl.ItemID)
 			if err != nil {
 				return 0, err
 			}
@@ -170,6 +170,10 @@ func (m *Manager) Grab(ctx context.Context, slotID, releaseID int64, by domain.A
 				return 0, &TagsError{Protocol: rel.Protocol, Title: titleTags}
 			}
 			dls, skipped = m.order(fit, now)
+			// Each Downloader sends with its category for the title's kind.
+			for i := range dls {
+				dls[i].Category = dls[i].CategoryFor(kind)
+			}
 		}
 		if len(dls) == 0 {
 			if len(skipped) > 0 {
@@ -616,17 +620,17 @@ func grabLinkAllowed(adapter, link string, allowLocal bool) (string, error) {
 	return link, nil
 }
 
-// slotTitleTags reads the tags of the title a Slot's Item belongs to.
-func slotTitleTags(ctx context.Context, db database.Querier, itemID int64) ([]string, error) {
-	var raw string
-	err := db.QueryRowContext(ctx, "SELECT t.tags FROM items i JOIN titles t ON t.id = i.title_id WHERE i.id = ?", itemID).Scan(&raw)
+// slotTitleTags reads the tags and kind of the title a Slot's Item belongs to.
+func slotTitleTags(ctx context.Context, db database.Querier, itemID int64) ([]string, string, error) {
+	var raw, kind string
+	err := db.QueryRowContext(ctx, "SELECT t.tags, t.kind FROM items i JOIN titles t ON t.id = i.title_id WHERE i.id = ?", itemID).Scan(&raw, &kind)
 	if errors.Is(err, sql.ErrNoRows) {
-		return nil, nil
+		return nil, "", nil
 	}
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 	var tags []string
 	_ = json.Unmarshal([]byte(raw), &tags)
-	return tags, nil
+	return tags, kind, nil
 }

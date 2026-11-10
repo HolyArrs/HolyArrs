@@ -367,5 +367,6 @@
 	"accounts.language.label": "اللغة",
 	"accounts.language.auto": "تلقائي",
 	"accounts.language.hint": "التلقائي يتبع متصفحك. يُحفظ في حسابك.",
-	"accounts.language.saveFailed": "تعذّر حفظ اللغة"
+	"accounts.language.saveFailed": "تعذّر حفظ اللغة",
+	"accounts.account.watchEveryone": "شغّل المالك هذه الميزة للجميع. أوقف الخيارين لإيقافها."
 }

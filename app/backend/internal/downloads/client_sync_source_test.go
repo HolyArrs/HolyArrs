@@ -206,11 +206,11 @@ func TestRunWakesOnChangeAndKeepsHealthClock(t *testing.T) {
 
 func TestSnapshotJobsCategory(t *testing.T) {
 	v := SyncView{Items: map[string]Job{"a": {ID: "a", Category: "holyarrs"}, "b": {ID: "b", Category: "other"}}}
-	if got := snapshotJobs(v, "holyarrs"); len(got) != 1 || got[0].ID != "a" {
+	if got := snapshotJobs(v, []string{"holyarrs"}); len(got) != 1 || got[0].ID != "a" {
 		t.Fatalf("filtered %v", got)
 	}
 	v.Scope = "holyarrs"
-	if got := snapshotJobs(v, "holyarrs"); len(got) != 2 {
+	if got := snapshotJobs(v, []string{"holyarrs"}); len(got) != 2 {
 		t.Fatalf("a read already in the category is not filtered again: %v", got)
 	}
 }

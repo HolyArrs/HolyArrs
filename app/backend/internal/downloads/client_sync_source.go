@@ -2,6 +2,7 @@ package downloads
 
 import (
 	"context"
+	"slices"
 	"time"
 
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
@@ -53,10 +54,10 @@ func (m *Manager) storeOn() bool {
 	return m.Sync != nil && m.Sync.On()
 }
 
-func snapshotJobs(v SyncView, category string) []Job {
+func snapshotJobs(v SyncView, cats []string) []Job {
 	out := make([]Job, 0, len(v.Items))
 	for _, j := range v.Items {
-		if v.Scope == "" && category != "" && j.Category != category {
+		if v.Scope == "" && !slices.Contains(cats, "") && !slices.Contains(cats, j.Category) {
 			continue
 		}
 		out = append(out, j)

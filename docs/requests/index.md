@@ -31,4 +31,4 @@ Open **Requests** in the menu (`http://your-server:6262/requests`).
 
 ## Building
 
-Automatic requests from Plex watchlists or Trakt lists are not in this release.
+Automatic requests from Trakt lists are not in this release. Requests from Plex watchlists are in [Request rules](settings.md#plex-watchlists).

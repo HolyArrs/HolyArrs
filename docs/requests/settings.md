@@ -61,9 +61,13 @@ These apply when an approver leaves folder or quality on **Default**.
 
 </details>
 
-## Building
+## Plex watchlists
 
-**Request from Plex watchlists** is not in this release.
+With **Request from Plex watchlists** on, HolyArrs reads the Plex watchlist of people who signed in with Plex every few minutes and asks for what is new on it, as that person. Their weekly limits, auto-approve and age-rating limits apply like any other request. Each entry is acted on once, and taking a title off the watchlist changes nothing.
+
+By default each person turns it on for themselves in **My account**, for movies, shows or both.
+
+Turn on **Turn on for everyone who signs in with Plex** to read everyone's watchlist without asking them first. People who signed in another way are left out. Anyone can still turn it off for themselves in **My account**, and HolyArrs keeps their choice.
 
 ## Related
 

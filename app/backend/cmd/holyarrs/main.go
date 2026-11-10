@@ -545,10 +545,6 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	// that finds nothing to do.
 	var watchlists atomic.Pointer[requests.Watchlists]
 	q.Handle(requests.KindPlexWatchlists, func(ctx context.Context, r *jobs.Run) error {
-		if !startup.FeatureOn(startup.PlexWatchlists) {
-			r.SetResult(map[string]any{"skipped": "held back"})
-			return nil
-		}
 		if w := watchlists.Load(); w != nil {
 			return w.Run(ctx, r)
 		}
@@ -556,9 +552,6 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		return nil
 	})
 	q.ProbeSchedule(requests.KindPlexWatchlists, func(ctx context.Context, now time.Time) (bool, any, error) {
-		if !startup.FeatureOn(startup.PlexWatchlists) {
-			return false, nil, nil
-		}
 		if w := watchlists.Load(); w != nil {
 			return w.Probe(ctx, now)
 		}

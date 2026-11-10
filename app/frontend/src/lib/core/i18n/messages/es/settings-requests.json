@@ -29,5 +29,7 @@
 	"settings.requests.plex": "Listas de seguimiento de Plex",
 	"settings.requests.plexDesc": "Los títulos de tu lista de seguimiento de Plex se convierten en solicitudes",
 	"settings.requests.plexOn": "Solicitar desde listas de seguimiento de Plex",
-	"settings.requests.plexOnHint": "Cada persona lo activa en Mi cuenta. Se aplican sus Límites."
+	"settings.requests.plexOnHint": "Cada persona lo activa en Mi cuenta. Se aplican sus Límites.",
+	"settings.requests.plexEveryone": "Activar para todos los que inician sesión con Plex",
+	"settings.requests.plexEveryoneHint": "Cualquiera puede desactivarlo para sí mismo en Mi cuenta."
 }

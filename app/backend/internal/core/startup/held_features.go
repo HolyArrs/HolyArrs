@@ -7,7 +7,6 @@ import (
 // The held-back features, by switch name.
 const (
 	AIApps            = "ai_apps"             // AI connector, AI keys, AI app guides
-	PlexWatchlists    = "plex_watchlists"     // Plex watchlists become requests
 	RowTitleStats     = "row_title_stats"     // Explore row titles statistics (owner table)
 	TraktLists        = "trakt_lists"         // Trakt key, Trakt lists, VIP token
 	AlertChannelsMore = "alert_channels_more" // alert channels not yet proven end to end
@@ -24,7 +23,7 @@ var ProvenAlertKinds = map[string]bool{"discord": true, "email": true}
 // wiring calls it once; calling it again does nothing.
 func RegisterHeldFeatures() {
 	registerOnce.Do(func() {
-		for _, n := range []string{AIApps, PlexWatchlists, RowTitleStats, TraktLists, AlertChannelsMore, SubtitleSites, EmbySignIn, GoBack} {
+		for _, n := range []string{AIApps, RowTitleStats, TraktLists, AlertChannelsMore, SubtitleSites, EmbySignIn, GoBack} {
 			RegisterFeature(n)
 		}
 	})

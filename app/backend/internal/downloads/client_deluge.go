@@ -12,6 +12,7 @@ import (
 	"net/http/cookiejar"
 	"net/url"
 	"path"
+	"slices"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -35,6 +36,7 @@ var delugeStatusKeys = []string{
 // Deluge is a Client for the Deluge web JSON-RPC API.
 type Deluge struct {
 	Category string
+	Others   []string // more categories that are also ours
 
 	base string
 	pass string
@@ -273,7 +275,7 @@ func (d *Deluge) Remove(ctx context.Context, id string, deleteFiles bool) error 
 		if err != nil {
 			return err
 		}
-		if job.Category != d.Category {
+		if job.Category != d.Category && !slices.Contains(d.Others, job.Category) {
 			return errors.New("refusing to remove a torrent outside the configured category")
 		}
 	}

@@ -38,6 +38,8 @@ type watchlistView struct {
 	WatchlistState
 	// On: the owner allows watchlists (Request rules).
 	On bool `json:"on"`
+	// Everyone: the owner turned it on for everyone with a Plex sign-in.
+	Everyone bool `json:"everyone"`
 	// Linked: a Plex account is linked to this person; PlexName is its name.
 	Linked   bool   `json:"linked"`
 	PlexName string `json:"plex_name,omitempty"`
@@ -71,6 +73,10 @@ func (h *WatchlistHandlers) watchlistView(r *http.Request) (watchlistView, error
 	}
 	v.Linked = err == nil
 	v.CanRead = v.Linked && h.Watchlists().HasToken(ctx, uid)
+	v.Everyone = set.PlexWatchlists && set.PlexWatchlistsEveryone
+	if v.Everyone && !v.Chosen && v.CanRead && v.MayAsk {
+		v.Movies, v.Shows = true, true // what the schedule does for them
+	}
 	return v, nil
 }
 

@@ -38,6 +38,7 @@ type Transmission struct {
 	session          string
 	modern           bool
 	category         string
+	others           []string // more categories that are also ours
 }
 
 type transmissionRefusedError struct{ error }
@@ -115,7 +116,14 @@ func (tr *Transmission) List(ctx context.Context, category string) ([]Job, error
 
 // Get returns the torrent with the given id.
 func (tr *Transmission) Get(ctx context.Context, id string) (Job, error) {
-	return tr.get(ctx, id, tr.category)
+	j, err := tr.get(ctx, id, tr.category)
+	for _, c := range tr.others {
+		if !errors.Is(err, errTransmissionForeign) {
+			break
+		}
+		j, err = tr.get(ctx, id, c)
+	}
+	return j, err
 }
 
 // Add queues a torrent and returns its hash.

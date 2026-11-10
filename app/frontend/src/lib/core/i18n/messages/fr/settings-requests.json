@@ -29,5 +29,7 @@
 	"settings.requests.plex": "Listes à voir Plex",
 	"settings.requests.plexDesc": "Les titres de votre liste à voir Plex deviennent des demandes",
 	"settings.requests.plexOn": "Demander depuis les listes à voir Plex",
-	"settings.requests.plexOnHint": "Chaque personne l'active dans Mon compte. Ses limites s'appliquent."
+	"settings.requests.plexOnHint": "Chaque personne l'active dans Mon compte. Ses limites s'appliquent.",
+	"settings.requests.plexEveryone": "Activer pour tous ceux qui se connectent avec Plex",
+	"settings.requests.plexEveryoneHint": "Chacun peut le désactiver pour soi dans Mon compte."
 }

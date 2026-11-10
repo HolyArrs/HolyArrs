@@ -108,27 +108,50 @@ func (w *Watchlists) Probe(ctx context.Context, _ time.Time) (bool, any, error) 
 }
 
 // people are the users whose watchlist is read now (none while the
-// Requests setting is off).
+// Requests setting is off). With the everyone switch on, that is also
+// everyone with a Plex token who has not chosen for themselves.
 func (w *Watchlists) people(ctx context.Context) ([]int64, error) {
 	db := w.Asks.Store.Read()
 	set, err := ReadSettings(ctx, db)
 	if err != nil || !set.PlexWatchlists {
 		return nil, err
 	}
-	rows, err := db.QueryContext(ctx, peopleSQL2)
+	q := peopleSQL2
+	if set.PlexWatchlistsEveryone {
+		q = peopleSQL3
+	}
+	rows, err := db.QueryContext(ctx, q)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
-	var ids []int64
+	type who struct {
+		id     int64
+		chosen bool
+	}
+	var all []who
 	for rows.Next() {
-		var id int64
-		if err := rows.Scan(&id); err != nil {
+		p := who{chosen: true}
+		dest := []any{&p.id}
+		if set.PlexWatchlistsEveryone {
+			dest = append(dest, &p.chosen)
+		}
+		if err := rows.Scan(dest...); err != nil {
+			rows.Close()
 			return nil, err
 		}
-		ids = append(ids, id)
+		all = append(all, p)
 	}
-	return ids, rows.Err()
+	rows.Close()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	var ids []int64
+	for _, p := range all {
+		if p.chosen || w.HasToken(ctx, p.id) {
+			ids = append(ids, p.id)
+		}
+	}
+	return ids, nil
 }
 
 // Run reads one person's watchlist (params user_id, from their Check
@@ -181,19 +204,34 @@ func (w *Watchlists) Pass(ctx context.Context, userID int64) (PassResult, error)
 	var res PassResult
 	db := w.Asks.Store.Read()
 	var name, role, perms, state, maxRating string
-	var movies, shows bool
-	err := db.QueryRowContext(ctx, passSQL, userID).Scan(&name, &role, &perms, &state, &maxRating, &movies, &shows)
+	var movies, shows, chosen bool
+	err := db.QueryRowContext(ctx, passSQL, userID).Scan(&name, &role, &perms, &state, &maxRating, &movies, &shows, &chosen)
 	if errors.Is(err, sql.ErrNoRows) {
 		return res, nil
 	}
 	if err != nil {
 		return res, err
 	}
+	// Not chosen for themselves: on when the owner turned it on for
+	// everyone, and then skipped quietly when it cannot be read.
+	quiet := false
+	if !chosen {
+		set, err := ReadSettings(ctx, db)
+		if err != nil {
+			return res, err
+		}
+		if set.PlexWatchlistsEveryone {
+			movies, shows, quiet = true, true, true
+		}
+	}
 	if !movies && !shows || state != "active" {
 		return res, nil
 	}
 	p := personOf(userID, name, role, perms, maxRating)
 	if p == nil {
+		if quiet {
+			return res, nil
+		}
 		return res, w.checked(ctx, userID, "Your account may not ask for titles, so your Plex watchlist is not read.")
 	}
 	tok := ""
@@ -203,6 +241,9 @@ func (w *Watchlists) Pass(ctx context.Context, userID int64) (PassResult, error)
 		}
 	}
 	if tok == "" {
+		if quiet {
+			return res, nil
+		}
 		return res, w.checked(ctx, userID, "Link your Plex account so HolyArrs can read your watchlist.")
 	}
 	entries, err := w.fetch(ctx, tok)
@@ -526,6 +567,8 @@ type WatchlistItem struct {
 // WatchlistState is a person's switches, last pass and newest entries.
 type WatchlistState struct {
 	WatchlistSwitches
+	// Chosen: the person set their own switches (else they follow the owner).
+	Chosen    bool            `json:"chosen"`
 	CheckedAt *time.Time      `json:"checked_at,omitempty"`
 	Error     string          `json:"error,omitempty"`
 	Items     []WatchlistItem `json:"items"`
@@ -537,7 +580,7 @@ func ReadWatchlist(ctx context.Context, db *sql.DB, userID int64) (WatchlistStat
 	s := WatchlistState{Items: []WatchlistItem{}}
 	var at sql.NullString
 	err := db.QueryRowContext(ctx, readWatchlistSQL, userID).
-		Scan(&s.Movies, &s.Shows, &at, &s.Error)
+		Scan(&s.Movies, &s.Shows, &s.Chosen, &at, &s.Error)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return s, err
 	}
