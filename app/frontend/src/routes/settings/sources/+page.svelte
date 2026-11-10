@@ -160,7 +160,7 @@
 				</span>
 			</Field>
 			{#if form.format !== 'rss'}
-				<Field id="so-key" label="Key" hint="Retype it if the address moves host">
+				<Field id="so-key" label="API key" hint="Retype it if the address moves host">
 					<input id="so-key" class="input mono" type="password" bind:value={form.api_key} autocomplete="new-password" spellcheck="false" />
 				</Field>
 			{/if}
