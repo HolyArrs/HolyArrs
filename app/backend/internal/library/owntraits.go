@@ -99,6 +99,9 @@ func UpdateOwnTrait(ctx context.Context, st *database.Store, id int64, in OwnTra
 		if err := database.Get(ctx, tx, "own_traits", id, &t); err != nil {
 			return err
 		}
+		if t.Source != "" {
+			return &mediafiles.FieldError{Field: "terms", Text: "This trait comes from TRaSH Guides; sync the Pick rules again to update it."}
+		}
 		if err := ownNameTaken(tx, next.Name, id); err != nil {
 			return err
 		}

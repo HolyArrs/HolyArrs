@@ -19,6 +19,7 @@ Set up the folders, subtitles, audio and media server links that decide how your
 | [Media servers](media-servers.md) | Link Jellyfin, Plex or Emby and map paths between containers |
 | [Metadata](metadata.md) | Where names, dates and posters come from, and what your install sends |
 | [Data packs](data-packs.md) | Copy Pick rules and naming patterns between installs with a JSON pack |
+| [TRaSH Guides scores](trash-guides.md) | Use a TRaSH Guides profile's scores as Pick rules points, and sync again later |
 | [Trailers](trailers.md) | Turn trailers on or off and fix trailers that do not play |
 
 New install: start with [Library folders](folders.md). The shared-folder layout that keeps imports instant is in [Folders and hardlinks](../start/folders.md).
