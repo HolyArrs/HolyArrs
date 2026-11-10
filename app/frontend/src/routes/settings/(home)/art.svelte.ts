@@ -35,6 +35,15 @@ export function startArt(member: number | undefined, mayUsers: boolean, self: Pe
 		.then((titles) => {
 			if (mine !== started) return;
 			const posters = pickPosters(titles).map(small);
+			if (posters.length) return posters;
+			// An empty Library still gets a wall: this week's trending movies.
+			return api
+				.get<{ items?: { poster?: string }[] }>('/discover?row=trending&kind=movie')
+				.then((r) => [...new Set((r.items ?? []).map((i) => i.poster ?? '').filter(Boolean))].slice(0, 16).map(small))
+				.catch(() => [] as string[]);
+		})
+		.then((posters) => {
+			if (mine !== started || !posters) return;
 			if (posters.join() !== homeArt.posters.join()) homeArt.posters = posters;
 			save(member, { posters: homeArt.posters, people: homeArt.people });
 		})
