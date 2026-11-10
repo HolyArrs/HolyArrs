@@ -52,6 +52,7 @@ interface AuthState {
 	safe_mode?: boolean;
 	min_password_length?: number;
 	config_unmapped?: boolean;
+	host_refused?: string;
 }
 // One session store per client; the default one is exported below.
 export function createSession(client: Client = defaultClient) {
@@ -78,6 +79,7 @@ export function createSession(client: Client = defaultClient) {
 		safeMode: boolean;
 		held: string[];
 		configUnmapped: boolean;
+		hostRefused: string;
 		minPassword: number;
 	}>({
 		state: 'unknown',
@@ -100,6 +102,7 @@ export function createSession(client: Client = defaultClient) {
 		safeMode: false,
 		held: [],
 		configUnmapped: false,
+		hostRefused: '',
 		minPassword: 8
 	});
 
@@ -111,6 +114,7 @@ export function createSession(client: Client = defaultClient) {
 		s.setupWays = st.setup_ways?.length ? st.setup_ways : ['password'];
 		if (st.safe_mode !== undefined) s.safeMode = !!st.safe_mode;
 		s.configUnmapped = !!st.config_unmapped;
+		s.hostRefused = st.host_refused ?? '';
 	}
 
 	// Failure keeps the last value; the server checks the length again.

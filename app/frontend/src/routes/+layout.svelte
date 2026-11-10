@@ -473,6 +473,12 @@
 		and schedules are off until HolyArrs starts again without safe mode.
 	</div>
 {/if}
+{#if session.s.hostRefused}
+	<div class="safe-banner" role="status" data-testid="host-refused">
+		<b>Changes can't be saved on {session.s.hostRefused}.</b> HolyArrs only saves on names you allow. Open it once by its IP address,
+		then add {session.s.hostRefused} under Settings › Sign-in › Allowed host names. No restart needed.
+	</div>
+{/if}
 {#if bare}
 	{@render children()}
 {:else if !ready}
