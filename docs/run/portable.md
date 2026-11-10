@@ -8,10 +8,16 @@ sidebar: { order: 9 }
 Run HolyArrs as a plain program on Linux or Windows, without Docker. Docker stays the main way to run it.
 
 :::caution
-Nobody publishes portable archives yet, and they are not signed. You build them yourself from the source.
+The release workflow builds portable archives and attaches them, with the source archive and `SHA256SUMS`, to each GitHub release. They are not signed, so check them against `SHA256SUMS` before you run them.
 :::
 
+## Download instead of building
+
+Releases built by the workflow have one archive per target: `linux-amd64`, `linux-arm64`, `linux-armv7` and `windows-amd64`. Download the one for your machine and its `SHA256SUMS`, check it, then continue at step 3 under [Build and run](#build-and-run). The rest of this page explains how to build the same archives yourself.
+
 ## Before you start
+
+To build the archives yourself, you also need:
 
 - Python 3, Git and Docker on the build machine.
 - A filled Go module cache from a normal project build, and frontend dependencies installed from `app/frontend/package-lock.json`.

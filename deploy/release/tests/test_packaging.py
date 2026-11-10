@@ -84,6 +84,9 @@ class PackagingTests(unittest.TestCase):
                             index = plain.index(value)
                             del plain[index - 1:index + 1]
                     plain[plain.index("-v") + 1] = "<source>:/src"
+                    for i, value in enumerate(plain):
+                        if i and plain[i - 1] == "-v" and value.endswith(":/gocache"):
+                            plain[i] = "<cache>:/gocache"
                     normalized.append(plain)
                 profiles.append(normalized)
                 outputs.append({p.name: p.read_bytes() for p in output.iterdir()})

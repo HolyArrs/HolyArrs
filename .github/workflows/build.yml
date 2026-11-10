@@ -1,7 +1,8 @@
 name: HolyArrs - Build
 
-# Builds the Docker image the way a release does and scans it with Trivy.
-# A CRITICAL or HIGH vulnerability that has a fix fails the run.
+# Builds the Docker image for every platform a release publishes (amd64, arm64
+# and armv7) and scans each one with Trivy. A CRITICAL or HIGH vulnerability
+# that has a fix fails the run.
 
 on:
   push:
@@ -16,11 +17,21 @@ permissions:
 
 jobs:
   build-and-scan:
-    name: Build and scan the image
+    name: Build and scan (${{ matrix.slug }})
     runs-on: ubuntu-latest
     permissions:
       contents: read
       security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux/amd64
+            slug: amd64
+          - platform: linux/arm64
+            slug: arm64
+          - platform: linux/arm/v7
+            slug: armv7
     steps:
       - name: Checkout
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
@@ -35,18 +46,18 @@ jobs:
         with:
           context: .
           file: deploy/Dockerfile
-          platforms: linux/amd64
+          platforms: ${{ matrix.platform }}
           load: true
-          tags: holyarrs-scan:local
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          tags: holyarrs-scan:${{ matrix.slug }}
+          cache-from: type=gha,scope=${{ matrix.slug }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.slug }}
 
       - name: Scan (report)
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
-          image-ref: holyarrs-scan:local
+          image-ref: holyarrs-scan:${{ matrix.slug }}
           format: sarif
-          output: trivy.sarif
+          output: trivy-${{ matrix.slug }}.sarif
           severity: CRITICAL,HIGH
           limit-severities-for-sarif: true
           ignore-unfixed: true
@@ -55,13 +66,13 @@ jobs:
         if: github.event_name != 'pull_request'
         uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
         with:
-          sarif_file: trivy.sarif
-          category: trivy
+          sarif_file: trivy-${{ matrix.slug }}.sarif
+          category: trivy-${{ matrix.slug }}
 
       - name: Scan (fail on fixable CRITICAL or HIGH)
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
-          image-ref: holyarrs-scan:local
+          image-ref: holyarrs-scan:${{ matrix.slug }}
           format: table
           severity: CRITICAL,HIGH
           ignore-unfixed: true
