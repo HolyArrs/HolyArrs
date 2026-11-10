@@ -38,7 +38,7 @@
 احفظ هذا باسم `docker-compose.yml` في مجلد جديد على قرص محلي:
 
 ```yaml
-name: HolyArrs
+name: holyarrs
 services:
   holyarrs:
     image: holyarrs/holyarrs:latest
@@ -202,14 +202,14 @@ docker compose up -d
 | الوسم | استخدمه لـ |
 | :----: | --- |
 | `latest` | أحدث إصدار. |
-| `1.0.14` | إصدار واحد بعينه. لا يتحرك أبدًا. |
+| `1.0.15` | إصدار واحد بعينه. لا يتحرك أبدًا. |
 
 ## الاستخدام
 
 ### docker compose (موصى به)
 
 ```yaml
-name: HolyArrs
+name: holyarrs
 services:
   holyarrs:
     image: holyarrs/holyarrs:latest

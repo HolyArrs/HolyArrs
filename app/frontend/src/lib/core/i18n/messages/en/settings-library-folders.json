@@ -36,5 +36,8 @@
 	"settings.libraryFolders.extraDesc": "Import can also read from these",
 	"settings.libraryFolders.folders": "Folders",
 	"settings.libraryFolders.foldersHint": "One path per line, e.g. /data/imports. Up to 32.",
-	"settings.libraryFolders.ownerOnly": "Owner and admins only"
+	"settings.libraryFolders.ownerOnly": "Owner and admins only",
+	"settings.libraryFolders.copiesExpected": "Copying is expected",
+	"settings.libraryFolders.copiesExpectedState": "Copies, as expected",
+	"settings.libraryFolders.warnAgain": "Warn again"
 }

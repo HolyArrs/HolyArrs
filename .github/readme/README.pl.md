@@ -36,7 +36,7 @@
 Zapisz to jako `docker-compose.yml` w nowym folderze na dysku lokalnym:
 
 ```yaml
-name: HolyArrs
+name: holyarrs
 services:
   holyarrs:
     image: holyarrs/holyarrs:latest
@@ -200,14 +200,14 @@ Image'e są na Docker Hub jako [`holyarrs/holyarrs`](https://hub.docker.com/r/ho
 | Tag | Do czego użyć |
 | :----: | --- |
 | `latest` | Najnowsza wersja. |
-| `1.0.14` | Jedna dokładna wersja. Nigdy się nie zmienia. |
+| `1.0.15` | Jedna dokładna wersja. Nigdy się nie zmienia. |
 
 ## Użycie
 
 ### docker compose (zalecane)
 
 ```yaml
-name: HolyArrs
+name: holyarrs
 services:
   holyarrs:
     image: holyarrs/holyarrs:latest

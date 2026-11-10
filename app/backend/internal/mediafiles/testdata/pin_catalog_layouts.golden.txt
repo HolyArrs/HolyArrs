@@ -9,6 +9,7 @@ Health string `db:"health"`
 HealthCheckedAt *time.Time `db:"health_checked_at"`
 SameDiskAs []int64 `db:"same_disk_as,json"`
 HealthReason string `db:"health_reason"`
+CopiesExpected bool `db:"copies_expected"`
 == Title
 Meta Meta ``
 Kind string `db:"kind"`

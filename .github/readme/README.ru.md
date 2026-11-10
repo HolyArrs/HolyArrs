@@ -36,7 +36,7 @@
 Сохраните это как `docker-compose.yml` в новой папке на локальном диске:
 
 ```yaml
-name: HolyArrs
+name: holyarrs
 services:
   holyarrs:
     image: holyarrs/holyarrs:latest
@@ -200,14 +200,14 @@ HolyArrs только читает ваши старые приложения и
 | Тег | Для чего |
 | :----: | --- |
 | `latest` | Самая новая версия. |
-| `1.0.14` | Одна точная версия. Никогда не сдвигается. |
+| `1.0.15` | Одна точная версия. Никогда не сдвигается. |
 
 ## Использование
 
 ### docker compose (рекомендуется)
 
 ```yaml
-name: HolyArrs
+name: holyarrs
 services:
   holyarrs:
     image: holyarrs/holyarrs:latest

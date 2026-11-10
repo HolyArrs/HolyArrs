@@ -340,6 +340,7 @@ content_ratings
 content_urls
 controls
 copies
+copies_expected
 copy
 corrected
 count
