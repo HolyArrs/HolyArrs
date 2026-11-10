@@ -188,7 +188,13 @@ func parseShow(r *Result, h showHit, pre, post string, trailing []string, anime 
 		title = m[2] + " " + m[1]
 	}
 	r.Title = sure(title)
-	tags := reSeparators.Split(strings.TrimSpace(post), -1)
+	// " - Episode Title" after the episode number is how the old apps name
+	// Library files. Its words are the episode's title ("Charlotte's Web",
+	// "TS-19"), not tags, unless a resolution says the name ends in quality.
+	if strings.HasPrefix(post, " - ") && !slices.ContainsFunc(splitTagPairs(reSeparators.Split(post, -1)), func(t string) bool { return reResWord.MatchString(strings.ToLower(t)) }) {
+		post = ""
+	}
+	tags := splitTagPairs(reSeparators.Split(strings.TrimSpace(post), -1))
 	tags = slices.DeleteFunc(tags, func(t string) bool { return t == "" || t == "-" })
 	tags = append(tags, trailing...)
 	readTags(r, tags, flags, hints)
