@@ -57,7 +57,7 @@ jobs:
             const FILE = 'signatures.json';
             const CONTEXT = 'CLA';
             const BOT = 'holyarrs-bot[bot]';
-            const MAINTAINERS = ['coderluii'];
+            const MAINTAINERS = [203967356]; // CoderLuii
             const { owner, repo } = context.repo;
             const doc = `https://github.com/${owner}/${repo}/blob/main/.github/CLA.md`;
 
@@ -75,14 +75,14 @@ jobs:
             }
             const commits = await github.paginate(github.rest.pulls.listCommits, { owner, repo, pull_number: number, per_page: 100 });
             const people = new Map();
-            const add = (u) => {
-              if (u?.login && u.type !== 'Bot' && u.login !== 'web-flow' && !MAINTAINERS.includes(u.login.toLowerCase())) people.set(u.id, u.login);
+            const addPerson = (u) => {
+              if (u?.login && u.type !== 'Bot' && u.login !== 'web-flow' && !MAINTAINERS.includes(u.id)) people.set(u.id, u.login);
             };
-            if (pr.user.type !== 'Bot') add(pr.user);
+            addPerson(pr.user);
             const unlinked = [];
             for (const c of commits) {
-              add(c.author);
-              add(c.committer);
+              addPerson(c.author);
+              addPerson(c.committer);
               if (!c.author) unlinked.push(c.sha.slice(0, 7));
             }
 
@@ -105,7 +105,7 @@ jobs:
             const clean = (s) => s.trim().replace(/[.!\s]+$/, '').toLowerCase();
             const fresh = [];
             for (const c of comments) {
-              if (people.has(c.user.id) && !signed(c.user.id) && !fresh.some((f) => f.id === c.user.id) && clean(c.body) === clean(SENTENCE)) {
+              if (c.user && people.has(c.user.id) && !signed(c.user.id) && !fresh.some((f) => f.id === c.user.id) && clean(c.body ?? '') === clean(SENTENCE)) {
                 fresh.push({ id: c.user.id, login: c.user.login, pull_request: number, comment: c.html_url, signed_at: c.created_at, comment_id: c.id });
               }
             }
@@ -128,13 +128,13 @@ jobs:
               // Two pull requests may write at once: re-read and retry.
               for (let attempt = 1; ; attempt++) {
                 const now = await readFile();
-                const add = fresh.filter((f) => !now.list.some((s) => s.id === f.id)).map(({ comment_id, ...s }) => s);
-                if (!add.length) { signatures = now.list; break; }
-                const next = [...now.list, ...add];
+                const toSave = fresh.filter((f) => !now.list.some((s) => s.id === f.id)).map(({ comment_id, ...s }) => s);
+                if (!toSave.length) { signatures = now.list; break; }
+                const next = [...now.list, ...toSave];
                 try {
                   await github.rest.repos.createOrUpdateFileContents({
                     owner, repo, branch: BRANCH, path: FILE, sha: now.fileSha,
-                    message: `CLA: ${add.map((s) => s.login).join(', ')} agreed in #${number}`,
+                    message: `CLA: ${toSave.map((s) => s.login).join(', ')} agreed in #${number}`,
                     content: Buffer.from(JSON.stringify(next, null, 2) + '\n').toString('base64'),
                   });
                   signatures = next;
@@ -163,24 +163,25 @@ jobs:
             await status('failure', waiting.length
               ? `Waiting for ${waiting.map(([, l]) => '@' + l).join(', ')} to agree to the CLA`
               : 'A commit is not linked to a GitHub account');
-            const mine = comments.filter((c) => c.user.login === BOT);
+            const mine = comments.filter((c) => c.user?.login === BOT);
             const askMark = (id) => `<!-- holyarrs-cla-ask:${id} -->`;
             const toAsk = waiting.filter(([id]) => !mine.some((c) => c.body.includes(askMark(id))));
-            const unlinkedMark = '<!-- holyarrs-cla-unlinked -->';
+            const unlinkedMark = `<!-- holyarrs-cla-unlinked:${unlinked.join(',')} -->`;
             const tellUnlinked = unlinked.length && !mine.some((c) => c.body.includes(unlinkedMark));
             if (!toAsk.length && !tellUnlinked) return;
+            const named = toAsk.slice(0, 10);
 
-            const parts = [`${toAsk.map(([id]) => askMark(id)).join('')}${tellUnlinked ? unlinkedMark : ''}`];
-            if (toAsk.length) {
+            const parts = [`${named.map(([id]) => askMark(id)).join('')}${tellUnlinked ? unlinkedMark : ''}`];
+            if (named.length) {
               parts.push(
-                `👋 Hey ${toAsk.map(([, l]) => '@' + l).join(' ')}, thanks for this pull request! I'm HolyArrs Bot, here for one quick thing before it can be merged.`,
+                `👋 Hey ${named.map(([, l]) => '@' + l).join(' ')}, thanks for this pull request! I'm HolyArrs Bot, here for one quick thing before it can be merged.`,
                 `📜 Please read the HolyArrs [contributor licence agreement](${doc}). In short: you keep the copyright to your work, HolyArrs can be offered under the AGPL and a commercial licence, and anything merged always stays available under the AGPL.`,
                 `✍️ If you agree, reply to this pull request with this line. You only ever do this once:`,
                 '```\n' + SENTENCE + '\n```');
             }
             if (tellUnlinked) {
               parts.push(`🔗 These commits use an email that isn't linked to a GitHub account, so I can't tell who wrote them: ${unlinked.map((s) => '`' + s + '`').join(', ')}. ` +
-                'Add that email to your GitHub account, or redo those commits with your GitHub email, and I\'ll check again.');
+                'Add that email to your GitHub account (or redo those commits with your GitHub email), then push again or leave any comment here and I\'ll check again.');
             }
             await github.rest.issues.createComment({ owner, repo, issue_number: number, body: parts.join('\n\n') });
 
