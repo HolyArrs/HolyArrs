@@ -70,7 +70,7 @@ func (s ExploreSource) List(ctx context.Context, q engine.Request) ([]engine.Ite
 	s.Calls.Add(q)
 	f.items, f.err = p.List(ctx, q)
 	if f.err != nil {
-		if ctx.Err() == nil && s.noteListDown(key, true) && listLogDue(f.err, time.Now()) {
+		if ctx.Err() == nil && s.noteListDown(key, true) && (!errors.Is(f.err, metadata.ErrNoAccess) || listLogDue(f.err, time.Now())) {
 			log.Printf("explore: list %s failed: %v", q.List, f.err)
 		}
 		if ok {
@@ -398,10 +398,10 @@ func (e *Explore) BuildPool(ctx context.Context, member int64, sw string) error 
 	return nil
 }
 
-// listLogDue says whether a failed list should be logged: the same error
+// listLogDue says whether a refused list should be logged: the same error
 // is logged at most once every five minutes, whichever list hit it. A
-// refused or unreachable metadata server fails every list at once, and
-// each one used to log the same line.
+// refused install fails every list at once, and each one used to log the
+// same line. Other failures still log once per list per outage.
 func listLogDue(err error, now time.Time) bool {
 	msg := err.Error()
 	if len(msg) > 120 {

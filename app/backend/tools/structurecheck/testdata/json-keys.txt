@@ -1199,6 +1199,7 @@ public_client
 published_at
 qbittorrent
 qid
+qualities
 quality
 qualityProfileId
 quality_profiles
