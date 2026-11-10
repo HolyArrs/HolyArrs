@@ -222,6 +222,7 @@
 	"library.page.addMovie": "Film",
 	"library.page.addShow": "Dizi",
 	"library.page.addArtist": "Sanatçı",
+	"library.page.importFromFolder": "Bir klasörden içe aktar",
 	"library.page.oneTitle": "1 başlık",
 	"library.page.nTitles": "{n} başlık",
 	"library.report.failedBody": "{n} tanesi değiştirilemedi",

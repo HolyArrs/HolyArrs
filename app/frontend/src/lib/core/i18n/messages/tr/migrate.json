@@ -208,6 +208,8 @@
 	"migrate.itemFailed": "{n} öğe başarısız oldu",
 	"migrate.itemsFailed": "{n} öğe başarısız oldu",
 	"migrate.reasonsAreInResults": "Nedenler Sonuçlar'da.",
+	"migrate.reasonsMatchByHand": "Nedenler Sonuçlar bölümünde. Tanınmayan bir diziyi veya filmi elle eşleştirebilirsin.",
+	"migrate.matchByHand": "Elle eşleştir",
 	"migrate.results": "Sonuçlar",
 	"migrate.show4": "{label} göster",
 	"migrate.notMoved": "İçe aktarılmadı",

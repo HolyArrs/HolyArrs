@@ -208,6 +208,8 @@
 	"migrate.itemFailed": "{n} element nie powiódł się",
 	"migrate.itemsFailed": "Elementy, które się nie powiodły: {n}",
 	"migrate.reasonsAreInResults": "Powody są w Wynikach.",
+	"migrate.reasonsMatchByHand": "Powody są w Wynikach. Nierozpoznany serial lub film możesz dopasować ręcznie.",
+	"migrate.matchByHand": "Dopasuj ręcznie",
 	"migrate.results": "Wyniki",
 	"migrate.show4": "Pokaż: {label}",
 	"migrate.notMoved": "Nieimportowane",

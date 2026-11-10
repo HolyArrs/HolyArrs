@@ -222,6 +222,7 @@
 	"library.page.addMovie": "Film",
 	"library.page.addShow": "Serie",
 	"library.page.addArtist": "Artiest",
+	"library.page.importFromFolder": "Importeren uit een map",
 	"library.page.oneTitle": "1 titel",
 	"library.page.nTitles": "{n} titels",
 	"library.report.failedBody": "{n} konden niet worden gewijzigd",

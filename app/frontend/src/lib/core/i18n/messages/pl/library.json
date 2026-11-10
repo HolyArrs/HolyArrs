@@ -222,6 +222,7 @@
 	"library.page.addMovie": "Film",
 	"library.page.addShow": "Serial",
 	"library.page.addArtist": "Wykonawca",
+	"library.page.importFromFolder": "Importuj z folderu",
 	"library.page.oneTitle": "1 tytuł",
 	"library.page.nTitles": "Tytułów: {n}",
 	"library.report.failedBody": "Nie udało się zmienić: {n}",

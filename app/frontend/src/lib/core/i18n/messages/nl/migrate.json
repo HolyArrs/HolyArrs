@@ -208,6 +208,8 @@
 	"migrate.itemFailed": "{n} item mislukt",
 	"migrate.itemsFailed": "{n} items mislukt",
 	"migrate.reasonsAreInResults": "De redenen staan bij Resultaten.",
+	"migrate.reasonsMatchByHand": "De redenen staan bij Resultaten. Een serie of film die niet herkend is, kun je met de hand koppelen.",
+	"migrate.matchByHand": "Met de hand koppelen",
 	"migrate.results": "Resultaten",
 	"migrate.show4": "{label} tonen",
 	"migrate.notMoved": "Niet geïmporteerd",
