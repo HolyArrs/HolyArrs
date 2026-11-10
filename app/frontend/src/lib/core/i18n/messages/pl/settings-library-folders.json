@@ -36,5 +36,8 @@
 	"settings.libraryFolders.extraDesc": "Import może też czytać z tych folderów",
 	"settings.libraryFolders.folders": "Foldery",
 	"settings.libraryFolders.foldersHint": "Jedna ścieżka w linii, np. /data/imports. Do 32.",
-	"settings.libraryFolders.ownerOnly": "Tylko właściciel i administratorzy"
+	"settings.libraryFolders.ownerOnly": "Tylko właściciel i administratorzy",
+	"settings.libraryFolders.copiesExpected": "Kopiowanie jest zamierzone",
+	"settings.libraryFolders.copiesExpectedState": "Kopiuje, zgodnie z zamiarem",
+	"settings.libraryFolders.warnAgain": "Ostrzegaj ponownie"
 }

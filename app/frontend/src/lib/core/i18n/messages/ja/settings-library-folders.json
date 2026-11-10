@@ -36,5 +36,8 @@
 "settings.libraryFolders.extraDesc": "インポートは、これらからも読み込めます",
 "settings.libraryFolders.folders": "フォルダー",
 "settings.libraryFolders.foldersHint": "1 行に 1 パス(例: /data/imports)。最大 32 件。",
-"settings.libraryFolders.ownerOnly": "オーナーと管理者のみ"
+"settings.libraryFolders.ownerOnly": "オーナーと管理者のみ",
+	"settings.libraryFolders.copiesExpected": "コピーで問題なし",
+	"settings.libraryFolders.copiesExpectedState": "コピー（想定どおり）",
+	"settings.libraryFolders.warnAgain": "再び警告する"
 }

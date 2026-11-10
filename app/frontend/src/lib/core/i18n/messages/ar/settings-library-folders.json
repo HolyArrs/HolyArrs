@@ -36,5 +36,8 @@
 	"settings.libraryFolders.extraDesc": "يمكن للاستيراد القراءة من هذه أيضًا",
 	"settings.libraryFolders.folders": "المجلدات",
 	"settings.libraryFolders.foldersHint": "مسار واحد في كل سطر، مثل /data/imports. حتى 32.",
-	"settings.libraryFolders.ownerOnly": "للمالك والمشرفين فقط"
+	"settings.libraryFolders.ownerOnly": "للمالك والمشرفين فقط",
+	"settings.libraryFolders.copiesExpected": "النسخ أمر متوقع",
+	"settings.libraryFolders.copiesExpectedState": "ينسخ، كما هو متوقع",
+	"settings.libraryFolders.warnAgain": "التنبيه مجددًا"
 }
