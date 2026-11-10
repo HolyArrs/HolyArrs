@@ -18,6 +18,10 @@ type ownTrait struct {
 	group bool
 	plain []string // lowercased words
 	pats  []*regexp.Regexp
+	// specs is set for a synced trait (and then decides alone); bad says a
+	// synced trait had a test that could not be read.
+	specs []ownSpec
+	bad   bool
 }
 
 var ownTraits atomic.Pointer[map[int64]ownTrait]
@@ -28,6 +32,12 @@ func SetOwnTraits(ts []OwnTrait) {
 	m := make(map[int64]ownTrait, len(ts))
 	for _, t := range ts {
 		o := ownTrait{name: t.Name, group: t.Match == "group"}
+		if len(t.Specs) > 0 {
+			o.specs, o.bad = compileSpecs(t.Specs)
+			o.bad = !o.bad
+			m[t.ID] = o
+			continue
+		}
 		for _, term := range t.Terms {
 			if p, ok := TermPattern(term); ok {
 				if re, err := regexp.Compile("(?i)" + p); err == nil {
@@ -55,6 +65,12 @@ func ownMatches(id int64, p releasename.Result) (bool, string) {
 	t, ok := (*all)[id]
 	if !ok {
 		return false, "a trait that was deleted"
+	}
+	if t.bad {
+		return false, t.name + ": a test could not be read"
+	}
+	if t.specs != nil {
+		return formatMatches(t.name, t.specs, p)
 	}
 	if t.group {
 		g := p.Group.Value
