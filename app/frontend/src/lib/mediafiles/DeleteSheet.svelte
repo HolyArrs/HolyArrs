@@ -17,7 +17,9 @@
 	// Counts previews so a slow older answer cannot overwrite a newer one.
 	let ask = 0;
 
-	const sure = $derived(!files || typed.trim().toLowerCase() === name.trim().toLowerCase());
+	// Typing the name is asked only when the files are deleted for good; held files come back with Undo.
+	const forGood = $derived(files && !!plan && plan.holding_days <= 0);
+	const sure = $derived(!forGood || typed.trim().toLowerCase() === name.trim().toLowerCase());
 
 	// Each time the sheet opens it starts clean; untrack so edits inside do not rerun this.
 	$effect(() => {
@@ -92,7 +94,7 @@
 			{/if}
 		</section>
 
-		{#if files}
+		{#if forGood}
 			<label class="ds-type">
 				<span>Type <b>{name}</b> to confirm</span>
 				<input bind:value={typed} autocomplete="off" spellcheck="false" placeholder={name} />
