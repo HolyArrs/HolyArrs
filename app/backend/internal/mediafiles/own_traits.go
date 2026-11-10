@@ -18,7 +18,7 @@ import (
 type OwnTrait struct {
 	database.Meta
 	Name  string   `db:"name"`
-	Match string   `db:"match"` // name, group
+	Match string   `db:"match"` // name, group, size
 	Terms []string `db:"terms,json"`
 	// Source and SourceID say where a synced trait came from ("trash",
 	// "sonarr:<trash id>"); empty for a trait a person made. A synced
@@ -29,8 +29,8 @@ type OwnTrait struct {
 }
 
 // OwnSpec is one test of a synced trait. Kind is name or group (a
-// pattern), source (one of the HolyArrs sources, comma-separated) or
-// resolution (a number). Tests of one kind pass when every Required one
+// pattern), source (one of the HolyArrs sources, comma-separated),
+// resolution (a number) or size ("over-upto" in GB, either end open). Tests of one kind pass when every Required one
 // passes and, if there are others, at least one of those does; the trait
 // matches when every kind passes. Negate turns a test's answer around.
 type OwnSpec struct {
@@ -73,8 +73,26 @@ func CheckOwnTrait(t *OwnTrait) error {
 	if t.Name == "" || !utf8.ValidString(t.Name) || utf8.RuneCountInString(t.Name) > 60 {
 		return fieldErr("name", "The name must hold 1 to 60 characters.")
 	}
-	if t.Match != "name" && t.Match != "group" {
-		return fieldErr("match", "Match the Release name or its release group.")
+	switch t.Match {
+	case "name", "group":
+	case "size":
+		var terms []string
+		for _, raw := range t.Terms {
+			if s := strings.TrimSpace(raw); s != "" {
+				terms = append(terms, s)
+			}
+		}
+		if len(terms) != 1 {
+			return fieldErr("terms", "Give one size range, such as 60- or 2-8 (GB).")
+		}
+		over, upTo, ok := ParseSizeRange(terms[0])
+		if !ok {
+			return fieldErr("terms", "Give an over or an up to size in GB, and up to above over.")
+		}
+		t.Terms = []string{SizeRangeValue(over, upTo)}
+		return nil
+	default:
+		return fieldErr("match", "Match the Release name, its release group or its size.")
 	}
 	var terms []string
 	for _, raw := range t.Terms {

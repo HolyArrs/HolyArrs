@@ -3871,7 +3871,7 @@
         "type": "object"
       },
       "OwnTrait": {
-        "description": "One of your own traits: a named test on the Release name or its release group. Pick rules use it under key, like a built-in trait.",
+        "description": "One of your own traits: a named test on the Release name, its release group or its size. Pick rules use it under key, like a built-in trait.",
         "properties": {
           "id": {
             "format": "int64",
@@ -3882,10 +3882,11 @@
             "type": "string"
           },
           "match": {
-            "description": "name: any term anywhere in the Release name; group: the release group is one of the terms.",
+            "description": "name: any term anywhere in the Release name; group: the release group is one of the terms; size: one term \"over-upto\" in GB, either end open (\"60-\", \"-8\", \"2-8\"), over the low end and up to and including the high end; a Release with no size given never fits.",
             "enum": [
               "name",
-              "group"
+              "group",
+              "size"
             ],
             "type": "string"
           },
@@ -3914,7 +3915,8 @@
           "match": {
             "enum": [
               "name",
-              "group"
+              "group",
+              "size"
             ],
             "type": "string"
           },

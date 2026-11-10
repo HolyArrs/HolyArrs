@@ -204,11 +204,11 @@ func TestGainsPerEpisode(t *testing.T) {
 	if !Gains(rel, rules, nil) {
 		t.Fatal("a missing episode always gains")
 	}
-	low := CurrentOf("Copper.Valley.S01E01.720p.HDTV.x264-OXBOW", time.Now(), rules)
+	low := CurrentOf("Copper.Valley.S01E01.720p.HDTV.x264-OXBOW", 0, time.Now(), rules)
 	if !Gains(rel, rules, &low) {
 		t.Fatal("1080p WEB over 720p TV gains")
 	}
-	same := CurrentOf("Copper.Valley.S01E01.1080p.WEB-DL.H.264-QUILL", time.Now(), rules)
+	same := CurrentOf("Copper.Valley.S01E01.1080p.WEB-DL.H.264-QUILL", 0, time.Now(), rules)
 	if Gains(rel, rules, &same) {
 		t.Fatal("the same copy does not gain")
 	}

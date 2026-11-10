@@ -16,6 +16,8 @@ import (
 type ownTrait struct {
 	name  string
 	group bool
+	// size is set for a size trait (its one term).
+	size  *sizeRange
 	plain []string // lowercased words
 	pats  []*regexp.Regexp
 	// specs is set for a synced trait (and then decides alone); bad says a
@@ -35,6 +37,16 @@ func SetOwnTraits(ts []OwnTrait) {
 		if len(t.Specs) > 0 {
 			o.specs, o.bad = compileSpecs(t.Specs)
 			o.bad = !o.bad
+			m[t.ID] = o
+			continue
+		}
+		if t.Match == "size" {
+			r := sizeRange{}
+			ok := len(t.Terms) == 1
+			if ok {
+				r, ok = compileSizeRange(t.Terms[0])
+			}
+			o.size, o.bad = &r, !ok
 			m[t.ID] = o
 			continue
 		}
@@ -71,6 +83,15 @@ func ownMatches(id int64, p releasename.Result) (bool, string) {
 	}
 	if t.specs != nil {
 		return formatMatches(t.name, t.specs, p)
+	}
+	if t.size != nil {
+		if p.Size <= 0 {
+			return false, t.name + ": the size is not known"
+		}
+		if t.size.fits(p.Size) {
+			return true, t.name + ": size " + sizeWord(p.Size)
+		}
+		return false, t.name + ": size " + sizeWord(p.Size) + " is outside it"
 	}
 	if t.group {
 		g := p.Group.Value

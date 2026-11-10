@@ -895,6 +895,7 @@
 	"downloads.pr.err.term200": "Кожен термін може містити щонайбільше 200 символів.",
 	"downloads.pr.err.terms50": "Вкажи щонайбільше 50 термінів.",
 	"downloads.pr.err.termsMin": "Вкажи принаймні одне слово чи шаблон.",
+	"downloads.pr.err.sizeRange": "Вкажіть нижню або верхню межу; верхня має бути більшою за нижню.",
 	"downloads.pr.err.traitName": "Дай ознаці назву.",
 	"downloads.pr.err.traitOnce": "Кожну ознаку можна вказати один раз.",
 	"downloads.pr.err.wait": "Очікування може бути від 0 до 10080 хвилин (7 днів).",
@@ -1211,5 +1212,13 @@
 	"downloads.ot.kindName": "назва",
 	"downloads.ot.kindGroup": "група",
 	"downloads.ot.kindSource": "джерело",
-	"downloads.ot.kindResolution": "роздільність"
+	"downloads.ot.kindResolution": "роздільність",
+	"downloads.ot.size": "Розмір",
+	"downloads.ot.kindSize": "розмір",
+	"downloads.ot.over": "Понад (ГБ)",
+	"downloads.ot.upTo": "До (ГБ)",
+	"downloads.ot.hintSize": "Розмір усього релізу в ГБ. Залиште одне поле порожнім, щоб не ставити межу. Реліз без указаного розміру ніколи не підходить.",
+	"downloads.ot.sumSize": "Розмір: {range}",
+	"downloads.ot.sizeOver": "понад {n} ГБ",
+	"downloads.ot.sizeUpTo": "до {n} ГБ"
 }
