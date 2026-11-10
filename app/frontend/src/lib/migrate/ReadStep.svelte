@@ -65,7 +65,7 @@
 		<EmptyState
 			icon="upload"
 			title="Bring your old apps over"
-			text="Read Sonarr, Radarr and the others. Nothing moves until you say so."
+			text="Read Sonarr, Radarr and the others. Your media files are never moved."
 			action={{ label: 'Add an app', icon: 'plus', onclick: onadd }}
 		/>
 	{:else}

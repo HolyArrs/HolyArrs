@@ -248,7 +248,7 @@
 		media: { h: 'Where’s your media?', p: 'Turn on what you collect and add its folder.' },
 		downloader: { h: 'Which app downloads?', p: 'Connect the one you use.' },
 		source: { h: 'Where should we search?', p: 'Link Prowlarr or Jackett and your sites come with it.' },
-		import: { h: 'Bring your apps', p: 'We only read them. Nothing moves until you say so.' },
+		import: { h: 'Bring your apps', p: 'We only read them. Your media files are never moved.' },
 		done: { h: 'You’re set', p: 'Find something on Home and we’ll get it.' }
 	};
 	const head = $derived(
