@@ -21,26 +21,11 @@ const rejudgedSetting = "adopted_quality_rejudged"
 // again and lets each Version's Slots swap to match. It returns how many
 // Slots changed.
 func (s *Service) RejudgeAdopted(ctx context.Context) (int, error) {
-	var done string
-	_ = s.Store.Read().QueryRowContext(ctx, "SELECT value FROM settings WHERE grp = 'this_app' AND key = ?", rejudgedSetting).Scan(&done)
-	if done != "" {
+	if database.SettingOr(ctx, s.Store.Read(), "this_app", rejudgedSetting, "") != "" {
 		return 0, nil
 	}
-	rows, err := s.Store.Read().QueryContext(ctx, `SELECT DISTINCT version_id FROM files WHERE origin = 'adopted' AND state = 'present'`)
+	versionIDs, err := mediafiles.AdoptedVersionIDs(ctx, s.Store.Read())
 	if err != nil {
-		return 0, err
-	}
-	var versionIDs []int64
-	for rows.Next() {
-		var id int64
-		if err := rows.Scan(&id); err != nil {
-			rows.Close()
-			return 0, err
-		}
-		versionIDs = append(versionIDs, id)
-	}
-	rows.Close()
-	if err := rows.Err(); err != nil {
 		return 0, err
 	}
 	by := domain.System
@@ -62,13 +47,8 @@ func (s *Service) RejudgeAdopted(ctx context.Context) (int, error) {
 			return changed, err
 		}
 	}
-	now := database.FormatTime(time.Now())
-	who := ActorText(by)
 	err = s.Store.Write(ctx, func(tx *sql.Tx) error {
-		_, err := tx.Exec(`INSERT INTO settings (grp, key, value, created_at, created_by, updated_at, updated_by) VALUES ('this_app', ?, ?, ?, ?, ?, ?)
-			ON CONFLICT (grp, key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at, updated_by = excluded.updated_by`,
-			rejudgedSetting, time.Now().UTC().Format(time.RFC3339), now, who, now, who)
-		return err
+		return database.PutSetting(tx, "this_app", rejudgedSetting, time.Now().UTC().Format(time.RFC3339), by, time.Now())
 	})
 	if changed > 0 {
 		log.Printf("library: read the quality of moved-over files again; %d slots changed", changed)
@@ -87,12 +67,12 @@ func rejudgeVersionTx(ctx context.Context, tx *sql.Tx, versionID int64, by domai
 	if err := database.Get(ctx, tx, "titles", v.TitleID, &t); err != nil {
 		return 0, nil
 	}
-	files, err := database.Select[mediafiles.File](ctx, tx, "files", "version_id = ? AND origin = 'adopted' AND state = 'present'", versionID)
+	files, err := database.Select[mediafiles.File](ctx, tx, "files", "version_id = ?", versionID)
 	if err != nil {
 		return 0, err
 	}
 	for _, f := range files {
-		if f.ReleaseName == nil || *f.ReleaseName == "" {
+		if f.Origin != "adopted" || f.State != "present" || f.ReleaseName == nil || *f.ReleaseName == "" {
 			continue
 		}
 		p := releasename.Parse(mediafiles.JudgeName(*f.ReleaseName, f.MediaInfo), releasename.Hints{Size: f.Size, Show: t.Kind == "show"})
