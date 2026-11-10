@@ -399,6 +399,8 @@ var routeOwners = map[string]Owner{
 	"POST /api/v1/own-traits":                 Media,
 	"PUT /api/v1/own-traits/{id}":             Media,
 	"DELETE /api/v1/own-traits/{id}":          Media,
+	"GET /api/v1/trash/profiles":              Media,
+	"POST /api/v1/pick-rules/{id}/trash":      Media,
 	"GET /api/v1/never-add":                   Media,
 	"POST /api/v1/never-add":                  Media,
 	"DELETE /api/v1/never-add/{id}":           Media,

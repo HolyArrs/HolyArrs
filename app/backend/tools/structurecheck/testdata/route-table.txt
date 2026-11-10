@@ -228,6 +228,7 @@ GET /api/v1/trailer/batch auth=signed_in scope=read assurance=false part=media
 GET /api/v1/trailer/stream/{id}/manifest.m3u8 auth=signed_in scope=read assurance=false part=media
 GET /api/v1/trailer/stream/{id}/seg/{n} auth=signed_in scope=read assurance=false part=media
 GET /api/v1/trailer/{kind}/{tmdb_id} auth=signed_in scope=read assurance=false part=media
+GET /api/v1/trash/profiles auth=settings scope=admin assurance=false part=media
 GET /api/v1/turned-down auth=manage_library scope=read assurance=false part=media
 GET /api/v1/users auth=users scope=admin assurance=false part=core
 GET /api/v1/users/invites auth=users scope=admin assurance=false part=core
@@ -397,6 +398,7 @@ POST /api/v1/parts/{part}/on auth=users scope=control assurance=false part=core
 POST /api/v1/parts/{part}/restart auth=users scope=control assurance=false part=core
 POST /api/v1/people/{id}/movies/review auth=signed_in scope=read assurance=false part=movies
 POST /api/v1/pick-rules auth=settings scope=write assurance=false part=media
+POST /api/v1/pick-rules/{id}/trash auth=settings scope=write assurance=false part=media
 POST /api/v1/releases/{id}/choose auth=manage_library scope=write assurance=false part=media
 POST /api/v1/releases/{id}/turn-down auth=manage_library scope=write assurance=false part=media
 POST /api/v1/rename auth=manage_library scope=write assurance=false part=media

@@ -10,6 +10,7 @@ import (
 // RouteScopes names routes whose scope is not the one the method and
 // RoutePerms give them (see RouteScope).
 var RouteScopes = map[string]string{
+	"GET /api/v1/trash/profiles":                                 webserver.ScopeAdmin,
 	"GET /api/v1/downloads/{id}/swarm":                           webserver.ScopeAdmin,
 	"GET /api/v1/downloads/{id}/detail":                          webserver.ScopeAdmin,
 	"GET /api/v1/downloads/{id}/files":                           webserver.ScopeAdmin,

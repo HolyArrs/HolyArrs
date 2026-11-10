@@ -319,6 +319,8 @@ var RoutePerms = map[string]webserver.Perm{
 	"POST /api/v1/own-traits":                                    webserver.PermSettings,
 	"PUT /api/v1/own-traits/{id}":                                webserver.PermSettings,
 	"DELETE /api/v1/own-traits/{id}":                             webserver.PermSettings,
+	"GET /api/v1/trash/profiles":                                 webserver.PermSettings,
+	"POST /api/v1/pick-rules/{id}/trash":                         webserver.PermSettings,
 	"GET /api/v1/never-add":                                      webserver.PermManageLibrary,
 	"POST /api/v1/never-add":                                     webserver.PermManageLibrary,
 	"DELETE /api/v1/never-add/{id}":                              webserver.PermManageLibrary,

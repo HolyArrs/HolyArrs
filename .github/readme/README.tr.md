@@ -200,7 +200,7 @@ NAS mı kullanıyorsun? [Unraid, Synology ve diğer NAS cihazları](https://docs
 | Etiket | Ne için kullanılır |
 | :----: | --- |
 | `latest` | En yeni sürüm. |
-| `1.0.6` | Tam olarak tek bir sürüm. Asla değişmez. |
+| `1.0.7` | Tam olarak tek bir sürüm. Asla değişmez. |
 
 ## Kullanım
 

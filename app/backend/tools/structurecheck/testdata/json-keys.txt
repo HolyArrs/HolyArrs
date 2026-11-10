@@ -358,6 +358,7 @@ cursor
 custom_formats
 cut
 cutoff
+cutoffFormatScore
 cutoff_score
 cw
 d
@@ -538,6 +539,7 @@ feed
 feed_check_minutes
 fell_back
 fetched_at
+fields
 file
 file_id
 file_ids
@@ -579,6 +581,7 @@ forced
 foreign_parts_only
 forgotten
 format
+formatItems
 formats
 forward
 found
@@ -691,6 +694,7 @@ images
 imdb
 imdbId
 imdb_id
+implementation
 import_lists
 import_min_track_kb
 import_min_video_mb
@@ -701,6 +705,7 @@ in_library
 in_use
 inactive_minutes
 inactive_seeding_time_limit
+include
 included
 incomplete
 index
@@ -872,6 +877,8 @@ migrates
 migration
 mimeType
 min
+minFormatScore
+minUpgradeFormatScore
 min_free_mb
 min_from
 min_password_length
@@ -956,6 +963,7 @@ needs_input
 needs_key
 needs_password
 needs_reentry
+negate
 neighbor_region
 network
 networks
@@ -1290,6 +1298,7 @@ report_id
 requested_by
 requests
 require_two_factor_admins
+required
 reset_time_utc
 resolution
 resource
@@ -1341,6 +1350,7 @@ scope
 scopes
 score
 score_parts
+scored
 scores
 searchForMissingEpisodes
 searchForMovie
@@ -1479,6 +1489,8 @@ sources
 spec
 special
 specials_folder
+specifications
+specs
 speed
 speed_limit
 speedlimit_abs
@@ -1535,6 +1547,7 @@ sync_every_hours
 sync_from_fps
 sync_step_ms
 sync_to_fps
+synced
 t
 t24
 t64
@@ -1644,6 +1657,11 @@ traits
 trakt
 translations
 transmission
+trash_description
+trash_id
+trash_score_set
+trash_scores
+trash_url
 tries
 trigger
 trimmed

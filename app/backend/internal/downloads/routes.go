@@ -48,4 +48,6 @@ func (h *Handlers) Routes(m *http.ServeMux) {
 	m.HandleFunc("POST /api/v1/own-traits", h.addOwnTrait)
 	m.HandleFunc("PUT /api/v1/own-traits/{id}", h.editOwnTrait)
 	m.HandleFunc("DELETE /api/v1/own-traits/{id}", h.deleteOwnTrait)
+	m.HandleFunc("GET /api/v1/trash/profiles", h.listTrashProfiles)
+	m.HandleFunc("POST /api/v1/pick-rules/{id}/trash", h.applyTrash)
 }

@@ -20,6 +20,25 @@ type OwnTrait struct {
 	Name  string   `db:"name"`
 	Match string   `db:"match"` // name, group
 	Terms []string `db:"terms,json"`
+	// Source and SourceID say where a synced trait came from ("trash",
+	// "sonarr:<trash id>"); empty for a trait a person made. A synced
+	// trait tests Specs instead of Terms.
+	Source   string    `db:"source"`
+	SourceID string    `db:"source_id"`
+	Specs    []OwnSpec `db:"specs,json"`
+}
+
+// OwnSpec is one test of a synced trait. Kind is name or group (a
+// pattern), source (one of the HolyArrs sources, comma-separated) or
+// resolution (a number). Tests of one kind pass when every Required one
+// passes and, if there are others, at least one of those does; the trait
+// matches when every kind passes. Negate turns a test's answer around.
+type OwnSpec struct {
+	Name     string `json:"name"`
+	Kind     string `json:"kind"`
+	Value    string `json:"value"`
+	Negate   bool   `json:"negate,omitempty"`
+	Required bool   `json:"required,omitempty"`
 }
 
 // OwnTraitPrefix starts the key of an own trait in Pick rules.

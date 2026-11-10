@@ -22415,6 +22415,39 @@
         "x-holyarrs-scope": "write"
       }
     },
+    "/api/v1/pick-rules/{id}/trash": {
+      "post": {
+        "description": "Send {\"app\": \"sonarr\" or \"radarr\", \"profile_id\": \"<TRaSH id>\"}. Makes or updates synced traits and sets their points in these Pick rules; sending it again re-syncs without duplicates.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "What the sync did"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "404": {
+            "description": "No such Pick rules or profile"
+          },
+          "502": {
+            "description": "TRaSH Guides could not be read"
+          }
+        },
+        "summary": "Apply or re-sync a TRaSH Guides profile",
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "settings",
+        "x-holyarrs-scope": "write"
+      }
+    },
     "/api/v1/public/signin-art": {
       "get": {
         "description": "The sign-in page's backdrops; open to everyone. Only picture addresses with their native width and height (a textless backdrop, an optional textless poster for tall screens, and a logo): never names, ids or counts. Kid-safe titles only (movies up to PG-13, shows up to TV-PG, never unrated). From the Library when \"Show Library art on the sign-in page\" is on and 6 or more titles qualify, else from trending titles. Kept 6 hours; each address may call it 20 times a minute (429 with Retry-After past that).",
@@ -29303,6 +29336,26 @@
         "x-holyarrs-part": "media",
         "x-holyarrs-permission": "signed_in",
         "x-holyarrs-scope": "read"
+      }
+    },
+    "/api/v1/trash/profiles": {
+      "get": {
+        "description": "Profiles for ?app=sonarr (shows) or radarr (movies), read from the TRaSH Guides repository and kept for an hour.",
+        "responses": {
+          "200": {
+            "description": "The profiles"
+          },
+          "400": {
+            "description": "Unknown app"
+          },
+          "502": {
+            "description": "TRaSH Guides could not be read"
+          }
+        },
+        "summary": "List TRaSH Guides profiles",
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "settings",
+        "x-holyarrs-scope": "admin"
       }
     },
     "/api/v1/turned-down": {
