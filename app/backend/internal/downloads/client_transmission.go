@@ -174,7 +174,10 @@ func (tr *Transmission) Add(ctx context.Context, r AddRequest) (string, error) {
 		}
 		a["filename"] = r.URL
 	} else {
-		b, err := fetchRelease(ctx, r.URL, r.AllowLocal, 8<<20)
+		b, err := r.File, error(nil)
+		if len(b) == 0 {
+			b, err = fetchRelease(ctx, r.URL, r.AllowLocal, torrentFetchMax)
+		}
 		if err != nil {
 			return "", err
 		}

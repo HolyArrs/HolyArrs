@@ -7,9 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"net"
 	"net/http"
-	"net/url"
 	"slices"
 	"strings"
 	"time"
@@ -511,19 +509,22 @@ func (m *Manager) send(ctx context.Context, d domain.Downloader, rel domain.Rele
 			limit = sabMaxNZB
 		}
 		var magnet string
-		localHost := "" // a home Source may be local itself (its host and port), nothing else may
-		if su, err := url.Parse(src.URL); allowLocal && err == nil && su.Hostname() != "" {
-			port := su.Port()
-			if port == "" {
-				port = map[string]string{"http": "80", "https": "443"}[strings.ToLower(su.Scheme)]
-			}
-			localHost = net.JoinHostPort(strings.TrimSuffix(strings.ToLower(su.Hostname()), "."), port)
-		}
-		if file, magnet, err = fetchGrabLink(ctx, link, limit, rt, localHost); err == nil && magnet != "" {
+		if file, magnet, err = fetchGrabLink(ctx, link, limit, rt, sourceLocalHost(src.URL, allowLocal)); err == nil && magnet != "" {
 			link, _, err = safeMagnet(magnet, allowLocal)
 		}
 		if err != nil {
 			return "", err
+		}
+	}
+	// Prowlarr and Jackett answer magnet-only sites with a redirect to a magnet,
+	// which Transmission, Deluge and some qBittorrent stand-ins cannot follow. A
+	// torrent link not read above (a home Source whose Release has a hash) is read
+	// here and the magnet or file is sent; if that fails the link is sent as before.
+	torrentAdapter := d.Adapter == "transmission" || d.Adapter == "deluge" || d.Adapter == "qbittorrent" && src.ProxyURL == ""
+	if torrentAdapter && file == nil && !strings.HasPrefix(link, "magnet:") {
+		link, file = prefetchTorrent(ctx, link, allowLocal, sourceLocalHost(src.URL, allowLocal))
+		if hash == "" {
+			hash = linkHash(link)
 		}
 	}
 	if d.Adapter == "qbittorrent" && file != nil {
