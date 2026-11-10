@@ -88,8 +88,11 @@ func TestSigninSeedInlinesFirstSlideThumbnails(t *testing.T) {
 	if len(shots) == 0 {
 		t.Fatal("no shots")
 	}
+	// Wait for the poster thumbnail itself: "poster" also names a field of
+	// every shot, so finding the word alone can end the wait while only the
+	// backdrop is built (seen on slower CI machines).
 	var got []byte
-	for i := 0; i < 200 && !bytes.Contains(got, []byte(`"poster"`)); i++ {
+	for i := 0; i < 400 && !seedHasPoster(got); i++ {
 		got = a.signinSeedJSON(context.Background())
 		time.Sleep(5 * time.Millisecond)
 	}
@@ -159,4 +162,12 @@ func TestSigninSeedFloodStartsOneBuild(t *testing.T) {
 	if grew > 5 {
 		t.Fatalf("%d goroutines started for 100 /login opens", grew)
 	}
+}
+
+// seedHasPoster reports whether a /login seed carries the poster thumbnails.
+func seedHasPoster(b []byte) bool {
+	var body struct {
+		Seed map[string]json.RawMessage `json:"seed"`
+	}
+	return b != nil && json.Unmarshal(b, &body) == nil && body.Seed["poster"] != nil
 }
