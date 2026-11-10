@@ -236,10 +236,15 @@ func TestHandle_PausesFailingSource(t *testing.T) {
 	}
 }
 
-func TestCleanLink_DropsKey(t *testing.T) {
-	got := cleanLink("http://src/dl?id=5&apikey=s3cret&x=1", nil)
-	if strings.Contains(got, "s3cret") || !strings.Contains(got, "id=5") {
+func TestCleanLink_KeepsSiteKeyHidesSourceKey(t *testing.T) {
+	keys := []string{"mine77"}
+	got := cleanLink("http://src/dl?id=5&apikey=site99&x=1&r=mine77", keys)
+	if !strings.Contains(got, "apikey=site99") || strings.Contains(got, "mine77") {
 		t.Fatalf("got %q", got)
+	}
+	back, err := revealLink(got, keys)
+	if err != nil || back != "http://src/dl?id=5&apikey=site99&x=1&r=mine77" {
+		t.Fatalf("back %q %v", back, err)
 	}
 }
 
