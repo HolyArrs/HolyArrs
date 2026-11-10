@@ -29,7 +29,6 @@
 	import LibraryPoster from './LibraryPoster.svelte';
 	import { exceptionChip, firstOfLetter, letterOf, letters, missingEpisodes, posterStatus, type Kind } from './library.ts';
 	import { libraryState } from './library-state.ts';
-	import { partOff } from './parts.svelte.ts';
 	import { buildEntries, cell, grow, isProgressCol, posterExtra, posterFacts, requestedBy, rowCell, shrink, tone, type Entry, type View } from './library-view.ts';
 	import { needsAttention, barOf, type PosterDetail } from './poster.ts';
 	import { columnSort, progressOf, sortName, sortsFor, tableMinWidth, type Column, type FilterState, type LibKind, type SortDir, type SortKey } from './table.ts';
@@ -304,10 +303,8 @@
 		{#if error}
 			<LoadError hasData={false} message={plainReason(error).text} onretry={retryLoad} />
 		{:else if titles.length === 0}
-			<EmptyState icon="library" title={tr('mediafiles.list.nothingYet')} action={{ label: tr('mediafiles.list.addMovie'), href: to('/search'), icon: 'search' }} />
+			<EmptyState icon="library" title={tr('mediafiles.list.nothingYet')} action={{ label: tr(kind === 'artist' ? 'mediafiles.list.addArtist' : kind === 'show' ? 'mediafiles.list.addShow' : 'mediafiles.list.addMovie'), href: to(kind === 'artist' ? '/search?kind=music' : kind === 'show' ? '/search?kind=show' : '/search'), icon: 'search' }} />
 			<div class="empty-more">
-				{#if !partOff('shows')}<Button href={to('/search?kind=show')}>{tr('mediafiles.list.addShow')}</Button>{/if}
-				{#if !partOff('music')}<Button href={to('/search?kind=music')}>{tr('mediafiles.list.addArtist')}</Button>{/if}
 				{#if session.can('settings')}<Button href={to('/settings/library-folders')}>{tr('mediafiles.list.folders')}</Button>{/if}
 			</div>
 		{:else if shown.length === 0}
