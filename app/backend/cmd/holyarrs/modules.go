@@ -165,7 +165,7 @@ func (a *handlers) migrateHandlers() *migrate.Handlers {
 // mover is the move runner (made on first use in tests).
 func (a *handlers) mover() *migrate.Mover {
 	if a.s.Mover == nil {
-		a.s.Mover = &migrate.Mover{Store: a.s.Store, Library: a.s.Library, Queue: a.s.Queue}
+		a.s.Mover = &migrate.Mover{Store: a.s.Store, Library: a.s.Library, Queue: a.s.Queue, Secrets: a.s.Secrets}
 	}
 	if a.s.Mover.PartOn == nil {
 		a.s.Mover.PartOn = func(p string) bool { return !a.safeMode() && a.partIsOn(parts.Part(p)) }

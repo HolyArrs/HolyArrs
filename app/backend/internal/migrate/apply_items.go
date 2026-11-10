@@ -3,6 +3,7 @@ package migrate
 import (
 	"database/sql"
 	"encoding/json"
+	"net/url"
 	"reflect"
 	"strings"
 	"time"
@@ -12,6 +13,7 @@ import (
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/migrate/secretsfile"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles"
 )
@@ -63,7 +65,11 @@ func (r *run) source(it Item) (string, string) {
 	prio := s.Priority
 	in := sources.Input{Name: it.Name, Format: s.Format, Protocol: s.Protocol, URL: s.URL, Kinds: s.Kinds, Categories: s.Categories,
 		MinSeeders: s.MinSeeders, Priority: &prio, AllowLocal: &local}
-	_, err := sources.Add(r.ctx, r.m.Store, nil, in, r.by, func(tx *sql.Tx, id int64) error {
+	if key := r.prowlarrKey(s.URL); key != "" {
+		in.APIKey = key
+		what += "; uses the key of the Prowlarr you imported from"
+	}
+	_, err := sources.Add(r.ctx, r.m.Store, r.m.Secrets, in, r.by, func(tx *sql.Tx, id int64) error {
 		if _, err := tx.Exec("UPDATE sources SET state = 'disabled' WHERE id = ?", id); err != nil {
 			return err
 		}
@@ -498,4 +504,37 @@ func (r *run) alert(it Item) (string, string) {
 		return r.markTx(tx, it.Key, "alert", id, "", "")
 	})
 	return result(err, ResCreated, what)
+}
+
+// prowlarrKey is the kept Prowlarr key when addr goes through that same
+// Prowlarr (scheme, host and port), else "".
+func (r *run) prowlarrKey(addr string) string {
+	if r.m.Secrets == nil {
+		return ""
+	}
+	if r.prowlarr == nil {
+		c, ok, err := secretsfile.ReadMoveCredential(r.ctx, r.m.Store, r.m.Secrets, string(Prowlarr))
+		if err != nil || !ok {
+			c = secretsfile.MoveCredential{}
+		}
+		r.prowlarr = &c
+	}
+	c := r.prowlarr
+	if c.APIKey == "" || c.Address == "" || originOf(c.Address) == "" || originOf(c.Address) != originOf(addr) {
+		return ""
+	}
+	return c.APIKey
+}
+
+// originOf is scheme://host:port in lower case, with the default port filled.
+func originOf(raw string) string {
+	u, err := url.Parse(strings.TrimSpace(raw))
+	if err != nil || u.Hostname() == "" {
+		return ""
+	}
+	port := u.Port()
+	if port == "" {
+		port = map[string]string{"http": "80", "https": "443"}[strings.ToLower(u.Scheme)]
+	}
+	return strings.ToLower(u.Scheme + "://" + u.Hostname() + ":" + port)
 }
