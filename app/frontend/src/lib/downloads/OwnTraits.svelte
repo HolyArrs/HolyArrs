@@ -38,6 +38,11 @@
 		{ value: 'name', label: 'Words in the name' },
 		{ value: 'group', label: 'Release group' }
 	];
+	// Traits synced from TRaSH Guides sit apart: there can be dozens, and only a sync changes them.
+	const handMade = $derived((list ?? []).filter((t) => !t.source));
+	const synced = $derived((list ?? []).filter((t) => t.source === 'trash'));
+	const specWord = { name: 'name', group: 'group', source: 'source', resolution: 'resolution' } as const;
+	const specSummary = (t: OwnTrait) => (t.specs ?? []).map((s) => `${s.negate ? 'not ' : ''}${s.name} (${specWord[s.kind] ?? s.kind})`).join(', ');
 	const summary = (t: OwnTrait) => `${t.match === 'group' ? 'Release group' : 'Name has'}: ${t.terms.join(', ')}`;
 
 	// The sheet that makes or changes one trait.
@@ -121,11 +126,11 @@
 		<LoadError hasData={false} message={error} onretry={load} busy={loading} />
 	{:else if list}
 		{#if error}<LoadError hasData message={error} onretry={load} busy={loading} />{/if}
-		{#if list.length === 0}
+		{#if handMade.length === 0}
 			<EmptyState compact icon="star" title="No traits of your own" text="Make one for a word like a subtitle language, or for release groups you like or avoid." action={mayEdit ? { label: 'Make a trait', icon: 'plus', onclick: () => openSheet(null) } : undefined} />
 		{:else}
 			<ul class="rows" data-testid="own-traits">
-				{#each list as t (t.id)}
+				{#each handMade as t (t.id)}
 					<li data-testid="own-trait">
 						<span class="grow">
 							<b>{t.name}</b>
@@ -139,6 +144,25 @@
 				{/each}
 			</ul>
 			{#if mayEdit}<div><Button icon="plus" onclick={() => openSheet(null)} data-testid="own-trait-add">Make a trait</Button></div>{/if}
+		{/if}
+		{#if synced.length}
+			<details class="synced" data-testid="synced-traits">
+				<summary>From TRaSH Guides ({synced.length})</summary>
+				<p class="xs muted">Sync a set of Pick rules again to update these</p>
+				<ul class="rows">
+					{#each synced as t (t.id)}
+						<li data-testid="synced-trait">
+							<span class="grow">
+								<b>{t.name}</b>
+								<span class="xs muted meta">{specSummary(t)}</span>
+							</span>
+							{#if mayEdit}<span class="acts">
+									<Menu label="More for {t.name}" items={[{ label: 'Remove', icon: 'trash', destructive: true, onselect: () => ((removing = t), (removeError = ''), (removeOpen = true)) }]} />
+								</span>{/if}
+						</li>
+					{/each}
+				</ul>
+			</details>
 		{/if}
 	{/if}
 </SettingsCard>
@@ -177,6 +201,8 @@
 
 <style>
 	.form { display: flex; flex-direction: column; gap: 16px; }
+	.synced > summary { cursor: pointer; font-weight: 600; padding: 4px 0; }
+	.synced > p { margin: 4px 0 8px; }
 	.meta { display: block; overflow-wrap: anywhere; }
 	.acts { display: flex; align-items: center; gap: 4px; flex: none; }
 	@media (max-width: 520px) {
