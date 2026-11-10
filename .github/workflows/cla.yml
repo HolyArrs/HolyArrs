@@ -46,6 +46,11 @@ jobs:
         with:
           client-id: ${{ vars.HOLYARRS_BOT_CLIENT_ID }}
           private-key: ${{ secrets.HOLYARRS_BOT_PRIVATE_KEY }}
+          # Only what this check uses, however much the app itself may do.
+          permission-contents: write
+          permission-issues: write
+          permission-statuses: write
+          permission-pull-requests: read
 
       - name: Check and record agreements
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
