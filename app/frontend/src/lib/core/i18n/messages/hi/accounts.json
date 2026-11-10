@@ -367,5 +367,6 @@
 	"accounts.language.label": "भाषा",
 	"accounts.language.auto": "अपने आप",
 	"accounts.language.hint": "अपने आप में ब्राउज़र की भाषा चलती है। आपके अकाउंट में सेव रहती है।",
-	"accounts.language.saveFailed": "भाषा सेव नहीं हो सकी"
+	"accounts.language.saveFailed": "भाषा सेव नहीं हो सकी",
+	"accounts.account.watchEveryone": "मालिक ने इसे सभी के लिए चालू किया है। रोकने के लिए दोनों बंद करें।"
 }

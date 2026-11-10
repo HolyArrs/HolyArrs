@@ -1,6 +1,7 @@
 {
   "movies": true,
   "shows": true,
+  "chosen": true,
   "checked_at": "2026-10-13T12:00:00Z",
   "error": "s",
   "items": [

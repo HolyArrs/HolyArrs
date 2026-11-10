@@ -367,5 +367,6 @@
 	"accounts.language.label": "Idioma",
 	"accounts.language.auto": "Automático",
 	"accounts.language.hint": "Automático segue o seu navegador. Salvo na sua conta.",
-	"accounts.language.saveFailed": "Não foi possível salvar o idioma"
+	"accounts.language.saveFailed": "Não foi possível salvar o idioma",
+	"accounts.account.watchEveryone": "O dono ativou isso para todos. Desative os dois para parar."
 }

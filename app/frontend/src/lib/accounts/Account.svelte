@@ -415,10 +415,12 @@
 	</div>
 </SettingsCard>
 
-{#if showWatchlistCard(watch) && watch && !session.held('plex_watchlists')}
+{#if showWatchlistCard(watch) && watch}
 	<SettingsCard id="watchlist-me" title={t('accounts.account.watchlist')} description={t('accounts.account.watchlistDesc')} icon="requests">
 		{#if !watch.can_read}
 			<p class="hint" data-testid="watchlist-cannot-read">{t('accounts.account.linkPlex')}</p>
+		{:else if watch.everyone && !watch.chosen}
+			<p class="hint" data-testid="watchlist-everyone">{t('accounts.account.watchEveryone')}</p>
 		{/if}
 		<div class="srow">
 			<div class="txt"><span class="label">{t('accounts.account.movies')}</span><span class="hint">{t('accounts.account.limitApplies')}</span></div>

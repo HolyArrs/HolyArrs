@@ -367,5 +367,6 @@
 	"accounts.language.label": "Язык",
 	"accounts.language.auto": "Автоматически",
 	"accounts.language.hint": "Автоматический выбор следует настройкам браузера. Сохраняется в вашей учётной записи.",
-	"accounts.language.saveFailed": "Не удалось сохранить язык"
+	"accounts.language.saveFailed": "Не удалось сохранить язык",
+	"accounts.account.watchEveryone": "Владелец включил это для всех. Выключите оба, чтобы остановить."
 }

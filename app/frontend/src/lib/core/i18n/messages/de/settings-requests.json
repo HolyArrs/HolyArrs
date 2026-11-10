@@ -29,5 +29,7 @@
 	"settings.requests.plex": "Plex-Merklisten",
 	"settings.requests.plexDesc": "Titel auf deiner Plex-Merkliste werden zu Anfragen",
 	"settings.requests.plexOn": "Aus Plex-Merklisten anfragen",
-	"settings.requests.plexOnHint": "Jede Person schaltet es in Mein Konto ein. Ihre Limits gelten."
+	"settings.requests.plexOnHint": "Jede Person schaltet es in Mein Konto ein. Ihre Limits gelten.",
+	"settings.requests.plexEveryone": "Für alle aktivieren, die sich mit Plex anmelden",
+	"settings.requests.plexEveryoneHint": "Jeder kann es unter Mein Konto für sich ausschalten."
 }

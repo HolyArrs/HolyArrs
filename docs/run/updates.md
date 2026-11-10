@@ -98,7 +98,6 @@ Remove the name and restart to turn it off. Hidden settings come back when you t
 | Switch | Feature |
 |---|---|
 | `ai_apps` | Connect AI apps: **Settings > AI apps**, the `/ai` page and its routes |
-| `plex_watchlists` | Plex watchlists turn into requests |
 | `row_title_stats` | Explore row title statistics in Appearance |
 | `trakt_lists` | Trakt key, Trakt lists and Trakt reviews. TMDB lists stay on |
 | `alert_channels_more` | Telegram, ntfy, Gotify, Pushover and webhook Alerts. Discord and email stay on |
