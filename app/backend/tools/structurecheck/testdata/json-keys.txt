@@ -513,6 +513,7 @@ event
 event_kind
 every_minutes
 every_s
+everyone
 exception
 exclusions
 exists
@@ -1149,6 +1150,7 @@ playerStoryboardSpecRenderer
 plex
 plex_name
 plex_watchlists
+plex_watchlists_everyone
 points
 pop
 popularity

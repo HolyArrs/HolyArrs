@@ -29,5 +29,7 @@
 	"settings.requests.plex": "Списки перегляду Plex",
 	"settings.requests.plexDesc": "Тайтли зі списку перегляду Plex стають запитами",
 	"settings.requests.plexOn": "Запрошувати зі списків перегляду Plex",
-	"settings.requests.plexOnHint": "Кожен вмикає це у своєму обліковому записі. Діють його ліміти."
+	"settings.requests.plexOnHint": "Кожен вмикає це у своєму обліковому записі. Діють його ліміти.",
+	"settings.requests.plexEveryone": "Увімкнути для всіх, хто входить через Plex",
+	"settings.requests.plexEveryoneHint": "Кожен може вимкнути це для себе в розділі «Мій акаунт»."
 }

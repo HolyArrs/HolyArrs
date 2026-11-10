@@ -29,5 +29,7 @@
 	"settings.requests.plex": "Plex वॉचलिस्ट",
 	"settings.requests.plexDesc": "आपकी Plex वॉचलिस्ट के टाइटल रिक्वेस्ट बन जाते हैं",
 	"settings.requests.plexOn": "Plex वॉचलिस्ट से रिक्वेस्ट करें",
-	"settings.requests.plexOnHint": "हर व्यक्ति इसे मेरा अकाउंट में चालू करता है। उन पर उनकी सीमा लागू होती है।"
+	"settings.requests.plexOnHint": "हर व्यक्ति इसे मेरा अकाउंट में चालू करता है। उन पर उनकी सीमा लागू होती है।",
+	"settings.requests.plexEveryone": "Plex से साइन इन करने वाले सभी के लिए चालू करें",
+	"settings.requests.plexEveryoneHint": "कोई भी मेरा खाता में अपने लिए इसे बंद कर सकता है।"
 }

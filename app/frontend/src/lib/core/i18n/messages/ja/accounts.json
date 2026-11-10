@@ -367,5 +367,6 @@
 	"accounts.language.label": "言語",
 	"accounts.language.auto": "自動",
 	"accounts.language.hint": "「自動」はブラウザーの設定に従います。アカウントに保存されます。",
-	"accounts.language.saveFailed": "言語を保存できませんでした"
+	"accounts.language.saveFailed": "言語を保存できませんでした",
+	"accounts.account.watchEveryone": "オーナーが全員に対してオンにしました。止めるには両方をオフにしてください。"
 }

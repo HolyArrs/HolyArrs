@@ -29,5 +29,7 @@
 	"settings.requests.plex": "Plex watchlists",
 	"settings.requests.plexDesc": "Titles on your Plex watchlist become requests",
 	"settings.requests.plexOn": "Request from Plex watchlists",
-	"settings.requests.plexOnHint": "Each person turns it on in My account. Their Limits apply."
+	"settings.requests.plexOnHint": "Each person turns it on in My account. Their Limits apply.",
+	"settings.requests.plexEveryone": "Turn on for everyone who signs in with Plex",
+	"settings.requests.plexEveryoneHint": "Anyone can turn it off for themselves in My account."
 }

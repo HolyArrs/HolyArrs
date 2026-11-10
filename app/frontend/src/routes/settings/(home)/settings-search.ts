@@ -170,6 +170,7 @@ export const settingIndex: SettingEntry[] = [
 	e('/settings/requests', 'ask-folder', 'Library folder for approved requests', 'wishlist approved folder'),
 	e('/settings/requests', 'ask-rules', 'Quality for approved requests', 'wishlist approved pick rules quality', true),
 	e('/settings/requests', 'search-approved', 'Search when approved', 'wishlist approved search'),
+	e('/settings/requests', 'plex-watchlists', 'Request from Plex watchlists', 'plex watchlist requests everyone automatic'),
 	e('/settings/users', 'inv-note', 'Invite someone', 'invite link add user family friend new user'),
 	e('/settings/users', 'people-card', 'Users and roles', 'users people roles permissions admin member kid preset devices'),
 	e('/settings/users', 'invites-card', 'Invite links', 'invites take back links'),
@@ -211,6 +212,7 @@ export const settingIndex: SettingEntry[] = [
 	e('/settings/account', 'pw-current', 'Change my password', 'password my account change'),
 	e('/settings/account', 'twofactor-me', 'My two-factor sign-in', '2fa two-factor otp authenticator backup codes'),
 	e('/settings/account', 'alerts-me', 'Alerts for me', 'my email discord notifications'),
+	e('/settings/account', 'watchlist-me', 'My Plex watchlist', 'plex watchlist requests my account'),
 	e('/settings/account', 'sessions-me', 'My signed-in devices', 'sessions devices sign out everywhere')
 ];
 

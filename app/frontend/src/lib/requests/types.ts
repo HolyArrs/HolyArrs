@@ -39,6 +39,7 @@ export interface AskSettings {
 	music_pick_rules_id: number;
 	/** People may have their Plex watchlist asked for as them. */
 	plex_watchlists?: boolean;
+	plex_watchlists_everyone?: boolean;
 }
 
 /** A TMDB or Trakt list whose movies are added on a schedule. */
