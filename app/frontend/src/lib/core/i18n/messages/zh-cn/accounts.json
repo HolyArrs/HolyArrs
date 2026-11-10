@@ -367,5 +367,6 @@
 	"accounts.language.label": "语言",
 	"accounts.language.auto": "自动",
 	"accounts.language.hint": "“自动”会跟随你的浏览器。保存在你的账户中。",
-	"accounts.language.saveFailed": "无法保存语言"
+	"accounts.language.saveFailed": "无法保存语言",
+	"accounts.account.watchEveryone": "所有者已为所有人开启此功能。关闭两项即可停止。"
 }

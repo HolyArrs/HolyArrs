@@ -56,7 +56,7 @@ func (m *Manager) SyncOnce(ctx context.Context) (int, error) {
 			switch {
 			case v.Fresh:
 				m.Sync.Fallback(dr.ID, false)
-				jobsIn, fromStore, readAt = snapshotJobs(v, dr.Category), true, v.ReadAt
+				jobsIn, fromStore, readAt = snapshotJobs(v, dr.Categories()), true, v.ReadAt
 			case !v.Degraded:
 				// Not fresh yet but within its bound: every row is unknown this tick, with no
 				// state change and no stall timer change.
@@ -67,7 +67,7 @@ func (m *Manager) SyncOnce(ctx context.Context) (int, error) {
 			}
 		}
 		if !fromStore {
-			jobsIn, err = e.List(ctx, dr.Category)
+			jobsIn, err = listCategories(ctx, e, dr.Categories())
 			if err != nil {
 				m.downloaderFailed(ctx, dr, err)
 				errs = append(errs, err)

@@ -13,6 +13,8 @@ export type WatchlistItem = {
 
 export type PlexWatchlist = {
 	on: boolean;
+	everyone?: boolean;
+	chosen?: boolean;
 	linked: boolean;
 	plex_name?: string;
 	can_read: boolean;

@@ -29,5 +29,7 @@
 	"settings.requests.plex": "قوائم المشاهدة في Plex",
 	"settings.requests.plexDesc": "الأعمال الموجودة في قائمة مشاهدة Plex تصبح طلبات",
 	"settings.requests.plexOn": "اطلب من قوائم مشاهدة Plex",
-	"settings.requests.plexOnHint": "يفعّلها كل شخص في حسابي. وتنطبق عليه حدوده."
+	"settings.requests.plexOnHint": "يفعّلها كل شخص في حسابي. وتنطبق عليه حدوده.",
+	"settings.requests.plexEveryone": "التشغيل لكل من يسجّل الدخول باستخدام Plex",
+	"settings.requests.plexEveryoneHint": "يمكن لأي شخص إيقافه لنفسه من حسابي."
 }

@@ -36,6 +36,7 @@ type NZBGet struct {
 	user, pass string
 	http       *http.Client
 	Category   string
+	Others     []string // more categories that are also ours
 }
 
 type nzbgetRPCError struct {

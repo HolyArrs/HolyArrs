@@ -29,5 +29,7 @@
 	"settings.requests.plex": "Списки «Смотреть позже» в Plex",
 	"settings.requests.plexDesc": "Тайтлы из вашего списка «Смотреть позже» в Plex становятся запросами",
 	"settings.requests.plexOn": "Запрашивать из списков Plex",
-	"settings.requests.plexOnHint": "Каждый включает это в разделе «Моя учётная запись». Действуют его лимиты."
+	"settings.requests.plexOnHint": "Каждый включает это в разделе «Моя учётная запись». Действуют его лимиты.",
+	"settings.requests.plexEveryone": "Включить для всех, кто входит через Plex",
+	"settings.requests.plexEveryoneHint": "Каждый может выключить это для себя в разделе «Мой аккаунт»."
 }

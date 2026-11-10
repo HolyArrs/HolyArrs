@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log"
 	"math/rand/v2"
+	"slices"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -542,13 +543,13 @@ func (s *Sync) read(ctx context.Context, d domain.Downloader) error {
 		if s.SABOutside(ctx) {
 			scope = ""
 		} else {
-			jobs = inCategory(jobs, d.Category)
+			jobs = inCategory(jobs, d.Categories())
 		}
 	case d.Protocol == "usenet" && s.SABOutside(ctx):
 		jobs, err = e.List(cctx, "")
 		scope = ""
 	default:
-		jobs, err = e.List(cctx, d.Category)
+		jobs, err = listCategories(cctx, e, d.Categories())
 	}
 	if ctx.Err() != nil && err != nil {
 		return err // stopping, so the client is not to blame
@@ -584,14 +585,14 @@ func isSab(e Engine) bool {
 	return ok
 }
 
-// inCategory keeps the jobs of one category. "" or "*" keeps all.
-func inCategory(jobs []Job, cat string) []Job {
-	if cat == "" || cat == "*" {
+// inCategory keeps the jobs in one of cats. "" or "*" among them keeps all.
+func inCategory(jobs []Job, cats []string) []Job {
+	if len(cats) == 0 || slices.Contains(cats, "") || slices.Contains(cats, "*") {
 		return jobs
 	}
 	out := jobs[:0:0]
 	for _, j := range jobs {
-		if j.Category == cat {
+		if slices.Contains(cats, j.Category) {
 			out = append(out, j)
 		}
 	}

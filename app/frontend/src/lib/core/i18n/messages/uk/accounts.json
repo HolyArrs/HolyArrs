@@ -367,5 +367,6 @@
 	"accounts.language.label": "Мова",
 	"accounts.language.auto": "Автоматично",
 	"accounts.language.hint": "Автоматично — за твоїм браузером. Зберігається в обліковому записі.",
-	"accounts.language.saveFailed": "Не вдалося зберегти мову"
+	"accounts.language.saveFailed": "Не вдалося зберегти мову",
+	"accounts.account.watchEveryone": "Власник увімкнув це для всіх. Вимкніть обидва, щоб зупинити."
 }

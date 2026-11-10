@@ -29,5 +29,7 @@
 "settings.requests.plex": "Plex ウォッチリスト",
 "settings.requests.plexDesc": "Plex のウォッチリストにある作品がリクエストになります",
 "settings.requests.plexOn": "Plex ウォッチリストからリクエスト",
-"settings.requests.plexOnHint": "各ユーザーがマイアカウントでオンにします。上限も適用されます。"
+"settings.requests.plexOnHint": "各ユーザーがマイアカウントでオンにします。上限も適用されます。",
+	"settings.requests.plexEveryone": "Plex でサインインする全員に対してオンにする",
+	"settings.requests.plexEveryoneHint": "各自がマイアカウントで自分の分をオフにできます。"
 }

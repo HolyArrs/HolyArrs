@@ -117,7 +117,6 @@ Then `seed -config ./config` adds the demo library and `seed -config ./config -r
 | Switch | Feature |
 |---|---|
 | `ai_apps` | AI app connections and keys |
-| `plex_watchlists` | Plex watchlists become requests |
 | `row_title_stats` | Explore row statistics for the owner |
 | `trakt_lists` | Trakt lists |
 | `alert_channels_more` | Alert channels beyond Discord and email |
