@@ -895,6 +895,7 @@
 	"downloads.pr.err.term200": "हर शब्द में ज़्यादा से ज़्यादा 200 अक्षर हो सकते हैं।",
 	"downloads.pr.err.terms50": "ज़्यादा से ज़्यादा 50 शब्द लिखें।",
 	"downloads.pr.err.termsMin": "कम से कम एक शब्द या पैटर्न लिखें।",
+	"downloads.pr.err.sizeRange": "न्यूनतम या अधिकतम आकार दें, अधिकतम न्यूनतम से बड़ा हो।",
 	"downloads.pr.err.traitName": "विशेषता को एक नाम दें।",
 	"downloads.pr.err.traitOnce": "हर विशेषता एक ही बार सूची में आ सकती है।",
 	"downloads.pr.err.wait": "इंतज़ार 0 से 10080 मिनट (7 दिन) तक हो सकता है।",
@@ -1211,5 +1212,13 @@
 	"downloads.ot.kindName": "नाम",
 	"downloads.ot.kindGroup": "ग्रुप",
 	"downloads.ot.kindSource": "सोर्स",
-	"downloads.ot.kindResolution": "रिज़ॉल्यूशन"
+	"downloads.ot.kindResolution": "रिज़ॉल्यूशन",
+	"downloads.ot.size": "आकार",
+	"downloads.ot.kindSize": "आकार",
+	"downloads.ot.over": "इससे अधिक (GB)",
+	"downloads.ot.upTo": "इतने तक (GB)",
+	"downloads.ot.hintSize": "पूरे Release का आकार GB में। कोई सीमा न रखने के लिए एक तरफ़ खाली छोड़ें। जिस Release का आकार नहीं दिया गया, वह कभी मेल नहीं खाता।",
+	"downloads.ot.sumSize": "आकार: {range}",
+	"downloads.ot.sizeOver": "{n} GB से अधिक",
+	"downloads.ot.sizeUpTo": "{n} GB तक"
 }

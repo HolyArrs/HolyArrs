@@ -895,6 +895,7 @@
 	"downloads.pr.err.term200": "Cada término admite como máximo 200 caracteres.",
 	"downloads.pr.err.terms50": "Lista como máximo 50 términos.",
 	"downloads.pr.err.termsMin": "Lista al menos una palabra o patrón.",
+	"downloads.pr.err.sizeRange": "Indica un tamaño mínimo o máximo, con el máximo por encima del mínimo.",
 	"downloads.pr.err.traitName": "Ponle un nombre al rasgo.",
 	"downloads.pr.err.traitOnce": "Cada rasgo se puede listar una vez.",
 	"downloads.pr.err.wait": "Una espera puede ser de 0 a 10080 minutos (7 días).",
@@ -1211,5 +1212,13 @@
 	"downloads.ot.kindName": "nombre",
 	"downloads.ot.kindGroup": "grupo",
 	"downloads.ot.kindSource": "origen",
-	"downloads.ot.kindResolution": "resolución"
+	"downloads.ot.kindResolution": "resolución",
+	"downloads.ot.size": "Tamaño",
+	"downloads.ot.kindSize": "tamaño",
+	"downloads.ot.over": "Más de (GB)",
+	"downloads.ot.upTo": "Hasta (GB)",
+	"downloads.ot.hintSize": "El tamaño de todo el Release en GB. Deja un extremo vacío para no poner límite. Un Release sin tamaño conocido nunca encaja.",
+	"downloads.ot.sumSize": "Tamaño: {range}",
+	"downloads.ot.sizeOver": "más de {n} GB",
+	"downloads.ot.sizeUpTo": "hasta {n} GB"
 }
