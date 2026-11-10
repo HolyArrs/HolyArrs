@@ -20,7 +20,7 @@
 	"updates.goBack.step2": "Riavvia il container con quell'immagine (con Compose: <code>docker compose up -d</code>).",
 	"updates.goBack.step3": "La {version} vede che i suoi dati sono più recenti e mostra una pagina al posto dell'app. Lì scrivi il codice monouso da <code>docker logs <container></code> e premi <b>Ripristina i dati di prima dell'aggiornamento</b>. Poi HolyArrs parte con quei dati.",
 	"updates.goBack.title": "Torna alla {version}",
-	"updates.newSince": "Novità dalla tua",
+	"updates.newSince": "Novità rispetto alla tua",
 	"updates.privacy": "A ogni controllo HolyArrs chiede ad api.github.com l'ultima versione, inviando solo l'intestazione User-Agent: HolyArrs/{version}. Nessun account, nessun elenco dei tuoi contenuti, nessun altro dato.",
 	"updates.reader.none": "Ancora nessuna ricerca valida",
 	"updates.releases.fewer": "Mostra meno",
@@ -33,7 +33,7 @@
 	"updates.said.behind": "È uscita una versione più recente. Aggiornare mantiene i tuoi dati e le tue impostazioni: stanno nella cartella di configurazione, non nel programma.",
 	"updates.said.current": "Questa è la versione più recente.",
 	"updates.said.none": "Non è ancora stata pubblicata nessuna versione di HolyArrs.",
-	"updates.said.off": "Il controllo degli aggiornamenti è spento.",
+	"updates.said.off": "Il controllo degli aggiornamenti è disattivato.",
 	"updates.said.problem": "L'ultimo controllo non ha funzionato.",
 	"updates.said.unchecked": "Non ancora controllato."
 }

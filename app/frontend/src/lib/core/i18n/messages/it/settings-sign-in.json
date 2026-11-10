@@ -28,7 +28,7 @@
 	"settings.signIn.tfOptional": "Due fattori facoltativi per gli amministratori",
 	"settings.signIn.minSaved": "Lunghezza minima salvata",
 	"settings.signIn.characters": "{n} caratteri",
-	"settings.signIn.skips": "La rete locale salta l'accesso",
+	"settings.signIn.skips": "La rete locale non richiede l'accesso",
 	"settings.signIn.neededEverywhere": "Accesso richiesto ovunque",
 	"settings.signIn.netsSaved": "Reti locali salvate",
 	"settings.signIn.hostsSaved": "Nomi host salvati",

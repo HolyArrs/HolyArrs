@@ -4,7 +4,7 @@
 	"settings.layout.sections": "Sezioni delle impostazioni",
 	"settings.layout.needsAttention": "Richiede attenzione",
 	"settings.layout.needsAttentionLower": "richiede attenzione",
-	"settings.layout.blocked": "Non puoi cambiare questo",
+	"settings.layout.blocked": "Non puoi modificarlo",
 	"settings.layout.backToSettings": "Torna a Impostazioni",
 	"settings.layout.setPasswordFirst": "Prima imposta una password",
 	"settings.layout.setPasswordDesc": "Chiavi, password, persone e backup richiedono una password di HolyArrs. Non ne hai ancora una.",
