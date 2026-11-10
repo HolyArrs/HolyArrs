@@ -265,7 +265,8 @@
 <svelte:head><title>{head.h} · HolyArrs</title></svelte:head>
 
 {#if firstRun}<SigninBackdrop /><div class="dim" aria-hidden="true"></div>{/if}
-<div class="welcome" class:over-art={firstRun}>
+<!-- First run sits on a dark picture with white text, so its cards and sheets use the dark colours in any theme. -->
+<div class="welcome" class:over-art={firstRun} data-theme={firstRun ? 'dark' : undefined}>
 	<!-- First run keeps the sign-in look: the same moving backdrop behind one glass panel. -->
 	<div class="sheet" class:glass={firstRun} class:light={theme.value === 'light'} data-signin-panel={firstRun ? '' : undefined}>
 	<div class="brand"><img src={to(mark)} alt={firstRun ? 'HolyArrs' : ''} width={firstRun ? 28 : 32} height={firstRun ? 28 : 32} />{#if !firstRun}<span>HolyArrs</span>{/if}</div>
