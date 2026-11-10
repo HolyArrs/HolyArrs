@@ -1,0 +1,116 @@
+name: HolyArrs - CLA
+
+# Our own CLA check, posted by HolyArrs Bot.
+# A first-time contributor is asked to agree to .github/CLA.md by replying with
+# one exact sentence. Agreements are kept in signatures.json on the
+# cla-signatures branch, so main is never written to. The pull request's code
+# is never checked out or run.
+
+on:
+  pull_request_target:
+    types: [opened, reopened, synchronize]
+  issue_comment:
+    types: [created]
+  # Run it by hand for a pull request opened before this check existed.
+  workflow_dispatch:
+    inputs:
+      pull_request:
+        description: Pull request number
+        required: true
+        type: number
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cla-${{ github.event.pull_request.number || github.event.issue.number || inputs.pull_request }}
+  cancel-in-progress: false
+
+jobs:
+  cla:
+    name: CLA
+    runs-on: ubuntu-latest
+    if: github.event_name != 'issue_comment' || github.event.issue.pull_request
+    steps:
+      - name: Sign in as HolyArrs Bot
+        id: bot
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          app-id: ${{ vars.HOLYARRS_BOT_APP_ID }}
+          private-key: ${{ secrets.HOLYARRS_BOT_PRIVATE_KEY }}
+
+      - name: Check or record the agreement
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          github-token: ${{ steps.bot.outputs.token }}
+          script: |
+            const SENTENCE = 'I have read the CLA and I agree to it.';
+            const BRANCH = 'cla-signatures';
+            const FILE = 'signatures.json';
+            const MARK = '<!-- holyarrs-cla -->';
+            const CONTEXT = 'CLA';
+            const MAINTAINERS = ['coderluii'];
+            const doc = `https://github.com/${context.repo.owner}/${context.repo.repo}/blob/main/.github/CLA.md`;
+            const { owner, repo } = context.repo;
+
+            const number = context.payload.pull_request?.number ?? context.payload.issue?.number ?? Number(context.payload.inputs.pull_request);
+            const pr = (await github.rest.pulls.get({ owner, repo, pull_number: number })).data;
+            const author = pr.user.login;
+            const sha = pr.head.sha;
+            const status = (state, description) =>
+              github.rest.repos.createCommitStatus({ owner, repo, sha, state, context: CONTEXT, description, target_url: doc });
+
+            // Maintainers and bots are covered without signing.
+            if (MAINTAINERS.includes(author.toLowerCase()) || pr.user.type === 'Bot') {
+              await status('success', 'Maintainer, no agreement needed');
+              return;
+            }
+
+            // Read the agreements (the branch and file are made on first use).
+            let signatures = [], fileSha;
+            try {
+              const f = (await github.rest.repos.getContent({ owner, repo, path: FILE, ref: BRANCH })).data;
+              signatures = JSON.parse(Buffer.from(f.content, 'base64').toString('utf8'));
+              fileSha = f.sha;
+            } catch (e) {
+              if (e.status !== 404) throw e;
+            }
+            const signed = (login) => signatures.some((s) => s.login.toLowerCase() === login.toLowerCase());
+
+            // The author replied with the exact sentence: record it once.
+            const comment = context.payload.comment;
+            if (comment && comment.user.login.toLowerCase() === author.toLowerCase() &&
+                comment.body.trim() === SENTENCE && !signed(author)) {
+              try {
+                await github.rest.git.getRef({ owner, repo, ref: `heads/${BRANCH}` });
+              } catch (e) {
+                if (e.status !== 404) throw e;
+                const main = (await github.rest.git.getRef({ owner, repo, ref: `heads/${pr.base.ref}` })).data;
+                await github.rest.git.createRef({ owner, repo, ref: `refs/heads/${BRANCH}`, sha: main.object.sha });
+              }
+              signatures.push({ login: author, id: comment.user.id, pull_request: number, comment: comment.html_url, signed_at: comment.created_at });
+              await github.rest.repos.createOrUpdateFileContents({
+                owner, repo, branch: BRANCH, path: FILE, sha: fileSha,
+                message: `CLA: ${author} agreed in #${number}`,
+                content: Buffer.from(JSON.stringify(signatures, null, 2) + '\n').toString('base64'),
+              });
+              await github.rest.issues.createComment({ owner, repo, issue_number: number,
+                body: `${MARK}\nThanks @${author}, your agreement to the [CLA](${doc}) is recorded. You won't be asked again.` });
+            }
+
+            if (signed(author)) {
+              await status('success', 'Contributor agreed to the CLA');
+              return;
+            }
+
+            // Not signed yet: ask once, and keep the check red.
+            await status('failure', 'Waiting for the contributor to agree to the CLA');
+            const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number: number });
+            if (!comments.some((c) => c.body.includes(MARK))) {
+              await github.rest.issues.createComment({ owner, repo, issue_number: number, body:
+                `${MARK}\nThanks for this, @${author}! Before it can be merged, please read the HolyArrs ` +
+                `[contributor licence agreement](${doc}). You keep the copyright to your work; it lets HolyArrs ` +
+                `be offered under the AGPL and a commercial licence, and anything merged stays available under the AGPL.\n\n` +
+                `If you agree, reply to this pull request with exactly this line (you only do this once):\n\n` +
+                '```\n' + SENTENCE + '\n```' });
+            }
