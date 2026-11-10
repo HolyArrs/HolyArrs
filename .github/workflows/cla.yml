@@ -60,11 +60,19 @@ jobs:
             const status = (state, description) =>
               github.rest.repos.createCommitStatus({ owner, repo, sha, state, context: CONTEXT, description, target_url: doc });
 
+            // Everyone who wrote a commit here must agree, not only the opener.
             // Maintainers and bots are covered without signing.
-            if (MAINTAINERS.includes(author.toLowerCase()) || pr.user.type === 'Bot') {
-              await status('success', 'Maintainer, no agreement needed');
-              return;
+            const commits = await github.paginate(github.rest.pulls.listCommits, { owner, repo, pull_number: number });
+            const people = new Map([[author.toLowerCase(), author]]);
+            const unlinked = new Set();
+            for (const c of commits) {
+              for (const who of [c.author, c.committer]) {
+                if (who?.login && who.type !== 'Bot' && who.login !== 'web-flow') people.set(who.login.toLowerCase(), who.login);
+              }
+              if (!c.author?.login) unlinked.add(c.commit.author?.name || 'unknown');
             }
+            for (const m of MAINTAINERS) people.delete(m);
+            if (pr.user.type === 'Bot') people.delete(author.toLowerCase());
 
             // Read the agreements (the branch and file are made on first use).
             let signatures = [], fileSha;
@@ -76,11 +84,12 @@ jobs:
               if (e.status !== 404) throw e;
             }
             const signed = (login) => signatures.some((s) => s.login.toLowerCase() === login.toLowerCase());
+            const same = (a, b) => a.trim().replace(/[.!\s]+$/, '').toLowerCase() === b.replace(/[.!\s]+$/, '').toLowerCase();
 
             // The author replied with the exact sentence: record it once.
             const comment = context.payload.comment;
-            if (comment && comment.user.login.toLowerCase() === author.toLowerCase() &&
-                comment.body.trim() === SENTENCE && !signed(author)) {
+            const signer = comment && people.get(comment.user.login.toLowerCase());
+            if (signer && same(comment.body, SENTENCE) && !signed(signer)) {
               try {
                 await github.rest.git.getRef({ owner, repo, ref: `heads/${BRANCH}` });
               } catch (e) {
@@ -88,29 +97,45 @@ jobs:
                 const main = (await github.rest.git.getRef({ owner, repo, ref: `heads/${pr.base.ref}` })).data;
                 await github.rest.git.createRef({ owner, repo, ref: `refs/heads/${BRANCH}`, sha: main.object.sha });
               }
-              signatures.push({ login: author, id: comment.user.id, pull_request: number, comment: comment.html_url, signed_at: comment.created_at });
+              signatures.push({ login: signer, id: comment.user.id, pull_request: number, comment: comment.html_url, signed_at: comment.created_at });
               await github.rest.repos.createOrUpdateFileContents({
                 owner, repo, branch: BRANCH, path: FILE, sha: fileSha,
-                message: `CLA: ${author} agreed in #${number}`,
+                message: `CLA: ${signer} agreed in #${number}`,
                 content: Buffer.from(JSON.stringify(signatures, null, 2) + '\n').toString('base64'),
               });
               await github.rest.issues.createComment({ owner, repo, issue_number: number,
-                body: `${MARK}\nThanks @${author}, your agreement to the [CLA](${doc}) is recorded. You won't be asked again.` });
+                body: `${MARK}\nThanks @${signer}, your agreement to the [CLA](${doc}) is recorded. You won't be asked again.` });
             }
 
-            if (signed(author)) {
-              await status('success', 'Contributor agreed to the CLA');
+            const waiting = [...people.values()].filter((p) => !signed(p));
+            if (!waiting.length && !unlinked.size) {
+              await status('success', people.size ? 'Everyone here agreed to the CLA' : 'Nothing to agree to: maintainer or bot');
               return;
             }
 
-            // Not signed yet: ask once, and keep the check red.
-            await status('failure', 'Waiting for the contributor to agree to the CLA');
+            // Not everyone has agreed: keep the check red, and ask each person once,
+            // even when their commit arrives later.
+            await status('failure', unlinked.size && !waiting.length
+              ? 'A commit is not linked to a GitHub account'
+              : `Waiting for ${waiting.map((p) => '@' + p).join(', ')} to agree to the CLA`.slice(0, 139));
             const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number: number });
-            if (!comments.some((c) => c.body.includes(MARK))) {
-              await github.rest.issues.createComment({ owner, repo, issue_number: number, body:
-                `${MARK}\nThanks for this, @${author}! Before it can be merged, please read the HolyArrs ` +
-                `[contributor licence agreement](${doc}). You keep the copyright to your work; it lets HolyArrs ` +
-                `be offered under the AGPL and a commercial licence, and anything merged stays available under the AGPL.\n\n` +
-                `If you agree, reply to this pull request with exactly this line (you only do this once):\n\n` +
-                '```\n' + SENTENCE + '\n```' });
+            const askMark = (p) => `<!-- holyarrs-cla-ask:${p.toLowerCase()} -->`;
+            const toAsk = waiting.filter((p) => !comments.some((c) => c.body.includes(askMark(p))));
+            const unlinkedMark = '<!-- holyarrs-cla-unlinked -->';
+            const tellUnlinked = unlinked.size && !comments.some((c) => c.body.includes(unlinkedMark));
+            if (toAsk.length || tellUnlinked) {
+              const parts = [`${MARK}${toAsk.map(askMark).join('')}${tellUnlinked ? unlinkedMark : ''}`];
+              if (toAsk.length) {
+                parts.push(
+                  `Thanks for this, ${toAsk.map((p) => '@' + p).join(' ')}! Before it can be merged, please read the HolyArrs ` +
+                  `[contributor licence agreement](${doc}). You keep the copyright to your work; it lets HolyArrs ` +
+                  `be offered under the AGPL and a commercial licence, and anything merged stays available under the AGPL.`,
+                  `If you agree, reply to this pull request with this line (you only do this once):`,
+                  '```\n' + SENTENCE + '\n```');
+              }
+              if (tellUnlinked) {
+                parts.push(`Some commits use an email that isn't linked to a GitHub account (${[...unlinked].join(', ')}). ` +
+                  'Add that email to your GitHub account, or redo those commits with your GitHub email, so they can be checked.');
+              }
+              await github.rest.issues.createComment({ owner, repo, issue_number: number, body: parts.join('\n\n') });
             }
