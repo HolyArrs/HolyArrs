@@ -45,7 +45,6 @@
 	import { DUR, easeIn, easeOut } from '../core/transitions.ts';
 	import { type Decision, type DownloadRow } from '../core/types.ts';
 	import type { TitleView } from '../core/types.ts';
-
 	type ClientAction = 'pause' | 'resume' | 'top' | 'recheck' | 'reannounce' | 'retry';
 	let {
 		rows: everyRow,
@@ -106,7 +105,6 @@
 		/** Upload speed summed by the server over every sending row; falls back to the rows on hand. */
 		upTotal?: number;
 	} = $props();
-
 	let kindOn = $state<KindKey>('');
 	const typed = $derived(kindOn ? everyRow.filter((r) => kindOf(r) === kindOn) : everyRow);
 	// The Downloads search narrows every tab, so the tab counts follow it.
@@ -122,9 +120,7 @@
 	const rows = $derived(trackKey ? bySource.filter((r) => byTracker(r, trackKey)) : bySource);
 	const kindCount = (k: string) => everyRow.filter((r) => kindOf(r) === k).length;
 	const srcCount = (k: string) => everyRow.filter((r) => protocolOf(r) === k).length;
-
 	// The picked tab and sub-tab live in the address as show=tab or tab.sub.
-
 	const dls = new Downloaders(() => watch);
 	const tabNow = (r: DownloadRow): PaneTab => {
 		const t = tabOf(r.id);
@@ -162,7 +158,6 @@
 		sub = sub === k ? '' : k;
 		remember();
 	}
-
 	const allQueue = $derived(typed.filter((r) => !inHistory(r)));
 	const isDone = $derived(on === 'done');
 	const newest = (a: DownloadRow, b: DownloadRow) => (b.finished_at || b.updated_at).localeCompare(a.finished_at || a.updated_at);
@@ -214,7 +209,6 @@
 		remember();
 	}
 	const done = $derived(historyTotals(typed.filter(inHistory)));
-
 	function toggle(id: number) {
 		openId = id;
 		paneOpen = true;
@@ -248,8 +242,7 @@
 		picked = new Set();
 		selecting = false;
 	};
-	// Torrents a torrent Downloader can steer by hash.
-	// Getters, so each word follows the language picked when it is read.
+	// Torrents a torrent Downloader can steer by hash. Getters, so each word follows the language picked when it is read.
 	const ROW_WORD: Record<RowItem, string> = {
 		get pause() { return t('downloads.act.pause'); },
 		get resume() { return t('downloads.act.start'); },
@@ -529,7 +522,6 @@
 		tick().then(() => document.querySelector<HTMLElement>('.dpane [role="tab"][aria-selected="true"]')?.focus());
 	}
 </script>
-
 {#snippet header()}
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div class="dline chead" data-testid="dl-colhead" oncontextmenu={cols.headMenu}>
@@ -546,7 +538,6 @@
 		{#if cols.lineX !== null}<span class="ins" style="left: {cols.lineX}px" data-testid="dl-insert" aria-hidden="true"></span>{/if}
 	</div>
 {/snippet}
-
 {#snippet pills()}
 	{#each tally as c (c.key)}
 		{@const t = tabs.find((x) => x.key === c.key)}
@@ -566,9 +557,7 @@
 		</div>
 	{/each}
 {/snippet}
-
 <svelte:window onpointerdown={cols.outside} onkeydown={listKey} />
-
 <div class="dlgrid" bind:this={cols.grid} style="--tpl: {cols.tpl}; --c-in: {cols.inner}px; --pi: {cols.posterW - 6}px; --lg: {cols.srcBig ? 24 : 18}px">
 <div class="app" data-testid="dl-app" bind:this={cols.appEl} style="--app-h: {cols.appH}px">
 <div class="strip hdr" data-testid="dl-strip">
@@ -619,11 +608,8 @@
 {#snippet morePop()}<DlMorePop {notes} {dls} {watch} />{/snippet}
 <div class="vh"><span data-testid="sb-health">{dls.health}</span></div>
 </div>
-
 <DlColumnPicker {cols} />
-
 </div>
-
 <style>
 	.ch[data-col='proto']:has(:global(svg)) { justify-content: center; }
 	.ch[data-col='kind']:has(:global(svg)) { justify-content: center; }

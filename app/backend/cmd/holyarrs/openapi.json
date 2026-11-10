@@ -20662,6 +20662,57 @@
         "x-holyarrs-scope": "read"
       }
     },
+    "/api/v1/my/language": {
+      "put": {
+        "description": "Saves the app language picked for me, so it follows me to other devices.",
+        "operationId": "putMyLanguage",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "language": {
+                    "example": "de",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "language"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyProfile"
+                }
+              }
+            },
+            "description": "Saved."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Not one of the app's languages."
+          }
+        },
+        "summary": "Set my app language",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "write"
+      }
+    },
     "/api/v1/my/plex-watchlist": {
       "get": {
         "description": "My Plex watchlist switches, when it was last read and the newest entries with what came of each. Reads nothing from Plex.",
