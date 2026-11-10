@@ -15,6 +15,7 @@ Keep a running HolyArrs updated, backed up and healthy.
 - [Schedules](schedules.md): see what runs on a timer and change how often.
 - [Logs and storage](logs.md): read the log, share it safely, find your files.
 - [Parts and safe mode](parts-safe-mode.md): turn parts off, start in safe mode.
+- [Outside addresses](outside-hosts.md): every outside address HolyArrs contacts, for a firewall.
 
 ## Choose where it runs
 
