@@ -482,7 +482,7 @@ func (e *Engine) folders(ctx context.Context) ([]Result, error) {
 			r.State, r.Message = Error, "Library folder "+name+" is not a folder"
 		case lf.Health == "read_only":
 			r.State, r.Message = Error, "HolyArrs cannot write to the Library folder "+name
-		case lf.Health == "no_hardlink":
+		case lf.Health == "no_hardlink" && !lf.CopiesExpected:
 			r.State, r.Message = Warning, "Library folder "+name+" is on another disk or mount than the downloads, so imports are copied, not hardlinked (each file takes its space twice while it seeds); to hardlink, put the downloads and this folder on one disk and one mount"
 		}
 		out = append(out, r)

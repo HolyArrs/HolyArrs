@@ -36,7 +36,7 @@
 ローカルディスク上に新しいフォルダを作り、次の内容を `docker-compose.yml` として保存します。
 
 ```yaml
-name: HolyArrs
+name: holyarrs
 services:
   holyarrs:
     image: holyarrs/holyarrs:latest
@@ -200,14 +200,14 @@ NAS をお使いですか。[Unraid、Synology などの NAS](https://docs.HolyA
 | タグ | 用途 |
 | :----: | --- |
 | `latest` | 最新のリリース。 |
-| `1.0.14` | 特定の1つのバージョンです。動くことはありません。 |
+| `1.0.15` | 特定の1つのバージョンです。動くことはありません。 |
 
 ## 使い方
 
 ### docker compose（推奨）
 
 ```yaml
-name: HolyArrs
+name: holyarrs
 services:
   holyarrs:
     image: holyarrs/holyarrs:latest

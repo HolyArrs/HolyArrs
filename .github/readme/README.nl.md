@@ -36,7 +36,7 @@
 Sla dit op als `docker-compose.yml` in een nieuwe map op een lokale schijf:
 
 ```yaml
-name: HolyArrs
+name: holyarrs
 services:
   holyarrs:
     image: holyarrs/holyarrs:latest
@@ -200,14 +200,14 @@ De images staan op Docker Hub als [`holyarrs/holyarrs`](https://hub.docker.com/r
 | Tag | Gebruik het voor |
 | :----: | --- |
 | `latest` | De nieuwste versie. |
-| `1.0.14` | Eén exacte versie. Die verandert nooit. |
+| `1.0.15` | Eén exacte versie. Die verandert nooit. |
 
 ## Gebruik
 
 ### docker compose (aanbevolen)
 
 ```yaml
-name: HolyArrs
+name: holyarrs
 services:
   holyarrs:
     image: holyarrs/holyarrs:latest

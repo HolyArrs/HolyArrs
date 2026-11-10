@@ -45,11 +45,12 @@ type FolderView struct {
 	Health           string     `json:"health"`
 	HealthReason     string     `json:"health_reason"`
 	HealthCheckedAt  *time.Time `json:"health_checked_at,omitempty"`
+	CopiesExpected   bool       `json:"copies_expected"`
 }
 
 func folderView(f mf.LibraryFolder) FolderView {
 	return FolderView{ID: f.ID, Path: f.Path, Kind: f.Kind, Label: f.Label, DefaultPickRules: f.DefaultPickRules, FreeSpace: f.FreeSpace,
-		Health: f.Health, HealthReason: f.HealthReason, HealthCheckedAt: f.HealthCheckedAt}
+		Health: f.Health, HealthReason: f.HealthReason, HealthCheckedAt: f.HealthCheckedAt, CopiesExpected: f.CopiesExpected}
 }
 
 // NeverAddView is a Never-add entry as the API shows it.
@@ -98,7 +99,7 @@ func (h *FolderHandlers) editFolder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var c FolderChange
-	if !webserver.Decode(w, r, &c, `send {"label": "...", "default_pick_rules_id": <id>}`) {
+	if !webserver.Decode(w, r, &c, `send {"label": "...", "default_pick_rules_id": <id>, "copies_expected": true}`) {
 		return
 	}
 	lf, err := UpdateFolder(r.Context(), h.Store, id, c, h.Actor(r))

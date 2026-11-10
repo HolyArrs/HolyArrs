@@ -20,3 +20,12 @@ func TestNoHardlinkSaysWhatToDo(t *testing.T) {
 		}
 	}
 }
+
+// A folder where copying is marked as expected counts as fine.
+func TestNoHardlinkExpectedIsFine(t *testing.T) {
+	w := newWorld(t)
+	w.exec(t, "UPDATE library_folders SET health = 'no_hardlink', copies_expected = 1")
+	if c := w.run(t)["library_folder:1"]; c.State != OK {
+		t.Fatalf("state %s (%q), want ok", c.State, c.Message)
+	}
+}

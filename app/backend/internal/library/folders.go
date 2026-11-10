@@ -252,9 +252,11 @@ func pickRulesExist(tx *sql.Tx, id *int64) error {
 type FolderChange struct {
 	Label            *string `json:"label"`
 	DefaultPickRules *int64  `json:"default_pick_rules_id"`
+	CopiesExpected   *bool   `json:"copies_expected"`
 }
 
-// UpdateFolder changes a Library folder's label and default Pick rules.
+// UpdateFolder changes a Library folder's label, default Pick rules and
+// whether copying (no hardlinks) is expected there.
 func UpdateFolder(ctx context.Context, s *database.Store, id int64, c FolderChange, by domain.Actor) (mediafiles.LibraryFolder, error) {
 	var lf mediafiles.LibraryFolder
 	err := s.Write(ctx, func(tx *sql.Tx) error {
@@ -276,6 +278,9 @@ func UpdateFolder(ctx context.Context, s *database.Store, id int64, c FolderChan
 				return err
 			}
 			lf.DefaultPickRules = c.DefaultPickRules
+		}
+		if c.CopiesExpected != nil {
+			lf.CopiesExpected = *c.CopiesExpected
 		}
 		return database.Update(tx, "library_folders", &lf, by)
 	})

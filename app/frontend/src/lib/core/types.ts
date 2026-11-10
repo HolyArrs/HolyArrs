@@ -331,6 +331,7 @@ export interface LibraryFolder {
 	health: string;
 	health_reason: string;
 	health_checked_at?: string;
+	copies_expected?: boolean;
 }
 
 export interface Reason {

@@ -30,7 +30,7 @@ Run HolyArrs in Docker and open it in your browser. It takes a few minutes.
 3. Save this as `docker-compose.yml` and change the paths:
 
    ```yaml
-   name: HolyArrs
+   name: holyarrs
    services:
      holyarrs:
        image: holyarrs/holyarrs:latest
@@ -274,7 +274,7 @@ are not safe. HolyArrs refuses a `/config` there and shows the fix on port
 6262. Use a named volume for `/config`. Media folders can stay host folders.
 
 ```yaml
-name: HolyArrs
+name: holyarrs
 services:
   holyarrs:
     image: holyarrs/holyarrs:latest

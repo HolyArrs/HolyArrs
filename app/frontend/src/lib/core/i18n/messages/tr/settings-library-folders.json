@@ -36,5 +36,8 @@
 	"settings.libraryFolders.extraDesc": "İçe aktarma bunlardan da okuyabilir",
 	"settings.libraryFolders.folders": "Klasörler",
 	"settings.libraryFolders.foldersHint": "Her satıra bir yol, örn. /data/imports. En fazla 32.",
-	"settings.libraryFolders.ownerOnly": "Yalnızca sahip ve yöneticiler"
+	"settings.libraryFolders.ownerOnly": "Yalnızca sahip ve yöneticiler",
+	"settings.libraryFolders.copiesExpected": "Kopyalama bekleniyor",
+	"settings.libraryFolders.copiesExpectedState": "Kopyalıyor, beklendiği gibi",
+	"settings.libraryFolders.warnAgain": "Yeniden uyar"
 }

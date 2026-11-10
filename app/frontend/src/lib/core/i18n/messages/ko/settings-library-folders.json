@@ -36,5 +36,8 @@
 	"settings.libraryFolders.extraDesc": "가져오기는 이 폴더에서도 읽을 수 있습니다",
 	"settings.libraryFolders.folders": "폴더",
 	"settings.libraryFolders.foldersHint": "한 줄에 경로 하나, 예: /data/imports. 최대 32개.",
-	"settings.libraryFolders.ownerOnly": "소유자와 관리자만"
+	"settings.libraryFolders.ownerOnly": "소유자와 관리자만",
+	"settings.libraryFolders.copiesExpected": "복사가 의도된 것임",
+	"settings.libraryFolders.copiesExpectedState": "복사 (의도대로)",
+	"settings.libraryFolders.warnAgain": "다시 경고"
 }

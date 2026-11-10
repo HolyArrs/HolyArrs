@@ -18,6 +18,7 @@ type LibraryFolder struct {
 	HealthCheckedAt  *time.Time `db:"health_checked_at"`
 	SameDiskAs       []int64    `db:"same_disk_as,json"`
 	HealthReason     string     `db:"health_reason"`
+	CopiesExpected   bool       `db:"copies_expected"` // copying without hardlinks is wanted
 }
 
 // Title is one movie, show or artist in the Library.

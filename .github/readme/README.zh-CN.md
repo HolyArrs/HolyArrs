@@ -36,7 +36,7 @@
 在本地磁盘上新建一个文件夹，把下面的内容保存为 `docker-compose.yml`：
 
 ```yaml
-name: HolyArrs
+name: holyarrs
 services:
   holyarrs:
     image: holyarrs/holyarrs:latest
@@ -200,14 +200,14 @@ HolyArrs 只读取你的旧应用，不会改动它们里面的任何东西，�
 | 标签 | 用途 |
 | :----: | --- |
 | `latest` | 最新版本。 |
-| `1.0.14` | 固定的某一个版本，永远不会变。 |
+| `1.0.15` | 固定的某一个版本，永远不会变。 |
 
 ## 用法
 
 ### docker compose（推荐）
 
 ```yaml
-name: HolyArrs
+name: holyarrs
 services:
   holyarrs:
     image: holyarrs/holyarrs:latest
