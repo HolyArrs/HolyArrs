@@ -204,8 +204,8 @@ test('Undo in the delete message puts the movie and its file back', async ({ pag
 	expect(titles.filter((t) => t.kind === 'movie' && t.name === 'Ember Road')).toHaveLength(1);
 });
 
-// With holding off the files go for good, so Delete waits for the exact name; the other delete tests cover holding on, where no name is asked for.
-test('Delete with files and holding off: Delete stays disabled until the exact name is typed', async ({ page }) => {
+// Holding set to 0 keeps deleted files until the holding folder is emptied, so no name is typed there either.
+test('Delete with files and holding kept until emptied: no name to type, Delete is ready', async ({ page }) => {
 	await signIn(page, owner());
 	const call = await api(page);
 	const id = await freshMovie(call, 900009, 'Velvet Tide');
@@ -215,7 +215,7 @@ test('Delete with files and holding off: Delete stays disabled until the exact n
 	await page.goto(`/library/${id}`);
 	await titleAction(page, 'More actions', 'Delete movie');
 	const sheet = page.getByRole('dialog', { name: 'Delete Velvet Tide?' });
-	// Holding is switched off only until the plan has loaded, so other projects' deletes are not affected for long.
+	// Holding is set to 0 only until the plan has loaded, so other projects' deletes are not affected for long.
 	const off = await call('PUT', '/settings/files', { ...rules, holding_days: 0 });
 	expect(off.ok(), await off.text()).toBe(true);
 	try {
@@ -225,13 +225,8 @@ test('Delete with files and holding off: Delete stays disabled until the exact n
 		const back = await call('PUT', '/settings/files', rules);
 		expect(back.ok(), await back.text()).toBe(true);
 	}
-	const del = sheet.getByRole('button', { name: 'Delete movie and files' });
-	await expect(del).toBeDisabled();
-	const typed = sheet.getByPlaceholder('Velvet Tide');
-	await typed.fill('Velvet');
-	await expect(del).toBeDisabled();
-	await typed.fill('Velvet Tide');
-	await expect(del).toBeEnabled();
+	await expect(sheet.getByPlaceholder('Velvet Tide')).toHaveCount(0);
+	await expect(sheet.getByRole('button', { name: 'Delete movie and files' })).toBeEnabled();
 	// Nothing was deleted: cancel leaves the movie and its file in place.
 	await sheet.getByRole('button', { name: 'Cancel' }).click();
 	await expect(sheet).toBeHidden();

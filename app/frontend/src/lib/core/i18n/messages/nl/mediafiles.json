@@ -16,7 +16,6 @@
 	"mediafiles.delete.never": "Nooit meer toevoegen",
 	"mediafiles.delete.neverHint": "Lijsten slaan het over",
 	"mediafiles.delete.willHappen": "Wat er gaat gebeuren",
-	"mediafiles.delete.type": "Typ <b>{name}</b> om te bevestigen",
 	"mediafiles.delete.cancel": "Annuleren",
 	"mediafiles.delete.deleting": "Verwijderen…",
 	"mediafiles.delete.kindAndFiles": "{kind} en bestanden verwijderen",

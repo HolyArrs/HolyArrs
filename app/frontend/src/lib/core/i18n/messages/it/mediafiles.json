@@ -16,7 +16,6 @@
 	"mediafiles.delete.never": "Non aggiungere mai più",
 	"mediafiles.delete.neverHint": "Le liste lo saltano",
 	"mediafiles.delete.willHappen": "Cosa succederà",
-	"mediafiles.delete.type": "Scrivi <b>{name}</b> per confermare",
 	"mediafiles.delete.cancel": "Annulla",
 	"mediafiles.delete.deleting": "Eliminazione…",
 	"mediafiles.delete.kindAndFiles": "Elimina {kind} e i file",

@@ -16,7 +16,6 @@
 	"mediafiles.delete.never": "Більше ніколи не додавати",
 	"mediafiles.delete.neverHint": "Списки його пропускатимуть",
 	"mediafiles.delete.willHappen": "Що станеться",
-	"mediafiles.delete.type": "Введи <b>{name}</b> для підтвердження",
 	"mediafiles.delete.cancel": "Скасувати",
 	"mediafiles.delete.deleting": "Видалення…",
 	"mediafiles.delete.kindAndFiles": "Видалити {kind} і файли",

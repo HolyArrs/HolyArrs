@@ -16,7 +16,6 @@
 	"mediafiles.delete.never": "Bir daha ekleme",
 	"mediafiles.delete.neverHint": "Listeler onu atlar",
 	"mediafiles.delete.willHappen": "Ne olacak",
-	"mediafiles.delete.type": "Onaylamak için <b>{name}</b> yaz",
 	"mediafiles.delete.cancel": "Vazgeç",
 	"mediafiles.delete.deleting": "Siliniyor…",
 	"mediafiles.delete.kindAndFiles": "{kind} ve dosyaları sil",

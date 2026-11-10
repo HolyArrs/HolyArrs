@@ -16,7 +16,6 @@
 	"mediafiles.delete.never": "दोबारा कभी न जोड़ें",
 	"mediafiles.delete.neverHint": "सूचियां इसे छोड़ देती हैं",
 	"mediafiles.delete.willHappen": "क्या होगा",
-	"mediafiles.delete.type": "पक्का करने के लिए <b>{name}</b> लिखें",
 	"mediafiles.delete.cancel": "रद्द करें",
 	"mediafiles.delete.deleting": "डिलीट हो रहा है…",
 	"mediafiles.delete.kindAndFiles": "{kind} और फ़ाइलें डिलीट करें",
