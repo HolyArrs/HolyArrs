@@ -127,6 +127,7 @@
 	"migrate.nothingHere": "ここには何もありません。",
 	"migrate.show100More": "さらに 100 件を表示",
 	"migrate.edit": "{name} を編集",
+	"migrate.appAt": "{address} の {name}",
 	"migrate.addAnApp": "アプリを追加",
 	"migrate.addTheAddress": "アドレスを入力してください。",
 	"migrate.readingStopped": "読み取りを停止しました。",

@@ -657,7 +657,7 @@ func (r *run) moveCredentials() {
 			continue
 		}
 		c.Address = address
-		if cur, ok, err := ReadMoveCredential(r.ctx, r.d.Store, r.d.Vault, x.kind); err == nil && ok && cur == c {
+		if cur, _, ok, err := ReadMoveCredentialAt(r.ctx, r.d.Store, r.d.Vault, x.kind, c.Address); err == nil && ok && cur == c {
 			r.add(item, Unchanged)
 			continue
 		}
