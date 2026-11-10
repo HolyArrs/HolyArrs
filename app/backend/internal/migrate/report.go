@@ -34,7 +34,9 @@ func (r *Report) Markdown() string {
 	if r.Move != 0 {
 		fmt.Fprintf(&b, "- Import: %d\n", r.Move)
 	}
-	fmt.Fprintf(&b, "- When: %s\n", r.At.Format("2006-01-02 15:04 MST"))
+	if !r.At.IsZero() {
+		fmt.Fprintf(&b, "- When: %s\n", r.At.Format("2006-01-02 15:04 MST"))
+	}
 	if len(r.Apps) > 0 {
 		fmt.Fprintf(&b, "- From: %s\n", strings.Join(r.Apps, ", "))
 	}
@@ -46,6 +48,10 @@ func (r *Report) Markdown() string {
 	var parts []string
 	for _, k := range keys {
 		parts = append(parts, fmt.Sprintf("%d %s", r.Counts[k], resultWords[k]))
+	}
+	if len(parts) == 0 {
+		// A move that failed before it started has no items.
+		parts = []string{"nothing was moved"}
 	}
 	fmt.Fprintf(&b, "- In short: %s\n\n", strings.Join(parts, ", "))
 

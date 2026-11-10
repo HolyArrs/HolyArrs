@@ -154,7 +154,7 @@ const stoppedNote = "HolyArrs stopped during this import, before it finished. Wh
 // instead of blocking every later move. A move whose Job is still there is
 // resumed by the queue (a move is safe to repeat).
 func (m *Mover) Recover(ctx context.Context) error {
-	b, _ := json.Marshal(&Report{Lines: []Line{}, Counts: map[string]int{}, NotMoved: []NotMoved{}, NeedsInput: []string{}, Next: []string{stoppedNote}})
+	b, _ := json.Marshal(&Report{At: m.now(), Lines: []Line{}, Counts: map[string]int{}, NotMoved: []NotMoved{}, NeedsInput: []string{}, Next: []string{stoppedNote}})
 	// Only a move with a live job can resume. Orphaned moves keep the
 	// interrupted-move report below instead of becoming approval failures.
 	pending, err := moves(ctx, m.Store, `WHERE state IN ('queued', 'running')
@@ -168,7 +168,7 @@ func (m *Mover) Recover(ctx context.Context) error {
 			planErr = ErrPlanChanged
 		}
 		if planErr != nil {
-			rep := &Report{Move: mv.ID, Lines: []Line{}, Counts: map[string]int{}, Next: []string{"This queued import no longer matches an approved preview. Preview it again and start a new import."}}
+			rep := &Report{Move: mv.ID, At: m.now(), Lines: []Line{}, Counts: map[string]int{}, Next: []string{"This queued import no longer matches an approved preview. Preview it again and start a new import."}}
 			if err := m.setState(ctx, mv.ID, "failed", rep); err != nil {
 				return err
 			}
@@ -206,7 +206,7 @@ func (m *Mover) handle(ctx context.Context, r *jobs.Run) error {
 		if r.Stopping() {
 			return ctx.Err() // a stop while reading the plan: resume after the restart
 		}
-		_ = m.setState(context.WithoutCancel(ctx), mv.ID, "failed", &Report{Move: mv.ID, Lines: []Line{}, Counts: map[string]int{},
+		_ = m.setState(context.WithoutCancel(ctx), mv.ID, "failed", &Report{Move: mv.ID, At: m.now(), Lines: []Line{}, Counts: map[string]int{},
 			Next: []string{"The import could not start from its approved preview: " + err.Error() + ". Preview it again and start a new import."}})
 		return err
 	}
