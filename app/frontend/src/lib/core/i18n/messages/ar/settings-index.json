@@ -1,6 +1,8 @@
 {
 	"settings.index.appearance.theme.theme.label": "السمة",
 	"settings.index.appearance.theme.theme.words": "مظهر سمة فاتح داكن تلقائي وضع ألوان ليلي",
+	"settings.index.appearance.look.look.label": "النمط",
+	"settings.index.appearance.look.look.words": "بسيط عادي هادئ بلا صور بلا توهج تشغيل تلقائي minimal",
 	"settings.index.appearance.language.language.label": "اللغة",
 	"settings.index.appearance.language.language.words": "لغة ترجمة لسان عربي إنجليزي كلمات",
 	"settings.index.appearance.autoplay-trailers.play-trailers-by-themselves.label": "شغّل الإعلانات التشويقية تلقائيًا",

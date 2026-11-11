@@ -4,6 +4,7 @@
 	import Icon from '#lib/ui/Icon.svelte';
 	import type { Snippet } from 'svelte';
 	import { proxied } from '../core/tmdb-image.ts';
+	import { minimalLook } from '../core/look.svelte.ts';
 
 	// Explore's banner for the household's favourite genre: slow art, the genre in large type, a short line and a row of picks not in the Library yet. One click opens the genre page. `layout` 1 lays the picks along the bottom, 2 puts them in a panel on the right.
 	let {
@@ -30,14 +31,18 @@
 		/** Posters rendered by the page so they match every other row. */
 		picks: Snippet;
 	} = $props();
-	const bg = $derived(proxied(art[0]));
+	// The minimal look shows no backdrop, so it is never fetched.
+	const minimal = $derived(minimalLook());
+	const bg = $derived(minimal ? '' : proxied(art[0]));
 </script>
 
-<section class="gb l{layout}" class:square aria-label={eyebrow} data-testid="genre-banner" data-layout={layout}>
-	<div class="art" aria-hidden="true">
-		{#if bg}<img src={bg} alt="" loading="lazy" decoding="async" />{/if}
-		<span class="veil"></span>
-	</div>
+<section class="gb l{layout}" class:square class:minimal aria-label={eyebrow} data-testid="genre-banner" data-layout={layout}>
+	{#if !minimal}
+		<div class="art" aria-hidden="true">
+			{#if bg}<img src={bg} alt="" loading="lazy" decoding="async" />{/if}
+			<span class="veil"></span>
+		</div>
+	{/if}
 	<div class="words">
 		<ArtPill text={eyebrow} icon="sparkle" />
 		<h2 class="name"><a {href} class="stretch">{name}</a></h2>
@@ -81,4 +86,11 @@
 		.name { font-size: clamp(36px, 12cqw, 56px); }
 	}
 	@media (prefers-reduced-motion: reduce) { .art img { animation: none; } }
+	/* Minimal: a plain theme panel with no art, so the words take theme colours. */
+	.gb.minimal { color: var(--text); }
+	.minimal.l1 { min-height: 0; }
+	.minimal .name { font-size: clamp(28px, 3.2cqw, 40px); text-shadow: none; }
+	.minimal .line { color: var(--text-muted); }
+	.minimal .open { color: var(--text); }
+	.minimal .words :global(.ui-art-pill) { --tint: var(--text-muted); color: var(--text); background: var(--surface-3); box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
 </style>

@@ -274,6 +274,7 @@
 	"accounts.account.preferences": "التفضيلات",
 	"accounts.account.trailers": "الإعلانات التشويقية",
 	"accounts.account.trailersHint": "الوضع التلقائي يحترم تقليل الحركة وتوفير البيانات",
+	"accounts.account.trailersMinimal": "متوقف في النمط البسيط",
 	"accounts.account.playTrailers": "شغّل الإعلانات التشويقية",
 	"accounts.account.auto": "تلقائي",
 	"accounts.account.always": "دائمًا",

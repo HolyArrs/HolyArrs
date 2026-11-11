@@ -274,6 +274,7 @@
 	"accounts.account.preferences": "Voorkeuren",
 	"accounts.account.trailers": "Trailers",
 	"accounts.account.trailersHint": "Auto houdt rekening met Beweging beperken en databesparing",
+	"accounts.account.trailersMinimal": "Uit in de minimale weergave",
 	"accounts.account.playTrailers": "Trailers afspelen",
 	"accounts.account.auto": "Auto",
 	"accounts.account.always": "Altijd",

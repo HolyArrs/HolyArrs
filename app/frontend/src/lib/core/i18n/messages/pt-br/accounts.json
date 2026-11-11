@@ -274,6 +274,7 @@
 	"accounts.account.preferences": "Preferências",
 	"accounts.account.trailers": "Trailers",
 	"accounts.account.trailersHint": "Automático respeita Reduzir movimento e economia de dados",
+	"accounts.account.trailersMinimal": "Desligado no visual mínimo",
 	"accounts.account.playTrailers": "Reproduzir trailers",
 	"accounts.account.auto": "Auto",
 	"accounts.account.always": "Sempre",

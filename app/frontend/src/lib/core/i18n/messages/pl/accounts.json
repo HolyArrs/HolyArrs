@@ -274,6 +274,7 @@
 	"accounts.account.preferences": "Preferencje",
 	"accounts.account.trailers": "Zwiastuny",
 	"accounts.account.trailersHint": "Auto uwzględnia Ogranicz ruch i oszczędzanie danych",
+	"accounts.account.trailersMinimal": "Wyłączone w stylu minimalnym",
 	"accounts.account.playTrailers": "Odtwarzaj zwiastuny",
 	"accounts.account.auto": "Auto",
 	"accounts.account.always": "Zawsze",

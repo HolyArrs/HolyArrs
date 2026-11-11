@@ -1,6 +1,8 @@
 {
 	"settings.index.appearance.theme.theme.label": "Tema",
 	"settings.index.appearance.theme.theme.words": "apariencia claro oscuro automático modo colores noche",
+	"settings.index.appearance.look.look.label": "Aspecto",
+	"settings.index.appearance.look.look.words": "mínimo sencillo simple tranquilo sin fotos sin brillo reproducción automática minimal",
 	"settings.index.appearance.language.language.label": "Idioma",
 	"settings.index.appearance.language.language.words": "idioma traducción configuración regional español inglés palabras",
 	"settings.index.appearance.autoplay-trailers.play-trailers-by-themselves.label": "Reproducir tráileres automáticamente",

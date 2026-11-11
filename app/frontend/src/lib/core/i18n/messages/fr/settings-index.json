@@ -1,6 +1,8 @@
 {
 	"settings.index.appearance.theme.theme.label": "Thème",
 	"settings.index.appearance.theme.theme.words": "apparence clair sombre automatique mode couleurs nuit",
+	"settings.index.appearance.look.look.label": "Style",
+	"settings.index.appearance.look.look.words": "minimal simple sobre calme sans photos sans halo lecture automatique",
 	"settings.index.appearance.language.language.label": "Langue",
 	"settings.index.appearance.language.language.words": "langue traduction locale français anglais mots",
 	"settings.index.appearance.autoplay-trailers.play-trailers-by-themselves.label": "Lire les bandes-annonces automatiquement",

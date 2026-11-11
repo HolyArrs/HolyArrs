@@ -274,6 +274,7 @@
 	"accounts.account.preferences": "環境設定",
 	"accounts.account.trailers": "予告編",
 	"accounts.account.trailersHint": "「自動」は、視覚効果を減らす設定とデータセーバーに従います",
+	"accounts.account.trailersMinimal": "ミニマル表示ではオフ",
 	"accounts.account.playTrailers": "予告編を再生",
 	"accounts.account.auto": "自動",
 	"accounts.account.always": "常に",

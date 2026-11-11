@@ -24,6 +24,7 @@
 	import { toasts } from '../core/toasts.svelte.ts';
 	import { to } from '../core/paths.ts';
 	import { autoplayPref, setAutoplayPref, type AutoplayPref } from '../core/trailer/trailer.ts';
+	import { minimalLook } from '../core/look.svelte.ts';
 
 	// Display name: edited inline; Save is on once it differs.
 	let nameDraft = $state('');
@@ -367,7 +368,7 @@
 		<div class="ctl"><LanguagePicker id="language-me" /></div>
 	</div>
 	<div class="srow">
-		<div class="txt"><span class="label">{t('accounts.account.trailers')}</span><span class="hint" title={t('accounts.account.trailersHint')}>{t('accounts.account.trailersHint')}</span></div>
+		<div class="txt"><span class="label">{t('accounts.account.trailers')}</span>{#if minimalLook()}<span class="hint">{t('accounts.account.trailersMinimal')}</span>{:else}<span class="hint" title={t('accounts.account.trailersHint')}>{t('accounts.account.trailersHint')}</span>{/if}</div>
 		<div class="ctl"><SegmentedControl size="sm" label={t('accounts.account.playTrailers')} options={[{ value: 'auto', label: t('accounts.account.auto') }, { value: 'always', label: t('accounts.account.always') }, { value: 'never', label: t('accounts.account.never') }] as { value: AutoplayPref; label: string }[]} value={pref} onchange={(v) => { pref = v; setAutoplayPref(v); location.reload(); }} /></div>
 	</div>
 	<div class="srow" id="recommendations-me">

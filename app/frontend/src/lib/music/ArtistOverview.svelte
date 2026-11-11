@@ -49,6 +49,7 @@
 	import { refreshInbox } from '#lib/core/inbox.svelte.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { to } from '#lib/core/paths.ts';
+	import { minimalLook } from '#lib/core/look.svelte.ts';
 	import type { Ask, LibraryFolder, PickRulesView } from '#lib/core/types.ts';
 
 	// The one artist page: any MusicBrainz artist, in the Library or not. The Library route passes `library` (its menu, progress and ask) and `below` (albums to keep, how HolyArrs keeps it, history, requests).
@@ -273,9 +274,12 @@
 		try { kept = localStorage.getItem(tintKey(id)); } catch {}
 		sampledTint = kept;
 	});
-	const pageTint = $derived(sampledTint || tint ? tintOf(sampledTint || tint) : null);
+	// The minimal look has no banner and no colour from the art: the page keeps the theme.
+	const minimal = $derived(minimalLook());
+	const pageTint = $derived(!minimal && (sampledTint || tint) ? tintOf(sampledTint || tint) : null);
 	$effect(() => {
 		if (pageTint) paintWindow(pageTint);
+		else if (minimal) unpaintWindow();
 	});
 	let toTinted = false;
 	beforeNavigate((nav) => (toTinted = nav.to?.route.id === page.route.id || !!nav.to?.route.id?.startsWith('/music/album')));
@@ -285,7 +289,7 @@
 	// The colour is read from the artist's round photo (one picture per artist, so every visitor gets the same colour); the banner only when there is no photo.
 	$effect(() => {
 		const src = picture, id = mbid;
-		if (!src || sampledTint) return;
+		if (!src || sampledTint || minimal) return;
 		const img = new Image();
 		img.onload = () => {
 			if (id !== mbid || sampledTint) return;
@@ -494,7 +498,7 @@
 {#snippet slimBar()}
 	<!-- The slim bar: the main button and the name, tinted from the banner, once the name has scrolled away. -->
 	<div class="slimwrap">
-		<div class="slim" class:on={slimOn} style:--tint={tint || undefined} data-testid="artist-slim-bar" aria-hidden={!slimOn} inert={!slimOn}>
+		<div class="slim" class:on={slimOn} style:--tint={(!minimal && tint) || undefined} data-testid="artist-slim-bar" aria-hidden={!slimOn} inert={!slimOn}>
 			{@render mainAct()}
 			<span class="slim-name">{hero?.name}</span>
 		</div>
@@ -637,11 +641,11 @@
 	{@render similarRow()}
 {/snippet}
 
-<div class="artist" class:tinted={!!pageTint} style={pageTint ? `--ar-bg:${pageTint.bg};--ar-soft:${pageTint.soft}` : undefined}>
+<div class="artist" class:tinted={!!pageTint} class:minimal style={pageTint ? `--ar-bg:${pageTint.bg};--ar-soft:${pageTint.soft}` : undefined}>
 	{#if error && !hero}<LoadError hasData={false} message={error} network={errorNet} onretry={load} {busy} />{/if}
 	<PageLoader loading={!hero && !error} cached={fromCache} label={t('music.loadingThisArtist')} onretry={load}>
 		{#if hero}
-			<ArtistHeroBanner {mbid} ready={!!hero && hero.mbid === mbid} list={heroList} {picture} backgrounds={art.backgrounds ?? []} {gone} bind:box={heroBox} onimage={heroLoaded} />
+			{#if !minimal}<ArtistHeroBanner {mbid} ready={!!hero && hero.mbid === mbid} list={heroList} {picture} backgrounds={art.backgrounds ?? []} {gone} bind:box={heroBox} onimage={heroLoaded} />{/if}
 			{@render slimBar()}
 			{@render compactLine()}
 			{@render libBits()}
@@ -696,6 +700,11 @@
 	.slimwrap { position: sticky; top: var(--topbar); z-index: 25; height: 0; margin-bottom: calc(var(--gap) * -1); transition: transform var(--bar-glide); }
 	:global(html.bar-hidden) .slimwrap { transform: translateY(calc(-1 * var(--topbar))); }
 	.slim { --tint: #3a3d44; position: absolute; top: 0; left: calc(var(--gutter) * -1); right: calc(var(--gutter) * -1); display: flex; align-items: center; gap: 14px; height: 64px; padding: 0 var(--gutter); box-sizing: border-box; background: color-mix(in srgb, var(--tint) 45%, #0b0c0f); color: #fff; box-shadow: 0 8px 24px rgb(0 0 0 / .22); opacity: 0; translate: 0 -8px; pointer-events: none; transition: opacity var(--dur) var(--ease-out), translate var(--dur) var(--ease-out); }
+	/* Minimal: no banner, so the row is a plain header under the top bar, and the slim bar takes the theme. */
+	.artist.minimal .cline { margin-top: 0; padding-top: 8px; }
+	.artist.minimal .photo { box-shadow: 0 4px 12px rgb(0 0 0 / .18), 0 0 0 4px var(--bg); }
+	.artist.minimal .slim { background: var(--bg); color: var(--text); border-bottom: 1px solid var(--line); box-shadow: none; }
+	:global(html:not([data-theme='dark'])) .artist.minimal .slim :global(.ui-act.primary) { background: var(--text); border-color: var(--text); color: var(--bg); box-shadow: none; }
 	.slim.on { opacity: 1; translate: 0 0; pointer-events: auto; }
 	.slim-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 700 22px/1.1 var(--font-display); letter-spacing: -.01em; }
 	@media (prefers-reduced-motion: reduce) { .slim, .slimwrap { transition: none; translate: none; } }

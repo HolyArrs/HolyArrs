@@ -274,6 +274,7 @@
 	"accounts.account.preferences": "Уподобання",
 	"accounts.account.trailers": "Трейлери",
 	"accounts.account.trailersHint": "Автоматично враховує «Зменшити рух» і економію трафіку",
+	"accounts.account.trailersMinimal": "Вимкнено в мінімальному стилі",
 	"accounts.account.playTrailers": "Відтворювати трейлери",
 	"accounts.account.auto": "Авто",
 	"accounts.account.always": "Завжди",

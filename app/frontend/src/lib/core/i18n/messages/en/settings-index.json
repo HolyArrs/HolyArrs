@@ -1,6 +1,8 @@
 {
 	"settings.index.appearance.theme.theme.label": "Theme",
 	"settings.index.appearance.theme.theme.words": "appearance light dark automatic mode colours colors night",
+	"settings.index.appearance.look.look.label": "Look",
+	"settings.index.appearance.look.look.words": "minimal plain simple calm no photos no glow autoplay",
 	"settings.index.appearance.language.language.label": "Language",
 	"settings.index.appearance.language.language.words": "language translation locale english words",
 	"settings.index.appearance.autoplay-trailers.play-trailers-by-themselves.label": "Play trailers by themselves",

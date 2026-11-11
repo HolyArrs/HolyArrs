@@ -1,6 +1,8 @@
 {
 	"settings.index.appearance.theme.theme.label": "थीम",
 	"settings.index.appearance.theme.theme.words": "दिखावट लाइट डार्क ऑटोमैटिक मोड रंग रात थीम",
+	"settings.index.appearance.look.look.label": "लुक",
+	"settings.index.appearance.look.look.words": "मिनिमल सादा सरल शांत फ़ोटो नहीं चमक नहीं ऑटोप्ले minimal plain",
 	"settings.index.appearance.language.language.label": "भाषा",
 	"settings.index.appearance.language.language.words": "भाषा अनुवाद लोकेल हिंदी अंग्रेज़ी शब्द",
 	"settings.index.appearance.autoplay-trailers.play-trailers-by-themselves.label": "ट्रेलर अपने आप चलाएं",

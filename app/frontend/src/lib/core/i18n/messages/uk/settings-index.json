@@ -1,6 +1,8 @@
 {
 	"settings.index.appearance.theme.theme.label": "Тема",
 	"settings.index.appearance.theme.theme.words": "вигляд світла темна автоматично режим кольори ніч",
+	"settings.index.appearance.look.look.label": "Стиль",
+	"settings.index.appearance.look.look.words": "мінімальний простий спокійний без фото без світіння автовідтворення minimal",
 	"settings.index.appearance.language.language.label": "Мова",
 	"settings.index.appearance.language.language.words": "мова переклад локаль українська слова",
 	"settings.index.appearance.autoplay-trailers.play-trailers-by-themselves.label": "Відтворювати трейлери автоматично",

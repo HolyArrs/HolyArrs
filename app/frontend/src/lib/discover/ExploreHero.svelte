@@ -15,6 +15,7 @@
 		title,
 		href,
 		backdrop,
+		poster,
 		subtitle,
 		settled = true,
 		vtName,
@@ -27,6 +28,8 @@
 		href?: string;
 		/** A backdrop known already, shown at once. */
 		backdrop?: string | null;
+		/** The card's poster, shown at once in the minimal look. */
+		poster?: string | null;
 		subtitle?: string;
 		/** The page has finished its first load. */
 		settled?: boolean;
@@ -50,7 +53,7 @@
 	const line = $derived([rich?.year, ...(rich?.genres ?? []).slice(0, 3)].filter(Boolean).join(' · ') || subtitle || '');
 </script>
 
-<Billboard label={t('discover.exploreHero.featured', { title })} testid="explore-hero" {kind} {tmdb} {title} videos={rich?.videos} {pictures} {vtName} {settled}>
+<Billboard label={t('discover.exploreHero.featured', { title })} testid="explore-hero" {kind} {tmdb} {title} videos={rich?.videos} {pictures} {vtName} {settled} thumb={sized(poster ?? rich?.poster, 'poster', 148) || null}>
 	{#snippet heading()}
 		{#if rich?.logo}
 			<h2 class="bb-logo"><img src={proxied(rich.logo)} alt={title} /></h2>
@@ -80,4 +83,7 @@
 	.info:hover { background: rgb(255 255 255 / 26%); }
 	.info:active { transform: scale(.97); }
 	.info:focus-visible { outline: none; box-shadow: 0 0 0 2px #fff; }
+	:global(.ui-billboard.minimal) .info { font-size: 15px !important; }
+	/* Minimal look on phones: the floating type pills overlap the card's top, so the words start below them. */
+	@media (max-width: 767px) { :global(html .ui-billboard.minimal[data-testid='explore-hero']) { padding-top: 48px; } }
 </style>

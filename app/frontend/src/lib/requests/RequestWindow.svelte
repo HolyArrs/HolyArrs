@@ -269,6 +269,8 @@
 					tmdb={picked.kind === 'artist' ? null : picked.tmdb_id}
 					title={picked.name}
 					{pictures}
+					thumb={music ? (artistPhoto(picked) ? proxied(artistPhoto(picked)!) : null) : picked.poster ? to(picked.poster) : null}
+					thumbSquare={music}
 					position="60% 25%"
 					art={music && (artistBg || mvideo) ? artistArt : undefined}
 				>
@@ -420,7 +422,11 @@
 	.sh-title { font: 800 20px/1.1 var(--font-display, var(--font-ui)); letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 	.sh-kind { color: var(--text-muted); font: 500 13px/1 var(--font-ui); white-space: nowrap; }
 	.frame.status.choosing :global(.ui-billboard .content) { opacity: 0; pointer-events: none; }
+	/* Minimal look: the poster fades with the words while choosing; on phones the words keep clear of the close button and pager. */
+	.frame :global(.ui-billboard.minimal .thumb) { transition: opacity 300ms var(--ease-out); }
+	.frame.choosing :global(.ui-billboard.minimal .thumb) { opacity: 0; }
 	@media (max-width: 767px) {
+		.frame :global(.ui-billboard.minimal) { padding-top: 64px; }
 		.sh-h:has(.sh-title) { flex-wrap: wrap; row-gap: 6px; }
 		.sh-h h3:has(.sh-title) { flex: 1 0 100%; flex-direction: column; align-items: flex-start; gap: 2px; }
 		.sh-h:has(.sh-title) .tl-sheet { margin-left: 0; }
