@@ -159,6 +159,19 @@ export function weekStart(d: Date): Date {
 	return new Date(d.getFullYear(), d.getMonth(), d.getDate() - ((d.getDay() + 6) % 7));
 }
 
+/** A week as one short range in the language's own order ("Nov 24 – 30", "24.–30. Nov."); the year shows only when it is not this year. */
+export function weekRange(from: Date, to: Date, locale: string, now = new Date()): string {
+	const year = from.getFullYear() !== now.getFullYear() || to.getFullYear() !== now.getFullYear();
+	const opts: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'short', ...(year ? { year: 'numeric' } : {}) };
+	let f: Intl.DateTimeFormat;
+	try {
+		f = new Intl.DateTimeFormat(locale, opts);
+	} catch {
+		f = new Intl.DateTimeFormat(undefined, opts);
+	}
+	return typeof f.formatRange === 'function' ? f.formatRange(from, to) : `${f.format(from)} – ${f.format(to)}`;
+}
+
 const viewKey = 'holyarrs.calendar-view';
 
 /** Reads ?view=: cards or list. Old layout links still land somewhere sensible (now or 0, the old page, opens List; 1 to 5 open Cards). */
