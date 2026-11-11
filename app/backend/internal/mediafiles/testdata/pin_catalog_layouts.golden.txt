@@ -55,6 +55,8 @@ Genres []string `db:"genres,json"`
 RuntimeMinutes int `db:"runtime_minutes"`
 Rating string `db:"rating"`
 People []string `db:"people,json"`
+Score *float64 `db:"score"`
+Votes int `db:"votes"`
 Directors []string `db:"directors,json"`
 Studio string `db:"studio"`
 Tags []string `db:"tags,json"`

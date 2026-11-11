@@ -517,6 +517,13 @@ type tmdbExtras struct {
 			Job  string `json:"job"`
 		} `json:"crew"`
 	} `json:"credits"`
+	VoteAverage float64 `json:"vote_average"`
+	VoteCount   int     `json:"vote_count"`
+}
+
+// score is the members' average to one decimal and its vote count.
+func (x tmdbExtras) score() (float64, int) {
+	return float64(int(x.VoteAverage*10+0.5)) / 10, x.VoteCount
 }
 
 // maxCast is how many cast names a Title keeps.
@@ -620,6 +627,7 @@ func (m tmdbMovie) movieWithCollection(images string, collectionKnown bool) Movi
 	out.CinemaDate, out.DigitalDate, out.PhysicalDate = m.dates()
 	out.Backdrop, out.Logo, out.Genres, out.People = m.tmdbExtras.pictures(images)
 	out.Directors = m.tmdbExtras.directors()
+	out.Score, out.Votes = m.tmdbExtras.score()
 	for _, c := range m.ProductionCompanies {
 		if c.Name != "" {
 			out.Studio = c.Name
