@@ -93,6 +93,8 @@
 	"settings.downloaders.removeFailedHint": "Löscht auch ihre Dateien",
 	"settings.downloaders.autoAdd": "Gefundene Titel zu deiner Bibliothek hinzufügen",
 	"settings.downloaders.autoAddHint": "Sichere Treffer, die schon in einem Downloader sind, werden ohne Suche hinzugefügt",
+	"settings.downloaders.sabOutside": "Usenet-Jobs anderer Apps anzeigen",
+	"settings.downloaders.sabOutsideHint": "Jobs aus anderen Kategorien eines geteilten SABnzbd oder NZBGet erscheinen unter Downloads, nur zum Ansehen. HolyArrs ordnet sie nie zu.",
 	"settings.downloaders.whenRemove": "Wenn du einen Download entfernst",
 	"settings.downloaders.deleteFiles": "Seine Dateien löschen",
 	"settings.downloaders.turnDown": "Sein Release verwerfen",

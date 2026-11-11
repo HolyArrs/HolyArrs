@@ -93,6 +93,8 @@
 	"settings.downloaders.removeFailedHint": "Apaga os arquivos deles também",
 	"settings.downloaders.autoAdd": "Adicionar títulos reconhecidos à sua Biblioteca",
 	"settings.downloaders.autoAddHint": "Correspondências certas que já estão num gerenciador são adicionadas sem buscar",
+	"settings.downloaders.sabOutside": "Mostrar tarefas Usenet enviadas por outros apps",
+	"settings.downloaders.sabOutsideHint": "Tarefas de outras categorias de um SABnzbd ou NZBGet compartilhado aparecem em Downloads, só para leitura. O HolyArrs nunca faz a correspondência delas.",
 	"settings.downloaders.whenRemove": "Quando você remove um download",
 	"settings.downloaders.deleteFiles": "Apagar os arquivos dele",
 	"settings.downloaders.turnDown": "Descartar o lançamento dele",

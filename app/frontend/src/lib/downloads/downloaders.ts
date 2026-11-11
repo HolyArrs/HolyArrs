@@ -54,6 +54,8 @@ export interface DownloaderSettings {
 	remove_search_again: boolean;
 	/** Add the movie or show of a matched outside item to the Library, without a search. Off by default. */
 	downloads_auto_add?: boolean;
+	/** Show Usenet jobs in other apps' categories on Downloads, read-only; never matched. On by default. */
+	downloads_sab_outside?: boolean;
 }
 
 /** The public recovery record for one uncertain send. It has no Downloader address, request marker or error text on purpose. */

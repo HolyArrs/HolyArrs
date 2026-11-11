@@ -93,6 +93,8 @@
 	"settings.downloaders.removeFailedHint": "También elimina sus archivos",
 	"settings.downloaders.autoAdd": "Añadir a tu Biblioteca los títulos que coinciden",
 	"settings.downloaders.autoAddHint": "Las coincidencias seguras que ya están en un gestor de descargas se añaden sin buscar",
+	"settings.downloaders.sabOutside": "Mostrar trabajos de Usenet enviados por otras apps",
+	"settings.downloaders.sabOutsideHint": "Los trabajos de otras categorías de un SABnzbd o NZBGet compartido aparecen en Descargas, solo para ver. HolyArrs nunca los empareja.",
 	"settings.downloaders.whenRemove": "Cuando quitas una descarga",
 	"settings.downloaders.deleteFiles": "Eliminar sus archivos",
 	"settings.downloaders.turnDown": "Descartar su lanzamiento",

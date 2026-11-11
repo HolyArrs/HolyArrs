@@ -93,6 +93,8 @@
 	"settings.downloaders.removeFailedHint": "Usuwa też ich pliki",
 	"settings.downloaders.autoAdd": "Dodawaj dopasowane tytuły do Biblioteki",
 	"settings.downloaders.autoAddHint": "Pewne dopasowania, które już są w Downloaderze, są dodawane bez wyszukiwania",
+	"settings.downloaders.sabOutside": "Pokazuj zadania Usenet wysłane przez inne aplikacje",
+	"settings.downloaders.sabOutsideHint": "Zadania z innych kategorii współdzielonego SABnzbd lub NZBGet są widoczne w Pobraniach tylko do odczytu. HolyArrs nigdy ich nie dopasowuje.",
 	"settings.downloaders.whenRemove": "Gdy usuwasz pobieranie",
 	"settings.downloaders.deleteFiles": "Usuń jego pliki",
 	"settings.downloaders.turnDown": "Odrzuć jego release",
