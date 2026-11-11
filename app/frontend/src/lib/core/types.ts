@@ -293,6 +293,8 @@ export type Moment =
 	| 'report_made'
 	| 'report_fixed'
 	| 'grab'
+	| 'downloaded'
+	| 'download_failed'
 	| 'import'
 	| 'rename'
 	| 'add'
