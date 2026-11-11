@@ -381,7 +381,7 @@
 					</div>
 					<div class="sheet-b">
 					<div class="body">
-						<span class="who"><Avatar name={w.name} src={w.avatar} size={26} /><span class="gl-id"><span class="gl-n"><b>{w.name.replace(/\s*\(kid\)\s*$/i, '')}</b>{#if isKid}<KidMark label={t('requests.window.kid')} size="sm" />{/if}</span><span class="gl-when"><span class="gl-ask">{t('requests.board.asked')} </span><time datetime={a.asked_at} title={dateTime(a.asked_at)}>{agoLong(a.asked_at)}</time>{#if watchlistLine(a.people, undefined)}<span data-testid="ask-from-watchlist">{` · ${t('requests.board.fromPlex')}`}</span>{/if}</span></span></span>
+						<span class="who"><Avatar name={w.name} src={w.avatar} size={26} /><span class="gl-id"><span class="gl-n"><b>{w.name.replace(/\s*\(kid\)\s*$/i, '')}</b>{#if isKid}<KidMark label={t('requests.window.kid')} size="sm" />{/if}</span><span class="gl-when"><span class="gl-ask">{t('requests.board.asked')}{' '}</span><time datetime={a.asked_at} title={dateTime(a.asked_at)}>{agoLong(a.asked_at)}</time>{#if watchlistLine(a.people, undefined)}<span data-testid="ask-from-watchlist">{` · ${t('requests.board.fromPlex')}`}</span>{/if}</span></span></span>
 					</div>
 					<div class="foot" inert={approving.has(a.id)}>
 						{#if waiting(a)}
