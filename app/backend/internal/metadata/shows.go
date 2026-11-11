@@ -53,6 +53,9 @@ type Show struct {
 	OtherNames       []string          `json:"other_names,omitempty"` // original, alternative and translated names
 	Seasons          []Season          `json:"seasons,omitempty"`
 	Episodes         []Episode         `json:"episodes,omitempty"`
+	// AltStale says the release-name numbers could not be read this time
+	// (the metadata server failed), so stored ones are kept.
+	AltStale bool `json:"-"`
 }
 
 // Season is one season of a looked-up show; 0 holds the specials.
@@ -77,6 +80,11 @@ type Episode struct {
 	Runtime  int        `json:"runtime,omitempty"`
 	ID       string     `json:"id,omitempty"`    // the source's episode id
 	Still    string     `json:"still,omitempty"` // still picture URL (w780), "" when none
+	// AltSeason and AltEpisode are how release names number the episode
+	// when that differs (an anime part TMDB keeps inside one season); 0 when
+	// they agree or nothing is known.
+	AltSeason  int `json:"alt_season,omitempty"`
+	AltEpisode int `json:"alt_episode,omitempty"`
 }
 
 // ShowProvider finds shows. Show takes "<kind>:<id>": the source's own id

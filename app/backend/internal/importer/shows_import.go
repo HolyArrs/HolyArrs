@@ -133,6 +133,9 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 		if it.Numbers.Absolute != nil {
 			e.Ref.Absolute = *it.Numbers.Absolute
 		}
+		if it.Numbers.AltSeason != nil && it.Numbers.AltEpisode != nil {
+			e.Ref.AltSeason, e.Ref.AltEpisode = *it.Numbers.AltSeason, *it.Numbers.AltEpisode
+		}
 		if it.AirDay != nil {
 			e.Ref.AirDay = *it.AirDay
 		}

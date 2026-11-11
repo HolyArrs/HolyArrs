@@ -447,7 +447,16 @@ func syncShowTx(ctx context.Context, tx *sql.Tx, t mediafiles.Title, sh metadata
 		if a, ok := abs[key]; ok {
 			absolute = &a
 		}
+		// How release names number the episode, when that differs.
+		var altS, altE *int
+		if e.AltSeason > 0 && e.AltEpisode > 0 {
+			as, ae := e.AltSeason, e.AltEpisode
+			altS, altE = &as, &ae
+		}
 		if it := match[key]; it != nil {
+			if sh.AltStale {
+				altS, altE = it.Numbers.AltSeason, it.Numbers.AltEpisode
+			}
 			ids := map[string]string{}
 			for k, v := range it.SourceIDs {
 				ids[k] = v
@@ -456,7 +465,7 @@ func syncShowTx(ctx context.Context, tx *sql.Tx, t mediafiles.Title, sh metadata
 				ids[sh.Source] = e.ID
 			}
 			changed := !library.EqStr(it.Name, name) || !library.EqTime(it.AirDate, e.AirDate) || it.AirTimed != (e.Timed && e.AirDate != nil) || !library.EqStr(it.AirDay, day) || !library.EqInt(it.Runtime, runtime) ||
-				!library.EqInt(it.Numbers.Absolute, absolute) || it.Still != e.Still || it.DroppedAt != nil || len(ids) != len(it.SourceIDs) || ids[sh.Source] != it.SourceIDs[sh.Source] ||
+				!library.EqInt(it.Numbers.Absolute, absolute) || !library.EqInt(it.Numbers.AltSeason, altS) || !library.EqInt(it.Numbers.AltEpisode, altE) || it.Still != e.Still || it.DroppedAt != nil || len(ids) != len(it.SourceIDs) || ids[sh.Source] != it.SourceIDs[sh.Source] ||
 				it.PartID == nil || *it.PartID != p.ID || *it.Numbers.Season != e.Season || *it.Numbers.Episode != e.Number
 			if !changed {
 				continue
@@ -464,6 +473,7 @@ func syncShowTx(ctx context.Context, tx *sql.Tx, t mediafiles.Title, sh metadata
 			season, number := e.Season, e.Number
 			it.Numbers.Season, it.Numbers.Episode = &season, &number
 			it.Name, it.AirDate, it.AirDay, it.Runtime, it.Numbers.Absolute, it.DroppedAt, it.SourceIDs, it.PartID = name, e.AirDate, day, runtime, absolute, nil, ids, &p.ID
+			it.Numbers.AltSeason, it.Numbers.AltEpisode = altS, altE
 			it.Still, it.AirTimed = e.Still, e.Timed && e.AirDate != nil
 			if err := database.Update(tx, "items", it, by); err != nil {
 				return out, err
@@ -476,7 +486,7 @@ func syncShowTx(ctx context.Context, tx *sql.Tx, t mediafiles.Title, sh metadata
 		if cut := futureCut(t, choice, now); cut != nil && e.AirDate != nil && !e.AirDate.After(*cut) {
 			keep = false // future: only episodes still to air
 		}
-		it := &mediafiles.Item{TitleID: t.ID, PartID: &p.ID, Kind: "episode", Numbers: mediafiles.Numbers{Season: &season, Episode: &number, Absolute: absolute},
+		it := &mediafiles.Item{TitleID: t.ID, PartID: &p.ID, Kind: "episode", Numbers: mediafiles.Numbers{Season: &season, Episode: &number, Absolute: absolute, AltSeason: altS, AltEpisode: altE},
 			Name: name, AirDate: e.AirDate, AirDay: day, AirTimed: e.Timed && e.AirDate != nil, Runtime: runtime, KeepUpToDate: keep, SourceIDs: map[string]string{}, Still: e.Still}
 		if e.ID != "" {
 			it.SourceIDs[sh.Source] = e.ID

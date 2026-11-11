@@ -180,6 +180,9 @@ func episodeRef(it mediafiles.Item) mediafiles.EpisodeRef {
 	if it.Numbers.Absolute != nil {
 		r.Absolute = *it.Numbers.Absolute
 	}
+	if it.Numbers.AltSeason != nil && it.Numbers.AltEpisode != nil {
+		r.AltSeason, r.AltEpisode = *it.Numbers.AltSeason, *it.Numbers.AltEpisode
+	}
 	if it.AirDay != nil {
 		r.AirDay = *it.AirDay
 	}

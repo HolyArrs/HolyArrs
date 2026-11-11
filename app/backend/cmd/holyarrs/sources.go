@@ -15,8 +15,8 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
-// showSources are the show details sources: TMDB and TVmaze through the
-// metadata server. TVDB is off; TVDB ids are still found through these two.
+// showSources are the show details sources: TMDB (with anime release
+// numbers) and TVmaze through the metadata server. TVDB is off; TVDB ids are still found through these two.
 // HOLYARRS_TVMAZE_URL points at a stand-in (tests); a
 // TVmaze stand-in is asked directly, and HOLYARRS_DIRECT_SOURCES=1
 // (developers only) keeps the real TVmaze behind the server for TVDB and
@@ -31,7 +31,7 @@ func showSources(v *secrets.Vault, hosted *metadata.Hosted) metadata.ShowSources
 		maze = hosted.Service.Shows("tvmaze", direct)
 	}
 	return metadata.ShowSources{
-		"tmdb":   hosted.TMDB(),
+		"tmdb":   hosted.Service.AnimeShows(hosted.TMDB()),
 		"tvmaze": maze,
 	}
 }
