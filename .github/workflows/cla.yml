@@ -172,55 +172,71 @@ jobs:
               }
               for (const f of fresh) {
                 await github.rest.reactions.createForIssueComment({ owner, repo, comment_id: f.comment_id, content: 'hooray' }).catch(() => {});
-                await github.rest.issues.createComment({ owner, repo, issue_number: number, body:
-                  `<!-- holyarrs-cla-thanks:${f.id} -->\n` +
-                  `🎉 You're all set, @${f.login}! Your agreement to the [CLA](${doc}) is saved, and you won't be asked again on any future pull request. Thanks for helping make HolyArrs better 💛` })
-                  // The agreement is already saved; a thank-you that can't be posted must not fail the check.
-                  .catch((e) => core.warning(`thank-you comment not posted: ${e.message}`));
               }
             }
 
             const waiting = [...people.entries()].filter(([id]) => !signed(id));
-            if (!waiting.length && !unlinked.length) {
-              await status('success', people.size ? 'Everyone here agreed to the CLA' : 'Nothing to agree to: maintainer or bot');
+            const done = !waiting.length && !unlinked.length;
+            await status(done ? 'success' : 'failure', done
+              ? (people.size ? 'Everyone here agreed to the CLA' : 'Nothing to agree to: maintainer or bot')
+              : waiting.length
+                ? `Waiting for ${waiting.map(([, l]) => '@' + l).join(', ')} to agree to the CLA`
+                : 'A commit is not linked to a GitHub account');
+
+            // One bot comment per pull request, edited as people agree. Edits notify
+            // nobody, so when someone new has to agree it is posted again instead.
+            // Only the bot's own comments count, so nobody can switch it off.
+            // Older pull requests may still carry the earlier request and thank-you
+            // comments: the newest one becomes this comment and the rest go.
+            const mine = comments.filter((c) => c.user?.login === BOT);
+            const STATUS = /<!-- holyarrs-cla-status:([^ ]*) -->/;
+            const OLD = /<!-- holyarrs-cla-(ask|unlinked):([^ ]*) -->/g;
+            const ours = mine.filter((c) => STATUS.test(c.body) || /<!-- holyarrs-cla-(ask|unlinked|thanks):/.test(c.body));
+            const current = mine.filter((c) => STATUS.test(c.body)).at(-1) ?? ours.filter((c) => !c.body.includes('holyarrs-cla-thanks')).at(-1);
+            if (!current && done) {
+              for (const c of ours) await github.rest.issues.deleteComment({ owner, repo, comment_id: c.id }).catch((e) => core.warning(`CLA comment not removed: ${e.message}`));
               return;
             }
+            const listed = !current ? [] : STATUS.test(current.body) ? current.body.match(STATUS)[1].split(',')
+              : ours.flatMap((c) => [...c.body.matchAll(OLD)].flatMap((m) => m[2].split(',')));
+            const keys = [...waiting.map(([id]) => String(id)), ...unlinked];
+            const opener = pr.user.login;
+            const name = (id, login) => (id === pr.user.id ? '@' + login : '`' + login + '`');
+            const list = [...people.entries()].map(([id, l]) => `${signed(id) ? '✅' : '⏳'} ${name(id, l)}${signed(id) ? ' agreed' : ' still needs to agree'}`).join('\n');
 
-            // Not everyone has agreed: keep the check red, and ask each person
-            // once (even when their commit arrives later). Only the bot's own
-            // markers count, so nobody can switch the reminder off.
-            await status('failure', waiting.length
-              ? `Waiting for ${waiting.map(([, l]) => '@' + l).join(', ')} to agree to the CLA`
-              : 'A commit is not linked to a GitHub account');
-            const mine = comments.filter((c) => c.user?.login === BOT);
-            const askMark = (id) => `<!-- holyarrs-cla-ask:${id} -->`;
-            const toAsk = waiting.filter(([id]) => !mine.some((c) => c.body.includes(askMark(id))));
-            const unlinkedMark = `<!-- holyarrs-cla-unlinked:${unlinked.join(',')} -->`;
-            const tellUnlinked = unlinked.length && !mine.some((c) => c.body.includes(unlinkedMark));
-            if (!toAsk.length && !tellUnlinked) return;
-            const opener = toAsk.find(([id]) => id === pr.user.id);
-            const others = toAsk.filter(([id]) => id !== pr.user.id).slice(0, 10);
-            const named = [...(opener ? [opener] : []), ...others];
-            const who = [...(opener ? ['@' + opener[1]] : []), ...others.map(([, l]) => '`' + l + '`')].join(', ');
+            const parts = [`<!-- holyarrs-cla-status:${keys.join(',')} -->`];
+            if (done) {
+              parts.push(`🎉 All set, thanks @${opener}! Everyone who wrote code here agreed to the HolyArrs [CLA](${doc}), and nobody here gets asked again on future pull requests. Thanks for helping make HolyArrs better 💛`);
+              if (people.size) parts.push(list);
+            } else {
+              parts.push(`👋 Hey @${opener}, thanks for this pull request! I'm HolyArrs Bot, here for one quick thing before it can be merged.`);
+              if (waiting.length) {
+                parts.push(
+                  `📜 Everyone who wrote code here needs to agree once to the HolyArrs [contributor licence agreement](${doc}). In short: you keep the copyright to your work, HolyArrs can be offered under the AGPL and a commercial licence, and anything merged always stays available under the AGPL.`,
+                  `✍️ To agree, add a comment to this pull request (a normal comment, not a review) with this line. You only ever do this once:`,
+                  '```\n' + SENTENCE + '\n```',
+                  list);
+                if (waiting.some(([id]) => id !== pr.user.id)) parts.push(`🤝 @${opener}, could you let the others know?`);
+              }
+              if (unlinked.length) {
+                parts.push(`🔗 These commits use an email that isn't linked to a GitHub account, so I can't tell who wrote them: ${unlinked.map((s) => '`' + s + '`').join(', ')}. ` +
+                  'Add that email to your GitHub account (or redo those commits with your GitHub email), then push again or leave any comment here and I\'ll check again.');
+              }
+            }
+            const body = parts.join('\n\n');
 
-            const parts = [`${named.map(([id]) => askMark(id)).join('')}${tellUnlinked ? unlinkedMark : ''}`];
-            if (named.length) {
-              parts.push(
-                `👋 Hey ${who}, thanks for this pull request! I'm HolyArrs Bot, here for one quick thing before it can be merged.`,
-                `📜 Please read the HolyArrs [contributor licence agreement](${doc}). In short: you keep the copyright to your work, HolyArrs can be offered under the AGPL and a commercial licence, and anything merged always stays available under the AGPL.`,
-                `✍️ If you agree, add a comment to this pull request (a normal comment, not a review) with this line. You only ever do this once:`,
-                '```\n' + SENTENCE + '\n```');
+            // The check already says who still has to agree; a comment that can't be posted must not hide that.
+            const say = (p, what) => p.then(() => true, (e) => { core.warning(`CLA comment not ${what}: ${e.message}`); return false; });
+            const repost = !current || keys.some((k) => !listed.includes(k));
+            if (repost) {
+              if (!(await say(github.rest.issues.createComment({ owner, repo, issue_number: number, body }), 'posted'))) return;
+            } else if (current.body !== body) {
+              // Older comments stay until this one says everything they said.
+              if (!(await say(github.rest.issues.updateComment({ owner, repo, comment_id: current.id, body }), 'updated'))) return;
             }
-            if (others.length) {
-              parts.push(`🤝 ${others.map(([, l]) => '`' + l + '`').join(', ')} also wrote commits here and ${others.length === 1 ? 'needs' : 'need'} to add the line too. @${pr.user.login}, could you let them know?`);
+            for (const c of ours.filter((c) => repost || c.id !== current.id)) {
+              await say(github.rest.issues.deleteComment({ owner, repo, comment_id: c.id }), 'removed');
             }
-            if (tellUnlinked) {
-              parts.push(`🔗 These commits use an email that isn't linked to a GitHub account, so I can't tell who wrote them: ${unlinked.map((s) => '`' + s + '`').join(', ')}. ` +
-                'Add that email to your GitHub account (or redo those commits with your GitHub email), then push again or leave any comment here and I\'ll check again.');
-            }
-            // The red check already names who still has to agree; a comment that can't be posted must not hide that.
-            await github.rest.issues.createComment({ owner, repo, issue_number: number, body: parts.join('\n\n') })
-              .catch((e) => core.warning(`CLA request comment not posted: ${e.message}`));
 
       # Without a working sign-in (wrong key, app not installed) nothing above
       # posts a status, so say so instead of leaving the check waiting forever.
