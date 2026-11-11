@@ -1,0 +1,14 @@
+{
+	"settings.layout.settings": "Nustatymai",
+	"settings.layout.home": "Pradžia",
+	"settings.layout.sections": "Nustatymų skyriai",
+	"settings.layout.needsAttention": "Reikia dėmesio",
+	"settings.layout.needsAttentionLower": "reikia dėmesio",
+	"settings.layout.blocked": "Negalite to keisti",
+	"settings.layout.backToSettings": "Atgal į nustatymus",
+	"settings.layout.setPasswordFirst": "Pirmiausia nustatykite slaptažodį",
+	"settings.layout.setPasswordDesc": "Raktams, slaptažodžiams, žmonėms ir atsarginėms kopijoms reikia HolyArrs slaptažodžio. Jo dar neturite.",
+	"settings.layout.setPasswordLabel": "Nustatyti slaptažodį",
+	"settings.layout.confirmPasswordLabel": "Patvirtinkite slaptažodį",
+	"settings.layout.confirmPasswordDesc": "Raktams, slaptažodžiams, žmonėms ir atsarginėms kopijoms reikia jūsų slaptažodžio. Galioja 10 minučių."
+}

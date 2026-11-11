@@ -1,0 +1,16 @@
+{
+	"settings.danger.stopping": "HolyArrs се зауставља.",
+	"settings.danger.couldnt": "Није успело: {action}",
+	"settings.danger.title": "Опасна зона",
+	"settings.danger.ownerOnly": "Само власник и администратори",
+	"settings.danger.ask": "{label}?",
+	"settings.danger.yes": "Да, {action}",
+	"settings.danger.cancel": "Откажи",
+	"settings.danger.expires": "Истиче за 60 с",
+	"settings.danger.wholeApp": "Цела апликација",
+	"settings.danger.intro": "Ово зауставља HolyArrs. Докерова политика поновног покретања враћа га за пар секунди, осим ако је политика <code>no</code>; тада сам покрени контејнер. Свако пита за потврду.",
+	"settings.danger.restart": "Поново покрени HolyArrs",
+	"settings.danger.safe": "Поново покрени у безбедном режиму",
+	"settings.danger.shutdown": "Искључи",
+	"settings.danger.safeNote": "Покреће се једном само са пријавом, Подешавањима и Библиотеком. Користи кад неки Део блокира покретање."
+}

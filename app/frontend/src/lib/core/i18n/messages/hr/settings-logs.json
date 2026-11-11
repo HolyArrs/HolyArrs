@@ -1,0 +1,18 @@
+{
+	"settings.logs.title": "Zapisnici",
+	"settings.logs.download": "Preuzmi",
+	"settings.logs.filter": "Filtriraj zapisnik",
+	"settings.logs.level": "Razina",
+	"settings.logs.every": "Svaki redak",
+	"settings.logs.warnings": "Upozorenja i pogreške",
+	"settings.logs.errors": "Samo pogreške",
+	"settings.logs.text": "Tekst",
+	"settings.logs.example": "npr. qBittorrent",
+	"settings.logs.from": "Od",
+	"settings.logs.to": "Do",
+	"settings.logs.apply": "Primijeni",
+	"settings.logs.clear": "Očisti",
+	"settings.logs.lines": "Retci",
+	"settings.logs.newer": "Novije",
+	"settings.logs.older": "Starije"
+}

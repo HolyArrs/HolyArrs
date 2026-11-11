@@ -1,0 +1,17 @@
+{
+	"setup.reconnect": "Pieslēgties vēlreiz",
+	"setup.testNow": "Pārbaudīt tagad",
+	"setup.movies": "Filmas",
+	"setup.tvShows": "TV seriāli",
+	"setup.music": "Mūzika",
+	"setup.subtitles": "Subtitri",
+	"setup.fullPath": "Izmanto pilnu mapes ceļu, piemēram, {path}.",
+	"setup.folderUsed": "Šī mape jau tiek izmantota vai atrodas citā, kas tiek izmantota.",
+	"setup.folderMissing": "Šāda mape neeksistē. Pārbaudi ceļu.",
+	"setup.addFolderOrOff": "Pievieno mapi vai izslēdz šo.",
+	"setup.notAnswering": "HolyArrs neatbild. Pēc brīža mēģini vēlreiz.",
+	"setup.addUserPasswordHint": "Pievieno lietotājvārdu un paroli.",
+	"setup.folders": "Mapes",
+	"setup.downloader": "Lejupielādētājs",
+	"setup.source": "Avots"
+}

@@ -1,0 +1,17 @@
+{
+	"setup.reconnect": "Kumonekta ulit",
+	"setup.testNow": "Subukan ngayon",
+	"setup.movies": "Mga Pelikula",
+	"setup.tvShows": "Mga TV show",
+	"setup.music": "Musika",
+	"setup.subtitles": "Mga Subtitle",
+	"setup.fullPath": "Gamitin ang buong path ng folder, tulad ng {path}.",
+	"setup.folderUsed": "Ginagamit na ang folder na ito, o nasa loob ito ng isang ginagamit na.",
+	"setup.folderMissing": "Walang ganoong folder. Tingnan ang path.",
+	"setup.addFolderOrOff": "Magdagdag ng folder o i-off ito.",
+	"setup.notAnswering": "Hindi sumasagot ang HolyArrs. Subukan ulit sa ilang saglit.",
+	"setup.addUserPasswordHint": "Ilagay ang user name at password.",
+	"setup.folders": "Mga Folder",
+	"setup.downloader": "Downloader",
+	"setup.source": "Source"
+}
