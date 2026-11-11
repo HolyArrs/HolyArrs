@@ -62,6 +62,9 @@ type Title struct {
 	// FutureFrom is set for Future seasons only: episodes that aired by
 	// then are not wanted when a refresh finds them.
 	FutureFrom *time.Time `db:"future_from"`
+	// PackWindow is how many episodes ahead a season pack fetches (shows);
+	// 0 fetches the whole season.
+	PackWindow int `db:"pack_window"`
 	Network    *string    `db:"network"`
 	AirTime    *string    `db:"air_time"`  // local, HH:MM
 	TimeZone   *string    `db:"time_zone"` // IANA name

@@ -237,6 +237,27 @@ func TestShowSwitchesAndEdit(t *testing.T) {
 	if _, err := svc.Edit(ctx, mid, library.TitleChange{EpisodeOrder: &order}, false, domain.System); !errors.Is(err, library.ErrShowOnly) {
 		t.Fatalf("order on a movie: %v", err)
 	}
+	// A few episodes at a time from a season pack: 0 is off, 1 to 10 ahead.
+	two := 2
+	if _, err := svc.Edit(ctx, mid, library.TitleChange{PackWindow: &two}, false, domain.System); !errors.Is(err, library.ErrShowOnly) {
+		t.Fatalf("pack window on a movie: %v", err)
+	}
+	for _, n := range []int{-1, 11} {
+		if _, err := svc.Edit(ctx, id, library.TitleChange{PackWindow: &n}, false, domain.System); !errors.Is(err, library.ErrBadPackWindow) {
+			t.Fatalf("pack window %d: %v", n, err)
+		}
+	}
+	if _, err := svc.Edit(ctx, id, library.TitleChange{PackWindow: &two}, false, domain.System); err != nil {
+		t.Fatal(err)
+	}
+	_ = database.Get(ctx, s.Read(), "titles", id, &ti)
+	if ti.PackWindow != 2 {
+		t.Fatalf("pack window saved %d", ti.PackWindow)
+	}
+	info, err := InfoOf(ctx, s.Read(), ti)
+	if err != nil || info.PackWindow != 2 {
+		t.Fatalf("pack window read back %+v %v", info, err)
+	}
 }
 
 func TestShowDefaultsSetting(t *testing.T) {

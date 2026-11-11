@@ -684,5 +684,12 @@
 	"discover.calendar.soonNone": "No dates in the Library are coming up this year.",
 	"discover.calendar.showWholeLibrary": "Show the Whole Library",
 	"discover.searchField.searchDownloads": "Search downloads",
-	"discover.searchField.showsMoviesPeople": "Shows, movies and people"
+	"discover.searchField.showsMoviesPeople": "Shows, movies and people",
+	"discover.titleLibrary.seasonPacks": "Season packs",
+	"discover.titleLibrary.packWhole": "Whole season",
+	"discover.titleLibrary.packAtATime": "{n} episodes at a time",
+	"discover.titleLibrary.packHint": "For torrents in qBittorrent. Usenet gets the whole season.",
+	"discover.titleLibrary.packNextStarted": "Getting the next episodes",
+	"discover.titleLibrary.packOneAtATime": "1 episode at a time",
+	"discover.titleLibrary.packShort": "{n} at a time"
 }

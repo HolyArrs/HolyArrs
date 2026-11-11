@@ -1077,6 +1077,7 @@ pack_alerts
 pack_digest
 pack_id
 pack_slot_ids
+pack_window
 packages
 page
 pageInfo

@@ -32,6 +32,8 @@ type TitleChange struct {
 	// EpisodeGroupID picks one of the show's TMDB episode orders; "" goes
 	// back to TMDB's own numbering.
 	EpisodeGroupID *string `json:"episode_group_id"`
+	// PackWindow takes a season pack a few episodes at a time (0 = off).
+	PackWindow *int `json:"pack_window"`
 	// Tags route the title's grabs and searches (tagset); nil keeps them.
 	Tags *[]string `json:"tags"`
 }
@@ -79,8 +81,10 @@ func (s *Service) Edit(ctx context.Context, titleID int64, c TitleChange, dryRun
 	switch {
 	case show && (c.ReleaseGate != nil || c.GateDelayDays != nil):
 		return res, ErrMovieOnly
-	case !show && (c.EpisodeOrder != nil || c.NewSeasons != nil || c.EpisodeGroupID != nil):
+	case !show && (c.EpisodeOrder != nil || c.NewSeasons != nil || c.EpisodeGroupID != nil || c.PackWindow != nil):
 		return res, ErrShowOnly
+	case c.PackWindow != nil && (*c.PackWindow < 0 || *c.PackWindow > MaxPackWindow):
+		return res, ErrBadPackWindow
 	case c.EpisodeOrder != nil && !ValidOrder(*c.EpisodeOrder):
 		return res, ErrBadOrder
 	case c.NewSeasons != nil && *c.NewSeasons != "all" && *c.NewSeasons != "none":
@@ -137,6 +141,9 @@ func (s *Service) Edit(ctx context.Context, titleID int64, c TitleChange, dryRun
 		}
 		if c.NewSeasons != nil {
 			t.NewPartsPolicy = *c.NewSeasons
+		}
+		if c.PackWindow != nil {
+			t.PackWindow = *c.PackWindow
 		}
 		if c.EpisodeGroupID != nil {
 			t.EpisodeGroupID = nil

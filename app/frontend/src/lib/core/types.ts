@@ -135,6 +135,8 @@ export interface ShowInfo {
 	episode_group?: { id: string; name: string; type: number } | null;
 	season_choice?: string;
 	new_seasons: string;
+	// Episodes ahead a season pack fetches; 0 or missing gets the whole season.
+	pack_window?: number;
 	status: string;
 	network?: string;
 	air_time?: string;
