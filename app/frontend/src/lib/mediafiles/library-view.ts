@@ -9,6 +9,7 @@ import { quality } from '#lib/ui/title-cards.ts';
 import { t as tr } from '../core/i18n/i18n.svelte.ts';
 import { codecLabel, languageName } from './copies.ts';
 import { libraryState } from './library-state.ts';
+import { shownScore } from '../core/rating.ts';
 import { progressOf, releaseDate, type Column } from './table.ts';
 
 export type View = 'rows' | 'table' | 'posters' | 'overview';
@@ -63,6 +64,11 @@ function movieOut(t: TitleView): string {
 	return date(releaseDate(t)) || tr('mediafiles.view.notKnown');
 }
 
+/** A title's score to one decimal, or '' when it has none or too few votes. */
+export function scoreText(t: TitleView): string {
+	return shownScore(t.score, t.votes)?.toFixed(1) ?? '';
+}
+
 export function cell(t: TitleView, c: Column, series: string): string {
 	switch (c.id) {
 		case 'network': return t.show?.network ?? '';
@@ -77,6 +83,7 @@ export function cell(t: TitleView, c: Column, series: string): string {
 		case 'audio': return (t.copy?.audio_languages ?? []).map(languageName).join(', ');
 		case 'genres': return (t.genres ?? []).slice(0, 3).join(', ');
 		case 'rating': return t.rating ?? '';
+		case 'score': return scoreText(t) ? `★ ${scoreText(t)}` : '';
 		case 'path': return t.folder_path ?? '';
 		case 'release': return t.kind === 'movie' ? movieOut(t) : '';
 		case 'runtime': return t.runtime_minutes ? tr('mediafiles.view.runtime', { h: Math.floor(t.runtime_minutes / 60), m: t.runtime_minutes % 60 }) : '';

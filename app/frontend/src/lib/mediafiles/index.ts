@@ -12,6 +12,7 @@ export { canAdopt } from './organise.ts';
 export { changedParts } from './title-defaults.ts';
 export { choices } from './organise.ts';
 export { chooseWarnings } from './releases.ts';
+export { chosenColumns } from './table.ts';
 export { codecLabel } from './copies.ts';
 export { collectionBody } from './collections.ts';
 export { collectionResultLine } from './collections.ts';
