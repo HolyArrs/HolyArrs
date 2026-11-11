@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"strconv"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"testing"
 
@@ -67,8 +68,9 @@ func watchRows(t *testing.T, w *world) []string {
 }
 
 // plexHistoryServer plays a Plex server: one movie library, one show
-// library and a watch history of two accounts.
-func plexHistoryServer(t *testing.T, failHistory *atomic.Bool) *httptest.Server {
+// library and a watch history of two accounts. onHistory, when set, runs
+// as each history page is asked for.
+func plexHistoryServer(t *testing.T, failHistory *atomic.Bool, onHistory func()) *httptest.Server {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("X-Plex-Token") != tok || r.Method != http.MethodGet {
 			w.WriteHeader(http.StatusUnauthorized)
@@ -84,6 +86,9 @@ func plexHistoryServer(t *testing.T, failHistory *atomic.Bool) *httptest.Server 
 		case "/library/sections/2/all":
 			_, _ = w.Write([]byte(plexPage(r, `<Directory ratingKey="7" guid="plex://show/abc"><Guid id="tvdb://100"/></Directory>`)))
 		case "/status/sessions/history/all":
+			if onHistory != nil {
+				onHistory()
+			}
 			if failHistory != nil && failHistory.Load() && r.URL.Query().Get("X-Plex-Container-Start") == "2" {
 				w.WriteHeader(http.StatusInternalServerError)
 				return
@@ -128,7 +133,7 @@ func TestWatchHistoryPlexEveryAccount(t *testing.T) {
 	w := newWorld(t)
 	ctx := context.Background()
 	watchTitles(t, w)
-	srv := plexHistoryServer(t, nil)
+	srv := plexHistoryServer(t, nil, nil)
 	if _, err := Add(ctx, w.s, w.v, Input{Name: "Plex", Kind: "plex", URL: srv.URL, Token: tok}, domain.System); err != nil {
 		t.Fatal(err)
 	}
@@ -187,7 +192,7 @@ func TestWatchHistoryPlexOwnerLinkedByName(t *testing.T) {
 	w := newWorld(t)
 	ctx := context.Background()
 	watchTitles(t, w)
-	srv := plexHistoryServer(t, nil)
+	srv := plexHistoryServer(t, nil, nil)
 	if _, err := Add(ctx, w.s, w.v, Input{Name: "Plex", Kind: "plex", URL: srv.URL, Token: tok}, domain.System); err != nil {
 		t.Fatal(err)
 	}
@@ -225,7 +230,7 @@ func TestWatchHistoryFailedPageKeepsRows(t *testing.T) {
 	ctx := context.Background()
 	watchTitles(t, w)
 	var fail atomic.Bool
-	srv := plexHistoryServer(t, &fail)
+	srv := plexHistoryServer(t, &fail, nil)
 	if _, err := Add(ctx, w.s, w.v, Input{Name: "Plex", Kind: "plex", URL: srv.URL, Token: tok}, domain.System); err != nil {
 		t.Fatal(err)
 	}
@@ -244,8 +249,35 @@ func TestWatchHistoryFailedPageKeepsRows(t *testing.T) {
 	}
 }
 
+// Turning watch history off while a pass reads leaves no rows behind.
+func TestWatchHistoryOffDuringAPassKeepsNoRows(t *testing.T) {
+	smallPages(t)
+	w := newWorld(t)
+	ctx := context.Background()
+	watchTitles(t, w)
+	var once sync.Once
+	srv := plexHistoryServer(t, nil, func() {
+		once.Do(func() {
+			if err := SetWatchHistory(ctx, w.s, false, domain.System); err != nil {
+				t.Error(err)
+			}
+		})
+	})
+	if _, err := Add(ctx, w.s, w.v, Input{Name: "Plex", Kind: "plex", URL: srv.URL, Token: tok}, domain.System); err != nil {
+		t.Fatal(err)
+	}
+	watchOn(t, w, true)
+	if err := (&Linker{Store: w.s, Vault: w.v}).ReadWatchHistory(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if rows := watchRows(t, w); len(rows) != 0 || WatchHistoryOn(ctx, w.s.Read()) {
+		t.Fatalf("rows after off %v", rows)
+	}
+}
+
 // jellyHistoryServer plays Jellyfin or Emby (recorded answer shapes). big
-// makes the second user's page larger than an answer may be.
+// makes the second user's page larger than an answer may be: an empty list
+// padded past the cap, which cut at the cap would read as nothing played.
 func jellyHistoryServer(t *testing.T, kind string, big *atomic.Bool) *httptest.Server {
 	srv := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 		okTok := r.Header.Get("X-Emby-Token") == tok
@@ -282,7 +314,7 @@ func jellyHistoryServer(t *testing.T, kind string, big *atomic.Bool) *httptest.S
 				`{"Type":"Episode","Id":"e9","SeriesId":"zz","ParentIndexNumber":1,"IndexNumber":1,"UserData":{"PlayCount":1}}`)))
 		case "/Users/u2/Items":
 			if big != nil && big.Load() {
-				_, _ = rw.Write([]byte(`{"Items":[{"Type":"Movie","Name":"` + strings.Repeat("x", 5<<20) + `"}]}`))
+				_, _ = rw.Write([]byte(`{"Items":[],"TotalRecordCount":0}` + strings.Repeat(" ", 5<<20)))
 				return
 			}
 			_, _ = rw.Write([]byte(page(`{"Type":"Episode","SeriesId":"s1","ParentIndexNumber":1,"IndexNumber":3,"UserData":{"PlayCount":0,"Played":true}}`)))
