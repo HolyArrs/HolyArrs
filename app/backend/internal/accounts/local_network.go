@@ -154,24 +154,6 @@ func withHomeRanges(list []string, home, cgnat bool) []string {
 	return out
 }
 
-// bridgeLocal covers a browser that opened the host's own address while
-// HolyArrs runs on a Docker bridge network: depending on the Docker set-up
-// the request then arrives from the bridge gateway (172.16-31.x.0.1), not
-// from the browser. It counts as local only when the address typed in the
-// browser (Host) is an IP inside a listed network. The caller has already
-// made sure no forwarding header came and the peer is no known proxy.
-func (a *Auth) bridgeLocal(peer net.IP, host string) bool {
-	v4 := peer.To4()
-	if v4 == nil || v4[0] != 172 || v4[1]&0xf0 != 16 || v4[2] != 0 || v4[3] != 1 {
-		return false
-	}
-	h := net.ParseIP(normHost(host))
-	if h == nil || h.IsLoopback() || h.IsUnspecified() || h.IsLinkLocalUnicast() || gatewayLike(h) {
-		return false
-	}
-	return a.isLocal(h.String())
-}
-
 // gatewayLike says whether an address looks like a container gateway:
 // 172.x.0.1, 10.88.0.1 or 10.89.x.1 bridges, 10.0.2.2 (rootless) or Docker Desktop's
 // 192.168.65.x.

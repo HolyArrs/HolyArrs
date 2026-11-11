@@ -127,6 +127,36 @@ func TestLocalVisitNeedsCSRF(t *testing.T) {
 	}
 }
 
+// A link from another site arrives without the SameSite=Strict local cookie,
+// even when the browser has one. Making a new cookie there would change the
+// token under the tabs already open, so their next save would fail; only a
+// same-site visit makes one.
+func TestCrossSiteVisitMakesNoLocalCookie(t *testing.T) {
+	f := gated(t, Options{})
+	own := ownerOf(t, f)
+	localHome(t, f, own, "")
+	got := func(site string) bool {
+		resp, out := call(t, client(t), "GET", f.srv.URL+"/api/v1/auth/me", "", map[string]string{"Sec-Fetch-Site": site})
+		if resp.StatusCode != 200 {
+			t.Fatalf("%s visit: %d %s", site, resp.StatusCode, out)
+		}
+		for _, ck := range resp.Cookies() {
+			if ck.Name == LocalCookieName {
+				return true
+			}
+		}
+		return false
+	}
+	if got("cross-site") {
+		t.Error("a cross-site visit made a new local cookie")
+	}
+	for _, site := range []string{"same-origin", "none", ""} {
+		if !got(site) {
+			t.Errorf("Sec-Fetch-Site %q: no local cookie", site)
+		}
+	}
+}
+
 // Kid guard: with a Kid around, only a Kid may be the person local visitors
 // become; then more Kids may be made.
 func TestLocalSkipKidGuard(t *testing.T) {
@@ -267,40 +297,37 @@ func TestTrustedProxiesInSettings(t *testing.T) {
 	}
 }
 
-// A browser that opens the host's own LAN address reaches a bridged
-// container from the bridge gateway; that counts as local only when the
-// typed address is in a listed network, and never with forwarding headers.
-func TestBridgeGatewayCountsWhenHostIsListed(t *testing.T) {
-	nets, err := parseLocalNets([]string{"192.168.1.0/24"})
-	if err != nil {
-		t.Fatal(err)
-	}
+// The Host header is written by the visitor, so it never makes a peer local:
+// a request from a container gateway counts only when the gateway itself is
+// listed, whatever address the visitor says it typed.
+func TestGatewayPeerNeedsItsOwnListing(t *testing.T) {
 	a := setup(t, Options{}).a
-	a.localNets.Store(nets)
 	a.skipLocal.Store(true)
-	try := func(peer, host, xff string) bool {
+	try := func(list []string, peer, host string) bool {
+		nets, err := parseLocalNets(list)
+		if err != nil {
+			t.Fatal(err)
+		}
+		a.localNets.Store(nets)
 		r := httptest.NewRequest("GET", "/api/v1/titles", nil)
 		r.RemoteAddr, r.Host = peer+":5000", host
-		if xff != "" {
-			r.Header.Set("X-Forwarded-For", xff)
-		}
 		return a.strictLocal(r)
 	}
+	home := []string{"192.168.1.0/24"}
 	for _, c := range []struct {
-		peer, host, xff string
-		want            bool
+		list       []string
+		peer, host string
+		want       bool
 	}{
-		{"172.17.0.1", "192.168.1.9:6262", "", true},
-		{"172.20.0.1", "192.168.1.9", "", true},
-		{"172.17.0.1", "192.168.2.9:6262", "", false}, // typed address not listed
-		{"172.17.0.1", "127.0.0.1:6262", "", false},
-		{"172.17.0.5", "192.168.1.9:6262", "", false}, // not a gateway
-		{"10.0.2.2", "192.168.1.9:6262", "", false},   // rootless: every visitor looks like this
-		{"172.17.0.1", "192.168.1.9:6262", "192.168.1.5", false},
-		{"8.8.8.8", "192.168.1.9:6262", "", false},
+		{home, "172.17.0.1", "192.168.1.9:6262", false}, // gateway, typed address listed
+		{home, "172.20.0.1", "192.168.1.9", false},
+		{home, "172.17.0.1", "[2001:db8::1]:6262", false},
+		{home, "192.168.1.5", "192.168.1.9:6262", true},
+		{home, "8.8.8.8", "192.168.1.9:6262", false},
+		{[]string{"172.17.0.1"}, "172.17.0.1", "192.168.1.9:6262", true}, // listed on purpose, as today
 	} {
-		if got := try(c.peer, c.host, c.xff); got != c.want {
-			t.Errorf("%s Host %s XFF %q: %v, want %v", c.peer, c.host, c.xff, got, c.want)
+		if got := try(c.list, c.peer, c.host); got != c.want {
+			t.Errorf("%v: %s Host %s: %v, want %v", c.list, c.peer, c.host, got, c.want)
 		}
 	}
 }

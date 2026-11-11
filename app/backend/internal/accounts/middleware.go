@@ -206,7 +206,7 @@ func (a *Auth) strictLocal(r *http.Request) bool {
 	if ip == nil || a.trustedProxy(ip) || a.seenProxy(ip) {
 		return false
 	}
-	return a.isLocal(ip.String()) || a.bridgeLocal(ip, r.Host)
+	return a.isLocal(ip.String())
 }
 
 // anyForwardHeader says whether the request carries any proxy forwarding header.

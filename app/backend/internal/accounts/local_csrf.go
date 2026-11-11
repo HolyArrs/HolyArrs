@@ -13,10 +13,16 @@ import (
 const LocalCookieName = "holyarrs_local"
 
 // localToken returns the CSRF token for this browser's local cookie, setting
-// a fresh cookie when there is none (had false).
+// a fresh cookie when there is none (had false), except on a cross-site visit.
 func (a *Auth) localToken(w http.ResponseWriter, r *http.Request) (csrf string, had bool) {
 	if ck, err := r.Cookie(LocalCookieName); err == nil && localCookieOK(ck.Value) {
 		return localCSRF(ck.Value), true
+	}
+	// A link from another site comes without the cookie even when the
+	// browser has one; a new one would change the token under the tabs
+	// already open. The page's own first call, same-site, makes it.
+	if r.Header.Get("Sec-Fetch-Site") == "cross-site" {
+		return "", false
 	}
 	v := token(32)
 	http.SetCookie(w, &http.Cookie{Name: LocalCookieName, Value: v, Path: "/", HttpOnly: true, SameSite: http.SameSiteStrictMode,

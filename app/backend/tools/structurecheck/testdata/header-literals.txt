@@ -27,6 +27,7 @@ Referrer-Policy
 Remote-Name
 Remote-User
 Retry-After
+Sec-Fetch-Site
 Server
 Server-Timing
 Title
