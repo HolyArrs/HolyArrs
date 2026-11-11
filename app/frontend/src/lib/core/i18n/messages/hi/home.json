@@ -254,6 +254,7 @@
 	"home.finished": "{when} पूरा हुआ",
 	"home.nothingIsDownloadingRight": "अभी कुछ डाउनलोड नहीं हो रहा।",
 	"home.paused2": "{n} रुके हुए।",
+	"home.notSentByHolyArrs": "डाउनलोडर में {n} ऐसे हैं जो HolyArrs ने नहीं भेजे।",
 	"home.someChecksCouldNot": "कुछ जांचें अभी पढ़ी नहीं जा सकीं।",
 	"home.otherCheckPassed": "{n} और जांच पास हुई।",
 	"home.otherChecksPassed": "{n} और जांचें पास हुईं।",

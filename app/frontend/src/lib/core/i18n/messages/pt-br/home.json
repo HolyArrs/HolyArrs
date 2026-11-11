@@ -254,6 +254,7 @@
 	"home.finished": "Concluído {when}",
 	"home.nothingIsDownloadingRight": "Nada está sendo baixado agora.",
 	"home.paused2": "{n} pausados.",
+	"home.notSentByHolyArrs": "{n} no gerenciador de downloads que o HolyArrs não enviou.",
 	"home.someChecksCouldNot": "Algumas verificações não puderam ser lidas agora.",
 	"home.otherCheckPassed": "{n} outra verificação passou.",
 	"home.otherChecksPassed": "{n} outras verificações passaram.",

@@ -254,6 +254,7 @@
 	"home.finished": "Завершено {when}",
 	"home.nothingIsDownloadingRight": "Сейчас ничего не загружается.",
 	"home.paused2": "На паузе: {n}.",
+	"home.notSentByHolyArrs": "В загрузчике: {n}, которые HolyArrs не отправлял.",
 	"home.someChecksCouldNot": "Некоторые проверки сейчас не удалось прочитать.",
 	"home.otherCheckPassed": "Остальных проверок пройдено: {n}.",
 	"home.otherChecksPassed": "Остальных проверок пройдено: {n}.",

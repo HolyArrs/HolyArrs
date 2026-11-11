@@ -254,6 +254,7 @@
 	"home.finished": "完成于 {when}",
 	"home.nothingIsDownloadingRight": "目前没有正在下载的内容。",
 	"home.paused2": "{n} 个已暂停。",
+	"home.notSentByHolyArrs": "下载器中有 {n} 个不是 HolyArrs 发送的。",
 	"home.someChecksCouldNot": "有些检查暂时无法读取。",
 	"home.otherCheckPassed": "另有 {n} 项检查通过。",
 	"home.otherChecksPassed": "另有 {n} 项检查通过。",
