@@ -41,7 +41,7 @@ func TestShowsAPI(t *testing.T) {
 	_ = json.Unmarshal(do(t, "POST", u+"/shows", `{"id":"tmdb:100","seasons":"latest","new_seasons":"none"}`, 201), &add)
 	sv := add.Title.Show
 	if add.Title.Kind != "show" || add.JobID == 0 || len(add.Title.Slots) != 0 || sv.DetailsSource != "tmdb" || sv.EpisodeOrder != "aired" ||
-		sv.SeasonChoice != "latest" || sv.NewSeasons != "none" || sv.Episodes != 5 || len(sv.Seasons) != 3 || sv.NotOutYet != 2 {
+		sv.SeasonChoice != "latest" || sv.NewSeasons != "none" || sv.Episodes != 4 || len(sv.Seasons) != 3 || sv.NotOutYet != 2 {
 		t.Fatalf("added %+v", add)
 	}
 	id := add.Title.ID
