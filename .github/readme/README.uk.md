@@ -17,7 +17,7 @@
   <a href="../../LICENSE"><img src="https://img.shields.io/badge/licence-AGPL--3.0-3b82f6?style=flat-square" alt="Ліцензія: AGPL-3.0"></a>
 </p>
 
-<p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
+<p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a>&nbsp;&nbsp;<a href="https://github.com/sponsors/CoderLuii"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-sponsor-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-sponsor-light.png" height="40" alt="Sponsor HolyArrs" /></picture></a><br><sub>Кожен постер, трейлер і оцінка у твоєму HolyArrs приходять із сервера, який я тримаю й оплачую сам, щоб він лишався безкоштовним для всіх. Якщо HolyArrs зробив твій кіновечір трохи кращим, спонсорство тримає світло увімкненим для всіх нас 💛</sub></p>
 
 <h3 align="center">Шість застосунків, щоб подивитися серіал. Тепер — один.</h3>
 
