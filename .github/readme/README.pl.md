@@ -21,9 +21,9 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.0.17: sortuj bibliotekę według oceny.** Każdy widok pokazuje ocenę każdego tytułu podczas sortowania, od wierszy po plakaty i telefon. [Co nowego](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.0.18: nowy wygląd Minimal**, z małymi plakatami, bez dużych zdjęć i autoodtwarzania. Do tego 8 poprawek, m.in. dla anime, które TMDB dzieli na dwie części. [Co nowego](https://holyarrs.com/whats-new/)
 >
-> <img src="https://github.com/user-attachments/assets/497be538-df38-4325-ab63-5ac51c273528" alt="HolyArrs 1.0.17" width="100%">
+> <img src="https://github.com/user-attachments/assets/f7e6987d-33eb-4fec-a8fe-ce2c2e264cdf" alt="HolyArrs 1.0.18" width="100%">
 
 > Każdy plakat, zwiastun i ocena w twoim HolyArrs pochodzą z serwera, który sam utrzymuję i opłacam, żeby był darmowy dla wszystkich. Jeśli HolyArrs choć trochę umilił ci wieczór z filmem, sponsoring pozwala utrzymać to światło dla nas wszystkich 💛
 >
@@ -222,7 +222,7 @@ Image'e są na Docker Hub jako [`holyarrs/holyarrs`](https://hub.docker.com/r/ho
 | Tag | Do czego użyć |
 | :----: | --- |
 | `latest` | Najnowsza wersja. |
-| `1.0.17` | Jedna dokładna wersja. Nigdy się nie zmienia. |
+| `1.0.18` | Jedna dokładna wersja. Nigdy się nie zmienia. |
 
 ## Użycie
 

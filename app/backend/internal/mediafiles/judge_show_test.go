@@ -213,3 +213,54 @@ func TestGainsPerEpisode(t *testing.T) {
 		t.Fatal("the same copy does not gain")
 	}
 }
+
+// A TMDB season that holds two parts: release names number the second part
+// as season 2, and those names find the stored season 1 episodes.
+func TestMatchEpisodesReleaseNumbers(t *testing.T) {
+	var eps []EpisodeRef
+	for e := 1; e <= 15; e++ {
+		eps = append(eps, EpisodeRef{ItemID: int64(e), Season: 0, Episode: e})
+	}
+	for e := 1; e <= 25; e++ {
+		r := EpisodeRef{ItemID: int64(100 + e), Season: 1, Episode: e, Absolute: e}
+		if e > 12 {
+			r.AltSeason, r.AltEpisode = 2, e-12
+		}
+		eps = append(eps, r)
+	}
+	labels := func(rs []EpisodeRef) []string {
+		var out []string
+		for _, r := range rs {
+			out = append(out, r.Label())
+		}
+		return out
+	}
+	run := func(from, to int) []string {
+		var out []string
+		for e := from; e <= to; e++ {
+			out = append(out, EpisodeRef{Season: 1, Episode: e}.Label())
+		}
+		return out
+	}
+	for _, c := range []struct {
+		name string
+		want []string
+		why  string
+	}{
+		{"Mashle S02E05 1080p WEB-DL", []string{"S01E17"}, ""},
+		{"[SubsPlease] Mashle S2 - 05 (1080p)", []string{"S01E17"}, ""},
+		{"[Erai-raws] Mashle 2nd Season - 05 [1080p]", []string{"S01E17"}, ""},
+		{"Mashle S01E05 1080p WEB-DL", []string{"S01E05"}, ""},
+		{"Mashle S01E17 1080p WEB-DL", []string{"S01E17"}, ""},
+		{"Mashle S01 1080p WEB-DL", run(1, 12), ""},
+		{"Mashle S02 1080p WEB-DL", run(13, 25), ""},
+		{"Mashle S01-S02 1080p WEB-DL", run(1, 25), ""},
+		{"[SubsPlease] Mashle - 17 (1080p)", []string{"S01E17"}, ""},
+		{"Mashle S03E01 1080p WEB-DL", nil, "the show has no episode S03E01"},
+	} {
+		got, why := MatchEpisodes(releasename.Parse(c.name, releasename.Hints{Show: true}), "absolute", eps)
+		if !slices.Equal(labels(got), c.want) || why != c.why {
+			t.Errorf("%s: %v %q, want %v %q", c.name, labels(got), why, c.want, c.why)
+		}
+	}
+}

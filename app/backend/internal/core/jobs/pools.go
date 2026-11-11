@@ -53,6 +53,7 @@ var kindPools = map[string]Pool{
 	"migrate_undo":        PoolHeavy,
 	"rescan_library":      PoolHeavy,
 	"subtitle_look":       PoolHeavy,
+	"recheck_pick_rules":  PoolHeavy,
 }
 
 // Pool is a group of workers. Core work (health checks) never waits behind

@@ -293,5 +293,8 @@
 	"migrate.holyarrsHandlesTheseIts": "يتعامل HolyArrs مع هذه بطريقته. لا شيء مطلوب.",
 	"migrate.allApps": "كل التطبيقات",
 	"migrate.ifAnOldApp": "إذا كان تطبيق قديم يرى مجلدًا تحت مسار مختلف، فأدخل المسارين.",
+	"migrate.notInContainer": "لا يستطيع HolyArrs رؤية {path}. استخدم المسار داخل الحاوية: الجانب الأيمن من وحدة تخزين Docker.",
+	"migrate.foldersItSees": "يمكنه رؤية: {list}",
+	"migrate.sameNewFolder": "نفس المجلد مثل {list}. ستنتهي عناوينهما معًا؛ امنح نسخ 4K أو النسخ الأخرى مجلدًا خاصًا بها.",
 	"migrate.doneOfTotal": "{done} من {total}"
 }

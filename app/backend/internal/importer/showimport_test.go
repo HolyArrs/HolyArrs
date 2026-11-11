@@ -571,3 +571,32 @@ func TestStrandedSweepNeverDoubleImports(t *testing.T) {
 		t.Fatalf("swept an imported pack again: %v", queued)
 	}
 }
+
+// A file named the way releases number an anime part (S02E01) imports into
+// the stored episode that carries those numbers, named by the stored ones.
+func TestShowImportReleaseNumbers(t *testing.T) {
+	w := showSetup(t, []int{3, 4}, "Copper.Valley.S02E01.1080p.WEB.H264-HOLYARRS.mkv", ep(4))
+	sl := w.slot(t, 3)
+	if err := w.s.Write(context.Background(), func(tx *sql.Tx) error {
+		_, err := tx.Exec(`UPDATE items SET numbers = json_set(numbers, '$.alt_season', 2, '$.alt_episode', 1) WHERE id = ?`, sl.ItemID)
+		return err
+	}); err != nil {
+		t.Fatal(err)
+	}
+	imp, err := (&Importer{Store: w.s}).Import(context.Background(), w.dlID, false, domain.System)
+	if err != nil || imp.State != "done" {
+		t.Fatalf("%v %+v", err, imp)
+	}
+	for n, want := range map[int]string{
+		3: "Copper Valley (2025)/Season 1/Copper Valley - S01E03 - Ash 1080p WEB.mkv",
+		4: "Copper Valley (2025)/Season 1/Copper Valley - S01E04 - Spring 1080p WEB.mkv",
+	} {
+		sl := w.slot(t, n)
+		if sl.FileID == nil {
+			t.Fatalf("E%d slot %+v", n, sl)
+		}
+		if f := w.file(t, *sl.FileID); f.RelativePath != want || len(f.SlotIDs) != 1 || f.SlotIDs[0] != w.slots[n] {
+			t.Fatalf("E%d file %+v, want %s", n, f, want)
+		}
+	}
+}

@@ -10,6 +10,7 @@
 	import { wall } from './(home)/pick.ts';
 	import { arrive, coverPage, push, settingsNav, swap } from './(home)/zoom.ts';
 	import { backdrop } from '#lib/accounts/index.ts';
+	import { minimalLook } from '#lib/core/look.svelte.ts';
 	import { partsNow, offPartName } from '#lib/mediafiles/index.ts';
 	import { settingsNow, refreshSettingsStatus, pageState, stateWords } from '#lib/alerts/index.ts';
 	import type { Snippet } from 'svelte';
@@ -159,7 +160,7 @@
 {/snippet}
 
 <!-- Background: this Library's posters, blurred and dimmed, still. -->
-{#if tiles.length && home && backdrop.value === 'posters'}
+{#if tiles.length && home && backdrop.value === 'posters' && !minimalLook()}
 	<div class="sx-wall" aria-hidden="true" data-poster-wall>
 		<div class="tiles">{#each tiles as src, i (i)}<img {src} alt="" decoding="async" />{/each}</div>
 		<div class="veil"></div>

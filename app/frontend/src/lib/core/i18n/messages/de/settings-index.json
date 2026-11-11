@@ -1,6 +1,8 @@
 {
 	"settings.index.appearance.theme.theme.label": "Design",
 	"settings.index.appearance.theme.theme.words": "aussehen hell dunkel automatisch modus farben nacht theme dark light",
+	"settings.index.appearance.look.look.label": "Ansicht",
+	"settings.index.appearance.look.look.words": "minimal schlicht einfach ruhig keine fotos kein leuchten autoplay look plain",
 	"settings.index.appearance.language.language.label": "Sprache",
 	"settings.index.appearance.language.language.words": "sprache übersetzung locale deutsch englisch wörter language",
 	"settings.index.appearance.autoplay-trailers.play-trailers-by-themselves.label": "Trailer von selbst abspielen",

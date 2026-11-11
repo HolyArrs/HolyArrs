@@ -205,3 +205,13 @@ export function posterStatus(t: TitleView, who: Audience): TitleStatus | null {
 export function missingEpisodes<E extends { keep_up_to_date: boolean; slots: { state: string }[] }>(eps: E[]): E[] {
 	return eps.filter((e) => e.keep_up_to_date && e.slots.some((s) => s.state === 'wanted' || busyStates.includes(s.state)));
 }
+
+export type AddKind = 'movie' | 'show' | 'artist';
+const addParts: Record<AddKind, string> = { movie: 'movies', show: 'shows', artist: 'music' };
+const addSearch: Record<AddKind, string> = { movie: '/search?kind=movie', show: '/search?kind=show', artist: '/search?kind=music' };
+
+/** The add buttons on an empty Library page: a kind's own page offers that kind; All offers every part that is on, movies first. */
+export function emptyAdds(kind: Kind, partOff: (part: string) => boolean): { kind: AddKind; href: string }[] {
+	const kinds: AddKind[] = kind === 'all' ? (['movie', 'show', 'artist'] as AddKind[]).filter((k) => !partOff(addParts[k])) : [kind];
+	return kinds.map((k) => ({ kind: k, href: addSearch[k] }));
+}

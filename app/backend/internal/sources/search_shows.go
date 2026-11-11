@@ -49,8 +49,11 @@ type epSlot struct {
 	// kept means the episode, its season, the Version and the show are all kept up to date.
 	kept bool
 	// soon means aired, or airing within a day, when season packs may be taken.
-	soon    bool
-	runtime int
+	soon bool
+	// placeholder means a last episode with no air date after a season that
+	// finished airing a while ago; it does not hold back the season's packs.
+	placeholder bool
+	runtime     int
 }
 
 // showSet is a show search: the show's episodes in one Version and the Slots asked for.
@@ -172,6 +175,9 @@ func (s *Searcher) loadShow(ctx context.Context, ti mediafiles.Title, ver mediaf
 		if it.Numbers.Absolute != nil {
 			e.ref.Absolute = *it.Numbers.Absolute
 		}
+		if it.Numbers.AltSeason != nil && it.Numbers.AltEpisode != nil {
+			e.ref.AltSeason, e.ref.AltEpisode = *it.Numbers.AltSeason, *it.Numbers.AltEpisode
+		}
 		if it.AirDay != nil {
 			e.ref.AirDay = *it.AirDay
 		}
@@ -184,6 +190,27 @@ func (s *Searcher) loadShow(ctx context.Context, ti mediafiles.Title, ver mediaf
 			e.cur = currentOf(ctx, db, *e.sl, set.pr)
 		}
 		set.eps = append(set.eps, e)
+	}
+	// The last dated episode of each season, to spot placeholders after it.
+	last := map[int]epSlot{}
+	for _, e := range set.eps {
+		if l, ok := last[e.ref.Season]; e.it.AirDate != nil && (!ok || e.ref.Episode > l.ref.Episode) {
+			last[e.ref.Season] = e
+		}
+	}
+	// Only one undated episode straight after it is a placeholder; a run of
+	// undated ones is a real unaired stretch.
+	after := map[int]int{}
+	for _, e := range set.eps {
+		if l, ok := last[e.ref.Season]; ok && e.it.AirDate == nil && e.ref.Episode > l.ref.Episode {
+			after[e.ref.Season]++
+		}
+	}
+	settled := time.Now().AddDate(0, 0, -14)
+	for i := range set.eps {
+		e := &set.eps[i]
+		l, ok := last[e.ref.Season]
+		e.placeholder = e.ref.Season > 0 && e.it.AirDate == nil && ok && e.ref.Episode == l.ref.Episode+1 && after[e.ref.Season] == 1 && l.it.AirDate.Before(settled)
 	}
 	return set, nil
 }
@@ -349,7 +376,7 @@ func (set showSet) lines(ss *mediafiles.SlotSet, rel mediafiles.ReleaseFacts, re
 
 	if pack {
 		for _, e := range covered {
-			if e.kept && !e.soon {
+			if e.kept && !e.soon && !e.placeholder {
 				ss.Out = false
 				ss.GateDetail = fmt.Sprintf("not every episode of season %d has aired (%s has not)", e.ref.Season, e.ref.Label())
 				break

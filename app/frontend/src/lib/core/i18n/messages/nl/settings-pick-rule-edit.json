@@ -24,6 +24,8 @@
 	"settings.pickRuleEdit.goodEnough": "Goed genoeg",
 	"settings.pickRuleEdit.goodEnoughAt": "Goed genoeg bij",
 	"settings.pickRuleEdit.goodEnoughHint": "HolyArrs stopt met zoeken naar een betere kopie zodra een bestand deze stap bereikt.",
+	"settings.pickRuleEdit.goodEnoughPoints": "Punten voor goed genoeg",
+	"settings.pickRuleEdit.goodEnoughPointsHint": "Een bestand op de goed-genoeg-stap heeft ook zoveel punten nodig. Laat leeg om alleen op de stap te letten.",
 	"settings.pickRuleEdit.yourTraits": "Je kenmerken",
 	"settings.pickRuleEdit.traits": "Kenmerken en punten",
 	"settings.pickRuleEdit.traitsDesc": "De meeste punten winnen op dezelfde stap",

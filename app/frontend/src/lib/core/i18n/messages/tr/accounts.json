@@ -274,6 +274,7 @@
 	"accounts.account.preferences": "Tercihler",
 	"accounts.account.trailers": "Fragmanlar",
 	"accounts.account.trailersHint": "Otomatik, Hareketi azalt ve veri tasarrufu ayarlarına uyar",
+	"accounts.account.trailersMinimal": "Minimal stilde kapalı",
 	"accounts.account.playTrailers": "Fragmanları oynat",
 	"accounts.account.auto": "Otomatik",
 	"accounts.account.always": "Her zaman",

@@ -12,6 +12,7 @@
 	import { session } from '#lib/core/session.svelte.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { setAutoplaySetting } from '#lib/core/trailer/autoplay.svelte.ts';
+	import { look, setLook, minimalLook, type Look } from '#lib/core/look.svelte.ts';
 	const aboutGroups = ['Information', 'Production', 'Links', 'Ratings', 'Feel'] as const;
 	const isDefault = $derived(!ratingPicks.custom && ratingPicks.list.length === DEFAULT_RATINGS.length && DEFAULT_RATINGS.every((r) => ratingPicks.list.includes(r)));
 
@@ -20,6 +21,11 @@
 	const backdrops = $derived<{ value: Backdrop; label: string }[]>([
 		{ value: 'plain', label: t('settings.appearance.plain') },
 		{ value: 'posters', label: t('settings.appearance.posterWall') }
+	]);
+	let lookChoice = $state<Look>(look.value);
+	const looks = $derived<{ value: Look; label: string }[]>([
+		{ value: 'full', label: t('settings.appearance.lookFull') },
+		{ value: 'minimal', label: t('settings.appearance.lookMinimal') }
 	]);
 	const themes = $derived<{ value: ThemeChoice; label: string; icon: 'sun' | 'moon' | 'settings' }[]>([
 		{ value: 'light', label: t('settings.appearance.light'), icon: 'sun' },
@@ -99,6 +105,12 @@
 	</div>
 </SettingsCard>
 
+<SettingsCard id="look-card" title={t('settings.appearance.look')} description={t('settings.appearance.lookDesc')} icon="appearance">
+	<div id="look" tabindex="-1">
+		<SegmentedControl label={t('settings.appearance.look')} options={looks} bind:value={lookChoice} onchange={(v) => setLook(v)} />
+	</div>
+</SettingsCard>
+
 <SettingsCard id="language-card" title={t('accounts.language.label')} description={t('accounts.language.hint')} icon="appearance">
 	<LanguagePicker id="language" />
 </SettingsCard>
@@ -106,6 +118,7 @@
 <SettingsCard id="backdrop-card" title={t('settings.appearance.background')} description={t('settings.appearance.backgroundDesc')} icon="appearance">
 	<div id="backdrop" tabindex="-1">
 		<SegmentedControl label={t('settings.appearance.background')} options={backdrops} bind:value={backdropChoice} onchange={(v) => setBackdrop(v)} />
+		{#if minimalLook()}<p class="look-hint" data-testid="wall-off-minimal">{t('settings.appearance.wallOffMinimal')}</p>{/if}
 	</div>
 </SettingsCard>
 
@@ -183,5 +196,6 @@
 	.picks { display: flex; flex-direction: column; gap: 0; margin: 0; padding-block: 0 !important; list-style: none; box-shadow: none !important; }
 	.picks > li { padding: 6px 0; }
 	.picks > li + li { box-shadow: inset 0 1px 0 var(--line); }
+	.look-hint { margin: 8px 0 0; color: var(--text-muted); font: var(--t-subhead); }
 	.motion-line { margin: 0; padding-block: 14px; color: var(--text-muted); font: var(--t-subhead); }
 </style>

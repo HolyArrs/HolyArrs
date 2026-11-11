@@ -1,6 +1,7 @@
-import { afterEach, describe, expect, it } from 'vitest';
-import { heroSize, pick, proxied, sharpen, sized } from './tmdb-image.ts';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { heroSize, pick, preloadHero, proxied, sharpen, sized } from './tmdb-image.ts';
 import { setBase } from './paths.ts';
+import { setLook } from './look.svelte.ts';
 
 describe('sized', () => {
 	afterEach(() => setBase(''));
@@ -65,5 +66,29 @@ describe('proxied', () => {
 		expect(proxied('/api/v1/artwork/tmdb/w342/p.jpg')).toBe('/api/v1/artwork/tmdb/w342/p.jpg');
 		expect(proxied('https://assets.fanart.tv/x.png')).toBe('https://assets.fanart.tv/x.png');
 		expect(proxied(null)).toBe('');
+	});
+});
+
+describe('preloadHero', () => {
+	afterEach(() => {
+		setLook('full');
+		vi.unstubAllGlobals();
+	});
+	function stub() {
+		const made: string[] = [];
+		vi.stubGlobal('window', { innerWidth: 1000 });
+		vi.stubGlobal('Image', class { decoding = ''; fetchPriority = ''; set src(u: string) { made.push(u); } });
+		return made;
+	}
+	it('fetches the backdrop in the full look', () => {
+		const made = stub();
+		preloadHero('https://image.tmdb.org/t/p/original/full.jpg');
+		expect(made).toEqual(['/api/v1/artwork/tmdb/w1280/full.jpg']);
+	});
+	it('fetches nothing in the minimal look', () => {
+		const made = stub();
+		setLook('minimal');
+		preloadHero('https://image.tmdb.org/t/p/original/minimal.jpg');
+		expect(made).toEqual([]);
 	});
 });

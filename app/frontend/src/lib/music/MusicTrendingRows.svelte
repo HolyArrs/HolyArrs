@@ -23,6 +23,7 @@
 	import { toasts } from '../core/toasts.svelte.ts';
 	import { refreshInbox } from '../core/inbox.svelte.ts';
 	import { to } from '../core/paths.ts';
+	import { minimalLook } from '../core/look.svelte.ts';
 	import type { Ask, LibraryFolder, PickRulesView, TitleView } from '../core/types.ts';
 
 	// Explore > Music. The server builds every row (personal first, then the charts, similar artists, missing albums and genre rows). Every row says why it is there; albums are square, artists round.
@@ -303,7 +304,8 @@
 								{#if !cv.src || noCover[c.key]}<ArtPlaceholder name={c.name} shape="wide" />{/if}
 								{#if cv.src && !noCover[c.key]}
 									<!-- The square cover on a blurred, darker copy of itself fills the wide frame. -->
-									<img class="blur" src={coverFor(musicImage(c), 120).src} alt="" aria-hidden="true" loading={hi < 2 ? 'eager' : 'lazy'} decoding="async" />
+									<!-- The minimal look skips the blurred copy and shows the cover on a plain surface. -->
+									{#if !minimalLook()}<img class="blur" src={coverFor(musicImage(c), 120).src} alt="" aria-hidden="true" loading={hi < 2 ? 'eager' : 'lazy'} decoding="async" />{/if}
 									<!-- The first 2 cards are on screen at once; the rest wait until scrolled near. -->
 									<img class="sq" src={cv.src} alt="" fetchpriority={hi < 2 ? 'high' : 'auto'} loading={hi < 2 ? 'eager' : 'lazy'} decoding="async" onerror={() => (noCover[c.key] = true)} />
 								{/if}
@@ -462,6 +464,7 @@
 	.feature:hover .frame { transform: translateY(-2px); box-shadow: 0 14px 28px -16px rgb(0 0 0 / .7); }
 	.blur { position: absolute; inset: 0; width: 100%; height: 100%; transform: scale(1.35); object-fit: cover; filter: blur(28px) saturate(1.3) brightness(.7); z-index: -1; }
 	.sq { position: absolute; top: 50%; left: 50%; height: 78%; aspect-ratio: 1; translate: -50% -50%; object-fit: cover; border-radius: 8px; box-shadow: 0 12px 30px -8px rgb(0 0 0 / .65); }
+	:global(html[data-look='minimal']) .sq { box-shadow: 0 4px 12px -6px rgb(0 0 0 / .35); }
 	.photo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 25%; opacity: 0; transition: opacity var(--dur) var(--ease-out); }
 	.photo.in { opacity: 1; }
 	.mini { position: absolute; right: 12px; bottom: 10px; z-index: 1; width: 56px; height: 56px; border-radius: 4px; object-fit: cover; box-shadow: 0 2px 10px rgb(0 0 0 / .45); }

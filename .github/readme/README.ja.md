@@ -21,9 +21,9 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.0.17: ライブラリをスコア順に並べ替え。** 並べ替え中はすべての表示で各タイトルのスコアが見えます。行表示からポスター、スマホまで。 [新着情報](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.0.18: 新しい Minimal 表示。** 小さなポスターで、大きな写真も自動再生もありません。ほかに、TMDB で 2 つに分かれたアニメなど 8 件の修正。 [新着情報](https://holyarrs.com/whats-new/)
 >
-> <img src="https://github.com/user-attachments/assets/497be538-df38-4325-ab63-5ac51c273528" alt="HolyArrs 1.0.17" width="100%">
+> <img src="https://github.com/user-attachments/assets/f7e6987d-33eb-4fec-a8fe-ce2c2e264cdf" alt="HolyArrs 1.0.18" width="100%">
 
 > HolyArrs のポスター、予告編、スコアはすべて、私が自分で運営し費用を払っているサーバーから届いています。だから誰でも無料で使えます。HolyArrs で映画の夜が少しでも楽しくなったなら、スポンサーになってみんなの明かりを灯し続けてください 💛
 >
@@ -222,7 +222,7 @@ NAS をお使いですか。[Unraid、Synology などの NAS](https://docs.HolyA
 | タグ | 用途 |
 | :----: | --- |
 | `latest` | 最新のリリース。 |
-| `1.0.17` | 特定の1つのバージョンです。動くことはありません。 |
+| `1.0.18` | 特定の1つのバージョンです。動くことはありません。 |
 
 ## 使い方
 

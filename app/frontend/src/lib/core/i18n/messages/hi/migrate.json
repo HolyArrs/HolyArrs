@@ -293,5 +293,8 @@
 	"migrate.holyarrsHandlesTheseIts": "HolyArrs इन्हें अपने तरीके से संभालता है। कुछ करना नहीं है।",
 	"migrate.allApps": "सभी ऐप",
 	"migrate.ifAnOldApp": "अगर कोई पुराना ऐप फ़ोल्डर को दूसरे पाथ पर देखता है, तो दोनों लिखें।",
+	"migrate.notInContainer": "HolyArrs {path} नहीं देख पा रहा। उसके कंटेनर के अंदर का पाथ लिखें: Docker वॉल्यूम का दायां हिस्सा।",
+	"migrate.foldersItSees": "यह देख सकता है: {list}",
+	"migrate.sameNewFolder": "{list} जैसा ही फ़ोल्डर। इनके टाइटल एक साथ आ जाएंगे; 4K या दूसरी कॉपियों को उनका अपना फ़ोल्डर दें।",
 	"migrate.doneOfTotal": "{done} / {total}"
 }

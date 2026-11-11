@@ -8,7 +8,8 @@
 	import { autoplayHere, loadUISettings, prefetchTrailer, trailerSources, type TrailerSource } from '../core/trailer/autoplay.svelte.ts';
 	import { dwell, HERO_DELAY, type Video } from '../core/trailer/trailer.ts';
 	import { fromHandoff, openTheater, resumedPlaying, takeBack, theater, type TheaterHandoff } from '../core/trailer/theater.svelte.ts';
-	import { THEATER_CHROME_MS, THEATER_SHRINK_MS } from '../core/motion.ts';
+	import { THEATER_CHROME_MS, THEATER_SHRINK_MS, viewTransitionName } from '../core/motion.ts';
+	import { minimalLook } from '../core/look.svelte.ts';
 
 	let {
 		label,
@@ -24,6 +25,8 @@
 		reveal = false,
 		once = false,
 		onpictureerror,
+		thumb,
+		thumbSquare = false,
 		art,
 		top,
 		heading,
@@ -45,6 +48,9 @@
 		reveal?: boolean;
 		once?: boolean;
 		onpictureerror?: () => void;
+		/** Small picture for the minimal look: left out means none, null means the initials tile. */
+		thumb?: string | null;
+		thumbSquare?: boolean;
 		art?: Snippet;
 		top?: Snippet;
 		heading: Snippet;
@@ -75,7 +81,13 @@
 
 	const quiet = $derived(!wordsShown(phase));
 	const artReady = $derived(artLoaded || !!art || !pictures.length);
-	const trailer = $derived(!!kind && !!tmdb && painted && artReady);
+	const minimal = $derived(minimalLook());
+	let thumbFailed = $state(false);
+	$effect(() => {
+		void thumb;
+		thumbFailed = false;
+	});
+	const trailer = $derived(!minimal && !!kind && !!tmdb && painted && artReady);
 
 	$effect(() => () => words.dispose());
 
@@ -172,7 +184,14 @@
 	}
 </script>
 
-<section class="ui-billboard" class:quiet class:reveal bind:this={box} data-hero aria-label={label} data-testid={testid}>
+<section class="ui-billboard" class:quiet class:reveal class:minimal bind:this={box} data-hero={minimal ? undefined : ''} aria-label={label} data-testid={testid}>
+	{#if minimal}
+		{#if thumb !== undefined}
+			<div class="thumb" class:sq={thumbSquare} aria-hidden="true">
+				{#if thumb && !thumbFailed}<img src={thumb} alt="" decoding="async" fetchpriority="high" use:viewTransitionName={vtName} onerror={() => (thumbFailed = true)} />{:else}<ArtPlaceholder name={title} shape={thumbSquare ? 'square' : 'poster'} />{/if}
+			</div>
+		{/if}
+	{:else}
 	<div class="art" aria-hidden={!sources.length}>
 		{#if !art && (!pictures.length || artFailed || !artLoaded)}
 			<ArtPlaceholder name={!pictures.length || artFailed ? title : ''} shape="wide" loading={!!pictures.length && !artFailed} />
@@ -189,6 +208,7 @@
 		{/if}
 		<div class="shade" class:playing></div>
 	</div>
+	{/if}
 	{#if top}<div class="top">{@render top()}</div>{/if}
 	<div class="content" class:playing>
 		<div class="heading">{@render heading()}</div>
@@ -264,6 +284,29 @@
 		.content { width: 100%; padding: 64px var(--gutter) 24px; }
 		.top { left: var(--gutter); }
 		.actions :global(.ui-act.primary) { flex: 1 1 100%; }
+	}
+	/* Minimal look: a compact flat card with a small poster instead of the big art. */
+	.ui-billboard.minimal { --hero-ink: #161618; min-height: 0; overflow: visible; flex-direction: row; align-items: center; justify-content: flex-start; gap: clamp(16px, 2vw, 28px); padding: clamp(16px, 2vw, 28px); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 8%); }
+	.thumb { position: relative; flex: none; width: clamp(96px, 9vw, 148px); aspect-ratio: 2 / 3; overflow: hidden; border-radius: 10px; background: rgb(255 255 255 / 6%); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 10%); }
+	.thumb.sq { aspect-ratio: 1; }
+	.thumb img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+	.minimal .content { --title-h: clamp(32px, 3.6vw, 56px); flex: 1 1 auto; width: auto; min-width: 0; max-width: 640px; padding: 0; }
+	/* Smaller buttons and type than the full hero, so the compact card stays compact. */
+	.minimal .actions { --hero-btn: 40px; gap: 8px; }
+	.minimal .actions :global(:is(.ui-act, .ui-actmenu .ui-pop > .trigger)) { font-size: 15px; }
+	.minimal .heading :global(h1), .minimal .heading :global(h2) { min-height: 0; }
+	.minimal .heading :global(.bb-name) { font-size: clamp(24px, 2.8vw, 40px); }
+	/* A wide title logo may ask for most of the screen; keep it inside the text column. */
+	.minimal .heading :global(.bb-logo img) { max-width: min(100%, 420px) !important; min-height: 0; }
+	@media (max-width: 767px) {
+		.ui-billboard.minimal { --hero-r: 16px; min-height: 0; align-items: flex-start; gap: 14px; padding: 16px; }
+		.ui-billboard.minimal { gap: 12px; }
+		.minimal .thumb { width: 64px; border-radius: 8px; }
+		.minimal .actions { --hero-btn: 38px; gap: 6px; }
+		.minimal .actions :global(.ui-act:not(.primary):not(.round)) { padding: 0 14px 0 12px; }
+		.minimal .content { width: auto; padding: 0; }
+		.minimal .actions :global(.ui-act.primary) { flex: 0 1 auto; }
+		.minimal .actions :global(:is(.ui-act, .ui-actmenu .ui-pop > .trigger)) { font-size: 14px; }
 	}
 	@media (prefers-reduced-motion: reduce) {
 		.shade, .content { transition: none; }

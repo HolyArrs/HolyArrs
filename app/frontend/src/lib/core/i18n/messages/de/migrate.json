@@ -293,5 +293,8 @@
 	"migrate.holyarrsHandlesTheseIts": "HolyArrs regelt das auf seine eigene Weise. Nichts zu tun.",
 	"migrate.allApps": "Alle Apps",
 	"migrate.ifAnOldApp": "Wenn eine alte App einen Ordner unter einem anderen Pfad sieht, gib beide an.",
+	"migrate.notInContainer": "HolyArrs sieht {path} nicht. Nimm den Pfad im Container: die rechte Seite des Docker-Volumes.",
+	"migrate.foldersItSees": "Sichtbar sind: {list}",
+	"migrate.sameNewFolder": "Derselbe Ordner wie {list}. Ihre Titel landen zusammen; gib 4K oder anderen Kopien einen eigenen Ordner.",
 	"migrate.doneOfTotal": "{done} von {total}"
 }

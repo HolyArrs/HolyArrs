@@ -18,9 +18,11 @@ export function createMovePlan(ctx: { extra: PathRule[]; skip: string[]; [key: s
 		ctx.planning = true;
 		ctx.planError = '';
 		try {
-			const r = await api.request<{ plan: Plan; suggested_path_rules?: PathRule[] }>('/migrate/plan', { method: 'POST', body: ctx.choices(), signal: ctx.planCtrl.signal });
+			const r = await api.request<{ plan: Plan; suggested_path_rules?: PathRule[]; missing_paths?: Record<string, string>; seen_folders?: string[] }>('/migrate/plan', { method: 'POST', body: ctx.choices(), signal: ctx.planCtrl.signal });
 			if (seq !== ctx.planSeq || ctx.destroyed) return;
 			ctx.plan = r.plan;
+			ctx.missingPaths = r.missing_paths ?? {};
+			ctx.seenFolders = r.seen_folders ?? [];
 			const sug: Record<string, string> = {};
 			for (const s of r.suggested_path_rules ?? []) sug[s.from] = s.to;
 			ctx.suggested = sug;

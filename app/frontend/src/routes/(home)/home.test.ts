@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { arrivedAt, libraryCards, n, arrivedTitle, arrivedHead, askProgressLine, attention, downloadMoved, downloadingNow, fallbackRows, groupAttention, homeFailures, homeStrip, downloadLine, downloadSubtitle, healthFix, homeFresh, isActive, mixLine, moreLink, shownState, soonLine, splitArrivals, uncheckedLine, freeSpace, partCount } from './home.ts';
+import { arrivedAt, libraryCards, n, arrivedTitle, arrivedHead, askProgressLine, attention, downloadMoved, downloadingNow, homeDownloadsURL, notSentNow, fallbackRows, groupAttention, homeFailures, homeStrip, downloadLine, downloadSubtitle, healthFix, homeFresh, isActive, mixLine, moreLink, shownState, soonLine, splitArrivals, uncheckedLine, freeSpace, partCount } from './home.ts';
 import type { HealthCheck } from '#lib/core/types.ts';
 
 const check = (key: string, state: HealthCheck['state'], kind: HealthCheck['kind'] = 'source'): HealthCheck => ({ id: 1, key, kind, subject: 'S', state, message: `${key} broke`, since: '', checked_at: '' });
@@ -141,7 +141,7 @@ describe('home', () => {
 			row(2, 'waiting', 'queued', 0),
 			row(3, 'downloading', 'downloading', 0.8),
 			row(4, 'done', 'seeding', 1, { active: true }),
-			row(5, 'downloading', 'downloading', 0.5, { client_item: true }),
+			row(5, 'downloading', 'downloading', 0.5, { client_item: true, outside: true }),
 			row(6, 'failed', 'failed', 0.3),
 			row(7, 'done', 'completed', 1),
 			row(8, 'stalled', 'stalled', 0.2)
@@ -269,6 +269,30 @@ describe('downloads that are being imported', () => {
 			{ id: 4, phase: 'downloading', state: 'downloading', progress: 0.4, active: true, client_item: false }
 		];
 		expect(downloadingNow(rows).map((d) => d.id).sort()).toEqual([1, 2, 4]);
+	});
+});
+
+describe('torrents only the Downloader lists', () => {
+	const row = (id: number, extra: object = {}) => ({ id, phase: 'downloading', state: 'downloading', progress: 0.5, active: true, client_item: true, live_key: `2:${id}`, ...extra });
+	const rows = [
+		row(1, { outside: true }),
+		row(2, { outside: true, title_id: 40 }),
+		row(3),
+		row(4, { outside: true, phase: 'waiting', state: 'queued', progress: 0 }),
+		row(5, { outside: true, phase: 'done', state: 'seeding', progress: 1 })
+	];
+	it('count when linked to a Library title or when HolyArrs sent them before its newest 100', () => {
+		expect(downloadingNow(rows).map((d) => d.live_key).sort()).toEqual(['2:2', '2:3']);
+	});
+	it('that HolyArrs did not send are counted apart, only while they are fetching', () => {
+		expect(notSentNow(rows).map((d) => d.live_key).sort()).toEqual(['2:1', '2:4']);
+		expect(notSentNow([])).toEqual([]);
+	});
+	it('are all read, not only the first 200 Downloader rows', () => {
+		const q = new URLSearchParams(homeDownloadsURL.split('?')[1]);
+		expect(homeDownloadsURL.startsWith('/downloads/view?')).toBe(true);
+		expect(q.get('limit')).toBe('100');
+		expect(Number(q.get('outside_limit'))).toBe(2000);
 	});
 });
 

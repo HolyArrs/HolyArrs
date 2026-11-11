@@ -21,9 +21,10 @@ func TestMapEpisodeFilesTakesTheFolderShowsOtherNames(t *testing.T) {
 			t.Fatalf("%s: not matched (%s)", f.Path, f.Why)
 		}
 	}
-	// Another show's file in the folder is still left alone.
+	// In the show's own folder a file under another name still links by
+	// its numbers, as Sonarr does.
 	other := mapEpisodeFiles([]library.AdoptVideo{{Path: "Parks and Recreation - S01E01.mkv", Size: 1 << 20}}, sh, "aired")
-	if len(other[0].Episodes) != 0 {
-		t.Fatalf("another show's file was matched: %+v", other[0])
+	if len(other[0].Episodes) != 1 {
+		t.Fatalf("a file in the show's folder was left alone: %+v", other[0])
 	}
 }

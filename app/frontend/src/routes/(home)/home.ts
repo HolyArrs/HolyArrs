@@ -37,17 +37,38 @@ export function homeFailures<T extends StageBits>(rows: T[]): T[] {
 
 const fetching = new Set(['checking', 'queued', 'downloading', 'stalled', 'importing']);
 
+type CardRow = StageBits & Pick<DownloadRow, 'id' | 'active' | 'client_item' | 'outside' | 'title_id'>;
+
+/**
+ * homeCounts says whether Home counts a download as HolyArrs's: its own, its
+ * own older ones that only come back as Downloader rows, and torrents linked
+ * to a title in the Library.
+ */
+export function homeCounts(d: Pick<DownloadRow, 'client_item' | 'outside' | 'title_id'>): boolean {
+	return !d.client_item || !d.outside || !!d.title_id;
+}
+
+const fetchingNow = (d: CardRow) => fetching.has(stageOf(d)) && (isActive(d) || stageOf(d) === 'importing');
+
 /**
  * downloadingNow is Home's Downloading row: what HolyArrs is fetching now,
  * furthest along first, at most `cap`. A download being imported counts: the
- * server no longer calls it active (its state is finished), but it is not in the Library yet. Torrents only the Downloader knows,
+ * server no longer calls it active (its state is finished), but it is not in the Library yet. Torrents HolyArrs did not send,
  * seeding, finished and failed rows stay on Downloads.
  */
-export function downloadingNow<T extends StageBits & Pick<DownloadRow, 'id' | 'active' | 'client_item'>>(rows: T[], cap = 20): T[] {
+export function downloadingNow<T extends CardRow>(rows: T[], cap = 20): T[] {
 	return rows
-		.filter((d) => !d.client_item && fetching.has(stageOf(d)) && (isActive(d) || stageOf(d) === 'importing'))
+		.filter((d) => homeCounts(d) && fetchingNow(d))
 		.sort((a, b) => (b.progress || 0) - (a.progress || 0) || b.id - a.id)
 		.slice(0, cap);
+}
+
+/** homeDownloadsURL reads every Downloader row (up to the server's 2000), so a busy Downloader or a second one is not cut off after 200. */
+export const homeDownloadsURL = '/downloads/view?limit=100&outside_limit=2000';
+
+/** notSentNow is what the Downloader is fetching that HolyArrs did not send and Home does not count. */
+export function notSentNow<T extends CardRow>(rows: T[]): T[] {
+	return rows.filter((d) => !homeCounts(d) && fetchingNow(d));
 }
 
 export interface Attention {

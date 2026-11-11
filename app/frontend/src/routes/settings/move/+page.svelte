@@ -87,6 +87,8 @@
 	let others = $state<Record<string, string>>({});
 	let extra = $state<PathRule[]>([]);
 	let suggested = $state<Record<string, string>>({});
+	let missingPaths = $state<Record<string, string>>({});
+	let seenFolders = $state<string[]>([]);
 	let skip = $state<string[]>([]);
 	let people = $state<Record<string, PersonChoice>>({});
 	let changes = $state(0);
@@ -420,6 +422,10 @@
 		set plan(v) { plan = v; },
 		get suggested() { return suggested; },
 		set suggested(v) { suggested = v; },
+		get missingPaths() { return missingPaths; },
+		set missingPaths(v) { missingPaths = v; },
+		get seenFolders() { return seenFolders; },
+		set seenFolders(v) { seenFolders = v; },
 		get picks() { return picks; },
 		set picks(v) { picks = v; },
 		get extra() { return extra; },
@@ -539,6 +545,7 @@
 		planHash = '';
 		plan = null;
 		suggested = {};
+		missingPaths = {};
 		tryNotice = '';
 		enter('read');
 	}
@@ -644,6 +651,8 @@
 			{extra}
 			{extraErrors}
 			{suggested}
+			missing={missingPaths}
+			seen={seenFolders}
 			{skip}
 			{people}
 			onfolder={planFlow.onfolder}

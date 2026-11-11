@@ -21,9 +21,9 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.0.17: 라이브러리를 평점순으로 정렬하세요.** 정렬하는 동안 모든 보기에서 각 작품의 평점이 보여요. 행 보기부터 포스터, 휴대폰까지. [새 소식](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.0.18: 새로운 Minimal 보기.** 작은 포스터에 큰 사진과 자동 재생이 없어요. 그 밖에 TMDB에서 두 부분으로 나뉜 애니메이션 등 8가지 수정. [새 소식](https://holyarrs.com/whats-new/)
 >
-> <img src="https://github.com/user-attachments/assets/497be538-df38-4325-ab63-5ac51c273528" alt="HolyArrs 1.0.17" width="100%">
+> <img src="https://github.com/user-attachments/assets/f7e6987d-33eb-4fec-a8fe-ce2c2e264cdf" alt="HolyArrs 1.0.18" width="100%">
 
 > HolyArrs의 모든 포스터, 예고편, 평점은 제가 직접 운영하고 비용을 내는 서버에서 와요. 그래서 모두에게 무료로 유지돼요. HolyArrs 덕분에 영화 보는 밤이 조금 더 즐거워졌다면, 후원으로 우리 모두의 불을 계속 밝혀 주세요 💛
 >
@@ -222,7 +222,7 @@ NAS를 쓰세요? [Unraid, Synology 및 기타 NAS](https://docs.HolyArrs.com/ru
 | 태그 | 용도 |
 | :----: | --- |
 | `latest` | 최신 릴리스. |
-| `1.0.17` | 정확히 한 버전이에요. 절대 움직이지 않아요. |
+| `1.0.18` | 정확히 한 버전이에요. 절대 움직이지 않아요. |
 
 ## 사용법
 

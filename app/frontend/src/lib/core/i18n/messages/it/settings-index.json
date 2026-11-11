@@ -1,6 +1,8 @@
 {
 	"settings.index.appearance.theme.theme.label": "Tema",
 	"settings.index.appearance.theme.theme.words": "aspetto chiaro scuro automatico modalità colori notte theme dark light",
+	"settings.index.appearance.look.look.label": "Stile",
+	"settings.index.appearance.look.look.words": "minimale semplice sobrio calmo niente foto niente bagliori riproduzione automatica minimal",
 	"settings.index.appearance.language.language.label": "Lingua",
 	"settings.index.appearance.language.language.words": "lingua traduzione locale italiano inglese parole language",
 	"settings.index.appearance.autoplay-trailers.play-trailers-by-themselves.label": "Riproduci i trailer da soli",

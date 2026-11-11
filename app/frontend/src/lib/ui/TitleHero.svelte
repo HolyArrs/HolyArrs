@@ -70,6 +70,7 @@
 	import { autoplayHere, loadUISettings, trailerClickSources } from '../core/trailer/autoplay.svelte.ts';
 	import { openTheater } from '../core/trailer/theater.svelte.ts';
 	import { api } from '../core/api.ts';
+	import { minimalLook } from '../core/look.svelte.ts';
 
 	let {
 		title,
@@ -149,6 +150,8 @@
 	// a cover replaces the wide backdrop; a poster fills in only when no backdrop exists
 	const wide = $derived(heroBackdrop && !backdropFailed && !cover ? heroBackdrop : null);
 	const pictures = $derived(wide ? heroPictures(wide, backdrops).map((u) => sized(u, 'backdrop')) : []);
+	// The minimal look shows only a small picture: the cover, else the poster.
+	const thumb = $derived(cover ?? (heroPoster ? sized(heroPoster, 'poster', 148) : null));
 	const stand = $derived(cover ?? (!wide && heroPoster && !posterFailed ? heroPoster : null));
 
 	const shown = $derived(shownRatings(extras.scores, score, ratingPicks.list, !ratingPicks.custom));
@@ -263,9 +266,9 @@
 
 <!-- description and byline sit under the banner, outside the art -->
 <div class="ui-thero" class:square>
-	<Billboard label={title} testid="title-hero" {kind} {tmdb} {title} {videos} {pictures} {vtName} {settled} once position="70% 30%" onpictureerror={() => (backdropFailed = true)} art={stand ? standArt : undefined}>
+	<Billboard label={title} testid="title-hero" {kind} {tmdb} {title} {videos} {pictures} {vtName} {settled} once position="70% 30%" onpictureerror={() => (backdropFailed = true)} art={stand ? standArt : undefined} {thumb} thumbSquare={square || !!cover}>
 		{#snippet heading()}
-			{#if cover}
+			{#if cover && !minimalLook()}
 				<img class="cover" src={cover} alt="" decoding="async" use:viewTransitionName={vtName} />
 			{/if}
 			{#if shownLogo}

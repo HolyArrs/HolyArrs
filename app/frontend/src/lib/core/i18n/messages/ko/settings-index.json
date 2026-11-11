@@ -1,6 +1,8 @@
 {
 	"settings.index.appearance.theme.theme.label": "테마",
 	"settings.index.appearance.theme.theme.words": "외관 라이트 다크 자동 모드 색상 밤 appearance light dark automatic mode colours colors night",
+	"settings.index.appearance.look.look.label": "보기 방식",
+	"settings.index.appearance.look.look.words": "미니멀 단순 간단 차분 사진 없음 빛 없음 자동 재생 minimal plain",
 	"settings.index.appearance.language.language.label": "언어",
 	"settings.index.appearance.language.language.words": "언어 번역 로캘 영어 language translation locale english words",
 	"settings.index.appearance.autoplay-trailers.play-trailers-by-themselves.label": "트레일러 자동 재생",

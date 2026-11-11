@@ -293,5 +293,8 @@
 	"migrate.holyarrsHandlesTheseIts": "これらは HolyArrs が独自の方法で扱います。対応は不要です。",
 	"migrate.allApps": "すべてのアプリ",
 	"migrate.ifAnOldApp": "以前のアプリがフォルダーを別のパスで見ている場合は、両方を入力してください。",
+	"migrate.notInContainer": "HolyArrs から {path} が見えません。コンテナー内のパス（Docker ボリュームの右側）を使ってください。",
+	"migrate.foldersItSees": "見えるフォルダー: {list}",
+	"migrate.sameNewFolder": "{list} と同じフォルダーです。タイトルがまとめて入るので、4K などの別コピーには専用のフォルダーを用意してください。",
 	"migrate.doneOfTotal": "{done} / {total}"
 }

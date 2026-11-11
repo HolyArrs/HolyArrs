@@ -112,6 +112,10 @@
 				if (t !== 'dark' && t !== 'light') t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 				document.documentElement.dataset.theme = t;
 			} catch (e) {}
+			// The minimal look (lib/core/look.svelte.ts): plain headers from the first frame.
+			try {
+				if (localStorage.getItem('holyarrs-look') === 'minimal') document.documentElement.dataset.look = 'minimal';
+			} catch (e) {}
 			// The saved language (lib/core/i18n setLang), or the browser's, so text direction is right on the first frame.
 			try {
 				var lg = localStorage.getItem('holyarrs-lang') || (navigator.language || '').toLowerCase().split('-')[0];

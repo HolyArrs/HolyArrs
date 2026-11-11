@@ -535,7 +535,11 @@ func (m *Mover) undoOne(ctx context.Context, x madeRow, by domain.Actor) (string
 			case e == nil:
 				return ResRemoved, ""
 			case errors.Is(e, library.ErrFolderInUse):
-				return ResKept, "the titles that were in it stay in History as removed, so the folder stays"
+				return ResKept, "titles in the Library still use it, so the folder stays"
+			case errors.Is(e, library.ErrFolderHeld):
+				return ResKept, "deleted files still wait in its holding folder, so the folder stays"
+			case errors.Is(e, library.ErrFolderListed):
+				return ResKept, "an outside list still uses it, so the folder stays"
 			case errors.Is(e, database.ErrNotFound):
 				return ResKept, "already gone"
 			}

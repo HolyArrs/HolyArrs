@@ -274,6 +274,7 @@
 	"accounts.account.preferences": "Préférences",
 	"accounts.account.trailers": "Bandes-annonces",
 	"accounts.account.trailersHint": "Auto respecte Réduire les animations et l'économiseur de données",
+	"accounts.account.trailersMinimal": "Désactivé avec le style minimal",
 	"accounts.account.playTrailers": "Lire les bandes-annonces",
 	"accounts.account.auto": "Auto",
 	"accounts.account.always": "Toujours",

@@ -254,6 +254,7 @@
 	"home.finished": "Finished {when}",
 	"home.nothingIsDownloadingRight": "Nothing is downloading right now.",
 	"home.paused2": "{n} paused.",
+	"home.notSentByHolyArrs": "{n} in the Downloader that HolyArrs did not send.",
 	"home.someChecksCouldNot": "Some checks could not be read right now.",
 	"home.otherCheckPassed": "{n} other check passed.",
 	"home.otherChecksPassed": "{n} other checks passed.",

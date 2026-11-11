@@ -1,7 +1,7 @@
 // Home's downloads tile: the counts, the steps and what finished lately.
 import type { IconName } from '#lib/ui/Icon.svelte';
 import { stageOf } from '#lib/downloads/index.ts';
-import { n } from './home.ts';
+import { homeCounts, n, notSentNow } from './home.ts';
 import { bytes, percent } from '#lib/core/format.ts';
 import type { DownloadRow } from '#lib/core/types.ts';
 import type { Ask } from '#lib/core/types.ts';
@@ -19,7 +19,9 @@ export function createHomeDownloads(ctx: Pick<HomeContext, 'waiting' | 'askPic' 
 	);
 	// Downloads, counted once and used everywhere: waiting (queued), downloading (bytes coming in, stalled and checking included), importing, and paused apart (a paused download is not in the list or the row). The tile, the note beside the switch and the row all read these.
 	const speed = $derived(ctx.fetchingAll.reduce((t, d) => t + (d.speed || 0), 0));
-	const pausedCount = $derived(ctx.manager ? ctx.downloads.filter((d) => !d.client_item && stageOf(d) === 'paused').length : 0);
+	const pausedCount = $derived(ctx.manager ? ctx.downloads.filter((d) => homeCounts(d) && stageOf(d) === 'paused').length : 0);
+	// Torrents the Downloader is fetching that HolyArrs did not send: the tile names them instead of saying nothing is downloading.
+	const notSent = $derived(ctx.manager ? notSentNow(ctx.downloads).length : 0);
 	function countStages(rows: DownloadRow[], paused = 0) {
 		const c = { waiting: 0, down: 0, imp: 0, paused };
 		for (const d of rows) {
@@ -69,5 +71,6 @@ export function createHomeDownloads(ctx: Pick<HomeContext, 'waiting' | 'askPic' 
 		dlState,
 		get recentDone() { return recentDone; },
 		get pausedCount() { return pausedCount; },
+		get notSent() { return notSent; },
 	};
 }

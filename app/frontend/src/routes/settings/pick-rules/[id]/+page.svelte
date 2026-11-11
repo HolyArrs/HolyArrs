@@ -216,6 +216,7 @@
 		kinds: 'pr-kinds',
 		steps: 'pr-steps',
 		good_enough_at: 'pr-good-enough',
+		good_enough_points: 'pr-good-enough-points',
 		traits: 'pr-traits',
 		must_have: 'pr-must-add',
 		never: 'pr-never-add',
@@ -349,6 +350,9 @@
 				<select id="pr-good-enough" class="input" bind:value={form.body.good_enough_at} {...bad('good_enough_at')}>
 					{#each [...ladderOn].reverse() as s (s.quality)}<option value={s.quality}>{stepLabel(s.quality)}</option>{/each}
 				</select>
+			</Field>
+			<Field id="pr-good-enough-points" label={t('settings.pickRuleEdit.goodEnoughPoints')} hint={t('settings.pickRuleEdit.goodEnoughPointsHint')} error={errors.good_enough_points}>
+				<input id="pr-good-enough-points" class="input narrow" type="number" min="-10000" max="10000" step="1" bind:value={form.body.good_enough_points} {...bad('good_enough_points')} />
 			</Field>
 		</SettingsCard>
 
