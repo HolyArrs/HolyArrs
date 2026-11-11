@@ -176,6 +176,7 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 		plan = PlanEpisodes(cands, t)
 	}
 	plan = append(plan, bad...)
+	gone := sourcesGone(root, plan)
 	lowSpace, release := im.guard(plan, lf.Path, cands, rules)
 	defer release()
 	if music {
@@ -481,6 +482,10 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 		switch {
 		case ss.step >= 0 && imp.Result[ss.step].Outcome == "placed":
 			ss.outcome = "placed"
+		case gone:
+			// Another app imported the files and removed them: let the
+			// download go, as Sonarr does, and keep the episode wanted.
+			ss.outcome, ss.reason = "gone", FilesGoneReason
 		case ss.lie != "":
 			ss.outcome, ss.reason = "lied", ss.lie
 		case ss.step >= 0:
@@ -507,6 +512,9 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 				}
 			}
 		}
+	}
+	if gone {
+		markGone(imp.Result)
 	}
 	kept := func(ss *showSlot) bool { return ver.KeepUpToDate && ss.it.KeepUpToDate && ti.KeepUpToDate }
 	placed, failed := 0, 0
@@ -658,6 +666,17 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 				if ss.to != mediafiles.SlotInLibrary {
 					lookAgain = append(lookAgain, id)
 				}
+			case "gone":
+				if err := mediafiles.ClearSlotDownloadTx(tx, id); err != nil {
+					return err
+				}
+				ss.to = mediafiles.SlotWanted
+				if hasFile {
+					ss.to = mediafiles.SlotBetterWanted
+				}
+				if err := mediafiles.MoveSlotTx(tx, id, ss.to, ss.reason, by); err != nil {
+					return err
+				}
 			default:
 				ss.to = mediafiles.SlotNeedsADecision
 				if err := mediafiles.MoveSlotTx(tx, id, ss.to, ss.reason, by); err != nil {
@@ -752,6 +771,9 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 		for _, id := range lookAgain {
 			im.OnRejected(ctx, id)
 		}
+	}
+	if gone && im.OnFilesGone != nil {
+		im.OnFilesGone(ctx, ti.ID)
 	}
 	return imp, nil
 }

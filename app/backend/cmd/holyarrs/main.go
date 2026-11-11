@@ -386,6 +386,13 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	}
 	// A finished Import: clear a Usenet download out of its Downloader.
 	im.OnImported = dm.ClearFinished
+	// Another app took a download's files before its import: a Library
+	// rescan links the copy that app placed.
+	im.OnFilesGone = func(ctx context.Context, _ int64) {
+		if _, _, err := q.Enqueue(ctx, library.KindRescan, nil, nil, library.KindRescan, domain.System); err != nil {
+			log.Printf("queue %s: %v", library.KindRescan, err)
+		}
+	}
 	// Finished Usenet files move into the Library unless HolyArrs may not
 	// change that Downloader.
 	im.MayMove = func(d domain.Downloader) bool { return !downloads.ReadOnlyFor(d) }

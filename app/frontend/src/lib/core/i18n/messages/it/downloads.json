@@ -140,6 +140,7 @@
 	"downloads.day.today": "Oggi",
 	"downloads.day.yesterday": "Ieri",
 	"downloads.detail.importFailed": "importazione non riuscita: {why}",
+	"downloads.detail.filesGone": "un'altra app ha preso i file prima che HolyArrs potesse importarli",
 	"downloads.detail.noMatch": "i file non corrispondevano",
 	"downloads.detail.placing": "sistemo i file",
 	"downloads.detail.ratio": "rapporto {ratio}",
@@ -1113,6 +1114,7 @@
 	"downloads.steer.speed": "Limiti di velocità",
 	"downloads.steer.speedMenu": "Limiti di velocità…",
 	"downloads.step.errored": "Errore del downloader",
+	"downloads.step.filesGone": "Presi da un'altra app",
 	"downloads.step.finishing": "Completamento",
 	"downloads.step.importFailed": "Importazione non riuscita",
 	"downloads.step.missing": "File mancanti",
@@ -1224,5 +1226,6 @@
 	"downloads.why.conflict": "L'importazione non è riuscita a finire da sola.",
 	"downloads.why.notReplaced": "Il suo download è stato rimosso fuori da HolyArrs e non viene sostituito da solo (impostazione).",
 	"downloads.why.notSent": "Nessun downloader ha potuto prenderlo: controlla i tag del titolo e i tuoi downloader.",
-	"downloads.why.out": "A HolyArrs sono finite le release che superano le Regole di scelta."
+	"downloads.why.out": "A HolyArrs sono finite le release che superano le Regole di scelta.",
+	"downloads.why.taken": "Un'altra app ha preso i file prima che HolyArrs potesse importarli."
 }

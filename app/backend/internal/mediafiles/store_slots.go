@@ -71,3 +71,9 @@ func actorJSON(a database.Actor) string {
 	b, _ := json.Marshal(a)
 	return string(b)
 }
+
+// ClearSlotDownloadTx unties a Slot from its download: the download is let go.
+func ClearSlotDownloadTx(tx *sql.Tx, slotID int64) error {
+	_, err := tx.Exec("UPDATE slots SET active_download_id = NULL WHERE id = ?", slotID)
+	return err
+}

@@ -50,6 +50,15 @@ export function placed(im: ImportRecord | undefined): ImportFacts | null {
 	return { how, where: folder(first?.target_path) };
 }
 
+// An older version left the Downloader's "not found" error instead of the gone mark.
+const notFound = /no such file or directory|cannot find the (file|path)/i;
+
+/** filesGone: another app took every file before the import could read it. */
+export function filesGone(im: ImportRecord | undefined): boolean {
+	const res = (im?.Result ?? []).filter((r) => r.outcome !== 'skipped');
+	return res.length > 0 && res.every((r) => r.outcome === 'gone' || (r.outcome === 'failed' && notFound.test(r.error ?? '')));
+}
+
 /** Why an import failed in a few words; null when it did not fail. */
 export function failReason(im: ImportRecord | undefined): string | null {
 	if (!im || im.State !== 'failed') return null;
@@ -61,6 +70,7 @@ export function failReason(im: ImportRecord | undefined): string | null {
 /** The short line after a row's status word: what an import in progress is doing, why it failed, or a seeding torrent's ratio. Empty when the word says it all. */
 export function statusDetail(r: Pick<DownloadRow, 'phase' | 'state' | 'progress' | 'ratio'>, im: ImportRecord | undefined): string {
 	const stage = stageOf(r);
+	if ((stage === 'done' || stage === 'decide') && filesGone(im)) return t('downloads.detail.filesGone');
 	if (stage === 'importing') {
 		// Bytes are in; the Downloader verifies, repairs and unpacks (Usenet).
 		if (r.phase === 'downloading') return t('downloads.detail.unpacking');

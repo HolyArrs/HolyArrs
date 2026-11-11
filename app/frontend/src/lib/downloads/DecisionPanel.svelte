@@ -55,11 +55,12 @@
 	const isEdition = (d: Decision) => d.kind === 'movie' && !!d.download_id && (d.why === 'conflict' || /edition/i.test(d.reason ?? ''));
 	function primary(d: Decision): Fix {
 		if (isEdition(d)) return 'edition';
-		if (d.why === 'conflict') return 'hand';
+		if (d.why === 'conflict' || d.why === 'taken') return 'hand';
 		return 'search';
 	}
 	function reasonLine(d: Decision): string {
 		if (isEdition(d)) return t('downloads.dp.editionUnknown');
+		if (d.why === 'taken') return whyWords(d);
 		const r = d.reason ? plainReason(d.reason).text : '';
 		return r || whyWords(d);
 	}
