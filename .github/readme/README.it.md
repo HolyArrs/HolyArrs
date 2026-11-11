@@ -21,9 +21,9 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.0.18: il nuovo aspetto Minimal**, con locandine piccole e senza foto grandi né riproduzione automatica. In più 8 correzioni, tra cui gli anime che TMDB divide in due parti. [Novità](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.0.19: rTorrent e ruTorrent come downloader**, anche su seedbox. I download Usenet finiti ora vengono spostati nella tua libreria invece di essere copiati. [Novità](https://holyarrs.com/whats-new/)
 >
-> <img src="https://github.com/user-attachments/assets/f7e6987d-33eb-4fec-a8fe-ce2c2e264cdf" alt="HolyArrs 1.0.18" width="100%">
+> <img src="https://github.com/user-attachments/assets/3f087371-bae1-496e-bda8-77b9a97c59bf" alt="HolyArrs 1.0.19" width="100%">
 
 > Ogni locandina, trailer e voto del tuo HolyArrs arriva da un server che gestisco e pago di tasca mia, così resta gratis per tutti. Se HolyArrs ha reso la tua serata film un po' più bella, una sponsorizzazione tiene le luci accese per tutti noi 💛
 >
@@ -222,7 +222,7 @@ Le immagini sono su Docker Hub come [`holyarrs/holyarrs`](https://hub.docker.com
 | Tag | A cosa serve |
 | :----: | --- |
 | `latest` | La versione più recente. |
-| `1.0.18` | Una versione esatta. Non cambia mai. |
+| `1.0.19` | Una versione esatta. Non cambia mai. |
 
 ## Utilizzo
 

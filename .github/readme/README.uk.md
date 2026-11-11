@@ -21,9 +21,9 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.0.18: новий вигляд Minimal**, з маленькими постерами, без великих фото й автовідтворення. І ще 8 виправлень, зокрема для аніме, яке TMDB ділить на дві частини. [Що нового](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.0.19: rTorrent і ruTorrent як завантажувач**, зокрема на сідбоксі. Готові завантаження з Usenet тепер переміщуються в бібліотеку, а не копіюються. [Що нового](https://holyarrs.com/whats-new/)
 >
-> <img src="https://github.com/user-attachments/assets/f7e6987d-33eb-4fec-a8fe-ce2c2e264cdf" alt="HolyArrs 1.0.18" width="100%">
+> <img src="https://github.com/user-attachments/assets/3f087371-bae1-496e-bda8-77b9a97c59bf" alt="HolyArrs 1.0.19" width="100%">
 
 > Кожен постер, трейлер і оцінка у твоєму HolyArrs приходять із сервера, який я тримаю й оплачую сам, щоб він лишався безкоштовним для всіх. Якщо HolyArrs зробив твій кіновечір трохи кращим, спонсорство тримає світло увімкненим для всіх нас 💛
 >
@@ -222,7 +222,7 @@ HolyArrs лише читає твої старі застосунки й ніч�
 | Тег | Для чого |
 | :----: | --- |
 | `latest` | Найновіша версія. |
-| `1.0.18` | Одна точна версія. Вона ніколи не змінюється. |
+| `1.0.19` | Одна точна версія. Вона ніколи не змінюється. |
 
 ## Використання
 

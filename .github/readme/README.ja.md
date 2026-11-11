@@ -21,9 +21,9 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.0.18: 新しい Minimal 表示。** 小さなポスターで、大きな写真も自動再生もありません。ほかに、TMDB で 2 つに分かれたアニメなど 8 件の修正。 [新着情報](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.0.19: ダウンローダーとして rTorrent と ruTorrent に対応。** シードボックスも使えます。完了した Usenet のダウンロードは、コピーではなくライブラリへ移動するようになりました。 [新着情報](https://holyarrs.com/whats-new/)
 >
-> <img src="https://github.com/user-attachments/assets/f7e6987d-33eb-4fec-a8fe-ce2c2e264cdf" alt="HolyArrs 1.0.18" width="100%">
+> <img src="https://github.com/user-attachments/assets/3f087371-bae1-496e-bda8-77b9a97c59bf" alt="HolyArrs 1.0.19" width="100%">
 
 > HolyArrs のポスター、予告編、スコアはすべて、私が自分で運営し費用を払っているサーバーから届いています。だから誰でも無料で使えます。HolyArrs で映画の夜が少しでも楽しくなったなら、スポンサーになってみんなの明かりを灯し続けてください 💛
 >
@@ -222,7 +222,7 @@ NAS をお使いですか。[Unraid、Synology などの NAS](https://docs.HolyA
 | タグ | 用途 |
 | :----: | --- |
 | `latest` | 最新のリリース。 |
-| `1.0.18` | 特定の1つのバージョンです。動くことはありません。 |
+| `1.0.19` | 特定の1つのバージョンです。動くことはありません。 |
 
 ## 使い方
 
