@@ -17,7 +17,7 @@ import (
 // route: GET /api/v1/trash/profiles
 // route: POST /api/v1/pick-rules/{id}/trash
 func TestTrashProfileApplied(t *testing.T) {
-	srv, _, _ := lbLibSetup(t)
+	srv, st, _ := lbLibSetup(t)
 	t.Cleanup(func() { mediafiles.SetOwnTraits(nil) })
 	old := downloads.TrashClient
 	c := library.NewTrashGuides()
@@ -52,6 +52,9 @@ func TestTrashProfileApplied(t *testing.T) {
 	_ = json.Unmarshal(lbDo(t, "POST", path, `{"app":"sonarr","profile_id":"p1"}`, 200), &res)
 	if res.Added != 3 || len(res.Scored) != 3 || len(res.Skipped) != 1 || res.Skipped[0].Kinds[0] != "language" {
 		t.Fatalf("first sync: %+v", res)
+	}
+	if n := recheckJobs(t, st, p.ID); n != 1 {
+		t.Fatalf("re-check jobs after applying a profile: %d, want 1", n)
 	}
 	_ = json.Unmarshal(lbDo(t, "POST", path, `{"app":"sonarr","profile_id":"p1"}`, 200), &res)
 	if res.Added != 0 || res.Updated != 3 {

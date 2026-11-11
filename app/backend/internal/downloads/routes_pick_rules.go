@@ -3,6 +3,7 @@ package downloads
 import (
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -140,12 +141,21 @@ func (h *Handlers) editPickRules(w http.ResponseWriter, r *http.Request) {
 		h.pickRulesError(w, r, id, err)
 		return
 	}
+	h.recheckGoodEnough(r, p)
 	u, err := library.PickRulesUse(r.Context(), h.Store, id)
 	if err != nil {
 		webserver.Internal(w, "downloads", err)
 		return
 	}
 	webserver.WriteJSON(w, http.StatusOK, detailOfPickRules(p, u))
+}
+
+// recheckGoodEnough queues the good enough re-check of the titles that use
+// the saved set. The save already stands, so a failure is only logged.
+func (h *Handlers) recheckGoodEnough(r *http.Request, p mediafiles.PickRules) {
+	if err := h.Library.QueueRecheckPickRules(r.Context(), p, webserver.ActorOr(r, database.Actor{Kind: "user", ID: 1})); err != nil {
+		log.Printf("downloads: queue the good enough re-check of pick rules %d: %v", p.ID, err)
+	}
 }
 
 func (h *Handlers) deletePickRules(w http.ResponseWriter, r *http.Request) {
