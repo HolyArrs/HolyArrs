@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"log"
+	"maps"
 	"net/http"
 	"strconv"
 	"strings"
@@ -135,7 +136,7 @@ func (h *TitleHandlers) editTitle(w http.ResponseWriter, r *http.Request) {
 		library.TitleChange
 		DetailsSource *string `json:"details_source"`
 	}
-	if !webserver.Decode(w, r, &c, "send any of keep_up_to_date, pick_rules_id, library_folder_id; for movies release_gate, gate_delay_days; for shows episode_order, new_seasons, details_source") {
+	if !webserver.Decode(w, r, &c, "send any of keep_up_to_date, pick_rules_id, library_folder_id; for movies release_gate, gate_delay_days; for shows episode_order, episode_group_id, new_seasons, details_source") {
 		return
 	}
 	dry := r.URL.Query().Get("dry_run") == "1" || r.URL.Query().Get("dry_run") == "true"
@@ -146,6 +147,17 @@ func (h *TitleHandlers) editTitle(w http.ResponseWriter, r *http.Request) {
 		}
 		if !metadata.ValidShowSource(*c.DetailsSource) {
 			h.ShowError(w, metadata.ErrUnknownSource)
+			return
+		}
+	}
+	// A new episode order renumbers the episodes: the show is refreshed
+	// after the edit, and a rename is offered when the numbers moved.
+	regroup := c.EpisodeGroupID != nil && !dry && t.Kind == "show" && *c.EpisodeGroupID != strOr(t.EpisodeGroupID)
+	var before map[int64][2]int
+	if regroup {
+		var err error
+		if before, err = library.EpisodeNamedNumbers(r.Context(), h.Store.Read(), t.ID); err != nil {
+			webserver.Internal(w, "api", err)
 			return
 		}
 	}
@@ -160,6 +172,20 @@ func (h *TitleHandlers) editTitle(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+	renamed := false
+	if regroup {
+		// A refresh that fails puts the old order back.
+		if _, err := shows.New(h.Library).Regroup(r.Context(), t.ID, t.EpisodeGroupID, h.Actor(r)); err != nil {
+			h.ShowError(w, err)
+			return
+		}
+		after, err := library.EpisodeNamedNumbers(r.Context(), h.Store.Read(), t.ID)
+		if err != nil {
+			webserver.Internal(w, "api", err)
+			return
+		}
+		renamed = !maps.Equal(before, after)
+	}
 	_ = database.Get(r.Context(), h.Store.Read(), "titles", t.ID, &t)
 	v, err := h.TitleView(r.Context(), t)
 	if err != nil {
@@ -169,7 +195,11 @@ func (h *TitleHandlers) editTitle(w http.ResponseWriter, r *http.Request) {
 	if !dry && h.Live {
 		h.PublishTitleView(v)
 	}
-	webserver.WriteJSON(w, http.StatusOK, map[string]any{"title": v, "changes": res})
+	out := map[string]any{"title": v, "changes": res}
+	if regroup {
+		out["rename_suggested"] = renamed
+	}
+	webserver.WriteJSON(w, http.StatusOK, out)
 }
 
 func (h *TitleHandlers) moveTitle(w http.ResponseWriter, r *http.Request) {

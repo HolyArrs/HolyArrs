@@ -43,6 +43,13 @@ type EpisodeView struct {
 	Dropped        bool              `json:"dropped,omitempty"`
 	IDs            map[string]string `json:"ids"`
 	Slots          []EpisodeSlot     `json:"slots"`
+	// OutsideOrder marks an episode the show's chosen episode order leaves
+	// out; it keeps TMDB's numbers.
+	OutsideOrder bool `json:"outside_order,omitempty"`
+	// TMDBSeason and TMDBEpisode are TMDB's own numbers, set when a chosen
+	// episode order numbers the episode differently.
+	TMDBSeason  *int `json:"tmdb_season,omitempty"`
+	TMDBEpisode *int `json:"tmdb_episode,omitempty"`
 }
 
 // EpisodeViewOf is an episode Item as the API shows it, without Slots.
@@ -65,6 +72,22 @@ func EpisodeViewOf(it mediafiles.Item) EpisodeView {
 		v.IDs = map[string]string{}
 	}
 	return v
+}
+
+// byOrder puts an episode view on the show's chosen episode order: its
+// numbers there, or the outside-order mark when the order leaves it out.
+// Specials keep their own numbers.
+func (v *EpisodeView) byOrder(it mediafiles.Item) {
+	n := it.Numbers
+	switch {
+	case v.Season == 0:
+	case n.AltSeason == nil || n.AltEpisode == nil || *n.AltSeason <= 0:
+		v.OutsideOrder = true
+	case *n.AltSeason != v.Season || *n.AltEpisode != v.Episode:
+		s, e := v.Season, v.Episode
+		v.TMDBSeason, v.TMDBEpisode = &s, &e
+		v.Season, v.Episode = *n.AltSeason, *n.AltEpisode
+	}
 }
 
 // EpisodeHandlers serves a show's episodes.
@@ -104,7 +127,12 @@ func (h *EpisodeHandlers) listEpisodes(w http.ResponseWriter, r *http.Request) {
 		}
 		season = &n
 	}
-	its, err := mediafiles.ShowEpisodes(r.Context(), db, t.ID, season)
+	grouped := t.EpisodeGroupID != nil && *t.EpisodeGroupID != ""
+	list := mediafiles.ShowEpisodes
+	if grouped {
+		list = mediafiles.ShowEpisodesByOrder
+	}
+	its, err := list(r.Context(), db, t.ID, season)
 	if err != nil {
 		webserver.Internal(w, "api", err)
 		return
@@ -150,6 +178,9 @@ func (h *EpisodeHandlers) listEpisodes(w http.ResponseWriter, r *http.Request) {
 	out := make([]EpisodeView, 0, len(its))
 	for _, it := range its {
 		v := EpisodeViewOf(it)
+		if grouped {
+			v.byOrder(it)
+		}
 		if sl := byItem[it.ID]; sl != nil {
 			v.Slots = sl
 		}

@@ -258,6 +258,7 @@ var RoutePerms = map[string]webserver.Perm{
 	"PUT /api/v1/settings/music":     webserver.PermSettings,
 	// Organise.
 	"GET /api/v1/titles/{id}/rename":            webserver.PermManageLibrary,
+	"GET /api/v1/titles/{id}/episode-groups":    webserver.PermManageLibrary,
 	"POST /api/v1/titles/{id}/rename":           webserver.PermManageLibrary,
 	"GET /api/v1/rename":                        webserver.PermManageLibrary,
 	"POST /api/v1/rename":                       webserver.PermManageLibrary,

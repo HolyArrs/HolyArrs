@@ -299,6 +299,19 @@ func ShowEpisodes(ctx context.Context, q database.Lister, titleID int64, season 
 	return database.Select[Item](ctx, q, "items", where+" ORDER BY json_extract(numbers, '$.season'), json_extract(numbers, '$.episode')", args...)
 }
 
+// ShowEpisodesByOrder lists a show's episodes by its chosen episode order:
+// by the release-name numbers when set, else by TMDB's. With season, only
+// that season of the order.
+func ShowEpisodesByOrder(ctx context.Context, q database.Lister, titleID int64, season *int) ([]Item, error) {
+	where, args := "title_id = ? AND kind = 'episode'", []any{titleID}
+	if season != nil {
+		where += " AND COALESCE(json_extract(numbers, '$.alt_season'), json_extract(numbers, '$.season')) = ?"
+		args = append(args, *season)
+	}
+	return database.Select[Item](ctx, q, "items", where+` ORDER BY COALESCE(json_extract(numbers, '$.alt_season'), json_extract(numbers, '$.season')),
+		COALESCE(json_extract(numbers, '$.alt_episode'), json_extract(numbers, '$.episode'))`, args...)
+}
+
 // EpisodeSlotsOfTitle lists the Slots of a show's episodes, oldest first.
 func EpisodeSlotsOfTitle(ctx context.Context, q database.Lister, titleID int64) ([]Slot, error) {
 	return database.Select[Slot](ctx, q, "slots", "item_id IN (SELECT id FROM items WHERE title_id = ? AND kind = 'episode') ORDER BY id", titleID)

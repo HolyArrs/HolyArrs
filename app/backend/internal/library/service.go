@@ -59,6 +59,8 @@ type Service struct {
 	// so Library search and release matching find them; nil or none: no
 	// aliases.
 	AnimeNames func(ctx context.Context, kind, tmdbID, name string) []string
+	// EpisodeGroups reads TMDB's other episode orders; nil offers none.
+	EpisodeGroups metadata.EpisodeGroupSource
 	// Now is the clock (time.Now when nil).
 	Now func() time.Time
 

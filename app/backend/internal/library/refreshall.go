@@ -569,6 +569,9 @@ func CalendarEpisodes(ctx context.Context, db Reader, from, to time.Time) ([]Cal
 		}
 		e := CalendarEntry{TitleID: t.ID, Name: t.Name, Year: t.Year, Kind: "episode", ItemID: it.ID, Season: it.Numbers.Season, Episode: it.Numbers.Episode,
 			KeepUpToDate: it.KeepUpToDate, Poster: posterOf(t), Backdrop: t.Backdrop, Still: it.Still, TMDB: t.SourceIDs["tmdb"]}
+		if t.EpisodeGroupID != nil && *t.EpisodeGroupID != "" && it.Numbers.AltSeason != nil && it.Numbers.AltEpisode != nil {
+			e.Season, e.Episode = it.Numbers.AltSeason, it.Numbers.AltEpisode // the show's chosen episode order
+		}
 		if it.Name != nil && !strings.EqualFold(*it.Name, "TBA") {
 			e.EpisodeName = *it.Name
 		}

@@ -464,6 +464,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	// TMDB copies are kept at most six months (TMDB's rule).
 	go lib.Artwork.KeepTMDBFresh(ctx)
 	lib.Shows = showMD
+	lib.EpisodeGroups = hosted.TMDB()
 	lib.AnimeNames = func(ctx context.Context, kind, tmdbID, name string) []string {
 		by := "tmdb_tv"
 		if kind == "movie" {

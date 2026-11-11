@@ -3,6 +3,7 @@ package shows
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 	"time"
@@ -110,6 +111,7 @@ type SeasonHandlers struct {
 // Routes registers the seasons and show settings routes.
 func (h *SeasonHandlers) Routes(m *http.ServeMux) {
 	m.HandleFunc("GET /api/v1/titles/{id}/seasons", h.listSeasons)
+	m.HandleFunc("GET /api/v1/titles/{id}/episode-groups", h.listEpisodeGroups)
 	m.HandleFunc("PUT /api/v1/titles/{id}/seasons/{number}", h.setSeason)
 	m.HandleFunc("GET /api/v1/settings/shows", h.getShowSettings)
 	m.HandleFunc("PUT /api/v1/settings/shows", h.putShowSettings)
@@ -139,6 +141,32 @@ func (h *SeasonHandlers) listSeasons(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	webserver.WriteJSON(w, http.StatusOK, map[string]any{"seasons": ss})
+}
+
+// listEpisodeGroups lists the TMDB episode orders a show can follow and
+// the one it follows. A show without a TMDB id, or not on TMDB, has none.
+func (h *SeasonHandlers) listEpisodeGroups(w http.ResponseWriter, r *http.Request) {
+	t, ok := ShowID(h.TitleID, w, r)
+	if !ok {
+		return
+	}
+	groups := []metadata.EpisodeGroupInfo{}
+	if tmdb := t.SourceIDs["tmdb"]; tmdb != "" && t.MetadataSource == "tmdb" && h.Lib != nil && h.Lib.EpisodeGroups != nil {
+		gs, err := h.Lib.EpisodeGroups.EpisodeGroups(r.Context(), tmdb)
+		switch {
+		case errors.Is(err, metadata.ErrShowNotFound), errors.Is(err, metadata.ErrNotFound):
+		case err != nil:
+			webserver.Fail(w, http.StatusBadGateway, "TMDB could not be read: "+err.Error())
+			return
+		default:
+			groups = gs
+		}
+	}
+	var chosen *string
+	if t.EpisodeGroupID != nil && *t.EpisodeGroupID != "" {
+		chosen = t.EpisodeGroupID
+	}
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"groups": groups, "chosen": chosen})
 }
 
 func (h *SeasonHandlers) setSeason(w http.ResponseWriter, r *http.Request) {

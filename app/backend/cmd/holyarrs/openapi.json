@@ -2249,6 +2249,10 @@
           "name": {
             "type": "string"
           },
+          "outside_order": {
+            "description": "The show's chosen episode order leaves this episode out; it keeps TMDB's numbers.",
+            "type": "boolean"
+          },
           "runtime": {
             "type": "integer"
           },
@@ -2286,6 +2290,14 @@
               "type": "object"
             },
             "type": "array"
+          },
+          "tmdb_episode": {
+            "description": "TMDB's episode number, set with tmdb_season.",
+            "type": "integer"
+          },
+          "tmdb_season": {
+            "description": "TMDB's season, when the chosen episode order numbers the episode differently (season and episode then hold the order's numbers).",
+            "type": "integer"
           }
         },
         "type": "object"
@@ -5155,6 +5167,22 @@
           "details_source": {
             "type": "string"
           },
+          "episode_group": {
+            "description": "The TMDB episode order the show follows; null for TMDB's own numbering.",
+            "nullable": true,
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "type": {
+                "type": "integer"
+              }
+            },
+            "type": "object"
+          },
           "episode_order": {
             "type": "string"
           },
@@ -6502,6 +6530,10 @@
               "tmdb",
               "tvmaze"
             ],
+            "type": "string"
+          },
+          "episode_group_id": {
+            "description": "Shows on TMDB: one of the show's TMDB episode orders (from /titles/{id}/episode-groups), or \"\" for TMDB's own numbering. The show is refreshed by it after saving.",
             "type": "string"
           },
           "episode_order": {
@@ -27299,6 +27331,10 @@
                     "changes": {
                       "type": "object"
                     },
+                    "rename_suggested": {
+                      "description": "Sent when episode_group_id changed the order: true when episode numbers moved, so a rename preview is worth offering.",
+                      "type": "boolean"
+                    },
                     "title": {
                       "$ref": "#/components/schemas/TitleView"
                     }
@@ -27628,6 +27664,93 @@
         "x-holyarrs-part": "title",
         "x-holyarrs-permission": "manage_library",
         "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/titles/{id}/episode-groups": {
+      "get": {
+        "description": "The TMDB episode orders (episode groups) the show can follow, and the one it follows. Empty for a show without a TMDB id or one not on TMDB.",
+        "operationId": "listEpisodeGroups",
+        "parameters": [
+          {
+            "description": "The record id.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "chosen": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "groups": {
+                      "items": {
+                        "properties": {
+                          "episodes": {
+                            "type": "integer"
+                          },
+                          "id": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "seasons": {
+                            "type": "integer"
+                          },
+                          "type": {
+                            "description": "TMDB's type: 1 original air, 2 absolute, 3 DVD, 4 digital, 5 story arc, 6 production, 7 TV.",
+                            "type": "integer"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Episode orders."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "No such show."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "TMDB could not be read."
+          }
+        },
+        "summary": "A show's TMDB episode orders",
+        "tags": [
+          "Shows"
+        ],
+        "x-holyarrs-part": "shows",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "read"
       }
     },
     "/api/v1/titles/{id}/episodes": {
