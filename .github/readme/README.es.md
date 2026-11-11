@@ -17,6 +17,8 @@
   <a href="../../LICENSE"><img src="https://img.shields.io/badge/licence-AGPL--3.0-3b82f6?style=flat-square" alt="Licencia: AGPL-3.0"></a>
 </p>
 
+<p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
+
 <h3 align="center">Seis apps para ver una serie. Ahora es una sola.</h3>
 
 <p align="center"><b>HolyArrs</b> es una app autoalojada para tus series, películas y música.<br>Navega como en una app de streaming, pide lo que quieras y ella se encarga del resto.</p>

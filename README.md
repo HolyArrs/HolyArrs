@@ -17,6 +17,8 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/licence-AGPL--3.0-3b82f6?style=flat-square" alt="Licence: AGPL-3.0"></a>
 </p>
 
+<p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
+
 <h3 align="center">Six apps to watch a show. Now it's one.</h3>
 
 <p align="center"><b>HolyArrs</b> is one self-hosted app for your shows, movies and music.<br>Browse like a streaming app, ask for what you want, and it handles the rest.</p>
