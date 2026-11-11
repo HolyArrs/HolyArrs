@@ -206,7 +206,7 @@
 	"settings.index.search.search-now.search-now.label": "Szukaj teraz",
 	"settings.index.search.search-now.search-now.words": "szukaj lepsza kopia kanały uruchom",
 	"settings.index.downloaders.downloaders-card.downloaders.label": "Downloadery",
-	"settings.index.downloaders.downloaders-card.downloaders.words": "download klient qbittorrent sabnzbd transmission deluge nzbget torrent klient dodaj",
+	"settings.index.downloaders.downloaders-card.downloaders.words": "download klient qbittorrent sabnzbd transmission deluge rtorrent rutorrent nzbget torrent klient dodaj",
 	"settings.index.downloaders.st-stall.stalled-after.label": "Zablokowane po",
 	"settings.index.downloaders.st-stall.stalled-after.words": "zablokowane zawieszone godziny pobieranie",
 	"settings.index.downloaders.st-act.give-up-and-try-the-next-release-after.label": "Zrezygnuj i spróbuj następnego release'u po",

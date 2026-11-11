@@ -228,11 +228,11 @@ func (b *builder) downloaders(s *Snapshot) {
 		from := b.from("download_clients", i)
 		var adapter string
 		switch k := strings.ToLower(d.Kind); k {
-		case "qbittorrent", "sabnzbd", "transmission", "deluge", "nzbget":
+		case "qbittorrent", "sabnzbd", "transmission", "deluge", "rtorrent", "nzbget":
 			adapter = k
 		}
 		if adapter == "" {
-			b.not(GroupDownloaders, from, d.Name, "HolyArrs talks to qBittorrent, Transmission, Deluge, SABnzbd and NZBGet only")
+			b.not(GroupDownloaders, from, d.Name, "HolyArrs talks to qBittorrent, Transmission, Deluge, rTorrent, SABnzbd and NZBGet only")
 			continue
 		}
 		port, _ := setNum(d.Settings, "port")

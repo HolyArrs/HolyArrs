@@ -34,7 +34,7 @@ Copper Valley (2025)/Season 1/Copper Valley - S01E02-E03 - The Mill + Flood 1080
 Copper Valley (2025)/Specials/Copper Valley - S00E01 - Behind the scenes 1080p WEB.mkv
 ```
 
-Files are hardlinked when the download and the Library share a disk: they take no extra space and your Downloader keeps seeding. On another disk they are copied. HolyArrs never moves or deletes your Downloader's files, and never writes over a file it did not put there.
+Torrent files are hardlinked when the download and the Library share a disk: they take no extra space and your Downloader keeps seeding. On another disk they are copied. A finished Usenet download is moved instead, which is instant on the same disk; if it can't be moved, it is copied. A Downloader marked read-only keeps its files. HolyArrs never writes over a file it did not put there.
 
 :::tip
 A download fills one Version. For a show kept in HD and 4K, each pack goes to its own Version's folder, for example `Copper Valley (2025)` and `Copper Valley (2025) [4K]`.

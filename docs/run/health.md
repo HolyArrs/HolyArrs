@@ -52,7 +52,7 @@ The update settings live on the same card; see [Updates](updates.md#choices).
 ## If it does not work
 
 **Symptom:** a download waits for its files after a share came back.
-**Cause:** qBittorrent, Deluge and Transmission keep the error until the files are checked again.
+**Cause:** qBittorrent, Deluge, Transmission and rTorrent keep the error until the files are checked again.
 **Fix:** on **Downloads**, select **Check again** on that row, or recheck it in the downloader.
 
 **Symptom:** a Library folder shows broken after a reboot.

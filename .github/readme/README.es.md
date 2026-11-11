@@ -21,9 +21,9 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.0.18: el nuevo aspecto Minimal**, con pósters pequeños y sin fotos grandes ni reproducción automática. Además, 8 arreglos, como el del anime que TMDB divide en dos partes. [Novedades](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.0.19: rTorrent y ruTorrent como gestor de descargas**, también en seedboxes. Las descargas de Usenet terminadas ahora se mueven a tu biblioteca en vez de copiarse. [Novedades](https://holyarrs.com/whats-new/)
 >
-> <img src="https://github.com/user-attachments/assets/f7e6987d-33eb-4fec-a8fe-ce2c2e264cdf" alt="HolyArrs 1.0.18" width="100%">
+> <img src="https://github.com/user-attachments/assets/3f087371-bae1-496e-bda8-77b9a97c59bf" alt="HolyArrs 1.0.19" width="100%">
 
 > Cada póster, tráiler y puntuación de tu HolyArrs viene de un servidor que mantengo y pago yo mismo, para que siga siendo gratis para todos. Si HolyArrs hizo tu noche de películas un poco mejor, patrocinarlo mantiene las luces encendidas para todos 💛
 >
@@ -152,7 +152,7 @@ Alguien pide un título. HolyArrs busca en tus Sources, elige el mejor lanzamien
 
 <picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="Descargadores: qBittorrent, Transmission, Deluge, SABnzbd, NZBGet. Servidores multimedia: Plex, Jellyfin, Emby." /></picture>
 
-- **Descargadores:** qBittorrent, Transmission, Deluge, SABnzbd, NZBGet
+- **Descargadores:** qBittorrent, Transmission, Deluge, rTorrent, SABnzbd, NZBGet
 - **Servidores multimedia:** Plex, Jellyfin, Emby
 - **Sources:** cualquier indexador Torznab o Newznab, o Prowlarr o Jackett
 - **Trae tu configuración desde:** Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent, SABnzbd
@@ -222,7 +222,7 @@ Las imágenes están en Docker Hub como [`holyarrs/holyarrs`](https://hub.docker
 | Etiqueta | Para qué sirve |
 | :----: | --- |
 | `latest` | La versión más reciente. |
-| `1.0.18` | Una versión exacta. Nunca se mueve. |
+| `1.0.19` | Una versión exacta. Nunca se mueve. |
 
 ## Uso
 

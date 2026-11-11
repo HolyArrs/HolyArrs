@@ -47,6 +47,18 @@ func latestMain(t *testing.T) int {
 	return ms[len(ms)-1].version
 }
 
+// mainBack is the main migration version n steps before the latest one.
+// Numbers may skip, so latest-n is not always a real version.
+func mainBack(t *testing.T, n int) int {
+	t.Helper()
+	src, _ := fs.Sub(embedded, "migrations/main")
+	ms, err := loadMigrations(src)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return ms[len(ms)-1-n].version
+}
+
 const (
 	ts = "'2026-10-01T00:00:00.000000000Z'"
 	by = `'{"kind":"system"}'`
@@ -142,7 +154,7 @@ func historyLine(t *testing.T, s *Store) string {
 // one checked pre-update backup is written, and a second start runs none.
 func TestUpgradeFromOlderSchemas(t *testing.T) {
 	latest := latestMain(t)
-	for _, from := range []int{40, 90, latest - 1} {
+	for _, from := range []int{40, 90, mainBack(t, 1)} {
 		t.Run("from_"+strconv.Itoa(from), func(t *testing.T) {
 			dir := oldFolder(t, from)
 			updating := 0
@@ -252,9 +264,10 @@ func TestRealDowngradeIsRefused(t *testing.T) {
 		t.Fatal(err)
 	}
 	_ = s.Close()
-	_, err = Open(dir, Options{MainMigrations: mainUpTo(t, latest-2, nil)})
+	older := mainBack(t, 2)
+	_, err = Open(dir, Options{MainMigrations: mainUpTo(t, older, nil)})
 	var nd *NewerDataError
-	if !errors.As(err, &nd) || nd.Have != latest || nd.Know != latest-2 || !strings.Contains(err.Error(), "newer HolyArrs") {
+	if !errors.As(err, &nd) || nd.Have != latest || nd.Know != older || !strings.Contains(err.Error(), "newer HolyArrs") {
 		t.Fatalf("got %v", err)
 	}
 	s, err = Open(dir, Options{})

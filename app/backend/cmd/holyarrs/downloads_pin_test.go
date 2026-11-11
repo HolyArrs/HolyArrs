@@ -238,7 +238,7 @@ func TestDlPinDownloadsViewShape(t *testing.T) {
 		keys = append(keys, k)
 	}
 	sort.Strings(keys)
-	if got := strings.Join(keys, ","); got != "clients,downloads,next_cursor,outside_total,totals" {
+	if got := strings.Join(keys, ","); got != "clients,downloads,next_cursor,outside_rest,outside_total,totals" {
 		t.Fatalf("top-level keys %s", got)
 	}
 	var rows []map[string]any

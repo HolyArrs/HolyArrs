@@ -223,3 +223,42 @@ test('AC6: 2,000-row list scrolls smoothly and draws fewer than 100 rows', async
 	await ctx.close();
 	await fetch(`${qbit}/set?count=0`);
 });
+
+// 883 torrents HolyArrs did not add: the tabs count every one, a note under
+// the tabs says only some are loaded, and Show more torrents sits at the end
+// of the list for Torrent (and every network), never for Usenet with none left.
+test('tab counts and Show more follow every torrent and the network filter', async ({ browser }) => {
+	test.setTimeout(120_000);
+	await fetch(`${qbit}/set?count=883`);
+	await expect.poll(async () => (await page.request.get('/api/v1/downloads/view?limit=1')).json().then((v) => v.outside_total), { timeout: 30_000 }).toBeGreaterThanOrEqual(883);
+	const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, storageState: await page.context().storageState() });
+	const p = await ctx.newPage();
+	await p.goto('/downloads');
+	const all = p.locator('[data-testid="rail-item"][data-key="active"]');
+	await expect.poll(async () => Number(await all.getAttribute('data-count')), { timeout: 30_000 }).toBeGreaterThanOrEqual(883);
+	await expect(p.getByTestId('dl-morenote')).toBeVisible();
+	const network = async (key: string) => {
+		await p.getByTestId('dl-filters-btn').click();
+		await p.locator(`[data-testid="dl-f-src"][data-key="${key}"]`).click();
+		await p.getByTestId('dl-filters-done').click();
+	};
+	const toEnd = () => p.getByTestId('dl-listbox').evaluate((b) => (b.scrollTop = b.scrollHeight));
+	const loaded = async () => Number(await p.locator('[data-testid="dl-list"]').getAttribute('data-rows'));
+
+	await network('torrent');
+	await toEnd();
+	await expect(p.getByTestId('dl-outside-more')).toBeInViewport();
+
+	await network('usenet');
+	await expect(p.getByTestId('dl-outside-more')).toHaveCount(0);
+	await expect(p.getByTestId('dl-morenote')).toHaveCount(0);
+
+	await network('torrent');
+	await toEnd();
+	const before = await loaded();
+	await expect(p.getByTestId('dl-outside-more')).toBeInViewport();
+	await p.getByTestId('dl-outside-more').click();
+	await expect.poll(loaded, { timeout: 30_000 }).toBeGreaterThan(before);
+	await ctx.close();
+	await fetch(`${qbit}/set?count=0`);
+});

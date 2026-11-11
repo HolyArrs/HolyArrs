@@ -17,15 +17,16 @@
 	import { Downloaders } from './clients.svelte.ts';
 	import { PaneDetail } from './pane-detail.svelte.ts';
 	import { tabsOf, type PaneTab } from './pane-facts.ts';
-	import GhostEmpty from './GhostEmpty.svelte';
+	import DlMoreNote from './DlMoreNote.svelte';
+	import DlEmpty from './DlEmpty.svelte';
 	import { reviewCount, reviewWord } from './status-views.ts';
 	import { listEsc, reviewShown, searchShortcut } from './keys.ts';
 	import { overlayScroll } from './overlay-scroll.ts';
 	import { dlTop } from './dl-top.svelte.ts';
-	import { size as bytes, categoryWords, protocolOf, type KindKey } from './size.ts';
+	import { size as bytes, freeSize, categoryWords, protocolOf, type KindKey } from './size.ts';
 	import { kindOf, rowName } from './downloaders.ts';
 	import type { ImportRecord } from './types.ts';
-	import { ALL, counts, emptyOf, pick, showOf, statusWord, subCounts, tabsFor } from './status-tabs.ts';
+	import { ALL, counts, emptyOf, moreOf, pick, showOf, statusWord, subCounts, tabsFor, withRest, type Rest } from './status-tabs.ts';
 	import { controllable, pausable } from './usenet.ts';
 	import { poster, who } from './row-art.ts';
 	import { byTracker, countLabel, pickRange, problemWords, toolbarTargets, trackerOptions, type BulkAction, type SteerMode } from './manage.ts';
@@ -70,7 +71,8 @@
 		changeOutside = true,
 		batchBusy = false,
 		watch = false,
-		upTotal
+		upTotal,
+		outside = { rest: {}, canMore: false, capMax: 0 }
 	}: {
 		rows: DownloadRow[];
 		/** Notes from the page, such as a Downloader not answering, shown in the status popover. */
@@ -104,6 +106,7 @@
 		watch?: boolean;
 		/** Upload speed summed by the server over every sending row; falls back to the rows on hand. */
 		upTotal?: number;
+		outside?: { rest: Rest; canMore: boolean; capMax: number; onmore?: () => void }; // torrents left out of this page (tabs count them too), whether more can load, and how
 	} = $props();
 	let kindOn = $state<KindKey>('');
 	const typed = $derived(kindOn ? everyRow.filter((r) => kindOf(r) === kindOn) : everyRow);
@@ -142,12 +145,15 @@
 		}
 	}
 	const tabs = $derived(tabsFor(rows, torrent));
-	const tally = $derived(counts(rows, tabs));
+	const filtered = $derived(!!(kindOn || q.trim() || trackKey)); // Unloaded torrents count on their tabs too (Torrent or Usenet filter included); other filters check loaded rows only.
+	const mo = $derived(moreOf({ rest: outside.rest, src: srcOn, partial: filtered, loaded: everyRow.filter((r) => r.client_item && (!srcOn || protocolOf(r) === srcOn)).length, canMore: outside.canMore }));
+	const tally = $derived(withRest(counts(rows, tabs), tabs, mo.extra));
 	const on = $derived(tabs.some((c) => c.key === show) ? show : ALL);
 	const onTab = $derived(tabs.find((c) => c.key === on));
-	const subs = $derived(subCounts(rows, onTab));
+	const subs = $derived(withRest(subCounts(rows, onTab), onTab?.subs ?? [], mo.extra));
 	const subOn = $derived(subs.some((x) => x.key === sub) ? sub : '');
 	const shown = $derived(pick(rows, tabs, on, subOn));
+	const restHere = $derived((onTab?.subs.find((x) => x.key === subOn)?.stages ?? onTab?.stages ?? []).reduce((a, s) => a + (mo.extra[s] ?? 0), 0)); // not loaded yet, on this tab
 	function choose(k: string) {
 		show = k;
 		sub = '';
@@ -541,7 +547,7 @@
 {#snippet pills()}
 	{#each tally as c (c.key)}
 		{@const t = tabs.find((x) => x.key === c.key)}
-		{@const so = t ? subCounts(rows, t) : []}
+		{@const so = t ? withRest(subCounts(rows, t), t.subs, mo.extra) : []}
 		{@const open = on === c.key && so.length > 0}
 		<div class="pw" class:on={on === c.key} class:open class:leaf={on === c.key && !subOn} data-key={c.key}>
 			<button type="button" role="tab" class="tab" class:zero={c.count === 0} aria-selected={on === c.key} tabindex={on === c.key ? 0 : -1} data-nav data-testid="rail-item" data-key={c.key} data-count={c.count} onclick={() => choose(c.key)}><span class="lb">{c.label}</span><b class="n">{c.count}</b></button>
@@ -573,8 +579,9 @@
 <div class="body">
 <div class="col" bind:this={colEl}>
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-<div class="tabrow" data-testid="dl-tabrow" onkeydown={navKey}><div class="tabs" role="tablist" aria-label={t('downloads.list.status')}>{@render pills()}</div>{#if problemWords(trackProblems)}<button type="button" class="trchip" class:on={trackKey === 'p:any'} aria-pressed={trackKey === 'p:any'} onclick={() => (trackOn = trackKey === 'p:any' ? '' : 'p:any')} data-testid="dl-tracker-issues">{problemWords(trackProblems)}</button>{/if}<DlStatus down="{bytes(sum.speed)}/s" up={noUp ? '' : `${bytes(upSum)}/s`} eta={etaWords} free={dls.freeAll.length ? bytes(Math.min(...dls.freeAll)) : ''} today={dls.sumOf('day_down') ? bytes(dls.sumOf('day_down')) : ''} session={dls.sumOf('session_down') ? bytes(dls.sumOf('session_down')) : ''} review={reviewShown(watch, toReview)} onreview={openReview} more={morePop} limit={Number.isFinite(capNow) ? `${bytes(capNow)}/s` : ''} onlimit={watch ? undefined : onlimit} /></div>
-<p class="qline" data-testid="dl-qline">{#if onlimit && !watch}<button type="button" class="qd qbtn" onclick={() => onlimit?.()} title={Number.isFinite(capNow) ? t('downloads.list.limitChange', { speed: `${bytes(capNow)}/s` }) : t('downloads.list.setLimit')} data-testid="dl-q-down"><span class="sr">{t('downloads.list.speedSr')} </span>↓ {bytes(sum.speed)}/s{#if Number.isFinite(capNow)}<span class="qcap"><Icon name="gauge" size={12} /><span class="sr">{t('downloads.list.limitSr')} </span>{bytes(capNow)}/s</span>{:else}<span class="sr">. {t('downloads.list.setLimit')}</span>{/if}</button>{:else}<span class="qd" data-testid="dl-q-down">↓ {bytes(sum.speed)}/s</span>{/if}{#if dls.freeAll.length}<span class="qs" aria-hidden="true">·</span><span data-testid="dl-q-free">{t('downloads.list.free', { size: bytes(Math.min(...dls.freeAll)) })}</span>{/if}{#if etaWords}<span class="qs" aria-hidden="true">·</span><span>{t('downloads.list.left', { time: etaWords })}</span>{/if}{#if reviewShown(watch, toReview)}<button type="button" class="qrv" onclick={openReview} data-testid="dl-q-review">{reviewWord(toReview)}</button>{/if}</p>
+<div class="tabrow" data-testid="dl-tabrow" onkeydown={navKey}><div class="tabs" role="tablist" aria-label={t('downloads.list.status')} aria-describedby={mo.left > 0 ? 'dl-morenote' : undefined}>{@render pills()}</div>{#if problemWords(trackProblems)}<button type="button" class="trchip" class:on={trackKey === 'p:any'} aria-pressed={trackKey === 'p:any'} onclick={() => (trackOn = trackKey === 'p:any' ? '' : 'p:any')} data-testid="dl-tracker-issues">{problemWords(trackProblems)}</button>{/if}<DlStatus down="{bytes(sum.speed)}/s" up={noUp ? '' : `${bytes(upSum)}/s`} eta={etaWords} free={dls.freeAll.length ? freeSize(Math.min(...dls.freeAll)) : ''} today={dls.sumOf('day_down') ? bytes(dls.sumOf('day_down')) : ''} session={dls.sumOf('session_down') ? bytes(dls.sumOf('session_down')) : ''} review={reviewShown(watch, toReview)} onreview={openReview} more={morePop} limit={Number.isFinite(capNow) ? `${bytes(capNow)}/s` : ''} onlimit={watch ? undefined : onlimit} /></div>
+<DlMoreNote {mo} {filtered} loaded={mo.loaded} capMax={outside.capMax} onmore={outside.onmore} />
+<p class="qline" data-testid="dl-qline">{#if onlimit && !watch}<button type="button" class="qd qbtn" onclick={() => onlimit?.()} title={Number.isFinite(capNow) ? t('downloads.list.limitChange', { speed: `${bytes(capNow)}/s` }) : t('downloads.list.setLimit')} data-testid="dl-q-down"><span class="sr">{t('downloads.list.speedSr')} </span>↓ {bytes(sum.speed)}/s{#if Number.isFinite(capNow)}<span class="qcap"><Icon name="gauge" size={12} /><span class="sr">{t('downloads.list.limitSr')} </span>{bytes(capNow)}/s</span>{:else}<span class="sr">. {t('downloads.list.setLimit')}</span>{/if}</button>{:else}<span class="qd" data-testid="dl-q-down">↓ {bytes(sum.speed)}/s</span>{/if}{#if dls.freeAll.length}<span class="qs" aria-hidden="true">·</span><span data-testid="dl-q-free">{t('downloads.list.free', { size: freeSize(Math.min(...dls.freeAll)) })}</span>{/if}{#if etaWords}<span class="qs" aria-hidden="true">·</span><span>{t('downloads.list.left', { time: etaWords })}</span>{/if}{#if reviewShown(watch, toReview)}<button type="button" class="qrv" onclick={openReview} data-testid="dl-q-review">{reviewWord(toReview)}</button>{/if}</p>
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 <div class="listbox" bind:this={cols.listEl} data-testid="dl-listbox" use:overlayScroll={{ header: ".chead" }}>
 {#if (pickedRows.length || selecting) && !watch}
@@ -586,18 +593,11 @@
 		<ul class="dlrows" class:vw={cols.windowed} bind:this={cols.ulEl} data-testid="dl-list" data-tab={on} data-rows={list.length} style={cols.windowed ? `padding-top: ${cols.span.a * cols.rh}px; padding-bottom: ${(list.length - cols.span.b) * cols.rh}px` : undefined}>
 			{#each cols.shownRows as r (r.id)}<DlRow {r} hist={inHistory(r)} {cols} {watch} {picked} {choosing} {openId} {tabRow} {importOf} {titles} {titlesReady} {rowMenu} onpickone={pickOne} onpickto={pickTo} onrowclick={rowClick} onrowkey={rowKey} onrowfocus={(id) => (rowFocus = id)} />{/each}
 		</ul>
+		<DlMoreNote {mo} loaded={mo.loaded} capMax={outside.capMax} onmore={outside.onmore} end />
 	</div></div>
 {:else}
-	{@const em = emptyOf(on, subOn, q, kindOn, tabs, srcOn)}
 	<div class="tw" data-testid="dl-tablebox"><div class="tin">{@render header()}</div></div>
-	{#key em.title}
-	<GhostEmpty title={em.title} text={em.text}>
-		{#snippet action()}
-			{#if em.action?.act === 'clear'}<button type="button" data-testid="dl-empty-act" onclick={() => (dlScope.term = '')}>{em.action.label}</button>
-			{:else if em.action?.act === 'all'}<button type="button" data-testid="dl-empty-act" onclick={() => { kindOn = ''; srcOn = ''; }}>{em.action.label}</button>{/if}
-		{/snippet}
-	</GhostEmpty>
-	{/key}
+	<DlEmpty em={emptyOf(on, subOn, q, kindOn, tabs, srcOn)} left={restHere} more={mo.more} onclear={() => (dlScope.term = '')} onall={() => { kindOn = ''; srcOn = ''; }} onmore={outside.onmore} />
 {/if}
 </div>
 {#if openRow}

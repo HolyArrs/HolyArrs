@@ -31,6 +31,11 @@ describe('row actions menu', () => {
 	it('keeps Transmission rows to remove', () => {
 		expect(rowItems({ ...tor, downloader_kind: 'transmission' })).toEqual(['remove']);
 	});
+	it('gives rTorrent rows pause or resume and remove only', () => {
+		expect(rowItems({ ...tor, downloader_kind: 'rtorrent' })).toEqual(['pause', 'remove']);
+		expect(rowItems({ ...tor, downloader_kind: 'rtorrent', state: 'paused' })).toEqual(['resume', 'remove']);
+		expect(rowItems({ ...tor, downloader_kind: 'rtorrent', can_act: false })).toEqual([]);
+	});
 	it('never offers a client change on a read-only row', () => {
 		expect(rowItems({ ...tor, can_act: false, title_id: 4 })).toEqual(['library']);
 		expect(rowItems({ ...tor, can_act: false })).toEqual([]);

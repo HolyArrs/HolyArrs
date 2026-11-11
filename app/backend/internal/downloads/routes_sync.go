@@ -164,6 +164,10 @@ func (a *Web) MatchLinkOnly(ctx context.Context, downloaderID int64, key, name, 
 	if db.QueryRowContext(ctx, "SELECT COUNT(*) FROM downloads WHERE downloader_id = ? AND lower(external_id) = ?", downloaderID, key).Scan(&n) == nil && n > 0 {
 		return "own", 0, nil
 	}
+	var d domain.Downloader
+	if database.Get(ctx, db, "downloaders", downloaderID, &d) == nil && otherApp(d, category) {
+		return matchOtherApp, 0, nil
+	}
 	var st, how string
 	var tid *int64
 	if db.QueryRowContext(ctx, "SELECT state, title_id, COALESCE(how, '') FROM client_links WHERE downloader_id = ? AND hash = ?", downloaderID, key).Scan(&st, &tid, &how) == nil &&
@@ -238,6 +242,27 @@ func (a *Web) MatchLinkOnly(ctx context.Context, downloaderID int64, key, name, 
 	return LinkLinked, titleID, nil
 }
 
+// matchOtherApp is the match outcome for a Usenet job in a category
+// HolyArrs does not use: another app's job in a shared client, shown on
+// Downloads but never matched.
+const matchOtherApp = "other"
+
+// otherApp reports whether category belongs to another app on d: d is a
+// Usenet client with categories of its own and category is none of them.
+// A client with no category, "" or "*" has every job as its own.
+func otherApp(d domain.Downloader, category string) bool {
+	if d.Protocol != "usenet" {
+		return false
+	}
+	cats := d.Categories()
+	for _, c := range cats {
+		if c == "" || c == "*" || strings.EqualFold(c, category) {
+			return false
+		}
+	}
+	return len(cats) > 0
+}
+
 // settingAutoAdd is downloads_auto_add (group links), off by default.
 const settingAutoAdd = "downloads_auto_add"
 
@@ -265,9 +290,10 @@ func (a *Web) Rematch(ctx context.Context) int {
 	var n int64
 	// Not-media names go again too (a person's not-media pick stays), and
 	// with auto-add on, the matcher's suggestions, to be added.
-	outs := "('', 'nomatch', 'not_media')"
+	// Other apps' jobs too, in case HolyArrs's categories changed.
+	outs := "('', 'nomatch', 'not_media', 'other')"
 	if a.autoAddOn(ctx) {
-		outs = "('', 'nomatch', 'not_media', 'suggested')"
+		outs = "('', 'nomatch', 'not_media', 'other', 'suggested')"
 	}
 	_ = a.Store.Write(ctx, func(tx *sql.Tx) error {
 		res, err := tx.ExecContext(ctx, "UPDATE dl_match_queue SET attempts = 0, next_try_at = ?, outcome = '', last_error = '' WHERE outcome IN "+outs,

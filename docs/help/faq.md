@@ -9,7 +9,7 @@ Short answers, each with a link to the full page.
 
 ## What does HolyArrs do?
 
-It runs movies, shows and music in one app: requests, searching your sources, picking a release, sending it to your downloader, importing the file, subtitles and alerts. It works with qBittorrent, SABnzbd, Transmission, NZBGet and Deluge. It does not download by itself.
+It runs movies, shows and music in one app: requests, searching your sources, picking a release, sending it to your downloader, importing the file, subtitles and alerts. It works with qBittorrent, SABnzbd, Transmission, NZBGet, Deluge and rTorrent. It does not download by itself.
 
 ## Do I need API keys for names and pictures?
 

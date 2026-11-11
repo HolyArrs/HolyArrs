@@ -54,7 +54,7 @@ Separate NAS shares or datasets under `/srv/data` are separate filesystems. File
 
 ### Separate mounts
 
-`/movies`, `/tv`, `/music` and `/downloads` as four mounts still work. Every import then copies the file, which takes longer and uses double the space until the downloader deletes its copy.
+`/movies`, `/tv`, `/music` and `/downloads` as four mounts still work. Every import then copies the file, which takes longer and uses double the space until the downloader deletes its copy. That holds for Usenet downloads too, even on one disk: a file can only move instantly within one mount, so use the shared parent folder above.
 
 ### Downloader in another container with other paths
 

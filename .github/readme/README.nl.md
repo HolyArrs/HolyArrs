@@ -21,9 +21,9 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.0.18: de nieuwe Minimal-look**, met kleine posters en zonder grote foto's of autoplay. Plus 8 oplossingen, zoals voor anime die TMDB in twee delen splitst. [Wat is er nieuw](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.0.19: rTorrent en ruTorrent als downloader**, ook op een seedbox. Afgeronde Usenet-downloads worden nu naar je bibliotheek verplaatst in plaats van gekopieerd. [Wat is er nieuw](https://holyarrs.com/whats-new/)
 >
-> <img src="https://github.com/user-attachments/assets/f7e6987d-33eb-4fec-a8fe-ce2c2e264cdf" alt="HolyArrs 1.0.18" width="100%">
+> <img src="https://github.com/user-attachments/assets/3f087371-bae1-496e-bda8-77b9a97c59bf" alt="HolyArrs 1.0.19" width="100%">
 
 > Elke poster, trailer en score in je HolyArrs komt van een server die ik zelf draai en betaal, zodat het voor iedereen gratis blijft. Heeft HolyArrs je filmavond een beetje beter gemaakt? Met een sponsor blijven de lichten aan voor ons allemaal 💛
 >
@@ -152,7 +152,7 @@ Iemand vraagt een titel aan. HolyArrs doorzoekt je bronnen, kiest met je keuzere
 
 <picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="Downloaders: qBittorrent, Transmission, Deluge, SABnzbd, NZBGet. Mediaservers: Plex, Jellyfin, Emby." /></picture>
 
-- **Downloaders:** qBittorrent, Transmission, Deluge, SABnzbd, NZBGet
+- **Downloaders:** qBittorrent, Transmission, Deluge, rTorrent, SABnzbd, NZBGet
 - **Mediaservers:** Plex, Jellyfin, Emby
 - **Bronnen:** elke Torznab- of Newznab-indexer, of Prowlarr of Jackett
 - **Neemt je setup over van:** Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent, SABnzbd
@@ -222,7 +222,7 @@ De images staan op Docker Hub als [`holyarrs/holyarrs`](https://hub.docker.com/r
 | Tag | Gebruik het voor |
 | :----: | --- |
 | `latest` | De nieuwste versie. |
-| `1.0.18` | Eén exacte versie. Die verandert nooit. |
+| `1.0.19` | Eén exacte versie. Die verandert nooit. |
 
 ## Gebruik
 

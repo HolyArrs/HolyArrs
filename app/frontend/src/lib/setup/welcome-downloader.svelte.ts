@@ -5,8 +5,8 @@ import { api, message, ApiError } from '#lib/core/api.ts';
 import { t as say } from '#lib/core/i18n/i18n.svelte.ts';
 
 export function createWelcomeDownloader(ctx: any) {
-	const dlKinds: DownloaderForm['kind'][] = ['qbittorrent', 'sabnzbd', 'transmission', 'nzbget', 'deluge'];
-	const dlPorts: Record<DownloaderForm['kind'], string> = { qbittorrent: '8080', sabnzbd: '8080', transmission: '9091', nzbget: '6789', deluge: '8112' };
+	const dlKinds: DownloaderForm['kind'][] = ['qbittorrent', 'sabnzbd', 'transmission', 'nzbget', 'deluge', 'rtorrent'];
+	const dlPorts: Record<DownloaderForm['kind'], string> = { qbittorrent: '8080', sabnzbd: '8080', transmission: '9091', nzbget: '6789', deluge: '8112', rtorrent: '8000' };
 	let dl = $state<DownloaderForm>(emptyForm());
 	// Every connected downloader, each with its last test answer; the form shows when there is none yet or the owner adds another.
 	let dlList = $state<DownloaderView[]>([]);
@@ -19,7 +19,7 @@ export function createWelcomeDownloader(ctx: any) {
 	// Shown under User name when an app that signs in turned down a try without one.
 	let dlAuth = $state('');
 	const dlForm = $derived(dlList.length === 0 || dlAdding);
-	const dlUser = $derived(dl.kind === 'qbittorrent' || dl.kind === 'transmission' || dl.kind === 'nzbget');
+	const dlUser = $derived(dl.kind === 'qbittorrent' || dl.kind === 'transmission' || dl.kind === 'nzbget' || dl.kind === 'rtorrent');
 	function pickDl(k: DownloaderForm['kind']) {
 		ctx.error = '';
 		dlError = '';

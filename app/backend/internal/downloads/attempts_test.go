@@ -549,7 +549,7 @@ func TestOptionalJournalDoesNotBindReusedIDs(t *testing.T) {
 }
 
 func TestOptionalTorrentJournalPinsUnknownOutcomeAcrossRestart(t *testing.T) {
-	for _, kind := range []string{"transmission", "deluge"} {
+	for _, kind := range []string{"transmission", "deluge", "rtorrent"} {
 		t.Run(kind, func(t *testing.T) {
 			w, m := setup(t)
 			ctx := context.Background()

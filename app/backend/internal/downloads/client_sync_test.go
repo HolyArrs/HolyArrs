@@ -391,7 +391,7 @@ func TestSabHistoryCounter(t *testing.T) {
 func adapterEngines(t *testing.T, base string) map[string]Engine {
 	t.Helper()
 	out := map[string]Engine{}
-	for _, kind := range []string{"qbittorrent", "sabnzbd", "transmission", "deluge", "nzbget"} {
+	for _, kind := range []string{"qbittorrent", "sabnzbd", "transmission", "deluge", "rtorrent", "nzbget"} {
 		e, err := (&Manager{}).EngineFor(context.Background(), domain.Downloader{Adapter: kind, URL: base, AllowLocal: true})
 		if err != nil {
 			t.Fatalf("%s: %v", kind, err)

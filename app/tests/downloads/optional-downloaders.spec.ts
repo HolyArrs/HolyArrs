@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { plainForm } from '../helpers/helpers.ts';
 
-type Kind = 'qbittorrent' | 'sabnzbd' | 'transmission' | 'nzbget' | 'deluge';
+type Kind = 'qbittorrent' | 'sabnzbd' | 'transmission' | 'nzbget' | 'deluge' | 'rtorrent';
 
 const configDir = process.env.HOLYARRS_OPTIONAL_UI_CONFIG;
 const libraryDir = process.env.HOLYARRS_OPTIONAL_UI_LIBRARY;
@@ -20,6 +20,7 @@ const kinds: { kind: Kind; label: string; username: boolean; secretLabel: 'Passw
 	{ kind: 'qbittorrent', label: 'qBittorrent', username: true, secretLabel: 'Password', category: 'holyarrs' },
 	{ kind: 'transmission', label: 'Transmission', username: true, secretLabel: 'Password', category: 'holyarrs' },
 	{ kind: 'deluge', label: 'Deluge', username: false, secretLabel: 'Password', category: 'holyarrs' },
+	{ kind: 'rtorrent', label: 'rTorrent', username: true, secretLabel: 'Password', category: 'holyarrs' },
 	{ kind: 'sabnzbd', label: 'SABnzbd', username: false, secretLabel: 'API key', category: 'movies' },
 	{ kind: 'nzbget', label: 'NZBGet', username: true, secretLabel: 'Password', category: 'holyarrs' }
 ];
@@ -89,7 +90,8 @@ async function verifyFieldMatrix(page: Page) {
 		await expect(page.getByLabel('Username')).toHaveCount(item.username ? 1 : 0);
 		await expect(page.getByLabel('API key', { exact: true })).toHaveCount(item.secretLabel === 'API key' ? 1 : 0);
 		await expect(page.getByLabel('Password', { exact: true })).toHaveCount(item.secretLabel === 'Password' ? 1 : 0);
-		if (item.kind === 'deluge') await expect(page.getByText(/must already be connected to the intended daemon/)).toBeVisible();
+		if (item.kind === 'deluge') await expect(page.getByText(/connected to a daemon with the Label plugin on/)).toBeVisible();
+		if (item.kind === 'rtorrent') await expect(page.getByText(/plugins\/httprpc\/action\.php/)).toBeVisible();
 	}
 	await noSidewaysScroll(page);
 	await seriousA11y(page, 'desktop add form');

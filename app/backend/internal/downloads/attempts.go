@@ -276,8 +276,8 @@ func (m *Manager) claimAttempt(ctx context.Context, d domain.Downloader, release
 		if d.Protocol == "torrent" {
 			if releasename.ValidInfoHash(strings.ToLower(hash.String)) {
 				expected = strings.ToLower(hash.String)
-			} else if magnetHash, ok := delugeMagnetHash(link); ok {
-				expected = magnetHash
+			} else if h, ok := magnetHash(link); ok {
+				expected = h
 			}
 		}
 		a = &sendAttempt{Attempt: Attempt{DownloaderID: d.ID, ReleaseID: releaseID, SlotID: slotID, State: "pending", CreatedAt: now, UpdatedAt: now},
@@ -294,7 +294,7 @@ func (m *Manager) claimAttempt(ctx context.Context, d domain.Downloader, release
 }
 
 func journalAdapter(adapter string) bool {
-	return adapter == "nzbget" || adapter == "transmission" || adapter == "deluge"
+	return adapter == "nzbget" || adapter == "transmission" || adapter == "deluge" || adapter == "rtorrent"
 }
 
 func pendingAttemptCount(tx *sql.Tx, downloaderID int64) (int, error) {

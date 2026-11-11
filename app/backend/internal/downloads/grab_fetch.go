@@ -136,5 +136,5 @@ func prefetchTorrent(ctx context.Context, link string, allowLocal bool, localHos
 	return link, file
 }
 
-// torrentFetchMax caps a .torrent read for Transmission and Deluge.
+// torrentFetchMax caps a .torrent read for Transmission, Deluge and rTorrent.
 const torrentFetchMax int64 = 8 << 20

@@ -21,9 +21,9 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.0.18: yeni Minimal görünüm**; küçük afişler, büyük fotoğraf ve otomatik oynatma yok. Ayrıca TMDB'nin ikiye böldüğü animeler dahil 8 düzeltme. [Yenilikler](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.0.19: İndirici olarak rTorrent ve ruTorrent**, seedbox'lar dahil. Biten Usenet indirmeleri artık kitaplığına kopyalanmak yerine taşınıyor. [Yenilikler](https://holyarrs.com/whats-new/)
 >
-> <img src="https://github.com/user-attachments/assets/f7e6987d-33eb-4fec-a8fe-ce2c2e264cdf" alt="HolyArrs 1.0.18" width="100%">
+> <img src="https://github.com/user-attachments/assets/3f087371-bae1-496e-bda8-77b9a97c59bf" alt="HolyArrs 1.0.19" width="100%">
 
 > HolyArrs'ındaki her afiş, fragman ve puan, kendim çalıştırıp ödediğim bir sunucudan geliyor; böylece herkes için ücretsiz kalıyor. HolyArrs film gecene biraz güzellik kattıysa, sponsor olmak hepimiz için ışıkları açık tutar 💛
 >
@@ -152,7 +152,7 @@ Biri bir başlık ister. HolyArrs Kaynaklarını arar, Seçim kurallarınla en i
 
 <picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="İndiriciler: qBittorrent, Transmission, Deluge, SABnzbd, NZBGet. Medya sunucuları: Plex, Jellyfin, Emby." /></picture>
 
-- **İndiriciler:** qBittorrent, Transmission, Deluge, SABnzbd, NZBGet
+- **İndiriciler:** qBittorrent, Transmission, Deluge, rTorrent, SABnzbd, NZBGet
 - **Medya sunucuları:** Plex, Jellyfin, Emby
 - **Kaynaklar:** herhangi bir Torznab ya da Newznab indeksleyicisi, ya da Prowlarr veya Jackett
 - **Kurulumunu şuradan taşır:** Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent, SABnzbd
@@ -222,7 +222,7 @@ NAS mı kullanıyorsun? [Unraid, Synology ve diğer NAS cihazları](https://docs
 | Etiket | Ne için kullanılır |
 | :----: | --- |
 | `latest` | En yeni sürüm. |
-| `1.0.18` | Tam olarak tek bir sürüm. Asla değişmez. |
+| `1.0.19` | Tam olarak tek bir sürüm. Asla değişmez. |
 
 ## Kullanım
 

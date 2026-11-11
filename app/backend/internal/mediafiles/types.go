@@ -208,6 +208,9 @@ type PlanStep struct {
 	TargetSlotIDs  []int64  `json:"target_slot_ids"`
 	TargetPath     string   `json:"target_path"`
 	Method         string   `json:"method"` // hardlink, move, copy
+	// Move tries a rename into the Library first: the file is not needed in
+	// the download folder afterwards (a finished Usenet job, an unpacked file).
+	Move bool `json:"move,omitempty"`
 	ReplacesFileID *int64   `json:"replaces_file_id,omitempty"`
 	Confidence     float64  `json:"confidence"`
 	Why            []string `json:"why"`
@@ -221,6 +224,10 @@ type PlaceResult struct {
 	FellBack   bool   `json:"fell_back"`
 	Error      string `json:"error,omitempty"`
 	HeldAside  string `json:"held_aside,omitempty"` // where the replaced copy was moved before this file was placed
+	// MoveSize and MoveMod (unix nanoseconds) are the source's size and time
+	// before a move, so a retry knows the moved file as its own.
+	MoveSize int64 `json:"move_size,omitempty"`
+	MoveMod  int64 `json:"move_mod,omitempty"`
 	// HeldAsideMore lists where other replaced copies went (an episode
 	// file that replaces several, such as two single episodes).
 	HeldAsideMore []string `json:"held_aside_more,omitempty"`

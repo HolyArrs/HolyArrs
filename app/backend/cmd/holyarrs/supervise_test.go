@@ -152,7 +152,7 @@ func TestEveryJobKindHasAPool(t *testing.T) {
 func TestSafeModeStartsOnlyTheCore(t *testing.T) {
 	reg, addr := startApp(t, config{SafeMode: true}, runOpts{})
 	base := "http://" + addr
-	for _, name := range []string{"schedules", "downloads", "stranded_imports", "gates", "wishlist", "jobs_io", "jobs_heavy", "media_servers"} {
+	for _, name := range []string{"schedules", "downloads", "stranded_imports", "gates", "wishlist", "jobs_io", "jobs_heavy", "jobs_migrate", "media_servers"} {
 		st, _ := reg.Get(jobs.StageKey(name))
 		if st.State != jobs.Off || !strings.Contains(st.Reason, "Safe mode") {
 			t.Errorf("%s: %+v", name, st)
