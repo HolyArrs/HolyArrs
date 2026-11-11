@@ -1,1 +1,13 @@
-[]
+[
+  {
+    "id": 7603227,
+    "login": "maurerr",
+    "pull_request": 198,
+    "comment": "https://github.com/HolyArrs/HolyArrs/pull/198#issuecomment-6787976567",
+    "comment_id": 6787976567,
+    "text": "I have read the CLA and I agree to it.",
+    "signed_at": "2026-11-11T05:32:39Z",
+    "cla_version": "1.0",
+    "cla_sha": "4309bdf4bf980395b9a4152b55d579ab4a4f07dc"
+  }
+]
