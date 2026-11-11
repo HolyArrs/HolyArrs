@@ -98,6 +98,9 @@ type DownloadRow struct {
 	// queued); Tracker the host of the tracker it works with now.
 	QueuePos int    `json:"queue_pos,omitempty"`
 	Tracker  string `json:"tracker,omitempty"`
+	// ClearWaiting is set for an imported Usenet download whose clear from
+	// its Downloader failed and is tried again later.
+	ClearWaiting *ClearWait `json:"clear_waiting,omitempty"`
 	// TrackerProblem: error, warning or announce (no tracker answered).
 	TrackerProblem string `json:"tracker_problem,omitempty"`
 	// Availability is a downloading torrent's full copies in the swarm
@@ -357,10 +360,14 @@ func (a *Web) DownloadsView(w http.ResponseWriter, r *http.Request) {
 	}
 	rels := releaseNames(ctx, db, relIDs)
 	slots := slotInfos(ctx, db, slotIDs)
+	waits := clearWaits(ctx, db)
 	rows := make([]DownloadRow, 0, len(ds))
 	shown := map[clientKey]bool{}
 	for _, d := range ds {
 		row := DownloadRow{DownloadView: DownloadViewOf(d), StartedAt: d.StartedAt, FinishedAt: d.FinishedAt, UpdatedAt: d.UpdatedAt, Name: d.ExternalID, Path: d.SavePath}
+		if cw, ok := waits[d.ID]; ok && manage {
+			row.ClearWaiting = &cw
+		}
 		if d.ExternalID != "" {
 			shown[clientKey{d.DownloaderID, strings.ToLower(d.ExternalID)}] = true
 			row.LiveKey = LiveKey(d.DownloaderID, d.ExternalID)
