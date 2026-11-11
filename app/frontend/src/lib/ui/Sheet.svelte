@@ -120,6 +120,8 @@
 	oncancel={cancel}
 	onclick={backdrop}
 >
+	<!-- The grab handle and title row are a drag surface for touch; Escape and the close button do the same from the keyboard. -->
+	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div class="inner" onpointerdown={dragStart} onpointermove={dragMove} onpointerup={dragEnd} onpointercancel={dragEnd}>
 		<header class:sr={hideTitle}>
 			<div class="titles">
