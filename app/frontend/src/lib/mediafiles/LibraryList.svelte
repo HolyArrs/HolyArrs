@@ -27,7 +27,7 @@
 	import BannerArt from './BannerArt.svelte';
 	import LibraryLetterRail from './LibraryLetterRail.svelte';
 	import LibraryPoster from './LibraryPoster.svelte';
-	import { exceptionChip, firstOfLetter, letterOf, letters, missingEpisodes, posterStatus, type Kind } from './library.ts';
+	import { emptyAdds, exceptionChip, firstOfLetter, letterOf, letters, missingEpisodes, posterStatus, type AddKind, type Kind } from './library.ts';
 	import { libraryState } from './library-state.ts';
 	import { partOff } from './parts.svelte.ts';
 	import { buildEntries, cell, grow, isProgressCol, posterExtra, posterFacts, requestedBy, rowCell, scoreText, shrink, tone, type Entry, type View } from './library-view.ts';
@@ -78,6 +78,8 @@
 		setKeep: (ids: number[], keep: boolean) => void;
 		refreshTitle: (t: TitleView) => void;
 	};
+	// The empty Library's add buttons, named for the kind each one adds.
+	const addWords = $derived<Record<AddKind, string>>({ movie: tr('mediafiles.list.addMovie'), show: tr('mediafiles.list.addShow'), artist: tr('mediafiles.list.addArtist') });
 	let { titles, shown, loaded, error, view, kind, libKind, filter, sort, grouped, kindTitle, q, filtersOn, who, canManage, selecting, picked, lastOpenedId, chosenCols, density, posterSize, posterDetail, seriesOfTitle, seriesName, phone, listWidth = $bindable(), gridEl = $bindable(), listEl = $bindable(), progressText, artistHref, episodeLabel, retryLoad, clearFilters, togglePick, startSelecting, setSort, searchTitles, setKeep, refreshTitle }: Props = $props();
 
 	const kindLabel = (k: string) => tr(`mediafiles.kindCap.${k}`);
@@ -304,10 +306,10 @@
 		{#if error}
 			<LoadError hasData={false} message={plainReason(error).text} onretry={retryLoad} />
 		{:else if titles.length === 0}
-			<EmptyState icon="library" title={tr('mediafiles.list.nothingYet')} action={{ label: tr('mediafiles.list.addMovie'), href: to('/search'), icon: 'search' }} />
+			{@const [firstAdd, ...moreAdds] = emptyAdds(kind, partOff)}
+			<EmptyState icon="library" title={tr('mediafiles.list.nothingYet')} action={firstAdd ? { label: addWords[firstAdd.kind], href: to(firstAdd.href), icon: 'search' } : undefined} />
 			<div class="empty-more">
-				{#if !partOff('shows')}<Button href={to('/search?kind=show')}>{tr('mediafiles.list.addShow')}</Button>{/if}
-				{#if !partOff('music')}<Button href={to('/search?kind=music')}>{tr('mediafiles.list.addArtist')}</Button>{/if}
+				{#each moreAdds as a (a.kind)}<Button href={to(a.href)}>{addWords[a.kind]}</Button>{/each}
 				{#if session.can('settings')}<Button href={to('/settings/library-folders')}>{tr('mediafiles.list.folders')}</Button>{/if}
 			</div>
 		{:else if shown.length === 0}

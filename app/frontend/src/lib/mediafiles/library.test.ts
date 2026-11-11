@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { byName, counts, slotNotes, loadChoices, matches, matchesTitleQuery, ofKind, pickId, saveChoices, secondVersion, titleQuery, letterOf, firstOfLetter, letters, exceptionChip, missingEpisodes, posterStatus } from './library.ts';
+import { byName, counts, emptyAdds, slotNotes, loadChoices, matches, matchesTitleQuery, ofKind, pickId, saveChoices, secondVersion, titleQuery, letterOf, firstOfLetter, letters, exceptionChip, missingEpisodes, posterStatus } from './library.ts';
 import type { TitleView } from '../core/types.ts';
 
 function title(name: string, ...states: string[]): TitleView {
@@ -165,5 +165,19 @@ describe('library letters and quiet states', () => {
 	it('lists the missing episodes of a show', () => {
 		const ep = (id: number, keep: boolean, state: string) => ({ id, keep_up_to_date: keep, slots: [{ state }] });
 		expect(missingEpisodes([ep(1, true, 'wanted'), ep(2, true, 'in_library'), ep(3, false, 'wanted'), ep(4, true, 'downloading'), ep(5, true, 'not_out_yet')]).map((e) => e.id)).toEqual([1, 4]);
+	});
+});
+
+describe('emptyAdds', () => {
+	const allOn = () => false;
+	it('offers only the page kind on a kind page', () => {
+		expect(emptyAdds('movie', allOn)).toEqual([{ kind: 'movie', href: '/search?kind=movie' }]);
+		expect(emptyAdds('show', allOn)).toEqual([{ kind: 'show', href: '/search?kind=show' }]);
+		expect(emptyAdds('artist', allOn)).toEqual([{ kind: 'artist', href: '/search?kind=music' }]);
+	});
+	it('offers every part that is on for All, movies first', () => {
+		expect(emptyAdds('all', allOn).map((a) => a.kind)).toEqual(['movie', 'show', 'artist']);
+		expect(emptyAdds('all', (p) => p === 'music').map((a) => a.kind)).toEqual(['movie', 'show']);
+		expect(emptyAdds('all', (p) => p === 'movies').map((a) => a.kind)).toEqual(['show', 'artist']);
 	});
 });
