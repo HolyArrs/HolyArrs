@@ -17,6 +17,8 @@
   <a href="../../LICENSE"><img src="https://img.shields.io/badge/licence-AGPL--3.0-3b82f6?style=flat-square" alt="ライセンス: AGPL-3.0"></a>
 </p>
 
+<p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
+
 <h3 align="center">番組を1本見るのに、アプリが6つ。これからは1つです。</h3>
 
 <p align="center"><b>HolyArrs</b> は、番組、映画、音楽のためのセルフホスト型アプリです。<br>配信アプリのように見て回り、欲しいものをリクエストすれば、あとは任せられます。</p>

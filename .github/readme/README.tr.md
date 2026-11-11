@@ -17,6 +17,8 @@
   <a href="../../LICENSE"><img src="https://img.shields.io/badge/licence-AGPL--3.0-3b82f6?style=flat-square" alt="Lisans: AGPL-3.0"></a>
 </p>
 
+<p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
+
 <h3 align="center">Bir dizi izlemek için altı uygulama. Artık tek uygulama.</h3>
 
 <p align="center"><b>HolyArrs</b>, dizilerin, filmlerin ve müziğin için kendi sunucunda çalışan tek bir uygulama.<br>Bir yayın uygulaması gibi gez, istediğini iste, gerisini o halleder.</p>

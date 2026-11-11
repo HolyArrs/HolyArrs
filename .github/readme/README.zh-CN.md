@@ -17,6 +17,8 @@
   <a href="../../LICENSE"><img src="https://img.shields.io/badge/licence-AGPL--3.0-3b82f6?style=flat-square" alt="许可证：AGPL-3.0"></a>
 </p>
 
+<p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
+
 <h3 align="center">看一部剧要用六个应用。现在只要一个。</h3>
 
 <p align="center"><b>HolyArrs</b> 是一个自托管应用，管理你的剧集、电影和音乐。<br>像用流媒体应用一样浏览，想看什么就提出请求，剩下的交给它。</p>

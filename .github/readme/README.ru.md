@@ -17,6 +17,8 @@
   <a href="../../LICENSE"><img src="https://img.shields.io/badge/licence-AGPL--3.0-3b82f6?style=flat-square" alt="Лицензия: AGPL-3.0"></a>
 </p>
 
+<p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
+
 <h3 align="center">Шесть приложений, чтобы посмотреть сериал. Теперь одно.</h3>
 
 <p align="center"><b>HolyArrs</b> - одно приложение для самостоятельного хостинга: ваши сериалы, фильмы и музыка.<br>Листайте как в стриминговом сервисе, просите, что хотите, а остальное он сделает сам.</p>
