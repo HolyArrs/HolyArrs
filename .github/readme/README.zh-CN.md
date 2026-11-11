@@ -21,9 +21,9 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.0.17：按评分排序你的媒体库。** 排序时，每种视图都会显示每个作品的评分，从列表到海报，再到手机。 [新功能](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.0.18：全新的 Minimal 外观**，小海报，没有大图，也不自动播放。另有 8 项修复，包括被 TMDB 分成两部分的动画。 [新功能](https://holyarrs.com/whats-new/)
 >
-> <img src="https://github.com/user-attachments/assets/497be538-df38-4325-ab63-5ac51c273528" alt="HolyArrs 1.0.17" width="100%">
+> <img src="https://github.com/user-attachments/assets/f7e6987d-33eb-4fec-a8fe-ce2c2e264cdf" alt="HolyArrs 1.0.18" width="100%">
 
 > 你的 HolyArrs 里每一张海报、每一段预告片和每一个评分，都来自我自己运营、自己付费的服务器，所以它对所有人都免费。如果 HolyArrs 让你的电影之夜更好了一点，赞助一下，就能为我们所有人留着这盏灯 💛
 >
@@ -222,7 +222,7 @@ HolyArrs 只读取你的旧应用，不会改动它们里面的任何东西，�
 | 标签 | 用途 |
 | :----: | --- |
 | `latest` | 最新版本。 |
-| `1.0.17` | 固定的某一个版本，永远不会变。 |
+| `1.0.18` | 固定的某一个版本，永远不会变。 |
 
 ## 用法
 

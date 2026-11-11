@@ -2,6 +2,23 @@
 
 All notable changes to HolyArrs are listed here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## 1.0.18
+
+### Added
+
+- A Minimal look with small posters and no big photos or autoplay. ([#119](https://github.com/HolyArrs/HolyArrs/issues/119))
+
+### Fixed
+
+- Anime that TMDB keeps as one long season gets its second half too. ([#234](https://github.com/HolyArrs/HolyArrs/issues/234))
+- Grabs from sites behind Cloudflare, like NZBFinder, go through. ([#231](https://github.com/HolyArrs/HolyArrs/issues/231))
+- A Library folder can be removed once no title uses it. ([#235](https://github.com/HolyArrs/HolyArrs/issues/235))
+- Changing good enough on a quality set re-checks your Library. ([#236](https://github.com/HolyArrs/HolyArrs/issues/236))
+- The Home downloads card counts torrents your old apps added. ([#237](https://github.com/HolyArrs/HolyArrs/issues/237))
+- Importing from old apps checks folder paths and brings over wanted titles. ([#238](https://github.com/HolyArrs/HolyArrs/issues/238))
+- Rescan links files in a show's folder by season and episode. ([#241](https://github.com/HolyArrs/HolyArrs/issues/241))
+- An empty Library shows the right add button on each page. ([#208](https://github.com/HolyArrs/HolyArrs/issues/208))
+
 ## 1.0.17
 
 ### Added

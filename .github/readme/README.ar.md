@@ -21,9 +21,9 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.0.17: رتّب مكتبتك حسب التقييم.** تعرض كل طريقة عرض تقييم كل عنوان أثناء الترتيب، من الصفوف إلى الملصقات وعلى هاتفك. [ما الجديد](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.0.18: مظهر Minimal الجديد**، بملصقات صغيرة ومن دون صور كبيرة أو تشغيل تلقائي. ومعه 8 إصلاحات، منها الأنمي الذي يقسمه TMDB إلى جزأين. [ما الجديد](https://holyarrs.com/whats-new/)
 >
-> <img src="https://github.com/user-attachments/assets/497be538-df38-4325-ab63-5ac51c273528" alt="HolyArrs 1.0.17" width="100%">
+> <img src="https://github.com/user-attachments/assets/f7e6987d-33eb-4fec-a8fe-ce2c2e264cdf" alt="HolyArrs 1.0.18" width="100%">
 
 > كل ملصق وإعلان وتقييم في HolyArrs لديك يأتي من خادم أشغّله وأدفع تكلفته بنفسي، ليبقى مجانيًا للجميع. إذا جعل HolyArrs سهرة الأفلام عندك أجمل قليلًا، فرعايتك تُبقي الأنوار مضاءة لنا جميعًا 💛
 >
@@ -224,7 +224,7 @@ docker compose up -d
 | الوسم | استخدمه لـ |
 | :----: | --- |
 | `latest` | أحدث إصدار. |
-| `1.0.17` | إصدار واحد بعينه. لا يتحرك أبدًا. |
+| `1.0.18` | إصدار واحد بعينه. لا يتحرك أبدًا. |
 
 ## الاستخدام
 

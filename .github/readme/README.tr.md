@@ -21,9 +21,9 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.0.17: Kitaplığını puana göre sırala.** Sıralarken her görünüm her başlığın puanını gösterir; satırlardan afişlere, telefonuna kadar. [Yenilikler](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.0.18: yeni Minimal görünüm**; küçük afişler, büyük fotoğraf ve otomatik oynatma yok. Ayrıca TMDB'nin ikiye böldüğü animeler dahil 8 düzeltme. [Yenilikler](https://holyarrs.com/whats-new/)
 >
-> <img src="https://github.com/user-attachments/assets/497be538-df38-4325-ab63-5ac51c273528" alt="HolyArrs 1.0.17" width="100%">
+> <img src="https://github.com/user-attachments/assets/f7e6987d-33eb-4fec-a8fe-ce2c2e264cdf" alt="HolyArrs 1.0.18" width="100%">
 
 > HolyArrs'ındaki her afiş, fragman ve puan, kendim çalıştırıp ödediğim bir sunucudan geliyor; böylece herkes için ücretsiz kalıyor. HolyArrs film gecene biraz güzellik kattıysa, sponsor olmak hepimiz için ışıkları açık tutar 💛
 >
@@ -222,7 +222,7 @@ NAS mı kullanıyorsun? [Unraid, Synology ve diğer NAS cihazları](https://docs
 | Etiket | Ne için kullanılır |
 | :----: | --- |
 | `latest` | En yeni sürüm. |
-| `1.0.17` | Tam olarak tek bir sürüm. Asla değişmez. |
+| `1.0.18` | Tam olarak tek bir sürüm. Asla değişmez. |
 
 ## Kullanım
 
