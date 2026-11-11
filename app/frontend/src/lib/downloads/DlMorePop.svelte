@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import Popover from '#lib/ui/Popover.svelte';
-	import { size as bytes } from './size.ts';
+	import { freeSize, size as bytes } from './size.ts';
 	import { CONN_HINT, CONN_WORD } from './pane-facts.ts';
 	import type { Downloaders } from './clients.svelte.ts';
 
@@ -31,7 +31,7 @@
 				{:else if s}
 					<div class="mcg">
 						<span><small>{t('downloads.pf.down')}</small>{bytes(s.speed)}/s</span>
-						{#if usenet}<span><small>{t('downloads.more.free')}</small>{s.free_space ? bytes(s.free_space) : '–'}</span><span><small>{t('downloads.day.today')}</small>{s.day_down ? bytes(s.day_down) : '–'}</span>
+						{#if usenet}<span><small>{t('downloads.more.free')}</small>{s.free_space ? freeSize(s.free_space) : '–'}</span><span><small>{t('downloads.day.today')}</small>{s.day_down ? bytes(s.day_down) : '–'}</span>
 						{:else}<span><small>{t('downloads.pf.up')}</small>{bytes(s.up_speed)}/s</span><span data-testid="sb-session"><small>{t('downloads.more.session')}</small>↑ {bytes(s.session_up)}</span>{/if}
 					</div>
 					{#if s.slow_mode != null}<label class="slow"><span>{t('downloads.more.slow')}</span><input type="checkbox" role="switch" checked={s.slow_mode} disabled={watch || dls.slowBusy === c.id} onchange={(e) => dls.setSlow(c, e.currentTarget.checked)} data-testid="sb-slow" /></label>{/if}
