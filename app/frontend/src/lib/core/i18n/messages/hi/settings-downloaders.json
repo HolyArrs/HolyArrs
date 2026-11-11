@@ -91,6 +91,8 @@
 	"settings.downloaders.removeFailedHint": "उनकी फ़ाइलें भी मिट जाती हैं",
 	"settings.downloaders.autoAdd": "मेल खाए टाइटल आपकी लाइब्रेरी में जोड़ें",
 	"settings.downloaders.autoAddHint": "डाउनलोडर में पहले से मौजूद पक्के मेल बिना खोजे जोड़ दिए जाते हैं",
+	"settings.downloaders.sabOutside": "दूसरे ऐप्स के भेजे Usenet जॉब दिखाएं",
+	"settings.downloaders.sabOutsideHint": "साझा SABnzbd या NZBGet की दूसरी कैटेगरी के जॉब डाउनलोड्स में सिर्फ़ देखने के लिए दिखते हैं। HolyArrs उन्हें कभी मैच नहीं करता।",
 	"settings.downloaders.whenRemove": "जब आप कोई डाउनलोड हटाते हैं",
 	"settings.downloaders.deleteFiles": "उसकी फ़ाइलें मिटाएं",
 	"settings.downloaders.turnDown": "उसकी रिलीज़ ठुकराएं",

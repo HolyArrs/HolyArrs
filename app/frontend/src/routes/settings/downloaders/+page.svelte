@@ -48,7 +48,8 @@
 		remove_delete_files: true,
 		remove_turn_down: false,
 		remove_search_again: true,
-		downloads_auto_add: false
+		downloads_auto_add: false,
+		downloads_sab_outside: true
 	});
 	let setBusy = $state(false);
 	let saved = $state('');
@@ -473,6 +474,10 @@
 		<label class="checkline">
 			<input id="auto-add" type="checkbox" bind:checked={settings.downloads_auto_add} />
 			<span><b>{t('settings.downloaders.autoAdd')}</b><br /><span class="hint">{t('settings.downloaders.autoAddHint')}</span></span>
+		</label>
+		<label class="checkline">
+			<input id="sab-outside" type="checkbox" bind:checked={settings.downloads_sab_outside} />
+			<span><b>{t('settings.downloaders.sabOutside')}</b><br /><span class="hint">{t('settings.downloaders.sabOutsideHint')}</span></span>
 		</label>
 		<fieldset class="defaults" id="remove-defaults" tabindex="-1">
 			<legend>{t('settings.downloaders.whenRemove')}</legend>

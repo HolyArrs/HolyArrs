@@ -91,6 +91,8 @@
 "settings.downloaders.removeFailedHint": "ファイルも削除します",
 "settings.downloaders.autoAdd": "一致した作品をライブラリに追加",
 "settings.downloaders.autoAddHint": "ダウンローダーにすでにある確実な一致は、検索せずに追加します",
+"settings.downloaders.sabOutside": "他のアプリが送った Usenet ジョブを表示",
+"settings.downloaders.sabOutsideHint": "共有の SABnzbd や NZBGet にある他のカテゴリのジョブを、ダウンロードに閲覧専用で表示します。HolyArrs が照合することはありません。",
 "settings.downloaders.whenRemove": "ダウンロードを削除したとき",
 "settings.downloaders.deleteFiles": "ファイルを削除",
 "settings.downloaders.turnDown": "そのリリースを不採用にする",

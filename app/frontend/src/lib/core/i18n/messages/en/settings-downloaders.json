@@ -91,6 +91,8 @@
 	"settings.downloaders.removeFailedHint": "Deletes their files too",
 	"settings.downloaders.autoAdd": "Add matched titles to your Library",
 	"settings.downloaders.autoAddHint": "Sure matches already in a Downloader are added without searching",
+	"settings.downloaders.sabOutside": "Show Usenet jobs other apps sent",
+	"settings.downloaders.sabOutsideHint": "Jobs in other categories of a shared SABnzbd or NZBGet show on Downloads, read-only. HolyArrs never matches them.",
 	"settings.downloaders.whenRemove": "When you remove a download",
 	"settings.downloaders.deleteFiles": "Delete its files",
 	"settings.downloaders.turnDown": "Turn down its Release",

@@ -91,6 +91,8 @@
 	"settings.downloaders.removeFailedHint": "Вместе с их файлами",
 	"settings.downloaders.autoAdd": "Добавлять совпавшие тайтлы в Медиатеку",
 	"settings.downloaders.autoAddHint": "Точные совпадения, уже находящиеся в загрузчике, добавляются без поиска",
+	"settings.downloaders.sabOutside": "Показывать задания Usenet от других приложений",
+	"settings.downloaders.sabOutsideHint": "Задания из других категорий общего SABnzbd или NZBGet видны в Загрузках только для просмотра. HolyArrs никогда их не сопоставляет.",
 	"settings.downloaders.whenRemove": "Когда вы удаляете загрузку",
 	"settings.downloaders.deleteFiles": "Удалять её файлы",
 	"settings.downloaders.turnDown": "Отбрасывать её релиз",

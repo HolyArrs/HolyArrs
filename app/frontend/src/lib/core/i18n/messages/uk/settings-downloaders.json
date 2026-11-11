@@ -91,6 +91,8 @@
 	"settings.downloaders.removeFailedHint": "Видаляє й їхні файли",
 	"settings.downloaders.autoAdd": "Додавати зіставлені тайтли до твоєї бібліотеки",
 	"settings.downloaders.autoAddHint": "Упевнені збіги, що вже є в завантажувачі, додаються без пошуку",
+	"settings.downloaders.sabOutside": "Показувати завдання Usenet від інших застосунків",
+	"settings.downloaders.sabOutsideHint": "Завдання з інших категорій спільного SABnzbd або NZBGet видно в Завантаженнях лише для перегляду. HolyArrs ніколи їх не зіставляє.",
 	"settings.downloaders.whenRemove": "Коли ти видаляєш завантаження",
 	"settings.downloaders.deleteFiles": "Видаляти його файли",
 	"settings.downloaders.turnDown": "Відкидати його реліз",

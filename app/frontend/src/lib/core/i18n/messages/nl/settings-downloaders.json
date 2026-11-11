@@ -91,6 +91,8 @@
 	"settings.downloaders.removeFailedHint": "Verwijdert ook hun bestanden",
 	"settings.downloaders.autoAdd": "Passende titels aan je Bibliotheek toevoegen",
 	"settings.downloaders.autoAddHint": "Zekere overeenkomsten die al in een Downloader staan, worden toegevoegd zonder te zoeken",
+	"settings.downloaders.sabOutside": "Usenet-taken van andere apps tonen",
+	"settings.downloaders.sabOutsideHint": "Taken in andere categorieën van een gedeelde SABnzbd of NZBGet staan bij Downloads, alleen-lezen. HolyArrs koppelt ze nooit.",
 	"settings.downloaders.whenRemove": "Als je een download verwijdert",
 	"settings.downloaders.deleteFiles": "De bestanden verwijderen",
 	"settings.downloaders.turnDown": "De release afkeuren",

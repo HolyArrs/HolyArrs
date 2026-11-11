@@ -91,6 +91,8 @@
 	"settings.downloaders.removeFailedHint": "Elimina anche i loro file",
 	"settings.downloaders.autoAdd": "Aggiungi i titoli abbinati alla tua Libreria",
 	"settings.downloaders.autoAddHint": "Gli abbinamenti sicuri già in un downloader vengono aggiunti senza cercare",
+	"settings.downloaders.sabOutside": "Mostra i job Usenet inviati da altre app",
+	"settings.downloaders.sabOutsideHint": "I job di altre categorie di un SABnzbd o NZBGet condiviso compaiono in Download, in sola lettura. HolyArrs non li abbina mai.",
 	"settings.downloaders.whenRemove": "Quando rimuovi un download",
 	"settings.downloaders.deleteFiles": "Elimina i suoi file",
 	"settings.downloaders.turnDown": "Scarta la sua release",

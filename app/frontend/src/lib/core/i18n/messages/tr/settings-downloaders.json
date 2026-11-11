@@ -91,6 +91,8 @@
 	"settings.downloaders.removeFailedHint": "Dosyalarını da siler",
 	"settings.downloaders.autoAdd": "Eşleşen başlıkları Kütüphanene ekle",
 	"settings.downloaders.autoAddHint": "Bir indiricide zaten olan kesin eşleşmeler aramadan eklenir",
+	"settings.downloaders.sabOutside": "Başka uygulamaların gönderdiği Usenet işlerini göster",
+	"settings.downloaders.sabOutsideHint": "Paylaşılan bir SABnzbd veya NZBGet'in diğer kategorilerindeki işler İndirmeler'de salt okunur görünür. HolyArrs onları asla eşleştirmez.",
 	"settings.downloaders.whenRemove": "Bir indirmeyi kaldırdığında",
 	"settings.downloaders.deleteFiles": "Dosyalarını sil",
 	"settings.downloaders.turnDown": "Sürüm adayını reddet",
