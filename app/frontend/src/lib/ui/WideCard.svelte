@@ -238,6 +238,8 @@
 	@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
 		a.hit:hover .art { transform: translateY(var(--lift)); box-shadow: var(--shadow-lift); }
 		a.hit:hover img { transform: scale(1.03); }
+		/* Minimal: the still does not zoom. */
+		:global(html[data-look='minimal']) a.hit:hover img { transform: none; }
 	}
 	.over { position: absolute; left: 8px; top: 8px; right: 8px; display: flex; flex-wrap: wrap; gap: 4px; }
 	.over.bottom { top: auto; bottom: 8px; }

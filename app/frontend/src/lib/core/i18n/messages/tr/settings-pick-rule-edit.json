@@ -24,6 +24,8 @@
 	"settings.pickRuleEdit.goodEnough": "Yeterince iyi",
 	"settings.pickRuleEdit.goodEnoughAt": "Yeterince iyi seviyesi",
 	"settings.pickRuleEdit.goodEnoughHint": "Bir dosya bu adıma ulaşınca HolyArrs daha iyi kopya aramayı bırakır.",
+	"settings.pickRuleEdit.goodEnoughPoints": "Yeterince iyi puanı",
+	"settings.pickRuleEdit.goodEnoughPointsHint": "Yeterince iyi adımındaki bir dosyanın bu kadar puanı da olmalı. Yalnızca adıma bakılması için boş bırakın.",
 	"settings.pickRuleEdit.yourTraits": "Özelliklerin",
 	"settings.pickRuleEdit.traits": "Özellikler ve puanlar",
 	"settings.pickRuleEdit.traitsDesc": "Aynı adımda en çok puan kazanır",

@@ -24,6 +24,8 @@
 	"settings.pickRuleEdit.goodEnough": "Gut genug",
 	"settings.pickRuleEdit.goodEnoughAt": "Gut genug ab",
 	"settings.pickRuleEdit.goodEnoughHint": "HolyArrs hört auf, nach einer besseren Kopie zu suchen, sobald eine Datei diese Stufe erreicht.",
+	"settings.pickRuleEdit.goodEnoughPoints": "Punkte für gut genug",
+	"settings.pickRuleEdit.goodEnoughPointsHint": "Eine Datei auf der Gut-genug-Stufe braucht zusätzlich so viele Punkte. Leer lassen, damit nur die Stufe zählt.",
 	"settings.pickRuleEdit.yourTraits": "Deine Merkmale",
 	"settings.pickRuleEdit.traits": "Merkmale und Punkte",
 	"settings.pickRuleEdit.traitsDesc": "Bei gleicher Stufe gewinnt, wer die meisten Punkte hat",

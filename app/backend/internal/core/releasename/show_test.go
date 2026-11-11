@@ -29,7 +29,7 @@ type ShowCase struct {
 func sn(seasons []int, eps ...int) ShowNumbers { return ShowNumbers{Seasons: seasons, Episodes: eps} }
 func s1(s int) []int                           { return []int{s} }
 
-// ShowCases holds S01 to S36, A01 to A14 and T27.
+// ShowCases holds S01 to S36, A01 to A18 and T27.
 var ShowCases = []ShowCase{
 	{ID: "S01", Name: "Copper.Valley.S01E01.1080p.WEB-DL.DDP5.1.H.264-QUILL", Kind: KindEpisode, Title: "Copper Valley", Show: sn(s1(1), 1), Resolution: 1080, Source: "web_dl", Codec: "h264", Audio: "eac3 5.1", Group: "QUILL"},
 	{ID: "S02", Name: "Copper.Valley.S01E02.720p.HDTV.x264-OXBOW", Kind: KindEpisode, Title: "Copper Valley", Show: sn(s1(1), 2), Resolution: 720, Source: "tv", Codec: "h264", Group: "OXBOW"},
@@ -75,6 +75,9 @@ var ShowCases = []ShowCase{
 	{ID: "A05", Name: "[Hoshizora] Starfall Kitchen - 101-112 [1080p] (Batch)", Kind: KindAbsolute, Title: "Starfall Kitchen", Show: ShowNumbers{Absolute: span(101, 112)}, Resolution: 1080, Source: "web_dl", SrcConf: Likely, Group: "Hoshizora"},
 	{ID: "A06", Name: "[Hoshizora] Starfall Kitchen - OVA 02 [1080p]", Kind: KindSpecial, Title: "Starfall Kitchen", Show: ShowNumbers{Seasons: s1(0), Episodes: []int{2}, Special: true}, Resolution: 1080, Source: "web_dl", SrcConf: Likely, Group: "Hoshizora"},
 	{ID: "A07", Name: "[Kumomaru] Starfall Kitchen S2 - 07 [720p]", Kind: KindEpisode, Title: "Starfall Kitchen", Show: sn(s1(2), 7), Resolution: 720, Source: "web_dl", SrcConf: Likely, Group: "Kumomaru"},
+	{ID: "A16", Name: "[Erai-raws] Mashle 2nd Season - 05 [1080p]", Kind: KindEpisode, Title: "Mashle", Show: sn(s1(2), 5), Resolution: 1080, Source: "web_dl", SrcConf: Likely, Group: "Erai-raws"},
+	{ID: "A17", Name: "[Kumomaru] Mashle Season 2 - 05 [1080p]", Kind: KindEpisode, Title: "Mashle", Show: sn(s1(2), 5), Resolution: 1080, Source: "web_dl", SrcConf: Likely, Group: "Kumomaru"},
+	{ID: "A18", Name: "[Kumomaru] Starfall Kitchen 3rd Season - 12v2 [720p]", Kind: KindEpisode, Title: "Starfall Kitchen", Show: sn(s1(3), 12), Resolution: 720, Source: "web_dl", SrcConf: Likely, Group: "Kumomaru", Fix: 1},
 	{ID: "A08", Name: "[Hoshizora] Kaze no Tsubasa - 03 [1080p][Dual Audio]", Kind: KindAbsolute, Title: "Kaze no Tsubasa", Show: ShowNumbers{Absolute: []int{3}}, Resolution: 1080, Source: "web_dl", SrcConf: Likely, Group: "Hoshizora", Flags: []string{"dual"}},
 	{ID: "A09", Name: "[Kumomaru] 風の翼 - 04 [1080p]", Kind: KindAbsolute, Title: "風の翼", Show: ShowNumbers{Absolute: []int{4}}, Resolution: 1080, Source: "web_dl", SrcConf: Likely, Group: "Kumomaru"},
 	{ID: "A10", Name: "[Hoshizora] Starfall Kitchen - 112 [1080p][HardSub]", Kind: KindAbsolute, Title: "Starfall Kitchen", Show: ShowNumbers{Absolute: []int{112}}, Resolution: 1080, Source: "web_dl", SrcConf: Likely, Group: "Hoshizora", Flags: []string{"hardcoded_subs"}},
@@ -140,6 +143,35 @@ func TestShowNames(t *testing.T) {
 				t.Errorf("flags %v, want %v", p.Flags, c.Flags)
 			}
 		})
+	}
+}
+
+// "Season 1 - 2" is a range of seasons and "Season 2 - 1080p" a quality, not
+// an episode; a plain "- 17" stays a running number.
+func TestSeasonDashNeedsEpisode(t *testing.T) {
+	for _, c := range []struct {
+		name, kind, title string
+		show              ShowNumbers
+	}{
+		{"[Kumomaru] Starfall Kitchen Season 1 - 2 [Batch]", KindAbsolute, "Starfall Kitchen Season 1", ShowNumbers{Absolute: []int{2}}},
+		{"[Kumomaru] Starfall Kitchen Season 2 - 1080p", KindSeasonPack, "Starfall Kitchen", sn(s1(2))},
+		{"[SubsPlease] Mashle - 17 (1080p)", KindAbsolute, "Mashle", ShowNumbers{Absolute: []int{17}}},
+		// A batch of the season is every episode of it, not the first one.
+		{"[Kumomaru] Mashle Season 2 - 01-12 [1080p]", KindMultiEpisode, "Mashle", sn(s1(2), span(1, 12)...)},
+		{"[Kumomaru] Mashle Season 2 - 01 - 12 [1080p]", KindMultiEpisode, "Mashle", sn(s1(2), span(1, 12)...)},
+		{"[Erai-raws] Mashle 2nd Season - 01 ~ 12 [1080p]", KindMultiEpisode, "Mashle", sn(s1(2), span(1, 12)...)},
+		{"[Erai-raws] Mashle 2nd Season - 05 [1080p]", KindEpisode, "Mashle", sn(s1(2), 5)},
+	} {
+		p := Parse(c.name, Hints{Show: true})
+		if p.Kind.Value != c.kind || p.Show == nil || p.Title.Value != c.title {
+			t.Errorf("%s: kind %q title %q %+v", c.name, p.Kind.Value, p.Title.Value, p.Show)
+			continue
+		}
+		got := *p.Show
+		got.Conf = ""
+		if !reflect.DeepEqual(got, c.show) {
+			t.Errorf("%s: numbers %+v, want %+v", c.name, got, c.show)
+		}
 	}
 }
 

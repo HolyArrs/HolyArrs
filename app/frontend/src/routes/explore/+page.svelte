@@ -604,7 +604,7 @@
 		{:else}
 			{#if heroCards.length}
 				{@const h = live(heroCards[heroAt % heroCards.length])}
-				<ExploreHero kind={h.kind === 'show' ? 'show' : 'movie'} tmdb={cardTmdb(h)} title={h.name} href={cardHref(h)} backdrop={h.wide ?? h.image} vtName={h.vtName} subtitle={h.year ? (h.kind === 'show' ? t('discover.explore.yearShow', { year: h.year }) : t('discover.explore.yearMovie', { year: h.year })) : h.subtitle} settled={headLoaded && !busy}>
+				<ExploreHero kind={h.kind === 'show' ? 'show' : 'movie'} tmdb={cardTmdb(h)} title={h.name} href={cardHref(h)} backdrop={h.wide ?? h.image} poster={h.image} vtName={h.vtName} subtitle={h.year ? (h.kind === 'show' ? t('discover.explore.yearShow', { year: h.year }) : t('discover.explore.yearMovie', { year: h.year })) : h.subtitle} settled={headLoaded && !busy}>
 					{#snippet action()}{@render heroAction(h)}{/snippet}
 					{#snippet badge()}
 						{@const why = whyShown({ kind: h.kind, tmdb: cardTmdb(h) ?? '', genres: heroGenres[`${h.kind}:${cardTmdb(h)}`], fresh: h.fresh }, { taste })}
@@ -742,6 +742,8 @@
 	.genre-pick :global(.trigger) { transition: transform var(--bar-glide); transform-origin: top center; }
 	.types.stuck .genre-pick :global(.trigger) { transform: scale(0.9); }
 	.types.stuck .genre-pick :global(.trigger) { background: color-mix(in srgb, var(--surface-2) 70%, transparent); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); box-shadow: 0 10px 30px rgb(0 0 0 / 0.28), 0 0 0 0.5px color-mix(in srgb, var(--text) 14%, transparent); }
+	/* Minimal look: the floating pills are solid, with no blur and only a hairline edge. */
+	:global(html[data-look='minimal']) .types.stuck :global(.ui-seg), :global(html[data-look='minimal']) .types.stuck .genre-pick :global(.trigger) { background: var(--surface-2); -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: 0 0 0 0.5px color-mix(in srgb, var(--text) 14%, transparent); }
 	/* The picker panel is the one scroll: a thin themed bar, never taller than the screen allows. */
 	.genre-pick :global(.panel) { max-height: min(calc(100dvh - var(--topbar, 64px) - 96px), 560px); padding: 0; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--text) 28%, transparent) transparent; }
 	.genre-pick :global(.panel::-webkit-scrollbar) { width: 8px; }
@@ -752,6 +754,7 @@
 	/* Hero badges, next to the facts line: small glass pills. */
 	.why { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 0; padding: 0; list-style: none; }
 	.why li { font: 600 12px/1 var(--font-ui); letter-spacing: .02em; padding: 6px 10px; border-radius: 999px; color: #fff; background: rgb(255 255 255 / 14%); border: 1px solid rgb(255 255 255 / 22%); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
+	:global(html[data-look='minimal']) .why li { -webkit-backdrop-filter: none; backdrop-filter: none; }
 	.row-wrap { display: contents; }
 	/* Wide title rows sit almost edge to edge: about 279px cards at a 1536px window with a 5px gap. */
 	@media (min-width: 768px) { .row-wrap.wide-row { --shelf-gap: 5px; } }

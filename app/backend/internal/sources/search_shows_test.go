@@ -593,3 +593,261 @@ func TestMissingSearch_OneTitleIgnoresNightlyShowSwitch(t *testing.T) {
 		t.Fatalf("nightly with shows off searches the movie only: %+v", j.Result)
 	}
 }
+
+// setAlt gives an episode the numbers release names use for it.
+func setAlt(t *testing.T, f showFix, label string, season, episode int) {
+	t.Helper()
+	if err := f.s.Write(context.Background(), func(tx *sql.Tx) error {
+		_, err := tx.Exec(`UPDATE items SET numbers = json_set(numbers, '$.alt_season', ?, '$.alt_episode', ?) WHERE id = ?`, season, episode, f.items[label])
+		return err
+	}); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// A feed Release named by the release numbers (S03E01) fills the stored
+// episode that carries them; without them it finds no episode.
+func TestFeedShow_ReleaseNumbers(t *testing.T) {
+	for _, mapped := range []bool{true, false} {
+		ts := &tvServer{answer: func(url.Values) []string { return []string{"Copper.Valley.S03E01.1080p.WEB-DL.H.264-QUILL"} }}
+		f := seedShow(t, ts.start(t), nil)
+		if mapped {
+			setAlt(t, f, "S01E03", 3, 1)
+		}
+		j := runKind(t, f.fixture, &Searcher{Store: f.s}, jobs.KindFeedCheck, nil, nil)
+		if j.State != "done" {
+			t.Fatalf("feed %s %+v", j.State, j.Error)
+		}
+		want := mediafiles.SlotWanted
+		if mapped {
+			want = mediafiles.SlotChosen
+		}
+		if st := f.state(t, "S01E03"); st != want {
+			r := relByName(t, f.fixture, "Copper.Valley.S03E01.1080p.WEB-DL.H.264-QUILL")
+			t.Fatalf("mapped %v: S01E03 %s, want %s (%s %v)", mapped, st, want, r.State, reasonCodes(r))
+		}
+	}
+}
+
+// setOrder sets the show's episode order and, for absolute, running numbers
+// counted in aired order.
+func setOrder(t *testing.T, f showFix, order string) {
+	t.Helper()
+	if err := f.s.Write(context.Background(), func(tx *sql.Tx) error {
+		if _, err := tx.Exec("UPDATE titles SET episode_order = ? WHERE id = ?", order, f.titleID); err != nil {
+			return err
+		}
+		for i, l := range []string{"S01E01", "S01E02", "S01E03", "S02E01", "S02E02"} {
+			if _, err := tx.Exec(`UPDATE items SET numbers = json_set(numbers, '$.absolute', ?) WHERE id = ?`, i+1, f.items[l]); err != nil {
+				return err
+			}
+		}
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// An episode search asks for the season and episode release names use. In
+// absolute order it never asks for season 0, and a second search by title
+// and running number finds anime names.
+func TestShowQuery_ReleaseNumbersAndRunningNumber(t *testing.T) {
+	for _, c := range []struct {
+		name, order string
+		alt         bool
+		season, ep  string
+		text        bool
+	}{
+		{"absolute", "absolute", false, "1", "2", true},
+		{"absolute with release numbers", "absolute", true, "3", "1", true},
+		{"aired with release numbers", "aired", true, "3", "1", false},
+		{"aired", "aired", false, "1", "2", false},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			ts := &tvServer{answer: func(q url.Values) []string {
+				if q.Get("q") != "" {
+					return []string{"[SubsPlease] Copper Valley - 02 (1080p)"}
+				}
+				return nil
+			}}
+			f := seedShow(t, ts.start(t), nil)
+			setOrder(t, f, c.order)
+			if c.alt {
+				setAlt(t, f, "S01E02", 3, 1)
+			}
+			runKind(t, f.fixture, &Searcher{Store: f.s}, jobs.KindSearchSlot, &domain.Subject{Type: "slot", ID: f.slots["S01E02"]}, nil)
+			want := 1
+			if c.text {
+				want = 2
+			}
+			if len(ts.queries) != want {
+				t.Fatalf("queries %v", ts.queries)
+			}
+			if q := ts.queries[0]; q.Get("tvdbid") != "4242" || q.Get("season") != c.season || q.Get("ep") != c.ep {
+				t.Fatalf("first query %v", q)
+			}
+			if !c.text {
+				return
+			}
+			if q := ts.queries[1]; q.Get("t") != "tvsearch" || q.Get("q") != "Copper Valley 02" || q.Has("season") || q.Has("ep") || q.Has("tvdbid") {
+				t.Fatalf("running number query %v", q)
+			}
+			if st := f.state(t, "S01E02"); st != mediafiles.SlotChosen {
+				r := relByName(t, f.fixture, "[SubsPlease] Copper Valley - 02 (1080p)")
+				t.Fatalf("S01E02 %s (%s %v)", st, r.State, reasonCodes(r))
+			}
+		})
+	}
+}
+
+// A season search also asks for each other season release names give its
+// episodes, and that season's pack covers them.
+func TestHandleSeason_AsksReleaseSeasons(t *testing.T) {
+	for _, mapped := range []bool{true, false} {
+		ts := &tvServer{answer: func(q url.Values) []string {
+			if q.Get("season") == "3" {
+				return []string{"Copper.Valley.S03.1080p.WEB-DL.H.264-QUILL"}
+			}
+			return nil
+		}}
+		f := seedShow(t, ts.start(t), nil)
+		if mapped {
+			setAlt(t, f, "S01E03", 3, 1)
+		}
+		runKind(t, f.fixture, &Searcher{Store: f.s}, jobs.KindSearchSeason, &domain.Subject{Type: "part", ID: f.parts[1]},
+			map[string]any{"version_id": f.verID, "choose": false, "by_hand": true})
+		var seasons []string
+		for _, q := range ts.queries {
+			if q.Has("ep") {
+				t.Fatalf("an episode query in a season search: %v", q)
+			}
+			seasons = append(seasons, q.Get("season"))
+		}
+		if !mapped {
+			if !slices.Equal(seasons, []string{"1"}) {
+				t.Fatalf("without release numbers: %v", seasons)
+			}
+			continue
+		}
+		if !slices.Equal(seasons, []string{"1", "3"}) {
+			t.Fatalf("seasons asked %v", seasons)
+		}
+		r := relByName(t, f.fixture, "Copper.Valley.S03.1080p.WEB-DL.H.264-QUILL")
+		if !slices.Equal(r.MatchedSlotIDs, []int64{f.slots["S01E03"]}) {
+			t.Fatalf("pack covers %v (%s %v)", r.MatchedSlotIDs, r.State, reasonCodes(r))
+		}
+	}
+}
+
+// The running number search uses the shortest plain-letter name.
+func TestAbsoluteQueryName(t *testing.T) {
+	ep := &epSlot{ref: mediafiles.EpisodeRef{Season: 1, Episode: 17, Absolute: 17}}
+	for _, c := range []struct {
+		name    string
+		aliases []string
+		want    string
+	}{
+		{"Mashle: Magic and Muscles", []string{"マッシュル-MASHLE-", "Mashle", "Mashuru", "MM"}, "Mashle 17"},
+		{"風の翼", []string{"Kaze no Tsubasa"}, "Kaze no Tsubasa 17"},
+		{"風の翼", nil, "風の翼 17"},
+	} {
+		order := "absolute"
+		q, ok := absoluteQuery(mediafiles.Title{Name: c.name, Aliases: c.aliases, EpisodeOrder: &order}, ep)
+		if !ok || q.Title != c.want || q.Season != 0 || q.Episode != "" || q.TVDB != 0 {
+			t.Errorf("%s: %+v %v, want %q", c.name, q, ok, c.want)
+		}
+	}
+	aired := "aired"
+	if _, ok := absoluteQuery(mediafiles.Title{Name: "Mashle", EpisodeOrder: &aired}, ep); ok {
+		t.Error("aired order made a running number search")
+	}
+}
+
+// addUndated adds a kept S01E04 with no air date, not out yet, and moves
+// season 1's air dates: dated[i] days ago for E(i+1), or no date when < 0.
+func addUndated(t *testing.T, f showFix, dated ...int) {
+	t.Helper()
+	now := time.Now().UTC()
+	if err := f.s.Write(context.Background(), func(tx *sql.Tx) error {
+		for i, d := range dated {
+			l := fmt.Sprintf("S01E%02d", i+1)
+			if d < 0 {
+				if _, err := tx.Exec("UPDATE items SET air_date = NULL, air_day = NULL WHERE id = ?", f.items[l]); err != nil {
+					return err
+				}
+				if _, err := tx.Exec("UPDATE slots SET state = 'not_out_yet' WHERE id = ?", f.slots[l]); err != nil {
+					return err
+				}
+				continue
+			}
+			air := now.AddDate(0, 0, -d)
+			if _, err := tx.Exec("UPDATE items SET air_date = ?, air_day = ? WHERE id = ?", air.Format(time.RFC3339Nano), air.Format("2006-01-02"), f.items[l]); err != nil {
+				return err
+			}
+		}
+		pid := f.parts[1]
+		it := &mediafiles.Item{TitleID: f.titleID, PartID: &pid, Kind: "episode", Numbers: mediafiles.Numbers{Season: ptr(1), Episode: ptr(4)},
+			Name: ptr("Episode 4"), Runtime: ptr(45), KeepUpToDate: true, SourceIDs: map[string]string{}}
+		if _, err := database.Insert(tx, "items", it, domain.System); err != nil {
+			return err
+		}
+		sl := &mediafiles.Slot{ItemID: it.ID, VersionID: f.verID, State: mediafiles.SlotNotOutYet}
+		if _, err := database.Insert(tx, "slots", sl, domain.System); err != nil {
+			return err
+		}
+		f.slots["S01E04"], f.items["S01E04"] = sl.ID, it.ID
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// An undated last episode (a placeholder) after a season that finished
+// airing a while ago does not stop the season search or its pack.
+func TestHandleSeason_PlaceholderDoesNotBlock(t *testing.T) {
+	ts := &tvServer{answer: func(q url.Values) []string {
+		if q.Get("ep") == "" {
+			return []string{"Copper.Valley.S01.1080p.WEB-DL.H.264-QUILL"}
+		}
+		return nil
+	}}
+	f := seedShow(t, ts.start(t), nil)
+	addUndated(t, f, 44, 37, 30)
+	j := runKind(t, f.fixture, &Searcher{Store: f.s}, jobs.KindSearchSeason, &domain.Subject{Type: "part", ID: f.parts[1]}, map[string]any{"version_id": f.verID})
+	if len(ts.queries) == 0 || ts.queries[0].Get("season") != "1" || ts.queries[0].Has("ep") {
+		t.Fatalf("queries %v; job %s %+v %+v", ts.queries, j.State, j.Error, j.Result)
+	}
+	for _, l := range []string{"S01E01", "S01E02", "S01E03"} {
+		if st := f.state(t, l); st != mediafiles.SlotChosen {
+			r := relByName(t, f.fixture, "Copper.Valley.S01.1080p.WEB-DL.H.264-QUILL")
+			t.Fatalf("%s is %s (%s %v); result %+v", l, st, r.State, reasonCodes(r), j.Result)
+		}
+	}
+	if st := f.state(t, "S01E04"); st != mediafiles.SlotNotOutYet {
+		t.Fatalf("the placeholder is %s", st)
+	}
+	if r := relByName(t, f.fixture, "Copper.Valley.S01.1080p.WEB-DL.H.264-QUILL"); !strings.Contains(fmt.Sprint(r.Verdict), "every episode it holds has aired") {
+		t.Fatalf("gate %v", r.Verdict)
+	}
+}
+
+// Still blocked: a season that aired only days ago, an undated episode in
+// the middle, a run of undated episodes at the end, or a season with no
+// dates at all.
+func TestHandleSeason_UndatedStillBlocks(t *testing.T) {
+	for name, dated := range map[string][]int{
+		"undated run": {50, 44, -1},
+		"recent":      {17, 10, 3},
+		"middle":      {44, -1, 30},
+		"no dates":    {-1, -1, -1},
+	} {
+		ts := &tvServer{answer: func(url.Values) []string { return nil }}
+		f := seedShow(t, ts.start(t), nil)
+		addUndated(t, f, dated...)
+		j := runKind(t, f.fixture, &Searcher{Store: f.s}, jobs.KindSearchSeason, &domain.Subject{Type: "part", ID: f.parts[1]}, map[string]any{"version_id": f.verID})
+		_, queued := j.Result["episodes_queued"]
+		if _, skipped := j.Result["skipped"]; !queued && !skipped || slices.ContainsFunc(ts.queries, func(q url.Values) bool { return !q.Has("ep") }) {
+			t.Fatalf("%s: searched as a whole: %+v %v", name, j.Result, ts.queries)
+		}
+	}
+}

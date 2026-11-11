@@ -14,6 +14,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 )
 
 type pickRulesDetail struct {
@@ -56,13 +57,29 @@ func ruleByName(t *testing.T, base, name string) downloads.PickRulesView {
 	return downloads.PickRulesView{}
 }
 
+// recheckJobs counts the good enough re-check Jobs queued for a Pick rules set.
+func recheckJobs(t *testing.T, s *database.Store, id int64) int {
+	t.Helper()
+	js, err := database.Select[domain.Job](context.Background(), s.Read(), "jobs", "kind = ?", library.KindRecheckPickRules)
+	if err != nil {
+		t.Fatal(err)
+	}
+	n := 0
+	for _, j := range js {
+		if j.Subject != nil && j.Subject.ID == id {
+			n++
+		}
+	}
+	return n
+}
+
 // route: POST /api/v1/pick-rules
 // route: GET /api/v1/pick-rules/{id}
 // route: PUT /api/v1/pick-rules/{id}
 // route: DELETE /api/v1/pick-rules/{id}
 func TestCreateEditDeletePickRules(t *testing.T) {
 	t.Parallel()
-	srv, _, _ := libSetup(t)
+	srv, s, _ := libSetup(t)
 	var p pickRulesDetail
 	_ = json.Unmarshal(do(t, "POST", srv.URL+"/api/v1/pick-rules", ruleJSON(t, "Small files", []string{"movie"}, mediafiles.GoodEveryday()), 201), &p)
 	if p.ID == 0 || p.Name != "Small files" || p.Revision != 1 || p.Preset || len(p.Body.Steps) == 0 {
@@ -82,6 +99,10 @@ func TestCreateEditDeletePickRules(t *testing.T) {
 	}
 	if v := ruleByName(t, srv.URL, "Smaller files"); v.InUse != 0 {
 		t.Fatalf("list in_use %+v", v)
+	}
+	// Saving queues the good enough re-check of the titles that use the set.
+	if n := recheckJobs(t, s, p.ID); n != 1 {
+		t.Fatalf("re-check jobs after a save: %d, want 1", n)
 	}
 	do(t, "DELETE", path, "", 204)
 	do(t, "GET", path, "", 404)

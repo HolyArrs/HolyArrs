@@ -8,6 +8,7 @@ import (
 	"net/url"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
 )
 
 // fetchRelease downloads a Release file for a client that cannot reach the Source. It takes web addresses only, with no sign-in part, and fetches through Client so the address rules apply to every redirect and connection. Error text is fixed so it never echoes the address, which may hold a key.
@@ -21,6 +22,9 @@ func fetchRelease(ctx context.Context, raw string, allowLocal bool, limit int64)
 	if err != nil {
 		return nil, errors.New("the Release file address is invalid")
 	}
+	// Sites behind Cloudflare refuse Go's default User-Agent; send the one
+	// Source searches use.
+	req.Header.Set("User-Agent", sources.UserAgent)
 	h := Client(raw, allowLocal)
 	defer h.CloseIdleConnections()
 	resp, err := h.Do(req)

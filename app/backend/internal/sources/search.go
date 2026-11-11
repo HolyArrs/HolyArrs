@@ -273,8 +273,8 @@ func (s *Searcher) Handle(ctx context.Context, r *jobs.Run) error {
 	q.TMDb, _ = strconv.Atoi(ti.SourceIDs["tmdb"])
 	isShow := ti.Kind == "show"
 	var shows showSet
+	var ep *epSlot
 	if isShow {
-		var ep *epSlot
 		if shows, ep, err = s.episodeSet(ctx, c, from != mediafiles.SlotNotOutYet); err != nil {
 			return err
 		}
@@ -283,6 +283,15 @@ func (s *Searcher) Handle(ctx context.Context, r *jobs.Run) error {
 	all, failures, answered, skipped, err := s.askAll(ctx, r, q, handSearch, isShow, ti.Tags)
 	if err != nil {
 		return err
+	}
+	// Absolute order also searches by title and running number; a Source
+	// that failed or was skipped is said once.
+	if aq, ok := absoluteQuery(ti, ep); isShow && ok {
+		more, _, n, _, err := s.askAll(ctx, r, aq, handSearch, true, ti.Tags)
+		if err != nil {
+			return err
+		}
+		all, answered = append(all, more...), max(answered, n)
 	}
 	jobID := r.Job.ID
 

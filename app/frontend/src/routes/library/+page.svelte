@@ -328,7 +328,7 @@
 	const countHint = (n: number) => (loaded ? String(n) : undefined);
 	// Add only adds. Everything that looks after the Library is in Tools (people are found by the search, movie series by Group by series, and held files are on Downloads).
 	const addItems = $derived<MenuItem[]>([
-		...(!partOff('movies') ? ([{ label: tr('library.page.addMovie'), icon: 'film', href: to('/search') }] as MenuItem[]) : []),
+		...(!partOff('movies') ? ([{ label: tr('library.page.addMovie'), icon: 'film', href: to('/search?kind=movie') }] as MenuItem[]) : []),
 		...(!partOff('shows') ? ([{ label: tr('library.page.addShow'), icon: 'tv', href: to('/search?kind=show') }] as MenuItem[]) : []),
 		...(!partOff('music') ? ([{ label: tr('library.page.addArtist'), icon: 'music', href: to('/search?kind=music') }] as MenuItem[]) : []),
 		...(canManage ? ([{ label: tr('library.page.importFromFolder'), icon: 'folder', href: to('/library/import') }] as MenuItem[]) : [])

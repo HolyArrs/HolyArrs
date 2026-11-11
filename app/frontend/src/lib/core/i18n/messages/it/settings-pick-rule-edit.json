@@ -24,6 +24,8 @@
 	"settings.pickRuleEdit.goodEnough": "Sufficiente",
 	"settings.pickRuleEdit.goodEnoughAt": "Sufficiente a",
 	"settings.pickRuleEdit.goodEnoughHint": "HolyArrs smette di cercare una copia migliore quando un file raggiunge questa fase.",
+	"settings.pickRuleEdit.goodEnoughPoints": "Punti per sufficiente",
+	"settings.pickRuleEdit.goodEnoughPointsHint": "Un file alla fase sufficiente deve avere anche questi punti. Lascia vuoto per contare solo la fase.",
 	"settings.pickRuleEdit.yourTraits": "I tuoi tratti",
 	"settings.pickRuleEdit.traits": "Tratti e punti",
 	"settings.pickRuleEdit.traitsDesc": "Nella stessa fase vince chi ha più punti",

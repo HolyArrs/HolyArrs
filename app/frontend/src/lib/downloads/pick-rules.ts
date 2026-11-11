@@ -272,7 +272,10 @@ export function tidyBody(body: PickRulesBody): PickRulesBody {
 	b.traits = b.traits.map((t) => ({ trait: t.trait, points: whole(t.points) }));
 	b.min_points = whole(b.min_points);
 	b.upgrade_min_points = whole(b.upgrade_min_points);
-	if (b.good_enough_points !== undefined && b.good_enough_points !== null) b.good_enough_points = whole(b.good_enough_points);
+	// An empty good enough points box means the step alone decides.
+	const gep = b.good_enough_points as unknown;
+	if (gep === undefined || gep === null || gep === '') delete b.good_enough_points;
+	else b.good_enough_points = whole(gep);
 	b.protocol.wait_minutes_torrent = whole(b.protocol.wait_minutes_torrent);
 	b.protocol.wait_minutes_usenet = whole(b.protocol.wait_minutes_usenet);
 	const days = whole(b.proper_policy.max_age_days);

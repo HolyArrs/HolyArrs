@@ -122,8 +122,11 @@ func libraryFile(ctx context.Context, db *sql.DB, folders []mediafiles.LibraryFo
 			continue
 		}
 		var n int
+		// A found note whose episodes are all still empty does not count: the import links it.
 		if db.QueryRowContext(ctx, `SELECT count(*) FROM files f JOIN versions v ON v.id = f.version_id
-			WHERE v.library_folder_id = ? AND f.relative_path = ? AND f.state = 'present' AND f.slot_ids != '[]'`, lf.ID, filepath.ToSlash(rel)).Scan(&n) == nil && n > 0 {
+			WHERE v.library_folder_id = ? AND f.relative_path = ? AND f.state = 'present' AND f.slot_ids != '[]'
+			AND NOT (f.origin = 'found' AND NOT EXISTS (SELECT 1 FROM json_each(f.slot_ids) j JOIN slots s ON s.id = j.value WHERE s.file_id IS NOT NULL))`,
+			lf.ID, filepath.ToSlash(rel)).Scan(&n) == nil && n > 0 {
 			return true
 		}
 	}
@@ -179,6 +182,9 @@ func episodeRef(it mediafiles.Item) mediafiles.EpisodeRef {
 	}
 	if it.Numbers.Absolute != nil {
 		r.Absolute = *it.Numbers.Absolute
+	}
+	if it.Numbers.AltSeason != nil && it.Numbers.AltEpisode != nil {
+		r.AltSeason, r.AltEpisode = *it.Numbers.AltSeason, *it.Numbers.AltEpisode
 	}
 	if it.AirDay != nil {
 		r.AirDay = *it.AirDay
@@ -550,8 +556,19 @@ func (im *Importer) recordByHand(ctx context.Context, r *ByHandResult, src, targ
 		if g := p.Group.Value; g != "" {
 			f.Group = &g
 		}
-		// A library scan may have noted this file before its episodes were known; that unlinked note gives way.
-		if _, err := tx.Exec(`DELETE FROM files WHERE version_id = ? AND relative_path = ? AND slot_ids = '[]'`, ver.ID, f.RelativePath); err != nil {
+		// A library scan may have noted this file as found, with or without its episodes; that note gives way.
+		srcRel := f.RelativePath
+		if r, err := filepath.Rel(lf.Path, src); err == nil && under(lf.Path, src) {
+			srcRel = filepath.ToSlash(r)
+		}
+		// A protected note keeps its protection on the imported file.
+		protected, err := mediafiles.ProtectedAt(ctx, tx, ver.ID, f.RelativePath, srcRel)
+		if err != nil {
+			return err
+		}
+		f.Protected = protected
+		if _, err := tx.Exec(`DELETE FROM files WHERE version_id = ? AND relative_path IN (?, ?) AND (slot_ids = '[]' OR origin = 'found')`,
+			ver.ID, f.RelativePath, srcRel); err != nil {
 			return err
 		}
 		id, err := database.Insert(tx, "files", f, by)

@@ -21,9 +21,9 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.0.17: sorteer je bibliotheek op score.** Elke weergave toont de score van elke titel terwijl je sorteert, van rijen tot posters en op je telefoon. [Wat is er nieuw](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.0.18: de nieuwe Minimal-look**, met kleine posters en zonder grote foto's of autoplay. Plus 8 oplossingen, zoals voor anime die TMDB in twee delen splitst. [Wat is er nieuw](https://holyarrs.com/whats-new/)
 >
-> <img src="https://github.com/user-attachments/assets/497be538-df38-4325-ab63-5ac51c273528" alt="HolyArrs 1.0.17" width="100%">
+> <img src="https://github.com/user-attachments/assets/f7e6987d-33eb-4fec-a8fe-ce2c2e264cdf" alt="HolyArrs 1.0.18" width="100%">
 
 > Elke poster, trailer en score in je HolyArrs komt van een server die ik zelf draai en betaal, zodat het voor iedereen gratis blijft. Heeft HolyArrs je filmavond een beetje beter gemaakt? Met een sponsor blijven de lichten aan voor ons allemaal 💛
 >
@@ -222,7 +222,7 @@ De images staan op Docker Hub als [`holyarrs/holyarrs`](https://hub.docker.com/r
 | Tag | Gebruik het voor |
 | :----: | --- |
 | `latest` | De nieuwste versie. |
-| `1.0.17` | Eén exacte versie. Die verandert nooit. |
+| `1.0.18` | Eén exacte versie. Die verandert nooit. |
 
 ## Gebruik
 

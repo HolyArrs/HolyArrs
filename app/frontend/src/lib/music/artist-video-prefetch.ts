@@ -1,5 +1,6 @@
 // Every link to an artist page (rows, cards, similar artists, credits) gets the trailers' two moments: on screen for a while, the artist is named in the in-view batch; at hover start, its video is asked for.
 import { prefetchArtistVideo, watchArtistVideo } from '../core/trailer/autoplay.svelte.ts';
+import { minimalLook } from '../core/look.svelte.ts';
 
 const ARTIST = /\/music\/artist\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})(?:[/?#]|$)/i;
 
@@ -14,6 +15,8 @@ export function installArtistVideoPrefetch(): () => void {
 	if (typeof window === 'undefined' || typeof MutationObserver === 'undefined') return () => {};
 	const stops = new Map<Element, () => void>();
 	const scan = (root: ParentNode) => {
+		// The minimal look plays no videos, so it asks for none.
+		if (minimalLook()) return;
 		for (const a of root.querySelectorAll?.('a[href*="/music/artist/"]') ?? []) {
 			if (stops.has(a)) continue;
 			const mbid = artistOfHref(a.getAttribute('href'));
@@ -41,7 +44,7 @@ export function installArtistVideoPrefetch(): () => void {
 	mo.observe(document.body, { childList: true, subtree: true });
 	scan(document);
 	const over = (e: PointerEvent) => {
-		if (e.pointerType !== 'mouse') return;
+		if (e.pointerType !== 'mouse' || minimalLook()) return;
 		const mbid = artistOfHref((e.target as Element | null)?.closest?.('a[href]')?.getAttribute('href'));
 		if (mbid) prefetchArtistVideo(mbid);
 	};

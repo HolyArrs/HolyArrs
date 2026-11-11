@@ -8,14 +8,15 @@ import (
 	"slices"
 	"strconv"
 	"time"
+	"unicode"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 )
 
-// showQuery is the search for one episode (daily: its air day; absolute: its
-// running number) or, with ep nil, one season.
+// showQuery is the search for one episode (daily: its air day; otherwise
+// the season and episode release names use) or, with ep nil, one season.
 func showQuery(ti mediafiles.Title, season int, ep *epSlot) Query {
 	q := Query{Title: ti.Name, TV: true, Season: season}
 	q.TVDB, _ = strconv.Atoi(ti.SourceIDs["tvdb"])
@@ -31,14 +32,41 @@ func showQuery(ti mediafiles.Title, season int, ep *epSlot) Query {
 		d, _ := time.Parse("2006-01-02", ep.ref.AirDay)
 		q.Season, q.Episode = d.Year(), d.Format("01/02")
 		q.Words = d.Format("2006 01 02")
-	case order == "absolute" && ep.ref.Absolute > 0:
-		q.Season, q.Episode = 0, strconv.Itoa(ep.ref.Absolute)
-		q.Words = fmt.Sprintf("%02d", ep.ref.Absolute)
 	default:
-		q.Season, q.Episode = ep.ref.Season, strconv.Itoa(ep.ref.Episode)
-		q.Words = ep.ref.Label()
+		season, number := ep.ref.Named()
+		q.Season, q.Episode = season, strconv.Itoa(number)
+		q.Words = fmt.Sprintf("S%02dE%02d", season, number)
 	}
 	return q
+}
+
+// absoluteQuery is the second search for an episode in absolute order: the
+// title and running number, as anime Releases are named ("Mashle 17"). It
+// takes the shortest plain-letter name of the show.
+func absoluteQuery(ti mediafiles.Title, ep *epSlot) (Query, bool) {
+	if ti.EpisodeOrder == nil || *ti.EpisodeOrder != "absolute" || ep == nil || ep.ref.Absolute <= 0 {
+		return Query{}, false
+	}
+	name := ""
+	for _, a := range append([]string{ti.Name}, ti.Aliases...) {
+		letters := 0
+		for _, r := range a {
+			if r > unicode.MaxASCII {
+				letters = -1
+				break
+			}
+			if unicode.IsLetter(r) {
+				letters++
+			}
+		}
+		if letters >= 4 && (name == "" || len(a) < len(name)) {
+			name = a
+		}
+	}
+	if name == "" {
+		name = ti.Name
+	}
+	return Query{TV: true, Title: fmt.Sprintf("%s %02d", name, ep.ref.Absolute)}, true
 }
 
 // handlesTV says whether a Source is set up for shows; no kinds means every kind.
@@ -119,7 +147,7 @@ func (s *Searcher) HandleSeason(ctx context.Context, r *jobs.Run) error {
 			looking = append(looking, e)
 		}
 		missing := e.sl.State == mediafiles.SlotWanted || e.cur == nil && (e.sl.State == mediafiles.SlotFailed || e.sl.State == mediafiles.SlotRejected)
-		if e.kept && (!missing || !e.soon) {
+		if e.kept && !e.placeholder && (!missing || !e.soon) {
 			whole = false
 		}
 	}
@@ -177,6 +205,21 @@ func (s *Searcher) HandleSeason(ctx context.Context, r *jobs.Run) error {
 	found, failures, answered, skipped, err := s.askAll(ctx, r, showQuery(ti, season, nil), hand, true, ti.Tags)
 	if err != nil {
 		return err
+	}
+	// Release names may number some episodes in other seasons (an anime
+	// part TMDB keeps inside this one): ask for those seasons too.
+	asked := map[int]bool{season: true}
+	for _, e := range looking {
+		named, _ := e.ref.Named()
+		if asked[named] {
+			continue
+		}
+		asked[named] = true
+		more, _, n, _, err := s.askAll(ctx, r, showQuery(ti, named, nil), hand, true, ti.Tags)
+		if err != nil {
+			return err
+		}
+		found, answered = append(found, more...), max(answered, n)
 	}
 	if reason, data, ok, failed := noAnswer(failures, answered, skipped); ok {
 		rest(reason)

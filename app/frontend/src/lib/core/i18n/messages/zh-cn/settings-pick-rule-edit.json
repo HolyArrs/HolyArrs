@@ -24,6 +24,8 @@
 	"settings.pickRuleEdit.goodEnough": "达标",
 	"settings.pickRuleEdit.goodEnoughAt": "达标档位",
 	"settings.pickRuleEdit.goodEnoughHint": "文件达到这个档位后，HolyArrs 就不再找更好的副本。",
+	"settings.pickRuleEdit.goodEnoughPoints": "达标分数",
+	"settings.pickRuleEdit.goodEnoughPointsHint": "到达达标档位的文件还需要这么多分数。留空则只看档位。",
 	"settings.pickRuleEdit.yourTraits": "你的特征",
 	"settings.pickRuleEdit.traits": "特征和分数",
 	"settings.pickRuleEdit.traitsDesc": "同一档位中，得分最高的胜出",

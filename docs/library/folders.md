@@ -44,7 +44,9 @@ Under 100 MB free adds a low space note. Imports work until the disk fills.
 
 **Rename** changes the name you see. Nothing moves on disk.
 
-The trash button removes the folder from HolyArrs and leaves every file in place. HolyArrs refuses while titles use the folder. Move those titles first.
+The trash button removes the folder from HolyArrs and leaves every file in place. HolyArrs refuses while titles in the Library use the folder. Move those titles first. Titles you deleted from the Library don't count. They stay in History.
+
+HolyArrs also keeps the folder while deleted files in it can still be restored from **Recently deleted**. Remove it once their holding days are over, or delete its `.holyarrs-replaced` folder on disk. A folder that is gone from disk has nothing left to restore, so it can always be removed once no title in the Library uses it.
 
 ## If it does not work
 
@@ -60,7 +62,7 @@ The trash button removes the folder from HolyArrs and leaves every file in place
 **Fix:** set `HOLYARRS_SAVE_PATH`, or add the download folder, such as `/downloads`, under **Extra import folders**.
 
 **Symptom:** cannot remove a folder.
-**Fix:** move its titles to another folder first.
+**Fix:** move its titles to another folder first. If it says deleted files can still be restored, wait until their holding days are over, or delete the folder's `.holyarrs-replaced` folder on disk. If an outside list adds to it, point that list at another folder.
 
 ## For experts
 

@@ -24,6 +24,8 @@
 	"settings.pickRuleEdit.goodEnough": "Good enough",
 	"settings.pickRuleEdit.goodEnoughAt": "Good enough at",
 	"settings.pickRuleEdit.goodEnoughHint": "HolyArrs stops looking for a better copy once a file reaches this step.",
+	"settings.pickRuleEdit.goodEnoughPoints": "Good enough points",
+	"settings.pickRuleEdit.goodEnoughPointsHint": "A file at the good enough step also needs this many points. Leave empty to go by the step alone.",
 	"settings.pickRuleEdit.yourTraits": "Your traits",
 	"settings.pickRuleEdit.traits": "Traits and points",
 	"settings.pickRuleEdit.traitsDesc": "Most points wins on the same step",

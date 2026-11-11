@@ -254,6 +254,7 @@
 	"home.finished": "{when} に完了",
 	"home.nothingIsDownloadingRight": "いまダウンロード中のものはありません。",
 	"home.paused2": "{n} 件一時停止中。",
+	"home.notSentByHolyArrs": "HolyArrs が送っていないものがダウンローダーに {n} 件あります。",
 	"home.someChecksCouldNot": "一部のチェックを今は読み取れませんでした。",
 	"home.otherCheckPassed": "ほか {n} 件のチェックは正常でした。",
 	"home.otherChecksPassed": "ほか {n} 件のチェックは正常でした。",

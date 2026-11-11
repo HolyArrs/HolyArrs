@@ -30,6 +30,7 @@
 	import { installHeroPrefetch } from '#lib/metadata/index.ts';
 	import { idlePages, installRowAhead } from '#lib/core/smart-preload.ts';
 	import { preloadHero } from '#lib/core/tmdb-image.ts';
+	import { minimalLook } from '#lib/core/look.svelte.ts';
 	import AppShell from './(frame)/AppShell.svelte';
 	import PosterWall from './(frame)/PosterWall.svelte';
 	import Sidebar from './(frame)/Sidebar.svelte';
@@ -496,7 +497,7 @@
 {:else}
 	<a class="skip" href="#main">{t('frame.layout.skip')}</a>
 	<!-- Background behind every page: plain by default, or this Library's posters (Settings > Appearance). Settings home draws its own. -->
-	{#if backdrop.value === 'posters' && path !== '/settings'}<PosterWall />{/if}
+	{#if backdrop.value === 'posters' && path !== '/settings' && !minimalLook()}<PosterWall />{/if}
 	<AppShell {collapsed} {overlay} onscrim={() => closeOverlay()}>
 		{#snippet sidebar()}
 			<Sidebar

@@ -274,6 +274,7 @@
 	"accounts.account.preferences": "Einstellungen",
 	"accounts.account.trailers": "Trailer",
 	"accounts.account.trailersHint": "Automatisch beachtet reduzierte Bewegung und Datensparmodus",
+	"accounts.account.trailersMinimal": "In der minimalen Ansicht aus",
 	"accounts.account.playTrailers": "Trailer abspielen",
 	"accounts.account.auto": "Auto",
 	"accounts.account.always": "Immer",

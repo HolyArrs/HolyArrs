@@ -293,5 +293,8 @@
 	"migrate.holyarrsHandlesTheseIts": "HolyArrs bunları kendi yöntemiyle halleder. Yapılacak bir şey yok.",
 	"migrate.allApps": "Tüm uygulamalar",
 	"migrate.ifAnOldApp": "Eski bir uygulama bir klasörü farklı bir yolda görüyorsa ikisini de yaz.",
+	"migrate.notInContainer": "HolyArrs {path} yolunu göremiyor. Konteynerin içindeki yolu kullan: Docker biriminin sağ tarafı.",
+	"migrate.foldersItSees": "Görebildikleri: {list}",
+	"migrate.sameNewFolder": "{list} ile aynı klasör. Başlıkları bir arada kalır; 4K veya diğer kopyalara kendi klasörünü ver.",
 	"migrate.doneOfTotal": "{done}/{total}"
 }

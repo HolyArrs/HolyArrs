@@ -274,6 +274,7 @@
 	"accounts.account.preferences": "偏好设置",
 	"accounts.account.trailers": "预告片",
 	"accounts.account.trailersHint": "“自动”会遵循“减弱动态效果”和流量节省设置",
+	"accounts.account.trailersMinimal": "极简风格下已关闭",
 	"accounts.account.playTrailers": "播放预告片",
 	"accounts.account.auto": "自动",
 	"accounts.account.always": "始终",

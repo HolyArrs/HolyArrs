@@ -254,6 +254,7 @@
 	"home.finished": "Bitti {when}",
 	"home.nothingIsDownloadingRight": "Şu an inen bir şey yok.",
 	"home.paused2": "{n} duraklatıldı.",
+	"home.notSentByHolyArrs": "İndiricide HolyArrs'ın göndermediği {n} öğe var.",
 	"home.someChecksCouldNot": "Bazı denetimler şu an okunamadı.",
 	"home.otherCheckPassed": "Diğer {n} denetim geçti.",
 	"home.otherChecksPassed": "Diğer {n} denetim geçti.",

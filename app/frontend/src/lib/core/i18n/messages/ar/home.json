@@ -254,6 +254,7 @@
 	"home.finished": "انتهى {when}",
 	"home.nothingIsDownloadingRight": "لا شيء قيد التنزيل الآن.",
 	"home.paused2": "{n} موقوفة مؤقتًا.",
+	"home.notSentByHolyArrs": "{n} في برنامج التنزيل لم يرسلها HolyArrs.",
 	"home.someChecksCouldNot": "تعذّرت قراءة بعض الفحوصات الآن.",
 	"home.otherCheckPassed": "نجح فحص آخر واحد ({n}).",
 	"home.otherChecksPassed": "نجحت {n} فحوصات أخرى.",

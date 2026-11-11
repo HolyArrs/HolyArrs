@@ -29,6 +29,7 @@
 	import { to } from '#lib/core/paths.ts';
 	import { plainReason } from '#lib/core/plain.ts';
 	import { setTopCrumbs } from '#lib/core/top-crumbs.svelte.ts';
+	import { minimalLook } from '#lib/core/look.svelte.ts';
 	import { autoplayHere, loadUISettings, trailerSources, type TrailerSource } from '#lib/core/trailer/autoplay.svelte.ts';
 	import { HERO_DELAY } from '#lib/core/trailer/trailer.ts';
 	import { fromHandoff, openTheater } from '#lib/core/trailer/theater.svelte.ts';
@@ -173,9 +174,10 @@
 		return { rows, wins: wins.length, noms, awards, paras, span, most, stills: aboutStills, wikiUrl: wiki.bio?.url ?? '' };
 	});
 	let still = $state(0);
+	const minimal = $derived(minimalLook()); // The minimal look: no banner, no trailers, no colour from the art and plain About cards.
 	$effect(() => {
 		const n = about?.stills.length ?? 0;
-		if (!view || n < 2 || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+		if (!view || minimal || n < 2 || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 		const t = setInterval(() => (still = (still + 1) % n), 6000);
 		return () => clearInterval(t);
 	});
@@ -241,6 +243,7 @@
 	let slimOn = $state(false);
 	// The top bar and the slim bar are one solid band in the person's colour.
 	$effect(() => {
+		if (minimal) return;
 		const c = document.documentElement.classList;
 		c.add('pbar');
 		return () => c.remove('pbar');
@@ -265,12 +268,12 @@
 	let sampled = $state<string | null>(null);
 	$effect(() => {
 		const src = photo || hero;
-		if (!view || !src || sampled) return;
+		if (!view || minimal || !src || sampled) return;
 		const img = new Image();
 		img.onload = () => (sampled = sampleCover(img));
 		img.src = src;
 	});
-	const tint = $derived(view && sampled ? tintOf(sampled) : null);
+	const tint = $derived(view && !minimal && sampled ? tintOf(sampled) : null);
 	$effect(() => {
 		if (tint) {
 			paintWindow(tint);
@@ -292,7 +295,7 @@
 		const m = top[clip % Math.max(1, top.length)];
 		sources = [];
 		clipOn = false;
-		if (view !== 2 || !m || clipDone) return;
+		if (view !== 2 || minimal || !m || clipDone) return;
 		const ctl = new AbortController();
 		const t = setTimeout(() => {
 			if (!autoplayHere()) return;
@@ -321,7 +324,7 @@
 	setTopCrumbs(null);
 </script>
 
-<svelte:head><title>{data?.person.name ?? t('discover.people.person')} · HolyArrs</title>{#if hero}<link rel="preload" as="image" href={hero} />{/if}</svelte:head>
+<svelte:head><title>{data?.person.name ?? t('discover.people.person')} · HolyArrs</title>{#if hero && !minimal}<link rel="preload" as="image" href={hero} />{/if}</svelte:head>
 
 {#snippet filmCard(m: PersonMovie)}
 	<WideCard cover title={m.name} href={href(m)} image={m.backdrop || m.poster} kind="movie" subtitle={roleLine(m) || undefined} owned={owned(m)} preview={{ kind: 'movie', tmdb: m.ids.tmdb, year: m.year || undefined, titleId: m.title_id }}
@@ -351,8 +354,8 @@
 
 <PageLoader loading={(!data || !(wikiDone || wikiWaited)) && !error} label={t('discover.people.loadingThisPerson')} onretry={load}>
 {#if data && (wikiDone || wikiWaited) && view}
-	<div class="ap" class:tinted={!!tint} style={tint ? `--ap-bg:${tint.bg};--ap-soft:${tint.soft}` : undefined}>
-	<header class="banner" bind:this={heroBox} style:--gone={gone.toFixed(3)} class:playing={clipOn} class:held={clipHeld} data-hero data-testid="person-banner">
+	<div class="ap" class:tinted={!!tint} class:minimal style={tint ? `--ap-bg:${tint.bg};--ap-soft:${tint.soft}` : undefined}>
+	{#if !minimal}<header class="banner" bind:this={heroBox} style:--gone={gone.toFixed(3)} class:playing={clipOn} class:held={clipHeld} data-hero data-testid="person-banner">
 		<div class="stage" aria-hidden="true">
 			{#if reel.length}
 				<HeroMotion pictures={reel} paused={clipOn && !clipHeld} position="center 25%" onload={() => (heroIn = true)} />
@@ -368,7 +371,7 @@
 		<div class="b-shade" aria-hidden="true"></div>
 		<div class="dim" aria-hidden="true"></div>
 		{#if view === 2 && clipOn && nowShowing}<a class="showing" href={href(nowShowing)}>{nowShowing.name}{nowShowing.year ? ` · ${nowShowing.year}` : ''}</a>{/if}
-	</header>
+	</header>{/if}
 
 	<div class="cline">
 		<span class="photo">{#if photo}<img src={photo} alt="" fetchpriority="high" />{:else}<span class="initials">{data.person.name.split(' ').map((w) => w[0]).slice(0, 2).join('')}</span>{/if}</span>
@@ -428,9 +431,8 @@
 	{#if bio || facts.length}
 		<section class="block">
 			<h2>{t('discover.people.about2')}</h2>
-			<button type="button" class="acard" aria-haspopup="dialog" aria-label={t('discover.people.aboutReadMore', { name: data.person.name })} onclick={() => (aboutOpen = true)} onpointermove={(e) => { const b = e.currentTarget.getBoundingClientRect(); e.currentTarget.style.setProperty('--mx', `${((e.clientX - b.left) / b.width) * 100}%`); e.currentTarget.style.setProperty('--my', `${((e.clientY - b.top) / b.height) * 100}%`); }} data-testid="person-about">
-				{#each about?.stills ?? [] as src, i (src)}<img class="ab-frame" class:on={i === still % (about?.stills.length || 1)} {src} alt="" loading="lazy" decoding="async" />{/each}
-				<span class="a-glow" aria-hidden="true"></span>
+			<button type="button" class="acard" class:minimal aria-haspopup="dialog" aria-label={t('discover.people.aboutReadMore', { name: data.person.name })} onclick={() => (aboutOpen = true)} onpointermove={(e) => { const b = e.currentTarget.getBoundingClientRect(); e.currentTarget.style.setProperty('--mx', `${((e.clientX - b.left) / b.width) * 100}%`); e.currentTarget.style.setProperty('--my', `${((e.clientY - b.top) / b.height) * 100}%`); }} data-testid="person-about">
+				{#if !minimal}{#each about?.stills ?? [] as src, i (src)}<img class="ab-frame" class:on={i === still % (about?.stills.length || 1)} {src} alt="" loading="lazy" decoding="async" />{/each}<span class="a-glow" aria-hidden="true"></span>{/if}
 				{#if wiki.badges[0]}<span class="disc" aria-hidden="true"><b>{wiki.badges[0].split(' ')[0]}</b><small>{wiki.badges[0].split(' ').slice(1).join(' ')}</small></span>{/if}
 				<span class="a-foot">
 					<span class="a-lis">{[stats?.films ? t('discover.people.filmsCount', { n: stats.films }) : '', yearsLine].filter(Boolean).join(' · ')}</span>
@@ -442,9 +444,9 @@
 		<Sheet bind:open={aboutOpen} title={t('discover.people.about', { name: data.person.name })} size="lg">
 			{#if about}
 			<div class="ab ab-{aboutView}" data-testid="person-about-sheet">
-				{#if aboutView !== 'dossier' && about.stills.length}
-					<figure class="ab-still">
-						{#each about.stills as src, i (src)}<img class="ab-frame" class:on={i === still % about.stills.length} {src} alt="" decoding="async" loading={i ? 'lazy' : 'eager'} />{/each}
+				{#if aboutView !== 'dossier' && (minimal || about.stills.length)}
+					<figure class="ab-still" class:plain={minimal}>
+						{#if !minimal}{#each about.stills as src, i (src)}<img class="ab-frame" class:on={i === still % about.stills.length} {src} alt="" decoding="async" loading={i ? 'lazy' : 'eager'} />{/each}{/if}
 						<figcaption>
 							{#if photo}<img class="ab-face" src={photo} alt="" />{/if}
 							<span><b>{data.person.name}</b>{#if lead}<small>{lead}</small>{/if}</span>
@@ -636,6 +638,7 @@
 	/* The top bar and the slim bar read as one solid band in the person's colour. */
 	:global(html.pbar .ui-topbar), :global(html.pbar[data-tint] .ui-topbar) { background-color: var(--tint-bg, #1b1c20); border-bottom-color: transparent; -webkit-backdrop-filter: none; backdrop-filter: none; }
 	:global(html.pbar) .slim { background: var(--tint-bg, #1b1c20); box-shadow: 0 10px 24px rgb(0 0 0 / .3); }
+	/* Minimal: no banner, so the photo row is a plain header under the top bar, and the bars take the theme. */ .ap.minimal .cline { margin-top: 0; padding-top: 8px; } .ap.minimal .photo { box-shadow: var(--shadow-card); } .ap.minimal .initials { color: var(--text-muted); } .ap.minimal .slim { background: var(--bg); color: var(--text); border-bottom: 1px solid var(--line); box-shadow: none; } :global(html:not([data-theme='dark'])) .ap.minimal .acts :global(.ui-act) { background: color-mix(in srgb, var(--text) 7%, transparent); border-color: var(--line); color: var(--text); backdrop-filter: none; -webkit-backdrop-filter: none; } :global(html:not([data-theme='dark'])) .ap.minimal .acts :global(.ui-act.primary), :global(html:not([data-theme='dark'])) .ap.minimal .slim :global(.ui-act.primary) { background: var(--text); border-color: var(--text); color: var(--bg); box-shadow: none; } :global(html:not([data-theme='dark'])) .ap.minimal .acts :global(.ui-act:focus-visible) { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--text); }
 	.slim.on { opacity: 1; translate: 0 0; pointer-events: auto; }
 	.s-photo { width: 32px; height: 48px; border-radius: 6px; object-fit: cover; object-position: center 20%; }
 	.slim-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 700 22px/1.1 var(--font-display); letter-spacing: -.01em; }
@@ -669,6 +672,7 @@
 	.a-foot { position: absolute; left: 28px; right: 28px; bottom: 26px; display: flex; flex-direction: column; gap: 8px; }
 	.a-lis { font: 700 13px/1 var(--font-ui); text-transform: uppercase; letter-spacing: .08em; opacity: .8; }
 	.a-bio { font: 500 19px/1.45 var(--font-ui); color: rgb(255 255 255 / .9); text-shadow: 0 1px 12px rgb(0 0 0 / .35); display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; max-width: 72ch; }
+	/* Minimal: a plain card in the theme's colours, the text in the flow. */ .acard.minimal { display: flex; align-items: center; gap: 20px; height: auto; padding: 20px; background: var(--surface-1); color: var(--text); box-shadow: 0 0 0 1px var(--line); } .acard.minimal::after { content: none; } .acard.minimal:focus-visible { box-shadow: var(--focus-ring); } .acard.minimal .disc { position: static; flex: none; box-shadow: none; } .acard.minimal .a-foot { position: static; min-width: 0; } .acard.minimal .a-bio { color: var(--text); text-shadow: none; } .acard.minimal .a-more { background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--line); backdrop-filter: none; -webkit-backdrop-filter: none; } .acard.minimal:hover .a-more { background: var(--line); }
 	.s-facts { margin: 0 0 12px; color: var(--text-muted); font: var(--t-subhead); }
 	.s-bio { margin: 0; font: var(--t-body); line-height: 1.6; white-space: pre-line; }
 	.circles { display: flex; gap: 20px; overflow-x: auto; margin: 0; padding: 4px 2px 8px; list-style: none; scrollbar-width: none; }
@@ -707,6 +711,7 @@
 	.ab-still figcaption span { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 	.ab-still b { font: 800 clamp(24px, 3vw, 34px)/1 var(--font-display); letter-spacing: -.02em; }
 	.ab-still small { font: 600 14px/1.3 var(--font-ui); opacity: .82; }
+	/* Minimal: the face and the name as a plain row, no stills. */ .ab-still.plain { aspect-ratio: auto; border-radius: 0; box-shadow: none; overflow: visible; background: none; animation: none; } .ab-still.plain::after { content: none; } .ab-still.plain figcaption { position: static; color: var(--text); } .ab-still.plain .ab-face { box-shadow: 0 0 0 1px var(--line); } :global(html[data-look='minimal'] .ui-sheet:has(.ab)) { --text: inherit; --text-muted: inherit; --surface-1: inherit; --surface-2: inherit; --line: inherit; --border: inherit; color-scheme: inherit; color: var(--text); background: var(--surface-1); box-shadow: var(--shadow-modal); } :global(html[data-look='minimal']) .ab-tiles div { background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--line); backdrop-filter: none; -webkit-backdrop-filter: none; } :global(html[data-look='minimal']) .ab-tiles div:hover { background: var(--surface-3, var(--surface-2)); } :global(html[data-look='minimal']) .ab-bio p, :global(html[data-look='minimal']) .ab-bio p.lead { color: var(--text); }
 	.ab-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin: 0; }
 	.ab-tiles div { display: flex; flex-direction: column; gap: 6px; padding: 16px 18px; border-radius: 16px; background: rgb(255 255 255 / 7%); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 8%), inset 0 1px 0 rgb(255 255 255 / 10%); backdrop-filter: blur(24px) saturate(160%); transition: background var(--dur-fast) var(--ease-out), translate var(--dur-fast) var(--ease-out); }
 	.ab-tiles div:hover { background: rgb(255 255 255 / 11%); translate: 0 -1px; }
@@ -786,7 +791,7 @@
 		.disc { width: 76px; height: 76px; top: 14px; left: 14px; }
 		.disc b { font-size: 21px; }
 		.a-foot { left: 16px; right: 16px; bottom: 16px; }
-		.a-bio { font-size: 17px; }
+		.a-bio { font-size: 17px; } .acard.minimal { height: auto; gap: 14px; padding: 16px; }
 		.person { --title-item: calc((100cqi - var(--shelf-gap, 12px)) / 1.6 / .78); gap: 26px; }
 		.hero-in { grid-template-columns: 96px minmax(0, 1fr); }
 		.grid { grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); }

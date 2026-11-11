@@ -1,6 +1,8 @@
 {
 	"settings.index.appearance.theme.theme.label": "テーマ",
 	"settings.index.appearance.theme.theme.words": "外観 ライト ダーク 自動 モード 色 夜 appearance light dark automatic mode colours colors night",
+	"settings.index.appearance.look.look.label": "表示スタイル",
+	"settings.index.appearance.look.look.words": "ミニマル シンプル 落ち着いた 写真なし 光なし 自動再生 minimal plain",
 	"settings.index.appearance.language.language.label": "言語",
 	"settings.index.appearance.language.language.words": "言語 翻訳 ロケール 日本語 language translation locale english words",
 	"settings.index.appearance.autoplay-trailers.play-trailers-by-themselves.label": "予告編を自動で再生",

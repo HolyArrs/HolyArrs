@@ -21,7 +21,7 @@ func WriteError(w http.ResponseWriter, err error) {
 		webserver.WriteJSON(w, http.StatusConflict, map[string]any{"error": err.Error(), "title_id": dup.TitleID})
 	case errors.As(err, &fe):
 		webserver.WriteJSON(w, http.StatusConflict, map[string]any{"error": err.Error(), "health": fe.Health.State, "reason": fe.Health.Reason})
-	case errors.Is(err, ErrNeverAdd), errors.Is(err, ErrNoFolder), errors.Is(err, ErrFolderInUse),
+	case errors.Is(err, ErrNeverAdd), errors.Is(err, ErrNoFolder), errors.Is(err, ErrFolderInUse), errors.Is(err, ErrFolderHeld), errors.Is(err, ErrFolderListed),
 		errors.Is(err, ErrFolderTaken), errors.Is(err, ErrFolderName), errors.Is(err, ErrMainVersion), errors.Is(err, ErrVersionHasFiles), errors.Is(err, ErrVersionBusy),
 		errors.Is(err, ErrVersionFolder), errors.Is(err, ErrProtectedCopy):
 		webserver.Fail(w, http.StatusConflict, err.Error())

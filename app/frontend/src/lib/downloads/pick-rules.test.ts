@@ -256,6 +256,18 @@ describe('tidyBody', () => {
 		expect(tidyBody(b).proper_policy.max_age_days).toBe(14);
 		expect(b.min_points).toBe('');
 	});
+
+	it('keeps good enough points as a whole number and drops them when the box is cleared', () => {
+		const b = blankBody('movie');
+		b.good_enough_points = 99.6;
+		expect(tidyBody(b).good_enough_points).toBe(100);
+		for (const empty of [null, '', undefined]) {
+			b.good_enough_points = empty as unknown as number;
+			const t = tidyBody(b);
+			expect('good_enough_points' in t).toBe(false);
+			expect(checkBody('Mine', ['movie'], t).good_enough_points).toBeUndefined();
+		}
+	});
 });
 
 describe('server fields', () => {

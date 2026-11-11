@@ -25,6 +25,7 @@
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { to } from '#lib/core/paths.ts';
 	import { pictureOf } from '#lib/core/pictures.ts';
+	import { minimalLook } from '#lib/core/look.svelte.ts';
 	import type { Ask, LibraryFolder, PickRulesView } from '#lib/core/types.ts';
 
 	// An album's page: the cover beside its title and actions, the tracklist with what the Library has, its other editions, and where to go next.
@@ -144,11 +145,14 @@
 	const coverTint = $derived(pictureOf(cover)?.color || null);
 	// The page colour: sampled from the cover once it shows (truer than the stored colour, which can miss a blue cover), else the stored one (lib/music/album-tint.ts).
 	let sampled = $state<string | null>(null);
-	const tint = $derived(sampled || coverTint ? tintOf(sampled || coverTint) : null);
+	// The minimal look keeps the cover but not its colour: the page follows the theme.
+	const minimal = $derived(minimalLook());
+	const tint = $derived(!minimal && (sampled || coverTint) ? tintOf(sampled || coverTint) : null);
 	const tintStyle = $derived(tint ? `--al-bg:${tint.bg};--al-band:${tint.band};--al-soft:${tint.soft}` : '');
 	// The whole window (side menu, top bar, page) takes the colour while the album shows. Between two albums it keeps the last colour until the next is known, and fades back to the normal look on leaving.
 	$effect(() => {
 		if (tint) paintWindow(tint);
+		else if (minimal) unpaintWindow();
 	});
 	// Going on to another album keeps the colour until that album's is known (no flash between two).
 	let toAlbum = false;
@@ -158,7 +162,7 @@
 	});
 	function coverLoaded(e: Event) {
 		coverIn = true;
-		sampled = sampleCover(e.currentTarget as HTMLImageElement);
+		if (!minimal) sampled = sampleCover(e.currentTarget as HTMLImageElement);
 	}
 	const songs = $derived.by(() => {
 		const n = list.length;
@@ -275,7 +279,7 @@
 		subtitle={[albumYear(a.release_date), kindWord(a)].filter(Boolean).join(' · ')} badges={a.explicit ? ['E'] : undefined} owned={owned(a)} />
 {/snippet}
 
-<div class="album" class:tinted={!!tint} style={tintStyle} data-tint={tint?.bg ?? ''}>
+<div class="album" class:tinted={!!tint} class:minimal style={tintStyle} data-tint={tint?.bg ?? ''}>
 	{#if error && !data}<LoadError hasData={false} message={error} network={errorNet} onretry={load} {busy} />{/if}
 	<PageLoader loading={!hero && !error} cached={fromCache} label={t('music.loadingThisAlbum')} onretry={load}>
 		{#if hero && !(error && !data)}
@@ -435,6 +439,22 @@
 	.band { display: flex; flex-direction: column; gap: 28px; margin: 4px calc(var(--gutter) * -1) 0; padding: 28px var(--gutter) 56px; background: var(--al-band); border-top: 1px solid rgb(255 255 255 / 8%); transition: background-color var(--dur-slow) var(--ease-out); }
 	.circles { display: flex; gap: 18px; overflow-x: auto; margin: 0; padding: 4px 2px 8px; list-style: none; scrollbar-width: none; }
 	.sq-rail { --poster-ratio: 1; }
+	/* Minimal: the theme's own colours instead of the dark cover palette, and a smaller cover. */
+	.album.minimal { --al-bg: var(--bg); --al-band: var(--surface-2); --al-soft: var(--text-muted); --text: inherit; --text-muted: inherit; --surface-1: inherit; --surface-2: inherit; --accent: inherit; --border: inherit; color: var(--text); color-scheme: inherit; }
+	.album.minimal .hero { grid-template-columns: 200px minmax(0, 1fr); gap: 28px; }
+	.album.minimal .cover { width: 200px; background: var(--surface-2); box-shadow: 0 4px 14px rgb(0 0 0 / .16); }
+	.album.minimal .by:hover, .album.minimal .t-have.in_library, .album.minimal .ed-link { color: var(--text); }
+	.album.minimal .pill { background: var(--surface-2); color: var(--text); }
+	.album.minimal .tracks li + li::before { background: var(--line); }
+	.album.minimal .tracks li:hover, .album.minimal .tracks li:focus-within { background: var(--surface-2); }
+	.album.minimal .band { border-top-color: var(--line); }
+	:global(html:not([data-theme='dark'])) .album.minimal .actions :global(.ui-act) { background: color-mix(in srgb, var(--text) 7%, transparent); border-color: var(--line); color: var(--text); backdrop-filter: none; -webkit-backdrop-filter: none; }
+	:global(html:not([data-theme='dark'])) .album.minimal .actions :global(.ui-act.primary), :global(html:not([data-theme='dark'])) .album.minimal .actions :global(.ui-act[aria-pressed='true']) { background: var(--text); border-color: var(--text); color: var(--bg); box-shadow: none; }
+	:global(html:not([data-theme='dark'])) .album.minimal .actions :global(.ui-act:focus-visible) { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--text); }
+	@media (max-width: 767px) {
+		.album.minimal .hero { grid-template-columns: minmax(0, 1fr); gap: 20px; }
+		.album.minimal .cover { width: min(200px, 60vw); }
+	}
 	@media (max-width: 767px) {
 		.album { --music-item: calc((100cqi - var(--shelf-gap, 12px)) / 2.3); gap: 24px; padding-top: 24px; }
 		.hero { grid-template-columns: minmax(0, 1fr); justify-items: center; text-align: center; gap: 20px; }

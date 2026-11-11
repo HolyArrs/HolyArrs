@@ -73,6 +73,20 @@ test('a failed trailers save puts the switch back and says why, in plain words',
 	await page.unroute('**/api/v1/settings/ui');
 });
 
+test('the minimal look is saved in this browser, lasts a reload, and Full brings the full look back', async () => {
+	await page.goto('/settings/appearance');
+	const looks = page.locator('#look');
+	await looks.getByRole('radio', { name: 'Minimal' }).click();
+	await expect(page.locator('html')).toHaveAttribute('data-look', 'minimal');
+	await expect(page.getByTestId('wall-off-minimal')).toBeVisible();
+	await page.reload();
+	await expect(page.locator('html')).toHaveAttribute('data-look', 'minimal');
+	await expect(looks.getByRole('radio', { name: 'Minimal' })).toHaveAttribute('aria-checked', 'true');
+	await looks.getByRole('radio', { name: 'Full' }).click();
+	await expect(page.locator('html')).not.toHaveAttribute('data-look', /./);
+	await expect(page.getByTestId('wall-off-minimal')).toHaveCount(0);
+});
+
 test('search by another word, and the keyboard reaches the result', async () => {
 	await page.goto('/settings');
 	const box = page.getByTestId('search-box');

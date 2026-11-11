@@ -1,6 +1,7 @@
 // Autoplay setting, trailer lookups and warmed players, with the ordered sources a player tries.
 import { api, ApiError } from '../api.ts';
 import { session } from '../session.svelte.ts';
+import { minimalLook } from '../look.svelte.ts';
 import { autoplayPref, browserConditions, finePointer, mayAutoplay, pickTrailer, soundOn, type Video } from './trailer.ts';
 import { prefetchQueue } from './trailer-prefetch.ts';
 import type { HeroVideo } from './hero-video.ts';
@@ -95,7 +96,7 @@ export function setAutoplaySetting(on: boolean) {
 }
 
 export function autoplayHere(): boolean {
-	return state.loaded && mayAutoplay({ setting: state.autoplay, kid: session.kid, pref: autoplayPref(), ...browserConditions() });
+	return state.loaded && mayAutoplay({ setting: state.autoplay, kid: session.kid, pref: autoplayPref(), minimal: minimalLook(), ...browserConditions() });
 }
 
 // Chrome also says "maybe" to HLS, but its player starts at the lowest quality and stalls on YouTube's mixed streams.

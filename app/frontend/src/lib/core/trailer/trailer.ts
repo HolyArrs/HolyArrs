@@ -17,6 +17,8 @@ export interface Conditions {
 	saveData?: boolean;
 	effectiveType?: string;
 	phone?: boolean;
+	/** The minimal look is on in this browser. */
+	minimal?: boolean;
 }
 
 export type AutoplayPref = 'auto' | 'always' | 'never';
@@ -93,10 +95,10 @@ export function setAutoplayPref(v: AutoplayPref) {
 	}
 }
 
-// Autoplay needs every condition to allow it; 'always' skips only the system ones.
+// Autoplay needs every condition to allow it; 'always' skips only the system ones, never the minimal look.
 export function mayAutoplay(c: Conditions): boolean {
 	const pref = c.pref ?? 'auto';
-	if (!c.setting || c.kid || pref === 'never') return false;
+	if (!c.setting || c.kid || c.minimal || pref === 'never') return false;
 	if (pref === 'always') return true;
 	if (c.reducedMotion || c.saveData || c.phone) return false;
 	return !['slow-2g', '2g', '3g'].includes(c.effectiveType ?? '');
