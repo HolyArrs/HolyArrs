@@ -30,6 +30,10 @@ describe('rowCell / cell', () => {
 		expect(cell({ ...m, digital_date: undefined, cinema_date: '2999-01-01' } as TitleView, col('release'), '')).toMatch(/^Cinemas/);
 		expect(cell(m, col('series'), 'Matrix')).toBe('Matrix');
 		expect(cell(m, col('nope'), '')).toBe('');
+		expect(cell({ ...m, score: 7.4, votes: 900 } as TitleView, col('score'), '')).toBe('★ 7.4');
+		expect(cell({ ...m, score: 8, votes: 900 } as TitleView, col('score'), '')).toBe('★ 8.0');
+		expect(cell({ ...m, score: 9.1, votes: 3 } as TitleView, col('score'), '')).toBe('');
+		expect(cell(m, col('score'), '')).toBe('');
 		expect(rowCell(m, col('episodes'), { have: 3, total: 10 }, '')).toBe('3/10');
 		expect(rowCell(m, col('episodes'), { have: 0, total: 0 }, '')).toBe('');
 	});

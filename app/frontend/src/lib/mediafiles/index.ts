@@ -17,6 +17,7 @@ export { collectionBody } from './collections.ts';
 export { collectionResultLine } from './collections.ts';
 export { collectionStart } from './collections.ts';
 export { colonChoices } from './organise.ts';
+export { chosenColumns } from './table.ts';
 export { columnsFor } from './table.ts';
 export { columnSort } from './table.ts';
 export { copiesQuery } from './copies.ts';

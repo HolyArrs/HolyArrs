@@ -2,12 +2,13 @@
 import type { TitleView } from '../core/types.ts';
 import { matches, type Filter } from './library.ts';
 import { libraryState } from './library-state.ts';
+import { shownScore } from '../core/rating.ts';
 import { t as tr } from '../core/i18n/i18n.svelte.ts';
 
 export type LibKind = 'movie' | 'show' | 'artist';
 
 export type ColumnId =
-	| 'status' | 'network' | 'rules' | 'next' | 'last' | 'seasons' | 'episodes' | 'added' | 'year' | 'size' | 'genres' | 'rating' | 'path'
+	| 'status' | 'network' | 'rules' | 'next' | 'last' | 'seasons' | 'episodes' | 'added' | 'year' | 'size' | 'genres' | 'rating' | 'score' | 'path'
 	| 'release' | 'runtime' | 'series' | 'albums' | 'tracks' | 'latest' | 'requested' | 'quality' | 'kept' | 'showstate' | 'activity' | 'codec' | 'audio';
 
 export interface Column {
@@ -22,7 +23,7 @@ export interface Column {
 
 export type ColumnLayout = { id: ColumnId; on: boolean }[];
 
-export type SortKey = 'status' | 'name' | 'year' | 'added' | 'size' | 'next' | 'last' | 'progress' | 'release' | 'runtime' | 'network' | 'rules';
+export type SortKey = 'status' | 'name' | 'year' | 'added' | 'size' | 'next' | 'last' | 'progress' | 'release' | 'runtime' | 'network' | 'rules' | 'score';
 export type SortDir = 'asc' | 'desc';
 
 export type Kept = 'any' | 'on' | 'off';
@@ -64,7 +65,7 @@ export interface SavedFilter {
 
 // Each label reads its words when used, so it follows the language.
 export const sortLabels = {} as Record<SortKey, string>;
-for (const k of ['status', 'name', 'year', 'added', 'size', 'next', 'last', 'progress', 'release', 'runtime', 'network', 'rules'] as SortKey[]) {
+for (const k of ['status', 'name', 'year', 'added', 'size', 'next', 'last', 'progress', 'release', 'runtime', 'network', 'rules', 'score'] as SortKey[]) {
 	Object.defineProperty(sortLabels, k, { get: () => tr(`mediafiles.sort.${k}`), enumerable: true });
 }
 
@@ -72,7 +73,7 @@ for (const k of ['status', 'name', 'year', 'added', 'size', 'next', 'last', 'pro
 export const columnSort: Partial<Record<ColumnId, SortKey>> = {
 	status: 'status',
 	year: 'year', added: 'added', size: 'size', next: 'next', last: 'last', episodes: 'progress', tracks: 'progress',
-	release: 'release', runtime: 'runtime', network: 'network', rules: 'rules', latest: 'next'
+	release: 'release', runtime: 'runtime', network: 'network', rules: 'rules', latest: 'next', score: 'score'
 };
 
 export const noFilter: FilterState = { status: 'all', kept: 'any', asker: 'anyone', series: 0, codec: '', subs: false };
@@ -97,6 +98,7 @@ export function columnsFor(kind: LibKind): Column[] {
 			col('year', '64px', false, true),
 			col('genres', '160px', false),
 			col('rating', '88px', false),
+			col('score', '84px', false, true),
 			col('requested', '130px', false),
 			col('quality', '130px', false),
 			col('kept', '72px', false),
@@ -127,6 +129,7 @@ export function columnsFor(kind: LibKind): Column[] {
 		col('year', '64px', true, true),
 		col('runtime', '84px', false, true),
 		col('rating', '88px', false),
+		col('score', '84px', false, true),
 		col('series', '160px', false),
 		col('genres', '160px', false),
 		col('requested', '130px', false),
@@ -137,6 +140,14 @@ export function columnsFor(kind: LibKind): Column[] {
 		col('activity', '110px', false, true),
 		col('path', 'minmax(160px, 1fr)', false)
 	];
+}
+
+// The columns that are on; while sorting by score its column shows right after the status, for this view only.
+export function chosenColumns(cols: Column[], key: SortKey): Column[] {
+	const on = cols.filter((c) => c.on && !(key === 'score' && c.id === 'score'));
+	const score = key === 'score' && cols.find((c) => c.id === 'score');
+	if (score) on.splice(on[0]?.id === 'status' ? 1 : 0, 0, { ...score, on: true });
+	return on;
 }
 
 export function columnsKey(member: number | undefined, kind: LibKind): string {
@@ -191,10 +202,10 @@ export function sortLabel(k: SortKey, kind: LibKind | 'all'): string {
 }
 
 export function sortsFor(kind: LibKind | 'all'): SortKey[] {
-	if (kind === 'show') return ['status', 'name', 'next', 'last', 'progress', 'added', 'year', 'size', 'network', 'rules'];
+	if (kind === 'show') return ['status', 'name', 'next', 'last', 'progress', 'added', 'year', 'score', 'size', 'network', 'rules'];
 	if (kind === 'artist') return ['status', 'name', 'progress', 'added', 'size', 'next'];
-	if (kind === 'movie') return ['status', 'name', 'year', 'release', 'added', 'size', 'runtime', 'rules'];
-	return ['name', 'year', 'added', 'size'];
+	if (kind === 'movie') return ['status', 'name', 'year', 'score', 'release', 'added', 'size', 'runtime', 'rules'];
+	return ['name', 'year', 'score', 'added', 'size'];
 }
 
 // Drops a leading article so "The Wire" sorts under W.
@@ -329,6 +340,7 @@ function sortValue(t: TitleView, key: SortKey): number | string | null {
 		case 'runtime': return t.runtime_minutes || null;
 		case 'network': return t.show?.network?.toLocaleLowerCase() || null;
 		case 'rules': return t.pick_rules_name?.toLocaleLowerCase() || null;
+		case 'score': return shownScore(t.score, t.votes) ?? null;
 		case 'progress': {
 			const p = progressOf(t);
 			return p.total ? p.have / p.total : null;

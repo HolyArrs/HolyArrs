@@ -8,7 +8,7 @@
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import { audienceOf } from '#lib/ui/title-status.ts';
 	import { densityLabels, loadDensity, loadPosterSize, posterLabels, saveDensity, savePosterSize, type Density, type PosterSize } from '#lib/ui/library-art.ts';
-	import { libraryTitles, filters, kinds, matchesTitleQuery, ofKind, titleQuery, type Filter, type Kind, activeCount, filterCounts, loadColumns, loadSaved, passes, saveColumns, saveSaved, sortTitles, sortsFor, startDir, columnsFor, defaultSort, type Column, type FilterContext, type FilterState, type Kept, type LibKind, type SavedFilter, type SortDir, type SortKey, detailLabels, flipFrom, loadPosterDetail, savePosterDetail, type PosterDetail, rememberLibraryKind, partsNow, codecLabel, copyCodecs, type CopySearchPreview, type CopySearchResult, deleteBody } from '#lib/mediafiles/index.ts';
+	import { libraryTitles, filters, kinds, matchesTitleQuery, ofKind, titleQuery, type Filter, type Kind, activeCount, filterCounts, loadColumns, loadSaved, passes, saveColumns, saveSaved, sortTitles, sortsFor, startDir, chosenColumns, columnsFor, defaultSort, type Column, type FilterContext, type FilterState, type Kept, type LibKind, type SavedFilter, type SortDir, type SortKey, detailLabels, flipFrom, loadPosterDetail, savePosterDetail, type PosterDetail, rememberLibraryKind, partsNow, codecLabel, copyCodecs, type CopySearchPreview, type CopySearchResult, deleteBody } from '#lib/mediafiles/index.ts';
 	import { episodeLabel, showProgress } from '#lib/shows/index.ts';
 	import { artistProgress, artistHref } from '#lib/music/index.ts';
 	import { DlFind, searchShortcut, dlTop } from '#lib/downloads/index.ts';
@@ -151,7 +151,7 @@
 		const me = myId;
 		columns = loadColumns(me, k);
 	});
-	const chosenCols = $derived(columns.filter((c) => c.on));
+	const chosenCols = $derived(chosenColumns(columns, sort.key));
 	// Columns that do not fit the width wait until the window is wider (the banner and the title always stay); the header says how many wait. The art is the hero of each row, so the banner column takes its share of the width.
 	let density = $state<Density>('large');
 	let posterSize = $state<PosterSize>('m');
