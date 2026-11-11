@@ -56,7 +56,9 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 		if ss.sl.VersionID != ver.ID || ss.it.TitleID != ti.ID {
 			return nil, fmt.Errorf("download %d fills Slots of more than one show or Version", d.ID)
 		}
-		ss.live = ss.sl.State == mediafiles.SlotDownloading || ss.sl.State == mediafiles.SlotImporting
+		// A Slot another download now fills (a replacement grab) does not wait for this one.
+		ss.live = (ss.sl.State == mediafiles.SlotDownloading || ss.sl.State == mediafiles.SlotImporting) &&
+			(ss.sl.ActiveDownloadID == nil || *ss.sl.ActiveDownloadID == d.ID)
 		slots[id] = ss
 	}
 	files, waiting := packReady(d)
@@ -212,7 +214,7 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 	if d.ReleaseID != nil {
 		_ = db.QueryRowContext(ctx, "SELECT COALESCE(size, 0) FROM releases WHERE id = ?", *d.ReleaseID).Scan(&claimed)
 	}
-	mismatch := fakes.claimMismatch(claimed, d.FilesSeen)
+	mismatch := fakes.claimMismatch(claimed, cands)
 	for i := range plan {
 		if plan[i].Method != "hardlink" {
 			continue
