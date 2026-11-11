@@ -17,6 +17,8 @@
   <a href="../../LICENSE"><img src="https://img.shields.io/badge/licence-AGPL--3.0-3b82f6?style=flat-square" alt="라이선스: AGPL-3.0"></a>
 </p>
 
+<p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
+
 <h3 align="center">드라마 하나 보려고 앱 여섯 개. 이제는 하나입니다.</h3>
 
 <p align="center"><b>HolyArrs</b>는 드라마, 영화, 음악을 위한 셀프 호스팅 앱 하나예요.<br>스트리밍 앱처럼 둘러보고, 원하는 걸 요청하면 나머지는 알아서 처리해요.</p>

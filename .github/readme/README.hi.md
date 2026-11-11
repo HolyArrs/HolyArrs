@@ -17,6 +17,8 @@
   <a href="../../LICENSE"><img src="https://img.shields.io/badge/licence-AGPL--3.0-3b82f6?style=flat-square" alt="लाइसेंस: AGPL-3.0"></a>
 </p>
 
+<p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
+
 <h3 align="center">एक शो देखने के लिए छह ऐप। अब सिर्फ़ एक।</h3>
 
 <p align="center"><b>HolyArrs</b> आपके शो, फ़िल्मों और संगीत के लिए एक सेल्फ-होस्टेड ऐप है।<br>स्ट्रीमिंग ऐप की तरह ब्राउज़ कीजिए, जो चाहिए उसकी रिक्वेस्ट डालिए, बाकी यह संभाल लेता है।</p>

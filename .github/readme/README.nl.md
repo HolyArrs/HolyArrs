@@ -17,6 +17,8 @@
   <a href="../../LICENSE"><img src="https://img.shields.io/badge/licence-AGPL--3.0-3b82f6?style=flat-square" alt="Licentie: AGPL-3.0"></a>
 </p>
 
+<p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
+
 <h3 align="center">Zes apps om één serie te kijken. Nu is het er één.</h3>
 
 <p align="center"><b>HolyArrs</b> is één zelfgehoste app voor je series, films en muziek.<br>Blader als in een streamingapp, vraag aan wat je wilt, en de rest regelt de app.</p>
