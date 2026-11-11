@@ -5,7 +5,8 @@
 	import Icon from '#lib/ui/Icon.svelte';
 	import { RenamePreview } from '#lib/mediafiles/index.ts';
 	import type { SheetEpisode } from './EpisodeSheet.svelte';
-	import { api } from '#lib/core/api.ts';
+	import { api, message } from '#lib/core/api.ts';
+	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { ago, bytes } from '#lib/core/format.ts';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 
@@ -17,8 +18,7 @@
 		episodes,
 		onchange,
 		ondelete,
-		packWindow = 0,
-		onnext
+		packWindow = 0
 	}: {
 		open?: boolean;
 		mode?: 'files' | 'rename' | 'history';
@@ -29,7 +29,6 @@
 		ondelete?: () => void;
 		// Episodes ahead this show takes from a season pack; 0 is the whole season.
 		packWindow?: number;
-		onnext?: () => void;
 	} = $props();
 
 	let events = $state<{ ID: number; At?: string; Kind?: string; Summary?: string }[]>([]);
@@ -69,6 +68,21 @@
 			.finally(() => (loadingEvents = false));
 	});
 
+	// Switches on the next episodes of this season's pack in qBittorrent.
+	let nexting = $state(false);
+	async function packNext() {
+		nexting = true;
+		try {
+			await api.post(`/titles/${titleId}/seasons/${season}/pack-next`, {});
+			toasts.push(t('discover.titleLibrary.packNextStarted'), 'ok');
+			onchange?.();
+		} catch (e) {
+			toasts.push(t('discover.titleLibrary.couldntSave'), 'fail', { body: message(e) });
+		} finally {
+			nexting = false;
+		}
+	}
+
 	// Short source names for the quality tag.
 	const sources: Record<string, string> = { web_dl: 'WEB', webrip: 'WEB', bluray: 'BluRay', remux: 'Remux', hdtv: 'TV', dvd: 'DVD' };
 </script>
@@ -86,7 +100,7 @@
 			{#if packWindow > 0}
 				<div class="st-pack" data-testid="season-pack-window">
 					<span>{t('shows.tools.packNote', { n: packWindow })}</span>
-					{#if onnext}<button type="button" class="st-next" onclick={onnext}><Icon name="download" size={16} />{t('shows.tools.getNext', { n: packWindow })}</button>{/if}
+					<button type="button" class="st-next" disabled={nexting} onclick={packNext}><Icon name="download" size={16} />{t('shows.tools.getNext', { n: packWindow })}</button>
 				</div>
 			{/if}
 			<ul class="st-files">
