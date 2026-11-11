@@ -8,6 +8,7 @@ import (
 	"net/http/cookiejar"
 	"net/http/httptest"
 	"net/url"
+	"slices"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -366,5 +367,57 @@ func TestServiceShowReleaseNumbersFromTVMaze(t *testing.T) {
 				t.Fatalf("E17 %+v, stale %v", e17, got.AltStale)
 			}
 		})
+	}
+}
+
+type fakeShowSource struct{ show Show }
+
+func (f fakeShowSource) SearchShows(context.Context, string) ([]Show, error) { return nil, nil }
+func (f fakeShowSource) Show(context.Context, string) (Show, error) {
+	f.show.Episodes = slices.Clone(f.show.Episodes)
+	return f.show, nil
+}
+
+// The live TMDB source reads TMDB itself (through /v1/tmdb), not the
+// server's show detail, so release numbers are added around it. Mashle's
+// live shape: TMDB season 1 holds 25 episodes (the last undated), the map
+// names TMDB seasons 2 and 3 that TMDB no longer has, TVMaze lists 12 + 12.
+func TestAnimeShowsNumbersTheTMDBSource(t *testing.T) {
+	s := testService(t, func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch r.URL.Path {
+		case "/v1/anime/map":
+			_, _ = w.Write([]byte(`{"entries":[{"tmdb_tv":204832,"tmdb_season":1,"tvdb_season":1,"tvdb":421737},{"tmdb_tv":204832,"tmdb_season":2,"tvdb_season":2,"tvdb":421737},{"tmdb_tv":204832,"tmdb_season":3,"tvdb_season":3,"tvdb":421737}]}`))
+		case "/v1/search":
+			serviceReply(w, "tvmaze", "", map[string]any{"items": []any{
+				normalizedItem("tvmaze", "67396", "show", map[string]any{"id": 67396, "name": "Mashle: Magic and Muscles", "externals": map[string]any{"thetvdb": 421737}}),
+			}, "pagination": map[string]any{"page": 1, "total_pages": 1, "total_results": 1}})
+		case "/v1/shows/tvmaze/67396":
+			eps := []any{}
+			for i := 1; i <= 24; i++ {
+				eps = append(eps, map[string]any{"id": 5000 + i, "season": 1 + (i-1)/12, "number": 1 + (i-1)%12, "airdate": "2023-04-08"})
+			}
+			serviceReply(w, "tvmaze", "67396", normalizedItem("tvmaze", "67396", "show", map[string]any{"id": 67396, "name": "Mashle: Magic and Muscles", "_embedded": map[string]any{"episodes": eps}}))
+		default:
+			http.NotFound(w, r)
+		}
+	})
+	show := Show{Source: "tmdb", Name: "MASHLE: MAGIC AND MUSCLES", OriginalLanguage: "ja", Genres: []string{"Animation", "Comedy"},
+		IDs: map[string]string{"tmdb": "204832", "tvdb": "421737"}, Seasons: []Season{{Number: 0}, {Number: 1}}}
+	for i := 1; i <= 25; i++ {
+		e := Episode{Season: 1, Number: i, AirDay: "2023-04-08"}
+		if i == 25 {
+			e.AirDay = ""
+		}
+		show.Episodes = append(show.Episodes, e)
+	}
+	got, err := s.AnimeShows(fakeShowSource{show}).Show(context.Background(), "tmdb:204832")
+	if err != nil || len(got.Episodes) != 25 || got.AltStale {
+		t.Fatalf("show: %+v, %v", got, err)
+	}
+	for _, c := range []struct{ i, season, number int }{{11, 0, 0}, {16, 2, 5}, {24, 2, 13}} {
+		if e := got.Episodes[c.i]; e.AltSeason != c.season || e.AltEpisode != c.number {
+			t.Errorf("E%d: %+v", c.i+1, e)
+		}
 	}
 }

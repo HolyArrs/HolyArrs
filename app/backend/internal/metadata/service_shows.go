@@ -104,6 +104,28 @@ func (p *serviceShows) Show(ctx context.Context, id string) (Show, error) {
 	return Show{}, err
 }
 
+// AnimeShows wraps the live TMDB show source, which reads TMDB through
+// the server's /v1/tmdb and so never passes serviceShows.Show: Japanese
+// TMDB shows it returns get their release-name numbers here.
+func (s *Service) AnimeShows(direct ShowProvider) ShowProvider {
+	return animeShows{ShowProvider: direct, numbers: &serviceShows{service: s, provider: "tmdb"}}
+}
+
+type animeShows struct {
+	ShowProvider
+	numbers *serviceShows
+}
+
+func (a animeShows) Show(ctx context.Context, id string) (Show, error) {
+	out, err := a.ShowProvider.Show(ctx, id)
+	if err == nil && out.Source == "tmdb" && out.OriginalLanguage == "ja" && out.IDs["tmdb"] != "" {
+		ctx, cancel := serviceContext(ctx)
+		defer cancel()
+		a.numbers.releaseNumbers(ctx, out.IDs["tmdb"], &out)
+	}
+	return out, err
+}
+
 // releaseNumbers adds the release-name numbers from the server's anime
 // map, or for an anime the map does not know or has out of date, from
 // TVMaze's season sizes. A show neither knows keeps none; a failed call
