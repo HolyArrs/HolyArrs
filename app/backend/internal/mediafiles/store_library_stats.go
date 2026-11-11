@@ -2,8 +2,11 @@ package mediafiles
 
 import (
 	"context"
+	"encoding/json"
 	"regexp"
+	"slices"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
@@ -67,27 +70,70 @@ func sqlList(vals []string) string {
 	return strings.Join(q, ", ")
 }
 
-// bucketSQL turns one fact of f.media_info into its bucket name.
-func (sf statFact) bucketSQL() string {
-	status := `lower(coalesce(json_extract(f.media_info, '$.inspection_status'), ''))`
-	val := `lower(trim(coalesce(json_extract(f.media_info, '$.` + sf.key + `'), '')))`
-	out := `CASE WHEN ` + status + ` IN ('complete', 'partial') THEN (CASE WHEN ` + val + ` IN (` + sqlList(sf.allowed) + `) THEN ` + val +
-		` WHEN ` + val + ` = '' THEN '` + sf.missing + `' ELSE 'other' END)`
-	if len(sf.fromExt) > 0 {
-		ext := `lower(coalesce(json_extract(f.quality, '$.source'), ''))`
-		out += ` WHEN t.kind = 'artist' AND ` + ext + ` IN (` + sqlList(sf.fromExt) + `) THEN ` + ext
+// bucket names one file's fact: an allowed value as itself, an empty one
+// as missing, any other value as "other"; a file nobody read yet is
+// "unchecked" (music by its extension when that names the fact) and one
+// that could not be read is "unknown".
+func (sf statFact) bucket(kind, status, ext, val string) string {
+	status = strings.ToLower(status)
+	if status == "complete" || status == "partial" {
+		val = strings.ToLower(strings.TrimSpace(val))
+		switch {
+		case slices.Contains(sf.allowed, val):
+			return val
+		case val == "":
+			return sf.missing
+		}
+		return "other"
 	}
-	return out + ` WHEN ` + status + ` = '' THEN 'unchecked' ELSE 'unknown' END`
+	if ext = strings.ToLower(ext); kind == "artist" && slices.Contains(sf.fromExt, ext) {
+		return ext
+	}
+	if status == "" {
+		return "unchecked"
+	}
+	return "unknown"
 }
 
 const statsFrom = ` FROM files f JOIN versions v ON v.id = f.version_id JOIN titles t ON t.id = v.title_id
 	WHERE f.state = 'present' AND f.role = 'main' AND t.state != 'removed' AND t.kind IN (`
 
+// factText is one fact as read from media_info: text as itself, a number
+// as its digits, anything else (an object, a list, true) as a word no
+// bucket allows, and nothing as "".
+func factText(v any) string {
+	switch x := v.(type) {
+	case nil:
+		return ""
+	case string:
+		return x
+	case float64:
+		return strconv.FormatFloat(x, 'f', -1, 64)
+	}
+	return "?"
+}
+
+// statTally adds up the titles, files and bytes of one bucket or kind.
+type statTally struct {
+	titles map[int64]bool
+	files  int
+	bytes  int64
+}
+
+func (st *statTally) add(title, size int64) {
+	st.titles[title] = true
+	st.files++
+	st.bytes += size
+}
+
+// statKey is one bucket of one fact of one kind.
+type statKey struct{ kind, fact, value string }
+
 // LibraryStatsOf counts present main files by fact for each kind shown
-// (nil shown counts every kind). Read-only.
+// (nil shown counts every kind). Read-only; each file's media_info is read
+// once (inspection status first, then each fact).
 func LibraryStatsOf(ctx context.Context, s *database.Store, shown func(kind string) bool) (LibraryStats, error) {
 	out := LibraryStats{Kinds: []LibraryKindStats{}}
-	byKind := map[string]*LibraryKindStats{}
 	var kinds []string
 	for _, k := range statKinds {
 		if shown != nil && !shown(k.title) {
@@ -105,58 +151,69 @@ func LibraryStatsOf(ctx context.Context, s *database.Store, shown func(kind stri
 	if len(kinds) == 0 {
 		return out, nil
 	}
-	for i := range out.Kinds {
-		byKind[kinds[i]] = &out.Kinds[i]
+	paths := `'$.inspection_status'`
+	for _, sf := range statFacts {
+		paths += `, '$.` + sf.key + `'`
 	}
-	from := statsFrom + sqlList(kinds) + `)`
-	rows, err := s.Read().QueryContext(ctx, `SELECT t.kind, count(DISTINCT t.id), count(*), coalesce(sum(f.size), 0)`+from+` GROUP BY 1`)
+	rows, err := s.Read().QueryContext(ctx, `SELECT t.kind, t.id, f.size, coalesce(json_extract(f.media_info, `+paths+`), '[]'),
+		coalesce(json_extract(f.quality, '$.source'), '')`+statsFrom+sqlList(kinds)+`)`)
 	if err != nil {
 		return out, err
 	}
+	defer rows.Close()
+	perKind := map[string]*statTally{}
+	buckets := map[statKey]*statTally{}
+	var order []statKey
+	var kind, raw, ext string
+	var title, size int64
 	for rows.Next() {
-		var kind string
-		var titles, files int
-		var bytes int64
-		if err := rows.Scan(&kind, &titles, &files, &bytes); err != nil {
-			rows.Close()
+		if err := rows.Scan(&kind, &title, &size, &raw, &ext); err != nil {
 			return out, err
 		}
-		if k := byKind[kind]; k != nil {
-			k.Titles, k.Files, k.Bytes = titles, files, bytes
+		var facts []any
+		if json.Unmarshal([]byte(raw), &facts) != nil || len(facts) != len(statFacts)+1 {
+			facts = make([]any, len(statFacts)+1)
+			facts[0] = "unreadable" // read, but not as facts
+		}
+		status := factText(facts[0])
+		if perKind[kind] == nil {
+			perKind[kind] = &statTally{titles: map[int64]bool{}}
+		}
+		perKind[kind].add(title, size)
+		for i, sf := range statFacts {
+			if sf.video && kind == "artist" {
+				continue
+			}
+			key := statKey{kind, sf.key, sf.bucket(kind, status, ext, factText(facts[i+1]))}
+			b := buckets[key]
+			if b == nil {
+				if !statValue.MatchString(key.value) {
+					key.value = "other"
+				}
+				if b = buckets[key]; b == nil {
+					b = &statTally{titles: map[int64]bool{}}
+					buckets[key] = b
+					order = append(order, key)
+				}
+			}
+			b.add(title, size)
 		}
 	}
-	rows.Close()
 	if err := rows.Err(); err != nil {
 		return out, err
 	}
-	for _, sf := range statFacts {
-		rows, err := s.Read().QueryContext(ctx, `SELECT t.kind, `+sf.bucketSQL()+`, count(DISTINCT t.id), count(*), coalesce(sum(f.size), 0)`+from+` GROUP BY 1, 2`)
-		if err != nil {
-			return out, err
+	for i, k := range kinds {
+		ks := &out.Kinds[i]
+		if t := perKind[k]; t != nil {
+			ks.Titles, ks.Files, ks.Bytes = len(t.titles), t.files, t.bytes
 		}
-		for rows.Next() {
-			var kind string
-			var b LibraryStatBucket
-			if err := rows.Scan(&kind, &b.Value, &b.Titles, &b.Files, &b.Bytes); err != nil {
-				rows.Close()
-				return out, err
+		for _, key := range order {
+			if key.kind == k {
+				b := buckets[key]
+				ks.Facts[key.fact] = append(ks.Facts[key.fact], LibraryStatBucket{Value: key.value, Titles: len(b.titles), Files: b.files, Bytes: b.bytes})
 			}
-			k := byKind[kind]
-			if _, ok := k.Facts[sf.key]; k == nil || !ok {
-				continue
-			}
-			if !statValue.MatchString(b.Value) {
-				b.Value = "other"
-			}
-			k.Facts[sf.key] = append(k.Facts[sf.key], b)
 		}
-		rows.Close()
-		if err := rows.Err(); err != nil {
-			return out, err
-		}
-	}
-	for _, k := range out.Kinds {
-		for _, list := range k.Facts {
+		for _, list := range ks.Facts {
 			sort.Slice(list, func(i, j int) bool {
 				if list[i].Files != list[j].Files {
 					return list[i].Files > list[j].Files

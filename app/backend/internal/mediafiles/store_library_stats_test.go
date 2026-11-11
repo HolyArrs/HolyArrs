@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"strconv"
-	"strings"
 	"testing"
 	"time"
 
@@ -163,46 +162,68 @@ func TestLibraryStatsOnlyShownKinds(t *testing.T) {
 	}
 }
 
-// A 10,000-title Library answers in well under a second.
+// A 10,000-title Library (6,000 movies, 3,500 shows of 6 episodes and 500
+// artists of 6 tracks, each video file with its own media facts as the
+// inspector writes them) answers in under a second. The best of three runs
+// counts, so a busy machine does not fail it.
 func TestLibraryStatsBigLibrary(t *testing.T) {
 	if testing.Short() {
 		t.Skip("big library")
 	}
 	s, _ := openTest(t, database.Options{})
 	statsFile(t, s, "movie", "Seed", Quality{}, map[string]any{})
-	info := `{"inspection_status":"complete","container":"matroska","video_codec":"hevc","resolution":"1080p","audio_codec":"eac3","audio_channels":"5.1"}`
-	err := s.Write(context.Background(), func(tx *sql.Tx) error {
-		for _, q := range []string{
-			`WITH RECURSIVE n(i) AS (SELECT 1 UNION ALL SELECT i + 1 FROM n WHERE i < 10000)
+	info := `{"inspection_status":"complete","container":"matroska","video_codec":"hevc","resolution":"1080p","width":1920,"height":1080,
+		"runtime_seconds":2700,"audio_codec":"eac3","audio_channels":"5.1","audio_languages":["en"],"audio_tracks":1,"audio_unknown":false,
+		"subtitle_languages":["en","fr"],"bit_depth":10,"frame_rate":23.976,"bitrate":8000000,"facts_version":2,
+		"inspection_size":2700000000,"inspection_modified":"1700000000000000000"}`
+	files := `WITH RECURSIVE k(i) AS (SELECT 1 UNION ALL SELECT i + 1 FROM k WHERE i < ?)
+		INSERT INTO files(created_at, created_by, updated_at, updated_by, version_id, relative_path, size, added_at, media_info, quality, origin, placed_by)
+		SELECT v.created_at, v.created_by, v.updated_at, v.updated_by, v.id, 'f' || k.i, 1000, v.created_at,
+		CASE WHEN ?2 = '{}' THEN '{}' ELSE json_set(?2, '$.inspection_size', v.id * 100 + k.i) END, ?3, 'imported', 'move'
+		FROM versions v JOIN titles t ON t.id = v.title_id, k WHERE v.folder_name LIKE 'T%' AND t.kind = ?4`
+	for _, step := range []struct {
+		q    string
+		args []any
+	}{
+		{`WITH RECURSIVE n(i) AS (SELECT 1 UNION ALL SELECT i + 1 FROM n WHERE i < 10000)
 			INSERT INTO titles(created_at, created_by, updated_at, updated_by, kind, name, sort_name, metadata_source, why_added, state, status)
-			SELECT created_at, created_by, updated_at, updated_by, CASE WHEN i % 2 THEN 'movie' ELSE 'show' END, 'T' || i, 't' || i, metadata_source, why_added, state, status
-			FROM n, (SELECT * FROM titles LIMIT 1)`,
-			`INSERT INTO versions(created_at, created_by, updated_at, updated_by, title_id, label, pick_rules_id, library_folder_id, folder_name, is_main)
+			SELECT created_at, created_by, updated_at, updated_by, CASE WHEN i <= 6000 THEN 'movie' WHEN i <= 9500 THEN 'show' ELSE 'artist' END,
+			'T' || i, 't' || i, metadata_source, why_added, state, status
+			FROM n, (SELECT * FROM titles LIMIT 1)`, nil},
+		{`INSERT INTO versions(created_at, created_by, updated_at, updated_by, title_id, label, pick_rules_id, library_folder_id, folder_name, is_main)
 			SELECT v.created_at, v.created_by, v.updated_at, v.updated_by, t.id, 'Main', v.pick_rules_id, v.library_folder_id, t.name, 1
-			FROM titles t, (SELECT * FROM versions LIMIT 1) v WHERE t.name LIKE 'T%'`,
-			`INSERT INTO files(created_at, created_by, updated_at, updated_by, version_id, relative_path, size, added_at, media_info, origin, placed_by)
-			SELECT v.created_at, v.created_by, v.updated_at, v.updated_by, v.id, 'f' || k.i, 1000, v.created_at, ?, 'imported', 'move'
-			FROM versions v, (SELECT 1 AS i UNION ALL SELECT 2) k WHERE v.label = 'Main' AND v.folder_name LIKE 'T%'`,
-		} {
-			var args []any
-			if strings.Contains(q, "?") {
-				args = []any{info}
-			}
-			if _, err := tx.Exec(q, args...); err != nil {
-				return err
-			}
+			FROM titles t, (SELECT * FROM versions LIMIT 1) v WHERE t.name LIKE 'T%'`, nil},
+		{files, []any{1, info, "{}", "movie"}},
+		{files, []any{6, info, "{}", "show"}},
+		{files, []any{6, "{}", `{"source":"flac"}`, "artist"}},
+	} {
+		if err := s.Write(context.Background(), func(tx *sql.Tx) error {
+			_, err := tx.Exec(step.q, step.args...)
+			return err
+		}); err != nil {
+			t.Fatal(err)
 		}
-		return nil
-	})
-	if err != nil {
-		t.Fatal(err)
 	}
-	start := time.Now()
-	st, err := LibraryStatsOf(context.Background(), s, nil)
-	if took := time.Since(start); err != nil || took > time.Second {
-		t.Fatalf("took %v: %v", took, err)
+	var st LibraryStats
+	took := time.Duration(-1)
+	for i := 0; i < 3 && (took < 0 || took > time.Second); i++ {
+		start := time.Now()
+		var err error
+		if st, err = LibraryStatsOf(context.Background(), s, nil); err != nil {
+			t.Fatal(err)
+		}
+		took = time.Since(start)
 	}
-	if m := kindOf(t, st, "movies"); m.Titles != 5001 || m.Files != 10001 {
+	if took > time.Second {
+		t.Fatalf("took %v", took)
+	}
+	if m := kindOf(t, st, "movies"); m.Titles != 6001 || m.Files != 6001 {
 		t.Fatalf("movies %+v", m)
+	}
+	if sh := kindOf(t, st, "shows"); sh.Titles != 3500 || sh.Files != 21000 || bucket(t, sh, "video_codec", "hevc").Files != 21000 {
+		t.Fatalf("shows %+v", sh)
+	}
+	if mu := kindOf(t, st, "music"); mu.Titles != 500 || mu.Files != 3000 || bucket(t, mu, "container", "flac").Titles != 500 {
+		t.Fatalf("music %+v", mu)
 	}
 }
