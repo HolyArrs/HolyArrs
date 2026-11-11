@@ -214,7 +214,7 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 	if d.ReleaseID != nil {
 		_ = db.QueryRowContext(ctx, "SELECT COALESCE(size, 0) FROM releases WHERE id = ?", *d.ReleaseID).Scan(&claimed)
 	}
-	mismatch := fakes.claimMismatch(claimed, cands)
+	mismatch := fakes.claimMismatch(claimed, claimSet(d, cands))
 	for i := range plan {
 		if plan[i].Method != "hardlink" {
 			continue

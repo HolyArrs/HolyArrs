@@ -3,6 +3,7 @@ package importer
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"strings"
 	"testing"
 
@@ -88,5 +89,27 @@ func TestRefusedDownloadDoesNotTakeTheSlotBack(t *testing.T) {
 	}
 	if state != "downloading" || !active.Valid || active.Int64 != newID {
 		t.Fatalf("slot %s active %v, want downloading for %d", state, active, newID)
+	}
+}
+
+// A season pack fetched a few episodes at a time is measured from every file
+// the client lists, so the first finished episodes are not a fake.
+func TestClaimSetPackWindowCountsWholePack(t *testing.T) {
+	fr := fakeRules{on: true, floors: true}
+	var seen []domain.SeenFile
+	for n := 1; n <= 20; n++ {
+		seen = append(seen, domain.SeenFile{Name: fmt.Sprintf("Show.S01/Show.S01E%02d.mkv", n), Size: 1 << 30})
+	}
+	claimed := int64(20 << 30)
+	// The first episode of the window is done; one of twenty is under a tenth.
+	ready := []Candidate{{Path: seen[0].Name, Size: seen[0].Size}}
+	d := domain.Download{FilesSeen: seen, PackFiles: []domain.PackFile{{Name: seen[0].Name, On: true}}}
+	if why := fr.claimMismatch(claimed, claimSet(d, ready)); why != "" {
+		t.Fatalf("pack window refused: %s", why)
+	}
+	// A normal download is measured from its files to import.
+	d.PackFiles = nil
+	if why := fr.claimMismatch(claimed, claimSet(d, ready)); !strings.Contains(why, "likely a fake") {
+		t.Fatalf("normal download: %q", why)
 	}
 }

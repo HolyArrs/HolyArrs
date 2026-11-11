@@ -43,3 +43,18 @@ func packReady(d domain.Download) ([]domain.SeenFile, map[int64]bool) {
 	}
 	return files, waiting
 }
+
+// claimSet is what a download's size is measured from against the Release's
+// claimed size. A season pack fetched a few episodes at a time holds only
+// some of its files so far, so every file the client lists counts; a partial
+// window is never read as a fake.
+func claimSet(d domain.Download, cands []Candidate) []Candidate {
+	if d.PackFiles == nil {
+		return cands
+	}
+	all := make([]Candidate, 0, len(d.FilesSeen))
+	for _, f := range d.FilesSeen {
+		all = append(all, Candidate{Path: f.Name, Size: f.Size})
+	}
+	return all
+}
