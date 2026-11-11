@@ -775,3 +775,24 @@ func partialPacks(ctx context.Context, db *sql.DB, titleID int64, season int) ([
 		WHERE i.title_id = ? AND (? = 0 OR json_extract(i.numbers, '$.season') = ?)) ORDER BY id DESC`, titleID, season, season)
 	return ds, window, err
 }
+
+// PackTitles lists the shows that take season packs a few episodes at a
+// time and have such a pack still in the Downloader.
+func PackTitles(ctx context.Context, db *sql.DB) ([]int64, error) {
+	rows, err := db.QueryContext(ctx, `SELECT t.id FROM titles t WHERE t.pack_window > 0 AND EXISTS (SELECT 1 FROM downloads d,
+		json_each(d.pack_files) f, json_each(json_extract(f.value, '$.items')) it JOIN items i ON i.id = it.value
+		WHERE json_array_length(d.pack_files) > 0 AND d.state IN (`+activeStates+`, 'finished', 'seeding') AND i.title_id = t.id) ORDER BY t.id`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []int64
+	for rows.Next() {
+		var id int64
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		out = append(out, id)
+	}
+	return out, rows.Err()
+}

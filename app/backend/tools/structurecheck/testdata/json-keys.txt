@@ -32,6 +32,7 @@ Path
 Policy
 ProductName
 Progress
+ProviderIds
 RemainingSizeHi
 RemainingSizeLo
 ScriptStatus

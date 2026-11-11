@@ -336,3 +336,21 @@ func TestGrabPackWindowWithoutQbitTakesTheWholeSeason(t *testing.T) {
 		t.Fatalf("pack %+v steps %v", d.PackFiles, w.fake.steps)
 	}
 }
+
+func TestPackTitlesListsShowsWithAPartialPack(t *testing.T) {
+	w, m, slots := packWindowWorld(t, true)
+	ctx := context.Background()
+	if got, err := PackTitles(ctx, w.s.Read()); err != nil || len(got) != 0 {
+		t.Fatalf("before the grab: %v %v", got, err)
+	}
+	id, err := m.Grab(ctx, w.slotID, w.relID, domain.System)
+	if err != nil {
+		t.Fatal(err)
+	}
+	finishWindow(t, w, id, slots[:2])
+	var titleID int64
+	_ = w.s.Read().QueryRow("SELECT title_id FROM items WHERE id = ?", w.download(t, id).PackFiles[0].Items[0]).Scan(&titleID)
+	if got, err := PackTitles(ctx, w.s.Read()); err != nil || !slices.Equal(got, []int64{titleID}) {
+		t.Fatalf("after the grab: %v %v", got, err)
+	}
+}

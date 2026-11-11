@@ -659,6 +659,13 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	if !c.SafeMode {
 		media.Watch(ctx)
 	}
+	optional(jobs.Loop{Name: "pack_watched", Label: "Season packs watched check", Every: 15 * time.Minute, Run: func(ctx context.Context) error {
+		ids, err := downloads.PackTitles(ctx, s.Read())
+		if err != nil {
+			return err
+		}
+		return media.AdvancePacks(ctx, ids, dm.Advance)
+	}})
 	defer sender.Wait()
 	requestsSvc := &requests.Service{Store: s, Library: lib, Metadata: md, Alerts: sender, Live: hub}
 	readyCheck.Store(requestsSvc)
