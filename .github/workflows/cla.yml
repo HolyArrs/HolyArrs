@@ -161,7 +161,9 @@ jobs:
                 await github.rest.reactions.createForIssueComment({ owner, repo, comment_id: f.comment_id, content: 'hooray' }).catch(() => {});
                 await github.rest.issues.createComment({ owner, repo, issue_number: number, body:
                   `<!-- holyarrs-cla-thanks:${f.id} -->\n` +
-                  `🎉 You're all set, @${f.login}! Your agreement to the [CLA](${doc}) is saved, and you won't be asked again on any future pull request. Thanks for helping make HolyArrs better 💛` });
+                  `🎉 You're all set, @${f.login}! Your agreement to the [CLA](${doc}) is saved, and you won't be asked again on any future pull request. Thanks for helping make HolyArrs better 💛` })
+                  // The agreement is already saved; a thank-you that can't be posted must not fail the check.
+                  .catch((e) => core.warning(`thank-you comment not posted: ${e.message}`));
               }
             }
 
@@ -203,7 +205,9 @@ jobs:
               parts.push(`🔗 These commits use an email that isn't linked to a GitHub account, so I can't tell who wrote them: ${unlinked.map((s) => '`' + s + '`').join(', ')}. ` +
                 'Add that email to your GitHub account (or redo those commits with your GitHub email), then push again or leave any comment here and I\'ll check again.');
             }
-            await github.rest.issues.createComment({ owner, repo, issue_number: number, body: parts.join('\n\n') });
+            // The red check already names who still has to agree; a comment that can't be posted must not hide that.
+            await github.rest.issues.createComment({ owner, repo, issue_number: number, body: parts.join('\n\n') })
+              .catch((e) => core.warning(`CLA request comment not posted: ${e.message}`));
 
       # Without a working sign-in (wrong key, app not installed) nothing above
       # posts a status, so say so instead of leaving the check waiting forever.
