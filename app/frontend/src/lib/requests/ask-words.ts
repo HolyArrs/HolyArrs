@@ -99,7 +99,7 @@ export const momentWords: Record<string, [string, string]> = {
 export const askMoments = ['ask_waiting', 'ask_approved', 'ask_turned_down', 'ask_ready', 'new_episodes', 'new_albums', 'report_made', 'report_fixed'] as const;
 
 /** Go to the staff. */
-export const libraryMoments = ['grab', 'import', 'rename', 'add', 'delete', 'health', 'needs_decision'] as const;
+export const libraryMoments = ['grab', 'downloaded', 'download_failed', 'import', 'rename', 'add', 'delete', 'health', 'needs_decision'] as const;
 
 export const askTabs: { tab: AskTab; label: string }[] = [
 	{ tab: 'waiting', get label() { return t('requests.tab.ask.waiting'); } },

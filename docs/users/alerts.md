@@ -140,10 +140,7 @@ A finished download:
   "moment": "downloaded",
   "event_kind": "download_finished",
   "subject": "Downloaded: Arrival (2016)",
-  "text": "Download 3f2a9c1b: finished
-release: Arrival.2016.1080p.WEB
-downloader: qBittorrent
-save_path: Arrival.2016.1080p.WEB",
+  "text": "Download 3f2a9c1b: finished\nrelease: Arrival.2016.1080p.WEB\ndownloader: qBittorrent\nsave_path: Arrival.2016.1080p.WEB",
   "at": "2025-01-01T17:58:40Z",
   "movie": { "id": 12, "name": "Arrival", "year": 2016, "tmdb": "329865", "imdb": "tt2543164" },
   "data": { "state": "finished", "progress": 1, "release": "Arrival.2016.1080p.WEB", "release_id": 7, "downloader": "qBittorrent", "save_path": "Arrival.2016.1080p.WEB" }
@@ -157,7 +154,7 @@ The import that follows:
   "moment": "import",
   "event_kind": "import_done",
   "subject": "In the Library: Arrival (2016)",
-  "text": "Import done: 1 placed by hardlink",
+  "text": "Import done: 1 placed by hardlink\nfrom: Arrival.2016.1080p.WEB",
   "at": "2025-01-01T18:04:11Z",
   "movie": { "id": 12, "name": "Arrival", "year": 2016, "tmdb": "329865", "imdb": "tt2543164" },
   "data": { "from": "Arrival.2016.1080p.WEB", "paths": [{ "from": "Arrival.2016.1080p.WEB.mkv", "to": "Arrival (2016).mkv", "method": "hardlink" }] }
