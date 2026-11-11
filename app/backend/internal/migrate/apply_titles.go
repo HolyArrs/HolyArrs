@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -85,6 +86,9 @@ func (r *run) title(it Item) (string, string) {
 	// missing Library folder means the paths are wrong.
 	noFiles := false
 	if fi, err := os.Lstat(dir); err != nil || !fi.IsDir() {
+		if !errors.Is(err, fs.ErrNotExist) {
+			return ResNotFound, "no folder at " + filepath.ToSlash(dir) + " on this server; add a path rule"
+		}
 		if !isDir(lib) {
 			return ResNotFound, "no folder at " + filepath.ToSlash(lib) + " on this server; add a path rule"
 		}

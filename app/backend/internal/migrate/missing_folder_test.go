@@ -71,6 +71,40 @@ func TestDryRunTitleWithoutLibraryFolderNotFound(t *testing.T) {
 	}
 }
 
+// A title folder that is there but is a link or not a folder is not
+// treated as missing: it stays not found, and nothing is added.
+func TestDryRunTitleFolderThereButNotPlainFolder(t *testing.T) {
+	cases := map[string]func(t *testing.T, dir string){
+		"file": func(t *testing.T, dir string) {
+			if err := os.RemoveAll(dir); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(dir, []byte("x"), 0o644); err != nil {
+				t.Fatal(err)
+			}
+		},
+		"link": func(t *testing.T, dir string) {
+			real := filepath.Join(t.TempDir(), "real")
+			if err := os.Rename(dir, real); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.Symlink(real, dir); err != nil {
+				t.Skip("no symlinks here:", err)
+			}
+		},
+	}
+	for name, setup := range cases {
+		t.Run(name, func(t *testing.T) {
+			l := newMoveLab(t)
+			setup(t, filepath.Join(l.movies, "The Matrix (1999)"))
+			rep := l.mv.Run(context.Background(), 0, l.plan(t), true, domain.Actor{Kind: "user", ID: 1}, nil)
+			if got := lineOf(t, rep, "title:movie:tmdb:603"); got.Result != ResNotFound || strings.Contains(got.Detail, "no files") {
+				t.Fatalf("dry run %+v", got)
+			}
+		})
+	}
+}
+
 type oneShow struct{ sh metadata.Show }
 
 func (o oneShow) SearchShows(context.Context, string) ([]metadata.Show, error) {
