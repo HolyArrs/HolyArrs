@@ -50,7 +50,7 @@ jobs:
           permission-contents: write
           permission-issues: write
           permission-statuses: write
-          permission-pull-requests: read
+          permission-pull-requests: write
 
       - name: Check and record agreements
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
@@ -112,13 +112,15 @@ jobs:
             // when runs overlap or a later comment arrives first.
             const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number: number, per_page: 100 });
             const clean = (s) => s.trim().replace(/[.!\s]+$/, '').toLowerCase();
+            // Email replies quote the whole thread under the agreement, so the first line counts.
+            const firstLine = (s) => (s ?? '').trim().split(/\r?\n/)[0];
             const CLA_VERSION = '1.0';
             const claSha = (await github.rest.repos.getContent({ owner, repo, path: '.github/CLA.md', ref: pr.base.repo.default_branch })).data.sha;
             const fresh = [];
             for (const c of comments) {
-              if (c.user && people.has(c.user.id) && !signed(c.user.id) && !fresh.some((f) => f.id === c.user.id) && clean(c.body ?? '') === clean(SENTENCE)) {
+              if (c.user && people.has(c.user.id) && !signed(c.user.id) && !fresh.some((f) => f.id === c.user.id) && clean(firstLine(c.body)) === clean(SENTENCE)) {
                 fresh.push({ id: c.user.id, login: c.user.login, pull_request: number, comment: c.html_url, comment_id: c.id,
-                  text: c.body.trim(), signed_at: c.updated_at || c.created_at, cla_version: CLA_VERSION, cla_sha: claSha });
+                  text: firstLine(c.body), signed_at: c.updated_at || c.created_at, cla_version: CLA_VERSION, cla_sha: claSha });
               }
             }
 
@@ -159,7 +161,9 @@ jobs:
                 await github.rest.reactions.createForIssueComment({ owner, repo, comment_id: f.comment_id, content: 'hooray' }).catch(() => {});
                 await github.rest.issues.createComment({ owner, repo, issue_number: number, body:
                   `<!-- holyarrs-cla-thanks:${f.id} -->\n` +
-                  `🎉 You're all set, @${f.login}! Your agreement to the [CLA](${doc}) is saved, and you won't be asked again on any future pull request. Thanks for helping make HolyArrs better 💛` });
+                  `🎉 You're all set, @${f.login}! Your agreement to the [CLA](${doc}) is saved, and you won't be asked again on any future pull request. Thanks for helping make HolyArrs better 💛` })
+                  // The agreement is already saved; a thank-you that can't be posted must not fail the check.
+                  .catch((e) => core.warning(`thank-you comment not posted: ${e.message}`));
               }
             }
 
@@ -201,7 +205,9 @@ jobs:
               parts.push(`🔗 These commits use an email that isn't linked to a GitHub account, so I can't tell who wrote them: ${unlinked.map((s) => '`' + s + '`').join(', ')}. ` +
                 'Add that email to your GitHub account (or redo those commits with your GitHub email), then push again or leave any comment here and I\'ll check again.');
             }
-            await github.rest.issues.createComment({ owner, repo, issue_number: number, body: parts.join('\n\n') });
+            // The red check already names who still has to agree; a comment that can't be posted must not hide that.
+            await github.rest.issues.createComment({ owner, repo, issue_number: number, body: parts.join('\n\n') })
+              .catch((e) => core.warning(`CLA request comment not posted: ${e.message}`));
 
       # Without a working sign-in (wrong key, app not installed) nothing above
       # posts a status, so say so instead of leaving the check waiting forever.
