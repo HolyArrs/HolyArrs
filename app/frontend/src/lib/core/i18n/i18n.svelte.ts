@@ -2,7 +2,8 @@
 
 export type Locale =
 	| 'en' | 'es' | 'pt-br' | 'pt-pt' | 'fr' | 'de' | 'it' | 'nl' | 'sv' | 'nb' | 'da' | 'fi' | 'ru' | 'uk' | 'pl' | 'cs' | 'hu' | 'ro' | 'el'
-	| 'zh-cn' | 'zh-tw' | 'ja' | 'ko' | 'hi' | 'id' | 'vi' | 'th' | 'tr' | 'he' | 'ar';
+	| 'sk' | 'bg' | 'sr' | 'hr' | 'ca' | 'lt' | 'lv' | 'et' | 'is'
+	| 'zh-cn' | 'zh-tw' | 'ja' | 'ko' | 'hi' | 'bn' | 'ta' | 'id' | 'ms' | 'fil' | 'vi' | 'th' | 'tr' | 'he' | 'fa' | 'ar';
 export type LocaleChoice = Locale | 'auto';
 
 /** Each language named in itself, in the same order as holyarrs.com. */
@@ -26,21 +27,35 @@ export const LOCALES: { code: Locale; name: string }[] = [
 	{ code: 'hu', name: 'Magyar' },
 	{ code: 'ro', name: 'Română' },
 	{ code: 'el', name: 'Ελληνικά' },
+	{ code: 'sk', name: 'Slovenčina' },
+	{ code: 'bg', name: 'Български' },
+	{ code: 'sr', name: 'Српски' },
+	{ code: 'hr', name: 'Hrvatski' },
+	{ code: 'ca', name: 'Català' },
+	{ code: 'lt', name: 'Lietuvių' },
+	{ code: 'lv', name: 'Latviešu' },
+	{ code: 'et', name: 'Eesti' },
+	{ code: 'is', name: 'Íslenska' },
 	{ code: 'zh-cn', name: '简体中文' },
 	{ code: 'zh-tw', name: '繁體中文' },
 	{ code: 'ja', name: '日本語' },
 	{ code: 'ko', name: '한국어' },
 	{ code: 'hi', name: 'हिन्दी' },
+	{ code: 'bn', name: 'বাংলা' },
+	{ code: 'ta', name: 'தமிழ்' },
 	{ code: 'id', name: 'Bahasa Indonesia' },
+	{ code: 'ms', name: 'Bahasa Melayu' },
+	{ code: 'fil', name: 'Filipino' },
 	{ code: 'vi', name: 'Tiếng Việt' },
 	{ code: 'th', name: 'ไทย' },
 	{ code: 'tr', name: 'Türkçe' },
 	{ code: 'he', name: 'עברית' },
+	{ code: 'fa', name: 'فارسی' },
 	{ code: 'ar', name: 'العربية' }
 ];
 
 const KEY = 'holyarrs-lang';
-const RTL = new Set<Locale>(['ar', 'he']);
+const RTL = new Set<Locale>(['ar', 'he', 'fa']);
 type Words = Record<string, string>;
 // One file per module per language (messages/<lang>/<module>.json), so the words sit beside each other but never collide.
 const en: Words = merge(import.meta.glob<{ default: Words }>('./messages/en/*.json', { eager: true }));
@@ -101,6 +116,8 @@ export function browserLocale(asked: readonly string[] = typeof navigator === 'u
 		if (b === 'no' || b === 'nn') return 'nb';
 		if (b === 'iw') return 'he';
 		if (b === 'in') return 'id';
+		if (b === 'tl') return 'fil';
+		if (b === 'sh') return 'sr';
 		const base = LOCALES.find((x) => x.code === l.split('-')[0]);
 		if (base) return base.code;
 	}

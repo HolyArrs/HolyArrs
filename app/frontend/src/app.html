@@ -121,7 +121,7 @@
 				var lg = localStorage.getItem('holyarrs-lang') || (navigator.language || '').toLowerCase().split('-')[0];
 				if (/^[a-z]{2}(-[a-z]{2})?$/.test(lg)) {
 					document.documentElement.lang = lg.replace(/-([a-z]{2})$/, function (m, r) { return '-' + r.toUpperCase(); });
-					document.documentElement.dir = lg === 'ar' || lg === 'he' || lg === 'iw' ? 'rtl' : 'ltr';
+					document.documentElement.dir = lg === 'ar' || lg === 'he' || lg === 'iw' || lg === 'fa' ? 'rtl' : 'ltr';
 				}
 			} catch (e) {}
 			// The sign-in page paints its panel on the first frame: no boot Orbit,
