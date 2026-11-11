@@ -1052,6 +1052,8 @@
 	"server.migrate.usenet-servers-stay-set-up-in": "Usenet 서버는 SABnzbd에 설정된 채로 남습니다",
 	"server.migrate.uses-the-folder-where-it-is": "{dir} 폴더를 그 자리에서 사용합니다",
 	"server.migrate.uses-the-folder-where-it-is-2": "{dir} 폴더를 그 자리에서 사용합니다. 파일은 옮기거나 이름을 바꾸지 않습니다",
+	"server.migrate.will-be-added-with-no-files": "우선 파일 없이 추가됩니다. {dir}에 폴더가 없습니다",
+	"server.migrate.added-with-no-files-yet-there": "우선 파일 없이 추가했습니다. {dir}에 폴더가 없습니다",
 	"server.migrate.uses-the-folder-where-it-is-3": "{folder} 폴더를 그 자리에서 사용합니다",
 	"server.migrate.wait-before-grabbing-every-title": "받기 전 대기(모든 작품)",
 	"server.migrate.wait-before-grabbing": "받기 전 대기 {tags}",

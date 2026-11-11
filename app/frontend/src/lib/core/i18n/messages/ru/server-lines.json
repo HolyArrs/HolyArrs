@@ -1052,6 +1052,8 @@
 	"server.migrate.usenet-servers-stay-set-up-in": "серверы Usenet остаются настроенными в SABnzbd",
 	"server.migrate.uses-the-folder-where-it-is": "использует папку {dir} там, где она лежит",
 	"server.migrate.uses-the-folder-where-it-is-2": "использует папку {dir} там, где она лежит; ни один файл не перемещается и не переименовывается",
+	"server.migrate.will-be-added-with-no-files": "будет добавлен пока без файлов; папки {dir} нет",
+	"server.migrate.added-with-no-files-yet-there": "добавлен пока без файлов; папки {dir} нет",
 	"server.migrate.uses-the-folder-where-it-is-3": "использует папку {folder} там, где она лежит",
 	"server.migrate.wait-before-grabbing-every-title": "ожидание перед загрузкой (для каждого тайтла)",
 	"server.migrate.wait-before-grabbing": "ожидание перед загрузкой {tags}",

@@ -1052,6 +1052,8 @@
 	"server.migrate.usenet-servers-stay-set-up-in": "Usenet-Server bleiben in SABnzbd eingerichtet",
 	"server.migrate.uses-the-folder-where-it-is": "nutzt den Ordner {dir}, wo er ist",
 	"server.migrate.uses-the-folder-where-it-is-2": "nutzt den Ordner {dir}, wo er ist; keine Datei wird verschoben oder umbenannt",
+	"server.migrate.will-be-added-with-no-files": "wird vorerst ohne Dateien hinzugefügt; unter {dir} gibt es keinen Ordner",
+	"server.migrate.added-with-no-files-yet-there": "vorerst ohne Dateien hinzugefügt; unter {dir} gibt es keinen Ordner",
 	"server.migrate.uses-the-folder-where-it-is-3": "nutzt den Ordner {folder}, wo er ist",
 	"server.migrate.wait-before-grabbing-every-title": "Wartezeit vor dem Holen (alle Titel)",
 	"server.migrate.wait-before-grabbing": "Wartezeit vor dem Holen ({tags})",

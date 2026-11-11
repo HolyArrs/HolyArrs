@@ -1052,6 +1052,8 @@
 	"server.migrate.usenet-servers-stay-set-up-in": "Usenet 服务器仍在 SABnzbd 中设置",
 	"server.migrate.uses-the-folder-where-it-is": "直接使用文件夹 {dir}，不改动位置",
 	"server.migrate.uses-the-folder-where-it-is-2": "直接使用文件夹 {dir}，不改动位置；不会移动或重命名任何文件",
+	"server.migrate.will-be-added-with-no-files": "将先在没有文件的情况下添加；{dir} 处没有文件夹",
+	"server.migrate.added-with-no-files-yet-there": "已先在没有文件的情况下添加；{dir} 处没有文件夹",
 	"server.migrate.uses-the-folder-where-it-is-3": "直接使用文件夹 {folder}，不改动位置",
 	"server.migrate.wait-before-grabbing-every-title": "抓取前等待（所有条目）",
 	"server.migrate.wait-before-grabbing": "抓取前等待 {tags}",

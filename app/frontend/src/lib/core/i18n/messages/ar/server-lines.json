@@ -1052,6 +1052,8 @@
 	"server.migrate.usenet-servers-stay-set-up-in": "تبقى خوادم Usenet معدّة في SABnzbd",
 	"server.migrate.uses-the-folder-where-it-is": "يستخدم المجلد {dir} كما هو",
 	"server.migrate.uses-the-folder-where-it-is-2": "يستخدم المجلد {dir} كما هو؛ لا يُنقل أي ملف ولا يُعاد تسميته",
+	"server.migrate.will-be-added-with-no-files": "ستتم إضافته بلا ملفات حاليًا؛ لا يوجد مجلد في {dir}",
+	"server.migrate.added-with-no-files-yet-there": "أُضيف بلا ملفات حاليًا؛ لا يوجد مجلد في {dir}",
 	"server.migrate.uses-the-folder-where-it-is-3": "يستخدم المجلد {folder} كما هو",
 	"server.migrate.wait-before-grabbing-every-title": "انتظر قبل الجلب (كل الأعمال)",
 	"server.migrate.wait-before-grabbing": "انتظر قبل الجلب {tags}",
