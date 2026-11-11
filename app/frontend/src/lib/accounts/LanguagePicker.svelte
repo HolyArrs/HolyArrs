@@ -7,6 +7,11 @@
 
 	let { id = 'language' }: { id?: string } = $props();
 
+	// The most used languages come first; the rest sit under More languages.
+	const TOP = new Set(['en', 'es', 'pt-br', 'fr', 'de', 'it', 'ru', 'zh-cn', 'ja', 'ar']);
+	const top = LOCALES.filter((l) => TOP.has(l.code));
+	const more = LOCALES.filter((l) => !TOP.has(l.code)).sort((a, b) => a.name.localeCompare(b.name));
+
 	let busy = $state(false);
 	async function pick(e: Event) {
 		const v = (e.currentTarget as HTMLSelectElement).value as LocaleChoice;
@@ -23,7 +28,12 @@
 
 <select {id} class="input" aria-label={t('accounts.language.label')} value={lang.choice} onchange={pick} disabled={busy} data-testid="language-picker">
 	<option value="auto">{t('accounts.language.auto')}</option>
-	{#each LOCALES as l (l.code)}<option value={l.code} lang={l.code}>{l.name}</option>{/each}
+	<optgroup label={t('accounts.language.top')}>
+		{#each top as l (l.code)}<option value={l.code} lang={l.code}>{l.name}</option>{/each}
+	</optgroup>
+	<optgroup label={t('accounts.language.more')}>
+		{#each more as l (l.code)}<option value={l.code} lang={l.code}>{l.name}</option>{/each}
+	</optgroup>
 </select>
 
 <style>

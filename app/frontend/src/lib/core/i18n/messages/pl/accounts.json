@@ -366,6 +366,8 @@
 	"accounts.invite.confirm": "Potwierdź hasło",
 	"accounts.invite.joinSignIn": "Dołącz i zaloguj się",
 	"accounts.language.label": "Język",
+	"accounts.language.top": "Najczęściej używane",
+	"accounts.language.more": "Więcej języków",
 	"accounts.language.auto": "Automatyczny",
 	"accounts.language.hint": "Automatyczny podąża za przeglądarką. Zapisywany na twoim koncie.",
 	"accounts.language.saveFailed": "Nie udało się zapisać języka",

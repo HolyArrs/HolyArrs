@@ -366,6 +366,8 @@
 	"accounts.invite.confirm": "Parolayı doğrula",
 	"accounts.invite.joinSignIn": "Katıl ve giriş yap",
 	"accounts.language.label": "Dil",
+	"accounts.language.top": "En çok kullanılan",
+	"accounts.language.more": "Diğer diller",
 	"accounts.language.auto": "Otomatik",
 	"accounts.language.hint": "Otomatik, tarayıcını izler. Hesabında kaydedilir.",
 	"accounts.language.saveFailed": "Dil kaydedilemedi",

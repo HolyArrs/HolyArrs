@@ -366,6 +366,8 @@
 	"accounts.invite.confirm": "Подтвердите пароль",
 	"accounts.invite.joinSignIn": "Присоединиться и войти",
 	"accounts.language.label": "Язык",
+	"accounts.language.top": "Популярные",
+	"accounts.language.more": "Другие языки",
 	"accounts.language.auto": "Автоматически",
 	"accounts.language.hint": "Автоматический выбор следует настройкам браузера. Сохраняется в вашей учётной записи.",
 	"accounts.language.saveFailed": "Не удалось сохранить язык",
