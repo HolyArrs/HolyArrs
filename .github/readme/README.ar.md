@@ -132,7 +132,7 @@ docker compose up -d
 
 <picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="المُنزِّلات: qBittorrent وTransmission وDeluge وSABnzbd وNZBGet. خوادم الوسائط: Plex وJellyfin وEmby." /></picture>
 
-- **المُنزِّلات:** qBittorrent، Transmission، Deluge، SABnzbd، NZBGet
+- **المُنزِّلات:** qBittorrent، Transmission، Deluge، rTorrent، SABnzbd، NZBGet
 - **خوادم الوسائط:** Plex، Jellyfin، Emby
 - **Sources:** أي مفهرس (indexer) من نوع Torznab أو Newznab، أو Prowlarr أو Jackett
 - **ينقل إعدادك من:** Sonarr، Radarr، Lidarr، Prowlarr، Bazarr، Seerr، Overseerr، qBittorrent، SABnzbd
