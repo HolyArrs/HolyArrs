@@ -36,6 +36,16 @@ describe('message keys', () => {
 		expect(missing).toEqual([]);
 	});
 
+	// A line one language lacks shows in English there, so every line (server lines too) ships in every language.
+	it('every language has every English line', () => {
+		const missing: string[] = [];
+		for (const l of readdirSync(messages).filter((d) => d !== 'en')) {
+			const words = read(join(messages, l));
+			for (const k of Object.keys(en)) if (typeof words[k] !== 'string') missing.push(`${l}: ${k}`);
+		}
+		expect(missing).toEqual([]);
+	});
+
 	it('other languages only use English keys, with the same placeholders and markers', () => {
 		const wrong: string[] = [];
 		for (const l of readdirSync(messages).filter((d) => d !== 'en')) {

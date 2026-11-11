@@ -46,6 +46,10 @@ describe('serverWords', () => {
 		expect(serverWords('Ana unlinked the trusted proxy sign-in of Ben')).toBe('Ana a délié la connexion trusted proxy de Ben');
 		expect(serverWords('Download 1a2b3c4d: completed')).toBe('Téléchargement 1a2b3c4d : completed');
 		expect(serverWords('uses {series_title}, which has no HolyArrs word')).toBe("utilise {series_title}, qui n'a pas de mot dans HolyArrs");
+		// The stored line starts with the person (a control's Event), and a removal names who removed it.
+		expect(serverWords('Ana paused the stage downloads')).toBe('Ana a mis en pause la phase downloads');
+		expect(serverWords('Download removed by Ana')).toBe('Téléchargement retiré par Ana');
+		expect(serverWords('Download removed')).toBe('Téléchargement retiré');
 	});
 
 	it('has every line the server sends (scripts/server-words.mjs --check)', () => {

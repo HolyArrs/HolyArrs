@@ -1207,5 +1207,10 @@
 	"server.migrate.prowlarr-s-api-key-line": "Prowlarr의 API 키",
 	"server.migrate.there-is-no-saved-key-for-2": "이 주소에는 이 앱에 저장된 키가 없습니다. 키를 입력하세요",
 	"server.migrate.uses-which-has-no-holyarrs-word": "{{w}}를 사용하지만 HolyArrs에 대응하는 단어가 없습니다",
-	"server.shows.tmdb-could-not-be-read": "TMDB를 읽을 수 없었습니다: {error}"
+	"server.shows.tmdb-could-not-be-read": "TMDB를 읽을 수 없었습니다: {error}",
+	"server.accounts.paused-the-stage": "{name}이(가) {stage} 단계를 일시 중지했습니다",
+	"server.accounts.restarted-the-stage": "{name}이(가) {stage} 단계를 재시작했습니다",
+	"server.accounts.resumed-the-stage": "{name}이(가) {stage} 단계를 다시 시작했습니다",
+	"server.downloads.download-removed": "다운로드 삭제됨",
+	"server.downloads.download-removed-by": "{name}이(가) 다운로드를 삭제했습니다"
 }

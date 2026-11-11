@@ -1207,5 +1207,10 @@
 	"server.migrate.prowlarr-s-api-key-line": "Prowlarr の API キー",
 	"server.migrate.there-is-no-saved-key-for-2": "このアドレスには、このアプリの保存済みキーがありません。キーを入力してください",
 	"server.migrate.uses-which-has-no-holyarrs-word": "{{w}} を使っていますが、HolyArrs に対応する語がありません",
-	"server.shows.tmdb-could-not-be-read": "TMDB を読み取れませんでした: {error}"
+	"server.shows.tmdb-could-not-be-read": "TMDB を読み取れませんでした: {error}",
+	"server.accounts.paused-the-stage": "{name} がステージ {stage} を一時停止しました",
+	"server.accounts.restarted-the-stage": "{name} がステージ {stage} を再起動しました",
+	"server.accounts.resumed-the-stage": "{name} がステージ {stage} を再開しました",
+	"server.downloads.download-removed": "ダウンロードを削除しました",
+	"server.downloads.download-removed-by": "{name} がダウンロードを削除しました"
 }

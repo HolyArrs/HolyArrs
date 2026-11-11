@@ -1207,5 +1207,10 @@
 	"server.migrate.prowlarr-s-api-key-line": "مفتاح API الخاص بـ Prowlarr",
 	"server.migrate.there-is-no-saved-key-for-2": "لا يوجد مفتاح محفوظ لهذا التطبيق على هذا العنوان؛ اكتب مفتاحه",
 	"server.migrate.uses-which-has-no-holyarrs-word": "يستخدم {{w}}، ولا توجد له كلمة في HolyArrs",
-	"server.shows.tmdb-could-not-be-read": "تعذّرت قراءة TMDB: {error}"
+	"server.shows.tmdb-could-not-be-read": "تعذّرت قراءة TMDB: {error}",
+	"server.accounts.paused-the-stage": "{name} أوقف المرحلة {stage} مؤقتًا",
+	"server.accounts.restarted-the-stage": "{name} أعاد تشغيل المرحلة {stage}",
+	"server.accounts.resumed-the-stage": "{name} استأنف المرحلة {stage}",
+	"server.downloads.download-removed": "أُزيل التنزيل",
+	"server.downloads.download-removed-by": "{name} أزال التنزيل"
 }

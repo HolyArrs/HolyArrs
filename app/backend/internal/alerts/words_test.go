@@ -50,7 +50,8 @@ func TestWordsKeepEnglishSlots(t *testing.T) {
 			}
 		}
 	}
-	for _, l := range []string{"sv", "pt-PT", "zh-TW", "he"} {
+	// Languages the app does not plan to offer, so this still holds once sv, he, pt-PT and zh-TW get alert words.
+	for _, l := range []string{"ur", "sw", "es-419", "xx"} {
 		if got := say(l, "in_library", "name", "Dune"); got != "Dune is in the Library" {
 			t.Errorf("%s: %q, want English", l, got)
 		}

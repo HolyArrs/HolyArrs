@@ -1207,5 +1207,10 @@
 	"server.migrate.prowlarr-s-api-key-line": "Prowlarr की API कुंजी",
 	"server.migrate.there-is-no-saved-key-for-2": "इस पते पर इस ऐप की कोई कुंजी सेव नहीं है; उसकी कुंजी डालें",
 	"server.migrate.uses-which-has-no-holyarrs-word": "{{w}} का उपयोग करता है, जिसके लिए HolyArrs में कोई शब्द नहीं है",
-	"server.shows.tmdb-could-not-be-read": "TMDB पढ़ा नहीं जा सका: {error}"
+	"server.shows.tmdb-could-not-be-read": "TMDB पढ़ा नहीं जा सका: {error}",
+	"server.accounts.paused-the-stage": "{name} ने स्टेज {stage} रोका",
+	"server.accounts.restarted-the-stage": "{name} ने स्टेज {stage} रीस्टार्ट किया",
+	"server.accounts.resumed-the-stage": "{name} ने स्टेज {stage} फिर शुरू किया",
+	"server.downloads.download-removed": "डाउनलोड हटाया गया",
+	"server.downloads.download-removed-by": "{name} ने डाउनलोड हटाया"
 }

@@ -1207,5 +1207,10 @@
 	"server.migrate.prowlarr-s-api-key-line": "API-Schlüssel von Prowlarr",
 	"server.migrate.there-is-no-saved-key-for-2": "für diese App gibt es unter dieser Adresse keinen gespeicherten Schlüssel; gib ihren Schlüssel ein",
 	"server.migrate.uses-which-has-no-holyarrs-word": "nutzt {{w}}, wofür HolyArrs kein Wort hat",
-	"server.shows.tmdb-could-not-be-read": "TMDB konnte nicht gelesen werden: {error}"
+	"server.shows.tmdb-could-not-be-read": "TMDB konnte nicht gelesen werden: {error}",
+	"server.accounts.paused-the-stage": "{name} hat die Stufe {stage} pausiert",
+	"server.accounts.restarted-the-stage": "{name} hat die Stufe {stage} neu gestartet",
+	"server.accounts.resumed-the-stage": "{name} hat die Stufe {stage} fortgesetzt",
+	"server.downloads.download-removed": "Download entfernt",
+	"server.downloads.download-removed-by": "{name} hat den Download entfernt"
 }

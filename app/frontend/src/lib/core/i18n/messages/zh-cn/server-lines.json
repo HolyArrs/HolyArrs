@@ -1207,5 +1207,10 @@
 	"server.migrate.prowlarr-s-api-key-line": "Prowlarr 的 API 密钥",
 	"server.migrate.there-is-no-saved-key-for-2": "这个地址上的这个应用没有已保存的密钥；请输入它的密钥",
 	"server.migrate.uses-which-has-no-holyarrs-word": "使用了 {{w}}，HolyArrs 中没有对应的词",
-	"server.shows.tmdb-could-not-be-read": "无法读取 TMDB：{error}"
+	"server.shows.tmdb-could-not-be-read": "无法读取 TMDB：{error}",
+	"server.accounts.paused-the-stage": "{name} 暂停了环节 {stage}",
+	"server.accounts.restarted-the-stage": "{name} 重启了环节 {stage}",
+	"server.accounts.resumed-the-stage": "{name} 恢复了环节 {stage}",
+	"server.downloads.download-removed": "已移除下载",
+	"server.downloads.download-removed-by": "{name} 移除了下载"
 }

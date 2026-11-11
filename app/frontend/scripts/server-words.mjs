@@ -19,6 +19,10 @@ const banned = ['Monitored', 'Activity', 'Wanted', 'Cutoff', 'Quality Profile', 
 // ids, kinds); they stay out of the file and the check.
 const notWords = new Set(['dash', 'each', 'range', 'smart', 'remove', 'normal', 'key', 'movie', 'show', 'artist',
 	'podnapisi', 'gestdown', 'qBittorrent', 'subtitles:languages', 'subtitle site ', 'tmdb:{v}', 'mbid:{v}']);
+// Lines the scan cannot put together: a control's Event starts with the person's name (setup ControlEvent)
+// and takes its verb from a map; a removal's reason may name who removed it.
+const handLines = { '{name} paused the stage {stage}': 'accounts', '{name} resumed the stage {stage}': 'accounts',
+	'{name} restarted the stage {stage}': 'accounts', 'Download removed': 'downloads', 'Download removed by {name}': 'downloads' };
 // Files whose fmt.Sprintf lines are display text (card lines, labels).
 const display = /(accounts[\\/]events|discover[\\/](home|explore_np|title_view)|shows[\\/]episode_labels|requests[\\/](episodes|follows\w*|reports)|health[\\/](health|routes_settings_status)|migrate[\\/]plan_\w+|metadata[\\/]moods)\.go$/;
 
@@ -262,6 +266,8 @@ for (const file of walk(root)) {
 		if (/moods\.go$/.test(file)) for (const v of src.matchAll(/"([A-Z][A-Za-z &'-]+)"/g)) add(file, v[1]);
 	}
 }
+
+for (const [t, mod] of Object.entries(handLines)) if (!found.has(t)) found.set(t, mod);
 
 // Keep every line already in the file under its key; give new lines new keys.
 const words = existsSync(out) ? JSON.parse(readFileSync(out, 'utf8')) : {};

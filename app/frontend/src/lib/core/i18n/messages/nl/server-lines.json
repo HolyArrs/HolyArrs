@@ -1207,5 +1207,10 @@
 	"server.migrate.prowlarr-s-api-key-line": "API-sleutel van Prowlarr",
 	"server.migrate.there-is-no-saved-key-for-2": "er is geen opgeslagen sleutel voor deze app op dit adres; typ de sleutel ervan",
 	"server.migrate.uses-which-has-no-holyarrs-word": "gebruikt {{w}}, waarvoor HolyArrs geen woord heeft",
-	"server.shows.tmdb-could-not-be-read": "TMDB kon niet worden uitgelezen: {error}"
+	"server.shows.tmdb-could-not-be-read": "TMDB kon niet worden uitgelezen: {error}",
+	"server.accounts.paused-the-stage": "{name} heeft de fase {stage} gepauzeerd",
+	"server.accounts.restarted-the-stage": "{name} heeft de fase {stage} herstart",
+	"server.accounts.resumed-the-stage": "{name} heeft de fase {stage} hervat",
+	"server.downloads.download-removed": "Download verwijderd",
+	"server.downloads.download-removed-by": "{name} heeft de download verwijderd"
 }

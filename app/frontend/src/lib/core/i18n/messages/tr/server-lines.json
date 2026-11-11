@@ -1207,5 +1207,10 @@
 	"server.migrate.prowlarr-s-api-key-line": "Prowlarr'ın API anahtarı",
 	"server.migrate.there-is-no-saved-key-for-2": "bu adreste bu uygulama için kayıtlı anahtar yok; anahtarını yaz",
 	"server.migrate.uses-which-has-no-holyarrs-word": "{{w}} kullanıyor; HolyArrs'ta bunun bir karşılığı yok",
-	"server.shows.tmdb-could-not-be-read": "TMDB okunamadı: {error}"
+	"server.shows.tmdb-could-not-be-read": "TMDB okunamadı: {error}",
+	"server.accounts.paused-the-stage": "{name}, {stage} aşamasını duraklattı",
+	"server.accounts.restarted-the-stage": "{name}, {stage} aşamasını yeniden başlattı",
+	"server.accounts.resumed-the-stage": "{name}, {stage} aşamasını sürdürdü",
+	"server.downloads.download-removed": "İndirme kaldırıldı",
+	"server.downloads.download-removed-by": "İndirme {name} tarafından kaldırıldı"
 }

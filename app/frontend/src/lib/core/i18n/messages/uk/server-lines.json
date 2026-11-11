@@ -1207,5 +1207,10 @@
 	"server.migrate.prowlarr-s-api-key-line": "API-ключ Prowlarr",
 	"server.migrate.there-is-no-saved-key-for-2": "для цього застосунку за цією адресою немає збереженого ключа; введи його ключ",
 	"server.migrate.uses-which-has-no-holyarrs-word": "використовує {{w}}, для якого в HolyArrs немає слова",
-	"server.shows.tmdb-could-not-be-read": "Не вдалося прочитати TMDB: {error}"
+	"server.shows.tmdb-could-not-be-read": "Не вдалося прочитати TMDB: {error}",
+	"server.accounts.paused-the-stage": "{name}: етап {stage} призупинено",
+	"server.accounts.restarted-the-stage": "{name}: етап {stage} перезапущено",
+	"server.accounts.resumed-the-stage": "{name}: етап {stage} відновлено",
+	"server.downloads.download-removed": "Завантаження видалено",
+	"server.downloads.download-removed-by": "{name}: завантаження видалено"
 }
