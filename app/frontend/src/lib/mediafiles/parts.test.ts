@@ -79,6 +79,8 @@ describe('switching parts', () => {
 		expect(switchPlan(all, all)).toEqual([]);
 	});
 	it('leaves a part the caller does not name as it is (the welcome step does not ask about Sources)', () => {
+		// Sources on (a fresh install) and a step that does not name it: it stays on.
+		expect(switchPlan({ ...all, sources: true }, all)).toEqual([]);
 		expect(switchPlan({ ...all, sources: false }, all)).toEqual([]);
 		expect(switchPlan({ ...all, sources: true }, { ...all, sources: false })).toEqual([{ part: 'sources', on: false }]);
 		expect(switchPlan({ ...all, sources: false }, { ...all, sources: true })).toEqual([{ part: 'sources', on: true }]);

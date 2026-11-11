@@ -26,7 +26,10 @@ func TestShowImportWithNoSaveFolderSaysWhereToSetIt(t *testing.T) {
 		t.Fatalf("slot %+v", sl)
 	}
 	why := *sl.LastReason
-	if !strings.Contains(why, "SABnzbd") || !strings.Contains(why, "Settings > Downloaders") || strings.Contains(why, "import plan") {
+	// The save folder is HolyArrs's own setting, not one in the Downloader: the
+	// line names both ways to let HolyArrs read the folder.
+	if !strings.Contains(why, "SABnzbd has no path pair") || !strings.Contains(why, "HOLYARRS_SAVE_PATH") || !strings.Contains(why, "Settings > Downloaders") ||
+		strings.Contains(why, "has no save folder") || strings.Contains(why, "import plan") {
 		t.Fatalf("reason %q", why)
 	}
 }
@@ -60,7 +63,7 @@ func TestMovieImportWithNoSaveFolderSaysWhereToSetIt(t *testing.T) {
 	if err := w.s.Read().QueryRowContext(ctx, "SELECT last_reason FROM slots WHERE id = ?", w.slotID).Scan(&why); err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(why, "Settings > Downloaders") || strings.Contains(why, "import plan") {
+	if !strings.Contains(why, "HOLYARRS_SAVE_PATH") || !strings.Contains(why, "Settings > Downloaders") || strings.Contains(why, "import plan") {
 		t.Fatalf("reason %q", why)
 	}
 	// A path pair is set up: the folder was read, so the plan is the answer.
