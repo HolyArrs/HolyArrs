@@ -1,11 +1,8 @@
 package importer
 
 import (
-	"context"
-	"database/sql"
 	"slices"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 )
 
@@ -60,13 +57,4 @@ func claimSet(d domain.Download, cands []Candidate) []Candidate {
 		all = append(all, Candidate{Path: f.Name, Size: f.Size})
 	}
 	return all
-}
-
-// reopenPack moves a finished season pack back to downloading, so the poll
-// follows its files still coming.
-func reopenPack(ctx context.Context, s *database.Store, id int64) error {
-	return s.Write(ctx, func(tx *sql.Tx) error {
-		_, err := tx.ExecContext(ctx, "UPDATE downloads SET state = 'downloading', finished_at = NULL WHERE id = ? AND state = 'finished'", id)
-		return err
-	})
 }

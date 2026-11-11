@@ -1,6 +1,7 @@
 package importer
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -87,4 +88,13 @@ func turnDownForTx(tx *sql.Tx, releaseID int64, slotIDs []int64, by domain.Actor
 		verdict = json_set(json_set(COALESCE(verdict, '{}'), '$.turned_down_slot_ids', json(?)), '$.turned_down_reason', ?), updated_at = ?, updated_by = ? WHERE id = ?`,
 		jsonIDs(ids), "the files did not fill these episodes", database.FormatTime(time.Now()), actorText(by), releaseID)
 	return err
+}
+
+// reopenPack moves a finished season pack back to downloading, so the poll
+// follows its files still coming.
+func reopenPack(ctx context.Context, s *database.Store, id int64) error {
+	return s.Write(ctx, func(tx *sql.Tx) error {
+		_, err := tx.ExecContext(ctx, "UPDATE downloads SET state = 'downloading', finished_at = NULL WHERE id = ? AND state = 'finished'", id)
+		return err
+	})
 }
