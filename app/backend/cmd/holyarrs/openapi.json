@@ -12012,7 +12012,7 @@
     },
     "/api/v1/backups/settings": {
       "put": {
-        "description": "preset is balanced, light or careful.",
+        "description": "preset is balanced, light, careful or off (off makes no scheduled backups; manual backups and the copies taken around an update are still made).",
         "operationId": "putBackupSettings",
         "requestBody": {
           "content": {
@@ -12023,7 +12023,8 @@
                     "enum": [
                       "balanced",
                       "light",
-                      "careful"
+                      "careful",
+                      "off"
                     ],
                     "type": "string"
                   }
