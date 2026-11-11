@@ -762,3 +762,90 @@ func TestAbsoluteQueryName(t *testing.T) {
 		t.Error("aired order made a running number search")
 	}
 }
+
+// addUndated adds a kept S01E04 with no air date, not out yet, and moves
+// season 1's air dates: dated[i] days ago for E(i+1), or no date when < 0.
+func addUndated(t *testing.T, f showFix, dated ...int) {
+	t.Helper()
+	now := time.Now().UTC()
+	if err := f.s.Write(context.Background(), func(tx *sql.Tx) error {
+		for i, d := range dated {
+			l := fmt.Sprintf("S01E%02d", i+1)
+			if d < 0 {
+				if _, err := tx.Exec("UPDATE items SET air_date = NULL, air_day = NULL WHERE id = ?", f.items[l]); err != nil {
+					return err
+				}
+				if _, err := tx.Exec("UPDATE slots SET state = 'not_out_yet' WHERE id = ?", f.slots[l]); err != nil {
+					return err
+				}
+				continue
+			}
+			air := now.AddDate(0, 0, -d)
+			if _, err := tx.Exec("UPDATE items SET air_date = ?, air_day = ? WHERE id = ?", air.Format(time.RFC3339Nano), air.Format("2006-01-02"), f.items[l]); err != nil {
+				return err
+			}
+		}
+		pid := f.parts[1]
+		it := &mediafiles.Item{TitleID: f.titleID, PartID: &pid, Kind: "episode", Numbers: mediafiles.Numbers{Season: ptr(1), Episode: ptr(4)},
+			Name: ptr("Episode 4"), Runtime: ptr(45), KeepUpToDate: true, SourceIDs: map[string]string{}}
+		if _, err := database.Insert(tx, "items", it, domain.System); err != nil {
+			return err
+		}
+		sl := &mediafiles.Slot{ItemID: it.ID, VersionID: f.verID, State: mediafiles.SlotNotOutYet}
+		if _, err := database.Insert(tx, "slots", sl, domain.System); err != nil {
+			return err
+		}
+		f.slots["S01E04"], f.items["S01E04"] = sl.ID, it.ID
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// An undated last episode (a placeholder) after a season that finished
+// airing a while ago does not stop the season search or its pack.
+func TestHandleSeason_PlaceholderDoesNotBlock(t *testing.T) {
+	ts := &tvServer{answer: func(q url.Values) []string {
+		if q.Get("ep") == "" {
+			return []string{"Copper.Valley.S01.1080p.WEB-DL.H.264-QUILL"}
+		}
+		return nil
+	}}
+	f := seedShow(t, ts.start(t), nil)
+	addUndated(t, f, 44, 37, 30)
+	j := runKind(t, f.fixture, &Searcher{Store: f.s}, jobs.KindSearchSeason, &domain.Subject{Type: "part", ID: f.parts[1]}, map[string]any{"version_id": f.verID})
+	if len(ts.queries) == 0 || ts.queries[0].Get("season") != "1" || ts.queries[0].Has("ep") {
+		t.Fatalf("queries %v; job %s %+v %+v", ts.queries, j.State, j.Error, j.Result)
+	}
+	for _, l := range []string{"S01E01", "S01E02", "S01E03"} {
+		if st := f.state(t, l); st != mediafiles.SlotChosen {
+			r := relByName(t, f.fixture, "Copper.Valley.S01.1080p.WEB-DL.H.264-QUILL")
+			t.Fatalf("%s is %s (%s %v); result %+v", l, st, r.State, reasonCodes(r), j.Result)
+		}
+	}
+	if st := f.state(t, "S01E04"); st != mediafiles.SlotNotOutYet {
+		t.Fatalf("the placeholder is %s", st)
+	}
+	if r := relByName(t, f.fixture, "Copper.Valley.S01.1080p.WEB-DL.H.264-QUILL"); !strings.Contains(fmt.Sprint(r.Verdict), "every episode it holds has aired") {
+		t.Fatalf("gate %v", r.Verdict)
+	}
+}
+
+// Still blocked: a season that aired only days ago, an undated episode in
+// the middle, or a season with no dates at all.
+func TestHandleSeason_UndatedStillBlocks(t *testing.T) {
+	for name, dated := range map[string][]int{
+		"recent":   {17, 10, 3},
+		"middle":   {44, -1, 30},
+		"no dates": {-1, -1, -1},
+	} {
+		ts := &tvServer{answer: func(url.Values) []string { return nil }}
+		f := seedShow(t, ts.start(t), nil)
+		addUndated(t, f, dated...)
+		j := runKind(t, f.fixture, &Searcher{Store: f.s}, jobs.KindSearchSeason, &domain.Subject{Type: "part", ID: f.parts[1]}, map[string]any{"version_id": f.verID})
+		_, queued := j.Result["episodes_queued"]
+		if _, skipped := j.Result["skipped"]; !queued && !skipped || slices.ContainsFunc(ts.queries, func(q url.Values) bool { return !q.Has("ep") }) {
+			t.Fatalf("%s: searched as a whole: %+v %v", name, j.Result, ts.queries)
+		}
+	}
+}

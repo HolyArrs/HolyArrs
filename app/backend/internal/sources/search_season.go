@@ -147,7 +147,7 @@ func (s *Searcher) HandleSeason(ctx context.Context, r *jobs.Run) error {
 			looking = append(looking, e)
 		}
 		missing := e.sl.State == mediafiles.SlotWanted || e.cur == nil && (e.sl.State == mediafiles.SlotFailed || e.sl.State == mediafiles.SlotRejected)
-		if e.kept && (!missing || !e.soon) {
+		if e.kept && !e.placeholder && (!missing || !e.soon) {
 			whole = false
 		}
 	}
