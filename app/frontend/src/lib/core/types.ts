@@ -604,7 +604,7 @@ export interface Decision {
 	year?: number;
 	version: string;
 	versions: number;
-	why: 'ran_out' | 'conflict' | 'not_replaced' | 'not_sent';
+	why: 'ran_out' | 'conflict' | 'not_replaced' | 'not_sent' | 'taken';
 	reason: string;
 	release_id?: number;
 	release_name?: string;

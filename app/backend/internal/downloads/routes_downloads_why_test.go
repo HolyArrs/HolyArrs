@@ -27,3 +27,21 @@ func TestWhyCountsUnpackReasonsAsAStuckImport(t *testing.T) {
 		t.Errorf("ran out: %s", got)
 	}
 }
+
+// An episode parked by an older import whose files another app had already
+// taken says so, so the card does not offer a second download first.
+func TestWhyNamesFilesTakenByAnotherApp(t *testing.T) {
+	t.Parallel()
+	for _, r := range []string{
+		"the file could not be placed: lstat /mnt/Torrents/holyarrs/Show.S01/Show.S01E01.mkv: no such file or directory",
+		"the file could not be placed: CreateFile D:/dl/Show.S01E01.mkv: The system cannot find the file specified.",
+		"the file for S01E01 could not be placed: Copper Valley by clean name; holds S01E01; the file is not in the download folder any more",
+	} {
+		if got := why(r); got != "taken" {
+			t.Errorf("%q: %s, want taken", r, got)
+		}
+	}
+	if got := why("the file could not be placed: hardlink failed (x), copy failed (y)"); got != "conflict" {
+		t.Errorf("other placing error: %s", got)
+	}
+}

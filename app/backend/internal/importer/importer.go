@@ -616,6 +616,55 @@ func candidates(root string, files []domain.SeenFile) ([]Candidate, []mediafiles
 	return cands, bad
 }
 
+// sourcesGone reports whether another app took a finished download's files:
+// every file the plan would read is gone while the download's own folder is
+// still there. For a torrent that folder is the Downloader's save folder, so
+// a missing one is a wrong path map or an empty mount, never proof. A Usenet
+// job folder (ownFolder) belongs to the download alone; it may be gone too
+// when the folder above it is still there.
+func sourcesGone(root string, plan []mediafiles.PlanStep, ownFolder bool) bool {
+	if root == "" {
+		return false
+	}
+	if _, err := os.Stat(root); err != nil {
+		if !ownFolder || !errors.Is(err, fs.ErrNotExist) {
+			return false
+		}
+		if _, err := os.Stat(filepath.Dir(root)); err != nil {
+			return false
+		}
+	}
+	seen := false
+	for _, st := range plan {
+		if !filepath.IsAbs(st.SourceFile) {
+			continue
+		}
+		if _, err := os.Lstat(st.SourceFile); !errors.Is(err, fs.ErrNotExist) {
+			return false
+		}
+		seen = true
+	}
+	if !seen {
+		_, err := os.Lstat(root)
+		return errors.Is(err, fs.ErrNotExist)
+	}
+	return true
+}
+
+// markGone records every step that was not placed as gone, with the reason.
+func markGone(res []mediafiles.PlaceResult) {
+	for i := range res {
+		if res[i].Outcome != "placed" && res[i].Outcome != "skipped" {
+			res[i].Outcome, res[i].Error = "gone", FilesGoneReason
+		}
+	}
+}
+
+// FilesGoneReason is why an import let its download go: every file it would
+// read was already removed, as another app sharing the Downloader does after
+// its own import.
+const FilesGoneReason = "the files were removed by another app before HolyArrs could import them"
+
 // Publisher announces import events.
 type Publisher interface {
 	Publish(topic string, data any) uint64
@@ -623,12 +672,16 @@ type Publisher interface {
 
 // Importer places finished downloads into the library.
 type Importer struct {
-	Store        *database.Store
-	Live         Publisher
-	Ops          Ops
-	SavePath     string
-	OnRejected   func(ctx context.Context, slotID int64)
-	OnImported   func(ctx context.Context, downloadID int64)
+	Store      *database.Store
+	Live       Publisher
+	Ops        Ops
+	SavePath   string
+	OnRejected func(ctx context.Context, slotID int64)
+	OnImported func(ctx context.Context, downloadID int64)
+	// OnFilesGone runs when a finished download's files were all taken by
+	// another app before the import, so a rescan can link the copy that app
+	// placed in the Title's folder.
+	OnFilesGone  func(ctx context.Context, titleID int64)
 	OnLowSpace   func(ctx context.Context, dir string, free, need int64)
 	NoSizeFloors bool
 	// MayMove says whether a Downloader's finished files may be moved out of

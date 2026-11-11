@@ -310,6 +310,8 @@ export function whyWords(d: Pick<Decision, 'why' | 'has_copy'>): string {
 			return t('downloads.why.notReplaced');
 		case 'not_sent':
 			return t('downloads.why.notSent');
+		case 'taken':
+			return t('downloads.why.taken');
 	}
 	return t('downloads.why.out');
 }

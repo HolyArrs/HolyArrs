@@ -140,6 +140,7 @@
 	"downloads.day.today": "Vandaag",
 	"downloads.day.yesterday": "Gisteren",
 	"downloads.detail.importFailed": "import mislukt: {why}",
+	"downloads.detail.filesGone": "een andere app heeft de bestanden meegenomen voordat HolyArrs ze kon importeren",
 	"downloads.detail.noMatch": "de bestanden kwamen niet overeen",
 	"downloads.detail.placing": "bestanden plaatsen",
 	"downloads.detail.ratio": "ratio {ratio}",
@@ -1114,6 +1115,7 @@
 	"downloads.steer.speed": "Snelheidslimieten",
 	"downloads.steer.speedMenu": "Snelheidslimieten…",
 	"downloads.step.errored": "Fout van de Downloader",
+	"downloads.step.filesGone": "Door andere app meegenomen",
 	"downloads.step.finishing": "Wordt afgerond",
 	"downloads.step.importFailed": "Import mislukt",
 	"downloads.step.missing": "Bestanden ontbreken",
@@ -1225,5 +1227,6 @@
 	"downloads.why.conflict": "De import kon niet zelf worden afgerond.",
 	"downloads.why.notReplaced": "De download is buiten HolyArrs verwijderd en wordt niet vanzelf vervangen (instelling).",
 	"downloads.why.notSent": "Geen Downloader kon hem aannemen: controleer de tags op de titel en je Downloaders.",
-	"downloads.why.out": "HolyArrs heeft geen releases meer die door de Keuzeregels komen."
+	"downloads.why.out": "HolyArrs heeft geen releases meer die door de Keuzeregels komen.",
+	"downloads.why.taken": "Een andere app heeft de bestanden meegenomen voordat HolyArrs ze kon importeren."
 }

@@ -140,6 +140,7 @@
 	"downloads.day.today": "Bugün",
 	"downloads.day.yesterday": "Dün",
 	"downloads.detail.importFailed": "içe aktarma başarısız: {why}",
+	"downloads.detail.filesGone": "HolyArrs içe aktaramadan önce başka bir uygulama dosyaları aldı",
 	"downloads.detail.noMatch": "dosyalar eşleşmedi",
 	"downloads.detail.placing": "dosyalar yerleştiriliyor",
 	"downloads.detail.ratio": "oran {ratio}",
@@ -1114,6 +1115,7 @@
 	"downloads.steer.speed": "Hız limitleri",
 	"downloads.steer.speedMenu": "Hız limitleri…",
 	"downloads.step.errored": "İndirici hatası",
+	"downloads.step.filesGone": "Başka uygulama aldı",
 	"downloads.step.finishing": "Bitiriliyor",
 	"downloads.step.importFailed": "İçe aktarma başarısız",
 	"downloads.step.missing": "Dosyalar eksik",
@@ -1225,5 +1227,6 @@
 	"downloads.why.conflict": "İçe aktarma kendi başına bitirilemedi.",
 	"downloads.why.notReplaced": "İndirmesi HolyArrs dışında kaldırıldı ve kendiliğinden yenisiyle değiştirilmiyor (ayar).",
 	"downloads.why.notSent": "Hiçbir İndirici kabul edemedi: başlığın etiketlerini ve İndiricilerini denetle.",
-	"downloads.why.out": "HolyArrs'ın Seçim kurallarını geçen sürüm adayı kalmadı."
+	"downloads.why.out": "HolyArrs'ın Seçim kurallarını geçen sürüm adayı kalmadı.",
+	"downloads.why.taken": "HolyArrs içe aktaramadan önce başka bir uygulama dosyaları aldı."
 }

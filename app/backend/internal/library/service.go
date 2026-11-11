@@ -63,6 +63,10 @@ type Service struct {
 	EpisodeGroups metadata.EpisodeGroupSource
 	// Now is the clock (time.Now when nil).
 	Now func() time.Time
+	// DownloadRunning says whether a download is still in its Downloader's
+	// hands; a rescan links a found copy to a movie whose download is not.
+	// Nil: any download holds the movie back.
+	DownloadRunning func(tx *sql.Tx, downloadID int64) (bool, error)
 
 	// checkedPaths is the Downloader folder list of the last full folder
 	// check; a timed check with another list runs the full test again.

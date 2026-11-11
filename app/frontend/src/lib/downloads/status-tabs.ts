@@ -259,6 +259,7 @@ export function stepLine(r: Pick<RowBits, 'client_hint'>, detail: string): strin
 	if (detail.startsWith(t('downloads.detail.importFailed', { why: '' }).trimEnd())) return t('downloads.step.importFailed');
 	if (detail === t('downloads.detail.removed')) return t('downloads.step.removedOutside');
 	if (detail === t('downloads.detail.noMatch')) return t('downloads.step.noMatch');
+	if (detail === t('downloads.detail.filesGone')) return t('downloads.step.filesGone');
 	return detail ? detail.charAt(0).toUpperCase() + detail.slice(1) : '';
 }
 
