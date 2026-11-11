@@ -407,7 +407,7 @@
 												<Poster src={t.artwork[0]} name={t.name} />
 											</span>
 											<span class="lt">
-												<a href={openLink(t)} tabindex="-1" title={t.name}>{t.name}</a>
+												<a href={openLink(t)} tabindex="-1" title={t.name} dir="auto">{t.name}</a>
 												{#if !phone && t.year}<small>{t.year}</small>{/if}
 												{#if phone}{@const fc = rowCols.find((c) => !isProgressCol(c)) ?? rowCols[0]}<span class="lsub">{[ls?.label, fc ? rowCell(t, fc, p, seriesOf(t)) : ''].filter(Boolean).join(' · ')}</span>{/if}
 											</span>
@@ -434,7 +434,7 @@
 												{:else}<span class="keep" class:on={t.keep_up_to_date} aria-label={tr(t.keep_up_to_date ? 'mediafiles.poster.kept' : 'mediafiles.poster.notKept')} role="img"><Icon name={t.keep_up_to_date ? 'bellOn' : 'bell'} size={16} /></span>{/if}
 											</span>
 											<span class="name">
-												<a href={openLink(t)} tabindex="-1" title={t.name}>{t.name}</a>
+												<a href={openLink(t)} tabindex="-1" title={t.name} dir="auto">{t.name}</a>
 												<span class="sub">
 													{#if kind === 'all'}{kindLabel(t.kind)}{#if t.year} · {t.year}{/if}{#if sort.key === 'score' && !phone && scoreText(t)} · ★ {scoreText(t)}{/if}{/if}
 													{#if ls && (kind === 'all' || phone || !shownCols.some((c) => c.id === 'status'))}<span class="ls {ls.tone}" data-testid="library-status" data-state={ls.key}><i class="dot" aria-hidden="true"></i>{ls.label}</span>{/if}
@@ -476,11 +476,11 @@
 										<div class="ov" class:music={t.kind === 'artist'}>
 											<a class="ov-poster" style:--poster-ratio={posterRatio(t.kind)} href={openLink(t)} tabindex="-1" aria-hidden="true"><Poster src={t.artwork[0]} name={t.name} /></a>
 											<div class="ov-main">
-												<h2><a href={openLink(t)} tabindex="-1" title={t.name}>{t.name}</a>{#if t.year}<span class="yr">{t.year}</span>{/if}<span class="keep ov-keep" class:on={t.keep_up_to_date} role="img" aria-label={tr(t.keep_up_to_date ? 'mediafiles.poster.kept' : 'mediafiles.poster.notKept')} title={tr(t.keep_up_to_date ? 'mediafiles.poster.kept' : 'mediafiles.poster.notKept')}><Icon name={t.keep_up_to_date ? 'bellOn' : 'bell'} size={15} /></span></h2>
+												<h2><a href={openLink(t)} tabindex="-1" title={t.name} dir="auto">{t.name}</a>{#if t.year}<span class="yr">{t.year}</span>{/if}<span class="keep ov-keep" class:on={t.keep_up_to_date} role="img" aria-label={tr(t.keep_up_to_date ? 'mediafiles.poster.kept' : 'mediafiles.poster.notKept')} title={tr(t.keep_up_to_date ? 'mediafiles.poster.kept' : 'mediafiles.poster.notKept')}><Icon name={t.keep_up_to_date ? 'bellOn' : 'bell'} size={15} /></span></h2>
 												{#if t.kind === 'artist'}
 													{#if t.artist?.bio}<p class="ov-text ov-bio">{t.artist.bio}</p>{/if}
 												{:else}
-													<p class="ov-text">{t.overview || tr('mediafiles.list.noDescription')}</p>
+													<p class="ov-text" dir="auto">{t.overview || tr('mediafiles.list.noDescription')}</p>
 												{/if}
 												{#if t.kind !== 'movie'}
 													<span class="ov-prog">

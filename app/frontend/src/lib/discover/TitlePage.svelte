@@ -412,7 +412,7 @@
 			{#each list.slice(0, max) as p, i (p.name + i)}{#if i}{', '}{/if}{#if personHref(p.id)}<a href={personHref(p.id)}>{p.name}</a>{:else}{p.name}{/if}{/each}
 		{/snippet}
 		{#snippet story()}
-			{#if d.overview}<p class="lead" data-testid="title-story">{d.overview}</p>{/if}
+			{#if d.overview}<p class="lead" data-testid="title-story" dir="auto">{d.overview}</p>{/if}
 		{/snippet}
 		{#snippet trailers()}
 			<TitleTrailers kind={d.kind} tmdb={d.tmdb} title={d.name} videos={rich?.videos ?? []} art={[d.backdrop, ...(rich?.backdrops ?? [])]} />

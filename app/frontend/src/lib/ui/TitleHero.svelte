@@ -276,7 +276,7 @@
 			{:else}
 				<h1 class="bb-name" class:short={!!cover}>{title}</h1>
 			{/if}
-			{#if tagline}<p class="hero-tagline" data-testid="hero-tagline">{tagline}</p>{/if}
+			{#if tagline}<p class="hero-tagline" data-testid="hero-tagline" dir="auto">{tagline}</p>{/if}
 		{/snippet}
 		{#snippet meta()}
 			{#if showFacts && facts.length}<p>{facts.join(' · ')}</p>{/if}

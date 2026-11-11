@@ -191,7 +191,7 @@
 			<CardBadges fresh={strip} {owned} size={shape === 'poster' ? 'md' : 'sm'} />
 			{#if progress !== undefined}<span class="prog"><ProgressBar value={progress} label={t('ui.posterCard.progress', { title })} size="sm" on="art" /></span>{/if}
 		</span>
-		<span class="t" id="{uid}-t" title={title}>{title}</span>
+		<span class="t" id="{uid}-t" title={title} dir="auto">{title}</span>
 		{#if href && more}<span class="sr-only" id="{uid}-d">{more}</span>{/if}
 		{#if typedWord || sub}<span class="s">{#if typedWord}<span class="ty">{typedWord}</span>{#if sub}<span class="dot" aria-hidden="true">·</span>{/if}{/if}{sub ?? ''}</span>{/if}
 	</svelte:element>

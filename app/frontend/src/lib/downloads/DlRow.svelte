@@ -66,9 +66,9 @@
 		<span class="pcell" class:ph class:named={cols.srcName} data-col="proto">{#if p}{@const cm = clientMark(r.downloader_kind)}{@const pw = p === 'torrent' ? 'Torrent' : 'Usenet'}{@const logo = CLIENT_ICONS.has(r.downloader_kind ?? '')}<span class="pm" class:logo class:cmk={!logo && !!cm.mark} data-tone={logo ? undefined : cm.tone || undefined} data-testid="dl-protocol" data-protocol={p} data-kind={r.downloader_kind} use:tip={`${dlName(r)} · ${pw}`} role="img" aria-label="{dlName(r)} · {pw}">{#if logo}<img class="cico" src={to(`/clients/${r.downloader_kind}.svg`)} alt="" width="24" height="24" decoding="async" />{:else if cm.mark}{cm.mark}{:else}<Icon name={p === 'torrent' ? 'torrent' : 'usenet'} size={14} />{/if}</span>{#if cols.srcName}<span class="pnm" title={dlName(r)}>{dlKind(r) || dlName(r)}</span>{/if}{/if}</span>
 	{:else if id === 'title'}
 		<span class="nm" class:ph data-col="title">
-			<span class="tt" title={rowName(r)}><span class="tn">{rowName(r)}</span><span class="tphone">{phoneTitle(r)}</span>{#if r.version && r.version !== 'Main'}<span class="ver">{r.version}</span>{/if}</span>
+			<span class="tt" title={rowName(r)}><span class="tn" dir="auto">{rowName(r)}</span><span class="tphone" dir="auto">{phoneTitle(r)}</span>{#if r.version && r.version !== 'Main'}<span class="ver">{r.version}</span>{/if}</span>
 			<!-- A season pack taken a few episodes at a time says which ones, ahead of the Release name. -->
-			<span class="rel" title={r.name}>{#if r.pack}<span class="pkc" data-testid="dl-pack">{packLine(r)}</span>{/if}{sub2(r)}</span>
+			<span class="rel" title={r.name}>{#if r.pack}<span class="pkc" data-testid="dl-pack">{packLine(r)}</span>{/if}<bdi>{sub2(r)}</bdi></span>
 			{#if r.pack || subLine(r)}<span class="ep" data-testid="dl-epline">{r.pack ? packLine(r) : subLine(r)}</span>{/if}
 		</span>
 	{:else if id === 'progress'}

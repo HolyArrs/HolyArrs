@@ -288,7 +288,7 @@
 		{/if}
 		<span class="scrim" class:playing={showing} aria-hidden="true"></span>
 		{#if shownLogo}<span class="name" class:lifted class:playing={showing} aria-hidden="true"><img class="logo" src={shownLogo} alt="" onerror={() => (logoFailed = true)} /></span>
-		{:else}<span class="name" class:lifted class:playing={showing} aria-hidden="true"><span class="word">{title}</span></span>{/if}
+		{:else}<span class="name" class:lifted class:playing={showing} aria-hidden="true"><span class="word" dir="auto">{title}</span></span>{/if}
 		{#if badge && g}<span class="badge" class:playing={showing}>{@render badge()}</span>{/if}
 	</a>
 	<div class="panel">
