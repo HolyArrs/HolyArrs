@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
 )
 
 var errLinkLocal = releaseRefused{`the Release link leads to a local or blocked address; if this Source is on your home network, turn on "May reach the local network" for it`}
@@ -66,6 +67,9 @@ func fetchGrabLink(ctx context.Context, raw string, limit int64, rt http.RoundTr
 	if err != nil {
 		return nil, "", errors.New("the Release file address is invalid")
 	}
+	// Sites behind Cloudflare refuse Go's default User-Agent; a proxied
+	// Source's transport would add this too, but a plain one would not.
+	req.Header.Set("User-Agent", sources.UserAgent)
 	resp, err := h.Do(req)
 	if err != nil {
 		if ctx.Err() != nil {
