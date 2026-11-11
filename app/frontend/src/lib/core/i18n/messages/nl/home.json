@@ -254,6 +254,7 @@
 	"home.finished": "Klaar {when}",
 	"home.nothingIsDownloadingRight": "Er wordt nu niets gedownload.",
 	"home.paused2": "{n} gepauzeerd.",
+	"home.notSentByHolyArrs": "{n} in de Downloader die HolyArrs niet heeft gestuurd.",
 	"home.someChecksCouldNot": "Sommige controles konden nu niet worden gelezen.",
 	"home.otherCheckPassed": "{n} andere controle geslaagd.",
 	"home.otherChecksPassed": "{n} andere controles geslaagd.",

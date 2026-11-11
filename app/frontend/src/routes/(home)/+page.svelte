@@ -18,7 +18,7 @@
 	import PageLoader from '#lib/ui/PageLoader.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
 	import { artGone, lightOnDark } from './art-check.ts';
-	import { arrivedHead, attention, downloadMoved, downloadingNow, fallbackRows, homeStrip, n, type HomeAnswer, type HomeCard, type HomeRow } from './home.ts';
+	import { arrivedHead, attention, downloadMoved, downloadingNow, fallbackRows, homeDownloadsURL, homeStrip, n, type HomeAnswer, type HomeCard, type HomeRow } from './home.ts';
 	import { MetadataNotice } from '#lib/metadata/index.ts';
 	import { homeFacts, homeGreeting, homeNews } from './home-line.ts';
 	import type { Health, HealthChecks } from '#lib/health/index.ts';
@@ -160,7 +160,7 @@
 			first,
 			manager ? api.get<{ library_folders: LibraryFolder[] }>('/library-folders') : Promise.resolve(null),
 			// Members may only read the Library and their own asks; the rest needs manage_library.
-			manager ? api.get<{ downloads: DownloadRow[] }>('/downloads/view?limit=100') : Promise.resolve(null),
+			manager ? api.get<{ downloads: DownloadRow[] }>(homeDownloadsURL) : Promise.resolve(null),
 			manager ? api.get<Health>('/health') : Promise.resolve(null),
 			// The checks need manage_library only; people without Settings get Status links instead of Fix.
 			manager ? api.get<HealthChecks>('/health/checks') : Promise.resolve(null),

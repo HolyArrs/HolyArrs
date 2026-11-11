@@ -254,6 +254,7 @@
 	"home.finished": "{when} 완료",
 	"home.nothingIsDownloadingRight": "지금 다운로드 중인 항목이 없습니다.",
 	"home.paused2": "{n}건 일시 중지.",
+	"home.notSentByHolyArrs": "HolyArrs가 보내지 않은 항목이 다운로더에 {n}건 있습니다.",
 	"home.someChecksCouldNot": "일부 점검 결과를 지금 읽지 못했습니다.",
 	"home.otherCheckPassed": "다른 점검 {n}개 통과.",
 	"home.otherChecksPassed": "다른 점검 {n}개 통과.",

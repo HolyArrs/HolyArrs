@@ -230,7 +230,7 @@
 						</ol>
 						{#if fetchingAll.length}
 							<ul class="dl-list">
-								{#each downloading.dlList as d (d.id)}
+								{#each downloading.dlList as d (d.live_key ?? d.id)}
 									{@const moving = ['downloading', 'stalled'].includes(stageOf(d))}
 									<li><b dir="auto">{d.title || d.name}</b><span>{downloading.dlState(d)}</span>{#if moving}<i class="pb"><i style="width: {percent(d.progress)}%"></i></i>{/if}</li>
 								{/each}
@@ -242,7 +242,7 @@
 								{/each}
 							</ul>
 						{:else}
-							<span class="quiet">{t('home.nothingIsDownloadingRight')}{downloading.pausedCount ? ' ' + t('home.paused2', { n: n(downloading.pausedCount) }) : ''}</span>
+							<span class="quiet">{downloading.notSent ? t('home.notSentByHolyArrs', { n: n(downloading.notSent) }) : t('home.nothingIsDownloadingRight')}{downloading.pausedCount ? ' ' + t('home.paused2', { n: n(downloading.pausedCount) }) : ''}</span>
 						{/if}
 					{/if}
 				</a>
