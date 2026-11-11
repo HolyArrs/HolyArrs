@@ -48,7 +48,8 @@ After applying, **left out** lists every TRaSH entry HolyArrs didn't take, and w
 | Language | Not yet |
 | Indexer flags | Not yet |
 | Release type (single episode or season pack) | Not yet |
-| Size, year and other kinds | Not yet |
+| Size (min and max in GB) | Yes, on the whole Release's size from the search result; a Release with no size given doesn't fit |
+| Year and other kinds | Not yet |
 
 TRaSH entries with no score in the profile are skipped quietly, since they change nothing. Optional TRaSH groups (the ones a profile doesn't include by default) aren't added; give those traits points yourself after a sync if you want them.
 

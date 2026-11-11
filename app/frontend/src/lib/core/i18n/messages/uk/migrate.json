@@ -127,6 +127,7 @@
 	"migrate.nothingHere": "Тут нічого немає.",
 	"migrate.show100More": "Показати ще 100",
 	"migrate.edit": "Редагувати {name}",
+	"migrate.appAt": "{name} за адресою {address}",
 	"migrate.addAnApp": "Додати застосунок",
 	"migrate.addTheAddress": "Додай адресу.",
 	"migrate.readingStopped": "Зчитування зупинено.",

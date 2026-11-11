@@ -12,6 +12,7 @@ export { default as MoveSteps } from './MoveSteps.svelte';
 export { default as ReadSheet } from './ReadSheet.svelte';
 export { default as ReadStep } from './ReadStep.svelte';
 export { default as StepFoot } from './StepFoot.svelte';
+export { latestPerInstance } from './move.ts';
 export { extraProblems } from './move.ts';
 export { folderProblem } from './move.ts';
 export { moveTotal } from './move.ts';

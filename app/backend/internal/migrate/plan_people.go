@@ -471,7 +471,7 @@ func (b *builder) outsideList(i int, l Provider) bool {
 	name = freeListName(name, func(n string) bool { return b.listNames[strings.ToLower(n)] })
 	b.listNames[strings.ToLower(name)] = true
 	op := &OutsideListPlan{Kind: kind, Ref: norm, Library: lib, KeepUpToDate: true, SearchOnAdd: boolean(anyKey(set, "link.searchOnAdd")),
-		Preset: b.presets[string(Radarr)+":"+strconv.FormatInt(num(anyKey(set, "link.qualityProfileId")), 10)], SyncEveryHours: syncHours(anyKey(set, "link.minRefreshInterval"))}
+		Preset: b.presets[b.presetKey(Radarr, num(anyKey(set, "link.qualityProfileId")))], SyncEveryHours: syncHours(anyKey(set, "link.minRefreshInterval"))}
 	switch strings.ToLower(str(anyKey(set, "link.monitor"))) {
 	case "none", "2":
 		op.KeepUpToDate = false

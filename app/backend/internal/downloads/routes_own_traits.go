@@ -33,7 +33,7 @@ func viewOfOwnTrait(t mediafiles.OwnTrait) OwnTraitView {
 	return OwnTraitView{ID: t.ID, Key: mediafiles.OwnTraitKey(t.ID), Name: t.Name, Match: t.Match, Terms: terms, Source: t.Source, Specs: t.Specs}
 }
 
-const ownTraitHelp = `send {"name": "...", "match": "name" or "group", "terms": ["word", "/pattern/"]}`
+const ownTraitHelp = `send {"name": "...", "match": "name", "group" or "size", "terms": ["word", "/pattern/"] or one size range in GB like ["60-"], ["-8"] or ["2-8"]}`
 
 func (h *Handlers) ownTraitID(w http.ResponseWriter, r *http.Request) (int64, bool) {
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)

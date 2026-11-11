@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { appName, asStep, buckets, chooseHint, cleanRules, countWord, countWords, extraProblems, folderProblem, moveCounts, moveStateWord, moveTotal, needsGroups, OTHER, placeholderFor, resultWords, ruleProblem, rulesFrom, running, setChoice, stepGate, summary, tone, type Report } from './move.ts';
+import { appName, hostOf, instanceKey, latestPerInstance, asStep, buckets, chooseHint, cleanRules, countWord, countWords, extraProblems, folderProblem, moveCounts, moveStateWord, moveTotal, needsGroups, OTHER, placeholderFor, resultWords, ruleProblem, rulesFrom, running, setChoice, stepGate, summary, tone, type Report } from './move.ts';
 
 describe('move helpers', () => {
 	it('names apps, with what they bring and their usual port', () => {
@@ -166,5 +166,20 @@ describe('move helpers', () => {
 		expect(c).toEqual({ 'person:seerr:2': 'merge' });
 		expect(setChoice(c, 'person:seerr:2', 'skip')).toEqual({ 'person:seerr:2': 'skip' });
 		expect(setChoice(c, 'person:seerr:2', null)).toEqual({});
+	});
+});
+
+describe('reads per copy of an app', () => {
+	it('keeps one row per kind and address, newest first', () => {
+		const reads = [
+			{ id: 4, kind: 'sonarr', address: 'http://sonarr-hd:8989' },
+			{ id: 3, kind: 'sonarr', address: 'http://sonarr-4k:8989' },
+			{ id: 2, kind: 'sonarr', address: 'http://sonarr-hd:8989' },
+			{ id: 1, kind: 'radarr', address: 'http://sonarr-hd:8989' }
+		];
+		expect(latestPerInstance(reads).map((s) => s.id)).toEqual([4, 3, 1]);
+		expect(instanceKey({ kind: 'sonarr' })).toBe(instanceKey({ kind: 'sonarr', address: '' }));
+		expect(hostOf('http://sonarr-4k:8989')).toBe('sonarr-4k:8989');
+		expect(hostOf('not an address')).toBe('not an address');
 	});
 });

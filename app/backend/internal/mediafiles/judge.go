@@ -332,6 +332,9 @@ func sizeMidpoint(lo, hi int64) int64 { return lo + (hi-lo)/2 }
 // Hard steps all run so every refusal is reported at once.
 func Judge(rel ReleaseFacts, set SlotSet, rules PickRulesBody) Verdict {
 	p := rel.Parse
+	if rel.Size > 0 {
+		p.Size = rel.Size
+	}
 	v := Verdict{SlotIDs: set.SlotIDs}
 
 	// Parse warnings.

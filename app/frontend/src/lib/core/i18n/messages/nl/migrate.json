@@ -127,6 +127,7 @@
 	"migrate.nothingHere": "Hier is niets.",
 	"migrate.show100More": "100 meer tonen",
 	"migrate.edit": "{name} bewerken",
+	"migrate.appAt": "{name} op {address}",
 	"migrate.addAnApp": "Een app toevoegen",
 	"migrate.addTheAddress": "Voeg het adres toe.",
 	"migrate.readingStopped": "Het uitlezen is gestopt.",

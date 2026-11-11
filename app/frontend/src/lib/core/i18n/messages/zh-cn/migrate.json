@@ -127,6 +127,7 @@
 	"migrate.nothingHere": "这里没有内容。",
 	"migrate.show100More": "再显示 100 项",
 	"migrate.edit": "编辑 {name}",
+	"migrate.appAt": "位于 {address} 的 {name}",
 	"migrate.addAnApp": "添加应用",
 	"migrate.addTheAddress": "请填写地址。",
 	"migrate.readingStopped": "读取已停止。",

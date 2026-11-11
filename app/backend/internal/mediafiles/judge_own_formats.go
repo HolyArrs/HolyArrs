@@ -20,6 +20,7 @@ type ownSpec struct {
 	re      *regexp2.Regexp
 	sources []string
 	res     int
+	size    sizeRange
 }
 
 const specTimeout = 50 * time.Millisecond
@@ -56,6 +57,12 @@ func compileSpecs(specs []OwnSpec) ([]ownSpec, bool) {
 				return nil, false
 			}
 			o.res = n
+		case "size":
+			r, ok := compileSizeRange(s.Value)
+			if !ok {
+				return nil, false
+			}
+			o.size = r
 		default:
 			return nil, false
 		}
@@ -78,6 +85,8 @@ func (s ownSpec) test(p releasename.Result) bool {
 		hit = p.Source.Conf != releasename.Unknown && slices.Contains(s.sources, p.Source.Value)
 	case "resolution":
 		hit = p.Resolution.Conf != releasename.Unknown && p.Resolution.Value == s.res
+	case "size":
+		hit = s.size.fits(p.Size)
 	}
 	return hit != s.Negate
 }

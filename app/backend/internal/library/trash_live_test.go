@@ -70,6 +70,6 @@ func TestLiveScores(t *testing.T) {
 		"Arcane.S01E01.1080p.WEB-DL.x265-YIFY",
 		"Arcane.S01E01.1080p.WEBRip.AV1-LAMA",
 	} {
-		t.Logf("%6d  %s", mediafiles.CurrentOf(name, time.Time{}, body).Points, name)
+		t.Logf("%6d  %s", mediafiles.CurrentOf(name, 0, time.Time{}, body).Points, name)
 	}
 }

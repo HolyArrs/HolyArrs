@@ -895,6 +895,7 @@
 	"downloads.pr.err.term200": "يحوي كل مصطلح 200 حرف كحد أقصى.",
 	"downloads.pr.err.terms50": "أدرج 50 مصطلحًا كحد أقصى.",
 	"downloads.pr.err.termsMin": "أدرج كلمة أو نمطًا واحدًا على الأقل.",
+	"downloads.pr.err.sizeRange": "أدخل حدًا أدنى أو أعلى للحجم، ويكون الأعلى أكبر من الأدنى.",
 	"downloads.pr.err.traitName": "أعطِ السمة اسمًا.",
 	"downloads.pr.err.traitOnce": "يمكن إدراج كل سمة مرة واحدة.",
 	"downloads.pr.err.wait": "يمكن أن يكون الانتظار من 0 إلى 10080 دقيقة (7 أيام).",
@@ -1211,5 +1212,13 @@
 	"downloads.ot.kindName": "الاسم",
 	"downloads.ot.kindGroup": "المجموعة",
 	"downloads.ot.kindSource": "المصدر",
-	"downloads.ot.kindResolution": "الدقة"
+	"downloads.ot.kindResolution": "الدقة",
+	"downloads.ot.size": "الحجم",
+	"downloads.ot.kindSize": "الحجم",
+	"downloads.ot.over": "أكبر من (غيغابايت)",
+	"downloads.ot.upTo": "حتى (غيغابايت)",
+	"downloads.ot.hintSize": "حجم الإصدار كاملًا بالغيغابايت. اترك أحد الطرفين فارغًا لعدم وضع حد. الإصدار الذي لا يُعرف حجمه لا يطابق أبدًا.",
+	"downloads.ot.sumSize": "الحجم: {range}",
+	"downloads.ot.sizeOver": "أكبر من {n} غيغابايت",
+	"downloads.ot.sizeUpTo": "حتى {n} غيغابايت"
 }

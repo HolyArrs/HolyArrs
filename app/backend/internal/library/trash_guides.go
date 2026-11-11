@@ -62,6 +62,9 @@ type TrashSpec struct {
 	Required       bool   `json:"required"`
 	Fields         struct {
 		Value json.RawMessage `json:"value"`
+		// Size tests give their ends in GB.
+		Min float64 `json:"min"`
+		Max float64 `json:"max"`
 	} `json:"fields"`
 }
 
@@ -266,7 +269,6 @@ var trashSkippedKinds = map[string]string{
 	"LanguageSpecification":    "language",
 	"IndexerFlagSpecification": "indexer flag",
 	"ReleaseTypeSpecification": "release type",
-	"SizeSpecification":        "size",
 	"YearSpecification":        "year",
 }
 
@@ -388,6 +390,12 @@ func trashConvert(app string, in []TrashSpec) ([]mediafiles.OwnSpec, []string) {
 				continue
 			}
 			o.Kind, o.Value = "resolution", strconv.Itoa(num)
+		case "SizeSpecification":
+			if _, _, ok := mediafiles.ParseSizeRange(mediafiles.SizeRangeValue(s.Fields.Min, s.Fields.Max)); !ok {
+				bad["size"] = true
+				continue
+			}
+			o.Kind, o.Value = "size", mediafiles.SizeRangeValue(s.Fields.Min, s.Fields.Max)
 		case "QualityModifierSpecification":
 			// Movies: 4 is a full disc, 5 a remux; the rest have no match here.
 			switch num {

@@ -2,6 +2,7 @@ package migrate
 
 import (
 	"fmt"
+	"net/url"
 	"path"
 	"sort"
 	"strings"
@@ -28,7 +29,10 @@ type builder struct {
 	listNames map[string]bool // Outside list names planned (lower case)
 	app       Kind
 	snapID    int64
-	paths     []pathRow // usable path rewrites from every app, placed by pathMaps
+	// label names the app's address after its rule names when more than
+	// one copy of that app is imported ("" otherwise).
+	label string
+	paths []pathRow // usable path rewrites from every app, placed by pathMaps
 }
 
 // waitFrom is one app's untagged default wait rule as Pick rules waits.
@@ -168,11 +172,23 @@ func BuildPlan(in []Input, ch Choices) *Plan {
 	}
 	sorted := append([]Input(nil), in...)
 	sort.SliceStable(sorted, func(i, j int) bool { return order(sorted[i].Snap.Kind) < order(sorted[j].Snap.Kind) })
+	copies := map[Kind]map[string]bool{}
+	for _, x := range sorted {
+		if x.Snap != nil {
+			if copies[x.Snap.Kind] == nil {
+				copies[x.Snap.Kind] = map[string]bool{}
+			}
+			copies[x.Snap.Kind][x.Snap.Address] = true
+		}
+	}
 	for _, x := range sorted {
 		if x.Snap == nil {
 			continue
 		}
-		b.app, b.snapID = x.Snap.Kind, x.ID
+		b.app, b.snapID, b.label = x.Snap.Kind, x.ID, ""
+		if len(copies[x.Snap.Kind]) > 1 {
+			b.label = instanceLabel(x.Snap.Address)
+		}
 		p.Snapshots = append(p.Snapshots, x.ID)
 		p.Apps = append(p.Apps, string(x.Snap.Kind))
 		b.snapshot(x.Snap)
@@ -183,6 +199,28 @@ func BuildPlan(in []Input, ch Choices) *Plan {
 	p.Notes = noteList(p.Notes)
 	p.Paths = noteList(p.Paths)
 	return p
+}
+
+// presetKey keys an app's quality profile to its Pick rules; profile ids
+// repeat across two copies of one app, so the read is part of the key.
+func (b *builder) presetKey(k Kind, id int64) string {
+	return fmt.Sprintf("%d:%s:%d", b.snapID, k, id)
+}
+
+// instanceLabel is the host (and port) of an address, or "backup".
+func instanceLabel(address string) string {
+	if u, err := url.Parse(address); err == nil && u.Host != "" {
+		return u.Host
+	}
+	return "backup"
+}
+
+// named adds the app copy's label to a name when one is set.
+func (b *builder) named(name string) string {
+	if b.label == "" {
+		return name
+	}
+	return name + " (" + b.label + ")"
 }
 
 func (b *builder) from(field string, i int) string {
@@ -228,7 +266,7 @@ func (b *builder) cover(fields ...string) {
 
 func (b *builder) snapshot(s *Snapshot) {
 	// The read's own facts are not settings.
-	b.cover("kind", "via", "version", "schema", "read_at")
+	b.cover("kind", "via", "version", "schema", "read_at", "address")
 	// An import list's sign-in has nowhere to go here: its own Not moved
 	// line says so (leftBehind) instead of asking for it.
 	var needs []string

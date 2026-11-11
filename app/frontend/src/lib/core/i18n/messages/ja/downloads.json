@@ -895,6 +895,7 @@
 	"downloads.pr.err.term200": "各語は 200 文字までです。",
 	"downloads.pr.err.terms50": "語は 50 件までです。",
 	"downloads.pr.err.termsMin": "語またはパターンを 1 つ以上入力してください。",
+	"downloads.pr.err.sizeRange": "下限か上限を入力してください。上限は下限より大きくしてください。",
 	"downloads.pr.err.traitName": "特性に名前を付けてください。",
 	"downloads.pr.err.traitOnce": "各特性は 1 回だけ載せられます。",
 	"downloads.pr.err.wait": "待機は 0 ~ 10080 分(7 日)です。",
@@ -1211,5 +1212,13 @@
 	"downloads.ot.kindName": "名前",
 	"downloads.ot.kindGroup": "グループ",
 	"downloads.ot.kindSource": "ソース",
-	"downloads.ot.kindResolution": "解像度"
+	"downloads.ot.kindResolution": "解像度",
+	"downloads.ot.size": "サイズ",
+	"downloads.ot.kindSize": "サイズ",
+	"downloads.ot.over": "超 (GB)",
+	"downloads.ot.upTo": "以下 (GB)",
+	"downloads.ot.hintSize": "Release 全体のサイズ (GB)。片方を空欄にすると上限・下限なしになります。サイズが不明な Release は一致しません。",
+	"downloads.ot.sumSize": "サイズ: {range}",
+	"downloads.ot.sizeOver": "{n} GB 超",
+	"downloads.ot.sizeUpTo": "{n} GB 以下"
 }

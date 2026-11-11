@@ -127,6 +127,7 @@
 	"migrate.nothingHere": "Burada bir şey yok.",
 	"migrate.show100More": "100 tane daha göster",
 	"migrate.edit": "{name} düzenle",
+	"migrate.appAt": "{address} adresindeki {name}",
 	"migrate.addAnApp": "Uygulama ekle",
 	"migrate.addTheAddress": "Adresi ekle.",
 	"migrate.readingStopped": "Okuma durdu.",

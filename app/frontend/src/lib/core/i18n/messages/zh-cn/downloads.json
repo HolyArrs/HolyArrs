@@ -895,6 +895,7 @@
 	"downloads.pr.err.term200": "每个词最多 200 个字符。",
 	"downloads.pr.err.terms50": "最多列出 50 个词。",
 	"downloads.pr.err.termsMin": "请至少列出一个词或模式。",
+	"downloads.pr.err.sizeRange": "请填写下限或上限，且上限要大于下限。",
 	"downloads.pr.err.traitName": "请给特征起个名字。",
 	"downloads.pr.err.traitOnce": "每个特征只能列出一次。",
 	"downloads.pr.err.wait": "等待时间可以是 0 到 10080 分钟（7 天）。",
@@ -1211,5 +1212,13 @@
 	"downloads.ot.kindName": "名称",
 	"downloads.ot.kindGroup": "组",
 	"downloads.ot.kindSource": "来源",
-	"downloads.ot.kindResolution": "分辨率"
+	"downloads.ot.kindResolution": "分辨率",
+	"downloads.ot.size": "大小",
+	"downloads.ot.kindSize": "大小",
+	"downloads.ot.over": "大于 (GB)",
+	"downloads.ot.upTo": "不超过 (GB)",
+	"downloads.ot.hintSize": "整个 Release 的大小，单位 GB。留空一端表示不设限制。没有给出大小的 Release 永远不符合。",
+	"downloads.ot.sumSize": "大小：{range}",
+	"downloads.ot.sizeOver": "大于 {n} GB",
+	"downloads.ot.sizeUpTo": "不超过 {n} GB"
 }

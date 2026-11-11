@@ -127,6 +127,7 @@
 	"migrate.nothingHere": "Aquí no hay nada.",
 	"migrate.show100More": "Ver 100 más",
 	"migrate.edit": "Editar {name}",
+	"migrate.appAt": "{name} en {address}",
 	"migrate.addAnApp": "Añadir una app",
 	"migrate.addTheAddress": "Añade la dirección.",
 	"migrate.readingStopped": "La lectura se detuvo.",

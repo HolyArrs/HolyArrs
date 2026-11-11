@@ -37,14 +37,14 @@ func TestOwnTraitsMadeJudgedAndRemoved(t *testing.T) {
 	var p lbPickRulesDetail
 	_ = json.Unmarshal(lbDo(t, "POST", srv.URL+"/api/v1/pick-rules", lbRuleJSON(t, "Mine", []string{"movie"}, b), 201), &p)
 	name := "Dune.Part.Two.2024.1080p.WEB-DL.DDP5.1.H.264-HOLYARRS"
-	if got := mediafiles.CurrentOf(name, time.Time{}, p.Body).Points; got < 300 {
+	if got := mediafiles.CurrentOf(name, 0, time.Time{}, p.Body).Points; got < 300 {
 		t.Fatalf("points with the trait = %d, want 300 or more", got)
 	}
 
 	// A change of terms is judged at once too.
 	path := fmt.Sprintf("%s/api/v1/own-traits/%d", srv.URL, tr.ID)
 	_ = json.Unmarshal(lbDo(t, "PUT", path, `{"name":"Favourite group","match":"group","terms":["LANTERN"]}`, 200), &tr)
-	if got := mediafiles.CurrentOf(name, time.Time{}, p.Body).Points; got >= 300 {
+	if got := mediafiles.CurrentOf(name, 0, time.Time{}, p.Body).Points; got >= 300 {
 		t.Fatalf("points after the change = %d, want under 300", got)
 	}
 

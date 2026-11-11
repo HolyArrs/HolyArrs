@@ -4,6 +4,7 @@
   "version": "s",
   "schema": 7,
   "read_at": "2026-10-13T12:00:00Z",
+  "address": "s",
   "titles": [
     {
       "source_id": 7,

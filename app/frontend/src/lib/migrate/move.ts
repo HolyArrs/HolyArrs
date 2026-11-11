@@ -7,6 +7,8 @@ export interface Snapshot {
 	created_at: string;
 	kind: string;
 	via: 'api' | 'backup';
+	/** The app's address for a read over its API; '' for a backup. */
+	address?: string;
 	app_version: string;
 	counts: Record<string, number>;
 	size: number;
@@ -239,6 +241,31 @@ export const steps = (): { id: Step; word: string; title: string }[] => [
 
 export function appName(kind: string): string {
 	return apps.find((a) => a.kind === kind)?.name ?? kind;
+}
+
+/** One copy of an old app: its kind and the address it was read from. */
+export function instanceKey(s: Pick<Snapshot, 'kind' | 'address'>): string {
+	return `${s.kind} ${s.address ?? ''}`;
+}
+
+/** The newest read of each copy (reads come newest first). */
+export function latestPerInstance<T extends Pick<Snapshot, 'kind' | 'address'>>(snaps: T[]): T[] {
+	const seen = new Set<string>();
+	return snaps.filter((s) => {
+		const k = instanceKey(s);
+		if (seen.has(k)) return false;
+		seen.add(k);
+		return true;
+	});
+}
+
+/** Host and port of an address, to tell two copies of one app apart. */
+export function hostOf(address: string): string {
+	try {
+		return new URL(address).host || address;
+	} catch {
+		return address;
+	}
 }
 
 export function placeholderFor(kind: string): string {
