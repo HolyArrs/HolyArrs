@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
@@ -109,5 +110,44 @@ func TestOtherApp(t *testing.T) {
 		if got := otherApp(c.d, c.cat); got != c.want {
 			t.Errorf("%+v %q: %v", c.d, c.cat, got)
 		}
+	}
+}
+
+// A job moved into HolyArrs's own category in a shared SABnzbd is matched
+// on the next look, as Sonarr picks it up on its next poll.
+func TestUsenetJobMovedIntoOwnCategoryIsMatched(t *testing.T) {
+	t.Parallel()
+	x := seed41(t, mediafiles.SlotDownloading, "downloading")
+	ctx := context.Background()
+	sab := addUsenet(t, x.s, "S", "holyarrs", "")
+	var lookups int
+	x.dl.Match.SearchMovies = func(context.Context, string, int) ([]metadata.Movie, error) { lookups++; return nil, nil }
+	x.dl.Match.SearchShows = func(context.Context, string) ([]metadata.Show, error) { lookups++; return nil, nil }
+	p := &persister{db: x.s, now: time.Now}
+	s := &Sync{Store: &Store{}, DB: x.s, Match: x.dl.MatchLinkOnly}
+	s.init()
+	job := Job{ID: "SABnzbd_nzo_m", Name: "QI.XL.S24E02.720p.WEB", Category: "tv"}
+	p.note(sab, Changes{Added: []string{job.ID}}, nil, map[string]Job{job.ID: job}, "")
+	if err := p.flush(ctx); err != nil {
+		t.Fatal(err)
+	}
+	s.matchStep(ctx)
+	outcome := func() (out, cat string) {
+		_ = x.s.Read().QueryRow("SELECT outcome, category FROM dl_match_queue WHERE downloader_id = ? AND key = ?", sab, job.ID).Scan(&out, &cat)
+		return
+	}
+	if out, _ := outcome(); out != matchOtherApp || lookups != 0 {
+		t.Fatalf("job in tv: outcome %q lookups %d", out, lookups)
+	}
+
+	moved := job
+	moved.Category = "holyarrs"
+	p.note(sab, Changes{Changed: []FieldChange{{ID: job.ID, Fields: []string{"Category"}}}}, map[string]Job{job.ID: job}, map[string]Job{job.ID: moved}, "")
+	if err := p.flush(ctx); err != nil {
+		t.Fatal(err)
+	}
+	s.matchStep(ctx)
+	if out, cat := outcome(); out == matchOtherApp || cat != "holyarrs" || lookups == 0 {
+		t.Fatalf("job now in own category: outcome %q queue category %q lookups %d", out, cat, lookups)
 	}
 }
