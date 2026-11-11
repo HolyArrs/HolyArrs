@@ -327,7 +327,7 @@
 				{/each}
 			</ul>
 		{:else}
-			<div class="rows {view}" class:v-rows={view === 'rows'} class:has-select={selecting} style="--acts-w: {actsW}px; --cols: {gridCols}; --table-min: {tableMin}px; --banner-w: {bannerW}px; --row-pad: {20 + touchActs}px" bind:this={listEl} bind:clientWidth={listWidth}>
+			<div class="rows {view}" class:v-rows={view === 'rows'} class:has-select={selecting} style="--acts-w: {actsW}px; --cols: {gridCols}; --table-min: {tableMin}px; --banner-w: {bannerW}px; --row-pad: {20 + touchActs + (view === 'table' && !phone && hiddenCols > 0 ? 16 : 0)}px" bind:this={listEl} bind:clientWidth={listWidth}>
 				{#if view === 'rows' && !phone}
 					<div class="lh" role="presentation" style="--facts: {factsTpl}">
 						{#if selecting}<span></span>{/if}
