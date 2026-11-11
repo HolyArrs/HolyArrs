@@ -145,6 +145,9 @@ var jobOwners = map[string]Owner{
 	"subtitle_missing": subtitles,
 	"subtitle_better":  subtitles,
 	"subtitle_look":    subtitles,
+
+	"subtitle_translate": subtitles,
+
 	// Requests.
 	"sync_plex_watchlists": wishlist,
 }

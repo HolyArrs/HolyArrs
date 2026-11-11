@@ -49,6 +49,8 @@ type Service struct {
 	Vault *secrets.Vault
 	// HTTP replaces every site's HTTP client. Only tests set it.
 	HTTP *http.Client
+	// TranslateHTTP replaces the translator's HTTP client. Only tests set it.
+	TranslateHTTP *http.Client
 	// Enqueue adds a Job to the jobs queue. When nil, nothing runs later.
 	Enqueue func(ctx context.Context, kind string, subj *domain.Subject, params map[string]any, key string) error
 
@@ -86,7 +88,20 @@ type Subtitle struct {
 	LastTriedAt     *time.Time     `db:"last_tried_at" json:"last_tried_at,omitempty"`
 	NextTryAt       *time.Time     `db:"next_try_at" json:"next_try_at,omitempty"`
 	Sync            map[string]any `db:"sync,json" json:"sync"`
+	// Made says what made a subtitle when a person did not: MadeTranslated or
+	// MadeTranslatedPartial for HolyArrs's own translation, or a site's
+	// sites.AITranslated or sites.MachineTranslated. Nil means a person.
+	Made *string `db:"made" json:"made,omitempty"`
+	// Picture marks a built-in track stored as pictures, which cannot be
+	// translated. It is worked out from the codec, never stored.
+	Picture bool `json:"picture,omitempty"`
 }
+
+// Marks of HolyArrs's own translations.
+const (
+	MadeTranslated        = "translated"
+	MadeTranslatedPartial = "translated_partial"
+)
 
 // fileCtx gathers what a search needs about one main File.
 type fileCtx struct {
@@ -169,7 +184,7 @@ type Have struct {
 
 // meets reports whether h satisfies w.
 func meets(w Want, h Have) bool {
-	if h.Language != w.Language || h.Forced != w.Forced {
+	if !LangMatches(w.Language, h.Language) || h.Forced != w.Forced {
 		return false
 	}
 	return w.HearingImpaired != HIOnly || h.HearingImpaired
@@ -461,6 +476,9 @@ func ListFor(ctx context.Context, db *sql.DB, fileID int64) ([]Subtitle, error) 
 	rs, err := database.Select[Subtitle](ctx, db, "subtitles", "file_id = ? ORDER BY place, language, id DESC", fileID)
 	if rs == nil {
 		rs = []Subtitle{}
+	}
+	for i := range rs {
+		rs[i].Picture = rs[i].Place == "built_in" && rs[i].Codec != nil && container.PictureCodec(*rs[i].Codec)
 	}
 	return rs, err
 }

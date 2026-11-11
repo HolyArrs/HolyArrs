@@ -533,6 +533,12 @@ var RoutePerms = map[string]webserver.Perm{
 	"GET /api/v1/migrate/moves/{id}/report": webserver.NeedUsers,
 	"POST /api/v1/migrate/moves/{id}/undo":  webserver.NeedUsers,
 
+	// Subtitle translation with the owner's own translator.
+	"GET /api/v1/settings/subtitles/translator":       webserver.PermSettings,
+	"PUT /api/v1/settings/subtitles/translator":       webserver.PermSettings,
+	"POST /api/v1/settings/subtitles/translator/test": webserver.PermSettings,
+	"POST /api/v1/files/{id}/subtitles/translate":     webserver.PermManageLibrary,
+
 	// Reports: anyone signed in reports a problem and sees their own;
 	// fixing and opening again needs manage_library.
 	"GET /api/v1/reports":              webserver.NeedSignedIn,

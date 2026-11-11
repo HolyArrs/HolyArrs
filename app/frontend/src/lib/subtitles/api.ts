@@ -7,6 +7,8 @@ export interface Want {
 	language: string;
 	hearing_impaired: HI;
 	forced: boolean;
+	// When nothing is found, translate one from this language with the owner's translator.
+	translate_from?: string;
 }
 
 export interface Language {
@@ -52,6 +54,7 @@ export interface SiteView {
 	downloads_today: number;
 	allow_local_network: boolean;
 	priority: number;
+	machine_made?: boolean;
 	has_account: boolean;
 }
 
@@ -93,6 +96,10 @@ export interface SubtitleRow {
 	tries: number;
 	next_try_at?: string;
 	sync: Record<string, unknown>;
+	// What made it when a person did not: a translation, whole or partial, or a site's machine-made file.
+	made?: 'translated' | 'translated_partial' | 'ai_translated' | 'machine_translated';
+	// A built-in track stored as pictures, which cannot be translated.
+	picture?: boolean;
 }
 
 export interface Resolved {
@@ -137,6 +144,7 @@ export interface Candidate {
 	trusted?: boolean;
 	downloads?: number;
 	format?: string;
+	machine_made?: 'ai_translated' | 'machine_translated';
 	score: { total: number; parts: ScorePart[]; refused?: string };
 }
 

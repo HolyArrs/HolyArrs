@@ -241,6 +241,7 @@ both
 budget
 built
 built_at
+built_in_auto
 bulk_search_respects_gate
 by
 by_hand
@@ -567,6 +568,7 @@ files
 filled
 films
 fingerprint
+finish_reason
 finished
 finished_at
 first-release-date
@@ -660,6 +662,7 @@ has_4k
 has_account
 has_copy
 has_file
+has_key
 has_other_announce_error
 has_tracker_error
 has_tracker_warning
@@ -862,7 +865,9 @@ lossless
 low_space_mb
 m
 machineIdentifier
+machine_made
 machine_translated
+made
 made_by
 main
 mal
@@ -919,6 +924,8 @@ missing_search_count
 missing_search_music
 missing_search_shows
 mode
+model
+models
 moment
 moments
 monitorNewItems
@@ -1470,9 +1477,14 @@ sim
 similar
 since
 site
+site_format
+site_hi
 site_id
 site_key
 site_kind
+site_language
+site_link
+site_score
 site_url
 sites
 sites_asked
@@ -1688,6 +1700,8 @@ trailer_key
 trait
 traits
 trakt
+translate_from
+translated
 translations
 transmission
 trash_description

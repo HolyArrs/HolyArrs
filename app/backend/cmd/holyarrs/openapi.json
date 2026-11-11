@@ -5873,6 +5873,16 @@
           "language": {
             "type": "string"
           },
+          "made": {
+            "description": "What made the subtitle when a person did not: HolyArrs's own translation (whole or partial) or a site's machine-made file. Left out: a person.",
+            "enum": [
+              "translated",
+              "translated_partial",
+              "ai_translated",
+              "machine_translated"
+            ],
+            "type": "string"
+          },
           "next_try_at": {
             "format": "date-time",
             "type": "string"
@@ -5884,6 +5894,10 @@
               "by_hand"
             ],
             "type": "string"
+          },
+          "picture": {
+            "description": "A built-in track stored as pictures (PGS, VobSub), which cannot be translated.",
+            "type": "boolean"
           },
           "place": {
             "enum": [
@@ -6308,6 +6322,10 @@
           "limits": {
             "$ref": "#/components/schemas/SubtitleSiteLimits"
           },
+          "machine_made": {
+            "description": "Lets in the files the site marks as AI-translated or machine-translated. They score low and stand in only when no file made by a person passes.",
+            "type": "boolean"
+          },
           "name": {
             "type": "string"
           },
@@ -6368,6 +6386,10 @@
           },
           "limits": {
             "$ref": "#/components/schemas/SubtitleSiteLimits"
+          },
+          "machine_made": {
+            "description": "Left out: a new site starts off and a changed one keeps its switch.",
+            "type": "boolean"
           },
           "name": {
             "type": "string"
@@ -6458,6 +6480,68 @@
         },
         "type": "object"
       },
+      "SubtitleTranslator": {
+        "description": "The owner's own translator. The key is never sent back; has_key only says one is kept in the vault.",
+        "properties": {
+          "built_in_auto": {
+            "description": "The timed search translates text tracks inside the video without asking. Off, they are translated by hand only.",
+            "type": "boolean"
+          },
+          "has_key": {
+            "type": "boolean"
+          },
+          "kind": {
+            "description": "openai: any server with the OpenAI chat API (OpenRouter, OpenAI, Ollama, LM Studio and the like); lingarr: a Lingarr server; empty: off.",
+            "enum": [
+              "",
+              "openai",
+              "lingarr"
+            ],
+            "type": "string"
+          },
+          "model": {
+            "description": "The model name, for openai.",
+            "type": "string"
+          },
+          "url": {
+            "description": "The API base, such as https://openrouter.ai/api/v1 or http://ollama:11434/v1. A bare host gets /v1. It may be on the local network.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "url",
+          "model",
+          "has_key",
+          "built_in_auto"
+        ],
+        "type": "object"
+      },
+      "SubtitleTranslatorInput": {
+        "description": "Fields left out keep their value. An empty key keeps the stored one; clear_key removes it. A kept key never follows the address to another host.",
+        "properties": {
+          "built_in_auto": {
+            "type": "boolean"
+          },
+          "clear_key": {
+            "type": "boolean"
+          },
+          "key": {
+            "description": "Sealed in the vault, never logged or sent back.",
+            "type": "string"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
       "SubtitleWant": {
         "properties": {
           "forced": {
@@ -6473,6 +6557,10 @@
           },
           "language": {
             "description": "two-letter code",
+            "type": "string"
+          },
+          "translate_from": {
+            "description": "When no subtitle in this language is found, translate one from this language with the owner's translator. Empty: never translated.",
             "type": "string"
           }
         },
@@ -16559,6 +16647,124 @@
         "x-holyarrs-scope": "write"
       }
     },
+    "/api/v1/files/{id}/subtitles/translate": {
+      "post": {
+        "description": "Queues a translation of one subtitle of a File with the owner's translator. Without a source, it takes a text file beside the video, then a text track inside it, then the best site file in the from language; picture tracks are skipped. A subtitle made by a person is never replaced. The Job saves a .LANG.srt with the same timings, marked as a translation.",
+        "operationId": "translateSubtitle",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "forced": {
+                    "type": "boolean"
+                  },
+                  "from": {
+                    "description": "The language to translate from; left out, the wish's rule, else any text subtitle, English first.",
+                    "type": "string"
+                  },
+                  "language": {
+                    "description": "The language to make, such as pt-br.",
+                    "type": "string"
+                  },
+                  "path": {
+                    "description": "For beside: the subtitle's path relative to the Library folder.",
+                    "type": "string"
+                  },
+                  "source": {
+                    "enum": [
+                      "",
+                      "beside",
+                      "built_in"
+                    ],
+                    "type": "string"
+                  },
+                  "track": {
+                    "description": "For built_in: the track number.",
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "language"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "job_id": {
+                      "type": "integer"
+                    },
+                    "queued": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "queued"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Queued."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Bad input."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "No such File."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "No translator is set up, the track holds pictures, or the File cannot have subtitles."
+          }
+        },
+        "summary": "Translate a subtitle",
+        "tags": [
+          "Subtitles"
+        ],
+        "x-holyarrs-part": "subtitles",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "write"
+      }
+    },
     "/api/v1/health": {
       "get": {
         "description": "Version, schema, uptime, write waits, Sources, Downloaders and live clients. The health checks are at /health/checks.",
@@ -24769,6 +24975,128 @@
           }
         },
         "summary": "Change the subtitle settings",
+        "tags": [
+          "Subtitles"
+        ],
+        "x-holyarrs-part": "subtitles",
+        "x-holyarrs-permission": "settings",
+        "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/settings/subtitles/translator": {
+      "get": {
+        "description": "The translator HolyArrs uses for subtitles no site has. The key itself is never sent.",
+        "operationId": "getSubtitleTranslator",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubtitleTranslator"
+                }
+              }
+            },
+            "description": "The translator."
+          }
+        },
+        "summary": "Read the subtitle translator",
+        "tags": [
+          "Subtitles"
+        ],
+        "x-holyarrs-part": "subtitles",
+        "x-holyarrs-permission": "settings",
+        "x-holyarrs-scope": "read"
+      },
+      "put": {
+        "description": "Fields left out keep their value. Moving the address to another host while a key is kept needs the key again or clear_key.",
+        "operationId": "putSubtitleTranslator",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubtitleTranslatorInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubtitleTranslator"
+                }
+              }
+            },
+            "description": "Saved."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Bad input."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "The key would follow the address to another host, or the vault is not set up."
+          }
+        },
+        "summary": "Change the subtitle translator",
+        "tags": [
+          "Subtitles"
+        ],
+        "x-holyarrs-part": "subtitles",
+        "x-holyarrs-permission": "settings",
+        "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/settings/subtitles/translator/test": {
+      "post": {
+        "description": "Lists the server's models where it can and translates two short lines, then says in plain words how it went. It changes nothing.",
+        "operationId": "testSubtitleTranslator",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    },
+                    "models": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "ok": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "ok",
+                    "message",
+                    "models"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "How it went."
+          }
+        },
+        "summary": "Test the subtitle translator",
         "tags": [
           "Subtitles"
         ],

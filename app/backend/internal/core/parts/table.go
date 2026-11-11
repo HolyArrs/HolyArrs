@@ -570,6 +570,12 @@ var routeOwners = map[string]Owner{
 	"DELETE /api/v1/subtitle-sites/{id}":        subtitles,
 	"POST /api/v1/subtitle-sites/{id}/test":     subtitles,
 
+	// Subtitle translation.
+	"GET /api/v1/settings/subtitles/translator":       subtitles,
+	"PUT /api/v1/settings/subtitles/translator":       subtitles,
+	"POST /api/v1/settings/subtitles/translator/test": subtitles,
+	"POST /api/v1/files/{id}/subtitles/translate":     subtitles,
+
 	// Requests: asks, limits, and the messages about asks.
 	"GET /api/v1/asks":                               wishlist,
 	"GET /api/v1/asks/{id}":                          wishlist,

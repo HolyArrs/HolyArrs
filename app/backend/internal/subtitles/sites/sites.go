@@ -59,7 +59,10 @@ type Candidate struct {
 	Corrected    bool     `json:"corrected,omitempty"`
 	Downloads    int      `json:"downloads,omitempty"`
 	Format       string   `json:"format,omitempty"`
-	Link         string   `json:"-"` // where Download fetches it; never shown
+	// MachineMade says the site flags the file as made by a machine:
+	// AITranslated or MachineTranslated. Empty means made by a person.
+	MachineMade string `json:"machine_made,omitempty"`
+	Link        string `json:"-"` // where Download fetches it; never shown
 }
 
 // Site is one subtitle site.
