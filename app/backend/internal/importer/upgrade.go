@@ -147,7 +147,50 @@ func lieOf(name, relName string, hasOld bool, oldName string, rules mediafiles.P
 			return fmt.Sprintf("file is %s, lower than the copy in place (%s)", plainStep(fStep), plainStep(oStep))
 		}
 	}
+	if hasOld {
+		if step := belowRules(rules, oldName, name, relName); step != "" {
+			return fmt.Sprintf("file is %s, which this Version's Pick rules don't allow, so it can't replace the copy in place; choose another Version", plainStep(step))
+		}
+	}
 	return ""
+}
+
+// belowRules returns the step the names parse to when it sits below every step the rules allow, so a file meant for a lower Version can't replace this Version's copy (#274).
+// Unknown steps pass, and so does a file that is still better than a copy in place of known quality.
+func belowRules(rules mediafiles.PickRulesBody, oldName string, names ...string) string {
+	lowest := -1
+	for i, s := range rules.Steps {
+		if s.Allowed {
+			lowest = i
+			break
+		}
+	}
+	if lowest < 0 {
+		return ""
+	}
+	bad, top := "", -1
+	for _, n := range names {
+		if n == "" {
+			continue
+		}
+		step, idx := mediafiles.StepOf(n, rules)
+		if step == "" {
+			continue
+		}
+		if idx < 0 || idx >= lowest {
+			return ""
+		}
+		if idx > top {
+			bad, top = step, idx
+		}
+	}
+	if bad == "" {
+		return ""
+	}
+	if _, oIdx := mediafiles.StepOf(oldName, rules); oIdx >= 0 && oIdx < top {
+		return ""
+	}
+	return bad
 }
 
 func lossyOverLossless(newPath, relName string, old mediafiles.File, oldPath string, rules mediafiles.PickRulesBody) string {

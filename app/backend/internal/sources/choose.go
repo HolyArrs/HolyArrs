@@ -103,6 +103,7 @@ func (s *Searcher) Choose(ctx context.Context, releaseID, slotID int64, force bo
 				break
 			}
 		}
+		slotID = s.fittingVersion(ctx, rel, slotID)
 	}
 	c, err := s.loadSlot(ctx, slotID)
 	if err != nil {
@@ -188,6 +189,49 @@ func (s *Searcher) Choose(ctx context.Context, releaseID, slotID int64, force bo
 		s.OnChosen(ctx, slotID, rel.ID)
 	}
 	return ch, nil
+}
+
+// fittingVersion returns the movie Slot a Release picked by hand should go to when no Slot was named: the given one when its Version's rules let the Release pass,
+// otherwise another Version's Slot of the same movie that does, so a 1080p Release never lands on the 4K Version (#274). Anything unclear keeps the given Slot.
+func (s *Searcher) fittingVersion(ctx context.Context, rel domain.Release, slotID int64) int64 {
+	db := s.Store.Read()
+	if kind, _ := mediafiles.SlotKind(ctx, db, slotID); kind != "movie" {
+		return slotID
+	}
+	own, err := s.loadSlot(ctx, slotID)
+	if err != nil {
+		return slotID
+	}
+	slots, err := database.Select[mediafiles.Slot](ctx, db, "slots", "item_id = ? ORDER BY id", own.sl.ItemID)
+	if err != nil || len(slots) < 2 {
+		return slotID
+	}
+	bySlot, _ := rel.Verdict["by_slot"].(map[string]any)
+	fits := func(id int64) bool {
+		if turnedDownFor(rel, id) {
+			return false
+		}
+		c, err := s.loadSlot(ctx, id)
+		if err != nil || !canTakePick(c.sl.State) {
+			return false
+		}
+		if v, ok := bySlot[fmt.Sprint(id)].(map[string]any); ok {
+			if passed, ok := v["passed"].(bool); ok {
+				return passed
+			}
+		}
+		_, idx := mediafiles.StepOf(rel.Name, c.pr.Body)
+		return idx >= 0 && c.pr.Body.Steps[idx].Allowed
+	}
+	if fits(slotID) {
+		return slotID
+	}
+	for _, sl := range slots {
+		if sl.ID != slotID && fits(sl.ID) {
+			return sl.ID
+		}
+	}
+	return slotID
 }
 
 // TurnDown rejects a Release for every Slot it matched.
