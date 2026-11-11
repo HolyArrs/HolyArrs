@@ -22,7 +22,7 @@ var (
 	reSeasonDash  = regexp.MustCompile(`(?i)\bS(\d{1,2})\s+-\s+(\d{1,4})\b`)
 	// "Season 2 - 05" and "2nd Season - 05". The episode has two digits or
 	// more, so "Season 1 - 2" (seasons) and "Season 2 - 1080p" stay out.
-	reSeasonWordDash = regexp.MustCompile(`(?i)\b(?:Season` + sep + `?(\d{1,2})|(\d{1,2})(?:st|nd|rd|th)` + sep + `Season)\s+-\s+(\d{2,4})(?:v(\d))?\b`)
+	reSeasonWordDash = regexp.MustCompile(`(?i)\b(?:Season` + sep + `?(\d{1,2})|(\d{1,2})(?:st|nd|rd|th)` + sep + `Season)\s+-\s+(\d{2,4})(?:v(\d))?(?:\s?[-~]\s?(\d{2,4}))?\b`)
 	reAbsolute       = regexp.MustCompile(`\s-\s(\d{1,4})(?:v(\d))?(?:\s?-\s?(\d{1,4}))?(?:\s|$|[\[(])`)
 	reSeason         = regexp.MustCompile(`(?i)\b(?:S|Season` + sep + `?)(\d{1,2})\b`)
 	rePart           = regexp.MustCompile(`(?i)\b(?:Part|Pt)` + sep + `?(\d{1,2}|[IVX]{1,5})\b`)
@@ -125,6 +125,12 @@ func findShow(s string, anime, show bool) (showHit, int, int, bool) {
 		h := showHit{kind: KindEpisode, n: ShowNumbers{Seasons: []int{atoi(s[season[0]:season[1]])}, Episodes: []int{atoi(s[m[6]:m[7]])}}}
 		if m[8] >= 0 {
 			h.fix = atoi(s[m[8]:m[9]]) - 1
+		}
+		// "Season 2 - 01-12" is a batch of that season.
+		if m[10] >= 0 {
+			if sp := span(h.n.Episodes[0], atoi(s[m[10]:m[11]])); len(sp) > 1 {
+				h.kind, h.n.Episodes = KindMultiEpisode, sp
+			}
 		}
 		return h, m[0], m[1], true
 	}

@@ -832,12 +832,14 @@ func TestHandleSeason_PlaceholderDoesNotBlock(t *testing.T) {
 }
 
 // Still blocked: a season that aired only days ago, an undated episode in
-// the middle, or a season with no dates at all.
+// the middle, a run of undated episodes at the end, or a season with no
+// dates at all.
 func TestHandleSeason_UndatedStillBlocks(t *testing.T) {
 	for name, dated := range map[string][]int{
-		"recent":   {17, 10, 3},
-		"middle":   {44, -1, 30},
-		"no dates": {-1, -1, -1},
+		"undated run": {50, 44, -1},
+		"recent":      {17, 10, 3},
+		"middle":      {44, -1, 30},
+		"no dates":    {-1, -1, -1},
 	} {
 		ts := &tvServer{answer: func(url.Values) []string { return nil }}
 		f := seedShow(t, ts.start(t), nil)

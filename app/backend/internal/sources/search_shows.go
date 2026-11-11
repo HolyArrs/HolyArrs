@@ -198,11 +198,19 @@ func (s *Searcher) loadShow(ctx context.Context, ti mediafiles.Title, ver mediaf
 			last[e.ref.Season] = e
 		}
 	}
+	// Only one undated episode straight after it is a placeholder; a run of
+	// undated ones is a real unaired stretch.
+	after := map[int]int{}
+	for _, e := range set.eps {
+		if l, ok := last[e.ref.Season]; ok && e.it.AirDate == nil && e.ref.Episode > l.ref.Episode {
+			after[e.ref.Season]++
+		}
+	}
 	settled := time.Now().AddDate(0, 0, -14)
 	for i := range set.eps {
 		e := &set.eps[i]
 		l, ok := last[e.ref.Season]
-		e.placeholder = e.ref.Season > 0 && e.it.AirDate == nil && ok && e.ref.Episode > l.ref.Episode && l.it.AirDate.Before(settled)
+		e.placeholder = e.ref.Season > 0 && e.it.AirDate == nil && ok && e.ref.Episode == l.ref.Episode+1 && after[e.ref.Season] == 1 && l.it.AirDate.Before(settled)
 	}
 	return set, nil
 }

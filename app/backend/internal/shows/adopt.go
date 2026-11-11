@@ -92,7 +92,7 @@ func matchShowFolder(ctx context.Context, p metadata.ShowProvider, folder string
 func mapEpisodeFiles(vids []library.AdoptVideo, sh metadata.Show, order string) []library.AdoptEpisodeFile {
 	refs := make([]mediafiles.EpisodeRef, len(sh.Episodes))
 	for i, e := range sh.Episodes {
-		refs[i] = mediafiles.EpisodeRef{ItemID: int64(i + 1), Season: e.Season, Episode: e.Number, Absolute: e.Absolute, AirDay: e.AirDay}
+		refs[i] = mediafiles.EpisodeRef{ItemID: int64(i + 1), Season: e.Season, Episode: e.Number, Absolute: e.Absolute, AirDay: e.AirDay, AltSeason: e.AltSeason, AltEpisode: e.AltEpisode}
 	}
 	lib := []mediafiles.TitleRef{{Name: sh.Name, Aliases: sh.OtherNames, Year: sh.Year, Kind: "show"}}
 	taken := map[[2]int]bool{}
@@ -420,6 +420,9 @@ func (s *Service) recordFoundEpisodes(ctx context.Context, lf mediafiles.Library
 		}
 		if it.AirDay != nil {
 			e.AirDay = *it.AirDay
+		}
+		if it.Numbers.AltSeason != nil && it.Numbers.AltEpisode != nil {
+			e.AltSeason, e.AltEpisode = *it.Numbers.AltSeason, *it.Numbers.AltEpisode
 		}
 		sh.Episodes = append(sh.Episodes, e)
 		byKey[[2]int{e.Season, e.Number}] = it.ID

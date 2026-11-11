@@ -156,6 +156,11 @@ func TestSeasonDashNeedsEpisode(t *testing.T) {
 		{"[Kumomaru] Starfall Kitchen Season 1 - 2 [Batch]", KindAbsolute, "Starfall Kitchen Season 1", ShowNumbers{Absolute: []int{2}}},
 		{"[Kumomaru] Starfall Kitchen Season 2 - 1080p", KindSeasonPack, "Starfall Kitchen", sn(s1(2))},
 		{"[SubsPlease] Mashle - 17 (1080p)", KindAbsolute, "Mashle", ShowNumbers{Absolute: []int{17}}},
+		// A batch of the season is every episode of it, not the first one.
+		{"[Kumomaru] Mashle Season 2 - 01-12 [1080p]", KindMultiEpisode, "Mashle", sn(s1(2), span(1, 12)...)},
+		{"[Kumomaru] Mashle Season 2 - 01 - 12 [1080p]", KindMultiEpisode, "Mashle", sn(s1(2), span(1, 12)...)},
+		{"[Erai-raws] Mashle 2nd Season - 01 ~ 12 [1080p]", KindMultiEpisode, "Mashle", sn(s1(2), span(1, 12)...)},
+		{"[Erai-raws] Mashle 2nd Season - 05 [1080p]", KindEpisode, "Mashle", sn(s1(2), 5)},
 	} {
 		p := Parse(c.name, Hints{Show: true})
 		if p.Kind.Value != c.kind || p.Show == nil || p.Title.Value != c.title {
