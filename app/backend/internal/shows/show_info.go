@@ -46,10 +46,13 @@ func InfoOf(ctx context.Context, db database.Lister, t mediafiles.Title) (*Info,
 		if s.Number > 0 {
 			si.SeasonCount++
 		}
-		si.Episodes += s.Episodes
+		// Specials count toward "X of Y episodes" only when kept up to date.
+		if s.Number > 0 || s.KeepUpToDate {
+			si.Episodes += s.Episodes
+			si.NotOutYet += s.NotOutYet
+			si.InLibrary += s.InLibrary
+		}
 		si.Missing += s.Missing
-		si.NotOutYet += s.NotOutYet
-		si.InLibrary += s.InLibrary
 		si.BetterWanted += s.BetterWanted
 		si.Downloading += s.Downloading
 		si.Failed += s.Failed
