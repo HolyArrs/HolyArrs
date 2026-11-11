@@ -259,6 +259,8 @@ func sizeOf(cands []Candidate, path string) int64 {
 type Ops struct {
 	Link func(oldname, newname string) error
 	Copy func(src, dst string) error
+	// Move renames a file without replacing the target.
+	Move func(src, dst string) error
 }
 
 var activeParts sync.Map
@@ -294,8 +296,18 @@ func CopyNoReplace(src, dst string) error { return copyFile(src, dst) }
 
 var beforeFinish func()
 
+// openHook sees every source a copy opens (tests count the reads).
+var openHook func(path string)
+
+func openSource(src string) (*os.File, error) {
+	if openHook != nil {
+		openHook(src)
+	}
+	return os.Open(src)
+}
+
 func copyFile(src, dst string) (err error) {
-	in, err := os.Open(src)
+	in, err := openSource(src)
 	if err != nil {
 		return err
 	}
@@ -333,10 +345,16 @@ func copyFile(src, dst string) (err error) {
 		if errors.Is(err, fs.ErrExist) {
 			return fmt.Errorf("%s appeared while copying", dst)
 		}
-		if linkUnsupported(err) {
-			return copyDirect(src, dst)
+		// No hardlink here: rename the finished copy into place rather than
+		// writing the whole file a second time.
+		rerr := renameNoReplace(tmp, dst)
+		if rerr == nil {
+			return nil
 		}
-		return err
+		if errors.Is(rerr, fs.ErrExist) {
+			return fmt.Errorf("%s appeared while copying", dst)
+		}
+		return copyDirect(src, dst)
 	}
 	return nil
 }
@@ -356,7 +374,7 @@ func CreateTemp(dir, prefix, suffix string) (*os.File, error) {
 var linkHook func(oldname, newname string) error
 
 func copyDirect(src, dst string) (err error) {
-	in, err := os.Open(src)
+	in, err := openSource(src)
 	if err != nil {
 		return err
 	}
@@ -443,6 +461,9 @@ func execute(steps []mediafiles.PlanStep, ops Ops, resumable map[string]time.Tim
 	if ops.Copy == nil {
 		ops.Copy = copyFile
 	}
+	if ops.Move == nil {
+		ops.Move = renameNoReplace
+	}
 	out := make([]mediafiles.PlaceResult, 0, len(steps))
 	for _, s := range steps {
 		r := mediafiles.PlaceResult{SourceFile: s.SourceFile, PlacedBy: "none"}
@@ -502,6 +523,20 @@ func place(s mediafiles.PlanStep, ops Ops, resumeFrom time.Time) mediafiles.Plac
 		r.Outcome, r.Error = "failed", err.Error()
 		return r
 	}
+	moveNote := ""
+	if s.Move && ops.Move != nil {
+		err := ops.Move(s.SourceFile, s.TargetPath)
+		if err == nil {
+			r.Outcome, r.PlacedBy = "placed", "move"
+			return r
+		}
+		if errors.Is(err, fs.ErrExist) {
+			r.Outcome, r.Error = "refused", "a file appeared at the target"
+			return r
+		}
+		// Another drive or a refused rename: link or copy as for any download.
+		moveNote = "move not possible: " + err.Error() + "; "
+	}
 	linkErr := ops.Link(s.SourceFile, s.TargetPath)
 	if linkErr == nil {
 		r.Outcome, r.PlacedBy = "placed", "hardlink"
@@ -520,7 +555,7 @@ func place(s mediafiles.PlanStep, ops Ops, resumeFrom time.Time) mediafiles.Plac
 		return r
 	}
 	r.Outcome, r.PlacedBy, r.FellBack = "placed", "copy", true
-	r.Error = "hardlink not possible: " + linkErr.Error()
+	r.Error = moveNote + "hardlink not possible: " + linkErr.Error()
 	return r
 }
 
@@ -596,6 +631,9 @@ type Importer struct {
 	OnImported   func(ctx context.Context, downloadID int64)
 	OnLowSpace   func(ctx context.Context, dir string, free, need int64)
 	NoSizeFloors bool
+	// MayMove says whether a Downloader's finished files may be moved out of
+	// its folder. Nil never moves.
+	MayMove func(d domain.Downloader) bool
 
 	runs sync.Map
 
