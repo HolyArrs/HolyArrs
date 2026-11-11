@@ -120,6 +120,13 @@ type Engine interface {
 	Remove(ctx context.Context, id string, deleteFiles bool) error
 }
 
+// ActiveLister is the optional read-only part of an engine that lists only what is still
+// downloading, plus the items with the given ids, so a background read does not fetch
+// every finished item. An id the client no longer has is left out.
+type ActiveLister interface {
+	ListActive(ctx context.Context, ids []string) ([]Job, error)
+}
+
 // AllLister is the optional read-only part of a torrent engine that lists every item in the client, whatever its category, for the Downloads screen.
 // Nothing it returns becomes a HolyArrs download.
 type AllLister interface {
