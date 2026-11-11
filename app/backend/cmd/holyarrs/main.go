@@ -386,6 +386,9 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	}
 	// A finished Import: clear a Usenet download out of its Downloader.
 	im.OnImported = dm.ClearFinished
+	// Finished Usenet files move into the Library unless HolyArrs may not
+	// change that Downloader.
+	im.MayMove = func(d domain.Downloader) bool { return !downloads.ReadOnlyFor(d) }
 	// A failed Download: search its Slot for the next Release (a failed
 	// season pack: one season search for its episodes).
 	dm.OnFailed = func(ctx context.Context, slotID int64) {
@@ -583,7 +586,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		return err
 	}
 	defer q.Stop()
-	for p, label := range map[jobs.Pool]string{jobs.PoolCore: "Core workers", jobs.PoolIO: "Search and download workers", jobs.PoolHeavy: "Import and scan workers"} {
+	for p, label := range map[jobs.Pool]string{jobs.PoolCore: "Core workers", jobs.PoolIO: "Search and download workers", jobs.PoolHeavy: "Import and scan workers", jobs.PoolMigrate: "Import from other apps worker"} {
 		if pools[p] == 0 {
 			reg.Set(jobs.StageKey("jobs_"+string(p)), "stage", label, jobs.Off, notStarted)
 			continue

@@ -63,7 +63,7 @@ See [Downloaders](../downloads/downloaders/) and [Sources](../downloads/sources/
 
 **Symptom:** the doctor says hardlinks don't work, or disk use doubles after imports.
 
-**Cause:** downloads and Library folders are on different disks or mounts.
+**Cause:** downloads and Library folders are on different disks or mounts, or the disk can't hardlink (DrivePool, many NAS and SMB shares, Docker Desktop on Windows). Each file is still written once. Finished Usenet downloads are moved when they share a disk with the Library.
 
 **Fix:** mount one shared parent folder into the container instead of separate ones. See [Folders](../start/folders/).
 
