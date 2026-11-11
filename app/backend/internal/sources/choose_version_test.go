@@ -15,7 +15,7 @@ import (
 )
 
 // TestChooseByHand_GoesToTheVersionItFits checks that a 1080p Release picked by hand for a movie with a 4K main Version and a 1080p Version goes to the 1080p one,
-// imports there, and leaves the 4K copy in place (#274).
+// imports there, and leaves the 4K copy in place.
 func TestChooseByHand_GoesToTheVersionItFits(t *testing.T) {
 	f := seed(t, "http://127.0.0.1:1/api")
 	ctx := context.Background()

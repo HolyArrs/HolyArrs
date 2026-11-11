@@ -46,7 +46,7 @@ func TestWhyNamesFilesTakenByAnotherApp(t *testing.T) {
 	}
 }
 
-// A file the importer would not put in place of the copy, or whose edition it could not settle, is a stuck import, not "ran out of Releases" (#274).
+// A file the importer would not put in place of the copy, or whose edition it could not settle, is a stuck import, not "ran out of Releases".
 func TestWhyCountsCopyRefusalsAsAStuckImport(t *testing.T) {
 	t.Parallel()
 	for _, r := range []string{

@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 const dec = (o: Record<string, unknown>) => ({ kind: 'movie', why: 'conflict', download_id: 7, reason: '', ...o }) as Parameters<typeof decisionFix>[0];
 
-describe('decision fix (#274)', () => {
+describe('decision fix', () => {
 	it('offers Set edition only for an edition refusal', () => {
 		for (const reason of ['edition is unknown; confirm the edition or choose an unconstrained Version', 'edition is ambiguous; confirm it explicitly', 'edition does not match the selected Version', 'file and release name disagree about the edition; confirm it explicitly']) {
 			expect(decisionFix(dec({ reason }))).toBe('edition');

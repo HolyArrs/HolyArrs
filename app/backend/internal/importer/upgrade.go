@@ -155,7 +155,7 @@ func lieOf(name, relName string, hasOld bool, oldName string, rules mediafiles.P
 	return ""
 }
 
-// belowRules returns the step the names parse to when it sits below every step the rules allow, so a file meant for a lower Version can't replace this Version's copy (#274).
+// belowRules returns the step the names parse to when it sits below every step the rules allow, so a file meant for a lower Version can't replace this Version's copy.
 // Unknown steps pass, and so does a file that is still better than a copy in place of known quality.
 func belowRules(rules mediafiles.PickRulesBody, oldName string, names ...string) string {
 	lowest := -1

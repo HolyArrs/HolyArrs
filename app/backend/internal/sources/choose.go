@@ -192,7 +192,7 @@ func (s *Searcher) Choose(ctx context.Context, releaseID, slotID int64, force bo
 }
 
 // fittingVersion returns the movie Slot a Release picked by hand should go to when no Slot was named: the given one when its Version's rules let the Release pass,
-// otherwise another Version's Slot of the same movie that does, so a 1080p Release never lands on the 4K Version (#274). Anything unclear keeps the given Slot.
+// otherwise another Version's Slot of the same movie that does, so a 1080p Release never lands on the 4K Version. Anything unclear keeps the given Slot.
 func (s *Searcher) fittingVersion(ctx context.Context, rel domain.Release, slotID int64) int64 {
 	db := s.Store.Read()
 	if kind, _ := mediafiles.SlotKind(ctx, db, slotID); kind != "movie" {

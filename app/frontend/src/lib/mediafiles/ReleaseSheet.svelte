@@ -69,7 +69,7 @@
 		if (r.needs_force && confirmId !== r.id) return void (confirmId = r.id);
 		busyId = r.id;
 		try {
-			// Send the Slot the sheet was opened for; with none, the server picks the Version whose rules the Release fits (#274).
+			// Send the Slot the sheet was opened for; with none, the server picks the Version whose rules the Release fits.
 			const body: Record<string, unknown> = { force: r.needs_force };
 			if (typeof scope?.body.slot_id === 'number') body.slot_id = scope.body.slot_id;
 			const ch = await api.post<Choice>(`/releases/${r.id}/choose`, body);

@@ -11,7 +11,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 )
 
-// A 1080p file tied to a 4K Version must never replace the 4K copy, even when the copy in place has no quality in its name (#274).
+// A 1080p file tied to a 4K Version must never replace the 4K copy, even when the copy in place has no quality in its name.
 func TestStepNotAllowedNeverReplacesCopy(t *testing.T) {
 	for _, old := range []string{"Dune - Part Two (2024)", "Dune.Part.Two.2024.2160p.UHD.BluRay.x265-HOLYARRS"} {
 		w, relID, oldID := upgradeWorld(t, relName, relName, old)

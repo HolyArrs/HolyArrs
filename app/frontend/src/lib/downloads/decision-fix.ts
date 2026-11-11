@@ -1,4 +1,4 @@
-// Which fix a download waiting for a decision leads with, and how its reason reads (#274).
+// Which fix a download waiting for a decision leads with, and how its reason reads.
 import type { Decision } from '../core/types.ts';
 
 export type Fix = 'edition' | 'version' | 'hand' | 'search';
