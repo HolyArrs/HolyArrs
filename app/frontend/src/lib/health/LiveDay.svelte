@@ -157,8 +157,10 @@
 	h3 { display: flex; align-items: center; gap: 8px; margin: 0 0 6px; font: 600 13px/1.2 var(--font-ui); color: var(--text-muted); white-space: nowrap; overflow: hidden; min-width: 0; }
 	.rg { min-width: 0; overflow: hidden; text-overflow: ellipsis; font-size: 11.5px; font-weight: 500; color: var(--text-muted); font-variant-numeric: tabular-nums; }
 	.st { flex: none; }
-	.st { margin-left: auto; padding: 2px 9px; border-radius: var(--r-pill); background: var(--surface-2, var(--surface-1)); font-size: 11.5px; font-weight: 600; color: var(--text-muted); }
+	.st { margin-inline-start: auto; padding: 2px 9px; border-radius: var(--r-pill); background: var(--surface-2, var(--surface-1)); font-size: 11.5px; font-weight: 600; color: var(--text-muted); }
 	.st.on { background: color-mix(in srgb, var(--accent, var(--text)) 16%, transparent); color: var(--text); }
+	/* A narrow chart (phones): the header takes two lines instead of cutting the time range and the hidden count. */
+	@container (max-width: 420px) { h3 { flex-wrap: wrap; row-gap: 2px; } .rg { flex: none; } }
 
 	.sc { flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: hidden; scrollbar-width: thin; }
 	.col { --rule: 40px; position: relative; box-sizing: border-box; padding: var(--pad) 0; }
