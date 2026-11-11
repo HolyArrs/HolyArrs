@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math"
 	"net/http"
 	"slices"
 	"strconv"
@@ -179,8 +180,8 @@ func (h *handler) queue(w http.ResponseWriter, r *http.Request) {
 		size = min(n, 10000)
 	}
 	page := 1
-	if n, err := strconv.Atoi(query(r, "page")); err == nil && n > 0 {
-		page = n
+	if n, err := strconv.ParseInt(query(r, "page"), 10, 64); err == nil && n > 0 {
+		page = int(min(n, math.MaxInt)) // past the end on a 32-bit build too
 	}
 	// A page past the end shows the last page that has rows.
 	if last := max(1, (len(rows)+size-1)/size); page > last {
