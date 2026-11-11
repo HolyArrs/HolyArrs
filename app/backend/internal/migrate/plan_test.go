@@ -833,23 +833,27 @@ func TestSyncHours(t *testing.T) {
 	}
 }
 
-// Transmission, Deluge, rTorrent and NZBGet set up in the old apps come over as
-// Downloaders, like qBittorrent and SABnzbd; other clients stay behind.
+// Transmission, Deluge, rTorrent, aria2 and NZBGet set up in the old apps come
+// over as Downloaders, like qBittorrent and SABnzbd; other clients stay behind.
 func TestPlanEveryDownloaderKind(t *testing.T) {
 	s := &Snapshot{Kind: Sonarr, DownloadClients: []Provider{
 		{Name: "Trans", Kind: "Transmission", Settings: map[string]any{"host": "transmission", "port": int64(9091), "urlBase": "/transmission/", "username": "me"}, NeedsReentry: []string{"password"}},
 		{Name: "Del", Kind: "Deluge", Settings: map[string]any{"host": "deluge", "port": int64(8112)}, NeedsReentry: []string{"password"}},
 		{Name: "RT", Kind: "RTorrent", Settings: map[string]any{"host": "rtorrent", "port": int64(8080), "urlBase": "RPC2", "username": "me", "tvCategory": "tv-sonarr"}, NeedsReentry: []string{"password"}},
+		{Name: "A2", Kind: "Aria2", Settings: map[string]any{"host": "aria2", "port": int64(6800), "rpcPath": "/rpc", "useSsl": false, "directory": "/data/dl"}, NeedsReentry: []string{"secretToken"}},
 		{Name: "NZB", Kind: "Nzbget", Settings: map[string]any{"host": "nzbget", "port": int64(6789), "username": "nzb"}},
 		{Name: "Old", Kind: "Vuze", Settings: map[string]any{"host": "vuze", "port": int64(9091)}},
+		{Name: "A2 open", Kind: "Aria2", Settings: map[string]any{"host": "aria2-open", "port": int64(6800), "directory": ""}},
 	}}
 	s.finish()
 	p := BuildPlan([]Input{{1, s}}, Choices{})
 	got := map[string]*DownloaderPlan{}
+	needs := map[string]string{}
 	for _, it := range p.Group(GroupDownloaders).Items {
 		got[it.Name] = it.Downloader
+		needs[it.Name] = it.Needs
 	}
-	for name, want := range map[string]string{"Trans": "transmission", "Del": "deluge", "RT": "rtorrent", "NZB": "nzbget"} {
+	for name, want := range map[string]string{"Trans": "transmission", "Del": "deluge", "RT": "rtorrent", "A2": "aria2", "A2 open": "aria2", "NZB": "nzbget"} {
 		if d := got[name]; d == nil || d.Adapter != want {
 			t.Fatalf("%s: %+v", name, d)
 		}
@@ -860,7 +864,19 @@ func TestPlanEveryDownloaderKind(t *testing.T) {
 	if rt := got["RT"]; rt.URL != "http://rtorrent:8080/RPC2" || rt.Username != "me" || !rt.NeedsInput {
 		t.Fatalf("rtorrent: %+v", rt)
 	}
-	if n, ok := notMoved(p, "sonarr download_clients[4]"); !ok || n.Why != "HolyArrs talks to qBittorrent, Transmission, Deluge, rTorrent, SABnzbd and NZBGet only" {
+	if a := got["A2"]; a.URL != "http://aria2:6800/jsonrpc" || a.Username != "" || !a.NeedsInput || needs["A2"] != "your secret token" {
+		t.Fatalf("aria2: %+v needs %q", a, needs["A2"])
+	}
+	if n, ok := notMoved(p, "sonarr download_clients[3].directory"); !ok || n.Why != "the Downloader keeps its own folders; HolyArrs reads where each download lands" {
+		t.Fatalf("aria2 folder: %+v", n)
+	}
+	if a := got["A2 open"]; a.URL != "http://aria2-open:6800/jsonrpc" || a.NeedsInput || needs["A2 open"] != "" {
+		t.Fatalf("aria2 without a secret: %+v needs %q", a, needs["A2 open"])
+	}
+	if n, ok := notMoved(p, "sonarr download_clients[6].directory"); ok {
+		t.Fatalf("empty aria2 folder noted: %+v", n)
+	}
+	if n, ok := notMoved(p, "sonarr download_clients[5]"); !ok || n.Why != "HolyArrs talks to qBittorrent, Transmission, Deluge, rTorrent, aria2, SABnzbd and NZBGet only" {
 		t.Fatalf("vuze: %+v", n)
 	}
 }

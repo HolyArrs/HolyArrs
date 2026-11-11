@@ -152,7 +152,7 @@ docker compose up -d
 
 <picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="डाउनलोडर: qBittorrent, Transmission, Deluge, SABnzbd, NZBGet। मीडिया सर्वर: Plex, Jellyfin, Emby।" /></picture>
 
-- **डाउनलोडर:** qBittorrent, Transmission, Deluge, rTorrent, SABnzbd, NZBGet
+- **डाउनलोडर:** qBittorrent, Transmission, Deluge, rTorrent, aria2, SABnzbd, NZBGet
 - **मीडिया सर्वर:** Plex, Jellyfin, Emby
 - **Sources:** कोई भी Torznab या Newznab इंडेक्सर, या Prowlarr या Jackett
 - **इनसे सेटअप लाया जा सकता है:** Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent, SABnzbd

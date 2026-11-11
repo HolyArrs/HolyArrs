@@ -77,6 +77,12 @@ type roRTorrent struct {
 	roController
 }
 
+// roAria2 is aria2's shape: the engine plus the row controls.
+type roAria2 struct {
+	*roCore
+	roController
+}
+
 type roUsenetQueue struct{ c *roCore }
 
 type roController struct{ c *roCore }
@@ -282,6 +288,8 @@ func readOnlyWrap(inner Engine, allowAdd bool) Engine {
 		return roSab{c, roController{c}, roRetrier{c}, roHistoryReader{c}, roQueueReader{c}, roUsenetInspector{c}, roUsenetQueue{c}}
 	case shapeOf(&RTorrent{}):
 		return roRTorrent{c, roController{c}}
+	case shapeOf(&Aria2{}):
+		return roAria2{c, roController{c}}
 	}
 	return c
 }

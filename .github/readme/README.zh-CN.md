@@ -152,7 +152,7 @@ docker compose up -d
 
 <picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="下载器：qBittorrent、Transmission、Deluge、SABnzbd、NZBGet。媒体服务器：Plex、Jellyfin、Emby。" /></picture>
 
-- **下载器：** qBittorrent、Transmission、Deluge、rTorrent、SABnzbd、NZBGet
+- **下载器：** qBittorrent、Transmission、Deluge、rTorrent、aria2、SABnzbd、NZBGet
 - **媒体服务器：** Plex、Jellyfin、Emby
 - **Sources：** 任何 Torznab 或 Newznab 索引器，或者 Prowlarr、Jackett
 - **可从这些应用迁移设置：** Sonarr、Radarr、Lidarr、Prowlarr、Bazarr、Seerr、Overseerr、qBittorrent、SABnzbd

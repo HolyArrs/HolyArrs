@@ -152,7 +152,7 @@ Ktoś prosi o tytuł. HolyArrs przeszukuje twoje źródła, wybiera najlepszy re
 
 <picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="Downloadery: qBittorrent, Transmission, Deluge, SABnzbd, NZBGet. Serwery multimediów: Plex, Jellyfin, Emby." /></picture>
 
-- **Downloadery:** qBittorrent, Transmission, Deluge, rTorrent, SABnzbd, NZBGet
+- **Downloadery:** qBittorrent, Transmission, Deluge, rTorrent, aria2, SABnzbd, NZBGet
 - **Serwery multimediów:** Plex, Jellyfin, Emby
 - **Źródła:** dowolny indekser Torznab lub Newznab albo Prowlarr czy Jackett
 - **Przenosi konfigurację z:** Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent, SABnzbd

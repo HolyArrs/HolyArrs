@@ -152,7 +152,7 @@ docker compose up -d
 
 <picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="ダウンローダー: qBittorrent、Transmission、Deluge、SABnzbd、NZBGet。メディアサーバー: Plex、Jellyfin、Emby。" /></picture>
 
-- **ダウンローダー:** qBittorrent、Transmission、Deluge、rTorrent、SABnzbd、NZBGet
+- **ダウンローダー:** qBittorrent、Transmission、Deluge、rTorrent、aria2、SABnzbd、NZBGet
 - **メディアサーバー:** Plex、Jellyfin、Emby
 - **Sources:** Torznab または Newznab のインデクサー、あるいは Prowlarr や Jackett
 - **設定を引き継げる元:** Sonarr、Radarr、Lidarr、Prowlarr、Bazarr、Seerr、Overseerr、qBittorrent、SABnzbd

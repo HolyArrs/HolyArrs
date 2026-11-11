@@ -152,7 +152,7 @@ docker compose up -d
 
 <picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="다운로더: qBittorrent, Transmission, Deluge, SABnzbd, NZBGet. 미디어 서버: Plex, Jellyfin, Emby." /></picture>
 
-- **다운로더:** qBittorrent, Transmission, Deluge, rTorrent, SABnzbd, NZBGet
+- **다운로더:** qBittorrent, Transmission, Deluge, rTorrent, aria2, SABnzbd, NZBGet
 - **미디어 서버:** Plex, Jellyfin, Emby
 - **Sources:** Torznab이나 Newznab 인덱서, 또는 Prowlarr나 Jackett
 - **설정을 옮겨 올 수 있는 앱:** Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent, SABnzbd

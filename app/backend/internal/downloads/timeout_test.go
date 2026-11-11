@@ -13,6 +13,7 @@ func TestDownloaderTimeout30s(t *testing.T) {
 		"nzbget":       NewNZBGet("http://x", "", "", nil).http.Timeout,
 		"deluge":       NewDeluge("http://x", "", nil).http.Timeout,
 		"rtorrent":     NewRTorrent("http://x", "", "", nil).http.Timeout,
+		"aria2":        NewAria2("http://x", "", nil).http.Timeout,
 		"transmission": NewTransmission("http://x", "", "", nil).http.Timeout,
 	} {
 		if got != 30*time.Second {

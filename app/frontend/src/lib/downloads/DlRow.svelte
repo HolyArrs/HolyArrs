@@ -249,12 +249,14 @@
 	.pm[data-tone='tr'] { --cm: #d23c3c; }
 	.pm[data-tone='de'] { --cm: #5b7388; }
 	.pm[data-tone='rt'] { --cm: #7b4fc9; }
+	.pm[data-tone='a2'] { --cm: #0f8a7e; }
 	.pm[data-tone='sab'] { --cm: #a87a00; }
 	.pm[data-tone='nzb'] { --cm: #2e8b4a; }
 	:global([data-theme='dark']) .pm[data-tone='qb'] { --cm: #7aa8f5; }
 	:global([data-theme='dark']) .pm[data-tone='tr'] { --cm: #f07a7a; }
 	:global([data-theme='dark']) .pm[data-tone='de'] { --cm: #9db3c6; }
 	:global([data-theme='dark']) .pm[data-tone='rt'] { --cm: #b99af2; }
+	:global([data-theme='dark']) .pm[data-tone='a2'] { --cm: #5fd3c4; }
 	:global([data-theme='dark']) .pm[data-tone='sab'] { --cm: #f0c84a; }
 	:global([data-theme='dark']) .pm[data-tone='nzb'] { --cm: #6cd08c; }
 	.sw1 { display: grid; grid-template-columns: 42px 42px auto; column-gap: 4px; align-items: center; justify-content: start; }
@@ -324,6 +326,7 @@
 		:global(:root:not([data-theme='light'])) .pm[data-tone='tr'] { --cm: #f07a7a; }
 		:global(:root:not([data-theme='light'])) .pm[data-tone='de'] { --cm: #9db3c6; }
 		:global(:root:not([data-theme='light'])) .pm[data-tone='rt'] { --cm: #b99af2; }
+		:global(:root:not([data-theme='light'])) .pm[data-tone='a2'] { --cm: #5fd3c4; }
 		:global(:root:not([data-theme='light'])) .pm[data-tone='sab'] { --cm: #f0c84a; }
 		:global(:root:not([data-theme='light'])) .pm[data-tone='nzb'] { --cm: #6cd08c; }
 	}

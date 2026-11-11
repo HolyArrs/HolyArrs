@@ -39,7 +39,7 @@ export function protocolOf(r: { protocol?: string; downloader_kind?: string }): 
 	if (p === 'torrent' || p === 'usenet') return p;
 	const k = (r.downloader_kind || '').toLowerCase();
 	if (k === 'sabnzbd' || k === 'nzbget') return 'usenet';
-	if (k === 'qbittorrent' || k === 'transmission' || k === 'deluge' || k === 'rtorrent') return 'torrent';
+	if (k === 'qbittorrent' || k === 'transmission' || k === 'deluge' || k === 'rtorrent' || k === 'aria2') return 'torrent';
 	return '';
 }
 

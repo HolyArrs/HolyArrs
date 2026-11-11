@@ -151,6 +151,8 @@
 				return 'http://192.168.1.10:8112';
 			case 'rtorrent':
 				return 'http://192.168.1.10:8000/RPC2';
+			case 'aria2':
+				return 'http://192.168.1.10:6800/jsonrpc';
 			default:
 				return 'http://192.168.1.10:8090';
 		}
@@ -161,6 +163,7 @@
 		if (kind === 'transmission') return t('settings.downloaders.catTransmission');
 		if (kind === 'deluge') return t('settings.downloaders.catDeluge');
 		if (kind === 'rtorrent') return t('settings.downloaders.catRtorrent');
+		if (kind === 'aria2') return t('settings.downloaders.catAria2');
 		if (kind === 'nzbget') return t('settings.downloaders.catNzbget');
 		return t('settings.downloaders.catQbit');
 	}
@@ -333,6 +336,7 @@
 						<label class="checkline"><input type="radio" name="kind" checked={form.kind === 'transmission'} onchange={() => pickKind('transmission')} /><span><b>Transmission</b> {t('settings.downloaders.torrents')}</span></label>
 						<label class="checkline"><input type="radio" name="kind" checked={form.kind === 'deluge'} onchange={() => pickKind('deluge')} /><span><b>Deluge</b> {t('settings.downloaders.torrents')}</span></label>
 						<label class="checkline"><input type="radio" name="kind" checked={form.kind === 'rtorrent'} onchange={() => pickKind('rtorrent')} /><span><b>rTorrent</b> {t('settings.downloaders.torrents')}</span></label>
+						<label class="checkline"><input type="radio" name="kind" checked={form.kind === 'aria2'} onchange={() => pickKind('aria2')} /><span><b>aria2</b> {t('settings.downloaders.torrents')}</span></label>
 						<label class="checkline"><input type="radio" name="kind" checked={form.kind === 'sabnzbd'} onchange={() => pickKind('sabnzbd')} /><span><b>SABnzbd</b> {t('settings.downloaders.usenet')}</span></label>
 						<label class="checkline"><input type="radio" name="kind" checked={form.kind === 'nzbget'} onchange={() => pickKind('nzbget')} /><span><b>NZBGet</b> {t('settings.downloaders.usenet')}</span></label>
 					</div>
@@ -366,15 +370,17 @@
 				</div>
 			{:else}
 				{@const key = form.kind === 'sabnzbd' || form.kind === 'qbittorrent'}
-				<Field id="dl-secret" label={key ? t('settings.downloaders.apiKeyLabel') : t('settings.downloaders.passwordLabel')}>
-					<input id="dl-secret" class="input" class:mono={key} type="password" bind:value={form.secret} autocomplete="new-password" spellcheck="false" required={isNew} data-testid="dl-secret" />
-					<span class="hint">{form.kind === 'sabnzbd' ? t('settings.downloaders.secretSab') : form.kind === 'qbittorrent' ? t('settings.downloaders.secretQbit') : t('settings.downloaders.secretDeluge')} {t('settings.downloaders.secretKept')}</span>
+				<Field id="dl-secret" label={key ? t('settings.downloaders.apiKeyLabel') : form.kind === 'aria2' ? t('settings.downloaders.secretTokenLabel') : t('settings.downloaders.passwordLabel')}>
+					<input id="dl-secret" class="input" class:mono={key} type="password" bind:value={form.secret} autocomplete="new-password" spellcheck="false" required={isNew && form.kind !== 'aria2'} data-testid="dl-secret" />
+					<span class="hint">{form.kind === 'sabnzbd' ? t('settings.downloaders.secretSab') : form.kind === 'qbittorrent' ? t('settings.downloaders.secretQbit') : form.kind === 'aria2' ? t('settings.downloaders.secretAria2') : t('settings.downloaders.secretDeluge')} {t('settings.downloaders.secretKept')}</span>
 				</Field>
 			{/if}
 			{#if form.kind === 'deluge'}
 				<p class="notice">{t('settings.downloaders.delugeNote')}</p>
 			{:else if form.kind === 'rtorrent'}
 				<p class="notice">{t('settings.downloaders.rtorrentNote')}</p>
+			{:else if form.kind === 'aria2'}
+				<p class="notice">{t('settings.downloaders.aria2Note')}</p>
 			{/if}
 			{#if form.kind === 'qbittorrent'}
 				<details class="more"><summary>{t('settings.downloaders.moreOptions')}</summary>{@render moreFields()}</details>
