@@ -304,17 +304,27 @@ func TestServiceShowReleaseNumbersFromTVMaze(t *testing.T) {
 		tvdb         int
 		alt          [2]int
 		stale        bool
+		animeMap     string
 	}{
-		{"split", 200, 999, [2]int{2, 5}, false},
-		{"other show", 200, 1000, [2]int{}, false},
-		{"server error", 500, 999, [2]int{}, true},
+		{"split", 200, 999, [2]int{2, 5}, false, ""},
+		{"other show", 200, 1000, [2]int{}, false, ""},
+		{"server error", 500, 999, [2]int{}, true, ""},
+		{"map agrees", 200, 999, [2]int{}, false, `{"entries":[{"tmdb_tv":42,"tmdb_season":1,"tvdb_season":1}]}`},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			s := testService(t, func(w http.ResponseWriter, r *http.Request) {
 				switch r.URL.Path {
 				case "/v1/anime/map":
-					http.NotFound(w, r)
+					if tc.animeMap == "" {
+						http.NotFound(w, r)
+						return
+					}
+					w.Header().Set("Content-Type", "application/json")
+					_, _ = w.Write([]byte(tc.animeMap))
 				case "/v1/search":
+					if tc.animeMap != "" {
+						t.Error("TVMaze searched although the anime map knows the show")
+					}
 					if q := r.URL.Query(); q.Get("provider") != "tvmaze" || q.Get("kind") != "show" {
 						t.Errorf("search query %s", r.URL.RawQuery)
 					}

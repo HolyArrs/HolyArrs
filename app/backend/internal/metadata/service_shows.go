@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"net/url"
-	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -106,19 +105,21 @@ func (p *serviceShows) Show(ctx context.Context, id string) (Show, error) {
 }
 
 // releaseNumbers adds the release-name numbers from the server's anime
-// map, or for an anime the map cannot number, from TVMaze's season sizes.
-// A show neither knows keeps none; a failed call marks them stale so the
-// stored ones stay.
+// map, or for an anime the map does not know or has out of date, from
+// TVMaze's season sizes. A show neither knows keeps none; a failed call
+// marks them stale so the stored ones stay.
 func (p *serviceShows) releaseNumbers(ctx context.Context, tmdbID string, out *Show) {
 	m, err := p.service.AnimeMap(ctx, "tmdb_tv", tmdbID)
 	switch {
 	case err == nil:
-		m.SetReleaseNumbers(tmdbID, out.Episodes)
+		if m.SetReleaseNumbers(tmdbID, out.Seasons, out.Episodes) {
+			return
+		}
 	case !errors.Is(err, ErrNotFound):
 		out.AltStale = true
 		return
 	}
-	if !LooksAnime(out.Genres, nil, out.OriginalLanguage) || slices.ContainsFunc(out.Episodes, func(e Episode) bool { return e.AltSeason > 0 }) {
+	if !LooksAnime(out.Genres, nil, out.OriginalLanguage) {
 		return
 	}
 	sizes, err := p.mazeSeasonSizes(ctx, out)

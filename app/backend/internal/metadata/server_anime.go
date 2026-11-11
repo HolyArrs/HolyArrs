@@ -241,9 +241,14 @@ func (m AnimeMap) Seasons(counts map[int]int) []AnimeSeason {
 // season and episode that release names use, when a TMDB season holds
 // several parts: in Mashle's TMDB season 1, episode 17 is S02E05. Only
 // entries of this show with a regular TMDB and TVDB season count; a map
-// with one part per season changes nothing.
-func (m AnimeMap) SetReleaseNumbers(tmdbID string, eps []Episode) {
+// with one part per season changes nothing. seasons is TMDB's own season
+// list. It reports whether the map knows the show and is current, even
+// when it changes nothing.
+func (m AnimeMap) SetReleaseNumbers(tmdbID string, seasons []Season, eps []Episode) bool {
 	have := map[int]bool{}
+	for _, s := range seasons {
+		have[s.Number] = true
+	}
 	for _, ep := range eps {
 		have[ep.Season] = true
 	}
@@ -251,7 +256,7 @@ func (m AnimeMap) SetReleaseNumbers(tmdbID string, eps []Episode) {
 	for _, e := range m.Entries {
 		if strconv.FormatInt(e.TMDBTV, 10) == tmdbID && e.TMDBSeason != nil && *e.TMDBSeason > 0 && !have[*e.TMDBSeason] {
 			// The map names a season TMDB no longer has: it is out of date.
-			return
+			return false
 		}
 		if strconv.FormatInt(e.TMDBTV, 10) != tmdbID || e.Absolute || e.TMDBSeason == nil || e.TVDBSeason == nil || *e.TMDBSeason < 1 || *e.TVDBSeason < 1 {
 			continue
@@ -259,7 +264,7 @@ func (m AnimeMap) SetReleaseNumbers(tmdbID string, eps []Episode) {
 		by[*e.TMDBSeason] = append(by[*e.TMDBSeason], e)
 	}
 	if !slices.ContainsFunc(slices.Collect(maps.Values(by)), func(es []AnimeEntry) bool { return len(es) > 1 }) {
-		return
+		return len(by) > 0
 	}
 	for i := range eps {
 		ep := &eps[i]
@@ -280,6 +285,7 @@ func (m AnimeMap) SetReleaseNumbers(tmdbID string, eps []Episode) {
 			ep.AltSeason, ep.AltEpisode = season, number
 		}
 	}
+	return true
 }
 
 // setSeasonSizes numbers TMDB's regular episodes the way release names do

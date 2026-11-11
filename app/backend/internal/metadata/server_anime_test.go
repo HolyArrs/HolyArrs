@@ -134,7 +134,7 @@ func TestAnimeReleaseNumbers(t *testing.T) {
 	mashle := []AnimeEntry{entry(204832, 1, 0, 1, 0), entry(204832, 1, 12, 2, 0)}
 
 	got := append(eps(0, 1), eps(1, 25)...)
-	AnimeMap{Entries: mashle}.SetReleaseNumbers("204832", got)
+	AnimeMap{Entries: mashle}.SetReleaseNumbers("204832", []Season{{Number: 0}, {Number: 1}}, got)
 	for _, c := range []struct{ season, number, altS, altE int }{
 		{1, 5, 0, 0}, {1, 12, 0, 0}, {1, 13, 2, 1}, {1, 17, 2, 5}, {1, 25, 2, 13}, {0, 1, 0, 0},
 	} {
@@ -144,7 +144,7 @@ func TestAnimeReleaseNumbers(t *testing.T) {
 	}
 
 	three := eps(1, 36)
-	AnimeMap{Entries: []AnimeEntry{entry(5, 1, 0, 1, 0), entry(5, 1, 12, 2, 0), entry(5, 1, 24, 3, 0)}}.SetReleaseNumbers("5", three)
+	AnimeMap{Entries: []AnimeEntry{entry(5, 1, 0, 1, 0), entry(5, 1, 12, 2, 0), entry(5, 1, 24, 3, 0)}}.SetReleaseNumbers("5", []Season{{Number: 1}}, three)
 	if a := alt(three, 1, 30); a != [2]int{3, 6} {
 		t.Errorf("three cours: S01E30 alt %v", a)
 	}
@@ -156,7 +156,7 @@ func TestAnimeReleaseNumbers(t *testing.T) {
 		"other show":           {entry(5, 1, 0, 1, 0), entry(6, 1, 12, 2, 0)},
 	} {
 		list := eps(1, 24)
-		AnimeMap{Entries: entries}.SetReleaseNumbers("5", list)
+		AnimeMap{Entries: entries}.SetReleaseNumbers("5", []Season{{Number: 1}, {Number: 2}}, list)
 		for _, e := range list {
 			if e.AltSeason != 0 || e.AltEpisode != 0 {
 				t.Errorf("%s: S%02dE%02d got alt %d/%d", name, e.Season, e.Number, e.AltSeason, e.AltEpisode)
@@ -176,11 +176,49 @@ func TestAnimeReleaseNumbersStaleSeasons(t *testing.T) {
 	for i := 1; i <= 36; i++ {
 		list = append(list, Episode{Season: 1, Number: i})
 	}
-	AnimeMap{Entries: []AnimeEntry{entry(1, 0, 1), entry(1, 12, 2), entry(2, 0, 3)}}.SetReleaseNumbers("5", list)
+	stale := AnimeMap{Entries: []AnimeEntry{entry(1, 0, 1), entry(1, 12, 2), entry(2, 0, 3)}}
+	if stale.SetReleaseNumbers("5", []Season{{Number: 1}}, list) {
+		t.Error("stale map reported as used")
+	}
 	for _, e := range list {
 		if e.AltSeason != 0 || e.AltEpisode != 0 {
 			t.Fatalf("S%02dE%02d got alt %d/%d", e.Season, e.Number, e.AltSeason, e.AltEpisode)
 		}
+	}
+
+	// A season TMDB lists but has no episodes in yet (an announced next
+	// part) still exists, so the map stays good.
+	list = list[:24]
+	if !stale.SetReleaseNumbers("5", []Season{{Number: 0}, {Number: 1}, {Number: 2}}, list) {
+		t.Error("map with an empty listed season reported as unused")
+	}
+	if e := list[16]; e.AltSeason != 2 || e.AltEpisode != 5 {
+		t.Errorf("empty listed season: S01E17 alt %d/%d, want 2/5", e.AltSeason, e.AltEpisode)
+	}
+}
+
+// A map that knows the show reports itself used, even when its layout
+// agrees with TMDB's and it numbers nothing; one that does not know it
+// does not.
+func TestAnimeReleaseNumbersUsed(t *testing.T) {
+	n := func(v int) *int { return &v }
+	list := []Episode{}
+	for i := 1; i <= 24; i++ {
+		list = append(list, Episode{Season: 1, Number: i})
+	}
+	seasons := []Season{{Number: 1}}
+	agree := AnimeMap{Entries: []AnimeEntry{
+		{TMDBTV: 5, TMDBSeason: n(1), TVDBSeason: n(1)},
+		{TMDBTV: 5, TMDBSeason: n(1), TMDBOffset: 12, TVDBSeason: n(1), TVDBOffset: 12},
+	}}
+	if !agree.SetReleaseNumbers("5", seasons, list) || list[16].AltSeason != 0 {
+		t.Errorf("agreeing map: alt %d/%d", list[16].AltSeason, list[16].AltEpisode)
+	}
+	if !(AnimeMap{Entries: []AnimeEntry{{TMDBTV: 5, TMDBSeason: n(1), TVDBSeason: n(1)}}}).SetReleaseNumbers("5", seasons, list) {
+		t.Error("one part per season reported as unused")
+	}
+	if (AnimeMap{Entries: []AnimeEntry{{TMDBTV: 6, TMDBSeason: n(1), TVDBSeason: n(1)}}}).SetReleaseNumbers("5", seasons, list) {
+		t.Error("other show's map reported as used")
 	}
 }
 
