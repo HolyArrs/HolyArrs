@@ -227,3 +227,70 @@ func TestServiceClearsCookieJarAndRedactsPrivateErrors(t *testing.T) {
 		t.Fatalf("callback leak: %v", err)
 	}
 }
+
+// A Japanese show reads the anime map, so a TMDB season of two cours
+// carries the release-name numbers; a failed map call says so.
+func TestServiceShowReleaseNumbers(t *testing.T) {
+	for _, tc := range []struct {
+		name, lang string
+		mapStatus  int
+		alt        [2]int
+		stale      bool
+		mapAsked   bool
+	}{
+		{"mapped", "ja", 200, [2]int{2, 5}, false, true},
+		{"not anime", "ja", 404, [2]int{}, false, true},
+		{"server error", "ja", 500, [2]int{}, true, true},
+		{"not Japanese", "en", 200, [2]int{}, false, false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			var asked atomic.Int32
+			s := testService(t, func(w http.ResponseWriter, r *http.Request) {
+				switch r.URL.Path {
+				case "/v1/anime/map":
+					asked.Add(1)
+					if r.URL.Query().Get("tmdb") != "42" {
+						t.Errorf("map query %s", r.URL.RawQuery)
+					}
+					if tc.mapStatus != 200 {
+						w.WriteHeader(tc.mapStatus)
+						return
+					}
+					_, _ = w.Write([]byte(`{"entries":[{"tmdb_tv":42,"tmdb_season":1,"tvdb_season":1},{"tmdb_tv":42,"tmdb_season":1,"tmdb_offset":12,"tvdb_season":2}]}`))
+				case "/v1/shows/tmdb/42":
+					serviceReply(w, "tmdb", "42", normalizedItem("tmdb", "42", "show", map[string]any{
+						"id": 42, "name": "Series", "original_language": tc.lang, "number_of_seasons": 1, "number_of_episodes": 24,
+						"seasons": []any{map[string]any{"id": 421, "season_number": 1, "episode_count": 24}},
+					}))
+				case "/v1/shows/tmdb/42/seasons/1":
+					eps := []any{}
+					for i := 1; i <= 24; i++ {
+						eps = append(eps, map[string]any{"id": 1000 + i, "season_number": 1, "episode_number": i})
+					}
+					serviceReply(w, "tmdb", "42", normalizedItem("tmdb", "421", "show", map[string]any{"id": 421, "season_number": 1, "episodes": eps}))
+				default:
+					http.NotFound(w, r)
+				}
+			})
+			got, err := s.Shows("tmdb", nil).Show(context.Background(), "tmdb:42")
+			if err != nil || len(got.Episodes) != 24 {
+				t.Fatalf("show: %+v, %v", got, err)
+			}
+			e17 := got.Episodes[16]
+			if e17.Number != 17 || [2]int{e17.AltSeason, e17.AltEpisode} != tc.alt || got.AltStale != tc.stale || (asked.Load() > 0) != tc.mapAsked {
+				t.Fatalf("E17 %+v, stale %v, map asked %d", e17, got.AltStale, asked.Load())
+			}
+		})
+	}
+}
+
+// When the server fails and TMDB is asked directly, no map was read, so a
+// Japanese show's stored release numbers are kept.
+func TestServiceShowFallbackKeepsReleaseNumbers(t *testing.T) {
+	direct := &titleDirect{show: Show{Name: "direct", OriginalLanguage: "ja", IDs: map[string]string{"tmdb": "42"}}}
+	s := testService(t, func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(http.StatusBadGateway) })
+	got, err := s.Shows("tmdb", direct).Show(context.Background(), "tmdb:42")
+	if err != nil || got.Name != "direct" || !got.AltStale {
+		t.Fatalf("fallback: %+v, %v", got, err)
+	}
+}

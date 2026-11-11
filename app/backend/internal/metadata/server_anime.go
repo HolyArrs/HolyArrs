@@ -4,9 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"maps"
 	"net/http"
 	"net/url"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -233,4 +235,41 @@ func (m AnimeMap) Seasons(counts map[int]int) []AnimeSeason {
 		out = append(out, *s)
 	}
 	return out
+}
+
+// SetReleaseNumbers gives the episodes of TMDB show tmdbID the TVDB-style
+// season and episode that release names use, when a TMDB season holds
+// several parts: in Mashle's TMDB season 1, episode 17 is S02E05. Only
+// entries of this show with a regular TMDB and TVDB season count; a map
+// with one part per season changes nothing.
+func (m AnimeMap) SetReleaseNumbers(tmdbID string, eps []Episode) {
+	by := map[int][]AnimeEntry{}
+	for _, e := range m.Entries {
+		if strconv.FormatInt(e.TMDBTV, 10) != tmdbID || e.Absolute || e.TMDBSeason == nil || e.TVDBSeason == nil || *e.TMDBSeason < 1 || *e.TVDBSeason < 1 {
+			continue
+		}
+		by[*e.TMDBSeason] = append(by[*e.TMDBSeason], e)
+	}
+	if !slices.ContainsFunc(slices.Collect(maps.Values(by)), func(es []AnimeEntry) bool { return len(es) > 1 }) {
+		return
+	}
+	for i := range eps {
+		ep := &eps[i]
+		if ep.Season < 1 {
+			continue
+		}
+		var part *AnimeEntry
+		for j, e := range by[ep.Season] {
+			if e.TMDBOffset < ep.Number && (part == nil || e.TMDBOffset > part.TMDBOffset) {
+				part = &by[ep.Season][j]
+			}
+		}
+		if part == nil {
+			continue
+		}
+		season, number := *part.TVDBSeason, ep.Number-part.TMDBOffset+part.TVDBOffset
+		if season != ep.Season || number != ep.Number {
+			ep.AltSeason, ep.AltEpisode = season, number
+		}
+	}
 }

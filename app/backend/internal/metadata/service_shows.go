@@ -82,6 +82,9 @@ func (p *serviceShows) Show(ctx context.Context, id string) (Show, error) {
 		var out Show
 		if p.provider == "tmdb" {
 			out, err = p.tmdbDetail(ctx, value, item)
+			if err == nil && out.OriginalLanguage == "ja" {
+				p.releaseNumbers(ctx, value, &out)
+			}
 		} else {
 			out, err = serviceTVMazeDetail(item)
 		}
@@ -93,9 +96,25 @@ func (p *serviceShows) Show(ctx context.Context, id string) (Show, error) {
 		return Show{}, ErrShowNotFound
 	}
 	if p.direct != nil && serviceFallback(ctx, err) {
-		return p.direct.Show(ctx, id)
+		out, err := p.direct.Show(ctx, id)
+		// The anime map was not read, so the stored release numbers stay.
+		out.AltStale = p.provider == "tmdb" && out.OriginalLanguage == "ja"
+		return out, err
 	}
 	return Show{}, err
+}
+
+// releaseNumbers adds the release-name numbers from the server's anime
+// map. A show the map does not know keeps none; a failed call marks them
+// stale so the stored ones stay.
+func (p *serviceShows) releaseNumbers(ctx context.Context, tmdbID string, out *Show) {
+	m, err := p.service.AnimeMap(ctx, "tmdb_tv", tmdbID)
+	switch {
+	case err == nil:
+		m.SetReleaseNumbers(tmdbID, out.Episodes)
+	case !errors.Is(err, ErrNotFound):
+		out.AltStale = true
+	}
 }
 
 type serviceTMDBShowCounts struct {

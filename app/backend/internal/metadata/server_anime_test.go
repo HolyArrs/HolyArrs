@@ -107,3 +107,60 @@ func TestAnimeSeasonsBounded(t *testing.T) {
 		t.Fatalf("%+v", ss)
 	}
 }
+
+// A TMDB season that holds several cours gets the TVDB-style numbers the
+// releases use; specials, absolute entries and other shows are left alone.
+func TestAnimeReleaseNumbers(t *testing.T) {
+	n := func(v int) *int { return &v }
+	entry := func(tmdbID int64, tmdbSeason, tmdbOff, tvdbSeason, tvdbOff int) AnimeEntry {
+		return AnimeEntry{TMDBTV: tmdbID, TMDBSeason: n(tmdbSeason), TMDBOffset: tmdbOff, TVDBSeason: n(tvdbSeason), TVDBOffset: tvdbOff}
+	}
+	eps := func(season, count int) []Episode {
+		out := []Episode{}
+		for i := 1; i <= count; i++ {
+			out = append(out, Episode{Season: season, Number: i})
+		}
+		return out
+	}
+	alt := func(eps []Episode, season, number int) [2]int {
+		for _, e := range eps {
+			if e.Season == season && e.Number == number {
+				return [2]int{e.AltSeason, e.AltEpisode}
+			}
+		}
+		t.Fatalf("no S%02dE%02d", season, number)
+		return [2]int{}
+	}
+	mashle := []AnimeEntry{entry(204832, 1, 0, 1, 0), entry(204832, 1, 12, 2, 0)}
+
+	got := append(eps(0, 1), eps(1, 25)...)
+	AnimeMap{Entries: mashle}.SetReleaseNumbers("204832", got)
+	for _, c := range []struct{ season, number, altS, altE int }{
+		{1, 5, 0, 0}, {1, 12, 0, 0}, {1, 13, 2, 1}, {1, 17, 2, 5}, {1, 25, 2, 13}, {0, 1, 0, 0},
+	} {
+		if a := alt(got, c.season, c.number); a != [2]int{c.altS, c.altE} {
+			t.Errorf("S%02dE%02d: alt %v, want %d/%d", c.season, c.number, a, c.altS, c.altE)
+		}
+	}
+
+	three := eps(1, 36)
+	AnimeMap{Entries: []AnimeEntry{entry(5, 1, 0, 1, 0), entry(5, 1, 12, 2, 0), entry(5, 1, 24, 3, 0)}}.SetReleaseNumbers("5", three)
+	if a := alt(three, 1, 30); a != [2]int{3, 6} {
+		t.Errorf("three cours: S01E30 alt %v", a)
+	}
+
+	for name, entries := range map[string][]AnimeEntry{
+		"one entry per season": {entry(5, 1, 0, 1, 0), entry(5, 2, 0, 2, 0)},
+		"absolute entry":       {entry(5, 1, 0, 1, 0), {TMDBTV: 5, TMDBSeason: n(1), TMDBOffset: 12, TVDBSeason: n(2), Absolute: true}},
+		"tvdb season 0":        {entry(5, 1, 0, 1, 0), entry(5, 1, 12, 0, 0)},
+		"other show":           {entry(5, 1, 0, 1, 0), entry(6, 1, 12, 2, 0)},
+	} {
+		list := eps(1, 24)
+		AnimeMap{Entries: entries}.SetReleaseNumbers("5", list)
+		for _, e := range list {
+			if e.AltSeason != 0 || e.AltEpisode != 0 {
+				t.Errorf("%s: S%02dE%02d got alt %d/%d", name, e.Season, e.Number, e.AltSeason, e.AltEpisode)
+			}
+		}
+	}
+}
