@@ -102,6 +102,7 @@ func (s *Service) Register(q *jobs.Queue) {
 	q.Handle(KindScanLibrary, s.handleScanLibrary)
 	q.Handle(KindAdopt, s.handleAdopt)
 	q.Handle(KindRescan, s.handleRescan)
+	q.Handle(KindRecheckPickRules, s.handleRecheckPickRules)
 }
 
 func (s *Service) Publish(topic string, v any) {
