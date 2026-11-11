@@ -139,7 +139,8 @@
 			{#if attention && ls}
 				<span class="badge {bar.tone}" aria-hidden="true"><Icon name={ls.icon} size={12} stroke={2.25} />{#if ls.percent !== undefined && bar.tone === 'busy'}<b>{ls.percent}%</b>{/if}</span>
 			{/if}
-			{#if score}
+			<!-- While picking, the pick dot takes this corner. -->
+			{#if score && !selecting}
 				<span class="badge score" aria-hidden="true"><svg width="10" height="10" viewBox="0 0 12 12"><path d="M6 .8l1.6 3.3 3.6.5-2.6 2.5.6 3.6L6 9l-3.2 1.7.6-3.6L.8 4.6l3.6-.5z" fill="currentColor" /></svg><b>{score}</b></span>
 			{/if}
 			<span class="line {bar.tone}" aria-hidden="true"><i style="transform: scaleX({bar.fill})"></i></span>
