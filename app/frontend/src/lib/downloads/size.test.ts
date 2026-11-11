@@ -18,6 +18,7 @@ describe('size', () => {
 		expect(protocolOf({ protocol: 'usenet' })).toBe('usenet');
 		expect(protocolOf({ downloader_kind: 'qbittorrent' })).toBe('torrent');
 		expect(protocolOf({ downloader_kind: 'rtorrent' })).toBe('torrent');
+		expect(protocolOf({ downloader_kind: 'aria2' })).toBe('torrent');
 		expect(protocolOf({})).toBe('');
 	});
 });

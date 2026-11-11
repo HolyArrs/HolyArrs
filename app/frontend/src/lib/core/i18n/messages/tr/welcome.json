@@ -49,6 +49,7 @@
 	"welcome.userName": "Kullanıcı adı",
 	"welcome.apiKeyLabel": "API anahtarı",
 	"welcome.passwordLabel": "Parola",
+	"welcome.secretTokenLabel": "Gizli anahtar",
 	"welcome.save": "Kaydet",
 	"welcome.connect": "{name} bağlan",
 	"welcome.continue": "Devam",

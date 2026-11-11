@@ -17,7 +17,7 @@ export interface PathMap {
 export interface DownloaderView {
 	id: number;
 	name: string;
-	kind: 'qbittorrent' | 'sabnzbd' | 'transmission' | 'nzbget' | 'deluge' | 'rtorrent';
+	kind: 'qbittorrent' | 'sabnzbd' | 'transmission' | 'nzbget' | 'deluge' | 'rtorrent' | 'aria2';
 	protocol: 'torrent' | 'usenet';
 	url: string;
 	username: string;
@@ -112,7 +112,8 @@ export const kindWords: Record<DownloaderView['kind'], string> = {
 	transmission: 'Transmission',
 	nzbget: 'NZBGet',
 	deluge: 'Deluge',
-	rtorrent: 'rTorrent'
+	rtorrent: 'rTorrent',
+	aria2: 'aria2'
 };
 
 /** Colours a Downloader's health chip. */

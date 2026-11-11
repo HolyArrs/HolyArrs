@@ -388,7 +388,7 @@
 				{/if}
 			{/if}
 			{#if downloaderStep.dlForm}
-				<div class="tiles six" role="radiogroup" aria-label={t('welcome.downloaderApp')}>
+				<div class="tiles seven" role="radiogroup" aria-label={t('welcome.downloaderApp')}>
 					{#each downloaderStep.dlKinds as k (k)}
 						<label class="tile small" class:on={downloaderStep.dl.kind === k}>
 							<input type="radio" name="dlkind" value={k} checked={downloaderStep.dl.kind === k} onchange={() => downloaderStep.pickDl(k)} aria-label={kindWords[k]} />
@@ -410,7 +410,7 @@
 						</div>
 					{/if}
 					<div class="field">
-						<label for="dl-secret">{downloaderStep.dl.kind === 'sabnzbd' ? t('welcome.apiKeyLabel') : t('welcome.passwordLabel')}</label>
+						<label for="dl-secret">{downloaderStep.dl.kind === 'sabnzbd' ? t('welcome.apiKeyLabel') : downloaderStep.dl.kind === 'aria2' ? t('welcome.secretTokenLabel') : t('welcome.passwordLabel')}</label>
 						<input id="dl-secret" class="input" type="password" bind:value={downloaderStep.dl.secret} autocomplete="new-password" />
 					</div>
 				</div>
@@ -533,7 +533,7 @@
 
 	/* Tiles: an icon and a word; picked tiles take the accent, with a tick. */
 	.tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
-	.tiles.six { grid-template-columns: repeat(3, minmax(0, 1fr)); margin-bottom: 18px; }
+	.tiles.seven { grid-template-columns: repeat(4, minmax(0, 1fr)); margin-bottom: 18px; }
 	.tiles.two-up { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 	.tile {
 		position: relative;
@@ -679,7 +679,7 @@
 
 	@media (max-width: 520px) {
 		.tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-		.tiles.six { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+		.tiles.seven { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 		.tiles.two-up { grid-template-columns: 1fr; }
 		.tile { min-height: 96px; }
 		.tile.small { min-height: 52px; }
