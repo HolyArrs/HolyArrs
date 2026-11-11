@@ -8,7 +8,6 @@
 	import Icon from '#lib/ui/Icon.svelte';
 	import { factsLine, filterOf, fixReport, kindHint, kindIcon, listReports, noteMax, quickReplies, reopenReport, reportFilters, reportHref, searchBody, sortReports, stateCounts, titleLine, whoName, type ReportFilter, type ReportView } from './reports.ts';
 	import { onMount, tick, untrack } from 'svelte';
-	import { flip } from 'svelte/animate';
 	import { fade, fly } from 'svelte/transition';
 	import { cubicOut } from 'svelte/easing';
 	import { replaceState } from '$app/navigation';
@@ -16,6 +15,7 @@
 	import { api, message } from '#lib/core/api.ts';
 	import { to } from '#lib/core/paths.ts';
 	import { proxied } from '#lib/core/tmdb-image.ts';
+	import { rowGlide } from '#lib/core/transitions.ts';
 	import { live } from '#lib/core/live.svelte.ts';
 	import { session } from '#lib/core/session.svelte.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
@@ -251,11 +251,13 @@
 	{:else if !loaded}
 		<ul class="cards" aria-hidden="true">{#each Array(3) as _, i (i)}<li class="bc ghost" style:--i={i}></li>{/each}</ul>
 	{:else}
-		<ul class="cards" aria-label={t('requests.reports.title')} in:fade={{ duration: ms(260) }}>
-			{#each shown as r, i (r.id)}
+		<!-- A new filter swaps the whole list in one quick fade; only a report that arrives while you look fades in on its own. -->
+		{#key filter}
+		<ul class="cards" aria-label={t('requests.reports.title')} in:fade={{ duration: ms(150) }}>
+			{#each shown as r (r.id)}
 				{@const wide = wides[r.title_id]}
 				{@const open = r.state === 'open'}
-				<li class="bc" class:answered={!open} data-testid="report" animate:flip={{ duration: ms(340), easing: cubicOut }} in:fly={{ y: 14, duration: ms(420), delay: ms(Math.min(i, 8) * 45), easing: cubicOut }} out:fade={{ duration: ms(220) }}>
+				<li class="bc" class:answered={!open} data-testid="report" animate:rowGlide={{ duration: ms(340) }} in:fade={{ duration: ms(150) }} out:fade={{ duration: ms(220) }}>
 					<!-- The whole card opens the report; the answers sit above this layer. -->
 					<button type="button" class="open" aria-label={t('requests.reports.openReport', { title: titleLine(r) })} aria-haspopup="dialog" onclick={() => show(r)}></button>
 					<a class="cl-go" href={to(reportHref(r))} aria-label={t('requests.reports.pageFor', { name: r.title_name })} title={t('requests.reports.openTitle')}><Icon name="arrowUpRight" size={16} /></a>
@@ -305,6 +307,7 @@
 				</li>
 			{/each}
 		</ul>
+		{/key}
 	{/if}
 </div>
 

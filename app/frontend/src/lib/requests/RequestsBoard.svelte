@@ -15,10 +15,10 @@
 	import { askedFor } from './asked-for.ts';
 	import { watchlistLine } from '../accounts/index.ts';
 	import { onDestroy, tick } from 'svelte';
-	import { flip } from 'svelte/animate';
 	import { fade, fly, slide } from 'svelte/transition';
 	import { cubicIn, cubicOut } from 'svelte/easing';
 	import { agoLong, dateTime } from '../core/format.ts';
+	import { rowGlide } from '../core/transitions.ts';
 	import { to } from '../core/paths.ts';
 	import { proxied } from '../core/tmdb-image.ts';
 	import type { Ask } from '../core/types.ts';
@@ -360,14 +360,16 @@
 				{#if can}{@render stDecline(a)}{/if}
 			{/if}
 		{/snippet}
-		<ul class="cards" aria-label={t('requests.board.requests')} in:fade={{ duration: ms(260) }}>
-			{#each cardsShown as a, i (a.id)}
+		<!-- A new tab swaps the whole list in one quick fade; only an ask that arrives while you look fades in on its own. -->
+		{#key ctx.approverTab}
+		<ul class="cards" aria-label={t('requests.board.requests')} in:fade={{ duration: ms(150) }}>
+			{#each cardsShown as a (a.id)}
 				{@const w = ctx.who(a)}
 				{@const isKid = !!w.kid || /\(kid\)\s*$/i.test(w.name)}
 				{@const life = lifeOf(a)}
 				{@const photo = a.kind === 'artist' ? proxied(artistPhoto(a)) || null : null}
 				{@const wide = proxied(banner(a)) || null}
-				<li class="bc" data-ask={a.id} class:music={a.kind === 'artist'} class:answered={!waiting(a)} class:st-row={!waiting(a) && !ctx.isPending(a.id)} animate:flip={{ duration: ms(340), easing: cubicOut }} in:fly={{ y: 14, duration: ms(420), delay: ms(Math.min(i, 8) * 45), easing: cubicOut }} out:fade={{ duration: ms(220) }}>
+				<li class="bc" data-ask={a.id} class:music={a.kind === 'artist'} class:answered={!waiting(a)} class:st-row={!waiting(a) && !ctx.isPending(a.id)} animate:rowGlide={{ duration: ms(340) }} in:fade={{ duration: ms(150) }} out:fade={{ duration: ms(220) }}>
 					<!-- The whole card opens the window; the answers sit above this layer. -->
 					<button type="button" class="open" aria-label={t('requests.board.open', { name: a.name, who: w.name })} aria-haspopup="dialog" onclick={(e) => void show(a, e.currentTarget)}></button>
 					{#if askHref(a)}<a class="cl-go" href={to(askHref(a))} aria-label={t(a.kind === 'artist' ? 'requests.board.pageForArtist' : a.kind === 'show' ? 'requests.board.pageForShow' : 'requests.board.pageForMovie', { name: a.name })} title={t(a.kind === 'artist' ? 'requests.window.pageArtist' : a.kind === 'show' ? 'requests.window.pageShow' : 'requests.window.pageMovie')}><Icon name="arrowUpRight" size={16} /></a>{/if}
@@ -418,6 +420,7 @@
 					</li>
 			{/each}
 		</ul>
+		{/key}
 </div>
 
 <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_noninteractive_element_interactions -->
