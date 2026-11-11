@@ -143,6 +143,7 @@ SourceFile string `json:"source_file"`
 TargetSlotIDs []int64 `json:"target_slot_ids"`
 TargetPath string `json:"target_path"`
 Method string `json:"method"`
+Move bool `json:"move,omitempty"`
 ReplacesFileID *int64 `json:"replaces_file_id,omitempty"`
 Confidence float64 `json:"confidence"`
 Why []string `json:"why"`
@@ -153,6 +154,8 @@ PlacedBy string `json:"placed_by"`
 FellBack bool `json:"fell_back"`
 Error string `json:"error,omitempty"`
 HeldAside string `json:"held_aside,omitempty"`
+MoveSize int64 `json:"move_size,omitempty"`
+MoveMod int64 `json:"move_mod,omitempty"`
 HeldAsideMore []string `json:"held_aside_more,omitempty"`
 == Import
 Meta Meta ``
