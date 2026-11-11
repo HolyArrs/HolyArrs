@@ -12,6 +12,24 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 )
 
+// Every channel can be added with no switch set: none is held back.
+func TestEveryChannelWithNoSwitchSet(t *testing.T) {
+	t.Setenv("HOLYARRS_FLAGS", "")
+	s, v := open(t)
+	ctx := context.Background()
+	for _, in := range []Input{
+		{Name: "Hook", Kind: "webhook", URL: "https://hooks.example.com/in", Secret: "hk-1234"},
+		{Name: "TG", Kind: "telegram", BotToken: tgToken, ChatID: "42"},
+		{Name: "N", Kind: "ntfy", Topic: "holyarrs"},
+		{Name: "G", Kind: "gotify", ServerURL: "https://gotify.example.com", AppToken: gotifyToken},
+		{Name: "P", Kind: "pushover", AppToken: pushToken, UserKey: pushUser},
+	} {
+		if _, err := Add(ctx, s, v, in, domain.System); err != nil {
+			t.Errorf("%s: %v", in.Kind, err)
+		}
+	}
+}
+
 // A finished download and a failed one are moments of their own: a new
 // Alert speaks for both, and a webhook gets each under its name, with the
 // movie and the Release.
