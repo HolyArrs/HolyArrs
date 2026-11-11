@@ -410,8 +410,8 @@ func (r *RTorrent) job(row rtRow) Job {
 		eta = (row.size - row.done) / row.down
 	}
 	j := Job{ID: row.hash, Name: row.name, Category: labelText(row.label), ContentPath: content, Size: max(0, row.size),
-		Progress: progress, Speed: max(0, row.down), UpSpeed: max(0, row.up), Seeds: int(min(max(0, row.seeds), math.MaxInt32)),
-		Peers: int(min(max(0, row.conns-row.seeds), math.MaxInt32)), ETA: eta, State: state, Detail: detail, Ratio: float64(max(0, row.ratio)) / 1000,
+		Progress: progress, Speed: max(0, row.down), UpSpeed: max(0, row.up), Seeds: count32(row.seeds),
+		Peers: count32(row.conns - row.seeds), ETA: eta, State: state, Detail: detail, Ratio: float64(max(0, row.ratio)) / 1000,
 		Uploaded: max(0, row.upTotal)}
 	if content != "" {
 		j.SavePath = path.Dir(content)
@@ -623,4 +623,15 @@ func asInt(v any) int64 {
 		return n
 	}
 	return 0
+}
+
+// count32 keeps a peer count inside int on every build, 32-bit ones included.
+func count32(v int64) int {
+	if v <= 0 {
+		return 0
+	}
+	if v > math.MaxInt32 {
+		return math.MaxInt32
+	}
+	return int(v)
 }
