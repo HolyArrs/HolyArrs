@@ -206,7 +206,7 @@ func (n *NZBGet) List(ctx context.Context, category string) ([]Job, error) {
 			out = append(out, match.row.job(match.history))
 		}
 	}
-	n.shareSpeed(ctx, out)
+	n.applyStatus(ctx, out)
 	return out, nil
 }
 
@@ -525,25 +525,37 @@ func (n *NZBGet) lookup(ctx context.Context, id, category string) (nzbgetMatch, 
 	return nzbgetFind(active, history, id, category)
 }
 
-func (n *NZBGet) shareSpeed(ctx context.Context, jobs []Job) {
-	moving := 0
+// applyStatus reads NZBGet's status once: a paused download queue holds
+// every job waiting or downloading, and the speed is shared among the jobs
+// still moving.
+func (n *NZBGet) applyStatus(ctx context.Context, jobs []Job) {
+	ask := false
 	for _, j := range jobs {
-		if j.State == StateDownloading {
+		ask = ask || j.State == StateDownloading || nzbgetHeld(j)
+	}
+	if !ask {
+		return
+	}
+	var st nzbgetStatus
+	if err := n.rpc(ctx, "status", nil, &st); err != nil {
+		return
+	}
+	moving := 0
+	for i := range jobs {
+		if st.DownloadPaused && nzbgetHeld(jobs[i]) {
+			jobs[i].State = StatePaused
+		}
+		if jobs[i].State == StateDownloading {
 			moving++
 		}
 	}
-	if moving == 0 {
-		return
-	}
-	var st struct {
-		DownloadRate int64 `json:"DownloadRate"`
-	}
-	if err := n.rpc(ctx, "status", nil, &st); err != nil || st.DownloadRate <= 0 {
+	rate := st.rate()
+	if moving == 0 || rate <= 0 {
 		return
 	}
 	for i := range jobs {
 		if jobs[i].State == StateDownloading {
-			jobs[i].Speed = st.DownloadRate / int64(moving)
+			jobs[i].Speed = rate / int64(moving)
 		}
 	}
 }

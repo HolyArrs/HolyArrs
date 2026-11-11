@@ -3,6 +3,7 @@ Address
 Category
 DeleteStatus
 DestDir
+DownloadPaused
 DownloadRate
 DownloadRateHi
 DownloadRateLo

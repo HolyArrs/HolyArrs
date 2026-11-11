@@ -60,7 +60,7 @@ func (m *Manager) ClearFinished(ctx context.Context, downloadID int64) {
 		relName = rel.Name
 	}
 	said := "Cleared the imported download from " + dr.Name
-	if root, rel := m.finishedFolder(folder, relName, dr); rel != "" {
+	if root, rel := m.finishedFolder(ctx, folder, relName, dr); rel != "" {
 		rerr := func() error {
 			rt, err := os.OpenRoot(root)
 			if err != nil {
@@ -78,7 +78,7 @@ func (m *Manager) ClearFinished(ctx context.Context, downloadID int64) {
 	m.event(ctx, &d, "download_removed", said)
 }
 
-func (m *Manager) finishedFolder(content, relName string, dr domain.Downloader) (root, rel string) {
+func (m *Manager) finishedFolder(ctx context.Context, content, relName string, dr domain.Downloader) (root, rel string) {
 	if content == "" || relName == "" {
 		return "", ""
 	}
@@ -91,6 +91,11 @@ func (m *Manager) finishedFolder(content, relName string, dr domain.Downloader) 
 	}
 	fi, err := os.Lstat(local)
 	if err != nil || !fi.IsDir() || fi.Mode()&(os.ModeSymlink|os.ModeIrregular) != 0 {
+		return "", ""
+	}
+	// As for a torrent's files: never in or around a Library folder, and
+	// nothing when the Library folders cannot be read.
+	if keep, err := m.libraryFolders(ctx); err != nil || nearLibrary(local, keep) {
 		return "", ""
 	}
 	var roots []string
