@@ -172,6 +172,9 @@ func (s *Searcher) loadShow(ctx context.Context, ti mediafiles.Title, ver mediaf
 		if it.Numbers.Absolute != nil {
 			e.ref.Absolute = *it.Numbers.Absolute
 		}
+		if it.Numbers.AltSeason != nil && it.Numbers.AltEpisode != nil {
+			e.ref.AltSeason, e.ref.AltEpisode = *it.Numbers.AltSeason, *it.Numbers.AltEpisode
+		}
 		if it.AirDay != nil {
 			e.ref.AirDay = *it.AirDay
 		}

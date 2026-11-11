@@ -593,3 +593,38 @@ func TestMissingSearch_OneTitleIgnoresNightlyShowSwitch(t *testing.T) {
 		t.Fatalf("nightly with shows off searches the movie only: %+v", j.Result)
 	}
 }
+
+// setAlt gives an episode the numbers release names use for it.
+func setAlt(t *testing.T, f showFix, label string, season, episode int) {
+	t.Helper()
+	if err := f.s.Write(context.Background(), func(tx *sql.Tx) error {
+		_, err := tx.Exec(`UPDATE items SET numbers = json_set(numbers, '$.alt_season', ?, '$.alt_episode', ?) WHERE id = ?`, season, episode, f.items[label])
+		return err
+	}); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// A feed Release named by the release numbers (S03E01) fills the stored
+// episode that carries them; without them it finds no episode.
+func TestFeedShow_ReleaseNumbers(t *testing.T) {
+	for _, mapped := range []bool{true, false} {
+		ts := &tvServer{answer: func(url.Values) []string { return []string{"Copper.Valley.S03E01.1080p.WEB-DL.H.264-QUILL"} }}
+		f := seedShow(t, ts.start(t), nil)
+		if mapped {
+			setAlt(t, f, "S01E03", 3, 1)
+		}
+		j := runKind(t, f.fixture, &Searcher{Store: f.s}, jobs.KindFeedCheck, nil, nil)
+		if j.State != "done" {
+			t.Fatalf("feed %s %+v", j.State, j.Error)
+		}
+		want := mediafiles.SlotWanted
+		if mapped {
+			want = mediafiles.SlotChosen
+		}
+		if st := f.state(t, "S01E03"); st != want {
+			r := relByName(t, f.fixture, "Copper.Valley.S03E01.1080p.WEB-DL.H.264-QUILL")
+			t.Fatalf("mapped %v: S01E03 %s, want %s (%s %v)", mapped, st, want, r.State, reasonCodes(r))
+		}
+	}
+}
