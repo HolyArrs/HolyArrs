@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http/httptest"
 	"strings"
 	"testing"
 
@@ -296,5 +297,29 @@ func TestSeedingChoiceChecks(t *testing.T) {
 	}
 	if err := applySeeding(SeedingChoice{}, &d); err != nil || d.AfterImport != "leave" || d.SeedGoal.DeleteFiles || d.SeedGoal.Ratio != nil {
 		t.Fatalf("off: %v %+v", err, d)
+	}
+}
+
+// Transmission lists only HolyArrs's labels, yet a twin under another label
+// shares the files, so they stay.
+func TestSeedCleanupTransmissionTwinKeepsFiles(t *testing.T) {
+	w, m, id, _ := seededDownload(t, "transmission", `{"delete_files":true}`, Job{})
+	f := &fakeTransmission{token: "<owned-session>", modern: true, items: map[string]map[string]any{}}
+	srv := httptest.NewServer(f)
+	t.Cleanup(srv.Close)
+	twin := strings.Repeat("b", 40)
+	for h, label := range map[string]string{hash: "holyarrs", twin: "cross-seed"} {
+		f.items[h] = map[string]any{"hash_string": h, "name": "Dune.Part.Two.2024.1080p.WEB.H264-HOLYARRS", "labels": []string{label},
+			"download_dir": "/data/downloads/complete", "status": 0, "percent_done": 1, "left_until_done": 0, "metadata_percent_complete": 1, "total_size": 100}
+	}
+	tr := NewTransmission(srv.URL, "task", "<transmission-test-password>", nil)
+	tr.category = "holyarrs"
+	m.Engine = func(domain.Downloader) (Engine, error) { return tr, nil }
+	m.Forget(w.download(t, id).DownloaderID)
+	m.cleanSeeded(context.Background())
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if f.items[hash] != nil || f.items[twin] == nil || f.deleteFiles {
+		t.Fatalf("removed %v, twin kept %v, files deleted %v", f.items[hash] == nil, f.items[twin] != nil, f.deleteFiles)
 	}
 }

@@ -79,10 +79,8 @@ func (m *Manager) deadReason(st settings, d domain.Download, j Job) string {
 	now := m.now()
 	if stuckOnMetadata(j) {
 		m.dropCrawlMark(d.ID)
-		since := d.CreatedAt
-		if d.StartedAt != nil {
-			since = *d.StartedAt
-		}
+		// From the last start or resume, as the stall timer: paused time never counts.
+		since := lastMoved(d)
 		if st.deadMetadata > 0 && now.Sub(since) >= st.deadMetadata {
 			return "stuck on metadata for " + hours(now.Sub(since))
 		}

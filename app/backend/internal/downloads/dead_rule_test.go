@@ -92,3 +92,24 @@ func TestDeadRuleCrawlingFastEnoughResets(t *testing.T) {
 		t.Fatalf("failed: %v", d.StateReason)
 	}
 }
+
+func TestDeadRuleMetadataPausedTimeNeverCounts(t *testing.T) {
+	w, m, id, eng := deadDownload(t, Job{Detail: "metaDL"}, setRule(SettingDeadMetadata, "30"))
+	// Paused by hand for two hours, then started again.
+	eng.jobs[0].State, eng.jobs[0].Detail = StatePaused, "pausedDL"
+	if _, err := m.SyncOnce(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	w.advance(2 * time.Hour)
+	eng.jobs[0].State, eng.jobs[0].Detail = StateDownloading, "metaDL"
+	if _, err := m.SyncOnce(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	m.deadRule(context.Background())
+	if d := w.download(t, id); d.State == "failed" {
+		t.Fatalf("failed as soon as it started again: %v", *d.StateReason)
+	}
+	w.advance(31 * time.Minute)
+	m.deadRule(context.Background())
+	wantFailedPath(t, w, id, "metadata", false)
+}

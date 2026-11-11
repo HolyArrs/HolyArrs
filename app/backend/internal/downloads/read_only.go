@@ -80,6 +80,12 @@ type roRTorrent struct {
 	roActiveLister
 }
 
+// roTransmission is Transmission's shape: the engine plus the full list.
+type roTransmission struct {
+	*roCore
+	roAllLister
+}
+
 // roAria2 is aria2's shape: the engine plus the row controls.
 type roAria2 struct {
 	*roCore
@@ -299,6 +305,8 @@ func readOnlyWrap(inner Engine, allowAdd bool) Engine {
 		return roRTorrent{c, roController{c}, roActiveLister{c}}
 	case shapeOf(&Aria2{}):
 		return roAria2{c, roController{c}}
+	case shapeOf(&Transmission{}):
+		return roTransmission{c, roAllLister{c}}
 	}
 	return c
 }
