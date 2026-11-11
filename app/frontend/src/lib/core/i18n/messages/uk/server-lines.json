@@ -1,8 +1,8 @@
 {
 	"server.accounts.is-restricted-on-the-server-confirm": "{name} має обмеження на сервері; підтверди перед імпортом як дорослого",
 	"server.accounts.address-must-look-like-http-192": "адреса {p} має виглядати як http://192.168.1.10:8096",
-	"server.accounts.unlinked-the-sign-in-of": "{r} відключив(ла) вхід {word} для {userid}",
-	"server.accounts.unlinked-their-sign-in": "{r} відключив(ла) свій вхід {word}",
+	"server.accounts.unlinked-the-sign-in-of": "{name} відключив(ла) вхід {word} для {name2}",
+	"server.accounts.unlinked-their-sign-in": "{name} відключив(ла) свій вхід {word}",
 	"server.accounts.is-already-linked-to-another-holyarrs": "{what} уже підключено до іншого користувача HolyArrs",
 	"server.accounts.a-key-cannot-make-a-key": "ключ не може створити ключ із правами, яких сам не має",
 	"server.accounts.ai-connections-are-off": "підключення ШІ вимкнено",
@@ -1198,5 +1198,14 @@
 	"server.discover.coming-saturday": "Вийде: субота",
 	"server.discover.new-episode-sat": "Нова серія · сб",
 	"server.discover.coming-sunday": "Вийде: неділя",
-	"server.discover.new-episode-sun": "Нова серія · нд"
+	"server.discover.new-episode-sun": "Нова серія · нд",
+	"server.accounts.the-stage": "Етап {name}: {past}",
+	"server.downloads.download": "Завантаження {externalid}: {state}",
+	"server.downloads.download-2": "Завантаження: {reason}",
+	"server.migrate.an-unclosed": "незакрита {",
+	"server.migrate.no-folder-at-on-this-server-4": "на цьому сервері немає теки {lib}; додай правило шляху",
+	"server.migrate.prowlarr-s-api-key-line": "API-ключ Prowlarr",
+	"server.migrate.there-is-no-saved-key-for-2": "для цього застосунку за цією адресою немає збереженого ключа; введи його ключ",
+	"server.migrate.uses-which-has-no-holyarrs-word": "використовує {{w}}, для якого в HolyArrs немає слова",
+	"server.shows.tmdb-could-not-be-read": "Не вдалося прочитати TMDB: {error}"
 }

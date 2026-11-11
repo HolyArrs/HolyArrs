@@ -1,8 +1,8 @@
 {
 	"server.accounts.is-restricted-on-the-server-confirm": "{name}은(는) 서버에서 제한된 계정입니다. 성인으로 가져오기 전에 확인하세요",
 	"server.accounts.address-must-look-like-http-192": "{p} 주소는 http://192.168.1.10:8096 형식이어야 합니다",
-	"server.accounts.unlinked-the-sign-in-of": "{r}이(가) {userid}의 {word} 로그인 연결을 해제했습니다",
-	"server.accounts.unlinked-their-sign-in": "{r}이(가) 자신의 {word} 로그인 연결을 해제했습니다",
+	"server.accounts.unlinked-the-sign-in-of": "{name}이(가) {name2}의 {word} 로그인 연결을 해제했습니다",
+	"server.accounts.unlinked-their-sign-in": "{name}이(가) 자신의 {word} 로그인 연결을 해제했습니다",
 	"server.accounts.is-already-linked-to-another-holyarrs": "{what}은(는) 이미 다른 HolyArrs 사용자에 연결되어 있습니다",
 	"server.accounts.a-key-cannot-make-a-key": "키는 자신이 갖지 않은 스코프의 키를 만들 수 없습니다",
 	"server.accounts.ai-connections-are-off": "AI 연결이 꺼져 있습니다",
@@ -1198,5 +1198,14 @@
 	"server.discover.coming-saturday": "토요일 공개",
 	"server.discover.new-episode-sat": "새 에피소드 · 토",
 	"server.discover.coming-sunday": "일요일 공개",
-	"server.discover.new-episode-sun": "새 에피소드 · 일"
+	"server.discover.new-episode-sun": "새 에피소드 · 일",
+	"server.accounts.the-stage": "단계 {name}: {past}",
+	"server.downloads.download": "다운로드 {externalid}: {state}",
+	"server.downloads.download-2": "다운로드: {reason}",
+	"server.migrate.an-unclosed": "닫히지 않은 {",
+	"server.migrate.no-folder-at-on-this-server-4": "이 서버에 {lib} 폴더가 없습니다. 경로 규칙을 추가하세요",
+	"server.migrate.prowlarr-s-api-key-line": "Prowlarr의 API 키",
+	"server.migrate.there-is-no-saved-key-for-2": "이 주소에는 이 앱에 저장된 키가 없습니다. 키를 입력하세요",
+	"server.migrate.uses-which-has-no-holyarrs-word": "{{w}}를 사용하지만 HolyArrs에 대응하는 단어가 없습니다",
+	"server.shows.tmdb-could-not-be-read": "TMDB를 읽을 수 없었습니다: {error}"
 }

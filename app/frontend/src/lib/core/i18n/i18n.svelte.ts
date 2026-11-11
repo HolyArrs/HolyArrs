@@ -100,29 +100,56 @@ async function use(l: Locale): Promise<void> {
 	want = l;
 	let words: Record<string, string> = en;
 	if (l !== 'en') {
-		try {
-			const url = packs[`./packs/${l}.json`];
-			if (!url) throw new Error('no pack');
-			const res = await fetch(url);
-			if (!res.ok) throw new Error('no pack');
-			const p = (await res.json()) as { fit: string; values: (string | null)[] };
-			if (p.fit !== fit || p.values.length !== ORDER.length) throw new Error('stale pack');
-			if (want !== l) return;
-			const got: Words = {};
-			ORDER.forEach((k, i) => {
-				const v = p.values[i];
-				if (typeof v === 'string') got[k] = v;
-			});
-			words = { ...en, ...got };
-		} catch {
-			l = 'en';
-		}
+		const got = await readPack(packs[`./packs/${l}.json`]);
+		if (want !== l || got === 'reload') return;
+		if (got) words = got;
+		else l = 'en';
 	}
 	lang.value = l;
 	lang.words = words;
 	if (typeof document !== 'undefined') {
 		document.documentElement.lang = bcp47(l);
 		document.documentElement.dir = RTL.has(l) ? 'rtl' : 'ltr';
+	}
+}
+
+const RELOADED = 'holyarrs-lang-reloaded';
+
+/** One language's words from its pack (lines it lacks in English); null when the pack can't be used, 'reload' when the page reloads to get a newer build's packs. */
+export async function readPack(url: string | undefined): Promise<Words | null | 'reload'> {
+	try {
+		if (!url) return null;
+		const res = await fetch(url);
+		// A tab from before an update asks for the old build's pack, which is gone: one reload brings the new page and its packs.
+		if (res.status === 404 && reloadOnce()) return 'reload';
+		if (!res.ok) return null;
+		const p = (await res.json()) as { fit: string; values: (string | null)[] };
+		if (p.fit !== fit || p.values.length !== ORDER.length) return null;
+		try {
+			sessionStorage.removeItem(RELOADED);
+		} catch {
+			// No storage: nothing was kept.
+		}
+		const got: Words = {};
+		ORDER.forEach((k, i) => {
+			const v = p.values[i];
+			if (typeof v === 'string') got[k] = v;
+		});
+		return { ...en, ...got };
+	} catch {
+		return null;
+	}
+}
+
+// Reloads the page unless this tab already did for a missing pack, so a pack that is really gone shows English instead of looping.
+function reloadOnce(): boolean {
+	try {
+		if (sessionStorage.getItem(RELOADED)) return false;
+		sessionStorage.setItem(RELOADED, '1');
+		location.reload();
+		return true;
+	} catch {
+		return false;
 	}
 }
 

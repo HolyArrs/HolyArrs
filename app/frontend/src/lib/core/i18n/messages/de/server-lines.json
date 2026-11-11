@@ -1,8 +1,8 @@
 {
 	"server.accounts.is-restricted-on-the-server-confirm": "{name} ist auf dem Server eingeschränkt; bestätige das, bevor du die Person als Erwachsene importierst",
 	"server.accounts.address-must-look-like-http-192": "Die Adresse von {p} muss so aussehen: http://192.168.1.10:8096",
-	"server.accounts.unlinked-the-sign-in-of": "{r} hat die Anmeldung per {word} von {userid} getrennt",
-	"server.accounts.unlinked-their-sign-in": "{r} hat die eigene Anmeldung per {word} getrennt",
+	"server.accounts.unlinked-the-sign-in-of": "{name} hat die Anmeldung per {word} von {name2} getrennt",
+	"server.accounts.unlinked-their-sign-in": "{name} hat die eigene Anmeldung per {word} getrennt",
 	"server.accounts.is-already-linked-to-another-holyarrs": "{what} ist schon mit einem anderen HolyArrs-Konto verknüpft",
 	"server.accounts.a-key-cannot-make-a-key": "ein Schlüssel kann keinen Schlüssel mit einem Bereich erstellen, den er selbst nicht hat",
 	"server.accounts.ai-connections-are-off": "KI-Verbindungen sind aus",
@@ -1198,5 +1198,14 @@
 	"server.discover.coming-saturday": "Kommt Samstag",
 	"server.discover.new-episode-sat": "Neue Folge · Sa",
 	"server.discover.coming-sunday": "Kommt Sonntag",
-	"server.discover.new-episode-sun": "Neue Folge · So"
+	"server.discover.new-episode-sun": "Neue Folge · So",
+	"server.accounts.the-stage": "Stufe {name}: {past}",
+	"server.downloads.download": "Download {externalid}: {state}",
+	"server.downloads.download-2": "Download: {reason}",
+	"server.migrate.an-unclosed": "eine nicht geschlossene {",
+	"server.migrate.no-folder-at-on-this-server-4": "kein Ordner unter {lib} auf diesem Server; füge eine Pfadregel hinzu",
+	"server.migrate.prowlarr-s-api-key-line": "API-Schlüssel von Prowlarr",
+	"server.migrate.there-is-no-saved-key-for-2": "für diese App gibt es unter dieser Adresse keinen gespeicherten Schlüssel; gib ihren Schlüssel ein",
+	"server.migrate.uses-which-has-no-holyarrs-word": "nutzt {{w}}, wofür HolyArrs kein Wort hat",
+	"server.shows.tmdb-could-not-be-read": "TMDB konnte nicht gelesen werden: {error}"
 }

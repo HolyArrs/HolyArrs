@@ -1,8 +1,8 @@
 {
 	"server.accounts.is-restricted-on-the-server-confirm": "{name} はサーバー側で制限されています。成人としてインポートする前に確認してください",
 	"server.accounts.address-must-look-like-http-192": "{p} のアドレスは http://192.168.1.10:8096 の形にしてください",
-	"server.accounts.unlinked-the-sign-in-of": "{r} が {userid} の{word}サインインの連携を解除しました",
-	"server.accounts.unlinked-their-sign-in": "{r} が自分の{word}サインインの連携を解除しました",
+	"server.accounts.unlinked-the-sign-in-of": "{name} が {name2} の{word}サインインの連携を解除しました",
+	"server.accounts.unlinked-their-sign-in": "{name} が自分の{word}サインインの連携を解除しました",
 	"server.accounts.is-already-linked-to-another-holyarrs": "{what} はすでに別の HolyArrs ユーザーと連携しています",
 	"server.accounts.a-key-cannot-make-a-key": "キーは、自分が持っていないスコープのキーを作れません",
 	"server.accounts.ai-connections-are-off": "AI の接続はオフです",
@@ -1198,5 +1198,14 @@
 	"server.discover.coming-saturday": "土曜日に公開",
 	"server.discover.new-episode-sat": "新しいエピソード · 土",
 	"server.discover.coming-sunday": "日曜日に公開",
-	"server.discover.new-episode-sun": "新しいエピソード · 日"
+	"server.discover.new-episode-sun": "新しいエピソード · 日",
+	"server.accounts.the-stage": "ステージ {name}：{past}",
+	"server.downloads.download": "ダウンロード {externalid}：{state}",
+	"server.downloads.download-2": "ダウンロード：{reason}",
+	"server.migrate.an-unclosed": "閉じられていない {",
+	"server.migrate.no-folder-at-on-this-server-4": "このサーバーに {lib} のフォルダーがありません。パスのルールを追加してください",
+	"server.migrate.prowlarr-s-api-key-line": "Prowlarr の API キー",
+	"server.migrate.there-is-no-saved-key-for-2": "このアドレスには、このアプリの保存済みキーがありません。キーを入力してください",
+	"server.migrate.uses-which-has-no-holyarrs-word": "{{w}} を使っていますが、HolyArrs に対応する語がありません",
+	"server.shows.tmdb-could-not-be-read": "TMDB を読み取れませんでした: {error}"
 }

@@ -1,8 +1,8 @@
 {
 	"server.accounts.is-restricted-on-the-server-confirm": "{name} 在服务器上受到限制；请确认后再将其作为成年人导入",
 	"server.accounts.address-must-look-like-http-192": "{p} 地址必须形如 http://192.168.1.10:8096",
-	"server.accounts.unlinked-the-sign-in-of": "{r} 取消关联了 {userid} 的 {word} 登录",
-	"server.accounts.unlinked-their-sign-in": "{r} 取消关联了自己的 {word} 登录",
+	"server.accounts.unlinked-the-sign-in-of": "{name} 取消关联了 {name2} 的 {word} 登录",
+	"server.accounts.unlinked-their-sign-in": "{name} 取消关联了自己的 {word} 登录",
 	"server.accounts.is-already-linked-to-another-holyarrs": "{what} 已关联到另一个 HolyArrs 用户",
 	"server.accounts.a-key-cannot-make-a-key": "密钥不能创建权限范围超出自身的密钥",
 	"server.accounts.ai-connections-are-off": "AI 连接已关闭",
@@ -1198,5 +1198,14 @@
 	"server.discover.coming-saturday": "星期六上线",
 	"server.discover.new-episode-sat": "新单集 · 周六",
 	"server.discover.coming-sunday": "星期日上线",
-	"server.discover.new-episode-sun": "新单集 · 周日"
+	"server.discover.new-episode-sun": "新单集 · 周日",
+	"server.accounts.the-stage": "环节 {name}：{past}",
+	"server.downloads.download": "下载 {externalid}：{state}",
+	"server.downloads.download-2": "下载：{reason}",
+	"server.migrate.an-unclosed": "有未闭合的 {",
+	"server.migrate.no-folder-at-on-this-server-4": "这台服务器上没有 {lib} 这个文件夹；请添加路径规则",
+	"server.migrate.prowlarr-s-api-key-line": "Prowlarr 的 API 密钥",
+	"server.migrate.there-is-no-saved-key-for-2": "这个地址上的这个应用没有已保存的密钥；请输入它的密钥",
+	"server.migrate.uses-which-has-no-holyarrs-word": "使用了 {{w}}，HolyArrs 中没有对应的词",
+	"server.shows.tmdb-could-not-be-read": "无法读取 TMDB：{error}"
 }

@@ -1,8 +1,8 @@
 {
 	"server.accounts.is-restricted-on-the-server-confirm": "{name} is beperkt op de server; bevestig dit voordat je diegene als volwassene importeert",
 	"server.accounts.address-must-look-like-http-192": "het adres van {p} moet eruitzien als http://192.168.1.10:8096",
-	"server.accounts.unlinked-the-sign-in-of": "{r} heeft de aanmelding via {word} van {userid} ontkoppeld",
-	"server.accounts.unlinked-their-sign-in": "{r} heeft de eigen aanmelding via {word} ontkoppeld",
+	"server.accounts.unlinked-the-sign-in-of": "{name} heeft de aanmelding via {word} van {name2} ontkoppeld",
+	"server.accounts.unlinked-their-sign-in": "{name} heeft de eigen aanmelding via {word} ontkoppeld",
 	"server.accounts.is-already-linked-to-another-holyarrs": "{what} is al gekoppeld aan een andere HolyArrs-gebruiker",
 	"server.accounts.a-key-cannot-make-a-key": "een sleutel kan geen sleutel maken met een scope die hij zelf niet heeft",
 	"server.accounts.ai-connections-are-off": "AI-verbindingen staan uit",
@@ -1198,5 +1198,14 @@
 	"server.discover.coming-saturday": "Komt zaterdag",
 	"server.discover.new-episode-sat": "Nieuwe aflevering · za",
 	"server.discover.coming-sunday": "Komt zondag",
-	"server.discover.new-episode-sun": "Nieuwe aflevering · zo"
+	"server.discover.new-episode-sun": "Nieuwe aflevering · zo",
+	"server.accounts.the-stage": "Fase {name}: {past}",
+	"server.downloads.download": "Download {externalid}: {state}",
+	"server.downloads.download-2": "Download: {reason}",
+	"server.migrate.an-unclosed": "een niet-gesloten {",
+	"server.migrate.no-folder-at-on-this-server-4": "geen map op {lib} op deze server; voeg een padregel toe",
+	"server.migrate.prowlarr-s-api-key-line": "API-sleutel van Prowlarr",
+	"server.migrate.there-is-no-saved-key-for-2": "er is geen opgeslagen sleutel voor deze app op dit adres; typ de sleutel ervan",
+	"server.migrate.uses-which-has-no-holyarrs-word": "gebruikt {{w}}, waarvoor HolyArrs geen woord heeft",
+	"server.shows.tmdb-could-not-be-read": "TMDB kon niet worden uitgelezen: {error}"
 }

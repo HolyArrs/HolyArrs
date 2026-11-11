@@ -1,8 +1,8 @@
 {
 	"server.accounts.is-restricted-on-the-server-confirm": "{name} tiene restricciones en el servidor; confirma antes de importarlo como adulto",
 	"server.accounts.address-must-look-like-http-192": "la dirección de {p} debe tener un formato como http://192.168.1.10:8096",
-	"server.accounts.unlinked-the-sign-in-of": "{r} desvinculó el inicio de sesión de {word} de {userid}",
-	"server.accounts.unlinked-their-sign-in": "{r} desvinculó su inicio de sesión de {word}",
+	"server.accounts.unlinked-the-sign-in-of": "{name} desvinculó el inicio de sesión de {word} de {name2}",
+	"server.accounts.unlinked-their-sign-in": "{name} desvinculó su inicio de sesión de {word}",
 	"server.accounts.is-already-linked-to-another-holyarrs": "{what} ya está vinculado a otro usuario de HolyArrs",
 	"server.accounts.a-key-cannot-make-a-key": "una clave no puede crear una clave con un alcance que no tiene",
 	"server.accounts.ai-connections-are-off": "las conexiones de IA están desactivadas",
@@ -1198,5 +1198,14 @@
 	"server.discover.coming-saturday": "Llega el sábado",
 	"server.discover.new-episode-sat": "Episodio nuevo · sáb",
 	"server.discover.coming-sunday": "Llega el domingo",
-	"server.discover.new-episode-sun": "Episodio nuevo · dom"
+	"server.discover.new-episode-sun": "Episodio nuevo · dom",
+	"server.accounts.the-stage": "Etapa {name}: {past}",
+	"server.downloads.download": "Descarga {externalid}: {state}",
+	"server.downloads.download-2": "Descarga: {reason}",
+	"server.migrate.an-unclosed": "una { sin cerrar",
+	"server.migrate.no-folder-at-on-this-server-4": "no hay ninguna carpeta en {lib} en este servidor; añade una regla de ruta",
+	"server.migrate.prowlarr-s-api-key-line": "clave API de Prowlarr",
+	"server.migrate.there-is-no-saved-key-for-2": "no hay una clave guardada para esta app en esta dirección; escribe su clave",
+	"server.migrate.uses-which-has-no-holyarrs-word": "usa {{w}}, que no tiene palabra en HolyArrs",
+	"server.shows.tmdb-could-not-be-read": "No se pudo leer TMDB: {error}"
 }
