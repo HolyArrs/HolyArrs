@@ -374,7 +374,7 @@ func (m *Manager) failed(ctx context.Context, dr domain.Downloader, old, next do
 	return true
 }
 
-// readFinished finds the final files of a finished job. It reads the disk through the path maps and, once a save root or a path pair is set, never leaves them, so a client cannot point HolyArrs at other files. If the path is not visible here, it falls back to the name and size the client gave.
+// readFinished finds the final files of a finished job. It reads the disk through the path maps and never leaves the save root or the mapped roots, so a client cannot point HolyArrs at other files. If the path is not visible here, it falls back to the name and size the client gave.
 func readFinished(j Job, pm []domain.PathMap, saveRoot string) (string, []File) {
 	content := j.ContentPath
 	if content == "" {
@@ -388,7 +388,9 @@ func readFinished(j Job, pm []domain.PathMap, saveRoot string) (string, []File) 
 	}
 	// Lstat so a symlink is not followed out of the roots.
 	fi, err := os.Lstat(local)
-	if !underAny(local, roots) && (anyRoot(roots) || !sharedAsIs(local, mapLocal(j.SavePath, pm))) {
+	// Only inside the save root or a path pair the owner set up: a Downloader
+	// never decides which folders HolyArrs reads.
+	if !underAny(local, roots) {
 		err = fs.ErrPermission
 	}
 	switch {
@@ -446,37 +448,6 @@ func underAny(p string, roots []string) bool {
 		}
 	}
 	return false
-}
-
-// anyRoot reports whether any root is set.
-func anyRoot(roots []string) bool {
-	for _, r := range roots {
-		if strings.TrimSpace(r) != "" {
-			return true
-		}
-	}
-	return false
-}
-
-// ConfigDir is HolyArrs's own config folder; a Downloader is never trusted to
-// point into it. main sets it from -config.
-var ConfigDir = "/config"
-
-// sharedAsIs reports whether a finished job may be read where the Downloader
-// says it is, for setups with no save path and no path pair (the Downloader's
-// folder is shared as is). Only inside the job's own save folder, never a whole
-// disk, and never HolyArrs's own config folder.
-func sharedAsIs(local, save string) bool {
-	save = filepath.Clean(strings.TrimSpace(save))
-	if !filepath.IsAbs(local) || !filepath.IsAbs(save) || isDiskRoot(local) || isDiskRoot(save) {
-		return false
-	}
-	return underAny(local, []string{save}) && !underAny(local, []string{ConfigDir}) && !underAny(ConfigDir, []string{local})
-}
-
-// isDiskRoot reports whether p is a whole disk, such as / or C:\.
-func isDiskRoot(p string) bool {
-	return filepath.Dir(p) == p
 }
 
 // mapLocal turns the client's path into ours.
