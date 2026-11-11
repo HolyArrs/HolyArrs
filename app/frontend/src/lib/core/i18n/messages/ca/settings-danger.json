@@ -1,0 +1,16 @@
+{
+	"settings.danger.stopping": "HolyArrs s'està aturant.",
+	"settings.danger.couldnt": "No s'ha pogut {action}",
+	"settings.danger.title": "Zona de perill",
+	"settings.danger.ownerOnly": "Només el propietari i els administradors",
+	"settings.danger.ask": "{label}?",
+	"settings.danger.yes": "Sí, {action}",
+	"settings.danger.cancel": "Cancel·la",
+	"settings.danger.expires": "Caduca d'aquí a 60 s",
+	"settings.danger.wholeApp": "Tota l'aplicació",
+	"settings.danger.intro": "Això atura HolyArrs. La política de reinici de Docker el torna a engegar en uns segons, tret que la política sigui <code>no</code>; en aquest cas, engega tu mateix el contenidor. Cada acció ho pregunta abans.",
+	"settings.danger.restart": "Reinicia HolyArrs",
+	"settings.danger.safe": "Reinicia en mode segur",
+	"settings.danger.shutdown": "Atura",
+	"settings.danger.safeNote": "S'engega una sola vegada amb només l'inici de sessió, la Configuració i la Biblioteca. Fes-ho servir quan una Part bloqueja l'arrencada."
+}

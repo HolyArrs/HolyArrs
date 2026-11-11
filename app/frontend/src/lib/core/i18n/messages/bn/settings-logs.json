@@ -1,0 +1,18 @@
+{
+	"settings.logs.title": "লগ",
+	"settings.logs.download": "ডাউনলোড",
+	"settings.logs.filter": "লগ ফিল্টার করুন",
+	"settings.logs.level": "লেভেল",
+	"settings.logs.every": "প্রতিটি লাইন",
+	"settings.logs.warnings": "সতর্কতা ও ত্রুটি",
+	"settings.logs.errors": "শুধু ত্রুটি",
+	"settings.logs.text": "লেখা",
+	"settings.logs.example": "যেমন qBittorrent",
+	"settings.logs.from": "থেকে",
+	"settings.logs.to": "পর্যন্ত",
+	"settings.logs.apply": "প্রয়োগ করুন",
+	"settings.logs.clear": "মুছুন",
+	"settings.logs.lines": "লাইন",
+	"settings.logs.newer": "নতুন",
+	"settings.logs.older": "পুরোনো"
+}

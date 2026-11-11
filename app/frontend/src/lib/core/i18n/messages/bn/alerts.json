@@ -1,0 +1,17 @@
+{
+	"alerts.fallback.settings": "সেটিংস",
+	"alerts.panel.clearAll": "সব মুছুন",
+	"alerts.panel.empty": "এখানে এখনো কিছু নেই",
+	"alerts.panel.needsAttention": "দেখা দরকার",
+	"alerts.panel.recent": "সাম্প্রতিক",
+	"alerts.panel.remove": "{text} সরান",
+	"alerts.panel.title": "সাম্প্রতিক অ্যালার্ট",
+	"alerts.state.manyNeed": "{count}টি দেখা দরকার",
+	"alerts.state.ok": "সব ঠিক আছে",
+	"alerts.state.oneNeeds": "১টি দেখা দরকার",
+	"alerts.state.unset": "সেট আপ করা নেই",
+	"alerts.time.days": "{n} দিন",
+	"alerts.time.hours": "{n} ঘ",
+	"alerts.time.minutes": "{n} মি",
+	"alerts.time.now": "এখনই"
+}

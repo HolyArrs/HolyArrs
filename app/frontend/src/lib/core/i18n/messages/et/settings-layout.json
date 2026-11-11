@@ -1,0 +1,14 @@
+{
+	"settings.layout.settings": "Seaded",
+	"settings.layout.home": "Avaleht",
+	"settings.layout.sections": "Seadete jaotised",
+	"settings.layout.needsAttention": "Vajab tähelepanu",
+	"settings.layout.needsAttentionLower": "vajab tähelepanu",
+	"settings.layout.blocked": "Seda ei saa muuta",
+	"settings.layout.backToSettings": "Tagasi seadete juurde",
+	"settings.layout.setPasswordFirst": "Määra esmalt parool",
+	"settings.layout.setPasswordDesc": "Võtmed, paroolid, inimesed ja varukoopiad vajavad HolyArrsi parooli. Sul pole seda veel.",
+	"settings.layout.setPasswordLabel": "Määra parool",
+	"settings.layout.confirmPasswordLabel": "Kinnita oma parool",
+	"settings.layout.confirmPasswordDesc": "Võtmed, paroolid, inimesed ja varukoopiad vajavad sinu parooli. Kehtib 10 minutit."
+}

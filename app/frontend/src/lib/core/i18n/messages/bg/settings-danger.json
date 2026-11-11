@@ -1,0 +1,16 @@
+{
+	"settings.danger.stopping": "HolyArrs спира.",
+	"settings.danger.couldnt": "Неуспешно действие: {action}",
+	"settings.danger.title": "Опасна зона",
+	"settings.danger.ownerOnly": "Само за собственика и администраторите",
+	"settings.danger.ask": "{label}?",
+	"settings.danger.yes": "Да, {action}",
+	"settings.danger.cancel": "Отказ",
+	"settings.danger.expires": "Изтича след 60 с",
+	"settings.danger.wholeApp": "Цялото приложение",
+	"settings.danger.intro": "Тези действия спират HolyArrs. Политиката за рестартиране на Docker го стартира отново след няколко секунди, освен ако политиката не е <code>no</code>; тогава стартирайте контейнера сами. Всяко действие първо иска потвърждение.",
+	"settings.danger.restart": "Рестартиране на HolyArrs",
+	"settings.danger.safe": "Рестартиране в безопасен режим",
+	"settings.danger.shutdown": "Изключване",
+	"settings.danger.safeNote": "Стартира веднъж само с вход, настройки и библиотека. Ползвайте го, когато някоя част блокира стартирането."
+}

@@ -1,0 +1,10 @@
+{
+	"settings.home.advanced": "উন্নত",
+	"settings.home.page": "{group} · পেজ",
+	"settings.home.title": "সেটিংস",
+	"settings.home.search": "সেটিংস খুঁজুন",
+	"settings.home.matching": "মিলে যাওয়া সেটিংস",
+	"settings.home.noMatch": "কোনো সেটিংস মেলেনি",
+	"settings.home.noMatchText": "অন্য একটি শব্দ চেষ্টা করুন, যেমন ফোল্ডার, কী বা পাসওয়ার্ড।",
+	"settings.home.clear": "সার্চ মুছুন"
+}
