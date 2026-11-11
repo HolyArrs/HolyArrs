@@ -67,6 +67,7 @@ func (h *Handlers) applyTrash(w http.ResponseWriter, r *http.Request) {
 		webserver.Fail(w, http.StatusBadGateway, err.Error())
 		return
 	}
+	h.recheckGoodEnough(r, res.PickRules)
 	u, err := library.PickRulesUse(r.Context(), h.Store, id)
 	if err != nil {
 		webserver.Internal(w, "downloads", err)

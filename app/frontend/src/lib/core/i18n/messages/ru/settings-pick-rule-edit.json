@@ -24,6 +24,8 @@
 	"settings.pickRuleEdit.goodEnough": "Достаточно",
 	"settings.pickRuleEdit.goodEnoughAt": "Достаточно на ступени",
 	"settings.pickRuleEdit.goodEnoughHint": "HolyArrs перестаёт искать копию получше, как только файл достигает этой ступени.",
+	"settings.pickRuleEdit.goodEnoughPoints": "Баллы для «достаточно»",
+	"settings.pickRuleEdit.goodEnoughPointsHint": "Файлу на ступени «достаточно» нужно ещё и столько баллов. Оставьте пустым, чтобы решала только ступень.",
 	"settings.pickRuleEdit.yourTraits": "Ваши признаки",
 	"settings.pickRuleEdit.traits": "Признаки и баллы",
 	"settings.pickRuleEdit.traitsDesc": "На одной ступени побеждает тот, у кого больше баллов",

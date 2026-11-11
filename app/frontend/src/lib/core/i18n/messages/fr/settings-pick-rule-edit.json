@@ -24,6 +24,8 @@
 	"settings.pickRuleEdit.goodEnough": "Suffisant",
 	"settings.pickRuleEdit.goodEnoughAt": "Suffisant à partir de",
 	"settings.pickRuleEdit.goodEnoughHint": "HolyArrs cesse de chercher une meilleure copie dès qu'un fichier atteint ce palier.",
+	"settings.pickRuleEdit.goodEnoughPoints": "Points pour suffisant",
+	"settings.pickRuleEdit.goodEnoughPointsHint": "Un fichier au palier suffisant doit aussi avoir ce nombre de points. Laissez vide pour ne tenir compte que du palier.",
 	"settings.pickRuleEdit.yourTraits": "Vos critères",
 	"settings.pickRuleEdit.traits": "Critères et points",
 	"settings.pickRuleEdit.traitsDesc": "Le plus de points l'emporte sur un même palier",

@@ -24,6 +24,8 @@
 	"settings.pickRuleEdit.goodEnough": "काफ़ी अच्छा",
 	"settings.pickRuleEdit.goodEnoughAt": "काफ़ी अच्छा यहां से",
 	"settings.pickRuleEdit.goodEnoughHint": "फ़ाइल इस स्टेप पर पहुंचते ही HolyArrs बेहतर कॉपी खोजना बंद कर देता है।",
+	"settings.pickRuleEdit.goodEnoughPoints": "काफ़ी अच्छा के लिए पॉइंट",
+	"settings.pickRuleEdit.goodEnoughPointsHint": "काफ़ी अच्छा स्टेप पर पहुंची फ़ाइल को इतने पॉइंट भी चाहिए। सिर्फ़ स्टेप से तय करने के लिए खाली छोड़ें।",
 	"settings.pickRuleEdit.yourTraits": "आपकी विशेषताएं",
 	"settings.pickRuleEdit.traits": "विशेषताएं और पॉइंट",
 	"settings.pickRuleEdit.traitsDesc": "एक ही स्टेप पर ज़्यादा पॉइंट वाला जीतता है",

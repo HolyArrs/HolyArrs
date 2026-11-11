@@ -24,6 +24,8 @@
 	"settings.pickRuleEdit.goodEnough": "Suficiente",
 	"settings.pickRuleEdit.goodEnoughAt": "Suficiente en",
 	"settings.pickRuleEdit.goodEnoughHint": "HolyArrs deja de buscar una copia mejor cuando un archivo llega a este paso.",
+	"settings.pickRuleEdit.goodEnoughPoints": "Puntos para suficiente",
+	"settings.pickRuleEdit.goodEnoughPointsHint": "Un archivo en el paso suficiente también necesita estos puntos. Déjalo vacío para que cuente solo el paso.",
 	"settings.pickRuleEdit.yourTraits": "Tus rasgos",
 	"settings.pickRuleEdit.traits": "Rasgos y puntos",
 	"settings.pickRuleEdit.traitsDesc": "Gana quien tenga más puntos en el mismo paso",
