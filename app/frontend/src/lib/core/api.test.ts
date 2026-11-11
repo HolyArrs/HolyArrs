@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { ApiError, createClient, isIncomplete, keepFor, message } from './api.ts';
+import { appLanguage } from './i18n/i18n.svelte.ts';
 
 function reply(status: number, body?: unknown, headers: Record<string, string> = {}) {
 	return new Response(body === undefined ? null : typeof body === 'string' ? body : JSON.stringify(body), { status, headers });
@@ -33,6 +34,14 @@ describe('api client', () => {
 		const c = createClient(f);
 		expect(await c.get('/titles')).toEqual({ titles: [] });
 		expect(f).toHaveBeenCalledWith('/api/v1/titles', expect.objectContaining({ method: 'GET', credentials: 'same-origin' }));
+	});
+
+	it('sends the language the app is shown in, so titles and synopses come in it', async () => {
+		const f = vi.fn(async (_u: string, _o?: RequestInit) => reply(200, {}));
+		const c = createClient(f);
+		await c.get('/metadata/movie/1');
+		await c.post('/asks', {});
+		for (const call of f.mock.calls) expect((call[1]?.headers as Record<string, string>)['X-HolyArrs-Language']).toBe(appLanguage());
 	});
 
 	it('sends the CSRF token on changes but not on reads', async () => {

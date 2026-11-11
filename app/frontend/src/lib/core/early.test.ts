@@ -97,6 +97,14 @@ describe('app.html boot requests', () => {
 		expect(fetch).toHaveBeenCalledTimes(2);
 	});
 
+	it('sends the saved app language with the boot asks', () => {
+		expect(boot({ url: '/title/movie/693134', stored: { 'holyarrs-lang': 'pt-br' } }).init).toEqual({
+			headers: { Accept: 'application/json', 'X-HolyArrs-Language': 'pt-br' },
+			credentials: 'same-origin'
+		});
+		expect(boot({ url: '/', stored: { 'holyarrs-lang': '"><x' } }).init).toEqual({ headers: { Accept: 'application/json' }, credentials: 'same-origin' });
+	});
+
 	it('asks a title page exactly as loadDetails does', async () => {
 		const asked: string[] = [];
 		const get = <T,>(p: string) => (asked.push(p), Promise.resolve({ movies: [], shows: [] } as T));

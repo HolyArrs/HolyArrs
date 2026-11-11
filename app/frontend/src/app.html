@@ -74,9 +74,12 @@
 						asks.push('/downloads/view?limit=100');
 					}
 					var early = (window.__holyarrsEarly = { at: Date.now(), asks: {} });
+					// lib/core/api.ts: titles and synopses in the saved language (none saved: the browser's).
+					var hd = { Accept: 'application/json' }, sl = saved('holyarrs-lang');
+					if (/^[a-z]{2}(-[a-z]{2})?$/.test(sl || '')) hd['X-HolyArrs-Language'] = sl;
 					for (var i = 0; i < asks.length; i++) {
 						var url = base + '/api/v1' + asks[i];
-						early.asks[url] = fetch(url, { headers: { Accept: 'application/json' }, credentials: 'same-origin' });
+						early.asks[url] = fetch(url, { headers: hd, credentials: 'same-origin' });
 						// Not taken: no "unhandled rejection" if the network fails.
 						early.asks[url].catch(function () {});
 					}

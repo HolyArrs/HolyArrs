@@ -101,10 +101,14 @@ func (c *CardArt) Read(ctx context.Context, keys [][2]string, lang string) map[s
 }
 
 // Fill sets card_art, card_logo and art_has_title from the stored
-// picks (the asked language first, else English). It never goes outside;
-// titles without a pick are left to the pool job, and the page falls back
-// to the backdrop and the name.
+// picks (the asked language first, else English), and the cards' names in
+// the page's language (FillText). It never goes outside; titles without a
+// pick are left to the pool job, and the page falls back to the backdrop
+// and the name.
 func (c *CardArt) Fill(r *http.Request, items []ItemView) {
+	if c.Metadata != nil {
+		FillText(r, c.Metadata(), items)
+	}
 	lang := metadata.TrailerLanguage(r)
 	c.NoteLang(lang)
 	var keys [][2]string

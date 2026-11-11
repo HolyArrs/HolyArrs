@@ -287,7 +287,11 @@ func (h *Handlers) metadataDetails(w http.ResponseWriter, r *http.Request) {
 			h.Cache.Put(key, e)
 		}
 	}
-	if cached && e.Details != nil && time.Since(e.At) >= DetailsTTL(e) {
+	// Details kept before titles carried their texts are read again now
+	// for a person who reads another language than English.
+	lang := metadata.TextLanguage(r)
+	text, textKnown := keptText(r.Context(), h.Metadata, kind, id, lang)
+	if cached && e.Details != nil && time.Since(e.At) >= DetailsTTL(e) && textKnown {
 		// Stale but kept: served now, refreshed in the background.
 		metadata.RefreshOnce(key, func(ctx context.Context) {
 			if det, err := d.Details(ctx, kind, id); err == nil {
@@ -295,14 +299,16 @@ func (h *Handlers) metadataDetails(w http.ResponseWriter, r *http.Request) {
 				metadata.KeepOnDisk(ctx, h.Store, key, det)
 			}
 		})
-	} else if !cached || time.Since(e.At) >= DetailsTTL(e) {
+	} else if !cached || !textKnown || time.Since(e.At) >= DetailsTTL(e) {
 		det, err := d.Details(r.Context(), kind, id)
 		switch {
 		case err == nil:
 			e = Entry{At: time.Now(), Details: &det}
 			h.Cache.Put(key, e)
 			metadata.KeepOnDisk(r.Context(), h.Store, key, det)
-		case !(cached && StaleOK(err)):
+			text, _ = keptText(r.Context(), h.Metadata, kind, id, lang)
+		// A kept page asked again only for its texts stays, in English.
+		case !(cached && (e.Details != nil || StaleOK(err))):
 			Fail(w, err)
 			return
 		}
@@ -334,6 +340,7 @@ func (h *Handlers) metadataDetails(w http.ResponseWriter, r *http.Request) {
 	if det.People == nil {
 		det.People = []metadata.DetailPerson{}
 	}
+	detailsText(&det, text)
 	type collectionView struct {
 		ID    string     `json:"id"`
 		Name  string     `json:"name"`
@@ -569,8 +576,16 @@ func (h *Handlers) metadataSeason(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+	eps := e.Episodes
+	// Episode names and synopses in the page's language, where TMDB has
+	// them; a failed ask keeps English.
+	if st, ok := metadata.SeasonTexterFor(r.Context(), h.Metadata); ok {
+		if texts, err := st.SeasonText(r.Context(), id, season, metadata.TextLanguage(r)); err == nil {
+			eps = seasonText(eps, texts)
+		}
+	}
 	h.Caching(w, r, "")
-	webserver.WriteJSON(w, http.StatusOK, map[string]any{"tmdb_id": id, "season": season, "episodes": e.Episodes})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"tmdb_id": id, "season": season, "episodes": eps})
 }
 
 // watchServices answers GET /api/v1/watch-services?region=<ISO>: the

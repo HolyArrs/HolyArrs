@@ -1,7 +1,7 @@
 // Fetch client with request sharing, early boot asks, csrf and sign-out handling.
 import { to } from './paths.ts';
 import { registerPictures } from './pictures.ts';
-import { t } from '#lib/core/i18n/i18n.svelte.ts';
+import { appLanguage, t } from '#lib/core/i18n/i18n.svelte.ts';
 import { serverWords } from '#lib/core/i18n/server-words.ts';
 
 export class ApiError extends Error {
@@ -100,7 +100,8 @@ export function createClient(fetchFn: FetchFn = (i, o) => fetch(i, o), early: ()
 
 	async function request<T>(path: string, opts: RequestOptions = {}, seen?: (res: Response) => void): Promise<T> {
 		const method = opts.method ?? 'GET';
-		const headers: Record<string, string> = { Accept: 'application/json' };
+		// Titles and synopses come in the language the app is shown in.
+		const headers: Record<string, string> = { Accept: 'application/json', 'X-HolyArrs-Language': appLanguage() };
 		let body: BodyInit | undefined;
 		if (opts.raw !== undefined) {
 			body = opts.raw;
