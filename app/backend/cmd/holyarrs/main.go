@@ -656,6 +656,8 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		}
 		return media.AdvancePacks(ctx, ids, dm.Advance)
 	}})
+	// Only reads while the owner keeps watch history on.
+	optional(jobs.Loop{Name: "watch_history", Label: "Watch history read", Every: 30 * time.Minute, Run: media.ReadWatchHistory})
 	defer sender.Wait()
 	requestsSvc := &requests.Service{Store: s, Library: lib, Metadata: md, Alerts: sender, Live: hub}
 	readyCheck.Store(requestsSvc)

@@ -99,6 +99,7 @@ var loopOwners = map[string]Owner{
 	"jobs_migrate":     Core,
 	"stranded_imports": Media,
 	"pack_watched":     Media,
+	"watch_history":    Media,
 	"gates":            movies,
 	"wishlist":         wishlist,
 	"music_warm":       music,

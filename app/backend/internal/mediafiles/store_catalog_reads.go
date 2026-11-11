@@ -321,3 +321,31 @@ func EpisodeSlotsOfTitle(ctx context.Context, q database.Lister, titleID int64) 
 func EpisodeFilesOfTitle(ctx context.Context, q database.Lister, titleID int64) ([]File, error) {
 	return database.Select[File](ctx, q, "files", `id IN (SELECT file_id FROM slots WHERE file_id IS NOT NULL AND item_id IN (SELECT id FROM items WHERE title_id = ? AND kind = 'episode'))`, titleID)
 }
+
+// TitlesBySourceID maps "movie|tmdb:603" and "show|tvdb:100" (kind, then a
+// tmdb, tvdb or imdb id) to the Library's movie and show titles.
+func TitlesBySourceID(ctx context.Context, q database.Lister) (map[string]int64, error) {
+	rows, err := q.QueryContext(ctx, "SELECT id, kind, source_ids FROM titles WHERE kind IN ('movie', 'show') AND state != 'removed'")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := map[string]int64{}
+	for rows.Next() {
+		var id int64
+		var kind, raw string
+		if err := rows.Scan(&id, &kind, &raw); err != nil {
+			return nil, err
+		}
+		var ids map[string]string
+		if json.Unmarshal([]byte(raw), &ids) != nil {
+			continue
+		}
+		for _, k := range []string{"tmdb", "tvdb", "imdb"} {
+			if v := ids[k]; v != "" {
+				out[kind+"|"+k+":"+v] = id
+			}
+		}
+	}
+	return out, rows.Err()
+}
