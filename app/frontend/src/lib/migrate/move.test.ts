@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { appName, hostOf, instanceKey, latestPerInstance, asStep, buckets, chooseHint, cleanRules, countWord, countWords, extraProblems, folderProblem, moveCounts, moveStateWord, moveTotal, needsGroups, OTHER, placeholderFor, resultWords, ruleProblem, rulesFrom, running, setChoice, sharedTargets, stepGate, summary, tone, type Report } from './move.ts';
+import { appName, hostOf, instanceKey, latestPerInstance, asStep, buckets, chooseHint, cleanPath, cleanRules, countWord, countWords, extraProblems, folderProblem, moveCounts, moveStateWord, moveTotal, needsGroups, OTHER, placeholderFor, resultWords, ruleProblem, rulesFrom, running, setChoice, sharedTargets, stepGate, summary, tone, type Report } from './move.ts';
 
 describe('move helpers', () => {
 	it('names apps, with what they bring and their usual port', () => {
@@ -188,5 +188,14 @@ describe('reads per copy of an app', () => {
 		const others = { '/mnt/78/Movies': '/data/movies ', '/mnt/78/4K Movies': '/data/movies' };
 		expect(sharedTargets(picks, others)).toEqual({ '/mnt/78/Movies': ['/mnt/78/4K Movies'], '/mnt/78/4K Movies': ['/mnt/78/Movies'] });
 		expect(sharedTargets({ '/a': '/x', '/b': '/y' }, {})).toEqual({});
+		expect(sharedTargets({ '/a': OTHER, '/b': OTHER }, { '/a': '/data/movies/', '/b': '/data//movies' })).toEqual({ '/a': ['/b'], '/b': ['/a'] });
+	});
+
+	it('cleans a path the way the server does before comparing', () => {
+		expect(cleanPath('/data/movies/')).toBe('/data/movies');
+		expect(cleanPath('D:\\Media\\Movies')).toBe('D:/Media/Movies');
+		expect(cleanPath('/data//movies')).toBe('/data/movies');
+		expect(cleanPath('/')).toBe('/');
+		expect(cleanPath('')).toBe('');
 	});
 });

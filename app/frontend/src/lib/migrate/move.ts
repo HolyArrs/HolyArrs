@@ -462,6 +462,13 @@ export function folderTo(pick: string | undefined, other: string | undefined): s
 	return pick === OTHER ? (other ?? '').trim() : pick;
 }
 
+// A path written the way the server keeps it: forward slashes, no doubled
+// or trailing slash, so two spellings of one folder compare equal.
+export function cleanPath(p: string): string {
+	const c = p.trim().replace(/\\/g, '/').replace(/\/{2,}/g, '/');
+	return c.length > 1 ? c.replace(/\/$/, '') : c;
+}
+
 export function folderProblem(from: string, pick: string | undefined, other: string | undefined): string {
 	if (!pick) return '';
 	if (pick === OTHER && !(other ?? '').trim()) return t('migrate.typeThePathHere');
@@ -472,7 +479,7 @@ export function folderProblem(from: string, pick: string | undefined, other: str
 export function sharedTargets(picks: Record<string, string>, others: Record<string, string>): Record<string, string[]> {
 	const by = new Map<string, string[]>();
 	for (const [from, pick] of Object.entries(picks)) {
-		const to = folderTo(pick, others[from]);
+		const to = cleanPath(folderTo(pick, others[from]));
 		if (to) by.set(to, [...(by.get(to) ?? []), from]);
 	}
 	const out: Record<string, string[]> = {};

@@ -13,7 +13,7 @@
 	import Icon from '#lib/ui/Icon.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import type { ShowList } from './ItemsSheet.svelte';
-	import { appName, folderProblem, folderTo, OTHER, sharedTargets, type PathRule, type PersonChoice, type Plan, type PlanGroup, type PlanItem } from './move.ts';
+	import { appName, cleanPath, folderProblem, folderTo, OTHER, sharedTargets, type PathRule, type PersonChoice, type Plan, type PlanGroup, type PlanItem } from './move.ts';
 
 	const countSteps = moveContext<boolean | undefined>('move-hide-count') !== true;
 
@@ -88,7 +88,7 @@
 	const needFolders = $derived(oldRows.filter((p) => held.includes(p) || !picks[p]));
 	const shared = $derived(sharedTargets(picks, others));
 	// The last plan's word on this row's new folder, while the row still points there.
-	const goneFor = (p: string) => (missing[p] && missing[p] === folderTo(picks[p], others[p]) ? missing[p] : '');
+	const goneFor = (p: string) => (missing[p] && cleanPath(missing[p]) === cleanPath(folderTo(picks[p], others[p])) ? missing[p] : '');
 	const lead = $derived.by(() => {
 		const b = big.map((n) => on.find((g) => g.name === n)).filter((g): g is PlanGroup => !!g);
 		if (b.length > 0 || on.length === 0) return b;
