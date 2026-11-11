@@ -11,6 +11,8 @@ Your own services are not listed: Sources, Downloaders, media servers, alert app
 
 Every address below uses HTTPS on port 443. HolyArrs also needs DNS.
 
+HolyArrs connects to these directly. It ignores `HTTP_PROXY`, `HTTPS_PROXY` and `ALL_PROXY`. See [Proxy variables](../reference/env-vars.md#proxy-variables).
+
 ## The metadata server
 
 | Address | `api.holyarrs.com` |
