@@ -160,7 +160,7 @@ export function weekStart(d: Date): Date {
 }
 
 /** A week as one short range in the language's own order ("Nov 24 – 30", "24.–30. Nov."); the year shows only when it is not this year. */
-export function weekRange(from: Date, to: Date, locale: string, now = new Date()): string {
+export function weekRange(from: Date, to: Date, locale: string | undefined, now = new Date()): string {
 	const year = from.getFullYear() !== now.getFullYear() || to.getFullYear() !== now.getFullYear();
 	const opts: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'short', ...(year ? { year: 'numeric' } : {}) };
 	let f: Intl.DateTimeFormat;
