@@ -442,6 +442,12 @@
 	@container home (min-width: 560px) and (max-width: 900px) {
 		.bento { grid-auto-rows: 150px; }
 }
+	/* Phones: smaller request posters, so a two-line note under them stays inside the tile in long languages. */
+	@container home (max-width: 400px) {
+		.ask-stack img { width: 28px; margin-inline-start: -9px; }
+		.ask-stack img:first-child { margin-inline-start: 0; }
+		.ask-stack b { min-width: 24px; height: 24px; margin-inline-start: 6px; }
+}
 	/* A small phone (360): the tile names still fit. */
 	@container home (max-width: 340px) {
 		.tile { padding-inline: 12px; }
