@@ -19,10 +19,12 @@ import (
 
 // SyncOnce reads every active Download from its Downloader and records what
 // changed, after asking again for any removal a Downloader missed (see
-// retryRemovals). It returns how many Downloads are still active. With nothing
-// active and no removal pending it reads and writes nothing.
+// retryRemovals) and any clear of a finished job whose wait is over (see
+// retryClears). It returns how many Downloads are still active. With nothing
+// active and nothing pending it writes nothing.
 func (m *Manager) SyncOnce(ctx context.Context) (int, error) {
 	m.retryRemovals(ctx)
+	m.retryClears(ctx)
 	db := m.Store.Read()
 	dls, err := database.Select[domain.Download](ctx, db, "downloads", "state IN ("+activeStates+") ORDER BY id")
 	if err != nil || len(dls) == 0 {

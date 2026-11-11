@@ -42,7 +42,7 @@ func TestDownloadersKeptByAria2Migration(t *testing.T) {
 	attempts := downloaderRows(t, old.Read(), "SELECT * FROM downloader_attempts ORDER BY id")
 	_ = old.Close()
 
-	s, err := Open(dir, Options{})
+	s, err := Open(dir, Options{MainMigrations: upTo(t, 109)})
 	if err != nil {
 		t.Fatal(err)
 	}
