@@ -1,6 +1,8 @@
 {
 	"settings.index.appearance.theme.theme.label": "Motyw",
 	"settings.index.appearance.theme.theme.words": "wygląd jasny ciemny automatyczny tryb kolory noc",
+	"settings.index.appearance.look.look.label": "Styl",
+	"settings.index.appearance.look.look.words": "minimalny prosty zwykły spokojny bez zdjęć bez poświaty autoodtwarzanie minimal",
 	"settings.index.appearance.language.language.label": "Język",
 	"settings.index.appearance.language.language.words": "język tłumaczenie lokalizacja polski słowa",
 	"settings.index.appearance.autoplay-trailers.play-trailers-by-themselves.label": "Odtwarzaj zwiastuny samoczynnie",

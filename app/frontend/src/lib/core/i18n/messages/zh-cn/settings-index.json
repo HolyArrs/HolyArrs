@@ -1,6 +1,8 @@
 {
 	"settings.index.appearance.theme.theme.label": "主题",
 	"settings.index.appearance.theme.theme.words": "外观 浅色 深色 自动 模式 颜色 夜间 appearance light dark automatic mode colours colors night",
+	"settings.index.appearance.look.look.label": "显示风格",
+	"settings.index.appearance.look.look.words": "极简 简洁 简单 安静 无照片 无光晕 自动播放 minimal plain",
 	"settings.index.appearance.language.language.label": "语言",
 	"settings.index.appearance.language.language.words": "语言 翻译 中文 英语 language translation locale english words",
 	"settings.index.appearance.autoplay-trailers.play-trailers-by-themselves.label": "自动播放预告片",

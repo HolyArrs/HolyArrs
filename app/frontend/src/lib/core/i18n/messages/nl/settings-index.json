@@ -1,6 +1,8 @@
 {
 	"settings.index.appearance.theme.theme.label": "Thema",
 	"settings.index.appearance.theme.theme.words": "uiterlijk licht donker automatisch modus kleuren nacht theme dark light",
+	"settings.index.appearance.look.look.label": "Weergave",
+	"settings.index.appearance.look.look.words": "minimaal eenvoudig simpel rustig geen foto's geen gloed autoplay minimal",
 	"settings.index.appearance.language.language.label": "Taal",
 	"settings.index.appearance.language.language.words": "taal vertaling nederlands engels woorden language",
 	"settings.index.appearance.autoplay-trailers.play-trailers-by-themselves.label": "Trailers vanzelf afspelen",

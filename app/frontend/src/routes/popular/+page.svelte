@@ -293,7 +293,7 @@
 		{:else}
 		{#if hero.length}
 			{@const h = live(hero[heroAt % hero.length])}
-			<ExploreHero kind={h.kind === 'show' ? 'show' : 'movie'} tmdb={cardTmdb(h)} title={h.name} href={cardHref(h)} backdrop={h.wide ?? h.image} vtName={h.vtName} subtitle={h.year ? (h.kind === 'show' ? t('discover.popular.yearShow', { year: h.year }) : t('discover.popular.yearMovie', { year: h.year })) : h.subtitle} settled={loaded}>
+			<ExploreHero kind={h.kind === 'show' ? 'show' : 'movie'} tmdb={cardTmdb(h)} title={h.name} href={cardHref(h)} backdrop={h.wide ?? h.image} poster={h.image} vtName={h.vtName} subtitle={h.year ? (h.kind === 'show' ? t('discover.popular.yearShow', { year: h.year }) : t('discover.popular.yearMovie', { year: h.year })) : h.subtitle} settled={loaded}>
 				{#snippet action()}{@render hoverAction(h, cardAction(h, { manage, ask: mayAsk }), null)}{/snippet}
 				{#snippet badge()}
 					{@const why = heroWhy(h)}

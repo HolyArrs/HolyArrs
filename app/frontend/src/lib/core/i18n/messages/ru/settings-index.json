@@ -1,6 +1,8 @@
 {
 	"settings.index.appearance.theme.theme.label": "Тема",
 	"settings.index.appearance.theme.theme.words": "оформление светлая тёмная автоматически режим цвета ночь тема",
+	"settings.index.appearance.look.look.label": "Вид",
+	"settings.index.appearance.look.look.words": "минимальный простой спокойный без фото без свечения автозапуск minimal",
 	"settings.index.appearance.language.language.label": "Язык",
 	"settings.index.appearance.language.language.words": "язык перевод локаль английский русский слова",
 	"settings.index.appearance.autoplay-trailers.play-trailers-by-themselves.label": "Запускать трейлеры сами",

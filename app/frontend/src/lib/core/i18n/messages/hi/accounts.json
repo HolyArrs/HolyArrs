@@ -274,6 +274,7 @@
 	"accounts.account.preferences": "पसंद",
 	"accounts.account.trailers": "ट्रेलर",
 	"accounts.account.trailersHint": "ऑटो में रिड्यूस मोशन और डेटा सेवर का ध्यान रखा जाता है",
+	"accounts.account.trailersMinimal": "मिनिमल लुक में बंद",
 	"accounts.account.playTrailers": "ट्रेलर चलाएं",
 	"accounts.account.auto": "ऑटो",
 	"accounts.account.always": "हमेशा",

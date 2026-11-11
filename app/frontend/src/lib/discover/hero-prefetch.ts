@@ -3,6 +3,7 @@ import { appPicture, coverFor } from '../music/index.ts';
 import { remembered, type DetailKind } from '../metadata/index.ts';
 import { pictureFor } from '../core/pictures.ts';
 import { proxied } from '../core/tmdb-image.ts';
+import { minimalLook } from '../core/look.svelte.ts';
 
 const album = /\/music\/album\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})(?:[?#]|$)/;
 const artist = /\/music\/artist\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})(?:[?#]|$)/;
@@ -22,7 +23,8 @@ const asked = new Set<string>();
 
 /** Preloads the hero behind a link: music pictures here, a title's backdrop through `preload` (the title page's own preloadHero). */
 export function heroAhead(href: string | null | undefined, preload: (backdrop: string | null | undefined) => void): void {
-	if (!href) return;
+	// The minimal look shows no big pictures, so none are fetched ahead.
+	if (!href || minimalLook()) return;
 	for (const u of heroPictures(href)) warm(u);
 	const t = title.exec(href);
 	if (t) preload(remembered(t[1] as DetailKind, t[2])?.backdrop);

@@ -8,6 +8,7 @@
 	import type { ExploreType } from './explore-type.ts';
 	import { to } from '../core/paths.ts';
 	import { sized } from '../core/tmdb-image.ts';
+	import { minimalLook } from '../core/look.svelte.ts';
 
 	// The category strip under the Explore hero: condensed wordmarks over a dark grey still of the category's art. On hover or focus the still comes up in its own colour.
 	type Genre = { key: string; name: string; href: string; art: string; hue: number };
@@ -17,6 +18,8 @@
 	type Entry = { key: string; name: string; label: string; href: string; art: string; arts?: string[]; all?: boolean; tile?: BrowseTile & { section: string }; tint?: string };
 	const tint = (hue: number) => `hsl(${(((hue % 24) + 24) % 24) * 15} 52% 36%)`;
 	let failed = $state<Record<string, boolean>>({});
+	// The minimal look draws plain tiles with no stills, so none are fetched.
+	const minimal = $derived(minimalLook());
 	const entries = $derived<Entry[]>(genres ? [
 		...genres.map((g) => ({ key: g.key, name: g.name, label: t('discover.categoryStrip.genre'), href: g.href, art: g.art, tint: tint(g.hue) })),
 		{ key: 'all', name: t('discover.categoryStrip.allGenres'), label: t('discover.categoryStrip.browse'), href: to('/search?kind=music'), art: '', all: true }
@@ -38,9 +41,9 @@
 <div class="cat-strip" data-row-id="category_strip">
 	<Shelf title={t('discover.categoryStrip.categories')} item="clamp(184px, 15vw, 236px)" items={entries} key={(e) => e.key} lines={1}>
 		{#snippet card(e: Entry)}
-			<a class="cat" class:all={e.all} class:tinted={e.tint && (!e.art || failed[e.key])} href={e.href} style="--chars: {Math.max(e.name.length, 6)}" style:--tint={e.tint} onclick={() => e.tile && onopen?.(e.tile)}>
-				{#if e.art && !failed[e.key]}<img class="art" src={e.art} alt="" loading="lazy" decoding="async" onerror={() => (failed[e.key] = true)} />{/if}
-				{#if e.arts?.length}<span class="art mosaic">{#each e.arts as a, i (i)}<img src={a} alt="" loading="lazy" decoding="async" />{/each}</span>{/if}
+			<a class="cat" class:all={e.all} class:tinted={e.tint && (minimal || !e.art || failed[e.key])} class:minimal href={e.href} style="--chars: {Math.max(e.name.length, 6)}" style:--tint={e.tint} onclick={() => e.tile && onopen?.(e.tile)}>
+				{#if !minimal && e.art && !failed[e.key]}<img class="art" src={e.art} alt="" loading="lazy" decoding="async" onerror={() => (failed[e.key] = true)} />{/if}
+				{#if !minimal && e.arts?.length}<span class="art mosaic">{#each e.arts as a, i (i)}<img src={a} alt="" loading="lazy" decoding="async" />{/each}</span>{/if}
 				<span class="txt">
 					<small>{e.label}</small>
 					<strong>{e.name}{#if e.all}<Icon name="chevronRight" size={18} />{/if}</strong>
@@ -87,6 +90,8 @@
 	.cat.tinted { background: linear-gradient(120deg, color-mix(in srgb, var(--tint) 70%, #120a0b), #120a0b 75%); }
 	:global(:root[data-theme='light']) .cat { box-shadow: 0 6px 18px -10px rgba(20, 8, 9, .45); border-color: rgba(0, 0, 0, .12); }
 	@media (prefers-color-scheme: light) { :global(:root:not([data-theme='dark'])) .cat { box-shadow: 0 6px 18px -10px rgba(20, 8, 9, .45); border-color: rgba(0, 0, 0, .12); } }
+	/* Minimal: no lift or zoom on hover. */
+	.cat.minimal:hover, .cat.minimal:is(:hover, :focus-visible) strong { transform: none; }
 	@media (prefers-reduced-motion: reduce) {
 		.cat, .art, .cat::before, .cat::after, strong { transition: none; }
 		.cat:hover, .cat:active, .cat:is(:hover, :focus-visible) .art, .cat:is(:hover, :focus-visible) strong { transform: none; }

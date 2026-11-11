@@ -1,6 +1,8 @@
 {
 	"settings.index.appearance.theme.theme.label": "Tema",
 	"settings.index.appearance.theme.theme.words": "görünüm açık koyu otomatik mod renkler gece tema",
+	"settings.index.appearance.look.look.label": "Stil",
+	"settings.index.appearance.look.look.words": "minimal sade basit sakin fotoğraf yok parlama yok otomatik oynatma",
 	"settings.index.appearance.language.language.label": "Dil",
 	"settings.index.appearance.language.language.words": "dil çeviri yerel ayar türkçe ingilizce kelimeler",
 	"settings.index.appearance.autoplay-trailers.play-trailers-by-themselves.label": "Fragmanları kendiliğinden oynat",

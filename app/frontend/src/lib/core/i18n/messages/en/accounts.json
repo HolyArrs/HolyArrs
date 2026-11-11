@@ -274,6 +274,7 @@
 	"accounts.account.preferences": "Preferences",
 	"accounts.account.trailers": "Trailers",
 	"accounts.account.trailersHint": "Auto respects Reduce motion and data saver",
+	"accounts.account.trailersMinimal": "Off in the minimal look",
 	"accounts.account.playTrailers": "Play trailers",
 	"accounts.account.auto": "Auto",
 	"accounts.account.always": "Always",
