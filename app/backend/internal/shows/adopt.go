@@ -86,15 +86,15 @@ func matchShowFolder(ctx context.Context, p metadata.ShowProvider, folder string
 }
 
 // mapEpisodeFiles matches each video of a show folder to its episodes by
-// name (S01E02, multi-episode names, an air day or a running number). A
-// file naming another show, no episode, or an episode a bigger file holds
+// name (S01E02, multi-episode names, an air day or a running number). The
+// folder is the show's, so the show name in a file name does not count, as
+// in Sonarr. A file naming no episode, or an episode a bigger file holds
 // too, is listed with the reason and left alone.
 func mapEpisodeFiles(vids []library.AdoptVideo, sh metadata.Show, order string) []library.AdoptEpisodeFile {
 	refs := make([]mediafiles.EpisodeRef, len(sh.Episodes))
 	for i, e := range sh.Episodes {
 		refs[i] = mediafiles.EpisodeRef{ItemID: int64(i + 1), Season: e.Season, Episode: e.Number, Absolute: e.Absolute, AirDay: e.AirDay}
 	}
-	lib := []mediafiles.TitleRef{{Name: sh.Name, Aliases: sh.OtherNames, Year: sh.Year, Kind: "show"}}
 	taken := map[[2]int]bool{}
 	out := make([]library.AdoptEpisodeFile, 0, len(vids))
 	for _, v := range vids { // biggest first
@@ -106,12 +106,6 @@ func mapEpisodeFiles(vids []library.AdoptVideo, sh metadata.Show, order string) 
 		case mediafiles.IsPack(p):
 			f.Why = "the file name names whole seasons, not episodes"
 		default:
-			if strings.TrimSpace(p.Title.Value) != "" {
-				if m := mediafiles.MatchTitle(p, lib); m.Title == nil {
-					f.Why = "the file name names another show (" + p.Title.Value + ")"
-					break
-				}
-			}
 			found, why := mediafiles.MatchEpisodes(p, order, refs)
 			if len(found) == 0 {
 				f.Why = why
@@ -346,8 +340,9 @@ func adoptEpisodesTx(ctx context.Context, tx *sql.Tx, titleID, versionID, pickRu
 			state, why = mediafiles.SlotBetterWanted, "adopted below good enough, so a better copy is sought"
 		}
 		for _, sid := range slotIDs {
-			// The Slots were written moments ago in this same write, so they
-			// take the adopted state as a new movie's Slot does.
+			// The Slots were written moments ago in this same write, or found
+			// empty in it, so they take the adopted state as a new movie's
+			// Slot does.
 			if _, err := tx.Exec(`UPDATE slots SET file_id = ?, good_enough = ?, state = ?, last_reason = ?, held_release_id = NULL WHERE id = ? AND state != 'removed'`,
 				fileID, ge, string(state), why, sid); err != nil {
 				return err
@@ -392,9 +387,10 @@ func (s *Service) adoptShowOne(ctx context.Context, lf mediafiles.LibraryFolder,
 	return r, nil
 }
 
-// recordFoundEpisodes records unknown videos in a show's folder as found
-// Files with the episodes their names give: shown, never renamed, moved
-// or deleted, and never filling a Slot.
+// recordFoundEpisodes links unknown videos in a show's folder to the
+// episodes their names give while those are all still empty, the way
+// adopting does, and records the others as found Files: shown, never
+// renamed, moved or deleted, and never filling a Slot.
 func (s *Service) recordFoundEpisodes(ctx context.Context, lf mediafiles.LibraryFolder, v mediafiles.Version, known map[string]bool, by domain.Actor) (int, error) {
 	db := s.Store.Read()
 	var t mediafiles.Title
@@ -446,6 +442,38 @@ func (s *Service) recordFoundEpisodes(ctx context.Context, lf mediafiles.Library
 			var sid int64
 			if db.QueryRowContext(ctx, "SELECT id FROM slots WHERE version_id = ? AND item_id = ?", v.ID, byKey[k]).Scan(&sid) == nil {
 				slotIDs = append(slotIDs, sid)
+			}
+		}
+		if len(slotIDs) > 0 && len(slotIDs) == len(af.Keys) {
+			linked := false
+			err := s.Store.Write(ctx, func(tx *sql.Tx) error {
+				for _, sid := range slotIDs {
+					var sl mediafiles.Slot
+					if err := database.Get(ctx, tx, "slots", sid, &sl); err != nil {
+						return err
+					}
+					switch sl.State {
+					case mediafiles.SlotRemoved, mediafiles.SlotChosen, mediafiles.SlotDownloading, mediafiles.SlotImporting:
+						return nil
+					}
+					if sl.FileID != nil || sl.ActiveDownloadID != nil {
+						return nil
+					}
+				}
+				a := &ShowAdoption{FolderName: v.FolderName, LibraryPath: lf.Path}
+				if err := adoptEpisodesTx(ctx, tx, t.ID, v.ID, v.PickRulesID, v.KeepUpToDate, []library.AdoptEpisodeFile{af}, a, s.Clock(), by); err != nil {
+					return err
+				}
+				linked = a.Adopted > 0
+				return nil
+			})
+			if err != nil {
+				return n, err
+			}
+			if linked {
+				n++
+				known[strings.ToLower(af.Path)] = true
+				continue
 			}
 		}
 		release := strings.TrimSuffix(path.Base(af.Path), path.Ext(af.Path))

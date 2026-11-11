@@ -45,13 +45,14 @@ func TestShowAdoptionAndFoundFilesUseInspectedHeaders(t *testing.T) {
 	if err := database.Get(context.Background(), s.Read(), "files", found.ID, &found); err != nil {
 		t.Fatal(err)
 	}
-	if found.Origin != "found" || found.MediaInfo["video_codec"] != "hevc" || fmt.Sprint(found.MediaInfo["audio_languages"]) != "[fr]" {
+	if found.Origin != "adopted" || found.MediaInfo["video_codec"] != "hevc" || fmt.Sprint(found.MediaInfo["audio_languages"]) != "[fr]" {
 		t.Fatalf("found show facts: %+v", found)
 	}
 }
 
 // TestRescanRecordsNewEpisodeFile: a new episode file dropped into an
-// adopted show's folder is recorded as found on the next rescan, once.
+// adopted show's folder is linked to its empty episode on the next rescan,
+// once.
 func TestRescanRecordsNewEpisodeFile(t *testing.T) {
 	svc, s, _, _ := addShowService(t)
 	ctx := context.Background()
@@ -78,8 +79,8 @@ func TestRescanRecordsNewEpisodeFile(t *testing.T) {
 		t.Fatalf("the new episode file was not recorded: %v", err)
 	}
 	f := fileRow(t, s, fid)
-	if f.Origin != "found" || len(f.SlotIDs) != 1 || f.SlotIDs[0] != episodes(t, s, id)["S02E03"].SlotID {
-		t.Fatalf("found file %+v, want origin found on the S02E03 slot", f)
+	if f.Origin != "adopted" || len(f.SlotIDs) != 1 || f.SlotIDs[0] != episodes(t, s, id)["S02E03"].SlotID {
+		t.Fatalf("found file %+v, want it adopted on the S02E03 slot", f)
 	}
 	second, err := svc.Rescan(ctx, domain.System)
 	if err != nil || second.Found != 0 {
