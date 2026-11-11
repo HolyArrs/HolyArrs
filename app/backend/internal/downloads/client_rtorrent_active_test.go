@@ -206,3 +206,26 @@ func rtBigBox(tb testing.TB) (*RTorrent, []string) {
 	tb.Cleanup(s.Close)
 	return NewRTorrent(s.URL, "", "", nil), ids
 }
+
+// notActive claims ListActive but cannot do it, like a guard around an engine
+// without it: the background read falls back to a whole read.
+type notActive struct{ *fakeClient }
+
+func (notActive) ListActive(context.Context, []string) ([]Job, error) { return nil, ErrNotSupported }
+
+func TestRTorrentPollFallsBackToAWholeReadWhenActiveReadIsNotSupported(t *testing.T) {
+	ctx := context.Background()
+	f := newFakeClient(Job{ID: "a", Category: "holyarrs", State: StateDownloading})
+	e := notActive{f}
+	var cur rtCursors
+	if _, err := cur.poll(ctx, 1, 1, e, []string{"holyarrs"}, nil, false, time.Unix(0, 0)); err != nil {
+		t.Fatal(err)
+	}
+	jobs, err := cur.poll(ctx, 1, 1, e, []string{"holyarrs"}, nil, false, time.Unix(1, 0))
+	if err != nil {
+		t.Fatalf("background read failed instead of reading the whole list: %v", err)
+	}
+	if len(jobs) != 1 || f.lists != 2 {
+		t.Fatalf("jobs %v, whole reads %d", jobs, f.lists)
+	}
+}

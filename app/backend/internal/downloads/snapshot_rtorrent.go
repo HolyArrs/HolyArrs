@@ -2,6 +2,7 @@ package downloads
 
 import (
 	"context"
+	"errors"
 	"sync"
 	"time"
 )
@@ -37,7 +38,26 @@ func (c *rtCursors) poll(ctx context.Context, id int64, gen uint64, e Engine, ca
 	c.mu.Unlock()
 	al, ok := e.(ActiveLister)
 	var next map[string]Job
-	if !ok || full || cur == nil || cur.gen != gen || now.Sub(cur.fullAt) >= rtSweep {
+	whole := !ok || full || cur == nil || cur.gen != gen || now.Sub(cur.fullAt) >= rtSweep
+	var got []Job
+	var ids []string
+	if !whole {
+		ids = append([]string(nil), follow...)
+		for k, j := range cur.items {
+			if j.State != StateFinished {
+				ids = append(ids, k)
+			}
+		}
+		var err error
+		got, err = al.ListActive(ctx, ids)
+		// An engine that cannot read only the active torrents gets a whole read.
+		if errors.Is(err, ErrNotSupported) {
+			whole = true
+		} else if err != nil {
+			return nil, err
+		}
+	}
+	if whole {
 		jobs, err := e.List(ctx, "")
 		if err != nil {
 			return nil, err
@@ -49,16 +69,6 @@ func (c *rtCursors) poll(ctx context.Context, id int64, gen uint64, e Engine, ca
 		}
 		cur = &rtCursor{gen: gen, fullAt: now}
 	} else {
-		ids := append([]string(nil), follow...)
-		for k, j := range cur.items {
-			if j.State != StateFinished {
-				ids = append(ids, k)
-			}
-		}
-		got, err := al.ListActive(ctx, ids)
-		if err != nil {
-			return nil, err
-		}
 		next = make(map[string]Job, len(cur.items)+len(got))
 		for k, j := range cur.items {
 			next[k] = j
