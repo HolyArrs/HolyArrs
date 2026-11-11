@@ -92,9 +92,16 @@ jobs:
             };
             addPerson(pr.user);
             const unlinked = [];
+            // Co-authors count when their trailer uses a GitHub noreply email, which
+            // names the account (accepted review suggestions do). Others (tools, AI) are skipped.
+            // Only GitHub login characters match, so trailer text can't add markdown to our comments.
+            const coAuthor = /^co-authored-by:.*<(\d{1,12})\+([A-Za-z0-9-]{1,39})@users\.noreply\.github\.com>/gim;
             for (const c of commits) {
               addPerson(c.author);
               addPerson(c.committer);
+              for (const [, id, login] of (c.commit?.message ?? '').matchAll(coAuthor)) {
+                addPerson({ id: Number(id), login, type: 'User' });
+              }
               if (!c.author) unlinked.push(c.sha.slice(0, 7));
             }
 
