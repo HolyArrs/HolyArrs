@@ -574,11 +574,12 @@ func viewTotals(sets ...[]DownloadRow) DownloadTotals {
 // OutsideCap is how many outside rows one view answer carries by default.
 const OutsideCap = 200
 
-// outsideMax is the most outside rows one view answer carries.
-const outsideMax = 2000
+// outsideMax is the most outside rows one view answer carries (the page asks
+// for 2,000 at a time and more as the list scrolls).
+const outsideMax = 20000
 
-// outsideLimit is the page size for outside rows (?outside_limit=, 1-2000;
-// more is held at 2000, so Show more past it never drops back to the first 200).
+// outsideLimit is the page size for outside rows (?outside_limit=, 1-20000;
+// more is held at 20000, so Show more past it never drops back to the first 200).
 func outsideLimit(r *http.Request) int {
 	n, err := strconv.Atoi(r.URL.Query().Get("outside_limit"))
 	if err != nil || n <= 0 {
