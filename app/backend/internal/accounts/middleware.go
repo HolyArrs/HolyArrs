@@ -91,11 +91,20 @@ func (a *Auth) Middleware(next http.Handler) http.Handler {
 			return
 		}
 		if a.strictLocal(r) {
-			if id, name, ok := a.owner(r.Context()); ok {
-				if unsafeMethod(r.Method) && a.refuse(w, r, true) {
-					return
+			// The picked person, with their own role and limits; nobody
+			// (sign in) when they are gone or a guard holds.
+			if who, _, ok := a.localCaller(r.Context()); ok {
+				csrf, had := a.localToken(w, r)
+				if unsafeMethod(r.Method) {
+					if a.refuse(w, r, true) {
+						return
+					}
+					if !had || subtle.ConstantTimeCompare([]byte(r.Header.Get(CSRFHeader)), []byte(csrf)) != 1 {
+						fail(w, http.StatusForbidden, "missing or wrong CSRF token")
+						return
+					}
 				}
-				who := webserver.Caller{UserID: id, Name: name, Via: "local_network", Role: webserver.RoleOwner, Perms: webserver.DefaultPerms(webserver.RoleOwner)}
+				who.CSRF = csrf
 				next.ServeHTTP(w, r.WithContext(webserver.ContextWith(r.Context(), who)))
 				return
 			}
@@ -152,6 +161,13 @@ func (a *Auth) trustedProxy(ip net.IP) bool {
 			return true
 		}
 	}
+	if saved := a.savedProxies.Load(); saved != nil {
+		for _, n := range saved.nets {
+			if n.Contains(ip) {
+				return true
+			}
+		}
+	}
 	return false
 }
 
@@ -185,10 +201,12 @@ func (a *Auth) strictLocal(r *http.Request) bool {
 			a.warnUntrustedProxy(ip)
 			return false
 		}
-	} else if ip == nil || a.trustedProxy(ip) || a.seenProxy(ip) {
+		return a.localPeer(r)
+	}
+	if ip == nil || a.trustedProxy(ip) || a.seenProxy(ip) {
 		return false
 	}
-	return a.localPeer(r)
+	return a.isLocal(ip.String()) || a.bridgeLocal(ip, r.Host)
 }
 
 // anyForwardHeader says whether the request carries any proxy forwarding header.

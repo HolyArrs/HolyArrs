@@ -93,21 +93,3 @@ func markInviteUsed(ctx context.Context, q conn, now string, userID int64, hash 
 	}
 	return res.RowsAffected()
 }
-
-// kidInviteExpiries lists when each unused invite with an age limit ends.
-func kidInviteExpiries(ctx context.Context, q conn) ([]string, error) {
-	rows, err := q.QueryContext(ctx, "SELECT expires_at FROM invites WHERE used_at IS NULL AND max_rating != ''")
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var out []string
-	for rows.Next() {
-		var expires string
-		if err := rows.Scan(&expires); err != nil {
-			return nil, err
-		}
-		out = append(out, expires)
-	}
-	return out, rows.Err()
-}

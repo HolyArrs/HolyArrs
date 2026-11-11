@@ -8,6 +8,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"slices"
 	"strings"
 	"time"
 )
@@ -72,6 +73,9 @@ func parseLocalNets(in []string) (*localNets, error) {
 		if err != nil {
 			return nil, fmt.Errorf("%q is not a network: use one like 192.168.1.0/24 or a single address like 192.168.1.5", truncate(e, 60))
 		}
+		if tooWide(n) {
+			return nil, fmt.Errorf("%q is too wide: list your home network, like 192.168.1.0/24", truncate(e, 60))
+		}
 		if s := n.String(); !seen[s] {
 			seen[s] = true
 			out.list = append(out.list, s)
@@ -94,7 +98,7 @@ func (a *Auth) loadLocalNets(ctx context.Context) *localNets {
 	}
 	out := &localNets{list: []string{}}
 	for _, e := range in {
-		if n, err := parseNet(strings.TrimSpace(e)); err == nil && len(out.list) < maxLocalNets {
+		if n, err := parseNet(strings.TrimSpace(e)); err == nil && !tooWide(n) && len(out.list) < maxLocalNets {
 			out.list = append(out.list, n.String())
 			out.nets = append(out.nets, n)
 		} else if strings.TrimSpace(e) != "" {
@@ -122,6 +126,50 @@ func (a *Auth) isLocal(remote string) bool {
 		}
 	}
 	return false
+}
+
+// homeRanges are what "Add usual home ranges" adds. Loopback (127.0.0.0/8)
+// and link-local (169.254.0.0/16, fe80::/10) are never in it, and the
+// Tailscale and carrier range (cgnatRange) only when asked for.
+var homeRanges = []string{"10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "fc00::/7"}
+
+const cgnatRange = "100.64.0.0/10"
+
+// withHomeRanges adds the usual home ranges when home, and cgnatRange when
+// cgnat, to list after the entries already there.
+func withHomeRanges(list []string, home, cgnat bool) []string {
+	out := append([]string{}, list...)
+	var add []string
+	if home {
+		add = append(add, homeRanges...)
+	}
+	if cgnat {
+		add = append(add, cgnatRange)
+	}
+	for _, r := range add {
+		if !slices.Contains(out, r) {
+			out = append(out, r)
+		}
+	}
+	return out
+}
+
+// bridgeLocal covers a browser that opened the host's own address while
+// HolyArrs runs on a Docker bridge network: depending on the Docker set-up
+// the request then arrives from the bridge gateway (172.16-31.x.0.1), not
+// from the browser. It counts as local only when the address typed in the
+// browser (Host) is an IP inside a listed network. The caller has already
+// made sure no forwarding header came and the peer is no known proxy.
+func (a *Auth) bridgeLocal(peer net.IP, host string) bool {
+	v4 := peer.To4()
+	if v4 == nil || v4[0] != 172 || v4[1]&0xf0 != 16 || v4[2] != 0 || v4[3] != 1 {
+		return false
+	}
+	h := net.ParseIP(normHost(host))
+	if h == nil || h.IsLoopback() || h.IsUnspecified() || h.IsLinkLocalUnicast() || gatewayLike(h) {
+		return false
+	}
+	return a.isLocal(h.String())
 }
 
 // gatewayLike says whether an address looks like a container gateway:

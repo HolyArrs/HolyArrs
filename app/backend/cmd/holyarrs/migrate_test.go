@@ -127,6 +127,7 @@ func TestMigratePermissions(t *testing.T) {
 	r.owner.call("PUT", "/api/v1/auth/settings", `{"skip_login_local_network":true,"local_networks":["127.0.0.0/8","10.0.0.0/8"]}`, 200)
 	jar, _ := cookiejar.New(nil)
 	bare := &arrSignedIn{t: t, base: r.srv.URL, c: &http.Client{Jar: jar}}
+	bare.csrf = localCSRF(t, r.srv.URL, bare.c)
 	for _, rt := range routes {
 		if b := bare.call(rt.method, rt.path, rt.body, 403); !strings.Contains(string(b), "confirm your local password") {
 			t.Errorf("%s %s: %s", rt.method, rt.path, b)
