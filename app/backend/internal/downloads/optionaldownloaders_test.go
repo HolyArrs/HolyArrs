@@ -9,7 +9,7 @@ import (
 func TestOptionalDownloaderSecretsRoundTrip(t *testing.T) {
 	t.Parallel()
 	srv, _ := dlServer(t)
-	for _, kind := range []string{"transmission", "nzbget", "deluge", "rtorrent"} {
+	for _, kind := range []string{"transmission", "nzbget", "deluge", "rtorrent", "aria2"} {
 		t.Run(kind, func(t *testing.T) {
 			secret := "optional-downloader-test-password"
 			in := map[string]any{"name": kind, "kind": kind, "url": "http://downloader:9091", "username": "task-user", "secret": secret}

@@ -228,6 +228,7 @@ birthday
 birthplace
 bit_depth
 bitrate
+bittorrent
 block
 blocked
 blocks
@@ -318,6 +319,7 @@ comment
 complete
 complete_path
 completed
+completedLength
 completeness
 completion_date
 completion_on
@@ -333,6 +335,7 @@ confirmed
 confirmed_edition
 connection
 connection_status
+connections
 container
 content
 content_path
@@ -401,6 +404,7 @@ digests
 digital
 digitalRelease
 digital_date
+dir
 directors
 disambiguation
 disc
@@ -429,6 +433,7 @@ download
 downloadClient
 downloadCount
 downloadId
+downloadSpeed
 downloadUri
 download_clients
 download_count
@@ -471,6 +476,7 @@ emptied
 enable_torrent
 enable_usenet
 enabled
+enabledFeatures
 end
 ended
 ended_at
@@ -577,6 +583,7 @@ folder_path
 folder_pattern
 folders
 follow
+followedBy
 followed_at
 followers
 following
@@ -624,6 +631,7 @@ genre
 genre_ids
 genre_name
 genres
+gid
 go
 good_enough
 good_enough_at
@@ -718,6 +726,8 @@ indexer
 indexer_proxies
 indexers
 indexes
+info
+infoHash
 inherit
 inspection_status
 ip
@@ -1006,6 +1016,7 @@ notes
 notes_short
 notifications
 nth
+numSeeders
 num_complete
 num_incomplete
 num_leechs
@@ -1391,6 +1402,7 @@ security
 seed
 seed_name
 seed_weight
+seeder
 seeders
 seeding_minutes
 seeding_time
@@ -1628,6 +1640,7 @@ torrents
 torrents_removed
 total
 totalEpisodeCount
+totalLength
 total_bytes
 total_downloaded
 total_pages
@@ -1718,6 +1731,8 @@ updated
 updated_at
 upgrade_allowed
 upgrade_min_points
+uploadLength
+uploadSpeed
 upload_payload_rate
 uploaded
 uploader

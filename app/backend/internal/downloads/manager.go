@@ -194,12 +194,18 @@ func (m *Manager) EngineFor(ctx context.Context, d domain.Downloader) (Engine, e
 		e.PathMap, e.SaveRoot = d.PathMap, m.SavePath
 		e.Keep = m.libraryFolders
 		return e, nil
+	case "aria2":
+		e := NewAria2(d.URL, secret, h)
+		e.Category, e.Others = d.Category, otherCategories(d)
+		e.PathMap, e.SaveRoot = d.PathMap, m.SavePath
+		e.Keep = m.libraryFolders
+		return e, nil
 	}
 	return nil, fmt.Errorf("no engine for adapter %q", d.Adapter)
 }
 
-// libraryFolders are the Library folders' paths. An rTorrent remove never
-// deletes in or around them, whatever path rTorrent reports.
+// libraryFolders are the Library folders' paths. An rTorrent or aria2 remove
+// never deletes in or around them, whatever path the Downloader reports.
 func (m *Manager) libraryFolders(ctx context.Context) ([]string, error) {
 	if m.Store == nil {
 		return nil, errors.New("no database")

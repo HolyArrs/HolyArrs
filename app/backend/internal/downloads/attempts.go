@@ -294,7 +294,7 @@ func (m *Manager) claimAttempt(ctx context.Context, d domain.Downloader, release
 }
 
 func journalAdapter(adapter string) bool {
-	return adapter == "nzbget" || adapter == "transmission" || adapter == "deluge" || adapter == "rtorrent"
+	return adapter == "nzbget" || adapter == "transmission" || adapter == "deluge" || adapter == "rtorrent" || adapter == "aria2"
 }
 
 func pendingAttemptCount(tx *sql.Tx, downloaderID int64) (int, error) {

@@ -431,7 +431,8 @@ func lastMoved(d domain.Download) time.Time {
 
 // cantUseFiles reports a paused job its client paused because it lost sight of
 // the files: qBittorrent error, missingFiles or unknown, Deluge Error,
-// Transmission local error 3, an rTorrent torrent closed with a storage error.
+// Transmission local error 3, an rTorrent torrent closed with a storage error,
+// an aria2 job stopped with an error.
 func cantUseFiles(j Job) bool {
 	if j.State != StatePaused {
 		return false

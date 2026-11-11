@@ -132,4 +132,8 @@ func TestKindCategoryValidation(t *testing.T) {
 	if err := fill(in, &d, true); !errors.Is(err, ErrDelugeLabel) {
 		t.Fatalf("deluge: %v, want ErrDelugeLabel", err)
 	}
+	in = Input{Name: "a", Adapter: "aria2", URL: "http://10.0.0.7:6800/jsonrpc", CategoryShows: str("..")}
+	if err := fill(in, &d, true); !errors.Is(err, ErrAria2Folder) {
+		t.Fatalf("aria2: %v, want ErrAria2Folder", err)
+	}
 }
