@@ -1,0 +1,14 @@
+{
+	"settings.layout.settings": "Ρυθμίσεις",
+	"settings.layout.home": "Αρχική",
+	"settings.layout.sections": "Ενότητες ρυθμίσεων",
+	"settings.layout.needsAttention": "Χρειάζονται προσοχή",
+	"settings.layout.needsAttentionLower": "χρειάζονται προσοχή",
+	"settings.layout.blocked": "Δεν μπορείτε να το αλλάξετε",
+	"settings.layout.backToSettings": "Πίσω στις Ρυθμίσεις",
+	"settings.layout.setPasswordFirst": "Ορίστε πρώτα κωδικό",
+	"settings.layout.setPasswordDesc": "Τα κλειδιά, οι κωδικοί, τα άτομα και τα αντίγραφα ασφαλείας απαιτούν κωδικό HolyArrs. Δεν έχετε ακόμη.",
+	"settings.layout.setPasswordLabel": "Ορισμός κωδικού",
+	"settings.layout.confirmPasswordLabel": "Επιβεβαίωση κωδικού",
+	"settings.layout.confirmPasswordDesc": "Τα κλειδιά, οι κωδικοί, τα άτομα και τα αντίγραφα ασφαλείας απαιτούν τον κωδικό σας. Ισχύει για 10 λεπτά."
+}

@@ -1,0 +1,18 @@
+{
+	"settings.logs.title": "Naplók",
+	"settings.logs.download": "Letöltés",
+	"settings.logs.filter": "Napló szűrése",
+	"settings.logs.level": "Szint",
+	"settings.logs.every": "Minden sor",
+	"settings.logs.warnings": "Figyelmeztetések és hibák",
+	"settings.logs.errors": "Csak hibák",
+	"settings.logs.text": "Szöveg",
+	"settings.logs.example": "pl. qBittorrent",
+	"settings.logs.from": "Ettől",
+	"settings.logs.to": "Eddig",
+	"settings.logs.apply": "Alkalmaz",
+	"settings.logs.clear": "Törlés",
+	"settings.logs.lines": "Sorok",
+	"settings.logs.newer": "Újabb",
+	"settings.logs.older": "Régebbi"
+}

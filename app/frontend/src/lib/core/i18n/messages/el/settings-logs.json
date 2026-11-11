@@ -1,0 +1,18 @@
+{
+	"settings.logs.title": "Αρχεία καταγραφής",
+	"settings.logs.download": "Λήψη",
+	"settings.logs.filter": "Φιλτράρισμα καταγραφής",
+	"settings.logs.level": "Επίπεδο",
+	"settings.logs.every": "Όλες οι γραμμές",
+	"settings.logs.warnings": "Προειδοποιήσεις και σφάλματα",
+	"settings.logs.errors": "Μόνο σφάλματα",
+	"settings.logs.text": "Κείμενο",
+	"settings.logs.example": "π.χ. qBittorrent",
+	"settings.logs.from": "Από",
+	"settings.logs.to": "Έως",
+	"settings.logs.apply": "Εφαρμογή",
+	"settings.logs.clear": "Εκκαθάριση",
+	"settings.logs.lines": "Γραμμές",
+	"settings.logs.newer": "Νεότερα",
+	"settings.logs.older": "Παλαιότερα"
+}

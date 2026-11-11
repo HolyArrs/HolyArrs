@@ -1,0 +1,17 @@
+{
+	"alerts.fallback.settings": "Innstillinger",
+	"alerts.panel.clearAll": "Fjern alle",
+	"alerts.panel.empty": "Ingenting her ennå",
+	"alerts.panel.needsAttention": "Trenger oppmerksomhet",
+	"alerts.panel.recent": "Nylig",
+	"alerts.panel.remove": "Fjern {text}",
+	"alerts.panel.title": "Siste varsler",
+	"alerts.state.manyNeed": "{count} trenger oppmerksomhet",
+	"alerts.state.ok": "Alt er i orden",
+	"alerts.state.oneNeeds": "1 trenger oppmerksomhet",
+	"alerts.state.unset": "Ikke satt opp",
+	"alerts.time.days": "{n}d",
+	"alerts.time.hours": "{n}t",
+	"alerts.time.minutes": "{n}m",
+	"alerts.time.now": "nå"
+}
