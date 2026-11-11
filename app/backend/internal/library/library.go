@@ -356,13 +356,14 @@ func applyMovie(t *mediafiles.Title, m metadata.Movie, now time.Time) {
 	t.CinemaDate, t.DigitalDate, t.PhysicalDate = m.CinemaDate, m.DigitalDate, m.PhysicalDate
 	t.Aliases = MergeAliases(t.Aliases, m.Name, m.OtherNames)
 	t.Status = titleStatus(Stage(DatesOf(*t), now))
-	ApplyDetails(t, m.Backdrop, m.Logo, m.Genres, m.Rating, m.People, m.Runtime)
+	ApplyDetails(t, m.Backdrop, m.Logo, m.Genres, m.Rating, m.People, m.Runtime, m.Score, m.Votes)
 	t.Directors, t.Studio = append([]string{}, m.Directors...), m.Studio
 }
 
 // applyDetails copies the screen details; a fresh lookup replaces them all.
-func ApplyDetails(t *mediafiles.Title, backdrop, logo string, genres []string, rating string, people []string, runtime int) {
+func ApplyDetails(t *mediafiles.Title, backdrop, logo string, genres []string, rating string, people []string, runtime int, score float64, votes int) {
 	t.Backdrop, t.Logo, t.Rating, t.RuntimeMinutes = backdrop, logo, rating, max(runtime, 0)
+	t.Score, t.Votes = &score, max(votes, 0)
 	t.Genres = append([]string{}, genres...)
 	t.People = append([]string{}, people...)
 }

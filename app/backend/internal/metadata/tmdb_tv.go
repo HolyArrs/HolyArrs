@@ -84,6 +84,7 @@ func (m tmdbShow) show(images string) Show {
 	}
 	out.Backdrop, out.Logo, out.Genres, out.People = m.tmdbExtras.pictures(images)
 	out.Rating = m.usRating()
+	out.Score, out.Votes = m.tmdbExtras.score()
 	for _, s := range m.Seasons {
 		out.Seasons = append(out.Seasons, Season{Number: s.Number, Name: s.Name})
 	}

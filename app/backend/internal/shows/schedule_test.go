@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"strings"
 	"sync"
 	"testing"
@@ -313,4 +314,47 @@ func TestRefreshShowsJobStopsOnNoAccess(t *testing.T) {
 			t.Fatalf("job %+v", job)
 		}
 	})
+}
+
+// Shows with no score yet are picked once the 6 hours have passed, even
+// when the rules say no, at most library.ScoreFillPerRun a run; dropped
+// shows are skipped.
+func TestShowRefreshPlanFillsScores(t *testing.T) {
+	s := open(t)
+	ctx := context.Background()
+	svc, _ := scheduleSvc(t, s, metadata.ShowSources{})
+	total := library.ScoreFillPerRun + 5
+	if err := s.Write(ctx, func(tx *sql.Tx) error {
+		for i := range total {
+			name, at := fmt.Sprintf("Show %03d", i), now.Add(-7*time.Hour)
+			var dropped any
+			switch i {
+			case 0:
+				at = now.Add(-5 * time.Hour)
+			case 1:
+				dropped = database.FormatTime(at)
+			}
+			if _, err := tx.Exec(`INSERT INTO titles (created_at, created_by, updated_at, updated_by, kind, name, sort_name, metadata_source, why_added, status, refreshed_at, dropped_at)
+				VALUES (?, '{"kind":"system"}', ?, '{"kind":"system"}', 'show', ?, ?, 'tmdb', 'by_hand', 'ended', ?, ?)`,
+				database.FormatTime(now), database.FormatTime(now), name, strings.ToLower(name), database.FormatTime(at), dropped); err != nil {
+				return err
+			}
+		}
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+	ids, why, err := svc.ShowRefreshPlan(ctx, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	filled := 0
+	for _, id := range ids {
+		if why[id] == "no score yet" {
+			filled++
+		}
+	}
+	if len(ids) != library.ScoreFillPerRun || filled != len(ids) || why[1] != "" || why[2] != "" || why[3] != "no score yet" {
+		t.Fatalf("planned %d, filled %d, why %q %q %q", len(ids), filled, why[1], why[2], why[3])
+	}
 }

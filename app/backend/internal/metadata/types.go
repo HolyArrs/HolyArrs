@@ -26,6 +26,8 @@ type Movie struct {
 	Logo             string            `json:"logo,omitempty"`     // English or no-language logo PNG URL (w500)
 	Genres           []string          `json:"genres,omitempty"`   // provider genre names, English
 	Rating           string            `json:"rating,omitempty"`   // US certification, "" when unknown
+	Score            float64           `json:"score,omitempty"`    // members' average out of 10, one decimal
+	Votes            int               `json:"votes,omitempty"`    // how many members voted
 	People           []string          `json:"people,omitempty"`   // top cast, then directors (names only)
 	// Directors are the directors alone (names only).
 	Directors []string `json:"directors,omitempty"`

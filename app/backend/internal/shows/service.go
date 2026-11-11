@@ -168,7 +168,7 @@ func applyShow(t *mediafiles.Title, sh metadata.Show) {
 	default:
 		t.Status = "running"
 	}
-	library.ApplyDetails(t, sh.Backdrop, sh.Logo, sh.Genres, sh.Rating, sh.People, sh.Runtime)
+	library.ApplyDetails(t, sh.Backdrop, sh.Logo, sh.Genres, sh.Rating, sh.People, sh.Runtime, sh.Score, sh.Votes)
 }
 
 // absolutes gives each regular episode its absolute number: the source's,

@@ -31,6 +31,16 @@ const (
 	changedListAge = 14 * 24 * time.Hour  // the changed list is used when the last run is newer
 )
 
+// ScoreFillPerRun is how many movies, and how many shows, with no score yet
+// a scheduled refresh adds, so a large Library fills over a few runs.
+const ScoreFillPerRun = 300
+
+// NeedsScore is true for a title not looked up since scores were kept,
+// not dropped by the source and not fetched within fresh.
+func NeedsScore(t mediafiles.Title, now time.Time, fresh time.Duration) bool {
+	return t.Score == nil && t.DroppedAt == nil && (t.RefreshedAt == nil || now.Sub(*t.RefreshedAt) >= fresh)
+}
+
 // ShouldRefresh applies the refresh rules, in order, to a Title that is not
 // on the changed list: over 180 days since the last fetch, yes; under 12
 // hours, no; announced or in cinemas, yes; released with the physical date
@@ -67,7 +77,8 @@ func changedSince(lastStart time.Time) time.Time {
 // RefreshPlan picks the Titles a refresh-all run covers. byHand covers every
 // movie. Otherwise, when the last start is under 14 days ago and the
 // provider has a changed list, the movies on it are refreshed; when that
-// list is empty or unavailable the rules decide (ShouldRefresh).
+// list is empty or unavailable the rules decide (ShouldRefresh). Either
+// way, up to ScoreFillPerRun movies with no score yet are added.
 func (s *Service) RefreshPlan(ctx context.Context, byHand bool, lastStart *time.Time) (ids []int64, why map[int64]string, err error) {
 	ts, err := database.Select[mediafiles.Title](ctx, s.Store.Read(), "titles", "kind = 'movie' AND state != 'removed' ORDER BY id")
 	if err != nil {
@@ -95,7 +106,12 @@ func (s *Service) RefreshPlan(ctx context.Context, byHand bool, lastStart *time.
 			log.Printf("library: changed list: %v; using the refresh rules", err)
 		}
 	}
+	filled := 0
 	for _, t := range ts {
+		if filled < ScoreFillPerRun && NeedsScore(t, now, refreshFresh) {
+			ids, why[t.ID], filled = append(ids, t.ID), "no score yet", filled+1
+			continue
+		}
 		if len(changed) > 0 {
 			if changed[lookupID(t)] {
 				ids, why[t.ID] = append(ids, t.ID), "on the changed list"

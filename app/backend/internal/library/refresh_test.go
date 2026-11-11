@@ -396,3 +396,106 @@ func TestArtworkCacheCapAndHosts(t *testing.T) {
 		t.Fatal("path outside the cache")
 	}
 }
+
+// A lookup always stores a score, 0 when the source has none; only titles
+// added before scores existed read back with none (NULL).
+func TestMovieScoreStored(t *testing.T) {
+	s := open(t)
+	ctx := context.Background()
+	addFolder(t, s)
+	rated := dune
+	rated.Score, rated.Votes = 8.1, 6200
+	id1, err := AddMovie(ctx, s, rated, AddOptions{}, nil, now, domain.System)
+	if err != nil {
+		t.Fatal(err)
+	}
+	id2, err := AddMovie(ctx, s, future, AddOptions{}, nil, now, domain.System)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var t1, t2 mediafiles.Title
+	_ = database.Get(ctx, s.Read(), "titles", id1, &t1)
+	_ = database.Get(ctx, s.Read(), "titles", id2, &t2)
+	if t1.Score == nil || *t1.Score != 8.1 || t1.Votes != 6200 {
+		t.Fatalf("rated %v %d", t1.Score, t1.Votes)
+	}
+	if t2.Score == nil || *t2.Score != 0 || t2.Votes != 0 {
+		t.Fatalf("looked up without a score %v %d", t2.Score, t2.Votes)
+	}
+	if err := s.Write(ctx, func(tx *sql.Tx) error {
+		_, err := tx.Exec("UPDATE titles SET score = NULL WHERE id = ?", id2)
+		return err
+	}); err != nil {
+		t.Fatal(err)
+	}
+	_ = database.Get(ctx, s.Read(), "titles", id2, &t2)
+	if t2.Score != nil {
+		t.Fatalf("NULL score read back as %v", *t2.Score)
+	}
+}
+
+type changedMovies struct {
+	*metadata.Static
+	ids []string
+}
+
+func (c changedMovies) Changed(context.Context, time.Time) ([]string, error) { return c.ids, nil }
+
+// Titles with no score yet are picked even while the changed list decides,
+// at most ScoreFillPerRun a run, and never one fetched under 12 hours ago
+// or one the source dropped.
+func TestRefreshPlanFillsScores(t *testing.T) {
+	s := open(t)
+	ctx := context.Background()
+	addFolder(t, s)
+	total := ScoreFillPerRun + 5
+	for i := 1; i <= total; i++ {
+		m := metadata.Movie{Name: fmt.Sprint("Movie ", i), Year: 2020, IDs: map[string]string{"tmdb": fmt.Sprint(i)}, CinemaDate: d("2020-01-01")}
+		if _, err := AddMovie(ctx, s, m, AddOptions{}, nil, now, domain.System); err != nil {
+			t.Fatal(err)
+		}
+	}
+	// Every movie was fetched 13 hours ago, before scores were kept; movie 1
+	// was fetched 2 hours ago, movie 2 has a score, movie 3 was dropped.
+	if err := s.Write(ctx, func(tx *sql.Tx) error {
+		ago13, ago2 := database.FormatTime(now.Add(-13*time.Hour)), database.FormatTime(now.Add(-2*time.Hour))
+		for _, u := range []struct {
+			q   string
+			arg any
+		}{
+			{"UPDATE titles SET score = NULL, refreshed_at = ?", ago13},
+			{`UPDATE titles SET refreshed_at = ? WHERE json_extract(source_ids, '$.tmdb') = '1'`, ago2},
+			{`UPDATE titles SET score = ? WHERE json_extract(source_ids, '$.tmdb') = '2'`, 7.4},
+			{`UPDATE titles SET dropped_at = ? WHERE json_extract(source_ids, '$.tmdb') = '3'`, ago13},
+		} {
+			if _, err := tx.Exec(u.q, u.arg); err != nil {
+				return err
+			}
+		}
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+	svc := &Service{Store: s, Metadata: changedMovies{Static: &metadata.Static{}, ids: []string{"tmdb:2"}}, Now: func() time.Time { return now }}
+	last := now.Add(-24 * time.Hour)
+	ids, why, err := svc.RefreshPlan(ctx, false, &last)
+	if err != nil {
+		t.Fatal(err)
+	}
+	byID := map[string]string{}
+	filled := 0
+	for _, id := range ids {
+		var tt mediafiles.Title
+		_ = database.Get(ctx, s.Read(), "titles", id, &tt)
+		byID[tt.SourceIDs["tmdb"]] = why[id]
+		if why[id] == "no score yet" {
+			filled++
+		}
+	}
+	if filled != ScoreFillPerRun || byID["2"] != "on the changed list" || byID["1"] != "" || byID["3"] != "" || byID["4"] != "no score yet" {
+		t.Fatalf("filled %d, why 1 %q 2 %q 3 %q 4 %q", filled, byID["1"], byID["2"], byID["3"], byID["4"])
+	}
+	if ids, _, _ := svc.RefreshPlan(ctx, true, nil); len(ids) != total {
+		t.Fatalf("by hand %d", len(ids))
+	}
+}
