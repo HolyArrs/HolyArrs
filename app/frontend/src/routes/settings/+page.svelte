@@ -156,8 +156,8 @@
 	.lede { margin: -14px 0 22px; color: var(--text-muted); font: var(--t-body); }
 	/* The top bar holds "Search settings" on tablets and desktops; phones have no top bar, so the field lives here. */
 	.find { position: relative; display: none; align-items: center; margin: -8px 0 18px; }
-	.find > :global(.icon) { position: absolute; left: 14px; color: var(--text-muted); pointer-events: none; }
-	.find .input { width: 100%; min-height: 44px; padding-left: 40px; border-radius: var(--r-pill); background: color-mix(in srgb, var(--surface-2) 80%, transparent); border-color: transparent; font: var(--t-body); }
+	.find > :global(.icon) { position: absolute; inset-inline-start: 14px; color: var(--text-muted); pointer-events: none; }
+	.find .input { width: 100%; min-height: 44px; padding-inline-start: 40px; border-radius: var(--r-pill); background: color-mix(in srgb, var(--surface-2) 80%, transparent); border-color: transparent; font: var(--t-body); }
 	@media (max-width: 767px) { .find { display: flex; } }
 
 	.fix { display: inline-flex; align-items: center; gap: 2px; min-height: 44px; padding: 0 6px 0 12px; color: var(--accent-text); font: var(--t-callout); font-weight: 600; }
