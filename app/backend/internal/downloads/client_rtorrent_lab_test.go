@@ -49,6 +49,7 @@ func TestLabRTorrent(t *testing.T) {
 	e := NewRTorrent(base, os.Getenv("HOLYARRS_LAB_RTORRENT_USER"), pass, Client(base, true))
 	e.Category = category
 	e.PathMap = []domain.PathMap{{Theirs: theirs, Ours: here}}
+	e.Keep = func(context.Context) ([]string, error) { return []string{"/data/media"}, nil }
 
 	h, err := e.Health(ctx)
 	if err != nil {

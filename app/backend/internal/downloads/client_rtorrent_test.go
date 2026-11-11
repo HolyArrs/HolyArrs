@@ -34,6 +34,7 @@ type fakeRTorrent struct {
 	calls     []string
 	untrusted bool   // refuse write calls the way ruTorrent's plugins do
 	dropLoad  bool   // answer a load with 0 but keep nothing
+	tooLarge  bool   // refuse a load for its size
 	hideFor   int    // lookups that miss a fresh item
 	path      string // where it answers, /RPC2 when empty
 }
@@ -166,6 +167,9 @@ func (f *fakeRTorrent) dispatch(method string, params []any) (any, *xmlrpcFault)
 		return out, nil
 	case "load.raw_start", "load.start":
 		f.loads++
+		if f.tooLarge {
+			return nil, &xmlrpcFault{Code: -509, Message: "XML-RPC request too large"}
+		}
 		if target != "" {
 			return nil, &xmlrpcFault{Code: -500, Message: "invalid parameters: target must be empty"}
 		}
@@ -567,6 +571,7 @@ func TestRTorrentRemoveDeletesOnlySafeFiles(t *testing.T) {
 		{"not visible", []item{{rtHash, "missing.mkv", "/remote/movies"}}, []domain.PathMap{{Theirs: "/remote", Ours: here}}, false},
 		{"names a Library folder", []item{{rtHash, "library", "/remote"}}, []domain.PathMap{{Theirs: "/remote", Ours: here}}, false},
 		{"holds a Library folder", []item{{rtHash, "movies", "/remote"}}, []domain.PathMap{{Theirs: "/remote", Ours: here}}, false},
+		{"a name with a backslash", []item{{rtHash, `movies.mkv`, "/remote"}}, []domain.PathMap{{Theirs: "/remote", Ours: here}}, false},
 	} {
 		t.Run(c.name, func(t *testing.T) {
 			file := put("movies/a.mkv")
@@ -680,4 +685,46 @@ func TestRTorrentPauseResumeAndStatus(t *testing.T) {
 		t.Errorf("move top: %v", err)
 	}
 	var _ Controller = e
+}
+
+func TestRTorrentSizeRefusalIsFinal(t *testing.T) {
+	f := &fakeRTorrent{tooLarge: true}
+	e := NewRTorrent(startRTorrent(t, f), "", "", nil)
+	_, err := e.Add(context.Background(), AddRequest{URL: "magnet:?xt=urn:btih:" + rtHash, Category: "movies"})
+	if err == nil || errors.Is(err, ErrUncertain) || !errors.Is(err, ErrTooLarge) || !strings.Contains(err.Error(), "size_limit") || f.loads != 1 {
+		t.Errorf("got %v after %d loads, want a final size refusal", err, f.loads)
+	}
+	big := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusRequestEntityTooLarge) }))
+	defer big.Close()
+	_, err = NewRTorrent(big.URL, "", "", nil).Add(context.Background(), AddRequest{URL: "magnet:?xt=urn:btih:" + rtHash, Category: "movies"})
+	if err == nil || errors.Is(err, ErrUncertain) || !errors.Is(err, ErrTooLarge) {
+		t.Errorf("413: %v", err)
+	}
+}
+
+func TestXMLRPCOddNameKeepsTheList(t *testing.T) {
+	body := "<methodResponse><params><param><value><array><data>" +
+		"<value><array><data><value><string>badnameÿ&#1;</string></value></data></array></value>" +
+		"<value><array><data><value><string>good</string></value></data></array></value>" +
+		"</data></array></value></param></params></methodResponse>"
+	v, err := xmlrpcResponse([]byte(body))
+	if err != nil {
+		t.Fatal(err)
+	}
+	rows := v.([]any)
+	if len(rows) != 2 || rows[1].([]any)[0] != "good" || !strings.HasPrefix(rows[0].([]any)[0].(string), "bad") {
+		t.Errorf("rows: %#v", rows)
+	}
+}
+
+func TestRTorrentMultiFilePaths(t *testing.T) {
+	f := &fakeRTorrent{items: map[string]*rtItem{strings.ToUpper(rtHash): {name: "Show.S01", label: "tv", dir: "/downloads/Show.S01", multi: 1, open: 1, state: 1, size: 10,
+		files: [][]any{{"Show.S01E01.mkv", int64(5), int64(1), int64(1)}, {"Subs/en.srt", int64(5), int64(0), int64(1)}}}}}
+	j, err := NewRTorrent(startRTorrent(t, f), "", "", nil).Get(context.Background(), rtHash)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if j.SavePath != "/downloads" || j.ContentPath != "/downloads/Show.S01" || len(j.Files) != 2 || j.Files[0].Name != "Show.S01/Show.S01E01.mkv" || j.Files[1].Name != "Show.S01/Subs/en.srt" {
+		t.Errorf("paths: save %q content %q files %+v", j.SavePath, j.ContentPath, j.Files)
+	}
 }

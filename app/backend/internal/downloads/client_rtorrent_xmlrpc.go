@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"regexp"
 	"slices"
 	"strconv"
 	"strings"
@@ -131,7 +132,7 @@ func xmlrpcInt(b *bytes.Buffer, n int64) {
 // bool, float64, []byte, []any or map[string]any. A fault comes back as
 // *xmlrpcFault.
 func xmlrpcResponse(body []byte) (any, error) {
-	d := xml.NewDecoder(bytes.NewReader(body))
+	d := xml.NewDecoder(bytes.NewReader(xmlrpcClean(body)))
 	d.Strict = true
 	d.Entity = map[string]string{}
 	start, err := xmlrpcNext(d)
@@ -371,6 +372,30 @@ func xmlrpcStruct(d *xml.Decoder, depth int) (any, error) {
 			return nil, errXMLRPCAnswer
 		}
 	}
+}
+
+// badCharRef matches character references to control characters, which XML
+// forbids and the decoder refuses.
+var badCharRef = regexp.MustCompile(`&#(x0*[0-8bBcCeEfF]|x0*1[0-9a-fA-F]|0*([0-8]|1[124-9]|2[0-9]|3[01]));`)
+
+// xmlrpcClean makes an answer decodable when a torrent name or message holds
+// bytes XML does not allow: invalid UTF-8 and control characters become U+FFFD,
+// so one odd name never hides every other torrent.
+func xmlrpcClean(b []byte) []byte {
+	bad := func(r rune) bool { return r < 0x20 && r != '\t' && r != '\n' && r != '\r' }
+	b = bytes.ToValidUTF8(b, []byte("\uFFFD"))
+	if bytes.IndexFunc(b, bad) >= 0 {
+		b = bytes.Map(func(r rune) rune {
+			if bad(r) {
+				return '\uFFFD'
+			}
+			return r
+		}, b)
+	}
+	if bytes.Contains(b, []byte("&#")) {
+		b = badCharRef.ReplaceAll(b, []byte("\uFFFD"))
+	}
+	return b
 }
 
 // cleanDetail folds whitespace and cuts a client message to 160 characters.

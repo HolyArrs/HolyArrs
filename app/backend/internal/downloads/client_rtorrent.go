@@ -30,6 +30,10 @@ var rtorrentConfirm = struct {
 	every time.Duration
 }{10, 500 * time.Millisecond}
 
+// rtorrentAnswerMax caps an answer. A large rTorrent lists thousands of torrents
+// in one d.multicall2, as large as qBittorrent's full list.
+const rtorrentAnswerMax = 64 << 20
+
 // rtorrentFields are the d.multicall2 fields, in the order rtRow reads them.
 var rtorrentFields = []string{
 	"d.hash=", "d.name=", "d.custom1=", "d.size_bytes=", "d.completed_bytes=", "d.down.rate=", "d.up.rate=", "d.up.total=",
@@ -147,8 +151,10 @@ func (r *RTorrent) Get(ctx context.Context, id string) (Job, error) {
 		if name == "" {
 			continue
 		}
-		if row.multi == 1 && row.name != "" {
-			name = row.name + "/" + name
+		if row.multi == 1 {
+			if folder := path.Base(row.content()); row.content() != "" {
+				name = folder + "/" + name
+			}
 		}
 		progress := float64(0)
 		if total := asInt(cols[3]); total > 0 {
@@ -232,7 +238,8 @@ func (r *RTorrent) Add(ctx context.Context, req AddRequest) (string, error) {
 		}
 		return "", sendErr
 	}
-	if errors.Is(sendErr, ErrAuth) || errors.Is(sendErr, outbound.ErrAddressRefused) {
+	var refusedSize rtorrentTooLarge
+	if errors.Is(sendErr, ErrAuth) || errors.Is(sendErr, outbound.ErrAddressRefused) || errors.As(sendErr, &refusedSize) {
 		return "", sendErr
 	}
 	for i := 0; i < rtorrentConfirm.tries && ctx.Err() == nil; i++ {
@@ -407,9 +414,6 @@ func (r *RTorrent) job(row rtRow) Job {
 		Uploaded: max(0, row.upTotal)}
 	if content != "" {
 		j.SavePath = path.Dir(content)
-		if row.multi == 1 {
-			j.SavePath = content
-		}
 	}
 	if row.complete == 1 && row.finished > 0 {
 		j.DoneAt = row.finished
@@ -480,6 +484,12 @@ func labelIs(raw, category string) bool {
 	return category != "" && (raw == category || labelText(raw) == category)
 }
 
+// rtorrentTooLarge is a call refused for its size before rTorrent took it.
+type rtorrentTooLarge struct{ error }
+
+// Unwrap gives the cause.
+func (e rtorrentTooLarge) Unwrap() error { return e.error }
+
 func rtNotFound(err error) error {
 	var f *xmlrpcFault
 	if errors.As(err, &f) && f.unknownHash() {
@@ -524,25 +534,25 @@ func (r *RTorrent) call(ctx context.Context, method string, params ...any) (any,
 		return nil, fmt.Errorf("%w: nothing answers XML-RPC at this path; crazymax images serve it on port 8000 at /RPC2 (8080 is the ruTorrent page), and through ruTorrent it is /plugins/httprpc/action.php", adapterHTTPError{resp.StatusCode})
 	}
 	if resp.StatusCode == http.StatusRequestEntityTooLarge {
-		return nil, fmt.Errorf("%w: the answer is over the web server's or rTorrent's size limit; raise network.xmlrpc.size_limit", ErrTooLarge)
+		return nil, rtorrentTooLarge{fmt.Errorf("%w: the call is over the web server's or rTorrent's size limit; raise network.xmlrpc.size_limit or the web server's body size limit", ErrTooLarge)}
 	}
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
 		return nil, adapterHTTPError{resp.StatusCode}
 	}
-	b, err := io.ReadAll(io.LimitReader(resp.Body, (16<<20)+1))
+	b, err := io.ReadAll(io.LimitReader(resp.Body, rtorrentAnswerMax+1))
 	if err != nil {
 		if ctx.Err() != nil {
 			return nil, ctx.Err()
 		}
 		return nil, errDownloaderUnavailable
 	}
-	if len(b) > 16<<20 {
+	if len(b) > rtorrentAnswerMax {
 		return nil, ErrTooLarge
 	}
 	v, err := xmlrpcResponse(b)
 	var f *xmlrpcFault
 	if errors.As(err, &f) && f.tooLarge() {
-		return nil, fmt.Errorf("%w: raise rTorrent's network.xmlrpc.size_limit (crazymax: XMLRPC_SIZE_LIMIT)", ErrTooLarge)
+		return nil, rtorrentTooLarge{fmt.Errorf("%w: raise rTorrent's network.xmlrpc.size_limit (crazymax: XMLRPC_SIZE_LIMIT)", ErrTooLarge)}
 	}
 	if errors.Is(err, errXMLRPCAnswer) {
 		return nil, errors.New("this address answered, but not with rTorrent's XML-RPC; check the path (usually /RPC2)")

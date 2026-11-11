@@ -169,6 +169,10 @@ func (r *RTorrent) deleteTarget(row rtRow, all []rtRow, keep []string) (filesTar
 		}
 	}
 	local := filepath.Clean(mapLocal(content, r.PathMap))
+	if filepath.Base(local) != row.name {
+		// A name holding this system's own separator would point elsewhere here.
+		return filesTarget{}, local + " is not named like the torrent here"
+	}
 	for _, k := range keep {
 		if k = strings.TrimSpace(k); k != "" && (underAny(local, []string{k}) || underAny(filepath.Clean(k), []string{local})) {
 			return filesTarget{}, local + " is a Library folder or holds one"
