@@ -293,5 +293,8 @@
 	"migrate.holyarrsHandlesTheseIts": "HolyArrs обробляє це по-своєму. Робити нічого не треба.",
 	"migrate.allApps": "Усі застосунки",
 	"migrate.ifAnOldApp": "Якщо старий застосунок бачить теку за іншим шляхом, введи обидва.",
+	"migrate.notInContainer": "HolyArrs не бачить {path}. Вкажи шлях усередині контейнера: праву частину тому Docker.",
+	"migrate.foldersItSees": "Видно теки: {list}",
+	"migrate.sameNewFolder": "Та сама тека, що й у {list}. Їхні назви опиняться разом; дай 4K чи іншим копіям окрему теку.",
 	"migrate.doneOfTotal": "{done} із {total}"
 }

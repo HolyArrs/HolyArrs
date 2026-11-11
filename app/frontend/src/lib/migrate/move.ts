@@ -468,6 +468,18 @@ export function folderProblem(from: string, pick: string | undefined, other: str
 	return ruleProblem({ from, to: folderTo(pick, other) });
 }
 
+// For each old folder, the other old folders that point at the same new folder.
+export function sharedTargets(picks: Record<string, string>, others: Record<string, string>): Record<string, string[]> {
+	const by = new Map<string, string[]>();
+	for (const [from, pick] of Object.entries(picks)) {
+		const to = folderTo(pick, others[from]);
+		if (to) by.set(to, [...(by.get(to) ?? []), from]);
+	}
+	const out: Record<string, string[]> = {};
+	for (const froms of by.values()) if (froms.length > 1) for (const f of froms) out[f] = froms.filter((x) => x !== f);
+	return out;
+}
+
 export function extraProblems(rules: PathRule[]): string[] {
 	return rules.map((r) => {
 		const c = { from: r.from.trim(), to: r.to.trim() };
