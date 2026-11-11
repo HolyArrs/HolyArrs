@@ -11,13 +11,13 @@ import (
 // searches do not delay a health check; hung imports or health checks do not
 // delay searches or the other pools.
 func TestStallInOnePoolLeavesTheOthers(t *testing.T) {
-	kindOf := map[Pool]string{PoolCore: "health_check", PoolIO: "search_slot", PoolHeavy: "import_download"}
-	for _, stalled := range []Pool{PoolCore, PoolIO, PoolHeavy} {
+	kindOf := map[Pool]string{PoolCore: "health_check", PoolIO: "search_slot", PoolHeavy: "import_download", PoolMigrate: "migrate_move"}
+	for _, stalled := range []Pool{PoolCore, PoolIO, PoolHeavy, PoolMigrate} {
 		t.Run(string(stalled), func(t *testing.T) {
 			s := newStore(t, t.TempDir())
 			defer s.Close()
 			o := fastOpts()
-			o.Pools = map[Pool]int{PoolCore: 1, PoolIO: 2, PoolHeavy: 1}
+			o.Pools = map[Pool]int{PoolCore: 1, PoolIO: 2, PoolHeavy: 1, PoolMigrate: 1}
 			q := New(s, o)
 			hold := make(chan struct{})
 			started := make(chan struct{}, 8)
@@ -71,7 +71,7 @@ func TestStallInOnePoolLeavesTheOthers(t *testing.T) {
 
 func TestPoolOf(t *testing.T) {
 	for kind, want := range map[string]Pool{"health_check": PoolCore, "search_slot": PoolIO, "grab": PoolIO,
-		"subtitle_search": PoolIO, "import_download": PoolHeavy, "rename_files": PoolHeavy, "scan_title": PoolHeavy, "something_new": PoolIO} {
+		"subtitle_search": PoolIO, "import_download": PoolHeavy, "rename_files": PoolHeavy, "scan_title": PoolHeavy, "migrate_move": PoolMigrate, "migrate_undo": PoolMigrate, "something_new": PoolIO} {
 		if got := PoolOf(kind); got != want {
 			t.Errorf("PoolOf(%s) = %s, want %s", kind, got, want)
 		}

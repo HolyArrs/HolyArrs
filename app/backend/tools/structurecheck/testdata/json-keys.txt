@@ -917,6 +917,8 @@ more_versions
 most_replayed
 move
 move_job_id
+move_mod
+move_size
 moves
 movie
 movieFile
