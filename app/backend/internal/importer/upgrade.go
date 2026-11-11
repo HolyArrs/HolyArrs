@@ -35,7 +35,7 @@ type upgrade struct {
 
 func plainStep(s string) string { return strings.ReplaceAll(s, "_", " ") }
 
-func checkUpgrade(ctx context.Context, db *sql.DB, sl mediafiles.Slot, ver mediafiles.Version, d domain.Download, plan []mediafiles.PlanStep, fakes fakeRules, minutes int) (upgrade, error) {
+func checkUpgrade(ctx context.Context, db *sql.DB, sl mediafiles.Slot, ver mediafiles.Version, d domain.Download, plan []mediafiles.PlanStep, cands []Candidate, fakes fakeRules, minutes int) (upgrade, error) {
 	u := upgrade{facts: map[string]map[string]any{}}
 	var pr mediafiles.PickRules
 	if err := database.Get(ctx, db, "pick_rules", ver.PickRulesID, &pr); err != nil {
@@ -59,7 +59,7 @@ func checkUpgrade(ctx context.Context, db *sql.DB, sl mediafiles.Slot, ver media
 	if d.ReleaseID != nil {
 		_ = db.QueryRowContext(ctx, "SELECT COALESCE(size, 0) FROM releases WHERE id = ?", *d.ReleaseID).Scan(&claimed)
 	}
-	mismatch := fakes.claimMismatch(claimed, d.FilesSeen)
+	mismatch := fakes.claimMismatch(claimed, cands)
 	for i := range plan {
 		if plan[i].Method != "hardlink" {
 			continue

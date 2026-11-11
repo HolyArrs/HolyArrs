@@ -11,7 +11,6 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
-	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 )
 
@@ -91,14 +90,17 @@ func (fr fakeRules) fakeFileOf(path string, music bool, minutes int, relName str
 	return "", nil
 }
 
-func (fr fakeRules) claimMismatch(claimed int64, seen []domain.SeenFile) string {
-	if !fr.on || !fr.floors || claimed <= 0 || len(seen) == 0 {
+// claimMismatch compares the Release's claimed size with the video or audio
+// the download holds, measured from the files to import: a RAR set counts
+// what it unpacked to, not only the sample beside it.
+func (fr fakeRules) claimMismatch(claimed int64, cands []Candidate) string {
+	if !fr.on || !fr.floors || claimed <= 0 || len(cands) == 0 {
 		return ""
 	}
 	var held int64
-	for _, f := range seen {
-		if IsMedia(filepath.Ext(strings.ReplaceAll(f.Name, `\`, "/"))) && f.Size > 0 {
-			held += f.Size
+	for _, c := range cands {
+		if IsMedia(filepath.Ext(strings.ReplaceAll(c.Path, `\`, "/"))) && c.Size > 0 {
+			held += c.Size
 		}
 	}
 	if held <= 0 || held >= claimed/claimedShare {

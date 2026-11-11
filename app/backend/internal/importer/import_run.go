@@ -69,6 +69,9 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 	if !dryRun && sl.State != mediafiles.SlotDownloading && sl.State != mediafiles.SlotImporting {
 		return nil, fmt.Errorf("slot %d is %s; nothing to import", sl.ID, sl.State)
 	}
+	if !dryRun && sl.ActiveDownloadID != nil && *sl.ActiveDownloadID != d.ID {
+		return nil, fmt.Errorf("slot %d waits for download %d, not %d; nothing to import", sl.ID, *sl.ActiveDownloadID, d.ID)
+	}
 	for _, g := range []struct {
 		table string
 		id    int64
@@ -126,7 +129,7 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 	if it.Runtime != nil {
 		minutes = *it.Runtime
 	}
-	up, err := checkUpgrade(ctx, db, sl, ver, d, plan, im.refuseFakes(ctx, db), minutes)
+	up, err := checkUpgrade(ctx, db, sl, ver, d, plan, cands, im.refuseFakes(ctx, db), minutes)
 	if err != nil {
 		return nil, err
 	}
