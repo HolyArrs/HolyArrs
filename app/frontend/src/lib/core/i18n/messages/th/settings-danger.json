@@ -1,0 +1,16 @@
+{
+	"settings.danger.stopping": "HolyArrs กำลังหยุดทำงาน",
+	"settings.danger.couldnt": "ไม่สามารถ{action}ได้",
+	"settings.danger.title": "โซนอันตราย",
+	"settings.danger.ownerOnly": "เฉพาะเจ้าของและผู้ดูแล",
+	"settings.danger.ask": "{label}ไหม",
+	"settings.danger.yes": "ใช่ {action}",
+	"settings.danger.cancel": "ยกเลิก",
+	"settings.danger.expires": "หมดอายุใน 60 วินาที",
+	"settings.danger.wholeApp": "ทั้งแอป",
+	"settings.danger.intro": "การกระทำเหล่านี้จะหยุด HolyArrs นโยบายรีสตาร์ตของ Docker จะเริ่มให้ใหม่ภายในไม่กี่วินาที ยกเว้นตั้งนโยบายเป็น <code>no</code> ซึ่งต้องเริ่มคอนเทนเนอร์เอง ทุกรายการจะถามยืนยันก่อน",
+	"settings.danger.restart": "รีสตาร์ต HolyArrs",
+	"settings.danger.safe": "รีสตาร์ตในโหมดปลอดภัย",
+	"settings.danger.shutdown": "ปิดการทำงาน",
+	"settings.danger.safeNote": "เริ่มหนึ่งครั้งโดยเปิดเฉพาะการเข้าสู่ระบบ ตั้งค่า และไลบรารี ใช้เมื่อมีส่วนเสริมที่ทำให้เริ่มระบบไม่ได้"
+}

@@ -1,0 +1,10 @@
+{
+	"settings.home.advanced": "高級",
+	"settings.home.page": "{group} · 頁面",
+	"settings.home.title": "設定",
+	"settings.home.search": "搜尋設定",
+	"settings.home.matching": "符合的設定",
+	"settings.home.noMatch": "沒有符合的設定",
+	"settings.home.noMatchText": "換個詞試試，比如資料夾、金鑰或密碼。",
+	"settings.home.clear": "清除搜尋"
+}

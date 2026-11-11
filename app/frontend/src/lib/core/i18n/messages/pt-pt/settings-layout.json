@@ -1,0 +1,14 @@
+{
+	"settings.layout.settings": "Definições",
+	"settings.layout.home": "Início",
+	"settings.layout.sections": "Secções das definições",
+	"settings.layout.needsAttention": "Precisa de atenção",
+	"settings.layout.needsAttentionLower": "precisa de atenção",
+	"settings.layout.blocked": "Não pode alterar isto",
+	"settings.layout.backToSettings": "Voltar às Definições",
+	"settings.layout.setPasswordFirst": "Defina uma palavra-passe primeiro",
+	"settings.layout.setPasswordDesc": "Chaves, palavras-passe, pessoas e backups exigem uma palavra-passe do HolyArrs. Ainda não tem uma.",
+	"settings.layout.setPasswordLabel": "Definir uma palavra-passe",
+	"settings.layout.confirmPasswordLabel": "Confirme a sua palavra-passe",
+	"settings.layout.confirmPasswordDesc": "Chaves, palavras-passe, pessoas e backups exigem a sua palavra-passe. Vale por 10 minutos."
+}

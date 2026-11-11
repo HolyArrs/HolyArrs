@@ -1,0 +1,10 @@
+{
+	"settings.home.advanced": "Avansat",
+	"settings.home.page": "{group} · pagină",
+	"settings.home.title": "Setări",
+	"settings.home.search": "Caută în setări",
+	"settings.home.matching": "Setări potrivite",
+	"settings.home.noMatch": "Nicio setare potrivită",
+	"settings.home.noMatchText": "Încearcă alt cuvânt, de exemplu dosar, cheie sau parolă.",
+	"settings.home.clear": "Șterge căutarea"
+}
