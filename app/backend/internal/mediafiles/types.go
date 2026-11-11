@@ -81,6 +81,10 @@ type Title struct {
 	RuntimeMinutes int      `db:"runtime_minutes"`
 	Rating         string   `db:"rating"`
 	People         []string `db:"people,json"`
+	// Score is the members' average out of 10 (nil until the first lookup
+	// after scores were kept; 0 when the source has none) and Votes how many voted.
+	Score *float64 `db:"score"`
+	Votes int      `db:"votes"`
 	// Directors are a movie's directors alone (People mixes them in after the cast).
 	Directors []string `db:"directors,json"`
 	// Studio is a movie's first production company.

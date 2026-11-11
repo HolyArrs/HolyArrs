@@ -2,6 +2,7 @@ package metadata
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"net/http"
 	"net/http/httptest"
@@ -174,3 +175,27 @@ func TestTokenFile(t *testing.T) {
 }
 
 func writeFile(p, s string) error { return os.WriteFile(p, []byte(s), 0o600) }
+
+// The members' average and vote count come with every movie and show answer
+// and are kept to one decimal; an answer without them gives 0 and 0.
+func TestTMDBScoreAndVotes(t *testing.T) {
+	var m tmdbMovie
+	if err := json.Unmarshal([]byte(`{"id":1,"title":"A","vote_average":7.86,"vote_count":1200}`), &m); err != nil {
+		t.Fatal(err)
+	}
+	if got := m.movie(""); got.Score != 7.9 || got.Votes != 1200 {
+		t.Fatalf("movie score %v votes %d", got.Score, got.Votes)
+	}
+	var s tmdbShow
+	if err := json.Unmarshal([]byte(`{"id":2,"name":"B","vote_average":6.04,"vote_count":80}`), &s); err != nil {
+		t.Fatal(err)
+	}
+	if got := s.show(""); got.Score != 6.0 || got.Votes != 80 {
+		t.Fatalf("show score %v votes %d", got.Score, got.Votes)
+	}
+	var bare tmdbMovie
+	_ = json.Unmarshal([]byte(`{"id":3,"title":"C"}`), &bare)
+	if got := bare.movie(""); got.Score != 0 || got.Votes != 0 {
+		t.Fatalf("no score %v votes %d", got.Score, got.Votes)
+	}
+}

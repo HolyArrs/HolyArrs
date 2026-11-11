@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { TitleView } from '../core/types.ts';
-import { applyLayout, columnsFor, filterCounts, loadColumns, loadSaved, moveColumn, noFilter, passes, saveColumns, saveSaved, sortLabel, sortTitles, tableMinWidth, type FilterContext } from './table.ts';
+import { applyLayout, chosenColumns, columnsFor, columnSort, filterCounts, loadColumns, loadSaved, moveColumn, noFilter, passes, saveColumns, saveSaved, sortLabel, sortLabels, sortsFor, sortTitles, startDir, tableMinWidth, type FilterContext } from './table.ts';
 
 function memory() {
 	const m = new Map<string, string>();
@@ -68,6 +68,31 @@ describe('sorting', () => {
 		const shows = [show(7, 'Ended', {}), show(8, 'Soon', { next_air_date: '2026-11-01' }), show(9, 'Sooner', { next_air_date: '2026-10-25' })];
 		expect(sortTitles(shows, 'next').map((t) => t.id)).toEqual([9, 8, 7]);
 	});
+	it('sorts by score, highest first, with unscored and low-vote titles last both ways', () => {
+		const scored = [
+			movie(1, 'Mid', { score: 7.4, votes: 900 }),
+			movie(2, 'None', {}),
+			movie(3, 'Top', { score: 8.1, votes: 5000 }),
+			movie(4, 'Few votes', { score: 9.5, votes: 3 }),
+			movie(5, 'Low', { score: 6, votes: 40 }),
+			movie(6, 'Zero', { score: 0, votes: 0 })
+		];
+		expect(startDir('score')).toBe('desc');
+		expect(sortTitles(scored, 'score', 'desc').map((t) => t.id)).toEqual([3, 1, 5, 4, 2, 6]);
+		expect(sortTitles(scored, 'score', 'asc').map((t) => t.id)).toEqual([5, 1, 3, 4, 2, 6]);
+	});
+	it('breaks score ties by name', () => {
+		const tie = [movie(1, 'Zulu', { score: 7, votes: 100 }), movie(2, 'Alpha', { score: 7, votes: 100 })];
+		expect(sortTitles(tie, 'score', 'desc').map((t) => t.id)).toEqual([2, 1]);
+	});
+	it('offers score for movies, shows and All, never for music', () => {
+		for (const k of ['movie', 'show', 'all'] as const) expect(sortsFor(k)).toContain('score');
+		expect(sortsFor('artist')).not.toContain('score');
+		expect(columnSort.score).toBe('score');
+		expect(columnsFor('movie').find((c) => c.id === 'score')?.on).toBe(false);
+		expect(columnsFor('show').find((c) => c.id === 'score')?.on).toBe(false);
+		expect(columnsFor('artist').some((c) => c.id === 'score')).toBe(false);
+	});
 });
 
 describe('filter counts', () => {
@@ -122,6 +147,39 @@ describe('tableMinWidth', () => {
 	});
 	it('ignores widths with no px floor', () => {
 		expect(tableMinWidth(['1fr'], 16, 0)).toBe(0);
+	});
+});
+
+describe('chosenColumns', () => {
+	it('shows the score right after the status while sorting by score, without saving it', () => {
+		const cols = columnsFor('movie');
+		const before = JSON.stringify(cols);
+		const ids = chosenColumns(cols, 'score').map((c) => c.id);
+		expect(ids.slice(0, 2)).toEqual(['status', 'score']);
+		expect(ids.filter((id) => id === 'score')).toHaveLength(1);
+		expect(JSON.stringify(cols)).toBe(before);
+		const store = memory();
+		saveColumns(1, 'movie', cols, store);
+		expect(loadColumns(1, 'movie', store).find((c) => c.id === 'score')?.on).toBe(false);
+	});
+	it('moves a score column that is on to the front, and leads with it when status is off', () => {
+		const on = columnsFor('movie').map((c) => (c.id === 'score' ? { ...c, on: true } : c));
+		expect(chosenColumns(on, 'score').map((c) => c.id).slice(0, 2)).toEqual(['status', 'score']);
+		const noStatus = on.filter((c) => c.id !== 'status');
+		expect(chosenColumns(noStatus, 'score')[0].id).toBe('score');
+	});
+	it('is only the columns that are on for any other sort, and for music', () => {
+		const cols = columnsFor('movie');
+		expect(chosenColumns(cols, 'name')).toEqual(cols.filter((c) => c.on));
+		expect(chosenColumns(columnsFor('artist'), 'score')).toEqual(columnsFor('artist').filter((c) => c.on));
+	});
+});
+
+describe('labels', () => {
+	it('every sort and column has English words', () => {
+		for (const [k, label] of Object.entries(sortLabels)) expect(label, k).not.toBe(`mediafiles.sort.${k}`);
+		for (const kind of ['movie', 'show', 'artist'] as const) for (const c of columnsFor(kind)) expect(c.label, c.id).not.toBe(`mediafiles.col.${c.id}`);
+		expect(sortLabels.score).toBe('Score');
 	});
 });
 

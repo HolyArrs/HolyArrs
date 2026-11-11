@@ -50,7 +50,7 @@ Open **Settings** from the menu. You see only the screens your account may use, 
 |---|---|
 | **Settings > Parts** | Turn Movies, Shows, Music, Subtitles and Requests on or off |
 | **Settings > Movies and TV defaults** | Set what a newly added movie or show gets |
-| **Settings > Appearance** | Theme (**Automatic**, **Dark**, **Light**), **Play trailers by themselves**, **Show Library art on the sign-in page** |
+| **Settings > Appearance** | Theme (**Automatic**, **Dark**, **Light**), **Play trailers by themselves**, **Show Library art on the sign-in page**, and **Ratings**: up to three scores beside the year on title pages. The Library's **Score** sort always uses the members' average, whatever you pick here |
 | **Settings > Library folders** | Add and check folders. See [Folders](../folders/) |
 | **Settings > Backups** | Back up, and **Download key kit** |
 

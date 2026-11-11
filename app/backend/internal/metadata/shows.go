@@ -47,6 +47,8 @@ type Show struct {
 	Logo             string            `json:"logo,omitempty"`
 	Genres           []string          `json:"genres,omitempty"`
 	Rating           string            `json:"rating,omitempty"` // US content rating
+	Score            float64           `json:"score,omitempty"`  // members' average out of 10, one decimal
+	Votes            int               `json:"votes,omitempty"`  // how many members voted
 	People           []string          `json:"people,omitempty"`
 	OtherNames       []string          `json:"other_names,omitempty"` // original, alternative and translated names
 	Seasons          []Season          `json:"seasons,omitempty"`
